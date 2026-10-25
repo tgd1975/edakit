@@ -87,9 +87,10 @@ EDA-specific), but if you run parallel sessions in one repository, build or adop
 11. **Requests to the user stand apart** at the end of a message, not hidden in a paragraph.
 12. **Design and review are two roles.** The main session designs (skill circuit-design), the agent
     electrical-reviewer reviews in its own session. A design reviewed by its designer has not been reviewed.
-13. **A finding a rule could have found becomes a check.** Reviewers mark such findings as check candidates; the user
-    decides; the check gets a catalog entry, code and a negative test (chapter 14.4). Rules come from the catalog and
-    the datasheets – a rule from memory is said to be one and reported as a candidate.
+13. **A finding a rule could have found can become a check.** Reviewers mark such findings as check candidates; the
+    user decides, nothing is filed by itself; an accepted candidate is a decision in the project's log and is built
+    in the edakit repository when the user asks (skill add-rule, chapter 14.4). Rules come from the catalog and the
+    datasheets – a rule from memory is said to be one and reported as a candidate.
 
 ## 11.5 Memory and project knowledge
 

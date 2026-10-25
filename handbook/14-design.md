@@ -74,10 +74,15 @@ is part of the workflow:
 1. The reviewers mark every finding with the catalog check it falls under – then also why that check did not report
    it, which may be a bug – or as a **check candidate**: what a rule over graph, parts, simulation, plan or Gerber
    files would test to find this kind of fault again. Findings that need judgement are marked as such.
-2. In the decision round the check candidates are one item: make it a check?
-3. Yes: in edakit a catalog entry (title, rule, why, fix, sources), the check, a negative test that builds the fault
-   into the example and expects the check to fail, and the table in this handbook. From then on it runs on every
-   project.
+2. In the decision round the check candidates are one item: make it a check? The user decides. Nothing is filed
+   anywhere by itself – whether a finding is knowledge worth keeping is a judgement, not something a program can tell.
+3. Yes: a decision in the project's decision log, written so that it can be built later without the conversation –
+   what the check would test, the finding with its numbers, the source, `edakit: open`.
+4. When the user asks for it, the skill `add-rule` builds it in the edakit repository (a skill of the repository, in
+   `.claude/skills/`, not part of the plugin): catalog entry (title, rule, why, fix, sources), the check, a negative
+   test that builds the fault into the example and expects the check to fail, a run against real projects to rule out
+   false alarms, and the table in this handbook. The decision gets the check's ID; from then on the check runs on every
+   project. The same skill adds hints, blocks and facts of single parts, and retires checks.
 
 G-13 (flyback diode) and G-14 (USB-C termination) are the reference project's buzzer stage and USB-C input turned into
 rules; G-11 (I2C pull-ups), G-12 (strapping pins) and the MCU output currents of E-2 come from CircuitSmith's rule

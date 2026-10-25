@@ -22,8 +22,8 @@ Topic: $ARGUMENTS. Why this format works: `${CLAUDE_PLUGIN_ROOT}/handbook/11-wor
 - What Claude can decide itself (no effect on cost, looks or operation) is not asked but listed at the end as
   "decided: …". No more than about 10 items – rather two rounds.
 - **Check candidates** of a review (findings a rule could find again) are one item: "make it a check in edakit?" –
-  with what the check would test. Yes → a decision, and in edakit a catalog entry, the check and its negative test
-  (handbook 14.4).
+  with what the check would test. Whether something becomes edakit knowledge is the user's decision; nothing is
+  filed anywhere by itself.
 
 ## 2. Read the answers
 
@@ -41,6 +41,11 @@ Topic: $ARGUMENTS. Why this format works: `${CLAUDE_PLUGIN_ROOT}/handbook/11-wor
 Every decision gets a **number** in the project's decision log (D-… design, E-… part choice, or the project's scheme):
 decision, reason (in the user's words where possible), date, alternatives. Cite the number in the graph or the code
 where it applies. Update the list of open items.
+
+An accepted check candidate is a decision like any other, written so that it can be built later without this
+conversation: what the check would test, the finding that showed it (designator, numbers), the evidence or source,
+and `edakit: open`. It is built in the edakit repository with that repository's skill add-rule when the user asks
+for it; the decision then gets the check's ID (`edakit: G-15`).
 
 ## 4. Implement and report
 
