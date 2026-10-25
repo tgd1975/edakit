@@ -78,11 +78,33 @@ is part of the workflow:
    anywhere by itself – whether a finding is knowledge worth keeping is a judgement, not something a program can tell.
 3. Yes: a decision in the project's decision log, written so that it can be built later without the conversation –
    what the check would test, the finding with its numbers, the source, `edakit: open`.
-4. When the user asks for it, the skill `add-rule` builds it in the edakit repository (a skill of the repository, in
+4. **Proposal.** When the user asks for it, the skill `propose-rule` turns the decision into an issue in the edakit
+   repository: a fixed text (`edakit proposal template`: kind, rule, why, finding, fix, sources, origin), shown to the
+   user before it goes out – the issue is public – and sealed with `edakit proposal seal`, whose last line is the
+   SHA-256 of the text. The decision gets the issue (`edakit: #12`).
+5. **Triage.** The Action `rule-proposals` of the edakit repository starts on every proposal of the repository owner
+   and on the owner's answers, and runs the skill `triage-rule` in a session of its own. Correctly made: `edakit
+   proposal verify` – every section filled in, the checksum matches; a body edited by hand fails on purpose. Does it
+   make sense: new, the right kind, the sources hold, general rather than one project's choice, decidable by a program
+   (else a hint), clear enough to build. The result is one of three, as a comment on the issue: **Accepted**,
+   **Rejected** with a reason a person can check, or **Question** with the alternatives – everything between accepted
+   and rejected is a question.
+6. **Build.** An accepted proposal is built with the skill `add-rule` (a skill of the repository, in
    `.claude/skills/`, not part of the plugin): catalog entry (title, rule, why, fix, sources), the check, a negative
    test that builds the fault into the example and expects the check to fail, a run against real projects to rule out
-   false alarms, and the table in this handbook. The decision gets the check's ID; from then on the check runs on every
-   project. The same skill adds hints, blocks and facts of single parts, and retires checks.
+   false alarms, and the table in this handbook. One commit per proposal, all of them in one open pull request from
+   `rules/proposals`; the user merges it. The same skill adds hints, blocks and facts of single parts, and retires
+   checks – also by hand in the repository, without an issue.
+7. **Back in the project.** `propose-rule` follows the issue: it answers questions with the user, and after the merge
+   the decision gets the check's ID (`edakit: G-15`) or `edakit: rejected (#12)`. From the next plugin update on the
+   check runs on every project – the plugin pins no version, so every commit on `main` is an update.
+
+Who may propose: only the repository owner – the Action does not start for anyone else, and GitHub's author field
+says who wrote an issue. The checksum adds that the text is the one that was sealed. The Action needs the Claude
+GitHub app on the repository and one of the secrets `CLAUDE_CODE_OAUTH_TOKEN` or `ANTHROPIC_API_KEY`
+(`/install-github-app` in the terminal Claude Code, or by hand: install github.com/apps/claude on the repository,
+`claude setup-token`, `gh secret set CLAUDE_CODE_OAUTH_TOKEN`). From the Action only public projects can be cloned for the run against real
+projects; the pull request names what could not be run, and that is run by hand before merging.
 
 G-13 (flyback diode) and G-14 (USB-C termination) are the reference project's buzzer stage and USB-C input turned into
 rules; G-11 (I2C pull-ups), G-12 (strapping pins) and the MCU output currents of E-2 come from CircuitSmith's rule

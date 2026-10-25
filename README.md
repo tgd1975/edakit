@@ -38,6 +38,9 @@ terminal, and restart Claude Code:
 claude plugin update edakit@edakit
 ```
 
+The plugin pins no version, so every commit on `main` is an update. Or switch on auto-update for the edakit
+marketplace under `/plugin` → Marketplaces (off by default for marketplaces outside Anthropic).
+
 Needed besides: EasyEDA Pro desktop, Node 24, [uv](https://docs.astral.sh/uv/), ngspice. Freerouting downloads itself
 on Linux x64. Then build and import the patched bridge extension once and start EasyEDA unthrottled –
 [handbook/02-setup.md](handbook/02-setup.md).
@@ -70,6 +73,10 @@ design (`circuit-design`) and its review are kept apart: the session that design
 ([handbook 14](handbook/14-design.md)).
 
 ## Example: the Christmas bell
+What a project teaches goes back with `/edakit:propose-rule`: a check, hint, block or part fact as an issue here,
+sealed with its SHA-256. An Action triages it – accepted and built into one pull request of rule proposals, rejected
+with the reason, or a question back ([handbook 14.4](handbook/14-design.md#144-from-a-finding-to-a-check)).
+
 
 [automatic_christmas_bell](https://github.com/tgd1975/automatic_christmas_bell) – an Arduino Nano counts down on five LEDs, then a servo rings a real bell. It is
 the second board built with edakit and started as a Fritzing breadboard drawing. It was not a push-button run:

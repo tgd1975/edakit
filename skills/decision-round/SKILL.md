@@ -23,7 +23,7 @@ Topic: $ARGUMENTS. Why this format works: `${CLAUDE_PLUGIN_ROOT}/handbook/11-wor
   "decided: …". No more than about 10 items – rather two rounds.
 - **Check candidates** of a review (findings a rule could find again) are one item: "make it a check in edakit?" –
   with what the check would test. Whether something becomes edakit knowledge is the user's decision; nothing is
-  filed anywhere by itself.
+  filed anywhere by itself – a proposal to edakit goes out only when the user asks for it (skill propose-rule).
 
 ## 2. Read the answers
 
@@ -44,8 +44,9 @@ where it applies. Update the list of open items.
 
 An accepted check candidate is a decision like any other, written so that it can be built later without this
 conversation: what the check would test, the finding that showed it (designator, numbers), the evidence or source,
-and `edakit: open`. It is built in the edakit repository with that repository's skill add-rule when the user asks
-for it; the decision then gets the check's ID (`edakit: G-15`).
+and `edakit: open`. When the user asks, the skill propose-rule sends it to the edakit repository as an issue
+(`edakit: #12`); its triage builds it, rejects it or asks back, and the decision then gets the check's ID
+(`edakit: G-15`) or `edakit: rejected (#12)`.
 
 ## 4. Implement and report
 

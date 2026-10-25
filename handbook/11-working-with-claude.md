@@ -15,6 +15,7 @@ agreements are as important as the scripts.
 | skill | `/edakit:pcb-round` | one layout round |
 | skill | `/edakit:release` | the gate, sign-offs, order checklist |
 | skill | `/edakit:decision-round` | numbered findings, short answers, numbered decisions |
+| skill | `/edakit:propose-rule` | a check, hint, block or part fact as a sealed issue to the edakit repository, and its outcome back into the decision (chapter 14.4) |
 | agent | `edakit:easyeda-operator` | runs one long EasyEDA step and returns only the result – keeps the main conversation clean |
 | agent | `edakit:electrical-reviewer` | independent circuit review; its result is the sign-off M-1 |
 | agent | `edakit:pcb-reviewer` | independent layout review (read-only EasyEDA tools); its result is the sign-off M-5 |
@@ -88,8 +89,9 @@ EDA-specific), but if you run parallel sessions in one repository, build or adop
 12. **Design and review are two roles.** The main session designs (skill circuit-design), the agent
     electrical-reviewer reviews in its own session. A design reviewed by its designer has not been reviewed.
 13. **A finding a rule could have found can become a check.** Reviewers mark such findings as check candidates; the
-    user decides, nothing is filed by itself; an accepted candidate is a decision in the project's log and is built
-    in the edakit repository when the user asks (skill add-rule, chapter 14.4). Rules come from the catalog and the
+    user decides, nothing is filed by itself; an accepted candidate is a decision in the project's log, goes to the
+    edakit repository as a proposal when the user asks (skill propose-rule), and is triaged and built there (skills
+    triage-rule and add-rule, chapter 14.4). Rules come from the catalog and the
     datasheets – a rule from memory is said to be one and reported as a candidate.
 
 ## 11.5 Memory and project knowledge

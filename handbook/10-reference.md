@@ -105,6 +105,7 @@ Code: `edakit … 2>&1 | cat`.
 | `edakit fab --board B --out DIR [--offline]` | ✓ / – | PCB, exports | `DIR/<board>/` |
 | `edakit lock [status\|claim\|release\|yield CHAT\|hook] [--note]` | – | – | `~/.local/state/edakit/easyeda-lock.json` |
 | `edakit doctor` | – | tool chain | – |
+| `edakit proposal template\|seal FILE [--out F]\|verify FILE` | – | a rule proposal (no project needed) | seal: the issue body with its SHA-256 |
 
 ## 10.3 Files in a project
 

@@ -1,7 +1,7 @@
 ---
 name: add-rule
-description: Turn knowledge into edakit – a new check, a design hint, a building block, a part fact, or a retired check – with catalog entry, code, negative test, handbook, and a run against real projects. Use in the edakit repository when the user asks to add a rule ("make D-17 of the bell a check", "a hint for …", "a block for …", "retire G-…"). Only on the user's request – what becomes knowledge is the user's decision.
-argument-hint: "<the rule, hint or block – or a project decision with 'edakit: open'>"
+description: Turn knowledge into edakit – a new check, a design hint, a building block, a part fact, or a retired check – with catalog entry, code, negative test, handbook, and a run against real projects. Use in the edakit repository when the user asks to add a rule ("make D-17 of the bell a check", "a hint for …", "a block for …", "retire G-…"), and from triage-rule for an accepted rule proposal. Only on the user's request – what becomes knowledge is the user's decision.
+argument-hint: "<the rule, hint or block – a project decision with 'edakit: open' – or an accepted proposal issue>"
 ---
 
 # Add knowledge to edakit
@@ -9,7 +9,9 @@ argument-hint: "<the rule, hint or block – or a project decision with 'edakit:
 Wanted: $ARGUMENTS. How catalog, hints and blocks fit together: `handbook/14-design.md`.
 
 Nothing here starts by itself. A check candidate from a review or a project decision (`edakit: open`) becomes edakit
-knowledge only when the user asks. If the request leaves open what exactly the rule says, ask before building.
+knowledge when the user asks – here, or by proposing it from the project (plugin skill propose-rule), which the
+Action rule-proposals triages with the skill triage-rule and builds with this one. If the request leaves open what
+exactly the rule says, ask before building; for a proposal, that is a **Question** of the triage.
 
 ## 1. What kind of knowledge
 
@@ -44,7 +46,8 @@ In doubt between check and hint: a hint. A check that has to guess produces waiv
 6. **Handbook:** the check table (3.3 for P and G, 5.3 for E, 8.1 for L and F), new fields in 3.1 or 4.1, the skills
    that name the fields (part-search), chapter 14 if the way of working changes.
 7. **Close the loop:** the project's decision that held the candidate gets the ID (`edakit: G-15`) – in that
-   project's repository, with the user's OK.
+   project's repository, with the user's OK. For a proposal the triage comment says it and propose-rule does it in
+   the project.
 
 ## 3. A hint
 
@@ -74,4 +77,5 @@ uvx ruff check edakit tests
 cd tests/fixtures/led-bar && uv run --project ../../.. edakit check && uv run --project ../../.. edakit sim
 ```
 
-Commit as the repository does (code with tests, then the handbook); push only when the user says so.
+Commit as the repository does (code with tests, then the handbook); push only when the user says so. A proposal
+built by triage-rule is one commit, pushed to `rules/proposals`.
