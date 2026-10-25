@@ -1,4 +1,4 @@
-# easyEDAAutomation – edakit
+# edakit
 
 **From a JSON hardware graph to a released, manufacturable PCB with EasyEDA Pro, driven by Claude Code.**
 
@@ -23,15 +23,15 @@ why – including the ~25 EasyEDA API behaviours that cost us time.
 In Claude Code:
 
 ```text
-/plugin marketplace add tgd1975/easyEDAAutomation
-/plugin install edakit@easyeda-automation
+/plugin marketplace add tgd1975/edakit
+/plugin install edakit@edakit
 ```
 
 Needed besides: EasyEDA Pro desktop, Node 24, [uv](https://docs.astral.sh/uv/), ngspice. Freerouting downloads itself
 on Linux x64. Then build and import the patched bridge extension once and start EasyEDA unthrottled –
 [handbook/02-setup.md](handbook/02-setup.md).
 
-Without Claude Code: `uvx --from git+https://github.com/tgd1975/easyEDAAutomation edakit <command>`.
+Without Claude Code: `uvx --from git+https://github.com/tgd1975/edakit edakit <command>`.
 
 ## Use
 

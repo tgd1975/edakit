@@ -31,8 +31,8 @@ extension API. edakit uses the same server.
 ## 2.3 Claude Code: the plugin
 
 ```text
-/plugin marketplace add tgd1975/easyEDAAutomation
-/plugin install edakit@easyeda-automation
+/plugin marketplace add tgd1975/edakit
+/plugin install edakit@edakit
 ```
 
 This installs the skills (`/edakit:start`, `/edakit:hardware-change`, …), the agents, the MCP server `easyeda`
@@ -44,14 +44,14 @@ To give every session in a project the plugin automatically, put this into the p
 ```json
 {
   "extraKnownMarketplaces": {
-    "easyeda-automation": { "source": { "source": "github", "repo": "tgd1975/easyEDAAutomation" } }
+    "edakit": { "source": { "source": "github", "repo": "tgd1975/edakit" } }
   },
-  "enabledPlugins": { "edakit@easyeda-automation": true }
+  "enabledPlugins": { "edakit@edakit": true }
 }
 ```
 
-Without Claude Code (CI, a terminal): `uvx --from git+https://github.com/tgd1975/easyEDAAutomation edakit <command>`,
-or from a clone `uv run --project /path/to/easyEDAAutomation edakit <command>`.
+Without Claude Code (CI, a terminal): `uvx --from git+https://github.com/tgd1975/edakit edakit <command>`,
+or from a clone `uv run --project /path/to/edakit edakit <command>`.
 
 ## 2.4 The MCP server
 

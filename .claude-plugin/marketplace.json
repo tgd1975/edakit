@@ -1,5 +1,5 @@
 {
-  "name": "easyeda-automation",
+  "name": "edakit",
   "owner": { "name": "tgd1975" },
   "description": "edakit: EasyEDA Pro automation for Claude Code – hardware graph, checks, simulation, schematic, PCB, routing, release gate.",
   "plugins": [

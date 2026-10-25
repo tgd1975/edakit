@@ -31,8 +31,8 @@ Create in the repository root (ask only for what you cannot sensibly default):
 - CI: the same two commands plus the project's tests on every pull request (`uvx --from git+<edakit repo> edakit …`).
 - `.claude/settings.json` of the project, so every session in this repo has the plugin:
   ```json
-  {"extraKnownMarketplaces": {"easyeda-automation": {"source": {"source": "github", "repo": "tgd1975/easyEDAAutomation"}}},
-   "enabledPlugins": {"edakit@easyeda-automation": true}}
+  {"extraKnownMarketplaces": {"edakit": {"source": {"source": "github", "repo": "tgd1975/edakit"}}},
+   "enabledPlugins": {"edakit@edakit": true}}
   ```
 
 ## 3. First run
