@@ -182,6 +182,9 @@ def functional(design, cfg, res, meta, load, ck, plugin):
             ck.add("E-3", des, "current from the supply", i, f"≤ {s['i_max_a'] * 1e3:.0f} mA", i <= s["i_max_a"], unit=" A")
         else:
             ck.add("E-3", des, "current from the supply", i, "information", True, "info", unit=" A")
+        if s.get("i_min_a"):  # power banks switch off below a minimum load
+            ck.add("E-3", des, "current keeps the supply on", i, f"≥ {s['i_min_a'] * 1e3:.0f} mA", i >= s["i_min_a"],
+                   unit=" A")
     for des, reg in meta["regs"].items():
         vin = v(res, reg["vin"]) - v(res, reg["gnd"])
         vout = v(res, reg["vout"]) - v(res, reg["gnd"])

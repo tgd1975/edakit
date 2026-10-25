@@ -142,7 +142,7 @@ class Netlist:
         r = spec.get("r_ohm", 0.1)
         self.add(f"R_{des}_SRC {x} {plus} {r}", des, "source", (x, plus), r)
         self.meta["sources"][des] = {"branch": f"v_{des}_src#branch".lower(), "i_max_a": spec.get("i_max_a"),
-                                     "nodes": [plus, minus]}
+                                     "i_min_a": spec.get("i_min_a"), "nodes": [plus, minus]}
 
     def external(self, des, spec):
         """Off-board load at a connector: constant current from pin 'plus' to pin 'minus'."""
@@ -297,15 +297,18 @@ class Netlist:
         elif vin:
             self.add(f"I_{des}_CORE {vin} 0 DC {p.get('i_core_a', 0.03)}")
         gpio = {self.d.pin_net.get(f"{des}.{n}") for n, i in part["pins"].items() if i.get("role") == "gpio"}
+        rail = self.n(mcfg["io_rail"]) if mcfg.get("io_rail") else (vin if v_io == "vin" else vout or vin)
         for net in mcfg.get("outputs", []):
             if net in gpio:
                 x = f"x_{des.lower()}_{net.lower()}"
                 if self.gpio_level(net) and v_io == "vin":
-                    self.add(f"B_{des}_{net} {x} 0 V = V({vin})")
+                    self.add(f"B_{des}_{net} {x}s 0 V = V({vin})")
                 else:
-                    self.add(f"V_{des}_{net} {x} 0 DC {v_io if self.gpio_level(net) else 0}")
+                    self.add(f"V_{des}_{net} {x}s 0 DC {v_io if self.gpio_level(net) else 0}")
+                self.add(f"V_{des}_{net}_AM {x}s {x} 0")
                 self.add(f"R_{des}_{net} {x} {self.n(net)} {p.get('gpio_r_out_ohm', 30)}")
-        rail = self.n(mcfg["io_rail"]) if mcfg.get("io_rail") else (vin if v_io == "vin" else vout or vin)
+                if self.gpio_level(net) and rail:  # what a high output sources comes out of the I/O supply
+                    self.add(f"B_{des}_{net}_SUP {rail} 0 I = max(i(V_{des}_{net}_AM), 0)")
         for net in mcfg.get("pullups", []):
             if net in gpio and rail:
                 self.add(f"R_{des}_PU_{net} {rail} {self.n(net)} {mcfg.get('pullup_ohm', 50000)}")

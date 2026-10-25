@@ -78,7 +78,7 @@ def build_parser():
     _common(p)
 
     p = sub.add_parser("silk", help="designators where there is room, silkscreen check on the Gerber export")
-    p.add_argument("action", choices=["apply", "check"])
+    p.add_argument("action", choices=["apply", "check", "preview"])
     p.add_argument("--board")
     _common(p)
 

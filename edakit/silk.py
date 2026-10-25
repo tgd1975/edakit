@@ -14,6 +14,11 @@ Board label: the board's title and revision ([boards.<b>] revision; [boards.<b>.
 "bottom-left" as seen from the printed side), not on pads, parts, labels, vias or the keep-outs of holes. edakit
 remembers the strings it created and replaces them on the next run, so an old revision never stays on the board.
 
+Artwork and texts ([[boards.<b>.silk.art]]: svg, x, y, width_mm, rot, side; [[boards.<b>.silk.texts]]: text, x, y,
+h_mm, rot, side, font) come first: filled shapes and strokes of the SVG become silkscreen fills, cut free of pads and
+solder-mask openings (+0.15 mm) and of strokes thinner than JLCPCB can print (0.15 mm). Designators and the board label
+then keep clear of them. `edakit silk preview` draws the artwork onto the last Gerber export offline.
+
 Run it again after every auto-layout and routing: the spots depend on where the small parts and vias ended up.
 API notes: designators are attributes (PCB_PrimitiveAttribute, key 'Designator'); modify works on locked parts too;
 alignMode 5 = centre on x/y. Stroke font 'default': measured 0.5-0.6 x height per character.
@@ -139,6 +144,89 @@ def corner_spot(area, obstacles, w, h, corner="bottom-left", step=0.5):
     return None
 
 
+MIN_SILK_MM = 0.15  # JLCPCB: thinner silkscreen does not print
+
+
+def svg_geometry(path):
+    """Filled shapes (even-odd) and strokes of an SVG as one shapely geometry, y up, in the SVG's user units."""
+    import numpy as np
+    from shapely.geometry import LineString
+    from svgelements import SVG, Path as SvgPath, Shape
+
+    shapes = []
+    for el in SVG.parse(str(path), reify=True).elements():
+        if not isinstance(el, Shape):
+            continue
+        p = SvgPath(el)
+        if not len(p):
+            continue
+        rings = []
+        for sub in p.as_subpaths():
+            sub = SvgPath(sub)
+            n = max(16, int(sub.length(error=1e-4) * 4))
+            rings.append([(float(x), -float(y)) for x, y in sub.npoint(np.linspace(0, 1, n))])
+        if el.fill is not None and el.fill.value is not None:
+            filled = None
+            for r in rings:
+                if len(r) >= 3:
+                    poly = Polygon(r).buffer(0)
+                    filled = poly if filled is None else filled.symmetric_difference(poly)
+            if filled is not None:
+                shapes.append(filled)
+        width = el.stroke_width if el.stroke is not None and el.stroke.value is not None else 0
+        if width:
+            shapes += [LineString(r).buffer(width / 2) for r in rings if len(r) >= 2]
+    return unary_union(shapes)
+
+
+def art_shapes(cfg, board, side):
+    """All artwork of one side in EasyEDA coordinates (mm, seen from the top). An item is scaled to width_mm, centred
+    on its plan position (x, y), turned by rot (counter-clockwise as seen from its side) and mirrored on the bottom –
+    EasyEDA mirrors texts there, not graphics."""
+    from shapely.affinity import rotate, scale, translate
+    out = []
+    for item in board.silk.get("art", []):
+        if item.get("side", board.silk.get("designators", "top")) != side:
+            continue
+        g = svg_geometry(cfg.resolve(item["svg"]))
+        x0, y0, x1, y1 = g.bounds
+        f = float(item["width_mm"]) / (x1 - x0)
+        g = scale(translate(g, -(x0 + x1) / 2, -(y0 + y1) / 2), f, f, origin=(0, 0))
+        g = rotate(g, float(item.get("rot", 0)), origin=(0, 0))
+        if side == "bottom":
+            g = scale(g, -1, 1, origin=(0, 0))
+        out.append(translate(g, *board.eda_point(float(item["x"]), float(item["y"]))))
+    return unary_union(out) if out else Polygon()
+
+
+def printable(art, area, openings):
+    """What JLCPCB can print of the artwork: inside the board, off pads and mask openings, nothing thinner than 0.15 mm."""
+    g = art.intersection(area).difference(openings.buffer(0.15))
+    return g.buffer(-MIN_SILK_MM / 2).buffer(MIN_SILK_MM / 2).simplify(0.01)
+
+
+def silk_texts(board, side):
+    """[(text, x, y, rot, h, font)] of [[boards.<b>.silk.texts]] on this side, positions in EasyEDA mm."""
+    out = []
+    for t in board.silk.get("texts", []):
+        if t.get("side", board.silk.get("designators", "top")) == side:
+            x, y = board.eda_point(float(t["x"]), float(t["y"]))
+            out.append((t["text"], x, y, float(t.get("rot", 0)), float(t.get("h_mm", 1.2)), t.get("font", "default")))
+    return out
+
+
+def ring_arg(coords):
+    pts = [(to_mil(x), to_mil(y)) for x, y in list(coords)[:-1]]
+    flat = [pts[0][0], pts[0][1], "L"]
+    for x, y in pts[1:] + pts[:1]:
+        flat += [x, y]
+    return flat
+
+
+def polygons(g):
+    return [p for p in getattr(g, "geoms", [g]) if p.geom_type == "Polygon" and not p.is_empty]
+
+
 def export_gerber(cfg, board, mcp):
     out = cfg.artifact(f"gerber_{board.name}", ".keep").parent
     res = mcp.call("easyeda_export_gerbers", projectId="current", drillFormat="millimeter",
@@ -159,7 +247,7 @@ def silk_on_openings(folder, layer, own=None):
     return silk.intersection(openings).area, openings
 
 
-def picture(silk, openings, area, out, mirror=False):
+def picture(silk, openings, area, out, mirror=False, extra=(), texts=()):
     import matplotlib
     matplotlib.use("Agg")
     import matplotlib.pyplot as plt
@@ -184,10 +272,15 @@ def picture(silk, openings, area, out, mirror=False):
     x0, y0, x1, y1 = area.bounds
     fig, ax = plt.subplots(figsize=((x1 - x0 + 10) / 25.4, (y1 - y0 + 10) / 25.4), dpi=300)
     fig.patch.set_facecolor("#14161a")
-    for g, color in ((area, "#0f5a2a"), (openings.intersection(area), "#c9b26a"), (silk, "#f4f2ea")):
+    if mirror:
+        extra = [(scale(g, -1, 1, origin=(0, 0)), c) for g, c in extra]
+    for g, color in ((area, "#0f5a2a"), (openings.intersection(area), "#c9b26a"), (silk, "#f4f2ea"), *extra):
         p = patch(g, color)
         if p:
             ax.add_patch(p)
+    for text, x, y, rot, th, _ in texts:
+        ax.text(-x if mirror else x, y, text, rotation=rot, ha="center", va="center", fontsize=th * 2.2,
+                color="#f4f2ea", family="DejaVu Sans")
     ax.set_xlim(x0 - 5, x1 + 5)
     ax.set_ylim(y0 - 5, y1 + 5)
     ax.set_aspect("equal")
@@ -204,11 +297,14 @@ def apply(cfg, board, mcp):
     hide = {SIDE[x] for x in s.get("hide", [])} | {layer}  # the placed side is hidden first, then shown at its spot
     ensure_pcb_focus(mcp)
     memo = cfg.artifact(f"silk_strings_{board.name}.json")
-    if memo.exists():  # group and board labels of the last run
-        old = [p for p in json.loads(memo.read_text()) if p]
-        existing = {eda.state(t).get("PrimitiveId") for t in api(mcp, "PCB_PrimitiveString.getAll") or []}
-        if [p for p in old if p in existing]:
-            api(mcp, "PCB_PrimitiveString.delete", [p for p in old if p in existing])
+    if memo.exists():  # texts and fills edakit created in the last run
+        old = json.loads(memo.read_text())
+        old = {"strings": old} if isinstance(old, list) else old
+        for kind, cls in (("strings", "PCB_PrimitiveString"), ("fills", "PCB_PrimitiveFill")):
+            existing = {eda.state(t).get("PrimitiveId") for t in api(mcp, f"{cls}.getAll") or []}
+            gone = [p for p in old.get(kind, []) if p in existing]
+            if gone:
+                api(mcp, f"{cls}.delete", gone)
     comps = {c["PrimitiveId"]: c for c in map(eda.state, api(mcp, "PCB_PrimitiveComponent.getAll") or [])}
     attrs = {}
     for a in map(eda.state, api(mcp, "PCB_PrimitiveAttribute.getAll") or []):
@@ -231,14 +327,35 @@ def apply(cfg, board, mcp):
     vias = unary_union([Point(mm(v["X"]), mm(v["Y"])).buffer(mm(v["Diameter"]) / 2 + 0.1)
                         for v in map(eda.state, api(mcp, "PCB_PrimitiveVia.getAll") or [])])
     area = board_shape(board).buffer(-0.5)
+    created = {"strings": [], "fills": []}
+
+    def string(text, x, y, rot, size, font="default", on=layer):
+        res = api(mcp, "PCB_PrimitiveString.create", on + 2, to_mil(x), to_mil(y), text, font, to_mil(size), 6,
+                  5, rot, False, 0, False, False)  # EasyEDA mirrors texts on the bottom by itself
+        created["strings"].append(eda.state(res).get("PrimitiveId") if isinstance(res, dict) else res)
+    for art_side, art_layer in SIDE.items():
+        art = art_shapes(cfg, board, art_side)
+        texts = silk_texts(board, art_side)
+        if art.is_empty and not texts:
+            continue
+        side_openings = openings if art_layer == layer else gerber.shape(
+            gerber.parse_gerber(folder / gerber.FILES[GERBER_KEYS[art_layer][0]]))
+        art = printable(art, area, side_openings)
+        for n, p in enumerate(polygons(art)):
+            if n % 20 == 0:
+                ensure_pcb_focus(mcp)
+            rings = [p.exterior.coords] + [i.coords for i in p.interiors]
+            arg = {"$complexPolygon": [ring_arg(r) for r in rings]} if p.interiors else {"$polygon": ring_arg(rings[0])}
+            res = api(mcp, "PCB_PrimitiveFill.create", art_layer + 2, arg, "", "solid", 0, False)
+            created["fills"].append(eda.state(res).get("PrimitiveId") if isinstance(res, dict) else res)
+        for text, x, y, rot, th, font in texts:
+            string(text, x, y, rot, th, font, art_layer)
+        if art_layer == layer:  # designators and the board label keep clear of it
+            boxes = [label_box(x, y, rot, *label_size(t, th)) for t, x, y, rot, th, _ in texts]
+            blocked = unary_union([blocked, art.buffer(0.3), *[b.buffer(0.3) for b in boxes]])
+        print(f"  {art_side}: artwork {len(polygons(art))} shapes ({art.area:.0f} mm²), {len(texts)} texts")
     placed, grouped, missing = place_labels(parts, blocked, vias, area, h, gap, s.get("groups"),
                                             tuple(s.get("priority", ["TP"])))
-    created = []
-
-    def string(text, x, y, rot, size):
-        res = api(mcp, "PCB_PrimitiveString.create", layer + 2, to_mil(x), to_mil(y), text, "default", to_mil(size), 6,
-                  5, rot, False, 0, False, False)  # EasyEDA mirrors texts on the bottom by itself
-        created.append(eda.state(res).get("PrimitiveId") if isinstance(res, dict) else res)
     for n, (name, (x, y, rot)) in enumerate(placed.items()):
         if n % 20 == 0:
             ensure_pcb_focus(mcp)
@@ -291,8 +408,34 @@ def check(cfg, board, mcp, footprint_silk=None):
     return 2 if bad or found else 0
 
 
+def preview(cfg, board):
+    """Offline: the artwork and texts of edakit.toml on the last Gerber export (edakit silk apply/check)."""
+    folder = cfg.artifact(f"gerber_{board.name}", ".keep").parent
+    top = folder / gerber.FILES["top_silk"]
+    if not top.exists():
+        return eda.die(f"no Gerber export in {folder} – run `edakit silk check` once")
+    area = board_shape(board).buffer(-0.5)
+    for side, layer in SIDE.items():
+        mask_key, silk_key = GERBER_KEYS[layer]
+        openings = gerber.shape(gerber.parse_gerber(folder / gerber.FILES[mask_key]))
+        silk = gerber.shape(gerber.parse_gerber(folder / gerber.FILES[silk_key]))
+        art = printable(art_shapes(cfg, board, side), area, openings)
+        texts = silk_texts(board, side)
+        if art.is_empty and not texts:
+            continue
+        boxes = unary_union([label_box(x, y, rot, *label_size(t, th)) for t, x, y, rot, th, _ in texts]) \
+            if texts else Polygon()
+        img = cfg.artifact(f"silk_preview_{board.name}_{side}.png")
+        picture(silk.union(art), openings, board_shape(board), img, mirror=layer == BOTTOM,
+                extra=[(boxes, "#7fb3ff")], texts=texts)
+        print(f"  {side}: artwork {art.area:.0f} mm², {len(texts)} texts (blue boxes) -> {img}")
+    return 0
+
+
 def main(cfg, args):
     board = cfg.board(args.board)
+    if args.action == "preview":
+        return preview(cfg, board)
     mcp = eda.connect(cfg, args.verbose)
     try:
         eda.open_project(mcp, cfg)

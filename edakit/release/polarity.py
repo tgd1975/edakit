@@ -102,8 +102,10 @@ def sheet(cfg, board, design, d):
     g = d / "gerber"
     layers = {"T": (gerber.parse_gerber(g / gerber.FILES["top"]), gerber.parse_gerber(g / gerber.FILES["top_silk"])),
               "B": (gerber.parse_gerber(g / gerber.FILES["bottom"]), gerber.parse_gerber(g / gerber.FILES["bottom_silk"]))}
+    def polar(part):  # electrolytic and tantalum capacitors count as well
+        return part.get("kind") in POLAR or (part.get("kind") == "capacitor" and part.get("params", {}).get("polarized"))
     comps = [c for c in design.board_comps(board.name).values() if c["designator"] in data
-             and (design.part(c["designator"]) or {}).get("kind") in POLAR]
+             and polar(design.part(c["designator"]) or {})]
     comps.sort(key=lambda c: (not c.get("verify"), design.part(c["designator"])["kind"], c["designator"]))
     tiles = [tile(c["designator"], c, design.part(c["designator"]), data[c["designator"]], layers, design.pin_net)
              for c in comps]

@@ -407,10 +407,12 @@ def tooling(cfg, board, mcp):
 
 
 def pour_outline(board):
-    """Pour polygon (plan mm): the outline with a notch around every tooling hole. EasyEDA takes a polygon with a
-    hole only as its outer contour, and copper must not lie under the tooling hole – so the notch reaches the edge."""
+    """Pour polygon (plan mm): the outline, set in by the edge clearance of the routing rules (+0.1 mm; EasyEDA itself
+    keeps only about 0.26 mm), with a notch around every tooling hole. EasyEDA takes a polygon with a hole only as its
+    outer contour, and copper must not lie under the tooling hole – so the notch reaches the edge."""
     from shapely.geometry import Point, box
-    poly = outline_polygon(board)
+    edge = float(board.routing.get("edge_clearance_um", 400)) / 1000 + 0.1
+    poly = outline_polygon(board).buffer(-edge, join_style="mitre")
     for tx, ty in board.tooling:
         half = max(board.tooling_keep, poly.exterior.distance(Point(tx, ty)) + 0.05)
         cut = poly.difference(box(tx - half, ty - half, tx + half, ty + half))

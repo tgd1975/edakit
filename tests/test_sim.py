@@ -61,6 +61,26 @@ def test_supply_limit(project):
     assert any(c["item"] == "J1" and "supply" in c["check"] for c in failing(simulate(project, sim)))
 
 
+def test_gpio_current_comes_out_of_the_supply(project):
+    sim = json.loads((project.root / "hardware" / "sim.json").read_text())
+    before = simulate(project, sim)
+    sim["mcu"]["U1"]["outputs"].append("BTN")                   # drive the button net high and press the button:
+    sim["loads"]["idle"]["gpio"]["BTN"] = 1                     # ~110 mA out of the GPIO into the switch
+    sim["loads"]["idle"]["buttons"] = ["SW1"]
+    after = simulate(project, sim)
+    i0, i1 = (next(s for s in out["scenarios"] if s["name"] == "usb-nom/idle/vf-min")["sources"]["J1"]
+              for out in (before, after))
+    assert i1 - i0 > 0.05                                       # 3.3 V x 0.11 A through the buck from 5 V
+
+
+def test_power_bank_minimum_load(project):
+    sim = json.loads((project.root / "hardware" / "sim.json").read_text())
+    sim["sources"]["J1"]["i_min_a"] = 0.001
+    assert not failing(simulate(project, sim))
+    sim["sources"]["J1"]["i_min_a"] = 0.5                       # idle draws far less: a power bank would switch off
+    assert any(c["item"] == "J1" and "keeps the supply on" in c["check"] for c in failing(simulate(project, sim)))
+
+
 def test_led_dark_when_oe_high(project):
     sim = json.loads((project.root / "hardware" / "sim.json").read_text())
     sim["loads"]["all_on"]["gpio"]["LED_OE"] = 1      # all_on expects light, OE says dark

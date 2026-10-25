@@ -17,6 +17,8 @@ on the delivered board instead (acceptance test).
 - Supplies: connectors listed under `sources` (a voltage source behind a source resistance), battery holders with a
   cell state (`cells`). A module that brings its own supply (an Arduino Nano on USB) is a source as well: `plus` is
   its 5V pin, the voltage is USB minus its on-board diode.
+- `i_min_a` on a source: the least current the supply needs to stay on – USB power banks switch off below
+  50–100 mA after a few seconds. E-3 checks every scenario against it.
 - Off-board loads (a servo, a motor, a strip at a connector): the load's `external`, e.g.
   `{"J1": {"plus": "2", "minus": "1", "i_a": 0.3}}` – a constant current between the two pins; it counts for the
   connector's contact current and for the track widths.
