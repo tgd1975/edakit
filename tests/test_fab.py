@@ -72,3 +72,12 @@ def test_copper_connectivity_from_gerber(tmp_path):
     groups = cu.net_groups("A")
     assert len(groups) == 2 and ["R1_1", "R2_1"] in groups      # R3 is not connected: the net is open
     assert cu.shorts == []
+
+
+def test_merge_bom_counts_every_designator_once():
+    entries = [{"reference": "C1, C1", "lcsc": "C439782", "quantity": 2},
+               {"reference": "R1, R2, R1, R2", "lcsc": "C17630", "quantity": 4},
+               {"reference": "R3", "lcsc": "C17630", "quantity": 1}]
+    merged = {e["lcsc"]: e for e in fab.merge_bom(entries)}
+    assert merged["C439782"]["reference"] == "C1" and merged["C439782"]["quantity"] == 1
+    assert merged["C17630"]["reference"] == "R1, R2, R3" and merged["C17630"]["quantity"] == 3

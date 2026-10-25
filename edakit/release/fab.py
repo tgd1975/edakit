@@ -65,6 +65,19 @@ class Rows(list):
                      "expected": str(expected), "result": result or ("pass" if ok else "fail")})
 
 
+def merge_bom(entries):
+    """BOM lines of several schematic pages -> one line per LCSC number. The bridge lists every part of a
+    board-linked schematic twice ("C1, C1"): every designator counts once."""
+    merged = {}
+    for e in entries:
+        m = merged.setdefault(e.get("lcsc") or e.get("value"), {**e, "reference": [], "quantity": 0})
+        for r in e.get("reference", "").split(", "):
+            if r and r not in m["reference"]:
+                m["reference"].append(r)
+        m["quantity"] = len(m["reference"])
+    return [{**m, "reference": ", ".join(m["reference"])} for m in merged.values()]
+
+
 # --- collect from EasyEDA -----------------------------------------------------------------------------------------
 
 def collect(cfg, board, d, verbose=False):
@@ -98,17 +111,12 @@ def collect(cfg, board, d, verbose=False):
         # easyeda_bom_generate lists the parts of the FOCUSED schematic page, not of the board: focus every page of
         # the board schematic in turn and merge (otherwise the template or another board would be compared)
         sch_uuid, pages = eda.find_pages(mcp, board.schematic)
-        merged = {}
+        entries = []
         for page in pages:
             eda.focus_page(mcp, sch_uuid, page)
             res = mcp.call("easyeda_bom_generate", projectId="current", format="json", groupBy="lcsc", timeout=120)
-            for e in res.get("entries", []):  # on a board schematic the bridge lists every part twice
-                m = merged.setdefault(e.get("lcsc") or e.get("value"), {**e, "reference": [], "quantity": 0})
-                m["reference"] += [r for r in e.get("reference", "").split(", ") if r and r not in m["reference"]]
-                m["quantity"] = len(m["reference"])
-        for m in merged.values():
-            m["reference"] = ", ".join(m["reference"])
-        (d / "bom_easyeda.json").write_text(json.dumps(list(merged.values()), indent=1, ensure_ascii=False))
+            entries += res.get("entries", [])
+        (d / "bom_easyeda.json").write_text(json.dumps(merge_bom(entries), indent=1, ensure_ascii=False))
     finally:
         mcp.close()
     shutil.rmtree(d / "gerber", ignore_errors=True)
