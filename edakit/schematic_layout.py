@@ -787,6 +787,8 @@ def main(cfg, args):
             if not eda.wait_for_bridge(mcp, args.wait):
                 return 1
             eda.open_project(mcp, cfg)
+            if name == board.schematic and not args.dry_run:
+                eda.ensure_board(mcp, board)
             sch_uuid, pages = eda.find_pages(mcp, name)
             if len(pages) != 1:
                 raise MCPError(f"'{name}' has {len(pages)} pages – only one is supported")

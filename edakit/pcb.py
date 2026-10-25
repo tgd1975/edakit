@@ -147,6 +147,37 @@ def check_plan(cfg, board, geo, place, boxes, tht):
                     gap = max(b[0] - a[2], a[0] - b[2], b[1] - a[3], a[1] - b[3], 0)
                     if gap > board.near_mm:
                         problems.append(f"{part}: {gap:.1f} mm from {host} (near_mm {board.near_mm:g})")
+    problems += led_rows(board, geo, place, Design.from_config(cfg))
+    return problems
+
+
+def led_rows(board, geo, place, design, tol=1.0):
+    """LEDs side by side on one side of the board (centres on one line within tol mm) have their anode towards the
+    same side – whoever solders them by the "+" mark should not have to turn every other one."""
+    leds = {}
+    for ref, p in place.items():
+        part = design.part(ref) if ref in design.comps else None
+        if not part or part.get("kind") != "led" or ref not in geo:
+            continue
+        roles = {i.get("role"): n for n, i in part["pins"].items()}
+        pads = geo[ref]["pads"]
+        if roles.get("anode") in pads and roles.get("cathode") in pads:
+            a, k = (board.transform((pads[roles[r]]["x"], pads[roles[r]]["y"]), p.x, p.y, p.rot, p.side)
+                    for r in ("anode", "cathode"))
+            leds[ref] = (p.side, (p.x, p.y), (a[0] - k[0], a[1] - k[1]))
+    problems, seen = [], set()
+    for axis, name in ((1, "row"), (0, "column")):
+        for ref, (side, c, d) in sorted(leds.items(), key=lambda kv: natural_key(kv[0])):
+            line = sorted((r for r, (s, c2, _) in leds.items() if s == side and abs(c2[axis] - c[axis]) <= tol),
+                          key=lambda r: leds[r][1][1 - axis])
+            if len(line) < 2 or tuple(line) in seen:
+                continue
+            seen.add(tuple(line))
+            first = leds[line[0]][2]
+            other = [r for r in line[1:] if leds[r][2][0] * first[0] + leds[r][2][1] * first[1] < 0]
+            if other:
+                problems.append(f"LEDs in a {name} ({', '.join(line)}): anode of {', '.join(other)} points the other "
+                                f"way than {line[0]} – turn them by 180°")
     return problems
 
 

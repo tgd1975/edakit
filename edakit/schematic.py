@@ -168,6 +168,18 @@ def place(mcp, comps, devices, positions):
     return placed
 
 
+def pin_differences(symbol, graph):
+    """symbol, graph: {pin number: name}. Numbers on one side only, and names that differ (case and blanks ignored) –
+    a graph that assumed another pinout shows up as a name, long before the board does."""
+    norm = lambda s: "".join(str(s).split()).upper()  # noqa: E731
+    out = []
+    if set(symbol) != set(graph):
+        out.append(f"symbol only {sorted(set(symbol) - set(graph))}, graph only {sorted(set(graph) - set(symbol))}")
+    out += [f"pin {n}: symbol '{symbol[n]}', graph '{graph[n]}'" for n in sorted(set(symbol) & set(graph), key=natural_key)
+            if norm(symbol[n]) != norm(graph[n])]
+    return out
+
+
 def check_symbol_pins(mcp, comps, placed):
     """One symbol per part number is enough to read; every designator is compared, the graph may differ per part."""
     problems, symbol_pins = 0, {}
@@ -175,11 +187,11 @@ def check_symbol_pins(mcp, comps, placed):
         key = comps[d].get("lcsc") or d
         if key not in symbol_pins:
             pins = mcp.call("easyeda_schematic_component_pins", primitiveId=p["id"]).get("pins", [])
-            symbol_pins[key] = {str(pin["pinNumber"]) for pin in pins}
-        have, want = symbol_pins[key], set(comps[d]["pins"])
-        if have != want:
+            symbol_pins[key] = {str(pin["pinNumber"]): pin.get("pinName", "") for pin in pins}
+        diffs = pin_differences(symbol_pins[key], comps[d]["pins"])
+        if diffs:
             problems += 1
-            print(f"  ! {d}: pins differ – symbol only {sorted(have - want)}, graph only {sorted(want - have)}")
+            print(f"  ! {d}: " + "; ".join(diffs))
     print(f"  {len(placed) - problems}/{len(placed)} parts with matching pins")
     return problems
 
@@ -378,9 +390,8 @@ def check_pins(mcp, graph_comps, sch, graph_nets, rep):
     in_net = {p for pins in graph_nets.values() for p in pins}
     for d in sorted(graph_comps.keys() & sch.keys(), key=natural_key):
         pins = mcp.call("easyeda_schematic_component_pins", primitiveId=sch[d]["primitiveId"]).get("pins", [])
-        have, want = {str(p["pinNumber"]) for p in pins}, set(graph_comps[d]["pins"])
-        if have != want:
-            rep.add("pins", f"{d}: symbol only {sorted(have - want)}, graph only {sorted(want - have)}")
+        for diff in pin_differences({str(p["pinNumber"]): p.get("pinName", "") for p in pins}, graph_comps[d]["pins"]):
+            rep.add("pins", f"{d}: {diff}")
         nc_want = {str(p) for p in graph_comps[d].get("nc", [])}
         nc_have = {str(p["pinNumber"]) for p in pins if p.get("noConnected")}
         for p in sorted(nc_want - nc_have):

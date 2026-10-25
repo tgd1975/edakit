@@ -37,7 +37,10 @@ edakit schematic check --schematic layout_main --no-pins
 ```
 
 Read only (it activates the pages, though). Parts (missing, extra, duplicate, LCSC), nets (every graph pin on its net,
-no foreign pins, no unknown nets), pin numbers and no-connect markers. About 10 s. The gate runs it for every board
+no foreign pins, no unknown nets), pin numbers **and names** and no-connect markers. About 10 s. A name that
+differs from the symbol (`D11/MOSI` in the graph, `D11` in the symbol) fails: the graph then assumed another
+pinout, and that is the error to catch here – or the library part disagrees with itself (an LED symbol naming pin 1
+`K` while its footprint prints `+` at pad 1). Names follow the symbol; the meaning sits in the roles. The gate runs it for every board
 (S-2). Run it also at the start of every EasyEDA session and before every gate run: a template once had a pin on two
 nets without anyone having written to it; regenerating fixed it.
 

@@ -59,6 +59,10 @@ the pour gets a notch from the edge around each tooling hole instead.
   reports "Netlist Error"). New parts are parked next to the board (`park`), their geometry is measured, pad nets set,
   PCB and schematic saved.
 
+A new project comes with one empty default board (Board1 = Schematic1 + PCB1). The first `edakit schematic layout`
+renames it to the board of edakit.toml (board name, `schematic`, `pcb`) and fills the schematic from the graph; any
+other board setup is left alone and must match edakit.toml.
+
 One case remains: when a part was freshly placed in the schematic from the library, the DRC shows "Netlist Error –
 Import Changes" until the import view was opened once in the GUI. That is the one click to ask for (start skill,
 section 3).
@@ -80,7 +84,9 @@ auto-layout places only unlocked parts, only on TOP, and knows nothing about bel
 capacitor 24 mm from its IC.
 
 `edakit pcb plan` checks offline: overlaps per side, outline (0.3 mm margin; `edge_ok` for connectors), keep-outs of
-holes and tooling holes, THT pins of one side under parts of the other, `near` distances; it prints the airline length
+holes and tooling holes, THT pins of one side under parts of the other, `near` distances, **LEDs side by side with
+their anode towards the same side** (whoever solders by the "+" mark should not have to turn every other one; the
+library footprints of one LED series may put the mark on different pads); it prints the airline length
 of the fixed parts (a number to compare placements) and writes `<artifacts>/pcb_plan_<board>.png`. Look at the picture
 before `apply`.
 

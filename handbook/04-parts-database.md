@@ -13,7 +13,7 @@ against which datasheet revision. Examples: [examples/led-bar/hardware/parts/](.
 | `package`, `footprint` | the footprint name must equal the EasyEDA footprint (L-4 compares it with the PCB) |
 | `jlc_class` | Basic / Extended Part |
 | `datasheet` | `url`, `pinout_page` |
-| `pins` | pin number → `name` (identical to the graph), `type`, `role`, `vmax` |
+| `pins` | pin number → `name` (as in the EasyEDA symbol and identical to the graph – S-2 compares them), `type`, `role` (the meaning; for polarised parts it follows the footprint's polarity print when symbol and footprint disagree), `vmax` |
 | `params` | values for simulation and calculations; `behavior` for ICs (chapter 5) |
 | `ratings` | limits for the stress checks |
 | `spice` | `{"model": ".model SS34 D(IS=20u N=1.2 RS=0.04 …)"}` for diodes and transistors |

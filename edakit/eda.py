@@ -419,6 +419,33 @@ def list_sheet_parts(mcp):
 
 # --- PCB ----------------------------------------------------------------------------------------------------------
 
+def ensure_board(mcp, board):
+    """edakit's board = one EasyEDA board named board.name that joins the board schematic (board.schematic) and the PCB
+    (board.pcb). A new project comes with one empty default board (Board1: Schematic1 + PCB1); it is renamed once.
+    Anything else is left alone – a board is never created or rebuilt behind the user's back."""
+    boards = api(mcp, "DMT_Board.getAllBoardsInfo") or []
+    mine = [b for b in boards if b.get("name") == board.name]
+    if mine:
+        sch, pcb = (mine[0].get("schematic") or {}).get("uuid"), (mine[0].get("pcb") or {}).get("name")
+        if schematic_name(mcp, sch) != board.schematic or pcb != board.pcb:
+            raise MCPError(f"board '{board.name}' joins '{schematic_name(mcp, sch)}' and '{pcb}', edakit.toml says "
+                           f"'{board.schematic}' and '{board.pcb}'")
+        return
+    default = [b for b in boards if b.get("name") == "Board1" and (b.get("pcb") or {}).get("name") == "PCB1"
+               and str((b.get("schematic") or {}).get("name", "")).lower() == "schematic1"]
+    if len(boards) != 1 or not default:
+        raise MCPError(f"no board '{board.name}' in the project (there are: {', '.join(b['name'] for b in boards) or '–'})"
+                       f" – create it in EasyEDA with the schematic '{board.schematic}' and the PCB '{board.pcb}'")
+    b = default[0]
+    api(mcp, "DMT_Board.modifyBoardName", b["name"], board.name)
+    api(mcp, "DMT_Pcb.modifyPcbName", b["pcb"]["uuid"], board.pcb)
+    activate_schematic(mcp, b["schematic"]["uuid"])
+    rename_schematic(mcp, b["schematic"]["uuid"], board.schematic)
+    if not [x for x in api(mcp, "DMT_Board.getAllBoardsInfo") or [] if x.get("name") == board.name]:
+        raise MCPError(f"renaming the default board to '{board.name}' did not take effect")
+    print(f"  default board renamed: Board1 -> {board.name} (schematic {board.schematic}, PCB {board.pcb})")
+
+
 PCB = {}  # name and uuid of the PCB this command works on
 
 
