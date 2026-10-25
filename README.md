@@ -20,26 +20,35 @@ why – including the ~25 EasyEDA API behaviours that cost us time.
 
 ## Install
 
-In Claude Code:
+In Claude Code in the terminal:
 
 ```text
 /plugin marketplace add tgd1975/edakit
 /plugin install edakit@edakit
 ```
 
-To update, refresh the marketplace in Claude Code, then update the plugin via `/plugin` → Manage plugins or in a
-terminal, and restart Claude Code:
+The VS Code extension has no `/plugin`; there the same goes through the command line, in a terminal. With only the
+extension installed, `claude` is not on the PATH – it is the binary that comes with the extension,
+`~/.vscode/extensions/anthropic.claude-code-<version>-linux-x64/resources/native-binary/claude`:
+
+```bash
+claude plugin marketplace add tgd1975/edakit
+claude plugin install edakit@edakit
+```
+
+To update, refresh the marketplace and update the plugin, then start a new session (VS Code: a new Claude session or
+*Developer: Reload Window*):
 
 ```text
 /plugin marketplace update edakit
 ```
 
 ```bash
-claude plugin update edakit@edakit
+claude plugin marketplace update edakit && claude plugin update edakit@edakit
 ```
 
-The plugin pins no version, so every commit on `main` is an update. Or switch on auto-update for the edakit
-marketplace under `/plugin` → Marketplaces (off by default for marketplaces outside Anthropic).
+The plugin pins no version, so every commit on `main` is an update. Auto-update for the edakit marketplace can be
+switched on under `/plugin` → Marketplaces (off by default for marketplaces outside Anthropic).
 
 Needed besides: EasyEDA Pro desktop, Node 24, [uv](https://docs.astral.sh/uv/), ngspice. Freerouting downloads itself
 on Linux x64. Then build and import the patched bridge extension once and start EasyEDA unthrottled –

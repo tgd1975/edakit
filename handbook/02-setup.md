@@ -35,6 +35,11 @@ extension API. edakit uses the same server.
 /plugin install edakit@edakit
 ```
 
+In the VS Code extension, which has no `/plugin`: `claude plugin marketplace add tgd1975/edakit` and
+`claude plugin install edakit@edakit` in a terminal – with only the extension installed, `claude` is
+`~/.vscode/extensions/anthropic.claude-code-<version>-linux-x64/resources/native-binary/claude`. How to update:
+README, Install.
+
 This installs the skills (`/edakit:start`, `/edakit:hardware-change`, …), the agents, the MCP server `easyeda`
 (tools `mcp__plugin_edakit_easyeda__*`), the EasyEDA claim hook and the command `edakit` on the Bash PATH. Confirm
 the MCP server when Claude Code asks (or `/mcp` → easyeda).
