@@ -258,10 +258,14 @@ def all_schematic_names(mcp):
     return {s["uuid"]: schematic_name(mcp, s["uuid"]) for s in api(mcp, "DMT_Schematic.getAllSchematicsInfo") or []}
 
 
-def find_pages(mcp, name):
-    for sch in api(mcp, "DMT_Schematic.getAllSchematicsInfo") or []:
-        if schematic_name(mcp, sch["uuid"]) == name:
-            return sch["uuid"], [p["uuid"] for p in sch.get("page", [])]
+def find_pages(mcp, name, wait_s=30):
+    """Right after openProject the schematics are listed, but getSchematicInfo answers only a few seconds later –
+    wait for the name instead of reporting it missing."""
+    for _ in range(max(int(wait_s / 2), 1)):
+        for sch in api(mcp, "DMT_Schematic.getAllSchematicsInfo") or []:
+            if schematic_name(mcp, sch["uuid"]) == name:
+                return sch["uuid"], [p["uuid"] for p in sch.get("page", [])]
+        time.sleep(2)
     raise MCPError(f"schematic '{name}' not found")
 
 
