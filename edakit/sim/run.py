@@ -7,7 +7,8 @@ plus "extra_scenarios" listed there.
 
   E-1  the operating point converges
   E-2  stress of every part against the ratings in the parts database, with the derating from the config
-  E-3  function: supply currents, regulator outputs and headroom, MCU supply, constant-current driver headroom and
+  E-3  function: supply currents, regulator outputs and headroom, MCU supply and input levels, constant-current
+       driver headroom and
        junction temperature, LED currents on/off as the load says, blocking diodes, every net inside its declared
        voltage range 'v', plus the project plugin's own checks
 
@@ -103,6 +104,9 @@ def stress(design, cfg, res, meta, ck):
             elif kind in ("switch", "connector", "source") and "i_max_a" in r and i is not None:
                 ck.add("E-2", des, "contact current", abs(i), f"≤ {der['i'] * r['i_max_a']:.3g} A",
                        abs(i) <= der["i"] * r["i_max_a"], unit=" A")
+            elif kind == "load" and "i_max_a" in r:
+                ck.add("E-2", des, "contact current (external load)", el["i"], f"≤ {der['i'] * r['i_max_a']:.3g} A",
+                       el["i"] <= der["i"] * r["i_max_a"], unit=" A")
             elif kind == "inductor" and "i_rated_a" in r:
                 ck.add("E-2", des, "average current", abs(i), f"≤ {der['i'] * r['i_rated_a']:.3g} A",
                        abs(i) <= der["i"] * r["i_rated_a"], unit=" A")
@@ -206,6 +210,15 @@ def functional(design, cfg, res, meta, load, ck, plugin):
         if reg and lim is not None:
             iout = max(res.get(reg["ammeter"], 0.0), 0.0)
             ck.add("E-3", des, "load on the on-board regulator", iout, f"≤ {lim * 1e3:.0f} mA", iout <= lim, unit=" A")
+        p = m["params"]
+        v_io = v(res, m["io_rail"]) if m.get("io_rail") else p.get("v_io", 3.3)
+        vih = p.get("vih_v", p["vih_ratio"] * v_io if "vih_ratio" in p else None)
+        vil = p.get("vil_v", p["vil_ratio"] * v_io if "vil_ratio" in p else None)
+        for net in m.get("inputs", []) if vih is not None and vil is not None else []:
+            x = v(res, netlist.node(net, design.ground))
+            level = "high" if x >= vih else "low" if x <= vil else "undefined"
+            ck.add("E-3", f"{des} {net}", f"input level {level} (VIL {vil:.2f} V, VIH {vih:.2f} V)", x,
+                   f"≤ {vil:.2f} V or ≥ {vih:.2f} V", level != "undefined", unit=" V")
 
     chan_of = {}
     for des, t in meta["cc"].items():
@@ -296,6 +309,8 @@ def net_currents(design, res, meta):
                 put(el["nodes"][:2], (v(res, el["nodes"][0]) - v(res, el["nodes"][1])) / el["value"])
             elif el["kind"] in ("led", "diode"):
                 put(el["nodes"], res.get(f"@{el['name']}[id]", 0.0))
+            elif el["kind"] == "load":
+                put(el["nodes"], el["i"])
             elif el["kind"] in ("npn", "pnp"):
                 ic, ib = res.get(f"@{el['name']}[ic]", 0.0), res.get(f"@{el['name']}[ib]", 0.0)
                 put([el["nodes"][0], el["nodes"][2]], ic)
@@ -321,6 +336,8 @@ def scenarios(sim):
     corners = sim.get("corners", ["typ"])
     for supply_name, supply in sim["supplies"].items():
         for load_name, load in sim["loads"].items():
+            if load.get("matrix") is False:  # fault cases: only where extra_scenarios name them
+                continue
             for corner in corners:
                 yield {"name": f"{supply_name}/{load_name}/vf-{corner}", "supply_name": supply_name, "supply": supply,
                        "load_name": load_name, "load": load, "corner": corner}

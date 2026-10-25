@@ -15,14 +15,18 @@ on the delivered board instead (acceptance test).
   come from the graph 1:1, values and SPICE models from the parts database.
 - Switches, buttons, DIP switches are closed or open as the scenario's load says (`buttons`, `open`, `dip_closed`).
 - Supplies: connectors listed under `sources` (a voltage source behind a source resistance), battery holders with a
-  cell state (`cells`).
+  cell state (`cells`). A module that brings its own supply (an Arduino Nano on USB) is a source as well: `plus` is
+  its 5V pin, the voltage is USB minus its on-board diode.
+- Off-board loads (a servo, a motor, a strip at a connector): the load's `external`, e.g.
+  `{"J1": {"plus": "2", "minus": "1", "i_a": 0.3}}` – a constant current between the two pins; it counts for the
+  connector's contact current and for the track widths.
 - ICs and modules are replaced by **behaviour models** (`params.behavior` in the parts entry):
 
 | Model | Roles | Parameters | Behaviour |
 |---|---|---|---|
 | `ldo` | `vin`, `vout`, (`gnd`) | `vout_v`, `dropout_v`, `iq_a` | output = min(vout, vin − dropout); input current = output current + iq |
 | `buck`, `boost` | `vin`, `vout` | `vout_v`, `efficiency`, `iq_a` | ideal output; input power = output power / efficiency |
-| `mcu` | `vsys`/`vin`/`vdd`, optional `vout`/`3v3`, `gpio` | `v_io`, `i_core_a`, `gpio_r_out_ohm`, `regulator` (`buck`/`ldo`), `efficiency` | on-board regulator feeding the core and external loads; GPIO outputs as sources with output resistance (levels from the load's `gpio`), pull-ups from the config |
+| `mcu` | `vsys`/`vin`/`vdd`, optional `vout`/`3v3`, `gpio` | `v_io` (V, or `"vin"` when the I/O runs from the supply pin, as on a 5 V AVR), `i_core_a`, `gpio_r_out_ohm`, `regulator` (`buck`/`ldo`), `vout_v` (regulator output, default `v_io`), `efficiency`, `vih_v`/`vih_ratio`, `vil_v`/`vil_ratio` | on-board regulator feeding the core and external loads; GPIO outputs as sources with output resistance (levels from the load's `gpio`), pull-ups from the config; the config's `inputs` must sit at a defined logic level |
 | `cc_sink` | `rext`, `out`, `vdd`, `oe_n` | `vrext_v`, `iout_gain`, `vout_knee_v`, `idd_max_a` | constant-current LED driver (TLC5916, STP08CP05, …): R-EXT held at vrext, every enabled output sinks gain × I(R-EXT) with a soft knee; `oe_n` high = all off |
 | `logic` | supply pins (`power_in`), outputs | `icc_a` | supply current, outputs low |
 | `current` | supply pins | `i_a` | constant supply current |
@@ -64,7 +68,9 @@ def checks(design, cfg, res, meta, load, add):   # extra E-3 checks per scenario
 ```
 
 Scenarios = supplies × loads × corners (LED forward voltage at min/max), plus `extra_scenarios` (e.g. "programming
-cable plugged in, external supply off"; `"info": true` turns failures into information). Battery projects add
+cable plugged in, external supply off"; `"info": true` turns failures into information). A load with
+`"matrix": false` runs only where an extra scenario names it – fault cases such as a stalled servo, whose result you
+want to see and record as a decision, but which must not block every commit. Battery projects add
 `"cells": {"fresh": {"v": 1.6, "r": 0.15}, "empty": {"v": 1.0, "r": 0.4}}` and supplies like `{"BT1": "fresh"}`.
 
 ## 5.3 Checks
@@ -73,7 +79,7 @@ cable plugged in, external supply off"; `"info": true` turns failures into infor
 |---|---|
 | E-1 | the operating point converges |
 | E-2 | stress of every part against its ratings with derating: resistor power ≤ 50 %, currents ≤ 80 %, capacitor/diode/transistor voltages ≤ 67 %, LED forward current and reverse voltage, fuse hold current at ambient, connector and switch contact current |
-| E-3 | function: current from every source (≤ `i_max_a`), regulator outputs within tolerance, input above `vin_min`, LDO junction temperature, MCU supply voltage and load on its regulator, LED driver output headroom and junction temperature, every LED on or dark as the load says (driver channels: ≥ 80 % of the set current; parallel LEDs share within a ratio), diodes that must block (`expect_blocking`), every net inside its declared range `v`, plus the plugin's checks |
+| E-3 | function: current from every source (≤ `i_max_a`), regulator outputs within tolerance, input above `vin_min`, LDO junction temperature, MCU supply voltage and load on its regulator, MCU inputs at a defined level (≤ VIL or ≥ VIH – a 3.3 V signal into a 5 V AVR is the classic case), LED driver output headroom and junction temperature, every LED on or dark as the load says (driver channels: ≥ 80 % of the set current; parallel LEDs share within a ratio), diodes that must block (`expect_blocking`), every net inside its declared range `v`, plus the plugin's checks |
 
 A reversed LED on a driver output fails as "LED reversed"; a reversed LED elsewhere stays dark where it should light.
 That is the polarity check of the graph.

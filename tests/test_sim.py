@@ -71,6 +71,52 @@ def test_led_dark_when_oe_high(project):
     assert dark and dark[0]["result"] == "pass"
 
 
+def test_external_load_at_a_connector(project):
+    sim = json.loads((project.root / "hardware" / "sim.json").read_text())
+    base = simulate(project, sim)
+    sim["loads"]["idle"]["external"] = {"J1": {"plus": "1", "minus": "2", "i_a": 0.3}}
+    out = simulate(project, sim)
+    i0 = next(s for s in base["scenarios"] if s["name"] == "usb-nom/idle/vf-min")["sources"]["J1"]
+    i1 = next(s for s in out["scenarios"] if s["name"] == "usb-nom/idle/vf-min")["sources"]["J1"]
+    assert i1 - i0 == pytest.approx(0.3, abs=0.01)
+    assert out["net_currents"]["VIN"]["i_max_a"] >= 0.3
+    sim["loads"]["idle"]["external"]["J1"]["i_a"] = 2.0          # rated 2 A, derated 1.6 A
+    assert any(c["item"] == "J1" and "external load" in c["check"] for c in failing(simulate(project, sim)))
+
+
+def test_input_level_defined(project):
+    sim = json.loads((project.root / "hardware" / "sim.json").read_text())
+    sim["mcu"]["U1"]["inputs"] = ["BTN"]
+    part = project.part("C41407547")
+    part["params"].update(vih_v=2.0, vil_v=0.8)
+    project.save_part("C41407547", part)
+    out = simulate(project, sim)
+    levels = [c for c in out["checks"] if c["item"] == "U1 BTN"]
+    assert {c["check"].split()[2] for c in levels} == {"high", "low"} and not failing(out)
+    part["params"]["vih_v"] = 3.5                                 # the pull-up to 3.3 V no longer reaches VIH
+    project.save_part("C41407547", part)
+    assert any(c["item"] == "U1 BTN" and "undefined" in c["check"] for c in failing(simulate(project, sim)))
+
+
+def test_io_level_follows_the_supply_pin(project):
+    part = project.part("C41407547")
+    part["params"]["v_io"] = "vin"                                # LED_OE high would be VSYS, not 3.3 V
+    project.save_part("C41407547", part)
+    assert any(c["id"] == "E-1" and "vout_v" in c["actual"] for c in failing(simulate(project)))
+    part["params"]["vout_v"] = 3.3
+    project.save_part("C41407547", part)
+    assert any(c["item"] == "LED_OE" and "declared range" in c["check"] for c in failing(simulate(project)))
+
+
+def test_fault_load_only_in_extra_scenarios(project):
+    sim = json.loads((project.root / "hardware" / "sim.json").read_text())
+    sim["loads"]["short"] = {"matrix": False, "external": {"J1": {"plus": "1", "minus": "2", "i_a": 3.0}}}
+    sim["extra_scenarios"] = [{"name": "short", "supply": {"J1": 5.0}, "load": "short", "info": True}]
+    out = simulate(project, sim)
+    assert [s["name"] for s in out["scenarios"] if s["load"] == "short"] == ["short"]
+    assert not failing(out) and any(c["scenario"] == "short" and c["result"] == "info" for c in out["checks"])
+
+
 def test_unknown_behaviour_model_fails_cleanly(project):
     part = project.part("C90107")
     part["params"]["behavior"] = "no_such_model"

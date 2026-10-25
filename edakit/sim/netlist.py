@@ -2,15 +2,18 @@
 
 Passive parts, diodes, LEDs, transistors and MOSFETs come from the graph 1:1, their values and SPICE models from the
 parts database. Switches, buttons and DIP switches are closed or open as the scenario's load says. Supplies are
-connectors listed under "sources" in the simulation config, or battery holders with a cell state.
+connectors listed under "sources" in the simulation config, or battery holders with a cell state. Off-board loads
+(a servo, a motor at a connector) are constant currents between two pins, listed under the load's "external".
 
 ICs and modules are replaced by behaviour models, chosen by params.behavior in the parts database:
 
   ldo       roles vin, vout (gnd optional): vout = min(vout_v, vin - dropout_v); input current = output + iq_a
   buck      roles vin, vout: ideal output vout_v; input power = output power / efficiency (B-source)
   boost     same as buck; checks vin_min from the ratings
-  mcu       roles vin|vsys|vdd (supply), optional vout|3v3 (on-board regulator: params regulator = "buck"|"ldo"),
-            gpio pins: outputs from the load's "gpio" levels as source + gpio_r_out_ohm, pull-ups from the config
+  mcu       roles vin|vsys|vdd (supply), optional vout|3v3 (on-board regulator: params regulator = "buck"|"ldo",
+            output vout_v, default v_io), gpio pins: outputs from the load's "gpio" levels as source + gpio_r_out_ohm,
+            high level v_io in V or "vin" (follows the supply pin, e.g. a 5 V AVR), pull-ups from the config; the
+            config's "inputs" are checked for a defined logic level (params vih_v|vih_ratio, vil_v|vil_ratio)
   cc_sink   constant-current LED driver (TLC5916, STP08CP05 …): roles rext, out, vdd, oe_n; R-EXT held at vrext_v,
             each enabled output sinks iout_gain x I(R-EXT) with a soft knee
   logic     icc_a at the supply pin, outputs low through 50 ohm
@@ -141,12 +144,23 @@ class Netlist:
         self.meta["sources"][des] = {"branch": f"v_{des}_src#branch".lower(), "i_max_a": spec.get("i_max_a"),
                                      "nodes": [plus, minus]}
 
+    def external(self, des, spec):
+        """Off-board load at a connector: constant current from pin 'plus' to pin 'minus'."""
+        plus = self.n(self.d.pin_net.get(f"{des}.{spec['plus']}"))
+        minus = self.n(self.d.pin_net.get(f"{des}.{spec['minus']}"))
+        if plus is None or minus is None:
+            raise ValueError(f"{des}: external load between unconnected pins {spec['plus']} and {spec['minus']}")
+        self.add(f"I_{des}_EXT {plus} {minus} DC {spec['i_a']}", des, "load", (plus, minus))
+        self.meta["elements"][des][-1]["i"] = spec["i_a"]
+
     def component(self, des):
         part = self.d.part(des)
         sources = self.cfg.get("sources", {})
         supply = self.sc.get("supply", {})
         if des in sources and des in supply:
             self.source(des, sources[des], supply[des])
+        if des in self.load.get("external", {}):
+            self.external(des, self.load["external"][des])
         if not part:
             return
         kind, p = part["kind"], part.get("params", {})
@@ -273,24 +287,31 @@ class Netlist:
         roles = self.roles(des)
         vin = self.n(roles.get("vsys") or roles.get("vin") or roles.get("vdd"))
         vout = self.n(roles.get("vout") or roles.get("3v3"))
-        v_io = p.get("v_io", 3.3)
+        v_io = p.get("v_io", 3.3)  # a number, or "vin": the I/O runs from the supply pin (5 V AVR boards)
         mcfg = self.cfg.get("mcu", {}).get(des) or self.cfg.get("mcu", {})
         if vout and p.get("regulator"):
-            self._regulator(des, vin, vout, "0", p["regulator"], {**p, "vout_v": v_io}, extra_i=p.get("i_core_a", 0.03))
+            vset = p.get("vout_v", v_io)
+            if not isinstance(vset, (int, float)):
+                raise ValueError(f"{des}: v_io = '{v_io}' – give the on-board regulator's output as params vout_v")
+            self._regulator(des, vin, vout, "0", p["regulator"], {**p, "vout_v": vset}, extra_i=p.get("i_core_a", 0.03))
         elif vin:
             self.add(f"I_{des}_CORE {vin} 0 DC {p.get('i_core_a', 0.03)}")
         gpio = {self.d.pin_net.get(f"{des}.{n}") for n, i in part["pins"].items() if i.get("role") == "gpio"}
         for net in mcfg.get("outputs", []):
             if net in gpio:
-                lvl = v_io if self.gpio_level(net) else 0
                 x = f"x_{des.lower()}_{net.lower()}"
-                self.add(f"V_{des}_{net} {x} 0 DC {lvl}")
+                if self.gpio_level(net) and v_io == "vin":
+                    self.add(f"B_{des}_{net} {x} 0 V = V({vin})")
+                else:
+                    self.add(f"V_{des}_{net} {x} 0 DC {v_io if self.gpio_level(net) else 0}")
                 self.add(f"R_{des}_{net} {x} {self.n(net)} {p.get('gpio_r_out_ohm', 30)}")
-        rail = self.n(mcfg["io_rail"]) if mcfg.get("io_rail") else (vout or vin)
+        rail = self.n(mcfg["io_rail"]) if mcfg.get("io_rail") else (vin if v_io == "vin" else vout or vin)
         for net in mcfg.get("pullups", []):
             if net in gpio and rail:
                 self.add(f"R_{des}_PU_{net} {rail} {self.n(net)} {mcfg.get('pullup_ohm', 50000)}")
-        self.meta["mcu"][des] = {"vin": vin, "vout": vout, "params": p, "ratings": part.get("ratings", {})}
+        self.meta["mcu"][des] = {"vin": vin, "vout": vout, "params": p, "ratings": part.get("ratings", {}),
+                                 "io_rail": rail if v_io == "vin" or mcfg.get("io_rail") else None,
+                                 "inputs": [net for net in mcfg.get("inputs", []) if net in gpio]}
 
     def ic_cc_sink(self, des, part):
         p = part["params"]
