@@ -1,0 +1,100 @@
+{
+  "lcsc": "C456012",
+  "mpn": "TYPE-C 6P",
+  "manufacturer": "SHOU HAN",
+  "kind": "connector",
+  "package": "USB-C 6P SMD horizontal, 4 THT shell legs",
+  "footprint": "TYPE-C-SMD_TYPE-C-6P_1",
+  "jlc_class": "Extended Part",
+  "datasheet": {
+    "url": "https://datasheet.lcsc.com/datasheet/pdf/68548ae186bce8dcee36d39654e737cb.pdf?productCode=C456012",
+    "pinout_page": 1
+  },
+  "pins": {
+    "A12": {
+      "name": "GND",
+      "type": "ground",
+      "role": "gnd"
+    },
+    "A9": {
+      "name": "VBUS",
+      "type": "passive",
+      "role": "vbus"
+    },
+    "A5": {
+      "name": "CC1",
+      "type": "passive",
+      "role": "cc1"
+    },
+    "B5": {
+      "name": "CC2",
+      "type": "passive",
+      "role": "cc2"
+    },
+    "B9": {
+      "name": "VBUS",
+      "type": "passive",
+      "role": "vbus"
+    },
+    "B12": {
+      "name": "GND",
+      "type": "ground",
+      "role": "gnd"
+    },
+    "7": {
+      "name": "EH",
+      "type": "mechanical",
+      "role": "shell"
+    }
+  },
+  "params": {
+    "r_contact_ohm": 0.04,
+    "r_source_ohm": 0.25
+  },
+  "ratings": {
+    "i_max_a": 1.25,
+    "v_max": 5.0,
+    "t_min_c": -30,
+    "t_max_c": 85
+  },
+  "spice": {},
+  "sources": [
+    "SHOU HAN TYPE-C 6P drawing 1006-FGBXXX (2021-08-02), p. 1: rated current VBUS pins 3 A, GND pin 1.25 A, others 0.25 A; operating voltage 5 V max.; contact resistance <= 40 mOhm; 8.94 x 6.80 x 3.26 mm; 4 shell legs through the board (slots)",
+    "p. 2: rating 5 V 3 A, -30 ... 85 °C; mating force 5-20 N",
+    "LCSC (2026-10-23): 691 000 pcs, 0.039 $",
+    "r_source_ohm: assumption for cable and power supply (USB cable 1 m, 2 x 0.1 Ohm)",
+    "EasyEDA library (2026-10-23): symbol TYPE-C 6P, pins A5 CC1, B5 CC2, A9/B9 VBUS, A12/B12 GND, 7 EH (shell); footprint TYPE-C-SMD_TYPE-C-6P_1; Extended Part"
+  ],
+  "notes": "Power only: no data lines. i_max_a = GND pin (1.25 A), the smallest of the current paths. Shell (EH) to GND. Block usb-c-sink; entry from the reference project (pytree, D-44).",
+  "verified": {
+    "by": "Claude Opus 5.5 (datasheet check, automated)",
+    "date": "2026-10-23",
+    "datasheet": "SHOU HAN TYPE-C 6P, drawing 1006-FGBXXX (2021-08-02)",
+    "checked": [
+      "pinout top view: A12 GND, A9 VBUS, B5 CC2, A5 CC1, B9 VBUS, B12 GND (p. 1, view into the receptacle)",
+      "rated current VBUS 3 A, GND pin 1.25 A, others 0.25 A; 5 V max.; contact resistance <= 40 mOhm",
+      "land pattern: 6 SMD pads pitch 0.5/0.7 mm, 4 slots for the shell legs, size 8.94 x 6.80 x 3.26 mm"
+    ],
+    "open": [],
+    "second_check": {
+      "by": "independent review agent (electrical-reviewer, own session, M-1 of the reference project)",
+      "date": "2026-10-23",
+      "datasheet": "SHOU HAN TYPE-C 6P, drawing 1006-FGBXXX",
+      "checked": [
+        "pin table and EasyEDA symbol: A5 CC1, B5 CC2, A9/B9 VBUS, A12/B12 GND, 7 shell",
+        "footprint against the land pattern: pad order B12 B9 A5 B5 A9 A12, pitch 1.2/1.0/1.0/1.0/1.2 mm, pads 0.8/0.7 mm, legs 8.64 x 3.80 mm, hole 0.6 mm"
+      ]
+    }
+  },
+  "lead": {
+    "7": {
+      "shape": "rect",
+      "a_mm": 0.3,
+      "b_mm": 0.8,
+      "tol_mm": null,
+      "hole_rec_mm": 0.6,
+      "hole_rec_b_mm": 1.4,
+      "source": "SHOU HAN drawing 1006-FGBXXX (2021-08-02): shell legs 4 x 0.80 (side view) from 0.3 mm sheet (front view 4 x 0.30, BOM outer shell C2680/SUS 0.3), land pattern 'Recommended P.C.B. Layout' slot 0.60 x 1.40 (x4)"
+    }
+  }
+}

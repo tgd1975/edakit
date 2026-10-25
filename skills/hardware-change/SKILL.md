@@ -22,14 +22,18 @@ format: `03-hardware-graph.md`. Change: $ARGUMENTS
 
 Component: `designator`, `lcsc`, `board`, `type`, `pins` (number → name exactly as in the parts entry), `nc`, `value`,
 `bom: false` for hand-soldered parts. Net: `name`, `pins` (`R1.2`), voltage range `v` over all operating states.
-A new LCSC number without parts entry → part-search skill first.
+A new LCSC number without parts entry → part-search skill first. A new function (an LED, a button, a supply input, a
+transistor switch, I2C pull-ups) → `edakit block list` first; designing a function → skill circuit-design.
 
 ## 2. Offline (seconds)
 
 ```bash
 edakit check 2>&1 | cat     # ERROR: fix. WAIVED: only with a reason in the graph. PENDING blocks only the release
+edakit hints 2>&1 | cat     # design hints of new parts: handle them or note why not ("hints" in the graph)
 edakit sim 2>&1 | cat       # exit 2 = finding: find the cause, do not argue it away
 ```
+
+`edakit check` explains every failed check below the findings; `edakit rules <ID>` gives the full entry.
 
 Plus the project's own generated files and tests (firmware pin tables etc.). A change of the protection path or of a
 check also changes the tests that prove the check finds faults – run them, CI will otherwise find it later.

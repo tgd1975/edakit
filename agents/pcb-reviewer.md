@@ -34,5 +34,8 @@ boards of the project in the current repository. You **change nothing**, neither
 ## Result
 
 A numbered list by severity (**block** = do not order like this, **important**, **note**). Per finding: designator and
-position (mm in plan coordinates), the finding, a proposal (concrete move, rotation or side). Then what is good
-(short) and what you could not check. For M-5 say clearly "M-5: OK for layout hash <hash>" or what must be fixed first.
+position (mm in plan coordinates), the finding, a proposal (concrete move, rotation or side), and **rule**: the check it
+falls under, named with its words (`edakit rules`, e.g. "L-11 (short current loops)"), or **check candidate**: what a
+rule over the plan, the geometry or the Gerber files would test to find it again, or "judgement" (looks, operation).
+Then what is good (short) and what you could not check. For M-5 say clearly "M-5: OK for layout hash <hash>" or what
+must be fixed first.

@@ -1,0 +1,81 @@
+{
+  "lcsc": "C15127",
+  "mpn": "AO3401A",
+  "manufacturer": "AOS",
+  "kind": "pmos",
+  "package": "SOT-23",
+  "footprint": "SOT-23_L2.9-W1.3-P1.90-LS2.4-BR",
+  "jlc_class": "Basic Part",
+  "datasheet": {
+    "url": "https://datasheet.lcsc.com/datasheet/pdf/fee353dd1e9e0bc90b295f14f381aa4c.pdf?productCode=C15127",
+    "pinout_page": 1
+  },
+  "pins": {
+    "1": {
+      "name": "G",
+      "type": "passive",
+      "role": "gate"
+    },
+    "2": {
+      "name": "S",
+      "type": "passive",
+      "role": "source"
+    },
+    "3": {
+      "name": "D",
+      "type": "passive",
+      "role": "drain"
+    }
+  },
+  "params": {
+    "vgs_th_v": [
+      -1.3,
+      -0.9,
+      -0.5
+    ],
+    "rds_on_max_ohm": {
+      "-2.5": 0.085,
+      "-4.5": 0.06,
+      "-10": 0.05
+    },
+    "vsd_v_at_1a": 0.7
+  },
+  "ratings": {
+    "vds_max": 30,
+    "vgs_max": 12,
+    "id_max_a": 3.2,
+    "p_max_w": 0.9,
+    "is_body_max_a": 2.0,
+    "tj_max_c": 150,
+    "rth_ja_k_per_w": 125
+  },
+  "spice": {
+    "model": ".model AO3401A PMOS(LEVEL=1 VTO=-0.9 KP=13.9 RD=0.04 IS=1.7e-12 LAMBDA=0.01)"
+  },
+  "sources": [
+    "AOS AO3401A Rev 3.1 (December 2023), p. 1-2, via LCSC 2026-10-23",
+    "LCSC product page (2026-10-23): Basic Part, 160 110 pcs",
+    "id_max_a and p_max_w: values at TA = 70 °C (3.2 A, 0.9 W) instead of 25 °C – conservative",
+    "SPICE: level 1, KP and RD chosen so that RDS(on) meets the maximum values (85 mOhm at -2.5 V, 60 mOhm at -4.5 V, 48 mOhm at -10 V); IS from VSD 0.7 V at 1 A – no manufacturer model"
+  ],
+  "notes": "P-channel MOSFET for reverse-polarity protection and high-side switching at low voltages (VGS max ±12 V): block reverse-pmos. Entry from the reference project (pytree, D-44).",
+  "verified": {
+    "by": "Claude Opus 5.5 (datasheet check, automated)",
+    "date": "2026-10-23",
+    "datasheet": "AOS AO3401A Rev 3.1 (12/2023)",
+    "checked": [
+      "SOT-23 pinout top view: 1 = G, 2 = S, 3 = D",
+      "VDS -30 V, VGS ±12 V, ID -4 A (25 °C) / -3.2 A (70 °C), PD 1.4 / 0.9 W, RthJA 125 K/W",
+      "RDS(on) max 50/60/85 mOhm at VGS -10/-4.5/-2.5 V; VGS(th) -0.5 ... -1.3 V; body diode VSD <= 1 V at 1 A, IS 2 A"
+    ],
+    "open": [],
+    "second_check": {
+      "by": "independent review agent (electrical-reviewer, own session, M-1 of the reference project)",
+      "date": "2026-10-23",
+      "datasheet": "AOS AO3401A Rev 3.1",
+      "checked": [
+        "SOT-23 top view: 1 = G, 2 = S, 3 = D, pad 3 alone in the footprint"
+      ]
+    }
+  }
+}

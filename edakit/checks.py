@@ -7,17 +7,28 @@
   G-2  pin locks: pins the firmware relies on are on the expected nets ([checks] pin_locks in edakit.toml), and an
        optional pin table in a Markdown document matches the graph ([checks] doc_pin_table)
   G-3  voltage domains: net voltage range within the pin limits (vmax) from the parts database
-  G-4  no floating inputs; an input driven only by MCU pins needs a pull resistor; transistors need a base resistor
+  G-4  no floating inputs; an input driven only by MCU pins needs a pull resistor; transistors need a base resistor,
+       MOSFETs a gate resistor to their source or a rail
   G-5  at most one push-pull output or supply output per net
   G-6  decoupling: per net at least one capacitor to ground per IC supply pin (power_in)
   G-8  voltage ratings of capacitors, diodes, transistors, MOSFETs, fuses, switches, connectors with margin
   G-10 reverse polarity: what a reversed source (battery holders, [checks] reverse_protect) reaches through fuses,
        switches and connectors is only capacitors, the anode of a blocking diode or the drain of a PMOS
+  G-11 I2C lines (net "bus": "i2c", a net name with SDA/SCL, pin role sda/scl, or a pin named SDA/SCL without a
+       role) have a pull-up to a supply between (V - 0.4 V) / 3 mA and 10 kOhm; pins with "pull": "up" (and
+       "pull_ohm") count
+  G-12 strapping pins ("strap": "high"|"low" in the parts entry) are at that level at reset: no pull, ground, supply
+       or output on their net that says otherwise, and something (an external pull or "pull" of the pin) holds them
+  G-13 flyback diode across inductive loads (relay coil, buzzer with coil_ohm) that a transistor or an output
+       switches: cathode at the positive terminal
+  G-14 USB-C sink: CC1 and CC2 of a receptacle (role cc1/cc2) each with its own 5.1 kOhm ± 10 % to ground, unless
+       an IC (a Type-C controller) is on the CC lines
   P-1  graph pins (number + name) = parts database, an entry exists for every LCSC number
   G-9  sign-off: every part verified against its datasheet, no open "verify" notes (pending, blocks only the release)
 
-A finding listed in "waive" of the net or component is accepted on purpose and reported with its reason.
-Exit code 1 on errors; with --release also on pending sign-offs.
+Rule, reason, fix and sources of every check: rules.json (`edakit rules G-4`). A failed check is explained once
+below the findings. A finding listed in "waive" of the net or component is accepted on purpose and reported with
+its reason. Exit code 1 on errors; with --release also on pending sign-offs.
 """
 
 from __future__ import annotations
@@ -27,6 +38,8 @@ import re
 from collections import Counter, defaultdict
 from pathlib import Path
 
+from . import rules
+
 CAP_FACTOR = 1.5      # rated voltage >= 1.5 x max. voltage across
 DIODE_FACTOR = 1.5    # VRRM >= 1.5 x max. reverse voltage
 BJT_FACTOR = 1.5      # VCEO, VDS, VGS >= 1.5 x max.
@@ -34,20 +47,11 @@ ACTIVE_TYPES = {"input", "output", "bidirectional", "power_in", "power_output", 
 BOOT_DRIVERS = {"output", "power_output", "ground"}   # define their net while the firmware is not running
 PASS_THROUGH = ("fuse", "switch", "connector")        # pass a reversed source on unchanged
 REVERSE_OK = ("battery_holder", "capacitor") + PASS_THROUGH
+I2C_SINK_A, I2C_VOL, I2C_R_MAX = 0.003, 0.4, 10e3    # UM10204 7.1: Rp(min) = (V - VOL) / 3 mA; 10 k for 100 kHz
+USB_RD, USB_RD_TOL = 5100, 0.10                      # USB Type-C sink termination Rd
+COILS = {"relay": ("coil_plus", "coil_minus"), "buzzer": ("plus", "minus")}   # inductive kinds: their coil roles
 
-CHECK_TEXT = {
-    "G-1": "Structure: unique names, every pin in exactly one net or nc, voltage range per net",
-    "G-2": "Pin locks and pin table match the graph",
-    "G-3": "Voltage range of every net within the pin limits",
-    "G-4": "No floating input; inputs driven only by MCU pins have a pull resistor",
-    "G-5": "At most one output per net",
-    "G-6": "One capacitor to ground per IC supply pin",
-    "G-8": "Voltage rating of capacitors, diodes, transistors, fuses, switches, connectors",
-    "G-10": "Reverse polarity: a reversed source reaches only capacitors and blocking devices",
-    "P-1": "Graph pins = parts database, an entry for every part",
-    "G-9": "Parts verified against the datasheet, no open 'verify' notes",
-}
-EXECUTED = list(CHECK_TEXT)
+EXECUTED = ["G-1", "G-2", "G-3", "G-4", "G-5", "G-6", "G-8", "G-10", "G-11", "G-12", "G-13", "G-14", "P-1", "G-9"]
 
 
 class Report:
@@ -69,6 +73,30 @@ class Report:
 def v_range(net):
     v = net.get("v")
     return v if isinstance(v, list) and len(v) == 2 and v[0] <= v[1] else [0, 0]
+
+
+def ohm(x):
+    return f"{x / 1000:.3g} kΩ" if x >= 1000 else f"{x:.3g} Ω"
+
+
+def supply_nets(d):
+    """Nets that carry a supply: a supply output or an IC supply pin is on them (ground excluded)."""
+    return {name for name, net in d.nets.items() if name != d.ground
+            and any(d.pin_info(r).get("type") in ("power_output", "power_in") for r in net["pins"])}
+
+
+def resistor_value(d, des):
+    part = d.part(des) or {}
+    return (part.get("params") or {}).get("value_ohm") if part.get("kind") == "resistor" else None
+
+
+def resistors_to(d, net, targets):
+    """(designator, value or None, other net) of every resistor between `net` and one of the `targets` nets."""
+    out = []
+    for des, a, b in resistor_like(d):
+        if net in (a, b) and (other := b if a == net else a) in targets:
+            out.append((des, resistor_value(d, des), other))
+    return out
 
 
 def check_structure(d, rep, boards):
@@ -190,6 +218,14 @@ def check_inputs(d, rep):
         if not any({a, b} == {base, emitter} for _, a, b in resistor_like(d)):
             rep.error("G-4", f"{des}: no base-emitter resistor – state undefined while the firmware is not running",
                       d.comps[des].get("waive"))
+    held = rails | supply_nets(d)
+    for des in d.comps_of_kind("nmos", "pmos"):
+        gate, source = d.net_of(des, "gate"), d.net_of(des, "source")
+        if gate is None or gate in held:
+            continue
+        if not resistors_to(d, gate, held | {source}):
+            rep.error("G-4", f"{des}: no resistor from the gate to its source or a rail – the MOSFET is undefined while "
+                             "the firmware is not running", d.comps[des].get("waive"))
 
 
 def check_contention(d, rep):
@@ -289,6 +325,129 @@ def check_reverse(d, rep, sources=()):
                       d.nets[net].get("waive"))
 
 
+def i2c_name(text):
+    """'sda' or 'scl' if the name contains SDA or SCL as a word ('SDA/SDI', 'I2C0_SCL' yes, 'GP4' no)."""
+    tokens = set(re.split(r"[^A-Z0-9]+", str(text).upper()))
+    return next((t.lower() for t in ("SDA", "SCL") if t in tokens), None)
+
+
+def i2c_line(info):
+    """'sda' or 'scl' from the pin's role, or from its name if it has no role."""
+    if info.get("role"):
+        return info["role"] if info["role"] in ("sda", "scl") else None
+    return i2c_name(info.get("name", ""))
+
+
+def check_i2c(d, rep):
+    supplies = supply_nets(d)
+    for name, net in d.nets.items():
+        if net.get("bus") != "i2c" and not i2c_name(name) and not any(i2c_line(d.pin_info(r)) for r in net["pins"]):
+            continue
+        waive = net.get("waive")
+        pulls = [(r, rail) for _, r, rail in resistors_to(d, name, supplies)]
+        pulls += [(d.pin_info(r).get("pull_ohm"), None) for r in net["pins"] if d.pin_info(r).get("pull") == "up"]
+        if not pulls:
+            rep.error("G-11", f"{name}: I2C line without a pull-up to a supply – the outputs are open-drain", waive)
+            continue
+        if any(r is None for r, _ in pulls):
+            continue  # a pull-up of unknown value: its presence is all that can be checked
+        r_eff = 1 / sum(1 / r for r, _ in pulls)
+        v = max([v_range(d.nets[rail])[1] for _, rail in pulls if rail] or [v_range(net)[1]])
+        r_min = (v - I2C_VOL) / I2C_SINK_A
+        if r_eff > I2C_R_MAX:
+            rep.error("G-11", f"{name}: pull-up {ohm(r_eff)} – above {ohm(I2C_R_MAX)}, the rising edges get too slow",
+                      waive)
+        elif r_eff < r_min:
+            rep.error("G-11", f"{name}: pull-up {ohm(r_eff)} – below ({v} V − {I2C_VOL} V) / 3 mA = {ohm(r_min)}, a "
+                              "device cannot pull the line low enough", waive)
+
+
+def check_straps(d, rep):
+    """G-12: what holds a strapping pin at reset – pulls, rails and outputs on its net, else the pin's own pull."""
+    supplies = supply_nets(d)
+    for des in d.comps:
+        for num, info in ((d.part(des) or {}).get("pins") or {}).items():
+            ref, want = f"{des}.{num}", info.get("strap")
+            net = d.pin_net.get(ref)
+            if want not in ("high", "low") or net is None:
+                continue
+            forces = []  # (level, by)
+            for r in d.nets[net]["pins"]:
+                t = d.pin_info(r).get("type")
+                if r != ref and t in ("ground", "power_output", "power_in", "output"):
+                    forces.append(({"ground": "low", "output": "driven"}.get(t, "high"), r))
+            forces += [("low", r) for r, _, _ in resistors_to(d, net, {d.ground})]
+            forces += [("high", r) for r, _, _ in resistors_to(d, net, supplies)]
+            what, waive = f"{ref} ({info['name']}) must be {want} at reset", d.nets[net].get("waive")
+            driven = [by for lvl, by in forces if lvl == "driven"]
+            wrong = [by for lvl, by in forces if lvl not in (want, "driven")]
+            if driven:
+                rep.error("G-12", f"{what}, but {', '.join(driven)} drives it – its level at power-up is not "
+                                  "defined by the graph", waive)
+            if wrong:
+                rep.error("G-12", f"{what}, but {', '.join(wrong)} holds it {'low' if want == 'high' else 'high'}",
+                          waive)
+            elif not forces and info.get("pull") != {"high": "up", "low": "down"}[want]:
+                rep.error("G-12", f"{what}, but nothing holds it there: no pull on {net} and no internal pull "
+                                  "in the parts entry", waive)
+
+
+def check_flyback(d, rep):
+    for des in d.comps_of_kind(*COILS):
+        part = d.part(des)
+        if part["kind"] == "buzzer" and "coil_ohm" not in (part.get("params") or {}):
+            continue  # a piezo buzzer has no coil
+        plus, minus = (d.net_of(des, role) for role in COILS[part["kind"]])
+        if not plus or not minus or plus == minus:
+            continue
+        switches = [q for q in d.comps_of_kind("npn", "pnp", "nmos", "pmos")
+                    if {d.net_of(q, "collector"), d.net_of(q, "drain")} & {plus, minus}]
+        switches += [r for n in (plus, minus) for r in d.nets[n]["pins"]
+                     if d.pin_info(r).get("type") in ("output", "bidirectional")]
+        if switches and not any(d.net_of(x, "cathode") == plus and d.net_of(x, "anode") == minus
+                                for x in d.comps_of_kind("diode")):
+            rep.error("G-13", f"{des}: coil switched by {', '.join(switches)} without a diode across it (cathode at "
+                              f"{plus}, anode at {minus})", d.comps[des].get("waive"))
+
+
+def cc_lines(d, des):
+    """{'cc1': net, 'cc2': net} of a USB-C receptacle: pins by role, by name if they have no role."""
+    out = {}
+    for num, info in d.part(des)["pins"].items():
+        line = (info.get("role") or str(info.get("name", ""))).lower()
+        if line in ("cc1", "cc2"):
+            out[line] = d.pin_net.get(f"{des}.{num}")
+    return out
+
+
+def check_usb_c(d, rep):
+    for des in d.comps_of_kind("connector"):
+        cc = cc_lines(d, des)
+        if set(cc) != {"cc1", "cc2"}:
+            continue
+        if any(d.pin_info(r).get("type") not in (None, "passive") for n in cc.values() if n
+               for r in d.nets[n]["pins"] if not r.startswith(f"{des}.")):
+            continue  # a Type-C or PD controller drives the CC lines
+        waive = d.comps[des].get("waive")
+        if cc["cc1"] and cc["cc1"] == cc["cc2"]:
+            rep.error("G-14", f"{des}: CC1 and CC2 on one net {cc['cc1']} – each needs its own {ohm(USB_RD)} to "
+                              f"{d.ground}", waive)
+            continue
+        for line, net in sorted(cc.items()):
+            if net is None:
+                rep.error("G-14", f"{des}: {line.upper()} not connected – a USB-C source switches VBUS on only with "
+                                  f"{ohm(USB_RD)} to {d.ground} on each CC pin", waive)
+                continue
+            rd = resistors_to(d, net, {d.ground})
+            known = [r for _, r, _ in rd if r is not None]
+            if not rd:
+                rep.error("G-14", f"{des}: {line.upper()} ({net}) without a resistor to {d.ground} – needs "
+                                  f"{ohm(USB_RD)}", waive)
+            elif known and not any(abs(r - USB_RD) <= USB_RD * USB_RD_TOL for r in known):
+                rep.error("G-14", f"{des}: {line.upper()} ({net}) has {', '.join(ohm(r) for r in known)} to "
+                                  f"{d.ground} – needs {ohm(USB_RD)} ± {USB_RD_TOL:.0%}", waive)
+
+
 def check_part_pins(d, rep):
     for des, c in d.comps.items():
         if not c.get("lcsc"):
@@ -337,6 +496,10 @@ def run(design, cfg=None):
     check_decoupling(design, rep)
     check_ratings(design, rep)
     check_reverse(design, rep, checks.get("reverse_protect", []))
+    check_i2c(design, rep)
+    check_straps(design, rep)
+    check_flyback(design, rep)
+    check_usb_c(design, rep)
     check_part_pins(design, rep)
     check_signoff(design, rep)
     return rep
@@ -352,8 +515,16 @@ def main(cfg, args):
         print(f"WAIVED  {check}  {msg}\n                 reason: {reason}")
     for check, msg in rep.pending:
         print(f"PENDING {check}  {msg}")
+    failed = list(dict.fromkeys(c for c, _ in rep.errors))
+    if failed:
+        print("\nWhat the failed checks are about (edakit rules <ID>):")
+        for c in failed:
+            print("  " + "\n  ".join(rules.explain(c)))
+    hints = rules.open_hints(d, cfg, rules.load_sim(cfg))
     print(f"{len(d.comps)} components, {len(d.nets)} nets, {len(d.parts)} parts entries; "
-          f"{len(rep.errors)} errors, {len(rep.waived)} waived, {len(rep.pending)} open sign-offs")
+          f"{len(rep.errors)} errors, {len(rep.waived)} waived, {len(rep.pending)} open sign-offs"
+          + (f"; design hints open: {', '.join(hints)} (edakit hints)" if hints else ""))
     if args.json:
-        Path(args.json).write_text(json.dumps(rep.to_dict(), indent=2, ensure_ascii=False) + "\n", encoding="utf-8")
+        Path(args.json).write_text(json.dumps({**rep.to_dict(), "hints_open": hints}, indent=2, ensure_ascii=False)
+                                   + "\n", encoding="utf-8")
     return 1 if rep.errors or (args.release and rep.pending) else 0

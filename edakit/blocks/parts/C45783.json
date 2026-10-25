@@ -1,0 +1,50 @@
+{
+  "lcsc": "C45783",
+  "mpn": "CL21A226MAQNNNE",
+  "manufacturer": "SAMSUNG(三星)",
+  "kind": "capacitor",
+  "package": "0805",
+  "footprint": "C0805",
+  "jlc_class": "Basic Part",
+  "datasheet": {
+    "url": "https://item.szlcsc.com/datasheet/CL21A226MAQNNNE/46786.html",
+    "pinout_page": null
+  },
+  "pins": {
+    "1": {
+      "name": "1",
+      "type": "passive",
+      "role": "1"
+    },
+    "2": {
+      "name": "2",
+      "type": "passive",
+      "role": "2"
+    }
+  },
+  "params": {
+    "value_f": 2.2e-05,
+    "dielectric": "X5R",
+    "tolerance": 0.2
+  },
+  "ratings": {
+    "v_max": 25
+  },
+  "spice": {},
+  "sources": [
+    "pin names from the EasyEDA symbol",
+    "LCSC parameter table via EasyEDA"
+  ],
+  "verified": {
+    "by": "Claude (datasheet check, automated)",
+    "date": "2026-10-20",
+    "datasheet": "Samsung MLCC standard & high capacitance (ordering code)",
+    "checked": [
+      "CL21A226MAQNNNE: 21 = 0805, A = X5R, 226 = 22 µF, M = ±20 %, A = 25 V"
+    ],
+    "open": [
+      "DC bias loss at 5 V – affects buffering, not safety"
+    ]
+  },
+  "notes": "X5R 22 µF/0805: capacitance at 5 V DC bias is much lower (about 30-50 %)."
+}

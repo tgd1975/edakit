@@ -1,7 +1,9 @@
 """Graph + parts database -> ngspice netlist for one operating point (.op) of one scenario.
 
 Passive parts, diodes, LEDs, transistors and MOSFETs come from the graph 1:1, their values and SPICE models from the
-parts database. Switches, buttons and DIP switches are closed or open as the scenario's load says. Supplies are
+parts database. Switches, buttons and DIP switches are closed or open as the scenario's load says; a relay is its coil
+resistance (coil_ohm between the roles coil_plus and coil_minus) plus a contact from common to no when the load lists
+it in "relays_on", else to nc. Supplies are
 connectors listed under "sources" in the simulation config, or battery holders with a cell state. Off-board loads
 (a servo, a motor at a connector) are constant currents between two pins, listed under the load's "external".
 
@@ -13,7 +15,9 @@ ICs and modules are replaced by behaviour models, chosen by params.behavior in t
   mcu       roles vin|vsys|vdd (supply), optional vout|3v3 (on-board regulator: params regulator = "buck"|"ldo",
             output vout_v, default v_io), gpio pins: outputs from the load's "gpio" levels as source + gpio_r_out_ohm,
             high level v_io in V or "vin" (follows the supply pin, e.g. a 5 V AVR), pull-ups from the config; the
-            config's "inputs" are checked for a defined logic level (params vih_v|vih_ratio, vil_v|vil_ratio)
+            config's "inputs" are checked for a defined logic level (params vih_v|vih_ratio, vil_v|vil_ratio); an
+            output on a pin of type "input" (input-only) is not driven and reported; every output's current is measured
+            (ratings gpio_i_max_a per pin, gpio_i_total_max_a for the sum)
   cc_sink   constant-current LED driver (TLC5916, STP08CP05 …): roles rext, out, vdd, oe_n; R-EXT held at vrext_v,
             each enabled output sinks iout_gain x I(R-EXT) with a soft knee
   logic     icc_a at the supply pin, outputs low through 50 ohm
@@ -81,7 +85,7 @@ class Netlist:
         self.d, self.cfg, self.sc = design, cfg, scenario
         self.load = scenario["load"]
         self.lines, self.models = [], {}
-        self.meta = {"leds": {}, "cc": {}, "regs": {}, "mcu": {}, "sources": {}, "elements": {}}
+        self.meta = {"leds": {}, "cc": {}, "regs": {}, "mcu": {}, "relays": {}, "sources": {}, "elements": {}}
         self.plugin_models = plugin_models or {}
 
     # --- helpers --------------------------------------------------------------------------------------------------
@@ -210,6 +214,17 @@ class Netlist:
             roles = self.roles(des)
             self.add(f"R_{des} {self.n(roles['plus'])} {self.n(roles['minus'])} {p['coil_ohm']}", des, "buzzer",
                      (self.n(roles["plus"]), self.n(roles["minus"])), p["coil_ohm"])
+        elif kind == "relay":
+            roles = self.roles(des)
+            a, b = self.n(roles.get("coil_plus")), self.n(roles.get("coil_minus"))
+            if a and b and a != b:
+                self.add(f"R_{des}_COIL {a} {b} {p['coil_ohm']}", des, "relay_coil", (a, b), p["coil_ohm"])
+            on = des in self.load.get("relays_on", [])
+            c, t = self.n(roles.get("common")), self.n(roles.get("no" if on else "nc"))
+            if c and t and c != t:
+                self.add(f"R_{des}_K {c} {t} {p.get('r_contact_ohm', 0.05)}", des, "switch", (c, t),
+                         p.get("r_contact_ohm", 0.05))
+            self.meta["relays"][des] = {"on": on, "coil": (a, b)}
         elif kind == "switch":
             if des in self.load.get("open", []):
                 return
@@ -298,8 +313,13 @@ class Netlist:
             self.add(f"I_{des}_CORE {vin} 0 DC {p.get('i_core_a', 0.03)}")
         gpio = {self.d.pin_net.get(f"{des}.{n}") for n, i in part["pins"].items() if i.get("role") == "gpio"}
         rail = self.n(mcfg["io_rail"]) if mcfg.get("io_rail") else (vin if v_io == "vin" else vout or vin)
+        ammeters, cannot_drive = {}, []
         for net in mcfg.get("outputs", []):
-            if net in gpio:
+            pins = [i for n, i in part["pins"].items() if self.d.pin_net.get(f"{des}.{n}") == net]
+            if pins and not any(i.get("type") in ("output", "bidirectional") for i in pins):
+                cannot_drive.append((net, "/".join(i["name"] for i in pins)))  # an input-only pin
+            elif net in gpio:
+                ammeters[net] = f"v_{des}_{net}_am#branch".lower()
                 x = f"x_{des.lower()}_{net.lower()}"
                 if self.gpio_level(net) and v_io == "vin":
                     self.add(f"B_{des}_{net} {x}s 0 V = V({vin})")
@@ -314,7 +334,8 @@ class Netlist:
                 self.add(f"R_{des}_PU_{net} {rail} {self.n(net)} {mcfg.get('pullup_ohm', 50000)}")
         self.meta["mcu"][des] = {"vin": vin, "vout": vout, "params": p, "ratings": part.get("ratings", {}),
                                  "io_rail": rail if v_io == "vin" or mcfg.get("io_rail") else None,
-                                 "inputs": [net for net in mcfg.get("inputs", []) if net in gpio]}
+                                 "inputs": [net for net in mcfg.get("inputs", []) if net in gpio],
+                                 "gpio_ammeters": ammeters, "cannot_drive": cannot_drive}
 
     def ic_cc_sink(self, des, part):
         p = part["params"]

@@ -6,10 +6,14 @@ Scenarios = supplies x loads x LED forward-voltage corners from the simulation c
 plus "extra_scenarios" listed there.
 
   E-1  the operating point converges
-  E-2  stress of every part against the ratings in the parts database, with the derating from the config
-  E-3  function: supply currents, regulator outputs and headroom, MCU supply and input levels, constant-current
-       driver headroom and junction temperature, LED currents on/off as the load says, blocking diodes, every net
-       inside its declared voltage range 'v', plus the project plugin's own checks
+  E-2  stress of every part against the ratings in the parts database, with the derating from the config; MCU output
+       current per pin (gpio_i_max_a) and of all outputs together (gpio_i_total_max_a)
+  E-3  function: supply currents, regulator outputs and headroom, MCU supply and input levels, MCU outputs only on
+       pins that can drive, constant-current driver headroom and junction temperature, LED currents on/off as the load
+       says, relays pull in and release (v_operate, v_release), blocking diodes, every net inside its declared voltage
+       range 'v', plus the project plugin's own checks
+
+Rule, reason and fix of each check: rules.json (`edakit rules E-2`).
 
 The largest current per net goes to <artifacts>/sim/net_currents.json – the input for the track widths
 (`edakit pcb plan`, gate check L-5). Exit code: 0 = all passed, 2 = at least one 'fail', 1 = tool error.
@@ -111,6 +115,9 @@ def stress(design, cfg, res, meta, ck):
                        abs(i) <= der["i"] * r["i_rated_a"], unit=" A")
             elif kind == "buzzer" and "v_max" in r:
                 ck.add("E-2", des, "coil voltage", abs(a - b), f"≤ {r['v_max']} V", abs(a - b) <= r["v_max"], unit=" V")
+            elif kind == "relay_coil" and "v_coil_max" in r:
+                ck.add("E-2", des, "coil voltage", abs(a - b), f"≤ {r['v_coil_max']} V", abs(a - b) <= r["v_coil_max"],
+                       unit=" V")
             elif kind == "capacitor" and "v_max" in r:
                 a, b = (v(res, n) for n in nodes)
                 lim = der["v_cap"] * r["v_max"]
@@ -161,6 +168,20 @@ def stress(design, cfg, res, meta, ck):
                 if "p_max_w" in r:
                     ck.add("E-2", des, "power dissipation", abs(vds * i), f"≤ {der['p'] * r['p_max_w']:.3g} W",
                            abs(vds * i) <= der["p"] * r["p_max_w"], unit=" W")
+    for des, m in meta["mcu"].items():  # MCU outputs: every pin, and all of them through the package's supply pins
+        r = m["ratings"]
+        cur = {net: res.get(am, 0.0) for net, am in m.get("gpio_ammeters", {}).items()}  # > 0: sourced, < 0: sunk
+        if "gpio_i_max_a" in r:
+            lim = der["i"] * r["gpio_i_max_a"]
+            for net, i in cur.items():
+                ck.add("E-2", f"{des} {net}", "GPIO output current", abs(i), f"≤ {lim * 1e3:.3g} mA", abs(i) <= lim,
+                       unit=" A")
+        if "gpio_i_total_max_a" in r and cur:
+            lim = der["i"] * r["gpio_i_total_max_a"]
+            for what, i in (("sourced", sum(x for x in cur.values() if x > 0)),
+                            ("sunk", -sum(x for x in cur.values() if x < 0))):
+                ck.add("E-2", des, f"GPIO current {what} by all outputs together", i, f"≤ {lim * 1e3:.3g} mA",
+                       i <= lim, unit=" A")
 
 
 def reg_input_current(res, reg):
@@ -221,6 +242,19 @@ def functional(design, cfg, res, meta, load, ck, plugin):
             level = "high" if x >= vih else "low" if x <= vil else "undefined"
             ck.add("E-3", f"{des} {net}", f"input level {level} (VIL {vil:.2f} V, VIH {vih:.2f} V)", x,
                    f"≤ {vil:.2f} V or ≥ {vih:.2f} V", level != "undefined", unit=" V")
+        for net, pin in m.get("cannot_drive", []):
+            ck.add("E-3", f"{des} {net}", f"output on {pin}, a pin that can only be an input", "input only",
+                   "a pin that can drive (output or bidirectional)", False)
+    for des, rl in meta["relays"].items():
+        p = (design.part(des) or {}).get("params", {})
+        a, b = rl["coil"]
+        vc = abs(v(res, a) - v(res, b)) if a and b else 0.0
+        if rl["on"] and "v_operate" in p:
+            ck.add("E-3", des, "relay pulls in: coil voltage ≥ must-operate voltage", vc, f"≥ {p['v_operate']} V",
+                   vc >= p["v_operate"], unit=" V")
+        if not rl["on"] and "v_release" in p:
+            ck.add("E-3", des, "relay releases: coil voltage ≤ must-release voltage", vc, f"≤ {p['v_release']} V",
+                   vc <= p["v_release"], unit=" V")
 
     chan_of = {}
     for des, t in meta["cc"].items():

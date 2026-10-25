@@ -5,6 +5,7 @@ from pathlib import Path
 import pytest
 
 EXAMPLE = Path(__file__).resolve().parent / "fixtures" / "led-bar"
+LIBRARY_PARTS = Path(__file__).resolve().parents[1] / "edakit" / "blocks" / "parts"
 
 
 @pytest.fixture
@@ -32,6 +33,16 @@ def project(tmp_path):
 
         def save_part(self, lcsc, data):
             (dst / "hardware" / "parts" / f"{lcsc}.json").write_text(json.dumps(data, indent=1))
+
+        def use_library_part(self, lcsc):
+            """A checked parts entry from the block library, e.g. the S8050 (C2146) for a transistor stage."""
+            shutil.copy(LIBRARY_PARTS / f"{lcsc}.json", dst / "hardware" / "parts" / f"{lcsc}.json")
+
+        def free_pins(self, g, *refs):
+            """Take MCU pins out of nc, so that a test can put them into nets."""
+            for ref in refs:
+                des, _, pin = ref.partition(".")
+                self.comp(g, des)["nc"].remove(pin)
 
         def net(self, g, name):
             return next(n for n in g["graph"]["nets"] if n["name"] == name)

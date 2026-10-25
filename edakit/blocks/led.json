@@ -1,0 +1,40 @@
+{
+ "name": "led",
+ "title": "LED with series resistor, driven by a signal",
+ "about": "A GPIO or logic output drives an LED to ground through a series resistor; the resistor sets the current, I = (V_in - Vf) / R.",
+ "ports": {
+  "in": "the driving signal: a GPIO or a logic output",
+  "gnd": "ground"
+ },
+ "components": [
+  {
+   "designator": "R1",
+   "type": "resistor",
+   "label": "{as}: LED series resistor",
+   "part": "0805W8F3300T5E",
+   "lcsc": "C17630",
+   "value": "330",
+   "pins": {"1": "1", "2": "2"},
+   "notes": "330 Ω with this green LED (Vf about 2.85 V): about 1.4 mA from 3.3 V, 6.5 mA from 5 V. Another current: another value of the same series (part-search skill)."
+  },
+  {
+   "designator": "D1",
+   "type": "led",
+   "label": "{as}: LED (green 0805)",
+   "part": "KT-0805G",
+   "lcsc": "C2297",
+   "value": "green",
+   "pins": {"1": "A", "2": "K"}
+  }
+ ],
+ "nets": [
+  {"name": "in", "pins": ["R1.1"]},
+  {"name": "anode", "pins": ["R1.2", "D1.1"], "v": "@in"},
+  {"name": "gnd", "pins": ["D1.2"]}
+ ],
+ "covers": ["E-2", "E-3"],
+ "notes": [
+  "sim.json: the driving net under the MCU's outputs, the LED's designator in leds_on of the loads where it lights; edakit sim then checks the current against the LED and the MCU pin (E-2) and that it lights (E-3).",
+  "From an MCU pin keep the current within the pin's rating (gpio_i_max_a in the MCU's parts entry); for more light a transistor (block npn-switch) or an LED driver."
+ ]
+}

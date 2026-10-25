@@ -144,3 +144,44 @@ def test_unknown_behaviour_model_fails_cleanly(project):
     out = simulate(project)
     assert all(s["status"] == "error" for s in out["scenarios"])
     assert any(c["id"] == "E-1" and "no_such_model" in c["actual"] for c in out["checks"])
+
+
+def test_gpio_current_per_pin_and_in_total(project):
+    sim = json.loads((project.root / "hardware" / "sim.json").read_text())
+    sim["mcu"]["U1"]["outputs"].append("BTN")                   # GPIO high into the pressed button: ~110 mA
+    sim["loads"]["all_on"]["gpio"]["BTN"] = 1
+    part = project.part("C41407547")
+    part["ratings"].update(gpio_i_max_a=0.5, gpio_i_total_max_a=1.0)
+    project.save_part("C41407547", part)
+    gpio = lambda out: [c for c in out["checks"] if c["check"].startswith("GPIO")]  # noqa: E731
+    out = simulate(project, sim)                                  # (the 50-mA button itself fails E-2 here)
+    assert any(c["item"] == "U1 BTN" for c in gpio(out)) and not failing({"checks": gpio(out)})
+    part["ratings"].update(gpio_i_max_a=0.012, gpio_i_total_max_a=0.05)   # RP2040-like: 12 mA per pin, 50 mA in all
+    project.save_part("C41407547", part)
+    bad = failing({"checks": gpio(simulate(project, sim))})
+    assert any(c["id"] == "E-2" and c["item"] == "U1 BTN" and c["check"] == "GPIO output current" for c in bad)
+    assert any(c["id"] == "E-2" and c["check"] == "GPIO current sourced by all outputs together" for c in bad)
+
+
+def test_output_on_an_input_only_pin(project):
+    part = project.part("C41407547")
+    part["pins"]["7"]["type"] = "input"                           # GP5 (LED_OE) as if it could only read
+    project.save_part("C41407547", part)
+    bad = failing(simulate(project))
+    assert any(c["id"] == "E-3" and c["item"] == "U1 LED_OE" and "can only be an input" in c["check"] for c in bad)
+
+
+def test_relay_pulls_in_and_releases(project):
+    from test_checks import RELAY, add_flyback, coil_stage
+    coil_stage(project, RELAY, ("coil_plus", "coil_minus"))
+    add_flyback(project)
+    sim = json.loads((project.root / "hardware" / "sim.json").read_text())
+    sim["mcu"]["U1"]["outputs"].append("DRIVE")
+    sim["loads"]["all_on"]["gpio"]["DRIVE"] = 1
+    sim["loads"]["all_on"]["relays_on"] = ["X1"]
+    out = simulate(project, sim)
+    relay = [c for c in out["checks"] if c["item"] == "X1"]
+    assert {c["check"].split(":")[0] for c in relay} >= {"relay pulls in", "relay releases", "coil voltage"}
+    assert not failing(out)
+    sim["loads"]["idle"]["gpio"]["DRIVE"] = 1                     # driven, but the load says released
+    assert any(c["item"] == "X1" and c["check"].startswith("relay releases") for c in failing(simulate(project, sim)))

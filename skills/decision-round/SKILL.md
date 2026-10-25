@@ -21,6 +21,9 @@ Topic: $ARGUMENTS. Why this format works: `${CLAUDE_PLUGIN_ROOT}/handbook/11-wor
   line at most.
 - What Claude can decide itself (no effect on cost, looks or operation) is not asked but listed at the end as
   "decided: …". No more than about 10 items – rather two rounds.
+- **Check candidates** of a review (findings a rule could find again) are one item: "make it a check in edakit?" –
+  with what the check would test. Yes → a decision, and in edakit a catalog entry, the check and its negative test
+  (handbook 14.4).
 
 ## 2. Read the answers
 

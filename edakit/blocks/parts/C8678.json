@@ -1,0 +1,56 @@
+{
+  "lcsc": "C8678",
+  "mpn": "SS34",
+  "manufacturer": "MDD(辰达半导体)",
+  "kind": "diode",
+  "package": "SMA",
+  "footprint": "SMA_L4.3-W2.6-LS5.2-RD",
+  "jlc_class": "Basic Part",
+  "datasheet": {
+    "url": "https://jlcpcb.com/partdetail/C8678",
+    "pinout_page": null
+  },
+  "pins": {
+    "1": {
+      "name": "K",
+      "type": "passive",
+      "role": "cathode"
+    },
+    "2": {
+      "name": "A",
+      "type": "passive",
+      "role": "anode"
+    }
+  },
+  "params": {
+    "vf_v": 0.55,
+    "vf_at_a": 3.0,
+    "ir_a": 0.0005,
+    "ir_at_v": 40
+  },
+  "ratings": {
+    "if_avg_a": 3.0,
+    "ifsm_a": 80,
+    "vrrm": 40,
+    "tj_max_c": 125
+  },
+  "spice": {
+    "model": ".model SS34 D(IS=20u N=1.2 RS=0.04 CJO=250p BV=40 IBV=1m)"
+  },
+  "sources": [
+    "LCSC parameter table via EasyEDA: 3 A, 40 V, Vf 0.55 V at 3 A, IFSM 80 A, basic part",
+    "pins of the EasyEDA symbol SS34_C8678: 1 = K, 2 = A",
+    "SPICE: generic Schottky model fitted to Vf 0.55 V at 3 A"
+  ],
+  "verified": {
+    "by": "Claude (datasheet check, automated)",
+    "date": "2026-10-20",
+    "datasheet": "MDD SS32...SS3200 (via JLCPCB/LCSC)",
+    "checked": [
+      "VRRM 40 V, IF(AV) 3 A, IFSM 80 A, VF <= 0.55 V at 3 A, TJ -55...125 °C",
+      "polarity: band = cathode; symbol 1 = K, 2 = A"
+    ],
+    "open": []
+  },
+  "notes": "Reverse-polarity protection in the main supply path."
+}

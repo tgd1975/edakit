@@ -1,0 +1,48 @@
+{
+  "lcsc": "C17414",
+  "mpn": "0805W8F1002T5E",
+  "manufacturer": "UNI-ROYAL(厚声)",
+  "kind": "resistor",
+  "package": "0805",
+  "footprint": "R0805",
+  "jlc_class": "Basic Part",
+  "datasheet": {
+    "url": "https://item.szlcsc.com/datasheet/0805W8F1002T5E/18102.html",
+    "pinout_page": null
+  },
+  "pins": {
+    "1": {
+      "name": "1",
+      "type": "passive",
+      "role": "1"
+    },
+    "2": {
+      "name": "2",
+      "type": "passive",
+      "role": "2"
+    }
+  },
+  "params": {
+    "value_ohm": 10000.0,
+    "tolerance": 0.01
+  },
+  "ratings": {
+    "p_max_w": 0.125,
+    "v_max": 150
+  },
+  "spice": {},
+  "sources": [
+    "pin names from the EasyEDA symbol",
+    "LCSC parameter table via EasyEDA"
+  ],
+  "verified": {
+    "by": "Claude (datasheet check, automated)",
+    "date": "2026-10-20",
+    "datasheet": "UNI-ROYAL Thick Film Chip Resistors V.3 (2019-02-12)",
+    "checked": [
+      "order code 0805W8F...: W8 = 1/8 W, F = ±1 %",
+      "table 7: 0805 max. working voltage 150 V"
+    ],
+    "open": []
+  }
+}

@@ -1,0 +1,40 @@
+{
+ "name": "i2c-pullups",
+ "title": "I2C pull-up pair",
+ "about": "One 4.7 kΩ pull-up on SDA and one on SCL to the bus supply: the value for 100 kHz on a small board (G-11). For Fast mode (400 kHz) 2.2 kΩ.",
+ "ports": {
+  "sda": "the SDA net",
+  "scl": "the SCL net",
+  "vcc": "the bus supply (the lower one when the devices run from different supplies)"
+ },
+ "components": [
+  {
+   "designator": "R1",
+   "type": "resistor",
+   "label": "{as}: SDA pull-up 4.7 k",
+   "part": "0805W8F4701T5E",
+   "lcsc": "C17673",
+   "value": "4.7k",
+   "pins": {"1": "1", "2": "2"}
+  },
+  {
+   "designator": "R2",
+   "type": "resistor",
+   "label": "{as}: SCL pull-up 4.7 k",
+   "part": "0805W8F4701T5E",
+   "lcsc": "C17673",
+   "value": "4.7k",
+   "pins": {"1": "1", "2": "2"}
+  }
+ ],
+ "nets": [
+  {"name": "sda", "pins": ["R1.2"], "v": "@vcc", "bus": "i2c"},
+  {"name": "scl", "pins": ["R2.2"], "v": "@vcc", "bus": "i2c"},
+  {"name": "vcc", "pins": ["R1.1", "R2.1"]}
+ ],
+ "covers": ["G-11"],
+ "notes": [
+  "Once per bus. Modules often bring their own pull-ups (\"pull\": \"up\" with \"pull_ohm\" on their pins); parallel pull-ups lower the value, and G-11 adds them up.",
+  "The block marks both nets with \"bus\": \"i2c\", so that G-11 checks them even when the MCU's pins are called GP4/GP5."
+ ]
+}

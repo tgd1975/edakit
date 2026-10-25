@@ -1,0 +1,49 @@
+{
+ "name": "power-input-jst",
+ "title": "5 V input: JST PH connector, reverse-polarity diode, capacitor",
+ "about": "Two-wire supply input as in the edakit example: JST PH 2-pin connector, SS34 Schottky diode against reverse polarity (drops 0.3–0.5 V), 22 µF behind it.",
+ "ports": {
+  "out": "the protected supply rail",
+  "gnd": "ground"
+ },
+ "components": [
+  {
+   "designator": "J1",
+   "type": "connector",
+   "label": "{as}: supply input (JST PH, pin 1 = +)",
+   "part": "B2B-PH-K-S(LF)(SN)",
+   "lcsc": "C131337",
+   "pins": {"1": "1", "2": "2"},
+   "notes": "Pin 1 = +, pin 2 = GND."
+  },
+  {
+   "designator": "D1",
+   "type": "diode",
+   "label": "{as}: reverse-polarity protection",
+   "part": "SS34",
+   "lcsc": "C8678",
+   "pins": {"1": "K", "2": "A"}
+  },
+  {
+   "designator": "C1",
+   "type": "capacitor",
+   "label": "{as}: 22 µF at the input",
+   "part": "CL21A226MAQNNNE",
+   "lcsc": "C45783",
+   "value": "22uF",
+   "pins": {"1": "1", "2": "2"},
+   "notes": "X5R: at 5 V only about 30–50 % of the 22 µF are left (DC bias)."
+  }
+ ],
+ "nets": [
+  {"name": "vin", "pins": ["J1.1", "D1.2"], "v": [0, 5.5], "notes": "Connector side of the diode; for another supply voltage change v here and on the output."},
+  {"name": "out", "pins": ["D1.1", "C1.1"], "v": [0, 5.5]},
+  {"name": "gnd", "pins": ["J1.2", "C1.2"]}
+ ],
+ "covers": ["G-10", "H-1"],
+ "notes": [
+  "edakit.toml: add the connector to [checks] reverse_protect – G-10 then checks that a reversed plug reaches only the diode's anode.",
+  "sim.json: the connector under sources (plus \"1\", minus \"2\") and its voltages under supplies.",
+  "The 22 µF ceramic is the buffer of the example; for long cables or plugging in while powered add an electrolytic (hint H-1)."
+ ]
+}

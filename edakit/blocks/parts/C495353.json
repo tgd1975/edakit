@@ -1,0 +1,90 @@
+{
+  "lcsc": "C495353",
+  "mpn": "SMD1206P150TFT",
+  "manufacturer": "PTTC(聚鼎)",
+  "kind": "fuse",
+  "package": "1206",
+  "footprint": "F1206",
+  "jlc_class": "Extended Part",
+  "datasheet": {
+    "url": "https://jlcpcb.com/partdetail/C495353",
+    "pinout_page": null
+  },
+  "pins": {
+    "1": {
+      "name": "1",
+      "type": "passive",
+      "role": "1"
+    },
+    "2": {
+      "name": "2",
+      "type": "passive",
+      "role": "2"
+    }
+  },
+  "params": {
+    "r_min_ohm": 0.04,
+    "r_max_ohm": 0.12,
+    "i_hold_vs_temp": [
+      [
+        -40,
+        2.2
+      ],
+      [
+        -20,
+        1.99
+      ],
+      [
+        0,
+        1.77
+      ],
+      [
+        23,
+        1.5
+      ],
+      [
+        40,
+        1.34
+      ],
+      [
+        50,
+        1.23
+      ],
+      [
+        60,
+        1.1
+      ],
+      [
+        70,
+        1.01
+      ],
+      [
+        85,
+        0.84
+      ]
+    ]
+  },
+  "ratings": {
+    "i_hold_a": 1.5,
+    "i_trip_a": 3.0,
+    "v_max": 8,
+    "i_max_a": 100,
+    "p_max_w": 0.8
+  },
+  "spice": {},
+  "sources": [
+    "LCSC via EasyEDA (2026-10-20): PTTC, F1206, 1.5 A / 3 A, 8 V",
+    "PTTC SMD1206 HF Series Rev. K (2017-01-03): row SMD1206P150TFT"
+  ],
+  "notes": "The simulation uses R = 120 mOhm (after a trip, worst case). Block usb-c-sink.",
+  "verified": {
+    "by": "Claude Opus 5.5 (datasheet check, automated)",
+    "date": "2026-10-20",
+    "datasheet": "PTTC SMD1206 HF Series Rev. K (2017-01-03)",
+    "checked": [
+      "SMD1206P150TFT: Ihold 1.50 A, Itrip 3.00 A, Vmax 8 V, Imax 100 A, Pd 0.8 W, R 40-120 mOhm",
+      "thermal derating: 2.20/1.99/1.77/1.50/1.34/1.23/1.10/1.01/0.84 A at -40...85 °C"
+    ],
+    "open": []
+  }
+}

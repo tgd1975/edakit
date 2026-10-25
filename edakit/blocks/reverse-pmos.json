@@ -1,0 +1,41 @@
+{
+ "name": "reverse-pmos",
+ "title": "Reverse-polarity protection with a P-MOSFET",
+ "about": "AO3401A in the supply path: drain at the input, source at the output, gate to ground through 10 kΩ. It conducts with milliohms instead of a diode drop; with a reversed source the gate is above the source and the body diode blocks. For inputs up to about 10 V (VGS max ±12 V).",
+ "ports": {
+  "in": "the supply from the connector",
+  "out": "the protected rail",
+  "gnd": "ground"
+ },
+ "components": [
+  {
+   "designator": "Q1",
+   "type": "transistor",
+   "label": "{as}: reverse-polarity PMOS",
+   "part": "AO3401A",
+   "lcsc": "C15127",
+   "pins": {"1": "G", "2": "S", "3": "D"}
+  },
+  {
+   "designator": "R1",
+   "type": "resistor",
+   "label": "{as}: gate to ground 10 k",
+   "part": "0805W8F1002T5E",
+   "lcsc": "C17414",
+   "value": "10k",
+   "pins": {"1": "1", "2": "2"}
+  }
+ ],
+ "nets": [
+  {"name": "in", "pins": ["Q1.3"]},
+  {"name": "out", "pins": ["Q1.2"], "v": "@in"},
+  {"name": "gate", "pins": ["Q1.1", "R1.1"], "v": [0, 0.1]},
+  {"name": "gnd", "pins": ["R1.2"]}
+ ],
+ "covers": ["G-4", "G-10"],
+ "notes": [
+  "edakit.toml: the connector that feeds 'in' under [checks] reverse_protect.",
+  "Above about 10 V input: a zener (10 V) from gate to source and a larger gate resistor, so that VGS stays below 12 V.",
+  "AO3401A: 3.2 A at 70 °C, 60 mΩ at VGS -4.5 V; edakit sim checks current and power (E-2)."
+ ]
+}

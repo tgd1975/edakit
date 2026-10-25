@@ -1,0 +1,61 @@
+{
+  "lcsc": "C2146",
+  "mpn": "S8050 J3Y(RANGE:200-350)",
+  "manufacturer": "CJ(江苏长电/长晶)",
+  "kind": "npn",
+  "package": "SOT-23",
+  "footprint": "SOT-23-3_L3.0-W1.7-P0.95-LS2.9-BR",
+  "jlc_class": "Basic Part",
+  "datasheet": {
+    "url": "https://item.szlcsc.com/datasheet/S8050%2520J3Y(RANGE%253A200-350)/2503.html",
+    "pinout_page": null
+  },
+  "pins": {
+    "1": {
+      "name": "B",
+      "type": "passive",
+      "role": "base"
+    },
+    "2": {
+      "name": "E",
+      "type": "passive",
+      "role": "emitter"
+    },
+    "3": {
+      "name": "C",
+      "type": "passive",
+      "role": "collector"
+    }
+  },
+  "params": {
+    "hfe_min": 200,
+    "hfe_max": 350,
+    "vce_sat_v": 0.6
+  },
+  "ratings": {
+    "ic_max_a": 0.5,
+    "vceo": 25,
+    "vebo": 5,
+    "p_max_w": 0.3
+  },
+  "spice": {
+    "model": ".model S8050 NPN(IS=5f BF=200 VAF=100 IKF=0.4 ISE=10f NE=1.6 BR=5 RB=10 RC=0.4 RE=0.1 CJE=12p CJC=6p TF=0.6n TR=40n)"
+  },
+  "sources": [
+    "pin names from the EasyEDA symbol (2026-10-19)",
+    "LCSC parameter table via EasyEDA (2026-10-20)",
+    "SPICE: generic small-signal NPN, BF = lower hFE limit of group J3Y (200) – no manufacturer model"
+  ],
+  "notes": "Low-side switch of block npn-switch (buzzer stage of the reference project).",
+  "verified": {
+    "by": "Claude Opus 5.5 (datasheet check, automated)",
+    "date": "2026-10-20",
+    "datasheet": "CJ S8050 SOT-23, marking J3Y (datasheet via JLCPCB/LCSC, 2026-10-20)",
+    "checked": [
+      "pins 1 = B, 2 = E, 3 = C",
+      "VCBO 40 V, VCEO 25 V, VEBO 5 V, IC 500 mA, PC 300 mW",
+      "pads at the footprint: 1 = B, 2 = E, 3 = C (M-1 of the reference project, 2026-10-25)"
+    ],
+    "open": []
+  }
+}

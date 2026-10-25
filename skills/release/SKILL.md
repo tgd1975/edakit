@@ -17,7 +17,8 @@ Concept: `${CLAUDE_PLUGIN_ROOT}/handbook/08-release-gate.md`.
    holes, polarity sheet. Files in `<reports>/<run>/fab/<board>/`.
 3. Read `<reports>/<run>/protocol.md`. Summarise per stage passed / failed / warning / open, then the findings with
    actual and expected value. Always name stages and checks with their short name next to the letter: "stage L
-   (board)", "L-9 (hole fits the lead)" – nobody remembers the letters.
+   (board)", "L-9 (hole fits the lead)" – nobody remembers the letters; the names come from the rule catalog
+   (`edakit rules`), and section 10 of the protocol explains every check that failed or warned.
 4. **Fix causes, do not define findings away.** The cause is in the graph, the parts database, the plan or the
    project's mechanics → hardware-change or pcb-round skill. **Only the user accepts a warning** – it is a decision.
    Propose the entry for the sign-off file (`accepted_warnings`: `match` as fnmatch pattern over "ID scenario item

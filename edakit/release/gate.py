@@ -5,7 +5,8 @@
 
 Result: <reports>/<YYYYMMDD-hhmmss>/
     protocol.md            readable protocol: header with hashes, stages, findings with actual and expected value,
-                           warnings and who accepted them, waivers, open sign-offs, manual checks, simulation table
+                           warnings and who accepted them, waivers, open sign-offs, manual checks, simulation table,
+                           and the rule, reason and fix of every check that failed or warned (rules.json)
     graph_checks.json, sim.json, schematic_<board>.json   raw results
     fab/<board>/           Gerber ZIP, BOM and CPL in JLCPCB format plus raw data (stages L, F)
     fab/manifest.json      SHA-256 of every file to upload, the hashes of the checked state, the decision
@@ -34,7 +35,7 @@ from collections import Counter, defaultdict
 from fnmatch import fnmatch
 from pathlib import Path
 
-from .. import checks
+from .. import checks, rules
 from ..design import Design
 
 STAGES = [
@@ -138,7 +139,7 @@ def stage_graph(cfg, design):
     for c, m in rep.pending:
         rows.append({"stage": stage_of(c), "id": c, "item": "", "check": m, "result": "pending"})
     hit = {r["id"] for r in rows if r["result"] in ("fail", "pending")}
-    rows += [{"stage": stage_of(c), "id": c, "item": "", "check": checks.CHECK_TEXT[c], "result": "pass"}
+    rows += [{"stage": stage_of(c), "id": c, "item": "", "check": rules.title(c), "result": "pass"}
              for c in checks.EXECUTED if c not in hit]
     return rows, rep.to_dict()
 
@@ -274,7 +275,7 @@ def write_protocol(cfg, outdir, head, rows, sim, signoff, notes, decision, reaso
                "advisories (do not block)" if c["advisory"] else "passed")
         L.append(f"| {sid} {name} | {what} | {c['pass']} | {c['fail']} | {c['warn']} | {c['waived']} | {c['pending']} | {res} |")
     L += ["\nIn P (parts) and G (graph) every rule without a finding counts once as passed; executed: "
-          + ", ".join(f"{k} ({checks.CHECK_TEXT[k]})" for k in checks.EXECUTED) + ".\n", "## 2 Findings\n"]
+          + ", ".join(rules.label(k) for k in checks.EXECUTED) + ".\n", "## 2 Findings\n"]
     fails = [r for r in rows if r["result"] == "fail"] + [c | {"stage": "E"} for c in sim["checks"] if c["result"] == "fail"]
     advis = [r for r in rows if r["result"] == "advisory"]
     if advis:
@@ -284,12 +285,13 @@ def write_protocol(cfg, outdir, head, rows, sim, signoff, notes, decision, reaso
         L.append("No check failed.\n")
     else:
         L += ["| Stage | Check | Scenario | Item | Step | Actual | Expected |", "|---|---|---|---|---|---|---|"]
-        L += [f"| {f['stage']} | {f['id']} | {f.get('scenario', '')} | {f['item']} | {f['check']} | {f.get('actual', '')} | "
-              f"{f.get('expected', '')} |" for f in fails]
+        L += [f"| {f['stage']} | {rules.label(f['id'])} | {f.get('scenario', '')} | {f['item']} | {f['check']} | "
+              f"{f.get('actual', '')} | {f.get('expected', '')} |" for f in fails]
         L.append("")
     L.append("## 3 Warnings\n")
     warns = [c for c in [*sim["checks"], *rows] if c["result"] == "warn"]
-    L += [f"- `{key_of(w)}`. Actual: {w.get('actual', '')}. Expected: {w.get('expected', '')}. → "
+    L += [f"- `{key_of(w)}` ({rules.title(w['id']) or 'project check'}). Actual: {w.get('actual', '')}. "
+          f"Expected: {w.get('expected', '')}. → "
           + (f"accepted by {a['by']} ({a['date']}): {a['reason']}" if (a := accepted(w, signoff)) else "**not accepted**")
           for w in warns] or ["None."]
     L.append("\n## 4 Waivers in the graph\n")
@@ -331,6 +333,13 @@ def write_protocol(cfg, outdir, head, rows, sim, signoff, notes, decision, reaso
         L.append("Files for the manufacturer (SHA-256 in `fab/manifest.json`)"
                  + (":" if decision == "RELEASED" else " – **do not upload, state not released**:") + "\n")
         L += [f"- `{f}` `{h[:16]}…`" for f, h in files.items()]
+    L.append("\n## 10 The rules behind the findings\n")
+    explained = [i for i in dict.fromkeys(c["id"] for c in [*fails, *warns]) if rules.entry(i)]
+    for i in explained:
+        lines = rules.explain(i, indent="")
+        L += [f"**{lines[0]}**\n", *[f"- {line}" for line in lines[1:]], ""]
+    if not explained:
+        L.append("No check of the catalog failed or warned. Every check: `edakit rules`.")
     (outdir / "protocol.md").write_text("\n".join(L) + "\n", encoding="utf-8")
 
 

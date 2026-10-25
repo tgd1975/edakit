@@ -1,6 +1,9 @@
 """edakit command line. Every command reads the project's edakit.toml (see handbook/10-reference.md).
 
     edakit check                     stages P/G: rule checks on the graph (offline, < 1 s)
+    edakit rules [ID ...]            the rule catalog: what each check and hint is about, why, what to do
+    edakit hints                     design hints that apply to the graph, notes from the parts database
+    edakit block list|show|add       building blocks with checked parts into the graph
     edakit sim                       stage E: ngspice operating points of all scenarios (offline, seconds)
     edakit schematic create|check|copy|layout
     edakit pcb dump|plan|parts|nets|apply|tooling|pour
@@ -33,6 +36,23 @@ def build_parser():
     p = sub.add_parser("check", help="rule checks on the graph (stages P, G)")
     p.add_argument("--release", action="store_true", help="also fail on open sign-offs")
     p.add_argument("--json", help="write the findings as JSON")
+    _common(p)
+
+    p = sub.add_parser("rules", help="the rule catalog: checks and hints with reason, fix and sources")
+    p.add_argument("ids", nargs="*", help="check or hint IDs, e.g. G-4 L-9 H-1 (default: the list)")
+
+    p = sub.add_parser("hints", help="design hints that apply to the graph, and notes from the parts database")
+    p.add_argument("--json", help="write them as JSON")
+    _common(p)
+
+    p = sub.add_parser("block", help="building blocks: list, show, or add one to the graph")
+    p.add_argument("action", choices=["list", "show", "add"])
+    p.add_argument("name", nargs="?", help="block name (edakit block list)")
+    p.add_argument("--as", dest="instance", help="add: name of this instance, used for its nets and labels")
+    p.add_argument("--connect", action="extend", nargs="+", metavar="PORT=NET", help="add: join ports to nets")
+    p.add_argument("--board", help="add: board of the new parts (needed with several boards)")
+    p.add_argument("--file", help="a block from this JSON file instead of the library")
+    p.add_argument("--dry-run", action="store_true", help="add: show what would change, write nothing")
     _common(p)
 
     p = sub.add_parser("sim", help="simulation (stage E)")
@@ -114,6 +134,12 @@ def main(argv=None):
     if args.command == "lock":
         from . import lock
         return lock.main(args)
+    if args.command == "rules":
+        from . import rules
+        return rules.main_rules(args)
+    if args.command == "block" and args.action in ("list", "show"):
+        from . import block
+        return block.main(None, args)
     from . import config
     try:
         cfg = config.load(args.config)
@@ -126,6 +152,12 @@ def main(argv=None):
     if args.command == "check":
         from . import checks
         return checks.main(cfg, args)
+    if args.command == "hints":
+        from . import rules
+        return rules.main_hints(cfg, args)
+    if args.command == "block":
+        from . import block
+        return block.main(cfg, args)
     if args.command == "sim":
         from .sim import run
         try:

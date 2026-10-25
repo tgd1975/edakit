@@ -1,0 +1,60 @@
+{
+ "name": "npn-switch",
+ "title": "Low-side NPN switch with flyback diode",
+ "about": "An S8050 switches a load to ground: 1 kΩ base resistor from the signal, 10 kΩ from base to emitter so that it stays off while the firmware is not running, and an SS14 across the load for coils. The buzzer stage of the reference project; up to about 100 mA saturated from a 3.3 V pin.",
+ "ports": {
+  "in": "the driving signal (GPIO)",
+  "load": "the low side of the load (relay coil, buzzer, LED string)",
+  "vplus": "the supply of the load (its high side)",
+  "gnd": "ground"
+ },
+ "components": [
+  {
+   "designator": "Q1",
+   "type": "transistor",
+   "label": "{as}: low-side switch",
+   "part": "S8050 J3Y",
+   "lcsc": "C2146",
+   "pins": {"1": "B", "2": "E", "3": "C"}
+  },
+  {
+   "designator": "R1",
+   "type": "resistor",
+   "label": "{as}: base resistor 1 k",
+   "part": "0805W8F1001T5E",
+   "lcsc": "C17513",
+   "value": "1k",
+   "pins": {"1": "1", "2": "2"}
+  },
+  {
+   "designator": "R2",
+   "type": "resistor",
+   "label": "{as}: base-emitter resistor 10 k",
+   "part": "0805W8F1002T5E",
+   "lcsc": "C17414",
+   "value": "10k",
+   "pins": {"1": "1", "2": "2"}
+  },
+  {
+   "designator": "D1",
+   "type": "diode",
+   "label": "{as}: flyback diode",
+   "part": "SS14",
+   "lcsc": "C2480",
+   "pins": {"1": "K", "2": "A"}
+  }
+ ],
+ "nets": [
+  {"name": "in", "pins": ["R1.1"]},
+  {"name": "base", "pins": ["Q1.1", "R1.2", "R2.1"], "v": [0, 0.9]},
+  {"name": "load", "pins": ["Q1.3", "D1.2"], "v": "@vplus"},
+  {"name": "vplus", "pins": ["D1.1"]},
+  {"name": "gnd", "pins": ["Q1.2", "R2.2"]}
+ ],
+ "covers": ["G-4", "G-13", "H-4"],
+ "notes": [
+  "The load goes between vplus and load: add it to the graph with its pins on these two nets. With a series resistor in front of a coil, vplus is the coil's own plus terminal, so that the diode sits directly across the coil.",
+  "Base current from 3.3 V about 2.4 mA: saturated up to about 100 mA (forced beta 40, hFE at least 200). For more current a smaller base resistor or a MOSFET; edakit sim shows VCE and the power (E-2).",
+  "sim.json: the driving net under the MCU's outputs."
+ ]
+}

@@ -37,8 +37,9 @@ Create in the repository root (ask only for what you cannot sensibly default):
 
 ## 3. First run
 
-1. Graph skeleton: power input, MCU, the main functions – parts by LCSC number (part-search skill), nets with voltage
-   ranges `v`. `edakit check` until 0 errors.
+1. Graph skeleton with the skill circuit-design: power input, MCU, the main functions – building blocks where they fit
+   (`edakit block list`), other parts by LCSC number (part-search skill), nets with voltage ranges `v`. `edakit check`
+   until 0 errors, `edakit hints` worked through.
 2. `edakit sim` – scenarios first at the supply limits.
 3. EasyEDA: the user creates the project once by hand (File → New → Project, named like `[project] name`) – the
    local desktop client refuses `DMT_Project.createProject`. Then the start skill.

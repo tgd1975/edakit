@@ -1,0 +1,57 @@
+{
+  "lcsc": "C318884",
+  "mpn": "TS-1187A-B-A-B",
+  "manufacturer": "XKB Connection(中国星坤)",
+  "kind": "button",
+  "package": "SMD 5,1 × 5,1 mm, 1,6 mm hoch",
+  "footprint": "SW-SMD_4P-L5.1-W5.1-P3.70-LS6.5-TL_H1.5",
+  "jlc_class": "Basic Part",
+  "datasheet": {
+    "url": "https://jlcpcb.com/partdetail/C318884",
+    "pinout_page": 1
+  },
+  "pins": {
+    "1": {
+      "name": "A",
+      "type": "passive",
+      "role": "a"
+    },
+    "2": {
+      "name": "B (internal to A)",
+      "type": "passive",
+      "role": "a"
+    },
+    "3": {
+      "name": "C",
+      "type": "passive",
+      "role": "b"
+    },
+    "4": {
+      "name": "D (internal to C)",
+      "type": "passive",
+      "role": "b"
+    }
+  },
+  "params": {
+    "r_on_ohm": 0.1,
+    "force_n": 1.6
+  },
+  "ratings": {
+    "i_max_a": 0.05,
+    "v_max": 12
+  },
+  "spice": {},
+  "sources": [
+    "XKB TS-1187A-X-X-X drawing A0 (via JLCPCB): A-B and C-D connected, switch between them; 50 mA / 12 V DC, contact resistance <= 100 mOhm; actuation force B = 160 gf"
+  ],
+  "verified": {
+    "by": "Claude (datasheet check, automated)",
+    "date": "2026-10-25",
+    "datasheet": "XKB TS-1187A-X-X-X Rev. A0",
+    "checked": [
+      "internal connection A-B, C-D",
+      "50 mA, 12 V, 100 mOhm"
+    ],
+    "open": []
+  }
+}

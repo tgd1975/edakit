@@ -1,0 +1,311 @@
+{
+ "about": "The rule catalog: every check edakit runs (P parts, G graph, E simulation, S schematic, L board, F manufacturing files) and every design hint (H), each with its rule, why it exists, what to do and where the knowledge comes from. Check IDs are stable: a retired check keeps its entry and its number is not reused. Hints have no rule a program could decide; 'when' says for which parts of the graph they apply. `edakit rules` prints this file, `edakit hints` the hints of a project.",
+ "checks": {
+  "P-1": {
+   "title": "graph pins = parts database",
+   "rule": "Every part with an LCSC number has a parts entry, its pins (number and name) equal that entry, and no supply pin is marked nc.",
+   "why": "Checks, simulation, schematic generation and the BOM all read the parts entry. A pin number shifted by one, a wrong LCSC number or a missing entry makes them reason about another part than the one that gets assembled. A supply pin left open leaves an IC unpowered or powered through its I/O pins.",
+   "fix": "Create the entry with the part-search skill. Take pin numbers and names from the EasyEDA symbol of exactly this part and copy them into the graph.",
+   "sources": ["edakit handbook 3.2 and 4.1"]
+  },
+  "P-2": {
+   "title": "polarity sheet",
+   "rule": "Every board gets a polarity sheet drawn from the Gerber data: each polarised part with copper, silkscreen, pad numbers, pin roles and nets.",
+   "why": "Polarity at the footprint is what neither the graph nor the DRC can see: a library footprint once printed '+' next to the cathode pad. The sheet is what the second datasheet check (M-1) compares with the datasheet drawings, and what is compared with JLCPCB's assembly preview (M-2).",
+   "fix": "Read the sheet against the datasheets. A wrong pad is fixed in the graph by swapping the nets and roles, not in the footprint.",
+   "sources": ["edakit handbook 4.4 and 8.1"]
+  },
+  "G-1": {
+   "title": "structure",
+   "rule": "Designators and net names are unique, every pin is in exactly one net or in nc, every net has at least two pins and a voltage range v, every part is on a known board, and a net spans boards only through a cable.",
+   "why": "Everything after the graph is generated from it. A pin that is neither connected nor declared open is usually forgotten; a net with one pin is a typo or an unfinished connection; a net without a voltage range cannot be compared with pin limits and the simulation.",
+   "fix": "Connect the pin, add it to nc when it is meant to stay open, correct the pin reference, or give the net its range [min, max] over all operating states.",
+   "sources": ["edakit handbook 3.1 and 3.2"]
+  },
+  "G-2": {
+   "title": "pin locks",
+   "rule": "Pins the firmware relies on are on the nets that [checks] pin_locks names, and a pin table in the documentation equals the graph.",
+   "why": "Firmware and hardware change in different files, often in different sessions. A GPIO that moved compiles fine and fails on the board.",
+   "fix": "Change the graph, the firmware's pin table and pin_locks in one commit. Regenerate generated tables instead of editing them.",
+   "sources": ["edakit handbook 3.3"]
+  },
+  "G-3": {
+   "title": "voltage domains",
+   "rule": "The voltage range of every net stays within the vmax of every pin on it, and no active pin sees less than -0.3 V.",
+   "why": "An input tolerates a few hundred millivolts beyond its supply; above that its protection diodes conduct, the pin is damaged or powers the IC through its input. A 5 V signal on a 3.3 V GPIO is the classic case.",
+   "fix": "Level shifting (a divider, a series resistor with a clamp, a level shifter, an open-drain stage pulled up to the lower supply) or a part that tolerates the voltage; then correct v.",
+   "sources": ["the datasheet of each part: absolute maximum ratings, entered as vmax per pin"]
+  },
+  "G-4": {
+   "title": "no floating input",
+   "rule": "Every input has a driver or a pull resistor; an input that only MCU pins drive has a pull resistor; every bipolar transistor has a base-emitter resistor and every MOSFET a gate resistor to its source or to a rail.",
+   "why": "A floating CMOS input takes its level from leakage and coupling: it reads random values and can rest in the threshold region where both input transistors conduct. An MCU pin is an input until the firmware configures it, so an enable or output-enable line it drives floats from power-up to that moment. A transistor whose base or gate floats can switch its load on during that time, or half-conduct and heat up.",
+   "fix": "A pull resistor to the inactive level (10–100 kΩ); a base-emitter resistor or a gate-source resistor (10–100 kΩ) next to the transistor. If the floating state is harmless, waive it with the reason, for example data lines of a driver whose output enable is held off.",
+   "sources": [
+    "TI SCBA004E, Implications of Slow or Floating CMOS Inputs (2021), section 1 – https://www.ti.com/lit/an/scba004e/scba004e.pdf",
+    "TI SLUA618A, Fundamentals of MOSFET and IGBT Gate Driver Circuits (2018), 3.5 dv/dt protection: a gate-source resistor holds the MOSFET off during power-up – https://www.ti.com/lit/ml/slua618a/slua618a.pdf"
+   ]
+  },
+  "G-5": {
+   "title": "one driver per net",
+   "rule": "At most one push-pull output or supply output drives a net.",
+   "why": "Two outputs that disagree short the supply through their output stages: high current, heat, an undefined level.",
+   "fix": "Separate the nets, make one side an input, or use open-drain outputs with a pull-up.",
+   "sources": ["edakit handbook 3.3"]
+  },
+  "G-6": {
+   "title": "decoupling",
+   "rule": "Every net with IC supply pins (power_in) has at least one capacitor to ground per supply pin.",
+   "why": "An IC draws its current in short pulses. The inductance of the supply track turns each pulse into a voltage dip at the pin; a capacitor next to the pin supplies the pulse locally.",
+   "fix": "100 nF ceramic per supply pin next to the pin (keep it there with near in edakit.toml), plus the bulk capacitance the datasheet asks for.",
+   "sources": ["Analog Devices MT-101, Decoupling Techniques (Rev. 0, 2009) – https://www.analog.com/media/en/training-seminars/tutorials/MT-101.pdf"]
+  },
+  "G-7": {
+   "title": "polarity",
+   "retired": "Polarity is checked by the simulation (E-3: a reversed LED is reported as reversed or stays dark) and, at the footprint, by the polarity sheet (P-2) and the second datasheet check M-1.",
+   "rule": "Retired; the number is not reused.",
+   "why": "A graph rule cannot see polarity; the simulation and the polarity sheet can.",
+   "fix": "See E-3 and P-2.",
+   "sources": ["edakit handbook 3.3"]
+  },
+  "G-8": {
+   "title": "voltage ratings",
+   "rule": "Capacitors, diodes, transistors, MOSFETs, fuses, switches and connectors are rated above the largest voltage they can see; capacitors, diode VRRM and transistor VCEO, VDS and VGS with the factor 1.5.",
+   "why": "Ceramic capacitors lose capacitance and lifetime near their rated voltage, semiconductors break down at theirs, and the declared ranges contain no spikes. The margin covers what a DC view does not see.",
+   "fix": "A part with a higher rating, or a correct net range v if it is too pessimistic.",
+   "sources": ["edakit handbook 3.3 (the margins of the reference project)"]
+  },
+  "G-9": {
+   "title": "parts signed",
+   "rule": "Every part is verified against its datasheet (field verified), and no component has an open 'verify' note.",
+   "why": "The parts database feeds every check. A value copied from a distributor's table without a look at the datasheet is an assumption; the sign-off records who checked what against which revision.",
+   "fix": "Check the part (handbook 4.3) and fill in verified; resolve verify notes in the graph.",
+   "sources": ["edakit handbook 4.3"]
+  },
+  "G-10": {
+   "title": "reverse polarity",
+   "rule": "What a reversed source (battery holders, connectors in [checks] reverse_protect) reaches through fuses, switches and connectors is only capacitors, the anode of a blocking diode or the drain of a PMOS whose source and gate are outside.",
+   "why": "A battery inserted the wrong way or a reversed plug drives the supply negative; every IC on that rail conducts through its substrate diodes and dies within milliseconds.",
+   "fix": "A Schottky diode in series (simple, loses 0.3–0.5 V) or a PMOS in the supply path with its gate to ground (milliohms; block reverse-pmos).",
+   "sources": ["TI SLVA139, Reverse Current/Battery Protection Circuits (2003) – https://www.ti.com/lit/an/slva139/slva139.pdf"]
+  },
+  "G-11": {
+   "title": "I2C pull-ups",
+   "rule": "Every I2C line (SDA, SCL) has a pull-up to a supply whose resulting value lies between (V - 0.4 V) / 3 mA and 10 kΩ.",
+   "why": "I2C outputs are open-drain: they only pull low. Without a pull-up the line never goes high. A weak pull-up makes the rising edge too slow (rise time at most 1000 ns in Standard mode and 300 ns in Fast mode; Rp(max) = tr / (0.8473 × Cb)); a strong one cannot be pulled below 0.4 V by a device that sinks 3 mA.",
+   "fix": "One pair of pull-ups per bus to the bus supply: 4.7 kΩ for 100 kHz, 2.2 kΩ for 400 kHz (block i2c-pullups). Modules often bring their own (pull in the parts entry) and parallel pull-ups add up. A pin called SDA or SCL that is not I2C gets another role in its parts entry.",
+   "sources": ["NXP UM10204 Rev. 7.0, I2C-bus specification and user manual (2021), 7.1 Pull-up resistor sizing and table 10 – https://www.nxp.com/docs/en/user-guide/UM10204.pdf"]
+  },
+  "G-12": {
+   "title": "strapping pins",
+   "rule": "A pin that an IC samples at reset (strap in its parts entry) is at its boot level through the circuit or its internal pull, and nothing on its net forces another level at power-up.",
+   "why": "Many MCUs read boot options from pins at reset: the ESP32 starts its download mode when GPIO0 is low and sets its flash supply to 1.8 V when MTDI (GPIO12) is high. A pull resistor, a ground connection or another IC's output on such a pin keeps the board from booting - and only at power-up, so it is found late.",
+   "fix": "Keep pulls and outputs that disagree with the boot level off strapping pins, or move the function to another pin. A button to ground on GPIO0 is fine: it is open at reset.",
+   "sources": ["Espressif ESP32 Series Datasheet v5.3, 3 Boot Configurations, table 3-1 – https://documentation.espressif.com/esp32_datasheet_en.pdf"]
+  },
+  "G-13": {
+   "title": "flyback diode",
+   "rule": "An inductive load on the board (relay coil, magnetic buzzer) that a transistor or an IC output switches has a diode across it, cathode at its positive terminal.",
+   "why": "The current in a coil cannot stop at once. When the switch opens, the coil drives the switch's voltage far above the supply until something breaks down - 1000 to 1500 V for a 12 V relay without suppression. The diode lets the current circulate and clamps the spike to one diode drop.",
+   "fix": "A diode directly across the coil: 1N4148 class for small coils, a Schottky such as SS14 for more current. For relays whose release time matters, a diode in series with a zener.",
+   "sources": ["TE Connectivity, The Application of Relay Coil Suppression with DC Relays (white paper) – https://www.te.com/en/products/relays-and-contactors/relays/intersection/relay-coil-suppression-dc-relays.html"]
+  },
+  "G-14": {
+   "title": "USB-C sink termination",
+   "rule": "A USB-C receptacle used as a power sink without a USB-C controller has its own 5.1 kΩ (±10 %) resistor from CC1 to ground and from CC2 to ground.",
+   "why": "A USB-C source switches VBUS on only when it sees the sink's pull-down Rd on a CC line. Without it a charger with a C-to-C cable delivers nothing, while C-to-A cables still work and hide the fault. With CC1 and CC2 on one resistor, an electronically marked cable adds its Ra in parallel and the source sees an audio accessory instead of a sink.",
+   "fix": "Two resistors, one per CC pin, 5.1 kΩ to ground (block usb-c-sink). With a Type-C or PD controller on the CC lines this check stays silent.",
+   "sources": [
+    "Richtek AN064, USB Type-C/PD Brief Introduction and Analysis (2021): a sink asserts Rd on the CC pins – https://www.richtek.com/~/media/AN%20PDF/AN064_EN.pdf",
+    "USB Type-C Cable and Connector Specification (USB-IF): sink termination Rd = 5.1 kΩ"
+   ]
+  },
+  "E-1": {
+   "title": "operating point",
+   "rule": "The DC operating point of every scenario converges, and the simulation config fits the graph.",
+   "why": "A scenario that does not converge checks nothing. Usually a node has no DC path to ground, a parameter is missing, or the config names a net or part that does not exist.",
+   "fix": "Read the message: give a floating node a path (often a real design fault), complete the parts entry, or correct sim.json.",
+   "sources": ["edakit handbook 5.1"]
+  },
+  "E-2": {
+   "title": "part stress",
+   "rule": "Every part stays within its ratings with derating in every scenario: resistor power ≤ 50 %, currents ≤ 80 %, capacitor, diode and transistor voltages ≤ 67 %, LED forward current and reverse voltage, fuse hold current at the ambient temperature, contact currents, and the current of every MCU output pin and of all of them together.",
+   "why": "A part at its absolute maximum rating is at the edge of failure, and worst-case supply, tolerances and ambient temperature only push it further. Derating buys lifetime and covers what a DC analysis does not see. An MCU's pins share one supply: each pin may be fine and the sum still beyond the package limit.",
+   "fix": "A part with a higher rating, another value or another operating point; LEDs at MCU pins through a driver or a transistor. The derating factors in sim.json are a project decision.",
+   "sources": ["edakit handbook 5.3", "the datasheet of each part: ratings in its parts entry (MCU: gpio_i_max_a, gpio_i_total_max_a)"]
+  },
+  "E-3": {
+   "title": "function",
+   "rule": "The circuit does what it should in every scenario: supply currents within their limits, regulator outputs in tolerance, MCU supply and input levels defined, MCU outputs on pins that can drive, driver headroom, LEDs on or dark as the load says, blocking diodes block, every net inside its declared range.",
+   "why": "A circuit can stay within every rating and still not work: a regulator without headroom at the low end of the USB voltage, a 3.3 V signal into a 5 V input, an output assigned to an input-only pin, a reversed LED, a power bank that switches off below its minimum load.",
+   "fix": "Depends on the item; the protocol gives the actual and the expected value per scenario.",
+   "sources": ["edakit handbook 5.3"]
+  },
+  "S-2": {
+   "title": "schematic = graph",
+   "rule": "Every schematic in EasyEDA has exactly the graph's parts (LCSC number, designator) and nets (pins, no-connects).",
+   "why": "The schematic is generated, but EasyEDA can lose or move things: a generated schematic once drifted (a pin on two nets) without anyone writing to it.",
+   "fix": "Generate it again (edakit schematic create, layout); never edit a schematic by hand.",
+   "sources": ["edakit handbook 6 and 13.2"]
+  },
+  "L-1": {
+   "title": "PCB = graph",
+   "rule": "The PCB has exactly the graph's parts, every pad carries the graph's net, and every graph pin has a pad.",
+   "why": "Bringing parts into the PCB can lose, double or mismatch them, and a pad on the wrong net is routed wrong without any DRC error.",
+   "fix": "edakit pcb parts --write and edakit pcb nets --write.",
+   "sources": ["edakit handbook 7 and 8.1"]
+  },
+  "L-2": {
+   "title": "copper from the Gerber files",
+   "rule": "The copper rasterised from the exported Gerber files connects every net, shorts no two nets and contains every connected pad.",
+   "why": "This is what the factory gets. Pours, islands and export settings can differ from what the editor shows, so the last connectivity check does not trust EasyEDA.",
+   "fix": "Look at the routing picture, route again or refill the pours, then export again.",
+   "sources": ["edakit handbook 8.1"]
+  },
+  "L-3": {
+   "title": "DRC",
+   "rule": "EasyEDA's design rule check reports nothing after save and reload.",
+   "why": "Clearances, widths and open connections below the manufacturer's limits. Right after API changes the DRC reports false errors, so it runs after a reload.",
+   "fix": "edakit route reload, then fix what remains (route all, the plan).",
+   "sources": ["edakit handbook 7 and 9"]
+  },
+  "L-4": {
+   "title": "footprint = parts database",
+   "rule": "Every part in the PCB has the footprint named in its parts entry.",
+   "why": "A swapped footprint variant (another pitch or package) fits in the editor and not on the board.",
+   "fix": "Correct the parts entry, or swap the part with edakit pcb parts --write.",
+   "sources": ["edakit handbook 4.1"]
+  },
+  "L-5": {
+   "title": "track width",
+   "rule": "Every track is at least as wide as IPC-2221 asks for 1.5 × the largest simulated current (failure) and as the practical width of its net class (warning); the voltage drop is shown as an upper bound.",
+   "why": "A track too narrow for its current heats up and drops voltage; the class width adds robustness for manufacturing and for later changes.",
+   "fix": "Wider tracks or a pour for the net; net classes in [boards.<b>.routing.classes] and [net_classes].",
+   "sources": ["IPC-2221B, Generic Standard on Printed Board Design: conductor width for a current", "edakit handbook 5.4"]
+  },
+  "L-7": {
+   "title": "placement plan",
+   "rule": "Fixed parts sit where the plan says (±0.02 mm, rotation, side), and the plan itself has no findings: outline, overlaps, holes, through-hole pins under parts on the other side, near distances.",
+   "why": "The auto-layout or a move by hand can shift a connector, a button or an LED that the enclosure or the user relies on.",
+   "fix": "edakit pcb apply; correct the plan in edakit.toml.",
+   "sources": ["edakit handbook 7"]
+  },
+  "L-8": {
+   "title": "polarity marks",
+   "rule": "Every '+' or '-' in the silkscreen sits next to a pad with that polarity role.",
+   "why": "A sign at the wrong pole makes whoever solders or inspects the board turn the part the wrong way.",
+   "fix": "A footprint whose marking matches the roles, or no sign in the silkscreen.",
+   "sources": ["edakit handbook 4.4"]
+  },
+  "L-9": {
+   "title": "hole fits the lead",
+   "rule": "Every through hole takes its lead at nominal size (lead data in the parts entry); less than 0.05 mm play in the worst case, or a plated slot narrower than 0.5 mm, is a warning.",
+   "why": "Nobody else checks library footprints: the Christmas bell's Nano footprint had 0.9 mm holes for 0.64 mm square header tails (diagonal 0.91 mm). JLCPCB drills plated holes +0.13/-0.08 mm.",
+   "fix": "A footprint with larger holes, a part with thinner leads, or a decision (D-...) if the fit is accepted.",
+   "sources": ["JLCPCB PCB capabilities: hole tolerance and minimum plated slot – https://jlcpcb.com/capabilities/pcb-capabilities", "edakit handbook 13.6"]
+  },
+  "L-10": {
+   "title": "pads as in the library",
+   "rule": "Every pad sits where the library footprint has the pad with that number; intended swaps are listed in pad_map.",
+   "why": "A pad swap made in the PCB to fix a polarity can be reset by EasyEDA, and the board is then assembled with the original, wrong assignment.",
+   "fix": "Fix polarity in the graph (handbook 4.4) instead of swapping pads; list intended swaps in pad_map.",
+   "sources": ["edakit handbook 4.4"]
+  },
+  "L-11": {
+   "title": "short current loops",
+   "rule": "Each pad pair listed in [[boards.<b>.loops]] is connected over tracks within its length limit.",
+   "why": "A switching regulator's loop carries pulsed current; a long loop radiates and rings. In the reference project it was routed 61 mm across the board, and the layout review found it, not a check.",
+   "fix": "Put the regulator, its capacitors, the diode and the inductor together and route the loop first.",
+   "sources": ["TI SNVA021C, AN-1149 Layout Guidelines for Switching Power Supplies (2013) – https://www.ti.com/lit/an/snva021c/snva021c.pdf", "edakit handbook 8.2"]
+  },
+  "F-1": {
+   "title": "BOM = graph",
+   "rule": "The BOM generated from the graph equals EasyEDA's BOM per designator, and every LCSC number is in the parts database; parts with bom: false are left out on purpose.",
+   "why": "JLCPCB assembles what the BOM says; a part that EasyEDA lists differently from the graph ends up differently on the board.",
+   "fix": "Correct the graph and bring the PCB in line (edakit pcb parts --write).",
+   "sources": ["edakit handbook 8.1"]
+  },
+  "F-2": {
+   "title": "stock at JLCPCB",
+   "rule": "Every BOM line is in JLCPCB's assembly catalogue with stock for [project] quantity boards.",
+   "why": "LCSC's stock and JLCPCB's assembly stock differ. A part that is not available can only be pre-ordered, which delays the order or changes the price.",
+   "fix": "A part in stock (part-search skill); a cheaper part that is available is worth a gate run.",
+   "sources": ["edakit handbook 4.2"]
+  },
+  "F-3": {
+   "title": "pick and place",
+   "rule": "Every BOM part is in the pick-and-place file exactly once with the PCB's side and rotation, and only on the sides [release] assembly allows (Economic PCBA: one side, SMD only).",
+   "why": "A missing or doubled line is a missing or doubled part; a part on the wrong side needs Standard PCBA at a higher price.",
+   "fix": "Move parts to the allowed side in the plan, or mark hand-soldered parts bom: false.",
+   "sources": ["edakit handbook 8.4"]
+  },
+  "F-4": {
+   "title": "files of one run",
+   "rule": "Gerber ZIP, BOM and pick-and-place file come from the same gate run, with their SHA-256 in fab/manifest.json.",
+   "why": "Files from different states fit together only on paper; the manifest is the record of what was ordered.",
+   "fix": "Run the gate again and upload only from its folder.",
+   "sources": ["edakit handbook 8.3"]
+  },
+  "F-5": {
+   "title": "Gerber set",
+   "rule": "The Gerber set is complete; outline and mounting holes equal the plan (±0.2 mm); tooling holes are in the NPTH drill file with the mask open and no copper in the opening.",
+   "why": "A missing layer or a shifted outline is found at the factory at best; tooling holes with copper or mask make JLCPCB add their own.",
+   "fix": "Export again; correct outline, holes or tooling holes in edakit.toml and apply them.",
+   "sources": ["edakit handbook 7 and 8.1"]
+  }
+ },
+ "hints": {
+  "H-1": {
+   "title": "bulk capacitor at the power input",
+   "when": {"match": "power_input"},
+   "why": "A supply cable has inductance. With only ceramic capacitors at the input, plugging in rings, and the voltage can overshoot to about twice the supply. Load steps (a servo starting, LEDs switching) also need charge close to the input.",
+   "fix": "An electrolytic or polymer capacitor of 10–100 µF near the input connector - its series resistance damps the ringing - rated at least 1.5 × the input voltage (G-8).",
+   "sources": ["Linear Technology AN88, Ceramic Input Capacitors Can Cause Overvoltage Transients (2001) – https://www.analog.com/media/en/technical-documentation/application-notes/an88f.pdf"]
+  },
+  "H-2": {
+   "title": "MOSFET gate resistor",
+   "when": {"kinds": ["nmos", "pmos"]},
+   "why": "The gate capacitance and the inductance of the drive loop form a resonant circuit; a fast edge makes it ring, which can exceed VGS max and radiate. A GPIO that switches a small MOSFET slowly rarely needs anything.",
+   "fix": "10–100 Ω in series with the gate, close to the gate, when the driver is fast or far from the gate; keep the gate-source resistor (G-4).",
+   "sources": ["TI SLUA618A, Fundamentals of MOSFET and IGBT Gate Driver Circuits (2018), 2.8 Effects of parasitic components – https://www.ti.com/lit/ml/slua618a/slua618a.pdf"]
+  },
+  "H-3": {
+   "title": "debounce buttons and switches",
+   "when": {"kinds": ["button", "switch", "dip_switch"]},
+   "why": "Mechanical contacts bounce: Ganssle measured about 1.6 ms on average and up to 6 ms, one switch 157 ms. A counter or an interrupt sees several presses.",
+   "fix": "Debounce in firmware: sample every 5–10 ms and accept a level after it was stable several times. An RC filter with a Schmitt-trigger input only where firmware cannot, for example a wake-up from sleep.",
+   "sources": ["Jack Ganssle, A Guide to Debouncing – http://www.ganssle.com/debouncing.htm"]
+  },
+  "H-4": {
+   "title": "inductive load off the board",
+   "when": {"match": "transistor_at_connector"},
+   "why": "A motor, solenoid or relay at the end of a cable stores energy in its coil like one on the board, but G-13 sees only coils that are parts of the graph. When the transistor switches off, the coil's voltage spike lands on it.",
+   "fix": "If the load at this connector is inductive: a diode across the connector's load pins on the board, cathode at the supply pin; a Schottky for PWM.",
+   "sources": ["TE Connectivity, The Application of Relay Coil Suppression with DC Relays (white paper) – https://www.te.com/en/products/relays-and-contactors/relays/intersection/relay-coil-suppression-dc-relays.html"]
+  },
+  "H-5": {
+   "title": "switching regulator layout",
+   "when": {"match": "switching_regulator"},
+   "why": "The loop of input capacitor, switch and diode or second switch carries pulsed current; its area radiates and its inductance rings. A ceramic input capacitor helps only next to the IC's VIN pin.",
+   "fix": "Input capacitor next to the VIN and GND pins, the loop as small as possible, and the loop listed in [[boards.<b>.loops]] so that L-11 checks it.",
+   "sources": ["TI SNVA021C, AN-1149 Layout Guidelines for Switching Power Supplies (2013), 3 Filter capacitors – https://www.ti.com/lit/an/snva021c/snva021c.pdf"]
+  },
+  "H-6": {
+   "title": "lithium cells need protection",
+   "when": {"kinds": ["battery_holder"]},
+   "why": "Li-ion and LiPo cells must not be over-discharged (below about 2 V per cell), overcharged or short-circuited, and protection circuits are mandatory for Li-ion packs. Alkaline and NiMH cells tolerate all of this far better.",
+   "fix": "For lithium cells: protected cells or a protection IC between holder and circuit; a cut-off in the firmware is not enough while the MCU is off. For alkaline or NiMH cells nothing is needed.",
+   "sources": [
+    "Battery University BU-304, Why are Protection Circuits Needed? – https://batteryuniversity.com/article/bu-304-why-are-protection-circuits-needed",
+    "Battery University BU-304a, Safety Concerns with Li-ion – https://batteryuniversity.com/article/bu-304a-safety-concerns-with-li-ion"
+   ]
+  },
+  "H-7": {
+   "title": "ESD at external connectors",
+   "when": {"match": "connector_signal"},
+   "why": "A connector that a person touches or plugs a cable into sees electrostatic discharges of several kilovolts. A line that runs straight to an IC pin relies on the IC's internal protection.",
+   "fix": "For lines that leave the enclosure: an ESD diode (TVS) per line, as near to the connector as the design rules allow; a series resistor on slow signal lines.",
+   "sources": ["TI SLVA680A, ESD Protection Layout Guide (2022) – https://www.ti.com/lit/an/slva680/slva680.pdf"]
+  }
+ }
+}
