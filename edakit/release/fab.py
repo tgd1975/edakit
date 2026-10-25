@@ -95,8 +95,20 @@ def collect(cfg, board, d, verbose=False):
         if not res.get("exported"):
             raise SystemExit(f"pick-and-place export failed: {res}")
         shutil.copy(res["file_path"], d / "cpl_easyeda.xlsx")  # EasyEDA delivers xlsx even when csv is asked for
-        res = mcp.call("easyeda_bom_generate", projectId="current", format="json", groupBy="lcsc", timeout=120)
-        (d / "bom_easyeda.json").write_text(json.dumps(res.get("entries", []), indent=1, ensure_ascii=False))
+        # easyeda_bom_generate lists the parts of the FOCUSED schematic page, not of the board: focus every page of
+        # the board schematic in turn and merge (otherwise the template or another board would be compared)
+        sch_uuid, pages = eda.find_pages(mcp, board.schematic)
+        merged = {}
+        for page in pages:
+            eda.focus_page(mcp, sch_uuid, page)
+            res = mcp.call("easyeda_bom_generate", projectId="current", format="json", groupBy="lcsc", timeout=120)
+            for e in res.get("entries", []):  # on a board schematic the bridge lists every part twice
+                m = merged.setdefault(e.get("lcsc") or e.get("value"), {**e, "reference": [], "quantity": 0})
+                m["reference"] += [r for r in e.get("reference", "").split(", ") if r and r not in m["reference"]]
+                m["quantity"] = len(m["reference"])
+        for m in merged.values():
+            m["reference"] = ", ".join(m["reference"])
+        (d / "bom_easyeda.json").write_text(json.dumps(list(merged.values()), indent=1, ensure_ascii=False))
     finally:
         mcp.close()
     shutil.rmtree(d / "gerber", ignore_errors=True)
