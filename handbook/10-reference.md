@@ -3,7 +3,7 @@
 ## 10.1 edakit.toml
 
 Lookup: `--config PATH`, `$EDAKIT_CONFIG`, then `edakit.toml` in the current directory or a parent. Relative paths
-are relative to the file. Complete example: [examples/led-bar/edakit.toml](../examples/led-bar/edakit.toml).
+are relative to the file. Complete example: [the Christmas bell's edakit.toml](https://github.com/tgd1975/automatic_christmas_bell/blob/main/edakit.toml).
 
 ### [project]
 

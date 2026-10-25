@@ -20,6 +20,6 @@ How we work, what the tools do, and why they do it that way – including everyt
 
 **Reading paths**
 
-- *First time:* 1 → 2 → the example project ([examples/led-bar](../examples/led-bar/)) → 3 → 6 → 7 → 8.
+- *First time:* 1 → 2 → the example project ([Christmas bell](https://github.com/tgd1975/automatic_christmas_bell)) → 3 → 6 → 7 → 8.
 - *Something broke:* 12 → 9.
 - *Adapting to your board:* 10 → 3 → 7.

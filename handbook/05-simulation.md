@@ -48,7 +48,8 @@ def checks(design, cfg, res, meta, load, add):   # extra E-3 checks per scenario
 
 ## 5.2 Scenarios
 
-`hardware/sim.json` ([example](../examples/led-bar/hardware/sim.json)):
+`hardware/sim.json` (the snippet is from the [test project](../tests/fixtures/led-bar/hardware/sim.json); a USB-powered
+module with a servo: [Christmas bell](https://github.com/tgd1975/automatic_christmas_bell/blob/main/hardware/sim.json)):
 
 ```json
 {

@@ -67,7 +67,7 @@ Every run records two hashes in the protocol header:
 - **circuit** (`state_sha256`): graph, parts database, simulation config (and plugin, `[release] state_files`)
 - **layout** (`layout_sha256`): `[release] layout_files` (default edakit.toml) and the footprint geometry
 
-The sign-off file (`[release] signoff`, [example](../examples/led-bar/hardware/signoff.json)) holds manual checks and
+The sign-off file (`[release] signoff`, [example](https://github.com/tgd1975/automatic_christmas_bell/blob/main/hardware/signoff.json)) holds manual checks and
 accepted warnings. Each counts only if the hash of its scope equals the current one:
 
 ```json

@@ -53,8 +53,18 @@ In Claude Code the skills do the orchestration: `/edakit:new-project`, `/edakit:
 `/edakit:part-search`, `/edakit:pcb-round`, `/edakit:release`, `/edakit:decision-round`; the agents
 `electrical-reviewer` and `pcb-reviewer` do the independent reviews whose results are the sign-offs.
 
-Start with the example: [examples/led-bar](examples/led-bar/) – a Pico 2 driving eight LEDs through a TLC5916, with
-graph, parts, simulation scenarios, placement plan and sign-off file. `edakit check` and `edakit sim` run offline.
+## Example: the Christmas bell
+
+[automatic_christmas_bell](https://github.com/tgd1975/automatic_christmas_bell) – an Arduino Nano counts down on five LEDs, then a servo rings a real bell. It
+started as a Fritzing breadboard drawing and went through edakit to manufacturing files:
+
+- Fritzing drawing → hardware graph, parts database, simulation scenarios (USB power, servo load, a stalled servo as
+  fault case) in under an hour; `edakit check` 0 errors, `edakit sim` 1112 checks.
+- Generated schematic = graph at the first attempt (17 parts, 15 nets, ERC clean); PCB 85 × 56 mm from a placement
+  plan, routed by Freerouting in 5 s (3 vias, DRC 0), silkscreen without findings.
+- The release gate passed every stage but one: the Nano footprint's 0.9 mm holes are too small for the usual 0.64 mm
+  header tails (L-9) – exactly the kind of finding that otherwise shows up when the headers do not go in.
+- Its decisions (`docs/decisions.md`) show the numbered-decision workflow, including two the simulation brought up.
 
 ## What is in here
 
@@ -64,12 +74,12 @@ graph, parts, simulation scenarios, placement plan and sign-off file. `edakit ch
 | [edakit/](edakit/) | the Python package: checks, simulation, EasyEDA client, schematic, PCB, routing, Gerber analysis, silkscreen, export, release gate, EasyEDA claim |
 | [edakit/easyeda/](edakit/easyeda/) | `mcp-server.sh` (pinned easyeda-mcp-pro with safe defaults), `bridge-extension-patch.sh` |
 | [skills/](skills/), [agents/](agents/), [hooks/](hooks/hooks.json), [bin/](bin/) | the Claude Code plugin |
-| [examples/led-bar/](examples/led-bar/) | a complete small project |
-| [tests/](tests/) | negative tests: every check seen red once |
+| [tests/](tests/) | negative tests: every check seen red once; [tests/fixtures/led-bar/](tests/fixtures/led-bar/) is the project they build their faults into |
 
 ## Status and limits
 
-- Grown on one real project (EasyEDA Pro 3.2.206, easyeda-mcp-pro 1.4.0, Linux) and then made generic. The offline
+- Grown on one real project (EasyEDA Pro 3.2.206, easyeda-mcp-pro 1.4.0, Linux), made generic, then taken through a
+  second one end to end (the Christmas bell). The offline
   parts (checks, simulation, DSN/Freerouting/check, Gerber analysis, the board and manufacturing checks) are verified
   against that project's data; the EasyEDA-writing commands are ports of scripts used there daily.
 - Two copper layers. Rectangular or polygonal outlines with straight segments (arcs as point lists).

@@ -1,7 +1,8 @@
 # 3 The hardware graph
 
 The graph is a pin-level netlist in JSON. It is the **only** place where parts, values and connections are decided.
-Example: [examples/led-bar/hardware/graph.json](../examples/led-bar/hardware/graph.json).
+Example: [the Christmas bell's graph](https://github.com/tgd1975/automatic_christmas_bell/blob/main/hardware/graph.json); the snippets below come from the
+[test project](../tests/fixtures/led-bar/hardware/graph.json).
 
 ## 3.1 Format
 

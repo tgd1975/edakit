@@ -7,7 +7,8 @@ argument-hint: "<project name> [board name]"
 # New edakit project
 
 Project: $ARGUMENTS. The approach and why: `${CLAUDE_PLUGIN_ROOT}/handbook/01-approach.md`. A complete small example
-to copy from: `${CLAUDE_PLUGIN_ROOT}/examples/led-bar/`.
+to copy from: `${CLAUDE_PLUGIN_ROOT}/tests/fixtures/led-bar/` (shipped with the plugin); a real one, taken through
+EasyEDA to the gate: https://github.com/tgd1975/automatic_christmas_bell.
 
 ## 1. Files
 
@@ -15,7 +16,7 @@ Create in the repository root (ask only for what you cannot sensibly default):
 
 | File | Content |
 |---|---|
-| `edakit.toml` | from `examples/led-bar/edakit.toml`: `[project] name` = the EasyEDA project, one `[boards.<name>]` with outline and holes as far as known; leave `place`, `routing.classes` and `schematic.layout.rows` minimal until the parts exist |
+| `edakit.toml` | from `tests/fixtures/led-bar/edakit.toml`: `[project] name` = the EasyEDA project, one `[boards.<name>]` with outline and holes as far as known; leave `place`, `routing.classes` and `schematic.layout.rows` minimal until the parts exist |
 | `hardware/graph.json` | `{"graph": {"name", "version": "0.1", "date", "description", "components": [], "nets": [], "cables": []}}` |
 | `hardware/parts/` | empty; every LCSC number gets an entry through the part-search skill |
 | `hardware/sim.json` | from the example: sources (the supply connector), supplies at min/nominal/max, loads, corners |

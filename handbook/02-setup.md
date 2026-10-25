@@ -114,7 +114,7 @@ Node. Check: `edakit doctor` ("EasyEDA unthrottled").
 
 ```bash
 cd my-project
-/edakit:new-project my-board          # in Claude Code – or copy examples/led-bar/ and adapt
+/edakit:new-project my-board          # in Claude Code – or copy the example's files and adapt
 edakit doctor                         # tool chain ready?
 edakit check && edakit sim            # offline, seconds
 ```

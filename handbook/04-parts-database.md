@@ -2,7 +2,7 @@
 
 One JSON file per LCSC number (`hardware/parts/C17414.json`). It holds what the datasheet says, in a form the checks
 and the simulation can use: pin types and roles, limits, parameters, SPICE models, lead dimensions, and who checked it
-against which datasheet revision. Examples: [examples/led-bar/hardware/parts/](../examples/led-bar/hardware/parts/).
+against which datasheet revision. Examples: [the Christmas bell's parts](https://github.com/tgd1975/automatic_christmas_bell/tree/main/hardware/parts).
 
 ## 4.1 Fields
 

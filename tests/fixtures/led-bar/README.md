@@ -1,4 +1,7 @@
-# Example: led-bar
+# Test project: led-bar
+
+The data the tests build their faults into (it never ran through EasyEDA). The documented example is the
+[Christmas bell](https://github.com/tgd1975/automatic_christmas_bell).
 
 A Raspberry Pi Pico 2 drives eight green LEDs through a TLC5916 constant-current sink (9.45 mA per LED, set by R1).
 5 V come in through a JST PH connector and a Schottky diode against reverse polarity; R2 keeps the LEDs dark until the
@@ -22,7 +25,7 @@ edakit gate       # P, G, E pass; NOT RELEASED: M-1/M-5 open, stages S/L/F need 
 ```
 
 With EasyEDA Pro (project "led-bar" created by hand once and open, bridge connected): `edakit schematic create --save`, then
-the steps of [handbook chapter 6–8](../../handbook/README.md). The placement plan is a starting point: run `edakit pcb
+the steps of [handbook chapter 6–8](../../../handbook/README.md). The placement plan is a starting point: run `edakit pcb
 dump` once the parts are in the PCB and adjust positions after `edakit pcb plan`.
 
 The parts entries were copied from a real project where each was checked against its datasheet; the Pico 2 and the

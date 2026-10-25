@@ -93,13 +93,19 @@ dead ends against the API, and loops that never ended. Each got a rule or a tool
 
 ## 13.6 The second project
 
-The first project after the extraction was much smaller: a carrier board for a plugged-in Arduino Nano with a servo,
-five LEDs and two buttons, taken over from a Fritzing drawing. From the Fritzing file to a checked, simulated graph
-took under an hour, and the generated schematic matched the graph at the first attempt (17 parts, 16 nets, ERC
-clean). What it added to edakit:
+The first project after the extraction was much smaller: [the Christmas bell](https://github.com/tgd1975/automatic_christmas_bell), a carrier board for a
+plugged-in Arduino Nano with a servo, five LEDs and two buttons, taken over from a Fritzing drawing. From the Fritzing
+file to a checked, simulated graph took under an hour; from there to a routed board through the release gate about
+another hour, most of it spent on the things below. What it added to edakit:
 
 - **Off-board loads** in the simulation (`external`: the servo at its connector) and **fault cases** that do not block
   every commit (`"matrix": false`): a stalled servo draws more than the Nano's 500 mA polyfuse holds.
-- **5 V I/O modules** (`v_io = "vin"`) and an **input level check**: the buttons switch 3.3 V into a 5 V AVR,
-  0.28 V above its VIH – fine, but now visible.
-- **Project creation is manual** in the local desktop client (chapter 9.2) – and the guard above.
+- **5 V I/O modules** (`v_io = "vin"`) and an **input level check**: the buttons switched 3.3 V into a 5 V AVR,
+  0.28 V above its VIH – visible now, and moved to 5 V.
+- **Pin names** are compared with the symbol: it caught three LED entries whose names disagreed with their symbols –
+  one library series marks the anode with "+" on pad 1 for green and red and on pad 2 for yellow.
+- **LEDs side by side point the same way** (plan check), after the first silkscreen showed the yellow ones turned.
+- **A new project's default board** is adopted, and **project creation is manual** in the local desktop client
+  (chapter 9.2) – with a guard after the first generated schematic landed in the wrong project.
+- The gate's hole check (L-9) failed the Nano footprint from a user library: 0.9 mm holes for 0.64 mm square header
+  tails. Library footprints are not checked by anyone else.
