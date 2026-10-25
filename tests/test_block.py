@@ -1,11 +1,12 @@
 """Building blocks: every library block is consistent, and once in a graph it passes the checks."""
 
+import argparse
 import json
 import shutil
 
 import pytest
 
-from edakit import block, checks, rules
+from edakit import block, checks, rules, schematic_draw
 from edakit.design import Design
 from edakit.sim import run as simrun
 
@@ -65,6 +66,14 @@ def test_block_in_the_example_passes_the_checks(project, name):
     signals(project, set(CONNECT[name].values()))
     block.add(project.config(), name, "T", CONNECT[name])
     assert errors(project) == []
+
+
+@pytest.mark.parametrize("name", sorted(CONNECT))
+def test_block_in_the_example_is_drawn(project, name, tmp_path):
+    signals(project, set(CONNECT[name].values()))
+    block.add(project.config(), name, "T", CONNECT[name])
+    args = argparse.Namespace(board=None, out=str(tmp_path / "schematic.svg"), force=False)
+    assert schematic_draw.main(project.config(), args) == 0
 
 
 def test_designators_continue_and_nets_get_the_instance_name(project):

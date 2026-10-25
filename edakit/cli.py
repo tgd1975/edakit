@@ -6,6 +6,7 @@
     edakit block list|show|add       building blocks with checked parts into the graph
     edakit sim                       stage E: ngspice operating points of all scenarios (offline, seconds)
     edakit schematic create|check|copy|layout
+    edakit schematic draw            the schematic as SVG from graph and parts database – no EasyEDA (offline)
     edakit pcb dump|plan|parts|nets|apply|tooling|pour
     edakit route all|read|dsn|route|check|apply|verify|pours|reload|drc
     edakit silk apply|check
@@ -61,8 +62,8 @@ def build_parser():
     p.add_argument("--keep", help="keep netlists and ngspice output in this directory")
     _common(p)
 
-    p = sub.add_parser("schematic", help="generate, check, copy or lay out a schematic in EasyEDA")
-    p.add_argument("action", choices=["create", "check", "copy", "layout"])
+    p = sub.add_parser("schematic", help="generate, check, copy or lay out a schematic in EasyEDA – or draw it without")
+    p.add_argument("action", choices=["create", "check", "copy", "layout", "draw"])
     p.add_argument("--board")
     p.add_argument("--schematic", help="schematic name (default: template for create/check, layout for layout)")
     p.add_argument("--source", help="copy: source schematic (default: the template)")
@@ -70,7 +71,8 @@ def build_parser():
     p.add_argument("--only", help="create: only these designators, comma-separated")
     p.add_argument("--dry-run", action="store_true", help="plan only (create: placement, layout: SVG preview)")
     p.add_argument("--reread", action="store_true", help="layout: read the symbol geometry again")
-    p.add_argument("--force", action="store_true", help="layout: write despite geometry conflicts")
+    p.add_argument("--force", action="store_true", help="layout, draw: write despite geometry conflicts")
+    p.add_argument("--out", help="draw: the SVG file (default: <artifacts>/schematic_<board>.svg)")
     p.add_argument("--no-pins", action="store_true", help="check: skip the per-part pin check")
     p.add_argument("--refresh-devices", action="store_true", help="create: search every LCSC number again")
     p.add_argument("--create-project", action="store_true", help="create the EasyEDA project if it is not open")

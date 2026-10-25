@@ -149,9 +149,10 @@ def pava(targets, weights):
 
 
 class Layout:
-    def __init__(self, graph_comps, graph_nets, geometry, rows, notes, power, near, stacked=()):
+    def __init__(self, graph_comps, graph_nets, geometry, rows, notes, power, near, stacked=(), note_char_w=NOTE_CHAR_W):
         self.geo = geometry
         self.rows, self.notes, self.power, self.near, self.stacked = rows, notes, power, near, set(stacked)
+        self.note_char_w = note_char_w  # width of a note character / font size – frames are sized with it
         self.placed = set(geometry) & set(graph_comps)
         self.nc = {d: {str(p) for p in graph_comps[d].get("nc", [])} for d in self.placed}
         self.nets = {}
@@ -207,6 +208,10 @@ class Layout:
             self.warnings.append(f"without a block (last row): {', '.join(rest)}")
             self.blocks.append([[("Other", rest)]])
 
+    def flag_box(self, net):
+        """Room of a power flag at (0, 0) pointing to +x (EasyEDA's flag symbols)."""
+        return 0, -10, 25, 10
+
     def branch(self, d, p, net):
         """A branch starts at a pin tip (0, 0) and grows towards +x."""
         kids = self.kids.get((d, p), [])
@@ -214,7 +219,7 @@ class Layout:
         if net in self.power:
             flag = Drawing()
             flag.flags.append((net, 0, 0, 0))
-            flag.add_box((0, -10, 25, 10))
+            flag.add_box(self.flag_box(net))
             items.append(flag)
         for k, kp in kids:
             items.append(self.node(k, kp))
@@ -353,7 +358,7 @@ class Layout:
                 x = blk.box[2] + TREE_GAP
         b = blk.box or (0, 0, 0, 0)
         lines = self.notes.get(title, [])
-        note_w = max((len(ln) for ln in lines), default=0) * NOTE_SIZE * NOTE_CHAR_W
+        note_w = max((len(ln) for ln in lines), default=0) * NOTE_SIZE * self.note_char_w
         note_h = len(lines) * NOTE_SIZE + 2 * GAP if lines else 0
         x0 = b[0] - FRAME_PAD
         x1 = max(b[2] + FRAME_PAD, x0 + len(title) * TITLE_SIZE * 0.7 + 20, x0 + 10 + note_w + 10)
@@ -482,7 +487,7 @@ def layout_config(cfg, board):
             "near": dict(lay.get("near", {})), "stacked": lay.get("stacked", []), "pin_table": lay.get("pin_table")}
 
 
-def block_notes(cfg, design, board, lc):
+def block_notes(cfg, design, board, lc, drawn_by="edakit schematic layout"):
     """Notes from edakit.toml plus a GPIO table from the graph and the open 'verify' notes."""
     notes = {k: list(v) for k, v in lc["notes"].items()}
     comps = design.board_comps(board.name)
@@ -509,7 +514,7 @@ def block_notes(cfg, design, board, lc):
         if verify:
             notes["Notes"].append(f"Before layout, check pin numbers/polarity against the footprint: {', '.join(verify)}.")
         notes["Notes"] += [f"Source: {cfg.graph.name} v{design.version} ({design.graph.get('date', '')})",
-                           "Drawn by edakit schematic layout – change the graph, not this sheet."]
+                           f"Drawn by {drawn_by} – change the graph, not this sheet."]
     return notes
 
 

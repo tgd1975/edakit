@@ -4,6 +4,8 @@
     edakit schematic check  [--board B] [--schematic NAME] [--no-pins]       read only: schematic = graph?
     edakit schematic copy   [--board B] [--source A --target B]              template -> board schematic
     edakit schematic layout [--board B] [--dry-run] [--save]                 readable sheet with blocks and wires
+    edakit schematic draw   [--board B] [--out FILE]                         the same sheet as SVG, without EasyEDA
+                                                                             (schematic_draw.py)
 
 Two schematics per board:
   template  (default generated_<board>): built from the graph by `create`, deleted and rebuilt on every run. Nets are
@@ -495,6 +497,9 @@ def main(cfg, args):
         return check(cfg, args)
     if args.action == "copy":
         return copy(cfg, args)
+    if args.action == "draw":
+        from . import schematic_draw
+        return schematic_draw.main(cfg, args)
     from . import schematic_layout
     return schematic_layout.main(cfg, args)
 
