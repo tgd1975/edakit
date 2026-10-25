@@ -12,6 +12,8 @@ here is removed and the pinned version in `edakit/easyeda/mcp-server.sh` is rais
 | 3 | `easyeda_api_call` results cut after 5 levels (`[MaxDepth]`) | `bridge-extension-patch.sh` (depth 12) | [issue draft](issue-3-api-call-depth.md), branch `feat/api-call-max-depth` |
 | 4 | `DMT_Project.createProject` returns null in the local desktop client | project created by hand | [issue draft](issue-4-create-project.md) |
 
+The issue drafts follow the repository's issue forms field by field; the PR drafts ([1](pr-1-stale-sweep.md), [2](pr-2-schematic-pdf.md), [3](pr-3-api-call-depth.md)) follow its pull request template.
+
 Status (2026-10-25): issue texts drafted, not posted. The three branches are committed in the local clone of the fork
 (`../easyeda-mcp-pro`) on top of upstream `main` (1.5.4), not pushed yet:
 
