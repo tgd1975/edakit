@@ -27,6 +27,17 @@ In Claude Code:
 /plugin install edakit@edakit
 ```
 
+To update, refresh the marketplace in Claude Code, then update the plugin via `/plugin` → Manage plugins or in a
+terminal, and restart Claude Code:
+
+```text
+/plugin marketplace update edakit
+```
+
+```bash
+claude plugin update edakit@edakit
+```
+
 Needed besides: EasyEDA Pro desktop, Node 24, [uv](https://docs.astral.sh/uv/), ngspice. Freerouting downloads itself
 on Linux x64. Then build and import the patched bridge extension once and start EasyEDA unthrottled –
 [handbook/02-setup.md](handbook/02-setup.md).
