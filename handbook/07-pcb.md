@@ -188,6 +188,14 @@ keep-outs of mounting and tooling holes. The revision comes from `[boards.<b>] r
 edakit remembers the texts it created (`<artifacts>/silk_strings_<board>.json`) and replaces them on the next run, so
 a board never carries two revisions.
 
+**Artwork and labels** come first: `[[boards.<b>.silk.art]]` places an SVG (filled shapes and strokes, scaled to
+`width_mm`, centred at `x`, `y` in plan mm) and `[[boards.<b>.silk.texts]]` free texts – "START" at a button, "GND 5V
+SIG" at a connector. edakit cuts the artwork free of pads and solder-mask openings (+0.15 mm), drops everything thinner
+than 0.15 mm (JLCPCB does not print it) and mirrors graphics on the bottom side (EasyEDA does that only for texts).
+Designators and the board label keep clear of artwork and texts. `edakit silk preview` draws them onto the last Gerber
+export offline (`<artifacts>/silk_preview_<board>_<side>.png`), so a design can be tuned without EasyEDA. Draw motifs in
+mm with lines of 0.2 mm or more; script text works as outlines (embolden it a little).
+
 Good to know:
 
 - Minimum text height at JLCPCB: 1.0 mm; stroke ≥ 0.15 mm (a regular 1.5-mm font had 0.12 mm – use bold).
