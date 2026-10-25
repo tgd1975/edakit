@@ -1,0 +1,16 @@
+{
+  "hooks": {
+    "PreToolUse": [
+      {
+        "matcher": "mcp__plugin_edakit_easyeda__.*|mcp__easyeda__.*",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "python3 \"${CLAUDE_PLUGIN_ROOT}/edakit/lock.py\" hook",
+            "timeout": 15
+          }
+        ]
+      }
+    ]
+  }
+}

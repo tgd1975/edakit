@@ -1,0 +1,55 @@
+{
+  "lcsc": "C2297",
+  "mpn": "KT-0805G",
+  "manufacturer": "KENTO",
+  "kind": "led",
+  "package": "0805",
+  "footprint": "LED0805-R-RD",
+  "jlc_class": "Basic Part",
+  "datasheet": {
+    "url": "https://item.szlcsc.com/datasheet/KT-0805G/2670.html",
+    "pinout_page": null
+  },
+  "pins": {
+    "1": {
+      "name": "A",
+      "type": "passive",
+      "role": "anode"
+    },
+    "2": {
+      "name": "K",
+      "type": "passive",
+      "role": "cathode"
+    }
+  },
+  "params": {
+    "color": "green",
+    "vf_typ": 2.85,
+    "vf_min": 2.6,
+    "vf_max": 3.1,
+    "vf_at_a": 0.005,
+    "rs_ohm": 10
+  },
+  "ratings": {
+    "if_max_a": 0.03,
+    "vr_max": 5,
+    "p_max_w": 0.1
+  },
+  "spice": {},
+  "sources": [
+    "pin names from the EasyEDA symbol",
+    "LCSC parameter table via EasyEDA: Vf 2.6-3.1 V at 5 mA",
+    "VR_max = 5 V: usual LED value, assumption without datasheet evidence"
+  ],
+  "verified": {
+    "by": "Claude (datasheet check, automated)",
+    "date": "2026-10-20",
+    "datasheet": "KENTO KT-0805G Rev. A.0",
+    "checked": [
+      "IF 30 mA, PD 100 mW, VF 2.6-3.1 V at 5 mA"
+    ],
+    "open": [
+      "VR not specified – 5 V assumed"
+    ]
+  }
+}

@@ -1,0 +1,5 @@
+#!/usr/bin/env bash
+# edakit from this plugin or clone, run through uv (installs the Python dependencies on first use).
+# On Linux with uv from snap, pipe the output when Claude Code captures it: edakit … 2>&1 | cat
+ROOT="$(cd "$(dirname "$(readlink -f "${BASH_SOURCE[0]}")")/.." && pwd)"
+exec uv run --quiet --project "$ROOT" edakit "$@"

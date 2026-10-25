@@ -1,0 +1,26 @@
+name: Tests
+
+on:
+  push:
+  pull_request:
+
+jobs:
+  test:
+    runs-on: ubuntu-24.04
+    steps:
+      - uses: actions/checkout@v4
+      - name: ngspice
+        run: sudo apt-get update && sudo apt-get install -y ngspice
+      - uses: astral-sh/setup-uv@v6
+      - name: Lint
+        run: uvx ruff check edakit tests
+      - name: Tests
+        run: uv run --group dev pytest -q
+      - name: Example project, offline stages
+        working-directory: examples/led-bar
+        run: |
+          uv run --project ../.. edakit check
+          uv run --project ../.. edakit sim
+          uv run --project ../.. edakit gate || test $? -eq 2   # NOT RELEASED is expected without EasyEDA
+      - name: Shell scripts parse
+        run: bash -n edakit/easyeda/mcp-server.sh && bash -n edakit/easyeda/bridge-extension-patch.sh && bash -n bin/edakit

@@ -1,0 +1,139 @@
+{
+  "lcsc": "C90107",
+  "mpn": "TLC5916IDR",
+  "manufacturer": "TI(德州仪器)",
+  "kind": "ic",
+  "package": "SOIC-16",
+  "footprint": "SOIC-16_L9.9-W3.9-P1.27-LS6.0-BL",
+  "jlc_class": "Extended Part",
+  "datasheet": {
+    "url": "https://www.ti.com/cn/lit/ds/symlink/tlc5916.pdf",
+    "pinout_page": 3
+  },
+  "pins": {
+    "1": {
+      "name": "GND",
+      "type": "ground"
+    },
+    "2": {
+      "name": "SDI",
+      "type": "input",
+      "vmax": 3.7
+    },
+    "3": {
+      "name": "CLK",
+      "type": "input",
+      "vmax": 3.7
+    },
+    "4": {
+      "name": "LE(ED1)",
+      "type": "input",
+      "vmax": 3.7
+    },
+    "5": {
+      "name": "OUT0",
+      "type": "current_sink",
+      "role": "out",
+      "vmax": 20.0
+    },
+    "6": {
+      "name": "OUT1",
+      "type": "current_sink",
+      "role": "out",
+      "vmax": 20.0
+    },
+    "7": {
+      "name": "OUT2",
+      "type": "current_sink",
+      "role": "out",
+      "vmax": 20.0
+    },
+    "8": {
+      "name": "OUT3",
+      "type": "current_sink",
+      "role": "out",
+      "vmax": 20.0
+    },
+    "9": {
+      "name": "OUT4",
+      "type": "current_sink",
+      "role": "out",
+      "vmax": 20.0
+    },
+    "10": {
+      "name": "OUT5",
+      "type": "current_sink",
+      "role": "out",
+      "vmax": 20.0
+    },
+    "11": {
+      "name": "OUT6",
+      "type": "current_sink",
+      "role": "out",
+      "vmax": 20.0
+    },
+    "12": {
+      "name": "OUT7",
+      "type": "current_sink",
+      "role": "out",
+      "vmax": 20.0
+    },
+    "13": {
+      "name": "OE(ED2)",
+      "type": "input",
+      "vmax": 3.7,
+      "role": "oe_n"
+    },
+    "14": {
+      "name": "SDO",
+      "type": "output"
+    },
+    "15": {
+      "name": "R-EXT",
+      "type": "analog",
+      "role": "rext"
+    },
+    "16": {
+      "name": "VDD",
+      "type": "power_in",
+      "vmax": 7.0,
+      "role": "vdd"
+    }
+  },
+  "params": {
+    "behavior": "cc_sink",
+    "vrext_v": 1.26,
+    "iout_gain": 15,
+    "vout_knee_v": 0.6,
+    "idd_max_a": 0.014,
+    "iout_accuracy": 0.06
+  },
+  "ratings": {
+    "vdd_max": 7,
+    "vdd_op_min": 3.0,
+    "vdd_op_max": 5.5,
+    "vout_max": 20,
+    "iout_max_a": 0.12,
+    "tj_max_c": 150,
+    "rth_ja_k_per_w": 87.4
+  },
+  "spice": {},
+  "sources": [
+    "pin names from the EasyEDA symbol",
+    "TI SLVS695D (2015): table 7.1 abs. max (VDD 7 V, VO 20 V, IO 120 mA, TJ 150 °C), 7.3 RthJA 87.4 K/W (D), 7.5 output current at VO = 0.6 V, IDD 8-14 mA at Rext 720 Ohm",
+    "IOUT = 1.26 V / R_EXT x 15 (section 9.4)"
+  ],
+  "verified": {
+    "by": "Claude (datasheet check, automated)",
+    "date": "2026-10-20",
+    "datasheet": "TI SLVS695D (January 2015)",
+    "checked": [
+      "pinout = graph",
+      "abs. max VDD 7 V, VO 20 V, IO 120 mA, TJ 150 °C; RthJA 87.4 K/W (D)",
+      "IOUT = 1.26 V / R_EXT x 15; regulation specified from VO = 0.6 V",
+      "IDD 8-14 mA"
+    ],
+    "open": []
+  },
+  "notes": "Behaviour model 'cc_sink'; roles oe_n (pin 13) and vdd (pin 16) for the simulation."
+}

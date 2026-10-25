@@ -1,0 +1,47 @@
+{
+  "lcsc": "C49678",
+  "mpn": "CC0805KRX7R9BB104",
+  "manufacturer": "YAGEO(国巨)",
+  "kind": "capacitor",
+  "package": "0805",
+  "footprint": "C0805",
+  "jlc_class": "Basic Part",
+  "datasheet": {
+    "url": "https://item.szlcsc.com/datasheet/CC0805KRX7R9BB104/50686.html",
+    "pinout_page": null
+  },
+  "pins": {
+    "1": {
+      "name": "1",
+      "type": "passive",
+      "role": "1"
+    },
+    "2": {
+      "name": "2",
+      "type": "passive",
+      "role": "2"
+    }
+  },
+  "params": {
+    "value_f": 1e-07,
+    "dielectric": "X7R",
+    "tolerance": 0.1
+  },
+  "ratings": {
+    "v_max": 50
+  },
+  "spice": {},
+  "sources": [
+    "pin names from the EasyEDA symbol",
+    "LCSC parameter table via EasyEDA"
+  ],
+  "verified": {
+    "by": "Claude (datasheet check, automated)",
+    "date": "2026-10-20",
+    "datasheet": "YAGEO CC series X7R 6.3-250 V",
+    "checked": [
+      "CC0805KRX7R9BB104: 0805, K = ±10 %, X7R, 9 = 50 V, 104 = 100 nF"
+    ],
+    "open": []
+  }
+}

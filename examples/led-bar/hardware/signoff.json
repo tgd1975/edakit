@@ -1,0 +1,44 @@
+{
+  "about": "Sign-offs for the release gate (edakit gate). Each one counts only for the hash of its scope: 'circuit' = state_sha256 (graph, parts database, simulation config), 'layout' = layout_sha256 (layout files, footprint geometry). When something there changes, it no longer counts – copy the new hash from the protocol header after the check was repeated. phase: 'export' blocks the release, 'order' and 'acceptance' come after the export. An accepted warning with scope 'decision' counts regardless of the hash and refers to a numbered decision in the docs. Parts are signed in their parts entry (field 'verified').",
+  "state_sha256": null,
+  "layout_sha256": null,
+  "manual": [
+    {
+      "id": "M-1",
+      "phase": "export",
+      "scope": "circuit",
+      "text": "Critical parts (U1, U2, D1, the LEDs, J1) checked a second time against the datasheet, independently – e.g. by the agent electrical-reviewer in its own session",
+      "done_by": null,
+      "date": null,
+      "note": null
+    },
+    {
+      "id": "M-5",
+      "phase": "export",
+      "scope": "layout",
+      "text": "Layout reviewed independently (manufacturability, mechanics, operation, looks) on the manufacturing files of a gate run with this layout – e.g. by the agent pcb-reviewer. No finding 'block' open, every 'important' finding fixed or rejected by the owner",
+      "done_by": null,
+      "date": null,
+      "note": null
+    },
+    {
+      "id": "M-2",
+      "phase": "order",
+      "scope": "layout",
+      "text": "At JLCPCB after the upload: assembly preview – rotation and polarity of every polarised part (compare with polarity_<board>.png); BOM without missing parts; price",
+      "done_by": null,
+      "date": null,
+      "note": null
+    },
+    {
+      "id": "M-4",
+      "phase": "acceptance",
+      "scope": "layout",
+      "text": "Acceptance test of every delivered board: visual check, supply current, every LED, the button",
+      "done_by": null,
+      "date": null,
+      "note": null
+    }
+  ],
+  "accepted_warnings": []
+}

@@ -1,0 +1,316 @@
+{
+  "lcsc": "C41407547",
+  "mpn": "Raspberry Pi Pico 2",
+  "manufacturer": "Raspberry Pi(树莓派)",
+  "kind": "module",
+  "package": "SMD-Modul 51×21 mm",
+  "footprint": "COMM-SMD_L51.0-W21.0-P2.54_SC0916",
+  "jlc_class": "Extended Part",
+  "datasheet": {
+    "url": "https://item.szlcsc.com/datasheet/Raspberry%2520Pi%2520Pico%25202/43207606.html",
+    "pinout_page": null
+  },
+  "pins": {
+    "1": {
+      "name": "GP0",
+      "type": "bidirectional",
+      "role": "gpio",
+      "vmax": 3.63
+    },
+    "2": {
+      "name": "GP1",
+      "type": "bidirectional",
+      "role": "gpio",
+      "vmax": 3.63
+    },
+    "3": {
+      "name": "GND",
+      "type": "ground"
+    },
+    "4": {
+      "name": "GP2",
+      "type": "bidirectional",
+      "role": "gpio",
+      "vmax": 3.63
+    },
+    "5": {
+      "name": "GP3",
+      "type": "bidirectional",
+      "role": "gpio",
+      "vmax": 3.63
+    },
+    "6": {
+      "name": "GP4",
+      "type": "bidirectional",
+      "role": "gpio",
+      "vmax": 3.63
+    },
+    "7": {
+      "name": "GP5",
+      "type": "bidirectional",
+      "role": "gpio",
+      "vmax": 3.63
+    },
+    "8": {
+      "name": "GND",
+      "type": "ground"
+    },
+    "9": {
+      "name": "GP6",
+      "type": "bidirectional",
+      "role": "gpio",
+      "vmax": 3.63
+    },
+    "10": {
+      "name": "GP7",
+      "type": "bidirectional",
+      "role": "gpio",
+      "vmax": 3.63
+    },
+    "11": {
+      "name": "GP8",
+      "type": "bidirectional",
+      "role": "gpio",
+      "vmax": 3.63
+    },
+    "12": {
+      "name": "GP9",
+      "type": "bidirectional",
+      "role": "gpio",
+      "vmax": 3.63
+    },
+    "13": {
+      "name": "GND",
+      "type": "ground"
+    },
+    "14": {
+      "name": "GP10",
+      "type": "bidirectional",
+      "role": "gpio",
+      "vmax": 3.63
+    },
+    "15": {
+      "name": "GP11",
+      "type": "bidirectional",
+      "role": "gpio",
+      "vmax": 3.63
+    },
+    "16": {
+      "name": "GP12",
+      "type": "bidirectional",
+      "role": "gpio",
+      "vmax": 3.63
+    },
+    "17": {
+      "name": "GP13",
+      "type": "bidirectional",
+      "role": "gpio",
+      "vmax": 3.63
+    },
+    "18": {
+      "name": "GND",
+      "type": "ground"
+    },
+    "19": {
+      "name": "GP14",
+      "type": "bidirectional",
+      "role": "gpio",
+      "vmax": 3.63
+    },
+    "20": {
+      "name": "GP15",
+      "type": "bidirectional",
+      "role": "gpio",
+      "vmax": 3.63
+    },
+    "21": {
+      "name": "GP16",
+      "type": "bidirectional",
+      "role": "gpio",
+      "vmax": 3.63
+    },
+    "22": {
+      "name": "GP17",
+      "type": "bidirectional",
+      "role": "gpio",
+      "vmax": 3.63
+    },
+    "23": {
+      "name": "GND",
+      "type": "ground"
+    },
+    "24": {
+      "name": "GP18",
+      "type": "bidirectional",
+      "role": "gpio",
+      "vmax": 3.63
+    },
+    "25": {
+      "name": "GP19",
+      "type": "bidirectional",
+      "role": "gpio",
+      "vmax": 3.63
+    },
+    "26": {
+      "name": "GP20",
+      "type": "bidirectional",
+      "role": "gpio",
+      "vmax": 3.63
+    },
+    "27": {
+      "name": "GP21",
+      "type": "bidirectional",
+      "role": "gpio",
+      "vmax": 3.63
+    },
+    "28": {
+      "name": "GND",
+      "type": "ground"
+    },
+    "29": {
+      "name": "GP22",
+      "type": "bidirectional",
+      "role": "gpio",
+      "vmax": 3.63
+    },
+    "30": {
+      "name": "RUN",
+      "type": "input",
+      "vmax": 3.63
+    },
+    "31": {
+      "name": "GP26_ADC0",
+      "type": "bidirectional",
+      "role": "gpio",
+      "vmax": 3.63
+    },
+    "32": {
+      "name": "GP27_ADC1",
+      "type": "bidirectional",
+      "role": "gpio",
+      "vmax": 3.63
+    },
+    "33": {
+      "name": "AGND",
+      "type": "ground"
+    },
+    "34": {
+      "name": "GP28_ADC2",
+      "type": "bidirectional",
+      "role": "gpio",
+      "vmax": 3.63
+    },
+    "35": {
+      "name": "ADC_VREF",
+      "type": "power_output",
+      "role": "adc_vref",
+      "vmax": 3.63
+    },
+    "36": {
+      "name": "3V3(OUT)",
+      "type": "power_output",
+      "role": "3v3"
+    },
+    "37": {
+      "name": "3V3_EN",
+      "type": "input",
+      "vmax": 3.63
+    },
+    "38": {
+      "name": "GND",
+      "type": "ground"
+    },
+    "39": {
+      "name": "VSYS",
+      "type": "power_in",
+      "role": "vsys",
+      "vmax": 5.5
+    },
+    "40": {
+      "name": "VBUS",
+      "type": "power_output",
+      "role": "vbus"
+    },
+    "41": {
+      "name": "SWDIO",
+      "type": "bidirectional",
+      "role": "gpio",
+      "vmax": 3.63
+    },
+    "42": {
+      "name": "GND",
+      "type": "ground"
+    },
+    "43": {
+      "name": "SWCLK",
+      "type": "bidirectional",
+      "role": "gpio",
+      "vmax": 3.63
+    },
+    "TP1": {
+      "name": "GND (USB)",
+      "type": "ground"
+    },
+    "TP2": {
+      "name": "USB DM",
+      "type": "bidirectional",
+      "vmax": 3.63
+    },
+    "TP3": {
+      "name": "USB DP",
+      "type": "bidirectional",
+      "vmax": 3.63
+    },
+    "TP4": {
+      "name": "GPIO23/SMPS PS",
+      "type": "bidirectional",
+      "role": "gpio",
+      "vmax": 3.63
+    },
+    "TP5": {
+      "name": "GPIO25/LED",
+      "type": "bidirectional",
+      "role": "gpio",
+      "vmax": 3.63
+    },
+    "TP6": {
+      "name": "BOOTSEL",
+      "type": "bidirectional",
+      "role": "gpio",
+      "vmax": 3.63
+    }
+  },
+  "params": {
+    "behavior": "mcu",
+    "regulator": "buck",
+    "v_io": 3.3,
+    "efficiency": 0.85,
+    "i_core_a": 0.03,
+    "gpio_r_out_ohm": 30
+  },
+  "ratings": {
+    "vsys_min": 1.8,
+    "vsys_max": 5.5,
+    "i_3v3_ext_max_a": 0.3,
+    "gpio_v_max": 3.63
+  },
+  "spice": {},
+  "sources": [
+    "pin names from the EasyEDA symbol",
+    "Raspberry Pi Pico 2 datasheet: VSYS 1.8-5.5 V, keep the external load on 3V3(OUT) below 300 mA",
+    "GPIO v_max 3.63 V (IOVDD + 10 %), deliberately conservative",
+    "core current 30 mA, regulator efficiency 85 %, GPIO output resistance 30 Ohm: assumptions"
+  ],
+  "verified": {
+    "by": "Claude (datasheet check, automated)",
+    "date": "2026-10-20",
+    "datasheet": "Raspberry Pi Pico 2 datasheet",
+    "checked": [
+      "VSYS 1.8-5.5 V",
+      "3V3 output: load < 300 mA recommended",
+      "3V3_EN pulled up to VSYS on the module (100 kOhm)"
+    ],
+    "open": []
+  },
+  "notes": "Behaviour model 'mcu' with the module's buck-boost regulator (VSYS -> 3V3)."
+}

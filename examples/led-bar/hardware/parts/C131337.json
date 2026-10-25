@@ -1,0 +1,71 @@
+{
+  "lcsc": "C131337",
+  "mpn": "B2B-PH-K-S(LF)(SN)",
+  "manufacturer": "JST",
+  "kind": "connector",
+  "package": "THT 1x2 P2.0 vertical",
+  "footprint": "CONN-TH_B2B-PH-K-S",
+  "jlc_class": "Extended Part",
+  "datasheet": {
+    "url": "https://item.szlcsc.com/datasheet/B2B-PH-K-S(LF)(SN)/142630.html",
+    "pinout_page": null,
+    "url_jst": "https://www.jst-mfg.com/product/pdf/eng/ePH.pdf"
+  },
+  "pins": {
+    "1": {
+      "name": "1",
+      "type": "passive",
+      "role": "pin1"
+    },
+    "2": {
+      "name": "2",
+      "type": "passive",
+      "role": "pin2"
+    }
+  },
+  "params": {
+    "r_contact_ohm": 0.01,
+    "pitch_mm": 2.0
+  },
+  "ratings": {
+    "i_max_a": 2.0,
+    "v_max": 100,
+    "t_min_c": -40,
+    "t_max_c": 105
+  },
+  "spice": {},
+  "sources": [
+    "EasyEDA library (easyeda_schematic_search_device): 2 A, 100 V, PA66 UL94V-0, height 6 mm",
+    "JST PH catalogue ePH.pdf: 2 A AC/DC (AWG 24), 100 V AC/DC, initial contact resistance <= 10 mOhm, AWG 32-24; B2B-PH-K-S = 2 positions, top entry, pitch 2.0 mm; mating housing PHR-2 with SPH-002T-P0.5S"
+  ],
+  "verified": {
+    "by": "Claude (datasheet check, automated)",
+    "date": "2026-10-20",
+    "datasheet": "JST PH connector catalogue (via JLCPCB/LCSC)",
+    "checked": [
+      "2 A at AWG 24, 100 V",
+      "initial contact resistance <= 10 mOhm",
+      "-25...+85 °C including self-heating"
+    ],
+    "open": [],
+    "second_check": {
+      "by": "independent review agent (electrical-reviewer)",
+      "date": "2026-10-22",
+      "datasheet": "JST PH TSSC017.01 p. 2",
+      "checked": [
+        "pad 1 = circuit no. 1"
+      ]
+    }
+  },
+  "lead": {
+    "*": {
+      "shape": "square",
+      "a_mm": 0.5,
+      "b_mm": 0.5,
+      "tol_mm": null,
+      "hole_rec_mm": 0.7,
+      "source": "JST PH catalogue TSSC017.01 p. 2: header pin '□0.5', p. 1 hole pattern top entry 'ø0.7 +0.1/0'"
+    }
+  },
+  "notes": "Power input: 5 V from a USB power supply through a two-wire cable (JST PH)."
+}

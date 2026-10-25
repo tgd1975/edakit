@@ -1,0 +1,164 @@
+"""edakit command line. Every command reads the project's edakit.toml (see handbook/10-reference.md).
+
+    edakit check                     stages P/G: rule checks on the graph (offline, < 1 s)
+    edakit sim                       stage E: ngspice operating points of all scenarios (offline, seconds)
+    edakit schematic create|check|copy|layout
+    edakit pcb dump|plan|parts|nets|apply|tooling|pour
+    edakit route all|read|dsn|route|check|apply|verify|pours|reload|drc
+    edakit silk apply|check
+    edakit export                    PDFs, Gerber, BOM, CPL, netlist and a project copy to <artifacts>/export
+    edakit gate [--easyeda]          release gate with test protocol and manufacturing files
+    edakit fab --board B --out DIR   stages L/F for one board (the gate calls it)
+    edakit lock [status|claim|release|yield CHAT]   share EasyEDA between parallel Claude sessions
+    edakit doctor                    Node, easyeda-mcp-pro, bridge, EasyEDA process, ngspice, Freerouting
+
+Exit codes everywhere: 0 = ok, 2 = findings, 1 = error.
+"""
+
+from __future__ import annotations
+
+import argparse
+import sys
+
+
+def _common(p):
+    p.add_argument("--config", help="path to edakit.toml (default: search upwards from the current directory)")
+    p.add_argument("-v", "--verbose", action="store_true", help="show the MCP traffic")
+
+
+def build_parser():
+    ap = argparse.ArgumentParser(prog="edakit", description=__doc__, formatter_class=argparse.RawDescriptionHelpFormatter)
+    sub = ap.add_subparsers(dest="command", required=True)
+
+    p = sub.add_parser("check", help="rule checks on the graph (stages P, G)")
+    p.add_argument("--release", action="store_true", help="also fail on open sign-offs")
+    p.add_argument("--json", help="write the findings as JSON")
+    _common(p)
+
+    p = sub.add_parser("sim", help="simulation (stage E)")
+    p.add_argument("--json", help="write every single check as JSON")
+    p.add_argument("--keep", help="keep netlists and ngspice output in this directory")
+    _common(p)
+
+    p = sub.add_parser("schematic", help="generate, check, copy or lay out a schematic in EasyEDA")
+    p.add_argument("action", choices=["create", "check", "copy", "layout"])
+    p.add_argument("--board")
+    p.add_argument("--schematic", help="schematic name (default: template for create/check, layout for layout)")
+    p.add_argument("--source", help="copy: source schematic (default: the template)")
+    p.add_argument("--target", help="copy: target schematic (default: the board schematic)")
+    p.add_argument("--only", help="create: only these designators, comma-separated")
+    p.add_argument("--dry-run", action="store_true", help="plan only (create: placement, layout: SVG preview)")
+    p.add_argument("--reread", action="store_true", help="layout: read the symbol geometry again")
+    p.add_argument("--force", action="store_true", help="layout: write despite geometry conflicts")
+    p.add_argument("--no-pins", action="store_true", help="check: skip the per-part pin check")
+    p.add_argument("--refresh-devices", action="store_true", help="create: search every LCSC number again")
+    p.add_argument("--create-project", action="store_true", help="create the EasyEDA project if it is not open")
+    p.add_argument("--save", action="store_true", help="save the project at the end")
+    p.add_argument("--json", help="check: write the differences as JSON")
+    p.add_argument("--wait", type=int, default=90, help="seconds to wait for the bridge")
+    _common(p)
+
+    p = sub.add_parser("pcb", help="placement plan, parts and nets sync, fixed parts, tooling holes, pours")
+    p.add_argument("action", choices=["dump", "plan", "parts", "nets", "apply", "tooling", "pour", "autolayout"])
+    p.add_argument("--board")
+    p.add_argument("--write", action="store_true", help="parts/nets: change the PCB (default: show only)")
+    p.add_argument("--ref", help="dump: only these designators, comma-separated")
+    p.add_argument("--verify-all", action="store_true", help="apply: compare the pads of every part with the plan")
+    _common(p)
+
+    p = sub.add_parser("route", help="route with Freerouting and write the result into EasyEDA")
+    p.add_argument("action", choices=["all", "read", "dsn", "route", "check", "apply", "verify", "pours", "reload",
+                                      "drc", "save"])
+    p.add_argument("--board")
+    p.add_argument("--passes", type=int, help="maximum Freerouting passes")
+    p.add_argument("--threads", type=int, default=4)
+    p.add_argument("--clearance", type=float, help="copper-to-copper clearance in mil")
+    p.add_argument("--no-optimizer", action="store_true", help="route only, skip Freerouting's optimiser")
+    p.add_argument("--cleanup", action="store_true", help="verify: delete tracks and vias that are not planned")
+    _common(p)
+
+    p = sub.add_parser("silk", help="designators where there is room, silkscreen check on the Gerber export")
+    p.add_argument("action", choices=["apply", "check"])
+    p.add_argument("--board")
+    _common(p)
+
+    p = sub.add_parser("export", help="documentation and manufacturing files from EasyEDA")
+    p.add_argument("--board")
+    _common(p)
+
+    p = sub.add_parser("gate", help="release gate: all stages, test protocol, manufacturing files")
+    p.add_argument("--easyeda", action="store_true", help="also run S, L and F (EasyEDA with the bridge)")
+    _common(p)
+
+    p = sub.add_parser("fab", help="stages L and F for one board")
+    p.add_argument("--board")
+    p.add_argument("--out", required=True, help="report folder; files go to OUT/<board>/")
+    p.add_argument("--offline", action="store_true", help="only check what is already in OUT/<board>/")
+    _common(p)
+
+    p = sub.add_parser("lock", help="EasyEDA claim between parallel Claude sessions")
+    p.add_argument("action", nargs="?", default="status", choices=["status", "claim", "release", "yield", "hook"])
+    p.add_argument("chat", nargs="?", help="yield: the session id (prefix) of the chat to let in")
+    p.add_argument("--note")
+    p.add_argument("--auto", action="store_true", help="claim from a script (logged as automatic)")
+    _common(p)
+
+    p = sub.add_parser("doctor", help="check the tool chain")
+    _common(p)
+    return ap
+
+
+def main(argv=None):
+    args = build_parser().parse_args(argv)
+    sys.stdout.reconfigure(line_buffering=True)  # progress shows up at once, also when piped
+    if args.command == "lock":
+        from . import lock
+        return lock.main(args)
+    from . import config
+    try:
+        cfg = config.load(args.config)
+    except config.ConfigError as e:
+        if args.command == "doctor":
+            cfg = None
+        else:
+            print(f"edakit: {e}", file=sys.stderr)
+            return 1
+    if args.command == "check":
+        from . import checks
+        return checks.main(cfg, args)
+    if args.command == "sim":
+        from .sim import run
+        try:
+            return run.main(cfg, args)
+        except run.SimError as e:
+            print(f"edakit sim: {e}", file=sys.stderr)
+            return 1
+    if args.command == "schematic":
+        from . import schematic
+        return schematic.main(cfg, args)
+    if args.command == "pcb":
+        from . import pcb
+        return pcb.main(cfg, args)
+    if args.command == "route":
+        from . import route
+        return route.main(cfg, args)
+    if args.command == "silk":
+        from . import silk
+        return silk.main(cfg, args)
+    if args.command == "export":
+        from . import export
+        return export.main(cfg, args)
+    if args.command == "gate":
+        from .release import gate
+        return gate.main(cfg, args)
+    if args.command == "fab":
+        from .release import fab
+        return fab.main(cfg, args)
+    if args.command == "doctor":
+        from . import doctor
+        return doctor.main(cfg, args)
+    return 1
+
+
+if __name__ == "__main__":
+    sys.exit(main())

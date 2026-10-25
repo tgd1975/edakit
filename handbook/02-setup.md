@@ -1,0 +1,129 @@
+# 2 Setup
+
+Tested with EasyEDA Pro 3.2.206 on Linux (Ubuntu), easyeda-mcp-pro 1.4.0, Node 24, Python 3.11–3.14, ngspice 45,
+Freerouting 2.4.1, Claude Code 2.1.3xx. Windows and macOS should work for everything except the bundled Freerouting
+download (set `FREEROUTING_JAR`) – untested.
+
+## 2.1 What talks to what
+
+```text
+Claude Code ──stdio──► easyeda-mcp-pro ◄──WebSocket 127.0.0.1:49620──► bridge extension in EasyEDA Pro
+ (plugin manifest)     (edakit/easyeda/mcp-server.sh)                    (menu "MCP Bridge")
+edakit ──────stdio──► easyeda-mcp-pro (its own instance, the same bridge connection)
+```
+
+EasyEDA Pro has no command line and no HTTP API. It can be automated only through its **extension API**, which
+exists inside the running editor. [easyeda-mcp-pro](https://github.com/oaslananka/easyeda-mcp-pro) brings an
+extension that connects to a local MCP server; the server exposes 115 tools plus a controlled generic call into the
+extension API. edakit uses the same server.
+
+## 2.2 Install
+
+1. **EasyEDA Pro** (desktop, not the web version): from easyeda.com. Create or open your project once.
+2. **Node 24** (easyeda-mcp-pro 1.4.0 requires it): `nvm install 24`. The launcher sources nvm itself when started
+   from a desktop client without it in PATH.
+3. **uv** (runs edakit with its dependencies): <https://docs.astral.sh/uv/>.
+4. **ngspice** (stage E): `sudo apt install ngspice` (or your package manager).
+5. **Freerouting**: nothing to do on Linux x64 – `edakit route` downloads the pinned release (with its own Java)
+   to `~/.local/share/freerouting/` and checks its SHA-256. Elsewhere: download `freerouting-2.4.1.jar`, install
+   Java 21+, set `FREEROUTING_JAR`. (Java 17 is too old for Freerouting 2.x.)
+
+## 2.3 Claude Code: the plugin
+
+```text
+/plugin marketplace add tgd1975/easyEDAAutomation
+/plugin install edakit@easyeda-automation
+```
+
+This installs the skills (`/edakit:start`, `/edakit:hardware-change`, …), the agents, the MCP server `easyeda`
+(tools `mcp__plugin_edakit_easyeda__*`), the EasyEDA claim hook and the command `edakit` on the Bash PATH. Confirm
+the MCP server when Claude Code asks (or `/mcp` → easyeda).
+
+To give every session in a project the plugin automatically, put this into the project's `.claude/settings.json`:
+
+```json
+{
+  "extraKnownMarketplaces": {
+    "easyeda-automation": { "source": { "source": "github", "repo": "tgd1975/easyEDAAutomation" } }
+  },
+  "enabledPlugins": { "edakit@easyeda-automation": true }
+}
+```
+
+Without Claude Code (CI, a terminal): `uvx --from git+https://github.com/tgd1975/easyEDAAutomation edakit <command>`,
+or from a clone `uv run --project /path/to/easyEDAAutomation edakit <command>`.
+
+## 2.4 The MCP server
+
+`edakit/easyeda/mcp-server.sh` installs easyeda-mcp-pro **pinned** to 1.4.0 into
+`~/.easyeda-mcp-pro/runtime/1.4.0` (once) and starts `node` directly, with safe defaults:
+
+| Setting | Value | Why |
+|---|---|---|
+| `TOOL_PROFILE` | `full` | schematic/PCB write tools and `easyeda_api_call` (writes need `confirmWrite: true`) |
+| `JLCPCB_MODE`, `JLCPCB_ENABLE_ORDERING` | `disabled`, `false` | nothing can be ordered from Claude – orders are placed by a human |
+| `BRIDGE_RAW_EXEC_ENABLED` | `false` | no arbitrary JavaScript in the editor |
+| `ARTIFACT_DIR` | `$PWD/build/easyeda-mcp` | exports land in the project, not in the home directory |
+| `BRIDGE_TIMEOUT_MS` | `120000` | DRC and pour fills of a large board take longer than the default 15 s |
+
+**Pinned, not npx:** the tool set and the extension must match, and npx does not pass SIGTERM on – an orphaned server
+then blocks the bridge port. Update deliberately: raise `EASYEDA_MCP_VERSION`, rebuild the patched extension (2.5),
+re-import it, restart EasyEDA.
+
+The bridge listens on 127.0.0.1 only. The only online calls are read-only part lookups (LCSC product data, JLCPCB's
+public assembly catalogue) – only part numbers leave the machine.
+
+## 2.5 The bridge extension, patched
+
+The original extension cuts every API answer after 5 levels – DRC details are then unreadable – and cannot export a
+schematic as PDF. Build the patched one:
+
+```bash
+bash <plugin or clone>/edakit/easyeda/bridge-extension-patch.sh      # -> ./easyeda-bridge-extension.eext
+```
+
+The script takes the extension from the pinned server, raises the depth to 12, adds the schematic PDF path, checks the
+bundle still parses, and renames it "MCP Pro Bridge (depth 12, schematic PDF)". If the extension changed upstream it
+stops instead of patching blindly.
+
+Import in EasyEDA: *Settings → Extensions → Extension Manager → Import*. It asks for the permission "External
+Interactions" itself. Then the menu **MCP Bridge** appears; choose **Enable Auto-Connect**.
+
+Re-importing (update, other depth): EasyEDA does not take an import over an installed copy with the same UUID and
+version. **Uninstall the old one, import, restart EasyEDA**; until the restart the old copy keeps running. After that
+restart the menu sometimes is missing, but Auto-Connect stays on and connects. Check: `DMT_Project.getCurrentProjectInfo`
+shows the pages written out instead of `[MaxDepth]`.
+
+## 2.6 EasyEDA without background throttling
+
+Chromium throttles timers of covered windows, and EasyEDA computes DRC, pour fills and exports in many small timer
+steps. With VS Code covering EasyEDA, the DRC of a 120-part board took longer than 120 s and failed; unthrottled it
+takes 1–4 s. Make the desktop launcher start it unthrottled (Linux):
+
+```bash
+sed 's|^Exec=.*|Exec=/opt/apps/easyeda-pro/easyeda-pro %f --no-sandbox --gtk-version=3 --disable-background-timer-throttling --disable-renderer-backgrounding --disable-backgrounding-occluded-windows|' \
+  /usr/share/applications/easyeda-pro.desktop > ~/.local/share/applications/easyeda-pro.desktop
+```
+
+From a shell inside VS Code or Claude Code start it only with `env -u ELECTRON_RUN_AS_NODE setsid /opt/apps/easyeda-pro/
+easyeda-pro --no-sandbox --gtk-version=3 --disable-background-timer-throttling --disable-renderer-backgrounding
+--disable-backgrounding-occluded-windows` – VS Code's shells carry `ELECTRON_RUN_AS_NODE`, and EasyEDA then behaves like
+Node. Check: `edakit doctor` ("EasyEDA unthrottled").
+
+## 2.7 A project
+
+```bash
+cd my-project
+/edakit:new-project my-board          # in Claude Code – or copy examples/led-bar/ and adapt
+edakit doctor                         # tool chain ready?
+edakit check && edakit sim            # offline, seconds
+```
+
+Then open the EasyEDA project once (edakit remembers its UUID and reopens it after an EasyEDA restart) and follow
+chapters 6–8. Daily: start EasyEDA → open the project → work.
+
+## 2.8 Licences of the parts you combine
+
+edakit itself is in this repository. It uses, without bundling them: **easyeda-mcp-pro** (PolyForm Noncommercial
+1.0.0 – fine for private projects; check its licence before commercial use), **EasyEDA Pro** (proprietary, free),
+**Freerouting** (GPL-3.0, downloaded at first use), **ngspice** (BSD).
