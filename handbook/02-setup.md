@@ -124,6 +124,6 @@ chapters 6–8. Daily: start EasyEDA → open the project → work.
 
 ## 2.8 Licences of the parts you combine
 
-edakit itself is in this repository. It uses, without bundling them: **easyeda-mcp-pro** (PolyForm Noncommercial
+edakit itself is MIT licensed ([LICENSE](../LICENSE)). It uses, without bundling them: **easyeda-mcp-pro** (PolyForm Noncommercial
 1.0.0 – fine for private projects; check its licence before commercial use), **EasyEDA Pro** (proprietary, free),
 **Freerouting** (GPL-3.0, downloaded at first use), **ngspice** (BSD).

@@ -23,10 +23,9 @@ why – including the ~25 EasyEDA API behaviours that cost us time.
 In Claude Code:
 
 ```text
-/plugin install edakit --marketplace tgd1975/easyEDAAutomation
+/plugin marketplace add tgd1975/easyEDAAutomation
+/plugin install edakit@easyeda-automation
 ```
-
-(or `/plugin marketplace add tgd1975/easyEDAAutomation` and `/plugin install edakit@easyeda-automation`).
 
 Needed besides: EasyEDA Pro desktop, Node 24, [uv](https://docs.astral.sh/uv/), ngspice. Freerouting downloads itself
 on Linux x64. Then build and import the patched bridge extension once and start EasyEDA unthrottled –
@@ -79,3 +78,7 @@ graph, parts, simulation scenarios, placement plan and sign-off file. `edakit ch
 - Used components and their licences: [easyeda-mcp-pro](https://github.com/oaslananka/easyeda-mcp-pro) (PolyForm
   Noncommercial 1.0.0 – check before commercial use), EasyEDA Pro (proprietary), Freerouting (GPL-3.0), ngspice (BSD).
   None of them is bundled.
+
+## Licence
+
+MIT – see [LICENSE](LICENSE).

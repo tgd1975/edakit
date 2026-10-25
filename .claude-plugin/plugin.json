@@ -8,6 +8,7 @@
   },
   "homepage": "https://github.com/tgd1975/easyEDAAutomation",
   "repository": "https://github.com/tgd1975/easyEDAAutomation",
+  "license": "MIT",
   "keywords": [
     "easyeda",
     "pcb",

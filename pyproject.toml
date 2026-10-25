@@ -3,6 +3,8 @@ name = "edakit"
 version = "0.1.0"
 description = "Hardware graph to manufactured PCB with EasyEDA Pro, the easyeda-mcp-pro bridge, Freerouting and JLCPCB"
 readme = "README.md"
+license = "MIT"
+license-files = ["LICENSE"]
 requires-python = ">=3.11"
 dependencies = [
     "matplotlib>=3.8",
