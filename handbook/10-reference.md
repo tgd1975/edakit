@@ -27,6 +27,7 @@ are relative to the file. Complete example: [the Christmas bell's edakit.toml](h
 | `template` | `generated_<name>` | schematic generated from the graph |
 | `schematic` | `layout_<name>` | board schematic (the PCB is linked to it) |
 | `pcb` | `<name>` | PCB document in EasyEDA |
+| `revision` | – | board revision, printed with the title (`silk.board_label`); without it no board label |
 | `view` | `top` | side the plan is drawn from; `bottom` mirrors x and rotations |
 | `edge_ok` | `[]` | parts that may touch or overhang the outline |
 | `near_mm` | `6` | maximum gap for `near` |
@@ -38,7 +39,7 @@ are relative to the file. Complete example: [the Christmas bell's edakit.toml](h
 | `near` | `{}` | `PART = "HOST"` or a list |
 | `routing` | see below | Freerouting rules |
 | `[[pours]]` | GND on both layers | `net`, `layers`, `plane` (bool), `stitch` (layer), `priority`, `line_mil` |
-| `silk` | `{}` | `designators` (side), `hide` (sides), `label_h_mm` (1.0), `gap_mm` (0.25), `groups` {label: [refs]}, `priority` (["TP"]) |
+| `silk` | `{}` | `designators` (side), `hide` (sides), `label_h_mm` (1.0), `gap_mm` (0.25), `groups` {label: [refs]}, `priority` (["TP"]), `board_label` (`"{title} rev {revision}"`; also `{project}`, `{board}`; `""` = none), `board_label_corner` (`bottom-left`, seen from the printed side), `board_label_h_mm` (1.2) |
 | `[[loops]]` | `[]` | `a`, `b` (pads "D1.2"), `max_mm`, `what` – check L-11 |
 
 `[boards.<name>.routing]`: `clearance_mil` (6.5), `signal_mil` (10), `via` ([24, 12]), `edge_clearance_um` (400),

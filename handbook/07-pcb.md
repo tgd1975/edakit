@@ -182,6 +182,12 @@ left, then vertical, then at the corners; not on pads, footprint print, parts or
 last resort; test points first), then exports again and checks that no own silkscreen lies on a solder-mask opening
 (JLCPCB cuts it off there) – target 0 mm² – and runs the DRC. Pictures per side in `<artifacts>/silk_<board>_<side>.png`.
 
+It also prints the **board label** – title and revision, `"{title} rev {revision}"` by default – at the free spot
+nearest to the bottom-left corner of the printed side (`board_label_corner`), clear of pads, parts, labels, vias and the
+keep-outs of mounting and tooling holes. The revision comes from `[boards.<b>] revision`; without it there is no label.
+edakit remembers the texts it created (`<artifacts>/silk_strings_<board>.json`) and replaces them on the next run, so
+a board never carries two revisions.
+
 Good to know:
 
 - Minimum text height at JLCPCB: 1.0 mm; stroke ≥ 0.15 mm (a regular 1.5-mm font had 0.12 mm – use bold).

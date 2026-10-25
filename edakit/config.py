@@ -48,6 +48,7 @@ class Board:
     template: str               # schematic generated from the graph and replaced on every run
     schematic: str              # readable, board-linked schematic (the PCB hangs on it)
     pcb: str                    # PCB document name in EasyEDA
+    revision: str | None = None  # board revision, printed with the title (silk board_label)
     view: str = "top"           # the plan is drawn looking at this side; "bottom" mirrors x
     outline: list = field(default_factory=list)       # polygon in mm (plan coordinates)
     holes: list = field(default_factory=list)         # [{"x", "y", "d", "keep"}] non-plated mounting holes
@@ -185,6 +186,7 @@ def _board(name, b):
         template=b.get("template", f"generated_{name}"),
         schematic=b.get("schematic", f"layout_{name}"),
         pcb=b.get("pcb", name),
+        revision=str(b["revision"]) if b.get("revision") is not None else None,
         view=view,
         outline=_outline(b.get("outline"), name),
         holes=[{"x": float(h["x"]), "y": float(h["y"]), "d": float(h.get("d", 3.2)),

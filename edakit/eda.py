@@ -449,8 +449,14 @@ def ensure_board(mcp, board):
 PCB = {}  # name and uuid of the PCB this command works on
 
 
-def open_pcb(mcp, name):
-    pcbs = {p["name"]: p["uuid"] for p in api(mcp, "DMT_Pcb.getAllPcbsInfo") or []}
+def open_pcb(mcp, name, wait_s=30):
+    """Right after openProject, getAllPcbsInfo is empty for a few seconds – wait for the documents to appear."""
+    pcbs = {}
+    for _ in range(max(int(wait_s / 2), 1)):
+        pcbs = {p["name"]: p["uuid"] for p in api(mcp, "DMT_Pcb.getAllPcbsInfo") or []}
+        if pcbs:
+            break
+        time.sleep(2)
     if name not in pcbs:
         raise MCPError(f"PCB '{name}' is not in the project (there are: {', '.join(pcbs) or '–'})")
     PCB.update(name=name, uuid=pcbs[name])

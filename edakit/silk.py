@@ -9,6 +9,11 @@ vertical, then at the corners) – not on pads, footprint silkscreen, other part
 tightest parts come first. A spot on a via (tented, the print holds) only when nothing else is free. Groups
 ([boards.<b>.silk] groups = {"R1-R8" = [...]}) get one common label when the single labels do not fit.
 
+Board label: the board's title and revision ([boards.<b>] revision; [boards.<b>.silk] board_label, default
+"{title} rev {revision}", also {project} and {board}) in the free spot nearest to a corner (board_label_corner, default
+"bottom-left" as seen from the printed side), not on pads, parts, labels, vias or the keep-outs of holes. edakit
+remembers the strings it created and replaces them on the next run, so an old revision never stays on the board.
+
 Run it again after every auto-layout and routing: the spots depend on where the small parts and vias ended up.
 API notes: designators are attributes (PCB_PrimitiveAttribute, key 'Designator'); modify works on locked parts too;
 alignMode 5 = centre on x/y. Stroke font 'default': measured 0.5-0.6 x height per character.
@@ -16,6 +21,7 @@ alignMode 5 = centre on x/y. Stroke font 'default': measured 0.5-0.6 x height pe
 
 from __future__ import annotations
 
+import json
 from pathlib import Path
 
 from shapely.geometry import Point, Polygon, box
@@ -112,6 +118,27 @@ def place_labels(parts, blocked, vias, area, h, gap, groups=None, priority=("TP"
     return placed, grouped, missing
 
 
+def board_label_text(cfg, board):
+    template = board.silk.get("board_label", "{title} rev {revision}")
+    if not template or ("{revision}" in template and board.revision is None):
+        return None
+    return template.format(project=cfg.project, title=board.title, board=board.name, revision=board.revision)
+
+
+def corner_spot(area, obstacles, w, h, corner="bottom-left", step=0.5):
+    """Centre of a free w x h box nearest to a corner of `area` (inside it, clear of `obstacles`), or None."""
+    x0, y0, x1, y1 = area.bounds
+    cx = x1 if "right" in corner else x0
+    cy = y1 if "top" in corner else y0
+    nx, ny = int((x1 - x0 - w) / step) + 1, int((y1 - y0 - h) / step) + 1
+    cands = [(x0 + w / 2 + i * step, y0 + h / 2 + j * step) for i in range(max(nx, 0)) for j in range(max(ny, 0))]
+    for x, y in sorted(cands, key=lambda p: (p[0] - cx) ** 2 + (p[1] - cy) ** 2):
+        b = label_box(x, y, 0, w, h)
+        if area.contains(b) and not b.intersects(obstacles):
+            return x, y
+    return None
+
+
 def export_gerber(cfg, board, mcp):
     out = cfg.artifact(f"gerber_{board.name}", ".keep").parent
     res = mcp.call("easyeda_export_gerbers", projectId="current", drillFormat="millimeter",
@@ -176,6 +203,12 @@ def apply(cfg, board, mcp):
     layer = SIDE[side]
     hide = {SIDE[x] for x in s.get("hide", [])} | {layer}  # the placed side is hidden first, then shown at its spot
     ensure_pcb_focus(mcp)
+    memo = cfg.artifact(f"silk_strings_{board.name}.json")
+    if memo.exists():  # group and board labels of the last run
+        old = [p for p in json.loads(memo.read_text()) if p]
+        existing = {eda.state(t).get("PrimitiveId") for t in api(mcp, "PCB_PrimitiveString.getAll") or []}
+        if [p for p in old if p in existing]:
+            api(mcp, "PCB_PrimitiveString.delete", [p for p in old if p in existing])
     comps = {c["PrimitiveId"]: c for c in map(eda.state, api(mcp, "PCB_PrimitiveComponent.getAll") or [])}
     attrs = {}
     for a in map(eda.state, api(mcp, "PCB_PrimitiveAttribute.getAll") or []):
@@ -200,6 +233,12 @@ def apply(cfg, board, mcp):
     area = board_shape(board).buffer(-0.5)
     placed, grouped, missing = place_labels(parts, blocked, vias, area, h, gap, s.get("groups"),
                                             tuple(s.get("priority", ["TP"])))
+    created = []
+
+    def string(text, x, y, rot, size):
+        res = api(mcp, "PCB_PrimitiveString.create", layer + 2, to_mil(x), to_mil(y), text, "default", to_mil(size), 6,
+                  5, rot, False, 0, False, False)  # EasyEDA mirrors texts on the bottom by itself
+        created.append(eda.state(res).get("PrimitiveId") if isinstance(res, dict) else res)
     for n, (name, (x, y, rot)) in enumerate(placed.items()):
         if n % 20 == 0:
             ensure_pcb_focus(mcp)
@@ -208,8 +247,26 @@ def apply(cfg, board, mcp):
                 {"x": to_mil(x), "y": to_mil(y), "rotation": rot, "alignMode": 5, "fontSize": to_mil(h), "lineWidth": 6,
                  "valueVisible": True})
         else:  # group label in the same stroke font
-            api(mcp, "PCB_PrimitiveString.create", layer + 2, to_mil(x), to_mil(y), name, "default", to_mil(h), 6, 5,
-                rot, False, 0, False, False)
+            string(name, x, y, rot, h)
+    text = board_label_text(cfg, board)
+    if text:
+        lh = float(s.get("board_label_h_mm", 1.2))
+        lw, _ = label_size(text, lh)
+        labels = [label_box(x, y, rot, *label_size(name, h)).buffer(0.3) for name, (x, y, rot) in placed.items()]
+        keeps = [Point(*board.eda_point(hl["x"], hl["y"])).buffer(hl["keep"]) for hl in board.holes]
+        keeps += [Point(*board.eda_point(x, y)).buffer(board.tooling_keep) for x, y in board.tooling]
+        corner = s.get("board_label_corner", "bottom-left")
+        if layer == BOTTOM:  # seen from the bottom, left and right swap
+            corner = corner.replace("left", "@").replace("right", "left").replace("@", "right")
+        spot = corner_spot(area, unary_union([blocked, vias, *labels, *keeps]), lw, lh, corner)
+        if spot:
+            string(text, *spot, 0, lh)
+            print(f"  board label '{text}' at ({spot[0]:.1f}, {spot[1]:.1f}) mm")
+        else:
+            print(f"  ! board label '{text}': no free spot")
+    elif board.revision is None:
+        print("  ! no board label: set [boards.<b>] revision")
+    memo.write_text(json.dumps(created))
     eda.save_pcb(mcp)
     print(f"  {side}: {sum(1 for n in placed if n in attrs)} of {len(parts)} designators placed"
           + (f", groups {', '.join(g for g in (s.get('groups') or {}) if g in placed)}" if grouped else "")

@@ -94,9 +94,9 @@ dead ends against the API, and loops that never ended. Each got a rule or a tool
 ## 13.6 The second project
 
 The first project after the extraction was much smaller: [the Christmas bell](https://github.com/tgd1975/automatic_christmas_bell), a carrier board for a
-plugged-in Arduino Nano with a servo, five LEDs and two buttons, taken over from a Fritzing drawing. From the Fritzing
-file to a checked, simulated graph took under an hour; from there to a routed board through the release gate about
-another hour, most of it spent on the things below. What it added to edakit:
+plugged-in Arduino Nano with a servo, five LEDs and two buttons, taken over from a Fritzing drawing. The circuit itself was quick: graph, parts and simulation took
+under an hour. Most of the time went into what the bell exposed in edakit, which had to be built before the board
+could go through:
 
 - **Off-board loads** in the simulation (`external`: the servo at its connector) and **fault cases** that do not block
   every commit (`"matrix": false`): a stalled servo draws more than the Nano's 500 mA polyfuse holds.

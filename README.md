@@ -55,16 +55,24 @@ In Claude Code the skills do the orchestration: `/edakit:new-project`, `/edakit:
 
 ## Example: the Christmas bell
 
-[automatic_christmas_bell](https://github.com/tgd1975/automatic_christmas_bell) – an Arduino Nano counts down on five LEDs, then a servo rings a real bell. It
-started as a Fritzing breadboard drawing and went through edakit to manufacturing files:
+[automatic_christmas_bell](https://github.com/tgd1975/automatic_christmas_bell) – an Arduino Nano counts down on five LEDs, then a servo rings a real bell. It is
+the second board built with edakit and started as a Fritzing breadboard drawing. It was not a push-button run:
 
-- Fritzing drawing → hardware graph, parts database, simulation scenarios (USB power, servo load, a stalled servo as
-  fault case) in under an hour; `edakit check` 0 errors, `edakit sim` 1112 checks.
-- Generated schematic = graph at the first attempt (17 parts, 15 nets, ERC clean); PCB 85 × 56 mm from a placement
-  plan, routed by Freerouting in 5 s (3 vias, DRC 0), silkscreen without findings.
-- The release gate passed every stage but one: the Nano footprint's 0.9 mm holes are too small for the usual 0.64 mm
-  header tails (L-9) – exactly the kind of finding that otherwise shows up when the headers do not go in.
-- Its decisions (`docs/decisions.md`) show the numbered-decision workflow, including two the simulation brought up.
+- **Gaps closed in edakit:** Taking the bell through EasyEDA showed gaps, and closing them is part of what edakit is
+  today ([handbook 13.6](handbook/13-lessons-learned.md)): pin names checked against the symbols, a new project's
+  default board, LEDs in a row pointing the same way, off-board loads and input levels in the simulation, and a guard
+  against writing into the wrong project.
+- **Manual steps:** Creating the EasyEDA project, one click on *Import Changes*, and the decisions.
+
+Where it stands:
+
+- **Offline:** `edakit check` 0 errors, `edakit sim` 1112 checks.
+- **Schematic:** equal to the graph (17 parts, 15 nets), ERC clean.
+- **PCB:** 85 × 56 mm from a placement plan, routed by Freerouting (3 vias), DRC 0, silkscreen without findings.
+- **Release gate:** Every stage passes except L-9. The Nano footprint's 0.9 mm holes are too small for the usual
+  0.64 mm header tails; that decision is still open. The sign-offs M-1 and M-5 are pending.
+- **Decisions:** `docs/decisions.md` shows the numbered-decision workflow, including two decisions the simulation
+  brought up.
 
 ## What is in here
 
