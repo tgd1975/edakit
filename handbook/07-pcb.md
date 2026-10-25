@@ -200,7 +200,8 @@ Good to know:
 
 - Minimum text height at JLCPCB: 1.0 mm; stroke ≥ 0.15 mm (a regular 1.5-mm font had 0.12 mm – use bold). All heights in
   edakit.toml (`label_h_mm`, `board_label_h_mm`, `h_mm` of texts) are **printed capital heights**: EasyEDA's font size
-  is the em height, and capitals print at about 0.71 of it – a size of 1.0 gave 0.71-mm letters. edakit converts.
+  is the em height, and capitals print at about 0.69 of it – a size of 1.0 gave 0.71-mm letters including the stroke. edakit converts
+  with 0.68 for some margin.
 - Mounting holes: the pour leaves the `keep` circle free (screw head, washer); EasyEDA alone keeps only 0.26 mm.
 - On the bottom silk layer EasyEDA mirrors texts by itself (`mirror = false`), but **not** graphics – mirror fills and
   lines yourself.

@@ -56,7 +56,7 @@ def board_shape(board):
     return Polygon([board.eda_point(*p) for p in board.outline]).difference(unary_union(holes))
 
 
-CAP_RATIO = 0.71  # EasyEDA's font size is the em height; capitals print at about 0.71 of it (measured on Gerber)
+CAP_RATIO = 0.68  # EasyEDA's font size is the em height; capitals print at 0.69 of it (measured on Gerber) – with margin
 
 
 def font_size(h):
