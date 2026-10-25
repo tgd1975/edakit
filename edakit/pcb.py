@@ -501,6 +501,12 @@ def schematic_parts(mcp, board):
     return sch_uuid, parts
 
 
+def bom_differs(sch_part, pcb_part):
+    """'Add into BOM' of schematic and PCB part differ – the import dialog lists that as a change."""
+    a, b = sch_part.get("AddIntoBom"), pcb_part.get("AddIntoBom")
+    return a is not None and b is not None and bool(a) != bool(b)
+
+
 def sync_parts(cfg, board, mcp, write=False):
     """PCB parts = parts of the board schematic, without the "Import Changes" dialog (importChanges(uuid, true) opens
     it anyway). Schematic and PCB part are linked through the same UniqueId (ggeN). Missing parts are created (device
@@ -528,9 +534,9 @@ def sync_parts(cfg, board, mcp, write=False):
                        or sch[r].get("UniqueId") != pcb[r].get("UniqueId"))), key=natural_key)
     # The DRC compares the properties like the dialog does ("Netlist Error – Import Changes"): a part created through
     # the API carried the Description from the library instead of the one from the schematic
-    props = sorted((r for r in set(sch) & set(pcb) if same(r) and any(
-        (pcb[r].get("OtherProperty") or {}).get(k) != v for k, v in (sch[r].get("OtherProperty") or {}).items())),
-        key=natural_key)
+    props = sorted((r for r in set(sch) & set(pcb) if same(r) and (any(
+        (pcb[r].get("OtherProperty") or {}).get(k) != v for k, v in (sch[r].get("OtherProperty") or {}).items())
+        or bom_differs(sch[r], pcb[r]))), key=natural_key)
     for title, refs in (("missing in the PCB", missing), ("not in the schematic", extra),
                         ("swapped (LCSC/footprint)", swapped), ("not linked (UniqueId)", unlinked),
                         ("properties differ from the schematic", props)):
@@ -558,7 +564,9 @@ def sync_parts(cfg, board, mcp, write=False):
         uid = st.get("UniqueId") or old.get("UniqueId") or f"gge{fresh(used_uid)}"
         if st.get("UniqueId") != uid:
             sch_uid[st["PrimitiveId"]] = uid
-        channel = (old.get("OtherProperty") or {}).get("Channel ID") or f"$1I{fresh(used_ch)}"
+        # the schematic's Channel ID wins: the import dialog compares it (a swap once kept the old PCB one)
+        channel = ((st.get("OtherProperty") or {}).get("Channel ID") or (old.get("OtherProperty") or {}).get("Channel ID")
+                   or f"$1I{fresh(used_ch)}")
         ensure_pcb_focus(mcp)
         if old:
             api(mcp, "PCB_PrimitiveComponent.delete", [old["PrimitiveId"]])  # its tracks stay
@@ -573,6 +581,8 @@ def sync_parts(cfg, board, mcp, write=False):
         # otherProperty replaces ALL properties – so pass the complete set
         api(mcp, "PCB_PrimitiveComponent.modify", new["PrimitiveId"],
             {"designator": ref, "uniqueId": uid, "otherProperty": other})
+        if st.get("AddIntoBom") is not None:  # hand-soldered parts: not in the BOM, as in the schematic
+            api(mcp, "PCB_PrimitiveComponent.modify", new["PrimitiveId"], {"addIntoBom": bool(st["AddIntoBom"])})
         created.append(ref)
         print(f"  created: {ref} ({st.get('SupplierId')}, {uid}, {channel})")
     for ref in unlinked:
@@ -587,6 +597,9 @@ def sync_parts(cfg, board, mcp, write=False):
         ensure_pcb_focus(mcp)
         api(mcp, "PCB_PrimitiveComponent.modify", pcb[ref]["PrimitiveId"],
             {"otherProperty": {**(pcb[ref].get("OtherProperty") or {}), **(sch[ref].get("OtherProperty") or {})}})
+        if bom_differs(sch[ref], pcb[ref]):
+            api(mcp, "PCB_PrimitiveComponent.modify", pcb[ref]["PrimitiveId"],
+                {"addIntoBom": bool(sch[ref]["AddIntoBom"])})
         print(f"  properties from the schematic: {ref}")
     if sch_uid:
         for page in {sch[r]["_page"] for r in sch if sch[r]["PrimitiveId"] in sch_uid}:
