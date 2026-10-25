@@ -1,7 +1,6 @@
 {
   "name": "edakit",
   "displayName": "edakit – EasyEDA Pro from a hardware graph",
-  "version": "0.1.0",
   "description": "From a JSON hardware graph to a released, manufacturable PCB with EasyEDA Pro: skills and agents for the workflow, the pinned easyeda-mcp-pro server, a hook that lets parallel sessions share EasyEDA, and the edakit command line (checks, ngspice simulation, schematic and PCB generation, Freerouting, release gate).",
   "author": {
     "name": "tgd1975"
