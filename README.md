@@ -56,6 +56,7 @@ edakit check                    # rule checks on the graph (P, G) – < 1 s, fai
 edakit hints                    # design hints for the parts in the graph (bulk capacitor, debouncing, ESD …)
 edakit rules G-11               # what a check is about, why, what to do, sources
 edakit sim                      # ngspice: every supply x load x tolerance corner (E) – seconds
+edakit schematic draw           # the schematic as SVG from graph and parts – no EasyEDA (enough without a PCB)
 edakit schematic create --save  # template schematic from the graph
 edakit schematic layout --save  # readable board schematic: blocks, wires, GPIO table
 edakit pcb parts --write        # parts into the PCB, no "Import Changes" dialog

@@ -91,6 +91,7 @@ Code: `edakit … 2>&1 | cat`.
 | `edakit schematic check [--schematic] [--no-pins] [--json F]` | ✓ read | graph, schematic | – |
 | `edakit schematic copy [--source] [--target] [--save]` | ✓ | schematic | copy |
 | `edakit schematic layout [--dry-run] [--reread] [--force] [--save]` | ✓ / – | graph, schematic, cached geometry | board schematic, `layout_preview_<name>.svg` |
+| `edakit schematic draw [--board] [--out F] [--force]` | – | graph, parts, `[schematic.layout]` if there | `schematic_<board>.svg` (or F) |
 | `edakit pcb dump [--ref]` | ✓ | PCB | `pcb_geometry_<board>.json` (parts end at 0°/TOP) |
 | `edakit pcb plan` | – | plan, geometry, net currents | `pcb_plan_<board>.png/.json`, `pcb_netclasses_<board>.json` |
 | `edakit pcb parts [--write]` | ✓ | board schematic, PCB, graph | PCB parts, UniqueIds, geometry |

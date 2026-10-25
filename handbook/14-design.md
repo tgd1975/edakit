@@ -138,7 +138,8 @@ voltage range – and `gnd` joins the project's ground. Missing parts entries ar
 existing entry must have the same pins. The graph file keeps its indentation. The block's notes say what is left to
 decide: the LED current, the entries in sim.json, the connector in `[checks] reverse_protect`.
 
-Every block passes `edakit check` and `edakit sim` once it is in the example project – a test makes sure of that. That
+Every block passes `edakit check` and `edakit sim` and is drawn by `edakit schematic draw` once it is in the example
+project – a test makes sure of that. That
 makes a block a good start, not a sign-off: values, ratings and the review are still the project's. A project's own
 blocks are JSON files of the same form, added with `--file`.
 
@@ -147,5 +148,6 @@ blocks are JSON files of the same form, added with `--file`.
 CircuitSmith, a sibling project that draws schematics from declarative YAML and checks them against an ERC rule
 catalog, brought in: the catalog with reason and source for every rule; the designer as an "electronics engineer" bound
 to the parts library and to rules instead of memory, asking open questions in one batch; sub-blocks with ports; and the
-checks for I2C pull-ups, strapping pins, input-only pins and the MCU's current budget. What edakit did not take is its
-own business – the schematic renderer, the layout engine, the KiCad netlist – because EasyEDA does that here.
+checks for I2C pull-ups, strapping pins, input-only pins and the MCU's current budget. CircuitSmith's other goal, a
+schematic without an EDA tool, edakit reached with what it had: the layout it computes for EasyEDA, drawn with symbols
+from the parts database (6.5). Not taken: CircuitSmith's renderer and layout engine, and the KiCad netlist.

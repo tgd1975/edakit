@@ -10,6 +10,9 @@ Two schematics per board, both generated:
 The PCB hangs on the board schematic. Once it does, the board schematic cannot be replaced (the PCB would lose its
 schematic); `layout` then syncs the parts in place instead of copying.
 
+Without EasyEDA, `edakit schematic draw` draws the schematic as an SVG from the graph and the parts database alone
+(6.5) – for a project without a PCB, for the documentation, for a look at a design before EasyEDA is involved.
+
 ## 6.1 Generate the template
 
 ```bash
@@ -91,3 +94,45 @@ to its footprint. New parts reach the PCB with `edakit pcb parts --write` (chapt
 - The sheet frame (title block) may be missing; edakit creates it from the system library.
 
 Details: [chapter 9.3](09-easyeda-api.md#93-schematic).
+
+## 6.5 Drawn without EasyEDA
+
+```bash
+edakit schematic draw                          # <artifacts>/schematic_<board>.svg
+edakit schematic draw --out docs/schematic.svg
+```
+
+The graph and the parts database are enough – no EasyEDA, no bridge, about a second. The arrangement is the one of
+`layout` (6.3): blocks with titles and notes, placement by topology, real wires, flags, GPIO table. Only the symbols
+come from the parts database instead of EasyEDA's library:
+
+| kind | symbol |
+|---|---|
+| resistor, capacitor, inductor, fuse, diode, LED, buzzer, battery holder, button | two terminals; anode, plus or pin 1 on the left; `+` at a polarised capacitor |
+| switch, potentiometer | common or wiper between the two other pins |
+| npn, pnp, nmos, pmos | base or gate on the left, collector/drain and emitter/source up and down, with pin numbers |
+| ic, module | a box with the connected pins in the order of their numbers, down the left side and up the right one as on a DIP package |
+| connector, relay, RGB LED, DIP switch, anything else | a box with every pin (a connector in one column, a relay's coil on the left) |
+
+A parts entry can arrange its box itself – a module whose pin numbers do not run like a DIP package:
+`"symbol": {"left": ["1", …, "20"], "right": ["40", …, "21"], "bottom": ["41", "42", "43"]}` (left and right from top
+to bottom, top and bottom from left to right; connected pins not listed go to the right).
+
+**Without `[schematic.layout]`** the drawing arranges itself:
+
+- every IC, module, connector, relay and battery holder starts a block, the power inputs first; title: designator and
+  label, the block's note: the part's `notes`;
+- ground symbols for the ground and every net with a ground pin; supply flags for every supply net (a supply output or
+  an IC supply pin on it) and every net with ten or more pins – drawn as a wire, a rail behind a diode would gather
+  half the board into one block;
+- a capacitor between flagged nets sits at the IC or module that takes its supply in.
+
+`rows`, `power_flags`, `near` and `notes` in edakit.toml replace each of these.
+
+Before the file is written, the drawing is checked like a plan for EasyEDA – no wire touches another net or a foreign
+pin – and every connected pin must end in a wire or a flag of its own net; otherwise nothing is written (exit 2,
+`--force` writes anyway). The page is as big as the drawing plus the title block and to scale: one unit is 10 mil,
+designators are 1.8 mm high.
+
+A project without a PCB – a development board and hand wiring – never needs EasyEDA: checks, simulation and this
+drawing work from the graph alone. For a PCB, EasyEDA's board schematic stays the one that counts; the PCB hangs on it.

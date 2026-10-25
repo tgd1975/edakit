@@ -55,6 +55,7 @@ sources, supplies at their limits, loads with the MCU's outputs, inputs, LEDs on
 edakit check 2>&1 | cat     # 0 errors: fix the cause; waive only with a reason that holds
 edakit hints 2>&1 | cat     # each open hint: handle it, or write down why it does not apply
 edakit sim 2>&1 | cat       # every scenario passes
+edakit schematic draw 2>&1 | cat   # the circuit as a drawing (SVG) for the user to look at – no EasyEDA needed
 ```
 
 A hint that is taken care of gets a line in the graph: `"hints": {"H-1": "C1 1000 µF next to J1"}`.
@@ -62,9 +63,10 @@ A hint that is taken care of gets a line in the graph: `"hints": {"H-1": "C1 100
 ## 7. Hand over
 
 The agent electrical-reviewer reviews the design; its findings go into a decision round. Then the skill
-hardware-change takes the graph to EasyEDA.
+hardware-change takes the graph to EasyEDA – unless there is no PCB (a development board and hand wiring): then the
+drawing is the schematic, and the project is done without EasyEDA.
 
 ## Report
 
 Requirements as understood, blocks and parts used, computed values, open decisions, results of check, hints and sim,
-check candidates.
+check candidates, where the drawing is.

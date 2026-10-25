@@ -8,6 +8,8 @@ checks, an ngspice simulation of every operating case, the schematic in EasyEDA 
 the bill of materials, and in the end the Gerber files that go to the manufacturer. Nobody draws a wire by hand.
 A change starts in the graph and flows through the same pipeline again. A **release gate** runs every check on the
 files that will actually be uploaded and writes a test protocol; only a run that says RELEASED goes to JLCPCB.
+A project without a PCB needs no EasyEDA at all: checks, simulation and a drawn schematic (6.5) work from the graph
+alone.
 
 ```text
  parts database ──► hardware graph ──► schematic ──► PCB ──► manufacturing files ──► JLCPCB ──► acceptance
@@ -85,7 +87,7 @@ what is checked by judgement and by whom, and an acceptance test after delivery 
 | [3 Hardware graph](03-hardware-graph.md) | format, conventions, the rule checks |
 | [4 Parts database](04-parts-database.md) | one file per LCSC number, sourcing, sign-off |
 | [5 Simulation](05-simulation.md) | ngspice from the graph, behaviour models, scenarios |
-| [6 Schematic](06-schematic.md) | generate, check, copy, lay out |
+| [6 Schematic](06-schematic.md) | generate, check, copy, lay out – or draw it without EasyEDA |
 | [7 PCB](07-pcb.md) | placement plan, parts without dialogs, Freerouting, pours, silkscreen |
 | [8 Release gate](08-release-gate.md) | stages, sign-offs, manifest, ordering at JLCPCB |
 | [9 EasyEDA API](09-easyeda-api.md) | how the API and the MCP server really behave |

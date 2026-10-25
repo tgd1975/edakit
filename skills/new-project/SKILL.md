@@ -41,8 +41,10 @@ Create in the repository root (ask only for what you cannot sensibly default):
    (`edakit block list`), other parts by LCSC number (part-search skill), nets with voltage ranges `v`. `edakit check`
    until 0 errors, `edakit hints` worked through.
 2. `edakit sim` – scenarios first at the supply limits.
-3. EasyEDA: the user creates the project once by hand (File → New → Project, named like `[project] name`) – the
-   local desktop client refuses `DMT_Project.createProject`. Then the start skill.
+3. Without a PCB (a development board and hand wiring) the project stops here: `edakit schematic draw` gives the
+   schematic, EasyEDA is not needed, and `edakit.toml` needs only `[project] name` and a `[boards.<name>]` with a
+   `title`. With a PCB: the user creates the EasyEDA project once by hand (File → New → Project, named like
+   `[project] name`) – the local desktop client refuses `DMT_Project.createProject`. Then the start skill.
 4. Continue with the hardware-change skill for every further change and pcb-round for the layout.
 
 Report: which files were created, what is still open (parts without entry, missing outline, first decisions).

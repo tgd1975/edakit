@@ -15,6 +15,7 @@ against which datasheet revision. Examples: [the Christmas bell's parts](https:/
 | `datasheet` | `url`, `pinout_page` |
 | `pins` | pin number → `name` (as in the EasyEDA symbol and identical to the graph – S-2 compares them), `type`, `role` (the meaning; for polarised parts it follows the footprint's polarity print when symbol and footprint disagree), `vmax`; from the datasheet where it applies: `strap` (`"high"`/`"low"`: level the pin needs at reset, G-12), `pull` (`"up"`/`"down"`: internal or built-in pull resistor, with `pull_ohm` if known – G-11, G-12), `hint` (a warning from the datasheet, e.g. "ADC2: no analog reads while WiFi is on") |
 | `hints` | warnings of the datasheet for the part as a whole; `edakit hints` shows them and the pin `hint`s of connected pins |
+| `symbol` | optional: the sides of the box `edakit schematic draw` draws for an IC or module – `{"left": [pins], "right": [pins], "top": [pins], "bottom": [pins]}`; without it the pins run as on a DIP package (6.5) |
 | `params` | values for simulation and calculations; `behavior` for ICs (chapter 5) |
 | `ratings` | limits for the stress checks |
 | `spice` | `{"model": ".model SS34 D(IS=20u N=1.2 RS=0.04 …)"}` for diodes and transistors |
