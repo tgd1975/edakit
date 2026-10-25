@@ -45,11 +45,17 @@ For a schematic the extension calls `SCH_ManufactureData.getExportDocumentFile(f
 
 ### Environment Info
 
-```markdown
-- easyeda-mcp-pro Version: 1.4.0 (observed); code path unchanged on main at 1.5.4 (582f818)
-- Node.js Version: 24.14.1
-- OS: Ubuntu (Linux 7.0)
-- EasyEDA Pro Client: Desktop Client 3.2.206
-- Bridge Extension Version: 1.4.0
-- Tool Profile: full
+```text
+easyeda-mcp-pro doctor   (1.4.0, installed package)
+
+Runtime mode: installed-package
+Node.js: OK 24.14.1 (required: 24.x; pinned: 24.21.0)
+Environment: OK
+EasyEDA extension package: OK …/easyeda-mcp-pro/easyeda-bridge-extension.eext
+Bridge server: OK reachable on 127.0.0.1:49620
+Remote backend: local_bridge / transport=stdio / session=per-request / oauth=disabled
+Tools: Profile 'full' with 115 / 120 tools enabled
+
+EasyEDA Pro Desktop Client 3.2.206 (local projects), Ubuntu (Linux 7.0).
+Observed on 1.4.0; the code path is unchanged on main at 1.5.4 (582f818).
 ```
