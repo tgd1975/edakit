@@ -408,11 +408,23 @@ def tooling(cfg, board, mcp):
 
 def pour_outline(board):
     """Pour polygon (plan mm): the outline, set in by the edge clearance of the routing rules (+0.1 mm; EasyEDA itself
-    keeps only about 0.26 mm), with a notch around every tooling hole. EasyEDA takes a polygon with a hole only as its
+    keeps only about 0.26 mm), without the keep-out circle of every mounting hole, with a notch around every tooling
+    hole. EasyEDA takes a polygon with a hole only as its
     outer contour, and copper must not lie under the tooling hole – so the notch reaches the edge."""
     from shapely.geometry import Point, box
     edge = float(board.routing.get("edge_clearance_um", 400)) / 1000 + 0.1
     poly = outline_polygon(board).buffer(-edge, join_style="mitre")
+    for h in board.holes:  # 'keep' = radius free of parts and copper (screw head, washer)
+        cut = poly.difference(Point(h["x"], h["y"]).buffer(h["keep"]))
+        if cut.geom_type == "Polygon" and not cut.interiors:
+            poly = cut
+        else:  # the circle lies inside: a notch to the edge, as for tooling holes
+            half = max(h["keep"], poly.exterior.distance(Point(h["x"], h["y"])) + 0.05)
+            cut = poly.difference(box(h["x"] - half, h["y"] - half, h["x"] + half, h["y"] + half))
+            if cut.geom_type == "Polygon" and not cut.interiors:
+                poly = cut
+            else:
+                print(f"  ! hole ({h['x']}, {h['y']}) is not near an edge – the pour keeps only EasyEDA's clearance")
     for tx, ty in board.tooling:
         half = max(board.tooling_keep, poly.exterior.distance(Point(tx, ty)) + 0.05)
         cut = poly.difference(box(tx - half, ty - half, tx + half, ty + half))

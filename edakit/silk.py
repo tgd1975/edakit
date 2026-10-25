@@ -56,8 +56,18 @@ def board_shape(board):
     return Polygon([board.eda_point(*p) for p in board.outline]).difference(unary_union(holes))
 
 
+CAP_RATIO = 0.71  # EasyEDA's font size is the em height; capitals print at about 0.71 of it (measured on Gerber)
+
+
+def font_size(h):
+    """EasyEDA font size for printed capitals of height h (mm). All heights in edakit.toml mean printed capitals –
+    JLCPCB wants at least 1.0 mm."""
+    return h / CAP_RATIO
+
+
 def label_size(name, h):
-    return 0.65 * h * len(name), h
+    fs = font_size(h)
+    return 0.65 * fs * len(name), fs
 
 
 def label_box(x, y, rot, w, h):
@@ -145,6 +155,7 @@ def corner_spot(area, obstacles, w, h, corner="bottom-left", step=0.5):
 
 
 MIN_SILK_MM = 0.15  # JLCPCB: thinner silkscreen does not print
+MIN_GAP_MM = 0.2    # narrower gaps inside the artwork fill in
 
 
 def svg_geometry(path):
@@ -200,8 +211,10 @@ def art_shapes(cfg, board, side):
 
 
 def printable(art, area, openings):
-    """What JLCPCB can print of the artwork: inside the board, off pads and mask openings, nothing thinner than 0.15 mm."""
+    """What JLCPCB can print of the artwork: inside the board, off pads and mask openings, gaps under 0.2 mm closed,
+    nothing thinner than 0.15 mm."""
     g = art.intersection(area).difference(openings.buffer(0.15))
+    g = g.buffer(MIN_GAP_MM / 2).buffer(-MIN_GAP_MM / 2)  # gaps the print closes anyway: closed here, so the preview shows it
     return g.buffer(-MIN_SILK_MM / 2).buffer(MIN_SILK_MM / 2).simplify(0.01)
 
 
@@ -279,7 +292,7 @@ def picture(silk, openings, area, out, mirror=False, extra=(), texts=()):
         if p:
             ax.add_patch(p)
     for text, x, y, rot, th, _ in texts:
-        ax.text(-x if mirror else x, y, text, rotation=rot, ha="center", va="center", fontsize=th * 2.2,
+        ax.text(-x if mirror else x, y, text, rotation=rot, ha="center", va="center", fontsize=th / 0.72 * 72 / 25.4,
                 color="#f4f2ea", family="DejaVu Sans")
     ax.set_xlim(x0 - 5, x1 + 5)
     ax.set_ylim(y0 - 5, y1 + 5)
@@ -330,7 +343,7 @@ def apply(cfg, board, mcp):
     created = {"strings": [], "fills": []}
 
     def string(text, x, y, rot, size, font="default", on=layer):
-        res = api(mcp, "PCB_PrimitiveString.create", on + 2, to_mil(x), to_mil(y), text, font, to_mil(size), 6,
+        res = api(mcp, "PCB_PrimitiveString.create", on + 2, to_mil(x), to_mil(y), text, font, to_mil(font_size(size)), 6,
                   5, rot, False, 0, False, False)  # EasyEDA mirrors texts on the bottom by itself
         created["strings"].append(eda.state(res).get("PrimitiveId") if isinstance(res, dict) else res)
     for art_side, art_layer in SIDE.items():
@@ -361,7 +374,8 @@ def apply(cfg, board, mcp):
             ensure_pcb_focus(mcp)
         if name in attrs:
             api(mcp, "PCB_PrimitiveAttribute.modify", attrs[name][0]["PrimitiveId"],
-                {"x": to_mil(x), "y": to_mil(y), "rotation": rot, "alignMode": 5, "fontSize": to_mil(h), "lineWidth": 6,
+                {"x": to_mil(x), "y": to_mil(y), "rotation": rot, "alignMode": 5, "fontSize": to_mil(font_size(h)),
+                 "lineWidth": 6,
                  "valueVisible": True})
         else:  # group label in the same stroke font
             string(name, x, y, rot, h)
