@@ -74,8 +74,11 @@ Where it stands:
 - **Offline:** `edakit check` 0 errors, `edakit sim` 1112 checks.
 - **Schematic:** equal to the graph (17 parts, 15 nets), ERC clean.
 - **PCB:** 85 × 56 mm from a placement plan, routed by Freerouting (3 vias), DRC 0, silkscreen without findings.
-- **Release gate:** Every stage passes except L-9. The Nano footprint's 0.9 mm holes are too small for the usual
-  0.64 mm header tails; that decision is still open. The sign-offs M-1 and M-5 are pending.
+- **Release gate:** released. Two of its reviews failed first and were fixed:
+  - **L-9:** the first Nano footprint's 0.9 mm holes were too small for the header tails; it was replaced by one with
+    1.1 mm holes.
+  - **M-5, the layout review:** printed texts below 1 mm and copper close to the mounting holes. Both were fixed in
+    edakit itself.
 - **Decisions:** `docs/decisions.md` shows the numbered-decision workflow, including two decisions the simulation
   brought up.
 
