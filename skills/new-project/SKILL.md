@@ -39,7 +39,8 @@ Create in the repository root (ask only for what you cannot sensibly default):
 1. Graph skeleton: power input, MCU, the main functions – parts by LCSC number (part-search skill), nets with voltage
    ranges `v`. `edakit check` until 0 errors.
 2. `edakit sim` – scenarios first at the supply limits.
-3. EasyEDA: create the project once by hand or `edakit schematic create --create-project`; then the start skill.
+3. EasyEDA: the user creates the project once by hand (File → New → Project, named like `[project] name`) – the
+   local desktop client refuses `DMT_Project.createProject`. Then the start skill.
 4. Continue with the hardware-change skill for every further change and pcb-round for the layout.
 
 Report: which files were created, what is still open (parts without entry, missing outline, first decisions).

@@ -18,8 +18,9 @@ edakit schematic create --only U3,R10,C5   # partial build to try a part
 edakit schematic create --save             # everything, then save
 ```
 
-Steps (each with duration and EasyEDA's memory): bridge → project (create only with `--create-project`, because
-EasyEDA does not list local projects and a duplicate could appear) → delete and recreate the template (never a
+Steps (each with duration and EasyEDA's memory): bridge → project (it must exist – the local desktop client refuses
+`DMT_Project.createProject`, so create a new project by hand once; edakit remembers its UUID and goes on only when
+the open project has the configured name) → delete and recreate the template (never a
 schematic that belongs to a board) → close other schematic tabs (EasyEDA sometimes switches to them by itself) →
 search every LCSC number once (cache `<artifacts>/device_cache.json`, `--refresh-devices` searches again) → place in
 blocks of 40 (`batch_write`; bigger blocks crashed EasyEDA) → set designators → compare symbol pins with the graph →

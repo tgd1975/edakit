@@ -209,23 +209,27 @@ def open_project(mcp, cfg, create=False):
             if pi and pi.get("friendlyName") == cfg.project:
                 uuid = u
                 break
-    if uuid:
-        print(f"  project {cfg.project} is not open – opening it")
-        api(mcp, "DMT_Project.openProject", uuid)
-        for _ in range(60):
-            info = api(mcp, "DMT_Project.getCurrentProjectInfo")
-            if info and info.get("friendlyName") == cfg.project:
-                return uuid
-            time.sleep(2)
-        raise MCPError(f"project {cfg.project} did not open")
-    if not create:
+    if not uuid and create:
+        # The desktop client in local mode refuses it ("请求参数path错误", the path parameter) and returns null.
+        uuid = api(mcp, "DMT_Project.createProject", cfg.project)
+        if not uuid:
+            raise MCPError(f"EasyEDA did not create the project '{cfg.project}' (the local desktop client refuses "
+                           "createProject) – create it by hand: File → New → Project, named exactly like [project] "
+                           "name in edakit.toml, then run the command again")
+        print(f"  project '{cfg.project}' created")
+    if not uuid:
         raise MCPError(f"project '{cfg.project}' is not open and EasyEDA does not list local projects – open it in "
-                       "EasyEDA once (edakit remembers its UUID) or pass --create-project")
-    uuid = api(mcp, "DMT_Project.createProject", cfg.project)
+                       "EasyEDA once (edakit remembers its UUID)")
+    print(f"  project {cfg.project} is not open – opening it")
     api(mcp, "DMT_Project.openProject", uuid)
-    memo.write_text(json.dumps({"name": cfg.project, "uuid": uuid}))
-    print(f"  project '{cfg.project}' created")
-    return uuid
+    # Never go on unless the open project is the right one: every step after this writes into whatever is open.
+    for _ in range(60):
+        info = api(mcp, "DMT_Project.getCurrentProjectInfo")
+        if info and info.get("friendlyName") == cfg.project:
+            memo.write_text(json.dumps({"name": cfg.project, "uuid": uuid}))
+            return uuid
+        time.sleep(2)
+    raise MCPError(f"project {cfg.project} did not open (open is '{(info or {}).get('friendlyName')}')")
 
 
 def connect(cfg, verbose=False, wait=90, artifact_dir=None):

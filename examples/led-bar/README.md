@@ -21,7 +21,7 @@ edakit sim        # 12 scenarios, ~700 checks
 edakit gate       # P, G, E pass; NOT RELEASED: M-1/M-5 open, stages S/L/F need EasyEDA
 ```
 
-With EasyEDA Pro (project "led-bar" open, bridge connected): `edakit schematic create --create-project --save`, then
+With EasyEDA Pro (project "led-bar" created by hand once and open, bridge connected): `edakit schematic create --save`, then
 the steps of [handbook chapter 6–8](../../handbook/README.md). The placement plan is a starting point: run `edakit pcb
 dump` once the parts are in the PCB and adjust positions after `edakit pcb plan`.
 

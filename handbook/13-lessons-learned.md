@@ -76,6 +76,9 @@ dead ends against the API, and loops that never ended. Each got a rule or a tool
 - **The EasyEDA claim before the second parallel session**, not after a lost 20-minute run.
 - **Tooling holes and the assembly type (Economic vs Standard) in the first layout**, not after the first quote – they
   constrain where parts can go.
+- **Check the target before writing.** On the second project `createProject` silently returned null and the first
+  generated schematic landed in the reference project (removed a minute later). Every write path now starts with
+  "is the open project the configured one?".
 - **Generic from the start.** The scripts began full of project constants (outline formula, LED channels, decoration).
   This repository is the generic extraction; a new project starts with an edakit.toml instead of a copy of scripts.
 
@@ -87,3 +90,16 @@ dead ends against the API, and loops that never ended. Each got a rule or a tool
 - Release gate: 7 stages, about 30 automatic checks in the board and manufacturing stages alone, 5 manual checks of which 2 are done by
   agents before the export.
 - About 25 EasyEDA API behaviours that cost time to find out (chapter 9).
+
+## 13.6 The second project
+
+The first project after the extraction was much smaller: a carrier board for a plugged-in Arduino Nano with a servo,
+five LEDs and two buttons, taken over from a Fritzing drawing. From the Fritzing file to a checked, simulated graph
+took under an hour, and the generated schematic matched the graph at the first attempt (17 parts, 16 nets, ERC
+clean). What it added to edakit:
+
+- **Off-board loads** in the simulation (`external`: the servo at its connector) and **fault cases** that do not block
+  every commit (`"matrix": false`): a stalled servo draws more than the Nano's 500 mA polyfuse holds.
+- **5 V I/O modules** (`v_io = "vin"`) and an **input level check**: the buttons switch 3.3 V into a 5 V AVR,
+  0.28 V above its VIH – fine, but now visible.
+- **Project creation is manual** in the local desktop client (chapter 9.2) – and the guard above.
