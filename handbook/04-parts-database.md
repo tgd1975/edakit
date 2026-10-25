@@ -9,11 +9,12 @@ against which datasheet revision. Examples: [the Christmas bell's parts](https:/
 | Field | Content |
 |---|---|
 | `lcsc`, `mpn`, `manufacturer` | identification |
-| `kind` | `resistor`, `capacitor`, `inductor`, `fuse`, `diode`, `led`, `led_rgb`, `npn`, `pnp`, `pmos`, `nmos`, `switch`, `dip_switch`, `button`, `potentiometer`, `battery_holder`, `buzzer`, `connector`, `ic`, `module` |
+| `kind` | `resistor`, `capacitor`, `inductor`, `fuse`, `diode`, `led`, `led_rgb`, `npn`, `pnp`, `pmos`, `nmos`, `switch`, `dip_switch`, `button`, `potentiometer`, `battery_holder`, `buzzer`, `relay`, `connector`, `ic`, `module` |
 | `package`, `footprint` | the footprint name must equal the EasyEDA footprint (L-4 compares it with the PCB) |
 | `jlc_class` | Basic / Extended Part |
 | `datasheet` | `url`, `pinout_page` |
-| `pins` | pin number → `name` (as in the EasyEDA symbol and identical to the graph – S-2 compares them), `type`, `role` (the meaning; for polarised parts it follows the footprint's polarity print when symbol and footprint disagree), `vmax` |
+| `pins` | pin number → `name` (as in the EasyEDA symbol and identical to the graph – S-2 compares them), `type`, `role` (the meaning; for polarised parts it follows the footprint's polarity print when symbol and footprint disagree), `vmax`; from the datasheet where it applies: `strap` (`"high"`/`"low"`: level the pin needs at reset, G-12), `pull` (`"up"`/`"down"`: internal or built-in pull resistor, with `pull_ohm` if known – G-11, G-12), `hint` (a warning from the datasheet, e.g. "ADC2: no analog reads while WiFi is on") |
+| `hints` | warnings of the datasheet for the part as a whole; `edakit hints` shows them and the pin `hint`s of connected pins |
 | `params` | values for simulation and calculations; `behavior` for ICs (chapter 5) |
 | `ratings` | limits for the stress checks |
 | `spice` | `{"model": ".model SS34 D(IS=20u N=1.2 RS=0.04 …)"}` for diodes and transistors |
@@ -24,7 +25,8 @@ against which datasheet revision. Examples: [the Christmas bell's parts](https:/
 
 **Pin types** (`type`): `passive`, `input`, `output`, `bidirectional`, `power_in`, `power_output`, `ground`, `analog`,
 `current_sink`, `no_connect`, `mechanical`. G-4, G-5 and G-6 work with them: `power_in` needs a capacitor, two
-`output`s on one net are a conflict, an `input` needs a driver.
+`output`s on one net are a conflict, an `input` needs a driver. An MCU pin that can only read (the ESP32's GPIO34–39)
+is `input`, even with the role `gpio`: the simulation refuses to drive it (E-3).
 
 **Pin roles** (`role`) tell the code what a pin does, independent of its name:
 
@@ -40,17 +42,23 @@ against which datasheet revision. Examples: [the Christmas bell's parts](https:/
 | potentiometer | `end_a`, `wiper`, `end_b` |
 | battery_holder | `plus`, `minus` (several cells: `plus_a`, `minus_a`, …) |
 | buzzer | `plus`, `minus` |
-| connector | free (`pin1`, …); `vbus`/`gnd` for a supply input |
-| ic, module | as the behaviour model needs them: `vin`, `vout`, `gnd`, `vsys`, `3v3`, `gpio`, `rext`, `out`, `oe_n`, `vdd` |
+| relay | `coil_plus`, `coil_minus`, `common`, `no`, `nc` |
+| connector | free (`pin1`, …); `vbus`/`gnd` for a supply input; `cc1`, `cc2` on a USB-C receptacle (G-14) |
+| ic, module | as the behaviour model needs them: `vin`, `vout`, `gnd`, `vsys`, `3v3`, `gpio`, `rext`, `out`, `oe_n`, `vdd`; `sda`, `scl` for I2C pins (G-11) |
 
 **Ratings** per kind (what the checks read): resistor `p_max_w`, `v_max`; capacitor `v_max`; diode `if_avg_a`, `vrrm`;
 LED `if_max_a`, `vr_max` (per colour for RGB); BJT `ic_max_a`, `vceo`, `vebo`, `p_max_w`; MOSFET `id_max_a`, `vds_max`,
 `vgs_max`, `p_max_w`; fuse `i_hold_a` (+ `params.i_hold_vs_temp`); switch/connector `i_max_a`, `v_max`; inductor
 `i_rated_a`, `i_sat_a`; regulators `vin_min`, `i_out_max_a`, `rth_ja_k_per_w`; MCU modules `vin_min`/`vsys_min`,
-`i_out_max_a`; LED drivers `rth_ja_k_per_w`.
+`i_out_max_a`, `gpio_i_max_a` (per output pin) and `gpio_i_total_max_a` (all outputs together, sourced and sunk
+separately – the package's supply pins); relays `v_coil_max`, `i_max_a` (contacts); LED drivers `rth_ja_k_per_w`.
 
 **Parameters**: resistor `value_ohm`; capacitor `value_f`; inductor `value_h`, `dcr_ohm`; LED `vf_typ`, `vf_min`,
-`vf_max`, `vf_at_a`, `rs_ohm`; switch/button `r_on_ohm`; buzzer `coil_ohm`; ICs see chapter 5.
+`vf_max`, `vf_at_a`, `rs_ohm`; switch/button `r_on_ohm`; buzzer `coil_ohm` (a magnetic buzzer; it is a coil for G-13);
+relay `coil_ohm`, `v_operate`, `v_release` (must-operate and must-release voltage), `r_contact_ohm`; ICs see chapter 5.
+
+The block library (`edakit/blocks/parts/`) holds checked entries of the parts the building blocks use – resistors,
+LEDs, the SS14/SS34 diodes, S8050, AO3401A, a USB-C receptacle, a polyfuse, buttons, a JST connector – to copy from.
 
 ## 4.2 Finding parts
 

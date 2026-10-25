@@ -19,7 +19,7 @@ edakit gate --easyeda    # plus S, L, F – EasyEDA with the bridge, minutes
 | Stage | What | Checks |
 |---|---|---|
 | P – Parts | parts database complete and signed | P-1, G-9 (chapter 3, 4) |
-| G – Graph | rule checks | G-1 … G-10 (chapter 3) |
+| G – Graph | rule checks | G-1 … G-14 (chapter 3) |
 | E – Simulation | operating points, stress, function | E-1 … E-3 (chapter 5) |
 | *project stages* | e.g. K – mechanics of an enclosure | `[[release.stages]]`, see below |
 | S – Schematic | EasyEDA schematic = graph | S-2 per board |
@@ -106,6 +106,10 @@ of the release, not a tool you may use.
 
 RELEASED only if every stage ran, no check failed, every warning is accepted, every part is signed, every manual check
 of phase `export` is signed – all for the current hashes. Otherwise NOT RELEASED with the reasons. Exit 0 / 2.
+
+The protocol names every check with its words next to the ID ("L-9 (hole fits the lead)"), and its last section,
+"The rules behind the findings", gives rule, reason, fix and sources of every check that failed or warned – from the
+rule catalog (chapter 14.2), so that the protocol can be read without this handbook.
 
 Result folder `<reports>/<YYYYMMDD-hhmmss>/`: `protocol.md`, `graph_checks.json`, `sim.json`,
 `schematic_<board>.json`, `fab/<board>/` (Gerber ZIP, BOM, CPL, raw data), `fab/polarity_<board>.png`,

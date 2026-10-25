@@ -43,7 +43,9 @@ Example: [the Christmas bell's graph](https://github.com/tgd1975/automatic_chris
 | `waive` | `{check id: reason}` – a finding accepted on purpose; printed with its reason in every report |
 | `notes` | free text; cite decision numbers here |
 | net `v` | `[min, max]` voltage over **all** intended operating states (all supply variants, reversed supply, unloaded) |
+| net `bus` | `"i2c"` marks SDA and SCL nets whose pins do not say so (MCU pins called GP4): G-11 checks them |
 | `cables` | wires between boards: connector pins joined 1:1; the cable is no part, its resistance feeds the simulation |
+| `hints` | design hints that are taken care of, `{"H-1": "C1 1000 µF next to J1"}` – chapter 14.3 |
 
 ## 3.2 Conventions that save trouble
 
@@ -59,31 +61,40 @@ Example: [the Christmas bell's graph](https://github.com/tgd1975/automatic_chris
 
 ## 3.3 Rule checks (stages P and G)
 
-`edakit check` runs in well under a second; put it into the pre-commit hook and CI.
+`edakit check` runs in well under a second; put it into the pre-commit hook and CI. What each check is about, why it
+exists, what to do and the sources: the rule catalog, `edakit rules` (list) and `edakit rules G-4` (one entry). Every
+check that fails is explained once below the findings (chapter 14.2).
 
 | Check | What | Finds e.g. |
 |---|---|---|
 | G-1 | structure: unique designators and nets, every pin in exactly one net or `nc`, nets with ≥ 2 pins, a voltage range per net, a known board per part, nets across boards only through a cable | a forgotten pin, a typo in a pin reference |
 | G-2 | pin locks: pins the firmware relies on are on the expected nets (`[checks] pin_locks`); optionally a pin table in a Markdown document equals the graph (`[checks] doc_pin_table`) | firmware and hardware disagree |
 | G-3 | voltage domains: every net's range within `vmax` of every pin on it | a 5-V signal on a 3.3-V GPIO |
-| G-4 | no floating input: an input needs a driver or a pull resistor; an input driven only by MCU pins needs a pull (floats until the firmware runs); every BJT needs a base-emitter resistor | a floating OE or EN pin at power-up |
+| G-4 | no floating input: an input needs a driver or a pull resistor; an input driven only by MCU pins needs a pull (floats until the firmware runs); every BJT needs a base-emitter resistor, every MOSFET a resistor from its gate to the source or a rail | a floating OE or EN pin at power-up, a MOSFET half on while the MCU boots |
 | G-5 | at most one push-pull output / supply output per net | two outputs against each other |
 | G-6 | decoupling: per net at least one capacitor to ground per IC supply pin (`power_in`) | the missing 100 nF |
 | G-8 | voltage ratings with margin: capacitors (×1.5), diodes VRRM (×1.5), BJT VCEO, MOSFET VDS/VGS (×1.5), fuses, switches, connectors | a 6.3-V capacitor on a 5-V rail |
 | G-10 | reverse polarity from the topology: what a reversed source (battery holders, `[checks] reverse_protect`) reaches through fuses, switches and connectors may only be a capacitor, the anode of a diode whose cathode is outside, or the drain of a PMOS whose source and gate are outside | the protection diode bypassed, an IC directly on the battery |
+| G-11 | I2C pull-ups: every I2C line has a pull-up to a supply between (V − 0.4 V) / 3 mA and 10 kΩ, parallel ones added up; a line is I2C by the net's `bus`, an SDA/SCL net name, a pin role `sda`/`scl` or a pin name with SDA/SCL (a role decides over the name); pins with `pull`/`pull_ohm` count (modules) | a bus without pull-ups, 47 kΩ, a module's pull-ups plus your own below 1 kΩ |
+| G-12 | strapping pins: a pin with `strap` in its parts entry is at that level at reset – no pull, rail or output on its net says otherwise, and something holds it (a pull, or the pin's internal `pull`) | a pull-down on the ESP32's GPIO0, an I2C pull-up on GPIO12 |
+| G-13 | flyback diode: a relay coil or a buzzer with `coil_ohm`, switched by a transistor or an output, has a diode across it with the cathode at its plus terminal | a relay that kills its transistor at the first switch-off |
+| G-14 | USB-C sink: a receptacle with `cc1`/`cc2` pins has its own 5.1 kΩ ± 10 % to ground on each CC pin; silent when an IC is on the CC lines | no 5 V from a USB-C charger, CC1 and CC2 on one resistor |
 | P-1 | graph pins (number and name) = parts entry; an entry exists for every LCSC number; no supply pin marked `nc` | a wrong part number, pins shifted by one |
 | G-9 | sign-off: every part `verified` against its datasheet, no open `verify` note (pending – blocks only the release) | an unchecked part going into an order |
 
 Results: `ERROR` (must be fixed), `WAIVED` (accepted in the graph with a reason), `PENDING` (open sign-off). Exit 1 on
-errors, with `--release` also on pending sign-offs.
+errors, with `--release` also on pending sign-offs. The last line also names the design hints that are still open
+(`edakit hints`, chapter 14.3); they never block.
 
 Polarity (is the LED the right way round?) is not a graph rule but a simulation result: a reversed LED shows up in
-stage E as "LED reversed" or as a dark LED (chapter 5).
+stage E as "LED reversed" or as a dark LED (chapter 5). G-7 was the graph's polarity check; it is retired and its number
+is not used again.
 
 ## 3.4 Working rules
 
 1. Change the graph, never the schematic or the PCB. The hardware-change skill walks through the rest.
-2. Every new LCSC number gets its parts entry first (part-search skill).
+2. Every new LCSC number gets its parts entry first (part-search skill). A new function starts from a building block
+   where one fits (`edakit block`, chapter 14.5).
 3. `edakit check` and `edakit sim` before every commit that touches `hardware/` – the pre-commit hook does it.
 4. A finding is fixed or waived with a reason. Never edit a check to make a finding go away.
 5. Generated files (firmware pin tables, the circuit description's parts list) are regenerated from the graph, never

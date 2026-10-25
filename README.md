@@ -37,7 +37,10 @@ Without Claude Code: `uvx --from git+https://github.com/tgd1975/edakit edakit <c
 
 ```bash
 edakit doctor                   # tool chain ready?
-edakit check                    # rule checks on the graph (P, G) – < 1 s
+edakit block add led --as STATUS --connect in=LED_STATUS   # a building block with checked parts into the graph
+edakit check                    # rule checks on the graph (P, G) – < 1 s, failed checks explained
+edakit hints                    # design hints for the parts in the graph (bulk capacitor, debouncing, ESD …)
+edakit rules G-11               # what a check is about, why, what to do, sources
 edakit sim                      # ngspice: every supply x load x tolerance corner (E) – seconds
 edakit schematic create --save  # template schematic from the graph
 edakit schematic layout --save  # readable board schematic: blocks, wires, GPIO table
@@ -49,9 +52,11 @@ edakit silk apply               # designators where there is room, silkscreen ch
 edakit gate --easyeda           # release gate: protocol, manifest, files for JLCPCB
 ```
 
-In Claude Code the skills do the orchestration: `/edakit:new-project`, `/edakit:start`, `/edakit:hardware-change`,
-`/edakit:part-search`, `/edakit:pcb-round`, `/edakit:release`, `/edakit:decision-round`; the agents
-`electrical-reviewer` and `pcb-reviewer` do the independent reviews whose results are the sign-offs.
+In Claude Code the skills do the orchestration: `/edakit:new-project`, `/edakit:circuit-design`, `/edakit:start`,
+`/edakit:hardware-change`, `/edakit:part-search`, `/edakit:pcb-round`, `/edakit:release`, `/edakit:decision-round`;
+the agents `electrical-reviewer` and `pcb-reviewer` do the independent reviews whose results are the sign-offs. The
+design (`circuit-design`) and its review are kept apart: the session that designs does not review
+([handbook 14](handbook/14-design.md)).
 
 ## Example: the Christmas bell
 
@@ -80,6 +85,8 @@ Where it stands:
 |---|---|
 | [handbook/](handbook/README.md) | the approach, setup, graph, parts, simulation, schematic, PCB, release gate, EasyEDA API notes, reference, working with Claude, troubleshooting, lessons learned |
 | [edakit/](edakit/) | the Python package: checks, simulation, EasyEDA client, schematic, PCB, routing, Gerber analysis, silkscreen, export, release gate, EasyEDA claim |
+| [edakit/rules.json](edakit/rules.json) | the rule catalog: every check and design hint with rule, reason, fix and sources |
+| [edakit/blocks/](edakit/blocks/) | building blocks (LED, button, I2C pull-ups, transistor switch, supply inputs, USB-C) and the checked parts entries they use |
 | [edakit/easyeda/](edakit/easyeda/) | `mcp-server.sh` (pinned easyeda-mcp-pro with safe defaults), `bridge-extension-patch.sh` |
 | [skills/](skills/), [agents/](agents/), [hooks/](hooks/hooks.json), [bin/](bin/) | the Claude Code plugin |
 | [tests/](tests/) | negative tests: every check seen red once; [tests/fixtures/led-bar/](tests/fixtures/led-bar/) is the project they build their faults into |

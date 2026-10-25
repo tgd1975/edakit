@@ -58,6 +58,8 @@ With the graph as the only source:
    later session (or a later you) knows why the 18-mil tracks are below the class width and that it was accepted.
 8. **Tooling over clicking.** When EasyEDA needs a click, first look for the API path (parts without the import dialog,
    pad nets directly, own DSN instead of the DSN export). A dialog that remains must be a plain OK.
+9. **Every rule says why.** Each check has a catalog entry with its reason, what to do and its sources; a finding comes
+   with that explanation, and a review finding that a rule could have found becomes a check (chapter 14).
 
 ## What it achieved
 
@@ -91,3 +93,4 @@ what is checked by judgement and by whom, and an acceptance test after delivery 
 | [11 Working with Claude](11-working-with-claude.md) | plugin, skills, agents, parallel sessions, working agreements |
 | [12 Troubleshooting](12-troubleshooting.md) | symptom → cause → fix |
 | [13 Lessons learned](13-lessons-learned.md) | what cost time, what we would do again |
+| [14 Designing a circuit](14-design.md) | designer and reviewer, the rule catalog, hints, building blocks, from a finding to a check |

@@ -17,9 +17,11 @@ How we work, what the tools do, and why they do it that way – including everyt
 | 11 | [Working with Claude](11-working-with-claude.md) | you use the plugin, run parallel sessions, or wonder about the working agreements |
 | 12 | [Troubleshooting](12-troubleshooting.md) | something fails |
 | 13 | [Lessons learned](13-lessons-learned.md) | you want the short version of a week of mistakes |
+| 14 | [Designing a circuit](14-design.md) | you design a circuit, want to know what a check or hint means, or use building blocks |
 
 **Reading paths**
 
 - *First time:* 1 → 2 → the example project ([Christmas bell](https://github.com/tgd1975/automatic_christmas_bell)) → 3 → 6 → 7 → 8.
+- *New circuit:* 14 → 3 → 4 → 5.
 - *Something broke:* 12 → 9.
 - *Adapting to your board:* 10 → 3 → 7.

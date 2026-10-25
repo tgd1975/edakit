@@ -65,8 +65,8 @@ other), `[schematic.layout.notes]` ({block title = [lines]}), `[schematic.layout
 
 ### [checks]
 
-`pin_locks` ({"U1.4" = "NET"}), `reverse_protect` (connectors that may be plugged the wrong way: G-10),
-`doc_pin_table` ({`component`, `file`, `prefix`, `regex`}).
+`pin_locks` ({"U1.4" = "NET"}), `reverse_protect` (connectors that may be plugged the wrong way: G-10; also a power
+input for the design hints), `doc_pin_table` ({`component`, `file`, `prefix`, `regex`}).
 
 ### [release]
 
@@ -82,6 +82,10 @@ Code: `edakit … 2>&1 | cat`.
 | Command | EasyEDA | Reads | Writes |
 |---|---|---|---|
 | `edakit check [--release] [--json F]` | – | graph, parts, pin table | – |
+| `edakit rules [ID …]` | – | the rule catalog (no project needed) | – |
+| `edakit hints [--json F]` | – | graph, parts, sim config | – |
+| `edakit block list\|show NAME` | – | the block library (no project needed) | – |
+| `edakit block add NAME --as I [--connect PORT=NET …] [--board B] [--file F] [--dry-run]` | – | graph, parts, block | graph (formatting kept), missing parts entries |
 | `edakit sim [--json F] [--keep DIR]` | – | graph, parts, sim config, plugin | `<artifacts>/sim/net_currents.json` |
 | `edakit schematic create [--board] [--only] [--dry-run] [--save] [--create-project] [--refresh-devices]` | ✓ | graph | template, `device_cache.json`, `schematic_map_<name>.json` |
 | `edakit schematic check [--schematic] [--no-pins] [--json F]` | ✓ read | graph, schematic | – |
