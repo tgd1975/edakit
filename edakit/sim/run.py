@@ -8,9 +8,8 @@ plus "extra_scenarios" listed there.
   E-1  the operating point converges
   E-2  stress of every part against the ratings in the parts database, with the derating from the config
   E-3  function: supply currents, regulator outputs and headroom, MCU supply and input levels, constant-current
-       driver headroom and
-       junction temperature, LED currents on/off as the load says, blocking diodes, every net inside its declared
-       voltage range 'v', plus the project plugin's own checks
+       driver headroom and junction temperature, LED currents on/off as the load says, blocking diodes, every net
+       inside its declared voltage range 'v', plus the project plugin's own checks
 
 The largest current per net goes to <artifacts>/sim/net_currents.json – the input for the track widths
 (`edakit pcb plan`, gate check L-5). Exit code: 0 = all passed, 2 = at least one 'fail', 1 = tool error.
