@@ -13,8 +13,8 @@
     edakit gate [--easyeda]          release gate with test protocol and manufacturing files
     edakit fab --board B --out DIR   stages L/F for one board (the gate calls it)
     edakit lock [status|claim|release|yield CHAT]   share EasyEDA between parallel Claude sessions
-    edakit doctor                    Node, easyeda-mcp-pro, bridge, EasyEDA process, ngspice, Freerouting
     edakit proposal template|seal|verify   a rule proposal for the edakit repository, sealed with its SHA-256
+    edakit doctor                    Node, easyeda-mcp-pro, bridge, EasyEDA process, ngspice, Freerouting
 
 Exit codes everywhere: 0 = ok, 2 = findings, 1 = error.
 """
@@ -124,13 +124,13 @@ def build_parser():
     p.add_argument("--auto", action="store_true", help="claim from a script (logged as automatic)")
     _common(p)
 
-    p = sub.add_parser("doctor", help="check the tool chain")
-    _common(p)
     p = sub.add_parser("proposal", help="rule proposals for the edakit repository: template, seal, verify")
     p.add_argument("action", choices=["template", "seal", "verify"])
     p.add_argument("file", nargs="?", help="seal, verify: the text (- for stdin)")
     p.add_argument("--out", help="seal: write the issue body into this file instead of stdout")
 
+    p = sub.add_parser("doctor", help="check the tool chain")
+    _common(p)
     return ap
 
 
@@ -143,11 +143,11 @@ def main(argv=None):
     if args.command == "rules":
         from . import rules
         return rules.main_rules(args)
-    if args.command == "block" and args.action in ("list", "show"):
-        from . import block
     if args.command == "proposal":
         from . import proposal
         return proposal.main(args)
+    if args.command == "block" and args.action in ("list", "show"):
+        from . import block
         return block.main(None, args)
     from . import config
     try:

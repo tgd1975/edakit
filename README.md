@@ -72,11 +72,11 @@ the agents `electrical-reviewer` and `pcb-reviewer` do the independent reviews w
 design (`circuit-design`) and its review are kept apart: the session that designs does not review
 ([handbook 14](handbook/14-design.md)).
 
-## Example: the Christmas bell
 What a project teaches goes back with `/edakit:propose-rule`: a check, hint, block or part fact as an issue here,
 sealed with its SHA-256. An Action triages it – accepted and built into one pull request of rule proposals, rejected
 with the reason, or a question back ([handbook 14.4](handbook/14-design.md#144-from-a-finding-to-a-check)).
 
+## Example: the Christmas bell
 
 [automatic_christmas_bell](https://github.com/tgd1975/automatic_christmas_bell) – an Arduino Nano counts down on five LEDs, then a servo rings a real bell. It is
 the second board built with edakit and started as a Fritzing breadboard drawing. It was not a push-button run:
