@@ -38,7 +38,8 @@ In doubt between check and hint: a hint. A check that has to guess produces waiv
    component accepts a finding with its reason.
 4. **Seen red once:** build the fault into the example (`tests/fixtures/led-bar`; helpers in `tests/conftest.py`,
    checked parts with `project.use_library_part`) and expect exactly this check, then the repaired circuit without it.
-   `test_example_is_clean` stays green.
+   `test_example_is_clean` stays green. L and F: one more entry in `FAULTS` of `tests/test_fab_run.py`, the written
+   export of the example's input stage (handbook 8.1).
 5. **Real projects, read only:** run it on the projects at hand. `edakit check` and `edakit hints` write nothing; for
    the simulation call `run_all` from Python – `edakit sim` writes `net_currents.json` into the project. A project
    without edakit.toml gets one in the scratchpad that points at its graph and parts. Every new finding there is a

@@ -18,7 +18,8 @@ Show the gap in a test before changing the code, with today's edakit:
 - in the example `tests/fixtures/led-bar` (helpers in `tests/conftest.py`, checked parts with
   `project.use_library_part`): the pattern built in, the command that fails or reports wrongly
 - or on the module's functions with a small input: the board file for routing (`tests/test_route.py`), the plan
-  (`test_pcb.py`), Gerber files (`test_fab.py`, `test_silk.py`), the netlist (`test_sim.py`)
+  (`test_pcb.py`), Gerber files (`test_fab.py`, `test_silk.py`), a whole export of stages L and F
+  (`test_fab_run.py`), the netlist (`test_sim.py`)
 
 The test fails for the reason the proposal gives. If it does not, the gap is not what the proposal says: stop and ask.
 

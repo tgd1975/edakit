@@ -89,8 +89,10 @@ HEADER_GEO = {"U1": footprint(51, 21, MODULE, tht=True), "C2": footprint(3.7, 1.
 
 
 def plan_check(project, parts, geo, **keys):
-    """The plan check of a 90 x 40 mm board without holes: `parts` {ref: (x, y)} on top at 0°."""
-    rows = "\n".join(f'{r} = {{ x = {x}, y = {y}, rot = 0, side = "top" }}' for r, (x, y) in parts.items())
+    """The plan check of a 90 x 40 mm board without holes: `parts` {ref: (x, y)} at 0°, on top unless a third value
+    names the side."""
+    rows = "\n".join(f'{r} = {{ x = {p[0]}, y = {p[1]}, rot = 0, side = "{p[2] if len(p) > 2 else "top"}" }}'
+                      for r, p in parts.items())
     (project.root / "hardware" / "boards" / "main.toml").write_text(f"[outline]\nrect = [90, 40]\n\n[place]\n{rows}\n")
     cfg = project.config()
     board = cfg.board()
@@ -174,3 +176,28 @@ def test_small_part_inside_a_box_stays_an_overlap(project):
 def test_silkscreen_tolerance_leaves_parts_under_a_module_on_headers_alone(project):
     assert under_module(project, UNDER, on_headers={"U1"}, silk_overlap_mm=0.8) == [
         "D1: on the pins of U1 (top) – 0.00 mm from pin 5 (header_keep_mm 1.27)"]
+
+
+# --- the plan's other findings (#18): outline, mounting and tooling holes, through-hole pins of the other side
+
+def test_plan_findings_at_the_outline_the_holes_and_the_other_side(project):
+    geo = {**{r: footprint(3.7, 1.9, CHIP) for r in ("R1", "R2", "C1", "C2")}, "J1": HEADER_GEO["J1"]}
+    parts = {"R1": (1.5, 20),              # its box reaches 0.35 mm over the left edge
+             "R2": (12, 30),               # its box 0.15 mm from the centre of the hole (10, 30): in the keep-out
+             "C1": (61, 37),               # over the tooling hole (60, 37)
+             "J1": (60, 20), "C2": (60, 20, "bottom")}   # J1's two pins under C2 on the other side
+    holes = [{"x": 10, "y": 30, "d": 3.2, "keep": 3.2}, {"x": 1.5, "y": 1.5, "d": 3.2, "keep": 3.2}]
+    tooling = [(89.5, 5), (60, 37), (8, 32)]
+    assert plan_check(project, parts, geo, holes=holes, tooling=tooling) == [
+        "R1: reaches over the outline (keep 0.3 mm)",
+        "R2: inside the keep-out of the hole (10, 30)",
+        "C1: inside the keep-out of the tooling hole (60, 37)",
+        "hole (1.5, 1.5): too close to the outline",
+        "tooling hole (89.5, 5): too close to the outline",
+        "tooling hole (8, 32): too close to a mounting hole",
+        "C2 (bottom): 2 THT pins of the other side underneath"]
+
+
+def test_one_tooling_hole_is_not_enough(project):
+    assert plan_check(project, {"R1": (20, 20)}, {"R1": footprint(3.7, 1.9, CHIP)}, tooling=[(50, 20)]) == [
+        "JLCPCB wants 2-3 tooling holes in opposite corners, not one"]
