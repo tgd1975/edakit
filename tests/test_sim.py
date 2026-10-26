@@ -208,3 +208,88 @@ def test_bridge_is_simulated_with_its_maximum_resistance(project):
     assert line() == "R_R10 n_3v3 n_3v3_b 0.05"                 # no r_max_ohm in the entry: 50 mΩ
     project.save_part(BRIDGE["lcsc"], {**BRIDGE, "params": {"value_ohm": 0.0, "r_max_ohm": 0.02}})
     assert line() == "R_R10 n_3v3 n_3v3_b 0.02"
+
+
+# XINGLIGHT XL-B504RGBC, 5 mm RGB LED with a common anode: pin 1 = anode, 2 = red, 3 = green, 4 = blue cathode;
+# IF 20 mA, VR 5 V per colour; VF at 20 mA red 1.8–2.4 V, green and blue 2.8–3.4 V (no typical value: the middle)
+RGB = {"lcsc": "C7371895", "mpn": "XL-B504RGBC", "manufacturer": "XINGLIGHT", "kind": "led_rgb",
+       "verified": {"by": "test"},
+       "pins": {"1": {"name": "A", "type": "passive", "role": "anode"},
+                "2": {"name": "R", "type": "passive", "role": "cathode_red"},
+                "3": {"name": "G", "type": "passive", "role": "cathode_green"},
+                "4": {"name": "B", "type": "passive", "role": "cathode_blue"}},
+       "params": {"red": {"vf_min": 1.8, "vf_typ": 2.1, "vf_max": 2.4, "vf_at_a": 0.02, "rs_ohm": 10},
+                  "green": {"vf_min": 2.8, "vf_typ": 3.1, "vf_max": 3.4, "vf_at_a": 0.02, "rs_ohm": 10},
+                  "blue": {"vf_min": 2.8, "vf_typ": 3.1, "vf_max": 3.4, "vf_at_a": 0.02, "rs_ohm": 10}},
+       "ratings": {c: {"if_max_a": 0.02, "vr_max": 5} for c in ("red", "green", "blue")}}
+COMMON_CATHODE = {"1": "cathode", "2": "anode_red", "3": "anode_green", "4": "anode_blue"}
+
+
+def rgb_led(project, roles=None):
+    """D7–D9 out, one RGB LED D10 in: pin 1 at +5V, pins 2–4 on LED5–LED7 (OUT5–OUT7 of U2). `roles` changes the
+    roles of the parts entry, e.g. to the common cathode."""
+    part = json.loads(json.dumps(RGB))
+    for num, role in (roles or {}).items():
+        part["pins"][num]["role"] = role
+    project.save_part(RGB["lcsc"], part)
+    g = project.graph()
+    g["graph"]["components"] = [c for c in g["graph"]["components"] if c["designator"] not in ("D7", "D8", "D9")]
+    g["graph"]["components"].append({"designator": "D10", "type": "led", "lcsc": RGB["lcsc"], "part": RGB["mpn"],
+                                     "pins": {"1": "A", "2": "R", "3": "G", "4": "B"}, "value": "RGB"})
+    for net in g["graph"]["nets"]:
+        net["pins"] = [p for p in net["pins"] if p.split(".")[0] not in ("D7", "D8", "D9")]
+    g["graph"]["layout"]["fixed"] = [d for d in g["graph"]["layout"]["fixed"] if d not in ("D7", "D8", "D9")] + ["D10"]
+    project.net(g, "+5V")["pins"].append("D10.1")
+    for pin, net in (("2", "LED5"), ("3", "LED6"), ("4", "LED7")):
+        project.net(g, net)["pins"].append(f"D10.{pin}")
+    project.save_graph(g)
+
+
+def test_rgb_led_with_a_common_anode(project):
+    rgb_led(project)
+    out = simulate(project)
+    assert not failing(out) and all(s["status"] == "ok" for s in out["scenarios"])
+    assert len(out["checks"]) == 714                              # as many as the example with D7–D9
+    for color, net in (("RED", "LED5"), ("GREEN", "LED6"), ("BLUE", "LED7")):
+        mine = [c for c in out["checks"] if c["item"] == f"D10_{color}"]
+        on = [c for c in mine if c["check"] == f"LED current ({net})"]
+        assert len(on) == 6 and all(float(c["actual"].split()[0]) == pytest.approx(0.00945, rel=0.02) for c in on)
+        assert len([c for c in mine if c["check"] == "LED dark"]) == 6          # idle: 3 supplies x 2 corners
+        assert len([c for c in mine if c["id"] == "E-2"]) == 24                 # forward current, reverse voltage
+    j1 = next(s for s in out["scenarios"] if s["name"] == "usb-min/all_on/vf-max")["sources"]["J1"]
+    assert j1 == pytest.approx(0.114, abs=0.002)
+
+
+def test_rgb_led_with_a_common_anode_by_leds_on(project):
+    rgb_led(project)                                              # each cathode through 1 kΩ to GND, no driver output:
+    project.use_library_part("C17513")                            # E-3 goes by the load's leds_on
+    g = project.graph()
+    for pin, net, des in (("2", "LED5", "R10"), ("3", "LED6", "R11"), ("4", "LED7", "R12")):
+        project.net(g, net)["pins"].remove(f"D10.{pin}")
+        g["graph"]["components"].append({"designator": des, "type": "resistor", "lcsc": "C17513",
+                                         "pins": {"1": "1", "2": "2"}, "value": "1k"})
+        g["graph"]["nets"].append({"name": f"K{pin}", "pins": [f"D10.{pin}", f"{des}.1"], "v": [0, 5.5]})
+        project.net(g, "GND")["pins"].append(f"{des}.2")
+    project.save_graph(g)
+    sim = json.loads((project.root / "hardware" / "sim.json").read_text())
+    sim["loads"]["idle"]["leds_on"] = ["D10"]                     # the designator: all three colours
+    sim["loads"]["all_on"]["leds_on"] = ["D10_RED"]               # one colour – green and blue light all the same
+    out = simulate(project, sim)
+    led = {(c["scenario"].split("/")[1], c["item"], c["check"], c["result"]) for c in out["checks"]
+           if c["item"].startswith("D10_") and c["id"] == "E-3"}
+    assert led == {("idle", f"D10_{x}", "LED on", "pass") for x in ("RED", "GREEN", "BLUE")} | {
+        ("all_on", "D10_RED", "LED on", "pass"), ("all_on", "D10_GREEN", "LED dark", "fail"),
+        ("all_on", "D10_BLUE", "LED dark", "fail")}
+
+
+@pytest.mark.parametrize("roles,anode,cathode", [(None, "n__5v", "n_led{}"), (COMMON_CATHODE, "n_led{}", "n__5v")])
+def test_rgb_led_layout_from_its_roles(project, roles, anode, cathode):
+    from edakit.sim import netlist
+    rgb_led(project, roles)                                       # the common pin is anode or cathode by its role
+    sim = json.loads((project.root / "hardware" / "sim.json").read_text())
+    sc = next(simrun.scenarios(sim))
+    text, meta = netlist.build(Design.from_config(project.config()), sim, sc)
+    for i, color in ((5, "red"), (6, "green"), (7, "blue")):
+        a, k = anode.format(i), cathode.format(i)
+        assert f"D_D10_{color} {a} {k} LED_C7371895_{color}_{sc['corner']}" in text.splitlines()
+        assert meta["leds"][f"d_d10_{color}"]["des"] == "D10"

@@ -1,11 +1,13 @@
 """Graph + parts database -> ngspice netlist for one operating point (.op) of one scenario.
 
 Passive parts, diodes, LEDs, transistors and MOSFETs come from the graph 1:1, their values and SPICE models from the
-parts database; a 0 Ω bridge (value_ohm 0) is its maximum resistance r_max_ohm, 50 mΩ without one. Switches, buttons
-and DIP switches are closed or open as the scenario's load says; a relay is its coil resistance (coil_ohm between the
-roles coil_plus and coil_minus) plus a contact from common to no when the load lists it in "relays_on", else to nc.
-Supplies are connectors listed under "sources" in the simulation config, or battery holders with a cell state. Off-board loads
-(a servo, a motor at a connector) are constant currents between two pins, listed under the load's "external".
+parts database; a 0 Ω bridge (value_ohm 0) is its maximum resistance r_max_ohm, 50 mΩ without one. An RGB LED is
+three LEDs with the params and ratings of their colour, common cathode (roles anode_<color>, cathode) or common anode
+(anode, cathode_<color>) as its roles say. Switches, buttons and DIP switches are closed or open as the scenario's
+load says; a relay is its coil resistance (coil_ohm between the roles coil_plus and coil_minus) plus a contact from
+common to no when the load lists it in "relays_on", else to nc. Supplies are connectors listed under "sources" in the
+simulation config, or battery holders with a cell state. Off-board loads (a servo, a motor at a connector) are
+constant currents between two pins, listed under the load's "external".
 
 ICs and modules are replaced by behaviour models, chosen by params.behavior in the parts database:
 
@@ -123,20 +125,20 @@ class Netlist:
             return
         self.add(f"{prefix}_{des} {a} {b} {value:.6g}", des, kind, (a, b), value)
 
-    def led(self, des, part, color=None, anode_role="anode"):
+    def led(self, des, part, color=None, anode_role="anode", cathode_role="cathode"):
         params = part["params"][color] if color else part["params"]
         corner = self.sc["corner"]
         vf = params[{"min": "vf_min", "max": "vf_max"}.get(corner, "vf_typ")]
         model = f"LED_{part.get('lcsc', des)}_{color or 'x'}_{corner}"
         self.models[model] = led_model(model, vf, params["vf_at_a"], params.get("rs_ohm", 10))
         roles = self.roles(des)
-        a, k = self.n(roles.get(anode_role)), self.n(roles.get("cathode"))
+        a, k = self.n(roles.get(anode_role)), self.n(roles.get(cathode_role))
         if a is None or k is None:
             return
         name = f"D_{des}" + (f"_{color}" if color else "")
         self.add(f"{name} {a} {k} {model}", des, "led", (a, k))
         self.meta["leds"][name.lower()] = {"des": des, "color": color, "anode_net": roles.get(anode_role),
-                                           "cathode_net": roles.get("cathode")}
+                                           "cathode_net": roles.get(cathode_role)}
 
     def source(self, des, spec, value):
         """Supply at a connector: voltage source behind a source resistance (cable, power supply)."""
@@ -195,9 +197,11 @@ class Netlist:
             self.add(f"M_{des} {dr} {g} {s} {s} {self.model(des, part)}", des, kind, (dr, g, s))
         elif kind == "led":
             self.led(des, part)
-        elif kind == "led_rgb":
+        elif kind == "led_rgb":   # the roles say the layout: a common anode, or a common cathode
+            common_anode = any(info.get("role") == "anode" for info in part["pins"].values())
             for color in ("red", "green", "blue"):
-                self.led(des, part, color, f"anode_{color}")
+                roles = ("anode", f"cathode_{color}") if common_anode else (f"anode_{color}", "cathode")
+                self.led(des, part, color, *roles)
         elif kind == "battery_holder":
             cell_name = supply.get(des)
             if cell_name is None:

@@ -14,6 +14,11 @@ on the delivered board instead (acceptance test).
 - Resistors, capacitors, inductors (with DCR), fuses, diodes, LEDs (model from Vf at a test current), BJTs, MOSFETs
   come from the graph 1:1, values and SPICE models from the parts database. A 0 Ω bridge (`value_ohm: 0`) is its
   `r_max_ohm`, 50 mΩ without one – ngspice finds no operating point with 0 Ω.
+- An RGB LED (`led_rgb`) is three LEDs, one per colour with that colour's `params` and `ratings`. The roles choose the
+  layout (4.1): with a common cathode each colour runs from `anode_<color>` to `cathode`, with a common anode from
+  `anode` to `cathode_<color>` – the layout a constant-current sink or a low-side switch per colour needs. Each colour
+  is checked as an LED of its own (`D10_RED`, `D10_GREEN`, `D10_BLUE`): E-2 against its ratings, E-3 on its driver
+  output or by the load's `leds_on`, where the designator turns on all three colours and `D10_RED` one.
 - Switches, buttons, DIP switches are closed or open as the scenario's load says (`buttons`, `open`, `dip_closed`).
   A relay is its coil (`coil_ohm`) plus a contact from `common` to `no` when the load lists it in `relays_on`, else to
   `nc`.
