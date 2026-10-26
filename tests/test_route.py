@@ -684,25 +684,99 @@ def test_pad_gaps_between_parts_on_different_nets():
     assert gaps(close_pads(), ({}, {"N2": "net tie"}))[0][4] == "net tie"
 
 
-def test_route_check_finds_pads_too_close_before_anything_is_written(tmp_path, capsys):
-    """The proposal's case: on a 40 x 20 mm board, `route check` reported 0 findings for R1.2 (N2) and R2.1 (N3)
-    0.090 mm apart. Every net has one pad, the SES no tracks: only L-13 has something to find."""
+def check_project(tmp_path, pads, release=""):
+    """A 40 x 20 mm board with these pads read, an SES without tracks -> (cfg, args of `route check`)."""
     from argparse import Namespace
-    (tmp_path / "edakit.toml").write_text('[project]\nname = "t"\n[boards.main]\n')
-    (tmp_path / "hardware" / "boards").mkdir(parents=True)
+    (tmp_path / "edakit.toml").write_text('[project]\nname = "t"\n[boards.main]\n' + release)
+    (tmp_path / "hardware" / "boards").mkdir(parents=True, exist_ok=True)
     (tmp_path / "hardware" / "boards" / "main.toml").write_text("[outline]\nrect = [40, 20]\n")
     cfg = config.load(tmp_path / "edakit.toml")
     P = route.paths(cfg, cfg.board())
-    P["board"].write_text(json.dumps({"pcb": "main", "components": [], "pads": close_pads(),
+    P["board"].write_text(json.dumps({"pcb": "main", "components": [], "pads": pads,
                                       "outlines": [[mm(0, 0), mm(40, 0), mm(40, 20), mm(0, 20)]]}))
     P["ses"].write_text("(session t (routes (resolution mil 100) (parser) (network_out)))")
-    args = Namespace(board=None, action="check", verbose=False, clearance=None, passes=None, threads=1,
-                     no_optimizer=False, cleanup=False)
+    return cfg, Namespace(board=None, action="check", verbose=False, clearance=None, passes=None, threads=1,
+                          no_optimizer=False, cleanup=False)
+
+
+def waive(tmp_path, **rules):
+    (tmp_path / "hardware" / "graph.json").write_text(json.dumps(
+        {"components": [{"designator": "R2", "waive": rules}], "nets": []}))
+
+
+def test_route_check_finds_pads_too_close_before_anything_is_written(tmp_path, capsys):
+    """The proposal's case: on a 40 x 20 mm board, `route check` reported 0 findings for R1.2 (N2) and R2.1 (N3)
+    0.090 mm apart. Every net has one pad, the SES no tracks: only L-13 – and L-14, the paste gap below it – have
+    something to find."""
+    cfg, args = check_project(tmp_path, close_pads())
     assert route.main(cfg, args) == 2
     out = capsys.readouterr().out
     assert "pads of different parts: 1 pairs closer than the clearance 6.5 mil" in out
     assert "R1.2 (N2) – R2.1 (N3): 0.090 mm apart on TOP" in out and "clearances/keep-outs: 0 findings" in out
-    (tmp_path / "hardware" / "graph.json").write_text(json.dumps(
-        {"components": [{"designator": "R2", "waive": {"L-13": "close on purpose"}}], "nets": []}))
+    waive(tmp_path, **{"L-13": "close on purpose"})
+    assert route.main(cfg, args) == 2                                              # the paste gap (L-14) still
+    out = capsys.readouterr().out
+    assert "0 pairs closer than the clearance 6.5 mil, 1 waived (L-13)" in out
+    assert "SMD pads of different parts on TOP and BOTTOM: 1 pairs closer than the paste gap 0.4 mm" in out
+    waive(tmp_path, **{"L-13": "close on purpose", "L-14": "close on purpose"})
     assert route.main(cfg, args) == 0                                              # waived in the graph
-    assert "0 pairs closer than the clearance 6.5 mil, 1 waived (L-13)" in capsys.readouterr().out
+    assert "0 pairs closer than the paste gap 0.4 mm, 1 waived (L-14)" in capsys.readouterr().out
+
+
+# --- SMD pads of different parts leave a paste gap (L-14, #13): the same row with R2 0.21 mm further right, so that
+# R1.2 (N2) and R2.1 (N3) are 0.30 mm apart – above the clearance (L-13), below the paste gap of 0.4 mm
+
+def paste_pads(**change):
+    xs = {"R2.1": 12.70, "R2.2": 13.55}
+    return close_pads(**{n: {"x": mm(x, 10)[0], **change.get(n, {})} for n, x in xs.items()},
+                      **{n: c for n, c in change.items() if n not in xs})
+
+
+def paste_gaps(pads, sides=("TOP", "BOTTOM"), waivers=({}, {})):
+    return [(g["a"], g["b"], g["layers"], round(g["mil"] / MIL, 3), g["waived"])
+            for g in route.pad_gaps({"pads": pads}, 0.4 * MIL, waivers, sides)]
+
+
+def test_paste_gap_between_smd_pads_on_the_assembled_sides():
+    assert gaps(paste_pads()) == []                                                 # no L-13: above the clearance
+    assert paste_gaps(paste_pads()) == [("R1.2", "R2.1", ["TOP"], 0.3, None)]
+    pair = route.pad_gaps({"pads": paste_pads()}, 0.4 * MIL, smd_on=("TOP",))[0]
+    assert route.gap_text(pair, 0.4 * MIL, "the paste gap") == \
+        "R1.2 (N2) – R2.1 (N3): 0.300 mm apart on TOP, below the paste gap 0.400 mm"
+    assert paste_gaps(paste_pads(), ("BOTTOM",)) == []                              # TOP not assembled
+    assert paste_gaps(paste_pads(), ()) == []                                       # nothing assembled
+    bottom = {n: {"layer": 2} for n in ("R1.1", "R1.2", "R2.1", "R2.2")}
+    assert paste_gaps(paste_pads(**bottom), ("BOTTOM",)) == [("R1.2", "R2.1", ["BOTTOM"], 0.3, None)]
+    assert paste_gaps(paste_pads(**{"R2.1": {"layer": 12}})) == []                  # through hole: no paste
+    assert paste_gaps(paste_pads(**{"R2.1": {"net": "N2"}})) == []                  # one net
+    assert paste_gaps(paste_pads(**{"R1.2": {"net": ""}}))[0][:2] == ("R1.2", "R2.1")  # no net: a net of its own
+    assert paste_gaps(paste_pads(**{"R2.1": {"x": mm(12.8, 10)[0]}})) == []         # 0.40 mm: at the paste gap
+    only_l13 = route.pad_waivers({"components": [{"designator": "R2", "waive": {"L-13": "x"}}]}, "L-14")
+    assert paste_gaps(paste_pads(), waivers=only_l13)[0][4] is None                 # waivers per check
+    net = route.pad_waivers({"nets": [{"name": "N3", "waive": {"L-14": "paste reduced"}}]}, "L-14")
+    assert paste_gaps(paste_pads(), waivers=net)[0][4] == "paste reduced"
+
+
+def test_paste_rule_from_release_assembly(tmp_path):
+    (tmp_path / "edakit.toml").write_text('[project]\nname = "t"\n[boards.main]\n')
+    gap, sides = route.paste_rule(config.load(tmp_path / "edakit.toml"))
+    assert (round(gap / MIL, 6), sides) == (0.4, ("TOP", "BOTTOM"))                # as F-3: both sides by default
+    (tmp_path / "edakit.toml").write_text('[project]\nname = "t"\n[boards.main]\n[release]\n'
+                                          'assembly = { sides = ["top"], paste_gap_mm = 0.5 }\n')
+    gap, sides = route.paste_rule(config.load(tmp_path / "edakit.toml"))
+    assert (round(gap / MIL, 6), sides) == (0.5, ("TOP",))
+
+
+def test_route_check_finds_smd_pads_closer_than_the_paste_gap(tmp_path, capsys):
+    """#13's case: SMD pads of two parts on different nets 0.30 mm apart on a 40 x 20 mm board – `route check`
+    reported 0 findings, and the clearance (L-13) has none. L-14 stops the check; assembled on the other side only,
+    the pads get no paste and it passes."""
+    cfg, args = check_project(tmp_path, paste_pads())
+    assert route.main(cfg, args) == 2
+    out = capsys.readouterr().out
+    assert "pads of different parts: 0 pairs closer than the clearance 6.5 mil" in out
+    assert "SMD pads of different parts on TOP and BOTTOM: 1 pairs closer than the paste gap 0.4 mm" in out
+    assert "R1.2 (N2) – R2.1 (N3): 0.300 mm apart on TOP, below the paste gap 0.400 mm" in out
+    cfg, args = check_project(tmp_path, paste_pads(), '[release]\nassembly = { sides = ["bottom"] }\n')
+    assert route.main(cfg, args) == 0
+    assert "SMD pads of different parts on BOTTOM: 0 pairs" in capsys.readouterr().out

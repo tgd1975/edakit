@@ -9,8 +9,8 @@ The whole example has never been routed or exported, so no real export of it exi
 jlc_parts.json (so F-2 stays offline), and the Gerber and drill files with FlyingProbeTesting.json. It also has the
 footprint geometry of `edakit pcb dump`, the net currents of `edakit sim` – 0.5 A on all three nets, which puts
 them in class POWER (0.6 mm), with an IPC-2221 width of 0.20 mm – and the board as `edakit route read` saw it (pads
-with their shapes, for L-13), written from pcb.json when the export is written. J1 is through-hole and the example orders Economic
-assembly (SMD only), so the cut-down graph leaves J1 out of the BOM, to be soldered by hand.
+with their shapes, for L-13 and L-14), written from pcb.json when the export is written. J1 is through-hole and the
+example orders Economic assembly (SMD only), so the cut-down graph leaves J1 out of the BOM, to be soldered by hand.
 
 A new check of stage L or F gets its fault here: one more entry in FAULTS.
 """
@@ -274,8 +274,8 @@ def findings(rows):
     return sorted((r["id"], r["result"]) for r in rows if r["result"] not in ("pass", "info"))
 
 
-CHECKS = ["L-1", "L-2", "L-3", "L-4", "L-5", "L-7", "L-8", "L-9", "L-10", "L-11", "L-12", "L-13", "F-1", "F-2", "F-3",
-          "F-5"]
+CHECKS = ["L-1", "L-2", "L-3", "L-4", "L-5", "L-7", "L-8", "L-9", "L-10", "L-11", "L-12", "L-13", "L-14", "F-1", "F-2",
+          "F-3", "F-5"]
 
 
 def test_the_clean_export_passes_every_check(project):
@@ -286,6 +286,9 @@ def test_the_clean_export_passes_every_check(project):
     assert by["L-11", "short current loops: path over tracks per pad pair within the limit"] == "J1.1-D1.2 7.8 mm"
     assert by["L-9", "hole takes the lead at nominal size (diagonal or edge, or manufacturer's value)"] == "2 holes"
     assert by["L-8", "silkscreen '+'/'−' = role of the nearest polarised pad"] == "1 signs correct"
+    paste_row = next(r for r in rows if r["id"] == "L-14")
+    assert (paste_row["actual"], paste_row["expected"]) == (
+        "4 SMD pads", ">= 0.400 mm on TOP ([release] assembly paste_gap_mm)")     # J1 is through-hole
 
 
 def test_edakit_fab_offline_on_the_clean_export(project, monkeypatch, capsys):
@@ -333,6 +336,13 @@ def crowd(ex, project):
     board_file(project, "C2 = { x = 20,", "C2 = { x = 8.01,")
     board_file(project, 'edge_ok = ["J1"]', 'edge_ok = ["J1"]\nsilk_overlap_mm = 0.2')
     ex.move("C2", 8.01 - 20)
+
+
+def paste(ex, project):
+    """C2 fixed left of D1, its GND pad 0.30 mm from D1's VIN pad (anode): above the clearance, below the paste gap of
+    0.4 mm on the assembled top side. The boxes stay 0.05 mm apart."""
+    board_file(project, "C2 = { x = 20,", "C2 = { x = 7.8,")
+    ex.move("C2", 7.8 - 20)
 
 
 def assembled_j1(ex, project):
@@ -404,11 +414,17 @@ FAULTS = [
      [("L-12", "fail", "J1: not in hardware/boards/main.toml [place] – the circuit wants it at the board edge")]),
     # L-13
     ("two parts with their pads closer than the clearance", crowd,
-     [("L-13", "fail", "C2.2 (GND) – D1.2 (VIN): 0.090 mm apart on TOP, below the clearance 0.165 mm")]),
+     [("L-13", "fail", "C2.2 (GND) – D1.2 (VIN): 0.090 mm apart on TOP, below the clearance 0.165 mm"),
+      ("L-14", "fail", "C2.2 (GND) – D1.2 (VIN): 0.090 mm apart on TOP, below the paste gap 0.400 mm")]),
     ("the board never read by route read", lambda ex, p: setattr(ex, "shapes", None),
-     [("L-13", "fail", "build/edakit/route/main_board.json missing (edakit route read)")]),
+     [("L-13", "fail", "build/edakit/route/main_board.json missing (edakit route read)"),
+      ("L-14", "fail", "build/edakit/route/main_board.json missing (edakit route read)")]),
     ("a part moved since the board was read", lambda ex, p: ex.read_off.update(C2=1),
-     [("L-13", "fail", "C2.1, C2.2 moved or changed since: edakit route read")]),
+     [("L-13", "fail", "C2.1, C2.2 moved or changed since: edakit route read"),
+      ("L-14", "fail", "C2.1, C2.2 moved or changed since: edakit route read")]),
+    # L-14
+    ("two SMD parts with their pads closer than the paste gap", paste,
+     [("L-14", "fail", "C2.2 (GND) – D1.2 (VIN): 0.300 mm apart on TOP, below the paste gap 0.400 mm")]),
     # F-1
     ("another LCSC number in EasyEDA's BOM", lambda ex, p: ex.bom[2].update(lcsc="C15850"),
      [("F-1", "fail", "C2: graph C45783, EasyEDA C15850")]),
@@ -460,9 +476,30 @@ def test_a_waived_pad_pair_is_listed_with_its_reason(project):
         crowd(ex, p)
         graph(p, lambda g: p.comp(g, "C2").update(waive={"L-13": "test: close on purpose"}))
     rows = run(project, waived)
-    assert findings(rows) == [("L-13", "waived")]
+    assert findings(rows) == [("L-13", "waived"), ("L-14", "fail")]          # a waiver holds for its own check
     w = next(r for r in rows if r["result"] == "waived")
     assert w["reason"] == "test: close on purpose" and "C2.2 (GND) – D1.2 (VIN): 0.090 mm" in w["check"]
+
+
+def test_a_waived_paste_gap_is_listed_with_its_reason(project):
+    def waived(ex, p):
+        paste(ex, p)
+        graph(p, lambda g: next(n for n in g["graph"]["nets"] if n["name"] == "VIN").update(
+            waive={"L-14": "test: paste reduced on D1"}))
+    rows = run(project, waived)
+    assert findings(rows) == [("L-14", "waived")]
+    w = next(r for r in rows if r["result"] == "waived")
+    assert w["reason"] == "test: paste reduced on D1" and "C2.2 (GND) – D1.2 (VIN): 0.300 mm" in w["check"]
+
+
+def test_no_paste_gap_on_a_side_that_is_not_assembled(project):
+    def bottom_only(ex, p):
+        paste(ex, p)
+        f = p.root / "edakit.toml"
+        f.write_text(f.read_text().replace('sides = ["top"]', 'sides = ["bottom"]'))   # F-3 fails, not L-14
+    rows = run(project, bottom_only)
+    assert not [r for r in rows if r["id"] == "L-14" and r["result"] != "pass"]
+    assert next(r for r in rows if r["id"] == "L-14")["actual"] == "0 SMD pads"
 
 
 def test_every_check_has_a_fault():

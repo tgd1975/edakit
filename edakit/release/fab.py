@@ -355,6 +355,34 @@ def check_pad_clearance(cfg, board, design, d, rows):
             rows[-1]["reason"] = g["waived"]
 
 
+def check_paste_gap(cfg, board, design, d, rows):
+    """L-14: on every side that is assembled ([release] assembly sides), SMD pads of different parts on different nets
+    at least the paste gap apart (paste_gap_mm, 0.4 mm) – the stencil keeps a web between their prints. Measured on
+    the pad shapes of `route read` as L-13 and `route check` measure them. A pair waived in the graph (waive L-14 on
+    one of its parts or nets) is listed with its reason."""
+    from .. import route
+    gap, sides = route.paste_rule(cfg)
+    what = "SMD pads of different parts on different nets at least the paste gap apart on the assembled sides"
+    if not sides:
+        rows.add("L", "L-14", board.name, what, True, "no side assembled ([release] assembly sides)", "–")
+        return
+    want = f">= {gap * MM:.3f} mm on {' and '.join(sides)} ([release] assembly paste_gap_mm)"
+    data, why = route.board_as_read(cfg, board, json.loads((d / "pcb.json").read_text())["components"])
+    if data is None:
+        rows.add("L", "L-14", board.name, "pad shapes for the paste gap", False, why, "the PCB as read")
+        return
+    gaps = route.pad_gaps(data, gap, route.pad_waivers(design.graph, "L-14"), sides)
+    bad = [route.gap_text(g, gap, "the paste gap") for g in gaps if not g["waived"]]
+    smd = sum(1 for p in data["pads"] if p["ref"] and route.LAYERS.get(p["layer"]) in sides)
+    rows.add("L", "L-14", board.name, what, not bad,
+             "; ".join(bad[:10]) + (f" … ({len(bad)} pairs)" if len(bad) > 10 else "") or f"{smd} SMD pads", want)
+    for g in gaps:
+        if g["waived"]:
+            rows.add("L", "L-14", board.name, f"paste gap: {route.gap_text(g, gap, 'the paste gap')}", True,
+                     f"{g['mil'] * MM:.3f} mm", want, "waived")
+            rows[-1]["reason"] = g["waived"]
+
+
 def lead_max(lead, tol=True):
     t = (lead.get("tol_mm") or 0) if tol else 0
     a = lead["a_mm"] + t
@@ -625,6 +653,7 @@ def run(cfg, board, out, offline=False, verbose=False):
     check_drills(board, design, d, rows)
     check_loops(board, design, d, rows)
     check_pad_clearance(cfg, board, design, d, rows)
+    check_paste_gap(cfg, board, design, d, rows)
     check_fab(cfg, board, design, d, rows)
     if (d / "gerber").exists():
         from . import polarity

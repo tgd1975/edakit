@@ -8,9 +8,10 @@ start, has a fixed 900 s limit and left nets open. So routing happens outside Ea
     2 dsn      offline: our own Specctra DSN (rules from [routing] of the board file); parts, pins and nets in a
                fixed order; with fanout on a plane, a protected via and stub for each SMD pad on the other layer
     3 route    offline: Freerouting (pinned, downloads itself once, SHA-256 checked), no GUI -> <board>.ses
-    4 check    offline: pads of different parts on different nets at least the clearance apart (L-13; no new attempt
-               helps there), every net connected, clearances >= rule, nothing in keep-outs; preview PNG with open
-               connections in yellow. In `all`: up to `attempts` runs with a reshuffled DSN while something is open.
+    4 check    offline: pads of different parts on different nets at least the clearance apart (L-13), SMD pads on
+               an assembled side at least the paste gap apart (L-14; no new attempt helps there), every net
+               connected, clearances >= rule, nothing in keep-outs; preview PNG with open connections in yellow.
+               In `all`: up to `attempts` runs with a reshuffled DSN while something is open.
                A pour-only net (pour_only in [[pours]] of the board file) gets no tracks: its pour, computed here,
                connects it
     5 apply    delete all tracks, vias and pours in the PCB, create the ones from the SES, compare geometrically,
@@ -49,7 +50,7 @@ from shapely.geometry import LineString, Point, Polygon, box
 from shapely.ops import unary_union
 
 from . import eda, pcb
-from .config import MIL_PER_MM, POUR_CLEARANCE_MM, POUR_MIN_WIDTH_MM
+from .config import MIL_PER_MM, PASTE_GAP_MM, POUR_CLEARANCE_MM, POUR_MIN_WIDTH_MM
 from .design import natural_key
 from .eda import api, ensure_pcb_focus
 
@@ -936,31 +937,40 @@ def clearance_check(rules, data, routes):
     return found
 
 
-def pad_waivers(graph):
-    """The L-13 waivers of the graph (the inner object, as design.load_graph returns it): ({designator: reason},
-    {net: reason})."""
+def pad_waivers(graph, rule="L-13"):
+    """The waivers of one rule (L-13, L-14) in the graph (the inner object, as design.load_graph returns it):
+    ({designator: reason}, {net: reason})."""
     def of(items, key):
-        return {x[key]: x["waive"]["L-13"] for x in items if "L-13" in (x.get("waive") or {})}
+        return {x[key]: x["waive"][rule] for x in items if rule in (x.get("waive") or {})}
     return of(graph.get("components", []), "designator"), of(graph.get("nets", []), "name")
 
 
-def graph_waivers(cfg):
+def graph_waivers(cfg, rule="L-13"):
     """pad_waivers of the project's graph; none for a board without its graph file."""
     from .design import load_graph
-    return pad_waivers(load_graph(cfg.graph)) if cfg.graph.exists() else ({}, {})
+    return pad_waivers(load_graph(cfg.graph), rule) if cfg.graph.exists() else ({}, {})
 
 
-def pad_gaps(data, gap_mil, waivers=({}, {})):
+def paste_rule(cfg):
+    """L-14 from [release] assembly: (paste gap in mil, the assembled sides as copper layers, e.g. ("TOP",))."""
+    assembly = cfg.release.get("assembly", {})
+    sides = tuple(s.upper() for s in assembly.get("sides", ["top", "bottom"]))
+    return assembly.get("paste_gap_mm", PASTE_GAP_MM) * MIL_PER_MM, sides
+
+
+def pad_gaps(data, gap_mil, waivers=({}, {}), smd_on=None):
     """L-13: pads of different parts on different nets closer than gap_mil on a copper layer both are on (a
     through-hole pad is on both). A pad without a net counts as a net of its own; pads of one part belong to its
     footprint, and a pad without a part (a tooling hole) is no part. A pair is waived when one of its parts or nets
-    has waive L-13 in the graph. -> [{"a", "b" (pad names), "nets", "layers", "mil", "waived" (reason or None)}],
-    closest first."""
+    has the rule's waiver in the graph (waivers: pad_waivers). smd_on (L-14): only SMD pads on these layers ("TOP",
+    "BOTTOM") – the sides that get paste. -> [{"a", "b" (pad names), "nets", "layers", "mil", "waived" (reason or
+    None)}], closest first."""
     from shapely.strtree import STRtree
     parts, nets = waivers
     pairs = {}
-    for layer in ("TOP", "BOTTOM"):
-        its = [(p, pad_outline(p)) for p in data["pads"] if p["ref"] and layer in pad_layers(p)]
+    for layer in ("TOP", "BOTTOM") if smd_on is None else [x for x in ("TOP", "BOTTOM") if x in smd_on]:
+        its = [(p, pad_outline(p)) for p in data["pads"] if p["ref"] and layer in pad_layers(p)
+               and (smd_on is None or p["layer"] in LAYERS)]
         tree = STRtree([g for _, g in its])
         for i, (p, g) in enumerate(its):
             for j in tree.query(g, predicate="dwithin", distance=gap_mil):
@@ -981,11 +991,11 @@ def pad_gaps(data, gap_mil, waivers=({}, {})):
     return sorted(pairs.values(), key=lambda x: (round(x["mil"], 3), natural_key(x["a"]), natural_key(x["b"])))
 
 
-def gap_text(pair, gap_mil):
+def gap_text(pair, gap_mil, what="the clearance"):
     """'R22.2 (N3) – R37.1 (N2): 0.090 mm apart on TOP, below the clearance 0.165 mm'"""
     (na, nb), mm = pair["nets"], 1 / MIL_PER_MM
     return (f"{pair['a']} ({na or 'no net'}) – {pair['b']} ({nb or 'no net'}): {pair['mil'] * mm:.3f} mm apart on "
-            f"{' and '.join(pair['layers'])}, below the clearance {gap_mil * mm:.3f} mm")
+            f"{' and '.join(pair['layers'])}, below {what} {gap_mil * mm:.3f} mm")
 
 
 def board_as_read(cfg, board, components):
@@ -1026,6 +1036,22 @@ def report_pads(rules, data, waivers):
         + (f", {len(gaps) - len(tight)} waived (L-13)" if len(gaps) > len(tight) else ""))
     for g in gaps[:20]:
         print(f"    {gap_text(g, rules.clear)}" + (f" – waived: {g['waived']}" if g["waived"] else ""), flush=True)
+    return tight
+
+
+def report_paste(cfg, data):
+    """L-14, printed: SMD pads of different parts on different nets closer than the paste gap on an assembled side,
+    waived ones with their reason -> those not waived."""
+    gap, sides = paste_rule(cfg)
+    if not sides:
+        return []
+    gaps = pad_gaps(data, gap, graph_waivers(cfg, "L-14"), sides)
+    tight = [g for g in gaps if not g["waived"]]
+    say(f"SMD pads of different parts on {' and '.join(sides)}: {len(tight)} pairs closer than the paste gap "
+        f"{gap / MIL_PER_MM:g} mm" + (f", {len(gaps) - len(tight)} waived (L-14)" if len(gaps) > len(tight) else ""))
+    for g in gaps[:20]:
+        print(f"    {gap_text(g, gap, 'the paste gap')}" + (f" – waived: {g['waived']}" if g["waived"] else ""),
+              flush=True)
     return tight
 
 
@@ -1375,6 +1401,7 @@ def main(cfg, args):
             elif step == "check":
                 data = json.loads(P["board"].read_text())
                 tight = report_pads(rules, data, graph_waivers(cfg))  # the placement's: another routing keeps them
+                tight += report_paste(cfg, data)
                 attempts = rules.attempts if args.action == "all" and not tight else 1
                 for attempt in range(1, attempts + 1):
                     if attempt > 1:
@@ -1401,10 +1428,11 @@ def main(cfg, args):
                     return 2
                 if tight:
                     if args.action == "all":
-                        raise SystemExit(f"{len(tight)} pad pairs of different parts closer than the clearance (L-13) – "
-                                         "nothing written to EasyEDA. Freerouting cannot move a pad: move or turn one "
-                                         "of the two parts in [place] of the board file (fix it there if the "
-                                         "auto-layout put it), then place and read the board again.")
+                        pairs = len({(g["a"], g["b"]) for g in tight})
+                        raise SystemExit(f"{pairs} pad pairs of different parts closer than the clearance (L-13) or "
+                                         "the paste gap (L-14) – nothing written to EasyEDA. Freerouting cannot move a "
+                                         "pad: move or turn one of the two parts in [place] of the board file (fix it "
+                                         "there if the auto-layout put it), then place and read the board again.")
                     return 2
             elif step == "apply":
                 apply_ses(rules, mcp, read_ses(P["ses"], rules), json.loads(P["board"].read_text()), P["stitch"])

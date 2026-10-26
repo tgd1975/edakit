@@ -135,7 +135,7 @@ are beyond the tolerance. For parts side by side that is the width of the strip 
 larger box lies as deep as its way out, so the tolerance does not hide it. If either part has through-hole pads, the
 tolerance does not apply. Under a module in `on_headers`, its pins decide (above). The default 0 keeps every overlap a
 finding. Keep the value within the silkscreen margin of the footprints in use: the pads themselves are not compared
-here, only by the DRC of the routed board (L-3).
+here, but by `route check` and the gate – the clearance (L-13) and, on an assembled side, the paste gap (L-14, 7.5).
 
 ```toml
 silk_overlap_mm = 0.8        # in hardware/boards/<b>.toml, above the tables
@@ -242,11 +242,14 @@ violation; edakit's check allows vias there, as `what = "wire"` says.
 
 **Check before writing:** pads of different parts on different nets at least the clearance apart on every layer
 both are on (L-13: pads of one part belong to the footprint; a pad without a net is a net of its own; `waive` L-13 on a
-part or net accepts a pair), every net connected through pads, tracks and vias (planes count, and the computed pour of
-a pour-only net, 7.6), every track and via at least the clearance from foreign copper, nothing in keep-outs (the edge
-strips above: `edge_clearance_um` from the outline, in inner corners too) – independent of Freerouting's own score.
-Freerouting cannot move a pad, so pads too close stop `route all` after one attempt, without the reshuffled ones: move
-or turn one of the two parts in the plan. The gate measures the same on the pads of the last `route read` (L-13, 8.1).
+part or net accepts a pair), SMD pads of different parts on different nets at least the paste gap apart on every side
+that is assembled (L-14: `[release] assembly` – `sides`, `paste_gap_mm` 0.4 mm – so that the stencil keeps a web
+between the two prints; through-hole pads get no paste; `waive` L-14), every net connected through pads, tracks and
+vias (planes count, and the computed pour of a pour-only net, 7.6), every track and via at least the clearance from
+foreign copper, nothing in keep-outs (the edge strips above: `edge_clearance_um` from the outline, in inner corners
+too) – independent of Freerouting's own score. Freerouting cannot move a pad, so pads too close stop `route all` after
+one attempt, without the reshuffled ones: move or turn one of the two parts in the plan. The gate measures the same on
+the pads of the last `route read` (L-13, L-14, 8.1).
 Preview: `<artifacts>/route/<board>_routing.png`, open connections dashed yellow. Nothing is written to EasyEDA until
 the check passes.
 

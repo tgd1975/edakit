@@ -52,8 +52,9 @@ The name of the ground net is in the graph (`ground`, default `GND`), with the c
 ### [release]
 
 `layout_files` (further files in the layout hash – the board files and the footprint geometry are always in it),
-`state_files` (further files in the circuit hash), `assembly` ({`sides`, `smd_only`}), `[[stages]]` ({`id`, `name`,
-`cmd`, `advisory`, `timeout`, `about`}).
+`state_files` (further files in the circuit hash), `assembly` ({`sides` (both), `smd_only`, `paste_gap_mm` (0.4: SMD
+pads of different parts on an assembled side, L-14)}), `[[stages]]` ({`id`, `name`, `cmd`, `advisory`, `timeout`,
+`about`}).
 
 ## 10.2 The board file
 
@@ -133,7 +134,7 @@ Code: `edakit … 2>&1 | cat`.
 | `edakit silk apply\|check` | ✓ | PCB, Gerber export | designators, `silk_<board>_<side>.png`, `gerber_<board>/` |
 | `edakit export [--board]` | ✓ read | schematic, PCB, project file | `<artifacts>/export/` |
 | `edakit gate [--easyeda]` | – / ✓ | everything | `<reports>/<run>/` |
-| `edakit fab --board B --out DIR [--offline]` | ✓ / – | PCB, exports, `route/<board>_board.json` (L-13) | `DIR/<board>/` |
+| `edakit fab --board B --out DIR [--offline]` | ✓ / – | PCB, exports, `route/<board>_board.json` (L-13, L-14) | `DIR/<board>/` |
 | `edakit lock [status\|claim\|release\|yield CHAT\|hook] [--note]` | – | – | `~/.local/state/edakit/easyeda-lock.json` |
 | `edakit proposal template [--feature]\|seal FILE [--out F]\|verify FILE` | – | a rule or feature proposal (no project needed) | seal: the issue body with its SHA-256 |
 | `edakit doctor` | – | tool chain | – |
