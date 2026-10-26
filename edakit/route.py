@@ -61,6 +61,7 @@ REGION_NESTED_MM2 = 0.5    # a piece of another net larger than this inside a ne
 FANOUT_DIRECTIONS = 16     # fanout: a via is tried in this many directions around an SMD pad (22.5° apart),
 FANOUT_STEP_MIL = 5        # the distance growing in these steps
 FANOUT_REACH_MIL = 60      # up to this much beyond the nearest spot
+EDGE_ARC_SEGMENTS = 4      # edge keep-out: chords per quarter circle around an inner corner of the outline
 
 FR_VERSION = "2.4.1"
 FR_ZIP = f"https://github.com/freerouting/freerouting/releases/download/v{FR_VERSION}/freerouting-{FR_VERSION}-linux-x64.zip"
@@ -295,8 +296,11 @@ def convex_pieces(geom, min_area=1.0):
 def outside_strips(rules, outer, margin=20.0):
     """Area between a rectangle around the board and the outline moved in by the edge clearance, as convex pieces.
     Freerouting 2.4.1 routed nothing in the upper part of a concave outline given as boundary; the same nets routed at
-    once with a rectangle. So: rectangle as boundary, everything outside the board as keep-outs."""
-    inner = outer.buffer(-rules.edge_um / 25.4, join_style=2)
+    once with a rectangle. So: rectangle as boundary, everything outside the board as keep-outs. The outline is moved
+    in with round joins: around an inner corner (a notch) the keep-out is an arc of the edge clearance,
+    EDGE_ARC_SEGMENTS chords per quarter circle. Mitred joins reached d / sin(θ/2) into the board there – 0.57 mm at a
+    90° corner and 1.3 mm at a 36° notch with 0.4 mm. Outlines without inner corners get the same strips either way."""
+    inner = outer.buffer(-rules.edge_um / 25.4, join_style="round", quad_segs=EDGE_ARC_SEGMENTS)
     x0, y0, x1, y1 = outer.bounds
     frame = box(x0 - margin, y0 - margin, x1 + margin, y1 + margin)
     return frame, convex_pieces(frame.difference(inner))

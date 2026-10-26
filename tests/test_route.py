@@ -3,8 +3,10 @@
 import json
 import math
 import re
+from pathlib import Path
 
 import pytest
+from shapely.ops import unary_union
 
 from edakit import config, route
 
@@ -535,3 +537,62 @@ def test_without_fanout_nothing_changes(plane_board, tmp_path):
     assert route.fanout(rules, data) == []
     route.write_dsn(rules, data, tmp_path / "t.dsn")
     assert wiring((tmp_path / "t.dsn").read_text()) == "  (wiring\n  )\n)\n"
+
+
+# --- edge keep-out in inner corners (#11): an L-shaped 40 x 20 mm board, its inner corner at (20, 10) mm, a track at
+# 45° passing that corner
+
+L_SHAPE = "[outline]\npolygon = [[0, 0], [40, 0], [40, 10], [20, 10], [20, 20], [0, 20]]\n"
+
+
+@pytest.fixture
+def l_board(tmp_path):
+    (tmp_path / "edakit.toml").write_text('[project]\nname = "t"\n[boards.main]\n')
+    (tmp_path / "hardware" / "boards").mkdir(parents=True)
+    (tmp_path / "hardware" / "boards" / "main.toml").write_text(L_SHAPE)
+    board = config.load(tmp_path / "edakit.toml").board()
+    data = {"pcb": "main", "components": [], "pads": [], "outlines": [[mm(x, y) for x, y in board.outline]]}
+    return route.Rules(board), data
+
+
+def past_the_corner(gap_mm, w=10):
+    """A track at 45° whose copper comes gap_mm close to the inner corner, and nowhere closer to the outline."""
+    s = gap_mm * MIL + w / 2                      # its centre line from the corner, along the diagonal into the board
+    x, y = mm(20, 10)
+    x, y, d = x - s / math.sqrt(2), y - s / math.sqrt(2), 3 * MIL
+    return {"SIG": {"wires": [("TOP", w, [(x - d, y + d), (x + d, y - d)])], "vias": []}}
+
+
+def edge_findings(rules, data, routes):
+    return [f for f in route.clearance_check(rules, data, routes) if "(edge/hole)" in f]
+
+
+def test_edge_keepout_in_an_inner_corner_is_the_clearance(l_board):
+    rules, data = l_board
+    assert rules.edge_um == 400
+    assert edge_findings(rules, data, past_the_corner(0.423)) == []        # keeps 0.4 mm: before, mitred, 1 finding
+    assert len(edge_findings(rules, data, past_the_corner(0.303))) == 1    # closer than 0.4 mm: as before
+
+
+def test_edge_strips_reach_no_farther_than_the_clearance(l_board):
+    from shapely import segmentize
+    from shapely.geometry import Point, Polygon
+    rules, data = l_board
+    outer = Polygon(data["outlines"][0])
+    _, strips = route.outside_strips(rules, outer)
+    inside = [Point(p) for g in strips for p in segmentize(g.exterior, 1).coords if outer.contains(Point(p))]
+    far = max(outer.exterior.distance(p) for p in inside)    # how far the keep-out reaches into the board
+    assert far / MIL == pytest.approx(0.400, abs=0.001)      # before: 0.566 mm at the 90° corner
+    corner = Point(mm(20, 10))                  # and it covers the corner: its arc's chords, 4 per quarter circle
+    assert unary_union(strips).contains(corner.buffer(0.4 * MIL * math.cos(math.pi / 16) - 0.01))
+
+
+def test_edge_strips_of_an_outline_without_inner_corners_stay():
+    from shapely.geometry import Polygon
+    fixture = Path(__file__).parent / "fixtures" / "led-bar" / "edakit.toml"
+    board = config.load(fixture).board()                    # the example: a rectangle with rounded corners
+    rules = route.Rules(board)
+    outer = Polygon([mm(x, y) for x, y in board.outline])
+    frame, strips = route.outside_strips(rules, outer)
+    mitred = outer.buffer(-rules.edge_um / 25.4, join_style="mitre")       # how the strips were cut before #11
+    assert frame.difference(mitred).symmetric_difference(unary_union(strips)).area < 1e-6

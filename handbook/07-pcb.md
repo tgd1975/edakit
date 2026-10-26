@@ -167,7 +167,11 @@ Class widths must be at least the minimum of the matching EasyEDA net class rule
 - Resolution `mil 1000` computes wrongly on a 170-mm board (unreachable pads, phantom violations) – edakit writes
   `mil 100`.
 - A **concave outline as boundary**: nothing routed above a certain height. edakit uses a rectangle as boundary and
-  the area outside the board (moved in by the edge clearance) as convex keep-out strips.
+  the area outside the board (moved in by the edge clearance) as convex keep-out strips. The outline is moved in with
+  round joins: around an inner corner (a notch) the keep-out is an arc of `edge_clearance_um`, 4 chords per quarter
+  circle. Mitred joins reached d / sin(θ/2) into the board there – 0.57 mm at a 90° corner, 1.3 mm at a 36° notch
+  with 0.4 mm. Tracks that kept the clearance were reported, and Freerouting lost that room in every notch.
+  `route check` and the fanout vias use the same strips.
 - `autoroute_settings` after the keep-outs: no parts read at all. A `plane` placed before the keep-outs: no
   connections read. Order matters.
 - Fanout is on by default and puts a via at every SMD pad: `--router.fanout.enabled=false`. It does not connect an
@@ -197,9 +201,10 @@ room for a fanout via to the V plane – …`. Freerouting's own score counts a 
 violation; edakit's check allows vias there, as `what = "wire"` says.
 
 **Check before writing:** every net connected through pads, tracks and vias (planes count, and the computed pour of a
-pour-only net, 7.6), every track and via at least the clearance from foreign copper, nothing in keep-outs – independent
-of Freerouting's own score. Preview: `<artifacts>/route/<board>_routing.png`, open connections dashed yellow. Nothing
-is written to EasyEDA until the check passes.
+pour-only net, 7.6), every track and via at least the clearance from foreign copper, nothing in keep-outs (the edge
+strips above: `edge_clearance_um` from the outline, in inner corners too) – independent of Freerouting's own score.
+Preview: `<artifacts>/route/<board>_routing.png`, open connections dashed yellow. Nothing is written to EasyEDA until
+the check passes.
 
 **Writing into EasyEDA** (all copper is generated, so it is deleted first – deleting sometimes needs several passes):
 points closer than 0.5 mil are snapped together (EasyEDA drops tiny pieces and connects track to track only through
