@@ -1,10 +1,10 @@
 """Graph + parts database -> ngspice netlist for one operating point (.op) of one scenario.
 
 Passive parts, diodes, LEDs, transistors and MOSFETs come from the graph 1:1, their values and SPICE models from the
-parts database. Switches, buttons and DIP switches are closed or open as the scenario's load says; a relay is its coil
-resistance (coil_ohm between the roles coil_plus and coil_minus) plus a contact from common to no when the load lists
-it in "relays_on", else to nc. Supplies are
-connectors listed under "sources" in the simulation config, or battery holders with a cell state. Off-board loads
+parts database; a 0 Ω bridge (value_ohm 0) is its maximum resistance r_max_ohm, 50 mΩ without one. Switches, buttons
+and DIP switches are closed or open as the scenario's load says; a relay is its coil resistance (coil_ohm between the
+roles coil_plus and coil_minus) plus a contact from common to no when the load lists it in "relays_on", else to nc.
+Supplies are connectors listed under "sources" in the simulation config, or battery holders with a cell state. Off-board loads
 (a servo, a motor at a connector) are constant currents between two pins, listed under the load's "external".
 
 ICs and modules are replaced by behaviour models, chosen by params.behavior in the parts database:
@@ -35,6 +35,7 @@ import re
 
 VT = 0.02585
 LED_N = 2.0
+BRIDGE_OHM = 0.05   # a 0 Ω bridge without r_max_ohm: the usual maximum of thick-film jumpers
 
 
 def node(net, ground="GND"):
@@ -168,8 +169,8 @@ class Netlist:
         if not part:
             return
         kind, p = part["kind"], part.get("params", {})
-        if kind == "resistor":
-            self.two_pole(des, "R", p["value_ohm"], "resistor")
+        if kind == "resistor":   # a 0 Ω bridge: ngspice finds no operating point with 0 Ω
+            self.two_pole(des, "R", p["value_ohm"] or p.get("r_max_ohm") or BRIDGE_OHM, "resistor")
         elif kind == "capacitor":
             self.two_pole(des, "C", p["value_f"], "capacitor")
         elif kind == "fuse":

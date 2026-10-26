@@ -54,7 +54,8 @@ LED `if_max_a`, `vr_max` (per colour for RGB); BJT `ic_max_a`, `vceo`, `vebo`, `
 `i_out_max_a`, `gpio_i_max_a` (per output pin) and `gpio_i_total_max_a` (all outputs together, sourced and sunk
 separately – the package's supply pins); relays `v_coil_max`, `i_max_a` (contacts); LED drivers `rth_ja_k_per_w`.
 
-**Parameters**: resistor `value_ohm`; capacitor `value_f`; inductor `value_h`, `dcr_ohm`; LED `vf_typ`, `vf_min`,
+**Parameters**: resistor `value_ohm` (`0`: a bridge that joins its nets, 3.3), `r_max_ohm` (a bridge's maximum
+resistance from the datasheet, simulated instead of 0 Ω; 50 mΩ without it); capacitor `value_f`; inductor `value_h`, `dcr_ohm`; LED `vf_typ`, `vf_min`,
 `vf_max`, `vf_at_a`, `rs_ohm`; switch/button `r_on_ohm`; buzzer `coil_ohm` (a magnetic buzzer; it is a coil for G-13);
 relay `coil_ohm`, `v_operate`, `v_release` (must-operate and must-release voltage), `r_contact_ohm`; ICs see chapter 5.
 

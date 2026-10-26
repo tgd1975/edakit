@@ -37,7 +37,8 @@ Tools and coordinates: `${CLAUDE_PLUGIN_ROOT}/handbook/07-pcb.md`. Wish: $ARGUME
 - While a free pad (tooling hole) is in the PCB, filling pours fails – edakit takes them out and puts them back.
 - Net classes need the simulated currents (`edakit sim` first).
 - Freerouting is deterministic but order-dependent: `route all` retries with reshuffled DSNs when nets stay open.
-  If it never closes: more room at the stuck pads in the plan, a plane for a power net, or other layer costs.
+  If it never closes: more room at the stuck pads in the plan, a plane for a power net, or other layer costs; with
+  all tracks on one side a 0 Ω bridge in the graph where a track has to cross (handbook 3.3).
 
 ## Report
 

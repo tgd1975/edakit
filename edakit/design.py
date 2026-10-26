@@ -9,10 +9,14 @@ Graph file (JSON), either {"graph": {...}} or the inner object directly:
 
 Parts database: one JSON file per LCSC number (hardware/parts/C17414.json) with kind, pins (name, type, role,
 vmax), params, ratings, spice, footprint, lead, verified. See handbook/04-parts-database.md.
+
+A resistor whose parts entry has value_ohm 0 is a bridge: copper that crosses a track on a board with all tracks on
+one side. The nets it joins are one net for the graph checks (`joined()`) and for the simulation's LED drivers.
 """
 
 from __future__ import annotations
 
+import copy
 import json
 import re
 from pathlib import Path
@@ -76,6 +80,70 @@ class Design:
 
     def comps_of_kind(self, *kinds):
         return [d for d in self.comps if (self.part(d) or {}).get("kind") in kinds]
+
+    # --- 0 Ω bridges -----------------------------------------------------------------------------------------------
+    def bridges(self):
+        """Designators of the resistors whose parts entry has value_ohm 0."""
+        return [d for d in self.comps if (p := self.part(d) or {}).get("kind") == "resistor"
+                and (p.get("params") or {}).get("value_ohm") == 0]
+
+    def bridge_groups(self):
+        """[(name, nets, bridges)] for every set of nets that bridges join: the nets in graph order, the name is the
+        ground net if it is one of them, else the first of them."""
+        parent, used = {}, {}
+
+        def root(n):
+            while parent.setdefault(n, n) != n:
+                n = parent[n]
+            return n
+        for des in self.bridges():
+            nets = [n for p in self.part(des)["pins"] if (n := self.pin_net.get(f"{des}.{p}"))]
+            for n in nets:
+                parent[root(n)] = root(nets[0])
+            if nets:
+                used.setdefault(nets[0], []).append(des)
+        order = {n: i for i, n in enumerate(self.nets)}
+        groups = {}
+        for n in sorted(parent, key=lambda n: (order.get(n, len(order)), n)):
+            groups.setdefault(root(n), []).append(n)
+        out = []
+        for nets in groups.values():
+            if len(nets) > 1:
+                des = sorted((d for n in nets for d in used.get(n, [])), key=natural_key)
+                out.append((self.ground if self.ground in nets else nets[0], nets, des))
+        return out
+
+    def joined_nets(self):
+        """{net: name of its group} for every net a bridge joins to another."""
+        return {n: name for name, nets, _ in self.bridge_groups() for n in nets}
+
+    def joined(self):
+        """The design as the graph checks see it: the nets of every bridge group merged into one net under the group's
+        name (pins, voltage range, waivers and bus of all of them), the bridges taken out. Without bridges: itself."""
+        bridges = set(self.bridges())
+        if not bridges:
+            return self
+        name = self.joined_nets()
+        nets = {}
+        for net in self.graph["nets"]:
+            to = name.get(net["name"], net["name"])
+            pins = [r for r in net["pins"] if r.split(".", 1)[0] not in bridges]
+            m = nets.setdefault(to, {**(self.nets.get(to) or net), "name": to, "pins": []})
+            m["pins"] += pins
+            if to != net["name"]:
+                m["joined"] = m.get("joined", [to]) + [net["name"]]
+                v, w = m.get("v"), net.get("v")
+                if isinstance(v, list) and isinstance(w, list) and len(v) == len(w) == 2:
+                    m["v"] = [min(v[0], w[0]), max(v[1], w[1])]
+                m["waive"] = {**(net.get("waive") or {}), **(m.get("waive") or {})} or None
+                m["bus"] = m.get("bus") or net.get("bus")
+        out = copy.copy(self)
+        out.graph = {**self.graph, "nets": list(nets.values()),
+                     "components": [c for c in self.graph["components"] if c["designator"] not in bridges]}
+        out.comps = {d: c for d, c in self.comps.items() if d not in bridges}
+        out.nets = nets
+        out.pin_net = {r: n["name"] for n in nets.values() for r in n["pins"]}
+        return out
 
     def board_comps(self, board):
         return {d: c for d, c in self.comps.items() if c.get("board") == board}

@@ -185,3 +185,26 @@ def test_relay_pulls_in_and_releases(project):
     assert not failing(out)
     sim["loads"]["idle"]["gpio"]["DRIVE"] = 1                     # driven, but the load says released
     assert any(c["item"] == "X1" and c["check"].startswith("relay releases") for c in failing(simulate(project, sim)))
+
+
+def test_zero_ohm_bridges(project):
+    from test_checks import bridged
+    bridged(project)                                              # R10–R12: 0 Ω, D9 reaches OUT7 through R12
+    out = simulate(project)
+    assert not failing(out) and all(s["status"] == "ok" for s in out["scenarios"])
+    d9 = [c for c in out["checks"] if c["item"] == "D9" and c["check"] == "LED current (LED7)"]
+    assert len(d9) == 6 and all(c["result"] == "pass" for c in d9)   # all_on: 3 supplies x 2 corners
+
+
+def test_bridge_is_simulated_with_its_maximum_resistance(project):
+    from test_checks import BRIDGE, bridged
+    from edakit.sim import netlist
+    bridged(project)
+
+    def line():
+        sim = json.loads((project.root / "hardware" / "sim.json").read_text())
+        text, _ = netlist.build(Design.from_config(project.config()), sim, next(simrun.scenarios(sim)))
+        return next(x for x in text.splitlines() if x.startswith("R_R10 "))
+    assert line() == "R_R10 n_3v3 n_3v3_b 0.05"                 # no r_max_ohm in the entry: 50 mΩ
+    project.save_part(BRIDGE["lcsc"], {**BRIDGE, "params": {"value_ohm": 0.0, "r_max_ohm": 0.02}})
+    assert line() == "R_R10 n_3v3 n_3v3_b 0.02"
