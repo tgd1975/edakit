@@ -1,5 +1,5 @@
-"""Board label: title and revision in the free spot nearest to the requested corner; designators of through-hole parts
-on their solder side."""
+"""Board label: title and revision in the free spot nearest to the requested corner, on a chosen side, inside a region;
+designators of through-hole parts on their solder side."""
 
 from pathlib import Path
 from types import SimpleNamespace
@@ -46,6 +46,9 @@ COMPS = {"c1": ("R1", TOP, (9, 9.5, 11, 10.5)), "c2": ("R2", BOTTOM, (19, 9.5, 2
 PADS = {"c1e1": TOP, "c1e2": TOP, "c2e1": BOTTOM, "c2e2": BOTTOM, "c3e1": 12, "c3e2": 12}  # id: layer, 12 through-hole
 TOP_OPENINGS = unary_union([box(9, 9.5, 9.6, 10.5), box(10.4, 9.5, 11, 10.5),               # R1's pads, D1's joints
                             Point(28.73, 10).buffer(0.9), Point(31.27, 10).buffer(0.9)])
+BOTTOM_OPENINGS = unary_union([box(19, 9.5, 19.6, 10.5), box(20.4, 9.5, 21, 10.5),         # R2's pads, D1's joints
+                               Point(28.73, 10).buffer(0.9), Point(31.27, 10).buffer(0.9)])
+BOTTOM_PRINT = box(33, 0.5, 39.5, 3)                    # print already on the bottom, in its lower right corner
 
 
 @pytest.fixture
@@ -66,7 +69,8 @@ def silk_run(tmp_path, monkeypatch):
             x0, y0, x1, y1 = (v * MIL for v in COMPS[args[0][0]][2])
             return {"minX": x0, "minY": y0, "maxX": x1, "maxY": y1}
         return {"PrimitiveId": f"s{len(calls)}"} if name.endswith(".create") else []
-    shapes = {gerber.FILES["top_mask"]: TOP_OPENINGS}                        # no footprint silk, nothing else
+    shapes = {gerber.FILES["top_mask"]: TOP_OPENINGS, gerber.FILES["bottom_mask"]: BOTTOM_OPENINGS,
+              gerber.FILES["bottom_silk"]: BOTTOM_PRINT}                     # no footprint silk on top, nothing else
     monkeypatch.setattr(silk, "gerber", SimpleNamespace(FILES=gerber.FILES, parse_gerber=lambda p: Path(p).name,
                                                         shape=lambda name: shapes.get(name, Polygon())))
     monkeypatch.setattr(silk, "api", api)
@@ -75,10 +79,10 @@ def silk_run(tmp_path, monkeypatch):
     monkeypatch.setattr(silk, "check", lambda *a, **k: 0)
     monkeypatch.setattr(silk.eda, "save_pcb", lambda mcp: None)
 
-    def run(table):
+    def run(table, head=""):
         (tmp_path / "edakit.toml").write_text('[project]\nname = "t"\n[boards.main]\n')
         (tmp_path / "hardware" / "boards").mkdir(parents=True, exist_ok=True)
-        (tmp_path / "hardware" / "boards" / "main.toml").write_text("[outline]\nrect = [40, 20]\n[silk]\n" + table)
+        (tmp_path / "hardware" / "boards" / "main.toml").write_text(head + "[outline]\nrect = [40, 20]\n[silk]\n" + table)
         cfg = config.load(tmp_path / "edakit.toml")
         calls.clear()
         assert silk.apply(cfg, cfg.board(), None) == 0
@@ -119,3 +123,64 @@ def test_solder_side_selects_the_through_hole_parts_of_the_other_side():
     assert silk.label_parts(parts, TOP) == ["R1"]                               # as before
     assert silk.label_parts(parts, TOP, solder_side=True) == ["D1", "R1"]
     assert silk.label_parts(parts, BOTTOM, solder_side=True) == ["D1", "R2"]
+
+
+# --- the board label on a chosen side, inside a region (#17): the same three parts, revision 2, the label "main rev 2"
+# 1.2 mm high; designators on top
+
+LABEL = "main rev 2"
+
+
+def board_label(calls):
+    """(layer, its box) of the board label created, or None."""
+    t = strings(calls).get(LABEL)
+    return t and (t[0], silk.label_box(t[1], t[2], t[3], silk.label_size(LABEL, 1.2)[0], 1.2))
+
+
+def test_board_label_without_the_new_keys_stays_where_it_was(silk_run):
+    calls = silk_run('designators = "top"\n', head='revision = "2"\n')
+    layer, b = board_label(calls)
+    assert layer == TOP + 2
+    assert b.centroid.x == pytest.approx(6.24, abs=0.01) and b.centroid.y == pytest.approx(1.10, abs=0.01)
+    assert [a for name, a in calls if name == "PCB_Primitive.getPrimitivesBBox"] == [(["c1"],)]   # no extra call
+
+
+def test_board_label_on_the_other_side_keeps_clear_of_that_side(silk_run):
+    layer, b = board_label(silk_run('designators = "top"\nboard_label_side = "bottom"\n', head='revision = "2"\n'))
+    assert layer == BOTTOM + 2                  # before: on top, with the designators
+    assert not b.intersects(unary_union([BOTTOM_PRINT.buffer(0.15), BOTTOM_OPENINGS.buffer(0.15),
+                                         box(*COMPS["c2"][2]), box(*COMPS["c3"][2])]))
+    assert b.centroid.x > 20 and b.centroid.y < 6   # bottom-left as seen from the bottom: the lower right from the top
+
+
+def test_board_label_inside_its_region(silk_run):
+    region = "board_label_region = [[0, 14], [40, 14], [40, 20], [0, 20]]\n"      # the upper 6 mm
+    layer, b = board_label(silk_run('designators = "top"\n' + region, head='revision = "2"\n'))
+    assert layer == TOP + 2
+    assert box(0, 14, 40, 20).buffer(0.001).contains(b)   # before: at (6.2, 1.1) mm, at the bottom of the board
+    assert b.bounds[0] < 1 and b.bounds[1] < 14.6   # in the bottom-left corner of the region
+
+
+def test_board_label_without_room_in_its_region_is_said(silk_run, capsys):
+    region = "board_label_region = [[2, 8.5], [18, 8.5], [18, 11.5], [2, 11.5]]\n"  # 16 x 3 mm, R1 across it
+    assert board_label(silk_run('designators = "top"\n' + region, head='revision = "2"\n')) is None
+    assert "board label 'main rev 2': no free spot" in capsys.readouterr().out    # before: placed outside the region
+
+
+
+def test_board_label_on_the_other_side_inside_its_region(silk_run):
+    region = "board_label_region = [[0, 14], [40, 14], [40, 20], [0, 20]]\n"
+    layer, b = board_label(silk_run('designators = "top"\nboard_label_side = "bottom"\n' + region,
+                                    head='revision = "2"\n'))
+    assert layer == BOTTOM + 2 and box(0, 14, 40, 20).buffer(0.001).contains(b)
+    assert b.bounds[2] > 39 and b.bounds[1] < 14.6   # the region's bottom-left corner as seen from the bottom
+
+
+def test_board_label_region_is_in_plan_mm():
+    from edakit.config import _board
+    board = _board("b", {}, {"view": "bottom", "outline": {"rect": [40, 20]},
+                             "silk": {"board_label_region": [[0, 0], [10, 0], [10, 5], [0, 5]]}})
+    area = silk.board_shape(board).buffer(-0.5)                             # EasyEDA x from -40 to 0: seen from below
+    assert silk.board_label_area(board, area).bounds == pytest.approx((-10, 0.5, -0.5, 5))
+    board.silk = {}
+    assert silk.board_label_area(board, area) is area                      # no region: the whole board, as before

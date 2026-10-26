@@ -290,8 +290,16 @@ def _board(name, entry, b, file=""):
     silk_overlap = float(b.get("silk_overlap_mm", 0.0))
     if silk_overlap < 0:
         raise ConfigError(f"board {name}: silk_overlap_mm must not be negative")
-    if not isinstance(b.get("silk", {}).get("solder_side", False), bool):
+    silk = b.get("silk", {})
+    if not isinstance(silk.get("solder_side", False), bool):
         raise ConfigError(f"board {name}: silk.solder_side must be true or false")
+    if silk.get("board_label_side", "top") not in ("top", "bottom"):
+        raise ConfigError(f"board {name}: silk.board_label_side must be 'top' or 'bottom'")
+    region = silk.get("board_label_region")
+    if region is not None and not (isinstance(region, list) and len(region) >= 3 and all(
+            isinstance(p, list) and len(p) == 2 and all(isinstance(v, (int, float)) for v in p) for p in region)):
+        raise ConfigError(f"board {name}: silk.board_label_region must be a polygon [[x, y], …] of at least 3 points "
+                          "in plan mm")
     return Board(
         name=name,
         title=entry.get("title", name),
@@ -322,7 +330,7 @@ def _board(name, entry, b, file=""):
         pour_regions=regions,
         pour_min_piece_mm2=min_piece,
         pour_inset_mm=inset,
-        silk=b.get("silk", {}),
+        silk=silk,
         loops=loops,
         net_classes=classes,
         force_class=force,

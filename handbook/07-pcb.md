@@ -342,6 +342,20 @@ keep-outs of mounting and tooling holes. The revision comes from `revision` in t
 label. edakit remembers the texts it created (`<artifacts>/silk_strings_<board>.json`) and replaces them on the next
 run, so a board never carries two revisions.
 
+The label goes on the `designators` side unless `board_label_side = "bottom"` (or `"top"`) names the other one. There it
+keeps clear of that side's mask openings and print (+0.15 mm), the boxes of its parts, its artwork and texts, vias and
+hole keep-outs. `board_label_region = [[x, y], …]` (plan mm) gives the part of the board it must lie in – the part a
+stand or an enclosure covers, say; `board_label_corner` is then the corner of that region. Without a free spot there
+the label is left out: "board label …: no free spot in board_label_region". Both keys leave the label as it was when
+they are missing:
+
+```toml
+[silk]
+designators = "top"
+board_label_side = "bottom"                                # the LED side, without designators
+board_label_region = [[0, 0], [60, 0], [60, 34], [0, 34]]  # the lower 34 mm, inside the stand
+```
+
 **Artwork and labels** come first: `[[silk.art]]` places an SVG (filled shapes and strokes, scaled to
 `width_mm`, centred at `x`, `y` in plan mm) and `[[silk.texts]]` free texts – "START" at a button, "GND 5V
 SIG" at a connector. edakit cuts the artwork free of pads and solder-mask openings (+0.15 mm), drops everything thinner

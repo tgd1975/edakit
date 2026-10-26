@@ -218,3 +218,20 @@ def test_silk_solder_side_key(tmp_path):
     assert load(tmp_path / "edakit.toml").board().silk["solder_side"] is True
     with pytest.raises(ConfigError, match="silk.solder_side must be true or false"):
         _board("b", {}, {"silk": {"solder_side": "yes"}})
+
+
+def test_silk_board_label_side_and_region_keys(tmp_path):
+    from edakit.config import _board
+    silk = _board("b", {}, {}).silk
+    assert "board_label_side" not in silk and "board_label_region" not in silk     # no key: as before
+    (tmp_path / "edakit.toml").write_text('[project]\nname = "t"\n[boards.main]\n')
+    (tmp_path / "hardware" / "boards").mkdir(parents=True)
+    (tmp_path / "hardware" / "boards" / "main.toml").write_text(
+        '[silk]\ndesignators = "top"\nboard_label_side = "bottom"\nboard_label_region = [[0, 0], [40, 0], [40, 34]]\n')
+    silk = load(tmp_path / "edakit.toml").board().silk
+    assert silk["board_label_side"] == "bottom" and silk["board_label_region"] == [[0, 0], [40, 0], [40, 34]]
+    with pytest.raises(ConfigError, match="silk.board_label_side must be 'top' or 'bottom'"):
+        _board("b", {}, {"silk": {"board_label_side": "back"}})
+    for region in ([[0, 0], [40, 0]], [[0, 0], [40, 0], [40]], "y < 34", [[0, 0], [40, 0], ["a", 3]]):
+        with pytest.raises(ConfigError, match=r"silk.board_label_region must be a polygon \[\[x, y\], …\]"):
+            _board("b", {}, {"silk": {"board_label_region": region}})
