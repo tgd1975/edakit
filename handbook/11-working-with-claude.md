@@ -19,6 +19,7 @@ agreements are as important as the scripts.
 | skill | `/edakit:propose-feature` | a feature edakit lacks and a project had to build or work around, as a sealed issue to the edakit repository, and its outcome back into the project (11.6) |
 | agent | `edakit:easyeda-operator` | runs one long EasyEDA step and returns only the result – keeps the main conversation clean |
 | agent | `edakit:electrical-reviewer` | independent circuit review; its result is the sign-off M-1 |
+| agent | `edakit:regulatory-reviewer` | circuit and parts against EU law for the board's purpose; its result is the sign-off M-6 (chapter 15) |
 | agent | `edakit:pcb-reviewer` | independent layout review (read-only EasyEDA tools); its result is the sign-off M-5 |
 | MCP | `easyeda` | easyeda-mcp-pro, pinned, safe defaults |
 | hook | PreToolUse on the easyeda tools | claims EasyEDA for the session, refuses when another session holds it |

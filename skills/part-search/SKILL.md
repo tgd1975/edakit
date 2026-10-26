@@ -39,6 +39,10 @@ Wanted: $ARGUMENTS. Fields of an entry: `${CLAUDE_PLUGIN_ROOT}/handbook/04-parts
   current `gpio_i_max_a` per pin and `gpio_i_total_max_a` for all together (E-2); a 0 Ω jumper `value_ohm: 0` with
   its maximum resistance `r_max_ohm` (it joins its nets, handbook 3.3); a pin `hint` or part `hints` for what the
   datasheet warns about (shown by `edakit hints`).
+- `compliance` for the regulatory review (M-6, handbook 15): `rohs` (true, false or the exemption), `reach` (the
+  supplier's SVHC statement), for a part that transmits `radio` (`bands_mhz`, `max_dbm`, `doc` = URL of the EU
+  declaration of conformity), and `source` (page and date). Take it from the distributor's part page or the
+  manufacturer's declaration; what nobody states stays out – the reviewer reports it as open, not as fine.
 - Check against the datasheet: pinout, polarity at the footprint (which pad is pin 1 / anode / +), package, every
   rating. Library footprints are sometimes wrong (a "+" printed at the cathode pad) – the polarity sheet of the gate
   and the second check M-1 exist for that. Then `verified` with by, date, datasheet revision, `checked`, `open`.

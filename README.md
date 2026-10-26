@@ -79,7 +79,8 @@ edakit gate --easyeda           # release gate: protocol, manifest, files for JL
 
 In Claude Code the skills do the orchestration: `/edakit:new-project`, `/edakit:circuit-design`, `/edakit:start`,
 `/edakit:hardware-change`, `/edakit:part-search`, `/edakit:pcb-round`, `/edakit:release`, `/edakit:decision-round`;
-the agents `electrical-reviewer` and `pcb-reviewer` do the independent reviews whose results are the sign-offs.
+the agents `electrical-reviewer`, `regulatory-reviewer` (EU law for the board's purpose: RoHS, REACH, radio,
+batteries) and `pcb-reviewer` do the independent reviews whose results are the sign-offs.
 Circuit, layout and review are separate roles: the circuit designer hands the board over in writing – `layout` in the
 graph, shown by `edakit handover` and kept by the plan check L-12 – the PCB designer works from that in a session of
 its own, and the session that designs does not review ([handbook 14.1](handbook/14-design.md#141-roles)).
@@ -118,7 +119,7 @@ Where it stands:
 
 | Path | Content |
 |---|---|
-| [handbook/](handbook/README.md) | the approach, setup, graph, parts, simulation, schematic, PCB, release gate, EasyEDA API notes, reference, working with Claude, troubleshooting, lessons learned |
+| [handbook/](handbook/README.md) | the approach, setup, graph, parts, simulation, schematic, PCB, release gate, EasyEDA API notes, reference, working with Claude, troubleshooting, lessons learned, designing a circuit, regulatory review |
 | [edakit/](edakit/) | the Python package: checks, simulation, EasyEDA client, schematic, PCB, routing, Gerber analysis, silkscreen, export, release gate, EasyEDA claim |
 | [edakit/rules.json](edakit/rules.json) | the rule catalog: every check and design hint with rule, reason, fix and sources |
 | [edakit/blocks/](edakit/blocks/) | building blocks (LED, button, I2C pull-ups, transistor switch, supply inputs, USB-C) and the checked parts entries they use |

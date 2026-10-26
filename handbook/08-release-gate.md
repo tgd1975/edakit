@@ -89,7 +89,7 @@ accepted warnings. Each counts only if the hash of its scope equals the current 
 
 | Phase | When | Blocks the release |
 |---|---|---|
-| `export` | before the files are released (M-1 second datasheet check, M-5 layout review) | yes |
+| `export` | before the files are released (M-1 second datasheet check, M-6 regulatory review, M-5 layout review) | yes |
 | `order` | after uploading, before paying (M-2: JLCPCB's assembly preview, BOM tool, price) | no |
 | `acceptance` | after delivery (M-4: acceptance test of every board) | no |
 
@@ -97,6 +97,10 @@ accepted warnings. Each counts only if the hash of its scope equals the current 
 counts regardless of the hash and must refer to a numbered decision. **Only the owner accepts a warning** – it is a
 decision. **A manual check an agent can do is signed by the agent's result** (chapter 11): OK → signed with the agent
 as `done_by`; not OK → fix the cause, check again.
+
+**M-6, the regulatory review, is required** even when the sign-off file does not list it: the gate adds it as open
+(chapter 15). Not everything that can be ordered may be sold or even operated in the EU, and nothing else in the
+gate looks at that.
 
 The lesson behind M-5: the first released run of the reference project had passed every automatic check, and nobody
 had looked at the layout as a whole. The layout review agent then found a switching regulator loop routed across the

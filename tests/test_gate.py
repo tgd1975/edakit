@@ -65,3 +65,16 @@ def test_hashes_change_with_the_graph(project):
     g["graph"]["version"] = "1.1"
     project.save_graph(g)
     assert gate.header(project.config())["state_sha256"] != h1
+
+
+def test_regulatory_review_is_required_also_when_the_file_lacks_it(project):
+    path = project.root / "hardware" / "signoff.json"
+    s = json.loads(path.read_text())
+    s["manual"] = [m for m in s["manual"] if m["id"] != "M-6"]   # a sign-off file from before M-6
+    path.write_text(json.dumps(s))
+    loaded, notes = gate.load_signoff(project.config(), {"state_sha256": None, "layout_sha256": None})
+    m6 = next(m for m in loaded["manual"] if m["id"] == "M-6")
+    assert m6["phase"] == "export" and m6["scope"] == "circuit" and m6["done_by"] is None
+    assert any("M-6 is missing" in n for n in notes)
+    d, reasons = gate.decide(rows("pass"), [], loaded, ALL, gate.STAGES)
+    assert d == "NOT RELEASED" and "M-6" in reasons[0]

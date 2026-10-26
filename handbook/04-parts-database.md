@@ -22,6 +22,7 @@ against which datasheet revision. Examples: [the Christmas bell's parts](https:/
 | `lead` | through-hole parts only: lead cross-section per pad number or `"*"`: `shape` (`square`, `round`, `rect`), `a_mm`, `b_mm`, `tol_mm`, `hole_rec_mm`, `source` – check L-9 |
 | `pad_map` | only when pad numbers are deliberately swapped on the placed part: `{PCB pad: library pad}` – check L-10 |
 | `sources` | where every value comes from; "assumption …" marks what must be checked with extra care |
+| `compliance` | for the regulatory review (M-6, chapter 15): `rohs` (true, false or the exemption), `reach` (the supplier's SVHC statement), `radio` for a part that transmits (`bands_mhz` [[from, to]], `max_dbm`, `doc` = URL of the EU declaration of conformity), `source` (page and date) |
 | `verified` | `null` or the sign-off: `by`, `date`, `datasheet` (revision), `checked` (list), `open` (list), optional `second_check` (the independent M-1 review) |
 
 **Pin types** (`type`): `passive`, `input`, `output`, `bidirectional`, `power_in`, `power_output`, `ground`, `analog`,

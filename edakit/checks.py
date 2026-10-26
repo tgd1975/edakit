@@ -4,7 +4,7 @@
 
   G-1  structure: unique names, every pin in exactly one net or "nc", nets with >= 2 pins, a voltage range per net,
        a known board per component, nets across boards only through a cable, layout requirements that name parts
-       and pins of the graph (handover.py)
+       and pins of the graph (handover.py), purpose.use private, gift or sale
   G-2  pin locks: pins the firmware relies on are on the expected nets ([checks] pin_locks in edakit.toml), and an
        optional pin table in a Markdown document matches the graph ([checks] doc_pin_table)
   G-3  voltage domains: net voltage range within the pin limits (vmax) from the parts database
@@ -52,6 +52,7 @@ ACTIVE_TYPES = {"input", "output", "bidirectional", "power_in", "power_output", 
 BOOT_DRIVERS = {"output", "power_output", "ground"}   # define their net while the firmware is not running
 PASS_THROUGH = ("fuse", "switch", "connector")        # pass a reversed source on unchanged
 REVERSE_OK = ("battery_holder", "capacitor") + PASS_THROUGH
+PURPOSES = ("private", "gift", "sale")                 # purpose.use of the graph: built for oneself, given away, sold
 I2C_SINK_A, I2C_VOL, I2C_R_MAX = 0.003, 0.4, 10e3    # UM10204 7.1: Rp(min) = (V - VOL) / 3 mA; 10 k for 100 kHz
 USB_RD, USB_RD_TOL = 5100, 0.10                      # USB Type-C sink termination Rd
 COILS = {"relay": ("coil_plus", "coil_minus"), "buzzer": ("plus", "minus")}   # inductive kinds: their coil roles
@@ -155,6 +156,8 @@ def check_structure(d, rep, boards):
             rep.error("G-1", f"net {net['name']} spans several boards without a cable")
     for problem in handover.problems(d):
         rep.error("G-1", problem)
+    if "purpose" in g and (g["purpose"] or {}).get("use") not in PURPOSES:
+        rep.error("G-1", f"purpose.use must be one of {', '.join(PURPOSES)} – the regulatory review (M-6) starts there")
 
 
 def check_pin_locks(d, rep, cfg_checks, root):

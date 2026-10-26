@@ -14,7 +14,8 @@ Result: <reports>/<YYYYMMDD-hhmmss>/
 RELEASED only if
   - every stage ran and no check failed,
   - every warning is accepted in the sign-off file (only a human accepts warnings – it is a decision),
-  - every part is verified and every manual check of phase 'export' is signed,
+  - every part is verified and every manual check of phase 'export' is signed – the regulatory review M-6 also when
+    the sign-off file does not list it,
   - all of that for exactly this state: sign-offs count only for the hash of their scope – 'circuit' (graph, parts
     database, simulation config) or 'layout' (layout files of [release] and the footprint geometry). An accepted
     warning with scope 'decision' counts regardless of the hash and refers to a numbered decision in the docs.
@@ -51,6 +52,11 @@ PHASES = [("export", "before the export (condition of the release)"),
           ("order", "after uploading to the manufacturer, before paying"),
           ("acceptance", "after delivery, per board")]
 SCOPE_KEY = {"circuit": "state_sha256", "layout": "layout_sha256"}
+REQUIRED = {   # manual checks every release needs, also when an older sign-off file does not list them
+    "M-6": {"phase": "export", "scope": "circuit",
+            "text": "Regulatory review: circuit and parts against EU law for the stated purpose (RoHS, REACH, radio, "
+                    "batteries, product safety) – the agent regulatory-reviewer in its own session"},
+}
 UPLOAD = ["gerber_{b}.zip", "bom_{b}.csv", "cpl_{b}.csv"]
 RESULT = {"pass": "passed", "fail": "FAILED", "warn": "warning", "info": "information", "advisory": "advisory",
           "waived": "waived", "pending": "open"}
@@ -105,7 +111,8 @@ def header(cfg):
 
 
 def load_signoff(cfg, head):
-    """Sign-offs and accepted warnings that count for the current hash of their scope."""
+    """Sign-offs and accepted warnings that count for the current hash of their scope. A required manual check the
+    file does not list is added as open."""
     path = cfg.resolve(cfg.release.get("signoff", "hardware/signoff.json"))
     if not path.exists():
         return {"manual": [], "accepted_warnings": []}, [f"{path.name} missing – no sign-offs"]
@@ -116,6 +123,10 @@ def load_signoff(cfg, head):
         if not valid[scope]:
             notes.append(f"{path.name}: sign-offs with scope '{scope}' belong to another state ({key}) and do not count")
     manual = [m if valid.get(m.get("scope", "circuit")) else {**m, "done_by": None} for m in s.get("manual", [])]
+    for sid, m in REQUIRED.items():
+        if sid not in {x.get("id") for x in manual}:
+            manual.append({"id": sid, **m, "done_by": None})
+            notes.append(f"{path.name}: {sid} is missing – added as open, every release needs it")
     warns = [a for a in s.get("accepted_warnings", []) if valid.get(a.get("scope", "circuit"))]
     return {**s, "manual": manual, "accepted_warnings": warns}, notes
 

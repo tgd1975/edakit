@@ -4,6 +4,11 @@
     "version": "1.0",
     "date": "2026-10-25",
     "description": "Example for edakit: a Raspberry Pi Pico 2 drives eight LEDs through a TLC5916 constant-current sink; 5 V input with reverse-polarity diode, one push button.",
+    "purpose": {
+      "use": "private",
+      "market": "EU",
+      "notes": "An example board for edakit, built for testing, not sold or given away."
+    },
     "conventions": {
       "pin_reference": "'<designator>.<pin>' with the pin numbers of the EasyEDA/LCSC symbol",
       "v": "per net: [min, max] in V over all intended operating states",

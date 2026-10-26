@@ -9,6 +9,7 @@ to a graph – and about the knowledge the checks are made of.
 |---|---|---|
 | circuit designer | a session with the skills `circuit-design` and `hardware-change` | asks for the requirements in one decision round, picks blocks and parts, computes values, writes the graph, works through `edakit check`, `edakit hints` and `edakit sim`, draws the schematic, writes the hand-over |
 | electrical reviewer | agent `electrical-reviewer`, its own session | reads graph, hand-over, parts, simulation and datasheets, changes nothing, returns numbered findings – its result is the sign-off M-1 |
+| regulatory reviewer | agent `regulatory-reviewer`, its own session | checks circuit and parts against EU law for the purpose in the graph (RoHS, REACH, radio, batteries, product safety), changes nothing, returns numbered findings with their sources – its result is the sign-off M-6 (chapter 15) |
 | PCB designer | a session of its own with the skill `pcb-round` | works from the hand-over: EasyEDA schematic, PCB, placement plan, routing, silkscreen; does not change the graph |
 | EasyEDA operator | agent `easyeda-operator` | runs one long EasyEDA step for the PCB designer and returns only the result |
 | PCB reviewer | agent `pcb-reviewer`, its own session | reads plan, hand-over, routing and manufacturing files, changes nothing – its result is the sign-off M-5 |

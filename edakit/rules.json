@@ -17,7 +17,7 @@
   },
   "G-1": {
    "title": "structure",
-   "rule": "Designators and net names are unique, every pin is in exactly one net or in nc, every net has at least two pins and a voltage range v, every part is on a known board, a net spans boards only through a cable, and the layout requirements name parts and pins of the graph.",
+   "rule": "Designators and net names are unique, every pin is in exactly one net or in nc, every net has at least two pins and a voltage range v, every part is on a known board, a net spans boards only through a cable, the layout requirements name parts and pins of the graph, and purpose.use is private, gift or sale.",
    "why": "Everything after the graph is generated from it. A pin that is neither connected nor declared open is usually forgotten; a net with one pin is a typo or an unfinished connection; a net without a voltage range cannot be compared with pin limits and the simulation; a layout requirement for a part that is not there protects nothing.",
    "fix": "Connect the pin, add it to nc when it is meant to stay open, correct the pin reference, give the net its range [min, max] over all operating states, or correct the names in layout.",
    "sources": ["edakit handbook 3.1 and 3.2"]

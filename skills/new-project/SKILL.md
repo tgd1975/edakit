@@ -17,10 +17,10 @@ Create in the repository root (ask only for what you cannot sensibly default):
 | File | Content |
 |---|---|
 | `edakit.toml` | from `tests/fixtures/led-bar/edakit.toml`: `[project] name` = the EasyEDA project, one `[boards.<name>]` with outline and holes as far as known; leave `place`, `routing.classes` and `schematic.layout.rows` minimal until the parts exist |
-| `hardware/graph.json` | `{"graph": {"name", "version": "0.1", "date", "description", "components": [], "nets": [], "cables": []}}` |
+| `hardware/graph.json` | `{"graph": {"name", "version": "0.1", "date", "description", "purpose": {"use", "market", "notes"}, "components": [], "nets": [], "cables": []}}` – `use` is `private`, `gift` or `sale` (circuit-design asks) |
 | `hardware/parts/` | empty; every LCSC number gets an entry through the part-search skill |
 | `hardware/sim.json` | from the example: sources (the supply connector), supplies at min/nominal/max, loads, corners |
-| `hardware/signoff.json` | from the example: M-1 (critical parts, second check), M-5 (layout review), M-2 (manufacturer preview), M-4 (acceptance) |
+| `hardware/signoff.json` | from the example: M-1 (critical parts, second check), M-6 (regulatory review), M-5 (layout review), M-2 (manufacturer preview), M-4 (acceptance) |
 | `docs/decisions.md` | numbered decisions D-1, … with reason and date (the decision-round skill appends) |
 | `.gitignore` | `build/` |
 

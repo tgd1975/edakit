@@ -17,9 +17,11 @@ designer's, in a session of its own that gets only what you write down (section 
 
 Collect them before choosing parts: the supply (source, voltage range including unloaded and reversed, the current it
 allows, the minimum load of a power bank), every input and output and what drives or reads it, the MCU or main part,
-quantity and assembly (JLCPCB SMD, hand-soldered), enclosure and what a person touches, and what matters to the user
-(cost, looks, robustness, loudness …). Default what you can; ask the rest in **one** decision round (skill
-decision-round), not one question after the other.
+quantity and assembly (JLCPCB SMD, hand-soldered), enclosure and what a person touches, what matters to the user
+(cost, looks, robustness, loudness …), and **what the board is for**: built for oneself, given away or sold, and
+where – it decides which rules apply (handbook 15). Default what you can; ask the rest in **one** decision round
+(skill decision-round), not one question after the other. The purpose goes into the graph:
+`"purpose": {"use": "private" | "gift" | "sale", "market": "EU", "notes": "what it is, who uses it"}`.
 
 ## 2. Building blocks first
 
@@ -84,9 +86,11 @@ edakit check 2>&1 | cat      # G-1 also checks the names in layout
 edakit handover 2>&1 | cat   # the hand-over as the PCB designer will read it
 ```
 
-The agent electrical-reviewer reviews the circuit and the hand-over; its findings go into a decision round. Then the
-PCB designer takes over in a session of its own: skill pcb-round, starting with `edakit handover`. Without a PCB (a
-development board and hand wiring) the drawing is the schematic, and the project is done without EasyEDA.
+Two agents review in sessions of their own, side by side: electrical-reviewer the circuit and the hand-over (M-1),
+regulatory-reviewer the circuit and its parts against the rules for its purpose (M-6) – before the layout, because
+its findings usually change parts. Their findings go into one decision round. Then the PCB designer takes over in a
+session of its own: skill pcb-round, starting with `edakit handover`. Without a PCB (a development board and hand
+wiring) the drawing is the schematic, and the project is done without EasyEDA.
 
 ## Report
 

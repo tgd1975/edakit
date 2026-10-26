@@ -430,3 +430,10 @@ def test_joined_nets_are_one_net_for_the_checks(project):
     part["pins"]["10"]["type"] = "output"
     project.save_part("C41407547", part)
     assert ("G-5", "CLASH: several outputs drive this net: U2.14, U1.10") in run(project).errors
+
+
+def test_g1_purpose_says_what_the_board_is_for(project):
+    g = project.graph()
+    g["graph"]["purpose"]["use"] = "hobby"
+    project.save_graph(g)
+    assert any("purpose.use must be one of private, gift, sale" in m for c, m in run(project).errors if c == "G-1")
