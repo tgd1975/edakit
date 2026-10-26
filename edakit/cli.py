@@ -162,7 +162,7 @@ def main(argv=None):
         cfg = config.load(args.config)
     except config.ConfigError as e:
         if args.command == "doctor":
-            cfg = None
+            cfg, args.config_error = None, str(e)
         else:
             print(f"edakit: {e}", file=sys.stderr)
             return 1

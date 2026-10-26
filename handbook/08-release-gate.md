@@ -39,7 +39,7 @@ edakit gate --easyeda    # plus S, L, F – EasyEDA with the bridge, minutes
 | L-8 | silkscreen "+"/"−" next to a pad with that polarity role | a sign at the wrong pole |
 | L-9 | every through hole takes its lead at nominal size (lead data in the parts database); worst case (hole −0.08 mm, lead + tolerance) below 0.05 mm play or plated slots narrower than 0.5 mm: warning per part | two parts whose leads would not have fitted the library holes |
 | L-10 | every pad sits where the library footprint has the pad with that number (`pad_map` for intended swaps) | a pad swap that was reset by EasyEDA |
-| L-11 | short current loops (`[[boards.<b>.loops]]` and `layout.loops` of the graph): shortest path over tracks per pad pair within its limit | a switching regulator loop routed 61 mm around the board |
+| L-11 | short current loops (`[[loops]]` of the board file and `layout.loops` of the graph): shortest path over tracks per pad pair within its limit | a switching regulator loop routed 61 mm around the board |
 | L-12 | the plan keeps the circuit's hand-over: `layout.fixed`, `.edge`, `.near` of the graph, a decoupling capacitor of its own next to every IC (7.4) | the auto-layout put a decoupling capacitor 24 mm from its IC; what the circuit designer knew got lost on the way to the layout |
 
 **Stage F:**
@@ -65,10 +65,16 @@ the datasheet drawings, and what you compare with JLCPCB's assembly preview.
 
 Every run records two hashes in the protocol header:
 
-- **circuit** (`state_sha256`): graph, parts database, simulation config (and plugin, `[release] state_files`)
-- **layout** (`layout_sha256`): `[release] layout_files` (default edakit.toml) and the footprint geometry
+- **circuit** (`state_sha256`): graph (with its ground net and check settings), parts database, simulation config
+  (and plugin, `[release] state_files`)
+- **layout** (`layout_sha256`): the board files, the footprint geometry (and `[release] layout_files`)
 
-The sign-off file (`[release] signoff`, [example](https://github.com/tgd1975/automatic_christmas_bell/blob/main/hardware/signoff.json)) holds manual checks and
+Each file belongs to one of them or to none (10.1): edakit.toml and the schematic file are in no hash, so a new order
+quantity or a note in the schematic voids no review. When a project moved from the one-file edakit.toml
+(`scripts/split_config.py`), its sign-off file records the hashes before and after in `rehashed`: the move changes
+files, not what they say.
+
+The sign-off file (`[project] signoff`, [example](https://github.com/tgd1975/automatic_christmas_bell/blob/main/hardware/signoff.json)) holds manual checks and
 accepted warnings. Each counts only if the hash of its scope equals the current one:
 
 ```json

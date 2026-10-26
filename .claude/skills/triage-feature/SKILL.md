@@ -41,7 +41,7 @@ In this order; the first question that fails decides.
 | **New?** `uv run edakit --help`, `handbook/10-reference.md`, the code (`grep` for the keys and the method), the other proposals (`gh issue list --label feature-proposal --state all`) | **Rejected**, naming what does it. Done in part: **Question** – extend that? |
 | **Is the gap real?** The Gap section shows it with a command and its output; read the code: does edakit behave like that at this commit? | **Question**: what was run, against which edakit |
 | **General?** Another board with this pattern needs it too – not the origin's taste, layout or naming | **Rejected**: it stays in the project (its generator, its edakit.toml, its own script) |
-| **Fits edakit?** Project data goes into edakit.toml, graph or parts entries, never into edakit's code; the default leaves existing projects as they are | **Question**, with the alternatives |
+| **Fits edakit?** Project data goes into edakit.toml, a board or schematic file, graph or parts entries, never into edakit's code; the default leaves existing projects as they are | **Question**, with the alternatives |
 | **Testable without EasyEDA?** A test shows the gap red today and green afterwards; what needs EasyEDA stays a thin call around a function that can be tested | **Question**: which part can be tested and how |
 | **One capability?** | **Question**: split it, with the proposed parts |
 | **Clear enough to build?** Interface, defaults, numbers, what a finding says | **Question**, with the concrete alternatives |

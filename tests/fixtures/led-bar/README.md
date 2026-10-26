@@ -10,11 +10,13 @@ for JLCPCB Economic assembly.
 
 | File | |
 |---|---|
-| [edakit.toml](edakit.toml) | the project: board, outline, holes, placement plan, routing rules, schematic blocks, checks, release |
-| [hardware/graph.json](hardware/graph.json) | 17 parts, 18 nets – the only source of the circuit |
+| [edakit.toml](edakit.toml) | the table of contents: project, board, where the files are, release |
+| [hardware/graph.json](hardware/graph.json) | 17 parts, 18 nets, the hand-over to the layout and the check settings – the only source of the circuit |
+| [hardware/boards/main.toml](hardware/boards/main.toml) | the board: outline, holes, placement plan, routing rules, pours, silkscreen |
+| [hardware/schematic.toml](hardware/schematic.toml) | the blocks, notes and pin table of the schematic |
 | [hardware/parts/](hardware/parts/) | 10 parts entries, signed against their datasheets |
 | [hardware/sim.json](hardware/sim.json) | 3 supply voltages × 2 loads × 2 LED corners |
-| [hardware/signoff.json](hardware/signoff.json) | manual checks M-1, M-5, M-2, M-4 (open) |
+| [hardware/signoff.json](hardware/signoff.json) | manual checks M-1, M-6, M-5, M-2, M-4 (open) |
 
 Offline, from this folder:
 

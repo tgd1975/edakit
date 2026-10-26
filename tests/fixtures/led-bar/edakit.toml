@@ -1,118 +1,27 @@
-# edakit project file – everything that is specific to this project. Reference: handbook/10-reference.md
+# edakit project file: the table of contents – the project, its boards and where their files are.
+# Reference: handbook/10-reference.md
 #
 # The example: a Raspberry Pi Pico 2 drives eight LEDs through a TLC5916 constant-current sink,
 # 5 V in through a JST PH connector and a reverse-polarity diode, one push button. 2 layers, 90 x 40 mm.
 
 [project]
 name = "led-bar"                 # EasyEDA project (friendly name); edakit never creates it silently
-graph = "hardware/graph.json"    # the single source of truth: parts, values, pins, nets
-parts = "hardware/parts"         # one JSON file per LCSC number
+company = "edakit example"       # schematic title block
+quantity = 5                     # boards per order: the stock check (F-2) needs this many sets
+graph = "hardware/graph.json"    # the single source of truth: parts, values, pins, nets, ground, check settings
+parts = "hardware/parts"         # one JSON file per part
+sim = "hardware/sim.json"        # simulation scenarios
+schematic = "hardware/schematic.toml"   # arrangement of the schematic: blocks, notes, pin table
+signoff = "hardware/signoff.json"       # sign-offs, bound to the hashes of circuit and layout
 artifacts = "build/edakit"       # caches, previews, routing files, exports (not versioned)
 reports = "build/release"        # one folder per release-gate run
-company = "edakit example"       # schematic title block
-ground = "GND"
-quantity = 5                     # boards per order: the stock check (F-2) needs this many sets
 
 [boards.main]
 title = "LED bar"                # page name of the readable schematic
 template = "generated_main"      # generated from the graph, replaced on every run
 schematic = "layout_main"        # readable schematic; the PCB is linked to it
 pcb = "main"                     # PCB document in EasyEDA
-view = "top"                     # plan coordinates below are seen from the top side
-edge_ok = ["U1", "J1"]           # may touch the outline (USB of the module, the connector)
-
-[boards.main.outline]            # mm; a rectangle with rounded corners, origin lower left
-rect = [90, 40]
-corner_radius = 2
-
-[[boards.main.holes]]            # M3 mounting holes: non-plated, 'keep' = radius free of parts and copper
-x = 3.5
-y = 3.5
-d = 3.2
-keep = 3.2
-
-[[boards.main.holes]]
-x = 86.5
-y = 36.5
-d = 3.2
-keep = 3.2
-
-[boards.main.tooling]            # JLCPCB Economic PCBA tooling holes: NPTH 1.152 mm, mask 0.148 mm larger
-holes = [[3.5, 36.5], [86.5, 3.5]]
-
-[boards.main.place]              # fixed parts (mm, degrees, side); the rest goes to EasyEDA's auto-layout
-U1 = { x = 29, y = 14.5, rot = 0, side = "top" }
-U2 = { x = 66, y = 17, rot = 90, side = "top" }
-J1 = { x = 84, y = 12, rot = 90, side = "top" }
-SW1 = { x = 80, y = 25, rot = 0, side = "top" }
-D2 = { x = 53, y = 34, rot = 0, side = "top" }
-D3 = { x = 57, y = 34, rot = 0, side = "top" }
-D4 = { x = 61, y = 34, rot = 0, side = "top" }
-D5 = { x = 65, y = 34, rot = 0, side = "top" }
-D6 = { x = 69, y = 34, rot = 0, side = "top" }
-D7 = { x = 73, y = 34, rot = 0, side = "top" }
-D8 = { x = 77, y = 34, rot = 0, side = "top" }
-D9 = { x = 81, y = 34, rot = 0, side = "top" }
-C1 = { x = 66, y = 25, rot = 0, side = "top" }    # decoupling of U2 – the circuit wants it next to U2 (L-12)
-R1 = { x = 59, y = 17, rot = 90, side = "top" }   # layout.near of the graph
-C2 = { x = 29, y = 28, rot = 0, side = "top" }
-
-[boards.main.near]               # the layout's own: within near_mm of the host; the circuit's are in the graph
-C2 = "U1"
-
-[boards.main.routing]            # Freerouting rules (mil); EasyEDA's DRC must accept them as well
-clearance_mil = 6.5
-signal_mil = 10
-via = [24, 12]                   # diameter, drill
-edge_clearance_um = 400
-passes = 40
-attempts = 5                     # retries with a reshuffled DSN when nets stay open
-layer_cost = { TOP = [1.0, 1.8], BOTTOM = [1.5, 2.5] }
-
-[boards.main.routing.classes]
-POWER = { width_mil = 18, nets = ["VIN", "+5V"] }
-GND = { width_mil = 18, nets = ["GND"] }
-SUPPLY = { width_mil = 12, nets = ["3V3"] }
-
-[[boards.main.pours]]            # copper pours, refilled after every routing run
-net = "GND"
-layers = ["TOP", "BOTTOM"]
-
-[boards.main.silk]
-designators = "top"              # `edakit silk` places the designators of this side where there is room
-label_h_mm = 1.0
-
-[schematic]
-stub = 10                        # length of the net stubs in the generated schematic
-
-[schematic.layout]               # blocks of the readable schematic: rows -> columns -> blocks
-power_flags = { GND = "Ground", "+5V" = "Power", "3V3" = "Power", VIN = "Power" }
-rows = [
-  [ [ { title = "Power Input", start = ["J1"] } ], [ { title = "MCU", start = ["U1"] } ] ],
-  [ [ { title = "LED Driver", start = ["U2"] } ], [ { title = "Notes" } ] ],
-]
-near = { C1 = "U2", C2 = "U1" }  # capacitors that only touch supply nets: draw them at this part
-
-[schematic.layout.notes]
-"Power Input" = ["J1: 5 V from a USB power supply (JST PH, pin 1 = VIN)", "D1 SS34: reverse-polarity protection"]
-MCU = ["Raspberry Pi Pico 2 module; VSYS from +5V, 3V3(OUT) supplies U2"]
-"LED Driver" = ["TLC5916: I_OUT = 15 x 1.26 V / R1 = 9.45 mA", "R2 keeps OE high until the firmware runs"]
-Notes = ["Nets with the same name are connected (labels and power flags)."]
-
-[schematic.layout.pin_table]     # generated GPIO table inside the MCU block
-component = "U1"
-block = "MCU"
-prefix = "GP"
-notes = { LED_SDI = "out, SPI TX", LED_CLK = "out, SPI SCK", LED_LE = "out, latch", LED_OE = "out, PWM, active low", BTN = "in, pull-up" }
-
-[sim]
-config = "hardware/sim.json"
-
-[checks]
-reverse_protect = ["J1"]         # G-10: sources that may be connected the wrong way round
-pin_locks = { "U1.4" = "LED_SDI", "U1.5" = "LED_CLK", "U1.6" = "LED_LE", "U1.7" = "LED_OE", "U1.9" = "BTN" }
+file = "hardware/boards/main.toml"      # outline, holes, placement, routing, pours, silk – the layout hash covers it
 
 [release]
-signoff = "hardware/signoff.json"
-layout_files = ["edakit.toml"]   # plus build/edakit/pcb_geometry_<board>.json: hash of the 'layout' sign-offs
 assembly = { sides = ["top"], smd_only = true }   # Economic PCBA: one side, SMD only (F-3)

@@ -3,10 +3,10 @@
 Meant for the board schematic (default layout_<board>). It deletes all wires, net flags, ports, rectangles and texts
 of the page, moves and rotates the parts and wires everything again (what was added by hand is lost):
 
-  - Blocks ([schematic.layout] rows in edakit.toml): rows -> columns -> blocks with a title and start parts
-    (ICs, connectors, the MCU). Every block gets a dashed frame with its title and notes. All other parts attach by
-    breadth-first search over signal nets (not over power nets and not past another start part).
-  - Capacitors that touch only supply nets sit at the part named in [schematic.layout] near.
+  - Blocks ([layout] rows of the schematic file, hardware/schematic.toml): rows -> columns -> blocks with a title
+    and start parts (ICs, connectors, the MCU). Every block gets a dashed frame with its title and notes. All other
+    parts attach by breadth-first search over signal nets (not over power nets and not past another start part).
+  - Capacitors that touch only supply nets sit at the part named in [layout] near.
   - Every child is rotated so that its connecting pin points at the parent pin; children of one pin are stacked,
     branches of one side are spread without overlaps and without crossings.
   - Nets inside a block: one branched wire with the net name. Nets to other blocks: a labelled stub (same name =
@@ -479,16 +479,16 @@ def check_geometry(sheet, geo, pin_net):
     return problems
 
 
-def layout_config(cfg, board):
+def layout_config(cfg, design):
     lay = cfg.schematic.get("layout", {})
     rows = [[[(b["title"], list(b.get("start", []))) for b in col] for col in row] for row in lay.get("rows", [])]
-    power = lay.get("power_flags") or {cfg.ground: "Ground"}
+    power = lay.get("power_flags") or {design.ground: "Ground"}
     return {"rows": rows, "notes": {k: list(v) for k, v in lay.get("notes", {}).items()}, "power": power,
             "near": dict(lay.get("near", {})), "stacked": lay.get("stacked", []), "pin_table": lay.get("pin_table")}
 
 
 def block_notes(cfg, design, board, lc, drawn_by="edakit schematic layout"):
-    """Notes from edakit.toml plus a GPIO table from the graph and the open 'verify' notes."""
+    """Notes from the schematic file plus a GPIO table from the graph and the open 'verify' notes."""
     notes = {k: list(v) for k, v in lc["notes"].items()}
     comps = design.board_comps(board.name)
     pt = lc.get("pin_table")
@@ -780,9 +780,10 @@ def main(cfg, args):
     design = Design.from_config(cfg)
     graph_comps = design.board_comps(board.name)
     graph_nets = {n["name"]: n["pins"] for n in design.graph["nets"]}
-    lc = layout_config(cfg, board)
+    lc = layout_config(cfg, design)
     if not lc["rows"]:
-        return eda.die("edakit.toml has no [schematic.layout] rows – define the blocks first (handbook/06-schematic.md)")
+        return eda.die(f"{cfg.relative(cfg.schematic_file)} has no [layout] rows – define the blocks first "
+                       "(handbook/06-schematic.md)")
     cache = cfg.artifact(f"layout_geometry_{name}.json")
     mcp = None
     need_eda = not args.dry_run or args.reread or not cache.exists()

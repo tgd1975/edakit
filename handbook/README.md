@@ -13,7 +13,7 @@ How we work, what the tools do, and why they do it that way – including everyt
 | 7 | [PCB](07-pcb.md) | you place, route, pour, print |
 | 8 | [Release gate](08-release-gate.md) | you prepare an order |
 | 9 | [EasyEDA API](09-easyeda-api.md) | you call the API directly or something behaves strangely |
-| 10 | [Reference](10-reference.md) | you need a key of edakit.toml or a command |
+| 10 | [Reference](10-reference.md) | you need a key of edakit.toml, of a board or schematic file, or a command |
 | 11 | [Working with Claude](11-working-with-claude.md) | you use the plugin, run parallel sessions, or wonder about the working agreements |
 | 12 | [Troubleshooting](12-troubleshooting.md) | something fails |
 | 13 | [Lessons learned](13-lessons-learned.md) | you want the short version of a week of mistakes |

@@ -42,8 +42,9 @@ With the graph as the only source:
 
 ## Principles
 
-1. **One source.** The graph for parts, values and connections; the parts database for what the datasheets say; the
-   project file `edakit.toml` for placement, rules and blocks. The schematic and the PCB are outputs.
+1. **One source.** The graph for parts, values and connections; the parts database for what the datasheets say; a
+   board file per board for placement and rules; the schematic file for the blocks – `edakit.toml` says where each of
+   them is. The schematic and the PCB are outputs.
 2. **Generated content may be deleted.** Everything in the EasyEDA project comes from scripts. When something is off,
    delete it and generate it again – no backups, no questions.
 3. **A check at every hand-over, and the last one on the real files.** The gate does not trust EasyEDA: connectivity
@@ -93,7 +94,7 @@ what is checked by judgement and by whom, and an acceptance test after delivery 
 | [7 PCB](07-pcb.md) | placement plan, parts without dialogs, Freerouting, pours, silkscreen |
 | [8 Release gate](08-release-gate.md) | stages, sign-offs, manifest, ordering at JLCPCB |
 | [9 EasyEDA API](09-easyeda-api.md) | how the API and the MCP server really behave |
-| [10 Reference](10-reference.md) | edakit.toml and every command |
+| [10 Reference](10-reference.md) | edakit.toml, the board and schematic files and every command |
 | [11 Working with Claude](11-working-with-claude.md) | plugin, skills, agents, parallel sessions, working agreements |
 | [12 Troubleshooting](12-troubleshooting.md) | symptom → cause → fix |
 | [13 Lessons learned](13-lessons-learned.md) | what cost time, what we would do again |

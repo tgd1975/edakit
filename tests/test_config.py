@@ -2,7 +2,7 @@ import math
 
 import pytest
 
-from edakit.config import Board, ConfigError, _outline
+from edakit.config import Board, ConfigError, _outline, load
 
 
 def board(view):
@@ -56,4 +56,63 @@ def test_example_config_loads(project):
     b = cfg.board()
     assert b.pcb == "main" and b.template == "generated_main" and b.schematic == "layout_main"
     assert len(b.tooling) == 2 and b.place["U1"].side == "top"
-    assert cfg.net_classes and list(cfg.net_classes)[-1] == "SIGNAL"
+    assert b.net_classes and list(b.net_classes)[-1] == "SIGNAL"
+    assert b.file == "hardware/boards/main.toml" and cfg.schematic["stub"] == 10
+    assert cfg.sim_config.name == "sim.json" and cfg.sim_plugin is None
+
+
+ONE_FILE = """
+[project]
+name = "t"
+ground = "GND"
+[boards.main]
+revision = "1"
+[boards.main.place]
+U1 = { x = 1, y = 2 }
+[net_classes]
+POWER = { min_a = 0.3, width_mm = 0.6 }
+[schematic]
+stub = 10
+[sim]
+config = "hardware/sim.json"
+[checks]
+pin_locks = { "U1.1" = "A" }
+[release]
+signoff = "hardware/signoff.json"
+layout_files = ["edakit.toml"]
+"""
+
+
+def test_one_file_form_is_refused_with_what_goes_where(tmp_path):
+    (tmp_path / "edakit.toml").write_text(ONE_FILE)
+    with pytest.raises(ConfigError) as e:
+        load(tmp_path / "edakit.toml")
+    for line in ("[boards.main] revision, place -> hardware/boards/main.toml, without the prefix 'boards.main.'",
+                 "[schematic] -> hardware/schematic.toml, without the prefix 'schematic.'",
+                 '[checks] -> "checks" in the graph', '[project] ground -> "ground" in the graph',
+                 "[net_classes] -> [net_classes] in each board file",
+                 "[sim] config, plugin -> [project] sim, sim_plugin", "[release] signoff -> [project] signoff",
+                 "[release] layout_files: drop edakit.toml", "scripts/split_config.py"):
+        assert line in str(e.value)
+
+
+def test_keys_in_the_wrong_file_or_misspelt(tmp_path):
+    (tmp_path / "edakit.toml").write_text('[project]\nname = "t"\ncompnay = "x"\n[boards.main]\n')
+    (tmp_path / "hardware" / "boards").mkdir(parents=True)
+    (tmp_path / "hardware" / "boards" / "main.toml").write_text('title = "Main"\nplcae = {}\n')
+    (tmp_path / "hardware" / "schematic.toml").write_text("stubs = 10\n")
+    with pytest.raises(ConfigError) as e:
+        load(tmp_path / "edakit.toml")
+    for line in ("[project]: unknown key 'compnay'", "hardware/schematic.toml: unknown key 'stubs'",
+                 "hardware/boards/main.toml: title belongs in edakit.toml [boards.main]",
+                 "hardware/boards/main.toml: unknown key 'plcae'"):
+        assert line in str(e.value)
+
+
+def test_board_file_missing(tmp_path):
+    (tmp_path / "edakit.toml").write_text('[project]\nname = "t"\n[boards.main]\n')
+    b = load(tmp_path / "edakit.toml").board()
+    assert b.file == "hardware/boards/main.toml" and b.outline == [] and b.place == {}   # no layout yet
+    (tmp_path / "edakit.toml").write_text('[project]\nname = "t"\n[boards.main]\nfile = "boards/main.toml"\n')
+    with pytest.raises(ConfigError, match="boards/main.toml not found"):
+        load(tmp_path / "edakit.toml")

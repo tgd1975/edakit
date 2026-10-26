@@ -1,21 +1,21 @@
 """Silkscreen: designators where there is room, checked on the Gerber export.
 
-    edakit silk apply   hide the designators of the sides in [boards.<b>.silk] hide; place those of the side in
-                        `designators` next to their part where nothing is in the way; export Gerber, check, DRC
+    edakit silk apply   hide the designators of the sides in [silk] hide of the board file; place those of the side
+                        in `designators` next to their part where nothing is in the way; export Gerber, check, DRC
     edakit silk check   export Gerber and only check: own silkscreen on solder-mask openings (JLCPCB cuts it off there)
 
 Placement: every designator gets the first free spot above, below, right or left of its part (horizontal, then
 vertical, then at the corners) – not on pads, footprint silkscreen, other parts or other labels. Test points and the
 tightest parts come first. A spot on a via (tented, the print holds) only when nothing else is free. Groups
-([boards.<b>.silk] groups = {"R1-R8" = [...]}) get one common label when the single labels do not fit.
+([silk] groups = {"R1-R8" = [...]}) get one common label when the single labels do not fit.
 
-Board label: the board's title and revision ([boards.<b>] revision; [boards.<b>.silk] board_label, default
+Board label: the board's title and revision (revision and [silk] board_label of the board file, default
 "{title} rev {revision}", also {project} and {board}) in the free spot nearest to a corner (board_label_corner, default
 "bottom-left" as seen from the printed side), not on pads, parts, labels, vias or the keep-outs of holes. edakit
 remembers the strings it created and replaces them on the next run, so an old revision never stays on the board.
 
-Artwork and texts ([[boards.<b>.silk.art]]: svg, x, y, width_mm, rot, side; [[boards.<b>.silk.texts]]: text, x, y,
-h_mm, rot, side, font) come first: filled shapes and strokes of the SVG become silkscreen fills, cut free of pads and
+Artwork and texts ([[silk.art]]: svg, x, y, width_mm, rot, side; [[silk.texts]]: text, x, y, h_mm, rot, side,
+font) come first: filled shapes and strokes of the SVG become silkscreen fills, cut free of pads and
 solder-mask openings (+0.15 mm) and of strokes thinner than JLCPCB can print (0.15 mm). Designators and the board label
 then keep clear of them. `edakit silk preview` draws the artwork onto the last Gerber export offline.
 
@@ -60,7 +60,7 @@ CAP_RATIO = 0.68  # EasyEDA's font size is the em height; capitals print at 0.69
 
 
 def font_size(h):
-    """EasyEDA font size for printed capitals of height h (mm). All heights in edakit.toml mean printed capitals –
+    """EasyEDA font size for printed capitals of height h (mm). All heights in the board file mean printed capitals –
     JLCPCB wants at least 1.0 mm."""
     return h / CAP_RATIO
 
@@ -219,7 +219,7 @@ def printable(art, area, openings):
 
 
 def silk_texts(board, side):
-    """[(text, x, y, rot, h, font)] of [[boards.<b>.silk.texts]] on this side, positions in EasyEDA mm."""
+    """[(text, x, y, rot, h, font)] of [[silk.texts]] on this side, positions in EasyEDA mm."""
     out = []
     for t in board.silk.get("texts", []):
         if t.get("side", board.silk.get("designators", "top")) == side:
@@ -396,7 +396,7 @@ def apply(cfg, board, mcp):
         else:
             print(f"  ! board label '{text}': no free spot")
     elif board.revision is None:
-        print("  ! no board label: set [boards.<b>] revision")
+        print(f"  ! no board label: set revision in {board.file}")
     memo.write_text(json.dumps(created))
     eda.save_pcb(mcp)
     print(f"  {side}: {sum(1 for n in placed if n in attrs)} of {len(parts)} designators placed"
@@ -423,7 +423,7 @@ def check(cfg, board, mcp, footprint_silk=None):
 
 
 def preview(cfg, board):
-    """Offline: the artwork and texts of edakit.toml on the last Gerber export (edakit silk apply/check)."""
+    """Offline: the artwork and texts of the board file on the last Gerber export (edakit silk apply/check)."""
     folder = cfg.artifact(f"gerber_{board.name}", ".keep").parent
     top = folder / gerber.FILES["top_silk"]
     if not top.exists():

@@ -587,6 +587,18 @@
       "notes": [
         "D2 to D9 form the bar: one row, in this order from left to right, as the user reads it."
       ]
+    },
+    "checks": {
+      "reverse_protect": [
+        "J1"
+      ],
+      "pin_locks": {
+        "U1.4": "LED_SDI",
+        "U1.5": "LED_CLK",
+        "U1.6": "LED_LE",
+        "U1.7": "LED_OE",
+        "U1.9": "BTN"
+      }
     }
   }
 }

@@ -15,7 +15,7 @@ nets, and ports – the nets that connect to the rest of the circuit. `add` copi
   - missing parts entries are copied from the library (edakit/blocks/parts/); an existing entry must have the same pins
   - the graph file keeps its formatting (indent, UTF-8); nothing is written with --dry-run
 
-The block's notes say what is left to decide (values, sim.json, edakit.toml). Afterwards: edakit check, edakit hints,
+The block's notes say what is left to decide (values, sim.json, the graph's checks). Afterwards: edakit check, edakit hints,
 edakit sim – a block is a starting point that passed the checks once, not a sign-off.
 """
 
@@ -173,7 +173,7 @@ def add(cfg, name, instance, connect, board=None, file=None, dry_run=False):
     if board is not None and board not in cfg.boards:
         raise BlockError(f"no board '{board}' in edakit.toml (boards: {', '.join(cfg.boards)})")
     missing = sorted(t for t in connect.values() if t not in {n["name"] for n in graph["nets"]})
-    comps, new_nets, extended, attrs, lcsc = plan(block, graph, instance, connect, cfg.ground,
+    comps, new_nets, extended, attrs, lcsc = plan(block, graph, instance, connect, graph.get("ground", "GND"),
                                                   board if len(cfg.boards) > 1 else None)
     copy = parts_to_copy(lcsc, cfg.parts, comps)
     if not dry_run:

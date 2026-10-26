@@ -31,8 +31,8 @@ proposals of the repository owner. A check, a hint, a block or a part fact is no
    - **Gap:** the command and what it says today, with designators, nets and numbers
    - **Reference:** how the project does it today – file, function, commit – and the method in words. The issue is
      public: quote the project's code only with the user's OK; names, parts and numbers are fine
-   - **Interface:** keys in edakit.toml, fields in graph or parts entries, options – each with the default that leaves
-     existing projects as they are; "none" if only the behaviour changes
+   - **Interface:** keys in edakit.toml or a board or schematic file, fields in graph or parts entries, options – each
+     with the default that leaves existing projects as they are; "none" if only the behaviour changes
    - **Test:** how a test shows it without EasyEDA (the Action has none): what is built into the example
      (`tests/fixtures/led-bar`), what edakit reports before and after; for a step in EasyEDA, the part that can be
      tested offline (the board file, the DSN, the plan, the Gerber files)

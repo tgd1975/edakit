@@ -17,14 +17,14 @@
   },
   "G-1": {
    "title": "structure",
-   "rule": "Designators and net names are unique, every pin is in exactly one net or in nc, every net has at least two pins and a voltage range v, every part is on a known board, a net spans boards only through a cable, the layout requirements name parts and pins of the graph, and purpose.use is private, gift or sale.",
-   "why": "Everything after the graph is generated from it. A pin that is neither connected nor declared open is usually forgotten; a net with one pin is a typo or an unfinished connection; a net without a voltage range cannot be compared with pin limits and the simulation; a layout requirement for a part that is not there protects nothing.",
-   "fix": "Connect the pin, add it to nc when it is meant to stay open, correct the pin reference, give the net its range [min, max] over all operating states, or correct the names in layout.",
+   "rule": "Designators and net names are unique, every pin is in exactly one net or in nc, every net has at least two pins and a voltage range v, every part is on a known board, a net spans boards only through a cable, the layout requirements and the check settings name parts and pins of the graph, the ground net is a net of the graph, and purpose.use is private, gift or sale.",
+   "why": "Everything after the graph is generated from it. A pin that is neither connected nor declared open is usually forgotten; a net with one pin is a typo or an unfinished connection; a net without a voltage range cannot be compared with pin limits and the simulation; a layout requirement or a check setting for a part that is not there protects nothing.",
+   "fix": "Connect the pin, add it to nc when it is meant to stay open, correct the pin reference, give the net its range [min, max] over all operating states, or correct the names in layout, checks or ground.",
    "sources": ["edakit handbook 3.1 and 3.2"]
   },
   "G-2": {
    "title": "pin locks",
-   "rule": "Pins the firmware relies on are on the nets that [checks] pin_locks names, and a pin table in the documentation equals the graph.",
+   "rule": "Pins the firmware relies on are on the nets that checks.pin_locks of the graph names, and a pin table in the documentation equals the graph.",
    "why": "Firmware and hardware change in different files, often in different sessions. A GPIO that moved compiles fine and fails on the board.",
    "fix": "Change the graph, the firmware's pin table and pin_locks in one commit. Regenerate generated tables instead of editing them.",
    "sources": ["edakit handbook 3.3"]
@@ -57,7 +57,7 @@
    "title": "decoupling",
    "rule": "Every net with IC supply pins (power_in) has at least one capacitor to ground per supply pin.",
    "why": "An IC draws its current in short pulses. The inductance of the supply track turns each pulse into a voltage dip at the pin; a capacitor next to the pin supplies the pulse locally.",
-   "fix": "100 nF ceramic per supply pin next to the pin (keep it there with near in edakit.toml), plus the bulk capacitance the datasheet asks for.",
+   "fix": "100 nF ceramic per supply pin next to the pin (the hand-over keeps it there on the board, L-12), plus the bulk capacitance the datasheet asks for.",
    "sources": ["Analog Devices MT-101, Decoupling Techniques (Rev. 0, 2009) – https://www.analog.com/media/en/training-seminars/tutorials/MT-101.pdf"]
   },
   "G-7": {
@@ -84,7 +84,7 @@
   },
   "G-10": {
    "title": "reverse polarity",
-   "rule": "What a reversed source (battery holders, connectors in [checks] reverse_protect) reaches through fuses, switches and connectors is only capacitors, the anode of a blocking diode or the drain of a PMOS whose source and gate are outside.",
+   "rule": "What a reversed source (battery holders, connectors in checks.reverse_protect of the graph) reaches through fuses, switches and connectors is only capacitors, the anode of a blocking diode or the drain of a PMOS whose source and gate are outside.",
    "why": "A battery inserted the wrong way or a reversed plug drives the supply negative; every IC on that rail conducts through its substrate diodes and dies within milliseconds.",
    "fix": "A Schottky diode in series (simple, loses 0.3–0.5 V) or a PMOS in the supply path with its gate to ground (milliohms; block reverse-pmos).",
    "sources": ["TI SLVA139, Reverse Current/Battery Protection Circuits (2003) – https://www.ti.com/lit/an/slva139/slva139.pdf"]
@@ -180,14 +180,14 @@
    "title": "track width",
    "rule": "Every track is at least as wide as IPC-2221 asks for 1.5 × the largest simulated current (failure) and as the practical width of its net class (warning); the voltage drop is shown as an upper bound.",
    "why": "A track too narrow for its current heats up and drops voltage; the class width adds robustness for manufacturing and for later changes.",
-   "fix": "Wider tracks or a pour for the net; net classes in [boards.<b>.routing.classes] and [net_classes].",
+   "fix": "Wider tracks or a pour for the net; net classes in [routing.classes] and [net_classes] of the board file.",
    "sources": ["IPC-2221B, Generic Standard on Printed Board Design: conductor width for a current", "edakit handbook 5.4"]
   },
   "L-7": {
    "title": "placement plan",
    "rule": "Fixed parts sit where the plan says (±0.02 mm, rotation, side), and the plan itself has no findings: outline, overlaps, holes, through-hole pins under parts on the other side, near distances.",
    "why": "The auto-layout or a move by hand can shift a connector, a button or an LED that the enclosure or the user relies on.",
-   "fix": "edakit pcb apply; correct the plan in edakit.toml.",
+   "fix": "edakit pcb apply; correct the plan in the board file.",
    "sources": ["edakit handbook 7"]
   },
   "L-8": {
@@ -213,7 +213,7 @@
   },
   "L-11": {
    "title": "short current loops",
-   "rule": "Each pad pair listed in [[boards.<b>.loops]] or in layout.loops of the graph is connected over tracks within its length limit.",
+   "rule": "Each pad pair listed in [[loops]] of the board file or in layout.loops of the graph is connected over tracks within its length limit.",
    "why": "A switching regulator's loop carries pulsed current; a long loop radiates and rings. In the reference project it was routed 61 mm across the board, and the layout review found it, not a check.",
    "fix": "Put the regulator, its capacitors, the diode and the inductor together and route the loop first.",
    "sources": ["TI SNVA021C, AN-1149 Layout Guidelines for Switching Power Supplies (2013) – https://www.ti.com/lit/an/snva021c/snva021c.pdf", "edakit handbook 8.2"]
@@ -222,7 +222,7 @@
    "title": "layout requirements of the circuit",
    "rule": "The plan keeps what the circuit hands over: every part in layout.fixed, layout.edge and layout.near of the graph is fixed, an edge part sits within edge_mm of the outline, a near part within near_mm of its host, and every IC with a supply pin is fixed with a capacitor of its own from that supply to ground within near_mm.",
    "why": "The auto-layout knows nothing about belonging – it once put a decoupling capacitor 24 mm from its IC. And what the circuit designer knows about the board – which connector is plugged in from outside, which part a person presses or looks at – is lost when it lives only in a conversation: the PCB designer works in a session of its own and gets only what is written down.",
-   "fix": "Fix the part in [boards.<b>.place] where the requirement holds. A requirement that cannot be kept goes back to the circuit designer as a written request – the layout side does not change the graph. A derived decoupling that does not apply is waived on the IC with its reason (waive L-12).",
+   "fix": "Fix the part in [place] of the board file where the requirement holds. A requirement that cannot be kept goes back to the circuit designer as a written request – the layout side does not change the graph. A derived decoupling that does not apply is waived on the IC with its reason (waive L-12).",
    "sources": ["Analog Devices MT-101, Decoupling Techniques (Rev. 0, 2009) – https://www.analog.com/media/en/training-seminars/tutorials/MT-101.pdf", "edakit handbook 7.4 and 14.1"]
   },
   "F-1": {
@@ -257,7 +257,7 @@
    "title": "Gerber set",
    "rule": "The Gerber set is complete; outline and mounting holes equal the plan (±0.2 mm); tooling holes are in the NPTH drill file with the mask open and no copper in the opening.",
    "why": "A missing layer or a shifted outline is found at the factory at best; tooling holes with copper or mask make JLCPCB add their own.",
-   "fix": "Export again; correct outline, holes or tooling holes in edakit.toml and apply them.",
+   "fix": "Export again; correct outline, holes or tooling holes in the board file and apply them.",
    "sources": ["edakit handbook 7 and 8.1"]
   }
  },
@@ -294,7 +294,7 @@
    "title": "switching regulator layout",
    "when": {"match": "switching_regulator"},
    "why": "The loop of input capacitor, switch and diode or second switch carries pulsed current; its area radiates and its inductance rings. A ceramic input capacitor helps only next to the IC's VIN pin.",
-   "fix": "Input capacitor next to the VIN and GND pins, the loop as small as possible, and the loop listed in [[boards.<b>.loops]] so that L-11 checks it.",
+   "fix": "Input capacitor next to the VIN and GND pins, the loop as small as possible, and the loop listed in layout.loops of the graph so that L-11 checks it.",
    "sources": ["TI SNVA021C, AN-1149 Layout Guidelines for Switching Power Supplies (2013), 3 Filter capacitors – https://www.ti.com/lit/an/snva021c/snva021c.pdf"]
   },
   "H-6": {

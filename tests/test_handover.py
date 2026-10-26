@@ -75,7 +75,7 @@ def test_plan_that_ignores_them_fails(project):
     boxes = {**KEPT, "J1": (70, 10, 74, 14), "C1": (40, 24, 42, 25)}
     del boxes["SW1"]
     assert kept(project, boxes) == [
-        "SW1: not in [boards.main.place] – the circuit wants it fixed",
+        "SW1: not in hardware/boards/main.toml [place] – the circuit wants it fixed",
         "J1: 10.0 mm from the board edge – the circuit wants it at the edge (edge_mm 1)",   # the lower edge
         "U2: no capacitor of its own from 3V3 to GND within 6 mm – fix C1 next to it"]
 

@@ -20,16 +20,19 @@ def setup(tmp_path):
 [project]
 name = "t"
 [boards.main]
-[boards.main.outline]
+""")
+    (tmp_path / "hardware" / "boards").mkdir(parents=True)
+    (tmp_path / "hardware" / "boards" / "main.toml").write_text("""
+[outline]
 rect = [40, 20]
-[boards.main.routing]
+[routing]
 clearance_mil = 6.5
 classes = { POWER = { width_mil = 20, nets = ["VCC"] } }
-[[boards.main.routing.keepouts]]
+[[routing.keepouts]]
 layer = "BOTTOM"
 what = "wire"
 rect = [0, 15, 40, 20]
-[[boards.main.pours]]
+[[pours]]
 net = "GND"
 layers = ["BOTTOM"]
 plane = true

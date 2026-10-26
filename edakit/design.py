@@ -6,6 +6,7 @@ Graph file (JSON), either {"graph": {...}} or the inner object directly:
                   verify, waive: {check: reason}, bom: false, easyeda_device: {...}}]
     nets:       [{name, pins: ["R1.1", ...], v: [min, max], notes, waive}]
     cables:     [{name, from, to, pins: {from_pin: to_pin}, r_ohm_per_wire}]
+    ground:     name of the ground net (default "GND")
 
 Parts database: one JSON file per part (hardware/parts/C17414.json) with kind, pins (name, type, role, vmax),
 params, ratings, spice, footprint, lead, compliance, order, verified. See handbook/04-parts-database.md. A component
@@ -40,10 +41,10 @@ def load_parts(directory):
 
 
 class Design:
-    def __init__(self, graph_path, parts_dir, boards=None, ground="GND"):
+    def __init__(self, graph_path, parts_dir, boards=None):
         self.graph_path = Path(graph_path)
         self.graph = load_graph(graph_path)
-        self.ground = ground
+        self.ground = self.graph.get("ground", "GND")
         self.boards = list(boards or [])
         default = self.boards[0] if len(self.boards) == 1 else None
         self.comps = {c["designator"]: c for c in self.graph["components"]}
@@ -58,7 +59,7 @@ class Design:
 
     @classmethod
     def from_config(cls, cfg):
-        return cls(cfg.graph, cfg.parts, list(cfg.boards), cfg.ground)
+        return cls(cfg.graph, cfg.parts, list(cfg.boards))
 
     # --- lookups -------------------------------------------------------------------------------------------------
     def entry_key(self, des):

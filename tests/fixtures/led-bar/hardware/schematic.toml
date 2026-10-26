@@ -1,0 +1,23 @@
+# Schematic of led-bar: blocks, notes, pin table (edakit handbook 10.3)
+
+stub = 10                        # length of the net stubs in the generated schematic
+
+[layout]                         # blocks of the readable schematic: rows -> columns -> blocks
+power_flags = { GND = "Ground", "+5V" = "Power", "3V3" = "Power", VIN = "Power" }
+rows = [
+  [ [ { title = "Power Input", start = ["J1"] } ], [ { title = "MCU", start = ["U1"] } ] ],
+  [ [ { title = "LED Driver", start = ["U2"] } ], [ { title = "Notes" } ] ],
+]
+near = { C1 = "U2", C2 = "U1" }  # capacitors that only touch supply nets: draw them at this part
+
+[layout.notes]
+"Power Input" = ["J1: 5 V from a USB power supply (JST PH, pin 1 = VIN)", "D1 SS34: reverse-polarity protection"]
+MCU = ["Raspberry Pi Pico 2 module; VSYS from +5V, 3V3(OUT) supplies U2"]
+"LED Driver" = ["TLC5916: I_OUT = 15 x 1.26 V / R1 = 9.45 mA", "R2 keeps OE high until the firmware runs"]
+Notes = ["Nets with the same name are connected (labels and power flags)."]
+
+[layout.pin_table]               # generated GPIO table inside the MCU block
+component = "U1"
+block = "MCU"
+prefix = "GP"
+notes = { LED_SDI = "out, SPI TX", LED_CLK = "out, SPI SCK", LED_LE = "out, latch", LED_OE = "out, PWM, active low", BTN = "in, pull-up" }

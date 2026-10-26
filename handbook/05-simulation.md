@@ -37,7 +37,7 @@ on the delivered board instead (acceptance test).
 | `current` | supply pins | `i_a` | constant supply current |
 | `none` | – | – | nothing |
 
-A project adds its own models in a plugin file (`[sim] plugin = "hardware/sim_plugin.py"`):
+A project adds its own models in a plugin file (`sim_plugin = "hardware/sim_plugin.py"` in `[project]`):
 
 ```python
 def my_boost(nl, des, part):            # nl: the netlist builder, see edakit/sim/netlist.py
@@ -93,9 +93,9 @@ That is the polarity check of the graph.
 ## 5.4 Track widths from the simulation
 
 `edakit sim` writes the largest current of a single part per net to `<artifacts>/sim/net_currents.json` (the supply
-current also on both supply nets, ground included). `edakit pcb plan` derives net classes from it (IPC-2221 outer
-layer, 1 oz, 10 K rise, × 1.5) with practical minimum widths from `[net_classes]`; the gate check L-5 fails a track
-below the IPC width and warns below the class width.
+current also on both supply nets, ground included). `edakit pcb plan` derives net classes from it (IPC-2221 outer layer,
+1 oz, 10 K rise, × 1.5) with practical minimum widths from `[net_classes]` of the board file; the gate check L-5 fails a
+track below the IPC width and warns below the class width.
 
 ## 5.5 Every check seen red
 

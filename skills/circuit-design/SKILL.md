@@ -29,7 +29,7 @@ where – it decides which rules apply (handbook 15). Default what you can; ask 
 and the simulation – supply input, reverse polarity, USB-C, LED, button, I2C pull-ups, transistor switch. Add one with
 `edakit block add <name> --as <INSTANCE> --connect <port>=<NET> … --dry-run`, then without `--dry-run`. A port joins
 an existing net or creates it; create the MCU's signal net first (e.g. `LED_STATUS` with the MCU pin). The block's notes
-say what is left: values, sim.json, edakit.toml.
+say what is left: values, sim.json, the graph's `checks`.
 
 ## 3. Parts and pins
 
@@ -63,7 +63,10 @@ edakit sim 2>&1 | cat       # every scenario passes
 edakit schematic draw 2>&1 | cat   # the circuit as a drawing (SVG) for the user to look at – no EasyEDA needed
 ```
 
-A hint that is taken care of gets a line in the graph: `"hints": {"H-1": "C1 1000 µF next to J1"}`.
+A hint that is taken care of gets a line in the graph: `"hints": {"H-1": "C1 1000 µF next to J1"}`. Settings the checks
+need go into the graph's `checks` – the pins the firmware relies on (`pin_locks`), a connector that can be plugged in
+the wrong way (`reverse_protect`). Blocks and notes of the drawing, once it should look a certain way, go into the
+schematic file `hardware/schematic.toml` (handbook 10.3).
 
 ## 7. Hand over
 

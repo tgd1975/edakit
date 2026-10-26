@@ -56,20 +56,21 @@ edakit schematic layout --save             # rebuild the board schematic (1–2 
 edakit schematic check --schematic layout_main
 ```
 
-`layout` deletes all wires, flags, rectangles and texts of the page, moves and rotates the parts and wires them again:
+`layout` deletes all wires, flags, rectangles and texts of the page, moves and rotates the parts and wires them again.
+What it arranges stands in the schematic file `hardware/schematic.toml` (10.3):
 
-- **Blocks** (`[schematic.layout] rows`): rows → columns → blocks with a title and start parts (connectors, ICs, the
-  MCU). Every block gets a dashed frame, its title and notes (`[schematic.layout.notes]`).
+- **Blocks** (`[layout] rows`): rows → columns → blocks with a title and start parts (connectors, ICs, the
+  MCU). Every block gets a dashed frame, its title and notes (`[layout.notes]`).
 - **Placement:** all other parts attach by breadth-first search over signal nets (not over power nets, not past
   another start part). The MCU goes last, so it collects only what is left (buttons, LEDs on GPIOs).
-- **Capacitors** that touch only supply nets go to the part in `[schematic.layout] near`.
+- **Capacitors** that touch only supply nets go to the part in `[layout] near`.
 - **Orientation:** every child is rotated so its connecting pin points at the parent pin; children of one pin are
   stacked; the branches of one side are spread without overlaps and without crossings (isotonic regression keeps the
   order).
 - **Connections:** a net inside a block is one branched wire with its name; to other blocks a labelled stub; power
   nets get flags (`power_flags`).
 - **Page:** the smallest landscape standard size that holds the content and leaves the title block free (A4 … A0).
-- **GPIO table** (`[schematic.layout.pin_table]`): pin → net → function, generated from the graph into the MCU block,
+- **GPIO table** (`[layout.pin_table]`): pin → net → function, generated from the graph into the MCU block,
   plus the spare pins.
 - **Before writing** the plan is checked for shorts (wires of different nets touching, wires over foreign pins,
   four-branch crossings which EasyEDA refuses). `--force` writes anyway.
@@ -118,7 +119,7 @@ A parts entry can arrange its box itself – a module whose pin numbers do not r
 `"symbol": {"left": ["1", …, "20"], "right": ["40", …, "21"], "bottom": ["41", "42", "43"]}` (left and right from top
 to bottom, top and bottom from left to right; connected pins not listed go to the right).
 
-**Without `[schematic.layout]`** the drawing arranges itself:
+**Without the schematic file** the drawing arranges itself:
 
 - every IC, module, connector, relay and battery holder starts a block, the power inputs first; title: designator and
   label, the block's note: the part's `notes`;
@@ -127,7 +128,7 @@ to bottom, top and bottom from left to right; connected pins not listed go to th
   half the board into one block;
 - a capacitor between flagged nets sits at the IC or module that takes its supply in.
 
-`rows`, `power_flags`, `near` and `notes` in edakit.toml replace each of these.
+`rows`, `power_flags`, `near` and `notes` in the schematic file replace each of these.
 
 Before the file is written, the drawing is checked like a plan for EasyEDA – no wire touches another net or a foreign
 pin – and every connected pin must end in a wire or a flag of its own net; otherwise nothing is written (exit 2,

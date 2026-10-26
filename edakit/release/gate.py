@@ -16,8 +16,9 @@ RELEASED only if
   - every warning is accepted in the sign-off file (only a human accepts warnings – it is a decision),
   - every part is verified and every manual check of phase 'export' is signed – the regulatory review M-6 also when
     the sign-off file does not list it,
-  - all of that for exactly this state: sign-offs count only for the hash of their scope – 'circuit' (graph, parts
-    database, simulation config) or 'layout' (layout files of [release] and the footprint geometry). An accepted
+  - all of that for exactly this state: sign-offs count only for the hash of their scope – 'circuit' (graph with its
+    check settings, parts database, simulation config) or 'layout' (the board files, further layout_files of
+    [release], the footprint geometry). An accepted
     warning with scope 'decision' counts regardless of the hash and refers to a numbered decision in the docs.
 Exit code: 0 = released, 2 = not released, 1 = tool error.
 """
@@ -78,15 +79,15 @@ def file_hash(root, files):
 
 
 def state_files(cfg):
-    sim = cfg.resolve(cfg.sim.get("config", "hardware/sim.json"))
-    files = [cfg.graph, sim, *sorted(cfg.parts.glob("*.json"))]
-    if cfg.sim.get("plugin"):
-        files.append(cfg.resolve(cfg.sim["plugin"]))
+    files = [cfg.graph, cfg.sim_config, *sorted(cfg.parts.glob("*.json"))]
+    if cfg.sim_plugin:
+        files.append(cfg.sim_plugin)
     return files + [cfg.resolve(f) for f in cfg.release.get("state_files", [])]
 
 
 def layout_files(cfg):
-    files = [cfg.resolve(f) for f in cfg.release.get("layout_files", ["edakit.toml"])]
+    files = [cfg.resolve(b.file) for b in cfg.boards.values()]
+    files += [cfg.resolve(f) for f in cfg.release.get("layout_files", [])]
     return files + [cfg.artifacts / f"pcb_geometry_{b}.json" for b in cfg.boards]
 
 
@@ -113,7 +114,7 @@ def header(cfg):
 def load_signoff(cfg, head):
     """Sign-offs and accepted warnings that count for the current hash of their scope. A required manual check the
     file does not list is added as open."""
-    path = cfg.resolve(cfg.release.get("signoff", "hardware/signoff.json"))
+    path = cfg.signoff
     if not path.exists():
         return {"manual": [], "accepted_warnings": []}, [f"{path.name} missing – no sign-offs"]
     s = json.loads(path.read_text(encoding="utf-8"))
@@ -368,7 +369,7 @@ def main(cfg, args):
     (outdir / "graph_checks.json").write_text(json.dumps(g_json, indent=1, ensure_ascii=False) + "\n", encoding="utf-8")
     print("[E] simulation …", flush=True)
     sim_cfg, _ = simrun.load_sim_config(cfg)
-    plugin = simrun.load_plugin(cfg.resolve(cfg.sim["plugin"])) if cfg.sim.get("plugin") else None
+    plugin = simrun.load_plugin(cfg.sim_plugin) if cfg.sim_plugin else None
     sim = simrun.run_all(Design.from_config(cfg), sim_cfg, plugin=plugin)
     simrun.write_net_currents(cfg, sim)
     (outdir / "sim.json").write_text(json.dumps(sim, indent=1, ensure_ascii=False) + "\n", encoding="utf-8")

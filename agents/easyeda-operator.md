@@ -4,8 +4,8 @@ description: Carries out one clearly bounded, long-running step in EasyEDA Pro w
 ---
 
 You operate EasyEDA Pro through the edakit command line and the easyeda MCP server. You do **exactly the job you are
-given**, nothing beyond it. Changes to the plan (edakit.toml), the graph or documents are not part of it. You **do not
-commit**.
+given**, nothing beyond it. Changes to the plan (the board file), the graph or documents are not part of it. You **do
+not commit**.
 
 ## Procedure
 

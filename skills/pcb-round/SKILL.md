@@ -9,7 +9,9 @@ argument-hint: "[board] <wish>"
 Tools and coordinates: `${CLAUDE_PLUGIN_ROOT}/handbook/07-pcb.md`. Wish: $ARGUMENTS
 
 You are the PCB designer, in a session of your own (handbook 14.1). You work from the hand-over, not from the
-conversation that designed the circuit, and **you do not change the graph or the parts database**. When the layout
+conversation that designed the circuit, and **you do not change the graph or the parts database** – your file is the
+board file `hardware/boards/<board>.toml` (handbook 10.2); start it from the example's when it does not exist yet. When
+the layout
 needs a circuit change – another GPIO for a shorter route, another footprint, a requirement that cannot be kept – write
 it into the project's decision log as a request to the circuit (what, why, which requirement) and ask the user to take
 it to the circuit designer. The layout review (agent pcb-reviewer) checks your work; you do not sign it off.
@@ -39,7 +41,7 @@ describes (section 3).
 
 ## Round
 
-1. **Change the plan** in edakit.toml: `[boards.<b>.place]` (x, y, rot, side), outline, holes, tooling holes, `near`,
+1. **Change the plan** in the board file: `[place]` (x, y, rot, side), outline, holes, tooling holes, `near`,
    routing classes and keep-outs. What the circuit wants fixed, at the edge or next to a part is in the hand-over;
    beyond that, everything the auto-layout must not decide (connectors, controls, ICs with their decoupling
    capacitors, LEDs, anything visible) is a fixed part. The plan's own `near` holds only between fixed parts.

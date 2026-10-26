@@ -7,11 +7,11 @@ to a graph – and about the knowledge the checks are made of.
 
 | Role | Who | Does |
 |---|---|---|
-| circuit designer | a session with the skills `circuit-design` and `hardware-change` | asks for the requirements in one decision round, picks blocks and parts, computes values, writes the graph, works through `edakit check`, `edakit hints` and `edakit sim`, draws the schematic, writes the hand-over |
+| circuit designer | a session with the skills `circuit-design` and `hardware-change` | asks for the requirements in one decision round, picks blocks and parts, computes values, writes the graph with its check settings and the schematic file, works through `edakit check`, `edakit hints` and `edakit sim`, draws the schematic, writes the hand-over |
 | part selector | agent `part-selector`, its own context | finds parts for the circuit designer at the project's distributors (one profile each), compares stock, price, lifecycle and compliance data, recommends one and writes its parts entry; never touches the graph (chapter 4.2) |
 | electrical reviewer | agent `electrical-reviewer`, its own session | reads graph, hand-over, parts, simulation and datasheets, changes nothing, returns numbered findings – its result is the sign-off M-1 |
 | regulatory reviewer | agent `regulatory-reviewer`, its own session | checks circuit and parts against EU law for the purpose in the graph (RoHS, REACH, radio, batteries, product safety), changes nothing, returns numbered findings with their sources – its result is the sign-off M-6 (chapter 15) |
-| PCB designer | a session of its own with the skill `pcb-round` | works from the hand-over: EasyEDA schematic, PCB, placement plan, routing, silkscreen; does not change the graph |
+| PCB designer | a session of its own with the skill `pcb-round` | works from the hand-over: EasyEDA schematic, PCB, and in its board file `hardware/boards/<name>.toml` placement plan, routing, silkscreen; does not change the graph |
 | EasyEDA operator | agent `easyeda-operator` | runs one long EasyEDA step for the PCB designer and returns only the result |
 | PCB reviewer | agent `pcb-reviewer`, its own session | reads plan, hand-over, routing and manufacturing files, changes nothing – its result is the sign-off M-5 |
 | decider | the user | answers the decision rounds: warnings, looks and operation, money, what becomes a check |
@@ -27,6 +27,10 @@ regulators, and notes no program checks. The decoupling capacitor of every IC is
 (7.4). Because it is part of the graph, the hand-over is reviewed and signed with the circuit (M-1). A circuit change
 the layout needs – another GPIO, another footprint – goes back as a written request in the decision log; the PCB
 designer does not change the graph. A project without a PCB ends at the hand-over: the drawing is the schematic.
+
+**Files.** Each role writes its own (10.1): the circuit designer the graph, the simulation config and the schematic
+file, the part selector the parts database, the PCB designer the board files. A file has one owner, and its hash says
+which sign-offs a change voids – a new placement voids the layout review, not the circuit's.
 
 ## 14.2 The rule catalog
 
@@ -59,7 +63,7 @@ in the graph or by a pattern, shown by `edakit hints`, never blocking.
 
 | Hint | When | About |
 |---|---|---|
-| H-1 | a power input (battery holder, connector with a `vbus` pin, `[checks] reverse_protect`, a sim source) | bulk capacitor at the input against hot-plug ringing and load steps |
+| H-1 | a power input (battery holder, connector with a `vbus` pin, `checks.reverse_protect` of the graph, a sim source) | bulk capacitor at the input against hot-plug ringing and load steps |
 | H-2 | a MOSFET | gate series resistor against ringing |
 | H-3 | a button, switch or DIP switch | debouncing |
 | H-4 | a transistor switching a connector pin | flyback diode for an inductive load off the board |
@@ -151,7 +155,7 @@ What `add` does: designators get the next free numbers (`R1` of the block become
 instance's name (`STATUS_ANODE`), each port joins the net given with `--connect` – or a new net, if the block knows its
 voltage range – and `gnd` joins the project's ground. Missing parts entries are copied from the block library; an
 existing entry must have the same pins. The graph file keeps its indentation. The block's notes say what is left to
-decide: the LED current, the entries in sim.json, the connector in `[checks] reverse_protect`.
+decide: the LED current, the entries in sim.json, the connector in `checks.reverse_protect`.
 
 Every block passes `edakit check` and `edakit sim` and is drawn by `edakit schematic draw` once it is in the example
 project – a test makes sure of that. That

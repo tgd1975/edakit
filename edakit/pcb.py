@@ -11,9 +11,9 @@ mounting and tooling holes, copper pours, EasyEDA's auto-layout.
     edakit pcb apply                outline, holes, tooling holes, fixed parts (locked); all other parts unlocked
     edakit pcb autolayout           EasyEDA auto-layout of the unlocked parts, waits until positions are stable
     edakit pcb tooling              only the tooling holes again
-    edakit pcb pour                 copper pours of [[boards.<b>.pours]] (replaces old ones, not filled)
+    edakit pcb pour                 copper pours of [[pours]] in the board file (replaces old ones, not filled)
 
-Plan coordinates: mm, as seen from the board's `view` side (edakit.toml); `side` of a part is the EasyEDA side.
+Plan coordinates: mm, as seen from the board's `view` side (board file); `side` of a part is the EasyEDA side.
 EasyEDA PCB unit: mil, y up. Footprint geometry is stored relative to the part origin at rotation 0 on TOP, so the
 plan can be computed offline.
 """
@@ -162,7 +162,7 @@ def check_handover(board, design, place, boxes):
     from the edge or from their host, an IC without a decoupling capacitor of its own next to it."""
     from shapely.geometry import box
     edge = outline_polygon(board).exterior
-    where = f"[boards.{board.name}.place]"
+    where = f"{board.file} [place]"
     reqs = handover.requirements(design, board.name)
     out = []
     for r in reqs:
@@ -295,10 +295,10 @@ def net_classes(cfg, board):
         print("  (no net currents – run `edakit sim` first)")
         return {}
     nets = json.loads(f.read_text())["nets"]
-    out = {name: {"width_mm": c["width_mm"], "nets": []} for name, c in cfg.net_classes.items()}
+    out = {name: {"width_mm": c["width_mm"], "nets": []} for name, c in board.net_classes.items()}
     for net, v in sorted(nets.items()):
         i = max(v["i_max_a"], v.get("i_peak_a") or 0)
-        cls = cfg.force_class.get(net) or next(n for n, c in cfg.net_classes.items() if i >= c["min_a"])
+        cls = board.force_class.get(net) or next(n for n, c in board.net_classes.items() if i >= c["min_a"])
         out[cls]["width_mm"] = round(max(out[cls]["width_mm"], ipc2221_width_mm(i)), 2)
         out[cls]["nets"].append(net)
     path = cfg.artifact(f"pcb_netclasses_{board.name}.json")
@@ -314,12 +314,13 @@ def plan(cfg, board):
     place, boxes, tht, unplaced, missing = build_plan(cfg, board, geo)
     problems = [f"{r}: in the plan but not in the footprint geometry (edakit pcb parts --write, then dump)"
                 for r in missing]
+    design = Design.from_config(cfg)
     problems += check_plan(cfg, board, geo, place, boxes, tht)
-    problems += [f"L-12 {p}" for p in check_handover(board, Design.from_config(cfg), place, boxes)]
+    problems += [f"L-12 {p}" for p in check_handover(board, design, place, boxes)]
     for p in problems:
         print("  !", p)
     print(f"  {len(place)} fixed parts, {len(unplaced)} for the auto-layout; airline length of the fixed parts "
-          f"(without {cfg.ground}): {wirelength(board, geo, place, cfg.ground) / 1000:.2f} m")
+          f"(without {design.ground}): {wirelength(board, geo, place, design.ground) / 1000:.2f} m")
     print(f"  preview -> {render(cfg, board, geo, place, boxes, tht, problems)}")
     cfg.artifact(f"pcb_plan_{board.name}.json").write_text(json.dumps(
         {r: {"x": p.x, "y": p.y, "rot": p.rot, "side": p.side} for r, p in place.items()}, indent=1))
@@ -492,7 +493,7 @@ def pour_outline(board):
 
 
 def pour(cfg, board, mcp, keep_islands_on=None):
-    """Copper pours of [[boards.<b>.pours]] (default GND on both layers) along the outline; old pours of the same
+    """Copper pours of [[pours]] in the board file (default GND on both layers) along the outline; old pours of the same
     nets are replaced. keep_islands_on: layer name whose islands are kept (to find them for stitching)."""
     ensure_pcb_focus(mcp)
     nets = {p["net"] for p in board.pours}

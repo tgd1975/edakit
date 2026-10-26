@@ -1,8 +1,8 @@
 # 7 PCB (stage L)
 
 The PCB is generated in layers: parts and nets from the board schematic (without dialogs), a **placement plan** for
-everything that matters (in edakit.toml), EasyEDA's auto-layout for the rest, **Freerouting** for the tracks, pours,
-silkscreen. Every step can be repeated; every step checks itself.
+everything that matters (in the board file `hardware/boards/<name>.toml`, 10.2), EasyEDA's auto-layout for the rest,
+**Freerouting** for the tracks, pours, silkscreen. Every step can be repeated; every step checks itself.
 
 ```bash
 edakit handover              # what the circuit hands over: state, sign-offs, what the plan must keep (14.1)
@@ -17,7 +17,7 @@ edakit silk apply            # designators where there is room, silkscreen check
 
 ## 7.1 Coordinates
 
-- **Plan** (edakit.toml): mm, any origin you like, seen from the board's `view` side. `side` of a part is the EasyEDA
+- **Plan** (board file): mm, any origin you like, seen from the board's `view` side. `side` of a part is the EasyEDA
   side it sits on (`top`/`bottom`).
 - **EasyEDA:** mil, y up, seen from the top. With `view = "bottom"` edakit mirrors x and turns rotations into
   180° − rotation – useful when the side people look at is the bottom (e.g. LEDs on the bottom, electronics on top,
@@ -29,17 +29,17 @@ edakit silk apply            # designators where there is room, silkscreen check
 ## 7.2 Outline, holes, tooling holes
 
 ```toml
-[boards.main.outline]
+[outline]
 rect = [90, 40]            # or polygon = [[x, y], …] (only straight segments; arcs as point lists)
 corner_radius = 2
 
-[[boards.main.holes]]      # non-plated mounting holes, drawn as circles on the outline layer
+[[holes]]                  # non-plated mounting holes, drawn as circles on the outline layer
 x = 3.5
 y = 3.5
 d = 3.2
 keep = 3.2                 # radius free of parts and copper (screw head)
 
-[boards.main.tooling]      # JLCPCB Economic PCBA tooling holes
+[tooling]                  # JLCPCB Economic PCBA tooling holes
 holes = [[3.5, 36.5], [86.5, 3.5]]
 ```
 
@@ -71,11 +71,11 @@ section 3).
 ## 7.4 The placement plan
 
 ```toml
-[boards.main.place]
+[place]                  # hardware/boards/main.toml
 U1 = { x = 29, y = 14.5, rot = 0, side = "top" }
 J1 = { x = 84, y = 12, rot = 90, side = "top" }
 
-[boards.main.near]       # the layout's own: fixed parts within near_mm of the host
+[near]                   # the layout's own: fixed parts within near_mm of the host
 C2 = "U1"
 ```
 
@@ -98,7 +98,7 @@ keeps it (14.1); `edakit handover` lists it:
 `near` parts sit within `near_mm` of their host. Every IC with a supply pin gets a capacitor of its own from that
 supply to ground within `near_mm` – derived from the graph, matched one capacitor per IC, so two ICs cannot share one
 while another sits far away; an IC whose capacitor is elsewhere on purpose carries `waive: {"L-12": "…"}`. `loops`
-join the plan's `[[boards.<b>.loops]]` for L-11 on the routed board, and `notes` are for the PCB designer and the
+join the board file's `[[loops]]` for L-11 on the routed board, and `notes` are for the PCB designer and the
 layout review. A requirement the plan cannot keep goes back to the circuit as a written request – the layout does not
 change the graph.
 
@@ -126,10 +126,10 @@ headless, reads the SES, and creates every track and via through the API.
 `edakit route all`, steps: read → dsn → route → check (up to `attempts` times with a reshuffled DSN) → apply → pours →
 reload → drc. About 3–7 minutes for 120 parts.
 
-Rules in edakit.toml:
+Rules in the board file:
 
 ```toml
-[boards.main.routing]
+[routing]
 clearance_mil = 6.5          # above EasyEDA's DRC (pad 0.152 mm) and JLCPCB (0.127 mm); 8 mil left 18 links open
 signal_mil = 10
 via = [24, 12]               # diameter, drill
@@ -137,18 +137,18 @@ edge_clearance_um = 400
 layer_cost = { TOP = [1.0, 1.8], BOTTOM = [2.2, 3.0] }   # preferred / against preferred direction: keep a side calm
 classes = { POWER = { width_mil = 18, nets = ["VIN", "+5V"] }, GND = { width_mil = 18, nets = ["GND"] } }
 
-[[boards.main.routing.keepouts]]   # no tracks (vias allowed) on a side or in an area
+[[routing.keepouts]]               # no tracks (vias allowed) on a side or in an area
 layer = "BOTTOM"
 what = "wire"                      # or "all"
 rect = [-80, 110, 80, 200]         # plan mm; windows = ["D1"] keeps those pads reachable
 
-[[boards.main.routing.fixed_wires]] # protected tracks Freerouting routes around (e.g. a short switching loop)
+[[routing.fixed_wires]]            # protected tracks Freerouting routes around (e.g. a short switching loop)
 net = "SW"
 layer = "TOP"
 width_mil = 24
 points = [[10, 5], [14, 5]]
 
-[[boards.main.pours]]
+[[pours]]
 net = "V_LED"
 layers = ["BOTTOM"]
 plane = true                       # Freerouting connects this net's pads to a plane on that layer through vias
@@ -189,7 +189,7 @@ and anything unplanned is deleted – old tracks have come back after a reload b
 
 ## 7.6 Pours
 
-`[[boards.<b>.pours]]`: net, layers, `plane`, `stitch`. Filled with `easyeda_pcb_rebuild_copper` per net (status
+`[[pours]]` of the board file: net, layers, `plane`, `stitch`. Filled with `easyeda_pcb_rebuild_copper` per net (status
 `readback-mismatch` is harmless). With `stitch = "BOTTOM"` edakit fills once keeping islands, puts a via into every loose
 island on that side where it overlaps the pour of the other side (with clearance), then fills again without islands.
 
@@ -203,12 +203,12 @@ last resort; test points first), then exports again and checks that no own silks
 
 It also prints the **board label** – title and revision, `"{title} rev {revision}"` by default – at the free spot
 nearest to the bottom-left corner of the printed side (`board_label_corner`), clear of pads, parts, labels, vias and the
-keep-outs of mounting and tooling holes. The revision comes from `[boards.<b>] revision`; without it there is no label.
-edakit remembers the texts it created (`<artifacts>/silk_strings_<board>.json`) and replaces them on the next run, so
-a board never carries two revisions.
+keep-outs of mounting and tooling holes. The revision comes from `revision` in the board file; without it there is no
+label. edakit remembers the texts it created (`<artifacts>/silk_strings_<board>.json`) and replaces them on the next
+run, so a board never carries two revisions.
 
-**Artwork and labels** come first: `[[boards.<b>.silk.art]]` places an SVG (filled shapes and strokes, scaled to
-`width_mm`, centred at `x`, `y` in plan mm) and `[[boards.<b>.silk.texts]]` free texts – "START" at a button, "GND 5V
+**Artwork and labels** come first: `[[silk.art]]` places an SVG (filled shapes and strokes, scaled to
+`width_mm`, centred at `x`, `y` in plan mm) and `[[silk.texts]]` free texts – "START" at a button, "GND 5V
 SIG" at a connector. edakit cuts the artwork free of pads and solder-mask openings (+0.15 mm), drops everything thinner
 than 0.15 mm (JLCPCB does not print it) and mirrors graphics on the bottom side (EasyEDA does that only for texts).
 Designators and the board label keep clear of artwork and texts. `edakit silk preview` draws them onto the last Gerber
@@ -218,9 +218,9 @@ mm with lines of 0.2 mm or more; script text works as outlines (embolden it a li
 Good to know:
 
 - Minimum text height at JLCPCB: 1.0 mm; stroke ≥ 0.15 mm (a regular 1.5-mm font had 0.12 mm – use bold). All heights in
-  edakit.toml (`label_h_mm`, `board_label_h_mm`, `h_mm` of texts) are **printed capital heights**: EasyEDA's font size
-  is the em height, and capitals print at about 0.69 of it – a size of 1.0 gave 0.71-mm letters including the stroke. edakit converts
-  with 0.68 for some margin.
+  the board file (`label_h_mm`, `board_label_h_mm`, `h_mm` of texts) are **printed capital heights**: EasyEDA's font
+  size is the em height, and capitals print at about 0.69 of it – a size of 1.0 gave 0.71-mm letters including the
+  stroke. edakit converts with 0.68 for some margin.
 - Mounting holes: the pour leaves the `keep` circle free (screw head, washer); EasyEDA alone keeps only 0.26 mm.
 - On the bottom silk layer EasyEDA mirrors texts by itself (`mirror = false`), but **not** graphics – mirror fills and
   lines yourself.

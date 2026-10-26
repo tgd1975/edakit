@@ -14,12 +14,13 @@ wires, power flags); only the symbols come from the parts database instead of Ea
     can choose the sides: "symbol": {"left": [pins top to bottom], "right": [...], "top": [pins left to right],
     "bottom": [...]}. Connectors (one column), relays (coil on the left), RGB LEDs and DIP switches show every pin.
 
-Without [schematic.layout] rows every IC, module, connector, relay and battery holder starts a block of its own, power
-inputs first, with the part's notes from the graph; without power_flags the ground and every net with a ground pin get
-ground symbols, every supply net and every net with RAIL_PINS pins or more supply flags; without near, a capacitor
-between flagged nets sits at the IC or module that takes its supply in. Before the file is written the drawing is
-checked like a plan for EasyEDA – no wire touches another net or a foreign pin – and every connected pin must end in a
-wire or flag of its own net; --force writes anyway. The page is as big as the drawing plus the title block.
+Without [layout] rows in the schematic file every IC, module, connector, relay and battery holder starts a block of
+its own, power inputs first, with the part's notes from the graph; without power_flags the ground and every net with a
+ground pin get ground symbols, every supply net and every net with RAIL_PINS pins or more supply flags; without near,
+a capacitor between flagged nets sits at the IC or module that takes its supply in. Before the file is written the
+drawing is checked like a plan for EasyEDA – no wire touches another net or a foreign pin – and every connected pin
+must end in a wire or flag of its own net; --force writes anyway. The page is as big as the drawing plus the title
+block.
 
 Units as in schematic_layout: 10 mil (EasyEDA's schematic unit), y up, grid 10. The SVG is to scale: its width and
 height are given in millimetres.
@@ -43,7 +44,7 @@ from .schematic_layout import (TITLE_BLOCK, Drawing, Layout, block_notes, box_un
 MM = 0.254          # one unit (10 mil) in millimetres
 PAGE_MARGIN = 40
 LABEL_TRIM = 6      # of the layout's margin of 10 round a body, labels may take 6 above and below
-RAIL_PINS = 10      # a net with this many pins gets flags instead of a wire when edakit.toml names no power_flags
+RAIL_PINS = 10      # a net with this many pins gets flags instead of a wire when the schematic file has no power_flags
 CHAR_W = 0.62       # character width / font size of the drawing font
 FONT = "DejaVu Sans, Arial, Helvetica, sans-serif"
 NAME, NUMBER, DESIGNATOR, VALUE, NET = 6, 5, 7, 6, 6   # font sizes
@@ -409,7 +410,7 @@ def symbol(design, d):
     return s
 
 
-# --- arrangement when edakit.toml says nothing ------------------------------------------------------------------
+# --- arrangement when the schematic file says nothing ----------------------------------------------------------
 
 def default_power(design):
     """Flags instead of wires: ground symbols for the ground and every net with a ground pin; supply flags for every
@@ -698,7 +699,7 @@ def main(cfg, args):
         return 1
     syms = {d: symbol(design, d) for d in comps}
     geo = {d: {"type": comps[d].get("type"), "pins": s.pins, "body": s.body} for d, s in syms.items()}
-    lc = layout_config(cfg, board)
+    lc = layout_config(cfg, design)
     if not cfg.schematic.get("layout", {}).get("power_flags"):
         lc["power"] = default_power(design)
     notes = block_notes(cfg, design, board, lc, drawn_by="edakit schematic draw")

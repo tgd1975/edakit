@@ -117,14 +117,14 @@ loop below brings such a gap back, the same way as a rule (14.4), with its own t
 1. **Decision in the project.** Which gaps go to edakit is the user's decision, in the project's log.
 2. **Proposal.** The skill `propose-feature` writes one issue per capability from `edakit proposal template --feature`:
    Capability (what edakit should do, for any board), Gap (the command and what it says today), Reference (how the
-   project does it: file, function, commit, the method in words), Interface (keys in edakit.toml, fields, options –
-   each with the default that leaves existing projects as they are), Test (how a test shows it without EasyEDA),
-   Origin. Shown to the user before it goes out – the issue is public, a private project's code is not quoted
-   without the user's OK – and sealed like a rule proposal.
+   project does it: file, function, commit, the method in words), Interface (keys in edakit.toml or a board or schematic
+   file, fields, options – each with the default that leaves existing projects as they are), Test (how a test shows it
+   without EasyEDA), Origin. Shown to the user before it goes out – the issue is public, a private project's code is not
+   quoted without the user's OK – and sealed like a rule proposal.
 3. **Triage.** The Action `proposals` reads the section Kind and runs the skill `triage-feature`: correctly made, a
-   feature and not a rule, new, the gap real at this commit, general rather than one project's taste, fitting
-   (project data in edakit.toml, not in the code), testable without EasyEDA, one capability, clear enough. Result as
-   for rules: **Accepted**, **Rejected** with a reason a person can check, or **Question**.
+   feature and not a rule, new, the gap real at this commit, general rather than one project's taste, fitting (project
+   data in the project's files, not in the code), testable without EasyEDA, one capability, clear enough. Result as for
+   rules: **Accepted**, **Rejected** with a reason a person can check, or **Question**.
 4. **Build.** The skill `add-feature`: the gap red in a test first, then the interface with its default, the code –
    whatever needs EasyEDA a thin call around a function that is tested –, the example and the projects at hand
    unchanged, the handbook. One commit per proposal, all of them in one open pull request from `features/proposals`.

@@ -45,8 +45,8 @@ FEATURE_SECTIONS = {
            "a part of the circuit left out, a step done by hand",
     "Reference": "how the origin does it today: file, function, commit, and the method in words – code only with the "
                  "owner's OK, the issue is public",
-    "Interface": "the keys in edakit.toml, fields in graph or parts entries, or options it needs, each with the default "
-                 "that leaves existing projects as they are – or 'none'",
+    "Interface": "the keys in edakit.toml or a board or schematic file, fields in graph or parts entries, or options "
+                 "it needs, each with the default that leaves existing projects as they are – or 'none'",
     "Test": "how a test shows it without EasyEDA: what is built into the example, what edakit reports before and after",
     "Origin": SECTIONS["Origin"],
 }

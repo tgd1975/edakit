@@ -24,9 +24,10 @@ The test fails for the reason the proposal gives. If it does not, the gap is not
 
 ## 2. Interface
 
-New keys in `edakit/config.py` with a default that leaves every existing project as it is (no key, no change), a
-test in `tests/test_config.py`. Graph and parts fields: the reader that takes them, and their place in handbook 3.1
-or 4.1. Prefer data over options: what differs between projects goes into edakit.toml, not into a switch in the code.
+New keys in `edakit/config.py` with a default that leaves every existing project as it is (no key, no change), in
+the list of known keys of their file (an unknown key is an error), a test in `tests/test_config.py`. Graph and parts
+fields: the reader that takes them, and their place in handbook 3.1 or 4.1. Prefer data over options: what differs
+between projects goes into edakit.toml, a board or schematic file or the graph, not into a switch in the code.
 
 ## 3. Code
 

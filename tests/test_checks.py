@@ -40,6 +40,17 @@ def test_g1_pin_in_two_nets(project):
     assert any("used in 2 nets" in m for c, m in run(project).errors)
 
 
+def test_g1_check_settings_and_ground_name_what_the_graph_has(project):
+    g = project.graph()
+    g["graph"]["checks"]["reverse_protect"] = ["J9"]
+    g["graph"]["checks"]["pin_lock"] = {}            # pin_locks misspelt
+    g["graph"]["ground"] = "0V"
+    project.save_graph(g)
+    msgs = [m for c, m in run(project).errors if c == "G-1"]
+    assert "checks.reverse_protect: no part J9 in the graph" in msgs and "ground: no net 0V in the graph" in msgs
+    assert any(m.startswith("checks: unknown key 'pin_lock'") for m in msgs)
+
+
 def test_g2_pin_lock(project):
     g = project.graph()
     project.net(g, "LED_CLK")["pins"].remove("U1.5")
