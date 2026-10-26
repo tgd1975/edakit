@@ -3,11 +3,13 @@
 Passive parts, diodes, LEDs, transistors and MOSFETs come from the graph 1:1, their values and SPICE models from the
 parts database; a 0 Ω bridge (value_ohm 0) is its maximum resistance r_max_ohm, 50 mΩ without one. An RGB LED is
 three LEDs with the params and ratings of their colour, common cathode (roles anode_<color>, cathode) or common anode
-(anode, cathode_<color>) as its roles say. Switches, buttons and DIP switches are closed or open as the scenario's
-load says; a relay is its coil resistance (coil_ohm between the roles coil_plus and coil_minus) plus a contact from
-common to no when the load lists it in "relays_on", else to nc. Supplies are connectors listed under "sources" in the
-simulation config, or battery holders with a cell state. Off-board loads (a servo, a motor at a connector) are
-constant currents between two pins, listed under the load's "external".
+(anode, cathode_<color>) as its roles say. An LED whose parts entry lacks one of these roles is left out of the
+netlist and listed in meta["leds_left_out"] (E-4); one with a pin in nc is an unused LED and simply left out.
+Switches, buttons and DIP switches are closed or open as the scenario's load says; a relay is its coil resistance
+(coil_ohm between the roles coil_plus and coil_minus) plus a contact from common to no when the load lists it in
+"relays_on", else to nc. Supplies are connectors listed under "sources" in the simulation config, or battery holders
+with a cell state. Off-board loads (a servo, a motor at a connector) are constant currents between two pins, listed
+under the load's "external".
 
 ICs and modules are replaced by behaviour models, chosen by params.behavior in the parts database:
 
@@ -89,7 +91,8 @@ class Netlist:
         self.d, self.cfg, self.sc = design, cfg, scenario
         self.load = scenario["load"]
         self.lines, self.models = [], {}
-        self.meta = {"leds": {}, "cc": {}, "regs": {}, "mcu": {}, "relays": {}, "sources": {}, "elements": {}}
+        self.meta = {"leds": {}, "leds_left_out": {}, "cc": {}, "regs": {}, "mcu": {}, "relays": {}, "sources": {},
+                     "elements": {}}
         self.plugin_models = plugin_models or {}
 
     # --- helpers --------------------------------------------------------------------------------------------------
@@ -134,9 +137,13 @@ class Netlist:
         self.models[model] = led_model(model, vf, params["vf_at_a"], params.get("rs_ohm", 10))
         roles = self.roles(des)
         a, k = self.n(roles.get(anode_role)), self.n(roles.get(cathode_role))
-        if a is None or k is None:
-            return
         name = f"D_{des}" + (f"_{color}" if color else "")
+        if a is None or k is None:   # a pin in nc: an unused LED; a role the parts entry lacks: left out, E-4 says so
+            known = {info.get("role") for info in part["pins"].values()}
+            missing = [r for r in (anode_role, cathode_role) if r not in known]
+            if missing:
+                self.meta["leds_left_out"][name.lower()] = {"des": des, "color": color, "roles": missing}
+            return
         self.add(f"{name} {a} {k} {model}", des, "led", (a, k))
         self.meta["leds"][name.lower()] = {"des": des, "color": color, "anode_net": roles.get(anode_role),
                                            "cathode_net": roles.get(cathode_role)}

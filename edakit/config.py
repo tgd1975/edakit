@@ -37,6 +37,7 @@ POUR_CLEARANCE_MM = 0.25         # pour_only: what the computed pour keeps from 
 POUR_MIN_WIDTH_MM = 0.25         # pour_only: the narrowest neck the computed pour fills
 POUR_MIN_PIECE_MM2 = 2.0         # pour_regions: the smallest piece of a shared layer that gets an outline
 HEADER_KEEP_MM = 1.27            # on_headers: the plastic of a 2.54 mm pin header, half its width around each pin
+PASTE_GAP_MM = 0.4               # [release] assembly paste_gap_mm: SMD pads of different parts, assembled side (L-14)
 
 PROJECT_KEYS = ("name", "company", "quantity", "distributors", "lock", "graph", "parts", "sim", "sim_plugin",
                 "schematic", "signoff", "artifacts", "reports")

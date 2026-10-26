@@ -62,10 +62,10 @@
   },
   "G-7": {
    "title": "polarity",
-   "retired": "Polarity is checked by the simulation (E-3: a reversed LED is reported as reversed or stays dark) and, at the footprint, by the polarity sheet (P-2) and the second datasheet check M-1.",
+   "retired": "Polarity is checked by the simulation (E-3: a reversed LED is reported as reversed or stays dark; E-4: every LED has a state E-3 checks) and, at the footprint, by the polarity sheet (P-2) and the second datasheet check M-1.",
    "rule": "Retired; the number is not reused.",
    "why": "A graph rule cannot see polarity; the simulation and the polarity sheet can.",
-   "fix": "See E-3 and P-2.",
+   "fix": "See E-3, E-4 and P-2.",
    "sources": ["edakit handbook 3.3"]
   },
   "G-8": {
@@ -140,6 +140,13 @@
    "why": "A circuit can stay within every rating and still not work: a regulator without headroom at the low end of the USB voltage, a 3.3 V signal into a 5 V input, an output assigned to an input-only pin, a reversed LED, a power bank that switches off below its minimum load.",
    "fix": "Depends on the item; the protocol gives the actual and the expected value per scenario.",
    "sources": ["edakit handbook 5.3"]
+  },
+  "E-4": {
+   "title": "LED has a known driver",
+   "rule": "In every scenario every LED – each colour of an RGB LED – has a state E-3 checks: its cathode is on the output of a constant-current sink (directly, behind 0 Ω bridges or behind one balancing resistor), or the scenario's load has leds_on (listed: on, not listed: dark); an LED with neither, or one the netlist left out because its parts entry lacks a role the simulation reads, fails.",
+   "why": "The simulation is the polarity check of the graph – G-7 is retired for it: a reversed LED is reported as reversed or stays dark where it should light. That holds only for an LED with an expected state. Without one E-3 skips it, and so does the netlist with an LED whose parts entry has no role anode or cathode (or those of its colour); its polarity and its current go unchecked and the run passes without a word.",
+   "fix": "Give every load leds_on: the LEDs that light in it (the designator, or D10_RED for one colour of an RGB LED), [] when none does. Or put the LED's cathode on a driver output. An LED left out needs the roles anode and cathode – anode_<color> and cathode, or anode and cathode_<color>, for an RGB LED – in its parts entry (handbook 4.1).",
+   "sources": ["edakit handbook 5.3: a reversed LED elsewhere stays dark where it should light – the polarity check of the graph", "edakit rules.json G-7 (retired): polarity is checked by the simulation"]
   },
   "S-2": {
    "title": "schematic = graph",
@@ -224,6 +231,20 @@
    "why": "The auto-layout knows nothing about belonging – it once put a decoupling capacitor 24 mm from its IC. And what the circuit designer knows about the board – which connector is plugged in from outside, which part a person presses or looks at – is lost when it lives only in a conversation: the PCB designer works in a session of its own and gets only what is written down.",
    "fix": "Fix the part in [place] of the board file where the requirement holds. A requirement that cannot be kept goes back to the circuit designer as a written request – the layout side does not change the graph. A derived decoupling that does not apply is waived on the IC with its reason (waive L-12).",
    "sources": ["Analog Devices MT-101, Decoupling Techniques (Rev. 0, 2009) – https://www.analog.com/media/en/training-seminars/tutorials/MT-101.pdf", "edakit handbook 7.4 and 14.1"]
+  },
+  "L-13": {
+   "title": "pads of different parts keep the clearance",
+   "rule": "Every pad keeps at least the routing clearance (clearance_mil) from every pad of another part on another net, on each copper layer both are on; a pad without a net counts as a net of its own. route check measures it before anything is written to EasyEDA, stage L on the pads of route read while they are the PCB's.",
+   "why": "Freerouting cannot move a pad, route check measured tracks and vias only, and the plan (L-7) compares part boxes, not pads. In the reference project two resistors of the star stage stood with their pads 0.09 mm apart: they passed both and were routed, and a layout review found them, not a program. EasyEDA's DRC (L-3) sees it only after the copper is written, with EasyEDA's own rule. JLCPCB makes SMD pads of different nets 0.15 mm apart at the least; the default clearance of 6.5 mil (0.165 mm) is above that.",
+   "fix": "Move or turn one of the two parts in [place] of the board file (fix it there if the auto-layout put it) until the gap is at least the clearance, then place and read the board again. Pads of one part belong to its footprint and are not checked. A pair that is close on purpose is waived on one of its parts or nets with the reason (waive L-13).",
+   "sources": ["JLCPCB PCB Manufacturing Capabilities, minimum clearances: SMD pad to pad clearance (different nets) 0.15 mm (read 2026-10-26) – https://jlcpcb.com/capabilities/pcb-capabilities", "JLCPCB, Terms and Conditions of JLCPCB Assembly Service (updated 2026-09-09), 2.2: placement and gap of the components after IPC-7351B medium or low density, components with very small gap avoided – https://jlcpcb.com/help/article/61-Terms-and-Conditions-of-JLCPCB-Assembly-Service", "edakit handbook 7.5 and 8.1"]
+  },
+  "L-14": {
+   "title": "SMD pads of different parts leave a paste gap",
+   "rule": "On every side that is assembled ([release] assembly sides), every SMD pad keeps at least the paste gap ([release] assembly paste_gap_mm, 0.4 mm) from every SMD pad of another part on another net; a pad without a net counts as a net of its own. route check measures it before anything is written to EasyEDA, stage L on the pads of route read while they are the PCB's.",
+   "why": "The copper rules let pads of neighbouring parts come as close as the clearance (L-13), but both pads get paste, and where only a thin web of the stencil separates the prints the paste can bridge in reflow. That short appears only at assembly, and the bare-board test cannot find it. JLCPCB adjusts the stencil apertures itself and names no minimum web, so the project's paste layer does not settle it; its assembly terms ask for placement and gaps after IPC-7351B medium or low density and rule out high density. At the nominal level each courtyard reaches about 0.25 mm beyond the largest pad, so two parts whose courtyards just touch keep their pads about 0.5 mm apart; 0.4 mm stays below that. In the reference project the paste of a ground pad and a transistor base pad of neighbouring parts was 0.06 mm apart and passed every check; the layout review found it.",
+   "fix": "Spread or turn the two parts in [place] of the board file (fix it there if the auto-layout put it) until their pads are at least the paste gap apart, then place and read the board again. Pads on one net (a capacitor at its own supply pin) and pads of one part are not compared, nor through-hole pads or pads on a side that is not assembled. A pair that is close on purpose is waived on one of its parts or nets with the reason (waive L-14).",
+   "sources": ["JLCPCB, Terms and Conditions of JLCPCB Assembly Service (updated 2026-09-09), 2.1 and 2.2: footprints, placement and gap of the components after IPC-7351B medium or low density, high density not supported, components with very small gap avoided – https://jlcpcb.com/help/article/61-Terms-and-Conditions-of-JLCPCB-Assembly-Service", "RF Essentials, RF glossary: Courtyard (read 2026-10-26; a secondary source, IPC-7351B itself not opened): courtyard excess Level A (Most) about 0.50 mm, Level B (Nominal) about 0.25 mm, Level C (Least) about 0.10 mm and reserved for high density; the courtyard wraps the largest body outline and land protrusion; overlapping courtyards mean parts too close for the nozzle, the stencil aperture or rework – https://rfessentials.com/resources/rf-glossary/courtyard/", "JLCPCB, Opening process standard of Stencil (updated 2025-04-24): engineers adjust the apertures by default (fine-pitch ICs, anti-solder-bead from 0805 up), no minimum web between apertures, through-hole apertures not opened – https://jlcpcb.com/help/article/opening-process-standard-of-stencil", "JLCPCB PCB Manufacturing Capabilities: SMD pad to pad clearance (different nets) 0.15 mm (read 2026-10-26) – https://jlcpcb.com/capabilities/pcb-capabilities", "0.4 mm: the reference project's decision after its layout review (M-5, edakit handbook 8.2), 2026-10-25", "edakit handbook 7.5 and 8.1"]
   },
   "F-1": {
    "title": "BOM = graph",

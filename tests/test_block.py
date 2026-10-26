@@ -158,8 +158,10 @@ def test_block_in_the_example_passes_the_simulation(project, name):
     _, comps, *_ = block.add(project.config(), name, "T", CONNECT[name])
     sim = json.loads((project.root / "hardware" / "sim.json").read_text())
     leds = [c["designator"] for c in comps if c["type"] == "led"]
-    if leds:   # as the block's notes ask: the signal is an MCU output, and a load lights the LED (E-3)
-        sim["mcu"]["U1"]["outputs"].append("SIG")
+    if leds:   # as the block's notes ask: the signal is an MCU output, a load lights the LED (E-3), the others say
+        sim["mcu"]["U1"]["outputs"].append("SIG")             # that it is dark (E-4)
+        for load in sim["loads"].values():
+            load.setdefault("leds_on", [])
         sim["loads"]["t_on"] = {"gpio": {"LED_OE": 1, "SIG": 1}, "leds_on": leds}
     out = simrun.run_all(Design.from_config(project.config()), sim)
     assert [c for c in out["checks"] if c["result"] == "fail"] == []

@@ -52,8 +52,9 @@ The name of the ground net is in the graph (`ground`, default `GND`), with the c
 ### [release]
 
 `layout_files` (further files in the layout hash – the board files and the footprint geometry are always in it),
-`state_files` (further files in the circuit hash), `assembly` ({`sides`, `smd_only`}), `[[stages]]` ({`id`, `name`,
-`cmd`, `advisory`, `timeout`, `about`}).
+`state_files` (further files in the circuit hash), `assembly` ({`sides` (both), `smd_only`, `paste_gap_mm` (0.4: SMD
+pads of different parts on an assembled side, L-14)}), `[[stages]]` ({`id`, `name`, `cmd`, `advisory`, `timeout`,
+`about`}).
 
 ## 10.2 The board file
 
@@ -85,7 +86,7 @@ layout review again (M-5). The keys stand at the top of the file, without a pref
 | `[[loops]]` | `[]` | `a`, `b` (pads "D1.2"), `max_mm`, `what` – check L-11; the circuit's are `layout.loops` of the graph |
 | `net_classes` | see below | track widths from the simulated currents |
 
-`[routing]`: `clearance_mil` (6.5), `signal_mil` (10), `via` ([24, 12]), `edge_clearance_um` (400: tracks and vias
+`[routing]`: `clearance_mil` (6.5; also the least gap between pads of different parts, L-13), `signal_mil` (10), `via` ([24, 12]), `edge_clearance_um` (400: tracks and vias
 from the outline, in the DSN and in Freerouting; the pours: `pour_inset_mm`), `passes` (40),
 `attempts` (5), `layer_cost` ({TOP = [1.0, 1.8], BOTTOM = [1.5, 2.5]}), `classes` ({NAME = {width_mil, nets}}),
 `[[routing.keepouts]]` ({layer, what = "wire"|"all", rect | polygon, windows, window_mm}), `[[routing.fixed_wires]]`
@@ -133,7 +134,7 @@ Code: `edakit … 2>&1 | cat`.
 | `edakit silk apply\|check` | ✓ | PCB, Gerber export | designators, `silk_<board>_<side>.png`, `gerber_<board>/` |
 | `edakit export [--board]` | ✓ read | schematic, PCB, project file | `<artifacts>/export/` |
 | `edakit gate [--easyeda]` | – / ✓ | everything | `<reports>/<run>/` |
-| `edakit fab --board B --out DIR [--offline]` | ✓ / – | PCB, exports | `DIR/<board>/` |
+| `edakit fab --board B --out DIR [--offline]` | ✓ / – | PCB, exports, `route/<board>_board.json` (L-13, L-14) | `DIR/<board>/` |
 | `edakit lock [status\|claim\|release\|yield CHAT\|hook] [--note]` | – | – | `~/.local/state/edakit/easyeda-lock.json` |
 | `edakit proposal template [--feature]\|seal FILE [--out F]\|verify FILE` | – | a rule or feature proposal (no project needed) | seal: the issue body with its SHA-256 |
 | `edakit doctor` | – | tool chain | – |

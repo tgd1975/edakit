@@ -101,8 +101,8 @@ errors, with `--release` also on pending sign-offs. The last line also names the
 (`edakit hints`, chapter 14.3); they never block.
 
 Polarity (is the LED the right way round?) is not a graph rule but a simulation result: a reversed LED shows up in
-stage E as "LED reversed" or as a dark LED (chapter 5). G-7 was the graph's polarity check; it is retired and its number
-is not used again.
+stage E as "LED reversed" or as a dark LED (chapter 5), and E-4 makes sure no LED escapes it. G-7 was the graph's
+polarity check; it is retired and its number is not used again.
 
 ## 3.4 Working rules
 
