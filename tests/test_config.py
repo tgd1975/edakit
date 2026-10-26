@@ -196,3 +196,14 @@ def test_on_headers_keys(tmp_path):
         _board("b", {}, {"on_headers": "U1"})
     with pytest.raises(ConfigError, match="header_keep_mm must not be negative"):
         _board("b", {}, {"header_keep_mm": -0.1})
+
+
+def test_silk_overlap_key(tmp_path):
+    from edakit.config import _board
+    assert _board("b", {}, {}).silk_overlap_mm == 0.0                  # no key: every overlap is a finding, as before
+    (tmp_path / "edakit.toml").write_text('[project]\nname = "t"\n[boards.main]\n')
+    (tmp_path / "hardware" / "boards").mkdir(parents=True)
+    (tmp_path / "hardware" / "boards" / "main.toml").write_text("silk_overlap_mm = 0.8\n")
+    assert load(tmp_path / "edakit.toml").board().silk_overlap_mm == 0.8
+    with pytest.raises(ConfigError, match="silk_overlap_mm must not be negative"):
+        _board("b", {}, {"silk_overlap_mm": -0.1})

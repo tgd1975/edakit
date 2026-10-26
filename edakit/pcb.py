@@ -3,10 +3,10 @@ mounting and tooling holes, copper pours, EasyEDA's auto-layout.
 
     edakit pcb dump [--ref U1,J1]   footprint geometry -> <artifacts>/pcb_geometry_<board>.json
                                     (turns every measured part to 0°/TOP and leaves it there – run apply afterwards)
-    edakit pcb plan                 offline: check the plan (overlaps – under a part on pin headers only its pins –,
-                                    outline, holes, THT pins under parts of the other side, near; L-12 the layout
-                                    requirements of the circuit), airline length, preview PNG, net classes from the
-                                    simulation
+    edakit pcb plan                 offline: check the plan (overlaps – under a part on pin headers only its pins,
+                                    SMD parts within silk_overlap_mm –, outline, holes, THT pins under parts of the
+                                    other side, near; L-12 the layout requirements of the circuit), airline length,
+                                    preview PNG, net classes from the simulation
     edakit pcb parts [--write]      parts of the board schematic -> PCB without the "Import Changes" dialog
     edakit pcb nets [--write]       pad nets in the PCB = graph
     edakit pcb apply                outline, holes, tooling holes, fixed parts (locked); all other parts unlocked
@@ -74,6 +74,17 @@ def box_gap(a, b):
     return max(b[0] - a[2], a[0] - b[2], b[1] - a[3], a[1] - b[3], 0)
 
 
+def overlap_depth(a, b):
+    """How far two overlapping boxes reach into each other: per axis the distance one has to move to clear the other,
+    the smaller of x and y. For parts side by side that is the width of the strip they share; a small part inside a
+    large box lies as deep as its way out."""
+    return min(a[2] - b[0], b[2] - a[0], a[3] - b[1], b[3] - a[1])
+
+
+def through_hole(geo):
+    return any(q.get("tht") for q in geo.get("pads", {}).values())
+
+
 def outline_polygon(board):
     from shapely.geometry import Polygon
     return Polygon(board.outline)
@@ -126,16 +137,27 @@ def overlap_finding(board, geo, place, boxes, pins, a, b):
     """Two parts of one side whose boxes overlap. When one of them stands on pin headers (pins), the board under it is
     free but for the plastic of its headers: an SMD part is a finding only where its box comes closer than
     header_keep_mm to one of the through-hole pins (a square around the pin centre); a through-hole part stays an
-    overlap."""
+    overlap. Otherwise the boxes, silkscreen included, of two SMD parts may reach silk_overlap_mm into each other;
+    with a through-hole part the overlap stays a finding."""
     host = a if pins.get(a) else b if pins.get(b) else None
     other = b if host == a else a
-    if host is None or any(q.get("tht") for q in geo[other].get("pads", {}).values()):
-        return [f"{a} / {b}: overlap ({place[a].side})"]
-    gap, pin = min(((box_gap(boxes[other], (x, y, x, y)), n) for n, (x, y) in pins[host].items()),
-                   key=lambda g: (round(g[0], 6), natural_key(g[1])))
-    if gap < board.header_keep_mm:
-        return [f"{other}: on the pins of {host} ({place[other].side}) – {gap:.2f} mm from pin {pin} "
-                f"(header_keep_mm {board.header_keep_mm:g})"]
+    if host is not None and not through_hole(geo[other]):
+        gap, pin = min(((box_gap(boxes[other], (x, y, x, y)), n) for n, (x, y) in pins[host].items()),
+                       key=lambda g: (round(g[0], 6), natural_key(g[1])))
+        if gap < board.header_keep_mm:
+            return [f"{other}: on the pins of {host} ({place[other].side}) – {gap:.2f} mm from pin {pin} "
+                    f"(header_keep_mm {board.header_keep_mm:g})"]
+        return []
+    found = f"{a} / {b}: overlap ({place[a].side})"
+    tol = board.silk_overlap_mm
+    if not tol:
+        return [found]
+    depth = overlap_depth(boxes[a], boxes[b])
+    tht = [r for r in (a, b) if through_hole(geo[r])]
+    if tht:
+        return [f"{found} – {depth:.2f} mm ({', '.join(tht)} through-hole: silk_overlap_mm does not apply)"]
+    if round(depth, 6) > tol:
+        return [f"{found} – {depth:.2f} mm (silk_overlap_mm {tol:g})"]
     return []
 
 

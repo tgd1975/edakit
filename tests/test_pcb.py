@@ -88,10 +88,9 @@ HEADER_GEO = {"U1": footprint(51, 21, MODULE, tht=True), "C2": footprint(3.7, 1.
               "J1": footprint(6, 6, {1: (-1, 0), 2: (1, 0)}, tht=True)}
 
 
-def under_module(project, parts, geo=HEADER_GEO, **keys):
-    """The plan check of a 90 x 40 mm board without holes: U1 at (45, 20) mm, `parts` {ref: (x, y)} on top at 0°."""
-    rows = "\n".join(f'{r} = {{ x = {x}, y = {y}, rot = 0, side = "top" }}' for r, (x, y) in
-                     {"U1": (45, 20), **parts}.items())
+def plan_check(project, parts, geo, **keys):
+    """The plan check of a 90 x 40 mm board without holes: `parts` {ref: (x, y)} on top at 0°."""
+    rows = "\n".join(f'{r} = {{ x = {x}, y = {y}, rot = 0, side = "top" }}' for r, (x, y) in parts.items())
     (project.root / "hardware" / "boards" / "main.toml").write_text(f"[outline]\nrect = [90, 40]\n\n[place]\n{rows}\n")
     cfg = project.config()
     board = cfg.board()
@@ -100,6 +99,11 @@ def under_module(project, parts, geo=HEADER_GEO, **keys):
     geo = {r: geo[r] for r in board.place}
     place, boxes, tht, _, _ = pcb.build_plan(cfg, board, geo)
     return pcb.check_plan(cfg, board, geo, place, boxes, tht)
+
+
+def under_module(project, parts, geo=HEADER_GEO, **keys):
+    """U1 at (45, 20) mm, `parts` around it."""
+    return plan_check(project, {"U1": (45, 20), **parts}, geo, **keys)
 
 
 UNDER = {"C2": (45, 20),           # between the pin rows, 7.94 mm from the nearest pin
@@ -131,3 +135,42 @@ def test_module_on_headers_without_through_hole_pins(project):
     assert under_module(project, {"C2": (45, 20)}, geo=flat, on_headers={"U1"}) == [
         "U1: in on_headers, but its footprint has no through-hole pins – its overlaps count as usual",
         "U1 / C2: overlap (top)"]
+
+
+# --- silkscreen tolerance (#15): 0805 boxes 3.7 x 1.9 mm (silkscreen included), J1 a through-hole connector of
+# 6 x 6 mm, U2 an SOIC box of 10 x 7.5 mm, C2 a 0201 box of 1.2 x 0.6 mm
+
+SILK_GEO = {"R1": footprint(3.7, 1.9, CHIP), "R2": footprint(3.7, 1.9, CHIP), "C1": footprint(3.7, 1.9, CHIP),
+            "J1": HEADER_GEO["J1"], "U2": footprint(10, 7.5, {1: (-2.7, -3.81), 16: (-2.7, 3.81)}),
+            "C2": footprint(1.2, 0.6, {1: (-0.3, 0), 2: (0.3, 0)})}
+SIDE_BY_SIDE = {"R1": (20, 20), "R2": (23.4, 20),     # boxes 0.3 mm into each other
+                "J1": (60, 20), "C1": (64.55, 20)}    # C1's box 0.3 mm into the through-hole connector's
+
+
+def test_touching_silkscreen_overlaps_without_the_key(project):
+    assert plan_check(project, SIDE_BY_SIDE, SILK_GEO) == ["R1 / R2: overlap (top)", "J1 / C1: overlap (top)"]
+
+
+def test_smd_boxes_may_overlap_by_the_silkscreen_tolerance(project):
+    assert plan_check(project, SIDE_BY_SIDE, SILK_GEO, silk_overlap_mm=0.8) == [
+        "J1 / C1: overlap (top) – 0.30 mm (J1 through-hole: silk_overlap_mm does not apply)"]
+
+
+def test_silkscreen_tolerance_is_a_limit(project):
+    deeper = {"R1": (20, 20), "R2": (22.7, 20)}             # 1.0 mm into each other
+    assert plan_check(project, deeper, SILK_GEO, silk_overlap_mm=0.8) == [
+        "R1 / R2: overlap (top) – 1.00 mm (silk_overlap_mm 0.8)"]
+    corner = {"R1": (20, 20), "R2": (22.7, 21.6)}           # 1.0 mm in x, 0.3 mm in y: beyond the tolerance in x only
+    assert plan_check(project, corner, SILK_GEO, silk_overlap_mm=0.8) == []
+
+
+def test_small_part_inside_a_box_stays_an_overlap(project):
+    # per axis, the distance one box has to move to clear the other: C2 is narrower than the tolerance, but it lies
+    # 4.05 mm deep inside U2
+    assert plan_check(project, {"U2": (20, 20), "C2": (20, 20)}, SILK_GEO, silk_overlap_mm=0.8) == [
+        "U2 / C2: overlap (top) – 4.05 mm (silk_overlap_mm 0.8)"]
+
+
+def test_silkscreen_tolerance_leaves_parts_under_a_module_on_headers_alone(project):
+    assert under_module(project, UNDER, on_headers={"U1"}, silk_overlap_mm=0.8) == [
+        "D1: on the pins of U1 (top) – 0.00 mm from pin 5 (header_keep_mm 1.27)"]

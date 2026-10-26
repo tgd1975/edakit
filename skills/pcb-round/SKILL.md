@@ -45,7 +45,8 @@ describes (section 3).
    routing classes and keep-outs. What the circuit wants fixed, at the edge or next to a part is in the hand-over;
    beyond that, everything the auto-layout must not decide (connectors, controls, ICs with their decoupling
    capacitors, LEDs, anything visible) is a fixed part. The plan's own `near` holds only between fixed parts. SMD
-   parts under a module on pin headers: `on_headers` (handbook 7.4).
+   parts under a module on pin headers: `on_headers`; SMD parts whose silkscreen outlines touch: `silk_overlap_mm`
+   (handbook 7.4).
 2. **Check offline before EasyEDA is touched:** `edakit pcb plan 2>&1 | cat` – overlaps, outline, holes, THT pins under
    parts of the other side, near-distances, the circuit's layout requirements (L-12), airline length, net classes;
    look at `<artifacts>/pcb_plan_<board>.png` (Read) and show it to the user before `apply` when positions visibly

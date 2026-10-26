@@ -42,8 +42,8 @@ PROJECT_KEYS = ("name", "company", "quantity", "distributors", "lock", "graph", 
                 "schematic", "signoff", "artifacts", "reports")
 BOARD_KEYS = ("title", "template", "schematic", "pcb", "file")            # [boards.<name>] in edakit.toml
 BOARD_FILE_KEYS = ("revision", "view", "outline", "holes", "tooling", "place", "near", "near_mm", "edge_mm", "edge_ok",
-                   "on_headers", "header_keep_mm", "park", "routing", "pours", "pour_regions", "pour_min_piece_mm2",
-                   "pour_inset_mm", "silk", "loops", "net_classes")
+                   "on_headers", "header_keep_mm", "silk_overlap_mm", "park", "routing", "pours", "pour_regions",
+                   "pour_min_piece_mm2", "pour_inset_mm", "silk", "loops", "net_classes")
 SCHEMATIC_KEYS = ("stub", "layout")
 RELEASE_KEYS = ("layout_files", "state_files", "assembly", "stages")
 
@@ -84,6 +84,7 @@ class Board:
     edge_ok: set = field(default_factory=set)         # parts allowed to touch or overhang the outline
     on_headers: set = field(default_factory=set)      # parts on pin headers: SMD parts of their side may sit under them
     header_keep_mm: float = HEADER_KEEP_MM            # ... clear of this square half width around each of their THT pins
+    silk_overlap_mm: float = 0.0                      # how far the boxes of two SMD parts may overlap (silkscreen)
     park: tuple = (10.0, -15.0)                       # where `pcb parts --write` drops new parts (mm, EasyEDA)
     routing: dict = field(default_factory=dict)
     pours: list = field(default_factory=list)
@@ -286,6 +287,9 @@ def _board(name, entry, b, file=""):
     header_keep = float(b.get("header_keep_mm", HEADER_KEEP_MM))
     if header_keep < 0:
         raise ConfigError(f"board {name}: header_keep_mm must not be negative")
+    silk_overlap = float(b.get("silk_overlap_mm", 0.0))
+    if silk_overlap < 0:
+        raise ConfigError(f"board {name}: silk_overlap_mm must not be negative")
     return Board(
         name=name,
         title=entry.get("title", name),
@@ -309,6 +313,7 @@ def _board(name, entry, b, file=""):
         edge_ok=set(b.get("edge_ok", [])),
         on_headers=set(on_headers),
         header_keep_mm=header_keep,
+        silk_overlap_mm=silk_overlap,
         park=tuple(map(float, b.get("park", [10, -15]))),
         routing=b.get("routing", {}),
         pours=_pours(name, b.get("pours", [{"net": "GND", "layers": ["TOP", "BOTTOM"]}]), regions),
