@@ -326,6 +326,14 @@ left, then vertical, then at the corners; not on pads, footprint print, parts or
 last resort; test points first), then exports again and checks that no own silkscreen lies on a solder-mask opening
 (JLCPCB cuts it off there) – target 0 mm² – and runs the DRC. Pictures per side in `<artifacts>/silk_<board>_<side>.png`.
 
+**Through-hole parts of the other side** are soldered from the `designators` side – LEDs on the front of a board whose
+electronics and designators are on the back. With `solder_side = true` in `[silk]` they are labelled there too: next to
+their box, where their solder joints are, by the same free-spot search, and their box blocks other labels like a part of
+that side. A part's designator prints only on its own side, so the name is a free text in the designators' stroke font
+and height, remembered and replaced like the board label. A part counts as through-hole with at least one through-hole
+pad; SMD parts of the other side get no label. `hide = ["bottom"]` (or `"top"`) keeps the part's own side free of
+designators. A large through-hole part there – a module on pin headers – blocks label spots over its whole box.
+
 It also prints the **board label** – title and revision, `"{title} rev {revision}"` by default – at the free spot
 nearest to the bottom-left corner of the printed side (`board_label_corner`), clear of pads, parts, labels, vias and the
 keep-outs of mounting and tooling holes. The revision comes from `revision` in the board file; without it there is no

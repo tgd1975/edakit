@@ -207,3 +207,14 @@ def test_silk_overlap_key(tmp_path):
     assert load(tmp_path / "edakit.toml").board().silk_overlap_mm == 0.8
     with pytest.raises(ConfigError, match="silk_overlap_mm must not be negative"):
         _board("b", {}, {"silk_overlap_mm": -0.1})
+
+
+def test_silk_solder_side_key(tmp_path):
+    from edakit.config import _board
+    assert "solder_side" not in _board("b", {}, {}).silk                  # no key: only the designators side, as before
+    (tmp_path / "edakit.toml").write_text('[project]\nname = "t"\n[boards.main]\n')
+    (tmp_path / "hardware" / "boards").mkdir(parents=True)
+    (tmp_path / "hardware" / "boards" / "main.toml").write_text('[silk]\ndesignators = "top"\nsolder_side = true\n')
+    assert load(tmp_path / "edakit.toml").board().silk["solder_side"] is True
+    with pytest.raises(ConfigError, match="silk.solder_side must be true or false"):
+        _board("b", {}, {"silk": {"solder_side": "yes"}})

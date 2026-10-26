@@ -290,6 +290,8 @@ def _board(name, entry, b, file=""):
     silk_overlap = float(b.get("silk_overlap_mm", 0.0))
     if silk_overlap < 0:
         raise ConfigError(f"board {name}: silk_overlap_mm must not be negative")
+    if not isinstance(b.get("silk", {}).get("solder_side", False), bool):
+        raise ConfigError(f"board {name}: silk.solder_side must be true or false")
     return Board(
         name=name,
         title=entry.get("title", name),
