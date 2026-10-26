@@ -70,9 +70,9 @@ Every run records two hashes in the protocol header:
 - **layout** (`layout_sha256`): the board files, the footprint geometry (and `[release] layout_files`)
 
 Each file belongs to one of them or to none (10.1): edakit.toml and the schematic file are in no hash, so a new order
-quantity or a note in the schematic voids no review. When a project moved from the one-file edakit.toml
-(`scripts/split_config.py`), its sign-off file records the hashes before and after in `rehashed`: the move changes
-files, not what they say.
+quantity or a note in the schematic voids no review. A project that moved from the one-file edakit.toml (October
+2026) records the hashes before and after in `rehashed` of its sign-off file: the move changed files, not what they
+say.
 
 The sign-off file (`[project] signoff`, [example](https://github.com/tgd1975/automatic_christmas_bell/blob/main/hardware/signoff.json)) holds manual checks and
 accepted warnings. Each counts only if the hash of its scope equals the current one:

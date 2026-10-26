@@ -17,9 +17,7 @@ are. What one role decides lives in a file of its own, with one owner and one ha
 
 Complete example: [tests/fixtures/led-bar](../tests/fixtures/led-bar/). A key edakit does not know is an error with
 the list of the known ones – a typo does not fall back to a default unnoticed. An edakit.toml that still holds the
-board, the schematic or the checks (the earlier one-file form) is refused with a list of what goes where;
-`scripts/split_config.py` of edakit moves such a project once and takes its valid sign-offs along – in the project:
-`uv run --project <edakit> python <edakit>/scripts/split_config.py --dry-run`, then without `--dry-run`.
+board, the schematic or the checks (the earlier one-file form) is refused with a list of what goes where.
 
 ### [project]
 
