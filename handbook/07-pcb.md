@@ -236,7 +236,8 @@ when one piece holds all its pads; pieces on two pour layers join through the ne
 its own tracks count as well. Otherwise it is reported like an open net, `GND (pour-only): 2 groups – C1.2 | C2.2`, and
 the preview shows the computed pour. Fixed wires of the net (`routing.fixed_wires`) stay in the result although
 Freerouting leaves a net outside the network out of its SES. A plane, by contrast, is taken as connected whatever
-the tracks do to it – use it for a net Freerouting connects with vias, not for a pour that tracks cut.
+the tracks do to it – use it for a layer the net has to itself, reached through its through-hole pads and vias
+(`fanout`, 7.5), not for a pour that tracks cut.
 
 **Several nets on one layer.** `pcb pour` gives every pour the same outline, and where pours overlap EasyEDA fills only
 the one with priority – a second net on a layer gets nothing. With `pour_regions = true` at the top of the board file,
