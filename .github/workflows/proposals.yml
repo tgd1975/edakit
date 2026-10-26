@@ -65,6 +65,7 @@ jobs:
           if [ "$kind" = feature ]; then skill=triage-feature; else skill=triage-rule; fi
           echo "skill=$skill" >> "$GITHUB_OUTPUT"
       - uses: anthropics/claude-code-action@v1
+        id: claude
         with:
           # one credential only: with both, Claude Code takes the API key – the subscription token goes first
           claude_code_oauth_token: ${{ secrets.CLAUDE_CODE_OAUTH_TOKEN }}
@@ -79,3 +80,9 @@ jobs:
           claude_args: |
             --model claude-opus-5-5
             --allowedTools "Bash,Read,Write,Edit,Glob,Grep,WebFetch,WebSearch"
+      - name: Why Claude stopped
+        # the action hides Claude's output; on a failure its last message (an API error, a limit) is what helps
+        if: failure() && steps.claude.outputs.execution_file != ''
+        env:
+          F: ${{ steps.claude.outputs.execution_file }}
+        run: jq -r '(if type == "array" then .[] else . end) | select(.type? == "result") | .result // empty' "$F" | head -40
