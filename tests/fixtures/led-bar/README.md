@@ -8,7 +8,7 @@ input stage (J1, D1, C2) and writes that export for the test.
 A Raspberry Pi Pico 2 drives eight green LEDs through a TLC5916 constant-current sink (9.45 mA per LED, set by R1).
 5 V come in through a JST PH connector and a Schottky diode against reverse polarity; R2 keeps the LEDs dark until the
 firmware runs; one push button to ground. Two layers, 90 × 40 mm, rounded corners, two M3 holes, two tooling holes
-for JLCPCB Economic assembly.
+for JLCPCB Economic assembly, which places SMD parts only: J1 is soldered by hand (`bom: false`).
 
 | File | |
 |---|---|

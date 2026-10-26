@@ -30,6 +30,8 @@ assembly preview at JLCPCB.
        decoupling capacitor next to every IC (handover.py)
   L-13 pads of different parts on different nets at least the routing clearance apart, on the pad shapes of
        `edakit route read` while they are the PCB's (route.pad_gaps, as `route check` measures)
+  L-14 on every assembled side, SMD pads of different parts on different nets at least the paste gap apart
+       ([release] assembly paste_gap_mm), measured as L-13
   F-1  BOM from the graph = BOM of EasyEDA; every LCSC number in the parts database
   F-2  every BOM part listed in JLCPCB's assembly catalogue with stock for `quantity` boards
   F-3  pick and place: every BOM part exactly once, side and rotation = PCB; sides/SMD as [release] assembly says
@@ -412,6 +414,10 @@ def hole_ok(lead, width, length):
 
 
 def check_drills(board, design, d, rows):
+    if lost := gerber.missing(d / "gerber", "pth"):
+        rows.add("L", "L-9", board.name, "drill file for the hole check", False, f"{lost[0]} missing (Gerber export)",
+                 "present")
+        return
     data = json.loads((d / "pcb.json").read_text())
     want = design.board_comps(board.name)
     holes = gerber.parse_holes(d / "gerber" / gerber.FILES["pth"])
@@ -489,20 +495,33 @@ def loop_length_mm(data, a, b, snap=0.5, pad_mm=0.9):
 
 
 def check_loops(board, design, d, rows):
-    """L-11 over the loops of the plan and those the circuit hands over (layout.loops of the graph)."""
+    """L-11 over the loops of the plan and those the circuit hands over (layout.loops of the graph). A pad that is not
+    in the PCB, or two pads on different nets there, is a finding of the loop (L-1 names the cause)."""
     loops = board.loops + handover.loops(design, board.name)
     if not loops:
         return
     data = json.loads((d / "pcb.json").read_text())
-    found = [(a, b, limit, what, loop_length_mm(data, a, b)) for a, b, limit, what in loops]
-    bad = [f"{a}-{b} ({what}): " + ("no track" if mm is None else f"{mm} mm") + f" > {limit} mm"
-           for a, b, limit, what, mm in found if mm is None or mm > limit]
+    net = {f"{c['designator']}.{p['PadNumber']}": p["Net"] for c in data["components"] for p in c["pads"]}
+    found, bad = [], []
+    for a, b, limit, what in loops:
+        if lost := [p for p in (a, b) if p not in net]:
+            bad.append(f"{a}-{b} ({what}): {', '.join(lost)} not in the PCB")
+        elif net[a] != net[b]:
+            bad.append(f"{a}-{b} ({what}): different nets ({net[a] or '–'}, {net[b] or '–'})")
+        else:
+            mm = loop_length_mm(data, a, b)
+            found.append(f"{a}-{b} {mm} mm")
+            if mm is None or mm > limit:
+                bad.append(f"{a}-{b} ({what}): " + ("no track" if mm is None else f"{mm} mm") + f" > {limit} mm")
     rows.add("L", "L-11", board.name, "short current loops: path over tracks per pad pair within the limit", not bad,
-             "; ".join(bad) or "; ".join(f"{a}-{b} {mm} mm" for a, b, _, _, mm in found),
-             ", ".join(f"{a}-{b} <= {limit} mm" for a, b, limit, _ in loops))
+             "; ".join(bad) or "; ".join(found), ", ".join(f"{a}-{b} <= {limit} mm" for a, b, limit, _ in loops))
 
 
 def check_copper(board, design, d, rows):
+    if lost := gerber.missing(d / "gerber", "top", "bottom", "pth", "probe"):
+        rows.add("L", "L-2", board.name, "Gerber and drill files for the copper check", False,
+                 f"{', '.join(lost)} missing (Gerber export)", "present")
+        return
     with contextlib.redirect_stdout(io.StringIO()):
         cu = gerber.Copper(d / "gerber", design.pin_net)
     want = design.board_comps(board.name)
@@ -585,7 +604,7 @@ def check_fab(cfg, board, design, d, rows):
              + (", SMD only" if assembly.get("smd_only") else "") + " ([release] assembly)", set(mix) <= allowed,
              ", ".join(f"{'Top' if s == 'T' else 'Bottom'} {k} {n}" for (s, k), n in sorted(mix.items())), str(sorted(allowed)))
     g = d / "gerber"
-    lost = [gerber.FILES[k] for k in gerber.REQUIRED if not (g / gerber.FILES[k]).exists()]
+    lost = gerber.missing(g, *gerber.REQUIRED)
     rows.add("F", "F-5", board.name, "Gerber set complete (copper, silk, mask, outline, drills)", not lost,
              ", ".join(lost) or f"{len(gerber.REQUIRED)} files", "all")
     if not lost:
@@ -655,7 +674,7 @@ def run(cfg, board, out, offline=False, verbose=False):
     check_pad_clearance(cfg, board, design, d, rows)
     check_paste_gap(cfg, board, design, d, rows)
     check_fab(cfg, board, design, d, rows)
-    if (d / "gerber").exists():
+    if not gerber.missing(d / "gerber", "top", "bottom", "top_silk", "bottom_silk"):   # otherwise F-5 names them
         from . import polarity
         img, n = polarity.sheet(cfg, board, design, d)
         rows.add("P", "P-2", board.name, "polarity sheet to compare with the datasheets and the JLCPCB preview", True,

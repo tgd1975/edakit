@@ -21,11 +21,12 @@
         "label": "5 V input (JST PH, top entry)",
         "part": "B2B-PH-K-S(LF)(SN)",
         "lcsc": "C131337",
+        "bom": false,
         "pins": {
           "1": "1",
           "2": "2"
         },
-        "notes": "Pin 1 = VIN (+5 V), pin 2 = GND."
+        "notes": "Pin 1 = VIN (+5 V), pin 2 = GND. Through-hole, soldered by hand (Economic assembly: SMD only)."
       },
       {
         "designator": "D1",

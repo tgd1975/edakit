@@ -29,6 +29,11 @@ REQUIRED = ["top", "bottom", "top_silk", "bottom_silk", "top_mask", "bottom_mask
 RES = 0.02  # mm per raster point
 
 
+def missing(folder, *keys):
+    """File names of these FILES keys that are not in folder."""
+    return [FILES[k] for k in keys if not (Path(folder) / FILES[k]).exists()]
+
+
 def parse_gerber(path):
     """-> [("draw", ((kind, a, b), points)), ("flash", ((kind, a, b), x, y)), ("region", [contours])] in mm.
     RoundRect becomes its enclosing rectangle ("RR", width, height)."""

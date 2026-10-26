@@ -10,7 +10,7 @@ jlc_parts.json (so F-2 stays offline), and the Gerber and drill files with Flyin
 footprint geometry of `edakit pcb dump`, the net currents of `edakit sim` – 0.5 A on all three nets, which puts
 them in class POWER (0.6 mm), with an IPC-2221 width of 0.20 mm – and the board as `edakit route read` saw it (pads
 with their shapes, for L-13 and L-14), written from pcb.json when the export is written. J1 is through-hole and the
-example orders Economic assembly (SMD only), so the cut-down graph leaves J1 out of the BOM, to be soldered by hand.
+example orders Economic assembly (SMD only), so J1 is not in its BOM: it is soldered by hand.
 
 A new check of stage L or F gets its fault here: one more entry in FAULTS.
 """
@@ -82,7 +82,6 @@ def cut(project):
     g = project.graph()
     gg = g["graph"]
     gg["components"] = [c for c in gg["components"] if c["designator"] in INPUT]
-    project.comp(g, "J1")["bom"] = False
     gg["nets"] = [{**n, "pins": [p for p in n["pins"] if p.split(".")[0] in INPUT]} for n in gg["nets"]]
     gg["nets"] = [n for n in gg["nets"] if n["pins"]]
     gg["layout"] = {"edge": ["J1"]}
@@ -189,6 +188,7 @@ class Export:
         kinds = {"C": "ELLIPSE", "R": "RECT"}
         self.shapes = {fp: [kinds[k], a * MIL, b * MIL] for fp, (_, _, (k, a, b), _) in FOOTPRINTS.items()}
         self.read_off = {}
+        self.lost = set()              # keys of gerber.FILES the export leaves out
 
     def board_read(self):
         """<board>_board.json of `edakit route read`, from the PCB as pcb.json has it."""
@@ -252,11 +252,11 @@ class Export:
             ws.append([r[k] for k in head])
         wb.save(d / "cpl_easyeda.xlsx")
         g = d / "gerber"
-        for key, layer in self.gerber.items():
-            (g / gerber.FILES[key]).write_text(layer.text())
-        (g / gerber.FILES["pth"]).write_text(drill(self.pth))
-        (g / gerber.FILES["npth"]).write_text(drill(self.npth))
-        (g / gerber.FILES["probe"]).write_text(json.dumps(self.probe))
+        files = {key: layer.text() for key, layer in self.gerber.items()}
+        files.update(pth=drill(self.pth), npth=drill(self.npth), probe=json.dumps(self.probe))
+        for key, text in files.items():
+            if key not in self.lost:
+                (g / gerber.FILES[key]).write_text(text)
         return d.parent
 
 
@@ -366,6 +366,10 @@ FAULTS = [
     ("an open net", lambda ex, p: ex.gerber["top"].drop("+5V"), [("L-2", "fail", "+5V: 2 groups")]),
     ("a connected pad missing from the files", lambda ex, p: ex.probe["pins"]["rows"].pop(4),
      [("L-2", "fail", "C2.1")]),
+    ("a copper file missing", lambda ex, p: ex.lost.add("top"),
+     [("L-2", "fail", "Gerber_TopLayer.GTL missing"), ("F-5", "fail", "Gerber_TopLayer.GTL")]),
+    ("the probe file missing", lambda ex, p: ex.lost.add("probe"),
+     [("L-2", "fail", "FlyingProbeTesting.json missing"), ("F-5", "fail", "FlyingProbeTesting.json")]),
     # L-3
     ("a DRC finding", lambda ex, p: ex.drc.append({"errorType": "Clearance", "ruleName": "Safe Spacing"}),
      [("L-3", "fail", "Clearance (Safe Spacing): 1")]),
@@ -404,11 +408,18 @@ FAULTS = [
      [("L-9", "fail", "J1.1: slot 0.45 x 1.20 mm"), ("L-9", "warn", "pad 1: 0.45 x 1.20 mm")]),
     ("a through-hole pad without its hole", lambda ex, p: ex.pth.pop(),     # the bottom pad of J1.2 loses GND too
      [("L-9", "fail", "J1.2: no hole"), ("L-2", "fail", "GND: 2 groups")]),
+    ("the drill file missing", lambda ex, p: ex.lost.add("pth"),
+     [("L-2", "fail", "Drill_PTH_Through.DRL missing"), ("L-9", "fail", "Drill_PTH_Through.DRL missing"),
+      ("F-5", "fail", "Drill_PTH_Through.DRL")]),
     # L-10
     ("a pad away from its library position", lambda ex, p: ex.pad("C2.1").update(X=ex.at_mil("C2.1")[0] + 0.2 * MIL),
      [("L-10", "fail", "C2.1: 0.20 mm away from its footprint position")]),
     # L-11
     ("a current loop over its limit", detour, [("L-11", "fail", "J1.1-D1.2 (input): 15.8 mm > 10.0 mm")]),
+    ("a loop's part missing in the PCB", lambda ex, p: ex.pcb["components"].remove(ex.comp("J1")),
+     [("L-1", "fail", "missing ['J1']"), ("L-11", "fail", "J1.1-D1.2 (input): J1.1 not in the PCB")]),
+    ("a loop's pads on different nets in the PCB", lambda ex, p: ex.pad("D1.2").update(Net="+5V"),
+     [("L-1", "fail", "D1.2: +5V instead of VIN"), ("L-11", "fail", "J1.1-D1.2 (input): different nets (VIN, +5V)")]),
     # L-12
     ("the circuit's edge part not fixed", lambda ex, p: board_file(p, "J1 = { x = 3", "# J1 = { x = 3"),
      [("L-12", "fail", "J1: not in hardware/boards/main.toml [place] – the circuit wants it at the board edge")]),
@@ -447,6 +458,8 @@ FAULTS = [
     # F-5
     ("a Gerber file missing", lambda ex, p: ex.gerber.pop("outline"),
      [("F-5", "fail", "Gerber_BoardOutlineLayer.GKO")]),
+    ("a silkscreen file missing", lambda ex, p: ex.lost.add("bottom_silk"),
+     [("F-5", "fail", "Gerber_BottomSilkscreenLayer.GBO")]),
     ("no outline in the outline file", lambda ex, p: ex.gerber["outline"].clear(), [("F-5", "fail", "none")]),
     ("the outline off the plan", lambda ex, p: ex.gerber["outline"].__setitem__(0, (
         "draw", 0.1, [(0, 0), (31, 0), (31, 20), (0, 20), (0, 0)], "outline")),
