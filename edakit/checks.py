@@ -26,6 +26,10 @@
   P-1  graph pins (number + name) = parts database, an entry exists for every LCSC number
   G-9  sign-off: every part verified against its datasheet, no open "verify" notes (pending, blocks only the release)
 
+0 Ω bridges (resistors with value_ohm 0 in the parts entry) join their nets: G-4, G-5, G-6, G-10 to G-14 see the
+joined nets as one net under the group's name (the ground net if it is one of them, else the first in the graph) and
+the bridges as copper; G-1, G-2, G-3, G-8, P-1 and G-9 see every net and part as the graph has them.
+
 Rule, reason, fix and sources of every check: rules.json (`edakit rules G-4`). A failed check is explained once
 below the findings. A finding listed in "waive" of the net or component is accepted on purpose and reported with
 its reason. Exit code 1 on errors; with --release also on pending sign-offs.
@@ -341,7 +345,9 @@ def i2c_line(info):
 def check_i2c(d, rep):
     supplies = supply_nets(d)
     for name, net in d.nets.items():
-        if net.get("bus") != "i2c" and not i2c_name(name) and not any(i2c_line(d.pin_info(r)) for r in net["pins"]):
+        names = net.get("joined") or [name]
+        if net.get("bus") != "i2c" and not any(map(i2c_name, names)) and \
+                not any(i2c_line(d.pin_info(r)) for r in net["pins"]):
             continue
         waive = net.get("waive")
         pulls = [(r, rail) for _, r, rail in resistors_to(d, name, supplies)]
@@ -488,18 +494,19 @@ def check_signoff(d, rep):
 def run(design, cfg=None):
     rep = Report()
     checks = cfg.checks if cfg else {}
+    joined = design.joined()   # nets joined by 0 Ω bridges as one net
     check_structure(design, rep, set(cfg.boards) if cfg else set())
     check_pin_locks(design, rep, checks, cfg.root if cfg else ".")
     check_domains(design, rep)
-    check_inputs(design, rep)
-    check_contention(design, rep)
-    check_decoupling(design, rep)
+    check_inputs(joined, rep)
+    check_contention(joined, rep)
+    check_decoupling(joined, rep)
     check_ratings(design, rep)
-    check_reverse(design, rep, checks.get("reverse_protect", []))
-    check_i2c(design, rep)
-    check_straps(design, rep)
-    check_flyback(design, rep)
-    check_usb_c(design, rep)
+    check_reverse(joined, rep, checks.get("reverse_protect", []))
+    check_i2c(joined, rep)
+    check_straps(joined, rep)
+    check_flyback(joined, rep)
+    check_usb_c(joined, rep)
     check_part_pins(design, rep)
     check_signoff(design, rep)
     return rep
@@ -520,6 +527,10 @@ def main(cfg, args):
         print("\nWhat the failed checks are about (edakit rules <ID>):")
         for c in failed:
             print("  " + "\n  ".join(rules.explain(c)))
+    groups = d.bridge_groups()
+    if groups:
+        print("joined by 0 Ω bridges, checked as one net: " + "; ".join(
+            " = ".join([name] + [n for n in nets if n != name]) + f" ({', '.join(des)})" for name, nets, des in groups))
     hints = rules.open_hints(d, cfg, rules.load_sim(cfg))
     print(f"{len(d.comps)} components, {len(d.nets)} nets, {len(d.parts)} parts entries; "
           f"{len(rep.errors)} errors, {len(rep.waived)} waived, {len(rep.pending)} open sign-offs"

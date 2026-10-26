@@ -10,8 +10,9 @@ plus "extra_scenarios" listed there.
        current per pin (gpio_i_max_a) and of all outputs together (gpio_i_total_max_a)
   E-3  function: supply currents, regulator outputs and headroom, MCU supply and input levels, MCU outputs only on
        pins that can drive, constant-current driver headroom and junction temperature, LED currents on/off as the load
-       says, relays pull in and release (v_operate, v_release), blocking diodes, every net inside its declared voltage
-       range 'v', plus the project plugin's own checks
+       says (an LED behind a 0 Ω bridge counts on the driver output the bridge joins it to), relays pull in and release
+       (v_operate, v_release), blocking diodes, every net inside its declared voltage range 'v', plus the project
+       plugin's own checks
 
 Rule, reason and fix of each check: rules.json (`edakit rules E-2`).
 
@@ -256,6 +257,7 @@ def functional(design, cfg, res, meta, load, ck, plugin):
             ck.add("E-3", des, "relay releases: coil voltage ≤ must-release voltage", vc, f"≤ {p['v_release']} V",
                    vc <= p["v_release"], unit=" V")
 
+    joined = design.joined_nets()   # nets joined by 0 Ω bridges: an LED behind a bridge is on the driver output
     chan_of = {}
     for des, t in meta["cc"].items():
         p, r = t["params"], t["ratings"]
@@ -263,7 +265,7 @@ def functional(design, cfg, res, meta, load, ck, plugin):
         t["iset"] = iset
         pd = v(res, t["vdd"]) * p.get("idd_max_a", 0.0) if t["vdd"] else 0.0
         for net, ch in t["channels"].items():
-            chan_of[net] = (des, ch["on"], iset)
+            chan_of[joined.get(net, net)] = (net, ch["on"], iset)
             if not ch["on"]:
                 continue
             vo, io = v(res, ch["node"]), res.get(ch["ammeter"], 0.0)
@@ -280,9 +282,10 @@ def functional(design, cfg, res, meta, load, ck, plugin):
     for name, info in meta["leds"].items():
         i = res.get(f"@{name}[id]", float("nan"))
         label = name[2:].upper()
-        if info["cathode_net"] in chan_of:
-            groups[info["cathode_net"]].append((label, i))
-        elif info["anode_net"] in chan_of:
+        cathode, anode = (joined.get(info[k], info[k]) for k in ("cathode_net", "anode_net"))
+        if cathode in chan_of:
+            groups[cathode].append((label, i))
+        elif anode in chan_of:
             ck.add("E-3", label, f"LED reversed (anode at the driver output {info['anode_net']})", i,
                    "cathode at the driver output", False, unit=" A")
         elif leds_on is not None:
@@ -293,8 +296,8 @@ def functional(design, cfg, res, meta, load, ck, plugin):
             else:
                 ck.add("E-3", label, "LED dark", i, f"≤ {crit['led_off_max_a'] * 1e6:.0f} µA",
                        i <= crit["led_off_max_a"], unit=" A")
-    for net, leds in groups.items():
-        _, on, iset = chan_of[net]
+    for key, leds in groups.items():
+        net, on, iset = chan_of[key]
         if not on:
             for label, i in leds:
                 ck.add("E-3", label, "LED dark", i, f"≤ {crit['led_off_max_a'] * 1e6:.0f} µA",

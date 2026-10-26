@@ -82,6 +82,14 @@ check that fails is explained once below the findings (chapter 14.2).
 | P-1 | graph pins (number and name) = parts entry; an entry exists for every LCSC number; no supply pin marked `nc` | a wrong part number, pins shifted by one |
 | G-9 | sign-off: every part `verified` against its datasheet, no open `verify` note (pending – blocks only the release) | an unchecked part going into an order |
 
+**0 Ω bridges.** A resistor whose parts entry has `value_ohm: 0` is copper – the usual way to cross a track on a board
+with all tracks on one side. The nets it joins are one net for G-4, G-5, G-6 and G-10 to G-14: a pull-up behind a
+bridge holds its input, a capacitor to a ground net behind a bridge decouples, two outputs on either side clash. A
+finding names the joined net after the ground net if that is one of them, else after the first of them in the graph;
+a waiver on any of them counts. G-1, G-2, G-3, G-8, P-1 and G-9 see every net and the bridge as the graph has them.
+`edakit check` lists the joined nets above its last line:
+`joined by 0 Ω bridges, checked as one net: GND = GND_B (R11); 3V3 = 3V3_B = 3V3_C (R10, R13)`.
+
 Results: `ERROR` (must be fixed), `WAIVED` (accepted in the graph with a reason), `PENDING` (open sign-off). Exit 1 on
 errors, with `--release` also on pending sign-offs. The last line also names the design hints that are still open
 (`edakit hints`, chapter 14.3); they never block.

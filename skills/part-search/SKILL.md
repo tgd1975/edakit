@@ -36,8 +36,9 @@ Wanted: $ARGUMENTS. Fields of an entry: `${CLAUDE_PLUGIN_ROOT}/handbook/04-parts
 - What the checks read from the datasheet besides the limits: input-only pins `type: input`; strapping pins
   `"strap": "high"|"low"` with the internal `"pull"` at reset (G-12); built-in pull resistors `"pull": "up"`,
   `"pull_ohm"` (I2C modules, G-11); roles `sda`/`scl` (G-11) and `cc1`/`cc2` on a USB-C receptacle (G-14); MCU output
-  current `gpio_i_max_a` per pin and `gpio_i_total_max_a` for all together (E-2); a pin `hint` or part `hints` for
-  what the datasheet warns about (shown by `edakit hints`).
+  current `gpio_i_max_a` per pin and `gpio_i_total_max_a` for all together (E-2); a 0 Ω jumper `value_ohm: 0` with
+  its maximum resistance `r_max_ohm` (it joins its nets, handbook 3.3); a pin `hint` or part `hints` for what the
+  datasheet warns about (shown by `edakit hints`).
 - Check against the datasheet: pinout, polarity at the footprint (which pad is pin 1 / anode / +), package, every
   rating. Library footprints are sometimes wrong (a "+" printed at the cathode pad) – the polarity sheet of the gate
   and the second check M-1 exist for that. Then `verified` with by, date, datasheet revision, `checked`, `open`.

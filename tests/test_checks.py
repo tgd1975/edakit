@@ -374,3 +374,59 @@ def test_failed_checks_are_explained(project, capsys):
     out = capsys.readouterr().out
     assert "G-11 (I2C pull-ups):" in out and "why:" in out and "UM10204" in out
     assert "design hints open: H-1, H-3" in out
+
+
+# --- 0 Ω bridges join their nets (feature proposal #1) --------------------------------------------------------------
+BRIDGE = {"lcsc": "C9000002", "mpn": "test 0 Ω bridge 0805", "kind": "resistor", "verified": {"by": "test"},
+          "params": {"value_ohm": 0.0}, "ratings": {"p_max_w": 0.125, "v_max": 150},
+          "pins": {"1": {"name": "1", "type": "passive", "role": "1"},
+                   "2": {"name": "2", "type": "passive", "role": "2"}}}
+
+
+def bridge(project, g, des, net, pin, value_ohm=0.0):
+    """`pin` moves from `net` to a new net <net>_B, joined to `net` by the resistor `des` – a 0 Ω bridge that crosses a
+    track on a board with all tracks on one side."""
+    project.save_part(BRIDGE["lcsc"], {**BRIDGE, "params": {"value_ohm": value_ohm}})
+    g["graph"]["components"].append(comp(des, BRIDGE["lcsc"], R, value="0"))
+    project.net(g, net)["pins"].remove(pin)
+    project.net(g, net)["pins"].append(f"{des}.1")
+    g["graph"]["nets"].append({"name": f"{net}_B", "pins": [f"{des}.2", pin], "v": project.net(g, net)["v"]})
+
+
+def bridged(project, value_ohm=0.0):
+    """The example with three bridges: R2 pulls OE up through R10, C1 reaches GND through R11, D9's cathode reaches
+    OUT7 of the LED driver through R12."""
+    g = project.graph()
+    for des, net, pin in (("R10", "3V3", "R2.1"), ("R11", "GND", "C1.2"), ("R12", "LED7", "D9.2")):
+        bridge(project, g, des, net, pin, value_ohm)
+    project.save_graph(g)
+
+
+def test_zero_ohm_bridges_join_their_nets(project, capsys):
+    bridged(project)
+    rep = run(project)
+    assert rep.errors == [] and rep.pending == []
+    assert {c for c, _, _ in rep.waived} == {"G-4"}
+    assert checks.main(project.config(), argparse.Namespace(release=False, json=None)) == 0
+    assert ("joined by 0 Ω bridges, checked as one net: GND = GND_B (R11); 3V3 = 3V3_B (R10); LED7 = LED7_B (R12)"
+            in capsys.readouterr().out)
+
+
+def test_a_resistor_joins_no_nets(project):
+    bridged(project, value_ohm=10000)            # the same places with 10 kΩ: the pull-up and the capacitor are cut off
+    assert sorted(run(project).errors) == [
+        ("G-4", "LED_OE: only MCU pins drive this input – floating until the firmware runs"),
+        ("G-6", "3V3: 1 IC supply pins (U2.16) but 0 capacitor(s) to GND")]
+
+
+def test_joined_nets_are_one_net_for_the_checks(project):
+    g = project.graph()
+    project.free_pins(g, "U1.10")
+    project.comp(g, "U2")["nc"].remove("14")
+    g["graph"]["nets"].append({"name": "CLASH", "pins": ["U2.14", "U1.10"], "v": [0, 3.4]})
+    bridge(project, g, "R13", "CLASH", "U1.10")  # SDO of the LED driver and an MCU output, a bridge between them
+    project.save_graph(g)
+    part = project.part("C41407547")
+    part["pins"]["10"]["type"] = "output"
+    project.save_part("C41407547", part)
+    assert ("G-5", "CLASH: several outputs drive this net: U2.14, U1.10") in run(project).errors
