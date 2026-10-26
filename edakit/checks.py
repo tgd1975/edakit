@@ -27,6 +27,9 @@
        an IC (a Type-C controller) is on the CC lines
   P-1  graph pins (number + name) = parts database, an entry exists for every LCSC number – or, for a part bought
        elsewhere, for its manufacturer part number `part`
+  P-3  own parts (part.py): a board copied from its project with `edakit part own` is that project's current
+       datasheet, copied from a commit (pending otherwise); a board that is not released is a warning; the project's
+       own datasheets (hardware/datasheet/) are of its current state
   G-9  sign-off: every part verified against its datasheet, no open "verify" notes (pending, blocks only the release)
 
 0 Ω bridges (resistors with value_ohm 0 in the parts entry) join their nets: G-4, G-5, G-6, G-10 to G-14 see the
@@ -60,12 +63,14 @@ I2C_SINK_A, I2C_VOL, I2C_R_MAX = 0.003, 0.4, 10e3    # UM10204 7.1: Rp(min) = (V
 USB_RD, USB_RD_TOL = 5100, 0.10                      # USB Type-C sink termination Rd
 COILS = {"relay": ("coil_plus", "coil_minus"), "buzzer": ("plus", "minus")}   # inductive kinds: their coil roles
 
-EXECUTED = ["G-1", "G-2", "G-3", "G-4", "G-5", "G-6", "G-8", "G-10", "G-11", "G-12", "G-13", "G-14", "P-1", "G-9"]
+EXECUTED = ["G-1", "G-2", "G-3", "G-4", "G-5", "G-6", "G-8", "G-10", "G-11", "G-12", "G-13", "G-14", "P-1", "P-3",
+            "G-9"]
 
 
 class Report:
     def __init__(self):
         self.errors, self.pending, self.waived = [], [], []
+        self.warnings, self.notes = [], []   # a warning the gate wants accepted in the sign-off file; information
 
     def error(self, check, msg, waive=None):
         if waive and check in waive:
@@ -76,7 +81,9 @@ class Report:
     def to_dict(self):
         return {"errors": [{"check": c, "msg": m} for c, m in self.errors],
                 "pending": [{"check": c, "msg": m} for c, m in self.pending],
-                "waived": [{"check": c, "msg": m, "reason": r} for c, m, r in self.waived]}
+                "waived": [{"check": c, "msg": m, "reason": r} for c, m, r in self.waived],
+                "warnings": [{"check": c, "msg": m} for c, m in self.warnings],
+                "notes": [{"check": c, "msg": m} for c, m in self.notes]}
 
 
 def v_range(net):
@@ -535,6 +542,9 @@ def run(design, cfg=None):
     check_flyback(joined, rep)
     check_usb_c(joined, rep)
     check_part_pins(design, rep)
+    if cfg:
+        from . import part
+        part.check(design, rep, cfg)
     check_signoff(design, rep)
     return rep
 
@@ -549,6 +559,10 @@ def main(cfg, args):
         print(f"WAIVED  {check}  {msg}\n                 reason: {reason}")
     for check, msg in rep.pending:
         print(f"PENDING {check}  {msg}")
+    for check, msg in rep.warnings:
+        print(f"WARNING {check}  {msg}")
+    for check, msg in rep.notes:
+        print(f"NOTE    {check}  {msg}")
     failed = list(dict.fromkeys(c for c, _ in rep.errors))
     if failed:
         print("\nWhat the failed checks are about (edakit rules <ID>):")
@@ -561,6 +575,7 @@ def main(cfg, args):
     hints = rules.open_hints(d, cfg, rules.load_sim(cfg))
     print(f"{len(d.comps)} components, {len(d.nets)} nets, {len(d.parts)} parts entries; "
           f"{len(rep.errors)} errors, {len(rep.waived)} waived, {len(rep.pending)} open sign-offs"
+          + (f", {len(rep.warnings)} warnings" if rep.warnings else "")
           + (f"; design hints open: {', '.join(hints)} (edakit hints)" if hints else ""))
     if args.json:
         Path(args.json).write_text(json.dumps({**rep.to_dict(), "hints_open": hints}, indent=2, ensure_ascii=False)

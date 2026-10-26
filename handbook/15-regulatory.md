@@ -46,6 +46,9 @@ an imported power supply or cell is its importer.
 - **Per part** – `compliance` in the parts entry (4.1), filled by the agent part-selector or the skill part-search: RoHS
   status (and the exemption it relies on), the supplier's REACH SVHC statement, and for a part that transmits its
   bands, maximum power and the EU declaration of conformity. What nobody states is open, not fine.
+- **Per own board** (4.5) – its `compliance` collects what its parts entries state, with the parts that state nothing.
+  An own board is no module with certificates of its own: it is part of the product, and whoever gives the product
+  away or sells it is the manufacturer of the board in it too.
 - **Per project** – `purpose` in the graph and the decision log: who uses the board (children?), the cell in a battery
   holder (chemistry, capacity, soldered or plugged), the power supply that comes with it, whether it connects to the
   internet and which personal data it handles – then also passwords and updates of the firmware.

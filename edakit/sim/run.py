@@ -12,7 +12,8 @@ plus "extra_scenarios" listed there.
        pins that can drive, constant-current driver headroom and junction temperature, LED currents on/off as the load
        says (an LED behind a 0 Ω bridge counts on the driver output the bridge joins it to, an LED behind one resistor
        to a single driver output on that output – parallel LEDs with balancing resistors), relays pull in and release
-       (v_operate, v_release), blocking diodes, every net inside its declared voltage range 'v', plus the project
+       (v_operate, v_release), a module modelled as a constant current (an own board, part.py) supplied inside
+       vin_min … vin_max, blocking diodes, every net inside its declared voltage range 'v', plus the project
        plugin's own checks
   E-4  every LED – each colour of an RGB LED – has a state E-3 checks in every scenario: its cathode on a driver output
        (directly, behind 0 Ω bridges or behind a balancing resistor) or the load has leds_on; an LED with neither, or
@@ -279,6 +280,21 @@ def functional(design, cfg, res, meta, load, ck, plugin):
         if not rl["on"] and "v_release" in p:
             ck.add("E-3", des, "relay releases: coil voltage ≤ must-release voltage", vc, f"≤ {p['v_release']} V",
                    vc <= p["v_release"], unit=" V")
+    for des in sorted(design.comps):   # a module modelled as a constant current – an own board – inside its range
+        p = design.part(des) or {}
+        r = p.get("ratings") or {}
+        if (p.get("params") or {}).get("behavior") != "current" or not {"vin_min", "vin_max"} & set(r):
+            continue
+        lo, hi = r.get("vin_min", -math.inf), r.get("vin_max", math.inf)
+        want = f"{lo} … {hi} V" if {"vin_min", "vin_max"} <= set(r) else f"≥ {lo} V" if "vin_min" in r else f"≤ {hi} V"
+        ground = next((design.pin_net[f"{des}.{n}"] for n, i in p["pins"].items()
+                       if i.get("type") == "ground" and f"{des}.{n}" in design.pin_net), design.ground)
+        for num, info in p["pins"].items():
+            net = design.pin_net.get(f"{des}.{num}")
+            if net and info.get("type") == "power_in":
+                x = v(res, netlist.node(net, design.ground)) - v(res, netlist.node(ground, design.ground))
+                ck.add("E-3", des, f"supply voltage at {info.get('name', num)} within vin_min … vin_max", x, want,
+                       lo <= x <= hi, unit=" V")
 
     joined = design.joined_nets()   # nets joined by 0 Ω bridges: an LED behind a bridge is on the driver output
     chan_of = {}

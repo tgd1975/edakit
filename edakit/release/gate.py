@@ -143,13 +143,17 @@ def accepted(item, signoff):
 def stage_graph(cfg, design):
     rep = checks.run(design, cfg)
     rows = []
-    stage_of = lambda c: "P" if c in ("P-1", "G-9") else "G"  # noqa: E731
+    stage_of = lambda c: "P" if c in ("P-1", "P-3", "G-9") else "G"  # noqa: E731
     for c, m in rep.errors:
         rows.append({"stage": stage_of(c), "id": c, "item": "", "check": m, "result": "fail"})
     for c, m, r in rep.waived:
         rows.append({"stage": stage_of(c), "id": c, "item": "", "check": m, "result": "waived", "reason": r})
     for c, m in rep.pending:
         rows.append({"stage": stage_of(c), "id": c, "item": "", "check": m, "result": "pending"})
+    for c, m in rep.warnings:
+        rows.append({"stage": stage_of(c), "id": c, "item": "", "check": m, "result": "warn"})
+    for c, m in rep.notes:
+        rows.append({"stage": stage_of(c), "id": c, "item": "", "check": m, "result": "info"})
     hit = {r["id"] for r in rows if r["result"] in ("fail", "pending")}
     rows += [{"stage": stage_of(c), "id": c, "item": "", "check": rules.title(c), "result": "pass"}
              for c in checks.EXECUTED if c not in hit]

@@ -15,6 +15,13 @@
    "fix": "Read the sheet against the datasheets. A wrong pad is fixed in the graph by swapping the nets and roles, not in the footprint.",
    "sources": ["edakit handbook 4.4 and 8.1"]
   },
+  "P-3": {
+   "title": "own part = its source",
+   "rule": "A board copied from another edakit project (own.what pcb, edakit part own) is that project's current datasheet and was copied from a commit, every datasheet a project writes (hardware/datasheet/) is of its current state, and a board that is not released at the state of its datasheet is a warning.",
+   "why": "An own board has no distributor and no manufacturer's datasheet: its parts entry is derived from the project that designed it – pins, supply range, current, compliance. When that project changes, the copy describes another board than the one that gets plugged in, and every check of the host reasons about the old one. A copy of uncommitted changes names no state anyone can find again. A board that has not passed its own gate is not checked as a product, whatever its datasheet says – that is the user's decision, so it is a warning to accept, not an error.",
+   "fix": "In the board's project: edakit part datasheet, then commit. In the host: edakit part own <path to the board's project>. Release the board there (edakit gate) and copy again, or accept the warning in the sign-off file with the reason.",
+   "sources": ["edakit handbook 4.5"]
+  },
   "G-1": {
    "title": "structure",
    "rule": "Designators and net names are unique, every pin is in exactly one net or in nc, every net has at least two pins and a voltage range v, every part is on a known board, a net spans boards only through a cable, the layout requirements and the check settings name parts and pins of the graph, the ground net is a net of the graph, and purpose.use is private, gift or sale.",

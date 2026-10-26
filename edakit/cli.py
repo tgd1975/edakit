@@ -4,7 +4,8 @@
     edakit rules [ID ...]            the rule catalog: what each check and hint is about, why, what to do
     edakit hints                     design hints that apply to the graph, notes from the parts database
     edakit block list|show|add       building blocks with checked parts into the graph
-    edakit sim                       stage E: ngspice operating points of all scenarios (offline, seconds)
+    edakit part datasheet|own        own parts: a board of an edakit project as a part in another project
+    edakit sim                      stage E: ngspice operating points of all scenarios (offline, seconds)
     edakit handover                  what the circuit hands over to the layout: state, sign-offs, layout requirements
     edakit schematic create|check|copy|layout
     edakit schematic draw            the schematic as SVG from graph and parts database – no EasyEDA (offline)
@@ -56,6 +57,14 @@ def build_parser():
     p.add_argument("--board", help="add: board of the new parts (needed with several boards)")
     p.add_argument("--file", help="a block from this JSON file instead of the library")
     p.add_argument("--dry-run", action="store_true", help="add: show what would change, write nothing")
+    _common(p)
+
+    p = sub.add_parser("part", help="own parts: the datasheet of this board, or the copy of another project's board")
+    p.add_argument("action", choices=["datasheet", "own"])
+    p.add_argument("source", nargs="?", help="own: the board's project (its directory or edakit.toml)")
+    p.add_argument("--connector", action="append", help="datasheet: a connector of the board, in the order of the "
+                                                        "part's pins (repeat for several; none: renew the datasheets)")
+    p.add_argument("--name", help="the part's name (mpn) – datasheet: default the project name; own: which datasheet")
     _common(p)
 
     p = sub.add_parser("sim", help="simulation (stage E)")
@@ -175,6 +184,9 @@ def main(argv=None):
     if args.command == "block":
         from . import block
         return block.main(cfg, args)
+    if args.command == "part":
+        from . import part
+        return part.main(cfg, args)
     if args.command == "sim":
         from .sim import run
         try:

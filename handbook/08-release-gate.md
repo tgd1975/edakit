@@ -18,7 +18,7 @@ edakit gate --easyeda    # plus S, L, F – EasyEDA with the bridge, minutes
 
 | Stage | What | Checks |
 |---|---|---|
-| P – Parts | parts database complete and signed | P-1, G-9 (chapter 3, 4) |
+| P – Parts | parts database complete and signed, own parts equal to their source | P-1, P-3, G-9 (chapter 3, 4) |
 | G – Graph | rule checks | G-1 … G-14 (chapter 3) |
 | E – Simulation | operating points, stress, function, every LED checked | E-1 … E-4 (chapter 5) |
 | *project stages* | e.g. K – mechanics of an enclosure | `[[release.stages]]`, see below |
@@ -112,9 +112,10 @@ accepted warnings. Each counts only if the hash of its scope equals the current 
 | `order` | after uploading, before paying (M-2: JLCPCB's assembly preview, BOM tool, price) | no |
 | `acceptance` | after delivery (M-4: acceptance test of every board) | no |
 
-`match` is an fnmatch pattern over "ID scenario item step" as section 3 of the protocol prints it. Scope `decision`
-counts regardless of the hash and must refer to a numbered decision. **Only the owner accepts a warning** – it is a
-decision. **A manual check an agent can do is signed by the agent's result** (chapter 11): OK → signed with the agent
+`match` is an fnmatch pattern over "ID scenario item step" as section 3 of the protocol prints it – for a warning of
+the graph checks the ID and the message, e.g. `"P-3 M1 ring: ../ring is not released*"` for an own board that is
+not released (4.5). Scope `decision` counts regardless of the hash and must refer to a numbered decision. **Only the
+owner accepts a warning** – it is a decision. **A manual check an agent can do is signed by the agent's result** (chapter 11): OK → signed with the agent
 as `done_by`; not OK → fix the cause, check again.
 
 **M-6, the regulatory review, is required** even when the sign-off file does not list it: the gate adds it as open

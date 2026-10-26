@@ -25,6 +25,8 @@ profile says: `${CLAUDE_PLUGIN_ROOT}/skills/part-search/distributors/<name>.md` 
 - Datasheet from the distributor's part page or the manufacturer; note its revision.
 - A part from outside LCSC is hand-soldered (`bom: false`) or goes to another assembler; in EasyEDA it needs a
   footprint – the `easyeda_device` of a part in the same package (handbook 3.1).
+- A part nobody sells is no search: a board of an edakit project comes with `edakit part datasheet` in its project
+  and `edakit part own <path>` here (handbook 4.5).
 
 ## Entry
 

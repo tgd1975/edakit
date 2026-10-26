@@ -116,6 +116,8 @@ Code: `edakit … 2>&1 | cat`.
 | `edakit hints [--json F]` | – | graph, parts, sim config | – |
 | `edakit block list\|show NAME` | – | the block library (no project needed) | – |
 | `edakit block add NAME --as I [--connect PORT=NET …] [--board B] [--file F] [--dry-run]` | – | graph, parts, block | graph (formatting kept), missing parts entries |
+| `edakit part datasheet [--connector C …] [--name N]` | – | graph, parts, sim config, board file (4.5) | `hardware/datasheet/<N>.json` and `.md`; without `--connector` every datasheet renewed |
+| `edakit part own PATH [--name N]` | – | the board's project at PATH: its datasheet, state, git, gate runs | `hardware/parts/<N>.json` |
 | `edakit sim [--json F] [--keep DIR]` | – | graph, parts, sim config, plugin | `<artifacts>/sim/net_currents.json` |
 | `edakit handover [--board B]` | – | graph, parts, sign-offs | – |
 | `edakit schematic create [--board] [--only] [--dry-run] [--save] [--create-project] [--refresh-devices]` | ✓ | graph | template, `device_cache.json`, `schematic_map_<name>.json` |
@@ -145,6 +147,7 @@ Code: `edakit … 2>&1 | cat`.
 edakit.toml                 the table of contents: project, boards, where the files are
 hardware/graph.json         the hardware graph (only source of parts and connections), ground net, check settings
 hardware/parts/*.json       parts database
+hardware/datasheet/<name>.* the board as a part for other projects: parts entry and datasheet (edakit part datasheet)
 hardware/sim.json           simulation scenarios
 hardware/schematic.toml     arrangement of the schematic
 hardware/boards/<name>.toml one board: outline, holes, placement, routing, pours, silkscreen

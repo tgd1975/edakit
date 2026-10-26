@@ -86,6 +86,7 @@ check that fails is explained once below the findings (chapter 14.2).
 | G-13 | flyback diode: a relay coil or a buzzer with `coil_ohm`, switched by a transistor or an output, has a diode across it with the cathode at its plus terminal | a relay that kills its transistor at the first switch-off |
 | G-14 | USB-C sink: a receptacle with `cc1`/`cc2` pins has its own 5.1 kΩ ± 10 % to ground on each CC pin; silent when an IC is on the CC lines | no 5 V from a USB-C charger, CC1 and CC2 on one resistor |
 | P-1 | graph pins (number and name) = parts entry; an entry exists for every LCSC number; no supply pin marked `nc` | a wrong part number, pins shifted by one |
+| P-3 | own parts (4.5): a board copied with `edakit part own` is its project's current datasheet, copied from a commit (pending otherwise); a board not released at that state is a warning; the project's own datasheets are of its current state | a board changed after it was copied into the host |
 | G-9 | sign-off: every part `verified` against its datasheet, no open `verify` note (pending – blocks only the release) | an unchecked part going into an order |
 
 **0 Ω bridges.** A resistor whose parts entry has `value_ohm: 0` is copper – the usual way to cross a track on a board
@@ -96,8 +97,9 @@ a waiver on any of them counts. G-1, G-2, G-3, G-8, P-1 and G-9 see every net an
 `edakit check` lists the joined nets above its last line:
 `joined by 0 Ω bridges, checked as one net: GND = GND_B (R11); 3V3 = 3V3_B = 3V3_C (R10, R13)`.
 
-Results: `ERROR` (must be fixed), `WAIVED` (accepted in the graph with a reason), `PENDING` (open sign-off). Exit 1 on
-errors, with `--release` also on pending sign-offs. The last line also names the design hints that are still open
+Results: `ERROR` (must be fixed), `WAIVED` (accepted in the graph with a reason), `PENDING` (open sign-off), `WARNING`
+(the gate wants it accepted in the sign-off file, 8.2), `NOTE` (information). Exit 1 on errors, with `--release` also
+on pending sign-offs. The last line also names the design hints that are still open
 (`edakit hints`, chapter 14.3); they never block.
 
 Polarity (is the LED the right way round?) is not a graph rule but a simulation result: a reversed LED shows up in

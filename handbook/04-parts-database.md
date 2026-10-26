@@ -2,9 +2,10 @@
 
 One JSON file per part, named by its LCSC number (`hardware/parts/C17414.json`) – or, for a part bought from another
 distributor, by its manufacturer part number (`hardware/parts/RC0805FR-0710KL.json`, characters a file name cannot
-hold replaced by `_`). A component finds its entry by `lcsc`, and without one by `part` = the entry's `mpn`. The entry
-holds what the datasheet says, in a form the checks and the simulation can use: pin types and roles, limits,
-parameters, SPICE models, lead dimensions, and who checked it against which datasheet revision.
+hold replaced by `_`) – or, for a part nobody sells, such as a board of your own, by the name it was given (4.5). A
+component finds its entry by `lcsc`, and without one by `part` = the entry's `mpn`. The entry holds what the
+datasheet says, in a form the checks and the simulation can use: pin types and roles, limits, parameters, SPICE
+models, lead dimensions, and who checked it against which datasheet revision.
 Examples: [the Christmas bell's parts](https://github.com/tgd1975/automatic_christmas_bell/tree/main/hardware/parts).
 
 ## 4.1 Fields
@@ -28,6 +29,7 @@ Examples: [the Christmas bell's parts](https://github.com/tgd1975/automatic_chri
 | `sources` | where every value comes from; "assumption …" marks what must be checked with extra care |
 | `compliance` | for the regulatory review (M-6, chapter 15): `rohs` (true, false or the exemption), `reach` (the supplier's SVHC statement), `radio` for a part that transmits (`bands_mhz` [[from, to]], `max_dbm`, `doc` = URL of the EU declaration of conformity), `source` (page and date) |
 | `verified` | `null` or the sign-off: `by`, `date`, `datasheet` (revision), `checked` (list), `open` (list), optional `second_check` (the independent M-1 review) |
+| `own` | a part nobody sells (4.5): `what` – `pcb` (a board of an edakit project), `bin` (from your stock, no longer to be had), `handmade`; for `pcb` its source: `project`, `connectors`, `state_sha256` (the board's circuit hash), and in the copy `path`, `commit`, `repo`, `released` – P-3 compares them |
 
 **Pin types** (`type`): `passive`, `input`, `output`, `bidirectional`, `power_in`, `power_output`, `ground`, `analog`,
 `current_sink`, `no_connect`, `mechanical`. G-4, G-5 and G-6 work with them: `power_in` needs a capacitor, two
@@ -57,7 +59,9 @@ LED `if_max_a`, `vr_max` (per colour for RGB); BJT `ic_max_a`, `vceo`, `vebo`, `
 `vgs_max`, `p_max_w`; fuse `i_hold_a` (+ `params.i_hold_vs_temp`); switch/connector `i_max_a`, `v_max`; inductor
 `i_rated_a`, `i_sat_a`; regulators `vin_min`, `i_out_max_a`, `rth_ja_k_per_w`; MCU modules `vin_min`/`vsys_min`,
 `i_out_max_a`, `gpio_i_max_a` (per output pin) and `gpio_i_total_max_a` (all outputs together, sourced and sunk
-separately – the package's supply pins); relays `v_coil_max`, `i_max_a` (contacts); LED drivers `rth_ja_k_per_w`.
+separately – the package's supply pins); relays `v_coil_max`, `i_max_a` (contacts); LED drivers `rth_ja_k_per_w`;
+own boards (behaviour `current`) `vin_min`, `vin_max` – the voltage at the connector over the board's own simulation
+(4.5, E-3).
 
 **Parameters**: resistor `value_ohm` (`0`: a bridge that joins its nets, 3.3), `r_max_ohm` (a bridge's maximum
 resistance from the datasheet, simulated instead of 0 Ω; 50 mΩ without it); capacitor `value_f`; inductor `value_h`,
@@ -127,3 +131,48 @@ called pad 1 the cathode. Editing the project's footprint through the API went n
 the graph: the net of the anode goes to the pad with the "+" print, and the parts entry gives pin 1 the role `anode` –
 so every check, the simulation and the firmware pin tables follow automatically. The gate's polarity sheet (one tile
 per polarised part: copper, silkscreen, pad numbers, roles, nets) is what makes this visible at a glance.
+
+## 4.5 Own parts
+
+Some parts nobody sells: a board of your own plugged onto the main board, a part from the bin that is no longer made,
+something made by hand. Nobody wrote a datasheet for them. For a board designed with edakit, its project is the
+datasheet – edakit derives the parts entry from it:
+
+1. **In the board's project:** `edakit part datasheet --connector J1` – several connectors: repeat `--connector`, their
+   pins are numbered on in that order. It writes `hardware/datasheet/<name>.json`, the parts entry, and `<name>.md`,
+   the datasheet to read; the name is the project's unless `--name` gives another. Derived from the board:
+   - `pins`: the net on the board is the pin's name. The simulation's source is `power_in` / `vin`, the ground
+     `ground` / `gnd`, a rail the board makes `power_output` / `vout`, an I2C line `bidirectional` / `sda` or `scl`;
+     any other pin takes the strongest type among the parts on its net (output, bidirectional, current_sink, input,
+     analog, else passive). A resistor to a supply or to ground gives `pull` and `pull_ohm` (G-11, G-12 count them);
+     `vmax` is the lowest limit on the net – a pin's `vmax`, a capacitor's `v_max` / 1.5
+   - `params`: behaviour `current`, the largest current from the connector over the board's scenarios
+   - `ratings`: `vin_min`, `vin_max` – the voltage at the connector over those scenarios
+   - `compliance`: RoHS, REACH and radio as the board's parts entries state them
+
+   The board's simulation must pass, and exactly one of the connectors must be a source of it: the supply the board
+   draws from the project that uses it. `edakit part datasheet` without arguments renews every datasheet of the
+   project. Commit them – a datasheet belongs to a state of the board, and P-3 says when it is older.
+2. **In the project that uses the board:** `edakit part own ../board` copies the datasheet into the parts database
+   and adds where it comes from: the path, the commit, the repository, and the gate run that released this state of
+   the board if there is one (`<reports>/*/fab/manifest.json` of the board's project). The component names it like a
+   part bought elsewhere – `"part": "<name>"`, `"bom": false` (JLCPCB does not have it), the pins as in the entry –
+   and gets an `easyeda_device`: a symbol with these pin names and the board's footprint, from your EasyEDA library.
+3. **Sign it off** like any part (4.3), against the datasheet at that commit. Copying the same state again keeps the
+   sign-off; a changed board needs a new one.
+
+The checks then treat the board like any IC: its pins take part in G-3 to G-6, G-11 and G-12, the simulation draws its
+current from the supply pin, and E-3 holds the voltage there inside `vin_min` … `vin_max` – the board was simulated
+only in that range; give its own `sim.json` more if the host needs more. P-3 compares the copy with its source:
+
+| Finding | Result |
+|---|---|
+| the board's project changed after its datasheet | pending – renew it there, copy again |
+| copied from uncommitted changes | pending – commit there, copy again |
+| the board is not released at the state of its datasheet | warning – release it there and copy again, or accept the warning in the sign-off file (8.2) |
+| the board's project is not there (another machine, CI) | note – the copy is not compared |
+| a datasheet of this project is older than the project | pending – `edakit part datasheet` |
+
+Not covered: the board's logic levels and timing – its signal pins are typed, not simulated. A board on a cable is no
+part of the host's PCB: it goes into the same project as a second board (`cables`, 3.1), or the host's connector gets
+its current as an `external` load (5.1).
