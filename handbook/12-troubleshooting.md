@@ -25,6 +25,8 @@ Start with `edakit doctor`.
 | `copy` refuses: "belongs to board" | the PCB is linked to the target | correct: use `edakit schematic layout`, which syncs in place |
 | Freerouting leaves nets open | order dependence, crowded pads, rules | `route all` retries reshuffled; more passes; more room in the plan; a power plane; lower clearance only within EasyEDA's DRC |
 | `route check`: a plane net open, its SMD pads on the other side in groups of their own | Freerouting connects no pad to a plane with a via | `fanout = true` on the plane in `[[pours]]` (7.5) |
+| `route check` / L-13: "R22.2 (N3) – R37.1 (N2): 0.090 mm apart on TOP, below the clearance …" | two parts placed with their pads closer than the routing clearance; Freerouting cannot move a pad | move or turn one of them in `[place]` (fix it there if the auto-layout put it), then `pcb apply` and `route all` again |
+| L-13: "… is not the PCB any more – … moved or changed since" | a part moved, turned or got another net after the last `route read` | `edakit route read` (or `route all`), then the gate again |
 | `route dsn` stops: "… no room for a fanout via" | foreign pads, the edge, a hole or a keep-out around that pad | more room next to the pad in the plan, or a `windows` entry for its part in the keep-out |
 | `pcb pour` stops: "pour_regions – the outlines … come from the routing" | `pour_regions` and no board file or SES yet | `edakit route all` (it pours at its end), or `route read` and `route route` first |
 | "… its pour at (x, y) mm lies inside the pour of …" | a net's area is enclosed by another net's area on a shared layer – that outline would need a hole | the preview shows where: route so that the outer net does not enclose it, or leave the inner net's pour off that layer |

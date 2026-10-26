@@ -7,8 +7,9 @@ with the nets VIN, +5V and GND, on a board of 30 x 20 mm with one M3 hole and tw
 The whole example has never been routed or exported, so no real export of it exists. This one has the files that
 `fab.collect` leaves, with the fields the checks read: pcb.json, drc.json, bom_easyeda.json, cpl_easyeda.xlsx,
 jlc_parts.json (so F-2 stays offline), and the Gerber and drill files with FlyingProbeTesting.json. It also has the
-footprint geometry of `edakit pcb dump` and the net currents of `edakit sim`: 0.5 A on all three nets, which puts
-them in class POWER (0.6 mm), with an IPC-2221 width of 0.20 mm. J1 is through-hole and the example orders Economic
+footprint geometry of `edakit pcb dump`, the net currents of `edakit sim` – 0.5 A on all three nets, which puts
+them in class POWER (0.6 mm), with an IPC-2221 width of 0.20 mm – and the board as `edakit route read` saw it (pads
+with their shapes, for L-13), written from pcb.json when the export is written. J1 is through-hole and the example orders Economic
 assembly (SMD only), so the cut-down graph leaves J1 out of the BOM, to be soldered by hand.
 
 A new check of stage L or F gets its fault here: one more entry in FAULTS.
@@ -183,6 +184,25 @@ class Export:
         self.cpl = [{"Designator": r, "Footprint": fp, "Mid X": x, "Mid Y": y, "Layer": "T", "Rotation": rot,
                      "SMD": "No" if FOOTPRINTS[fp][3] else "Yes"} for r, (fp, x, y, rot) in PLACE.items()]
         self.currents = {"nets": {n: {"i_max_a": 0.5, "scenario": "written for the test"} for n in TRACKS}}
+        # pad shape per footprint at 0° as `route read` gives it (mil); None: `route read` never ran. read_off:
+        # {ref: dx mm} – the part stood there when the board was read
+        kinds = {"C": "ELLIPSE", "R": "RECT"}
+        self.shapes = {fp: [kinds[k], a * MIL, b * MIL] for fp, (_, _, (k, a, b), _) in FOOTPRINTS.items()}
+        self.read_off = {}
+
+    def board_read(self):
+        """<board>_board.json of `edakit route read`, from the PCB as pcb.json has it."""
+        comps, pads = [], []
+        for c in self.pcb["components"]:
+            ref, dx = c["designator"], self.read_off.get(c["designator"], 0) * MIL
+            comps.append({"ref": ref, "x": c["x"] + dx, "y": c["y"], "rot": c["rotation"], "layer": c["layer"]})
+            pads += [{"id": f"{ref}e{p['PadNumber']}", "ref": ref, "num": p["PadNumber"], "net": p["Net"],
+                      "x": p["X"] + dx, "y": p["Y"], "rot": c["rotation"], "layer": p["Layer"],
+                      "shape": self.shapes[PLACE.get(ref, [c["footprintName"]])[0]],
+                      "hole": [DRILL * MIL] if p["tht"] else None,
+                      "hole_off": [0, 0]} for p in c["pads"]]
+        edge = [(0, 0), (30 * MIL, 0), (30 * MIL, 20 * MIL), (0, 20 * MIL)]
+        return {"pcb": "main", "components": comps, "pads": pads, "outlines": [edge]}
 
     def at_mil(self, ref):
         return tuple(v * MIL for v in self.at[ref])
@@ -215,8 +235,10 @@ class Export:
     def write(self, root):
         art = root / "build" / "edakit"
         (art / "sim").mkdir(parents=True, exist_ok=True)
-        for f, data in (("pcb_geometry_main.json", self.geo), ("sim/net_currents.json", self.currents)):
-            if data is not None:       # None: `pcb dump` or `edakit sim` never ran
+        (art / "route").mkdir()
+        for f, data in (("pcb_geometry_main.json", self.geo), ("sim/net_currents.json", self.currents),
+                        ("route/main_board.json", self.shapes and self.board_read())):
+            if data is not None:       # None: `pcb dump`, `edakit sim` or `route read` never ran
                 (art / f).write_text(json.dumps(data))
         d = root / "build" / "fab" / "main"
         (d / "gerber").mkdir(parents=True)
@@ -252,7 +274,8 @@ def findings(rows):
     return sorted((r["id"], r["result"]) for r in rows if r["result"] not in ("pass", "info"))
 
 
-CHECKS = ["L-1", "L-2", "L-3", "L-4", "L-5", "L-7", "L-8", "L-9", "L-10", "L-11", "L-12", "F-1", "F-2", "F-3", "F-5"]
+CHECKS = ["L-1", "L-2", "L-3", "L-4", "L-5", "L-7", "L-8", "L-9", "L-10", "L-11", "L-12", "L-13", "F-1", "F-2", "F-3",
+          "F-5"]
 
 
 def test_the_clean_export_passes_every_check(project):
@@ -302,6 +325,14 @@ def detour(ex, project):
 def slot(ex, project):
     x, y, _ = ex.pth[0]
     ex.pth[0] = (x, y - 0.375, x, y + 0.375, 0.45)
+
+
+def crowd(ex, project):
+    """C2 fixed left of D1, its GND pad 0.09 mm from D1's VIN pad (anode) – PCB and plan agree, and the boxes reach
+    0.16 mm into each other, within the plan's silk_overlap_mm."""
+    board_file(project, "C2 = { x = 20,", "C2 = { x = 8.01,")
+    board_file(project, 'edge_ok = ["J1"]', 'edge_ok = ["J1"]\nsilk_overlap_mm = 0.2')
+    ex.move("C2", 8.01 - 20)
 
 
 def assembled_j1(ex, project):
@@ -371,6 +402,13 @@ FAULTS = [
     # L-12
     ("the circuit's edge part not fixed", lambda ex, p: board_file(p, "J1 = { x = 3", "# J1 = { x = 3"),
      [("L-12", "fail", "J1: not in hardware/boards/main.toml [place] – the circuit wants it at the board edge")]),
+    # L-13
+    ("two parts with their pads closer than the clearance", crowd,
+     [("L-13", "fail", "C2.2 (GND) – D1.2 (VIN): 0.090 mm apart on TOP, below the clearance 0.165 mm")]),
+    ("the board never read by route read", lambda ex, p: setattr(ex, "shapes", None),
+     [("L-13", "fail", "build/edakit/route/main_board.json missing (edakit route read)")]),
+    ("a part moved since the board was read", lambda ex, p: ex.read_off.update(C2=1),
+     [("L-13", "fail", "C2.1, C2.2 moved or changed since: edakit route read")]),
     # F-1
     ("another LCSC number in EasyEDA's BOM", lambda ex, p: ex.bom[2].update(lcsc="C15850"),
      [("F-1", "fail", "C2: graph C45783, EasyEDA C15850")]),
@@ -415,6 +453,16 @@ def test_each_fault_is_found_by_its_check(project, fault, expected):
     for cid, result, text in expected:
         assert any(r["id"] == cid and r["result"] == result and text in r["actual"] for r in rows), \
             [(r["result"], r["actual"]) for r in rows if r["id"] == cid]
+
+
+def test_a_waived_pad_pair_is_listed_with_its_reason(project):
+    def waived(ex, p):
+        crowd(ex, p)
+        graph(p, lambda g: p.comp(g, "C2").update(waive={"L-13": "test: close on purpose"}))
+    rows = run(project, waived)
+    assert findings(rows) == [("L-13", "waived")]
+    w = next(r for r in rows if r["result"] == "waived")
+    assert w["reason"] == "test: close on purpose" and "C2.2 (GND) – D1.2 (VIN): 0.090 mm" in w["check"]
 
 
 def test_every_check_has_a_fault():

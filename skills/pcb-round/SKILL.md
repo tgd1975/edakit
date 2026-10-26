@@ -76,6 +76,8 @@ describes (section 3).
   area (handbook 7.6); an area enclosed by another net's is an error, solved in the routing.
 - While a free pad (tooling hole) is in the PCB, filling pours fails – edakit takes them out and puts them back.
 - Net classes need the simulated currents (`edakit sim` first).
+- Freerouting cannot move a pad: pads of different parts on different nets closer than `clearance_mil` stop
+  `route all` at its check, without retries (L-13) – move or turn one of the two parts in `place`.
 - Freerouting is deterministic but order-dependent: `route all` retries with reshuffled DSNs when nets stay open.
   If it never closes: more room at the stuck pads in the plan, a plane for a power net (`fanout = true` for its SMD
   pads on the other side, handbook 7.5), or other layer costs; with all tracks on one side a 0 Ω bridge in the graph

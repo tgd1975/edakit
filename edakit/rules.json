@@ -232,6 +232,13 @@
    "fix": "Fix the part in [place] of the board file where the requirement holds. A requirement that cannot be kept goes back to the circuit designer as a written request – the layout side does not change the graph. A derived decoupling that does not apply is waived on the IC with its reason (waive L-12).",
    "sources": ["Analog Devices MT-101, Decoupling Techniques (Rev. 0, 2009) – https://www.analog.com/media/en/training-seminars/tutorials/MT-101.pdf", "edakit handbook 7.4 and 14.1"]
   },
+  "L-13": {
+   "title": "pads of different parts keep the clearance",
+   "rule": "Every pad keeps at least the routing clearance (clearance_mil) from every pad of another part on another net, on each copper layer both are on; a pad without a net counts as a net of its own. route check measures it before anything is written to EasyEDA, stage L on the pads of route read while they are the PCB's.",
+   "why": "Freerouting cannot move a pad, route check measured tracks and vias only, and the plan (L-7) compares part boxes, not pads. In the reference project two resistors of the star stage stood with their pads 0.09 mm apart: they passed both and were routed, and a layout review found them, not a program. EasyEDA's DRC (L-3) sees it only after the copper is written, with EasyEDA's own rule. JLCPCB makes SMD pads of different nets 0.15 mm apart at the least; the default clearance of 6.5 mil (0.165 mm) is above that.",
+   "fix": "Move or turn one of the two parts in [place] of the board file (fix it there if the auto-layout put it) until the gap is at least the clearance, then place and read the board again. Pads of one part belong to its footprint and are not checked. A pair that is close on purpose is waived on one of its parts or nets with the reason (waive L-13).",
+   "sources": ["JLCPCB PCB Manufacturing Capabilities, minimum clearances: SMD pad to pad clearance (different nets) 0.15 mm (read 2026-10-26) – https://jlcpcb.com/capabilities/pcb-capabilities", "JLCPCB, Terms and Conditions of JLCPCB Assembly Service (updated 2026-09-09), 2.2: placement and gap of the components after IPC-7351B medium or low density, components with very small gap avoided – https://jlcpcb.com/help/article/61-Terms-and-Conditions-of-JLCPCB-Assembly-Service", "edakit handbook 7.5 and 8.1"]
+  },
   "F-1": {
    "title": "BOM = graph",
    "rule": "The BOM generated from the graph equals EasyEDA's BOM per designator, and every LCSC number is in the parts database; parts with bom: false are left out on purpose.",

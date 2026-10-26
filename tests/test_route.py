@@ -642,3 +642,67 @@ def test_edge_strips_reach_the_promised_depth_in_every_inner_corner(l_board):
         reach[bend] = edge_reach(outer, route.outside_strips(rules, outer)[1])
     shallow = {b: round(r, 4) for b, r in reach.items() if r < EDGE_REACH_MM}
     assert shallow == {}    # before: 163 of 179, 77 short of even 0.392 mm, the least 0.3835 mm at 33°
+
+
+# --- pads of different parts keep the clearance (L-13, #12): R1 and R2 with pads of 0.8 x 0.9 mm in a row at y = 10;
+# R1.2 (N2) and R2.1 (N3) 0.09 mm apart, R1's own pads 0.05 mm apart
+
+PAD = ("RECT", 0.8 * MIL, 0.9 * MIL)
+
+
+def close_pads(**change):
+    """{name: {field: value}} changes single pads."""
+    xs = {"R1.1": 10.75, "R1.2": 11.6, "R2.1": 12.49, "R2.2": 13.34}
+    nets = {"R1.1": "N1", "R1.2": "N2", "R2.1": "N3", "R2.2": "N4"}
+    out = []
+    for name, x in xs.items():
+        ref, num = name.split(".")
+        out.append({**pad(ref, num, nets[name], *mm(x, 10), shape=PAD), **change.get(name, {})})
+    return out
+
+
+def gaps(pads, waivers=({}, {})):
+    return [(g["a"], g["b"], g["layers"], round(g["mil"] / MIL, 3), g["waived"])
+            for g in route.pad_gaps({"pads": pads}, 6.5, waivers)]
+
+
+def test_pad_gaps_between_parts_on_different_nets():
+    assert gaps(close_pads()) == [("R1.2", "R2.1", ["TOP"], 0.09, None)]          # not R1.1-R1.2: one part
+    pair = route.pad_gaps({"pads": close_pads()}, 6.5)[0]
+    assert route.gap_text(pair, 6.5) == "R1.2 (N2) – R2.1 (N3): 0.090 mm apart on TOP, below the clearance 0.165 mm"
+    assert gaps(close_pads(**{"R2.1": {"net": "N2"}})) == []                      # one net
+    assert gaps(close_pads(**{"R1.2": {"net": ""}, "R2.1": {"net": ""}}))[0][:2] == ("R1.2", "R2.1")  # no net: its own
+    assert gaps(close_pads(**{"R2.1": {"layer": 2}, "R2.2": {"layer": 2}})) == []  # other side
+    tht = gaps(close_pads(**{"R2.1": {"layer": 12}}))                              # through hole: on both layers
+    assert tht == [("R1.2", "R2.1", ["TOP"], 0.09, None)]
+    both = close_pads(**{"R1.2": {"layer": 12}, "R2.1": {"layer": 12}})
+    assert gaps(both) == [("R1.2", "R2.1", ["TOP", "BOTTOM"], 0.09, None)]         # one pair, both layers
+    assert gaps(close_pads(**{"R2.1": {"ref": None}})) == []                       # no part (a tooling hole)
+    assert gaps(close_pads(**{"R2.1": {"x": mm(12.555, 10)[0]}}))[0][3] == 0.155  # below 6.5 mil (0.1651 mm)
+    assert gaps(close_pads(**{"R2.1": {"x": mm(12.5651, 10)[0]}})) == []          # at the clearance
+    assert gaps(close_pads(), ({"R2": "close on purpose"}, {})) == [("R1.2", "R2.1", ["TOP"], 0.09, "close on purpose")]
+    assert gaps(close_pads(), ({}, {"N2": "net tie"}))[0][4] == "net tie"
+
+
+def test_route_check_finds_pads_too_close_before_anything_is_written(tmp_path, capsys):
+    """The proposal's case: on a 40 x 20 mm board, `route check` reported 0 findings for R1.2 (N2) and R2.1 (N3)
+    0.090 mm apart. Every net has one pad, the SES no tracks: only L-13 has something to find."""
+    from argparse import Namespace
+    (tmp_path / "edakit.toml").write_text('[project]\nname = "t"\n[boards.main]\n')
+    (tmp_path / "hardware" / "boards").mkdir(parents=True)
+    (tmp_path / "hardware" / "boards" / "main.toml").write_text("[outline]\nrect = [40, 20]\n")
+    cfg = config.load(tmp_path / "edakit.toml")
+    P = route.paths(cfg, cfg.board())
+    P["board"].write_text(json.dumps({"pcb": "main", "components": [], "pads": close_pads(),
+                                      "outlines": [[mm(0, 0), mm(40, 0), mm(40, 20), mm(0, 20)]]}))
+    P["ses"].write_text("(session t (routes (resolution mil 100) (parser) (network_out)))")
+    args = Namespace(board=None, action="check", verbose=False, clearance=None, passes=None, threads=1,
+                     no_optimizer=False, cleanup=False)
+    assert route.main(cfg, args) == 2
+    out = capsys.readouterr().out
+    assert "pads of different parts: 1 pairs closer than the clearance 6.5 mil" in out
+    assert "R1.2 (N2) – R2.1 (N3): 0.090 mm apart on TOP" in out and "clearances/keep-outs: 0 findings" in out
+    (tmp_path / "hardware" / "graph.json").write_text(json.dumps(
+        {"components": [{"designator": "R2", "waive": {"L-13": "close on purpose"}}], "nets": []}))
+    assert route.main(cfg, args) == 0                                              # waived in the graph
+    assert "0 pairs closer than the clearance 6.5 mil, 1 waived (L-13)" in capsys.readouterr().out

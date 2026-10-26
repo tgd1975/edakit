@@ -23,7 +23,7 @@ edakit gate --easyeda    # plus S, L, F – EasyEDA with the bridge, minutes
 | E – Simulation | operating points, stress, function, every LED checked | E-1 … E-4 (chapter 5) |
 | *project stages* | e.g. K – mechanics of an enclosure | `[[release.stages]]`, see below |
 | S – Schematic | EasyEDA schematic = graph | S-2 per board |
-| L – Board | PCB = graph and plan, copper from the Gerber files, the circuit's hand-over kept | L-1 … L-12 |
+| L – Board | PCB = graph and plan, copper from the Gerber files, the circuit's hand-over kept, pads apart | L-1 … L-13 |
 | F – Manufacturing | BOM, stock, pick and place, Gerber set | F-1 … F-5 |
 
 **Stage L** (per board, `edakit fab`):
@@ -41,6 +41,7 @@ edakit gate --easyeda    # plus S, L, F – EasyEDA with the bridge, minutes
 | L-10 | every pad sits where the library footprint has the pad with that number (`pad_map` for intended swaps) | a pad swap that was reset by EasyEDA |
 | L-11 | short current loops (`[[loops]]` of the board file and `layout.loops` of the graph): shortest path over tracks per pad pair within its limit | a switching regulator loop routed 61 mm around the board |
 | L-12 | the plan keeps the circuit's hand-over: `layout.fixed`, `.edge`, `.near` of the graph, a decoupling capacitor of its own next to every IC (7.4) | the auto-layout put a decoupling capacitor 24 mm from its IC; what the circuit designer knew got lost on the way to the layout |
+| L-13 | pads of different parts on different nets at least the routing clearance (`clearance_mil`) apart on every copper layer both are on; a pad without a net counts as a net of its own, pads of one part are not compared. Measured as `route check` measures it (7.5), on the pads of `route read` (`<artifacts>/route/<board>_board.json`) – pcb.json has no pad shapes –, and only while every pad there sits where the PCB has it, on its layer and net; otherwise L-13 fails and asks for `route read`. `waive: {"L-13": "…"}` on one of the two parts or nets lists the pair as waived | two resistors stood with their pads 0.09 mm apart: the plan compares boxes, `route check` measured only tracks and vias, and only EasyEDA's DRC could have seen it, after the copper was written |
 
 **Stage F:**
 
@@ -58,7 +59,8 @@ the datasheet drawings, and what you compare with JLCPCB's assembly preview.
 
 **Seen red.** No EasyEDA run is needed to test stages L and F. `tests/test_fab_run.py` cuts the example down to its
 input stage (J1, D1, C2 on a 30 × 20 mm board) and writes the export for it: the files `edakit fab` collects, the
-footprint geometry and the net currents. `edakit fab --offline` on that export passes every row. Then each entry of
+footprint geometry, the net currents and the board as `route read` saw it (pads with their shapes, for L-13).
+`edakit fab --offline` on that export passes every row. Then each entry of
 `FAULTS` builds one fault into a copy: a pad net, a part moved or turned, a short or an open net in the Gerber copper,
 a hole too small in the drill file, a changed LCSC number, a part missing from the pick-and-place file, a tooling
 hole missing from the NPTH file. The check that should find the fault fails (or warns) and names the part, net or
