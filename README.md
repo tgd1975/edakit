@@ -66,6 +66,7 @@ edakit hints                    # design hints for the parts in the graph (bulk 
 edakit rules G-11               # what a check is about, why, what to do, sources
 edakit sim                      # ngspice: every supply x load x tolerance corner (E) – seconds
 edakit schematic draw           # the schematic as SVG from graph and parts – no EasyEDA (enough without a PCB)
+edakit handover                 # what the circuit hands over to the layout – where the PCB designer starts
 edakit schematic create --save  # template schematic from the graph
 edakit schematic layout --save  # readable board schematic: blocks, wires, GPIO table
 edakit pcb parts --write        # parts into the PCB, no "Import Changes" dialog
@@ -78,9 +79,10 @@ edakit gate --easyeda           # release gate: protocol, manifest, files for JL
 
 In Claude Code the skills do the orchestration: `/edakit:new-project`, `/edakit:circuit-design`, `/edakit:start`,
 `/edakit:hardware-change`, `/edakit:part-search`, `/edakit:pcb-round`, `/edakit:release`, `/edakit:decision-round`;
-the agents `electrical-reviewer` and `pcb-reviewer` do the independent reviews whose results are the sign-offs. The
-design (`circuit-design`) and its review are kept apart: the session that designs does not review
-([handbook 14](handbook/14-design.md)).
+the agents `electrical-reviewer` and `pcb-reviewer` do the independent reviews whose results are the sign-offs.
+Circuit, layout and review are separate roles: the circuit designer hands the board over in writing – `layout` in the
+graph, shown by `edakit handover` and kept by the plan check L-12 – the PCB designer works from that in a session of
+its own, and the session that designs does not review ([handbook 14.1](handbook/14-design.md#141-roles)).
 
 What a project teaches goes back with `/edakit:propose-rule`: a check, hint, block or part fact as an issue here,
 sealed with its SHA-256. An Action triages it – accepted and built into one pull request of rule proposals, rejected

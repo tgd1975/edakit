@@ -5,6 +5,7 @@
     edakit hints                     design hints that apply to the graph, notes from the parts database
     edakit block list|show|add       building blocks with checked parts into the graph
     edakit sim                       stage E: ngspice operating points of all scenarios (offline, seconds)
+    edakit handover                  what the circuit hands over to the layout: state, sign-offs, layout requirements
     edakit schematic create|check|copy|layout
     edakit schematic draw            the schematic as SVG from graph and parts database – no EasyEDA (offline)
     edakit pcb dump|plan|parts|nets|apply|tooling|pour
@@ -60,6 +61,10 @@ def build_parser():
     p = sub.add_parser("sim", help="simulation (stage E)")
     p.add_argument("--json", help="write every single check as JSON")
     p.add_argument("--keep", help="keep netlists and ngspice output in this directory")
+    _common(p)
+
+    p = sub.add_parser("handover", help="the hand-over from the circuit to the layout: state, sign-offs, requirements")
+    p.add_argument("--board")
     _common(p)
 
     p = sub.add_parser("schematic", help="generate, check, copy or lay out a schematic in EasyEDA – or draw it without")
@@ -177,6 +182,9 @@ def main(argv=None):
         except run.SimError as e:
             print(f"edakit sim: {e}", file=sys.stderr)
             return 1
+    if args.command == "handover":
+        from . import handover
+        return handover.main(cfg, args)
     if args.command == "schematic":
         from . import schematic
         return schematic.main(cfg, args)

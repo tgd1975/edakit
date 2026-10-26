@@ -59,6 +59,7 @@ class Board:
     place: dict = field(default_factory=dict)         # designator -> Placement (fixed parts)
     near: dict = field(default_factory=dict)          # part -> [host parts it must sit next to]
     near_mm: float = 6.0
+    edge_mm: float = 1.0                              # layout.edge of the graph: part box at most this far from the outline
     edge_ok: set = field(default_factory=set)         # parts allowed to touch or overhang the outline
     park: tuple = (10.0, -15.0)                       # where `pcb parts --write` drops new parts (mm, EasyEDA)
     routing: dict = field(default_factory=dict)
@@ -198,6 +199,7 @@ def _board(name, b):
         place={ref: _placement(ref, v) for ref, v in b.get("place", {}).items()},
         near={k: [v] if isinstance(v, str) else list(v) for k, v in b.get("near", {}).items()},
         near_mm=float(b.get("near_mm", 6.0)),
+        edge_mm=float(b.get("edge_mm", 1.0)),
         edge_ok=set(b.get("edge_ok", [])),
         park=tuple(map(float, b.get("park", [10, -15]))),
         routing=b.get("routing", {}),

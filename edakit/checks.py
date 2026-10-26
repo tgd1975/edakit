@@ -3,7 +3,8 @@
     edakit check [--release] [--json FILE]
 
   G-1  structure: unique names, every pin in exactly one net or "nc", nets with >= 2 pins, a voltage range per net,
-       a known board per component, nets across boards only through a cable
+       a known board per component, nets across boards only through a cable, layout requirements that name parts
+       and pins of the graph (handover.py)
   G-2  pin locks: pins the firmware relies on are on the expected nets ([checks] pin_locks in edakit.toml), and an
        optional pin table in a Markdown document matches the graph ([checks] doc_pin_table)
   G-3  voltage domains: net voltage range within the pin limits (vmax) from the parts database
@@ -42,7 +43,7 @@ import re
 from collections import Counter, defaultdict
 from pathlib import Path
 
-from . import rules
+from . import handover, rules
 
 CAP_FACTOR = 1.5      # rated voltage >= 1.5 x max. voltage across
 DIODE_FACTOR = 1.5    # VRRM >= 1.5 x max. reverse voltage
@@ -152,6 +153,8 @@ def check_structure(d, rep, boards):
         on = {d.comps[r.partition(".")[0]].get("board") for r in net["pins"] if r.partition(".")[0] in d.comps}
         if len(on) > 1 and not cable_pins & set(net["pins"]):
             rep.error("G-1", f"net {net['name']} spans several boards without a cable")
+    for problem in handover.problems(d):
+        rep.error("G-1", problem)
 
 
 def check_pin_locks(d, rep, cfg_checks, root):

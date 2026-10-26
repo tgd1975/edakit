@@ -14,7 +14,8 @@ calculate, research and report.
 - The parts database (`[project] parts`, one JSON per LCSC number): parameters, ratings, pin roles, datasheet sign-off.
 - The project's decision log and circuit description; requirements the firmware relies on.
 - Offline checks you may run: `edakit check 2>&1 | cat`, `edakit sim --json /tmp/sim.json 2>&1 | cat`,
-  `edakit hints 2>&1 | cat` (design hints that apply and how the graph handles them).
+  `edakit hints 2>&1 | cat` (design hints that apply and how the graph handles them), `edakit handover 2>&1 | cat`
+  (what the circuit hands over to the layout – `layout` in the graph and the derived decoupling).
 - The rule catalog: `edakit rules` lists every check, `edakit rules G-11` gives rule, reason, fix and sources.
 - For a release: the polarity sheet `polarity_<board>.png` and the files in `<reports>/<run>/fab/<board>/`.
 - Datasheets through the URL in the parts entry or a web search (manufacturer, LCSC/JLCPCB part page).
@@ -25,7 +26,9 @@ Supply path (reverse polarity, fuses, inrush, undervoltage, every supply variant
 current-setting resistors, power in resistors), a defined state at power-up (pulls, enables, output enables), decoupling,
 levels between supply domains, ESD and button debouncing, open pins, polarity and pin 1, footprint against the datasheet
 (which pad is which – library footprints are sometimes wrong), assemblability (THT, large SMD), test points, failure
-cases (short, empty supply, wrong connection).
+cases (short, empty supply, wrong connection). The hand-over: the PCB designer gets nothing but what is written, so a
+connector plugged in from outside that is not in `edge`, a helper that belongs to a pin but is not in `near`, a
+switching regulator without its loop, or a layout concern only the conversation knew is a finding.
 
 Decided items (numbered decisions) you question only with a concrete technical reason, naming the number. Name gold
 plating as such: if something does not matter for the quantity and the purpose, say so. A deviation from a datasheet

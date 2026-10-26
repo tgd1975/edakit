@@ -46,6 +46,7 @@ Example: [the Christmas bell's graph](https://github.com/tgd1975/automatic_chris
 | net `bus` | `"i2c"` marks SDA and SCL nets whose pins do not say so (MCU pins called GP4): G-11 checks them |
 | `cables` | wires between boards: connector pins joined 1:1; the cable is no part, its resistance feeds the simulation |
 | `hints` | design hints that are taken care of, `{"H-1": "C1 1000 µF next to J1"}` – chapter 14.3 |
+| `layout` | the hand-over to the layout: `fixed`, `edge`, `near`, `loops`, `notes` – chapters 7.4 and 14.1; G-1 checks that the names exist |
 
 ## 3.2 Conventions that save trouble
 

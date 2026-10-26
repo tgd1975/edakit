@@ -4,7 +4,8 @@ mounting and tooling holes, copper pours, EasyEDA's auto-layout.
     edakit pcb dump [--ref U1,J1]   footprint geometry -> <artifacts>/pcb_geometry_<board>.json
                                     (turns every measured part to 0°/TOP and leaves it there – run apply afterwards)
     edakit pcb plan                 offline: check the plan (overlaps, outline, holes, THT pins under parts of the
-                                    other side, near), airline length, preview PNG, net classes from the simulation
+                                    other side, near; L-12 the layout requirements of the circuit), airline length,
+                                    preview PNG, net classes from the simulation
     edakit pcb parts [--write]      parts of the board schematic -> PCB without the "Import Changes" dialog
     edakit pcb nets [--write]       pad nets in the PCB = graph
     edakit pcb apply                outline, holes, tooling holes, fixed parts (locked); all other parts unlocked
@@ -24,7 +25,7 @@ import math
 import re
 import time
 
-from . import eda
+from . import eda, handover
 from .config import BOTTOM, MIL_PER_MM, TOP
 from .design import Design, natural_key
 from .eda import MCPError, api, ensure_pcb_focus
@@ -65,6 +66,10 @@ def part_box(board, geo, p):
 
 def overlap(a, b, gap=0.0):
     return a[0] < b[2] + gap and b[0] < a[2] + gap and a[1] < b[3] + gap and b[1] < a[3] + gap
+
+
+def box_gap(a, b):
+    return max(b[0] - a[2], a[0] - b[2], b[1] - a[3], a[1] - b[3], 0)
 
 
 def outline_polygon(board):
@@ -140,15 +145,65 @@ def check_plan(cfg, board, geo, place, boxes, tht):
             if hits:
                 problems.append(f"{r} ({other}): {len(hits)} THT pins of the other side underneath")
     for part, hosts in board.near.items():
-        if part in boxes:
-            for host in hosts:
-                if host in boxes:
-                    a, b = boxes[part], boxes[host]
-                    gap = max(b[0] - a[2], a[0] - b[2], b[1] - a[3], a[1] - b[3], 0)
-                    if gap > board.near_mm:
-                        problems.append(f"{part}: {gap:.1f} mm from {host} (near_mm {board.near_mm:g})")
+        loose = [d for d in (part, *hosts) if d not in place]
+        if loose:   # the auto-layout knows nothing about belonging: near holds only between fixed parts
+            problems.append(f"near {part}: {', '.join(loose)} not fixed – near counts only between fixed parts")
+            continue
+        for host in hosts:
+            if part in boxes and host in boxes and box_gap(boxes[part], boxes[host]) > board.near_mm:
+                problems.append(f"{part}: {box_gap(boxes[part], boxes[host]):.1f} mm from {host} "
+                                f"(near_mm {board.near_mm:g})")
     problems += led_rows(board, geo, place, Design.from_config(cfg))
     return problems
+
+
+def check_handover(board, design, place, boxes):
+    """L-12: the plan keeps the layout requirements of the circuit (handover.py) – parts that are not fixed, too far
+    from the edge or from their host, an IC without a decoupling capacitor of its own next to it."""
+    from shapely.geometry import box
+    edge = outline_polygon(board).exterior
+    where = f"[boards.{board.name}.place]"
+    reqs = handover.requirements(design, board.name)
+    out = []
+    for r in reqs:
+        if r.part not in place:
+            want = {"fixed": "fixed", "edge": "at the board edge", "near": f"next to {', '.join(r.others)}",
+                    "decoupling": f"fixed with its decoupling capacitor ({r.net})"}[r.kind]
+            out.append(f"{r.part}: not in {where} – the circuit wants it {want}")
+        elif r.kind == "edge" and r.part in boxes:
+            dist = box(*boxes[r.part]).distance(edge)
+            if dist > board.edge_mm:
+                out.append(f"{r.part}: {dist:.1f} mm from the board edge – the circuit wants it at the edge "
+                           f"(edge_mm {board.edge_mm:g})")
+        elif r.kind == "near":
+            for host in r.others:
+                if host not in place:
+                    out.append(f"{host}: not in {where} – {r.part} must sit next to it")
+                elif r.part in boxes and host in boxes and box_gap(boxes[r.part], boxes[host]) > board.near_mm:
+                    out.append(f"{r.part}: {box_gap(boxes[r.part], boxes[host]):.1f} mm from {host} – the circuit "
+                               f"wants it next to it (near_mm {board.near_mm:g})")
+    # decoupling: every IC gets a capacitor of its own – two ICs sharing one while another sits far away is no
+    # decoupling (a matching per supply net, Kuhn's augmenting paths)
+    ics = [r for r in reqs if r.kind == "decoupling" and r.part in boxes]
+    for net in sorted({r.net for r in ics}):
+        close = {r.part: [c for c in r.others if c in boxes and box_gap(boxes[c], boxes[r.part]) <= board.near_mm]
+                 for r in ics if r.net == net}
+        owner = {}
+
+        def assign(ic, seen):
+            for c in close[ic]:
+                if c not in seen:
+                    seen.add(c)
+                    if c not in owner or assign(owner[c], seen):
+                        owner[c] = ic
+                        return True
+            return False
+        for r in ics:
+            if r.net == net and not assign(r.part, set()):
+                caps = r.others[0] if len(r.others) == 1 else f"one of {', '.join(r.others)}"
+                out.append(f"{r.part}: no capacitor of its own from {net} to {design.ground} within "
+                           f"{board.near_mm:g} mm – fix {caps} next to it")
+    return out
 
 
 def led_rows(board, geo, place, design, tol=1.0):
@@ -260,6 +315,7 @@ def plan(cfg, board):
     problems = [f"{r}: in the plan but not in the footprint geometry (edakit pcb parts --write, then dump)"
                 for r in missing]
     problems += check_plan(cfg, board, geo, place, boxes, tht)
+    problems += [f"L-12 {p}" for p in check_handover(board, Design.from_config(cfg), place, boxes)]
     for p in problems:
         print("  !", p)
     print(f"  {len(place)} fixed parts, {len(unplaced)} for the auto-layout; airline length of the fixed parts "

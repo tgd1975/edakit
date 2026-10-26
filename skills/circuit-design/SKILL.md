@@ -9,8 +9,9 @@ argument-hint: "<what the circuit must do>"
 Wanted: $ARGUMENTS. The graph is the only source (`${CLAUDE_PLUGIN_ROOT}/handbook/03-hardware-graph.md`); how rules,
 hints and blocks fit together: `14-design.md`.
 
-You design, you do not sign off. The second opinion is the agent electrical-reviewer in its own session – a design
-reviewed by its designer has not been reviewed.
+You design the circuit; you neither sign it off nor lay out the board. The second opinion is the agent
+electrical-reviewer in its own session – a design reviewed by its designer has not been reviewed. The layout is the PCB
+designer's, in a session of its own that gets only what you write down (section 7).
 
 ## 1. Requirements
 
@@ -62,11 +63,32 @@ A hint that is taken care of gets a line in the graph: `"hints": {"H-1": "C1 100
 
 ## 7. Hand over
 
-The agent electrical-reviewer reviews the design; its findings go into a decision round. Then the skill
-hardware-change takes the graph to EasyEDA – unless there is no PCB (a development board and hand wiring): then the
-drawing is the schematic, and the project is done without EasyEDA.
+What you know about the board goes into the graph as `layout` – the PCB designer gets nothing else, and the plan check
+holds the layout to it (L-12, handbook 7.4):
+
+```json
+"layout": {"fixed": ["SW1", "D2"], "edge": ["J1"], "near": {"R1": "U2"},
+           "loops": [{"a": "C5.1", "b": "U3.2", "max_mm": 8, "what": "buck input loop"}],
+           "notes": ["D2 to D9 form the bar: one row, in this order"]}
+```
+
+- `edge`: what is plugged in from outside. `fixed`: what a person presses or looks at, and parts with a mechanical
+  constraint from the enclosure.
+- `near`: helpers that belong to a pin – a current-setting resistor, a crystal and its capacitors, ESD protection at
+  its connector, a feedback divider. The decoupling capacitor of every IC is derived, no line needed.
+- `loops`: the hot loop of a switching regulator (pads of one net, checked on the routed board by L-11).
+- `notes`: everything else the layout must know and no program checks – the layout review reads it.
+
+```bash
+edakit check 2>&1 | cat      # G-1 also checks the names in layout
+edakit handover 2>&1 | cat   # the hand-over as the PCB designer will read it
+```
+
+The agent electrical-reviewer reviews the circuit and the hand-over; its findings go into a decision round. Then the
+PCB designer takes over in a session of its own: skill pcb-round, starting with `edakit handover`. Without a PCB (a
+development board and hand wiring) the drawing is the schematic, and the project is done without EasyEDA.
 
 ## Report
 
 Requirements as understood, blocks and parts used, computed values, open decisions, results of check, hints and sim,
-check candidates, where the drawing is.
+check candidates, where the drawing is, the hand-over (`edakit handover`).

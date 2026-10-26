@@ -87,8 +87,9 @@ EDA-specific), but if you run parallel sessions in one repository, build or adop
 9. **Name stages and checks with words.** "Stage L (board)", "L-9 (hole fits the lead)" – nobody remembers letters.
 10. **Cost matters, effort is no argument.** A cheaper part is worth a gate run; a gate run is routine, not a cost.
 11. **Requests to the user stand apart** at the end of a message, not hidden in a paragraph.
-12. **Design and review are two roles.** The main session designs (skill circuit-design), the agent
-    electrical-reviewer reviews in its own session. A design reviewed by its designer has not been reviewed.
+12. **Circuit, layout and review are separate roles** (chapter 14.1). The circuit designer (skill circuit-design)
+    hands over in writing, the PCB designer works from that in a session of its own (skill pcb-round), and the agents
+    electrical-reviewer and pcb-reviewer review in theirs. A design reviewed by its designer has not been reviewed.
 13. **A finding a rule could have found can become a check.** Reviewers mark such findings as check candidates; the
     user decides, nothing is filed by itself; an accepted candidate is a decision in the project's log, goes to the
     edakit repository as a proposal when the user asks (skill propose-rule), and is triaged and built there (skills

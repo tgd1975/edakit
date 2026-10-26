@@ -1,6 +1,6 @@
 ---
 name: hardware-change
-description: Carry a hardware change through completely – hardware graph, parts database, checks, simulation, schematics in EasyEDA, PCB parts and nets, documentation. Use when a part, value, net, pin, board assignment or a design decision is changed or added in an edakit project.
+description: Carry a circuit change through completely – hardware graph, parts database, checks, simulation, the hand-over to the layout, documentation – and hand it to the PCB designer. Use when a part, value, net, pin, board assignment or a design decision is changed or added in an edakit project, also when the layout asks for a circuit change.
 argument-hint: "<what changes>"
 ---
 
@@ -9,6 +9,9 @@ argument-hint: "<what changes>"
 The only source is the hardware graph (`[project] graph` in edakit.toml). **Never change the schematic or the PCB
 directly** – EasyEDA content is generated and gets regenerated. Why: `${CLAUDE_PLUGIN_ROOT}/handbook/01-approach.md`,
 format: `03-hardware-graph.md`. Change: $ARGUMENTS
+
+This is the circuit designer's side. EasyEDA – schematic and PCB – is the PCB designer's, in a session of its own
+(skill pcb-round, handbook 14.1); this skill ends with the hand-over.
 
 ## 0. Decision
 
@@ -38,33 +41,26 @@ edakit sim 2>&1 | cat       # exit 2 = finding: find the cause, do not argue it 
 Plus the project's own generated files and tests (firmware pin tables etc.). A change of the protection path or of a
 check also changes the tests that prove the check finds faults – run them, CI will otherwise find it later.
 
-## 3. Schematics (start skill first)
+## 3. Hand-over to the layout
+
+A part that is plugged in, pressed or seen, a helper that belongs to a pin, a hot loop: update `layout` in the graph
+(circuit-design section 7). Then:
 
 ```bash
-edakit schematic create --save 2>&1 | cat     # template from the graph (minutes on big boards)
-edakit schematic check 2>&1 | cat             # template = graph
-edakit schematic layout --save 2>&1 | cat     # board schematic: parts synced, rewired
-edakit schematic check --schematic <board schematic> 2>&1 | cat
+edakit schematic draw 2>&1 | cat   # the changed circuit as a drawing
+edakit handover 2>&1 | cat         # what the PCB designer gets
 ```
 
-Before the PCB is linked: `edakit schematic copy` + `layout`. After that `copy` refuses (the PCB would lose its
-schematic) and `layout` syncs parts in place (a swapped part keeps its UniqueId and the link to its footprint).
+The PCB designer takes it over in its own session with the skill pcb-round – it brings the change into the EasyEDA
+schematic and the PCB (`schematic create/layout`, `pcb parts/nets`) and checks the plan against the hand-over (L-12).
 
-## 4. PCB
-
-- Only nets changed: `edakit pcb nets --write`.
-- Parts added, swapped or removed: `edakit pcb parts` (show), then `--write` – creates, swaps, deletes, links, copies
-  the schematic properties, sets pad nets, measures the geometry, saves. No dialog. Then the pcb-round skill.
-- If parts were newly placed in the schematic, the DRC may show "Netlist Error – Import Changes" until the import view
-  was opened once in the GUI – request that click as the start skill describes (section 3).
-
-## 5. Documentation and sign-offs
+## 4. Documentation and sign-offs
 
 - Circuit description / decision log / BOM notes of the project.
 - Every change of graph, parts database or simulation config changes the circuit hash: sign-offs with scope
   'circuit' (e.g. M-1) no longer count and must be redone for the new state – by the agent, not the user.
 
-## 6. Finish
+## 5. Finish
 
 Commit graph, parts, generated files and docs together (the project's git workflow). Report: what changed, which checks
-are green, what is left in EasyEDA.
+are green, what the hand-over asks of the layout, what the PCB designer has to bring into EasyEDA.

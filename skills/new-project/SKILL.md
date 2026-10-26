@@ -45,6 +45,7 @@ Create in the repository root (ask only for what you cannot sensibly default):
    schematic, EasyEDA is not needed, and `edakit.toml` needs only `[project] name` and a `[boards.<name>]` with a
    `title`. With a PCB: the user creates the EasyEDA project once by hand (File → New → Project, named like
    `[project] name`) – the local desktop client refuses `DMT_Project.createProject`. Then the start skill.
-4. Continue with the hardware-change skill for every further change and pcb-round for the layout.
+4. Continue with the hardware-change skill for every further change of the circuit. The layout is the PCB
+   designer's: skill pcb-round in a session of its own, starting from `edakit handover` (handbook 14.1).
 
 Report: which files were created, what is still open (parts without entry, missing outline, first decisions).

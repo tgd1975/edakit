@@ -24,7 +24,10 @@ assembly preview at JLCPCB.
        or plated slots narrower than JLCPCB's minimum: warn
   L-10 every pad sits where the library footprint has the pad with that number (pad_map in the parts DB for
        intended swaps)
-  L-11 short current loops ([[boards.<b>.loops]]): shortest path over tracks of the same net per pad pair
+  L-11 short current loops ([[boards.<b>.loops]] and layout.loops of the graph): shortest path over tracks of the
+       same net per pad pair
+  L-12 the plan keeps the layout requirements of the circuit: layout.fixed, .edge, .near of the graph and a
+       decoupling capacitor next to every IC (handover.py)
   F-1  BOM from the graph = BOM of EasyEDA; every LCSC number in the parts database
   F-2  every BOM part listed in JLCPCB's assembly catalogue with stock for `quantity` boards
   F-3  pick and place: every BOM part exactly once, side and rotation = PCB; sides/SMD as [release] assembly says
@@ -45,7 +48,7 @@ import zipfile
 from collections import Counter, defaultdict
 from pathlib import Path
 
-from .. import gerber
+from .. import gerber, handover
 from ..config import BOTTOM, MIL_PER_MM, TOP
 from ..design import Design, natural_key
 
@@ -246,6 +249,9 @@ def check_pcb(cfg, board, design, d, rows):
                  f"{len(place)} parts" + (f", {len(off)} off: {'; '.join(off[:8])}" if off else ""), "± 0.02 mm")
         rows.add("L", "L-7", board.name, "plan without findings (outline, overlaps, holes, THT pins, near)", not problems,
                  "; ".join(problems[:10]) or "none", "none")
+        kept = pcbmod.check_handover(board, design, place, boxes)
+        rows.add("L", "L-12", board.name, "plan keeps the layout requirements of the circuit (fixed, edge, near, "
+                 "decoupling)", not kept, "; ".join(kept[:10]) or "all kept", "all kept")
     else:
         rows.add("L", "L-7", board.name, "footprint geometry for the plan checks", False, f"{geo_file.name} missing "
                  "(edakit pcb dump)", "present")
@@ -429,16 +435,18 @@ def loop_length_mm(data, a, b, snap=0.5, pad_mm=0.9):
     return None
 
 
-def check_loops(board, d, rows):
-    if not board.loops:
+def check_loops(board, design, d, rows):
+    """L-11 over the loops of the plan and those the circuit hands over (layout.loops of the graph)."""
+    loops = board.loops + handover.loops(design, board.name)
+    if not loops:
         return
     data = json.loads((d / "pcb.json").read_text())
-    found = [(a, b, limit, what, loop_length_mm(data, a, b)) for a, b, limit, what in board.loops]
+    found = [(a, b, limit, what, loop_length_mm(data, a, b)) for a, b, limit, what in loops]
     bad = [f"{a}-{b} ({what}): " + ("no track" if mm is None else f"{mm} mm") + f" > {limit} mm"
            for a, b, limit, what, mm in found if mm is None or mm > limit]
     rows.add("L", "L-11", board.name, "short current loops: path over tracks per pad pair within the limit", not bad,
              "; ".join(bad) or "; ".join(f"{a}-{b} {mm} mm" for a, b, _, _, mm in found),
-             ", ".join(f"{a}-{b} <= {limit} mm" for a, b, limit, _ in board.loops))
+             ", ".join(f"{a}-{b} <= {limit} mm" for a, b, limit, _ in loops))
 
 
 def check_copper(board, design, d, rows):
@@ -590,7 +598,7 @@ def run(cfg, board, out, offline=False, verbose=False):
     check_pcb(cfg, board, design, d, rows)
     check_copper(board, design, d, rows)
     check_drills(board, design, d, rows)
-    check_loops(board, d, rows)
+    check_loops(board, design, d, rows)
     check_fab(cfg, board, design, d, rows)
     if (d / "gerber").exists():
         from . import polarity

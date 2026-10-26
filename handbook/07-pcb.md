@@ -5,6 +5,7 @@ everything that matters (in edakit.toml), EasyEDA's auto-layout for the rest, **
 silkscreen. Every step can be repeated; every step checks itself.
 
 ```bash
+edakit handover              # what the circuit hands over: state, sign-offs, what the plan must keep (14.1)
 edakit pcb parts --write     # parts of the board schematic -> PCB (no "Import Changes" dialog)
 edakit pcb dump              # footprint geometry -> <artifacts>/pcb_geometry_<board>.json
 edakit pcb plan              # offline: check the plan, preview PNG, net classes
@@ -74,21 +75,39 @@ section 3).
 U1 = { x = 29, y = 14.5, rot = 0, side = "top" }
 J1 = { x = 84, y = 12, rot = 90, side = "top" }
 
-[boards.main.near]       # must sit within near_mm of the host
-C1 = "U2"
+[boards.main.near]       # the layout's own: fixed parts within near_mm of the host
+C2 = "U1"
 ```
 
 Fix everything the auto-layout must not decide: connectors and anything at the edge, controls, ICs with their
 decoupling capacitors and pull resistors, LEDs and anything visible, parts with mechanical constraints. EasyEDA's
 auto-layout places only unlocked parts, only on TOP, and knows nothing about belonging – it once put a decoupling
-capacitor 24 mm from its IC.
+capacitor 24 mm from its IC. That is why `near` holds only between fixed parts: an entry for a part the auto-layout
+places is a finding.
+
+**What the circuit hands over** (L-12) comes first. The circuit designer writes it into the graph, the PCB designer
+keeps it (14.1); `edakit handover` lists it:
+
+```json
+"layout": {"fixed": ["SW1", "D2"], "edge": ["J1"], "near": {"R1": "U2"},
+           "loops": [{"a": "C5.1", "b": "U3.2", "max_mm": 8, "what": "buck input loop"}],
+           "notes": ["D2 to D9 form the bar: one row, in this order"]}
+```
+
+`fixed` parts need a position in `place`; `edge` parts also a box within `edge_mm` of the outline (default 1 mm);
+`near` parts sit within `near_mm` of their host. Every IC with a supply pin gets a capacitor of its own from that
+supply to ground within `near_mm` – derived from the graph, matched one capacitor per IC, so two ICs cannot share one
+while another sits far away; an IC whose capacitor is elsewhere on purpose carries `waive: {"L-12": "…"}`. `loops`
+join the plan's `[[boards.<b>.loops]]` for L-11 on the routed board, and `notes` are for the PCB designer and the
+layout review. A requirement the plan cannot keep goes back to the circuit as a written request – the layout does not
+change the graph.
 
 `edakit pcb plan` checks offline: overlaps per side, outline (0.3 mm margin; `edge_ok` for connectors), keep-outs of
-holes and tooling holes, THT pins of one side under parts of the other, `near` distances, **LEDs side by side with
-their anode towards the same side** (whoever solders by the "+" mark should not have to turn every other one; the
-library footprints of one LED series may put the mark on different pads); it prints the airline length
-of the fixed parts (a number to compare placements) and writes `<artifacts>/pcb_plan_<board>.png`. Look at the picture
-before `apply`.
+holes and tooling holes, THT pins of one side under parts of the other, `near` distances, the circuit's layout
+requirements (L-12), **LEDs side by side with their anode towards the same side** (whoever solders by the "+" mark
+should not have to turn every other one; the library footprints of one LED series may put the mark on different
+pads); it prints the airline length of the fixed parts (a number to compare placements) and writes
+`<artifacts>/pcb_plan_<board>.png`. Look at the picture before `apply`.
 
 `edakit pcb dump` turns every part it measures to 0° on TOP to read its geometry and **leaves it there** – run `apply`
 and the auto-layout afterwards.

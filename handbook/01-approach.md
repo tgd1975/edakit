@@ -62,6 +62,8 @@ With the graph as the only source:
    pad nets directly, own DSN instead of the DSN export). A dialog that remains must be a plain OK.
 9. **Every rule says why.** Each check has a catalog entry with its reason, what to do and its sources; a finding comes
    with that explanation, and a review finding that a rule could have found becomes a check (chapter 14).
+10. **Roles hand over in writing.** The circuit designer and the PCB designer work in sessions of their own; what the
+    layout must know is in the graph (`layout`), not in a conversation, and a check holds the plan to it (14.1).
 
 ## What it achieved
 

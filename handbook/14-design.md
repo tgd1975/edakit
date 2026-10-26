@@ -3,15 +3,28 @@
 Chapters 3 to 8 check a circuit. This chapter is about the step before: getting from "five LEDs, a servo, USB power"
 to a graph – and about the knowledge the checks are made of.
 
-## 14.1 Two roles
+## 14.1 Roles
 
 | Role | Who | Does |
 |---|---|---|
-| designer | the main session, skill `circuit-design` | asks for the requirements in one decision round, picks blocks and parts, computes values, writes the graph, works through `edakit check`, `edakit hints` and `edakit sim` |
-| reviewer | agent `electrical-reviewer`, its own session | reads graph, parts, simulation and datasheets, changes nothing, returns numbered findings – its result is the sign-off M-1 |
+| circuit designer | a session with the skills `circuit-design` and `hardware-change` | asks for the requirements in one decision round, picks blocks and parts, computes values, writes the graph, works through `edakit check`, `edakit hints` and `edakit sim`, draws the schematic, writes the hand-over |
+| electrical reviewer | agent `electrical-reviewer`, its own session | reads graph, hand-over, parts, simulation and datasheets, changes nothing, returns numbered findings – its result is the sign-off M-1 |
+| PCB designer | a session of its own with the skill `pcb-round` | works from the hand-over: EasyEDA schematic, PCB, placement plan, routing, silkscreen; does not change the graph |
+| EasyEDA operator | agent `easyeda-operator` | runs one long EasyEDA step for the PCB designer and returns only the result |
+| PCB reviewer | agent `pcb-reviewer`, its own session | reads plan, hand-over, routing and manufacturing files, changes nothing – its result is the sign-off M-5 |
+| decider | the user | answers the decision rounds: warnings, looks and operation, money, what becomes a check |
 
-The designer never reviews its own design. A second opinion from the session that made the decisions repeats the
-decisions; the reviewer starts without them.
+No role checks its own work: a second opinion from the session that made the decisions repeats the decisions; the
+reviewer starts without them.
+
+**The hand-over.** Circuit and layout are separate sessions, so what the layout must know is written down – the
+PCB designer gets nothing else. It is `layout` in the graph: parts that are fixed (pressed, looked at), at the edge
+(plugged in from outside), next to another part (a current-setting resistor at its pin), the hot loops of switching
+regulators, and notes no program checks. The decoupling capacitor of every IC is derived from the graph.
+`edakit handover` shows all of it together with the circuit's state and sign-offs, and L-12 holds the plan to it
+(7.4). Because it is part of the graph, the hand-over is reviewed and signed with the circuit (M-1). A circuit change
+the layout needs – another GPIO, another footprint – goes back as a written request in the decision log; the PCB
+designer does not change the graph. A project without a PCB ends at the hand-over: the drawing is the schematic.
 
 ## 14.2 The rule catalog
 

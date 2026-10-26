@@ -560,6 +560,28 @@
         ]
       }
     ],
-    "cables": []
+    "cables": [],
+    "layout": {
+      "fixed": [
+        "SW1",
+        "D2",
+        "D3",
+        "D4",
+        "D5",
+        "D6",
+        "D7",
+        "D8",
+        "D9"
+      ],
+      "edge": [
+        "J1"
+      ],
+      "near": {
+        "R1": "U2"
+      },
+      "notes": [
+        "D2 to D9 form the bar: one row, in this order from left to right, as the user reads it."
+      ]
+    }
   }
 }

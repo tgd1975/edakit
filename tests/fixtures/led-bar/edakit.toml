@@ -53,10 +53,11 @@ D6 = { x = 69, y = 34, rot = 0, side = "top" }
 D7 = { x = 73, y = 34, rot = 0, side = "top" }
 D8 = { x = 77, y = 34, rot = 0, side = "top" }
 D9 = { x = 81, y = 34, rot = 0, side = "top" }
+C1 = { x = 66, y = 25, rot = 0, side = "top" }    # decoupling of U2 – the circuit wants it next to U2 (L-12)
+R1 = { x = 59, y = 17, rot = 90, side = "top" }   # layout.near of the graph
+C2 = { x = 29, y = 28, rot = 0, side = "top" }
 
-[boards.main.near]               # decoupling and helpers: the plan check wants them within near_mm of the host
-C1 = "U2"
-R1 = "U2"
+[boards.main.near]               # the layout's own: within near_mm of the host; the circuit's are in the graph
 C2 = "U1"
 
 [boards.main.routing]            # Freerouting rules (mil); EasyEDA's DRC must accept them as well
