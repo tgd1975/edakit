@@ -1,4 +1,4 @@
-"""Stage E seen red: reversed LED, overloaded part, too narrow range, too weak supply."""
+"""Stage E seen red: reversed LED, overloaded part, too narrow range, too weak supply, LED without a known driver."""
 
 import json
 import shutil
@@ -397,3 +397,64 @@ def test_driver_sdo_in_the_netlist(project):
     read_back(project)                                            # unconnected: left out, as before; connected: 50 Ω
     text, _ = netlist.build(Design.from_config(project.config()), sim, sc)
     assert "R_U2_14 n_led_sdo 0 50" in text.splitlines()
+
+
+def status_led(project, sim):
+    """The block led on GP7 (net SIG): R3 150 Ω and D10 (green) to GND, on no driver output; SIG is an MCU output, high
+    in all_on – a load without leds_on."""
+    from test_block import signals
+    from edakit import block
+    signals(project, {"SIG"})
+    block.add(project.config(), "led", "STATUS", {"in": "SIG"})
+    sim["mcu"]["U1"]["outputs"].append("SIG")
+    sim["loads"]["all_on"]["gpio"]["SIG"] = 1
+
+
+def test_led_without_a_known_driver(project):
+    sim = json.loads((project.root / "hardware" / "sim.json").read_text())
+    status_led(project, sim)                                      # D10 lights in all_on, and nothing checks it
+    bad = failing(simulate(project, sim))
+    assert {(c["id"], c["scenario"].split("/")[1], c["item"], c["check"]) for c in bad} == {
+        ("E-4", "all_on", "D10", "LED without a known driver")}
+    assert len(bad) == 6                                          # 3 supplies x 2 corners
+    assert bad[0]["actual"] == "cathode at GND, on no driver output; the load has no leds_on"
+    sim["loads"]["all_on"]["leds_on"] = ["D10"]                   # the load says it lights: E-3 checks it
+    out = simulate(project, sim)
+    assert not failing(out)
+    on = [c for c in out["checks"] if c["item"] == "D10" and c["check"] == "LED on"]
+    assert len(on) == 6 and all(c["result"] == "pass" for c in on)
+    assert not [c for c in out["checks"] if c["id"] == "E-4"]   # E-4 reports only an LED without a state
+
+
+def test_led_left_out_of_the_simulation(project):
+    sim = json.loads((project.root / "hardware" / "sim.json").read_text())
+    status_led(project, sim)
+    sim["loads"]["all_on"]["leds_on"] = ["D10"]
+    part = project.part("C2297")                                  # D10's own entry, its cathode role misspelt:
+    part["lcsc"] = "C9002297"                                     # the netlist cannot place it
+    part["pins"]["2"]["role"] = "k"
+    project.save_part("C9002297", part)
+    g = project.graph()
+    project.comp(g, "D10")["lcsc"] = "C9002297"
+    project.save_graph(g)
+    bad = failing(simulate(project, sim))
+    assert {(c["id"], c["item"], c["check"], c["actual"]) for c in bad} == {
+        ("E-4", "D10", "LED without a known driver",
+         "left out of the simulation: no pin with the role cathode in its parts entry")}
+    assert len(bad) == 12                                         # in every scenario
+    project.comp(g, "D10")["lcsc"] = "C2297"                      # the entry with both roles: simulated and checked
+    project.save_graph(g)
+    assert not failing(simulate(project, sim))
+
+
+def test_unused_colour_is_no_led_without_a_driver(project):
+    rgb_led(project)                                              # blue unused: D10.4 and OUT7 (U2.12) in nc
+    g = project.graph()
+    g["graph"]["nets"] = [n for n in g["graph"]["nets"] if n["name"] != "LED7"]
+    project.comp(g, "D10")["nc"] = ["4"]
+    project.comp(g, "U2")["nc"].append("12")
+    project.save_graph(g)
+    out = simulate(project)
+    assert not failing(out) and all(s["status"] == "ok" for s in out["scenarios"])
+    assert not [c for c in out["checks"] if c["item"] == "D10_BLUE"]
+    assert [c for c in out["checks"] if c["item"] == "D10_GREEN" and c["check"] == "LED current (LED6)"]

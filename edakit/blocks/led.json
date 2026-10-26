@@ -34,7 +34,7 @@
  ],
  "covers": ["E-2", "E-3"],
  "notes": [
-  "sim.json: the driving net under the MCU's outputs, the LED's designator in leds_on of the loads where it lights; edakit sim then checks the current against the LED and the MCU pin (E-2) and that it lights (E-3).",
+  "sim.json: the driving net under the MCU's outputs, and leds_on in every load – the LED's designator where it lights, [] or the others where it is dark (E-4); edakit sim then checks the current against the LED and the MCU pin (E-2) and that it lights or stays dark (E-3).",
   "From an MCU pin keep the current within the pin's rating (gpio_i_max_a in the MCU's parts entry); for more light a transistor (block npn-switch) or an LED driver."
  ]
 }

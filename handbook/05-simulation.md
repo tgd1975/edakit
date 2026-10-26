@@ -84,6 +84,10 @@ cable plugged in, external supply off"; `"info": true` turns failures into infor
 want to see and record as a decision, but which must not block every commit. Battery projects add
 `"cells": {"fresh": {"v": 1.6, "r": 0.15}, "empty": {"v": 1.0, "r": 0.4}}` and supplies like `{"BT1": "fresh"}`.
 
+`leds_on` lists the LEDs that light in a load – the designator, or `D10_RED` for one colour of an RGB LED, `"all"` for
+every one; the others are expected dark. LEDs on the output of a constant-current sink go by the channel instead (5.3).
+As soon as an LED is on no driver output, every load needs `leds_on`, `[]` when none lights (E-4).
+
 ## 5.3 Checks
 
 | Check | What |
@@ -91,9 +95,13 @@ want to see and record as a decision, but which must not block every commit. Bat
 | E-1 | the operating point converges |
 | E-2 | stress of every part against its ratings with derating: resistor power ≤ 50 %, currents ≤ 80 %, capacitor/diode/transistor voltages ≤ 67 %, LED forward current and reverse voltage, fuse hold current at ambient, connector, switch and relay contact current, relay coil voltage, the current of every MCU output (`gpio_i_max_a`) and of all outputs together, sourced and sunk (`gpio_i_total_max_a`) – each pin may be fine and the sum beyond the package |
 | E-3 | function: current from every source (≤ `i_max_a`), regulator outputs within tolerance, input above `vin_min`, LDO junction temperature, MCU supply voltage and load on its regulator, MCU inputs at a defined level (≤ VIL or ≥ VIH – a 3.3 V signal into a 5 V AVR is the classic case), MCU outputs only on pins that can drive (an output on an input-only pin is reported and not driven), LED driver output headroom and junction temperature, every LED on or dark as the load says (driver channels: ≥ 80 % of its share of the set current, also for an LED behind 0 Ω bridges or one resistor; parallel LEDs share within a ratio – below the table), relays pull in (`v_operate`) and release (`v_release`) as the load says, diodes that must block (`expect_blocking`), every net inside its declared range `v`, plus the plugin's checks |
+| E-4 | LED has a known driver: in every scenario every LED – each colour of an RGB LED – has a state E-3 checks, its cathode on a driver output (directly, behind 0 Ω bridges or one resistor) or the load's `leds_on`; an LED with neither, or one the netlist left out because its parts entry lacks a role it reads (anode, cathode and their colours, 4.1), fails as "LED without a known driver" |
 
 A reversed LED on a driver output fails as "LED reversed"; a reversed LED elsewhere stays dark where it should light.
-That is the polarity check of the graph.
+That is the polarity check of the graph – for an LED with an expected state. E-4 makes sure every LED has one: an LED
+on no driver output in a load without `leds_on` would be skipped, and so would an LED whose parts entry the netlist
+cannot read, with neither polarity nor current checked. Both fail E-4 instead. An LED with a pin in nc (the unused
+colour of an RGB LED) is not simulated and needs nothing.
 
 An LED counts on the output of a constant-current sink when its cathode is on that output – directly, behind 0 Ω
 bridges, or behind one resistor that joins its cathode net to this output and no other: a series resistor that takes

@@ -20,7 +20,7 @@ edakit gate --easyeda    # plus S, L, F – EasyEDA with the bridge, minutes
 |---|---|---|
 | P – Parts | parts database complete and signed | P-1, G-9 (chapter 3, 4) |
 | G – Graph | rule checks | G-1 … G-14 (chapter 3) |
-| E – Simulation | operating points, stress, function | E-1 … E-3 (chapter 5) |
+| E – Simulation | operating points, stress, function, every LED checked | E-1 … E-4 (chapter 5) |
 | *project stages* | e.g. K – mechanics of an enclosure | `[[release.stages]]`, see below |
 | S – Schematic | EasyEDA schematic = graph | S-2 per board |
 | L – Board | PCB = graph and plan, copper from the Gerber files, the circuit's hand-over kept | L-1 … L-12 |

@@ -14,6 +14,9 @@ plus "extra_scenarios" listed there.
        to a single driver output on that output – parallel LEDs with balancing resistors), relays pull in and release
        (v_operate, v_release), blocking diodes, every net inside its declared voltage range 'v', plus the project
        plugin's own checks
+  E-4  every LED – each colour of an RGB LED – has a state E-3 checks in every scenario: its cathode on a driver output
+       (directly, behind 0 Ω bridges or behind a balancing resistor) or the load has leds_on; an LED with neither, or
+       one the netlist left out because its parts entry lacks a role, fails as "LED without a known driver"
 
 Rule, reason and fix of each check: rules.json (`edakit rules E-2`).
 
@@ -319,6 +322,13 @@ def functional(design, cfg, res, meta, load, ck, plugin):
             else:
                 ck.add("E-3", label, "LED dark", i, f"≤ {crit['led_off_max_a'] * 1e6:.0f} µA",
                        i <= crit["led_off_max_a"], unit=" A")
+        else:   # neither polarity nor current would be checked, and the run would pass without a word
+            ck.add("E-4", label, "LED without a known driver", f"cathode at {info['cathode_net']}, on no driver output;"
+                   " the load has no leds_on", "the cathode on a driver output, or the load's leds_on", False)
+    for name, info in meta["leds_left_out"].items():
+        ck.add("E-4", name[2:].upper(), "LED without a known driver", "left out of the simulation: no pin with the "
+               f"role {' or '.join(info['roles'])} in its parts entry", "the roles the simulation reads (handbook 4.1)",
+               False)
     for key, leds in groups.items():
         net, on, iset = chan_of[key]
         if not on:
