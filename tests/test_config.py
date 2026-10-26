@@ -134,3 +134,33 @@ def test_pours_pour_only():
 def test_pours_pour_only_mistakes(pours):
     with pytest.raises(ConfigError):
         _pours("b", pours)
+
+
+def test_pour_regions_keys(tmp_path):
+    from edakit.config import _board
+    b = _board("b", {}, {})
+    assert (b.pour_regions, b.pour_min_piece_mm2) == (False, 2.0)                # no key, no change
+    (tmp_path / "edakit.toml").write_text('[project]\nname = "t"\n[boards.main]\n')
+    (tmp_path / "hardware" / "boards").mkdir(parents=True)
+    (tmp_path / "hardware" / "boards" / "main.toml").write_text("pour_regions = true\npour_min_piece_mm2 = 1\n")
+    b = load(tmp_path / "edakit.toml").board()                                    # keys of the board file
+    assert (b.pour_regions, b.pour_min_piece_mm2) == (True, 1.0)
+
+
+@pytest.mark.parametrize("b", [
+    {"pour_regions": "yes"},
+    {"pour_regions": True, "pour_min_piece_mm2": -1},
+    {"pour_regions": True, "pours": [{"net": "GND", "layers": ["TOP"]}, {"net": "V", "layers": ["TOP"], "plane": True}]},
+    {"pour_regions": True, "pours": [{"net": "GND", "layers": ["TOP"]}, {"net": "V", "layers": ["TOP"], "clearance_mm": -1}]},
+])
+def test_pour_regions_mistakes(b):
+    from edakit.config import _board
+    with pytest.raises(ConfigError):
+        _board("b", {}, b)
+
+
+def test_pour_regions_plane_on_a_layer_of_its_own():
+    from edakit.config import _board
+    b = _board("b", {}, {"pour_regions": True, "pours": [{"net": "GND", "layers": ["TOP"]},
+                                                         {"net": "V", "layers": ["BOTTOM"], "plane": True}]})
+    assert b.pours[1]["plane"]

@@ -14,7 +14,8 @@ start, has a fixed 900 s limit and left nets open. So routing happens outside Ea
                connects it
     5 apply    delete all tracks, vias and pours in the PCB, create the ones from the SES, compare geometrically,
                delete anything unplanned
-    6 pours    pours of [[pours]] anew and filled; optional stitching of loose islands with vias
+    6 pours    pours of [[pours]] anew and filled; optional stitching of loose islands with vias. With
+               pour_regions, nets that share a layer get the outlines of their own areas, computed from board and SES
     7 reload   save, close the PCB tab, open it again – otherwise the DRC reports false connection errors
     8 drc      EasyEDA DRC with details -> <board>_drc.json; exit 2 on findings
 
@@ -54,6 +55,9 @@ from .eda import api, ensure_pcb_focus
 LAYERS = {1: "TOP", 2: "BOTTOM"}
 SNAP_MIL = 0.5  # points closer than this count as one (EasyEDA drops pieces < ~0.5 mil)
 POURED_UNIT = 10  # mil per unit: EasyEDA returns pour fills (PourFills) in 10 mil, tracks and pads in mil
+REGION_GROW_MM = 0.2       # pour_regions: an outline reaches this far beyond its pieces, under the tracks between nets
+REGION_SIMPLIFY_MM = 0.03  # and is simplified by this much (thousands of points otherwise)
+REGION_NESTED_MM2 = 0.5    # a piece of another net larger than this inside a net's outline: EasyEDA cannot fill that
 
 FR_VERSION = "2.4.1"
 FR_ZIP = f"https://github.com/freerouting/freerouting/releases/download/v{FR_VERSION}/freerouting-{FR_VERSION}-linux-x64.zip"
@@ -88,6 +92,18 @@ class Rules:
                     self.pour_only[p["net"]].append((layer, p.get("clearance_mm", POUR_CLEARANCE_MM) * MIL_PER_MM,
                                                      p.get("min_width_mm", POUR_MIN_WIDTH_MM) * MIL_PER_MM))
         self.pour_only = dict(self.pour_only)
+        # pour_regions: layer -> [(net, clearance mil, min width mil)] in claim order (priority, then as written), for
+        # the layers that several nets pour on
+        self.regions = {}
+        if board.pour_regions:
+            by_layer = defaultdict(list)
+            for _, p in sorted(enumerate(board.pours), key=lambda ip: (ip[1].get("priority", 1), ip[0])):
+                for layer in p.get("layers", ["TOP", "BOTTOM"]):  # as `pcb pour` pours them
+                    if all(n != p["net"] for n, _, _ in by_layer[layer]):
+                        by_layer[layer].append((p["net"], p.get("clearance_mm", POUR_CLEARANCE_MM) * MIL_PER_MM,
+                                                p.get("min_width_mm", POUR_MIN_WIDTH_MM) * MIL_PER_MM))
+            self.regions = {layer: nets for layer, nets in sorted(by_layer.items()) if len(nets) > 1}
+        self.min_piece = board.pour_min_piece_mm2 * MIL_PER_MM ** 2
 
     def net_class(self, net):
         for name, (w, nets) in self.classes.items():
@@ -235,6 +251,13 @@ def planes(rules):
 
 def _parts(geom):
     return [g for g in getattr(geom, "geoms", [geom]) if not g.is_empty]
+
+
+def _polygons(geom):
+    """The polygons of any geometry, also inside collections."""
+    if geom.geom_type == "Polygon":
+        return [] if geom.is_empty else [geom]
+    return [p for g in getattr(geom, "geoms", []) for p in _polygons(g)]
 
 
 def convex_pieces(geom, min_area=1.0):
@@ -609,21 +632,18 @@ def segments(rules, routes, data=None):
 
 # --- 4 check ------------------------------------------------------------------------------------------------------
 
-def pour_pieces(rules, data, routes, segs=None):
-    """The pours of the pour-only nets as EasyEDA fills them, computed offline: {(net, layer): [polygon, …]} in mil.
-    Per net and layer: the pour outline of `pcb pour`, without the copper of other nets on that layer – pads (those
-    without a net too), tracks, vias – grown by clearance_mm, opened by half of min_width_mm (EasyEDA does not fill
-    narrower necks). The net's own copper is not taken away: the pour reaches its pads, tracks and vias. Other pours on
-    the same layer are not taken into account."""
-    if not rules.pour_only:
-        return {}
+def _pour_area(rules):
+    """The pour outline of `pcb pour` in mil."""
     board = rules.board
     if not board.outline:
-        raise SystemExit(f"board {board.name}: pour_only needs the outline in the board file – the pour outline is "
-                         "computed from it")
-    outline = Polygon([tuple(v * MIL_PER_MM for v in board.eda_point(x, y)) for x, y in pcb.pour_outline(board)])
-    segs = segments(rules, routes, data) if segs is None else segs
-    copper = {"TOP": [], "BOTTOM": []}  # (net, copper) per layer
+        raise SystemExit(f"board {board.name}: pour_only and pour_regions need the outline in the board file – the pour "
+                         "outline is computed from it")
+    return Polygon([tuple(v * MIL_PER_MM for v in board.eda_point(x, y)) for x, y in pcb.pour_outline(board)])
+
+
+def _layer_copper(rules, data, routes, segs):
+    """(net, copper) per layer: pads (those without a net too), tracks, vias."""
+    copper = {"TOP": [], "BOTTOM": []}
     for p in data["pads"]:
         for layer in pad_layers(p):
             copper[layer].append((p["net"], pad_outline(p)))
@@ -634,14 +654,109 @@ def pour_pieces(rules, data, routes, segs=None):
         for v in r["vias"]:
             for layer in copper:
                 copper[layer].append((net, Point(v).buffer(rules.via[1] / 2)))
+    return copper
+
+
+def _computed(outline, copper, net, clearance, width, taken=None):
+    """The pour of a net on one layer: the outline without foreign copper grown by clearance (and without `taken`, the
+    area earlier nets fill, grown by clearance), opened by half of width."""
+    area = outline.difference(unary_union([g for n, g in copper if n != net]).buffer(clearance))
+    if taken is not None:
+        area = area.difference(taken.buffer(clearance))
+    if width > 0:
+        area = area.buffer(-width / 2).buffer(width / 2)
+    return [g for g in _parts(area) if g.geom_type == "Polygon"]
+
+
+def pour_pieces(rules, data, routes, segs=None, regions=None):
+    """The pours of the pour-only nets as EasyEDA fills them, computed offline: {(net, layer): [polygon, …]} in mil.
+    Per net and layer: the pour outline of `pcb pour`, without the copper of other nets on that layer – pads (those
+    without a net too), tracks, vias – grown by clearance_mm, opened by half of min_width_mm (EasyEDA does not fill
+    narrower necks). The net's own copper is not taken away: the pour reaches its pads, tracks and vias. On a layer
+    that several nets pour on, with pour_regions: the pieces the net claims there (pour_regions); without it, the other
+    pours are not taken into account."""
+    if not rules.pour_only:
+        return {}
+    outline = _pour_area(rules)
+    segs = segments(rules, routes, data) if segs is None else segs
+    copper = _layer_copper(rules, data, routes, segs)
+    claims = {}
+    if rules.regions:
+        claims = (regions or _regions(rules, outline, copper))["claims"]
     out = {}
     for net, specs in sorted(rules.pour_only.items()):
         for layer, clearance, width in specs:
-            area = outline.difference(unary_union([g for n, g in copper[layer] if n != net]).buffer(clearance))
-            if width > 0:
-                area = area.buffer(-width / 2).buffer(width / 2)
-            out[(net, layer)] = [g for g in _parts(area) if g.geom_type == "Polygon"]
+            out[(net, layer)] = claims[(net, layer)] if (net, layer) in claims \
+                else _computed(outline, copper[layer], net, clearance, width)
     return out
+
+
+def pour_regions(rules, data, routes, segs=None):
+    """pour_regions: on every layer that several nets pour on, the nets claim their area in priority order. A net takes
+    the pieces of its computed pour (pour_pieces) without what the nets before it fill, kept away from that by its
+    clearance_mm, opened by its min_width_mm – those that hold its copper there (pads, tracks, vias; EasyEDA drops the
+    others as islands) and have more than pour_min_piece_mm2 outside that copper grown by the clearance (EasyEDA leaves
+    smaller ones empty). Its outlines: the pieces without their holes, grown by REGION_GROW_MM, simplified, within the
+    pour outline and without the outlines of the nets before it. A piece of one net inside the outline of another needs
+    an outline with a hole, which EasyEDA does not fill: a problem naming the place.
+    -> {"claims": {(net, layer): [piece]}, "outlines": {(net, layer): [polygon]}, "problems": [text]}, in mil."""
+    if not rules.regions:
+        return {"claims": {}, "outlines": {}, "problems": []}
+    segs = segments(rules, routes, data) if segs is None else segs
+    return _regions(rules, _pour_area(rules), _layer_copper(rules, data, routes, segs))
+
+
+def _regions(rules, outline, copper):
+    claims, outlines, problems = {}, {}, []
+    grow, tolerance = REGION_GROW_MM * MIL_PER_MM, REGION_SIMPLIFY_MM * MIL_PER_MM
+    for layer, nets in rules.regions.items():
+        taken = []
+        for net, clearance, width in nets:
+            own = unary_union([g for n, g in copper[layer] if n == net])
+            near = own.buffer(clearance)
+            pieces = _computed(outline, copper[layer], net, clearance, width, unary_union(taken) if taken else None)
+            claims[(net, layer)] = [g for g in pieces if g.intersects(own) and g.difference(near).area > rules.min_piece]
+            taken += claims[(net, layer)]
+        done = Polygon()
+        for net, _, _ in nets:
+            mine = claims[(net, layer)]
+            hull = unary_union([Polygon(g.exterior) for g in mine])
+            for other, _, _ in nets:
+                for g in claims[(other, layer)] if other != net else []:
+                    inside = hull.intersection(g)
+                    if inside.area > REGION_NESTED_MM2 * MIL_PER_MM ** 2:
+                        c = inside.representative_point()
+                        x, y = rules.board.plan_point(c.x / MIL_PER_MM, c.y / MIL_PER_MM)
+                        problems.append(f"{other} {layer}: its pour at ({x:.1f}, {y:.1f}) mm lies inside the pour of "
+                                        f"{net} – EasyEDA does not fill an outline with a hole; route so that {net} "
+                                        f"does not enclose it, or leave {other} off {layer}")
+            area = hull.buffer(grow).simplify(tolerance).intersection(outline).difference(done) if mine else Polygon()
+            outlines[(net, layer)] = [Polygon(p.exterior) for p in _polygons(area) if any(p.intersects(g) for g in mine)]
+            done = done.union(area)
+    return {"claims": claims, "outlines": outlines, "problems": problems}
+
+
+def region_outlines(cfg, board, rules=None):
+    """pour_regions: the outlines `pcb pour` gives the nets on a shared layer, in EasyEDA mm, from the board file and
+    the SES of the last routing -> {(net, layer): [[(x, y), …], …]}; None when no layer is shared. Stops when one is
+    missing or a net's pour lies inside another's."""
+    rules = rules or Rules(board)
+    if not rules.regions:
+        return None
+    P = paths(cfg, board)
+    missing = [str(f) for f in (P["board"], P["ses"]) if not f.exists()]
+    if missing:
+        raise SystemExit(f"board {board.name}: pour_regions – the outlines on {', '.join(rules.regions)} come from the "
+                         f"routing, and {' and '.join(missing)} {'is' if len(missing) == 1 else 'are'} missing: "
+                         "`edakit route all` pours at its end, or run `edakit route read` and `edakit route route` "
+                         "first")
+    r = pour_regions(rules, json.loads(P["board"].read_text()), read_ses(P["ses"], rules))
+    if r["problems"]:
+        raise SystemExit("\n".join(r["problems"]) + "\nnothing poured")
+    for (net, layer), polys in r["outlines"].items():
+        print(f"  pour region {net} {layer}: {len(polys)} outline{'s' * (len(polys) != 1)}", flush=True)
+    return {k: [[(x / MIL_PER_MM, y / MIL_PER_MM) for x, y in list(p.exterior.coords)[:-1]] for p in polys]
+            for k, polys in r["outlines"].items()}
 
 
 def check(rules, data, routes):
@@ -738,9 +853,23 @@ def report_check(rules, data, open_nets, routes):
         for layer, _, _ in specs:
             others = sorted({p["net"] for p in rules.board.pours
                              if p["net"] != net and layer in p.get("layers", ["TOP", "BOTTOM"])})
-            if others:
+            if others and layer not in rules.regions:
                 print(f"    ! {net} {layer}: the pour of {', '.join(others)} shares the layer – the computed pour of "
-                      f"{net} does not leave it out, and EasyEDA fills overlapping pours by priority", flush=True)
+                      f"{net} does not leave it out, and EasyEDA fills overlapping pours by priority (pour_regions "
+                      "gives each net its own area)", flush=True)
+
+
+def report_regions(rules, data, routes):
+    """pour_regions: the outlines per shared layer, and what EasyEDA cannot fill -> those problems."""
+    if not rules.regions:
+        return []
+    r = pour_regions(rules, data, routes)
+    for layer, nets in rules.regions.items():
+        say(f"pour regions {layer}: " + ", ".join(f"{net} {len(r['outlines'][(net, layer)])}" for net, _, _ in nets)
+            + " outlines")
+    for line in r["problems"]:
+        print(f"    {line}", flush=True)
+    return r["problems"]
 
 
 def render(rules, data, routes, png, open_nets=None):
@@ -750,7 +879,9 @@ def render(rules, data, routes, png, open_nets=None):
     from matplotlib.patches import Polygon as MPoly
     outer, holes = board_area(data)
     segs = segments(rules, routes, data)
-    pours = pour_pieces(rules, data, routes, segs)
+    regions = pour_regions(rules, data, routes, segs)
+    pours = pour_pieces(rules, data, routes, segs, regions)
+    pours.update({k: v for k, v in regions["claims"].items() if k not in pours})  # the other nets on a shared layer
     fig, axes = plt.subplots(1, 2, figsize=(14, 8))
     for ax, side, color in ((axes[0], "TOP", "#d62728"), (axes[1], "BOTTOM", "#1f77b4")):
         ax.add_patch(MPoly(list(outer.exterior.coords), closed=True, fc="#0b3d1a", ec="#aaaaaa", lw=1))
@@ -760,6 +891,12 @@ def render(rules, data, routes, png, open_nets=None):
             ax.add_patch(MPoly(list(g.exterior.coords), closed=True, fc=color, ec="none", alpha=0.25))
             for ring in g.interiors:
                 ax.add_patch(MPoly(list(ring.coords), closed=True, fc="#0b3d1a", ec="none"))
+        for k, ((net, layer), gs) in enumerate(regions["outlines"].items()):  # pour_regions: what `pcb pour` creates
+            edge = ("#ff7f0e", "#2ca02c", "#17becf", "#e377c2", "#bcbd22")[k % 5]
+            for g in gs if layer == side else []:
+                ax.add_patch(MPoly(list(g.exterior.coords), closed=True, fc="none", ec=edge, lw=1.0, ls="--"))
+                c = g.representative_point()
+                ax.annotate(net, (c.x, c.y), color=edge, fontsize=7, ha="center")
         for p in data["pads"]:
             if side in pad_layers(p):
                 ax.add_patch(MPoly(list(pad_outline(p).exterior.coords), closed=True, fc="#c8a040", ec="none", alpha=0.9))
@@ -994,8 +1131,8 @@ def stitch_islands(rules, mcp, data, routes, net, layer_name, stitch_file):
     say(f"{net} {layer_name}: {loose} loose islands, {len(vias)} stitched with a via, {loose - len(vias)} without room")
 
 
-def fill(cfg, board, mcp, nets, keep_islands_on=None):
-    pcb.pour(cfg, board, mcp, keep_islands_on)
+def fill(cfg, board, mcp, nets, keep_islands_on=None, regions=None):
+    pcb.pour(cfg, board, mcp, keep_islands_on, regions)
     ensure_pcb_focus(mcp)
     for net in nets:
         res = mcp.call("easyeda_pcb_rebuild_copper", confirmWrite=True, net=net, timeout=300)
@@ -1005,18 +1142,19 @@ def fill(cfg, board, mcp, nets, keep_islands_on=None):
             print(f"    pour {r.get('pourId')}: {r.get('status')}", flush=True)
 
 
-def pours(cfg, board, rules, mcp, data=None, routes=None, stitch_file=None):
+def pours(cfg, board, rules, mcp, data=None, routes=None, stitch_file=None, regions=None):
     """Pours anew and filled. Tooling holes (free pads) are taken out before filling and set again afterwards –
     with a free pad in the PCB the fill fails. With stitching configured ([[pours]] stitch = "BOTTOM"),
-    fill with islands first, stitch the loose islands to the other side with vias, then fill without islands."""
+    fill with islands first, stitch the loose islands to the other side with vias, then fill without islands.
+    regions: the outlines of region_outlines for the nets on a shared layer."""
     nets = sorted({p["net"] for p in board.pours})
     pcb.remove_tooling(mcp)
     stitched = [p for p in board.pours if p.get("stitch")]
     if data is not None and stitched:
         for spec in stitched:
-            fill(cfg, board, mcp, [spec["net"]], keep_islands_on=spec["stitch"])
+            fill(cfg, board, mcp, [spec["net"]], keep_islands_on=spec["stitch"], regions=regions)
             stitch_islands(rules, mcp, data, routes, spec["net"], spec["stitch"], stitch_file)
-    fill(cfg, board, mcp, nets)
+    fill(cfg, board, mcp, nets, regions=regions)
     pcb.tooling(cfg, board, mcp)
     for pid in api(mcp, "PCB_PrimitivePoured.getAllPrimitiveId") or []:
         st = eda.state(api(mcp, "PCB_PrimitivePour.get", pid))
@@ -1063,12 +1201,14 @@ def main(cfg, args):
                     say(f"clearances/keep-outs: {len(bad)} findings")
                     for line in bad[:20]:
                         print(f"    {line}", flush=True)
-                    if not (open_nets or bad):
+                    nested = report_regions(rules, data, routes)
+                    if not (open_nets or bad or nested):
                         break
                 else:
                     if args.action == "all":
-                        raise SystemExit(f"after {attempts} attempts nets are still open or clearances too small – "
-                                         "nothing written to EasyEDA. More passes (--passes), or check rules/placement.")
+                        raise SystemExit(f"after {attempts} attempts nets are still open, clearances too small or a "
+                                         "pour inside another – nothing written to EasyEDA. More passes (--passes), or "
+                                         "check rules/placement.")
                     return 2
             elif step == "apply":
                 apply_ses(rules, mcp, read_ses(P["ses"], rules), json.loads(P["board"].read_text()), P["stitch"])
@@ -1082,9 +1222,10 @@ def main(cfg, args):
                 if problems:
                     return 2
             elif step == "pours":
+                regions = region_outlines(cfg, board, rules)  # before anything is written
                 data = json.loads(P["board"].read_text()) if P["board"].exists() else None
                 routes = read_ses(P["ses"], rules) if P["ses"].exists() else {}
-                pours(cfg, board, rules, mcp, data, routes, P["stitch"])
+                pours(cfg, board, rules, mcp, data, routes, P["stitch"], regions)
             elif step == "reload":
                 eda.reload_pcb(mcp)
                 say("PCB saved and reloaded")

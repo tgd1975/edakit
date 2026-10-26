@@ -210,8 +210,41 @@ the preview shows the computed pour. Fixed wires of the net (`routing.fixed_wire
 Freerouting leaves a net outside the network out of its SES. A plane, by contrast, is taken as connected whatever
 the tracks do to it – use it for a net Freerouting connects with vias, not for a pour that tracks cut.
 
-The computed pour assumes the layer to itself: when another net pours on the same layer, `route check` says so, since
-EasyEDA fills overlapping pours by priority. The gate's L-2 on the Gerber copper has the last word either way.
+**Several nets on one layer.** `pcb pour` gives every pour the same outline, and where pours overlap EasyEDA fills only
+the one with priority – a second net on a layer gets nothing. With `pour_regions = true` at the top of the board file,
+each net on a layer that several nets pour on gets an outline of its own area instead:
+
+```toml
+pour_regions = true                # in hardware/boards/<b>.toml, above the tables
+
+[[pours]]
+net = "GND"
+layers = ["BOTTOM"]
+pour_only = true                   # priority 1: claims first
+
+[[pours]]
+net = "V_LED"
+layers = ["BOTTOM"]
+priority = 2
+```
+
+The nets claim their area in `priority` order (1 first, ties in the order of the file). A net takes the pieces of its
+computed pour (as for pour-only nets, with its `clearance_mm` and `min_width_mm`) without what the nets before it
+fill, kept away from that by its clearance – the pieces that hold its own copper (pads, tracks, vias; EasyEDA drops the
+others as islands) and have more than `pour_min_piece_mm2` (2.0) outside that copper grown by the clearance; EasyEDA
+would leave a smaller one empty. Its outlines are those pieces without their holes, grown by 0.2 mm, simplified by
+0.03 mm, within the pour outline and without the outlines of the nets before it: one pour per outline
+(`GND_BOTTOM_1`, `GND_BOTTOM_2`, …), with the entry's priority. A layer with one net keeps the full outline.
+
+The outlines come from the board file and the SES, so `route pours` computes them (`route all` at its end); `pcb pour`
+stops with a hint while there is no routing. EasyEDA does not fill an outline with a hole, so a piece of one net inside
+the outline of another is an error naming the place – `GND_B BOTTOM: its pour at (10.0, 10.0) mm lies inside the pour
+of GND` – and nothing is poured; `route check` reports it as a finding first, and `route all` tries another routing.
+A pour-only net on a shared layer is connected by what it claims, not by the whole outline, and the preview draws the
+outlines dashed. A plane takes the whole layer, so with `pour_regions` it needs a layer of its own.
+
+Without `pour_regions`, the computed pour of a pour-only net assumes the layer to itself: when another net pours on
+the same layer, `route check` says so. The gate's L-2 on the Gerber copper has the last word either way.
 
 ## 7.7 Silkscreen
 

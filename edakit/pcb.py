@@ -11,7 +11,8 @@ mounting and tooling holes, copper pours, EasyEDA's auto-layout.
     edakit pcb apply                outline, holes, tooling holes, fixed parts (locked); all other parts unlocked
     edakit pcb autolayout           EasyEDA auto-layout of the unlocked parts, waits until positions are stable
     edakit pcb tooling              only the tooling holes again
-    edakit pcb pour                 copper pours of [[pours]] in the board file (replaces old ones, not filled)
+    edakit pcb pour                 copper pours of [[pours]] in the board file (replaces old ones, not filled);
+                                    with pour_regions the outlines on a shared layer from the last routing
 
 Plan coordinates: mm, as seen from the board's `view` side (board file); `side` of a part is the EasyEDA side.
 EasyEDA PCB unit: mil, y up. Footprint geometry is stored relative to the part origin at rotation 0 on TOP, so the
@@ -492,9 +493,10 @@ def pour_outline(board):
     return [tuple(q) for q in list(poly.exterior.coords)[:-1]]
 
 
-def pour(cfg, board, mcp, keep_islands_on=None):
+def pour(cfg, board, mcp, keep_islands_on=None, regions=None):
     """Copper pours of [[pours]] in the board file (default GND on both layers) along the outline; old pours of the same
-    nets are replaced. keep_islands_on: layer name whose islands are kept (to find them for stitching)."""
+    nets are replaced. keep_islands_on: layer name whose islands are kept (to find them for stitching). regions:
+    {(net, layer name): [outline in EasyEDA mm, …]} – a pour per outline instead (route.region_outlines)."""
     ensure_pcb_focus(mcp)
     nets = {p["net"] for p in board.pours}
     old = [eda.state(p)["PrimitiveId"] for p in api(mcp, "PCB_PrimitivePour.getAll") or []
@@ -504,13 +506,19 @@ def pour(cfg, board, mcp, keep_islands_on=None):
     pts = [board.eda_point(*q) for q in pour_outline(board)]
     for spec in board.pours:
         for layer_name in spec.get("layers", ["TOP", "BOTTOM"]):
-            ensure_pcb_focus(mcp)
-            layer = LAYER_ID[layer_name]
-            # 5th value preserveSilos: keep islands. Loose islands count as DRC connection errors – only for finding them
-            r = api(mcp, "PCB_PrimitivePour.create", spec["net"], layer, outline_arg(pts), "solid",
-                    keep_islands_on == layer_name, f"{spec['net']}_{layer_name}", spec.get("priority", 1),
-                    spec.get("line_mil", 10))
-            print(f"  pour {spec['net']} {layer_name}: {'ok' if r else 'FAILED'}")
+            shapes = (regions or {}).get((spec["net"], layer_name), [pts])
+            if not shapes:
+                print(f"  pour {spec['net']} {layer_name}: no area of its own on the shared layer – not poured")
+            for k, shape in enumerate(shapes, 1):
+                ensure_pcb_focus(mcp)
+                layer = LAYER_ID[layer_name]
+                part = f"_{k}" if len(shapes) > 1 else ""
+                # 5th value preserveSilos: keep islands. Loose islands count as DRC connection errors – only for finding
+                # them
+                r = api(mcp, "PCB_PrimitivePour.create", spec["net"], layer, outline_arg(shape), "solid",
+                        keep_islands_on == layer_name, f"{spec['net']}_{layer_name}{part}", spec.get("priority", 1),
+                        spec.get("line_mil", 10))
+                print(f"  pour {spec['net']} {layer_name}{part}: {'ok' if r else 'FAILED'}")
 
 
 def sync_nets(cfg, mcp, write=False):
@@ -705,6 +713,10 @@ def main(cfg, args):
     board = cfg.board(args.board)
     if args.action == "plan":
         return 2 if plan(cfg, board) else 0
+    regions = None
+    if args.action == "pour":  # pour_regions: the outlines from the last routing, before EasyEDA is touched
+        from . import route
+        regions = route.region_outlines(cfg, board)
     mcp = eda.start(cfg, args.verbose)
     try:
         if not eda.wait_for_bridge(mcp):
@@ -721,7 +733,7 @@ def main(cfg, args):
         elif args.action == "tooling":
             tooling(cfg, board, mcp)
         elif args.action == "pour":
-            pour(cfg, board, mcp)
+            pour(cfg, board, mcp, regions=regions)
         elif args.action == "nets":
             n = sync_nets(cfg, mcp, write=args.write)
             return 2 if n and not args.write else 0

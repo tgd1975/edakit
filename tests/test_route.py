@@ -1,6 +1,7 @@
 """DSN writer, SES reader, connectivity and clearance check of the Freerouting pipeline, offline."""
 
 import json
+import re
 
 import pytest
 
@@ -234,3 +235,166 @@ def test_pour_only_on_a_shared_layer_is_said(pour_board, capsys):
     out = capsys.readouterr().out
     assert "GND (pour-only): 2 groups – C" in out
     assert "! GND TOP: the pour of V_LED shares the layer" in out
+
+
+# --- several nets share one pour layer (#8): GND pads on the left, GND_B pads on the right, SIG across the board on
+# TOP between them, both pours on TOP. `edakit route pours` against a recorder instead of EasyEDA
+
+REGIONS = """
+pour_regions = true
+[outline]
+rect = [40, 20]
+[[pours]]
+net = "GND"
+layers = ["TOP"]
+pour_only = true
+[[pours]]
+net = "GND_B"
+layers = ["TOP"]
+pour_only = true
+priority = 2
+"""
+
+LEFT, RIGHT = [mm(5, 5), mm(5, 15)], [mm(35, 5), mm(35, 15)]
+# a closed SIG2 track around (10, 10), inside GND's area: a pocket of 1.2 mm² outside a GND_B pad and its clearance
+POCKET = {"SIG2": {"wires": [("TOP", 10, [mm(8.7, 8.7), mm(11.3, 8.7), mm(11.3, 11.3), mm(8.7, 11.3), mm(8.7, 8.7)])],
+                   "vias": []}}
+
+
+def ses(routes):
+    """An SES as Freerouting writes it (mil, resolution 100)."""
+    def net(name, r):
+        wires = " ".join(f"(wire (path {layer} {w * 100:.0f} " + " ".join(f"{x * 100:.0f} {y * 100:.0f}" for x, y in pts)
+                         + "))" for layer, w, pts in r["wires"])
+        return f"(net {name} {wires} " + " ".join(f"(via via24 {x * 100:.0f} {y * 100:.0f})" for x, y in r["vias"]) + ")"
+    return ("(session t (routes (resolution mil 100) (parser) (network_out "
+            + " ".join(net(n, r) for n, r in routes.items()) + ")))")
+
+
+class Recorder:
+    """Stands in for EasyEDA: records every API call, creates succeed, lists are empty."""
+    def __init__(self):
+        self.calls = []
+
+    def api(self, mcp, name, *args):
+        self.calls.append((name, args))
+        return True if name.endswith(".create") else []
+
+    def call(self, tool, **kw):
+        return {"results": [{"pourId": "p", "status": "ok"}]}
+
+    def close(self):
+        pass
+
+    def pours(self):
+        """The created pours: [(net, layer id, name, priority, polygon in mm)]."""
+        from shapely.geometry import Polygon
+        out = []
+        for name, a in self.calls:
+            if name == "PCB_PrimitivePour.create":
+                nums = [v for v in a[2]["$polygon"] if not isinstance(v, str)]
+                out.append((a[0], a[1], a[5], a[6], Polygon([(x / MIL, y / MIL) for x, y in zip(nums[0::2], nums[1::2])])))
+        return out
+
+
+@pytest.fixture
+def regions(tmp_path, monkeypatch):
+    """-> run(action, board file, pads, routes) -> (exit code, created pours): `edakit route <action>` or `edakit pcb
+    pour` with the board file and SES of the routing in the artifacts, EasyEDA replaced by a recorder."""
+    from argparse import Namespace
+
+    from edakit import eda, pcb
+    rec = Recorder()
+    for mod in (pcb, route):
+        monkeypatch.setattr(mod, "api", rec.api)
+        monkeypatch.setattr(mod, "ensure_pcb_focus", lambda mcp: None)
+    for name in ("open_project", "open_pcb"):
+        monkeypatch.setattr(eda, name, lambda *a, **k: None)
+    monkeypatch.setattr(eda, "connect", lambda *a, **k: rec)
+    monkeypatch.setattr(eda, "start", lambda *a, **k: rec)
+    monkeypatch.setattr(eda, "wait_for_bridge", lambda mcp: True)
+
+    def run(action, toml=REGIONS, pads=(), routes=None, ses_file=True):
+        (tmp_path / "edakit.toml").write_text('[project]\nname = "t"\n[boards.main]\n')
+        (tmp_path / "hardware" / "boards").mkdir(parents=True, exist_ok=True)
+        (tmp_path / "hardware" / "boards" / "main.toml").write_text(toml)
+        cfg = config.load(tmp_path / "edakit.toml")
+        board = cfg.board()
+        data = {"pcb": "main", "components": [], "outlines": [[mm(0, 0), mm(40, 0), mm(40, 20), mm(0, 20)]],
+                "pads": [pad(f"C{i}", "2", net, *xy) for i, (net, xy) in enumerate(
+                    [("GND", p) for p in LEFT] + [("GND_B", p) for p in RIGHT] + list(pads), 1)]
+                + [pad("TP1", "1", "SIG", *mm(20, 19)), pad("TP2", "1", "SIG", *mm(20, 1))]}
+        P = route.paths(cfg, board)
+        P["board"].write_text(json.dumps(data))
+        if ses_file:
+            P["ses"].write_text(ses(dict(SIG_TOP, **(routes or {}))))
+        args = Namespace(board=None, action=action, verbose=False, clearance=None, passes=None, threads=1,
+                         no_optimizer=False, cleanup=False)
+        if action == "pcb pour":
+            code = pcb.main(cfg, Namespace(board=None, action="pour", verbose=False))
+        else:
+            code = route.main(cfg, args)
+        return code, rec.pours()
+    return run
+
+
+def holds(poly, points):
+    from shapely.geometry import Point
+    return [poly.contains(Point(x / MIL, y / MIL)) for x, y in points]
+
+
+def test_regions_each_net_gets_its_own_outline(regions):
+    _, made = regions("pours")
+    assert [(net, layer, name, prio) for net, layer, name, prio, _ in made] == [("GND", 1, "GND_TOP", 1),
+                                                                               ("GND_B", 1, "GND_B_TOP", 2)]
+    gnd, gnd_b = made[0][4], made[1][4]
+    assert all(holds(gnd, LEFT)) and not any(holds(gnd, RIGHT))
+    assert all(holds(gnd_b, RIGHT)) and not any(holds(gnd_b, LEFT))
+    assert gnd.intersection(gnd_b).area < 1e-6                                       # no overlap
+    # SIG's edge at 20 - 0.127 mm, the pour 0.25 mm before it, the outline 0.2 mm beyond the pour
+    assert gnd.bounds[2] == pytest.approx(20 - 0.127 - 0.25 + 0.2, abs=0.01)
+
+
+def test_regions_a_sliver_gets_no_outline(regions):
+    _, made = regions("pours", pads=[("GND_B", mm(10, 10))], routes=POCKET)
+    assert [net for net, *_ in made] == ["GND", "GND_B"]                             # one outline each
+    assert not any(holds(made[1][4], [mm(10, 10)]))                                  # none for the pocket
+
+
+def test_regions_a_piece_inside_another_nets_outline_is_an_error(regions, capsys):
+    toml = REGIONS.replace("pour_regions = true", "pour_regions = true\npour_min_piece_mm2 = 1.0")
+    where = r"GND_B TOP: its pour at \(10\.0, 10\.0\) mm lies inside the pour of GND"
+    with pytest.raises(SystemExit, match=where):
+        regions("pours", toml, pads=[("GND_B", mm(10, 10))], routes=POCKET)
+    code, made = regions("check", toml, pads=[("GND_B", mm(10, 10))], routes=POCKET)
+    assert code == 2 and made == [] and re.search(where, capsys.readouterr().out)   # route check finds it first
+
+
+def test_regions_route_check_judges_a_pour_only_net_by_its_own_area(regions, capsys):
+    # a GND pad on the right as well: GND claims both sides, nothing is left for GND_B
+    code, _ = regions("check", pads=[("GND", mm(35, 10))])
+    out = capsys.readouterr().out
+    assert code == 2 and "GND_B (pour-only): 2 groups – C3.2 | C4.2" in out and "shares the layer" not in out
+    assert "pour regions TOP: GND 2, GND_B 0 outlines" in out
+    code, _ = regions("check", REGIONS.replace("pour_regions = true", ""), pads=[("GND", mm(35, 10))])
+    out = capsys.readouterr().out                                                    # as before: the whole outline
+    assert "GND_B (pour-only)" not in out and "! GND_B TOP: the pour of GND shares the layer" in out
+
+
+def test_regions_without_the_key_or_on_a_layer_of_its_own_nothing_changes(regions):
+    _, made = regions("pours", REGIONS.replace("pour_regions = true", ""))
+    assert [len(p.exterior.coords) for *_, p in made] == [5, 5] and made[0][4].equals(made[1][4])
+    alone = REGIONS + '[[pours]]\nnet = "GND"\nlayers = ["BOTTOM"]\npour_only = true\n'
+    _, made = regions("pours", alone)
+    bottom = [p for net, layer, *_, p in made if layer == 2]
+    assert len(bottom) == 1 and len(bottom[0].exterior.coords) == 5 and bottom[0].area == pytest.approx(39 * 19)
+
+
+APART = REGIONS.replace('net = "GND_B"\nlayers = ["TOP"]', 'net = "GND_B"\nlayers = ["BOTTOM"]')
+
+
+def test_regions_pcb_pour_needs_the_routing(regions):
+    with pytest.raises(SystemExit, match="pour_regions.*main.ses is missing.*route all"):
+        regions("pcb pour", ses_file=False)
+    code, made = regions("pcb pour", APART, ses_file=False)                         # no shared layer: no routing
+    assert code == 0 and [(net, layer) for net, layer, *_ in made] == [("GND", 1), ("GND_B", 2)]
