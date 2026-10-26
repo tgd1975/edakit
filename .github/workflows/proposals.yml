@@ -66,8 +66,9 @@ jobs:
           echo "skill=$skill" >> "$GITHUB_OUTPUT"
       - uses: anthropics/claude-code-action@v1
         with:
+          # one credential only: with both, Claude Code takes the API key – the subscription token goes first
           claude_code_oauth_token: ${{ secrets.CLAUDE_CODE_OAUTH_TOKEN }}
-          anthropic_api_key: ${{ secrets.ANTHROPIC_API_KEY }}
+          anthropic_api_key: ${{ !secrets.CLAUDE_CODE_OAUTH_TOKEN && secrets.ANTHROPIC_API_KEY || '' }}
           prompt: |
             Repository: ${{ github.repository }}, owner ${{ github.repository_owner }}.
             Event: ${{ github.event_name }} ${{ github.event.action }} on issue #${{ github.event.issue.number }}.
