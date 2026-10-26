@@ -1,13 +1,13 @@
 {
-  "lcsc": "C17630",
-  "mpn": "0805W8F3300T5E",
+  "lcsc": "C17471",
+  "mpn": "0805W8F1500T5E",
   "manufacturer": "UNI-ROYAL(厚声)",
   "kind": "resistor",
   "package": "0805",
   "footprint": "R0805",
   "jlc_class": "Basic Part",
   "datasheet": {
-    "url": "https://datasheet.lcsc.com/datasheet/pdf/0a975aaa49b7c97f38a963127be4a823.pdf?productCode=C17630",
+    "url": "https://datasheet.lcsc.com/datasheet/pdf/0a975aaa49b7c97f38a963127be4a823.pdf?productCode=C17471",
     "pinout_page": null
   },
   "pins": {
@@ -23,7 +23,7 @@
     }
   },
   "params": {
-    "value_ohm": 330.0,
+    "value_ohm": 150.0,
     "tolerance": 0.01
   },
   "ratings": {
@@ -32,17 +32,21 @@
   },
   "spice": {},
   "sources": [
-    "EasyEDA library and LCSC parameter table (2026-10-25): 330 Ω ±1 %, 125 mW, 150 V",
-    "LCSC stock 2026-10-25: 1 020 500 pcs"
+    "LCSC part data (2026-10-26): 150 Ω ±1 %, 125 mW, 150 V, thick film, ±100 ppm/K",
+    "LCSC stock 2026-10-26: 242 100 pcs; JLCPCB Basic Part"
   ],
   "verified": {
     "by": "Claude Opus 5.5 (datasheet check, automated)",
-    "date": "2026-10-25",
-    "datasheet": "UNI-ROYAL Thick Film Chip Resistors (same series as C17673)",
+    "date": "2026-10-26",
+    "datasheet": "UNI-ROYAL Thick Film Chip Resistors (one document for the whole series)",
     "checked": [
-      "order code 0805W8F3300: W8 = 1/8 W, F = ±1 %, 330 Ω",
+      "order code 0805W8F1500: W8 = 1/8 W, F = ±1 %, 150 Ω",
       "0805 max. working voltage 150 V"
     ],
     "open": []
+  },
+  "compliance": {
+    "rohs": true,
+    "source": "LCSC part data (RoHS), 2026-10-26"
   }
 }

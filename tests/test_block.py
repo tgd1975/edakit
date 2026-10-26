@@ -82,8 +82,8 @@ def test_designators_continue_and_nets_get_the_instance_name(project):
     assert [c["designator"] for c in comps] == ["R3", "D10"]
     assert comps[0]["label"] == "STATUS: LED series resistor" and "(block led, STATUS)" in comps[0]["notes"]
     assert new_nets == [{"name": "STATUS_ANODE", "pins": ["R3.2", "D10.1"], "v": [0, 3.4]}]   # "@in": the range of SIG
-    assert extended == {"SIG": ["R3.1"], "GND": ["D10.2"]} and copy == ["C17630"]
-    assert (project.root / "hardware" / "parts" / "C17630.json").exists()
+    assert extended == {"SIG": ["R3.1"], "GND": ["D10.2"]} and copy == ["C17471"]
+    assert (project.root / "hardware" / "parts" / "C17471.json").exists()
 
 
 def test_port_without_connect_becomes_a_net(project):
@@ -155,10 +155,15 @@ def test_several_boards_need_a_board(project):
 @pytest.mark.parametrize("name", sorted(CONNECT))
 def test_block_in_the_example_passes_the_simulation(project, name):
     signals(project, set(CONNECT[name].values()))
-    block.add(project.config(), name, "T", CONNECT[name])
+    _, comps, *_ = block.add(project.config(), name, "T", CONNECT[name])
     sim = json.loads((project.root / "hardware" / "sim.json").read_text())
+    leds = [c["designator"] for c in comps if c["type"] == "led"]
+    if leds:   # as the block's notes ask: the signal is an MCU output, and a load lights the LED (E-3)
+        sim["mcu"]["U1"]["outputs"].append("SIG")
+        sim["loads"]["t_on"] = {"gpio": {"LED_OE": 1, "SIG": 1}, "leds_on": leds}
     out = simrun.run_all(Design.from_config(project.config()), sim)
     assert [c for c in out["checks"] if c["result"] == "fail"] == []
+    assert not leds or [c for c in out["checks"] if c["check"] == "LED on" and leds[0] in c["item"]]
 
 
 def test_made_up_net_names_do_not_join_existing_nets(project):
