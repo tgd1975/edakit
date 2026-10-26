@@ -545,14 +545,18 @@ def test_without_fanout_nothing_changes(plane_board, tmp_path):
 L_SHAPE = "[outline]\npolygon = [[0, 0], [40, 0], [40, 10], [20, 10], [20, 20], [0, 20]]\n"
 
 
-@pytest.fixture
-def l_board(tmp_path):
+def outline_board(tmp_path, outline):
     (tmp_path / "edakit.toml").write_text('[project]\nname = "t"\n[boards.main]\n')
     (tmp_path / "hardware" / "boards").mkdir(parents=True)
-    (tmp_path / "hardware" / "boards" / "main.toml").write_text(L_SHAPE)
+    (tmp_path / "hardware" / "boards" / "main.toml").write_text(outline)
     board = config.load(tmp_path / "edakit.toml").board()
     data = {"pcb": "main", "components": [], "pads": [], "outlines": [[mm(x, y) for x, y in board.outline]]}
     return route.Rules(board), data
+
+
+@pytest.fixture
+def l_board(tmp_path):
+    return outline_board(tmp_path, L_SHAPE)
 
 
 def past_the_corner(gap_mm, w=10):
@@ -596,3 +600,20 @@ def test_edge_strips_of_an_outline_without_inner_corners_stay():
     frame, strips = route.outside_strips(rules, outer)
     mitred = outer.buffer(-rules.edge_um / 25.4, join_style="mitre")       # how the strips were cut before #11
     assert frame.difference(mitred).symmetric_difference(unary_union(strips)).area < 1e-6
+
+
+# a 32° notch from the top edge, its tip at (20, 15) mm: the strips are cut at every vertex of the arc around the tip,
+# and some of the slices there are smaller than 1 mil²
+
+NOTCH = "[outline]\npolygon = [[0, 0], [40, 0], [40, 20], [20.5, 20], [20, 15], [17.5, 20], [0, 20]]\n"
+
+
+def test_edge_strips_keep_the_slivers_at_a_notch_tip(tmp_path):
+    from shapely.geometry import Polygon
+    rules, data = outline_board(tmp_path, NOTCH)
+    outer = Polygon(data["outlines"][0])
+    frame, strips = route.outside_strips(rules, outer)
+    reach = 0.4 * MIL * math.cos(math.pi / 16)                # 0.392 mm: the chords of the arc, 4 per quarter circle
+    band = frame.difference(outer.buffer(-reach, quad_segs=64))
+    missing = band.difference(unary_union(strips).buffer(1e-6))     # 1e-6 mil closes the seams between the strips
+    assert missing.area < 1e-9      # before: 2.9 mil² missing, 4 slices < 1 mil² dropped, 0.296 mm reach at the tip

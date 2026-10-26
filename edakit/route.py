@@ -299,11 +299,14 @@ def outside_strips(rules, outer, margin=20.0):
     once with a rectangle. So: rectangle as boundary, everything outside the board as keep-outs. The outline is moved
     in with round joins: around an inner corner (a notch) the keep-out is an arc of the edge clearance,
     EDGE_ARC_SEGMENTS chords per quarter circle. Mitred joins reached d / sin(θ/2) into the board there – 0.57 mm at a
-    90° corner and 1.3 mm at a 36° notch with 0.4 mm. Outlines without inner corners get the same strips either way."""
+    90° corner and 1.3 mm at a 36° notch with 0.4 mm. Outlines without inner corners get the same strips either way.
+    Every piece is kept, however small: the cuts at the arc's vertices leave slices under 1 mil² at a sharp notch tip,
+    and without them the keep-out reached 0.3 mm into the board there instead of the clearance. Freerouting skips a
+    piece thinner than its 0.01 mil resolution with a warning; `route check` keeps it."""
     inner = outer.buffer(-rules.edge_um / 25.4, join_style="round", quad_segs=EDGE_ARC_SEGMENTS)
     x0, y0, x1, y1 = outer.bounds
     frame = box(x0 - margin, y0 - margin, x1 + margin, y1 + margin)
-    return frame, convex_pieces(frame.difference(inner))
+    return frame, convex_pieces(frame.difference(inner), min_area=0)
 
 
 def config_keepouts(rules, data):

@@ -206,7 +206,10 @@ Class widths must be at least the minimum of the matching EasyEDA net class rule
   round joins: around an inner corner (a notch) the keep-out is an arc of `edge_clearance_um`, 4 chords per quarter
   circle. Mitred joins reached d / sin(θ/2) into the board there – 0.57 mm at a 90° corner, 1.3 mm at a 36° notch
   with 0.4 mm. Tracks that kept the clearance were reported, and Freerouting lost that room in every notch.
-  `route check` and the fanout vias use the same strips.
+  `route check` and the fanout vias use the same strips. Every strip is kept, however small: at a sharp notch tip the
+  cuts leave slices under 1 mil², and without them the keep-out reached only 0.3 mm into the board there. Freerouting
+  skips a strip thinner than its 0.01 mil resolution with a warning ("Keepout zone … was skipped because its geometry
+  is degenerate"); that is harmless, and `route check` still tests against it.
 - `autoroute_settings` after the keep-outs: no parts read at all. A `plane` placed before the keep-outs: no
   connections read. Order matters.
 - Fanout is on by default and puts a via at every SMD pad: `--router.fanout.enabled=false`. It does not connect an
