@@ -102,12 +102,13 @@ is part of the workflow:
    user before it goes out – the issue is public – and sealed with `edakit proposal seal`, whose last line is the
    SHA-256 of the text. The decision gets the issue (`edakit: #12`).
 5. **Triage.** The Action `proposals` of the edakit repository starts on every proposal of the repository owner
-   and on the owner's answers, and runs the skill `triage-rule` in a session of its own. Correctly made: `edakit
-   proposal verify` – every section filled in, the checksum matches; a body edited by hand fails on purpose. Does it
-   make sense: new, the right kind, the sources hold, general rather than one project's choice, decidable by a program
-   (else a hint), clear enough to build. The result is one of three, as a comment on the issue: **Accepted**,
-   **Rejected** with a reason a person can check, or **Question** with the alternatives – everything between accepted
-   and rejected is a question.
+   and on the owner's answers, and runs the skill `triage-rule` in a session of its own. Each run takes along every
+   proposal still without a result, one after another, so proposals filed at the same time are not lost when GitHub
+   cancels their waiting runs. Correctly made: `edakit proposal verify` – every section filled in, the checksum
+   matches; a body edited by hand fails on purpose. Does it make sense: new, the right kind, the sources hold,
+   general rather than one project's choice, decidable by a program (else a hint), clear enough to build. The result
+   is one of three, as a comment on the issue: **Accepted**, **Rejected** with a reason a person can check, or
+   **Question** with the alternatives – everything between accepted and rejected is a question.
 6. **Build.** An accepted proposal is built with the skill `add-rule` (a skill of the repository, in
    `.claude/skills/`, not part of the plugin): catalog entry (title, rule, why, fix, sources), the check, a negative
    test that builds the fault into the example and expects the check to fail, a run against real projects to rule out
@@ -122,8 +123,10 @@ Who may propose: only the repository owner – the Action does not start for any
 says who wrote an issue. The checksum adds that the text is the one that was sealed. The Action needs the Claude
 GitHub app on the repository and one of the secrets `CLAUDE_CODE_OAUTH_TOKEN` or `ANTHROPIC_API_KEY`
 (`/install-github-app` in the terminal Claude Code, or by hand: install github.com/apps/claude on the repository,
-`claude setup-token`, `gh secret set CLAUDE_CODE_OAUTH_TOKEN`). From the Action only public projects can be cloned for the run against real
-projects; the pull request names what could not be run, and that is run by hand before merging.
+`claude setup-token`, `gh secret set CLAUDE_CODE_OAUTH_TOKEN`). A token that no longer holds shows in the step *Why
+Claude stopped* as `401 Invalid bearer token`; with a new one, `gh workflow run proposals.yml` triages what is
+waiting. From the Action only public projects can be cloned for the run against real projects; the pull request
+names what could not be run, and that is run by hand before merging.
 
 G-13 (flyback diode) and G-14 (USB-C termination) are the reference project's buzzer stage and USB-C input turned into
 rules; G-11 (I2C pull-ups), G-12 (strapping pins) and the MCU output currents of E-2 come from CircuitSmith's rule
