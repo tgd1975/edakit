@@ -27,8 +27,8 @@ ICs and modules are replaced by behaviour models, chosen by params.behavior in t
   current   constant i_a at the supply pin
   none      nothing (e.g. a module that is not powered in this design)
 
-A project adds its own models in a plugin file (edakit.toml [sim] plugin = "hardware/sim_plugin.py") that defines
-MODELS = {"name": function(netlist, des, part)}. See handbook/05-simulation.md.
+A project adds its own models in a plugin file (edakit.toml [project] sim_plugin = "hardware/sim_plugin.py") that
+defines MODELS = {"name": function(netlist, des, part)}. See handbook/05-simulation.md.
 """
 
 from __future__ import annotations

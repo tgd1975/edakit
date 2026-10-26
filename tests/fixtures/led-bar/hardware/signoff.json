@@ -1,5 +1,5 @@
 {
-  "about": "Sign-offs for the release gate (edakit gate). Each one counts only for the hash of its scope: 'circuit' = state_sha256 (graph, parts database, simulation config), 'layout' = layout_sha256 (layout files, footprint geometry). When something there changes, it no longer counts – copy the new hash from the protocol header after the check was repeated. phase: 'export' blocks the release, 'order' and 'acceptance' come after the export. An accepted warning with scope 'decision' counts regardless of the hash and refers to a numbered decision in the docs. Parts are signed in their parts entry (field 'verified').",
+  "about": "Sign-offs for the release gate (edakit gate). Each one counts only for the hash of its scope: 'circuit' = state_sha256 (graph, parts database, simulation config), 'layout' = layout_sha256 (board files, footprint geometry). When something there changes, it no longer counts – copy the new hash from the protocol header after the check was repeated. phase: 'export' blocks the release, 'order' and 'acceptance' come after the export. An accepted warning with scope 'decision' counts regardless of the hash and refers to a numbered decision in the docs. Parts are signed in their parts entry (field 'verified').",
   "state_sha256": null,
   "layout_sha256": null,
   "manual": [

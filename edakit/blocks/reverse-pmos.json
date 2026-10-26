@@ -34,7 +34,7 @@
  ],
  "covers": ["G-4", "G-10"],
  "notes": [
-  "edakit.toml: the connector that feeds 'in' under [checks] reverse_protect.",
+  "Graph: the connector that feeds 'in' into checks.reverse_protect.",
   "Above about 10 V input: a zener (10 V) from gate to source and a larger gate resistor, so that VGS stays below 12 V.",
   "AO3401A: 3.2 A at 70 °C, 60 mΩ at VGS -4.5 V; edakit sim checks current and power (E-2)."
  ]

@@ -1,11 +1,18 @@
-"""Project configuration: edakit.toml in the project root.
+"""Project configuration: edakit.toml and the files it points to.
 
-Everything that differs between projects lives here (or in the files it points to): where the graph and the parts
-database are, the boards with their EasyEDA document names, the placement plan, routing rules, schematic blocks,
-simulation scenarios and release settings. The tools themselves contain no project knowledge.
+edakit.toml is the table of contents: the project, its boards with their EasyEDA documents, where the files are, and
+the release settings. What one role decides lives in a file of its own, with one owner and one hash (handbook 10.1):
+
+    hardware/graph.json           circuit, purpose, hand-over, ground net, check settings  circuit designer  circuit
+    hardware/parts/, sim.json     parts database, simulation scenarios                     circuit designer  circuit
+    hardware/schematic.toml       arrangement of the schematic: blocks, notes, pin table   circuit designer  –
+    hardware/boards/<name>.toml   outline, holes, placement, routing, pours, silk          PCB designer      layout
+
+The tools themselves contain no project knowledge. edakit.toml in the one-file form – board, schematic and checks
+inside – is refused with a list of what goes where.
 
 Lookup order: --config PATH, $EDAKIT_CONFIG, then edakit.toml in the current directory or one of its parents.
-All relative paths in the file are relative to the directory that contains it.
+All relative paths are relative to the directory that contains edakit.toml.
 """
 
 from __future__ import annotations
@@ -29,6 +36,14 @@ DEFAULT_NET_CLASSES = {          # from the largest simulated current (A), pract
 POUR_CLEARANCE_MM = 0.25         # pour_only: what the computed pour keeps from foreign copper (copper-area rule)
 POUR_MIN_WIDTH_MM = 0.25         # pour_only: the narrowest neck the computed pour fills
 
+PROJECT_KEYS = ("name", "company", "quantity", "distributors", "lock", "graph", "parts", "sim", "sim_plugin",
+                "schematic", "signoff", "artifacts", "reports")
+BOARD_KEYS = ("title", "template", "schematic", "pcb", "file")            # [boards.<name>] in edakit.toml
+BOARD_FILE_KEYS = ("revision", "view", "outline", "holes", "tooling", "place", "near", "near_mm", "edge_mm", "edge_ok",
+                   "park", "routing", "pours", "silk", "loops", "net_classes")
+SCHEMATIC_KEYS = ("stub", "layout")
+RELEASE_KEYS = ("layout_files", "state_files", "assembly", "stages")
+
 
 class ConfigError(Exception):
     pass
@@ -50,6 +65,7 @@ class Board:
     template: str               # schematic generated from the graph and replaced on every run
     schematic: str              # readable, board-linked schematic (the PCB hangs on it)
     pcb: str                    # PCB document name in EasyEDA
+    file: str = ""              # the board file, as edakit.toml names it: everything below comes from there
     revision: str | None = None  # board revision, printed with the title (silk board_label)
     view: str = "top"           # the plan is drawn looking at this side; "bottom" mirrors x
     outline: list = field(default_factory=list)       # polygon in mm (plan coordinates)
@@ -68,6 +84,8 @@ class Board:
     pours: list = field(default_factory=list)
     silk: dict = field(default_factory=dict)
     loops: list = field(default_factory=list)         # [(pad a, pad b, max mm, what)] short current loops (L-11)
+    net_classes: dict = field(default_factory=lambda: dict(DEFAULT_NET_CLASSES))  # by falling min_a
+    force_class: dict = field(default_factory=dict)   # net -> class, whatever its current
 
     # --- plan <-> EasyEDA -------------------------------------------------------------------------------------------
     def to_eda(self, x, y, rot, side):
@@ -108,17 +126,16 @@ class Config:
     project: str
     graph: Path
     parts: Path
+    sim_config: Path
+    sim_plugin: Path | None
+    schematic_file: Path
+    signoff: Path
     artifacts: Path
     reports: Path
     company: str
-    ground: str
     quantity: int
     boards: dict
-    net_classes: dict
-    force_class: dict
-    schematic: dict
-    sim: dict
-    checks: dict
+    schematic: dict             # the schematic file: stub, [layout]
     release: dict
     lock: str
     raw: dict
@@ -135,6 +152,11 @@ class Config:
     def resolve(self, p) -> Path:
         p = Path(p)
         return p if p.is_absolute() else self.root / p
+
+    def relative(self, p) -> str:
+        """A path for messages: relative to the project when it lies inside."""
+        p = Path(p)
+        return str(p.relative_to(self.root)) if p.is_relative_to(self.root) else str(p)
 
     def artifact(self, *parts) -> Path:
         out = self.artifacts.joinpath(*parts)
@@ -178,9 +200,9 @@ def _placement(ref, v):
 
 
 def _pours(name, pours):
-    """[[boards.<b>.pours]] as written. A net with pour_only = true gets no tracks, its pour connects it: every entry of
-    that net must say so, none may be a plane (a plane gets connections to make), and each gets its clearance_mm and
-    min_width_mm."""
+    """[[pours]] of the board file as written. A net with pour_only = true gets no tracks, its pour connects it: every
+    entry of that net must say so, none may be a plane (a plane gets connections to make), and each gets its
+    clearance_mm and min_width_mm."""
     out = [dict(p) for p in pours]
     only = {p.get("net") for p in out if p.get("pour_only")}
     for p in out:
@@ -199,18 +221,30 @@ def _pours(name, pours):
     return out
 
 
-def _board(name, b):
+def _net_classes(nc):
+    """[net_classes] of a board file: classes sorted by falling min_a, and the nets forced into a class."""
+    nc = dict(nc)
+    force = nc.pop("force", {}) if isinstance(nc.get("force"), dict) else {}
+    classes = {k: {"min_a": float(v["min_a"]), "width_mm": float(v["width_mm"])} for k, v in nc.items()} \
+        or DEFAULT_NET_CLASSES
+    return dict(sorted(classes.items(), key=lambda kv: -kv[1]["min_a"])), force
+
+
+def _board(name, entry, b, file=""):
+    """A board: its EasyEDA documents from edakit.toml (entry), everything physical from its board file (b)."""
     tooling = b.get("tooling", {})
     view = b.get("view", "top")
     if view not in ("top", "bottom"):
         raise ConfigError(f"board {name}: view must be 'top' or 'bottom'")
     loops = [(lp["a"], lp["b"], float(lp["max_mm"]), lp.get("what", "")) for lp in b.get("loops", [])]
+    classes, force = _net_classes(b.get("net_classes", {}))
     return Board(
         name=name,
-        title=b.get("title", name),
-        template=b.get("template", f"generated_{name}"),
-        schematic=b.get("schematic", f"layout_{name}"),
-        pcb=b.get("pcb", name),
+        title=entry.get("title", name),
+        template=entry.get("template", f"generated_{name}"),
+        schematic=entry.get("schematic", f"layout_{name}"),
+        pcb=entry.get("pcb", name),
+        file=file,
         revision=str(b["revision"]) if b.get("revision") is not None else None,
         view=view,
         outline=_outline(b.get("outline"), name),
@@ -230,7 +264,47 @@ def _board(name, b):
         pours=_pours(name, b.get("pours", [{"net": "GND", "layers": ["TOP", "BOTTOM"]}])),
         silk=b.get("silk", {}),
         loops=loops,
+        net_classes=classes,
+        force_class=force,
     )
+
+
+def _read(path):
+    try:
+        return tomllib.loads(path.read_text(encoding="utf-8"))
+    except tomllib.TOMLDecodeError as e:
+        raise ConfigError(f"{path}: {e}") from None
+
+
+def _unknown(where, table, known, moved=()):
+    return [f"{where}: unknown key '{k}' (known: {', '.join(known)})" for k in table if k not in known + tuple(moved)]
+
+
+def _one_file_form(raw, name):
+    """What edakit.toml in the one-file form still holds, each with the place it has now."""
+    project, release = raw.get("project", {}), raw.get("release", {})
+    out = []
+    for b, entry in raw.get("boards", {}).items():
+        keys = [k for k in entry if k in BOARD_FILE_KEYS]
+        if keys:
+            out.append(f"[boards.{b}] {', '.join(keys)} -> {entry.get('file', f'hardware/boards/{b}.toml')}, "
+                       f"without the prefix 'boards.{b}.'")
+    if "schematic" in raw:
+        out.append(f"[schematic] -> {project.get('schematic', 'hardware/schematic.toml')}, without the prefix "
+                   f"'schematic.'")
+    if "checks" in raw:
+        out.append('[checks] -> "checks" in the graph (pin_locks, reverse_protect, doc_pin_table)')
+    if "ground" in project:
+        out.append('[project] ground -> "ground" in the graph (default GND)')
+    if "net_classes" in raw:
+        out.append("[net_classes] -> [net_classes] in each board file")
+    if "sim" in raw:
+        out.append("[sim] config, plugin -> [project] sim, sim_plugin")
+    if "signoff" in release:
+        out.append("[release] signoff -> [project] signoff")
+    if name in release.get("layout_files", []):
+        out.append(f"[release] layout_files: drop {name} – the board files are in the layout hash, {name} in none")
+    return out
 
 
 def find_config(start=None) -> Path:
@@ -246,10 +320,7 @@ def find_config(start=None) -> Path:
 
 def load(path=None) -> Config:
     path = Path(path).resolve() if path else find_config()
-    try:
-        raw = tomllib.loads(path.read_text(encoding="utf-8"))
-    except tomllib.TOMLDecodeError as e:
-        raise ConfigError(f"{path}: {e}") from None
+    raw = _read(path)
     root = path.parent
     p = raw.get("project", {})
     if "name" not in p:
@@ -259,28 +330,48 @@ def load(path=None) -> Config:
         v = Path(p.get(key, default))
         return v if v.is_absolute() else root / v
 
-    boards = {name: _board(name, b) for name, b in raw.get("boards", {}).items()}
+    moved = _one_file_form(raw, path.name)
+    problems = _unknown(path.name, raw, ("project", "boards", "release"), ("schematic", "checks", "net_classes", "sim"))
+    problems += _unknown("[project]", p, PROJECT_KEYS, ("ground",))
+    problems += _unknown("[release]", raw.get("release", {}), RELEASE_KEYS, ("signoff",))
+    files = {}
+    for name, entry in raw.get("boards", {}).items():
+        problems += _unknown(f"[boards.{name}]", entry, BOARD_KEYS, BOARD_FILE_KEYS)
+        file = entry.get("file", f"hardware/boards/{name}.toml")
+        if (root / file).exists():
+            files[name] = (file, _read(root / file))
+        elif "file" in entry:
+            raise ConfigError(f"{path}: [boards.{name}] file: {file} not found")
+        else:
+            files[name] = (file, {})       # no layout yet: the PCB designer starts the board file
+        problems += [f"{file}: {k} belongs in {path.name} [boards.{name}]" for k in files[name][1] if k in BOARD_KEYS]
+        problems += _unknown(file, files[name][1], BOARD_FILE_KEYS, BOARD_KEYS)
+    schematic_file = rel("schematic", "hardware/schematic.toml")
+    schematic = _read(schematic_file) if schematic_file.exists() else {}
+    problems += _unknown(p.get("schematic", "hardware/schematic.toml"), schematic, SCHEMATIC_KEYS)
+    if moved:
+        problems = moved + problems + [
+            f"{path.name} is the table of contents now: board, schematic and checks have files of their own "
+            "(handbook 10.1); scripts/split_config.py of edakit moves a project once, its sign-offs with it"]
+    if problems:
+        raise ConfigError(f"{path}:\n  " + "\n  ".join(problems))
+    boards = {name: _board(name, raw["boards"][name], data, file) for name, (file, data) in files.items()}
     if not boards:
         raise ConfigError(f"{path}: at least one [boards.<name>] section is needed")
-    nc = raw.get("net_classes", {})
-    force = nc.pop("force", {}) if isinstance(nc.get("force"), dict) else {}
-    classes = {k: {"min_a": float(v["min_a"]), "width_mm": float(v["width_mm"])} for k, v in nc.items()} \
-        or DEFAULT_NET_CLASSES
     return Config(
         path=path, root=root, project=p["name"],
         graph=rel("graph", "hardware/graph.json"),
         parts=rel("parts", "hardware/parts"),
+        sim_config=rel("sim", "hardware/sim.json"),
+        sim_plugin=rel("sim_plugin", "") if p.get("sim_plugin") else None,
+        schematic_file=schematic_file,
+        signoff=rel("signoff", "hardware/signoff.json"),
         artifacts=rel("artifacts", "build/edakit"),
         reports=rel("reports", "build/release"),
         company=p.get("company", ""),
-        ground=p.get("ground", "GND"),
         quantity=int(p.get("quantity", 5)),
         boards=boards,
-        net_classes=dict(sorted(classes.items(), key=lambda kv: -kv[1]["min_a"])),
-        force_class=force,
-        schematic=raw.get("schematic", {}),
-        sim=raw.get("sim", {}),
-        checks=raw.get("checks", {}),
+        schematic=schematic,
         release=raw.get("release", {}),
         lock=p.get("lock", "auto"),
         raw=raw,

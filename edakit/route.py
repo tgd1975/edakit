@@ -5,14 +5,16 @@ throws every track away (1773 lines -> 223 in one observed run). It runs past th
 start, has a fixed 900 s limit and left nets open. So routing happens outside EasyEDA, reproducibly:
 
     1 read     pads, outline, holes, parts from EasyEDA -> <artifacts>/route/<board>_board.json
-    2 dsn      offline: our own Specctra DSN (rules from [boards.<b>.routing]); parts, pins and nets in a fixed order
+    2 dsn      offline: our own Specctra DSN (rules from [routing] of the board file); parts, pins and nets in a
+               fixed order
     3 route    offline: Freerouting (pinned, downloads itself once, SHA-256 checked), no GUI -> <board>.ses
     4 check    offline: every net connected, clearances >= rule, nothing in keep-outs; preview PNG with open
                connections in yellow. In `all`: up to `attempts` runs with a reshuffled DSN while something is open.
-               A pour-only net ([[boards.<b>.pours]] pour_only) gets no tracks: its pour, computed here, connects it
+               A pour-only net (pour_only in [[pours]] of the board file) gets no tracks: its pour, computed here,
+               connects it
     5 apply    delete all tracks, vias and pours in the PCB, create the ones from the SES, compare geometrically,
                delete anything unplanned
-    6 pours    pours of [[boards.<b>.pours]] anew and filled; optional stitching of loose islands with vias
+    6 pours    pours of [[pours]] anew and filled; optional stitching of loose islands with vias
     7 reload   save, close the PCB tab, open it again – otherwise the DRC reports false connection errors
     8 drc      EasyEDA DRC with details -> <board>_drc.json; exit 2 on findings
 
@@ -202,7 +204,7 @@ def board_area(data):
 
 
 def hole_keeps(rules, data):
-    """Keep-out circles (x, y, r in mil) around mounting holes: radius 'keep' of the matching hole in edakit.toml."""
+    """Keep-out circles (x, y, r in mil) around mounting holes: radius 'keep' of the matching hole in the board file."""
     board = rules.board
     _, holes = board_area(data)
     out = []
@@ -226,7 +228,7 @@ def circles(keeps):
 
 
 def planes(rules):
-    """Pours declared as planes ([[boards.<b>.pours]] plane = true): (net, layer). Freerouting then connects the
+    """Pours declared as planes ([[pours]] plane = true): (net, layer). Freerouting then connects the
     net's pads on that layer to the plane with vias instead of tracks."""
     return [(p["net"], layer) for p in rules.board.pours if p.get("plane") for layer in p.get("layers", ["BOTTOM"])]
 
@@ -274,7 +276,7 @@ def outside_strips(rules, outer, margin=20.0):
 
 
 def config_keepouts(rules, data):
-    """[[boards.<b>.routing.keepouts]]: {layer, rect | polygon (plan mm), what: "wire" (vias allowed) | "all",
+    """[[routing.keepouts]]: {layer, rect | polygon (plan mm), what: "wire" (vias allowed) | "all",
     windows: [parts whose pads stay reachable, with window_mm margin]} -> [(layer, kind, convex piece in mil)]."""
     board = rules.board
     out = []
@@ -295,7 +297,7 @@ def config_keepouts(rules, data):
 
 
 def fixed_wires(rules):
-    """[[boards.<b>.routing.fixed_wires]]: {net, layer, width_mil, points (plan mm)} – protected in the DSN: Freerouting
+    """[[routing.fixed_wires]]: {net, layer, width_mil, points (plan mm)} – protected in the DSN: Freerouting
     routes around them and keeps them (e.g. a short switching loop)."""
     b = rules.board
     return [(w["net"], w.get("layer", "TOP"), w.get("width_mil", rules.signal),
@@ -617,7 +619,7 @@ def pour_pieces(rules, data, routes, segs=None):
         return {}
     board = rules.board
     if not board.outline:
-        raise SystemExit(f"board {board.name}: pour_only needs the outline in edakit.toml – the pour outline is "
+        raise SystemExit(f"board {board.name}: pour_only needs the outline in the board file – the pour outline is "
                          "computed from it")
     outline = Polygon([tuple(v * MIL_PER_MM for v in board.eda_point(x, y)) for x, y in pcb.pour_outline(board)])
     segs = segments(rules, routes, data) if segs is None else segs
@@ -1005,7 +1007,7 @@ def fill(cfg, board, mcp, nets, keep_islands_on=None):
 
 def pours(cfg, board, rules, mcp, data=None, routes=None, stitch_file=None):
     """Pours anew and filled. Tooling holes (free pads) are taken out before filling and set again afterwards –
-    with a free pad in the PCB the fill fails. With stitching configured ([[boards.<b>.pours]] stitch = "BOTTOM"),
+    with a free pad in the PCB the fill fails. With stitching configured ([[pours]] stitch = "BOTTOM"),
     fill with islands first, stitch the loose islands to the other side with vias, then fill without islands."""
     nets = sorted({p["net"] for p in board.pours})
     pcb.remove_tooling(mcp)

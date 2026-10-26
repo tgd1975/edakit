@@ -24,7 +24,8 @@ Example: [the Christmas bell's graph](https://github.com/tgd1975/automatic_chris
   ],
   "cables": [
     {"name": "W1", "from": "J2", "to": "J1", "pins": {"1": "1", "2": "2"}, "r_ohm_per_wire": 0.065}
-  ]
+  ],
+  "checks": {"reverse_protect": ["J1"], "pin_locks": {"U1.4": "LED_SDI", "U1.5": "LED_CLK"}}
 }}
 ```
 
@@ -49,6 +50,8 @@ Example: [the Christmas bell's graph](https://github.com/tgd1975/automatic_chris
 | `hints` | design hints that are taken care of, `{"H-1": "C1 1000 µF next to J1"}` – chapter 14.3 |
 | `layout` | the hand-over to the layout: `fixed`, `edge`, `near`, `loops`, `notes` – chapters 7.4 and 14.1; G-1 checks that the names exist |
 | `purpose` | what the board is for: `use` (`private` – built for oneself, `gift` – given away, `sale` – sold, also in small series), `market` (`"EU"`), `notes` (what it is, who uses it) – it decides which rules the regulatory review applies (chapter 15); part of the circuit hash |
+| `ground` | name of the ground net (default `GND`) – the checks, the simulation and the schematic's flags use it; G-1 checks that the net exists |
+| `checks` | settings of the graph checks: `pin_locks` (`{"U1.4": "LED_SDI"}` – pins the firmware relies on, G-2), `doc_pin_table` (`{component, file, prefix, regex}` – a pin table in the documentation, G-2), `reverse_protect` (connectors that may be plugged in the wrong way round, G-10; also a power input for the design hints); part of the circuit hash, G-1 checks the names |
 
 ## 3.2 Conventions that save trouble
 
@@ -70,14 +73,14 @@ check that fails is explained once below the findings (chapter 14.2).
 
 | Check | What | Finds e.g. |
 |---|---|---|
-| G-1 | structure: unique designators and nets, every pin in exactly one net or `nc`, nets with ≥ 2 pins, a voltage range per net, a known board per part, nets across boards only through a cable | a forgotten pin, a typo in a pin reference |
-| G-2 | pin locks: pins the firmware relies on are on the expected nets (`[checks] pin_locks`); optionally a pin table in a Markdown document equals the graph (`[checks] doc_pin_table`) | firmware and hardware disagree |
+| G-1 | structure: unique designators and nets, every pin in exactly one net or `nc`, nets with ≥ 2 pins, a voltage range per net, a known board per part, nets across boards only through a cable; the names in `layout` and `checks`, the `ground` net, `purpose.use` | a forgotten pin, a typo in a pin reference |
+| G-2 | pin locks: pins the firmware relies on are on the expected nets (`checks.pin_locks`); optionally a pin table in a Markdown document equals the graph (`checks.doc_pin_table`) | firmware and hardware disagree |
 | G-3 | voltage domains: every net's range within `vmax` of every pin on it | a 5-V signal on a 3.3-V GPIO |
 | G-4 | no floating input: an input needs a driver or a pull resistor; an input driven only by MCU pins needs a pull (floats until the firmware runs); every BJT needs a base-emitter resistor, every MOSFET a resistor from its gate to the source or a rail | a floating OE or EN pin at power-up, a MOSFET half on while the MCU boots |
 | G-5 | at most one push-pull output / supply output per net | two outputs against each other |
 | G-6 | decoupling: per net at least one capacitor to ground per IC supply pin (`power_in`) | the missing 100 nF |
 | G-8 | voltage ratings with margin: capacitors (×1.5), diodes VRRM (×1.5), BJT VCEO, MOSFET VDS/VGS (×1.5), fuses, switches, connectors | a 6.3-V capacitor on a 5-V rail |
-| G-10 | reverse polarity from the topology: what a reversed source (battery holders, `[checks] reverse_protect`) reaches through fuses, switches and connectors may only be a capacitor, the anode of a diode whose cathode is outside, or the drain of a PMOS whose source and gate are outside | the protection diode bypassed, an IC directly on the battery |
+| G-10 | reverse polarity from the topology: what a reversed source (battery holders, `checks.reverse_protect`) reaches through fuses, switches and connectors may only be a capacitor, the anode of a diode whose cathode is outside, or the drain of a PMOS whose source and gate are outside | the protection diode bypassed, an IC directly on the battery |
 | G-11 | I2C pull-ups: every I2C line has a pull-up to a supply between (V − 0.4 V) / 3 mA and 10 kΩ, parallel ones added up; a line is I2C by the net's `bus`, an SDA/SCL net name, a pin role `sda`/`scl` or a pin name with SDA/SCL (a role decides over the name); pins with `pull`/`pull_ohm` count (modules) | a bus without pull-ups, 47 kΩ, a module's pull-ups plus your own below 1 kΩ |
 | G-12 | strapping pins: a pin with `strap` in its parts entry is at that level at reset – no pull, rail or output on its net says otherwise, and something holds it (a pull, or the pin's internal `pull`) | a pull-down on the ESP32's GPIO0, an I2C pull-up on GPIO12 |
 | G-13 | flyback diode: a relay coil or a buzzer with `coil_ohm`, switched by a transistor or an output, has a diode across it with the cathode at its plus terminal | a relay that kills its transistor at the first switch-off |

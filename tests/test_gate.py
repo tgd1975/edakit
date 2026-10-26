@@ -67,6 +67,24 @@ def test_hashes_change_with_the_graph(project):
     assert gate.header(project.config())["state_sha256"] != h1
 
 
+def test_each_hash_covers_its_files(project):
+    """The table of contents and the schematic arrangement are in no hash, the board file is the layout's, the check
+    settings in the graph are the circuit's."""
+    h = gate.header(project.config())
+    toml = project.root / "edakit.toml"
+    toml.write_text(toml.read_text().replace("quantity = 5", "quantity = 10"))
+    (project.root / "hardware" / "schematic.toml").write_text("stub = 12\n")
+    h2 = gate.header(project.config())
+    assert (h2["state_sha256"], h2["layout_sha256"]) == (h["state_sha256"], h["layout_sha256"])
+    board = project.root / "hardware" / "boards" / "main.toml"
+    board.write_text(board.read_text().replace('C2 = "U1"', 'C2 = "U2"'))
+    assert gate.header(project.config())["layout_sha256"] != h["layout_sha256"]
+    g = project.graph()
+    g["graph"]["checks"]["reverse_protect"] = []
+    project.save_graph(g)
+    assert gate.header(project.config())["state_sha256"] != h["state_sha256"]
+
+
 def test_regulatory_review_is_required_also_when_the_file_lacks_it(project):
     path = project.root / "hardware" / "signoff.json"
     s = json.loads(path.read_text())

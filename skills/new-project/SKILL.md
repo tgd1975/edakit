@@ -1,6 +1,6 @@
 ---
 name: new-project
-description: Set up a new hardware project for the edakit workflow – edakit.toml, an empty hardware graph, parts database, simulation config, sign-off file, git hooks and Claude Code settings – in the current repository. Use when the user starts a new board ("new PCB", "set up edakit", "use the EasyEDA workflow here") or an existing project has no edakit.toml yet.
+description: Set up a new hardware project for the edakit workflow – edakit.toml (the table of contents), an empty hardware graph, parts database, simulation config, board file, sign-off file, git hooks and Claude Code settings – in the current repository. Use when the user starts a new board ("new PCB", "set up edakit", "use the EasyEDA workflow here") or an existing project has no edakit.toml yet.
 argument-hint: "<project name> [board name]"
 ---
 
@@ -16,7 +16,8 @@ Create in the repository root (ask only for what you cannot sensibly default):
 
 | File | Content |
 |---|---|
-| `edakit.toml` | from `tests/fixtures/led-bar/edakit.toml`: `[project] name` = the EasyEDA project, one `[boards.<name>]` with outline and holes as far as known; leave `place`, `routing.classes` and `schematic.layout.rows` minimal until the parts exist |
+| `edakit.toml` | from `tests/fixtures/led-bar/edakit.toml`: `[project] name` = the EasyEDA project, one `[boards.<name>]` with its EasyEDA documents – the table of contents that points to the files below (handbook 10.1) |
+| `hardware/boards/<name>.toml` | when the board's size is known: from the example's board file, outline and holes; leave `place` and `routing.classes` minimal until the parts exist. Otherwise the PCB designer starts it |
 | `hardware/graph.json` | `{"graph": {"name", "version": "0.1", "date", "description", "purpose": {"use", "market", "notes"}, "components": [], "nets": [], "cables": []}}` – `use` is `private`, `gift` or `sale` (circuit-design asks) |
 | `hardware/parts/` | empty; every LCSC number gets an entry through the part-search skill |
 | `hardware/sim.json` | from the example: sources (the supply connector), supplies at min/nominal/max, loads, corners |

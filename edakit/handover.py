@@ -4,7 +4,7 @@ designer or derived from it. The PCB designer works from it and does not change 
     edakit handover [--board B]   the hand-over sheet: the circuit's state and sign-offs, the layout requirements
 
 "layout" in the graph:
-    fixed  [parts]                    the auto-layout must not decide them: a position in [boards.<b>.place]
+    fixed  [parts]                    the auto-layout must not decide them: a position in [place] of the board file
     edge   [parts]                    fixed at the board edge: within edge_mm of the outline (plan, default 1 mm)
     near   {part: host or [hosts]}    fixed within near_mm of the host (plan, default 6 mm)
     loops  [{a, b, max_mm, what}]     short current loop between two pads of one net, checked on the routed board (L-11)
@@ -98,7 +98,7 @@ def requirements(design, board):
 
 
 def loops(design, board):
-    """layout.loops of one board in the form of [[boards.<b>.loops]]: (pad a, pad b, max mm, what)."""
+    """layout.loops of one board in the form of [[loops]] in the board file: (pad a, pad b, max mm, what)."""
     mine = design.board_comps(board)
     return [(lp["a"], lp["b"], float(lp["max_mm"]), lp.get("what", "")) for lp in layout(design).get("loops", [])
             if lp.get("a", "").partition(".")[0] in mine]

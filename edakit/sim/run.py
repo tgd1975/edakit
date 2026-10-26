@@ -2,7 +2,7 @@
 
     edakit sim [--json FILE] [--keep DIR]
 
-Scenarios = supplies x loads x LED forward-voltage corners from the simulation config (edakit.toml [sim] config),
+Scenarios = supplies x loads x LED forward-voltage corners from the simulation config (edakit.toml [project] sim),
 plus "extra_scenarios" listed there.
 
   E-1  the operating point converges
@@ -454,9 +454,9 @@ def run_all(design, sim, keep=None, plugin=None):
 
 
 def load_sim_config(cfg):
-    path = cfg.resolve(cfg.sim.get("config", "hardware/sim.json"))
+    path = cfg.sim_config
     if not path.exists():
-        raise SimError(f"simulation config {path} not found (edakit.toml [sim] config)")
+        raise SimError(f"simulation config {path} not found (edakit.toml [project] sim)")
     return json.loads(path.read_text(encoding="utf-8")), path
 
 
@@ -473,7 +473,7 @@ def write_net_currents(cfg, out):
 def main(cfg, args):
     from ..design import Design
     sim, _ = load_sim_config(cfg)
-    plugin = load_plugin(cfg.resolve(cfg.sim["plugin"])) if cfg.sim.get("plugin") else None
+    plugin = load_plugin(cfg.sim_plugin) if cfg.sim_plugin else None
     if args.keep:
         Path(args.keep).mkdir(parents=True, exist_ok=True)
     out = run_all(Design.from_config(cfg), sim, args.keep, plugin)

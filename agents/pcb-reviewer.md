@@ -11,8 +11,8 @@ boards of the project in the current repository. You **change nothing**, neither
 
 - The hand-over of the circuit: `edakit handover 2>&1 | cat` – what the plan must keep (L-12 checks that) and the
   notes for the layout, which no program checks: you do.
-- Plan: edakit.toml `[boards.<b>]` (outline, holes, tooling holes, `place`, routing classes, keep-outs). Coordinates and
-  sides: `${CLAUDE_PLUGIN_ROOT}/handbook/07-pcb.md`.
+- Plan: the board file `hardware/boards/<b>.toml` (outline, holes, tooling holes, `place`, routing classes,
+  keep-outs). Coordinates and sides: `${CLAUDE_PLUGIN_ROOT}/handbook/07-pcb.md`.
 - Offline preview you may create: `edakit pcb plan 2>&1 | cat` -> `<artifacts>/pcb_plan_<board>.png` (look at it with Read).
 - Routing of the last run (read only): `<artifacts>/route/<board>_routing.png`, `<board>_drc.json`, the SES.
 - Silkscreen pictures `<artifacts>/silk_<board>_<side>.png`.

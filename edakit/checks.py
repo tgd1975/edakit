@@ -4,16 +4,17 @@
 
   G-1  structure: unique names, every pin in exactly one net or "nc", nets with >= 2 pins, a voltage range per net,
        a known board per component, nets across boards only through a cable, layout requirements that name parts
-       and pins of the graph (handover.py), purpose.use private, gift or sale
-  G-2  pin locks: pins the firmware relies on are on the expected nets ([checks] pin_locks in edakit.toml), and an
-       optional pin table in a Markdown document matches the graph ([checks] doc_pin_table)
+       and pins of the graph (handover.py), purpose.use private, gift or sale, check settings that name parts of
+       the graph, a ground net that exists
+  G-2  pin locks: pins the firmware relies on are on the expected nets (checks.pin_locks of the graph), and an
+       optional pin table in a Markdown document matches the graph (checks.doc_pin_table)
   G-3  voltage domains: net voltage range within the pin limits (vmax) from the parts database
   G-4  no floating inputs; an input driven only by MCU pins needs a pull resistor; transistors need a base resistor,
        MOSFETs a gate resistor to their source or a rail
   G-5  at most one push-pull output or supply output per net
   G-6  decoupling: per net at least one capacitor to ground per IC supply pin (power_in)
   G-8  voltage ratings of capacitors, diodes, transistors, MOSFETs, fuses, switches, connectors with margin
-  G-10 reverse polarity: what a reversed source (battery holders, [checks] reverse_protect) reaches through fuses,
+  G-10 reverse polarity: what a reversed source (battery holders, checks.reverse_protect) reaches through fuses,
        switches and connectors is only capacitors, the anode of a blocking diode or the drain of a PMOS
   G-11 I2C lines (net "bus": "i2c", a net name with SDA/SCL, pin role sda/scl, or a pin named SDA/SCL without a
        role) have a pull-up to a supply between (V - 0.4 V) / 3 mA and 10 kOhm; pins with "pull": "up" (and
@@ -54,6 +55,7 @@ BOOT_DRIVERS = {"output", "power_output", "ground"}   # define their net while t
 PASS_THROUGH = ("fuse", "switch", "connector")        # pass a reversed source on unchanged
 REVERSE_OK = ("battery_holder", "capacitor") + PASS_THROUGH
 PURPOSES = ("private", "gift", "sale")                 # purpose.use of the graph: built for oneself, given away, sold
+CHECK_KEYS = ("pin_locks", "reverse_protect", "doc_pin_table")   # checks of the graph
 I2C_SINK_A, I2C_VOL, I2C_R_MAX = 0.003, 0.4, 10e3    # UM10204 7.1: Rp(min) = (V - VOL) / 3 mA; 10 k for 100 kHz
 USB_RD, USB_RD_TOL = 5100, 0.10                      # USB Type-C sink termination Rd
 COILS = {"relay": ("coil_plus", "coil_minus"), "buzzer": ("plus", "minus")}   # inductive kinds: their coil roles
@@ -159,14 +161,31 @@ def check_structure(d, rep, boards):
         rep.error("G-1", problem)
     if "purpose" in g and (g["purpose"] or {}).get("use") not in PURPOSES:
         rep.error("G-1", f"purpose.use must be one of {', '.join(PURPOSES)} – the regulatory review (M-6) starts there")
+    for problem in settings_problems(d):
+        rep.error("G-1", problem)
 
 
-def check_pin_locks(d, rep, cfg_checks, root):
-    for ref, net in (cfg_checks.get("pin_locks") or {}).items():
+def settings_problems(d):
+    """The ground net and the check settings of the graph name what the graph has."""
+    g, out = d.graph, []
+    if "ground" in g and g["ground"] not in d.nets:
+        out.append(f"ground: no net {g['ground']} in the graph")
+    checks = g.get("checks") or {}
+    out += [f"checks: unknown key '{k}' (known: {', '.join(CHECK_KEYS)})" for k in checks if k not in CHECK_KEYS]
+    named = [("pin_locks", ref.partition(".")[0]) for ref in checks.get("pin_locks") or {}]
+    named += [("reverse_protect", des) for des in checks.get("reverse_protect") or []]
+    if checks.get("doc_pin_table"):
+        named.append(("doc_pin_table", checks["doc_pin_table"].get("component")))
+    out += [f"checks.{key}: no part {des} in the graph" for key, des in named if des not in d.comps]
+    return out
+
+
+def check_pin_locks(d, rep, checks, root):
+    for ref, net in (checks.get("pin_locks") or {}).items():
         if d.pin_net.get(ref) != net:
             rep.error("G-2", f"{ref} expected on net {net}, found {d.pin_net.get(ref)}")
-    table = cfg_checks.get("doc_pin_table")
-    if not table:
+    table = checks.get("doc_pin_table")
+    if not table or table.get("component") not in d.comps:   # an unknown component is G-1's
         return
     doc = Path(root) / table["file"]
     comp = table["component"]
@@ -501,7 +520,7 @@ def check_signoff(d, rep):
 
 def run(design, cfg=None):
     rep = Report()
-    checks = cfg.checks if cfg else {}
+    checks = design.graph.get("checks") or {}
     joined = design.joined()   # nets joined by 0 Ω bridges as one net
     check_structure(design, rep, set(cfg.boards) if cfg else set())
     check_pin_locks(design, rep, checks, cfg.root if cfg else ".")
@@ -510,7 +529,7 @@ def run(design, cfg=None):
     check_contention(joined, rep)
     check_decoupling(joined, rep)
     check_ratings(design, rep)
-    check_reverse(joined, rep, checks.get("reverse_protect", []))
+    check_reverse(joined, rep, [des for des in checks.get("reverse_protect", []) if des in design.comps])  # else G-1
     check_i2c(joined, rep)
     check_straps(joined, rep)
     check_flyback(joined, rep)

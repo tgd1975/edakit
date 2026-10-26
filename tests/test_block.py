@@ -139,7 +139,7 @@ def test_mistakes_are_refused(project):
 
 def test_several_boards_need_a_board(project):
     toml = project.root / "edakit.toml"
-    toml.write_text(toml.read_text().replace("[boards.main.outline]", "[boards.second]\n\n[boards.main.outline]", 1))
+    toml.write_text(toml.read_text().replace("[release]", "[boards.second]\n\n[release]", 1))
     g = project.graph()
     for c in g["graph"]["components"]:
         c["board"] = "main"

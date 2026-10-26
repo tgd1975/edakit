@@ -24,7 +24,7 @@ assembly preview at JLCPCB.
        or plated slots narrower than JLCPCB's minimum: warn
   L-10 every pad sits where the library footprint has the pad with that number (pad_map in the parts DB for
        intended swaps)
-  L-11 short current loops ([[boards.<b>.loops]] and layout.loops of the graph): shortest path over tracks of the
+  L-11 short current loops ([[loops]] of the board file and layout.loops of the graph): shortest path over tracks of the
        same net per pad pair
   L-12 the plan keeps the layout requirements of the circuit: layout.fixed, .edge, .near of the graph and a
        decoupling capacitor next to every IC (handover.py)
@@ -195,8 +195,8 @@ def required_widths(cfg, design, board):
         if not e:
             continue
         i = max(e["i_max_a"], e.get("i_peak_a") or 0)
-        cls = cfg.force_class.get(net) or next(n for n, c in cfg.net_classes.items() if i >= c["min_a"])
-        out[net] = (ipc2221_width_mm(i), cfg.net_classes[cls]["width_mm"], i)
+        cls = board.force_class.get(net) or next(n for n, c in board.net_classes.items() if i >= c["min_a"])
+        out[net] = (ipc2221_width_mm(i), board.net_classes[cls]["width_mm"], i)
     return out
 
 

@@ -61,15 +61,8 @@ def draw(cfg, tmp_path):
 
 
 def without_layout(project):
-    """The example's edakit.toml without [schematic.layout] and its tables: nothing tells the drawing how."""
-    path = project.root / "edakit.toml"
-    keep, skip = [], False
-    for line in path.read_text().splitlines():
-        if line.startswith("["):
-            skip = line.startswith("[schematic.layout")
-        if not skip:
-            keep.append(line)
-    path.write_text("\n".join(keep) + "\n")
+    """The example without its schematic file: nothing tells the drawing how."""
+    (project.root / "hardware" / "schematic.toml").unlink()
 
 
 @pytest.fixture(autouse=True)

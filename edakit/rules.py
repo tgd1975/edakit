@@ -65,9 +65,9 @@ def _part_kind(design, des):
 
 
 def _power_inputs(design, cfg, sim):
-    """Where the supply comes in: battery holders, connectors with a vbus pin, [checks] reverse_protect, sim sources."""
+    """Where the supply comes in: battery holders, connectors with a vbus pin, checks.reverse_protect, sim sources."""
     found = set(design.comps_of_kind("battery_holder"))
-    found |= set((cfg.checks if cfg else {}).get("reverse_protect", []))
+    found |= set((design.graph.get("checks") or {}).get("reverse_protect", []))
     found |= {d for d in design.comps_of_kind("connector")
               if "vbus" in {p.get("role") for p in design.part(d)["pins"].values()}}
     found |= set((sim or {}).get("sources", {}))
@@ -168,7 +168,7 @@ def part_notes(design):
 def load_sim(cfg):
     """The simulation config if there is one – hints use its sources; a missing or broken file is no error here."""
     try:
-        return json.loads(cfg.resolve(cfg.sim.get("config", "hardware/sim.json")).read_text(encoding="utf-8"))
+        return json.loads(cfg.sim_config.read_text(encoding="utf-8"))
     except (OSError, ValueError, AttributeError):
         return None
 

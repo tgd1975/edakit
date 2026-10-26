@@ -32,8 +32,10 @@ def main(cfg, args):
         nonlocal bad
         bad += level == "FAIL"
         print(f"{level:<5} {what}" + (f"\n      -> {hint}" if hint else ""))
-    line("OK" if cfg else "FAIL", f"edakit.toml: {cfg.path if cfg else 'not found'}",
-         "" if cfg else "create one (/edakit:new-project, handbook/10-reference.md)")
+    error = getattr(args, "config_error", "")
+    line("OK" if cfg else "FAIL", f"edakit.toml: {cfg.path if cfg else 'refused' if error else 'not found'}",
+         "" if cfg else error.replace("\n", "\n         ") if error and "no edakit.toml found" not in error
+         else "create one (/edakit:new-project, handbook/10-reference.md)")
     line("OK" if sys.version_info >= (3, 11) else "FAIL", f"Python {sys.version.split()[0]}")
     code, out = run("node", "-v")
     major = re.match(r"v(\d+)", out or "")

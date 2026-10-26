@@ -1,24 +1,45 @@
-# 10 Reference: edakit.toml and commands
+# 10 Reference: edakit.toml, the project files and the commands
 
 ## 10.1 edakit.toml
 
 Lookup: `--config PATH`, `$EDAKIT_CONFIG`, then `edakit.toml` in the current directory or a parent. Relative paths
-are relative to the file. Complete example: [the Christmas bell's edakit.toml](https://github.com/tgd1975/automatic_christmas_bell/blob/main/edakit.toml).
+are relative to it. edakit.toml is the table of contents: what the project is, which boards it has, where their files
+are. What one role decides lives in a file of its own, with one owner and one hash (8.2):
+
+| File | Content | Written by | Hash |
+|---|---|---|---|
+| `edakit.toml` | project, boards with their EasyEDA documents, where the files are, release settings | new-project, the user | – |
+| `hardware/graph.json` | the circuit with its purpose, the hand-over to the layout, the ground net and the check settings (3.1) | circuit designer | circuit |
+| `hardware/parts/`, `hardware/sim.json` | parts database (4), simulation scenarios (5) | part-selector, circuit designer | circuit |
+| `hardware/schematic.toml` | arrangement of the schematic: blocks, notes, pin table (10.3) | circuit designer | – |
+| `hardware/boards/<name>.toml` | one board: outline, holes, placement, routing, pours, silkscreen (10.2) | PCB designer | layout |
+| `hardware/signoff.json` | sign-offs and accepted warnings (8.2) | reviewers, the user | – |
+
+Complete example: [tests/fixtures/led-bar](../tests/fixtures/led-bar/). A key edakit does not know is an error with
+the list of the known ones – a typo does not fall back to a default unnoticed. An edakit.toml that still holds the
+board, the schematic or the checks (the earlier one-file form) is refused with a list of what goes where;
+`scripts/split_config.py` of edakit moves such a project once and takes its valid sign-offs along – in the project:
+`uv run --project <edakit> python <edakit>/scripts/split_config.py --dry-run`, then without `--dry-run`.
 
 ### [project]
 
 | Key | Default | Meaning |
 |---|---|---|
 | `name` | – (required) | EasyEDA project (friendly name) |
+| `company` | `""` | title block of the schematics |
+| `quantity` | `5` | boards per order (stock check F-2) |
+| `distributors` | `["lcsc"]` | where the agent part-selector searches, in this order: `lcsc`, `rs`, `farnell`, `mouser`, `digikey`, `reichelt` (chapter 4.2) |
+| `lock` | `auto` | EasyEDA claim between Claude sessions: `auto` (when `CLAUDE_CODE_SESSION_ID` is set) or `off` |
 | `graph` | `hardware/graph.json` | the hardware graph |
 | `parts` | `hardware/parts` | parts database, one JSON per part (LCSC number or manufacturer part number) |
-| `distributors` | `["lcsc"]` | where the agent part-selector searches, in this order: `lcsc`, `rs`, `farnell`, `mouser`, `digikey`, `reichelt` (chapter 4.2) |
+| `sim` | `hardware/sim.json` | simulation config (chapter 5) |
+| `sim_plugin` | – | optional Python file with `MODELS` and `checks` (5.1) |
+| `schematic` | `hardware/schematic.toml` | the schematic file (10.3) |
+| `signoff` | `hardware/signoff.json` | the sign-off file (8.2) |
 | `artifacts` | `build/edakit` | caches, previews, routing files, exports, Gerber exports (not versioned) |
 | `reports` | `build/release` | gate runs |
-| `company` | `""` | title block of the schematics |
-| `ground` | `GND` | name of the ground net |
-| `quantity` | `5` | boards per order (stock check F-2) |
-| `lock` | `auto` | EasyEDA claim between Claude sessions: `auto` (when `CLAUDE_CODE_SESSION_ID` is set) or `off` |
+
+The name of the ground net is in the graph (`ground`, default `GND`), with the circuit it belongs to.
 
 ### [boards.&lt;name&gt;]
 
@@ -28,6 +49,21 @@ are relative to the file. Complete example: [the Christmas bell's edakit.toml](h
 | `template` | `generated_<name>` | schematic generated from the graph |
 | `schematic` | `layout_<name>` | board schematic (the PCB is linked to it) |
 | `pcb` | `<name>` | PCB document in EasyEDA |
+| `file` | `hardware/boards/<name>.toml` | the board file (10.2); while it does not exist the board has no layout yet – a file named here must exist |
+
+### [release]
+
+`layout_files` (further files in the layout hash – the board files and the footprint geometry are always in it),
+`state_files` (further files in the circuit hash), `assembly` ({`sides`, `smd_only`}), `[[stages]]` ({`id`, `name`,
+`cmd`, `advisory`, `timeout`, `about`}).
+
+## 10.2 The board file
+
+`hardware/boards/<name>.toml`: what the PCB designer decides (14.1). The layout hash covers it – a change needs the
+layout review again (M-5). The keys stand at the top of the file, without a prefix (`[place]`, `[[holes]]`):
+
+| Key | Default | Meaning |
+|---|---|---|
 | `revision` | – | board revision, printed with the title (`silk.board_label`); without it no board label |
 | `view` | `top` | side the plan is drawn from; `bottom` mirrors x and rotations |
 | `edge_ok` | `[]` | parts that may touch or overhang the outline |
@@ -42,41 +78,27 @@ are relative to the file. Complete example: [the Christmas bell's edakit.toml](h
 | `routing` | see below | Freerouting rules |
 | `[[pours]]` | GND on both layers | `net`, `layers`, `plane` (bool), `stitch` (layer), `priority`, `line_mil`, `pour_only` (false: the net gets no tracks, its pour connects it; on every entry of the net, not with `plane`), `clearance_mm` (0.25: what the computed pour keeps from foreign copper – the EasyEDA copper-area rule), `min_width_mm` (0.25: the narrowest neck it fills) |
 | `silk` | `{}` | `designators` (side), `hide` (sides), `label_h_mm` (1.0), `gap_mm` (0.25), `groups` {label: [refs]}, `priority` (["TP"]), `board_label` (`"{title} rev {revision}"`; also `{project}`, `{board}`; `""` = none), `board_label_corner` (`bottom-left`, seen from the printed side), `board_label_h_mm` (1.2), `[[art]]` ({`svg`, `x`, `y`, `width_mm`, `rot`, `side`}), `[[texts]]` ({`text`, `x`, `y`, `h_mm` (1.2), `rot`, `side`, `font` (`default` = stroke font, or a font family EasyEDA knows)}) |
-| `[[loops]]` | `[]` | `a`, `b` (pads "D1.2"), `max_mm`, `what` – check L-11 |
+| `[[loops]]` | `[]` | `a`, `b` (pads "D1.2"), `max_mm`, `what` – check L-11; the circuit's are `layout.loops` of the graph |
+| `net_classes` | see below | track widths from the simulated currents |
 
-`[boards.<name>.routing]`: `clearance_mil` (6.5), `signal_mil` (10), `via` ([24, 12]), `edge_clearance_um` (400),
-`passes` (40), `attempts` (5), `layer_cost` ({TOP = [1.0, 1.8], BOTTOM = [1.5, 2.5]}), `classes`
-({NAME = {width_mil, nets}}), `[[keepouts]]` ({layer, what = "wire"|"all", rect | polygon, windows, window_mm}),
-`[[fixed_wires]]` ({net, layer, width_mil, points}).
+`[routing]`: `clearance_mil` (6.5), `signal_mil` (10), `via` ([24, 12]), `edge_clearance_um` (400), `passes` (40),
+`attempts` (5), `layer_cost` ({TOP = [1.0, 1.8], BOTTOM = [1.5, 2.5]}), `classes` ({NAME = {width_mil, nets}}),
+`[[routing.keepouts]]` ({layer, what = "wire"|"all", rect | polygon, windows, window_mm}), `[[routing.fixed_wires]]`
+({net, layer, width_mil, points}).
 
-### [net_classes]
+`[net_classes]`: `NAME = {min_a, width_mm}` – class by the largest simulated current, practical minimum width (default
+POWER ≥ 0.3 A 0.6 mm, SUPPLY ≥ 0.1 A 0.4 mm, SIGNAL 0.25 mm). `force = {NET = "CLASS"}` pins a net to a class (e.g. a
+switching node).
 
-`NAME = {min_a, width_mm}` – class by the largest simulated current, practical minimum width (default POWER ≥ 0.3 A
-0.6 mm, SUPPLY ≥ 0.1 A 0.4 mm, SIGNAL 0.25 mm). `force = {NET = "CLASS"}` pins a net to a class (e.g. a switching node).
+## 10.3 The schematic file
 
-### [schematic]
+`hardware/schematic.toml`: `stub` (10): stub length of the template. `[layout]`: `rows` (rows → columns → blocks
+`{title, start}`), `power_flags` ({NET = "Ground"|"Power"}), `near` ({CAP = "PART"}), `stacked` (blocks whose trees
+stand one below the other), `[layout.notes]` ({block title = [lines]}), `[layout.pin_table]` (`component`, `block`,
+`prefix`, `notes` {NET = "function"}). It changes no hash – the drawing explains the circuit, it is not the circuit.
+Without the file `edakit schematic draw` arranges the schematic by itself (6.5).
 
-`stub` (10): stub length of the template. `[schematic.layout]`: `rows` (rows → columns → blocks `{title, start}`),
-`power_flags` ({NET = "Ground"|"Power"}), `near` ({CAP = "PART"}), `stacked` (blocks whose trees stand one below the
-other), `[schematic.layout.notes]` ({block title = [lines]}), `[schematic.layout.pin_table]` (`component`, `block`,
-`prefix`, `notes` {NET = "function"}).
-
-### [sim]
-
-`config` (`hardware/sim.json`, chapter 5), `plugin` (optional Python file with `MODELS` and `checks`).
-
-### [checks]
-
-`pin_locks` ({"U1.4" = "NET"}), `reverse_protect` (connectors that may be plugged the wrong way: G-10; also a power
-input for the design hints), `doc_pin_table` ({`component`, `file`, `prefix`, `regex`}).
-
-### [release]
-
-`signoff` (`hardware/signoff.json`), `layout_files` (["edakit.toml"]; the footprint geometry is always added),
-`state_files` (extra files in the circuit hash), `assembly` ({`sides`, `smd_only`}), `[[stages]]` ({`id`, `name`,
-`cmd`, `advisory`, `timeout`, `about`}).
-
-## 10.2 Commands
+## 10.4 Commands
 
 All commands: `--config`, `-v` (MCP traffic). Exit codes: 0 ok, 2 findings, 1 error. With uv from snap inside Claude
 Code: `edakit … 2>&1 | cat`.
@@ -94,7 +116,7 @@ Code: `edakit … 2>&1 | cat`.
 | `edakit schematic check [--schematic] [--no-pins] [--json F]` | ✓ read | graph, schematic | – |
 | `edakit schematic copy [--source] [--target] [--save]` | ✓ | schematic | copy |
 | `edakit schematic layout [--dry-run] [--reread] [--force] [--save]` | ✓ / – | graph, schematic, cached geometry | board schematic, `layout_preview_<name>.svg` |
-| `edakit schematic draw [--board] [--out F] [--force]` | – | graph, parts, `[schematic.layout]` if there | `schematic_<board>.svg` (or F) |
+| `edakit schematic draw [--board] [--out F] [--force]` | – | graph, parts, the schematic file if there | `schematic_<board>.svg` (or F) |
 | `edakit pcb dump [--ref]` | ✓ | PCB | `pcb_geometry_<board>.json` (parts end at 0°/TOP) |
 | `edakit pcb plan` | – | plan, geometry, net currents, graph (`layout`, L-12) | `pcb_plan_<board>.png/.json`, `pcb_netclasses_<board>.json` |
 | `edakit pcb parts [--write]` | ✓ | board schematic, PCB, graph | PCB parts, UniqueIds, geometry |
@@ -111,13 +133,15 @@ Code: `edakit … 2>&1 | cat`.
 | `edakit proposal template [--feature]\|seal FILE [--out F]\|verify FILE` | – | a rule or feature proposal (no project needed) | seal: the issue body with its SHA-256 |
 | `edakit doctor` | – | tool chain | – |
 
-## 10.3 Files in a project
+## 10.5 Files in a project
 
 ```text
-edakit.toml                 project configuration
-hardware/graph.json         the hardware graph (only source of parts and connections)
-hardware/parts/C*.json      parts database
+edakit.toml                 the table of contents: project, boards, where the files are
+hardware/graph.json         the hardware graph (only source of parts and connections), ground net, check settings
+hardware/parts/*.json       parts database
 hardware/sim.json           simulation scenarios
+hardware/schematic.toml     arrangement of the schematic
+hardware/boards/<name>.toml one board: outline, holes, placement, routing, pours, silkscreen
 hardware/signoff.json       manual checks and accepted warnings, bound to hashes
 docs/decisions.md           numbered decisions (or wherever the project keeps them)
 build/edakit/               artifacts (not versioned): caches, geometry, previews, routing, exports

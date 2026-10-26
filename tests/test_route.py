@@ -20,16 +20,19 @@ def setup(tmp_path):
 [project]
 name = "t"
 [boards.main]
-[boards.main.outline]
+""")
+    (tmp_path / "hardware" / "boards").mkdir(parents=True)
+    (tmp_path / "hardware" / "boards" / "main.toml").write_text("""
+[outline]
 rect = [40, 20]
-[boards.main.routing]
+[routing]
 clearance_mil = 6.5
 classes = { POWER = { width_mil = 20, nets = ["VCC"] } }
-[[boards.main.routing.keepouts]]
+[[routing.keepouts]]
 layer = "BOTTOM"
 what = "wire"
 rect = [0, 15, 40, 20]
-[[boards.main.pours]]
+[[pours]]
 net = "GND"
 layers = ["BOTTOM"]
 plane = true
@@ -121,16 +124,14 @@ def mm(x, y):
 
 
 POUR_ONLY = """
-[project]
-name = "t"
-[boards.main.outline]
+[outline]
 rect = [40, 20]
-[[boards.main.routing.fixed_wires]]
+[[routing.fixed_wires]]
 net = "GND"
 layer = "TOP"
 width_mil = 12
 points = [[5, 10], [8, 10]]
-[[boards.main.pours]]
+[[pours]]
 net = "GND"
 layers = ["TOP"]
 """
@@ -139,7 +140,9 @@ layers = ["TOP"]
 @pytest.fixture
 def pour_board(tmp_path):
     def make(extra="pour_only = true"):
-        (tmp_path / "edakit.toml").write_text(POUR_ONLY + extra + "\n")
+        (tmp_path / "edakit.toml").write_text('[project]\nname = "t"\n[boards.main]\n')
+        (tmp_path / "hardware" / "boards").mkdir(parents=True, exist_ok=True)
+        (tmp_path / "hardware" / "boards" / "main.toml").write_text(POUR_ONLY + extra + "\n")
         return route.Rules(config.load(tmp_path / "edakit.toml").board())
     data = {"pcb": "main",
             "components": [{"ref": r, "x": 0, "y": 0, "rot": 0, "layer": 1} for r in ("C1", "C2", "TP1", "TP2")],
@@ -203,7 +206,7 @@ def test_pour_only_neck_narrower_than_min_width(pour_board):
 
 def test_pour_only_two_pour_layers_join_through_a_via(pour_board):
     make, data = pour_board
-    rules = make('pour_only = true\n[[boards.main.pours]]\nnet = "GND"\nlayers = ["BOTTOM"]\npour_only = true')
+    rules = make('pour_only = true\n[[pours]]\nnet = "GND"\nlayers = ["BOTTOM"]\npour_only = true')
     data["pads"][1]["layer"] = 2                                                     # C2 on the bottom side
     assert set(route.check(rules, data, SIG_TOP)) == {"GND"}                         # TOP cut, nothing joins the sides
     stitched = dict(SIG_TOP, GND={"wires": [], "vias": [mm(8, 10)]})
@@ -226,7 +229,7 @@ def test_pour_only_fixed_wire_stays_in_the_routes(pour_board, tmp_path):
 
 def test_pour_only_on_a_shared_layer_is_said(pour_board, capsys):
     make, data = pour_board
-    rules = make('pour_only = true\n[[boards.main.pours]]\nnet = "V_LED"\nlayers = ["TOP", "BOTTOM"]')
+    rules = make('pour_only = true\n[[pours]]\nnet = "V_LED"\nlayers = ["TOP", "BOTTOM"]')
     route.report_check(rules, data, route.check(rules, data, SIG_TOP), SIG_TOP)
     out = capsys.readouterr().out
     assert "GND (pour-only): 2 groups – C" in out
