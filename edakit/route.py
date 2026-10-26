@@ -8,7 +8,8 @@ start, has a fixed 900 s limit and left nets open. So routing happens outside Ea
     2 dsn      offline: our own Specctra DSN (rules from [boards.<b>.routing]); parts, pins and nets in a fixed order
     3 route    offline: Freerouting (pinned, downloads itself once, SHA-256 checked), no GUI -> <board>.ses
     4 check    offline: every net connected, clearances >= rule, nothing in keep-outs; preview PNG with open
-               connections in yellow. In `all`: up to `attempts` runs with a reshuffled DSN while something is open
+               connections in yellow. In `all`: up to `attempts` runs with a reshuffled DSN while something is open.
+               A pour-only net ([[boards.<b>.pours]] pour_only) gets no tracks: its pour, computed here, connects it
     5 apply    delete all tracks, vias and pours in the PCB, create the ones from the SES, compare geometrically,
                delete anything unplanned
     6 pours    pours of [[boards.<b>.pours]] anew and filled; optional stitching of loose islands with vias
@@ -44,7 +45,7 @@ from shapely.geometry import LineString, Point, Polygon, box
 from shapely.ops import unary_union
 
 from . import eda, pcb
-from .config import MIL_PER_MM
+from .config import MIL_PER_MM, POUR_CLEARANCE_MM, POUR_MIN_WIDTH_MM
 from .design import natural_key
 from .eda import api, ensure_pcb_focus
 
@@ -78,6 +79,13 @@ class Rules:
         self.passes = r.get("passes", 40)
         self.attempts = r.get("attempts", 5)
         self.classes = {name: (c["width_mil"], set(c["nets"])) for name, c in r.get("classes", {}).items()}
+        self.pour_only = defaultdict(list)  # net -> [(layer, clearance mil, min width mil)]
+        for p in board.pours:
+            if p.get("pour_only"):
+                for layer in p.get("layers", ["TOP", "BOTTOM"]):  # as `pcb pour` pours them
+                    self.pour_only[p["net"]].append((layer, p.get("clearance_mm", POUR_CLEARANCE_MM) * MIL_PER_MM,
+                                                     p.get("min_width_mm", POUR_MIN_WIDTH_MM) * MIL_PER_MM))
+        self.pour_only = dict(self.pour_only)
 
     def net_class(self, net):
         for name, (w, nets) in self.classes.items():
@@ -327,7 +335,8 @@ def write_dsn(rules, data, out, variant=0):
         images[ref].append(f"(pin {q(padstacks[key][0])} {q(pin)} {f(pad['x'] - origin['x'])} {f(pad['y'] - origin['y'])})")
         if pad["net"]:
             nets[pad["net"]].append(f"{ref}-{pin}")
-    routed = {n: p for n, p in nets.items() if len(p) > 1}
+    # a pour-only net is left out of the network: its pads stay pins without a net, obstacles Freerouting keeps clear of
+    routed = {n: p for n, p in nets.items() if len(p) > 1 and n not in rules.pour_only}
     cls = defaultdict(list)
     for n in sorted(routed):
         cls[rules.net_class(n)].append(n)
@@ -404,7 +413,8 @@ def write_dsn(rules, data, out, variant=0):
     out.write_text("\n".join(L) + "\n")
     say(f"DSN: {len(routed)} nets with >= 2 pins, {len(data['pads'])} pads, {len(padstacks)} padstacks, {len(keep)} hole "
         f"keep-outs, {len(strips)} edge strips, {len(extra)} keep-out pieces, {len(fixed)} fixed wires, clearance "
-        f"{rules.clear} mil" + (f", order {variant}" if variant else "") + f" -> {out}")
+        f"{rules.clear} mil" + (f", order {variant}" if variant else "")
+        + (f", pour-only (no tracks): {', '.join(sorted(rules.pour_only))}" if rules.pour_only else "") + f" -> {out}")
     for (name, w), members in sorted(cls.items()):
         print(f"    class {name}: {w} mil, {len(members)} nets", flush=True)
 
@@ -486,8 +496,9 @@ def find(node, key):
             yield c
 
 
-def read_ses(ses):
-    """-> {net: {"wires": [(layer, width, [(x, y), …])], "vias": [(x, y)]}} in mil."""
+def read_ses(ses, rules=None):
+    """-> {net: {"wires": [(layer, width, [(x, y), …])], "vias": [(x, y)]}} in mil. With rules: the fixed wires of
+    pour-only nets added back – Freerouting leaves a net that is not in the network out of the SES."""
     root = sexp(Path(ses).read_text())
     routes = next(find(root, "routes"))
     res = next(find(routes, "resolution"))
@@ -503,6 +514,12 @@ def read_ses(ses):
             entry["wires"].append((path[1], nums[0], list(zip(nums[1::2], nums[2::2]))))
         for via in find(net, "via"):
             entry["vias"].append((float(via[2]) / scale, float(via[3]) / scale))
+    for net, layer, w, pts in fixed_wires(rules) if rules else []:
+        if net in rules.pour_only:
+            entry = out.setdefault(net, {"wires": [], "vias": []})
+            if not any(lay == layer and len(p2) == len(pts) and max(map(math.dist, p2, pts), default=0) <= SNAP_MIL
+                       for lay, _, p2 in entry["wires"]):
+                entry["wires"].append((layer, w, pts))
     return out
 
 
@@ -590,9 +607,46 @@ def segments(rules, routes, data=None):
 
 # --- 4 check ------------------------------------------------------------------------------------------------------
 
+def pour_pieces(rules, data, routes, segs=None):
+    """The pours of the pour-only nets as EasyEDA fills them, computed offline: {(net, layer): [polygon, …]} in mil.
+    Per net and layer: the pour outline of `pcb pour`, without the copper of other nets on that layer – pads (those
+    without a net too), tracks, vias – grown by clearance_mm, opened by half of min_width_mm (EasyEDA does not fill
+    narrower necks). The net's own copper is not taken away: the pour reaches its pads, tracks and vias. Other pours on
+    the same layer are not taken into account."""
+    if not rules.pour_only:
+        return {}
+    board = rules.board
+    if not board.outline:
+        raise SystemExit(f"board {board.name}: pour_only needs the outline in edakit.toml – the pour outline is "
+                         "computed from it")
+    outline = Polygon([tuple(v * MIL_PER_MM for v in board.eda_point(x, y)) for x, y in pcb.pour_outline(board)])
+    segs = segments(rules, routes, data) if segs is None else segs
+    copper = {"TOP": [], "BOTTOM": []}  # (net, copper) per layer
+    for p in data["pads"]:
+        for layer in pad_layers(p):
+            copper[layer].append((p["net"], pad_outline(p)))
+    for net, ss in segs.items():
+        for layer, w, a, b in ss:
+            copper[layer].append((net, LineString([a, b]).buffer(w / 2)))
+    for net, r in routes.items():
+        for v in r["vias"]:
+            for layer in copper:
+                copper[layer].append((net, Point(v).buffer(rules.via[1] / 2)))
+    out = {}
+    for net, specs in sorted(rules.pour_only.items()):
+        for layer, clearance, width in specs:
+            area = outline.difference(unary_union([g for n, g in copper[layer] if n != net]).buffer(clearance))
+            if width > 0:
+                area = area.buffer(-width / 2).buffer(width / 2)
+            out[(net, layer)] = [g for g in _parts(area) if g.geom_type == "Polygon"]
+    return out
+
+
 def check(rules, data, routes):
-    """Per net: are all pads connected through tracks and vias? Net -> groups of pad indices, largest first."""
+    """Per net: are all pads connected through tracks and vias – and for a pour-only net its computed pour (pieces on
+    two layers join through its through-hole pads and vias)? Net -> groups of pad indices, largest first."""
     segs = segments(rules, routes, data)
+    pours = pour_pieces(rules, data, routes, segs)
     pads_by_net = defaultdict(list)
     for i, p in enumerate(data["pads"]):
         if p["net"]:
@@ -613,6 +667,8 @@ def check(rules, data, routes):
         nodes += [(("via", k), {"TOP", "BOTTOM"}, Point(v).buffer(rules.via[1] / 2)) for k, v in enumerate(r["vias"])]
         nodes += [(("seg", k), {layer}, LineString([a, b]).buffer(w / 2 * 0.2))
                   for k, (layer, w, a, b) in enumerate(segs.get(net, []))]
+        for layer, _, _ in rules.pour_only.get(net, []):
+            nodes += [(("pour", layer, k), {layer}, g) for k, g in enumerate(pours[(net, layer)])]
         for x in range(len(nodes)):
             for y in range(x + 1, len(nodes)):
                 if nodes[x][1] & nodes[y][1] and nodes[x][2].intersects(nodes[y][2]):
@@ -674,8 +730,15 @@ def report_check(rules, data, open_nets, routes):
     say(f"check: {len(routes)} nets routed, {n_seg} track pieces, {n_via} vias; open: {len(open_nets)}")
     name = lambda i: f"{data['pads'][i]['ref']}.{data['pads'][i]['num']}"  # noqa: E731
     for net, groups in open_nets.items():
-        print(f"    {net}: {len(groups)} groups – " + " | ".join(
+        print(f"    {net}{' (pour-only)' if net in rules.pour_only else ''}: {len(groups)} groups – " + " | ".join(
             ", ".join(name(i) for i in g[:6]) + (" …" if len(g) > 6 else "") for g in groups), flush=True)
+    for net, specs in sorted(rules.pour_only.items()):
+        for layer, _, _ in specs:
+            others = sorted({p["net"] for p in rules.board.pours
+                             if p["net"] != net and layer in p.get("layers", ["TOP", "BOTTOM"])})
+            if others:
+                print(f"    ! {net} {layer}: the pour of {', '.join(others)} shares the layer – the computed pour of "
+                      f"{net} does not leave it out, and EasyEDA fills overlapping pours by priority", flush=True)
 
 
 def render(rules, data, routes, png, open_nets=None):
@@ -685,11 +748,16 @@ def render(rules, data, routes, png, open_nets=None):
     from matplotlib.patches import Polygon as MPoly
     outer, holes = board_area(data)
     segs = segments(rules, routes, data)
+    pours = pour_pieces(rules, data, routes, segs)
     fig, axes = plt.subplots(1, 2, figsize=(14, 8))
     for ax, side, color in ((axes[0], "TOP", "#d62728"), (axes[1], "BOTTOM", "#1f77b4")):
         ax.add_patch(MPoly(list(outer.exterior.coords), closed=True, fc="#0b3d1a", ec="#aaaaaa", lw=1))
         for h in holes:
             ax.add_patch(MPoly(list(h.exterior.coords), closed=True, fc="white", ec="#aaaaaa"))
+        for g in (g for (_, layer), gs in pours.items() if layer == side for g in gs):  # pours of pour-only nets
+            ax.add_patch(MPoly(list(g.exterior.coords), closed=True, fc=color, ec="none", alpha=0.25))
+            for ring in g.interiors:
+                ax.add_patch(MPoly(list(ring.coords), closed=True, fc="#0b3d1a", ec="none"))
         for p in data["pads"]:
             if side in pad_layers(p):
                 ax.add_patch(MPoly(list(pad_outline(p).exterior.coords), closed=True, fc="#c8a040", ec="none", alpha=0.9))
@@ -985,7 +1053,7 @@ def main(cfg, args):
                         write_dsn(rules, data, P["dsn"], variant=attempt - 1)
                         run_freerouting(P["dsn"], P["ses"], P["log"], passes, args.threads, not args.no_optimizer,
                                         rules.edge_um)
-                    routes = read_ses(P["ses"])
+                    routes = read_ses(P["ses"], rules)
                     open_nets = check(rules, data, routes)
                     render(rules, data, routes, P["png"], open_nets)
                     report_check(rules, data, open_nets, routes)
@@ -1001,9 +1069,9 @@ def main(cfg, args):
                                          "nothing written to EasyEDA. More passes (--passes), or check rules/placement.")
                     return 2
             elif step == "apply":
-                apply_ses(rules, mcp, read_ses(P["ses"]), json.loads(P["board"].read_text()), P["stitch"])
+                apply_ses(rules, mcp, read_ses(P["ses"], rules), json.loads(P["board"].read_text()), P["stitch"])
             elif step == "verify":
-                data, routes = json.loads(P["board"].read_text()), read_ses(P["ses"])
+                data, routes = json.loads(P["board"].read_text()), read_ses(P["ses"], rules)
                 segs = segments(rules, routes, data)
                 problems = remove_stray(rules, mcp, segs, routes, P["stitch"]) if args.cleanup \
                     else verify(rules, mcp, segs, routes, P["stitch"])[0]
@@ -1013,7 +1081,7 @@ def main(cfg, args):
                     return 2
             elif step == "pours":
                 data = json.loads(P["board"].read_text()) if P["board"].exists() else None
-                routes = read_ses(P["ses"]) if P["ses"].exists() else {}
+                routes = read_ses(P["ses"], rules) if P["ses"].exists() else {}
                 pours(cfg, board, rules, mcp, data, routes, P["stitch"])
             elif step == "reload":
                 eda.reload_pcb(mcp)

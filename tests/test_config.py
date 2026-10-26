@@ -2,7 +2,7 @@ import math
 
 import pytest
 
-from edakit.config import Board, ConfigError, _outline
+from edakit.config import Board, ConfigError, _outline, _pours
 
 
 def board(view):
@@ -57,3 +57,21 @@ def test_example_config_loads(project):
     assert b.pcb == "main" and b.template == "generated_main" and b.schematic == "layout_main"
     assert len(b.tooling) == 2 and b.place["U1"].side == "top"
     assert cfg.net_classes and list(cfg.net_classes)[-1] == "SIGNAL"
+
+
+def test_pours_pour_only():
+    plain = [{"net": "GND", "layers": ["TOP", "BOTTOM"]}, {"net": "V_LED", "layers": ["BOTTOM"], "plane": True}]
+    assert _pours("b", plain) == plain                                  # no pour_only: as written
+    got = _pours("b", [{"net": "GND", "layers": ["TOP"], "pour_only": True},
+                       {"net": "GND", "layers": ["BOTTOM"], "pour_only": True, "min_width_mm": 0.3}])
+    assert [(p["clearance_mm"], p["min_width_mm"]) for p in got] == [(0.25, 0.25), (0.25, 0.3)]
+
+
+@pytest.mark.parametrize("pours", [
+    [{"net": "GND", "pour_only": True, "plane": True}],
+    [{"net": "GND", "layers": ["TOP"], "pour_only": True}, {"net": "GND", "layers": ["BOTTOM"]}],
+    [{"net": "GND", "pour_only": True, "clearance_mm": -0.1}],
+])
+def test_pours_pour_only_mistakes(pours):
+    with pytest.raises(ConfigError):
+        _pours("b", pours)

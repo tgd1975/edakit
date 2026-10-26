@@ -26,6 +26,8 @@ DEFAULT_NET_CLASSES = {          # from the largest simulated current (A), pract
     "SUPPLY": {"min_a": 0.1, "width_mm": 0.4},
     "SIGNAL": {"min_a": 0.0, "width_mm": 0.25},
 }
+POUR_CLEARANCE_MM = 0.25         # pour_only: what the computed pour keeps from foreign copper (copper-area rule)
+POUR_MIN_WIDTH_MM = 0.25         # pour_only: the narrowest neck the computed pour fills
 
 
 class ConfigError(Exception):
@@ -175,6 +177,28 @@ def _placement(ref, v):
     return Placement(float(v["x"]), float(v["y"]), float(v.get("rot", 0)), side, bool(v.get("lock", True)))
 
 
+def _pours(name, pours):
+    """[[boards.<b>.pours]] as written. A net with pour_only = true gets no tracks, its pour connects it: every entry of
+    that net must say so, none may be a plane (a plane gets connections to make), and each gets its clearance_mm and
+    min_width_mm."""
+    out = [dict(p) for p in pours]
+    only = {p.get("net") for p in out if p.get("pour_only")}
+    for p in out:
+        if p.get("net") not in only:
+            continue
+        if not p.get("pour_only"):
+            raise ConfigError(f"board {name}: pour {p.get('net')} is pour_only in one entry but not in another – "
+                              "set it on every entry of the net")
+        if p.get("plane"):
+            raise ConfigError(f"board {name}: pour {p['net']} cannot be pour_only and a plane – a plane gets tracks "
+                              "and vias to it, a pour-only net none")
+        for key, default in (("clearance_mm", POUR_CLEARANCE_MM), ("min_width_mm", POUR_MIN_WIDTH_MM)):
+            p[key] = float(p.get(key, default))
+            if p[key] < 0:
+                raise ConfigError(f"board {name}: pour {p['net']}: {key} must not be negative")
+    return out
+
+
 def _board(name, b):
     tooling = b.get("tooling", {})
     view = b.get("view", "top")
@@ -203,7 +227,7 @@ def _board(name, b):
         edge_ok=set(b.get("edge_ok", [])),
         park=tuple(map(float, b.get("park", [10, -15]))),
         routing=b.get("routing", {}),
-        pours=b.get("pours", [{"net": "GND", "layers": ["TOP", "BOTTOM"]}]),
+        pours=_pours(name, b.get("pours", [{"net": "GND", "layers": ["TOP", "BOTTOM"]}])),
         silk=b.get("silk", {}),
         loops=loops,
     )

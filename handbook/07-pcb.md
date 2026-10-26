@@ -152,6 +152,11 @@ points = [[10, 5], [14, 5]]
 net = "V_LED"
 layers = ["BOTTOM"]
 plane = true                       # Freerouting connects this net's pads to a plane on that layer through vias
+
+[[boards.main.pours]]
+net = "GND"
+layers = ["TOP"]
+pour_only = true                   # no tracks: the pour between the tracks connects this net (7.6)
 ```
 
 Class widths must be at least the minimum of the matching EasyEDA net class rule, or the DRC complains.
@@ -173,10 +178,10 @@ Class widths must be at least the minimum of the matching EasyEDA net class rule
   side and connects that net with vias – a calm visible side. With the ground net as the plane instead, 70 of 178
   connections stayed open; choose the net whose pads are spread over the side.
 
-**Check before writing:** every net connected through pads, tracks and vias (planes count), every track and via at
-least the clearance from foreign copper, nothing in keep-outs – independent of Freerouting's own score. Preview:
-`<artifacts>/route/<board>_routing.png`, open connections dashed yellow. Nothing is written to EasyEDA until the check
-passes.
+**Check before writing:** every net connected through pads, tracks and vias (planes count, and the computed pour of a
+pour-only net, 7.6), every track and via at least the clearance from foreign copper, nothing in keep-outs – independent
+of Freerouting's own score. Preview: `<artifacts>/route/<board>_routing.png`, open connections dashed yellow. Nothing
+is written to EasyEDA until the check passes.
 
 **Writing into EasyEDA** (all copper is generated, so it is deleted first – deleting sometimes needs several passes):
 points closer than 0.5 mil are snapped together (EasyEDA drops tiny pieces and connects track to track only through
@@ -189,9 +194,24 @@ and anything unplanned is deleted – old tracks have come back after a reload b
 
 ## 7.6 Pours
 
-`[[boards.<b>.pours]]`: net, layers, `plane`, `stitch`. Filled with `easyeda_pcb_rebuild_copper` per net (status
-`readback-mismatch` is harmless). With `stitch = "BOTTOM"` edakit fills once keeping islands, puts a via into every loose
-island on that side where it overlaps the pour of the other side (with clearance), then fills again without islands.
+`[[boards.<b>.pours]]`: net, layers, `plane`, `stitch`, `pour_only`. Filled with `easyeda_pcb_rebuild_copper` per net
+(status `readback-mismatch` is harmless). With `stitch = "BOTTOM"` edakit fills once keeping islands, puts a via into
+every loose island on that side where it overlaps the pour of the other side (with clearance), then fills again without
+islands.
+
+**Pour-only nets.** On a board where ground is the pour between the tracks – all tracks on one side, say – a net with
+`pour_only = true` gets no tracks: the DSN leaves it out of the network, so its pads are pins without a net that
+Freerouting keeps clear of. `route check` computes the pour offline from the board file and the routes: the pour
+outline of `pcb pour`, without the pads (also those without a net), tracks and vias of other nets on that layer grown
+by `clearance_mm`, without necks narrower than `min_width_mm` (EasyEDA does not fill them). The net counts as connected
+when one piece holds all its pads; pieces on two pour layers join through the net's through-hole pads and vias, and
+its own tracks count as well. Otherwise it is reported like an open net, `GND (pour-only): 2 groups – C1.2 | C2.2`, and
+the preview shows the computed pour. Fixed wires of the net (`routing.fixed_wires`) stay in the result although
+Freerouting leaves a net outside the network out of its SES. A plane, by contrast, is taken as connected whatever
+the tracks do to it – use it for a net Freerouting connects with vias, not for a pour that tracks cut.
+
+The computed pour assumes the layer to itself: when another net pours on the same layer, `route check` says so, since
+EasyEDA fills overlapping pours by priority. The gate's L-2 on the Gerber copper has the last word either way.
 
 ## 7.7 Silkscreen
 

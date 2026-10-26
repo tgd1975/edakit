@@ -24,6 +24,7 @@ Start with `edakit doctor`.
 | `edakit schematic check` suddenly reports a pin on two nets in the template | drift of unknown cause in a generated schematic | regenerate the template (`schematic create --save`) |
 | `copy` refuses: "belongs to board" | the PCB is linked to the target | correct: use `edakit schematic layout`, which syncs in place |
 | Freerouting leaves nets open | order dependence, crowded pads, rules | `route all` retries reshuffled; more passes; more room in the plan; a power plane; lower clearance only within EasyEDA's DRC |
+| `route check`: a pour-only net open in groups | tracks of other nets cut its pour into islands | the preview shows the computed pour and where it is cut: a wire keep-out on that layer where the tracks cut it, or more room between the pads there |
 | Freerouting routes nothing in part of the board | concave outline as boundary | edakit uses a rectangle + keep-outs; if you write your own DSN, do the same |
 | tracks appear where a wire keep-out should be | stale DSN | `route` writes the DSN fresh every time; `route check` uses the same config |
 | "outline contains arcs" | outline drawn by hand with arcs | draw it with `edakit pcb apply` (arcs as point lists) |
