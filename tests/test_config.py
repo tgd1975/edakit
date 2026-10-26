@@ -164,3 +164,11 @@ def test_pour_regions_plane_on_a_layer_of_its_own():
     b = _board("b", {}, {"pour_regions": True, "pours": [{"net": "GND", "layers": ["TOP"]},
                                                          {"net": "V", "layers": ["BOTTOM"], "plane": True}]})
     assert b.pours[1]["plane"]
+
+
+def test_pour_inset_key():
+    from edakit.config import _board
+    assert _board("b", {}, {}).pour_inset_mm is None                  # no key: edge clearance + 0.1 mm, as before
+    assert _board("b", {}, {"pour_inset_mm": 0.55}).pour_inset_mm == 0.55
+    with pytest.raises(ConfigError, match="pour_inset_mm must not be negative"):
+        _board("b", {}, {"pour_inset_mm": -0.1})

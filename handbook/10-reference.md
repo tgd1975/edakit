@@ -79,11 +79,13 @@ layout review again (M-5). The keys stand at the top of the file, without a pref
 | `[[pours]]` | GND on both layers | `net`, `layers`, `plane` (bool), `stitch` (layer), `priority`, `line_mil`, `pour_only` (false: the net gets no tracks, its pour connects it; on every entry of the net, not with `plane`), `clearance_mm` (0.25: what the computed pour keeps from foreign copper – the EasyEDA copper-area rule), `min_width_mm` (0.25: the narrowest neck it fills); both also for every pour on a shared layer with `pour_regions` |
 | `pour_regions` | `false` | nets that share a pour layer get outlines of their own area, claimed in `priority` order (7.6); no `plane` on such a layer |
 | `pour_min_piece_mm2` | `2.0` | with `pour_regions`: the smallest piece (outside the net's own copper and clearance) that gets an outline |
+| `pour_inset_mm` | edge clearance + 0.1 | how far the pours lie inside the outline (mm): the outline of `pcb pour` and `route pours` and every computed pour; without it `routing.edge_clearance_um` / 1000 + 0.1; the tracks keep `edge_clearance_um` either way (7.6) |
 | `silk` | `{}` | `designators` (side), `hide` (sides), `label_h_mm` (1.0), `gap_mm` (0.25), `groups` {label: [refs]}, `priority` (["TP"]), `board_label` (`"{title} rev {revision}"`; also `{project}`, `{board}`; `""` = none), `board_label_corner` (`bottom-left`, seen from the printed side), `board_label_h_mm` (1.2), `[[art]]` ({`svg`, `x`, `y`, `width_mm`, `rot`, `side`}), `[[texts]]` ({`text`, `x`, `y`, `h_mm` (1.2), `rot`, `side`, `font` (`default` = stroke font, or a font family EasyEDA knows)}) |
 | `[[loops]]` | `[]` | `a`, `b` (pads "D1.2"), `max_mm`, `what` – check L-11; the circuit's are `layout.loops` of the graph |
 | `net_classes` | see below | track widths from the simulated currents |
 
-`[routing]`: `clearance_mil` (6.5), `signal_mil` (10), `via` ([24, 12]), `edge_clearance_um` (400), `passes` (40),
+`[routing]`: `clearance_mil` (6.5), `signal_mil` (10), `via` ([24, 12]), `edge_clearance_um` (400: tracks and vias
+from the outline, in the DSN and in Freerouting; the pours: `pour_inset_mm`), `passes` (40),
 `attempts` (5), `layer_cost` ({TOP = [1.0, 1.8], BOTTOM = [1.5, 2.5]}), `classes` ({NAME = {width_mil, nets}}),
 `[[routing.keepouts]]` ({layer, what = "wire"|"all", rect | polygon, windows, window_mm}), `[[routing.fixed_wires]]`
 ({net, layer, width_mil, points}).

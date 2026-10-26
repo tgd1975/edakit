@@ -67,6 +67,8 @@ describes (section 3).
 - The auto-layout knows nothing about belonging: decoupling capacitors and pull-ups that must sit at their IC go into
   `place` – L-12 names the ones the circuit asks for.
 - A pour polygon with a hole is taken only as its outer contour; tooling holes get a notch to the edge instead.
+- The pours keep the tracks' edge clearance + 0.1 mm from the outline; `pour_inset_mm` in the board file gives them a
+  distance of their own (handbook 7.6), e.g. further from the milled edge than tracks that run along it.
 - Two nets pouring on one layer: the one with priority fills it all unless `pour_regions = true` gives each its own
   area (handbook 7.6); an area enclosed by another net's is an error, solved in the routing.
 - While a free pad (tooling hole) is in the PCB, filling pours fails – edakit takes them out and puts them back.

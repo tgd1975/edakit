@@ -133,7 +133,7 @@ Rules in the board file:
 clearance_mil = 6.5          # above EasyEDA's DRC (pad 0.152 mm) and JLCPCB (0.127 mm); 8 mil left 18 links open
 signal_mil = 10
 via = [24, 12]               # diameter, drill
-edge_clearance_um = 400
+edge_clearance_um = 400      # tracks and vias from the outline; the pours keep pour_inset_mm (7.6)
 layer_cost = { TOP = [1.0, 1.8], BOTTOM = [2.2, 3.0] }   # preferred / against preferred direction: keep a side calm
 classes = { POWER = { width_mil = 18, nets = ["VIN", "+5V"] }, GND = { width_mil = 18, nets = ["GND"] } }
 
@@ -198,6 +198,16 @@ and anything unplanned is deleted – old tracks have come back after a reload b
 per net (status `readback-mismatch` is harmless). With `stitch = "BOTTOM"` edakit fills once keeping islands, puts a via
 into every loose island on that side where it overlaps the pour of the other side (with clearance), then fills again
 without islands.
+
+**Distance from the edge.** Every pour gets the board outline set in by `pour_inset_mm` from the top of the board file
+– without it by the tracks' `routing.edge_clearance_um` + 0.1 mm (0.5 mm with 400; EasyEDA itself keeps only about
+0.26 mm). The computed pours below start from the same outline. The key keeps the pours further from the milled edge
+than tracks that have to run along it, through a notch of the outline say; the tracks keep the edge clearance in the
+DSN and in Freerouting either way:
+
+```toml
+pour_inset_mm = 0.55               # in hardware/boards/<b>.toml, above the tables; tracks 0.4 mm (edge_clearance_um)
+```
 
 **Pour-only nets.** On a board where ground is the pour between the tracks – all tracks on one side, say – a net with
 `pour_only = true` gets no tracks: the DSN leaves it out of the network, so its pads are pins without a net that

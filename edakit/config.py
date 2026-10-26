@@ -41,7 +41,8 @@ PROJECT_KEYS = ("name", "company", "quantity", "distributors", "lock", "graph", 
                 "schematic", "signoff", "artifacts", "reports")
 BOARD_KEYS = ("title", "template", "schematic", "pcb", "file")            # [boards.<name>] in edakit.toml
 BOARD_FILE_KEYS = ("revision", "view", "outline", "holes", "tooling", "place", "near", "near_mm", "edge_mm", "edge_ok",
-                   "park", "routing", "pours", "pour_regions", "pour_min_piece_mm2", "silk", "loops", "net_classes")
+                   "park", "routing", "pours", "pour_regions", "pour_min_piece_mm2", "pour_inset_mm", "silk", "loops",
+                   "net_classes")
 SCHEMATIC_KEYS = ("stub", "layout")
 RELEASE_KEYS = ("layout_files", "state_files", "assembly", "stages")
 
@@ -85,6 +86,7 @@ class Board:
     pours: list = field(default_factory=list)
     pour_regions: bool = False                        # nets that share a pour layer get claimed outlines
     pour_min_piece_mm2: float = POUR_MIN_PIECE_MM2
+    pour_inset_mm: float | None = None                # pours inside the outline; None: edge clearance + 0.1 mm
     silk: dict = field(default_factory=dict)
     loops: list = field(default_factory=list)         # [(pad a, pad b, max mm, what)] short current loops (L-11)
     net_classes: dict = field(default_factory=lambda: dict(DEFAULT_NET_CLASSES))  # by falling min_a
@@ -265,6 +267,9 @@ def _board(name, entry, b, file=""):
     min_piece = float(b.get("pour_min_piece_mm2", POUR_MIN_PIECE_MM2))
     if min_piece < 0:
         raise ConfigError(f"board {name}: pour_min_piece_mm2 must not be negative")
+    inset = float(b["pour_inset_mm"]) if b.get("pour_inset_mm") is not None else None
+    if inset is not None and inset < 0:
+        raise ConfigError(f"board {name}: pour_inset_mm must not be negative")
     return Board(
         name=name,
         title=entry.get("title", name),
@@ -291,6 +296,7 @@ def _board(name, entry, b, file=""):
         pours=_pours(name, b.get("pours", [{"net": "GND", "layers": ["TOP", "BOTTOM"]}]), regions),
         pour_regions=regions,
         pour_min_piece_mm2=min_piece,
+        pour_inset_mm=inset,
         silk=b.get("silk", {}),
         loops=loops,
         net_classes=classes,
