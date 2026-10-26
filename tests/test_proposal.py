@@ -27,6 +27,34 @@ A footprint with 1.0–1.1 mm holes.
 - commit: 3a613ed
 """
 
+FEATURE = """## zero-ohm bridges join their nets
+
+### Kind
+feature
+
+### Capability
+A 0 Ω resistor (value_ohm 0) joins its two nets for the checks and the simulation, as copper would.
+
+### Gap
+`edakit check` on the origin: G-4 on TLC_OE (pull-up behind R35) and G-6 on V_LED (capacitors behind R55), both
+false; `edakit sim` stops with ZeroDivisionError in stress().
+
+### Reference
+pytree hardware/graph/check_graph.py bridged() at 9d9efad: nets joined through parts with value_ohm 0 count as one
+for G-4 and G-6; run_sims.py uses r_max_ohm instead of 0.
+
+### Interface
+none – a parts entry with value_ohm 0 is enough.
+
+### Test
+The example gets a 0 Ω bridge between the button's pull-up and 3V3: today G-4 fires and sim crashes, then neither.
+
+### Origin
+- project: pytree (private)
+- decision: EK-2 in docs/concepts/offen/edakit.md
+- commit: 9d9efad
+"""
+
 
 def test_template_is_not_sealed_unfilled():
     body, problems = proposal.seal(proposal.template())
@@ -75,3 +103,29 @@ def test_cli(tmp_path, capsys):
     body.write_text(body.read_text().replace("U1", "U2"))
     assert cli.main(["proposal", "verify", str(body)]) == 2
     assert "checksum does not match" in capsys.readouterr().out
+
+
+def test_feature_template_has_its_kind_and_its_sections():
+    text = proposal.template(proposal.FEATURE)
+    assert "### Kind\nfeature" in text and "### Gap" in text and "### Rule" not in text
+    body, problems = proposal.seal(text)
+    assert body is None
+    assert len(problems) == len(proposal.FEATURE_SECTIONS)     # the title and every section but Kind
+
+
+def test_feature_proposal_verifies_with_its_own_sections():
+    body, problems = proposal.seal(FEATURE)
+    assert problems == [] and proposal.verify(body) == []
+    body, problems = proposal.seal(FEATURE.replace("### Interface", "### Fix"))
+    assert body is None and any("section 'Interface' is missing" in p for p in problems)
+
+
+def test_rule_sections_do_not_make_a_feature():
+    problems = proposal.check(FILLED.replace("check\n", "feature\n", 1))
+    assert any("section 'Capability' is missing" in p for p in problems)
+    assert not any("kind" in p for p in problems)
+
+
+def test_cli_feature_template(capsys):
+    assert cli.main(["proposal", "template", "--feature"]) == 0
+    assert "### Capability" in capsys.readouterr().out

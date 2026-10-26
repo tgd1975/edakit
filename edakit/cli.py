@@ -14,7 +14,7 @@
     edakit gate [--easyeda]          release gate with test protocol and manufacturing files
     edakit fab --board B --out DIR   stages L/F for one board (the gate calls it)
     edakit lock [status|claim|release|yield CHAT]   share EasyEDA between parallel Claude sessions
-    edakit proposal template|seal|verify   a rule proposal for the edakit repository, sealed with its SHA-256
+    edakit proposal template|seal|verify   a rule or feature proposal for the edakit repository, sealed with its SHA-256
     edakit doctor                    Node, easyeda-mcp-pro, bridge, EasyEDA process, ngspice, Freerouting
 
 Exit codes everywhere: 0 = ok, 2 = findings, 1 = error.
@@ -126,8 +126,9 @@ def build_parser():
     p.add_argument("--auto", action="store_true", help="claim from a script (logged as automatic)")
     _common(p)
 
-    p = sub.add_parser("proposal", help="rule proposals for the edakit repository: template, seal, verify")
+    p = sub.add_parser("proposal", help="rule and feature proposals for the edakit repository: template, seal, verify")
     p.add_argument("action", choices=["template", "seal", "verify"])
+    p.add_argument("--feature", action="store_true", help="template: a feature proposal instead of a rule proposal")
     p.add_argument("file", nargs="?", help="seal, verify: the text (- for stdin)")
     p.add_argument("--out", help="seal: write the issue body into this file instead of stdout")
 

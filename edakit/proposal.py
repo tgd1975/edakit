@@ -1,10 +1,14 @@
-"""Rule proposals: an issue in the edakit repository that asks for a check, a hint, a block, a part fact or the
-retirement of a check – written in a project (plugin skill propose-rule), triaged in the edakit repository (skill
-triage-rule, run by the Action rule-proposals). Handbook 14.4.
+"""Proposals: an issue in the edakit repository, written in a project and triaged in the edakit repository by the
+Action proposals. Two sorts, told apart by the section Kind:
 
-    edakit proposal template          the text to fill in
-    edakit proposal seal FILE         check the filled-in text and append its SHA-256 – the body of the issue
-    edakit proposal verify FILE|-     every section filled in, and the text is the one that was sealed
+- a rule proposal asks for a check, a hint, a block, a part fact or the retirement of a check (plugin skill
+  propose-rule, repository skill triage-rule; handbook 14.4)
+- a feature proposal asks for something edakit cannot do yet and a project had to build or work around itself
+  (plugin skill propose-feature, repository skill triage-feature; handbook 11.6)
+
+    edakit proposal template [--feature]   the text to fill in
+    edakit proposal seal FILE              check the filled-in text and append its SHA-256 – the body of the issue
+    edakit proposal verify FILE|-          every section filled in, and the text is the one that was sealed
 
 The checksum shows that the text was not changed after it was sealed – an issue edited by hand fails on purpose.
 Who wrote it is what GitHub says about the author; the Action only works on proposals of the repository owner.
@@ -20,17 +24,31 @@ import sys
 from pathlib import Path
 
 VERSION = 1
-KINDS = ("check", "hint", "block", "part", "retire")
+RULE_KINDS = ("check", "hint", "block", "part", "retire")
+FEATURE = "feature"
+KINDS = RULE_KINDS + (FEATURE,)
 TITLE = "a few words, like the title of a check"
 # section -> what goes in it (also the placeholder of the template)
 SECTIONS = {
-    "Kind": "one of: " + ", ".join(KINDS),
+    "Kind": "one of: " + ", ".join(RULE_KINDS),
     "Rule": "the rule in one sentence – what a check would test, what a hint says, what a block is for",
     "Why": "what goes wrong without it",
     "Finding": "where it showed: designator or net, the numbers, the state (circuit hash or commit)",
     "Fix": "what to do about a finding",
     "Sources": "every source opened and read: document number, revision, section – or the project's decision",
     "Origin": "project (owner/repo on GitHub, or its name), decision (D-… in which file), commit",
+}
+FEATURE_SECTIONS = {
+    "Kind": FEATURE,
+    "Capability": "what edakit should be able to do, in one or two sentences – for any board with this pattern",
+    "Gap": "what edakit does today on the origin: the command and its output or numbers – a false finding, a crash, "
+           "a part of the circuit left out, a step done by hand",
+    "Reference": "how the origin does it today: file, function, commit, and the method in words – code only with the "
+                 "owner's OK, the issue is public",
+    "Interface": "the keys in edakit.toml, fields in graph or parts entries, or options it needs, each with the default "
+                 "that leaves existing projects as they are – or 'none'",
+    "Test": "how a test shows it without EasyEDA: what is built into the example, what edakit reports before and after",
+    "Origin": SECTIONS["Origin"],
 }
 SEAL = re.compile(r"^edakit-proposal v(\d+) sha256:([0-9a-f]{64})$")
 
@@ -44,8 +62,21 @@ def digest(text):
     return hashlib.sha256(canonical(text).encode("utf-8")).hexdigest()
 
 
-def template():
-    parts = [f"## <{TITLE}>"] + [f"### {name}\n<{what}>" for name, what in SECTIONS.items()]
+def kind_of(sections):
+    """The first word of the section Kind, lower case ('' when missing)."""
+    words = (sections.get("Kind") or "").split()
+    return words[0].lower() if words else ""
+
+
+def sections_for(kind):
+    return FEATURE_SECTIONS if kind == FEATURE else SECTIONS
+
+
+def template(kind=None):
+    """The text to fill in; for a feature proposal the kind is filled in already."""
+    wanted = sections_for(kind)
+    parts = [f"## <{TITLE}>"] + [f"### {name}\n{what if name == 'Kind' and kind == FEATURE else f'<{what}>'}"
+                                 for name, what in wanted.items()]
     return "\n\n".join(parts) + "\n"
 
 
@@ -80,18 +111,18 @@ def parse(text):
 def check(text):
     """What is missing in the text itself."""
     title, sections = parse(text)
+    kind = kind_of(sections)
     problems = []
     if not title or title == f"<{TITLE}>":
         problems.append(f"no title: the first line is '## <{TITLE}>'")
-    for name, what in SECTIONS.items():
+    for name, what in sections_for(kind).items():
         content = sections.get(name)
         if content is None:
             problems.append(f"section '{name}' is missing – {what}")
         elif not content or content == f"<{what}>":
             problems.append(f"section '{name}' is not filled in – {what}")
-    kind = sections.get("Kind")
-    if kind and kind != f"<{SECTIONS['Kind']}>" and kind.split()[0].lower() not in KINDS:
-        problems.append(f"kind '{kind.split()[0]}' – {SECTIONS['Kind']}")
+    if kind and sections.get("Kind") != f"<{SECTIONS['Kind']}>" and kind not in KINDS:
+        problems.append(f"kind '{sections['Kind'].split()[0]}' – one of: {', '.join(KINDS)}")
     return problems
 
 
@@ -120,7 +151,7 @@ def verify(body):
 
 def main(args):
     if args.action == "template":
-        sys.stdout.write(template())
+        sys.stdout.write(template(FEATURE if args.feature else None))
         return 0
     if not args.file:
         print(f"edakit proposal {args.action}: FILE needed (- for stdin)", file=sys.stderr)
