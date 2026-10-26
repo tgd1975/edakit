@@ -293,3 +293,72 @@ def test_rgb_led_layout_from_its_roles(project, roles, anode, cathode):
         a, k = anode.format(i), cathode.format(i)
         assert f"D_D10_{color} {a} {k} LED_C7371895_{color}_{sc['corner']}" in text.splitlines()
         assert meta["leds"][f"d_d10_{color}"]["des"] == "D10"
+
+
+def resistor(ohm):
+    """A test resistor, 0805 1/8 W, its value in its own entry (as the 0 Ω bridge of test_checks.py)."""
+    return {"lcsc": f"C9{ohm:06d}", "mpn": f"test {ohm} Ω 0805", "kind": "resistor", "verified": {"by": "test"},
+            "params": {"value_ohm": float(ohm)}, "ratings": {"p_max_w": 0.125, "v_max": 150},
+            "pins": {"1": {"name": "1", "type": "passive", "role": "1"},
+                     "2": {"name": "2", "type": "passive", "role": "2"}}}
+
+
+def balanced(project, r10=68, r11=68):
+    """Two LEDs in parallel on OUT7 of U2, each behind its balancing resistor: D9's cathode moves to D9_K with R10 to
+    LED7, a second green LED D10 (anode at +5V) gets D10_K with R11 to LED7. 68 Ω keep the output at 1.0 V at usb-min;
+    330 Ω (the block library's resistor until 65a1af9) would pull it below its 0.6 V knee."""
+    g = project.graph()
+    for des, ohm in (("R10", r10), ("R11", r11)):
+        part = resistor(ohm)
+        project.save_part(part["lcsc"], part)
+        g["graph"]["components"].append({"designator": des, "type": "resistor", "lcsc": part["lcsc"],
+                                         "pins": {"1": "1", "2": "2"}, "value": str(ohm)})
+    g["graph"]["components"].append({"designator": "D10", "type": "led", "lcsc": "C2297", "part": "KT-0805G",
+                                     "pins": {"1": "A", "2": "K"}, "value": "green"})
+    project.net(g, "+5V")["pins"].append("D10.1")
+    project.net(g, "LED7")["pins"] = ["U2.12", "R10.2", "R11.2"]
+    for led, des in (("D9", "R10"), ("D10", "R11")):
+        g["graph"]["nets"].append({"name": f"{led}_K", "pins": [f"{led}.2", f"{des}.1"], "v": [0, 5.5]})
+    project.save_graph(g)
+
+
+def test_leds_behind_balancing_resistors_count_on_their_output(project):
+    balanced(project)
+    out = simulate(project)
+    assert not failing(out) and all(s["status"] == "ok" for s in out["scenarios"])
+    assert len(out["checks"]) == 804                              # 786 before: no E-3 for D9, D10, LED7 in all_on
+    for led in ("D9", "D10"):
+        mine = [c for c in out["checks"] if c["item"] == led and c["id"] == "E-3"]
+        on = [c for c in mine if c["check"] == "LED current (LED7)"]
+        assert len(on) == 6                                       # all_on: 3 supplies x 2 corners, half of 9.45 mA
+        assert all(float(c["actual"].split()[0]) == pytest.approx(0.00945 / 2, rel=0.02) for c in on)
+        assert len([c for c in mine if c["check"] == "LED dark"]) == 6          # idle: the channel is off
+    share = [c for c in out["checks"] if c["item"] == "LED7" and c["check"].startswith("current sharing")]
+    assert len(share) == 6 and all(float(c["actual"]) == pytest.approx(1.0, abs=0.01) for c in share)
+
+
+def test_unbalanced_leds_on_one_output(project):
+    balanced(project, r11=330)                                    # D10 gets 1.92 mA, D9 7.48 mA at usb-min/vf-max
+    out = simulate(project)
+    bad = {(c["scenario"].split("/")[1], c["item"], c["check"]) for c in failing(out)}
+    assert bad == {("all_on", "D10", "LED current (LED7)"), ("all_on", "LED7", "current sharing of parallel LEDs "
+                                                                                "(min/mean)")}
+    d10 = next(c for c in failing(out) if c["scenario"] == "usb-min/all_on/vf-max" and c["item"] == "D10")
+    share = next(c for c in failing(out) if c["scenario"] == "usb-min/all_on/vf-max" and c["item"] == "LED7")
+    assert (d10["actual"], d10["expected"], share["actual"]) == ("0.001922 A", "≥ 80% of 4.72 mA", "0.409")
+
+
+def test_which_nets_are_behind_a_balancing_resistor(project):
+    from test_checks import R, bridge, comp
+    balanced(project)
+    g = project.graph()
+    bridge(project, g, "R12", "LED7", "R10.2")                    # R10 reaches OUT7 through a 0 Ω bridge as well
+    part = resistor(68)
+    g["graph"]["components"] += [comp("R13", part["lcsc"], R, value="68"), comp("R14", part["lcsc"], R, value="68")]
+    project.net(g, "LED6")["pins"].append("R13.1")                # D10_K reaches OUT6 and OUT7: no single output
+    project.net(g, "D10_K")["pins"].append("R13.2")
+    project.net(g, "LED5")["pins"].append("R14.1")                # a resistor from OUT5 to ground: ground is never
+    project.net(g, "GND")["pins"].append("R14.2")                 # behind an output
+    project.save_graph(g)
+    d = Design.from_config(project.config())
+    assert simrun.behind_resistor(d, d.joined_nets(), {f"LED{i}" for i in range(8)}) == {"D9_K": "LED7"}

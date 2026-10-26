@@ -90,10 +90,19 @@ want to see and record as a decision, but which must not block every commit. Bat
 |---|---|
 | E-1 | the operating point converges |
 | E-2 | stress of every part against its ratings with derating: resistor power ≤ 50 %, currents ≤ 80 %, capacitor/diode/transistor voltages ≤ 67 %, LED forward current and reverse voltage, fuse hold current at ambient, connector, switch and relay contact current, relay coil voltage, the current of every MCU output (`gpio_i_max_a`) and of all outputs together, sourced and sunk (`gpio_i_total_max_a`) – each pin may be fine and the sum beyond the package |
-| E-3 | function: current from every source (≤ `i_max_a`), regulator outputs within tolerance, input above `vin_min`, LDO junction temperature, MCU supply voltage and load on its regulator, MCU inputs at a defined level (≤ VIL or ≥ VIH – a 3.3 V signal into a 5 V AVR is the classic case), MCU outputs only on pins that can drive (an output on an input-only pin is reported and not driven), LED driver output headroom and junction temperature, every LED on or dark as the load says (driver channels: ≥ 80 % of the set current, also for an LED whose cathode reaches the output through 0 Ω bridges; parallel LEDs share within a ratio), relays pull in (`v_operate`) and release (`v_release`) as the load says, diodes that must block (`expect_blocking`), every net inside its declared range `v`, plus the plugin's checks |
+| E-3 | function: current from every source (≤ `i_max_a`), regulator outputs within tolerance, input above `vin_min`, LDO junction temperature, MCU supply voltage and load on its regulator, MCU inputs at a defined level (≤ VIL or ≥ VIH – a 3.3 V signal into a 5 V AVR is the classic case), MCU outputs only on pins that can drive (an output on an input-only pin is reported and not driven), LED driver output headroom and junction temperature, every LED on or dark as the load says (driver channels: ≥ 80 % of its share of the set current, also for an LED behind 0 Ω bridges or one resistor; parallel LEDs share within a ratio – below the table), relays pull in (`v_operate`) and release (`v_release`) as the load says, diodes that must block (`expect_blocking`), every net inside its declared range `v`, plus the plugin's checks |
 
 A reversed LED on a driver output fails as "LED reversed"; a reversed LED elsewhere stays dark where it should light.
 That is the polarity check of the graph.
+
+An LED counts on the output of a constant-current sink when its cathode is on that output – directly, behind 0 Ω
+bridges, or behind one resistor that joins its cathode net to this output and no other: a series resistor that takes
+voltage off the driver, or several LEDs in parallel on one channel, each with its balancing resistor. The LEDs on one
+output form a group, and the load's `leds_on` does not apply to them: with the channel on, each carries at least
+`led_on_min_ratio` (default 0.8) × set current / number of LEDs in the group ("LED current (LED7)"), and min/mean of
+the group reaches `chain_min_ratio` (default 0.7; both under `criteria`); with the channel off, each is dark. A cathode
+net that reaches two outputs through resistors, and the ground net, count on no output – such an LED goes by
+`leds_on`.
 
 ## 5.4 Track widths from the simulation
 
