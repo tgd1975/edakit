@@ -92,7 +92,7 @@ def test_one_file_form_is_refused_with_what_goes_where(tmp_path):
                  '[checks] -> "checks" in the graph', '[project] ground -> "ground" in the graph',
                  "[net_classes] -> [net_classes] in each board file",
                  "[sim] config, plugin -> [project] sim, sim_plugin", "[release] signoff -> [project] signoff",
-                 "[release] layout_files: drop edakit.toml", "scripts/split_config.py"):
+                 "[release] layout_files: drop edakit.toml", "edakit.toml is the table of contents now"):
         assert line in str(e.value)
 
 

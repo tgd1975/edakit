@@ -394,7 +394,7 @@ def load(path=None) -> Config:
     if moved:
         problems = moved + problems + [
             f"{path.name} is the table of contents now: board, schematic and checks have files of their own "
-            "(handbook 10.1); scripts/split_config.py of edakit moves a project once, its sign-offs with it"]
+            "(handbook 10.1)"]
     if problems:
         raise ConfigError(f"{path}:\n  " + "\n  ".join(problems))
     boards = {name: _board(name, raw["boards"][name], data, file) for name, (file, data) in files.items()}
