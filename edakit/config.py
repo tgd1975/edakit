@@ -208,8 +208,15 @@ def _pours(name, pours, regions=False):
     """[[pours]] of the board file as written. A net with pour_only = true gets no tracks, its pour connects it: every
     entry of that net must say so, none may be a plane (a plane gets connections to make), and each gets its
     clearance_mm and min_width_mm. With regions (pour_regions), a layer that several nets pour on is shared out among
-    them: no plane there (a plane takes the whole layer), and their clearance_mm and min_width_mm are used as well."""
+    them: no plane there (a plane takes the whole layer), and their clearance_mm and min_width_mm are used as well.
+    fanout = true only on a plane: its SMD pads on the other layer get a via to it."""
     out = [dict(p) for p in pours]
+    for p in out:
+        if not isinstance(p.get("fanout", False), bool):
+            raise ConfigError(f"board {name}: pour {p.get('net')}: fanout must be true or false")
+        if p.get("fanout") and not p.get("plane"):
+            raise ConfigError(f"board {name}: pour {p.get('net')}: fanout needs plane = true – the fanout vias connect "
+                              "SMD pads on the other layer to a plane")
     only = {p.get("net") for p in out if p.get("pour_only")}
     for p in out:
         if p.get("net") not in only:

@@ -6,7 +6,7 @@ start, has a fixed 900 s limit and left nets open. So routing happens outside Ea
 
     1 read     pads, outline, holes, parts from EasyEDA -> <artifacts>/route/<board>_board.json
     2 dsn      offline: our own Specctra DSN (rules from [routing] of the board file); parts, pins and nets in a
-               fixed order
+               fixed order; with fanout on a plane, a protected via and stub for each SMD pad on the other layer
     3 route    offline: Freerouting (pinned, downloads itself once, SHA-256 checked), no GUI -> <board>.ses
     4 check    offline: every net connected, clearances >= rule, nothing in keep-outs; preview PNG with open
                connections in yellow. In `all`: up to `attempts` runs with a reshuffled DSN while something is open.
@@ -58,6 +58,9 @@ POURED_UNIT = 10  # mil per unit: EasyEDA returns pour fills (PourFills) in 10 m
 REGION_GROW_MM = 0.2       # pour_regions: an outline reaches this far beyond its pieces, under the tracks between nets
 REGION_SIMPLIFY_MM = 0.03  # and is simplified by this much (thousands of points otherwise)
 REGION_NESTED_MM2 = 0.5    # a piece of another net larger than this inside a net's outline: EasyEDA cannot fill that
+FANOUT_DIRECTIONS = 16     # fanout: a via is tried in this many directions around an SMD pad (22.5° apart),
+FANOUT_STEP_MIL = 5        # the distance growing in these steps
+FANOUT_REACH_MIL = 60      # up to this much beyond the nearest spot
 
 FR_VERSION = "2.4.1"
 FR_ZIP = f"https://github.com/freerouting/freerouting/releases/download/v{FR_VERSION}/freerouting-{FR_VERSION}-linux-x64.zip"
@@ -244,8 +247,9 @@ def circles(keeps):
 
 
 def planes(rules):
-    """Pours declared as planes ([[pours]] plane = true): (net, layer). Freerouting then connects the
-    net's pads on that layer to the plane with vias instead of tracks."""
+    """Pours declared as planes ([[pours]] plane = true): (net, layer). Freerouting takes the net's pads on that layer
+    (and its through-hole pads) as joined by the plane; it does not connect a pad on the other layer to it with a via –
+    it routes a track to another pad of the net, or, with fanout = true, the fanout via connects it."""
     return [(p["net"], layer) for p in rules.board.pours if p.get("plane") for layer in p.get("layers", ["BOTTOM"])]
 
 
@@ -328,6 +332,81 @@ def fixed_wires(rules):
             for w in b.routing.get("fixed_wires", [])]
 
 
+def fanout(rules, data):
+    """[[pours]] fanout = true on a plane: every SMD pad of the net on a layer without its plane gets a via next to it
+    and a stub from the pad's centre at the net's class width. Freerouting 2.4.1 does not connect such a pad to the
+    plane, with its own fanout on or off; written into the DSN as protected wiring, it routes around them and keeps
+    them. The spot: the nearest distance first (half the pad's larger side + via radius + clearance, then in
+    FANOUT_STEP_MIL steps up to FANOUT_REACH_MIL further), at each distance FANOUT_DIRECTIONS directions, the one closest
+    to the direction away from the part's centre first. Via and stub keep the clearance from foreign copper (pads, fixed
+    wires, the other fanouts) and the fanout vias from each other; the via stays inside the edge clearance and off the
+    hole, tooling and `what = "all"` keep-outs, the stub off those and off every keep-out on its layer. A pad without a
+    spot stops the run. -> [(net, "R1.1", layer, width, pad centre, via)] in mil, by net and pad."""
+    on_plane = defaultdict(set)
+    for net, layer in planes(rules):
+        on_plane[net].add(layer)
+    nets = {p["net"] for p in rules.board.pours if p.get("plane") and p.get("fanout")}
+    todo = sorted((p for p in data["pads"] if p["net"] in nets and p["layer"] in LAYERS
+                   and LAYERS[p["layer"]] not in on_plane[p["net"]]),
+                  key=lambda p: (p["net"], natural_key(p["ref"] or "~"), natural_key(p["num"])))
+    if not todo:
+        return []
+    r_via, clear, eps = rules.via[1] / 2, rules.clear, 0.01
+    outer, _ = board_area(data)
+    _, strips = outside_strips(rules, outer)
+    forbidden = unary_union(strips + circles(hole_keeps(rules, data) + tooling_keeps(rules)))
+    keep = config_keepouts(rules, data)
+    keep_all = unary_union([g for _, what, g in keep if what != "wire"])                # no vias on either layer
+    keep_wire = {lay: unary_union([g for la, _, g in keep if la == lay]) for lay in LAYERS.values()}  # no tracks
+    # copper to keep the clearance from: (net, layers, geometry, half width, a fanout via)
+    copper = [(p["net"] or f"nc:{p['id']}", set(pad_layers(p)), pad_outline(p), 0, False) for p in data["pads"]]
+    copper += [(net, {layer}, LineString(pts), w / 2, False) for net, layer, w, pts in fixed_wires(rules)]
+    comp_at = {c["ref"]: c for c in data["components"]}
+    steps = range(int(FANOUT_REACH_MIL / FANOUT_STEP_MIL) + 1)
+    out = []
+
+    def apart(g, half, other):
+        return g.is_empty or g.distance(other) >= half + eps
+
+    for p in todo:
+        net, layer, w = p["net"], LAYERS[p["layer"]], rules.net_class(p["net"])[1]
+        name, x, y = f"{p['ref'] or 'FREE'}.{p['num']}", p["x"], p["y"]
+        c = comp_at.get(p["ref"])
+        away = math.degrees(math.atan2(y - c["y"], x - c["x"])) if c and math.dist((x, y), (c["x"], c["y"])) > 0.01 \
+            else 0.0
+        turn = 360 / FANOUT_DIRECTIONS
+        dirs = sorted(range(FANOUT_DIRECTIONS), key=lambda k: (abs((k * turn - away + 180) % 360 - 180), k))
+        d0 = max(p["shape"][1], p["shape"][2]) / 2 + r_via + clear
+        reach = Point(x, y).buffer(d0 + FANOUT_REACH_MIL + r_via + clear + w)
+        near = [(n, lays, g, half, via) for n, lays, g, half, via in copper
+                if (n != net or via) and g.distance(reach) <= half]
+        spot = None
+        for d in (d0 + i * FANOUT_STEP_MIL for i in steps):
+            for k in dirs:
+                a = math.radians(k * turn)
+                v = (round(x + d * math.cos(a), 2), round(y + d * math.sin(a), 2))
+                via, stub = Point(v), LineString([(x, y), v])
+                if not (apart(forbidden, r_via, via) and apart(keep_all, r_via, via) and apart(forbidden, w / 2, stub)
+                        and apart(keep_wire[layer], w / 2, stub)):
+                    continue
+                if all(via.distance(g) >= half + r_via + clear - eps and
+                       (n == net or layer not in lays or stub.distance(g) >= half + w / 2 + clear - eps)
+                       for n, lays, g, half, _ in near):
+                    spot = v
+                    break
+            if spot:
+                break
+        if spot is None:
+            raise SystemExit(f"{name} ({net}): no room for a fanout via to the {net} plane – {FANOUT_DIRECTIONS} "
+                             f"directions, {d0:.1f} to {d0 + FANOUT_REACH_MIL:.1f} mil from the pad's centre, keeping "
+                             f"{clear} mil from foreign copper with a {rules.via[1]} mil via, inside the edge clearance "
+                             "and off hole, tooling and keep-out areas; give the pad room in the plan")
+        out.append((net, name, layer, w, (x, y), spot))
+        copper.append((net, {"TOP", "BOTTOM"}, Point(spot), r_via, True))
+        copper.append((net, {layer}, LineString([(x, y), spot]), w / 2, False))
+    return out
+
+
 def write_dsn(rules, data, out, variant=0):
     """Specctra DSN. Parts, pins and nets in a fixed order (designator, pad number, net name): Freerouting is
     deterministic but order-dependent – a part EasyEDA puts at the end of its list changed the result (one GND link
@@ -368,6 +447,7 @@ def write_dsn(rules, data, out, variant=0):
     keep = hole_keeps(rules, data) + tooling_keeps(rules)
     extra = config_keepouts(rules, data)
     fixed = fixed_wires(rules)
+    fans = fanout(rules, data)
     L = [f"(pcb {q(data['pcb'])}",
          '  (parser (string_quote ") (space_in_quoted_tokens on) (host_cad "edakit") (host_version "1"))',
          # 1/100 mil: with 1/1000 mil Freerouting 2.4.1 computes wrongly (board ≈ 7 million units high: unreachable
@@ -433,12 +513,16 @@ def write_dsn(rules, data, out, variant=0):
     for net, layer, w, pts in fixed:
         L.append(f"    (wire (path {layer} {f(w)} " + " ".join(f"{f(x)} {f(y)}" for x, y in pts)
                  + f") (net {q(net)}) (type protect))")
+    for net, _, layer, w, (x0, y0), (x, y) in fans:
+        L.append(f"    (wire (path {layer} {f(w)} {f(x0)} {f(y0)} {f(x)} {f(y)}) (net {q(net)}) (type protect))")
+        L.append(f"    (via {q(rules.via[0])} {f(x)} {f(y)} (net {q(net)}) (type protect))")
     L.append("  )")
     L.append(")")
     out.write_text("\n".join(L) + "\n")
     say(f"DSN: {len(routed)} nets with >= 2 pins, {len(data['pads'])} pads, {len(padstacks)} padstacks, {len(keep)} hole "
-        f"keep-outs, {len(strips)} edge strips, {len(extra)} keep-out pieces, {len(fixed)} fixed wires, clearance "
-        f"{rules.clear} mil" + (f", order {variant}" if variant else "")
+        f"keep-outs, {len(strips)} edge strips, {len(extra)} keep-out pieces, {len(fixed)} fixed wires, "
+        + (f"{len(fans)} fanout vias, " if fans else "") + f"clearance {rules.clear} mil"
+        + (f", order {variant}" if variant else "")
         + (f", pour-only (no tracks): {', '.join(sorted(rules.pour_only))}" if rules.pour_only else "") + f" -> {out}")
     for (name, w), members in sorted(cls.items()):
         print(f"    class {name}: {w} mil, {len(members)} nets", flush=True)

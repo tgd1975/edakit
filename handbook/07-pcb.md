@@ -151,7 +151,8 @@ points = [[10, 5], [14, 5]]
 [[pours]]
 net = "V_LED"
 layers = ["BOTTOM"]
-plane = true                       # Freerouting connects this net's pads to a plane on that layer through vias
+plane = true                       # the net's pads on BOTTOM (and through-hole pads) count as joined by the plane
+fanout = true                      # its SMD pads on TOP get a via to the plane – Freerouting places none
 
 [[pours]]
 net = "GND"
@@ -169,14 +170,31 @@ Class widths must be at least the minimum of the matching EasyEDA net class rule
   the area outside the board (moved in by the edge clearance) as convex keep-out strips.
 - `autoroute_settings` after the keep-outs: no parts read at all. A `plane` placed before the keep-outs: no
   connections read. Order matters.
-- Fanout is on by default and puts a via at every SMD pad: `--router.fanout.enabled=false`.
+- Fanout is on by default and puts a via at every SMD pad: `--router.fanout.enabled=false`. It does not connect an
+  SMD pad to a plane on the other layer either – neither does the router: such a pad gets a track to another pad of
+  its net, or stays open. edakit's `fanout` does it (below).
 - Layer costs in the DSN are partly overridden by Freerouting itself; the optimiser stops at score 999.98/1000.
 - **Deterministic but order-dependent:** after one part was recreated (it moved to the end of EasyEDA's list), one GND
   link stayed open three times in a row with the same plan. edakit sorts parts, pins and nets, and reshuffles them
   reproducibly (seed = attempt) when nets stay open.
 - With a whole side as wire keep-out and one power net on it as a plane, Freerouting routes everything on the other
-  side and connects that net with vias – a calm visible side. With the ground net as the plane instead, 70 of 178
-  connections stayed open; choose the net whose pads are spread over the side.
+  side – a calm visible side. The plane joins the net's pads on its layer and its through-hole pads; its SMD pads on
+  the routed side need `fanout = true`, or Freerouting routes them to another pad of the net with a track, and where
+  a keep-out is in the way they stay open. With the ground net as the plane instead, 70 of 178 connections stayed
+  open; choose the net whose pads are spread over the side.
+
+**Fanout to a plane.** With `fanout = true` on a `plane` entry of `[[pours]]`, every SMD pad of the net on a layer
+without its plane gets a via next to it and a stub from the pad's centre at the net's class width, written into the
+DSN as protected wiring: Freerouting routes around them and keeps them, they come back in the SES, `route check`
+counts them, and `apply` creates them like any routed via. The spot: the nearest distance first – half the pad's
+larger side + via radius + clearance, then in 5 mil steps up to 60 mil further – and at each distance 16 directions
+22.5° apart, the one closest to the direction away from the part's centre first. Via and stub keep the routing
+clearance from foreign pads, fixed wires and other fanouts, and the fanout vias of a net one diameter + clearance
+from each other; the via stays inside the edge clearance and off the keep-outs of mounting and tooling holes and of
+`what = "all"`, the stub off those and off every keep-out on its layer (a `windows` entry keeps the pad's
+surroundings free). A pad without a spot stops the DSN (`route dsn`, `route`, `all`) with its name: `R1.1 (V): no
+room for a fanout via to the V plane – …`. Freerouting's own score counts a fanout via inside a wire keep-out as a
+violation; edakit's check allows vias there, as `what = "wire"` says.
 
 **Check before writing:** every net connected through pads, tracks and vias (planes count, and the computed pour of a
 pour-only net, 7.6), every track and via at least the clearance from foreign copper, nothing in keep-outs – independent
@@ -194,10 +212,10 @@ and anything unplanned is deleted – old tracks have come back after a reload b
 
 ## 7.6 Pours
 
-`[[pours]]` of the board file: net, layers, `plane`, `stitch`, `pour_only`. Filled with `easyeda_pcb_rebuild_copper`
-per net (status `readback-mismatch` is harmless). With `stitch = "BOTTOM"` edakit fills once keeping islands, puts a via
-into every loose island on that side where it overlaps the pour of the other side (with clearance), then fills again
-without islands.
+`[[pours]]` of the board file: net, layers, `plane` (with `fanout`, 7.5), `stitch`, `pour_only`. Filled with
+`easyeda_pcb_rebuild_copper` per net (status `readback-mismatch` is harmless). With `stitch = "BOTTOM"` edakit fills
+once keeping islands, puts a via into every loose island on that side where it overlaps the pour of the other side
+(with clearance), then fills again without islands.
 
 **Distance from the edge.** Every pour gets the board outline set in by `pour_inset_mm` from the top of the board file
 – without it by the tracks' `routing.edge_clearance_um` + 0.1 mm (0.5 mm with 400; EasyEDA itself keeps only about

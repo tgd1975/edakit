@@ -74,9 +74,10 @@ describes (section 3).
 - While a free pad (tooling hole) is in the PCB, filling pours fails – edakit takes them out and puts them back.
 - Net classes need the simulated currents (`edakit sim` first).
 - Freerouting is deterministic but order-dependent: `route all` retries with reshuffled DSNs when nets stay open.
-  If it never closes: more room at the stuck pads in the plan, a plane for a power net, or other layer costs; with
-  all tracks on one side a 0 Ω bridge in the graph where a track has to cross (handbook 3.3), and the ground as a
-  pour-only net (`pour_only`, handbook 7.6) that the pour between the tracks connects.
+  If it never closes: more room at the stuck pads in the plan, a plane for a power net (`fanout = true` for its SMD
+  pads on the other side, handbook 7.5), or other layer costs; with all tracks on one side a 0 Ω bridge in the graph
+  where a track has to cross (handbook 3.3), and the ground as a pour-only net (`pour_only`, handbook 7.6) that the
+  pour between the tracks connects.
 
 ## Report
 

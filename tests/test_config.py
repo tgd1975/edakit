@@ -136,6 +136,15 @@ def test_pours_pour_only_mistakes(pours):
         _pours("b", pours)
 
 
+def test_pours_fanout():
+    plane = [{"net": "V", "layers": ["BOTTOM"], "plane": True, "fanout": True}]
+    assert _pours("b", plane) == plane
+    with pytest.raises(ConfigError, match="pour V: fanout needs plane = true"):
+        _pours("b", [{"net": "V", "layers": ["BOTTOM"], "fanout": True}])
+    with pytest.raises(ConfigError, match="pour V: fanout must be true or false"):
+        _pours("b", [{"net": "V", "layers": ["BOTTOM"], "plane": True, "fanout": "yes"}])
+
+
 def test_pour_regions_keys(tmp_path):
     from edakit.config import _board
     b = _board("b", {}, {})

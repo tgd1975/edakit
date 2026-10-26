@@ -1,6 +1,7 @@
 """DSN writer, SES reader, connectivity and clearance check of the Freerouting pipeline, offline."""
 
 import json
+import math
 import re
 
 import pytest
@@ -398,3 +399,139 @@ def test_regions_pcb_pour_needs_the_routing(regions):
         regions("pcb pour", ses_file=False)
     code, made = regions("pcb pour", APART, ses_file=False)                         # no shared layer: no routing
     assert code == 0 and [(net, layer) for net, layer, *_ in made] == [("GND", 1), ("GND_B", 2)]
+
+
+# --- fanout vias to a plane (#10): a 40 x 20 mm board, plane V on BOTTOM, BOTTOM a wire keep-out (vias allowed);
+# V = R1.1 (SMD on TOP, R1's centre to its right) and D1.1 (through hole), a wire keep-out on TOP between them
+
+FANOUT = """
+[outline]
+rect = [40, 20]
+[routing]
+clearance_mil = 6.5
+classes = { POWER = { width_mil = 20, nets = ["V"] } }
+[[routing.keepouts]]
+layer = "BOTTOM"
+what = "wire"
+rect = [0, 0, 40, 20]
+[[routing.keepouts]]
+layer = "TOP"
+what = "wire"
+rect = [18, 0, 22, 20]
+[[pours]]
+net = "V"
+layers = ["BOTTOM"]
+plane = true
+"""
+D0 = 20 + 12 + 6.5                       # half the pad's larger side + via radius + clearance (mil)
+
+
+@pytest.fixture
+def plane_board(tmp_path):
+    def make(extra="fanout = true", head=""):
+        (tmp_path / "edakit.toml").write_text('[project]\nname = "t"\n[boards.main]\n')
+        (tmp_path / "hardware" / "boards").mkdir(parents=True, exist_ok=True)
+        (tmp_path / "hardware" / "boards" / "main.toml").write_text(head + FANOUT + extra + "\n")
+        return route.Rules(config.load(tmp_path / "edakit.toml").board())
+    data = {"pcb": "main",
+            "components": [{"ref": "R1", "x": mm(11, 10)[0], "y": mm(11, 10)[1], "rot": 0, "layer": 1},
+                           {"ref": "R2", "x": mm(7, 4)[0], "y": mm(7, 4)[1], "rot": 0, "layer": 1},
+                           {"ref": "D1", "x": mm(31.27, 10)[0], "y": mm(31.27, 10)[1], "rot": 0, "layer": 1}],
+            "pads": [pad("R1", "1", "V", *mm(10, 10)), pad("R1", "2", "SIG", *mm(12, 10)),
+                     pad("R2", "1", "SIG", *mm(6, 4)), pad("R2", "2", "", *mm(8, 4)),
+                     pad("D1", "1", "V", *mm(30, 10), layer=12, shape=("ELLIPSE", 60, 60)),
+                     pad("D1", "2", "", *mm(32.54, 10), layer=12, shape=("ELLIPSE", 60, 60))],
+            "outlines": [[mm(0, 0), mm(40, 0), mm(40, 20), mm(0, 20)]]}
+    return make, data
+
+
+def wiring(text):
+    return text[text.index("  (wiring"):]
+
+
+def fanout_routes(rules, data):
+    """The routes of the fanouts alone, as they come back in the SES."""
+    out = {}
+    for net, _, layer, w, start, via in route.fanout(rules, data):
+        r = out.setdefault(net, {"wires": [], "vias": []})
+        r["wires"].append((layer, w, [start, via]))
+        r["vias"].append(via)
+    return out
+
+
+def test_fanout_via_and_stub_in_the_dsn(plane_board, tmp_path):
+    make, data = plane_board
+    route.write_dsn(make(), data, tmp_path / "t.dsn")
+    text = wiring((tmp_path / "t.dsn").read_text())
+    [via] = re.findall(r'\(via "via24" (\S+) (\S+) \(net "V"\) \(type protect\)\)', text)
+    [stub] = re.findall(r'\(wire \(path TOP 20 (\S+) (\S+) (\S+) (\S+)\) \(net "V"\) \(type protect\)\)', text)
+    x, y = mm(10, 10)
+    assert [float(v) for v in stub] == pytest.approx([x, y, x - D0, y], abs=0.01)  # from R1.1's centre, away from R1
+    assert [float(v) for v in via] == pytest.approx([x - D0, y], abs=0.01)
+
+
+def test_fanout_via_keeps_clearance_edge_and_holes(plane_board):
+    from shapely.geometry import LineString, Point
+    make, data = plane_board
+    data["pads"] += [pad("R3", "1", "V", *mm(1.1, 15)), pad("R3", "2", "", *mm(2.1, 15))]   # V pad at the left edge
+    data["components"].append({"ref": "R3", "x": mm(1.6, 15)[0], "y": mm(1.6, 15)[1], "rot": 0, "layer": 1})
+    rules = make("fanout = true", "[tooling]\nholes = [[7.8, 10]]\n")              # in R1.1's preferred spot
+    fans = route.fanout(rules, data)
+    assert [p for _, p, *_ in fans] == ["R1.1", "R3.1"]
+    # both prefer the left (away from their part): the tooling hole and the edge leave the nearest free direction
+    assert [math.degrees(math.atan2(v[1] - s[1], v[0] - s[0])) for *_, s, v in fans] == pytest.approx([112.5] * 2, abs=0.05)
+    assert [math.dist(s, v) for *_, s, v in fans] == pytest.approx([D0] * 2, abs=0.01)
+    inner = route.board_area(data)[0].buffer(-rules.edge_um / 25.4)
+    keep = Point(*mm(7.8, 10)).buffer(1.5 * MIL)
+    for net, name, layer, w, start, via in fans:
+        disc = Point(via).buffer(rules.via[1] / 2)
+        assert disc.within(inner) and not disc.intersects(keep)
+        for p in data["pads"]:
+            if p["net"] != net:
+                assert disc.distance(route.pad_outline(p)) >= rules.clear - 1e-6
+                assert LineString([start, via]).buffer(w / 2).distance(route.pad_outline(p)) >= rules.clear - 1e-6
+    assert route.clearance_check(rules, data, fanout_routes(rules, data)) == []
+
+
+def test_fanout_vias_keep_apart(plane_board):
+    make, data = plane_board
+    data["pads"] = [dict(p, shape=["RECT", 20, 20]) for p in data["pads"]]
+    data["pads"].append(pad("R4", "1", "V", *mm(10, 10.6), shape=("RECT", 20, 20)))  # beside R1.1: same spot first
+    data["components"].append({"ref": "R4", "x": mm(11, 10.6)[0], "y": mm(11, 10.6)[1], "rot": 0, "layer": 1})
+    vias = [via for *_, via in route.fanout(make(), data)]
+    assert len(vias) == 2 and math.dist(*vias) >= 24 + 6.5 - 1e-6
+
+
+def test_fanout_connects_the_pad_to_the_plane(plane_board, tmp_path):
+    make, data = plane_board
+    rules = make()
+    assert names(data, route.check(rules, data, {})["V"]) == [["R1.1"], ["D1.1"]]  # as today: V open
+    assert "V" not in route.check(rules, data, fanout_routes(rules, data))
+    # back from Freerouting 2.4.1 as it writes protected wiring into the SES
+    [(_, _, _, _, (x0, y0), (x, y))] = route.fanout(rules, data)
+    xy = f"{x * 100:.0f} {y * 100:.0f}"
+    (tmp_path / "t.ses").write_text(f"""(session t (routes (resolution mil 100) (parser) (network_out
+  (net V (via via24 {xy} (type protect)) (wire (path TOP 2000 {x0 * 100:.0f} {y0 * 100:.0f} {xy}) (type protect)))
+)))""")
+    routes = route.read_ses(tmp_path / "t.ses", rules)
+    assert routes["V"]["vias"] == [(x, y)] and "V" not in route.check(rules, data, routes)
+    assert route.clearance_check(rules, data, routes) == []                         # the via in BOTTOM's wire keep-out
+
+
+def test_fanout_pad_without_room_is_an_error(plane_board):
+    make, data = plane_board
+    x, y = mm(10, 10)
+    data["pads"] = [p for p in data["pads"] if p["ref"] != "R1" or p["num"] == "1"]
+    data["pads"] += [pad("X", str(k), "", x + dx, y + dy, shape=s) for k, (dx, dy, s) in enumerate(
+        [(-140, 0, ("RECT", 200, 480)), (140, 0, ("RECT", 200, 480)), (0, 140, ("RECT", 480, 200)),
+         (0, -140, ("RECT", 480, 200))], 1)]                                       # a frame 20 mil from R1.1
+    with pytest.raises(SystemExit, match=r"R1\.1 \(V\): no room for a fanout via"):
+        route.fanout(make(), data)
+
+
+def test_without_fanout_nothing_changes(plane_board, tmp_path):
+    make, data = plane_board
+    rules = make("")
+    assert route.fanout(rules, data) == []
+    route.write_dsn(rules, data, tmp_path / "t.dsn")
+    assert wiring((tmp_path / "t.dsn").read_text()) == "  (wiring\n  )\n)\n"

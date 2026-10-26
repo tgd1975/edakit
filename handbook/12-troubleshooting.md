@@ -24,6 +24,8 @@ Start with `edakit doctor`.
 | `edakit schematic check` suddenly reports a pin on two nets in the template | drift of unknown cause in a generated schematic | regenerate the template (`schematic create --save`) |
 | `copy` refuses: "belongs to board" | the PCB is linked to the target | correct: use `edakit schematic layout`, which syncs in place |
 | Freerouting leaves nets open | order dependence, crowded pads, rules | `route all` retries reshuffled; more passes; more room in the plan; a power plane; lower clearance only within EasyEDA's DRC |
+| `route check`: a plane net open, its SMD pads on the other side in groups of their own | Freerouting connects no pad to a plane with a via | `fanout = true` on the plane in `[[pours]]` (7.5) |
+| `route dsn` stops: "… no room for a fanout via" | foreign pads, the edge, a hole or a keep-out around that pad | more room next to the pad in the plan, or a `windows` entry for its part in the keep-out |
 | `pcb pour` stops: "pour_regions – the outlines … come from the routing" | `pour_regions` and no board file or SES yet | `edakit route all` (it pours at its end), or `route read` and `route route` first |
 | "… its pour at (x, y) mm lies inside the pour of …" | a net's area is enclosed by another net's area on a shared layer – that outline would need a hole | the preview shows where: route so that the outer net does not enclose it, or leave the inner net's pour off that layer |
 | `route check`: a pour-only net open in groups | tracks of other nets cut its pour into islands | the preview shows the computed pour and where it is cut: a wire keep-out on that layer where the tracks cut it, or more room between the pads there |
