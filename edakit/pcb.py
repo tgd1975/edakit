@@ -3,9 +3,10 @@ mounting and tooling holes, copper pours, EasyEDA's auto-layout.
 
     edakit pcb dump [--ref U1,J1]   footprint geometry -> <artifacts>/pcb_geometry_<board>.json
                                     (turns every measured part to 0°/TOP and leaves it there – run apply afterwards)
-    edakit pcb plan                 offline: check the plan (overlaps, outline, holes, THT pins under parts of the
-                                    other side, near; L-12 the layout requirements of the circuit), airline length,
-                                    preview PNG, net classes from the simulation
+    edakit pcb plan                 offline: check the plan (overlaps – under a part on pin headers only its pins –,
+                                    outline, holes, THT pins under parts of the other side, near; L-12 the layout
+                                    requirements of the circuit), airline length, preview PNG, net classes from the
+                                    simulation
     edakit pcb parts [--write]      parts of the board schematic -> PCB without the "Import Changes" dialog
     edakit pcb nets [--write]       pad nets in the PCB = graph
     edakit pcb apply                outline, holes, tooling holes, fixed parts (locked); all other parts unlocked
@@ -110,17 +111,48 @@ def wirelength(board, geo, place, ground):
     return total
 
 
+def header_pins(board, geo, place):
+    """The through-hole pins of the fixed parts in on_headers, in plan coordinates: {ref: {pad: (x, y)}}."""
+    out = {}
+    for r in sorted(board.on_headers, key=natural_key):
+        if r in place and r in geo:
+            p = place[r]
+            out[r] = {n: board.transform((q["x"], q["y"]), p.x, p.y, p.rot, p.side)
+                      for n, q in geo[r].get("pads", {}).items() if q.get("tht")}
+    return out
+
+
+def overlap_finding(board, geo, place, boxes, pins, a, b):
+    """Two parts of one side whose boxes overlap. When one of them stands on pin headers (pins), the board under it is
+    free but for the plastic of its headers: an SMD part is a finding only where its box comes closer than
+    header_keep_mm to one of the through-hole pins (a square around the pin centre); a through-hole part stays an
+    overlap."""
+    host = a if pins.get(a) else b if pins.get(b) else None
+    other = b if host == a else a
+    if host is None or any(q.get("tht") for q in geo[other].get("pads", {}).values()):
+        return [f"{a} / {b}: overlap ({place[a].side})"]
+    gap, pin = min(((box_gap(boxes[other], (x, y, x, y)), n) for n, (x, y) in pins[host].items()),
+                   key=lambda g: (round(g[0], 6), natural_key(g[1])))
+    if gap < board.header_keep_mm:
+        return [f"{other}: on the pins of {host} ({place[other].side}) – {gap:.2f} mm from pin {pin} "
+                f"(header_keep_mm {board.header_keep_mm:g})"]
+    return []
+
+
 def check_plan(cfg, board, geo, place, boxes, tht):
     from shapely.geometry import Point, box
     problems = []
     outline = outline_polygon(board)
     refs = [r for r in place if r in boxes]
+    pins = header_pins(board, geo, place)
+    problems += [f"{r}: in on_headers, but its footprint has no through-hole pins – its overlaps count as usual"
+                 for r, p in pins.items() if not p]
     for i, a in enumerate(refs):
         if a not in board.edge_ok and not outline.buffer(-0.3).contains(box(*boxes[a])):
             problems.append(f"{a}: reaches over the outline (keep 0.3 mm)")
         for b in refs[i + 1:]:
             if place[a].side == place[b].side and overlap(boxes[a], boxes[b]):
-                problems.append(f"{a} / {b}: overlap ({place[a].side})")
+                problems += overlap_finding(board, geo, place, boxes, pins, a, b)
         for h in board.holes:
             if box(*boxes[a]).intersects(Point(h["x"], h["y"]).buffer(h["keep"])):
                 problems.append(f"{a}: inside the keep-out of the hole ({h['x']:g}, {h['y']:g})")

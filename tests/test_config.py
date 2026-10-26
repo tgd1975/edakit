@@ -181,3 +181,18 @@ def test_pour_inset_key():
     assert _board("b", {}, {"pour_inset_mm": 0.55}).pour_inset_mm == 0.55
     with pytest.raises(ConfigError, match="pour_inset_mm must not be negative"):
         _board("b", {}, {"pour_inset_mm": -0.1})
+
+
+def test_on_headers_keys(tmp_path):
+    from edakit.config import _board
+    b = _board("b", {}, {})
+    assert b.on_headers == set() and b.header_keep_mm == 1.27         # no key: every overlap is a finding, as before
+    (tmp_path / "edakit.toml").write_text('[project]\nname = "t"\n[boards.main]\n')
+    (tmp_path / "hardware" / "boards").mkdir(parents=True)
+    (tmp_path / "hardware" / "boards" / "main.toml").write_text('on_headers = ["U1"]\nheader_keep_mm = 0.87\n')
+    b = load(tmp_path / "edakit.toml").board()
+    assert b.on_headers == {"U1"} and b.header_keep_mm == 0.87
+    with pytest.raises(ConfigError, match="on_headers must be a list of designators"):
+        _board("b", {}, {"on_headers": "U1"})
+    with pytest.raises(ConfigError, match="header_keep_mm must not be negative"):
+        _board("b", {}, {"header_keep_mm": -0.1})

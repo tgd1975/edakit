@@ -65,6 +65,8 @@ layout review again (M-5). The keys stand at the top of the file, without a pref
 | `revision` | – | board revision, printed with the title (`silk.board_label`); without it no board label |
 | `view` | `top` | side the plan is drawn from; `bottom` mirrors x and rotations |
 | `edge_ok` | `[]` | parts that may touch or overhang the outline |
+| `on_headers` | `[]` | parts that stand on pin headers: an SMD part of their side may sit under them, clear of `header_keep_mm` around each of their through-hole pins; a through-hole part under them stays an overlap (7.4) |
+| `header_keep_mm` | `1.27` | half width of the square around each through-hole pin of an `on_headers` part that SMD parts of its side stay out of (mm) |
 | `near_mm` | `6` | maximum gap for `near` (of the plan and of the graph's `layout`) and the decoupling of L-12 |
 | `edge_mm` | `1` | maximum distance from the outline for the graph's `layout.edge` (L-12) |
 | `park` | `[10, -15]` | where new parts are dropped (mm, EasyEDA coordinates) |

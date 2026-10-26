@@ -36,13 +36,14 @@ DEFAULT_NET_CLASSES = {          # from the largest simulated current (A), pract
 POUR_CLEARANCE_MM = 0.25         # pour_only: what the computed pour keeps from foreign copper (copper-area rule)
 POUR_MIN_WIDTH_MM = 0.25         # pour_only: the narrowest neck the computed pour fills
 POUR_MIN_PIECE_MM2 = 2.0         # pour_regions: the smallest piece of a shared layer that gets an outline
+HEADER_KEEP_MM = 1.27            # on_headers: the plastic of a 2.54 mm pin header, half its width around each pin
 
 PROJECT_KEYS = ("name", "company", "quantity", "distributors", "lock", "graph", "parts", "sim", "sim_plugin",
                 "schematic", "signoff", "artifacts", "reports")
 BOARD_KEYS = ("title", "template", "schematic", "pcb", "file")            # [boards.<name>] in edakit.toml
 BOARD_FILE_KEYS = ("revision", "view", "outline", "holes", "tooling", "place", "near", "near_mm", "edge_mm", "edge_ok",
-                   "park", "routing", "pours", "pour_regions", "pour_min_piece_mm2", "pour_inset_mm", "silk", "loops",
-                   "net_classes")
+                   "on_headers", "header_keep_mm", "park", "routing", "pours", "pour_regions", "pour_min_piece_mm2",
+                   "pour_inset_mm", "silk", "loops", "net_classes")
 SCHEMATIC_KEYS = ("stub", "layout")
 RELEASE_KEYS = ("layout_files", "state_files", "assembly", "stages")
 
@@ -81,6 +82,8 @@ class Board:
     near_mm: float = 6.0
     edge_mm: float = 1.0                              # layout.edge of the graph: part box at most this far from the outline
     edge_ok: set = field(default_factory=set)         # parts allowed to touch or overhang the outline
+    on_headers: set = field(default_factory=set)      # parts on pin headers: SMD parts of their side may sit under them
+    header_keep_mm: float = HEADER_KEEP_MM            # ... clear of this square half width around each of their THT pins
     park: tuple = (10.0, -15.0)                       # where `pcb parts --write` drops new parts (mm, EasyEDA)
     routing: dict = field(default_factory=dict)
     pours: list = field(default_factory=list)
@@ -277,6 +280,12 @@ def _board(name, entry, b, file=""):
     inset = float(b["pour_inset_mm"]) if b.get("pour_inset_mm") is not None else None
     if inset is not None and inset < 0:
         raise ConfigError(f"board {name}: pour_inset_mm must not be negative")
+    on_headers = b.get("on_headers", [])
+    if not isinstance(on_headers, list) or not all(isinstance(r, str) for r in on_headers):
+        raise ConfigError(f"board {name}: on_headers must be a list of designators")
+    header_keep = float(b.get("header_keep_mm", HEADER_KEEP_MM))
+    if header_keep < 0:
+        raise ConfigError(f"board {name}: header_keep_mm must not be negative")
     return Board(
         name=name,
         title=entry.get("title", name),
@@ -298,6 +307,8 @@ def _board(name, entry, b, file=""):
         near_mm=float(b.get("near_mm", 6.0)),
         edge_mm=float(b.get("edge_mm", 1.0)),
         edge_ok=set(b.get("edge_ok", [])),
+        on_headers=set(on_headers),
+        header_keep_mm=header_keep,
         park=tuple(map(float, b.get("park", [10, -15]))),
         routing=b.get("routing", {}),
         pours=_pours(name, b.get("pours", [{"net": "GND", "layers": ["TOP", "BOTTOM"]}]), regions),

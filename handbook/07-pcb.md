@@ -102,12 +102,29 @@ join the board file's `[[loops]]` for L-11 on the routed board, and `notes` are 
 layout review. A requirement the plan cannot keep goes back to the circuit as a written request – the layout does not
 change the graph.
 
-`edakit pcb plan` checks offline: overlaps per side, outline (0.3 mm margin; `edge_ok` for connectors), keep-outs of
-holes and tooling holes, THT pins of one side under parts of the other, `near` distances, the circuit's layout
-requirements (L-12), **LEDs side by side with their anode towards the same side** (whoever solders by the "+" mark
-should not have to turn every other one; the library footprints of one LED series may put the mark on different
-pads); it prints the airline length of the fixed parts (a number to compare placements) and writes
-`<artifacts>/pcb_plan_<board>.png`. Look at the picture before `apply`.
+`edakit pcb plan` checks offline: overlaps per side (under a module on pin headers only its pins, below), outline
+(0.3 mm margin; `edge_ok` for connectors), keep-outs of holes and tooling holes, THT pins of one side under parts of the
+other, `near` distances, the circuit's layout requirements (L-12), **LEDs side by side with their anode towards the
+same side** (whoever solders by the "+" mark should not have to turn every other one; the library footprints of one
+LED series may put the mark on different pads); it prints the airline length of the fixed parts (a number to compare
+placements) and writes `<artifacts>/pcb_plan_<board>.png`. Look at the picture before `apply`.
+
+**Parts under a module on pin headers.** A module that stands on pin headers – a Pico, an RP2040-Zero – leaves the
+board under it free but for the plastic of its headers. `on_headers` names such parts. An SMD part of the same side
+may then sit under one, as long as its box stays `header_keep_mm` (1.27 mm, half the 2.54 mm pitch) clear of every
+through-hole pin of the module, measured from the pin centre as a square. A through-hole part under it stays an
+overlap; a part on the other side over its pins stays a finding (THT pins underneath). The boxes are the footprints'
+bounding boxes from `pcb dump`, silkscreen included, so a project may set the keep-out smaller by its silkscreen
+margin. Height is not checked: what sits under the module has to be lower than its headers lift it.
+
+```toml
+on_headers = ["U1"]          # in hardware/boards/<b>.toml, above the tables
+header_keep_mm = 1.27        # the square around each through-hole pin of U1 that SMD parts stay out of
+```
+
+A part too close reads `D1: on the pins of U1 (top) – 0.00 mm from pin 5 (header_keep_mm 1.27)`: the gap between its
+box and the nearest pin centre. An `on_headers` part whose footprint has no through-hole pins is a finding of its
+own, and its overlaps count as usual.
 
 `edakit pcb dump` turns every part it measures to 0° on TOP to read its geometry and **leaves it there** – run `apply`
 and the auto-layout afterwards.
