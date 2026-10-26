@@ -56,6 +56,16 @@ Plus P-2: a **polarity sheet** per board – every polarised part drawn from the
 pad numbers, pin roles and nets, bottom parts mirrored as seen from below. It is what the second check compares with
 the datasheet drawings, and what you compare with JLCPCB's assembly preview.
 
+**Seen red.** No EasyEDA run is needed to test stages L and F. `tests/test_fab_run.py` cuts the example down to its
+input stage (J1, D1, C2 on a 30 × 20 mm board) and writes the export for it: the files `edakit fab` collects, the
+footprint geometry and the net currents. `edakit fab --offline` on that export passes every row. Then each entry of
+`FAULTS` builds one fault into a copy: a pad net, a part moved or turned, a short or an open net in the Gerber copper,
+a hole too small in the drill file, a changed LCSC number, a part missing from the pick-and-place file, a tooling
+hole missing from the NPTH file. The check that should find the fault fails (or warns) and names the part, net or
+file. Each test lists every row that fails or warns, so a check that also fires is noticed too. Most faults hit
+one check. A few hit two, because the fault touches both: a part turned by 90° (L-7, F-3), a through-hole pad
+without its hole (L-9, and GND open in L-2). A new check of L or F gets its fault there.
+
 **Project stages** (`[[release.stages]]` in edakit.toml): `{id = "K", name = "Mechanics", cmd = ["uv", "run",
 "mech/check.py", "--json"], advisory = true}`. The command's last stdout line may be a JSON list of
 `[id, check, actual, expected, ok]`; otherwise its exit code counts. `advisory` findings are listed but do not block

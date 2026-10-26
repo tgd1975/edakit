@@ -127,7 +127,7 @@ Where it stands:
 | [edakit/blocks/](edakit/blocks/) | building blocks (LED, button, I2C pull-ups, transistor switch, supply inputs, USB-C) and the checked parts entries they use |
 | [edakit/easyeda/](edakit/easyeda/) | `mcp-server.sh` (pinned easyeda-mcp-pro with safe defaults), `bridge-extension-patch.sh` |
 | [skills/](skills/), [agents/](agents/), [hooks/](hooks/hooks.json), [bin/](bin/) | the Claude Code plugin |
-| [tests/](tests/) | negative tests: every check seen red once; [tests/fixtures/led-bar/](tests/fixtures/led-bar/) is the project they build their faults into |
+| [tests/](tests/) | negative tests: every check seen red once; [tests/fixtures/led-bar/](tests/fixtures/led-bar/) is the project they build their faults into, stages L and F on a written export of its input stage ([test_fab_run.py](tests/test_fab_run.py)) |
 
 ## Status and limits
 

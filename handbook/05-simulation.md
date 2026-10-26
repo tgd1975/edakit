@@ -14,6 +14,11 @@ on the delivered board instead (acceptance test).
 - Resistors, capacitors, inductors (with DCR), fuses, diodes, LEDs (model from Vf at a test current), BJTs, MOSFETs
   come from the graph 1:1, values and SPICE models from the parts database. A 0 Ω bridge (`value_ohm: 0`) is its
   `r_max_ohm`, 50 mΩ without one – ngspice finds no operating point with 0 Ω.
+- An RGB LED (`led_rgb`) is three LEDs, one per colour with that colour's `params` and `ratings`. The roles choose the
+  layout (4.1): with a common cathode each colour runs from `anode_<color>` to `cathode`, with a common anode from
+  `anode` to `cathode_<color>` – the layout a constant-current sink or a low-side switch per colour needs. Each colour
+  is checked as an LED of its own (`D10_RED`, `D10_GREEN`, `D10_BLUE`): E-2 against its ratings, E-3 on its driver
+  output or by the load's `leds_on`, where the designator turns on all three colours and `D10_RED` one.
 - Switches, buttons, DIP switches are closed or open as the scenario's load says (`buttons`, `open`, `dip_closed`).
   A relay is its coil (`coil_ohm`) plus a contact from `common` to `no` when the load lists it in `relays_on`, else to
   `nc`.
@@ -32,7 +37,7 @@ on the delivered board instead (acceptance test).
 | `ldo` | `vin`, `vout`, (`gnd`) | `vout_v`, `dropout_v`, `iq_a` | output = min(vout, vin − dropout); input current = output current + iq |
 | `buck`, `boost` | `vin`, `vout` | `vout_v`, `efficiency`, `iq_a` | ideal output; input power = output power / efficiency |
 | `mcu` | `vsys`/`vin`/`vdd`, optional `vout`/`3v3`, `gpio` | `v_io` (V, or `"vin"` when the I/O runs from the supply pin, as on a 5 V AVR), `i_core_a`, `gpio_r_out_ohm`, `regulator` (`buck`/`ldo`), `vout_v` (regulator output, default `v_io`), `efficiency`, `vih_v`/`vih_ratio`, `vil_v`/`vil_ratio` | on-board regulator feeding the core and external loads; GPIO outputs as sources with output resistance (levels from the load's `gpio`), pull-ups from the config; the config's `inputs` must sit at a defined logic level |
-| `cc_sink` | `rext`, `out`, `vdd`, `oe_n` | `vrext_v`, `iout_gain`, `vout_knee_v`, `idd_max_a` | constant-current LED driver (TLC5916, STP08CP05, …): R-EXT held at vrext, every enabled output sinks gain × I(R-EXT) with a soft knee; `oe_n` high = all off |
+| `cc_sink` | `rext`, `out`, `vdd`, `oe_n` | `vrext_v`, `iout_gain`, `vout_knee_v`, `idd_max_a` | constant-current LED driver (TLC5916, STP08CP05, …): R-EXT held at vrext, every enabled output sinks gain × I(R-EXT) with a soft knee; `oe_n` high = all off; pins of type `output` (SDO to the next driver's SDI or to an MCU input that reads the chain back) low through 50 Ω, as in `logic`; an unconnected SDO stays out of the netlist |
 | `logic` | supply pins (`power_in`), outputs | `icc_a` | supply current, outputs low |
 | `current` | supply pins | `i_a` | constant supply current |
 | `none` | – | – | nothing |
@@ -85,10 +90,19 @@ want to see and record as a decision, but which must not block every commit. Bat
 |---|---|
 | E-1 | the operating point converges |
 | E-2 | stress of every part against its ratings with derating: resistor power ≤ 50 %, currents ≤ 80 %, capacitor/diode/transistor voltages ≤ 67 %, LED forward current and reverse voltage, fuse hold current at ambient, connector, switch and relay contact current, relay coil voltage, the current of every MCU output (`gpio_i_max_a`) and of all outputs together, sourced and sunk (`gpio_i_total_max_a`) – each pin may be fine and the sum beyond the package |
-| E-3 | function: current from every source (≤ `i_max_a`), regulator outputs within tolerance, input above `vin_min`, LDO junction temperature, MCU supply voltage and load on its regulator, MCU inputs at a defined level (≤ VIL or ≥ VIH – a 3.3 V signal into a 5 V AVR is the classic case), MCU outputs only on pins that can drive (an output on an input-only pin is reported and not driven), LED driver output headroom and junction temperature, every LED on or dark as the load says (driver channels: ≥ 80 % of the set current, also for an LED whose cathode reaches the output through 0 Ω bridges; parallel LEDs share within a ratio), relays pull in (`v_operate`) and release (`v_release`) as the load says, diodes that must block (`expect_blocking`), every net inside its declared range `v`, plus the plugin's checks |
+| E-3 | function: current from every source (≤ `i_max_a`), regulator outputs within tolerance, input above `vin_min`, LDO junction temperature, MCU supply voltage and load on its regulator, MCU inputs at a defined level (≤ VIL or ≥ VIH – a 3.3 V signal into a 5 V AVR is the classic case), MCU outputs only on pins that can drive (an output on an input-only pin is reported and not driven), LED driver output headroom and junction temperature, every LED on or dark as the load says (driver channels: ≥ 80 % of its share of the set current, also for an LED behind 0 Ω bridges or one resistor; parallel LEDs share within a ratio – below the table), relays pull in (`v_operate`) and release (`v_release`) as the load says, diodes that must block (`expect_blocking`), every net inside its declared range `v`, plus the plugin's checks |
 
 A reversed LED on a driver output fails as "LED reversed"; a reversed LED elsewhere stays dark where it should light.
 That is the polarity check of the graph.
+
+An LED counts on the output of a constant-current sink when its cathode is on that output – directly, behind 0 Ω
+bridges, or behind one resistor that joins its cathode net to this output and no other: a series resistor that takes
+voltage off the driver, or several LEDs in parallel on one channel, each with its balancing resistor. The LEDs on one
+output form a group, and the load's `leds_on` does not apply to them: with the channel on, each carries at least
+`led_on_min_ratio` (default 0.8) × set current / number of LEDs in the group ("LED current (LED7)"), and min/mean of
+the group reaches `chain_min_ratio` (default 0.7; both under `criteria`); with the channel off, each is dark. A cathode
+net that reaches two outputs through resistors, and the ground net, count on no output – such an LED goes by
+`leds_on`.
 
 ## 5.4 Track widths from the simulation
 

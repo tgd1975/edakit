@@ -102,12 +102,47 @@ join the board file's `[[loops]]` for L-11 on the routed board, and `notes` are 
 layout review. A requirement the plan cannot keep goes back to the circuit as a written request – the layout does not
 change the graph.
 
-`edakit pcb plan` checks offline: overlaps per side, outline (0.3 mm margin; `edge_ok` for connectors), keep-outs of
-holes and tooling holes, THT pins of one side under parts of the other, `near` distances, the circuit's layout
-requirements (L-12), **LEDs side by side with their anode towards the same side** (whoever solders by the "+" mark
-should not have to turn every other one; the library footprints of one LED series may put the mark on different
-pads); it prints the airline length of the fixed parts (a number to compare placements) and writes
-`<artifacts>/pcb_plan_<board>.png`. Look at the picture before `apply`.
+`edakit pcb plan` checks offline: overlaps per side (under a module on pin headers only its pins, SMD parts within a
+silkscreen tolerance: below), outline (0.3 mm margin; `edge_ok` for connectors), keep-outs of holes and tooling holes,
+THT pins of one side under parts of the other, `near` distances, the circuit's layout requirements (L-12), **LEDs side
+by side with their anode towards the same side** (whoever solders by the "+" mark should not have to turn every other
+one; the library footprints of one LED series may put the mark on different pads); it prints the airline length of the
+fixed parts (a number to compare placements) and writes `<artifacts>/pcb_plan_<board>.png`. Look at the picture before
+`apply`.
+
+**Parts under a module on pin headers.** A module that stands on pin headers – a Pico, an RP2040-Zero – leaves the
+board under it free but for the plastic of its headers. `on_headers` names such parts. An SMD part of the same side
+may then sit under one, as long as its box stays `header_keep_mm` (1.27 mm, half the 2.54 mm pitch) clear of every
+through-hole pin of the module, measured from the pin centre as a square. A through-hole part under it stays an
+overlap; a part on the other side over its pins stays a finding (THT pins underneath). The boxes are the footprints'
+bounding boxes from `pcb dump`, silkscreen included, so a project may set the keep-out smaller by its silkscreen
+margin. Height is not checked: what sits under the module has to be lower than its headers lift it.
+
+```toml
+on_headers = ["U1"]          # in hardware/boards/<b>.toml, above the tables
+header_keep_mm = 1.27        # the square around each through-hole pin of U1 that SMD parts stay out of
+```
+
+A part too close reads `D1: on the pins of U1 (top) – 0.00 mm from pin 5 (header_keep_mm 1.27)`: the gap between its
+box and the nearest pin centre. An `on_headers` part whose footprint has no through-hole pins is a finding of its
+own, and its overlaps count as usual.
+
+**Silkscreen tolerance.** Because the boxes include the silkscreen, two small SMD parts whose pads lie well apart are
+an overlap as soon as their printed outlines touch – a decoupling capacitor close to its IC, a base resistor next to
+its transistor. `silk_overlap_mm` lets the boxes of two SMD parts of one side reach that far into each other. Per axis
+the plan check measures how far one box has to move to clear the other; the pair is a finding only when both x and y
+are beyond the tolerance. For parts side by side that is the width of the strip they share; a small part inside a
+larger box lies as deep as its way out, so the tolerance does not hide it. If either part has through-hole pads, the
+tolerance does not apply. Under a module in `on_headers`, its pins decide (above). The default 0 keeps every overlap a
+finding. Keep the value within the silkscreen margin of the footprints in use: the pads themselves are not compared
+here, only by the DRC of the routed board (L-3).
+
+```toml
+silk_overlap_mm = 0.8        # in hardware/boards/<b>.toml, above the tables
+```
+
+With the key, an overlap gives its depth: `R1 / R2: overlap (top) – 1.00 mm (silk_overlap_mm 0.8)`, or
+`J1 / C1: overlap (top) – 0.30 mm (J1 through-hole: silk_overlap_mm does not apply)`.
 
 `edakit pcb dump` turns every part it measures to 0° on TOP to read its geometry and **leaves it there** – run `apply`
 and the auto-layout afterwards.
@@ -133,7 +168,7 @@ Rules in the board file:
 clearance_mil = 6.5          # above EasyEDA's DRC (pad 0.152 mm) and JLCPCB (0.127 mm); 8 mil left 18 links open
 signal_mil = 10
 via = [24, 12]               # diameter, drill
-edge_clearance_um = 400
+edge_clearance_um = 400      # tracks and vias from the outline; the pours keep pour_inset_mm (7.6)
 layer_cost = { TOP = [1.0, 1.8], BOTTOM = [2.2, 3.0] }   # preferred / against preferred direction: keep a side calm
 classes = { POWER = { width_mil = 18, nets = ["VIN", "+5V"] }, GND = { width_mil = 18, nets = ["GND"] } }
 
@@ -151,7 +186,13 @@ points = [[10, 5], [14, 5]]
 [[pours]]
 net = "V_LED"
 layers = ["BOTTOM"]
-plane = true                       # Freerouting connects this net's pads to a plane on that layer through vias
+plane = true                       # the net's pads on BOTTOM (and through-hole pads) count as joined by the plane
+fanout = true                      # its SMD pads on TOP get a via to the plane – Freerouting places none
+
+[[pours]]
+net = "GND"
+layers = ["TOP"]
+pour_only = true                   # no tracks: the pour between the tracks connects this net (7.6)
 ```
 
 Class widths must be at least the minimum of the matching EasyEDA net class rule, or the DRC complains.
@@ -161,22 +202,49 @@ Class widths must be at least the minimum of the matching EasyEDA net class rule
 - Resolution `mil 1000` computes wrongly on a 170-mm board (unreachable pads, phantom violations) – edakit writes
   `mil 100`.
 - A **concave outline as boundary**: nothing routed above a certain height. edakit uses a rectangle as boundary and
-  the area outside the board (moved in by the edge clearance) as convex keep-out strips.
+  the area outside the board (moved in by the edge clearance) as convex keep-out strips. The outline is moved in with
+  round joins: around an inner corner (a notch) the keep-out is an arc of `edge_clearance_um`, in chords of at most
+  16.875° (8 per quarter circle; an arc under 16.875° is one chord). It reaches at least 0.989 of the clearance into
+  the board: 0.3957 mm with 0.4 mm, 4.3 µm short of the arc. Mitred joins reached d / sin(θ/2) into the board there –
+  0.57 mm at a 90° corner, 1.3 mm at a 36° notch with 0.4 mm. Tracks that kept the clearance were reported, and
+  Freerouting lost that room in every notch.
+  `route check` and the fanout vias use the same strips. Every strip is kept, however small: at a sharp notch tip the
+  cuts leave slices under 1 mil², and without them the keep-out reached only 0.3 mm into the board there. Freerouting
+  skips a strip thinner than its 0.01 mil resolution with a warning ("Keepout zone … was skipped because its geometry
+  is degenerate"); that is harmless, and `route check` still tests against it.
 - `autoroute_settings` after the keep-outs: no parts read at all. A `plane` placed before the keep-outs: no
   connections read. Order matters.
-- Fanout is on by default and puts a via at every SMD pad: `--router.fanout.enabled=false`.
+- Fanout is on by default and puts a via at every SMD pad: `--router.fanout.enabled=false`. It does not connect an
+  SMD pad to a plane on the other layer either – neither does the router: such a pad gets a track to another pad of
+  its net, or stays open. edakit's `fanout` does it (below).
 - Layer costs in the DSN are partly overridden by Freerouting itself; the optimiser stops at score 999.98/1000.
 - **Deterministic but order-dependent:** after one part was recreated (it moved to the end of EasyEDA's list), one GND
   link stayed open three times in a row with the same plan. edakit sorts parts, pins and nets, and reshuffles them
   reproducibly (seed = attempt) when nets stay open.
 - With a whole side as wire keep-out and one power net on it as a plane, Freerouting routes everything on the other
-  side and connects that net with vias – a calm visible side. With the ground net as the plane instead, 70 of 178
-  connections stayed open; choose the net whose pads are spread over the side.
+  side – a calm visible side. The plane joins the net's pads on its layer and its through-hole pads; its SMD pads on
+  the routed side need `fanout = true`, or Freerouting routes them to another pad of the net with a track, and where
+  a keep-out is in the way they stay open. With the ground net as the plane instead, 70 of 178 connections stayed
+  open; choose the net whose pads are spread over the side.
 
-**Check before writing:** every net connected through pads, tracks and vias (planes count), every track and via at
-least the clearance from foreign copper, nothing in keep-outs – independent of Freerouting's own score. Preview:
-`<artifacts>/route/<board>_routing.png`, open connections dashed yellow. Nothing is written to EasyEDA until the check
-passes.
+**Fanout to a plane.** With `fanout = true` on a `plane` entry of `[[pours]]`, every SMD pad of the net on a layer
+without its plane gets a via next to it and a stub from the pad's centre at the net's class width, written into the
+DSN as protected wiring: Freerouting routes around them and keeps them, they come back in the SES, `route check`
+counts them, and `apply` creates them like any routed via. The spot: the nearest distance first – half the pad's
+larger side + via radius + clearance, then in 5 mil steps up to 60 mil further – and at each distance 16 directions
+22.5° apart, the one closest to the direction away from the part's centre first. Via and stub keep the routing
+clearance from foreign pads, fixed wires and other fanouts, and the fanout vias of a net one diameter + clearance
+from each other; the via stays inside the edge clearance and off the keep-outs of mounting and tooling holes and of
+`what = "all"`, the stub off those and off every keep-out on its layer (a `windows` entry keeps the pad's
+surroundings free). A pad without a spot stops the DSN (`route dsn`, `route`, `all`) with its name: `R1.1 (V): no
+room for a fanout via to the V plane – …`. Freerouting's own score counts a fanout via inside a wire keep-out as a
+violation; edakit's check allows vias there, as `what = "wire"` says.
+
+**Check before writing:** every net connected through pads, tracks and vias (planes count, and the computed pour of a
+pour-only net, 7.6), every track and via at least the clearance from foreign copper, nothing in keep-outs (the edge
+strips above: `edge_clearance_um` from the outline, in inner corners too) – independent of Freerouting's own score.
+Preview: `<artifacts>/route/<board>_routing.png`, open connections dashed yellow. Nothing is written to EasyEDA until
+the check passes.
 
 **Writing into EasyEDA** (all copper is generated, so it is deleted first – deleting sometimes needs several passes):
 points closer than 0.5 mil are snapped together (EasyEDA drops tiny pieces and connects track to track only through
@@ -189,9 +257,68 @@ and anything unplanned is deleted – old tracks have come back after a reload b
 
 ## 7.6 Pours
 
-`[[pours]]` of the board file: net, layers, `plane`, `stitch`. Filled with `easyeda_pcb_rebuild_copper` per net (status
-`readback-mismatch` is harmless). With `stitch = "BOTTOM"` edakit fills once keeping islands, puts a via into every loose
-island on that side where it overlaps the pour of the other side (with clearance), then fills again without islands.
+`[[pours]]` of the board file: net, layers, `plane` (with `fanout`, 7.5), `stitch`, `pour_only`. Filled with
+`easyeda_pcb_rebuild_copper` per net (status `readback-mismatch` is harmless). With `stitch = "BOTTOM"` edakit fills
+once keeping islands, puts a via into every loose island on that side where it overlaps the pour of the other side
+(with clearance), then fills again without islands.
+
+**Distance from the edge.** Every pour gets the board outline set in by `pour_inset_mm` from the top of the board file
+– without it by the tracks' `routing.edge_clearance_um` + 0.1 mm (0.5 mm with 400; EasyEDA itself keeps only about
+0.26 mm). The computed pours below start from the same outline. The key keeps the pours further from the milled edge
+than tracks that have to run along it, through a notch of the outline say; the tracks keep the edge clearance in the
+DSN and in Freerouting either way:
+
+```toml
+pour_inset_mm = 0.55               # in hardware/boards/<b>.toml, above the tables; tracks 0.4 mm (edge_clearance_um)
+```
+
+**Pour-only nets.** On a board where ground is the pour between the tracks – all tracks on one side, say – a net with
+`pour_only = true` gets no tracks: the DSN leaves it out of the network, so its pads are pins without a net that
+Freerouting keeps clear of. `route check` computes the pour offline from the board file and the routes: the pour
+outline of `pcb pour`, without the pads (also those without a net), tracks and vias of other nets on that layer grown
+by `clearance_mm`, without necks narrower than `min_width_mm` (EasyEDA does not fill them). The net counts as connected
+when one piece holds all its pads; pieces on two pour layers join through the net's through-hole pads and vias, and
+its own tracks count as well. Otherwise it is reported like an open net, `GND (pour-only): 2 groups – C1.2 | C2.2`, and
+the preview shows the computed pour. Fixed wires of the net (`routing.fixed_wires`) stay in the result although
+Freerouting leaves a net outside the network out of its SES. A plane, by contrast, is taken as connected whatever
+the tracks do to it – use it for a layer the net has to itself, reached through its through-hole pads and vias
+(`fanout`, 7.5), not for a pour that tracks cut.
+
+**Several nets on one layer.** `pcb pour` gives every pour the same outline, and where pours overlap EasyEDA fills only
+the one with priority – a second net on a layer gets nothing. With `pour_regions = true` at the top of the board file,
+each net on a layer that several nets pour on gets an outline of its own area instead:
+
+```toml
+pour_regions = true                # in hardware/boards/<b>.toml, above the tables
+
+[[pours]]
+net = "GND"
+layers = ["BOTTOM"]
+pour_only = true                   # priority 1: claims first
+
+[[pours]]
+net = "V_LED"
+layers = ["BOTTOM"]
+priority = 2
+```
+
+The nets claim their area in `priority` order (1 first, ties in the order of the file). A net takes the pieces of its
+computed pour (as for pour-only nets, with its `clearance_mm` and `min_width_mm`) without what the nets before it
+fill, kept away from that by its clearance – the pieces that hold its own copper (pads, tracks, vias; EasyEDA drops the
+others as islands) and have more than `pour_min_piece_mm2` (2.0) outside that copper grown by the clearance; EasyEDA
+would leave a smaller one empty. Its outlines are those pieces without their holes, grown by 0.2 mm, simplified by
+0.03 mm, within the pour outline and without the outlines of the nets before it: one pour per outline
+(`GND_BOTTOM_1`, `GND_BOTTOM_2`, …), with the entry's priority. A layer with one net keeps the full outline.
+
+The outlines come from the board file and the SES, so `route pours` computes them (`route all` at its end); `pcb pour`
+stops with a hint while there is no routing. EasyEDA does not fill an outline with a hole, so a piece of one net inside
+the outline of another is an error naming the place – `GND_B BOTTOM: its pour at (10.0, 10.0) mm lies inside the pour
+of GND` – and nothing is poured; `route check` reports it as a finding first, and `route all` tries another routing.
+A pour-only net on a shared layer is connected by what it claims, not by the whole outline, and the preview draws the
+outlines dashed. A plane takes the whole layer, so with `pour_regions` it needs a layer of its own.
+
+Without `pour_regions`, the computed pour of a pour-only net assumes the layer to itself: when another net pours on
+the same layer, `route check` says so. The gate's L-2 on the Gerber copper has the last word either way.
 
 ## 7.7 Silkscreen
 
@@ -201,11 +328,33 @@ left, then vertical, then at the corners; not on pads, footprint print, parts or
 last resort; test points first), then exports again and checks that no own silkscreen lies on a solder-mask opening
 (JLCPCB cuts it off there) – target 0 mm² – and runs the DRC. Pictures per side in `<artifacts>/silk_<board>_<side>.png`.
 
+**Through-hole parts of the other side** are soldered from the `designators` side – LEDs on the front of a board whose
+electronics and designators are on the back. With `solder_side = true` in `[silk]` they are labelled there too: next to
+their box, where their solder joints are, by the same free-spot search, and their box blocks other labels like a part of
+that side. A part's designator prints only on its own side, so the name is a free text in the designators' stroke font
+and height, remembered and replaced like the board label. A part counts as through-hole with at least one through-hole
+pad; SMD parts of the other side get no label. `hide = ["bottom"]` (or `"top"`) keeps the part's own side free of
+designators. A large through-hole part there – a module on pin headers – blocks label spots over its whole box.
+
 It also prints the **board label** – title and revision, `"{title} rev {revision}"` by default – at the free spot
 nearest to the bottom-left corner of the printed side (`board_label_corner`), clear of pads, parts, labels, vias and the
 keep-outs of mounting and tooling holes. The revision comes from `revision` in the board file; without it there is no
 label. edakit remembers the texts it created (`<artifacts>/silk_strings_<board>.json`) and replaces them on the next
 run, so a board never carries two revisions.
+
+The label goes on the `designators` side unless `board_label_side = "bottom"` (or `"top"`) names the other one. There it
+keeps clear of that side's mask openings and print (+0.15 mm), the boxes of its parts, its artwork and texts, vias and
+hole keep-outs. `board_label_region = [[x, y], …]` (plan mm) gives the part of the board it must lie in – the part a
+stand or an enclosure covers, say; `board_label_corner` is then the corner of that region. Without a free spot there
+the label is left out: "board label …: no free spot in board_label_region". Both keys leave the label as it was when
+they are missing:
+
+```toml
+[silk]
+designators = "top"
+board_label_side = "bottom"                                # the LED side, without designators
+board_label_region = [[0, 0], [60, 0], [60, 34], [0, 34]]  # the lower 34 mm, inside the stand
+```
 
 **Artwork and labels** come first: `[[silk.art]]` places an SVG (filled shapes and strokes, scaled to
 `width_mm`, centred at `x`, `y` in plan mm) and `[[silk.texts]]` free texts – "START" at a button, "GND 5V

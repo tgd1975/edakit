@@ -10,7 +10,8 @@ plus "extra_scenarios" listed there.
        current per pin (gpio_i_max_a) and of all outputs together (gpio_i_total_max_a)
   E-3  function: supply currents, regulator outputs and headroom, MCU supply and input levels, MCU outputs only on
        pins that can drive, constant-current driver headroom and junction temperature, LED currents on/off as the load
-       says (an LED behind a 0 Ω bridge counts on the driver output the bridge joins it to), relays pull in and release
+       says (an LED behind a 0 Ω bridge counts on the driver output the bridge joins it to, an LED behind one resistor
+       to a single driver output on that output – parallel LEDs with balancing resistors), relays pull in and release
        (v_operate, v_release), blocking diodes, every net inside its declared voltage range 'v', plus the project
        plugin's own checks
 
@@ -195,6 +196,25 @@ def reg_input_current(res, reg):
     return reg["vset"] * (iout + reg["extra_i"]) / (p.get("efficiency", 0.85) * vin) + p.get("iq_a", 0.0)
 
 
+def behind_resistor(design, joined, outputs):
+    """{net: driver output} for every net that one resistor (not a 0 Ω bridge) joins to exactly one of `outputs` – the
+    cathode net of an LED behind its balancing resistor, when several LEDs share a channel. Nets as the bridges join
+    them (`joined`); the ground is never behind an output, a net that reaches two outputs belongs to neither."""
+    reach = defaultdict(set)
+    bridges = set(design.bridges())
+    for des in design.comps:
+        part = design.part(des) or {}
+        if part.get("kind") != "resistor" or des in bridges:
+            continue
+        nets = {joined.get(n, n) for p in part.get("pins") or {} if (n := design.pin_net.get(f"{des}.{p}"))}
+        if len(nets) == 2:
+            a, b = nets
+            for net, out in ((a, b), (b, a)):
+                if out in outputs and net != design.ground:
+                    reach[net].add(out)
+    return {net: next(iter(outs)) for net, outs in reach.items() if len(outs) == 1}
+
+
 def functional(design, cfg, res, meta, load, ck, plugin):
     crit = {**DEFAULT_CRITERIA, **cfg.get("criteria", {})}
     amb = cfg.get("ambient_c", 25)
@@ -279,6 +299,7 @@ def functional(design, cfg, res, meta, load, ck, plugin):
 
     leds_on = load.get("leds_on")
     groups = defaultdict(list)
+    behind = behind_resistor(design, joined, chan_of)   # LEDs in parallel on one channel, each behind its resistor
     for name, info in meta["leds"].items():
         i = res.get(f"@{name}[id]", float("nan"))
         label = name[2:].upper()
@@ -288,6 +309,8 @@ def functional(design, cfg, res, meta, load, ck, plugin):
         elif anode in chan_of:
             ck.add("E-3", label, f"LED reversed (anode at the driver output {info['anode_net']})", i,
                    "cathode at the driver output", False, unit=" A")
+        elif cathode in behind:
+            groups[behind[cathode]].append((label, i))
         elif leds_on is not None:
             on = leds_on == "all" or info["des"] in leds_on or label in leds_on
             if on:

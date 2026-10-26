@@ -65,6 +65,9 @@ layout review again (M-5). The keys stand at the top of the file, without a pref
 | `revision` | – | board revision, printed with the title (`silk.board_label`); without it no board label |
 | `view` | `top` | side the plan is drawn from; `bottom` mirrors x and rotations |
 | `edge_ok` | `[]` | parts that may touch or overhang the outline |
+| `on_headers` | `[]` | parts that stand on pin headers: an SMD part of their side may sit under them, clear of `header_keep_mm` around each of their through-hole pins; a through-hole part under them stays an overlap (7.4) |
+| `header_keep_mm` | `1.27` | half width of the square around each through-hole pin of an `on_headers` part that SMD parts of its side stay out of (mm) |
+| `silk_overlap_mm` | `0` | how far the boxes (silkscreen included) of two SMD parts of one side may reach into each other, in x and in y, before the plan check reports them (mm); with a through-hole part it does not apply (7.4) |
 | `near_mm` | `6` | maximum gap for `near` (of the plan and of the graph's `layout`) and the decoupling of L-12 |
 | `edge_mm` | `1` | maximum distance from the outline for the graph's `layout.edge` (L-12) |
 | `park` | `[10, -15]` | where new parts are dropped (mm, EasyEDA coordinates) |
@@ -74,12 +77,16 @@ layout review again (M-5). The keys stand at the top of the file, without a pref
 | `place` | `{}` | `REF = {x, y, rot, side, lock}` fixed parts |
 | `near` | `{}` | `PART = "HOST"` or a list – the layout's own, between fixed parts; the circuit's are `layout.near` of the graph |
 | `routing` | see below | Freerouting rules |
-| `[[pours]]` | GND on both layers | `net`, `layers`, `plane` (bool), `stitch` (layer), `priority`, `line_mil` |
-| `silk` | `{}` | `designators` (side), `hide` (sides), `label_h_mm` (1.0), `gap_mm` (0.25), `groups` {label: [refs]}, `priority` (["TP"]), `board_label` (`"{title} rev {revision}"`; also `{project}`, `{board}`; `""` = none), `board_label_corner` (`bottom-left`, seen from the printed side), `board_label_h_mm` (1.2), `[[art]]` ({`svg`, `x`, `y`, `width_mm`, `rot`, `side`}), `[[texts]]` ({`text`, `x`, `y`, `h_mm` (1.2), `rot`, `side`, `font` (`default` = stroke font, or a font family EasyEDA knows)}) |
+| `[[pours]]` | GND on both layers | `net`, `layers`, `plane` (bool), `fanout` (false: with `plane`, every SMD pad of the net on the other layer gets a protected via to the plane and a stub, 7.5), `stitch` (layer), `priority`, `line_mil`, `pour_only` (false: the net gets no tracks, its pour connects it; on every entry of the net, not with `plane`), `clearance_mm` (0.25: what the computed pour keeps from foreign copper – the EasyEDA copper-area rule), `min_width_mm` (0.25: the narrowest neck it fills); both also for every pour on a shared layer with `pour_regions` |
+| `pour_regions` | `false` | nets that share a pour layer get outlines of their own area, claimed in `priority` order (7.6); no `plane` on such a layer |
+| `pour_min_piece_mm2` | `2.0` | with `pour_regions`: the smallest piece (outside the net's own copper and clearance) that gets an outline |
+| `pour_inset_mm` | edge clearance + 0.1 | how far the pours lie inside the outline (mm): the outline of `pcb pour` and `route pours` and every computed pour; without it `routing.edge_clearance_um` / 1000 + 0.1; the tracks keep `edge_clearance_um` either way (7.6) |
+| `silk` | `{}` | `designators` (side), `hide` (sides), `label_h_mm` (1.0), `gap_mm` (0.25), `groups` {label: [refs]}, `priority` (["TP"]), `solder_side` (`false`; `true`: the through-hole parts of the other side are labelled on the `designators` side too, 7.7), `board_label` (`"{title} rev {revision}"`; also `{project}`, `{board}`; `""` = none), `board_label_corner` (`bottom-left`, seen from the printed side), `board_label_h_mm` (1.2), `board_label_side` (the `designators` side; `"top"` or `"bottom"`, 7.7), `board_label_region` (the whole board; a polygon `[[x, y], …]` in plan mm the label must lie in, `board_label_corner` then means its corner, 7.7), `[[art]]` ({`svg`, `x`, `y`, `width_mm`, `rot`, `side`}), `[[texts]]` ({`text`, `x`, `y`, `h_mm` (1.2), `rot`, `side`, `font` (`default` = stroke font, or a font family EasyEDA knows)}) |
 | `[[loops]]` | `[]` | `a`, `b` (pads "D1.2"), `max_mm`, `what` – check L-11; the circuit's are `layout.loops` of the graph |
 | `net_classes` | see below | track widths from the simulated currents |
 
-`[routing]`: `clearance_mil` (6.5), `signal_mil` (10), `via` ([24, 12]), `edge_clearance_um` (400), `passes` (40),
+`[routing]`: `clearance_mil` (6.5), `signal_mil` (10), `via` ([24, 12]), `edge_clearance_um` (400: tracks and vias
+from the outline, in the DSN and in Freerouting; the pours: `pour_inset_mm`), `passes` (40),
 `attempts` (5), `layer_cost` ({TOP = [1.0, 1.8], BOTTOM = [1.5, 2.5]}), `classes` ({NAME = {width_mil, nets}}),
 `[[routing.keepouts]]` ({layer, what = "wire"|"all", rect | polygon, windows, window_mm}), `[[routing.fixed_wires]]`
 ({net, layer, width_mil, points}).
@@ -121,7 +128,7 @@ Code: `edakit … 2>&1 | cat`.
 | `edakit pcb nets [--write]` | ✓ | graph, PCB | pad nets |
 | `edakit pcb apply [--verify-all]` | ✓ | plan, geometry | outline, holes, tooling, fixed parts |
 | `edakit pcb autolayout` | ✓ | – | positions of unlocked parts |
-| `edakit pcb tooling` / `pour` | ✓ | plan | tooling holes / pours (unfilled) |
+| `edakit pcb tooling` / `pour` | ✓ | plan; `pour` with `pour_regions`: board file and SES of `route` | tooling holes / pours (unfilled) |
 | `edakit route all\|read\|dsn\|route\|check\|apply\|verify [--cleanup]\|pours\|reload\|drc\|save` | ✓ / – (dsn, route, check offline) | PCB, rules | `route/<board>_board.json`, `.dsn`, `.ses`, `_routing.png`, `_drc.json`; tracks, vias, pours |
 | `edakit silk apply\|check` | ✓ | PCB, Gerber export | designators, `silk_<board>_<side>.png`, `gerber_<board>/` |
 | `edakit export [--board]` | ✓ read | schematic, PCB, project file | `<artifacts>/export/` |

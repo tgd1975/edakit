@@ -3,7 +3,8 @@ mounting and tooling holes, copper pours, EasyEDA's auto-layout.
 
     edakit pcb dump [--ref U1,J1]   footprint geometry -> <artifacts>/pcb_geometry_<board>.json
                                     (turns every measured part to 0°/TOP and leaves it there – run apply afterwards)
-    edakit pcb plan                 offline: check the plan (overlaps, outline, holes, THT pins under parts of the
+    edakit pcb plan                 offline: check the plan (overlaps – under a part on pin headers only its pins,
+                                    SMD parts within silk_overlap_mm –, outline, holes, THT pins under parts of the
                                     other side, near; L-12 the layout requirements of the circuit), airline length,
                                     preview PNG, net classes from the simulation
     edakit pcb parts [--write]      parts of the board schematic -> PCB without the "Import Changes" dialog
@@ -11,7 +12,8 @@ mounting and tooling holes, copper pours, EasyEDA's auto-layout.
     edakit pcb apply                outline, holes, tooling holes, fixed parts (locked); all other parts unlocked
     edakit pcb autolayout           EasyEDA auto-layout of the unlocked parts, waits until positions are stable
     edakit pcb tooling              only the tooling holes again
-    edakit pcb pour                 copper pours of [[pours]] in the board file (replaces old ones, not filled)
+    edakit pcb pour                 copper pours of [[pours]] in the board file (replaces old ones, not filled);
+                                    with pour_regions the outlines on a shared layer from the last routing
 
 Plan coordinates: mm, as seen from the board's `view` side (board file); `side` of a part is the EasyEDA side.
 EasyEDA PCB unit: mil, y up. Footprint geometry is stored relative to the part origin at rotation 0 on TOP, so the
@@ -72,6 +74,17 @@ def box_gap(a, b):
     return max(b[0] - a[2], a[0] - b[2], b[1] - a[3], a[1] - b[3], 0)
 
 
+def overlap_depth(a, b):
+    """How far two overlapping boxes reach into each other: per axis the distance one has to move to clear the other,
+    the smaller of x and y. For parts side by side that is the width of the strip they share; a small part inside a
+    large box lies as deep as its way out."""
+    return min(a[2] - b[0], b[2] - a[0], a[3] - b[1], b[3] - a[1])
+
+
+def through_hole(geo):
+    return any(q.get("tht") for q in geo.get("pads", {}).values())
+
+
 def outline_polygon(board):
     from shapely.geometry import Polygon
     return Polygon(board.outline)
@@ -109,17 +122,59 @@ def wirelength(board, geo, place, ground):
     return total
 
 
+def header_pins(board, geo, place):
+    """The through-hole pins of the fixed parts in on_headers, in plan coordinates: {ref: {pad: (x, y)}}."""
+    out = {}
+    for r in sorted(board.on_headers, key=natural_key):
+        if r in place and r in geo:
+            p = place[r]
+            out[r] = {n: board.transform((q["x"], q["y"]), p.x, p.y, p.rot, p.side)
+                      for n, q in geo[r].get("pads", {}).items() if q.get("tht")}
+    return out
+
+
+def overlap_finding(board, geo, place, boxes, pins, a, b):
+    """Two parts of one side whose boxes overlap. When one of them stands on pin headers (pins), the board under it is
+    free but for the plastic of its headers: an SMD part is a finding only where its box comes closer than
+    header_keep_mm to one of the through-hole pins (a square around the pin centre); a through-hole part stays an
+    overlap. Otherwise the boxes, silkscreen included, of two SMD parts may reach silk_overlap_mm into each other;
+    with a through-hole part the overlap stays a finding."""
+    host = a if pins.get(a) else b if pins.get(b) else None
+    other = b if host == a else a
+    if host is not None and not through_hole(geo[other]):
+        gap, pin = min(((box_gap(boxes[other], (x, y, x, y)), n) for n, (x, y) in pins[host].items()),
+                       key=lambda g: (round(g[0], 6), natural_key(g[1])))
+        if gap < board.header_keep_mm:
+            return [f"{other}: on the pins of {host} ({place[other].side}) – {gap:.2f} mm from pin {pin} "
+                    f"(header_keep_mm {board.header_keep_mm:g})"]
+        return []
+    found = f"{a} / {b}: overlap ({place[a].side})"
+    tol = board.silk_overlap_mm
+    if not tol:
+        return [found]
+    depth = overlap_depth(boxes[a], boxes[b])
+    tht = [r for r in (a, b) if through_hole(geo[r])]
+    if tht:
+        return [f"{found} – {depth:.2f} mm ({', '.join(tht)} through-hole: silk_overlap_mm does not apply)"]
+    if round(depth, 6) > tol:
+        return [f"{found} – {depth:.2f} mm (silk_overlap_mm {tol:g})"]
+    return []
+
+
 def check_plan(cfg, board, geo, place, boxes, tht):
     from shapely.geometry import Point, box
     problems = []
     outline = outline_polygon(board)
     refs = [r for r in place if r in boxes]
+    pins = header_pins(board, geo, place)
+    problems += [f"{r}: in on_headers, but its footprint has no through-hole pins – its overlaps count as usual"
+                 for r, p in pins.items() if not p]
     for i, a in enumerate(refs):
         if a not in board.edge_ok and not outline.buffer(-0.3).contains(box(*boxes[a])):
             problems.append(f"{a}: reaches over the outline (keep 0.3 mm)")
         for b in refs[i + 1:]:
             if place[a].side == place[b].side and overlap(boxes[a], boxes[b]):
-                problems.append(f"{a} / {b}: overlap ({place[a].side})")
+                problems += overlap_finding(board, geo, place, boxes, pins, a, b)
         for h in board.holes:
             if box(*boxes[a]).intersects(Point(h["x"], h["y"]).buffer(h["keep"])):
                 problems.append(f"{a}: inside the keep-out of the hole ({h['x']:g}, {h['y']:g})")
@@ -464,12 +519,14 @@ def tooling(cfg, board, mcp):
 
 
 def pour_outline(board):
-    """Pour polygon (plan mm): the outline, set in by the edge clearance of the routing rules (+0.1 mm; EasyEDA itself
-    keeps only about 0.26 mm), without the keep-out circle of every mounting hole, with a notch around every tooling
-    hole. EasyEDA takes a polygon with a hole only as its
-    outer contour, and copper must not lie under the tooling hole – so the notch reaches the edge."""
+    """Pour polygon (plan mm): the outline, set in by pour_inset_mm of the board file – without it by the edge clearance
+    of the routing rules + 0.1 mm (EasyEDA itself keeps only about 0.26 mm) –, without the keep-out circle of every
+    mounting hole, with a notch around every tooling hole. EasyEDA takes a polygon with a hole only as its outer
+    contour, and copper must not lie under the tooling hole – so the notch reaches the edge."""
     from shapely.geometry import Point, box
-    edge = float(board.routing.get("edge_clearance_um", 400)) / 1000 + 0.1
+    edge = board.pour_inset_mm
+    if edge is None:
+        edge = float(board.routing.get("edge_clearance_um", 400)) / 1000 + 0.1
     poly = outline_polygon(board).buffer(-edge, join_style="mitre")
     for h in board.holes:  # 'keep' = radius free of parts and copper (screw head, washer)
         cut = poly.difference(Point(h["x"], h["y"]).buffer(h["keep"]))
@@ -492,9 +549,10 @@ def pour_outline(board):
     return [tuple(q) for q in list(poly.exterior.coords)[:-1]]
 
 
-def pour(cfg, board, mcp, keep_islands_on=None):
+def pour(cfg, board, mcp, keep_islands_on=None, regions=None):
     """Copper pours of [[pours]] in the board file (default GND on both layers) along the outline; old pours of the same
-    nets are replaced. keep_islands_on: layer name whose islands are kept (to find them for stitching)."""
+    nets are replaced. keep_islands_on: layer name whose islands are kept (to find them for stitching). regions:
+    {(net, layer name): [outline in EasyEDA mm, …]} – a pour per outline instead (route.region_outlines)."""
     ensure_pcb_focus(mcp)
     nets = {p["net"] for p in board.pours}
     old = [eda.state(p)["PrimitiveId"] for p in api(mcp, "PCB_PrimitivePour.getAll") or []
@@ -504,13 +562,19 @@ def pour(cfg, board, mcp, keep_islands_on=None):
     pts = [board.eda_point(*q) for q in pour_outline(board)]
     for spec in board.pours:
         for layer_name in spec.get("layers", ["TOP", "BOTTOM"]):
-            ensure_pcb_focus(mcp)
-            layer = LAYER_ID[layer_name]
-            # 5th value preserveSilos: keep islands. Loose islands count as DRC connection errors – only for finding them
-            r = api(mcp, "PCB_PrimitivePour.create", spec["net"], layer, outline_arg(pts), "solid",
-                    keep_islands_on == layer_name, f"{spec['net']}_{layer_name}", spec.get("priority", 1),
-                    spec.get("line_mil", 10))
-            print(f"  pour {spec['net']} {layer_name}: {'ok' if r else 'FAILED'}")
+            shapes = (regions or {}).get((spec["net"], layer_name), [pts])
+            if not shapes:
+                print(f"  pour {spec['net']} {layer_name}: no area of its own on the shared layer – not poured")
+            for k, shape in enumerate(shapes, 1):
+                ensure_pcb_focus(mcp)
+                layer = LAYER_ID[layer_name]
+                part = f"_{k}" if len(shapes) > 1 else ""
+                # 5th value preserveSilos: keep islands. Loose islands count as DRC connection errors – only for finding
+                # them
+                r = api(mcp, "PCB_PrimitivePour.create", spec["net"], layer, outline_arg(shape), "solid",
+                        keep_islands_on == layer_name, f"{spec['net']}_{layer_name}{part}", spec.get("priority", 1),
+                        spec.get("line_mil", 10))
+                print(f"  pour {spec['net']} {layer_name}{part}: {'ok' if r else 'FAILED'}")
 
 
 def sync_nets(cfg, mcp, write=False):
@@ -705,6 +769,10 @@ def main(cfg, args):
     board = cfg.board(args.board)
     if args.action == "plan":
         return 2 if plan(cfg, board) else 0
+    regions = None
+    if args.action == "pour":  # pour_regions: the outlines from the last routing, before EasyEDA is touched
+        from . import route
+        regions = route.region_outlines(cfg, board)
     mcp = eda.start(cfg, args.verbose)
     try:
         if not eda.wait_for_bridge(mcp):
@@ -721,7 +789,7 @@ def main(cfg, args):
         elif args.action == "tooling":
             tooling(cfg, board, mcp)
         elif args.action == "pour":
-            pour(cfg, board, mcp)
+            pour(cfg, board, mcp, regions=regions)
         elif args.action == "nets":
             n = sync_nets(cfg, mcp, write=args.write)
             return 2 if n and not args.write else 0

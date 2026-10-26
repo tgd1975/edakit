@@ -7,12 +7,16 @@
 Placement: every designator gets the first free spot above, below, right or left of its part (horizontal, then
 vertical, then at the corners) – not on pads, footprint silkscreen, other parts or other labels. Test points and the
 tightest parts come first. A spot on a via (tented, the print holds) only when nothing else is free. Groups
-([silk] groups = {"R1-R8" = [...]}) get one common label when the single labels do not fit.
+([silk] groups = {"R1-R8" = [...]}) get one common label when the single labels do not fit. With solder_side = true the
+through-hole parts of the other side are labelled on this side too, next to their solder joints: a free text in the
+same font, remembered and replaced like the group labels.
 
 Board label: the board's title and revision (revision and [silk] board_label of the board file, default
 "{title} rev {revision}", also {project} and {board}) in the free spot nearest to a corner (board_label_corner, default
-"bottom-left" as seen from the printed side), not on pads, parts, labels, vias or the keep-outs of holes. edakit
-remembers the strings it created and replaces them on the next run, so an old revision never stays on the board.
+"bottom-left" as seen from the printed side), not on pads, parts, labels, vias or the keep-outs of holes. It goes on the
+designators side unless board_label_side names the other one, and anywhere on the board unless board_label_region
+(a polygon in plan mm) gives the part it must lie in – the corner is then that region's. edakit remembers the strings
+it created and replaces them on the next run, so an old revision never stays on the board.
 
 Artwork and texts ([[silk.art]]: svg, x, y, width_mm, rot, side; [[silk.texts]]: text, x, y, h_mm, rot, side,
 font) come first: filled shapes and strokes of the SVG become silkscreen fills, cut free of pads and
@@ -38,6 +42,7 @@ from .design import natural_key
 from .eda import api, ensure_pcb_focus
 
 SIDE = {"top": TOP, "bottom": BOTTOM}
+MULTI_LAYER = 12  # EasyEDA layer of through-hole pads
 GERBER_KEYS = {TOP: ("top_mask", "top_silk"), BOTTOM: ("bottom_mask", "bottom_silk")}
 
 
@@ -133,6 +138,23 @@ def place_labels(parts, blocked, vias, area, h, gap, groups=None, priority=("TP"
     return placed, grouped, missing
 
 
+def label_parts(parts, layer, solder_side=False):
+    """parts: {designator: (EasyEDA layer, through-hole)} -> the designators labelled on `layer`: the parts of that side
+    and, with solder_side, the through-hole parts of the other side – they are soldered from this one."""
+    return sorted((r for r, (on, tht) in parts.items() if on == layer or (solder_side and tht)), key=natural_key)
+
+
+def through_hole_parts(mcp, comps):
+    """Designators of the parts with a through-hole pad (layer 12); a pad's id starts with its part's id."""
+    out = set()
+    for p in map(eda.state, api(mcp, "PCB_PrimitivePad.getAll") or []):
+        if p.get("Layer") == MULTI_LAYER:
+            owner = next((c for cid, c in comps.items() if p["PrimitiveId"].startswith(cid)), None)
+            if owner and owner.get("Designator"):
+                out.add(owner["Designator"])
+    return out
+
+
 def board_label_text(cfg, board):
     template = board.silk.get("board_label", "{title} rev {revision}")
     if not template or ("{revision}" in template and board.revision is None):
@@ -140,8 +162,23 @@ def board_label_text(cfg, board):
     return template.format(project=cfg.project, title=board.title, board=board.name, revision=board.revision)
 
 
+def board_label_area(board, area):
+    """Where the board label may lie: the printable `area`, cut to [silk] board_label_region (plan mm) if given."""
+    region = board.silk.get("board_label_region")
+    return area.intersection(Polygon([board.eda_point(*p) for p in region]).buffer(0)) if region else area
+
+
+def side_obstacles(openings, printed, boxes, art=None):
+    """What the board label keeps clear of on the side without designators: pads and mask openings and the print
+    already there (+0.15 mm), the boxes of that side's parts, its artwork and texts (already grown)."""
+    return unary_union([openings.buffer(0.15), printed.buffer(0.15), *[box(*bb) for bb in boxes]]
+                       + ([art] if art is not None else []))
+
+
 def corner_spot(area, obstacles, w, h, corner="bottom-left", step=0.5):
     """Centre of a free w x h box nearest to a corner of `area` (inside it, clear of `obstacles`), or None."""
+    if area.is_empty:
+        return None
     x0, y0, x1, y1 = area.bounds
     cx = x1 if "right" in corner else x0
     cy = y1 if "top" in corner else y0
@@ -331,15 +368,19 @@ def apply(cfg, board, mcp):
     mask_key, silk_key = GERBER_KEYS[layer]
     openings = gerber.shape(gerber.parse_gerber(folder / gerber.FILES[mask_key]))
     fp_silk = gerber.shape(gerber.parse_gerber(folder / gerber.FILES[silk_key]))
+    solder_side = s.get("solder_side", False)
+    tht = through_hole_parts(mcp, comps) if solder_side else set()
     parts = {}
-    for ref, (a, c) in attrs.items():
-        if c.get("Layer") == layer:
-            bb = api(mcp, "PCB_Primitive.getPrimitivesBBox", [c["PrimitiveId"]])
-            parts[ref] = (mm(bb["minX"]), mm(bb["minY"]), mm(bb["maxX"]), mm(bb["maxY"]))
+    for ref in label_parts({r: (c.get("Layer"), r in tht) for r, (_, c) in attrs.items()}, layer, solder_side):
+        bb = api(mcp, "PCB_Primitive.getPrimitivesBBox", [attrs[ref][1]["PrimitiveId"]])
+        parts[ref] = (mm(bb["minX"]), mm(bb["minY"]), mm(bb["maxX"]), mm(bb["maxY"]))
+    other = [r for r in parts if attrs[r][1].get("Layer") != layer]  # solder_side: printed as free texts
     blocked = unary_union([openings.buffer(0.15), fp_silk.buffer(0.15)] + [box(*bb) for bb in parts.values()])
     vias = unary_union([Point(mm(v["X"]), mm(v["Y"])).buffer(mm(v["Diameter"]) / 2 + 0.1)
                         for v in map(eda.state, api(mcp, "PCB_PrimitiveVia.getAll") or [])])
     area = board_shape(board).buffer(-0.5)
+    label_layer = SIDE[s.get("board_label_side", side)]
+    label_art = None  # the artwork and texts of the board label's side when that is not the designators side
     created = {"strings": [], "fills": []}
 
     def string(text, x, y, rot, size, font="default", on=layer):
@@ -363,43 +404,61 @@ def apply(cfg, board, mcp):
             created["fills"].append(eda.state(res).get("PrimitiveId") if isinstance(res, dict) else res)
         for text, x, y, rot, th, font in texts:
             string(text, x, y, rot, th, font, art_layer)
-        if art_layer == layer:  # designators and the board label keep clear of it
+        if art_layer in (layer, label_layer):  # designators and the board label keep clear of it
             boxes = [label_box(x, y, rot, *label_size(t, th)) for t, x, y, rot, th, _ in texts]
-            blocked = unary_union([blocked, art.buffer(0.3), *[b.buffer(0.3) for b in boxes]])
+            keep = unary_union([art.buffer(0.3), *[b.buffer(0.3) for b in boxes]])
+            if art_layer == layer:
+                blocked = unary_union([blocked, keep])
+            else:
+                label_art = keep
         print(f"  {art_side}: artwork {len(polygons(art))} shapes ({art.area:.0f} mm²), {len(texts)} texts")
     placed, grouped, missing = place_labels(parts, blocked, vias, area, h, gap, s.get("groups"),
                                             tuple(s.get("priority", ["TP"])))
     for n, (name, (x, y, rot)) in enumerate(placed.items()):
         if n % 20 == 0:
             ensure_pcb_focus(mcp)
-        if name in attrs:
+        if name in attrs and name not in other:
             api(mcp, "PCB_PrimitiveAttribute.modify", attrs[name][0]["PrimitiveId"],
                 {"x": to_mil(x), "y": to_mil(y), "rotation": rot, "alignMode": 5, "fontSize": to_mil(font_size(h)),
                  "lineWidth": 6,
                  "valueVisible": True})
-        else:  # group label in the same stroke font
+        else:  # group label, or a part of the other side (its attribute prints there): a text in the same stroke font
             string(name, x, y, rot, h)
     text = board_label_text(cfg, board)
     if text:
         lh = float(s.get("board_label_h_mm", 1.2))
         lw, _ = label_size(text, lh)
-        labels = [label_box(x, y, rot, *label_size(name, h)).buffer(0.3) for name, (x, y, rot) in placed.items()]
+        if label_layer == layer:  # what the designators keep clear of, and the designators
+            near = [blocked, *[label_box(x, y, rot, *label_size(name, h)).buffer(0.3) for name, (x, y, rot) in
+                               placed.items()]]
+        else:  # board_label_side: the other side's openings, print, parts, artwork and texts
+            mask_key, silk_key = GERBER_KEYS[label_layer]
+            bbs = [api(mcp, "PCB_Primitive.getPrimitivesBBox", [cid]) for cid, c in comps.items()
+                   if c.get("Layer") == label_layer]
+            near = [side_obstacles(gerber.shape(gerber.parse_gerber(folder / gerber.FILES[mask_key])),
+                                   gerber.shape(gerber.parse_gerber(folder / gerber.FILES[silk_key])),
+                                   [(mm(b["minX"]), mm(b["minY"]), mm(b["maxX"]), mm(b["maxY"])) for b in bbs],
+                                   label_art)]
         keeps = [Point(*board.eda_point(hl["x"], hl["y"])).buffer(hl["keep"]) for hl in board.holes]
         keeps += [Point(*board.eda_point(x, y)).buffer(board.tooling_keep) for x, y in board.tooling]
         corner = s.get("board_label_corner", "bottom-left")
-        if layer == BOTTOM:  # seen from the bottom, left and right swap
+        if label_layer == BOTTOM:  # seen from the bottom, left and right swap
             corner = corner.replace("left", "@").replace("right", "left").replace("@", "right")
-        spot = corner_spot(area, unary_union([blocked, vias, *labels, *keeps]), lw, lh, corner)
+        spot = corner_spot(board_label_area(board, area), unary_union([*near, vias, *keeps]), lw, lh, corner)
+        where = f" on the {s['board_label_side']}" if label_layer != layer else ""
         if spot:
-            string(text, *spot, 0, lh)
-            print(f"  board label '{text}' at ({spot[0]:.1f}, {spot[1]:.1f}) mm")
+            string(text, *spot, 0, lh, on=label_layer)
+            print(f"  board label '{text}'{where} at ({spot[0]:.1f}, {spot[1]:.1f}) mm")
         else:
-            print(f"  ! board label '{text}': no free spot")
+            print(f"  ! board label '{text}': no free spot"
+                  + (" in board_label_region" if s.get("board_label_region") else "") + where)
     elif board.revision is None:
         print(f"  ! no board label: set revision in {board.file}")
     memo.write_text(json.dumps(created))
     eda.save_pcb(mcp)
     print(f"  {side}: {sum(1 for n in placed if n in attrs)} of {len(parts)} designators placed"
+          + (f" ({sum(1 for n in placed if n in other)} of {len(other)} through-hole parts of the other side)"
+             if solder_side else "")
           + (f", groups {', '.join(g for g in (s.get('groups') or {}) if g in placed)}" if grouped else "")
           + f"; without room: {', '.join(missing) or '–'}")
     return check(cfg, board, mcp, fp_silk)

@@ -33,12 +33,17 @@ DEFAULT_NET_CLASSES = {          # from the largest simulated current (A), pract
     "SUPPLY": {"min_a": 0.1, "width_mm": 0.4},
     "SIGNAL": {"min_a": 0.0, "width_mm": 0.25},
 }
+POUR_CLEARANCE_MM = 0.25         # pour_only: what the computed pour keeps from foreign copper (copper-area rule)
+POUR_MIN_WIDTH_MM = 0.25         # pour_only: the narrowest neck the computed pour fills
+POUR_MIN_PIECE_MM2 = 2.0         # pour_regions: the smallest piece of a shared layer that gets an outline
+HEADER_KEEP_MM = 1.27            # on_headers: the plastic of a 2.54 mm pin header, half its width around each pin
 
 PROJECT_KEYS = ("name", "company", "quantity", "distributors", "lock", "graph", "parts", "sim", "sim_plugin",
                 "schematic", "signoff", "artifacts", "reports")
 BOARD_KEYS = ("title", "template", "schematic", "pcb", "file")            # [boards.<name>] in edakit.toml
 BOARD_FILE_KEYS = ("revision", "view", "outline", "holes", "tooling", "place", "near", "near_mm", "edge_mm", "edge_ok",
-                   "park", "routing", "pours", "silk", "loops", "net_classes")
+                   "on_headers", "header_keep_mm", "silk_overlap_mm", "park", "routing", "pours", "pour_regions",
+                   "pour_min_piece_mm2", "pour_inset_mm", "silk", "loops", "net_classes")
 SCHEMATIC_KEYS = ("stub", "layout")
 RELEASE_KEYS = ("layout_files", "state_files", "assembly", "stages")
 
@@ -77,9 +82,15 @@ class Board:
     near_mm: float = 6.0
     edge_mm: float = 1.0                              # layout.edge of the graph: part box at most this far from the outline
     edge_ok: set = field(default_factory=set)         # parts allowed to touch or overhang the outline
+    on_headers: set = field(default_factory=set)      # parts on pin headers: SMD parts of their side may sit under them
+    header_keep_mm: float = HEADER_KEEP_MM            # ... clear of this square half width around each of their THT pins
+    silk_overlap_mm: float = 0.0                      # how far the boxes of two SMD parts may overlap (silkscreen)
     park: tuple = (10.0, -15.0)                       # where `pcb parts --write` drops new parts (mm, EasyEDA)
     routing: dict = field(default_factory=dict)
     pours: list = field(default_factory=list)
+    pour_regions: bool = False                        # nets that share a pour layer get claimed outlines
+    pour_min_piece_mm2: float = POUR_MIN_PIECE_MM2
+    pour_inset_mm: float | None = None                # pours inside the outline; None: edge clearance + 0.1 mm
     silk: dict = field(default_factory=dict)
     loops: list = field(default_factory=list)         # [(pad a, pad b, max mm, what)] short current loops (L-11)
     net_classes: dict = field(default_factory=lambda: dict(DEFAULT_NET_CLASSES))  # by falling min_a
@@ -197,6 +208,53 @@ def _placement(ref, v):
     return Placement(float(v["x"]), float(v["y"]), float(v.get("rot", 0)), side, bool(v.get("lock", True)))
 
 
+def _pours(name, pours, regions=False):
+    """[[pours]] of the board file as written. A net with pour_only = true gets no tracks, its pour connects it: every
+    entry of that net must say so, none may be a plane (a plane gets connections to make), and each gets its
+    clearance_mm and min_width_mm. With regions (pour_regions), a layer that several nets pour on is shared out among
+    them: no plane there (a plane takes the whole layer), and their clearance_mm and min_width_mm are used as well.
+    fanout = true only on a plane: its SMD pads on the other layer get a via to it."""
+    out = [dict(p) for p in pours]
+    for p in out:
+        if not isinstance(p.get("fanout", False), bool):
+            raise ConfigError(f"board {name}: pour {p.get('net')}: fanout must be true or false")
+        if p.get("fanout") and not p.get("plane"):
+            raise ConfigError(f"board {name}: pour {p.get('net')}: fanout needs plane = true – the fanout vias connect "
+                              "SMD pads on the other layer to a plane")
+    only = {p.get("net") for p in out if p.get("pour_only")}
+    for p in out:
+        if p.get("net") not in only:
+            continue
+        if not p.get("pour_only"):
+            raise ConfigError(f"board {name}: pour {p.get('net')} is pour_only in one entry but not in another – "
+                              "set it on every entry of the net")
+        if p.get("plane"):
+            raise ConfigError(f"board {name}: pour {p['net']} cannot be pour_only and a plane – a plane gets tracks "
+                              "and vias to it, a pour-only net none")
+        for key, default in (("clearance_mm", POUR_CLEARANCE_MM), ("min_width_mm", POUR_MIN_WIDTH_MM)):
+            p[key] = float(p.get(key, default))
+            if p[key] < 0:
+                raise ConfigError(f"board {name}: pour {p['net']}: {key} must not be negative")
+    if regions:
+        nets = {}  # layer -> nets that pour on it, as `pcb pour` pours them
+        for p in out:
+            for layer in p.get("layers", ["TOP", "BOTTOM"]):
+                nets.setdefault(layer, set()).add(p.get("net"))
+        for p in out:
+            shared = [layer for layer in p.get("layers", ["TOP", "BOTTOM"]) if len(nets[layer]) > 1]
+            if not shared:
+                continue
+            if p.get("plane"):
+                raise ConfigError(f"board {name}: pour {p['net']} is a plane on {shared[0]}, which "
+                                  f"{', '.join(sorted(n for n in nets[shared[0]] if n != p['net']))} pour on too – with "
+                                  "pour_regions each net gets only its own area there; give the plane a layer of its "
+                                  "own or drop plane")
+            for key in ("clearance_mm", "min_width_mm"):
+                if float(p.get(key, 0)) < 0:
+                    raise ConfigError(f"board {name}: pour {p['net']}: {key} must not be negative")
+    return out
+
+
 def _net_classes(nc):
     """[net_classes] of a board file: classes sorted by falling min_a, and the nets forced into a class."""
     nc = dict(nc)
@@ -214,6 +272,34 @@ def _board(name, entry, b, file=""):
         raise ConfigError(f"board {name}: view must be 'top' or 'bottom'")
     loops = [(lp["a"], lp["b"], float(lp["max_mm"]), lp.get("what", "")) for lp in b.get("loops", [])]
     classes, force = _net_classes(b.get("net_classes", {}))
+    regions = b.get("pour_regions", False)
+    if not isinstance(regions, bool):
+        raise ConfigError(f"board {name}: pour_regions must be true or false")
+    min_piece = float(b.get("pour_min_piece_mm2", POUR_MIN_PIECE_MM2))
+    if min_piece < 0:
+        raise ConfigError(f"board {name}: pour_min_piece_mm2 must not be negative")
+    inset = float(b["pour_inset_mm"]) if b.get("pour_inset_mm") is not None else None
+    if inset is not None and inset < 0:
+        raise ConfigError(f"board {name}: pour_inset_mm must not be negative")
+    on_headers = b.get("on_headers", [])
+    if not isinstance(on_headers, list) or not all(isinstance(r, str) for r in on_headers):
+        raise ConfigError(f"board {name}: on_headers must be a list of designators")
+    header_keep = float(b.get("header_keep_mm", HEADER_KEEP_MM))
+    if header_keep < 0:
+        raise ConfigError(f"board {name}: header_keep_mm must not be negative")
+    silk_overlap = float(b.get("silk_overlap_mm", 0.0))
+    if silk_overlap < 0:
+        raise ConfigError(f"board {name}: silk_overlap_mm must not be negative")
+    silk = b.get("silk", {})
+    if not isinstance(silk.get("solder_side", False), bool):
+        raise ConfigError(f"board {name}: silk.solder_side must be true or false")
+    if silk.get("board_label_side", "top") not in ("top", "bottom"):
+        raise ConfigError(f"board {name}: silk.board_label_side must be 'top' or 'bottom'")
+    region = silk.get("board_label_region")
+    if region is not None and not (isinstance(region, list) and len(region) >= 3 and all(
+            isinstance(p, list) and len(p) == 2 and all(isinstance(v, (int, float)) for v in p) for p in region)):
+        raise ConfigError(f"board {name}: silk.board_label_region must be a polygon [[x, y], …] of at least 3 points "
+                          "in plan mm")
     return Board(
         name=name,
         title=entry.get("title", name),
@@ -235,10 +321,16 @@ def _board(name, entry, b, file=""):
         near_mm=float(b.get("near_mm", 6.0)),
         edge_mm=float(b.get("edge_mm", 1.0)),
         edge_ok=set(b.get("edge_ok", [])),
+        on_headers=set(on_headers),
+        header_keep_mm=header_keep,
+        silk_overlap_mm=silk_overlap,
         park=tuple(map(float, b.get("park", [10, -15]))),
         routing=b.get("routing", {}),
-        pours=b.get("pours", [{"net": "GND", "layers": ["TOP", "BOTTOM"]}]),
-        silk=b.get("silk", {}),
+        pours=_pours(name, b.get("pours", [{"net": "GND", "layers": ["TOP", "BOTTOM"]}]), regions),
+        pour_regions=regions,
+        pour_min_piece_mm2=min_piece,
+        pour_inset_mm=inset,
+        silk=silk,
         loops=loops,
         net_classes=classes,
         force_class=force,

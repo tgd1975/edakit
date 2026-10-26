@@ -44,7 +44,9 @@ describes (section 3).
 1. **Change the plan** in the board file: `[place]` (x, y, rot, side), outline, holes, tooling holes, `near`,
    routing classes and keep-outs. What the circuit wants fixed, at the edge or next to a part is in the hand-over;
    beyond that, everything the auto-layout must not decide (connectors, controls, ICs with their decoupling
-   capacitors, LEDs, anything visible) is a fixed part. The plan's own `near` holds only between fixed parts.
+   capacitors, LEDs, anything visible) is a fixed part. The plan's own `near` holds only between fixed parts. SMD
+   parts under a module on pin headers: `on_headers`; SMD parts whose silkscreen outlines touch: `silk_overlap_mm`
+   (handbook 7.4).
 2. **Check offline before EasyEDA is touched:** `edakit pcb plan 2>&1 | cat` – overlaps, outline, holes, THT pins under
    parts of the other side, near-distances, the circuit's layout requirements (L-12), airline length, net classes;
    look at `<artifacts>/pcb_plan_<board>.png` (Read) and show it to the user before `apply` when positions visibly
@@ -56,7 +58,8 @@ describes (section 3).
    - `edakit pcb autolayout` (unlocked parts, TOP only, waits for stable positions)
    - `edakit route all 2>&1 | cat` (read → DSN → Freerouting → check → apply → pours → reload → DRC; exit 0 = DRC 0).
      Open connections are yellow in `<artifacts>/route/<board>_routing.png`. Never EasyEDA's autorouter.
-   - `edakit silk apply 2>&1 | cat` (designators where there is room; silkscreen on pads = 0; DRC)
+   - `edakit silk apply 2>&1 | cat` (designators where there is room; silkscreen on pads = 0; DRC). Through-hole parts
+     of the other side, soldered from the designators side: `[silk] solder_side = true` (handbook 7.7)
 4. **Check:** `edakit pcb nets` (pad nets = graph), DRC details in `<artifacts>/route/<board>_drc.json`.
 5. **Picture:** routing preview and silk pictures; a canvas capture may be stale. For an overall view or a second
    opinion use the agent pcb-reviewer – its result is the sign-off M-5, not a checklist for the user.
@@ -67,11 +70,17 @@ describes (section 3).
 - The auto-layout knows nothing about belonging: decoupling capacitors and pull-ups that must sit at their IC go into
   `place` – L-12 names the ones the circuit asks for.
 - A pour polygon with a hole is taken only as its outer contour; tooling holes get a notch to the edge instead.
+- The pours keep the tracks' edge clearance + 0.1 mm from the outline; `pour_inset_mm` in the board file gives them a
+  distance of their own (handbook 7.6), e.g. further from the milled edge than tracks that run along it.
+- Two nets pouring on one layer: the one with priority fills it all unless `pour_regions = true` gives each its own
+  area (handbook 7.6); an area enclosed by another net's is an error, solved in the routing.
 - While a free pad (tooling hole) is in the PCB, filling pours fails – edakit takes them out and puts them back.
 - Net classes need the simulated currents (`edakit sim` first).
 - Freerouting is deterministic but order-dependent: `route all` retries with reshuffled DSNs when nets stay open.
-  If it never closes: more room at the stuck pads in the plan, a plane for a power net, or other layer costs; with
-  all tracks on one side a 0 Ω bridge in the graph where a track has to cross (handbook 3.3).
+  If it never closes: more room at the stuck pads in the plan, a plane for a power net (`fanout = true` for its SMD
+  pads on the other side, handbook 7.5), or other layer costs; with all tracks on one side a 0 Ω bridge in the graph
+  where a track has to cross (handbook 3.3), and the ground as a pour-only net (`pour_only`, handbook 7.6) that the
+  pour between the tracks connects.
 
 ## Report
 

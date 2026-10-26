@@ -1,7 +1,9 @@
 # Test project: led-bar
 
 The data the tests build their faults into (it never ran through EasyEDA). The documented example is the
-[Christmas bell](https://github.com/tgd1975/automatic_christmas_bell).
+[Christmas bell](https://github.com/tgd1975/automatic_christmas_bell). Stages L and F need an export of the
+board, which this project does not have: [tests/test_fab_run.py](../../test_fab_run.py) cuts the project down to its
+input stage (J1, D1, C2) and writes that export for the test.
 
 A Raspberry Pi Pico 2 drives eight green LEDs through a TLC5916 constant-current sink (9.45 mA per LED, set by R1).
 5 V come in through a JST PH connector and a Schottky diode against reverse polarity; R2 keeps the LEDs dark until the

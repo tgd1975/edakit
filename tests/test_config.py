@@ -2,7 +2,7 @@ import math
 
 import pytest
 
-from edakit.config import Board, ConfigError, _outline, load
+from edakit.config import Board, ConfigError, _outline, _pours, load
 
 
 def board(view):
@@ -116,3 +116,122 @@ def test_board_file_missing(tmp_path):
     (tmp_path / "edakit.toml").write_text('[project]\nname = "t"\n[boards.main]\nfile = "boards/main.toml"\n')
     with pytest.raises(ConfigError, match="boards/main.toml not found"):
         load(tmp_path / "edakit.toml")
+
+
+def test_pours_pour_only():
+    plain = [{"net": "GND", "layers": ["TOP", "BOTTOM"]}, {"net": "V_LED", "layers": ["BOTTOM"], "plane": True}]
+    assert _pours("b", plain) == plain                                  # no pour_only: as written
+    got = _pours("b", [{"net": "GND", "layers": ["TOP"], "pour_only": True},
+                       {"net": "GND", "layers": ["BOTTOM"], "pour_only": True, "min_width_mm": 0.3}])
+    assert [(p["clearance_mm"], p["min_width_mm"]) for p in got] == [(0.25, 0.25), (0.25, 0.3)]
+
+
+@pytest.mark.parametrize("pours", [
+    [{"net": "GND", "pour_only": True, "plane": True}],
+    [{"net": "GND", "layers": ["TOP"], "pour_only": True}, {"net": "GND", "layers": ["BOTTOM"]}],
+    [{"net": "GND", "pour_only": True, "clearance_mm": -0.1}],
+])
+def test_pours_pour_only_mistakes(pours):
+    with pytest.raises(ConfigError):
+        _pours("b", pours)
+
+
+def test_pours_fanout():
+    plane = [{"net": "V", "layers": ["BOTTOM"], "plane": True, "fanout": True}]
+    assert _pours("b", plane) == plane
+    with pytest.raises(ConfigError, match="pour V: fanout needs plane = true"):
+        _pours("b", [{"net": "V", "layers": ["BOTTOM"], "fanout": True}])
+    with pytest.raises(ConfigError, match="pour V: fanout must be true or false"):
+        _pours("b", [{"net": "V", "layers": ["BOTTOM"], "plane": True, "fanout": "yes"}])
+
+
+def test_pour_regions_keys(tmp_path):
+    from edakit.config import _board
+    b = _board("b", {}, {})
+    assert (b.pour_regions, b.pour_min_piece_mm2) == (False, 2.0)                # no key, no change
+    (tmp_path / "edakit.toml").write_text('[project]\nname = "t"\n[boards.main]\n')
+    (tmp_path / "hardware" / "boards").mkdir(parents=True)
+    (tmp_path / "hardware" / "boards" / "main.toml").write_text("pour_regions = true\npour_min_piece_mm2 = 1\n")
+    b = load(tmp_path / "edakit.toml").board()                                    # keys of the board file
+    assert (b.pour_regions, b.pour_min_piece_mm2) == (True, 1.0)
+
+
+@pytest.mark.parametrize("b", [
+    {"pour_regions": "yes"},
+    {"pour_regions": True, "pour_min_piece_mm2": -1},
+    {"pour_regions": True, "pours": [{"net": "GND", "layers": ["TOP"]}, {"net": "V", "layers": ["TOP"], "plane": True}]},
+    {"pour_regions": True, "pours": [{"net": "GND", "layers": ["TOP"]}, {"net": "V", "layers": ["TOP"], "clearance_mm": -1}]},
+])
+def test_pour_regions_mistakes(b):
+    from edakit.config import _board
+    with pytest.raises(ConfigError):
+        _board("b", {}, b)
+
+
+def test_pour_regions_plane_on_a_layer_of_its_own():
+    from edakit.config import _board
+    b = _board("b", {}, {"pour_regions": True, "pours": [{"net": "GND", "layers": ["TOP"]},
+                                                         {"net": "V", "layers": ["BOTTOM"], "plane": True}]})
+    assert b.pours[1]["plane"]
+
+
+def test_pour_inset_key():
+    from edakit.config import _board
+    assert _board("b", {}, {}).pour_inset_mm is None                  # no key: edge clearance + 0.1 mm, as before
+    assert _board("b", {}, {"pour_inset_mm": 0.55}).pour_inset_mm == 0.55
+    with pytest.raises(ConfigError, match="pour_inset_mm must not be negative"):
+        _board("b", {}, {"pour_inset_mm": -0.1})
+
+
+def test_on_headers_keys(tmp_path):
+    from edakit.config import _board
+    b = _board("b", {}, {})
+    assert b.on_headers == set() and b.header_keep_mm == 1.27         # no key: every overlap is a finding, as before
+    (tmp_path / "edakit.toml").write_text('[project]\nname = "t"\n[boards.main]\n')
+    (tmp_path / "hardware" / "boards").mkdir(parents=True)
+    (tmp_path / "hardware" / "boards" / "main.toml").write_text('on_headers = ["U1"]\nheader_keep_mm = 0.87\n')
+    b = load(tmp_path / "edakit.toml").board()
+    assert b.on_headers == {"U1"} and b.header_keep_mm == 0.87
+    with pytest.raises(ConfigError, match="on_headers must be a list of designators"):
+        _board("b", {}, {"on_headers": "U1"})
+    with pytest.raises(ConfigError, match="header_keep_mm must not be negative"):
+        _board("b", {}, {"header_keep_mm": -0.1})
+
+
+def test_silk_overlap_key(tmp_path):
+    from edakit.config import _board
+    assert _board("b", {}, {}).silk_overlap_mm == 0.0                  # no key: every overlap is a finding, as before
+    (tmp_path / "edakit.toml").write_text('[project]\nname = "t"\n[boards.main]\n')
+    (tmp_path / "hardware" / "boards").mkdir(parents=True)
+    (tmp_path / "hardware" / "boards" / "main.toml").write_text("silk_overlap_mm = 0.8\n")
+    assert load(tmp_path / "edakit.toml").board().silk_overlap_mm == 0.8
+    with pytest.raises(ConfigError, match="silk_overlap_mm must not be negative"):
+        _board("b", {}, {"silk_overlap_mm": -0.1})
+
+
+def test_silk_solder_side_key(tmp_path):
+    from edakit.config import _board
+    assert "solder_side" not in _board("b", {}, {}).silk                  # no key: only the designators side, as before
+    (tmp_path / "edakit.toml").write_text('[project]\nname = "t"\n[boards.main]\n')
+    (tmp_path / "hardware" / "boards").mkdir(parents=True)
+    (tmp_path / "hardware" / "boards" / "main.toml").write_text('[silk]\ndesignators = "top"\nsolder_side = true\n')
+    assert load(tmp_path / "edakit.toml").board().silk["solder_side"] is True
+    with pytest.raises(ConfigError, match="silk.solder_side must be true or false"):
+        _board("b", {}, {"silk": {"solder_side": "yes"}})
+
+
+def test_silk_board_label_side_and_region_keys(tmp_path):
+    from edakit.config import _board
+    silk = _board("b", {}, {}).silk
+    assert "board_label_side" not in silk and "board_label_region" not in silk     # no key: as before
+    (tmp_path / "edakit.toml").write_text('[project]\nname = "t"\n[boards.main]\n')
+    (tmp_path / "hardware" / "boards").mkdir(parents=True)
+    (tmp_path / "hardware" / "boards" / "main.toml").write_text(
+        '[silk]\ndesignators = "top"\nboard_label_side = "bottom"\nboard_label_region = [[0, 0], [40, 0], [40, 34]]\n')
+    silk = load(tmp_path / "edakit.toml").board().silk
+    assert silk["board_label_side"] == "bottom" and silk["board_label_region"] == [[0, 0], [40, 0], [40, 34]]
+    with pytest.raises(ConfigError, match="silk.board_label_side must be 'top' or 'bottom'"):
+        _board("b", {}, {"silk": {"board_label_side": "back"}})
+    for region in ([[0, 0], [40, 0]], [[0, 0], [40, 0], [40]], "y < 34", [[0, 0], [40, 0], ["a", 3]]):
+        with pytest.raises(ConfigError, match=r"silk.board_label_region must be a polygon \[\[x, y\], …\]"):
+            _board("b", {}, {"silk": {"board_label_region": region}})
