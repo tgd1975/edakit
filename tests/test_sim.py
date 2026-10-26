@@ -362,3 +362,38 @@ def test_which_nets_are_behind_a_balancing_resistor(project):
     project.save_graph(g)
     d = Design.from_config(project.config())
     assert simrun.behind_resistor(d, d.joined_nets(), {f"LED{i}" for i in range(8)}) == {"D9_K": "LED7"}
+
+
+def read_back(project):
+    """U2's SDO (pin 14) to GP7 (U1.10), an input that reads the chain back: net LED_SDO. GP7 is not under the MCU's
+    outputs, so only SDO drives the net."""
+    g = project.graph()
+    project.free_pins(g, "U1.10")
+    g["graph"]["nets"].append({"name": "LED_SDO", "pins": ["U2.14", "U1.10"], "v": [0, 3.4]})
+    project.save_graph(g)
+
+
+def test_driver_sdo_is_driven_low(project):
+    read_back(project)
+    out = simulate(project)
+    assert not failing(out) and all(s["status"] == "ok" for s in out["scenarios"])
+    assert len(out["checks"]) == 726                              # the example's 714 + LED_SDO's range in 12 scenarios
+    sdo = [c for c in out["checks"] if c["item"] == "LED_SDO"]
+    assert len(sdo) == 12 and all(c["actual"] == "0 V" for c in sdo)
+    sim = json.loads((project.root / "hardware" / "sim.json").read_text())
+    sim["mcu"]["U1"]["pullups"].append("LED_SDO")                 # GP7's pull-up: the driven output holds it low
+    out = simulate(project, sim)
+    sdo = [c for c in out["checks"] if c["item"] == "LED_SDO"]
+    assert not failing(out) and len(sdo) == 12
+    assert all(float(c["actual"].split()[0]) == pytest.approx(3.3 * 50 / 50050, rel=0.01) for c in sdo)   # 3.3 mV
+
+
+def test_driver_sdo_in_the_netlist(project):
+    from edakit.sim import netlist
+    sim = json.loads((project.root / "hardware" / "sim.json").read_text())
+    sc = next(simrun.scenarios(sim))
+    text, _ = netlist.build(Design.from_config(project.config()), sim, sc)
+    assert not any(line.startswith("R_U2_14 ") for line in text.splitlines())
+    read_back(project)                                            # unconnected: left out, as before; connected: 50 Ω
+    text, _ = netlist.build(Design.from_config(project.config()), sim, sc)
+    assert "R_U2_14 n_led_sdo 0 50" in text.splitlines()

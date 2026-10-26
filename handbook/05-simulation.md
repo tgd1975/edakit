@@ -37,7 +37,7 @@ on the delivered board instead (acceptance test).
 | `ldo` | `vin`, `vout`, (`gnd`) | `vout_v`, `dropout_v`, `iq_a` | output = min(vout, vin − dropout); input current = output current + iq |
 | `buck`, `boost` | `vin`, `vout` | `vout_v`, `efficiency`, `iq_a` | ideal output; input power = output power / efficiency |
 | `mcu` | `vsys`/`vin`/`vdd`, optional `vout`/`3v3`, `gpio` | `v_io` (V, or `"vin"` when the I/O runs from the supply pin, as on a 5 V AVR), `i_core_a`, `gpio_r_out_ohm`, `regulator` (`buck`/`ldo`), `vout_v` (regulator output, default `v_io`), `efficiency`, `vih_v`/`vih_ratio`, `vil_v`/`vil_ratio` | on-board regulator feeding the core and external loads; GPIO outputs as sources with output resistance (levels from the load's `gpio`), pull-ups from the config; the config's `inputs` must sit at a defined logic level |
-| `cc_sink` | `rext`, `out`, `vdd`, `oe_n` | `vrext_v`, `iout_gain`, `vout_knee_v`, `idd_max_a` | constant-current LED driver (TLC5916, STP08CP05, …): R-EXT held at vrext, every enabled output sinks gain × I(R-EXT) with a soft knee; `oe_n` high = all off |
+| `cc_sink` | `rext`, `out`, `vdd`, `oe_n` | `vrext_v`, `iout_gain`, `vout_knee_v`, `idd_max_a` | constant-current LED driver (TLC5916, STP08CP05, …): R-EXT held at vrext, every enabled output sinks gain × I(R-EXT) with a soft knee; `oe_n` high = all off; pins of type `output` (SDO to the next driver's SDI or to an MCU input that reads the chain back) low through 50 Ω, as in `logic`; an unconnected SDO stays out of the netlist |
 | `logic` | supply pins (`power_in`), outputs | `icc_a` | supply current, outputs low |
 | `current` | supply pins | `i_a` | constant supply current |
 | `none` | – | – | nothing |

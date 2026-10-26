@@ -21,7 +21,8 @@ ICs and modules are replaced by behaviour models, chosen by params.behavior in t
             output on a pin of type "input" (input-only) is not driven and reported; every output's current is measured
             (ratings gpio_i_max_a per pin, gpio_i_total_max_a for the sum)
   cc_sink   constant-current LED driver (TLC5916, STP08CP05 …): roles rext, out, vdd, oe_n; R-EXT held at vrext_v,
-            each enabled output sinks iout_gain x I(R-EXT) with a soft knee
+            each enabled output sinks iout_gain x I(R-EXT) with a soft knee; pins of type output (the serial data
+            output SDO of a daisy chain) low through 50 ohm, as in logic
   logic     icc_a at the supply pin, outputs low through 50 ohm
   current   constant i_a at the supply pin
   none      nothing (e.g. a module that is not powered in this design)
@@ -369,6 +370,10 @@ class Netlist:
             else:
                 self.add(f"R_{des}_OFF{num} {o} 0 100Meg")
             chans[net] = {"on": on, "ammeter": f"v_{des.lower()}_a{num}#branch", "node": o}
+        for num, info in part["pins"].items():     # the serial data output (SDO): low through 50 Ω, as in 'logic'
+            net = self.d.pin_net.get(f"{des}.{num}")
+            if net and info.get("type") == "output":
+                self.add(f"R_{des}_{num} {self.n(net)} 0 50")
         self.meta["cc"][des] = {"rext_src": f"v_{des.lower()}_rext#branch", "vdd": vdd, "channels": chans,
                                 "params": p, "ratings": part.get("ratings", {})}
 
