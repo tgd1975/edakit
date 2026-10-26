@@ -543,6 +543,7 @@ def test_without_fanout_nothing_changes(plane_board, tmp_path):
 # 45° passing that corner
 
 L_SHAPE = "[outline]\npolygon = [[0, 0], [40, 0], [40, 10], [20, 10], [20, 20], [0, 20]]\n"
+EDGE_REACH_MM = 0.4 * math.cos(math.radians(135 / 8 / 2))  # 0.3957 mm: the arc's chords span ≤ 16.875°, 8 per quarter
 
 
 def outline_board(tmp_path, outline):
@@ -587,8 +588,8 @@ def test_edge_strips_reach_no_farther_than_the_clearance(l_board):
     inside = [Point(p) for g in strips for p in segmentize(g.exterior, 1).coords if outer.contains(Point(p))]
     far = max(outer.exterior.distance(p) for p in inside)    # how far the keep-out reaches into the board
     assert far / MIL == pytest.approx(0.400, abs=0.001)      # before: 0.566 mm at the 90° corner
-    corner = Point(mm(20, 10))                  # and it covers the corner: its arc's chords, 4 per quarter circle
-    assert unary_union(strips).contains(corner.buffer(0.4 * MIL * math.cos(math.pi / 16) - 0.01))
+    corner = Point(mm(20, 10))                  # and it covers the corner up to its arc's chords
+    assert unary_union(strips).contains(corner.buffer(EDGE_REACH_MM * MIL - 0.01))
 
 
 def test_edge_strips_of_an_outline_without_inner_corners_stay():
@@ -613,7 +614,31 @@ def test_edge_strips_keep_the_slivers_at_a_notch_tip(tmp_path):
     rules, data = outline_board(tmp_path, NOTCH)
     outer = Polygon(data["outlines"][0])
     frame, strips = route.outside_strips(rules, outer)
-    reach = 0.4 * MIL * math.cos(math.pi / 16)                # 0.392 mm: the chords of the arc, 4 per quarter circle
+    reach = EDGE_REACH_MM * MIL                               # the chords of the arc
     band = frame.difference(outer.buffer(-reach, quad_segs=64))
     missing = band.difference(unary_union(strips).buffer(1e-6))     # 1e-6 mil closes the seams between the strips
     assert missing.area < 1e-9      # before: 2.9 mil² missing, 4 slices < 1 mil² dropped, 0.296 mm reach at the tip
+
+
+# inner corners of every angle: a V valley in the top edge of a 40 mm wide board, the outline bending by 1° to 179° at
+# (20, 20) mm. GEOS gives an arc of θ round(θ / (90° / quad_segs)) chords, at least one: with 4 per quarter circle a
+# 33° arc got one chord and a 50° arc two of 25°, wider than the 22.5° behind the 0.392 mm #11 promised. 8 per
+# quarter circle: at most 16.875° (an arc just under it gets one chord), the keep-out reaches EDGE_REACH_MM
+
+
+def edge_reach(outer, strips):
+    """How far the edge keep-out reaches into the board at its shallowest point, in mm."""
+    free = outer.difference(unary_union(strips).buffer(1e-6))       # 1e-6 mil closes the seams between the strips
+    return outer.exterior.distance(free.boundary) / MIL
+
+
+def test_edge_strips_reach_the_promised_depth_in_every_inner_corner(l_board):
+    from shapely.geometry import Polygon
+    rules, _ = l_board
+    reach = {}
+    for bend in range(1, 180):
+        h = 20 * math.tan(math.radians(bend / 2))
+        outer = Polygon([mm(0, 0), mm(40, 0), mm(40, 20 + h), mm(20, 20), mm(0, 20 + h)])
+        reach[bend] = edge_reach(outer, route.outside_strips(rules, outer)[1])
+    shallow = {b: round(r, 4) for b, r in reach.items() if r < EDGE_REACH_MM}
+    assert shallow == {}    # before: 163 of 179, 77 short of even 0.392 mm, the least 0.3835 mm at 33°

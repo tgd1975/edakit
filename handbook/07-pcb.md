@@ -203,9 +203,11 @@ Class widths must be at least the minimum of the matching EasyEDA net class rule
   `mil 100`.
 - A **concave outline as boundary**: nothing routed above a certain height. edakit uses a rectangle as boundary and
   the area outside the board (moved in by the edge clearance) as convex keep-out strips. The outline is moved in with
-  round joins: around an inner corner (a notch) the keep-out is an arc of `edge_clearance_um`, 4 chords per quarter
-  circle. Mitred joins reached d / sin(θ/2) into the board there – 0.57 mm at a 90° corner, 1.3 mm at a 36° notch
-  with 0.4 mm. Tracks that kept the clearance were reported, and Freerouting lost that room in every notch.
+  round joins: around an inner corner (a notch) the keep-out is an arc of `edge_clearance_um`, in chords of at most
+  16.875° (8 per quarter circle; an arc under 16.875° is one chord). It reaches at least 0.989 of the clearance into
+  the board: 0.3957 mm with 0.4 mm, 4.3 µm short of the arc. Mitred joins reached d / sin(θ/2) into the board there –
+  0.57 mm at a 90° corner, 1.3 mm at a 36° notch with 0.4 mm. Tracks that kept the clearance were reported, and
+  Freerouting lost that room in every notch.
   `route check` and the fanout vias use the same strips. Every strip is kept, however small: at a sharp notch tip the
   cuts leave slices under 1 mil², and without them the keep-out reached only 0.3 mm into the board there. Freerouting
   skips a strip thinner than its 0.01 mil resolution with a warning ("Keepout zone … was skipped because its geometry

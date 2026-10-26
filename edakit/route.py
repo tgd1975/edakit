@@ -61,7 +61,7 @@ REGION_NESTED_MM2 = 0.5    # a piece of another net larger than this inside a ne
 FANOUT_DIRECTIONS = 16     # fanout: a via is tried in this many directions around an SMD pad (22.5° apart),
 FANOUT_STEP_MIL = 5        # the distance growing in these steps
 FANOUT_REACH_MIL = 60      # up to this much beyond the nearest spot
-EDGE_ARC_SEGMENTS = 4      # edge keep-out: chords per quarter circle around an inner corner of the outline
+EDGE_ARC_SEGMENTS = 8      # edge keep-out: chords per quarter circle around an inner corner (reach ≥ 0.989 d)
 
 FR_VERSION = "2.4.1"
 FR_ZIP = f"https://github.com/freerouting/freerouting/releases/download/v{FR_VERSION}/freerouting-{FR_VERSION}-linux-x64.zip"
@@ -297,9 +297,12 @@ def outside_strips(rules, outer, margin=20.0):
     """Area between a rectangle around the board and the outline moved in by the edge clearance, as convex pieces.
     Freerouting 2.4.1 routed nothing in the upper part of a concave outline given as boundary; the same nets routed at
     once with a rectangle. So: rectangle as boundary, everything outside the board as keep-outs. The outline is moved
-    in with round joins: around an inner corner (a notch) the keep-out is an arc of the edge clearance,
-    EDGE_ARC_SEGMENTS chords per quarter circle. Mitred joins reached d / sin(θ/2) into the board there – 0.57 mm at a
-    90° corner and 1.3 mm at a 36° notch with 0.4 mm. Outlines without inner corners get the same strips either way.
+    in with round joins: around an inner corner (a notch) the keep-out is an arc of the edge clearance d, in chords.
+    GEOS gives an arc of θ round(θ / (90° / EDGE_ARC_SEGMENTS)) chords, at least one, so with 8 a chord spans at most
+    16.875° (an arc just under that: one chord) and the keep-out reaches at least d · cos(8.4375°) = 0.989 d into the
+    board – 0.3957 mm with 0.4 mm, 4.3 µm short of the arc. With 4 a chord spanned up to 33.75° (0.383 mm). Mitred
+    joins reached d / sin(θ/2) into the board there – 0.57 mm at a 90° corner and 1.3 mm at a 36° notch with 0.4 mm.
+    Outlines without inner corners get the same strips either way.
     Every piece is kept, however small: the cuts at the arc's vertices leave slices under 1 mil² at a sharp notch tip,
     and without them the keep-out reached 0.3 mm into the board there instead of the clearance. Freerouting skips a
     piece thinner than its 0.01 mil resolution with a warning; `route check` keeps it."""
