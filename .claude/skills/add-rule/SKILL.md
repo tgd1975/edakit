@@ -10,7 +10,7 @@ Wanted: $ARGUMENTS. How catalog, hints and blocks fit together: `handbook/14-des
 
 Nothing here starts by itself. A check candidate from a review or a project decision (`edakit: open`) becomes edakit
 knowledge when the user asks – here, or by proposing it from the project (plugin skill propose-rule), which the
-Action rule-proposals triages with the skill triage-rule and builds with this one. If the request leaves open what
+Action proposals triages with the skill triage-rule and builds with this one. If the request leaves open what
 exactly the rule says, ask before building; for a proposal, that is a **Question** of the triage.
 
 ## 1. What kind of knowledge

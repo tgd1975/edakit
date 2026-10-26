@@ -84,7 +84,9 @@ design (`circuit-design`) and its review are kept apart: the session that design
 
 What a project teaches goes back with `/edakit:propose-rule`: a check, hint, block or part fact as an issue here,
 sealed with its SHA-256. An Action triages it – accepted and built into one pull request of rule proposals, rejected
-with the reason, or a question back ([handbook 14.4](handbook/14-design.md#144-from-a-finding-to-a-check)).
+with the reason, or a question back ([handbook 14.4](handbook/14-design.md#144-from-a-finding-to-a-check)). What a
+project had to build itself because edakit could not goes back with `/edakit:propose-feature`, triaged the same way and
+built into one pull request of feature proposals ([handbook 11.6](handbook/11-working-with-claude.md)).
 
 ## Example: the Christmas bell
 

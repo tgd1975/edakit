@@ -82,7 +82,7 @@ is part of the workflow:
    repository: a fixed text (`edakit proposal template`: kind, rule, why, finding, fix, sources, origin), shown to the
    user before it goes out – the issue is public – and sealed with `edakit proposal seal`, whose last line is the
    SHA-256 of the text. The decision gets the issue (`edakit: #12`).
-5. **Triage.** The Action `rule-proposals` of the edakit repository starts on every proposal of the repository owner
+5. **Triage.** The Action `proposals` of the edakit repository starts on every proposal of the repository owner
    and on the owner's answers, and runs the skill `triage-rule` in a session of its own. Correctly made: `edakit
    proposal verify` – every section filled in, the checksum matches; a body edited by hand fails on purpose. Does it
    make sense: new, the right kind, the sources hold, general rather than one project's choice, decidable by a program

@@ -1,6 +1,6 @@
 ---
 name: triage-rule
-description: Triage a rule proposal – an issue in tgd1975/edakit sealed with `edakit proposal` – and accept it (build it with add-rule into the one open pull request of rule proposals), reject it with the reason, or ask back. Run by the Action rule-proposals on the owner's proposals and answers; by hand with "triage #12".
+description: Triage a rule proposal – an issue in tgd1975/edakit sealed with `edakit proposal` – and accept it (build it with add-rule into the one open pull request of rule proposals), reject it with the reason, or ask back. Run by the Action proposals on the owner's proposals and answers; by hand with "triage #12".
 argument-hint: "<issue number>"
 ---
 

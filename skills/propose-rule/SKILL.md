@@ -8,7 +8,7 @@ argument-hint: "<decision, e.g. D-17 – or an issue number to follow up>"
 
 Wanted: $ARGUMENTS. The whole loop: `${CLAUDE_PLUGIN_ROOT}/handbook/14-design.md` (14.4).
 
-A proposal is an issue in `tgd1975/edakit`. The Action rule-proposals there triages it – accepted and built into the
+A proposal is an issue in `tgd1975/edakit`. The Action proposals there triages it – accepted and built into the
 one open pull request of rule proposals, rejected with the reason, or a question back – and works only on proposals
 of the repository owner. The checksum shows that the text is the one sealed here.
 

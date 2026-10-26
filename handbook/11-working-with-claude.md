@@ -16,6 +16,7 @@ agreements are as important as the scripts.
 | skill | `/edakit:release` | the gate, sign-offs, order checklist |
 | skill | `/edakit:decision-round` | numbered findings, short answers, numbered decisions |
 | skill | `/edakit:propose-rule` | a check, hint, block or part fact as a sealed issue to the edakit repository, and its outcome back into the decision (chapter 14.4) |
+| skill | `/edakit:propose-feature` | a feature edakit lacks and a project had to build or work around, as a sealed issue to the edakit repository, and its outcome back into the project (11.6) |
 | agent | `edakit:easyeda-operator` | runs one long EasyEDA step and returns only the result – keeps the main conversation clean |
 | agent | `edakit:electrical-reviewer` | independent circuit review; its result is the sign-off M-1 |
 | agent | `edakit:pcb-reviewer` | independent layout review (read-only EasyEDA tools); its result is the sign-off M-5 |
@@ -93,6 +94,8 @@ EDA-specific), but if you run parallel sessions in one repository, build or adop
     edakit repository as a proposal when the user asks (skill propose-rule), and is triaged and built there (skills
     triage-rule and add-rule, chapter 14.4). Rules come from the catalog and the
     datasheets – a rule from memory is said to be one and reported as a candidate.
+14. **What a project had to build itself goes back as a feature proposal**, not as a quiet copy in edakit and not as
+    a lasting workaround in the project (11.6).
 
 ## 11.5 Memory and project knowledge
 
@@ -100,3 +103,32 @@ Claude Code's memory (per project) is the place for preferences like the ones ab
 that are in the repository (decisions, checks, API behaviour) belong in the repository – the decision log, the
 handbook, comments next to the code they explain. Each quirk in chapter 9 is also written as a comment where edakit
 works around it, so the next person does not "simplify" the workaround away.
+
+## 11.6 When edakit falls short: feature proposals
+
+A project finds what edakit cannot do yet: a false finding (a 0 Ω bridge that the checks do not see through), a crash,
+a part of the circuit the simulation leaves out, a routing or pour capability, a silkscreen it cannot place, a check
+without a test. The project then builds it itself or works around it – and edakit and the project drift apart. The
+loop below brings such a gap back, the same way as a rule (14.4), with its own text and its own triage:
+
+1. **Decision in the project.** Which gaps go to edakit is the user's decision, in the project's log.
+2. **Proposal.** The skill `propose-feature` writes one issue per capability from `edakit proposal template --feature`:
+   Capability (what edakit should do, for any board), Gap (the command and what it says today), Reference (how the
+   project does it: file, function, commit, the method in words), Interface (keys in edakit.toml, fields, options –
+   each with the default that leaves existing projects as they are), Test (how a test shows it without EasyEDA),
+   Origin. Shown to the user before it goes out – the issue is public, a private project's code is not quoted
+   without the user's OK – and sealed like a rule proposal.
+3. **Triage.** The Action `proposals` reads the section Kind and runs the skill `triage-feature`: correctly made, a
+   feature and not a rule, new, the gap real at this commit, general rather than one project's taste, fitting
+   (project data in edakit.toml, not in the code), testable without EasyEDA, one capability, clear enough. Result as
+   for rules: **Accepted**, **Rejected** with a reason a person can check, or **Question**.
+4. **Build.** The skill `add-feature`: the gap red in a test first, then the interface with its default, the code –
+   whatever needs EasyEDA a thin call around a function that is tested –, the example and the projects at hand
+   unchanged, the handbook. One commit per proposal, all of them in one open pull request from `features/proposals`.
+5. **Back in the project.** The Action cannot clone a private project; the pull request gives the commands that show
+   the gap closed there, and the project runs them against the branch before the user merges. After the merge the
+   project's workaround goes and the decision gets `edakit: #14 built`.
+
+Why it exists: the project edakit came from went on growing after the extraction (0 Ω bridges, a common-anode star
+LED, pour-only nets). Before it can use edakit, those have to come back – one proposal each.
+
