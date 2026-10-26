@@ -33,6 +33,7 @@ Example: [the Christmas bell's graph](https://github.com/tgd1975/automatic_chris
 | `designator` | as on schematic, PCB and silkscreen |
 | `type` | rough class for the generated template layout and the schematic blocks: `microcontroller`, `module`, `ic`, `transistor`, `connector`, `regulator`, `diode`, `led`, `resistor`, `capacitor`, `inductor`, `button`, `switch`, `potentiometer`, `audio`, `testpoint`, `battery_holder`, `fuse` |
 | `lcsc` | the LCSC number – identifies symbol, footprint, parts entry and the BOM line |
+| `part` | the manufacturer part number; without `lcsc` it names the parts entry (its `mpn`) – a part bought elsewhere (chapter 4) |
 | `pins` | pin number → pin name, **with the pin numbers of the EasyEDA/LCSC symbol of exactly this part**. The names must equal the parts entry (P-1). |
 | `nc` | pins deliberately unconnected; every pin is in exactly one net or in `nc` |
 | `board` | which board the part is on (a key of `[boards]` in edakit.toml); may be omitted with one board |

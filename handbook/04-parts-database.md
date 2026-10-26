@@ -1,14 +1,18 @@
 # 4 The parts database
 
-One JSON file per LCSC number (`hardware/parts/C17414.json`). It holds what the datasheet says, in a form the checks
-and the simulation can use: pin types and roles, limits, parameters, SPICE models, lead dimensions, and who checked it
-against which datasheet revision. Examples: [the Christmas bell's parts](https://github.com/tgd1975/automatic_christmas_bell/tree/main/hardware/parts).
+One JSON file per part, named by its LCSC number (`hardware/parts/C17414.json`) – or, for a part bought from another
+distributor, by its manufacturer part number (`hardware/parts/RC0805FR-0710KL.json`, characters a file name cannot
+hold replaced by `_`). A component finds its entry by `lcsc`, and without one by `part` = the entry's `mpn`. The entry
+holds what the datasheet says, in a form the checks and the simulation can use: pin types and roles, limits,
+parameters, SPICE models, lead dimensions, and who checked it against which datasheet revision.
+Examples: [the Christmas bell's parts](https://github.com/tgd1975/automatic_christmas_bell/tree/main/hardware/parts).
 
 ## 4.1 Fields
 
 | Field | Content |
 |---|---|
-| `lcsc`, `mpn`, `manufacturer` | identification |
+| `lcsc`, `mpn`, `manufacturer` | identification; `mpn` is what a component without `lcsc` names in `part` |
+| `order` | order numbers at other distributors: `{"rs": "223-0562", "farnell": "…", "mouser": "…", "digikey": "…"}` |
 | `kind` | `resistor`, `capacitor`, `inductor`, `fuse`, `diode`, `led`, `led_rgb`, `npn`, `pnp`, `pmos`, `nmos`, `switch`, `dip_switch`, `button`, `potentiometer`, `battery_holder`, `buzzer`, `relay`, `connector`, `ic`, `module` |
 | `package`, `footprint` | the footprint name must equal the EasyEDA footprint (L-4 compares it with the PCB) |
 | `jlc_class` | Basic / Extended Part |
@@ -64,6 +68,31 @@ The block library (`edakit/blocks/parts/`) holds checked entries of the parts th
 LEDs, the SS14/SS34 diodes, S8050, AO3401A, a USB-C receptacle, a polyfuse, buttons, a JST connector – to copy from.
 
 ## 4.2 Finding parts
+
+The agent **part-selector** searches in its own context – datasheets and distributor pages do not fill the design
+session – at the distributors of `[project] distributors` (default `["lcsc"]`), compares the candidates and writes the
+entry of the one it recommends. How to search at each distributor is in its profile,
+`skills/part-search/distributors/<name>.md`; a new distributor is a new profile, not a new agent. Which distributor
+fits depends on how the board is built: JLCPCB assembles from LCSC's stock, so a part from RS or Farnell is
+hand-soldered (`bom: false`), goes to another assembler, or reaches JLCPCB through its Global Sourcing or as a
+consigned part (weeks, fees – the user's decision); in EasyEDA it needs the footprint of a part in the same package
+(`easyeda_device`).
+
+What an agent can reach (tried in October 2026):
+
+| Distributor | Without a key | With a key in the environment |
+|---|---|---|
+| LCSC / JLCPCB | EasyEDA's device search, the part pages (curl) | – (APIs only on application) |
+| Reichelt | search and part pages; stock without a count | – (no API) |
+| DigiKey | WebFetch: search by part number leads to the part page; no RoHS/REACH | `DIGIKEY_CLIENT_ID`, `DIGIKEY_CLIENT_SECRET` |
+| Mouser | nothing (the denial comes with HTTP 200) | `MOUSER_API_KEY` |
+| Farnell | nothing (403) | `ELEMENT14_API_KEY` |
+| RS | nothing (403); a web search finds the order number | only from RS's account managers |
+
+Keys belong in the environment of the session, never into the repository. Without a key the agent says what it could
+not see – stock from a search snippet is no stock figure.
+
+At LCSC and JLCPCB:
 
 - `easyeda_schematic_search_device` with the **LCSC number** or the manufacturer part number. It returns footprint,
   manufacturer number, Basic/Extended and the parameter table (`otherProperty`), but **no stock and no price**.

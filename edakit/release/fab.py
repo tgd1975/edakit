@@ -228,7 +228,7 @@ def check_pcb(cfg, board, design, d, rows):
              f"{total} pads" + (f", {len(bad)} differences: {'; '.join(bad[:12])}" if bad else ""), "no difference")
     wrong = []
     for ref, c in sorted(on_pcb.items()):
-        part = design.parts.get(want.get(ref, {}).get("lcsc") or "")
+        part = design.part(ref) if ref in want else None
         if part and part.get("footprint") and c["footprintName"] != part["footprint"]:
             wrong.append(f"{ref}: {c['footprintName']} instead of {part['footprint']}")
     rows.add("L", "L-4", board.name, "footprint per part = parts database", not wrong, "; ".join(wrong) or "all equal", "equal")

@@ -24,7 +24,8 @@
        switches: cathode at the positive terminal
   G-14 USB-C sink: CC1 and CC2 of a receptacle (role cc1/cc2) each with its own 5.1 kOhm ± 10 % to ground, unless
        an IC (a Type-C controller) is on the CC lines
-  P-1  graph pins (number + name) = parts database, an entry exists for every LCSC number
+  P-1  graph pins (number + name) = parts database, an entry exists for every LCSC number – or, for a part bought
+       elsewhere, for its manufacturer part number `part`
   G-9  sign-off: every part verified against its datasheet, no open "verify" notes (pending, blocks only the release)
 
 0 Ω bridges (resistors with value_ohm 0 in the parts entry) join their nets: G-4, G-5, G-6, G-10 to G-14 see the
@@ -462,17 +463,18 @@ def check_usb_c(d, rep):
 
 def check_part_pins(d, rep):
     for des, c in d.comps.items():
-        if not c.get("lcsc"):
-            continue
+        if not c.get("lcsc") and not c.get("part"):
+            continue   # a bare test pad: no part to buy, no entry
         part = d.part(des)
         if not part:
-            rep.error("P-1", f"{des}: no parts entry {c['lcsc']}.json")
+            rep.error("P-1", f"{des}: no parts entry " + (f"{c['lcsc']}.json" if c.get("lcsc")
+                                                          else f"with mpn {c['part']}"))
             continue
         want = {k: v["name"] for k, v in part["pins"].items()}
         if c["pins"] != want:
             only_g = {k: v for k, v in c["pins"].items() if want.get(k) != v}
             only_p = {k: v for k, v in want.items() if c["pins"].get(k) != v}
-            rep.error("P-1", f"{des}: pins differ from parts entry {c['lcsc']}: graph {only_g} vs parts {only_p}")
+            rep.error("P-1", f"{des}: pins differ from parts entry {d.entry_key(des)}: graph {only_g} vs parts {only_p}")
         for pin in c.get("nc", []):
             if part["pins"].get(str(pin), {}).get("type") == "power_in":
                 rep.error("P-1", f"{des}.{pin} ({part['pins'][str(pin)]['name']}) is a supply pin but marked nc",
@@ -480,11 +482,11 @@ def check_part_pins(d, rep):
 
 
 def check_signoff(d, rep):
-    for lcsc in sorted({c["lcsc"] for c in d.comps.values() if c.get("lcsc")}):
-        part = d.parts.get(lcsc)
-        if part and not part.get("verified"):
-            users = [des for des, c in d.comps.items() if c.get("lcsc") == lcsc]
-            rep.pending.append(("G-9", f"{lcsc} {part.get('mpn', '')} ({', '.join(users)}) not verified against "
+    for key in sorted({d.entry_key(des) for des in d.comps} - {None}):
+        part = d.parts[key]
+        if not part.get("verified"):
+            users = [des for des in d.comps if d.entry_key(des) == key]
+            rep.pending.append(("G-9", f"{key} {part.get('mpn', '')} ({', '.join(users)}) not verified against "
                                        "its datasheet"))
     for des, c in d.comps.items():
         if c.get("verify"):

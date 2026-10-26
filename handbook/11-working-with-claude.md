@@ -11,12 +11,13 @@ agreements are as important as the scripts.
 | skill | `/edakit:new-project` | set up edakit in a repository |
 | skill | `/edakit:circuit-design` | from requirements to a graph: blocks, parts, computed values, checks, hints, simulation (chapter 14) |
 | skill | `/edakit:hardware-change` | a change from graph to PCB and docs |
-| skill | `/edakit:part-search` | find a part, create and sign its parts entry |
+| skill | `/edakit:part-search` | find a part at the project's distributors, create and sign its parts entry |
 | skill | `/edakit:pcb-round` | one layout round |
 | skill | `/edakit:release` | the gate, sign-offs, order checklist |
 | skill | `/edakit:decision-round` | numbered findings, short answers, numbered decisions |
 | skill | `/edakit:propose-rule` | a check, hint, block or part fact as a sealed issue to the edakit repository, and its outcome back into the decision (chapter 14.4) |
 | skill | `/edakit:propose-feature` | a feature edakit lacks and a project had to build or work around, as a sealed issue to the edakit repository, and its outcome back into the project (11.6) |
+| agent | `edakit:part-selector` | finds a part at the project's distributors (a profile each) and writes its parts entry, in its own context (chapter 4.2) |
 | agent | `edakit:easyeda-operator` | runs one long EasyEDA step and returns only the result – keeps the main conversation clean |
 | agent | `edakit:electrical-reviewer` | independent circuit review; its result is the sign-off M-1 |
 | agent | `edakit:regulatory-reviewer` | circuit and parts against EU law for the board's purpose; its result is the sign-off M-6 (chapter 15) |

@@ -33,8 +33,10 @@ say what is left: values, sim.json, edakit.toml.
 
 ## 3. Parts and pins
 
-- Only parts with a parts entry: the project's, the block library's, or new ones through the skill part-search. Pin
-  numbers and names come from the entry, never from memory or from a similar part's datasheet.
+- Only parts with a parts entry: the project's, the block library's, or new ones from the agent part-selector (the
+  requirement, the quantity and the assembly in the prompt; it searches the project's distributors in its own context
+  and writes the entry) or the skill part-search. Pin numbers and names come from the entry, never from memory or from
+  a similar part's datasheet.
 - Prefer parts the project uses already, Basic parts, parts in stock.
 - MCU pins: read the entry first – strapping pins (`strap`), input-only pins (`type: input`), notes (`hint`, e.g. an
   ADC that does not work with WiFi). Buttons, LEDs and pulls stay off strapping pins unless they agree with the boot

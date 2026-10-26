@@ -1,6 +1,6 @@
 ---
 name: part-search
-description: Find a part at LCSC/JLCPCB, check stock and assembly, and create its parts-database entry (hardware/parts/<LCSC>.json) with pins, roles, ratings and a datasheet sign-off. Use when a new part is needed, a part must be replaced (stock, variant, package), an LCSC number is mentioned or the graph check reports a missing entry (P-1).
+description: Find a part at the distributors the project buys from (LCSC/JLCPCB by default; RS, Farnell, Mouser, DigiKey, Reichelt with a profile each), check stock and assembly, and create its parts-database entry (hardware/parts/<LCSC number or manufacturer part number>.json) with pins, roles, ratings, compliance data and a datasheet sign-off. Use when a new part is needed, a part must be replaced (stock, variant, package, distributor), an LCSC or order number is mentioned or the graph check reports a missing entry (P-1). For a search across several distributors use the agent part-selector, which follows this skill in its own context.
 argument-hint: "<part, requirement or LCSC number>"
 ---
 
@@ -17,22 +17,22 @@ Wanted: $ARGUMENTS. Fields of an entry: `${CLAUDE_PLUGIN_ROOT}/handbook/04-parts
 
 ## Search
 
-1. `easyeda_schematic_search_device` with `key: "<LCSC number or manufacturer part number>"`. It returns footprint,
-   manufacturer number, basic/extended and `otherProperty` (parameters). **Take only hits whose `supplierId` equals the
-   LCSC number** – the search is full text (`C5613` also finds `C5613331`). `C99…` numbers are user libraries, not
-   orderable. Free text ("led 5mm red") gives mostly noise; manufacturer series names work (handbook 04).
-2. Stock and price: `https://wmsc.lcsc.com/ftps/wm/product/detail?productCode=Cxxxx` (stock, price breaks,
-   parameters). LCSC's full-text search blocks automated requests (403).
-3. Report stock as a number with the date ("1 902 pcs at LCSC, 2026-10-25"), not as "few". JLCPCB's assembly stock
-   differs from LCSC's; the release gate checks it (F-2).
-4. Datasheet from the LCSC/JLCPCB part page or the manufacturer; note its revision.
+At every distributor the project buys from – `[project] distributors` in edakit.toml, default `["lcsc"]` – as its
+profile says: `${CLAUDE_PLUGIN_ROOT}/skills/part-search/distributors/<name>.md` (`lcsc`, `rs`, `farnell`, `mouser`,
+`digikey`, `reichelt`). The profile tells how to search there, what loads without a key and what the page states.
+
+- Report stock as a number with the date ("1 902 pcs at LCSC, 2026-10-25"), not as "few".
+- Datasheet from the distributor's part page or the manufacturer; note its revision.
+- A part from outside LCSC is hand-soldered (`bom: false`) or goes to another assembler; in EasyEDA it needs a
+  footprint – the `easyeda_device` of a part in the same package (handbook 3.1).
 
 ## Entry
 
-- `hardware/parts/<LCSC>.json` after the pattern of a similar part: `kind`, `pins` (names identical to the graph,
-  `type`, `role`, `vmax`), `params`, `ratings`, `spice` for diodes/transistors, `lead` for through-hole parts,
-  `sources` (mark every assumption as "assumption"). The block library (`edakit/blocks/parts/` of the plugin) has
-  checked entries to copy from.
+- `hardware/parts/<LCSC>.json` – from another distributor `hardware/parts/<manufacturer part number>.json` with
+  `mpn` set and `order` for the order numbers (`{"rs": "223-0562"}`); the graph names it in `part`. After the
+  pattern of a similar part: `kind`, `pins` (names identical to the graph, `type`, `role`, `vmax`), `params`,
+  `ratings`, `spice` for diodes/transistors, `lead` for through-hole parts, `sources` (mark every assumption as
+  "assumption"). The block library (`edakit/blocks/parts/` of the plugin) has checked entries to copy from.
 - What the checks read from the datasheet besides the limits: input-only pins `type: input`; strapping pins
   `"strap": "high"|"low"` with the internal `"pull"` at reset (G-12); built-in pull resistors `"pull": "up"`,
   `"pull_ohm"` (I2C modules, G-11); roles `sda`/`scl` (G-11) and `cc1`/`cc2` on a USB-C receptacle (G-14); MCU output

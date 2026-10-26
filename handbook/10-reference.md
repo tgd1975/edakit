@@ -11,7 +11,8 @@ are relative to the file. Complete example: [the Christmas bell's edakit.toml](h
 |---|---|---|
 | `name` | – (required) | EasyEDA project (friendly name) |
 | `graph` | `hardware/graph.json` | the hardware graph |
-| `parts` | `hardware/parts` | parts database, one JSON per LCSC number |
+| `parts` | `hardware/parts` | parts database, one JSON per part (LCSC number or manufacturer part number) |
+| `distributors` | `["lcsc"]` | where the agent part-selector searches, in this order: `lcsc`, `rs`, `farnell`, `mouser`, `digikey`, `reichelt` (chapter 4.2) |
 | `artifacts` | `build/edakit` | caches, previews, routing files, exports, Gerber exports (not versioned) |
 | `reports` | `build/release` | gate runs |
 | `company` | `""` | title block of the schematics |

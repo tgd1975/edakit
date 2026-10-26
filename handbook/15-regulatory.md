@@ -43,8 +43,8 @@ an imported power supply or cell is its importer.
 
 ## 15.3 What the review needs
 
-- **Per part** – `compliance` in the parts entry (4.1), filled by the skill part-search: RoHS status
-  (and the exemption it relies on), the supplier's REACH SVHC statement, and for a part that transmits its
+- **Per part** – `compliance` in the parts entry (4.1), filled by the agent part-selector or the skill part-search: RoHS
+  status (and the exemption it relies on), the supplier's REACH SVHC statement, and for a part that transmits its
   bands, maximum power and the EU declaration of conformity. What nobody states is open, not fine.
 - **Per project** – `purpose` in the graph and the decision log: who uses the board (children?), the cell in a battery
   holder (chemistry, capacity, soldered or plugged), the power supply that comes with it, whether it connects to the

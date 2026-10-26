@@ -3,7 +3,7 @@
  "checks": {
   "P-1": {
    "title": "graph pins = parts database",
-   "rule": "Every part with an LCSC number has a parts entry, its pins (number and name) equal that entry, and no supply pin is marked nc.",
+   "rule": "Every part with an LCSC number – or, bought elsewhere, with a manufacturer part number in part – has a parts entry, its pins (number and name) equal that entry, and no supply pin is marked nc.",
    "why": "Checks, simulation, schematic generation and the BOM all read the parts entry. A pin number shifted by one, a wrong LCSC number or a missing entry makes them reason about another part than the one that gets assembled. A supply pin left open leaves an IC unpowered or powered through its I/O pins.",
    "fix": "Create the entry with the part-search skill. Take pin numbers and names from the EasyEDA symbol of exactly this part and copy them into the graph.",
    "sources": ["edakit handbook 3.2 and 4.1"]

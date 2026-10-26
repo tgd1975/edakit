@@ -7,8 +7,10 @@ Graph file (JSON), either {"graph": {...}} or the inner object directly:
     nets:       [{name, pins: ["R1.1", ...], v: [min, max], notes, waive}]
     cables:     [{name, from, to, pins: {from_pin: to_pin}, r_ohm_per_wire}]
 
-Parts database: one JSON file per LCSC number (hardware/parts/C17414.json) with kind, pins (name, type, role,
-vmax), params, ratings, spice, footprint, lead, verified. See handbook/04-parts-database.md.
+Parts database: one JSON file per part (hardware/parts/C17414.json) with kind, pins (name, type, role, vmax),
+params, ratings, spice, footprint, lead, compliance, order, verified. See handbook/04-parts-database.md. A component
+finds its entry by its LCSC number (the file name) – or, without one, by its manufacturer part number `part` (the
+entry's `mpn`): a part bought from another distributor.
 
 A resistor whose parts entry has value_ohm 0 is a bridge: copper that crosses a track on a board with all tracks on
 one side. The nets it joins are one net for the graph checks (`joined()`) and for the simulation's LED drivers.
@@ -50,14 +52,25 @@ class Design:
         self.nets = {n["name"]: n for n in self.graph["nets"]}
         self.pin_net = {ref: n["name"] for n in self.graph["nets"] for ref in n["pins"]}
         self.parts = load_parts(parts_dir)
+        self.by_mpn = {}
+        for key, entry in self.parts.items():
+            self.by_mpn.setdefault(str(entry.get("mpn") or key), key)
 
     @classmethod
     def from_config(cls, cfg):
         return cls(cfg.graph, cfg.parts, list(cfg.boards), cfg.ground)
 
     # --- lookups -------------------------------------------------------------------------------------------------
+    def entry_key(self, des):
+        """The parts entry of a component: its LCSC number, or without one the entry whose mpn is its `part`."""
+        c = self.comps[des]
+        if c.get("lcsc"):
+            return c["lcsc"] if c["lcsc"] in self.parts else None
+        return self.by_mpn.get(str(c.get("part") or ""))
+
     def part(self, des):
-        return self.parts.get(self.comps[des].get("lcsc") or "")
+        key = self.entry_key(des)
+        return self.parts[key] if key else None
 
     def pin_info(self, ref):
         des, _, pin = ref.partition(".")

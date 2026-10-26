@@ -437,3 +437,22 @@ def test_g1_purpose_says_what_the_board_is_for(project):
     g["graph"]["purpose"]["use"] = "hobby"
     project.save_graph(g)
     assert any("purpose.use must be one of private, gift, sale" in m for c, m in run(project).errors if c == "G-1")
+
+
+def test_a_part_bought_elsewhere_finds_its_entry_by_the_manufacturer_number(project):
+    entry = project.part("C17414")                       # R2, 10 kΩ – now ordered at another distributor
+    entry.pop("lcsc", None)
+    entry["mpn"], entry["order"] = "RC0805FR-0710KL", {"rs": "223-0562"}
+    (project.root / "hardware" / "parts" / "RC0805FR-0710KL.json").write_text(json.dumps(entry))
+    g = project.graph()
+    r2 = project.comp(g, "R2")
+    del r2["lcsc"]
+    r2["part"] = "RC0805FR-0710KL"
+    project.save_graph(g)
+    cfg = project.config()
+    design = Design.from_config(cfg)
+    assert design.entry_key("R2") == "RC0805FR-0710KL" and design.part("R2")["order"] == {"rs": "223-0562"}
+    assert run(project).errors == []
+    r2["part"] = "RC0805FR-0710KX"                       # a manufacturer number without an entry
+    project.save_graph(g)
+    assert ("P-1", "R2: no parts entry with mpn RC0805FR-0710KX") in run(project).errors

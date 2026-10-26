@@ -154,11 +154,9 @@ def open_hints(design, cfg=None, sim=None):
 def part_notes(design):
     """(where, note) from the parts entries: the part's 'hints' and the 'hint' of every connected pin."""
     out = []
-    for lcsc in sorted({c["lcsc"] for c in design.comps.values() if c.get("lcsc")}, key=natural_key):
-        part = design.parts.get(lcsc)
-        if not part:
-            continue
-        users = sorted((d for d, c in design.comps.items() if c.get("lcsc") == lcsc), key=natural_key)
+    for key in sorted({design.entry_key(d) for d in design.comps} - {None}, key=natural_key):
+        part = design.parts[key]
+        users = sorted((d for d in design.comps if design.entry_key(d) == key), key=natural_key)
         out += [(", ".join(users), note) for note in part.get("hints", [])]
         for num, pin in part["pins"].items():
             refs = [f"{d}.{num}" for d in users if f"{d}.{num}" in design.pin_net]
