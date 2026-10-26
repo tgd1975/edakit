@@ -12,6 +12,7 @@ agreements are as important as the scripts.
 | skill | `/edakit:circuit-design` | from requirements to a graph: blocks, parts, computed values, checks, hints, simulation (chapter 14) |
 | skill | `/edakit:hardware-change` | a change from graph to PCB and docs |
 | skill | `/edakit:part-search` | find a part at the project's distributors, create and sign its parts entry |
+| skill | `/edakit:own-part` | the parts entry of a part nobody sells and no edakit project describes – own board, from the bin, made by hand – from the user's documents and measurement (4.5) |
 | skill | `/edakit:pcb-round` | one layout round |
 | skill | `/edakit:release` | the gate, sign-offs, order checklist |
 | skill | `/edakit:decision-round` | numbered findings, short answers, numbered decisions |

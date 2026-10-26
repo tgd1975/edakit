@@ -25,9 +25,10 @@ This is the circuit designer's side. EasyEDA – schematic and PCB – is the PC
 
 Component: `designator`, `lcsc`, `board`, `type`, `pins` (number → name exactly as in the parts entry), `nc`, `value`,
 `bom: false` for hand-soldered parts. Net: `name`, `pins` (`R1.2`), voltage range `v` over all operating states.
-A new LCSC number without parts entry → part-search skill first; a board of your own → `edakit part own <its project>`
-(handbook 4.5). A new function (an LED, a button, a supply input, a
-transistor switch, I2C pull-ups) → `edakit block list` first; designing a function → skill circuit-design.
+A new LCSC number without parts entry → part-search skill first; a board of your own →
+`edakit part own <its project>`, without an edakit project → skill own-part (handbook 4.5). A new function (an LED, a
+button, a supply input, a transistor switch, I2C pull-ups) → `edakit block list` first; designing a function → skill
+circuit-design.
 
 ## 2. Offline (seconds)
 

@@ -176,3 +176,9 @@ only in that range; give its own `sim.json` more if the host needs more. P-3 com
 Not covered: the board's logic levels and timing – its signal pins are typed, not simulated. A board on a cable is no
 part of the host's PCB: it goes into the same project as a second board (`cables`, 3.1), or the host's connector gets
 its current as an `external` load (5.1).
+
+**Without an edakit project** – a perfboard, an older board, a part from the bin, something made by hand – the user is
+the datasheet. The skill `own-part` asks for pins, supply range and current once, has what nobody knows measured, and
+writes the entry with `own: {"what": "pcb" | "bin" | "handmade", "notes": …}`: every value with its source ("measured
+2026-11-02, multimeter …, all LEDs on: 182 mA"), what is guessed as "assumption …", and the sign-off against those
+notes. The checks treat it like the copy of an edakit board; P-3 has nothing to compare it with.

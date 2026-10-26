@@ -78,7 +78,8 @@ edakit gate --easyeda           # release gate: protocol, manifest, files for JL
 ```
 
 In Claude Code the skills do the orchestration: `/edakit:new-project`, `/edakit:circuit-design`, `/edakit:start`,
-`/edakit:hardware-change`, `/edakit:part-search`, `/edakit:pcb-round`, `/edakit:release`, `/edakit:decision-round`;
+`/edakit:hardware-change`, `/edakit:part-search`, `/edakit:own-part`, `/edakit:pcb-round`, `/edakit:release`,
+`/edakit:decision-round`;
 the agent `part-selector` finds parts at the project's distributors (LCSC/JLCPCB, RS, Farnell, Mouser, DigiKey,
 Reichelt) and writes their entries; the agents `electrical-reviewer`, `regulatory-reviewer` (EU law for the board's
 purpose: RoHS, REACH, radio, batteries) and `pcb-reviewer` do the independent reviews whose results are the
