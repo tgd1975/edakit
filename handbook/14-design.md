@@ -9,11 +9,11 @@ to a graph – and about the knowledge the checks are made of.
 |---|---|---|
 | circuit designer | a session with the skills `circuit-design` and `hardware-change` | asks for the requirements in one decision round, picks blocks and parts, computes values, writes the graph with its check settings and the schematic file, works through `edakit check`, `edakit hints` and `edakit sim`, draws the schematic, writes the hand-over |
 | part selector | agent `part-selector`, its own context | finds parts for the circuit designer at the project's distributors (one profile each), compares stock, price, lifecycle and compliance data, recommends one and writes its parts entry; never touches the graph (chapter 4.2) |
-| electrical reviewer | agent `electrical-reviewer`, its own session | reads graph, hand-over, parts, simulation and datasheets, changes nothing, returns numbered findings – its result is the sign-off M-1 |
+| electrical reviewer | agent `electrical-reviewer`, its own session | reads graph, hand-over, parts, simulation and datasheets, changes nothing, returns numbered findings with probability and cost – before the first layout, before every hand-over that changes parts or the power path, and as the sign-off M-1 |
 | regulatory reviewer | agent `regulatory-reviewer`, its own session | checks circuit and parts against EU law for the purpose in the graph (RoHS, REACH, radio, batteries, product safety), changes nothing, returns numbered findings with their sources – its result is the sign-off M-6 (chapter 15) |
 | PCB designer | a session of its own with the skill `pcb-round` | works from the hand-over: EasyEDA schematic, PCB, and in its board file `hardware/boards/<name>.toml` placement plan, routing, silkscreen; does not change the graph |
 | EasyEDA operator | agent `easyeda-operator` | runs one long EasyEDA step for the PCB designer and returns only the result |
-| PCB reviewer | agent `pcb-reviewer`, its own session | reads plan, hand-over, routing and manufacturing files, changes nothing – its result is the sign-off M-5 |
+| PCB reviewer | agent `pcb-reviewer`, its own session | reads plan, hand-over, routing and the copper of every layer from the Gerber files, changes nothing, returns numbered findings with probability and cost – at the end of every layout round that changed placement, routing or pours, and on the gate run's files as the sign-off M-5 |
 | decider | the user | answers the decision rounds: warnings, looks and operation, money, what becomes a check |
 
 No role checks its own work: a second opinion from the session that made the decisions repeats the decisions; the

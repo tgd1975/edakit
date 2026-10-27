@@ -81,8 +81,9 @@ EDA-specific), but if you run parallel sessions in one repository, build or adop
    real decisions go to the user: accepting a warning, looks and operation, money.
 5. **Decision rounds:** numbered findings with consequence and a recommended proposal; the user answers "ad 1 ack,
    ad 2 b, ad 3 you decide"; every answer becomes a numbered decision with reason and date (decision-round skill).
-6. **Realistic risks.** Per risk: how likely, what it costs. Delivery delays and stock problems are force majeure –
-   one line. A deviation from a datasheet recommendation without a realistic consequence is not a finding.
+6. **Realistic risks.** Per risk: how likely, what it costs – the review agents per finding too. Delivery delays and
+   stock problems are force majeure – one line. A deviation from a datasheet recommendation without a realistic
+   consequence is not a finding.
 7. **Check that a proposal fits before proposing it.** Dimensions from the datasheet of the exact part (including
    solder tabs) against the board geometry; electrical specs of the exact part, not of a similar one.
 8. **Robust, not fitted.** Mechanical parts derived from the layout (enclosures, stands) get uniform clearances over

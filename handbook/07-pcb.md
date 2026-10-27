@@ -340,6 +340,9 @@ footprints' own print), places every designator of the `designators` side at the
 left, then vertical, then at the corners; not on pads, footprint print, parts or other labels; over a tented via only as
 last resort; test points first), then exports again and checks that no own silkscreen lies on a solder-mask opening
 (JLCPCB cuts it off there) – target 0 mm² – and runs the DRC. Pictures per side in `<artifacts>/silk_<board>_<side>.png`.
+The export stays in `<artifacts>/gerber_<board>/` (`edakit silk check` writes it again without placing anything): the
+copper of every layer as EasyEDA filled it, which the layout review at the end of the round reads (skill pcb-round) –
+the routing picture shows the pours edakit computed, not what EasyEDA made of them.
 
 **Through-hole parts of the other side** are soldered from the `designators` side – LEDs on the front of a board whose
 electronics and designators are on the back. With `solder_side = true` in `[silk]` they are labelled there too: next to

@@ -63,8 +63,13 @@ describes (section 3).
      "without room": more room, a group label (`[silk] groups`) or `[silk] unlabelled` with the reason – the gate warns
      on it otherwise (L-17). Run it last, after the routing: the gate fails on edakit's own print on a mask opening
 4. **Check:** `edakit pcb nets` (pad nets = graph), DRC details in `<artifacts>/route/<board>_drc.json`.
-5. **Picture:** routing preview and silk pictures; a canvas capture may be stale. For an overall view or a second
-   opinion use the agent pcb-reviewer – its result is the sign-off M-5, not a checklist for the user.
+5. **Picture and review:** routing preview and silk pictures; a canvas capture may be stale. A round that changed
+   placement, routing or pours ends with the agent pcb-reviewer in its own session, on this round's data: the plan,
+   the routing files and the round's Gerber export `<artifacts>/gerber_<board>/` – the copper of every layer as
+   EasyEDA filled it. `silk apply` writes that export; a round that did not run it runs `edakit silk check 2>&1 | cat`
+   first. Its findings are fixed or decided (skill decision-round) before the next round and before the gate, not
+   after it. A round that changed only the silkscreen may skip the review. At release the same agent signs M-5 on the
+   gate run's files (skill release); its result is a sign-off, not a checklist for the user.
 6. Save only when the state is better than the saved one; `route all` and `silk apply` save themselves.
 
 ## Known limits

@@ -53,6 +53,11 @@ edakit schematic draw 2>&1 | cat   # the changed circuit as a drawing
 edakit handover 2>&1 | cat         # what the PCB designer gets
 ```
 
+A change of parts or of the power path is reviewed before the hand-over: the agent electrical-reviewer in its own
+session, on this state – the changed circuit and the hand-over. Its findings are fixed or decided (skill
+decision-round) first; the PCB designer takes over the reviewed state and the review's result, not a circuit whose
+review is still to come after the layout. The release sign-offs stay as they are (skill release).
+
 The PCB designer takes it over in its own session with the skill pcb-round – it brings the change into the EasyEDA
 schematic and the PCB (`schematic create/layout`, `pcb parts/nets`) and checks the plan against the hand-over (L-12).
 

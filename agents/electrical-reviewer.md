@@ -62,8 +62,7 @@ part of the class: read its result and ask the rest.
   `params.usb_c.cc` in its entry; the VBUS path and the regulator no check sees.
 
 Decided items (numbered decisions) you question only with a concrete technical reason, naming the number. Name gold
-plating as such: if something does not matter for the quantity and the purpose, say so. A deviation from a datasheet
-recommendation without a realistic consequence is not a finding.
+plating as such: if something does not matter for the quantity and the purpose, say so.
 
 Go through `edakit hints`: for every open hint say whether it matters here; for a handled one whether the reason in
 the graph holds. Blocks (`notes` say "block …") passed the checks once – review them like everything else.
@@ -78,8 +77,10 @@ result is the sign-off: say clearly "M-1: OK for state <circuit hash>" or list w
 
 A numbered list sorted by severity (**critical** = board does not work or gets damaged, **important** = function or
 lifetime suffers, **note**). Per finding: designator or net, the finding in 1–2 sentences with numbers, evidence
-(datasheet page, calculation, simulation result), proposal, and **rule**: the catalog check it falls under (`G-11`) –
-then also say why that check did not report it, it may be a bug – or, without one, **check candidate**: what a rule
-over graph, parts database or simulation would test to find this class of fault again, or "judgement" if no program
-could. At the end: what you checked and found good (short), the hints and how they are handled, and what you could not
-check.
+(datasheet page, calculation, simulation result), its **probability** (how likely the consequence is, in which supply
+variant or use) and its **cost** if it happens (a dead board, a fix round, a part that gets hot under a finger, five
+minutes with a soldering iron), proposal, and **rule**: the catalog check it falls under (`G-11`) – then also say why
+that check did not report it, it may be a bug – or, without one, **check candidate**: what a rule over graph, parts
+database or simulation would test to find this class of fault again, or "judgement" if no program could. A deviation
+from a datasheet recommendation without a realistic consequence is not a finding. At the end: what you checked and
+found good (short), the hints and how they are handled, and what you could not check.

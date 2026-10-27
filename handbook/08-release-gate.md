@@ -130,7 +130,12 @@ gate looks at that.
 The lesson behind M-5: the first released run of the reference project had passed every automatic check, and nobody
 had looked at the layout as a whole. The layout review agent then found a switching regulator loop routed across the
 whole board (now L-11) and that the visible side was crowded with tracks. Since then the layout review is a condition
-of the release, not a tool you may use.
+of the release, not a tool you may use. It also ends every layout round that changed placement, routing or pours (skill
+pcb-round), on the round's Gerber export, so its findings come before the gate rather than after it: later in the same
+project a run was released with about 45 % of one side bare – EasyEDA had dropped pour islands without a pad, and
+gate, DRC and layout review all passed it, because none of their inputs showed the copper as filled (now L-15). Both
+reviewers give every finding its probability and its cost; a deviation without a realistic consequence is not a
+finding.
 
 ## 8.3 The decision
 
