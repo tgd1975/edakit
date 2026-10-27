@@ -34,11 +34,11 @@ Example: [the Christmas bell's graph](https://github.com/tgd1975/automatic_chris
 | `designator` | as on schematic, PCB and silkscreen |
 | `type` | rough class for the generated template layout and the schematic blocks: `microcontroller`, `module`, `ic`, `transistor`, `connector`, `regulator`, `diode`, `led`, `resistor`, `capacitor`, `inductor`, `button`, `switch`, `potentiometer`, `audio`, `testpoint`, `battery_holder`, `fuse` |
 | `lcsc` | the LCSC number – identifies symbol, footprint, parts entry and the BOM line |
-| `part` | the manufacturer part number; without `lcsc` it names the parts entry (its `mpn`) – a part bought elsewhere (chapter 4) |
+| `part` | the manufacturer part number; without `lcsc` it names the parts entry (its `mpn`) – a part bought elsewhere (chapter 4); with `lcsc` it must name the entry's `mpn` too (P-6) |
 | `pins` | pin number → pin name, **with the pin numbers of the EasyEDA/LCSC symbol of exactly this part**. The names must equal the parts entry (P-1). |
 | `nc` | pins deliberately unconnected; every pin is in exactly one net or in `nc` |
 | `board` | which board the part is on (a key of `[boards]` in edakit.toml); may be omitted with one board |
-| `value` | shown in the BOM ("10k", "100nF") |
+| `value` | shown in the BOM ("10k", "100nF"); P-6 holds it to the entry's `value_ohm`, `value_f` or `value_h` |
 | `bom: false` | the part is placed on the PCB but not in the BOM for assembly (hand-soldered, bought separately) |
 | `easyeda_device` | for parts without LCSC number (bare test pads): `{name, uuid, libraryUuid}` of an EasyEDA library device |
 | `verify` | an open question about pins/polarity that the library does not settle; blocks the release (G-9) until resolved |
@@ -94,6 +94,7 @@ check that fails is explained once below the findings (chapter 14.2).
 | G-17 | fuse against what it protects: the hold current of every fuse (`i_hold_a`; at the lowest ambient `ambient_min_c` of sim.json from `i_hold_vs_temp`) is at most the `i_max_a` of every connector, switch and cable its current flows through – its own nets and on through fuses and switches; a trip current (`i_trip_a`) above it is a warning | a 1.5-A polyfuse in front of a connector rated 1.25 A, an overload that heats the contacts instead of tripping the fuse |
 | G-18 | hot loop in the hand-over: a part whose entry names its hot-loop pins (`hot_loop`, 4.1) has a `layout.loops` entry on every net of the loop – the nets of those pins and, one diode further, the net behind the rectifier on its switch node (`sw`); a buck or boost IC (`behavior`) without `hot_loop` is a warning; `waive` on the part, or on a net whose part of the loop closes over a pour | a boost whose output loop was routed 61 mm across the board, passing every check because nobody listed it |
 | P-1 | graph pins (number and name) = parts entry; an entry exists for every LCSC number; no supply pin marked `nc` | a wrong part number, pins shifted by one |
+| P-6 | part identity: the component and its parts entry name the same part – the entry's `lcsc` is its file name; the component's `lcsc` is no `C99…` user-library number (unless `bom: false`); its `part` names the entry's `mpn` (remarks in parentheses or after `;` left out, case ignored, a manufacturer before it allowed; a `part` that starts with a value, "330 Ω 0805", is compared as that value); its `value` reads as the entry's `value_ohm` / `value_f` / `value_h` within 1 % ("4k7", "100nF", "2R2"); its `type` fits the entry's `kind` (microcontroller, regulator: ic or module; transistor: npn, pnp, nmos, pmos; led: led, led_rgb; switch: switch, dip_switch; audio: buzzer; otherwise the same word); `waive` on the component. A designator prefix against the kind (R, C, L, D, Q, U, J, SW, F, BT, BZ, K, TP) is a warning | C25789 written for a 74HC165 (a 464 kΩ resistor), R2 "1k" on a 10 kΩ entry, an LED that came in as U1 |
 | P-3 | own parts (4.5): a board copied with `edakit part own` is its project's current datasheet, copied from a commit (pending otherwise); a board not released at that state is a warning; the project's own datasheets are of its current state | a board changed after it was copied into the host |
 | G-9 | sign-off: every part `verified` against its datasheet, no open `verify` note (pending – blocks only the release) | an unchecked part going into an order |
 

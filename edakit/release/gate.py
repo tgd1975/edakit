@@ -143,7 +143,7 @@ def accepted(item, signoff):
 def stage_graph(cfg, design):
     rep = checks.run(design, cfg)
     rows = []
-    stage_of = lambda c: "P" if c in ("P-1", "P-3", "G-9") else "G"  # noqa: E731
+    stage_of = lambda c: "P" if c.startswith("P-") or c == "G-9" else "G"  # noqa: E731
     for c, m in rep.errors:
         rows.append({"stage": stage_of(c), "id": c, "item": "", "check": m, "result": "fail"})
     for c, m, r in rep.waived:

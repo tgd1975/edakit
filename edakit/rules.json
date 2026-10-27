@@ -22,6 +22,16 @@
    "fix": "In the board's project: edakit part datasheet, then commit. In the host: edakit part own <path to the board's project>. Release the board there (edakit gate) and copy again, or accept the warning in the sign-off file with the reason.",
    "sources": ["edakit handbook 4.5"]
   },
+  "P-6": {
+   "title": "graph and parts entry name the same part",
+   "rule": "Every component names the same part as its parts entry: the entry's lcsc equals its file name, the component's lcsc is no C99… user-library number (unless it stays out of the BOM, bom: false), its part names the entry's mpn (remarks in parentheses or after a semicolon left out, case ignored; a part that starts with a value, such as \"330 Ω 0805\", is that value), its value reads as the entry's value_ohm, value_f or value_h within 1 %, and its type fits the entry's kind (microcontroller and regulator: ic or module; transistor: npn, pnp, nmos, pmos; led: led or led_rgb; switch: switch or dip_switch; audio: buzzer; any other type the same word). A designator prefix that contradicts the kind (R, C, L, D, Q, U, J, SW, F, BT, BZ, K, TP) is a warning.",
+   "why": "P-1 compares only pins, and every two-pin part has the same pins whatever it is. A number that points to another part, or an entry written for another number, passes stages P, G and E – and JLCPCB assembles what the number says, on every board. In the reference project the design document's LCSC numbers were wrong in eight places, found by hand against LCSC: C25789 ('74HC165') is a 464 kΩ resistor, C124327 ('10 kΩ') a crystal, six more did not exist. A C99… number looks like any other in EasyEDA's library, with supplier LCSC and class Extended Part, but nobody sells it.",
+   "fix": "Correct whichever side names the wrong part: take the number by exact match from the catalogue (handbook 4.2) and write the entry from that number, or correct the graph's part, value or type. Replace a C99… number with an orderable part, or keep the part out of the BOM (bom: false) when it is plugged in or bought elsewhere. An intended mismatch – a part soldered by hand that borrows the entry of a sister part – is waived on the component with its reason.",
+   "sources": [
+    "edakit handbook 3.1 (component fields type, lcsc, part, value), 4.1 (entry fields, kind, value parameters) and 4.2 (exact match only, C99… user libraries)",
+    "reference project: decision E-15, invalid LCSC numbers checked against LCSC on 2026-10-19 (C25789, C124327, C299999, C17236, C15942, C124278, C124279, C17347) and replaced"
+   ]
+  },
   "G-1": {
    "title": "structure",
    "rule": "Designators and net names are unique, every pin is in exactly one net or in nc, every net has at least two pins and a voltage range v, every part is on a known board, a net spans boards only through a cable, the layout requirements and the check settings name parts and pins of the graph, the ground net is a net of the graph, and purpose.use is private, gift or sale.",

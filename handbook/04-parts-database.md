@@ -12,7 +12,7 @@ Examples: [the Christmas bell's parts](https://github.com/tgd1975/automatic_chri
 
 | Field | Content |
 |---|---|
-| `lcsc`, `mpn`, `manufacturer` | identification; `mpn` is what a component without `lcsc` names in `part` |
+| `lcsc`, `mpn`, `manufacturer` | identification; `lcsc` equals the file name, `mpn` is what a component names in `part` – P-6 compares them, with the `kind` and the value parameters |
 | `order` | order numbers at other distributors: `{"rs": "223-0562", "farnell": "…", "mouser": "…", "digikey": "…"}` |
 | `kind` | `resistor`, `capacitor`, `inductor`, `fuse`, `diode`, `led`, `led_rgb`, `npn`, `pnp`, `pmos`, `nmos`, `switch`, `dip_switch`, `button`, `potentiometer`, `battery_holder`, `buzzer`, `relay`, `connector`, `ic`, `module` |
 | `package`, `footprint` | the footprint name must equal the EasyEDA footprint (L-4 compares it with the PCB) |
@@ -121,7 +121,7 @@ At LCSC and JLCPCB:
   Free text ("led 5mm red") returns mostly noise; the classification filter has no effect. Series names work
   (e.g. `XL-304`, `KT-0805`, `UNI-ROYAL 0805W8F…`).
 - **Exact match only:** the search is full text – take hits whose `supplierId` equals the number.
-- `C99…` numbers are user libraries without an orderable part.
+- `C99…` numbers are user libraries without an orderable part – P-6 refuses one on a part that goes into the BOM.
 - **Stock and price:** `https://wmsc.lcsc.com/ftps/wm/product/detail?productCode=Cxxxx` (stock, price breaks,
   parameters). LCSC's own search blocks automated requests (HTTP 403); jlcsearch is too thin for single parts.
 - **JLCPCB's assembly stock differs from LCSC's.** The gate asks JLCPCB's public catalogue

@@ -483,7 +483,7 @@ def bridge(project, g, des, net, pin, value_ohm=0.0):
     """`pin` moves from `net` to a new net <net>_B, joined to `net` by the resistor `des` – a 0 Ω bridge that crosses a
     track on a board with all tracks on one side."""
     project.save_part(BRIDGE["lcsc"], {**BRIDGE, "params": {"value_ohm": value_ohm}})
-    g["graph"]["components"].append(comp(des, BRIDGE["lcsc"], R, value="0"))
+    g["graph"]["components"].append(comp(des, BRIDGE["lcsc"], R, value=f"{value_ohm:g}"))   # P-6: as the entry says
     project.net(g, net)["pins"].remove(pin)
     project.net(g, net)["pins"].append(f"{des}.1")
     g["graph"]["nets"].append({"name": f"{net}_B", "pins": [f"{des}.2", pin], "v": project.net(g, net)["v"]})

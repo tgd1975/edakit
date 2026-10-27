@@ -117,7 +117,7 @@ Code: `edakit … 2>&1 | cat`.
 
 | Command | EasyEDA | Reads | Writes |
 |---|---|---|---|
-| `edakit check [--release] [--json F]` | – | graph, parts, pin table | – |
+| `edakit check [--release] [--json F]` | – | graph, parts (pins, identity P-6), pin table | – |
 | `edakit rules [ID …]` | – | the rule catalog (no project needed) | – |
 | `edakit hints [--json F]` | – | graph, parts, sim config | – |
 | `edakit block list\|show NAME` | – | the block library (no project needed) | – |

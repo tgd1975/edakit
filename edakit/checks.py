@@ -41,6 +41,11 @@
        switch node (sw); a buck or boost IC without hot_loop is a warning
   P-1  graph pins (number + name) = parts database, an entry exists for every LCSC number – or, for a part bought
        elsewhere, for its manufacturer part number `part`
+  P-6  part identity: the component and its parts entry name the same part – the entry's lcsc is its file name,
+       the component's lcsc no C99… user-library number (unless bom: false), its part names the entry's mpn (remarks
+       in parentheses or after ";" left out, case ignored; a part that starts with a value is that value), its
+       value reads as the entry's value_ohm / value_f / value_h within 1 %, its type fits the entry's kind; a
+       designator prefix (R, C, L, D, Q, U, J, SW, F, BT, BZ, K, TP) against the kind is a warning
   P-3  own parts (part.py): a board copied from its project with `edakit part own` is that project's current
        datasheet, copied from a commit (pending otherwise); a board that is not released is a warning; the project's
        own datasheets (hardware/datasheet/) are of its current state
@@ -63,6 +68,7 @@ from collections import Counter, defaultdict
 from pathlib import Path
 
 from . import handover, rules
+from .design import natural_key
 
 CAP_FACTOR = 1.5      # rated voltage >= 1.5 x max. voltage across
 DIODE_FACTOR = 1.5    # VRRM >= 1.5 x max. reverse voltage
@@ -82,9 +88,21 @@ FN_NAMES = [k + (f".{line}" if line else "") for k, lines in FN_LINES.items() fo
 SUPPLY_R_MAX = 100                                   # a resistor up to this passes a supply (shunt, filter)
 SWITCHERS = ("buck", "boost")                        # behaviour models of switching regulators (hot loop, G-18)
 PIN_FUNCTION = re.compile(r"([a-z][a-z0-9]*?)(\d+)(?:\.([a-z]+))?")   # "spi0.sck", "i2c1.sda", "pwm1.a", "adc0"
+KINDS_OF_TYPE = {"microcontroller": ("ic", "module"), "regulator": ("ic", "module"),   # P-6: graph type -> parts
+                 "transistor": ("npn", "pnp", "nmos", "pmos"), "led": ("led", "led_rgb"),   # entry kinds; any other
+                 "switch": ("switch", "dip_switch"), "audio": ("buzzer",)}                  # type: the same word
+KINDS_OF_PREFIX = {"R": ("resistor", "potentiometer"), "C": ("capacitor",), "L": ("inductor",),
+                   "D": ("diode", "led", "led_rgb"), "Q": ("npn", "pnp", "nmos", "pmos"), "U": ("ic", "module"),
+                   "J": ("connector",), "SW": ("switch", "button", "dip_switch"), "F": ("fuse",),
+                   "BT": ("battery_holder",), "BZ": ("buzzer",), "K": ("relay",), "TP": ("connector",)}
+VALUE_PARAMS = {"value_ohm": ("Ω", "resistance"), "value_f": ("F", "capacitance"), "value_h": ("H", "inductance")}
+VALUE_TOL = 0.01      # graph value vs the entry's value parameter
+MULTIPLIERS = {"p": 1e-12, "n": 1e-9, "u": 1e-6, "µ": 1e-6, "μ": 1e-6, "m": 1e-3, "k": 1e3, "K": 1e3, "M": 1e6,
+               "G": 1e9, "R": 1, "Ω": 1}
+QUANTITY = re.compile(r"\s*(\d+)(?:[.,](\d+))?\s*([pnuµμmkKMG]|[RΩ])?(\d+)?\s*(Ω|[oO]hms?|F|H)?(?=$|[\s,;/()])")
 
 EXECUTED = ["G-1", "G-2", "G-3", "G-4", "G-5", "G-6", "G-8", "G-10", "G-11", "G-12", "G-13", "G-14", "G-15", "G-16",
-            "G-17", "G-18", "P-1", "P-3", "G-9"]
+            "G-17", "G-18", "P-1", "P-3", "P-6", "G-9"]
 
 
 class Report:
@@ -813,6 +831,87 @@ def check_part_pins(d, rep):
                           c.get("waive"))
 
 
+def read_value(text):
+    """(number, unit or None) of a value as the graph writes it – 10k, 4k7, 2R2, 100nF, 22 µF, 330 Ω 0805 (the
+    leading quantity) –, or None when it starts with no quantity (green, 1N4148, 0805W8F…)."""
+    m = QUANTITY.match(str(text or ""))
+    if not m or (m.group(2) and m.group(4)):
+        return None
+    whole, frac, mult, frac2, unit = m.groups()
+    number = float(f"{whole}.{frac or frac2 or 0}") * MULTIPLIERS.get(mult, 1)
+    if (unit and unit[0] in "ΩoO") or (mult in ("R", "Ω") and not unit):
+        unit = "Ω"
+    return number, unit
+
+
+def si(x, unit):
+    for f, p in ((1e9, "G"), (1e6, "M"), (1e3, "k"), (1, ""), (1e-3, "m"), (1e-6, "µ"), (1e-9, "n"), (1e-12, "p")):
+        if abs(x) >= f or f == 1e-12:
+            return f"{x / f:.4g} {p}{unit}" if x else f"0 {unit}"
+    return f"{x} {unit}"
+
+
+def core_mpn(mpn):
+    """The part number of an mpn without the remarks entries add: in parentheses, after a semicolon."""
+    return " ".join(re.sub(r"\([^)]*\)", " ", str(mpn)).split(";")[0].split())
+
+
+def value_problem(text, part, key, what):
+    """What is wrong with a value of the graph against the value parameter of parts entry `key`, or None."""
+    params = part.get("params") or {}
+    param = next((k for k in VALUE_PARAMS if isinstance(params.get(k), (int, float))), None)
+    if not param:
+        return None
+    (unit, name), want = VALUE_PARAMS[param], float(params[param])
+    got = read_value(text)
+    if got is None:
+        return f"{what} {text} does not read as a {name} – parts entry {key} has {param} {si(want, unit)}"
+    if got[1] and got[1] != unit:
+        return f"{what} {text} is no {name} – parts entry {key} has {param} {si(want, unit)}"
+    if abs(got[0] - want) > VALUE_TOL * abs(want):
+        return f"{what} {text} reads {si(got[0], unit)}, parts entry {key} has {param} {si(want, unit)}"
+    return None
+
+
+def check_identity(d, rep):
+    """P-6: the component and its parts entry name the same part."""
+    users = defaultdict(list)
+    for des in sorted(d.comps, key=natural_key):
+        if (key := d.entry_key(des)) is not None:
+            users[key].append(des)
+    for key, dess in sorted(users.items()):
+        lcsc = d.parts[key].get("lcsc")
+        if lcsc and lcsc != key:
+            rep.error("P-6", f"{key}.json: lcsc {lcsc} – the file is named {key} ({', '.join(dess)})")
+    for key, dess in users.items():
+        part = d.parts[key]
+        for des in dess:
+            c, waive = d.comps[des], d.comps[des].get("waive")
+            if str(c.get("lcsc") or "").startswith("C99") and c.get("bom") is not False:
+                rep.error("P-6", f"{des}: lcsc {c['lcsc']} is a part of an EasyEDA user library – nobody sells it "
+                                 "(handbook 4.2)", waive)
+            mpn = core_mpn(part.get("mpn") or "")
+            if c.get("part") and mpn:
+                if read_value(c["part"]):                   # a description ("330 Ω 0805"): its value counts
+                    if problem := value_problem(c["part"], part, key, "part"):
+                        rep.error("P-6", f"{des}: {problem}", waive)
+                elif not re.search(r"(?<![A-Za-z0-9])" + re.escape(mpn).replace(r"\ ", r"\s+") + r"(?![A-Za-z0-9])",
+                                   c["part"], re.I):
+                    rep.error("P-6", f"{des}: part {c['part']} does not name {mpn}, the mpn of parts entry {key}", waive)
+            if c.get("value") not in (None, "") and (problem := value_problem(c["value"], part, key, "value")):
+                rep.error("P-6", f"{des}: {problem}", waive)
+            kind = part.get("kind")
+            if not kind:
+                continue
+            if c.get("type") and kind not in KINDS_OF_TYPE.get(c["type"], (c["type"],)):
+                rep.error("P-6", f"{des}: type {c['type']} does not fit kind {kind} of parts entry {key}", waive)
+            prefix = re.match(r"[A-Za-z]*", des).group(0).upper()
+            if prefix in KINDS_OF_PREFIX and kind not in KINDS_OF_PREFIX[prefix]:
+                usual = next((p for p, kinds in KINDS_OF_PREFIX.items() if kind in kinds), None)
+                rep.warnings.append(("P-6", f"{des}: designator prefix {prefix}, but parts entry {key} is a {kind}"
+                                            + (f" ({usual})" if usual else "")))
+
+
 def check_signoff(d, rep):
     for key in sorted({d.entry_key(des) for des in d.comps} - {None}):
         part = d.parts[key]
@@ -853,6 +952,7 @@ def run(design, cfg=None):
     check_fuses(joined, rep, sim)
     check_hot_loops(design, rep)   # layout.loops name pads of the graph's own nets (G-1, L-11)
     check_part_pins(design, rep)
+    check_identity(design, rep)
     if cfg:
         from . import part
         part.check(design, rep, cfg)

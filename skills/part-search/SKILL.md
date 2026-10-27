@@ -61,4 +61,5 @@ profile says: `${CLAUDE_PLUGIN_ROOT}/skills/part-search/distributors/<name>.md` 
   and the second check M-1 exist for that. Then `verified` with by, date, datasheet revision, `checked`, `open`.
 - Record the choice in the decision log (alternatives and why they were dropped).
 
-Then `edakit check` (P-1, G-9), and the hardware-change skill if the part goes into the graph.
+Then `edakit check` (P-1, P-6 – the graph's `lcsc`, `part`, `value` and `type` name this entry –, G-9), and the
+hardware-change skill if the part goes into the graph.
