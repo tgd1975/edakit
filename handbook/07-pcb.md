@@ -230,6 +230,7 @@ via = [24, 12]               # diameter, drill
 edge_clearance_um = 400      # tracks and vias from the outline; the pours keep pour_inset_mm (7.6)
 layer_cost = { TOP = [1.0, 1.8], BOTTOM = [2.2, 3.0] }   # preferred / against preferred direction: keep a side calm
 classes = { POWER = { width_mil = 18, nets = ["VIN", "+5V"] }, GND = { width_mil = 18, nets = ["GND"] } }
+widths = "classes"           # or "sim": every class at least the IPC-2221 width of the simulated currents (below)
 
 [[routing.keepouts]]               # no tracks (vias allowed) on a side or in an area
 layer = "BOTTOM"
@@ -255,6 +256,15 @@ pour_only = true                   # no tracks: the pour between the tracks conn
 ```
 
 Class widths must be at least the minimum of the matching EasyEDA net class rule, or the DRC complains.
+
+**Widths from the simulation.** `widths = "classes"` (the default) writes the widths of `classes` and `signal_mil` into
+the DSN as they are. With `widths = "sim"`, `route dsn`, `route` and `all` read `<artifacts>/sim/net_currents.json`
+(`edakit sim`) and give every net at least its IPC-2221 width for 1.5 × its simulated current – the width L-5 of the
+gate asks for: a class is widened to the largest need of its nets, and a net outside the classes that needs more than
+`signal_mil` gets a class of its own, named after the net. Widths are rounded up to 0.1 mil; `route dsn` prints what it
+widened (`widths = "sim": class POWER: 18 -> 53.9 mil (+5V 2.00 A, VIN 2.00 A)`). Without the currents it stops. Fixed
+wires keep their `width_mil` – the check names them (below). One source of widths then: the simulation, not a table
+that drifts from it.
 
 **Freerouting 2.4.1 pitfalls**, all handled in the DSN writer:
 
@@ -309,6 +319,18 @@ foreign copper, nothing in keep-outs (the edge strips above: `edge_clearance_um`
 too) – independent of Freerouting's own score. Freerouting cannot move a pad, so pads too close stop `route all` after
 one attempt, without the reshuffled ones: move or turn one of the two parts in the plan. The gate measures the same on
 the pads of the last `route read` (L-13, L-14, 8.1).
+**Track widths (L-5 offline)** with the gate's own widths (8.1): the narrowest SES track of every net and every
+`[[routing.fixed_wires]]` entry against IPC-2221 for 1.5 × the simulated current – below it fails, and stops `route
+all` before anything is written as open nets do (a new attempt routes no wider) – and against the practical width of
+the net class (`[net_classes]`) – below it warns:
+
+```text
+    L-5 (offline) VIN: 0.46 < 1.37 mm
+    L-5 (offline) fixed wire GND (84, 15)–(80, 15): 0.41 < 0.42 mm
+    L-5 (offline) 3V3: 0.30 < 0.40 mm – below the practical width of its class (warning)
+```
+
+Without `net_currents.json` one line says so and nothing fails. Tracks that pass L-5 in the gate pass here.
 Preview: `<artifacts>/route/<board>_routing.png`, open connections dashed yellow. Nothing is written to EasyEDA until
 the check passes.
 

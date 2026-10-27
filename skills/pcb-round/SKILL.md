@@ -95,7 +95,9 @@ describes (section 3).
   warns (L-15: a copper-free circle above `[copper] max_bare_mm`, 5 mm); give the area a second pour net
   (`pour_regions`) or a pad or via of the pour net, then `route pours` again.
 - While a free pad (tooling hole) is in the PCB, filling pours fails – edakit takes them out and puts them back.
-- Net classes need the simulated currents (`edakit sim` first).
+- Net classes need the simulated currents (`edakit sim` first). `route check` holds the routed tracks and fixed wires
+  to L-5 before anything is written; `[routing] widths = "sim"` routes at the IPC widths of the simulation instead of
+  a hand-written class table (handbook 7.5).
 - Freerouting cannot move a pad: pads of different parts on different nets closer than `clearance_mil` (L-13), or
   SMD pads on an assembled side closer than the paste gap (L-14, `[release] assembly` `paste_gap_mm`, 0.4 mm), stop
   `route all` at its check, without retries – move or turn one of the two parts in `place`.

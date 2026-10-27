@@ -5,12 +5,15 @@ throws every track away (1773 lines -> 223 in one observed run). It runs past th
 start, has a fixed 900 s limit and left nets open. So routing happens outside EasyEDA, reproducibly:
 
     1 read     pads, outline, holes, parts from EasyEDA -> <artifacts>/route/<board>_board.json
-    2 dsn      offline: our own Specctra DSN (rules from [routing] of the board file); parts, pins and nets in a
-               fixed order; with fanout on a plane, a protected via and stub for each SMD pad on the other layer
+    2 dsn      offline: our own Specctra DSN (rules from [routing] of the board file; with widths = "sim" every net
+               at least the IPC-2221 width of its simulated current); parts, pins and nets in a fixed order; with
+               fanout on a plane, a protected via and stub for each SMD pad on the other layer
     3 route    offline: Freerouting (pinned, downloads itself once, SHA-256 checked), no GUI -> <board>.ses
     4 check    offline: pads of different parts on different nets at least the clearance apart (L-13), SMD pads on
                an assembled side at least the paste gap apart (L-14; no new attempt helps there), every net
-               connected, clearances >= rule, nothing in keep-outs; preview PNG with open connections in yellow.
+               connected, clearances >= rule, nothing in keep-outs, track widths of the SES and the fixed wires
+               against the simulated currents (L-5 as in the gate: below IPC-2221 fails, below the class width
+               warns); preview PNG with open connections in yellow.
                In `all`: up to `attempts` runs with a reshuffled DSN while something is open.
                A pour-only net (pour_only in [[pours]] of the board file) gets no tracks: its pour, computed here,
                connects it
@@ -538,6 +541,73 @@ def write_dsn(rules, data, out, variant=0):
         + (f", pour-only (no tracks): {', '.join(sorted(rules.pour_only))}" if rules.pour_only else "") + f" -> {out}")
     for (name, w), members in sorted(cls.items()):
         print(f"    class {name}: {w} mil, {len(members)} nets", flush=True)
+
+
+def sim_widths(cfg, board, rules):
+    """[routing] widths = "sim": every class of [routing.classes] at least the IPC-2221 width (1.5 x the simulated
+    current, as L-5 of the gate) of its widest net, and a net outside the classes that needs more than signal_mil a
+    class of its own, named after the net; widths rounded up to 0.1 mil. Changes rules.classes, prints what it widened.
+    Fixed wires keep their own width_mil – `route check` measures them."""
+    from .design import Design
+    from .release.fab import required_widths
+    need = required_widths(cfg, Design.from_config(cfg), board) if cfg.graph.exists() else None
+    if need is None:
+        raise SystemExit(f'board {board.name}: [routing] widths = "sim" needs the simulated currents '
+                         f"({cfg.relative(cfg.artifacts / 'sim' / 'net_currents.json')}) – run `edakit sim` first")
+    mil = {n: math.ceil(v[0] * MIL_PER_MM * 10 - 1e-9) / 10 for n, v in need.items()}
+    lines = []
+    for name, (w, nets) in list(rules.classes.items()):
+        top = max((mil[n] for n in nets if n in mil), default=0)
+        if top > w:
+            rules.classes[name] = (top, nets)
+            why = ", ".join(f"{n} {need[n][2]:.2f} A" for n in sorted(nets) if mil.get(n) == top)
+            lines.append(f"class {name}: {w:g} -> {top:g} mil ({why})")
+    taken = {n for _, nets in rules.classes.values() for n in nets}
+    for n in sorted(mil):
+        if n not in taken and mil[n] > rules.signal:
+            name = n if n not in rules.classes else f"{n}_NET"
+            rules.classes[name] = (mil[n], {n})
+            lines.append(f"class {name}: {mil[n]:g} mil, a class of its own ({n} {need[n][2]:.2f} A; signal_mil "
+                         f"{rules.signal:g})")
+    say('widths = "sim": ' + ("; ".join(lines) if lines else "every class already at its IPC-2221 width"))
+    return lines
+
+
+def report_widths(cfg, board, rules, routes):
+    """L-5 offline: the narrowest SES track of every net and every fixed wire against the widths of the gate's L-5
+    (release.fab.required_widths): below IPC-2221 for 1.5 x the simulated current fails, below the practical width of
+    the net class warns. Without net_currents.json one line and nothing fails, as before. -> the failures."""
+    from .design import Design
+    from .release.fab import required_widths
+    need = required_widths(cfg, Design.from_config(cfg), board) if cfg.graph.exists() else None
+    if need is None:
+        say("track widths (L-5 offline): no net currents – run `edakit sim` first")
+        return []
+    fixed = fixed_wires(rules)
+    mm = 1 / MIL_PER_MM
+
+    def is_fixed(net, layer, pts):
+        return any(net == n and layer == lay and len(pts) == len(p2) and
+                   max(map(math.dist, pts, p2), default=0) <= SNAP_MIL for n, lay, _, p2 in fixed)
+    narrow = {}
+    for net, r in routes.items():
+        ws = [w for layer, w, pts in r["wires"] if not is_fixed(net, layer, pts)]
+        if ws:
+            narrow[net] = min(ws) * mm
+    items = [(net, net, w) for net, w in sorted(narrow.items())]
+    for spec, (net, _, w, _) in zip(rules.board.routing.get("fixed_wires", []), fixed):
+        (x0, y0), (x1, y1) = spec["points"][0], spec["points"][-1]
+        items.append((net, f"fixed wire {net} ({x0:g}, {y0:g})–({x1:g}, {y1:g})", w * mm))
+    fail = [f"L-5 (offline) {what}: {w:.2f} < {need[net][0]:.2f} mm" for net, what, w in items
+            if net in need and w < need[net][0] - 0.005]
+    warn = [f"L-5 (offline) {what}: {w:.2f} < {need[net][1]:.2f} mm – below the practical width of its class "
+            "(warning)" for net, what, w in items if net in need and need[net][0] - 0.005 <= w < need[net][1] - 0.005]
+    wires = f" and {len(fixed)} fixed wire{'s' * (len(fixed) != 1)}" if fixed else ""
+    say(f"track widths (L-5 offline): {len(narrow)} nets{wires}, {len(fail)} below IPC-2221 for 1.5 x the simulated "
+        f"current, {len(warn)} below the class width")
+    for line in fail + warn:
+        print(f"    {line}", flush=True)
+    return fail
 
 
 # --- 3 route ------------------------------------------------------------------------------------------------------
@@ -1382,6 +1452,8 @@ def main(cfg, args):
     P = paths(cfg, board)
     passes = args.passes or rules.passes
     steps = {"all": ["read", "dsn", "route", "check", "apply", "pours", "reload", "drc"]}.get(args.action, [args.action])
+    if board.routing.get("widths") == "sim" and {"dsn", "route", "check"} & set(steps):
+        sim_widths(cfg, board, rules)
     mcp = None
     try:
         for n, step in enumerate(steps, 1):
@@ -1418,7 +1490,8 @@ def main(cfg, args):
                     for line in bad[:20]:
                         print(f"    {line}", flush=True)
                     nested = report_regions(rules, data, routes)
-                    if not (open_nets or bad or nested):
+                    thin = report_widths(cfg, board, rules, routes)   # no new attempt routes wider
+                    if not (open_nets or bad or nested) or thin:
                         break
                 else:
                     if args.action == "all":
@@ -1433,6 +1506,13 @@ def main(cfg, args):
                                          "the paste gap (L-14) – nothing written to EasyEDA. Freerouting cannot move a "
                                          "pad: move or turn one of the two parts in [place] of the board file (fix it "
                                          "there if the auto-layout put it), then place and read the board again.")
+                    return 2
+                if thin:
+                    if args.action == "all":
+                        raise SystemExit(f"{len(thin)} track widths below IPC-2221 for 1.5 x the simulated current "
+                                         "(L-5, above) – nothing written to EasyEDA. Widen the class in "
+                                         '[routing.classes] or the fixed wire, or route with [routing] widths = "sim".'
+                                         + (" Nets are open as well (above)." if open_nets else ""))
                     return 2
             elif step == "apply":
                 apply_ses(rules, mcp, read_ses(P["ses"], rules), json.loads(P["board"].read_text()), P["stitch"])

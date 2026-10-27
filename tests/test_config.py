@@ -337,3 +337,12 @@ def test_place_auto_key(tmp_path):
     assert c1.auto is True and c1.lock is True and (c1.x, c1.y) == (66.0, 21.4)
     with pytest.raises(ConfigError, match="place.C1: auto must be true or false"):
         _placement("C1", {"x": 1, "y": 2, "auto": "yes"})
+
+
+def test_routing_widths_key(tmp_path):
+    from edakit.config import _board
+    assert "widths" not in _board("b", {}, {}).routing                    # no key: the widths of the classes, as before
+    for value in ("classes", "sim"):
+        assert _board("b", {}, {"routing": {"widths": value}}).routing["widths"] == value
+    with pytest.raises(ConfigError, match="routing.widths must be 'classes' or 'sim'"):
+        _board("b", {}, {"routing": {"widths": "ipc"}})

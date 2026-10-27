@@ -143,6 +143,9 @@ layout review again (M-5). The keys stand at the top of the file, without a pref
 `[routing]`: `clearance_mil` (6.5; also the least gap between pads of different parts, L-13), `signal_mil` (10), `via` ([24, 12]), `edge_clearance_um` (400: tracks and vias
 from the outline, in the DSN and in Freerouting; the pours: `pour_inset_mm`), `passes` (40),
 `attempts` (5), `layer_cost` ({TOP = [1.0, 1.8], BOTTOM = [1.5, 2.5]}), `classes` ({NAME = {width_mil, nets}}),
+`widths` (`"classes"`: the DSN takes the widths of `classes` and `signal_mil`; `"sim"`: every class at least the
+IPC-2221 width of its nets' simulated currents, a net outside the classes that needs more than `signal_mil` a class of
+its own – needs `net_currents.json`, 7.5),
 `[[routing.keepouts]]` ({layer, what = "wire"|"all", rect | polygon, windows, window_mm}), `[[routing.fixed_wires]]`
 ({net, layer, width_mil, points}).
 
@@ -202,7 +205,7 @@ Code: `edakit … 2>&1 | cat`.
 | `edakit pcb apply [--verify-all]` | ✓ | plan, geometry | outline, holes, tooling, fixed parts |
 | `edakit pcb autolayout` | ✓ | – | positions of unlocked parts |
 | `edakit pcb tooling` / `pour` | ✓ | plan; `pour` with `pour_regions`: board file and SES of `route` | tooling holes / pours (unfilled) |
-| `edakit route all\|read\|dsn\|route\|check\|apply\|verify [--cleanup]\|pours\|reload\|drc\|save` | ✓ / – (dsn, route, check offline) | PCB, rules | `route/<board>_board.json`, `.dsn`, `.ses`, `_routing.png`, `_drc.json`; tracks, vias, pours |
+| `edakit route all\|read\|dsn\|route\|check\|apply\|verify [--cleanup]\|pours\|reload\|drc\|save` | ✓ / – (dsn, route, check offline) | PCB, rules; `net_currents.json` (check: L-5 offline; `widths = "sim"`) | `route/<board>_board.json`, `.dsn`, `.ses`, `_routing.png`, `_drc.json`; tracks, vias, pours |
 | `edakit silk apply\|check` | ✓ | PCB, Gerber export | designators, `silk_<board>_<side>.png`, `gerber_<board>/`; apply: `silk_footprints_<board>/` (the print it found, for L-17) |
 | `edakit export [--board]` | ✓ read | schematic, PCB, project file | `<artifacts>/export/` |
 | `edakit gate [--easyeda]` | – / ✓ | everything | `<reports>/<run>/` |

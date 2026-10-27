@@ -228,8 +228,10 @@ net that reaches two outputs through resistors, and the ground net, count on no 
 `edakit sim` writes the largest current of a single part per net to `<artifacts>/sim/net_currents.json` (the supply
 current also on both supply nets, ground included). `edakit pcb plan` derives net classes from it (IPC-2221 outer layer,
 1 oz, 10 K rise, × 1.5) with practical minimum widths from `[net_classes]` of the board file; the gate check L-5 fails a
-track below the IPC width and warns below the class width. Its voltage drop is an upper bound, shown as information;
-the drop itself the simulation computes once the board is routed and `copper` names the net (5.2).
+track below the IPC width and warns below the class width. `edakit route check` measures the same on the routing
+before anything is written to EasyEDA, and with `[routing] widths = "sim"` the router gets those IPC widths itself
+(7.5). The voltage drop L-5 shows is an upper bound, as information; the drop itself the simulation computes once
+the board is routed and `copper` names the net (5.2).
 
 ## 5.5 Every check seen red
 
