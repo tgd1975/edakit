@@ -18,7 +18,7 @@ edakit gate --easyeda    # plus S, L, F – EasyEDA with the bridge, minutes
 
 | Stage | What | Checks |
 |---|---|---|
-| P – Parts | parts database complete and signed, own parts equal to their source | P-1, P-3, G-9 (chapter 3, 4) |
+| P – Parts | parts database complete and signed, every part named by its entry, own parts equal to their source | P-1, P-3, P-6, G-9 (chapter 3, 4) |
 | G – Graph | rule checks | G-1 … G-18 (chapter 3) |
 | E – Simulation | operating points, stress, function, every LED checked | E-1 … E-4 (chapter 5) |
 | *project stages* | e.g. K – mechanics of an enclosure | `[[release.stages]]`, see below |
