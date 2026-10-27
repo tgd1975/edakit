@@ -67,6 +67,10 @@ def main(cfg, args):
              "EasyEDA started from here behaves like Node ('bad option: --no-sandbox'): env -u ELECTRON_RUN_AS_NODE …")
     line("OK" if shutil.which("ngspice") else "FAIL", f"ngspice: {shutil.which('ngspice') or 'missing'}",
          "" if shutil.which("ngspice") else "sudo apt install ngspice (stage E)")
+    pdftotext = shutil.which("pdftotext")
+    line("OK" if pdftotext else "WARN", f"pdftotext: {pdftotext or 'missing'}",
+         "" if pdftotext else "sudo apt install poppler-utils – without it edakit part fetch keeps datasheets "
+         "unchecked (text layer, part number)")
     from .route import FR_BIN
     fr = os.environ.get("FREEROUTING_BIN") or os.environ.get("FREEROUTING_JAR") or (str(FR_BIN) if FR_BIN.exists() else "")
     line("OK" if fr else "WARN", f"Freerouting: {fr or 'not yet downloaded'}",

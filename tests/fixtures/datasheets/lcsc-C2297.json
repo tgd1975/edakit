@@ -1,0 +1,12 @@
+{
+ "code": 200,
+ "msg": null,
+ "ok": true,
+ "result": {
+  "productCode": "C2297",
+  "productModel": "KT-0805G",
+  "brandNameEn": "Hubei KENTO Elec",
+  "encapStandard": "0805",
+  "pdfUrl": "https://datasheet.lcsc.com/datasheet/pdf/de342fde3322df0797012cd7a04e2194.pdf?productCode=C2297"
+ }
+}

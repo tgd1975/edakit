@@ -83,8 +83,8 @@ jobs:
       - uses: actions/checkout@v4
         with:
           fetch-depth: 0
-      - name: ngspice
-        run: sudo apt-get update && sudo apt-get install -y ngspice
+      - name: ngspice, pdftotext
+        run: sudo apt-get update && sudo apt-get install -y ngspice poppler-utils
       - uses: astral-sh/setup-uv@v6
       - name: Python environment
         run: uv sync --group dev

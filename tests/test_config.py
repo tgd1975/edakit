@@ -59,6 +59,7 @@ def test_example_config_loads(project):
     assert b.net_classes and list(b.net_classes)[-1] == "SIGNAL"
     assert b.file == "hardware/boards/main.toml" and cfg.schematic["stub"] == 10
     assert cfg.sim_config.name == "sim.json" and cfg.sim_plugin is None
+    assert cfg.datasheets == cfg.artifacts / "datasheets"          # edakit part fetch: not versioned by default
 
 
 ONE_FILE = """

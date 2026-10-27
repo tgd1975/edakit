@@ -70,7 +70,9 @@ the graph holds. Blocks (`notes` say "block …") passed the checks once – rev
 ## For the M-1 sign-off
 
 Check every critical part again, independently: pinout and pin names, polarity at the footprint (compare the polarity
-sheet with the datasheet drawing), package, every rating and parameter, especially values marked as assumption. Your
+sheet with the datasheet drawing), package, every rating and parameter, especially values marked as assumption. Read
+the datasheet the sign-off read: `<datasheets>/<key>.pdf` (`edakit part fetch <key>` if it is missing; its sha256
+against `verified.datasheet_sha256`), not a download of your own. Your
 result is the sign-off: say clearly "M-1: OK for state <circuit hash>" or list what must be fixed.
 
 ## Result

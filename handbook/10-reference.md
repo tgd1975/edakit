@@ -37,6 +37,7 @@ board, the schematic or the checks (the earlier one-file form) is refused with a
 | `signoff` | `hardware/signoff.json` | the sign-off file (8.2) |
 | `artifacts` | `build/edakit` | caches, previews, routing files, exports, Gerber exports (not versioned) |
 | `reports` | `build/release` | gate runs |
+| `datasheets` | `<artifacts>/datasheets` | the datasheets `edakit part fetch` keeps, `<key>.pdf` and `<key>.json` (4.6); a folder in the repository versions them |
 
 The name of the ground net is in the graph (`ground`, default `GND`), with the circuit it belongs to; nets that are
 ground on purpose besides it (an analog ground) in `grounds` (3.1, G-16).
@@ -125,6 +126,7 @@ Code: `edakit … 2>&1 | cat`.
 | `edakit block add NAME --as I [--connect PORT=NET …] [--board B] [--file F] [--dry-run]` | – | graph, parts, block | graph (formatting kept), missing parts entries |
 | `edakit part import LCSC [--update]` | – (internet) | EasyEDA's public component data of that number (4.2) | a new `hardware/parts/<LCSC>.json`, else nothing (`--update`: the fields it lacks); `<artifacts>/library/<LCSC>.json`, `<artifacts>/footprints/<footprint>.json`; exit 2 = the entry differs |
 | `edakit part diff OLD NEW [--json F]` | – | geometry of both (the dump of a placed part, else the library footprint of `part import`), their parts entries (roles, `lead`), graph | – (F: the comparison as JSON); exit 0 = drop-in, 2 = something to decide (7.3) |
+| `edakit part fetch KEY [--url U] \| --all` | – (internet) | the parts entry (`mpn`, `datasheet.url`, `lcsc`, `verified.datasheet_sha256`); the sources of 4.6 | `<datasheets>/<KEY>.pdf` and `.json` (a failed download keeps the earlier copy, exit 2; variant or changed since the sign-off: exit 2) |
 | `edakit part datasheet [--connector C …] [--name N]` | – | graph, parts, sim config, board file (4.5) | `hardware/datasheet/<N>.json` and `.md`; without `--connector` every datasheet renewed |
 | `edakit part own PATH [--name N]` | – | the board's project at PATH: its datasheet, state, git, gate runs | `hardware/parts/<N>.json` |
 | `edakit sim [--json F] [--keep DIR]` | – | graph, parts, sim config, plugin | `<artifacts>/sim/net_currents.json` |
@@ -163,6 +165,7 @@ hardware/boards/<name>.toml one board: outline, holes, placement, routing, pours
 hardware/signoff.json       manual checks and accepted warnings, bound to hashes
 docs/decisions.md           numbered decisions (or wherever the project keeps them)
 build/edakit/               artifacts (not versioned): caches, geometry, previews, routing, exports; library/ and
-                            footprints/: the library's symbols and footprints (edakit part import)
+                            footprints/: the library's symbols and footprints (edakit part import); datasheets/:
+                            the datasheets edakit part fetch keeps (unless [project] datasheets names another folder)
 build/release/<run>/        gate runs (archive the released one)
 ```

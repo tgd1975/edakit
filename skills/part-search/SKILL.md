@@ -22,7 +22,9 @@ profile says: `${CLAUDE_PLUGIN_ROOT}/skills/part-search/distributors/<name>.md` 
 `digikey`, `reichelt`). The profile tells how to search there, what loads without a key and what the page states.
 
 - Report stock as a number with the date ("1 902 pcs at LCSC, 2026-10-25"), not as "few".
-- Datasheet from the distributor's part page or the manufacturer; note its revision.
+- Datasheet: `edakit part fetch <key>` once the entry exists (`--url` for one from the manufacturer) – it keeps the
+  PDF beside the project and says whether it is of this part (a warning names a longer variant: MT3608L for
+  MT3608); read that file and note its revision.
 - A part from outside LCSC is hand-soldered (`bom: false`) or goes to another assembler; in EasyEDA it needs a
   footprint – the `easyeda_device` of a part in the same package (handbook 3.1).
 - A part nobody sells is no search: a board of an edakit project comes with `edakit part datasheet` in its project
@@ -61,7 +63,8 @@ profile says: `${CLAUDE_PLUGIN_ROOT}/skills/part-search/distributors/<name>.md` 
   manufacturer's declaration; what nobody states stays out – the reviewer reports it as open, not as fine.
 - Check against the datasheet: pinout, polarity at the footprint (which pad is pin 1 / anode / +), package, every
   rating. Library footprints are sometimes wrong (a "+" printed at the cathode pad) – the polarity sheet of the gate
-  and the second check M-1 exist for that. Then `verified` with by, date, datasheet revision, `checked`, `open`.
+  and the second check M-1 exist for that. Then `verified` with by, date, datasheet revision, `datasheet_sha256`
+  (from `<datasheets>/<key>.json`), `checked`, `open`.
 - Record the choice in the decision log (alternatives and why they were dropped).
 
 Then `edakit check` (P-1, P-6 – the graph's `lcsc`, `part`, `value` and `type` name this entry –, G-9), and the

@@ -64,6 +64,7 @@ edakit doctor                   # tool chain ready?
 edakit block add led --as STATUS --connect in=LED_STATUS   # a building block with checked parts into the graph
 edakit part import C2297        # symbol pins and footprint of an LCSC number from the library – no EasyEDA
 edakit part diff C17179532 C49284748   # before a swap: how the new footprint lies over the old one
+edakit part fetch C2297         # the datasheet PDF, kept with the project and checked to be of that part
 edakit check                    # rule checks on the graph (P, G) – < 1 s, failed checks explained
 edakit hints                    # design hints for the parts in the graph (bulk capacitor, debouncing, ESD …)
 edakit rules G-11               # what a check is about, why, what to do, sources

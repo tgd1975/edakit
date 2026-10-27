@@ -15,10 +15,12 @@ BOM line.
    also finds `C5613331`). `C99…` numbers are user libraries, not orderable. Free text ("led 5mm red") gives mostly
    noise; manufacturer series names work (`XL-304`, `UNI-ROYAL 0805W8F…`). LCSC's own search pages are JavaScript
    only, and its old search endpoint answers 403 – do not work around that.
-3. **Stock, price breaks, RoHS, datasheet** (curl, no key):
+3. **Stock, price breaks, RoHS** (curl, no key):
    `https://wmsc.lcsc.com/ftps/wm/product/detail?productCode=C17414` (JSON), or the part page
    `https://www.lcsc.com/product-detail/C17414.html` with the same data embedded (`stockNumber`, `productPriceList`,
-   `isEnvironment` = RoHS, `pdfUrl`). WebFetch drops stock and prices – use curl.
+   `isEnvironment` = RoHS). WebFetch drops stock and prices – use curl. **The datasheet:** `edakit part fetch <LCSC>`
+   once the entry exists – it tries the entry's `datasheet.url`, this JSON's `pdfUrl` and JLCPCB's `dataManualUrl`,
+   keeps the PDF and says whether it names the part (handbook 4.6). Do not download it by hand.
 4. **Basic or Extended:** `https://jlcpcb.com/partdetail/C17414` (`componentLibraryType` "base" = Basic). Basic parts
    first (no feeder fee), Extended when needed.
 5. JLCPCB's assembly stock differs from LCSC's. The gate asks JLCPCB's public catalogue for every BOM line (F-2); a

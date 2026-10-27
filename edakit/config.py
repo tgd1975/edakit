@@ -41,7 +41,7 @@ PASTE_GAP_MM = 0.4               # [release] assembly paste_gap_mm: SMD pads of 
 MAX_BARE_MM = 5.0                # [copper] max_bare_mm: largest copper-free circle on a poured layer (L-15)
 
 PROJECT_KEYS = ("name", "company", "quantity", "distributors", "lock", "agreements", "graph", "parts", "sim",
-                "sim_plugin", "schematic", "signoff", "artifacts", "reports")
+                "sim_plugin", "schematic", "signoff", "artifacts", "reports", "datasheets")
 BOARD_KEYS = ("title", "template", "schematic", "pcb", "file")            # [boards.<name>] in edakit.toml
 BOARD_FILE_KEYS = ("revision", "view", "outline", "holes", "tooling", "place", "near", "near_mm", "edge_mm", "edge_ok",
                    "on_headers", "header_keep_mm", "silk_overlap_mm", "park", "routing", "pours", "pour_regions",
@@ -144,6 +144,7 @@ class Config:
     signoff: Path
     artifacts: Path
     reports: Path
+    datasheets: Path            # the datasheets edakit part fetch keeps: <datasheets>/<key>.pdf and .json
     company: str
     quantity: int
     boards: dict
@@ -464,6 +465,7 @@ def load(path=None) -> Config:
         signoff=rel("signoff", "hardware/signoff.json"),
         artifacts=rel("artifacts", "build/edakit"),
         reports=rel("reports", "build/release"),
+        datasheets=rel("datasheets", Path(p.get("artifacts", "build/edakit")) / "datasheets"),
         company=p.get("company", ""),
         quantity=int(p.get("quantity", 5)),
         boards=boards,

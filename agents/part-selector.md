@@ -26,7 +26,8 @@ graph, the plan and the documents are the circuit designer's. You do not commit.
    footprint and the symbol's pins from the library, no bridge needed); then as the skill part-search says (section Entry,
    `${CLAUDE_PLUGIN_ROOT}/skills/part-search/SKILL.md`) – the file named by the LCSC number or, from another
    distributor, by the manufacturer part number; `order` with the order numbers outside LCSC; `compliance` from the
-   page or the manufacturer's declaration; `verified` with you as `by`, the datasheet revision, what you checked and
+   page or the manufacturer's declaration; the datasheet with `edakit part fetch <key>` (read the kept PDF, mind a
+   variant warning); `verified` with you as `by`, the datasheet revision and `datasheet_sha256`, what you checked and
    what is open.
 
 ## Result

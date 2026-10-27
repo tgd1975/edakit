@@ -17,7 +17,7 @@ Examples: [the Christmas bell's parts](https://github.com/tgd1975/automatic_chri
 | `kind` | `resistor`, `capacitor`, `inductor`, `fuse`, `diode`, `led`, `led_rgb`, `npn`, `pnp`, `pmos`, `nmos`, `switch`, `dip_switch`, `button`, `potentiometer`, `battery_holder`, `buzzer`, `relay`, `connector`, `ic`, `module` |
 | `package`, `footprint` | the footprint name must equal the EasyEDA footprint (L-4 compares it with the PCB) |
 | `jlc_class` | Basic / Extended Part |
-| `datasheet` | `url`, `pinout_page` |
+| `datasheet` | `url`, `pinout_page`; `edakit part fetch` keeps the PDF beside the project, not in the entry (4.3) |
 | `pins` | pin number → `name` (as in the EasyEDA symbol and identical to the graph – S-2 compares them), `type`, `role` (the meaning; for polarised parts it follows the footprint's polarity print when symbol and footprint disagree), `vmax`; from the datasheet where it applies: `strap` (`"high"`/`"low"`: level the pin needs at reset, G-12), `pull` (`"up"`/`"down"`: internal or built-in pull resistor, with `pull_ohm` if known – G-11, G-12), `hint` (a warning from the datasheet, e.g. "ADC2: no analog reads while WiFi is on"); on MCU and module pins `functions` – what the pin-mux table offers, `<peripheral><instance>.<line>`: `["spi0.sck", "uart0.cts", "i2c1.sda", "pwm1.a", "uart0.tx"]`, `adc0`; for PWM the instance is the slice and the line the channel; `[]` = no free function (used on the module), no key = unknown (G-15); from the recommended operating conditions: `v_op` (`[min, max]` of a supply pin that differs from the part's `vdd_op_min`/`vdd_op_max`) and the thresholds of one input pin, `vih_v` or `vih_ratio`, `vil_v` or `vil_ratio`, where they differ from the part's (E-3); on a serial output (SDO, Q7) of a clocked part: `out_edge` (`"rising"`/`"falling"`: the clock edge after which it changes) and `t_pd_ns` (`[min, max]` clock-to-output delay at the part's supply, `null` where the datasheet gives none) – `edakit hints` shows them with H-9 |
 | `hints` | warnings of the datasheet for the part as a whole; `edakit hints` shows them and the pin `hint`s of connected pins |
 | `hot_loop` | switching regulators: the pin roles of the loop that carries the pulsed current, from the datasheet's layout section – a buck `["vin", "sw", "gnd"]`, an asynchronous boost `["sw", "gnd"]`; a ground pin without a role is `gnd`. G-18 wants a `layout.loops` entry on each of their nets and on the net behind a diode on `sw` |
@@ -29,7 +29,7 @@ Examples: [the Christmas bell's parts](https://github.com/tgd1975/automatic_chri
 | `pad_map` | only when pad numbers are deliberately swapped on the placed part: `{PCB pad: library pad}` – check L-10 |
 | `sources` | where every value comes from; "assumption …" marks what must be checked with extra care |
 | `compliance` | for the regulatory review (M-6, chapter 15): `rohs` (true, false or the exemption), `reach` (the supplier's SVHC statement), `radio` for a part that transmits (`bands_mhz` [[from, to]], `max_dbm`, `doc` = URL of the EU declaration of conformity), `source` (page and date) |
-| `verified` | `null` or the sign-off: `by`, `date`, `datasheet` (revision), `checked` (list), `open` (list), optional `second_check` (the independent M-1 review) |
+| `verified` | `null` or the sign-off: `by`, `date`, `datasheet` (revision), `checked` (list), `open` (list), optional `datasheet_sha256` (the file signed against, as `edakit part fetch` recorded it), optional `second_check` (the independent M-1 review) |
 | `own` | a part nobody sells (4.5): `what` – `pcb` (a board of an edakit project), `bin` (from your stock, no longer to be had), `handmade`; for `pcb` its source: `project`, `connectors`, `state_sha256` (the board's circuit hash), and in the copy `path`, `commit`, `repo`, `released` – P-3 compares them |
 
 **Pin types** (`type`): `passive`, `input`, `output`, `bidirectional`, `power_in`, `power_output`, `ground`, `analog`,
@@ -143,7 +143,8 @@ At LCSC and JLCPCB:
 
 ## 4.3 Signing off a part
 
-1. Open the datasheet (`datasheet.url`), note its revision.
+1. `edakit part fetch <key>` and read `<datasheets>/<key>.pdf` (4.6); note its revision, and its `sha256` from
+   `<key>.json` as `verified.datasheet_sha256`.
 2. Check pinout and pin names, **polarity at the footprint** (which pad is pin 1, anode, +), package, every value in
    `params` and `ratings`, especially the ones marked as assumption.
 3. Correct the file, extend `sources`.
@@ -229,3 +230,36 @@ the datasheet. The skill `own-part` asks for pins, supply range and current once
 writes the entry with `own: {"what": "pcb" | "bin" | "handmade", "notes": …}`: every value with its source ("measured
 2026-11-02, multimeter …, all LEDs on: 182 mA"), what is guessed as "assumption …", and the sign-off against those
 notes. The checks treat it like the copy of an edakit board; P-3 has nothing to compare it with.
+
+## 4.6 Datasheets kept with the project
+
+`edakit part fetch <key>` downloads the datasheet of a parts entry once and keeps it – every later reader, the
+sign-off, the second check M-1, a review, reads the same file. `edakit part fetch --all` fetches every entry that has
+none yet. The sources, in this order:
+
+1. `--url URL`
+2. the entry's `datasheet.url`
+3. for an LCSC number, `pdfUrl` of LCSC's product data (`https://wmsc.lcsc.com/ftps/wm/product/detail?productCode=…`)
+4. `dataManualUrl` of exactly that number in JLCPCB's catalogue (the endpoint of F-2)
+
+An HTML page is searched once for a link to a PDF (the viewer of an `item.szlcsc.com` page, the download of a JLCPCB
+part page). Only a complete PDF counts – it starts with `%PDF` and has its `%%EOF` in the last 64 kB (some tools
+append metadata after it). A refused request, an HTML page, a download that broke off or an expired signed link is
+reported with its reason, and an earlier copy stays as it is ("kept the copy of 2026-10-27", exit 2).
+
+The copy goes to `<datasheets>/<key>.pdf` (`[project] datasheets`, default `<artifacts>/datasheets`: not versioned; a
+folder in the repository keeps them with the project) and its record to `<key>.json`: `url` (the source's address),
+`pdf_url` (the link a page led to), `source`, `sha256`, `fetched`, `bytes`, `pages`, `text` and `names_mpn`. The
+parts entry is not touched – a change there renews the circuit hash and lapses the sign-offs (4.3). A sign-off
+records the hash it read as `verified.datasheet_sha256`; a new download with another hash is a warning, "changed
+since the sign-off".
+
+With `pdftotext` (poppler-utils) on PATH the text is checked; `edakit doctor` says whether it is there:
+
+| The text | Result |
+|---|---|
+| names the `mpn` as a whole word (case ignored) | ok, `names_mpn: "yes"` |
+| does not name it | note, `"no"` – some vendors never print it (the KT-0805G sheet says only "0805"); compare package, drawing and values |
+| names it only inside a longer part number | warning, the variant: `"MT3608L"` for MT3608 – a sheet of another part (pin 6 OC instead of NC) |
+| has no text layer (fewer than 20 characters a page) | note, `text: false`: scanned, read the drawings as images (`pdftoppm -r 300 -png`) |
+| no pdftotext | note, `text: null` – nothing checked |

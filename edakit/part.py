@@ -1,4 +1,5 @@
-"""Parts: what the library says about an LCSC number, how a new footprint maps onto the old one, and own parts.
+"""Parts: what the library says about an LCSC number, how a new footprint maps onto the old one, datasheets, and own
+parts.
 
     edakit part import C2297 [--update]
                                 symbol pins, footprint and identification of exactly that LCSC number from the
@@ -9,6 +10,14 @@
                                 before a swap: the turn and shift that lay NEW's pads over OLD's (and whether the
                                 mirror image fits), the pad map by position, roles, pitch, holes and box that change,
                                 the graph change it implies; exit 0 = drop-in, 2 = something to decide
+    edakit part fetch KEY [--url URL] | --all
+                                the datasheet PDF of a parts entry, kept as <datasheets>/<KEY>.pdf with <KEY>.json (url,
+                                sha256, date, pages, text layer, whether it names the mpn). Sources in this order:
+                                --url, the entry's datasheet.url, LCSC's product data (pdfUrl), JLCPCB's catalogue
+                                (dataManualUrl); an HTML page is searched once for a link to a PDF. Only a complete PDF
+                                counts – anything else keeps the earlier copy (exit 2). --all: every entry without one.
+                                The entry is not touched (a change would lapse its sign-off); verified.datasheet_sha256
+                                of a sign-off says which file was signed
 
 The library geometry has the units and axes of `edakit pcb dump` (mil, y up, relative to the part origin at 0° on
 TOP); a pad with a hole adds `hole` [w, l] in mm and `plated`, every pad its shape, size `w` × `h` (mil) and `rot`.
@@ -44,13 +53,16 @@ P-3 compares the copy with its source and a project's datasheets with its state 
 from __future__ import annotations
 
 import datetime
+import hashlib
 import json
 import os
 import re
+import shutil
 import subprocess
 import sys
 import urllib.error
 import urllib.request
+from collections import Counter
 from pathlib import Path
 
 from . import checks, config
@@ -627,6 +639,270 @@ def main_import(cfg, args):
     return 2 if diffs else 0
 
 
+# --- the datasheet of a part (part fetch) ----------------------------------------------------------------------------
+
+LCSC_PRODUCT = "https://wmsc.lcsc.com/ftps/wm/product/detail?productCode={lcsc}"   # LCSC's product data: pdfUrl
+BROWSER = "Mozilla/5.0 (compatible; edakit)"     # datasheet hosts answer a browser, some refuse anything else
+SCAN_CHARS = 20       # fewer characters (blanks not counted) per page than this: no text layer, a scan
+EOF_TAIL = 64 * 1024  # a complete PDF has its %%EOF this close to its end (some tools append metadata after it)
+PDF_LINK = re.compile(r"""(?:href|src)\s*=\s*["']([^"']+?\.pdf(?:[?#][^"']*)?)["']""", re.I)
+
+
+def today():
+    return datetime.date.today().isoformat()
+
+
+def _download(url):
+    """The one network access of part fetch for a URL: the answer's bytes (the tests answer from recordings)."""
+    req = urllib.request.Request(url, headers={"User-Agent": BROWSER})
+    with urllib.request.urlopen(req, timeout=60) as r:
+        return r.read()
+
+
+def catalogue_search(keyword, page_size=25):
+    """JLCPCB's public parts catalogue, the endpoint F-2 asks (release/fab.py, no login; only the keyword leaves the
+    machine): the hits of a full-text search as the catalogue gives them. Network errors and a changed answer raise.
+    The one place part fetch and part search reach the catalogue."""
+    from .release.fab import JLC_SEARCH
+    req = urllib.request.Request(JLC_SEARCH, headers={"Content-Type": "application/json", "User-Agent": "Mozilla/5.0"},
+                                 data=json.dumps({"keyword": keyword, "currentPage": 1, "pageSize": page_size}).encode())
+    with urllib.request.urlopen(req, timeout=30) as resp:
+        return json.load(resp)["data"]["componentPageInfo"]["list"] or []
+
+
+def datasheet_files(cfg, key):
+    """(<datasheets>/<key>.pdf, <datasheets>/<key>.json)."""
+    stem = cfg.datasheets / file_name(key)
+    return stem.with_suffix(".pdf"), stem.with_suffix(".json")
+
+
+def is_html(data):
+    head = data[:1024].lstrip().lower()
+    return head.startswith((b"<!doctype", b"<html", b"<?xml")) or b"<html" in head
+
+
+def pdf_link(data, base):
+    """The first link to a PDF in an href or src of an HTML page (an embedded viewer comes first), absolute, without
+    its #fragment."""
+    import html
+    import urllib.parse
+    m = PDF_LINK.search(data.decode("utf-8", "replace"))
+    return urllib.parse.urldefrag(urllib.parse.urljoin(base, html.unescape(m.group(1))))[0] if m else None
+
+
+def get_pdf(url, follow=True):
+    """(bytes, url) of a complete PDF at the URL; an HTML page is searched once for a link to one. Anything else
+    raises PartError with what came back."""
+    import http.client
+    try:
+        data = _download(url)
+    except urllib.error.HTTPError as e:
+        raise PartError(f"HTTP {e.code}") from None
+    except (OSError, ValueError, http.client.HTTPException) as e:
+        raise PartError(f"no answer ({e})") from None
+    if data.startswith(b"%PDF"):
+        eof = data.rfind(b"%%EOF")
+        if eof < 0 or len(data) - eof > EOF_TAIL:
+            raise PartError(f"an incomplete PDF ({len(data)} bytes, no %%EOF in its last {EOF_TAIL // 1024} kB)")
+        return data, url
+    if not is_html(data):
+        raise PartError(f"not a PDF ({len(data)} bytes, starting {data[:12]!r})")
+    if not follow:
+        raise PartError(f"an HTML page ({len(data)} bytes)")
+    link = pdf_link(data, url)
+    if not link:
+        raise PartError(f"an HTML page ({len(data)} bytes) without a link to a PDF")
+    try:
+        return get_pdf(link, follow=False)
+    except PartError as e:
+        raise PartError(f"an HTML page whose PDF link {link} gave {e}") from None
+
+
+def lcsc_pdf_url(lcsc):
+    """pdfUrl of LCSC's product data of the number."""
+    try:
+        data = json.loads(_download(LCSC_PRODUCT.format(lcsc=lcsc)))
+    except urllib.error.HTTPError as e:
+        raise PartError(f"HTTP {e.code}") from None
+    except (OSError, ValueError) as e:
+        raise PartError(f"no answer ({e})") from None
+    url = (data.get("result") or {}).get("pdfUrl")
+    if not url:
+        raise PartError("no pdfUrl")
+    return url
+
+
+def jlc_manual_url(lcsc):
+    """dataManualUrl of exactly that number in JLCPCB's catalogue."""
+    try:
+        hit = next((c for c in catalogue_search(lcsc) if c.get("componentCode") == lcsc), None)
+    except Exception as e:  # network, changed API
+        raise PartError(f"no answer ({str(e)[:200]})") from None
+    if not hit:
+        raise PartError("not listed")
+    if not hit.get("dataManualUrl"):
+        raise PartError("no dataManualUrl")
+    return hit["dataManualUrl"]
+
+
+def short(url):
+    """A URL for a message: a long query string (a signed link that expires anyway) cut off."""
+    base, _, query = url.partition("?")
+    return url if len(query) <= 60 else f"{base}?…"
+
+
+def datasheet_sources(key, entry, url=None):
+    """[(name, URL or a function that finds one)] in the order part fetch tries them."""
+    out = [("--url", url)] if url else []
+    if (entry.get("datasheet") or {}).get("url"):
+        out.append(("datasheet.url", entry["datasheet"]["url"]))
+    lcsc = entry.get("lcsc") or (key if re.fullmatch(r"C\d+", key) else None)
+    if lcsc and re.fullmatch(r"C\d+", lcsc) and not lcsc.startswith("C99"):
+        out += [("LCSC product data", lambda: lcsc_pdf_url(lcsc)), ("JLCPCB catalogue", lambda: jlc_manual_url(lcsc))]
+    return out
+
+
+def pdf_text(path):
+    """The text of a PDF by pdftotext (one form feed ends each page), or None without pdftotext on PATH."""
+    exe = shutil.which("pdftotext")
+    if not exe:
+        return None
+    try:
+        r = subprocess.run([exe, "-enc", "UTF-8", str(path), "-"], capture_output=True, timeout=120)
+    except (OSError, subprocess.TimeoutExpired):
+        return None
+    return r.stdout.decode("utf-8", "replace") if r.returncode == 0 else None
+
+
+def count_pages(data):
+    """Pages of a PDF from its page objects – None where they sit in compressed object streams."""
+    n = len(re.findall(rb"/Type\s*/Page(?![A-Za-z])", data))
+    return n or None
+
+
+def names_mpn(text, mpn):
+    """'yes' when the text names the mpn as a whole word (case ignored), the longer part number it names when it
+    names the mpn only inside one (MT3608L for MT3608), else 'no'."""
+    if re.search(r"(?<![A-Za-z0-9])" + re.escape(mpn) + r"(?![A-Za-z0-9])", text, re.I):
+        return "yes"
+    longer = [t for t in re.findall(r"[A-Za-z0-9]*" + re.escape(mpn) + r"[A-Za-z0-9]*", text, re.I)
+              if t.upper() != mpn.upper()]
+    return Counter(longer).most_common(1)[0][0] if longer else "no"
+
+
+def fetch(cfg, key, url=None):
+    """Fetch the datasheet of a parts entry and keep it: {key, mpn, file, record, tried [(source, url, outcome)],
+    kept (the earlier record when every source failed), findings [(level, text)]}. A download counts only as a
+    complete PDF; anything else leaves the kept copy as it is. The record: url (the source's address), pdf_url (the
+    link a page led to, if it did), source, sha256, fetched, bytes, pages, text (a text layer; None without
+    pdftotext), names_mpn ('yes', 'no', the longer variant named; None unchecked). The parts entry is never touched
+    – a change there would lapse its sign-offs (handbook 4.3)."""
+    d = Design.from_config(cfg)
+    entry = d.parts.get(key)
+    if entry is None:
+        raise PartError(f"no parts entry {key} in {cfg.relative(cfg.parts)} – edakit part import {key} for an LCSC "
+                        "number")
+    pdf, rec_file = datasheet_files(cfg, key)
+    before = _read(rec_file) if pdf.is_file() else None
+    mpn = str(entry.get("mpn") or key)
+    out = {"key": key, "mpn": mpn, "file": pdf, "record": None, "tried": [], "kept": None, "findings": []}
+    sources = datasheet_sources(key, entry, url)
+    if not sources:
+        raise PartError(f"{key}: no source – no datasheet.url in the entry and no LCSC number; name one with --url")
+    data = None
+    for name, where in sources:
+        try:
+            where = where() if callable(where) else where
+            data, got = get_pdf(where)
+        except PartError as e:
+            out["tried"].append((name, where if isinstance(where, str) else "", str(e)))
+            continue
+        out["tried"].append((name, where, "PDF" if got == where else f"PDF behind the page's link {short(got)}"))
+        break
+    if data is None:
+        out["kept"] = before
+        return out
+    pdf.parent.mkdir(parents=True, exist_ok=True)
+    tmp = pdf.with_suffix(".part")
+    tmp.write_bytes(data)
+    text = pdf_text(tmp)
+    sha = hashlib.sha256(data).hexdigest()
+    pages = (text.count("\f") or None) if text is not None else count_pages(data)
+    layer = None if text is None else len("".join(text.split())) >= SCAN_CHARS * (pages or 1)
+    rec = {"key": key, "mpn": mpn, "url": where, **({"pdf_url": got} if got != where else {}), "source": name,
+           "sha256": sha, "fetched": today(), "bytes": len(data), "pages": pages, "text": layer,
+           "names_mpn": names_mpn(text, mpn) if layer else None}
+    tmp.replace(pdf)
+    rec_file.write_text(json.dumps(rec, indent=1, ensure_ascii=False) + "\n", encoding="utf-8")
+    out["record"] = rec
+    f = out["findings"]
+    if before and before.get("sha256") != sha:
+        f.append(("info", f"replaces the copy of {before.get('fetched')} (sha256 {str(before.get('sha256'))[:12]}…)"))
+    signed = (entry.get("verified") or {}).get("datasheet_sha256")
+    if signed and signed == sha:
+        f.append(("info", "the signed file (verified.datasheet_sha256)"))
+    elif signed:
+        f.append(("warning", f"changed since the sign-off: verified.datasheet_sha256 {signed[:12]}…, this file "
+                             f"{sha[:12]}… – read it and renew the sign-off (handbook 4.3)"))
+    if text is None:
+        f.append(("note", "pdftotext not on PATH: the text is not checked (poppler-utils; edakit doctor)"))
+    elif not layer:
+        f.append(("note", "no text layer: scanned, read the drawings as images (pdftoppm -r 300 -png)"))
+    elif rec["names_mpn"] == "no":
+        f.append(("note", f"the text does not name {mpn} – some vendors never print it; compare package, drawing "
+                          "and values with the entry"))
+    elif rec["names_mpn"] != "yes":
+        f.append(("warning", f"the text names {rec['names_mpn']}, not {mpn} – a sheet of a variant? Compare pinout "
+                             "and ratings, or fetch another with --url"))
+    return out
+
+
+def main_fetch(cfg, args):
+    if args.all and args.url:
+        raise PartError("--url names the datasheet of one part, not of --all")
+    if args.all:
+        keys = sorted(Design.from_config(cfg).parts)
+    elif args.source:
+        keys = [args.source]
+    else:
+        raise PartError("which part? edakit part fetch C2297 [--url URL], or --all")
+    worst = 0
+    for key in keys:
+        pdf, rec_file = datasheet_files(cfg, key)
+        if args.all and pdf.is_file() and (rec := _read(rec_file)):
+            print(f"{key}: kept, fetched {rec.get('fetched')}")
+            continue
+        try:
+            r = fetch(cfg, key, args.url)
+        except PartError as e:
+            if not args.all:
+                raise
+            print(f"{key}: {e}")
+            continue
+        print(f"{key} {r['mpn']}")
+        for name, where, outcome in r["tried"]:
+            print("  " + " ".join(x for x in (name, where) if x) + f": {outcome}")
+        if r["record"] is None:
+            if r["kept"]:
+                print(f"  kept the copy of {r['kept'].get('fetched')} – every source failed: {cfg.relative(pdf)}")
+                worst = max(worst, 2)
+            else:
+                print("  no datasheet: every source failed – name one with --url")
+                worst = max(worst, 2 if args.all else 1)
+            continue
+        rec = r["record"]
+        print(f"  {cfg.relative(pdf)}: {rec['bytes'] / 1024:.0f} kB, "
+              + (f"{rec['pages']} pages, " if rec["pages"] else "")
+              + {True: "text layer", False: "no text layer", None: "text not checked"}[rec["text"]]
+              + (f", names {r['mpn']}" if rec["names_mpn"] == "yes" else "")
+              + f", sha256 {rec['sha256'][:12]}…")
+        for level, text in r["findings"]:
+            print(f"  {'' if level == 'info' else f'{level.upper():<7} '}{text}")
+            if level == "warning":
+                worst = max(worst, 2)
+    return worst
+
+
 # --- how a new footprint maps onto the old one (part diff) ---------------------------------------------------------
 
 TURNS = {0: (1, 0), 90: (0, 1), 180: (-1, 0), 270: (0, -1)}   # cos, sin
@@ -943,6 +1219,8 @@ def main(cfg, args):
             return main_import(cfg, args)
         if args.action == "diff":
             return main_diff(cfg, args)
+        if args.action == "fetch":
+            return main_fetch(cfg, args)
         if args.action == "datasheet":
             if args.connector:
                 done = [write_datasheet(cfg, args.connector, args.name)[0]]
