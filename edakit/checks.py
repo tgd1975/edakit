@@ -24,7 +24,9 @@
   G-13 flyback diode across inductive loads (relay coil, buzzer with coil_ohm) that a transistor or an output
        switches: cathode at the positive terminal
   G-14 USB-C sink: CC1 and CC2 of a receptacle (role cc1/cc2) each with its own 5.1 kOhm ± 10 % to ground, unless
-       an IC (a Type-C controller) is on the CC lines
+       an IC (a Type-C controller) is on the CC lines; a module or breakout states the termination of its receptacle
+       in params.usb_c: rd_5k1 or controller passes, none has its CC pins checked like a receptacle's and fails
+       without them
   G-15 pin functions: a net's "fn" (pwm, adc, spi.sck, i2c.sda, uart.tx, …) is on a pin whose parts entry lists it
        in "functions", the nets of one "fn_bus" on one peripheral instance, PWM nets of one slice with one fixed
        "pwm_hz" and a channel each; a pin without "functions" is a note
@@ -70,6 +72,7 @@ PURPOSES = ("private", "gift", "sale")                 # purpose.use of the grap
 CHECK_KEYS = ("pin_locks", "reverse_protect", "doc_pin_table")   # checks of the graph
 I2C_SINK_A, I2C_VOL, I2C_R_MAX = 0.003, 0.4, 10e3    # UM10204 7.1: Rp(min) = (V - VOL) / 3 mA; 10 k for 100 kHz
 USB_RD, USB_RD_TOL = 5100, 0.10                      # USB Type-C sink termination Rd
+USB_C_CC = ("rd_5k1", "controller", "none")          # params.usb_c.cc: how a module or breakout terminates its CC lines
 COILS = {"relay": ("coil_plus", "coil_minus"), "buzzer": ("plus", "minus")}   # inductive kinds: their coil roles
 FN_LINES = {"pwm": (), "adc": (), "spi": ("sck", "tx", "rx", "cs"), "i2c": ("sda", "scl"), "uart": ("tx", "rx")}
 FN_NAMES = [k + (f".{line}" if line else "") for k, lines in FN_LINES.items() for line in lines or [""]]   # net fn
@@ -473,14 +476,32 @@ def cc_lines(d, des):
 
 
 def check_usb_c(d, rep):
-    for des in d.comps_of_kind("connector"):
-        cc = cc_lines(d, des)
-        if set(cc) != {"cc1", "cc2"}:
+    """G-14 on the receptacles the graph shows with their CC pins, and on the ones a parts entry states (usb_c): a
+    module or breakout that terminates its own receptacle passes, one without termination is checked through its CC
+    pins, or fails when they are no pins of the graph."""
+    for des in d.comps:
+        part = d.part(des)
+        if not part:
+            continue
+        cc, usb, waive = cc_lines(d, des), (part.get("params") or {}).get("usb_c"), d.comps[des].get("waive")
+        if usb is not None:
+            state = usb.get("cc") if isinstance(usb, dict) else None
+            if state not in USB_C_CC:
+                rep.error("G-14", f"{des}: params.usb_c of {d.entry_key(des)} needs cc {', '.join(USB_C_CC[:-1])} or "
+                                  f"{USB_C_CC[-1]}, not {state!r}")
+                continue
+            if state != "none":
+                continue  # the board terminates its receptacle itself: Rd on it, or a Type-C or PD controller
+            if set(cc) != {"cc1", "cc2"}:
+                rep.error("G-14", f"{des}: USB-C receptacle without CC termination (params.usb_c of "
+                                  f"{d.entry_key(des)}: cc none) and its CC lines are no pins of the graph – a USB-C "
+                                  f"source switches VBUS on only with {ohm(USB_RD)} to {d.ground} on each CC pin", waive)
+                continue
+        elif part.get("kind") != "connector" or set(cc) != {"cc1", "cc2"}:
             continue
         if any(d.pin_info(r).get("type") not in (None, "passive") for n in cc.values() if n
                for r in d.nets[n]["pins"] if not r.startswith(f"{des}.")):
             continue  # a Type-C or PD controller drives the CC lines
-        waive = d.comps[des].get("waive")
         if cc["cc1"] and cc["cc1"] == cc["cc2"]:
             rep.error("G-14", f"{des}: CC1 and CC2 on one net {cc['cc1']} – each needs its own {ohm(USB_RD)} to "
                               f"{d.ground}", waive)

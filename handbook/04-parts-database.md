@@ -57,7 +57,7 @@ in `sources` – any RP2350 module takes the same list per GPIO. On the RP2040 a
 | battery_holder | `plus`, `minus` (several cells: `plus_a`, `minus_a`, …) |
 | buzzer | `plus`, `minus` |
 | relay | `coil_plus`, `coil_minus`, `common`, `no`, `nc` |
-| connector | free (`pin1`, …); `vbus`/`gnd` for a supply input; `cc1`, `cc2` on a USB-C receptacle (G-14) |
+| connector | free (`pin1`, …); `vbus`/`gnd` for a supply input; `cc1`, `cc2` on a USB-C receptacle (G-14; a module or breakout without these roles: `params.usb_c`) |
 | ic, module | as the behaviour model needs them: `vin`, `vout`, `gnd`, `vsys`, `3v3`, `gpio`, `rext`, `out`, `oe_n`, `vdd`; `sda`, `scl` for I2C pins (G-11) |
 
 **Ratings** per kind (what the checks read): resistor `p_max_w`, `v_max`; capacitor `v_max`; diode `if_avg_a`, `vrrm`;
@@ -74,7 +74,10 @@ own simulation (4.5, E-3).
 resistance from the datasheet, simulated instead of 0 Ω; 50 mΩ without it); capacitor `value_f`; inductor `value_h`,
 `dcr_ohm`; LED `vf_typ`, `vf_min`, `vf_max`, `vf_at_a`, `rs_ohm` (RGB: one set per colour, under `red`, `green`,
 `blue`); switch/button `r_on_ohm`; buzzer `coil_ohm` (a magnetic buzzer; it is a coil for G-13); relay `coil_ohm`,
-`v_operate`, `v_release` (must-operate and must-release voltage), `r_contact_ohm`; ICs see chapter 5.
+`v_operate`, `v_release` (must-operate and must-release voltage), `r_contact_ohm`; a module or breakout with a USB-C
+receptacle `usb_c`: `{"cc": "rd_5k1" | "controller" | "none", "source": "…"}` – how the board terminates its
+CC lines, from its schematic (G-14; the RP2350-Zero has 5.1 kΩ on CC1 and CC2, the breakout Soldered 333011 has
+none); ICs see chapter 5.
 
 The block library (`edakit/blocks/parts/`) holds checked entries of the parts the building blocks use – resistors,
 LEDs, the SS14/SS34 diodes, S8050, AO3401A, a USB-C receptacle, a polyfuse, buttons, a JST connector – to copy from.
@@ -185,6 +188,22 @@ only in that range; give its own `sim.json` more if the host needs more. P-3 com
 Not covered: the board's logic levels and timing – its signal pins are typed, not simulated. A board on a cable is no
 part of the host's PCB: it goes into the same project as a second board (`cables`, 3.1), or the host's connector gets
 its current as an `external` load (5.1).
+
+**Bought boards** – an MCU module, a sensor board, a USB-C breakout – are parts with an entry like any other (kind
+`module`, or `connector` for a breakout that only passes lines on), written from the seller's schematic, with
+`"bom": false` when JLCPCB does not assemble them. Plugged or soldered onto the board (pin headers, castellated pads)
+they are components of that board: the footprint is the header or pad row, the pins are the ones the board brings
+out. A USB-C receptacle on such a board is checked by G-14 in one of two ways:
+
+- its CC eyes as pins of the entry – a `connector` with the roles `cc1`, `cc2`, or a `module` whose entry says
+  `params.usb_c` `{"cc": "none"}`: G-14 wants the two 5.1 kΩ on those pins, as parts of the graph;
+- its receptacle inside the board, CC lines no pins of the entry (an MCU module with USB-C on board): `params.usb_c`
+  says what the board has – `rd_5k1` and `controller` pass, `none` fails.
+
+A bought board on a cable – a breakout in an enclosure wired to the board's power connector – has no place in the
+graph yet: every board of `[boards]` is one edakit makes, with schematic, PCB and manufacturing files in the gate.
+Its supply goes into sim.json as the source at your connector (5.1), and its CC termination is a question for the
+electrical review (M-1) until it is.
 
 **Without an edakit project** – a perfboard, an older board, a part from the bin, something made by hand – the user is
 the datasheet. The skill `own-part` asks for pins, supply range and current once, has what nobody knows measured, and

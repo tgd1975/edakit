@@ -119,12 +119,14 @@
   },
   "G-14": {
    "title": "USB-C sink termination",
-   "rule": "A USB-C receptacle used as a power sink without a USB-C controller has its own 5.1 kΩ (±10 %) resistor from CC1 to ground and from CC2 to ground.",
-   "why": "A USB-C source switches VBUS on only when it sees the sink's pull-down Rd on a CC line. Without it a charger with a C-to-C cable delivers nothing, while C-to-A cables still work and hide the fault. With CC1 and CC2 on one resistor, an electronically marked cable adds its Ra in parallel and the source sees an audio accessory instead of a sink.",
-   "fix": "Two resistors, one per CC pin, 5.1 kΩ to ground (block usb-c-sink). With a Type-C or PD controller on the CC lines this check stays silent.",
+   "rule": "A USB-C receptacle used as a power sink without a USB-C controller has its own 5.1 kΩ (±10 %) resistor from CC1 to ground and from CC2 to ground. A receptacle on a module or breakout states its termination in the parts entry (params.usb_c.cc: rd_5k1, controller or none); with none its CC pins need the two resistors, and without CC pins in the graph it fails.",
+   "why": "A USB-C source switches VBUS on only when it sees the sink's pull-down Rd on a CC line. Without it a charger with a C-to-C cable delivers nothing, while C-to-A cables still work and hide the fault. With CC1 and CC2 on one resistor, an electronically marked cable adds its Ra in parallel and the source sees an audio accessory instead of a sink. A bought board brings its receptacle along – an MCU module with USB-C, a USB-C breakout – and such boards are sold with and without the two resistors; their CC lines are often no pins of the graph at all.",
+   "fix": "Two resistors, one per CC pin, 5.1 kΩ to ground (block usb-c-sink). With a Type-C or PD controller on the CC lines this check stays silent. A module or breakout gets params.usb_c {\"cc\": \"rd_5k1\" | \"controller\" | \"none\", \"source\": \"…\"} from its schematic: with none, the two resistors on its CC pins (on the host board or soldered onto the breakout), or a board that has them; a receptacle never used with a USB-C source gets waive {\"G-14\": reason} on the part.",
    "sources": [
     "Richtek AN064, USB Type-C/PD Brief Introduction and Analysis (2021): a sink asserts Rd on the CC pins – https://www.richtek.com/~/media/AN%20PDF/AN064_EN.pdf",
-    "USB Type-C Cable and Connector Specification (USB-IF): sink termination Rd = 5.1 kΩ"
+    "USB Type-C Cable and Connector Specification (USB-IF): sink termination Rd = 5.1 kΩ",
+    "Waveshare RP2350-Zero schematic (RP2350_Zero.pdf, read 2026-10-27): R1 5.1 kΩ from CC1 (A5) and R3 5.1 kΩ from CC2 (B5) to GND on the module – https://files.waveshare.com/wiki/RP2350-Zero/RP2350_Zero.pdf",
+    "Lesson of the reference project (pytree E-18, 2026-10-25): the bought USB-C breakout Soldered 333011 has CC1 and CC2 on solder eyes and no resistors; found after the order list was written, by no check – the breakout was not in the graph"
    ]
   },
   "G-15": {

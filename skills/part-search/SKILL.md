@@ -38,9 +38,10 @@ profile says: `${CLAUDE_PLUGIN_ROOT}/skills/part-search/distributors/<name>.md` 
   "assumption"). The block library (`edakit/blocks/parts/` of the plugin) has checked entries to copy from.
 - What the checks read from the datasheet besides the limits: input-only pins `type: input`; strapping pins `"strap":
   "high"|"low"` with the internal `"pull"` at reset (G-12); built-in pull resistors `"pull": "up"`, `"pull_ohm"` (I2C
-  modules, G-11); roles `sda`/`scl` (G-11) and `cc1`/`cc2` on a USB-C receptacle (G-14); MCU output current
-  `gpio_i_max_a` per pin and `gpio_i_total_max_a` for all together (E-2); MCU pin `functions` from the pin-mux table
-  (`["spi0.sck", "i2c1.sda", "pwm1.a", "adc0"]`, `[]` for a pin used on the module – G-15, handbook 4.1); a fuse's
+  modules, G-11); roles `sda`/`scl` (G-11) and `cc1`/`cc2` on a USB-C receptacle (G-14), and for a module or
+  breakout with USB-C `params.usb_c` `{"cc": "rd_5k1" | "controller" | "none"}` from its schematic (G-14); MCU output
+  current `gpio_i_max_a` per pin and `gpio_i_total_max_a` for all together (E-2); MCU pin `functions` from the pin-mux
+  table (`["spi0.sck", "i2c1.sda", "pwm1.a", "adc0"]`, `[]` for a pin used on the module – G-15, handbook 4.1); a fuse's
   `i_hold_a`, `i_trip_a` and its derating table `i_hold_vs_temp`, and the `i_max_a` of a connector or switch as a whole
   – every contact of the current path counted (G-17); a 0 Ω jumper `value_ohm: 0` with its maximum resistance
   `r_max_ohm` (it joins its nets, handbook 3.3); a pin `hint` or part `hints` for what the datasheet warns about (shown

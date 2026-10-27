@@ -357,6 +357,91 @@ def test_g14_silent_with_a_controller(project):
     assert "G-14" not in ids(run(project))
 
 
+# a bought USB-C breakout (the reference project's Soldered 333011): eight solder eyes, no CC resistors on it
+BREAKOUT = {"mpn": "333011", "manufacturer": "Soldered", "kind": "module", "verified": {"by": "test"},
+            "pins": {"1": {"name": "GND", "type": "ground"}, "2": {"name": "CC2", "type": "passive"},
+                     "3": {"name": "SBU2", "type": "passive"}, "4": {"name": "D-", "type": "passive"},
+                     "5": {"name": "D+", "type": "passive"}, "6": {"name": "SBU1", "type": "passive"},
+                     "7": {"name": "CC1", "type": "passive"}, "8": {"name": "VUSB", "type": "power_output",
+                                                                    "role": "vbus"}}}
+
+
+def breakout(project, usb=None, cc_pins=True):
+    """The breakout as a module J9 feeding +5V, only VUSB and GND wired; `usb` its params.usb_c; without `cc_pins`
+    its entry leaves the CC eyes out, as a model of VBUS and GND only."""
+    part = json.loads(json.dumps(BREAKOUT))
+    if not cc_pins:
+        part["pins"] = {"1": part["pins"]["1"], "8": part["pins"]["8"]}
+    if usb is not None:
+        part["params"] = {"usb_c": usb}
+    (project.root / "hardware" / "parts" / "333011.json").write_text(json.dumps(part))
+    g = project.graph()
+    pins = {k: v["name"] for k, v in part["pins"].items()}
+    g["graph"]["components"].append({"designator": "J9", "type": "module", "part": "333011", "bom": False,
+                                     "pins": pins, "nc": [k for k in pins if k not in ("1", "8")],
+                                     "easyeda_device": {"name": "333011"}})
+    project.net(g, "+5V")["pins"].append("J9.8")
+    project.net(g, "GND")["pins"].append("J9.1")
+    project.save_graph(g)
+    return g
+
+
+def g14(rep):
+    return [m for c, m in rep.errors if c == "G-14"]
+
+
+def test_g14_breakout_as_a_module_without_the_field_is_not_checked(project):
+    breakout(project)
+    assert g14(run(project)) == []                     # as before: a module is no receptacle for G-14
+
+
+def test_g14_breakout_without_rd_and_its_cc_pins_unconnected(project):
+    breakout(project, {"cc": "none", "source": "Soldered 333011 KiCad data V1.2.0: no CC resistors"})
+    assert g14(run(project)) == ["J9: CC1 not connected – a USB-C source switches VBUS on only with 5.1 kΩ to GND on "
+                                 "each CC pin", "J9: CC2 not connected – a USB-C source switches VBUS on only with "
+                                 "5.1 kΩ to GND on each CC pin"]
+
+
+def test_g14_breakout_without_rd_gets_them_on_the_board(project):
+    g = breakout(project, {"cc": "none"})
+    project.use_library_part("C27834")
+    project.comp(g, "J9")["nc"] = ["3", "4", "5", "6"]
+    for i, pin in enumerate(("7", "2"), 1):              # CC1, CC2 each with a 5.1 kΩ to GND on the host board
+        g["graph"]["components"].append(comp(f"R2{i}", "C27834", R))
+        g["graph"]["nets"].append({"name": f"CC{i}", "pins": [f"J9.{pin}", f"R2{i}.1"], "v": [0, 5.5]})
+        project.net(g, "GND")["pins"].append(f"R2{i}.2")
+    project.save_graph(g)
+    assert run(project).errors == []
+
+
+def test_g14_receptacle_that_is_no_pin_of_the_graph(project):
+    breakout(project, {"cc": "none"}, cc_pins=False)
+    msg = ("J9: USB-C receptacle without CC termination (params.usb_c of 333011: cc none) and its CC lines are no pins "
+           "of the graph – a USB-C source switches VBUS on only with 5.1 kΩ to GND on each CC pin")
+    assert g14(run(project)) == [msg]
+    g = project.graph()
+    project.comp(g, "J9")["waive"] = {"G-14": "powered from a C-to-A cable only, the cable is part of the kit"}
+    project.save_graph(g)
+    rep = run(project)
+    assert g14(rep) == [] and ("G-14", msg, "powered from a C-to-A cable only, the cable is part of the kit") \
+        in rep.waived
+
+
+@pytest.mark.parametrize("cc", ["rd_5k1", "controller"])
+def test_g14_module_that_terminates_its_receptacle(project, cc):
+    """An MCU module with USB-C on board (RP2350-Zero: 5.1 kΩ on CC1 and CC2) or a breakout with a PD controller."""
+    part = project.part("C41407547")
+    part["params"]["usb_c"] = {"cc": cc, "source": "module schematic"}
+    project.save_part("C41407547", part)
+    breakout(project, {"cc": cc}, cc_pins=False)
+    assert g14(run(project)) == []
+
+
+def test_g14_usb_c_field_needs_a_known_termination(project):
+    breakout(project, {"cc": "5k1"}, cc_pins=False)
+    assert g14(run(project)) == ["J9: params.usb_c of 333011 needs cc rd_5k1, controller or none, not '5k1'"]
+
+
 def test_g4_mosfet_gate_needs_a_resistor(project):
     project.use_library_part("C15127")
     g = project.graph()
