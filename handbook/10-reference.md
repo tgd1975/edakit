@@ -148,7 +148,9 @@ from the outline, in the DSN and in Freerouting; the pours: `pour_inset_mm`), `p
 `attempts` (5), `layer_cost` ({TOP = [1.0, 1.8], BOTTOM = [1.5, 2.5]}), `classes` ({NAME = {width_mil, nets}}),
 `widths` (`"classes"`: the DSN takes the widths of `classes` and `signal_mil`; `"sim"`: every class at least the
 IPC-2221 width of its nets' simulated currents, a net outside the classes that needs more than `signal_mil` a class of
-its own – needs `net_currents.json`, 7.5),
+its own – needs `net_currents.json`, 7.5), `hand_solder_keep_mm` (0 = off: L-18, vias and pads of other nets at
+least this far, in mm, from the through-hole pads of `bom: false` parts on their solder side; `route dsn` writes via
+keep-outs around them, 7.5),
 `[[routing.keepouts]]` ({layer, what = "wire"|"all", rect | polygon, windows, window_mm}), `[[routing.fixed_wires]]`
 ({net, layer, width_mil, points}).
 
@@ -213,7 +215,7 @@ Code: `edakit … 2>&1 | cat`.
 | `edakit silk apply\|check` | ✓ | PCB, Gerber export | designators, `silk_<board>_<side>.png`, `gerber_<board>/`; apply: `silk_footprints_<board>/` (the print it found, for L-17) |
 | `edakit export [--board]` | ✓ read | schematic, PCB, project file | `<artifacts>/export/` |
 | `edakit gate [--easyeda]` | – / ✓ | everything | `<reports>/<run>/` |
-| `edakit fab --board B --out DIR [--offline]` | ✓ / – | PCB, exports, `route/<board>_board.json` (L-13, L-14), `silk_strings_<board>.json` and `silk_footprints_<board>/` (L-17), the stock snapshot (`order.md`) | `DIR/<board>/`, with `[order]` also `order.md` |
+| `edakit fab --board B --out DIR [--offline]` | ✓ / – | PCB, exports, `route/<board>_board.json` (L-13, L-14, L-18), `silk_strings_<board>.json` and `silk_footprints_<board>/` (L-17), the stock snapshot (`order.md`) | `DIR/<board>/`, with `[order]` also `order.md` |
 | `edakit lock [status\|claim\|release\|yield CHAT\|hook] [--note]` | – | – | `~/.local/state/edakit/easyeda-lock.json` |
 | `edakit proposal template [--feature]\|seal FILE [--out F]\|verify FILE` | – | a rule or feature proposal (no project needed) | seal: the issue body with its SHA-256 |
 | `edakit doctor` | – | tool chain | – |

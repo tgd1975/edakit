@@ -35,7 +35,8 @@ boards of the project in the current repository. You **change nothing**, neither
 1. **Manufacturability (JLCPCB):** clearances, widths of power nets, annular rings and hole spacing (L-16 holds them
    to JLCPCB's table – judge what it waived), drills and slots (plated slots >= 0.5 mm), copper to edge, assembly side
    per part, THT pins under parts of the other side, polarity marks in the silkscreen, tooling holes for Economic PCBA,
-   DRC.
+   DRC; vias and foreign pads next to joints soldered by hand on their solder side (L-18 with
+   `[routing] hand_solder_keep_mm` – without the key, note them).
    **Copper per layer** from the Gerber files: the share of the board each layer covers, the largest bare area where
    a pour should be (on a board that is seen it reads as a failed pour), floating copper – an island connected to no
    pad. L-15 tests the same in the gate; after a round, read the round's export yourself.

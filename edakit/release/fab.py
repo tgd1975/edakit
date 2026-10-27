@@ -42,6 +42,9 @@ assembly preview at JLCPCB.
   L-17 silkscreen from the Gerber files: edakit's own print on a solder-mask opening (fail), other print there per part,
        print beyond the outline, a part of the designators side without a visible designator or group label (not in
        [silk] unlabelled), a text height edakit prints below 1.0 mm (warn)
+  L-18 with [routing] hand_solder_keep_mm: on the solder side of every through-hole pad of a hand-soldered part
+       (bom: false), vias and pads of other nets at least that far away; pads as L-13, vias from the via drill file
+       (net: the tracks of pcb.json that end on them)
   [looks] of the board file: the visible side's track length and the board's vias, an information row; above
        max_track_m or max_vias a warning (row ID "L": the stage's own, no check of the catalog)
   F-1  BOM from the graph = BOM of EasyEDA; every LCSC number in the parts database
@@ -641,6 +644,52 @@ def check_looks(board, d, rows):
         rows.add("L", "L", board.name, f"visible side within its [looks] limit: {text}", False, actual, limit, "warn")
 
 
+def pcb_vias(d, lines, diameter_mil):
+    """Vias of the PCB from the via drill file (pcb.json has none): [(net or None, (x, y) mil, diameter mil)], the
+    copper diameter the routing's (vias are created at [routing] via), the net that of the tracks ending on the via –
+    None when no track or several nets end there."""
+    holes = gerber.parse_holes(d / "gerber" / gerber.FILES["vias"])
+    out = []
+    for x, y, _, _ in holes:
+        v = (x * MIL_PER_MM, y * MIL_PER_MM)
+        nets = {ln["Net"] for ln in lines if ln["Net"] and any(
+            math.dist(v, e) <= diameter_mil / 2 for e in ((ln["StartX"], ln["StartY"]), (ln["EndX"], ln["EndY"])))}
+        out.append((nets.pop() if len(nets) == 1 else None, v, diameter_mil))
+    return out
+
+
+def check_hand_joints(cfg, board, design, d, rows):
+    """L-18 with [routing] hand_solder_keep_mm: on the solder side of every through-hole pad of a hand-soldered part
+    (bom: false), no via or pad of another net closer than the keep – the pads as `route read` saw them (as L-13), the
+    vias from the via drill file with the net of the tracks of pcb.json that end on them. Tracks do not count. A pair
+    waived in the graph (waive L-18 on the joint's part or net, or on the other part or net) is listed with its reason.
+    Off (0): no row."""
+    from .. import route
+    rules = route.Rules(board)
+    keep = rules.joint_keep
+    if not keep:
+        return
+    want = f">= {keep * MM:g} mm ([routing] hand_solder_keep_mm)"
+    pcb = json.loads((d / "pcb.json").read_text())
+    data, why = route.board_as_read(cfg, board, pcb["components"])
+    if data is None:
+        rows.add("L", "L-18", board.name, "pad shapes for the hand-soldered joints", False, why, "the PCB as read")
+        return
+    hand = route.hand_soldered(design.graph, board.name)
+    vias = pcb_vias(d, pcb["lines"], rules.via[1])
+    gaps = route.joint_gaps(data, keep, hand, vias, route.pad_waivers(design.graph, "L-18"))
+    bad = [route.joint_text(g, keep, board) for g in gaps if not g["waived"]]
+    joints = route.hand_joints(data, hand)
+    rows.add("L", "L-18", board.name, "vias and pads of other nets keep clear of the hand-soldered joints on their "
+             "solder side", not bad, "; ".join(bad[:10]) + (f" … ({len(bad)} findings)" if len(bad) > 10 else "")
+             or f"{len(joints)} joints of {len({p['ref'] for p, _ in joints})} parts, {len(vias)} vias", want)
+    for g in gaps:
+        if g["waived"]:
+            rows.add("L", "L-18", board.name, f"hand-soldered joint: {route.joint_text(g, keep, board)}", True,
+                     f"{g['mil'] * MM:.2f} mm", want, "waived")
+            rows[-1]["reason"] = g["waived"]
+
+
 def lead_max(lead, tol=True):
     t = (lead.get("tol_mm") or 0) if tol else 0
     a = lead["a_mm"] + t
@@ -1189,6 +1238,7 @@ def run(cfg, board, out, offline=False, verbose=False):
     check_loops(board, design, d, rows)
     check_pad_clearance(cfg, board, design, d, rows)
     check_paste_gap(cfg, board, design, d, rows)
+    check_hand_joints(cfg, board, design, d, rows)
     check_looks(board, d, rows)
     check_fab(cfg, board, design, d, rows)
     from . import order_sheet

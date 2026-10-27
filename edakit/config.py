@@ -408,6 +408,9 @@ def _board(name, entry, b, file=""):
     thickness = b.get("thickness_mm", THICKNESS_MM)
     if isinstance(thickness, bool) or not isinstance(thickness, (int, float)) or thickness <= 0:
         raise ConfigError(f"board {name}: thickness_mm must be a thickness in mm, more than 0")
+    keep = b.get("routing", {}).get("hand_solder_keep_mm", 0)
+    if isinstance(keep, bool) or not isinstance(keep, (int, float)) or keep < 0:
+        raise ConfigError(f"board {name}: routing.hand_solder_keep_mm must be a distance in mm, 0 or more (0 = off)")
     silk = b.get("silk", {})
     if not isinstance(silk.get("solder_side", False), bool):
         raise ConfigError(f"board {name}: silk.solder_side must be true or false")

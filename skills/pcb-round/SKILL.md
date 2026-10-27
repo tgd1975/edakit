@@ -103,7 +103,9 @@ describes (section 3).
   a hand-written class table (handbook 7.5).
 - Freerouting cannot move a pad: pads of different parts on different nets closer than `clearance_mil` (L-13), or
   SMD pads on an assembled side closer than the paste gap (L-14, `[release] assembly` `paste_gap_mm`, 0.4 mm), stop
-  `route all` at its check, without retries – move or turn one of the two parts in `place`.
+  `route all` at its check, without retries – move or turn one of the two parts in `place`. So do pads of other nets
+  closer than `[routing] hand_solder_keep_mm` to a joint soldered by hand (`bom: false`) on its solder side (L-18);
+  vias are kept away there by the DSN (handbook 7.5).
 - Freerouting is deterministic but order-dependent: `route all` retries with reshuffled DSNs when nets stay open.
   Before relaxing rules or moving parts, `edakit route diagnose 2>&1 | cat` says per open connection why: unreachable
   (what walls the pad in – a keep-out, the edge, a hole, foreign pads: no rule or pass count helps), blocked (by which

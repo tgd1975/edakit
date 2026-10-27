@@ -7,11 +7,14 @@ start, has a fixed 900 s limit and left nets open. So routing happens outside Ea
     1 read     pads, outline, holes, parts from EasyEDA -> <artifacts>/route/<board>_board.json
     2 dsn      offline: our own Specctra DSN (rules from [routing] of the board file; with widths = "sim" every net
                at least the IPC-2221 width of its simulated current); parts, pins and nets in a fixed order; with
-               fanout on a plane, a protected via and stub for each SMD pad on the other layer
+               fanout on a plane, a protected via and stub for each SMD pad on the other layer; with
+               hand_solder_keep_mm a via keep-out around every hand-soldered joint on its solder side (L-18)
     3 route    offline: Freerouting (pinned, downloads itself once, SHA-256 checked), no GUI -> <board>.ses
     4 check    offline: pads of different parts on different nets at least the clearance apart (L-13), SMD pads on
-               an assembled side at least the paste gap apart (L-14; no new attempt helps there), every net
-               connected, clearances >= rule, nothing in keep-outs, track widths of the SES and the fixed wires
+               an assembled side at least the paste gap apart (L-14), pads of other nets at least
+               hand_solder_keep_mm from a hand-soldered joint on its solder side (L-18; no new attempt helps there),
+               every net connected, clearances >= rule, nothing in keep-outs, vias of other nets at least
+               hand_solder_keep_mm from a hand-soldered joint (L-18), track widths of the SES and the fixed wires
                against the simulated currents (L-5 as in the gate: below IPC-2221 fails, below the class width
                warns); with [looks] the track length per side, the vias and the visible side against its limits
                (warnings only); preview PNG with open connections in yellow.
@@ -105,6 +108,10 @@ class Rules:
                     self.pour_only[p["net"]].append((layer, p.get("clearance_mm", POUR_CLEARANCE_MM) * MIL_PER_MM,
                                                      p.get("min_width_mm", POUR_MIN_WIDTH_MM) * MIL_PER_MM))
         self.pour_only = dict(self.pour_only)
+        # L-18: copper of other nets keeps this much (mil) from a hand-soldered joint on its solder side; 0 = off.
+        # hand: the designators soldered by hand (bom: false in the graph) – set by the caller, who has the graph
+        self.joint_keep = r.get("hand_solder_keep_mm", 0) * MIL_PER_MM
+        self.hand = set()
         # pour_regions: layer -> [(net, clearance mil, min width mil)] in claim order (priority, then as written), for
         # the layers that several nets pour on
         self.regions = {}
@@ -348,6 +355,91 @@ def config_keepouts(rules, data):
             for piece in convex_pieces(area)]
 
 
+def hand_soldered(graph, board):
+    """Designators of the parts soldered by hand on this board: bom: false in the graph (the inner object, as
+    design.load_graph returns it) – on an Economic PCBA order the through-hole parts you solder yourself (8.4)."""
+    return {c["designator"] for c in graph.get("components", [])
+            if c.get("bom") is False and c.get("board", board) in (None, board)}
+
+
+def hand_joints(data, hand):
+    """L-18: every through-hole pad of a part in `hand`, with its solder side – the copper layer its part does not sit
+    on. -> [(pad, layer)] in the order of the pads."""
+    side = {c["ref"]: c["layer"] for c in data["components"]}
+    return [(p, LAYERS[3 - side[p["ref"]]]) for p in data["pads"]
+            if p["ref"] in hand and p["layer"] == 12 and side.get(p["ref"]) in LAYERS]
+
+
+def joint_keepouts(rules, data):
+    """L-18 in the DSN: a via keep-out on the solder side around every hand-soldered joint, the pad grown by
+    joint_keep – Specctra via_keepout, which Freerouting 2.4.1 reads. Its chords lie outside the true distance.
+    Freerouting's keep-outs are not per net: a via of the joint's own net stays out too, its tracks still reach it.
+    -> [(layer, convex polygon in mil)]"""
+    if not rules.joint_keep:
+        return []
+    segs = 4
+    grow = rules.joint_keep / math.cos(math.pi / (4 * segs))
+    return [(layer, pad_outline(p).buffer(grow, quad_segs=segs)) for p, layer in hand_joints(data, rules.hand)]
+
+
+def joint_gaps(data, keep_mil, hand, vias=(), waivers=({}, {})):
+    """L-18: on the solder side of every through-hole pad of a hand-soldered part (hand_joints), vias and pads of other
+    nets closer than keep_mil, copper to copper. Tracks do not count: they run under the solder mask, between the pins
+    of a 2.54 mm part too (the owner's decision on #59). A pad without a net counts as a net of its own; the part's own
+    pads are not compared, nor pads without a part (tooling holes). vias: [(net, or None when unknown, (x, y),
+    diameter)] in mil; a via of unknown net counts as another net's. A finding is waived when the joint's part or net,
+    or the other pad's part or the other net, has the waiver (pad_waivers(graph, "L-18")). -> [{"joint", "net",
+    "layer", "kind" ("pad", "via"), "other" (pad name, net or None), "other_net", "mil", "at" (the other pad's
+    closest point, the via's centre), "waived"}], closest first; a pair of two joints once."""
+    from shapely.ops import nearest_points
+    from shapely.strtree import STRtree
+    parts, nets = waivers
+    items = {"TOP": [], "BOTTOM": []}   # (kind, name, net, ref, geometry, radius)
+    for q in data["pads"]:
+        if q["ref"]:
+            for layer in pad_layers(q):
+                items[layer].append(("pad", f"{q['ref']}.{q['num']}", q["net"] or None, q["ref"], pad_outline(q), 0))
+    for net, v, d in vias:
+        for layer in items:
+            items[layer].append(("via", net, net, None, Point(v), d / 2))
+    trees = {layer: STRtree([it[4] for it in its]) for layer, its in items.items()}
+    found = {}
+    for p, layer in hand_joints(data, hand):
+        g, own = pad_outline(p), p["net"] or None
+        name = f"{p['ref']}.{p['num']}"
+        reach = keep_mil + max((it[5] for it in items[layer]), default=0)
+        for j in trees[layer].query(g, predicate="dwithin", distance=reach):
+            kind, other, onet, oref, h, r = items[layer][j]
+            if oref == p["ref"] or (own and onet == own):
+                continue
+            gap = g.distance(h) - r
+            if gap >= keep_mil - 0.01:
+                continue
+            key = tuple(sorted((name, other))) if kind == "pad" else (name, kind, other, h.x, h.y)
+            if key in found and found[key]["mil"] <= gap:
+                continue
+            at = nearest_points(g, h)[1]
+            found[key] = {"joint": name, "net": own, "layer": layer, "kind": kind, "other": other, "other_net": onet,
+                          "mil": gap, "at": (at.x, at.y),
+                          "waived": next((w[k] for w, k in ((parts, p["ref"]), (parts, oref), (nets, own), (nets, onet))
+                                          if k and k in w), None)}
+    return sorted(found.values(), key=lambda x: (round(x["mil"], 3), natural_key(x["joint"]), str(x["other"])))
+
+
+def joint_text(item, keep_mil, board=None):
+    """'J1.1 (VIN) – via GND at (84.00, 9.70): 0.30 mm apart on BOTTOM, the solder side of J1, below
+    hand_solder_keep_mm 0.5' – the point in plan mm with the board, else in EasyEDA mm."""
+    mm = 1 / MIL_PER_MM
+    x, y = (v * mm for v in item["at"])
+    if board is not None:
+        x, y = board.plan_point(x, y)
+    other = (f"pad {item['other']} ({item['other_net'] or 'no net'})" if item["kind"] == "pad"
+             else f"via {item['other'] or '(no track, net unknown)'}")
+    return (f"{item['joint']} ({item['net'] or 'no net'}) – {other} at ({x:.2f}, {y:.2f}): {item['mil'] * mm:.2f} mm "
+            f"apart on {item['layer']}, the solder side of {item['joint'].split('.')[0]}, below hand_solder_keep_mm "
+            f"{keep_mil * mm:g}")
+
+
 def fixed_wires(rules):
     """[[routing.fixed_wires]]: {net, layer, width_mil, points (plan mm)} – protected in the DSN: Freerouting
     routes around them and keeps them (e.g. a short switching loop)."""
@@ -365,8 +457,8 @@ def fanout(rules, data):
     FANOUT_STEP_MIL steps up to FANOUT_REACH_MIL further), at each distance FANOUT_DIRECTIONS directions, the one closest
     to the direction away from the part's centre first. Via and stub keep the clearance from foreign copper (pads, fixed
     wires, the other fanouts) and the fanout vias from each other; the via stays inside the edge clearance and off the
-    hole, tooling and `what = "all"` keep-outs, the stub off those and off every keep-out on its layer. A pad without a
-    spot stops the run. -> [(net, "R1.1", layer, width, pad centre, via)] in mil, by net and pad."""
+    hole, tooling and `what = "all"` keep-outs, the stub off those and off every keep-out on its layer; with L-18 on, the
+    via keeps joint_keep from the hand-soldered joints of other nets. A pad without a spot stops the run. -> [(net, "R1.1", layer, width, pad centre, via)] in mil, by net and pad."""
     on_plane = defaultdict(set)
     for net, layer in planes(rules):
         on_plane[net].add(layer)
@@ -387,6 +479,7 @@ def fanout(rules, data):
     copper = [(p["net"] or f"nc:{p['id']}", set(pad_layers(p)), pad_outline(p), 0, False) for p in data["pads"]]
     copper += [(net, {layer}, LineString(pts), w / 2, False) for net, layer, w, pts in fixed_wires(rules)]
     comp_at = {c["ref"]: c for c in data["components"]}
+    joints = [(p["net"], pad_outline(p)) for p, _ in hand_joints(data, rules.hand)] if rules.joint_keep else []
     steps = range(int(FANOUT_REACH_MIL / FANOUT_STEP_MIL) + 1)
     out = []
 
@@ -416,7 +509,8 @@ def fanout(rules, data):
                     continue
                 if all(via.distance(g) >= half + r_via + clear - eps and
                        (n == net or layer not in lays or stub.distance(g) >= half + w / 2 + clear - eps)
-                       for n, lays, g, half, _ in near):
+                       for n, lays, g, half, _ in near) and \
+                        all(via.distance(g) >= r_via + rules.joint_keep - eps for n, g in joints if n != net):
                     spot = v
                     break
             if spot:
@@ -425,7 +519,9 @@ def fanout(rules, data):
             raise SystemExit(f"{name} ({net}): no room for a fanout via to the {net} plane – {FANOUT_DIRECTIONS} "
                              f"directions, {d0:.1f} to {d0 + FANOUT_REACH_MIL:.1f} mil from the pad's centre, keeping "
                              f"{clear} mil from foreign copper with a {rules.via[1]} mil via, inside the edge clearance "
-                             "and off hole, tooling and keep-out areas; give the pad room in the plan")
+                             "and off hole, tooling and keep-out areas"
+                             + (" and hand_solder_keep_mm from hand-soldered joints of other nets" if joints else "")
+                             + "; give the pad room in the plan")
         out.append((net, name, layer, w, (x, y), spot))
         copper.append((net, {"TOP", "BOTTOM"}, Point(spot), r_via, True))
         copper.append((net, {layer}, LineString([(x, y), spot]), w / 2, False))
@@ -504,6 +600,11 @@ def write_dsn(rules, data, out, variant=0):
         kw = "wire_keepout" if what == "wire" else "keepout"
         pts = list(g.exterior.coords)[:-1]
         L.append(f"    ({kw} {q(f'K{i}')} (polygon {layer} 0 " + " ".join(f"{f(x)} {f(y)}" for x, y in pts) + "))")
+    joints = joint_keepouts(rules, data)
+    for i, (layer, g) in enumerate(joints):
+        pts = list(g.exterior.coords)[:-1]
+        L.append(f"    (via_keepout {q(f'J{i}_{layer}')} (polygon {layer} 0 " + " ".join(f"{f(x)} {f(y)}" for x, y in pts)
+                 + "))")
     # planes last in the structure: placed further up, Freerouting 2.4.1 read no connections any more (0 unrouted)
     for net, layer in planes(rules):
         L.append(f"    (plane {q(net)} (polygon {layer} 0 "
@@ -546,7 +647,8 @@ def write_dsn(rules, data, out, variant=0):
     out.write_text("\n".join(L) + "\n")
     say(f"DSN: {len(routed)} nets with >= 2 pins, {len(data['pads'])} pads, {len(padstacks)} padstacks, {len(keep)} hole "
         f"keep-outs, {len(strips)} edge strips, {len(extra)} keep-out pieces, {len(fixed)} fixed wires, "
-        + (f"{len(fans)} fanout vias, " if fans else "") + f"clearance {rules.clear} mil"
+        + (f"{len(fans)} fanout vias, " if fans else "")
+        + (f"{len(joints)} via keep-outs at hand-soldered joints (L-18), " if joints else "") + f"clearance {rules.clear} mil"
         + (f", order {variant}" if variant else "")
         + (f", pour-only (no tracks): {', '.join(sorted(rules.pour_only))}" if rules.pour_only else "") + f" -> {out}")
     for (name, w), members in sorted(cls.items()):
@@ -1169,6 +1271,26 @@ def report_looks(rules, data, routes):
     say(row)
     for w, _, _ in warns:
         print(f"    {w} – warning", flush=True)
+
+
+def report_joints(cfg, board, rules, data, routes=None):
+    """L-18, printed: with routes None the pads of other nets at the hand-soldered joints (the placement's part: no
+    new routing moves them), else the vias of the SES. Waived ones with their reason -> those not waived."""
+    if not rules.joint_keep:
+        return []
+    vias = [] if routes is None else [(net, tuple(v), rules.via[1]) for net, r in routes.items() for v in r["vias"]]
+    gaps = [g for g in joint_gaps(data, rules.joint_keep, rules.hand, vias, graph_waivers(cfg, "L-18"))
+            if (g["kind"] == "pad") == (routes is None)]
+    near = [g for g in gaps if not g["waived"]]
+    what = "pads" if routes is None else "vias"
+    n = len(hand_joints(data, rules.hand))
+    say(f"hand-soldered joints (L-18): {n} on their solder side, {len(near)} {what} of other nets closer than "
+        f"hand_solder_keep_mm {rules.joint_keep / MIL_PER_MM:g}"
+        + (f", {len(gaps) - len(near)} waived" if len(gaps) > len(near) else ""))
+    for g in gaps[:20]:
+        print(f"    {joint_text(g, rules.joint_keep, board)}" + (f" – waived: {g['waived']}" if g["waived"] else ""),
+              flush=True)
+    return near
 
 
 def report_check(rules, data, open_nets, routes):
@@ -2010,6 +2132,9 @@ def pours(cfg, board, rules, mcp, data=None, routes=None, stitch_file=None, regi
 def main(cfg, args):
     board = cfg.board(args.board)
     rules = Rules(board, args.clearance)
+    if rules.joint_keep and cfg.graph.exists():
+        from .design import load_graph
+        rules.hand = hand_soldered(load_graph(cfg.graph), board.name)
     P = paths(cfg, board)
     passes = args.passes or rules.passes
     steps = {"all": ["read", "dsn", "route", "check", "apply", "pours", "reload", "drc"]}.get(args.action, [args.action])
@@ -2035,6 +2160,7 @@ def main(cfg, args):
                 data = json.loads(P["board"].read_text())
                 tight = report_pads(rules, data, graph_waivers(cfg))  # the placement's: another routing keeps them
                 tight += report_paste(cfg, data)
+                tight += report_joints(cfg, board, rules, data)
                 attempts = rules.attempts if args.action == "all" and not tight else 1
                 for attempt in range(1, attempts + 1):
                     if attempt > 1:
@@ -2051,23 +2177,26 @@ def main(cfg, args):
                     say(f"clearances/keep-outs: {len(bad)} findings")
                     for line in bad[:20]:
                         print(f"    {line}", flush=True)
+                    near = report_joints(cfg, board, rules, data, routes)
                     nested = report_regions(rules, data, routes)
                     thin = report_widths(cfg, board, rules, routes)   # no new attempt routes wider
-                    if not (open_nets or bad or nested) or thin:
+                    if not (open_nets or bad or near or nested) or thin:
                         break
                 else:
                     if args.action == "all":
-                        raise SystemExit(f"after {attempts} attempts nets are still open, clearances too small or a "
-                                         "pour inside another – nothing written to EasyEDA. More passes (--passes), or "
-                                         "check rules/placement." + (" Pads too close as well (above)." if tight else ""))
+                        raise SystemExit(f"after {attempts} attempts nets are still open, clearances too small, a via "
+                                         "at a hand-soldered joint (L-18) or a pour inside another – nothing "
+                                         "written to EasyEDA. More passes (--passes), or check rules/placement."
+                                         + (" Pads too close as well (above)." if tight else ""))
                     return 2
                 if tight:
                     if args.action == "all":
-                        pairs = len({(g["a"], g["b"]) for g in tight})
-                        raise SystemExit(f"{pairs} pad pairs of different parts closer than the clearance (L-13) or "
-                                         "the paste gap (L-14) – nothing written to EasyEDA. Freerouting cannot move a "
-                                         "pad: move or turn one of the two parts in [place] of the board file (fix it "
-                                         "there if the auto-layout put it), then place and read the board again.")
+                        pairs = len({(g["a"], g["b"]) if "a" in g else (g["joint"], g["other"]) for g in tight})
+                        raise SystemExit(f"{pairs} pad pairs of different parts closer than the clearance (L-13), "
+                                         "the paste gap (L-14) or the keep of a hand-soldered joint (L-18) – nothing "
+                                         "written to EasyEDA. Freerouting cannot move a pad: move or turn one of the "
+                                         "two parts in [place] of the board file (fix it there if the auto-layout put "
+                                         "it), then place and read the board again.")
                     return 2
                 if thin:
                     if args.action == "all":

@@ -293,6 +293,7 @@ edge_clearance_um = 400      # tracks and vias from the outline; the pours keep 
 layer_cost = { TOP = [1.0, 1.8], BOTTOM = [2.2, 3.0] }   # preferred / against preferred direction: keep a side calm
 classes = { POWER = { width_mil = 18, nets = ["VIN", "+5V"] }, GND = { width_mil = 18, nets = ["GND"] } }
 widths = "classes"           # or "sim": every class at least the IPC-2221 width of the simulated currents (below)
+hand_solder_keep_mm = 0.5    # L-18: vias and pads of other nets this far from hand-soldered joints (0 = off, below)
 
 [[routing.keepouts]]               # no tracks (vias allowed) on a side or in an area
 layer = "BOTTOM"
@@ -381,6 +382,26 @@ foreign copper, nothing in keep-outs (the edge strips above: `edge_clearance_um`
 too) – independent of Freerouting's own score. Freerouting cannot move a pad, so pads too close stop `route all` after
 one attempt, without the reshuffled ones: move or turn one of the two parts in the plan. The gate measures the same on
 the pads of the last `route read` (L-13, L-14, 8.1).
+**Hand-soldered joints (L-18)** with `hand_solder_keep_mm` (0, off, by default): a joint soldered by hand gets an
+iron and wire solder, not a stencil print of fixed volume, and a tented via or a foreign pad a few tenths of a millimetre
+away can take a bridge that only shows at assembly. The joints are the through-hole pads of every part with `bom:
+false` in the graph (8.4), each on its solder side – the copper layer its part does not sit on. On that side no via and
+no pad of another net comes closer than the keep, copper to copper; a pad without a net is a net of its own, the part's
+own pads are not compared, and tracks do not count – they run under the solder mask, between the pins of a 2.54 mm
+part too. Pads too close stop `route all` like L-13 (Freerouting cannot move them); a via gets the reshuffled attempts.
+`route dsn` keeps vias away from the start: around every joint a via keep-out on its solder side, the pad grown by the
+keep (Specctra `via_keepout`, which Freerouting reads) – it keeps out vias of the joint's own net as well, which
+reaches the joint by track – and the fanout vias of a plane keep the same distance. `waive` L-18 on the joint's part
+or net, or on the other part or net, accepts a pair:
+
+```text
+hand-soldered joints (L-18): 2 on their solder side, 1 vias of other nets closer than hand_solder_keep_mm 0.5
+    J1.1 (VIN) – via GND at (84.00, 9.70): 0.30 mm apart on BOTTOM, the solder side of J1, below hand_solder_keep_mm 0.5
+```
+
+In the reference project the layout reviews found a via 0.25 mm from an LED joint, a via 0.26 mm between two
+potentiometer pins and a resistor pad 0.37 mm from an LED joint, each after every check had passed; 0.5 mm finds all
+three and passes the released board. The gate measures the same on the PCB (L-18, 8.1).
 **Track widths (L-5 offline)** with the gate's own widths (8.1): the narrowest SES track of every net and every
 `[[routing.fixed_wires]]` entry against IPC-2221 for 1.5 × the simulated current – below it fails, and stops `route
 all` before anything is written as open nets do (a new attempt routes no wider) – and against the practical width of

@@ -382,3 +382,12 @@ def test_thickness_key(tmp_path):
     (tmp_path / "hardware" / "boards").mkdir(parents=True)
     (tmp_path / "hardware" / "boards" / "main.toml").write_text("thickness_mm = 0.8\n")
     assert load(tmp_path / "edakit.toml").board().thickness_mm == 0.8
+
+
+def test_routing_hand_solder_keep_key():
+    from edakit.config import _board
+    assert "hand_solder_keep_mm" not in _board("b", {}, {}).routing        # no key: L-18 off, as before
+    assert _board("b", {}, {"routing": {"hand_solder_keep_mm": 0.5}}).routing["hand_solder_keep_mm"] == 0.5
+    for value in (-0.1, "0.5", True):
+        with pytest.raises(ConfigError, match="routing.hand_solder_keep_mm must be a distance in mm"):
+            _board("b", {}, {"routing": {"hand_solder_keep_mm": value}})
