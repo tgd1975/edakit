@@ -24,9 +24,14 @@ on the delivered board instead (acceptance test).
   `nc`.
 - Supplies: connectors listed under `sources` (a voltage source behind a source resistance), battery holders with a
   cell state (`cells`). A module that brings its own supply (an Arduino Nano on USB) is a source as well: `plus` is
-  its 5V pin, the voltage is USB minus its on-board diode.
+  its 5V pin, the voltage is USB minus its on-board diode – or USB itself on a module without that diode.
 - `i_min_a` on a source: the least current the supply needs to stay on – USB power banks switch off below
   50–100 mA after a few seconds. E-3 checks every scenario against it.
+- No supply is fed backwards: where two supplies meet and nothing blocks the way, the higher one feeds the lower one –
+  into a PC's USB port through a module whose 5 V pin is its VBUS, into primary cells. E-3 holds the current into
+  every source (against its direction) to `i_back_max_a` of the source, and the current into every cell of a battery
+  holder to `i_charge_max_a` of its cell state (`"cells": {"nimh": {"v": 1.3, "r": 0.05, "i_charge_max_a": 0.1}}` for a
+  pack its charger charges on purpose); both are `criteria.blocking_max_a` (1 mA) unless set.
 - Off-board loads (a servo, a motor, a strip at a connector): the load's `external`, e.g.
   `{"J1": {"plus": "2", "minus": "1", "i_a": 0.3}}` – a constant current between the two pins; it counts for the
   connector's contact current and for the track widths.
@@ -96,7 +101,7 @@ As soon as an LED is on no driver output, every load needs `leds_on`, `[]` when 
 |---|---|
 | E-1 | the operating point converges |
 | E-2 | stress of every part against its ratings with derating: resistor power ≤ 50 %, currents ≤ 80 %, capacitor/diode/transistor voltages ≤ 67 %, LED forward current and reverse voltage, fuse hold current at ambient, connector, switch and relay contact current, relay coil voltage, the current of every MCU output (`gpio_i_max_a`) and of all outputs together, sourced and sunk (`gpio_i_total_max_a`) – each pin may be fine and the sum beyond the package |
-| E-3 | function: current from every source (≤ `i_max_a`), regulator outputs within tolerance, input above `vin_min`, LDO junction temperature, MCU supply voltage and load on its regulator, MCU inputs at a defined level (≤ VIL or ≥ VIH – a 3.3 V signal into a 5 V AVR is the classic case), every part with an operating supply range inside it, every input pin with thresholds at a defined level and the high level of every MCU output reaching the VIH of the inputs on its net (below the table), MCU outputs only on pins that can drive (an output on an input-only pin is reported and not driven), LED driver output headroom and junction temperature, every LED on or dark as the load says (driver channels: ≥ 80 % of its share of the set current, also for an LED behind 0 Ω bridges or one resistor; parallel LEDs share within a ratio – below the table), relays pull in (`v_operate`) and release (`v_release`) as the load says, an own board supplied inside the range it was simulated for (`vin_min` … `vin_max`, 4.5), diodes that must block (`expect_blocking`), every net inside its declared range `v`, plus the plugin's checks |
+| E-3 | function: current from every source (≤ `i_max_a`), no source and no cell fed backwards (≤ `i_back_max_a`, `i_charge_max_a`, 1 mA by default), regulator outputs within tolerance, input above `vin_min`, LDO junction temperature, MCU supply voltage and load on its regulator, MCU inputs at a defined level (≤ VIL or ≥ VIH – a 3.3 V signal into a 5 V AVR is the classic case), every part with an operating supply range inside it, every input pin with thresholds at a defined level and the high level of every MCU output reaching the VIH of the inputs on its net (below the table), MCU outputs only on pins that can drive (an output on an input-only pin is reported and not driven), LED driver output headroom and junction temperature, every LED on or dark as the load says (driver channels: ≥ 80 % of its share of the set current, also for an LED behind 0 Ω bridges or one resistor; parallel LEDs share within a ratio – below the table), relays pull in (`v_operate`) and release (`v_release`) as the load says, an own board supplied inside the range it was simulated for (`vin_min` … `vin_max`, 4.5), diodes that must block (`expect_blocking`), every net inside its declared range `v`, plus the plugin's checks |
 | E-4 | LED has a known driver: in every scenario every LED – each colour of an RGB LED – has a state E-3 checks, its cathode on a driver output (directly, behind 0 Ω bridges or one resistor) or the load's `leds_on`; an LED with neither, or one the netlist left out because its parts entry lacks a role it reads (anode, cathode and their colours, 4.1), fails as "LED without a known driver" |
 
 **Operating range and logic levels.** A part whose entry gives its operating supply range – `ratings` `vdd_op_min` /

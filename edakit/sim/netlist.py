@@ -8,8 +8,8 @@ netlist and listed in meta["leds_left_out"] (E-4); one with a pin in nc is an un
 Switches, buttons and DIP switches are closed or open as the scenario's load says; a relay is its coil resistance
 (coil_ohm between the roles coil_plus and coil_minus) plus a contact from common to no when the load lists it in
 "relays_on", else to nc. Supplies are connectors listed under "sources" in the simulation config, or battery holders
-with a cell state. Off-board loads (a servo, a motor at a connector) are constant currents between two pins, listed
-under the load's "external".
+with a cell state – one voltage source per cell, listed in meta["cells"] (E-3: no charge current). Off-board loads
+(a servo, a motor at a connector) are constant currents between two pins, listed under the load's "external".
 
 ICs and modules are replaced by behaviour models, chosen by params.behavior in the parts database:
 
@@ -223,6 +223,8 @@ class Netlist:
                 self.add(f"V_{name} x_{name.lower()} {minus} DC {cell['v']}")
                 self.add(f"R_{name} x_{name.lower()} {plus} {cell['r']}", des, "battery",
                          (f"x_{name.lower()}", plus), cell["r"])
+                self.meta.setdefault("cells", {})[name] = {"des": des, "state": cell_name,
+                                                           "branch": f"v_{name}#branch".lower()}
         elif kind == "buzzer":
             roles = self.roles(des)
             self.add(f"R_{des} {self.n(roles['plus'])} {self.n(roles['minus'])} {p['coil_ohm']}", des, "buzzer",

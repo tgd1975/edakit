@@ -57,7 +57,8 @@ Nets with worst-case voltage ranges `v`. A ground that is separate on purpose (a
 goes into the graph's `grounds` – every other ground pin belongs on the ground net (G-16). Decisions numbered (D-…) in
 the decision log and cited in `notes`. sim.json:
 sources, supplies at their limits, loads with the MCU's outputs, inputs, LEDs on (`leds_on` in every load once an LED is
-on no driver output, `[]` when none lights – E-4), buttons, relays.
+on no driver output, `[]` when none lights – E-4), buttons, relays. No source and no cell takes more than 1 mA back
+(E-3); a cell its charger charges on purpose gets `i_charge_max_a` in its cell state.
 
 ## 6. Check loop (seconds)
 

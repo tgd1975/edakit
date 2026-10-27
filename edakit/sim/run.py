@@ -8,7 +8,8 @@ plus "extra_scenarios" listed there.
   E-1  the operating point converges
   E-2  stress of every part against the ratings in the parts database, with the derating from the config; MCU output
        current per pin (gpio_i_max_a) and of all outputs together (gpio_i_total_max_a)
-  E-3  function: supply currents, regulator outputs and headroom, MCU supply and input levels, MCU outputs only on
+  E-3  function: supply currents, no supply fed backwards (sources: i_back_max_a, cells: i_charge_max_a, default the
+       criteria's blocking_max_a), regulator outputs and headroom, MCU supply and input levels, MCU outputs only on
        pins that can drive, constant-current driver headroom and junction temperature, LED currents on/off as the load
        says (an LED behind a 0 Ω bridge counts on the driver output the bridge joins it to, an LED behind one resistor
        to a single driver output on that output – parallel LEDs with balancing resistors), relays pull in and release
@@ -233,6 +234,7 @@ def functional(design, cfg, res, meta, load, ck, plugin):
         if s.get("i_min_a"):  # power banks switch off below a minimum load
             ck.add("E-3", des, "current keeps the supply on", i, f"≥ {s['i_min_a'] * 1e3:.0f} mA", i >= s["i_min_a"],
                    unit=" A")
+    back_feed(cfg, res, meta, crit, ck)
     for des, reg in meta["regs"].items():
         vin = v(res, reg["vin"]) - v(res, reg["gnd"])
         vout = v(res, reg["vout"]) - v(res, reg["gnd"])
@@ -380,6 +382,23 @@ def functional(design, cfg, res, meta, load, ck, plugin):
                unit=" V")
     if plugin and hasattr(plugin, "checks"):
         plugin.checks(design=design, cfg=cfg, res=res, meta=meta, load=load, add=ck.add)
+
+
+def back_feed(cfg, res, meta, crit, ck):
+    """E-3: no supply is fed backwards. The current into a source of `sources` – against its direction – stays at or
+    below its i_back_max_a, the current into each cell of a battery holder at or below the i_charge_max_a of its cell
+    state; both are the criteria's blocking_max_a (1 mA) unless set. Where two supplies meet, the higher one feeds the
+    lower one wherever nothing blocks the way: into a PC's USB port, into a primary cell."""
+    for des, s in meta["sources"].items():
+        lim = cfg.get("sources", {}).get(des, {}).get("i_back_max_a", crit["blocking_max_a"])
+        i = res.get(s["branch"], 0.0)                 # ngspice: > 0 flows into the source's plus terminal
+        i = i if i > 0 else 0.0
+        ck.add("E-3", des, "current into the supply (fed backwards)", i, f"≤ {lim * 1e3:.3g} mA", i <= lim, unit=" A")
+    for name, cell in meta.get("cells", {}).items():
+        lim = cfg["cells"][cell["state"]].get("i_charge_max_a", crit["blocking_max_a"])
+        i = res.get(cell["branch"], 0.0)
+        i = i if i > 0 else 0.0
+        ck.add("E-3", name, "current into the cell (charging)", i, f"≤ {lim * 1e3:.3g} mA", i <= lim, unit=" A")
 
 
 SUPPLY_ROLES = ("vdd", "vcc")

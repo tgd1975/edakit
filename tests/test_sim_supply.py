@@ -1,5 +1,7 @@
-"""Stage E seen red at the supplies: a part outside its operating range, an input between its thresholds."""
+"""Stage E seen red at the supplies: a part outside its operating range, an input between its thresholds, a source or
+a cell fed backwards."""
 
+import json
 import shutil
 
 import pytest
@@ -76,3 +78,70 @@ def test_ratio_needs_one_supply_pin(project):
     bad = failing(simulate(project))
     assert {(c["item"], c["check"]) for c in bad if c["check"].startswith("input thresholds")} == {
         ("U2", "input thresholds as a ratio of the supply")}
+
+
+BACK = "current into the supply (fed backwards)"
+CHARGE = "current into the cell (charging)"
+
+
+def sim_config(project):
+    return json.loads((project.root / "hardware" / "sim.json").read_text())
+
+
+def module_usb(sim, **supplies):
+    """U1 (Pico 2) as a second source at VSYS, as a module whose USB reaches its 5 V pin without a diode."""
+    sim["sources"]["U1"] = {"plus": "39", "minus": "3", "r_ohm": 0.3, "i_max_a": 0.5}
+    sim["supplies"] = supplies or sim["supplies"]
+    return sim
+
+
+def test_no_source_is_fed_backwards(project):
+    out = simulate(project)
+    fed = [c for c in out["checks"] if c["item"] == "J1" and c["check"] == BACK]
+    assert len(fed) == 12 and all(c["result"] == "pass" and c["actual"] == "0 A" for c in fed)
+    sim = module_usb(sim_config(project), both={"J1": 5.25, "U1": 4.75})   # the PC's USB below the supply at J1
+    bad = failing(simulate(project, sim))
+    assert {(c["id"], c["item"], c["check"], c["expected"]) for c in bad} == {("E-3", "U1", BACK, "≤ 1 mA")}
+    assert len(bad) == 4 and all(0.2 < float(c["actual"].split()[0]) < 0.35 for c in bad)   # 0.25–0.29 A into the PC
+    sim["sources"]["U1"]["i_back_max_a"] = 0.5                    # the source's own limit
+    assert not failing(simulate(project, sim))
+    sim = module_usb(sim_config(project), both={"U1": 5.25, "J1": 4.75})   # D1 blocks the way into J1
+    out = simulate(project, sim)
+    assert not failing(out)
+    j1 = [c for c in out["checks"] if c["item"] == "J1" and c["check"] == BACK]
+    assert len(j1) == 4 and all(float(c["actual"].split()[0]) < 1e-3 for c in j1)
+
+
+# A holder for one cell, kind battery_holder, roles plus and minus – the test's own entry
+HOLDER = {"lcsc": "C9000001", "mpn": "test holder", "kind": "battery_holder", "verified": {"by": "test"},
+          "pins": {"1": {"name": "+", "type": "power_output", "role": "plus"},
+                   "2": {"name": "-", "type": "ground", "role": "minus"}},
+          "params": {"cells": 1}, "ratings": {}}
+
+
+def cells_on_the_rail(project):
+    """BT1 straight on +5V, next to J1 behind D1: primary cells, nothing between them and the USB supply."""
+    project.save_part(HOLDER["lcsc"], HOLDER)
+    g = project.graph()
+    g["graph"]["components"].append({"designator": "BT1", "type": "battery_holder", "lcsc": HOLDER["lcsc"],
+                                     "part": HOLDER["mpn"], "pins": {"1": "+", "2": "-"}})
+    project.net(g, "+5V")["pins"].append("BT1.1")
+    project.net(g, "GND")["pins"].append("BT1.2")
+    project.save_graph(g)
+    sim = sim_config(project)
+    sim["cells"] = {"fresh": {"v": 4.8, "r": 0.45}}               # three fresh AA cells as one: 3 x 1.6 V, 3 x 0.15 Ω
+    sim["supplies"] = {"usb+cells": {"J1": 5.25, "BT1": "fresh"}, "cells": {"BT1": "fresh"}}
+    return sim
+
+
+def test_no_cell_is_charged(project):
+    sim = cells_on_the_rail(project)
+    out = simulate(project, sim)
+    bad = failing(out)
+    assert {(c["id"], c["scenario"].split("/")[0], c["item"], c["check"], c["expected"]) for c in bad} == {
+        ("E-3", "usb+cells", "BT1", CHARGE, "≤ 1 mA")}
+    assert len(bad) == 4 and all(float(c["actual"].split()[0]) > 0.01 for c in bad)
+    alone = [c for c in out["checks"] if c["scenario"].startswith("cells/") and c["check"] == CHARGE]
+    assert len(alone) == 4 and all(c["result"] == "pass" and c["actual"] == "0 A" for c in alone)
+    sim["cells"]["fresh"]["i_charge_max_a"] = 0.5                 # a rechargeable pack, charged on purpose
+    assert not failing(simulate(project, sim))
