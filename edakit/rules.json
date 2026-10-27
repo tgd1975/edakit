@@ -271,9 +271,9 @@
   },
   "L-3": {
    "title": "DRC",
-   "rule": "EasyEDA's design rule check reports nothing after save and reload.",
-   "why": "Clearances, widths and open connections below the manufacturer's limits. Right after API changes the DRC reports false errors, so it runs after a reload.",
-   "fix": "edakit route reload, then fix what remains (route all, the plan).",
+   "rule": "EasyEDA's design rule check reports nothing after save and reload. A \"Netlist Error – Import Changes\" item is checked on its own: schematic and PCB are compared as edakit pcb parts and pcb nets do.",
+   "why": "Clearances, widths and open connections below the manufacturer's limits. Right after API changes the DRC reports false errors, so it runs after a reload. After parts were placed in the schematic, EasyEDA reports Import Changes until its import view has been opened once – even when schematic and PCB are equal; in the reference project that held the gate for 2¾ h and ten runs.",
+   "fix": "edakit route reload, then fix what remains (route all, the plan). Import Changes with no difference (\"EasyEDA waits for the import acknowledgement\"): open Design → Import Changes once in EasyEDA – it shows no changes. With differences: edakit pcb parts --write (parts, links, properties) or edakit pcb nets --write (pad nets), as the row says.",
    "sources": ["edakit handbook 7 and 9"]
   },
   "L-4": {

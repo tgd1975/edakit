@@ -15,7 +15,7 @@ Start with `edakit doctor`.
 | answers contain `[MaxDepth]`, DRC details empty | original bridge extension | build and import the patched one (chapter 2.5): uninstall old, import, restart |
 | `PCB_Drc.check` returns null / undefined | the PCB tab counts as inactive | edakit switches to the start page and back; or click the PCB tab once |
 | DRC: many "Connection Error" right after routing | DRC on the unsaved state after many API changes | `edakit route reload`, then DRC – reported 320 → 0 |
-| DRC: "Netlist Error – Import Changes" | a part was freshly placed in the schematic | open *Design → Import Changes* once in the GUI (shows "no changes") – the one click |
+| DRC: "Netlist Error – Import Changes" | a part was freshly placed in the schematic | L-3 / `route drc` / `silk` say "EasyEDA waits for the import acknowledgement" (exit 3): open *Design → Import Changes* once in the GUI (shows "no changes") – the one click. They name differences instead: `edakit pcb parts --write` or `pcb nets --write` first |
 | pour fill fails: "Cannot read properties of undefined (reading 'length')" | a free pad (tooling hole) is in the PCB | edakit removes tooling holes before filling; by hand: `edakit pcb tooling` after the fill |
 | pour status `readback-mismatch` | harmless for the fill | look at the number of filled areas per layer; L-15 of the gate measures what the fill left |
 | "focus lost" / "获取器件关联的所有引脚失败" (pins not readable) | another tab became active (a click, another script) | scripts get the tab back or abort; never run two EasyEDA jobs at once; claim EasyEDA |

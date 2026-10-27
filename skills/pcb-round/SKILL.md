@@ -36,8 +36,9 @@ edakit pcb nets 2>&1 | cat                    # only nets changed: show, then --
 
 Before the PCB is linked: `edakit schematic copy` + `layout`. After that `copy` refuses (the PCB would lose its
 schematic) and `layout` syncs parts in place. If parts were newly placed in the schematic, the DRC may show "Netlist
-Error – Import Changes" until the import view was opened once in the GUI – request that click as the start skill
-describes (section 3).
+Error – Import Changes" until the import view was opened once in the GUI. edakit compares schematic and PCB then:
+only when it says "EasyEDA waits for the import acknowledgement" (exit 3) request that click as the start skill
+describes (section 3); a list of parts or pads is fixed with `pcb parts --write` / `pcb nets --write` first.
 
 ## Round
 
@@ -64,7 +65,8 @@ describes (section 3).
      `edakit part diff OLD NEW` says how the new footprint lies over the old one (turn, shift, pad map).
    - `edakit pcb apply` (outline, holes, tooling holes, fixed parts locked; pad positions verified against the plan)
    - `edakit pcb autolayout` (unlocked parts, TOP only, waits for stable positions)
-   - `edakit route all 2>&1 | cat` (read → DSN → Freerouting → check → apply → pours → reload → DRC; exit 0 = DRC 0).
+   - `edakit route all 2>&1 | cat` (read → DSN → Freerouting → check → apply → pours → reload → DRC; exit 0 = DRC 0, 3 = only the import
+     acknowledgement pending).
      Open connections are yellow in `<artifacts>/route/<board>_routing.png`. Never EasyEDA's autorouter.
    - `edakit silk apply 2>&1 | cat` (designators where there is room; silkscreen on pads = 0; DRC). Through-hole parts
      of the other side, soldered from the designators side: `[silk] solder_side = true` (handbook 7.7). A part listed

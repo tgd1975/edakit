@@ -184,6 +184,7 @@ class Export:
         self.probe = {"pins": {"fields": ["PIN_NAME", "PIN_X", "PIN_Y", "NET_NAME", "PIN_TYPE", "LAYER", "PAD_SIZEX",
                                           "PAD_SIZEY"], "rows": probe}}
         self.drc = []
+        self.netlist_diff = None       # the dry runs of `pcb parts` and `pcb nets` (only with an Import Changes item)
         self.bom = [{"reference": r, "lcsc": LCSC[r], "value": v, "quantity": 1}
                     for r, v in (("J1", ""), ("D1", "SS34"), ("C2", "22uF"))]
         self.jlc = {"C8678": {"componentModelEn": "SS34", "componentLibraryType": "base", "stockCount": 52000},
@@ -264,8 +265,10 @@ class Export:
                 (art / "silk_footprints_main" / gerber.FILES[key]).write_text(layer.text())
         d = root / "build" / "fab" / "main"
         (d / "gerber").mkdir(parents=True)
-        for name, data in (("pcb", self.pcb), ("drc", self.drc), ("bom_easyeda", self.bom), ("jlc_parts", self.jlc)):
-            (d / f"{name}.json").write_text(json.dumps(data, ensure_ascii=False))
+        for name, data in (("pcb", self.pcb), ("drc", self.drc), ("bom_easyeda", self.bom), ("jlc_parts", self.jlc),
+                           ("netlist_diff", self.netlist_diff)):
+            if data is not None:
+                (d / f"{name}.json").write_text(json.dumps(data, ensure_ascii=False))
         wb = openpyxl.Workbook()
         ws = wb.active
         head = ["Designator", "Footprint", "Mid X", "Mid Y", "Layer", "Rotation", "SMD"]
@@ -351,6 +354,20 @@ def graph(project, change):
     g = project.graph()
     change(g)
     project.save_graph(g)
+
+
+# the DRC item EasyEDA writes while the import view has not been opened since schematic parts changed (#67)
+IMPORT = {"errorType": "Netlist Error", "ruleName": "Import Changes", "obj1": {"typeName": "Schematic Netlist"},
+          "obj2": {"typeName": "PCB Netlist"}}
+CLEARANCE = {"errorType": "Clearance", "ruleName": "Safe Spacing"}
+NO_DIFF = {"parts": {}, "nets": []}
+
+
+def import_pending(diff, *more):
+    def fault(ex, project):
+        ex.drc += [IMPORT, *more]
+        ex.netlist_diff = diff
+    return fault
 
 
 def short(ex, project):
@@ -515,8 +532,17 @@ FAULTS = [
      [("L-2", "fail", "FlyingProbeTesting.json missing"), ("F-5", "fail", "FlyingProbeTesting.json"),
       ("L-15", "fail", "FlyingProbeTesting.json missing")]),
     # L-3
-    ("a DRC finding", lambda ex, p: ex.drc.append({"errorType": "Clearance", "ruleName": "Safe Spacing"}),
-     [("L-3", "fail", "Clearance (Safe Spacing): 1")]),
+    ("a DRC finding", lambda ex, p: ex.drc.append(CLEARANCE), [("L-3", "fail", "Clearance (Safe Spacing): 1")]),
+    ("the import acknowledgement pending", import_pending(NO_DIFF),
+     [("L-3", "fail", "EasyEDA waits for the import acknowledgement: open Design → Import Changes once")]),
+    ("a property of D1 differs between schematic and PCB", import_pending({"parts": {"props": ["D1"]}, "nets": []}),
+     [("L-3", "fail", "properties differ from the schematic: D1 → edakit pcb parts --write")]),
+    ("a pad net differs between graph and PCB", import_pending({"parts": {}, "nets": [["D1.2", "+5V", "VIN"]]}),
+     [("L-3", "fail", "pad nets: D1.2 +5V instead of VIN → edakit pcb nets --write")]),
+    ("an Import Changes item, schematic and PCB not compared", import_pending(None),
+     [("L-3", "fail", "schematic and PCB not compared")]),
+    ("an Import Changes item and a clearance error", import_pending(NO_DIFF, CLEARANCE),
+     [("L-3", "fail", "Clearance (Safe Spacing): 1"), ("L-3", "fail", "EasyEDA waits for the import acknowledgement")]),
     # L-4
     ("another footprint", lambda ex, p: ex.comp("C2").update(footprintName="C0603"),
      [("L-4", "fail", "C2: C0603 instead of C0805")]),
@@ -855,6 +881,14 @@ def test_a_group_label_or_unlabelled_covers_a_part(project):
     assert l17(rows)["designators of the top side read with the PCB"] == (
         "pass", "3 parts: 0 with a visible designator, 2 under a group label, unlabelled on purpose: "
                 "C2 (no room next to D1)")
+
+
+def test_the_acknowledgement_alone_leaves_the_other_kinds_passing(project):
+    rows = run(project, import_pending(NO_DIFF))
+    other, sync = [r for r in rows if r["id"] == "L-3"]
+    assert (other["check"], other["result"]) == ("EasyEDA DRC without findings (other kinds)", "pass")
+    assert (sync["check"], sync["result"]) == ("schematic and PCB in sync (Import Changes)", "fail")
+    assert "it shows no changes" in sync["actual"]
 
 
 def test_every_check_has_a_fault():

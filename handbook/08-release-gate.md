@@ -33,7 +33,7 @@ edakit gate --easyeda    # plus S, L, F – EasyEDA with the bridge, minutes
 |---|---|---|
 | L-1 | parts in the PCB = graph; every pad carries the graph's net; every graph pin has a pad | the import may lose or mismatch parts |
 | L-2 | copper from the **Gerber files**, rasterised at 0.02 mm, layers joined through plated holes, pads from FlyingProbeTesting.json, nets from the graph: every net connected, no short, every pad present | do not trust EasyEDA – check what goes to the factory |
-| L-3 | EasyEDA DRC 0 (after save and reload) | |
+| L-3 | EasyEDA DRC 0 (after save and reload), two rows: other kinds; schematic and PCB in sync – an Import Changes item with no difference in `netlist_diff.json` is "EasyEDA waits for the import acknowledgement" (still a fail, one click), otherwise the differences and `pcb parts --write` / `pcb nets --write` | |
 | L-4 | footprint per part = parts database | a swapped footprint variant |
 | L-5 | track width ≥ IPC-2221 for 1.5 × the simulated current (fail), ≥ class width (warn), voltage drop upper bound (info); `route check` measures the same on the SES and the fixed wires before writing (7.5) | power tracks too thin |
 | L-7 | fixed parts in the PCB = plan (± 0.02 mm, rotation, side); the plan itself without findings | a part moved by hand or by the auto-layout |

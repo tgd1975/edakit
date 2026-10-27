@@ -30,7 +30,9 @@
     edakit proposal template|seal|verify   a rule or feature proposal for the edakit repository, sealed with its SHA-256
     edakit doctor                    Node, easyeda-mcp-pro, bridge, EasyEDA process, ngspice, Freerouting
 
-Exit codes everywhere: 0 = ok, 2 = findings, 1 = error.
+Exit codes everywhere: 0 = ok, 2 = findings, 1 = error. `edakit lock`: 3 = another session holds EasyEDA.
+`route all|drc` and `silk apply|check`: 3 = the DRC's only item is "Import Changes" and schematic = PCB – EasyEDA
+waits for the import acknowledgement (Design → Import Changes once).
 """
 
 from __future__ import annotations

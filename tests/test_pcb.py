@@ -552,3 +552,62 @@ def test_without_the_new_fields_the_plan_is_as_before(project, capsys):
     mech = json.loads((project.root / "build" / "edakit" / "mech_main.json").read_text())
     assert sorted(mech["parts"]) == sorted(cfg.board().place)               # … the model is written in any case
     assert all(set(p) == {"side", "x", "y", "rot", "box"} for p in mech["parts"].values())
+
+
+# --- the DRC's Import Changes item: acknowledgement pending or a real difference (#67) -----------------------------
+
+IMPORT = {"errorType": "Netlist Error", "ruleName": "Import Changes"}
+CLEARANCE = {"errorType": "Clearance", "ruleName": "Safe Spacing"}
+NO_DIFF = {"parts": {}, "nets": []}
+
+
+def test_drc_exit_codes():
+    """route all|drc and silk apply|check: 3 when EasyEDA only waits for the acknowledgement, as `edakit lock` exits 3
+    while waiting for another session."""
+    assert pcb.drc_exit([], None) == 0
+    assert pcb.drc_exit([IMPORT], NO_DIFF) == 3
+    assert pcb.drc_exit([IMPORT], {"parts": {"props": ["D1"]}, "nets": []}) == 2
+    assert pcb.drc_exit([IMPORT], None) == 2                  # not compared
+    assert pcb.drc_exit([IMPORT, CLEARANCE], NO_DIFF) == 2
+    assert pcb.drc_exit([CLEARANCE], None) == 2
+
+
+def test_import_verdict_names_the_differences_and_the_fix():
+    assert pcb.import_verdict([], None) == (True, "no Import Changes item")
+    ok, text = pcb.import_verdict([IMPORT], {"parts": {"missing": ["R7"], "props": ["D1", "D2"]},
+                                            "nets": [["U1.3", "", "GND"]]})
+    assert not ok
+    assert text == ("schematic and PCB differ – missing in the PCB: R7; properties differ from the schematic: D1, D2 "
+                    "→ edakit pcb parts --write; pad nets: U1.3 – instead of GND → edakit pcb nets --write")
+
+
+def test_drc_report_compares_only_for_an_import_item(project, monkeypatch, capsys):
+    cfg = project.config()
+    calls = []
+    monkeypatch.setattr(pcb, "netlist_diff", lambda cfg, board, mcp: calls.append(1) or NO_DIFF)
+    assert pcb.drc_report(cfg, cfg.board(), None, [CLEARANCE]) == 2 and not calls
+    out = cfg.artifact("route", "main_netlist_diff.json")
+    assert pcb.drc_report(cfg, cfg.board(), None, [IMPORT], out) == 3 and calls
+    assert json.loads(out.read_text()) == NO_DIFF
+    assert "open Design → Import Changes once" in capsys.readouterr().out
+    assert pcb.drc_report(cfg, cfg.board(), None, []) == 0
+
+
+def test_route_drc_exits_3_for_the_acknowledgement_alone(project, monkeypatch):
+    from argparse import Namespace
+
+    from edakit import eda
+
+    class Mcp:
+        def close(self):
+            pass
+    for name in ("open_project", "open_pcb"):
+        monkeypatch.setattr(eda, name, lambda *a, **k: None)
+    monkeypatch.setattr(eda, "connect", lambda *a, **k: Mcp())
+    monkeypatch.setattr(eda, "drc", lambda mcp, out=None: [IMPORT])
+    monkeypatch.setattr(pcb, "netlist_diff", lambda cfg, board, mcp: NO_DIFF)
+    args = Namespace(board=None, action="drc", verbose=False, clearance=None, passes=None, threads=1,
+                     no_optimizer=False, cleanup=False)
+    assert route.main(project.config(), args) == 3
+    monkeypatch.setattr(pcb, "netlist_diff", lambda cfg, board, mcp: {"parts": {"swapped": ["D1"]}, "nets": []})
+    assert route.main(project.config(), args) == 2

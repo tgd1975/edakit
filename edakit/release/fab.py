@@ -11,12 +11,16 @@ Result in DIR/<board>/:
     jlc_parts.json                   JLCPCB assembly catalogue entry per LCSC number of the BOM (F-2)
     pcb.json, drc.json, bom_easyeda.json, cpl_easyeda.xlsx   raw data from EasyEDA (for --offline)
     order.md                         with [order] in the board file: the order form of this board (order_sheet.py)
+    netlist_diff.json                schematic against PCB (`pcb parts`, `pcb nets`), when the DRC has an Import
+                                     Changes item
 and DIR/polarity_<board>.png: every polarised part with pad, role and net, to compare with datasheets and with the
 assembly preview at JLCPCB.
 
   L-1  parts in the PCB = graph; every pad carries the graph's net; every graph pin has a pad
   L-2  copper from the Gerber files: every net connected, no short, every connected pad present
-  L-3  EasyEDA DRC without findings (after save and reload)
+  L-3  EasyEDA DRC without findings (after save and reload): other kinds; and schematic and PCB in sync – a
+       "Netlist Error – Import Changes" item with no difference in netlist_diff.json is EasyEDA waiting for the
+       import acknowledgement (Design → Import Changes once), otherwise the differences with the command that fixes them
   L-4  footprint per part = parts database
   L-5  track width per net >= IPC-2221 for 1.5 x the simulated current (fail); below the practical class width (warn);
        voltage drop as an upper bound (info)
@@ -114,7 +118,8 @@ def merge_bom(entries):
 # --- collect from EasyEDA -----------------------------------------------------------------------------------------
 
 def collect(cfg, board, d, verbose=False):
-    from .. import eda
+    from .. import eda, pcb
+    (d / "netlist_diff.json").unlink(missing_ok=True)
     mcp = eda.connect(cfg, verbose, artifact_dir=d)
     try:
         eda.open_project(mcp, cfg)
@@ -155,6 +160,12 @@ def collect(cfg, board, d, verbose=False):
             res = mcp.call("easyeda_bom_generate", projectId="current", format="json", groupBy="lcsc", timeout=120)
             entries += res.get("entries", [])
         (d / "bom_easyeda.json").write_text(json.dumps(merge_bom(entries), indent=1, ensure_ascii=False))
+        if pcb.import_items(found):   # last: the comparison focuses the schematic pages
+            try:
+                diff = pcb.netlist_diff(cfg, board, mcp)
+                (d / "netlist_diff.json").write_text(json.dumps(diff, indent=1, ensure_ascii=False))
+            except eda.MCPError as e:          # L-3 then says: not compared
+                print(f"  schematic and PCB not compared: {e}", file=sys.stderr)
     finally:
         mcp.close()
     shutil.rmtree(d / "gerber", ignore_errors=True)
@@ -336,9 +347,14 @@ def check_pcb(cfg, board, design, d, rows):
                      True, ", ".join(f"{n} {v * 1e3:.0f} mV" for n, v in sorted(drop.items(), key=lambda kv: -kv[1])),
                      "information", "info")
     drc = json.loads((d / "drc.json").read_text())
-    kinds = Counter(f"{f.get('errorType')} ({f.get('ruleName')})" for f in drc)
-    rows.add("L", "L-3", board.name, "EasyEDA DRC without findings", not drc,
+    items = pcbmod.import_items(drc)
+    other = [f for f in drc if f not in items]
+    kinds = Counter(f"{f.get('errorType')} ({f.get('ruleName')})" for f in other)
+    rows.add("L", "L-3", board.name, "EasyEDA DRC without findings (other kinds)", not other,
              ", ".join(f"{k}: {n}" for k, n in kinds.items()) or "0", "0")
+    diff = json.loads((d / "netlist_diff.json").read_text()) if (d / "netlist_diff.json").exists() else None
+    ok, what = pcbmod.import_verdict(items, diff)
+    rows.add("L", "L-3", board.name, "schematic and PCB in sync (Import Changes)", ok, what, "no Import Changes item")
     check_polarity_marks(cfg, board, design, d, data, want, on_pcb, rows)
 
 

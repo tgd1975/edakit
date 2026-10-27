@@ -3,6 +3,8 @@
     edakit silk apply   hide the designators of the sides in [silk] hide of the board file; place those of the side
                         in `designators` next to their part where nothing is in the way; export Gerber, check, DRC
     edakit silk check   export Gerber and only check: own silkscreen on solder-mask openings (JLCPCB cuts it off there)
+Both end with EasyEDA's DRC: exit 2 on findings, 3 when the only one is EasyEDA waiting for the import
+acknowledgement (schematic = PCB, compared as `pcb parts` and `pcb nets` do; Design → Import Changes once).
 
 Placement: every designator gets the first free spot above, below, right or left of its part (horizontal, then
 vertical, then at the corners) – not on pads, footprint silkscreen, other parts or other labels. Test points and the
@@ -39,7 +41,7 @@ from pathlib import Path
 from shapely.geometry import Point, Polygon, box
 from shapely.ops import unary_union
 
-from . import eda, gerber
+from . import eda, gerber, pcb
 from .config import BOTTOM, MIL_PER_MM, TOP
 from .design import natural_key
 from .eda import api, ensure_pcb_focus
@@ -497,9 +499,8 @@ def check(cfg, board, mcp, footprint_silk=None):
         picture(silk, openings, board_shape(board), img, mirror=layer == BOTTOM)
         print(f"  {side}: silkscreen on mask openings {hit:.3f} mm² (target 0), picture -> {img}")
         bad += hit > 0.001
-    found = eda.drc(mcp)
-    print("  " + eda.describe_drc(found))
-    return 2 if bad or found else 0
+    code = pcb.drc_report(cfg, board, mcp, eda.drc(mcp))
+    return 2 if bad else code
 
 
 def preview(cfg, board):

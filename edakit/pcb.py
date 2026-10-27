@@ -1237,9 +1237,9 @@ def pour(cfg, board, mcp, keep_islands_on=None, regions=None):
                 print(f"  pour {spec['net']} {layer_name}{part}: {'ok' if r else 'FAILED'}")
 
 
-def sync_nets(cfg, mcp, write=False):
-    """Pad nets in the PCB = graph (replaces importChanges for pure net changes: its confirmation dialog needs a click,
-    'force' has no effect). Pads of parts have their own ids from getAllPinsByPrimitiveId."""
+def nets_diff(cfg, mcp):
+    """Pads whose net in the PCB differs from the graph: [(pad, pad id, PCB net, graph net)]. Pads of parts have their
+    own ids from getAllPinsByPrimitiveId."""
     design = Design.from_config(cfg)
     want = dict(design.pin_net)
     ensure_pcb_focus(mcp)
@@ -1255,6 +1255,13 @@ def sync_nets(cfg, mcp, write=False):
             net = want.get(key, "")  # not in the graph = unconnected (nc)
             if (ps.get("Net") or "") != net:
                 changes.append((key, ps["PrimitiveId"], ps.get("Net"), net))
+    return changes
+
+
+def sync_nets(cfg, mcp, write=False):
+    """Pad nets in the PCB = graph (replaces importChanges for pure net changes: its confirmation dialog needs a click,
+    'force' has no effect)."""
+    changes = nets_diff(cfg, mcp)
     for n, (key, pid, old, new) in enumerate(changes):
         print(f"  {key}: {old} -> {new or '–'}")
         if write:
@@ -1288,14 +1295,13 @@ def bom_differs(sch_part, pcb_part):
     return a is not None and b is not None and bool(a) != bool(b)
 
 
-def sync_parts(cfg, board, mcp, write=False):
-    """PCB parts = parts of the board schematic, without the "Import Changes" dialog (importChanges(uuid, true) opens
-    it anyway). Schematic and PCB part are linked through the same UniqueId (ggeN). Missing parts are created (device
-    from the project library, designator, UniqueId, the COMPLETE OtherProperty of the schematic part with a new
-    Channel ID, pad nets from the graph) and parked next to the board; swapped ones (other LCSC number or footprint)
-    are replaced the same way; extra ones deleted; unlinked ones linked. Without write only shown.
-    Then: dump/plan, apply, auto-layout, route."""
-    project = api(mcp, "DMT_Project.getCurrentProjectInfo")["uuid"]
+PARTS_DIFF = {"missing": "missing in the PCB", "extra": "not in the schematic", "swapped": "swapped (LCSC/footprint)",
+              "unlinked": "not linked (UniqueId)", "props": "properties differ from the schematic"}
+
+
+def parts_diff(mcp, board):
+    """Schematic parts against PCB parts: ({kind of PARTS_DIFF: [designators]}, schematic uuid, schematic parts,
+    PCB parts)."""
     sch_uuid, sch = schematic_parts(mcp, board)
     eda.open_pcb(mcp, board.pcb)
     pcb = {}
@@ -1318,12 +1324,24 @@ def sync_parts(cfg, board, mcp, write=False):
     props = sorted((r for r in set(sch) & set(pcb) if same(r) and (any(
         (pcb[r].get("OtherProperty") or {}).get(k) != v for k, v in (sch[r].get("OtherProperty") or {}).items())
         or bom_differs(sch[r], pcb[r]))), key=natural_key)
-    for title, refs in (("missing in the PCB", missing), ("not in the schematic", extra),
-                        ("swapped (LCSC/footprint)", swapped), ("not linked (UniqueId)", unlinked),
-                        ("properties differ from the schematic", props)):
+    found = {"missing": missing, "extra": extra, "swapped": swapped, "unlinked": unlinked, "props": props}
+    return found, sch_uuid, sch, pcb
+
+
+def sync_parts(cfg, board, mcp, write=False):
+    """PCB parts = parts of the board schematic, without the "Import Changes" dialog (importChanges(uuid, true) opens
+    it anyway). Schematic and PCB part are linked through the same UniqueId (ggeN). Missing parts are created (device
+    from the project library, designator, UniqueId, the COMPLETE OtherProperty of the schematic part with a new
+    Channel ID, pad nets from the graph) and parked next to the board; swapped ones (other LCSC number or footprint)
+    are replaced the same way; extra ones deleted; unlinked ones linked. Without write only shown.
+    Then: dump/plan, apply, auto-layout, route."""
+    project = api(mcp, "DMT_Project.getCurrentProjectInfo")["uuid"]
+    found, sch_uuid, sch, pcb = parts_diff(mcp, board)
+    missing, extra, swapped, unlinked, props = (found[k] for k in PARTS_DIFF)
+    for kind, refs in found.items():
         if refs:
-            print(f"  {title}: {', '.join(refs)}")
-    todo = len(missing) + len(extra) + len(swapped) + len(unlinked) + len(props)
+            print(f"  {PARTS_DIFF[kind]}: {', '.join(refs)}")
+    todo = sum(map(len, found.values()))
     print(f"  schematic {board.schematic}: {len(sch)} parts, PCB {board.pcb}: {len(pcb)}; {todo} difference(s)")
     if not write or not todo:
         return todo
@@ -1401,6 +1419,68 @@ def sync_parts(cfg, board, mcp, write=False):
         f.write_text(json.dumps(geo, indent=1, ensure_ascii=False))
     print(f"  PCB saved: {eda.save_pcb(mcp)}")
     return 0
+
+
+# --- the DRC's "Netlist Error – Import Changes" -------------------------------------------------------------------
+
+IMPORT_CHANGES = ("Netlist Error", "Import Changes")
+ACKNOWLEDGE = ("EasyEDA waits for the import acknowledgement: open Design → Import Changes once, it shows no changes "
+               "(schematic = PCB: parts, links, properties, pad nets)")
+
+
+def import_items(found):
+    """The DRC items EasyEDA writes while schematic and PCB netlist differ in its eyes – also, after parts were placed
+    in the schematic, until the import view has been opened once."""
+    return [f for f in found if (f.get("errorType"), f.get("ruleName")) == IMPORT_CHANGES]
+
+
+def netlist_diff(cfg, board, mcp):
+    """The dry runs of `pcb parts` and `pcb nets`: {"parts": {kind: [designators]}, "nets": [[pad, PCB net, graph
+    net]]} – only the kinds with a difference."""
+    parts = {k: refs for k, refs in parts_diff(mcp, board)[0].items() if refs}
+    return {"parts": parts, "nets": [[key, old or "", new] for key, _, old, new in nets_diff(cfg, mcp)]}
+
+
+def import_verdict(items, diff):
+    """(ok, what) for 'schematic and PCB in sync (Import Changes)': no item; not compared; the acknowledgement alone;
+    or the differences with the command that fixes them."""
+    if not items:
+        return True, "no Import Changes item"
+    if diff is None:
+        return False, (f"Netlist Error (Import Changes): {len(items)}; schematic and PCB not compared (EasyEDA's DRC "
+                       "and the comparison of `edakit pcb parts` and `pcb nets` run together)")
+    parts = [f"{PARTS_DIFF.get(k, k)}: {', '.join(refs)}" for k, refs in diff.get("parts", {}).items() if refs]
+    nets = [f"{pad} {have or '–'} instead of {want or '–'}" for pad, have, want in diff.get("nets", [])]
+    if not parts and not nets:
+        return False, ACKNOWLEDGE
+    out = ["; ".join(parts) + " → edakit pcb parts --write"] if parts else []
+    out += [f"pad nets: {'; '.join(nets[:12])}" + (f" (+{len(nets) - 12})" if len(nets) > 12 else "")
+            + " → edakit pcb nets --write"] if nets else []
+    return False, "schematic and PCB differ – " + "; ".join(out)
+
+
+def drc_exit(found, diff):
+    """Exit code of `route all|drc` and `silk apply|check` for the DRC: 0 without items; 3 when the only items are
+    Import Changes and the comparison shows no difference – EasyEDA waits for the acknowledgement, as `edakit lock`
+    exits 3 while another session holds EasyEDA –; 2 otherwise."""
+    if not found:
+        return 0
+    if len(import_items(found)) == len(found) and import_verdict(found, diff)[1] == ACKNOWLEDGE:
+        return 3
+    return 2
+
+
+def drc_report(cfg, board, mcp, found, out=None, say=print):
+    """Print the DRC; with an Import Changes item compare schematic and PCB (written to out) and say which case it is.
+    Returns drc_exit."""
+    say(f"  {eda.describe_drc(found)}")
+    items, diff = import_items(found), None
+    if items:
+        diff = netlist_diff(cfg, board, mcp)
+        if out:
+            out.write_text(json.dumps(diff, indent=1, ensure_ascii=False))
+        say(f"  {import_verdict(items, diff)[1]}")
+    return drc_exit(found, diff)
 
 
 def autolayout(cfg, board, mcp, timeout_min=20):

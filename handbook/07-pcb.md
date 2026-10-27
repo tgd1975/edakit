@@ -483,6 +483,15 @@ and anything unplanned is deleted – old tracks have come back after a reload b
 **DRC only after reload:** right after API changes the DRC reported 320 false connection errors; saved and reloaded:
 0. `route all` saves, closes and reopens the PCB before its DRC.
 
+**Import Changes.** After parts were placed in the schematic, EasyEDA's DRC reports "Netlist Error – Import
+Changes" until its import view has been opened once – also when schematic and PCB are equal. `route drc` (and
+`route all`, `silk apply`/`check`, the gate's L-3) then compares them itself, as `pcb parts` and `pcb nets` do without
+`--write`, writes the result to `route/<board>_netlist_diff.json` and says which case it is: no difference → "EasyEDA
+waits for the import acknowledgement: open Design → Import Changes once, it shows no changes", exit **3** when that
+is the only item; differences → the parts and pads with `pcb parts --write` or `pcb nets --write`, exit 2. In the
+reference project the item alone held the gate at L-3 in ten runs, once for 2¾ h while the first diagnosis was
+wrong.
+
 ## 7.6 Pours
 
 `[[pours]]` of the board file: net, layers, `plane` (with `fanout`, 7.5), `stitch`, `pour_only`. Filled with

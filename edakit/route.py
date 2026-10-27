@@ -26,9 +26,12 @@ start, has a fixed 900 s limit and left nets open. So routing happens outside Ea
     6 pours    pours of [[pours]] anew and filled; optional stitching of loose islands with vias. With
                pour_regions, nets that share a layer get the outlines of their own areas, computed from board and SES
     7 reload   save, close the PCB tab, open it again – otherwise the DRC reports false connection errors
-    8 drc      EasyEDA DRC with details -> <board>_drc.json; exit 2 on findings
+    8 drc      EasyEDA DRC with details -> <board>_drc.json; exit 2 on findings. With a "Netlist Error – Import
+               Changes" item it compares schematic and PCB as `pcb parts` and `pcb nets` do (-> <board>_netlist_diff.json):
+               no difference = EasyEDA only waits for the import acknowledgement (Design → Import Changes once),
+               exit 3 when that is the only item
 
-    edakit route all                 # 1-8, progress per step; exit 0 = DRC 0
+    edakit route all                 # 1-8, progress per step; exit 0 = DRC 0, 3 = only the acknowledgement pending
     edakit route route --passes 60   # single steps
     edakit route diagnose [--net N]  # offline: why each open connection is open – unreachable on the empty board
                                      # (what walls it in), blocked by the routed copper of other nets (which), or a
@@ -136,7 +139,8 @@ def paths(cfg, board):
     d = cfg.artifact("route", ".keep").parent
     return {k: d / f"{board.name}{suffix}" for k, suffix in
             (("board", "_board.json"), ("dsn", ".dsn"), ("ses", ".ses"), ("log", "_freerouting.log"),
-             ("png", "_routing.png"), ("drc", "_drc.json"), ("stitch", "_stitch.json"), ("diagnose", "_diagnose"))}
+             ("png", "_routing.png"), ("drc", "_drc.json"), ("netlist_diff", "_netlist_diff.json"),
+             ("stitch", "_stitch.json"), ("diagnose", "_diagnose"))}
 
 
 # --- 1 read -------------------------------------------------------------------------------------------------------
@@ -2228,9 +2232,10 @@ def main(cfg, args):
                 say("PCB saved and reloaded")
             elif step == "drc":
                 found = eda.drc(mcp, P["drc"])
-                say(eda.describe_drc(found))
-                if found:
-                    return 2
+                P["netlist_diff"].unlink(missing_ok=True)
+                code = pcb.drc_report(cfg, board, mcp, found, P["netlist_diff"], say=say)
+                if code:
+                    return code
             elif step == "save":
                 say(f"PCB saved: {eda.save_pcb(mcp)}")
     except eda.MCPError as e:
