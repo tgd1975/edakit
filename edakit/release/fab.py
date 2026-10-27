@@ -19,7 +19,8 @@ assembly preview at JLCPCB.
   L-5  track width per net >= IPC-2221 for 1.5 x the simulated current (fail); below the practical class width (warn);
        voltage drop as an upper bound (info)
   L-7  fixed parts in the PCB = plan (± 0.02 mm, rotation, side); the plan itself without findings
-  L-8  silkscreen "+"/"−" next to a pad with that polarity role
+  L-8  silkscreen "+"/"−" next to a pad of that sign: PCB texts, and the "+" footprints draw as two crossing strokes in
+       the silk Gerber files; cathode and minus pads "−", anode, plus and vbus pads "+" (waive L-8 on the nearest part)
   L-9  every through hole takes its lead at nominal size (lead data in the parts database); tight in the worst case
        or plated slots narrower than JLCPCB's minimum: warn
   L-10 every pad sits where the library footprint has the pad with that number (pad_map in the parts DB for
@@ -166,11 +167,13 @@ def pin_role(design, comp, num):
 
 
 def role_sign(role):
+    """The sign a pin role takes in the silkscreen (L-8): anode, plus… and vbus "+", cathode and minus… "−"; the
+    anodes and cathodes of the colours of an RGB LED (anode_red, cathode_red …) like the plain ones."""
     if not role:
         return None
-    if role.startswith("plus") or role in ("vbus", "anode"):
+    if role.startswith(("plus", "anode")) or role == "vbus":
         return "+"
-    if role.startswith("minus"):
+    if role.startswith(("minus", "cathode")):
         return "−"
     return None
 
@@ -292,24 +295,72 @@ def check_pcb(cfg, board, design, d, rows):
     kinds = Counter(f"{f.get('errorType')} ({f.get('ruleName')})" for f in drc)
     rows.add("L", "L-3", board.name, "EasyEDA DRC without findings", not drc,
              ", ".join(f"{k}: {n}" for k, n in kinds.items()) or "0", "0")
-    labels = [s for s in data["strings"] if s["Layer"] in SILK and s["Text"] in ("+", "−", "-")]
+    check_polarity_marks(cfg, board, design, d, data, want, on_pcb, rows)
+
+
+TEXT_REACH_MM = 1.2   # L-8: how far from its anchor, per character, the strokes of a PCB text may lie
+
+
+def polarity_signs(cfg, board, d, data):
+    """L-8: the signs of the silkscreen as [(sign, x, y, silk layer, how)] in mm – the PCB texts "+", "−", "-", and the
+    "+" a footprint draws as two crossing strokes, read from the silk Gerber files (gerber.plus_signs). A drawn "+"
+    near a PCB text with a "+" is that text's print (a "+" text counts once, a "+5V" is a label); one inside the box
+    of a [[silk.art]] item is artwork. -> (signs, silk files missing)."""
+    from shapely.geometry import Point
+
+    from .. import silk
+    signs = [("+" if s["Text"] == "+" else "−", s["X"] * MM, s["Y"] * MM, s["Layer"], "text")
+             for s in data["strings"] if s["Layer"] in SILK and s["Text"] in ("+", "−", "-")]
+    lost = gerber.missing(d / "gerber", "top_silk", "bottom_silk")
+    for key, layer, side in (("top_silk", 3, "top"), ("bottom_silk", 4, "bottom")):
+        if gerber.FILES[key] in lost:
+            continue
+        drawn = gerber.plus_signs(d / "gerber" / gerber.FILES[key])
+        texts = [(s["X"] * MM, s["Y"] * MM, TEXT_REACH_MM * len(s["Text"])) for s in data["strings"]
+                 if s["Layer"] == layer and "+" in s["Text"]]
+        drawn = [p for p in drawn if not any(math.dist(p, t[:2]) <= t[2] for t in texts)]
+        if drawn and board.silk.get("art"):
+            art = [g.envelope for g in silk.art_items(cfg, board, side)]
+            drawn = [p for p in drawn if not any(a.covers(Point(p)) for a in art)]
+        signs += [("+", x, y, layer, "drawn") for x, y in drawn]
+    return signs, lost
+
+
+def check_polarity_marks(cfg, board, design, d, data, want, on_pcb, rows):
+    """L-8: every sign of the silkscreen (polarity_signs) is compared with the nearest pad on its side whose pin role
+    has a sign (role_sign); a sign at a pad of the other sign fails. `waive: {"L-8": "…"}` on the nearest part lists
+    its finding as waived – a decorative cross, or a footprint whose print is known and wrong."""
+    signs, lost = polarity_signs(cfg, board, d, data)
+    if lost:
+        rows.add("L", "L-8", board.name, "silk Gerber files for the drawn signs", False,
+                 f"{', '.join(lost)} missing (Gerber export)", "present")
     polar = {r for r in want if r in on_pcb and any(role_sign(p.get("role")) for p in
                                                    (design.parts.get(want[r].get("lcsc") or "", {}).get("pins") or {}).values())}
-    if labels and polar:
-        wrong = []
-        for s in labels:
-            pads = [(ref, p) for ref in polar for p in on_pcb[ref]["pads"]
-                    if p["Layer"] in (SILK[s["Layer"]], MULTI) and role_sign(pin_role(design, want[ref], p["PadNumber"]))]
-            if not pads:
-                wrong.append(f"'{s['Text']}' at ({s['X'] * MM:.1f}, {s['Y'] * MM:.1f}) mm: no polarised pad on this side")
-                continue
-            ref, p = min(pads, key=lambda rp: math.hypot(rp[1]["X"] - s["X"], rp[1]["Y"] - s["Y"]))
-            role = pin_role(design, want[ref], p["PadNumber"])
-            if role_sign(role) != ("+" if s["Text"] == "+" else "−"):
-                wrong.append(f"'{s['Text']}' at ({s['X'] * MM:.1f}, {s['Y'] * MM:.1f}) mm: nearest pad {ref}.{p['PadNumber']} "
-                             f"is {role}")
-        rows.add("L", "L-8", board.name, "silkscreen '+'/'−' = role of the nearest polarised pad", not wrong,
-                 "; ".join(wrong) or f"{len(labels)} signs correct", "every sign at the right pole")
+    if not signs or not polar:
+        return
+    wrong, waived = [], []
+    for sign, x, y, layer, _ in signs:
+        pads = [(ref, p) for ref in polar for p in on_pcb[ref]["pads"]
+                if p["Layer"] in (SILK[layer], MULTI) and role_sign(pin_role(design, want[ref], p["PadNumber"]))]
+        if not pads:
+            wrong.append(f"'{sign}' at ({x:.1f}, {y:.1f}) mm: no polarised pad on this side")
+            continue
+        ref, p = min(pads, key=lambda rp: math.hypot(rp[1]["X"] * MM - x, rp[1]["Y"] * MM - y))
+        role = pin_role(design, want[ref], p["PadNumber"])
+        if role_sign(role) != sign:
+            text = f"'{sign}' at ({x:.1f}, {y:.1f}) mm: nearest pad {ref}.{p['PadNumber']} is {role}"
+            reason = (want[ref].get("waive") or {}).get("L-8")
+            if reason:
+                waived.append((text, reason))
+            else:
+                wrong.append(text)
+    n_text = sum(1 for s in signs if s[4] == "text")
+    rows.add("L", "L-8", board.name, "silkscreen '+'/'−' = role of the nearest polarised pad", not wrong,
+             "; ".join(wrong) or f"{len(signs) - len(waived)} signs correct" + (f", {len(waived)} waived" if waived else "")
+             + f": {n_text} as PCB text, {len(signs) - n_text} drawn in the silkscreen", "every sign at the right pole")
+    for text, reason in waived:
+        rows.add("L", "L-8", board.name, f"polarity mark: {text}", True, text, "every sign at the right pole", "waived")
+        rows[-1]["reason"] = reason
 
 
 def check_pad_layout(board, design, on_pcb, want, geo, rows):

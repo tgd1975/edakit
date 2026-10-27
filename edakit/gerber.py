@@ -278,3 +278,32 @@ class Copper:
     def net_groups(self, net):
         """Pad groups of a net, largest first; more than one = the net is open in the copper."""
         return sorted((sorted(p) for p in self.groups.get(net, {}).values()), key=len, reverse=True)
+
+
+def plus_signs(path, lo=0.3, hi=2.0, tol=0.1):
+    """'+' signs drawn in a silkscreen file the way footprints draw them (L-8): two straight strokes of lo to hi mm,
+    as long as each other (± 0.2 mm), at right angles (|cos| < 0.1), their middles within tol mm of each other.
+    -> [(x, y)] in mm, one per sign. A frame, an arc or a letter does not qualify: its strokes meet at their ends, are
+    shorter or longer, or cross at another angle."""
+    strokes = []
+    for kind, dat in parse_gerber(path):
+        if kind == "draw":
+            strokes += [(a, b) for a, b in zip(dat[1], dat[1][1:]) if lo <= math.dist(a, b) <= hi]
+    mids = [((a[0] + b[0]) / 2, (a[1] + b[1]) / 2) for a, b in strokes]
+    cells = defaultdict(list)
+    for i, (x, y) in enumerate(mids):
+        cells[(math.floor(x / tol), math.floor(y / tol))].append(i)
+    found = []
+    for i, ((a, b), m) in enumerate(zip(strokes, mids)):
+        cx, cy = math.floor(m[0] / tol), math.floor(m[1] / tol)
+        for j in (j for dx in (-1, 0, 1) for dy in (-1, 0, 1) for j in cells.get((cx + dx, cy + dy), ()) if j > i):
+            (c, e), n = strokes[j], mids[j]
+            u, v = (b[0] - a[0], b[1] - a[1]), (e[0] - c[0], e[1] - c[1])
+            if (math.dist(m, n) <= tol and abs(math.hypot(*u) - math.hypot(*v)) <= 0.2
+                    and abs(u[0] * v[0] + u[1] * v[1]) < 0.1 * math.hypot(*u) * math.hypot(*v)):
+                found.append(((m[0] + n[0]) / 2, (m[1] + n[1]) / 2))
+    signs = []
+    for p in found:                     # a sign drawn twice is one sign
+        if not any(math.dist(p, q) <= tol for q in signs):
+            signs.append(p)
+    return signs

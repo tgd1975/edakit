@@ -39,6 +39,7 @@ Start with `edakit doctor`.
 | Freerouting routes nothing in part of the board | concave outline as boundary | edakit uses a rectangle + keep-outs; if you write your own DSN, do the same |
 | tracks appear where a wire keep-out should be | stale DSN | `route` writes the DSN fresh every time; `route check` uses the same config |
 | "outline contains arcs" | outline drawn by hand with arcs | draw it with `edakit pcb apply` (arcs as point lists) |
+| L-8: "'+' at (-20.2, 92.5) mm: nearest pad D19.1 is cathode" | the footprint prints its "+" at the pad the parts entry calls the cathode – the print or the roles are wrong | compare the footprint with the datasheet: roles wrong → correct them in the parts entry; print wrong → put the anode's net on the pad with the "+" and give that pin the role `anode` (4.4), or another footprint; a decorative cross: `waive` L-8 on the nearest part |
 | `uv run …` exits 120 without output inside Claude Code | uv from snap cannot write to the file Claude Code hands it | `… 2>&1 \| cat` |
 | a wait loop never ends | `pgrep -f` matches its own shell | wait for an end line or the PID (chapter 11.3) |
 | EasyEDA crashed during a long run | V8 out of memory | restart, find the state, rerun the whole step; second crash: smaller blocks (start skill, section 4) |

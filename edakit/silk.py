@@ -228,9 +228,15 @@ def svg_geometry(path):
 
 
 def art_shapes(cfg, board, side):
-    """All artwork of one side in EasyEDA coordinates (mm, seen from the top). An item is scaled to width_mm, centred
-    on its plan position (x, y), turned by rot (counter-clockwise as seen from its side) and mirrored on the bottom –
-    EasyEDA mirrors texts there, not graphics."""
+    """All artwork of one side in EasyEDA coordinates (mm, seen from the top), as one geometry."""
+    out = art_items(cfg, board, side)
+    return unary_union(out) if out else Polygon()
+
+
+def art_items(cfg, board, side):
+    """Each artwork item of one side in EasyEDA coordinates (mm, seen from the top). An item is scaled to width_mm,
+    centred on its plan position (x, y), turned by rot (counter-clockwise as seen from its side) and mirrored on the
+    bottom – EasyEDA mirrors texts there, not graphics."""
     from shapely.affinity import rotate, scale, translate
     out = []
     for item in board.silk.get("art", []):
@@ -244,7 +250,7 @@ def art_shapes(cfg, board, side):
         if side == "bottom":
             g = scale(g, -1, 1, origin=(0, 0))
         out.append(translate(g, *board.eda_point(float(item["x"]), float(item["y"]))))
-    return unary_union(out) if out else Polygon()
+    return out
 
 
 def printable(art, area, openings):

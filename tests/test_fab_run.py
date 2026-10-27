@@ -43,6 +43,7 @@ HOLE = (26, 16, 3.2)               # M3, a circle on the outline layer
 TOOLING = [(2.5, 17.5), (27.5, 2.5)]
 TOOLING_D, TOOLING_OPEN = 1.152, 1.152 + 2 * 0.148
 PLUS = (10.8, 10.9)                # "+" on the top silkscreen, next to D1's anode
+CATHODE = (15.2, 10.9)             # 1.9 mm above D1.1, D1's cathode
 BOARD = f"""# The input stage of the example on a board of its own (tests/test_fab_run.py)
 view = "top"
 pours = []
@@ -290,7 +291,8 @@ def test_the_clean_export_passes_every_check(project):
     by = {(r["id"], r["check"]): r["actual"] for r in rows}
     assert by["L-11", "short current loops: path over tracks per pad pair within the limit"] == "J1.1-D1.2 7.8 mm"
     assert by["L-9", "hole takes the lead at nominal size (diagonal or edge, or manufacturer's value)"] == "2 holes"
-    assert by["L-8", "silkscreen '+'/'−' = role of the nearest polarised pad"] == "1 signs correct"
+    assert by["L-8", "silkscreen '+'/'−' = role of the nearest polarised pad"] == \
+        "1 signs correct: 1 as PCB text, 0 drawn in the silkscreen"     # the text's strokes are that text
     paste_row = next(r for r in rows if r["id"] == "L-14")
     assert (paste_row["actual"], paste_row["expected"]) == (
         "4 SMD pads", ">= 0.400 mm on TOP ([release] assembly paste_gap_mm)")     # J1 is through-hole
@@ -378,6 +380,17 @@ def via(ex, x, y, pad=0.6096, hole=0.3048):
         ex.gerber[layer].append(("flash", ("C", pad, pad), x, y))
 
 
+def plus_at(x, y, text=True):
+    """The "+" of the export moved to (x, y): drawn in the top silkscreen as two crossing strokes, the way a footprint
+    draws it, and as a PCB text unless text is False (a footprint's own print)."""
+    def fault(ex, project):
+        ex.gerber["top_silk"].drop("+")
+        ex.gerber["top_silk"] += [("draw", 0.15, [(x - 0.4, y), (x + 0.4, y)], "+"),
+                                  ("draw", 0.15, [(x, y - 0.4), (x, y + 0.4)], "+")]
+        ex.pcb["strings"] = [{**s, "X": x * MIL, "Y": y * MIL} for s in ex.pcb["strings"]] if text else []
+    return fault
+
+
 def assembled_j1(ex, project):
     graph(project, lambda g: project.comp(g, "J1").pop("bom"))
     ex.jlc["C131337"] = {"componentModelEn": "B2B-PH-K-S(LF)(SN)", "componentLibraryType": "extend",
@@ -434,6 +447,10 @@ FAULTS = [
     ("a plus sign on a side without polarised pads",
      lambda ex, p: ex.pcb["strings"].append({**ex.pcb["strings"][0], "Layer": 4}),
      [("L-8", "fail", "'+' at (10.8, 10.9) mm: no polarised pad on this side")]),
+    ("a plus sign at the cathode", plus_at(*CATHODE),           # a cathode had no sign: compared with the anode
+     [("L-8", "fail", "'+' at (15.2, 10.9) mm: nearest pad D1.1 is cathode")]),
+    ("a footprint's own plus sign at the cathode", plus_at(*CATHODE, text=False),   # only the Gerber has it
+     [("L-8", "fail", "'+' at (15.2, 10.9) mm: nearest pad D1.1 is cathode")]),
     # L-9
     ("a through-hole part without lead data", lambda ex, p: p.save_part("C131337", {
         k: v for k, v in p.part("C131337").items() if k != "lead"}), [("L-9", "fail", "J1")]),
@@ -511,7 +528,7 @@ FAULTS = [
     ("a Gerber file missing", lambda ex, p: ex.gerber.pop("outline"),
      [("F-5", "fail", "Gerber_BoardOutlineLayer.GKO")]),
     ("a silkscreen file missing", lambda ex, p: ex.lost.add("bottom_silk"),
-     [("F-5", "fail", "Gerber_BottomSilkscreenLayer.GBO")]),
+     [("F-5", "fail", "Gerber_BottomSilkscreenLayer.GBO"), ("L-8", "fail", "Gerber_BottomSilkscreenLayer.GBO missing")]),
     ("no outline in the outline file", lambda ex, p: ex.gerber["outline"].clear(), [("F-5", "fail", "none")]),
     ("the outline off the plan", lambda ex, p: ex.gerber["outline"].__setitem__(0, (
         "draw", 0.1, [(0, 0), (31, 0), (31, 20), (0, 20), (0, 0)], "outline")),
@@ -610,6 +627,48 @@ def test_a_waived_annular_ring_is_listed_with_its_reason(project):
     assert [(r["check"], r["actual"]) for r in w] == [
         ("annular ring: J1.1: 0.125 mm on TOP and BOTTOM (hole Ø 1.00 mm)", "0.125 mm"),
         ("annular ring: J1.2: 0.125 mm on TOP and BOTTOM (hole Ø 1.00 mm)", "0.125 mm")]
+
+
+def test_a_minus_sign_at_the_cathode_is_right(project):
+    def minus(ex, p):
+        ex.pcb["strings"] = [{"Text": "−", "X": CATHODE[0] * MIL, "Y": CATHODE[1] * MIL, "Layer": 3}]
+    rows = run(project, minus)                  # the drawn "+" stays at the anode
+    assert findings(rows) == []
+    assert next(r for r in rows if r["id"] == "L-8")["actual"] == \
+        "2 signs correct: 1 as PCB text, 1 drawn in the silkscreen"
+
+
+def test_a_cross_in_the_artwork_is_not_read(project):
+    def art(ex, p):
+        plus_at(*CATHODE, text=False)(ex, p)
+        (p.root / "star.svg").write_text('<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 10 10">'
+                                         '<rect x="0" y="0" width="10" height="10" fill="black"/></svg>')
+        board_file(p, 'edge_ok = ["J1"]', 'edge_ok = ["J1"]\n\n[[silk.art]]\nsvg = "star.svg"\n'
+                   f"x = {CATHODE[0]}\ny = {CATHODE[1]}\nwidth_mm = 3")
+    rows = run(project, art)
+    assert findings(rows) == []
+    assert not [r for r in rows if r["id"] == "L-8"]                    # no sign left to compare
+
+
+def test_a_waived_sign_is_listed_with_its_reason(project):
+    def waived(ex, p):
+        plus_at(*CATHODE, text=False)(ex, p)
+        graph(p, lambda g: p.comp(g, "D1").update(waive={"L-8": "test: the library's print, the roles are right"}))
+    rows = run(project, waived)
+    assert findings(rows) == [("L-8", "waived")]
+    w = next(r for r in rows if r["result"] == "waived")
+    assert w["reason"] == "test: the library's print, the roles are right"
+    assert "'+' at (15.2, 10.9) mm: nearest pad D1.1 is cathode" in w["check"]
+
+
+def test_plus_signs_in_a_silkscreen_file(tmp_path):
+    lay = Layer([("draw", 0.15, [(0, 1), (1.2, 1)], "+"), ("draw", 0.15, [(0.6, 0.4), (0.6, 1.6)], "+"),   # a "+"
+                 ("draw", 0.15, [(5, 0), (6, 0), (6, 1), (5, 1), (5, 0)], "frame"),       # corners meet at their ends
+                 ("draw", 0.15, [(10, 0), (10.5, 0.866)], "X"), ("draw", 0.15, [(10.5, 0), (10, 0.866)], "X"),  # 60°
+                 ("draw", 0.15, [(20, 0), (20.2, 0)], "short"), ("draw", 0.15, [(20.1, -0.1), (20.1, 0.1)], "short"),
+                 ("draw", 0.15, [(30, 0), (33, 0)], "long"), ("draw", 0.15, [(31.5, -1.5), (31.5, 1.5)], "long")])
+    (tmp_path / "silk.gbr").write_text(lay.text())
+    assert [tuple(round(v, 3) for v in p) for p in gerber.plus_signs(tmp_path / "silk.gbr")] == [(0.6, 1.0)]
 
 
 def test_every_check_has_a_fault():

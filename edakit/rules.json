@@ -206,10 +206,10 @@
   },
   "L-8": {
    "title": "polarity marks",
-   "rule": "Every '+' or '-' in the silkscreen sits next to a pad with that polarity role.",
-   "why": "A sign at the wrong pole makes whoever solders or inspects the board turn the part the wrong way.",
-   "fix": "A footprint whose marking matches the roles, or no sign in the silkscreen.",
-   "sources": ["edakit handbook 4.4"]
+   "rule": "Every '+' or '-' in the silkscreen – a PCB text, or a '+' a footprint draws as two crossing strokes of 0.3–2 mm in the silk Gerber file – sits next to a pad of that sign: the nearest pad on its side whose pin role has a sign (anode…, plus…, vbus '+'; cathode…, minus… '-') has the same one.",
+   "why": "A sign at the wrong pole makes whoever solders or inspects the board turn the part the wrong way. The sign that counts most is the footprint's own print: the assembler, the hand-solderer and JLCPCB's assembly preview go by it. In the reference project the library footprint of a 5-mm LED printed '+' at the pad that symbol and datasheet call the cathode. L-8 read only PCB texts, and a cathode had no sign, so a '+' at a cathode was compared with the anode next to it and passed; a review found it before five boards were assembled with the LED turned.",
+   "fix": "Compare the footprint with the datasheet. The print is right: correct the roles in the parts entry. The datasheet is right: put the anode's net on the pad with the '+' and give that pin the role anode (handbook 4.4), or use another footprint. A cross inside the box of a [[silk.art]] item is artwork and is not read; a decorative cross elsewhere is waived on the nearest part (waive L-8).",
+   "sources": ["edakit handbook 4.4 and 8.1", "the reference project's second review (M-1), 2026-10-22, and its decision on it: the footprint LED-TH_BD5.0-P2.54-FD prints '+' at pad 1, symbol and datasheet call pad 1 the cathode; the nets were swapped so that pad 1 carries the anode"]
   },
   "L-9": {
    "title": "hole fits the lead",

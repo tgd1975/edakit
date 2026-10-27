@@ -130,7 +130,9 @@ In the reference project the EasyEDA footprint of a 5-mm LED printed "+" next to
 called pad 1 the cathode. Editing the project's footprint through the API went nowhere (chapter 9.4). The fix was in
 the graph: the net of the anode goes to the pad with the "+" print, and the parts entry gives pin 1 the role `anode` –
 so every check, the simulation and the firmware pin tables follow automatically. The gate's polarity sheet (one tile
-per polarised part: copper, silkscreen, pad numbers, roles, nets) is what makes this visible at a glance.
+per polarised part: copper, silkscreen, pad numbers, roles, nets) is what makes this visible at a glance. L-8 of the
+gate finds it on its own: it reads the "+" the footprint draws in the silk Gerber and fails when the nearest pad with a
+polarity role is a cathode (8.1).
 
 ## 4.5 Own parts
 
