@@ -40,6 +40,12 @@ Start with `edakit doctor`.
 | tracks appear where a wire keep-out should be | stale DSN | `route` writes the DSN fresh every time; `route check` uses the same config |
 | "outline contains arcs" | outline drawn by hand with arcs | draw it with `edakit pcb apply` (arcs as point lists) |
 | L-8: "'+' at (-20.2, 92.5) mm: nearest pad D19.1 is cathode" | the footprint prints its "+" at the pad the parts entry calls the cathode – the print or the roles are wrong | compare the footprint with the datasheet: roles wrong → correct them in the parts entry; print wrong → put the anode's net on the pad with the "+" and give that pin the role `anode` (4.4), or another footprint; a decorative cross: `waive` L-8 on the nearest part |
+| L-17: "TOP: edakit's own print … off the solder-mask openings – 0.165 mm² in 1 spot: (19.1, 9.0) mm at C2.1" | a part or a via moved after `silk apply`, and a designator, text or artwork now lies on a pad | `edakit silk apply` after the last routing, then the gate again |
+| L-17: "silk_strings_main.json exists, silk_footprints_main/ does not" | `silk apply` of an older edakit: the gate cannot tell edakit's print from the footprints' | `edakit silk apply` once |
+| L-17: "R53: silkscreen on its solder-mask openings – JLCPCB clips it there" | the footprint's own frame or mark reaches over the pad's mask opening | correct the footprint, or accept the warning (JLCPCB clips the print there) |
+| L-17: "TOP: … mm² beyond it" | footprint print over the board edge (a connector's outline), or a frame drawn on the edge | correct the footprint or the drawing, or accept the warning; JLCPCB's DFM says "silkscreen outside board" |
+| L-17: "R21: no visible designator, no group label, not in [silk] unlabelled" | `silk apply` found no room for it ("without room"), or it was hidden | more room, a group label, or `[silk] unlabelled = { R21 = "…" }` with the reason |
+| L-17: "pcb.json without the designators" | an export by an older edakit, checked with `--offline` | `edakit fab` without `--offline` (or the gate with `--easyeda`) |
 | `uv run …` exits 120 without output inside Claude Code | uv from snap cannot write to the file Claude Code hands it | `… 2>&1 \| cat` |
 | a wait loop never ends | `pgrep -f` matches its own shell | wait for an end line or the PID (chapter 11.3) |
 | EasyEDA crashed during a long run | V8 out of memory | restart, find the state, rerun the whole step; second crash: smaller blocks (start skill, section 4) |

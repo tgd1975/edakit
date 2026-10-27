@@ -23,7 +23,9 @@ font) come first: filled shapes and strokes of the SVG become silkscreen fills, 
 solder-mask openings (+0.15 mm) and of strokes thinner than JLCPCB can print (0.15 mm). Designators and the board label
 then keep clear of them. `edakit silk preview` draws the artwork onto the last Gerber export offline.
 
-Run it again after every auto-layout and routing: the spots depend on where the small parts and vias ended up.
+Run it again after every auto-layout and routing: the spots depend on where the small parts and vias ended up. `apply`
+keeps the silk files of its first export, before it prints anything, in <artifacts>/silk_footprints_<board>/: the gate
+(L-17) fails on print on a solder-mask opening that is not in them – edakit's own – and only warns on the rest.
 API notes: designators are attributes (PCB_PrimitiveAttribute, key 'Designator'); modify works on locked parts too;
 alignMode 5 = centre on x/y. Stroke font 'default': measured 0.5-0.6 x height per character.
 """
@@ -31,6 +33,7 @@ alignMode 5 = centre on x/y. Stroke font 'default': measured 0.5-0.6 x height pe
 from __future__ import annotations
 
 import json
+import shutil
 from pathlib import Path
 
 from shapely.geometry import Point, Polygon, box
@@ -193,6 +196,7 @@ def corner_spot(area, obstacles, w, h, corner="bottom-left", step=0.5):
 
 MIN_SILK_MM = 0.15  # JLCPCB: thinner silkscreen does not print
 MIN_GAP_MM = 0.2    # narrower gaps inside the artwork fill in
+MIN_TEXT_MM = 1.0   # JLCPCB: lower characters are unidentifiable (L-17)
 
 
 def svg_geometry(path):
@@ -283,6 +287,12 @@ def polygons(g):
     return [p for p in getattr(g, "geoms", [g]) if p.geom_type == "Polygon" and not p.is_empty]
 
 
+def footprint_print(cfg, board):
+    """Where `apply` keeps the silk Gerber files of its first export – the print that is not edakit's own: the
+    footprints', and texts and designators edakit did not place. The gate (L-17) tells edakit's print from it."""
+    return cfg.artifacts / f"silk_footprints_{board.name}"
+
+
 def export_gerber(cfg, board, mcp):
     out = cfg.artifact(f"gerber_{board.name}", ".keep").parent
     res = mcp.call("easyeda_export_gerbers", projectId="current", drillFormat="millimeter",
@@ -371,6 +381,11 @@ def apply(cfg, board, mcp):
                 api(mcp, "PCB_PrimitiveAttribute.modify", a["PrimitiveId"], {"valueVisible": False})
     eda.save_pcb(mcp)
     folder = export_gerber(cfg, board, mcp)  # now the silk layer holds only the footprints' own print
+    kept = footprint_print(cfg, board)
+    kept.mkdir(parents=True, exist_ok=True)
+    for key in ("top_silk", "bottom_silk"):              # kept for the gate: what is not in it is edakit's (L-17)
+        if (folder / gerber.FILES[key]).exists():
+            shutil.copy(folder / gerber.FILES[key], kept / gerber.FILES[key])
     mask_key, silk_key = GERBER_KEYS[layer]
     openings = gerber.shape(gerber.parse_gerber(folder / gerber.FILES[mask_key]))
     fp_silk = gerber.shape(gerber.parse_gerber(folder / gerber.FILES[silk_key]))

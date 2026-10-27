@@ -7,7 +7,8 @@ with the nets VIN, +5V and GND, on a board of 30 x 20 mm with one M3 hole and tw
 no pours (`pours = []`).
 The whole example has never been routed or exported, so no real export of it exists. This one has the files that
 `fab.collect` leaves, with the fields the checks read: pcb.json, drc.json, bom_easyeda.json, cpl_easyeda.xlsx,
-jlc_parts.json (so F-2 stays offline), and the Gerber and drill files with FlyingProbeTesting.json. It also has the
+jlc_parts.json (so F-2 stays offline), and the Gerber and drill files with FlyingProbeTesting.json. pcb.json has every
+designator visible (L-17). It also has the
 footprint geometry of `edakit pcb dump`, the net currents of `edakit sim` – 0.5 A on all three nets, which puts
 them in class POWER (0.6 mm), with an IPC-2221 width of 0.20 mm – and the board as `edakit route read` saw it (pads
 with their shapes, for L-13 and L-14), written from pcb.json when the export is written. J1 is through-hole and the
@@ -175,7 +176,8 @@ class Export:
         cu["outline"].append(("draw", 0.1, ring, "hole"))
         self.gerber = cu
         self.pcb = {"components": comps, "lines": lines,
-                    "strings": [{"Text": "+", "X": PLUS[0] * MIL, "Y": PLUS[1] * MIL, "Layer": 3}]}
+                    "strings": [{"Text": "+", "X": PLUS[0] * MIL, "Y": PLUS[1] * MIL, "Layer": 3}],
+                    "designators": {ref: True for ref in PLACE}}
         self.probe = {"pins": {"fields": ["PIN_NAME", "PIN_X", "PIN_Y", "NET_NAME", "PIN_TYPE", "LAYER", "PAD_SIZEX",
                                           "PAD_SIZEY"], "rows": probe}}
         self.drc = []
@@ -193,6 +195,8 @@ class Export:
         self.shapes = {fp: [kinds[k], a * MIL, b * MIL] for fp, (_, _, (k, a, b), _) in FOOTPRINTS.items()}
         self.read_off = {}
         self.lost = set()              # keys of gerber.FILES the export leaves out
+        self.silk_memo = None          # silk_strings_main.json of `silk apply`; None: it never ran
+        self.kept = None               # {silk key: Layer}: the footprint print `silk apply` saved; None: none saved
 
     def board_read(self):
         """<board>_board.json of `edakit route read`, from the PCB as pcb.json has it."""
@@ -244,6 +248,12 @@ class Export:
                         ("route/main_board.json", self.shapes and self.board_read())):
             if data is not None:       # None: `pcb dump`, `edakit sim` or `route read` never ran
                 (art / f).write_text(json.dumps(data))
+        if self.silk_memo is not None:
+            (art / "silk_strings_main.json").write_text(json.dumps(self.silk_memo))
+        if self.kept is not None:
+            (art / "silk_footprints_main").mkdir()
+            for key, layer in self.kept.items():
+                (art / "silk_footprints_main" / gerber.FILES[key]).write_text(layer.text())
         d = root / "build" / "fab" / "main"
         (d / "gerber").mkdir(parents=True)
         for name, data in (("pcb", self.pcb), ("drc", self.drc), ("bom_easyeda", self.bom), ("jlc_parts", self.jlc)):
@@ -281,7 +291,7 @@ def findings(rows):
 
 
 CHECKS = ["L-1", "L-2", "L-3", "L-4", "L-5", "L-7", "L-8", "L-9", "L-10", "L-11", "L-12", "L-13", "L-14", "L-15", "L-16",
-          "F-1", "F-2", "F-3", "F-5"]
+          "L-17", "F-1", "F-2", "F-3", "F-5"]
 
 
 def test_the_clean_export_passes_every_check(project):
@@ -389,6 +399,24 @@ def plus_at(x, y, text=True):
                                   ("draw", 0.15, [(x, y - 0.4), (x, y + 0.4)], "+")]
         ex.pcb["strings"] = [{**s, "X": x * MIL, "Y": y * MIL} for s in ex.pcb["strings"]] if text else []
     return fault
+
+
+def silk_line(*pts):
+    """A 0.15 mm line of print on the top silkscreen."""
+    def fault(ex, project):
+        ex.gerber["top_silk"].append(("draw", 0.15, list(pts), "line"))
+    return fault
+
+
+ACROSS_C2 = ((18, 9), (20, 9))     # across C2.1's mask opening (1.1 x 1.4 mm): 0.165 mm² of print on it
+
+
+def own_print(ex, project):
+    """`silk apply` ran – its memo, and the print it found before placing anything, saved – and then a line of its
+    own print lies across C2.1: a part moved after it, say."""
+    ex.silk_memo = {"strings": ["s1"], "fills": []}
+    ex.kept = {k: Layer(ex.gerber[k]) for k in ("top_silk", "bottom_silk")}
+    silk_line(*ACROSS_C2)(ex, project)
 
 
 def assembled_j1(ex, project):
@@ -505,6 +533,23 @@ FAULTS = [
      [("L-16", "fail", "via at (8.00, 13.50) – via at (8.45, 13.50): 0.145 mm apart, below 0.20 mm")]),
     ("a via closer than 0.45 mm to a component hole", lambda ex, p: via(ex, 3, 12.05),
      [("L-16", "fail", "J1.2 – via at (3.00, 12.05): 0.398 mm apart, below 0.45 mm")]),
+    # L-17
+    ("edakit's own print on a mask opening", own_print,
+     [("L-17", "fail", "TOP: 0.165 mm² in 1 spot: (19.1, 9.0) mm at C2.1")]),
+    ("edakit printed, but its print cannot be told from the footprints'",
+     lambda ex, p: setattr(ex, "silk_memo", {"strings": ["s1"], "fills": []}),
+     [("L-17", "fail", "silk_strings_main.json exists, silk_footprints_main/ does not")]),
+    ("a footprint's print on a mask opening", silk_line(*ACROSS_C2),
+     [("L-17", "warn", "TOP: 0.165 mm² in 1 spot: (19.1, 9.0) mm at C2.1")]),
+    ("print beyond the board outline", silk_line((29, 15), (31, 15)),
+     [("L-17", "warn", "TOP: 0.157 mm² beyond it in 1 spot: around (30.5, 15.0) mm")]),
+    ("a part without a visible designator", lambda ex, p: ex.pcb["designators"].update(C2=False),
+     [("L-17", "warn", "C2 on the top without a visible designator")]),
+    ("the designators not read with the PCB", lambda ex, p: ex.pcb.pop("designators"),
+     [("L-17", "fail", "pcb.json without the designators")]),
+    ("a text height below the fab's minimum",
+     lambda ex, p: board_file(p, 'edge_ok = ["J1"]', 'edge_ok = ["J1"]\n\n[silk]\nlabel_h_mm = 0.8'),
+     [("L-17", "warn", "label_h_mm = 0.8 mm")]),
     # F-1
     ("another LCSC number in EasyEDA's BOM", lambda ex, p: ex.bom[2].update(lcsc="C15850"),
      [("F-1", "fail", "C2: graph C45783, EasyEDA C15850")]),
@@ -526,10 +571,12 @@ FAULTS = [
     ("a through-hole part in the BOM of an SMD-only assembly", assembled_j1, [("F-3", "fail", "Top THT 1")]),
     # F-5
     ("a Gerber file missing", lambda ex, p: ex.gerber.pop("outline"),
-     [("F-5", "fail", "Gerber_BoardOutlineLayer.GKO")]),
+     [("F-5", "fail", "Gerber_BoardOutlineLayer.GKO"), ("L-17", "fail", "Gerber_BoardOutlineLayer.GKO missing")]),
     ("a silkscreen file missing", lambda ex, p: ex.lost.add("bottom_silk"),
-     [("F-5", "fail", "Gerber_BottomSilkscreenLayer.GBO"), ("L-8", "fail", "Gerber_BottomSilkscreenLayer.GBO missing")]),
-    ("no outline in the outline file", lambda ex, p: ex.gerber["outline"].clear(), [("F-5", "fail", "none")]),
+     [("F-5", "fail", "Gerber_BottomSilkscreenLayer.GBO"), ("L-8", "fail", "Gerber_BottomSilkscreenLayer.GBO missing"),
+      ("L-17", "fail", "Gerber_BottomSilkscreenLayer.GBO missing")]),
+    ("no outline in the outline file", lambda ex, p: ex.gerber["outline"].clear(),
+     [("F-5", "fail", "none"), ("L-17", "fail", "no closed outline in Gerber_BoardOutlineLayer.GKO")]),
     ("the outline off the plan", lambda ex, p: ex.gerber["outline"].__setitem__(0, (
         "draw", 0.1, [(0, 0), (31, 0), (31, 20), (0, 20), (0, 0)], "outline")),
      [("F-5", "fail", "31.00 x 20.00 mm at (0.00, 0.00)")]),
@@ -669,6 +716,49 @@ def test_plus_signs_in_a_silkscreen_file(tmp_path):
                  ("draw", 0.15, [(30, 0), (33, 0)], "long"), ("draw", 0.15, [(31.5, -1.5), (31.5, 1.5)], "long")])
     (tmp_path / "silk.gbr").write_text(lay.text())
     assert [tuple(round(v, 3) for v in p) for p in gerber.plus_signs(tmp_path / "silk.gbr")] == [(0.6, 1.0)]
+
+
+def l17(rows):
+    return {r["check"]: (r["result"], r["actual"]) for r in rows if r["id"] == "L-17"}
+
+
+def test_silkscreen_of_the_clean_export(project):
+    assert l17(run(project)) == {
+        "edakit's own print (designators, texts, artwork of silk apply) off the solder-mask openings":
+            ("pass", "edakit printed nothing on this board (no silk apply)"),
+        "TOP: other print (footprints, texts by hand) off the solder-mask openings": ("pass", "TOP: 0.000 mm²"),
+        "BOTTOM: other print (footprints, texts by hand) off the solder-mask openings": ("pass", "BOTTOM: 0.000 mm²"),
+        "TOP: silkscreen inside the board outline": ("pass", "TOP: 0.000 mm² beyond it"),
+        "BOTTOM: silkscreen inside the board outline": ("pass", "BOTTOM: 0.000 mm² beyond it"),
+        "designators of the top side read with the PCB": ("pass", "3 parts: 3 with a visible designator"),
+        "text heights edakit prints at least 1.0 mm (JLCPCB minimum text height)": ("pass", "label_h_mm 1 mm"),
+    }
+
+
+def test_silk_apply_run_again_leaves_only_the_footprints_print(project):
+    """After `silk apply` the footprint print it saved covers the print on the opening: a warning for C2, no fail."""
+    def again(ex, p):
+        silk_line(*ACROSS_C2)(ex, p)
+        ex.silk_memo = {"strings": [], "fills": []}
+        ex.kept = {k: Layer(ex.gerber[k]) for k in ("top_silk", "bottom_silk")}
+    rows = run(project, again)
+    assert findings(rows) == [("L-17", "warn")]
+    assert l17(rows)["TOP: edakit's own print (designators, texts, artwork of silk apply) off the solder-mask "
+                     "openings"] == ("pass", "TOP: 0.000 mm²")
+    assert l17(rows)["C2: silkscreen on its solder-mask openings – JLCPCB clips it there"][0] == "warn"
+
+
+def test_a_group_label_or_unlabelled_covers_a_part(project):
+    def grouped(ex, p):
+        ex.pcb["designators"].update(J1=False, C2=False, D1=False)
+        ex.pcb["strings"].append({"Text": "IN", "X": 10 * MIL, "Y": 15 * MIL, "Layer": 3})
+        board_file(p, 'edge_ok = ["J1"]', 'edge_ok = ["J1"]\n\n[silk]\ngroups = { IN = ["J1", "D1"] }\n'
+                   'unlabelled = { C2 = "no room next to D1" }')
+    rows = run(project, grouped)
+    assert findings(rows) == []
+    assert l17(rows)["designators of the top side read with the PCB"] == (
+        "pass", "3 parts: 0 with a visible designator, 2 under a group label, unlabelled on purpose: "
+                "C2 (no room next to D1)")
 
 
 def test_every_check_has_a_fault():

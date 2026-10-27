@@ -59,7 +59,9 @@ describes (section 3).
    - `edakit route all 2>&1 | cat` (read → DSN → Freerouting → check → apply → pours → reload → DRC; exit 0 = DRC 0).
      Open connections are yellow in `<artifacts>/route/<board>_routing.png`. Never EasyEDA's autorouter.
    - `edakit silk apply 2>&1 | cat` (designators where there is room; silkscreen on pads = 0; DRC). Through-hole parts
-     of the other side, soldered from the designators side: `[silk] solder_side = true` (handbook 7.7)
+     of the other side, soldered from the designators side: `[silk] solder_side = true` (handbook 7.7). A part listed
+     "without room": more room, a group label (`[silk] groups`) or `[silk] unlabelled` with the reason – the gate warns
+     on it otherwise (L-17). Run it last, after the routing: the gate fails on edakit's own print on a mask opening
 4. **Check:** `edakit pcb nets` (pad nets = graph), DRC details in `<artifacts>/route/<board>_drc.json`.
 5. **Picture:** routing preview and silk pictures; a canvas capture may be stale. For an overall view or a second
    opinion use the agent pcb-reviewer – its result is the sign-off M-5, not a checklist for the user.

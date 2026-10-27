@@ -307,3 +307,22 @@ def plus_signs(path, lo=0.3, hi=2.0, tol=0.1):
         if not any(math.dist(p, q) <= tol for q in signs):
             signs.append(p)
     return signs
+
+
+def outline_shape(folder):
+    """The board as the outline file draws it (mm, L-17): the area its closed paths enclose – mounting holes and
+    cut-outs left open – without the NPTH holes of the drill file. None without a closed path."""
+    from shapely.geometry import LineString, Point
+    from shapely.ops import polygonize, unary_union
+    folder = Path(folder)
+    lines = []
+    for kind, dat in parse_gerber(folder / FILES["outline"]):
+        pts = [(round(x, 3), round(y, 3)) for x, y in (dat[1] if kind == "draw" else [])]
+        lines += [LineString([a, b]) for a, b in zip(pts, pts[1:]) if a != b]
+    faces = sorted(polygonize(unary_union(lines)), key=lambda p: -p.area) if lines else []
+    if not faces:
+        return None
+    board = faces[0]
+    inner = [f for f in faces[1:] if board.contains(f)]     # a closed path inside the board is a cut-out
+    drilled = [Point(x, y).buffer(w / 2) for x, y, w, _ in parse_holes(folder / FILES["npth"])]
+    return board.difference(unary_union(inner + drilled))

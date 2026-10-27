@@ -220,6 +220,18 @@ def test_silk_solder_side_key(tmp_path):
         _board("b", {}, {"silk": {"solder_side": "yes"}})
 
 
+def test_silk_unlabelled_key(tmp_path):
+    from edakit.config import _board
+    assert "unlabelled" not in _board("b", {}, {}).silk                  # no key: every part needs its designator (L-17)
+    (tmp_path / "edakit.toml").write_text('[project]\nname = "t"\n[boards.main]\n')
+    (tmp_path / "hardware" / "boards").mkdir(parents=True)
+    (tmp_path / "hardware" / "boards" / "main.toml").write_text('[silk]\nunlabelled = { R21 = "no room in the star" }\n')
+    assert load(tmp_path / "edakit.toml").board().silk["unlabelled"] == {"R21": "no room in the star"}
+    for bad in (["R21"], {"R21": ""}, {"R21": 1}, "R21"):
+        with pytest.raises(ConfigError, match="silk.unlabelled must be a table of designator = reason"):
+            _board("b", {}, {"silk": {"unlabelled": bad}})
+
+
 def test_silk_board_label_side_and_region_keys(tmp_path):
     from edakit.config import _board
     silk = _board("b", {}, {}).silk

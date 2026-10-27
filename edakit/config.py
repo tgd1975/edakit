@@ -315,6 +315,10 @@ def _board(name, entry, b, file=""):
         raise ConfigError(f"board {name}: silk.solder_side must be true or false")
     if silk.get("board_label_side", "top") not in ("top", "bottom"):
         raise ConfigError(f"board {name}: silk.board_label_side must be 'top' or 'bottom'")
+    unlabelled = silk.get("unlabelled", {})
+    if not isinstance(unlabelled, dict) or not all(isinstance(v, str) and v.strip() for v in unlabelled.values()):
+        raise ConfigError(f"board {name}: silk.unlabelled must be a table of designator = reason (L-17), "
+                          "e.g. { R21 = \"no room between the star tracks\" }")
     region = silk.get("board_label_region")
     if region is not None and not (isinstance(region, list) and len(region) >= 3 and all(
             isinstance(p, list) and len(p) == 2 and all(isinstance(v, (int, float)) for v in p) for p in region)):

@@ -90,6 +90,16 @@ def silk_run(tmp_path, monkeypatch):
     return run
 
 
+def test_apply_keeps_the_print_it_did_not_place(silk_run, tmp_path):
+    """The silk files of the first export – before edakit prints – stay for the gate (L-17)."""
+    for key in ("top_silk", "bottom_silk"):
+        (tmp_path / gerber.FILES[key]).write_text(f"{key} before apply")
+    silk_run('designators = "top"\n')
+    kept = tmp_path / "build" / "edakit" / "silk_footprints_main"
+    assert {p.name: p.read_text() for p in kept.iterdir()} == {
+        gerber.FILES["top_silk"]: "top_silk before apply", gerber.FILES["bottom_silk"]: "bottom_silk before apply"}
+
+
 def strings(calls):
     """The free texts created: {text: (layer, x mm, y mm, rotation)}."""
     return {a[3]: (a[0], a[1] / MIL, a[2] / MIL, a[8]) for name, a in calls if name == "PCB_PrimitiveString.create"}

@@ -389,6 +389,19 @@ Good to know:
   "specify a location" when ordering.
 - Run `silk apply` again after every auto-layout and routing – spots depend on parts and vias.
 
+**In the gate** (L-17, 8.1) the silkscreen is checked as the fab gets it. `silk apply` keeps the silk files of its first
+export – the print it found before placing anything: footprints, and texts it did not make – in
+`<artifacts>/silk_footprints_<board>/`; whatever else lies on a solder-mask opening is edakit's own print and fails
+(run `silk apply` again). The footprints' print on an opening, print beyond the outline, a text height below 1.0 mm and
+a part of the `designators` side without a visible designator are warnings. A part that is left without a designator on
+purpose goes into `unlabelled` with the reason, so the warning does not come back with every run:
+
+```toml
+[silk]
+designators = "top"
+unlabelled = { R21 = "no room between the star tracks" }
+```
+
 ## 7.8 Export for documentation
 
 `edakit export` writes per board the schematic as vector PDF (patched bridge; otherwise stitched canvas tiles), the PCB

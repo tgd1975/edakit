@@ -38,6 +38,9 @@ assembly preview at JLCPCB.
        pad, via or plated hole: warn
   L-16 every plated hole keeps JLCPCB's annular ring (component hole 0.18 mm, warn below 0.20 mm; via 0.05 mm) and
        every two plated holes JLCPCB's hole-to-hole spacing, edge to edge (0.45 mm with a component hole, 0.2 mm vias)
+  L-17 silkscreen from the Gerber files: edakit's own print on a solder-mask opening (fail), other print there per part,
+       print beyond the outline, a part of the designators side without a visible designator or group label (not in
+       [silk] unlabelled), a text height edakit prints below 1.0 mm (warn)
   F-1  BOM from the graph = BOM of EasyEDA; every LCSC number in the parts database
   F-2  every BOM part listed in JLCPCB's assembly catalogue with stock for `quantity` boards
   F-3  pick and place: every BOM part exactly once, side and rotation = PCB; sides/SMD as [release] assembly says
@@ -108,7 +111,12 @@ def collect(cfg, board, d, verbose=False):
                  for s in (eda.state(x) for x in eda.api(mcp, "PCB_PrimitiveLine.getAll") or []) if s["Layer"] in (1, 2)]
         strings = [{k: s[k] for k in ("Text", "X", "Y", "Layer")}
                    for s in (eda.state(x) for x in eda.api(mcp, "PCB_PrimitiveString.getAll") or [])]
-        (d / "pcb.json").write_text(json.dumps({"components": comps, "lines": lines, "strings": strings}, indent=1))
+        ids = {c["primitiveId"]: c["designator"] for c in comps if c.get("designator")}
+        shown = {ids[a["ParentPrimitiveId"]]: bool(a.get("ValueVisible"))       # L-17: designator printed or hidden
+                 for a in map(eda.state, eda.api(mcp, "PCB_PrimitiveAttribute.getAll") or [])
+                 if a.get("Key") == "Designator" and a.get("ParentPrimitiveId") in ids}
+        (d / "pcb.json").write_text(json.dumps({"components": comps, "lines": lines, "strings": strings,
+                                                "designators": shown}, indent=1))
         eda.reload_pcb(mcp)  # the DRC is reliable only on the saved, reloaded state
         found = eda.drc(mcp)
         (d / "drc.json").write_text(json.dumps(found, indent=1, ensure_ascii=False))
@@ -361,6 +369,149 @@ def check_polarity_marks(cfg, board, design, d, data, want, on_pcb, rows):
     for text, reason in waived:
         rows.add("L", "L-8", board.name, f"polarity mark: {text}", True, text, "every sign at the right pole", "waived")
         rows[-1]["reason"] = reason
+
+
+SILK_SPOT_MM2 = 0.0005    # L-17: smaller pieces of print on an opening or beyond the outline are rounding
+SILK_LIMIT_MM2 = 0.001    # L-17: from this much on, a side or a part has print where it is not printed
+SILK_PART_MM = 3.0        # L-17: print on an opening further than this from every pad belongs to no part
+
+
+def check_silk(cfg, board, design, d, rows):
+    """L-17: the silkscreen as the fab gets it – the print on solder-mask openings and beyond the outline (silk_print),
+    the designators (silk_designators) and the text heights edakit prints (silk_heights)."""
+    data = json.loads((d / "pcb.json").read_text())
+    if lost := gerber.missing(d / "gerber", "top_silk", "bottom_silk", "top_mask", "bottom_mask", "outline"):
+        rows.add("L", "L-17", board.name, "Gerber files for the silkscreen check", False,
+                 f"{', '.join(lost)} missing (Gerber export)", "present")
+    else:
+        silk_print(cfg, board, data, d / "gerber", rows)
+    silk_designators(board, design, data, rows)
+    silk_heights(cfg, board, rows)
+
+
+def silk_spots(g):
+    """The pieces of a geometry larger than SILK_SPOT_MM2, largest first."""
+    return sorted((p for p in getattr(g, "geoms", [g]) if p.area > SILK_SPOT_MM2), key=lambda p: -p.area)
+
+
+def nearest_pad(pads, spot):
+    """'C2.1': the pad of pads [(name, x, y)] nearest to the spot's centre, within SILK_PART_MM; '' if none."""
+    c = spot.centroid
+    dist, name = min(((math.dist((x, y), (c.x, c.y)), name) for name, x, y in pads), default=(None, ""))
+    return name if dist is not None and dist <= SILK_PART_MM else ""
+
+
+def spots_text(spots, pads=None, around=""):
+    """'0.165 mm² in 1 spot: (19.1, 9.0) mm at C2.1' – the five largest, with their nearest pad if pads are given."""
+    def mm1(v):
+        return f"{v:.1f}" if round(v, 1) else "0.0"         # never "-0.0"
+    at = [f"{around}({mm1(p.centroid.x)}, {mm1(p.centroid.y)}) mm"
+          + (f" at {pin}" if pads is not None and (pin := nearest_pad(pads, p)) else "") for p in spots[:5]]
+    return (f"{sum(p.area for p in spots):.3f} mm² in {len(spots)} spot{'s' if len(spots) > 1 else ''}: "
+            + ", ".join(at) + (" …" if len(spots) > 5 else ""))
+
+
+def silk_print(cfg, board, data, g, rows):
+    """L-17, per side from the silk, mask and outline Gerber files. Print on a solder-mask opening: edakit's own –
+    what is not in the footprint print `silk apply` kept (silk.footprint_print) – fails, the rest warns per part, the
+    part of the nearest pad (JLCPCB clips print on openings). Print beyond the outline warns."""
+    from .. import silk
+    memo, kept = cfg.artifacts / f"silk_strings_{board.name}.json", silk.footprint_print(cfg, board)
+    what = "edakit's own print (designators, texts, artwork of silk apply) off the solder-mask openings"
+    if not kept.is_dir():
+        rows.add("L", "L-17", board.name, what, not memo.exists(), f"{memo.name} exists, {kept.name}/ does not: "
+                 "edakit's print cannot be told from the footprints' (silk apply of an older edakit) – run edakit silk "
+                 "apply" if memo.exists() else "edakit printed nothing on this board (no silk apply)",
+                 "0 mm² – the footprint print silk apply keeps tells it apart")
+    outline = gerber.outline_shape(g)
+    if outline is None:
+        rows.add("L", "L-17", board.name, "board outline for the print beyond it", False,
+                 f"no closed outline in {gerber.FILES['outline']}", "a closed outline")
+    for side, layer in silk.SIDE.items():
+        name = side.upper()
+        mask_key, silk_key = silk.GERBER_KEYS[layer]
+        pads = [(f"{c['designator']}.{p['PadNumber']}", p["X"] * MM, p["Y"] * MM) for c in data["components"]
+                if c.get("designator") for p in c["pads"] if p["Layer"] in (layer, MULTI)]
+        printed = gerber.shape(gerber.parse_gerber(g / gerber.FILES[silk_key]))
+        other = printed.intersection(gerber.shape(gerber.parse_gerber(g / gerber.FILES[mask_key])))
+        if kept.is_dir():
+            if (kept / gerber.FILES[silk_key]).exists():
+                theirs = gerber.shape(gerber.parse_gerber(kept / gerber.FILES[silk_key])).buffer(0.02)
+                own, other = silk_spots(other.difference(theirs)), other.intersection(theirs)
+            else:
+                own, other = silk_spots(other), other.difference(other)
+            rows.add("L", "L-17", board.name, f"{name}: {what}", sum(p.area for p in own) <= SILK_LIMIT_MM2,
+                     f"{name}: " + (spots_text(own, pads) if own else "0.000 mm²"),
+                     "0 mm² – run silk apply after the last routing")
+        by_part = defaultdict(list)
+        for p in silk_spots(other):
+            by_part[nearest_pad(pads, p).split(".")[0]].append(p)
+        bad = {ref: spots for ref, spots in by_part.items() if sum(p.area for p in spots) > SILK_LIMIT_MM2}
+        for ref, spots in sorted(bad.items(), key=lambda kv: natural_key(kv[0])):
+            rows.add("L", "L-17", board.name, f"{ref}: silkscreen on its solder-mask openings – JLCPCB clips it there"
+                     if ref else f"{name}: silkscreen on solder-mask openings away from every pad", False,
+                     f"{name}: {spots_text(spots, pads)}", "0 mm²", "warn")
+        if not bad:
+            rows.add("L", "L-17", board.name, f"{name}: other print (footprints, texts by hand) off the solder-mask "
+                     "openings", True, f"{name}: {sum(p.area for p in silk_spots(other)):.3f} mm²", "0 mm²")
+        if outline is not None:
+            out = silk_spots(printed.difference(outline.buffer(0.01)))
+            area = sum(p.area for p in out)
+            rows.add("L", "L-17", board.name, f"{name}: silkscreen inside the board outline", area <= SILK_LIMIT_MM2,
+                     f"{name}: " + (spots_text(out, around="around ").replace(" in ", " beyond it in ", 1) if out
+                                    else "0.000 mm² beyond it"), "0 mm²", None if area <= SILK_LIMIT_MM2 else "warn")
+
+
+def silk_designators(board, design, data, rows):
+    """L-17: every part of the `designators` side has a visible designator (read with the PCB into pcb.json), lies
+    under a group label ([silk] groups, printed as a text) or a text with its name, or is listed in [silk] unlabelled
+    with the reason – otherwise a warning per part."""
+    from .. import silk
+    side = board.silk.get("designators", "top")
+    layer = silk.SIDE[side]
+    shown = data.get("designators")
+    if shown is None:
+        rows.add("L", "L-17", board.name, f"designators of the {side} side read with the PCB", False,
+                 "pcb.json without the designators (written by an older edakit) – edakit fab without --offline",
+                 "read with the PCB")
+        return
+    want = design.board_comps(board.name)
+    texts = {s["Text"] for s in data["strings"] if s["Layer"] == layer + 2}
+    grouped = {r for name, refs in (board.silk.get("groups") or {}).items() if name in texts for r in refs}
+    unlabelled = board.silk.get("unlabelled") or {}
+    parts = sorted((c["designator"] for c in data["components"] if c.get("designator") in want and c["layer"] == layer),
+                   key=natural_key)
+    bare = [r for r in parts if not shown.get(r) and r not in texts]
+    in_group = [r for r in bare if r in grouped]
+    listed = [r for r in bare if r not in grouped and r in unlabelled]
+    rows.add("L", "L-17", board.name, f"designators of the {side} side read with the PCB", True,
+             f"{len(parts)} parts: {len(parts) - len(bare)} with a visible designator"
+             + (f", {len(in_group)} under a group label" if in_group else "")
+             + (", unlabelled on purpose: " + "; ".join(f"{r} ({unlabelled[r]})" for r in listed) if listed else ""),
+             "every part labelled")
+    for r in bare:
+        if r not in grouped and r not in unlabelled:
+            rows.add("L", "L-17", board.name, f"{r}: no visible designator, no group label, not in [silk] unlabelled",
+                     False, f"{r} on the {side} without a visible designator",
+                     "a visible designator, a group label or [silk] unlabelled", "warn")
+
+
+def silk_heights(cfg, board, rows):
+    """L-17: the text heights edakit prints – label_h_mm, board_label_h_mm when there is a board label, h_mm of
+    [[silk.texts]] – at least JLCPCB's minimum text height; a warning per height below it."""
+    from .. import silk
+    s = board.silk
+    heights = [("label_h_mm", float(s.get("label_h_mm", 1.0)))]
+    if silk.board_label_text(cfg, board):
+        heights.append(("board_label_h_mm", float(s.get("board_label_h_mm", 1.2))))
+    heights += [(f"h_mm of [[silk.texts]] '{t['text']}'", float(t.get("h_mm", 1.2))) for t in s.get("texts", [])]
+    low = [(k, h) for k, h in heights if h < silk.MIN_TEXT_MM - 1e-9]
+    for k, h in low:
+        rows.add("L", "L-17", board.name, f"{k}: text height below JLCPCB's minimum", False, f"{k} = {h:g} mm",
+                 f">= {silk.MIN_TEXT_MM:.1f} mm", "warn")
+    if not low:
+        rows.add("L", "L-17", board.name, f"text heights edakit prints at least {silk.MIN_TEXT_MM:.1f} mm (JLCPCB minimum "
+                 "text height)", True, ", ".join(f"{k} {h:g} mm" for k, h in heights), f">= {silk.MIN_TEXT_MM:.1f} mm")
 
 
 def check_pad_layout(board, design, on_pcb, want, geo, rows):
@@ -973,6 +1124,7 @@ def run(cfg, board, out, offline=False, verbose=False):
         (d / "jlc_parts.json").unlink(missing_ok=True)
     rows = Rows()
     check_pcb(cfg, board, design, d, rows)
+    check_silk(cfg, board, design, d, rows)
     check_copper(board, design, d, rows)
     check_copper_sides(board, design, d, rows)
     check_drills(board, design, d, rows)
