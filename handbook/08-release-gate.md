@@ -18,7 +18,7 @@ edakit gate --easyeda    # plus S, L, F – EasyEDA with the bridge, minutes
 
 | Stage | What | Checks |
 |---|---|---|
-| P – Parts | parts database complete and signed, every part named by its entry, through-hole leads fitting their holes, own parts equal to their source | P-1, P-3, P-6, P-7, G-9 (chapter 3, 4) |
+| P – Parts | parts database complete and signed, every part named by its entry, through-hole leads fitting their holes, own parts equal to their source, parts orderable | P-1, P-3, P-4, P-6, P-7, G-9 (chapter 3, 4) |
 | G – Graph | rule checks | G-1 … G-18 (chapter 3) |
 | E – Simulation | operating points, stress, function, every LED checked | E-1 … E-4 (chapter 5) |
 | *project stages* | e.g. K – mechanics of an enclosure | `[[release.stages]]`, see below |
@@ -52,7 +52,7 @@ edakit gate --easyeda    # plus S, L, F – EasyEDA with the bridge, minutes
 | Check | What |
 |---|---|
 | F-1 | BOM generated **from the graph** in JLCPCB format = EasyEDA's BOM per designator; every LCSC number in the parts database; parts with `bom: false` left out on purpose |
-| F-2 | every BOM line in JLCPCB's public assembly catalogue with stock for `quantity` boards (otherwise only pre-order) |
+| F-2 | every BOM line in JLCPCB's public assembly catalogue with stock for `quantity` boards (otherwise only pre-order), under the MPN of its parts entry; another class than `jlc_class` warns – P-4 checks the same and more from the stock snapshot when the part is chosen |
 | F-3 | pick and place: every BOM part exactly once, side and rotation = PCB; sides and SMD-only as `[release] assembly` says (Economic PCBA: one side, SMD only; two SMD sides need Standard PCBA) |
 | F-4 | Gerber ZIP, BOM and pick and place from the same run; `fab/manifest.json` with SHA-256 per file and the state hashes |
 | F-5 | Gerber set complete (a missing file is named here, and L-2, L-8, L-9 and L-17, which read it, report it as not checked); outline and mounting holes from the outline layer = plan (± 0.2 mm); tooling holes in the NPTH file, mask open, no copper in the opening |
@@ -155,12 +155,13 @@ Result folder `<reports>/<YYYYMMDD-hhmmss>/`: `protocol.md`, `graph_checks.json`
 The MCP server cannot order. Lessons from the reference order:
 
 - Upload `gerber_<b>.zip`, `bom_<b>.csv`, `cpl_<b>.csv` from the released folder only; compare the checksums.
-- **Economic PCBA** assembles one side, SMD only; a second SMD side or certain parts (large battery holders) need
-  Standard PCBA with a higher setup fee per side. Plan the board so the cheap option works (through-hole parts you
-  solder yourself get `bom: false`).
+- **Economic PCBA** assembles one side, SMD only; a second SMD side or certain parts (large battery holders, some
+  modules – "Standard Only" on their JLCPCB part page) need Standard PCBA with a higher setup fee per side. Plan the
+  board so the cheap option works (through-hole parts you solder yourself get `bom: false`); P-4 fails a "Standard
+  Only" part on an Economic order as soon as `edakit stock` has read it.
 - **Tooling holes:** with your own (chapter 7.2) choose "added by customer"; otherwise JLCPCB adds rails or holes.
 - **Moisture-sensitive parts:** JLCPCB bakes MSL ≥ 5 parts for a fee and includes the 48 h in the lead time; its MSL
-  classification may differ from the manufacturer's datasheet – check the BOM tool.
+  classification may differ from the manufacturer's datasheet – P-4 warns with JLCPCB's value from the stock snapshot.
 - **Tented vias** if a side is visible (open vias are holes and tin dots).
 - **Order number:** "specify a location" when a placeholder is printed.
 - **Remarks** (max. 200 characters): where panel tabs may and may not go, no V-cut on visible edges.

@@ -24,6 +24,8 @@ profile says: `${CLAUDE_PLUGIN_ROOT}/skills/part-search/distributors/<name>.md` 
 - Report stock as a number with the date ("1 902 pcs at LCSC, 2026-10-25"), not as "few".
 - "Not available" only after the routes the profile names (at LCSC: `edakit part search`, EasyEDA's search, the
   series name), each with its queries in the result.
+- For JLCPCB assembly: `edakit stock --lcsc <C…>` for every candidate – listed, JLCPCB's stock, "Standard Only",
+  MSL, X-ray – before it is chosen (P-4 checks the same later, from the project's snapshot).
 - Datasheet: `edakit part fetch <key>` once the entry exists (`--url` for one from the manufacturer) – it keeps the
   PDF beside the project and says whether it is of this part (a warning names a longer variant: MT3608L for
   MT3608); read that file and note its revision.
@@ -69,5 +71,5 @@ profile says: `${CLAUDE_PLUGIN_ROOT}/skills/part-search/distributors/<name>.md` 
   (from `<datasheets>/<key>.json`), `checked`, `open`.
 - Record the choice in the decision log (alternatives and why they were dropped).
 
-Then `edakit check` (P-1, P-6 – the graph's `lcsc`, `part`, `value` and `type` name this entry –, G-9), and the
-hardware-change skill if the part goes into the graph.
+Then `edakit stock` and `edakit check` (P-1, P-4, P-6 – the graph's `lcsc`, `part`, `value` and `type` name this
+entry –, G-9), and the hardware-change skill if the part goes into the graph.

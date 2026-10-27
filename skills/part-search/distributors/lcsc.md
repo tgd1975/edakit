@@ -38,10 +38,12 @@ Then:
   `isEnvironment` = RoHS). WebFetch drops stock and prices – use curl. **The datasheet:** `edakit part fetch <LCSC>`
   once the entry exists – it tries the entry's `datasheet.url`, this JSON's `pdfUrl` and JLCPCB's `dataManualUrl`,
   keeps the PDF and says whether it names the part (handbook 4.6). Do not download it by hand.
-- **Basic or Extended:** `https://jlcpcb.com/partdetail/C17414` (`componentLibraryType` "base" = Basic). Basic parts
-  first (no feeder fee), Extended when needed.
-- JLCPCB's assembly stock differs from LCSC's. The gate asks JLCPCB's public catalogue for every BOM line (F-2); a
-  part missing there can only be pre-ordered.
+- **What JLCPCB says:** `edakit stock --lcsc C17414 C…` for every candidate (no project needed): listed or pre-order
+  only, Basic/Extended (preferred), JLCPCB's stock, PCBA type ("Standard Only" forces Standard PCBA), MSL (≥ 5 is
+  baked for a fee), X-ray, hand soldering, attrition and minimum. Basic parts first (no loading fee in Economic),
+  Extended when needed, "Standard Only" only on a Standard order.
+- JLCPCB's assembly stock differs from LCSC's. Once the part is in the graph, `edakit stock` records it in the
+  project's snapshot and P-4 checks it on every `edakit check`; at the export F-2 asks the catalogue again.
 - **Compliance:** RoHS only (with certificate); no REACH statement, no country of origin.
 
 A part outside JLCPCB's library can still be assembled there, at a cost: *Global Sourcing* (JLCPCB buys it at DigiKey,

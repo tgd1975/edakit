@@ -41,7 +41,7 @@ from .. import checks, rules
 from ..design import Design
 
 STAGES = [
-    ("P", "Parts", "parts database complete, graph pins = parts database, parts verified"),
+    ("P", "Parts", "parts database complete, graph pins = parts database, parts verified, parts orderable"),
     ("G", "Graph", "structure, pin locks, voltage domains, inputs, drivers, decoupling, ratings, reverse polarity"),
     ("E", "Simulation", "ngspice operating points of all scenarios, stress of every part, function limits"),
     ("S", "Schematic", "EasyEDA schematic = graph (parts, LCSC, nets, pins, no-connects)"),

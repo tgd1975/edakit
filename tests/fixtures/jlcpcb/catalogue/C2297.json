@@ -1,0 +1,439 @@
+{
+ "code": 200,
+ "data": {
+  "componentPageInfo": {
+   "list": [
+    {
+     "componentCode": "C2297",
+     "componentModelEn": "KT-0805G",
+     "componentBrandEn": "Hubei KENTO Elec",
+     "componentLibraryType": "base",
+     "preferredComponentFlag": false,
+     "stockCount": 2341794,
+     "componentPrices": [
+      {
+       "startNumber": 1,
+       "endNumber": 499,
+       "productPrice": 0.0164
+      },
+      {
+       "startNumber": 500,
+       "endNumber": 2999,
+       "productPrice": 0.0128
+      },
+      {
+       "startNumber": 3000,
+       "endNumber": 5999,
+       "productPrice": 0.0101
+      },
+      {
+       "startNumber": 6000,
+       "endNumber": 23999,
+       "productPrice": 0.0089
+      },
+      {
+       "startNumber": 24000,
+       "endNumber": 50999,
+       "productPrice": 0.0084
+      },
+      {
+       "startNumber": 51000,
+       "endNumber": -1,
+       "productPrice": 0.0081
+      }
+     ],
+     "lossNumber": 10,
+     "leastPatchNumber": 20,
+     "describe": "-40℃~+85℃ 100mW 120° 2.6V~3.1V 430mcd 513nm~528nm 525nm 5mA Discrete Diode Emerald Green Water Clear 0805 LED Indication - Discrete ROHS"
+    },
+    {
+     "componentCode": "C3187252",
+     "componentModelEn": "MIC2297-42YML",
+     "componentBrandEn": "Microchip Tech",
+     "componentLibraryType": "expand",
+     "preferredComponentFlag": false,
+     "stockCount": 0,
+     "componentPrices": [
+      {
+       "startNumber": 1,
+       "endNumber": 9,
+       "productPrice": 2.8039
+      },
+      {
+       "startNumber": 10,
+       "endNumber": 29,
+       "productPrice": 2.8039
+      },
+      {
+       "startNumber": 30,
+       "endNumber": 199,
+       "productPrice": 2.8039
+      },
+      {
+       "startNumber": 200,
+       "endNumber": 499,
+       "productPrice": 1.0853
+      },
+      {
+       "startNumber": 500,
+       "endNumber": 999,
+       "productPrice": 1.0476
+      },
+      {
+       "startNumber": 1000,
+       "endNumber": -1,
+       "productPrice": 1.028
+      }
+     ],
+     "lossNumber": 0,
+     "leastPatchNumber": 0,
+     "describe": "-40℃~+125℃ 1 1.2A 600kHz Boost PWM MLF-10(2.5x2.5) LED Drivers ROHS"
+    },
+    {
+     "componentCode": "C679886",
+     "componentModelEn": "LTC2297CUP#PBF",
+     "componentBrandEn": "Analog Devices",
+     "componentLibraryType": "expand",
+     "preferredComponentFlag": false,
+     "stockCount": 0,
+     "componentPrices": [
+      {
+       "startNumber": 1,
+       "endNumber": 2,
+       "productPrice": 20.321
+      },
+      {
+       "startNumber": 3,
+       "endNumber": 4,
+       "productPrice": 20.321
+      },
+      {
+       "startNumber": 5,
+       "endNumber": 29,
+       "productPrice": 20.321
+      },
+      {
+       "startNumber": 30,
+       "endNumber": 33,
+       "productPrice": 19.3226
+      },
+      {
+       "startNumber": 34,
+       "endNumber": 35,
+       "productPrice": 19.3226
+      },
+      {
+       "startNumber": 36,
+       "endNumber": -1,
+       "productPrice": 19.3226
+      }
+     ],
+     "lossNumber": 0,
+     "leastPatchNumber": 0,
+     "describe": "0℃~+70℃ 1.2LSB 14 2 2.7V~3.4V 40MHz QFN-64-EP(9x9) Analog to Digital Converters (ADC) ROHS"
+    },
+    {
+     "componentCode": "C679888",
+     "componentModelEn": "LTC2297IUP#PBF",
+     "componentBrandEn": "Analog Devices",
+     "componentLibraryType": "expand",
+     "preferredComponentFlag": false,
+     "stockCount": 0,
+     "componentPrices": [
+      {
+       "startNumber": 1,
+       "endNumber": 2,
+       "productPrice": 138.4413
+      },
+      {
+       "startNumber": 3,
+       "endNumber": 4,
+       "productPrice": 138.4413
+      },
+      {
+       "startNumber": 5,
+       "endNumber": 29,
+       "productPrice": 138.4413
+      },
+      {
+       "startNumber": 30,
+       "endNumber": 33,
+       "productPrice": 131.9039
+      },
+      {
+       "startNumber": 34,
+       "endNumber": 35,
+       "productPrice": 131.9039
+      },
+      {
+       "startNumber": 36,
+       "endNumber": -1,
+       "productPrice": 131.9039
+      }
+     ],
+     "lossNumber": 0,
+     "leastPatchNumber": 0,
+     "describe": "-40℃~+85℃ 1.2LSB 14 2 2.7V~3.4V 40MHz QFN-64-EP(9x9) Analog to Digital Converters (ADC) ROHS"
+    },
+    {
+     "componentCode": "C144199",
+     "componentModelEn": "MIC2297-42YML-TR",
+     "componentBrandEn": "Microchip Tech",
+     "componentLibraryType": "expand",
+     "preferredComponentFlag": false,
+     "stockCount": 0,
+     "componentPrices": [
+      {
+       "startNumber": 1,
+       "endNumber": 9,
+       "productPrice": 3.8024
+      },
+      {
+       "startNumber": 10,
+       "endNumber": 29,
+       "productPrice": 3.2753
+      },
+      {
+       "startNumber": 30,
+       "endNumber": 99,
+       "productPrice": 2.9627
+      },
+      {
+       "startNumber": 100,
+       "endNumber": 499,
+       "productPrice": 2.6075
+      },
+      {
+       "startNumber": 500,
+       "endNumber": 999,
+       "productPrice": 2.6075
+      },
+      {
+       "startNumber": 1000,
+       "endNumber": -1,
+       "productPrice": 2.6075
+      }
+     ],
+     "lossNumber": 0,
+     "leastPatchNumber": 0,
+     "describe": "-40℃~+125℃ 1 1.2A 600kHz Boost PWM DFN-10-EP(2.5x2.5) LED Drivers ROHS"
+    },
+    {
+     "componentCode": "C621737",
+     "componentModelEn": "MIC2297-15YML-TR",
+     "componentBrandEn": "Microchip Tech",
+     "componentLibraryType": "expand",
+     "preferredComponentFlag": false,
+     "stockCount": 0,
+     "componentPrices": [
+      {
+       "startNumber": 1,
+       "endNumber": 49,
+       "productPrice": 0.4911
+      },
+      {
+       "startNumber": 50,
+       "endNumber": 59,
+       "productPrice": 0.4911
+      },
+      {
+       "startNumber": 60,
+       "endNumber": 999,
+       "productPrice": 0.4911
+      },
+      {
+       "startNumber": 1000,
+       "endNumber": 2499,
+       "productPrice": 0.1901
+      },
+      {
+       "startNumber": 2500,
+       "endNumber": 4999,
+       "productPrice": 0.1834
+      },
+      {
+       "startNumber": 5000,
+       "endNumber": -1,
+       "productPrice": 0.1801
+      }
+     ],
+     "lossNumber": 0,
+     "leastPatchNumber": 2,
+     "describe": "-40℃~+125℃ 1 1.2A 2.5V~10V 600kHz Boost Built-in PWM DFN-10-EP(2.5x2.5) LED Drivers ROHS"
+    },
+    {
+     "componentCode": "C621738",
+     "componentModelEn": "MIC2297-38YML-TR",
+     "componentBrandEn": "Microchip Tech",
+     "componentLibraryType": "expand",
+     "preferredComponentFlag": false,
+     "stockCount": 0,
+     "componentPrices": [
+      {
+       "startNumber": 1,
+       "endNumber": 9,
+       "productPrice": 2.4553
+      },
+      {
+       "startNumber": 10,
+       "endNumber": 29,
+       "productPrice": 2.0853
+      },
+      {
+       "startNumber": 30,
+       "endNumber": 99,
+       "productPrice": 1.8546
+      },
+      {
+       "startNumber": 100,
+       "endNumber": 499,
+       "productPrice": 1.6172
+      },
+      {
+       "startNumber": 500,
+       "endNumber": 999,
+       "productPrice": 1.6172
+      },
+      {
+       "startNumber": 1000,
+       "endNumber": -1,
+       "productPrice": 1.6172
+      }
+     ],
+     "lossNumber": 0,
+     "leastPatchNumber": 0,
+     "describe": "-40℃~+125℃ 1 1.2A 600kHz Boost PWM DFN-10-EP LED Drivers ROHS"
+    },
+    {
+     "componentCode": "C679887",
+     "componentModelEn": "LTC2297CUP#TRPBF",
+     "componentBrandEn": "Analog Devices",
+     "componentLibraryType": "expand",
+     "preferredComponentFlag": false,
+     "stockCount": 0,
+     "componentPrices": [
+      {
+       "startNumber": 1,
+       "endNumber": 2,
+       "productPrice": 20.321
+      },
+      {
+       "startNumber": 3,
+       "endNumber": 4,
+       "productPrice": 20.321
+      },
+      {
+       "startNumber": 5,
+       "endNumber": 29,
+       "productPrice": 20.321
+      },
+      {
+       "startNumber": 30,
+       "endNumber": 31,
+       "productPrice": 19.3226
+      },
+      {
+       "startNumber": 32,
+       "endNumber": 33,
+       "productPrice": 19.3226
+      },
+      {
+       "startNumber": 34,
+       "endNumber": -1,
+       "productPrice": 19.3226
+      }
+     ],
+     "lossNumber": 0,
+     "leastPatchNumber": 0,
+     "describe": "0℃~+70℃ 1.2LSB 14 2 2.7V~3.4V 40MHz QFN-64-EP(9x9) Analog to Digital Converters (ADC) ROHS"
+    },
+    {
+     "componentCode": "C679889",
+     "componentModelEn": "LTC2297IUP#TRPBF",
+     "componentBrandEn": "Analog Devices",
+     "componentLibraryType": "expand",
+     "preferredComponentFlag": false,
+     "stockCount": 0,
+     "componentPrices": [
+      {
+       "startNumber": 1,
+       "endNumber": 2,
+       "productPrice": 24.3279
+      },
+      {
+       "startNumber": 3,
+       "endNumber": 4,
+       "productPrice": 24.3279
+      },
+      {
+       "startNumber": 5,
+       "endNumber": 29,
+       "productPrice": 24.3279
+      },
+      {
+       "startNumber": 30,
+       "endNumber": 31,
+       "productPrice": 23.1331
+      },
+      {
+       "startNumber": 32,
+       "endNumber": 33,
+       "productPrice": 23.1331
+      },
+      {
+       "startNumber": 34,
+       "endNumber": -1,
+       "productPrice": 23.1331
+      }
+     ],
+     "lossNumber": 0,
+     "leastPatchNumber": 0,
+     "describe": "-40℃~+85℃ 1.2LSB 14 2 2.7V~3.4V 40MHz QFN-64-EP(9x9) Analog to Digital Converters (ADC) ROHS"
+    },
+    {
+     "componentCode": "C3232222",
+     "componentModelEn": "SAK-XC2297H-104F80LAB",
+     "componentBrandEn": "Infineon Technologies",
+     "componentLibraryType": "expand",
+     "preferredComponentFlag": false,
+     "stockCount": 0,
+     "componentPrices": [
+      {
+       "startNumber": 1,
+       "endNumber": 9,
+       "productPrice": 6.2543
+      },
+      {
+       "startNumber": 10,
+       "endNumber": 11,
+       "productPrice": 6.2543
+      },
+      {
+       "startNumber": 12,
+       "endNumber": 199,
+       "productPrice": 6.2543
+      },
+      {
+       "startNumber": 200,
+       "endNumber": 499,
+       "productPrice": 2.4209
+      },
+      {
+       "startNumber": 500,
+       "endNumber": 999,
+       "productPrice": 2.3358
+      },
+      {
+       "startNumber": 1000,
+       "endNumber": -1,
+       "productPrice": 2.2932
+      }
+     ],
+     "lossNumber": 0,
+     "leastPatchNumber": 0,
+     "describe": "10bit 150 3V~5.5V 80MHz 832KB Others LQFP-176-EP(24x24) Microcontrollers (MCU/MPU/SOC) ROHS"
+    }
+   ]
+  }
+ }
+}

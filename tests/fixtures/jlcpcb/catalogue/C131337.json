@@ -1,0 +1,52 @@
+{
+ "code": 200,
+ "data": {
+  "componentPageInfo": {
+   "list": [
+    {
+     "componentCode": "C131337",
+     "componentModelEn": "B2B-PH-K-S(LF)(SN)",
+     "componentBrandEn": "JST",
+     "componentLibraryType": "expand",
+     "preferredComponentFlag": false,
+     "stockCount": 203313,
+     "componentPrices": [
+      {
+       "startNumber": 1,
+       "endNumber": 199,
+       "productPrice": 0.0356
+      },
+      {
+       "startNumber": 200,
+       "endNumber": 999,
+       "productPrice": 0.0282
+      },
+      {
+       "startNumber": 1000,
+       "endNumber": 1999,
+       "productPrice": 0.0248
+      },
+      {
+       "startNumber": 2000,
+       "endNumber": 9999,
+       "productPrice": 0.0223
+      },
+      {
+       "startNumber": 10000,
+       "endNumber": 19999,
+       "productPrice": 0.0213
+      },
+      {
+       "startNumber": 20000,
+       "endNumber": -1,
+       "productPrice": 0.0207
+      }
+     ],
+     "lossNumber": 1,
+     "leastPatchNumber": 2,
+     "describe": "-25℃~+85℃ 1 100V 1x2P 2 2A 2P 2mm 4.5mm 5.9mm 6mm Brass K Pin PA66 PH Through Hole Tin UL94V-0 White 插件,P=2mm Wire To Board Connector ROHS"
+    }
+   ]
+  }
+ }
+}

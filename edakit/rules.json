@@ -22,6 +22,13 @@
    "fix": "In the board's project: edakit part datasheet, then commit. In the host: edakit part own <path to the board's project>. Release the board there (edakit gate) and copy again, or accept the warning in the sign-off file with the reason.",
    "sources": ["edakit handbook 4.5"]
   },
+  "P-4": {
+   "title": "parts orderable",
+   "rule": "Every assembled part (an LCSC number, not bom: false) is in the stock snapshot of edakit stock, listed in JLCPCB's assembly catalogue, in stock for [project] quantity boards – under Standard PCBA with the assembler's attrition, max(placements + lossNumber, leastPatchNumber) – named as its parts entry names it, and not 'Standard Only' on an Economic order. MSL 5 or more (baked), stock below the need plus [project] stock_margin_pct and another library class than the entry's jlc_class are warnings; a part the snapshot lacks or could not read and a snapshot older than [project] stock_max_age_days are pending.",
+   "why": "What the assembler can place is decided when the part is chosen, not when the BOM is uploaded. A part only LCSC stocks is 'pre-order only' at JLCPCB; a 'Standard Only' part (large holders, modules) turns a one-sided Economic order into Standard with setup per side and loading fees on every type; an MSL 5 part is baked for a fee and two days; a catalogue entry under another part number is another part. Found in the quote, each of these costs a part swap, sign-offs again and gate runs.",
+   "fix": "edakit stock after every part change. A part that fails: another part (part-search, edakit stock --lcsc for the candidates), the part soldered by hand (bom: false), or Standard PCBA chosen on purpose ([release] assembly.pcba = \"standard\"). A wrong MPN: correct the parts entry or the LCSC number. Accept a warning in the sign-off file with its reason.",
+   "sources": ["edakit handbook 4.2 and 8.4", "JLCPCB part pages (PCBA Type, MSL, X-ray) and the quotes of 2026-10-24 and 2026-10-25 (attrition)"]
+  },
   "P-6": {
    "title": "graph and parts entry name the same part",
    "rule": "Every component names the same part as its parts entry: the entry's lcsc equals its file name, the component's lcsc is no C99… user-library number (unless it stays out of the BOM, bom: false), its part names the entry's mpn (remarks in parentheses or after a semicolon left out, case ignored; a part that starts with a value, such as \"330 Ω 0805\", is that value), its value reads as the entry's value_ohm, value_f or value_h within 1 %, and its type fits the entry's kind (microcontroller and regulator: ic or module; transistor: npn, pnp, nmos, pmos; led: led or led_rgb; switch: switch or dip_switch; audio: buzzer; any other type the same word). A designator prefix that contradicts the kind (R, C, L, D, Q, U, J, SW, F, BT, BZ, K, TP) is a warning.",
@@ -346,7 +353,7 @@
   },
   "F-2": {
    "title": "stock at JLCPCB",
-   "rule": "Every BOM line is in JLCPCB's assembly catalogue with stock for [project] quantity boards.",
+   "rule": "Every BOM line is in JLCPCB's assembly catalogue with stock for [project] quantity boards, under the MPN of its parts entry (case and blanks ignored); another library class than the entry's jlc_class is a warning.",
    "why": "LCSC's stock and JLCPCB's assembly stock differ. A part that is not available can only be pre-ordered, which delays the order or changes the price.",
    "fix": "A part in stock (part-search skill); a cheaper part that is available is worth a gate run.",
    "sources": ["edakit handbook 4.2"]

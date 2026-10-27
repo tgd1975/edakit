@@ -9,6 +9,7 @@
     edakit part fetch KEY [--url U] | --all   a part's datasheet PDF, kept beside the project and checked to be of it
     edakit part search "KEYWORDS"    JLCPCB's parts catalogue: LCSC number, class, stock – no EasyEDA
     edakit part datasheet|own        own parts: a board of an edakit project as a part in another project
+    edakit stock [--refresh]         what JLCPCB says about the assembled parts, as a dated snapshot (check P-4)
     edakit sim                      stage E: ngspice operating points of all scenarios (offline, seconds)
     edakit handover                  what the circuit hands over to the layout: state, sign-offs, layout requirements
     edakit schematic create|check|copy|layout
@@ -80,6 +81,13 @@ def build_parser():
     p.add_argument("--connector", action="append", help="datasheet: a connector of the board, in the order of the "
                                                         "part's pins (repeat for several; none: renew the datasheets)")
     p.add_argument("--name", help="the part's name (mpn) – datasheet: default the project name; own: which datasheet")
+    _common(p)
+
+    p = sub.add_parser("stock", help="ask JLCPCB about every assembled part and write the stock snapshot (P-4)")
+    p.add_argument("--board", help="only the parts of this board")
+    p.add_argument("--refresh", action="store_true", help="ask about every part again, not only missing or old ones")
+    p.add_argument("--lcsc", nargs="+", metavar="C", help="print what JLCPCB says about these parts, write nothing "
+                                                          "(part search; no project needed)")
     _common(p)
 
     p = sub.add_parser("sim", help="simulation (stage E)")
@@ -178,6 +186,9 @@ def main(argv=None):
     if args.command == "proposal":
         from . import proposal
         return proposal.main(args)
+    if args.command == "stock" and args.lcsc:
+        from . import stock
+        return stock.main_lcsc(args.lcsc)
     if args.command == "block" and args.action in ("list", "show"):
         from . import block
         return block.main(None, args)
@@ -202,6 +213,9 @@ def main(argv=None):
     if args.command == "part":
         from . import part
         return part.main(cfg, args)
+    if args.command == "stock":
+        from . import stock
+        return stock.main(cfg, args)
     if args.command == "sim":
         from .sim import run
         try:

@@ -41,13 +41,16 @@ PASTE_GAP_MM = 0.4               # [release] assembly paste_gap_mm: SMD pads of 
 MAX_BARE_MM = 5.0                # [copper] max_bare_mm: largest copper-free circle on a poured layer (L-15)
 
 PROJECT_KEYS = ("name", "company", "quantity", "distributors", "lock", "agreements", "graph", "parts", "sim",
-                "sim_plugin", "schematic", "signoff", "artifacts", "reports", "datasheets")
+                "sim_plugin", "schematic", "signoff", "artifacts", "reports", "datasheets", "stock", "stock_margin_pct",
+                "stock_max_age_days")
 BOARD_KEYS = ("title", "template", "schematic", "pcb", "file")            # [boards.<name>] in edakit.toml
 BOARD_FILE_KEYS = ("revision", "view", "outline", "holes", "tooling", "place", "near", "near_mm", "edge_mm", "edge_ok",
                    "on_headers", "header_keep_mm", "silk_overlap_mm", "park", "routing", "pours", "pour_regions",
                    "pour_min_piece_mm2", "pour_inset_mm", "silk", "loops", "net_classes", "copper")
 SCHEMATIC_KEYS = ("stub", "layout")
 RELEASE_KEYS = ("layout_files", "state_files", "assembly", "stages")
+PCBA = ("economic", "standard")  # [release] assembly.pcba: the assembler's class of the order (P-4)
+STOCK_MAX_AGE_DAYS = 14          # [project] stock_max_age_days: an older stock snapshot is pending (P-4)
 
 
 class ConfigError(Exception):
@@ -153,6 +156,19 @@ class Config:
     lock: str
     agreements: bool            # the working agreements of handbook 11.4 at session start (edakit/agreements.py)
     raw: dict
+    stock: Path | None = None           # the stock snapshot of `edakit stock` (P-4); not in the circuit hash
+    stock_margin_pct: float = 0.0       # P-4 warns below need x (1 + margin / 100)
+    stock_max_age_days: int = STOCK_MAX_AGE_DAYS
+
+    def pcba(self):
+        """(class, why) of the assembly order: [release] assembly.pcba, or derived from assembly.sides – one side
+        Economic, two sides Standard (without [release] assembly both sides count, as for F-3)."""
+        a = self.release.get("assembly", {})
+        if a.get("pcba"):
+            return a["pcba"], f'[release] assembly.pcba = "{a["pcba"]}"'
+        sides = a.get("sides", ["top", "bottom"])
+        return ("economic" if len(sides) == 1 else "standard"), \
+            f"[release] assembly.sides {' + '.join(sides)}: {'one side' if len(sides) == 1 else 'two sides'}"
 
     def board(self, name=None) -> Board:
         if name is None:
@@ -402,6 +418,30 @@ def _one_file_form(raw, name):
     return out
 
 
+def _number(where, v, integer=False, positive=False):
+    ok = isinstance(v, int) if integer else isinstance(v, (int, float))
+    if isinstance(v, bool) or not ok or v < 0 or (positive and v == 0):
+        return [f"{where} must be a{' whole' if integer else ''} number {'> 0' if positive else '>= 0'}, not {v!r}"]
+    return []
+
+
+def _project_values(p):
+    out = []
+    for key in ("stock_margin_pct",):
+        if key in p:
+            out += _number(f"[project] {key}", p[key])
+    if "stock_max_age_days" in p:
+        out += _number("[project] stock_max_age_days", p["stock_max_age_days"], integer=True)
+    return out
+
+
+def _release_values(release):
+    a = release.get("assembly", {})
+    if "pcba" in a and a["pcba"] not in PCBA:
+        return [f"[release] assembly.pcba must be one of {', '.join(PCBA)}, not {a['pcba']!r}"]
+    return []
+
+
 def find_config(start=None) -> Path:
     env = os.environ.get("EDAKIT_CONFIG")
     if env:
@@ -450,6 +490,7 @@ def load(path=None) -> Config:
         problems = moved + problems + [
             f"{path.name} is the table of contents now: board, schematic and checks have files of their own "
             "(handbook 10.1)"]
+    problems += _project_values(p) + _release_values(raw.get("release", {}))
     if problems:
         raise ConfigError(f"{path}:\n  " + "\n  ".join(problems))
     boards = {name: _board(name, raw["boards"][name], data, file) for name, (file, data) in files.items()}
@@ -474,4 +515,7 @@ def load(path=None) -> Config:
         lock=p.get("lock", "auto"),
         agreements=p.get("agreements", True),
         raw=raw,
+        stock=rel("stock", "hardware/stock.json"),
+        stock_margin_pct=float(p.get("stock_margin_pct", 0)),
+        stock_max_age_days=int(p.get("stock_max_age_days", STOCK_MAX_AGE_DAYS)),
     )

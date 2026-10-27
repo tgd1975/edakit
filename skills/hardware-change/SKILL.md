@@ -38,6 +38,7 @@ circuit-design.
 ```bash
 edakit check 2>&1 | cat     # ERROR: fix. WAIVED: only with a reason in the graph. PENDING blocks only the release
 edakit hints 2>&1 | cat     # design hints of new parts: handle them or note why not ("hints" in the graph)
+edakit stock 2>&1 | cat     # new or other parts: what JLCPCB says about them, dated – P-4 reads it in edakit check
 edakit sim 2>&1 | cat       # exit 2 = finding: find the cause, do not argue it away
 ```
 

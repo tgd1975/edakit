@@ -1,0 +1,52 @@
+{
+ "code": 200,
+ "data": {
+  "componentPageInfo": {
+   "list": [
+    {
+     "componentCode": "C2895493",
+     "componentModelEn": "XL-504SURD",
+     "componentBrandEn": "XINGLIGHT",
+     "componentLibraryType": "expand",
+     "preferredComponentFlag": false,
+     "stockCount": 22104,
+     "componentPrices": [
+      {
+       "startNumber": 1,
+       "endNumber": 199,
+       "productPrice": 0.0329
+      },
+      {
+       "startNumber": 200,
+       "endNumber": 999,
+       "productPrice": 0.0259
+      },
+      {
+       "startNumber": 1000,
+       "endNumber": 1999,
+       "productPrice": 0.0207
+      },
+      {
+       "startNumber": 2000,
+       "endNumber": 9999,
+       "productPrice": 0.0184
+      },
+      {
+       "startNumber": 10000,
+       "endNumber": 19999,
+       "productPrice": 0.0163
+      },
+      {
+       "startNumber": 20000,
+       "endNumber": -1,
+       "productPrice": 0.0152
+      }
+     ],
+     "lossNumber": 5,
+     "leastPatchNumber": 2,
+     "describe": "-20℃~+85℃ 2.2V 20mA 25° 300mcd 50mW 5mm round lamp head 620nm~630nm 625nm Red Red Lens 插件,D=5mm LED Indication - Discrete ROHS"
+    }
+   ]
+  }
+ }
+}

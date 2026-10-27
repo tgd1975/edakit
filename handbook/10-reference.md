@@ -25,7 +25,7 @@ board, the schematic or the checks (the earlier one-file form) is refused with a
 |---|---|---|
 | `name` | – (required) | EasyEDA project (friendly name) |
 | `company` | `""` | title block of the schematics |
-| `quantity` | `5` | boards per order (stock check F-2) |
+| `quantity` | `5` | boards per order (stock checks P-4 and F-2) |
 | `distributors` | `["lcsc"]` | where the agent part-selector searches, in this order: `lcsc`, `rs`, `farnell`, `mouser`, `digikey`, `reichelt` (chapter 4.2) |
 | `lock` | `auto` | EasyEDA claim between Claude sessions: `auto` (when `CLAUDE_CODE_SESSION_ID` is set) or `off` |
 | `agreements` | `true` | the working agreements of handbook 11.4, one line each, in the context of every Claude Code session in the project (plugin hook at session start); `false` turns it off |
@@ -38,6 +38,9 @@ board, the schematic or the checks (the earlier one-file form) is refused with a
 | `artifacts` | `build/edakit` | caches, previews, routing files, exports, Gerber exports (not versioned) |
 | `reports` | `build/release` | gate runs |
 | `datasheets` | `<artifacts>/datasheets` | the datasheets `edakit part fetch` keeps, `<key>.pdf` and `<key>.json` (4.6); a folder in the repository versions them |
+| `stock` | `hardware/stock.json` | the stock snapshot of `edakit stock` (P-4, 4.2); versioned, outside the circuit hash |
+| `stock_margin_pct` | `0` | P-4 warns when the assembler's stock is below the need plus this margin |
+| `stock_max_age_days` | `14` | an older snapshot (or snapshot row) is pending in P-4 – it blocks the release, not `edakit check` |
 
 The name of the ground net is in the graph (`ground`, default `GND`), with the circuit it belongs to; nets that are
 ground on purpose besides it (an analog ground) in `grounds` (3.1, G-16).
@@ -56,7 +59,8 @@ ground on purpose besides it (an analog ground) in `grounds` (3.1, G-16).
 
 `layout_files` (further files in the layout hash – the board files and the footprint geometry are always in it),
 `state_files` (further files in the circuit hash), `assembly` ({`sides` (both), `smd_only`, `paste_gap_mm` (0.4: SMD
-pads of different parts on an assembled side, L-14)}), `[[stages]]` ({`id`, `name`, `cmd`, `advisory`, `timeout`,
+pads of different parts on an assembled side, L-14), `pcba` (`"economic"` or `"standard"`: the assembler's class of
+the order, P-4; default from `sides` – one side Economic, two Standard)}), `[[stages]]` ({`id`, `name`, `cmd`, `advisory`, `timeout`,
 `about`}).
 
 ## 10.2 The board file
@@ -129,6 +133,8 @@ Code: `edakit … 2>&1 | cat`.
 | `edakit part fetch KEY [--url U] \| --all` | – (internet) | the parts entry (`mpn`, `datasheet.url`, `lcsc`, `verified.datasheet_sha256`); the sources of 4.6 | `<datasheets>/<KEY>.pdf` and `.json` (a failed download keeps the earlier copy, exit 2; variant or changed since the sign-off: exit 2) |
 | `edakit part search "KEYWORDS" [--basic] [--min-stock N] [--limit 25] [--json F]` | – (internet) | JLCPCB's public parts catalogue (4.2) | – (F: the hits); exit 2 = no hits |
 | `edakit part datasheet [--connector C …] [--name N]` | – | graph, parts, sim config, board file (4.5) | `hardware/datasheet/<N>.json` and `.md`; without `--connector` every datasheet renewed |
+| `edakit stock [--board B] [--refresh]` | – | graph, parts, the snapshot; JLCPCB's catalogue and part pages (network) | `hardware/stock.json` (`[project] stock`): the parts missing, unread or older than `stock_max_age_days`, with `--refresh` all |
+| `edakit stock --lcsc C…` | – | JLCPCB's catalogue and part pages (no project needed) | – (prints listed, class, stock, MSL, PCBA type, X-ray, attrition) |
 | `edakit part own PATH [--name N]` | – | the board's project at PATH: its datasheet, state, git, gate runs | `hardware/parts/<N>.json` |
 | `edakit sim [--json F] [--keep DIR]` | – | graph, parts, sim config, plugin | `<artifacts>/sim/net_currents.json` |
 | `edakit handover [--board B]` | – | graph, parts, sign-offs | – |
@@ -161,6 +167,7 @@ hardware/graph.json         the hardware graph (only source of parts and connect
 hardware/parts/*.json       parts database
 hardware/datasheet/<name>.* the board as a part for other projects: parts entry and datasheet (edakit part datasheet)
 hardware/sim.json           simulation scenarios
+hardware/stock.json         what the assembler said about the parts, dated (edakit stock, P-4)
 hardware/schematic.toml     arrangement of the schematic
 hardware/boards/<name>.toml one board: outline, holes, placement, routing, pours, silkscreen
 hardware/signoff.json       manual checks and accepted warnings, bound to hashes

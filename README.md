@@ -68,6 +68,7 @@ edakit part fetch C2297         # the datasheet PDF, kept with the project and c
 edakit part search "RGB LED 5mm common cathode"   # JLCPCB's catalogue: number, class, stock – no EasyEDA
 edakit check                    # rule checks on the graph (P, G) – < 1 s, failed checks explained
 edakit hints                    # design hints for the parts in the graph (bulk capacitor, debouncing, ESD …)
+edakit stock                    # what JLCPCB says about the assembled parts, dated – check P-4 reads it
 edakit rules G-11               # what a check is about, why, what to do, sources
 edakit sim                      # ngspice: every supply x load x tolerance corner (E) – seconds
 edakit schematic draw           # the schematic as SVG from graph and parts – no EasyEDA (enough without a PCB)

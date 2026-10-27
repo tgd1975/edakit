@@ -562,6 +562,10 @@ FAULTS = [
      [("F-2", "fail", "C2 C45783: 3 in stock, 5 needed")]),
     ("the catalogue not reachable", lambda ex, p: ex.jlc.update(C8678={"error": "timed out"}),
      [("F-2", "fail", "D1 C8678: catalogue not reachable (timed out)")]),
+    ("the catalogue names another part (#38)", lambda ex, p: ex.jlc["C8678"].update(componentModelEn="SS14"),
+     [("F-2", "fail", "D1 C8678: JLCPCB names it SS14, the parts entry SS34")]),
+    ("the catalogue lists another class (#38)", lambda ex, p: ex.jlc["C8678"].update(componentLibraryType="expand"),
+     [("F-2", "warn", "D1 C8678: JLCPCB lists it as Extended Part, the parts entry as Basic Part")]),
     # F-3
     ("a part missing from the pick-and-place file", lambda ex, p: ex.cpl.pop(1), [("F-3", "fail", "D1: 0x")]),
     ("a part twice in the pick-and-place file", lambda ex, p: ex.cpl.append(dict(ex.cpl[2])),

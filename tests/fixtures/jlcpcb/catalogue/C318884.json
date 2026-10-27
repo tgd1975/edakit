@@ -1,0 +1,52 @@
+{
+ "code": 200,
+ "data": {
+  "componentPageInfo": {
+   "list": [
+    {
+     "componentCode": "C318884",
+     "componentModelEn": "TS-1187A-B-A-B",
+     "componentBrandEn": "XKB Connection",
+     "componentLibraryType": "base",
+     "preferredComponentFlag": false,
+     "stockCount": 1171242,
+     "componentPrices": [
+      {
+       "startNumber": 1,
+       "endNumber": 199,
+       "productPrice": 0.0207
+      },
+      {
+       "startNumber": 200,
+       "endNumber": 599,
+       "productPrice": 0.016
+      },
+      {
+       "startNumber": 600,
+       "endNumber": 3999,
+       "productPrice": 0.0139
+      },
+      {
+       "startNumber": 4000,
+       "endNumber": 7999,
+       "productPrice": 0.0121
+      },
+      {
+       "startNumber": 8000,
+       "endNumber": 19999,
+       "productPrice": 0.0115
+      },
+      {
+       "startNumber": 20000,
+       "endNumber": -1,
+       "productPrice": 0.0111
+      }
+     ],
+     "lossNumber": 8,
+     "leastPatchNumber": 5,
+     "describe": "-30℃~+85℃ 1.5mm 1.6N 100,000 cycles 12V 5.1mm 5.1mm 50mA Gold No Round Button SPST Surface Mount,Vertical Without Bracket SMD-4P,5.1x5.1mm Tactile Switches ROHS"
+    }
+   ]
+  }
+ }
+}

@@ -21,7 +21,8 @@ graph, the plan and the documents are the circuit designer's. You do not commit.
    named with its queries in the result.
 4. **Candidates** that meet the requirement, per candidate: manufacturer part number, manufacturer, distributor and
    order number, stock as a number with the date, price at the quantity, lifecycle (active, not for new designs, end
-   of life), package, the ratings that matter, compliance data the page states (RoHS, REACH), datasheet link. The
+   of life), package, the ratings that matter, compliance data the page states (RoHS, REACH), datasheet link; for
+   JLCPCB assembly what `edakit stock --lcsc <C…>` prints (listed, JLCPCB's stock, "Standard Only", MSL). The
    frame of the skill part-search holds: a part in stock beats a "better" one that is not; for JLCPCB assembly a part
    of its library (Basic before Extended) beats one from elsewhere.
 5. **Recommend** one with the reason and name the alternatives and why they lost.

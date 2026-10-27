@@ -10,7 +10,8 @@ Concept: `${CLAUDE_PLUGIN_ROOT}/handbook/08-release-gate.md`.
 
 ## Procedure
 
-1. **Offline** (seconds): `edakit gate 2>&1 | cat` – P, G, E and the project's own stages.
+1. **Offline** (seconds): `edakit stock 2>&1 | cat` when the snapshot is older than `stock_max_age_days` (P-4 is
+   pending then), then `edakit gate 2>&1 | cat` – P, G, E and the project's own stages.
 2. **With EasyEDA** (start skill, claim EasyEDA, reference schematic checked): `edakit gate --easyeda 2>&1 | cat` in the
    background (minutes). Adds S, L and F per board: read the PCB, save and reload, DRC, export Gerber and pick-and-place,
    BOM from the graph, JLCPCB stock, copper connectivity from the Gerber files, holes against leads, outline, tooling
@@ -38,7 +39,8 @@ Concept: `${CLAUDE_PLUGIN_ROOT}/handbook/08-release-gate.md`.
 The MCP server cannot order on purpose. Checklist for the user:
 
 - [ ] Per board: `gerber_<b>.zip`, `bom_<b>.csv`, `cpl_<b>.csv` from the released folder, checksums as in the manifest
-- [ ] Assembly type matches `[release] assembly` (Economic: one side, SMD; two SMD sides need Standard PCBA)
+- [ ] Assembly type matches `[release] assembly` (Economic: one side, SMD; two SMD sides or a "Standard Only" part
+      need Standard PCBA – `assembly.pcba`, P-4); bake set when P-4 warns about MSL ≥ 5
 - [ ] Tooling holes "added by customer" when the board has its own (otherwise JLCPCB drills theirs, maybe visibly)
 - [ ] Order number position: "specify a location" if the silkscreen has a placeholder (`JLCJLCJLCJLC`)
 - [ ] Remarks field (max. 200 characters) for panel tabs or V-cuts that must avoid visible edges

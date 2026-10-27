@@ -1,0 +1,52 @@
+{
+ "code": 200,
+ "data": {
+  "componentPageInfo": {
+   "list": [
+    {
+     "componentCode": "C17604",
+     "componentModelEn": "0805W8F2001T5E",
+     "componentBrandEn": "UNI-ROYAL(Uniroyal Elec)",
+     "componentLibraryType": "base",
+     "preferredComponentFlag": false,
+     "stockCount": 4593731,
+     "componentPrices": [
+      {
+       "startNumber": 1,
+       "endNumber": 999,
+       "productPrice": 0.0037
+      },
+      {
+       "startNumber": 1000,
+       "endNumber": 4999,
+       "productPrice": 0.0029
+      },
+      {
+       "startNumber": 5000,
+       "endNumber": 9999,
+       "productPrice": 0.0024
+      },
+      {
+       "startNumber": 10000,
+       "endNumber": 49999,
+       "productPrice": 0.0022
+      },
+      {
+       "startNumber": 50000,
+       "endNumber": 50199,
+       "productPrice": 0.002
+      },
+      {
+       "startNumber": 50200,
+       "endNumber": -1,
+       "productPrice": 0.002
+      }
+     ],
+     "lossNumber": 10,
+     "leastPatchNumber": 20,
+     "describe": "-55℃~+155℃ 125mW 150V 2kΩ Thick Film Resistor ±1% ±100ppm/℃ 0805 Chip Resistor - Surface Mount ROHS"
+    }
+   ]
+  }
+ }
+}

@@ -42,7 +42,9 @@ assembly preview at JLCPCB.
        print beyond the outline, a part of the designators side without a visible designator or group label (not in
        [silk] unlabelled), a text height edakit prints below 1.0 mm (warn)
   F-1  BOM from the graph = BOM of EasyEDA; every LCSC number in the parts database
-  F-2  every BOM part listed in JLCPCB's assembly catalogue with stock for `quantity` boards
+  F-2  every BOM part listed in JLCPCB's assembly catalogue with stock for `quantity` boards, under the MPN of its
+       parts entry; another class than the entry's jlc_class warns (check P-4 reads the same offline, from the stock
+       snapshot)
   F-3  pick and place: every BOM part exactly once, side and rotation = PCB; sides/SMD as [release] assembly says
   F-5  Gerber set complete; outline and holes = plan (± 0.2 mm); tooling holes in the NPTH file, mask open, no copper
 Last stdout line: JSON list of rows {stage, id, item, check, actual, expected, result}. Exit 0 / 2 / 1.
@@ -61,7 +63,7 @@ import zipfile
 from collections import Counter, defaultdict
 from pathlib import Path
 
-from .. import gerber, handover
+from .. import gerber, handover, stock
 from ..config import BOTTOM, MIL_PER_MM, TOP
 from ..design import Design, natural_key
 
@@ -145,22 +147,33 @@ def collect(cfg, board, d, verbose=False):
         z.extractall(d / "gerber")
 
 
-def fetch_jlc(bom, d):
-    """F-2: JLCPCB's public assembly catalogue (no login; only part numbers leave the machine). A number missing there
-    can only be pre-ordered."""
+def jlc_search(keyword, page_size=10, timeout=30):
+    """JLCPCB's public assembly catalogue (no login; only the keyword leaves the machine): the hits of a full-text
+    search as the catalogue gives them. Network errors and a changed answer raise."""
     import urllib.request
+    req = urllib.request.Request(JLC_SEARCH, headers={"Content-Type": "application/json", "User-Agent": "Mozilla/5.0"},
+                                 data=json.dumps({"keyword": keyword, "currentPage": 1, "pageSize": page_size}).encode())
+    with urllib.request.urlopen(req, timeout=timeout) as resp:
+        return json.load(resp)["data"]["componentPageInfo"]["list"] or []
+
+
+def jlc_part(lcsc, timeout=30):
+    """The catalogue entry of exactly this LCSC number – the search is full text – or None: not listed, a number that
+    can only be pre-ordered."""
+    return next((c for c in jlc_search(lcsc, timeout=timeout) if c.get("componentCode") == lcsc), None)
+
+
+def fetch_jlc(bom, d):
+    """F-2: the catalogue entry per LCSC number of the BOM, into jlc_parts.json."""
     out = {}
     for lcsc in sorted({r["LCSC Part #"] for r in bom}):
-        req = urllib.request.Request(JLC_SEARCH, headers={"Content-Type": "application/json", "User-Agent": "Mozilla/5.0"},
-                                     data=json.dumps({"keyword": lcsc, "currentPage": 1, "pageSize": 10}).encode())
         try:
-            with urllib.request.urlopen(req, timeout=30) as resp:
-                found = json.load(resp)["data"]["componentPageInfo"]["list"] or []
+            hit = jlc_part(lcsc)
         except Exception as e:  # network, changed API
             out[lcsc] = {"error": str(e)[:200]}
             continue
-        hit = next((c for c in found if c.get("componentCode") == lcsc), None)  # full-text search: exact number only
-        out[lcsc] = hit and {k: hit.get(k) for k in ("componentModelEn", "componentLibraryType", "stockCount")}
+        out[lcsc] = hit and {k: hit.get(k) for k in ("componentModelEn", "componentLibraryType",
+                                                     "preferredComponentFlag", "stockCount")}
     (d / "jlc_parts.json").write_text(json.dumps(out, indent=1, ensure_ascii=False))
 
 
@@ -1022,17 +1035,28 @@ def check_fab(cfg, board, design, d, rows):
     jlc_file = d / "jlc_parts.json"
     if not jlc_file.exists():
         fetch_jlc(bom, d)
-    jlc, bad = json.loads(jlc_file.read_text()), []
+    jlc, bad, other = json.loads(jlc_file.read_text()), [], []
     for r in bom:
         n, hit = len(r["Designator"].split(",")) * cfg.quantity, jlc.get(r["LCSC Part #"])
+        who, entry = f"{r['Designator']} {r['LCSC Part #']}", design.parts.get(r["LCSC Part #"]) or {}
         if not hit:
-            bad.append(f"{r['Designator']} {r['LCSC Part #']}: not in the catalogue (pre-order only)")
-        elif hit.get("error"):
-            bad.append(f"{r['Designator']} {r['LCSC Part #']}: catalogue not reachable ({hit['error'][:60]})")
-        elif (hit.get("stockCount") or 0) < n:
-            bad.append(f"{r['Designator']} {r['LCSC Part #']}: {hit.get('stockCount')} in stock, {n} needed")
-    rows.add("F", "F-2", board.name, f"every BOM part in JLCPCB's assembly catalogue, stock for {cfg.quantity} boards",
-             not bad, "; ".join(bad) or f"{len(bom)} lines listed and in stock", "all")
+            bad.append(f"{who}: not in the catalogue (pre-order only)")
+            continue
+        if hit.get("error"):
+            bad.append(f"{who}: catalogue not reachable ({hit['error'][:60]})")
+            continue
+        if (hit.get("stockCount") or 0) < n:
+            bad.append(f"{who}: {hit.get('stockCount')} in stock, {n} needed")
+        if entry.get("mpn") and hit.get("componentModelEn") and not stock.same_mpn(entry["mpn"], hit["componentModelEn"]):
+            bad.append(f"{who}: JLCPCB names it {hit['componentModelEn']}, the parts entry {entry['mpn']}")
+        cls = stock.CLASS.get(hit.get("componentLibraryType"), hit.get("componentLibraryType"))
+        if stock.class_differs(cls, hit.get("preferredComponentFlag"), entry.get("jlc_class")):
+            other.append(f"{who}: JLCPCB lists it as {cls}, the parts entry as {entry['jlc_class']}")
+    rows.add("F", "F-2", board.name, f"every BOM part in JLCPCB's assembly catalogue, stock for {cfg.quantity} boards, "
+             "the MPN of its parts entry", not bad, "; ".join(bad) or f"{len(bom)} lines listed and in stock", "all")
+    if other:
+        rows.add("F", "F-2", board.name, "catalogue class = jlc_class of the parts entry", False, "; ".join(other),
+                 "equal", "warn")
     import openpyxl
     ws = openpyxl.load_workbook(d / "cpl_easyeda.xlsx", read_only=True).worksheets[0]
     rx = list(ws.iter_rows(values_only=True))
