@@ -59,7 +59,7 @@ in `sources` – any RP2350 module takes the same list per GPIO. On the RP2040 a
 | buzzer | `plus`, `minus` |
 | relay | `coil_plus`, `coil_minus`, `common`, `no`, `nc` |
 | connector | free (`pin1`, …); `vbus`/`gnd` for a supply input; `cc1`, `cc2` on a USB-C receptacle (G-14; a module or breakout without these roles: `params.usb_c`) |
-| ic, module | as the behaviour model needs them: `vin`, `vout`, `gnd`, `vsys`, `3v3`, `gpio`, `rext`, `out`, `oe_n`, `vdd`; `sda`, `scl` for I2C pins (G-11) |
+| ic, module | as the behaviour model needs them: `vin`, `vout`, `gnd`, `vsys`, `3v3`, `gpio`, `rext`, `out`, `oe_n`, `vdd`; `sda`, `scl` for I2C pins (G-11); on shift registers and LED drivers `sdi`, `sdo` (serial data in and out) and the outputs numbered `out0` … `outN` where their order matters – the simulation reads them as `out`, the firmware contract numbers its channels by them (3.5) |
 
 **Ratings** per kind (what the checks read): resistor `p_max_w`, `v_max`; capacitor `v_max`; diode `if_avg_a`, `vrrm`;
 LED `if_max_a`, `vr_max` (per colour for RGB); BJT `ic_max_a`, `vceo`, `vebo`, `p_max_w`; MOSFET `id_max_a`, `vds_max`,
@@ -78,8 +78,10 @@ the part gets no temperature item.
 **Parameters**: resistor `value_ohm` (`0`: a bridge that joins its nets, 3.3), `r_max_ohm` (a bridge's maximum
 resistance from the datasheet, simulated instead of 0 Ω; 50 mΩ without it); capacitor `value_f`; inductor `value_h`,
 `dcr_ohm`; LED `vf_typ`, `vf_min`, `vf_max`, `vf_at_a`, `rs_ohm` (RGB: one set per colour, under `red`, `green`,
-`blue`); switch/button `r_on_ohm`; buzzer `coil_ohm` (a magnetic buzzer; it is a coil for G-13); relay `coil_ohm`,
-`v_operate`, `v_release` (must-operate and must-release voltage), `r_contact_ohm`; a module or breakout with a USB-C
+`blue`); shift registers and LED drivers `first_bit_to` (the output the first shifted bit ends on, e.g. `"out7"` – from
+the datasheet's timing diagram, copied into the firmware contract, 3.5); switch/button `r_on_ohm`; buzzer `coil_ohm` (a
+magnetic buzzer; it is a coil for G-13); relay `coil_ohm`, `v_operate`, `v_release` (must-operate and must-release
+voltage), `r_contact_ohm`; a module or breakout with a USB-C
 receptacle `usb_c`: `{"cc": "rd_5k1" | "controller" | "none", "source": "…"}` – how the board terminates its
 CC lines, from its schematic (G-14; the RP2350-Zero has 5.1 kΩ on CC1 and CC2, the breakout Soldered 333011 has
 none); ICs see chapter 5 – and for any IC with logic inputs the thresholds of the recommended operating

@@ -45,7 +45,9 @@ edakit sim 2>&1 | cat       # exit 2 = finding: find the cause, do not argue it 
 
 `edakit check` explains every failed check below the findings; `edakit rules <ID>` gives the full entry.
 
-Plus the project's own generated files and tests (firmware pin tables etc.). A change of the protection path or of a
+With `[firmware]` in edakit.toml: `edakit firmware` writes the firmware contract again (`--check` says whether it
+drifted, handbook 3.5) – commit it with the graph; the project's renderer turns it into firmware source. Plus the
+project's own generated files and tests. A change of the protection path or of a
 check also changes the tests that prove the check finds faults – run them, CI will otherwise find it later.
 
 ## 3. Hand-over to the layout

@@ -130,4 +130,31 @@ polarity check; it is retired and its number is not used again.
 3. `edakit check` and `edakit sim` before every commit that touches `hardware/` – the pre-commit hook does it.
 4. A finding is fixed or waived with a reason. Never edit a check to make a finding go away.
 5. Generated files (firmware pin tables, the circuit description's parts list) are regenerated from the graph, never
-   edited, and committed together with the graph change.
+   edited, and committed together with the graph change – the firmware contract with `edakit firmware` (3.5).
+
+## 3.5 The firmware contract
+
+Opt-in: with `[firmware]` in edakit.toml (10.1), `edakit firmware` writes what the firmware must know about the board
+as neutral JSON (default `hardware/firmware.json`), and `edakit firmware --check` exits 2 when the committed file no
+longer matches – for the pre-commit hook, next to `edakit check` and `edakit sim`. Without the table nothing changes.
+It runs the other way round from G-2: there the firmware is the reference and `pin_locks` hold the graph to it; here
+the graph is the reference and the firmware follows. A project may use both.
+
+| Key | Content |
+|---|---|
+| `graph_version`, `graph_date`, `state_sha256` | the circuit it was written from – `state_sha256` is the gate's circuit hash (8.2), so any change to graph, parts or sim config asks for `edakit firmware` again; `--check` lists what differs |
+| `mcu` | the MCU it describes (`[firmware] mcu`, default the one part with pins of the role `gpio`) |
+| `pins` | `{net: {pin, name, gpio, dir, pull, idle, active}}` for every connected `gpio` pin of the MCU. `gpio`: the number in the pin's name (`[firmware] gpio`). `dir`: `out` when it drives an input, an LED or a transistor's base or gate (directly or through one resistor), `in` when a button, a switch or an output drives the net, `inout` for both or only bidirectional pins, `null` when nothing says. `pull`: `{dir, by, ohm}` of the resistors to a rail or ground – on the net or behind one series resistor (a base resistor and its pull-down) –, `{dir, by: "internal"}` for a switch without one (the firmware switches the MCU's pull on), `{dir, by: "pin"}` for a pin's built-in `pull`. `idle`: the level of the pull. `active`: the level a switch gives when closed, the level that lights an LED on the pin (`leds`, with the side it is on), or for an output with a pull the opposite of `idle`. Copied from the net where they are set: `fn`, `fn_bus`, `pwm_hz` (G-15) |
+| `pwm` | `{net: pwm_hz}` of the nets with `fn: "pwm"` |
+| `inputs` | buttons and switches on MCU pins with their `active` level; a DIP switch as `bits` in the order of its roles `a1` … `aN` / `b1` … `bN` |
+| `buses` | `{fn_bus: {fn: net}}`, and I2C lines by pin role `sda`/`scl` as `i2c` |
+| `chains` | from an MCU net through the roles `sdi` → `sdo`: `data`, `parts` in shift order, `read_back` (the last `sdo` on an MCU pin), `common` (MCU nets every part of the chain shares: clock, latch, enable) and `first_bit_to` (the part fact `params.first_bit_to`, `"unknown"` without it) |
+| `channels` | `{channel, chain, driver, output, pin, net, leds}` for every output with the role `out0` … `outN`, the LEDs traced as E-3/E-4 trace them: cathode on the output directly, behind 0 Ω bridges or behind a balancing resistor (5.3); `channel` = the outputs of the drivers before it in its chain + its number. A reversed LED is listed under `reversed` |
+
+Only roles decide which pin is a cathode, a data input or output 3 – never a pin name (in the origin project an
+exporter once found a cathode by the name "K" and nearly wrote a wrong channel table). The one exception is the GPIO
+number, taken from the MCU pin's name. A driver in a chain whose outputs have only the role `out` is an error: the
+channel order needs the numbers.
+
+The contract has no firmware format. Turning it into source – a MicroPython module, a C header – is the project's own
+script, which reads the JSON and runs after `edakit firmware` (MicroPython can also read the JSON as it is).

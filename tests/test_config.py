@@ -298,3 +298,16 @@ def test_order_keys(tmp_path):
                        ("specify", "order must be a table")):
         with pytest.raises(ConfigError, match=msg):
             _board("b", {}, {"order": order})
+
+
+def test_firmware_table_is_opt_in(tmp_path):
+    (tmp_path / "edakit.toml").write_text('[project]\nname = "t"\n[boards.main]\n')
+    assert load(tmp_path / "edakit.toml").firmware is None
+    (tmp_path / "edakit.toml").write_text('[project]\nname = "t"\n[boards.main]\n[firmware]\nmcu = "U1"\n')
+    assert load(tmp_path / "edakit.toml").firmware == {"mcu": "U1", "out": "hardware/firmware.json", "gpio": r"(\d+)"}
+    (tmp_path / "edakit.toml").write_text('[project]\nname = "t"\n[boards.main]\n[firmware]\nformat = "c"\n')
+    with pytest.raises(ConfigError, match=r"\[firmware\]: unknown key 'format'"):
+        load(tmp_path / "edakit.toml")
+    (tmp_path / "edakit.toml").write_text('[project]\nname = "t"\n[boards.main]\n[firmware]\ngpio = "GP"\n')
+    with pytest.raises(ConfigError, match="needs a group"):
+        load(tmp_path / "edakit.toml")

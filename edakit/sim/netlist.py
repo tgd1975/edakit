@@ -26,7 +26,7 @@ ICs and modules are replaced by behaviour models, chosen by params.behavior in t
             config's "inputs" are checked for a defined logic level (params vih_v|vih_ratio, vil_v|vil_ratio); an
             output on a pin of type "input" (input-only) is not driven and reported; every output's current is measured
             (ratings gpio_i_max_a per pin, gpio_i_total_max_a for the sum)
-  cc_sink   constant-current LED driver (TLC5916, STP08CP05 …): roles rext, out, vdd, oe_n; R-EXT held at vrext_v,
+  cc_sink   constant-current LED driver (TLC5916, STP08CP05 …): roles rext, out (or out0 … outN), vdd, oe_n; R-EXT held at vrext_v,
             each enabled output sinks iout_gain x I(R-EXT) with a soft knee; pins of type output (the serial data
             output SDO of a daisy chain) low through 50 ohm, as in logic
   logic     icc_a at the supply pin, outputs low through 50 ohm
@@ -87,6 +87,20 @@ def led_model(name, vf, i_test, rs):
     vd = vf - i_test * rs
     i_s = i_test / (math.exp(vd / (LED_N * VT)) - 1)
     return f".model {name} D(IS={i_s:.4e} N={LED_N} RS={rs} BV=5 IBV=10u CJO=20p)"
+
+
+def led_roles(part):
+    """[(colour, anode role, cathode role)] of an LED – one entry, colour None – or of each colour of an RGB LED; a pin
+    with the role anode makes it a common anode (handbook 4.1)."""
+    if part.get("kind") == "led":
+        return [(None, "anode", "cathode")]
+    common_anode = any(info.get("role") == "anode" for info in part["pins"].values())
+    return [(c, "anode", f"cathode_{c}") if common_anode else (c, f"anode_{c}", "cathode") for c in ("red", "green", "blue")]
+
+
+def out_role(role):
+    """A driver output: the role out, or out0 … outN where the order of the outputs matters (edakit firmware)."""
+    return bool(role) and (role == "out" or (role.startswith("out") and role[3:].isdigit()))
 
 
 def split_boards(design):
@@ -267,9 +281,7 @@ class Netlist:
         elif kind == "led":
             self.led(des, part)
         elif kind == "led_rgb":   # the roles say the layout: a common anode, or a common cathode
-            common_anode = any(info.get("role") == "anode" for info in part["pins"].values())
-            for color in ("red", "green", "blue"):
-                roles = ("anode", f"cathode_{color}") if common_anode else (f"anode_{color}", "cathode")
+            for color, *roles in led_roles(part):
                 self.led(des, part, color, *roles)
         elif kind == "battery_holder":
             cell_name = supply.get(des)
@@ -426,7 +438,7 @@ class Netlist:
         want = self.load.get("cc_on", {}).get(des, []) if isinstance(self.load.get("cc_on"), dict) else []
         chans = {}
         for num, info in part["pins"].items():
-            if info.get("role") != "out":
+            if not out_role(info.get("role")):
                 continue
             net = self.d.pin_net.get(f"{des}.{num}")
             if net is None:

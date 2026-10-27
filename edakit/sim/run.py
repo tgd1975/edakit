@@ -318,6 +318,19 @@ def behind_resistor(design, joined, outputs):
     return {net: next(iter(outs)) for net, outs in reach.items() if len(outs) == 1}
 
 
+def led_on_output(outputs, behind, anode, cathode):
+    """How E-3/E-4 trace one LED (one colour) to a driver output, its nets as the bridges join them: (output, "cathode")
+    when its cathode is on it – directly or behind its balancing resistor (`behind`, behind_resistor) –, (output,
+    "anode") when its anode is on it directly (the LED is reversed), else None. edakit firmware traces channels so."""
+    if cathode in outputs:
+        return cathode, "cathode"
+    if anode in outputs:
+        return anode, "anode"
+    if cathode in behind:
+        return behind[cathode], "cathode"
+    return None
+
+
 def functional(design, cfg, res, meta, load, ck, plugin):
     crit = {**DEFAULT_CRITERIA, **cfg.get("criteria", {})}
     amb = cfg.get("ambient_c", 25)
@@ -424,13 +437,12 @@ def functional(design, cfg, res, meta, load, ck, plugin):
         i = res.get(f"@{name}[id]", float("nan"))
         label = name[2:].upper()
         cathode, anode = (joined.get(info[k], info[k]) for k in ("cathode_net", "anode_net"))
-        if cathode in chan_of:
-            groups[cathode].append((label, i))
-        elif anode in chan_of:
+        hit = led_on_output(chan_of, behind, anode, cathode)
+        if hit and hit[1] == "cathode":
+            groups[hit[0]].append((label, i))
+        elif hit:
             ck.add("E-3", label, f"LED reversed (anode at the driver output {info['anode_net']})", i,
                    "cathode at the driver output", False, unit=" A")
-        elif cathode in behind:
-            groups[behind[cathode]].append((label, i))
         elif leds_on is not None:
             on = leds_on == "all" or info["des"] in leds_on or label in leds_on
             if on:

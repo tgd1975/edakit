@@ -14,6 +14,7 @@ are. What one role decides lives in a file of its own, with one owner and one ha
 | `hardware/schematic.toml` | arrangement of the schematic: blocks, notes, pin table (10.3) | circuit designer | – |
 | `hardware/boards/<name>.toml` | one board: outline, holes, placement, routing, pours, silkscreen (10.2) | PCB designer | layout |
 | `hardware/signoff.json` | sign-offs and accepted warnings (8.2) | reviewers, the user | – |
+| `hardware/firmware.json` | the firmware contract, with `[firmware]` (3.5) | `edakit firmware` | – |
 
 Complete example: [tests/fixtures/led-bar](../tests/fixtures/led-bar/). A key edakit does not know is an error with
 the list of the known ones – a typo does not fall back to a default unnoticed. An edakit.toml that still holds the
@@ -86,6 +87,16 @@ Items off the board that belong to the order – a cable, feet, a module that is
 top), `moq` (the supplier's minimum), `step` (its pack size), `unit_price` and its `currency` (default
 `[cost] currency`). `edakit order` puts each into the cart of its supplier, `edakit cost` prices the cart quantity:
 ceil(`per_set` × `quantity` × (1 + `spare_pct`/100)) + `spare`, at least `moq`, a multiple of `step`.
+
+### [firmware]
+
+Opt-in: the board's firmware contract (3.5). Without the table `edakit firmware` exits 1 and nothing else changes.
+
+| Key | Default | Meaning |
+|---|---|---|
+| `mcu` | the one part with pins of the role `gpio` | the MCU the contract describes |
+| `out` | `hardware/firmware.json` | where `edakit firmware` writes it, relative to edakit.toml |
+| `gpio` | `"(\\d+)"` | regex over the MCU pin's name, its first group is the GPIO number (`GP26_ADC0` → 26); no match: `null` |
 
 ## 10.2 The board file
 
@@ -164,6 +175,7 @@ Code: `edakit … 2>&1 | cat`.
 | `edakit order [--out DIR]` | – | graph, parts (`order`), board files (side), `[[extra]]`, `spare_pct` | `<artifacts>/order/` or DIR: `bom_<board>.csv` (the F-1 BOM), `cart_<supplier>.csv`, `hand_assembly.md` |
 | `edakit part own PATH [--name N]` | – | the board's project at PATH: its datasheet, state, git, gate runs | `hardware/parts/<N>.json` |
 | `edakit sim [--json F] [--keep DIR]` | – | graph, parts, sim config, plugin; with `copper` `route/<board>.ses`, `route/<board>_board.json` and the board file's pours | `<artifacts>/sim/net_currents.json`; with `--keep` each netlist and ngspice log, for a transient run its waveforms (`<run>.dat`) |
+| `edakit firmware [--check]` | – | graph, parts, `[firmware]`; for `state_sha256` the files of the circuit hash | `[firmware] out` (not with `--check`: exit 2 on drift) |
 | `edakit handover [--board B]` | – | graph, parts, sign-offs | – |
 | `edakit schematic create [--board] [--only] [--dry-run] [--save] [--create-project] [--refresh-devices]` | ✓ | graph | template, `device_cache.json`, `schematic_map_<name>.json` |
 | `edakit schematic check [--schematic] [--no-pins] [--json F]` | ✓ read | graph, schematic | – |
@@ -198,6 +210,7 @@ hardware/stock.json         what the assembler said about the parts, dated (edak
 hardware/schematic.toml     arrangement of the schematic
 hardware/boards/<name>.toml one board: outline, holes, placement, routing, pours, silkscreen
 hardware/signoff.json       manual checks and accepted warnings, bound to hashes
+hardware/firmware.json      the firmware contract, if [firmware] is set (edakit firmware)
 docs/decisions.md           numbered decisions (or wherever the project keeps them)
 build/edakit/               artifacts (not versioned): caches, geometry, previews, routing, exports, cost.json;
                             library/ and footprints/: the library's symbols and footprints (edakit part import);

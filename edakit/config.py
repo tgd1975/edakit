@@ -19,6 +19,7 @@ from __future__ import annotations
 
 import math
 import os
+import re
 import tomllib
 from dataclasses import dataclass, field
 from pathlib import Path
@@ -55,6 +56,7 @@ EXTRA_KEYS = ("item", "supplier", "code", "per_set", "spare", "moq", "step", "un
 STOCK_MAX_AGE_DAYS = 14          # [project] stock_max_age_days: an older stock snapshot is pending (P-4)
 ORDER_KEYS = ("finish", "mark", "remark", "tab_zones", "tab_copper_mm")   # [order] of a board file (F-6)
 MARKS = ("default", "specify", "remove")   # order.mark: JLCPCB's order number anywhere, at the placeholder, none
+FIRMWARE_KEYS = ("mcu", "out", "gpio")    # [firmware]: the board's firmware contract (edakit firmware), opt-in
 
 
 class ConfigError(Exception):
@@ -167,6 +169,7 @@ class Config:
     cost: dict | None = None            # [cost] of edakit.toml; None: no cost estimate in the gate
     spare_pct: float = 0.0              # edakit order: spares on every cart line, in % of quantity sets
     extras: list = field(default_factory=list)   # [[extra]]: items off the board – cost estimate and carts
+    firmware: dict | None = None  # [firmware] with its defaults; None without the table: no contract
 
     def pcba(self):
         """(class, why) of the assembly order: [release] assembly.pcba, or derived from assembly.sides – one side
@@ -527,6 +530,18 @@ def _extras(extras):
     return out
 
 
+def _firmware(fw):
+    """[firmware]: mcu (default: the one part with GPIO pins), out (the contract), gpio (regex for the GPIO number in
+    the MCU pin's name: its first group, default the first number)."""
+    out = {"mcu": fw.get("mcu"), "out": fw.get("out", "hardware/firmware.json"), "gpio": fw.get("gpio", r"(\d+)")}
+    try:
+        if re.compile(out["gpio"]).groups < 1:
+            raise ConfigError("[firmware] gpio: the regex needs a group, the GPIO number – e.g. 'GP(\\d+)'")
+    except re.error as e:
+        raise ConfigError(f"[firmware] gpio: {e}") from None
+    return out
+
+
 def find_config(start=None) -> Path:
     env = os.environ.get("EDAKIT_CONFIG")
     if env:
@@ -551,10 +566,11 @@ def load(path=None) -> Config:
         return v if v.is_absolute() else root / v
 
     moved = _one_file_form(raw, path.name)
-    problems = _unknown(path.name, raw, ("project", "boards", "release", "cost", "extra"),
+    problems = _unknown(path.name, raw, ("project", "boards", "release", "cost", "extra", "firmware"),
                         ("schematic", "checks", "net_classes", "sim"))
     problems += _unknown("[project]", p, PROJECT_KEYS, ("ground",))
     problems += _unknown("[release]", raw.get("release", {}), RELEASE_KEYS, ("signoff",))
+    problems += _unknown("[firmware]", raw.get("firmware", {}), FIRMWARE_KEYS)
     if not isinstance(p.get("agreements", True), bool):
         problems.append("[project] agreements: true or false")
     files = {}
@@ -608,4 +624,5 @@ def load(path=None) -> Config:
         cost=raw.get("cost"),
         spare_pct=float(p.get("spare_pct", 0)),
         extras=list(raw.get("extra", [])),
+        firmware=_firmware(raw["firmware"]) if "firmware" in raw else None,
     )

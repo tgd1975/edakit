@@ -28,7 +28,8 @@ Create in the repository root (ask only for what you cannot sensibly default):
 ## 2. Guard rails
 
 - Pre-commit hook (`.githooks/pre-commit`, `git config core.hooksPath .githooks`): when `hardware/` changed, run
-  `edakit check` and `edakit sim`; a failing check blocks the commit. Never bypass it with `--no-verify`.
+  `edakit check` and `edakit sim`; a failing check blocks the commit. Never bypass it with `--no-verify`. A project
+  whose firmware follows the graph adds `[firmware]` and `edakit firmware --check` (handbook 3.5).
 - CI: the same two commands plus the project's tests on every pull request (`uvx --from git+<edakit repo> edakit …`).
 - `.claude/settings.json` of the project, so every session in this repo has the plugin:
   ```json

@@ -13,6 +13,7 @@
     edakit cost [--json F]           the order for `quantity` boards from BOM, board and the dated fee table
     edakit order [--out DIR]         the assembler's BOM, a cart per other supplier, the hand-assembly list (P-5)
     edakit sim                      stage E: ngspice operating points of all scenarios (offline, seconds)
+    edakit firmware [--check]        the board's firmware contract as JSON from the graph; --check: drift (opt-in)
     edakit handover                  what the circuit hands over to the layout: state, sign-offs, layout requirements
     edakit schematic create|check|copy|layout
     edakit schematic draw            the schematic as SVG from graph and parts database – no EasyEDA (offline)
@@ -104,6 +105,10 @@ def build_parser():
     p = sub.add_parser("sim", help="simulation (stage E)")
     p.add_argument("--json", help="write every single check as JSON")
     p.add_argument("--keep", help="keep netlists and ngspice output in this directory")
+    _common(p)
+
+    p = sub.add_parser("firmware", help="the board's firmware contract from the graph ([firmware] in edakit.toml)")
+    p.add_argument("--check", action="store_true", help="compare the committed contract with the graph, write nothing")
     _common(p)
 
     p = sub.add_parser("handover", help="the hand-over from the circuit to the layout: state, sign-offs, requirements")
@@ -240,6 +245,9 @@ def main(argv=None):
         except run.SimError as e:
             print(f"edakit sim: {e}", file=sys.stderr)
             return 1
+    if args.command == "firmware":
+        from . import firmware
+        return firmware.main(cfg, args)
     if args.command == "handover":
         from . import handover
         return handover.main(cfg, args)
