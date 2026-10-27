@@ -13,8 +13,10 @@ plus "extra_scenarios" listed there.
        says (an LED behind a 0 Ω bridge counts on the driver output the bridge joins it to, an LED behind one resistor
        to a single driver output on that output – parallel LEDs with balancing resistors), relays pull in and release
        (v_operate, v_release), a module modelled as a constant current (an own board, part.py) supplied inside
-       vin_min … vin_max, blocking diodes, every net inside its declared voltage range 'v', plus the project
-       plugin's own checks
+       vin_min … vin_max, every part with an operating range (ratings vdd_op_min/vdd_op_max, pin v_op) supplied
+       inside it, every input with thresholds (vih_*/vil_* on the pin or in the params) at a valid logic level and
+       the high level of every MCU output reaching them, blocking diodes, every net inside its declared voltage range
+       'v', plus the project plugin's own checks
   E-4  every LED – each colour of an RGB LED – has a state E-3 checks in every scenario: its cathode on a driver output
        (directly, behind 0 Ω bridges or behind a balancing resistor) or the load has leds_on; an LED with neither, or
        one the netlist left out because its parts entry lacks a role, fails as "LED without a known driver"
@@ -295,6 +297,8 @@ def functional(design, cfg, res, meta, load, ck, plugin):
                 x = v(res, netlist.node(net, design.ground)) - v(res, netlist.node(ground, design.ground))
                 ck.add("E-3", des, f"supply voltage at {info.get('name', num)} within vin_min … vin_max", x, want,
                        lo <= x <= hi, unit=" V")
+    operating_range(design, res, ck)
+    logic_levels(design, res, meta, ck)
 
     joined = design.joined_nets()   # nets joined by 0 Ω bridges: an LED behind a bridge is on the driver output
     chan_of = {}
@@ -376,6 +380,107 @@ def functional(design, cfg, res, meta, load, ck, plugin):
                unit=" V")
     if plugin and hasattr(plugin, "checks"):
         plugin.checks(design=design, cfg=cfg, res=res, meta=meta, load=load, add=ck.add)
+
+
+SUPPLY_ROLES = ("vdd", "vcc")
+
+
+def supply_pins(part):
+    """The supply pins of a part: its power_in pins with the role vdd or vcc, else all of its power_in pins."""
+    pins = {n: i for n, i in (part.get("pins") or {}).items() if i.get("type") == "power_in"}
+    return {n: i for n, i in pins.items() if i.get("role") in SUPPLY_ROLES} or pins
+
+
+def own_ground(design, des, part):
+    """The net of the part's first ground pin – what its supply and its input levels are measured against."""
+    return next((design.pin_net[f"{des}.{n}"] for n, i in (part.get("pins") or {}).items()
+                 if i.get("type") == "ground" and f"{des}.{n}" in design.pin_net), design.ground)
+
+
+def against(design, res, net, ground):
+    """Voltage of a net against a ground net; nan for a net no element of the netlist reaches."""
+    return v(res, netlist.node(net, design.ground)) - v(res, netlist.node(ground, design.ground))
+
+
+def operating_range(design, res, ck):
+    """E-3: a part with an operating supply range – ratings vdd_op_min/vdd_op_max for its supply pins, or v_op
+    [min, max] on a pin of its own – is supplied inside it, measured to its own ground pin. Absolute maxima are G-3's;
+    this is the range in which the part works."""
+    for des in sorted(design.comps):
+        part = design.part(des) or {}
+        r = part.get("ratings") or {}
+        ranges = {n: (r.get("vdd_op_min"), r.get("vdd_op_max")) for n in supply_pins(part)}
+        ranges.update({n: tuple(i["v_op"]) for n, i in (part.get("pins") or {}).items() if i.get("v_op")})
+        ground, seen = own_ground(design, des, part), set()
+        for num, (lo, hi) in ranges.items():
+            net = design.pin_net.get(f"{des}.{num}")
+            if net is None or (lo is None and hi is None) or (net, lo, hi) in seen:
+                continue
+            seen.add((net, lo, hi))
+            x = against(design, res, net, ground)
+            if math.isnan(x):
+                continue
+            want = f"{lo} … {hi} V" if lo is not None and hi is not None else f"≥ {lo} V" if hi is None else f"≤ {hi} V"
+            ok = (lo is None or x >= lo) and (hi is None or x <= hi)
+            ck.add("E-3", des, f"supply voltage at {part['pins'][num].get('name', num)} inside its operating range", x,
+                   want, ok, unit=" V")
+
+
+def threshold(params, pin, kind, vdd):
+    """VIL or VIH (`kind` 'vil'|'vih') of an input pin: the pin's own kind_v|kind_ratio, else the part's params; a ratio
+    is taken of the supply `vdd` (None: no single supply)."""
+    for src in (pin, params):
+        if f"{kind}_v" in src:
+            return src[f"{kind}_v"]
+        if f"{kind}_ratio" in src:
+            return None if vdd is None else src[f"{kind}_ratio"] * vdd
+    return None
+
+
+def logic_levels(design, res, meta, ck):
+    """E-3: every input pin (type input) with thresholds – vih_v|vih_ratio and vil_v|vil_ratio on the pin or in the
+    part's params – sits at ≤ VIL or ≥ VIH, a ratio taken of the voltage at the part's supply pin; and the high level
+    of every MCU output on its net (behind 0 Ω bridges too) reaches VIH, whatever the load drives. An MCU's own inputs
+    go by the config's `inputs` (functional)."""
+    joined = design.joined_nets()
+    reach = defaultdict(list)                     # net -> (input, VIH) on it
+    for des in sorted(design.comps):
+        part = design.part(des) or {}
+        p = part.get("params") or {}
+        if p.get("behavior") == "mcu":
+            continue
+        inputs = [(n, i) for n, i in (part.get("pins") or {}).items() if i.get("type") == "input"
+                  and f"{des}.{n}" in design.pin_net and all(any(f"{k}_{x}" in s for s in (i, p) for x in ("v", "ratio"))
+                                                             for k in ("vil", "vih"))]
+        if not inputs:
+            continue
+        ground = own_ground(design, des, part)
+        nets = sorted({design.pin_net[f"{des}.{n}"] for n in supply_pins(part) if f"{des}.{n}" in design.pin_net})
+        vdd = against(design, res, nets[0], ground) if len(nets) == 1 else None
+        for num, info in inputs:
+            vil, vih = (threshold(p, info, k, vdd) for k in ("vil", "vih"))
+            if vil is None or vih is None:
+                ck.add("E-3", des, "input thresholds as a ratio of the supply",
+                       f"{len(nets)} supply nets ({', '.join(nets) or 'none'}), none with the role vdd or vcc",
+                       "one supply pin: a power_in pin with the role vdd or vcc", False)
+                break
+            net, name = design.pin_net[f"{des}.{num}"], info.get("name", num)
+            x = against(design, res, net, ground)
+            if math.isnan(vil) or math.isnan(vih):
+                continue
+            reach[joined.get(net, net)].append((f"{des} {name}", vih))
+            if math.isnan(x):
+                continue
+            level = "high" if x >= vih else "low" if x <= vil else "undefined"
+            ck.add("E-3", f"{des} {net}", f"input level {level} at {name} (VIL {vil:.2f} V, VIH {vih:.2f} V)", x,
+                   f"≤ {vil:.2f} V or ≥ {vih:.2f} V", level != "undefined", unit=" V")
+    for des, m in meta["mcu"].items():
+        p = m["params"]
+        high = v(res, m["vin"]) if p.get("v_io") == "vin" else p.get("v_io", 3.3)
+        for net in m.get("gpio_ammeters", {}):
+            for who, vih in reach.get(joined.get(net, net), []):
+                ck.add("E-3", f"{des} {net}", f"output high level reaches VIH of {who}", high, f"≥ {vih:.2f} V",
+                       high >= vih, unit=" V")
 
 
 def net_currents(design, res, meta):

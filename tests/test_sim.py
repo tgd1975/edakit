@@ -249,7 +249,7 @@ def test_rgb_led_with_a_common_anode(project):
     rgb_led(project)
     out = simulate(project)
     assert not failing(out) and all(s["status"] == "ok" for s in out["scenarios"])
-    assert len(out["checks"]) == 714                              # as many as the example with D7–D9
+    assert len(out["checks"]) == 726                              # as many as the example with D7–D9
     for color, net in (("RED", "LED5"), ("GREEN", "LED6"), ("BLUE", "LED7")):
         mine = [c for c in out["checks"] if c["item"] == f"D10_{color}"]
         on = [c for c in mine if c["check"] == f"LED current ({net})"]
@@ -326,7 +326,7 @@ def test_leds_behind_balancing_resistors_count_on_their_output(project):
     balanced(project)
     out = simulate(project)
     assert not failing(out) and all(s["status"] == "ok" for s in out["scenarios"])
-    assert len(out["checks"]) == 804                              # 786 before: no E-3 for D9, D10, LED7 in all_on
+    assert len(out["checks"]) == 816                              # 798 before: no E-3 for D9, D10, LED7 in all_on
     for led in ("D9", "D10"):
         mine = [c for c in out["checks"] if c["item"] == led and c["id"] == "E-3"]
         on = [c for c in mine if c["check"] == "LED current (LED7)"]
@@ -377,7 +377,7 @@ def test_driver_sdo_is_driven_low(project):
     read_back(project)
     out = simulate(project)
     assert not failing(out) and all(s["status"] == "ok" for s in out["scenarios"])
-    assert len(out["checks"]) == 726                              # the example's 714 + LED_SDO's range in 12 scenarios
+    assert len(out["checks"]) == 738                              # the example's 726 + LED_SDO's range in 12 scenarios
     sdo = [c for c in out["checks"] if c["item"] == "LED_SDO"]
     assert len(sdo) == 12 and all(c["actual"] == "0 V" for c in sdo)
     sim = json.loads((project.root / "hardware" / "sim.json").read_text())

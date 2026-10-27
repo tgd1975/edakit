@@ -296,7 +296,7 @@ def test_p3_and_e3_leave_the_example_alone(project):
     assert p3(rep) == ([], [], [], []) and "P-3" in checks.EXECUTED
     assert not [c for c in simrun.run_all(Design.from_config(project.config()),
                                           json.loads((project.root / "hardware/sim.json").read_text()))["checks"]
-                if c["check"].startswith("supply voltage") and c["item"] not in ("U1",)]
+                if "vin_min … vin_max" in c["check"]]
 
 
 def test_part_parser():

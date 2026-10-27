@@ -18,7 +18,7 @@ Examples: [the Christmas bell's parts](https://github.com/tgd1975/automatic_chri
 | `package`, `footprint` | the footprint name must equal the EasyEDA footprint (L-4 compares it with the PCB) |
 | `jlc_class` | Basic / Extended Part |
 | `datasheet` | `url`, `pinout_page` |
-| `pins` | pin number → `name` (as in the EasyEDA symbol and identical to the graph – S-2 compares them), `type`, `role` (the meaning; for polarised parts it follows the footprint's polarity print when symbol and footprint disagree), `vmax`; from the datasheet where it applies: `strap` (`"high"`/`"low"`: level the pin needs at reset, G-12), `pull` (`"up"`/`"down"`: internal or built-in pull resistor, with `pull_ohm` if known – G-11, G-12), `hint` (a warning from the datasheet, e.g. "ADC2: no analog reads while WiFi is on"); on MCU and module pins `functions` – what the pin-mux table offers, `<peripheral><instance>.<line>`: `["spi0.sck", "uart0.cts", "i2c1.sda", "pwm1.a", "uart0.tx"]`, `adc0`; for PWM the instance is the slice and the line the channel; `[]` = no free function (used on the module), no key = unknown (G-15) |
+| `pins` | pin number → `name` (as in the EasyEDA symbol and identical to the graph – S-2 compares them), `type`, `role` (the meaning; for polarised parts it follows the footprint's polarity print when symbol and footprint disagree), `vmax`; from the datasheet where it applies: `strap` (`"high"`/`"low"`: level the pin needs at reset, G-12), `pull` (`"up"`/`"down"`: internal or built-in pull resistor, with `pull_ohm` if known – G-11, G-12), `hint` (a warning from the datasheet, e.g. "ADC2: no analog reads while WiFi is on"); on MCU and module pins `functions` – what the pin-mux table offers, `<peripheral><instance>.<line>`: `["spi0.sck", "uart0.cts", "i2c1.sda", "pwm1.a", "uart0.tx"]`, `adc0`; for PWM the instance is the slice and the line the channel; `[]` = no free function (used on the module), no key = unknown (G-15); from the recommended operating conditions: `v_op` (`[min, max]` of a supply pin that differs from the part's `vdd_op_min`/`vdd_op_max`) and the thresholds of one input pin, `vih_v` or `vih_ratio`, `vil_v` or `vil_ratio`, where they differ from the part's (E-3) |
 | `hints` | warnings of the datasheet for the part as a whole; `edakit hints` shows them and the pin `hint`s of connected pins |
 | `hot_loop` | switching regulators: the pin roles of the loop that carries the pulsed current, from the datasheet's layout section – a buck `["vin", "sw", "gnd"]`, an asynchronous boost `["sw", "gnd"]`; a ground pin without a role is `gnd`. G-18 wants a `layout.loops` entry on each of their nets and on the net behind a diode on `sw` |
 | `symbol` | optional: the sides of the box `edakit schematic draw` draws for an IC or module – `{"left": [pins], "right": [pins], "top": [pins], "bottom": [pins]}`; without it the pins run as on a DIP package (6.5) |
@@ -68,8 +68,9 @@ LED `if_max_a`, `vr_max` (per colour for RGB); BJT `ic_max_a`, `vceo`, `vebo`, `
 `v_max`; inductor `i_rated_a`, `i_sat_a`; regulators `vin_min`, `i_out_max_a`, `rth_ja_k_per_w`; MCU modules
 `vin_min`/`vsys_min`, `i_out_max_a`, `gpio_i_max_a` (per output pin) and `gpio_i_total_max_a` (all outputs together,
 sourced and sunk separately – the package's supply pins); relays `v_coil_max`, `i_max_a` (contacts); LED drivers
-`rth_ja_k_per_w`; own boards (behaviour `current`) `vin_min`, `vin_max` – the voltage at the connector over the board's
-own simulation (4.5, E-3).
+`rth_ja_k_per_w`; any IC or module `vdd_op_min`, `vdd_op_max` – the operating supply range of the recommended
+operating conditions, not the absolute maximum (E-3 holds every supply pin to it); own boards (behaviour `current`)
+`vin_min`, `vin_max` – the voltage at the connector over the board's own simulation (4.5, E-3).
 
 **Parameters**: resistor `value_ohm` (`0`: a bridge that joins its nets, 3.3), `r_max_ohm` (a bridge's maximum
 resistance from the datasheet, simulated instead of 0 Ω; 50 mΩ without it); capacitor `value_f`; inductor `value_h`,
@@ -78,7 +79,9 @@ resistance from the datasheet, simulated instead of 0 Ω; 50 mΩ without it); ca
 `v_operate`, `v_release` (must-operate and must-release voltage), `r_contact_ohm`; a module or breakout with a USB-C
 receptacle `usb_c`: `{"cc": "rd_5k1" | "controller" | "none", "source": "…"}` – how the board terminates its
 CC lines, from its schematic (G-14; the RP2350-Zero has 5.1 kΩ on CC1 and CC2, the breakout Soldered 333011 has
-none); ICs see chapter 5.
+none); ICs see chapter 5 – and for any IC with logic inputs the thresholds of the recommended operating
+conditions, `vih_v` | `vih_ratio` and `vil_v` | `vil_ratio` (a ratio of its supply, e.g. 0.7 and 0.3 for VIH 0.7 × VDD),
+which E-3 holds its `input` pins and the MCU outputs that drive them to.
 
 The block library (`edakit/blocks/parts/`) holds checked entries of the parts the building blocks use – resistors,
 LEDs, the SS14/SS34 diodes, S8050, AO3401A, a USB-C receptacle, a polyfuse, buttons, a JST connector – to copy from.
