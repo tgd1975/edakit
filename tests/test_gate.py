@@ -1,6 +1,7 @@
 """The gate's decision: every reason for NOT RELEASED, and sign-offs only for their hash."""
 
 import json
+import re
 
 import pytest
 
@@ -193,3 +194,162 @@ def test_released_with_every_required_check_signed(project):
     assert {"M-1", "M-5", "M-6"} <= {m["id"] for m in loaded["manual"] if m["done_by"]}
     assert not any("missing" in n for n in notes)
     assert gate.decide(rows("pass"), [], loaded, ALL, gate.STAGES) == ("RELEASED", [])
+
+
+# --- what the circuit hash covers, and acceptances bound to their parts (#66) --------------------------------------
+
+def ignore(project, keys):
+    toml = project.root / "edakit.toml"
+    text = re.sub(r"hash_ignore = .*\n", "", toml.read_text())
+    toml.write_text(text.replace("[release]\n", f"[release]\nhash_ignore = {json.dumps(keys)}\n"))
+    return project.config()
+
+
+def state(project):
+    return gate.header(project.config())["state_sha256"]
+
+
+def edit(project, change):
+    g = project.graph()
+    change(g)
+    project.save_graph(g)
+
+
+def test_without_hash_ignore_every_byte_counts(project):
+    """The default hashes the files as they are: existing sign-offs keep their hash."""
+    cfg = project.config()
+    assert gate.state_hash(cfg) == gate.file_hash(cfg.root, gate.state_files(cfg))
+    h = state(project)
+    edit(project, lambda g: project.comp(g, "D2").update(notes="checked again"))
+    assert state(project) != h
+
+
+def test_hash_ignore_leaves_documentation_keys_out(project):
+    ignore(project, ["notes"])
+    h = state(project)
+    edit(project, lambda g: project.comp(g, "D2").update(notes="checked again"))
+    assert state(project) == h
+    edit(project, lambda g: project.comp(g, "D2")["pins"].update({"2": "C"}))      # a pin is the circuit
+    assert state(project) != h
+
+
+def test_hash_ignore_in_the_parts_entries(project):
+    ignore(project, ["verified", "sources"])
+    h = state(project)
+    part = project.part("C2297")
+    part["verified"]["open"] = []
+    part["sources"].append("datasheet p. 3 read again")
+    project.save_part("C2297", part)
+    assert state(project) == h
+    part["ratings"]["if_max_a"] = 0.02
+    project.save_part("C2297", part)
+    assert state(project) != h
+
+
+def test_what_a_check_or_review_reads_stays_in_the_hash(project):
+    """`purpose` (M-6) is hashed whole, and the simulation config byte by byte: its `sources` are the supplies."""
+    ignore(project, ["notes", "sources", "note"])
+    h = state(project)
+    edit(project, lambda g: g["graph"]["purpose"].update(notes="a toy for small children"))
+    assert state(project) != h
+    h = state(project)
+    sim = project.root / "hardware" / "sim.json"
+    s = json.loads(sim.read_text())
+    s["sources"]["J1"]["i_max_a"] = 1.0
+    sim.write_text(json.dumps(s, indent=1))
+    assert state(project) != h
+
+
+def test_turning_hash_ignore_on_rehashes_the_signed_state(project):
+    """The sign-off file signed the bytes; with hash_ignore the gate records old and new hash in `rehashed`, and the
+    sign-offs keep counting – only when nothing else changed."""
+    cfg = project.config()
+    old = gate.state_hash(cfg)
+    path = project.root / "hardware" / "signoff.json"
+    s = json.loads(path.read_text())
+    s["state_sha256"] = old
+    s["manual"] = [{**m, "done_by": "agent", "date": "2026-10-27"} for m in s["manual"]]
+    path.write_text(json.dumps(s, indent=2))
+    cfg = ignore(project, ["notes"])
+    new = gate.state_hash(cfg)
+    assert new != old
+    loaded, notes = gate.load_signoff(cfg, {"state_sha256": new, "layout_sha256": None})
+    assert next(m for m in loaded["manual"] if m["id"] == "M-1")["done_by"] == "agent"
+    assert any("rehashed" in n for n in notes)
+    assert json.loads(path.read_text())["state_sha256"] == old          # read only unless the gate writes
+    gate.load_signoff(cfg, {"state_sha256": new, "layout_sha256": None}, write=True)
+    written = json.loads(path.read_text())
+    assert written["state_sha256"] == new
+    assert written["rehashed"][-1]["state_sha256"] == [old, new]
+    assert written["rehashed"][-1]["hash_ignore"] == ["notes"]
+    # a further key later: the old hash is the one with the list recorded last
+    cfg = ignore(project, ["notes", "sources"])
+    newer = gate.state_hash(cfg)
+    loaded, _ = gate.load_signoff(cfg, {"state_sha256": newer, "layout_sha256": None}, write=True)
+    assert json.loads(path.read_text())["rehashed"][-1]["state_sha256"] == [new, newer]
+
+
+def test_no_rehash_when_the_circuit_changed_as_well(project):
+    cfg = project.config()
+    path = project.root / "hardware" / "signoff.json"
+    s = json.loads(path.read_text())
+    s["state_sha256"] = gate.state_hash(cfg)
+    s["manual"] = [{**m, "done_by": "agent", "date": "2026-10-27"} for m in s["manual"]]
+    path.write_text(json.dumps(s, indent=2))
+    edit(project, lambda g: project.comp(g, "D2")["pins"].update({"2": "C"}))
+    cfg = ignore(project, ["notes"])
+    loaded, notes = gate.load_signoff(cfg, {"state_sha256": gate.state_hash(cfg), "layout_sha256": None}, write=True)
+    assert next(m for m in loaded["manual"] if m["id"] == "M-1")["done_by"] is None
+    assert "rehashed" not in json.loads(path.read_text())
+
+
+WARN = {"stage": "L", "id": "L-9", "item": "main", "check": "D2: hole tight at the lower tolerance", "result": "warn"}
+ACCEPT = {"match": "L-9 main D2: hole tight*", "scope": "decision", "reason": "D-1", "by": "owner", "date": "2026-10-27"}
+
+
+def accept(project, **extra):
+    path = project.root / "hardware" / "signoff.json"
+    s = json.loads(path.read_text())
+    s["accepted_warnings"] = [{**ACCEPT, **extra}]
+    path.write_text(json.dumps(s, indent=2))
+    return gate.load_signoff(project.config(), {"state_sha256": None, "layout_sha256": None})
+
+
+def test_an_acceptance_naming_its_parts_counts_while_they_are_the_same(project):
+    loaded, _ = accept(project, parts={"D2": "C2297"})
+    assert gate.accepted(WARN, loaded) and not loaded["lapsed_warnings"]
+    assert not any("warning" in r for r in gate.decide([WARN], [], loaded, ALL, gate.STAGES)[1])
+
+
+def test_an_acceptance_lapses_when_its_part_changes(project, tmp_path):
+    edit(project, lambda g: project.comp(g, "D2").update(lcsc="C2895549"))
+    loaded, _ = accept(project, parts={"D2": "C2297"})
+    assert not gate.accepted(WARN, loaded)
+    assert loaded["lapsed_warnings"][0]["lapsed"] == "D2 is now C2895549"
+    _, reasons = gate.decide([WARN], [], loaded, ALL, gate.STAGES)
+    assert any("1 warning(s) not accepted" in r for r in reasons)
+    edit(project, lambda g: g["graph"].update(components=[c for c in g["graph"]["components"]
+                                                          if c["designator"] != "D2"]))
+    loaded, _ = accept(project, parts={"D2": "C2297"})
+    assert loaded["lapsed_warnings"][0]["lapsed"] == "D2 is not in the graph"
+
+
+def test_without_parts_an_acceptance_works_as_before(project):
+    edit(project, lambda g: project.comp(g, "D2").update(lcsc="C2895549"))
+    loaded, _ = accept(project)
+    assert gate.accepted(WARN, loaded) and not loaded["lapsed_warnings"]
+
+
+def test_the_protocol_lists_a_lapsed_acceptance(project, monkeypatch):
+    edit(project, lambda g: project.comp(g, "D2").update(lcsc="C2895549"))
+    loaded, notes = accept(project, parts={"D2": "C2297"})
+    cfg = project.config()
+    out = cfg.reports / "run"
+    out.mkdir(parents=True)
+    head = {"time": "2026-10-27T10:00:00+01:00", "tester": "t", "graph_version": "1", "graph_date": "d",
+            "graph_sha256": "g", "state_sha256": "s", "layout_sha256": "l", "git_commit": "c", "git_dirty": False,
+            "tools": {"python": "3", "edakit": "0", "ngspice": "n", "easyeda-mcp-pro": "m"}}
+    sim = {"checks": [], "scenarios": []}
+    gate.write_protocol(cfg, out, head, [WARN], sim, loaded, notes, "NOT RELEASED", [], set("PGE"), gate.STAGES, {})
+    text = (out / "protocol.md").read_text()
+    assert "**not accepted** (lapsed: D2 is now C2895549" in text

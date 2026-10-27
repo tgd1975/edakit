@@ -95,7 +95,7 @@ def datasheet_dir(cfg):
 def state_hash(cfg):
     """The hash of the circuit the gate signs (graph, simulation config, parts database)."""
     from .release import gate
-    return gate.file_hash(cfg.root, gate.state_files(cfg))
+    return gate.state_hash(cfg)
 
 
 def file_name(mpn):

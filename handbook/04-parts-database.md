@@ -173,6 +173,9 @@ At LCSC and JLCPCB:
    agent electrical-reviewer in its own session, recorded as `second_check`.
 
 Every change to a parts file changes the circuit hash: sign-offs with scope `circuit` must be renewed (chapter 8).
+With `[release] hash_ignore` (8.2) the keys listed there are left out – `sources`, `notes`, `verified` and `datasheet`
+are the usual ones –, so recording a review or correcting a source voids nothing; a pin, a rating or a parameter
+still does.
 
 ## 4.4 Library footprints are not always right
 

@@ -23,7 +23,9 @@ Concept: `${CLAUDE_PLUGIN_ROOT}/handbook/08-release-gate.md`.
 4. **Fix causes, do not define findings away.** The cause is in the graph, the parts database, the plan or the
    project's mechanics → hardware-change or pcb-round skill. **Only the user accepts a warning** – it is a decision.
    Propose the entry for the sign-off file (`accepted_warnings`: `match` as fnmatch pattern over "ID scenario item
-   step" as shown in section 3 of the protocol, `scope`, `reason`, `by`, `date`) and add it after their OK.
+   step" as shown in section 3 of the protocol, `scope`, `reason`, `by`, `date`, and `parts` {designator: LCSC} for
+   a warning about particular parts – it lapses when one of them is swapped) and add it after their OK. A lapsed
+   acceptance (section 3) goes back to the user: judge again, then update `parts` or remove it.
 5. **Manual checks an agent can do are signed by the agent's result** (no checklist for the user; M-1, M-6 and M-5
    are required – the gate adds them as open when the sign-off file lacks them): M-1 – agent
    electrical-reviewer checks the critical parts again against their datasheets with the polarity sheet; M-6 – agent

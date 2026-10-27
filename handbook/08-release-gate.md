@@ -115,6 +115,19 @@ files` are in no hash, so a new order quantity, a note in the schematic or a cor
 2026) records the hashes before and after in `rehashed` of its sign-off file: the move changed files, not what they
 say.
 
+**What the circuit hash leaves out.** By default it takes the files byte by byte: a corrected note, a source added
+or the `verified` record a datasheet check writes voids M-1 and M-6. `[release] hash_ignore` lists keys that are
+documentation, e.g. `["notes", "sources", "description", "verified", "datasheet"]`: the graph and every parts entry
+are then hashed as canonical JSON (keys sorted, no whitespace) without these keys, at any depth. A pin, a value, a
+rating or an LCSC number still changes the hash. Only keys that no check and no review reads belong in the list.
+Two things stay whole whatever the list says: `purpose` of the graph and `compliance` of a parts entry (the
+regulatory review M-6 reads them, `purpose.notes` included), and the simulation config, the plugin and `state_files`
+stay bytes – the simulation config's `sources` are its supplies, not references. Turning the list on (or changing
+it) changes the hash once: when the sign-off file's `state_sha256` is the hash of the current files with the list
+before (none: the bytes), nothing but the method changed – the gate counts the sign-offs, writes the new hash into the
+file and records both in `rehashed` (`by` "edakit gate", `hash_ignore`, `state_sha256` [old, new]). When the circuit
+changed as well, nothing is rehashed and the sign-offs of scope `circuit` are done again.
+
 The sign-off file (`[project] signoff`, [example](https://github.com/tgd1975/automatic_christmas_bell/blob/main/hardware/signoff.json)) holds manual checks and
 accepted warnings. Each counts only if the hash of its scope (`circuit`, `layout`, `fab`) equals the current one. The
 fab hash is known only after stage F: in a run without it (the offline gate) sign-offs with scope `fab` are listed as
@@ -134,7 +147,9 @@ not checked and do not count.
   "accepted_warnings": [
     {"match": "L-5 main track width >= practical width*", "scope": "decision",
      "reason": "D-38: 18 mil is above IPC for 1.5 x the current; wider tracks left 16 links open", "by": "owner",
-     "date": "2026-10-22"}
+     "date": "2026-10-22"},
+    {"match": "L-9 main D2: hole tight*", "scope": "decision", "parts": {"D2": "C2297"},
+     "reason": "D-40: 0.09 mm play at nominal size, measured on the part", "by": "owner", "date": "2026-10-22"}
   ]
 }
 ```
@@ -161,7 +176,11 @@ otherwise.
 
 `match` is an fnmatch pattern over "ID scenario item step" as section 3 of the protocol prints it – for a warning of
 the graph checks the ID and the message, e.g. `"P-3 M1 ring: ../ring is not released*"` for an own board that is
-not released (4.5). Scope `decision` counts regardless of the hash and must refer to a numbered decision. **Only the
+not released (4.5). Scope `decision` counts regardless of the hash and must refer to a numbered decision. An
+acceptance about particular parts names them in `parts` ({designator: LCSC number}, or the `part` of a component
+without one): it counts only while every one of them is still that part in the graph. After a swap section 3 of the
+protocol lists it as lapsed ("lapsed: D2 is now C2895549", "D2 is not in the graph") and the warning is not accepted
+until the owner judges it again and updates `parts`. Without `parts` an acceptance counts as before. **Only the
 owner accepts a warning** – it is a decision. **A manual check an agent can do is signed by the agent's result** (chapter 11): OK → signed with the agent
 as `done_by`; not OK → fix the cause, check again.
 

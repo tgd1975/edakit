@@ -6,6 +6,7 @@ import pytest
 
 from edakit import cli, firmware
 from edakit.design import Design
+from edakit.release import gate
 from edakit.sim import run as simrun
 
 FIRMWARE = '\n[firmware]\nmcu = "U1"\nout = "hardware/firmware.json"\n'
@@ -56,6 +57,14 @@ def test_contract_of_the_example(project):
     assert c["channels"][0]["pin"] == "U2.5" and c["channels"][0]["chain"] == 0
     assert "format" not in c                                        # rendering is the project's job
 
+
+def test_state_sha256_is_the_gates_circuit_hash(project):
+    """#66: with [release] hash_ignore the contract's state_sha256 is still the hash the gate signs."""
+    with_firmware(project)
+    toml = project.root / "edakit.toml"
+    toml.write_text(toml.read_text().replace("[release]\n", '[release]\nhash_ignore = ["notes"]\n'))
+    cfg = project.config()
+    assert contract(project)["state_sha256"] == gate.state_hash(cfg) != gate.file_hash(cfg.root, gate.state_files(cfg))
 
 def test_first_bit_to_unknown_without_the_part_fact(project):
     with_firmware(project)

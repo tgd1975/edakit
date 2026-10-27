@@ -53,7 +53,7 @@ BOARD_FILE_KEYS = ("revision", "view", "outline", "holes", "tooling", "place", "
                    "pour_min_piece_mm2", "pour_inset_mm", "silk", "loops", "net_classes", "copper", "order", "uniform",
                    "looks", "thickness_mm")
 SCHEMATIC_KEYS = ("stub", "layout")
-RELEASE_KEYS = ("layout_files", "state_files", "assembly", "stages")
+RELEASE_KEYS = ("layout_files", "state_files", "hash_ignore", "assembly", "stages")
 PCBA = ("economic", "standard")  # [release] assembly.pcba: the assembler's class of the order (P-4)
 COST_KEYS = ("fees", "budget", "currency", "rates", "shipping", "coupon", "vat_pct", "pcb_price")   # [cost]
 EXTRA_KEYS = ("item", "supplier", "code", "per_set", "spare", "moq", "step", "unit_price", "currency")   # [[extra]]
@@ -613,6 +613,9 @@ def load(path=None) -> Config:
                         ("schematic", "checks", "net_classes", "sim"))
     problems += _unknown("[project]", p, PROJECT_KEYS, ("ground",))
     problems += _unknown("[release]", raw.get("release", {}), RELEASE_KEYS, ("signoff",))
+    ignore = raw.get("release", {}).get("hash_ignore", [])
+    if not isinstance(ignore, list) or not all(isinstance(k, str) and k for k in ignore):
+        problems.append('[release] hash_ignore: a list of key names, e.g. ["notes", "sources"]')
     problems += _unknown("[firmware]", raw.get("firmware", {}), FIRMWARE_KEYS)
     if not isinstance(p.get("agreements", True), bool):
         problems.append("[project] agreements: true or false")

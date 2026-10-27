@@ -391,3 +391,14 @@ def test_routing_hand_solder_keep_key():
     for value in (-0.1, "0.5", True):
         with pytest.raises(ConfigError, match="routing.hand_solder_keep_mm must be a distance in mm"):
             _board("b", {}, {"routing": {"hand_solder_keep_mm": value}})
+
+
+def test_hash_ignore_is_a_list_of_key_names(project):
+    toml = project.root / "edakit.toml"
+    text = toml.read_text()
+    assert project.config().release.get("hash_ignore") is None           # default: the bytes are hashed
+    toml.write_text(text.replace("[release]\n", '[release]\nhash_ignore = ["notes", "sources"]\n'))
+    assert project.config().release["hash_ignore"] == ["notes", "sources"]
+    toml.write_text(text.replace("[release]\n", '[release]\nhash_ignore = "notes"\n'))
+    with pytest.raises(ConfigError, match="hash_ignore: a list of key names"):
+        project.config()

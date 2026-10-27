@@ -21,7 +21,11 @@ RELEASED only if
     check settings, parts database, simulation config), 'layout' (the board files, further layout_files of
     [release], the footprint geometry) or 'fab' (what the manufacturer builds from: the Gerber layers rasterised, the
     drill hits, BOM and CPL rows – known after stage F, fab.fab_layers). An accepted
-    warning with scope 'decision' counts regardless of the hash and refers to a numbered decision in the docs.
+    warning with scope 'decision' counts regardless of the hash and refers to a numbered decision in the docs; one
+    that names its parts ({designator: LCSC}) counts only while they are the same parts.
+[release] hash_ignore leaves documentation keys (notes, sources, verified, …) out of the circuit hash: graph and parts
+entries are hashed as canonical JSON without them. Turning it on is recorded in `rehashed` of the sign-off file when
+the files are the signed ones.
 Exit code: 0 = released, 2 = not released, 1 = tool error.
 
 One current release: a RELEASED run supersedes every earlier released run of the project (their manifests say
@@ -88,11 +92,41 @@ def sh(cwd, *cmd, timeout=30):
         return ""
 
 
-def file_hash(root, files):
+KEEP_WHOLE = ("purpose", "compliance")   # read whole by the regulatory review M-6: hash_ignore never reaches inside
+
+
+def strip(data, ignore):
+    """data without the keys in ignore, at any depth – except inside KEEP_WHOLE."""
+    if isinstance(data, dict):
+        return {k: v if k in KEEP_WHOLE else strip(v, ignore) for k, v in data.items() if k not in ignore}
+    if isinstance(data, list):
+        return [strip(v, ignore) for v in data]
+    return data
+
+
+def content(path, ignore=()):
+    """What the hash takes of a file: its bytes; with ignore, a JSON file as canonical JSON (sorted keys, no
+    whitespace) without those keys. A file that is no valid JSON stays bytes."""
+    path = Path(path)
+    if not path.exists():
+        return b"<missing>"
+    raw = path.read_bytes()
+    if not ignore:
+        return raw
+    try:
+        data = json.loads(raw)
+    except (json.JSONDecodeError, UnicodeDecodeError):
+        return raw
+    return json.dumps(strip(data, set(ignore)), sort_keys=True, separators=(",", ":"), ensure_ascii=False).encode()
+
+
+def file_hash(root, files, ignore=(), documented=()):
+    """SHA-256 over the names and contents of files; the files in `documented` without the keys in ignore."""
     h = hashlib.sha256()
+    documented = {Path(f) for f in documented}
     for f in files:
         h.update(str(Path(f).relative_to(root) if Path(f).is_relative_to(root) else f).encode() + b"\0"
-                 + (Path(f).read_bytes() if Path(f).exists() else b"<missing>"))
+                 + content(f, ignore if Path(f) in documented else ()))
     return h.hexdigest()
 
 
@@ -101,6 +135,13 @@ def state_files(cfg):
     if cfg.sim_plugin:
         files.append(cfg.sim_plugin)
     return files + [cfg.resolve(f) for f in cfg.release.get("state_files", [])]
+
+
+def state_hash(cfg, ignore=None):
+    """The circuit hash (state_sha256). [release] hash_ignore leaves its keys out of the graph and the parts entries;
+    the simulation config (its `sources` are the supplies), the plugin and state_files stay bytes."""
+    ignore = cfg.release.get("hash_ignore", []) if ignore is None else ignore
+    return file_hash(cfg.root, state_files(cfg), ignore, [cfg.graph, *cfg.parts.glob("*.json")])
 
 
 def layout_files(cfg):
@@ -116,7 +157,7 @@ def header(cfg):
                     (Path(__file__).resolve().parents[1] / "easyeda" / "mcp-server.sh").read_text())
     return {
         "graph_sha256": hashlib.sha256(cfg.graph.read_bytes()).hexdigest(),
-        "state_sha256": file_hash(cfg.root, state_files(cfg)),
+        "state_sha256": state_hash(cfg),
         "layout_sha256": file_hash(cfg.root, layout_files(cfg)),
         "graph_version": design.version, "graph_date": design.graph.get("date"),
         "git_commit": sh(cfg.root, "git", "rev-parse", "--short", "HEAD"),
@@ -129,14 +170,64 @@ def header(cfg):
     }
 
 
-def load_signoff(cfg, head):
+def rehash(cfg, s, head):
+    """The `rehashed` entry when only [release] hash_ignore changed since the sign-offs of scope 'circuit': the file's
+    state_sha256 is the hash of the current files with the list recorded last (none: the bytes). Otherwise None."""
+    now = list(cfg.release.get("hash_ignore", []))
+    before = next((r["hash_ignore"] for r in reversed(s.get("rehashed", [])) if "hash_ignore" in r), [])
+    signed = s.get("state_sha256")
+    if not signed or signed == head.get("state_sha256") or sorted(before) == sorted(now):
+        return None
+    if state_hash(cfg, before) != signed:
+        return None
+    return {"date": dt.date.today().isoformat(), "by": "edakit gate",
+            "why": f"[release] hash_ignore = {json.dumps(now)}" + (f" (was {json.dumps(before)})" if before else "")
+                   + ": the circuit hash leaves these keys out; the files are the signed ones",
+            "hash_ignore": now, "state_sha256": [signed, head["state_sha256"]]}
+
+
+def lapsed(cfg, warns):
+    """(acceptances that count, acceptances whose parts changed with 'lapsed': why). An acceptance with
+    parts {designator: LCSC} counts only while every designator still has that number in the graph."""
+    if not any("parts" in a for a in warns):
+        return warns, []
+    comps = Design.from_config(cfg).comps
+    keep, gone = [], []
+    for a in warns:
+        named = a.get("parts")
+        if named is None:
+            keep.append(a)
+            continue
+        if not isinstance(named, dict):
+            gone.append({**a, "lapsed": "parts is not {designator: LCSC}"})
+            continue
+        now = {des: comps[des].get("lcsc") or comps[des].get("part") for des in named if des in comps}
+        why = [f"{des} is not in the graph" if des not in comps else f"{des} is now {now[des] or 'without an LCSC number'}"
+               for des, num in named.items() if des not in comps or now[des] != num]
+        if why:
+            gone.append({**a, "lapsed": "; ".join(why)})
+        else:
+            keep.append(a)
+    return keep, gone
+
+
+def load_signoff(cfg, head, write=False):
     """Sign-offs and accepted warnings that count for the current hash of their scope. A required manual check the
-    file does not list is added as open."""
+    file does not list is added as open. When only [release] hash_ignore changed, the circuit sign-offs keep counting
+    and the old and new hash go into `rehashed` – into the file only with write (the gate)."""
     path = cfg.signoff
     if not path.exists():
-        return {"manual": [], "accepted_warnings": []}, [f"{path.name} missing – no sign-offs"]
+        return {"manual": [], "accepted_warnings": [], "lapsed_warnings": []}, [f"{path.name} missing – no sign-offs"]
     s = json.loads(path.read_text(encoding="utf-8"))
     notes, valid = [], {"decision": True}
+    if entry := rehash(cfg, s, head):
+        old, new = entry["state_sha256"]
+        s["state_sha256"] = new
+        s.setdefault("rehashed", []).append(entry)
+        notes.append(f"{path.name}: rehashed – {entry['why']}; state_sha256 {old[:12]}… → {new[:12]}…")
+        if write:
+            save_manifest(path, s, indent=2)
+            print(f"  {notes[-1]}")
     used = {x.get("scope", "circuit") for x in [*s.get("manual", []), *s.get("accepted_warnings", [])]}
     for scope, key in SCOPE_KEY.items():
         if scope == "fab" and head.get(key) is None:   # known only after stage F
@@ -153,8 +244,8 @@ def load_signoff(cfg, head):
         if sid not in {x.get("id") for x in manual}:
             manual.append({"id": sid, **m, "done_by": None})
             notes.append(f"{path.name}: {sid} is missing – added as open, every release needs it")
-    warns = [a for a in s.get("accepted_warnings", []) if valid.get(a.get("scope", "circuit"))]
-    return {**s, "manual": manual, "accepted_warnings": warns}, notes
+    warns, gone = lapsed(cfg, [a for a in s.get("accepted_warnings", []) if valid.get(a.get("scope", "circuit"))])
+    return {**s, "manual": manual, "accepted_warnings": warns, "lapsed_warnings": gone}, notes
 
 
 def key_of(item):
@@ -361,8 +452,8 @@ class ReleaseError(Exception):
     pass
 
 
-def save_manifest(path, manifest):
-    path.write_text(json.dumps(manifest, indent=1, ensure_ascii=False) + "\n", encoding="utf-8")
+def save_manifest(path, manifest, indent=1):
+    path.write_text(json.dumps(manifest, indent=indent, ensure_ascii=False) + "\n", encoding="utf-8")
 
 
 def runs(cfg):
@@ -541,10 +632,22 @@ def write_protocol(cfg, outdir, head, rows, sim, signoff, notes, decision, reaso
         L.append("")
     L.append("## 3 Warnings\n")
     warns = [c for c in [*sim["checks"], *rows] if c["result"] == "warn"]
+    gone = signoff.get("lapsed_warnings", [])
+
+    def verdict(w):
+        if a := accepted(w, signoff):
+            return f"accepted by {a['by']} ({a['date']}): {a['reason']}"
+        old = next((a for a in gone if fnmatch(key_of(w), a["match"])), None)
+        if not old:
+            return "**not accepted**"
+        was = ", ".join(f"{d} = {n}" for d, n in old["parts"].items()) if isinstance(old["parts"], dict) else ""
+        return (f"**not accepted** (lapsed: {old['lapsed']}; accepted by {old.get('by')} ({old.get('date')})"
+                + (f" for {was}" if was else "") + ")")
     L += [f"- `{key_of(w)}` ({rules.title(w['id']) or 'project check'}). Actual: {w.get('actual', '')}. "
-          f"Expected: {w.get('expected', '')}. → "
-          + (f"accepted by {a['by']} ({a['date']}): {a['reason']}" if (a := accepted(w, signoff)) else "**not accepted**")
-          for w in warns] or ["None."]
+          f"Expected: {w.get('expected', '')}. → " + verdict(w) for w in warns] or ["None."]
+    if gone:
+        L += ["\nAcceptances that lapsed – a part they name is another one now; judge again and update `parts`, or "
+              "remove them:\n", *[f"- `{a['match']}`: {a['lapsed']}" for a in gone]]
     L.append("\n## 4 Waivers in the graph\n")
     L += [f"- {r['id']} {r['check']}  \n  reason: {r['reason']}" for r in rows if r["result"] == "waived"] or ["None."]
     L.append("\n## 5 Open sign-offs\n")
@@ -637,7 +740,7 @@ def main(cfg, args):
         rows += stage_fab(cfg, outdir)
         stages_run |= set(WITH_EASYEDA)
         head.update(fab_hashes(cfg, outdir))
-    signoff, notes = load_signoff(cfg, head)    # after stage F: the sign-offs with scope 'fab' need its hash
+    signoff, notes = load_signoff(cfg, head, write=True)   # after stage F: sign-offs with scope 'fab' need its hash
     decision, reasons = decide(rows, sim["checks"], signoff, stages_run, stages)
     if args.easyeda:
         files = write_manifest(cfg, outdir, head, decision)

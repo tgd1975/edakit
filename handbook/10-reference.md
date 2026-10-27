@@ -13,7 +13,7 @@ are. What one role decides lives in a file of its own, with one owner and one ha
 | `hardware/parts/`, `hardware/sim.json` | parts database (4), simulation scenarios (5) | part-selector, circuit designer | circuit |
 | `hardware/schematic.toml` | arrangement of the schematic: blocks, notes, pin table (10.3) | circuit designer | – |
 | `hardware/boards/<name>.toml` | one board: outline, holes, placement, routing, pours, silkscreen (10.2) | PCB designer | layout |
-| `hardware/signoff.json` | sign-offs and accepted warnings, each bound to the hash of its scope: circuit, layout or fab (8.2) | reviewers, the user | – |
+| `hardware/signoff.json` | sign-offs and accepted warnings, each bound to the hash of its scope: circuit, layout or fab (8.2); an accepted warning with `parts` {designator: LCSC} also to those parts; `rehashed` records a change of the hash method (the gate writes it for `hash_ignore`) | reviewers, the user | – |
 | `hardware/firmware.json` | the firmware contract, with `[firmware]` (3.5) | `edakit firmware` | – |
 
 Complete example: [tests/fixtures/led-bar](../tests/fixtures/led-bar/). A key edakit does not know is an error with
@@ -60,10 +60,12 @@ ground on purpose besides it (an analog ground) in `grounds` (3.1, G-16).
 ### [release]
 
 `layout_files` (further files in the layout hash – the board files and the footprint geometry are always in it),
-`state_files` (further files in the circuit hash), `assembly` ({`sides` (both), `smd_only`, `paste_gap_mm` (0.4: SMD
-pads of different parts on an assembled side, L-14), `pcba` (`"economic"` or `"standard"`: the assembler's class of
-the order, P-4; default from `sides` – one side Economic, two Standard)}), `[[stages]]` ({`id`, `name`, `cmd`, `advisory`, `timeout`,
-`about`}).
+`state_files` (further files in the circuit hash), `hash_ignore` (`[]`: keys left out of the circuit hash at any depth
+of the graph and the parts entries, e.g. `["notes", "sources", "description", "verified", "datasheet"]` – only keys no
+check and no review reads; empty: the bytes are hashed, 8.2), `assembly` ({`sides` (both), `smd_only`, `paste_gap_mm`
+(0.4: SMD pads of different parts on an assembled side, L-14), `pcba` (`"economic"` or `"standard"`: the assembler's
+class of the order, P-4; default from `sides` – one side Economic, two Standard)}), `[[stages]]` ({`id`, `name`, `cmd`,
+`advisory`, `timeout`, `about`}).
 
 ### [cost]
 

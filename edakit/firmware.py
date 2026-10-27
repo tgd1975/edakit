@@ -333,7 +333,7 @@ def contract(cfg, design):
         "about": f"Firmware contract of {cfg.project}, written by edakit firmware from the graph and the parts entries "
                  "– do not edit: change the graph and run edakit firmware again (edakit handbook 3.5).",
         "graph_version": design.version, "graph_date": design.graph.get("date"),
-        "state_sha256": gate.file_hash(cfg.root, gate.state_files(cfg)),
+        "state_sha256": gate.state_hash(cfg),
         "mcu": mcu,
         "pins": pins,
         "pwm": {n: e.get("pwm_hz") for n, e in pins.items() if e.get("fn") == "pwm"},
