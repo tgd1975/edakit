@@ -23,7 +23,7 @@ edakit gate --easyeda    # plus S, L, F – EasyEDA with the bridge, minutes
 | E – Simulation | operating points, stress, function, every LED checked | E-1 … E-4 (chapter 5) |
 | *project stages* | e.g. K – mechanics of an enclosure | `[[release.stages]]`, see below |
 | S – Schematic | EasyEDA schematic = graph | S-2 per board |
-| L – Board | PCB = graph and plan, copper from the Gerber files, the circuit's hand-over kept, pads apart | L-1 … L-14 |
+| L – Board | PCB = graph and plan, copper from the Gerber files, the circuit's hand-over kept, pads apart | L-1 … L-15 |
 | F – Manufacturing | BOM, stock, pick and place, Gerber set | F-1 … F-5 |
 
 **Stage L** (per board, `edakit fab`):
@@ -43,6 +43,7 @@ edakit gate --easyeda    # plus S, L, F – EasyEDA with the bridge, minutes
 | L-12 | the plan keeps the circuit's hand-over: `layout.fixed`, `.edge`, `.near` of the graph, a decoupling capacitor of its own next to every IC (7.4) | the auto-layout put a decoupling capacitor 24 mm from its IC; what the circuit designer knew got lost on the way to the layout |
 | L-13 | pads of different parts on different nets at least the routing clearance (`clearance_mil`) apart on every copper layer both are on; a pad without a net counts as a net of its own, pads of one part are not compared. Measured as `route check` measures it (7.5), on the pads of `route read` (`<artifacts>/route/<board>_board.json`) – pcb.json has no pad shapes –, and only while every pad there sits where the PCB has it, on its layer and net; otherwise L-13 fails and asks for `route read`. `waive: {"L-13": "…"}` on one of the two parts or nets lists the pair as waived | two resistors stood with their pads 0.09 mm apart: the plan compares boxes, `route check` measured only tracks and vias, and only EasyEDA's DRC could have seen it, after the copper was written |
 | L-14 | on every side that is assembled (`[release] assembly` `sides`), SMD pads of different parts on different nets at least the paste gap (`paste_gap_mm`, 0.4 mm) apart, so that the stencil keeps a web between their prints; a pad without a net counts as a net of its own, pads of one part, through-hole pads and pads on a side that is not assembled are not compared. Measured on the pads of `route read` like L-13, and only while they are the PCB's. `waive: {"L-14": "…"}` on one of the two parts or nets lists the pair as waived | the paste of a ground pad and a transistor base pad of neighbouring parts was 0.06 mm apart: above every copper rule, a bridge in reflow that the bare-board test cannot see; the layout review found it |
+| L-15 | copper per layer on L-2's raster of the **Gerber files**, widened to the outline: the copper share of the board area (without mounting and NPTH holes) and the largest copper-free circle inside the pour outline (the outline `pcb pour` pours, 7.6) – information; on a layer the board file pours (`[[pours]]`, default GND on both) a circle above `[copper] max_bare_mm` (5 mm) warns, a share below `[copper] min_cover` warns, and on every layer a copper piece that touches no pad (FlyingProbeTesting.json), via or plated hole warns, with its area and place. Copper inside an NPTH or mounting hole is drilled away. One row per layer, so an accepted warning covers its layer | EasyEDA drops every pour piece without a pad of its net: half the back of a released board stayed bare (47 % copper, a copper-free circle of Ø 9.7 mm) where ground had no pads, with DRC 0 and every check passed; it was seen by eye before the order |
 
 **Stage F:**
 
@@ -67,7 +68,8 @@ a hole too small in the drill file, a changed LCSC number, a part missing from t
 hole missing from the NPTH file. The check that should find the fault fails (or warns) and names the part, net or
 file. Each test lists every row that fails or warns, so a check that also fires is noticed too. Most faults hit
 one check. A few hit two, because the fault touches both: a part turned by 90° (L-7, F-3), a through-hole pad
-without its hole (L-9, and GND open in L-2). A new check of L or F gets its fault there.
+without its hole (L-9, and GND open in L-2), a copper dot in a tooling hole's opening (F-5, and a loose piece in
+L-15). A new check of L or F gets its fault there.
 
 **Project stages** (`[[release.stages]]` in edakit.toml): `{id = "K", name = "Mechanics", cmd = ["uv", "run",
 "mech/check.py", "--json"], advisory = true}`. The command's last stdout line may be a JSON list of

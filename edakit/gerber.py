@@ -176,9 +176,10 @@ def bbox(pts):
 
 
 class Copper:
-    """Rasterised copper layers, islands, connections through plated holes, pads per island and net."""
+    """Rasterised copper layers, islands, connections through plated holes, pads per island and net. The raster covers
+    the copper and 3 mm around it, and the points of extent (mm) as well – the board outline, say (L-15)."""
 
-    def __init__(self, folder, pin_net):
+    def __init__(self, folder, pin_net, extent=()):
         import numpy as np
         from scipy import ndimage
         self.d = Path(folder)
@@ -186,6 +187,7 @@ class Copper:
         self.holes = [(x, y, w) for x, y, w, _ in parse_holes(self.d / FILES["pth"]) + parse_holes(self.d / FILES["vias"])]
         pts = [p for ops in self.ops.values() for kind, dat in ops for p in
                ([dat[1:]] if kind == "flash" else dat[1] if kind == "draw" else [q for c in dat for q in c])]
+        pts += list(extent)
         self.x0, self.y0 = min(p[0] for p in pts) - 3, min(p[1] for p in pts) - 3
         self.w = int((max(p[0] for p in pts) + 3 - self.x0) / RES)
         self.h = int((max(p[1] for p in pts) + 3 - self.y0) / RES)

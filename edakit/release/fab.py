@@ -32,6 +32,9 @@ assembly preview at JLCPCB.
        `edakit route read` while they are the PCB's (route.pad_gaps, as `route check` measures)
   L-14 on every assembled side, SMD pads of different parts on different nets at least the paste gap apart
        ([release] assembly paste_gap_mm), measured as L-13
+  L-15 copper per layer from the Gerber files: share of the board area and largest copper-free circle (info); a
+       circle above [copper] max_bare_mm on a poured layer, a share below [copper] min_cover, a copper piece without
+       pad, via or plated hole: warn
   F-1  BOM from the graph = BOM of EasyEDA; every LCSC number in the parts database
   F-2  every BOM part listed in JLCPCB's assembly catalogue with stock for `quantity` boards
   F-3  pick and place: every BOM part exactly once, side and rotation = PCB; sides/SMD as [release] assembly says
@@ -544,6 +547,113 @@ def check_copper(board, design, d, rows):
              "; ".join(shorts[:8]) or "none", "none")
 
 
+BARE_STEP = 5                # L-15: the copper-free circle is measured on blocks of 5 x 5 raster points (0.1 mm)
+
+
+def free_circle(free, step=BARE_STEP):
+    """Largest circle inside the True area of a raster: (diameter, row, column) in raster points, measured on blocks
+    of step x step points that are free throughout (so never larger than the truth, at most a block smaller)."""
+    import numpy as np
+    from scipy import ndimage
+    h, w = free.shape[0] // step * step, free.shape[1] // step * step
+    blocks = free[:h, :w].reshape(h // step, step, w // step, step).all(axis=(1, 3))
+    if not blocks.any():
+        return 0.0, 0, 0
+    dist = ndimage.distance_transform_edt(blocks)
+    r, c = np.unravel_index(np.argmax(dist), dist.shape)
+    return 2 * dist[r, c] * step, (r + 0.5) * step, (c + 0.5) * step
+
+
+def check_copper_sides(board, design, d, rows):
+    """L-15: copper per layer from the Gerber files on the raster of L-2, widened to the outline. Per layer the copper
+    share of the board area (outline without mounting and NPTH holes) and the largest copper-free circle inside
+    the pour outline (pcb.pour_outline, as `pcb pour` pours): information on a layer without pour, a warning above
+    [copper] max_bare_mm on a layer the board file pours ([[pours]], default GND on both) – a pour EasyEDA left empty
+    where its net has no pad, or never filled. A share below [copper] min_cover warns. On every layer a copper piece that
+    touches no pad (FlyingProbeTesting.json), via or plated hole warns: an island left by a fill with islands kept.
+    Copper inside an NPTH or mounting hole is drilled away and does not count."""
+    g = d / "gerber"
+    if lost := gerber.missing(g, "top", "bottom", "probe"):
+        rows.add("L", "L-15", board.name, "Gerber files for the copper per side", False,
+                 f"{', '.join(lost)} missing (Gerber export)", "present")
+        return
+    import numpy as np
+    from PIL import Image, ImageDraw
+    from scipy import ndimage
+
+    from .. import pcb
+    with contextlib.redirect_stdout(io.StringIO()):
+        pour = [board.eda_point(*p) for p in pcb.pour_outline(board)]
+        outline = [board.eda_point(*p) for p in board.outline]
+        cu = gerber.Copper(g, design.pin_net, extent=outline)
+    res = gerber.RES
+
+    def area(poly, cut=()):
+        """The polygon without the circles (x, y, r) – or, without a polygon, the circles alone."""
+        img = Image.new("1", (cu.w, cu.h), 0)
+        dr = ImageDraw.Draw(img)
+        if poly:
+            dr.polygon([cu.px(*q) for q in poly], fill=1)
+        for x, y, r in cut:
+            (cx, cy), rr = cu.px(x, y), r / res
+            dr.ellipse([cx - rr, cy - rr, cx + rr, cy + rr], fill=0 if poly else 1)
+        return np.array(img, dtype=bool)
+    drilled = area([], [(x, y, w / 2) for x, y, w, _ in gerber.parse_holes(g / gerber.FILES["npth"])]
+                   + [(*board.eda_point(h["x"], h["y"]), h["d"] / 2) for h in board.holes])   # NPTH, mounting holes
+    whole = area(outline) & ~drilled
+    inside = area(pour) & ~drilled
+    probe = json.loads((g / gerber.FILES["probe"]).read_text())["pins"]
+    anchors = {"T": [], "B": []}       # (x, y, r): pads of FlyingProbeTesting.json (all of them), plated holes and vias
+    for row in probe["rows"]:
+        p = dict(zip(probe["fields"], row))
+        r = min(p["PAD_SIZEX"], p["PAD_SIZEY"]) / MIL_PER_MM / 4
+        for k in ("TB" if p["PIN_TYPE"] != "SMD" else "T" if p["LAYER"] in ("T", "TOP") else "B"):
+            anchors[k].append((p["PIN_X"] / MIL_PER_MM, p["PIN_Y"] / MIL_PER_MM, r))
+    for x, y, w in cu.holes:
+        for k in "TB":
+            anchors[k].append((x, y, w / 2 + 0.05))
+    poured = defaultdict(list)
+    for p in board.pours:
+        for layer in p.get("layers", ["TOP", "BOTTOM"]):
+            poured[layer].append(p["net"])
+    limit, cover = board.copper["max_bare_mm"], board.copper["min_cover"]
+    for k, layer in (("T", "TOP"), ("B", "BOTTOM")):
+        copper = cu.render(cu.ops[k]) & ~drilled
+        share = 100 * (copper & whole).sum() / max(1, whole.sum())
+        dia, r, c = free_circle(inside & ~copper)
+        dia *= res
+        at = f"({cu.x0 + c * res:.1f}, {cu.y0 + (cu.h - r) * res:.1f}) mm"
+        text = f"{share:.0f} % copper, largest copper-free circle Ø {dia:.1f} mm" + (f" at {at}" if dia else "")
+        if poured[layer]:
+            rows.add("L", "L-15", board.name, f"{layer}: no copper-free circle above {limit:g} mm inside the pour "
+                     f"outline (poured: {', '.join(poured[layer])})", dia <= limit, f"{layer}: {text}",
+                     f"Ø <= {limit:g} mm ([copper] max_bare_mm)", None if dia <= limit else "warn")
+        else:
+            rows.add("L", "L-15", board.name, f"{layer}: copper share and largest copper-free circle (no pour)", True,
+                     f"{layer}: {text}", "information", "info")
+        if layer in cover:
+            rows.add("L", "L-15", board.name, f"{layer}: copper share at least {cover[layer]:g} % ([copper] min_cover)",
+                     share >= cover[layer], f"{layer}: {share:.0f} % copper", f">= {cover[layer]:g} %",
+                     None if share >= cover[layer] else "warn")
+        lab, n = ndimage.label(copper, structure=np.ones((3, 3)))
+        held = set()
+        for x, y, rad in anchors[k]:
+            (cx, cy), rr = cu.px(x, y), max(1, int(rad / res))
+            held |= set(np.unique(lab[max(0, int(cy) - rr):int(cy) + rr + 1, max(0, int(cx) - rr):int(cx) + rr + 1]))
+        size = np.bincount(lab.ravel(), minlength=n + 1) * res * res
+        loose = sorted((i for i in range(1, n + 1) if i not in held), key=lambda i: -size[i])
+        where, boxes = [], ndimage.find_objects(lab) if loose else []
+        for i in loose[:5]:
+            rs, cs = boxes[i - 1]
+            x = cu.x0 + (cs.start + cs.stop) / 2 * res
+            y = cu.y0 + (cu.h - (rs.start + rs.stop) / 2) * res
+            where.append(f"{size[i]:.1f} mm² around ({x:.1f}, {y:.1f}) mm")
+        many = f"{len(loose)} pieces, {sum(size[i] for i in loose):.1f} mm² together" if len(loose) > 1 else "1 piece"
+        rows.add("L", "L-15", board.name, f"{layer}: every copper piece touches a pad, via or plated hole", not loose,
+                 f"{layer}: {many} without pad, via or hole: " + "; ".join(where) + (" …" if len(loose) > 5 else "")
+                 if loose else f"{layer}: {n} pieces", "none loose", None if not loose else "warn")
+
+
 # --- F checks -----------------------------------------------------------------------------------------------------
 
 def check_fab(cfg, board, design, d, rows):
@@ -669,6 +779,7 @@ def run(cfg, board, out, offline=False, verbose=False):
     rows = Rows()
     check_pcb(cfg, board, design, d, rows)
     check_copper(board, design, d, rows)
+    check_copper_sides(board, design, d, rows)
     check_drills(board, design, d, rows)
     check_loops(board, design, d, rows)
     check_pad_clearance(cfg, board, design, d, rows)

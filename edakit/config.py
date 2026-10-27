@@ -38,13 +38,14 @@ POUR_MIN_WIDTH_MM = 0.25         # pour_only: the narrowest neck the computed po
 POUR_MIN_PIECE_MM2 = 2.0         # pour_regions: the smallest piece of a shared layer that gets an outline
 HEADER_KEEP_MM = 1.27            # on_headers: the plastic of a 2.54 mm pin header, half its width around each pin
 PASTE_GAP_MM = 0.4               # [release] assembly paste_gap_mm: SMD pads of different parts, assembled side (L-14)
+MAX_BARE_MM = 5.0                # [copper] max_bare_mm: largest copper-free circle on a poured layer (L-15)
 
 PROJECT_KEYS = ("name", "company", "quantity", "distributors", "lock", "graph", "parts", "sim", "sim_plugin",
                 "schematic", "signoff", "artifacts", "reports")
 BOARD_KEYS = ("title", "template", "schematic", "pcb", "file")            # [boards.<name>] in edakit.toml
 BOARD_FILE_KEYS = ("revision", "view", "outline", "holes", "tooling", "place", "near", "near_mm", "edge_mm", "edge_ok",
                    "on_headers", "header_keep_mm", "silk_overlap_mm", "park", "routing", "pours", "pour_regions",
-                   "pour_min_piece_mm2", "pour_inset_mm", "silk", "loops", "net_classes")
+                   "pour_min_piece_mm2", "pour_inset_mm", "silk", "loops", "net_classes", "copper")
 SCHEMATIC_KEYS = ("stub", "layout")
 RELEASE_KEYS = ("layout_files", "state_files", "assembly", "stages")
 
@@ -96,6 +97,7 @@ class Board:
     loops: list = field(default_factory=list)         # [(pad a, pad b, max mm, what)] short current loops (L-11)
     net_classes: dict = field(default_factory=lambda: dict(DEFAULT_NET_CLASSES))  # by falling min_a
     force_class: dict = field(default_factory=dict)   # net -> class, whatever its current
+    copper: dict = field(default_factory=lambda: _copper("", {}))  # [copper]: max_bare_mm, min_cover (L-15)
 
     # --- plan <-> EasyEDA -------------------------------------------------------------------------------------------
     def to_eda(self, x, y, rot, side):
@@ -265,6 +267,23 @@ def _net_classes(nc):
     return dict(sorted(classes.items(), key=lambda kv: -kv[1]["min_a"])), force
 
 
+def _copper(name, c):
+    """[copper] of a board file (L-15): max_bare_mm (largest copper-free circle on a poured layer, mm) and min_cover
+    {layer: least copper share in % of the board area}; without it no share is required."""
+    if not isinstance(c, dict):
+        raise ConfigError(f"board {name}: [copper] must be a table")
+    if lost := [k for k in c if k not in ("max_bare_mm", "min_cover")]:
+        raise ConfigError(f"board {name}: [copper] unknown key '{lost[0]}' (known: max_bare_mm, min_cover)")
+    bare = float(c.get("max_bare_mm", MAX_BARE_MM))
+    if bare <= 0:
+        raise ConfigError(f"board {name}: copper.max_bare_mm must be positive")
+    cover = c.get("min_cover", {})
+    if not isinstance(cover, dict) or not set(cover) <= {"TOP", "BOTTOM"} or not all(
+            isinstance(v, (int, float)) and 0 <= v <= 100 for v in cover.values()):
+        raise ConfigError(f"board {name}: copper.min_cover must be {{TOP = %, BOTTOM = %}} with values from 0 to 100")
+    return {"max_bare_mm": bare, "min_cover": {k: float(v) for k, v in cover.items()}}
+
+
 def _board(name, entry, b, file=""):
     """A board: its EasyEDA documents from edakit.toml (entry), everything physical from its board file (b)."""
     tooling = b.get("tooling", {})
@@ -335,6 +354,7 @@ def _board(name, entry, b, file=""):
         loops=loops,
         net_classes=classes,
         force_class=force,
+        copper=_copper(name, b.get("copper", {})),
     )
 
 

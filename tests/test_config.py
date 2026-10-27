@@ -235,3 +235,14 @@ def test_silk_board_label_side_and_region_keys(tmp_path):
     for region in ([[0, 0], [40, 0]], [[0, 0], [40, 0], [40]], "y < 34", [[0, 0], [40, 0], ["a", 3]]):
         with pytest.raises(ConfigError, match=r"silk.board_label_region must be a polygon \[\[x, y\], …\]"):
             _board("b", {}, {"silk": {"board_label_region": region}})
+
+
+def test_copper_key(tmp_path):
+    from edakit.config import _board
+    assert _board("b", {}, {}).copper == {"max_bare_mm": 5.0, "min_cover": {}}     # no key: 5 mm, no share required
+    b = _board("b", {}, {"copper": {"max_bare_mm": 8, "min_cover": {"BOTTOM": 60}}})
+    assert b.copper == {"max_bare_mm": 8.0, "min_cover": {"BOTTOM": 60.0}}
+    for bad, msg in (({"max_bare_mm": 0}, "max_bare_mm must be positive"), ({"min_cover": {"INNER1": 50}}, "min_cover"),
+                     ({"min_cover": {"TOP": 150}}, "min_cover"), ({"bare_mm": 5}, "unknown key 'bare_mm'")):
+        with pytest.raises(ConfigError, match=msg):
+            _board("b", {}, {"copper": bad})

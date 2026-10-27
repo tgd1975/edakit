@@ -74,6 +74,9 @@ describes (section 3).
   distance of their own (handbook 7.6), e.g. further from the milled edge than tracks that run along it.
 - Two nets pouring on one layer: the one with priority fills it all unless `pour_regions = true` gives each its own
   area (handbook 7.6); an area enclosed by another net's is an error, solved in the routing.
+- EasyEDA drops every pour piece without a pad of its net: where the pour net has no pad, that side stays bare. The gate
+  warns (L-15: a copper-free circle above `[copper] max_bare_mm`, 5 mm); give the area a second pour net
+  (`pour_regions`) or a pad or via of the pour net, then `route pours` again.
 - While a free pad (tooling hole) is in the PCB, filling pours fails – edakit takes them out and puts them back.
 - Net classes need the simulated currents (`edakit sim` first).
 - Freerouting cannot move a pad: pads of different parts on different nets closer than `clearance_mil` (L-13), or

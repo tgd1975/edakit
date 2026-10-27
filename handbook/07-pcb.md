@@ -265,7 +265,11 @@ and anything unplanned is deleted – old tracks have come back after a reload b
 ## 7.6 Pours
 
 `[[pours]]` of the board file: net, layers, `plane` (with `fanout`, 7.5), `stitch`, `pour_only`. Filled with
-`easyeda_pcb_rebuild_copper` per net (status `readback-mismatch` is harmless). With `stitch = "BOTTOM"` edakit fills
+`easyeda_pcb_rebuild_copper` per net (status `readback-mismatch` is harmless for the fill). EasyEDA drops every piece of a
+pour that touches no pad of its net: where the pour net has no pad, that side stays bare – it looks the same as a pour
+that was never filled. The gate measures it in the Gerber files (L-15): a copper-free circle above `[copper]
+max_bare_mm` (5 mm) inside the pour outline of a poured layer warns, and so does a copper piece without pad, via or hole.
+Give such an area a net that reaches it – a second pour net with `pour_regions` below, or a pad or via of the pour net. With `stitch = "BOTTOM"` edakit fills
 once keeping islands, puts a via into every loose island on that side where it overlaps the pour of the other side
 (with clearance), then fills again without islands.
 
@@ -325,7 +329,8 @@ A pour-only net on a shared layer is connected by what it claims, not by the who
 outlines dashed. A plane takes the whole layer, so with `pour_regions` it needs a layer of its own.
 
 Without `pour_regions`, the computed pour of a pour-only net assumes the layer to itself: when another net pours on
-the same layer, `route check` says so. The gate's L-2 on the Gerber copper has the last word either way.
+the same layer, `route check` says so. The gate's L-2 (connectivity) and L-15 (bare areas, loose copper) on the Gerber
+copper have the last word either way.
 
 ## 7.7 Silkscreen
 

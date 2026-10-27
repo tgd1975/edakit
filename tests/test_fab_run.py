@@ -3,7 +3,8 @@ every row passes – and one fault per check built into a copy of it: the check 
 file. Each test lists every row that fails or warns, so a check that fires as well shows up.
 
 The export is the example's input stage: J1 (JST PH, through-hole), D1 (SS34 against reverse polarity) and C2 (22 µF)
-with the nets VIN, +5V and GND, on a board of 30 x 20 mm with one M3 hole and two tooling holes, every track on TOP.
+with the nets VIN, +5V and GND, on a board of 30 x 20 mm with one M3 hole and two tooling holes, every track on TOP,
+no pours (`pours = []`).
 The whole example has never been routed or exported, so no real export of it exists. This one has the files that
 `fab.collect` leaves, with the fields the checks read: pcb.json, drc.json, bom_easyeda.json, cpl_easyeda.xlsx,
 jlc_parts.json (so F-2 stays offline), and the Gerber and drill files with FlyingProbeTesting.json. It also has the
@@ -44,6 +45,7 @@ TOOLING_D, TOOLING_OPEN = 1.152, 1.152 + 2 * 0.148
 PLUS = (10.8, 10.9)                # "+" on the top silkscreen, next to D1's anode
 BOARD = f"""# The input stage of the example on a board of its own (tests/test_fab_run.py)
 view = "top"
+pours = []
 edge_ok = ["J1"]
 
 [outline]
@@ -274,8 +276,8 @@ def findings(rows):
     return sorted((r["id"], r["result"]) for r in rows if r["result"] not in ("pass", "info"))
 
 
-CHECKS = ["L-1", "L-2", "L-3", "L-4", "L-5", "L-7", "L-8", "L-9", "L-10", "L-11", "L-12", "L-13", "L-14", "F-1", "F-2",
-          "F-3", "F-5"]
+CHECKS = ["L-1", "L-2", "L-3", "L-4", "L-5", "L-7", "L-8", "L-9", "L-10", "L-11", "L-12", "L-13", "L-14", "L-15", "F-1",
+          "F-2", "F-3", "F-5"]
 
 
 def test_the_clean_export_passes_every_check(project):
@@ -345,6 +347,18 @@ def paste(ex, project):
     ex.move("C2", 7.8 - 20)
 
 
+def bare_bottom(ex, project):
+    """GND poured on BOTTOM by the board file, but the BOTTOM Gerber holds only J1's two pads: a pour never filled."""
+    board_file(project, "pours = []\n", "")
+    f = project.root / "hardware" / "boards" / "main.toml"
+    f.write_text(f.read_text() + '\n[[pours]]\nnet = "GND"\nlayers = ["BOTTOM"]\n')
+
+
+def loose_copper(ex, project):
+    """A copper stroke of 3 x 3 mm with round ends (16 mm²) on TOP that touches no pad, via or hole."""
+    ex.gerber["top"].append(("draw", 3.0, [(9, 4.5), (12, 4.5)], "loose"))
+
+
 def assembled_j1(ex, project):
     graph(project, lambda g: project.comp(g, "J1").pop("bom"))
     ex.jlc["C131337"] = {"componentModelEn": "B2B-PH-K-S(LF)(SN)", "componentLibraryType": "extend",
@@ -367,9 +381,11 @@ FAULTS = [
     ("a connected pad missing from the files", lambda ex, p: ex.probe["pins"]["rows"].pop(4),
      [("L-2", "fail", "C2.1")]),
     ("a copper file missing", lambda ex, p: ex.lost.add("top"),
-     [("L-2", "fail", "Gerber_TopLayer.GTL missing"), ("F-5", "fail", "Gerber_TopLayer.GTL")]),
+     [("L-2", "fail", "Gerber_TopLayer.GTL missing"), ("F-5", "fail", "Gerber_TopLayer.GTL"),
+      ("L-15", "fail", "Gerber_TopLayer.GTL missing")]),
     ("the probe file missing", lambda ex, p: ex.lost.add("probe"),
-     [("L-2", "fail", "FlyingProbeTesting.json missing"), ("F-5", "fail", "FlyingProbeTesting.json")]),
+     [("L-2", "fail", "FlyingProbeTesting.json missing"), ("F-5", "fail", "FlyingProbeTesting.json"),
+      ("L-15", "fail", "FlyingProbeTesting.json missing")]),
     # L-3
     ("a DRC finding", lambda ex, p: ex.drc.append({"errorType": "Clearance", "ruleName": "Safe Spacing"}),
      [("L-3", "fail", "Clearance (Safe Spacing): 1")]),
@@ -436,6 +452,11 @@ FAULTS = [
     # L-14
     ("two SMD parts with their pads closer than the paste gap", paste,
      [("L-14", "fail", "C2.2 (GND) – D1.2 (VIN): 0.300 mm apart on TOP, below the paste gap 0.400 mm")]),
+    # L-15
+    ("a poured layer left bare", bare_bottom,
+     [("L-15", "warn", "BOTTOM: 1 % copper, largest copper-free circle Ø 19.0 mm at (13.2, 10.1) mm")]),
+    ("copper that touches no pad, via or hole", loose_copper,
+     [("L-15", "warn", "TOP: 1 piece without pad, via or hole: 16.2 mm² around (10.5, 4.5) mm")]),
     # F-1
     ("another LCSC number in EasyEDA's BOM", lambda ex, p: ex.bom[2].update(lcsc="C15850"),
      [("F-1", "fail", "C2: graph C45783, EasyEDA C15850")]),
@@ -469,9 +490,9 @@ FAULTS = [
      [("F-5", "fail", "1 NPTH holes, missing 1")]),
     ("the mask closed over a tooling hole", lambda ex, p: ex.gerber["top_mask"].pop(),
      [("F-5", "fail", "top_mask: opening at (27.5, 2.5) smaller than Ø 1.448 mm")]),
-    ("copper in a tooling hole's opening",
+    ("copper in a tooling hole's opening",     # the dot is no pad either: what the drill leaves of it is loose
      lambda ex, p: ex.gerber["top"].append(("flash", ("C", 0.3, 0.3), 3.15, 17.5)),
-     [("F-5", "fail", "top: copper in the opening at (2.5, 17.5)")]),
+     [("F-5", "fail", "top: copper in the opening at (2.5, 17.5)"), ("L-15", "warn", "TOP: 1 piece without pad")]),
 ]
 
 
@@ -513,6 +534,32 @@ def test_no_paste_gap_on_a_side_that_is_not_assembled(project):
     rows = run(project, bottom_only)
     assert not [r for r in rows if r["id"] == "L-14" and r["result"] != "pass"]
     assert next(r for r in rows if r["id"] == "L-14")["actual"] == "0 SMD pads"
+
+
+def test_copper_per_side_of_the_clean_export(project):
+    """L-15 on the clean export: nothing poured (pours = []), so share and bare circle are information; the 3 pieces of
+    TOP (the three nets' tracks with their pads) and J1's two pads on BOTTOM all touch a pad."""
+    rows = {r["check"]: (r["result"], r["actual"]) for r in run(project) if r["id"] == "L-15"}
+    assert rows == {
+        "TOP: copper share and largest copper-free circle (no pour)":
+            ("info", "TOP: 6 % copper, largest copper-free circle Ø 8.2 mm at (5.0, 4.5) mm"),
+        "TOP: every copper piece touches a pad, via or plated hole": ("pass", "TOP: 3 pieces"),
+        "BOTTOM: copper share and largest copper-free circle (no pour)":
+            ("info", "BOTTOM: 1 % copper, largest copper-free circle Ø 19.0 mm at (13.2, 10.1) mm"),
+        "BOTTOM: every copper piece touches a pad, via or plated hole": ("pass", "BOTTOM: 2 pieces")}
+
+
+def test_copper_per_side_settings(project):
+    """[copper] of the board file: max_bare_mm lets the bare BOTTOM pass, min_cover warns below its share."""
+    def settings(ex, p):
+        bare_bottom(ex, p)
+        f = p.root / "hardware" / "boards" / "main.toml"
+        f.write_text(f.read_text() + "\n[copper]\nmax_bare_mm = 20\nmin_cover = { TOP = 10 }\n")
+    rows = run(project, settings)
+    assert findings(rows) == [("L-15", "warn")]
+    by = {r["check"]: (r["result"], r["actual"]) for r in rows if r["id"] == "L-15"}
+    assert by["BOTTOM: no copper-free circle above 20 mm inside the pour outline (poured: GND)"][0] == "pass"
+    assert by["TOP: copper share at least 10 % ([copper] min_cover)"] == ("warn", "TOP: 6 % copper")
 
 
 def test_every_check_has_a_fault():
