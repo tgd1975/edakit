@@ -140,6 +140,7 @@ layout review again (M-5). The keys stand at the top of the file, without a pref
 | `[[loops]]` | `[]` | `a`, `b` (pads "D1.2"), `max_mm`, `what` – check L-11; the circuit's are `layout.loops` of the graph |
 | `copper` | see below | copper per layer in the Gerber files, check L-15 |
 | `order` | – | the order form fields of this board (8.4); with the table the gate writes `fab/<board>/order.md` and runs F-6: `finish` (`"LeadFree HASL"`), `mark` (`"default"`, `"specify"`: at the placeholder `JLCJLCJLCJLC`, `"remove"`), `remark` (`""`; at most 200 ASCII characters), `tab_zones` (`[]`: `{from = [x, y], to = [x, y]}`, two points on the outline in plan mm – the shorter stretch between them), `tab_copper_mm` (`1.0`: no copper of either side this close to a tab zone) |
+| `thickness_mm` | `1.6` | board thickness (mm); the mechanical model `mech_<board>.json` takes the lead protrusion from it (lead `length_mm` − `thickness_mm`, 7.4) |
 | `net_classes` | see below | track widths from the simulated currents |
 
 `[routing]`: `clearance_mil` (6.5; also the least gap between pads of different parts, L-13), `signal_mil` (10), `via` ([24, 12]), `edge_clearance_um` (400: tracks and vias
@@ -200,7 +201,7 @@ Code: `edakit … 2>&1 | cat`.
 | `edakit schematic layout [--dry-run] [--reread] [--force] [--save]` | ✓ / – | graph, schematic, cached geometry | board schematic, `layout_preview_<name>.svg` |
 | `edakit schematic draw [--board] [--out F] [--force]` | – | graph, parts, the schematic file if there; for a `{sim:…}` note the saved simulation result | `schematic_<board>.svg` (or F) |
 | `edakit pcb dump [--ref]` | ✓ | PCB | `pcb_geometry_<board>.json` (parts end at 0°/TOP; through-hole pads with `hole` [w, l] mm and `plated`) |
-| `edakit pcb plan` | – | plan, geometry (the dump; library footprints of `part import` for parts not in it), net currents, graph (`layout`, L-12) | `pcb_plan_<board>.png/.json`, `pcb_netclasses_<board>.json` |
+| `edakit pcb plan` | – | plan, geometry (the dump; library footprints of `part import` for parts not in it), net currents, graph (`layout`, L-12), parts entries (`body`, `lead` `length_mm`, `mate`) | `pcb_plan_<board>.png/.json`, `pcb_netclasses_<board>.json`, `mech_<board>.json` (7.4) |
 | `edakit pcb place [--write] [--only C1,R1]` | – | plan, geometry, graph (`layout.near`, decoupling of L-12), `[near]` | with `--write`: rows with `auto = true` at the end of `[place]` |
 | `edakit pcb parts [--write]` | ✓ | board schematic, PCB, graph | PCB parts, UniqueIds, geometry |
 | `edakit pcb nets [--write]` | ✓ | graph, PCB | pad nets |

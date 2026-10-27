@@ -40,7 +40,9 @@ boards of the project in the current repository. You **change nothing**, neither
    a pour should be (on a board that is seen it reads as a failed pour), floating copper – an island connected to no
    pad. L-15 tests the same in the gate; after a round, read the round's export yourself.
 2. **Mechanics:** connectors reachable at the edge and polarised, mounting holes, the enclosure, parts that must be
-   accessible after assembly.
+   accessible after assembly. The mated plugs `pcb plan` checks and the board in three dimensions are in
+   `<artifacts>/mech_<board>.json` (heights, lead protrusion, plug boxes); a connector without `mate` in its parts entry
+   whose plug may hit something is worth a note.
 3. **Operation:** buttons and controls where the user expects them, labels readable.
 4. **Looks:** where the board is visible: calm arrangement, symmetry where intended, no crowded area next to empty
    space, few and quiet tracks on a visible side. With `[looks]` in the board file, `route check` and stage L give the

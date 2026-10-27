@@ -83,7 +83,10 @@ gets its fault there.
 **Project stages** (`[[release.stages]]` in edakit.toml): `{id = "K", name = "Mechanics", cmd = ["uv", "run",
 "mech/check.py", "--json"], advisory = true}`. The command's last stdout line may be a JSON list of
 `[id, check, actual, expected, ok]`; otherwise its exit code counts. `advisory` findings are listed but do not block
-(in the reference project the printed enclosure was adapted after delivery anyway).
+(in the reference project the printed enclosure was adapted after delivery anyway). A mechanics stage reads the board
+– outline, holes, part boxes, heights, lead protrusion, mated plugs – from `<artifacts>/mech_<board>.json`, which
+`edakit pcb plan` writes (7.4); the gate does not run the plan, so a stage that needs the file current runs
+`edakit pcb plan` first.
 
 ## 8.2 Hashes and sign-offs
 

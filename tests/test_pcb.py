@@ -410,3 +410,145 @@ def test_the_bar_with_d3_turned(project, capsys):
     f.write_text(f.read_text().replace('uniform = { diode = "row" }', 'uniform = { diode = "+x" }'))
     cfg = project.config()
     assert pcb.plan(cfg, cfg.board()) == ["D3 (diode): cathode points -x, uniform +x – turn it by 180° (rot = 0)"]
+
+
+# --- mated plugs and the mechanical model (#62): the example with the test geometry; J1 at (84, 12) turned by 90°, so
+# that its footprint's +y points into the board (-x) and -y to the right edge (+x, the outline at x = 90); its box
+# reaches x = 81.75 … 89.5, y = 9 … 15. U2 (SOIC-16 turned by 90°) covers x = 60.8 … 71.2, y = 14 … 20.
+
+def with_mate(project, mate=None, f=None, **entry):
+    """The example with its test geometry, J1's parts entry (C131337) given `mate` and further fields."""
+    f = f or place_project(project, drop=())
+    part = project.part("C131337")
+    if mate is not None:
+        part["mate"] = mate
+    part.update(entry)
+    project.save_part("C131337", part)
+    return f
+
+
+INTO_BOARD = {"box": [-2.5, 2.25, 2.5, 14.25], "h_mm": 4.5, "exit": "+y"}    # 12 mm out of J1 towards U2 (-x)
+TO_EDGE = {"box": [-2.5, -7.5, 2.5, -5.5], "h_mm": 4.5, "exit": "-y"}       # 2 mm out of J1, over the edge (+x)
+
+
+def test_a_mated_plug_into_the_board_names_the_part_it_hits(project, capsys):
+    with_mate(project, INTO_BOARD)
+    cfg = project.config()
+    assert pcb.plan(cfg, cfg.board()) == ["J1: mated plug reaches into U2 (top)",
+                                          "J1: mated plug leaves towards -x but ends 69.8 mm inside the outline"]
+
+
+def test_a_mated_plug_over_the_edge_passes(project):
+    with_mate(project, TO_EDGE)
+    cfg = project.config()
+    assert pcb.plan(cfg, cfg.board()) == []
+
+
+def test_a_sideways_plug_that_stops_short_of_the_outline(project):
+    with_mate(project, {"box": [-2.5, -5.0, 2.5, -3.0], "exit": "-y"})         # ends at x = 89, 1 mm before the edge
+    cfg = project.config()
+    assert "J1" in cfg.board().edge_ok                                       # edge_ok lifts neither finding
+    assert pcb.plan(cfg, cfg.board()) == ["J1: mated plug leaves towards +x but ends 1.0 mm inside the outline"]
+
+
+def test_a_cable_that_leaves_upwards_needs_no_outline(project):
+    with_mate(project, {**INTO_BOARD, "exit": "+z"})
+    cfg = project.config()
+    assert pcb.plan(cfg, cfg.board()) == ["J1: mated plug reaches into U2 (top)"]
+
+
+def test_a_mated_plug_over_an_smd_part_within_the_silkscreen_tolerance(project):
+    """The plug is a body without a margin, the other part's box has its silkscreen and pads: silk_overlap_mm holds
+    for an SMD part as it does between two SMD boxes."""
+    mate = {"box": [-2.5, 2.25, 2.5, 14.25], "exit": "+z"}                      # y = 9.5 … 14.5: 0.5 mm into U2
+    f = with_mate(project, mate)
+    f.write_text(f.read_text().replace('view = "top"', 'view = "top"\nsilk_overlap_mm = 0.8'))
+    cfg = project.config()
+    assert pcb.plan(cfg, cfg.board()) == []
+    f.write_text(f.read_text().replace("silk_overlap_mm = 0.8", "silk_overlap_mm = 0.3"))
+    cfg = project.config()
+    assert pcb.plan(cfg, cfg.board()) == ["J1: mated plug reaches into U2 (top) – 0.50 mm (silk_overlap_mm 0.3)"]
+
+
+def test_a_plug_turns_and_mirrors_with_its_part():
+    board = config.Board(name="b", title="b", template="t", schematic="s", pcb="p")
+    mate = {"box": [-1.0, 2.0, 1.0, 4.0], "exit": "+y"}
+    _, box, d, far = pcb.mate_shape(board, config.Placement(10, 5, 0, "bottom"), mate)   # local y mirrored
+    assert box == pytest.approx((9, 1, 11, 3)) and pcb.exit_way(d) == "-y" and far == pytest.approx((10, 1))
+    _, box, d, far = pcb.mate_shape(board, config.Placement(10, 5, 90, "top"), mate)
+    assert box == pytest.approx((6, 4, 8, 6)) and pcb.exit_way(d) == "-x" and far == pytest.approx((6, 5))
+    board.view = "bottom"            # seen from the bottom: x mirrored, EasyEDA rotation 180 - rot (Board.to_eda)
+    _, box, d, _ = pcb.mate_shape(board, config.Placement(10, 5, 0, "top"), {**mate, "exit": "+x"})
+    assert box == pytest.approx((9, 1, 11, 3)) and pcb.exit_way(d) == "+x"
+    _, _, d, _ = pcb.mate_shape(board, config.Placement(10, 5, 45, "top"), {**mate, "exit": "+x"})
+    assert pcb.exit_way(d) == pytest.approx([0.7071, 0.7071])                 # turned by 45°: the unit vector
+    assert pcb.mate_shape(board, config.Placement(10, 5, 0, "top"), {**mate, "exit": "+z"})[2:] == (None, None)
+
+
+def test_two_mated_plugs_side_by_side(project):
+    f = with_mate(project, {"box": [-4, -7.5, 4, -5.5], "exit": "-y"})          # 8 mm wide plugs, J1's y = 8 … 16
+    g = project.graph()
+    g["graph"]["components"].append({**project.comp(g, "J1"), "designator": "J2"})
+    project.save_graph(g)
+    f.write_text(f.read_text().replace('SW1 = {', 'J2 = { x = 84, y = 19, rot = 90, side = "top" }\nSW1 = {'))
+    geo = led_bar_geo()
+    geo["J2"] = geo["J1"]
+    (project.root / "build" / "edakit" / "pcb_geometry_main.json").write_text(json.dumps(geo))
+    cfg = project.config()
+    assert pcb.plan(cfg, cfg.board()) == ["J1: mated plug reaches into the mated plug of J2 (top)"]
+
+
+def test_a_parts_entry_with_a_wrong_mate_is_named(project):
+    f = with_mate(project, {"box": [-2.5, -7.5, 2.5], "exit": "sideways"}, body={"h_mm": -1})
+    cfg = project.config()
+    assert pcb.plan(cfg, cfg.board()) == [
+        "J1: parts entry C131337: body.h_mm must be a height in mm, 0 or more",
+        "J1: parts entry C131337: mate.box must be [x0, y0, x1, y1] in footprint mm with x0 < x1 and y0 < y1",
+        "J1: parts entry C131337: mate.exit must be one of +x, -x, +y, -y, +z"]
+    with_mate(project, {"box": [-2.5, -7.5, 2.5, -5.5], "exit": ["+x"], "h_mm": "6"}, f=f, body={"h_mm": 6})
+    cfg = project.config()
+    assert pcb.plan(cfg, cfg.board()) == ["J1: parts entry C131337: mate.exit must be one of +x, -x, +y, -y, +z",
+                                          "J1: parts entry C131337: mate.h_mm must be a height in mm, 0 or more"]
+
+
+def test_mechanical_model(project, capsys):
+    lead = project.part("C131337")["lead"]
+    lead["*"]["length_mm"] = 3.4
+    f = with_mate(project, TO_EDGE, body={"h_mm": 6.0}, lead=lead)
+    key = project.comp(project.graph(), "U2")["lcsc"]
+    part = project.part(key)
+    part["body"] = {"h_mm": 1.75}
+    project.save_part(key, part)
+    cfg = project.config()
+    assert pcb.plan(cfg, cfg.board()) == []
+    assert "  mechanical model -> " in capsys.readouterr().out
+    mech = json.loads((project.root / "build" / "edakit" / "mech_main.json").read_text())
+    assert (mech["board"], mech["units"], mech["view"], mech["thickness_mm"]) == ("main", "mm", "top", 1.6)
+    assert mech["outline"][0] == pytest.approx([88, 0])
+    assert mech["holes"] == [{"x": 3.5, "y": 3.5, "d": 3.2}, {"x": 86.5, "y": 36.5, "d": 3.2}]
+    assert mech["tooling"] == [{"x": 3.5, "y": 36.5, "d": 1.152}, {"x": 86.5, "y": 3.5, "d": 1.152}]
+    j1 = mech["parts"]["J1"]
+    assert (j1["side"], j1["x"], j1["y"], j1["rot"], j1["h_mm"]) == ("top", 84, 12, 90, 6.0)
+    assert j1["box"] == pytest.approx([81.75, 9, 89.5, 15])
+    assert j1["mate"] == {"box": pytest.approx([89.5, 9.5, 91.5, 14.5]), "h_mm": 4.5, "exit": "+x"}
+    assert j1["protrusion_mm"] == pytest.approx(1.8)                         # 3.4 mm lead - 1.6 mm board
+    assert [(q["pad"], q["x"], q["y"]) for q in j1["leads"]] == [("1", pytest.approx(84), pytest.approx(11)),
+                                                                ("2", pytest.approx(84), pytest.approx(13))]
+    assert mech["parts"]["U2"]["h_mm"] == 1.75 and "mate" not in mech["parts"]["U2"]
+    assert set(mech["parts"]["R1"]) == {"side", "x", "y", "rot", "box"}       # nothing known: nothing guessed
+    assert mech["unplaced"] == ["D1", "R2"]
+    f.write_text(f.read_text().replace('view = "top"', 'view = "top"\nthickness_mm = 1.0'))
+    cfg = project.config()
+    pcb.plan(cfg, cfg.board())
+    mech = json.loads((project.root / "build" / "edakit" / "mech_main.json").read_text())
+    assert mech["parts"]["J1"]["protrusion_mm"] == pytest.approx(2.4)
+
+
+def test_without_the_new_fields_the_plan_is_as_before(project, capsys):
+    place_project(project, drop=())
+    cfg = project.config()
+    assert pcb.plan(cfg, cfg.board()) == []
+    assert "mechanical model" not in capsys.readouterr().out                 # output as before …
+    mech = json.loads((project.root / "build" / "edakit" / "mech_main.json").read_text())
+    assert sorted(mech["parts"]) == sorted(cfg.board().place)               # … the model is written in any case
+    assert all(set(p) == {"side", "x", "y", "rot", "box"} for p in mech["parts"].values())

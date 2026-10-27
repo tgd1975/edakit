@@ -8,7 +8,7 @@ everything that matters (in the board file `hardware/boards/<name>.toml`, 10.2),
 edakit handover              # what the circuit hands over: state, sign-offs, what the plan must keep (14.1)
 edakit pcb parts --write     # parts of the board schematic -> PCB (no "Import Changes" dialog)
 edakit pcb dump              # footprint geometry -> <artifacts>/pcb_geometry_<board>.json
-edakit pcb plan              # offline: check the plan, preview PNG, net classes
+edakit pcb plan              # offline: check the plan, preview PNG, net classes, mechanical model
 edakit pcb place --write     # offline: decoupling capacitors, pull and series resistors next to their host
 edakit pcb apply             # outline, holes, tooling holes, fixed parts locked; pads verified
 edakit pcb autolayout        # the unlocked small parts, waits until positions are stable
@@ -139,9 +139,10 @@ change the graph.
 `edakit pcb plan` checks offline: overlaps per side (under a module on pin headers only its pins, SMD parts within a
 silkscreen tolerance: below), outline (0.3 mm margin; `edge_ok` for connectors), keep-outs of holes and tooling holes,
 THT pins of one side under parts of the other, `near` distances, the circuit's layout requirements (L-12), **polarised
-parts that point the same way** – by default LEDs side by side with their anode towards the same side (below); it
-prints the airline length of the fixed parts (a number to compare placements) and writes
-`<artifacts>/pcb_plan_<board>.png`. Look at the picture before `apply`.
+parts that point the same way** – by default LEDs side by side with their anode towards the same side (below) –,
+**mated plugs** clear of the other parts and out through the outline (below); it prints the airline length of the
+fixed parts (a number to compare placements) and writes `<artifacts>/pcb_plan_<board>.png` and the mechanical model
+`<artifacts>/mech_<board>.json`. Look at the picture before `apply`.
 
 **Polarised parts in one direction.** Whoever solders a bag of LEDs, diodes or buzzers by hand turns each one by its
 "+" mark or flat side and should not have to turn every other one – the library footprints of one LED series may even
@@ -198,6 +199,46 @@ silk_overlap_mm = 0.8        # in hardware/boards/<b>.toml, above the tables
 
 With the key, an overlap gives its depth: `R1 / R2: overlap (top) – 1.00 mm (silk_overlap_mm 0.8)`, or
 `J1 / C1: overlap (top) – 0.30 mm (J1 through-hole: silk_overlap_mm does not apply)`.
+
+**Mated plugs.** A connector's footprint box ends where the plug begins: the plug with its strain relief or overmould,
+and the cable behind it, need room the footprint does not show. The parts entry of a connector can carry its mated
+plug (`mate`, 4.1): a box in footprint mm, its height and the direction the cable leaves it. `pcb plan` turns and
+places the box with the part and checks, for every placed part with `mate`:
+
+- the plug runs into no other part's box on its side – into an SMD part's box at most `silk_overlap_mm`, as two SMD
+  boxes may (the plug is a body without silkscreen, the other box has its margin) – and into no other part's plug
+- a plug whose cable leaves sideways (`+x`, `-x`, `+y`, `-y` in footprint coordinates) reaches the outline in that
+  direction, measured from the middle of its far end: a cable that leaves across the board is a finding
+
+`edge_ok` lifts neither: it lets the connector's own box touch or overhang the outline, nothing more. A plug whose
+cable is bent away from the board right behind it is `exit = "+z"`, with the bend in its box; then only the first
+check applies.
+
+```json
+"mate": {"box": [-2.5, -6.6, 2.5, -4.6], "h_mm": 5.0, "exit": "-y"}
+```
+
+A finding reads `J1: mated plug reaches into U2 (top)` – with `silk_overlap_mm`, how deep: `J1: mated plug reaches
+into D32 (top) – 1.01 mm (silk_overlap_mm 0.8)` –, `J1: mated plug reaches into the mated plug of J2 (top)`, or
+`J1: mated plug leaves towards -x but ends 69.8 mm inside the outline` (a plan direction). A `body`, `lead`
+`length_mm` or `mate` that is not as 4.1 says is named with its parts entry. Without `mate` nothing changes.
+
+**The mechanical model.** `pcb plan` writes `<artifacts>/mech_<board>.json` on every run, for the project's own
+mechanics stage (`[[release.stages]]`, 8.1) and its enclosure scripts – they read the board from it instead of keeping
+the part boxes, heights, plug sizes and the board thickness as constants of their own. Plan coordinates in mm, as seen
+from `view`:
+
+| Key | Content |
+|---|---|
+| `board`, `units` (`"mm"`), `view` | the board, and the side the coordinates are seen from (`bottom`: x mirrored) |
+| `thickness_mm` | the board file's `thickness_mm` (default 1.6) |
+| `outline` | the outline polygon `[[x, y], …]` |
+| `holes`, `tooling` | `[{x, y, d}]` mounting holes and tooling holes |
+| `parts` | per part in `[place]`: `side` (the side it sits on), `x`, `y`, `rot`, `box` `[x0, y0, x1, y1]` (the footprint's, silkscreen included) – and where its parts entry knows them: `h_mm` (`body`), `leads` (`[{pad, x, y, protrusion_mm}]` per through-hole pad with a lead `length_mm`; the protrusion is length − `thickness_mm`, out of the other side) with the largest as `protrusion_mm`, `mate` (`box` in plan mm, `h_mm`, `exit`: `+x`, `-x`, `+y`, `-y` in plan coordinates or `+z` away from the board; for a part turned by an angle that is no multiple of 90° the unit vector `[dx, dy]`) |
+| `unplaced` | the parts the plan leaves to the auto-layout: the model does not know where they go |
+
+Unknown values are left out, not guessed. The file holds no limits: how high a part may stand, how far a lead may
+stick out, what the enclosure needs – that is the project's, from these numbers.
 
 **Parts next to their host.** `edakit pcb place` works out a spot, offline, for every part that `[place]` lacks but
 the circuit or the board file ties to a host: `layout.near` of the graph, `[near]` of the board file, and the

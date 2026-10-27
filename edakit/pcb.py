@@ -7,9 +7,11 @@ mounting and tooling holes, copper pours, EasyEDA's auto-layout.
     edakit pcb plan                 offline: check the plan (overlaps – under a part on pin headers only its pins,
                                     SMD parts within silk_overlap_mm –, outline, holes, THT pins under parts of the
                                     other side, near, polarised parts of the kinds in `uniform` pointing the same way
-                                    (default: LEDs in a row); L-12 the layout requirements of the circuit; P-7 holes
-                                    and leads), airline length, preview PNG, net classes from the simulation; a part
-                                    not in the dump yet takes the library footprint `edakit part import` cached
+                                    (default: LEDs in a row), mated plugs (`mate` of the parts entry) clear of the
+                                    other parts and out through the outline; L-12 the layout requirements of the
+                                    circuit; P-7 holes and leads), airline length, preview PNG, net classes from the
+                                    simulation, the mechanical model mech_<board>.json; a part not in the dump yet
+                                    takes the library footprint `edakit part import` cached
     edakit pcb place [--write] [--only C1,R1]
                                     offline: a spot next to its host for every part the circuit or the board file
                                     ties to one (layout.near, [near], the decoupling of L-12) and [place] lacks;
@@ -231,7 +233,9 @@ def check_plan(cfg, board, geo, place, boxes, tht):
             if part in boxes and host in boxes and box_gap(boxes[part], boxes[host]) > board.near_mm:
                 problems.append(f"{part}: {box_gap(boxes[part], boxes[host]):.1f} mm from {host} "
                                 f"(near_mm {board.near_mm:g})")
-    problems += polarity_findings(board, geo, place, Design.from_config(cfg))
+    design = Design.from_config(cfg)
+    problems += polarity_findings(board, geo, place, design)
+    problems += mate_findings(board, geo, place, boxes, design)
     return problems
 
 
@@ -389,7 +393,184 @@ def polarity_way(board, geo, p, pins, ref, kind, way, word):
             f"(rot = {(p.rot + turn) % 360:g})")
 
 
-def render(cfg, board, geo, place, boxes, tht, problems):
+# --- the third dimension: body height, lead length, mated plug; the mechanical model --------------------------------
+
+EXITS = {"+x": (1, 0), "-x": (-1, 0), "+y": (0, 1), "-y": (0, -1), "+z": None}   # +z: away from the board
+EXIT_TOL_MM = 0.05     # a sideways plug whose far end lies less than this inside the outline reaches it
+
+
+def _given_mm(v, low=None, above=False):
+    if isinstance(v, bool) or not isinstance(v, (int, float)):
+        return False
+    return low is None or (v > low if above else v >= low)
+
+
+def part_mech(part):
+    """The third dimension of a parts entry, every field optional: `body.h_mm` (height of the body above the board, on
+    the part's side), `lead.<pad or "*">.length_mm` (lead length below the seating plane, beside the cross-section of
+    L-9), `mate` – the mated plug with its strain relief: `box` [x0, y0, x1, y1] in footprint mm (relative to the
+    part's origin at 0° on TOP, as the geometry dump), `h_mm`, and `exit`, the direction the cable leaves the box:
+    "+x", "-x", "+y", "-y", or "+z" away from the board. -> ({"h_mm", "leads": {pad: length}, "mate"} as far as the
+    entry gives them, [what is wrong])."""
+    part, out, bad = part or {}, {}, []
+    if "body" in part:
+        h = part["body"].get("h_mm") if isinstance(part["body"], dict) else None
+        if _given_mm(h, 0):
+            out["h_mm"] = float(h)
+        else:
+            bad.append("body.h_mm must be a height in mm, 0 or more")
+    leads = {}
+    for pad, lead in (part.get("lead") or {}).items():
+        if isinstance(lead, dict) and "length_mm" in lead:
+            if _given_mm(lead["length_mm"], 0, above=True):
+                leads[str(pad)] = float(lead["length_mm"])
+            else:
+                bad.append(f"lead.{pad}.length_mm must be a length in mm, more than 0")
+    if leads:
+        out["leads"] = leads
+    if "mate" in part:
+        m = part["mate"] if isinstance(part["mate"], dict) else {}
+        box, wrong = m.get("box"), []
+        if not (isinstance(box, list) and len(box) == 4 and all(_given_mm(v) for v in box) and box[0] < box[2]
+                and box[1] < box[3]):
+            wrong.append("mate.box must be [x0, y0, x1, y1] in footprint mm with x0 < x1 and y0 < y1")
+        if not isinstance(m.get("exit"), str) or m["exit"] not in EXITS:
+            wrong.append(f"mate.exit must be one of {', '.join(EXITS)}")
+        if "h_mm" in m and not _given_mm(m["h_mm"], 0):
+            wrong.append("mate.h_mm must be a height in mm, 0 or more")
+        if not wrong:
+            out["mate"] = {"box": [float(v) for v in box], "exit": m["exit"]}
+            if "h_mm" in m:
+                out["mate"]["h_mm"] = float(m["h_mm"])
+        bad += wrong
+    return out, bad
+
+
+def mate_shape(board, p, mate):
+    """The mated plug of a part placed as p, in plan mm -> (its corners, its box, the plan direction of `exit` – None
+    for "+z" –, the middle of its far end in that direction)."""
+    x0, y0, x1, y1 = mate["box"]
+
+    def at(x, y):
+        return board.transform((x * MIL_PER_MM, y * MIL_PER_MM), p.x, p.y, p.rot, p.side)
+    corners = [at(x0, y0), at(x1, y0), at(x1, y1), at(x0, y1)]
+    xs, ys = [c[0] for c in corners], [c[1] for c in corners]
+    box = (min(xs), min(ys), max(xs), max(ys))
+    d = EXITS[mate["exit"]]
+    if d is None:
+        return corners, box, None, None
+    fx, fy = (x0 + x1) / 2 + d[0] * (x1 - x0) / 2, (y0 + y1) / 2 + d[1] * (y1 - y0) / 2
+    a, b = at(fx, fy), at(fx + d[0], fy + d[1])
+    return corners, box, (b[0] - a[0], b[1] - a[1]), a
+
+
+def exit_way(d):
+    """A plan direction: "+x", "-x", "+y", "-y" ("+z" for None); turned by an angle that is no multiple of 90°, the
+    unit vector [dx, dy]."""
+    if d is None:
+        return "+z"
+    for name, v in EXITS.items():
+        if v and math.dist(d, v) < 1e-6:
+            return name
+    return [round(d[0], 4), round(d[1], 4)]
+
+
+def inside_by(outline, point, d):
+    """How far `point` lies inside the outline along the direction d: its way to the outline's edge (mm), 0 on or
+    outside the outline."""
+    from shapely.geometry import LineString, Point
+    pt = Point(point)
+    if not outline.contains(pt):
+        return 0.0
+    x0, y0, x1, y1 = outline.bounds
+    reach = 2 * math.hypot(x1 - x0, y1 - y0) + 1
+    n = math.hypot(*d)
+    ray = LineString([point, (point[0] + d[0] / n * reach, point[1] + d[1] / n * reach)])
+    hit = ray.intersection(outline.exterior)
+    return 0.0 if hit.is_empty else pt.distance(hit)
+
+
+def mate_findings(board, geo, place, boxes, design):
+    """Mated plugs (`mate` of the parts entry) of the placed parts. The plug box, turned and placed with its part, runs
+    into no other part's box on its side – into an SMD part's box at most silk_overlap_mm, as two SMD boxes may – and
+    into no other part's plug; a plug whose cable leaves sideways reaches the outline in that direction, measured
+    from the middle of its far end. edge_ok lifts neither. Fields of the third dimension that are wrong are named."""
+    problems, plugs = [], {}
+    for ref in sorted((r for r in place if r in boxes), key=natural_key):
+        part = design.part(ref) if ref in design.comps else None
+        if not part:
+            continue
+        mech, bad = part_mech(part)
+        problems += [f"{ref}: parts entry {design.entry_key(ref)}: {b}" for b in bad]
+        if "mate" in mech:
+            plugs[ref] = mate_shape(board, place[ref], mech["mate"])
+    if not plugs:
+        return problems
+    outline, tol = outline_polygon(board), board.silk_overlap_mm
+    order = list(plugs)
+    for i, ref in enumerate(order):
+        _, box, d, far = plugs[ref]
+        side = place[ref].side
+        for other in sorted(boxes, key=natural_key):
+            if other == ref or place[other].side != side or not overlap(box, boxes[other]):
+                continue
+            found = f"{ref}: mated plug reaches into {other} ({side})"
+            depth = overlap_depth(box, boxes[other])
+            if not tol:
+                problems.append(found)
+            elif through_hole(geo[other]):
+                problems.append(f"{found} – {depth:.2f} mm ({other} through-hole: silk_overlap_mm does not apply)")
+            elif round(depth, 6) > tol:
+                problems.append(f"{found} – {depth:.2f} mm (silk_overlap_mm {tol:g})")
+        problems += [f"{ref}: mated plug reaches into the mated plug of {other} ({side})" for other in order[i + 1:]
+                     if place[other].side == side and overlap(box, plugs[other][1])]
+        if d is not None:
+            inside = inside_by(outline, far, d)
+            if inside >= EXIT_TOL_MM:
+                problems.append(f"{ref}: mated plug leaves towards {exit_way(d)} but ends {inside:.1f} mm inside the "
+                                "outline")
+    return problems
+
+
+def mech_model(board, geo, place, boxes, design, unplaced):
+    """The board in three dimensions, for the project's mechanics stage and enclosure scripts (`mech_<board>.json`):
+    plan mm seen from `view`; outline, holes, tooling holes, thickness_mm; per placed part its side, position, box
+    (the footprint's, silkscreen included) and, where its parts entry knows them, h_mm, the through-hole leads with
+    their protrusion (lead length - thickness_mm, per lead and the largest) and the mated plug (box, h_mm, exit as a
+    plan direction); the parts the plan leaves to the auto-layout by name. Unknown values are left out."""
+    parts = {}
+    for ref in sorted((r for r in place if r in boxes), key=natural_key):
+        p = place[ref]
+        mech, _ = part_mech(design.part(ref) if ref in design.comps else None)
+        row = {"side": p.side, "x": p.x, "y": p.y, "rot": p.rot, "box": [round(v, 3) for v in boxes[ref]]}
+        if "h_mm" in mech:
+            row["h_mm"] = mech["h_mm"]
+        lengths, pads, leads = mech.get("leads", {}), geo[ref].get("pads", {}), []
+        for num in sorted(pads, key=natural_key):
+            length = lengths.get(num, lengths.get("*"))
+            if not pads[num].get("tht") or length is None:
+                continue
+            for q in geo[ref].get("pads_same_number", {}).get(num) or [pads[num]]:
+                x, y = board.transform((q["x"], q["y"]), p.x, p.y, p.rot, p.side)
+                leads.append({"pad": num, "x": round(x, 3), "y": round(y, 3),
+                              "protrusion_mm": round(length - board.thickness_mm, 3)})
+        if leads:
+            row["protrusion_mm"] = max(q["protrusion_mm"] for q in leads)
+            row["leads"] = leads
+        if "mate" in mech:
+            _, box, d, _ = mate_shape(board, p, mech["mate"])
+            row["mate"] = {"box": [round(v, 3) for v in box], "exit": exit_way(d)}
+            if "h_mm" in mech["mate"]:
+                row["mate"]["h_mm"] = mech["mate"]["h_mm"]
+        parts[ref] = row
+    return {"board": board.name, "units": "mm", "view": board.view, "thickness_mm": board.thickness_mm,
+            "outline": [[round(x, 4), round(y, 4)] for x, y in board.outline],
+            "holes": [{"x": h["x"], "y": h["y"], "d": h["d"]} for h in board.holes],
+            "tooling": [{"x": tx, "y": ty, "d": board.tooling_d} for tx, ty in board.tooling],
+            "parts": parts, "unplaced": list(unplaced)}
+
+
+def render(cfg, board, geo, place, boxes, tht, problems, plugs=None):
     import matplotlib
     matplotlib.use("Agg")
     import matplotlib.pyplot as plt
@@ -419,6 +600,10 @@ def render(cfg, board, geo, place, boxes, tht, problems):
             if own:
                 ax.text((x0 + x1) / 2, (b[1] + b[3]) / 2, r, ha="center", va="center", color="white",
                         fontsize=6 if (b[2] - b[0]) < 8 else 8)
+            if own and r in (plugs or {}):   # the mated plug, dashed
+                m = plugs[r]
+                mx0, mx1 = (m[0], m[2]) if mirror == 1 else (-m[2], -m[0])
+                ax.add_patch(Rectangle((mx0, m[1]), mx1 - mx0, m[3] - m[1], fc="none", ec=col, lw=1, ls="--"))
         for px, py in tht["top"] + tht["bottom"]:
             ax.add_patch(Circle((mirror * px, py), 0.45, fc="#ffd700", ec="none"))
         ax.set_title(f"{side} side" + ("" if mirror == 1 else " (seen from that side)"))
@@ -489,9 +674,15 @@ def plan(cfg, board):
                   + ", ".join(sorted((r for r, k in skipped if k == kind), key=natural_key)) + f" ({kind})")
     print(f"  {len(place)} fixed parts, {len(unplaced)} for the auto-layout; airline length of the fixed parts "
           f"(without {design.ground}): {wirelength(board, geo, place, design.ground) / 1000:.2f} m")
-    print(f"  preview -> {render(cfg, board, geo, place, boxes, tht, problems)}")
+    mech = mech_model(board, geo, place, boxes, design, unplaced)
+    plugs = {r: row["mate"]["box"] for r, row in mech["parts"].items() if "mate" in row}
+    print(f"  preview -> {render(cfg, board, geo, place, boxes, tht, problems, plugs)}")
     cfg.artifact(f"pcb_plan_{board.name}.json").write_text(json.dumps(
         {r: {"x": p.x, "y": p.y, "rot": p.rot, "side": p.side} for r, p in place.items()}, indent=1))
+    path = cfg.artifact(f"mech_{board.name}.json")
+    path.write_text(json.dumps(mech, indent=1))
+    if any(k in row for row in mech["parts"].values() for k in ("h_mm", "leads", "mate")):
+        print(f"  mechanical model -> {path}")
     net_classes(cfg, board)
     return problems
 

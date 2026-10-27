@@ -369,3 +369,16 @@ def test_looks_key():
                        ({"visible": "top", "max_vias": 1.5}, "max_vias must be a whole number")):
         with pytest.raises(ConfigError, match=msg):
             _board("b", {}, {"looks": value})
+
+
+def test_thickness_key(tmp_path):
+    from edakit.config import _board
+    assert _board("b", {}, {}).thickness_mm == 1.6                         # no key: 1.6 mm, only the mechanical model reads it
+    assert _board("b", {}, {"thickness_mm": 1.0}).thickness_mm == 1.0
+    for value in (0, -1, "1.6", True):
+        with pytest.raises(ConfigError, match="thickness_mm must be a thickness in mm, more than 0"):
+            _board("b", {}, {"thickness_mm": value})
+    (tmp_path / "edakit.toml").write_text('[project]\nname = "t"\n[boards.main]\n')
+    (tmp_path / "hardware" / "boards").mkdir(parents=True)
+    (tmp_path / "hardware" / "boards" / "main.toml").write_text("thickness_mm = 0.8\n")
+    assert load(tmp_path / "edakit.toml").board().thickness_mm == 0.8

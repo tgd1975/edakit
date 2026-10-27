@@ -42,6 +42,7 @@ PASTE_GAP_MM = 0.4               # [release] assembly paste_gap_mm: SMD pads of 
 MAX_BARE_MM = 5.0                # [copper] max_bare_mm: largest copper-free circle on a poured layer (L-15)
 UNIFORM = {"led": "row"}         # uniform: LEDs side by side point the same way – the plan check without the key
 UNIFORM_WAYS = ("row", "+x", "-x", "+y", "-y")
+THICKNESS_MM = 1.6               # board thickness: the lead protrusion of the mechanical model (pcb plan)
 
 PROJECT_KEYS = ("name", "company", "quantity", "distributors", "lock", "agreements", "graph", "parts", "sim",
                 "sim_plugin", "schematic", "signoff", "artifacts", "reports", "datasheets", "stock", "stock_margin_pct",
@@ -50,7 +51,7 @@ BOARD_KEYS = ("title", "template", "schematic", "pcb", "file")            # [boa
 BOARD_FILE_KEYS = ("revision", "view", "outline", "holes", "tooling", "place", "near", "near_mm", "edge_mm", "edge_ok",
                    "on_headers", "header_keep_mm", "silk_overlap_mm", "park", "routing", "pours", "pour_regions",
                    "pour_min_piece_mm2", "pour_inset_mm", "silk", "loops", "net_classes", "copper", "order", "uniform",
-                   "looks")
+                   "looks", "thickness_mm")
 SCHEMATIC_KEYS = ("stub", "layout")
 RELEASE_KEYS = ("layout_files", "state_files", "assembly", "stages")
 PCBA = ("economic", "standard")  # [release] assembly.pcba: the assembler's class of the order (P-4)
@@ -115,6 +116,7 @@ class Board:
     order: dict | None = None                         # [order]: the order form fields of this board (F-6); None: none
     uniform: dict | None = None                       # kind -> "row" | "+x" | "-x" | "+y" | "-y"; None: UNIFORM
     looks: dict | None = None                         # [looks]: visible ("top" | "bottom"), max_track_m, max_vias
+    thickness_mm: float = THICKNESS_MM                # board thickness: lead protrusion in mech_<board>.json
 
     # --- plan <-> EasyEDA -------------------------------------------------------------------------------------------
     def to_eda(self, x, y, rot, side):
@@ -403,6 +405,9 @@ def _board(name, entry, b, file=""):
             raise ConfigError(f"board {name}: looks.max_track_m must be a length in m, 0 or more")
         if "max_vias" in looks and not number(looks["max_vias"], int):
             raise ConfigError(f"board {name}: looks.max_vias must be a whole number, 0 or more")
+    thickness = b.get("thickness_mm", THICKNESS_MM)
+    if isinstance(thickness, bool) or not isinstance(thickness, (int, float)) or thickness <= 0:
+        raise ConfigError(f"board {name}: thickness_mm must be a thickness in mm, more than 0")
     silk = b.get("silk", {})
     if not isinstance(silk.get("solder_side", False), bool):
         raise ConfigError(f"board {name}: silk.solder_side must be true or false")
@@ -455,6 +460,7 @@ def _board(name, entry, b, file=""):
         order=_order(name, b.get("order")),
         uniform=dict(uniform) if uniform is not None else None,
         looks=dict(looks) if looks is not None else None,
+        thickness_mm=float(thickness),
     )
 
 

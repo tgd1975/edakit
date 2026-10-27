@@ -45,7 +45,9 @@ profile says: `${CLAUDE_PLUGIN_ROOT}/skills/part-search/distributors/<name>.md` 
   separately at LCSC with a minimum gets `{"lcsc": {"moq": 20}}` – `edakit order` rounds its cart line up. After the
   pattern of a similar part: `kind`, `pins` (names identical to the graph, `type`, `role`, `vmax`), `params`,
   `ratings`, `spice` for diodes/transistors, `lead` for through-hole parts (P-7 stays pending without it and holds
-  it to the footprint's holes at once), `sources` (mark every assumption as "assumption" – also a value taken from a
+  it to the footprint's holes at once; with `length_mm` when the drawing gives it), `body` `h_mm` when the board goes
+  into an enclosure, `mate` for a connector whose plug needs room (the mated plug from the manufacturer's assembly
+  drawing, handbook 4.1), `sources` (mark every assumption as "assumption" – also a value taken from a
   sibling part or the series, e.g. "VR_max = 5 V from XL-304UGD of the same series: assumption"; the gate protocol
   lists them). The block library (`edakit/blocks/parts/` of the plugin) has checked entries to copy from.
 - What the checks read from the datasheet besides the limits: input-only pins `type: input`; strapping pins `"strap":
