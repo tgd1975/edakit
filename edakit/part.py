@@ -665,14 +665,11 @@ def _download(url):
 
 
 def catalogue_search(keyword, page_size=25):
-    """JLCPCB's public parts catalogue, the endpoint F-2 asks (release/fab.py, no login; only the keyword leaves the
-    machine): the hits of a full-text search as the catalogue gives them. Network errors and a changed answer raise.
-    The one place part fetch and part search reach the catalogue."""
-    from .release.fab import JLC_SEARCH
-    req = urllib.request.Request(JLC_SEARCH, headers={"Content-Type": "application/json", "User-Agent": "Mozilla/5.0"},
-                                 data=json.dumps({"keyword": keyword, "currentPage": 1, "pageSize": page_size}).encode())
-    with urllib.request.urlopen(req, timeout=30) as resp:
-        return json.load(resp)["data"]["componentPageInfo"]["list"] or []
+    """JLCPCB's public parts catalogue through F-2's client (release/fab.py jlc_search; no login, only the keyword
+    leaves the machine): the hits of a full-text search as the catalogue gives them. Network errors and a changed
+    answer raise. The one place part fetch and part search reach the catalogue."""
+    from .release import fab
+    return fab.jlc_search(keyword, page_size=page_size)
 
 
 def datasheet_files(cfg, key):
