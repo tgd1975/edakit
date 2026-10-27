@@ -58,5 +58,7 @@ proposal (concrete move, rotation or side), and **rule**: the check it falls und
 rules`, e.g. "L-11 (short current loops)"), or **check candidate**: what a rule over the plan, the geometry or the
 Gerber files would test to find it again, or "judgement" (looks, operation). A deviation from a guideline or a
 datasheet recommendation without a realistic consequence is not a finding; name gold plating as such. Then what is
-good (short) and what you could not check. For M-5 say clearly "M-5: OK for layout hash <hash>" or what must be fixed
-first.
+good (short) and what you could not check. For M-5 say clearly "M-5: OK for fab hash <hash>" (the `fab_sha256` in
+the protocol header of the run whose files you reviewed; "layout hash" when the sign-off file gives M-5 the scope
+`layout`) or what must be fixed first. Reviewing again after a change: `edakit fab diff <reviewed run> <new run>`
+lists the changed layers and spots.

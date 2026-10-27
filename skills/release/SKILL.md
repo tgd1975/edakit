@@ -29,7 +29,9 @@ Concept: `${CLAUDE_PLUGIN_ROOT}/handbook/08-release-gate.md`.
    regulatory-reviewer checks circuit and parts against the rules for the purpose in the graph (usually done at the
    hand-over already; it counts as long as the circuit hash is the same); M-5 – agent pcb-reviewer checks the layout
    on the manufacturing files of this run. OK → `done_by` = the agent, date, note, and the hash of its scope from the
-   protocol header into the sign-off file. Not OK → fix the cause and check again. What changes looks or operation is
+   protocol header into the sign-off file – for scope `fab` (M-5, M-2) the `fab_sha256` of the run whose files were
+   reviewed; a later run with the same files keeps it. When it lapsed: `edakit fab diff <reviewed run> <new run>`
+   shows what changed, and the review looks at that. Not OK → fix the cause and check again. What changes looks or operation is
    the user's call (decision-round skill).
 6. **RELEASED:** `fab/manifest.json` says `"released": true`, and the run is the current release – the gate marked
    every earlier released run as superseded (`edakit release current` shows it). Archive the folder in git

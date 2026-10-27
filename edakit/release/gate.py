@@ -18,8 +18,9 @@ RELEASED only if
   - every part is verified and every manual check of phase 'export' is signed – the regulatory review M-6 also when
     the sign-off file does not list it,
   - all of that for exactly this state: sign-offs count only for the hash of their scope – 'circuit' (graph with its
-    check settings, parts database, simulation config) or 'layout' (the board files, further layout_files of
-    [release], the footprint geometry). An accepted
+    check settings, parts database, simulation config), 'layout' (the board files, further layout_files of
+    [release], the footprint geometry) or 'fab' (what the manufacturer builds from: the Gerber layers rasterised, the
+    drill hits, BOM and CPL rows – known after stage F, fab.fab_layers). An accepted
     warning with scope 'decision' counts regardless of the hash and refers to a numbered decision in the docs.
 Exit code: 0 = released, 2 = not released, 1 = tool error.
 
@@ -61,7 +62,7 @@ OFFLINE, WITH_EASYEDA = "PGE", "SLF"
 PHASES = [("export", "before the export (condition of the release)"),
           ("order", "after uploading to the manufacturer, before paying"),
           ("acceptance", "after delivery, per board")]
-SCOPE_KEY = {"circuit": "state_sha256", "layout": "layout_sha256"}
+SCOPE_KEY = {"circuit": "state_sha256", "layout": "layout_sha256", "fab": "fab_sha256"}
 REQUIRED = {   # manual checks every release needs, also when an older sign-off file does not list them
     "M-6": {"phase": "export", "scope": "circuit",
             "text": "Regulatory review: circuit and parts against EU law for the stated purpose (RoHS, REACH, radio, "
@@ -129,9 +130,16 @@ def load_signoff(cfg, head):
         return {"manual": [], "accepted_warnings": []}, [f"{path.name} missing – no sign-offs"]
     s = json.loads(path.read_text(encoding="utf-8"))
     notes, valid = [], {"decision": True}
+    used = {x.get("scope", "circuit") for x in [*s.get("manual", []), *s.get("accepted_warnings", [])]}
     for scope, key in SCOPE_KEY.items():
-        valid[scope] = s.get(key) == head[key]
-        if not valid[scope]:
+        if scope == "fab" and head.get(key) is None:   # known only after stage F
+            valid[scope] = False
+            if scope in used:
+                notes.append(f"{path.name}: sign-offs with scope 'fab' are not checked in a run without stage F "
+                             "(no fab_sha256) and do not count")
+            continue
+        valid[scope] = s.get(key) == head.get(key)
+        if not valid[scope] and (scope != "fab" or scope in used or key in s):
             notes.append(f"{path.name}: sign-offs with scope '{scope}' belong to another state ({key}) and do not count")
     manual = [m if valid.get(m.get("scope", "circuit")) else {**m, "done_by": None} for m in s.get("manual", [])]
     for sid, m in REQUIRED.items():
@@ -279,6 +287,17 @@ def stage_fab(cfg, outdir):
     return rows
 
 
+def fab_hashes(cfg, outdir):
+    """fab_method, fab_layers per board and fab_sha256 of this run's manufacturing files (stage F)."""
+    from . import fab
+    try:
+        layers = {b: fab.fab_layers(outdir / "fab" / b, b) for b in cfg.boards}
+    except Exception as e:   # unreadable files: F-4/F-5 name them; the sign-offs with scope 'fab' then do not count
+        print(f"  fab hash not computed: {e}", file=sys.stderr)
+        return {}
+    return {"fab_method": fab.FAB_METHOD, "fab_layers": layers, "fab_sha256": fab.fab_hash(layers)}
+
+
 def decide(rows, sim_checks, signoff, stages_run, stages):
     reasons = []
     n_fail = sum(r["result"] == "fail" for r in rows) + sum(c["result"] == "fail" for c in sim_checks)
@@ -315,6 +334,8 @@ def write_manifest(cfg, outdir, head, decision):
                 "graph_version": head.get("graph_version"),
                 "graph_sha256": head["graph_sha256"], "state_sha256": head["state_sha256"],
                 "layout_sha256": head["layout_sha256"], "files": files}
+    if head.get("fab_sha256"):
+        manifest.update(fab_method=head["fab_method"], fab_sha256=head["fab_sha256"], fab_layers=head["fab_layers"])
     if decision == "RELEASED":
         manifest["status"] = "released"
     fab.mkdir(exist_ok=True)
@@ -481,6 +502,8 @@ def write_protocol(cfg, outdir, head, rows, sim, signoff, notes, decision, reaso
          f"| SHA-256 graph | `{head['graph_sha256']}` |",
          f"| SHA-256 circuit | `{head['state_sha256']}` (graph, parts database, simulation config) |",
          f"| SHA-256 layout | `{head['layout_sha256']}` (layout files, footprint geometry) |",
+         *([f"| SHA-256 fab | `{head['fab_sha256']}` (what the manufacturer builds from: Gerber layers, drill hits, "
+            f"BOM and CPL rows – {head['fab_method']}) |"] if head.get("fab_sha256") else []),
          f"| Git | `{head['git_commit']}`{' + uncommitted changes' if head['git_dirty'] else ''} |",
          f"| Tools | Python {head['tools']['python']}, edakit {head['tools']['edakit']}, {head['tools']['ngspice']}, "
          f"easyeda-mcp-pro {head['tools']['easyeda-mcp-pro']} |",
@@ -579,7 +602,6 @@ def main(cfg, args):
     head = header(cfg)
     outdir = cfg.reports / dt.datetime.fromisoformat(head["time"]).strftime("%Y%m%d-%H%M%S")
     outdir.mkdir(parents=True, exist_ok=True)
-    signoff, notes = load_signoff(cfg, head)
     design = Design.from_config(cfg)
     custom = [(st["id"], st["name"], st.get("about", " ".join(st["cmd"]))) for st in cfg.release.get("stages", [])]
     stages = STAGES[:3] + custom + STAGES[3:]
@@ -607,6 +629,8 @@ def main(cfg, args):
         print("[L/F] board and manufacturing files …", flush=True)
         rows += stage_fab(cfg, outdir)
         stages_run |= set(WITH_EASYEDA)
+        head.update(fab_hashes(cfg, outdir))
+    signoff, notes = load_signoff(cfg, head)    # after stage F: the sign-offs with scope 'fab' need its hash
     decision, reasons = decide(rows, sim["checks"], signoff, stages_run, stages)
     if args.easyeda:
         files = write_manifest(cfg, outdir, head, decision)

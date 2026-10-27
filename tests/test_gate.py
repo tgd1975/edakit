@@ -54,7 +54,8 @@ def test_signoff_counts_only_for_its_hash(project):
     loaded, notes = gate.load_signoff(cfg, {"state_sha256": "abc", "layout_sha256": "OTHER"})
     by_id = {m["id"]: m["done_by"] for m in loaded["manual"]}
     assert by_id["M-1"] == "agent"          # scope circuit, hash matches
-    assert by_id["M-5"] is None             # scope layout, hash differs
+    assert by_id["M-4"] is None             # scope layout, hash differs
+    assert by_id["M-5"] is None             # scope fab: no stage F, no fab hash
     assert any("layout" in n for n in notes)
 
 

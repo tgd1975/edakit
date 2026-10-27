@@ -61,7 +61,7 @@ project the layout review measured the LED side by hand at every round; the row 
 | F-1 | BOM generated **from the graph** in JLCPCB format = EasyEDA's BOM per designator; every LCSC number in the parts database; parts with `bom: false` left out on purpose |
 | F-2 | every BOM line in JLCPCB's public assembly catalogue with stock for `quantity` boards (otherwise only pre-order), under the MPN of its parts entry; another class than `jlc_class` warns – P-4 checks the same and more from the stock snapshot when the part is chosen |
 | F-3 | pick and place: every BOM part exactly once, side and rotation = PCB; sides and SMD-only as `[release] assembly` says (Economic PCBA: one side, SMD only; two SMD sides need Standard PCBA) |
-| F-4 | Gerber ZIP, BOM and pick and place from the same run; `fab/manifest.json` with SHA-256 per file and the state hashes |
+| F-4 | Gerber ZIP, BOM and pick and place from the same run; `fab/manifest.json` with SHA-256 per file, the state hashes and the fab hash (8.2) |
 | F-5 | Gerber set complete (a missing file is named here, and L-2, L-8, L-9 and L-17, which read it, report it as not checked); outline and mounting holes from the outline layer = plan (± 0.2 mm); tooling holes in the NPTH file, mask open, no copper in the opening |
 | F-6 | only with `[order]` in the board file (8.4): the remark at most 200 characters, ASCII (fail); `mark = "specify"` with the placeholder `JLCJLCJLCJLC` on a silkscreen layer of pcb.json, at least 0.8 mm high in `[[silk.texts]]` (fail; no height there: warning); the placeholder with another mark (warning); Economic PCBA with fewer than 2 tooling holes (warning: JLCPCB drills its own); no copper of either side within `tab_copper_mm` of a declared tab zone, measured on the Gerber copper against the Gerber outline (fail, with the distance and the position); the outline stretches free of copper (information) |
 
@@ -93,11 +93,22 @@ gets its fault there.
 
 ## 8.2 Hashes and sign-offs
 
-Every run records two hashes in the protocol header:
+Every run records two hashes in the protocol header, and a run with stage F a third:
 
 - **circuit** (`state_sha256`): graph (with its ground net and check settings), parts database, simulation config
   (and plugin, `[release] state_files`)
 - **layout** (`layout_sha256`): the board files, the footprint geometry (and `[release] layout_files`)
+- **fab** (`fab_sha256`): what the manufacturer builds from, per board – every Gerber layer of `fab/<board>/gerber/`
+  rasterised at 0.02 mm as L-2 does, in the frame of the board outline (documentation and drill-drawing layers left
+  out: nobody builds from them), the drill hits (both ends, diameter) rounded to 1 µm and sorted, the rows of
+  `bom_<b>.csv` and `cpl_<b>.csv` sorted; with the method (`fab_method`, "raster 0.02 mm v1"), so that a new method
+  shows. The manifest has it with the hash per board and file (`fab_layers`).
+
+The raw files differ on every export (a date comment, other aperture numbers, another order of objects), the layout
+hash changes with a comment in a board file and does not change when edakit's code, a router option or EasyEDA's pour
+fill changes the copper. The fab hash changes exactly when what the factory builds changes – down to one raster point
+(0.02 mm, below the manufacturer's tolerance). A Pillow update that draws edges differently changes it too: the
+sign-offs then lapse, a change never passes unseen.
 
 Each file belongs to one of them or to none (10.1): edakit.toml, the schematic file and the documents of `[docs]
 files` are in no hash, so a new order quantity, a note in the schematic or a corrected number (6.6) voids no review. A project that moved from the one-file edakit.toml (October
@@ -105,15 +116,20 @@ files` are in no hash, so a new order quantity, a note in the schematic or a cor
 say.
 
 The sign-off file (`[project] signoff`, [example](https://github.com/tgd1975/automatic_christmas_bell/blob/main/hardware/signoff.json)) holds manual checks and
-accepted warnings. Each counts only if the hash of its scope equals the current one:
+accepted warnings. Each counts only if the hash of its scope (`circuit`, `layout`, `fab`) equals the current one. The
+fab hash is known only after stage F: in a run without it (the offline gate) sign-offs with scope `fab` are listed as
+not checked and do not count.
 
 ```json
 {
   "state_sha256": "<from the protocol header>",
   "layout_sha256": "<from the protocol header>",
+  "fab_sha256": "<from the protocol header of the run whose files were reviewed>",
   "manual": [
     {"id": "M-1", "phase": "export", "scope": "circuit", "text": "critical parts checked again …",
-     "done_by": "agent electrical-reviewer (own session)", "date": "2026-10-24", "note": "…"}
+     "done_by": "agent electrical-reviewer (own session)", "date": "2026-10-24", "note": "…"},
+    {"id": "M-5", "phase": "export", "scope": "fab", "text": "layout reviewed on the manufacturing files …",
+     "done_by": "agent pcb-reviewer", "date": "2026-10-25", "note": "…"}
   ],
   "accepted_warnings": [
     {"match": "L-5 main track width >= practical width*", "scope": "decision",
@@ -128,6 +144,20 @@ accepted warnings. Each counts only if the hash of its scope equals the current 
 | `export` | before the files are released (M-1 second datasheet check, M-6 regulatory review, M-5 layout review) | yes |
 | `order` | after uploading, before paying (M-2: JLCPCB's assembly preview, BOM tool, price) | no |
 | `acceptance` | after delivery (M-4: acceptance test of every board) | no |
+
+Scope `fab` suits what is checked on the manufacturing files: the layout review M-5 and the manufacturer's preview
+M-2 (the example and new projects use it). A later gate run whose files are the same keeps the sign-off, whatever
+changed upstream; a run whose files differ voids it. Existing sign-off files keep `circuit` and `layout` as they are.
+What changed between two runs:
+
+```bash
+edakit fab diff 20261025-205344 20261025-224607 [--board B]   # run folder names under reports, or their paths
+```
+
+per board and file `equal` or `changed`: for a Gerber layer the area added and removed and the largest changed spots
+(XOR of the two rasters, labelled as in L-2) with their bounding box in Gerber coordinates, spots under 0.01 mm² only
+counted and summed; drill hits and BOM/CPL rows removed (−) and added (+). Exit 0 when everything is equal, 2
+otherwise.
 
 `match` is an fnmatch pattern over "ID scenario item step" as section 3 of the protocol prints it – for a warning of
 the graph checks the ID and the message, e.g. `"P-3 M1 ring: ../ring is not released*"` for an own board that is

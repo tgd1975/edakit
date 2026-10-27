@@ -2,6 +2,7 @@
 
     edakit fab --board main --out DIR            read the PCB, save + reload, DRC, export Gerber/CPL, BOM from the graph
     edakit fab --board main --out DIR --offline  only check what is already in DIR/<board>/
+    edakit fab diff RUN_A RUN_B [--board B]     where the manufacturing files of two gate runs differ
 
 Result in DIR/<board>/:
     gerber/ and gerber_<board>.zip   Gerber and drill files as EasyEDA exports them (upload the ZIP)
@@ -56,12 +57,18 @@ assembly preview at JLCPCB.
   F-6  with [order] in the board file: remark <= 200 ASCII characters, mark = placeholder on the silkscreen, Economic
        with its own tooling holes, no copper near the edge in a tab zone (order_sheet.py)
 Last stdout line: JSON list of rows {stage, id, item, check, actual, expected, result}. Exit 0 / 2 / 1.
+
+What the manufacturer builds from, hashed for the sign-offs with scope 'fab' (fab_sha256, FAB_METHOD): every Gerber
+layer rasterised as L-2 does (gerber.RES) in the frame of the board outline – documentation and drill-drawing layers
+left out –, the drill hits rounded to 1 µm, the BOM and CPL rows sorted. Aperture numbers, comments and the order in
+which EasyEDA writes its objects do not change it. `fab diff` compares the same rasters: XOR, labelled into spots.
 """
 
 from __future__ import annotations
 
 import contextlib
 import csv
+import hashlib
 import io
 import json
 import math
@@ -1251,7 +1258,189 @@ def run(cfg, board, out, offline=False, verbose=False):
     return rows
 
 
+# --- what the manufacturer builds from: fab_sha256 and `edakit fab diff` ----------------------------------------------
+
+FAB_METHOD = f"raster {gerber.RES} mm v1"
+NOT_BUILT = ("Gerber_DocumentLayer", "Gerber_DrillDrawingLayer")   # drawings for people; the factory builds nothing
+FRAME_MM = 1.0           # the raster frame: the board outline and this much around it
+SPOT_MM2 = 0.01          # changed spots below this area are only counted and summed
+SHOW = 5                 # changed spots, drill hits and rows listed per file
+
+
+def sha(data):
+    return hashlib.sha256(data).hexdigest()
+
+
+def built_files(g):
+    """(Gerber layers, drill files) in a gerber folder that the manufacturer builds from – without the documentation
+    and drill-drawing layers, the probe file and the order notes."""
+    files = sorted(p for p in Path(g).iterdir() if p.is_file()) if Path(g).is_dir() else []
+    return ([p for p in files if p.name.startswith("Gerber_") and not p.name.startswith(NOT_BUILT)],
+            [p for p in files if p.name.startswith("Drill_")])
+
+
+def outline_box(g, gerbers):
+    """(x0, y0, x1, y1) in mm: the board outline – without one, every layer's extent – and FRAME_MM around it."""
+    outline = Path(g) / gerber.FILES["outline"]
+    pts = (gerber.points(gerber.parse_gerber(outline)) if outline.exists() else
+           [p for f in gerbers for p in gerber.points(gerber.parse_gerber(f))]) or [(0.0, 0.0)]
+    return (min(p[0] for p in pts) - FRAME_MM, min(p[1] for p in pts) - FRAME_MM,
+            max(p[0] for p in pts) + FRAME_MM, max(p[1] for p in pts) + FRAME_MM)
+
+
+def frame(g, gerbers):
+    return gerber.Raster(*outline_box(g, gerbers))
+
+
+def drill_rows(path):
+    """Drill hits [x0, y0, x1, y1, diameter] rounded to 1 µm, sorted."""
+    return sorted([round(v, 3) for v in hit] for hit in gerber.parse_drills(path))
+
+
+def csv_rows(path):
+    """Header, then the rows sorted."""
+    with open(path, newline="", encoding="utf-8-sig") as f:
+        rows = [r for r in csv.reader(f) if r]
+    return rows[:1] + sorted(rows[1:])
+
+
+def fab_layers(d, board):
+    """SHA-256 per file the manufacturer builds from, for one board folder <run>/fab/<board>: every Gerber layer
+    rasterised in the outline's frame, the drill hits, the BOM and CPL rows."""
+    import numpy as np
+    gerbers, drills = built_files(Path(d) / "gerber")
+    out = {}
+    if gerbers:
+        r = frame(Path(d) / "gerber", gerbers)
+        where = f"{r.x0:.3f} {r.y0:.3f} {r.w} {r.h} ".encode()
+        for f in gerbers:
+            out[f.name] = sha(where + np.packbits(r.render(gerber.parse_gerber(f))).tobytes())
+    for f in drills:
+        out[f.name] = sha(json.dumps(drill_rows(f)).encode())
+    for name in (f"bom_{board}.csv", f"cpl_{board}.csv"):
+        if (Path(d) / name).exists():
+            out[name] = sha(json.dumps(csv_rows(Path(d) / name), ensure_ascii=False).encode())
+    return out
+
+
+def fab_hash(layers):
+    """fab_sha256 over {board: fab_layers(…)} and the method."""
+    return sha(json.dumps({"method": FAB_METHOD, "boards": layers}, sort_keys=True).encode())
+
+
+def spots(xor, r):
+    """Changed spots of a XOR image, largest first: [(area mm², (x0, x1, y0, y1) mm)]."""
+    import numpy as np
+    from scipy import ndimage
+    lab, n = ndimage.label(xor, structure=np.ones((3, 3)))
+    if not n:
+        return []
+    out = []
+    for size, (rows, cols) in zip(ndimage.sum(xor, lab, range(1, n + 1)), ndimage.find_objects(lab)):
+        x0, y0 = r.mm(cols.start, rows.stop)
+        x1, y1 = r.mm(cols.stop, rows.start)
+        out.append((float(size) * gerber.RES ** 2, (x0, x1, y0, y1)))
+    return sorted(out, key=lambda s: -s[0])
+
+
+def diff_layer(r, fa, fb):
+    """Detail lines of one Gerber layer in two runs, or [] when the raster is the same."""
+    a, b = r.render(gerber.parse_gerber(fa)), r.render(gerber.parse_gerber(fb))
+    if (a == b).all():
+        return []
+    found = spots(a ^ b, r)
+    big, small = [s for s in found if s[0] >= SPOT_MM2], [s for s in found if s[0] < SPOT_MM2]
+    lines = [f"+{(b & ~a).sum() * gerber.RES ** 2:.3f} mm² / −{(a & ~b).sum() * gerber.RES ** 2:.3f} mm² in "
+             f"{len(found)} spot(s)"]
+    lines += [f"{area:.3f} mm² at x {x0:.2f}–{x1:.2f}, y {y0:.2f}–{y1:.2f} mm" for area, (x0, x1, y0, y1) in big[:SHOW]]
+    if len(big) > SHOW:
+        lines.append(f"{len(big) - SHOW} more spot(s), {sum(s[0] for s in big[SHOW:]):.3f} mm² together")
+    if small:
+        lines.append(f"{len(small)} spot(s) under {SPOT_MM2} mm², {sum(s[0] for s in small):.3f} mm² together")
+    return lines
+
+
+def diff_rows(a, b, show):
+    """Detail lines of rows removed (−) and added (+) between two lists of rows."""
+    ca, cb = Counter(map(tuple, a)), Counter(map(tuple, b))
+    gone, new = sorted((ca - cb).elements()), sorted((cb - ca).elements())
+    lines = [f"- {show(x)}" for x in gone[:SHOW]] + ([f"  … {len(gone) - SHOW} more removed"] if len(gone) > SHOW else [])
+    lines += [f"+ {show(x)}" for x in new[:SHOW]] + ([f"  … {len(new) - SHOW} more added"] if len(new) > SHOW else [])
+    return lines
+
+
+def hole(h):
+    x0, y0, x1, y1, d = h
+    return f"Ø{d:.3f} at ({x0:.3f}, {y0:.3f})" + (f"–({x1:.3f}, {y1:.3f})" if (x0, y0) != (x1, y1) else "")
+
+
+def diff_board(da, db, board):
+    """[(file, changed, detail lines)] for one board folder in two runs: Gerber layers, drill hits, BOM and CPL."""
+    (ga, dra), (gb, drb) = built_files(da / "gerber"), built_files(db / "gerber")
+    out = []
+    boxes = [outline_box(d / "gerber", g) for d, g in ((da, ga), (db, gb)) if g]
+    r = gerber.Raster(min(b[0] for b in boxes), min(b[1] for b in boxes), max(b[2] for b in boxes),
+                      max(b[3] for b in boxes)) if boxes else None
+    pairs = [({f.name: f for f in xa}, {f.name: f for f in xb}) for xa, xb in ((ga, gb), (dra, drb))]
+    csvs = [f"bom_{board}.csv", f"cpl_{board}.csv"]
+    pairs.append(({n: da / n for n in csvs if (da / n).exists()}, {n: db / n for n in csvs if (db / n).exists()}))
+    for kind, (fa, fb) in zip(("gerber", "drill", "csv"), pairs):
+        for name in sorted(set(fa) | set(fb), key=lambda n: (csvs.index(n) if n in csvs else 0, n)):
+            if name not in fb or name not in fa:
+                out.append((name, True, ["only in " + ("the first run" if name in fa else "the second run")]))
+            elif kind == "gerber":
+                lines = diff_layer(r, fa[name], fb[name])
+                out.append((name, bool(lines), lines))
+            elif kind == "drill":
+                lines = diff_rows(drill_rows(fa[name]), drill_rows(fb[name]), hole)
+                out.append((name, bool(lines), lines))
+            else:
+                lines = diff_rows(csv_rows(fa[name])[1:], csv_rows(fb[name])[1:], ",".join)
+                out.append((name, bool(lines) or csv_rows(fa[name])[:1] != csv_rows(fb[name])[:1], lines))
+    return out
+
+
+def run_folder(cfg, run):
+    p = Path(run)
+    for d in (p, cfg.reports / run):
+        if (d / "fab").is_dir():
+            return d
+    raise SystemExit(f"edakit fab diff: {run}: no gate run with manufacturing files (neither a folder nor in "
+                     f"{cfg.reports})")
+
+
+def main_diff(cfg, args):
+    if len(args.runs) != 2:
+        print("edakit fab diff RUN_A RUN_B: two gate runs", file=sys.stderr)
+        return 1
+    try:
+        a, b = (run_folder(cfg, r) for r in args.runs)
+    except SystemExit as e:
+        print(e, file=sys.stderr)
+        return 1
+    boards = [args.board] if args.board else sorted({d.name for run in (a, b) for d in (run / "fab").iterdir()
+                                                     if d.is_dir()})
+    changed = 0
+    for board in boards:
+        print(f"{board}: {a.name} → {b.name}")
+        if not (a / "fab" / board).is_dir() or not (b / "fab" / board).is_dir():
+            print(f"  {board}  only in {'the first run' if (a / 'fab' / board).is_dir() else 'the second run'}")
+            changed += 1
+            continue
+        for name, diff, lines in diff_board(a / "fab" / board, b / "fab" / board, board):
+            changed += diff
+            print(f"  {name}  {'changed' if diff else 'equal'}")
+            print("".join(f"      {ln}\n" for ln in lines), end="")
+    print(f"{changed} file(s) changed" if changed else "the manufacturing files are equal")
+    return 2 if changed else 0
+
+
 def main(cfg, args):
+    if args.action == "diff":
+        return main_diff(cfg, args)
+    if not args.out:
+        print("edakit fab: --out is required (or: edakit fab diff RUN_A RUN_B)", file=sys.stderr)
+        return 1
     board = cfg.board(args.board)
     rows = run(cfg, board, args.out, args.offline, args.verbose)
     for r in rows:

@@ -127,6 +127,12 @@ def parse_holes(path):
     return [((x0 + x1) / 2, (y0 + y1) / 2, w, w + math.hypot(x1 - x0, y1 - y0)) for x0, y0, x1, y1, w in parse_drills(path)]
 
 
+def points(ops):
+    """Every coordinate of these Gerber operations (mm)."""
+    return [p for kind, dat in ops for p in
+            ([dat[1:]] if kind == "flash" else dat[1] if kind == "draw" else [q for c in dat for q in c])]
+
+
 def shape(ops, quad_segs=16):
     """Gerber operations as one shapely area (mm); circles as polygons of quad_segs segments a quarter."""
     from shapely.geometry import LineString, Point, Polygon, box
@@ -182,53 +188,20 @@ def bbox(pts):
     return min(xs), min(ys), max(xs), max(ys)
 
 
-class Copper:
-    """Rasterised copper layers, islands, connections through plated holes, pads per island and net. The raster covers
-    the copper and 3 mm around it, and the points of extent (mm) as well – the board outline, say (L-15)."""
+class Raster:
+    """A frame in mm drawn at RES per point: Gerber operations -> bool image, row 0 at the top (max y)."""
 
-    def __init__(self, folder, pin_net, extent=()):
-        import numpy as np
-        from scipy import ndimage
-        self.d = Path(folder)
-        self.ops = {"T": parse_gerber(self.d / FILES["top"]), "B": parse_gerber(self.d / FILES["bottom"])}
-        self.holes = [(x, y, w) for x, y, w, _ in parse_holes(self.d / FILES["pth"]) + parse_holes(self.d / FILES["vias"])]
-        pts = [p for ops in self.ops.values() for kind, dat in ops for p in
-               ([dat[1:]] if kind == "flash" else dat[1] if kind == "draw" else [q for c in dat for q in c])]
-        pts += list(extent)
-        self.x0, self.y0 = min(p[0] for p in pts) - 3, min(p[1] for p in pts) - 3
-        self.w = int((max(p[0] for p in pts) + 3 - self.x0) / RES)
-        self.h = int((max(p[1] for p in pts) + 3 - self.y0) / RES)
-        self.lab = {k: ndimage.label(self.render(self.ops[k]), structure=np.ones((3, 3)))[0] for k in "TB"}
-        self.parent = {}
-        for x, y, dia in self.holes:  # the barrel joins what touches the hole on both layers
-            for a in self.labels_at("T", x, y, dia / 2 + 0.05):
-                for b in self.labels_at("B", x, y, dia / 2 + 0.05):
-                    self.union(("T", a), ("B", b))
-        graph_net = {p.replace(".", "_", 1): n for p, n in pin_net.items()}
-        fp = json.loads((self.d / FILES["probe"]).read_text())
-        self.pins = {}
-        self.groups = defaultdict(lambda: defaultdict(set))  # net -> island -> pins
-        nets_at = defaultdict(set)
-        mil = 0.0254
-        for row in fp["pins"]["rows"]:
-            p = dict(zip(fp["pins"]["fields"], row))
-            if p["PIN_NAME"].startswith("PAD"):  # duplicate entries without a part
-                continue
-            x, y = p["PIN_X"] * mil, p["PIN_Y"] * mil
-            net = graph_net.get(p["PIN_NAME"], "")
-            self.pins[p["PIN_NAME"]] = (x, y, net)
-            r = min(p["PAD_SIZEX"], p["PAD_SIZEY"]) * mil / 4
-            for k in ("TB" if p["PIN_TYPE"] != "SMD" else ("T" if p["LAYER"] in ("T", "TOP") else "B")):
-                for lab in self.labels_at(k, x, y, r):
-                    g = self.find((k, lab))
-                    nets_at[g].add(net)
-                    if net:
-                        self.groups[net][g].add(p["PIN_NAME"])
-        self.shorts = [(sorted(n - {""}), sorted(p for net in n - {""} for p in self.groups[net][g]))
-                       for g, n in nets_at.items() if len(n - {""}) > 1]
+    def __init__(self, x0, y0, x1, y1):
+        self.x0, self.y0 = x0, y0
+        self.w = int((x1 - x0) / RES)
+        self.h = int((y1 - y0) / RES)
 
     def px(self, x, y):
         return (x - self.x0) / RES, self.h - (y - self.y0) / RES
+
+    def mm(self, col, row):
+        """Point (column, row) of the image -> (x, y) in mm."""
+        return self.x0 + col * RES, self.y0 + (self.h - row) * RES
 
     def render(self, ops):
         import numpy as np
@@ -257,6 +230,49 @@ class Copper:
                 for cx, cy in q:
                     dr.ellipse([cx - a / 2 / RES, cy - a / 2 / RES, cx + a / 2 / RES, cy + a / 2 / RES], fill=1)
         return np.array(img, dtype=bool)
+
+
+class Copper(Raster):
+    """Rasterised copper layers, islands, connections through plated holes, pads per island and net. The raster covers
+    the copper and 3 mm around it, and the points of extent (mm) as well – the board outline, say (L-15)."""
+
+    def __init__(self, folder, pin_net, extent=()):
+        import numpy as np
+        from scipy import ndimage
+        self.d = Path(folder)
+        self.ops = {"T": parse_gerber(self.d / FILES["top"]), "B": parse_gerber(self.d / FILES["bottom"])}
+        self.holes = [(x, y, w) for x, y, w, _ in parse_holes(self.d / FILES["pth"]) + parse_holes(self.d / FILES["vias"])]
+        pts = [p for ops in self.ops.values() for p in points(ops)] + list(extent)
+        x0, y0 = min(p[0] for p in pts) - 3, min(p[1] for p in pts) - 3
+        super().__init__(x0, y0, max(p[0] for p in pts) + 3, max(p[1] for p in pts) + 3)
+        self.lab = {k: ndimage.label(self.render(self.ops[k]), structure=np.ones((3, 3)))[0] for k in "TB"}
+        self.parent = {}
+        for x, y, dia in self.holes:  # the barrel joins what touches the hole on both layers
+            for a in self.labels_at("T", x, y, dia / 2 + 0.05):
+                for b in self.labels_at("B", x, y, dia / 2 + 0.05):
+                    self.union(("T", a), ("B", b))
+        graph_net = {p.replace(".", "_", 1): n for p, n in pin_net.items()}
+        fp = json.loads((self.d / FILES["probe"]).read_text())
+        self.pins = {}
+        self.groups = defaultdict(lambda: defaultdict(set))  # net -> island -> pins
+        nets_at = defaultdict(set)
+        mil = 0.0254
+        for row in fp["pins"]["rows"]:
+            p = dict(zip(fp["pins"]["fields"], row))
+            if p["PIN_NAME"].startswith("PAD"):  # duplicate entries without a part
+                continue
+            x, y = p["PIN_X"] * mil, p["PIN_Y"] * mil
+            net = graph_net.get(p["PIN_NAME"], "")
+            self.pins[p["PIN_NAME"]] = (x, y, net)
+            r = min(p["PAD_SIZEX"], p["PAD_SIZEY"]) * mil / 4
+            for k in ("TB" if p["PIN_TYPE"] != "SMD" else ("T" if p["LAYER"] in ("T", "TOP") else "B")):
+                for lab in self.labels_at(k, x, y, r):
+                    g = self.find((k, lab))
+                    nets_at[g].add(net)
+                    if net:
+                        self.groups[net][g].add(p["PIN_NAME"])
+        self.shorts = [(sorted(n - {""}), sorted(p for net in n - {""} for p in self.groups[net][g]))
+                       for g, n in nets_at.items() if len(n - {""}) > 1]
 
     def find(self, a):
         self.parent.setdefault(a, a)
