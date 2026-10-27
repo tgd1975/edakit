@@ -292,12 +292,14 @@ def findings(rows):
 
 CHECKS = ["L-1", "L-2", "L-3", "L-4", "L-5", "L-7", "L-8", "L-9", "L-10", "L-11", "L-12", "L-13", "L-14", "L-15", "L-16",
           "L-17", "F-1", "F-2", "F-3", "F-5"]
+ON_REQUEST = ["F-6"]               # runs only when the board file asks for it ([order])
 
 
 def test_the_clean_export_passes_every_check(project):
     rows = run(project)
     assert findings(rows) == []
-    assert sorted({r["id"] for r in rows if r["stage"] in "LF"}, key=CHECKS.index) == CHECKS
+    assert sorted({r["id"] for r in rows if r["stage"] in "LF"}, key=CHECKS.index) == CHECKS   # no [order]: no F-6
+    assert not (project.root / "build" / "fab" / "main" / "order.md").exists()
     by = {(r["id"], r["check"]): r["actual"] for r in rows}
     assert by["L-11", "short current loops: path over tracks per pad pair within the limit"] == "J1.1-D1.2 7.8 mm"
     assert by["L-9", "hole takes the lead at nominal size (diagonal or edge, or manufacturer's value)"] == "2 holes"
@@ -436,6 +438,37 @@ def assembled_j1(ex, project):
     graph(project, lambda g: project.comp(g, "J1").pop("bom"))
     ex.jlc["C131337"] = {"componentModelEn": "B2B-PH-K-S(LF)(SN)", "componentLibraryType": "extend",
                          "stockCount": 41000}
+
+
+REMARK = "No V-cut. Use our 2 NPTH tooling holes (1.152 mm). Tabs only on the right edge X30 Y0-20, none elsewhere. Ask us first."
+PLACEHOLDER = (18.0, 3.0)          # the order-number placeholder on the top silkscreen, bottom right
+
+
+def ordered(ex, project, order=None, placeholder=True, h_mm=1.0):
+    """#40: [order] in the board file (mark = "specify" and REMARK unless order says otherwise), and the placeholder
+    JLCJLCJLCJLC on the top silkscreen – in pcb.json and as [[silk.texts]] of h_mm."""
+    order = {"mark": "specify", "remark": REMARK, **(order or {})}
+    text = "\n[order]\n" + "".join(f"{k} = {json.dumps(v, ensure_ascii=False)}\n" for k, v in order.items()
+                                   if k != "tab_zones")
+    if "tab_zones" in order:
+        text += "tab_zones = [" + ", ".join(f"{{ from = {list(a)}, to = {list(b)} }}" for a, b in order["tab_zones"]) + "]\n"
+    if placeholder:
+        text += (f'\n[[silk.texts]]\ntext = "JLCJLCJLCJLC"\nx = {PLACEHOLDER[0]}\ny = {PLACEHOLDER[1]}\nh_mm = {h_mm}\n'
+                 'side = "top"\n')
+        ex.pcb["strings"].append({"Text": "JLCJLCJLCJLC", "X": PLACEHOLDER[0] * MIL, "Y": PLACEHOLDER[1] * MIL, "Layer": 3})
+    f = project.root / "hardware" / "boards" / "main.toml"
+    f.write_text(f.read_text() + text)
+
+
+def edge_track(ex, project):
+    """A tab zone along the left edge, and a track of 0.2 mm whose copper runs 0.45 mm from that edge."""
+    ordered(ex, project, {"tab_zones": [((0, 0), (0, 20))]})
+    ex.gerber["top"].append(("draw", 0.2, [(0.55, 3), (0.55, 15)], "edge"))
+
+
+def no_tooling(ex, project):
+    ordered(ex, project)
+    board_file(project, "[tooling]\nholes", "# [tooling]\n# holes")
 
 
 FAULTS = [
@@ -605,6 +638,21 @@ FAULTS = [
     ("copper in a tooling hole's opening",     # the dot is no pad either: what the drill leaves of it is loose
      lambda ex, p: ex.gerber["top"].append(("flash", ("C", 0.3, 0.3), 3.15, 17.5)),
      [("F-5", "fail", "top: copper in the opening at (2.5, 17.5)"), ("L-15", "warn", "TOP: 1 piece without pad")]),
+    # F-6 (#40) – only with [order] in the board file
+    ("a remark longer than 200 characters", lambda ex, p: ordered(ex, p, {"remark": "x" * 201}),
+     [("F-6", "fail", "201 characters")]),
+    ("a remark that is not ASCII", lambda ex, p: ordered(ex, p, {"remark": "Tabs only where copper is ≥ 1 mm away"}),
+     [("F-6", "fail", "not ASCII: ≥")]),
+    ("mark specify without the placeholder", lambda ex, p: ordered(ex, p, placeholder=False),
+     [("F-6", "fail", "no JLCJLCJLCJLC on a silkscreen layer")]),
+    ("the placeholder too small", lambda ex, p: ordered(ex, p, h_mm=0.6),   # below L-17's 1.0 mm for edakit's texts too
+     [("F-6", "fail", "JLCJLCJLCJLC 0.60 mm high"), ("L-17", "warn", "'JLCJLCJLCJLC' = 0.6 mm")]),
+    ("the placeholder kept with mark default", lambda ex, p: ordered(ex, p, {"mark": "default"}),
+     [("F-6", "warn", 'JLCJLCJLCJLC at (18.0, 3.0) on the top silkscreen, but mark = "default"')]),
+    ("Economic without tooling holes", no_tooling,
+     [("F-6", "warn", "no tooling holes ([tooling]) – JLCPCB adds its own")]),
+    ("copper in a tab zone", edge_track,       # the track touches no pad: loose copper for L-15 too
+     [("F-6", "fail", "copper 0.45 mm from the edge at (0.0, "), ("L-15", "warn", "TOP: 1 piece without pad")]),
 ]
 
 
@@ -779,4 +827,45 @@ def test_a_group_label_or_unlabelled_covers_a_part(project):
 
 
 def test_every_check_has_a_fault():
-    assert {cid for _, _, e in FAULTS for cid, _, _ in e} == set(CHECKS)
+    assert {cid for _, _, e in FAULTS for cid, _, _ in e} == set(CHECKS + ON_REQUEST)
+
+
+def test_the_order_form_of_the_clean_export(project):
+    """#40: with [order] F-6 passes, and order.md holds every field of the order form – the class and side from
+    [release] assembly, the tooling holes, the mark at the placeholder, the remark, bake, the free outline stretches."""
+    rows = run(project, ordered)
+    assert findings(rows) == []
+    f6 = [r for r in rows if r["id"] == "F-6"]
+    assert {r["result"] for r in f6} == {"pass", "info"}
+    assert len(REMARK) <= 200 and any(r["actual"] == f"{len(REMARK)} characters, ASCII" for r in f6)
+    sheet = (project.root / "build" / "fab" / "main" / "order.md").read_text()
+    for text in ("| Layers | 2 |", "| Dimensions | 30.00 x 20.00 mm (Gerber outline) |", "| PCB Qty | 5 |",
+                 "| Surface Finish | LeadFree HASL |",
+                 "| Mark on PCB | Order Number (Specify Position) – JLCJLCJLCJLC at (18.0, 3.0) on the top silkscreen |",
+                 REMARK, "| PCBA Type | Economic ([release] assembly.sides top: one side) |",
+                 "| Assembly Side | Top Side |", "| PCBA Qty | 5 |", "| Tooling holes | Added by Customer (2 x Ø 1.152 mm) |",
+                 "| Bake Components | check the BOM tool – no stock snapshot (edakit stock) |",
+                 "| BOM / CPL | bom_main.csv (2 lines) / cpl_main.csv |", "| Gerber | gerber_main.zip |",
+                 "(30.0, 0.0) → (30.0, 20.0), 20.0 mm", "| J1 | C131337 B2B-PH-K-S(LF)(SN) | lcsc | C131337 |"):
+        assert text in sheet, text
+
+
+def test_the_order_form_lists_only_the_free_edges(project):
+    """#40: copper 0.45 mm from the left edge – the tab zone there fails, the right edge is still free."""
+    rows = run(project, edge_track)
+    row = next(r for r in rows if r["id"] == "F-6" and r["result"] == "fail")
+    assert row["actual"].startswith("copper 0.45 mm from the edge at (0.0, ") and row["expected"] == ">= 1.00 mm (tab_copper_mm)"
+    sheet = (project.root / "build" / "fab" / "main" / "order.md").read_text()
+    assert "(30.0, 0.0) → (30.0, 20.0), 20.0 mm" in sheet and "| (0.0, 0.0) → (0.0, 20.0) | 0.45 mm" in sheet
+
+
+def test_the_order_form_bakes_an_msl5_part(project):
+    """#40: bake "Yes" when the stock snapshot gives a BOM part MSL 5 or more."""
+    def snapshot(ex, p):
+        ordered(ex, p)
+        rows = {"C8678": {"date": "2026-10-27", "listed": True, "msl": 5}, "C45783": {"date": "2026-10-27", "listed": True,
+                                                                               "msl": 1}}
+        (p.root / "hardware" / "stock.json").write_text(json.dumps({"date": "2026-10-27", "parts": rows}))
+    run(project, snapshot)
+    sheet = (project.root / "build" / "fab" / "main" / "order.md").read_text()
+    assert "| Bake Components | Yes – D1 C8678 MSL 5 (stock snapshot 2026-10-27) |" in sheet

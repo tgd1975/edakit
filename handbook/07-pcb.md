@@ -422,7 +422,8 @@ Good to know:
 - On the bottom silk layer EasyEDA mirrors texts by itself (`mirror = false`), but **not** graphics – mirror fills and
   lines yourself.
 - JLCPCB prints its order number somewhere unless you place the placeholder `JLCJLCJLCJLC` and choose
-  "specify a location" when ordering.
+  "specify a location" when ordering: a `[[silk.texts]]` entry of at least 0.8 mm and `mark = "specify"` in `[order]`
+  of the board file – F-6 checks that both are there (8.4).
 - Run `silk apply` again after every auto-layout and routing – spots depend on parts and vias.
 
 **In the gate** (L-17, 8.1) the silkscreen is checked as the fab gets it. `silk apply` keeps the silk files of its first

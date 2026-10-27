@@ -41,9 +41,10 @@ The MCP server cannot order on purpose. Checklist for the user:
 - [ ] Per board: `gerber_<b>.zip`, `bom_<b>.csv`, `cpl_<b>.csv` from the released folder, checksums as in the manifest
 - [ ] Assembly type matches `[release] assembly` (Economic: one side, SMD; two SMD sides or a "Standard Only" part
       need Standard PCBA – `assembly.pcba`, P-4); bake set when P-4 warns about MSL ≥ 5
-- [ ] Tooling holes "added by customer" when the board has its own (otherwise JLCPCB drills theirs, maybe visibly)
-- [ ] Order number position: "specify a location" if the silkscreen has a placeholder (`JLCJLCJLCJLC`)
-- [ ] Remarks field (max. 200 characters) for panel tabs or V-cuts that must avoid visible edges
+- [ ] The form as `fab/<b>/order.md` of the released run says (with `[order]` in the board file; F-6 checked it):
+      tooling holes "added by customer" when the board has its own, order number "specify position" at the
+      placeholder, the remark (≤ 200 ASCII characters, tabs only on stretches order.md lists as free), bake.
+      Without `[order]`: tooling holes, order number position and remark by hand as in handbook 8.4
 - [ ] M-2: in JLCPCB's assembly preview the rotation and polarity of every polarised part (compare with
       `polarity_<b>.png`), no missing part in the BOM tool, price; then sign M-2
 - [ ] The cart against `edakit cost` – class, fees and parts; a difference of more than a few dollars has a reason

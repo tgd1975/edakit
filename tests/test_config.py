@@ -269,3 +269,32 @@ def test_agreements_key(tmp_path):
     (tmp_path / "edakit.toml").write_text('[project]\nname = "t"\nagreements = "no"\n[boards.main]\n')
     with pytest.raises(ConfigError, match=r"\[project\] agreements: true or false"):
         load(tmp_path / "edakit.toml")
+
+
+def test_order_keys(tmp_path):
+    """#40: [order] of the board file – the order form fields that depend on the board (F-6)."""
+    from edakit.config import _board
+    assert _board("b", {}, {}).order is None                              # no key: no order form, no F-6, as before
+    (tmp_path / "edakit.toml").write_text('[project]\nname = "t"\n[boards.main]\n')
+    (tmp_path / "hardware" / "boards").mkdir(parents=True)
+    (tmp_path / "hardware" / "boards" / "main.toml").write_text("[order]\n")
+    assert load(tmp_path / "edakit.toml").board().order == {
+        "finish": "LeadFree HASL", "mark": "default", "remark": "", "tab_zones": [], "tab_copper_mm": 1.0}
+    (tmp_path / "hardware" / "boards" / "main.toml").write_text(
+        '[order]\nfinish = "ENIG"\nmark = "specify"\nremark = "No V-cut."\ntab_copper_mm = 0.5\n'
+        'tab_zones = [{ from = [0, 0], to = [0, 20] }]\n')
+    assert load(tmp_path / "edakit.toml").board().order == {
+        "finish": "ENIG", "mark": "specify", "remark": "No V-cut.", "tab_zones": [((0.0, 0.0), (0.0, 20.0))],
+        "tab_copper_mm": 0.5}
+    for order, msg in (({"marks": "specify"}, r"order: unknown key 'marks' \(known: finish, mark, remark"),
+                       ({"mark": "place"}, "order.mark must be one of default, specify, remove, not 'place'"),
+                       ({"remark": 3}, "order.remark must be a string"),
+                       ({"finish": 1}, "order.finish must be a string"),
+                       ({"tab_copper_mm": -1}, "order.tab_copper_mm must be a number >= 0"),
+                       ({"tab_zones": [{"from": [0, 0]}]}, r"order.tab_zones 1: needs from = \[x, y\] and to = \[x, y\]"),
+                       ({"tab_zones": [{"from": [0, 0], "to": [0, "a"]}]}, "order.tab_zones 1: needs from"),
+                       ({"tab_zones": [{"from": [0, 0], "to": [0, 2], "side": "top"}]},
+                        "order.tab_zones 1: unknown key 'side'"),
+                       ("specify", "order must be a table")):
+        with pytest.raises(ConfigError, match=msg):
+            _board("b", {}, {"order": order})

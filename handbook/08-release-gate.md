@@ -24,7 +24,7 @@ edakit gate --easyeda    # plus S, L, F – EasyEDA with the bridge, minutes
 | *project stages* | e.g. K – mechanics of an enclosure | `[[release.stages]]`, see below |
 | S – Schematic | EasyEDA schematic = graph | S-2 per board |
 | L – Board | PCB = graph and plan, copper from the Gerber files, the circuit's hand-over kept, pads apart, silkscreen as printed | L-1 … L-17 |
-| F – Manufacturing | BOM, stock, pick and place, Gerber set | F-1 … F-5 |
+| F – Manufacturing | BOM, stock, pick and place, Gerber set, order settings | F-1 … F-6 |
 
 **Stage L** (per board, `edakit fab`):
 
@@ -56,6 +56,7 @@ edakit gate --easyeda    # plus S, L, F – EasyEDA with the bridge, minutes
 | F-3 | pick and place: every BOM part exactly once, side and rotation = PCB; sides and SMD-only as `[release] assembly` says (Economic PCBA: one side, SMD only; two SMD sides need Standard PCBA) |
 | F-4 | Gerber ZIP, BOM and pick and place from the same run; `fab/manifest.json` with SHA-256 per file and the state hashes |
 | F-5 | Gerber set complete (a missing file is named here, and L-2, L-8, L-9 and L-17, which read it, report it as not checked); outline and mounting holes from the outline layer = plan (± 0.2 mm); tooling holes in the NPTH file, mask open, no copper in the opening |
+| F-6 | only with `[order]` in the board file (8.4): the remark at most 200 characters, ASCII (fail); `mark = "specify"` with the placeholder `JLCJLCJLCJLC` on a silkscreen layer of pcb.json, at least 0.8 mm high in `[[silk.texts]]` (fail; no height there: warning); the placeholder with another mark (warning); Economic PCBA with fewer than 2 tooling holes (warning: JLCPCB drills its own); no copper of either side within `tab_copper_mm` of a declared tab zone, measured on the Gerber copper against the Gerber outline (fail, with the distance and the position); the outline stretches free of copper (information) |
 
 Plus P-2: a **polarity sheet** per board – every polarised part drawn from the Gerber data with copper, silkscreen,
 pad numbers, pin roles and nets, bottom parts mirrored as seen from below. It is what the second check compares with
@@ -147,7 +148,7 @@ The protocol names every check with its words next to the ID ("L-9 (hole fits th
 rule catalog (chapter 14.2), so that the protocol can be read without this handbook.
 
 Result folder `<reports>/<YYYYMMDD-hhmmss>/`: `protocol.md`, `graph_checks.json`, `sim.json`,
-`schematic_<board>.json`, `fab/<board>/` (Gerber ZIP, BOM, CPL, raw data), `fab/polarity_<board>.png`,
+`schematic_<board>.json`, `fab/<board>/` (Gerber ZIP, BOM, CPL, raw data, with `[order]` the order form `order.md`), `fab/polarity_<board>.png`,
 `fab/manifest.json`. Archive a released folder in git (`git add -f`) – it is the record of what was ordered.
 
 ## 8.4 Ordering at JLCPCB (the owner does it)
@@ -181,6 +182,17 @@ up to the supplier's minimum and pack size (`moq`, `step` in `order` or the item
 BOM tool ("LCSC Part Number, Quantity, Comment"), the others "Code, Quantity, Item, Designators". P-5 warns about a
 part bought separately that names no supplier.
 
+**The order form as data.** The form fields that depend on the board go into `[order]` of the board file (10.2):
+`finish`, `mark` (`"default"` – JLCPCB prints its number anywhere, `"specify"` – at the placeholder, `"remove"`),
+`remark` and the tab zones (`tab_zones`, stretches of the outline in plan mm, with `tab_copper_mm`). The board file is
+in the layout hash, so a changed remark needs the layout review again. Every gate run then writes
+`fab/<board>/order.md` next to the upload files – layers, size, quantity, finish, the mark at the placeholder, the
+remark; PCBA type and side from `[release] assembly`, tooling holes "Added by Customer" when the board has
+`[tooling]`, bake "Yes" when the stock snapshot gives a BOM part MSL ≥ 5; the tab zones with their nearest copper and
+every outline stretch with no copper within `tab_copper_mm` (Gerber coordinates, what JLCPCB sees); the parts bought
+separately with their supplier (`edakit order`) – and F-6 checks the settings against the files. Fill the form from
+order.md of the released run and write tab zones only on stretches it lists as free.
+
 The MCP server cannot order. Lessons from the reference order:
 
 - Upload `gerber_<b>.zip`, `bom_<b>.csv`, `cpl_<b>.csv` from the released folder only; compare the checksums.
@@ -189,11 +201,15 @@ The MCP server cannot order. Lessons from the reference order:
   board so the cheap option works (through-hole parts you solder yourself get `bom: false`); P-4 fails a "Standard
   Only" part on an Economic order as soon as `edakit stock` has read it.
 - **Tooling holes:** with your own (chapter 7.2) choose "added by customer"; otherwise JLCPCB adds rails or holes.
+  F-6 warns about an Economic order with fewer than two – in the reference project they were found only in the quote.
 - **Moisture-sensitive parts:** JLCPCB bakes MSL ≥ 5 parts for a fee and includes the 48 h in the lead time; its MSL
   classification may differ from the manufacturer's datasheet – P-4 warns with JLCPCB's value from the stock snapshot.
 - **Tented vias** if a side is visible (open vias are holes and tin dots).
-- **Order number:** "specify a location" when a placeholder is printed.
-- **Remarks** (max. 200 characters): where panel tabs may and may not go, no V-cut on visible edges.
+- **Order number:** "specify a location" when a placeholder is printed (`mark = "specify"`; the reference cart still
+  said "Remove Mark").
+- **Remarks** (max. 200 characters, F-6): where panel tabs may and may not go, no V-cut on visible edges. The
+  reference remark was written by hand and wrong three times: tabs where a track ran 0.45 mm from the edge, then 202
+  characters, then a "1.17 mm free" that a new pour 0.55 mm from the edge made false.
 - **M-2** in the assembly preview: rotation and polarity of every polarised part on both sides (compare with the
   polarity sheet), no part missing in the BOM tool, then pay.
 - If JLCPCB's DFM check reports something the layout review already accepted or a waiver of the gate names (e.g. an

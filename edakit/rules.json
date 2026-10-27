@@ -385,6 +385,13 @@
    "why": "A missing layer or a shifted outline is found at the factory at best; tooling holes with copper or mask make JLCPCB add their own.",
    "fix": "Export again; correct outline, holes or tooling holes in the board file and apply them.",
    "sources": ["edakit handbook 7 and 8.1"]
+  },
+  "F-6": {
+   "title": "order settings = board",
+   "rule": "With [order] in the board file: the remark has at most 200 characters, all ASCII; mark = \"specify\" has the placeholder JLCJLCJLCJLC on a silkscreen layer, at least 0.8 mm high in [[silk.texts]] (a height not given there is a warning); a placeholder with another mark is a warning; an Economic order with fewer than 2 tooling holes is a warning; no copper of either side lies within tab_copper_mm (1.0 mm) of a declared tab zone of the outline, measured on the Gerber files. The outline stretches free of copper are listed, and fab/<board>/order.md holds the form.",
+   "why": "The order form fields that depend on the board are filled in by hand while ordering: a cart with 'Remove Mark' prints the placeholder as text, a remark of 202 characters does not fit the field, a remark that allows tabs where a track runs 0.45 mm from the edge lets the tab cut it, and an Economic order without own tooling holes gets JLCPCB's, possibly on a visible edge. Each was found late in the reference project, the tooling holes only in the quote.",
+   "fix": "Correct [order] of the board file – a shorter ASCII remark, mark = \"specify\" with the placeholder (or another mark), tab zones only on stretches order.md lists as free, or the copper moved back from the edge – or add [tooling] holes. A warning the owner wants (JLCPCB's tooling holes, a hand-placed placeholder) is accepted in the sign-off file.",
+   "sources": ["edakit handbook 8.4", "JLCPCB order form (Mark on PCB, Remark, PCBA Type, Tooling holes); reference order of 2026-10-25"]
   }
  },
  "hints": {

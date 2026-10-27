@@ -9,6 +9,7 @@ Result in DIR/<board>/:
     cpl_<board>.csv                  pick-and-place file in JLCPCB format (BOM parts only)
     jlc_parts.json                   JLCPCB assembly catalogue entry per LCSC number of the BOM (F-2)
     pcb.json, drc.json, bom_easyeda.json, cpl_easyeda.xlsx   raw data from EasyEDA (for --offline)
+    order.md                         with [order] in the board file: the order form of this board (order_sheet.py)
 and DIR/polarity_<board>.png: every polarised part with pad, role and net, to compare with datasheets and with the
 assembly preview at JLCPCB.
 
@@ -47,6 +48,8 @@ assembly preview at JLCPCB.
        snapshot)
   F-3  pick and place: every BOM part exactly once, side and rotation = PCB; sides/SMD as [release] assembly says
   F-5  Gerber set complete; outline and holes = plan (± 0.2 mm); tooling holes in the NPTH file, mask open, no copper
+  F-6  with [order] in the board file: remark <= 200 ASCII characters, mark = placeholder on the silkscreen, Economic
+       with its own tooling holes, no copper near the edge in a tab zone (order_sheet.py)
 Last stdout line: JSON list of rows {stage, id, item, check, actual, expected, result}. Exit 0 / 2 / 1.
 """
 
@@ -1162,6 +1165,8 @@ def run(cfg, board, out, offline=False, verbose=False):
     check_pad_clearance(cfg, board, design, d, rows)
     check_paste_gap(cfg, board, design, d, rows)
     check_fab(cfg, board, design, d, rows)
+    from . import order_sheet
+    order_sheet.check(cfg, board, design, d, rows, bom_rows(design, board))   # F-6, only with [order]
     if not gerber.missing(d / "gerber", "top", "bottom", "top_silk", "bottom_silk"):   # otherwise F-5 names them
         from . import polarity
         img, n = polarity.sheet(cfg, board, design, d)

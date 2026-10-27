@@ -46,13 +46,15 @@ PROJECT_KEYS = ("name", "company", "quantity", "distributors", "lock", "agreemen
 BOARD_KEYS = ("title", "template", "schematic", "pcb", "file")            # [boards.<name>] in edakit.toml
 BOARD_FILE_KEYS = ("revision", "view", "outline", "holes", "tooling", "place", "near", "near_mm", "edge_mm", "edge_ok",
                    "on_headers", "header_keep_mm", "silk_overlap_mm", "park", "routing", "pours", "pour_regions",
-                   "pour_min_piece_mm2", "pour_inset_mm", "silk", "loops", "net_classes", "copper")
+                   "pour_min_piece_mm2", "pour_inset_mm", "silk", "loops", "net_classes", "copper", "order")
 SCHEMATIC_KEYS = ("stub", "layout")
 RELEASE_KEYS = ("layout_files", "state_files", "assembly", "stages")
 PCBA = ("economic", "standard")  # [release] assembly.pcba: the assembler's class of the order (P-4)
 COST_KEYS = ("fees", "budget", "currency", "rates", "shipping", "coupon", "vat_pct", "pcb_price")   # [cost]
 EXTRA_KEYS = ("item", "supplier", "code", "per_set", "spare", "moq", "step", "unit_price", "currency")   # [[extra]]
 STOCK_MAX_AGE_DAYS = 14          # [project] stock_max_age_days: an older stock snapshot is pending (P-4)
+ORDER_KEYS = ("finish", "mark", "remark", "tab_zones", "tab_copper_mm")   # [order] of a board file (F-6)
+MARKS = ("default", "specify", "remove")   # order.mark: JLCPCB's order number anywhere, at the placeholder, none
 
 
 class ConfigError(Exception):
@@ -103,6 +105,7 @@ class Board:
     net_classes: dict = field(default_factory=lambda: dict(DEFAULT_NET_CLASSES))  # by falling min_a
     force_class: dict = field(default_factory=dict)   # net -> class, whatever its current
     copper: dict = field(default_factory=lambda: _copper("", {}))  # [copper]: max_bare_mm, min_cover (L-15)
+    order: dict | None = None                         # [order]: the order form fields of this board (F-6); None: none
 
     # --- plan <-> EasyEDA -------------------------------------------------------------------------------------------
     def to_eda(self, x, y, rot, side):
@@ -307,6 +310,38 @@ def _copper(name, c):
     return {"max_bare_mm": bare, "min_cover": {k: float(v) for k, v in cover.items()}}
 
 
+def _order(name, o):
+    """[order] of a board file, with its defaults; None without the table (no order form, no F-6)."""
+    if o is None:
+        return None
+    if not isinstance(o, dict):
+        raise ConfigError(f"board {name}: order must be a table ([order])")
+    if bad := _unknown(f"board {name}: order", o, ORDER_KEYS):
+        raise ConfigError(bad[0])
+    for key in ("finish", "remark"):
+        if not isinstance(o.get(key, ""), str):
+            raise ConfigError(f"board {name}: order.{key} must be a string")
+    if o.get("mark", "default") not in MARKS:
+        raise ConfigError(f"board {name}: order.mark must be one of {', '.join(MARKS)}, not {o['mark']!r}")
+    if bad := _number(f"board {name}: order.tab_copper_mm", o.get("tab_copper_mm", 1.0)):
+        raise ConfigError(bad[0])
+    zones = o.get("tab_zones", [])
+    if not isinstance(zones, list):
+        raise ConfigError(f"board {name}: order.tab_zones must be a list of {{ from = [x, y], to = [x, y] }}")
+    out = []
+    for i, z in enumerate(zones, 1):
+        where = f"board {name}: order.tab_zones {i}"
+        if isinstance(z, dict) and (bad := _unknown(where, z, ("from", "to"))):
+            raise ConfigError(bad[0])
+        point = lambda p: isinstance(p, list) and len(p) == 2 and all(  # noqa: E731
+            isinstance(v, (int, float)) and not isinstance(v, bool) for v in p)
+        if not isinstance(z, dict) or not point(z.get("from")) or not point(z.get("to")):
+            raise ConfigError(f"{where}: needs from = [x, y] and to = [x, y] (plan mm, two points on the outline)")
+        out.append((tuple(map(float, z["from"])), tuple(map(float, z["to"]))))
+    return {"finish": o.get("finish", "LeadFree HASL"), "mark": o.get("mark", "default"), "remark": o.get("remark", ""),
+            "tab_zones": out, "tab_copper_mm": float(o.get("tab_copper_mm", 1.0))}
+
+
 def _board(name, entry, b, file=""):
     """A board: its EasyEDA documents from edakit.toml (entry), everything physical from its board file (b)."""
     tooling = b.get("tooling", {})
@@ -382,6 +417,7 @@ def _board(name, entry, b, file=""):
         net_classes=classes,
         force_class=force,
         copper=_copper(name, b.get("copper", {})),
+        order=_order(name, b.get("order")),
     )
 
 

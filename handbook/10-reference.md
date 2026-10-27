@@ -116,6 +116,7 @@ layout review again (M-5). The keys stand at the top of the file, without a pref
 | `silk` | `{}` | `designators` (side), `hide` (sides), `label_h_mm` (1.0), `gap_mm` (0.25), `groups` {label: [refs]}, `unlabelled` ({designator = reason}, none: a part of the `designators` side without a visible designator or group label is an L-17 warning), `priority` (["TP"]), `solder_side` (`false`; `true`: the through-hole parts of the other side are labelled on the `designators` side too, 7.7), `board_label` (`"{title} rev {revision}"`; also `{project}`, `{board}`; `""` = none), `board_label_corner` (`bottom-left`, seen from the printed side), `board_label_h_mm` (1.2), `board_label_side` (the `designators` side; `"top"` or `"bottom"`, 7.7), `board_label_region` (the whole board; a polygon `[[x, y], …]` in plan mm the label must lie in, `board_label_corner` then means its corner, 7.7), `[[art]]` ({`svg`, `x`, `y`, `width_mm`, `rot`, `side`}), `[[texts]]` ({`text`, `x`, `y`, `h_mm` (1.2), `rot`, `side`, `font` (`default` = stroke font, or a font family EasyEDA knows)}) |
 | `[[loops]]` | `[]` | `a`, `b` (pads "D1.2"), `max_mm`, `what` – check L-11; the circuit's are `layout.loops` of the graph |
 | `copper` | see below | copper per layer in the Gerber files, check L-15 |
+| `order` | – | the order form fields of this board (8.4); with the table the gate writes `fab/<board>/order.md` and runs F-6: `finish` (`"LeadFree HASL"`), `mark` (`"default"`, `"specify"`: at the placeholder `JLCJLCJLCJLC`, `"remove"`), `remark` (`""`; at most 200 ASCII characters), `tab_zones` (`[]`: `{from = [x, y], to = [x, y]}`, two points on the outline in plan mm – the shorter stretch between them), `tab_copper_mm` (`1.0`: no copper of either side this close to a tab zone) |
 | `net_classes` | see below | track widths from the simulated currents |
 
 `[routing]`: `clearance_mil` (6.5; also the least gap between pads of different parts, L-13), `signal_mil` (10), `via` ([24, 12]), `edge_clearance_um` (400: tracks and vias
@@ -180,7 +181,7 @@ Code: `edakit … 2>&1 | cat`.
 | `edakit silk apply\|check` | ✓ | PCB, Gerber export | designators, `silk_<board>_<side>.png`, `gerber_<board>/`; apply: `silk_footprints_<board>/` (the print it found, for L-17) |
 | `edakit export [--board]` | ✓ read | schematic, PCB, project file | `<artifacts>/export/` |
 | `edakit gate [--easyeda]` | – / ✓ | everything | `<reports>/<run>/` |
-| `edakit fab --board B --out DIR [--offline]` | ✓ / – | PCB, exports, `route/<board>_board.json` (L-13, L-14), `silk_strings_<board>.json` and `silk_footprints_<board>/` (L-17) | `DIR/<board>/` |
+| `edakit fab --board B --out DIR [--offline]` | ✓ / – | PCB, exports, `route/<board>_board.json` (L-13, L-14), `silk_strings_<board>.json` and `silk_footprints_<board>/` (L-17), the stock snapshot (`order.md`) | `DIR/<board>/`, with `[order]` also `order.md` |
 | `edakit lock [status\|claim\|release\|yield CHAT\|hook] [--note]` | – | – | `~/.local/state/edakit/easyeda-lock.json` |
 | `edakit proposal template [--feature]\|seal FILE [--out F]\|verify FILE` | – | a rule or feature proposal (no project needed) | seal: the issue body with its SHA-256 |
 | `edakit doctor` | – | tool chain | – |

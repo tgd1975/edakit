@@ -82,6 +82,9 @@ describes (section 3).
 - A pour polygon with a hole is taken only as its outer contour; tooling holes get a notch to the edge instead.
 - The pours keep the tracks' edge clearance + 0.1 mm from the outline; `pour_inset_mm` in the board file gives them a
   distance of their own (handbook 7.6), e.g. further from the milled edge than tracks that run along it.
+- Panel tabs: the remark and the tab zones in `[order]` of the board file belong to the layout. A new pour or a track
+  along the edge can put copper into a tab zone – F-6 measures it at the gate, and `fab/<board>/order.md` lists the
+  stretches that are still free (handbook 8.4).
 - Two nets pouring on one layer: the one with priority fills it all unless `pour_regions = true` gives each its own
   area (handbook 7.6); an area enclosed by another net's is an error, solved in the routing.
 - EasyEDA drops every pour piece without a pad of its net: where the pour net has no pad, that side stays bare. The gate
