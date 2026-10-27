@@ -110,5 +110,6 @@ describes (section 3).
 
 ## Report
 
-What changed, numbers (fixed parts, tracks, vias, DRC findings by kind), picture, what the user must click (if
+What changed, numbers (fixed parts, tracks, vias, DRC findings by kind; with `[looks]` the visible side's track length
+and vias against its limits, handbook 7.5), picture, what the user must click (if
 anything), whether it is saved, requests to the circuit. Note open layout items in the project's decision log.

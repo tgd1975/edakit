@@ -869,3 +869,35 @@ def test_the_order_form_bakes_an_msl5_part(project):
     run(project, snapshot)
     sheet = (project.root / "build" / "fab" / "main" / "order.md").read_text()
     assert "| Bake Components | Yes – D1 C8678 MSL 5 (stock snapshot 2026-10-27) |" in sheet
+
+
+# --- a declared visible side (#61): stage L adds the side's numbers as a row of its own, and warns above a limit
+
+def looks(project, keys, change=None):
+    def fault(ex, p):
+        f = p.root / "hardware" / "boards" / "main.toml"
+        f.write_text(f.read_text() + f"\n[looks]\n{keys}\n")
+        if change:
+            change(ex, p)
+    return [r for r in run(project, fault) if r["id"] == "L"]
+
+
+def test_stage_l_reports_the_visible_side(project):
+    row, = looks(project, 'visible = "bottom"')                                   # every track of the export is on TOP
+    assert (row["result"], row["actual"], row["expected"]) == (
+        "info", "BOTTOM (visible): 0.00 m of track, 0 vias (TOP 0.04 m, BOTTOM 0.00 m)", "information")
+
+
+def test_stage_l_warns_above_the_limits_of_the_visible_side(project):
+    def vias(ex, p):
+        ex.vias += [(10, 15, 0.3), (12, 15, 0.3)]
+    rows = looks(project, 'visible = "top"\nmax_track_m = 0.03\nmax_vias = 1', vias)       # 39.7 mm of track on TOP
+    assert [(r["result"], r["actual"], r["expected"]) for r in rows] == [
+        ("info", "TOP (visible): 0.04 m of track, 2 vias (TOP 0.04 m, BOTTOM 0.00 m)", "<= 0.03 m, <= 1 vias"),
+        ("warn", "0.04 m of track", "<= 0.03 m"), ("warn", "2 vias", "<= 1 vias")]
+
+
+def test_stage_l_within_the_limits_of_the_visible_side(project):
+    rows = looks(project, 'visible = "top"\nmax_track_m = 0.1\nmax_vias = 2', lambda ex, p: ex.vias.append((10, 15, 0.3)))
+    assert [(r["result"], r["actual"]) for r in rows] == [
+        ("info", "TOP (visible): 0.04 m of track, 1 via (TOP 0.04 m, BOTTOM 0.00 m)")]

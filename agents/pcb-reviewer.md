@@ -43,7 +43,8 @@ boards of the project in the current repository. You **change nothing**, neither
    accessible after assembly.
 3. **Operation:** buttons and controls where the user expects them, labels readable.
 4. **Looks:** where the board is visible: calm arrangement, symmetry where intended, no crowded area next to empty
-   space, few and quiet tracks on a visible side.
+   space, few and quiet tracks on a visible side. With `[looks]` in the board file, `route check` and stage L give the
+   visible side's track length and vias against its limits – a visible side without `[looks]` is worth a note.
 
 ## Result
 

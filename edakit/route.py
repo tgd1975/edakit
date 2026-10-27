@@ -13,7 +13,8 @@ start, has a fixed 900 s limit and left nets open. So routing happens outside Ea
                an assembled side at least the paste gap apart (L-14; no new attempt helps there), every net
                connected, clearances >= rule, nothing in keep-outs, track widths of the SES and the fixed wires
                against the simulated currents (L-5 as in the gate: below IPC-2221 fails, below the class width
-               warns); preview PNG with open connections in yellow.
+               warns); with [looks] the track length per side, the vias and the visible side against its limits
+               (warnings only); preview PNG with open connections in yellow.
                In `all`: up to `attempts` runs with a reshuffled DSN while something is open.
                A pour-only net (pour_only in [[pours]] of the board file) gets no tracks: its pour, computed here,
                connects it
@@ -1125,6 +1126,42 @@ def report_paste(cfg, data):
     return tight
 
 
+def looks_rows(board, length_m, vias):
+    """[looks] of the board file: the visible side's track length and the board's vias (a via shows on both sides)
+    -> (information line, [(warning, actual, limit)] above max_track_m / max_vias), or None without [looks].
+    length_m: {"TOP": m, "BOTTOM": m}. Used by `route check` and stage L alike."""
+    lk = board.looks
+    if not lk:
+        return None
+    side = lk["visible"].upper()
+    track = f"{length_m[side]:.2f} m of track"
+    warns = []
+    if lk.get("max_track_m") is not None and length_m[side] > lk["max_track_m"]:
+        warns.append((f"{side} (visible): {track}, limit {lk['max_track_m']:g} m", track,
+                      f"<= {lk['max_track_m']:g} m"))
+    if lk.get("max_vias") is not None and vias > lk["max_vias"]:
+        warns.append((f"{side} (visible): {vias} vias, limit {lk['max_vias']}", f"{vias} vias",
+                      f"<= {lk['max_vias']} vias"))
+    return f"{side} (visible): {track}, {vias} via{'s' * (vias != 1)}", warns
+
+
+def report_looks(rules, data, routes):
+    """[looks], printed: the track length per side and the vias of the SES, the visible side's row and its warnings.
+    Nothing without [looks]; no exit code changes."""
+    if not rules.board.looks:
+        return
+    length = {"TOP": 0.0, "BOTTOM": 0.0}
+    for ss in segments(rules, routes, data).values():
+        for layer, _, a, b in ss:
+            length[layer] += math.dist(a, b) / MIL_PER_MM / 1000
+    vias = sum(len(r["vias"]) for r in routes.values())
+    say(f"tracks: TOP {length['TOP']:.2f} m, BOTTOM {length['BOTTOM']:.2f} m; vias {vias}")
+    row, warns = looks_rows(rules.board, length, vias)
+    say(row)
+    for w, _, _ in warns:
+        print(f"    {w} – warning", flush=True)
+
+
 def report_check(rules, data, open_nets, routes):
     n_seg = sum(len(s) for s in segments(rules, routes, data).values())
     n_via = sum(len(r["vias"]) for r in routes.values())
@@ -1485,6 +1522,7 @@ def main(cfg, args):
                     open_nets = check(rules, data, routes)
                     render(rules, data, routes, P["png"], open_nets)
                     report_check(rules, data, open_nets, routes)
+                    report_looks(rules, data, routes)
                     bad = clearance_check(rules, data, routes)
                     say(f"clearances/keep-outs: {len(bad)} findings")
                     for line in bad[:20]:

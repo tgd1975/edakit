@@ -356,3 +356,16 @@ def test_uniform_key():
     for value in ({"led": "x"}, {"led": "left"}, ["led"], {"led": 1}):
         with pytest.raises(ConfigError, match="uniform must be a table of part kinds"):
             _board("b", {}, {"uniform": value})
+
+
+def test_looks_key():
+    from edakit.config import _board
+    assert _board("b", {}, {}).looks is None                               # no [looks]: nothing reported, as before
+    lk = {"visible": "bottom", "max_track_m": 0.1, "max_vias": 4}
+    assert _board("b", {}, {"looks": lk}).looks == lk
+    for value, msg in (({"max_vias": 1}, "needs visible"), ({"visible": "front"}, "needs visible"),
+                       ({"visible": "top", "max_track": 1}, "unknown key 'max_track'"),
+                       ({"visible": "top", "max_track_m": -1}, "max_track_m must be a length"),
+                       ({"visible": "top", "max_vias": 1.5}, "max_vias must be a whole number")):
+        with pytest.raises(ConfigError, match=msg):
+            _board("b", {}, {"looks": value})

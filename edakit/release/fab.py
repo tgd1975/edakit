@@ -42,6 +42,8 @@ assembly preview at JLCPCB.
   L-17 silkscreen from the Gerber files: edakit's own print on a solder-mask opening (fail), other print there per part,
        print beyond the outline, a part of the designators side without a visible designator or group label (not in
        [silk] unlabelled), a text height edakit prints below 1.0 mm (warn)
+  [looks] of the board file: the visible side's track length and the board's vias, an information row; above
+       max_track_m or max_vias a warning (row ID "L": the stage's own, no check of the catalog)
   F-1  BOM from the graph = BOM of EasyEDA; every LCSC number in the parts database
   F-2  every BOM part listed in JLCPCB's assembly catalogue with stock for `quantity` boards, under the MPN of its
        parts entry; another class than the entry's jlc_class warns (check P-4 reads the same offline, from the stock
@@ -616,6 +618,29 @@ def check_paste_gap(cfg, board, design, d, rows):
             rows[-1]["reason"] = g["waived"]
 
 
+def check_looks(board, d, rows):
+    """[looks] of the board file: the visible side's track length (pcb.json, lines per layer) and the vias of the board
+    (the via drill file; none when EasyEDA wrote none) – an information row, and a warning per limit it exceeds. No
+    check of the catalog: the stage's own row, like route check's line."""
+    from .. import route
+    if not board.looks:
+        return
+    data = json.loads((d / "pcb.json").read_text())
+    length = {"TOP": 0.0, "BOTTOM": 0.0}
+    for ln in data["lines"]:
+        length[route.LAYERS[ln["Layer"]]] += math.hypot(ln["EndX"] - ln["StartX"], ln["EndY"] - ln["StartY"]) * MM / 1000
+    vias = len(gerber.parse_holes(d / "gerber" / gerber.FILES["vias"]))
+    row, warns = route.looks_rows(board, length, vias)
+    lk = board.looks
+    limits = ([f"<= {lk['max_track_m']:g} m"] if "max_track_m" in lk else []) + \
+        ([f"<= {lk['max_vias']} vias"] if "max_vias" in lk else [])
+    rows.add("L", "L", board.name, f"visible side ([looks] visible = {lk['visible']}): track length on it, vias of the "
+             "board", True, f"{row} (TOP {length['TOP']:.2f} m, BOTTOM {length['BOTTOM']:.2f} m)",
+             ", ".join(limits) or "information", "info")
+    for text, actual, limit in warns:
+        rows.add("L", "L", board.name, f"visible side within its [looks] limit: {text}", False, actual, limit, "warn")
+
+
 def lead_max(lead, tol=True):
     t = (lead.get("tol_mm") or 0) if tol else 0
     a = lead["a_mm"] + t
@@ -1164,6 +1189,7 @@ def run(cfg, board, out, offline=False, verbose=False):
     check_loops(board, design, d, rows)
     check_pad_clearance(cfg, board, design, d, rows)
     check_paste_gap(cfg, board, design, d, rows)
+    check_looks(board, d, rows)
     check_fab(cfg, board, design, d, rows)
     from . import order_sheet
     order_sheet.check(cfg, board, design, d, rows, bom_rows(design, board))   # F-6, only with [order]

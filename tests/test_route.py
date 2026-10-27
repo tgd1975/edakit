@@ -903,3 +903,41 @@ def test_sim_widths_give_a_net_outside_the_classes_a_class_of_its_own(project):
     assert rules.net_class("BTN") == ("BTN", 20.7)            # IPC 0.53 mm for 1 A above signal_mil 10
     assert rules.net_class("LED_SDI") == ("SIGNAL", 10)       # below signal_mil: as before
     assert rules.net_class("3V3") == ("SUPPLY", 12)           # a class wide enough stays as it is
+
+
+# --- a declared visible side (#61): the routed input stage with +5V on a detour of 0.18 m on BOTTOM through two vias
+
+DETOUR = [(72.8, 8), (5, 8), (5, 35), (67.05, 35), (67.05, 8)]      # BOTTOM: 67.8 + 27 + 62.05 + 27 mm
+
+
+def with_detour(project):
+    """+5V from D1.1 down to a via, along BOTTOM, up through a via to C2.1 – TOP keeps 0.04 m, BOTTOM gets 0.18 m."""
+    def path(layer, pts):
+        return f"(wire (path {layer} 1800 " + " ".join(f"{round(v * 100)}" for p in pts for v in mm(*p)) + "))"
+    vias = " ".join(f'(via "via24" {round(mm(*p)[0] * 100)} {round(mm(*p)[1] * 100)})' for p in (DETOUR[0], DETOUR[-1]))
+    five = (f'(net "+5V" {path("TOP", [(72.8, 12), DETOUR[0]])} {path("BOTTOM", DETOUR)} '
+            f'{path("TOP", [DETOUR[-1], (67.05, 12)])} {vias})')
+    f = project.root / "build" / "edakit" / "route" / "main.ses"
+    f.write_text(re.sub(r'\(net "\+5V" \(wire [^\n]*\)\)', lambda m: five, f.read_text()))
+
+
+def looks(project, capsys, keys=None):
+    routed_stage(project)
+    if keys is not None:
+        f = project.root / "hardware" / "boards" / "main.toml"
+        f.write_text(f.read_text() + f"\n[looks]\n{keys}\n")
+    with_detour(project)
+    code, out = route_cmd(project, "check", capsys)
+    return code, out, [ln.strip() for ln in out.splitlines() if "tracks:" in ln or "(visible)" in ln]
+
+
+def test_route_check_reports_the_visible_side(project, capsys):
+    code, out, lines = looks(project, capsys)
+    assert code == 0 and lines == [] and "2 vias; open: 0" in out                    # no [looks]: as before
+    code, out, lines = looks(project, capsys, 'visible = "bottom"')
+    assert code == 0 and lines == ["tracks: TOP 0.04 m, BOTTOM 0.18 m; vias 2", "BOTTOM (visible): 0.18 m of track, 2 vias"]
+    code, out, lines = looks(project, capsys, 'visible = "bottom"\nmax_track_m = 0.1\nmax_vias = 1')
+    assert code == 0 and lines[2:] == ["BOTTOM (visible): 0.18 m of track, limit 0.1 m – warning",
+                                        "BOTTOM (visible): 2 vias, limit 1 – warning"]
+    code, out, lines = looks(project, capsys, 'visible = "top"\nmax_track_m = 0.1\nmax_vias = 2')
+    assert code == 0 and lines[1:] == ["TOP (visible): 0.04 m of track, 2 vias"]      # within both limits

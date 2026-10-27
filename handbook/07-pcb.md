@@ -352,6 +352,28 @@ the net class (`[net_classes]`) – below it warns:
 ```
 
 Without `net_currents.json` one line says so and nothing fails. Tracks that pass L-5 in the gate pass here.
+
+**The visible side.** A front panel, a display side or a decorative board has a side people look at, and the means to
+keep it calm are there – a wire keep-out over the side or part of it, a plane on it with `fanout`, layer costs. What
+they lack is a target and a number. `[looks]` in the board file names the side; `route check` then prints the track
+length per side of the SES and its vias, and the visible side's row – a via counts on both sides, it shows through:
+
+```toml
+[looks]
+visible = "bottom"           # the side people look at: "top" or "bottom" (EasyEDA sides)
+max_track_m = 0.1            # optional: more track on it is a warning
+max_vias = 4                 # optional: more vias on the board is a warning
+```
+
+```text
+tracks: TOP 0.04 m, BOTTOM 0.18 m; vias 2
+BOTTOM (visible): 0.18 m of track, 2 vias
+    BOTTOM (visible): 0.18 m of track, limit 0.1 m – warning
+```
+
+The lengths are those of the routing preview's titles. A warning changes no exit code: the routing is not wrong, the
+look is not what the board file asked for. Stage L of the gate gives the same row from the PCB itself (8.1). Without
+`[looks]` nothing is printed.
 Preview: `<artifacts>/route/<board>_routing.png`, open connections dashed yellow. Nothing is written to EasyEDA until
 the check passes.
 

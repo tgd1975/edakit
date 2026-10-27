@@ -49,7 +49,8 @@ PROJECT_KEYS = ("name", "company", "quantity", "distributors", "lock", "agreemen
 BOARD_KEYS = ("title", "template", "schematic", "pcb", "file")            # [boards.<name>] in edakit.toml
 BOARD_FILE_KEYS = ("revision", "view", "outline", "holes", "tooling", "place", "near", "near_mm", "edge_mm", "edge_ok",
                    "on_headers", "header_keep_mm", "silk_overlap_mm", "park", "routing", "pours", "pour_regions",
-                   "pour_min_piece_mm2", "pour_inset_mm", "silk", "loops", "net_classes", "copper", "order", "uniform")
+                   "pour_min_piece_mm2", "pour_inset_mm", "silk", "loops", "net_classes", "copper", "order", "uniform",
+                   "looks")
 SCHEMATIC_KEYS = ("stub", "layout")
 RELEASE_KEYS = ("layout_files", "state_files", "assembly", "stages")
 PCBA = ("economic", "standard")  # [release] assembly.pcba: the assembler's class of the order (P-4)
@@ -113,6 +114,7 @@ class Board:
     copper: dict = field(default_factory=lambda: _copper("", {}))  # [copper]: max_bare_mm, min_cover (L-15)
     order: dict | None = None                         # [order]: the order form fields of this board (F-6); None: none
     uniform: dict | None = None                       # kind -> "row" | "+x" | "-x" | "+y" | "-y"; None: UNIFORM
+    looks: dict | None = None                         # [looks]: visible ("top" | "bottom"), max_track_m, max_vias
 
     # --- plan <-> EasyEDA -------------------------------------------------------------------------------------------
     def to_eda(self, x, y, rot, side):
@@ -388,6 +390,19 @@ def _board(name, entry, b, file=""):
             isinstance(k, str) and v in UNIFORM_WAYS for k, v in uniform.items())):
         raise ConfigError(f"board {name}: uniform must be a table of part kinds, each "
                           f"{' | '.join(repr(w) for w in UNIFORM_WAYS)} – e.g. uniform = {{ led = \"+x\", buzzer = \"-x\" }}")
+    looks = b.get("looks")
+    if looks is not None:
+        def number(v, kind):
+            return not isinstance(v, bool) and isinstance(v, kind) and v >= 0
+        if not isinstance(looks, dict) or looks.get("visible") not in ("top", "bottom"):
+            raise ConfigError(f"board {name}: [looks] needs visible = 'top' or 'bottom' – the side people look at")
+        bad = [k for k in looks if k not in ("visible", "max_track_m", "max_vias")]
+        if bad:
+            raise ConfigError(f"board {name}: [looks] unknown key '{bad[0]}' (known: visible, max_track_m, max_vias)")
+        if "max_track_m" in looks and not number(looks["max_track_m"], (int, float)):
+            raise ConfigError(f"board {name}: looks.max_track_m must be a length in m, 0 or more")
+        if "max_vias" in looks and not number(looks["max_vias"], int):
+            raise ConfigError(f"board {name}: looks.max_vias must be a whole number, 0 or more")
     silk = b.get("silk", {})
     if not isinstance(silk.get("solder_side", False), bool):
         raise ConfigError(f"board {name}: silk.solder_side must be true or false")
@@ -439,6 +454,7 @@ def _board(name, entry, b, file=""):
         copper=_copper(name, b.get("copper", {})),
         order=_order(name, b.get("order")),
         uniform=dict(uniform) if uniform is not None else None,
+        looks=dict(looks) if looks is not None else None,
     )
 
 
