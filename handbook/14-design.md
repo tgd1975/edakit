@@ -71,6 +71,7 @@ in the graph or by a pattern, shown by `edakit hints`, never blocking.
 | H-6 | a battery holder | protection for lithium cells |
 | H-7 | a signal line from a connector to an IC pin | ESD protection at the connector |
 | H-8 | two supplies reach one net – power inputs as for H-1 and a module's `power_output` pin with the role `vbus` – and at least one of them without a diode on the way; fuses, switches, inductors and a single MOSFET pass, a back-to-back MOSFET pair passes nothing | back-feed into a supply: cells charged, a PC's USB port fed, a body diode heating |
+| H-9 | an `output` pin of a part the MCU drives (its clock among the inputs) on a net with an MCU pin (role `gpio`), directly or through one resistor – a read-back from a chain or a shift register | the output's edge and delay (`out_edge`, `t_pd_ns`) against the SPI mode the firmware samples in |
 
 The designer handles each one and writes down how, in the graph:
 

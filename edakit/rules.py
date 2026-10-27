@@ -209,9 +209,50 @@ def _two_supplies(design, cfg, sim):
     return out
 
 
+def _mcu_pins(design, net):
+    """MCU pins (role gpio) on a net or one resistor away from it."""
+    return [r for n in {net} | _resistor_neighbours(design, net) for r in design.nets[n]["pins"]
+            if design.pin_info(r).get("role") == "gpio"]
+
+
+def _output_timing(info):
+    """' (changes 12–30 ns after the rising clock edge)' from a pin's out_edge and t_pd_ns ([min, max] in ns, null where
+    the datasheet gives none); '' without either."""
+    edge, tpd = info.get("out_edge"), info.get("t_pd_ns")
+    lo, hi = (tpd if isinstance(tpd, list) and len(tpd) == 2 else [tpd, tpd] if isinstance(tpd, (int, float))
+              else [None, None])
+    delay = (f"{lo:g} ns" if lo == hi and lo is not None else f"{lo:g}–{hi:g} ns" if lo is not None and hi is not None
+             else f"≥ {lo:g} ns" if lo is not None else f"≤ {hi:g} ns" if hi is not None else "")
+    if not edge and not delay:
+        return ""
+    return f" (changes {delay + ' ' if delay else ''}after the {edge + ' ' if edge else ''}clock edge)"
+
+
+def _read_backs(design, cfg, sim):
+    """A serial output read back by an MCU: an `output` pin of a part without MCU pins, on a net with an MCU pin (role
+    gpio; directly or through one resistor), of a part that MCU also drives an `input` of – its clock among them. The
+    pin's out_edge and t_pd_ns go with it where the parts entry gives them."""
+    found = []
+    for des in design.comps:
+        pins = (design.part(des) or {}).get("pins") or {}
+        if any(i.get("role") == "gpio" for i in pins.values()):
+            continue
+        nets = {num: net for num in pins if (net := design.pin_net.get(f"{des}.{num}"))}
+        driving = {r.split(".", 1)[0] for num, net in nets.items() if pins[num].get("type") == "input"
+                   for r in _mcu_pins(design, net)}
+        for num, net in nets.items():
+            if pins[num].get("type") != "output":
+                continue
+            for ref in _mcu_pins(design, net):
+                if ref.split(".", 1)[0] in driving:
+                    found.append(f"{des} {pins[num].get('name', num)} to {ref.split('.', 1)[0]} "
+                                 f"{design.pin_info(ref).get('name', ref)}{_output_timing(pins[num])}")
+    return found
+
+
 MATCHERS = {"power_input": _power_inputs, "connector_signal": _connector_signals,
             "transistor_at_connector": _transistors_at_connectors, "switching_regulator": _switching_regulators,
-            "two_supplies": _two_supplies}
+            "two_supplies": _two_supplies, "read_back": _read_backs}
 
 
 def matching_hints(design, cfg=None, sim=None):

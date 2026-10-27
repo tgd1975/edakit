@@ -416,6 +416,13 @@
     "Lesson of the reference project (pytree D-44, 2026-10-23): with one AO3401A cutting three AA cells off while USB-C was plugged, fresh lithium cells (5.4 V) fed through its body diode, about 0.7 W and up to 125 °C on a touchable underside; a second AO3401A back-to-back fixed it",
     "Lesson of the reference project (pytree D-47, USB tree, 2026-10-25): the module's 5V pin is its USB VBUS without a diode and J1 feeds the same rail through D32 – a source at J1 above the PC's VBUS feeds the PC through the module (about 0.2 A at 5.25 V against 4.75 V, second check M-1); accepted with an operating rule"
    ]
+  },
+  "H-9": {
+   "title": "read-back of a serial output",
+   "when": {"match": "read_back"},
+   "why": "Shift registers and constant-current LED drivers shift on the rising clock edge and change their serial output a propagation delay after it – the STP08CP05 typically 21–24 ns and at most 32 ns at 3.3 V, the TLC5916 12–30 ns at 3 V. SPI mode 0 samples on that same rising edge: a read-back in mode 0 works only while the delay is longer than the MCU's input hold time, and only the datasheet's minimum delay counts – the STP08CP05 states none. Mode 1 samples on the falling edge, but shifts the MCU's own data out on the rising edge, where the part samples its serial input. The SPI mode is the firmware's, so no program decides this from the graph, and the question gets lost between the concept and the code.",
+   "fix": "Look up the output's delay after the clock edge (out_edge and t_pd_ns on the pin of the parts entry) and the MCU's SPI input hold time in the mode the firmware uses. If the minimum delay is not safely longer: read back by bit-bang, sampling after the falling edge, or test the SPI read on the first board with bit-bang as the planned fallback. Record the decision in the graph: \"hints\": {\"H-9\": \"…\"}.",
+   "sources": ["ST DocID13524 Rev 8 (STP08CP05, August 2018), table 8 Switching characteristics: CLK-SDO tPLH 21/28 ns (typ/max) at VDD 3.3 V and 17/22 ns at 5 V, tPHL 24/32 ns at 3.3 V and 19/25 ns at 5 V, no minimum; table 9 and figure 8: data shifts and SDO changes on the rising CLK edge", "TI SLVS695D (TLC591x, June 2007, revised January 2015), pin functions: CLK \"Clock input for data shift on rising edge\"; 7.7 Switching Characteristics (VDD 3 V): tPLH4 and tPHL4 CLK to SDO 12/20/30 ns (min/typ/max)", "Wikipedia, Serial Peripheral Interface, section Mode numbers (read 2026-10-26): mode 0 (CPOL 0, CPHA 0) shifts data out on the falling SCLK and samples on the rising SCLK; mode 1 shifts on the rising and samples on the falling SCLK"]
   }
  }
 }

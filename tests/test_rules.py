@@ -58,6 +58,47 @@ def test_hints_of_the_example(project):
     assert rules.matching_hints(d, cfg, rules.load_sim(cfg)) == {"H-1": ["J1"], "H-3": ["SW1"]}
 
 
+def test_read_back_from_a_chain(project):
+    from test_sim import read_back
+    read_back(project)                            # U2's SDO to GP7; the MCU drives U2's SDI, CLK, LE and OE
+    cfg = project.config()
+    assert rules.matching_hints(Design.from_config(cfg), cfg)["H-9"] == ["U2 SDO to U1 GP7"]
+    part = project.part("C90107")
+    part["pins"]["14"].update(out_edge="rising", t_pd_ns=[12, 30])     # TI SLVS695D 7.7, VDD 3 V: tPLH4/tPHL4
+    project.save_part("C90107", part)
+    assert rules.matching_hints(Design.from_config(cfg), cfg)["H-9"] == [
+        "U2 SDO to U1 GP7 (changes 12–30 ns after the rising clock edge)"]
+    part["pins"]["14"]["t_pd_ns"] = [None, 32]                         # a datasheet without a minimum (STP08CP05)
+    project.save_part("C90107", part)
+    assert rules.matching_hints(Design.from_config(cfg), cfg)["H-9"] == [
+        "U2 SDO to U1 GP7 (changes ≤ 32 ns after the rising clock edge)"]
+
+
+def test_read_back_through_a_series_resistor(project):
+    from test_sim import read_back
+    read_back(project)
+    g = project.graph()
+    project.net(g, "LED_SDO")["pins"].remove("U1.10")
+    g["graph"]["components"].append({"designator": "R3", "type": "resistor", "lcsc": "C17414", "value": "10k",
+                                     "pins": {"1": "1", "2": "2"}})
+    project.net(g, "LED_SDO")["pins"].append("R3.1")
+    g["graph"]["nets"].append({"name": "GP7_IN", "pins": ["R3.2", "U1.10"], "v": [0, 3.4]})
+    project.save_graph(g)
+    cfg = project.config()
+    assert rules.matching_hints(Design.from_config(cfg), cfg)["H-9"] == ["U2 SDO to U1 GP7"]
+
+
+def test_no_read_back_without_the_mcu_driving_the_part(project):
+    from test_sim import read_back
+    read_back(project)
+    part = project.part("C90107")
+    for num in ("2", "3", "4", "13"):             # SDI, CLK, LE, OE: no input the MCU drives – an output, not a chain
+        part["pins"][num]["type"] = "passive"
+    project.save_part("C90107", part)
+    cfg = project.config()
+    assert "H-9" not in rules.matching_hints(Design.from_config(cfg), cfg)
+
+
 def test_hint_taken_care_of_is_not_open(project):
     g = project.graph()
     g["graph"]["hints"] = {"H-3": "firmware debounces for 20 ms"}
@@ -79,13 +120,13 @@ def test_notes_of_the_parts_database(project):
 
 def test_hints_command(project, capsys):
     g = project.graph()
-    g["graph"]["hints"] = {"H-1": "C2 22 µF next to the module", "H-9": "typo"}
+    g["graph"]["hints"] = {"H-1": "C2 22 µF next to the module", "H-99": "typo"}
     project.save_graph(g)
     out_file = project.root / "hints.json"
     assert rules.main_hints(project.config(), argparse.Namespace(json=str(out_file))) == 0
     out = capsys.readouterr().out
     assert "H-3 (debounce buttons and switches) – SW1" in out
-    assert "taken care of: C2 22 µF next to the module" in out and "H-9: in the graph's hints but not" in out
+    assert "taken care of: C2 22 µF next to the module" in out and "H-99: in the graph's hints but not" in out
     data = json.loads(out_file.read_text())
     assert list(data["open"]) == ["H-3"] and data["handled"]["H-1"]["applies_to"] == ["J1"]
 
