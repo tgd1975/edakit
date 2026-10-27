@@ -64,8 +64,10 @@ describes (section 3).
    - `edakit silk apply 2>&1 | cat` (designators where there is room; silkscreen on pads = 0; DRC). Through-hole parts
      of the other side, soldered from the designators side: `[silk] solder_side = true` (handbook 7.7). A part listed
      "without room": more room, a group label (`[silk] groups`) or `[silk] unlabelled` with the reason – the gate warns
-     on it otherwise (L-17). Run it last, after the routing: the gate fails on edakit's own print on a mask opening
-4. **Check:** `edakit pcb nets` (pad nets = graph), DRC details in `<artifacts>/route/<board>_drc.json`.
+     on it otherwise (L-17). Run it last, after the routing: the gate fails on edakit's own print on a mask opening.
+4. **Check:** `edakit pcb nets` (pad nets = graph), DRC details in `<artifacts>/route/<board>_drc.json`. With sim.json
+   `copper` (power nets whose track drop matters): `edakit sim 2>&1 | cat` on the new routing – the drop of the tracks
+   is in every check now (handbook 5.2); a failure there goes back to the routing (wider class, a pour) or the circuit.
 5. **Picture and review:** routing preview and silk pictures; a canvas capture may be stale. A round that changed
    placement, routing or pours ends with the agent pcb-reviewer in its own session, on this round's data: the plan,
    the routing files and the round's Gerber export `<artifacts>/gerber_<board>/` – the copper of every layer as

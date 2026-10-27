@@ -410,6 +410,7 @@ def write_protocol(cfg, outdir, head, rows, sim, signoff, notes, decision, reaso
 
 
 def main(cfg, args):
+    from ..sim import copper
     from ..sim import run as simrun
     head = header(cfg)
     outdir = cfg.reports / dt.datetime.fromisoformat(head["time"]).strftime("%Y%m%d-%H%M%S")
@@ -424,7 +425,8 @@ def main(cfg, args):
     print("[E] simulation …", flush=True)
     sim_cfg, _ = simrun.load_sim_config(cfg)
     plugin = simrun.load_plugin(cfg.sim_plugin) if cfg.sim_plugin else None
-    sim = simrun.run_all(Design.from_config(cfg), sim_cfg, plugin=plugin)
+    routing = copper.load_routing(cfg) if sim_cfg.get("copper") else None   # the routed copper, as it is now
+    sim = simrun.run_all(Design.from_config(cfg), sim_cfg, plugin=plugin, routing=routing)
     simrun.write_net_currents(cfg, sim)
     (outdir / "sim.json").write_text(json.dumps(sim, indent=1, ensure_ascii=False) + "\n", encoding="utf-8")
     stages_run = set(OFFLINE)

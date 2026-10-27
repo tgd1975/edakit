@@ -35,6 +35,8 @@ the supply over time and E-5 judges them. Switching spikes and fast edges are me
   every source (against its direction) to `i_back_max_a` of the source, and the current into every cell of a battery
   holder to `i_charge_max_a` of its cell state (`"cells": {"nimh": {"v": 1.3, "r": 0.05, "i_charge_max_a": 0.1}}` for a
   pack its charger charges on purpose); both are `criteria.blocking_max_a` (1 mA) unless set.
+- Every net is one node – a track is 0 Ω – unless sim.json `copper` names it (5.2): then each of its pins gets a node
+  of its own, with the routed tracks and vias as resistors in between, and every check sees the voltage at the pin.
 - Off-board loads (a servo, a motor, a strip at a connector): the load's `external`, e.g.
   `{"J1": {"plus": "2", "minus": "1", "i_a": 0.3}}` – a constant current between the two pins; it counts for the
   connector's contact current and for the track widths.
@@ -124,6 +126,26 @@ for the surface and the time a hand stays on it; IEC 62368-1 TS1 allows 48 °C f
 (51 °C on metal) for 10 s to 1 min and 77 °C (60 °C) for 1–10 s. A board without it gets no touch item; a name that is
 no board of edakit.toml stops the run.
 
+**Routed copper.** Once a board is routed, `copper` brings the resistance of its tracks into every scenario:
+
+```json
+"copper": {"nets": ["+5V", "VIN"], "oz": 1, "via_ohm": 0.001}
+```
+
+For each listed net and each board, `edakit sim` reads the routing as `edakit route check` does
+(`<artifacts>/route/<board>.ses` with `<board>_board.json`). Every track piece becomes a resistor ρ × L / (w × t)
+(0.0172 Ω·mm²/m, t = `oz` × 35 µm, default 1 oz), every via `via_ohm` (default 1 mΩ) between its layers. A pin's pads
+join where a track or a via ends on them; on a layer where the board file pours the net (`[[pours]]`) its copper counts
+as ideal. Each pin gets its own node, and every check reads its pin: the MCU's supply, a regulator's input, a
+driver's headroom, an operating range. A net's range `v` holds for its lowest and highest pin ("4.365 V (D9.1) …
+4.442 V (D1.1)"), the `report` shows the lowest. The ground net stays the reference and cannot be listed. A listed
+net that cannot be annotated stays one node, and E-1 notes why: the board has no routing yet, a pin has no pad in the
+board json, or a pin is not connected by the routed tracks, vias or pours (`edakit route check`). On the example, a
++5V track of 200 mm × 0.15 mm (0.655 Ω) from D1 to the loads drops the far LED anode from 4.442 V to 4.365 V. A range
+`v: [4.45, 5.5]` passes without `copper` and fails with it. The routing is an artifact of `edakit route`, so run
+`edakit sim` again after every routing run; the gate does that in stage E. Without `copper`, every net is one node as
+before.
+
 **Transient runs.** `transients` names runs over time, each with its supplies as curves, a load and limits:
 
 ```json
@@ -159,9 +181,9 @@ As soon as an LED is on no driver output, every load needs `leds_on`, `[]` when 
 
 | Check | What |
 |---|---|
-| E-1 | the operating point converges, a transient run runs to its end |
+| E-1 | the operating point converges, a transient run runs to its end; a net of `copper` that stays one node is noted (info) with the reason |
 | E-2 | stress of every part against its ratings with derating: resistor power ≤ 50 %, currents ≤ 80 %, capacitor/diode/transistor voltages ≤ 67 %, LED forward current and reverse voltage, fuse hold current at ambient, connector, switch and relay contact current, relay coil voltage, the current of every MCU output (`gpio_i_max_a`) and of all outputs together, sourced and sunk (`gpio_i_total_max_a`) – each pin may be fine and the sum beyond the package; the junction temperature of every part with `rth_ja_k_per_w` against its `tj_max_c`, and on a board of `touch_c` against the touch limit (below the table) |
-| E-3 | function: current from every source (≤ `i_max_a`), no source and no cell fed backwards (≤ `i_back_max_a`, `i_charge_max_a`, 1 mA by default), regulator outputs within tolerance, input above `vin_min`, LDO junction temperature (against the same limit as E-2's), MCU supply voltage and load on its regulator, MCU inputs at a defined level (≤ VIL or ≥ VIH – a 3.3 V signal into a 5 V AVR is the classic case), every part with an operating supply range inside it, every input pin with thresholds at a defined level and the high level of every MCU output reaching the VIH of the inputs on its net (below the table), MCU outputs only on pins that can drive (an output on an input-only pin is reported and not driven), LED driver output headroom and junction temperature, every LED on or dark as the load says (driver channels: ≥ 80 % of its share of the set current, also for an LED behind 0 Ω bridges or one resistor; parallel LEDs share within a ratio – below the table), relays pull in (`v_operate`) and release (`v_release`) as the load says, an own board supplied inside the range it was simulated for (`vin_min` … `vin_max`, 4.5), diodes that must block (`expect_blocking`), every net inside its declared range `v`, plus the plugin's checks |
+| E-3 | function: current from every source (≤ `i_max_a`), no source and no cell fed backwards (≤ `i_back_max_a`, `i_charge_max_a`, 1 mA by default), regulator outputs within tolerance, input above `vin_min`, LDO junction temperature (against the same limit as E-2's), MCU supply voltage and load on its regulator, MCU inputs at a defined level (≤ VIL or ≥ VIH – a 3.3 V signal into a 5 V AVR is the classic case), every part with an operating supply range inside it, every input pin with thresholds at a defined level and the high level of every MCU output reaching the VIH of the inputs on its net (below the table), MCU outputs only on pins that can drive (an output on an input-only pin is reported and not driven), LED driver output headroom and junction temperature, every LED on or dark as the load says (driver channels: ≥ 80 % of its share of the set current, also for an LED behind 0 Ω bridges or one resistor; parallel LEDs share within a ratio – below the table), relays pull in (`v_operate`) and release (`v_release`) as the load says, an own board supplied inside the range it was simulated for (`vin_min` … `vin_max`, 4.5), diodes that must block (`expect_blocking`), every net inside its declared range `v` (a net of `copper`: its lowest and highest pin), plus the plugin's checks |
 | E-4 | LED has a known driver: in every scenario every LED – each colour of an RGB LED – has a state E-3 checks, its cathode on a driver output (directly, behind 0 Ω bridges or one resistor) or the load's `leds_on`; an LED with neither, or one the netlist left out because its parts entry lacks a role it reads (anode, cathode and their colours, 4.1), fails as "LED without a known driver" |
 | E-5 | transient limits: in every run of `transients` each limit of its `expect` – a net's lowest voltage ≥ `min_v`, highest ≤ `max_v`, a source's peak current ≤ `i_max_a` – and every MCU's supply pin, once it has reached its `vin_min` (`vsys_min`), never below it again before the run ends; actual value with the time it occurs ("2.985 V at 1.3 ms") |
 
@@ -206,7 +228,8 @@ net that reaches two outputs through resistors, and the ground net, count on no 
 `edakit sim` writes the largest current of a single part per net to `<artifacts>/sim/net_currents.json` (the supply
 current also on both supply nets, ground included). `edakit pcb plan` derives net classes from it (IPC-2221 outer layer,
 1 oz, 10 K rise, × 1.5) with practical minimum widths from `[net_classes]` of the board file; the gate check L-5 fails a
-track below the IPC width and warns below the class width.
+track below the IPC width and warns below the class width. Its voltage drop is an upper bound, shown as information;
+the drop itself the simulation computes once the board is routed and `copper` names the net (5.2).
 
 ## 5.5 Every check seen red
 

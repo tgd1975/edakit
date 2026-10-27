@@ -36,6 +36,9 @@ ICs and modules are replaced by behaviour models, chosen by params.behavior in t
 Constant-current loads – i_core_a, idd_max_a, icc_a, i_a, an external load – fall to 0 below DEAD_RAIL_V across them, so
 that a rail nothing feeds stays at 0 V instead of being pulled below ground; above it they are constant.
 
+Every element ends on the node of its pin (pn): the node of the pin's net, or – for a net whose routed copper is in the
+simulation (sim.json copper, copper.py) – the pin's own pad node, with the tracks and vias as resistors in between.
+
 A project adds its own models in a plugin file (edakit.toml [project] sim_plugin = "hardware/sim_plugin.py") that
 defines MODELS = {"name": function(netlist, des, part)}. See handbook/05-simulation.md.
 """
@@ -65,6 +68,21 @@ def node(net, ground="GND"):
     return "0" if net == ground else "n_" + re.sub(r"\W", "_", net.lower())
 
 
+def pin_node(design, ref):
+    """Node of a pin ('U1.39'): its pad node where the routed copper of its net is simulated (copper.py), else the
+    node of its net."""
+    pads = (getattr(design, "copper", None) or {}).get("pads", {})
+    return pads.get(ref) or node(design.pin_net.get(ref), design.ground)
+
+
+def net_nodes(design, net):
+    """The nodes a net's voltage is read at: the node of every pin of a net whose copper is simulated, else the net's
+    node."""
+    if net in (getattr(design, "copper", None) or {}).get("nets", {}):
+        return sorted({pin_node(design, ref) for ref in design.nets[net]["pins"]})
+    return [node(net, design.ground)]
+
+
 def led_model(name, vf, i_test, rs):
     vd = vf - i_test * rs
     i_s = i_test / (math.exp(vd / (LED_N * VT)) - 1)
@@ -90,6 +108,7 @@ def split_boards(design):
                 if board[ref.split(".", 1)[0]] == side:
                     design.pin_net[ref] = alt
             design.cable_elements.append({"name": f"R_{cable['name']}_{p_src}", "des": dst, "a": alt, "b": net,
+                                          "pa": f"{src}.{p_src}", "pb": f"{dst}.{p_dst}",
                                           "r": cable.get("r_ohm_per_wire", 0.05)})
 
 
@@ -115,11 +134,35 @@ class Netlist:
     def n(self, net):
         return node(net, self.d.ground)
 
+    def pn(self, ref):
+        """Node of a pin ('U1.39'): its pad node where the copper of its net is simulated, else its net's node."""
+        return pin_node(self.d, ref) if ref else None
+
     def pin_nodes(self, des):
-        return {num: self.n(self.d.pin_net.get(f"{des}.{num}")) for num in self.d.part(des)["pins"]}
+        return {num: self.pn(f"{des}.{num}") for num in self.d.part(des)["pins"]}
 
     def roles(self, des):
+        """role -> net of the first connected pin with that role."""
         return self.d.pins_by_role(des)
+
+    def role_pins(self, des):
+        """role -> the first connected pin with that role ('U1.39'), the pin roles() takes the net of."""
+        out = {}
+        for num, p in ((self.d.part(des) or {}).get("pins") or {}).items():
+            ref = f"{des}.{num}"
+            if self.d.pin_net.get(ref) and p.get("role") and p["role"] not in out:
+                out[p["role"]] = ref
+        return out
+
+    def rn(self, des, role, required=False):
+        """Node of the pin with this role (pn); None without one, KeyError when it is `required`."""
+        pins = self.role_pins(des)
+        return self.pn(pins[role] if required else pins.get(role))
+
+    def pin_on(self, des, net):
+        """The first pin of `des` on `net` ('U1.4'), None without one."""
+        return next((f"{des}.{n}" for n in (self.d.part(des) or {}).get("pins", {})
+                     if self.d.pin_net.get(f"{des}.{n}") == net), None)
 
     def add(self, line, des=None, kind=None, nodes=(), value=None):
         self.lines.append(line)
@@ -145,7 +188,7 @@ class Netlist:
 
     # --- passive and discrete -------------------------------------------------------------------------------------
     def two_pole(self, des, prefix, value, kind, pins=("1", "2")):
-        a, b = (self.n(self.d.pin_net.get(f"{des}.{p}")) for p in pins)
+        a, b = (self.pn(f"{des}.{p}") for p in pins)
         if a is None or b is None or a == b:
             return
         self.add(f"{prefix}_{des} {a} {b} {value:.6g}", des, kind, (a, b), value)
@@ -157,7 +200,7 @@ class Netlist:
         model = f"LED_{part.get('lcsc', des)}_{color or 'x'}_{corner}"
         self.models[model] = led_model(model, vf, params["vf_at_a"], params.get("rs_ohm", 10))
         roles = self.roles(des)
-        a, k = self.n(roles.get(anode_role)), self.n(roles.get(cathode_role))
+        a, k = self.rn(des, anode_role), self.rn(des, cathode_role)
         name = f"D_{des}" + (f"_{color}" if color else "")
         if a is None or k is None:   # a pin in nc: an unused LED; a role the parts entry lacks: left out, E-4 says so
             known = {info.get("role") for info in part["pins"].values()}
@@ -171,8 +214,8 @@ class Netlist:
 
     def source(self, des, spec, value):
         """Supply at a connector: voltage source behind a source resistance (cable, power supply)."""
-        plus = self.n(self.d.pin_net.get(f"{des}.{spec['plus']}"))
-        minus = self.n(self.d.pin_net.get(f"{des}.{spec['minus']}"))
+        plus = self.pn(f"{des}.{spec['plus']}")
+        minus = self.pn(f"{des}.{spec['minus']}")
         x = f"x_{des.lower()}_src"
         self.add(f"V_{des}_SRC {x} {minus} {pwl(value)}")
         r = spec.get("r_ohm", 0.1)
@@ -182,8 +225,8 @@ class Netlist:
 
     def external(self, des, spec):
         """Off-board load at a connector: constant current from pin 'plus' to pin 'minus'."""
-        plus = self.n(self.d.pin_net.get(f"{des}.{spec['plus']}"))
-        minus = self.n(self.d.pin_net.get(f"{des}.{spec['minus']}"))
+        plus = self.pn(f"{des}.{spec['plus']}")
+        minus = self.pn(f"{des}.{spec['minus']}")
         if plus is None or minus is None:
             raise ValueError(f"{des}: external load between unconnected pins {spec['plus']} and {spec['minus']}")
         self.current_load(f"{des}_EXT", plus, minus, spec["i_a"], des, "load")
@@ -207,22 +250,19 @@ class Netlist:
         elif kind == "fuse":
             self.two_pole(des, "R", p.get("r_max_ohm", 0.1), "fuse")
         elif kind == "inductor":
-            a, b = (self.n(self.d.pin_net.get(f"{des}.{x}")) for x in ("1", "2"))
+            a, b = (self.pn(f"{des}.{x}") for x in ("1", "2"))
             self.add(f"L_{des} {a} x_{des.lower()} {p['value_h']:.6g}")
             self.add(f"R_{des} x_{des.lower()} {b} {p.get('dcr_ohm', 0.05)}", des, "inductor",
                      (f"x_{des.lower()}", b), p.get("dcr_ohm", 0.05))
         elif kind == "diode":
-            roles = self.roles(des)
-            a, k = self.n(roles.get("anode")), self.n(roles.get("cathode"))
+            a, k = self.rn(des, "anode"), self.rn(des, "cathode")
             if a and k:
                 self.add(f"D_{des} {a} {k} {self.model(des, part)}", des, "diode", (a, k))
         elif kind in ("npn", "pnp"):
-            roles = self.roles(des)
-            c, b, e = (self.n(roles.get(x)) for x in ("collector", "base", "emitter"))
+            c, b, e = (self.rn(des, x) for x in ("collector", "base", "emitter"))
             self.add(f"Q_{des} {c} {b} {e} {self.model(des, part)}", des, kind, (c, b, e))
         elif kind in ("pmos", "nmos"):
-            roles = self.roles(des)
-            dr, g, s = (self.n(roles.get(x)) for x in ("drain", "gate", "source"))
+            dr, g, s = (self.rn(des, x) for x in ("drain", "gate", "source"))
             self.add(f"M_{des} {dr} {g} {s} {s} {self.model(des, part)}", des, kind, (dr, g, s))
         elif kind == "led":
             self.led(des, part)
@@ -236,27 +276,24 @@ class Netlist:
             if cell_name is None:
                 return
             cell = self.cfg["cells"][cell_name]
-            roles = self.roles(des)
             count = p.get("cells", 1)
             for s in [""] if count == 1 else [f"_{chr(ord('a') + i)}" for i in range(count)]:
                 name = des + s
-                plus, minus = self.n(roles["plus" + s]), self.n(roles["minus" + s])
+                plus, minus = self.rn(des, "plus" + s, True), self.rn(des, "minus" + s, True)
                 self.add(f"V_{name} x_{name.lower()} {minus} DC {cell['v']}")
                 self.add(f"R_{name} x_{name.lower()} {plus} {cell['r']}", des, "battery",
                          (f"x_{name.lower()}", plus), cell["r"])
                 self.meta.setdefault("cells", {})[name] = {"des": des, "state": cell_name,
                                                            "branch": f"v_{name}#branch".lower()}
         elif kind == "buzzer":
-            roles = self.roles(des)
-            self.add(f"R_{des} {self.n(roles['plus'])} {self.n(roles['minus'])} {p['coil_ohm']}", des, "buzzer",
-                     (self.n(roles["plus"]), self.n(roles["minus"])), p["coil_ohm"])
+            a, b = self.rn(des, "plus", True), self.rn(des, "minus", True)
+            self.add(f"R_{des} {a} {b} {p['coil_ohm']}", des, "buzzer", (a, b), p["coil_ohm"])
         elif kind == "relay":
-            roles = self.roles(des)
-            a, b = self.n(roles.get("coil_plus")), self.n(roles.get("coil_minus"))
+            a, b = self.rn(des, "coil_plus"), self.rn(des, "coil_minus")
             if a and b and a != b:
                 self.add(f"R_{des}_COIL {a} {b} {p['coil_ohm']}", des, "relay_coil", (a, b), p["coil_ohm"])
             on = des in self.load.get("relays_on", [])
-            c, t = self.n(roles.get("common")), self.n(roles.get("no" if on else "nc"))
+            c, t = self.rn(des, "common"), self.rn(des, "no" if on else "nc")
             if c and t and c != t:
                 self.add(f"R_{des}_K {c} {t} {p.get('r_contact_ohm', 0.05)}", des, "switch", (c, t),
                          p.get("r_contact_ohm", 0.05))
@@ -264,34 +301,30 @@ class Netlist:
         elif kind == "switch":
             if des in self.load.get("open", []):
                 return
-            roles = self.roles(des)
-            a = self.n(roles.get("common"))
-            b = self.n(roles.get(self.load.get("throw", {}).get(des, "throw_a"))) or self.n(roles.get("throw_b"))
+            a = self.rn(des, "common")
+            b = self.rn(des, self.load.get("throw", {}).get(des, "throw_a")) or self.rn(des, "throw_b")
             if a and b:
                 self.add(f"R_{des} {a} {b} {p.get('r_on_ohm', 0.05)}", des, "switch", (a, b), p.get("r_on_ohm", 0.05))
         elif kind == "dip_switch":
             closed = self.load.get("dip_closed", {}).get(des, []) if isinstance(self.load.get("dip_closed"), dict) \
                 else self.load.get("dip_closed", [])
-            roles = self.roles(des)
             for i in range(1, p.get("positions", 8) + 1):
                 if closed == "all" or i in closed:
-                    a, b = self.n(roles.get(f"a{i}")), self.n(roles.get(f"b{i}"))
+                    a, b = self.rn(des, f"a{i}"), self.rn(des, f"b{i}")
                     if a and b:
                         self.add(f"R_{des}_{i} {a} {b} {p.get('r_on_ohm', 0.1)}", des, "switch", (a, b),
                                  p.get("r_on_ohm", 0.1))
         elif kind == "button":
             if des in self.load.get("buttons", []):
-                roles = self.roles(des)
-                a, b = self.n(roles.get("a")), self.n(roles.get("b"))
+                a, b = self.rn(des, "a"), self.rn(des, "b")
                 if a and b:
                     self.add(f"R_{des} {a} {b} {p.get('r_on_ohm', 0.1)}", des, "switch", (a, b), p.get("r_on_ohm", 0.1))
         elif kind == "potentiometer":
-            roles = self.roles(des)
             pos = self.load.get("pot", {}).get(des, 0.5) if isinstance(self.load.get("pot"), dict) else 0.5
             ra, rb = max(p["value_ohm"] * pos, 1), max(p["value_ohm"] * (1 - pos), 1)
-            w = self.n(roles["wiper"])
-            self.add(f"R_{des}_a {self.n(roles['end_a'])} {w} {ra:.6g}", des, "pot", (self.n(roles["end_a"]), w), ra)
-            self.add(f"R_{des}_b {w} {self.n(roles['end_b'])} {rb:.6g}", des, "pot", (w, self.n(roles["end_b"])), rb)
+            w, ea, eb = (self.rn(des, x, True) for x in ("wiper", "end_a", "end_b"))
+            self.add(f"R_{des}_a {ea} {w} {ra:.6g}", des, "pot", (ea, w), ra)
+            self.add(f"R_{des}_b {w} {eb} {rb:.6g}", des, "pot", (w, eb), rb)
         elif kind in ("ic", "module"):
             behavior = p.get("behavior", "none")
             fn = self.plugin_models.get(behavior) or getattr(self, f"ic_{behavior}", None)
@@ -301,8 +334,8 @@ class Netlist:
             fn(self, des, part) if behavior in self.plugin_models else fn(des, part)
 
     # --- behaviour models -----------------------------------------------------------------------------------------
-    def _gnd_of(self, roles):
-        return self.n(roles.get("gnd")) or "0"
+    def _gnd_of(self, des):
+        return self.rn(des, "gnd") or "0"
 
     def _regulator(self, des, vin, vout, gnd, kind, p, extra_i=0.0, vin_min=None):
         """Output source at vout with an ammeter; input current from vin by kind ('ldo' or 'buck'/'boost'). With
@@ -324,14 +357,12 @@ class Netlist:
                                   "ammeter": f"v_{tag}_am#branch", "params": p, "extra_i": extra_i, "vin_min": vin_min}
 
     def ic_ldo(self, des, part):
-        roles = self.roles(des)
-        self._regulator(des, self.n(roles["vin"]), self.n(roles["vout"]), self._gnd_of(roles), "ldo", part["params"],
+        self._regulator(des, self.rn(des, "vin", True), self.rn(des, "vout", True), self._gnd_of(des), "ldo", part["params"],
                         vin_min=part.get("ratings", {}).get("vin_min"))
         self.meta["regs"][des]["ratings"] = part.get("ratings", {})
 
     def ic_buck(self, des, part, kind="buck"):
-        roles = self.roles(des)
-        self._regulator(des, self.n(roles["vin"]), self.n(roles["vout"]), self._gnd_of(roles), kind, part["params"],
+        self._regulator(des, self.rn(des, "vin", True), self.rn(des, "vout", True), self._gnd_of(des), kind, part["params"],
                         vin_min=part.get("ratings", {}).get("vin_min"))
         self.meta["regs"][des]["ratings"] = part.get("ratings", {})
 
@@ -340,9 +371,9 @@ class Netlist:
 
     def ic_mcu(self, des, part):
         p = part["params"]
-        roles = self.roles(des)
-        vin = self.n(roles.get("vsys") or roles.get("vin") or roles.get("vdd"))
-        vout = self.n(roles.get("vout") or roles.get("3v3"))
+        rp = self.role_pins(des)
+        vin = self.pn(rp.get("vsys") or rp.get("vin") or rp.get("vdd"))
+        vout = self.pn(rp.get("vout") or rp.get("3v3"))
         v_io = p.get("v_io", 3.3)  # a number, or "vin": the I/O runs from the supply pin (5 V AVR boards)
         mcfg = self.cfg.get("mcu", {}).get(des) or self.cfg.get("mcu", {})
         if vout and p.get("regulator"):
@@ -355,7 +386,8 @@ class Netlist:
         elif vin:
             self.current_load(f"{des}_CORE", vin, "0", p.get("i_core_a", 0.03))
         gpio = {self.d.pin_net.get(f"{des}.{n}") for n, i in part["pins"].items() if i.get("role") == "gpio"}
-        rail = self.n(mcfg["io_rail"]) if mcfg.get("io_rail") else (vin if v_io == "vin" else vout or vin)
+        rail = (self.pn(self.pin_on(des, mcfg["io_rail"])) or self.n(mcfg["io_rail"])) if mcfg.get("io_rail") \
+            else (vin if v_io == "vin" else vout or vin)
         ammeters, cannot_drive = {}, []
         for net in mcfg.get("outputs", []):
             pins = [i for n, i in part["pins"].items() if self.d.pin_net.get(f"{des}.{n}") == net]
@@ -369,24 +401,26 @@ class Netlist:
                 else:
                     self.add(f"V_{des}_{net} {x}s 0 DC {v_io if self.gpio_level(net) else 0}")
                 self.add(f"V_{des}_{net}_AM {x}s {x} 0")
-                self.add(f"R_{des}_{net} {x} {self.n(net)} {p.get('gpio_r_out_ohm', 30)}")
+                self.add(f"R_{des}_{net} {x} {self.pn(self.pin_on(des, net))} {p.get('gpio_r_out_ohm', 30)}")
                 if self.gpio_level(net) and rail:  # what a high output sources comes out of the I/O supply
                     self.add(f"B_{des}_{net}_SUP {rail} 0 I = max(i(V_{des}_{net}_AM), 0)")
         for net in mcfg.get("pullups", []):
             if net in gpio and rail:
-                self.add(f"R_{des}_PU_{net} {rail} {self.n(net)} {mcfg.get('pullup_ohm', 50000)}")
+                self.add(f"R_{des}_PU_{net} {rail} {self.pn(self.pin_on(des, net))} {mcfg.get('pullup_ohm', 50000)}")
         self.meta["mcu"][des] = {"vin": vin, "vout": vout, "params": p, "ratings": part.get("ratings", {}),
                                  "io_rail": rail if v_io == "vin" or mcfg.get("io_rail") else None,
                                  "inputs": [net for net in mcfg.get("inputs", []) if net in gpio],
+                                 "input_nodes": {net: self.pn(self.pin_on(des, net)) for net in mcfg.get("inputs", [])
+                                                 if net in gpio},
                                  "gpio_ammeters": ammeters, "cannot_drive": cannot_drive}
 
     def ic_cc_sink(self, des, part):
         p = part["params"]
         nets = {i.get("role"): self.d.pin_net.get(f"{des}.{n}") for n, i in part["pins"].items() if i.get("role")}
-        vdd = self.n(nets.get("vdd"))
+        vdd = self.rn(des, "vdd")
         if vdd:
             self.current_load(f"{des}_VDD", vdd, "0", p.get("idd_max_a", 0.01))
-        self.add(f"V_{des}_REXT {self.n(nets['rext'])} 0 DC {p['vrext_v']}")
+        self.add(f"V_{des}_REXT {self.rn(des, 'rext', True)} 0 DC {p['vrext_v']}")
         oe = nets.get("oe_n")
         enabled = oe is None or self.gpio_level(oe, default=1) == 0
         want = self.load.get("cc_on", {}).get(des, []) if isinstance(self.load.get("cc_on"), dict) else []
@@ -397,7 +431,7 @@ class Netlist:
             net = self.d.pin_net.get(f"{des}.{num}")
             if net is None:
                 continue
-            o = self.n(net)
+            o = self.pn(f"{des}.{num}")
             on = enabled and (want == "all" or net in want or info["name"] in want)
             if on:
                 y = f"y_{des.lower()}_{num}"
@@ -410,7 +444,7 @@ class Netlist:
         for num, info in part["pins"].items():     # the serial data output (SDO): low through 50 Ω, as in 'logic'
             net = self.d.pin_net.get(f"{des}.{num}")
             if net and info.get("type") == "output":
-                self.add(f"R_{des}_{num} {self.n(net)} 0 50")
+                self.add(f"R_{des}_{num} {self.pn(f'{des}.{num}')} 0 50")
         self.meta["cc"][des] = {"rext_src": f"v_{des.lower()}_rext#branch", "vdd": vdd, "channels": chans,
                                 "params": p, "ratings": part.get("ratings", {})}
 
@@ -420,15 +454,15 @@ class Netlist:
             if not net:
                 continue
             if info["type"] == "power_in":
-                self.current_load(f"{des}_{num}", self.n(net), "0", part["params"].get("icc_a", 0.001))
+                self.current_load(f"{des}_{num}", self.pn(f"{des}.{num}"), "0", part["params"].get("icc_a", 0.001))
             elif info["type"] == "output":
-                self.add(f"R_{des}_{num} {self.n(net)} 0 50")
+                self.add(f"R_{des}_{num} {self.pn(f'{des}.{num}')} 0 50")
 
     def ic_current(self, des, part):
         for num, info in part["pins"].items():
             net = self.d.pin_net.get(f"{des}.{num}")
             if net and info["type"] == "power_in":
-                self.current_load(f"{des}_{num}", self.n(net), "0", part["params"].get("i_a", 0.001))
+                self.current_load(f"{des}_{num}", self.pn(f"{des}.{num}"), "0", part["params"].get("i_a", 0.001))
 
     def ic_none(self, des, part):
         pass
@@ -438,8 +472,10 @@ class Netlist:
         for des in sorted(self.d.comps):
             self.component(des)
         for el in getattr(self.d, "cable_elements", []):
-            a, b = self.n(el["a"]), self.n(el["b"])
+            a, b = self.pn(el["pa"]), self.pn(el["pb"])
             self.add(f"{el['name']} {a} {b} {el['r']}", el["des"], "connector", (a, b), el["r"])
+        for name, a, b, r in (getattr(self.d, "copper", None) or {}).get("elements", []):   # tracks and vias
+            self.add(f"R_CU_{name} {a} {b} {r:.6g}")
         prints = ["print all"]
         for els in self.meta["elements"].values():
             for el in els:
@@ -460,7 +496,7 @@ class Netlist:
         tran["nets"] and of every MCU supply pin and the current of every source written to tran["file"] (wrdata, one
         time column); their order in meta["tran"]["columns"]."""
         present = {t for line in self.lines for t in line.split()}
-        nodes = [self.n(net) for net in tran["nets"]] + [m["vin"] for m in self.meta["mcu"].values()]
+        nodes = [x for net in tran["nets"] for x in net_nodes(self.d, net)] + [m["vin"] for m in self.meta["mcu"].values()]
         nodes = list(dict.fromkeys(x for x in nodes if x and x != "0" and x in present))
         branches = [s["branch"] for s in self.meta["sources"].values()]
         self.meta["tran"] = {"columns": nodes + branches, "file": tran["file"]}

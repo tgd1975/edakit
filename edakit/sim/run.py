@@ -48,7 +48,7 @@ import tempfile
 from collections import defaultdict
 from pathlib import Path
 
-from . import netlist
+from . import copper, netlist
 
 DEFAULT_DERATING = {"p": 0.5, "i": 0.8, "v_cap": 0.67, "v_diode": 0.67, "v_bjt": 0.67}
 DEFAULT_CRITERIA = {"net_range_tol_v": 0.05, "led_on_min_a": 0.001, "led_on_min_ratio": 0.8, "led_off_max_a": 1e-5,
@@ -363,7 +363,7 @@ def functional(design, cfg, res, meta, load, ck, plugin):
         vih = p.get("vih_v", p["vih_ratio"] * v_io if "vih_ratio" in p else None)
         vil = p.get("vil_v", p["vil_ratio"] * v_io if "vil_ratio" in p else None)
         for net in m.get("inputs", []) if vih is not None and vil is not None else []:
-            x = v(res, netlist.node(net, design.ground))
+            x = v(res, m.get("input_nodes", {}).get(net) or netlist.node(net, design.ground))
             level = "high" if x >= vih else "low" if x <= vil else "undefined"
             ck.add("E-3", f"{des} {net}", f"input level {level} (VIL {vil:.2f} V, VIH {vih:.2f} V)", x,
                    f"≤ {vil:.2f} V or ≥ {vih:.2f} V", level != "undefined", unit=" V")
@@ -387,12 +387,11 @@ def functional(design, cfg, res, meta, load, ck, plugin):
             continue
         lo, hi = r.get("vin_min", -math.inf), r.get("vin_max", math.inf)
         want = f"{lo} … {hi} V" if {"vin_min", "vin_max"} <= set(r) else f"≥ {lo} V" if "vin_min" in r else f"≤ {hi} V"
-        ground = next((design.pin_net[f"{des}.{n}"] for n, i in p["pins"].items()
-                       if i.get("type") == "ground" and f"{des}.{n}" in design.pin_net), design.ground)
+        ground = ground_pin(design, des, p)
         for num, info in p["pins"].items():
             net = design.pin_net.get(f"{des}.{num}")
             if net and info.get("type") == "power_in":
-                x = v(res, netlist.node(net, design.ground)) - v(res, netlist.node(ground, design.ground))
+                x = at_pin(design, res, f"{des}.{num}", ground)
                 ck.add("E-3", des, f"supply voltage at {info.get('name', num)} within vin_min … vin_max", x, want,
                        lo <= x <= hi, unit=" V")
     operating_range(design, res, ck)
@@ -472,10 +471,19 @@ def functional(design, cfg, res, meta, load, ck, plugin):
     tol = crit["net_range_tol_v"]
     gnd = design.ground
     for name, net in design.nets.items():
-        x = v(res, netlist.node(name, gnd)) - v(res, netlist.node(netlist.local_ground(design, name), gnd))
+        g = v(res, netlist.node(netlist.local_ground(design, name), gnd))
         lo, hi = net.get("v", [0, 0])
-        ck.add("E-3", name, "net voltage inside the declared range", x, f"{lo} … {hi} V", lo - tol <= x <= hi + tol,
-               unit=" V")
+        nodes = netlist.net_nodes(design, name)
+        if len(nodes) == 1:
+            x = v(res, nodes[0]) - g
+            ck.add("E-3", name, "net voltage inside the declared range", x, f"{lo} … {hi} V", lo - tol <= x <= hi + tol,
+                   unit=" V")
+            continue
+        pin_at = {netlist.pin_node(design, ref): ref for ref in reversed(net["pins"])}   # the routed copper: every pin
+        (x_lo, n_lo), (x_hi, n_hi) = min(xs := [(v(res, n) - g, n) for n in nodes]), max(xs)
+        ck.add("E-3", name, "net voltage inside the declared range",
+               f"{x_lo:.4g} V ({pin_at[n_lo]}) … {x_hi:.4g} V ({pin_at[n_hi]})", f"{lo} … {hi} V",
+               lo - tol <= x_lo and x_hi <= hi + tol)
     if plugin and hasattr(plugin, "checks"):
         plugin.checks(design=design, cfg=cfg, res=res, meta=meta, load=load, add=ck.add)
 
@@ -506,15 +514,17 @@ def supply_pins(part):
     return {n: i for n, i in pins.items() if i.get("role") in SUPPLY_ROLES} or pins
 
 
-def own_ground(design, des, part):
-    """The net of the part's first ground pin – what its supply and its input levels are measured against."""
-    return next((design.pin_net[f"{des}.{n}"] for n, i in (part.get("pins") or {}).items()
-                 if i.get("type") == "ground" and f"{des}.{n}" in design.pin_net), design.ground)
+def ground_pin(design, des, part):
+    """The part's first connected ground pin ('U2.1') – what its supply and its input levels are measured against;
+    None without one (the ground net)."""
+    return next((f"{des}.{n}" for n, i in (part.get("pins") or {}).items()
+                 if i.get("type") == "ground" and f"{des}.{n}" in design.pin_net), None)
 
 
-def against(design, res, net, ground):
-    """Voltage of a net against a ground net; nan for a net no element of the netlist reaches."""
-    return v(res, netlist.node(net, design.ground)) - v(res, netlist.node(ground, design.ground))
+def at_pin(design, res, ref, ground=None):
+    """Voltage at a pin – on its pad node where the copper of its net is simulated – against a ground pin (None: the
+    ground net); nan for a node no element of the netlist reaches."""
+    return v(res, netlist.pin_node(design, ref)) - (v(res, netlist.pin_node(design, ground)) if ground else 0.0)
 
 
 def operating_range(design, res, ck):
@@ -526,13 +536,13 @@ def operating_range(design, res, ck):
         r = part.get("ratings") or {}
         ranges = {n: (r.get("vdd_op_min"), r.get("vdd_op_max")) for n in supply_pins(part)}
         ranges.update({n: tuple(i["v_op"]) for n, i in (part.get("pins") or {}).items() if i.get("v_op")})
-        ground, seen = own_ground(design, des, part), set()
+        ground, seen = ground_pin(design, des, part), set()
         for num, (lo, hi) in ranges.items():
             net = design.pin_net.get(f"{des}.{num}")
             if net is None or (lo is None and hi is None) or (net, lo, hi) in seen:
                 continue
             seen.add((net, lo, hi))
-            x = against(design, res, net, ground)
+            x = at_pin(design, res, f"{des}.{num}", ground)
             if math.isnan(x):
                 continue
             want = f"{lo} … {hi} V" if lo is not None and hi is not None else f"≥ {lo} V" if hi is None else f"≤ {hi} V"
@@ -569,9 +579,10 @@ def logic_levels(design, res, meta, ck):
                                                              for k in ("vil", "vih"))]
         if not inputs:
             continue
-        ground = own_ground(design, des, part)
-        nets = sorted({design.pin_net[f"{des}.{n}"] for n in supply_pins(part) if f"{des}.{n}" in design.pin_net})
-        vdd = against(design, res, nets[0], ground) if len(nets) == 1 else None
+        ground = ground_pin(design, des, part)
+        on = sorted((design.pin_net[f"{des}.{n}"], f"{des}.{n}") for n in supply_pins(part) if f"{des}.{n}" in design.pin_net)
+        nets = sorted({net for net, _ in on})
+        vdd = at_pin(design, res, on[0][1], ground) if len(nets) == 1 else None
         for num, info in inputs:
             vil, vih = (threshold(p, info, k, vdd) for k in ("vil", "vih"))
             if vil is None or vih is None:
@@ -580,7 +591,7 @@ def logic_levels(design, res, meta, ck):
                        "one supply pin: a power_in pin with the role vdd or vcc", False)
                 break
             net, name = design.pin_net[f"{des}.{num}"], info.get("name", num)
-            x = against(design, res, net, ground)
+            x = at_pin(design, res, f"{des}.{num}", ground)
             if math.isnan(vil) or math.isnan(vih):
                 continue
             reach[joined.get(net, net)].append((f"{des} {name}", vih))
@@ -602,6 +613,7 @@ def net_currents(design, res, meta):
     """Largest current of a single part per net – a measure for the main trunk of a track."""
     gnd = design.ground
     net_of_node = {netlist.node(n, gnd): n for n in set(design.pin_net.values())}
+    net_of_node.update((getattr(design, "copper", None) or {}).get("node_net", {}))   # pad nodes of the routed copper
     cur = defaultdict(float)
 
     def put(nodes, i):
@@ -782,11 +794,14 @@ def transient(design, sim, name, run, keep=None, models=None):
     wave = dict(zip(meta["tran"]["columns"], cols))
     zero = [0.0] * len(times)
 
-    def volts(net):
-        a, g = netlist.node(net, design.ground), netlist.node(grounds[net], design.ground)
-        if a not in wave and a != "0":
+    def volts(net, fn=min):
+        """The net's voltage over time against its ground; with its routed copper the lowest (fn=min) or highest
+        (fn=max) of its pins at each time. None for a net no element reaches."""
+        nodes = [x for x in netlist.net_nodes(design, net) if x in wave or x == "0"]
+        if not nodes:
             return None
-        return [x - y for x, y in zip(wave.get(a, zero), wave.get(g, zero))]
+        g = wave.get(netlist.node(grounds[net], design.ground), zero)
+        return [fn(xs) - y for xs, y in zip(zip(*(wave.get(x, zero) for x in nodes)), g)]
     for key, lim in expect.items():
         if key in sources:
             cur = [-x for x in wave[meta["sources"][key]["branch"]]] if key in meta["sources"] else zero
@@ -794,10 +809,10 @@ def transient(design, sim, name, run, keep=None, models=None):
             ck.add("E-5", key, "peak current from the supply", at_time(peak, t, "A"),
                    f"≤ {lim['i_max_a'] * 1e3:.4g} mA", peak <= lim["i_max_a"])
             continue
-        xs = volts(key)
         for k, what, fn, sign in (("min_v", "lowest voltage", min, "≥"), ("max_v", "highest voltage", max, "≤")):
             if k not in lim:
                 continue
+            xs = volts(key, fn)
             if xs is None:
                 ck.add("E-5", key, what, "no element of the netlist on the net", f"{sign} {lim[k]} V", False)
                 continue
@@ -820,9 +835,9 @@ def transient(design, sim, name, run, keep=None, models=None):
         for c in ck.items:
             if c["result"] == "fail":
                 c["result"] = "info"
-    report = {n: xs for n in sim.get("report", []) if (xs := volts(n)) is not None}
-    row["nets"] = {n: min(xs) for n, xs in report.items()}
-    row["nets_max"] = {n: max(xs) for n, xs in report.items()}
+    report = [n for n in sim.get("report", []) if volts(n) is not None]
+    row["nets"] = {n: min(volts(n, min)) for n in report}
+    row["nets_max"] = {n: max(volts(n, max)) for n in report}
     row["sources"] = {d: max(-x for x in wave[s["branch"]]) for d, s in meta["sources"].items()}
     row["status"] = "ok" if all(c["result"] != "fail" for c in ck.items) else "fail"
     return row, ck.items
@@ -837,12 +852,21 @@ def load_plugin(path):
     return mod
 
 
-def run_all(design, sim, keep=None, plugin=None):
-    """All scenarios; `sim` is the parsed simulation config (tests pass modified copies)."""
+def run_all(design, sim, keep=None, plugin=None, routing=None):
+    """All scenarios; `sim` is the parsed simulation config (tests pass modified copies). `routing`: the routed boards
+    for sim.json copper (copper.load_routing)."""
     models = getattr(plugin, "MODELS", {}) if plugin else {}
     touch_limits(design, sim)
     runs = transient_runs(design, sim)
     out = {"scenarios": [], "checks": [], "net_currents": {}}
+    try:
+        cu = copper.annotate(design, sim, routing)
+    except copper.CopperError as e:
+        raise SimError(str(e)) from None
+    notes = Checks("copper")
+    for net, why in cu["notes"]:      # a listed net that stays one ideal node
+        notes.add("E-1", net, "copper not annotated", why, "the routed copper of the net", True, "info")
+    out["checks"] += notes.items
     for sc in scenarios(sim):
         ck = Checks(sc["name"])
         row = {"name": sc["name"], "supply": sc["supply_name"], "load": sc["load_name"], "corner": sc["corner"]}
@@ -862,7 +886,7 @@ def run_all(design, sim, keep=None, plugin=None):
             for c in ck.items:
                 if c["result"] == "fail":
                     c["result"] = "info"
-        row["nets"] = {n: v(res, netlist.node(n, design.ground)) for n in sim.get("report", [])}
+        row["nets"] = {n: min(v(res, x) for x in netlist.net_nodes(design, n)) for n in sim.get("report", [])}
         row["sources"] = {d: -res.get(s["branch"], 0.0) for d, s in meta["sources"].items()}
         for net, i in net_currents(design, res, meta).items():
             e = out["net_currents"].setdefault(net, {"i_max_a": 0.0, "scenario": ""})
@@ -904,7 +928,8 @@ def main(cfg, args):
     generated = generated_supplies(sim)
     if generated:
         print("supplies from combine_sources: " + ", ".join(generated))
-    out = run_all(Design.from_config(cfg), sim, args.keep, plugin)
+    routing = copper.load_routing(cfg) if sim.get("copper") else None
+    out = run_all(Design.from_config(cfg), sim, args.keep, plugin, routing)
     report = sim.get("report", [])
     print(f"{'scenario':<34} {'status':<7}" + "".join(f" {n:>8}" for n in report) + "   supply current")
     for r in out["scenarios"]:
@@ -927,7 +952,7 @@ def main(cfg, args):
         summary[c["result"]] += 1
     print(f"\n{len(out['checks'])} checks: " + ", ".join(f"{k} {n}" for k, n in sorted(summary.items())))
     for c in out["checks"]:
-        if c["result"] in ("fail", "warn"):
+        if c["result"] in ("fail", "warn") or c["scenario"] == "copper":   # a net of copper that stays one node too
             print(f"  {c['result'].upper():<5} {c['id']} {c['scenario']:<30} {c['item']:<12} {c['check']}: "
                   f"{c['actual']} (expected {c['expected']})")
     if args.json:
