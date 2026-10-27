@@ -31,14 +31,18 @@ Concept: `${CLAUDE_PLUGIN_ROOT}/handbook/08-release-gate.md`.
    on the manufacturing files of this run. OK → `done_by` = the agent, date, note, and the hash of its scope from the
    protocol header into the sign-off file. Not OK → fix the cause and check again. What changes looks or operation is
    the user's call (decision-round skill).
-6. **RELEASED:** `fab/manifest.json` says `"released": true`. Archive the folder in git (`git add -f`) through the
-   project's git workflow. Upload only from that folder.
+6. **RELEASED:** `fab/manifest.json` says `"released": true`, and the run is the current release – the gate marked
+   every earlier released run as superseded (`edakit release current` shows it). Archive the folder in git
+   (`git add -f`) together with the superseded manifests through the project's git workflow. A released run that must
+   not be uploaded after all (a review found something): `edakit release withdraw <run> --reason "…"` – then there is
+   no current release until the next RELEASED run.
 
 ## Order (done by the user)
 
 The MCP server cannot order on purpose. Checklist for the user:
 
-- [ ] Per board: `gerber_<b>.zip`, `bom_<b>.csv`, `cpl_<b>.csv` from the released folder, checksums as in the manifest
+- [ ] `edakit release verify <the files about to be uploaded>` says every file is of the current release (exit 0) –
+      per board `gerber_<b>.zip`, `bom_<b>.csv`, `cpl_<b>.csv`
 - [ ] Assembly type matches `[release] assembly` (Economic: one side, SMD; two SMD sides or a "Standard Only" part
       need Standard PCBA – `assembly.pcba`, P-4); bake set when P-4 warns about MSL ≥ 5
 - [ ] The form as `fab/<b>/order.md` of the released run says (with `[order]` in the board file; F-6 checked it):

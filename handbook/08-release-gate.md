@@ -1,7 +1,8 @@
 # 8 The release gate
 
-Only the gate creates the files that go to the manufacturer, and only a run whose manifest says `"released": true`
-may be uploaded. The gate runs every check, on the files themselves, and writes a test protocol.
+Only the gate creates the files that go to the manufacturer, and only the current release may be uploaded: the run
+whose manifest says `"released": true` – a newer released run supersedes it (8.3). The gate runs every check, on the
+files themselves, and writes a test protocol.
 
 ```bash
 edakit gate              # P, G, E and the project's own stages – offline, seconds
@@ -167,6 +168,30 @@ Result folder `<reports>/<YYYYMMDD-hhmmss>/`: `protocol.md`, `graph_checks.json`
 `schematic_<board>.json`, `fab/<board>/` (Gerber ZIP, BOM, CPL, raw data, with `[order]` the order form `order.md`), `fab/polarity_<board>.png`,
 `fab/manifest.json`. Archive a released folder in git (`git add -f`) – it is the record of what was ordered.
 
+**One current release.** A project has at most one run that may be uploaded. When the gate decides RELEASED, it
+marks every earlier manifest under `[project] reports` that says `"released": true` as superseded by the new run:
+`"released": false`, `"status": "superseded"`, `"superseded_by": "<run>"`; `decision` keeps what the gate decided.
+The archived folders change – commit them together with the new run. A released run that must not be uploaded after
+all (a review found something, the files were wrong) is withdrawn:
+
+```bash
+edakit release current                                  # the run, its time, git commit, graph version, files + SHA-256
+edakit release withdraw 20261025-205344 --reason "back copper missing"   # "status": "withdrawn", {reason, by, date}
+edakit release verify ~/upload/                         # the files about to be uploaded = the current release?
+```
+
+After a withdrawal there is no current release until the next RELEASED run; earlier runs stay superseded (manifests
+from before this – without `status` – that still say released are superseded by the withdrawn run, so that none of
+them becomes current instead). A manifest without `status` reads as before: the newest one that says released is
+current, and nothing is rewritten until the next RELEASED run. Whatever reads `released` – `edakit part own` for
+the release of an own board (4.5) – skips superseded and withdrawn runs.
+
+`release verify` takes files or folders (a folder: every `.zip` and `.csv` file in and below it) and compares the
+SHA-256 of each with the manifests: a file of the current release passes; a file of another run is named with that
+run and its status ("from run 20261025-205344 (superseded by 20261025-232212)"); a file of no run is unknown – an
+edited CSV, a renamed export. Exit 0 when every file is of the current release, 2 otherwise, 1 for a file that is not
+there.
+
 ## 8.4 Ordering at JLCPCB (the owner does it)
 
 **The cost before the quote.** `edakit cost` estimates the order for `quantity` boards from the graph, the parts
@@ -212,7 +237,8 @@ order.md of the released run and write tab zones only on stretches it lists as f
 
 The MCP server cannot order. Lessons from the reference order:
 
-- Upload `gerber_<b>.zip`, `bom_<b>.csv`, `cpl_<b>.csv` from the released folder only; compare the checksums.
+- Upload `gerber_<b>.zip`, `bom_<b>.csv`, `cpl_<b>.csv` of the current release only: `edakit release verify` on the
+  files you are about to upload, right before the upload.
 - **Economic PCBA** assembles one side, SMD only; a second SMD side or certain parts (large battery holders, some
   modules – "Standard Only" on their JLCPCB part page) need Standard PCBA with a higher setup fee per side. Plan the
   board so the cheap option works (through-hole parts you solder yourself get `bom: false`); P-4 fails a "Standard

@@ -208,7 +208,8 @@ datasheet – edakit derives the parts entry from it:
    project. Commit them – a datasheet belongs to a state of the board, and P-3 says when it is older.
 2. **In the project that uses the board:** `edakit part own ../board` copies the datasheet into the parts database
    and adds where it comes from: the path, the commit, the repository, and the gate run that released this state of
-   the board if there is one (`<reports>/*/fab/manifest.json` of the board's project). The component names it like a
+   the board if there is one and it was neither superseded nor withdrawn (`<reports>/*/fab/manifest.json` of the
+   board's project, 8.3). The component names it like a
    part bought elsewhere – `"part": "<name>"`, `"bom": false` (JLCPCB does not have it), the pins as in the entry –
    and gets an `easyeda_device`: a symbol with these pin names and the board's footprint, from your EasyEDA library.
 3. **Sign it off** like any part (4.3), against the datasheet at that commit. Copying the same state again keeps the

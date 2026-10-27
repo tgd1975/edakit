@@ -214,7 +214,10 @@ Code: `edakit … 2>&1 | cat`.
 | `edakit route diagnose [--net N]` | – | `route/<board>_board.json`, the board file's rules, the last SES | `route/<board>_diagnose/` (a PNG per open connection, `congestion.png`, `diagnose.json`), 7.5 |
 | `edakit silk apply\|check` | ✓ | PCB, Gerber export | designators, `silk_<board>_<side>.png`, `gerber_<board>/`; apply: `silk_footprints_<board>/` (the print it found, for L-17) |
 | `edakit export [--board]` | ✓ read | schematic, PCB, project file | `<artifacts>/export/` |
-| `edakit gate [--easyeda]` | – / ✓ | everything | `<reports>/<run>/` |
+| `edakit gate [--easyeda]` | – / ✓ | everything | `<reports>/<run>/`; a RELEASED run supersedes the earlier ones in their `fab/manifest.json` (8.3) |
+| `edakit release current` | – | the manifests under `reports` | – |
+| `edakit release withdraw RUN --reason TEXT` | – | the run's manifest | its `fab/manifest.json`: `status`, `withdrawn` {reason, by, date} |
+| `edakit release verify FILE…\|DIR…` | – | the files (a folder: its `.zip` and `.csv` files), the manifests | – |
 | `edakit fab --board B --out DIR [--offline]` | ✓ / – | PCB, exports, `route/<board>_board.json` (L-13, L-14, L-18), `silk_strings_<board>.json` and `silk_footprints_<board>/` (L-17), the stock snapshot (`order.md`) | `DIR/<board>/`, with `[order]` also `order.md` |
 | `edakit lock [status\|claim\|release\|yield CHAT\|hook] [--note]` | – | – | `~/.local/state/edakit/easyeda-lock.json` |
 | `edakit proposal template [--feature]\|seal FILE [--out F]\|verify FILE` | – | a rule or feature proposal (no project needed) | seal: the issue body with its SHA-256 |
@@ -238,5 +241,5 @@ build/edakit/               artifacts (not versioned): caches, geometry, preview
                             library/ and footprints/: the library's symbols and footprints (edakit part import);
                             datasheets/: the datasheets edakit part fetch keeps (unless [project] datasheets names
                             another folder)
-build/release/<run>/        gate runs (archive the released one)
+build/release/<run>/        gate runs (archive the released ones; fab/manifest.json says which one is current)
 ```

@@ -23,6 +23,7 @@
     edakit silk apply|check
     edakit export                    PDFs, Gerber, BOM, CPL, netlist and a project copy to <artifacts>/export
     edakit gate [--easyeda]          release gate with test protocol and manufacturing files
+    edakit release current|withdraw RUN --reason T|verify FILE…   the one current release, the files to upload
     edakit fab --board B --out DIR   stages L/F for one board (the gate calls it)
     edakit lock [status|claim|release|yield CHAT]   share EasyEDA between parallel Claude sessions
     edakit proposal template|seal|verify   a rule or feature proposal for the edakit repository, sealed with its SHA-256
@@ -175,6 +176,13 @@ def build_parser():
     p.add_argument("--easyeda", action="store_true", help="also run S, L and F (EasyEDA with the bridge)")
     _common(p)
 
+    p = sub.add_parser("release", help="the current release: show it, withdraw a run, check the files to upload")
+    p.add_argument("action", choices=["current", "withdraw", "verify"])
+    p.add_argument("items", nargs="*", help="withdraw: the run (folder name under reports); verify: files or folders "
+                                            "(their .zip and .csv files)")
+    p.add_argument("--reason", help="withdraw: why the run must not be uploaded")
+    _common(p)
+
     p = sub.add_parser("fab", help="stages L and F for one board")
     p.add_argument("--board")
     p.add_argument("--out", required=True, help="report folder; files go to OUT/<board>/")
@@ -281,6 +289,9 @@ def main(argv=None):
     if args.command == "gate":
         from .release import gate
         return gate.main(cfg, args)
+    if args.command == "release":
+        from .release import gate
+        return gate.main_release(cfg, args)
     if args.command == "fab":
         from .release import fab
         return fab.main(cfg, args)

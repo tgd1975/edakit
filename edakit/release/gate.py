@@ -9,7 +9,8 @@ Result: <reports>/<YYYYMMDD-hhmmss>/
                            and the rule, reason and fix of every check that failed or warned (rules.json)
     graph_checks.json, sim.json, schematic_<board>.json   raw results
     fab/<board>/           Gerber ZIP, BOM and CPL in JLCPCB format plus raw data (stages L, F)
-    fab/manifest.json      SHA-256 of every file to upload, the hashes of the checked state, the decision
+    fab/manifest.json      SHA-256 of every file to upload, the hashes of the checked state, the decision, and
+                           whether the run is the current release (status: released, superseded, withdrawn)
 
 RELEASED only if
   - every stage ran and no check failed,
@@ -21,6 +22,13 @@ RELEASED only if
     [release], the footprint geometry). An accepted
     warning with scope 'decision' counts regardless of the hash and refers to a numbered decision in the docs.
 Exit code: 0 = released, 2 = not released, 1 = tool error.
+
+One current release: a RELEASED run supersedes every earlier released run of the project (their manifests say
+"released": false, "status": "superseded", "superseded_by": <run>), and a released run can be withdrawn.
+
+    edakit release current             the current release: run, time, git, graph version, files with SHA-256
+    edakit release withdraw RUN --reason TEXT   the run is withdrawn – then there is no current release
+    edakit release verify FILE…|DIR    the files about to be uploaded = the files of the current release?
 """
 
 from __future__ import annotations
@@ -33,6 +41,7 @@ import json
 import platform
 import re
 import subprocess
+import sys
 from collections import Counter, defaultdict
 from fnmatch import fnmatch
 from pathlib import Path
@@ -292,6 +301,8 @@ def decide(rows, sim_checks, signoff, stages_run, stages):
 
 
 def write_manifest(cfg, outdir, head, decision):
+    """fab/manifest.json of this run. A RELEASED run is the current release: every earlier run that says released is
+    superseded by it."""
     fab = outdir / "fab"
     files = {}
     for b in cfg.boards:
@@ -301,11 +312,160 @@ def write_manifest(cfg, outdir, head, decision):
                 files[str(f.relative_to(outdir))] = hashlib.sha256(f.read_bytes()).hexdigest()
     manifest = {"released": decision == "RELEASED", "decision": decision, "time": head["time"],
                 "git": head["git_commit"] + (" + uncommitted changes" if head["git_dirty"] else ""),
+                "graph_version": head.get("graph_version"),
                 "graph_sha256": head["graph_sha256"], "state_sha256": head["state_sha256"],
                 "layout_sha256": head["layout_sha256"], "files": files}
+    if decision == "RELEASED":
+        manifest["status"] = "released"
     fab.mkdir(exist_ok=True)
-    (fab / "manifest.json").write_text(json.dumps(manifest, indent=1, ensure_ascii=False) + "\n", encoding="utf-8")
+    save_manifest(fab / "manifest.json", manifest)
+    if decision == "RELEASED":
+        try:
+            supersede(cfg, outdir.name)
+        except ReleaseError as e:    # the run stays released; the protocol and `release current` still get written
+            print(f"  earlier runs not superseded: {e}", file=sys.stderr)
     return files
+
+
+# --- one current release ------------------------------------------------------------------------------------------
+
+class ReleaseError(Exception):
+    pass
+
+
+def save_manifest(path, manifest):
+    path.write_text(json.dumps(manifest, indent=1, ensure_ascii=False) + "\n", encoding="utf-8")
+
+
+def runs(cfg):
+    """Gate runs with a manifest, oldest first: [(run, manifest file, manifest)]."""
+    out = []
+    for m in sorted(cfg.reports.glob("*/fab/manifest.json")):
+        try:
+            out.append((m.parent.parent.name, m, json.loads(m.read_text(encoding="utf-8"))))
+        except (OSError, json.JSONDecodeError) as e:
+            raise ReleaseError(f"{m}: not readable ({e})") from e
+    return out
+
+
+def current(cfg):
+    """(run, manifest) of the current release – the newest run whose manifest says released – or None. Manifests from
+    before superseding (no status) read the same way."""
+    return next(((run, data) for run, _, data in reversed(runs(cfg)) if data.get("released")), None)
+
+
+def status(data):
+    """What a run is, in words: released, superseded by …, withdrawn: …, not released."""
+    if data.get("withdrawn"):
+        return f"withdrawn: {data['withdrawn'].get('reason')}"
+    if data.get("superseded_by"):
+        return f"superseded by {data['superseded_by']}"
+    return "released" if data.get("released") else "not released"
+
+
+def supersede(cfg, run):
+    """Every earlier run that says released is superseded by run: [their names]."""
+    done = []
+    for name, path, data in runs(cfg):
+        if name < run and data.get("released"):
+            data.update(released=False, status="superseded", superseded_by=run)
+            save_manifest(path, data)
+            done.append(name)
+    return done
+
+
+def withdraw(cfg, run, reason, by=None):
+    """The run is withdrawn: released false, status withdrawn, {reason, by, date}. Earlier runs that still say released
+    (manifests from before superseding) are superseded by it, so that none of them becomes current instead."""
+    path = cfg.reports / run / "fab" / "manifest.json"
+    if not path.exists():
+        raise ReleaseError(f"{run}: no gate run with a manifest in {cfg.reports}")
+    data = json.loads(path.read_text(encoding="utf-8"))
+    if data.get("decision") != "RELEASED":
+        raise ReleaseError(f"{run}: the gate did not release it ({data.get('decision')}) – nothing to withdraw")
+    if data.get("withdrawn"):
+        raise ReleaseError(f"{run}: already withdrawn ({data['withdrawn'].get('reason')})")
+    by = by or sh(cfg.root, "git", "config", "user.name") or getpass.getuser()
+    data.update(released=False, status="withdrawn",
+                withdrawn={"reason": reason, "by": by, "date": dt.date.today().isoformat()})
+    save_manifest(path, data)
+    return supersede(cfg, run)
+
+
+def upload_files(paths):
+    """The files to check: each FILE, and every .zip and .csv file in and below each DIR."""
+    files = []
+    for p in map(Path, paths):
+        if p.is_dir():
+            files += sorted(f for f in p.rglob("*") if f.is_file() and f.suffix.lower() in (".zip", ".csv"))
+        elif p.is_file():
+            files.append(p)
+        else:
+            raise ReleaseError(f"{p}: not found")
+    if not files:
+        raise ReleaseError(f"no file to check in {', '.join(map(str, paths))} (a folder: its .zip and .csv files)")
+    return files
+
+
+def verify(cfg, paths):
+    """Each file against the current release: [(file, ok, what)] – ok only for a file of the current release; another
+    run's file is named with that run and its status, a file of no run is unknown."""
+    known = defaultdict(list)            # SHA-256 -> [(run, path in the run, manifest)], oldest first
+    for run, _, data in runs(cfg):
+        for rel, sha in data.get("files", {}).items():
+            known[sha].append((run, rel, data))
+    cur = current(cfg)
+    out = []
+    for f in upload_files(paths):
+        hits = known.get(hashlib.sha256(f.read_bytes()).hexdigest(), [])
+        mine = [rel for run, rel, _ in hits if cur and run == cur[0]]
+        if mine:
+            out.append((f, True, f"current release {cur[0]} ({mine[0]})"))
+        elif hits:
+            run, rel, data = hits[-1]
+            more = len({r for r, _, _ in hits}) - 1
+            out.append((f, False, f"from run {run} ({status(data)})" + (f", also in {more} earlier run(s)" if more else "")
+                        + " – " + (f"the current release is {cur[0]}" if cur else "there is no current release")))
+        else:
+            out.append((f, False, f"unknown – no gate run in {cfg.reports} has this file"))
+    return cur, out
+
+
+def main_release(cfg, args):
+    try:
+        if args.action == "current":
+            cur = current(cfg)
+            if not cur:
+                last = next((f"{run} {status(d)}" for run, _, d in reversed(runs(cfg)) if d.get("decision") == "RELEASED"),
+                            None)
+                print("current release: none" + (f" (newest released run: {last})" if last else ""))
+                return 2
+            run, data = cur
+            print(f"current release: {run} ({data.get('time')}), git {data.get('git') or '?'}"
+                  + (f", graph {data['graph_version']}" if data.get("graph_version") else
+                     f", graph sha256 {str(data.get('graph_sha256'))[:12]}"))
+            for rel, sha in data.get("files", {}).items():
+                print(f"  {rel}  {sha}")
+            return 0
+        if args.action == "withdraw":
+            if len(args.items) != 1 or not args.reason:
+                raise ReleaseError("withdraw RUN --reason TEXT: one run and why")
+            run = args.items[0]
+            also = withdraw(cfg, run, args.reason)
+            print(f"{run} withdrawn: {args.reason}" + (f"; superseded as well: {', '.join(also)}" if also else ""))
+            cur = current(cfg)
+            print(f"current release: {cur[0] if cur else 'none'}")
+            return 0
+        cur, found = verify(cfg, args.items)
+        for f, ok, what in found:
+            print(f"{'ok  ' if ok else 'FAIL'} {f.name}: {what}  [{f}]")
+        bad = sum(not ok for _, ok, _ in found)
+        print(f"{len(found) - bad} of {len(found)} file(s) of the current release {cur[0] if cur else '(none)'}"
+              + ("" if not bad else " – do not upload"))
+        return 2 if bad else 0
+    except ReleaseError as e:
+        print(f"edakit release: {e}", file=sys.stderr)
+        return 1
 
 
 def write_protocol(cfg, outdir, head, rows, sim, signoff, notes, decision, reasons, stages_run, stages, files):
@@ -395,6 +555,10 @@ def write_protocol(cfg, outdir, head, rows, sim, signoff, notes, decision, reaso
         L.append("Not run.")
     L.append("\n## 9 Release and manufacturing files\n")
     L.append(f"Decision of the gate: **{decision}**\n")
+    if files and decision == "RELEASED":
+        old = [run for run, _, d in runs(cfg) if d.get("superseded_by") == outdir.name]
+        L.append("This run is the current release (`edakit release current`)"
+                 + (f"; it supersedes {', '.join(old)}" if old else "") + ".\n")
     if files:
         L.append("Files for the manufacturer (SHA-256 in `fab/manifest.json`)"
                  + (":" if decision == "RELEASED" else " – **do not upload, state not released**:") + "\n")
