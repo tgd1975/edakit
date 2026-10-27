@@ -135,6 +135,7 @@ class Export:
         self.at, comps, self.geo, probe = {}, [], {}, []
         cu = {k: Layer() for k in gerber.FILES if k not in ("pth", "vias", "npth", "probe")}
         self.pth, self.npth = [], [(x, y, TOOLING_D) for x, y in TOOLING]
+        self.vias = []                 # (x, y, d): EasyEDA writes them into the PTH file and into a file of their own
         for ref, (fp, x, y, rot) in PLACE.items():
             (w, h), pads, (k, a, b), tht = FOOTPRINTS[fp]
             self.geo[ref] = {"footprint": fp, "bbox": [-w / 2 * MIL, -h / 2 * MIL, w / 2 * MIL, h / 2 * MIL],
@@ -255,7 +256,9 @@ class Export:
         wb.save(d / "cpl_easyeda.xlsx")
         g = d / "gerber"
         files = {key: layer.text() for key, layer in self.gerber.items()}
-        files.update(pth=drill(self.pth), npth=drill(self.npth), probe=json.dumps(self.probe))
+        files.update(pth=drill(self.pth + self.vias), npth=drill(self.npth), probe=json.dumps(self.probe))
+        if self.vias:
+            files["vias"] = drill(self.vias)
         for key, text in files.items():
             if key not in self.lost:
                 (g / gerber.FILES[key]).write_text(text)
@@ -276,8 +279,8 @@ def findings(rows):
     return sorted((r["id"], r["result"]) for r in rows if r["result"] not in ("pass", "info"))
 
 
-CHECKS = ["L-1", "L-2", "L-3", "L-4", "L-5", "L-7", "L-8", "L-9", "L-10", "L-11", "L-12", "L-13", "L-14", "L-15", "F-1",
-          "F-2", "F-3", "F-5"]
+CHECKS = ["L-1", "L-2", "L-3", "L-4", "L-5", "L-7", "L-8", "L-9", "L-10", "L-11", "L-12", "L-13", "L-14", "L-15", "L-16",
+          "F-1", "F-2", "F-3", "F-5"]
 
 
 def test_the_clean_export_passes_every_check(project):
@@ -359,6 +362,22 @@ def loose_copper(ex, project):
     ex.gerber["top"].append(("draw", 3.0, [(9, 4.5), (12, 4.5)], "loose"))
 
 
+def j1_pads(mm):
+    """J1's round pads (Ø 1.4 mm on 1.0 mm holes, a ring of 0.2 mm) at another diameter on both copper layers."""
+    def fault(ex, project):
+        for layer in ("top", "bottom"):
+            ex.gerber[layer][:] = [("flash", ("C", mm, mm), *i[2:]) if i[:2] == ("flash", ("C", 1.4, 1.4)) else i
+                                   for i in ex.gerber[layer]]
+    return fault
+
+
+def via(ex, x, y, pad=0.6096, hole=0.3048):
+    """A via as edakit routes it ([24, 12] mil), tented: drill files and a pad on both copper layers."""
+    ex.vias.append((x, y, hole))
+    for layer in ("top", "bottom"):
+        ex.gerber[layer].append(("flash", ("C", pad, pad), x, y))
+
+
 def assembled_j1(ex, project):
     graph(project, lambda g: project.comp(g, "J1").pop("bom"))
     ex.jlc["C131337"] = {"componentModelEn": "B2B-PH-K-S(LF)(SN)", "componentLibraryType": "extend",
@@ -382,7 +401,7 @@ FAULTS = [
      [("L-2", "fail", "C2.1")]),
     ("a copper file missing", lambda ex, p: ex.lost.add("top"),
      [("L-2", "fail", "Gerber_TopLayer.GTL missing"), ("F-5", "fail", "Gerber_TopLayer.GTL"),
-      ("L-15", "fail", "Gerber_TopLayer.GTL missing")]),
+      ("L-15", "fail", "Gerber_TopLayer.GTL missing"), ("L-16", "fail", "Gerber_TopLayer.GTL missing")]),
     ("the probe file missing", lambda ex, p: ex.lost.add("probe"),
      [("L-2", "fail", "FlyingProbeTesting.json missing"), ("F-5", "fail", "FlyingProbeTesting.json"),
       ("L-15", "fail", "FlyingProbeTesting.json missing")]),
@@ -420,13 +439,14 @@ FAULTS = [
         k: v for k, v in p.part("C131337").items() if k != "lead"}), [("L-9", "fail", "J1")]),
     ("holes too small for the lead", lambda ex, p: ex.pth.__setitem__(slice(None), [h[:2] + (0.5,) for h in ex.pth]),
      [("L-9", "fail", "J1.1: hole 0.50 mm for diagonal 0.71 mm")]),
-    ("a plated slot narrower than 0.5 mm", slot,
-     [("L-9", "fail", "J1.1: slot 0.45 x 1.20 mm"), ("L-9", "warn", "pad 1: 0.45 x 1.20 mm")]),
+    ("a plated slot narrower than 0.5 mm", slot,        # 1.2 mm long in J1's round 1.4 mm pad: 0.1 mm at its ends
+     [("L-9", "fail", "J1.1: slot 0.45 x 1.20 mm"), ("L-9", "warn", "pad 1: 0.45 x 1.20 mm"),
+      ("L-16", "fail", "J1.1: 0.100 mm on TOP and BOTTOM (hole 0.45 x 1.20 mm)")]),
     ("a through-hole pad without its hole", lambda ex, p: ex.pth.pop(),     # the bottom pad of J1.2 loses GND too
      [("L-9", "fail", "J1.2: no hole"), ("L-2", "fail", "GND: 2 groups")]),
     ("the drill file missing", lambda ex, p: ex.lost.add("pth"),
      [("L-2", "fail", "Drill_PTH_Through.DRL missing"), ("L-9", "fail", "Drill_PTH_Through.DRL missing"),
-      ("F-5", "fail", "Drill_PTH_Through.DRL")]),
+      ("F-5", "fail", "Drill_PTH_Through.DRL"), ("L-16", "fail", "Drill_PTH_Through.DRL missing")]),
     # L-10
     ("a pad away from its library position", lambda ex, p: ex.pad("C2.1").update(X=ex.at_mil("C2.1")[0] + 0.2 * MIL),
      [("L-10", "fail", "C2.1: 0.20 mm away from its footprint position")]),
@@ -457,6 +477,17 @@ FAULTS = [
      [("L-15", "warn", "BOTTOM: 1 % copper, largest copper-free circle Ø 19.0 mm at (13.2, 10.1) mm")]),
     ("copper that touches no pad, via or hole", loose_copper,
      [("L-15", "warn", "TOP: 1 piece without pad, via or hole: 16.2 mm² around (10.5, 4.5) mm")]),
+    # L-16
+    ("a pad ring below JLCPCB's minimum", j1_pads(1.25),
+     [("L-16", "fail", "J1.1: 0.125 mm on TOP and BOTTOM (hole Ø 1.00 mm); J1.2: 0.125 mm on TOP and BOTTOM")]),
+    ("a pad ring below JLCPCB's capability value", j1_pads(1.38),
+     [("L-16", "warn", "pad 1, 2: 0.190 mm on TOP and BOTTOM (hole Ø 1.00 mm)")]),
+    ("a via ring below 0.05 mm", lambda ex, p: via(ex, 8, 13.5, pad=0.38),     # on TOP the GND track is its ring
+     [("L-16", "fail", "via at (8.00, 13.50): 0.037 mm on BOTTOM (hole Ø 0.30 mm)")]),
+    ("two vias closer than 0.2 mm", lambda ex, p: (via(ex, 8, 13.5), via(ex, 8.45, 13.5)),
+     [("L-16", "fail", "via at (8.00, 13.50) – via at (8.45, 13.50): 0.145 mm apart, below 0.20 mm")]),
+    ("a via closer than 0.45 mm to a component hole", lambda ex, p: via(ex, 3, 12.05),
+     [("L-16", "fail", "J1.2 – via at (3.00, 12.05): 0.398 mm apart, below 0.45 mm")]),
     # F-1
     ("another LCSC number in EasyEDA's BOM", lambda ex, p: ex.bom[2].update(lcsc="C15850"),
      [("F-1", "fail", "C2: graph C45783, EasyEDA C15850")]),
@@ -560,6 +591,25 @@ def test_copper_per_side_settings(project):
     by = {r["check"]: (r["result"], r["actual"]) for r in rows if r["id"] == "L-15"}
     assert by["BOTTOM: no copper-free circle above 20 mm inside the pour outline (poured: GND)"][0] == "pass"
     assert by["TOP: copper share at least 10 % ([copper] min_cover)"] == ("warn", "TOP: 6 % copper")
+
+
+def test_rings_and_hole_spacing_of_the_clean_export(project):
+    """L-16 on the clean export: J1's two holes of 1.0 mm in pads of 1.4 mm, 2 mm apart – a ring of 0.2 mm is kept."""
+    rows = [(r["result"], r["actual"]) for r in run(project) if r["id"] == "L-16"]
+    assert rows == [("pass", "2 holes (narrowest ring 0.200 mm, J1.1), 0 vias"), ("pass", "closest 1.000 mm (J1.1 – J1.2)")]
+
+
+def test_a_waived_annular_ring_is_listed_with_its_reason(project):
+    def waived(ex, p):
+        j1_pads(1.25)(ex, p)
+        graph(p, lambda g: p.comp(g, "J1").update(waive={"L-16": "test: JLCPCB confirmed the ring"}))
+    rows = run(project, waived)
+    assert findings(rows) == [("L-16", "waived"), ("L-16", "waived")]                  # one row per hole
+    w = [r for r in rows if r["result"] == "waived"]
+    assert {r["reason"] for r in w} == {"test: JLCPCB confirmed the ring"}
+    assert [(r["check"], r["actual"]) for r in w] == [
+        ("annular ring: J1.1: 0.125 mm on TOP and BOTTOM (hole Ø 1.00 mm)", "0.125 mm"),
+        ("annular ring: J1.2: 0.125 mm on TOP and BOTTOM (hole Ø 1.00 mm)", "0.125 mm")]
 
 
 def test_every_check_has_a_fault():

@@ -104,8 +104,8 @@ def arc(x0, y0, x1, y1, i, j, cw):
     return [(cx + r * math.cos(a0 + (a1 - a0) * k / n), cy + r * math.sin(a0 + (a1 - a0) * k / n)) for k in range(n + 1)]
 
 
-def parse_holes(path):
-    """Drill file -> [(x, y, width, length)] in mm; slots (G85) with centre and overall length."""
+def parse_drills(path):
+    """Drill file -> [(x0, y0, x1, y1, width)] in mm: a round hole has x1, y1 = x0, y0, a slot (G85) its two ends."""
     path = Path(path)
     if not path.exists():
         return []
@@ -118,12 +118,17 @@ def parse_holes(path):
         elif (m := re.match(r"^X(-?[\d.]+)Y(-?[\d.]+)(?:G85X(-?[\d.]+)Y(-?[\d.]+))?", line)) and cur:
             x0, y0 = float(m.group(1)), float(m.group(2))
             x1, y1 = (float(m.group(3)), float(m.group(4))) if m.group(3) else (x0, y0)
-            out.append(((x0 + x1) / 2, (y0 + y1) / 2, cur, cur + math.hypot(x1 - x0, y1 - y0)))
+            out.append((x0, y0, x1, y1, cur))
     return out
 
 
-def shape(ops):
-    """Gerber operations as one shapely area (mm)."""
+def parse_holes(path):
+    """Drill file -> [(x, y, width, length)] in mm; slots (G85) with centre and overall length."""
+    return [((x0 + x1) / 2, (y0 + y1) / 2, w, w + math.hypot(x1 - x0, y1 - y0)) for x0, y0, x1, y1, w in parse_drills(path)]
+
+
+def shape(ops, quad_segs=16):
+    """Gerber operations as one shapely area (mm); circles as polygons of quad_segs segments a quarter."""
     from shapely.geometry import LineString, Point, Polygon, box
     from shapely.ops import unary_union
     parts = []
@@ -133,16 +138,18 @@ def shape(ops):
         elif kind_ == "flash":
             (kind, a, b), x, y = dat
             if kind == "C":
-                parts.append(Point(x, y).buffer(a / 2))
+                parts.append(Point(x, y).buffer(a / 2, quad_segs))
             elif kind == "O":
                 d = abs(a - b) / 2
                 seg = ((x - d, y), (x + d, y)) if a > b else ((x, y - d), (x, y + d))
-                parts.append(LineString(seg).buffer(min(a, b) / 2) if d else Point(x, y).buffer(a / 2))
+                parts.append(LineString(seg).buffer(min(a, b) / 2, quad_segs) if d else
+                             Point(x, y).buffer(a / 2, quad_segs))
             else:
                 parts.append(box(x - a / 2, y - b / 2, x + a / 2, y + b / 2))
         else:
             (kind, a, b), pts = dat
-            parts.append(LineString(pts).buffer(a / 2) if len(pts) > 1 else Point(pts[0]).buffer(a / 2))
+            parts.append(LineString(pts).buffer(a / 2, quad_segs) if len(pts) > 1 else
+                         Point(pts[0]).buffer(a / 2, quad_segs))
     return unary_union(parts)
 
 

@@ -35,6 +35,8 @@ assembly preview at JLCPCB.
   L-15 copper per layer from the Gerber files: share of the board area and largest copper-free circle (info); a
        circle above [copper] max_bare_mm on a poured layer, a share below [copper] min_cover, a copper piece without
        pad, via or plated hole: warn
+  L-16 every plated hole keeps JLCPCB's annular ring (component hole 0.18 mm, warn below 0.20 mm; via 0.05 mm) and
+       every two plated holes JLCPCB's hole-to-hole spacing, edge to edge (0.45 mm with a component hole, 0.2 mm vias)
   F-1  BOM from the graph = BOM of EasyEDA; every LCSC number in the parts database
   F-2  every BOM part listed in JLCPCB's assembly catalogue with stock for `quantity` boards
   F-3  pick and place: every BOM part exactly once, side and rotation = PCB; sides/SMD as [release] assembly says
@@ -462,6 +464,148 @@ def check_drills(board, design, d, rows):
                  "JLCPCB widens it or asks", False, "; ".join(slots), f">= {JLC_SLOT_MM} mm", "warn")
 
 
+JLC_RING_MM = 0.18           # L-16, JLCPCB 2 layers 1 oz: PTH annular ring, absolute minimum (fail below)
+JLC_RING_WARN_MM = 0.20      # ... the capability value "≧0.20mm" (warn below; recommended 0.25 mm)
+JLC_VIA_RING_MM = 0.05       # ... via diameter at least the via hole + 0.1 mm
+JLC_PAD_GAP_MM = 0.45        # ... "Pad Hole-to-Hole Spacing", read edge to edge (a component hole is one of the two)
+JLC_VIA_GAP_MM = 0.2         # ... "Via Hole-to-Hole Spacing" (two vias), edge to edge
+RING_TOL_MM = 0.001          # the files' rounding (EasyEDA keeps mil, writes mm) and the circle polygons (64 a quarter)
+RING_REACH_MM = 1.0          # a ring is measured up to this width – wider is wide enough
+
+
+def drill_axis(h):
+    """A drilled hole (x0, y0, x1, y1, width) as its centre point, or a slot as the line between its two ends."""
+    from shapely.geometry import LineString, Point
+    return Point(h[0], h[1]) if (h[0], h[1]) == (h[2], h[3]) else LineString([h[:2], h[2:4]])
+
+
+def ring_mm(parts, hole):
+    """Narrowest copper around a drilled hole on one layer: from the hole's edge to the nearest point without copper
+    (mm, at most RING_REACH_MM); None when no copper covers the hole's centre. Pad, track and pour count alike – it is
+    the copper the plating sits in. parts: [(bounds, area)] per Gerber operation of the layer."""
+    import shapely
+    from shapely.geometry import box
+    axis, half = drill_axis(hole), hole[4] / 2
+    x0, y0, x1, y1 = axis.bounds
+    m = half + RING_REACH_MM
+    win = (x0 - m, y0 - m, x1 + m, y1 + m)
+    near = [g.intersection(box(*win)) for b, g in parts
+            if b[0] <= win[2] and b[2] >= win[0] and b[1] <= win[3] and b[3] >= win[1]]
+    centre = axis.interpolate(0.5, normalized=True) if axis.geom_type == "LineString" else axis
+    pieces = shapely.get_parts(shapely.unary_union(near)) if near else []
+    piece = next((q for q in pieces if q.geom_type == "Polygon" and q.covers(centre)), None)
+    return None if piece is None else piece.boundary.distance(axis) - half
+
+
+def check_rings(board, design, d, rows):
+    """L-16: every plated hole keeps JLCPCB's annular ring on TOP and BOTTOM (2 layers, 1 oz: a component hole 0.18 mm,
+    warning below 0.20 mm; a via 0.05 mm, via Ø >= hole + 0.1 mm), and every two plated holes – also two of one part –
+    keep JLCPCB's hole-to-hole spacing, edge to edge (0.45 mm when a component hole is one of them, 0.2 mm between two
+    vias). Vias are the holes of the via drill file (EasyEDA writes them into the PTH file as well); the other plated
+    holes are named by the through-hole pad of pcb.json at their place. The ring is the copper around the hole in the
+    Gerber files, whatever it belongs to. waive {"L-16": …} on a part or net of the graph lists its findings as waived."""
+    g = d / "gerber"
+    if lost := gerber.missing(g, "top", "bottom", "pth"):
+        rows.add("L", "L-16", board.name, "Gerber and drill files for the annular rings", False,
+                 f"{', '.join(lost)} missing (Gerber export)", "present")
+        return
+    from shapely import STRtree
+
+    from .. import route
+    vias = list(dict.fromkeys(gerber.parse_drills(g / gerber.FILES["vias"])))
+    at_via = {(round(h[0], 3), round(h[1], 3)) for h in vias}
+    pth = [h for h in dict.fromkeys(gerber.parse_drills(g / gerber.FILES["pth"]))
+           if (round(h[0], 3), round(h[1], 3)) not in at_via]
+    pads = [(f"{c['designator']}.{p['PadNumber']}", c["designator"], p.get("Net") or "", p["X"] * MM, p["Y"] * MM)
+            for c in json.loads((d / "pcb.json").read_text())["components"] if c.get("designator")
+            for p in c["pads"] if p["tht"]]
+    holes = []                   # (hole, name, part, net, via)
+    for h in pth:
+        x, y = drill_axis(h).centroid.coords[0]
+        pad = min(pads, key=lambda p: math.hypot(p[3] - x, p[4] - y), default=None)
+        if pad and math.hypot(pad[3] - x, pad[4] - y) < 0.3:
+            holes.append((h, pad[0], pad[1], pad[2], False))
+        else:
+            holes.append((h, f"plated hole at ({x:.2f}, {y:.2f})", "", "", False))
+    holes += [(h, f"via at ({h[0]:.2f}, {h[1]:.2f})", "", "", True) for h in vias]
+    parts_of, nets_of = route.pad_waivers(design.graph, "L-16")
+
+    def waiver(*items):
+        return next((parts_of.get(p) or nets_of.get(n) for _, _, p, n, _ in items if parts_of.get(p) or nets_of.get(n)),
+                    None)
+
+    def size(h):
+        return f"Ø {h[4]:.2f} mm" if h[:2] == h[2:4] else \
+            f"{h[4]:.2f} x {h[4] + math.hypot(h[2] - h[0], h[3] - h[1]):.2f} mm"
+    copper = {name: [(a.bounds, a) for a in (gerber.shape([op], 64) for op in gerber.parse_gerber(g / gerber.FILES[k]))
+                      if not a.is_empty] for name, k in (("TOP", "top"), ("BOTTOM", "bottom"))}
+    narrow, low, waived, narrowest = [], defaultdict(lambda: defaultdict(list)), [], {}   # narrowest: via? -> ring
+    for item in holes:
+        h, name, part, _, is_via = item
+        rings = {layer: ring_mm(parts, h) for layer, parts in copper.items()}
+        none = [layer for layer, r in rings.items() if r is None]
+        least = min((r for r in rings.values() if r is not None), default=None)
+        where = " and ".join(layer for layer, r in rings.items() if r is not None and abs(r - least) < RING_TOL_MM)
+        limit = JLC_VIA_RING_MM if is_via else JLC_RING_MM
+        if none:
+            text, value = f"{name}: no copper around the hole on {' and '.join(none)} (hole {size(h)})", "no copper"
+        elif least + RING_TOL_MM < limit:
+            text, value = f"{name}: {least:.3f} mm on {where} (hole {size(h)})", f"{least:.3f} mm"
+        else:
+            if not is_via and least + RING_TOL_MM < JLC_RING_WARN_MM:
+                low[part or name][f"{least:.3f} mm on {where} (hole {size(h)})"].append(name.partition(".")[2] or name)
+            if is_via not in narrowest or least < narrowest[is_via][0]:
+                narrowest[is_via] = (least, name)
+            continue
+        if reason := waiver(item):
+            waived.append(("annular ring", text, value, f">= {limit} mm", reason))
+        else:
+            narrow.append(text)
+    n_via = sum(1 for *_, v in holes if v)
+    count = [f"{len(holes) - n_via} holes", f"{n_via} vias"]
+    for k, (ring, name) in narrowest.items():
+        count[k] += f" (narrowest ring {ring:.3f} mm" + ("" if k else f", {name}") + ")"
+    narrow.sort(key=natural_key)
+    rows.add("L", "L-16", board.name, f"plated holes keep JLCPCB's annular ring: component holes {JLC_RING_MM} mm, vias "
+             f"{JLC_VIA_RING_MM} mm (2 layers, 1 oz)", not narrow, "; ".join(narrow[:10])
+             + (f" … ({len(narrow)} holes)" if len(narrow) > 10 else "") or ", ".join(count),
+             f">= {JLC_RING_MM} mm (component hole), >= {JLC_VIA_RING_MM} mm (via)")
+    for ref, by_text in low.items():   # one warning per part, so an accepted warning covers only that part
+        reason = waiver(*(item for item in holes if item[2] == ref))
+        rows.add("L", "L-16", board.name, f"{ref}: annular ring below {JLC_RING_WARN_MM} mm – JLCPCB's capability value "
+                 "(recommended 0.25 mm)", False, "; ".join(f"pad {', '.join(sorted(p, key=natural_key))}: {t}"
+                                                         for t, p in by_text.items()),
+                 f">= {JLC_RING_WARN_MM} mm", "waived" if reason else "warn")
+        if reason:
+            rows[-1]["reason"] = reason
+    geoms = [drill_axis(h) for h, *_ in holes]
+    tree, reach = STRtree(geoms), max((h[4] for h, *_ in holes), default=0) + RING_REACH_MM + JLC_PAD_GAP_MM
+    close, kept = [], []
+    for i, a in enumerate(holes):
+        for j in sorted(tree.query(geoms[i].buffer(reach))):
+            if j <= i:
+                continue
+            b = holes[j]
+            gap = geoms[i].distance(geoms[j]) - (a[0][4] + b[0][4]) / 2
+            limit = JLC_VIA_GAP_MM if a[4] and b[4] else JLC_PAD_GAP_MM
+            if gap + RING_TOL_MM >= limit:
+                kept.append((gap, f"{a[1]} – {b[1]}"))
+            elif reason := waiver(a, b):
+                waived.append(("hole spacing", f"{a[1]} – {b[1]}: {gap:.3f} mm apart, below {limit:.2f} mm",
+                               f"{gap:.3f} mm", f">= {limit} mm", reason))
+            else:
+                close.append(f"{a[1]} – {b[1]}: {gap:.3f} mm apart, below {limit:.2f} mm")
+    least = min(kept, default=None)
+    rows.add("L", "L-16", board.name, f"plated holes at least JLCPCB's hole-to-hole spacing apart, edge to edge: "
+             f"{JLC_PAD_GAP_MM} mm with a component hole, {JLC_VIA_GAP_MM} mm between vias", not close,
+             "; ".join(close[:10]) + (f" … ({len(close)} pairs)" if len(close) > 10 else "")
+             or (f"closest {least[0]:.3f} mm ({least[1]})" if least else f"{len(holes)} holes, none near another"),
+             f">= {JLC_PAD_GAP_MM} mm, between vias >= {JLC_VIA_GAP_MM} mm")
+    for what, text, value, want, reason in sorted(waived, key=lambda w: natural_key(w[1])):
+        rows.add("L", "L-16", board.name, f"{what}: {text}", True, value, want, "waived")
+        rows[-1]["reason"] = reason
+
+
 def loop_length_mm(data, a, b, snap=0.5, pad_mm=0.9):
     """Shortest path (mm) from pad a to pad b over tracks of their net on their layer; None without a connection.
     Pours do not count: the loop is supposed to be closed by a track, not by a detour through a plane."""
@@ -781,6 +925,7 @@ def run(cfg, board, out, offline=False, verbose=False):
     check_copper(board, design, d, rows)
     check_copper_sides(board, design, d, rows)
     check_drills(board, design, d, rows)
+    check_rings(board, design, d, rows)
     check_loops(board, design, d, rows)
     check_pad_clearance(cfg, board, design, d, rows)
     check_paste_gap(cfg, board, design, d, rows)

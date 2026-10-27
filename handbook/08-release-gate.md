@@ -23,7 +23,7 @@ edakit gate --easyeda    # plus S, L, F – EasyEDA with the bridge, minutes
 | E – Simulation | operating points, stress, function, every LED checked | E-1 … E-4 (chapter 5) |
 | *project stages* | e.g. K – mechanics of an enclosure | `[[release.stages]]`, see below |
 | S – Schematic | EasyEDA schematic = graph | S-2 per board |
-| L – Board | PCB = graph and plan, copper from the Gerber files, the circuit's hand-over kept, pads apart | L-1 … L-15 |
+| L – Board | PCB = graph and plan, copper from the Gerber files, the circuit's hand-over kept, pads apart | L-1 … L-16 |
 | F – Manufacturing | BOM, stock, pick and place, Gerber set | F-1 … F-5 |
 
 **Stage L** (per board, `edakit fab`):
@@ -44,6 +44,7 @@ edakit gate --easyeda    # plus S, L, F – EasyEDA with the bridge, minutes
 | L-13 | pads of different parts on different nets at least the routing clearance (`clearance_mil`) apart on every copper layer both are on; a pad without a net counts as a net of its own, pads of one part are not compared. Measured as `route check` measures it (7.5), on the pads of `route read` (`<artifacts>/route/<board>_board.json`) – pcb.json has no pad shapes –, and only while every pad there sits where the PCB has it, on its layer and net; otherwise L-13 fails and asks for `route read`. `waive: {"L-13": "…"}` on one of the two parts or nets lists the pair as waived | two resistors stood with their pads 0.09 mm apart: the plan compares boxes, `route check` measured only tracks and vias, and only EasyEDA's DRC could have seen it, after the copper was written |
 | L-14 | on every side that is assembled (`[release] assembly` `sides`), SMD pads of different parts on different nets at least the paste gap (`paste_gap_mm`, 0.4 mm) apart, so that the stencil keeps a web between their prints; a pad without a net counts as a net of its own, pads of one part, through-hole pads and pads on a side that is not assembled are not compared. Measured on the pads of `route read` like L-13, and only while they are the PCB's. `waive: {"L-14": "…"}` on one of the two parts or nets lists the pair as waived | the paste of a ground pad and a transistor base pad of neighbouring parts was 0.06 mm apart: above every copper rule, a bridge in reflow that the bare-board test cannot see; the layout review found it |
 | L-15 | copper per layer on L-2's raster of the **Gerber files**, widened to the outline: the copper share of the board area (without mounting and NPTH holes) and the largest copper-free circle inside the pour outline (the outline `pcb pour` pours, 7.6) – information; on a layer the board file pours (`[[pours]]`, default GND on both) a circle above `[copper] max_bare_mm` (5 mm) warns, a share below `[copper] min_cover` warns, and on every layer a copper piece that touches no pad (FlyingProbeTesting.json), via or plated hole warns, with its area and place. Copper inside an NPTH or mounting hole is drilled away. One row per layer, so an accepted warning covers its layer | EasyEDA drops every pour piece without a pad of its net: half the back of a released board stayed bare (47 % copper, a copper-free circle of Ø 9.7 mm) where ground had no pads, with DRC 0 and every check passed; it was seen by eye before the order |
+| L-16 | every plated hole keeps JLCPCB's annular ring on TOP and BOTTOM (2 layers, 1 oz): a component hole 0.18 mm, below 0.20 mm a warning per part, a via 0.05 mm (via Ø ≥ hole + 0.1 mm) – measured in the **Gerber files** from the hole's edge to the nearest point without copper, so a pad, a track or a pour around the hole counts alike; and every two plated holes, also two of one part, keep JLCPCB's hole-to-hole spacing edge to edge: 0.45 mm when a component hole is one of them, 0.2 mm between two vias. Vias are the holes of the via drill file, the other plated holes are named by the through-hole pad of pcb.json at their place. Within 0.001 mm counts as kept (EasyEDA keeps mil and writes mm). `waive: {"L-16": "…"}` on a part or net lists its holes as waived | an RGB LED at 1.25 mm pitch had its holes widened for its legs (L-9) to 0.80 mm with pads of 1.06 mm: a ring of 0.13 mm, below the fab's minimum of 0.18 mm, passed the gate; via pairs 0.47 mm apart were flagged by a review against a figure from memory, where the fab's table allows 0.2 mm |
 
 **Stage F:**
 
@@ -69,7 +70,8 @@ hole missing from the NPTH file. The check that should find the fault fails (or 
 file. Each test lists every row that fails or warns, so a check that also fires is noticed too. Most faults hit
 one check. A few hit two, because the fault touches both: a part turned by 90° (L-7, F-3), a through-hole pad
 without its hole (L-9, and GND open in L-2), a copper dot in a tooling hole's opening (F-5, and a loose piece in
-L-15). A new check of L or F gets its fault there.
+L-15), a plated slot 1.2 mm long in a round pad of 1.4 mm (L-9, and its ring of 0.1 mm in L-16). A new check of L or F
+gets its fault there.
 
 **Project stages** (`[[release.stages]]` in edakit.toml): `{id = "K", name = "Mechanics", cmd = ["uv", "run",
 "mech/check.py", "--json"], advisory = true}`. The command's last stdout line may be a JSON list of
@@ -158,8 +160,9 @@ The MCP server cannot order. Lessons from the reference order:
 - **Remarks** (max. 200 characters): where panel tabs may and may not go, no V-cut on visible edges.
 - **M-2** in the assembly preview: rotation and polarity of every polarised part on both sides (compare with the
   polarity sheet), no part missing in the BOM tool, then pay.
-- If JLCPCB's DFM check reports something the layout review already accepted (e.g. a drill-to-drill distance on two via
-  pairs), it is in the checklist so nobody panics.
+- If JLCPCB's DFM check reports something the layout review already accepted or a waiver of the gate names (e.g. an
+  annular ring the fab confirmed, L-16), it is in the checklist so nobody panics. L-16 holds rings and hole spacing to
+  JLCPCB's table, so a via pair 0.47 mm apart is no finding there.
 
 ## 8.5 Acceptance (M-4)
 
