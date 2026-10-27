@@ -98,6 +98,16 @@ Opt-in: the board's firmware contract (3.5). Without the table `edakit firmware`
 | `out` | `hardware/firmware.json` | where `edakit firmware` writes it, relative to edakit.toml |
 | `gpio` | `"(\\d+)"` | regex over the MCU pin's name, its first group is the GPIO number (`GP26_ADC0` → 26); no match: `null` |
 
+### [docs]
+
+Values quoted from the design data (6.6). Without the table no document is read; placeholders in the schematic notes
+work without it.
+
+| Key | Default | Meaning |
+|---|---|---|
+| `files` | `[]` | Markdown files with value blocks `<!--edakit SOURCE [FORMAT]-->value<!--/edakit-->`, relative to edakit.toml |
+| `decimal` | `"."` | `","` writes quoted numbers with a decimal comma |
+
 ## 10.2 The board file
 
 `hardware/boards/<name>.toml`: what the PCB designer decides (14.1). The layout hash covers it – a change needs the
@@ -149,7 +159,8 @@ switching node).
 `hardware/schematic.toml`: `stub` (10): stub length of the template. `[layout]`: `rows` (rows → columns → blocks
 `{title, start}`), `power_flags` ({NET = "Ground"|"Power"}), `near` ({CAP = "PART"}), `stacked` (blocks whose trees
 stand one below the other), `[layout.notes]` ({block title = [lines]}), `[layout.pin_table]` (`component`, `block`,
-`prefix`, `notes` {NET = "function"}). It changes no hash – the drawing explains the circuit, it is not the circuit.
+`prefix`, `notes` {NET = "function"}). A note may quote the design data: `{graph:R1.value}`, `{part:C90107.params.vrext_v}`,
+`{sim:max E-3 * D2 LED current*}`, optionally with a format (6.6). It changes no hash – the drawing explains the circuit, it is not the circuit.
 Without the file `edakit schematic draw` arranges the schematic by itself (6.5).
 
 ## 10.4 Commands
@@ -174,14 +185,15 @@ Code: `edakit … 2>&1 | cat`.
 | `edakit cost [--board B] [--json F]` | – | graph, parts, board files, the stock snapshot, the fee table, `[cost]`, `[[extra]]` | `<artifacts>/cost.json` (the change since the last estimate is printed); exit 2 above `budget` |
 | `edakit order [--out DIR]` | – | graph, parts (`order`), board files (side), `[[extra]]`, `spare_pct` | `<artifacts>/order/` or DIR: `bom_<board>.csv` (the F-1 BOM), `cart_<supplier>.csv`, `hand_assembly.md` |
 | `edakit part own PATH [--name N]` | – | the board's project at PATH: its datasheet, state, git, gate runs | `hardware/parts/<N>.json` |
-| `edakit sim [--json F] [--keep DIR]` | – | graph, parts, sim config, plugin; with `copper` `route/<board>.ses`, `route/<board>_board.json` and the board file's pours | `<artifacts>/sim/net_currents.json`; with `--keep` each netlist and ngspice log, for a transient run its waveforms (`<run>.dat`) |
+| `edakit sim [--json F] [--keep DIR]` | – | graph, parts, sim config, plugin; with `copper` `route/<board>.ses`, `route/<board>_board.json` and the board file's pours | `<artifacts>/sim/net_currents.json`, `<artifacts>/sim/result.json` (the whole result with the hash of its inputs, 6.6); with `--keep` each netlist and ngspice log, for a transient run its waveforms (`<run>.dat`) |
+| `edakit docs [--write]` | – | `[docs] files`, the schematic notes, graph, parts; for `sim:` the saved simulation result (or a new run) | with `--write` the value blocks of `[docs] files` |
 | `edakit firmware [--check]` | – | graph, parts, `[firmware]`; for `state_sha256` the files of the circuit hash | `[firmware] out` (not with `--check`: exit 2 on drift) |
 | `edakit handover [--board B]` | – | graph, parts, sign-offs | – |
 | `edakit schematic create [--board] [--only] [--dry-run] [--save] [--create-project] [--refresh-devices]` | ✓ | graph | template, `device_cache.json`, `schematic_map_<name>.json` |
 | `edakit schematic check [--schematic] [--no-pins] [--json F]` | ✓ read | graph, schematic | – |
 | `edakit schematic copy [--source] [--target] [--save]` | ✓ | schematic | copy |
 | `edakit schematic layout [--dry-run] [--reread] [--force] [--save]` | ✓ / – | graph, schematic, cached geometry | board schematic, `layout_preview_<name>.svg` |
-| `edakit schematic draw [--board] [--out F] [--force]` | – | graph, parts, the schematic file if there | `schematic_<board>.svg` (or F) |
+| `edakit schematic draw [--board] [--out F] [--force]` | – | graph, parts, the schematic file if there; for a `{sim:…}` note the saved simulation result | `schematic_<board>.svg` (or F) |
 | `edakit pcb dump [--ref]` | ✓ | PCB | `pcb_geometry_<board>.json` (parts end at 0°/TOP; through-hole pads with `hole` [w, l] mm and `plated`) |
 | `edakit pcb plan` | – | plan, geometry (the dump; library footprints of `part import` for parts not in it), net currents, graph (`layout`, L-12) | `pcb_plan_<board>.png/.json`, `pcb_netclasses_<board>.json` |
 | `edakit pcb parts [--write]` | ✓ | board schematic, PCB, graph | PCB parts, UniqueIds, geometry |

@@ -488,7 +488,8 @@ def layout_config(cfg, design):
 
 
 def block_notes(cfg, design, board, lc, drawn_by="edakit schematic layout"):
-    """Notes from the schematic file plus a GPIO table from the graph and the open 'verify' notes."""
+    """Notes from the schematic file – their quoted values filled in (edakit docs) – plus a GPIO table from the graph
+    and the open 'verify' notes."""
     notes = {k: list(v) for k, v in lc["notes"].items()}
     comps = design.board_comps(board.name)
     pt = lc.get("pin_table")
@@ -515,7 +516,8 @@ def block_notes(cfg, design, board, lc, drawn_by="edakit schematic layout"):
             notes["Notes"].append(f"Before layout, check pin numbers/polarity against the footprint: {', '.join(verify)}.")
         notes["Notes"] += [f"Source: {cfg.graph.name} v{design.version} ({design.graph.get('date', '')})",
                            f"Drawn by {drawn_by} – change the graph, not this sheet."]
-    return notes
+    from . import docs
+    return docs.fill_notes(cfg, design, notes)   # {graph:…}, {part:…}, {sim:…} quoted from the design data
 
 
 def sync_parts(cfg, mcp, graph_comps):

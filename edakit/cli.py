@@ -13,6 +13,7 @@
     edakit cost [--json F]           the order for `quantity` boards from BOM, board and the dated fee table
     edakit order [--out DIR]         the assembler's BOM, a cart per other supplier, the hand-assembly list (P-5)
     edakit sim                      stage E: ngspice operating points of all scenarios (offline, seconds)
+    edakit docs [--write]            values quoted in documents and schematic notes: G-19 for stale ones, --write fills in
     edakit firmware [--check]        the board's firmware contract as JSON from the graph; --check: drift (opt-in)
     edakit handover                  what the circuit hands over to the layout: state, sign-offs, layout requirements
     edakit schematic create|check|copy|layout
@@ -105,6 +106,10 @@ def build_parser():
     p = sub.add_parser("sim", help="simulation (stage E)")
     p.add_argument("--json", help="write every single check as JSON")
     p.add_argument("--keep", help="keep netlists and ngspice output in this directory")
+    _common(p)
+
+    p = sub.add_parser("docs", help="values quoted from the design data in documents and notes (G-19)")
+    p.add_argument("--write", action="store_true", help="fill in the current values")
     _common(p)
 
     p = sub.add_parser("firmware", help="the board's firmware contract from the graph ([firmware] in edakit.toml)")
@@ -245,6 +250,9 @@ def main(argv=None):
         except run.SimError as e:
             print(f"edakit sim: {e}", file=sys.stderr)
             return 1
+    if args.command == "docs":
+        from . import docs
+        return docs.main(cfg, args)
     if args.command == "firmware":
         from . import firmware
         return firmware.main(cfg, args)

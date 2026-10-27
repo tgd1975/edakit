@@ -311,3 +311,15 @@ def test_firmware_table_is_opt_in(tmp_path):
     (tmp_path / "edakit.toml").write_text('[project]\nname = "t"\n[boards.main]\n[firmware]\ngpio = "GP"\n')
     with pytest.raises(ConfigError, match="needs a group"):
         load(tmp_path / "edakit.toml")
+
+
+def test_docs_files(tmp_path):
+    (tmp_path / "edakit.toml").write_text('[project]\nname = "t"\n[boards.main]\n')
+    assert load(tmp_path / "edakit.toml").docs == []                     # nothing is read
+    (tmp_path / "edakit.toml").write_text('[project]\nname = "t"\n[boards.main]\n[docs]\nfiles = ["docs/a.md"]\n')
+    assert load(tmp_path / "edakit.toml").docs == ["docs/a.md"]
+    assert load(tmp_path / "edakit.toml").docs_decimal == "."
+    for bad in ('files = "docs/a.md"', 'file = ["docs/a.md"]', 'decimal = ";"'):
+        (tmp_path / "edakit.toml").write_text(f'[project]\nname = "t"\n[boards.main]\n[docs]\n{bad}\n')
+        with pytest.raises(ConfigError, match=r"\[docs\]"):
+            load(tmp_path / "edakit.toml")

@@ -37,7 +37,7 @@ from collections import Counter, defaultdict
 from fnmatch import fnmatch
 from pathlib import Path
 
-from .. import checks, rules
+from .. import checks, docs, rules
 from ..design import Design
 
 STAGES = [
@@ -428,6 +428,7 @@ def main(cfg, args):
     routing = copper.load_routing(cfg) if sim_cfg.get("copper") else None   # the routed copper, as it is now
     sim = simrun.run_all(Design.from_config(cfg), sim_cfg, plugin=plugin, routing=routing)
     simrun.write_net_currents(cfg, sim)
+    rows += docs.stage_rows(cfg, design, sim)    # G-19: quoted values against this run's simulation
     (outdir / "sim.json").write_text(json.dumps(sim, indent=1, ensure_ascii=False) + "\n", encoding="utf-8")
     stages_run = set(OFFLINE)
     if custom:

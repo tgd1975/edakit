@@ -19,7 +19,7 @@ edakit gate --easyeda    # plus S, L, F – EasyEDA with the bridge, minutes
 | Stage | What | Checks |
 |---|---|---|
 | P – Parts | parts database complete and signed, every part named by its entry, through-hole leads fitting their holes, own parts equal to their source, parts orderable, a supplier per part | P-1, P-3, P-4, P-5, P-6, P-7, G-9 (chapter 3, 4) |
-| G – Graph | rule checks | G-1 … G-18 (chapter 3) |
+| G – Graph | rule checks; with quoted values (6.6) G-19 on this run's simulation | G-1 … G-19 (chapter 3) |
 | E – Simulation | operating points, stress, function, every LED checked, transient runs; with sim.json `copper` on the routing of `edakit route` as it is | E-1 … E-5 (chapter 5) |
 | *project stages* | e.g. K – mechanics of an enclosure | `[[release.stages]]`, see below |
 | S – Schematic | EasyEDA schematic = graph | S-2 per board |
@@ -88,8 +88,8 @@ Every run records two hashes in the protocol header:
   (and plugin, `[release] state_files`)
 - **layout** (`layout_sha256`): the board files, the footprint geometry (and `[release] layout_files`)
 
-Each file belongs to one of them or to none (10.1): edakit.toml and the schematic file are in no hash, so a new order
-quantity or a note in the schematic voids no review. A project that moved from the one-file edakit.toml (October
+Each file belongs to one of them or to none (10.1): edakit.toml, the schematic file and the documents of `[docs]
+files` are in no hash, so a new order quantity, a note in the schematic or a corrected number (6.6) voids no review. A project that moved from the one-file edakit.toml (October
 2026) records the hashes before and after in `rehashed` of its sign-off file: the move changed files, not what they
 say.
 

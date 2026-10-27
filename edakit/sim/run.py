@@ -33,7 +33,8 @@ the operating point at t = 0, judged by E-5 only; without the key nothing runs.
 Rule, reason and fix of each check: rules.json (`edakit rules E-2`).
 
 The largest current per net goes to <artifacts>/sim/net_currents.json – the input for the track widths
-(`edakit pcb plan`, gate check L-5). Exit code: 0 = all passed, 2 = at least one 'fail', 1 = tool error.
+(`edakit pcb plan`, gate check L-5) –, the whole result with the hash of its inputs to <artifacts>/sim/result.json,
+which values quoted from the simulation reuse while the inputs are unchanged (edakit docs, G-19). Exit code: 0 = all passed, 2 = at least one 'fail', 1 = tool error.
 """
 
 from __future__ import annotations
@@ -921,6 +922,45 @@ def load_sim_config(cfg):
     return json.loads(path.read_text(encoding="utf-8")), path
 
 
+def inputs_sha256(cfg, sim):
+    """Hash of what a simulation result depends on: the circuit hash's files, with copper also the board files and the
+    routing it reads."""
+    from ..release import gate
+    files = gate.state_files(cfg)
+    if sim.get("copper"):
+        files += [cfg.resolve(b.file) for b in cfg.boards.values()]
+        files += [cfg.artifacts / "route" / f"{b}{x}" for b in cfg.boards for x in (".ses", "_board.json")]
+    return gate.file_hash(cfg.root, files)
+
+
+def save_result(cfg, sim, out):
+    """The whole result of the last run, with the hash of its inputs: <artifacts>/sim/result.json."""
+    path = cfg.artifact("sim", "result.json")
+    path.write_text(json.dumps({"inputs_sha256": inputs_sha256(cfg, sim), **out}, ensure_ascii=False) + "\n",
+                    encoding="utf-8")
+    return path
+
+
+def current_result(cfg):
+    """The simulation result of the current state: the one saved by the last run when its inputs are unchanged, else a
+    new run (saved in turn) – for values quoted from the simulation (edakit docs, G-19)."""
+    sim, _ = load_sim_config(cfg)
+    path = cfg.artifacts / "sim" / "result.json"
+    if path.exists():
+        try:
+            data = json.loads(path.read_text(encoding="utf-8"))
+        except json.JSONDecodeError:
+            data = {}
+        if data.get("inputs_sha256") == inputs_sha256(cfg, sim):
+            return data
+    from ..design import Design
+    plugin = load_plugin(cfg.sim_plugin) if cfg.sim_plugin else None
+    routing = copper.load_routing(cfg) if sim.get("copper") else None
+    out = run_all(Design.from_config(cfg), sim, plugin=plugin, routing=routing)
+    save_result(cfg, sim, out)
+    return out
+
+
 def write_net_currents(cfg, out):
     path = cfg.artifact("sim", "net_currents.json")
     data = {"about": "Largest current of a single part per net over all scenarios of `edakit sim`. Nets with suffix "
@@ -970,4 +1010,5 @@ def main(cfg, args):
     if args.json:
         Path(args.json).write_text(json.dumps(out, indent=1, ensure_ascii=False) + "\n", encoding="utf-8")
     print(f"net currents → {write_net_currents(cfg, out)}")
+    save_result(cfg, sim, out)
     return 2 if summary["fail"] else 0

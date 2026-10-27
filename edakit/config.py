@@ -57,6 +57,7 @@ STOCK_MAX_AGE_DAYS = 14          # [project] stock_max_age_days: an older stock 
 ORDER_KEYS = ("finish", "mark", "remark", "tab_zones", "tab_copper_mm")   # [order] of a board file (F-6)
 MARKS = ("default", "specify", "remove")   # order.mark: JLCPCB's order number anywhere, at the placeholder, none
 FIRMWARE_KEYS = ("mcu", "out", "gpio")    # [firmware]: the board's firmware contract (edakit firmware), opt-in
+DOCS_KEYS = ("files", "decimal")                     # [docs]: Markdown files with quoted values (edakit docs, G-19)
 
 
 class ConfigError(Exception):
@@ -170,6 +171,8 @@ class Config:
     spare_pct: float = 0.0              # edakit order: spares on every cart line, in % of quantity sets
     extras: list = field(default_factory=list)   # [[extra]]: items off the board – cost estimate and carts
     firmware: dict | None = None  # [firmware] with its defaults; None without the table: no contract
+    docs: list = field(default_factory=list)   # [docs] files: Markdown files whose value blocks edakit docs reads
+    docs_decimal: str = "."                    # [docs] decimal: "." or "," in quoted numbers
 
     def pcba(self):
         """(class, why) of the assembly order: [release] assembly.pcba, or derived from assembly.sides – one side
@@ -566,13 +569,19 @@ def load(path=None) -> Config:
         return v if v.is_absolute() else root / v
 
     moved = _one_file_form(raw, path.name)
-    problems = _unknown(path.name, raw, ("project", "boards", "release", "cost", "extra", "firmware"),
+    problems = _unknown(path.name, raw, ("project", "boards", "release", "cost", "extra", "firmware", "docs"),
                         ("schematic", "checks", "net_classes", "sim"))
     problems += _unknown("[project]", p, PROJECT_KEYS, ("ground",))
     problems += _unknown("[release]", raw.get("release", {}), RELEASE_KEYS, ("signoff",))
     problems += _unknown("[firmware]", raw.get("firmware", {}), FIRMWARE_KEYS)
     if not isinstance(p.get("agreements", True), bool):
         problems.append("[project] agreements: true or false")
+    problems += _unknown("[docs]", raw.get("docs", {}), DOCS_KEYS)
+    doc_files = raw.get("docs", {}).get("files", [])
+    if not isinstance(doc_files, list) or not all(isinstance(f, str) for f in doc_files):
+        problems.append("[docs] files must be a list of paths")
+    if raw.get("docs", {}).get("decimal", ".") not in (".", ","):
+        problems.append('[docs] decimal must be "." or ","')
     files = {}
     for name, entry in raw.get("boards", {}).items():
         problems += _unknown(f"[boards.{name}]", entry, BOARD_KEYS, BOARD_FILE_KEYS)
@@ -625,4 +634,6 @@ def load(path=None) -> Config:
         spare_pct=float(p.get("spare_pct", 0)),
         extras=list(raw.get("extra", [])),
         firmware=_firmware(raw["firmware"]) if "firmware" in raw else None,
+        docs=list(doc_files),
+        docs_decimal=raw.get("docs", {}).get("decimal", "."),
     )
