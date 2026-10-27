@@ -374,10 +374,11 @@ def write_protocol(cfg, outdir, head, rows, sim, signoff, notes, decision, reaso
     L += [f"- note: {n}" for n in notes + sheet_notes]
     L += datasheet_list(sheet)
     L += ["\n## 7 Simulation (stage E)\n", "| Scenario | Status | Nets | Supply current |", "|---|---|---|---|"]
-    for s in sim["scenarios"]:
-        nets = ", ".join(f"{n} {v:.3f} V" for n, v in s.get("nets", {}).items())
-        src = ", ".join(f"{d} {i * 1e3:.0f} mA" for d, i in s.get("sources", {}).items())
-        L.append(f"| {s['name']} | {s['status']} | {nets} | {src} |")
+    for s in sim["scenarios"]:   # a transient run (E-5): lowest … highest voltage, peak current
+        hi = s.get("nets_max", {})
+        nets = ", ".join(f"{n} {v:.3f}" + (f" … {hi[n]:.3f}" if n in hi else "") + " V" for n, v in s.get("nets", {}).items())
+        src = ", ".join(f"{d} {'peak ' if s.get('transient') else ''}{i * 1e3:.0f} mA" for d, i in s.get("sources", {}).items())
+        L.append(f"| {s['name']}{' (transient)' if s.get('transient') else ''} | {s['status']} | {nets} | {src} |")
     agg = defaultdict(Counter)
     for c in sim["checks"]:
         agg[(c["id"], re.sub(r" \(.*", "", c["check"]))][c["result"]] += 1

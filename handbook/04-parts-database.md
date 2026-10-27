@@ -194,7 +194,8 @@ datasheet – edakit derives the parts entry from it:
      any other pin takes the strongest type among the parts on its net (output, bidirectional, current_sink, input,
      analog, else passive). A resistor to a supply or to ground gives `pull` and `pull_ohm` (G-11, G-12 count them);
      `vmax` is the lowest limit on the net – a pin's `vmax`, a capacitor's `v_max` / 1.5
-   - `params`: behaviour `current`, the largest current from the connector over the board's scenarios
+   - `params`: behaviour `current`, the largest current from the connector over the board's scenarios (its DC
+     scenarios: fault cases with `info` and transient runs are left out)
    - `ratings`: `vin_min`, `vin_max` – the voltage at the connector over those scenarios
    - `compliance`: RoHS, REACH and radio as the board's parts entries state them
 

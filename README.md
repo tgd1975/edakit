@@ -145,7 +145,8 @@ Where it stands:
   parts (checks, simulation, DSN/Freerouting/check, Gerber analysis, the board and manufacturing checks) are verified
   against that project's data; the EasyEDA-writing commands are ports of scripts used there daily.
 - Two copper layers. Rectangular or polygonal outlines with straight segments (arcs as point lists).
-- The simulation is DC operating points; transients are left to the acceptance test.
+- The simulation is DC operating points, plus transient runs of plug, unplug and switch-over where sim.json names
+  them (E-5); switching spikes and fast edges are left to the acceptance test.
 - The MCP server cannot order, by design.
 - Used components and their licences: [easyeda-mcp-pro](https://github.com/oaslananka/easyeda-mcp-pro) (PolyForm
   Noncommercial 1.0.0 – check before commercial use), EasyEDA Pro (proprietary), Freerouting (GPL-3.0), ngspice (BSD).

@@ -3,11 +3,13 @@
 `edakit sim` turns the graph into an ngspice netlist per scenario, computes the DC operating point, and checks every
 part against its ratings and the circuit against its function – in seconds, on every commit.
 
-Why DC operating points and not transients: the expensive errors on a small board are static. A resistor that cooks
-at full brightness, a regulator without headroom at the low end of the USB voltage, an LED the wrong way round, a
-net that reaches a pin with more than it tolerates, a supply that cannot deliver the sum of all loads. A DC sweep over
-supply corners × load cases × LED tolerance corners finds those. Transients (inrush, switching spikes) are measured
-on the delivered board instead (acceptance test).
+Why DC operating points first: the expensive errors on a small board are static. A resistor that cooks at full
+brightness, a regulator without headroom at the low end of the USB voltage, an LED the wrong way round, a net that
+reaches a pin with more than it tolerates, a supply that cannot deliver the sum of all loads. A DC sweep over supply
+corners × load cases × LED tolerance corners finds those. Where the supply itself changes – plug, unplug, a
+switch-over between two sources – a DC scenario sits on one side of the gap or the other; transient runs (5.2) follow
+the supply over time and E-5 judges them. Switching spikes and fast edges are measured on the delivered board
+(acceptance test): the behaviour models know no switching.
 
 ## 5.1 How the netlist is built
 
@@ -47,6 +49,13 @@ on the delivered board instead (acceptance test).
 | `logic` | supply pins (`power_in`), outputs | `icc_a` | supply current, outputs low |
 | `current` | supply pins | `i_a` | constant supply current; with `ratings` `vin_min`/`vin_max` (an own board, 4.5) E-3 checks the voltage at its supply pins against them |
 | `none` | – | – | nothing |
+
+Two model rules hold for every scenario and matter in transient runs. A regulator whose ratings give `vin_min` – an
+`ldo`, `buck` or `boost`, and the `mcu` model's on-board regulator with `vin_min` or `vsys_min` – locks out below it:
+its output and its input current fall to 0 over the 0.2 V below `vin_min`. A constant-current load – `i_core_a`,
+`idd_max_a`, `icc_a`, `i_a`, an `external` load – falls to 0 below 0.5 V across it, so a rail nothing feeds stays at
+0 V instead of being pulled below ground. Above these voltages both are what the table says; a DC result with every
+input above its minimum is the same as without them.
 
 A project adds its own models in a plugin file (`sim_plugin = "hardware/sim_plugin.py"` in `[project]`):
 
@@ -115,6 +124,33 @@ for the surface and the time a hand stays on it; IEC 62368-1 TS1 allows 48 °C f
 (51 °C on metal) for 10 s to 1 min and 77 °C (60 °C) for 1–10 s. A board without it gets no touch item; a name that is
 no board of edakit.toml stops the run.
 
+**Transient runs.** `transients` names runs over time, each with its supplies as curves, a load and limits:
+
+```json
+"transients": {
+  "usb-unplug": {"supply": {"J1": [[0, 4.75], [0.001, 4.75], [0.00101, 0]]}, "load": "all_on", "corner": "max",
+                 "stop_s": 0.0013, "step_s": 1e-6, "expect": {"+5V": {"min_v": 1.8}}},
+  "usb-plug":   {"supply": {"J1": [[0, 0], [0.001, 4.75]]}, "load": "all_on", "stop_s": 0.002,
+                 "expect": {"J1": {"i_max_a": 0.5}}}
+}
+```
+
+`supply` gives each source of `sources` a voltage or `[t, V]` points (seconds, rising from 0; linear in between, the
+last value held) and each battery holder a cell state of `cells`; what it leaves out is not plugged in. `load` and
+`corner` (default `typ`) are those of the scenarios; `stop_s` is the length of the run, `step_s` the largest time step
+(default `stop_s` / 1000). ngspice starts from the operating point with every source at its first point – 0 V on every
+net for a plug-in, the DC state for an unplug – and runs `.tran`. `expect` holds limits per net (`min_v`, `max_v`, the
+lowest and highest voltage during the run) and per source (`i_max_a`, the peak current it delivers); every MCU whose
+ratings give `vin_min` (or `vsys_min`) is held to it as well, from the moment its supply pin first reaches it – a plug
+run passes once the MCU has started and never browns out, an unplug fails as soon as the rail falls below it (E-5).
+`"info": true` turns failures into information. Each run gets its row in the scenario table with the lowest and highest
+voltage of the `report` nets and the peak current of each source; a run adds no stress items and no net currents.
+On the example, J1 dropping to 0 V in 10 µs leaves +5V at 2.99 V after 0.3 ms with C2 = 22 µF and at 1.59 V with
+1 µF, where the Pico 2 locks out; the plug-in takes 0.22 A from J1 while C2 charges. A switch-over between two sources
+– two P-MOSFETs back to back next to a USB diode – is a run with both in `supply`, the one ramping while the other
+holds; its gap comes from the MOSFETs' thresholds and body diodes, and the capacitors bridge it or not. Without
+`transients` nothing runs.
+
 `leds_on` lists the LEDs that light in a load – the designator, or `D10_RED` for one colour of an RGB LED, `"all"` for
 every one; the others are expected dark. LEDs on the output of a constant-current sink go by the channel instead (5.3).
 As soon as an LED is on no driver output, every load needs `leds_on`, `[]` when none lights (E-4).
@@ -123,10 +159,11 @@ As soon as an LED is on no driver output, every load needs `leds_on`, `[]` when 
 
 | Check | What |
 |---|---|
-| E-1 | the operating point converges |
+| E-1 | the operating point converges, a transient run runs to its end |
 | E-2 | stress of every part against its ratings with derating: resistor power ≤ 50 %, currents ≤ 80 %, capacitor/diode/transistor voltages ≤ 67 %, LED forward current and reverse voltage, fuse hold current at ambient, connector, switch and relay contact current, relay coil voltage, the current of every MCU output (`gpio_i_max_a`) and of all outputs together, sourced and sunk (`gpio_i_total_max_a`) – each pin may be fine and the sum beyond the package; the junction temperature of every part with `rth_ja_k_per_w` against its `tj_max_c`, and on a board of `touch_c` against the touch limit (below the table) |
 | E-3 | function: current from every source (≤ `i_max_a`), no source and no cell fed backwards (≤ `i_back_max_a`, `i_charge_max_a`, 1 mA by default), regulator outputs within tolerance, input above `vin_min`, LDO junction temperature (against the same limit as E-2's), MCU supply voltage and load on its regulator, MCU inputs at a defined level (≤ VIL or ≥ VIH – a 3.3 V signal into a 5 V AVR is the classic case), every part with an operating supply range inside it, every input pin with thresholds at a defined level and the high level of every MCU output reaching the VIH of the inputs on its net (below the table), MCU outputs only on pins that can drive (an output on an input-only pin is reported and not driven), LED driver output headroom and junction temperature, every LED on or dark as the load says (driver channels: ≥ 80 % of its share of the set current, also for an LED behind 0 Ω bridges or one resistor; parallel LEDs share within a ratio – below the table), relays pull in (`v_operate`) and release (`v_release`) as the load says, an own board supplied inside the range it was simulated for (`vin_min` … `vin_max`, 4.5), diodes that must block (`expect_blocking`), every net inside its declared range `v`, plus the plugin's checks |
 | E-4 | LED has a known driver: in every scenario every LED – each colour of an RGB LED – has a state E-3 checks, its cathode on a driver output (directly, behind 0 Ω bridges or one resistor) or the load's `leds_on`; an LED with neither, or one the netlist left out because its parts entry lacks a role it reads (anode, cathode and their colours, 4.1), fails as "LED without a known driver" |
+| E-5 | transient limits: in every run of `transients` each limit of its `expect` – a net's lowest voltage ≥ `min_v`, highest ≤ `max_v`, a source's peak current ≤ `i_max_a` – and every MCU's supply pin, once it has reached its `vin_min` (`vsys_min`), never below it again before the run ends; actual value with the time it occurs ("2.985 V at 1.3 ms") |
 
 **Heat and touch.** Half the power rating is no temperature: an AO3401A (125 K/W) at E-2's 0.45 W runs at 96 °C
 at 40 °C ambient. Every part whose entry gives `rth_ja_k_per_w` gets its junction temperature in every scenario,

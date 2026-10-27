@@ -206,7 +206,7 @@
   },
   "E-1": {
    "title": "operating point",
-   "rule": "The DC operating point of every scenario converges, and the simulation config fits the graph.",
+   "rule": "The DC operating point of every scenario and every transient run converges, and the simulation config fits the graph.",
    "why": "A scenario that does not converge checks nothing. Usually a node has no DC path to ground, a parameter is missing, or the config names a net or part that does not exist.",
    "fix": "Read the message: give a floating node a path (often a real design fault), complete the parts entry, or correct sim.json.",
    "sources": ["edakit handbook 5.1"]
@@ -231,6 +231,13 @@
    "why": "The simulation is the polarity check of the graph – G-7 is retired for it: a reversed LED is reported as reversed or stays dark where it should light. That holds only for an LED with an expected state. Without one E-3 skips it, and so does the netlist with an LED whose parts entry has no role anode or cathode (or those of its colour); its polarity and its current go unchecked and the run passes without a word.",
    "fix": "Give every load leds_on: the LEDs that light in it (the designator, or D10_RED for one colour of an RGB LED), [] when none does. Or put the LED's cathode on a driver output. An LED left out needs the roles anode and cathode – anode_<color> and cathode, or anode and cathode_<color>, for an RGB LED – in its parts entry (handbook 4.1).",
    "sources": ["edakit handbook 5.3: a reversed LED elsewhere stays dark where it should light – the polarity check of the graph", "edakit rules.json G-7 (retired): polarity is checked by the simulation"]
+  },
+  "E-5": {
+   "title": "transient limits",
+   "rule": "In every run of transients (sim.json) – the supplies following piecewise-linear curves over time from the operating point at t = 0 – every limit of the run's expect holds: a net's lowest voltage ≥ min_v and highest ≤ max_v, a source's peak current ≤ i_max_a; and the supply pin of every MCU whose ratings give vin_min (or vsys_min), once it has reached that minimum, does not fall below it again before the run ends.",
+   "why": "A board can pass every DC scenario and still reset whenever its supply changes: two P-MOSFETs back to back that let go of the cells before the USB diode conducts, a bulk capacitor too small to bridge an unplug, a source ramp that crosses a regulator's lockout. A DC scenario sits at one point of the curve, either side of the gap; only a run over time passes through it. The same run shows the inrush a plug-in takes from the source.",
+   "fix": "Close the gap or bridge it: more bulk capacitance at the rail (C ≥ I × t / ΔV for the time no source feeds it), a path that conducts before the other one lets go (a Schottky diode across the gap, an ideal-diode or power-mux IC), a regulator whose lockout lies below the dip. Against inrush: less capacitance behind the connector or a load switch with soft start. A run a procedure excludes (unplug only when switched off) stays as info: true. The limits come from the datasheets: the MCU's vin_min or brown-out level, a source's i_max_a.",
+   "sources": ["edakit handbook 5.2 (transient runs) and 5.3", "ngspice User's Manual, independent sources: PWL(T1 V1 T2 V2 …) holds V1 before T1; .tran starts from the DC operating point unless uic is given", "Raspberry Pi Pico 2 datasheet: VSYS 1.8–5.5 V – the vsys_min of the example's Pico 2 entry (tests/fixtures/led-bar/hardware/parts/C41407547.json)", "Universal Serial Bus Specification Revision 2.0 (April 27, 2000), 7.2.4.1 Inrush Current Limiting: at most 10 µF in parallel with 44 Ω at the downstream end of a cable"]
   },
   "S-2": {
    "title": "schematic = graph",

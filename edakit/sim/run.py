@@ -5,8 +5,10 @@
 Scenarios = supplies x loads x LED forward-voltage corners from the simulation config (edakit.toml [project] sim),
 plus "extra_scenarios" listed there. "combine_sources" adds supplies for every combination of the sources it names:
 each alone at both ends of its range, all together with one high and the others low (generated_supplies).
+"transients" adds runs over time: the supplies follow [t, V] points (plug, unplug, a switch-over), ngspice .tran from
+the operating point at t = 0, judged by E-5 only; without the key nothing runs.
 
-  E-1  the operating point converges
+  E-1  the operating point converges (a transient run: it runs to its end)
   E-2  stress of every part against the ratings in the parts database, with the derating from the config; MCU output
        current per pin (gpio_i_max_a) and of all outputs together (gpio_i_total_max_a); the junction temperature
        ambient + P x rth_ja_k_per_w of every part whose entry gives it, against its tj_max_c (at most the criteria's),
@@ -24,6 +26,9 @@ each alone at both ends of its range, all together with one high and the others 
   E-4  every LED – each colour of an RGB LED – has a state E-3 checks in every scenario: its cathode on a driver output
        (directly, behind 0 Ω bridges or behind a balancing resistor) or the load has leds_on; an LED with neither, or
        one the netlist left out because its parts entry lacks a role, fails as "LED without a known driver"
+  E-5  transient limits: in every run of transients, each limit of its expect (a net's lowest voltage ≥ min_v, highest
+       ≤ max_v, a source's peak current ≤ i_max_a), and every MCU supply pin, once it has reached its vin_min|vsys_min,
+       never below it again
 
 Rule, reason and fix of each check: rules.json (`edakit rules E-2`).
 
@@ -75,6 +80,31 @@ def ngspice(text, keep=None, name="run"):
         raise SimError("operating point not found: " + " | ".join(
             line for line in (res.stdout + res.stderr).splitlines() if "rror" in line)[:300])
     return values
+
+
+def ngspice_tran(text, data_file, keep=None, name="run"):
+    """A transient netlist (netlist.build with tran) -> (times, columns): the rows ngspice wrote to `data_file` with
+    wrdata, the first column the time, the others in the order of meta["tran"]["columns"]."""
+    if not shutil.which("ngspice"):
+        raise SimError("ngspice not found – install it (Debian/Ubuntu: sudo apt install ngspice)")
+    with tempfile.TemporaryDirectory() as tmp:
+        d = Path(keep or tmp)
+        cir = d / (re.sub(r"[^\w.-]", "_", name) + ".cir")
+        cir.write_text(text)
+        res = subprocess.run(["ngspice", "-b", cir.name], cwd=d, capture_output=True, text=True, timeout=600)
+        if keep:
+            cir.with_suffix(".log").write_text(res.stdout + res.stderr)
+        dat = d / data_file
+        rows = []
+        for line in (dat.read_text().splitlines()[1:] if dat.exists() else []):
+            try:
+                rows.append([float(x) for x in line.split()])
+            except ValueError:
+                pass
+    if not rows or any(math.isnan(x) for r in rows for x in r):
+        raise SimError("transient run failed: " + " | ".join(
+            line for line in (res.stdout + res.stderr).splitlines() if "rror" in line or "too small" in line)[:300])
+    return [r[0] for r in rows], [list(c) for c in zip(*(r[1:] for r in rows))]
 
 
 class Checks:
@@ -259,13 +289,14 @@ def touch_limits(design, sim):
 
 
 def reg_input_current(res, reg):
-    """Current a regulator model draws from its input (the same expression as its B-source)."""
+    """Current a regulator model draws from its input (the same expression as its B-source, lockout included)."""
     iout = max(res.get(reg["ammeter"], 0.0), 0.0)
     p = reg["params"]
+    vin = v(res, reg["vin"]) - v(res, reg["gnd"])
+    on = 1.0 if reg.get("vin_min") is None else min(1.0, max(vin - reg["vin_min"] + netlist.UVLO_V, 0) / netlist.UVLO_V)
     if reg["kind"] == "ldo":
-        return iout + p.get("iq_a", 0.0) + reg["extra_i"]
-    vin = max(v(res, reg["vin"]) - v(res, reg["gnd"]), 0.3)
-    return reg["vset"] * (iout + reg["extra_i"]) / (p.get("efficiency", 0.85) * vin) + p.get("iq_a", 0.0)
+        return on * (iout + p.get("iq_a", 0.0) + reg["extra_i"])
+    return on * (reg["vset"] * (iout + reg["extra_i"]) / (p.get("efficiency", 0.85) * max(vin, 0.3)) + p.get("iq_a", 0.0))
 
 
 def behind_resistor(design, joined, outputs):
@@ -665,6 +696,138 @@ def scenarios(sim):
                "info": s.get("info", False)}
 
 
+RUN_KEYS = {"supply", "load", "corner", "stop_s", "step_s", "expect", "info", "about", "note"}
+
+
+def number(x):
+    return isinstance(x, (int, float)) and not isinstance(x, bool)
+
+
+def transient_runs(design, sim):
+    """The runs of `transients`, {name: run}, checked: a supply per source of `sources` (a voltage, or [t, V] points
+    with rising t) or per battery holder (a cell state of `cells`), a load of `loads`, stop_s and step_s in seconds,
+    expect per net (min_v, max_v) or per source (i_max_a)."""
+    runs = sim.get("transients") or {}
+    if not isinstance(runs, dict):
+        raise SimError(f"transients: a map from each run's name to the run expected, not {runs!r}")
+    sources, cells = sim.get("sources", {}), sim.get("cells", {})
+    for name, r in runs.items():
+        at = f"transients {name}"
+        if not isinstance(r, dict) or set(r) - RUN_KEYS:
+            raise SimError(f"{at}: a run with {', '.join(sorted(RUN_KEYS - {'about', 'note'}))} expected, not {r!r}")
+        if r.get("load") not in sim.get("loads", {}):
+            raise SimError(f"{at}: load {r.get('load')} is no load of loads")
+        if r.get("corner", "typ") not in ("min", "typ", "max"):
+            raise SimError(f"{at}: corner min, typ or max expected, not {r['corner']!r}")
+        stop = r.get("stop_s")
+        if not number(stop) or stop <= 0:
+            raise SimError(f"{at}: stop_s, the length of the run in seconds, expected")
+        step = r.get("step_s", stop / 1000)
+        if not number(step) or not 0 < step <= stop:
+            raise SimError(f"{at}: step_s, the largest time step in seconds (≤ stop_s), expected, not {step!r}")
+        if not isinstance(r.get("supply"), dict):
+            raise SimError(f"{at}: supply, a map from each source or battery holder to its curve or state, expected")
+        for des, x in r["supply"].items():
+            if des in sources:
+                pts = x if isinstance(x, list) else None
+                if not number(x) and not (pts and all(isinstance(q, list) and len(q) == 2 and all(map(number, q))
+                                                      for q in pts)
+                                          and pts[0][0] >= 0 and all(a[0] < b[0] for a, b in zip(pts, pts[1:]))):
+                    raise SimError(f"{at}: {des} – a voltage or a list of [t, V] points with rising t from 0 expected, "
+                                   f"not {x!r}")
+            elif not (isinstance(x, str) and x in cells and (design.part(des) or {}).get("kind") == "battery_holder"):
+                raise SimError(f"{at}: {des} is neither a source of sources nor a battery holder with a cell state of "
+                               "cells")
+        for key, lim in (r.get("expect") or {}).items():
+            allowed = {"i_max_a"} if key in sources else {"min_v", "max_v"} if key in design.nets else None
+            if allowed is None:
+                raise SimError(f"{at}: expect {key} is neither a net nor a source of sources")
+            if not isinstance(lim, dict) or not lim or set(lim) - allowed or not all(map(number, lim.values())):
+                raise SimError(f"{at}: expect {key} – {' and/or '.join(sorted(allowed))} expected, not {lim!r}")
+    return runs
+
+
+def extreme(times, xs, fn, start=0):
+    """(value, time) of the minimum (fn=min) or maximum (fn=max) of xs[start:]."""
+    i = fn(range(start, len(xs)), key=xs.__getitem__)
+    return xs[i], times[i]
+
+
+def at_time(x, t, unit):
+    return f"{x:.4g} {unit} at {t * 1e3:.4g} ms"
+
+
+def transient(design, sim, name, run, keep=None, models=None):
+    """One run of `transients`: ngspice .tran from the operating point at t = 0; E-1 (it converges) and E-5 – every
+    limit of expect, and every MCU's supply pin, once it has reached its vin_min|vsys_min, never below it again.
+    -> (row of the scenario table, check items)."""
+    corner = run.get("corner", "typ")
+    ck = Checks(name)
+    row = {"name": name, "supply": "transient", "load": run["load"], "corner": corner, "transient": True}
+    expect = run.get("expect") or {}
+    sources = sim.get("sources", {})
+    nets = [n for n in dict.fromkeys([*sim.get("report", []), *(k for k in expect if k not in sources)])]
+    grounds = {n: netlist.local_ground(design, n) for n in nets}
+    sc = {"name": name, "supply": run["supply"], "load": sim["loads"][run["load"]], "corner": corner}
+    tran = {"step_s": run.get("step_s", run["stop_s"] / 1000), "stop_s": run["stop_s"],
+            "nets": [*nets, *grounds.values()], "file": re.sub(r"[^\w.-]", "_", name) + ".dat"}
+    try:
+        text, meta = netlist.build(design, sim, sc, models or {}, tran)
+        times, cols = ngspice_tran(text, tran["file"], keep, name)
+    except (ValueError, KeyError, SimError) as e:
+        ck.add("E-1", "circuit", "transient run", f"{type(e).__name__}: {e}", "converges", False)
+        row["status"] = "error"
+        return row, ck.items
+    ck.add("E-1", "circuit", "transient run", "converged", "converges", True)
+    wave = dict(zip(meta["tran"]["columns"], cols))
+    zero = [0.0] * len(times)
+
+    def volts(net):
+        a, g = netlist.node(net, design.ground), netlist.node(grounds[net], design.ground)
+        if a not in wave and a != "0":
+            return None
+        return [x - y for x, y in zip(wave.get(a, zero), wave.get(g, zero))]
+    for key, lim in expect.items():
+        if key in sources:
+            cur = [-x for x in wave[meta["sources"][key]["branch"]]] if key in meta["sources"] else zero
+            peak, t = extreme(times, cur, max)
+            ck.add("E-5", key, "peak current from the supply", at_time(peak, t, "A"),
+                   f"≤ {lim['i_max_a'] * 1e3:.4g} mA", peak <= lim["i_max_a"])
+            continue
+        xs = volts(key)
+        for k, what, fn, sign in (("min_v", "lowest voltage", min, "≥"), ("max_v", "highest voltage", max, "≤")):
+            if k not in lim:
+                continue
+            if xs is None:
+                ck.add("E-5", key, what, "no element of the netlist on the net", f"{sign} {lim[k]} V", False)
+                continue
+            x, t = extreme(times, xs, fn)
+            ck.add("E-5", key, what, at_time(x, t, "V"), f"{sign} {lim[k]} V", x >= lim[k] if fn is min else x <= lim[k])
+    for des, m in meta["mcu"].items():
+        r = m["ratings"]
+        rating = "vin_min" if "vin_min" in r else "vsys_min" if "vsys_min" in r else None
+        if rating is None or m["vin"] not in wave:
+            continue
+        xs, vmin = wave[m["vin"]], r[rating]
+        what = f"lowest supply voltage once started ({rating})"
+        start = next((i for i, x in enumerate(xs) if x >= vmin), None)
+        if start is None:
+            ck.add("E-5", des, what, f"never reaches {vmin} V (highest {max(xs):.4g} V)", f"≥ {vmin} V", False)
+            continue
+        x, t = extreme(times, xs, min, start)
+        ck.add("E-5", des, what, at_time(x, t, "V"), f"≥ {vmin} V", x >= vmin)
+    if run.get("info"):
+        for c in ck.items:
+            if c["result"] == "fail":
+                c["result"] = "info"
+    report = {n: xs for n in sim.get("report", []) if (xs := volts(n)) is not None}
+    row["nets"] = {n: min(xs) for n, xs in report.items()}
+    row["nets_max"] = {n: max(xs) for n, xs in report.items()}
+    row["sources"] = {d: max(-x for x in wave[s["branch"]]) for d, s in meta["sources"].items()}
+    row["status"] = "ok" if all(c["result"] != "fail" for c in ck.items) else "fail"
+    return row, ck.items
+
+
 def load_plugin(path):
     if not path:
         return None
@@ -678,6 +841,7 @@ def run_all(design, sim, keep=None, plugin=None):
     """All scenarios; `sim` is the parsed simulation config (tests pass modified copies)."""
     models = getattr(plugin, "MODELS", {}) if plugin else {}
     touch_limits(design, sim)
+    runs = transient_runs(design, sim)
     out = {"scenarios": [], "checks": [], "net_currents": {}}
     for sc in scenarios(sim):
         ck = Checks(sc["name"])
@@ -706,6 +870,10 @@ def run_all(design, sim, keep=None, plugin=None):
                 e.update(i_max_a=i, scenario=sc["name"])
         row["status"] = "ok" if all(c["result"] != "fail" for c in ck.items) else "fail"
         out["checks"] += ck.items
+        out["scenarios"].append(row)
+    for name, run in runs.items():   # transient runs: E-5, no stress, not in the net currents
+        row, items = transient(design, sim, name, run, keep, models)
+        out["checks"] += items
         out["scenarios"].append(row)
     return out
 
@@ -740,7 +908,18 @@ def main(cfg, args):
     report = sim.get("report", [])
     print(f"{'scenario':<34} {'status':<7}" + "".join(f" {n:>8}" for n in report) + "   supply current")
     for r in out["scenarios"]:
+        if r.get("transient"):
+            continue
         nets = "".join(f" {r.get('nets', {}).get(n, float('nan')):7.3f}V" for n in report)
+        src = ", ".join(f"{d} {i * 1e3:.0f} mA" for d, i in r.get("sources", {}).items())
+        print(f"{r['name']:<34} {r['status']:<7}{nets}   {src}")
+    runs = [r for r in out["scenarios"] if r.get("transient")]
+    if runs:
+        print(f"\n{'transient run':<34} {'status':<7}" + "".join(f" {n + ' min…max':>14}" for n in report)
+              + "   peak supply current")
+    for r in runs:
+        nets = "".join(f" {r.get('nets', {}).get(n, float('nan')):7.3f}…{r.get('nets_max', {}).get(n, float('nan')):.3f}V"
+                       for n in report)
         src = ", ".join(f"{d} {i * 1e3:.0f} mA" for d, i in r.get("sources", {}).items())
         print(f"{r['name']:<34} {r['status']:<7}{nets}   {src}")
     summary = defaultdict(int)

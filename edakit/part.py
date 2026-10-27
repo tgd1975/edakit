@@ -137,12 +137,13 @@ def supply_of(sim, connectors):
 
 
 def simulate(cfg, d, sim, probe):
-    """The board's own scenarios (fault cases with info left out), with the nets in `probe` reported."""
+    """The board's own scenarios (fault cases with info and transient runs left out), with the nets in `probe`
+    reported."""
     from .sim import run as simrun
     info = {s["name"] for s in simrun.scenarios(sim) if s.get("info")}
     plugin = simrun.load_plugin(cfg.sim_plugin) if cfg.sim_plugin else None
     out = simrun.run_all(d, {**sim, "report": list(dict.fromkeys(probe))}, plugin=plugin)
-    rows = [s for s in out["scenarios"] if s["name"] not in info]
+    rows = [s for s in out["scenarios"] if s["name"] not in info and not s.get("transient")]
     bad = [s["name"] for s in rows if s["status"] != "ok"]
     if bad:
         raise PartError(f"the simulation of the board fails in {len(bad)} scenario(s) ({', '.join(bad[:3])}) – "
