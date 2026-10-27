@@ -2,6 +2,8 @@
 
 import json
 
+import pytest
+
 from edakit.release import gate
 
 ALL = set("PGESLF")
@@ -160,3 +162,34 @@ def test_an_open_point_with_an_unknown_phase_is_named(project, monkeypatch):
     six = section(gate_run(project, monkeypatch), 6)
     assert "- note: C2297: open point with when 'delivery' – known: order, acceptance; listed without a phase" in six
     assert "  - open: VR not specified – 5 V assumed\n" in six
+
+
+HEAD = {"state_sha256": "s", "layout_sha256": "l", "fab_sha256": "f"}
+
+
+def signed(project, drop=()):
+    """The example's sign-off file signed for HEAD, without the manual checks in drop."""
+    path = project.root / "hardware" / "signoff.json"
+    s = json.loads(path.read_text())
+    s.update(HEAD)
+    s["manual"] = [{**m, "done_by": "agent", "date": "2026-10-27"} for m in s["manual"] if m["id"] not in drop]
+    path.write_text(json.dumps(s))
+    return gate.load_signoff(project.config(), HEAD)
+
+
+@pytest.mark.parametrize("sid, scope", [("M-1", "circuit"), ("M-5", "fab")])
+def test_second_datasheet_check_and_layout_review_are_required(project, sid, scope):
+    """M-1 and M-5 are conditions of every release, as M-6 is: a sign-off file without them gets them as open."""
+    loaded, notes = signed(project, drop=(sid,))
+    m = next(m for m in loaded["manual"] if m["id"] == sid)
+    assert (m["phase"], m["scope"], m["done_by"]) == ("export", scope, None)
+    assert any(f"{sid} is missing" in n for n in notes)
+    d, reasons = gate.decide(rows("pass"), [], loaded, ALL, gate.STAGES)
+    assert d == "NOT RELEASED" and sid in reasons[0]
+
+
+def test_released_with_every_required_check_signed(project):
+    loaded, notes = signed(project)
+    assert {"M-1", "M-5", "M-6"} <= {m["id"] for m in loaded["manual"] if m["done_by"]}
+    assert not any("missing" in n for n in notes)
+    assert gate.decide(rows("pass"), [], loaded, ALL, gate.STAGES) == ("RELEASED", [])

@@ -24,15 +24,16 @@ Concept: `${CLAUDE_PLUGIN_ROOT}/handbook/08-release-gate.md`.
    project's mechanics → hardware-change or pcb-round skill. **Only the user accepts a warning** – it is a decision.
    Propose the entry for the sign-off file (`accepted_warnings`: `match` as fnmatch pattern over "ID scenario item
    step" as shown in section 3 of the protocol, `scope`, `reason`, `by`, `date`) and add it after their OK.
-5. **Manual checks an agent can do are signed by the agent's result** (no checklist for the user): M-1 – agent
+5. **Manual checks an agent can do are signed by the agent's result** (no checklist for the user; M-1, M-6 and M-5
+   are required – the gate adds them as open when the sign-off file lacks them): M-1 – agent
    electrical-reviewer checks the critical parts again against their datasheets with the polarity sheet; M-6 – agent
    regulatory-reviewer checks circuit and parts against the rules for the purpose in the graph (usually done at the
    hand-over already; it counts as long as the circuit hash is the same); M-5 – agent pcb-reviewer checks the layout
    on the manufacturing files of this run. OK → `done_by` = the agent, date, note, and the hash of its scope from the
    protocol header into the sign-off file – for scope `fab` (M-5, M-2) the `fab_sha256` of the run whose files were
    reviewed; a later run with the same files keeps it. When it lapsed: `edakit fab diff <reviewed run> <new run>`
-   shows what changed, and the review looks at that. Not OK → fix the cause and check again. What changes looks or operation is
-   the user's call (decision-round skill).
+   shows what changed, and the review looks at that. Not OK → fix the cause and check again. What changes looks or
+   operation is the user's call (decision-round skill).
 6. **RELEASED:** `fab/manifest.json` says `"released": true`, and the run is the current release – the gate marked
    every earlier released run as superseded (`edakit release current` shows it). Archive the folder in git
    (`git add -f`) together with the superseded manifests through the project's git workflow. A released run that must

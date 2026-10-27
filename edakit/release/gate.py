@@ -15,8 +15,8 @@ Result: <reports>/<YYYYMMDD-hhmmss>/
 RELEASED only if
   - every stage ran and no check failed,
   - every warning is accepted in the sign-off file (only a human accepts warnings – it is a decision),
-  - every part is verified and every manual check of phase 'export' is signed – the regulatory review M-6 also when
-    the sign-off file does not list it,
+  - every part is verified and every manual check of phase 'export' is signed – the second datasheet check M-1, the
+    regulatory review M-6 and the layout review M-5 also when the sign-off file does not list them (REQUIRED),
   - all of that for exactly this state: sign-offs count only for the hash of their scope – 'circuit' (graph with its
     check settings, parts database, simulation config), 'layout' (the board files, further layout_files of
     [release], the footprint geometry) or 'fab' (what the manufacturer builds from: the Gerber layers rasterised, the
@@ -64,9 +64,16 @@ PHASES = [("export", "before the export (condition of the release)"),
           ("acceptance", "after delivery, per board")]
 SCOPE_KEY = {"circuit": "state_sha256", "layout": "layout_sha256", "fab": "fab_sha256"}
 REQUIRED = {   # manual checks every release needs, also when an older sign-off file does not list them
+    "M-1": {"phase": "export", "scope": "circuit",
+            "text": "Critical parts checked a second time against their datasheets, independently – the agent "
+                    "electrical-reviewer in its own session"},
     "M-6": {"phase": "export", "scope": "circuit",
             "text": "Regulatory review: circuit and parts against EU law for the stated purpose (RoHS, REACH, radio, "
                     "batteries, product safety) – the agent regulatory-reviewer in its own session"},
+    "M-5": {"phase": "export", "scope": "fab",
+            "text": "Layout reviewed independently (manufacturability, mechanics, operation, looks) on the "
+                    "manufacturing files of a gate run – the agent pcb-reviewer. No finding 'block' open, every "
+                    "'important' finding fixed or rejected by the owner"},
 }
 UPLOAD = ["gerber_{b}.zip", "bom_{b}.csv", "cpl_{b}.csv"]
 WHEN = ("order", "acceptance")   # verified.open {text, when}: the phase whose manual checks answer the point

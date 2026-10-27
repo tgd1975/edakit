@@ -171,19 +171,29 @@ with `when` (`order`, `acceptance`) is also an unchecked line under that phase's
 KT-0805G (D2–D9): VR not specified – 5 V assumed" after M-4, so the acceptance list carries it without copying. The
 list is information: it changes neither the decision nor its reasons, and a project without open points gets none.
 
-**M-6, the regulatory review, is required** even when the sign-off file does not list it: the gate adds it as open
-(chapter 15). Not everything that can be ordered may be sold or even operated in the EU, and nothing else in the
-gate looks at that.
+**Three manual checks are required** even when the sign-off file does not list them: the gate adds each one as open
+("M-5 is missing – added as open, every release needs it"), and the run is NOT RELEASED until it is signed. There is
+no key to switch them off.
+
+| Check | Phase | Scope | What |
+|---|---|---|---|
+| M-1 | export | circuit | the critical parts checked a second time against their datasheets – agent electrical-reviewer |
+| M-6 | export | circuit | the regulatory review (chapter 15) – agent regulatory-reviewer |
+| M-5 | export | fab | the layout review on the manufacturing files of a gate run – agent pcb-reviewer |
+
+A sign-off file that lists one of them keeps its own phase, scope and text (an older M-5 with scope `layout` stays
+so). Not everything that can be ordered may be sold or even operated in the EU, and nothing else in the gate looks at
+that (M-6).
 
 The lesson behind M-5: the first released run of the reference project had passed every automatic check, and nobody
 had looked at the layout as a whole. The layout review agent then found a switching regulator loop routed across the
 whole board (now L-11) and that the visible side was crowded with tracks. Since then the layout review is a condition
-of the release, not a tool you may use. It also ends every layout round that changed placement, routing or pours (skill
-pcb-round), on the round's Gerber export, so its findings come before the gate rather than after it: later in the same
-project a run was released with about 45 % of one side bare – EasyEDA had dropped pour islands without a pad, and
-gate, DRC and layout review all passed it, because none of their inputs showed the copper as filled (now L-15). Both
-reviewers give every finding its probability and its cost; a deviation without a realistic consequence is not a
-finding.
+of the release, not a tool you may use – in the gate's own list, so that a project whose sign-off file never had it
+is held to it too. It also ends every layout round that changed placement, routing or pours (skill pcb-round), on the
+round's Gerber export, so its findings come before the gate rather than after it: later in the same project a run was
+released with about 45 % of one side bare – EasyEDA had dropped pour islands without a pad, and gate, DRC and layout
+review all passed it, because none of their inputs showed the copper as filled (now L-15). Both reviewers give every
+finding its probability and its cost; a deviation without a realistic consequence is not a finding.
 
 ## 8.3 The decision
 
