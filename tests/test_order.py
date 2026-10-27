@@ -169,19 +169,29 @@ def test_order_keys(project, toml, msg):
     assert msg in str(e.value)
 
 
-def test_an_easyeda_library_number_is_not_carted(project, monkeypatch, capsys):
-    """C99… numbers are EasyEDA user-library entries (handbook 4.2): LCSC does not sell them."""
+def test_an_easyeda_library_number_is_no_number(project, monkeypatch, capsys):
+    """C99… numbers are EasyEDA user-library entries (handbook 4.2): LCSC does not sell them – not carted, and P-5
+    counts them as no number (the owner's answer to #41). With `part` or without, as the bell's Nano has both."""
     part = project.part("C131337")
     part["lcsc"] = "C9900187880"
     project.save_part("C9900187880", part)
     g = project.graph()
     project.comp(g, "J1")["lcsc"] = "C9900187880"
+    project.comp(g, "J1").pop("part")
     project.save_graph(g)
     assert order(project, monkeypatch) == 0
     assert not (out_dir(project) / "cart_lcsc.csv").exists()
     out = capsys.readouterr().out
     assert "J1: no supplier" in out and "C9900187880 is an EasyEDA library number" in out
-    assert p5(project)[0] == []                   # P-5 asks for an LCSC number or `order`: J1 has a number
+    assert p5(project)[0] == ["J1 B2B-PH-K-S(LF)(SN): bought separately (bom: false), but neither an LCSC number nor "
+                              "`order` in its parts entry (C9900187880 is an EasyEDA library number, LCSC does not "
+                              "sell it) – name the supplier and its order code"]
+    project.comp(g, "J1")["part"] = "B2B-PH-K-S(LF)(SN)"
+    project.save_graph(g)
+    assert len(p5(project)[0]) == 1
+    part["order"] = {"reichelt": "JST PH2P"}
+    project.save_part("C9900187880", part)
+    assert p5(project)[0] == []
 
 
 def test_a_supplier_name_becomes_a_file_name(project, monkeypatch):

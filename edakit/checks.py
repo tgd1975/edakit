@@ -57,8 +57,8 @@
   P-4  parts orderable (stock.py): every assembled part listed at JLCPCB, in stock for `quantity` boards with the
        assembler's attrition, the MPN of its entry, not "Standard Only" on an Economic order – read offline from the
        snapshot of `edakit stock`; MSL >= 5, a thin stock margin, another class warn; an old snapshot is pending
-  P-5  a part bought separately (bom: false) names its supplier: an LCSC number or `order` in its parts entry
-       (order.py, warning)
+  P-5  a part bought separately (bom: false) names its supplier: an LCSC number (a C99… library number is none) or
+       `order` in its parts entry (order.py, warning)
   G-9  sign-off: every part verified against its datasheet, no open "verify" notes (pending, blocks only the release)
 
 0 Ω bridges (resistors with value_ohm 0 in the parts entry) join their nets: G-4, G-5, G-6, G-10 to G-16 see the

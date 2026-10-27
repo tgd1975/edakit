@@ -31,9 +31,9 @@
   },
   "P-5": {
    "title": "supplier per part",
-   "rule": "Every part bought separately and fitted by hand (bom: false) has an LCSC number or an order entry in its parts entry ({supplier: code} or {supplier: {code, moq, step}}), so that edakit order can put it into a cart. A warning.",
+   "rule": "Every part bought separately and fitted by hand (bom: false) has an LCSC number or an order entry in its parts entry ({supplier: code} or {supplier: {code, moq, step}}), so that edakit order can put it into a cart. A C99… number is an EasyEDA user-library entry, not an LCSC number: LCSC does not sell it. A warning.",
    "why": "The assembler's BOM leaves out every hand-soldered part, module and cable. What has no supplier and no order code is written into an order list by hand, late and without spares or the supplier's minimum – a 50-pack that does not exist, one LED short for the last board.",
-   "fix": "Add order to the parts entry, e.g. {\"berrybase\": \"OSM5DK7331A\"} or {\"lcsc\": {\"moq\": 20, \"step\": 20}}, or give the component its LCSC number; then edakit order. Accept the warning in the sign-off file if the part is at hand already.",
+   "fix": "Add order to the parts entry, e.g. {\"berrybase\": \"OSM5DK7331A\"} or {\"lcsc\": {\"moq\": 20, \"step\": 20}}, or give the component its LCSC number – for a C99… library number the supplier the part really comes from; then edakit order. Accept the warning in the sign-off file if the part is at hand already.",
    "sources": ["edakit handbook 4.1 and 8.4"]
   },
   "P-6": {

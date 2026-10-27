@@ -19,7 +19,8 @@ spare, moq, step, unit_price, currency) – the list `edakit cost` prices.
 Pieces per cart line: ceil(per set x quantity x (1 + [project] spare_pct / 100)) + the components' or the item's
 `spare`, at least `moq`, a multiple of `step`. Own parts (`own` in the entry) are made, not bought: no cart.
 
-  P-5  a part bought separately (bom: false) has an LCSC number or `order` in its parts entry (warning)
+  P-5  a part bought separately (bom: false) has an LCSC number – not a C99… EasyEDA library number – or `order` in its
+       parts entry (warning)
 """
 
 from __future__ import annotations
@@ -167,19 +168,20 @@ def hand_assembly(cfg, design, lost):
 
 
 def check(design, rep, cfg=None):
-    """P-5: a part bought separately (bom: false) names where it comes from."""
+    """P-5: a part bought separately (bom: false) names where it comes from. A C99… number is no LCSC number."""
     by_entry = defaultdict(list)
     for des, c in design.comps.items():
-        if c.get("bom") is not False or c.get("lcsc") or not c.get("part"):
+        if c.get("bom") is not False or orderable(c.get("lcsc")) or not (c.get("lcsc") or c.get("part")):
             continue          # assembled, from LCSC, or a bare pad with nothing to buy
         entry = design.part(des) or {}
         if entry.get("own") or entry.get("order"):
             continue
-        by_entry[entry.get("mpn") or c["part"]].append(des)
-    for mpn, refs in sorted(by_entry.items(), key=lambda kv: natural_key(kv[1][0])):
+        by_entry[(entry.get("mpn") or c.get("part") or c["lcsc"], c.get("lcsc"))].append(des)
+    for (mpn, lcsc), refs in sorted(by_entry.items(), key=lambda kv: natural_key(kv[1][0])):
         rep.warnings.append(("P-5", f"{refs_text(sorted(refs, key=natural_key))} {mpn}: bought separately (bom: false), "
-                                    "but neither an LCSC number nor `order` in its parts entry – name the supplier and "
-                                    "its order code"))
+                                    "but neither an LCSC number nor `order` in its parts entry"
+                                    + (f" ({lcsc} is an EasyEDA library number, LCSC does not sell it)" if lcsc else "")
+                                    + " – name the supplier and its order code"))
 
 
 def main(cfg, args):

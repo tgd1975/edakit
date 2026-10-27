@@ -185,8 +185,9 @@ writes), one cart per other supplier and `hand_assembly.md`. A part bought separ
 component's `supplier`, else the first supplier of its entry's `order`, else LCSC; items off the board are
 `[[extra]]`. Every cart line gets the spares (`[project] spare_pct`, `spare` on the component or item) and is rounded
 up to the supplier's minimum and pack size (`moq`, `step` in `order` or the item). The LCSC cart has the columns of its
-BOM tool ("LCSC Part Number, Quantity, Comment"), the others "Code, Quantity, Item, Designators". P-5 warns about a
-part bought separately that names no supplier.
+BOM tool ("LCSC Part Number, Quantity, Comment"), the others "Code, Quantity, Item, Designators". A `C99…` number is
+an EasyEDA library entry that LCSC does not sell: no cart line. P-5 warns about a part bought separately that names no
+supplier – also one that has only such a number.
 
 **The order form as data.** The form fields that depend on the board go into `[order]` of the board file (10.2):
 `finish`, `mark` (`"default"` – JLCPCB prints its number anywhere, `"specify"` – at the placeholder, `"remove"`),
