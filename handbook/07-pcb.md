@@ -60,6 +60,28 @@ the pour gets a notch from the edge around each tooling hole instead.
   reports "Netlist Error"). New parts are parked next to the board (`park`), their geometry is measured, pad nets set,
   PCB and schematic saved.
 
+**Before a swap** – another part for the same place, because the old one is out of stock or not in JLCPCB's library –
+`edakit part diff OLD NEW` (LCSC numbers or parts-entry keys) compares the footprints without EasyEDA. The geometry is
+the dump of a placed part, else the library footprint of `edakit part import`. Pads are matched by position only: for
+each turn of 0, 90, 180 and 270° on the same side, and for the mirror image (the other side), the nearest assignment
+after laying origins and centroids on each other, with the shift that lays the assigned pads over each other best. A
+turn fits when every pad of OLD lies on the copper of its new pad (shape, size and rotation from the library; for a
+dump without pad sizes within half the smallest pad distance). Every other fit within 0.05 mm RMS of the best one
+with another map is reported – "symmetric: the numbers decide". The report:
+
+- the turn and shift that lay NEW over OLD, the residual per pad, whether the mirror image fits as well – or "mirror
+  image only – not on the same side", or "no turn fits"
+- the map old → new by position, the roles of the two entries that change under it (`old 1 throw_a → new 3 throw_b`)
+- the pitch per row, the hole or slot per pad old → new, and with `lead` in NEW's entry L-9's verdict (`hole_ok`) and
+  the 0.5 mm minimum for plated slots; the box w × h old → new
+- the graph change it implies for every component that uses OLD (`SW5: BAT_SW 1 → 3`)
+
+Exit 0 is a drop-in – same side, 0°, every pad keeps its number and role, holes fit (a shift is reported, the plan
+moves the part); 2 is something to decide. It writes nothing but `--json F`. The reference project's slide switch
+(XUNPU SS-12D11G9 for G-Switch SS-12D11-G090) gives: turned 180°, the mirror image fits equally (symmetric), map
+1→3, 2→2, 3→1, 4→4, 5→5, pitch 4.70 → 4.80 mm, the 0.40 mm tab slots below 0.5 mm, `SW5: BAT_SW 1 → 3` – what took
+an hour with both datasheet drawings and was first described as a turn when it is a mirror image.
+
 A new project comes with one empty default board (Board1 = Schematic1 + PCB1). The first `edakit schematic layout`
 renames it to the board of edakit.toml (board name, `schematic`, `pcb`) and fills the schematic from the graph; any
 other board setup is left alone and must match edakit.toml.

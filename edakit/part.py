@@ -1,10 +1,14 @@
-"""Parts: what the library says about an LCSC number, and own parts.
+"""Parts: what the library says about an LCSC number, how a new footprint maps onto the old one, and own parts.
 
     edakit part import C2297 [--update]
                                 symbol pins, footprint and identification of exactly that LCSC number from the
                                 library's public data, without EasyEDA: a new parts entry, or the differences to the
                                 existing one (--update fills in missing fields); the geometry and the symbol cached in
                                 <artifacts>/footprints/<footprint>.json and <artifacts>/library/<LCSC>.json
+    edakit part diff OLD NEW [--json FILE]
+                                before a swap: the turn and shift that lay NEW's pads over OLD's (and whether the
+                                mirror image fits), the pad map by position, roles, pitch, holes and box that change,
+                                the graph change it implies; exit 0 = drop-in, 2 = something to decide
 
 The library geometry has the units and axes of `edakit pcb dump` (mil, y up, relative to the part origin at 0° on
 TOP); a pad with a hole adds `hole` [w, l] in mm and `plated`, every pad its shape, size `w` × `h` (mil) and `rot`.
@@ -623,6 +627,266 @@ def main_import(cfg, args):
     return 2 if diffs else 0
 
 
+# --- how a new footprint maps onto the old one (part diff) ---------------------------------------------------------
+
+TURNS = {0: (1, 0), 90: (0, 1), 180: (-1, 0), 270: (0, -1)}   # cos, sin
+TIE_MM = 0.05         # another fit within this RMS of the best one: the pad set is symmetric, the numbers decide
+ROW_MM = 0.05         # pads whose centres share a coordinate within this stand in one row
+
+
+def part_geometry(cfg, d, key):
+    """(geometry, where it comes from) of a part named by its LCSC number or parts-entry key: the dump of a placed
+    component that uses it – the project's footprint –, else the library footprint part import cached."""
+    from .pcb import geometry_file
+    for board in cfg.boards.values():
+        dump = _read(geometry_file(cfg, board)) or {}
+        for des in sorted(d.comps, key=natural_key):
+            if des in dump and key in (d.entry_key(des), d.comps[des].get("lcsc")):
+                return dump[des], f"pcb dump of {des}"
+    entry = d.parts.get(key) or d.parts.get(d.by_mpn.get(key, "")) or {}
+    name = entry.get("footprint") or (cached(cfg, key) or {}).get("footprint")
+    geo = cached_footprint(cfg, name)
+    if geo:
+        return geo, f"library geometry {name}"
+    how = f"edakit part import {key}" if re.fullmatch(r"C\d+", key) else "edakit pcb dump once it is in the PCB"
+    raise PartError(f"{key}: no footprint geometry – {how}")
+
+
+def pad_points(geo):
+    """[(number, x mm, y mm, pad)] – every pad, each shell leg of a number used several times."""
+    out = []
+    for n, p in geo["pads"].items():
+        for q in (geo.get("pads_same_number") or {}).get(n) or [p]:
+            out.append((n, q["x"] / MIL_PER_MM, q["y"] / MIL_PER_MM, {**p, **q}))
+    return out
+
+
+def turned(x, y, turn, mirror):
+    """A pad of NEW turned on the same side – or, mirrored, as on the other side: EasyEDA mirrors the local y, then
+    turns (config.Board.transform)."""
+    c, s = TURNS[turn]
+    y = -y if mirror else y
+    return x * c - y * s, x * s + y * c
+
+
+def fit(old, new, turn, mirror):
+    """NEW's pads assigned to OLD's by position only – nearest assignment, after the origins and then the centroids
+    are laid on each other, and the shift that lays the assigned pads over each other best."""
+    import numpy as np
+    from scipy.optimize import linear_sum_assignment
+    a = np.array([(x, y) for _, x, y, _ in old])
+    b0 = np.array([turned(x, y, turn, mirror) for _, x, y, _ in new])
+    best = None
+    for shift in (np.zeros(2), a.mean(0) - b0.mean(0)):
+        for _ in range(5):
+            cost = np.linalg.norm(a[:, None, :] - (b0 + shift)[None, :, :], axis=2)
+            i, j = linear_sum_assignment(cost)
+            moved = (a[i] - b0[j]).mean(0)
+            if np.allclose(moved, shift, atol=1e-6):
+                break
+            shift = moved
+        cost = np.linalg.norm(a[:, None, :] - (b0 + shift)[None, :, :], axis=2)
+        i, j = linear_sum_assignment(cost)
+        res = cost[i, j]
+        rms = float(np.sqrt((res ** 2).mean()))
+        if best is None or rms < best["rms"] - 1e-9:
+            best = {"turn": turn, "mirror": mirror, "shift": [float(v) for v in shift], "rms": rms,
+                    "pairs": [(int(p), int(q), float(r)) for p, q, r in zip(i, j, res)]}
+    return best
+
+
+def spacing(points):
+    """Smallest distance between two pads – a map is unambiguous while every pad lands within half of it."""
+    import math
+    return min((math.dist(p[1:3], q[1:3]) for k, p in enumerate(points) for q in points[k + 1:]), default=float("inf"))
+
+
+def lands(c, old, new, limit):
+    """Every pad of OLD has its partner: its centre lies on the copper of NEW's pad there (the pad's shape, size and
+    rotation, turned and mirrored with NEW) – or, where a pad's size is unknown (a dump), within `limit` of it."""
+    import math
+    for i, j, r in c["pairs"]:
+        pad = new[j][3]
+        if not pad.get("w") or not pad.get("h"):
+            if r >= limit:
+                return False
+            continue
+        x, y = turned(new[j][1], new[j][2], c["turn"], c["mirror"])
+        dx, dy = old[i][1] - x - c["shift"][0], old[i][2] - y - c["shift"][1]
+        a = math.radians((-pad.get("rot", 0) if c["mirror"] else pad.get("rot", 0)) + c["turn"])
+        u, v = dx * math.cos(a) + dy * math.sin(a), -dx * math.sin(a) + dy * math.cos(a)
+        hw, hh = pad["w"] / MIL_PER_MM / 2, pad["h"] / MIL_PER_MM / 2
+        inside = (u / hw) ** 2 + (v / hh) ** 2 <= 1 if pad.get("shape") == "ELLIPSE" else abs(u) <= hw and abs(v) <= hh
+        if not inside:
+            return False
+    return True
+
+
+def transform_name(c):
+    return ("the mirror image" + (f" turned {c['turn']}°" if c["turn"] else "")) if c["mirror"] \
+        else f"turned {c['turn']}°"
+
+
+def pad_map(c, old, new):
+    out = {}
+    for i, j, _ in c["pairs"]:
+        out.setdefault(old[i][0], set()).add(new[j][0])
+    return {n: "/".join(sorted(m, key=natural_key)) for n, m in sorted(out.items(), key=lambda kv: natural_key(kv[0]))}
+
+
+def rows(points, axis):
+    """Pads in a row: centres sharing y (axis 1) or x (axis 0) within ROW_MM, at least two, ordered along the row."""
+    groups = []
+    for k in sorted(range(len(points)), key=lambda k: points[k][1 + axis]):
+        if groups and abs(points[groups[-1][-1]][1 + axis] - points[k][1 + axis]) <= ROW_MM:
+            groups[-1].append(k)
+        else:
+            groups.append([k])
+    return [sorted(g, key=lambda k: points[k][2 - axis]) for g in groups if len(g) > 1]
+
+
+def hole_text(pad):
+    h = pad.get("hole")
+    if not h:
+        return "no hole" if not pad.get("tht") else "hole unknown"
+    return f"Ø{h[0]:.2f}" if abs(h[1] - h[0]) < 0.01 else f"slot {h[0]:.2f} x {h[1]:.2f}"
+
+
+def compare(cfg, old_key, new_key):
+    """The comparison of `part diff` as a dict; text() prints it."""
+    import math
+    import statistics
+
+    from .release.fab import JLC_SLOT_MM, hole_ok
+    d = Design.from_config(cfg)
+    (og, owhere), (ng, nwhere) = part_geometry(cfg, d, old_key), part_geometry(cfg, d, new_key)
+    old, new = pad_points(og), pad_points(ng)
+    if not old or not new:
+        raise PartError(f"{old_key if not old else new_key}: a footprint without pads")
+    limit = min(spacing(old), spacing(new)) / 2
+    cands = [fit(old, new, t, m) for m in (False, True) for t in TURNS]
+    for c in cands:
+        c["fits"] = lands(c, old, new, limit)
+        c["map"] = pad_map(c, old, new)
+    ok = sorted((c for c in cands if c["fits"]), key=lambda c: c["rms"])
+    same = [c for c in ok if not c["mirror"]]
+    best = (same or ok or sorted(cands, key=lambda c: c["rms"]))[0]
+    tie = [c for c in ok if c["rms"] <= best["rms"] + TIE_MM and c["mirror"] == best["mirror"]] or [best]
+    best = min(tie, key=lambda c: (any(k != v for k, v in c["map"].items()), c["turn"]))   # numbers kept, least turn
+    tie += [c for c in ok if c["rms"] <= best["rms"] + TIE_MM and c not in tie]
+    others = [c for c in tie if c is not best and c["map"] != best["map"]]
+    better = [c for c in ok if c["rms"] < best["rms"] - TIE_MM]          # only a mirror image can fit better
+    entry = lambda key: d.parts.get(key) or d.parts.get(d.by_mpn.get(key, "")) or {}  # noqa: E731
+    oe, ne = entry(old_key), entry(new_key)
+    role = lambda e, n: ((e.get("pins") or {}).get(n) or {}).get("role")  # noqa: E731
+    roles = [f"old {n} {role(oe, n) or '–'} → new {m} {role(ne, m) or '–'}" for n, m in best["map"].items()
+             if "/" not in m and role(oe, n) != role(ne, m) and (role(oe, n) or role(ne, m))]
+    pos = {j: turned(x, y, best["turn"], best["mirror"]) for j, (_, x, y, _) in enumerate(new)}
+    partner = {i: j for i, j, _ in best["pairs"]}
+    pitch = []
+    for axis in (1, 0):
+        for row in rows(old, axis):
+            if all(k in partner for k in row):
+                was = statistics.median(math.dist(old[a][1:3], old[b][1:3]) for a, b in zip(row, row[1:]))
+                now = statistics.median(math.dist(pos[partner[a]], pos[partner[b]]) for a, b in zip(row, row[1:]))
+                pitch.append({"row": "-".join(old[k][0] for k in row), "old_mm": round(was, 3), "new_mm": round(now, 3)})
+    leads, holes, holes_fit = ne.get("lead"), [], True
+    for i, j, _ in sorted(best["pairs"], key=lambda p: natural_key(old[p[0]][0])):
+        po, pn = old[i][3], new[j][3]
+        if not (po.get("tht") or pn.get("tht")):
+            continue
+        line = {"old": old[i][0], "new": new[j][0], "text": f"{hole_text(po)} → {hole_text(pn)} mm"}
+        h = pn.get("hole")
+        lead = (leads or {}).get(new[j][0]) or (leads or {}).get("*")
+        if h and pn.get("plated", True) and lead:
+            fits, tight, text = hole_ok(lead, h[0], h[1])
+            narrow = h[1] > h[0] + 0.01 and h[0] < JLC_SLOT_MM - 1e-6
+            line["l9"] = text + ("" if fits else " – does not take the lead") + (" – tight" if fits and tight else "") \
+                + (f" – slot narrower than {JLC_SLOT_MM} mm (JLCPCB minimum)" if narrow else "")
+            holes_fit &= fits and not narrow
+        elif h:
+            line["l9"] = f"no lead data in the entry of {new_key} – the fit is not checked (P-7)"
+        if not any(x["old"] == line["old"] and x["text"] == line["text"] for x in holes):   # shell legs: once
+            holes.append(line)
+    box = lambda g: ((g["bbox"][2] - g["bbox"][0]) / MIL_PER_MM, (g["bbox"][3] - g["bbox"][1]) / MIL_PER_MM)  # noqa
+    nw, nh = box(ng)
+    graph = []
+    for des in sorted(d.comps, key=natural_key):
+        c = d.comps[des]
+        if old_key not in (d.entry_key(des), c.get("lcsc")):
+            continue
+        for p in sorted(c["pins"], key=natural_key):
+            net = d.pin_net.get(f"{des}.{p}")
+            if net and best["map"].get(p) != p:
+                graph.append(f"{des}: {net} {p} → {best['map'].get(p) or 'no pad'}")
+    matched = len(best["pairs"]) == len(old) == len(new)
+    residuals = {}
+    for i, _, r in best["pairs"]:        # shell legs of one number: the largest
+        residuals[old[i][0]] = round(max(r, residuals.get(old[i][0], 0)), 3)
+    return {"old": {"part": old_key, "footprint": og.get("footprint"), "from": owhere},
+            "new": {"part": new_key, "footprint": ng.get("footprint"), "from": nwhere},
+            "fits": best["fits"], "turn": best["turn"], "mirror": best["mirror"],
+            "shift_mm": [round(v, 3) + 0.0 for v in best["shift"]], "rms_mm": round(best["rms"], 3),
+            "mirror_only": bool(ok) and not same,
+            "residual_mm": residuals,
+            "map": best["map"], "symmetric": bool(others), "also_fit": [transform_name(c) for c in others],
+            "fits_better": [f"{transform_name(c)} (RMS {c['rms']:.2f} mm)" for c in better],
+            "unmatched_old": sorted({old[i][0] for i in range(len(old))} - {old[i][0] for i, _, _ in best["pairs"]},
+                                    key=natural_key),
+            "unmatched_new": sorted({new[j][0] for j in range(len(new))} - {new[j][0] for _, j, _ in best["pairs"]},
+                                    key=natural_key),
+            "roles": roles, "pitch": pitch, "holes": holes,
+            "box_mm": {"old": [round(v, 2) for v in box(og)],
+                       "new": [round(v, 2) for v in ((nh, nw) if best["turn"] in (90, 270) else (nw, nh))]},
+            "graph": graph,
+            "drop_in": bool(best["fits"] and not best["mirror"] and best["turn"] == 0 and matched and not roles
+                            and all(k == v for k, v in best["map"].items()) and holes_fit)}
+
+
+def text(r):
+    """The comparison for the terminal."""
+    o, n = r["old"], r["new"]
+    out = [f"{o['part']} {o['footprint']} ({o['from']}) → {n['part']} {n['footprint']} ({n['from']})"]
+    how = f"{transform_name(r)}, shift ({r['shift_mm'][0]:+.2f}, {r['shift_mm'][1]:+.2f}) mm, RMS {r['rms_mm']:.2f} mm"
+    if not r["fits"]:
+        out.append(f"no turn fits – the pads do not correspond one to one (closest: {how})")
+    elif r["mirror_only"]:
+        out.append(f"mirror image only – not on the same side: {how}")
+    else:
+        out.append(f"fit: {how}" + (f" – {' and '.join(r['also_fit'])} fit{'s' if len(r['also_fit']) == 1 else ''} "
+                                    "equally (symmetric: the numbers decide)" if r["symmetric"] else ""))
+        if r["fits_better"]:
+            out.append(f"on the other side {' and '.join(r['fits_better'])} would fit better")
+    out.append("map by position: " + ", ".join(f"{k}→{v}" for k, v in r["map"].items()))
+    out.append("residual per pad (mm): " + ", ".join(f"{k} {v:.2f}" for k, v in sorted(
+        r["residual_mm"].items(), key=lambda kv: natural_key(kv[0]))))
+    if r["unmatched_old"] or r["unmatched_new"]:
+        out.append(f"without a partner: old {', '.join(r['unmatched_old']) or '–'}, new "
+                   f"{', '.join(r['unmatched_new']) or '–'}")
+    if r["roles"]:
+        out.append("roles that change: " + "; ".join(r["roles"]))
+    for p in r["pitch"]:
+        out.append(f"row {p['row']}: pitch {p['old_mm']:.2f} → {p['new_mm']:.2f} mm")
+    for h in r["holes"]:
+        pads = h["old"] if h["old"] == h["new"] else f"{h['old']}→{h['new']}"
+        out.append(f"hole {pads}: {h['text']}" + (f" – L-9: {h['l9']}" if h.get("l9") else ""))
+    b = r["box_mm"]
+    out.append(f"box: {b['old'][0]:.1f} x {b['old'][1]:.1f} mm → {b['new'][0]:.1f} x {b['new'][1]:.1f} mm")
+    out += [f"graph change: {g}" for g in r["graph"]]
+    out.append("drop-in: the same pads at the same places" if r["drop_in"] else "something to decide")
+    return "\n".join(out)
+
+
+def main_diff(cfg, args):
+    if not (args.source and args.new):
+        raise PartError("two parts are needed (edakit part diff C17179532 C49284748)")
+    r = compare(cfg, args.source, args.new)
+    print(text(r))
+    if args.json:
+        Path(args.json).write_text(json.dumps(r, indent=1, ensure_ascii=False) + "\n", encoding="utf-8")
+    return 0 if r["drop_in"] else 2
+
+
 # --- P-3 -------------------------------------------------------------------------------------------------------------
 
 def check(d, rep, cfg):
@@ -677,6 +941,8 @@ def main(cfg, args):
     try:
         if args.action == "import":
             return main_import(cfg, args)
+        if args.action == "diff":
+            return main_diff(cfg, args)
         if args.action == "datasheet":
             if args.connector:
                 done = [write_datasheet(cfg, args.connector, args.name)[0]]
