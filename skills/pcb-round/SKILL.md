@@ -51,7 +51,8 @@ describes (section 3).
    never a row written by hand).
 2. **Check offline before EasyEDA is touched:** `edakit pcb plan 2>&1 | cat` – overlaps, outline, holes, THT pins under
    parts of the other side, near-distances, the circuit's layout requirements (L-12), holes against leads (P-7),
-   airline length, net classes;
+   polarised parts turned as `uniform` says (default: LEDs in a row alike; a direction per kind for parts soldered by
+   hand, handbook 7.4), airline length, net classes;
    look at `<artifacts>/pcb_plan_<board>.png` (Read) and show it to the user before `apply` when positions visibly
    change.
 3. **EasyEDA** (start skill, claim EasyEDA):

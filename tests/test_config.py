@@ -346,3 +346,13 @@ def test_routing_widths_key(tmp_path):
         assert _board("b", {}, {"routing": {"widths": value}}).routing["widths"] == value
     with pytest.raises(ConfigError, match="routing.widths must be 'classes' or 'sim'"):
         _board("b", {}, {"routing": {"widths": "ipc"}})
+
+
+def test_uniform_key():
+    from edakit.config import _board
+    assert _board("b", {}, {}).uniform is None                             # no key: LEDs in a row, as before
+    u = {"led": "+x", "buzzer": "-x", "capacitor": "row"}
+    assert _board("b", {}, {"uniform": u}).uniform == u
+    for value in ({"led": "x"}, {"led": "left"}, ["led"], {"led": 1}):
+        with pytest.raises(ConfigError, match="uniform must be a table of part kinds"):
+            _board("b", {}, {"uniform": value})

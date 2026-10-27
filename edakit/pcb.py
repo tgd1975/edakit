@@ -6,10 +6,10 @@ mounting and tooling holes, copper pours, EasyEDA's auto-layout.
                                     (turns every measured part to 0°/TOP and leaves it there – run apply afterwards)
     edakit pcb plan                 offline: check the plan (overlaps – under a part on pin headers only its pins,
                                     SMD parts within silk_overlap_mm –, outline, holes, THT pins under parts of the
-                                    other side, near; L-12 the layout requirements of the circuit; P-7 holes and
-                                    leads), airline length,
-                                    preview PNG, net classes from the simulation; a part not in the dump yet takes
-                                    the library footprint `edakit part import` cached
+                                    other side, near, polarised parts of the kinds in `uniform` pointing the same way
+                                    (default: LEDs in a row); L-12 the layout requirements of the circuit; P-7 holes
+                                    and leads), airline length, preview PNG, net classes from the simulation; a part
+                                    not in the dump yet takes the library footprint `edakit part import` cached
     edakit pcb place [--write] [--only C1,R1]
                                     offline: a spot next to its host for every part the circuit or the board file
                                     ties to one (layout.near, [near], the decoupling of L-12) and [place] lacks;
@@ -231,7 +231,7 @@ def check_plan(cfg, board, geo, place, boxes, tht):
             if part in boxes and host in boxes and box_gap(boxes[part], boxes[host]) > board.near_mm:
                 problems.append(f"{part}: {box_gap(boxes[part], boxes[host]):.1f} mm from {host} "
                                 f"(near_mm {board.near_mm:g})")
-    problems += led_rows(board, geo, place, Design.from_config(cfg))
+    problems += polarity_findings(board, geo, place, Design.from_config(cfg))
     return problems
 
 
@@ -284,34 +284,109 @@ def check_handover(board, design, place, boxes):
     return out
 
 
-def led_rows(board, geo, place, design, tol=1.0):
-    """LEDs side by side on one side of the board (centres on one line within tol mm) have their anode towards the
-    same side – whoever solders them by the "+" mark should not have to turn every other one."""
-    leds = {}
+AXES = {"+x": (1, 0), "-x": (-1, 0), "+y": (0, 1), "-y": (0, -1)}
+
+
+def polar_pins(part):
+    """The plus and the minus pin of a polarised part from the roles of its parts entry – anode or plus…, cathode or
+    minus… -> (plus, minus, the minus pin's word: "cathode" or "minus"), or None unless there is exactly one of each
+    (an RGB LED, a battery holder of several cells)."""
+    roles = [(n, (i or {}).get("role") or "") for n, i in ((part or {}).get("pins") or {}).items()]
+    plus = [n for n, r in roles if r == "anode" or r.startswith("plus")]
+    minus = [(n, r) for n, r in roles if r == "cathode" or r.startswith("minus")]
+    if len(plus) != 1 or len(minus) != 1:
+        return None
+    return plus[0], minus[0][0], "cathode" if minus[0][1] == "cathode" else "minus"
+
+
+def polarity_findings(board, geo, place, design, tol=1.0, skipped=None):
+    """Polarised parts of the kinds in the board's `uniform` point the same way – whoever solders a bag of them by hand
+    turns each one alike, by the "+" mark or the flat side. Per kind: "row" – parts of the kind side by side on one
+    side of the board (centres on one line within tol mm) have their plus pin towards the same side; "+x", "-x", "+y",
+    "-y" – the minus pin (cathode) of every part of the kind points that way, seen from the side the part sits on (a part
+    on the other side than `view` is mirrored in x). Without the key: LEDs in rows (config.UNIFORM). A part counts with
+    exactly one anode/plus… and one cathode/minus… pin (polar_pins); the others of a listed kind go to `skipped`."""
+    from .config import UNIFORM
+    uniform = UNIFORM if board.uniform is None else board.uniform
+    parts = {}   # ref -> (kind, pins, word)
     for ref, p in place.items():
         part = design.part(ref) if ref in design.comps else None
-        if not part or part.get("kind") != "led" or ref not in geo:
+        kind = (part or {}).get("kind")
+        if kind not in uniform or ref not in geo:
             continue
-        roles = {i.get("role"): n for n, i in part["pins"].items()}
-        pads = geo[ref]["pads"]
-        if roles.get("anode") in pads and roles.get("cathode") in pads:
-            a, k = (board.transform((pads[roles[r]]["x"], pads[roles[r]]["y"]), p.x, p.y, p.rot, p.side)
-                    for r in ("anode", "cathode"))
-            leds[ref] = (p.side, (p.x, p.y), (a[0] - k[0], a[1] - k[1]))
+        pins, pads = polar_pins(part), geo[ref].get("pads", {})
+        if not pins or pins[0] not in pads or pins[1] not in pads:
+            if skipped is not None:
+                skipped.append((ref, kind))
+            continue
+        parts[ref] = (kind, pins[:2], pins[2])
+    problems = []
+    for kind, way in uniform.items():
+        mine = {r: (place[r], polar_vector(board, geo[r], place[r], pins), word)
+                for r, (k, pins, word) in parts.items() if k == kind}
+        if way == "row":
+            problems += polarity_rows(kind, mine, tol)
+        else:
+            problems += [polarity_way(board, geo[r], place[r], parts[r][1], r, kind, way, word)
+                         for r, (_, _, word) in sorted(mine.items(), key=lambda kv: natural_key(kv[0]))
+                         if not points_to(board, place[r].side, mine[r][1], way)]
+    return problems
+
+
+def polar_vector(board, geo, p, pins, rot=None):
+    """Plus pad minus minus pad of a part placed as p (rot: another rotation), in plan mm."""
+    a, k = (board.transform((geo["pads"][n]["x"], geo["pads"][n]["y"]), p.x, p.y, p.rot if rot is None else rot,
+                            p.side) for n in pins)
+    return a[0] - k[0], a[1] - k[1]
+
+
+def minus_way(board, side, d):
+    """The direction the minus pin points (from plus to minus), seen from the side the part sits on."""
+    m = (-d[0], -d[1])
+    return (-m[0], m[1]) if side != board.view else m
+
+
+def points_to(board, side, d, way):
+    """The minus pin points within 45° of `way`."""
+    m, t = minus_way(board, side, d), AXES[way]
+    return m[0] * t[0] + m[1] * t[1] > math.hypot(*m) * math.cos(math.radians(45)) + 1e-9
+
+
+def polarity_rows(kind, parts, tol):
+    """"row": {ref: (placement, plus - minus, word)} -> parts in a row or column whose plus pin points the other way
+    than the first one's. LEDs keep the words the plan check always had."""
     problems, seen = [], set()
     for axis, name in ((1, "row"), (0, "column")):
-        for ref, (side, c, d) in sorted(leds.items(), key=lambda kv: natural_key(kv[0])):
-            line = sorted((r for r, (s, c2, _) in leds.items() if s == side and abs(c2[axis] - c[axis]) <= tol),
-                          key=lambda r: leds[r][1][1 - axis])
+        for ref, (p, _, _) in sorted(parts.items(), key=lambda kv: natural_key(kv[0])):
+            c = (p.x, p.y)
+            line = sorted((r for r, (q, _, _) in parts.items() if q.side == p.side and abs((q.x, q.y)[axis] - c[axis])
+                           <= tol), key=lambda r: (parts[r][0].x, parts[r][0].y)[1 - axis])
             if len(line) < 2 or tuple(line) in seen:
                 continue
             seen.add(tuple(line))
-            first = leds[line[0]][2]
-            other = [r for r in line[1:] if leds[r][2][0] * first[0] + leds[r][2][1] * first[1] < 0]
-            if other:
+            first = parts[line[0]][1]
+            other = [r for r in line[1:] if parts[r][1][0] * first[0] + parts[r][1][1] * first[1] < 0]
+            if not other:
+                continue
+            if kind == "led":
                 problems.append(f"LEDs in a {name} ({', '.join(line)}): anode of {', '.join(other)} points the other "
                                 f"way than {line[0]} – turn them by 180°")
+            else:
+                problems.append(f"{kind.replace('_', ' ')}s in a {name} ({', '.join(line)}): {parts[line[0]][2]} of "
+                                f"{', '.join(other)} points the other way than {line[0]} – turn "
+                                f"{'it' if len(other) == 1 else 'them'} by 180°")
     return problems
+
+
+def polarity_way(board, geo, p, pins, ref, kind, way, word):
+    """The finding of a part whose minus pin does not point `way`: where it points, and the turn and the rotation in
+    [place] that make it."""
+    m = minus_way(board, p.side, polar_vector(board, geo, p, pins))
+    points = max(AXES, key=lambda a: m[0] * AXES[a][0] + m[1] * AXES[a][1])
+    turn = next(dt for dt in (90, 180, 270)
+                if points_to(board, p.side, polar_vector(board, geo, p, pins, p.rot + dt), way))
+    return (f"{ref} ({kind}): {word} points {points}, uniform {way} – turn it by {min(turn, 360 - turn)}° "
+            f"(rot = {(p.rot + turn) % 360:g})")
 
 
 def render(cfg, board, geo, place, boxes, tht, problems):
@@ -406,6 +481,12 @@ def plan(cfg, board):
             print(f"  P-7 {kind}: {m}")
     for p in problems:
         print("  !", p)
+    if board.uniform is not None:   # the board asks for its kinds: name the parts the polarity check cannot judge
+        skipped = []
+        polarity_findings(board, geo, place, design, skipped=skipped)
+        for kind in dict.fromkeys(k for _, k in skipped):
+            print("  uniform: skipped – not exactly one anode/plus and one cathode/minus pin: "
+                  + ", ".join(sorted((r for r, k in skipped if k == kind), key=natural_key)) + f" ({kind})")
     print(f"  {len(place)} fixed parts, {len(unplaced)} for the auto-layout; airline length of the fixed parts "
           f"(without {design.ground}): {wirelength(board, geo, place, design.ground) / 1000:.2f} m")
     print(f"  preview -> {render(cfg, board, geo, place, boxes, tht, problems)}")

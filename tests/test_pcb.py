@@ -1,4 +1,5 @@
-"""Placement rule: LEDs side by side have their anode towards the same side. The pour outline."""
+"""Placement rule: LEDs side by side have their anode towards the same side, other polarised kinds as the board says. The
+pour outline."""
 
 import json
 import math
@@ -11,7 +12,7 @@ from shapely.geometry import Polygon
 from shapely.ops import unary_union
 
 from edakit import cli, config, pcb, route
-from edakit.pcb import led_rows
+from edakit.pcb import polarity_findings
 
 PART = {"kind": "led", "pins": {"1": {"role": "anode"}, "2": {"role": "cathode"}}}
 GEO = {"pads": {"1": {"x": -50, "y": 0}, "2": {"x": 50, "y": 0}}}
@@ -22,7 +23,7 @@ def run(project, rots, y=None):
     place = {f"D{i}": SimpleNamespace(x=10 * i, y=(y or [20] * len(rots))[i], rot=r, side="top")
              for i, r in enumerate(rots)}
     design = SimpleNamespace(comps=dict.fromkeys(place), part=lambda ref: PART)
-    return led_rows(board, dict.fromkeys(place, GEO), place, design)
+    return polarity_findings(board, dict.fromkeys(place, GEO), place, design)
 
 
 def test_row_with_same_polarity_passes(project):
@@ -325,3 +326,87 @@ def test_place_names_a_part_without_a_free_spot(project, capsys):
     place_project(project, drop=("C1",), add=add, geo=geo)
     assert cli.main(["pcb", "place", "--config", str(project.root / "edakit.toml")]) == 2
     assert "C1: no free spot within near_mm 6 of U2 (pin 16, 3V3)" in capsys.readouterr().out
+
+
+# --- polarised parts of the configured kinds point the same way (#60): the LED tests above with other kinds, one
+# direction for the whole board, and the example's bar with D3 turned by 180°
+
+def polar(project, rots, kind="diode", roles=("anode", "cathode"), sides=None, uniform=None, y=None):
+    """Parts D0, D1, … of `kind` in a row at y = 20 (or `y`), with the pin roles `roles` (pin 1 at -x, pin 2 at +x at
+    0°) -> the findings of the plan's polarity check, with `uniform` as the board file would give it."""
+    board = project.config().board()
+    if uniform is not None:
+        board.uniform = uniform
+    part = {"kind": kind, "pins": {"1": {"role": roles[0]}, "2": {"role": roles[1]}}}
+    place = {f"D{i}": SimpleNamespace(x=10 * i, y=(y or [20] * len(rots))[i], rot=r, side=(sides or ["top"] * 9)[i])
+             for i, r in enumerate(rots)}
+    design = SimpleNamespace(comps=dict.fromkeys(place), part=lambda ref: part)
+    return pcb.polarity_findings(board, dict.fromkeys(place, GEO), place, design)
+
+
+def test_diodes_in_a_row_point_the_same_way_when_the_board_asks(project):
+    assert polar(project, [0, 180]) == []                                     # no key: only LEDs, as before
+    assert polar(project, [0, 180], uniform={"diode": "row"}) == [
+        "diodes in a row (D0, D1): cathode of D1 points the other way than D0 – turn it by 180°"]
+    assert polar(project, [0, 180, 180], uniform={"diode": "row"}) == [
+        "diodes in a row (D0, D1, D2): cathode of D1, D2 points the other way than D0 – turn them by 180°"]
+    assert polar(project, [0, 180], kind="led", uniform={"diode": "row"}) == []    # a table names every kind it checks
+
+
+def test_one_direction_for_the_whole_board(project):
+    assert polar(project, [0], kind="led", uniform={"led": "+x"}) == []      # cathode at +x
+    assert polar(project, [180], kind="led", uniform={"led": "+x"}) == [
+        "D0 (led): cathode points -x, uniform +x – turn it by 180° (rot = 0)"]
+    assert polar(project, [90], kind="led", uniform={"led": "+x"}) == [       # alone, not in a row
+        "D0 (led): cathode points +y, uniform +x – turn it by 90° (rot = 0)"]
+    # the other side than view: seen from its own side, mirrored in x
+    assert polar(project, [0], kind="led", sides=["bottom"], uniform={"led": "+x"}) == [
+        "D0 (led): cathode points -x, uniform +x – turn it by 180° (rot = 180)"]
+    assert polar(project, [180], kind="led", sides=["bottom"], uniform={"led": "+x"}) == []
+
+
+def test_a_buzzer_points_its_minus_the_given_way(project):
+    roles = ("plus", "minus")
+    assert polar(project, [0], kind="buzzer", roles=roles, uniform={"buzzer": "-x"}) == [
+        "D0 (buzzer): minus points +x, uniform -x – turn it by 180° (rot = 180)"]
+    assert polar(project, [180], kind="buzzer", roles=roles, uniform={"buzzer": "-x"}) == []
+    assert polar(project, [0, 180], kind="buzzer", roles=("plus_a", "minus_a"), uniform={"buzzer": "row"}) == [
+        "buzzers in a row (D0, D1): minus of D1 points the other way than D0 – turn it by 180°"]
+
+
+def test_a_part_without_one_plus_and_one_minus_pin_is_skipped_and_named(project, capsys):
+    place_project(project, drop=())
+    rgb = project.part("C2297")
+    rgb["pins"]["2"]["role"] = "cathode_red"                                    # no single cathode any more
+    project.save_part("C2297", rgb)
+    cfg = project.config()
+    assert pcb.plan(cfg, cfg.board()) == []                                    # no key: skipped, as before, unnamed
+    assert "uniform" not in capsys.readouterr().out
+    f = project.root / "hardware" / "boards" / "main.toml"
+    f.write_text(f.read_text().replace('view = "top"', 'view = "top"\nuniform = { led = "row" }'))
+    cfg = project.config()
+    assert pcb.plan(cfg, cfg.board()) == []
+    assert "  uniform: skipped – not exactly one anode/plus and one cathode/minus pin: D2, D3, D4, D5, D6, D7, D8, D9 " \
+           "(led)" in capsys.readouterr().out
+
+
+def test_the_bar_with_d3_turned(project, capsys):
+    """The proposal's case: with D3 turned the plan names it as long as the LEDs' kind is led; with the parts entry
+    saying diode it passed – now `uniform` names the kind."""
+    f = place_project(project, drop=())
+    f.write_text(f.read_text().replace('D3 = { x = 57, y = 34, rot = 0,', 'D3 = { x = 57, y = 34, rot = 180,'))
+    cfg = project.config()
+    assert pcb.plan(cfg, cfg.board()) == ["LEDs in a row (D2, D3, D4, D5, D6, D7, D8, D9): anode of D3 points the other "
+                                          "way than D2 – turn them by 180°"]
+    part = project.part("C2297")
+    part["kind"] = "diode"
+    project.save_part("C2297", part)
+    cfg = project.config()
+    assert pcb.plan(cfg, cfg.board()) == []
+    f.write_text(f.read_text().replace('view = "top"', 'view = "top"\nuniform = { diode = "row" }'))
+    cfg = project.config()
+    assert pcb.plan(cfg, cfg.board()) == ["diodes in a row (D2, D3, D4, D5, D6, D7, D8, D9): cathode of D3 points the "
+                                          "other way than D2 – turn it by 180°"]
+    f.write_text(f.read_text().replace('uniform = { diode = "row" }', 'uniform = { diode = "+x" }'))
+    cfg = project.config()
+    assert pcb.plan(cfg, cfg.board()) == ["D3 (diode): cathode points -x, uniform +x – turn it by 180° (rot = 0)"]

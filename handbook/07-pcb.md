@@ -138,11 +138,32 @@ change the graph.
 
 `edakit pcb plan` checks offline: overlaps per side (under a module on pin headers only its pins, SMD parts within a
 silkscreen tolerance: below), outline (0.3 mm margin; `edge_ok` for connectors), keep-outs of holes and tooling holes,
-THT pins of one side under parts of the other, `near` distances, the circuit's layout requirements (L-12), **LEDs side
-by side with their anode towards the same side** (whoever solders by the "+" mark should not have to turn every other
-one; the library footprints of one LED series may put the mark on different pads); it prints the airline length of the
-fixed parts (a number to compare placements) and writes `<artifacts>/pcb_plan_<board>.png`. Look at the picture before
-`apply`.
+THT pins of one side under parts of the other, `near` distances, the circuit's layout requirements (L-12), **polarised
+parts that point the same way** – by default LEDs side by side with their anode towards the same side (below); it
+prints the airline length of the fixed parts (a number to compare placements) and writes
+`<artifacts>/pcb_plan_<board>.png`. Look at the picture before `apply`.
+
+**Polarised parts in one direction.** Whoever solders a bag of LEDs, diodes or buzzers by hand turns each one by its
+"+" mark or flat side and should not have to turn every other one – the library footprints of one LED series may even
+put the mark on different pads. `uniform` in the board file says, per `kind` of the parts entry, how the parts of that
+kind are turned. The direction is read from the pin roles: the pin `anode` or `plus…` against the pin `cathode` or
+`minus…`; a part with not exactly one of each (an RGB LED, a holder of several cells) is skipped, and `pcb plan`
+names it once. `"row"` compares parts of the kind side by side on one side of the board (centres on one line within
+1 mm, rows and columns): the plus pins point towards the same side. A direction – `"+x"`, `"-x"`, `"+y"`, `"-y"` in
+plan coordinates – holds for every part of the kind on the whole board, alone or in a row: its cathode or minus pin
+points that way, seen from the side the part sits on (a part on the other side than `view` is seen mirrored in x).
+Without the key it is `{ led = "row" }`; a table names every kind it checks, so a table without `led` leaves the LEDs
+alone. `pcb place` takes the check like every other: a part it places gets a rotation that keeps it.
+
+```toml
+view = "bottom"                                # the LED side is the front
+uniform = { led = "+x", buzzer = "-x" }        # every LED cathode right seen from the front; the buzzer (on the
+                                               # back) plus right seen from the back, its minus left
+```
+
+A part that points elsewhere reads `BZ1 (buzzer): minus points +x, uniform -x – turn it by 180° (rot = 0)`, with the
+rotation for `[place]`; a row `diodes in a row (D2, D3): cathode of D3 points the other way than D2 – turn it by 180°`.
+LEDs in a row keep their words: `LEDs in a row (…): anode of D3 points the other way than D2 – turn them by 180°`.
 
 **Parts under a module on pin headers.** A module that stands on pin headers – a Pico, an RP2040-Zero – leaves the
 board under it free but for the plastic of its headers. `on_headers` names such parts. An SMD part of the same side

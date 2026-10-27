@@ -40,6 +40,8 @@ POUR_MIN_PIECE_MM2 = 2.0         # pour_regions: the smallest piece of a shared 
 HEADER_KEEP_MM = 1.27            # on_headers: the plastic of a 2.54 mm pin header, half its width around each pin
 PASTE_GAP_MM = 0.4               # [release] assembly paste_gap_mm: SMD pads of different parts, assembled side (L-14)
 MAX_BARE_MM = 5.0                # [copper] max_bare_mm: largest copper-free circle on a poured layer (L-15)
+UNIFORM = {"led": "row"}         # uniform: LEDs side by side point the same way – the plan check without the key
+UNIFORM_WAYS = ("row", "+x", "-x", "+y", "-y")
 
 PROJECT_KEYS = ("name", "company", "quantity", "distributors", "lock", "agreements", "graph", "parts", "sim",
                 "sim_plugin", "schematic", "signoff", "artifacts", "reports", "datasheets", "stock", "stock_margin_pct",
@@ -47,7 +49,7 @@ PROJECT_KEYS = ("name", "company", "quantity", "distributors", "lock", "agreemen
 BOARD_KEYS = ("title", "template", "schematic", "pcb", "file")            # [boards.<name>] in edakit.toml
 BOARD_FILE_KEYS = ("revision", "view", "outline", "holes", "tooling", "place", "near", "near_mm", "edge_mm", "edge_ok",
                    "on_headers", "header_keep_mm", "silk_overlap_mm", "park", "routing", "pours", "pour_regions",
-                   "pour_min_piece_mm2", "pour_inset_mm", "silk", "loops", "net_classes", "copper", "order")
+                   "pour_min_piece_mm2", "pour_inset_mm", "silk", "loops", "net_classes", "copper", "order", "uniform")
 SCHEMATIC_KEYS = ("stub", "layout")
 RELEASE_KEYS = ("layout_files", "state_files", "assembly", "stages")
 PCBA = ("economic", "standard")  # [release] assembly.pcba: the assembler's class of the order (P-4)
@@ -110,6 +112,7 @@ class Board:
     force_class: dict = field(default_factory=dict)   # net -> class, whatever its current
     copper: dict = field(default_factory=lambda: _copper("", {}))  # [copper]: max_bare_mm, min_cover (L-15)
     order: dict | None = None                         # [order]: the order form fields of this board (F-6); None: none
+    uniform: dict | None = None                       # kind -> "row" | "+x" | "-x" | "+y" | "-y"; None: UNIFORM
 
     # --- plan <-> EasyEDA -------------------------------------------------------------------------------------------
     def to_eda(self, x, y, rot, side):
@@ -380,6 +383,11 @@ def _board(name, entry, b, file=""):
         raise ConfigError(f"board {name}: silk_overlap_mm must not be negative")
     if b.get("routing", {}).get("widths", "classes") not in ("classes", "sim"):
         raise ConfigError(f"board {name}: routing.widths must be 'classes' or 'sim'")
+    uniform = b.get("uniform")
+    if uniform is not None and not (isinstance(uniform, dict) and all(
+            isinstance(k, str) and v in UNIFORM_WAYS for k, v in uniform.items())):
+        raise ConfigError(f"board {name}: uniform must be a table of part kinds, each "
+                          f"{' | '.join(repr(w) for w in UNIFORM_WAYS)} – e.g. uniform = {{ led = \"+x\", buzzer = \"-x\" }}")
     silk = b.get("silk", {})
     if not isinstance(silk.get("solder_side", False), bool):
         raise ConfigError(f"board {name}: silk.solder_side must be true or false")
@@ -430,6 +438,7 @@ def _board(name, entry, b, file=""):
         force_class=force,
         copper=_copper(name, b.get("copper", {})),
         order=_order(name, b.get("order")),
+        uniform=dict(uniform) if uniform is not None else None,
     )
 
 
