@@ -22,6 +22,8 @@ profile says: `${CLAUDE_PLUGIN_ROOT}/skills/part-search/distributors/<name>.md` 
 `digikey`, `reichelt`). The profile tells how to search there, what loads without a key and what the page states.
 
 - Report stock as a number with the date ("1 902 pcs at LCSC, 2026-10-25"), not as "few".
+- "Not available" only after the routes the profile names (at LCSC: `edakit part search`, EasyEDA's search, the
+  series name), each with its queries in the result.
 - Datasheet: `edakit part fetch <key>` once the entry exists (`--url` for one from the manufacturer) – it keeps the
   PDF beside the project and says whether it is of this part (a warning names a longer variant: MT3608L for
   MT3608); read that file and note its revision.

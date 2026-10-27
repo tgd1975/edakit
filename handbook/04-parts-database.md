@@ -104,7 +104,7 @@ What an agent can reach (tried in October 2026):
 
 | Distributor | Without a key | With a key in the environment |
 |---|---|---|
-| LCSC / JLCPCB | EasyEDA's device search, the part pages (curl) | – (APIs only on application) |
+| LCSC / JLCPCB | `edakit part search` (JLCPCB's catalogue), EasyEDA's device search, the part pages (curl) | – (APIs only on application) |
 | Reichelt | search and part pages; stock without a count | – (no API) |
 | DigiKey | WebFetch: search by part number leads to the part page; no RoHS/REACH | `DIGIKEY_CLIENT_ID`, `DIGIKEY_CLIENT_SECRET` |
 | Mouser | nothing (the denial comes with HTTP 200) | `MOUSER_API_KEY` |
@@ -116,6 +116,15 @@ not see – stock from a search snippet is no stock figure.
 
 At LCSC and JLCPCB:
 
+- **`edakit part search "RGB LED 5mm common cathode"`** asks JLCPCB's public parts catalogue – the endpoint of F-2, no
+  login, no EasyEDA, no bridge, no claim. One line per hit: LCSC number, manufacturer part number, manufacturer, class
+  (Basic, Extended, preferred), JLCPCB's assembly stock, package, category; `C99…` numbers dropped, Basic first, then
+  by stock. `--basic` keeps Basic and preferred parts, `--min-stock N` drops the rest, `--limit N` (25) is the page
+  asked of the catalogue, `--json FILE` writes the hits. An LCSC number gives only its exact hit (the search is full
+  text: `C2297` also finds MIC2297). Exit 2 when nothing is found, 1 when the catalogue does not answer. Function and
+  package words work here, unlike in EasyEDA's search: that one query lists the Kingbright C6751358 and the XINGLIGHT
+  C7371894, which took the reference project some 30 searches. **"Not available" only after three routes**, each
+  named with its queries: this search, EasyEDA's device search, the manufacturer's series name (the LCSC profile).
 - **`edakit part import C2297`** reads exactly that number from EasyEDA's public component data – the endpoint
   easyeda2kicad reads, no key, no EasyEDA, no bridge: manufacturer, manufacturer part number, footprint name,
   Basic/Extended and the symbol's pin numbers and names. Without an entry it writes a new one with these and

@@ -1,0 +1,134 @@
+[
+ {
+  "componentCode": "C2297",
+  "componentModelEn": "KT-0805G",
+  "componentBrandEn": "Hubei KENTO Elec",
+  "componentTypeEn": "LED Indication - Discrete",
+  "componentSpecificationEn": "0805",
+  "componentLibraryType": "base",
+  "preferredComponentFlag": false,
+  "stockCount": 2342627,
+  "dataManualUrl": "https://www.lcsc.com/datasheet/lcsc_datasheet_1806151820_Hubei-KENTO-Elec-KT-0805G_C2297.pdf"
+ },
+ {
+  "componentCode": "C3187252",
+  "componentModelEn": "MIC2297-42YML",
+  "componentBrandEn": "Microchip Tech",
+  "componentTypeEn": "LED Drivers",
+  "componentSpecificationEn": "MLF-10(2.5x2.5)",
+  "componentLibraryType": "expand",
+  "preferredComponentFlag": false,
+  "stockCount": 0,
+  "dataManualUrl": "https://wmsc.lcsc.com/wmsc/upload/file/pdf/v2/lcsc/2401291243_Microchip-Tech-MIC2297-42YML_C3187252.pdf"
+ },
+ {
+  "componentCode": "C679886",
+  "componentModelEn": "LTC2297CUP#PBF",
+  "componentBrandEn": "Analog Devices",
+  "componentTypeEn": "Analog to Digital Converters (ADC)",
+  "componentSpecificationEn": "QFN-64-EP(9x9)",
+  "componentLibraryType": "expand",
+  "preferredComponentFlag": false,
+  "stockCount": 0,
+  "dataManualUrl": "https://wmsc.lcsc.com/wmsc/upload/file/pdf/v2/lcsc/2205191000_Analog-Devices-LTC2297CUP-PBF_C679886.pdf"
+ },
+ {
+  "componentCode": "C679888",
+  "componentModelEn": "LTC2297IUP#PBF",
+  "componentBrandEn": "Analog Devices",
+  "componentTypeEn": "Analog to Digital Converters (ADC)",
+  "componentSpecificationEn": "QFN-64-EP(9x9)",
+  "componentLibraryType": "expand",
+  "preferredComponentFlag": false,
+  "stockCount": 0,
+  "dataManualUrl": "https://wmsc.lcsc.com/wmsc/upload/file/pdf/v2/lcsc/2205191000_Analog-Devices-LTC2297IUP-PBF_C679888.pdf"
+ },
+ {
+  "componentCode": "C144199",
+  "componentModelEn": "MIC2297-42YML-TR",
+  "componentBrandEn": "Microchip Tech",
+  "componentTypeEn": "LED Drivers",
+  "componentSpecificationEn": "DFN-10-EP(2.5x2.5)",
+  "componentLibraryType": "expand",
+  "preferredComponentFlag": false,
+  "stockCount": 0,
+  "dataManualUrl": "https://www.lcsc.com/datasheet/lcsc_datasheet_1804162330_Microchip-Tech-MIC2297-42YML-TR_C144199.pdf"
+ },
+ {
+  "componentCode": "C621737",
+  "componentModelEn": "MIC2297-15YML-TR",
+  "componentBrandEn": "Microchip Tech",
+  "componentTypeEn": "LED Drivers",
+  "componentSpecificationEn": "DFN-10-EP(2.5x2.5)",
+  "componentLibraryType": "expand",
+  "preferredComponentFlag": false,
+  "stockCount": 0,
+  "dataManualUrl": "https://wmsc.lcsc.com/wmsc/upload/file/pdf/v2/lcsc/2210180600_Microchip-Tech-MIC2297-15YML-TR_C621737.pdf"
+ },
+ {
+  "componentCode": "C621738",
+  "componentModelEn": "MIC2297-38YML-TR",
+  "componentBrandEn": "Microchip Tech",
+  "componentTypeEn": "LED Drivers",
+  "componentSpecificationEn": "DFN-10-EP",
+  "componentLibraryType": "expand",
+  "preferredComponentFlag": false,
+  "stockCount": 0,
+  "dataManualUrl": "https://wmsc.lcsc.com/wmsc/upload/file/pdf/v2/lcsc/2210180600_Microchip-Tech-MIC2297-38YML-TR_C621738.pdf"
+ },
+ {
+  "componentCode": "C679887",
+  "componentModelEn": "LTC2297CUP#TRPBF",
+  "componentBrandEn": "Analog Devices",
+  "componentTypeEn": "Analog to Digital Converters (ADC)",
+  "componentSpecificationEn": "QFN-64-EP(9x9)",
+  "componentLibraryType": "expand",
+  "preferredComponentFlag": false,
+  "stockCount": 0,
+  "dataManualUrl": "https://wmsc.lcsc.com/wmsc/upload/file/pdf/v2/lcsc/2210190630_Analog-Devices-LTC2297CUP-TRPBF_C679887.pdf"
+ },
+ {
+  "componentCode": "C679889",
+  "componentModelEn": "LTC2297IUP#TRPBF",
+  "componentBrandEn": "Analog Devices",
+  "componentTypeEn": "Analog to Digital Converters (ADC)",
+  "componentSpecificationEn": "QFN-64-EP(9x9)",
+  "componentLibraryType": "expand",
+  "preferredComponentFlag": false,
+  "stockCount": 0,
+  "dataManualUrl": "https://wmsc.lcsc.com/wmsc/upload/file/pdf/v2/lcsc/2205191000_Analog-Devices-LTC2297IUP-TRPBF_C679889.pdf"
+ },
+ {
+  "componentCode": "C3232222",
+  "componentModelEn": "SAK-XC2297H-104F80LAB",
+  "componentBrandEn": "Infineon Technologies",
+  "componentTypeEn": "Microcontrollers (MCU/MPU/SOC)",
+  "componentSpecificationEn": "LQFP-176-EP(24x24)",
+  "componentLibraryType": "expand",
+  "preferredComponentFlag": false,
+  "stockCount": 0,
+  "dataManualUrl": ""
+ },
+ {
+  "componentCode": "C3232224",
+  "componentModelEn": "XC2297H136F80LABKXUMA2",
+  "componentBrandEn": "Infineon Technologies",
+  "componentTypeEn": "Microcontrollers (MCU/MPU/SOC)",
+  "componentSpecificationEn": "LQFP-176-EP(24x24)",
+  "componentLibraryType": "expand",
+  "preferredComponentFlag": false,
+  "stockCount": 0,
+  "dataManualUrl": "https://wmsc.lcsc.com/wmsc/upload/file/pdf/v2/lcsc/2404021349_Infineon-Technologies-XC2297H136F80LABKXUMA2_C3232224.pdf"
+ },
+ {
+  "componentCode": "C3232225",
+  "componentModelEn": "SAKXC2297H136F80LABKXUMA2",
+  "componentBrandEn": "Infineon Technologies",
+  "componentTypeEn": "Microcontrollers (MCU/MPU/SOC)",
+  "componentSpecificationEn": "LQFP-176-EP(24x24)",
+  "componentLibraryType": "expand",
+  "preferredComponentFlag": false,
+  "stockCount": 0,
+  "dataManualUrl": ""
+ }
+]

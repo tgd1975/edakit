@@ -7,6 +7,7 @@
     edakit part import LCSC [--update]   symbol pins and footprint of an LCSC number from the library – no EasyEDA
     edakit part diff OLD NEW         how a new footprint maps onto the old one before a swap (offline)
     edakit part fetch KEY [--url U] | --all   a part's datasheet PDF, kept beside the project and checked to be of it
+    edakit part search "KEYWORDS"    JLCPCB's parts catalogue: LCSC number, class, stock – no EasyEDA
     edakit part datasheet|own        own parts: a board of an edakit project as a part in another project
     edakit sim                      stage E: ngspice operating points of all scenarios (offline, seconds)
     edakit handover                  what the circuit hands over to the layout: state, sign-offs, layout requirements
@@ -63,15 +64,19 @@ def build_parser():
     _common(p)
 
     p = sub.add_parser("part", help="the library's data of an LCSC number, a footprint swap compared, datasheets, "
-                                    "own parts")
-    p.add_argument("action", choices=["import", "diff", "fetch", "datasheet", "own"])
+                                    "a catalogue search, own parts")
+    p.add_argument("action", choices=["import", "diff", "fetch", "search", "datasheet", "own"])
     p.add_argument("source", nargs="?", help="import: the LCSC number; diff: the old part; fetch: the parts-entry key; "
-                                             "own: the board's project (its directory or edakit.toml)")
+                                             "search: the keywords; own: the board's project (its directory or "
+                                             "edakit.toml)")
     p.add_argument("new", nargs="?", help="diff: the new part (LCSC number or parts-entry key)")
     p.add_argument("--update", action="store_true", help="import: fill in what the existing entry lacks")
     p.add_argument("--url", help="fetch: try this URL first")
     p.add_argument("--all", action="store_true", help="fetch: every parts entry without a kept datasheet")
-    p.add_argument("--json", help="diff: write the comparison as JSON")
+    p.add_argument("--json", help="diff: write the comparison as JSON; search: the hits")
+    p.add_argument("--basic", action="store_true", help="search: only Basic and preferred parts")
+    p.add_argument("--min-stock", type=int, help="search: at least this assembly stock")
+    p.add_argument("--limit", type=int, default=25, help="search: hits asked of the catalogue (default 25)")
     p.add_argument("--connector", action="append", help="datasheet: a connector of the board, in the order of the "
                                                         "part's pins (repeat for several; none: renew the datasheets)")
     p.add_argument("--name", help="the part's name (mpn) – datasheet: default the project name; own: which datasheet")

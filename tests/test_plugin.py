@@ -94,3 +94,16 @@ def test_session_start_hook_runs_the_agreements_digest():
     commands = [h["command"] for entry in hooks.get("SessionStart", []) for h in entry["hooks"]]
     assert commands == ['python3 "${CLAUDE_PLUGIN_ROOT}/edakit/agreements.py"']
     assert hooks["PreToolUse"], "the EasyEDA claim stays"
+
+
+def test_the_lcsc_profile_searches_the_catalogue_first_and_three_routes_before_not_available():
+    """#37: a false "does not exist" after one route cost the reference project 45 minutes."""
+    text = (ROOT / "skills" / "part-search" / "distributors" / "lcsc.md").read_text(encoding="utf-8")
+    steps = re.findall(r"^(\d)\. \*\*(.+?)\*\*(.*)$", text, re.M)
+    assert [n for n, _, _ in steps] == ["1", "2", "3"]
+    assert "edakit part search" in steps[0][2] and "easyeda_schematic_search_device" in steps[1][2]
+    assert "series name" in steps[2][1]
+    order = text.index("**Search in this order.**")
+    assert "not available only after all three routes" in text[order:text.index("1. **")]
+    agent = (ROOT / "agents" / "part-selector.md").read_text(encoding="utf-8")
+    assert "edakit part search" in agent and "three routes" in agent

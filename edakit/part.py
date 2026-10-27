@@ -18,6 +18,11 @@ parts.
                                 counts – anything else keeps the earlier copy (exit 2). --all: every entry without one.
                                 The entry is not touched (a change would lapse its sign-off); verified.datasheet_sha256
                                 of a sign-off says which file was signed
+    edakit part search "KEYWORDS" [--basic] [--min-stock N] [--limit 25] [--json FILE]
+                                JLCPCB's public parts catalogue (F-2's endpoint), without EasyEDA: LCSC number, mpn,
+                                manufacturer, class (Basic, Extended, preferred), assembly stock, package, category;
+                                C99… dropped, Basic first, then by stock; an LCSC number gives only its exact hit.
+                                Exit 2 when nothing is found
 
 The library geometry has the units and axes of `edakit pcb dump` (mil, y up, relative to the part origin at 0° on
 TOP); a pad with a hole adds `hole` [w, l] in mm and `plated`, every pad its shape, size `w` × `h` (mil) and `rot`.
@@ -903,6 +908,56 @@ def main_fetch(cfg, args):
     return worst
 
 
+# --- a search through JLCPCB's catalogue (part search) ------------------------------------------------------------
+
+def catalogue_class(h):
+    """Basic, Extended, preferred – as JLCPCB's assembly charges them (preferred Extended parts have no feeder fee)."""
+    if h.get("componentLibraryType") == "base":
+        return "Basic"
+    return "Extended, preferred" if h.get("preferredComponentFlag") else "Extended"
+
+
+def search(keyword, basic=False, min_stock=None, limit=25):
+    """(hits, dropped C99… numbers) of a catalogue search: one row per hit {lcsc, mpn, manufacturer, category, package,
+    class, stock}, Basic before preferred before Extended, then by stock. An LCSC number as the keyword gives only its
+    exact hit – the search is full text."""
+    try:
+        found = catalogue_search(keyword, page_size=limit)
+    except Exception as e:  # network, changed API
+        raise PartError(f"the catalogue did not answer ({str(e)[:200]})") from None
+    if re.fullmatch(r"C\d+", keyword.strip()):
+        found = [h for h in found if h.get("componentCode") == keyword.strip()]
+    dropped = [h for h in found if str(h.get("componentCode") or "").startswith("C99")]
+    rows = [{"lcsc": h.get("componentCode"), "mpn": h.get("componentModelEn"), "manufacturer": h.get("componentBrandEn"),
+             "category": h.get("componentTypeEn"), "package": h.get("componentSpecificationEn"),
+             "class": catalogue_class(h), "stock": int(h.get("stockCount") or 0)} for h in found if h not in dropped]
+    if basic:
+        rows = [r for r in rows if r["class"] != "Extended"]
+    if min_stock is not None:
+        rows = [r for r in rows if r["stock"] >= min_stock]
+    rank = {"Basic": 0, "Extended, preferred": 1, "Extended": 2}
+    return sorted(rows, key=lambda r: (rank[r["class"]], -r["stock"])), len(dropped)
+
+
+def main_search(cfg, args):
+    if not args.source:
+        raise PartError('what to search for? edakit part search "RGB LED 5mm common cathode"')
+    rows, dropped = search(args.source, args.basic, args.min_stock, args.limit)
+    print(f'JLCPCB catalogue, "{args.source}", {today()}: '
+          + (f"{len(rows)} hit(s)" if rows else "no hits")
+          + (f", {dropped} C99… number{'s' if dropped > 1 else ''} dropped (user libraries, nobody sells them)"
+             if dropped else ""))
+    widths = {k: max([len(str(r[k] or "")) for r in rows] + [0]) for k in ("lcsc", "mpn", "manufacturer", "class")}
+    for r in rows:
+        print(f"{r['lcsc']:<{widths['lcsc']}}  {str(r['mpn'] or ''):<{widths['mpn']}}  "
+              f"{str(r['manufacturer'] or ''):<{widths['manufacturer']}}  {r['class']:<{widths['class']}}  "
+              f"{r['stock']:>8}  {r['package'] or ''} – {r['category'] or ''}")
+    if args.json:
+        Path(args.json).write_text(json.dumps({"query": args.source, "date": today(), "dropped_c99": dropped,
+                                               "hits": rows}, indent=1, ensure_ascii=False) + "\n", encoding="utf-8")
+    return 0 if rows else 2
+
+
 # --- how a new footprint maps onto the old one (part diff) ---------------------------------------------------------
 
 TURNS = {0: (1, 0), 90: (0, 1), 180: (-1, 0), 270: (0, -1)}   # cos, sin
@@ -1221,6 +1276,8 @@ def main(cfg, args):
             return main_diff(cfg, args)
         if args.action == "fetch":
             return main_fetch(cfg, args)
+        if args.action == "search":
+            return main_search(cfg, args)
         if args.action == "datasheet":
             if args.connector:
                 done = [write_datasheet(cfg, args.connector, args.name)[0]]
