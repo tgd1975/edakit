@@ -17,6 +17,7 @@ pins of the graph.
 from __future__ import annotations
 
 import json
+from collections import Counter, defaultdict
 from functools import lru_cache
 from pathlib import Path
 
@@ -124,8 +125,93 @@ def _switching_regulators(design, cfg, sim):
     return regs + design.comps_of_kind("inductor")
 
 
+def _supply_starts(design, cfg, sim):
+    """{supply: nets it feeds directly}: the power inputs of H-1 by their supply pins – the plus of a battery holder,
+    the vbus pins of a connector, the pins of a connector in checks.reverse_protect, the plus of a sim source – and a
+    module's pin of type power_output with the role vbus (its USB VBUS brought out). Ground is no supply net."""
+    protect = set((design.graph.get("checks") or {}).get("reverse_protect") or [])
+    sources = (sim or {}).get("sources") or {}
+    out = {}
+    for des in design.comps:
+        part = design.part(des) or {}
+        pins = part.get("pins") or {}
+        roles = {num: str(p.get("role") or "") for num, p in pins.items()}
+        take = []
+        if part.get("kind") == "battery_holder":
+            take = [n for n, r in roles.items() if r.startswith("plus")] or list(pins)
+        elif part.get("kind") == "connector" and "vbus" in roles.values():
+            take = [n for n, r in roles.items() if r == "vbus"]
+        elif des in protect:
+            take = list(pins)
+        if part.get("kind") == "module":
+            take += [n for n, p in pins.items() if p.get("type") == "power_output" and roles[n] == "vbus"]
+        if isinstance(sources.get(des), dict) and "plus" in sources[des]:
+            take.append(str(sources[des]["plus"]))
+        nets = {design.pin_net.get(f"{des}.{n}") for n in take} - {None, design.ground}
+        if nets:
+            out[des] = nets
+    return out
+
+
+def _supply_steps(design):
+    """{net: [(next net, blocks)]} for a supply's current: fuses, switches and inductors (every pin), a MOSFET (drain
+    and source both ways – its body diode or its channel conducts), diodes from anode to cathode (a block: nothing
+    flows back). Two MOSFETs whose sources share a net – a back-to-back pair – pass nothing either way. A connector's
+    pins are separate contacts: a cable joins its nets, not the connector."""
+    fets = design.comps_of_kind("nmos", "pmos")
+    shared = Counter(design.net_of(q, "source") for q in fets)
+    steps = defaultdict(list)
+    for des in design.comps:
+        part = design.part(des) or {}
+        kind = part.get("kind")
+        if kind == "diode":
+            a, k = design.net_of(des, "anode"), design.net_of(des, "cathode")
+            if a and k and design.ground not in (a, k):
+                steps[a].append((k, True))
+            continue
+        if kind in ("nmos", "pmos"):
+            source = design.net_of(des, "source")
+            if source != design.ground and shared[source] > 1:
+                continue   # one of a back-to-back pair
+            nets = {design.net_of(des, "drain"), source}
+        elif kind in ("fuse", "switch", "inductor"):
+            nets = {design.pin_net.get(f"{des}.{p}") for p in part.get("pins") or {}}
+        else:
+            continue
+        nets -= {None, design.ground}
+        for n in nets:
+            steps[n] += [(m, False) for m in nets - {n}]
+    return steps
+
+
+def _two_supplies(design, cfg, sim):
+    """Nets that two supplies reach, at least one of them without a diode on the way – current can flow back into
+    that one: 'VIN (J1 unblocked, J2)'."""
+    starts = _supply_starts(design, cfg, sim)
+    if len(starts) < 2:
+        return []
+    steps, reached = _supply_steps(design), {}
+    for supply, nets in starts.items():
+        free = dict.fromkeys(nets, True)   # net -> reached without a block
+        todo = list(nets)
+        while todo:
+            n = todo.pop()
+            for m, block in steps.get(n, ()):
+                if m not in free or (free[n] and not block and not free[m]):
+                    free[m] = free[n] and not block
+                    todo.append(m)
+        reached[supply] = free
+    out = []
+    for net in design.nets:
+        at = sorted(((s, r[net]) for s, r in reached.items() if net in r), key=lambda x: natural_key(x[0]))
+        if len(at) > 1 and any(free for _, free in at):
+            out.append(f"{net} ({', '.join(f'{s} unblocked' if free else s for s, free in at)})")
+    return out
+
+
 MATCHERS = {"power_input": _power_inputs, "connector_signal": _connector_signals,
-            "transistor_at_connector": _transistors_at_connectors, "switching_regulator": _switching_regulators}
+            "transistor_at_connector": _transistors_at_connectors, "switching_regulator": _switching_regulators,
+            "two_supplies": _two_supplies}
 
 
 def matching_hints(design, cfg=None, sim=None):

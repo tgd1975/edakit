@@ -405,6 +405,17 @@
    "why": "A connector that a person touches or plugs a cable into sees electrostatic discharges of several kilovolts. A line that runs straight to an IC pin relies on the IC's internal protection.",
    "fix": "For lines that leave the enclosure: an ESD diode (TVS) per line, as near to the connector as the design rules allow; a series resistor on slow signal lines.",
    "sources": ["TI SLVA680A, ESD Protection Layout Guide (2022) – https://www.ti.com/lit/an/slva680/slva680.pdf"]
+  },
+  "H-8": {
+   "title": "two supplies on one net",
+   "when": {"match": "two_supplies"},
+   "why": "Where two supplies meet on one net, the higher one feeds the other whenever its path has nothing that blocks: primary cells get charged, a PC's USB port takes current, a body diode conducts and heats. A single P-MOSFET switched off by the other supply is no block – its body diode conducts from drain to source. G-10 looks at a reversed source only, and the simulation shows the back-feed only in a scenario with both supplies on and the other one higher. Whether it matters – cells that may be charged, a host that tolerates it, an operating rule – is a judgement.",
+   "fix": "A blocking element in every path that must not be fed: a Schottky diode (0.3–0.5 V drop), two P-MOSFETs back-to-back with a common source, or an ORing controller. Or an operating rule that firmware or manual enforce (one of the two unplugged). The hint names the net and marks the supplies that reach it without a block; record how it is handled: \"hints\": {\"H-8\": \"Q8/Q9 back-to-back, D40\"}.",
+   "sources": [
+    "AOS AO3401A, Rev 3.1 (December 2023), p. 2: body diode forward voltage VSD -0.7 V typ., -1 V max. at IS = -1 A and VGS = 0 V, body-diode continuous current IS -2 A – the diode conducts with the MOSFET off – https://datasheet.lcsc.com/datasheet/pdf/fee353dd1e9e0bc90b295f14f381aa4c.pdf?productCode=C15127",
+    "Lesson of the reference project (pytree D-44, 2026-10-23): with one AO3401A cutting three AA cells off while USB-C was plugged, fresh lithium cells (5.4 V) fed through its body diode, about 0.7 W and up to 125 °C on a touchable underside; a second AO3401A back-to-back fixed it",
+    "Lesson of the reference project (pytree D-47, USB tree, 2026-10-25): the module's 5V pin is its USB VBUS without a diode and J1 feeds the same rail through D32 – a source at J1 above the PC's VBUS feeds the PC through the module (about 0.2 A at 5.25 V against 4.75 V, second check M-1); accepted with an operating rule"
+   ]
   }
  }
 }

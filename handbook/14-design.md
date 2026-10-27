@@ -70,6 +70,7 @@ in the graph or by a pattern, shown by `edakit hints`, never blocking.
 | H-5 | a buck or boost regulator, an inductor | the hot loop – G-18 wants it in `layout.loops`, L-11 measures it |
 | H-6 | a battery holder | protection for lithium cells |
 | H-7 | a signal line from a connector to an IC pin | ESD protection at the connector |
+| H-8 | two supplies reach one net – power inputs as for H-1 and a module's `power_output` pin with the role `vbus` – and at least one of them without a diode on the way; fuses, switches, inductors and a single MOSFET pass, a back-to-back MOSFET pair passes nothing | back-feed into a supply: cells charged, a PC's USB port fed, a body diode heating |
 
 The designer handles each one and writes down how, in the graph:
 
