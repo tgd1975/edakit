@@ -37,7 +37,8 @@ say what is left: values, sim.json, the graph's `checks`.
   requirement, the quantity and the assembly in the prompt; it searches the project's distributors in its own context
   and writes the entry) or the skill part-search. Pin numbers and names come from the entry, never from memory or from
   a similar part's datasheet.
-- Prefer parts the project uses already, Basic parts, parts in stock.
+- Prefer parts the project uses already, Basic parts, parts in stock. `edakit cost` shows what a choice costs: an
+  Extended type, a "Standard Only" part or a second assembled side raises the order by more than the part itself.
 - MCU pins: read the entry first – strapping pins (`strap`), input-only pins (`type: input`), notes (`hint`, e.g. an
   ADC that does not work with WiFi), what each pin can do (`functions`). Buttons, LEDs and pulls stay off strapping
   pins unless they agree with the boot level (G-12). A net that needs a peripheral says so – `fn` (`spi.tx`, `pwm`,

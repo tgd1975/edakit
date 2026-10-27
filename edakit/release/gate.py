@@ -157,6 +157,8 @@ def stage_graph(cfg, design):
     hit = {r["id"] for r in rows if r["result"] in ("fail", "pending")}
     rows += [{"stage": stage_of(c), "id": c, "item": "", "check": rules.title(c), "result": "pass"}
              for c in checks.EXECUTED if c not in hit]
+    from .. import cost
+    rows += cost.gate_rows(cfg)   # with [cost]: the estimate, above the budget a warning
     return rows, rep.to_dict()
 
 
@@ -335,7 +337,7 @@ def write_protocol(cfg, outdir, head, rows, sim, signoff, notes, decision, reaso
     L += ["\n| Check | Step | passed | failed | warning | info |", "|---|---|---:|---:|---:|---:|"]
     L += [f"| {cid} | {what} | {n['pass']} | {n['fail']} | {n['warn']} | {n['info']} |" for (cid, what), n in sorted(agg.items())]
     L.append("\nAll single values: `sim.json`.\n")
-    shown = [r for r in rows if r["stage"] not in "PGE" or r["id"] == "P-2"]
+    shown = [r for r in rows if r["stage"] not in "PGE" or r["id"] in ("P-2", "cost")]
     L.append("## 8 Other stages\n")
     if shown:
         L += ["| Stage | Check | Item | Step | Actual | Expected | Result |", "|---|---|---|---|---|---|---|"]

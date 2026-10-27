@@ -14,29 +14,10 @@ import pytest
 
 from edakit import checks, cli
 from edakit.design import Design
-from edakit.release import fab
 
 REC = Path(__file__).resolve().parent / "fixtures" / "jlcpcb"
 ASSEMBLED = ["C17414", "C17604", "C2297", "C318884", "C41407547", "C45783", "C49678", "C8678", "C90107"]
 TODAY = dt.date.today().isoformat()
-
-
-@pytest.fixture
-def jlcpcb(monkeypatch):
-    """JLCPCB from the recordings; counts the requests."""
-    from edakit import stock
-    asked = []
-
-    def search(keyword, page_size=10, timeout=30):
-        asked.append(keyword)
-        f = REC / "catalogue" / f"{keyword}.json"
-        return json.loads(f.read_text(encoding="utf-8"))["data"]["componentPageInfo"]["list"] if f.exists() else []
-
-    def page(lcsc, timeout=30):
-        return (REC / "partdetail" / f"{lcsc}.html").read_text(encoding="utf-8")
-    monkeypatch.setattr(fab, "jlc_search", search)
-    monkeypatch.setattr(stock, "fetch_part_page", page)
-    return asked
 
 
 def p4(rep):

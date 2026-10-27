@@ -16,7 +16,7 @@ Create in the repository root (ask only for what you cannot sensibly default):
 
 | File | Content |
 |---|---|
-| `edakit.toml` | from `tests/fixtures/led-bar/edakit.toml`: `[project] name` = the EasyEDA project, one `[boards.<name>]` with its EasyEDA documents – the table of contents that points to the files below (handbook 10.1) |
+| `edakit.toml` | from `tests/fixtures/led-bar/edakit.toml`: `[project] name` = the EasyEDA project, one `[boards.<name>]` with its EasyEDA documents – the table of contents that points to the files below (handbook 10.1); `[release] assembly` (sides, `pcba`) and, when the user names one, `[cost] budget` |
 | `hardware/boards/<name>.toml` | when the board's size is known: from the example's board file, outline and holes; leave `place` and `routing.classes` minimal until the parts exist. Otherwise the PCB designer starts it |
 | `hardware/graph.json` | `{"graph": {"name", "version": "0.1", "date", "description", "purpose": {"use", "market", "notes"}, "components": [], "nets": [], "cables": []}}` – `use` is `private`, `gift` or `sale` (circuit-design asks) |
 | `hardware/parts/` | empty; every LCSC number gets an entry through the part-search skill |

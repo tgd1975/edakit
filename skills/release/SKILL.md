@@ -46,6 +46,7 @@ The MCP server cannot order on purpose. Checklist for the user:
 - [ ] Remarks field (max. 200 characters) for panel tabs or V-cuts that must avoid visible edges
 - [ ] M-2: in JLCPCB's assembly preview the rotation and polarity of every polarised part (compare with
       `polarity_<b>.png`), no missing part in the BOM tool, price; then sign M-2
+- [ ] The cart against `edakit cost` – class, fees and parts; a difference of more than a few dollars has a reason
 - [ ] Parts that do not come from JLCPCB (hand-soldered, cables, enclosure) ordered in the same go
 
 After delivery: acceptance test of every board (M-4).

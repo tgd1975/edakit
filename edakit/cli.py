@@ -10,6 +10,7 @@
     edakit part search "KEYWORDS"    JLCPCB's parts catalogue: LCSC number, class, stock – no EasyEDA
     edakit part datasheet|own        own parts: a board of an edakit project as a part in another project
     edakit stock [--refresh]         what JLCPCB says about the assembled parts, as a dated snapshot (check P-4)
+    edakit cost [--json F]           the order for `quantity` boards from BOM, board and the dated fee table
     edakit sim                      stage E: ngspice operating points of all scenarios (offline, seconds)
     edakit handover                  what the circuit hands over to the layout: state, sign-offs, layout requirements
     edakit schematic create|check|copy|layout
@@ -88,6 +89,11 @@ def build_parser():
     p.add_argument("--refresh", action="store_true", help="ask about every part again, not only missing or old ones")
     p.add_argument("--lcsc", nargs="+", metavar="C", help="print what JLCPCB says about these parts, write nothing "
                                                           "(part search; no project needed)")
+    _common(p)
+
+    p = sub.add_parser("cost", help="estimate the order: PCB, PCBA fees, parts, extras, shipping, VAT; drivers, budget")
+    p.add_argument("--board", help="only this board (no shipping, extras, VAT)")
+    p.add_argument("--json", help="also write the estimate as JSON to this file")
     _common(p)
 
     p = sub.add_parser("sim", help="simulation (stage E)")
@@ -216,6 +222,9 @@ def main(argv=None):
     if args.command == "stock":
         from . import stock
         return stock.main(cfg, args)
+    if args.command == "cost":
+        from . import cost
+        return cost.main(cfg, args)
     if args.command == "sim":
         from .sim import run
         try:

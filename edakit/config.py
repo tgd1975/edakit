@@ -50,6 +50,8 @@ BOARD_FILE_KEYS = ("revision", "view", "outline", "holes", "tooling", "place", "
 SCHEMATIC_KEYS = ("stub", "layout")
 RELEASE_KEYS = ("layout_files", "state_files", "assembly", "stages")
 PCBA = ("economic", "standard")  # [release] assembly.pcba: the assembler's class of the order (P-4)
+COST_KEYS = ("fees", "budget", "currency", "rates", "shipping", "coupon", "vat_pct", "pcb_price")   # [cost]
+EXTRA_KEYS = ("item", "supplier", "per_set", "unit_price", "currency")   # [[extra]]: items off the board
 STOCK_MAX_AGE_DAYS = 14          # [project] stock_max_age_days: an older stock snapshot is pending (P-4)
 
 
@@ -159,6 +161,8 @@ class Config:
     stock: Path | None = None           # the stock snapshot of `edakit stock` (P-4); not in the circuit hash
     stock_margin_pct: float = 0.0       # P-4 warns below need x (1 + margin / 100)
     stock_max_age_days: int = STOCK_MAX_AGE_DAYS
+    cost: dict | None = None            # [cost] of edakit.toml; None: no cost estimate in the gate
+    extras: list = field(default_factory=list)   # [[extra]]: items off the board – cost estimate and carts
 
     def pcba(self):
         """(class, why) of the assembly order: [release] assembly.pcba, or derived from assembly.sides – one side
@@ -442,6 +446,45 @@ def _release_values(release):
     return []
 
 
+def _cost_values(cost):
+    if cost is None:
+        return []
+    if not isinstance(cost, dict):
+        return ["[cost] must be a table"]
+    out = _unknown("[cost]", cost, COST_KEYS)
+    for key in ("budget", "shipping", "coupon", "vat_pct"):
+        if key in cost:
+            out += _number(f"[cost] {key}", cost[key])
+    rates = cost.get("rates", {})
+    if not isinstance(rates, dict):
+        out.append("[cost] rates must be a table, e.g. { EUR = 1.15 } (value of one unit in [cost] currency)")
+    else:
+        out += [m for k, v in rates.items() for m in _number(f"[cost] rates.{k}", v, positive=True)]
+    price = cost.get("pcb_price")
+    if isinstance(price, dict):
+        out += [m for k, v in price.items() for m in _number(f"[cost] pcb_price.{k}", v)]
+    elif price is not None:
+        out += _number("[cost] pcb_price", price)
+    return out
+
+
+def _extras(extras):
+    if extras is None:
+        return []
+    if not isinstance(extras, list) or not all(isinstance(e, dict) for e in extras):
+        return ["[[extra]] must be an array of tables: [[extra]] item = …, supplier = …, per_set = …"]
+    out = []
+    for i, e in enumerate(extras, 1):
+        where = f"[[extra]] {i} ({e.get('item', '?')})"
+        out += _unknown(where, e, EXTRA_KEYS)
+        out += [f"{where}: {k} is missing" for k in ("item", "supplier", "per_set") if k not in e]
+        if "per_set" in e:
+            out += _number(f"{where}: per_set", e["per_set"], positive=True)
+        if "unit_price" in e:
+            out += _number(f"{where}: unit_price", e["unit_price"])
+    return out
+
+
 def find_config(start=None) -> Path:
     env = os.environ.get("EDAKIT_CONFIG")
     if env:
@@ -466,7 +509,8 @@ def load(path=None) -> Config:
         return v if v.is_absolute() else root / v
 
     moved = _one_file_form(raw, path.name)
-    problems = _unknown(path.name, raw, ("project", "boards", "release"), ("schematic", "checks", "net_classes", "sim"))
+    problems = _unknown(path.name, raw, ("project", "boards", "release", "cost", "extra"),
+                        ("schematic", "checks", "net_classes", "sim"))
     problems += _unknown("[project]", p, PROJECT_KEYS, ("ground",))
     problems += _unknown("[release]", raw.get("release", {}), RELEASE_KEYS, ("signoff",))
     if not isinstance(p.get("agreements", True), bool):
@@ -491,6 +535,7 @@ def load(path=None) -> Config:
             f"{path.name} is the table of contents now: board, schematic and checks have files of their own "
             "(handbook 10.1)"]
     problems += _project_values(p) + _release_values(raw.get("release", {}))
+    problems += _cost_values(raw.get("cost")) + _extras(raw.get("extra"))
     if problems:
         raise ConfigError(f"{path}:\n  " + "\n  ".join(problems))
     boards = {name: _board(name, raw["boards"][name], data, file) for name, (file, data) in files.items()}
@@ -518,4 +563,6 @@ def load(path=None) -> Config:
         stock=rel("stock", "hardware/stock.json"),
         stock_margin_pct=float(p.get("stock_margin_pct", 0)),
         stock_max_age_days=int(p.get("stock_max_age_days", STOCK_MAX_AGE_DAYS)),
+        cost=raw.get("cost"),
+        extras=list(raw.get("extra", [])),
     )

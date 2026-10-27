@@ -63,6 +63,27 @@ pads of different parts on an assembled side, L-14), `pcba` (`"economic"` or `"s
 the order, P-4; default from `sides` – one side Economic, two Standard)}), `[[stages]]` ({`id`, `name`, `cmd`, `advisory`, `timeout`,
 `about`}).
 
+### [cost]
+
+Optional: the order estimate of `edakit cost` (8.4). Without the table the gate and every command are as before; with
+it the gate has an information row "estimated order cost" in stage P, and above `budget` a warning to accept.
+
+| Key | Default | Meaning |
+|---|---|---|
+| `fees` | the shipped `edakit/fees/jlcpcb.json` | another fee table in the same form (every value with `date` and `source`) |
+| `budget` | – | the most the whole order may cost, in `currency`; above it `edakit cost` exits 2 and the gate warns |
+| `currency` | `"USD"` | the currency of the estimate |
+| `rates` | `{}` | the value of one unit of another currency in `currency`, e.g. `{ EUR = 1.15 }`; needed for the fee table's USD and for every `[[extra]]` in another currency |
+| `shipping`, `coupon` | `0` | per order, in `currency` |
+| `vat_pct` | `0` | import VAT on the assembler's order (boards + shipping − coupon) |
+| `pcb_price` | from the fee table | the quoted price of the PCBs (all `quantity` of them) – a number, or `{ board = price }` |
+
+### [[extra]]
+
+Items off the board that belong to the order – a cable, feet, a module that is plugged in: `item`, `supplier`,
+`per_set` (pieces per board set), `unit_price` and its `currency` (default `[cost] currency`). `edakit cost` prices
+`ceil(per_set × quantity)` of each.
+
 ## 10.2 The board file
 
 `hardware/boards/<name>.toml`: what the PCB designer decides (14.1). The layout hash covers it – a change needs the
@@ -135,6 +156,7 @@ Code: `edakit … 2>&1 | cat`.
 | `edakit part datasheet [--connector C …] [--name N]` | – | graph, parts, sim config, board file (4.5) | `hardware/datasheet/<N>.json` and `.md`; without `--connector` every datasheet renewed |
 | `edakit stock [--board B] [--refresh]` | – | graph, parts, the snapshot; JLCPCB's catalogue and part pages (network) | `hardware/stock.json` (`[project] stock`): the parts missing, unread or older than `stock_max_age_days`, with `--refresh` all |
 | `edakit stock --lcsc C…` | – | JLCPCB's catalogue and part pages (no project needed) | – (prints listed, class, stock, MSL, PCBA type, X-ray, attrition) |
+| `edakit cost [--board B] [--json F]` | – | graph, parts, board files, the stock snapshot, the fee table, `[cost]`, `[[extra]]` | `<artifacts>/cost.json` (the change since the last estimate is printed); exit 2 above `budget` |
 | `edakit part own PATH [--name N]` | – | the board's project at PATH: its datasheet, state, git, gate runs | `hardware/parts/<N>.json` |
 | `edakit sim [--json F] [--keep DIR]` | – | graph, parts, sim config, plugin | `<artifacts>/sim/net_currents.json` |
 | `edakit handover [--board B]` | – | graph, parts, sign-offs | – |
@@ -172,8 +194,9 @@ hardware/schematic.toml     arrangement of the schematic
 hardware/boards/<name>.toml one board: outline, holes, placement, routing, pours, silkscreen
 hardware/signoff.json       manual checks and accepted warnings, bound to hashes
 docs/decisions.md           numbered decisions (or wherever the project keeps them)
-build/edakit/               artifacts (not versioned): caches, geometry, previews, routing, exports; library/ and
-                            footprints/: the library's symbols and footprints (edakit part import); datasheets/:
-                            the datasheets edakit part fetch keeps (unless [project] datasheets names another folder)
+build/edakit/               artifacts (not versioned): caches, geometry, previews, routing, exports, cost.json;
+                            library/ and footprints/: the library's symbols and footprints (edakit part import);
+                            datasheets/: the datasheets edakit part fetch keeps (unless [project] datasheets names
+                            another folder)
 build/release/<run>/        gate runs (archive the released one)
 ```

@@ -152,6 +152,27 @@ Result folder `<reports>/<YYYYMMDD-hhmmss>/`: `protocol.md`, `graph_checks.json`
 
 ## 8.4 Ordering at JLCPCB (the owner does it)
 
+**The cost before the quote.** `edakit cost` estimates the order for `quantity` boards from the graph, the parts
+entries, the board files, the stock snapshot (4.2) and a dated fee table (`edakit/fees/jlcpcb.json`: JLCPCB's
+assembly fees with the page and the day they were read, bake, edge rails and PCB prices from real carts):
+
+- the class per board – `[release] assembly.pcba` or its sides, raised to Standard by parts on a second side
+  (`side` in `[place]`; a part not placed sits on the first side of `assembly.sides`) and by "Standard Only" parts;
+- the PCB at its size (under Standard with 5 mm edge rails on the long edges) or the quoted `[cost] pcb_price`;
+- the fees line by line: Economic setup and stencil per order and 3.07 $ per Extended type; Standard setup and
+  stencil per assembled side and 1.53 $ per type, Basic included, plus packing; SMT joints; joints JLCPCB solders by
+  hand plus the labour per order; through-hole reflow joints; X-ray per placed part; the bake for MSL ≥ 5; a Standard
+  order Economic could also assemble is topped up to the handling fee's 14.93 $ difference;
+- the parts at their price break – Economic exactly the placements, Standard with JLCPCB's attrition;
+- shipping, coupon and VAT (`[cost]`), the items off the board (`[[extra]]`), the budget;
+- what drives the cost (the part or side that forces Standard, each Extended type, a bake, an X-ray part, the edge
+  rails), the other class beside it, and the change since the last estimate.
+
+Without a stock snapshot the parts have no price. On the reference project the estimate came within about 1 $ of
+the cart (USB tree, 2026-10-25: 71.53 $ with the fees of that day against 72.58 $); the fees JLCPCB does not itemise
+(bake, X-ray, hand soldering, packing) are values of their own in the table. Run it when a part, a side or the class
+changes, not after the first quote.
+
 The MCP server cannot order. Lessons from the reference order:
 
 - Upload `gerber_<b>.zip`, `bom_<b>.csv`, `cpl_<b>.csv` from the released folder only; compare the checksums.

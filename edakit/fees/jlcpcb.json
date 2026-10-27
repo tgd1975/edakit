@@ -1,0 +1,35 @@
+{
+ "assembler": "JLCPCB",
+ "currency": "USD",
+ "date": "2026-10-27",
+ "about": "Fees of JLCPCB's PCB assembly and PCB prices for edakit cost (handbook 8.5). Every value carries the date it was read and its source. The assembly fees are those of JLCPCB's page 'PCB Assembly Cost: What Does the Price Include?' (last updated 2026-10-22, read 2026-10-27); JLCPCB converts to USD daily, so a value may differ by a cent from one week to the next. Bake, edge rails and the PCB prices are what JLCPCB charged in the carts of 2026-10-24 and 2026-10-25 (2 layers, FR-4 TG135, 1.6 mm, 1 oz, lead-free HASL, green, 5 boards). Tiers: [from, to, price per unit]; the price of the tier the whole order falls in applies to every unit.",
+ "pcba": {
+  "economic_setup": {"value": 8.18, "per": "order", "date": "2026-10-27", "source": "https://jlcpcb.com/help/article/pcb-assembly-price – Setup fee, Economic PCBA"},
+  "economic_stencil": {"value": 1.53, "per": "order", "date": "2026-10-27", "source": "https://jlcpcb.com/help/article/pcb-assembly-price – Stencil, Economic PCBA"},
+  "standard_setup": {"value": 25.56, "per": "side", "date": "2026-10-27", "source": "https://jlcpcb.com/help/article/pcb-assembly-price – Setup fee, Standard PCBA: $25.56 single side, $51.12 double side"},
+  "standard_stencil": {"value": 8.21, "per": "side", "date": "2026-10-27", "source": "https://jlcpcb.com/help/article/pcb-assembly-price – Stencil, Standard PCBA: $8.21 single side, $16.42 double side"},
+  "economic_loading": {"value": 3.07, "per": "Extended part type (Basic and Preferred Extended free)", "date": "2026-10-27", "source": "https://jlcpcb.com/help/article/pcb-assembly-price – Feeder Loading, Economic PCBA: $3.07 Extend"},
+  "standard_loading": {"value": 1.53, "per": "part type, Basic included", "date": "2026-10-27", "source": "https://jlcpcb.com/help/article/pcb-assembly-price – Feeder Loading, Standard PCBA: $1.53 Basic/Extend"},
+  "economic_smt_joint": {"tiers": [[1, 100000, 0.0016]], "per": "joint", "date": "2026-10-27", "source": "https://jlcpcb.com/help/article/pcb-assembly-price – SMT Assembly, Economic PCBA"},
+  "standard_smt_joint": {"tiers": [[1, 50000, 0.0016], [50001, 100000, 0.0013], [100001, 1000000, 0.0012]], "per": "joint", "date": "2026-10-27", "source": "https://jlcpcb.com/help/article/pcb-assembly-price – SMT Assembly, Standard PCBA"},
+  "manual_joint": {"tiers": [[1, 10000, 0.0164], [10001, 30000, 0.015], [30001, 100000, 0.012]], "per": "joint soldered by hand", "date": "2026-10-27", "source": "https://jlcpcb.com/help/article/pcb-assembly-price – Manual Assembly (both classes)"},
+  "hand_soldering_labour": {"value": 3.58, "per": "order with joints soldered by hand", "date": "2026-10-27", "source": "https://jlcpcb.com/help/article/pcb-assembly-price – Hand-soldering Labor (both classes)"},
+  "reflow_joint": {"value": 0.016, "per": "through-hole joint soldered in the reflow oven", "date": "2026-10-27", "source": "https://jlcpcb.com/help/article/pcb-assembly-price – Pre-reflow Soldering (both classes)"},
+  "xray": {"tiers": [[1, 10, 1.64], [11, 50, 0.82], [51, 200, 0.49], [201, 500, 0.33], [501, 1000, 0.25], [1001, 3000, 0.16], [3001, 99999, 0.082]], "per": "part placed that needs X-ray", "date": "2026-10-27", "source": "https://jlcpcb.com/help/article/pcb-assembly-price – X-ray Inspection (component quantity, both classes)"},
+  "standard_packing": {"value": 0.5, "per_cm2": 0.00003, "per": "order, plus per cm² of PCB area", "date": "2026-10-27", "source": "https://jlcpcb.com/help/article/pcb-assembly-price – Packing: Economic free, Standard $0.50 + $0.00003 × PCB area (cm²)"},
+  "large_size": {"value": 57.46, "above_cm2": 650, "per": "order with a PCB area above 650 cm²", "date": "2026-10-27", "source": "https://jlcpcb.com/help/article/pcb-assembly-price – Large Size (both classes)"},
+  "handling_min_difference": {"value": 14.93, "per": "Standard order that Economic could also assemble: the shortfall below this difference", "date": "2026-10-27", "source": "https://jlcpcb.com/help/article/pcb-assembly-price – Handling fee, Standard PCBA: ≥ $14.93"},
+  "bake": {"value": 7.94, "per": "order with a part of MSL 5 or more (and 2 days more)", "date": "2026-10-24", "source": "JLCPCB's request 'Bake Components' (7.94 $, 48 h) in the quote of 2026-10-24, Standard PCBA SMT026102460577, for XL-504SURD/UGD/UYD (C2895493, C2895549, C2895495), MSL 5 at JLCPCB"},
+  "standard_edge_rails_mm": {"value": 5, "per": "edge rail on each of the two long edges (the PCB is priced that much larger)", "date": "2026-10-24", "source": "JLCPCB carts of 2026-10-24: a 100 × 100 mm and a 100 × 170 mm board under Standard PCBA were priced as 110 × 100 mm and 110 × 170 mm"}
+ },
+ "pcb": {
+  "spec": "2 layers, FR-4 TG135, 1.6 mm, 1 oz, lead-free HASL, green, tented vias, 5 boards, 24 h",
+  "qty": 5,
+  "layers": 2,
+  "prices": [
+   {"w_mm": 110, "h_mm": 100, "value": 10.7, "date": "2026-10-24", "source": "JLCPCB cart of 2026-10-24, PCB prototype Y3-13857314A (110 × 100 mm)"},
+   {"w_mm": 100, "h_mm": 170, "value": 13.7, "date": "2026-10-25", "source": "JLCPCB cart of 2026-10-25, PCB prototype Y4-13857314A (100 × 170 mm)"},
+   {"w_mm": 110, "h_mm": 170, "value": 14.5, "date": "2026-10-24", "source": "JLCPCB cart of 2026-10-24, PCB prototype Y2-13857314A (110 × 170 mm)"}
+  ]
+ }
+}

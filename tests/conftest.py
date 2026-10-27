@@ -6,6 +6,26 @@ import pytest
 
 EXAMPLE = Path(__file__).resolve().parent / "fixtures" / "led-bar"
 LIBRARY_PARTS = Path(__file__).resolve().parents[1] / "edakit" / "blocks" / "parts"
+JLCPCB = Path(__file__).resolve().parent / "fixtures" / "jlcpcb"   # recorded catalogue answers and part pages
+
+
+@pytest.fixture
+def jlcpcb(monkeypatch):
+    """JLCPCB from the recordings in fixtures/jlcpcb (test_stock.py); the list of catalogue requests."""
+    from edakit import stock
+    from edakit.release import fab
+    asked = []
+
+    def search(keyword, page_size=10, timeout=30):
+        asked.append(keyword)
+        f = JLCPCB / "catalogue" / f"{keyword}.json"
+        return json.loads(f.read_text(encoding="utf-8"))["data"]["componentPageInfo"]["list"] if f.exists() else []
+
+    def page(lcsc, timeout=30):
+        return (JLCPCB / "partdetail" / f"{lcsc}.html").read_text(encoding="utf-8")
+    monkeypatch.setattr(fab, "jlc_search", search)
+    monkeypatch.setattr(stock, "fetch_part_page", page)
+    return asked
 
 
 @pytest.fixture
