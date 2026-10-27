@@ -14,8 +14,8 @@ queries in the result:
    Kingbright C6751358 and the XINGLIGHT C7371894 in one query). `--basic`, `--min-stock N`, `--json FILE`. An LCSC
    number gives only its exact hit.
 2. **Search EasyEDA:** `easyeda_schematic_search_device` with `key: "<LCSC number or manufacturer part number>"`. It
-   needs the EasyEDA bridge. It returns footprint, manufacturer number, Basic/Extended and `otherProperty`
-   (parameters), but no stock and no price.
+   needs the EasyEDA bridge but no claim: it runs while another session holds EasyEDA, and takes none itself. It
+   returns footprint, manufacturer number, Basic/Extended and `otherProperty` (parameters), but no stock and no price.
    - **Take only hits whose `supplierId` equals the LCSC number.** The search is full text: `C5613` also finds
      `C5613331`.
    - `C99…` numbers are user libraries and cannot be ordered.

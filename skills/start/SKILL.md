@@ -27,7 +27,8 @@ Background and every API quirk: `${CLAUDE_PLUGIN_ROOT}/handbook/02-setup.md`, `0
    (`<artifacts>/easyeda_project.json`); the very first time the user opens it once.
 6. **Claim EasyEDA** before a series of runs: `edakit lock claim --note "<what>"`, afterwards `edakit lock release`
    (also after an abort). The plugin hook claims automatically on the first EasyEDA MCP tool and refuses tools while
-   another session holds it; edakit commands do the same. **Never run two EasyEDA jobs at the same time**, not even
+   another session holds it; edakit commands do the same. Library lookups (`easyeda_schematic_search_device`,
+   `easyeda_api_call` on `LIB_Device.search…`/`LIB_Device.get…`) pass without a claim (handbook 11.2). **Never run two EasyEDA jobs at the same time**, not even
    from one session – they switch the active tab and write into the wrong document. A run under 5 minutes on another
    document may be let in between two runs of the holder: the holder runs `edakit lock yield <session>`; when the
    guest releases, EasyEDA goes back to the holder.

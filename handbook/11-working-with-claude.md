@@ -43,6 +43,12 @@ So EasyEDA is **claimed per session** (`edakit lock`), independent of anything g
 
 - The first EasyEDA access claims automatically (the hook for MCP tools, every edakit command for scripts); every
   access renews it; it expires after 15 minutes without access. Tools that only ask about the connection are free.
+- **Library lookups pass the claim:** the device search (`easyeda_schematic_search_device`) and the device reads
+  through `easyeda_api_call` (paths beginning `LIB_Device.search` or `LIB_Device.get`) leave the open document and tab
+  as they are, so they neither take nor renew a claim – a part search runs while another session routes, and it does
+  not block EasyEDA for 15 minutes afterwards. The list is data in `edakit/lock.py` (`READ_ONLY_TOOLS`,
+  `READ_ONLY_API`); an entry joins only with the evidence that the call leaves the active document as it was. (A part
+  lookup once waited 38 minutes behind a layout session.)
 - Another session is refused with who holds EasyEDA and since when. It waits, or asks the holder (ListAgents →
   SendMessage).
 - **Letting a short run in:** a run under 5 minutes on another document need not wait behind a long one. The holder,

@@ -91,7 +91,8 @@ class MCPClient:
             return msg.get("result", {})
 
     def call(self, tool, timeout=130, **args):
-        lock.claim_for_script(renew=True, mode=self.lock_mode)
+        if not lock.read_only(tool, args):  # library lookups need no claim (lock.READ_ONLY_TOOLS, READ_ONLY_API)
+            lock.claim_for_script(renew=True, mode=self.lock_mode)
         result = self._request("tools/call", {"name": tool, "arguments": args}, timeout)
         if "structuredContent" in result:
             data = result["structuredContent"]
