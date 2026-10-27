@@ -51,7 +51,7 @@ from collections import Counter, defaultdict
 from fnmatch import fnmatch
 from pathlib import Path
 
-from .. import checks, docs, rules
+from .. import checks, docs, eda, rules
 from ..design import Design
 
 STAGES = [
@@ -320,11 +320,13 @@ def stage_graph(cfg, design):
     return rows, rep.to_dict()
 
 
-def stage_custom(cfg, outdir):
+def stage_custom(cfg, outdir, step=None):
     """[[release.stages]]: id, name, cmd (list), advisory. The command's last stdout line may be a JSON list of
-    [id, check, actual, expected, ok]; otherwise only its exit code counts."""
+    [id, check, actual, expected, ok]; otherwise only its exit code counts. step: eda.Steps, one step per stage."""
     rows, run = [], set()
     for st in cfg.release.get("stages", []):
+        if step:
+            step(f"{st['id']} {st['name']}")
         run.add(st["id"])
         log = outdir / f"stage_{st['id']}.txt"
         try:
@@ -366,13 +368,16 @@ def stage_schematic(cfg, outdir):
     return rows
 
 
-def stage_fab(cfg, outdir):
+def stage_fab(cfg, outdir, step=None):
     from . import fab
     rows = []
     d = outdir / "fab"
     d.mkdir(exist_ok=True)
     for board in cfg.boards.values():
-        print(f"    {board.name} …", flush=True)
+        if step:  # one step per board: with EasyEDA up to five minutes each
+            step(f"L/F board and manufacturing files: {board.name}")
+        else:
+            print(f"    {board.name} …", flush=True)
         try:
             rows += fab.run(cfg, board, d)
         except (SystemExit, Exception) as e:  # one board failing must not hide the others
@@ -715,10 +720,11 @@ def main(cfg, args):
     design = Design.from_config(cfg)
     custom = [(st["id"], st["name"], st.get("about", " ".join(st["cmd"]))) for st in cfg.release.get("stages", [])]
     stages = STAGES[:3] + custom + STAGES[3:]
-    print("[P/G] parts and graph …", flush=True)
+    step = eda.Steps(2 + len(custom) + (1 + len(cfg.boards) if args.easyeda else 0))
+    step("P/G parts and graph")
     rows, g_json = stage_graph(cfg, design)
     (outdir / "graph_checks.json").write_text(json.dumps(g_json, indent=1, ensure_ascii=False) + "\n", encoding="utf-8")
-    print("[E] simulation …", flush=True)
+    step("E simulation")
     sim_cfg, _ = simrun.load_sim_config(cfg)
     plugin = simrun.load_plugin(cfg.sim_plugin) if cfg.sim_plugin else None
     routing = copper.load_routing(cfg) if sim_cfg.get("copper") else None   # the routed copper, as it is now
@@ -728,16 +734,14 @@ def main(cfg, args):
     (outdir / "sim.json").write_text(json.dumps(sim, indent=1, ensure_ascii=False) + "\n", encoding="utf-8")
     stages_run = set(OFFLINE)
     if custom:
-        print("[project stages] …", flush=True)
-        more, ran = stage_custom(cfg, outdir)
+        more, ran = stage_custom(cfg, outdir, step)
         rows += more
         stages_run |= ran
     files = {}
     if args.easyeda:
-        print("[S] schematic against the graph …", flush=True)
+        step("S schematic against the graph")
         rows += stage_schematic(cfg, outdir)
-        print("[L/F] board and manufacturing files …", flush=True)
-        rows += stage_fab(cfg, outdir)
+        rows += stage_fab(cfg, outdir, step)
         stages_run |= set(WITH_EASYEDA)
         head.update(fab_hashes(cfg, outdir))
     signoff, notes = load_signoff(cfg, head, write=True)   # after stage F: sign-offs with scope 'fab' need its hash

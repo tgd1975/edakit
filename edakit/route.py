@@ -2145,10 +2145,11 @@ def main(cfg, args):
     if board.routing.get("widths") == "sim" and {"dsn", "route", "check", "diagnose"} & set(steps):
         sim_widths(cfg, board, rules)
     mcp = None
+    step_line = eda.Steps(len(steps), clock=time.time, t0=T0)   # the minutes of say()
     try:
-        for n, step in enumerate(steps, 1):
+        for step in steps:
             if len(steps) > 1:
-                say(f"step {n}/{len(steps)}: {step}")
+                step_line(step)
             if step in ("read", "apply", "verify", "pours", "reload", "drc", "save") and mcp is None:
                 mcp = eda.connect(cfg, args.verbose)
                 eda.open_project(mcp, cfg)

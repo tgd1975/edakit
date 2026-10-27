@@ -292,7 +292,7 @@ def create(cfg, args):
         for d in sorted(positions, key=natural_key):
             print(f"  {d:<6} {comps[d].get('type', ''):<16} {positions[d]}")
         return 0
-    phase = eda.Progress()
+    phase = eda.Progress(10 + bool(args.save))   # bridge … ERC, and save
     mcp = eda.start(cfg, args.verbose)
     try:
         phase("bridge")

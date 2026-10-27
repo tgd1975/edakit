@@ -1,6 +1,7 @@
 """open_project never lets a command go on in another project (it once wrote a schematic into the wrong one)."""
 
 import json
+import re
 
 import pytest
 
@@ -114,3 +115,35 @@ def test_failed_connections_and_pin_mismatches_hold_the_save_too(cfg, capsys):
     assert save_step(mcp, failures=1, pin_problems=2, skipped=1) == 2
     assert "easyeda_project_save" not in mcp.tools
     assert "1 failed connections, 2 pin mismatches, 1 parts skipped" in capsys.readouterr().out
+
+
+def test_steps_print_n_of_m_with_minutes(capsys):
+    from edakit import eda
+    t = iter([0.0, 30.0, 150.0, 400.0])
+    steps = eda.Steps(3, clock=lambda: next(t))
+    for name in ("read", "route", "write"):
+        steps(name)
+    lines = capsys.readouterr().out.splitlines()
+    assert lines == ["[ 0.5 min] step 1/3: read", "[ 2.5 min] step 2/3: route", "[ 6.7 min] step 3/3: write"]
+
+
+def test_steps_go_to_the_stream_given(capsys):
+    import sys
+
+    from edakit import eda
+    eda.Steps(1, out=sys.stderr)("export")
+    cap = capsys.readouterr()
+    assert cap.out == "" and "step 1/1: export" in cap.err
+
+
+def test_progress_with_a_total_numbers_its_phases(capsys, monkeypatch):
+    from edakit import eda
+    monkeypatch.setattr(eda, "easyeda_memory", lambda: "EasyEDA 1.00 GB")
+    phase = eda.Progress(2)
+    phase("bridge")
+    phase("place")
+    phase(None)
+    out = capsys.readouterr().out
+    assert re.search(r"^\[ *\d+\.\d min\] step 1/2: bridge$", out, re.M)
+    assert re.search(r"^\[ *\d+\.\d min\] step 2/2: place$", out, re.M)
+    assert "  (place: " in out                                    # the duration of each phase stays

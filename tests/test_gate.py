@@ -353,3 +353,26 @@ def test_the_protocol_lists_a_lapsed_acceptance(project, monkeypatch):
     gate.write_protocol(cfg, out, head, [WARN], sim, loaded, notes, "NOT RELEASED", [], set("PGE"), gate.STAGES, {})
     text = (out / "protocol.md").read_text()
     assert "**not accepted** (lapsed: D2 is now C2895549" in text
+
+
+STEP = re.compile(r"^\[ *\d+\.\d min\] step (\d+)/(\d+): ")
+
+
+def test_gate_prints_step_n_of_m(project, monkeypatch, capsys):
+    """Offline: one line per stage run, numbered 1..m before the stage – P/G, E and the project's own stages."""
+    protocol = gate_run(project, monkeypatch)
+    out = capsys.readouterr().out
+    steps = [STEP.match(line) for line in out.splitlines() if STEP.match(line)]
+    assert [(int(m[1]), int(m[2])) for m in steps] == [(1, 2), (2, 2)], out
+    assert "P/G parts and graph" in out and "E simulation" in out
+    assert "## 1 Stages" in protocol and "NOT RELEASED" in decision(protocol)   # protocol and exit (2) as before
+
+
+def test_gate_counts_the_project_stages(project, monkeypatch, capsys):
+    toml = project.root / "edakit.toml"
+    toml.write_text(toml.read_text() + '\n[[release.stages]]\nid = "X"\nname = "firmware build"\n'
+                    'cmd = ["python3", "-c", "print(1)"]\n')
+    gate_run(project, monkeypatch)
+    out = capsys.readouterr().out
+    steps = [(m[1], m[2]) for m in map(STEP.match, out.splitlines()) if m]
+    assert steps == [("1", "3"), ("2", "3"), ("3", "3")] and "step 3/3: X firmware build" in out

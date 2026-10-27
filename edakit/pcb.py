@@ -1094,16 +1094,22 @@ def circle_points(cx, cy, r, n=24):
     return [(cx + r * math.cos(2 * math.pi * k / n), cy + r * math.sin(2 * math.pi * k / n)) for k in range(n)]
 
 
-def apply(cfg, board, mcp, verify_all=False):
+APPLY_STEPS = 7   # bridge and PCB (main), then the six of apply
+
+
+def apply(cfg, board, mcp, verify_all=False, step=None):
     """Fixed parts locked in place, outline and holes drawn, tooling holes set; then the pads of one part per
     (footprint, side, rotation) are compared with the plan – it checks that EasyEDA mirrors and rotates like
-    Board.transform. --verify-all compares every part."""
+    Board.transform. --verify-all compares every part. step: eda.Steps of `pcb apply` (APPLY_STEPS)."""
+    step = step or (lambda _: None)
+    step("plan and geometry")
     geo = load_geometry(cfg, board)
     problems = plan(cfg, board)
     ids = {c["designator"]: c["primitiveId"] for c in eda.list_pcb_components(mcp) if c.get("designator")}
     missing = [r for r in board.place if r not in geo or r not in ids]
     if missing:
         raise SystemExit(f"not in the PCB or without geometry (first `edakit pcb parts --write`, `dump`): {missing}")
+    step("fixed parts")
     for n, (ref, p) in enumerate(board.place.items()):
         if n % 20 == 0:  # focus check per block instead of before every write
             ensure_pcb_focus(mcp)
@@ -1111,12 +1117,14 @@ def apply(cfg, board, mcp, verify_all=False):
         api(mcp, "PCB_PrimitiveComponent.modify", ids[ref],
             {"x": to_mil(x), "y": to_mil(y), "rotation": rot, "layer": layer, "primitiveLock": p.lock})
     print(f"  {len(board.place)} fixed parts placed")
+    step("unlock the other parts")
     loose = [r for r in ids if r not in board.place]
     for n, ref in enumerate(loose):  # parts that were fixed before: unlock them for the auto-layout
         if n % 20 == 0:
             ensure_pcb_focus(mcp)
         api(mcp, "PCB_PrimitiveComponent.modify", ids[ref], {"primitiveLock": False})
     print(f"  {len(loose)} parts unlocked for the auto-layout")
+    step("outline and holes")
     ensure_pcb_focus(mcp)
     for pid in api(mcp, "PCB_PrimitivePolyline.getAllPrimitiveId") or []:
         line = api(mcp, "PCB_PrimitivePolyline.get", pid)
@@ -1128,7 +1136,9 @@ def apply(cfg, board, mcp, verify_all=False):
         cx, cy = board.eda_point(h["x"], h["y"])
         api(mcp, "PCB_PrimitivePolyline.create", "", BOARD_OUTLINE_LAYER, outline_arg(circle_points(cx, cy, h["d"] / 2)), 6)
     print(f"  outline: {len(board.outline)} points, {len(board.holes)} holes")
+    step("tooling holes")
     tooling(cfg, board, mcp)
+    step("pad check")
     ensure_pcb_focus(mcp)
     worst, seen = (0.0, None), set()
     for ref, p in board.place.items():
@@ -1520,6 +1530,9 @@ def main(cfg, args):
     if args.action == "pour":  # pour_regions: the outlines from the last routing, before EasyEDA is touched
         from . import route
         regions = route.region_outlines(cfg, board)
+    step = eda.Steps(APPLY_STEPS) if args.action == "apply" else None
+    if step:
+        step("bridge and PCB")
     mcp = eda.start(cfg, args.verbose)
     try:
         if not eda.wait_for_bridge(mcp):
@@ -1532,7 +1545,7 @@ def main(cfg, args):
         if args.action == "dump":
             dump(cfg, board, mcp, args.ref and args.ref.split(","))
         elif args.action == "apply":
-            return apply(cfg, board, mcp, args.verify_all)
+            return apply(cfg, board, mcp, args.verify_all, step)
         elif args.action == "tooling":
             tooling(cfg, board, mcp)
         elif args.action == "pour":

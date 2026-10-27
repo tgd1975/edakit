@@ -9,6 +9,9 @@ edakit gate              # P, G, E and the project's own stages – offline, sec
 edakit gate --easyeda    # plus S, L, F – EasyEDA with the bridge, minutes
 ```
 
+Before each stage – each project stage, and with `--easyeda` each board of stages L/F – the gate prints
+`[x.x min] step n/m: <stage>` (11.3).
+
 "Guaranteed correct" is not reachable with any tool chain. Reachable is:
 
 1. Every known error class has an automatic check, and every check was seen red once.

@@ -41,7 +41,9 @@ Background and every API quirk: `${CLAUDE_PLUGIN_ROOT}/handbook/02-setup.md`, `0
 ## 2. Long runs
 
 - Start runs that take minutes in the background and show progress (step n/m, minutes, which step takes longest).
-  Do not poll; wait for the notification or watch the log with a Monitor.
+  Do not poll; wait for the notification or watch the log with a Monitor. `route all`, `gate`, `pcb apply`,
+  `silk apply`, `export` and `schematic create`/`layout` print `[x.x min] step n/m: <step>` themselves – watch for
+  those lines instead of adding your own; the END line below stays (it also catches a killed process).
 - **Waiting for a running process:** never `pgrep -f <pattern>` in a loop – the loop's own shell matches the pattern
   and it never ends (cost 10 minutes several times). Write PID and an end line instead:
   `( edakit route all 2>&1 | cat > $LOG; echo "END exit ${PIPESTATUS[0]}" >> $LOG ) & echo $! > $LOG.pid`, and wait with

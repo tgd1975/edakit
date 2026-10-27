@@ -675,9 +675,12 @@ def clear_orphan_attributes(mcp):
     return len(orphan)
 
 
-def apply(cfg, mcp, geo, sheet, page_format, board, version, power):
-    """Write the plan; returns the wires EasyEDA could not create."""
-    phase = eda.Progress()
+APPLY_PHASES = 6   # page and title block … wires
+
+
+def apply(cfg, mcp, geo, sheet, page_format, board, version, power, phase=None):
+    """Write the plan; returns the wires EasyEDA could not create. phase: the eda.Progress of `schematic layout`."""
+    phase = phase or eda.Progress()
     phase("page and title block")
     name, w, h = page_format
     eda.label_sheet(mcp, cfg, FOCUS["page"], board.title, version, {"Page Size": name, "Width": w, "Height": h})
@@ -789,8 +792,12 @@ def main(cfg, args):
     cache = cfg.artifact(f"layout_geometry_{name}.json")
     mcp = None
     need_eda = not args.dry_run or args.reread or not cache.exists()
+    # bridge and project, sync, symbol geometry, plan; writing: the phases of apply, netlist, ERC, save
+    phase = eda.Progress(need_eda + (need_eda and not args.dry_run) + 2
+                         + (0 if args.dry_run else APPLY_PHASES + 2 + bool(args.save)))
     try:
         if need_eda:
+            phase("bridge and project")
             mcp = eda.start(cfg, args.verbose)
             if not eda.wait_for_bridge(mcp, args.wait):
                 return 1
@@ -802,21 +809,23 @@ def main(cfg, args):
                 raise MCPError(f"'{name}' has {len(pages)} pages – only one is supported")
             eda.focus_page(mcp, sch_uuid, pages[0])
             if not args.dry_run:
-                print("[sync parts with the graph]")
+                phase("sync parts with the graph")
                 sync_parts(cfg, mcp, graph_comps)
                 sync_nc(mcp, graph_comps)
         if args.reread or not cache.exists():
-            print("[read symbol geometry]")
+            phase("read symbol geometry")
             geo = read_geometry(mcp, graph_comps)
             cache.write_text(json.dumps(geo, indent=1) + "\n", encoding="utf-8")
         else:
+            phase("symbol geometry from the cache")
             geo = json.loads(cache.read_text(encoding="utf-8"))
             if mcp:  # primitive ids belong to the page – the cache must match it
                 ids = {c["primitiveId"] for c in eda.list_sheet_parts(mcp)}
                 if not {g["id"] for g in geo.values()} <= ids or set(graph_comps) - set(geo):
-                    print("[read symbol geometry again – the cache does not match the page]")
+                    print("  the cache does not match the page – reading the symbol geometry again")
                     geo = read_geometry(mcp, graph_comps)
                     cache.write_text(json.dumps(geo, indent=1) + "\n", encoding="utf-8")
+        phase("plan and preview")
         lay = Layout(graph_comps, graph_nets, geo, lc["rows"], block_notes(cfg, design, board, lc), lc["power"],
                      lc["near"], lc["stacked"])
         sheet, page_format = lay.build()
@@ -837,16 +846,18 @@ def main(cfg, args):
             print(f"{len(problems)} geometry conflicts – nothing written (--force writes anyway)")
             return 2
         if args.dry_run:
+            phase(None)
             return 0
-        failed = apply(cfg, mcp, geo, sheet, page_format, board, design.version, lc["power"])
-        print("\n[netlist against the graph]")
+        failed = apply(cfg, mcp, geo, sheet, page_format, board, design.version, lc["power"], phase)
+        phase("netlist against the graph")
         diffs = eda.verify_nets(mcp, lay.nets, {d: {"ref": d} for d in lay.placed})
-        print("\n[ERC]")
+        phase("ERC")
         erc = mcp.call("easyeda_erc_run", projectId=PROJECT, scope="focused")
         print("  " + json.dumps({k: v for k, v in erc.items() if not isinstance(v, (list, dict))}, ensure_ascii=False))
         if args.save:   # --force wrote despite geometry conflicts; the save still needs a matching netlist
-            print()
+            phase("save")
             eda.save_if_matching(mcp, diffs, len(failed))
+        phase(None)
         return 0 if not (diffs or failed) else 2
     except MCPError as e:
         return eda.die(str(e))

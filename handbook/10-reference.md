@@ -180,7 +180,8 @@ by itself (6.5).
 All commands: `--config`, `-v` (MCP traffic). Exit codes: 0 ok, 2 findings, 1 error; 3 from `edakit lock` (another
 session holds EasyEDA) and from `route all|drc` and `silk apply|check` when the DRC's only item is EasyEDA waiting
 for the import acknowledgement (schematic = PCB; *Design → Import Changes* once – 7.5). With uv from snap inside
-Claude Code: `edakit … 2>&1 | cat`.
+Claude Code: `edakit … 2>&1 | cat`. The long commands – `route all`, `gate`, `pcb apply`, `silk apply`, `export`,
+`schematic create|layout` – print `[x.x min] step n/m: <step>` before each step (11.3).
 
 | Command | EasyEDA | Reads | Writes |
 |---|---|---|---|

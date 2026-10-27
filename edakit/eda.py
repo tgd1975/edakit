@@ -172,19 +172,39 @@ def easyeda_memory():
         return "EasyEDA memory ?"
 
 
-class Progress:
-    """Phase headings with the duration of the previous phase and EasyEDA's memory."""
+class Steps:
+    """`[x.x min] step n/m: <step>` before each step of a long command, flushed at once – a Monitor on the log shows
+    where a run is and since when, and a stalled run shows the step it stalled in. Used by route all, gate, pcb apply,
+    silk apply, export and (through Progress) schematic create/layout."""
 
-    def __init__(self):
+    def __init__(self, total, out=None, clock=time.monotonic, t0=None):
+        self.total, self.n, self.out, self.clock = total, 0, out, clock
+        self.t0 = clock() if t0 is None else t0
+
+    def __call__(self, step):
+        self.n += 1
+        print(f"[{(self.clock() - self.t0) / 60:4.1f} min] step {self.n}/{self.total}: {step}",
+              file=self.out or sys.stdout, flush=True)
+
+
+class Progress:
+    """Phase headings with the duration of the previous phase and EasyEDA's memory; with a total the heading is the
+    step line of Steps."""
+
+    def __init__(self, total=None):
         self.t0 = self.t = time.monotonic()
         self.title = None
+        self.steps = Steps(total, t0=self.t0) if total else None
 
     def __call__(self, title=None):
         now = time.monotonic()
         if self.title:
             print(f"  ({self.title}: {now - self.t:.1f} s, {easyeda_memory()})")
         self.title, self.t = title, now
-        if title:
+        if title and self.steps:
+            print()
+            self.steps(title)
+        elif title:
             print(f"\n[{title}]  (+{(now - self.t0) / 60:.1f} min)")
 
     def say(self, msg):
