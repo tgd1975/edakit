@@ -41,8 +41,16 @@ say what is left: values, sim.json, the graph's `checks`.
 - MCU pins: read the entry first – strapping pins (`strap`), input-only pins (`type: input`), notes (`hint`, e.g. an
   ADC that does not work with WiFi), what each pin can do (`functions`). Buttons, LEDs and pulls stay off strapping
   pins unless they agree with the boot level (G-12). A net that needs a peripheral says so – `fn` (`spi.tx`, `pwm`,
-  `adc`, …), `fn_bus` for the nets of one bus, `pwm_hz` for PWM – and G-15 checks the pin, the bus and the PWM
-  slices; a pin's function is chosen here, not when the firmware is written.
+  `adc`, …), `fn_bus` for the nets of one bus on one peripheral instance, `pwm_hz` for PWM – and G-15 checks the pin,
+  the bus and the PWM slices; a pin's function is chosen here, not when the firmware is written.
+- The function of every MCU pin you use, from the MCU's datasheet: a PWM signal on a PWM channel, and PWM signals with
+  independent frequencies on different PWM slices or timers; a bus on a pin of its peripheral instance (SPI, I2C,
+  UART); an analog input on an ADC input – into `functions` of the entry, where G-15 reads it. On a module, only pins
+  brought out on its header – the module's pinout, not the chip's. Errata of the MCU that touch the pins used.
+- Every IC that is not the MCU: its supply range against the net it is supplied from (the minimum operating voltage,
+  not only `vmax`), and the VIH and VIL of its inputs against the domain that drives them – a 5 V part with
+  VIH = 0.7 × VCC does not read 3.3 V logic. E-3 checks both where the entry gives them (`vdd_op_min`/`vdd_op_max`,
+  `vih_v`|`vih_ratio`, `vil_v`|`vil_ratio`).
 
 ## 4. Values are computed
 

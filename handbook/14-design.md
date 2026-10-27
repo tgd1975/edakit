@@ -94,7 +94,12 @@ is part of the workflow:
 
 1. The reviewers mark every finding with the catalog check it falls under – then also why that check did not report
    it, which may be a bug – or as a **check candidate**: what a rule over graph, parts, simulation, plan or Gerber
-   files would test to find this kind of fault again. Findings that need judgement are marked as such.
+   files would test to find this kind of fault again. Findings that need judgement are marked as such. The classes
+   no check covers fully yet are questions in the reviewer's prompt ("Not covered by a check yet" in
+   electrical-reviewer: several sources and back-feed, MCU pin functions, supply range and input levels of the other
+   ICs, read-back edges, junction and touch temperature, what an off-board module brings), so every review asks them
+   instead of finding them by chance; a check that covers part of a class is named in its question (G-15, E-2, E-3,
+   G-14, and the hints H-8, H-9).
 2. In the decision round the check candidates are one item: make it a check? The user decides. Nothing is filed
    anywhere by itself – whether a finding is knowledge worth keeping is a judgement, not something a program can tell.
 3. Yes: a decision in the project's decision log, written so that it can be built later without the conversation –

@@ -45,7 +45,8 @@ In doubt between check and hint: a hint. A check that has to guess produces waiv
    without edakit.toml gets one in the scratchpad that points at its graph and parts. Every new finding there is a
    real fault (tell the user) or a false alarm (fix the check before going on).
 6. **Handbook:** the check table (3.3 for P and G, 5.3 for E, 8.1 for L and F), new fields in 3.1 or 4.1, the skills
-   that name the fields (part-search), chapter 14 if the way of working changes.
+   that name the fields (part-search), chapter 14 if the way of working changes. A check that answers a question
+   under "Not covered by a check yet" in `agents/electrical-reviewer.md` is named in that question.
 7. **Close the loop:** the project's decision that held the candidate gets the ID (`edakit: G-15`) – in that
    project's repository, with the user's OK. For a proposal the triage comment says it and propose-rule does it in
    the project.
