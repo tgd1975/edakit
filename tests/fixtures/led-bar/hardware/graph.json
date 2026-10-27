@@ -132,7 +132,7 @@
           "TP5",
           "TP6"
         ],
-        "notes": "GP2..GP5 drive the LED driver, GP6 reads the button (internal pull-up). The module's 3V3 regulator supplies U2."
+        "notes": "GP2 (SPI0 SCK) and GP3 (SPI0 TX) clock and shift into the LED driver, GP4 latches, GP5 dims (PWM), GP6 reads the button (internal pull-up). The module's 3V3 regulator supplies U2."
       },
       {
         "designator": "U2",
@@ -402,13 +402,15 @@
       {
         "name": "LED_SDI",
         "pins": [
-          "U1.4",
+          "U1.5",
           "U2.2"
         ],
         "v": [
           0,
           3.4
         ],
+        "fn": "spi.tx",
+        "fn_bus": "LED",
         "waive": {
           "G-4": "Floating until the firmware runs, but harmless: R2 holds OE high, so no output can switch on."
         }
@@ -416,13 +418,15 @@
       {
         "name": "LED_CLK",
         "pins": [
-          "U1.5",
+          "U1.4",
           "U2.3"
         ],
         "v": [
           0,
           3.4
         ],
+        "fn": "spi.sck",
+        "fn_bus": "LED",
         "waive": {
           "G-4": "Floating until the firmware runs, but harmless: R2 holds OE high, so no output can switch on."
         }
@@ -452,6 +456,7 @@
           0,
           3.4
         ],
+        "fn": "pwm",
         "notes": "Active low; R2 keeps the LEDs dark at boot."
       },
       {
@@ -594,8 +599,8 @@
         "J1"
       ],
       "pin_locks": {
-        "U1.4": "LED_SDI",
-        "U1.5": "LED_CLK",
+        "U1.4": "LED_CLK",
+        "U1.5": "LED_SDI",
         "U1.6": "LED_LE",
         "U1.7": "LED_OE",
         "U1.9": "BTN"

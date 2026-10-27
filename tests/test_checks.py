@@ -53,8 +53,8 @@ def test_g1_check_settings_and_ground_name_what_the_graph_has(project):
 
 def test_g2_pin_lock(project):
     g = project.graph()
-    project.net(g, "LED_CLK")["pins"].remove("U1.5")
-    project.net(g, "BTN")["pins"].append("U1.5")
+    project.net(g, "LED_CLK")["pins"].remove("U1.4")
+    project.net(g, "BTN")["pins"].append("U1.4")
     project.save_graph(g)
     assert "G-2" in ids(run(project))
 
@@ -467,3 +467,135 @@ def test_a_part_bought_elsewhere_finds_its_entry_by_the_manufacturer_number(proj
     r2["part"] = "RC0805FR-0710KX"                       # a manufacturer number without an entry
     project.save_graph(g)
     assert ("P-1", "R2: no parts entry with mpn RC0805FR-0710KX") in run(project).errors
+
+
+# --- G-15 pin functions (rule proposal #43) -------------------------------------------------------------------------
+def g15(rep):
+    return sorted(m for c, m in rep.errors if c == "G-15")
+
+
+def test_g15_spi_roles_swapped(project):
+    """The example before G-15: data on GP2 (SPI0 SCK), clock on GP3 (SPI0 TX) – fine bit-banged, not on SPI0."""
+    g = project.graph()
+    project.net(g, "LED_SDI")["pins"][0], project.net(g, "LED_CLK")["pins"][0] = "U1.4", "U1.5"
+    g["graph"]["checks"]["pin_locks"].update({"U1.4": "LED_SDI", "U1.5": "LED_CLK"})
+    project.save_graph(g)
+    assert g15(run(project)) == [
+        "LED_CLK: needs spi.sck, but U1.5 (GP3) has spi0.tx, uart0.rts, i2c1.scl, pwm1.b, uart0.rx",
+        "LED_SDI: needs spi.tx, but U1.4 (GP2) has spi0.sck, uart0.cts, i2c1.sda, pwm1.a, uart0.tx"]
+    for name in ("LED_SDI", "LED_CLK"):
+        project.net(g, name)["waive"]["G-15"] = "bit-banged, no SPI peripheral"
+    project.save_graph(g)
+    rep = run(project)
+    assert rep.errors == [] and sum(c == "G-15" for c, _, _ in rep.waived) == 2
+
+
+def test_g15_one_bus_one_peripheral(project):
+    g = project.graph()
+    project.free_pins(g, "U1.15")                    # GP11: SPI1 TX
+    project.net(g, "LED_SDI")["pins"][0] = "U1.15"
+    project.comp(g, "U1")["nc"].append("5")
+    project.save_graph(g)
+    assert g15(run(project)) == ["bus LED: LED_CLK on spi0 (U1.4), LED_SDI on spi1 (U1.15) – the nets of one bus "
+                                 "need one spi of U1"]
+
+
+def pwm_pair(project, pins, hz):
+    """Two PWM nets STAR and TONE on free pins of U1, each with a 10 kΩ load to GND."""
+    g = project.graph()
+    project.free_pins(g, *(f"U1.{p}" for p in pins))
+    for i, (name, pin, f) in enumerate(zip(("STAR", "TONE"), pins, hz)):
+        g["graph"]["components"].append(comp(f"R1{i}", "C17414", R, value="10k"))
+        g["graph"]["nets"].append({"name": name, "pins": [f"U1.{pin}", f"R1{i}.1"], "v": [0, 3.4], "fn": "pwm",
+                                   **({"pwm_hz": f} if f is not None else {})})
+        project.net(g, "GND")["pins"].append(f"R1{i}.2")
+    project.save_graph(g)
+
+
+@pytest.mark.parametrize("hz,msg", [
+    ((1000, [523, 2700]), "STAR (1000 Hz) and TONE (523–2700 Hz) share PWM slice 4 of U1 (U1.11, U1.12) – a slice "
+                          "has one frequency, a net whose frequency changes needs a slice of its own"),
+    ((1000, 500), "STAR (1000 Hz) and TONE (500 Hz) share PWM slice 4 of U1 (U1.11, U1.12) – a slice has one "
+                  "frequency"),
+    ((1000, None), "STAR (1000 Hz) and TONE (pwm_hz missing) share PWM slice 4 of U1 (U1.11, U1.12) – give both "
+                   "their pwm_hz: a slice has one frequency"),
+])
+def test_g15_pwm_nets_of_one_slice_share_one_frequency(project, hz, msg):
+    pwm_pair(project, ("11", "12"), hz)               # GP8 and GP9: slice 4, like the star and the buzzer of the origin
+    assert g15(run(project)) == [msg]
+
+
+def test_g15_pwm_nets_of_one_slice_at_one_frequency(project):
+    pwm_pair(project, ("11", "12"), (1000, 1000))
+    rep = run(project)
+    assert rep.errors == [] and not [m for c, m in rep.notes if c == "G-15"]
+
+
+def test_g15_pwm_channel_used_twice(project):
+    pwm_pair(project, ("1", "21"), (1000, 1000))      # GP0 and GP16: both PWM_A_0
+    assert g15(run(project)) == ["STAR and TONE on the same PWM channel pwm0.a of U1 (U1.1, U1.21) – one output "
+                                 "for both"]
+    g = project.graph()                               # GP21 is PWM_B_2, the channel of LED_OE on GP5
+    project.net(g, "TONE")["pins"][0] = "U1.27"
+    project.comp(g, "U1")["nc"] = [p for p in project.comp(g, "U1")["nc"] if p != "27"] + ["21"]
+    project.save_graph(g)
+    assert g15(run(project)) == ["LED_OE and TONE on the same PWM channel pwm2.b of U1 (U1.7, U1.27) – one output "
+                                 "for both"]
+
+
+def test_g15_adc_only_on_adc_pins(project):
+    g = project.graph()
+    project.free_pins(g, "U1.10", "U1.31")
+    g["graph"]["components"].append(comp("R10", "C17414", R, value="10k"))
+    g["graph"]["nets"].append({"name": "SENSE", "pins": ["U1.10", "R10.1"], "v": [0, 3.4], "fn": "adc"})
+    project.net(g, "3V3")["pins"].append("R10.2")
+    project.comp(g, "U1")["nc"].append("31")
+    project.save_graph(g)
+    assert g15(run(project)) == ["SENSE: needs adc, but U1.10 (GP7) has spi0.tx, uart1.rts, i2c1.scl, pwm3.b, "
+                                 "uart1.rx"]
+    project.net(g, "SENSE")["pins"][0] = "U1.31"      # GP26_ADC0
+    project.comp(g, "U1")["nc"] = [p for p in project.comp(g, "U1")["nc"] if p != "31"] + ["10"]
+    project.save_graph(g)
+    assert run(project).errors == []
+
+
+def test_g15_used_pin_has_no_free_function(project):
+    g = project.graph()
+    project.free_pins(g, "U1.TP5")                    # GPIO25: the module's LED
+    project.net(g, "LED_OE")["pins"].append("U1.TP5")
+    project.net(g, "LED_OE")["pins"].remove("U1.7")
+    project.comp(g, "U1")["nc"].append("7")
+    project.save_graph(g)
+    assert g15(run(project)) == ["LED_OE: needs pwm, but U1.TP5 (GPIO25/LED) has no free function"]
+
+
+def test_g15_pin_without_functions_is_a_note(project):
+    part = project.part("C41407547")
+    del part["pins"]["5"]["functions"]
+    project.save_part("C41407547", part)
+    rep = run(project)
+    assert rep.errors == []
+    assert ("G-15", "LED_SDI: needs spi.tx, but no pin on it has functions in its parts entry – not checked") \
+        in rep.notes
+
+
+def test_g15_unknown_fn_and_pwm_hz(project):
+    g = project.graph()
+    project.net(g, "LED_SDI")["fn"] = "spi.mosi"
+    project.net(g, "LED_OE")["pwm_hz"] = "fast"
+    project.save_graph(g)
+    assert g15(run(project)) == [
+        "LED_OE: pwm_hz must be a frequency in Hz or [min, max], not 'fast'",
+        "LED_SDI: unknown fn 'spi.mosi' (known: pwm, adc, spi.sck, spi.tx, spi.rx, spi.cs, i2c.sda, i2c.scl, uart.tx, "
+        "uart.rx)"]
+
+
+def test_g15_sees_through_0_ohm_bridges(project):
+    g = project.graph()
+    project.net(g, "LED_SDI")["pins"][0], project.net(g, "LED_CLK")["pins"][0] = "U1.4", "U1.5"
+    bridge(project, g, "R13", "LED_SDI", "U2.2")      # the driver's SDI behind a bridge, fn stated there
+    sdi_b = project.net(g, "LED_SDI_B")
+    sdi_b["fn"] = project.net(g, "LED_SDI").pop("fn")
+    project.save_graph(g)
+    assert "LED_SDI: needs spi.tx, but U1.4 (GP2) has spi0.sck, uart0.cts, i2c1.sda, pwm1.a, uart0.tx" \
+        in g15(run(project))

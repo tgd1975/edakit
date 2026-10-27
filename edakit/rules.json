@@ -127,6 +127,17 @@
     "USB Type-C Cable and Connector Specification (USB-IF): sink termination Rd = 5.1 kΩ"
    ]
   },
+  "G-15": {
+   "title": "pin functions",
+   "rule": "A net that states the function it needs (fn: pwm, adc, spi.sck|tx|rx|cs, i2c.sda|scl, uart.tx|rx) is on a pin whose parts entry lists that function; the nets of one fn_bus use one peripheral instance of the part; two PWM nets on one slice have the same fixed pwm_hz and never the same channel.",
+   "why": "On most MCUs a peripheral reaches only some pins, and pins share hardware. On the RP2040 and RP2350 two neighbouring GPIOs share one PWM slice and with it counter, wrap and clock divider - one frequency for both; GP0 and GP16 even share the channel. An SPI data line on the clock pin, an analog input on a pin without ADC, a buzzer next to an LED dimmed at 1 kHz: each is a wiring fault that firmware cannot repair, and it shows only when that firmware is written.",
+   "fix": "Move the net to a pin that has the function (functions in the MCU's parts entry), or give the PWM nets on a shared slice one frequency. A deliberate exception - bit-banged SPI, PIO - leaves fn out or gets waive {\"G-15\": reason} on the net. A pin without functions in its parts entry is not checked (a note): fill them from the pin-mux table of the datasheet.",
+   "sources": [
+    "pico-sdk 2.1.1, src/rp2350/hardware_regs/include/hardware/regs/io_bank0.h: IO_BANK0_GPIOn_CTRL_FUNCSEL_VALUE_* – the SPI, UART, I2C and PWM function of every GPIO – https://github.com/raspberrypi/pico-sdk/blob/2.1.1/src/rp2350/hardware_regs/include/hardware/regs/io_bank0.h",
+    "pico-sdk 2.1.1, src/rp2_common/hardware_pwm/include/hardware/pwm.h: each slice drives two outputs from one counter; PWM_GPIO_SLICE_NUM = (gpio >> 1) & 7 below GPIO 32, channel = gpio & 1; src/rp2350/hardware_regs/include/hardware/platform_defs.h: RP2350A ADC_BASE_PIN 26",
+    "Lesson of the reference project (pytree D-14, 2026-10-19): the star's blue LED at 1 kHz and the buzzer on GP20/GP21 shared PWM slice 2 – every note would have changed the blue PWM; found by chance in a review"
+   ]
+  },
   "E-1": {
    "title": "operating point",
    "rule": "The DC operating point of every scenario converges, and the simulation config fits the graph.",

@@ -18,7 +18,7 @@ Examples: [the Christmas bell's parts](https://github.com/tgd1975/automatic_chri
 | `package`, `footprint` | the footprint name must equal the EasyEDA footprint (L-4 compares it with the PCB) |
 | `jlc_class` | Basic / Extended Part |
 | `datasheet` | `url`, `pinout_page` |
-| `pins` | pin number → `name` (as in the EasyEDA symbol and identical to the graph – S-2 compares them), `type`, `role` (the meaning; for polarised parts it follows the footprint's polarity print when symbol and footprint disagree), `vmax`; from the datasheet where it applies: `strap` (`"high"`/`"low"`: level the pin needs at reset, G-12), `pull` (`"up"`/`"down"`: internal or built-in pull resistor, with `pull_ohm` if known – G-11, G-12), `hint` (a warning from the datasheet, e.g. "ADC2: no analog reads while WiFi is on") |
+| `pins` | pin number → `name` (as in the EasyEDA symbol and identical to the graph – S-2 compares them), `type`, `role` (the meaning; for polarised parts it follows the footprint's polarity print when symbol and footprint disagree), `vmax`; from the datasheet where it applies: `strap` (`"high"`/`"low"`: level the pin needs at reset, G-12), `pull` (`"up"`/`"down"`: internal or built-in pull resistor, with `pull_ohm` if known – G-11, G-12), `hint` (a warning from the datasheet, e.g. "ADC2: no analog reads while WiFi is on"); on MCU and module pins `functions` – what the pin-mux table offers, `<peripheral><instance>.<line>`: `["spi0.sck", "uart0.cts", "i2c1.sda", "pwm1.a", "uart0.tx"]`, `adc0`; for PWM the instance is the slice and the line the channel; `[]` = no free function (used on the module), no key = unknown (G-15) |
 | `hints` | warnings of the datasheet for the part as a whole; `edakit hints` shows them and the pin `hint`s of connected pins |
 | `symbol` | optional: the sides of the box `edakit schematic draw` draws for an IC or module – `{"left": [pins], "right": [pins], "top": [pins], "bottom": [pins]}`; without it the pins run as on a DIP package (6.5) |
 | `params` | values for simulation and calculations; `behavior` for ICs (chapter 5) |
@@ -35,6 +35,11 @@ Examples: [the Christmas bell's parts](https://github.com/tgd1975/automatic_chri
 `current_sink`, `no_connect`, `mechanical`. G-4, G-5 and G-6 work with them: `power_in` needs a capacitor, two
 `output`s on one net are a conflict, an `input` needs a driver. An MCU pin that can only read (the ESP32's GPIO34–39)
 is `input`, even with the role `gpio`: the simulation refuses to drive it (E-3).
+
+**Pin functions** (`functions`) come from the MCU's pin-mux table, not from memory: the example's Pico 2 entry
+(`tests/fixtures/led-bar/hardware/parts/C41407547.json`) has them for the RP2350, from the pico-sdk headers it names
+in `sources` – any RP2350 module takes the same list per GPIO. On the RP2040 and RP2350 the PWM slice of GPIO n is
+(n >> 1) & 7 and the channel `a` for even, `b` for odd n.
 
 **Pin roles** (`role`) tell the code what a pin does, independent of its name:
 

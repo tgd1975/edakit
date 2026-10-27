@@ -25,6 +25,9 @@
        switches: cathode at the positive terminal
   G-14 USB-C sink: CC1 and CC2 of a receptacle (role cc1/cc2) each with its own 5.1 kOhm ± 10 % to ground, unless
        an IC (a Type-C controller) is on the CC lines
+  G-15 pin functions: a net's "fn" (pwm, adc, spi.sck, i2c.sda, uart.tx, …) is on a pin whose parts entry lists it
+       in "functions", the nets of one "fn_bus" on one peripheral instance, PWM nets of one slice with one fixed
+       "pwm_hz" and a channel each; a pin without "functions" is a note
   P-1  graph pins (number + name) = parts database, an entry exists for every LCSC number – or, for a part bought
        elsewhere, for its manufacturer part number `part`
   P-3  own parts (part.py): a board copied from its project with `edakit part own` is that project's current
@@ -32,7 +35,7 @@
        own datasheets (hardware/datasheet/) are of its current state
   G-9  sign-off: every part verified against its datasheet, no open "verify" notes (pending, blocks only the release)
 
-0 Ω bridges (resistors with value_ohm 0 in the parts entry) join their nets: G-4, G-5, G-6, G-10 to G-14 see the
+0 Ω bridges (resistors with value_ohm 0 in the parts entry) join their nets: G-4, G-5, G-6, G-10 to G-15 see the
 joined nets as one net under the group's name (the ground net if it is one of them, else the first in the graph) and
 the bridges as copper; G-1, G-2, G-3, G-8, P-1 and G-9 see every net and part as the graph has them.
 
@@ -62,9 +65,12 @@ CHECK_KEYS = ("pin_locks", "reverse_protect", "doc_pin_table")   # checks of the
 I2C_SINK_A, I2C_VOL, I2C_R_MAX = 0.003, 0.4, 10e3    # UM10204 7.1: Rp(min) = (V - VOL) / 3 mA; 10 k for 100 kHz
 USB_RD, USB_RD_TOL = 5100, 0.10                      # USB Type-C sink termination Rd
 COILS = {"relay": ("coil_plus", "coil_minus"), "buzzer": ("plus", "minus")}   # inductive kinds: their coil roles
+FN_LINES = {"pwm": (), "adc": (), "spi": ("sck", "tx", "rx", "cs"), "i2c": ("sda", "scl"), "uart": ("tx", "rx")}
+FN_NAMES = [k + (f".{line}" if line else "") for k, lines in FN_LINES.items() for line in lines or [""]]   # net fn
+PIN_FUNCTION = re.compile(r"([a-z][a-z0-9]*?)(\d+)(?:\.([a-z]+))?")   # "spi0.sck", "i2c1.sda", "pwm1.a", "adc0"
 
-EXECUTED = ["G-1", "G-2", "G-3", "G-4", "G-5", "G-6", "G-8", "G-10", "G-11", "G-12", "G-13", "G-14", "P-1", "P-3",
-            "G-9"]
+EXECUTED = ["G-1", "G-2", "G-3", "G-4", "G-5", "G-6", "G-8", "G-10", "G-11", "G-12", "G-13", "G-14", "G-15", "P-1",
+            "P-3", "G-9"]
 
 
 class Report:
@@ -487,6 +493,89 @@ def check_usb_c(d, rep):
                                   f"{d.ground} – needs {ohm(USB_RD)} ± {USB_RD_TOL:.0%}", waive)
 
 
+def fn_match(fn, function):
+    """(instance, line) if the pin function serves the net's fn: 'spi.tx' and 'spi0.tx' -> ('0', 'tx'); 'pwm' and
+    'pwm1.b' -> ('1', 'b') – slice and channel; 'adc' and 'adc0' -> ('0', None)."""
+    m = PIN_FUNCTION.fullmatch(str(function))
+    kind, _, line = fn.partition(".")
+    if not m or m[1] != kind or (line and m[3] != line):
+        return None
+    return m[2], m[3]
+
+
+def hz_text(hz):
+    if hz is None:
+        return "pwm_hz missing"
+    return f"{hz[0]:g}–{hz[1]:g} Hz" if isinstance(hz, list) else f"{hz:g} Hz"
+
+
+def valid_hz(hz):
+    def num(x):
+        return isinstance(x, (int, float)) and not isinstance(x, bool) and x > 0
+    return hz is None or num(hz) or (isinstance(hz, list) and len(hz) == 2 and all(map(num, hz)) and hz[0] <= hz[1])
+
+
+def check_pin_functions(d, rep):
+    """G-15: the pin of a net with `fn` has that function (`functions` of its parts entry), the nets of one `fn_bus`
+    use one peripheral instance per part, PWM nets of one slice have one fixed `pwm_hz` and a channel each."""
+    hits = {}   # net -> [(ref, instance, line)] of the pins that serve its fn
+    for name, net in sorted(d.nets.items()):
+        fn, waive = net.get("fn"), net.get("waive")
+        if not valid_hz(net.get("pwm_hz")):
+            rep.error("G-15", f"{name}: pwm_hz must be a frequency in Hz or [min, max], not {net['pwm_hz']!r}", waive)
+        if not fn:
+            continue
+        if fn not in FN_NAMES:
+            rep.error("G-15", f"{name}: unknown fn {fn!r} (known: {', '.join(FN_NAMES)})", waive)
+            continue
+        known = [(r, d.pin_info(r)) for r in net["pins"] if isinstance(d.pin_info(r).get("functions"), list)]
+        if not known:
+            rep.notes.append(("G-15", f"{name}: needs {fn}, but no pin on it has functions in its parts entry – not "
+                                      "checked"))
+            continue
+        hits[name] = [(r, *m) for r, info in known for f in info["functions"] if (m := fn_match(fn, f))]
+        if not hits[name]:
+            has = "; ".join(f"{r} ({info['name']}) has " + (", ".join(info["functions"]) or "no free function")
+                            for r, info in known)
+            rep.error("G-15", f"{name}: needs {fn}, but {has}", waive)
+    buses = defaultdict(dict)   # (bus, peripheral, part) -> {net: {instance: pin}}
+    for name, pins in hits.items():
+        if bus := d.nets[name].get("fn_bus"):
+            for ref, inst, _ in pins:
+                buses[(bus, d.nets[name]["fn"].partition(".")[0], ref.partition(".")[0])].setdefault(name, {})[inst] = ref
+    for (bus, kind, des), nets in sorted(buses.items()):
+        if len(nets) > 1 and not set.intersection(*map(set, nets.values())):
+            waive = {k: v for n in nets for k, v in (d.nets[n].get("waive") or {}).items()}
+            on = ", ".join(f"{n} on " + "/".join(f"{kind}{i}" for i in sorted(inst)) + " ("
+                           + ", ".join(inst[i] for i in sorted(inst)) + ")" for n, inst in sorted(nets.items()))
+            rep.error("G-15", f"bus {bus}: {on} – the nets of one bus need one {kind} of {des}", waive)
+    slices = defaultdict(list)   # (part, slice) -> [(net, channel, ref)]
+    for name, pins in hits.items():
+        if d.nets[name]["fn"] == "pwm":
+            for ref, inst, channel in pins:
+                slices[(ref.partition(".")[0], inst)].append((name, channel, ref))
+    for (des, inst), users in sorted(slices.items()):
+        for i, (a, ch_a, ref_a) in enumerate(users):
+            for b, ch_b, ref_b in users[i + 1:]:
+                if a == b:
+                    continue
+                waive = {**(d.nets[b].get("waive") or {}), **(d.nets[a].get("waive") or {})}
+                hz_a, hz_b = d.nets[a].get("pwm_hz"), d.nets[b].get("pwm_hz")
+                where = f"PWM slice {inst} of {des} ({ref_a}, {ref_b})"
+                if ch_a == ch_b:
+                    rep.error("G-15", f"{a} and {b} on the same PWM channel pwm{inst}.{ch_a} of {des} ({ref_a}, "
+                                      f"{ref_b}) – one output for both", waive)
+                elif hz_a is None or hz_b is None:
+                    rep.error("G-15", f"{a} ({hz_text(hz_a)}) and {b} ({hz_text(hz_b)}) share {where} – give both "
+                                      "their pwm_hz: a slice has one frequency", waive)
+                elif isinstance(hz_a, list) or isinstance(hz_b, list):
+                    rep.error("G-15", f"{a} ({hz_text(hz_a)}) and {b} ({hz_text(hz_b)}) share {where} – a slice has "
+                                      "one frequency, a net whose frequency changes needs a slice of its own", waive)
+                elif hz_a != hz_b:
+                    rep.error("G-15", f"{a} ({hz_text(hz_a)}) and {b} ({hz_text(hz_b)}) share {where} – a slice has "
+                                      "one frequency", waive)
+
+
 def check_part_pins(d, rep):
     for des, c in d.comps.items():
         if not c.get("lcsc") and not c.get("part"):
@@ -541,6 +630,7 @@ def run(design, cfg=None):
     check_straps(joined, rep)
     check_flyback(joined, rep)
     check_usb_c(joined, rep)
+    check_pin_functions(joined, rep)
     check_part_pins(design, rep)
     if cfg:
         from . import part

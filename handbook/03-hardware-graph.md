@@ -19,13 +19,13 @@ Example: [the Christmas bell's graph](https://github.com/tgd1975/automatic_chris
   ],
   "nets": [
     {"name": "+5V", "pins": ["D1.1", "U1.39", "C2.1", "D2.1"], "v": [0, 5.5], "notes": "behind the reverse diode"},
-    {"name": "LED_CLK", "pins": ["U1.5", "U2.3"], "v": [0, 3.4],
+    {"name": "LED_CLK", "pins": ["U1.4", "U2.3"], "v": [0, 3.4], "fn": "spi.sck", "fn_bus": "LED",
      "waive": {"G-4": "floating until the firmware runs, harmless: OE is pulled high"}}
   ],
   "cables": [
     {"name": "W1", "from": "J2", "to": "J1", "pins": {"1": "1", "2": "2"}, "r_ohm_per_wire": 0.065}
   ],
-  "checks": {"reverse_protect": ["J1"], "pin_locks": {"U1.4": "LED_SDI", "U1.5": "LED_CLK"}}
+  "checks": {"reverse_protect": ["J1"], "pin_locks": {"U1.4": "LED_CLK", "U1.5": "LED_SDI"}}
 }}
 ```
 
@@ -46,6 +46,9 @@ Example: [the Christmas bell's graph](https://github.com/tgd1975/automatic_chris
 | `notes` | free text; cite decision numbers here |
 | net `v` | `[min, max]` voltage over **all** intended operating states (all supply variants, reversed supply, unloaded) |
 | net `bus` | `"i2c"` marks SDA and SCL nets whose pins do not say so (MCU pins called GP4): G-11 checks them |
+| net `fn` | the function the net needs from its MCU pin: `pwm`, `adc`, `spi.sck`, `spi.tx`, `spi.rx`, `spi.cs`, `i2c.sda`, `i2c.scl`, `uart.tx`, `uart.rx` – G-15 holds it to the pin's `functions` (4.1); without `fn` the pin is a plain GPIO (bit-banged, PIO) |
+| net `fn_bus` | a name the nets of one bus share (`"LED"` on SDI and CLK): G-15 wants them on one peripheral instance (`spi0`, not `spi0` and `spi1`) |
+| net `pwm_hz` | the PWM frequency of a net with `fn: "pwm"` – a number, or `[min, max]` for one that changes (a buzzer playing notes): two PWM nets on one slice need the same fixed frequency (G-15) |
 | `cables` | wires between boards: connector pins joined 1:1; the cable is no part, its resistance feeds the simulation |
 | `hints` | design hints that are taken care of, `{"H-1": "C1 1000 µF next to J1"}` – chapter 14.3 |
 | `layout` | the hand-over to the layout: `fixed`, `edge`, `near`, `loops`, `notes` – chapters 7.4 and 14.1; G-1 checks that the names exist |
@@ -85,12 +88,13 @@ check that fails is explained once below the findings (chapter 14.2).
 | G-12 | strapping pins: a pin with `strap` in its parts entry is at that level at reset – no pull, rail or output on its net says otherwise, and something holds it (a pull, or the pin's internal `pull`) | a pull-down on the ESP32's GPIO0, an I2C pull-up on GPIO12 |
 | G-13 | flyback diode: a relay coil or a buzzer with `coil_ohm`, switched by a transistor or an output, has a diode across it with the cathode at its plus terminal | a relay that kills its transistor at the first switch-off |
 | G-14 | USB-C sink: a receptacle with `cc1`/`cc2` pins has its own 5.1 kΩ ± 10 % to ground on each CC pin; silent when an IC is on the CC lines | no 5 V from a USB-C charger, CC1 and CC2 on one resistor |
+| G-15 | pin functions: a net with `fn` is on a pin whose parts entry lists that function (`functions`), the nets of one `fn_bus` on one peripheral instance, two PWM nets of one slice with the same fixed `pwm_hz` and a channel each; a net with `fn` on pins without `functions` is a note | SPI data on the clock pin, an analog input without ADC, a buzzer on the PWM slice of an LED |
 | P-1 | graph pins (number and name) = parts entry; an entry exists for every LCSC number; no supply pin marked `nc` | a wrong part number, pins shifted by one |
 | P-3 | own parts (4.5): a board copied with `edakit part own` is its project's current datasheet, copied from a commit (pending otherwise); a board not released at that state is a warning; the project's own datasheets are of its current state | a board changed after it was copied into the host |
 | G-9 | sign-off: every part `verified` against its datasheet, no open `verify` note (pending – blocks only the release) | an unchecked part going into an order |
 
 **0 Ω bridges.** A resistor whose parts entry has `value_ohm: 0` is copper – the usual way to cross a track on a board
-with all tracks on one side. The nets it joins are one net for G-4, G-5, G-6 and G-10 to G-14: a pull-up behind a
+with all tracks on one side. The nets it joins are one net for G-4, G-5, G-6 and G-10 to G-15: a pull-up behind a
 bridge holds its input, a capacitor to a ground net behind a bridge decouples, two outputs on either side clash. A
 finding names the joined net after the ground net if that is one of them, else after the first of them in the graph;
 a waiver on any of them counts. G-1, G-2, G-3, G-8, P-1 and G-9 see every net and the bridge as the graph has them.

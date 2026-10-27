@@ -39,8 +39,10 @@ say what is left: values, sim.json, the graph's `checks`.
   a similar part's datasheet.
 - Prefer parts the project uses already, Basic parts, parts in stock.
 - MCU pins: read the entry first – strapping pins (`strap`), input-only pins (`type: input`), notes (`hint`, e.g. an
-  ADC that does not work with WiFi). Buttons, LEDs and pulls stay off strapping pins unless they agree with the boot
-  level (G-12).
+  ADC that does not work with WiFi), what each pin can do (`functions`). Buttons, LEDs and pulls stay off strapping
+  pins unless they agree with the boot level (G-12). A net that needs a peripheral says so – `fn` (`spi.tx`, `pwm`,
+  `adc`, …), `fn_bus` for the nets of one bus, `pwm_hz` for PWM – and G-15 checks the pin, the bus and the PWM
+  slices; a pin's function is chosen here, not when the firmware is written.
 
 ## 4. Values are computed
 

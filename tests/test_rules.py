@@ -69,7 +69,7 @@ def test_hint_taken_care_of_is_not_open(project):
 def test_notes_of_the_parts_database(project):
     part = project.part("C41407547")
     part["hints"] = ["module note"]
-    part["pins"]["4"]["hint"] = "pin note"       # GP2, connected (LED_SDI)
+    part["pins"]["4"]["hint"] = "pin note"       # GP2, connected (LED_CLK)
     part["pins"]["1"]["hint"] = "unused pin"     # GP0 is nc: not shown
     project.save_part("C41407547", part)
     notes = rules.part_notes(Design.from_config(project.config()))
