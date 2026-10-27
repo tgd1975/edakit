@@ -6,6 +6,7 @@ import shutil
 
 import pytest
 
+from edakit.sim import run as simrun
 from test_sim import failing, simulate
 
 pytestmark = pytest.mark.skipif(not shutil.which("ngspice"), reason="ngspice not installed")
@@ -145,3 +146,69 @@ def test_no_cell_is_charged(project):
     assert len(alone) == 4 and all(c["result"] == "pass" and c["actual"] == "0 A" for c in alone)
     sim["cells"]["fresh"]["i_charge_max_a"] = 0.5                 # a rechargeable pack, charged on purpose
     assert not failing(simulate(project, sim))
+
+
+def names(sim):
+    return [s["name"] for s in simrun.scenarios(sim)]
+
+
+def test_scenarios_for_every_combination_of_sources(project):
+    sim = module_usb(sim_config(project))                         # U1 a source, but no supply switches it on
+    before = names(sim)
+    sim["combine_sources"] = {"J1": [4.75, 5.25], "U1": [4.75, 5.25]}
+    generated = simrun.generated_supplies(sim)                    # J1 4.75 and J1 5.25 are usb-min and usb-max
+    assert list(generated) == ["U1 4.75", "U1 5.25", "J1 5.25 + U1 4.75", "U1 5.25 + J1 4.75"]
+    assert generated["J1 5.25 + U1 4.75"] == {"J1": 5.25, "U1": 4.75}
+    after = names(sim)
+    assert after[:12] == before and len(after) == 12 + 4 * 2 * 2  # every load and corner
+    assert "J1 5.25 + U1 4.75/all_on/vf-min" in after
+    out = simulate(project, sim)
+    row = next(s for s in out["scenarios"] if s["name"] == "J1 5.25 + U1 4.75/all_on/vf-min")
+    assert row["supply"] == "J1 5.25 + U1 4.75" and row["sources"]["U1"] == pytest.approx(-0.247, abs=0.01)
+    bad = failing(out)                                            # the back-feed into U1 – E-3 says so
+    assert {(c["scenario"].split("/")[0], c["item"], c["check"]) for c in bad} == {
+        ("J1 5.25 + U1 4.75", "U1", "current into the supply (fed backwards)")}
+    sim.pop("combine_sources")
+    assert names(sim) == before                                   # no key: the scenarios of today
+
+
+def test_an_extra_scenario_takes_a_combination_over(project):
+    sim = module_usb(sim_config(project))
+    sim["combine_sources"] = {"J1": [4.75, 5.25], "U1": [4.75, 5.25]}
+    sim["extra_scenarios"] = [{"name": "flashing with J1 plugged in", "supply": {"J1": 5.25, "U1": 4.75},
+                               "load": "idle", "info": True}]    # excluded by procedure: unplug J1 while flashing
+    got = names(sim)
+    assert not [n for n in got if n.startswith("J1 5.25 + U1 4.75/idle/")]
+    assert [n for n in got if n.startswith("J1 5.25 + U1 4.75/all_on/")] and got[-1] == "flashing with J1 plugged in"
+    sim["supplies"]["pc"] = {"U1": 5.25, "note": "the PC alone"}    # the same settings by hand: run once, by its name
+    assert "U1 5.25" not in simrun.generated_supplies(sim)
+
+
+def test_combinations_with_cells():
+    sim = {"sources": {"J1": {"plus": "1", "minus": "2"}}, "cells": {"empty": {"v": 1.0, "r": 0.4},
+                                                                     "fresh": {"v": 1.6, "r": 0.15}},
+           "supplies": {}, "combine_sources": {"J1": [4.75, 5.25], "BT1": ["empty", "fresh"]}}
+    assert simrun.generated_supplies(sim) == {
+        "J1 4.75": {"J1": 4.75}, "J1 5.25": {"J1": 5.25}, "BT1 empty": {"BT1": "empty"}, "BT1 fresh": {"BT1": "fresh"},
+        "J1 5.25 + BT1 empty": {"J1": 5.25, "BT1": "empty"}, "BT1 fresh + J1 4.75": {"BT1": "fresh", "J1": 4.75}}
+    sim["combine_sources"] = {"J1": [4.75, 5.25]}                 # one source: its two cases alone
+    assert list(simrun.generated_supplies(sim)) == ["J1 4.75", "J1 5.25"]
+
+
+@pytest.mark.parametrize("combine", [True, {"J9": [4.75, 5.25]}, {"J1": [5.0]}, {"BT1": ["empty", "full"]}])
+def test_combine_sources_names_what_it_combines(combine):
+    sim = {"sources": {"J1": {"plus": "1", "minus": "2"}}, "cells": {"empty": {"v": 1.0, "r": 0.4}},
+           "supplies": {}, "combine_sources": combine}
+    with pytest.raises(simrun.SimError, match="combine_sources"):
+        simrun.generated_supplies(sim)
+
+
+def test_sim_prints_the_generated_supplies(project, capsys):
+    import argparse
+    sim = module_usb(sim_config(project))
+    sim["combine_sources"] = {"J1": [4.75, 5.25], "U1": [4.75, 5.25]}
+    (project.root / "hardware" / "sim.json").write_text(json.dumps(sim))
+    simrun.main(project.config(), argparse.Namespace(json=None, keep=None))
+    text = capsys.readouterr().out
+    assert text.count("combine_sources:") == 1
+    assert "combine_sources: U1 4.75, U1 5.25, J1 5.25 + U1 4.75, U1 5.25 + J1 4.75" in text

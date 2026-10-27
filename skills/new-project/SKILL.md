@@ -20,7 +20,7 @@ Create in the repository root (ask only for what you cannot sensibly default):
 | `hardware/boards/<name>.toml` | when the board's size is known: from the example's board file, outline and holes; leave `place` and `routing.classes` minimal until the parts exist. Otherwise the PCB designer starts it |
 | `hardware/graph.json` | `{"graph": {"name", "version": "0.1", "date", "description", "purpose": {"use", "market", "notes"}, "components": [], "nets": [], "cables": []}}` – `use` is `private`, `gift` or `sale` (circuit-design asks) |
 | `hardware/parts/` | empty; every LCSC number gets an entry through the part-search skill |
-| `hardware/sim.json` | from the example: sources (the supply connector), supplies at min/nominal/max, loads, corners |
+| `hardware/sim.json` | from the example: sources (the supply connector), supplies at min/nominal/max, loads, corners; with several sources `combine_sources` (handbook 5.2) |
 | `hardware/signoff.json` | from the example: M-1 (critical parts, second check), M-6 (regulatory review), M-5 (layout review), M-2 (manufacturer preview), M-4 (acceptance) |
 | `docs/decisions.md` | numbered decisions D-1, … with reason and date (the decision-round skill appends) |
 | `.gitignore` | `build/` |

@@ -24,7 +24,8 @@ on the delivered board instead (acceptance test).
   `nc`.
 - Supplies: connectors listed under `sources` (a voltage source behind a source resistance), battery holders with a
   cell state (`cells`). A module that brings its own supply (an Arduino Nano on USB) is a source as well: `plus` is
-  its 5V pin, the voltage is USB minus its on-board diode – or USB itself on a module without that diode.
+  its 5V pin, the voltage is USB minus its on-board diode – or USB itself on a module without that diode;
+  `combine_sources` (5.2) puts it into scenarios with the other sources.
 - `i_min_a` on a source: the least current the supply needs to stay on – USB power banks switch off below
   50–100 mA after a few seconds. E-3 checks every scenario against it.
 - No supply is fed backwards: where two supplies meet and nothing blocks the way, the higher one feeds the lower one –
@@ -84,7 +85,24 @@ module with a servo: [Christmas bell](https://github.com/tgd1975/automatic_chris
 ```
 
 Scenarios = supplies × loads × corners (LED forward voltage at min/max), plus `extra_scenarios` (e.g. "programming
-cable plugged in, external supply off"; `"info": true` turns failures into information). A load with
+cable plugged in, external supply off"; `"info": true` turns failures into information).
+
+A board with several sources – a supply connector and a module that brings its own USB, USB and cells – gets the
+combinations from `combine_sources` instead of by hand: a map from each source to its range, `[low, high]` in volts for
+a source of `sources`, two cell states of `cells` for a battery holder.
+
+```json
+"combine_sources": {"J1": [4.75, 5.25], "U1": [4.75, 5.25], "BT1": ["empty", "fresh"]}
+```
+
+It generates supplies named after what they set: each source alone at both ends (`J1 4.75`, `J1 5.25`, …, `BT1 fresh`)
+and, with more than one, all of them together, each one high in turn and the others low (`J1 5.25 + U1 4.75 + BT1
+empty`, `U1 5.25 + J1 4.75 + BT1 empty`, `BT1 fresh + J1 4.75 + U1 4.75`) – where one supply feeds the others
+hardest (E-3: no supply fed backwards). They run with every load and corner like a supply of `supplies`; `edakit sim`
+prints them once. A hand-written case is not run twice: a supply of `supplies` with the same settings runs under its
+own name instead, and an extra scenario with the same supply and load takes that load's case out of the matrix – the
+way to keep a combination a procedure excludes ("unplug J1 while flashing") as `"info": true`. Without the key nothing
+is generated. A load with
 `"matrix": false` runs only where an extra scenario names it – fault cases such as a stalled servo, whose result you
 want to see and record as a decision, but which must not block every commit. `ambient_c` is the ambient of the
 scenarios (E-2 derates the fuses' hold current to it); `ambient_min_c`, optional, the lowest one – G-17 holds a fuse's

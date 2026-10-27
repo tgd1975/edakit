@@ -3,7 +3,8 @@
     edakit sim [--json FILE] [--keep DIR]
 
 Scenarios = supplies x loads x LED forward-voltage corners from the simulation config (edakit.toml [project] sim),
-plus "extra_scenarios" listed there.
+plus "extra_scenarios" listed there. "combine_sources" adds supplies for every combination of the sources it names:
+each alone at both ends of its range, all together with one high and the others low (generated_supplies).
 
   E-1  the operating point converges
   E-2  stress of every part against the ratings in the parts database, with the derating from the config; MCU output
@@ -608,12 +609,53 @@ def net_currents(design, res, meta):
     return cur
 
 
+def supply_settings(sim, supply):
+    """What a supply sets – its sources and cell states, without notes."""
+    sources, cells = sim.get("sources", {}), sim.get("cells", {})
+    return frozenset((k, x) for k, x in supply.items() if k in sources or (isinstance(x, str) and x in cells))
+
+
+def generated_supplies(sim):
+    """The supplies `combine_sources` generates, {name: supply}, in this order: each source alone at the low and the
+    high end of its range; with several, all of them together, each one high in turn and the others low. A source of
+    `sources` gets [low, high] in volts, a battery holder two cell states of `cells`. A supply with the settings of a
+    hand-written one is left out – that one runs."""
+    combine = sim.get("combine_sources") or {}
+    sources, cells = sim.get("sources", {}), sim.get("cells", {})
+    if not isinstance(combine, dict):
+        raise SimError(f"combine_sources: a map from each source to its [low, high] expected, not {combine!r}")
+    for des, ends in combine.items():
+        if not isinstance(ends, list) or len(ends) != 2:
+            raise SimError(f"combine_sources {des}: [low, high] expected, not {ends!r}")
+        if all(isinstance(x, str) for x in ends):
+            if any(x not in cells for x in ends):
+                raise SimError(f"combine_sources {des}: {', '.join(x for x in ends if x not in cells)} – no cell "
+                               "state of cells")
+        elif des not in sources or not all(isinstance(x, (int, float)) for x in ends):
+            raise SimError(f"combine_sources {des}: neither a source of sources with [low, high] in volts nor a battery "
+                           "holder with two cell states of cells")
+
+    def name(des, x):
+        return f"{des} {x:g}" if isinstance(x, (int, float)) else f"{des} {x}"
+    out = {name(des, x): {des: x} for des, ends in combine.items() for x in ends}
+    if len(combine) > 1:
+        for des, (_, high) in combine.items():
+            together = [(des, high)] + [(d, ends[0]) for d, ends in combine.items() if d != des]
+            out[" + ".join(name(d, x) for d, x in together)] = dict(together)
+    hand = {supply_settings(sim, s) for s in sim.get("supplies", {}).values()}
+    return {n: s for n, s in out.items() if n not in sim.get("supplies", {}) and supply_settings(sim, s) not in hand}
+
+
 def scenarios(sim):
     corners = sim.get("corners", ["typ"])
-    for supply_name, supply in sim["supplies"].items():
+    generated = generated_supplies(sim)
+    taken = {(supply_settings(sim, s["supply"]), s["load"]) for s in sim.get("extra_scenarios", [])}
+    for supply_name, supply in {**sim.get("supplies", {}), **generated}.items():
         for load_name, load in sim["loads"].items():
             if load.get("matrix") is False:  # fault cases: only where extra_scenarios name them
                 continue
+            if supply_name in generated and (supply_settings(sim, supply), load_name) in taken:
+                continue                     # an extra scenario took the combination over (info: excluded by procedure)
             for corner in corners:
                 yield {"name": f"{supply_name}/{load_name}/vf-{corner}", "supply_name": supply_name, "supply": supply,
                        "load_name": load_name, "load": load, "corner": corner}
@@ -691,6 +733,9 @@ def main(cfg, args):
     plugin = load_plugin(cfg.sim_plugin) if cfg.sim_plugin else None
     if args.keep:
         Path(args.keep).mkdir(parents=True, exist_ok=True)
+    generated = generated_supplies(sim)
+    if generated:
+        print("supplies from combine_sources: " + ", ".join(generated))
     out = run_all(Design.from_config(cfg), sim, args.keep, plugin)
     report = sim.get("report", [])
     print(f"{'scenario':<34} {'status':<7}" + "".join(f" {n:>8}" for n in report) + "   supply current")
