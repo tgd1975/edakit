@@ -18,9 +18,9 @@ RELEASED only if
   - every part is verified and every manual check of phase 'export' is signed – the second datasheet check M-1, the
     regulatory review M-6 and the layout review M-5 also when the sign-off file does not list them (REQUIRED),
   - all of that for exactly this state: sign-offs count only for the hash of their scope – 'circuit' (graph with its
-    check settings, parts database, simulation config), 'layout' (the board files, further layout_files of
-    [release], the footprint geometry) or 'fab' (what the manufacturer builds from: the Gerber layers rasterised, the
-    drill hits, BOM and CPL rows – known after stage F, fab.fab_layers). An accepted
+    check settings, parts database, simulation config), 'layout' (the board files with the artwork they place,
+    further layout_files of [release], the footprint geometry) or 'fab' (what the manufacturer builds from: the
+    Gerber layers rasterised, the drill hits, BOM and CPL rows – known after stage F, fab.fab_layers). An accepted
     warning with scope 'decision' counts regardless of the hash and refers to a numbered decision in the docs; one
     that names its parts ({designator: LCSC}) counts only while they are the same parts.
 [release] hash_ignore leaves documentation keys (notes, sources, verified, …) out of the circuit hash: graph and parts
@@ -146,6 +146,9 @@ def state_hash(cfg, ignore=None):
 
 def layout_files(cfg):
     files = [cfg.resolve(b.file) for b in cfg.boards.values()]
+    # the artwork the board files place ([[silk.art]]), each SVG once however often it is placed
+    files += dict.fromkeys(cfg.resolve(a["svg"]) for b in cfg.boards.values() for a in b.silk.get("art", [])
+                           if "svg" in a)
     files += [cfg.resolve(f) for f in cfg.release.get("layout_files", [])]
     return files + [cfg.artifacts / f"pcb_geometry_{b}.json" for b in cfg.boards]
 
@@ -604,7 +607,7 @@ def write_protocol(cfg, outdir, head, rows, sim, signoff, notes, decision, reaso
          f"{', '.join(cfg.boards)} in EasyEDA project {cfg.project} |",
          f"| SHA-256 graph | `{head['graph_sha256']}` |",
          f"| SHA-256 circuit | `{head['state_sha256']}` (graph, parts database, simulation config) |",
-         f"| SHA-256 layout | `{head['layout_sha256']}` (layout files, footprint geometry) |",
+         f"| SHA-256 layout | `{head['layout_sha256']}` (board files, artwork, layout files, footprint geometry) |",
          *([f"| SHA-256 fab | `{head['fab_sha256']}` (what the manufacturer builds from: Gerber layers, drill hits, "
             f"BOM and CPL rows – {head['fab_method']}) |"] if head.get("fab_sha256") else []),
          f"| Git | `{head['git_commit']}`{' + uncommitted changes' if head['git_dirty'] else ''} |",

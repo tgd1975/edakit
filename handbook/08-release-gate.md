@@ -100,7 +100,8 @@ Every run records two hashes in the protocol header, and a run with stage F a th
 
 - **circuit** (`state_sha256`): graph (with its ground net and check settings), parts database, simulation config
   (and plugin, `[release] state_files`)
-- **layout** (`layout_sha256`): the board files, the footprint geometry (and `[release] layout_files`)
+- **layout** (`layout_sha256`): the board files with the artwork they place (`[[silk.art]]`), the footprint geometry
+  (and `[release] layout_files`)
 - **fab** (`fab_sha256`): what the manufacturer builds from, per board – every Gerber layer of `fab/<board>/gerber/`
   rasterised at 0.02 mm as L-2 does, in the frame of the board outline (documentation and drill-drawing layers left
   out: nobody builds from them), the drill hits (both ends, diameter) rounded to 1 µm and sorted, the rows of

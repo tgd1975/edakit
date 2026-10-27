@@ -89,6 +89,45 @@ def test_each_hash_covers_its_files(project):
     assert gate.header(project.config())["state_sha256"] != h["state_sha256"]
 
 
+SVG = '<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 10 10"><rect width="{w}" height="10"/></svg>\n'
+
+
+def add_art(project, *names):
+    """One [[silk.art]] in the board file per name; each SVG once in hardware/art/."""
+    art = project.root / "hardware" / "art"
+    art.mkdir(exist_ok=True)
+    board = project.root / "hardware" / "boards" / "main.toml"
+    text = board.read_text()
+    for i, name in enumerate(names):
+        if not (art / name).exists():
+            (art / name).write_text(SVG.format(w=10))
+        text += f'\n[[silk.art]]\nsvg = "hardware/art/{name}"\nx = {5 + 10 * i}\ny = 5\nwidth_mm = 4\n'
+    board.write_text(text)
+    return art
+
+
+def test_layout_hash_covers_the_artwork(project):
+    """The SVGs of [[silk.art]] are the layout's, each once after the board files however often it is placed: a
+    changed motif voids the layout review like a changed board file, and the circuit's sign-offs keep counting."""
+    art = add_art(project, "star.svg", "tree.svg", "star.svg")
+    cfg = project.config()
+    board = project.root / "hardware" / "boards" / "main.toml"
+    assert gate.layout_files(cfg)[:3] == [board, art / "star.svg", art / "tree.svg"]
+    assert gate.layout_files(cfg).count(art / "star.svg") == 1
+    h = gate.header(cfg)
+    (art / "tree.svg").write_text(SVG.format(w=5))
+    h2 = gate.header(project.config())
+    assert h2["layout_sha256"] != h["layout_sha256"]
+    assert h2["state_sha256"] == h["state_sha256"]
+
+
+def test_a_board_without_artwork_keeps_its_layout_hash(project):
+    """Without [[silk.art]] the layout hash covers the same files in the same order as before the artwork joined it."""
+    cfg = project.config()
+    assert gate.layout_files(cfg) == [project.root / "hardware" / "boards" / "main.toml",
+                                      cfg.artifacts / "pcb_geometry_main.json"]
+
+
 def test_regulatory_review_is_required_also_when_the_file_lacks_it(project):
     path = project.root / "hardware" / "signoff.json"
     s = json.loads(path.read_text())

@@ -7,6 +7,7 @@ the release settings. What one role decides lives in a file of its own, with one
     hardware/parts/, sim.json     parts database, simulation scenarios                     circuit designer  circuit
     hardware/schematic.toml       arrangement of the schematic: blocks, notes, pin table   circuit designer  –
     hardware/boards/<name>.toml   outline, holes, placement, routing, pours, silk          PCB designer      layout
+    SVGs of [[silk.art]]          artwork on the silkscreen                                PCB designer      layout
 
 The tools themselves contain no project knowledge. edakit.toml in the one-file form – board, schematic and checks
 inside – is refused with a list of what goes where.

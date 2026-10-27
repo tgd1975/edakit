@@ -609,7 +609,9 @@ SIG" at a connector. edakit cuts the artwork free of pads and solder-mask openin
 than 0.15 mm (JLCPCB does not print it) and mirrors graphics on the bottom side (EasyEDA does that only for texts).
 Designators and the board label keep clear of artwork and texts. `edakit silk preview` draws them onto the last Gerber
 export offline (`<artifacts>/silk_preview_<board>_<side>.png`), so a design can be tuned without EasyEDA. Draw motifs in
-mm with lines of 0.2 mm or more; script text works as outlines (embolden it a little).
+mm with lines of 0.2 mm or more; script text works as outlines (embolden it a little). The SVGs are in the layout hash
+like the board file: a changed motif voids the sign-offs with scope `layout`, and M-5 with scope `fab` lapses with the
+silkscreen of the next gate run (8.2).
 
 Good to know:
 

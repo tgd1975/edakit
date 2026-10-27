@@ -13,6 +13,7 @@ are. What one role decides lives in a file of its own, with one owner and one ha
 | `hardware/parts/`, `hardware/sim.json` | parts database (4), simulation scenarios (5) | part-selector, circuit designer | circuit |
 | `hardware/schematic.toml` | arrangement of the schematic: blocks, notes, pin table (10.3) | circuit designer | – |
 | `hardware/boards/<name>.toml` | one board: outline, holes, placement, routing, pours, silkscreen (10.2) | PCB designer | layout |
+| the SVGs of `[[silk.art]]` | artwork on the silkscreen (7.7), drawn by hand or by a project script | PCB designer | layout |
 | `hardware/signoff.json` | sign-offs and accepted warnings, each bound to the hash of its scope: circuit, layout or fab (8.2); an accepted warning with `parts` {designator: LCSC} also to those parts; `rehashed` records a change of the hash method (the gate writes it for `hash_ignore`) | reviewers, the user | – |
 | `hardware/firmware.json` | the firmware contract, with `[firmware]` (3.5) | `edakit firmware` | – |
 
@@ -59,7 +60,8 @@ ground on purpose besides it (an analog ground) in `grounds` (3.1, G-16).
 
 ### [release]
 
-`layout_files` (further files in the layout hash – the board files and the footprint geometry are always in it),
+`layout_files` (further files in the layout hash – the board files, their artwork and the footprint geometry are always
+in it),
 `state_files` (further files in the circuit hash), `hash_ignore` (`[]`: keys left out of the circuit hash at any depth
 of the graph and the parts entries, e.g. `["notes", "sources", "description", "verified", "datasheet"]` – only keys no
 check and no review reads; empty: the bytes are hashed, 8.2), `assembly` ({`sides` (both), `smd_only`, `paste_gap_mm`
@@ -112,9 +114,10 @@ work without it.
 
 ## 10.2 The board file
 
-`hardware/boards/<name>.toml`: what the PCB designer decides (14.1). The layout hash covers it – a change voids the
-sign-offs with scope `layout`; the layout review M-5 with scope `fab` (8.2) lapses when the manufacturing files change.
-The keys stand at the top of the file, without a prefix (`[place]`, `[[holes]]`):
+`hardware/boards/<name>.toml`: what the PCB designer decides (14.1). The layout hash covers it and the SVGs its
+`[[silk.art]]` places – a change voids the sign-offs with scope `layout`; the layout review M-5 with scope `fab` (8.2)
+lapses when the manufacturing files change. The keys stand at the top of the file, without a prefix (`[place]`,
+`[[holes]]`):
 
 | Key | Default | Meaning |
 |---|---|---|
