@@ -377,6 +377,19 @@ def verify_nets(mcp, nets, placed):
     return diffs
 
 
+def save_if_matching(mcp, diffs, failures=0, pin_problems=0, skipped=0):
+    """--save of `schematic create` and `schematic layout`: save the project only when the netlist equals the graph –
+    no differing net (an empty netlist on every read counts every net), no failed connection, no symbol pin mismatch,
+    no part skipped. Returns 0 (saved) or 2."""
+    if diffs or failures or pin_problems or skipped:
+        print(f"not saved: {diffs} differing nets, {failures} failed connections, {pin_problems} pin mismatches"
+              + (f", {skipped} parts skipped" if skipped else "") + " – fix and run again, or save in EasyEDA by hand")
+        return 2
+    mcp.call("easyeda_project_save", projectId=PROJECT, confirmWrite=True)
+    print("project saved")
+    return 0
+
+
 def ensure_frame(mcp):
     """The title block belongs to the sheet frame, a component of type 'sheet'. Without a frame titleBlockData is
     empty. SCH_PrimitiveComponent.create places the frame at once but never answers – short timeout, then look."""

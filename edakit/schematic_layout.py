@@ -844,9 +844,9 @@ def main(cfg, args):
         print("\n[ERC]")
         erc = mcp.call("easyeda_erc_run", projectId=PROJECT, scope="focused")
         print("  " + json.dumps({k: v for k, v in erc.items() if not isinstance(v, (list, dict))}, ensure_ascii=False))
-        if args.save:
-            mcp.call("easyeda_project_save", projectId=PROJECT, confirmWrite=True)
-            print("\nproject saved")
+        if args.save:   # --force wrote despite geometry conflicts; the save still needs a matching netlist
+            print()
+            eda.save_if_matching(mcp, diffs, len(failed))
         return 0 if not (diffs or failed) else 2
     except MCPError as e:
         return eda.die(str(e))

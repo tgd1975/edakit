@@ -138,7 +138,8 @@ def build_parser():
     p.add_argument("--no-pins", action="store_true", help="check: skip the per-part pin check")
     p.add_argument("--refresh-devices", action="store_true", help="create: search every LCSC number again")
     p.add_argument("--create-project", action="store_true", help="create the EasyEDA project if it is not open")
-    p.add_argument("--save", action="store_true", help="save the project at the end")
+    p.add_argument("--save", action="store_true", help="save the project at the end – create and layout only when "
+                                                       "the netlist equals the graph")
     p.add_argument("--json", help="check: write the differences as JSON")
     p.add_argument("--wait", type=int, default=90, help="seconds to wait for the bridge")
     _common(p)

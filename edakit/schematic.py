@@ -1,6 +1,7 @@
 """Schematics in EasyEDA Pro from the graph: create, check, copy, layout (stage S).
 
-    edakit schematic create [--board B] [--only R1,C1] [--dry-run] [--save]   template <- graph (replaced every run)
+    edakit schematic create [--board B] [--only R1,C1] [--dry-run] [--save]   template <- graph (replaced every run);
+                                                 --save (also of layout) only when the netlist equals the graph
     edakit schematic check  [--board B] [--schematic NAME] [--no-pins]       read only: schematic = graph?
     edakit schematic copy   [--board B] [--source A --target B]              template -> board schematic
     edakit schematic layout [--board B] [--dry-run] [--save]                 readable sheet with blocks and wires
@@ -321,11 +322,11 @@ def create(cfg, args):
         phase("ERC")
         erc = mcp.call("easyeda_erc_run", projectId=PROJECT, scope="focused")
         print("  " + json.dumps({k: v for k, v in erc.items() if not isinstance(v, (list, dict))}, ensure_ascii=False))
+        skipped = len(comps) - len(placed)
         if args.save:
             phase("save")
-            mcp.call("easyeda_project_save", projectId=PROJECT, confirmWrite=True)
+            eda.save_if_matching(mcp, diffs, failures, pin_problems, skipped)
         phase(None)
-        skipped = len(comps) - len(placed)
         print(f"\ndone: {len(placed)} placed, {skipped} skipped, {pin_problems} pin mismatches, {failures} pin "
               f"failures, {diffs} differing nets")
         return 0 if not (skipped or failures or diffs or pin_problems) else 2

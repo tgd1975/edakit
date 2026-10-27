@@ -30,6 +30,13 @@ blocks of 40 (`batch_write`; bigger blocks crashed EasyEDA) → set designators 
 connect nets as stubs (longer stubs on collisions) → connect leftover pins one by one → mark no-connects → compare the
 netlist with the graph → ERC → save.
 
+`--save` of `create` and `layout` saves only a schematic whose netlist equals the graph: no differing net, no failed
+connection, no symbol pin mismatch, no part skipped. Otherwise the run says "not saved: 2 differing nets, 0 failed
+connections, 0 pin mismatches – fix and run again, or save in EasyEDA by hand" and exits 2; the schematic stays open
+in EasyEDA as it was written. An empty netlist (EasyEDA returned one after many writes in the reference project, and
+the script saved it) is read ten times; if it stays empty, every net counts as differing and nothing is saved.
+`layout --force` writes despite geometry conflicts, it does not force the save.
+
 Timing in the reference project: 13 parts 12–41 s; 123 parts 6 minutes (placing 2.1 min, connecting 3.7 min).
 
 ## 6.2 Check against the graph

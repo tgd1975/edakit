@@ -201,10 +201,10 @@ Claude Code: `edakit … 2>&1 | cat`.
 | `edakit docs [--write]` | – | `[docs] files`, the schematic notes, graph, parts; for `sim:` the saved simulation result (or a new run) | with `--write` the value blocks of `[docs] files` |
 | `edakit firmware [--check]` | – | graph, parts, `[firmware]`; for `state_sha256` the files of the circuit hash | `[firmware] out` (not with `--check`: exit 2 on drift) |
 | `edakit handover [--board B]` | – | graph, parts, sign-offs | – |
-| `edakit schematic create [--board] [--only] [--dry-run] [--save] [--create-project] [--refresh-devices]` | ✓ | graph | template, `device_cache.json`, `schematic_map_<name>.json` |
+| `edakit schematic create [--board] [--only] [--dry-run] [--save] [--create-project] [--refresh-devices]` | ✓ | graph | template, `device_cache.json`, `schematic_map_<name>.json`; `--save` only when the netlist equals the graph (6.1) |
 | `edakit schematic check [--schematic] [--no-pins] [--json F]` | ✓ read | graph, schematic | – |
 | `edakit schematic copy [--source] [--target] [--save]` | ✓ | schematic | copy |
-| `edakit schematic layout [--dry-run] [--reread] [--force] [--save]` | ✓ / – | graph, schematic, cached geometry | board schematic, `layout_preview_<name>.svg` |
+| `edakit schematic layout [--dry-run] [--reread] [--force] [--save]` | ✓ / – | graph, schematic, cached geometry | board schematic, `layout_preview_<name>.svg`; `--save` only when the netlist equals the graph (6.1) |
 | `edakit schematic draw [--board] [--out F] [--force]` | – | graph, parts, the schematic file if there; for a `{sim:…}` note the saved simulation result | `schematic_<board>.svg` (or F) |
 | `edakit pcb dump [--ref]` | ✓ | PCB | `pcb_geometry_<board>.json` (parts end at 0°/TOP; through-hole pads with `hole` [w, l] mm and `plated`) |
 | `edakit pcb plan` | – | plan, geometry (the dump; library footprints of `part import` for parts not in it), net currents, graph (`layout`, L-12), parts entries (`body`, `lead` `length_mm`, `mate`) | `pcb_plan_<board>.png/.json`, `pcb_netclasses_<board>.json`, `mech_<board>.json` (7.4) |

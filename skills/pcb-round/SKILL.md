@@ -28,7 +28,7 @@ first (start skill, claim EasyEDA):
 ```bash
 edakit schematic create --save 2>&1 | cat     # template from the graph (minutes on big boards)
 edakit schematic check 2>&1 | cat             # template = graph
-edakit schematic layout --save 2>&1 | cat     # board schematic: parts synced, rewired
+edakit schematic layout --save 2>&1 | cat     # board schematic: parts synced, rewired (saved only when the netlist = graph)
 edakit schematic check --schematic <board schematic> 2>&1 | cat
 edakit pcb parts 2>&1 | cat                   # parts added, swapped or removed: show, then --write
 edakit pcb nets 2>&1 | cat                    # only nets changed: show, then --write
