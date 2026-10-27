@@ -151,9 +151,10 @@ def build_parser():
     _common(p)
 
     p = sub.add_parser("route", help="route with Freerouting and write the result into EasyEDA")
-    p.add_argument("action", choices=["all", "read", "dsn", "route", "check", "apply", "verify", "pours", "reload",
-                                      "drc", "save"])
+    p.add_argument("action", choices=["all", "read", "dsn", "route", "check", "diagnose", "apply", "verify", "pours",
+                                      "reload", "drc", "save"])
     p.add_argument("--board")
+    p.add_argument("--net", help="diagnose: only this net")
     p.add_argument("--passes", type=int, help="maximum Freerouting passes")
     p.add_argument("--threads", type=int, default=4)
     p.add_argument("--clearance", type=float, help="copper-to-copper clearance in mil")

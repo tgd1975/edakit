@@ -105,7 +105,10 @@ describes (section 3).
   SMD pads on an assembled side closer than the paste gap (L-14, `[release] assembly` `paste_gap_mm`, 0.4 mm), stop
   `route all` at its check, without retries – move or turn one of the two parts in `place`.
 - Freerouting is deterministic but order-dependent: `route all` retries with reshuffled DSNs when nets stay open.
-  If it never closes: more room at the stuck pads in the plan, a plane for a power net (`fanout = true` for its SMD
+  Before relaxing rules or moving parts, `edakit route diagnose 2>&1 | cat` says per open connection why: unreachable
+  (what walls the pad in – a keep-out, the edge, a hole, foreign pads: no rule or pass count helps), blocked (by which
+  nets, at what congestion: a crossing at low utilisation wants a bridge or the other layer) or a free way left (more
+  passes); pictures in `<artifacts>/route/<board>_diagnose/` (handbook 7.5). If it never closes: more room at the stuck pads in the plan, a plane for a power net (`fanout = true` for its SMD
   pads on the other side, handbook 7.5), or other layer costs; with all tracks on one side a 0 Ω bridge in the graph
   where a track has to cross (handbook 3.3), and the ground as a pour-only net (`pour_only`, handbook 7.6) that the
   pour between the tracks connects.

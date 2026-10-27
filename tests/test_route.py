@@ -941,3 +941,92 @@ def test_route_check_reports_the_visible_side(project, capsys):
                                         "BOTTOM (visible): 2 vias, limit 1 – warning"]
     code, out, lines = looks(project, capsys, 'visible = "top"\nmax_track_m = 0.1\nmax_vias = 2')
     assert code == 0 and lines[1:] == ["TOP (visible): 0.04 m of track, 2 vias"]      # within both limits
+
+
+# --- route diagnose (#63): why a connection stays open. On the pour board above (GND an ordinary net here): C1.2 and
+# C2.2 apart on TOP, the SIG track from the top edge to the bottom edge (SIG_TOP) walls TOP in two; on the example's
+# routed input stage: J1.2 (GND) inside a keep-out on both layers, GND left open in the SES.
+
+BOTTOM_WIRE_KEEP = '\n[[routing.keepouts]]\nlayer = "BOTTOM"\nwhat = "wire"\nrect = [0, 0, 40, 20]\n'
+
+
+def test_diagnose_a_connection_cut_by_the_track_of_another_net(pour_board):
+    make, data = pour_board
+    [gap] = route.diagnose(make(BOTTOM_WIRE_KEEP), data, SIG_TOP)["open"]
+    assert (gap["net"], gap["a"], gap["b"], gap["verdict"], gap["blocked_by"]) == ("GND", "C1.2", "C2.2", "blocked",
+                                                                                  ["SIG"])
+    assert re.fullmatch(r"GND C1\.2 – C2\.2: blocked by SIG – utilisation \d\.\d\d at \(\d+, \d+\) mm", gap["line"])
+    assert gap["way_mm"] == pytest.approx(30, abs=1.5)                    # the empty board's way: straight across
+
+
+def test_diagnose_a_way_through_the_other_layer_is_not_unreachable(pour_board):
+    make, data = pour_board
+    [gap] = route.diagnose(make(""), data, SIG_TOP)["open"]               # BOTTOM free: through vias around the wall
+    assert gap["verdict"] == "free" and "blocked_by" not in gap
+    assert gap["line"] == ("GND C1.2 – C2.2: open, but a free way is left – Freerouting did not find it (more passes, "
+                           "another order: route all's attempts)")
+    assert route.diagnose(make(""), data, SIG_BOTTOM)["open"][0]["verdict"] == "free"
+
+
+def test_diagnose_the_wall_alone_is_no_gap(pour_board):
+    make, data = pour_board
+    gnd = {"GND": {"wires": [("BOTTOM", 10, [mm(5, 10), mm(35, 10)])], "vias": [mm(5, 10), mm(35, 10)]}}
+    assert route.diagnose(make(BOTTOM_WIRE_KEEP.replace("wire", "all")), data, {**SIG_TOP, **gnd})["open"] == []
+
+
+def test_congestion_of_a_dense_strip_above_a_sparse_one(pour_board):
+    make, data = pour_board
+    dense = [pad(f"A{i}", "1", f"N{i}", *mm(10, 6 + 0.1 * i)) for i in range(20)] + \
+            [pad(f"B{i}", "1", f"N{i}", *mm(15, 6 + 0.1 * i)) for i in range(20)]   # 20 nets across a 5 mm strip
+    sparse = [pad("S1", "1", "S", *mm(25, 15)), pad("S2", "1", "S", *mm(35, 15))]
+    data = {**data, "pads": data["pads"] + dense + sparse}
+    c = route.congestion(make(""), data)
+    hot, cool = route.utilisation_at(c, *mm(12.5, 7)), route.utilisation_at(c, *mm(30, 15))
+    assert hot > 1 > cool and hot > 5 * cool
+    assert c["max"] >= hot and abs(c["at"][0] - 12.5) <= 2 and abs(c["at"][1] - 7) <= 2   # plan mm
+
+
+def gnd_walled_in(project, windows=False):
+    """The routed input stage with GND open in the SES and J1.2 inside a keep-out on both layers (K0)."""
+    routed_stage(project)
+    f = project.root / "hardware" / "boards" / "main.toml"
+    f.write_text(f.read_text() + '\n[[routing.keepouts]]\nlayer = ["TOP", "BOTTOM"]\nwhat = "all"\n'
+                                 'rect = [82.5, 12.2, 85.5, 14.5]\n' + ('windows = ["J1"]\n' if windows else ""))
+    ses = project.root / "build" / "edakit" / "route" / "main.ses"
+    ses.write_text(re.sub(r'  \(net "GND" .*\n', "", ses.read_text()))
+
+
+def test_route_diagnose_names_the_keepout_that_walls_a_pad_in(project, capsys):
+    gnd_walled_in(project)
+    code, out = route_cmd(project, "check", capsys)
+    assert code == 2 and "GND: 2 groups – J1.2 | C2.2" in out              # today: open, the keep-out not named
+    code, out = route_cmd(project, "diagnose", capsys)
+    assert code == 2
+    assert "    GND J1.2 – C2.2: unreachable – J1.2 enclosed by keep-out K0 (TOP, BOTTOM)" in out.splitlines()
+    d = project.root / "build" / "edakit" / "route" / "main_diagnose"
+    report = json.loads((d / "diagnose.json").read_text())
+    assert [g["verdict"] for g in report["open"]] == ["unreachable"] and report["open"][0]["enclosed_by"] == [
+        "keep-out K0 (TOP, BOTTOM)"]
+    assert (d / report["open"][0]["png"]).exists() and (d / "congestion.png").exists()
+    assert report["congestion"]["max"] > 0
+
+
+def test_route_diagnose_with_a_window_for_the_part(project, capsys):
+    gnd_walled_in(project, windows=True)
+    code, out = route_cmd(project, "diagnose", capsys)
+    assert code == 2 and "unreachable" not in out
+    assert "GND J1.2 – C2.2: open, but a free way is left" in out
+
+
+def test_route_diagnose_with_nothing_open(project, capsys):
+    routed_stage(project)
+    code, out = route_cmd(project, "diagnose", capsys)
+    assert code == 0 and "diagnose: nothing open" in out
+    assert route_cmd(project, "diagnose", capsys)[0] == 0
+
+
+def test_route_diagnose_one_net(project, capsys):
+    gnd_walled_in(project)
+    from edakit import cli
+    assert cli.main(["route", "diagnose", "--net", "VIN", "--config", str(project.root / "edakit.toml")]) == 0
+    assert "VIN: not open" in capsys.readouterr().out

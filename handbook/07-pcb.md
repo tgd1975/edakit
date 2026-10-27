@@ -418,6 +418,41 @@ look is not what the board file asked for. Stage L of the gate gives the same ro
 Preview: `<artifacts>/route/<board>_routing.png`, open connections dashed yellow. Nothing is written to EasyEDA until
 the check passes.
 
+**Why a connection stays open:** `edakit route diagnose [--net N]`, offline from `route/<board>_board.json`, the board
+file's rules and the last SES – before rules are relaxed, parts moved or another long run started. A connection is
+the closest pad pair between the largest group of an open net and each other group (the yellow airline). The net is
+judged with its class width and the clearance, as Freerouting routes it; a pour-only net with its pour's `min_width_mm`
+and `clearance_mm`, on its pour layers, without vias.
+
+- **unreachable:** even on the empty board no way joins the two groups. The free area per layer is the board inside
+  the edge clearance, without hole, tooling-hole and keep-out areas (a wire keep-out only for tracks) and every
+  foreign pad grown by the clearance, shrunk by half the track width; vias join the layers wherever one fits on both.
+  The line names what walls in the side that reaches less: `the edge`, a `hole at (x, y) mm`, a `keep-out K<i>` (the
+  i-th `[[routing.keepouts]]` entry, counted from 0) with its layers, or the foreign `pads` around it.
+- **blocked:** a way exists on the empty board, but not between the routed copper of the other nets. The line names
+  the nets whose copper lies on the shortest way of the empty board (a raster of at most 0.1 mm, a via counted as 1 mm
+  of way), and the highest congestion along it.
+- **free way left:** the routed board still has room – Freerouting did not find it; more passes or another order.
+
+```text
+$ edakit route diagnose
+[ 0.0 min] diagnose: 1 open connection in 1 net
+    GND J1.2 – C2.2: unreachable – J1.2 enclosed by keep-out K0 (TOP, BOTTOM)
+$ edakit route diagnose            # the origin, one-sided, with GND routed as tracks
+    V_LED U1.23 – D32.1: blocked by GND_B1 – utilisation 0.04 at (-4, 2) mm
+    U4_OUT7 U4.12 – D8.2: blocked by STAR_B_K, U4_OUT6 – utilisation 0.23 at (-6, 88) mm
+```
+
+**Congestion** (RUDY): each routed net's wire demand – half the perimeter of its pads' bounding box over its area – is
+spread on a 1 mm grid and set against the capacity of each cell, the layers tracks may use there times cell / (signal
+width + clearance); both are averaged over 3 × 3 mm, because single cells at the edge give outliers. Above 1 an area
+needs more track than fits; a blocked connection at a low utilisation is a crossing, not a lack of room – a bridge,
+the other layer or another placement, not more passes. `route/<board>_diagnose/` holds one cropped picture per open
+connection (the net's free area on the empty board green, keep-outs red, the blocking nets' copper orange, the
+shortest way yellow), `congestion.png` and `diagnose.json` (per connection `net`, `a`, `b`, `verdict`, `line`, and
+`enclosed`, `enclosed_by` or `blocked_by`, `utilisation`, `at`, `way_mm`; the highest congestion). Exit 0 when nothing
+is open, 2 when open connections are explained. No new key.
+
 **Writing into EasyEDA** (all copper is generated, so it is deleted first – deleting sometimes needs several passes):
 points closer than 0.5 mil are snapped together (EasyEDA drops tiny pieces and connects track to track only through
 coinciding ends), pieces are split at T junctions, straight continuations merged (EasyEDA does that anyway), pieces
