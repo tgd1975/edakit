@@ -113,10 +113,11 @@ parts are in the PCB – the project's footprints as placed – and, for a plann
 the library footprint `edakit part import <LCSC>` cached (4.2): `pcb plan` names those parts ("library geometry") and
 takes their pad nets from the graph. The dump wins. The dump keeps the hole of every through-hole pad (`hole` [w, l] in
 mm, `plated`), and `pcb plan` runs P-7 on the plan's geometry: a hole that does not take its lead is a plan finding
-(`P-7 D31 (pads 1, 2, 3, 4, library geometry …): hole 0.70 mm for diagonal 0.71 mm …`), a tight hole or a missing
-`lead` is printed. A geometry file from before has no holes – dump again (it changes the layout hash once). Library and EasyEDA Pro agree on the pads within 0.1 mil (eleven
-footprints of the reference project; one switch 1 mil); the boxes differ by up to 0.3 mm, because EasyEDA Pro measures the silkscreen of
-the placed part. Without a dump and without a cached footprint a planned part stays a finding.
+(`P-7 D31 (pads 1, 2, 3, 4, library geometry …): hole 0.70 mm for diagonal 0.71 mm …`), a tight hole or a missing `lead`
+is printed. A geometry file from before has no holes – dump again (it changes the layout hash once). Library and EasyEDA
+Pro agree on the pads within 0.1 mil (eleven footprints of the reference project; one switch 1 mil); the boxes differ by
+up to 0.3 mm, because EasyEDA Pro measures the silkscreen of the placed part. Without a dump and without a cached
+footprint a planned part stays a finding.
 
 **What the circuit hands over** (L-12) comes first. The circuit designer writes it into the graph, the PCB designer
 keeps it (14.1); `edakit handover` lists it:
@@ -262,8 +263,8 @@ $ edakit pcb place
 may move a row with `auto = true` (its part is placed anew; one that has no host any more stays), never a row written
 by hand – delete `auto = true` to keep a spot. To every other command an `auto` row is a fixed, locked part like any
 other. `--only C1,R1` places only those. A part without a spot is named with its host and pin – `C1: no free spot
-within near_mm 6 of U2 (pin 16, 3V3)` – and the command exits 2. It reads the geometry of `pcb dump`, so the parts must
-be in the PCB once.
+within near_mm 6 of U2 (pin 16, 3V3)` – and the command exits 2. It reads the geometry as `pcb plan` does: the dump of
+`pcb dump`, and for a part not yet in the PCB the library footprint `edakit part import` cached (4.2).
 
 `edakit pcb dump` turns every part it measures to 0° on TOP to read its geometry and **leaves it there** – run `apply`
 and the auto-layout afterwards.
@@ -382,17 +383,18 @@ foreign copper, nothing in keep-outs (the edge strips above: `edge_clearance_um`
 too) – independent of Freerouting's own score. Freerouting cannot move a pad, so pads too close stop `route all` after
 one attempt, without the reshuffled ones: move or turn one of the two parts in the plan. The gate measures the same on
 the pads of the last `route read` (L-13, L-14, 8.1).
-**Hand-soldered joints (L-18)** with `hand_solder_keep_mm` (0, off, by default): a joint soldered by hand gets an
-iron and wire solder, not a stencil print of fixed volume, and a tented via or a foreign pad a few tenths of a millimetre
-away can take a bridge that only shows at assembly. The joints are the through-hole pads of every part with `bom:
-false` in the graph (8.4), each on its solder side – the copper layer its part does not sit on. On that side no via and
-no pad of another net comes closer than the keep, copper to copper; a pad without a net is a net of its own, the part's
-own pads are not compared, and tracks do not count – they run under the solder mask, between the pins of a 2.54 mm
-part too. Pads too close stop `route all` like L-13 (Freerouting cannot move them); a via gets the reshuffled attempts.
-`route dsn` keeps vias away from the start: around every joint a via keep-out on its solder side, the pad grown by the
-keep (Specctra `via_keepout`, which Freerouting reads) – it keeps out vias of the joint's own net as well, which
-reaches the joint by track – and the fanout vias of a plane keep the same distance. `waive` L-18 on the joint's part
-or net, or on the other part or net, accepts a pair:
+
+**Hand-soldered joints (L-18)** with `hand_solder_keep_mm` (0, off, by default): a joint soldered by hand gets an iron
+and wire solder, not a stencil print of fixed volume, and a tented via or a foreign pad a few tenths of a millimetre
+away can take a bridge that only shows at assembly. The joints are the through-hole pads of every part with `bom: false`
+in the graph (8.4), each on its solder side – the copper layer its part does not sit on. On that side no via and no pad
+of another net comes closer than the keep, copper to copper; a pad without a net is a net of its own, the part's own
+pads are not compared, and tracks do not count – they run under the solder mask, between the pins of a 2.54 mm part too.
+Pads too close stop `route all` like L-13 (Freerouting cannot move them); a via gets the reshuffled attempts. `route
+dsn` keeps vias away from the start: around every joint a via keep-out on its solder side, the pad grown by the keep
+(Specctra `via_keepout`, which Freerouting reads) – it keeps out vias of the joint's own net as well, which reaches the
+joint by track – and the fanout vias of a plane keep the same distance. `waive` L-18 on the joint's part or net, or on
+the other part or net, accepts a pair:
 
 ```text
 hand-soldered joints (L-18): 2 on their solder side, 1 vias of other nets closer than hand_solder_keep_mm 0.5

@@ -73,6 +73,8 @@ edakit cost                     # the order for `quantity` boards: class, fees, 
 edakit order                    # assembler's BOM, a cart per other supplier, hand-assembly list for all sets
 edakit rules G-11               # what a check is about, why, what to do, sources
 edakit sim                      # ngspice: every supply x load x tolerance corner (E) – seconds
+edakit docs --write             # values quoted in documents and schematic notes, from the design data (G-19)
+edakit firmware                 # the board's firmware contract as JSON from the graph; --check reports drift
 edakit schematic draw           # the schematic as SVG from graph and parts – no EasyEDA (enough without a PCB)
 edakit handover                 # what the circuit hands over to the layout – where the PCB designer starts
 edakit schematic create --save  # template schematic from the graph
@@ -82,8 +84,11 @@ edakit pcb place --write        # decoupling capacitors, pull resistors next to 
 edakit pcb apply                # outline, holes, tooling holes, fixed parts from the plan
 edakit pcb autolayout           # the small parts
 edakit route all                # Freerouting -> EasyEDA, pours, reload, DRC
+edakit route diagnose           # why a connection stays open: walled in, blocked by other nets, or free – offline
 edakit silk apply               # designators where there is room, silkscreen check
 edakit gate --easyeda           # release gate: protocol, manifest, files for JLCPCB
+edakit fab diff RUN_A RUN_B     # where the manufacturing files of two gate runs differ – raster, drills, BOM, CPL
+edakit release current|withdraw|verify   # the one run that may be uploaded; verify the files right before upload
 ```
 
 In Claude Code the skills do the orchestration: `/edakit:new-project`, `/edakit:circuit-design`, `/edakit:start`,

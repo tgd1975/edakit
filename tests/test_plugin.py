@@ -52,6 +52,21 @@ def test_the_electrical_review_asks_what_no_check_answers_yet():
     assert not missing, missing
 
 
+
+def test_the_reviewers_name_the_checks_that_now_answer_part_of_a_class():
+    """A question a check covers in part names that check, and every ID a reviewer names is in the catalogue."""
+    rules = json.loads((ROOT / "edakit" / "rules.json").read_text(encoding="utf-8"))
+    known = {*rules["checks"], *rules["hints"]}
+    look = section(ROOT / "agents" / "electrical-reviewer.md", "What you look at")
+    sources = look.split("**several sources**")[1].split("**mcu pin functions**")[0]
+    supply = look.split("**supply range")[1].split("**read-back")[0]
+    assert "e-5" in sources and "transients" in sources and "`copper`" in supply
+    pcb = section(ROOT / "agents" / "pcb-reviewer.md", "What you look at")
+    assert all(cid in pcb for cid in ("l-15", "l-16", "l-17", "l-18"))
+    for agent in ("electrical-reviewer", "pcb-reviewer"):
+        named = set(re.findall(r"\b[A-Z]-\d+\b", (ROOT / "agents" / f"{agent}.md").read_text(encoding="utf-8")))
+        assert named - {"M-1", "M-5"} <= known, (agent, named - known)
+
 def test_circuit_design_reads_pin_functions_and_header_pins():
     pins = section(ROOT / "skills" / "circuit-design" / "SKILL.md", "3. Parts and pins")
     for words in ("pwm slice", "peripheral instance", "adc", "header", "errata", "supply range", "vih"):

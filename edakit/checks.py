@@ -61,7 +61,7 @@
        `order` in its parts entry (order.py, warning)
   G-9  sign-off: every part verified against its datasheet, no open "verify" notes (pending, blocks only the release)
 
-0 Ω bridges (resistors with value_ohm 0 in the parts entry) join their nets: G-4, G-5, G-6, G-10 to G-16 see the
+0 Ω bridges (resistors with value_ohm 0 in the parts entry) join their nets: G-4, G-5, G-6, G-10 to G-17 see the
 joined nets as one net under the group's name (the ground net if it is one of them, else the first in the graph) and
 the bridges as copper; G-1, G-2, G-3, G-8, G-18, P-1 and G-9 see every net and part as the graph has them.
 

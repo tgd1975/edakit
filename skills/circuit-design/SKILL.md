@@ -85,10 +85,10 @@ edakit schematic draw 2>&1 | cat   # the circuit as a drawing (SVG) for the user
 ```
 
 A hint that is taken care of gets a line in the graph: `"hints": {"H-1": "C1 1000 µF next to J1"}`. Settings the checks
-need go into the graph's `checks` – the pins the firmware relies on (`pin_locks`; or, where the firmware follows
-the graph, the contract of `edakit firmware`, handbook 3.5, with the roles `sdi`, `sdo`, `out0` … `outN` on drivers), a connector that can be plugged in
-the wrong way (`reverse_protect`). Blocks and notes of the drawing, once it should look a certain way, go into the
-schematic file `hardware/schematic.toml` (handbook 10.3).
+need go into the graph's `checks` – the pins the firmware relies on (`pin_locks`; or, where the firmware follows the
+graph, the contract of `edakit firmware`, handbook 3.5, with the roles `sdi`, `sdo`, `out0` … `outN` on drivers), a
+connector that can be plugged in the wrong way (`reverse_protect`). Blocks and notes of the drawing, once it should look
+a certain way, go into the schematic file `hardware/schematic.toml` (handbook 10.3).
 
 ## 7. Hand over
 

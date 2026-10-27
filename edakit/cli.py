@@ -12,14 +12,15 @@
     edakit stock [--refresh]         what JLCPCB says about the assembled parts, as a dated snapshot (check P-4)
     edakit cost [--json F]           the order for `quantity` boards from BOM, board and the dated fee table
     edakit order [--out DIR]         the assembler's BOM, a cart per other supplier, the hand-assembly list (P-5)
-    edakit sim                      stage E: ngspice operating points of all scenarios (offline, seconds)
+    edakit sim                       stage E: ngspice operating points of all scenarios (offline, seconds)
     edakit docs [--write]            values quoted in documents and schematic notes: G-19 for stale ones, --write fills in
     edakit firmware [--check]        the board's firmware contract as JSON from the graph; --check: drift (opt-in)
     edakit handover                  what the circuit hands over to the layout: state, sign-offs, layout requirements
     edakit schematic create|check|copy|layout
     edakit schematic draw            the schematic as SVG from graph and parts database – no EasyEDA (offline)
     edakit pcb dump|plan|place|parts|nets|apply|tooling|pour|autolayout
-    edakit route all|read|dsn|route|check|apply|verify|pours|reload|drc
+    edakit route all|read|dsn|route|check|apply|verify|pours|reload|drc|save
+    edakit route diagnose [--net N]  why each open connection is open: walled in, blocked, or a free way (offline)
     edakit silk apply|check
     edakit export                    PDFs, Gerber, BOM, CPL, netlist and a project copy to <artifacts>/export
     edakit gate [--easyeda]          release gate with test protocol and manufacturing files

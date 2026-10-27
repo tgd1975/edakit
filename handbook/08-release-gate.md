@@ -110,10 +110,10 @@ fill changes the copper. The fab hash changes exactly when what the factory buil
 (0.02 mm, below the manufacturer's tolerance). A Pillow update that draws edges differently changes it too: the
 sign-offs then lapse, a change never passes unseen.
 
-Each file belongs to one of them or to none (10.1): edakit.toml, the schematic file and the documents of `[docs]
-files` are in no hash, so a new order quantity, a note in the schematic or a corrected number (6.6) voids no review. A project that moved from the one-file edakit.toml (October
-2026) records the hashes before and after in `rehashed` of its sign-off file: the move changed files, not what they
-say.
+Each file belongs to one of them or to none (10.1): edakit.toml, the schematic file and the documents of `[docs] files`
+are in no hash, so a new order quantity, a note in the schematic or a corrected number (6.6) voids no review. A project
+that moved from the one-file edakit.toml (October 2026) records the hashes before and after in `rehashed` of its
+sign-off file: the move changed files, not what they say.
 
 **What the circuit hash leaves out.** By default it takes the files byte by byte: a corrected note, a source added
 or the `verified` record a datasheet check writes voids M-1 and M-6. `[release] hash_ignore` lists keys that are
@@ -223,8 +223,8 @@ The protocol names every check with its words next to the ID ("L-9 (hole fits th
 "The rules behind the findings", gives rule, reason, fix and sources of every check that failed or warned – from the
 rule catalog (chapter 14.2), so that the protocol can be read without this handbook.
 
-Result folder `<reports>/<YYYYMMDD-hhmmss>/`: `protocol.md`, `graph_checks.json`, `sim.json`,
-`schematic_<board>.json`, `fab/<board>/` (Gerber ZIP, BOM, CPL, raw data, with `[order]` the order form `order.md`), `fab/polarity_<board>.png`,
+Result folder `<reports>/<YYYYMMDD-hhmmss>/`: `protocol.md`, `graph_checks.json`, `sim.json`, `schematic_<board>.json`,
+`fab/<board>/` (Gerber ZIP, BOM, CPL, raw data, with `[order]` the order form `order.md`), `fab/polarity_<board>.png`,
 `fab/manifest.json`. Archive a released folder in git (`git add -f`) – it is the record of what was ordered.
 
 **One current release.** A project has at most one run that may be uploaded. When the gate decides RELEASED, it

@@ -39,7 +39,9 @@ part of the class: read its result and ask the rest.
   programming cable, a host port – which source feeds which net? Does any of them back-feed into a host port, a cell
   or another supply, also through a MOSFET body diode or a diode inside a module? What happens in the switch-over gap
   when one source goes and the other takes over – a transient that no DC scenario shows? E-3 tests the back-feed into
-  sources and cells in the simulated scenarios, H-8 names every net two supplies meet on without a block.
+  sources and cells in the simulated scenarios (with sim.json `combine_sources` in every combination), H-8 names
+  every net two supplies meet on without a block, and E-5 holds the runs of sim.json `transients` – plug-in, unplug,
+  switch-over – to their limits: ask for the switch-overs and unplugs no run covers.
 - **MCU pin functions** (graph and parts database): does every signal sit on a pin that has its function – PWM
   channel, SPI, I2C or UART instance, ADC input? Do PWM signals with independent frequencies sit on different PWM
   slices or timers? Is every pin used brought out on the module's header? Do errata of the MCU touch the pins used?
@@ -48,7 +50,9 @@ part of the class: read its result and ask the rest.
 - **Supply range and input levels of every IC that is not the MCU** (graph and simulation): is its minimum operating
   voltage met on the net it is supplied from, and do the VIH and VIL of its inputs fit the domain that drives them?
   G-3 tests only the upper limit `vmax`; E-3 tests the supply range and the input levels of every part whose entry
-  gives them (`vdd_op_min`/`vdd_op_max`, `vih_v`, `vil_v`) – ask for the parts without them.
+  gives them (`vdd_op_min`/`vdd_op_max`, `vih_v`, `vil_v`) – ask for the parts without them. On a routed board, does
+  the track drop eat the margin? With sim.json `copper` the simulation puts the routed tracks of the listed nets in
+  as resistors and E-3 reads each pin's own voltage – ask for the power nets `copper` does not list.
 - **Read-back of synchronous outputs** (parts database): on which clock edge does a shift register or driver chain
   change its serial output, against the edge the MCU samples on in the SPI mode it uses? H-9 asks it for every output
   the MCU reads from a part whose inputs it also drives.

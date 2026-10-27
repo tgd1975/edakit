@@ -28,7 +28,8 @@ first (start skill, claim EasyEDA):
 ```bash
 edakit schematic create --save 2>&1 | cat     # template from the graph (minutes on big boards)
 edakit schematic check 2>&1 | cat             # template = graph
-edakit schematic layout --save 2>&1 | cat     # board schematic: parts synced, rewired (saved only when the netlist = graph)
+edakit schematic layout --save 2>&1 | cat     # board schematic: parts synced, rewired
+                                              # (saved only when the netlist = graph)
 edakit schematic check --schematic <board schematic> 2>&1 | cat
 edakit pcb parts 2>&1 | cat                   # parts added, swapped or removed: show, then --write
 edakit pcb nets 2>&1 | cat                    # only nets changed: show, then --write
@@ -65,9 +66,9 @@ describes (section 3); a list of parts or pads is fixed with `pcb parts --write`
      `edakit part diff OLD NEW` says how the new footprint lies over the old one (turn, shift, pad map).
    - `edakit pcb apply` (outline, holes, tooling holes, fixed parts locked; pad positions verified against the plan)
    - `edakit pcb autolayout` (unlocked parts, TOP only, waits for stable positions)
-   - `edakit route all 2>&1 | cat` (read → DSN → Freerouting → check → apply → pours → reload → DRC; exit 0 = DRC 0, 3 = only the import
-     acknowledgement pending).
-     Open connections are yellow in `<artifacts>/route/<board>_routing.png`. Never EasyEDA's autorouter.
+   - `edakit route all 2>&1 | cat` (read → DSN → Freerouting → check → apply → pours → reload → DRC; exit 0 = DRC 0, 3 =
+     only the import acknowledgement pending). Open connections are yellow in `<artifacts>/route/<board>_routing.png`.
+     Never EasyEDA's autorouter.
    - `edakit silk apply 2>&1 | cat` (designators where there is room; silkscreen on pads = 0; DRC). Through-hole parts
      of the other side, soldered from the designators side: `[silk] solder_side = true` (handbook 7.7). A part listed
      "without room": more room, a group label (`[silk] groups`) or `[silk] unlabelled` with the reason – the gate warns
@@ -108,14 +109,14 @@ describes (section 3); a list of parts or pads is fixed with `pcb parts --write`
   `route all` at its check, without retries – move or turn one of the two parts in `place`. So do pads of other nets
   closer than `[routing] hand_solder_keep_mm` to a joint soldered by hand (`bom: false`) on its solder side (L-18);
   vias are kept away there by the DSN (handbook 7.5).
-- Freerouting is deterministic but order-dependent: `route all` retries with reshuffled DSNs when nets stay open.
-  Before relaxing rules or moving parts, `edakit route diagnose 2>&1 | cat` says per open connection why: unreachable
-  (what walls the pad in – a keep-out, the edge, a hole, foreign pads: no rule or pass count helps), blocked (by which
-  nets, at what congestion: a crossing at low utilisation wants a bridge or the other layer) or a free way left (more
-  passes); pictures in `<artifacts>/route/<board>_diagnose/` (handbook 7.5). If it never closes: more room at the stuck pads in the plan, a plane for a power net (`fanout = true` for its SMD
-  pads on the other side, handbook 7.5), or other layer costs; with all tracks on one side a 0 Ω bridge in the graph
-  where a track has to cross (handbook 3.3), and the ground as a pour-only net (`pour_only`, handbook 7.6) that the
-  pour between the tracks connects.
+- Freerouting is deterministic but order-dependent: `route all` retries with reshuffled DSNs when nets stay open. Before
+  relaxing rules or moving parts, `edakit route diagnose 2>&1 | cat` says per open connection why: unreachable (what
+  walls the pad in – a keep-out, the edge, a hole, foreign pads: no rule or pass count helps), blocked (by which nets,
+  at what congestion: a crossing at low utilisation wants a bridge or the other layer) or a free way left (more passes);
+  pictures in `<artifacts>/route/<board>_diagnose/` (handbook 7.5). If it never closes: more room at the stuck pads in
+  the plan, a plane for a power net (`fanout = true` for its SMD pads on the other side, handbook 7.5), or other layer
+  costs; with all tracks on one side a 0 Ω bridge in the graph where a track has to cross (handbook 3.3), and the ground
+  as a pour-only net (`pour_only`, handbook 7.6) that the pour between the tracks connects.
 
 ## Report
 

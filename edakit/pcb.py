@@ -66,13 +66,13 @@ def load_geometry(cfg, board):
     return json.loads(f.read_text())
 
 
-def plan_geometry(cfg, board, design):
-    """The geometry the plan works with: the dump of the PCB, and for a planned part that is not in it the footprint
-    `edakit part import` cached – "source": "library", the pad nets from the graph."""
+def plan_geometry(cfg, board, design, refs=None):
+    """The geometry the plan works with: the dump of the PCB, and for a part of refs (default: the planned ones) that
+    is not in it the footprint `edakit part import` cached – "source": "library", the pad nets from the graph."""
     from . import part
     f = geometry_file(cfg, board)
     geo = json.loads(f.read_text()) if f.exists() else {}
-    for ref in board.place:
+    for ref in board.place if refs is None else refs:
         if ref not in geo and ref in design.comps and (lib := part.library_footprint(cfg, design, ref)):
             pads = {n: {**p, "net": design.pin_net.get(f"{ref}.{n}", "")} for n, p in lib["pads"].items()}
             geo[ref] = {**lib, "pads": pads, "source": "library"}
@@ -996,10 +996,15 @@ def write_place_rows(path, rows):
 
 
 def place_main(cfg, board, write=False, only=None):
+    """pcb place: the geometry as pcb plan reads it, for every part of the board – a part not yet in the PCB is
+    placed by the library footprint `edakit part import` cached."""
     from . import config
-    geo = load_geometry(cfg, board)
     design = Design.from_config(cfg)
+    geo = plan_geometry(cfg, board, design, [*board.place, *(r for r in sorted(design.board_comps(board.name),
+                                                                                key=natural_key) if r not in board.place)])
     rows, problems = auto_place(cfg, board, geo, design, set(only) if only else None)
+    if lib := [r for r, _, _ in rows if geo[r].get("source") == "library"]:
+        print(f"  library geometry (edakit part import, not yet from the PCB): {', '.join(lib)}")
     for ref, p, why in rows:
         print(f"  {ref} = {place_row(p)}   # {why}")
     for p in problems:

@@ -34,7 +34,8 @@ boards of the project in the current repository. You **change nothing**, neither
 
 1. **Manufacturability (JLCPCB):** clearances, widths of power nets, annular rings and hole spacing (L-16 holds them
    to JLCPCB's table – judge what it waived), drills and slots (plated slots >= 0.5 mm), copper to edge, assembly side
-   per part, THT pins under parts of the other side, polarity marks in the silkscreen, tooling holes for Economic PCBA,
+   per part, THT pins under parts of the other side, polarity marks in the silkscreen (L-8), silkscreen on pads and
+   beyond the outline and the designators (L-17 reads them from the Gerber files), tooling holes for Economic PCBA,
    DRC; vias and foreign pads next to joints soldered by hand on their solder side (L-18 with
    `[routing] hand_solder_keep_mm` – without the key, note them).
    **Copper per layer** from the Gerber files: the share of the board each layer covers, the largest bare area where

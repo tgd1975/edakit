@@ -113,7 +113,8 @@ work without it.
 ## 10.2 The board file
 
 `hardware/boards/<name>.toml`: what the PCB designer decides (14.1). The layout hash covers it – a change voids the
-sign-offs with scope `layout`; the layout review M-5 with scope `fab` (8.2) lapses when the manufacturing files change. The keys stand at the top of the file, without a prefix (`[place]`, `[[holes]]`):
+sign-offs with scope `layout`; the layout review M-5 with scope `fab` (8.2) lapses when the manufacturing files change.
+The keys stand at the top of the file, without a prefix (`[place]`, `[[holes]]`):
 
 | Key | Default | Meaning |
 |---|---|---|
@@ -169,9 +170,10 @@ switching node).
 `hardware/schematic.toml`: `stub` (10): stub length of the template. `[layout]`: `rows` (rows → columns → blocks
 `{title, start}`), `power_flags` ({NET = "Ground"|"Power"}), `near` ({CAP = "PART"}), `stacked` (blocks whose trees
 stand one below the other), `[layout.notes]` ({block title = [lines]}), `[layout.pin_table]` (`component`, `block`,
-`prefix`, `notes` {NET = "function"}). A note may quote the design data: `{graph:R1.value}`, `{part:C90107.params.vrext_v}`,
-`{sim:max E-3 * D2 LED current*}`, optionally with a format (6.6). It changes no hash – the drawing explains the circuit, it is not the circuit.
-Without the file `edakit schematic draw` arranges the schematic by itself (6.5).
+`prefix`, `notes` {NET = "function"}). A note may quote the design data: `{graph:R1.value}`,
+`{part:C90107.params.vrext_v}`, `{sim:max E-3 * D2 LED current*}`, optionally with a format (6.6). It changes no hash –
+the drawing explains the circuit, it is not the circuit. Without the file `edakit schematic draw` arranges the schematic
+by itself (6.5).
 
 ## 10.4 Commands
 
@@ -208,7 +210,7 @@ Claude Code: `edakit … 2>&1 | cat`.
 | `edakit schematic draw [--board] [--out F] [--force]` | – | graph, parts, the schematic file if there; for a `{sim:…}` note the saved simulation result | `schematic_<board>.svg` (or F) |
 | `edakit pcb dump [--ref]` | ✓ | PCB | `pcb_geometry_<board>.json` (parts end at 0°/TOP; through-hole pads with `hole` [w, l] mm and `plated`) |
 | `edakit pcb plan` | – | plan, geometry (the dump; library footprints of `part import` for parts not in it), net currents, graph (`layout`, L-12), parts entries (`body`, `lead` `length_mm`, `mate`) | `pcb_plan_<board>.png/.json`, `pcb_netclasses_<board>.json`, `mech_<board>.json` (7.4) |
-| `edakit pcb place [--write] [--only C1,R1]` | – | plan, geometry, graph (`layout.near`, decoupling of L-12), `[near]` | with `--write`: rows with `auto = true` at the end of `[place]` |
+| `edakit pcb place [--write] [--only C1,R1]` | – | plan, geometry as `pcb plan` reads it, graph (`layout.near`, decoupling of L-12), `[near]` | with `--write`: rows with `auto = true` at the end of `[place]` |
 | `edakit pcb parts [--write]` | ✓ | board schematic, PCB, graph | PCB parts, UniqueIds, geometry |
 | `edakit pcb nets [--write]` | ✓ | graph, PCB | pad nets |
 | `edakit pcb apply [--verify-all]` | ✓ | plan, geometry | outline, holes, tooling, fixed parts |

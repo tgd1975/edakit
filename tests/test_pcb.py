@@ -11,7 +11,7 @@ import pytest
 from shapely.geometry import Polygon
 from shapely.ops import unary_union
 
-from edakit import cli, config, pcb, route
+from edakit import cli, config, part, pcb, route
 from edakit.pcb import polarity_findings
 
 PART = {"kind": "led", "pins": {"1": {"role": "anode"}, "2": {"role": "cathode"}}}
@@ -279,6 +279,24 @@ def test_place_puts_the_parts_next_to_their_host(project, capsys):
         assert math.dist(pad_at(board, geo, ref, p, pad), pad_at(board, geo, "U2", u2, pin)) < 2.0
     assert "R2" not in out                                                 # the pull-up of LED_OE has no host
 
+
+def test_place_reads_the_geometry_as_the_plan_does(project, capsys):
+    """A part not yet in the PCB dump is placed by the footprint `edakit part import` cached, as pcb plan reads it."""
+    geo = led_bar_geo()
+    lib = geo.pop("R1")
+    place_project(project, geo=geo)
+    toml = str(project.root / "edakit.toml")
+    capsys.readouterr()
+    assert cli.main(["pcb", "place", "--config", toml]) == 2            # without the library footprint: R1 unplaced
+    assert "R1: R1 not in the footprint geometry" in capsys.readouterr().out
+    cfg = project.config()
+    name = project.part("C17604")["footprint"]
+    f = cfg.artifact("footprints", part.file_name(name))
+    f.write_text(json.dumps({**lib, "footprint": name}))
+    assert cli.main(["pcb", "place", "--config", toml]) == 0
+    out = capsys.readouterr().out
+    assert "library geometry (edakit part import, not yet from the PCB): R1" in out
+    assert [r for r in re.findall(r"^  (\w+) = \{", out, re.M)] == ["R1", "C1"]
 
 def test_place_write_adds_the_rows_and_the_plan_passes(project, capsys):
     f = place_project(project)
