@@ -40,7 +40,9 @@ profile says: `${CLAUDE_PLUGIN_ROOT}/skills/part-search/distributors/<name>.md` 
 - An LCSC part: `edakit part import <LCSC>` writes the start – identification, footprint, the symbol's pin numbers
   and names – and caches the library's symbol and footprint (P-1 then compares the graph with the symbol).
 - `hardware/parts/<LCSC>.json` – from another distributor `hardware/parts/<manufacturer part number>.json` with
-  `mpn` set and `order` for the order numbers (`{"rs": "223-0562"}`); the graph names it in `part`. After the
+  `mpn` set and `order` for the order numbers (`{"rs": "223-0562"}`, with a minimum or pack size
+  `{"rs": {"code": "223-0562", "moq": 10, "step": 10}}`); the graph names it in `part`. A part bought
+  separately at LCSC with a minimum gets `{"lcsc": {"moq": 20}}` – `edakit order` rounds its cart line up. After the
   pattern of a similar part: `kind`, `pins` (names identical to the graph, `type`, `role`, `vmax`), `params`,
   `ratings`, `spice` for diodes/transistors, `lead` for through-hole parts (P-7 stays pending without it and holds
   it to the footprint's holes at once), `sources` (mark every assumption as

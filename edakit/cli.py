@@ -11,6 +11,7 @@
     edakit part datasheet|own        own parts: a board of an edakit project as a part in another project
     edakit stock [--refresh]         what JLCPCB says about the assembled parts, as a dated snapshot (check P-4)
     edakit cost [--json F]           the order for `quantity` boards from BOM, board and the dated fee table
+    edakit order [--out DIR]         the assembler's BOM, a cart per other supplier, the hand-assembly list (P-5)
     edakit sim                      stage E: ngspice operating points of all scenarios (offline, seconds)
     edakit handover                  what the circuit hands over to the layout: state, sign-offs, layout requirements
     edakit schematic create|check|copy|layout
@@ -94,6 +95,10 @@ def build_parser():
     p = sub.add_parser("cost", help="estimate the order: PCB, PCBA fees, parts, extras, shipping, VAT; drivers, budget")
     p.add_argument("--board", help="only this board (no shipping, extras, VAT)")
     p.add_argument("--json", help="also write the estimate as JSON to this file")
+    _common(p)
+
+    p = sub.add_parser("order", help="assembler's BOM, one cart per other supplier, hand-assembly list for all sets")
+    p.add_argument("--out", help="folder for the files (default: <artifacts>/order)")
     _common(p)
 
     p = sub.add_parser("sim", help="simulation (stage E)")
@@ -225,6 +230,9 @@ def main(argv=None):
     if args.command == "cost":
         from . import cost
         return cost.main(cfg, args)
+    if args.command == "order":
+        from . import order
+        return order.main(cfg, args)
     if args.command == "sim":
         from .sim import run
         try:

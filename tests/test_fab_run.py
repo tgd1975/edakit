@@ -318,6 +318,19 @@ def test_edakit_fab_offline_on_the_clean_export(project, monkeypatch, capsys):
     assert findings(rows) == []
 
 
+def test_edakit_order_writes_the_bom_of_f1(project, monkeypatch):
+    """#41: the assembler's BOM of `edakit order` is byte for byte the one F-1 writes – C2 and D1; J1 is soldered by
+    hand and goes to a cart."""
+    run(project)
+    monkeypatch.chdir(project.root)
+    monkeypatch.delenv("EDAKIT_CONFIG", raising=False)
+    assert cli.main(["order", "--out", str(project.root / "order")]) == 0
+    bom = (project.root / "order" / "bom_main.csv").read_bytes()
+    assert bom == (project.root / "build" / "fab" / "main" / "bom_main.csv").read_bytes()
+    assert [line.split(",")[-1] for line in bom.decode().splitlines()] == ["LCSC Part #", "C45783", "C8678"]
+    assert "C131337" in (project.root / "order" / "cart_lcsc.csv").read_text()
+
+
 def board_file(project, old, new):
     f = project.root / "hardware" / "boards" / "main.toml"
     assert old in f.read_text()

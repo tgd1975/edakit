@@ -57,6 +57,8 @@
   P-4  parts orderable (stock.py): every assembled part listed at JLCPCB, in stock for `quantity` boards with the
        assembler's attrition, the MPN of its entry, not "Standard Only" on an Economic order – read offline from the
        snapshot of `edakit stock`; MSL >= 5, a thin stock margin, another class warn; an old snapshot is pending
+  P-5  a part bought separately (bom: false) names its supplier: an LCSC number or `order` in its parts entry
+       (order.py, warning)
   G-9  sign-off: every part verified against its datasheet, no open "verify" notes (pending, blocks only the release)
 
 0 Ω bridges (resistors with value_ohm 0 in the parts entry) join their nets: G-4, G-5, G-6, G-10 to G-16 see the
@@ -110,7 +112,7 @@ MULTIPLIERS = {"p": 1e-12, "n": 1e-9, "u": 1e-6, "µ": 1e-6, "μ": 1e-6, "m": 1e
 QUANTITY = re.compile(r"\s*(\d+)(?:[.,](\d+))?\s*([pnuµμmkKMG]|[RΩ])?(\d+)?\s*(Ω|[oO]hms?|F|H)?(?=$|[\s,;/()])")
 
 EXECUTED = ["G-1", "G-2", "G-3", "G-4", "G-5", "G-6", "G-8", "G-10", "G-11", "G-12", "G-13", "G-14", "G-15", "G-16",
-            "G-17", "G-18", "P-1", "P-3", "P-4", "P-6", "P-7", "G-9"]
+            "G-17", "G-18", "P-1", "P-3", "P-4", "P-5", "P-6", "P-7", "G-9"]
 
 
 class Report:
@@ -1040,12 +1042,13 @@ def run(design, cfg=None):
     check_part_pins(design, rep, cfg)
     check_identity(design, rep)
     if cfg:
-        from . import part, stock
+        from . import order, part, stock
         part.check(design, rep, cfg)
         if not check_holes(design, rep, footprint_geometry(design, cfg)):
             rep.notes.append(("P-7", "not run: no footprint geometry – edakit pcb dump once the parts are in the PCB, "
                                      "or edakit part import <LCSC> for the library's"))
         stock.check(design, rep, cfg)
+        order.check(design, rep, cfg)
     check_signoff(design, rep)
     return rep
 

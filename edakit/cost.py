@@ -28,7 +28,6 @@ from __future__ import annotations
 
 import datetime as dt
 import json
-import math
 import sys
 from pathlib import Path
 
@@ -255,8 +254,9 @@ def converter(cfg, fees):
 
 def extra_lines(cfg, rate):
     out = []
+    from .order import extra_pieces
     for e in cfg.extras:
-        qty = math.ceil(e["per_set"] * cfg.quantity - 1e-9)
+        qty = extra_pieces(cfg, e)          # as the cart orders it: spares, minimum, pack size
         price = e.get("unit_price")
         out.append({"item": e["item"], "supplier": e["supplier"], "qty": qty, "unit_price": price,
                     "currency": e.get("currency") or (cfg.cost or {}).get("currency", "USD"),

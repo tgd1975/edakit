@@ -18,7 +18,7 @@ edakit gate --easyeda    # plus S, L, F – EasyEDA with the bridge, minutes
 
 | Stage | What | Checks |
 |---|---|---|
-| P – Parts | parts database complete and signed, every part named by its entry, through-hole leads fitting their holes, own parts equal to their source, parts orderable | P-1, P-3, P-4, P-6, P-7, G-9 (chapter 3, 4) |
+| P – Parts | parts database complete and signed, every part named by its entry, through-hole leads fitting their holes, own parts equal to their source, parts orderable, a supplier per part | P-1, P-3, P-4, P-5, P-6, P-7, G-9 (chapter 3, 4) |
 | G – Graph | rule checks | G-1 … G-18 (chapter 3) |
 | E – Simulation | operating points, stress, function, every LED checked | E-1 … E-4 (chapter 5) |
 | *project stages* | e.g. K – mechanics of an enclosure | `[[release.stages]]`, see below |
@@ -172,6 +172,14 @@ Without a stock snapshot the parts have no price. On the reference project the e
 the cart (USB tree, 2026-10-25: 71.53 $ with the fees of that day against 72.58 $); the fees JLCPCB does not itemise
 (bake, X-ray, hand soldering, packing) are values of their own in the table. Run it when a part, a side or the class
 changes, not after the first quote.
+
+**Everything else in the same go.** `edakit order` writes, for `quantity` sets, the assembler's BOM (the file F-1
+writes), one cart per other supplier and `hand_assembly.md`. A part bought separately (`bom: false`) goes to the
+component's `supplier`, else the first supplier of its entry's `order`, else LCSC; items off the board are
+`[[extra]]`. Every cart line gets the spares (`[project] spare_pct`, `spare` on the component or item) and is rounded
+up to the supplier's minimum and pack size (`moq`, `step` in `order` or the item). The LCSC cart has the columns of its
+BOM tool ("LCSC Part Number, Quantity, Comment"), the others "Code, Quantity, Item, Designators". P-5 warns about a
+part bought separately that names no supplier.
 
 The MCP server cannot order. Lessons from the reference order:
 

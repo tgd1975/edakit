@@ -13,7 +13,7 @@ Examples: [the Christmas bell's parts](https://github.com/tgd1975/automatic_chri
 | Field | Content |
 |---|---|
 | `lcsc`, `mpn`, `manufacturer` | identification; `lcsc` equals the file name, `mpn` is what a component names in `part` – P-6 compares them, with the `kind` and the value parameters |
-| `order` | order numbers at other distributors: `{"rs": "223-0562", "farnell": "…", "mouser": "…", "digikey": "…"}` |
+| `order` | where a part bought separately is ordered, supplier → order code: `{"rs": "223-0562", "farnell": "…"}`; a value may be `{code, moq, step}` with the supplier's minimum and pack size, `{"lcsc": {"moq": 20, "step": 20}}` (the LCSC code defaults to `lcsc`). The first supplier is the default of `edakit order`; P-5 warns about a `bom: false` part with neither an LCSC number nor `order` |
 | `kind` | `resistor`, `capacitor`, `inductor`, `fuse`, `diode`, `led`, `led_rgb`, `npn`, `pnp`, `pmos`, `nmos`, `switch`, `dip_switch`, `button`, `potentiometer`, `battery_holder`, `buzzer`, `relay`, `connector`, `ic`, `module` |
 | `package`, `footprint` | the footprint name must equal the EasyEDA footprint (L-4 compares it with the PCB) |
 | `jlc_class` | Basic / Extended Part; P-4 and F-2 warn when JLCPCB's catalogue lists another class |

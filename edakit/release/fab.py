@@ -215,6 +215,14 @@ def bom_rows(design, board):
     return out
 
 
+def write_bom(bom, path):
+    """The BOM in JLCPCB's columns – F-1 and `edakit order` write the same file."""
+    with open(path, "w", newline="", encoding="utf-8") as f:
+        w = csv.DictWriter(f, fieldnames=["Comment", "Designator", "Footprint", "LCSC Part #"])
+        w.writeheader()
+        w.writerows(bom)
+
+
 def required_widths(cfg, design, board):
     """Per net: (IPC-2221 width for 1.5 x the largest simulated current, practical class width, current)."""
     from ..pcb import ipc2221_width_mm
@@ -1018,10 +1026,7 @@ def check_copper_sides(board, design, d, rows):
 def check_fab(cfg, board, design, d, rows):
     want = design.board_comps(board.name)
     bom = bom_rows(design, board)
-    with open(d / f"bom_{board.name}.csv", "w", newline="", encoding="utf-8") as f:
-        w = csv.DictWriter(f, fieldnames=["Comment", "Designator", "Footprint", "LCSC Part #"])
-        w.writeheader()
-        w.writerows(bom)
+    write_bom(bom, d / f"bom_{board.name}.csv")
     ours = {ref: r["LCSC Part #"] for r in bom for ref in r["Designator"].split(",")}
     eda_bom = {ref.strip(): e["lcsc"] for e in json.loads((d / "bom_easyeda.json").read_text())
                for ref in e["reference"].split(",") if ref.strip() in want}

@@ -42,7 +42,7 @@ MAX_BARE_MM = 5.0                # [copper] max_bare_mm: largest copper-free cir
 
 PROJECT_KEYS = ("name", "company", "quantity", "distributors", "lock", "agreements", "graph", "parts", "sim",
                 "sim_plugin", "schematic", "signoff", "artifacts", "reports", "datasheets", "stock", "stock_margin_pct",
-                "stock_max_age_days")
+                "stock_max_age_days", "spare_pct")
 BOARD_KEYS = ("title", "template", "schematic", "pcb", "file")            # [boards.<name>] in edakit.toml
 BOARD_FILE_KEYS = ("revision", "view", "outline", "holes", "tooling", "place", "near", "near_mm", "edge_mm", "edge_ok",
                    "on_headers", "header_keep_mm", "silk_overlap_mm", "park", "routing", "pours", "pour_regions",
@@ -51,7 +51,7 @@ SCHEMATIC_KEYS = ("stub", "layout")
 RELEASE_KEYS = ("layout_files", "state_files", "assembly", "stages")
 PCBA = ("economic", "standard")  # [release] assembly.pcba: the assembler's class of the order (P-4)
 COST_KEYS = ("fees", "budget", "currency", "rates", "shipping", "coupon", "vat_pct", "pcb_price")   # [cost]
-EXTRA_KEYS = ("item", "supplier", "per_set", "unit_price", "currency")   # [[extra]]: items off the board
+EXTRA_KEYS = ("item", "supplier", "code", "per_set", "spare", "moq", "step", "unit_price", "currency")   # [[extra]]
 STOCK_MAX_AGE_DAYS = 14          # [project] stock_max_age_days: an older stock snapshot is pending (P-4)
 
 
@@ -162,6 +162,7 @@ class Config:
     stock_margin_pct: float = 0.0       # P-4 warns below need x (1 + margin / 100)
     stock_max_age_days: int = STOCK_MAX_AGE_DAYS
     cost: dict | None = None            # [cost] of edakit.toml; None: no cost estimate in the gate
+    spare_pct: float = 0.0              # edakit order: spares on every cart line, in % of quantity sets
     extras: list = field(default_factory=list)   # [[extra]]: items off the board – cost estimate and carts
 
     def pcba(self):
@@ -431,7 +432,7 @@ def _number(where, v, integer=False, positive=False):
 
 def _project_values(p):
     out = []
-    for key in ("stock_margin_pct",):
+    for key in ("stock_margin_pct", "spare_pct"):
         if key in p:
             out += _number(f"[project] {key}", p[key])
     if "stock_max_age_days" in p:
@@ -482,6 +483,11 @@ def _extras(extras):
             out += _number(f"{where}: per_set", e["per_set"], positive=True)
         if "unit_price" in e:
             out += _number(f"{where}: unit_price", e["unit_price"])
+        if "spare" in e:
+            out += _number(f"{where}: spare", e["spare"], integer=True)
+        for key in ("moq", "step"):
+            if key in e:
+                out += _number(f"{where}: {key}", e[key], integer=True, positive=True)
     return out
 
 
@@ -564,5 +570,6 @@ def load(path=None) -> Config:
         stock_margin_pct=float(p.get("stock_margin_pct", 0)),
         stock_max_age_days=int(p.get("stock_max_age_days", STOCK_MAX_AGE_DAYS)),
         cost=raw.get("cost"),
+        spare_pct=float(p.get("spare_pct", 0)),
         extras=list(raw.get("extra", [])),
     )

@@ -41,6 +41,7 @@ board, the schematic or the checks (the earlier one-file form) is refused with a
 | `stock` | `hardware/stock.json` | the stock snapshot of `edakit stock` (P-4, 4.2); versioned, outside the circuit hash |
 | `stock_margin_pct` | `0` | P-4 warns when the assembler's stock is below the need plus this margin |
 | `stock_max_age_days` | `14` | an older snapshot (or snapshot row) is pending in P-4 – it blocks the release, not `edakit check` |
+| `spare_pct` | `0` | `edakit order`: spares on every cart line, in % of `quantity` sets (rounded up) |
 
 The name of the ground net is in the graph (`ground`, default `GND`), with the circuit it belongs to; nets that are
 ground on purpose besides it (an analog ground) in `grounds` (3.1, G-16).
@@ -81,8 +82,10 @@ it the gate has an information row "estimated order cost" in stage P, and above 
 ### [[extra]]
 
 Items off the board that belong to the order – a cable, feet, a module that is plugged in: `item`, `supplier`,
-`per_set` (pieces per board set), `unit_price` and its `currency` (default `[cost] currency`). `edakit cost` prices
-`ceil(per_set × quantity)` of each.
+`per_set` (pieces per board set) – these three are required –, `code` (the supplier's order code), `spare` (pieces on
+top), `moq` (the supplier's minimum), `step` (its pack size), `unit_price` and its `currency` (default
+`[cost] currency`). `edakit order` puts each into the cart of its supplier, `edakit cost` prices the cart quantity:
+ceil(`per_set` × `quantity` × (1 + `spare_pct`/100)) + `spare`, at least `moq`, a multiple of `step`.
 
 ## 10.2 The board file
 
@@ -157,6 +160,7 @@ Code: `edakit … 2>&1 | cat`.
 | `edakit stock [--board B] [--refresh]` | – | graph, parts, the snapshot; JLCPCB's catalogue and part pages (network) | `hardware/stock.json` (`[project] stock`): the parts missing, unread or older than `stock_max_age_days`, with `--refresh` all |
 | `edakit stock --lcsc C…` | – | JLCPCB's catalogue and part pages (no project needed) | – (prints listed, class, stock, MSL, PCBA type, X-ray, attrition) |
 | `edakit cost [--board B] [--json F]` | – | graph, parts, board files, the stock snapshot, the fee table, `[cost]`, `[[extra]]` | `<artifacts>/cost.json` (the change since the last estimate is printed); exit 2 above `budget` |
+| `edakit order [--out DIR]` | – | graph, parts (`order`), board files (side), `[[extra]]`, `spare_pct` | `<artifacts>/order/` or DIR: `bom_<board>.csv` (the F-1 BOM), `cart_<supplier>.csv`, `hand_assembly.md` |
 | `edakit part own PATH [--name N]` | – | the board's project at PATH: its datasheet, state, git, gate runs | `hardware/parts/<N>.json` |
 | `edakit sim [--json F] [--keep DIR]` | – | graph, parts, sim config, plugin | `<artifacts>/sim/net_currents.json` |
 | `edakit handover [--board B]` | – | graph, parts, sign-offs | – |
