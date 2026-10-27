@@ -92,6 +92,7 @@ check that fails is explained once below the findings (chapter 14.2).
 | G-15 | pin functions: a net with `fn` is on a pin whose parts entry lists that function (`functions`), the nets of one `fn_bus` on one peripheral instance, two PWM nets of one slice with the same fixed `pwm_hz` and a channel each; a net with `fn` on pins without `functions` is a note | SPI data on the clock pin, an analog input without ADC, a buzzer on the PWM slice of an LED |
 | G-16 | ground and supply pins: every `ground` pin on the ground net (or one joined to it by a 0 Ω bridge or an inductor, or in `grounds`); every `power_in` pin on a net that a supply reaches – a `power_output` pin, a battery holder, a connector with a `vbus` pin or in `checks.reverse_protect`, a simulation source – directly or through fuses, switches, connectors, inductors, MOSFETs, resistors up to 100 Ω and diodes in forward direction | a rail split by a typo in its name, a ground pin on a net of its own, VDD swapped with a signal |
 | G-17 | fuse against what it protects: the hold current of every fuse (`i_hold_a`; at the lowest ambient `ambient_min_c` of sim.json from `i_hold_vs_temp`) is at most the `i_max_a` of every connector, switch and cable its current flows through – its own nets and on through fuses and switches; a trip current (`i_trip_a`) above it is a warning | a 1.5-A polyfuse in front of a connector rated 1.25 A, an overload that heats the contacts instead of tripping the fuse |
+| G-18 | hot loop in the hand-over: a part whose entry names its hot-loop pins (`hot_loop`, 4.1) has a `layout.loops` entry on every net of the loop – the nets of those pins and, one diode further, the net behind the rectifier on its switch node (`sw`); a buck or boost IC (`behavior`) without `hot_loop` is a warning; `waive` on the part, or on a net whose part of the loop closes over a pour | a boost whose output loop was routed 61 mm across the board, passing every check because nobody listed it |
 | P-1 | graph pins (number and name) = parts entry; an entry exists for every LCSC number; no supply pin marked `nc` | a wrong part number, pins shifted by one |
 | P-3 | own parts (4.5): a board copied with `edakit part own` is its project's current datasheet, copied from a commit (pending otherwise); a board not released at that state is a warning; the project's own datasheets are of its current state | a board changed after it was copied into the host |
 | G-9 | sign-off: every part `verified` against its datasheet, no open `verify` note (pending – blocks only the release) | an unchecked part going into an order |
@@ -100,7 +101,8 @@ check that fails is explained once below the findings (chapter 14.2).
 with all tracks on one side. The nets it joins are one net for G-4, G-5, G-6 and G-10 to G-17: a pull-up behind a
 bridge holds its input, a capacitor to a ground net behind a bridge decouples, two outputs on either side clash. A
 finding names the joined net after the ground net if that is one of them, else after the first of them in the graph;
-a waiver on any of them counts. G-1, G-2, G-3, G-8, P-1 and G-9 see every net and the bridge as the graph has them.
+a waiver on any of them counts. G-1, G-2, G-3, G-8, G-18, P-1 and G-9 see every net and the bridge as the graph has
+them (G-18: the pads of `layout.loops` lie on one net of the graph).
 `edakit check` lists the joined nets above its last line:
 `joined by 0 Ω bridges, checked as one net: GND = GND_B (R11); 3V3 = 3V3_B = 3V3_C (R10, R13)`.
 

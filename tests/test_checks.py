@@ -861,3 +861,85 @@ def test_g17_needs_the_ratings(project):
     del part["ratings"]["i_hold_a"], part["ratings"]["i_trip_a"]
     project.save_part("C495353", part)
     assert g17(run(project)) == ([], [])
+
+
+# --- G-18 hot loop of a switching regulator in layout.loops (rule proposal #47) --------------------------------------
+BOOST = {"lcsc": "C9000010", "mpn": "test boost converter (MT3608-like)", "kind": "ic", "verified": {"by": "test"},
+         "params": {"behavior": "boost", "vout_v": 12, "efficiency": 0.85}, "hot_loop": ["sw", "gnd"],
+         "pins": {"1": {"name": "SW", "type": "passive", "role": "sw"}, "2": {"name": "GND", "type": "ground"},
+                  "3": {"name": "FB", "type": "passive", "role": "fb"}, "4": {"name": "EN", "type": "passive",
+                                                                            "role": "en"},
+                  "5": {"name": "IN", "type": "power_in", "role": "vin"}, "6": {"name": "NC", "type": "no_connect"}}}
+BOOST_LOOPS = [{"a": "L1.2", "b": "U3.1", "max_mm": 6, "what": "inductor to switch pin"},
+               {"a": "D10.1", "b": "C4.1", "max_mm": 5, "what": "boost output loop"},
+               {"a": "C4.2", "b": "U3.2", "max_mm": 8, "what": "output capacitor to ground pin"}]
+
+
+def boost(project, entry=BOOST, loops=()):
+    """U3 boosts +5V to VOUT (12 V): L1 from +5V to BOOST_SW, D10 (SS34) from BOOST_SW to VOUT, C4 22 µF at VOUT, C3
+    100 nF at its input; `loops` go into layout.loops."""
+    project.save_part(entry["lcsc"], entry)
+    project.save_part(INDUCTOR["lcsc"], INDUCTOR)
+    g = project.graph()
+    g["graph"]["components"] += [comp("U3", entry["lcsc"], {k: v["name"] for k, v in entry["pins"].items()}, kind="ic",
+                                      nc=["6"]),
+                                 comp("L1", INDUCTOR["lcsc"], R, kind="inductor"),
+                                 comp("D10", "C8678", {"1": "K", "2": "A"}, kind="diode"),
+                                 comp("C3", "C49678", R, kind="capacitor"), comp("C4", "C45783", R, kind="capacitor")]
+    g["graph"]["nets"] += [{"name": "BOOST_SW", "pins": ["U3.1", "L1.2", "D10.2"], "v": [0, 12.5]},
+                           {"name": "VOUT", "pins": ["D10.1", "C4.1", "U3.3"], "v": [0, 12]}]
+    project.net(g, "+5V")["pins"] += ["L1.1", "U3.5", "U3.4", "C3.1"]
+    project.net(g, "GND")["pins"] += ["U3.2", "C3.2", "C4.2"]
+    g["graph"]["layout"]["loops"] = list(loops)
+    project.save_graph(g)
+    return g
+
+
+def g18(rep):
+    return [m for c, m in rep.errors if c == "G-18"], [m for c, m in rep.warnings if c == "G-18"]
+
+
+def test_g18_boost_without_its_loop_in_layout_loops(project):
+    boost(project)
+    rep = run(project)
+    assert g18(rep) == (["U3 (boost): no layout.loops entry on BOOST_SW (U3.1 SW)",
+                         "U3 (boost): no layout.loops entry on GND (U3.2 GND)",
+                         "U3 (boost): no layout.loops entry on VOUT (behind D10)"], [])
+    assert set(ids(rep)) == {"G-18"}
+
+
+def test_g18_the_net_behind_the_diode_counts(project):
+    """The reference project's case: loops on the regulator's own nets, none on the output behind the diode."""
+    boost(project, loops=[BOOST_LOOPS[0], BOOST_LOOPS[2]])
+    assert g18(run(project))[0] == ["U3 (boost): no layout.loops entry on VOUT (behind D10)"]
+
+
+def test_g18_every_net_of_the_loop_listed(project):
+    boost(project, loops=BOOST_LOOPS)
+    assert run(project).errors == []
+
+
+def test_g18_waive_on_the_part_or_on_the_net(project):
+    g = boost(project, loops=BOOST_LOOPS[:2])
+    project.net(g, "GND")["waive"] = {"G-18": "the return closes over the ground plane under the loop"}
+    project.save_graph(g)
+    rep = run(project)
+    assert g18(rep) == ([], []) and [m for c, m, _ in rep.waived if c == "G-18"] == \
+        ["U3 (boost): no layout.loops entry on GND (U3.2 GND)"]
+    g["graph"]["layout"]["loops"] = []
+    project.comp(g, "U3")["waive"] = {"G-18": "a module's layout, not ours"}
+    project.save_graph(g)
+    assert g18(run(project)) == ([], [])
+
+
+def test_g18_buck_or_boost_without_hot_loop_is_a_warning(project):
+    entry = {k: v for k, v in BOOST.items() if k != "hot_loop"}
+    boost(project, entry)
+    assert g18(run(project)) == ([], ["U3 (boost): parts entry C9000010 names no hot_loop – G-18 cannot ask for its "
+                                      "hot loop in layout.loops"])
+
+
+def test_g18_hot_loop_role_the_part_does_not_have(project):
+    boost(project, {**BOOST, "hot_loop": ["vin", "switch", "gnd"]}, loops=BOOST_LOOPS)
+    assert g18(run(project))[0] == ["U3: hot_loop of C9000010 names 'switch', no pin role of the part",
+                                    "U3 (boost): no layout.loops entry on +5V (U3.5 IN)"]

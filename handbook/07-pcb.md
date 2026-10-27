@@ -98,7 +98,8 @@ keeps it (14.1); `edakit handover` lists it:
 `near` parts sit within `near_mm` of their host. Every IC with a supply pin gets a capacitor of its own from that
 supply to ground within `near_mm` – derived from the graph, matched one capacitor per IC, so two ICs cannot share one
 while another sits far away; an IC whose capacitor is elsewhere on purpose carries `waive: {"L-12": "…"}`. `loops`
-join the board file's `[[loops]]` for L-11 on the routed board, and `notes` are for the PCB designer and the
+join the board file's `[[loops]]` for L-11 on the routed board – G-18 wants one on every net of a switching
+regulator's hot loop (its `hot_loop` pins and the net behind its diode), and `notes` are for the PCB designer and the
 layout review. A requirement the plan cannot keep goes back to the circuit as a written request – the layout does not
 change the graph.
 

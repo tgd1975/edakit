@@ -160,6 +160,16 @@
     "Lesson of the reference project (pytree D-31/D-32, 2026-10-20): F1 (hold 1.5 A, trip 3.0 A) in series with two JST PH connectors rated 2 A – the trip current above the contacts, judged acceptable by argument only, recorded by no check"
    ]
   },
+  "G-18": {
+   "title": "hot loop in the hand-over",
+   "rule": "A part whose parts entry names its hot-loop pins (hot_loop: pin roles; a ground pin without a role is gnd) has a layout.loops entry on every net of that loop – the nets of those pins and, for a converter with a rectifier diode, the net behind the diode on its switch node (sw); a buck or boost IC whose entry has no hot_loop is a warning.",
+   "why": "L-11 measures exactly the pad pairs that someone wrote into layout.loops or the board file's [[loops]], and H-5 counts as taken care of with any line in the graph's hints. The router connects by total length, not by current path, so a switching regulator whose loop nobody listed passes the DRC, every check and the gate however long its loop is routed. The segment that is routed far away is often not on a pin of the regulator: in a boost converter it lies behind the diode, between its cathode and the output capacitor.",
+   "fix": "Write the loop into layout.loops of the graph – pad pairs of one net with max_mm and what, e.g. {\"a\": \"D33.1\", \"b\": \"C13.1\", \"max_mm\": 5, \"what\": \"boost output loop\"} – and L-11 measures it on the routed board. The parts entry gets hot_loop from the datasheet's layout section: a buck [\"vin\", \"sw\", \"gnd\"], an asynchronous boost [\"sw\", \"gnd\"]. A return that closes over the ground plane (L-11 measures tracks only) gets waive {\"G-18\": reason} on the ground net; a regulator whose loop is not on this board (a module) waive {\"G-18\": reason} on the part.",
+   "sources": [
+    "TI SNVA021C, AN-1149 Layout Guidelines for Switching Power Supplies, Rev. C (2013), 5 Traces and Ground Plane: inductor, output capacitors and output diode as close to each other as possible; the grounds of IC, input capacitors, output capacitors and output diode connected close together directly to a ground plane – https://www.ti.com/lit/an/snva021c/snva021c.pdf",
+    "Lesson of the reference project (pytree D-41, 2026-10-23): in the released run 20261023-000107 the MT3608 boost's diode cathode (D33) reached its output capacitor C13 over 61 mm of copper across the board; DRC, the gate and the electrical review passed it, the layout review (M-5) found it; the fix listed four pad pairs (L1.2–U6.1 ≤ 6 mm, U6.1–D33.2 ≤ 5 mm, D33.1–C13.1 ≤ 5 mm, C13.2–U6.2 ≤ 8 mm), the 61-mm segment on V_LED, a net without a pin of U6"
+   ]
+  },
   "E-1": {
    "title": "operating point",
    "rule": "The DC operating point of every scenario converges, and the simulation config fits the graph.",

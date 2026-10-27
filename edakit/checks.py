@@ -36,6 +36,9 @@
        connectors, inductors, MOSFETs, resistors up to 100 Ohm and diodes in forward direction
   G-17 fuses: the hold current of a fuse (at the lowest ambient, ambient_min_c of sim.json) is at most the i_max_a of
        every connector, switch and cable its current flows through; a trip current above it is a warning
+  G-18 hot loops: a part whose parts entry names its hot-loop pin roles (hot_loop; "gnd" also for ground pins) has
+       a layout.loops entry on each net of the loop – the nets of those pins and the net behind a diode on its
+       switch node (sw); a buck or boost IC without hot_loop is a warning
   P-1  graph pins (number + name) = parts database, an entry exists for every LCSC number – or, for a part bought
        elsewhere, for its manufacturer part number `part`
   P-3  own parts (part.py): a board copied from its project with `edakit part own` is that project's current
@@ -45,7 +48,7 @@
 
 0 Ω bridges (resistors with value_ohm 0 in the parts entry) join their nets: G-4, G-5, G-6, G-10 to G-16 see the
 joined nets as one net under the group's name (the ground net if it is one of them, else the first in the graph) and
-the bridges as copper; G-1, G-2, G-3, G-8, P-1 and G-9 see every net and part as the graph has them.
+the bridges as copper; G-1, G-2, G-3, G-8, G-18, P-1 and G-9 see every net and part as the graph has them.
 
 Rule, reason, fix and sources of every check: rules.json (`edakit rules G-4`). A failed check is explained once
 below the findings. A finding listed in "waive" of the net or component is accepted on purpose and reported with
@@ -77,10 +80,11 @@ COILS = {"relay": ("coil_plus", "coil_minus"), "buzzer": ("plus", "minus")}   # 
 FN_LINES = {"pwm": (), "adc": (), "spi": ("sck", "tx", "rx", "cs"), "i2c": ("sda", "scl"), "uart": ("tx", "rx")}
 FN_NAMES = [k + (f".{line}" if line else "") for k, lines in FN_LINES.items() for line in lines or [""]]   # net fn
 SUPPLY_R_MAX = 100                                   # a resistor up to this passes a supply (shunt, filter)
+SWITCHERS = ("buck", "boost")                        # behaviour models of switching regulators (hot loop, G-18)
 PIN_FUNCTION = re.compile(r"([a-z][a-z0-9]*?)(\d+)(?:\.([a-z]+))?")   # "spi0.sck", "i2c1.sda", "pwm1.a", "adc0"
 
 EXECUTED = ["G-1", "G-2", "G-3", "G-4", "G-5", "G-6", "G-8", "G-10", "G-11", "G-12", "G-13", "G-14", "G-15", "G-16",
-            "G-17", "P-1", "P-3", "G-9"]
+            "G-17", "G-18", "P-1", "P-3", "G-9"]
 
 
 class Report:
@@ -750,6 +754,45 @@ def check_fuses(d, rep, sim=None):
                     rep.warnings.append(("G-17", msg))
 
 
+def check_hot_loops(d, rep):
+    """G-18: a part whose entry names its hot-loop pins (hot_loop: pin roles, "gnd" also for pins of type ground) has
+    a layout.loops entry on every net of that loop – the nets of those pins and, one diode further, the net behind
+    the rectifier on the switch node (sw). A buck or boost IC without hot_loop is a warning."""
+    covered = {d.pin_net.get(lp.get("a")) for lp in (d.graph.get("layout") or {}).get("loops") or []} - {None}
+    for des in d.comps:
+        part = d.part(des) or {}
+        roles, behavior = part.get("hot_loop"), (part.get("params") or {}).get("behavior")
+        who, waive = f"{des} ({behavior})" if behavior else des, d.comps[des].get("waive")
+        if roles is None:
+            if part.get("kind") == "ic" and behavior in SWITCHERS:
+                msg = f"{who}: parts entry {d.entry_key(des)} names no hot_loop – G-18 cannot ask for its hot loop " \
+                      "in layout.loops"
+                if waive and "G-18" in waive:
+                    rep.waived.append(("G-18", msg, waive["G-18"]))
+                else:
+                    rep.warnings.append(("G-18", msg))
+            continue
+        pins = {num: "gnd" if p.get("type") == "ground" and p.get("role") is None else p.get("role")
+                for num, p in part["pins"].items()}
+        for role in [r for r in roles if r not in pins.values()]:
+            rep.error("G-18", f"{des}: hot_loop of {d.entry_key(des)} names '{role}', no pin role of the part")
+        nets = {}   # net -> why it belongs to the loop
+        for num, role in pins.items():
+            if role in roles and (net := d.pin_net.get(f"{des}.{num}")):
+                nets.setdefault(net, f"{des}.{num} {part['pins'][num]['name']}")
+        sw = {d.pin_net.get(f"{des}.{num}") for num, role in pins.items() if role == "sw" and role in roles} - {None}
+        for dio in d.comps_of_kind("diode"):
+            a, k = d.net_of(dio, "anode"), d.net_of(dio, "cathode")
+            for here, there in ((a, k), (k, a)):
+                if here in sw and there and there not in nets:
+                    nets[there] = f"behind {dio}"
+        for net, why in nets.items():
+            if net not in covered:
+                on_net = d.nets[net].get("waive") or {}
+                rep.error("G-18", f"{who}: no layout.loops entry on {net} ({why})",
+                          on_net if "G-18" in on_net else waive)
+
+
 def check_part_pins(d, rep):
     for des, c in d.comps.items():
         if not c.get("lcsc") and not c.get("part"):
@@ -808,6 +851,7 @@ def run(design, cfg=None):
     check_pin_functions(joined, rep)
     check_power_pins(joined, rep, sim)
     check_fuses(joined, rep, sim)
+    check_hot_loops(design, rep)   # layout.loops name pads of the graph's own nets (G-1, L-11)
     check_part_pins(design, rep)
     if cfg:
         from . import part

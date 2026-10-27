@@ -88,7 +88,8 @@ holds the layout to it (L-12, handbook 7.4):
   constraint from the enclosure.
 - `near`: helpers that belong to a pin – a current-setting resistor, a crystal and its capacitors, ESD protection at
   its connector, a feedback divider. The decoupling capacitor of every IC is derived, no line needed.
-- `loops`: the hot loop of a switching regulator (pads of one net, checked on the routed board by L-11).
+- `loops`: the hot loop of a switching regulator (pads of one net, checked on the routed board by L-11) – one entry
+  on every net of it, the net behind the diode included; G-18 asks for them from the regulator's `hot_loop`.
 - `notes`: everything else the layout must know and no program checks – the layout review reads it.
 
 ```bash

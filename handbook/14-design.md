@@ -67,7 +67,7 @@ in the graph or by a pattern, shown by `edakit hints`, never blocking.
 | H-2 | a MOSFET | gate series resistor against ringing |
 | H-3 | a button, switch or DIP switch | debouncing |
 | H-4 | a transistor switching a connector pin | flyback diode for an inductive load off the board |
-| H-5 | a buck or boost regulator, an inductor | the hot loop – and L-11 to check it |
+| H-5 | a buck or boost regulator, an inductor | the hot loop – G-18 wants it in `layout.loops`, L-11 measures it |
 | H-6 | a battery holder | protection for lithium cells |
 | H-7 | a signal line from a connector to an IC pin | ESD protection at the connector |
 
