@@ -7,12 +7,13 @@ Start with `edakit doctor`.
 | `easyeda_bridge_status`: not connected | no server ran yet, or EasyEDA was restarted | the first tool call starts the server; Auto-Connect connects within seconds. Otherwise *MCP Bridge → Connect*; with the patched bridge the menu may be missing – restart EasyEDA, Auto-Connect stays on |
 | MCP tools missing in the session | the server did not start (Node not 24, npm failed) | `bash edakit/easyeda/mcp-server.sh doctor`; then `/mcp` → easyeda (only the user can reconnect) |
 | port 49620 busy, "address in use" | an orphaned server (started through npx, or a crashed session) | `pgrep -af easyeda-mcp-pro`, `ss -ltnp \| grep 4962`, end the stale one (tell other sessions) |
-| "timed out after 15000ms" or "expired (stale sweep)" | the server holding the port runs with the default 15 s | end all easyeda-mcp-pro processes; they restart with `BRIDGE_TIMEOUT_MS=120000` from mcp-server.sh |
+| "timed out after 15000ms" or "expired (stale sweep)" | the server holding the port runs with the default 15 s | `edakit doctor` names the servers whose `BRIDGE_TIMEOUT_MS` differs, with their PIDs; end them (tell other sessions); they restart with `BRIDGE_TIMEOUT_MS=120000` from mcp-server.sh |
 | DRC, pour fill or export hang; EasyEDA hardly busy | EasyEDA runs throttled because its window is covered | save, quit, start unthrottled (chapter 2.6); `edakit doctor` shows it |
 | "bad option: --no-sandbox" when starting EasyEDA | `ELECTRON_RUN_AS_NODE` inherited from VS Code | `env -u ELECTRON_RUN_AS_NODE …` |
 | every `DMT_*` call returns null | EasyEDA shows its start page (focus `tab_page1`) | open the project; edakit reopens it by its remembered UUID |
 | "project is not open and EasyEDA does not list local projects" | edakit never saw the project open | open it once in EasyEDA |
-| answers contain `[MaxDepth]`, DRC details empty | original bridge extension | build and import the patched one (chapter 2.5): uninstall old, import, restart |
+| answers contain `[MaxDepth]`, DRC details empty; `edakit doctor`: "original extension" | original bridge extension | build and import the patched one (chapter 2.5): uninstall old, import, restart; `edakit doctor` says "patched extension" when the new one runs |
+| `edakit doctor`: "bridge extension … against server …" or "method registry … differs" | the extension is of another easyeda-mcp-pro version than the pinned server | rebuild the patched extension from the pinned server (2.5) and import it |
 | `PCB_Drc.check` returns null / undefined | the PCB tab counts as inactive | edakit switches to the start page and back; or click the PCB tab once |
 | DRC: many "Connection Error" right after routing | DRC on the unsaved state after many API changes | `edakit route reload`, then DRC – reported 320 → 0 |
 | DRC: "Netlist Error – Import Changes" | a part was freshly placed in the schematic | L-3 / `route drc` / `silk` say "EasyEDA waits for the import acknowledgement" (exit 3): open *Design → Import Changes* once in the GUI (shows "no changes") – the one click. They name differences instead: `edakit pcb parts --write` or `pcb nets --write` first |

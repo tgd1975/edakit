@@ -10,8 +10,10 @@ Background and every API quirk: `${CLAUDE_PLUGIN_ROOT}/handbook/02-setup.md`, `0
 
 ## 1. Readiness
 
-1. `edakit doctor 2>&1 | cat` – Node 24, easyeda-mcp-pro, EasyEDA running **unthrottled**, bridge port, ngspice,
-   Freerouting, who holds EasyEDA. Fix every FAIL before going on.
+1. `edakit doctor 2>&1 | cat` – Node 24, easyeda-mcp-pro, EasyEDA running **unthrottled**, the servers'
+   `BRIDGE_TIMEOUT_MS`, bridge port, ngspice, Freerouting, who holds EasyEDA; with EasyEDA running also the bridge:
+   connected, extension against server version, registry, and the return depth ("original extension" = DRC details
+   unreadable – build the patched one, handbook 2.5). Fix every FAIL and these WARNs before going on.
 2. **Unthrottled:** if doctor says "THROTTLED", DRC, pour fills and exports time out as soon as another window covers
    EasyEDA. Save, quit EasyEDA and start it with `--disable-background-timer-throttling --disable-renderer-backgrounding
    --disable-backgrounding-occluded-windows` (handbook 02, the desktop launcher). From a shell started by VS Code or

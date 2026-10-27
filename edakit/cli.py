@@ -212,6 +212,7 @@ def build_parser():
     p.add_argument("--out", help="seal: write the issue body into this file instead of stdout")
 
     p = sub.add_parser("doctor", help="check the tool chain")
+    p.add_argument("--offline", action="store_true", help="skip the bridge part: start no server, ask no bridge")
     _common(p)
     return ap
 

@@ -99,8 +99,12 @@ Interactions" itself. Then the menu **MCP Bridge** appears; choose **Enable Auto
 
 Re-importing (update, other depth): EasyEDA does not take an import over an installed copy with the same UUID and
 version. **Uninstall the old one, import, restart EasyEDA**; until the restart the old copy keeps running. After that
-restart the menu sometimes is missing, but Auto-Connect stays on and connects. Check: `DMT_Project.getCurrentProjectInfo`
-shows the pages written out instead of `[MaxDepth]`.
+restart the menu sometimes is missing, but Auto-Connect stays on and connects. Check: `edakit doctor` says "patched
+extension" – it asks `DMT_Project.getCurrentProjectInfo`, which shows the pages written out instead of `[MaxDepth]` –
+and "bridge extension 1.4.0 = server 1.4.0". It probes the depth only while EasyEDA is free or claimed by you; the
+version and registry lines come from `easyeda_health_check`, which needs no claim. The patched build keeps the UUID
+and version of the original, so neither EasyEDA's extension manager nor the version tells the two apart – the depth
+does.
 
 ## 2.6 EasyEDA without background throttling
 

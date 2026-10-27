@@ -124,12 +124,14 @@ class MCPClient:
             self.proc.kill()
 
 
-def start(cfg, verbose=False, artifact_dir=None):
-    """Claim EasyEDA for the calling Claude session and start an own MCP server through mcp-server.sh."""
-    lock.claim_for_script(mode=cfg.lock)
+def start(cfg, verbose=False, artifact_dir=None, lock_mode=None):
+    """Claim EasyEDA for the calling Claude session and start an own MCP server through mcp-server.sh. `lock_mode="off"`
+    claims nothing (edakit doctor); without a project (cfg None) artifact_dir is needed."""
+    mode = lock_mode or cfg.lock
+    lock.claim_for_script(mode=mode)
     env = {"ARTIFACT_DIR": str(artifact_dir or cfg.artifact("mcp", ".keep").parent),
            "BRIDGE_TIMEOUT_MS": os.environ.get("BRIDGE_TIMEOUT_MS", "120000")}
-    return MCPClient(["bash", str(MCP_SERVER)], verbose=verbose, env=env, cwd=cfg.root, lock_mode=cfg.lock)
+    return MCPClient(["bash", str(MCP_SERVER)], verbose=verbose, env=env, cwd=cfg.root if cfg else None, lock_mode=mode)
 
 
 def wait_for_bridge(mcp, seconds=90):
