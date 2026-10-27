@@ -71,6 +71,7 @@ class Placement:
     rot: float = 0.0
     side: str = "top"           # EasyEDA side the part sits on: "top" or "bottom"
     lock: bool = True
+    auto: bool = False          # written by `pcb place`: a later run may move it; to everything else a fixed part
 
 
 @dataclass
@@ -240,7 +241,10 @@ def _placement(ref, v):
     side = v.get("side", "top")
     if side not in LAYER_OF_SIDE:
         raise ConfigError(f"place.{ref}: side must be 'top' or 'bottom', not {side!r}")
-    return Placement(float(v["x"]), float(v["y"]), float(v.get("rot", 0)), side, bool(v.get("lock", True)))
+    if not isinstance(v.get("auto", False), bool):
+        raise ConfigError(f"place.{ref}: auto must be true or false")
+    return Placement(float(v["x"]), float(v["y"]), float(v.get("rot", 0)), side, bool(v.get("lock", True)),
+                     v.get("auto", False))
 
 
 def _pours(name, pours, regions=False):

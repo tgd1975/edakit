@@ -46,7 +46,9 @@ describes (section 3).
    beyond that, everything the auto-layout must not decide (connectors, controls, ICs with their decoupling
    capacitors, LEDs, anything visible) is a fixed part. The plan's own `near` holds only between fixed parts. SMD
    parts under a module on pin headers: `on_headers`; SMD parts whose silkscreen outlines touch: `silk_overlap_mm`
-   (handbook 7.4).
+   (handbook 7.4). Decoupling capacitors and the parts `layout.near` or `near` tie to a host: `edakit pcb place 2>&1 |
+   cat` proposes a spot next to the host, `--write` adds the rows with `auto = true` (a later run may move those,
+   never a row written by hand).
 2. **Check offline before EasyEDA is touched:** `edakit pcb plan 2>&1 | cat` – overlaps, outline, holes, THT pins under
    parts of the other side, near-distances, the circuit's layout requirements (L-12), holes against leads (P-7),
    airline length, net classes;
@@ -80,7 +82,7 @@ describes (section 3).
 ## Known limits
 
 - The auto-layout knows nothing about belonging: decoupling capacitors and pull-ups that must sit at their IC go into
-  `place` – L-12 names the ones the circuit asks for.
+  `place` – L-12 names the ones the circuit asks for, `pcb place` puts the ones with a host next to it.
 - A pour polygon with a hole is taken only as its outer contour; tooling holes get a notch to the edge instead.
 - The pours keep the tracks' edge clearance + 0.1 mm from the outline; `pour_inset_mm` in the board file gives them a
   distance of their own (handbook 7.6), e.g. further from the milled edge than tracks that run along it.

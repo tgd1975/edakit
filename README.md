@@ -78,6 +78,7 @@ edakit handover                 # what the circuit hands over to the layout – 
 edakit schematic create --save  # template schematic from the graph
 edakit schematic layout --save  # readable board schematic: blocks, wires, GPIO table
 edakit pcb parts --write        # parts into the PCB, no "Import Changes" dialog
+edakit pcb place --write        # decoupling capacitors, pull resistors next to their host – offline
 edakit pcb apply                # outline, holes, tooling holes, fixed parts from the plan
 edakit pcb autolayout           # the small parts
 edakit route all                # Freerouting -> EasyEDA, pours, reload, DRC

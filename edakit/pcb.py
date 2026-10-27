@@ -10,6 +10,10 @@ mounting and tooling holes, copper pours, EasyEDA's auto-layout.
                                     leads), airline length,
                                     preview PNG, net classes from the simulation; a part not in the dump yet takes
                                     the library footprint `edakit part import` cached
+    edakit pcb place [--write] [--only C1,R1]
+                                    offline: a spot next to its host for every part the circuit or the board file
+                                    ties to one (layout.near, [near], the decoupling of L-12) and [place] lacks;
+                                    --write adds the rows to [place] with auto = true (a later run may move those)
     edakit pcb parts [--write]      parts of the board schematic -> PCB without the "Import Changes" dialog
     edakit pcb nets [--write]       pad nets in the PCB = graph
     edakit pcb apply                outline, holes, tooling holes, fixed parts (locked); all other parts unlocked
@@ -411,6 +415,350 @@ def plan(cfg, board):
     return problems
 
 
+# --- place: the parts the circuit ties to a host, next to that host ----------------------------------------------
+
+PLACE_STEPS_PER_MM = 10            # pcb place: spots on a 0.1 mm grid of the plan
+PLACE_ROTATIONS = (0, 90, 180, 270)
+PLACE_EPS = 1e-6                   # boxes that only touch count as touching: a spot keeps clear of them
+PLACE_TRIES = 500                  # spots the full plan check may turn down before a part counts as without one
+PLACE_HEADER = re.compile(r"^\s*\[\s*place\s*\]\s*(#.*)?$")
+TABLE_HEADER = re.compile(r"""^\s*\[\[?\s*[\w."' -]+\s*\]\]?\s*(#.*)?$""")
+
+
+def declared_hosts(board, design):
+    """part -> [hosts]: layout.near of the graph first, then [near] of the board file."""
+    out = {}
+    pairs = [(r.part, r.others) for r in handover.requirements(design, board.name) if r.kind == "near"]
+    for part, hosts in pairs + list(board.near.items()):
+        mine = out.setdefault(part, [])
+        mine += [h for h in hosts if h not in mine]
+    return out
+
+
+def missing_decoupling(board, reqs, boxes):
+    """The decoupling requirements of L-12 the plan does not keep yet – one capacitor of its own per IC within near_mm,
+    matched as check_handover matches them."""
+    ics = [r for r in reqs if r.kind == "decoupling" and r.part in boxes]
+    out = []
+    for net in sorted({r.net for r in ics}):
+        close = {r.part: [c for c in r.others if c in boxes and box_gap(boxes[c], boxes[r.part]) <= board.near_mm]
+                 for r in ics if r.net == net}
+        owner = {}
+
+        def assign(ic, seen):
+            for c in close[ic]:
+                if c not in seen:
+                    seen.add(c)
+                    if c not in owner or assign(owner[c], seen):
+                        owner[c] = ic
+                        return True
+            return False
+        out += [r for r in ics if r.net == net and not assign(r.part, set())]
+    return out
+
+
+def tie_pads(pin_net, ground, geo, part, host, supply=None):
+    """The pads that should face each other: (primary, secondary), each [(net, pads of part, pins of host)].
+    Decoupling (supply): the supply, ground as the tie-break. Otherwise the nets part and host share without ground –
+    or ground when that is all they share –, no tie-break."""
+    def pads(ref, net):
+        return [n for n in sorted(geo[ref]["pads"], key=natural_key) if pin_net.get(f"{ref}.{n}") == net]
+    shared = ({pin_net.get(f"{part}.{n}") for n in geo[part]["pads"]}
+              & {pin_net.get(f"{host}.{n}") for n in geo[host]["pads"]}) - {None}
+    primary = [supply] if supply else sorted(shared - {ground}) or sorted(shared & {ground})
+    secondary = [ground] if supply and ground in shared else []
+    rows = lambda nets: [(n, pads(part, n), pads(host, n)) for n in nets if pads(part, n) and pads(host, n)]  # noqa
+    return rows(primary), rows(secondary)
+
+
+def plan_state(board, geo, place):
+    """Boxes and through-hole pads per side of the parts in place, as build_plan computes them."""
+    boxes = {r: part_box(board, geo[r], p) for r, p in place.items() if r in geo}
+    tht = {"top": [], "bottom": []}
+    for r, p in place.items():
+        for pad in geo.get(r, {}).get("pads", {}).values():
+            if pad["tht"]:
+                tht[p.side].append(board.transform((pad["x"], pad["y"]), p.x, p.y, p.rot, p.side))
+    return boxes, tht
+
+
+def plan_findings(cfg, board, geo, design, place, boxes, tht):
+    from collections import Counter
+    return Counter(check_plan(cfg, board, geo, place, boxes, tht) + check_handover(board, design, place, boxes))
+
+
+def spot_candidates(board, geo, place, boxes, tht, part, hosts, rows):
+    """Every spot of part within near_mm of all hosts, on the side of the first, at 0/90/180/270°, on the plan grid,
+    that keeps the plan's rules towards what is placed (overlaps with silk_overlap_mm and on_headers, holes, tooling
+    holes, THT pins of the other side, roughly the outline) -> [(x, y, rot)], the best first: the pads of `rows`
+    nearest to the host's pins – with a tie-break (decoupling) to 0.1 mm, then the tie-break pads –, then rotation,
+    y, x."""
+    import numpy as np
+    from shapely import contains_xy
+
+    from .config import Placement
+    host = place[hosts[0]]
+    side, n = host.side, board.near_mm
+    S = PLACE_STEPS_PER_MM
+    primary, secondary = rows
+    pins = {num: board.transform((q["x"], q["y"]), host.x, host.y, host.rot, host.side)
+            for num, q in geo[hosts[0]]["pads"].items()}
+    others = [r for r in place if r in boxes and place[r].side == side]
+    header = header_pins(board, geo, place)
+    smd = not through_hole(geo[part])
+    inner = outline_polygon(board).buffer(-0.3)
+    other_side = "bottom" if side == "top" else "top"
+    out = []
+    for k, rot in enumerate(PLACE_ROTATIONS):
+        bx0, by0, bx1, by1 = part_box(board, geo[part], Placement(0, 0, rot, side))
+        hb = boxes[hosts[0]]
+        kx = np.arange(math.ceil((hb[0] - n - bx1) * S), math.floor((hb[2] + n - bx0) * S) + 1)
+        ky = np.arange(math.ceil((hb[1] - n - by1) * S), math.floor((hb[3] + n - by0) * S) + 1)
+        X, Y = (a.ravel() / S for a in np.meshgrid(kx, ky))
+        c0, c1, c2, c3 = X + bx0, Y + by0, X + bx1, Y + by1
+        zero = np.zeros_like(X)
+        ok = np.ones(X.shape, bool)
+        for h in hosts:
+            b = boxes[h]
+            ok &= np.maximum.reduce([b[0] - c2, c0 - b[2], b[1] - c3, c1 - b[3], zero]) <= n - PLACE_EPS
+        for r in others:
+            b = boxes[r]
+            touch = ((c0 < b[2] + PLACE_EPS) & (b[0] < c2 + PLACE_EPS)
+                     & (c1 < b[3] + PLACE_EPS) & (b[1] < c3 + PLACE_EPS))
+            if header.get(r) and smd:            # under a module on pin headers: clear of its pins
+                gap = np.minimum.reduce([np.maximum.reduce([px - c2, c0 - px, py - c3, c1 - py, zero])
+                                         for px, py in header[r].values()])
+                ok &= ~touch | (gap >= board.header_keep_mm + PLACE_EPS)
+            elif board.silk_overlap_mm and smd and not through_hole(geo[r]):
+                depth = np.minimum.reduce([c2 - b[0], b[2] - c0, c3 - b[1], b[3] - c1])
+                ok &= ~touch | (depth <= board.silk_overlap_mm - PLACE_EPS)
+            else:
+                ok &= ~touch
+        for cx, cy, r in [(h["x"], h["y"], h["keep"]) for h in board.holes] + \
+                [(tx, ty, board.tooling_keep) for tx, ty in board.tooling]:
+            dx = np.maximum.reduce([c0 - cx, cx - c2, zero])
+            dy = np.maximum.reduce([c1 - cy, cy - c3, zero])
+            ok &= np.hypot(dx, dy) > r + PLACE_EPS
+        for px, py in tht[other_side]:
+            ok &= ~((c0 - 0.5 < px) & (px < c2 + 0.5) & (c1 - 0.5 < py) & (py < c3 + 0.5))
+        if part not in board.edge_ok:
+            for xs, ys in ((c0, c1), (c2, c1), (c2, c3), (c0, c3)):
+                ok &= contains_xy(inner, xs, ys)
+        X, Y = X[ok], Y[ok]
+
+        def dist(pairs):
+            total = np.zeros_like(X)
+            for _, mine, theirs in pairs:
+                d = np.full(X.shape, np.inf)
+                for a in mine:
+                    q = geo[part]["pads"][a]
+                    ox, oy = board.transform((q["x"], q["y"]), 0, 0, rot, side)
+                    for b in theirs:
+                        d = np.minimum(d, np.hypot(X + ox - pins[b][0], Y + oy - pins[b][1]))
+                total += d
+            return total
+        if primary:
+            first, second = dist(primary), dist(secondary)
+        else:   # nothing shared: as close to the host's box as possible, then centre to centre
+            first = np.maximum.reduce([hb[0] - (X + bx1), X + bx0 - hb[2], hb[1] - (Y + by1), Y + by0 - hb[3],
+                                       np.zeros_like(X)])
+            second = np.hypot(X + (bx0 + bx1) / 2 - (hb[0] + hb[2]) / 2, Y + (by0 + by1) / 2 - (hb[1] + hb[3]) / 2)
+        out.append((np.round(first, 1 if secondary else 6), np.round(second, 6), np.full(X.shape, k), Y, X))
+    first, second, rot, Y, X = (np.concatenate(a) for a in zip(*out))
+    order = np.lexsort((X, Y, rot, second, first))
+    return [(float(X[i]), float(Y[i]), PLACE_ROTATIONS[rot[i]]) for i in order]
+
+
+def find_spot(cfg, board, geo, design, state, part, hosts, rows):
+    """The first spot of spot_candidates where check_plan and check_handover report nothing new -> (Placement or None,
+    the first new finding of the best spot turned down)."""
+    from shapely.geometry import box
+
+    from .config import Placement
+    place, boxes, tht = state
+    side = place[hosts[0]].side
+    edge = outline_polygon(board).exterior
+    inner = outline_polygon(board).buffer(-0.3)
+    at_edge = any(r.kind == "edge" and r.part == part for r in handover.requirements(design, board.name))
+    before = plan_findings(cfg, board, geo, design, place, boxes, tht)
+    tried, why = 0, None
+    for x, y, rot in spot_candidates(board, geo, place, boxes, tht, part, hosts, rows):
+        p = Placement(x, y, rot, side, auto=True)
+        b = part_box(board, geo[part], p)
+        if part not in board.edge_ok and not inner.contains(box(*b)):
+            continue
+        if at_edge and box(*b).distance(edge) > board.edge_mm:
+            continue
+        pads = [board.transform((q["x"], q["y"]), x, y, rot, side) for q in geo[part]["pads"].values() if q["tht"]]
+        new = plan_findings(cfg, board, geo, design, {**place, part: p}, {**boxes, part: b},
+                            {s: v + (pads if s == side else []) for s, v in tht.items()}) - before
+        if not new:
+            return p, None
+        why = why or sorted(new)[0]   # the best spot's first new finding, for the message
+        tried += 1
+        if tried >= PLACE_TRIES:
+            break
+    return None, why
+
+
+def auto_place(cfg, board, geo, design, only=None):
+    """pcb place: a spot for every part that is not in [place] (or is there with auto = true) but tied to a host –
+    by layout.near of the graph, [near] of the board file (in that order, by designator), then the decoupling of L-12:
+    an IC without a capacitor of its own within near_mm gets the first free capacitor between its supply and ground
+    that declares no host. The spot: on the host's side, within near_mm of every host, at 0/90/180/270°, the part's
+    pad on a net it shares with the host as close as possible to the host's pin on that net (decoupling: the supply,
+    ground pad to the nearest ground pin as the tie-break); accepted only where the plan check reports nothing new;
+    each placed part is an obstacle for the next. A row with auto = true is placed anew; one whose part has no host
+    any more, or no spot, stays where it is – an obstacle like any row. -> ([(ref, Placement, why)], problems)."""
+    keep = lambda r: only is None or r in only  # noqa: E731
+    moving = {r for r, p in board.place.items() if p.auto and keep(r)}
+    stuck = []
+    while True:
+        rows, problems = _auto_place(cfg, board, geo, design, moving, keep)
+        placed = {r for r, _, _ in rows}
+        if moving <= placed:
+            return rows, [text for _, text in stuck + problems]
+        stuck += [(r, f"{text} – its row stays where it is") for r, text in problems if r in moving - placed]
+        moving &= placed
+
+
+def _auto_place(cfg, board, geo, design, moving, keep):
+    place = {r: p for r, p in board.place.items() if r not in moving}
+    boxes, tht = plan_state(board, geo, place)
+    names = design.joined_nets()
+    pin_net = {r: names.get(n, n) for r, n in design.pin_net.items()}
+    hosts_of = declared_hosts(board, design)
+    reqs = handover.requirements(design, board.name)
+    rows, problems, failed, tried = [], [], set(), set()
+
+    def put(part, hosts, supply=None):
+        missing = [d for d in (part, *hosts) if d not in geo]
+        if missing:
+            problems.append((part, f"{part}: {', '.join(missing)} not in the footprint geometry (edakit pcb parts "
+                                   "--write, then dump)"))
+            failed.add(part)
+            return
+        pairs = tie_pads(pin_net, design.ground, geo, part, hosts[0], supply)
+        p, why = find_spot(cfg, board, geo, design, (place, boxes, tht), part, hosts, pairs)
+        pins = "; ".join(f"pin{'s' * (len(theirs) > 1)} {', '.join(theirs)}, {net}" for net, _, theirs in pairs[0])
+        if p is None:
+            problems.append((part, f"{part}: no free spot within near_mm {board.near_mm:g} of {hosts[0]}"
+                                   + (f" ({pins})" if pins else "") + (f" – the plan check: {why}" if why else "")))
+            failed.add(part)
+            return
+        place[part] = p
+        boxes[part] = part_box(board, geo[part], p)
+        tht[p.side] += [board.transform((q["x"], q["y"]), p.x, p.y, p.rot, p.side)
+                        for q in geo[part]["pads"].values() if q["tht"]]
+        host = place[hosts[0]]
+        near = []
+        for net, mine, theirs in pairs[0]:
+            d, a, b = min((math.dist(board.transform((geo[part]["pads"][a]["x"], geo[part]["pads"][a]["y"]),
+                                                     p.x, p.y, p.rot, p.side),
+                                     board.transform((geo[hosts[0]]["pads"][b]["x"], geo[hosts[0]]["pads"][b]["y"]),
+                                                     host.x, host.y, host.rot, host.side)), a, b)
+                          for a in mine for b in theirs)
+            near.append(f"pad {a} {d:.1f} mm from {hosts[0]}.{b} ({net})")
+        what = f"decoupling of {hosts[0]} on {supply}" if supply else f"next to {', '.join(hosts)}"
+        rows.append((part, p, what + (": " + ", ".join(near) if near else "")))
+
+    near_jobs = sorted((part for part in hosts_of if part not in place and keep(part)),
+                       key=lambda d: (d not in {r.part for r in reqs if r.kind == "near"}, natural_key(d)))
+    progress = True
+    while progress:
+        progress = False
+        for part in [d for d in near_jobs if all(h in place for h in hosts_of[d])]:
+            near_jobs.remove(part)
+            put(part, hosts_of[part])
+            progress = True
+        for r in sorted((r for r in reqs if r.kind == "decoupling"), key=lambda r: (natural_key(r.part), r.net)):
+            if (r.part, r.net) in tried or not any(m.part == r.part and m.net == r.net
+                                                   for m in missing_decoupling(board, reqs, boxes)):
+                continue
+            cap = next((c for c in r.others if c not in place and c not in hosts_of and c not in failed and keep(c)),
+                       None)
+            if cap:   # one capacitor per IC and supply: one that finds no spot is named, not replaced by the next
+                tried.add((r.part, r.net))
+                put(cap, [r.part], r.net)
+                progress = True
+    for part in near_jobs:
+        loose = [h for h in hosts_of[part] if h not in place]
+        problems.append((part, f"{part}: next to {', '.join(loose)}, which {'is' if len(loose) == 1 else 'are'} not "
+                               "in [place] – fix the host first"))
+    return rows, problems
+
+
+def place_row(p):
+    return f'{{ x = {p.x:.1f}, y = {p.y:.1f}, rot = {p.rot:g}, side = "{p.side}", auto = true }}'
+
+
+def write_place_rows(path, rows):
+    """rows {ref: inline table}: a row that is already in [place] gets its new table on its own line (only an auto row
+    is ever moved), the others go as new lines at the end of [place]; every other line stays as it is. -> number of
+    lines changed or added."""
+    text = path.read_text(encoding="utf-8") if path.exists() else ""
+    lines = text.splitlines(keepends=True)
+    if lines and not lines[-1].endswith("\n"):
+        lines[-1] += "\n"
+    start = next((i for i, ln in enumerate(lines) if PLACE_HEADER.match(ln)), None)
+    if start is None:
+        lines += ["\n", "[place]\n"] if lines else ["[place]\n"]
+        start = len(lines) - 1
+    end = next((i for i in range(start + 1, len(lines)) if TABLE_HEADER.match(lines[i])), len(lines))
+    changed, new = 0, []
+    for ref, table in rows.items():
+        pat = re.compile(rf"""^(\s*["']?{re.escape(ref)}["']?\s*=\s*)\{{[^}}]*\}}(.*)$""", re.S)
+        at = next((i for i in range(start + 1, end) if pat.match(lines[i])), None)
+        if at is None:
+            new.append(f"{ref} = {table}\n")
+        else:
+            line = pat.sub(lambda m: m.group(1) + table + m.group(2), lines[at])
+            changed += line != lines[at]
+            lines[at] = line
+    last = max((i for i in range(start, end) if i == start or (lines[i].strip() and
+                                                                not lines[i].lstrip().startswith("#"))))
+    lines[last + 1:last + 1] = new
+    if changed or new:
+        path.write_text("".join(lines), encoding="utf-8")
+    return changed + len(new)
+
+
+def place_main(cfg, board, write=False, only=None):
+    from . import config
+    geo = load_geometry(cfg, board)
+    design = Design.from_config(cfg)
+    rows, problems = auto_place(cfg, board, geo, design, set(only) if only else None)
+    for ref, p, why in rows:
+        print(f"  {ref} = {place_row(p)}   # {why}")
+    for p in problems:
+        print("  !", p)
+    if write and rows:
+        f = cfg.resolve(board.file)
+        old = f.read_text(encoding="utf-8") if f.exists() else None
+        n = write_place_rows(f, {ref: place_row(p) for ref, p, _ in rows})
+        try:
+            got = config.load(cfg.path).board(board.name).place
+            off = [ref for ref, p, _ in rows if ref not in got or (got[ref].x, got[ref].y, got[ref].rot, got[ref].side,
+                                                                    got[ref].auto) != (p.x, p.y, p.rot, p.side, True)]
+        except config.ConfigError as e:
+            off = [str(e)]
+        if off:
+            if old is None:
+                f.unlink()
+            else:
+                f.write_text(old, encoding="utf-8")
+            raise SystemExit(f"{board.file}: {', '.join(off)} did not read back as written – the file is left as it "
+                             "was")
+        print(f"  {n} row{'s' * (n != 1)} written into {board.file} [place]"
+              + (f", {len(rows) - n} unchanged" if len(rows) > n else ""))
+    elif not rows and not problems:
+        print("  nothing to place: every part the circuit or the board file ties to a host is in [place]")
+    else:
+        print(f"  {len(rows)} part{'s' * (len(rows) != 1)} next to {'its' if len(rows) == 1 else 'their'} host"
+              + ("" if write else " – --write puts them into [place]"))
+    return 2 if problems else 0
+
+
 # --- EasyEDA ------------------------------------------------------------------------------------------------------
 
 def pad_hole(p):
@@ -809,6 +1157,8 @@ def main(cfg, args):
     board = cfg.board(args.board)
     if args.action == "plan":
         return 2 if plan(cfg, board) else 0
+    if args.action == "place":
+        return place_main(cfg, board, args.write, args.only and args.only.split(","))
     regions = None
     if args.action == "pour":  # pour_regions: the outlines from the last routing, before EasyEDA is touched
         from . import route

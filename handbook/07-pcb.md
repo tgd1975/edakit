@@ -9,6 +9,7 @@ edakit handover              # what the circuit hands over: state, sign-offs, wh
 edakit pcb parts --write     # parts of the board schematic -> PCB (no "Import Changes" dialog)
 edakit pcb dump              # footprint geometry -> <artifacts>/pcb_geometry_<board>.json
 edakit pcb plan              # offline: check the plan, preview PNG, net classes
+edakit pcb place --write     # offline: decoupling capacitors, pull and series resistors next to their host
 edakit pcb apply             # outline, holes, tooling holes, fixed parts locked; pads verified
 edakit pcb autolayout        # the unlocked small parts, waits until positions are stable
 edakit route all             # Freerouting -> EasyEDA, pours, reload, DRC (exit 0 = DRC 0)
@@ -105,7 +106,7 @@ Fix everything the auto-layout must not decide: connectors and anything at the e
 decoupling capacitors and pull resistors, LEDs and anything visible, parts with mechanical constraints. EasyEDA's
 auto-layout places only unlocked parts, only on TOP, and knows nothing about belonging – it once put a decoupling
 capacitor 24 mm from its IC. That is why `near` holds only between fixed parts: an entry for a part the auto-layout
-places is a finding.
+places is a finding – `edakit pcb place` (below) gives such a part a spot next to its host.
 
 **Geometry.** The plan works with footprint boxes and pads relative to the part origin: from `edakit pcb dump` once the
 parts are in the PCB – the project's footprints as placed – and, for a planned part that is not in the dump yet, from
@@ -176,6 +177,31 @@ silk_overlap_mm = 0.8        # in hardware/boards/<b>.toml, above the tables
 
 With the key, an overlap gives its depth: `R1 / R2: overlap (top) – 1.00 mm (silk_overlap_mm 0.8)`, or
 `J1 / C1: overlap (top) – 0.30 mm (J1 through-hole: silk_overlap_mm does not apply)`.
+
+**Parts next to their host.** `edakit pcb place` works out a spot, offline, for every part that `[place]` lacks but
+the circuit or the board file ties to a host: `layout.near` of the graph, `[near]` of the board file, and the
+decoupling of L-12 – an IC without a capacitor of its own within `near_mm` gets the first free capacitor between its
+supply and ground that has no declared host of its own, matched one per IC as L-12 matches them. Declared hosts come
+first (graph, then board file, each by designator), then the decoupling; each placed part is an obstacle for the next.
+The spot lies on the host's side, within `near_mm` of every host, at 0, 90, 180 or 270° on a 0.1 mm grid: the part's
+pad on a net it shares with the host (ground only when that is all they share) as close as possible to the host's pin
+on that net – for a decoupling capacitor its supply pad to the IC's supply pin, and within 0.1 mm of that the ground
+pad nearest to the IC's ground pin. A spot counts only where the plan check (`check_plan` and L-12) reports nothing
+new: `silk_overlap_mm`, `on_headers` with `header_keep_mm`, outline, hole and tooling keep-outs, THT pins of the
+other side, `edge_mm` – as they are. Parts without a host stay with the auto-layout.
+
+```text
+$ edakit pcb place
+  R1 = { x = 62.8, y = 21.9, rot = 90, side = "top", auto = true }   # next to U2: pad 1 1.3 mm from U2.15 (REXT)
+  C1 = { x = 59.9, y = 21.0, rot = 180, side = "top", auto = true }   # decoupling of U2 on 3V3: pad 1 1.5 mm from U2.16 (3V3)
+```
+
+`--write` adds the rows as new lines at the end of `[place]`; every other line and comment stays as it is. A later run
+may move a row with `auto = true` (its part is placed anew; one that has no host any more stays), never a row written
+by hand – delete `auto = true` to keep a spot. To every other command an `auto` row is a fixed, locked part like any
+other. `--only C1,R1` places only those. A part without a spot is named with its host and pin – `C1: no free spot
+within near_mm 6 of U2 (pin 16, 3V3)` – and the command exits 2. It reads the geometry of `pcb dump`, so the parts must
+be in the PCB once.
 
 `edakit pcb dump` turns every part it measures to 0° on TOP to read its geometry and **leaves it there** – run `apply`
 and the auto-layout afterwards.

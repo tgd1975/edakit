@@ -323,3 +323,17 @@ def test_docs_files(tmp_path):
         (tmp_path / "edakit.toml").write_text(f'[project]\nname = "t"\n[boards.main]\n[docs]\n{bad}\n')
         with pytest.raises(ConfigError, match=r"\[docs\]"):
             load(tmp_path / "edakit.toml")
+
+
+def test_place_auto_key(tmp_path):
+    from edakit.config import _placement
+    assert _placement("C1", {"x": 1, "y": 2}).auto is False               # no key: a row written by hand, as before
+    assert _placement("C1", [1, 2, 90, "top"]).auto is False
+    (tmp_path / "edakit.toml").write_text('[project]\nname = "t"\n[boards.main]\n')
+    (tmp_path / "hardware" / "boards").mkdir(parents=True)
+    (tmp_path / "hardware" / "boards" / "main.toml").write_text(
+        '[place]\nC1 = { x = 66.0, y = 21.4, rot = 0, side = "top", auto = true }\n')
+    c1 = load(tmp_path / "edakit.toml").board().place["C1"]
+    assert c1.auto is True and c1.lock is True and (c1.x, c1.y) == (66.0, 21.4)
+    with pytest.raises(ConfigError, match="place.C1: auto must be true or false"):
+        _placement("C1", {"x": 1, "y": 2, "auto": "yes"})
