@@ -59,6 +59,7 @@ REQUIRED = {   # manual checks every release needs, also when an older sign-off 
                     "batteries, product safety) – the agent regulatory-reviewer in its own session"},
 }
 UPLOAD = ["gerber_{b}.zip", "bom_{b}.csv", "cpl_{b}.csv"]
+WHEN = ("order", "acceptance")   # verified.open {text, when}: the phase whose manual checks answer the point
 RESULT = {"pass": "passed", "fail": "FAILED", "warn": "warning", "info": "information", "advisory": "advisory",
           "waived": "waived", "pending": "open"}
 
@@ -138,6 +139,48 @@ def key_of(item):
 
 def accepted(item, signoff):
     return next((a for a in signoff.get("accepted_warnings", []) if fnmatch(key_of(item), a["match"])), None)
+
+
+def datasheet_open(cfg):
+    """Per parts entry of the graph: its designators, the open points of its datasheet sign-off (verified.open – a
+    text, or {text, when} with the phase that answers it) and its sources marked as an assumption. Information for
+    section 6 of the protocol; the decision does not read it. Returns ([{who, open: [(text, when)], assumptions}],
+    notes)."""
+    from ..design import natural_key
+    from ..stock import refs_text
+    design = Design.from_config(cfg)
+    users = defaultdict(list)
+    for des in design.comps:
+        if key := design.entry_key(des):
+            users[key].append(des)
+    out, notes = [], []
+    for key, refs in sorted(users.items(), key=lambda kv: natural_key(kv[0])):
+        part, items = design.parts[key], []
+        for o in (part.get("verified") or {}).get("open") or []:
+            text, when = (str(o.get("text", "")), o.get("when")) if isinstance(o, dict) else (str(o), None)
+            if when is not None and when not in WHEN:
+                notes.append(f"{key}: open point with when {when!r} – known: {', '.join(WHEN)}; listed without a phase")
+                when = None
+            items.append((text, when))
+        assumed = [s for s in part.get("sources") or [] if isinstance(s, str) and re.search(r"\bassumption", s, re.I)]
+        if items or assumed:
+            name = key + (f" {part['mpn']}" if part.get("mpn") and part["mpn"] != key else "")
+            out.append({"who": f"{name} ({refs_text(sorted(refs, key=natural_key))})", "open": items,
+                        "assumptions": assumed})
+    return out, notes
+
+
+def datasheet_list(found):
+    """The list "Open from the datasheets" at the end of section 6; nothing when nothing is open."""
+    if not found:
+        return []
+    title = dict(PHASES)
+    L = ["\n**Open from the datasheets** (information – the release does not depend on it)\n"]
+    for e in found:
+        L.append(f"- {e['who']}")
+        L += [f"  - open{', ' + title[w] if w else ''}: {t}" for t, w in e["open"]]
+        L += [f"  - assumption: {s}" for s in e["assumptions"]]
+    return L
 
 
 def stage_graph(cfg, design):
@@ -317,15 +360,19 @@ def write_protocol(cfg, outdir, head, rows, sim, signoff, notes, decision, reaso
     L.append("\n## 5 Open sign-offs\n")
     L += [f"- [ ] {r['check']}" for r in rows if r["result"] == "pending"] or ["None."]
     L.append("\n## 6 Manual checks\n")
+    sheet, sheet_notes = datasheet_open(cfg)
     for phase, title in PHASES:
         items = [m for m in signoff.get("manual", []) if m.get("phase", "export") == phase]
-        if items:
+        answered = [f"- [ ] {e['who']}: {t}" for e in sheet for t, w in e["open"] if w == phase]
+        if items or answered:
             L.append(f"**{title}**\n")
             for m in items:
                 by = (f" – {m['done_by']}, {m.get('date')}" + (f": {m['note']}" if m.get("note") else "")) if m.get("done_by") else ""
                 L.append(f"- [{'x' if m.get('done_by') else ' '}] {m['id']} {m['text']}{by}")
+            L += answered
             L.append("")
-    L += [f"- note: {n}" for n in notes]
+    L += [f"- note: {n}" for n in notes + sheet_notes]
+    L += datasheet_list(sheet)
     L += ["\n## 7 Simulation (stage E)\n", "| Scenario | Status | Nets | Supply current |", "|---|---|---|---|"]
     for s in sim["scenarios"]:
         nets = ", ".join(f"{n} {v:.3f} V" for n, v in s.get("nets", {}).items())

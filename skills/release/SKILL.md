@@ -46,9 +46,11 @@ The MCP server cannot order on purpose. Checklist for the user:
       placeholder, the remark (≤ 200 ASCII characters, tabs only on stretches order.md lists as free), bake.
       Without `[order]`: tooling holes, order number position and remark by hand as in handbook 8.4
 - [ ] M-2: in JLCPCB's assembly preview the rotation and polarity of every polarised part (compare with
-      `polarity_<b>.png`), no missing part in the BOM tool, price; then sign M-2
+      `polarity_<b>.png`), no missing part in the BOM tool, price, and the datasheet points section 6 lists under
+      "after uploading"; then sign M-2
 - [ ] The cart against `edakit cost` – class, fees and parts; a difference of more than a few dollars has a reason
 - [ ] Parts that do not come from JLCPCB (hand-soldered, cables, enclosure) ordered in the same go: `edakit order`
       writes a cart per supplier and `hand_assembly.md` for all sets, with spares and minimum quantities
 
-After delivery: acceptance test of every board (M-4).
+After delivery: acceptance test of every board (M-4), with the datasheet points section 6 of the protocol lists
+under "after delivery, per board" (`verified.open` with `when`).

@@ -124,6 +124,12 @@ not released (4.5). Scope `decision` counts regardless of the hash and must refe
 owner accepts a warning** – it is a decision. **A manual check an agent can do is signed by the agent's result** (chapter 11): OK → signed with the agent
 as `done_by`; not OK → fix the cause, check again.
 
+**Open from the datasheets.** Section 6 of the protocol ends with a list per parts entry of the graph – its
+designators, the `open` points of its `verified` sign-off and its `sources` with the word "assumption" (4.1). A point
+with `when` (`order`, `acceptance`) is also an unchecked line under that phase's manual checks, e.g. "- [ ] C2297
+KT-0805G (D2–D9): VR not specified – 5 V assumed" after M-4, so the acceptance list carries it without copying. The
+list is information: it changes neither the decision nor its reasons, and a project without open points gets none.
+
 **M-6, the regulatory review, is required** even when the sign-off file does not list it: the gate adds it as open
 (chapter 15). Not everything that can be ordered may be sold or even operated in the EU, and nothing else in the
 gate looks at that.
