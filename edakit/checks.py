@@ -28,6 +28,10 @@
   G-15 pin functions: a net's "fn" (pwm, adc, spi.sck, i2c.sda, uart.tx, …) is on a pin whose parts entry lists it
        in "functions", the nets of one "fn_bus" on one peripheral instance, PWM nets of one slice with one fixed
        "pwm_hz" and a channel each; a pin without "functions" is a note
+  G-16 ground and supply pins: a ground pin on the ground net (or one joined to it by an inductor, or in the graph's
+       "grounds"), a supply pin (power_in) on a net that a supply reaches – a power output, a battery holder, a
+       connector with a vbus pin or in checks.reverse_protect, a sim source – directly or through fuses, switches,
+       connectors, inductors, MOSFETs, resistors up to 100 Ohm and diodes in forward direction
   P-1  graph pins (number + name) = parts database, an entry exists for every LCSC number – or, for a part bought
        elsewhere, for its manufacturer part number `part`
   P-3  own parts (part.py): a board copied from its project with `edakit part own` is that project's current
@@ -35,7 +39,7 @@
        own datasheets (hardware/datasheet/) are of its current state
   G-9  sign-off: every part verified against its datasheet, no open "verify" notes (pending, blocks only the release)
 
-0 Ω bridges (resistors with value_ohm 0 in the parts entry) join their nets: G-4, G-5, G-6, G-10 to G-15 see the
+0 Ω bridges (resistors with value_ohm 0 in the parts entry) join their nets: G-4, G-5, G-6, G-10 to G-16 see the
 joined nets as one net under the group's name (the ground net if it is one of them, else the first in the graph) and
 the bridges as copper; G-1, G-2, G-3, G-8, P-1 and G-9 see every net and part as the graph has them.
 
@@ -67,10 +71,11 @@ USB_RD, USB_RD_TOL = 5100, 0.10                      # USB Type-C sink terminati
 COILS = {"relay": ("coil_plus", "coil_minus"), "buzzer": ("plus", "minus")}   # inductive kinds: their coil roles
 FN_LINES = {"pwm": (), "adc": (), "spi": ("sck", "tx", "rx", "cs"), "i2c": ("sda", "scl"), "uart": ("tx", "rx")}
 FN_NAMES = [k + (f".{line}" if line else "") for k, lines in FN_LINES.items() for line in lines or [""]]   # net fn
+SUPPLY_R_MAX = 100                                   # a resistor up to this passes a supply (shunt, filter)
 PIN_FUNCTION = re.compile(r"([a-z][a-z0-9]*?)(\d+)(?:\.([a-z]+))?")   # "spi0.sck", "i2c1.sda", "pwm1.a", "adc0"
 
-EXECUTED = ["G-1", "G-2", "G-3", "G-4", "G-5", "G-6", "G-8", "G-10", "G-11", "G-12", "G-13", "G-14", "G-15", "P-1",
-            "P-3", "G-9"]
+EXECUTED = ["G-1", "G-2", "G-3", "G-4", "G-5", "G-6", "G-8", "G-10", "G-11", "G-12", "G-13", "G-14", "G-15", "G-16",
+            "P-1", "P-3", "G-9"]
 
 
 class Report:
@@ -576,6 +581,91 @@ def check_pin_functions(d, rep):
                                       "one frequency", waive)
 
 
+def supply_inputs(d, sim=None):
+    """Nets a supply feeds: power outputs, and where the supply comes in (the design hint H-1's power inputs) – the
+    plus of a battery holder, the vbus pins of a connector, every pin of a connector in checks.reverse_protect, the
+    plus of a simulation source."""
+    out = {n for n, net in d.nets.items() if any(d.pin_info(r).get("type") == "power_output" for r in net["pins"])}
+    protect = set((d.graph.get("checks") or {}).get("reverse_protect") or [])
+    for des in d.comps:
+        part = d.part(des) or {}
+        roles = {num: str(p.get("role") or "") for num, p in (part.get("pins") or {}).items()}
+        if part.get("kind") == "battery_holder":
+            take = [n for n, r in roles.items() if r.startswith("plus")] or list(roles)
+        elif part.get("kind") == "connector" and "vbus" in roles.values():
+            take = [n for n, r in roles.items() if r == "vbus"]
+        elif des in protect:
+            take = list(roles)
+        else:
+            continue
+        out |= {d.pin_net.get(f"{des}.{n}") for n in take}
+    for des, src in ((sim or {}).get("sources") or {}).items():
+        if des in d.comps and isinstance(src, dict) and "plus" in src:
+            out.add(d.pin_net.get(f"{des}.{src['plus']}"))
+    return out - {None}
+
+
+def supply_paths(d):
+    """{net: nets a supply reaches from it through one part}: fuses, switches, connectors and inductors (every pin),
+    MOSFETs (drain and source), resistors up to SUPPLY_R_MAX both ways, diodes from anode to cathode."""
+    nxt = defaultdict(set)
+    for des in d.comps:
+        part = d.part(des) or {}
+        kind, value = part.get("kind"), resistor_value(d, des)
+        if kind == "diode":
+            a, k = d.net_of(des, "anode"), d.net_of(des, "cathode")
+            if a and k:
+                nxt[a].add(k)
+            continue
+        if kind in ("nmos", "pmos"):
+            nets = {d.net_of(des, "drain"), d.net_of(des, "source")}
+        elif kind in PASS_THROUGH + ("inductor",) or (value is not None and value <= SUPPLY_R_MAX):
+            nets = {d.pin_net.get(f"{des}.{p}") for p in part.get("pins") or {}}
+        else:
+            continue
+        for n in nets - {None}:
+            nxt[n] |= nets - {None, n}
+    return nxt
+
+
+def reach(starts, nxt, stop=()):
+    seen, todo = set(starts), list(starts)
+    while todo:
+        for n in nxt.get(todo.pop(), ()):
+            if n not in seen and n not in stop:
+                seen.add(n)
+                todo.append(n)
+    return seen
+
+
+def check_power_pins(d, rep, sim=None):
+    """G-16: ground pins on ground, supply pins on a net that a supply reaches."""
+    alias = {a: name for name, net in d.nets.items() for a in net.get("joined") or [name]}   # 0 Ω bridges joined
+    named = d.graph.get("grounds") or []
+    for n in named:
+        if n not in alias:
+            rep.error("G-16", f"grounds: no net {n} in the graph")
+    inductors = defaultdict(set)
+    for des in d.comps_of_kind("inductor"):
+        nets = {d.pin_net.get(f"{des}.{p}") for p in d.part(des)["pins"]} - {None}
+        for n in nets:
+            inductors[n] |= nets - {n}
+    grounds = reach({d.ground} | {alias[n] for n in named if n in alias}, inductors)
+    supplied = reach(supply_inputs(d, sim) - grounds, supply_paths(d), stop=grounds)
+    for des in d.comps:
+        for num, info in ((d.part(des) or {}).get("pins") or {}).items():
+            ref, net = f"{des}.{num}", d.pin_net.get(f"{des}.{num}")
+            if net is None:
+                continue
+            what, waive = f"{ref} ({info.get('name', num)}) on {net}", d.nets[net].get("waive")
+            if info.get("type") == "ground" and net not in grounds:
+                rep.error("G-16", f"{what}, not on {d.ground}", waive)
+            elif info.get("type") == "power_in" and net in grounds:
+                rep.error("G-16", f"{what}: a supply pin on ground", waive)
+            elif info.get("type") == "power_in" and net not in supplied:
+                rep.error("G-16", f"{what}: nothing supplies this net", waive)
+
+
 def check_part_pins(d, rep):
     for des, c in d.comps.items():
         if not c.get("lcsc") and not c.get("part"):
@@ -631,6 +721,7 @@ def run(design, cfg=None):
     check_flyback(joined, rep)
     check_usb_c(joined, rep)
     check_pin_functions(joined, rep)
+    check_power_pins(joined, rep, rules.load_sim(cfg) if cfg else None)
     check_part_pins(design, rep)
     if cfg:
         from . import part

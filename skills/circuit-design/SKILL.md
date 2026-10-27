@@ -53,7 +53,9 @@ check candidate (handbook 14.4) – do not present it as an established check.
 
 ## 5. Into the graph
 
-Nets with worst-case voltage ranges `v`. Decisions numbered (D-…) in the decision log and cited in `notes`. sim.json:
+Nets with worst-case voltage ranges `v`. A ground that is separate on purpose (an analog ground joined at one point)
+goes into the graph's `grounds` – every other ground pin belongs on the ground net (G-16). Decisions numbered (D-…) in
+the decision log and cited in `notes`. sim.json:
 sources, supplies at their limits, loads with the MCU's outputs, inputs, LEDs on (`leds_on` in every load once an LED is
 on no driver output, `[]` when none lights – E-4), buttons, relays.
 

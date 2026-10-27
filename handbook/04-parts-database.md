@@ -32,9 +32,10 @@ Examples: [the Christmas bell's parts](https://github.com/tgd1975/automatic_chri
 | `own` | a part nobody sells (4.5): `what` – `pcb` (a board of an edakit project), `bin` (from your stock, no longer to be had), `handmade`; for `pcb` its source: `project`, `connectors`, `state_sha256` (the board's circuit hash), and in the copy `path`, `commit`, `repo`, `released` – P-3 compares them |
 
 **Pin types** (`type`): `passive`, `input`, `output`, `bidirectional`, `power_in`, `power_output`, `ground`, `analog`,
-`current_sink`, `no_connect`, `mechanical`. G-4, G-5 and G-6 work with them: `power_in` needs a capacitor, two
-`output`s on one net are a conflict, an `input` needs a driver. An MCU pin that can only read (the ESP32's GPIO34–39)
-is `input`, even with the role `gpio`: the simulation refuses to drive it (E-3).
+`current_sink`, `no_connect`, `mechanical`. G-4, G-5, G-6 and G-16 work with them: `power_in` needs a capacitor and
+a net that a supply reaches, a `ground` pin the ground net, two `output`s on one net are a conflict, an `input` needs a
+driver. An MCU pin that can only read (the ESP32's GPIO34–39) is `input`, even with the role `gpio`: the simulation
+refuses to drive it (E-3).
 
 **Pin functions** (`functions`) come from the MCU's pin-mux table, not from memory: the example's Pico 2 entry
 (`tests/fixtures/led-bar/hardware/parts/C41407547.json`) has them for the RP2350, from the pico-sdk headers it names

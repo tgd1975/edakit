@@ -138,6 +138,16 @@
     "Lesson of the reference project (pytree D-14, 2026-10-19): the star's blue LED at 1 kHz and the buzzer on GP20/GP21 shared PWM slice 2 – every note would have changed the blue PWM; found by chance in a review"
    ]
   },
+  "G-16": {
+   "title": "ground and supply pins",
+   "rule": "Every pin of type ground is on the ground net or on a net joined to it (0 Ω bridges, inductors, or a net in the graph's grounds), and every power_in pin is on a net that a supply reaches – a power_output pin or a power input (battery holder, connector with a vbus pin or in checks.reverse_protect, simulation source) – directly or through fuses, switches, connectors, inductors, MOSFETs, resistors up to 100 Ω and diodes in forward direction.",
+   "why": "P-1 makes the pin names equal the parts entry and G-1 connects every pin, but neither asks whether a pin is on the right net. A rail split by a typo in a net name, a ground pin on a net of its own, VDD swapped with a signal: each one kills every board and passes the other checks – G-6 counts capacitors per supply pin, so a split rail that took its capacitor along passes it too. The simulation shows such a fault only as a symptom, or not at all when the net's range is loose.",
+   "fix": "Put the pin on its rail or on ground; it is usually a typo in a net name or two pins swapped. A ground that is separate on purpose (an analog ground joined at one point, an isolated side) goes into the graph's grounds. A supply pin fed from a GPIO or through a larger resistor gets waive {\"G-16\": reason} on its net.",
+   "sources": [
+    "Lesson of the reference project (pytree MVP risk review, item 10, 2026-10-23): pin-to-net checked by hand for every IC, about 20 minutes, and nothing repeats it after the next change",
+    "edakit handbook 4.1 (pin types ground, power_in, power_output) and 3.3 (0 Ω bridges)"
+   ]
+  },
   "E-1": {
    "title": "operating point",
    "rule": "The DC operating point of every scenario converges, and the simulation config fits the graph.",

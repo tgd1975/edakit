@@ -54,6 +54,7 @@ Example: [the Christmas bell's graph](https://github.com/tgd1975/automatic_chris
 | `layout` | the hand-over to the layout: `fixed`, `edge`, `near`, `loops`, `notes` – chapters 7.4 and 14.1; G-1 checks that the names exist |
 | `purpose` | what the board is for: `use` (`private` – built for oneself, `gift` – given away, `sale` – sold, also in small series), `market` (`"EU"`), `notes` (what it is, who uses it) – it decides which rules the regulatory review applies (chapter 15); part of the circuit hash |
 | `ground` | name of the ground net (default `GND`) – the checks, the simulation and the schematic's flags use it; G-1 checks that the net exists |
+| `grounds` | further nets that are ground on purpose, `["AGND"]` – an analog ground joined at one point, an isolated side: their `ground` pins pass G-16 (default: none) |
 | `checks` | settings of the graph checks: `pin_locks` (`{"U1.4": "LED_SDI"}` – pins the firmware relies on, G-2), `doc_pin_table` (`{component, file, prefix, regex}` – a pin table in the documentation, G-2), `reverse_protect` (connectors that may be plugged in the wrong way round, G-10; also a power input for the design hints); part of the circuit hash, G-1 checks the names |
 
 ## 3.2 Conventions that save trouble
@@ -89,12 +90,13 @@ check that fails is explained once below the findings (chapter 14.2).
 | G-13 | flyback diode: a relay coil or a buzzer with `coil_ohm`, switched by a transistor or an output, has a diode across it with the cathode at its plus terminal | a relay that kills its transistor at the first switch-off |
 | G-14 | USB-C sink: a receptacle with `cc1`/`cc2` pins has its own 5.1 kΩ ± 10 % to ground on each CC pin; silent when an IC is on the CC lines | no 5 V from a USB-C charger, CC1 and CC2 on one resistor |
 | G-15 | pin functions: a net with `fn` is on a pin whose parts entry lists that function (`functions`), the nets of one `fn_bus` on one peripheral instance, two PWM nets of one slice with the same fixed `pwm_hz` and a channel each; a net with `fn` on pins without `functions` is a note | SPI data on the clock pin, an analog input without ADC, a buzzer on the PWM slice of an LED |
+| G-16 | ground and supply pins: every `ground` pin on the ground net (or one joined to it by a 0 Ω bridge or an inductor, or in `grounds`); every `power_in` pin on a net that a supply reaches – a `power_output` pin, a battery holder, a connector with a `vbus` pin or in `checks.reverse_protect`, a simulation source – directly or through fuses, switches, connectors, inductors, MOSFETs, resistors up to 100 Ω and diodes in forward direction | a rail split by a typo in its name, a ground pin on a net of its own, VDD swapped with a signal |
 | P-1 | graph pins (number and name) = parts entry; an entry exists for every LCSC number; no supply pin marked `nc` | a wrong part number, pins shifted by one |
 | P-3 | own parts (4.5): a board copied with `edakit part own` is its project's current datasheet, copied from a commit (pending otherwise); a board not released at that state is a warning; the project's own datasheets are of its current state | a board changed after it was copied into the host |
 | G-9 | sign-off: every part `verified` against its datasheet, no open `verify` note (pending – blocks only the release) | an unchecked part going into an order |
 
 **0 Ω bridges.** A resistor whose parts entry has `value_ohm: 0` is copper – the usual way to cross a track on a board
-with all tracks on one side. The nets it joins are one net for G-4, G-5, G-6 and G-10 to G-15: a pull-up behind a
+with all tracks on one side. The nets it joins are one net for G-4, G-5, G-6 and G-10 to G-16: a pull-up behind a
 bridge holds its input, a capacitor to a ground net behind a bridge decouples, two outputs on either side clash. A
 finding names the joined net after the ground net if that is one of them, else after the first of them in the graph;
 a waiver on any of them counts. G-1, G-2, G-3, G-8, P-1 and G-9 see every net and the bridge as the graph has them.

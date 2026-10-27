@@ -599,3 +599,97 @@ def test_g15_sees_through_0_ohm_bridges(project):
     project.save_graph(g)
     assert "LED_SDI: needs spi.tx, but U1.4 (GP2) has spi0.sck, uart0.cts, i2c1.sda, pwm1.a, uart0.tx" \
         in g15(run(project))
+
+
+# --- G-16 ground and supply pins (rule proposal #44) ----------------------------------------------------------------
+def g16(rep):
+    return sorted(m for c, m in rep.errors if c == "G-16")
+
+
+def move(project, g, pins, to, v=(0, 3.4)):
+    """Take `pins` out of their nets and put them on the net `to` (created if it does not exist)."""
+    for net in g["graph"]["nets"]:
+        net["pins"] = [p for p in net["pins"] if p not in pins]
+    if not any(n["name"] == to for n in g["graph"]["nets"]):
+        g["graph"]["nets"].append({"name": to, "pins": [], "v": list(v)})
+    project.net(g, to)["pins"] += pins
+
+
+def test_g16_supply_rail_split_by_a_typo(project):
+    g = project.graph()
+    move(project, g, ["U2.16", "C1.1"], "3.3V")       # 3.3V instead of 3V3: G-6 is content, the capacitor came along
+    project.save_graph(g)
+    rep = run(project)
+    assert g16(rep) == ["U2.16 (VDD) on 3.3V: nothing supplies this net"] and "G-6" not in ids(rep)
+
+
+def test_g16_ground_pin_on_a_net_of_its_own(project):
+    g = project.graph()
+    move(project, g, ["U2.1", "R1.2"], "GND_U2", v=(0, 0))
+    project.save_graph(g)
+    assert g16(run(project)) == ["U2.1 (GND) on GND_U2, not on GND"]
+    g["graph"]["grounds"] = ["GND_U2"]                 # a ground that is separate on purpose
+    project.save_graph(g)
+    assert g16(run(project)) == []
+    g["graph"]["grounds"] = ["AGND"]
+    project.save_graph(g)
+    assert "grounds: no net AGND in the graph" in g16(run(project))
+
+
+INDUCTOR = {"lcsc": "C9000003", "mpn": "test ferrite bead 0805", "kind": "inductor", "verified": {"by": "test"},
+            "params": {"value_h": 1e-6, "dcr_ohm": 0.1},
+            "pins": {"1": {"name": "1", "type": "passive"}, "2": {"name": "2", "type": "passive"}}}
+
+
+def test_g16_ground_and_supply_through_a_ferrite(project):
+    project.save_part(INDUCTOR["lcsc"], INDUCTOR)
+    g = project.graph()
+    move(project, g, ["U2.1", "R1.2"], "GND_U2", v=(0, 0))
+    move(project, g, ["U2.16", "C1.1"], "3V3_U2")
+    g["graph"]["components"] += [comp("L1", INDUCTOR["lcsc"], R, kind="inductor"),
+                                 comp("L2", INDUCTOR["lcsc"], R, kind="inductor")]
+    project.net(g, "GND")["pins"].append("L1.1")
+    project.net(g, "GND_U2")["pins"].append("L1.2")
+    project.net(g, "3V3")["pins"].append("L2.1")
+    project.net(g, "3V3_U2")["pins"].append("L2.2")
+    project.save_graph(g)
+    assert g16(run(project)) == []
+
+
+def test_g16_supply_and_signal_pins_swapped(project):
+    g = project.graph()
+    project.net(g, "3V3")["pins"][project.net(g, "3V3")["pins"].index("U2.16")] = "U2.3"
+    project.net(g, "LED_CLK")["pins"][project.net(g, "LED_CLK")["pins"].index("U2.3")] = "U2.16"
+    project.save_graph(g)
+    assert g16(run(project)) == ["U2.16 (VDD) on LED_CLK: nothing supplies this net"]
+
+
+def test_g16_supply_pin_on_ground(project):
+    g = project.graph()
+    move(project, g, ["U2.16"], "GND")
+    project.save_graph(g)
+    assert g16(run(project)) == ["U2.16 (VDD) on GND: a supply pin on ground"]
+
+
+@pytest.mark.parametrize("value_ohm,found", [(100, False), (150, True)])
+def test_g16_supply_through_a_resistor_up_to_100_ohm(project, value_ohm, found):
+    """U2 behind a series resistor from 3V3: a shunt or a filter passes, a larger one is no supply path."""
+    project.save_part("C9000004", {**BRIDGE, "lcsc": "C9000004", "params": {"value_ohm": value_ohm}})
+    g = project.graph()
+    move(project, g, ["U2.16", "C1.1"], "3V3_U2")
+    g["graph"]["components"].append(comp("R20", "C9000004", R))
+    project.net(g, "3V3")["pins"].append("R20.1")
+    project.net(g, "3V3_U2")["pins"].append("R20.2")
+    project.save_graph(g)
+    assert g16(run(project)) == (["U2.16 (VDD) on 3V3_U2: nothing supplies this net"] if found else [])
+    project.net(g, "3V3_U2")["waive"] = {"G-16": "U2 runs from 3V3 through R20 on purpose"}
+    project.save_graph(g)
+    assert g16(run(project)) == []
+
+
+def test_g16_supply_only_through_a_diode_in_forward_direction(project):
+    g = project.graph()
+    project.net(g, "VIN")["pins"][project.net(g, "VIN")["pins"].index("D1.2")] = "D1.1"   # D1 reversed: blocks VIN
+    project.net(g, "+5V")["pins"][project.net(g, "+5V")["pins"].index("D1.1")] = "D1.2"
+    project.save_graph(g)
+    assert g16(run(project)) == ["U1.39 (VSYS) on +5V: nothing supplies this net"]
