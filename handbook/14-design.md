@@ -152,6 +152,7 @@ edakit block add led --as STATUS --connect in=LED_STATUS
 | `i2c-pullups` | 4.7 kΩ on SDA and SCL, marks both nets as I2C |
 | `npn-switch` | S8050 low-side switch with base and base-emitter resistor and a flyback diode |
 | `power-input-jst` | JST PH input, SS34 against reverse polarity, 22 µF |
+| `power-or-pmos` | two supplies ORed onto one rail: USB through an SS34, cells or a second input through two AO3401A back-to-back that USB switches off – neither supply is fed backwards (H-8) |
 | `reverse-pmos` | AO3401A reverse-polarity protection with its gate resistor |
 | `usb-c-sink` | USB-C power input with 5.1 kΩ per CC pin and a polyfuse |
 

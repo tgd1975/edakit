@@ -1,0 +1,62 @@
+{
+ "name": "power-or-pmos",
+ "title": "Two supplies ORed: USB through a Schottky, the other one through back-to-back P-MOSFETs",
+ "about": "Two supplies onto one rail, neither one fed backwards (hint H-8). The preferred supply (usb) reaches the rail through an SS34; the other one (bat: cells or a second input) through two AO3401A in series with a common source, whose gates usb pulls up. While usb is present both MOSFETs are off and their body diodes point against each other: bat is cut off in both directions. Without usb, R1 pulls the gates to ground and bat feeds the rail with milliohms instead of a diode drop. As built in the reference project (pytree D-44, Q8/Q9, D40).",
+ "ports": {
+  "bat": "the supply that is cut off while usb is present: cells or a second input",
+  "usb": "the preferred supply, e.g. USB VBUS behind its fuse; it drives the gates",
+  "out": "the ORed rail",
+  "gnd": "ground"
+ },
+ "components": [
+  {
+   "designator": "Q1",
+   "type": "transistor",
+   "label": "{as}: bat cut-off PMOS, drain at bat",
+   "part": "AO3401A",
+   "lcsc": "C15127",
+   "pins": {"1": "G", "2": "S", "3": "D"}
+  },
+  {
+   "designator": "Q2",
+   "type": "transistor",
+   "label": "{as}: bat cut-off PMOS, drain at the rail",
+   "part": "AO3401A",
+   "lcsc": "C15127",
+   "pins": {"1": "G", "2": "S", "3": "D"}
+  },
+  {
+   "designator": "R1",
+   "type": "resistor",
+   "label": "{as}: gates to ground 10 k",
+   "part": "0805W8F1002T5E",
+   "lcsc": "C17414",
+   "value": "10k",
+   "pins": {"1": "1", "2": "2"}
+  },
+  {
+   "designator": "D1",
+   "type": "diode",
+   "label": "{as}: usb OR diode",
+   "part": "SS34",
+   "lcsc": "C8678",
+   "pins": {"1": "K", "2": "A"}
+  }
+ ],
+ "nets": [
+  {"name": "bat", "pins": ["Q1.3"]},
+  {"name": "usb", "pins": ["Q1.1", "Q2.1", "R1.1", "D1.2"], "v": [0, 5.5]},
+  {"name": "mid", "pins": ["Q1.2", "Q2.2"], "v": [-0.5, 5.5], "notes": "Common source of the back-to-back pair."},
+  {"name": "out", "pins": ["Q2.3", "D1.1"], "v": [0, 5.5]},
+  {"name": "gnd", "pins": ["R1.2"]}
+ ],
+ "covers": ["G-4", "G-10", "H-8"],
+ "notes": [
+  "Both MOSFETs stay off only while bat stays below usb + |VGS(th)|. Above it they conduct in part: fresh lithium AA cells (5.4 V) against USB at 4.75 V with the worst-case VGS(th) of -0.5 V gave about 0.18 A and 0.17 W in the reference project (M-1). The simulation uses the typical threshold.",
+  "AO3401A: VGS max ±12 V – both supplies up to about 10 V, as for reverse-pmos; 3.2 A at 70 °C, 85 mΩ at VGS -2.5 V.",
+  "A reversed bat meets Q1's drain with source and gate outside (G-10): put the connector or holder of bat into checks.reverse_protect. The block replaces reverse-pmos on that input.",
+  "sim.json: both supplies as sources, scenarios with each one alone and with both at mismatched voltages (bat high, usb low and the other way round); in none of them may a source take current.",
+  "While usb ramps up or down (1–20 ms) neither path may conduct for a moment – the MOSFETs are half off, D1 does not conduct yet. A large load can brown out; the reference project accepted a restart under full load.",
+  "A Schottky in the bat path instead would cost 0.3–0.4 V, often the whole reserve of a battery."
+ ]
+}

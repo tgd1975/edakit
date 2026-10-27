@@ -17,6 +17,7 @@ CONNECT = {
     "i2c-pullups": {"sda": "SIG", "scl": "SIG2", "vcc": "3V3"},
     "npn-switch": {"in": "SIG", "vplus": "+5V"},
     "power-input-jst": {"out": "+5V"},
+    "power-or-pmos": {"bat": "VIN", "out": "+5V"},
     "reverse-pmos": {"in": "VIN", "out": "+5V"},
     "usb-c-sink": {"vbus": "+5V"},
 }
@@ -173,3 +174,41 @@ def test_made_up_net_names_do_not_join_existing_nets(project):
     block.add(project.config(), "npn-switch", "BUZ", {"in": "SIG", "vplus": "+5V"})   # creates BUZ_LOAD, BUZ_BASE
     with pytest.raises(block.BlockError, match="BUZ_BASE, BUZ_LOAD exists already"):
         block.add(project.config(), "npn-switch", "BUZ", {"in": "SIG2", "vplus": "+5V"})
+
+
+def two_supplies(project):
+    """The reference project's base board in the example: J1 (cells, reverse_protect) on BAT, power-or-pmos with
+    bat=BAT and out=VIN (VIN goes on through D1 as before), the usb-c-sink block (J2) on its usb port; both are sim
+    sources. Returns the sim config."""
+    g = project.graph()
+    vin = next(n for n in g["graph"]["nets"] if n["name"] == "VIN")
+    vin["pins"].remove("J1.1")
+    g["graph"]["nets"].append({"name": "BAT", "pins": ["J1.1"], "v": [-5.5, 5.5]})
+    project.save_graph(g)
+    block.add(project.config(), "power-or-pmos", "PWR", {"bat": "BAT", "out": "VIN"})
+    block.add(project.config(), "usb-c-sink", "USB", {"vbus": "PWR_USB"})
+    sim = json.loads((project.root / "hardware" / "sim.json").read_text())
+    sim["sources"]["J2"] = {"plus": "A9", "minus": "A12", "r_ohm": 0.3, "i_max_a": 0.5}
+    sim["supplies"] = {"bat": {"J1": 5.0}, "usb": {"J2": 5.0}, "bat-high": {"J1": 5.4, "J2": 4.75},
+                       "usb-high": {"J1": 4.5, "J2": 5.25}}
+    return sim
+
+
+def test_power_or_pmos_with_two_supplies_passes_the_checks(project):
+    two_supplies(project)
+    assert errors(project) == []
+    cfg = project.config()
+    assert "H-8" not in rules.matching_hints(Design.from_config(cfg), cfg, rules.load_sim(cfg))
+
+
+@pytest.mark.skipif(not shutil.which("ngspice"), reason="ngspice not installed")
+def test_power_or_pmos_feeds_no_supply_backwards(project):
+    """No source takes current in any scenario, and with USB present the cells deliver nothing – even when they are
+    higher (fresh lithium cells at 5.4 V against USB at 4.75 V)."""
+    sim = two_supplies(project)
+    out = simrun.run_all(Design.from_config(project.config()), sim)
+    assert [c for c in out["checks"] if c["result"] == "fail"] == []
+    rows = {r["name"]: r["sources"] for r in out["scenarios"]}
+    assert all(i > -1e-3 for sources in rows.values() for i in sources.values()), rows
+    assert all(sources["J1"] < 1e-3 for name, sources in rows.items() if name.startswith(("bat-high", "usb-high")))
+    assert all(sources["J1"] > 0.01 for name, sources in rows.items() if name.startswith("bat/all_on"))
