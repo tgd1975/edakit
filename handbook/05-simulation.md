@@ -91,6 +91,12 @@ scenarios (E-2 derates the fuses' hold current to it); `ambient_min_c`, optional
 hold current there against the connectors it protects (without it: the datasheet's `i_hold_a`). Battery projects add
 `"cells": {"fresh": {"v": 1.6, "r": 0.15}, "empty": {"v": 1.0, "r": 0.4}}` and supplies like `{"BT1": "fresh"}`.
 
+A board people reach – picked up, held, pressed – gets its touch limit: `"touch_c": {"main": 48}`, a map from each such
+board to the temperature in °C its parts may reach (E-2, 5.3). The number comes from the standard the product follows,
+for the surface and the time a hand stays on it; IEC 62368-1 TS1 allows 48 °C for longer than a minute, 60 °C on plastic
+(51 °C on metal) for 10 s to 1 min and 77 °C (60 °C) for 1–10 s. A board without it gets no touch item; a name that is
+no board of edakit.toml stops the run.
+
 `leds_on` lists the LEDs that light in a load – the designator, or `D10_RED` for one colour of an RGB LED, `"all"` for
 every one; the others are expected dark. LEDs on the output of a constant-current sink go by the channel instead (5.3).
 As soon as an LED is on no driver output, every load needs `leds_on`, `[]` when none lights (E-4).
@@ -100,9 +106,19 @@ As soon as an LED is on no driver output, every load needs `leds_on`, `[]` when 
 | Check | What |
 |---|---|
 | E-1 | the operating point converges |
-| E-2 | stress of every part against its ratings with derating: resistor power ≤ 50 %, currents ≤ 80 %, capacitor/diode/transistor voltages ≤ 67 %, LED forward current and reverse voltage, fuse hold current at ambient, connector, switch and relay contact current, relay coil voltage, the current of every MCU output (`gpio_i_max_a`) and of all outputs together, sourced and sunk (`gpio_i_total_max_a`) – each pin may be fine and the sum beyond the package |
-| E-3 | function: current from every source (≤ `i_max_a`), no source and no cell fed backwards (≤ `i_back_max_a`, `i_charge_max_a`, 1 mA by default), regulator outputs within tolerance, input above `vin_min`, LDO junction temperature, MCU supply voltage and load on its regulator, MCU inputs at a defined level (≤ VIL or ≥ VIH – a 3.3 V signal into a 5 V AVR is the classic case), every part with an operating supply range inside it, every input pin with thresholds at a defined level and the high level of every MCU output reaching the VIH of the inputs on its net (below the table), MCU outputs only on pins that can drive (an output on an input-only pin is reported and not driven), LED driver output headroom and junction temperature, every LED on or dark as the load says (driver channels: ≥ 80 % of its share of the set current, also for an LED behind 0 Ω bridges or one resistor; parallel LEDs share within a ratio – below the table), relays pull in (`v_operate`) and release (`v_release`) as the load says, an own board supplied inside the range it was simulated for (`vin_min` … `vin_max`, 4.5), diodes that must block (`expect_blocking`), every net inside its declared range `v`, plus the plugin's checks |
+| E-2 | stress of every part against its ratings with derating: resistor power ≤ 50 %, currents ≤ 80 %, capacitor/diode/transistor voltages ≤ 67 %, LED forward current and reverse voltage, fuse hold current at ambient, connector, switch and relay contact current, relay coil voltage, the current of every MCU output (`gpio_i_max_a`) and of all outputs together, sourced and sunk (`gpio_i_total_max_a`) – each pin may be fine and the sum beyond the package; the junction temperature of every part with `rth_ja_k_per_w` against its `tj_max_c`, and on a board of `touch_c` against the touch limit (below the table) |
+| E-3 | function: current from every source (≤ `i_max_a`), no source and no cell fed backwards (≤ `i_back_max_a`, `i_charge_max_a`, 1 mA by default), regulator outputs within tolerance, input above `vin_min`, LDO junction temperature (against the same limit as E-2's), MCU supply voltage and load on its regulator, MCU inputs at a defined level (≤ VIL or ≥ VIH – a 3.3 V signal into a 5 V AVR is the classic case), every part with an operating supply range inside it, every input pin with thresholds at a defined level and the high level of every MCU output reaching the VIH of the inputs on its net (below the table), MCU outputs only on pins that can drive (an output on an input-only pin is reported and not driven), LED driver output headroom and junction temperature, every LED on or dark as the load says (driver channels: ≥ 80 % of its share of the set current, also for an LED behind 0 Ω bridges or one resistor; parallel LEDs share within a ratio – below the table), relays pull in (`v_operate`) and release (`v_release`) as the load says, an own board supplied inside the range it was simulated for (`vin_min` … `vin_max`, 4.5), diodes that must block (`expect_blocking`), every net inside its declared range `v`, plus the plugin's checks |
 | E-4 | LED has a known driver: in every scenario every LED – each colour of an RGB LED – has a state E-3 checks, its cathode on a driver output (directly, behind 0 Ω bridges or one resistor) or the load's `leds_on`; an LED with neither, or one the netlist left out because its parts entry lacks a role it reads (anode, cathode and their colours, 4.1), fails as "LED without a known driver" |
+
+**Heat and touch.** Half the power rating is no temperature: an AO3401A (125 K/W) at E-2's 0.45 W runs at 96 °C
+at 40 °C ambient. Every part whose entry gives `rth_ja_k_per_w` gets its junction temperature in every scenario,
+`ambient_c` + P × Rth(j-a), with P the power of all its elements – a resistor's I²R, a diode's or LED's VF × IF, a
+transistor's VCE × IC + VBE × IB, a MOSFET's VDS × ID, its body diode included (ngspice counts it in the drain
+current). It is held to the part's `tj_max_c`, at most the criteria's `tj_max_c` (default 125 °C) – the limit of the
+LDO and LED driver items of E-3 as well ("junction temperature at 40 °C: 0.0751 W × 125 K/W"). On a board of
+`touch_c` the same temperature – the upper bound of the part's surface – is held to the touch limit, for the LDOs and
+LED drivers too ("temperature where people touch (board main)"). A P-MOSFET switched off while fresh cells and USB
+meet passes every rating with 0.27 W in its body diode and still reaches 74 °C under a hand.
 
 **Operating range and logic levels.** A part whose entry gives its operating supply range – `ratings` `vdd_op_min` /
 `vdd_op_max` for its supply pins (the `power_in` pins with the role `vdd` or `vcc`, else all of them), or `v_op: [min,

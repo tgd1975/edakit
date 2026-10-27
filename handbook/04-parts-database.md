@@ -68,9 +68,12 @@ LED `if_max_a`, `vr_max` (per colour for RGB); BJT `ic_max_a`, `vceo`, `vebo`, `
 `v_max`; inductor `i_rated_a`, `i_sat_a`; regulators `vin_min`, `i_out_max_a`, `rth_ja_k_per_w`; MCU modules
 `vin_min`/`vsys_min`, `i_out_max_a`, `gpio_i_max_a` (per output pin) and `gpio_i_total_max_a` (all outputs together,
 sourced and sunk separately – the package's supply pins); relays `v_coil_max`, `i_max_a` (contacts); LED drivers
-`rth_ja_k_per_w`; any IC or module `vdd_op_min`, `vdd_op_max` – the operating supply range of the recommended
-operating conditions, not the absolute maximum (E-3 holds every supply pin to it); own boards (behaviour `current`)
-`vin_min`, `vin_max` – the voltage at the connector over the board's own simulation (4.5, E-3).
+`rth_ja_k_per_w`; any IC or module `vdd_op_min`, `vdd_op_max` – the operating supply range of the recommended operating
+conditions, not the absolute maximum (E-3 holds every supply pin to it); own boards (behaviour `current`) `vin_min`,
+`vin_max` – the voltage at the connector over the board's own simulation (4.5, E-3); any part that dissipates –
+resistor, diode, LED, BJT, MOSFET – `rth_ja_k_per_w` (thermal resistance junction to ambient) and `tj_max_c`: E-2 holds
+ambient + P × Rth(j-a) to the junction limit and, on a board people touch, to `touch_c` (5.3); without `rth_ja_k_per_w`
+the part gets no temperature item.
 
 **Parameters**: resistor `value_ohm` (`0`: a bridge that joins its nets, 3.3), `r_max_ohm` (a bridge's maximum
 resistance from the datasheet, simulated instead of 0 Ω; 50 mΩ without it); capacitor `value_f`; inductor `value_h`,

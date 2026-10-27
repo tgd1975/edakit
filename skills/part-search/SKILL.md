@@ -42,12 +42,14 @@ profile says: `${CLAUDE_PLUGIN_ROOT}/skills/part-search/distributors/<name>.md` 
   with USB-C `params.usb_c` `{"cc": "rd_5k1" | "controller" | "none"}` from its schematic (G-14); MCU output current
   `gpio_i_max_a` per pin and `gpio_i_total_max_a` for all together (E-2); from the recommended operating conditions of
   an IC the supply range `vdd_op_min`/`vdd_op_max` (`v_op` on a pin with a range of its own) and the input thresholds
-  `vih_v`|`vih_ratio`, `vil_v`|`vil_ratio` (E-3); MCU pin `functions` from the pin-mux table (`["spi0.sck", "i2c1.sda",
-  "pwm1.a", "adc0"]`, `[]` for a pin used on the module – G-15, handbook 4.1); a fuse's `i_hold_a`, `i_trip_a` and its
-  derating table `i_hold_vs_temp`, and the `i_max_a` of a connector or switch as a whole – every contact of the current
-  path counted (G-17); a 0 Ω jumper `value_ohm: 0` with its maximum resistance `r_max_ohm` (it joins its nets, handbook
-  3.3); a switching regulator's `hot_loop`, the pin roles of its hot loop from the datasheet's layout section (G-18); a
-  pin `hint` or part `hints` for what the datasheet warns about (shown by `edakit hints`).
+  `vih_v`|`vih_ratio`, `vil_v`|`vil_ratio` (E-3); for a part that dissipates – resistor, diode, transistor, MOSFET,
+  regulator, LED driver – `rth_ja_k_per_w` (RθJA, steady state) and `tj_max_c` (E-2: junction and touch temperature);
+  MCU pin `functions` from the pin-mux table (`["spi0.sck", "i2c1.sda", "pwm1.a", "adc0"]`, `[]` for a pin used on the
+  module – G-15, handbook 4.1); a fuse's `i_hold_a`, `i_trip_a` and its derating table `i_hold_vs_temp`, and the
+  `i_max_a` of a connector or switch as a whole – every contact of the current path counted (G-17); a 0 Ω jumper
+  `value_ohm: 0` with its maximum resistance `r_max_ohm` (it joins its nets, handbook 3.3); a switching regulator's
+  `hot_loop`, the pin roles of its hot loop from the datasheet's layout section (G-18); a pin `hint` or part `hints` for
+  what the datasheet warns about (shown by `edakit hints`).
 - `compliance` for the regulatory review (M-6, handbook 15): `rohs` (true, false or the exemption), `reach` (the
   supplier's SVHC statement), for a part that transmits `radio` (`bands_mhz`, `max_dbm`, `doc` = URL of the EU
   declaration of conformity), and `source` (page and date). Take it from the distributor's part page or the

@@ -7,7 +7,9 @@ plus "extra_scenarios" listed there.
 
   E-1  the operating point converges
   E-2  stress of every part against the ratings in the parts database, with the derating from the config; MCU output
-       current per pin (gpio_i_max_a) and of all outputs together (gpio_i_total_max_a)
+       current per pin (gpio_i_max_a) and of all outputs together (gpio_i_total_max_a); the junction temperature
+       ambient + P x rth_ja_k_per_w of every part whose entry gives it, against its tj_max_c (at most the criteria's),
+       and on a board of touch_c against the temperature people may touch
   E-3  function: supply currents, no supply fed backwards (sources: i_back_max_a, cells: i_charge_max_a, default the
        criteria's blocking_max_a), regulator outputs and headroom, MCU supply and input levels, MCU outputs only on
        pins that can drive, constant-current driver headroom and junction temperature, LED currents on/off as the load
@@ -177,6 +179,9 @@ def stress(design, cfg, res, meta, ck):
                 if "p_max_w" in r:
                     ck.add("E-2", des, "power dissipation", abs(vds * i), f"≤ {der['p'] * r['p_max_w']:.3g} W",
                            abs(vds * i) <= der["p"] * r["p_max_w"], unit=" W")
+        heat = [w for el in els if (w := dissipation(el, res)) is not None]
+        if "rth_ja_k_per_w" in r and heat:   # one package: the power of all its elements
+            junction(design, cfg, des, sum(heat), r, ck)
     for des, m in meta["mcu"].items():  # MCU outputs: every pin, and all of them through the package's supply pins
         r = m["ratings"]
         cur = {net: res.get(am, 0.0) for net, am in m.get("gpio_ammeters", {}).items()}  # > 0: sourced, < 0: sunk
@@ -191,6 +196,65 @@ def stress(design, cfg, res, meta, ck):
                             ("sunk", -sum(x for x in cur.values() if x < 0))):
                 ck.add("E-2", des, f"GPIO current {what} by all outputs together", i, f"≤ {lim * 1e3:.3g} mA",
                        i <= lim, unit=" A")
+
+
+def dissipation(el, res):
+    """Power an element of the netlist turns into heat in its part (W); None where the part is not what dissipates it –
+    a capacitor, the resistance of a source or a cell, an external load."""
+    kind, nodes = el["kind"], el["nodes"]
+    if kind in ("capacitor", "source", "battery", "load"):
+        return None
+    if kind in ("led", "diode"):
+        a, k = (v(res, n) for n in nodes)
+        return abs((a - k) * res.get(f"@{el['name']}[id]", 0.0))
+    if kind in ("npn", "pnp"):
+        c, b, e = (v(res, n) for n in nodes)
+        return abs((c - e) * res.get(f"@{el['name']}[ic]", 0.0)) + abs((b - e) * res.get(f"@{el['name']}[ib]", 0.0))
+    if kind in ("pmos", "nmos"):   # @m[id] includes the body diode's current
+        d_, _, s = (v(res, n) for n in nodes)
+        return abs((d_ - s) * res.get(f"@{el['name']}[id]", 0.0))
+    if "value" in el:
+        a, b = (v(res, n) for n in nodes[:2])
+        return (a - b) ** 2 / el["value"]
+    return None
+
+
+def tj_limit(ratings, crit):
+    """Junction limit of a part: its own tj_max_c, the criteria's tj_max_c where that is lower or the part has none."""
+    return min(ratings.get("tj_max_c", math.inf), crit["tj_max_c"])
+
+
+def junction(design, cfg, des, p, r, ck):
+    """E-2: ambient + P x Rth(j-a) of a part whose entry gives rth_ja_k_per_w stays at or below its junction limit, and
+    on a board people touch at or below the touch limit (touch)."""
+    crit = {**DEFAULT_CRITERIA, **cfg.get("criteria", {})}
+    amb, rth = cfg.get("ambient_c", 25), r["rth_ja_k_per_w"]
+    tj, lim = amb + p * rth, tj_limit(r, crit)
+    ck.add("E-2", des, f"junction temperature at {amb} °C: {p:.3g} W × {rth:g} K/W", tj, f"≤ {lim:g} °C", tj <= lim,
+           unit=" °C")
+    touch(design, cfg, des, tj, ck)
+
+
+def touch(design, cfg, des, tj, ck):
+    """E-2: on a board of touch_c – a board people reach – a part's junction temperature, the upper bound of its
+    surface, stays at or below the limit the product's standard sets for that surface and contact time."""
+    board = (design.comps.get(des) or {}).get("board")
+    lim = (cfg.get("touch_c") or {}).get(board)
+    if lim is not None:
+        ck.add("E-2", des, f"temperature where people touch (board {board})", tj, f"≤ {lim:g} °C", tj <= lim,
+               unit=" °C")
+
+
+def touch_limits(design, sim):
+    """touch_c of the simulation config: {board: °C}, every key a board of the project."""
+    touch_c = sim.get("touch_c", {})
+    if not isinstance(touch_c, dict) or not all(
+            isinstance(x, (int, float)) and not isinstance(x, bool) for x in touch_c.values()):
+        raise SimError(f"touch_c: a map from each board people touch to its limit in °C expected, not {touch_c!r}")
+    for board in touch_c:
+        if design.boards and board not in design.boards:
+            raise SimError(f"touch_c: {board} is no board of the project (boards: {', '.join(design.boards)})")
+    return touch_c
 
 
 def reg_input_current(res, reg):
@@ -248,9 +312,9 @@ def functional(design, cfg, res, meta, load, ck, plugin):
             ck.add("E-3", des, "output current", iout, f"≤ {r['i_out_max_a'] * 1e3:.0f} mA", iout <= r["i_out_max_a"],
                    unit=" A")
         if reg["kind"] == "ldo" and "rth_ja_k_per_w" in r:
-            tj = amb + (vin - vout) * iout * r["rth_ja_k_per_w"]
-            ck.add("E-3", des, f"junction temperature at {amb} °C", tj, f"≤ {crit['tj_max_c']} °C",
-                   tj <= crit["tj_max_c"], unit=" °C")
+            tj, lim = amb + (vin - vout) * iout * r["rth_ja_k_per_w"], tj_limit(r, crit)
+            ck.add("E-3", des, f"junction temperature at {amb} °C", tj, f"≤ {lim:g} °C", tj <= lim, unit=" °C")
+            touch(design, cfg, des, tj, ck)
     for des, m in meta["mcu"].items():
         r = m["ratings"]
         vin = v(res, m["vin"])
@@ -318,9 +382,9 @@ def functional(design, cfg, res, meta, load, ck, plugin):
             ck.add("E-3", f"{des} {net}", "output headroom", vo, f"≥ {p.get('vout_knee_v', 0.6)} V",
                    vo >= p.get("vout_knee_v", 0.6), unit=" V")
         if "rth_ja_k_per_w" in r:
-            tj = amb + pd * r["rth_ja_k_per_w"]
-            ck.add("E-3", des, f"junction temperature at {amb} °C", tj, f"≤ {crit['tj_max_c']} °C",
-                   tj <= crit["tj_max_c"], unit=" °C")
+            tj, lim = amb + pd * r["rth_ja_k_per_w"], tj_limit(r, crit)
+            ck.add("E-3", des, f"junction temperature at {amb} °C", tj, f"≤ {lim:g} °C", tj <= lim, unit=" °C")
+            touch(design, cfg, des, tj, ck)
 
     leds_on = load.get("leds_on")
     groups = defaultdict(list)
@@ -571,6 +635,7 @@ def load_plugin(path):
 def run_all(design, sim, keep=None, plugin=None):
     """All scenarios; `sim` is the parsed simulation config (tests pass modified copies)."""
     models = getattr(plugin, "MODELS", {}) if plugin else {}
+    touch_limits(design, sim)
     out = {"scenarios": [], "checks": [], "net_currents": {}}
     for sc in scenarios(sim):
         ck = Checks(sc["name"])

@@ -52,6 +52,8 @@ an imported power supply or cell is its importer.
 - **Per project** – `purpose` in the graph and the decision log: who uses the board (children?), the cell in a battery
   holder (chemistry, capacity, soldered or plugged), the power supply that comes with it, whether it connects to the
   internet and which personal data it handles – then also passwords and updates of the firmware.
+  Which boards people touch, and for how long: their `touch_c` in sim.json (5.2), checked by E-2 – a hot surface is a
+  risk of the product safety analysis.
 
 ## 15.4 The sign-off
 
