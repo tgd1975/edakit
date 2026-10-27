@@ -1,5 +1,6 @@
 """The plugin's agents and skills: a profile for every distributor the part search names, agents that load."""
 
+import json
 import re
 from pathlib import Path
 
@@ -86,3 +87,10 @@ def test_both_reviewers_weigh_every_finding_by_probability_and_cost():
         result = section(ROOT / "agents" / f"{agent}.md", "Result")
         for words in ("probability", "cost", "without a realistic consequence"):
             assert words in result, (agent, words)
+
+
+def test_session_start_hook_runs_the_agreements_digest():
+    hooks = json.loads((ROOT / "hooks" / "hooks.json").read_text(encoding="utf-8"))["hooks"]
+    commands = [h["command"] for entry in hooks.get("SessionStart", []) for h in entry["hooks"]]
+    assert commands == ['python3 "${CLAUDE_PLUGIN_ROOT}/edakit/agreements.py"']
+    assert hooks["PreToolUse"], "the EasyEDA claim stays"

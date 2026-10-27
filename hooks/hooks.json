@@ -11,6 +11,17 @@
           }
         ]
       }
+    ],
+    "SessionStart": [
+      {
+        "hooks": [
+          {
+            "type": "command",
+            "command": "python3 \"${CLAUDE_PLUGIN_ROOT}/edakit/agreements.py\"",
+            "timeout": 15
+          }
+        ]
+      }
     ]
   }
 }

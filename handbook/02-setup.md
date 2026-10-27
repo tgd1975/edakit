@@ -41,8 +41,9 @@ In the VS Code extension, which has no `/plugin`: `claude plugin marketplace add
 README, Install.
 
 This installs the skills (`/edakit:start`, `/edakit:hardware-change`, …), the agents, the MCP server `easyeda`
-(tools `mcp__plugin_edakit_easyeda__*`), the EasyEDA claim hook and the command `edakit` on the Bash PATH. Confirm
-the MCP server when Claude Code asks (or `/mcp` → easyeda).
+(tools `mcp__plugin_edakit_easyeda__*`), the EasyEDA claim hook, the session hook that brings the working agreements
+(11.4) into every session of an edakit project, and the command `edakit` on the Bash PATH. Confirm the MCP server when
+Claude Code asks (or `/mcp` → easyeda).
 
 To give every session in a project the plugin automatically, put this into the project's `.claude/settings.json`:
 

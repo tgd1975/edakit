@@ -40,8 +40,8 @@ HEADER_KEEP_MM = 1.27            # on_headers: the plastic of a 2.54 mm pin head
 PASTE_GAP_MM = 0.4               # [release] assembly paste_gap_mm: SMD pads of different parts, assembled side (L-14)
 MAX_BARE_MM = 5.0                # [copper] max_bare_mm: largest copper-free circle on a poured layer (L-15)
 
-PROJECT_KEYS = ("name", "company", "quantity", "distributors", "lock", "graph", "parts", "sim", "sim_plugin",
-                "schematic", "signoff", "artifacts", "reports")
+PROJECT_KEYS = ("name", "company", "quantity", "distributors", "lock", "agreements", "graph", "parts", "sim",
+                "sim_plugin", "schematic", "signoff", "artifacts", "reports")
 BOARD_KEYS = ("title", "template", "schematic", "pcb", "file")            # [boards.<name>] in edakit.toml
 BOARD_FILE_KEYS = ("revision", "view", "outline", "holes", "tooling", "place", "near", "near_mm", "edge_mm", "edge_ok",
                    "on_headers", "header_keep_mm", "silk_overlap_mm", "park", "routing", "pours", "pour_regions",
@@ -150,6 +150,7 @@ class Config:
     schematic: dict             # the schematic file: stub, [layout]
     release: dict
     lock: str
+    agreements: bool            # the working agreements of handbook 11.4 at session start (edakit/agreements.py)
     raw: dict
 
     def board(self, name=None) -> Board:
@@ -427,6 +428,8 @@ def load(path=None) -> Config:
     problems = _unknown(path.name, raw, ("project", "boards", "release"), ("schematic", "checks", "net_classes", "sim"))
     problems += _unknown("[project]", p, PROJECT_KEYS, ("ground",))
     problems += _unknown("[release]", raw.get("release", {}), RELEASE_KEYS, ("signoff",))
+    if not isinstance(p.get("agreements", True), bool):
+        problems.append("[project] agreements: true or false")
     files = {}
     for name, entry in raw.get("boards", {}).items():
         problems += _unknown(f"[boards.{name}]", entry, BOARD_KEYS, BOARD_FILE_KEYS)
@@ -467,5 +470,6 @@ def load(path=None) -> Config:
         schematic=schematic,
         release=raw.get("release", {}),
         lock=p.get("lock", "auto"),
+        agreements=p.get("agreements", True),
         raw=raw,
     )

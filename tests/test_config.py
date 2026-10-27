@@ -258,3 +258,13 @@ def test_copper_key(tmp_path):
                      ({"min_cover": {"TOP": 150}}, "min_cover"), ({"bare_mm": 5}, "unknown key 'bare_mm'")):
         with pytest.raises(ConfigError, match=msg):
             _board("b", {}, {"copper": bad})
+
+
+def test_agreements_key(tmp_path):
+    (tmp_path / "edakit.toml").write_text('[project]\nname = "t"\n[boards.main]\n')
+    assert load(tmp_path / "edakit.toml").agreements is True                  # default: the digest at session start
+    (tmp_path / "edakit.toml").write_text('[project]\nname = "t"\nagreements = false\n[boards.main]\n')
+    assert load(tmp_path / "edakit.toml").agreements is False
+    (tmp_path / "edakit.toml").write_text('[project]\nname = "t"\nagreements = "no"\n[boards.main]\n')
+    with pytest.raises(ConfigError, match=r"\[project\] agreements: true or false"):
+        load(tmp_path / "edakit.toml")
