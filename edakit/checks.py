@@ -40,7 +40,8 @@
        a layout.loops entry on each net of the loop – the nets of those pins and the net behind a diode on its
        switch node (sw); a buck or boost IC without hot_loop is a warning
   P-1  graph pins (number + name) = parts database, an entry exists for every LCSC number – or, for a part bought
-       elsewhere, for its manufacturer part number `part`
+       elsewhere, for its manufacturer part number `part`; with the library's symbol cached by `edakit part import`,
+       the graph's pins = that symbol (case and blanks ignored, as S-2)
   P-6  part identity: the component and its parts entry name the same part – the entry's lcsc is its file name,
        the component's lcsc no C99… user-library number (unless bom: false), its part names the entry's mpn (remarks
        in parentheses or after ";" left out, case ignored; a part that starts with a value is that value), its
@@ -811,10 +812,16 @@ def check_hot_loops(d, rep):
                           on_net if "G-18" in on_net else waive)
 
 
-def check_part_pins(d, rep):
+def check_part_pins(d, rep, cfg=None):
+    from . import part as parts
+    from .schematic import pin_differences
     for des, c in d.comps.items():
         if not c.get("lcsc") and not c.get("part"):
             continue   # a bare test pad: no part to buy, no entry
+        symbol = parts.cached(cfg, c.get("lcsc")) if cfg else None   # the library's symbol (edakit part import)
+        if symbol and (diffs := pin_differences(symbol["pins"], c["pins"])):
+            rep.error("P-1", f"{des}: pins differ from the library symbol of {c['lcsc']} "
+                             f"({cfg.relative(parts.library_file(cfg, c['lcsc']))}): {'; '.join(diffs)}", c.get("waive"))
         part = d.part(des)
         if not part:
             rep.error("P-1", f"{des}: no parts entry " + (f"{c['lcsc']}.json" if c.get("lcsc")
@@ -951,7 +958,7 @@ def run(design, cfg=None):
     check_power_pins(joined, rep, sim)
     check_fuses(joined, rep, sim)
     check_hot_loops(design, rep)   # layout.loops name pads of the graph's own nets (G-1, L-11)
-    check_part_pins(design, rep)
+    check_part_pins(design, rep, cfg)
     check_identity(design, rep)
     if cfg:
         from . import part

@@ -123,6 +123,7 @@ Code: `edakit … 2>&1 | cat`.
 | `edakit hints [--json F]` | – | graph, parts, sim config | – |
 | `edakit block list\|show NAME` | – | the block library (no project needed) | – |
 | `edakit block add NAME --as I [--connect PORT=NET …] [--board B] [--file F] [--dry-run]` | – | graph, parts, block | graph (formatting kept), missing parts entries |
+| `edakit part import LCSC [--update]` | – (internet) | EasyEDA's public component data of that number (4.2) | a new `hardware/parts/<LCSC>.json`, else nothing (`--update`: the fields it lacks); `<artifacts>/library/<LCSC>.json`, `<artifacts>/footprints/<footprint>.json`; exit 2 = the entry differs |
 | `edakit part datasheet [--connector C …] [--name N]` | – | graph, parts, sim config, board file (4.5) | `hardware/datasheet/<N>.json` and `.md`; without `--connector` every datasheet renewed |
 | `edakit part own PATH [--name N]` | – | the board's project at PATH: its datasheet, state, git, gate runs | `hardware/parts/<N>.json` |
 | `edakit sim [--json F] [--keep DIR]` | – | graph, parts, sim config, plugin | `<artifacts>/sim/net_currents.json` |
@@ -133,7 +134,7 @@ Code: `edakit … 2>&1 | cat`.
 | `edakit schematic layout [--dry-run] [--reread] [--force] [--save]` | ✓ / – | graph, schematic, cached geometry | board schematic, `layout_preview_<name>.svg` |
 | `edakit schematic draw [--board] [--out F] [--force]` | – | graph, parts, the schematic file if there | `schematic_<board>.svg` (or F) |
 | `edakit pcb dump [--ref]` | ✓ | PCB | `pcb_geometry_<board>.json` (parts end at 0°/TOP) |
-| `edakit pcb plan` | – | plan, geometry, net currents, graph (`layout`, L-12) | `pcb_plan_<board>.png/.json`, `pcb_netclasses_<board>.json` |
+| `edakit pcb plan` | – | plan, geometry (the dump; library footprints of `part import` for parts not in it), net currents, graph (`layout`, L-12) | `pcb_plan_<board>.png/.json`, `pcb_netclasses_<board>.json` |
 | `edakit pcb parts [--write]` | ✓ | board schematic, PCB, graph | PCB parts, UniqueIds, geometry |
 | `edakit pcb nets [--write]` | ✓ | graph, PCB | pad nets |
 | `edakit pcb apply [--verify-all]` | ✓ | plan, geometry | outline, holes, tooling, fixed parts |
@@ -160,6 +161,7 @@ hardware/schematic.toml     arrangement of the schematic
 hardware/boards/<name>.toml one board: outline, holes, placement, routing, pours, silkscreen
 hardware/signoff.json       manual checks and accepted warnings, bound to hashes
 docs/decisions.md           numbered decisions (or wherever the project keeps them)
-build/edakit/               artifacts (not versioned): caches, geometry, previews, routing, exports
+build/edakit/               artifacts (not versioned): caches, geometry, previews, routing, exports; library/ and
+                            footprints/: the library's symbols and footprints (edakit part import)
 build/release/<run>/        gate runs (archive the released one)
 ```

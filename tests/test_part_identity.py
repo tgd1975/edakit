@@ -134,7 +134,7 @@ def test_a_designator_prefix_against_the_kind_is_a_warning(project):
 
 
 def test_an_entry_without_kind_is_not_compared(project):
-    """An entry written with kind null: whoever signs it off fills it in (G-9 stays open)."""
+    """A fresh `edakit part import` writes kind null: whoever signs it off fills it in (G-9 stays open)."""
     e = project.part("C49678")
     project.save_part("C49678", {**e, "kind": None})
     g = project.graph()

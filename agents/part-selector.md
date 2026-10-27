@@ -22,7 +22,8 @@ graph, the plan and the documents are the circuit designer's. You do not commit.
    frame of the skill part-search holds: a part in stock beats a "better" one that is not; for JLCPCB assembly a part
    of its library (Basic before Extended) beats one from elsewhere.
 4. **Recommend** one with the reason and name the alternatives and why they lost.
-5. **Entry**, unless told to search only: as the skill part-search says (section Entry,
+5. **Entry**, unless told to search only: for an LCSC part start with `edakit part import <LCSC>` (identification,
+   footprint and the symbol's pins from the library, no bridge needed); then as the skill part-search says (section Entry,
    `${CLAUDE_PLUGIN_ROOT}/skills/part-search/SKILL.md`) – the file named by the LCSC number or, from another
    distributor, by the manufacturer part number; `order` with the order numbers outside LCSC; `compliance` from the
    page or the manufacturer's declaration; `verified` with you as `by`, the datasheet revision, what you checked and

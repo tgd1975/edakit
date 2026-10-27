@@ -31,6 +31,8 @@ profile says: `${CLAUDE_PLUGIN_ROOT}/skills/part-search/distributors/<name>.md` 
 
 ## Entry
 
+- An LCSC part: `edakit part import <LCSC>` writes the start – identification, footprint, the symbol's pin numbers
+  and names – and caches the library's symbol and footprint (P-1 then compares the graph with the symbol).
 - `hardware/parts/<LCSC>.json` – from another distributor `hardware/parts/<manufacturer part number>.json` with
   `mpn` set and `order` for the order numbers (`{"rs": "223-0562"}`); the graph names it in `part`. After the
   pattern of a similar part: `kind`, `pins` (names identical to the graph, `type`, `role`, `vmax`), `params`,

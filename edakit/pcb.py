@@ -6,7 +6,8 @@ mounting and tooling holes, copper pours, EasyEDA's auto-layout.
     edakit pcb plan                 offline: check the plan (overlaps – under a part on pin headers only its pins,
                                     SMD parts within silk_overlap_mm –, outline, holes, THT pins under parts of the
                                     other side, near; L-12 the layout requirements of the circuit), airline length,
-                                    preview PNG, net classes from the simulation
+                                    preview PNG, net classes from the simulation; a part not in the dump yet takes
+                                    the library footprint `edakit part import` cached
     edakit pcb parts [--write]      parts of the board schematic -> PCB without the "Import Changes" dialog
     edakit pcb nets [--write]       pad nets in the PCB = graph
     edakit pcb apply                outline, holes, tooling holes, fixed parts (locked); all other parts unlocked
@@ -55,6 +56,22 @@ def load_geometry(cfg, board):
     if not f.exists():
         raise SystemExit(f"{f} is missing – run `edakit pcb dump` once the parts are in the PCB")
     return json.loads(f.read_text())
+
+
+def plan_geometry(cfg, board, design):
+    """The geometry the plan works with: the dump of the PCB, and for a planned part that is not in it the footprint
+    `edakit part import` cached – "source": "library", the pad nets from the graph."""
+    from . import part
+    f = geometry_file(cfg, board)
+    geo = json.loads(f.read_text()) if f.exists() else {}
+    for ref in board.place:
+        if ref not in geo and ref in design.comps and (lib := part.library_footprint(cfg, design, ref)):
+            pads = {n: {**p, "net": design.pin_net.get(f"{ref}.{n}", "")} for n, p in lib["pads"].items()}
+            geo[ref] = {**lib, "pads": pads, "source": "library"}
+    if not geo:
+        raise SystemExit(f"{f} is missing – run `edakit pcb dump` once the parts are in the PCB, or `edakit part "
+                         "import <LCSC>` for the library's footprints")
+    return geo
 
 
 # --- plan ---------------------------------------------------------------------------------------------------------
@@ -365,11 +382,13 @@ def net_classes(cfg, board):
 
 
 def plan(cfg, board):
-    geo = load_geometry(cfg, board)
+    design = Design.from_config(cfg)
+    geo = plan_geometry(cfg, board, design)
     place, boxes, tht, unplaced, missing = build_plan(cfg, board, geo)
     problems = [f"{r}: in the plan but not in the footprint geometry (edakit pcb parts --write, then dump)"
                 for r in missing]
-    design = Design.from_config(cfg)
+    if lib := sorted((r for r in place if geo.get(r, {}).get("source") == "library"), key=natural_key):
+        print(f"  library geometry (edakit part import, not yet from the PCB): {', '.join(lib)}")
     problems += check_plan(cfg, board, geo, place, boxes, tht)
     problems += [f"L-12 {p}" for p in check_handover(board, design, place, boxes)]
     for p in problems:

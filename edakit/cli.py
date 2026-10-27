@@ -4,6 +4,7 @@
     edakit rules [ID ...]            the rule catalog: what each check and hint is about, why, what to do
     edakit hints                     design hints that apply to the graph, notes from the parts database
     edakit block list|show|add       building blocks with checked parts into the graph
+    edakit part import LCSC [--update]   symbol pins and footprint of an LCSC number from the library – no EasyEDA
     edakit part datasheet|own        own parts: a board of an edakit project as a part in another project
     edakit sim                      stage E: ngspice operating points of all scenarios (offline, seconds)
     edakit handover                  what the circuit hands over to the layout: state, sign-offs, layout requirements
@@ -59,9 +60,11 @@ def build_parser():
     p.add_argument("--dry-run", action="store_true", help="add: show what would change, write nothing")
     _common(p)
 
-    p = sub.add_parser("part", help="own parts: the datasheet of this board, or the copy of another project's board")
-    p.add_argument("action", choices=["datasheet", "own"])
-    p.add_argument("source", nargs="?", help="own: the board's project (its directory or edakit.toml)")
+    p = sub.add_parser("part", help="the library's data of an LCSC number, own parts")
+    p.add_argument("action", choices=["import", "datasheet", "own"])
+    p.add_argument("source", nargs="?", help="import: the LCSC number; own: the board's project (its directory or "
+                                             "edakit.toml)")
+    p.add_argument("--update", action="store_true", help="import: fill in what the existing entry lacks")
     p.add_argument("--connector", action="append", help="datasheet: a connector of the board, in the order of the "
                                                         "part's pins (repeat for several; none: renew the datasheets)")
     p.add_argument("--name", help="the part's name (mpn) – datasheet: default the project name; own: which datasheet")

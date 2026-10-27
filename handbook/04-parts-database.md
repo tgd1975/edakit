@@ -116,6 +116,18 @@ not see – stock from a search snippet is no stock figure.
 
 At LCSC and JLCPCB:
 
+- **`edakit part import C2297`** reads exactly that number from EasyEDA's public component data – the endpoint
+  easyeda2kicad reads, no key, no EasyEDA, no bridge: manufacturer, manufacturer part number, footprint name,
+  Basic/Extended and the symbol's pin numbers and names. Without an entry it writes a new one with these and
+  `verified: null` – kind, pin types and roles, values and ratings are for whoever signs it off (4.3). An existing entry
+  is never overwritten: the command lists where it differs from the library (exit 2), `--update` fills in only the
+  fields it lacks. Either way the symbol goes to `<artifacts>/library/<LCSC>.json` and the footprint to
+  `<artifacts>/footprints/<footprint>.json`, in the units and axes of `pcb dump` (mil, y up, rotation 0 on TOP), each
+  pad with shape, size and, for a hole, `hole` [w, l] in mm and `plated`. With the symbol cached, P-1 compares the
+  graph with it (3.3); `pcb plan` takes the footprint for a part that is not in the PCB yet (7.4). The endpoint is
+  undocumented: an unknown number answers HTTP 200 with `success: false` ("not in the library", exit 1), and after
+  some two dozen requests in a few minutes it answered HTTP 403 for a while – import what you need, not the catalogue.
+  `C99…` numbers are refused: the library returns them like any part, but nobody sells them.
 - `easyeda_schematic_search_device` with the **LCSC number** or the manufacturer part number. It returns footprint,
   manufacturer number, Basic/Extended and the parameter table (`otherProperty`), but **no stock and no price**.
   Free text ("led 5mm red") returns mostly noise; the classification filter has no effect. Series names work

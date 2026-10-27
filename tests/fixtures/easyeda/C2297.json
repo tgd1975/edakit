@@ -1,0 +1,58 @@
+{
+ "success": true,
+ "code": 0,
+ "result": {
+  "title": "0805G (Green)",
+  "lcsc": {
+   "number": "C2297"
+  },
+  "dataStr": {
+   "head": {
+    "x": 0,
+    "y": -5,
+    "c_para": {
+     "pre": "LED?",
+     "name": "0805G (Green)",
+     "package": "LED0805-R-RD",
+     "Supplier": "LCSC",
+     "Manufacturer": "KENTO",
+     "Manufacturer Part": "KT-0805G",
+     "Supplier Part": "C2297",
+     "JLCPCB Part Class": "Basic Part"
+    }
+   },
+   "shape": [
+    "P~show~0~2~-20~-5~180~gge28~0^^-20~-5^^M -20 -5 h 15~#800^^0~-1~-5~0~K~start~~~#800^^0~-9~-9~0~2~end~~~#800^^0~-8~-5^^0~M -5 -2 L -2 -5 L -5 -8",
+    "P~show~0~1~20~-5~0~gge37~0^^20~-5^^M 20 -5 h -15~#800^^0~1~-5~0~A~end~~~#800^^0~9~-9~0~1~start~~~#800^^0~8~-5^^0~M 5 -8 L 2 -5 L 5 -2"
+   ]
+  },
+  "packageDetail": {
+   "title": "LED0805-R-RD",
+   "dataStr": {
+    "head": {
+     "x": 399.935,
+     "y": 299.995,
+     "c_para": {
+      "package": "LED0805-R-RD",
+      "pre": "LED?",
+      "sourceId": "Bf9rlewO6",
+      "timeStamp": "1472716961",
+      "Contributor": "lcsc",
+      "link": "https://item.szlcsc.com/88042.html",
+      "3DModel": "LED0805-RD"
+     }
+    },
+    "shape": [
+     "PAD~RECT~395.8~299.995~3.937~5.51~1~~2~0~393.8315 302.75 397.7685 302.75 397.7685 297.24 393.8315 297.24~180~gge2~0~~Y~0~0~0.2~395.8,299.995",
+     "PAD~RECT~404.07~299.995~3.937~5.51~1~~1~0~406.0385 302.75 402.1015 302.75 402.1015 297.24 406.0385 297.24~180~gge3~0~~Y~0~0~0.2~404.07,299.995"
+    ],
+    "BBox": {
+     "x": 391.2,
+     "y": 296,
+     "width": 16.6,
+     "height": 8.1
+    }
+   }
+  }
+ }
+}

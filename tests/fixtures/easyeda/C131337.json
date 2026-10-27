@@ -1,0 +1,57 @@
+{
+ "success": true,
+ "code": 0,
+ "result": {
+  "title": "B2B-PH-K-S(LF)(SN)",
+  "lcsc": {
+   "number": "C131337"
+  },
+  "dataStr": {
+   "head": {
+    "x": 395,
+    "y": 300,
+    "c_para": {
+     "pre": "CN?",
+     "name": "B2B-PH-K-S(LF)(SN)",
+     "package": "CONN-TH_B2B-PH-K-S",
+     "Contributor": "LCSC",
+     "Supplier": "LCSC",
+     "Manufacturer": "JST",
+     "Manufacturer Part": "B2B-PH-K-S(LF)(SN)",
+     "Supplier Part": "C131337",
+     "JLCPCB Part Class": "Extended Part"
+    }
+   },
+   "shape": [
+    "P~show~1~1~420~290~0~gge4~0^^420~290^^M 420 290 h -20~#000000^^1~395~293~0~1~end~~~#000000^^1~405~289~0~1~start~~~#000000^^0~403~290^^0~M 400 287 L 397 290 L 400 293",
+    "P~show~1~2~420~310~0~gge11~0^^420~310^^M 420 310 h -20~#000000^^1~395~313~0~2~end~~~#000000^^1~405~309~0~2~start~~~#000000^^0~403~310^^0~M 400 307 L 397 310 L 400 313"
+   ]
+  },
+  "packageDetail": {
+   "title": "CONN-TH_B2B-PH-K-S",
+   "dataStr": {
+    "head": {
+     "x": 4001.437,
+     "y": 2997,
+     "c_para": {
+      "package": "CONN-TH_B2B-PH-K-S",
+      "pre": "CN?",
+      "Contributor": "lcsc",
+      "link": "https://item.szlcsc.com/142630.html",
+      "3DModel": "CONN-TH_PH2.00-LI-2P"
+     }
+    },
+    "shape": [
+     "PAD~ELLIPSE~3997.5~2997~6.2992~6.2992~11~~2~1.7717~~180~rep3~0~~Y~0~0~0.2~3997.5,2997",
+     "PAD~ELLIPSE~4005.374~2997~6.2992~6.2992~11~~1~1.7717~~180~rep2~0~~Y~0~0~0.2~4005.374,2997"
+    ],
+    "BBox": {
+     "x": 3989.6,
+     "y": 2985.6,
+     "width": 23.8,
+     "height": 18.1
+    }
+   }
+  }
+ }
+}

@@ -170,14 +170,15 @@ def place(mcp, comps, devices, positions):
     return placed
 
 
-def pin_differences(symbol, graph):
+def pin_differences(symbol, graph, labels=("symbol", "graph")):
     """symbol, graph: {pin number: name}. Numbers on one side only, and names that differ (case and blanks ignored) –
     a graph that assumed another pinout shows up as a name, long before the board does."""
     norm = lambda s: "".join(str(s).split()).upper()  # noqa: E731
+    a, b = labels
     out = []
     if set(symbol) != set(graph):
-        out.append(f"symbol only {sorted(set(symbol) - set(graph))}, graph only {sorted(set(graph) - set(symbol))}")
-    out += [f"pin {n}: symbol '{symbol[n]}', graph '{graph[n]}'" for n in sorted(set(symbol) & set(graph), key=natural_key)
+        out.append(f"{a} only {sorted(set(symbol) - set(graph))}, {b} only {sorted(set(graph) - set(symbol))}")
+    out += [f"pin {n}: {a} '{symbol[n]}', {b} '{graph[n]}'" for n in sorted(set(symbol) & set(graph), key=natural_key)
             if norm(symbol[n]) != norm(graph[n])]
     return out
 
