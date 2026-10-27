@@ -56,6 +56,7 @@
  "notes": [
   "Without a USB-PD controller the source supplies 5 V only; the Rp a charger shows on CC tells whether it allows 0.5, 1.5 or 3 A – this block does not read it.",
   "sim.json: the receptacle under sources (plus \"A9\", minus \"A12\").",
-  "A bulk capacitor behind the fuse (hint H-1)."
+  "A bulk capacitor behind the fuse (hint H-1).",
+  "G-17 warns: F1 trips at 3 A, the receptacle carries 2.5 A – accept it in the sign-off (a short trips the fuse fast) or take a fuse with a lower trip current."
  ]
 }

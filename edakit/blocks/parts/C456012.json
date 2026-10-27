@@ -52,7 +52,7 @@
     "r_source_ohm": 0.25
   },
   "ratings": {
-    "i_max_a": 1.25,
+    "i_max_a": 2.5,
     "v_max": 5.0,
     "t_min_c": -30,
     "t_max_c": 85
@@ -65,7 +65,7 @@
     "r_source_ohm: assumption for cable and power supply (USB cable 1 m, 2 x 0.1 Ohm)",
     "EasyEDA library (2026-10-23): symbol TYPE-C 6P, pins A5 CC1, B5 CC2, A9/B9 VBUS, A12/B12 GND, 7 EH (shell); footprint TYPE-C-SMD_TYPE-C-6P_1; Extended Part"
   ],
-  "notes": "Power only: no data lines. i_max_a = GND pin (1.25 A), the smallest of the current paths. Shell (EH) to GND. Block usb-c-sink; entry from the reference project (pytree, D-44).",
+  "notes": "Power only: no data lines. i_max_a = the two GND contacts A12 and B12 at 1.25 A each (2.5 A), the smallest of the current paths: VBUS 3 A, rating 5 V 3 A. Shell (EH) to GND. Block usb-c-sink; entry from the reference project (pytree, D-44).",
   "verified": {
     "by": "Claude Opus 5.5 (datasheet check, automated)",
     "date": "2026-10-23",

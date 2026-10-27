@@ -81,7 +81,9 @@ module with a servo: [Christmas bell](https://github.com/tgd1975/automatic_chris
 Scenarios = supplies × loads × corners (LED forward voltage at min/max), plus `extra_scenarios` (e.g. "programming
 cable plugged in, external supply off"; `"info": true` turns failures into information). A load with
 `"matrix": false` runs only where an extra scenario names it – fault cases such as a stalled servo, whose result you
-want to see and record as a decision, but which must not block every commit. Battery projects add
+want to see and record as a decision, but which must not block every commit. `ambient_c` is the ambient of the
+scenarios (E-2 derates the fuses' hold current to it); `ambient_min_c`, optional, the lowest one – G-17 holds a fuse's
+hold current there against the connectors it protects (without it: the datasheet's `i_hold_a`). Battery projects add
 `"cells": {"fresh": {"v": 1.6, "r": 0.15}, "empty": {"v": 1.0, "r": 0.4}}` and supplies like `{"BT1": "fresh"}`.
 
 `leds_on` lists the LEDs that light in a load – the designator, or `D10_RED` for one colour of an RGB LED, `"all"` for

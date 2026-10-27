@@ -693,3 +693,86 @@ def test_g16_supply_only_through_a_diode_in_forward_direction(project):
     project.net(g, "+5V")["pins"][project.net(g, "+5V")["pins"].index("D1.1")] = "D1.2"
     project.save_graph(g)
     assert g16(run(project)) == ["U1.39 (VSYS) on +5V: nothing supplies this net"]
+
+
+# --- G-17 fuse against what it protects (rule proposal #45) ---------------------------------------------------------
+def g17(rep):
+    return sorted(m for c, m in rep.errors if c == "G-17"), sorted(m for c, m in rep.warnings if c == "G-17")
+
+
+def fused_input(project):
+    """F1 (C495353: hold 1.5 A, trip 3.0 A) behind J1 (JST PH, 2 A): VIN -> F1 -> VIN_F -> D1."""
+    project.use_library_part("C495353")
+    g = project.graph()
+    g["graph"]["components"].append(comp("F1", "C495353", R, kind="fuse", value="1.5A"))
+    vin = project.net(g, "VIN")
+    vin["pins"][vin["pins"].index("D1.2")] = "F1.1"
+    g["graph"]["nets"].append({"name": "VIN_F", "pins": ["F1.2", "D1.2"], "v": [0, 5.5]})
+    project.save_graph(g)
+    return g
+
+
+def set_sim(project, **kv):
+    path = project.root / "hardware" / "sim.json"
+    path.write_text(json.dumps({**json.loads(path.read_text()), **kv}))
+
+
+def test_g17_trip_current_above_the_connector_is_a_warning(project):
+    fused_input(project)
+    assert g17(run(project)) == ([], ["F1: trips at 3 A, above the 2 A of J1 – an overload in between may last for "
+                                      "minutes"])
+
+
+def test_g17_hold_current_at_the_lowest_ambient(project):
+    fused_input(project)
+    set_sim(project, ambient_min_c=-40)               # C495353 holds 2.2 A at -40 °C
+    assert g17(run(project))[0] == ["F1: holds 2.2 A at -40 °C, above the 2 A of J1 – an overload in between never "
+                                    "trips it"]
+    set_sim(project, ambient_min_c=-30)               # 2.1 A between the table's -40 and -20 °C
+    assert g17(run(project))[0] == ["F1: holds 2.1 A at -30 °C, above the 2 A of J1 – an overload in between never "
+                                    "trips it"]
+
+
+def test_g17_cable_and_switch_in_the_path(project):
+    g = fused_input(project)
+    project.save_part("C9000005", {"lcsc": "C9000005", "mpn": "test slide switch", "kind": "switch",
+                                   "verified": {"by": "test"}, "ratings": {"i_max_a": 0.5, "v_max": 12},
+                                   "pins": {"1": {"name": "1", "type": "passive", "role": "common"},
+                                            "2": {"name": "2", "type": "passive", "role": "throw_a"}}})
+    g["graph"]["components"] += [comp("SW2", "C9000005", R, kind="switch"),
+                                 comp("J2", "C131337", {"1": "1", "2": "2"}, kind="connector", bom=False)]
+    project.net(g, "VIN_F")["pins"][project.net(g, "VIN_F")["pins"].index("D1.2")] = "SW2.1"
+    g["graph"]["nets"].append({"name": "VIN_S", "pins": ["SW2.2", "D1.2"], "v": [0, 5.5]})
+    project.net(g, "VIN")["pins"].append("J2.1")      # J2 – cable W1 – J1: the supply from another board
+    project.net(g, "GND")["pins"].append("J2.2")
+    g["graph"]["cables"] = [{"name": "W1", "from": "J2", "to": "J1", "pins": {"1": "1", "2": "2"}, "i_max_a": 1.0}]
+    project.save_graph(g)
+    errors, warnings = g17(run(project))
+    assert errors == ["F1: holds 1.5 A, above the 0.5 A of SW2 – an overload in between never trips it",
+                      "F1: holds 1.5 A, above the 1 A of cable W1 – an overload in between never trips it"]
+    assert warnings == ["F1: trips at 3 A, above the 2 A of J1 – an overload in between may last for minutes",
+                        "F1: trips at 3 A, above the 2 A of J2 – an overload in between may last for minutes"]
+    project.comp(g, "F1")["waive"] = {"G-17": "normal current 0.2 A, a short trips within 100 ms"}
+    project.save_graph(g)
+    rep = run(project)
+    assert g17(rep) == ([], []) and sum(c == "G-17" for c, _, _ in rep.waived) == 4
+
+
+def test_g17_usb_c_sink_block(project):
+    """The block's receptacle carries 2.5 A (two ground contacts at 1.25 A) – above the fuse's hold, below its trip."""
+    from edakit import block
+    block.add(project.config(), "usb-c-sink", "USB", {"vbus": "+5V"})
+    rep = run(project)
+    assert g17(rep) == ([], ["F1: trips at 3 A, above the 2.5 A of J2 – an overload in between may last for minutes"])
+    part = project.part("C456012")
+    part["ratings"]["i_max_a"] = 1.25                 # one ground contact for the whole receptacle
+    project.save_part("C456012", part)
+    assert g17(run(project))[0] == ["F1: holds 1.5 A, above the 1.25 A of J2 – an overload in between never trips it"]
+
+
+def test_g17_needs_the_ratings(project):
+    fused_input(project)
+    part = project.part("C495353")
+    del part["ratings"]["i_hold_a"], part["ratings"]["i_trip_a"]
+    project.save_part("C495353", part)
+    assert g17(run(project)) == ([], [])

@@ -32,6 +32,8 @@
        "grounds"), a supply pin (power_in) on a net that a supply reaches – a power output, a battery holder, a
        connector with a vbus pin or in checks.reverse_protect, a sim source – directly or through fuses, switches,
        connectors, inductors, MOSFETs, resistors up to 100 Ohm and diodes in forward direction
+  G-17 fuses: the hold current of a fuse (at the lowest ambient, ambient_min_c of sim.json) is at most the i_max_a of
+       every connector, switch and cable its current flows through; a trip current above it is a warning
   P-1  graph pins (number + name) = parts database, an entry exists for every LCSC number – or, for a part bought
        elsewhere, for its manufacturer part number `part`
   P-3  own parts (part.py): a board copied from its project with `edakit part own` is that project's current
@@ -75,7 +77,7 @@ SUPPLY_R_MAX = 100                                   # a resistor up to this pas
 PIN_FUNCTION = re.compile(r"([a-z][a-z0-9]*?)(\d+)(?:\.([a-z]+))?")   # "spi0.sck", "i2c1.sda", "pwm1.a", "adc0"
 
 EXECUTED = ["G-1", "G-2", "G-3", "G-4", "G-5", "G-6", "G-8", "G-10", "G-11", "G-12", "G-13", "G-14", "G-15", "G-16",
-            "P-1", "P-3", "G-9"]
+            "G-17", "P-1", "P-3", "G-9"]
 
 
 class Report:
@@ -666,6 +668,67 @@ def check_power_pins(d, rep, sim=None):
                 rep.error("G-16", f"{what}: nothing supplies this net", waive)
 
 
+def hold_current(part, t_min=None):
+    """i_hold_a of a fuse, or at the lowest ambient t_min from params.i_hold_vs_temp: linear between its points, the
+    end values beyond them."""
+    table = sorted((part.get("params") or {}).get("i_hold_vs_temp") or [])
+    if t_min is None or not table:
+        return part["ratings"]["i_hold_a"]
+    if t_min <= table[0][0]:
+        return table[0][1]
+    for (t0, h0), (t1, h1) in zip(table, table[1:]):
+        if t0 <= t_min <= t1:
+            return h0 + (h1 - h0) * (t_min - t0) / (t1 - t0)
+    return table[-1][1]
+
+
+def series_nets(d, des):
+    """The nets the current of a part flows on: its own, and on through fuses and switches (G-10's walk without the
+    connectors – a connector hands the current on through a cable on the same net, not to its other pins); not
+    ground."""
+    nets = {d.pin_net.get(f"{des}.{p}") for p in d.part(des)["pins"]} - {None, d.ground}
+    todo = list(nets)
+    while todo:
+        for ref in d.nets[todo.pop()]["pins"]:
+            other = ref.split(".", 1)[0]
+            if (d.part(other) or {}).get("kind") in ("fuse", "switch"):
+                for p in d.part(other)["pins"]:
+                    n = d.pin_net.get(f"{other}.{p}")
+                    if n and n != d.ground and n not in nets:
+                        nets.add(n)
+                        todo.append(n)
+    return nets
+
+
+def check_fuses(d, rep, sim=None):
+    """G-17: a fuse holds no more than the connectors, switches and cables its current flows through carry."""
+    t_min = (sim or {}).get("ambient_min_c")
+    for fuse in d.comps_of_kind("fuse"):
+        part = d.part(fuse)
+        r = part.get("ratings") or {}
+        if "i_hold_a" not in r:
+            continue
+        hold, trip, waive = hold_current(part, t_min), r.get("i_trip_a"), d.comps[fuse].get("waive")
+        at = f" at {t_min:g} °C" if t_min is not None and (part.get("params") or {}).get("i_hold_vs_temp") else ""
+        nets = series_nets(d, fuse)
+        rated = [(des, p["ratings"]["i_max_a"]) for des in d.comps_of_kind("connector", "switch")
+                 if "i_max_a" in ((p := d.part(des)).get("ratings") or {})
+                 and any(d.pin_net.get(f"{des}.{n}") in nets for n in p["pins"])]
+        rated += [(f"cable {c['name']}", c["i_max_a"]) for c in d.graph.get("cables", [])
+                  if "i_max_a" in c and any(d.pin_net.get(f"{c['from']}.{a}") in nets for a in c["pins"])]
+        for what, i_max in rated:
+            if hold > i_max:
+                rep.error("G-17", f"{fuse}: holds {hold:.3g} A{at}, above the {i_max:g} A of {what} – an overload in "
+                                  "between never trips it", waive)
+            elif trip is not None and trip > i_max:
+                msg = f"{fuse}: trips at {trip:g} A, above the {i_max:g} A of {what} – an overload in between may " \
+                      "last for minutes"
+                if waive and "G-17" in waive:
+                    rep.waived.append(("G-17", msg, waive["G-17"]))
+                else:
+                    rep.warnings.append(("G-17", msg))
+
+
 def check_part_pins(d, rep):
     for des, c in d.comps.items():
         if not c.get("lcsc") and not c.get("part"):
@@ -707,6 +770,7 @@ def check_signoff(d, rep):
 def run(design, cfg=None):
     rep = Report()
     checks = design.graph.get("checks") or {}
+    sim = rules.load_sim(cfg) if cfg else None   # sources (G-16) and the lowest ambient (G-17)
     joined = design.joined()   # nets joined by 0 Ω bridges as one net
     check_structure(design, rep, set(cfg.boards) if cfg else set())
     check_pin_locks(design, rep, checks, cfg.root if cfg else ".")
@@ -721,7 +785,8 @@ def run(design, cfg=None):
     check_flyback(joined, rep)
     check_usb_c(joined, rep)
     check_pin_functions(joined, rep)
-    check_power_pins(joined, rep, rules.load_sim(cfg) if cfg else None)
+    check_power_pins(joined, rep, sim)
+    check_fuses(joined, rep, sim)
     check_part_pins(design, rep)
     if cfg:
         from . import part

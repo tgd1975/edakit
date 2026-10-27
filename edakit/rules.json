@@ -148,6 +148,16 @@
     "edakit handbook 4.1 (pin types ground, power_in, power_output) and 3.3 (0 Ω bridges)"
    ]
   },
+  "G-17": {
+   "title": "fuse against what it protects",
+   "rule": "The hold current of every fuse – at the lowest ambient temperature (ambient_min_c in sim.json, from the fuse's i_hold_vs_temp) – is at most the i_max_a of every connector, switch and cable its current flows through; a trip current above that rating is a warning.",
+   "why": "A polyfuse is chosen for the normal current. Below its hold current it never trips, and between hold and trip current its datasheet promises neither. A connector, switch or cable rated below the hold current carries an overload the fuse never stops: its contacts heat up instead of the fuse. The hold current rises in the cold – 1.5 A at 23 °C is 2.2 A at -40 °C. E-2 compares only the simulated operating currents with the ratings; the overload between the operating point and the trip current is in no scenario.",
+   "fix": "A fuse with a lower hold (and trip) current, or a connector, switch or cable with a higher rating. A trip current above a rating accepted on purpose gets waive {\"G-17\": reason} on the fuse, e.g. 'normal current 0.9 A, a short trips within 100 ms'. Cables carry their rating as i_max_a in the graph's cables.",
+   "sources": [
+    "PTTC SMD1206 HF Series, Rev. K (2017-01-03), p. 2: Ihold = maximum current the device passes without tripping, Itrip = minimum current at which it trips (23 °C still air); p. 4: thermal derating, SMD1206P150TFT 2.20 A at -40 °C, 1.50 A at 23 °C, 0.84 A at 85 °C – https://datasheet.lcsc.com/datasheet/pdf/c142bd6abe50067c0e2abbe967f2fcb5.pdf?productCode=C495353",
+    "Lesson of the reference project (pytree D-31/D-32, 2026-10-20): F1 (hold 1.5 A, trip 3.0 A) in series with two JST PH connectors rated 2 A – the trip current above the contacts, judged acceptable by argument only, recorded by no check"
+   ]
+  },
   "E-1": {
    "title": "operating point",
    "rule": "The DC operating point of every scenario converges, and the simulation config fits the graph.",

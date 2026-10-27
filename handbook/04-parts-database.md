@@ -62,12 +62,13 @@ in `sources` – any RP2350 module takes the same list per GPIO. On the RP2040 a
 
 **Ratings** per kind (what the checks read): resistor `p_max_w`, `v_max`; capacitor `v_max`; diode `if_avg_a`, `vrrm`;
 LED `if_max_a`, `vr_max` (per colour for RGB); BJT `ic_max_a`, `vceo`, `vebo`, `p_max_w`; MOSFET `id_max_a`, `vds_max`,
-`vgs_max`, `p_max_w`; fuse `i_hold_a` (+ `params.i_hold_vs_temp`); switch/connector `i_max_a`, `v_max`; inductor
-`i_rated_a`, `i_sat_a`; regulators `vin_min`, `i_out_max_a`, `rth_ja_k_per_w`; MCU modules `vin_min`/`vsys_min`,
-`i_out_max_a`, `gpio_i_max_a` (per output pin) and `gpio_i_total_max_a` (all outputs together, sourced and sunk
-separately – the package's supply pins); relays `v_coil_max`, `i_max_a` (contacts); LED drivers `rth_ja_k_per_w`;
-own boards (behaviour `current`) `vin_min`, `vin_max` – the voltage at the connector over the board's own simulation
-(4.5, E-3).
+`vgs_max`, `p_max_w`; fuse `i_hold_a`, `i_trip_a` (+ `params.i_hold_vs_temp`: `[[°C, A], …]`, G-17); switch/connector
+`i_max_a` (what the part carries as a whole: a USB-C receptacle's two ground contacts at 1.25 A each are 2.5 A),
+`v_max`; inductor `i_rated_a`, `i_sat_a`; regulators `vin_min`, `i_out_max_a`, `rth_ja_k_per_w`; MCU modules
+`vin_min`/`vsys_min`, `i_out_max_a`, `gpio_i_max_a` (per output pin) and `gpio_i_total_max_a` (all outputs together,
+sourced and sunk separately – the package's supply pins); relays `v_coil_max`, `i_max_a` (contacts); LED drivers
+`rth_ja_k_per_w`; own boards (behaviour `current`) `vin_min`, `vin_max` – the voltage at the connector over the board's
+own simulation (4.5, E-3).
 
 **Parameters**: resistor `value_ohm` (`0`: a bridge that joins its nets, 3.3), `r_max_ohm` (a bridge's maximum
 resistance from the datasheet, simulated instead of 0 Ω; 50 mΩ without it); capacitor `value_f`; inductor `value_h`,
