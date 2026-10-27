@@ -47,6 +47,10 @@
        in parentheses or after ";" left out, case ignored; a part that starts with a value is that value), its
        value reads as the entry's value_ohm / value_f / value_h within 1 %, its type fits the entry's kind; a
        designator prefix (R, C, L, D, Q, U, J, SW, F, BT, BZ, K, TP) against the kind is a warning
+  P-7  through-hole leads known and fitting the footprint, before the layout: L-9's test (release/fab.py hole_ok)
+       on the holes of the footprint geometry – the board's `pcb dump`, else the library footprint cached by `edakit
+       part import`; plated holes without `lead` in the parts entry pending, a hole that does not take the lead an
+       error, tight in the worst case or a plated slot narrower than 0.5 mm a warning
   P-3  own parts (part.py): a board copied from its project with `edakit part own` is that project's current
        datasheet, copied from a commit (pending otherwise); a board that is not released is a warning; the project's
        own datasheets (hardware/datasheet/) are of its current state
@@ -103,7 +107,7 @@ MULTIPLIERS = {"p": 1e-12, "n": 1e-9, "u": 1e-6, "µ": 1e-6, "μ": 1e-6, "m": 1e
 QUANTITY = re.compile(r"\s*(\d+)(?:[.,](\d+))?\s*([pnuµμmkKMG]|[RΩ])?(\d+)?\s*(Ω|[oO]hms?|F|H)?(?=$|[\s,;/()])")
 
 EXECUTED = ["G-1", "G-2", "G-3", "G-4", "G-5", "G-6", "G-8", "G-10", "G-11", "G-12", "G-13", "G-14", "G-15", "G-16",
-            "G-17", "G-18", "P-1", "P-3", "P-6", "G-9"]
+            "G-17", "G-18", "P-1", "P-3", "P-6", "P-7", "G-9"]
 
 
 class Report:
@@ -919,6 +923,78 @@ def check_identity(d, rep):
                                             + (f" ({usual})" if usual else "")))
 
 
+def footprint_geometry(d, cfg):
+    """geometry(des) -> (footprint geometry, where from) or (None, None): the dump of the component's board – the
+    project's footprint as placed –, else the library footprint `edakit part import` cached."""
+    from . import part as parts
+    from .pcb import geometry_file
+    dumps = {name: parts._read(geometry_file(cfg, b)) or {} for name, b in cfg.boards.items()}
+
+    def geometry(des):
+        board = d.comps[des].get("board")
+        for name, dump in dumps.items():
+            if board in (None, name) and des in dump:
+                return dump[des], "pcb dump"
+        lib = parts.library_footprint(cfg, d, des)
+        return (lib, f"library geometry {lib['footprint']}") if lib else (None, None)
+    return geometry
+
+
+def check_holes(d, rep, geometry):
+    """P-7: L-9's hole-against-lead test (fab.hole_ok) on the plated holes of the footprint geometry, before anything
+    is placed or routed. Same words and thresholds as L-9, which stays in the gate on the drill file."""
+    from .part import pad_points
+    from .release.fab import HOLE_PLAY_MM, HOLE_TOL_MM, JLC_SLOT_MM, hole_ok
+    seen, unknown = False, []
+    for des in sorted(d.comps, key=natural_key):
+        entry = d.part(des)
+        geo, where = geometry(des) if entry else (None, None)
+        if not geo:
+            continue
+        seen = True
+        holes = [(n, p) for n, _, _, p in pad_points(geo) if p.get("tht") and p.get("plated", True)]
+        if not holes:
+            continue
+        if any(not p.get("hole") for _, p in holes):
+            unknown.append(des)
+            continue
+        leads = entry.get("lead")
+        if not leads:
+            rep.pending.append(("P-7", f"{des} {d.entry_key(des)}: plated holes but no lead in the parts entry – the "
+                                       "lead's cross-section from the datasheet (handbook 4.1)"))
+            continue
+        bad, tight, narrow, nolead = defaultdict(list), defaultdict(list), defaultdict(list), []
+        for n, p in holes:
+            lead = leads.get(n) or leads.get("*")
+            if lead is None:
+                nolead.append(n)
+                continue
+            w, length = p["hole"]
+            ok, is_tight, text = hole_ok(lead, w, length)
+            if not ok:
+                bad[text].append(n)
+            elif is_tight:
+                tight[text].append(n)
+            if length > w + 0.01 and w < JLC_SLOT_MM - 1e-6:
+                narrow[f"{w:.2f} x {length:.2f} mm"].append(n)
+        pads = lambda ns: ", ".join(sorted(dict.fromkeys(ns), key=natural_key))  # noqa: E731
+        for text, ns in bad.items():
+            rep.error("P-7", f"{des} (pads {pads(ns)}, {where}): {text}", d.comps[des].get("waive"))
+        if tight:
+            rep.warnings.append(("P-7", f"{des} ({where}): tight hole – worst case below {HOLE_PLAY_MM} mm play (hole "
+                                        f"-{HOLE_TOL_MM} mm, lead + tolerance): "
+                                        + "; ".join(f"pad {pads(ns)}: {t}" for t, ns in tight.items())))
+        if narrow:
+            rep.warnings.append(("P-7", f"{des} ({where}): slot narrower than {JLC_SLOT_MM} mm (JLCPCB minimum, plated, "
+                                        "2 layers): " + "; ".join(f"pad {pads(ns)}: {s}" for s, ns in narrow.items())))
+        if nolead:
+            rep.pending.append(("P-7", f"{des} {d.entry_key(des)}: no lead for pad {pads(nolead)} in the parts entry"))
+    if unknown:
+        rep.notes.append(("P-7", f"{', '.join(unknown)}: hole size unknown – edakit pcb dump (the geometry is older "
+                                 "than P-7)"))
+    return seen
+
+
 def check_signoff(d, rep):
     for key in sorted({d.entry_key(des) for des in d.comps} - {None}):
         part = d.parts[key]
@@ -963,6 +1039,9 @@ def run(design, cfg=None):
     if cfg:
         from . import part
         part.check(design, rep, cfg)
+        if not check_holes(design, rep, footprint_geometry(design, cfg)):
+            rep.notes.append(("P-7", "not run: no footprint geometry – edakit pcb dump once the parts are in the PCB, "
+                                     "or edakit part import <LCSC> for the library's"))
     check_signoff(design, rep)
     return rep
 

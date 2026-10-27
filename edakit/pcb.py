@@ -1,11 +1,13 @@
 """PCB: placement plan, footprint geometry, parts and nets from the schematic without dialogs, fixed parts, outline,
 mounting and tooling holes, copper pours, EasyEDA's auto-layout.
 
-    edakit pcb dump [--ref U1,J1]   footprint geometry -> <artifacts>/pcb_geometry_<board>.json
+    edakit pcb dump [--ref U1,J1]   footprint geometry -> <artifacts>/pcb_geometry_<board>.json, through-hole pads
+                                    with their hole [w, l] in mm (P-7)
                                     (turns every measured part to 0°/TOP and leaves it there – run apply afterwards)
     edakit pcb plan                 offline: check the plan (overlaps – under a part on pin headers only its pins,
                                     SMD parts within silk_overlap_mm –, outline, holes, THT pins under parts of the
-                                    other side, near; L-12 the layout requirements of the circuit), airline length,
+                                    other side, near; L-12 the layout requirements of the circuit; P-7 holes and
+                                    leads), airline length,
                                     preview PNG, net classes from the simulation; a part not in the dump yet takes
                                     the library footprint `edakit part import` cached
     edakit pcb parts [--write]      parts of the board schematic -> PCB without the "Import Changes" dialog
@@ -28,7 +30,7 @@ import math
 import re
 import time
 
-from . import eda, handover
+from . import checks, eda, handover
 from .config import BOTTOM, MIL_PER_MM, TOP
 from .design import Design, natural_key
 from .eda import MCPError, api, ensure_pcb_focus
@@ -391,6 +393,13 @@ def plan(cfg, board):
         print(f"  library geometry (edakit part import, not yet from the PCB): {', '.join(lib)}")
     problems += check_plan(cfg, board, geo, place, boxes, tht)
     problems += [f"L-12 {p}" for p in check_handover(board, design, place, boxes)]
+    holes = checks.Report()      # P-7 on the plan's geometry: a hole that does not take its lead is a plan finding
+    checks.check_holes(design, holes, lambda r: (geo[r], f"library geometry {geo[r]['footprint']}" if geo[r].get(
+        "source") == "library" else "pcb dump") if r in geo else (None, None))
+    problems += [f"P-7 {m}" for _, m in holes.errors]
+    for kind, found in (("pending", holes.pending), ("warning", holes.warnings)):
+        for _, m in found:
+            print(f"  P-7 {kind}: {m}")
     for p in problems:
         print("  !", p)
     print(f"  {len(place)} fixed parts, {len(unplaced)} for the auto-layout; airline length of the fixed parts "
@@ -404,8 +413,20 @@ def plan(cfg, board):
 
 # --- EasyEDA ------------------------------------------------------------------------------------------------------
 
+def pad_hole(p):
+    """{"hole": [w, l] mm, "plated"} of a pin whose hole the API gives in mil – ["ROUND", d] or ["SLOT", d, length]
+    (a length below the diameter follows it) – or {} for an SMD pad."""
+    h = p.get("hole")
+    if not h:
+        return {}
+    w = h[1] / MIL_PER_MM
+    length = max(w, (h[2] if len(h) > 2 else h[1]) / MIL_PER_MM)
+    return {"hole": [round(w, 3), round(length, 3)], "plated": bool(p.get("metallization", True))}
+
+
 def measure(mcp, c):
-    """Geometry of a part relative to its origin; turns it to 0°/TOP for that and leaves it so."""
+    """Geometry of a part relative to its origin; turns it to 0°/TOP for that and leaves it so. Through-hole pads keep
+    their hole (P-7)."""
     pid = c["primitiveId"]
     if c["rotation"] or c["layer"] != TOP:
         ensure_pcb_focus(mcp)
@@ -418,10 +439,10 @@ def measure(mcp, c):
     g = {"primitiveId": pid, "footprint": c["footprintName"], "device": c["deviceName"],
          "bbox": [round(bb["minX"] - x, 2), round(bb["minY"] - y, 2), round(bb["maxX"] - x, 2), round(bb["maxY"] - y, 2)],
          "pads": {p["padNumber"]: {"x": round(p["x"] - x, 2), "y": round(p["y"] - y, 2), "net": p["net"],
-                                   "tht": p["hole"] is not None} for p in pads}}
+                                   "tht": p["hole"] is not None, **pad_hole(p)} for p in pads}}
     nums = [p["padNumber"] for p in pads]  # numbers used several times (shell legs): "pads" keeps one, all here
     if dup := sorted({n for n in nums if nums.count(n) > 1}):
-        g["pads_same_number"] = {n: [{"x": round(p["x"] - x, 2), "y": round(p["y"] - y, 2)} for p in pads
+        g["pads_same_number"] = {n: [{"x": round(p["x"] - x, 2), "y": round(p["y"] - y, 2), **pad_hole(p)} for p in pads
                                      if p["padNumber"] == n] for n in dup}
     w, h = g["bbox"][2] - g["bbox"][0], g["bbox"][3] - g["bbox"][1]
     print(f"  {c['designator']:<6} {mm(w):6.1f} x {mm(h):5.1f} mm  {c['footprintName']}")

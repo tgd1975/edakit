@@ -110,7 +110,10 @@ places is a finding.
 **Geometry.** The plan works with footprint boxes and pads relative to the part origin: from `edakit pcb dump` once the
 parts are in the PCB – the project's footprints as placed – and, for a planned part that is not in the dump yet, from
 the library footprint `edakit part import <LCSC>` cached (4.2): `pcb plan` names those parts ("library geometry") and
-takes their pad nets from the graph. The dump wins. Library and EasyEDA Pro agree on the pads within 0.1 mil (eleven
+takes their pad nets from the graph. The dump wins. The dump keeps the hole of every through-hole pad (`hole` [w, l] in
+mm, `plated`), and `pcb plan` runs P-7 on the plan's geometry: a hole that does not take its lead is a plan finding
+(`P-7 D31 (pads 1, 2, 3, 4, library geometry …): hole 0.70 mm for diagonal 0.71 mm …`), a tight hole or a missing
+`lead` is printed. A geometry file from before has no holes – dump again (it changes the layout hash once). Library and EasyEDA Pro agree on the pads within 0.1 mil (eleven
 footprints of the reference project; one switch 1 mil); the boxes differ by up to 0.3 mm, because EasyEDA Pro measures the silkscreen of
 the placed part. Without a dump and without a cached footprint a planned part stays a finding.
 

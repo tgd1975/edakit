@@ -36,7 +36,8 @@ profile says: `${CLAUDE_PLUGIN_ROOT}/skills/part-search/distributors/<name>.md` 
 - `hardware/parts/<LCSC>.json` – from another distributor `hardware/parts/<manufacturer part number>.json` with
   `mpn` set and `order` for the order numbers (`{"rs": "223-0562"}`); the graph names it in `part`. After the
   pattern of a similar part: `kind`, `pins` (names identical to the graph, `type`, `role`, `vmax`), `params`,
-  `ratings`, `spice` for diodes/transistors, `lead` for through-hole parts, `sources` (mark every assumption as
+  `ratings`, `spice` for diodes/transistors, `lead` for through-hole parts (P-7 stays pending without it and holds
+  it to the footprint's holes at once), `sources` (mark every assumption as
   "assumption"). The block library (`edakit/blocks/parts/` of the plugin) has checked entries to copy from.
 - What the checks read from the datasheet besides the limits: input-only pins `type: input`; strapping pins `"strap":
   "high"|"low"` with the internal `"pull"` at reset (G-12); built-in pull resistors `"pull": "up"`, `"pull_ohm"` (I2C

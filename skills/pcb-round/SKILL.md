@@ -48,7 +48,8 @@ describes (section 3).
    parts under a module on pin headers: `on_headers`; SMD parts whose silkscreen outlines touch: `silk_overlap_mm`
    (handbook 7.4).
 2. **Check offline before EasyEDA is touched:** `edakit pcb plan 2>&1 | cat` – overlaps, outline, holes, THT pins under
-   parts of the other side, near-distances, the circuit's layout requirements (L-12), airline length, net classes;
+   parts of the other side, near-distances, the circuit's layout requirements (L-12), holes against leads (P-7),
+   airline length, net classes;
    look at `<artifacts>/pcb_plan_<board>.png` (Read) and show it to the user before `apply` when positions visibly
    change.
 3. **EasyEDA** (start skill, claim EasyEDA):
