@@ -43,7 +43,8 @@ Two questions show whether it works:
 
   Nobody turns these into edakit's entries today.
 - **Late settings.** The purpose of the device (`use`: private, gift or sale – it decides how deep the regulatory
-  review M-6 goes), the order settings and the budget come up when the release asks, not at the start.
+  review M-6 goes, which is support and not legal advice), the order settings and the budget come up when the release
+  asks, not at the start.
 
 ## Proposal: a guided setup
 

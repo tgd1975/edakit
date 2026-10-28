@@ -85,7 +85,8 @@ REQUIRED = {   # manual checks every release needs, also when an older sign-off 
                     "electrical-reviewer in its own session"},
     "M-6": {"phase": "export", "scope": "circuit",
             "text": "Regulatory review: circuit and parts against EU law for the stated purpose (RoHS, REACH, radio, "
-                    "batteries, product safety) – the agent regulatory-reviewer in its own session"},
+                    "batteries, product safety) – the agent regulatory-reviewer in its own session; support, not "
+                    "legal advice: no claim to correctness, nothing legally guaranteed"},
     "M-5": {"phase": "export", "scope": "fab",
             "text": "Layout reviewed independently (manufacturability, mechanics, operation, looks) on the "
                     "manufacturing files of a gate run – the agent pcb-reviewer. No finding 'block' open, every "

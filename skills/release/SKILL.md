@@ -34,18 +34,18 @@ Concept: `${CLAUDE_PLUGIN_ROOT}/handbook/08-release-gate.md`.
    resolve – fix `[scripts]` in edakit.toml. A project check is a stage of its own, its `id` the stage letter
    (handbook 8.1): what it printed is `<reports>/<run>/stage_<id>.txt`; a failed one is a finding like any other, an
    advisory one is listed and does not block.
-5. **Manual checks an agent can do are signed by the agent's result** (no checklist for the user; M-1, M-6 and M-5
-   are required – the gate adds them as open when the sign-off file lacks them): M-1 – agent
-   electrical-reviewer checks the critical parts again against their datasheets with the polarity sheet; M-6 – agent
-   regulatory-reviewer checks circuit and parts against the rules for the purpose in the graph (usually done at the
-   hand-over already; it counts as long as the circuit hash is the same); M-5 – agent pcb-reviewer checks the layout
-   on the manufacturing files of this run. OK → `done_by` = the agent, date, note – with `[project] requirements` the
-   note names every requirement the check found met, as the agent's line gives them ("requirements met: R-4, R-5";
-   `verify = [{ signoff = "M-1" }]`, handbook 8.7) –, and the hash of its scope from the protocol header into the
-   sign-off file – for scope `fab` (M-5, M-2) the `fab_sha256` of the run whose files were reviewed; a later run with
-   the same files – and the same thickness, colours, finish and mark of `[order]` – keeps it. When it lapsed:
-   `edakit fab diff <reviewed run> <new run>` shows what changed, and the review looks at that. Not OK → fix the
-   cause and check again. What changes looks or operation is the user's call (decision-round skill).
+5. **Manual checks an agent can do are signed by the agent's result** (no checklist for the user; M-1, M-6 and M-5 are
+   required – the gate adds them as open when the sign-off file lacks them): M-1 – agent electrical-reviewer checks the
+   critical parts again against their datasheets with the polarity sheet; M-6 – agent regulatory-reviewer checks circuit
+   and parts against the rules for the purpose in the graph (usually done at the hand-over already; it counts as long as
+   the circuit hash is the same) – support, not legal advice, and you say so when you report it; M-5 – agent
+   pcb-reviewer checks the layout on the manufacturing files of this run. OK → `done_by` = the agent, date, note – with
+   `[project] requirements` the note names every requirement the check found met, as the agent's line gives them
+   ("requirements met: R-4, R-5"; `verify = [{ signoff = "M-1" }]`, handbook 8.7) –, and the hash of its scope from the
+   protocol header into the sign-off file – for scope `fab` (M-5, M-2) the `fab_sha256` of the run whose files were
+   reviewed; a later run with the same files – and the same thickness, colours, finish and mark of `[order]` – keeps it.
+   When it lapsed: `edakit fab diff <reviewed run> <new run>` shows what changed, and the review looks at that. Not OK →
+   fix the cause and check again. What changes looks or operation is the user's call (decision-round skill).
 6. **RELEASED:** `fab/manifest.json` says `"released": true`, and the run is the current release – the gate marked
    every earlier released run as superseded (`edakit release current` shows it). Archive the folder in git
    (`git add -f`) together with the superseded manifests through the project's git workflow. A released run that must

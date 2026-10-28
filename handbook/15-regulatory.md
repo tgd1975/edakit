@@ -7,7 +7,10 @@ graph; its result is the sign-off M-6, which every release needs (8.2). It runs 
 (14.1), before the layout, because its findings usually change parts.
 
 This chapter is its map: the state of October 2026, with the primary sources. The law changes – the agent checks every
-date and threshold it relies on against the source. It is no legal advice; whoever sells the board answers for it.
+date and threshold it relies on against the source.
+
+**Not legal advice.** This chapter, the agent and its sign-off M-6 are support, without any claim to being correct or
+complete; nothing in them is legally guaranteed. Whoever sells or gives away the board answers for it.
 
 ## 15.1 The purpose decides
 

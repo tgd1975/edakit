@@ -259,7 +259,7 @@ no key to switch them off.
 | Check | Phase | Scope | What |
 |---|---|---|---|
 | M-1 | export | circuit | the critical parts checked a second time against their datasheets – agent electrical-reviewer |
-| M-6 | export | circuit | the regulatory review (chapter 15) – agent regulatory-reviewer |
+| M-6 | export | circuit | the regulatory review (chapter 15) – agent regulatory-reviewer; support, not legal advice |
 | M-5 | export | fab | the layout review on the manufacturing files of a gate run – agent pcb-reviewer |
 
 A sign-off file that lists one of them keeps its own phase, scope and text (an older M-5 with scope `layout` stays

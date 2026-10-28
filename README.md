@@ -103,12 +103,12 @@ In Claude Code the skills do the orchestration: `/edakit:new-project`, `/edakit:
 `requirements-engineer` reads a project's documents for it – candidates with their source, contradictions, vague
 words, requirements without evidence; the agent `part-selector` finds parts at the project's distributors
 (LCSC/JLCPCB, RS, Farnell, Mouser, DigiKey, Reichelt) and writes their entries; the agent `easyeda-operator` runs one
-long EasyEDA step and returns only its result; the agents `electrical-reviewer`, `regulatory-reviewer` (EU law for
-the board's purpose: RoHS, REACH, radio, batteries) and `pcb-reviewer` do the independent reviews whose results are
-the sign-offs – each also judges the requirements its sign-off verifies.
-Circuit, layout and review are separate roles: the circuit designer hands the board over in writing – `layout` in the
-graph, shown by `edakit handover` and kept by the plan check L-12 – the PCB designer works from that in a session of
-its own, and the session that designs does not review ([handbook 14.1](handbook/14-design.md#141-roles)).
+long EasyEDA step and returns only its result; the agents `electrical-reviewer`, `regulatory-reviewer` (EU law for the
+board's purpose: RoHS, REACH, radio, batteries – support, not legal advice) and `pcb-reviewer` do the independent
+reviews whose results are the sign-offs – each also judges the requirements its sign-off verifies. Circuit, layout and
+review are separate roles: the circuit designer hands the board over in writing – `layout` in the graph, shown by
+`edakit handover` and kept by the plan check L-12 – the PCB designer works from that in a session of its own, and the
+session that designs does not review ([handbook 14.1](handbook/14-design.md#141-roles)).
 
 What a project teaches goes back with `/edakit:propose-rule`: a check, hint, block or part fact as an issue here,
 sealed with its SHA-256. An Action triages it – accepted and built into one pull request of rule proposals, rejected
@@ -154,6 +154,8 @@ Where it stands:
 
 ## Status and limits
 
+- The regulatory review (M-6, [handbook 15](handbook/15-regulatory.md)) is support, not legal advice: it makes no
+  claim to correctness, and nothing in it is legally guaranteed.
 - Not text yet ([concept](docs/concepts/new/design-as-text.md), [plan](docs/concepts/new/implementation-plan.md)):
   - the positions EasyEDA's auto-layout sets: the board file holds only the fixed parts and those `pcb place` puts
     next to their host;
