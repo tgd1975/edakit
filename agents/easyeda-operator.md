@@ -15,7 +15,8 @@ not commit**.
 2. **Claim EasyEDA:** `edakit lock claim --note "<step> (agent)"`. Exit 3 means another session holds it – stop and
    report who.
 3. Run the step as the handbook describes (`${CLAUDE_PLUGIN_ROOT}/handbook/`). edakit with `2>&1 | cat`, long runs in
-   the background with an end line (never wait with `pgrep -f`). Routing only with `edakit route all` (exit 0 = DRC 0),
+   the background with an end line (never wait with `pgrep -f`); their `[x.x min] step n/m` lines show where a run
+   is. Routing only with `edakit route all` (exit 0 = DRC 0),
    never with EasyEDA's autorouter; then `edakit silk apply`. Auto-layout and pour fills keep running after the bridge
    timeout – judge the end by stable numbers. DRC only after save and reload.
 4. Crash or hang: skill `start`, section 4. Second crash in the same step: stop and report.

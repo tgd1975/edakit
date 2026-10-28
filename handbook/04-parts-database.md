@@ -5,7 +5,7 @@ distributor, by its manufacturer part number (`hardware/parts/RC0805FR-0710KL.js
 hold replaced by `_`) – or, for a part nobody sells, such as a board of your own, by the name it was given (4.5). A
 component finds its entry by `lcsc`, and without one by `part` = the entry's `mpn`. The entry holds what the
 datasheet says, in a form the checks and the simulation can use: pin types and roles, limits, parameters, SPICE
-models, lead dimensions, and who checked it against which datasheet revision.
+models, lead dimensions, the part's height and its mated plug, and who checked it against which datasheet revision.
 Examples: [the Christmas bell's parts](https://github.com/tgd1975/automatic_christmas_bell/tree/main/hardware/parts).
 
 ## 4.1 Fields
@@ -13,11 +13,11 @@ Examples: [the Christmas bell's parts](https://github.com/tgd1975/automatic_chri
 | Field | Content |
 |---|---|
 | `lcsc`, `mpn`, `manufacturer` | identification; `lcsc` equals the file name, `mpn` is what a component names in `part` – P-6 compares them, with the `kind` and the value parameters |
-| `order` | order numbers at other distributors: `{"rs": "223-0562", "farnell": "…", "mouser": "…", "digikey": "…"}` |
+| `order` | where a part bought separately is ordered, supplier → order code: `{"rs": "223-0562", "farnell": "…"}`; a value may be `{code, moq, step}` with the supplier's minimum and pack size, `{"lcsc": {"moq": 20, "step": 20}}` (the LCSC code defaults to `lcsc`). The first supplier is the default of `edakit order`; P-5 warns about a `bom: false` part with neither an LCSC number nor `order` – a `C99…` library number counts as none, LCSC does not sell it |
 | `kind` | `resistor`, `capacitor`, `inductor`, `fuse`, `diode`, `led`, `led_rgb`, `npn`, `pnp`, `pmos`, `nmos`, `switch`, `dip_switch`, `button`, `potentiometer`, `battery_holder`, `buzzer`, `relay`, `connector`, `ic`, `module` |
 | `package`, `footprint` | the footprint name must equal the EasyEDA footprint (L-4 compares it with the PCB) |
-| `jlc_class` | Basic / Extended Part |
-| `datasheet` | `url`, `pinout_page` |
+| `jlc_class` | Basic / Extended Part; P-4 and F-2 warn when JLCPCB's catalogue lists another class |
+| `datasheet` | `url`, `pinout_page`; `edakit part fetch` keeps the PDF beside the project, not in the entry (4.3) |
 | `pins` | pin number → `name` (as in the EasyEDA symbol and identical to the graph – S-2 compares them), `type`, `role` (the meaning; for polarised parts it follows the footprint's polarity print when symbol and footprint disagree), `vmax`; from the datasheet where it applies: `strap` (`"high"`/`"low"`: level the pin needs at reset, G-12), `pull` (`"up"`/`"down"`: internal or built-in pull resistor, with `pull_ohm` if known – G-11, G-12), `hint` (a warning from the datasheet, e.g. "ADC2: no analog reads while WiFi is on"); on MCU and module pins `functions` – what the pin-mux table offers, `<peripheral><instance>.<line>`: `["spi0.sck", "uart0.cts", "i2c1.sda", "pwm1.a", "uart0.tx"]`, `adc0`; for PWM the instance is the slice and the line the channel; `[]` = no free function (used on the module), no key = unknown (G-15); from the recommended operating conditions: `v_op` (`[min, max]` of a supply pin that differs from the part's `vdd_op_min`/`vdd_op_max`) and the thresholds of one input pin, `vih_v` or `vih_ratio`, `vil_v` or `vil_ratio`, where they differ from the part's (E-3); on a serial output (SDO, Q7) of a clocked part: `out_edge` (`"rising"`/`"falling"`: the clock edge after which it changes) and `t_pd_ns` (`[min, max]` clock-to-output delay at the part's supply, `null` where the datasheet gives none) – `edakit hints` shows them with H-9 |
 | `hints` | warnings of the datasheet for the part as a whole; `edakit hints` shows them and the pin `hint`s of connected pins |
 | `hot_loop` | switching regulators: the pin roles of the loop that carries the pulsed current, from the datasheet's layout section – a buck `["vin", "sw", "gnd"]`, an asynchronous boost `["sw", "gnd"]`; a ground pin without a role is `gnd`. G-18 wants a `layout.loops` entry on each of their nets and on the net behind a diode on `sw` |
@@ -25,11 +25,13 @@ Examples: [the Christmas bell's parts](https://github.com/tgd1975/automatic_chri
 | `params` | values for simulation and calculations; `behavior` for ICs (chapter 5) |
 | `ratings` | limits for the stress checks |
 | `spice` | `{"model": ".model SS34 D(IS=20u N=1.2 RS=0.04 …)"}` for diodes and transistors |
-| `lead` | through-hole parts only: lead cross-section per pad number or `"*"`: `shape` (`square`, `round`, `rect`), `a_mm`, `b_mm`, `tol_mm`, `hole_rec_mm`, `source` – check L-9; the ring a widened hole leaves: L-16 |
+| `lead` | through-hole parts only: lead cross-section per pad number or `"*"`: `shape` (`square`, `round`, `rect`), `a_mm`, `b_mm`, `tol_mm`, `hole_rec_mm`, `source` – checks P-7 (before the layout, on the footprint geometry) and L-9 (in the gate, on the drill file); the ring a widened hole leaves: L-16; a footprint with plated holes and no `lead` keeps P-7 pending; optional `length_mm`, the lead length below the seating plane – the mechanical model gives its protrusion (7.4) |
+| `body` | optional: `{"h_mm": 2.3}`, the height of the body above the board, on the side the part sits on – for the mechanical model (7.4) |
+| `mate` | optional, for a connector: its mated plug with the strain relief, `{"box": [x0, y0, x1, y1], "h_mm": 6.5, "exit": "+y"}` – `box` in footprint mm (relative to the part's origin at 0° on TOP, as `pcb dump` measures it), `h_mm` its height above the board, `exit` the direction the cable leaves the box: `+x`, `-x`, `+y`, `-y`, or `+z` (away from the board). `pcb plan` checks it (7.4) |
 | `pad_map` | only when pad numbers are deliberately swapped on the placed part: `{PCB pad: library pad}` – check L-10 |
-| `sources` | where every value comes from; "assumption …" marks what must be checked with extra care |
+| `sources` | where every value comes from; "assumption …" marks what must be checked with extra care – also a value taken from a sibling part or the series. The gate protocol lists every source with the word "assumption" (8.2) |
 | `compliance` | for the regulatory review (M-6, chapter 15): `rohs` (true, false or the exemption), `reach` (the supplier's SVHC statement), `radio` for a part that transmits (`bands_mhz` [[from, to]], `max_dbm`, `doc` = URL of the EU declaration of conformity), `source` (page and date) |
-| `verified` | `null` or the sign-off: `by`, `date`, `datasheet` (revision), `checked` (list), `open` (list), optional `second_check` (the independent M-1 review) |
+| `verified` | `null` or the sign-off: `by`, `date`, `datasheet` (revision), `checked` (list), `open` (list: a text, or `{"text": "…", "when": "order"}` – `when` names the phase whose manual check answers it: `order` the assembly preview M-2, `acceptance` the delivered board M-4), optional `datasheet_sha256` (the file signed against, as `edakit part fetch` recorded it), optional `second_check` (the independent M-1 review). The gate protocol lists the open points (8.2) |
 | `own` | a part nobody sells (4.5): `what` – `pcb` (a board of an edakit project), `bin` (from your stock, no longer to be had), `handmade`; for `pcb` its source: `project`, `connectors`, `state_sha256` (the board's circuit hash), and in the copy `path`, `commit`, `repo`, `released` – P-3 compares them |
 
 **Pin types** (`type`): `passive`, `input`, `output`, `bidirectional`, `power_in`, `power_output`, `ground`, `analog`,
@@ -59,7 +61,7 @@ in `sources` – any RP2350 module takes the same list per GPIO. On the RP2040 a
 | buzzer | `plus`, `minus` |
 | relay | `coil_plus`, `coil_minus`, `common`, `no`, `nc` |
 | connector | free (`pin1`, …); `vbus`/`gnd` for a supply input; `cc1`, `cc2` on a USB-C receptacle (G-14; a module or breakout without these roles: `params.usb_c`) |
-| ic, module | as the behaviour model needs them: `vin`, `vout`, `gnd`, `vsys`, `3v3`, `gpio`, `rext`, `out`, `oe_n`, `vdd`; `sda`, `scl` for I2C pins (G-11) |
+| ic, module | as the behaviour model needs them: `vin`, `vout`, `gnd`, `vsys`, `3v3`, `gpio`, `rext`, `out`, `oe_n`, `vdd`; `sda`, `scl` for I2C pins (G-11); on shift registers and LED drivers `sdi`, `sdo` (serial data in and out) and the outputs numbered `out0` … `outN` where their order matters – the simulation reads them as `out`, the firmware contract numbers its channels by them (3.5) |
 
 **Ratings** per kind (what the checks read): resistor `p_max_w`, `v_max`; capacitor `v_max`; diode `if_avg_a`, `vrrm`;
 LED `if_max_a`, `vr_max` (per colour for RGB); BJT `ic_max_a`, `vceo`, `vebo`, `p_max_w`; MOSFET `id_max_a`, `vds_max`,
@@ -78,8 +80,10 @@ the part gets no temperature item.
 **Parameters**: resistor `value_ohm` (`0`: a bridge that joins its nets, 3.3), `r_max_ohm` (a bridge's maximum
 resistance from the datasheet, simulated instead of 0 Ω; 50 mΩ without it); capacitor `value_f`; inductor `value_h`,
 `dcr_ohm`; LED `vf_typ`, `vf_min`, `vf_max`, `vf_at_a`, `rs_ohm` (RGB: one set per colour, under `red`, `green`,
-`blue`); switch/button `r_on_ohm`; buzzer `coil_ohm` (a magnetic buzzer; it is a coil for G-13); relay `coil_ohm`,
-`v_operate`, `v_release` (must-operate and must-release voltage), `r_contact_ohm`; a module or breakout with a USB-C
+`blue`); shift registers and LED drivers `first_bit_to` (the output the first shifted bit ends on, e.g. `"out7"` – from
+the datasheet's timing diagram, copied into the firmware contract, 3.5); switch/button `r_on_ohm`; buzzer `coil_ohm` (a
+magnetic buzzer; it is a coil for G-13); relay `coil_ohm`, `v_operate`, `v_release` (must-operate and must-release
+voltage), `r_contact_ohm`; a module or breakout with a USB-C
 receptacle `usb_c`: `{"cc": "rd_5k1" | "controller" | "none", "source": "…"}` – how the board terminates its
 CC lines, from its schematic (G-14; the RP2350-Zero has 5.1 kΩ on CC1 and CC2, the breakout Soldered 333011 has
 none); ICs see chapter 5 – and for any IC with logic inputs the thresholds of the recommended operating
@@ -104,7 +108,7 @@ What an agent can reach (tried in October 2026):
 
 | Distributor | Without a key | With a key in the environment |
 |---|---|---|
-| LCSC / JLCPCB | EasyEDA's device search, the part pages (curl) | – (APIs only on application) |
+| LCSC / JLCPCB | `edakit part search` (JLCPCB's catalogue), EasyEDA's device search, the part pages (curl) | – (APIs only on application) |
 | Reichelt | search and part pages; stock without a count | – (no API) |
 | DigiKey | WebFetch: search by part number leads to the part page; no RoHS/REACH | `DIGIKEY_CLIENT_ID`, `DIGIKEY_CLIENT_SECRET` |
 | Mouser | nothing (the denial comes with HTTP 200) | `MOUSER_API_KEY` |
@@ -116,6 +120,27 @@ not see – stock from a search snippet is no stock figure.
 
 At LCSC and JLCPCB:
 
+- **`edakit part search "RGB LED 5mm common cathode"`** asks JLCPCB's public parts catalogue – the endpoint of F-2, no
+  login, no EasyEDA, no bridge, no claim. One line per hit: LCSC number, manufacturer part number, manufacturer, class
+  (Basic, Extended, preferred), JLCPCB's assembly stock, package, category; `C99…` numbers dropped, Basic first, then
+  by stock. `--basic` keeps Basic and preferred parts, `--min-stock N` drops the rest, `--limit N` (25) is the page
+  asked of the catalogue, `--json FILE` writes the hits. An LCSC number gives only its exact hit (the search is full
+  text: `C2297` also finds MIC2297). Exit 2 when nothing is found, 1 when the catalogue does not answer. Function and
+  package words work here, unlike in EasyEDA's search: that one query lists the Kingbright C6751358 and the XINGLIGHT
+  C7371894, which took the reference project some 30 searches. **"Not available" only after three routes**, each
+  named with its queries: this search, EasyEDA's device search, the manufacturer's series name (the LCSC profile).
+- **`edakit part import C2297`** reads exactly that number from EasyEDA's public component data – the endpoint
+  easyeda2kicad reads, no key, no EasyEDA, no bridge: manufacturer, manufacturer part number, footprint name,
+  Basic/Extended and the symbol's pin numbers and names. Without an entry it writes a new one with these and
+  `verified: null` – kind, pin types and roles, values and ratings are for whoever signs it off (4.3). An existing entry
+  is never overwritten: the command lists where it differs from the library (exit 2), `--update` fills in only the
+  fields it lacks. Either way the symbol goes to `<artifacts>/library/<LCSC>.json` and the footprint to
+  `<artifacts>/footprints/<footprint>.json`, in the units and axes of `pcb dump` (mil, y up, rotation 0 on TOP), each
+  pad with shape, size and, for a hole, `hole` [w, l] in mm and `plated`. With the symbol cached, P-1 compares the
+  graph with it (3.3); `pcb plan` takes the footprint for a part that is not in the PCB yet (7.4). The endpoint is
+  undocumented: an unknown number answers HTTP 200 with `success: false` ("not in the library", exit 1), and after
+  some two dozen requests in a few minutes it answered HTTP 403 for a while – import what you need, not the catalogue.
+  `C99…` numbers are refused: the library returns them like any part, but nobody sells them.
 - `easyeda_schematic_search_device` with the **LCSC number** or the manufacturer part number. It returns footprint,
   manufacturer number, Basic/Extended and the parameter table (`otherProperty`), but **no stock and no price**.
   Free text ("led 5mm red") returns mostly noise; the classification filter has no effect. Series names work
@@ -124,14 +149,22 @@ At LCSC and JLCPCB:
 - `C99…` numbers are user libraries without an orderable part – P-6 refuses one on a part that goes into the BOM.
 - **Stock and price:** `https://wmsc.lcsc.com/ftps/wm/product/detail?productCode=Cxxxx` (stock, price breaks,
   parameters). LCSC's own search blocks automated requests (HTTP 403); jlcsearch is too thin for single parts.
-- **JLCPCB's assembly stock differs from LCSC's.** The gate asks JLCPCB's public catalogue
-  (`selectSmtComponentList`) for every BOM line and the stock for `quantity` boards (F-2). A part missing there can only
-  be pre-ordered.
+- **JLCPCB's assembly stock differs from LCSC's.** `edakit stock` asks JLCPCB's public catalogue
+  (`selectSmtComponentList`) and part page (`jlcpcb.com/partdetail/<C…>`) about every assembled part and writes a dated
+  snapshot, `hardware/stock.json`: listed, Basic/Extended/preferred, stock, MPN, PCBA type ("Economic and Standard" or
+  "Standard Only"), MSL, X-ray, machine or hand soldering, attrition (`lossNumber`), minimum (`leastPatchNumber`) and
+  price breaks. Check **P-4** reads it on every `edakit check`, offline: a part not listed (pre-order only), short of
+  stock for `quantity` boards – under Standard PCBA plus the attrition, max(n + attrition, minimum) –, under another
+  MPN than its entry, or "Standard Only" on an Economic order (`[release] assembly.pcba`) fails; MSL ≥ 5 (baked for a
+  fee and two days), stock within `stock_margin_pct` and another class than `jlc_class` warn; a snapshot older than
+  `stock_max_age_days` is pending. `edakit stock --lcsc C…` prints the same for candidates before they are in the
+  graph. At the export F-2 asks the catalogue again.
 - Report stock as a number with a date. "Few" is not information.
 
 ## 4.3 Signing off a part
 
-1. Open the datasheet (`datasheet.url`), note its revision.
+1. `edakit part fetch <key>` and read `<datasheets>/<key>.pdf` (4.6); note its revision, and its `sha256` from
+   `<key>.json` as `verified.datasheet_sha256`.
 2. Check pinout and pin names, **polarity at the footprint** (which pad is pin 1, anode, +), package, every value in
    `params` and `ratings`, especially the ones marked as assumption.
 3. Correct the file, extend `sources`.
@@ -140,6 +173,9 @@ At LCSC and JLCPCB:
    agent electrical-reviewer in its own session, recorded as `second_check`.
 
 Every change to a parts file changes the circuit hash: sign-offs with scope `circuit` must be renewed (chapter 8).
+With `[release] hash_ignore` (8.2) the keys listed there are left out – `sources`, `notes`, `verified` and `datasheet`
+are the usual ones –, so recording a review or correcting a source voids nothing; a pin, a rating or a parameter
+still does.
 
 ## 4.4 Library footprints are not always right
 
@@ -165,7 +201,8 @@ datasheet – edakit derives the parts entry from it:
      any other pin takes the strongest type among the parts on its net (output, bidirectional, current_sink, input,
      analog, else passive). A resistor to a supply or to ground gives `pull` and `pull_ohm` (G-11, G-12 count them);
      `vmax` is the lowest limit on the net – a pin's `vmax`, a capacitor's `v_max` / 1.5
-   - `params`: behaviour `current`, the largest current from the connector over the board's scenarios
+   - `params`: behaviour `current`, the largest current from the connector over the board's scenarios (its DC
+     scenarios: fault cases with `info` and transient runs are left out)
    - `ratings`: `vin_min`, `vin_max` – the voltage at the connector over those scenarios
    - `compliance`: RoHS, REACH and radio as the board's parts entries state them
 
@@ -174,7 +211,8 @@ datasheet – edakit derives the parts entry from it:
    project. Commit them – a datasheet belongs to a state of the board, and P-3 says when it is older.
 2. **In the project that uses the board:** `edakit part own ../board` copies the datasheet into the parts database
    and adds where it comes from: the path, the commit, the repository, and the gate run that released this state of
-   the board if there is one (`<reports>/*/fab/manifest.json` of the board's project). The component names it like a
+   the board if there is one and it was neither superseded nor withdrawn (`<reports>/*/fab/manifest.json` of the
+   board's project, 8.3). The component names it like a
    part bought elsewhere – `"part": "<name>"`, `"bom": false` (JLCPCB does not have it), the pins as in the entry –
    and gets an `easyeda_device`: a symbol with these pin names and the board's footprint, from your EasyEDA library.
 3. **Sign it off** like any part (4.3), against the datasheet at that commit. Copying the same state again keeps the
@@ -217,3 +255,36 @@ the datasheet. The skill `own-part` asks for pins, supply range and current once
 writes the entry with `own: {"what": "pcb" | "bin" | "handmade", "notes": …}`: every value with its source ("measured
 2026-11-02, multimeter …, all LEDs on: 182 mA"), what is guessed as "assumption …", and the sign-off against those
 notes. The checks treat it like the copy of an edakit board; P-3 has nothing to compare it with.
+
+## 4.6 Datasheets kept with the project
+
+`edakit part fetch <key>` downloads the datasheet of a parts entry once and keeps it – every later reader, the
+sign-off, the second check M-1, a review, reads the same file. `edakit part fetch --all` fetches every entry that has
+none yet. The sources, in this order:
+
+1. `--url URL`
+2. the entry's `datasheet.url`
+3. for an LCSC number, `pdfUrl` of LCSC's product data (`https://wmsc.lcsc.com/ftps/wm/product/detail?productCode=…`)
+4. `dataManualUrl` of exactly that number in JLCPCB's catalogue (the endpoint of F-2)
+
+An HTML page is searched once for a link to a PDF (the viewer of an `item.szlcsc.com` page, the download of a JLCPCB
+part page). Only a complete PDF counts – it starts with `%PDF` and has its `%%EOF` in the last 64 kB (some tools
+append metadata after it). A refused request, an HTML page, a download that broke off or an expired signed link is
+reported with its reason, and an earlier copy stays as it is ("kept the copy of 2026-10-27", exit 2).
+
+The copy goes to `<datasheets>/<key>.pdf` (`[project] datasheets`, default `<artifacts>/datasheets`: not versioned; a
+folder in the repository keeps them with the project) and its record to `<key>.json`: `url` (the source's address),
+`pdf_url` (the link a page led to), `source`, `sha256`, `fetched`, `bytes`, `pages`, `text` and `names_mpn`. The
+parts entry is not touched – a change there renews the circuit hash and lapses the sign-offs (4.3). A sign-off
+records the hash it read as `verified.datasheet_sha256`; a new download with another hash is a warning, "changed
+since the sign-off".
+
+With `pdftotext` (poppler-utils) on PATH the text is checked; `edakit doctor` says whether it is there:
+
+| The text | Result |
+|---|---|
+| names the `mpn` as a whole word (case ignored) | ok, `names_mpn: "yes"` |
+| does not name it | note, `"no"` – some vendors never print it (the KT-0805G sheet says only "0805"); compare package, drawing and values |
+| names it only inside a longer part number | warning, the variant: `"MT3608L"` for MT3608 – a sheet of another part (pin 6 OC instead of NC) |
+| has no text layer (fewer than 20 characters a page) | note, `text: false`: scanned, read the drawings as images (`pdftoppm -r 300 -png`) |
+| no pdftotext | note, `text: null` – nothing checked |

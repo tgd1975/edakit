@@ -1,0 +1,141 @@
+{
+ "code": 200,
+ "data": {
+  "componentPageInfo": {
+   "list": [
+    {
+     "componentCode": "C17414",
+     "componentModelEn": "0805W8F1002T5E",
+     "componentBrandEn": "UNI-ROYAL(Uniroyal Elec)",
+     "componentLibraryType": "base",
+     "preferredComponentFlag": false,
+     "stockCount": 53552563,
+     "componentPrices": [
+      {
+       "startNumber": 1,
+       "endNumber": 999,
+       "productPrice": 0.0034
+      },
+      {
+       "startNumber": 1000,
+       "endNumber": 4999,
+       "productPrice": 0.0026
+      },
+      {
+       "startNumber": 5000,
+       "endNumber": 9999,
+       "productPrice": 0.0018
+      },
+      {
+       "startNumber": 10000,
+       "endNumber": 49999,
+       "productPrice": 0.0016
+      },
+      {
+       "startNumber": 50000,
+       "endNumber": 50199,
+       "productPrice": 0.0014
+      },
+      {
+       "startNumber": 50200,
+       "endNumber": -1,
+       "productPrice": 0.0014
+      }
+     ],
+     "lossNumber": 10,
+     "leastPatchNumber": 20,
+     "describe": "-55℃~+155℃ 10kΩ 125mW 150V Thick Film Resistor ±1% ±100ppm/℃ 0805 Chip Resistor - Surface Mount ROHS"
+    },
+    {
+     "componentCode": "C20622501",
+     "componentModelEn": "C17414",
+     "componentBrandEn": "UNI-ROYAL(Uniroyal Elec)",
+     "componentLibraryType": "expand",
+     "preferredComponentFlag": false,
+     "stockCount": 0,
+     "componentPrices": [
+      {
+       "startNumber": 1,
+       "endNumber": 99,
+       "productPrice": 0.0398
+      },
+      {
+       "startNumber": 100,
+       "endNumber": -1,
+       "productPrice": 0.0205
+      }
+     ],
+     "lossNumber": 4,
+     "leastPatchNumber": 5,
+     "describe": "0805 New Arrivals ROHS"
+    },
+    {
+     "componentCode": "C9900174869",
+     "componentModelEn": "C17414",
+     "componentBrandEn": "JLCPCB Assembly",
+     "componentLibraryType": "expand",
+     "preferredComponentFlag": false,
+     "stockCount": 0,
+     "componentPrices": [
+      {
+       "startNumber": 1,
+       "endNumber": 99,
+       "productPrice": 0.0398
+      },
+      {
+       "startNumber": 100,
+       "endNumber": -1,
+       "productPrice": 0.0205
+      }
+     ],
+     "lossNumber": 4,
+     "leastPatchNumber": 5,
+     "describe": "R0805 SMT ROHS"
+    },
+    {
+     "componentCode": "C19980441",
+     "componentModelEn": "C17414_SPORT-2X2-S6",
+     "componentBrandEn": "Ledil",
+     "componentLibraryType": "expand",
+     "preferredComponentFlag": false,
+     "stockCount": 0,
+     "componentPrices": [
+      {
+       "startNumber": 1,
+       "endNumber": 9,
+       "productPrice": 7.2249
+      },
+      {
+       "startNumber": 10,
+       "endNumber": 11,
+       "productPrice": 7.2249
+      },
+      {
+       "startNumber": 12,
+       "endNumber": 195,
+       "productPrice": 7.2249
+      },
+      {
+       "startNumber": 196,
+       "endNumber": 503,
+       "productPrice": 2.8841
+      },
+      {
+       "startNumber": 504,
+       "endNumber": 1007,
+       "productPrice": 2.7875
+      },
+      {
+       "startNumber": 1008,
+       "endNumber": -1,
+       "productPrice": 2.7401
+      }
+     ],
+     "lossNumber": 0,
+     "leastPatchNumber": 0,
+     "describe": "- Optoelectronics Accessories ROHS"
+    }
+   ]
+  }
+ }
+}

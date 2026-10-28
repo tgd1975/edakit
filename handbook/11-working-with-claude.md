@@ -25,6 +25,7 @@ agreements are as important as the scripts.
 | agent | `edakit:pcb-reviewer` | independent layout review (read-only EasyEDA tools); its result is the sign-off M-5 |
 | MCP | `easyeda` | easyeda-mcp-pro, pinned, safe defaults |
 | hook | PreToolUse on the easyeda tools | claims EasyEDA for the session, refuses when another session holds it |
+| hook | SessionStart | in an edakit project: the working agreements of 11.4, one line each, into the session's context |
 | bin | `edakit` | the command line on the Bash PATH |
 
 Skills trigger on their description; you can also call them by name. Put project-specific rules (what the user wants
@@ -42,6 +43,12 @@ So EasyEDA is **claimed per session** (`edakit lock`), independent of anything g
 
 - The first EasyEDA access claims automatically (the hook for MCP tools, every edakit command for scripts); every
   access renews it; it expires after 15 minutes without access. Tools that only ask about the connection are free.
+- **Library lookups pass the claim:** the device search (`easyeda_schematic_search_device`) and the device reads
+  through `easyeda_api_call` (paths beginning `LIB_Device.search` or `LIB_Device.get`) leave the open document and tab
+  as they are, so they neither take nor renew a claim – a part search runs while another session routes, and it does
+  not block EasyEDA for 15 minutes afterwards. The list is data in `edakit/lock.py` (`READ_ONLY_TOOLS`,
+  `READ_ONLY_API`); an entry joins only with the evidence that the call leaves the active document as it was. (A part
+  lookup once waited 38 minutes behind a layout session.)
 - Another session is refused with who holds EasyEDA and since when. It waits, or asks the holder (ListAgents →
   SendMessage).
 - **Letting a short run in:** a run under 5 minutes on another document need not wait behind a long one. The holder,
@@ -60,7 +67,11 @@ EDA-specific), but if you run parallel sessions in one repository, build or adop
 
 ## 11.3 Long runs
 
-- Say up front how long it will take and which step is the longest; show progress (step n/m, minutes).
+- Say up front how long it will take and which step is the longest; show progress (step n/m, minutes). edakit's long
+  commands print it themselves, one line before each step, flushed at once: `[ 3.2 min] step 4/8: pours` –
+  `route all`, `gate` (each stage and project stage, with `--easyeda` each board), `pcb apply`, `silk apply`, `export`
+  (two steps per board) and `schematic create`/`layout` (each phase, followed by its duration and EasyEDA's memory). A
+  Monitor on `step ` lines shows where a run is and since when; a stalled run stalls in the step it last named.
 - Start long runs in the background; wait for the notification or watch the log. **Never wait with `pgrep -f`** on a
   pattern in the same command line – it finds its own shell and never ends. Write an end line and the PID, wait for
   either.
@@ -68,6 +79,11 @@ EDA-specific), but if you run parallel sessions in one repository, build or adop
 - `uv` installed as a snap cannot write to files Claude Code hands it as stdout: `… 2>&1 | cat`.
 
 ## 11.4 Working agreements that proved themselves
+
+Every session in an edakit project starts with this list: the plugin's SessionStart hook (`edakit/agreements.py`)
+finds the project's edakit.toml and adds one line per agreement – its number and bold title, read from this
+section – with the path of this chapter. A new agreement needs nothing but its numbered item with a bold title here.
+`[project] agreements = false` in edakit.toml turns it off; outside an edakit project the hook adds nothing.
 
 1. **Everything in EasyEDA is generated, so it may be deleted.** Claude deletes tracks, pours, parts, schematics and
    regenerates them without asking for permission or proposing a backup.
@@ -79,17 +95,19 @@ EDA-specific), but if you run parallel sessions in one repository, build or adop
 4. **An agent's check is the sign-off.** If an independent agent checked it, it is either OK (signed, `done_by` = the
    agent) or not OK (fixed and checked again). No checklists for the user to re-check what an agent can check. Only
    real decisions go to the user: accepting a warning, looks and operation, money.
-5. **Decision rounds:** numbered findings with consequence and a recommended proposal; the user answers "ad 1 ack,
-   ad 2 b, ad 3 you decide"; every answer becomes a numbered decision with reason and date (decision-round skill).
-6. **Realistic risks.** Per risk: how likely, what it costs. Delivery delays and stock problems are force majeure –
-   one line. A deviation from a datasheet recommendation without a realistic consequence is not a finding.
+5. **Open questions go to the user in decision rounds.** Numbered findings with consequence and a recommended
+   proposal; the user answers "ad 1 ack, ad 2 b, ad 3 you decide"; every answer becomes a numbered decision with
+   reason and date (decision-round skill).
+6. **Realistic risks: how likely, what it costs.** Per risk, and the review agents per finding too. Delivery delays
+   and stock problems are force majeure – one line. A deviation from a datasheet recommendation without a realistic
+   consequence is not a finding.
 7. **Check that a proposal fits before proposing it.** Dimensions from the datasheet of the exact part (including
    solder tabs) against the board geometry; electrical specs of the exact part, not of a similar one.
-8. **Robust, not fitted.** Mechanical parts derived from the layout (enclosures, stands) get uniform clearances over
-   areas and contact only where needed – not pockets fitted to today's pins.
+8. **Robust, not fitted to today's layout.** Mechanical parts derived from the layout (enclosures, stands) get
+   uniform clearances over areas and contact only where needed – not pockets fitted to today's pins.
 9. **Name stages and checks with words.** "Stage L (board)", "L-9 (hole fits the lead)" – nobody remembers letters.
 10. **Cost matters, effort is no argument.** A cheaper part is worth a gate run; a gate run is routine, not a cost.
-11. **Requests to the user stand apart** at the end of a message, not hidden in a paragraph.
+11. **Requests to the user stand apart at the end of a message**, not hidden in a paragraph.
 12. **Circuit, layout and review are separate roles** (chapter 14.1). The circuit designer (skill circuit-design)
     hands over in writing, the PCB designer works from that in a session of its own (skill pcb-round), and the agents
     electrical-reviewer and pcb-reviewer review in theirs. A design reviewed by its designer has not been reviewed.
@@ -100,10 +118,51 @@ EDA-specific), but if you run parallel sessions in one repository, build or adop
     datasheets – a rule from memory is said to be one and reported as a candidate.
 14. **What a project had to build itself goes back as a feature proposal**, not as a quiet copy in edakit and not as
     a lasting workaround in the project (11.6).
+15. **Time-box a failing tool.** When a tool keeps failing, read its documented limits and try the alternative before
+    writing repair tooling around it – fixing the tooling (2) starts there. In the reference project about a day and
+    1000 lines of repair code went into EasyEDA's autorouter, whose documented behaviour is all or nothing; Freerouting
+    then routed the same board in 1.5 minutes with DRC 0.
+16. **Reported means read back.** A change written to the EDA is reported or documented only after save, reload and
+    read-back – best from the exported files. A fix of hole sizes and slots was reported, and written into the parts
+    database and a decision, while EasyEDA had reverted it; the documents were wrong for about 1.5 hours.
+17. **Tool and UI facts only from verified output.** Commands, API names, menu entries and options in documents or
+    instructions come from the tool itself – the API inventory, the extension's manifest, the editor's bundle –
+    never from memory; look for the EDA's own API before building a fallback around it. About 600 lines of invented
+    automation docs (commands, a package, API calls that do not exist) and mock scripts with invented part numbers
+    took about an hour to clean up; a raster PDF stitched from 36 screenshots was presented as the only option while
+    the API had a vector export (35 minutes).
+18. **Probes on a throwaway document.** Tests and probes run on a scratch document, never on a generated document the
+    project uses; probe documents and library objects without a device are removed when done. A test run overwrote
+    the real 113-part schematic; later, leftover probe schematics and a footprint copy without a device put a dialog in
+    front of the user whose wrong answer would have changed the footprint of the main module in the order data.
+19. **A principle the user has set stays set.** State the effort once, plainly; do not reopen a decided principle
+    with effort arguments. After the user had set "nothing on the visible side but the LEDs", moving the tracks was
+    answered with "a day of work with risk" and two more questions about alternatives – two extra decision rounds.
+20. **Fix defects in your own choices.** A failing check on a part, footprint or value Claude chose is fixed and
+    reported, not put to the user as "may I swap?"; only real trade-offs go to the user (4). On a second project
+    Claude asked the user to approve swapping a footprint it had chosen itself, after the hole check failed on it.
+21. **Say honestly how far the automation goes.** Documents and READMEs name the steps that were done or fixed by hand
+    and the ones never run live. A README claimed that nothing in the EDA project was drawn by hand while much had been
+    developed by hand around it; it had to be rewritten.
+22. **Prefer what the project already does.** Among options, recommend the mechanism the project already uses (a plug
+    and a cable, screws) over a new one (spring contacts, docking); if a new one is the only way, say that it is new
+    and what must be tested. Spring-contact docking was recommended where a plug and a cable like the existing ones
+    did the job, and rejected as a mechanism the project never had.
+23. **Take a stated rule literally, keep a new feature on its own.** Do not tie it to existing mappings or build on an
+    optional aside. A progress display stated as "from bottom left to top right" was mapped onto an unrelated existing
+    order of the LEDs, followed by the question whether to rearrange other content to fit it.
+24. **A declared phase limits what changes.** While the user calls the work a concept phase, every request changes the
+    concept documents only – not graph, board files or firmware – until an explicit go. In a concept phase, requests
+    about a 3D-printed part were taken as orders to change it; the phase had to be restated three times.
+25. **Project documents stay in the repository.** Reports and documentation are files in the repository; nothing is
+    published to an outside service unless the user asks. A documentation request once ended as a page hosted outside
+    the repository.
 
 ## 11.5 Memory and project knowledge
 
-Claude Code's memory (per project) is the place for preferences like the ones above that are not in the code. Facts
+The agreements of 11.4 reach every session through the plugin, so a new project does not meet them again the hard
+way. Claude Code's memory (per project) and the project's CLAUDE.md are the place for the preferences of one project
+that are not in the code. Facts
 that are in the repository (decisions, checks, API behaviour) belong in the repository – the decision log, the
 handbook, comments next to the code they explain. Each quirk in chapter 9 is also written as a comment where edakit
 works around it, so the next person does not "simplify" the workaround away.

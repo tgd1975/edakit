@@ -3,9 +3,9 @@
  "checks": {
   "P-1": {
    "title": "graph pins = parts database",
-   "rule": "Every part with an LCSC number – or, bought elsewhere, with a manufacturer part number in part – has a parts entry, its pins (number and name) equal that entry, and no supply pin is marked nc.",
+   "rule": "Every part with an LCSC number – or, bought elsewhere, with a manufacturer part number in part – has a parts entry, its pins (number and name) equal that entry, and no supply pin is marked nc. When edakit part import has cached the library's symbol of the number, the graph's pins equal that symbol as well (case and blanks ignored, as S-2).",
    "why": "Checks, simulation, schematic generation and the BOM all read the parts entry. A pin number shifted by one, a wrong LCSC number or a missing entry makes them reason about another part than the one that gets assembled. A supply pin left open leaves an IC unpowered or powered through its I/O pins.",
-   "fix": "Create the entry with the part-search skill. Take pin numbers and names from the EasyEDA symbol of exactly this part and copy them into the graph.",
+   "fix": "Create the entry with the part-search skill; edakit part import <LCSC> reads pin numbers and names from the library symbol of exactly this part. Copy them into the graph. Names deliberately different from the symbol: waive P-1 on the component with the reason.",
    "sources": ["edakit handbook 3.2 and 4.1"]
   },
   "P-2": {
@@ -22,14 +22,38 @@
    "fix": "In the board's project: edakit part datasheet, then commit. In the host: edakit part own <path to the board's project>. Release the board there (edakit gate) and copy again, or accept the warning in the sign-off file with the reason.",
    "sources": ["edakit handbook 4.5"]
   },
+  "P-4": {
+   "title": "parts orderable",
+   "rule": "Every assembled part (an LCSC number, not bom: false) is in the stock snapshot of edakit stock, listed in JLCPCB's assembly catalogue, in stock for [project] quantity boards – under Standard PCBA with the assembler's attrition, max(placements + lossNumber, leastPatchNumber) – named as its parts entry names it, and not 'Standard Only' on an Economic order. MSL 5 or more (baked), stock below the need plus [project] stock_margin_pct and another library class than the entry's jlc_class are warnings; a part the snapshot lacks or could not read and a snapshot older than [project] stock_max_age_days are pending.",
+   "why": "What the assembler can place is decided when the part is chosen, not when the BOM is uploaded. A part only LCSC stocks is 'pre-order only' at JLCPCB; a 'Standard Only' part (large holders, modules) turns a one-sided Economic order into Standard with setup per side and loading fees on every type; an MSL 5 part is baked for a fee and two days; a catalogue entry under another part number is another part. Found in the quote, each of these costs a part swap, sign-offs again and gate runs.",
+   "fix": "edakit stock after every part change. A part that fails: another part (part-search, edakit stock --lcsc for the candidates), the part soldered by hand (bom: false), or Standard PCBA chosen on purpose ([release] assembly.pcba = \"standard\"). A wrong MPN: correct the parts entry or the LCSC number. Accept a warning in the sign-off file with its reason.",
+   "sources": ["edakit handbook 4.2 and 8.4", "JLCPCB part pages (PCBA Type, MSL, X-ray) and the quotes of 2026-10-24 and 2026-10-25 (attrition)"]
+  },
+  "P-5": {
+   "title": "supplier per part",
+   "rule": "Every part bought separately and fitted by hand (bom: false) has an LCSC number or an order entry in its parts entry ({supplier: code} or {supplier: {code, moq, step}}), so that edakit order can put it into a cart. A C99… number is an EasyEDA user-library entry, not an LCSC number: LCSC does not sell it. A warning.",
+   "why": "The assembler's BOM leaves out every hand-soldered part, module and cable. What has no supplier and no order code is written into an order list by hand, late and without spares or the supplier's minimum – a 50-pack that does not exist, one LED short for the last board.",
+   "fix": "Add order to the parts entry, e.g. {\"berrybase\": \"OSM5DK7331A\"} or {\"lcsc\": {\"moq\": 20, \"step\": 20}}, or give the component its LCSC number – for a C99… library number the supplier the part really comes from; then edakit order. Accept the warning in the sign-off file if the part is at hand already.",
+   "sources": ["edakit handbook 4.1 and 8.4"]
+  },
   "P-6": {
    "title": "graph and parts entry name the same part",
    "rule": "Every component names the same part as its parts entry: the entry's lcsc equals its file name, the component's lcsc is no C99… user-library number (unless it stays out of the BOM, bom: false), its part names the entry's mpn (remarks in parentheses or after a semicolon left out, case ignored; a part that starts with a value, such as \"330 Ω 0805\", is that value), its value reads as the entry's value_ohm, value_f or value_h within 1 %, and its type fits the entry's kind (microcontroller and regulator: ic or module; transistor: npn, pnp, nmos, pmos; led: led or led_rgb; switch: switch or dip_switch; audio: buzzer; any other type the same word). A designator prefix that contradicts the kind (R, C, L, D, Q, U, J, SW, F, BT, BZ, K, TP) is a warning.",
    "why": "P-1 compares only pins, and every two-pin part has the same pins whatever it is. A number that points to another part, or an entry written for another number, passes stages P, G and E – and JLCPCB assembles what the number says, on every board. In the reference project the design document's LCSC numbers were wrong in eight places, found by hand against LCSC: C25789 ('74HC165') is a 464 kΩ resistor, C124327 ('10 kΩ') a crystal, six more did not exist. A C99… number looks like any other in EasyEDA's library, with supplier LCSC and class Extended Part, but nobody sells it.",
-   "fix": "Correct whichever side names the wrong part: take the number by exact match from the catalogue (handbook 4.2) and write the entry from that number, or correct the graph's part, value or type. Replace a C99… number with an orderable part, or keep the part out of the BOM (bom: false) when it is plugged in or bought elsewhere. An intended mismatch – a part soldered by hand that borrows the entry of a sister part – is waived on the component with its reason.",
+   "fix": "Correct whichever side names the wrong part: take the number by exact match from the catalogue (handbook 4.2) and write the entry from that number (edakit part import), or correct the graph's part, value or type. Replace a C99… number with an orderable part, or keep the part out of the BOM (bom: false) when it is plugged in or bought elsewhere. An intended mismatch – a part soldered by hand that borrows the entry of a sister part – is waived on the component with its reason.",
    "sources": [
     "edakit handbook 3.1 (component fields type, lcsc, part, value), 4.1 (entry fields, kind, value parameters) and 4.2 (exact match only, C99… user libraries)",
     "reference project: decision E-15, invalid LCSC numbers checked against LCSC on 2026-10-19 (C25789, C124327, C299999, C17236, C15942, C124278, C124279, C17347) and replaced"
+   ]
+  },
+  "P-7": {
+   "title": "through-hole leads known and fitting the footprint",
+   "rule": "Every part whose footprint has plated holes has lead data in its parts entry (field lead), and every hole of the footprint geometry – the board's pcb dump, else the library footprint of edakit part import – takes its lead at nominal size (L-9's test); less than 0.05 mm play in the worst case, or a plated slot narrower than 0.5 mm, is a warning. Without geometry it is not run.",
+   "why": "L-9 finds a hole that does not take its lead only in the gate, on the drill file of a board that has been placed and routed: in the reference project every misfit was found there, five rounds over three days, each voiding the layout sign-off – the star LED's library footprint drilled 0.70 mm for 0.5 mm square legs (diagonal 0.71 mm), a USB-C receptacle's shell-leg slots failed after the board was reported done. The holes and the leads are known as soon as the part is chosen.",
+   "fix": "Lead data from the datasheet into the parts entry (handbook 4.1); a footprint with larger holes, a part with thinner leads, or a decision (D-...) if the fit is accepted. L-9 checks the drill file again in the gate.",
+   "sources": [
+    "JLCPCB PCB capabilities: hole size tolerance +0.13/-0.08 mm, minimum plated slot width 0.5 mm on 2 layers – https://jlcpcb.com/capabilities/pcb-capabilities (read 2026-10-27)",
+    "edakit handbook 13.6 and 8.1 (L-9)"
    ]
   },
   "G-1": {
@@ -180,9 +204,18 @@
     "Lesson of the reference project (pytree D-41, 2026-10-23): in the released run 20261023-000107 the MT3608 boost's diode cathode (D33) reached its output capacitor C13 over 61 mm of copper across the board; DRC, the gate and the electrical review passed it, the layout review (M-5) found it; the fix listed four pad pairs (L1.2–U6.1 ≤ 6 mm, U6.1–D33.2 ≤ 5 mm, D33.1–C13.1 ≤ 5 mm, C13.2–U6.2 ≤ 8 mm), the 61-mm segment on V_LED, a net without a pin of U6"
    ]
   },
+  "G-19": {
+   "title": "documents quote the design data",
+   "rule": "Every value block in a Markdown file of [docs] files equals its source – a graph value, a parts entry field or the simulation result – and every source quoted in a block or in a placeholder of the schematic notes exists.",
+   "why": "Numbers in descriptions, decisions and schematic notes are typed once and then lag behind the circuit: a resistor swapped, a margin changed, a part removed. Reviewers and the next session read the stale number as a fact.",
+   "fix": "edakit docs --write fills in the current values. A source that no longer exists: quote the part or net that replaced it, or drop the block. Documents are in no hash, so this voids no sign-off.",
+   "sources": [
+    "edakit handbook 6.6"
+   ]
+  },
   "E-1": {
    "title": "operating point",
-   "rule": "The DC operating point of every scenario converges, and the simulation config fits the graph.",
+   "rule": "The DC operating point of every scenario and every transient run converges, and the simulation config fits the graph.",
    "why": "A scenario that does not converge checks nothing. Usually a node has no DC path to ground, a parameter is missing, or the config names a net or part that does not exist.",
    "fix": "Read the message: give a floating node a path (often a real design fault), complete the parts entry, or correct sim.json.",
    "sources": ["edakit handbook 5.1"]
@@ -208,6 +241,13 @@
    "fix": "Give every load leds_on: the LEDs that light in it (the designator, or D10_RED for one colour of an RGB LED), [] when none does. Or put the LED's cathode on a driver output. An LED left out needs the roles anode and cathode – anode_<color> and cathode, or anode and cathode_<color>, for an RGB LED – in its parts entry (handbook 4.1).",
    "sources": ["edakit handbook 5.3: a reversed LED elsewhere stays dark where it should light – the polarity check of the graph", "edakit rules.json G-7 (retired): polarity is checked by the simulation"]
   },
+  "E-5": {
+   "title": "transient limits",
+   "rule": "In every run of transients (sim.json) – the supplies following piecewise-linear curves over time from the operating point at t = 0 – every limit of the run's expect holds: a net's lowest voltage ≥ min_v and highest ≤ max_v, a source's peak current ≤ i_max_a; and the supply pin of every MCU whose ratings give vin_min (or vsys_min), once it has reached that minimum, does not fall below it again before the run ends.",
+   "why": "A board can pass every DC scenario and still reset whenever its supply changes: two P-MOSFETs back to back that let go of the cells before the USB diode conducts, a bulk capacitor too small to bridge an unplug, a source ramp that crosses a regulator's lockout. A DC scenario sits at one point of the curve, either side of the gap; only a run over time passes through it. The same run shows the inrush a plug-in takes from the source.",
+   "fix": "Close the gap or bridge it: more bulk capacitance at the rail (C ≥ I × t / ΔV for the time no source feeds it), a path that conducts before the other one lets go (a Schottky diode across the gap, an ideal-diode or power-mux IC), a regulator whose lockout lies below the dip. Against inrush: less capacitance behind the connector or a load switch with soft start. A run a procedure excludes (unplug only when switched off) stays as info: true. The limits come from the datasheets: the MCU's vin_min or brown-out level, a source's i_max_a.",
+   "sources": ["edakit handbook 5.2 (transient runs) and 5.3", "ngspice User's Manual, independent sources: PWL(T1 V1 T2 V2 …) holds V1 before T1; .tran starts from the DC operating point unless uic is given", "Raspberry Pi Pico 2 datasheet: VSYS 1.8–5.5 V – the vsys_min of the example's Pico 2 entry (tests/fixtures/led-bar/hardware/parts/C41407547.json)", "Universal Serial Bus Specification Revision 2.0 (April 27, 2000), 7.2.4.1 Inrush Current Limiting: at most 10 µF in parallel with 44 Ω at the downstream end of a cable"]
+  },
   "S-2": {
    "title": "schematic = graph",
    "rule": "Every schematic in EasyEDA has exactly the graph's parts (LCSC number, designator) and nets (pins, no-connects).",
@@ -231,9 +271,9 @@
   },
   "L-3": {
    "title": "DRC",
-   "rule": "EasyEDA's design rule check reports nothing after save and reload.",
-   "why": "Clearances, widths and open connections below the manufacturer's limits. Right after API changes the DRC reports false errors, so it runs after a reload.",
-   "fix": "edakit route reload, then fix what remains (route all, the plan).",
+   "rule": "EasyEDA's design rule check reports nothing after save and reload. A \"Netlist Error – Import Changes\" item is checked on its own: schematic and PCB are compared as edakit pcb parts and pcb nets do.",
+   "why": "Clearances, widths and open connections below the manufacturer's limits. Right after API changes the DRC reports false errors, so it runs after a reload. After parts were placed in the schematic, EasyEDA reports Import Changes until its import view has been opened once – even when schematic and PCB are equal; in the reference project that held the gate for 2¾ h and ten runs.",
+   "fix": "edakit route reload, then fix what remains (route all, the plan). Import Changes with no difference (\"EasyEDA waits for the import acknowledgement\"): open Design → Import Changes once in EasyEDA – it shows no changes. With differences: edakit pcb parts --write (parts, links, properties) or edakit pcb nets --write (pad nets), as the row says.",
    "sources": ["edakit handbook 7 and 9"]
   },
   "L-4": {
@@ -327,6 +367,13 @@
    "fix": "Own print on an opening: run edakit silk apply again after the last routing. Footprint print on an opening or beyond the outline: correct the footprint, or accept the warning. A part without a designator: give it room, a group label ([silk] groups), or list it in [silk] unlabelled with the reason. A text below 1.0 mm: raise label_h_mm, board_label_h_mm or h_mm, or accept the warning.",
    "sources": ["JLCPCB PCB Manufacturing Capabilities, Legend (read 2026-10-27): minimum line width 0.15 mm; minimum text height 40 mil (1.0 mm), 'Characters height less than 40 mil(1.0mm) will be unidentifiable'; minimum distance between pad and silkscreen 0.15 mm – https://jlcpcb.com/capabilities/pcb-capabilities", "edakit handbook 7.7 and 8.1", "the reference project's layout review M-5, 2026-10-25: footprint frames on pads, designators about 0.7 mm high accepted; JLCPCB's DFM warning 'silkscreen outside board' on its base board, accepted"]
   },
+  "L-18": {
+   "title": "hand-soldered joints keep clear",
+   "rule": "With [routing] hand_solder_keep_mm of the board file (0 = off, the default), no via and no pad of another net comes closer than that, copper to copper, to a through-hole pad of a part soldered by hand (bom: false in the graph) on its solder side – the copper layer the part does not sit on; a pad without a net counts as a net of its own, the part's own pads are not compared, tracks do not count. route check measures it before anything is written to EasyEDA, and route dsn keeps vias out with a via keep-out; stage L measures the pads of route read while they are the PCB's and the vias of the via drill file, each with the net of the tracks that end on it – a via no track ends on counts as another net's.",
+   "why": "A joint soldered by hand is made with an iron and wire solder, not with a stencil print of fixed volume, and a tented via or a foreign pad a few tenths of a millimetre away can take a bridge. Nothing else keeps that distance: vias keep only the routing clearance from pads (6.5 mil, 0.165 mm), pads of different parts the same (L-13), and EasyEDA's DRC (L-3) its own copper rule. The bridge appears only at assembly, so the bare-board test cannot find it, and on a board people solder themselves it means rework. In the reference project the layout review found a via 0.25 mm from a hand-soldered LED pad on its solder side – a bridge would have put 5 V without its series resistor on an LED – and a via between two potentiometer pins at 0.26 mm; both became a loupe check of every board. A later review found the 3V3 pad of a 0 Ω resistor 0.37 mm from a 5 V joint of a hand-soldered LED. Every check had passed, the DRC was 0. Tracks are left out: they run under the solder mask and between the pins of a 2.54 mm part, where they cannot keep more than about 0.2 mm, and the reference project's reviews passed 30 such tracks on the released board. The distance is the project's choice: no standard that was opened gives a number for hand soldering.",
+   "fix": "Move the via, or move or turn the part in [place] of the board file, until hand_solder_keep_mm is kept on the solder side, then route again. route dsn keeps vias of every net out with a via keep-out around each joint (the pad grown by the keep), which Freerouting reads, so a new routing keeps them away; the joint's own net reaches it by track. Pads of other nets stop route all at its check, like L-13: move one of the two parts. A pair that is close on purpose is waived on the joint's part or net, or on the other part or net, with the reason (waive L-18). 0.5 mm covers the reference project's findings (0.25, 0.26 and 0.37 mm) and passes its released board, where the resistor moved to 1.07 mm.",
+   "sources": ["Reference project (pytree): layout review M-5 at gate run 20261023-152935 – a via 0.25 mm copper to copper from LED D12 pad 1 (V_LED) on the electronics side, the LEDs' solder side, and a via between pins 2 and 3 of RV1; acceptance list check 1.7 (loupe check of both, commit 0ac0c9d). M-5 at gate run 20261025-193700: R51 (0 Ω, 3V3) 0.37 mm from a 5 V joint of the hand-soldered LED D23, moved to 1.07 mm in run 20261025-204229 (commit 4f10911, signoff.json M-5 note)", "Owner's answer on edakit proposal #59 (2026-10-27): only vias and pads of other nets count, tracks do not; a via without a track to give its net counts as another net's – the triage's choice, the conservative side", "AllPCB, Pad-to-Pad Spacing Demystified: A Practical Guide for PCB Manufacturability (read 2026-10-27; a secondary source): 'A minimum spacing of 0.3 mm (12 mils) between pads and vias is recommended' against solder wicking; through-hole pads 'around 1 mm (40 mils), due to the nature of wave soldering'; the soldering method, hand soldering among them, impacts spacing requirements, without a number – https://www.allpcb.com/allelectrohub/pad-to-pad-spacing-demystified-a-practical-guide-for-pcb-manufacturability", "Freerouting 2.4.1 release (the version edakit pins): its Specctra reader app/freerouting/io/specctra/parser/Structure knows the keep-out type via_keepout (VIA_KEEPOUT, viaKeepoutList)", "edakit handbook 7.5, 8.1 and 8.4 (Economic PCBA: through-hole parts you solder yourself get bom: false)"]
+  },
   "F-1": {
    "title": "BOM = graph",
    "rule": "The BOM generated from the graph equals EasyEDA's BOM per designator, and every LCSC number is in the parts database; parts with bom: false are left out on purpose.",
@@ -336,7 +383,7 @@
   },
   "F-2": {
    "title": "stock at JLCPCB",
-   "rule": "Every BOM line is in JLCPCB's assembly catalogue with stock for [project] quantity boards.",
+   "rule": "Every BOM line is in JLCPCB's assembly catalogue with stock for [project] quantity boards, under the MPN of its parts entry (case and blanks ignored); another library class than the entry's jlc_class is a warning.",
    "why": "LCSC's stock and JLCPCB's assembly stock differ. A part that is not available can only be pre-ordered, which delays the order or changes the price.",
    "fix": "A part in stock (part-search skill); a cheaper part that is available is worth a gate run.",
    "sources": ["edakit handbook 4.2"]
@@ -361,6 +408,13 @@
    "why": "A missing layer or a shifted outline is found at the factory at best; tooling holes with copper or mask make JLCPCB add their own.",
    "fix": "Export again; correct outline, holes or tooling holes in the board file and apply them.",
    "sources": ["edakit handbook 7 and 8.1"]
+  },
+  "F-6": {
+   "title": "order settings = board",
+   "rule": "With [order] in the board file: the remark has at most 200 characters, all ASCII; mark = \"specify\" has the placeholder JLCJLCJLCJLC on a silkscreen layer, at least 0.8 mm high in [[silk.texts]] (a height not given there is a warning); a placeholder with another mark is a warning; an Economic order with fewer than 2 tooling holes is a warning; no copper of either side lies within tab_copper_mm (1.0 mm) of a declared tab zone of the outline, measured on the Gerber files. The outline stretches free of copper are listed, and fab/<board>/order.md holds the form.",
+   "why": "The order form fields that depend on the board are filled in by hand while ordering: a cart with 'Remove Mark' prints the placeholder as text, a remark of 202 characters does not fit the field, a remark that allows tabs where a track runs 0.45 mm from the edge lets the tab cut it, and an Economic order without own tooling holes gets JLCPCB's, possibly on a visible edge. Each was found late in the reference project, the tooling holes only in the quote.",
+   "fix": "Correct [order] of the board file – a shorter ASCII remark, mark = \"specify\" with the placeholder (or another mark), tab zones only on stretches order.md lists as free, or the copper moved back from the edge – or add [tooling] holes. A warning the owner wants (JLCPCB's tooling holes, a hand-placed placeholder) is accepted in the sign-off file.",
+   "sources": ["edakit handbook 8.4", "JLCPCB order form (Mark on PCB, Remark, PCBA Type, Tooling holes); reference order of 2026-10-25"]
   }
  },
  "hints": {

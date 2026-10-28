@@ -108,9 +108,12 @@ def capture_sheet(mcp, page_uuid, path):
     return cols * rows
 
 
-def export_board(cfg, mcp, board, out):
+def export_board(cfg, mcp, board, out, step=None):
+    """step: eda.Steps of `export` – two per board."""
+    step = step or (lambda _: None)
     out.mkdir(parents=True, exist_ok=True)
     rows = []
+    step(f"{board.name}: schematic PDF, netlist, BOM")
     sch, pages = eda.find_pages(mcp, board.schematic)
     eda.focus_page(mcp, sch, pages[0])
     pdf = out / f"schematic_{board.name}.pdf"
@@ -118,6 +121,7 @@ def export_board(cfg, mcp, board, out):
     rows.append((f"{pdf.name} ({kind})", pdf.stat().st_size / 1000 if pdf.exists() else None))
     rows.append((f"nets_{board.name}.txt", write_netlist(mcp, out / f"nets_{board.name}.txt", board.schematic)))
     rows.append((f"bom_{board.name}.csv", write_bom(mcp, out / f"bom_{board.name}.csv")))
+    step(f"{board.name}: PCB PDF, Gerber, pick and place")
     eda.open_pcb(mcp, board.pcb)
     eda.activate_pcb(mcp)
     rows.append((f"pcb_{board.name}.pdf", export(mcp, "easyeda_export_pdf", out / f"pcb_{board.name}.pdf", scope="board")))
@@ -150,15 +154,18 @@ def copy_project(mcp, out):
 
 def main(cfg, args):
     out = cfg.artifact("export", ".keep").parent
+    boards = [cfg.board(args.board)] if args.board else list(cfg.boards.values())
+    step = eda.Steps(1 + 2 * len(boards) + (0 if args.board else 1))
+    step("bridge and project")
     mcp = eda.connect(cfg, args.verbose, artifact_dir=out)  # the export tools write only into the server's ARTIFACT_DIR
     try:
         eda.open_project(mcp, cfg)
         missing = 0
-        for board in [cfg.board(args.board)] if args.board else cfg.boards.values():
+        for board in boards:
             print(f"[{board.name}] -> {out / board.name}")
-            missing += export_board(cfg, mcp, board, out / board.name)
+            missing += export_board(cfg, mcp, board, out / board.name, step)
         if not args.board:
-            print("[project]")
+            step("project file")
             missing += copy_project(mcp, out)
         return 2 if missing else 0
     except MCPError as e:

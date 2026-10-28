@@ -10,8 +10,10 @@ Background and every API quirk: `${CLAUDE_PLUGIN_ROOT}/handbook/02-setup.md`, `0
 
 ## 1. Readiness
 
-1. `edakit doctor 2>&1 | cat` – Node 24, easyeda-mcp-pro, EasyEDA running **unthrottled**, bridge port, ngspice,
-   Freerouting, who holds EasyEDA. Fix every FAIL before going on.
+1. `edakit doctor 2>&1 | cat` – Node 24, easyeda-mcp-pro, EasyEDA running **unthrottled**, the servers'
+   `BRIDGE_TIMEOUT_MS`, bridge port, ngspice, Freerouting, who holds EasyEDA; with EasyEDA running also the bridge:
+   connected, extension against server version, registry, and the return depth ("original extension" = DRC details
+   unreadable – build the patched one, handbook 2.5). Fix every FAIL and these WARNs before going on.
 2. **Unthrottled:** if doctor says "THROTTLED", DRC, pour fills and exports time out as soon as another window covers
    EasyEDA. Save, quit EasyEDA and start it with `--disable-background-timer-throttling --disable-renderer-backgrounding
    --disable-backgrounding-occluded-windows` (handbook 02, the desktop launcher). From a shell started by VS Code or
@@ -27,7 +29,8 @@ Background and every API quirk: `${CLAUDE_PLUGIN_ROOT}/handbook/02-setup.md`, `0
    (`<artifacts>/easyeda_project.json`); the very first time the user opens it once.
 6. **Claim EasyEDA** before a series of runs: `edakit lock claim --note "<what>"`, afterwards `edakit lock release`
    (also after an abort). The plugin hook claims automatically on the first EasyEDA MCP tool and refuses tools while
-   another session holds it; edakit commands do the same. **Never run two EasyEDA jobs at the same time**, not even
+   another session holds it; edakit commands do the same. Library lookups (`easyeda_schematic_search_device`,
+   `easyeda_api_call` on `LIB_Device.search…`/`LIB_Device.get…`) pass without a claim (handbook 11.2). **Never run two EasyEDA jobs at the same time**, not even
    from one session – they switch the active tab and write into the wrong document. A run under 5 minutes on another
    document may be let in between two runs of the holder: the holder runs `edakit lock yield <session>`; when the
    guest releases, EasyEDA goes back to the holder.
@@ -38,7 +41,9 @@ Background and every API quirk: `${CLAUDE_PLUGIN_ROOT}/handbook/02-setup.md`, `0
 ## 2. Long runs
 
 - Start runs that take minutes in the background and show progress (step n/m, minutes, which step takes longest).
-  Do not poll; wait for the notification or watch the log with a Monitor.
+  Do not poll; wait for the notification or watch the log with a Monitor. `route all`, `gate`, `pcb apply`,
+  `silk apply`, `export` and `schematic create`/`layout` print `[x.x min] step n/m: <step>` themselves – watch for
+  those lines instead of adding your own; the END line below stays (it also catches a killed process).
 - **Waiting for a running process:** never `pgrep -f <pattern>` in a loop – the loop's own shell matches the pattern
   and it never ends (cost 10 minutes several times). Write PID and an end line instead:
   `( edakit route all 2>&1 | cat > $LOG; echo "END exit ${PIPESTATUS[0]}" >> $LOG ) & echo $! > $LOG.pid`, and wait with
@@ -55,7 +60,10 @@ Background and every API quirk: `${CLAUDE_PLUGIN_ROOT}/handbook/02-setup.md`, `0
 
 Some things only a human can click (e.g. after parts were newly placed in the schematic, the DRC shows "Netlist Error –
 Import Changes" until the import view was opened once). Avoid dialogs: parts go into the PCB with
-`edakit pcb parts --write`, nets with `edakit pcb nets --write`. If a click is unavoidable:
+`edakit pcb parts --write`, nets with `edakit pcb nets --write`. edakit compares schematic and PCB when the DRC has
+that item: "EasyEDA waits for the import acknowledgement" (exit 3 of `route all|drc` and `silk apply|check`, a fail
+row of L-3) means nothing differs and only the click is left; a list of parts or pads means fix those first, do not
+ask for the click. If a click is unavoidable:
 
 1. Prepare everything so that the click is a plain **OK** – never ask the user to read, copy or judge dialog contents.
 2. Do all other work first; the click comes last.

@@ -24,6 +24,8 @@ extension API. edakit uses the same server.
    from a desktop client without it in PATH.
 3. **uv** (runs edakit with its dependencies): <https://docs.astral.sh/uv/>.
 4. **ngspice** (stage E): `sudo apt install ngspice` (or your package manager).
+   **pdftotext** (optional, poppler-utils): `edakit part fetch` checks with it whether a datasheet has a text layer
+   and names its part number (4.3).
 5. **Freerouting**: nothing to do on Linux x64 – `edakit route` downloads the pinned release (with its own Java)
    to `~/.local/share/freerouting/` and checks its SHA-256. Elsewhere: download `freerouting-2.4.1.jar`, install
    Java 21+, set `FREEROUTING_JAR`. (Java 17 is too old for Freerouting 2.x.)
@@ -41,8 +43,9 @@ In the VS Code extension, which has no `/plugin`: `claude plugin marketplace add
 README, Install.
 
 This installs the skills (`/edakit:start`, `/edakit:hardware-change`, …), the agents, the MCP server `easyeda`
-(tools `mcp__plugin_edakit_easyeda__*`), the EasyEDA claim hook and the command `edakit` on the Bash PATH. Confirm
-the MCP server when Claude Code asks (or `/mcp` → easyeda).
+(tools `mcp__plugin_edakit_easyeda__*`), the EasyEDA claim hook, the session hook that brings the working agreements
+(11.4) into every session of an edakit project, and the command `edakit` on the Bash PATH. Confirm the MCP server when
+Claude Code asks (or `/mcp` → easyeda).
 
 To give every session in a project the plugin automatically, put this into the project's `.claude/settings.json`:
 
@@ -96,8 +99,12 @@ Interactions" itself. Then the menu **MCP Bridge** appears; choose **Enable Auto
 
 Re-importing (update, other depth): EasyEDA does not take an import over an installed copy with the same UUID and
 version. **Uninstall the old one, import, restart EasyEDA**; until the restart the old copy keeps running. After that
-restart the menu sometimes is missing, but Auto-Connect stays on and connects. Check: `DMT_Project.getCurrentProjectInfo`
-shows the pages written out instead of `[MaxDepth]`.
+restart the menu sometimes is missing, but Auto-Connect stays on and connects. Check: `edakit doctor` says "patched
+extension" – it asks `DMT_Project.getCurrentProjectInfo`, which shows the pages written out instead of `[MaxDepth]` –
+and "bridge extension 1.4.0 = server 1.4.0". It probes the depth only while EasyEDA is free or claimed by you; the
+version and registry lines come from `easyeda_health_check`, which needs no claim. The patched build keeps the UUID
+and version of the original, so neither EasyEDA's extension manager nor the version tells the two apart – the depth
+does.
 
 ## 2.6 EasyEDA without background throttling
 

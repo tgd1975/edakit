@@ -59,6 +59,7 @@ def test_example_config_loads(project):
     assert b.net_classes and list(b.net_classes)[-1] == "SIGNAL"
     assert b.file == "hardware/boards/main.toml" and cfg.schematic["stub"] == 10
     assert cfg.sim_config.name == "sim.json" and cfg.sim_plugin is None
+    assert cfg.datasheets == cfg.artifacts / "datasheets"          # edakit part fetch: not versioned by default
 
 
 ONE_FILE = """
@@ -258,3 +259,146 @@ def test_copper_key(tmp_path):
                      ({"min_cover": {"TOP": 150}}, "min_cover"), ({"bare_mm": 5}, "unknown key 'bare_mm'")):
         with pytest.raises(ConfigError, match=msg):
             _board("b", {}, {"copper": bad})
+
+
+def test_agreements_key(tmp_path):
+    (tmp_path / "edakit.toml").write_text('[project]\nname = "t"\n[boards.main]\n')
+    assert load(tmp_path / "edakit.toml").agreements is True                  # default: the digest at session start
+    (tmp_path / "edakit.toml").write_text('[project]\nname = "t"\nagreements = false\n[boards.main]\n')
+    assert load(tmp_path / "edakit.toml").agreements is False
+    (tmp_path / "edakit.toml").write_text('[project]\nname = "t"\nagreements = "no"\n[boards.main]\n')
+    with pytest.raises(ConfigError, match=r"\[project\] agreements: true or false"):
+        load(tmp_path / "edakit.toml")
+
+
+def test_order_keys(tmp_path):
+    """#40: [order] of the board file – the order form fields that depend on the board (F-6)."""
+    from edakit.config import _board
+    assert _board("b", {}, {}).order is None                              # no key: no order form, no F-6, as before
+    (tmp_path / "edakit.toml").write_text('[project]\nname = "t"\n[boards.main]\n')
+    (tmp_path / "hardware" / "boards").mkdir(parents=True)
+    (tmp_path / "hardware" / "boards" / "main.toml").write_text("[order]\n")
+    assert load(tmp_path / "edakit.toml").board().order == {
+        "finish": "LeadFree HASL", "mark": "default", "remark": "", "tab_zones": [], "tab_copper_mm": 1.0}
+    (tmp_path / "hardware" / "boards" / "main.toml").write_text(
+        '[order]\nfinish = "ENIG"\nmark = "specify"\nremark = "No V-cut."\ntab_copper_mm = 0.5\n'
+        'tab_zones = [{ from = [0, 0], to = [0, 20] }]\n')
+    assert load(tmp_path / "edakit.toml").board().order == {
+        "finish": "ENIG", "mark": "specify", "remark": "No V-cut.", "tab_zones": [((0.0, 0.0), (0.0, 20.0))],
+        "tab_copper_mm": 0.5}
+    for order, msg in (({"marks": "specify"}, r"order: unknown key 'marks' \(known: finish, mark, remark"),
+                       ({"mark": "place"}, "order.mark must be one of default, specify, remove, not 'place'"),
+                       ({"remark": 3}, "order.remark must be a string"),
+                       ({"finish": 1}, "order.finish must be a string"),
+                       ({"tab_copper_mm": -1}, "order.tab_copper_mm must be a number >= 0"),
+                       ({"tab_zones": [{"from": [0, 0]}]}, r"order.tab_zones 1: needs from = \[x, y\] and to = \[x, y\]"),
+                       ({"tab_zones": [{"from": [0, 0], "to": [0, "a"]}]}, "order.tab_zones 1: needs from"),
+                       ({"tab_zones": [{"from": [0, 0], "to": [0, 2], "side": "top"}]},
+                        "order.tab_zones 1: unknown key 'side'"),
+                       ("specify", "order must be a table")):
+        with pytest.raises(ConfigError, match=msg):
+            _board("b", {}, {"order": order})
+
+
+def test_firmware_table_is_opt_in(tmp_path):
+    (tmp_path / "edakit.toml").write_text('[project]\nname = "t"\n[boards.main]\n')
+    assert load(tmp_path / "edakit.toml").firmware is None
+    (tmp_path / "edakit.toml").write_text('[project]\nname = "t"\n[boards.main]\n[firmware]\nmcu = "U1"\n')
+    assert load(tmp_path / "edakit.toml").firmware == {"mcu": "U1", "out": "hardware/firmware.json", "gpio": r"(\d+)"}
+    (tmp_path / "edakit.toml").write_text('[project]\nname = "t"\n[boards.main]\n[firmware]\nformat = "c"\n')
+    with pytest.raises(ConfigError, match=r"\[firmware\]: unknown key 'format'"):
+        load(tmp_path / "edakit.toml")
+    (tmp_path / "edakit.toml").write_text('[project]\nname = "t"\n[boards.main]\n[firmware]\ngpio = "GP"\n')
+    with pytest.raises(ConfigError, match="needs a group"):
+        load(tmp_path / "edakit.toml")
+
+
+def test_docs_files(tmp_path):
+    (tmp_path / "edakit.toml").write_text('[project]\nname = "t"\n[boards.main]\n')
+    assert load(tmp_path / "edakit.toml").docs == []                     # nothing is read
+    (tmp_path / "edakit.toml").write_text('[project]\nname = "t"\n[boards.main]\n[docs]\nfiles = ["docs/a.md"]\n')
+    assert load(tmp_path / "edakit.toml").docs == ["docs/a.md"]
+    assert load(tmp_path / "edakit.toml").docs_decimal == "."
+    for bad in ('files = "docs/a.md"', 'file = ["docs/a.md"]', 'decimal = ";"'):
+        (tmp_path / "edakit.toml").write_text(f'[project]\nname = "t"\n[boards.main]\n[docs]\n{bad}\n')
+        with pytest.raises(ConfigError, match=r"\[docs\]"):
+            load(tmp_path / "edakit.toml")
+
+
+def test_place_auto_key(tmp_path):
+    from edakit.config import _placement
+    assert _placement("C1", {"x": 1, "y": 2}).auto is False               # no key: a row written by hand, as before
+    assert _placement("C1", [1, 2, 90, "top"]).auto is False
+    (tmp_path / "edakit.toml").write_text('[project]\nname = "t"\n[boards.main]\n')
+    (tmp_path / "hardware" / "boards").mkdir(parents=True)
+    (tmp_path / "hardware" / "boards" / "main.toml").write_text(
+        '[place]\nC1 = { x = 66.0, y = 21.4, rot = 0, side = "top", auto = true }\n')
+    c1 = load(tmp_path / "edakit.toml").board().place["C1"]
+    assert c1.auto is True and c1.lock is True and (c1.x, c1.y) == (66.0, 21.4)
+    with pytest.raises(ConfigError, match="place.C1: auto must be true or false"):
+        _placement("C1", {"x": 1, "y": 2, "auto": "yes"})
+
+
+def test_routing_widths_key(tmp_path):
+    from edakit.config import _board
+    assert "widths" not in _board("b", {}, {}).routing                    # no key: the widths of the classes, as before
+    for value in ("classes", "sim"):
+        assert _board("b", {}, {"routing": {"widths": value}}).routing["widths"] == value
+    with pytest.raises(ConfigError, match="routing.widths must be 'classes' or 'sim'"):
+        _board("b", {}, {"routing": {"widths": "ipc"}})
+
+
+def test_uniform_key():
+    from edakit.config import _board
+    assert _board("b", {}, {}).uniform is None                             # no key: LEDs in a row, as before
+    u = {"led": "+x", "buzzer": "-x", "capacitor": "row"}
+    assert _board("b", {}, {"uniform": u}).uniform == u
+    for value in ({"led": "x"}, {"led": "left"}, ["led"], {"led": 1}):
+        with pytest.raises(ConfigError, match="uniform must be a table of part kinds"):
+            _board("b", {}, {"uniform": value})
+
+
+def test_looks_key():
+    from edakit.config import _board
+    assert _board("b", {}, {}).looks is None                               # no [looks]: nothing reported, as before
+    lk = {"visible": "bottom", "max_track_m": 0.1, "max_vias": 4}
+    assert _board("b", {}, {"looks": lk}).looks == lk
+    for value, msg in (({"max_vias": 1}, "needs visible"), ({"visible": "front"}, "needs visible"),
+                       ({"visible": "top", "max_track": 1}, "unknown key 'max_track'"),
+                       ({"visible": "top", "max_track_m": -1}, "max_track_m must be a length"),
+                       ({"visible": "top", "max_vias": 1.5}, "max_vias must be a whole number")):
+        with pytest.raises(ConfigError, match=msg):
+            _board("b", {}, {"looks": value})
+
+
+def test_thickness_key(tmp_path):
+    from edakit.config import _board
+    assert _board("b", {}, {}).thickness_mm == 1.6                         # no key: 1.6 mm, only the mechanical model reads it
+    assert _board("b", {}, {"thickness_mm": 1.0}).thickness_mm == 1.0
+    for value in (0, -1, "1.6", True):
+        with pytest.raises(ConfigError, match="thickness_mm must be a thickness in mm, more than 0"):
+            _board("b", {}, {"thickness_mm": value})
+    (tmp_path / "edakit.toml").write_text('[project]\nname = "t"\n[boards.main]\n')
+    (tmp_path / "hardware" / "boards").mkdir(parents=True)
+    (tmp_path / "hardware" / "boards" / "main.toml").write_text("thickness_mm = 0.8\n")
+    assert load(tmp_path / "edakit.toml").board().thickness_mm == 0.8
+
+
+def test_routing_hand_solder_keep_key():
+    from edakit.config import _board
+    assert "hand_solder_keep_mm" not in _board("b", {}, {}).routing        # no key: L-18 off, as before
+    assert _board("b", {}, {"routing": {"hand_solder_keep_mm": 0.5}}).routing["hand_solder_keep_mm"] == 0.5
+    for value in (-0.1, "0.5", True):
+        with pytest.raises(ConfigError, match="routing.hand_solder_keep_mm must be a distance in mm"):
+            _board("b", {}, {"routing": {"hand_solder_keep_mm": value}})
+
+
+def test_hash_ignore_is_a_list_of_key_names(project):
+    toml = project.root / "edakit.toml"
+    text = toml.read_text()
+    assert project.config().release.get("hash_ignore") is None           # default: the bytes are hashed
+    toml.write_text(text.replace("[release]\n", '[release]\nhash_ignore = ["notes", "sources"]\n'))
+    assert project.config().release["hash_ignore"] == ["notes", "sources"]
+    toml.write_text(text.replace("[release]\n", '[release]\nhash_ignore = "notes"\n'))
+    with pytest.raises(ConfigError, match="hash_ignore: a list of key names"):
+        project.config()

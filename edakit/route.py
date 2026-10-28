@@ -5,12 +5,19 @@ throws every track away (1773 lines -> 223 in one observed run). It runs past th
 start, has a fixed 900 s limit and left nets open. So routing happens outside EasyEDA, reproducibly:
 
     1 read     pads, outline, holes, parts from EasyEDA -> <artifacts>/route/<board>_board.json
-    2 dsn      offline: our own Specctra DSN (rules from [routing] of the board file); parts, pins and nets in a
-               fixed order; with fanout on a plane, a protected via and stub for each SMD pad on the other layer
+    2 dsn      offline: our own Specctra DSN (rules from [routing] of the board file; with widths = "sim" every net
+               at least the IPC-2221 width of its simulated current); parts, pins and nets in a fixed order; with
+               fanout on a plane, a protected via and stub for each SMD pad on the other layer; with
+               hand_solder_keep_mm a via keep-out around every hand-soldered joint on its solder side (L-18)
     3 route    offline: Freerouting (pinned, downloads itself once, SHA-256 checked), no GUI -> <board>.ses
     4 check    offline: pads of different parts on different nets at least the clearance apart (L-13), SMD pads on
-               an assembled side at least the paste gap apart (L-14; no new attempt helps there), every net
-               connected, clearances >= rule, nothing in keep-outs; preview PNG with open connections in yellow.
+               an assembled side at least the paste gap apart (L-14), pads of other nets at least
+               hand_solder_keep_mm from a hand-soldered joint on its solder side (L-18; no new attempt helps there),
+               every net connected, clearances >= rule, nothing in keep-outs, vias of other nets at least
+               hand_solder_keep_mm from a hand-soldered joint (L-18), track widths of the SES and the fixed wires
+               against the simulated currents (L-5 as in the gate: below IPC-2221 fails, below the class width
+               warns); with [looks] the track length per side, the vias and the visible side against its limits
+               (warnings only); preview PNG with open connections in yellow.
                In `all`: up to `attempts` runs with a reshuffled DSN while something is open.
                A pour-only net (pour_only in [[pours]] of the board file) gets no tracks: its pour, computed here,
                connects it
@@ -19,10 +26,16 @@ start, has a fixed 900 s limit and left nets open. So routing happens outside Ea
     6 pours    pours of [[pours]] anew and filled; optional stitching of loose islands with vias. With
                pour_regions, nets that share a layer get the outlines of their own areas, computed from board and SES
     7 reload   save, close the PCB tab, open it again – otherwise the DRC reports false connection errors
-    8 drc      EasyEDA DRC with details -> <board>_drc.json; exit 2 on findings
+    8 drc      EasyEDA DRC with details -> <board>_drc.json; exit 2 on findings. With a "Netlist Error – Import
+               Changes" item it compares schematic and PCB as `pcb parts` and `pcb nets` do (-> <board>_netlist_diff.json):
+               no difference = EasyEDA only waits for the import acknowledgement (Design → Import Changes once),
+               exit 3 when that is the only item
 
-    edakit route all                 # 1-8, progress per step; exit 0 = DRC 0
+    edakit route all                 # 1-8, progress per step; exit 0 = DRC 0, 3 = only the acknowledgement pending
     edakit route route --passes 60   # single steps
+    edakit route diagnose [--net N]  # offline: why each open connection is open – unreachable on the empty board
+                                     # (what walls it in), blocked by the routed copper of other nets (which), or a
+                                     # free way left; congestion (RUDY); pictures in route/<board>_diagnose/
 
 We write the DSN ourselves instead of PCB_ManufactureData.getDsnFile: that returned null (PCB tab "inactive"), and
 the SES import (importAutoRouteSesFile) needs a File object the bridge cannot pass. Units: mil like EasyEDA (DSN
@@ -98,6 +111,10 @@ class Rules:
                     self.pour_only[p["net"]].append((layer, p.get("clearance_mm", POUR_CLEARANCE_MM) * MIL_PER_MM,
                                                      p.get("min_width_mm", POUR_MIN_WIDTH_MM) * MIL_PER_MM))
         self.pour_only = dict(self.pour_only)
+        # L-18: copper of other nets keeps this much (mil) from a hand-soldered joint on its solder side; 0 = off.
+        # hand: the designators soldered by hand (bom: false in the graph) – set by the caller, who has the graph
+        self.joint_keep = r.get("hand_solder_keep_mm", 0) * MIL_PER_MM
+        self.hand = set()
         # pour_regions: layer -> [(net, clearance mil, min width mil)] in claim order (priority, then as written), for
         # the layers that several nets pour on
         self.regions = {}
@@ -122,7 +139,8 @@ def paths(cfg, board):
     d = cfg.artifact("route", ".keep").parent
     return {k: d / f"{board.name}{suffix}" for k, suffix in
             (("board", "_board.json"), ("dsn", ".dsn"), ("ses", ".ses"), ("log", "_freerouting.log"),
-             ("png", "_routing.png"), ("drc", "_drc.json"), ("stitch", "_stitch.json"))}
+             ("png", "_routing.png"), ("drc", "_drc.json"), ("netlist_diff", "_netlist_diff.json"),
+             ("stitch", "_stitch.json"), ("diagnose", "_diagnose"))}
 
 
 # --- 1 read -------------------------------------------------------------------------------------------------------
@@ -314,12 +332,11 @@ def outside_strips(rules, outer, margin=20.0):
     return frame, convex_pieces(frame.difference(inner), min_area=0)
 
 
-def config_keepouts(rules, data):
-    """[[routing.keepouts]]: {layer, rect | polygon (plan mm), what: "wire" (vias allowed) | "all",
-    windows: [parts whose pads stay reachable, with window_mm margin]} -> [(layer, kind, convex piece in mil)]."""
+def keepout_areas(rules, data):
+    """[[routing.keepouts]] as the board file has them: [(index, layers, what, area in mil)], the windows cut out."""
     board = rules.board
     out = []
-    for k in board.routing.get("keepouts", []):
+    for i, k in enumerate(board.routing.get("keepouts", [])):
         if "rect" in k:
             x0, y0, x1, y1 = k["rect"]
             pts = [(x0, y0), (x1, y0), (x1, y1), (x0, y1)]
@@ -330,9 +347,101 @@ def config_keepouts(rules, data):
         win = [pad_outline(p).buffer(m, join_style=2).envelope for p in data["pads"] if p["ref"] in k.get("windows", [])]
         if win:
             area = area.difference(unary_union(win))
-        for layer in ([k["layer"]] if isinstance(k.get("layer"), str) else k.get("layer", ["TOP", "BOTTOM"])):
-            out += [(layer, k.get("what", "wire"), piece) for piece in convex_pieces(area)]
+        layers = [k["layer"]] if isinstance(k.get("layer"), str) else list(k.get("layer", ["TOP", "BOTTOM"]))
+        out.append((i, layers, k.get("what", "wire"), area))
     return out
+
+
+def config_keepouts(rules, data):
+    """[[routing.keepouts]]: {layer, rect | polygon (plan mm), what: "wire" (vias allowed) | "all",
+    windows: [parts whose pads stay reachable, with window_mm margin]} -> [(layer, kind, convex piece in mil)]."""
+    return [(layer, what, piece) for _, layers, what, area in keepout_areas(rules, data) for layer in layers
+            for piece in convex_pieces(area)]
+
+
+def hand_soldered(graph, board):
+    """Designators of the parts soldered by hand on this board: bom: false in the graph (the inner object, as
+    design.load_graph returns it) – on an Economic PCBA order the through-hole parts you solder yourself (8.4)."""
+    return {c["designator"] for c in graph.get("components", [])
+            if c.get("bom") is False and c.get("board", board) in (None, board)}
+
+
+def hand_joints(data, hand):
+    """L-18: every through-hole pad of a part in `hand`, with its solder side – the copper layer its part does not sit
+    on. -> [(pad, layer)] in the order of the pads."""
+    side = {c["ref"]: c["layer"] for c in data["components"]}
+    return [(p, LAYERS[3 - side[p["ref"]]]) for p in data["pads"]
+            if p["ref"] in hand and p["layer"] == 12 and side.get(p["ref"]) in LAYERS]
+
+
+def joint_keepouts(rules, data):
+    """L-18 in the DSN: a via keep-out on the solder side around every hand-soldered joint, the pad grown by
+    joint_keep – Specctra via_keepout, which Freerouting 2.4.1 reads. Its chords lie outside the true distance.
+    Freerouting's keep-outs are not per net: a via of the joint's own net stays out too, its tracks still reach it.
+    -> [(layer, convex polygon in mil)]"""
+    if not rules.joint_keep:
+        return []
+    segs = 4
+    grow = rules.joint_keep / math.cos(math.pi / (4 * segs))
+    return [(layer, pad_outline(p).buffer(grow, quad_segs=segs)) for p, layer in hand_joints(data, rules.hand)]
+
+
+def joint_gaps(data, keep_mil, hand, vias=(), waivers=({}, {})):
+    """L-18: on the solder side of every through-hole pad of a hand-soldered part (hand_joints), vias and pads of other
+    nets closer than keep_mil, copper to copper. Tracks do not count: they run under the solder mask, between the pins
+    of a 2.54 mm part too (the owner's decision on #59). A pad without a net counts as a net of its own; the part's own
+    pads are not compared, nor pads without a part (tooling holes). vias: [(net, or None when unknown, (x, y),
+    diameter)] in mil; a via of unknown net counts as another net's. A finding is waived when the joint's part or net,
+    or the other pad's part or the other net, has the waiver (pad_waivers(graph, "L-18")). -> [{"joint", "net",
+    "layer", "kind" ("pad", "via"), "other" (pad name, net or None), "other_net", "mil", "at" (the other pad's
+    closest point, the via's centre), "waived"}], closest first; a pair of two joints once."""
+    from shapely.ops import nearest_points
+    from shapely.strtree import STRtree
+    parts, nets = waivers
+    items = {"TOP": [], "BOTTOM": []}   # (kind, name, net, ref, geometry, radius)
+    for q in data["pads"]:
+        if q["ref"]:
+            for layer in pad_layers(q):
+                items[layer].append(("pad", f"{q['ref']}.{q['num']}", q["net"] or None, q["ref"], pad_outline(q), 0))
+    for net, v, d in vias:
+        for layer in items:
+            items[layer].append(("via", net, net, None, Point(v), d / 2))
+    trees = {layer: STRtree([it[4] for it in its]) for layer, its in items.items()}
+    found = {}
+    for p, layer in hand_joints(data, hand):
+        g, own = pad_outline(p), p["net"] or None
+        name = f"{p['ref']}.{p['num']}"
+        reach = keep_mil + max((it[5] for it in items[layer]), default=0)
+        for j in trees[layer].query(g, predicate="dwithin", distance=reach):
+            kind, other, onet, oref, h, r = items[layer][j]
+            if oref == p["ref"] or (own and onet == own):
+                continue
+            gap = g.distance(h) - r
+            if gap >= keep_mil - 0.01:
+                continue
+            key = tuple(sorted((name, other))) if kind == "pad" else (name, kind, other, h.x, h.y)
+            if key in found and found[key]["mil"] <= gap:
+                continue
+            at = nearest_points(g, h)[1]
+            found[key] = {"joint": name, "net": own, "layer": layer, "kind": kind, "other": other, "other_net": onet,
+                          "mil": gap, "at": (at.x, at.y),
+                          "waived": next((w[k] for w, k in ((parts, p["ref"]), (parts, oref), (nets, own), (nets, onet))
+                                          if k and k in w), None)}
+    return sorted(found.values(), key=lambda x: (round(x["mil"], 3), natural_key(x["joint"]), str(x["other"])))
+
+
+def joint_text(item, keep_mil, board=None):
+    """'J1.1 (VIN) – via GND at (84.00, 9.70): 0.30 mm apart on BOTTOM, the solder side of J1, below
+    hand_solder_keep_mm 0.5' – the point in plan mm with the board, else in EasyEDA mm."""
+    mm = 1 / MIL_PER_MM
+    x, y = (v * mm for v in item["at"])
+    if board is not None:
+        x, y = board.plan_point(x, y)
+    other = (f"pad {item['other']} ({item['other_net'] or 'no net'})" if item["kind"] == "pad"
+             else f"via {item['other'] or '(no track, net unknown)'}")
+    return (f"{item['joint']} ({item['net'] or 'no net'}) – {other} at ({x:.2f}, {y:.2f}): {item['mil'] * mm:.2f} mm "
+            f"apart on {item['layer']}, the solder side of {item['joint'].split('.')[0]}, below hand_solder_keep_mm "
+            f"{keep_mil * mm:g}")
 
 
 def fixed_wires(rules):
@@ -352,8 +461,8 @@ def fanout(rules, data):
     FANOUT_STEP_MIL steps up to FANOUT_REACH_MIL further), at each distance FANOUT_DIRECTIONS directions, the one closest
     to the direction away from the part's centre first. Via and stub keep the clearance from foreign copper (pads, fixed
     wires, the other fanouts) and the fanout vias from each other; the via stays inside the edge clearance and off the
-    hole, tooling and `what = "all"` keep-outs, the stub off those and off every keep-out on its layer. A pad without a
-    spot stops the run. -> [(net, "R1.1", layer, width, pad centre, via)] in mil, by net and pad."""
+    hole, tooling and `what = "all"` keep-outs, the stub off those and off every keep-out on its layer; with L-18 on, the
+    via keeps joint_keep from the hand-soldered joints of other nets. A pad without a spot stops the run. -> [(net, "R1.1", layer, width, pad centre, via)] in mil, by net and pad."""
     on_plane = defaultdict(set)
     for net, layer in planes(rules):
         on_plane[net].add(layer)
@@ -374,6 +483,7 @@ def fanout(rules, data):
     copper = [(p["net"] or f"nc:{p['id']}", set(pad_layers(p)), pad_outline(p), 0, False) for p in data["pads"]]
     copper += [(net, {layer}, LineString(pts), w / 2, False) for net, layer, w, pts in fixed_wires(rules)]
     comp_at = {c["ref"]: c for c in data["components"]}
+    joints = [(p["net"], pad_outline(p)) for p, _ in hand_joints(data, rules.hand)] if rules.joint_keep else []
     steps = range(int(FANOUT_REACH_MIL / FANOUT_STEP_MIL) + 1)
     out = []
 
@@ -403,7 +513,8 @@ def fanout(rules, data):
                     continue
                 if all(via.distance(g) >= half + r_via + clear - eps and
                        (n == net or layer not in lays or stub.distance(g) >= half + w / 2 + clear - eps)
-                       for n, lays, g, half, _ in near):
+                       for n, lays, g, half, _ in near) and \
+                        all(via.distance(g) >= r_via + rules.joint_keep - eps for n, g in joints if n != net):
                     spot = v
                     break
             if spot:
@@ -412,7 +523,9 @@ def fanout(rules, data):
             raise SystemExit(f"{name} ({net}): no room for a fanout via to the {net} plane – {FANOUT_DIRECTIONS} "
                              f"directions, {d0:.1f} to {d0 + FANOUT_REACH_MIL:.1f} mil from the pad's centre, keeping "
                              f"{clear} mil from foreign copper with a {rules.via[1]} mil via, inside the edge clearance "
-                             "and off hole, tooling and keep-out areas; give the pad room in the plan")
+                             "and off hole, tooling and keep-out areas"
+                             + (" and hand_solder_keep_mm from hand-soldered joints of other nets" if joints else "")
+                             + "; give the pad room in the plan")
         out.append((net, name, layer, w, (x, y), spot))
         copper.append((net, {"TOP", "BOTTOM"}, Point(spot), r_via, True))
         copper.append((net, {layer}, LineString([(x, y), spot]), w / 2, False))
@@ -491,6 +604,11 @@ def write_dsn(rules, data, out, variant=0):
         kw = "wire_keepout" if what == "wire" else "keepout"
         pts = list(g.exterior.coords)[:-1]
         L.append(f"    ({kw} {q(f'K{i}')} (polygon {layer} 0 " + " ".join(f"{f(x)} {f(y)}" for x, y in pts) + "))")
+    joints = joint_keepouts(rules, data)
+    for i, (layer, g) in enumerate(joints):
+        pts = list(g.exterior.coords)[:-1]
+        L.append(f"    (via_keepout {q(f'J{i}_{layer}')} (polygon {layer} 0 " + " ".join(f"{f(x)} {f(y)}" for x, y in pts)
+                 + "))")
     # planes last in the structure: placed further up, Freerouting 2.4.1 read no connections any more (0 unrouted)
     for net, layer in planes(rules):
         L.append(f"    (plane {q(net)} (polygon {layer} 0 "
@@ -533,11 +651,79 @@ def write_dsn(rules, data, out, variant=0):
     out.write_text("\n".join(L) + "\n")
     say(f"DSN: {len(routed)} nets with >= 2 pins, {len(data['pads'])} pads, {len(padstacks)} padstacks, {len(keep)} hole "
         f"keep-outs, {len(strips)} edge strips, {len(extra)} keep-out pieces, {len(fixed)} fixed wires, "
-        + (f"{len(fans)} fanout vias, " if fans else "") + f"clearance {rules.clear} mil"
+        + (f"{len(fans)} fanout vias, " if fans else "")
+        + (f"{len(joints)} via keep-outs at hand-soldered joints (L-18), " if joints else "") + f"clearance {rules.clear} mil"
         + (f", order {variant}" if variant else "")
         + (f", pour-only (no tracks): {', '.join(sorted(rules.pour_only))}" if rules.pour_only else "") + f" -> {out}")
     for (name, w), members in sorted(cls.items()):
         print(f"    class {name}: {w} mil, {len(members)} nets", flush=True)
+
+
+def sim_widths(cfg, board, rules):
+    """[routing] widths = "sim": every class of [routing.classes] at least the IPC-2221 width (1.5 x the simulated
+    current, as L-5 of the gate) of its widest net, and a net outside the classes that needs more than signal_mil a
+    class of its own, named after the net; widths rounded up to 0.1 mil. Changes rules.classes, prints what it widened.
+    Fixed wires keep their own width_mil – `route check` measures them."""
+    from .design import Design
+    from .release.fab import required_widths
+    need = required_widths(cfg, Design.from_config(cfg), board) if cfg.graph.exists() else None
+    if need is None:
+        raise SystemExit(f'board {board.name}: [routing] widths = "sim" needs the simulated currents '
+                         f"({cfg.relative(cfg.artifacts / 'sim' / 'net_currents.json')}) – run `edakit sim` first")
+    mil = {n: math.ceil(v[0] * MIL_PER_MM * 10 - 1e-9) / 10 for n, v in need.items()}
+    lines = []
+    for name, (w, nets) in list(rules.classes.items()):
+        top = max((mil[n] for n in nets if n in mil), default=0)
+        if top > w:
+            rules.classes[name] = (top, nets)
+            why = ", ".join(f"{n} {need[n][2]:.2f} A" for n in sorted(nets) if mil.get(n) == top)
+            lines.append(f"class {name}: {w:g} -> {top:g} mil ({why})")
+    taken = {n for _, nets in rules.classes.values() for n in nets}
+    for n in sorted(mil):
+        if n not in taken and mil[n] > rules.signal:
+            name = n if n not in rules.classes else f"{n}_NET"
+            rules.classes[name] = (mil[n], {n})
+            lines.append(f"class {name}: {mil[n]:g} mil, a class of its own ({n} {need[n][2]:.2f} A; signal_mil "
+                         f"{rules.signal:g})")
+    say('widths = "sim": ' + ("; ".join(lines) if lines else "every class already at its IPC-2221 width"))
+    return lines
+
+
+def report_widths(cfg, board, rules, routes):
+    """L-5 offline: the narrowest SES track of every net and every fixed wire against the widths of the gate's L-5
+    (release.fab.required_widths): below IPC-2221 for 1.5 x the simulated current fails, below the practical width of
+    the net class warns. Without net_currents.json one line and nothing fails, as before. -> the failures."""
+    from .design import Design
+    from .release.fab import required_widths
+    need = required_widths(cfg, Design.from_config(cfg), board) if cfg.graph.exists() else None
+    if need is None:
+        say("track widths (L-5 offline): no net currents – run `edakit sim` first")
+        return []
+    fixed = fixed_wires(rules)
+    mm = 1 / MIL_PER_MM
+
+    def is_fixed(net, layer, pts):
+        return any(net == n and layer == lay and len(pts) == len(p2) and
+                   max(map(math.dist, pts, p2), default=0) <= SNAP_MIL for n, lay, _, p2 in fixed)
+    narrow = {}
+    for net, r in routes.items():
+        ws = [w for layer, w, pts in r["wires"] if not is_fixed(net, layer, pts)]
+        if ws:
+            narrow[net] = min(ws) * mm
+    items = [(net, net, w) for net, w in sorted(narrow.items())]
+    for spec, (net, _, w, _) in zip(rules.board.routing.get("fixed_wires", []), fixed):
+        (x0, y0), (x1, y1) = spec["points"][0], spec["points"][-1]
+        items.append((net, f"fixed wire {net} ({x0:g}, {y0:g})–({x1:g}, {y1:g})", w * mm))
+    fail = [f"L-5 (offline) {what}: {w:.2f} < {need[net][0]:.2f} mm" for net, what, w in items
+            if net in need and w < need[net][0] - 0.005]
+    warn = [f"L-5 (offline) {what}: {w:.2f} < {need[net][1]:.2f} mm – below the practical width of its class "
+            "(warning)" for net, what, w in items if net in need and need[net][0] - 0.005 <= w < need[net][1] - 0.005]
+    wires = f" and {len(fixed)} fixed wire{'s' * (len(fixed) != 1)}" if fixed else ""
+    say(f"track widths (L-5 offline): {len(narrow)} nets{wires}, {len(fail)} below IPC-2221 for 1.5 x the simulated "
+        f"current, {len(warn)} below the class width")
+    for line in fail + warn:
+        print(f"    {line}", flush=True)
+    return fail
 
 
 # --- 3 route ------------------------------------------------------------------------------------------------------
@@ -1055,6 +1241,62 @@ def report_paste(cfg, data):
     return tight
 
 
+def looks_rows(board, length_m, vias):
+    """[looks] of the board file: the visible side's track length and the board's vias (a via shows on both sides)
+    -> (information line, [(warning, actual, limit)] above max_track_m / max_vias), or None without [looks].
+    length_m: {"TOP": m, "BOTTOM": m}. Used by `route check` and stage L alike."""
+    lk = board.looks
+    if not lk:
+        return None
+    side = lk["visible"].upper()
+    track = f"{length_m[side]:.2f} m of track"
+    warns = []
+    if lk.get("max_track_m") is not None and length_m[side] > lk["max_track_m"]:
+        warns.append((f"{side} (visible): {track}, limit {lk['max_track_m']:g} m", track,
+                      f"<= {lk['max_track_m']:g} m"))
+    if lk.get("max_vias") is not None and vias > lk["max_vias"]:
+        warns.append((f"{side} (visible): {vias} vias, limit {lk['max_vias']}", f"{vias} vias",
+                      f"<= {lk['max_vias']} vias"))
+    return f"{side} (visible): {track}, {vias} via{'s' * (vias != 1)}", warns
+
+
+def report_looks(rules, data, routes):
+    """[looks], printed: the track length per side and the vias of the SES, the visible side's row and its warnings.
+    Nothing without [looks]; no exit code changes."""
+    if not rules.board.looks:
+        return
+    length = {"TOP": 0.0, "BOTTOM": 0.0}
+    for ss in segments(rules, routes, data).values():
+        for layer, _, a, b in ss:
+            length[layer] += math.dist(a, b) / MIL_PER_MM / 1000
+    vias = sum(len(r["vias"]) for r in routes.values())
+    say(f"tracks: TOP {length['TOP']:.2f} m, BOTTOM {length['BOTTOM']:.2f} m; vias {vias}")
+    row, warns = looks_rows(rules.board, length, vias)
+    say(row)
+    for w, _, _ in warns:
+        print(f"    {w} – warning", flush=True)
+
+
+def report_joints(cfg, board, rules, data, routes=None):
+    """L-18, printed: with routes None the pads of other nets at the hand-soldered joints (the placement's part: no
+    new routing moves them), else the vias of the SES. Waived ones with their reason -> those not waived."""
+    if not rules.joint_keep:
+        return []
+    vias = [] if routes is None else [(net, tuple(v), rules.via[1]) for net, r in routes.items() for v in r["vias"]]
+    gaps = [g for g in joint_gaps(data, rules.joint_keep, rules.hand, vias, graph_waivers(cfg, "L-18"))
+            if (g["kind"] == "pad") == (routes is None)]
+    near = [g for g in gaps if not g["waived"]]
+    what = "pads" if routes is None else "vias"
+    n = len(hand_joints(data, rules.hand))
+    say(f"hand-soldered joints (L-18): {n} on their solder side, {len(near)} {what} of other nets closer than "
+        f"hand_solder_keep_mm {rules.joint_keep / MIL_PER_MM:g}"
+        + (f", {len(gaps) - len(near)} waived" if len(gaps) > len(near) else ""))
+    for g in gaps[:20]:
+        print(f"    {joint_text(g, rules.joint_keep, board)}" + (f" – waived: {g['waived']}" if g["waived"] else ""),
+              flush=True)
+    return near
+
+
 def report_check(rules, data, open_nets, routes):
     n_seg = sum(len(s) for s in segments(rules, routes, data).values())
     n_via = sum(len(r["vias"]) for r in routes.values())
@@ -1141,6 +1383,521 @@ def render(rules, data, routes, png, open_nets=None):
     fig.savefig(png, dpi=110, facecolor="white")
     plt.close(fig)
     say(f"preview -> {png}")
+
+
+# --- diagnose: why a connection stays open --------------------------------------------------------------------------
+
+DIAG_EPS_MIL = 0.5          # an obstacle this close to a free area bounds it
+DIAG_STEP_MIL = 4.0         # the raster of the shortest way: no finer than 0.1 mm …
+DIAG_CELLS = 200_000        # … and at most this many cells per layer
+DIAG_MARGIN_MIL = 200.0     # first a window this much around the two pads (5 mm), then the whole board
+DIAG_VIA_COST_MIL = 40.0    # a via counts as 1 mm of way
+RUDY_CELL_MIL = MIL_PER_MM  # congestion on a 1 mm grid
+RUDY_SMOOTH_CELLS = 3       # demand and capacity averaged over 3 x 3 cells: single cells at the edge are outliers
+
+
+def net_way(rules, net):
+    """How a connection of `net` is made: (track width, clearance, layers, vias) – a pour-only net by its pour
+    (min_width_mm and clearance_mm, on its pour layers, no vias), any other net by its class on both layers."""
+    if net in rules.pour_only:
+        specs = rules.pour_only[net]
+        return max(w for _, _, w in specs), max(c for _, c, _ in specs), sorted({lay for lay, _, _ in specs}), False
+    return rules.net_class(net)[1], rules.clear, ["TOP", "BOTTOM"], True
+
+
+def plan_mm(rules, x, y):
+    """EasyEDA mil -> plan mm, rounded to 0.1 mm."""
+    px, py = rules.board.plan_point(x / MIL_PER_MM, y / MIL_PER_MM)
+    return round(px, 1), round(py, 1)
+
+
+def walls(rules, data):
+    """What walls a track in on the empty board: (the area inside the edge clearance, {layer: [(name, area)]} for
+    tracks, [(name, area)] for vias – a wire keep-out lets a via through). Names: "hole at (x, y) mm", "tooling hole
+    at (x, y) mm" (plan mm), "keep-out K<i>" (the i-th [[routing.keepouts]] of the board file, counted from 0)."""
+    outer, _ = board_area(data)
+    inner = outer.buffer(-rules.edge_um / 25.4, join_style="round", quad_segs=EDGE_ARC_SEGMENTS)
+    holes = [(f"{what} at ({plan_mm(rules, x, y)[0]:g}, {plan_mm(rules, x, y)[1]:g}) mm", Point(x, y).buffer(r))
+             for what, keeps in (("hole", hole_keeps(rules, data)), ("tooling hole", tooling_keeps(rules)))
+             for x, y, r in keeps]
+    keeps = keepout_areas(rules, data)
+    track = {lay: holes + [(f"keep-out K{i}", a) for i, layers, _, a in keeps if lay in layers]
+             for lay in ("TOP", "BOTTOM")}
+    via = holes + [(f"keep-out K{i}", a) for i, _, what, a in keeps if what != "wire"]
+    return inner, track, via
+
+
+def free_space(rules, data, net, walls_, copper=None):
+    """Where the middle of a track of `net` may run on each of its layers, and where a via of it may sit: inside the
+    edge clearance, off holes and keep-outs, the clearance away from foreign pads – and from `copper` ({layer:
+    [area]}, the routed copper of other nets) –, shrunk by half the track width (by the via radius for vias).
+    -> ({layer: area}, via area or None) in mil."""
+    w, c, layers, vias = net_way(rules, net)
+    inner, track, via = walls_
+    grown = {}
+    for lay in ("TOP", "BOTTOM"):
+        foreign = [pad_outline(p) for p in data["pads"] if p["net"] != net and lay in pad_layers(p)]
+        foreign += list((copper or {}).get(lay, []))
+        grown[lay] = unary_union(foreign).buffer(c) if foreign else Polygon()
+    areas = {lay: inner.difference(unary_union([g for _, g in track[lay]] + [grown[lay]])).buffer(-w / 2)
+             for lay in layers}
+    if not vias:
+        return areas, None
+    blocked = unary_union([g for _, g in via] + [grown["TOP"], grown["BOTTOM"]])
+    return areas, inner.difference(blocked).buffer(-rules.via[1] / 2)
+
+
+def regions_of(data, areas, vias_area, groups):
+    """The free areas split into regions, joined where a via fits in both, through a pad of the net that touches
+    several (a through-hole pad on both layers), and within a group of pads the net's own copper already joins.
+    -> (root, {key: region}, {pad index: [keys of the regions it touches]})."""
+    from shapely import prepare
+    from shapely.strtree import STRtree
+    regions = {(lay, k): g for lay, a in areas.items() for k, g in enumerate(_polygons(a))}
+    for g in regions.values():
+        prepare(g)
+    parent = {}
+
+    def root(k):
+        while parent.setdefault(k, k) != k:
+            parent[k] = parent[parent[k]]
+            k = parent[k]
+        return k
+
+    def join(keys):
+        for k in keys[1:]:
+            parent[root(k)] = root(keys[0])
+    pad_keys = {}
+    for i in (i for g in groups for i in g):
+        p = data["pads"][i]
+        shape = pad_outline(p)
+        pad_keys[i] = [k for k, g in regions.items() if k[0] in pad_layers(p) and g.intersects(shape)]
+        join(pad_keys[i])
+    for g in groups:
+        join([k for i in g for k in pad_keys[i]])
+    if vias_area is not None and not vias_area.is_empty:
+        bottoms = [k for k in regions if k[0] == "BOTTOM"]
+        tree = STRtree([regions[k] for k in bottoms])
+        for t in (k for k in regions if k[0] == "TOP"):
+            spots = regions[t].intersection(vias_area)
+            if not spots.is_empty:
+                for j in tree.query(spots, predicate="intersects"):
+                    join([t, bottoms[j]])
+    return root, regions, pad_keys
+
+
+def joined(root, pad_keys, g1, g2):
+    r1 = {root(k) for i in g1 for k in pad_keys[i]}
+    return any(root(k) in r1 for i in g2 for k in pad_keys[i])
+
+
+def reached(root, regions, pad_keys, group):
+    """The regions the pads of `group` reach -> {layer: [region]}."""
+    roots = {root(k) for i in group for k in pad_keys[i]}
+    out = defaultdict(list)
+    for k, g in regions.items():
+        if root(k) in roots:
+            out[k[0]].append(g)
+    return out
+
+
+def enclosure(rules, data, net, walls_, regions, root, pad_keys, group):
+    """What walls the pads of `group` in on the empty board: the edge, holes, keep-outs and foreign pads along the outer
+    rings of the regions they reach – or, where they reach none, on and around the pads themselves.
+    -> ["keep-out K0 (TOP, BOTTOM)", "pads U1.2, U1.4 (TOP)", …]"""
+    w, c, layers, _ = net_way(rules, net)
+    inner, track, _ = walls_
+    mine = reached(root, regions, pad_keys, group)
+    found = {}
+    for lay in layers:
+        if mine.get(lay):
+            near = unary_union([g.exterior for g in mine[lay]])
+        else:
+            shapes = [pad_outline(data["pads"][i]) for i in group if lay in pad_layers(data["pads"][i])]
+            if not shapes:
+                continue
+            near = unary_union(shapes)
+        hits = [name for name, g in track[lay] if near.distance(g) <= w / 2 + DIAG_EPS_MIL]
+        if near.distance(inner.boundary) <= w / 2 + DIAG_EPS_MIL or not inner.contains(near):
+            hits.insert(0, "the edge")
+        pads = sorted((f"{p['ref'] or 'FREE'}.{p['num']}" for p in data["pads"] if p["net"] != net
+                       and lay in pad_layers(p) and near.distance(pad_outline(p)) <= c + w / 2 + DIAG_EPS_MIL),
+                      key=natural_key)
+        if pads:
+            hits.append("pads " + ", ".join(pads[:6]) + (" …" if len(pads) > 6 else ""))
+        for name in hits:
+            found.setdefault(name, []).append(lay)
+    return [f"{name} ({', '.join(lays)})" for name, lays in found.items()]
+
+
+def shortest_way(rules, data, areas, vias_area, starts, ends, window):
+    """The shortest way from a pad of `starts` to one of `ends` (pad indices) over the free areas, on a raster of the
+    window (x0, y0, x1, y1 in mil): 8 neighbours on a layer, a via where one fits. -> [(layer, x, y)] in mil or None."""
+    import numpy as np
+    from scipy.sparse import coo_matrix
+    from scipy.sparse.csgraph import dijkstra
+    from shapely import contains_xy
+    x0, y0, x1, y1 = window
+    step = max(DIAG_STEP_MIL, math.sqrt((x1 - x0) * (y1 - y0) / DIAG_CELLS))
+    nx, ny = int((x1 - x0) / step) + 2, int((y1 - y0) / step) + 2
+    X, Y = np.meshgrid(x0 + np.arange(nx) * step, y0 + np.arange(ny) * step)
+    layers = list(areas)
+    free = np.stack([contains_xy(areas[lay], X, Y) for lay in layers])
+    idx = np.arange(len(layers) * nx * ny).reshape(len(layers), ny, nx)
+    rows, cols, cost = [], [], []
+    for li in range(len(layers)):
+        for dy, dx in ((0, 1), (1, 0), (1, 1), (1, -1)):
+            a = (slice(0, ny - dy), slice(max(0, -dx), nx - max(0, dx)))
+            b = (slice(dy, ny), slice(max(0, dx), nx - max(0, -dx)))
+            both = free[li][a] & free[li][b]
+            rows.append(idx[li][a][both])
+            cols.append(idx[li][b][both])
+            cost.append(np.full(int(both.sum()), step * math.hypot(dx, dy)))
+    if vias_area is not None and len(layers) == 2:
+        v = contains_xy(vias_area, X, Y) & free[0] & free[1]
+        rows.append(idx[0][v])
+        cols.append(idx[1][v])
+        cost.append(np.full(int(v.sum()), DIAG_VIA_COST_MIL))
+    n = idx.size
+    graph = coo_matrix((np.concatenate(cost), (np.concatenate(rows), np.concatenate(cols))), shape=(n, n)).tocsr()
+
+    def cells(pads):
+        out = []
+        for i in pads:
+            p = data["pads"][i]
+            inside = contains_xy(pad_outline(p).buffer(step * 0.75), X, Y)
+            out += [idx[li][inside & free[li]] for li, lay in enumerate(layers) if lay in pad_layers(p)]
+        return np.unique(np.concatenate(out)) if out else np.array([], int)
+    src, dst = cells(starts), cells(ends)
+    if not len(src) or not len(dst):
+        return None
+    dist, pred, _ = dijkstra(graph, directed=False, indices=src, return_predecessors=True, min_only=True)
+    end = dst[np.argmin(dist[dst])]
+    if not np.isfinite(dist[end]):
+        return None
+    way, k = [], int(end)
+    while k >= 0:
+        li, rest = divmod(k, nx * ny)
+        j, i = divmod(rest, nx)
+        way.append((layers[li], float(X[j, i]), float(Y[j, i])))
+        k = int(pred[k])
+    return way[::-1]
+
+
+def way_runs(way):
+    """The way as runs per layer and the vias between them -> ([(layer, [(x, y), …])], [(x, y)])."""
+    runs, vias = [], []
+    for lay, x, y in way:
+        if runs and runs[-1][0] == lay:
+            runs[-1][1].append((x, y))
+        else:
+            if runs:
+                vias.append((x, y))
+            runs.append((lay, [(x, y)]))
+    return runs, vias
+
+
+def way_length(way):
+    return sum(math.dist(a[1:], b[1:]) for a, b in zip(way, way[1:]))
+
+
+def crossing(way, others, reach):
+    """The nets whose routed copper ({net: {layer: area}}) comes closer than `reach` to the way."""
+    runs, vias = way_runs(way)
+    lines = {lay: unary_union([LineString(pts) if len(pts) > 1 else Point(pts[0]) for la, pts in runs if la == lay]
+                              + [Point(v) for v in vias]) for lay in ("TOP", "BOTTOM")}
+    return sorted((n for n, per in others.items()
+                   if any(not lines[lay].is_empty and lines[lay].distance(g) < reach for lay, g in per.items())),
+                  key=natural_key)
+
+
+def fence(regions, others, reach):
+    """The nets whose routed copper lies along the outer rings of the regions -> sorted names."""
+    rings = {lay: unary_union([g.exterior for g in gs]) for lay, gs in regions.items() if gs}
+    return sorted((n for n, per in others.items()
+                   if any(lay in rings and rings[lay].distance(g) <= reach for lay, g in per.items())), key=natural_key)
+
+
+def congestion(rules, data, walls_=None):
+    """RUDY: each routed net's wire demand – half the perimeter of its pads' bounding box over its area – spread on a
+    1 mm grid, against the capacity of each cell – the layers tracks may use there, times cell / (signal width +
+    clearance) –, both averaged over RUDY_SMOOTH_CELLS x RUDY_SMOOTH_CELLS cells. -> {"util": [ny, nx] (nan off the
+    board), "x0", "y0", "cell" (mil), "max", "at" (plan mm), "at_mil"}"""
+    import numpy as np
+    from scipy.ndimage import uniform_filter
+    from shapely import contains_xy
+    inner, track, _ = walls_ or walls(rules, data)
+    outer, _ = board_area(data)
+    bx0, by0, bx1, by1 = outer.bounds
+    cell = RUDY_CELL_MIL
+    nx, ny = max(1, math.ceil((bx1 - bx0) / cell)), max(1, math.ceil((by1 - by0) / cell))
+    gx, gy = bx0 + np.arange(nx + 1) * cell, by0 + np.arange(ny + 1) * cell
+    pins = defaultdict(list)
+    for p in data["pads"]:
+        if p["net"] and p["net"] not in rules.pour_only:
+            pins[p["net"]].append((p["x"], p["y"]))
+    demand = np.zeros((ny, nx))
+    for pts in pins.values():
+        if len(pts) < 2:
+            continue
+        xs, ys = [q[0] for q in pts], [q[1] for q in pts]
+        w, h = max(max(xs) - min(xs), cell), max(max(ys) - min(ys), cell)
+        cx, cy = (max(xs) + min(xs)) / 2, (max(ys) + min(ys)) / 2
+        ovx = np.clip(np.minimum(gx[1:], cx + w / 2) - np.maximum(gx[:-1], cx - w / 2), 0, None)
+        ovy = np.clip(np.minimum(gy[1:], cy + h / 2) - np.maximum(gy[:-1], cy - h / 2), 0, None)
+        demand += (w + h) / (w * h) * np.outer(ovy, ovx) / cell          # tracks across each cell
+    k = 4                                                                 # samples per cell side for the capacity
+    SX, SY = np.meshgrid(bx0 + (np.arange(nx * k) + 0.5) * cell / k, by0 + (np.arange(ny * k) + 0.5) * cell / k)
+    capacity = np.zeros((ny, nx))
+    for lay in ("TOP", "BOTTOM"):
+        allowed = inner.difference(unary_union([g for _, g in track[lay]]))
+        share = contains_xy(allowed, SX, SY).reshape(ny, k, nx, k).mean(axis=(1, 3))
+        capacity += share * cell / (rules.signal + rules.clear)
+    d, c = (uniform_filter(a, RUDY_SMOOTH_CELLS, mode="constant") for a in (demand, capacity))
+    util = np.full((ny, nx), np.nan)
+    ok = (capacity > 0) & (c > 1e-9)
+    util[ok] = d[ok] / c[ok]
+    out = {"util": util, "x0": bx0, "y0": by0, "cell": cell, "max": 0.0, "at": None, "at_mil": None}
+    if ok.any():
+        j, i = np.unravel_index(np.nanargmax(util), util.shape)
+        at = (bx0 + (i + 0.5) * cell, by0 + (j + 0.5) * cell)
+        out.update({"max": float(util[j, i]), "at": plan_mm(rules, *at), "at_mil": at})
+    return out
+
+
+def utilisation_at(cong, x, y):
+    """The congestion at a point (mil); 0 off the grid or off the board."""
+    i, j = int((x - cong["x0"]) // cong["cell"]), int((y - cong["y0"]) // cong["cell"])
+    ny, nx = cong["util"].shape
+    if not (0 <= i < nx and 0 <= j < ny) or math.isnan(cong["util"][j, i]):
+        return 0.0
+    return float(cong["util"][j, i])
+
+
+def routed_copper(rules, segs, routes):
+    """{net: {layer: area}} of the routed tracks and vias."""
+    parts = defaultdict(lambda: defaultdict(list))
+    for net, ss in segs.items():
+        for layer, w, a, b in ss:
+            parts[net][layer].append(LineString([a, b]).buffer(w / 2))
+    for net, r in routes.items():
+        for v in r["vias"]:
+            for layer in ("TOP", "BOTTOM"):
+                parts[net][layer].append(Point(v).buffer(rules.via[1] / 2))
+    return {net: {lay: unary_union(gs) for lay, gs in per.items()} for net, per in parts.items()}
+
+
+def diagnose(rules, data, routes, only=None, out_dir=None):
+    """Why each connection the SES leaves open is open. A connection is the closest pad pair between the largest group
+    of an open net and each other group (the yellow airline of the routing preview); the net is routed with its class
+    width and the clearance (a pour-only net with its pour's), as Freerouting routes it.
+    - unreachable: on the empty board – inside the edge clearance, off holes, tooling holes and keep-outs (a wire
+      keep-out lets vias through), the clearance from foreign pads – no way joins the two groups; named: what walls in
+      the side that reaches less (enclosure)
+    - blocked: a way on the empty board, none between the routed copper of the other nets; named: the nets whose
+      copper lies on the shortest way of the empty board (a raster, vias included) and the highest congestion along it
+    - free: a way is left – Freerouting did not find it
+    -> {"board", "open": [{net, a, b, verdict, line, …}], "congestion": {max, at}}; with out_dir one PNG per connection,
+    congestion.png and diagnose.json there."""
+    open_nets = {n: g for n, g in check(rules, data, routes).items() if only is None or n == only}
+    segs = segments(rules, routes, data)
+    walls_ = walls(rules, data)
+    cong = congestion(rules, data, walls_)
+    copper = routed_copper(rules, segs, routes)
+    outer, _ = board_area(data)
+    name = lambda i: f"{data['pads'][i]['ref'] or 'FREE'}.{data['pads'][i]['num']}"  # noqa: E731
+    gaps = []
+    for net, groups in open_nets.items():
+        w, c, _, _ = net_way(rules, net)
+        empty = free_space(rules, data, net, walls_)
+        e_root, e_regions, e_keys = regions_of(data, *empty, groups)
+        others = {n: per for n, per in copper.items() if n != net}
+        routed = free_space(rules, data, net, walls_, {lay: [per[lay] for per in others.values() if lay in per]
+                                                       for lay in ("TOP", "BOTTOM")})
+        r_root, r_regions, r_keys = regions_of(data, *routed, groups)
+        for g in groups[1:]:
+            a, b = min(((i, j) for i in groups[0] for j in g), key=lambda ij: math.dist(
+                (data["pads"][ij[0]]["x"], data["pads"][ij[0]]["y"]), (data["pads"][ij[1]]["x"], data["pads"][ij[1]]["y"])))
+            gap = {"net": net, "a": name(a), "b": name(b)}
+            head = f"{net} {name(a)} – {name(b)}"
+            way = None
+            if not joined(e_root, e_keys, groups[0], g):
+                def area(group):
+                    return sum(r.area for gs in reached(e_root, e_regions, e_keys, group).values() for r in gs)
+                side, pad = (g, b) if area(g) <= area(groups[0]) else (groups[0], a)
+                by = enclosure(rules, data, net, walls_, e_regions, e_root, e_keys, side)
+                gap.update(verdict="unreachable", enclosed=name(pad), enclosed_by=by)
+                gap["line"] = f"{head}: unreachable – {name(pad)} " + (
+                    f"enclosed by {', '.join(by)}" if by else f"has no way {w:g} mil wide")
+            elif not joined(r_root, r_keys, groups[0], g):
+                pa, pb = data["pads"][a], data["pads"][b]
+                margin = max(DIAG_MARGIN_MIL, math.dist((pa["x"], pa["y"]), (pb["x"], pb["y"])) / 2)
+                bx0, by0, bx1, by1 = outer.bounds
+                window = (max(bx0, min(pa["x"], pb["x"]) - margin), max(by0, min(pa["y"], pb["y"]) - margin),
+                          min(bx1, max(pa["x"], pb["x"]) + margin), min(by1, max(pa["y"], pb["y"]) + margin))
+                way = shortest_way(rules, data, *empty, g, groups[0], window) or \
+                    shortest_way(rules, data, *empty, g, groups[0], outer.bounds)
+                reach = c + w / 2 - DIAG_EPS_MIL
+                blockers = crossing(way, others, reach) if way else []
+                if not blockers:   # no way on the raster: the nets along the walls of the smaller side
+                    small = min((groups[0], g), key=lambda grp: sum(
+                        r.area for gs in reached(r_root, r_regions, r_keys, grp).values() for r in gs))
+                    blockers = fence(reached(r_root, r_regions, r_keys, small), others, c + w / 2 + DIAG_EPS_MIL)
+                points = [(x, y) for _, x, y in way] if way else [(pa["x"] + (pb["x"] - pa["x"]) * t / 20,
+                                                                  pa["y"] + (pb["y"] - pa["y"]) * t / 20)
+                                                                 for t in range(21)]
+                u, at = max(((utilisation_at(cong, x, y), (x, y)) for x, y in points), key=lambda ua: ua[0])
+                gap.update(verdict="blocked", blocked_by=blockers, utilisation=round(u, 2), at=plan_mm(rules, *at))
+                if way:
+                    gap["way_mm"] = round(way_length(way) / MIL_PER_MM, 1)
+                gap["line"] = (f"{head}: blocked by {', '.join(blockers) or 'the routed copper'} – utilisation {u:.2f} "
+                               f"at ({gap['at'][0]:.0f}, {gap['at'][1]:.0f}) mm")
+            else:
+                gap.update(verdict="free")
+                gap["line"] = (f"{head}: open, but a free way is left – Freerouting did not find it (more passes, "
+                               "another order: route all's attempts)")
+            gaps.append(gap)
+            if out_dir:
+                gap["png"] = f"{len(gaps):02d}_{re.sub(r'[^A-Za-z0-9_+-]', '_', net)}.png"
+                render_gap(rules, data, segs, routes, gap, net, empty[0], way, walls_, out_dir / gap["png"])
+    result = {"board": rules.board.name, "open": gaps,
+              "congestion": {"max": round(cong["max"], 2), "at": cong["at"], "png": "congestion.png"}}
+    if out_dir:
+        render_congestion(rules, data, cong, out_dir / "congestion.png")
+        (out_dir / "diagnose.json").write_text(json.dumps(result, indent=1, ensure_ascii=False))
+    return result
+
+
+def _patch(ax, geom, **kw):
+    """A shapely area (with holes) as one matplotlib patch per polygon."""
+    from matplotlib.patches import PathPatch
+    from matplotlib.path import Path as MPath
+    for g in _polygons(geom):
+        verts, codes = [], []
+        for ring in (g.exterior, *g.interiors):
+            pts = list(ring.coords)
+            verts += pts
+            codes += [MPath.MOVETO] + [MPath.LINETO] * (len(pts) - 2) + [MPath.CLOSEPOLY]
+        ax.add_patch(PathPatch(MPath(verts, codes), **kw))
+
+
+def render_gap(rules, data, segs, routes, gap, net, areas, way, walls_, png):
+    """One open connection, cropped: where the net's track may run on the empty board (green), keep-outs and holes
+    (red), pads (the two of the connection outlined), the routed copper (the blocking nets orange, the net's own cyan,
+    the others grey), the shortest way of the empty board (yellow)."""
+    import matplotlib
+    matplotlib.use("Agg")
+    import matplotlib.pyplot as plt
+    from matplotlib.collections import LineCollection, PolyCollection
+    outer, holes = board_area(data)
+    _, track, _ = walls_
+    ends = [p for p in data["pads"] if f"{p['ref'] or 'FREE'}.{p['num']}" in (gap["a"], gap["b"])]
+    xs = [p["x"] for p in ends] + [x for _, x, _ in way or []]
+    ys = [p["y"] for p in ends] + [y for _, _, y in way or []]
+    m = 3 * MIL_PER_MM
+    x0, y0, x1, y1 = min(xs) - m, min(ys) - m, max(xs) + m, max(ys) + m
+    window = box(x0, y0, x1, y1)
+    blockers = set(gap.get("blocked_by", []))
+    runs, vias = way_runs(way) if way else ([], [])
+    height = min(8.0, max(3.0, 6.0 * (y1 - y0) / (x1 - x0) + 1.2))
+    fig, axes = plt.subplots(1, 2, figsize=(12, height))
+    for ax, lay in zip(axes, ("TOP", "BOTTOM")):
+        ax.set_facecolor("#1a1a1a")
+        _patch(ax, outer.intersection(window), fc="#0b3d1a", ec="#aaaaaa", lw=1)
+        for h in holes:
+            _patch(ax, h.intersection(window), fc="white", ec="#aaaaaa")
+        if lay in areas:
+            _patch(ax, areas[lay].intersection(window), fc="#3fae5a", ec="none", alpha=0.35)
+        for _, g in track[lay]:
+            _patch(ax, g.intersection(window), fc="#c0392b", ec="#ff6b5b", alpha=0.4, hatch="//")
+        pads = [(pad_outline(p), p in ends) for p in data["pads"] if lay in pad_layers(p)]
+        pads = [(g, mark) for g, mark in pads if g.intersects(window)]
+        if pads:
+            ax.add_collection(PolyCollection([list(g.exterior.coords) for g, _ in pads], facecolors="#c8a040",
+                                             edgecolors=["white" if mark else "none" for _, mark in pads],
+                                             linewidths=[1.5 if mark else 0 for _, mark in pads]))
+        lines = [((a, b), "#ff8c00" if n in blockers else "#00e5ff" if n == net else "#888888", max(0.8, w / 8))
+                 for n, ss in segs.items() for layer, w, a, b in ss
+                 if layer == lay and LineString([a, b]).intersects(window)]
+        if lines:
+            ax.add_collection(LineCollection([seg for seg, _, _ in lines], colors=[c for _, c, _ in lines],
+                                             linewidths=[w for _, _, w in lines], capstyle="round"))
+        for n, r in routes.items():
+            for x, y in r["vias"]:
+                if x0 <= x <= x1 and y0 <= y <= y1:
+                    ax.add_patch(plt.Circle((x, y), rules.via[1] / 2, fc="#ff8c00" if n in blockers else "#dddddd",
+                                            ec="black", lw=0.3))
+        for layer, pts in runs:
+            if layer == lay and len(pts) > 1:
+                ax.plot([x for x, _ in pts], [y for _, y in pts], color="#ffe000", lw=1.6)
+        for x, y in vias:
+            ax.add_patch(plt.Circle((x, y), rules.via[1] / 2, fc="none", ec="#ffe000", lw=1.2))
+        ax.set_xlim(x0, x1)
+        ax.set_ylim(y0, y1)
+        ax.set_aspect("equal")
+        ax.set_xticks([])
+        ax.set_yticks([])
+        ax.set_title(f"{lay} (seen from top)")
+    fig.suptitle(gap["line"], fontsize=9)
+    fig.tight_layout()
+    fig.savefig(png, dpi=110, facecolor="white")
+    plt.close(fig)
+
+
+def render_congestion(rules, data, cong, png):
+    import matplotlib
+    matplotlib.use("Agg")
+    import matplotlib.pyplot as plt
+    import numpy as np
+    outer, holes = board_area(data)
+    ny, nx = cong["util"].shape
+    x0, y0, cell = cong["x0"], cong["y0"], cong["cell"]
+    fig, ax = plt.subplots(figsize=(9, min(10.0, max(3.5, 7.5 * ny / max(nx, 1) + 1.0))))
+    im = ax.imshow(np.ma.masked_invalid(cong["util"]), origin="lower", cmap="viridis", vmin=0,
+                   vmax=max(1.0, cong["max"]), extent=[x0, x0 + nx * cell, y0, y0 + ny * cell])
+    for ring in (outer.exterior, *(h.exterior for h in holes)):
+        ax.plot(*ring.xy, color="#444444", lw=1)
+    if cong["at_mil"]:
+        ax.plot(*cong["at_mil"], "o", mfc="none", mec="#ff3030", ms=14, mew=2)
+    fig.colorbar(im, ax=ax, label="utilisation: wire demand / track capacity")
+    at = f" at ({cong['at'][0]:.0f}, {cong['at'][1]:.0f}) mm" if cong["at"] else ""
+    ax.set_title(f"{data['pcb']}: congestion (RUDY, 1 mm grid, averaged over {RUDY_SMOOTH_CELLS} mm) – "
+                 f"highest {cong['max']:.2f}{at}", fontsize=10)
+    ax.set_aspect("equal")
+    ax.axis("off")
+    fig.tight_layout()
+    fig.savefig(png, dpi=110, facecolor="white")
+    plt.close(fig)
+
+
+def diagnose_main(cfg, board, rules, only=None):
+    """`route diagnose`: offline from the board as read, the board file and the last SES -> exit 0 nothing open, 2 open
+    connections explained."""
+    P = paths(cfg, board)
+    missing = [cfg.relative(f) for f in (P["board"], P["ses"]) if not f.exists()]
+    if missing:
+        raise SystemExit(f"{' and '.join(missing)} missing – `edakit route read` and `edakit route route` (or `route "
+                         "all`) first")
+    out = P["diagnose"]
+    out.mkdir(parents=True, exist_ok=True)
+    for old in out.glob("*.png"):
+        old.unlink()
+    r = diagnose(rules, json.loads(P["board"].read_text()), read_ses(P["ses"], rules), only, out)
+    cong = r["congestion"]
+    at = f" at ({cong['at'][0]:.0f}, {cong['at'][1]:.0f}) mm" if cong["at"] else ""
+    if only and not r["open"]:
+        print(f"    {only}: not open", flush=True)
+        return 0
+    if not r["open"]:
+        say("diagnose: nothing open")
+    else:
+        nets = len({g["net"] for g in r["open"]})
+        say(f"diagnose: {len(r['open'])} open connection{'s' * (len(r['open']) != 1)} in {nets} "
+            f"net{'s' * (nets != 1)}")
+        for g in r["open"]:
+            print(f"    {g['line']}", flush=True)
+    say(f"congestion: highest utilisation {cong['max']:.2f}{at} -> {cfg.relative(out)}")
+    return 2 if r["open"] else 0
 
 
 # --- 5 apply ------------------------------------------------------------------------------------------------------
@@ -1379,14 +2136,20 @@ def pours(cfg, board, rules, mcp, data=None, routes=None, stitch_file=None, regi
 def main(cfg, args):
     board = cfg.board(args.board)
     rules = Rules(board, args.clearance)
+    if rules.joint_keep and cfg.graph.exists():
+        from .design import load_graph
+        rules.hand = hand_soldered(load_graph(cfg.graph), board.name)
     P = paths(cfg, board)
     passes = args.passes or rules.passes
     steps = {"all": ["read", "dsn", "route", "check", "apply", "pours", "reload", "drc"]}.get(args.action, [args.action])
+    if board.routing.get("widths") == "sim" and {"dsn", "route", "check", "diagnose"} & set(steps):
+        sim_widths(cfg, board, rules)
     mcp = None
+    step_line = eda.Steps(len(steps), clock=time.time, t0=T0)   # the minutes of say()
     try:
-        for n, step in enumerate(steps, 1):
+        for step in steps:
             if len(steps) > 1:
-                say(f"step {n}/{len(steps)}: {step}")
+                step_line(step)
             if step in ("read", "apply", "verify", "pours", "reload", "drc", "save") and mcp is None:
                 mcp = eda.connect(cfg, args.verbose)
                 eda.open_project(mcp, cfg)
@@ -1402,6 +2165,7 @@ def main(cfg, args):
                 data = json.loads(P["board"].read_text())
                 tight = report_pads(rules, data, graph_waivers(cfg))  # the placement's: another routing keeps them
                 tight += report_paste(cfg, data)
+                tight += report_joints(cfg, board, rules, data)
                 attempts = rules.attempts if args.action == "all" and not tight else 1
                 for attempt in range(1, attempts + 1):
                     if attempt > 1:
@@ -1413,27 +2177,41 @@ def main(cfg, args):
                     open_nets = check(rules, data, routes)
                     render(rules, data, routes, P["png"], open_nets)
                     report_check(rules, data, open_nets, routes)
+                    report_looks(rules, data, routes)
                     bad = clearance_check(rules, data, routes)
                     say(f"clearances/keep-outs: {len(bad)} findings")
                     for line in bad[:20]:
                         print(f"    {line}", flush=True)
+                    near = report_joints(cfg, board, rules, data, routes)
                     nested = report_regions(rules, data, routes)
-                    if not (open_nets or bad or nested):
+                    thin = report_widths(cfg, board, rules, routes)   # no new attempt routes wider
+                    if not (open_nets or bad or near or nested) or thin:
                         break
                 else:
                     if args.action == "all":
-                        raise SystemExit(f"after {attempts} attempts nets are still open, clearances too small or a "
-                                         "pour inside another – nothing written to EasyEDA. More passes (--passes), or "
-                                         "check rules/placement." + (" Pads too close as well (above)." if tight else ""))
+                        raise SystemExit(f"after {attempts} attempts nets are still open, clearances too small, a via "
+                                         "at a hand-soldered joint (L-18) or a pour inside another – nothing "
+                                         "written to EasyEDA. More passes (--passes), or check rules/placement."
+                                         + (" Pads too close as well (above)." if tight else ""))
                     return 2
                 if tight:
                     if args.action == "all":
-                        pairs = len({(g["a"], g["b"]) for g in tight})
-                        raise SystemExit(f"{pairs} pad pairs of different parts closer than the clearance (L-13) or "
-                                         "the paste gap (L-14) – nothing written to EasyEDA. Freerouting cannot move a "
-                                         "pad: move or turn one of the two parts in [place] of the board file (fix it "
-                                         "there if the auto-layout put it), then place and read the board again.")
+                        pairs = len({(g["a"], g["b"]) if "a" in g else (g["joint"], g["other"]) for g in tight})
+                        raise SystemExit(f"{pairs} pad pairs of different parts closer than the clearance (L-13), "
+                                         "the paste gap (L-14) or the keep of a hand-soldered joint (L-18) – nothing "
+                                         "written to EasyEDA. Freerouting cannot move a pad: move or turn one of the "
+                                         "two parts in [place] of the board file (fix it there if the auto-layout put "
+                                         "it), then place and read the board again.")
                     return 2
+                if thin:
+                    if args.action == "all":
+                        raise SystemExit(f"{len(thin)} track widths below IPC-2221 for 1.5 x the simulated current "
+                                         "(L-5, above) – nothing written to EasyEDA. Widen the class in "
+                                         '[routing.classes] or the fixed wire, or route with [routing] widths = "sim".'
+                                         + (" Nets are open as well (above)." if open_nets else ""))
+                    return 2
+            elif step == "diagnose":
+                return diagnose_main(cfg, board, rules, getattr(args, "net", None))
             elif step == "apply":
                 apply_ses(rules, mcp, read_ses(P["ses"], rules), json.loads(P["board"].read_text()), P["stitch"])
             elif step == "verify":
@@ -1455,9 +2233,10 @@ def main(cfg, args):
                 say("PCB saved and reloaded")
             elif step == "drc":
                 found = eda.drc(mcp, P["drc"])
-                say(eda.describe_drc(found))
-                if found:
-                    return 2
+                P["netlist_diff"].unlink(missing_ok=True)
+                code = pcb.drc_report(cfg, board, mcp, found, P["netlist_diff"], say=say)
+                if code:
+                    return code
             elif step == "save":
                 say(f"PCB saved: {eda.save_pcb(mcp)}")
     except eda.MCPError as e:

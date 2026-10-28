@@ -72,6 +72,9 @@ a = "J1.1"
 b = "D1.2"
 max_mm = 10
 what = "input"
+
+[routing]
+hand_solder_keep_mm = 0.5        # L-18: J1 is soldered by hand (bom: false), its joints are on BOTTOM
 """
 
 
@@ -181,6 +184,7 @@ class Export:
         self.probe = {"pins": {"fields": ["PIN_NAME", "PIN_X", "PIN_Y", "NET_NAME", "PIN_TYPE", "LAYER", "PAD_SIZEX",
                                           "PAD_SIZEY"], "rows": probe}}
         self.drc = []
+        self.netlist_diff = None       # the dry runs of `pcb parts` and `pcb nets` (only with an Import Changes item)
         self.bom = [{"reference": r, "lcsc": LCSC[r], "value": v, "quantity": 1}
                     for r, v in (("J1", ""), ("D1", "SS34"), ("C2", "22uF"))]
         self.jlc = {"C8678": {"componentModelEn": "SS34", "componentLibraryType": "base", "stockCount": 52000},
@@ -235,6 +239,11 @@ class Export:
             dx, dy = turn((p["X"] - c["x"], p["Y"] - c["y"]), rot)
             p["X"], p["Y"] = c["x"] + dx, c["y"] + dy
 
+    def line(self, net, layer, pts, width=WIDTH):
+        self.gerber["top" if layer == 1 else "bottom"].append(("draw", width, pts, net))
+        self.pcb["lines"] += [{"Net": net, "Layer": layer, "LineWidth": width * MIL, "StartX": a[0] * MIL,
+                               "StartY": a[1] * MIL, "EndX": b[0] * MIL, "EndY": b[1] * MIL} for a, b in zip(pts, pts[1:])]
+
     def width(self, net, mm):
         for ln in self.pcb["lines"]:
             if ln["Net"] == net:
@@ -256,8 +265,10 @@ class Export:
                 (art / "silk_footprints_main" / gerber.FILES[key]).write_text(layer.text())
         d = root / "build" / "fab" / "main"
         (d / "gerber").mkdir(parents=True)
-        for name, data in (("pcb", self.pcb), ("drc", self.drc), ("bom_easyeda", self.bom), ("jlc_parts", self.jlc)):
-            (d / f"{name}.json").write_text(json.dumps(data, ensure_ascii=False))
+        for name, data in (("pcb", self.pcb), ("drc", self.drc), ("bom_easyeda", self.bom), ("jlc_parts", self.jlc),
+                           ("netlist_diff", self.netlist_diff)):
+            if data is not None:
+                (d / f"{name}.json").write_text(json.dumps(data, ensure_ascii=False))
         wb = openpyxl.Workbook()
         ws = wb.active
         head = ["Designator", "Footprint", "Mid X", "Mid Y", "Layer", "Rotation", "SMD"]
@@ -291,13 +302,15 @@ def findings(rows):
 
 
 CHECKS = ["L-1", "L-2", "L-3", "L-4", "L-5", "L-7", "L-8", "L-9", "L-10", "L-11", "L-12", "L-13", "L-14", "L-15", "L-16",
-          "L-17", "F-1", "F-2", "F-3", "F-5"]
+          "L-17", "L-18", "F-1", "F-2", "F-3", "F-5"]
+ON_REQUEST = ["F-6"]               # runs only when the board file asks for it ([order])
 
 
 def test_the_clean_export_passes_every_check(project):
     rows = run(project)
     assert findings(rows) == []
-    assert sorted({r["id"] for r in rows if r["stage"] in "LF"}, key=CHECKS.index) == CHECKS
+    assert sorted({r["id"] for r in rows if r["stage"] in "LF"}, key=CHECKS.index) == CHECKS   # no [order]: no F-6
+    assert not (project.root / "build" / "fab" / "main" / "order.md").exists()
     by = {(r["id"], r["check"]): r["actual"] for r in rows}
     assert by["L-11", "short current loops: path over tracks per pad pair within the limit"] == "J1.1-D1.2 7.8 mm"
     assert by["L-9", "hole takes the lead at nominal size (diagonal or edge, or manufacturer's value)"] == "2 holes"
@@ -318,6 +331,19 @@ def test_edakit_fab_offline_on_the_clean_export(project, monkeypatch, capsys):
     assert findings(rows) == []
 
 
+def test_edakit_order_writes_the_bom_of_f1(project, monkeypatch):
+    """#41: the assembler's BOM of `edakit order` is byte for byte the one F-1 writes – C2 and D1; J1 is soldered by
+    hand and goes to a cart."""
+    run(project)
+    monkeypatch.chdir(project.root)
+    monkeypatch.delenv("EDAKIT_CONFIG", raising=False)
+    assert cli.main(["order", "--out", str(project.root / "order")]) == 0
+    bom = (project.root / "order" / "bom_main.csv").read_bytes()
+    assert bom == (project.root / "build" / "fab" / "main" / "bom_main.csv").read_bytes()
+    assert [line.split(",")[-1] for line in bom.decode().splitlines()] == ["LCSC Part #", "C45783", "C8678"]
+    assert "C131337" in (project.root / "order" / "cart_lcsc.csv").read_text()
+
+
 def board_file(project, old, new):
     f = project.root / "hardware" / "boards" / "main.toml"
     assert old in f.read_text()
@@ -328,6 +354,20 @@ def graph(project, change):
     g = project.graph()
     change(g)
     project.save_graph(g)
+
+
+# the DRC item EasyEDA writes while the import view has not been opened since schematic parts changed (#67)
+IMPORT = {"errorType": "Netlist Error", "ruleName": "Import Changes", "obj1": {"typeName": "Schematic Netlist"},
+          "obj2": {"typeName": "PCB Netlist"}}
+CLEARANCE = {"errorType": "Clearance", "ruleName": "Safe Spacing"}
+NO_DIFF = {"parts": {}, "nets": []}
+
+
+def import_pending(diff, *more):
+    def fault(ex, project):
+        ex.drc += [IMPORT, *more]
+        ex.netlist_diff = diff
+    return fault
 
 
 def short(ex, project):
@@ -419,10 +459,55 @@ def own_print(ex, project):
     silk_line(*ACROSS_C2)(ex, project)
 
 
+def via_at_joint(ex, project):
+    """A GND via 0.40 mm (copper to copper) left of J1.1 (VIN), with its piece of GND track on TOP – J1 sits on TOP, so
+    only the via is on J1's solder side."""
+    via(ex, 1.6, 9)
+    ex.line("GND", 1, [(1.6, 9), (1.6, 6)])
+
+
+def track_at_joint(ex, project):
+    """A GND track on BOTTOM from J1.2 that passes 0.20 mm below J1.1 (VIN), J1's solder side – tracks do not count
+    for L-18. It starts on J1.2, so L-15 sees no loose copper."""
+    y = 9 - 0.7 - 0.2 - WIDTH / 2
+    ex.line("GND", 2, [(3, 11), (1.5, 11), (1.5, y), (5, y)])
+
+
 def assembled_j1(ex, project):
     graph(project, lambda g: project.comp(g, "J1").pop("bom"))
     ex.jlc["C131337"] = {"componentModelEn": "B2B-PH-K-S(LF)(SN)", "componentLibraryType": "extend",
                          "stockCount": 41000}
+
+
+REMARK = "No V-cut. Use our 2 NPTH tooling holes (1.152 mm). Tabs only on the right edge X30 Y0-20, none elsewhere. Ask us first."
+PLACEHOLDER = (18.0, 3.0)          # the order-number placeholder on the top silkscreen, bottom right
+
+
+def ordered(ex, project, order=None, placeholder=True, h_mm=1.0):
+    """#40: [order] in the board file (mark = "specify" and REMARK unless order says otherwise), and the placeholder
+    JLCJLCJLCJLC on the top silkscreen – in pcb.json and as [[silk.texts]] of h_mm."""
+    order = {"mark": "specify", "remark": REMARK, **(order or {})}
+    text = "\n[order]\n" + "".join(f"{k} = {json.dumps(v, ensure_ascii=False)}\n" for k, v in order.items()
+                                   if k != "tab_zones")
+    if "tab_zones" in order:
+        text += "tab_zones = [" + ", ".join(f"{{ from = {list(a)}, to = {list(b)} }}" for a, b in order["tab_zones"]) + "]\n"
+    if placeholder:
+        text += (f'\n[[silk.texts]]\ntext = "JLCJLCJLCJLC"\nx = {PLACEHOLDER[0]}\ny = {PLACEHOLDER[1]}\nh_mm = {h_mm}\n'
+                 'side = "top"\n')
+        ex.pcb["strings"].append({"Text": "JLCJLCJLCJLC", "X": PLACEHOLDER[0] * MIL, "Y": PLACEHOLDER[1] * MIL, "Layer": 3})
+    f = project.root / "hardware" / "boards" / "main.toml"
+    f.write_text(f.read_text() + text)
+
+
+def edge_track(ex, project):
+    """A tab zone along the left edge, and a track of 0.2 mm whose copper runs 0.45 mm from that edge."""
+    ordered(ex, project, {"tab_zones": [((0, 0), (0, 20))]})
+    ex.gerber["top"].append(("draw", 0.2, [(0.55, 3), (0.55, 15)], "edge"))
+
+
+def no_tooling(ex, project):
+    ordered(ex, project)
+    board_file(project, "[tooling]\nholes", "# [tooling]\n# holes")
 
 
 FAULTS = [
@@ -447,8 +532,17 @@ FAULTS = [
      [("L-2", "fail", "FlyingProbeTesting.json missing"), ("F-5", "fail", "FlyingProbeTesting.json"),
       ("L-15", "fail", "FlyingProbeTesting.json missing")]),
     # L-3
-    ("a DRC finding", lambda ex, p: ex.drc.append({"errorType": "Clearance", "ruleName": "Safe Spacing"}),
-     [("L-3", "fail", "Clearance (Safe Spacing): 1")]),
+    ("a DRC finding", lambda ex, p: ex.drc.append(CLEARANCE), [("L-3", "fail", "Clearance (Safe Spacing): 1")]),
+    ("the import acknowledgement pending", import_pending(NO_DIFF),
+     [("L-3", "fail", "EasyEDA waits for the import acknowledgement: open Design → Import Changes once")]),
+    ("a property of D1 differs between schematic and PCB", import_pending({"parts": {"props": ["D1"]}, "nets": []}),
+     [("L-3", "fail", "properties differ from the schematic: D1 → edakit pcb parts --write")]),
+    ("a pad net differs between graph and PCB", import_pending({"parts": {}, "nets": [["D1.2", "+5V", "VIN"]]}),
+     [("L-3", "fail", "pad nets: D1.2 +5V instead of VIN → edakit pcb nets --write")]),
+    ("an Import Changes item, schematic and PCB not compared", import_pending(None),
+     [("L-3", "fail", "schematic and PCB not compared")]),
+    ("an Import Changes item and a clearance error", import_pending(NO_DIFF, CLEARANCE),
+     [("L-3", "fail", "Clearance (Safe Spacing): 1"), ("L-3", "fail", "EasyEDA waits for the import acknowledgement")]),
     # L-4
     ("another footprint", lambda ex, p: ex.comp("C2").update(footprintName="C0603"),
      [("L-4", "fail", "C2: C0603 instead of C0805")]),
@@ -510,10 +604,12 @@ FAULTS = [
       ("L-14", "fail", "C2.2 (GND) – D1.2 (VIN): 0.090 mm apart on TOP, below the paste gap 0.400 mm")]),
     ("the board never read by route read", lambda ex, p: setattr(ex, "shapes", None),
      [("L-13", "fail", "build/edakit/route/main_board.json missing (edakit route read)"),
-      ("L-14", "fail", "build/edakit/route/main_board.json missing (edakit route read)")]),
+      ("L-14", "fail", "build/edakit/route/main_board.json missing (edakit route read)"),
+      ("L-18", "fail", "build/edakit/route/main_board.json missing (edakit route read)")]),
     ("a part moved since the board was read", lambda ex, p: ex.read_off.update(C2=1),
      [("L-13", "fail", "C2.1, C2.2 moved or changed since: edakit route read"),
-      ("L-14", "fail", "C2.1, C2.2 moved or changed since: edakit route read")]),
+      ("L-14", "fail", "C2.1, C2.2 moved or changed since: edakit route read"),
+      ("L-18", "fail", "C2.1, C2.2 moved or changed since: edakit route read")]),
     # L-14
     ("two SMD parts with their pads closer than the paste gap", paste,
      [("L-14", "fail", "C2.2 (GND) – D1.2 (VIN): 0.300 mm apart on TOP, below the paste gap 0.400 mm")]),
@@ -531,8 +627,9 @@ FAULTS = [
      [("L-16", "fail", "via at (8.00, 13.50): 0.037 mm on BOTTOM (hole Ø 0.30 mm)")]),
     ("two vias closer than 0.2 mm", lambda ex, p: (via(ex, 8, 13.5), via(ex, 8.45, 13.5)),
      [("L-16", "fail", "via at (8.00, 13.50) – via at (8.45, 13.50): 0.145 mm apart, below 0.20 mm")]),
-    ("a via closer than 0.45 mm to a component hole", lambda ex, p: via(ex, 3, 12.05),
-     [("L-16", "fail", "J1.2 – via at (3.00, 12.05): 0.398 mm apart, below 0.45 mm")]),
+    ("a via closer than 0.45 mm to a component hole", lambda ex, p: via(ex, 3, 12.05),     # J1 is soldered by hand
+     [("L-16", "fail", "J1.2 – via at (3.00, 12.05): 0.398 mm apart, below 0.45 mm"),
+      ("L-18", "fail", "J1.2 (GND) – via (no track, net unknown) at (3.00, 12.05): 0.05 mm apart on BOTTOM")]),
     # L-17
     ("edakit's own print on a mask opening", own_print,
      [("L-17", "fail", "TOP: 0.165 mm² in 1 spot: (19.1, 9.0) mm at C2.1")]),
@@ -550,6 +647,12 @@ FAULTS = [
     ("a text height below the fab's minimum",
      lambda ex, p: board_file(p, 'edge_ok = ["J1"]', 'edge_ok = ["J1"]\n\n[silk]\nlabel_h_mm = 0.8'),
      [("L-17", "warn", "label_h_mm = 0.8 mm")]),
+    # L-18
+    ("a via of another net next to a hand-soldered joint", via_at_joint,
+     [("L-18", "fail", "J1.1 (VIN) – via GND at (1.60, 9.00): 0.40 mm apart on BOTTOM, the solder side of J1, below "
+       "hand_solder_keep_mm 0.5")]),
+    ("a via without a track next to a hand-soldered joint", lambda ex, p: via(ex, 1.6, 9),
+     [("L-18", "fail", "J1.1 (VIN) – via (no track, net unknown) at (1.60, 9.00): 0.40 mm")]),
     # F-1
     ("another LCSC number in EasyEDA's BOM", lambda ex, p: ex.bom[2].update(lcsc="C15850"),
      [("F-1", "fail", "C2: graph C45783, EasyEDA C15850")]),
@@ -562,6 +665,10 @@ FAULTS = [
      [("F-2", "fail", "C2 C45783: 3 in stock, 5 needed")]),
     ("the catalogue not reachable", lambda ex, p: ex.jlc.update(C8678={"error": "timed out"}),
      [("F-2", "fail", "D1 C8678: catalogue not reachable (timed out)")]),
+    ("the catalogue names another part (#38)", lambda ex, p: ex.jlc["C8678"].update(componentModelEn="SS14"),
+     [("F-2", "fail", "D1 C8678: JLCPCB names it SS14, the parts entry SS34")]),
+    ("the catalogue lists another class (#38)", lambda ex, p: ex.jlc["C8678"].update(componentLibraryType="expand"),
+     [("F-2", "warn", "D1 C8678: JLCPCB lists it as Extended Part, the parts entry as Basic Part")]),
     # F-3
     ("a part missing from the pick-and-place file", lambda ex, p: ex.cpl.pop(1), [("F-3", "fail", "D1: 0x")]),
     ("a part twice in the pick-and-place file", lambda ex, p: ex.cpl.append(dict(ex.cpl[2])),
@@ -588,6 +695,21 @@ FAULTS = [
     ("copper in a tooling hole's opening",     # the dot is no pad either: what the drill leaves of it is loose
      lambda ex, p: ex.gerber["top"].append(("flash", ("C", 0.3, 0.3), 3.15, 17.5)),
      [("F-5", "fail", "top: copper in the opening at (2.5, 17.5)"), ("L-15", "warn", "TOP: 1 piece without pad")]),
+    # F-6 (#40) – only with [order] in the board file
+    ("a remark longer than 200 characters", lambda ex, p: ordered(ex, p, {"remark": "x" * 201}),
+     [("F-6", "fail", "201 characters")]),
+    ("a remark that is not ASCII", lambda ex, p: ordered(ex, p, {"remark": "Tabs only where copper is ≥ 1 mm away"}),
+     [("F-6", "fail", "not ASCII: ≥")]),
+    ("mark specify without the placeholder", lambda ex, p: ordered(ex, p, placeholder=False),
+     [("F-6", "fail", "no JLCJLCJLCJLC on a silkscreen layer")]),
+    ("the placeholder too small", lambda ex, p: ordered(ex, p, h_mm=0.6),   # below L-17's 1.0 mm for edakit's texts too
+     [("F-6", "fail", "JLCJLCJLCJLC 0.60 mm high"), ("L-17", "warn", "'JLCJLCJLCJLC' = 0.6 mm")]),
+    ("the placeholder kept with mark default", lambda ex, p: ordered(ex, p, {"mark": "default"}),
+     [("F-6", "warn", 'JLCJLCJLCJLC at (18.0, 3.0) on the top silkscreen, but mark = "default"')]),
+    ("Economic without tooling holes", no_tooling,
+     [("F-6", "warn", "no tooling holes ([tooling]) – JLCPCB adds its own")]),
+    ("copper in a tab zone", edge_track,       # the track touches no pad: loose copper for L-15 too
+     [("F-6", "fail", "copper 0.45 mm from the edge at (0.0, "), ("L-15", "warn", "TOP: 1 piece without pad")]),
 ]
 
 
@@ -761,5 +883,116 @@ def test_a_group_label_or_unlabelled_covers_a_part(project):
                 "C2 (no room next to D1)")
 
 
+def test_the_acknowledgement_alone_leaves_the_other_kinds_passing(project):
+    rows = run(project, import_pending(NO_DIFF))
+    other, sync = [r for r in rows if r["id"] == "L-3"]
+    assert (other["check"], other["result"]) == ("EasyEDA DRC without findings (other kinds)", "pass")
+    assert (sync["check"], sync["result"]) == ("schematic and PCB in sync (Import Changes)", "fail")
+    assert "it shows no changes" in sync["actual"]
+
+
 def test_every_check_has_a_fault():
-    assert {cid for _, _, e in FAULTS for cid, _, _ in e} == set(CHECKS)
+    assert {cid for _, _, e in FAULTS for cid, _, _ in e} == set(CHECKS + ON_REQUEST)
+
+
+def test_the_order_form_of_the_clean_export(project):
+    """#40: with [order] F-6 passes, and order.md holds every field of the order form – the class and side from
+    [release] assembly, the tooling holes, the mark at the placeholder, the remark, bake, the free outline stretches."""
+    rows = run(project, ordered)
+    assert findings(rows) == []
+    f6 = [r for r in rows if r["id"] == "F-6"]
+    assert {r["result"] for r in f6} == {"pass", "info"}
+    assert len(REMARK) <= 200 and any(r["actual"] == f"{len(REMARK)} characters, ASCII" for r in f6)
+    sheet = (project.root / "build" / "fab" / "main" / "order.md").read_text()
+    for text in ("| Layers | 2 |", "| Dimensions | 30.00 x 20.00 mm (Gerber outline) |", "| PCB Qty | 5 |",
+                 "| Surface Finish | LeadFree HASL |",
+                 "| Mark on PCB | Order Number (Specify Position) – JLCJLCJLCJLC at (18.0, 3.0) on the top silkscreen |",
+                 REMARK, "| PCBA Type | Economic ([release] assembly.sides top: one side) |",
+                 "| Assembly Side | Top Side |", "| PCBA Qty | 5 |", "| Tooling holes | Added by Customer (2 x Ø 1.152 mm) |",
+                 "| Bake Components | check the BOM tool – no stock snapshot (edakit stock) |",
+                 "| BOM / CPL | bom_main.csv (2 lines) / cpl_main.csv |", "| Gerber | gerber_main.zip |",
+                 "(30.0, 0.0) → (30.0, 20.0), 20.0 mm", "| J1 | C131337 B2B-PH-K-S(LF)(SN) | lcsc | C131337 |"):
+        assert text in sheet, text
+
+
+def test_the_order_form_lists_only_the_free_edges(project):
+    """#40: copper 0.45 mm from the left edge – the tab zone there fails, the right edge is still free."""
+    rows = run(project, edge_track)
+    row = next(r for r in rows if r["id"] == "F-6" and r["result"] == "fail")
+    assert row["actual"].startswith("copper 0.45 mm from the edge at (0.0, ") and row["expected"] == ">= 1.00 mm (tab_copper_mm)"
+    sheet = (project.root / "build" / "fab" / "main" / "order.md").read_text()
+    assert "(30.0, 0.0) → (30.0, 20.0), 20.0 mm" in sheet and "| (0.0, 0.0) → (0.0, 20.0) | 0.45 mm" in sheet
+
+
+def test_the_order_form_bakes_an_msl5_part(project):
+    """#40: bake "Yes" when the stock snapshot gives a BOM part MSL 5 or more."""
+    def snapshot(ex, p):
+        ordered(ex, p)
+        rows = {"C8678": {"date": "2026-10-27", "listed": True, "msl": 5}, "C45783": {"date": "2026-10-27", "listed": True,
+                                                                               "msl": 1}}
+        (p.root / "hardware" / "stock.json").write_text(json.dumps({"date": "2026-10-27", "parts": rows}))
+    run(project, snapshot)
+    sheet = (project.root / "build" / "fab" / "main" / "order.md").read_text()
+    assert "| Bake Components | Yes – D1 C8678 MSL 5 (stock snapshot 2026-10-27) |" in sheet
+
+
+# --- a declared visible side (#61): stage L adds the side's numbers as a row of its own, and warns above a limit
+
+def looks(project, keys, change=None):
+    def fault(ex, p):
+        f = p.root / "hardware" / "boards" / "main.toml"
+        f.write_text(f.read_text() + f"\n[looks]\n{keys}\n")
+        if change:
+            change(ex, p)
+    return [r for r in run(project, fault) if r["id"] == "L"]
+
+
+def test_stage_l_reports_the_visible_side(project):
+    row, = looks(project, 'visible = "bottom"')                                   # every track of the export is on TOP
+    assert (row["result"], row["actual"], row["expected"]) == (
+        "info", "BOTTOM (visible): 0.00 m of track, 0 vias (TOP 0.04 m, BOTTOM 0.00 m)", "information")
+
+
+def test_stage_l_warns_above_the_limits_of_the_visible_side(project):
+    def vias(ex, p):
+        ex.vias += [(10, 15, 0.3), (12, 15, 0.3)]
+    rows = looks(project, 'visible = "top"\nmax_track_m = 0.03\nmax_vias = 1', vias)       # 39.7 mm of track on TOP
+    assert [(r["result"], r["actual"], r["expected"]) for r in rows] == [
+        ("info", "TOP (visible): 0.04 m of track, 2 vias (TOP 0.04 m, BOTTOM 0.00 m)", "<= 0.03 m, <= 1 vias"),
+        ("warn", "0.04 m of track", "<= 0.03 m"), ("warn", "2 vias", "<= 1 vias")]
+
+
+def test_stage_l_within_the_limits_of_the_visible_side(project):
+    rows = looks(project, 'visible = "top"\nmax_track_m = 0.1\nmax_vias = 2', lambda ex, p: ex.vias.append((10, 15, 0.3)))
+    assert [(r["result"], r["actual"]) for r in rows] == [
+        ("info", "TOP (visible): 0.04 m of track, 1 via (TOP 0.04 m, BOTTOM 0.00 m)")]
+
+
+def test_a_waived_hand_soldered_joint_is_listed_with_its_reason(project):
+    def waived(ex, p):
+        via_at_joint(ex, p)
+        graph(p, lambda g: next(n for n in g["graph"]["nets"] if n["name"] == "VIN").update(
+            waive={"L-18": "test: the via is tented"}))
+    rows = run(project, waived)
+    assert findings(rows) == [("L-18", "waived")]
+    w = next(r for r in rows if r["result"] == "waived")
+    assert w["reason"] == "test: the via is tented" and "J1.1 (VIN) – via GND at (1.60, 9.00)" in w["check"]
+
+
+def test_hand_solder_keep_off_gives_no_row(project):
+    def off(ex, p):
+        via_at_joint(ex, p)
+        board_file(p, "hand_solder_keep_mm = 0.5", "hand_solder_keep_mm = 0")
+    rows = run(project, off)
+    assert findings(rows) == [] and not [r for r in rows if r["id"] == "L-18"]
+
+
+def test_the_clean_export_names_the_hand_soldered_joints(project):
+    row = next(r for r in run(project) if r["id"] == "L-18")
+    assert (row["result"], row["actual"], row["expected"]) == (
+        "pass", "2 joints of 1 parts, 0 vias", ">= 0.5 mm ([routing] hand_solder_keep_mm)")
+
+
+def test_a_track_at_a_hand_soldered_joint_does_not_count(project):
+    rows = run(project, track_at_joint)
+    assert findings(rows) == [] and next(r for r in rows if r["id"] == "L-18")["result"] == "pass"

@@ -1,0 +1,52 @@
+{
+ "code": 200,
+ "data": {
+  "componentPageInfo": {
+   "list": [
+    {
+     "componentCode": "C45783",
+     "componentModelEn": "CL21A226MAQNNNE",
+     "componentBrandEn": "Samsung Electro-Mechanics",
+     "componentLibraryType": "base",
+     "preferredComponentFlag": false,
+     "stockCount": 4061592,
+     "componentPrices": [
+      {
+       "startNumber": 1,
+       "endNumber": 199,
+       "productPrice": 0.1917
+      },
+      {
+       "startNumber": 200,
+       "endNumber": 599,
+       "productPrice": 0.1508
+      },
+      {
+       "startNumber": 600,
+       "endNumber": 1999,
+       "productPrice": 0.131
+      },
+      {
+       "startNumber": 2000,
+       "endNumber": 9999,
+       "productPrice": 0.1132
+      },
+      {
+       "startNumber": 10000,
+       "endNumber": 19999,
+       "productPrice": 0.1082
+      },
+      {
+       "startNumber": 20000,
+       "endNumber": -1,
+       "productPrice": 0.1055
+      }
+     ],
+     "lossNumber": 4,
+     "leastPatchNumber": 5,
+     "describe": "22uF 25V X5R ±20% 0805 Multilayer Ceramic Capacitors MLCC - SMD/SMT ROHS"
+    }
+   ]
+  }
+ }
+}

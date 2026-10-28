@@ -1,6 +1,7 @@
 """Schematics in EasyEDA Pro from the graph: create, check, copy, layout (stage S).
 
-    edakit schematic create [--board B] [--only R1,C1] [--dry-run] [--save]   template <- graph (replaced every run)
+    edakit schematic create [--board B] [--only R1,C1] [--dry-run] [--save]   template <- graph (replaced every run);
+                                                 --save (also of layout) only when the netlist equals the graph
     edakit schematic check  [--board B] [--schematic NAME] [--no-pins]       read only: schematic = graph?
     edakit schematic copy   [--board B] [--source A --target B]              template -> board schematic
     edakit schematic layout [--board B] [--dry-run] [--save]                 readable sheet with blocks and wires
@@ -170,14 +171,15 @@ def place(mcp, comps, devices, positions):
     return placed
 
 
-def pin_differences(symbol, graph):
+def pin_differences(symbol, graph, labels=("symbol", "graph")):
     """symbol, graph: {pin number: name}. Numbers on one side only, and names that differ (case and blanks ignored) –
     a graph that assumed another pinout shows up as a name, long before the board does."""
     norm = lambda s: "".join(str(s).split()).upper()  # noqa: E731
+    a, b = labels
     out = []
     if set(symbol) != set(graph):
-        out.append(f"symbol only {sorted(set(symbol) - set(graph))}, graph only {sorted(set(graph) - set(symbol))}")
-    out += [f"pin {n}: symbol '{symbol[n]}', graph '{graph[n]}'" for n in sorted(set(symbol) & set(graph), key=natural_key)
+        out.append(f"{a} only {sorted(set(symbol) - set(graph))}, {b} only {sorted(set(graph) - set(symbol))}")
+    out += [f"pin {n}: {a} '{symbol[n]}', {b} '{graph[n]}'" for n in sorted(set(symbol) & set(graph), key=natural_key)
             if norm(symbol[n]) != norm(graph[n])]
     return out
 
@@ -290,7 +292,7 @@ def create(cfg, args):
         for d in sorted(positions, key=natural_key):
             print(f"  {d:<6} {comps[d].get('type', ''):<16} {positions[d]}")
         return 0
-    phase = eda.Progress()
+    phase = eda.Progress(10 + bool(args.save))   # bridge … ERC, and save
     mcp = eda.start(cfg, args.verbose)
     try:
         phase("bridge")
@@ -320,11 +322,11 @@ def create(cfg, args):
         phase("ERC")
         erc = mcp.call("easyeda_erc_run", projectId=PROJECT, scope="focused")
         print("  " + json.dumps({k: v for k, v in erc.items() if not isinstance(v, (list, dict))}, ensure_ascii=False))
+        skipped = len(comps) - len(placed)
         if args.save:
             phase("save")
-            mcp.call("easyeda_project_save", projectId=PROJECT, confirmWrite=True)
+            eda.save_if_matching(mcp, diffs, failures, pin_problems, skipped)
         phase(None)
-        skipped = len(comps) - len(placed)
         print(f"\ndone: {len(placed)} placed, {skipped} skipped, {pin_problems} pin mismatches, {failures} pin "
               f"failures, {diffs} differing nets")
         return 0 if not (skipped or failures or diffs or pin_problems) else 2

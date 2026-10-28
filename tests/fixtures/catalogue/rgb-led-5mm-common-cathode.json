@@ -1,0 +1,134 @@
+[
+ {
+  "componentCode": "C330759",
+  "componentModelEn": "TJ-L5FYTXHMCSLCRGB-A5",
+  "componentBrandEn": "TOGIALED",
+  "componentTypeEn": "RGB LEDs",
+  "componentSpecificationEn": "Plugin,D=5mm",
+  "componentLibraryType": "expand",
+  "preferredComponentFlag": false,
+  "stockCount": 12335,
+  "dataManualUrl": "https://www.lcsc.com/datasheet/lcsc_datasheet_1912111437_TOGIALED-TJ-L5FYTXHMCSLCRGB-A5_C330759.pdf"
+ },
+ {
+  "componentCode": "C331058",
+  "componentModelEn": "TJ-L5FYTXHTCSLCRGB-A5",
+  "componentBrandEn": "TOGIALED",
+  "componentTypeEn": "RGB LEDs",
+  "componentSpecificationEn": "Plugin,D=5mm",
+  "componentLibraryType": "expand",
+  "preferredComponentFlag": false,
+  "stockCount": 1657,
+  "dataManualUrl": "https://www.lcsc.com/datasheet/lcsc_datasheet_1912111437_TOGIALED-TJ-L5FYTXHTCSLCRGB-A5_C331058.pdf"
+ },
+ {
+  "componentCode": "C2837020",
+  "componentModelEn": "TJ-L5FCMXHTCSLCRGB-A5",
+  "componentBrandEn": "TOGIALED",
+  "componentTypeEn": "RGB LEDs",
+  "componentSpecificationEn": "Plugin,D=5mm",
+  "componentLibraryType": "expand",
+  "preferredComponentFlag": false,
+  "stockCount": 349,
+  "dataManualUrl": "https://wmsc.lcsc.com/wmsc/upload/file/pdf/v2/lcsc/2202131930_TOGIALED-TJ-L5FCMXHTCSLCRGB-A5_C2837020.pdf"
+ },
+ {
+  "componentCode": "C2837021",
+  "componentModelEn": "TJ-L5FCMXHMCSLCRGB-A5",
+  "componentBrandEn": "TOGIALED",
+  "componentTypeEn": "RGB LEDs",
+  "componentSpecificationEn": "Plugin,D=5mm",
+  "componentLibraryType": "expand",
+  "preferredComponentFlag": false,
+  "stockCount": 1069,
+  "dataManualUrl": "https://wmsc.lcsc.com/wmsc/upload/file/pdf/v2/lcsc/2202131930_TOGIALED-TJ-L5FCMXHMCSLCRGB-A5_C2837021.pdf"
+ },
+ {
+  "componentCode": "C7371892",
+  "componentModelEn": "XL-A504RGBW",
+  "componentBrandEn": "XINGLIGHT",
+  "componentTypeEn": "RGB LEDs",
+  "componentSpecificationEn": "Plugin,D=5mm",
+  "componentLibraryType": "expand",
+  "preferredComponentFlag": false,
+  "stockCount": 3987,
+  "dataManualUrl": "https://wmsc.lcsc.com/wmsc/upload/file/pdf/v2/lcsc/2402181501_XINGLIGHT-XL-A504RGBW_C7371892.pdf"
+ },
+ {
+  "componentCode": "C7371894",
+  "componentModelEn": "XL-A504RGBC",
+  "componentBrandEn": "XINGLIGHT",
+  "componentTypeEn": "RGB LEDs",
+  "componentSpecificationEn": "Plugin,D=5mm",
+  "componentLibraryType": "expand",
+  "preferredComponentFlag": false,
+  "stockCount": 4239,
+  "dataManualUrl": "https://wmsc.lcsc.com/wmsc/upload/file/pdf/v2/lcsc/2402181501_XINGLIGHT-XL-A504RGBC_C7371894.pdf"
+ },
+ {
+  "componentCode": "C6751358",
+  "componentModelEn": "WP154A4SUREQBFZGC",
+  "componentBrandEn": "Kingbright",
+  "componentTypeEn": "RGB LEDs",
+  "componentSpecificationEn": "Plugin,D=5mm",
+  "componentLibraryType": "expand",
+  "preferredComponentFlag": false,
+  "stockCount": 1902,
+  "dataManualUrl": "https://wmsc.lcsc.com/wmsc/upload/file/pdf/v2/lcsc/2312271103_Kingbright-WP154A4SUREQBFZGC_C6751358.pdf"
+ },
+ {
+  "componentCode": "C51933351",
+  "componentModelEn": "GL5050RGB01-A",
+  "componentBrandEn": "Gui guang light",
+  "componentTypeEn": "RGB LEDs",
+  "componentSpecificationEn": "SMD5050-6P",
+  "componentLibraryType": "expand",
+  "preferredComponentFlag": false,
+  "stockCount": 24694,
+  "dataManualUrl": null
+ },
+ {
+  "componentCode": "C6135031",
+  "componentModelEn": "NTE30155",
+  "componentBrandEn": "NTE Electronics",
+  "componentTypeEn": "RGB LEDs",
+  "componentSpecificationEn": "Plugin,D=5mm",
+  "componentLibraryType": "expand",
+  "preferredComponentFlag": false,
+  "stockCount": 0,
+  "dataManualUrl": "https://wmsc.lcsc.com/wmsc/upload/file/pdf/v2/lcsc/2312080230_NTE-ELECTRONICS--INC--NTE30155_C6135031.pdf"
+ },
+ {
+  "componentCode": "C7321976",
+  "componentModelEn": "NTE30156",
+  "componentBrandEn": "NTE Electronics",
+  "componentTypeEn": "RGB LEDs",
+  "componentSpecificationEn": "Plugin,D=5mm",
+  "componentLibraryType": "expand",
+  "preferredComponentFlag": false,
+  "stockCount": 0,
+  "dataManualUrl": "https://wmsc.lcsc.com/wmsc/upload/file/pdf/v2/lcsc/2312272154_NTE-ELECTRONICS--INC--NTE30156_C7321976.pdf"
+ },
+ {
+  "componentCode": "C5816693",
+  "componentModelEn": "NTE30155-10",
+  "componentBrandEn": "NTE Electronics",
+  "componentTypeEn": "RGB LEDs",
+  "componentSpecificationEn": "Plugin",
+  "componentLibraryType": "expand",
+  "preferredComponentFlag": false,
+  "stockCount": 0,
+  "dataManualUrl": "https://wmsc.lcsc.com/wmsc/upload/file/pdf/v2/lcsc/2312030353_NTE-ELECTRONICS--INC--NTE30155-10_C5816693.pdf"
+ },
+ {
+  "componentCode": "C6135033",
+  "componentModelEn": "NTE30156-10",
+  "componentBrandEn": "NTE Electronics",
+  "componentTypeEn": "RGB LEDs",
+  "componentSpecificationEn": "Plugin",
+  "componentLibraryType": "expand",
+  "preferredComponentFlag": false,
+  "stockCount": 0,
+  "dataManualUrl": "https://wmsc.lcsc.com/wmsc/upload/file/pdf/v2/lcsc/2312080230_NTE-ELECTRONICS--INC--NTE30156-10_C6135033.pdf"
+ }
+]

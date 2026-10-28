@@ -1,0 +1,138 @@
+{
+ "code": 200,
+ "data": {
+  "componentPageInfo": {
+   "list": [
+    {
+     "componentCode": "C8678",
+     "componentModelEn": "SS34",
+     "componentBrandEn": "MDD(Microdiode Semiconductor)",
+     "componentLibraryType": "base",
+     "preferredComponentFlag": false,
+     "stockCount": 3563752,
+     "componentPrices": [
+      {
+       "startNumber": 1,
+       "endNumber": 199,
+       "productPrice": 0.0351
+      },
+      {
+       "startNumber": 200,
+       "endNumber": 599,
+       "productPrice": 0.0282
+      },
+      {
+       "startNumber": 600,
+       "endNumber": 4999,
+       "productPrice": 0.0251
+      },
+      {
+       "startNumber": 5000,
+       "endNumber": 9999,
+       "productPrice": 0.0171
+      },
+      {
+       "startNumber": 10000,
+       "endNumber": 19999,
+       "productPrice": 0.0161
+      },
+      {
+       "startNumber": 20000,
+       "endNumber": -1,
+       "productPrice": 0.0155
+      }
+     ],
+     "lossNumber": 8,
+     "leastPatchNumber": 5,
+     "describe": "-55℃~+125℃ 3A 40V 500uA@40V 550mV@3A Independent SMA(DO-214AC) Schottky Diodes ROHS"
+    },
+    {
+     "componentCode": "C3279378",
+     "componentModelEn": "FDMC8678S",
+     "componentBrandEn": "onsemi",
+     "componentLibraryType": "expand",
+     "preferredComponentFlag": false,
+     "stockCount": 0,
+     "componentPrices": [
+      {
+       "startNumber": 1,
+       "endNumber": 9,
+       "productPrice": 0.8201
+      },
+      {
+       "startNumber": 10,
+       "endNumber": 11,
+       "productPrice": 0.8201
+      },
+      {
+       "startNumber": 12,
+       "endNumber": 199,
+       "productPrice": 0.8201
+      },
+      {
+       "startNumber": 200,
+       "endNumber": 499,
+       "productPrice": 0.3176
+      },
+      {
+       "startNumber": 500,
+       "endNumber": 999,
+       "productPrice": 0.3078
+      },
+      {
+       "startNumber": 1000,
+       "endNumber": -1,
+       "productPrice": 0.3012
+      }
+     ],
+     "lossNumber": 0,
+     "leastPatchNumber": 0,
+     "describe": "-55℃~+150℃@(Tj) 1 N-channel 15A、18A 2.075nF@15V 2.3W、41W 30V 34nC@10V 3V@1mA 5.2mΩ@15A,10V Power-33 MOSFETs ROHS"
+    },
+    {
+     "componentCode": "C3289371",
+     "componentModelEn": "FDMC8678S",
+     "componentBrandEn": "onsemi",
+     "componentLibraryType": "expand",
+     "preferredComponentFlag": false,
+     "stockCount": 0,
+     "componentPrices": [
+      {
+       "startNumber": 1,
+       "endNumber": 9,
+       "productPrice": 0.8201
+      },
+      {
+       "startNumber": 10,
+       "endNumber": 11,
+       "productPrice": 0.8201
+      },
+      {
+       "startNumber": 12,
+       "endNumber": 199,
+       "productPrice": 0.8201
+      },
+      {
+       "startNumber": 200,
+       "endNumber": 499,
+       "productPrice": 0.3176
+      },
+      {
+       "startNumber": 500,
+       "endNumber": 999,
+       "productPrice": 0.3078
+      },
+      {
+       "startNumber": 1000,
+       "endNumber": -1,
+       "productPrice": 0.3012
+      }
+     ],
+     "lossNumber": 0,
+     "leastPatchNumber": 0,
+     "describe": "-55℃~+150℃ 1 N-channel 1.08nF 135pF 2.075nF 30V 34nC@10V 3V 41W 66A 8.7mΩ@4.5V N-Channel Power-33 MOSFETs ROHS"
+    }
+   ]
+  }
+ }
+}

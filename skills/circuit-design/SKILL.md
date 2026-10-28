@@ -37,12 +37,21 @@ say what is left: values, sim.json, the graph's `checks`.
   requirement, the quantity and the assembly in the prompt; it searches the project's distributors in its own context
   and writes the entry) or the skill part-search. Pin numbers and names come from the entry, never from memory or from
   a similar part's datasheet.
-- Prefer parts the project uses already, Basic parts, parts in stock.
+- Prefer parts the project uses already, Basic parts, parts in stock. `edakit cost` shows what a choice costs: an
+  Extended type, a "Standard Only" part or a second assembled side raises the order by more than the part itself.
 - MCU pins: read the entry first – strapping pins (`strap`), input-only pins (`type: input`), notes (`hint`, e.g. an
   ADC that does not work with WiFi), what each pin can do (`functions`). Buttons, LEDs and pulls stay off strapping
   pins unless they agree with the boot level (G-12). A net that needs a peripheral says so – `fn` (`spi.tx`, `pwm`,
-  `adc`, …), `fn_bus` for the nets of one bus, `pwm_hz` for PWM – and G-15 checks the pin, the bus and the PWM
-  slices; a pin's function is chosen here, not when the firmware is written.
+  `adc`, …), `fn_bus` for the nets of one bus on one peripheral instance, `pwm_hz` for PWM – and G-15 checks the pin,
+  the bus and the PWM slices; a pin's function is chosen here, not when the firmware is written.
+- The function of every MCU pin you use, from the MCU's datasheet: a PWM signal on a PWM channel, and PWM signals with
+  independent frequencies on different PWM slices or timers; a bus on a pin of its peripheral instance (SPI, I2C,
+  UART); an analog input on an ADC input – into `functions` of the entry, where G-15 reads it. On a module, only pins
+  brought out on its header – the module's pinout, not the chip's. Errata of the MCU that touch the pins used.
+- Every IC that is not the MCU: its supply range against the net it is supplied from (the minimum operating voltage,
+  not only `vmax`), and the VIH and VIL of its inputs against the domain that drives them – a 5 V part with
+  VIH = 0.7 × VCC does not read 3.3 V logic. E-3 checks both where the entry gives them (`vdd_op_min`/`vdd_op_max`,
+  `vih_v`|`vih_ratio`, `vil_v`|`vil_ratio`).
 
 ## 4. Values are computed
 
@@ -58,7 +67,11 @@ goes into the graph's `grounds` – every other ground pin belongs on the ground
 the decision log and cited in `notes`. sim.json:
 sources, supplies at their limits, loads with the MCU's outputs, inputs, LEDs on (`leds_on` in every load once an LED is
 on no driver output, `[]` when none lights – E-4), buttons, relays. No source and no cell takes more than 1 mA back
-(E-3); a cell its charger charges on purpose gets `i_charge_max_a` in its cell state.
+(E-3); a cell its charger charges on purpose gets `i_charge_max_a` in its cell state. Several sources (a module with
+its own USB, cells next to USB): `combine_sources` with the range of each, not combinations written by hand.
+A supply that comes and goes – USB plugged and unplugged, a switch-over to cells – gets `transients` (handbook 5.2):
+the plug-in, the unplug and the switch-over ramp, with the rail's lowest voltage and the inrush as `expect`; E-5 holds
+the MCU above its minimum once it has started.
 A board people touch (requirements: what a person touches): `touch_c` with its limit from the product's standard
 (IEC 62368-1 TS1: 48 °C for longer than a minute) – E-2 holds every part with `rth_ja_k_per_w` on it to that limit.
 
@@ -72,9 +85,10 @@ edakit schematic draw 2>&1 | cat   # the circuit as a drawing (SVG) for the user
 ```
 
 A hint that is taken care of gets a line in the graph: `"hints": {"H-1": "C1 1000 µF next to J1"}`. Settings the checks
-need go into the graph's `checks` – the pins the firmware relies on (`pin_locks`), a connector that can be plugged in
-the wrong way (`reverse_protect`). Blocks and notes of the drawing, once it should look a certain way, go into the
-schematic file `hardware/schematic.toml` (handbook 10.3).
+need go into the graph's `checks` – the pins the firmware relies on (`pin_locks`; or, where the firmware follows the
+graph, the contract of `edakit firmware`, handbook 3.5, with the roles `sdi`, `sdo`, `out0` … `outN` on drivers), a
+connector that can be plugged in the wrong way (`reverse_protect`). Blocks and notes of the drawing, once it should look
+a certain way, go into the schematic file `hardware/schematic.toml` (handbook 10.3).
 
 ## 7. Hand over
 

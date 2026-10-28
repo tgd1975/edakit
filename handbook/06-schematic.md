@@ -30,6 +30,13 @@ blocks of 40 (`batch_write`; bigger blocks crashed EasyEDA) → set designators 
 connect nets as stubs (longer stubs on collisions) → connect leftover pins one by one → mark no-connects → compare the
 netlist with the graph → ERC → save.
 
+`--save` of `create` and `layout` saves only a schematic whose netlist equals the graph: no differing net, no failed
+connection, no symbol pin mismatch, no part skipped. Otherwise the run says "not saved: 2 differing nets, 0 failed
+connections, 0 pin mismatches – fix and run again, or save in EasyEDA by hand" and exits 2; the schematic stays open
+in EasyEDA as it was written. An empty netlist (EasyEDA returned one after many writes in the reference project, and
+the script saved it) is read ten times; if it stays empty, every net counts as differing and nothing is saved.
+`layout --force` writes despite geometry conflicts, it does not force the save.
+
 Timing in the reference project: 13 parts 12–41 s; 123 parts 6 minutes (placing 2.1 min, connecting 3.7 min).
 
 ## 6.2 Check against the graph
@@ -137,3 +144,37 @@ designators are 1.8 mm high.
 
 A project without a PCB – a development board and hand wiring – never needs EasyEDA: checks, simulation and this
 drawing work from the graph alone. For a PCB, EasyEDA's board schematic stays the one that counts; the PCB hangs on it.
+
+## 6.6 Values quoted from the design data (G-19)
+
+A number in a note or a document goes stale when the circuit changes: R1 swapped from 2 k to 4.7 k, the simulation
+gives 4.02 mA, and the note still says "I_OUT = … = 9.45 mA". So a note or a document names the source of the number
+and edakit fills it in.
+
+- **Schematic notes** (`[layout.notes]`, 10.3) hold placeholders: `"I_OUT = {sim:max E-3 * D2 LED current*}"`.
+  `schematic draw` and `schematic layout` fill them in when they draw; one that cannot be filled stays as written,
+  with a warning. Only braces that start with a source are read – `{R1}` stays as it is.
+- **Markdown documents** listed in `[docs] files` (10.1) hold blocks, invisible when rendered:
+  `LED current <!--edakit sim:max E-3 * D2 LED current*-->9.45 mA<!--/edakit--> per output`. A file that is not
+  listed is never read.
+
+| Source | Value |
+|---|---|
+| `graph:<key>` | a key of the graph itself: `graph:version`, `graph:date` |
+| `graph:<part, net or cable>.<key>` | `graph:R1.value`, `graph:+5V.v` (a net's range, in V), further keys with dots |
+| `part:<parts entry>.<path>` | `part:C90107.params.vrext_v` – the unit follows the key's ending (`_v`, `_a`, `_ohm`, `_w`, `_f`, `_h`, `_hz`, `_c`, `_mm`, `_s`) |
+| `sim:max\|min\|one <pattern>` | the numeric actual of the simulation rows whose `ID scenario item check` matches the pattern – the key the sign-off file's `match` uses (8.2); `one` wants exactly one row |
+
+A format after the source – `{sim:max E-3 * D2 LED current* %.1f mA}` – formats the number, scaled to the prefix
+written after it; without one: three significant digits and the unit of the source (`4.02 mA`). `[docs] decimal =
+","` writes a decimal comma. The simulation result is the one `edakit sim` saved last
+(`<artifacts>/sim/result.json`) while its inputs are unchanged; otherwise edakit simulates once.
+
+```bash
+edakit docs            # G-19 for every block that differs from its source and every source that does not exist; exit 2
+edakit docs --write    # fill in the current values
+```
+
+G-19 also runs in the gate's stage G on the gate's own simulation, an error like G-2 for a pin table. Documents and
+the schematic file are in no hash (8.2): correcting a quoted number voids no sign-off. Put `edakit docs` into the
+pre-commit hook next to `edakit check` and `edakit sim`.

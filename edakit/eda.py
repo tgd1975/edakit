@@ -91,7 +91,8 @@ class MCPClient:
             return msg.get("result", {})
 
     def call(self, tool, timeout=130, **args):
-        lock.claim_for_script(renew=True, mode=self.lock_mode)
+        if not lock.read_only(tool, args):  # library lookups need no claim (lock.READ_ONLY_TOOLS, READ_ONLY_API)
+            lock.claim_for_script(renew=True, mode=self.lock_mode)
         result = self._request("tools/call", {"name": tool, "arguments": args}, timeout)
         if "structuredContent" in result:
             data = result["structuredContent"]
@@ -123,12 +124,14 @@ class MCPClient:
             self.proc.kill()
 
 
-def start(cfg, verbose=False, artifact_dir=None):
-    """Claim EasyEDA for the calling Claude session and start an own MCP server through mcp-server.sh."""
-    lock.claim_for_script(mode=cfg.lock)
+def start(cfg, verbose=False, artifact_dir=None, lock_mode=None):
+    """Claim EasyEDA for the calling Claude session and start an own MCP server through mcp-server.sh. `lock_mode="off"`
+    claims nothing (edakit doctor); without a project (cfg None) artifact_dir is needed."""
+    mode = lock_mode or cfg.lock
+    lock.claim_for_script(mode=mode)
     env = {"ARTIFACT_DIR": str(artifact_dir or cfg.artifact("mcp", ".keep").parent),
            "BRIDGE_TIMEOUT_MS": os.environ.get("BRIDGE_TIMEOUT_MS", "120000")}
-    return MCPClient(["bash", str(MCP_SERVER)], verbose=verbose, env=env, cwd=cfg.root, lock_mode=cfg.lock)
+    return MCPClient(["bash", str(MCP_SERVER)], verbose=verbose, env=env, cwd=cfg.root if cfg else None, lock_mode=mode)
 
 
 def wait_for_bridge(mcp, seconds=90):
@@ -169,19 +172,39 @@ def easyeda_memory():
         return "EasyEDA memory ?"
 
 
-class Progress:
-    """Phase headings with the duration of the previous phase and EasyEDA's memory."""
+class Steps:
+    """`[x.x min] step n/m: <step>` before each step of a long command, flushed at once – a Monitor on the log shows
+    where a run is and since when, and a stalled run shows the step it stalled in. Used by route all, gate, pcb apply,
+    silk apply, export and (through Progress) schematic create/layout."""
 
-    def __init__(self):
+    def __init__(self, total, out=None, clock=time.monotonic, t0=None):
+        self.total, self.n, self.out, self.clock = total, 0, out, clock
+        self.t0 = clock() if t0 is None else t0
+
+    def __call__(self, step):
+        self.n += 1
+        print(f"[{(self.clock() - self.t0) / 60:4.1f} min] step {self.n}/{self.total}: {step}",
+              file=self.out or sys.stdout, flush=True)
+
+
+class Progress:
+    """Phase headings with the duration of the previous phase and EasyEDA's memory; with a total the heading is the
+    step line of Steps."""
+
+    def __init__(self, total=None):
         self.t0 = self.t = time.monotonic()
         self.title = None
+        self.steps = Steps(total, t0=self.t0) if total else None
 
     def __call__(self, title=None):
         now = time.monotonic()
         if self.title:
             print(f"  ({self.title}: {now - self.t:.1f} s, {easyeda_memory()})")
         self.title, self.t = title, now
-        if title:
+        if title and self.steps:
+            print()
+            self.steps(title)
+        elif title:
             print(f"\n[{title}]  (+{(now - self.t0) / 60:.1f} min)")
 
     def say(self, msg):
@@ -375,6 +398,19 @@ def verify_nets(mcp, nets, placed):
             print(f"  ! {name}: missing {sorted(want - have)}, extra {sorted(have - want)}")
     print(f"  {len(nets) - diffs}/{len(nets)} nets match the graph")
     return diffs
+
+
+def save_if_matching(mcp, diffs, failures=0, pin_problems=0, skipped=0):
+    """--save of `schematic create` and `schematic layout`: save the project only when the netlist equals the graph –
+    no differing net (an empty netlist on every read counts every net), no failed connection, no symbol pin mismatch,
+    no part skipped. Returns 0 (saved) or 2."""
+    if diffs or failures or pin_problems or skipped:
+        print(f"not saved: {diffs} differing nets, {failures} failed connections, {pin_problems} pin mismatches"
+              + (f", {skipped} parts skipped" if skipped else "") + " – fix and run again, or save in EasyEDA by hand")
+        return 2
+    mcp.call("easyeda_project_save", projectId=PROJECT, confirmWrite=True)
+    print("project saved")
+    return 0
 
 
 def ensure_frame(mcp):

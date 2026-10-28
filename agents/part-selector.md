@@ -16,17 +16,24 @@ graph, the plan and the documents are the circuit designer's. You do not commit.
 2. **Distributors:** the ones in the prompt, else `[project] distributors` of edakit.toml (default `["lcsc"]`). For
    each read its profile `${CLAUDE_PLUGIN_ROOT}/skills/part-search/distributors/<name>.md` – how to search there, what
    loads without a key, what the page states.
-3. **Candidates** that meet the requirement, per candidate: manufacturer part number, manufacturer, distributor and
+3. **Search** at LCSC/JLCPCB in the profile's order: `edakit part search "<keywords>"` first (Bash, no bridge), then
+   the EasyEDA search, then the manufacturer's series names. "Not available" only after these three routes, each
+   named with its queries in the result.
+4. **Candidates** that meet the requirement, per candidate: manufacturer part number, manufacturer, distributor and
    order number, stock as a number with the date, price at the quantity, lifecycle (active, not for new designs, end
-   of life), package, the ratings that matter, compliance data the page states (RoHS, REACH), datasheet link. The
+   of life), package, the ratings that matter, compliance data the page states (RoHS, REACH), datasheet link; for
+   JLCPCB assembly what `edakit stock --lcsc <C…>` prints (listed, JLCPCB's stock, "Standard Only", MSL). The
    frame of the skill part-search holds: a part in stock beats a "better" one that is not; for JLCPCB assembly a part
    of its library (Basic before Extended) beats one from elsewhere.
-4. **Recommend** one with the reason and name the alternatives and why they lost.
-5. **Entry**, unless told to search only: as the skill part-search says (section Entry,
-   `${CLAUDE_PLUGIN_ROOT}/skills/part-search/SKILL.md`) – the file named by the LCSC number or, from another
-   distributor, by the manufacturer part number; `order` with the order numbers outside LCSC; `compliance` from the
-   page or the manufacturer's declaration; `verified` with you as `by`, the datasheet revision, what you checked and
-   what is open.
+5. **Recommend** one with the reason and name the alternatives and why they lost.
+6. **Entry**, unless told to search only: for an LCSC part start with `edakit part import <LCSC>` (identification,
+   footprint and the symbol's pins from the library, no bridge needed); then as the skill part-search says (section
+   Entry, `${CLAUDE_PLUGIN_ROOT}/skills/part-search/SKILL.md`) – the file named by the LCSC number or, from another
+   distributor, by the manufacturer part number; `order` with the order numbers outside LCSC and the supplier's minimum
+   and pack size where it has one (`{"code", "moq", "step"}`, `edakit order` rounds to them); `compliance` from the page
+   or the manufacturer's declaration; the datasheet with `edakit part fetch <key>` (read the kept PDF, mind a variant
+   warning); `verified` with you as `by`, the datasheet revision and `datasheet_sha256`, what you checked and what is
+   open.
 
 ## Result
 

@@ -19,6 +19,7 @@ from __future__ import annotations
 
 import math
 import os
+import re
 import tomllib
 from dataclasses import dataclass, field
 from pathlib import Path
@@ -39,15 +40,28 @@ POUR_MIN_PIECE_MM2 = 2.0         # pour_regions: the smallest piece of a shared 
 HEADER_KEEP_MM = 1.27            # on_headers: the plastic of a 2.54 mm pin header, half its width around each pin
 PASTE_GAP_MM = 0.4               # [release] assembly paste_gap_mm: SMD pads of different parts, assembled side (L-14)
 MAX_BARE_MM = 5.0                # [copper] max_bare_mm: largest copper-free circle on a poured layer (L-15)
+UNIFORM = {"led": "row"}         # uniform: LEDs side by side point the same way – the plan check without the key
+UNIFORM_WAYS = ("row", "+x", "-x", "+y", "-y")
+THICKNESS_MM = 1.6               # board thickness: the lead protrusion of the mechanical model (pcb plan)
 
-PROJECT_KEYS = ("name", "company", "quantity", "distributors", "lock", "graph", "parts", "sim", "sim_plugin",
-                "schematic", "signoff", "artifacts", "reports")
+PROJECT_KEYS = ("name", "company", "quantity", "distributors", "lock", "agreements", "graph", "parts", "sim",
+                "sim_plugin", "schematic", "signoff", "artifacts", "reports", "datasheets", "stock", "stock_margin_pct",
+                "stock_max_age_days", "spare_pct")
 BOARD_KEYS = ("title", "template", "schematic", "pcb", "file")            # [boards.<name>] in edakit.toml
 BOARD_FILE_KEYS = ("revision", "view", "outline", "holes", "tooling", "place", "near", "near_mm", "edge_mm", "edge_ok",
                    "on_headers", "header_keep_mm", "silk_overlap_mm", "park", "routing", "pours", "pour_regions",
-                   "pour_min_piece_mm2", "pour_inset_mm", "silk", "loops", "net_classes", "copper")
+                   "pour_min_piece_mm2", "pour_inset_mm", "silk", "loops", "net_classes", "copper", "order", "uniform",
+                   "looks", "thickness_mm")
 SCHEMATIC_KEYS = ("stub", "layout")
-RELEASE_KEYS = ("layout_files", "state_files", "assembly", "stages")
+RELEASE_KEYS = ("layout_files", "state_files", "hash_ignore", "assembly", "stages")
+PCBA = ("economic", "standard")  # [release] assembly.pcba: the assembler's class of the order (P-4)
+COST_KEYS = ("fees", "budget", "currency", "rates", "shipping", "coupon", "vat_pct", "pcb_price")   # [cost]
+EXTRA_KEYS = ("item", "supplier", "code", "per_set", "spare", "moq", "step", "unit_price", "currency")   # [[extra]]
+STOCK_MAX_AGE_DAYS = 14          # [project] stock_max_age_days: an older stock snapshot is pending (P-4)
+ORDER_KEYS = ("finish", "mark", "remark", "tab_zones", "tab_copper_mm")   # [order] of a board file (F-6)
+MARKS = ("default", "specify", "remove")   # order.mark: JLCPCB's order number anywhere, at the placeholder, none
+FIRMWARE_KEYS = ("mcu", "out", "gpio")    # [firmware]: the board's firmware contract (edakit firmware), opt-in
+DOCS_KEYS = ("files", "decimal")                     # [docs]: Markdown files with quoted values (edakit docs, G-19)
 
 
 class ConfigError(Exception):
@@ -61,6 +75,7 @@ class Placement:
     rot: float = 0.0
     side: str = "top"           # EasyEDA side the part sits on: "top" or "bottom"
     lock: bool = True
+    auto: bool = False          # written by `pcb place`: a later run may move it; to everything else a fixed part
 
 
 @dataclass
@@ -98,6 +113,10 @@ class Board:
     net_classes: dict = field(default_factory=lambda: dict(DEFAULT_NET_CLASSES))  # by falling min_a
     force_class: dict = field(default_factory=dict)   # net -> class, whatever its current
     copper: dict = field(default_factory=lambda: _copper("", {}))  # [copper]: max_bare_mm, min_cover (L-15)
+    order: dict | None = None                         # [order]: the order form fields of this board (F-6); None: none
+    uniform: dict | None = None                       # kind -> "row" | "+x" | "-x" | "+y" | "-y"; None: UNIFORM
+    looks: dict | None = None                         # [looks]: visible ("top" | "bottom"), max_track_m, max_vias
+    thickness_mm: float = THICKNESS_MM                # board thickness: lead protrusion in mech_<board>.json
 
     # --- plan <-> EasyEDA -------------------------------------------------------------------------------------------
     def to_eda(self, x, y, rot, side):
@@ -144,13 +163,34 @@ class Config:
     signoff: Path
     artifacts: Path
     reports: Path
+    datasheets: Path            # the datasheets edakit part fetch keeps: <datasheets>/<key>.pdf and .json
     company: str
     quantity: int
     boards: dict
     schematic: dict             # the schematic file: stub, [layout]
     release: dict
     lock: str
+    agreements: bool            # the working agreements of handbook 11.4 at session start (edakit/agreements.py)
     raw: dict
+    stock: Path | None = None           # the stock snapshot of `edakit stock` (P-4); not in the circuit hash
+    stock_margin_pct: float = 0.0       # P-4 warns below need x (1 + margin / 100)
+    stock_max_age_days: int = STOCK_MAX_AGE_DAYS
+    cost: dict | None = None            # [cost] of edakit.toml; None: no cost estimate in the gate
+    spare_pct: float = 0.0              # edakit order: spares on every cart line, in % of quantity sets
+    extras: list = field(default_factory=list)   # [[extra]]: items off the board – cost estimate and carts
+    firmware: dict | None = None  # [firmware] with its defaults; None without the table: no contract
+    docs: list = field(default_factory=list)   # [docs] files: Markdown files whose value blocks edakit docs reads
+    docs_decimal: str = "."                    # [docs] decimal: "." or "," in quoted numbers
+
+    def pcba(self):
+        """(class, why) of the assembly order: [release] assembly.pcba, or derived from assembly.sides – one side
+        Economic, two sides Standard (without [release] assembly both sides count, as for F-3)."""
+        a = self.release.get("assembly", {})
+        if a.get("pcba"):
+            return a["pcba"], f'[release] assembly.pcba = "{a["pcba"]}"'
+        sides = a.get("sides", ["top", "bottom"])
+        return ("economic" if len(sides) == 1 else "standard"), \
+            f"[release] assembly.sides {' + '.join(sides)}: {'one side' if len(sides) == 1 else 'two sides'}"
 
     def board(self, name=None) -> Board:
         if name is None:
@@ -208,7 +248,10 @@ def _placement(ref, v):
     side = v.get("side", "top")
     if side not in LAYER_OF_SIDE:
         raise ConfigError(f"place.{ref}: side must be 'top' or 'bottom', not {side!r}")
-    return Placement(float(v["x"]), float(v["y"]), float(v.get("rot", 0)), side, bool(v.get("lock", True)))
+    if not isinstance(v.get("auto", False), bool):
+        raise ConfigError(f"place.{ref}: auto must be true or false")
+    return Placement(float(v["x"]), float(v["y"]), float(v.get("rot", 0)), side, bool(v.get("lock", True)),
+                     v.get("auto", False))
 
 
 def _pours(name, pours, regions=False):
@@ -284,6 +327,38 @@ def _copper(name, c):
     return {"max_bare_mm": bare, "min_cover": {k: float(v) for k, v in cover.items()}}
 
 
+def _order(name, o):
+    """[order] of a board file, with its defaults; None without the table (no order form, no F-6)."""
+    if o is None:
+        return None
+    if not isinstance(o, dict):
+        raise ConfigError(f"board {name}: order must be a table ([order])")
+    if bad := _unknown(f"board {name}: order", o, ORDER_KEYS):
+        raise ConfigError(bad[0])
+    for key in ("finish", "remark"):
+        if not isinstance(o.get(key, ""), str):
+            raise ConfigError(f"board {name}: order.{key} must be a string")
+    if o.get("mark", "default") not in MARKS:
+        raise ConfigError(f"board {name}: order.mark must be one of {', '.join(MARKS)}, not {o['mark']!r}")
+    if bad := _number(f"board {name}: order.tab_copper_mm", o.get("tab_copper_mm", 1.0)):
+        raise ConfigError(bad[0])
+    zones = o.get("tab_zones", [])
+    if not isinstance(zones, list):
+        raise ConfigError(f"board {name}: order.tab_zones must be a list of {{ from = [x, y], to = [x, y] }}")
+    out = []
+    for i, z in enumerate(zones, 1):
+        where = f"board {name}: order.tab_zones {i}"
+        if isinstance(z, dict) and (bad := _unknown(where, z, ("from", "to"))):
+            raise ConfigError(bad[0])
+        point = lambda p: isinstance(p, list) and len(p) == 2 and all(  # noqa: E731
+            isinstance(v, (int, float)) and not isinstance(v, bool) for v in p)
+        if not isinstance(z, dict) or not point(z.get("from")) or not point(z.get("to")):
+            raise ConfigError(f"{where}: needs from = [x, y] and to = [x, y] (plan mm, two points on the outline)")
+        out.append((tuple(map(float, z["from"])), tuple(map(float, z["to"]))))
+    return {"finish": o.get("finish", "LeadFree HASL"), "mark": o.get("mark", "default"), "remark": o.get("remark", ""),
+            "tab_zones": out, "tab_copper_mm": float(o.get("tab_copper_mm", 1.0))}
+
+
 def _board(name, entry, b, file=""):
     """A board: its EasyEDA documents from edakit.toml (entry), everything physical from its board file (b)."""
     tooling = b.get("tooling", {})
@@ -310,6 +385,32 @@ def _board(name, entry, b, file=""):
     silk_overlap = float(b.get("silk_overlap_mm", 0.0))
     if silk_overlap < 0:
         raise ConfigError(f"board {name}: silk_overlap_mm must not be negative")
+    if b.get("routing", {}).get("widths", "classes") not in ("classes", "sim"):
+        raise ConfigError(f"board {name}: routing.widths must be 'classes' or 'sim'")
+    uniform = b.get("uniform")
+    if uniform is not None and not (isinstance(uniform, dict) and all(
+            isinstance(k, str) and v in UNIFORM_WAYS for k, v in uniform.items())):
+        raise ConfigError(f"board {name}: uniform must be a table of part kinds, each "
+                          f"{' | '.join(repr(w) for w in UNIFORM_WAYS)} – e.g. uniform = {{ led = \"+x\", buzzer = \"-x\" }}")
+    looks = b.get("looks")
+    if looks is not None:
+        def number(v, kind):
+            return not isinstance(v, bool) and isinstance(v, kind) and v >= 0
+        if not isinstance(looks, dict) or looks.get("visible") not in ("top", "bottom"):
+            raise ConfigError(f"board {name}: [looks] needs visible = 'top' or 'bottom' – the side people look at")
+        bad = [k for k in looks if k not in ("visible", "max_track_m", "max_vias")]
+        if bad:
+            raise ConfigError(f"board {name}: [looks] unknown key '{bad[0]}' (known: visible, max_track_m, max_vias)")
+        if "max_track_m" in looks and not number(looks["max_track_m"], (int, float)):
+            raise ConfigError(f"board {name}: looks.max_track_m must be a length in m, 0 or more")
+        if "max_vias" in looks and not number(looks["max_vias"], int):
+            raise ConfigError(f"board {name}: looks.max_vias must be a whole number, 0 or more")
+    thickness = b.get("thickness_mm", THICKNESS_MM)
+    if isinstance(thickness, bool) or not isinstance(thickness, (int, float)) or thickness <= 0:
+        raise ConfigError(f"board {name}: thickness_mm must be a thickness in mm, more than 0")
+    keep = b.get("routing", {}).get("hand_solder_keep_mm", 0)
+    if isinstance(keep, bool) or not isinstance(keep, (int, float)) or keep < 0:
+        raise ConfigError(f"board {name}: routing.hand_solder_keep_mm must be a distance in mm, 0 or more (0 = off)")
     silk = b.get("silk", {})
     if not isinstance(silk.get("solder_side", False), bool):
         raise ConfigError(f"board {name}: silk.solder_side must be true or false")
@@ -359,6 +460,10 @@ def _board(name, entry, b, file=""):
         net_classes=classes,
         force_class=force,
         copper=_copper(name, b.get("copper", {})),
+        order=_order(name, b.get("order")),
+        uniform=dict(uniform) if uniform is not None else None,
+        looks=dict(looks) if looks is not None else None,
+        thickness_mm=float(thickness),
     )
 
 
@@ -400,6 +505,86 @@ def _one_file_form(raw, name):
     return out
 
 
+def _number(where, v, integer=False, positive=False):
+    ok = isinstance(v, int) if integer else isinstance(v, (int, float))
+    if isinstance(v, bool) or not ok or v < 0 or (positive and v == 0):
+        return [f"{where} must be a{' whole' if integer else ''} number {'> 0' if positive else '>= 0'}, not {v!r}"]
+    return []
+
+
+def _project_values(p):
+    out = []
+    for key in ("stock_margin_pct", "spare_pct"):
+        if key in p:
+            out += _number(f"[project] {key}", p[key])
+    if "stock_max_age_days" in p:
+        out += _number("[project] stock_max_age_days", p["stock_max_age_days"], integer=True)
+    return out
+
+
+def _release_values(release):
+    a = release.get("assembly", {})
+    if "pcba" in a and a["pcba"] not in PCBA:
+        return [f"[release] assembly.pcba must be one of {', '.join(PCBA)}, not {a['pcba']!r}"]
+    return []
+
+
+def _cost_values(cost):
+    if cost is None:
+        return []
+    if not isinstance(cost, dict):
+        return ["[cost] must be a table"]
+    out = _unknown("[cost]", cost, COST_KEYS)
+    for key in ("budget", "shipping", "coupon", "vat_pct"):
+        if key in cost:
+            out += _number(f"[cost] {key}", cost[key])
+    rates = cost.get("rates", {})
+    if not isinstance(rates, dict):
+        out.append("[cost] rates must be a table, e.g. { EUR = 1.15 } (value of one unit in [cost] currency)")
+    else:
+        out += [m for k, v in rates.items() for m in _number(f"[cost] rates.{k}", v, positive=True)]
+    price = cost.get("pcb_price")
+    if isinstance(price, dict):
+        out += [m for k, v in price.items() for m in _number(f"[cost] pcb_price.{k}", v)]
+    elif price is not None:
+        out += _number("[cost] pcb_price", price)
+    return out
+
+
+def _extras(extras):
+    if extras is None:
+        return []
+    if not isinstance(extras, list) or not all(isinstance(e, dict) for e in extras):
+        return ["[[extra]] must be an array of tables: [[extra]] item = …, supplier = …, per_set = …"]
+    out = []
+    for i, e in enumerate(extras, 1):
+        where = f"[[extra]] {i} ({e.get('item', '?')})"
+        out += _unknown(where, e, EXTRA_KEYS)
+        out += [f"{where}: {k} is missing" for k in ("item", "supplier", "per_set") if k not in e]
+        if "per_set" in e:
+            out += _number(f"{where}: per_set", e["per_set"], positive=True)
+        if "unit_price" in e:
+            out += _number(f"{where}: unit_price", e["unit_price"])
+        if "spare" in e:
+            out += _number(f"{where}: spare", e["spare"], integer=True)
+        for key in ("moq", "step"):
+            if key in e:
+                out += _number(f"{where}: {key}", e[key], integer=True, positive=True)
+    return out
+
+
+def _firmware(fw):
+    """[firmware]: mcu (default: the one part with GPIO pins), out (the contract), gpio (regex for the GPIO number in
+    the MCU pin's name: its first group, default the first number)."""
+    out = {"mcu": fw.get("mcu"), "out": fw.get("out", "hardware/firmware.json"), "gpio": fw.get("gpio", r"(\d+)")}
+    try:
+        if re.compile(out["gpio"]).groups < 1:
+            raise ConfigError("[firmware] gpio: the regex needs a group, the GPIO number – e.g. 'GP(\\d+)'")
+    except re.error as e:
+        raise ConfigError(f"[firmware] gpio: {e}") from None
+    return out
+
+
 def find_config(start=None) -> Path:
     env = os.environ.get("EDAKIT_CONFIG")
     if env:
@@ -424,9 +609,22 @@ def load(path=None) -> Config:
         return v if v.is_absolute() else root / v
 
     moved = _one_file_form(raw, path.name)
-    problems = _unknown(path.name, raw, ("project", "boards", "release"), ("schematic", "checks", "net_classes", "sim"))
+    problems = _unknown(path.name, raw, ("project", "boards", "release", "cost", "extra", "firmware", "docs"),
+                        ("schematic", "checks", "net_classes", "sim"))
     problems += _unknown("[project]", p, PROJECT_KEYS, ("ground",))
     problems += _unknown("[release]", raw.get("release", {}), RELEASE_KEYS, ("signoff",))
+    ignore = raw.get("release", {}).get("hash_ignore", [])
+    if not isinstance(ignore, list) or not all(isinstance(k, str) and k for k in ignore):
+        problems.append('[release] hash_ignore: a list of key names, e.g. ["notes", "sources"]')
+    problems += _unknown("[firmware]", raw.get("firmware", {}), FIRMWARE_KEYS)
+    if not isinstance(p.get("agreements", True), bool):
+        problems.append("[project] agreements: true or false")
+    problems += _unknown("[docs]", raw.get("docs", {}), DOCS_KEYS)
+    doc_files = raw.get("docs", {}).get("files", [])
+    if not isinstance(doc_files, list) or not all(isinstance(f, str) for f in doc_files):
+        problems.append("[docs] files must be a list of paths")
+    if raw.get("docs", {}).get("decimal", ".") not in (".", ","):
+        problems.append('[docs] decimal must be "." or ","')
     files = {}
     for name, entry in raw.get("boards", {}).items():
         problems += _unknown(f"[boards.{name}]", entry, BOARD_KEYS, BOARD_FILE_KEYS)
@@ -446,6 +644,8 @@ def load(path=None) -> Config:
         problems = moved + problems + [
             f"{path.name} is the table of contents now: board, schematic and checks have files of their own "
             "(handbook 10.1)"]
+    problems += _project_values(p) + _release_values(raw.get("release", {}))
+    problems += _cost_values(raw.get("cost")) + _extras(raw.get("extra"))
     if problems:
         raise ConfigError(f"{path}:\n  " + "\n  ".join(problems))
     boards = {name: _board(name, raw["boards"][name], data, file) for name, (file, data) in files.items()}
@@ -461,11 +661,22 @@ def load(path=None) -> Config:
         signoff=rel("signoff", "hardware/signoff.json"),
         artifacts=rel("artifacts", "build/edakit"),
         reports=rel("reports", "build/release"),
+        datasheets=rel("datasheets", Path(p.get("artifacts", "build/edakit")) / "datasheets"),
         company=p.get("company", ""),
         quantity=int(p.get("quantity", 5)),
         boards=boards,
         schematic=schematic,
         release=raw.get("release", {}),
         lock=p.get("lock", "auto"),
+        agreements=p.get("agreements", True),
         raw=raw,
+        stock=rel("stock", "hardware/stock.json"),
+        stock_margin_pct=float(p.get("stock_margin_pct", 0)),
+        stock_max_age_days=int(p.get("stock_max_age_days", STOCK_MAX_AGE_DAYS)),
+        cost=raw.get("cost"),
+        spare_pct=float(p.get("spare_pct", 0)),
+        extras=list(raw.get("extra", [])),
+        firmware=_firmware(raw["firmware"]) if "firmware" in raw else None,
+        docs=list(doc_files),
+        docs_decimal=raw.get("docs", {}).get("decimal", "."),
     )

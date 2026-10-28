@@ -1,12 +1,21 @@
 """PCB: placement plan, footprint geometry, parts and nets from the schematic without dialogs, fixed parts, outline,
 mounting and tooling holes, copper pours, EasyEDA's auto-layout.
 
-    edakit pcb dump [--ref U1,J1]   footprint geometry -> <artifacts>/pcb_geometry_<board>.json
+    edakit pcb dump [--ref U1,J1]   footprint geometry -> <artifacts>/pcb_geometry_<board>.json, through-hole pads
+                                    with their hole [w, l] in mm (P-7)
                                     (turns every measured part to 0°/TOP and leaves it there – run apply afterwards)
     edakit pcb plan                 offline: check the plan (overlaps – under a part on pin headers only its pins,
                                     SMD parts within silk_overlap_mm –, outline, holes, THT pins under parts of the
-                                    other side, near; L-12 the layout requirements of the circuit), airline length,
-                                    preview PNG, net classes from the simulation
+                                    other side, near, polarised parts of the kinds in `uniform` pointing the same way
+                                    (default: LEDs in a row), mated plugs (`mate` of the parts entry) clear of the
+                                    other parts and out through the outline; L-12 the layout requirements of the
+                                    circuit; P-7 holes and leads), airline length, preview PNG, net classes from the
+                                    simulation, the mechanical model mech_<board>.json; a part not in the dump yet
+                                    takes the library footprint `edakit part import` cached
+    edakit pcb place [--write] [--only C1,R1]
+                                    offline: a spot next to its host for every part the circuit or the board file
+                                    ties to one (layout.near, [near], the decoupling of L-12) and [place] lacks;
+                                    --write adds the rows to [place] with auto = true (a later run may move those)
     edakit pcb parts [--write]      parts of the board schematic -> PCB without the "Import Changes" dialog
     edakit pcb nets [--write]       pad nets in the PCB = graph
     edakit pcb apply                outline, holes, tooling holes, fixed parts (locked); all other parts unlocked
@@ -27,7 +36,7 @@ import math
 import re
 import time
 
-from . import eda, handover
+from . import checks, eda, handover
 from .config import BOTTOM, MIL_PER_MM, TOP
 from .design import Design, natural_key
 from .eda import MCPError, api, ensure_pcb_focus
@@ -55,6 +64,22 @@ def load_geometry(cfg, board):
     if not f.exists():
         raise SystemExit(f"{f} is missing – run `edakit pcb dump` once the parts are in the PCB")
     return json.loads(f.read_text())
+
+
+def plan_geometry(cfg, board, design, refs=None):
+    """The geometry the plan works with: the dump of the PCB, and for a part of refs (default: the planned ones) that
+    is not in it the footprint `edakit part import` cached – "source": "library", the pad nets from the graph."""
+    from . import part
+    f = geometry_file(cfg, board)
+    geo = json.loads(f.read_text()) if f.exists() else {}
+    for ref in board.place if refs is None else refs:
+        if ref not in geo and ref in design.comps and (lib := part.library_footprint(cfg, design, ref)):
+            pads = {n: {**p, "net": design.pin_net.get(f"{ref}.{n}", "")} for n, p in lib["pads"].items()}
+            geo[ref] = {**lib, "pads": pads, "source": "library"}
+    if not geo:
+        raise SystemExit(f"{f} is missing – run `edakit pcb dump` once the parts are in the PCB, or `edakit part "
+                         "import <LCSC>` for the library's footprints")
+    return geo
 
 
 # --- plan ---------------------------------------------------------------------------------------------------------
@@ -208,7 +233,9 @@ def check_plan(cfg, board, geo, place, boxes, tht):
             if part in boxes and host in boxes and box_gap(boxes[part], boxes[host]) > board.near_mm:
                 problems.append(f"{part}: {box_gap(boxes[part], boxes[host]):.1f} mm from {host} "
                                 f"(near_mm {board.near_mm:g})")
-    problems += led_rows(board, geo, place, Design.from_config(cfg))
+    design = Design.from_config(cfg)
+    problems += polarity_findings(board, geo, place, design)
+    problems += mate_findings(board, geo, place, boxes, design)
     return problems
 
 
@@ -261,37 +288,289 @@ def check_handover(board, design, place, boxes):
     return out
 
 
-def led_rows(board, geo, place, design, tol=1.0):
-    """LEDs side by side on one side of the board (centres on one line within tol mm) have their anode towards the
-    same side – whoever solders them by the "+" mark should not have to turn every other one."""
-    leds = {}
+AXES = {"+x": (1, 0), "-x": (-1, 0), "+y": (0, 1), "-y": (0, -1)}
+
+
+def polar_pins(part):
+    """The plus and the minus pin of a polarised part from the roles of its parts entry – anode or plus…, cathode or
+    minus… -> (plus, minus, the minus pin's word: "cathode" or "minus"), or None unless there is exactly one of each
+    (an RGB LED, a battery holder of several cells)."""
+    roles = [(n, (i or {}).get("role") or "") for n, i in ((part or {}).get("pins") or {}).items()]
+    plus = [n for n, r in roles if r == "anode" or r.startswith("plus")]
+    minus = [(n, r) for n, r in roles if r == "cathode" or r.startswith("minus")]
+    if len(plus) != 1 or len(minus) != 1:
+        return None
+    return plus[0], minus[0][0], "cathode" if minus[0][1] == "cathode" else "minus"
+
+
+def polarity_findings(board, geo, place, design, tol=1.0, skipped=None):
+    """Polarised parts of the kinds in the board's `uniform` point the same way – whoever solders a bag of them by hand
+    turns each one alike, by the "+" mark or the flat side. Per kind: "row" – parts of the kind side by side on one
+    side of the board (centres on one line within tol mm) have their plus pin towards the same side; "+x", "-x", "+y",
+    "-y" – the minus pin (cathode) of every part of the kind points that way, seen from the side the part sits on (a part
+    on the other side than `view` is mirrored in x). Without the key: LEDs in rows (config.UNIFORM). A part counts with
+    exactly one anode/plus… and one cathode/minus… pin (polar_pins); the others of a listed kind go to `skipped`."""
+    from .config import UNIFORM
+    uniform = UNIFORM if board.uniform is None else board.uniform
+    parts = {}   # ref -> (kind, pins, word)
     for ref, p in place.items():
         part = design.part(ref) if ref in design.comps else None
-        if not part or part.get("kind") != "led" or ref not in geo:
+        kind = (part or {}).get("kind")
+        if kind not in uniform or ref not in geo:
             continue
-        roles = {i.get("role"): n for n, i in part["pins"].items()}
-        pads = geo[ref]["pads"]
-        if roles.get("anode") in pads and roles.get("cathode") in pads:
-            a, k = (board.transform((pads[roles[r]]["x"], pads[roles[r]]["y"]), p.x, p.y, p.rot, p.side)
-                    for r in ("anode", "cathode"))
-            leds[ref] = (p.side, (p.x, p.y), (a[0] - k[0], a[1] - k[1]))
-    problems, seen = [], set()
-    for axis, name in ((1, "row"), (0, "column")):
-        for ref, (side, c, d) in sorted(leds.items(), key=lambda kv: natural_key(kv[0])):
-            line = sorted((r for r, (s, c2, _) in leds.items() if s == side and abs(c2[axis] - c[axis]) <= tol),
-                          key=lambda r: leds[r][1][1 - axis])
-            if len(line) < 2 or tuple(line) in seen:
-                continue
-            seen.add(tuple(line))
-            first = leds[line[0]][2]
-            other = [r for r in line[1:] if leds[r][2][0] * first[0] + leds[r][2][1] * first[1] < 0]
-            if other:
-                problems.append(f"LEDs in a {name} ({', '.join(line)}): anode of {', '.join(other)} points the other "
-                                f"way than {line[0]} – turn them by 180°")
+        pins, pads = polar_pins(part), geo[ref].get("pads", {})
+        if not pins or pins[0] not in pads or pins[1] not in pads:
+            if skipped is not None:
+                skipped.append((ref, kind))
+            continue
+        parts[ref] = (kind, pins[:2], pins[2])
+    problems = []
+    for kind, way in uniform.items():
+        mine = {r: (place[r], polar_vector(board, geo[r], place[r], pins), word)
+                for r, (k, pins, word) in parts.items() if k == kind}
+        if way == "row":
+            problems += polarity_rows(kind, mine, tol)
+        else:
+            problems += [polarity_way(board, geo[r], place[r], parts[r][1], r, kind, way, word)
+                         for r, (_, _, word) in sorted(mine.items(), key=lambda kv: natural_key(kv[0]))
+                         if not points_to(board, place[r].side, mine[r][1], way)]
     return problems
 
 
-def render(cfg, board, geo, place, boxes, tht, problems):
+def polar_vector(board, geo, p, pins, rot=None):
+    """Plus pad minus minus pad of a part placed as p (rot: another rotation), in plan mm."""
+    a, k = (board.transform((geo["pads"][n]["x"], geo["pads"][n]["y"]), p.x, p.y, p.rot if rot is None else rot,
+                            p.side) for n in pins)
+    return a[0] - k[0], a[1] - k[1]
+
+
+def minus_way(board, side, d):
+    """The direction the minus pin points (from plus to minus), seen from the side the part sits on."""
+    m = (-d[0], -d[1])
+    return (-m[0], m[1]) if side != board.view else m
+
+
+def points_to(board, side, d, way):
+    """The minus pin points within 45° of `way`."""
+    m, t = minus_way(board, side, d), AXES[way]
+    return m[0] * t[0] + m[1] * t[1] > math.hypot(*m) * math.cos(math.radians(45)) + 1e-9
+
+
+def polarity_rows(kind, parts, tol):
+    """"row": {ref: (placement, plus - minus, word)} -> parts in a row or column whose plus pin points the other way
+    than the first one's. LEDs keep the words the plan check always had."""
+    problems, seen = [], set()
+    for axis, name in ((1, "row"), (0, "column")):
+        for ref, (p, _, _) in sorted(parts.items(), key=lambda kv: natural_key(kv[0])):
+            c = (p.x, p.y)
+            line = sorted((r for r, (q, _, _) in parts.items() if q.side == p.side and abs((q.x, q.y)[axis] - c[axis])
+                           <= tol), key=lambda r: (parts[r][0].x, parts[r][0].y)[1 - axis])
+            if len(line) < 2 or tuple(line) in seen:
+                continue
+            seen.add(tuple(line))
+            first = parts[line[0]][1]
+            other = [r for r in line[1:] if parts[r][1][0] * first[0] + parts[r][1][1] * first[1] < 0]
+            if not other:
+                continue
+            if kind == "led":
+                problems.append(f"LEDs in a {name} ({', '.join(line)}): anode of {', '.join(other)} points the other "
+                                f"way than {line[0]} – turn them by 180°")
+            else:
+                problems.append(f"{kind.replace('_', ' ')}s in a {name} ({', '.join(line)}): {parts[line[0]][2]} of "
+                                f"{', '.join(other)} points the other way than {line[0]} – turn "
+                                f"{'it' if len(other) == 1 else 'them'} by 180°")
+    return problems
+
+
+def polarity_way(board, geo, p, pins, ref, kind, way, word):
+    """The finding of a part whose minus pin does not point `way`: where it points, and the turn and the rotation in
+    [place] that make it."""
+    m = minus_way(board, p.side, polar_vector(board, geo, p, pins))
+    points = max(AXES, key=lambda a: m[0] * AXES[a][0] + m[1] * AXES[a][1])
+    turn = next(dt for dt in (90, 180, 270)
+                if points_to(board, p.side, polar_vector(board, geo, p, pins, p.rot + dt), way))
+    return (f"{ref} ({kind}): {word} points {points}, uniform {way} – turn it by {min(turn, 360 - turn)}° "
+            f"(rot = {(p.rot + turn) % 360:g})")
+
+
+# --- the third dimension: body height, lead length, mated plug; the mechanical model --------------------------------
+
+EXITS = {"+x": (1, 0), "-x": (-1, 0), "+y": (0, 1), "-y": (0, -1), "+z": None}   # +z: away from the board
+EXIT_TOL_MM = 0.05     # a sideways plug whose far end lies less than this inside the outline reaches it
+
+
+def _given_mm(v, low=None, above=False):
+    if isinstance(v, bool) or not isinstance(v, (int, float)):
+        return False
+    return low is None or (v > low if above else v >= low)
+
+
+def part_mech(part):
+    """The third dimension of a parts entry, every field optional: `body.h_mm` (height of the body above the board, on
+    the part's side), `lead.<pad or "*">.length_mm` (lead length below the seating plane, beside the cross-section of
+    L-9), `mate` – the mated plug with its strain relief: `box` [x0, y0, x1, y1] in footprint mm (relative to the
+    part's origin at 0° on TOP, as the geometry dump), `h_mm`, and `exit`, the direction the cable leaves the box:
+    "+x", "-x", "+y", "-y", or "+z" away from the board. -> ({"h_mm", "leads": {pad: length}, "mate"} as far as the
+    entry gives them, [what is wrong])."""
+    part, out, bad = part or {}, {}, []
+    if "body" in part:
+        h = part["body"].get("h_mm") if isinstance(part["body"], dict) else None
+        if _given_mm(h, 0):
+            out["h_mm"] = float(h)
+        else:
+            bad.append("body.h_mm must be a height in mm, 0 or more")
+    leads = {}
+    for pad, lead in (part.get("lead") or {}).items():
+        if isinstance(lead, dict) and "length_mm" in lead:
+            if _given_mm(lead["length_mm"], 0, above=True):
+                leads[str(pad)] = float(lead["length_mm"])
+            else:
+                bad.append(f"lead.{pad}.length_mm must be a length in mm, more than 0")
+    if leads:
+        out["leads"] = leads
+    if "mate" in part:
+        m = part["mate"] if isinstance(part["mate"], dict) else {}
+        box, wrong = m.get("box"), []
+        if not (isinstance(box, list) and len(box) == 4 and all(_given_mm(v) for v in box) and box[0] < box[2]
+                and box[1] < box[3]):
+            wrong.append("mate.box must be [x0, y0, x1, y1] in footprint mm with x0 < x1 and y0 < y1")
+        if not isinstance(m.get("exit"), str) or m["exit"] not in EXITS:
+            wrong.append(f"mate.exit must be one of {', '.join(EXITS)}")
+        if "h_mm" in m and not _given_mm(m["h_mm"], 0):
+            wrong.append("mate.h_mm must be a height in mm, 0 or more")
+        if not wrong:
+            out["mate"] = {"box": [float(v) for v in box], "exit": m["exit"]}
+            if "h_mm" in m:
+                out["mate"]["h_mm"] = float(m["h_mm"])
+        bad += wrong
+    return out, bad
+
+
+def mate_shape(board, p, mate):
+    """The mated plug of a part placed as p, in plan mm -> (its corners, its box, the plan direction of `exit` – None
+    for "+z" –, the middle of its far end in that direction)."""
+    x0, y0, x1, y1 = mate["box"]
+
+    def at(x, y):
+        return board.transform((x * MIL_PER_MM, y * MIL_PER_MM), p.x, p.y, p.rot, p.side)
+    corners = [at(x0, y0), at(x1, y0), at(x1, y1), at(x0, y1)]
+    xs, ys = [c[0] for c in corners], [c[1] for c in corners]
+    box = (min(xs), min(ys), max(xs), max(ys))
+    d = EXITS[mate["exit"]]
+    if d is None:
+        return corners, box, None, None
+    fx, fy = (x0 + x1) / 2 + d[0] * (x1 - x0) / 2, (y0 + y1) / 2 + d[1] * (y1 - y0) / 2
+    a, b = at(fx, fy), at(fx + d[0], fy + d[1])
+    return corners, box, (b[0] - a[0], b[1] - a[1]), a
+
+
+def exit_way(d):
+    """A plan direction: "+x", "-x", "+y", "-y" ("+z" for None); turned by an angle that is no multiple of 90°, the
+    unit vector [dx, dy]."""
+    if d is None:
+        return "+z"
+    for name, v in EXITS.items():
+        if v and math.dist(d, v) < 1e-6:
+            return name
+    return [round(d[0], 4), round(d[1], 4)]
+
+
+def inside_by(outline, point, d):
+    """How far `point` lies inside the outline along the direction d: its way to the outline's edge (mm), 0 on or
+    outside the outline."""
+    from shapely.geometry import LineString, Point
+    pt = Point(point)
+    if not outline.contains(pt):
+        return 0.0
+    x0, y0, x1, y1 = outline.bounds
+    reach = 2 * math.hypot(x1 - x0, y1 - y0) + 1
+    n = math.hypot(*d)
+    ray = LineString([point, (point[0] + d[0] / n * reach, point[1] + d[1] / n * reach)])
+    hit = ray.intersection(outline.exterior)
+    return 0.0 if hit.is_empty else pt.distance(hit)
+
+
+def mate_findings(board, geo, place, boxes, design):
+    """Mated plugs (`mate` of the parts entry) of the placed parts. The plug box, turned and placed with its part, runs
+    into no other part's box on its side – into an SMD part's box at most silk_overlap_mm, as two SMD boxes may – and
+    into no other part's plug; a plug whose cable leaves sideways reaches the outline in that direction, measured
+    from the middle of its far end. edge_ok lifts neither. Fields of the third dimension that are wrong are named."""
+    problems, plugs = [], {}
+    for ref in sorted((r for r in place if r in boxes), key=natural_key):
+        part = design.part(ref) if ref in design.comps else None
+        if not part:
+            continue
+        mech, bad = part_mech(part)
+        problems += [f"{ref}: parts entry {design.entry_key(ref)}: {b}" for b in bad]
+        if "mate" in mech:
+            plugs[ref] = mate_shape(board, place[ref], mech["mate"])
+    if not plugs:
+        return problems
+    outline, tol = outline_polygon(board), board.silk_overlap_mm
+    order = list(plugs)
+    for i, ref in enumerate(order):
+        _, box, d, far = plugs[ref]
+        side = place[ref].side
+        for other in sorted(boxes, key=natural_key):
+            if other == ref or place[other].side != side or not overlap(box, boxes[other]):
+                continue
+            found = f"{ref}: mated plug reaches into {other} ({side})"
+            depth = overlap_depth(box, boxes[other])
+            if not tol:
+                problems.append(found)
+            elif through_hole(geo[other]):
+                problems.append(f"{found} – {depth:.2f} mm ({other} through-hole: silk_overlap_mm does not apply)")
+            elif round(depth, 6) > tol:
+                problems.append(f"{found} – {depth:.2f} mm (silk_overlap_mm {tol:g})")
+        problems += [f"{ref}: mated plug reaches into the mated plug of {other} ({side})" for other in order[i + 1:]
+                     if place[other].side == side and overlap(box, plugs[other][1])]
+        if d is not None:
+            inside = inside_by(outline, far, d)
+            if inside >= EXIT_TOL_MM:
+                problems.append(f"{ref}: mated plug leaves towards {exit_way(d)} but ends {inside:.1f} mm inside the "
+                                "outline")
+    return problems
+
+
+def mech_model(board, geo, place, boxes, design, unplaced):
+    """The board in three dimensions, for the project's mechanics stage and enclosure scripts (`mech_<board>.json`):
+    plan mm seen from `view`; outline, holes, tooling holes, thickness_mm; per placed part its side, position, box
+    (the footprint's, silkscreen included) and, where its parts entry knows them, h_mm, the through-hole leads with
+    their protrusion (lead length - thickness_mm, per lead and the largest) and the mated plug (box, h_mm, exit as a
+    plan direction); the parts the plan leaves to the auto-layout by name. Unknown values are left out."""
+    parts = {}
+    for ref in sorted((r for r in place if r in boxes), key=natural_key):
+        p = place[ref]
+        mech, _ = part_mech(design.part(ref) if ref in design.comps else None)
+        row = {"side": p.side, "x": p.x, "y": p.y, "rot": p.rot, "box": [round(v, 3) for v in boxes[ref]]}
+        if "h_mm" in mech:
+            row["h_mm"] = mech["h_mm"]
+        lengths, pads, leads = mech.get("leads", {}), geo[ref].get("pads", {}), []
+        for num in sorted(pads, key=natural_key):
+            length = lengths.get(num, lengths.get("*"))
+            if not pads[num].get("tht") or length is None:
+                continue
+            for q in geo[ref].get("pads_same_number", {}).get(num) or [pads[num]]:
+                x, y = board.transform((q["x"], q["y"]), p.x, p.y, p.rot, p.side)
+                leads.append({"pad": num, "x": round(x, 3), "y": round(y, 3),
+                              "protrusion_mm": round(length - board.thickness_mm, 3)})
+        if leads:
+            row["protrusion_mm"] = max(q["protrusion_mm"] for q in leads)
+            row["leads"] = leads
+        if "mate" in mech:
+            _, box, d, _ = mate_shape(board, p, mech["mate"])
+            row["mate"] = {"box": [round(v, 3) for v in box], "exit": exit_way(d)}
+            if "h_mm" in mech["mate"]:
+                row["mate"]["h_mm"] = mech["mate"]["h_mm"]
+        parts[ref] = row
+    return {"board": board.name, "units": "mm", "view": board.view, "thickness_mm": board.thickness_mm,
+            "outline": [[round(x, 4), round(y, 4)] for x, y in board.outline],
+            "holes": [{"x": h["x"], "y": h["y"], "d": h["d"]} for h in board.holes],
+            "tooling": [{"x": tx, "y": ty, "d": board.tooling_d} for tx, ty in board.tooling],
+            "parts": parts, "unplaced": list(unplaced)}
+
+
+def render(cfg, board, geo, place, boxes, tht, problems, plugs=None):
     import matplotlib
     matplotlib.use("Agg")
     import matplotlib.pyplot as plt
@@ -321,6 +600,10 @@ def render(cfg, board, geo, place, boxes, tht, problems):
             if own:
                 ax.text((x0 + x1) / 2, (b[1] + b[3]) / 2, r, ha="center", va="center", color="white",
                         fontsize=6 if (b[2] - b[0]) < 8 else 8)
+            if own and r in (plugs or {}):   # the mated plug, dashed
+                m = plugs[r]
+                mx0, mx1 = (m[0], m[2]) if mirror == 1 else (-m[2], -m[0])
+                ax.add_patch(Rectangle((mx0, m[1]), mx1 - mx0, m[3] - m[1], fc="none", ec=col, lw=1, ls="--"))
         for px, py in tht["top"] + tht["bottom"]:
             ax.add_patch(Circle((mirror * px, py), 0.45, fc="#ffd700", ec="none"))
         ax.set_title(f"{side} side" + ("" if mirror == 1 else " (seen from that side)"))
@@ -365,28 +648,410 @@ def net_classes(cfg, board):
 
 
 def plan(cfg, board):
-    geo = load_geometry(cfg, board)
+    design = Design.from_config(cfg)
+    geo = plan_geometry(cfg, board, design)
     place, boxes, tht, unplaced, missing = build_plan(cfg, board, geo)
     problems = [f"{r}: in the plan but not in the footprint geometry (edakit pcb parts --write, then dump)"
                 for r in missing]
-    design = Design.from_config(cfg)
+    if lib := sorted((r for r in place if geo.get(r, {}).get("source") == "library"), key=natural_key):
+        print(f"  library geometry (edakit part import, not yet from the PCB): {', '.join(lib)}")
     problems += check_plan(cfg, board, geo, place, boxes, tht)
     problems += [f"L-12 {p}" for p in check_handover(board, design, place, boxes)]
+    holes = checks.Report()      # P-7 on the plan's geometry: a hole that does not take its lead is a plan finding
+    checks.check_holes(design, holes, lambda r: (geo[r], f"library geometry {geo[r]['footprint']}" if geo[r].get(
+        "source") == "library" else "pcb dump") if r in geo else (None, None))
+    problems += [f"P-7 {m}" for _, m in holes.errors]
+    for kind, found in (("pending", holes.pending), ("warning", holes.warnings)):
+        for _, m in found:
+            print(f"  P-7 {kind}: {m}")
     for p in problems:
         print("  !", p)
+    if board.uniform is not None:   # the board asks for its kinds: name the parts the polarity check cannot judge
+        skipped = []
+        polarity_findings(board, geo, place, design, skipped=skipped)
+        for kind in dict.fromkeys(k for _, k in skipped):
+            print("  uniform: skipped – not exactly one anode/plus and one cathode/minus pin: "
+                  + ", ".join(sorted((r for r, k in skipped if k == kind), key=natural_key)) + f" ({kind})")
     print(f"  {len(place)} fixed parts, {len(unplaced)} for the auto-layout; airline length of the fixed parts "
           f"(without {design.ground}): {wirelength(board, geo, place, design.ground) / 1000:.2f} m")
-    print(f"  preview -> {render(cfg, board, geo, place, boxes, tht, problems)}")
+    mech = mech_model(board, geo, place, boxes, design, unplaced)
+    plugs = {r: row["mate"]["box"] for r, row in mech["parts"].items() if "mate" in row}
+    print(f"  preview -> {render(cfg, board, geo, place, boxes, tht, problems, plugs)}")
     cfg.artifact(f"pcb_plan_{board.name}.json").write_text(json.dumps(
         {r: {"x": p.x, "y": p.y, "rot": p.rot, "side": p.side} for r, p in place.items()}, indent=1))
+    path = cfg.artifact(f"mech_{board.name}.json")
+    path.write_text(json.dumps(mech, indent=1))
+    if any(k in row for row in mech["parts"].values() for k in ("h_mm", "leads", "mate")):
+        print(f"  mechanical model -> {path}")
     net_classes(cfg, board)
     return problems
 
 
+# --- place: the parts the circuit ties to a host, next to that host ----------------------------------------------
+
+PLACE_STEPS_PER_MM = 10            # pcb place: spots on a 0.1 mm grid of the plan
+PLACE_ROTATIONS = (0, 90, 180, 270)
+PLACE_EPS = 1e-6                   # boxes that only touch count as touching: a spot keeps clear of them
+PLACE_TRIES = 500                  # spots the full plan check may turn down before a part counts as without one
+PLACE_HEADER = re.compile(r"^\s*\[\s*place\s*\]\s*(#.*)?$")
+TABLE_HEADER = re.compile(r"""^\s*\[\[?\s*[\w."' -]+\s*\]\]?\s*(#.*)?$""")
+
+
+def declared_hosts(board, design):
+    """part -> [hosts]: layout.near of the graph first, then [near] of the board file."""
+    out = {}
+    pairs = [(r.part, r.others) for r in handover.requirements(design, board.name) if r.kind == "near"]
+    for part, hosts in pairs + list(board.near.items()):
+        mine = out.setdefault(part, [])
+        mine += [h for h in hosts if h not in mine]
+    return out
+
+
+def missing_decoupling(board, reqs, boxes):
+    """The decoupling requirements of L-12 the plan does not keep yet – one capacitor of its own per IC within near_mm,
+    matched as check_handover matches them."""
+    ics = [r for r in reqs if r.kind == "decoupling" and r.part in boxes]
+    out = []
+    for net in sorted({r.net for r in ics}):
+        close = {r.part: [c for c in r.others if c in boxes and box_gap(boxes[c], boxes[r.part]) <= board.near_mm]
+                 for r in ics if r.net == net}
+        owner = {}
+
+        def assign(ic, seen):
+            for c in close[ic]:
+                if c not in seen:
+                    seen.add(c)
+                    if c not in owner or assign(owner[c], seen):
+                        owner[c] = ic
+                        return True
+            return False
+        out += [r for r in ics if r.net == net and not assign(r.part, set())]
+    return out
+
+
+def tie_pads(pin_net, ground, geo, part, host, supply=None):
+    """The pads that should face each other: (primary, secondary), each [(net, pads of part, pins of host)].
+    Decoupling (supply): the supply, ground as the tie-break. Otherwise the nets part and host share without ground –
+    or ground when that is all they share –, no tie-break."""
+    def pads(ref, net):
+        return [n for n in sorted(geo[ref]["pads"], key=natural_key) if pin_net.get(f"{ref}.{n}") == net]
+    shared = ({pin_net.get(f"{part}.{n}") for n in geo[part]["pads"]}
+              & {pin_net.get(f"{host}.{n}") for n in geo[host]["pads"]}) - {None}
+    primary = [supply] if supply else sorted(shared - {ground}) or sorted(shared & {ground})
+    secondary = [ground] if supply and ground in shared else []
+    rows = lambda nets: [(n, pads(part, n), pads(host, n)) for n in nets if pads(part, n) and pads(host, n)]  # noqa
+    return rows(primary), rows(secondary)
+
+
+def plan_state(board, geo, place):
+    """Boxes and through-hole pads per side of the parts in place, as build_plan computes them."""
+    boxes = {r: part_box(board, geo[r], p) for r, p in place.items() if r in geo}
+    tht = {"top": [], "bottom": []}
+    for r, p in place.items():
+        for pad in geo.get(r, {}).get("pads", {}).values():
+            if pad["tht"]:
+                tht[p.side].append(board.transform((pad["x"], pad["y"]), p.x, p.y, p.rot, p.side))
+    return boxes, tht
+
+
+def plan_findings(cfg, board, geo, design, place, boxes, tht):
+    from collections import Counter
+    return Counter(check_plan(cfg, board, geo, place, boxes, tht) + check_handover(board, design, place, boxes))
+
+
+def spot_candidates(board, geo, place, boxes, tht, part, hosts, rows):
+    """Every spot of part within near_mm of all hosts, on the side of the first, at 0/90/180/270°, on the plan grid,
+    that keeps the plan's rules towards what is placed (overlaps with silk_overlap_mm and on_headers, holes, tooling
+    holes, THT pins of the other side, roughly the outline) -> [(x, y, rot)], the best first: the pads of `rows`
+    nearest to the host's pins – with a tie-break (decoupling) to 0.1 mm, then the tie-break pads –, then rotation,
+    y, x."""
+    import numpy as np
+    from shapely import contains_xy
+
+    from .config import Placement
+    host = place[hosts[0]]
+    side, n = host.side, board.near_mm
+    S = PLACE_STEPS_PER_MM
+    primary, secondary = rows
+    pins = {num: board.transform((q["x"], q["y"]), host.x, host.y, host.rot, host.side)
+            for num, q in geo[hosts[0]]["pads"].items()}
+    others = [r for r in place if r in boxes and place[r].side == side]
+    header = header_pins(board, geo, place)
+    smd = not through_hole(geo[part])
+    inner = outline_polygon(board).buffer(-0.3)
+    other_side = "bottom" if side == "top" else "top"
+    out = []
+    for k, rot in enumerate(PLACE_ROTATIONS):
+        bx0, by0, bx1, by1 = part_box(board, geo[part], Placement(0, 0, rot, side))
+        hb = boxes[hosts[0]]
+        kx = np.arange(math.ceil((hb[0] - n - bx1) * S), math.floor((hb[2] + n - bx0) * S) + 1)
+        ky = np.arange(math.ceil((hb[1] - n - by1) * S), math.floor((hb[3] + n - by0) * S) + 1)
+        X, Y = (a.ravel() / S for a in np.meshgrid(kx, ky))
+        c0, c1, c2, c3 = X + bx0, Y + by0, X + bx1, Y + by1
+        zero = np.zeros_like(X)
+        ok = np.ones(X.shape, bool)
+        for h in hosts:
+            b = boxes[h]
+            ok &= np.maximum.reduce([b[0] - c2, c0 - b[2], b[1] - c3, c1 - b[3], zero]) <= n - PLACE_EPS
+        for r in others:
+            b = boxes[r]
+            touch = ((c0 < b[2] + PLACE_EPS) & (b[0] < c2 + PLACE_EPS)
+                     & (c1 < b[3] + PLACE_EPS) & (b[1] < c3 + PLACE_EPS))
+            if header.get(r) and smd:            # under a module on pin headers: clear of its pins
+                gap = np.minimum.reduce([np.maximum.reduce([px - c2, c0 - px, py - c3, c1 - py, zero])
+                                         for px, py in header[r].values()])
+                ok &= ~touch | (gap >= board.header_keep_mm + PLACE_EPS)
+            elif board.silk_overlap_mm and smd and not through_hole(geo[r]):
+                depth = np.minimum.reduce([c2 - b[0], b[2] - c0, c3 - b[1], b[3] - c1])
+                ok &= ~touch | (depth <= board.silk_overlap_mm - PLACE_EPS)
+            else:
+                ok &= ~touch
+        for cx, cy, r in [(h["x"], h["y"], h["keep"]) for h in board.holes] + \
+                [(tx, ty, board.tooling_keep) for tx, ty in board.tooling]:
+            dx = np.maximum.reduce([c0 - cx, cx - c2, zero])
+            dy = np.maximum.reduce([c1 - cy, cy - c3, zero])
+            ok &= np.hypot(dx, dy) > r + PLACE_EPS
+        for px, py in tht[other_side]:
+            ok &= ~((c0 - 0.5 < px) & (px < c2 + 0.5) & (c1 - 0.5 < py) & (py < c3 + 0.5))
+        if part not in board.edge_ok:
+            for xs, ys in ((c0, c1), (c2, c1), (c2, c3), (c0, c3)):
+                ok &= contains_xy(inner, xs, ys)
+        X, Y = X[ok], Y[ok]
+
+        def dist(pairs):
+            total = np.zeros_like(X)
+            for _, mine, theirs in pairs:
+                d = np.full(X.shape, np.inf)
+                for a in mine:
+                    q = geo[part]["pads"][a]
+                    ox, oy = board.transform((q["x"], q["y"]), 0, 0, rot, side)
+                    for b in theirs:
+                        d = np.minimum(d, np.hypot(X + ox - pins[b][0], Y + oy - pins[b][1]))
+                total += d
+            return total
+        if primary:
+            first, second = dist(primary), dist(secondary)
+        else:   # nothing shared: as close to the host's box as possible, then centre to centre
+            first = np.maximum.reduce([hb[0] - (X + bx1), X + bx0 - hb[2], hb[1] - (Y + by1), Y + by0 - hb[3],
+                                       np.zeros_like(X)])
+            second = np.hypot(X + (bx0 + bx1) / 2 - (hb[0] + hb[2]) / 2, Y + (by0 + by1) / 2 - (hb[1] + hb[3]) / 2)
+        out.append((np.round(first, 1 if secondary else 6), np.round(second, 6), np.full(X.shape, k), Y, X))
+    first, second, rot, Y, X = (np.concatenate(a) for a in zip(*out))
+    order = np.lexsort((X, Y, rot, second, first))
+    return [(float(X[i]), float(Y[i]), PLACE_ROTATIONS[rot[i]]) for i in order]
+
+
+def find_spot(cfg, board, geo, design, state, part, hosts, rows):
+    """The first spot of spot_candidates where check_plan and check_handover report nothing new -> (Placement or None,
+    the first new finding of the best spot turned down)."""
+    from shapely.geometry import box
+
+    from .config import Placement
+    place, boxes, tht = state
+    side = place[hosts[0]].side
+    edge = outline_polygon(board).exterior
+    inner = outline_polygon(board).buffer(-0.3)
+    at_edge = any(r.kind == "edge" and r.part == part for r in handover.requirements(design, board.name))
+    before = plan_findings(cfg, board, geo, design, place, boxes, tht)
+    tried, why = 0, None
+    for x, y, rot in spot_candidates(board, geo, place, boxes, tht, part, hosts, rows):
+        p = Placement(x, y, rot, side, auto=True)
+        b = part_box(board, geo[part], p)
+        if part not in board.edge_ok and not inner.contains(box(*b)):
+            continue
+        if at_edge and box(*b).distance(edge) > board.edge_mm:
+            continue
+        pads = [board.transform((q["x"], q["y"]), x, y, rot, side) for q in geo[part]["pads"].values() if q["tht"]]
+        new = plan_findings(cfg, board, geo, design, {**place, part: p}, {**boxes, part: b},
+                            {s: v + (pads if s == side else []) for s, v in tht.items()}) - before
+        if not new:
+            return p, None
+        why = why or sorted(new)[0]   # the best spot's first new finding, for the message
+        tried += 1
+        if tried >= PLACE_TRIES:
+            break
+    return None, why
+
+
+def auto_place(cfg, board, geo, design, only=None):
+    """pcb place: a spot for every part that is not in [place] (or is there with auto = true) but tied to a host –
+    by layout.near of the graph, [near] of the board file (in that order, by designator), then the decoupling of L-12:
+    an IC without a capacitor of its own within near_mm gets the first free capacitor between its supply and ground
+    that declares no host. The spot: on the host's side, within near_mm of every host, at 0/90/180/270°, the part's
+    pad on a net it shares with the host as close as possible to the host's pin on that net (decoupling: the supply,
+    ground pad to the nearest ground pin as the tie-break); accepted only where the plan check reports nothing new;
+    each placed part is an obstacle for the next. A row with auto = true is placed anew; one whose part has no host
+    any more, or no spot, stays where it is – an obstacle like any row. -> ([(ref, Placement, why)], problems)."""
+    keep = lambda r: only is None or r in only  # noqa: E731
+    moving = {r for r, p in board.place.items() if p.auto and keep(r)}
+    stuck = []
+    while True:
+        rows, problems = _auto_place(cfg, board, geo, design, moving, keep)
+        placed = {r for r, _, _ in rows}
+        if moving <= placed:
+            return rows, [text for _, text in stuck + problems]
+        stuck += [(r, f"{text} – its row stays where it is") for r, text in problems if r in moving - placed]
+        moving &= placed
+
+
+def _auto_place(cfg, board, geo, design, moving, keep):
+    place = {r: p for r, p in board.place.items() if r not in moving}
+    boxes, tht = plan_state(board, geo, place)
+    names = design.joined_nets()
+    pin_net = {r: names.get(n, n) for r, n in design.pin_net.items()}
+    hosts_of = declared_hosts(board, design)
+    reqs = handover.requirements(design, board.name)
+    rows, problems, failed, tried = [], [], set(), set()
+
+    def put(part, hosts, supply=None):
+        missing = [d for d in (part, *hosts) if d not in geo]
+        if missing:
+            problems.append((part, f"{part}: {', '.join(missing)} not in the footprint geometry (edakit pcb parts "
+                                   "--write, then dump)"))
+            failed.add(part)
+            return
+        pairs = tie_pads(pin_net, design.ground, geo, part, hosts[0], supply)
+        p, why = find_spot(cfg, board, geo, design, (place, boxes, tht), part, hosts, pairs)
+        pins = "; ".join(f"pin{'s' * (len(theirs) > 1)} {', '.join(theirs)}, {net}" for net, _, theirs in pairs[0])
+        if p is None:
+            problems.append((part, f"{part}: no free spot within near_mm {board.near_mm:g} of {hosts[0]}"
+                                   + (f" ({pins})" if pins else "") + (f" – the plan check: {why}" if why else "")))
+            failed.add(part)
+            return
+        place[part] = p
+        boxes[part] = part_box(board, geo[part], p)
+        tht[p.side] += [board.transform((q["x"], q["y"]), p.x, p.y, p.rot, p.side)
+                        for q in geo[part]["pads"].values() if q["tht"]]
+        host = place[hosts[0]]
+        near = []
+        for net, mine, theirs in pairs[0]:
+            d, a, b = min((math.dist(board.transform((geo[part]["pads"][a]["x"], geo[part]["pads"][a]["y"]),
+                                                     p.x, p.y, p.rot, p.side),
+                                     board.transform((geo[hosts[0]]["pads"][b]["x"], geo[hosts[0]]["pads"][b]["y"]),
+                                                     host.x, host.y, host.rot, host.side)), a, b)
+                          for a in mine for b in theirs)
+            near.append(f"pad {a} {d:.1f} mm from {hosts[0]}.{b} ({net})")
+        what = f"decoupling of {hosts[0]} on {supply}" if supply else f"next to {', '.join(hosts)}"
+        rows.append((part, p, what + (": " + ", ".join(near) if near else "")))
+
+    near_jobs = sorted((part for part in hosts_of if part not in place and keep(part)),
+                       key=lambda d: (d not in {r.part for r in reqs if r.kind == "near"}, natural_key(d)))
+    progress = True
+    while progress:
+        progress = False
+        for part in [d for d in near_jobs if all(h in place for h in hosts_of[d])]:
+            near_jobs.remove(part)
+            put(part, hosts_of[part])
+            progress = True
+        for r in sorted((r for r in reqs if r.kind == "decoupling"), key=lambda r: (natural_key(r.part), r.net)):
+            if (r.part, r.net) in tried or not any(m.part == r.part and m.net == r.net
+                                                   for m in missing_decoupling(board, reqs, boxes)):
+                continue
+            cap = next((c for c in r.others if c not in place and c not in hosts_of and c not in failed and keep(c)),
+                       None)
+            if cap:   # one capacitor per IC and supply: one that finds no spot is named, not replaced by the next
+                tried.add((r.part, r.net))
+                put(cap, [r.part], r.net)
+                progress = True
+    for part in near_jobs:
+        loose = [h for h in hosts_of[part] if h not in place]
+        problems.append((part, f"{part}: next to {', '.join(loose)}, which {'is' if len(loose) == 1 else 'are'} not "
+                               "in [place] – fix the host first"))
+    return rows, problems
+
+
+def place_row(p):
+    return f'{{ x = {p.x:.1f}, y = {p.y:.1f}, rot = {p.rot:g}, side = "{p.side}", auto = true }}'
+
+
+def write_place_rows(path, rows):
+    """rows {ref: inline table}: a row that is already in [place] gets its new table on its own line (only an auto row
+    is ever moved), the others go as new lines at the end of [place]; every other line stays as it is. -> number of
+    lines changed or added."""
+    text = path.read_text(encoding="utf-8") if path.exists() else ""
+    lines = text.splitlines(keepends=True)
+    if lines and not lines[-1].endswith("\n"):
+        lines[-1] += "\n"
+    start = next((i for i, ln in enumerate(lines) if PLACE_HEADER.match(ln)), None)
+    if start is None:
+        lines += ["\n", "[place]\n"] if lines else ["[place]\n"]
+        start = len(lines) - 1
+    end = next((i for i in range(start + 1, len(lines)) if TABLE_HEADER.match(lines[i])), len(lines))
+    changed, new = 0, []
+    for ref, table in rows.items():
+        pat = re.compile(rf"""^(\s*["']?{re.escape(ref)}["']?\s*=\s*)\{{[^}}]*\}}(.*)$""", re.S)
+        at = next((i for i in range(start + 1, end) if pat.match(lines[i])), None)
+        if at is None:
+            new.append(f"{ref} = {table}\n")
+        else:
+            line = pat.sub(lambda m: m.group(1) + table + m.group(2), lines[at])
+            changed += line != lines[at]
+            lines[at] = line
+    last = max((i for i in range(start, end) if i == start or (lines[i].strip() and
+                                                                not lines[i].lstrip().startswith("#"))))
+    lines[last + 1:last + 1] = new
+    if changed or new:
+        path.write_text("".join(lines), encoding="utf-8")
+    return changed + len(new)
+
+
+def place_main(cfg, board, write=False, only=None):
+    """pcb place: the geometry as pcb plan reads it, for every part of the board – a part not yet in the PCB is
+    placed by the library footprint `edakit part import` cached."""
+    from . import config
+    design = Design.from_config(cfg)
+    geo = plan_geometry(cfg, board, design, [*board.place, *(r for r in sorted(design.board_comps(board.name),
+                                                                                key=natural_key) if r not in board.place)])
+    rows, problems = auto_place(cfg, board, geo, design, set(only) if only else None)
+    if lib := [r for r, _, _ in rows if geo[r].get("source") == "library"]:
+        print(f"  library geometry (edakit part import, not yet from the PCB): {', '.join(lib)}")
+    for ref, p, why in rows:
+        print(f"  {ref} = {place_row(p)}   # {why}")
+    for p in problems:
+        print("  !", p)
+    if write and rows:
+        f = cfg.resolve(board.file)
+        old = f.read_text(encoding="utf-8") if f.exists() else None
+        n = write_place_rows(f, {ref: place_row(p) for ref, p, _ in rows})
+        try:
+            got = config.load(cfg.path).board(board.name).place
+            off = [ref for ref, p, _ in rows if ref not in got or (got[ref].x, got[ref].y, got[ref].rot, got[ref].side,
+                                                                    got[ref].auto) != (p.x, p.y, p.rot, p.side, True)]
+        except config.ConfigError as e:
+            off = [str(e)]
+        if off:
+            if old is None:
+                f.unlink()
+            else:
+                f.write_text(old, encoding="utf-8")
+            raise SystemExit(f"{board.file}: {', '.join(off)} did not read back as written – the file is left as it "
+                             "was")
+        print(f"  {n} row{'s' * (n != 1)} written into {board.file} [place]"
+              + (f", {len(rows) - n} unchanged" if len(rows) > n else ""))
+    elif not rows and not problems:
+        print("  nothing to place: every part the circuit or the board file ties to a host is in [place]")
+    else:
+        print(f"  {len(rows)} part{'s' * (len(rows) != 1)} next to {'its' if len(rows) == 1 else 'their'} host"
+              + ("" if write else " – --write puts them into [place]"))
+    return 2 if problems else 0
+
+
 # --- EasyEDA ------------------------------------------------------------------------------------------------------
 
+def pad_hole(p):
+    """{"hole": [w, l] mm, "plated"} of a pin whose hole the API gives in mil – ["ROUND", d] or ["SLOT", d, length]
+    (a length below the diameter follows it) – or {} for an SMD pad."""
+    h = p.get("hole")
+    if not h:
+        return {}
+    w = h[1] / MIL_PER_MM
+    length = max(w, (h[2] if len(h) > 2 else h[1]) / MIL_PER_MM)
+    return {"hole": [round(w, 3), round(length, 3)], "plated": bool(p.get("metallization", True))}
+
+
 def measure(mcp, c):
-    """Geometry of a part relative to its origin; turns it to 0°/TOP for that and leaves it so."""
+    """Geometry of a part relative to its origin; turns it to 0°/TOP for that and leaves it so. Through-hole pads keep
+    their hole (P-7)."""
     pid = c["primitiveId"]
     if c["rotation"] or c["layer"] != TOP:
         ensure_pcb_focus(mcp)
@@ -399,10 +1064,10 @@ def measure(mcp, c):
     g = {"primitiveId": pid, "footprint": c["footprintName"], "device": c["deviceName"],
          "bbox": [round(bb["minX"] - x, 2), round(bb["minY"] - y, 2), round(bb["maxX"] - x, 2), round(bb["maxY"] - y, 2)],
          "pads": {p["padNumber"]: {"x": round(p["x"] - x, 2), "y": round(p["y"] - y, 2), "net": p["net"],
-                                   "tht": p["hole"] is not None} for p in pads}}
+                                   "tht": p["hole"] is not None, **pad_hole(p)} for p in pads}}
     nums = [p["padNumber"] for p in pads]  # numbers used several times (shell legs): "pads" keeps one, all here
     if dup := sorted({n for n in nums if nums.count(n) > 1}):
-        g["pads_same_number"] = {n: [{"x": round(p["x"] - x, 2), "y": round(p["y"] - y, 2)} for p in pads
+        g["pads_same_number"] = {n: [{"x": round(p["x"] - x, 2), "y": round(p["y"] - y, 2), **pad_hole(p)} for p in pads
                                      if p["padNumber"] == n] for n in dup}
     w, h = g["bbox"][2] - g["bbox"][0], g["bbox"][3] - g["bbox"][1]
     print(f"  {c['designator']:<6} {mm(w):6.1f} x {mm(h):5.1f} mm  {c['footprintName']}")
@@ -429,16 +1094,22 @@ def circle_points(cx, cy, r, n=24):
     return [(cx + r * math.cos(2 * math.pi * k / n), cy + r * math.sin(2 * math.pi * k / n)) for k in range(n)]
 
 
-def apply(cfg, board, mcp, verify_all=False):
+APPLY_STEPS = 7   # bridge and PCB (main), then the six of apply
+
+
+def apply(cfg, board, mcp, verify_all=False, step=None):
     """Fixed parts locked in place, outline and holes drawn, tooling holes set; then the pads of one part per
     (footprint, side, rotation) are compared with the plan – it checks that EasyEDA mirrors and rotates like
-    Board.transform. --verify-all compares every part."""
+    Board.transform. --verify-all compares every part. step: eda.Steps of `pcb apply` (APPLY_STEPS)."""
+    step = step or (lambda _: None)
+    step("plan and geometry")
     geo = load_geometry(cfg, board)
     problems = plan(cfg, board)
     ids = {c["designator"]: c["primitiveId"] for c in eda.list_pcb_components(mcp) if c.get("designator")}
     missing = [r for r in board.place if r not in geo or r not in ids]
     if missing:
         raise SystemExit(f"not in the PCB or without geometry (first `edakit pcb parts --write`, `dump`): {missing}")
+    step("fixed parts")
     for n, (ref, p) in enumerate(board.place.items()):
         if n % 20 == 0:  # focus check per block instead of before every write
             ensure_pcb_focus(mcp)
@@ -446,12 +1117,14 @@ def apply(cfg, board, mcp, verify_all=False):
         api(mcp, "PCB_PrimitiveComponent.modify", ids[ref],
             {"x": to_mil(x), "y": to_mil(y), "rotation": rot, "layer": layer, "primitiveLock": p.lock})
     print(f"  {len(board.place)} fixed parts placed")
+    step("unlock the other parts")
     loose = [r for r in ids if r not in board.place]
     for n, ref in enumerate(loose):  # parts that were fixed before: unlock them for the auto-layout
         if n % 20 == 0:
             ensure_pcb_focus(mcp)
         api(mcp, "PCB_PrimitiveComponent.modify", ids[ref], {"primitiveLock": False})
     print(f"  {len(loose)} parts unlocked for the auto-layout")
+    step("outline and holes")
     ensure_pcb_focus(mcp)
     for pid in api(mcp, "PCB_PrimitivePolyline.getAllPrimitiveId") or []:
         line = api(mcp, "PCB_PrimitivePolyline.get", pid)
@@ -463,7 +1136,9 @@ def apply(cfg, board, mcp, verify_all=False):
         cx, cy = board.eda_point(h["x"], h["y"])
         api(mcp, "PCB_PrimitivePolyline.create", "", BOARD_OUTLINE_LAYER, outline_arg(circle_points(cx, cy, h["d"] / 2)), 6)
     print(f"  outline: {len(board.outline)} points, {len(board.holes)} holes")
+    step("tooling holes")
     tooling(cfg, board, mcp)
+    step("pad check")
     ensure_pcb_focus(mcp)
     worst, seen = (0.0, None), set()
     for ref, p in board.place.items():
@@ -577,9 +1252,9 @@ def pour(cfg, board, mcp, keep_islands_on=None, regions=None):
                 print(f"  pour {spec['net']} {layer_name}{part}: {'ok' if r else 'FAILED'}")
 
 
-def sync_nets(cfg, mcp, write=False):
-    """Pad nets in the PCB = graph (replaces importChanges for pure net changes: its confirmation dialog needs a click,
-    'force' has no effect). Pads of parts have their own ids from getAllPinsByPrimitiveId."""
+def nets_diff(cfg, mcp):
+    """Pads whose net in the PCB differs from the graph: [(pad, pad id, PCB net, graph net)]. Pads of parts have their
+    own ids from getAllPinsByPrimitiveId."""
     design = Design.from_config(cfg)
     want = dict(design.pin_net)
     ensure_pcb_focus(mcp)
@@ -595,6 +1270,13 @@ def sync_nets(cfg, mcp, write=False):
             net = want.get(key, "")  # not in the graph = unconnected (nc)
             if (ps.get("Net") or "") != net:
                 changes.append((key, ps["PrimitiveId"], ps.get("Net"), net))
+    return changes
+
+
+def sync_nets(cfg, mcp, write=False):
+    """Pad nets in the PCB = graph (replaces importChanges for pure net changes: its confirmation dialog needs a click,
+    'force' has no effect)."""
+    changes = nets_diff(cfg, mcp)
     for n, (key, pid, old, new) in enumerate(changes):
         print(f"  {key}: {old} -> {new or '–'}")
         if write:
@@ -628,14 +1310,13 @@ def bom_differs(sch_part, pcb_part):
     return a is not None and b is not None and bool(a) != bool(b)
 
 
-def sync_parts(cfg, board, mcp, write=False):
-    """PCB parts = parts of the board schematic, without the "Import Changes" dialog (importChanges(uuid, true) opens
-    it anyway). Schematic and PCB part are linked through the same UniqueId (ggeN). Missing parts are created (device
-    from the project library, designator, UniqueId, the COMPLETE OtherProperty of the schematic part with a new
-    Channel ID, pad nets from the graph) and parked next to the board; swapped ones (other LCSC number or footprint)
-    are replaced the same way; extra ones deleted; unlinked ones linked. Without write only shown.
-    Then: dump/plan, apply, auto-layout, route."""
-    project = api(mcp, "DMT_Project.getCurrentProjectInfo")["uuid"]
+PARTS_DIFF = {"missing": "missing in the PCB", "extra": "not in the schematic", "swapped": "swapped (LCSC/footprint)",
+              "unlinked": "not linked (UniqueId)", "props": "properties differ from the schematic"}
+
+
+def parts_diff(mcp, board):
+    """Schematic parts against PCB parts: ({kind of PARTS_DIFF: [designators]}, schematic uuid, schematic parts,
+    PCB parts)."""
     sch_uuid, sch = schematic_parts(mcp, board)
     eda.open_pcb(mcp, board.pcb)
     pcb = {}
@@ -658,12 +1339,24 @@ def sync_parts(cfg, board, mcp, write=False):
     props = sorted((r for r in set(sch) & set(pcb) if same(r) and (any(
         (pcb[r].get("OtherProperty") or {}).get(k) != v for k, v in (sch[r].get("OtherProperty") or {}).items())
         or bom_differs(sch[r], pcb[r]))), key=natural_key)
-    for title, refs in (("missing in the PCB", missing), ("not in the schematic", extra),
-                        ("swapped (LCSC/footprint)", swapped), ("not linked (UniqueId)", unlinked),
-                        ("properties differ from the schematic", props)):
+    found = {"missing": missing, "extra": extra, "swapped": swapped, "unlinked": unlinked, "props": props}
+    return found, sch_uuid, sch, pcb
+
+
+def sync_parts(cfg, board, mcp, write=False):
+    """PCB parts = parts of the board schematic, without the "Import Changes" dialog (importChanges(uuid, true) opens
+    it anyway). Schematic and PCB part are linked through the same UniqueId (ggeN). Missing parts are created (device
+    from the project library, designator, UniqueId, the COMPLETE OtherProperty of the schematic part with a new
+    Channel ID, pad nets from the graph) and parked next to the board; swapped ones (other LCSC number or footprint)
+    are replaced the same way; extra ones deleted; unlinked ones linked. Without write only shown.
+    Then: dump/plan, apply, auto-layout, route."""
+    project = api(mcp, "DMT_Project.getCurrentProjectInfo")["uuid"]
+    found, sch_uuid, sch, pcb = parts_diff(mcp, board)
+    missing, extra, swapped, unlinked, props = (found[k] for k in PARTS_DIFF)
+    for kind, refs in found.items():
         if refs:
-            print(f"  {title}: {', '.join(refs)}")
-    todo = len(missing) + len(extra) + len(swapped) + len(unlinked) + len(props)
+            print(f"  {PARTS_DIFF[kind]}: {', '.join(refs)}")
+    todo = sum(map(len, found.values()))
     print(f"  schematic {board.schematic}: {len(sch)} parts, PCB {board.pcb}: {len(pcb)}; {todo} difference(s)")
     if not write or not todo:
         return todo
@@ -743,6 +1436,68 @@ def sync_parts(cfg, board, mcp, write=False):
     return 0
 
 
+# --- the DRC's "Netlist Error – Import Changes" -------------------------------------------------------------------
+
+IMPORT_CHANGES = ("Netlist Error", "Import Changes")
+ACKNOWLEDGE = ("EasyEDA waits for the import acknowledgement: open Design → Import Changes once, it shows no changes "
+               "(schematic = PCB: parts, links, properties, pad nets)")
+
+
+def import_items(found):
+    """The DRC items EasyEDA writes while schematic and PCB netlist differ in its eyes – also, after parts were placed
+    in the schematic, until the import view has been opened once."""
+    return [f for f in found if (f.get("errorType"), f.get("ruleName")) == IMPORT_CHANGES]
+
+
+def netlist_diff(cfg, board, mcp):
+    """The dry runs of `pcb parts` and `pcb nets`: {"parts": {kind: [designators]}, "nets": [[pad, PCB net, graph
+    net]]} – only the kinds with a difference."""
+    parts = {k: refs for k, refs in parts_diff(mcp, board)[0].items() if refs}
+    return {"parts": parts, "nets": [[key, old or "", new] for key, _, old, new in nets_diff(cfg, mcp)]}
+
+
+def import_verdict(items, diff):
+    """(ok, what) for 'schematic and PCB in sync (Import Changes)': no item; not compared; the acknowledgement alone;
+    or the differences with the command that fixes them."""
+    if not items:
+        return True, "no Import Changes item"
+    if diff is None:
+        return False, (f"Netlist Error (Import Changes): {len(items)}; schematic and PCB not compared (EasyEDA's DRC "
+                       "and the comparison of `edakit pcb parts` and `pcb nets` run together)")
+    parts = [f"{PARTS_DIFF.get(k, k)}: {', '.join(refs)}" for k, refs in diff.get("parts", {}).items() if refs]
+    nets = [f"{pad} {have or '–'} instead of {want or '–'}" for pad, have, want in diff.get("nets", [])]
+    if not parts and not nets:
+        return False, ACKNOWLEDGE
+    out = ["; ".join(parts) + " → edakit pcb parts --write"] if parts else []
+    out += [f"pad nets: {'; '.join(nets[:12])}" + (f" (+{len(nets) - 12})" if len(nets) > 12 else "")
+            + " → edakit pcb nets --write"] if nets else []
+    return False, "schematic and PCB differ – " + "; ".join(out)
+
+
+def drc_exit(found, diff):
+    """Exit code of `route all|drc` and `silk apply|check` for the DRC: 0 without items; 3 when the only items are
+    Import Changes and the comparison shows no difference – EasyEDA waits for the acknowledgement, as `edakit lock`
+    exits 3 while another session holds EasyEDA –; 2 otherwise."""
+    if not found:
+        return 0
+    if len(import_items(found)) == len(found) and import_verdict(found, diff)[1] == ACKNOWLEDGE:
+        return 3
+    return 2
+
+
+def drc_report(cfg, board, mcp, found, out=None, say=print):
+    """Print the DRC; with an Import Changes item compare schematic and PCB (written to out) and say which case it is.
+    Returns drc_exit."""
+    say(f"  {eda.describe_drc(found)}")
+    items, diff = import_items(found), None
+    if items:
+        diff = netlist_diff(cfg, board, mcp)
+        if out:
+            out.write_text(json.dumps(diff, indent=1, ensure_ascii=False))
+        say(f"  {import_verdict(items, diff)[1]}")
+    return drc_exit(found, diff)
+
+
 def autolayout(cfg, board, mcp, timeout_min=20):
     """EasyEDA's auto-layout places only unlocked parts and only on TOP; it knows nothing about belonging
     (decoupling capacitors, pull-ups) – fix those in the plan. It keeps running after the bridge timeout, so the end is
@@ -769,10 +1524,15 @@ def main(cfg, args):
     board = cfg.board(args.board)
     if args.action == "plan":
         return 2 if plan(cfg, board) else 0
+    if args.action == "place":
+        return place_main(cfg, board, args.write, args.only and args.only.split(","))
     regions = None
     if args.action == "pour":  # pour_regions: the outlines from the last routing, before EasyEDA is touched
         from . import route
         regions = route.region_outlines(cfg, board)
+    step = eda.Steps(APPLY_STEPS) if args.action == "apply" else None
+    if step:
+        step("bridge and PCB")
     mcp = eda.start(cfg, args.verbose)
     try:
         if not eda.wait_for_bridge(mcp):
@@ -785,7 +1545,7 @@ def main(cfg, args):
         if args.action == "dump":
             dump(cfg, board, mcp, args.ref and args.ref.split(","))
         elif args.action == "apply":
-            return apply(cfg, board, mcp, args.verify_all)
+            return apply(cfg, board, mcp, args.verify_all, step)
         elif args.action == "tooling":
             tooling(cfg, board, mcp)
         elif args.action == "pour":

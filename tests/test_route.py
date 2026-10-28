@@ -11,6 +11,7 @@ from shapely.ops import unary_union
 from edakit import config, route
 
 MIL = 1000 / 25.4
+EXAMPLE = Path(__file__).resolve().parent / "fixtures" / "led-bar"
 
 
 def pad(ref, num, net, x, y, layer=1, shape=("RECT", 40, 40)):
@@ -780,3 +781,362 @@ def test_route_check_finds_smd_pads_closer_than_the_paste_gap(tmp_path, capsys):
     cfg, args = check_project(tmp_path, paste_pads(), '[release]\nassembly = { sides = ["bottom"] }\n')
     assert route.main(cfg, args) == 0
     assert "SMD pads of different parts on BOTTOM: 0 pairs" in capsys.readouterr().out
+
+
+# --- widths from the simulated currents (#58): the example's input stage routed at 18 mil on TOP – J1 (through-hole)
+# at (84, 12) turned by 90°, D1 (SMA) at (75, 12), C2 (0805) at (68, 12) –, 90 x 40 mm, net_currents.json beside it
+
+def stage_pad(ref, num, net, x, y, w, h, tht=False):
+    return {**pad(ref, num, net, *mm(x, y), layer=12 if tht else 1, shape=("ELLIPSE" if tht else "RECT", w * MIL,
+                                                                        h * MIL)),
+            "hole": [1.0 * MIL] if tht else None}
+
+
+STAGE = {"pcb": "main",
+         "components": [{"ref": r, "x": mm(x, y)[0], "y": mm(x, y)[1], "rot": rot, "layer": 1}
+                        for r, x, y, rot in (("J1", 84, 12, 90), ("D1", 75, 12, 0), ("C2", 68, 12, 0))],
+         "pads": [stage_pad("J1", "1", "VIN", 84, 11, 1.4, 1.4, tht=True),
+                  stage_pad("J1", "2", "GND", 84, 13, 1.4, 1.4, tht=True),
+                  stage_pad("D1", "1", "+5V", 72.8, 12, 2.5, 1.7), stage_pad("D1", "2", "VIN", 77.2, 12, 2.5, 1.7),
+                  stage_pad("C2", "1", "+5V", 67.05, 12, 1.0, 1.3), stage_pad("C2", "2", "GND", 68.95, 12, 1.0, 1.3)],
+         "outlines": [[mm(0, 0), mm(90, 0), mm(90, 40), mm(0, 40)]]}
+FIXED_GND = [(84, 15), (80, 15)]       # the piece of the GND track a [[routing.fixed_wires]] entry protects
+
+
+def stage_ses(gnd_fixed_mil=None):
+    """The SES Freerouting would return: every track 18 mil; with gnd_fixed_mil the fixed GND piece at its own width."""
+    def path(w, pts):
+        return f"(wire (path TOP {round(w * 100)} " + " ".join(f"{round(v * 100)}" for p in pts for v in mm(*p)) + "))"
+    gnd = [path(18, [(84, 13), (84, 15), (68.95, 15), (68.95, 12)])]
+    if gnd_fixed_mil:
+        gnd = [path(18, [(84, 13), (84, 15)]), path(gnd_fixed_mil, FIXED_GND),
+               path(18, [(80, 15), (68.95, 15), (68.95, 12)])]
+    return ("(session main (routes (resolution mil 100) (parser) (network_out\n"
+            f'  (net "VIN" {path(18, [(84, 11), (77.2, 11), (77.2, 12)])})\n'
+            f'  (net "+5V" {path(18, [(72.8, 12), (72.8, 10), (67.05, 10), (67.05, 12)])})\n'
+            f'  (net "GND" {" ".join(gnd)})\n)))\n')
+
+
+def routed_stage(project, currents=None, gnd_fixed_mil=None, routing=""):
+    """The example with the routed input stage as `route read` and Freerouting leave it; currents {net: A} as
+    `edakit sim` writes them (None: no net_currents.json); routing: lines for [routing] of the board file."""
+    f = project.root / "hardware" / "boards" / "main.toml"
+    text = (EXAMPLE / "hardware" / "boards" / "main.toml").read_text()      # each call starts from the example's
+    text = text.replace("attempts = 5 ", f"attempts = 5\n{routing}\n" if routing else "attempts = 5 ")
+    if gnd_fixed_mil:
+        text = text.replace("[[pours]]", '[[routing.fixed_wires]]\nnet = "GND"\nlayer = "TOP"\n'
+                                          f"width_mil = {gnd_fixed_mil}\npoints = {[list(p) for p in FIXED_GND]}\n\n"
+                                          "[[pours]]", 1)
+    f.write_text(text)
+    d = project.root / "build" / "edakit"
+    (d / "route").mkdir(parents=True, exist_ok=True)
+    (d / "route" / "main_board.json").write_text(json.dumps(STAGE))
+    (d / "route" / "main.ses").write_text(stage_ses(gnd_fixed_mil))
+    if currents is not None:
+        (d / "sim").mkdir(exist_ok=True)
+        (d / "sim" / "net_currents.json").write_text(json.dumps(
+            {"nets": {n: {"i_max_a": i, "scenario": "test"} for n, i in currents.items()}}))
+    return project.config()
+
+
+def route_cmd(project, action, capsys):
+    from edakit import cli
+    code = cli.main(["route", action, "--config", str(project.root / "edakit.toml")])
+    return code, re.sub(r"\[ *[\d.]+ min\] ", "", capsys.readouterr().out)
+
+
+TWO_AMPS = {"VIN": 2.0, "+5V": 2.0, "GND": 2.0, "3V3": 0.0144}
+
+
+def test_route_check_holds_the_ipc_width_of_the_simulated_current(project, capsys):
+    routed_stage(project, TWO_AMPS)
+    code, out = route_cmd(project, "check", capsys)
+    assert code == 2
+    assert "L-5 (offline) VIN: 0.46 < 1.37 mm" in out and "L-5 (offline) GND: 0.46 < 1.37 mm" in out
+    assert "check: 3 nets routed, 8 track pieces, 0 vias; open: 0" in out    # connected all the same
+
+
+def test_route_check_without_net_currents_as_before(project, capsys):
+    routed_stage(project)
+    code, out = route_cmd(project, "check", capsys)
+    assert code == 0 and "open: 0" in out and "clearances/keep-outs: 0 findings" in out
+    assert [ln for ln in out.splitlines() if "L-5" in ln] == [
+        "track widths (L-5 offline): no net currents – run `edakit sim` first"]
+
+
+def test_route_check_names_a_fixed_wire_below_its_net(project, capsys):
+    routed_stage(project, {"VIN": 0.1, "+5V": 0.1, "GND": 0.85}, gnd_fixed_mil=16)   # IPC for GND 0.42 mm
+    code, out = route_cmd(project, "check", capsys)
+    assert code == 2 and "L-5 (offline) fixed wire GND (84, 15)–(80, 15): 0.41 < 0.42 mm" in out
+    gnd = [ln for ln in out.splitlines() if "L-5 (offline) GND:" in ln]       # the routed GND tracks: wide enough
+    assert gnd == ["    L-5 (offline) GND: 0.46 < 0.60 mm – below the practical width of its class (warning)"]
+
+
+def test_route_check_passes_a_fixed_wire_at_the_ipc_width(project, capsys):
+    routed_stage(project, {"VIN": 0.1, "+5V": 0.1, "GND": 0.85}, gnd_fixed_mil=18)
+    code, out = route_cmd(project, "check", capsys)
+    assert code == 0
+    assert "below IPC" not in out.replace("0 below IPC", "")
+    assert "L-5 (offline) GND: 0.46 < 0.60 mm" in out and "warning" in out   # below the class width: a warning
+
+
+def test_dsn_widths_from_the_simulation(project, capsys, tmp_path):
+    cfg = routed_stage(project, TWO_AMPS)
+    data = json.loads((project.root / "build" / "edakit" / "route" / "main_board.json").read_text())
+    rules = route.Rules(cfg.board())
+    route.write_dsn(rules, data, tmp_path / "classes.dsn")
+    cfg = routed_stage(project, TWO_AMPS, routing='widths = "classes"')
+    route.write_dsn(route.Rules(cfg.board()), data, tmp_path / "explicit.dsn")
+    assert (tmp_path / "explicit.dsn").read_text() == (tmp_path / "classes.dsn").read_text()   # the default
+    cfg = routed_stage(project, TWO_AMPS, routing='widths = "sim"')
+    code, out = route_cmd(project, "dsn", capsys)
+    text = (project.root / "build" / "edakit" / "route" / "main.dsn").read_text()
+    widths = {m[0]: float(m[1]) for m in re.findall(r'\(class "(\w+)" .*\(rule \(width ([\d.]+)\)', text)}
+    assert code == 0 and widths["POWER"] >= 53.8 and widths["GND"] >= 53.8
+    assert "class POWER: 18 -> 53.9 mil" in out
+
+
+def test_sim_widths_give_a_net_outside_the_classes_a_class_of_its_own(project):
+    cfg = routed_stage(project, {**TWO_AMPS, "BTN": 1.0, "LED_SDI": 0.01}, routing='widths = "sim"')
+    rules = route.Rules(cfg.board())
+    route.sim_widths(cfg, cfg.board(), rules)
+    assert rules.net_class("BTN") == ("BTN", 20.7)            # IPC 0.53 mm for 1 A above signal_mil 10
+    assert rules.net_class("LED_SDI") == ("SIGNAL", 10)       # below signal_mil: as before
+    assert rules.net_class("3V3") == ("SUPPLY", 12)           # a class wide enough stays as it is
+
+
+# --- a declared visible side (#61): the routed input stage with +5V on a detour of 0.18 m on BOTTOM through two vias
+
+DETOUR = [(72.8, 8), (5, 8), (5, 35), (67.05, 35), (67.05, 8)]      # BOTTOM: 67.8 + 27 + 62.05 + 27 mm
+
+
+def with_detour(project):
+    """+5V from D1.1 down to a via, along BOTTOM, up through a via to C2.1 – TOP keeps 0.04 m, BOTTOM gets 0.18 m."""
+    def path(layer, pts):
+        return f"(wire (path {layer} 1800 " + " ".join(f"{round(v * 100)}" for p in pts for v in mm(*p)) + "))"
+    vias = " ".join(f'(via "via24" {round(mm(*p)[0] * 100)} {round(mm(*p)[1] * 100)})' for p in (DETOUR[0], DETOUR[-1]))
+    five = (f'(net "+5V" {path("TOP", [(72.8, 12), DETOUR[0]])} {path("BOTTOM", DETOUR)} '
+            f'{path("TOP", [DETOUR[-1], (67.05, 12)])} {vias})')
+    f = project.root / "build" / "edakit" / "route" / "main.ses"
+    f.write_text(re.sub(r'\(net "\+5V" \(wire [^\n]*\)\)', lambda m: five, f.read_text()))
+
+
+def looks(project, capsys, keys=None):
+    routed_stage(project)
+    if keys is not None:
+        f = project.root / "hardware" / "boards" / "main.toml"
+        f.write_text(f.read_text() + f"\n[looks]\n{keys}\n")
+    with_detour(project)
+    code, out = route_cmd(project, "check", capsys)
+    return code, out, [ln.strip() for ln in out.splitlines() if "tracks:" in ln or "(visible)" in ln]
+
+
+def test_route_check_reports_the_visible_side(project, capsys):
+    code, out, lines = looks(project, capsys)
+    assert code == 0 and lines == [] and "2 vias; open: 0" in out                    # no [looks]: as before
+    code, out, lines = looks(project, capsys, 'visible = "bottom"')
+    assert code == 0 and lines == ["tracks: TOP 0.04 m, BOTTOM 0.18 m; vias 2", "BOTTOM (visible): 0.18 m of track, 2 vias"]
+    code, out, lines = looks(project, capsys, 'visible = "bottom"\nmax_track_m = 0.1\nmax_vias = 1')
+    assert code == 0 and lines[2:] == ["BOTTOM (visible): 0.18 m of track, limit 0.1 m – warning",
+                                        "BOTTOM (visible): 2 vias, limit 1 – warning"]
+    code, out, lines = looks(project, capsys, 'visible = "top"\nmax_track_m = 0.1\nmax_vias = 2')
+    assert code == 0 and lines[1:] == ["TOP (visible): 0.04 m of track, 2 vias"]      # within both limits
+
+
+# --- route diagnose (#63): why a connection stays open. On the pour board above (GND an ordinary net here): C1.2 and
+# C2.2 apart on TOP, the SIG track from the top edge to the bottom edge (SIG_TOP) walls TOP in two; on the example's
+# routed input stage: J1.2 (GND) inside a keep-out on both layers, GND left open in the SES.
+
+BOTTOM_WIRE_KEEP = '\n[[routing.keepouts]]\nlayer = "BOTTOM"\nwhat = "wire"\nrect = [0, 0, 40, 20]\n'
+
+
+def test_diagnose_a_connection_cut_by_the_track_of_another_net(pour_board):
+    make, data = pour_board
+    [gap] = route.diagnose(make(BOTTOM_WIRE_KEEP), data, SIG_TOP)["open"]
+    assert (gap["net"], gap["a"], gap["b"], gap["verdict"], gap["blocked_by"]) == ("GND", "C1.2", "C2.2", "blocked",
+                                                                                  ["SIG"])
+    assert re.fullmatch(r"GND C1\.2 – C2\.2: blocked by SIG – utilisation \d\.\d\d at \(\d+, \d+\) mm", gap["line"])
+    assert gap["way_mm"] == pytest.approx(30, abs=1.5)                    # the empty board's way: straight across
+
+
+def test_diagnose_a_way_through_the_other_layer_is_not_unreachable(pour_board):
+    make, data = pour_board
+    [gap] = route.diagnose(make(""), data, SIG_TOP)["open"]               # BOTTOM free: through vias around the wall
+    assert gap["verdict"] == "free" and "blocked_by" not in gap
+    assert gap["line"] == ("GND C1.2 – C2.2: open, but a free way is left – Freerouting did not find it (more passes, "
+                           "another order: route all's attempts)")
+    assert route.diagnose(make(""), data, SIG_BOTTOM)["open"][0]["verdict"] == "free"
+
+
+def test_diagnose_the_wall_alone_is_no_gap(pour_board):
+    make, data = pour_board
+    gnd = {"GND": {"wires": [("BOTTOM", 10, [mm(5, 10), mm(35, 10)])], "vias": [mm(5, 10), mm(35, 10)]}}
+    assert route.diagnose(make(BOTTOM_WIRE_KEEP.replace("wire", "all")), data, {**SIG_TOP, **gnd})["open"] == []
+
+
+def test_congestion_of_a_dense_strip_above_a_sparse_one(pour_board):
+    make, data = pour_board
+    dense = [pad(f"A{i}", "1", f"N{i}", *mm(10, 6 + 0.1 * i)) for i in range(20)] + \
+            [pad(f"B{i}", "1", f"N{i}", *mm(15, 6 + 0.1 * i)) for i in range(20)]   # 20 nets across a 5 mm strip
+    sparse = [pad("S1", "1", "S", *mm(25, 15)), pad("S2", "1", "S", *mm(35, 15))]
+    data = {**data, "pads": data["pads"] + dense + sparse}
+    c = route.congestion(make(""), data)
+    hot, cool = route.utilisation_at(c, *mm(12.5, 7)), route.utilisation_at(c, *mm(30, 15))
+    assert hot > 1 > cool and hot > 5 * cool
+    assert c["max"] >= hot and abs(c["at"][0] - 12.5) <= 2 and abs(c["at"][1] - 7) <= 2   # plan mm
+
+
+def gnd_walled_in(project, windows=False):
+    """The routed input stage with GND open in the SES and J1.2 inside a keep-out on both layers (K0)."""
+    routed_stage(project)
+    f = project.root / "hardware" / "boards" / "main.toml"
+    f.write_text(f.read_text() + '\n[[routing.keepouts]]\nlayer = ["TOP", "BOTTOM"]\nwhat = "all"\n'
+                                 'rect = [82.5, 12.2, 85.5, 14.5]\n' + ('windows = ["J1"]\n' if windows else ""))
+    ses = project.root / "build" / "edakit" / "route" / "main.ses"
+    ses.write_text(re.sub(r'  \(net "GND" .*\n', "", ses.read_text()))
+
+
+def test_route_diagnose_names_the_keepout_that_walls_a_pad_in(project, capsys):
+    gnd_walled_in(project)
+    code, out = route_cmd(project, "check", capsys)
+    assert code == 2 and "GND: 2 groups – J1.2 | C2.2" in out              # today: open, the keep-out not named
+    code, out = route_cmd(project, "diagnose", capsys)
+    assert code == 2
+    assert "    GND J1.2 – C2.2: unreachable – J1.2 enclosed by keep-out K0 (TOP, BOTTOM)" in out.splitlines()
+    d = project.root / "build" / "edakit" / "route" / "main_diagnose"
+    report = json.loads((d / "diagnose.json").read_text())
+    assert [g["verdict"] for g in report["open"]] == ["unreachable"] and report["open"][0]["enclosed_by"] == [
+        "keep-out K0 (TOP, BOTTOM)"]
+    assert (d / report["open"][0]["png"]).exists() and (d / "congestion.png").exists()
+    assert report["congestion"]["max"] > 0
+
+
+def test_route_diagnose_with_a_window_for_the_part(project, capsys):
+    gnd_walled_in(project, windows=True)
+    code, out = route_cmd(project, "diagnose", capsys)
+    assert code == 2 and "unreachable" not in out
+    assert "GND J1.2 – C2.2: open, but a free way is left" in out
+
+
+def test_route_diagnose_with_nothing_open(project, capsys):
+    routed_stage(project)
+    code, out = route_cmd(project, "diagnose", capsys)
+    assert code == 0 and "diagnose: nothing open" in out
+    assert route_cmd(project, "diagnose", capsys)[0] == 0
+
+
+def test_route_diagnose_one_net(project, capsys):
+    gnd_walled_in(project)
+    from edakit import cli
+    assert cli.main(["route", "diagnose", "--net", "VIN", "--config", str(project.root / "edakit.toml")]) == 0
+    assert "VIN: not open" in capsys.readouterr().out
+
+
+# --- hand-soldered joints keep clear (L-18, #59): the routed input stage with a GND via 0.30 mm (copper to copper)
+# below J1.1 (VIN). J1 is through-hole and bom: false, on TOP – its joints are on BOTTOM, the solder side
+
+JOINT_TO_VIA = 0.7 + 0.30 + 24 / MIL / 2      # J1.1's radius + 0.30 mm + the via's radius, from J1.1's centre
+KEEP = 'hand_solder_keep_mm = 0.5'
+
+
+def with_via(project, net="GND", at=(84, 11 - JOINT_TO_VIA)):
+    """The SES of routed_stage with one via of `net` at `at` (plan mm)."""
+    f = project.root / "build" / "edakit" / "route" / "main.ses"
+    x, y = (round(v * 100) for v in mm(*at))
+    f.write_text(f.read_text().replace(f'(net "{net}" ', f'(net "{net}" (via "via24" {x} {y}) ', 1))
+
+
+def test_route_check_finds_a_via_next_to_a_hand_soldered_joint(project, capsys):
+    """The proposal's case: `route check` passed a GND via 0.30 mm from J1.1 (VIN), a joint soldered by hand."""
+    routed_stage(project)
+    with_via(project)
+    code, out = route_cmd(project, "check", capsys)
+    assert code == 0 and "1 vias; open: 0" in out and "L-18" not in out                # no key: as before
+    routed_stage(project, routing=KEEP)
+    with_via(project)
+    code, out = route_cmd(project, "check", capsys)
+    assert code == 2
+    assert "hand-soldered joints (L-18): 2 on their solder side, 0 pads of other nets closer than " \
+           "hand_solder_keep_mm 0.5" in out
+    assert "J1.1 (VIN) – via GND at (84.00, 9.70): 0.30 mm apart on BOTTOM, the solder side of J1, below " \
+           "hand_solder_keep_mm 0.5" in out
+    assert "clearances/keep-outs: 0 findings" in out                                 # the clearance itself is kept
+    routed_stage(project, routing="hand_solder_keep_mm = 0.25")
+    with_via(project)
+    assert route_cmd(project, "check", capsys)[0] == 0                                # 0.30 mm is enough for 0.25
+
+
+def test_hand_solder_keep_leaves_tracks_alone(project, capsys):
+    """A GND track on BOTTOM 0.2 mm below J1.1 (VIN), J1's solder side: tracks run under the solder mask, between the
+    pins of a part too – the owner's answer on #59: only vias and pads count."""
+    routed_stage(project, routing=KEEP)
+    f = project.root / "build" / "edakit" / "route" / "main.ses"
+    y = 11 - 0.7 - 0.2 - 9 / MIL                                                        # 18 mil wide: half 9 mil
+    piece = "(wire (path BOTTOM 1800 " + " ".join(f"{round(v * 100)}" for p in ((82, y), (86, y)) for v in mm(*p)) + "))"
+    f.write_text(f.read_text().replace('(net "GND" ', f'(net "GND" {piece} ', 1))
+    code, out = route_cmd(project, "check", capsys)
+    assert code == 0 and "0 vias of other nets closer than hand_solder_keep_mm 0.5" in out
+    assert "clearances/keep-outs: 0 findings" in out
+
+
+def test_hand_solder_keep_counts_only_other_nets_of_hand_soldered_parts(project, capsys):
+    routed_stage(project, routing=KEEP)
+    with_via(project, net="VIN")                                                       # the joint's own net
+    assert route_cmd(project, "check", capsys)[0] == 0
+    routed_stage(project, routing=KEEP)
+    with_via(project)
+    g = project.graph()
+    project.comp(g, "J1").pop("bom")                                                   # assembled: no hand joint
+    project.save_graph(g)
+    code, out = route_cmd(project, "check", capsys)
+    assert code == 0 and "hand-soldered joints (L-18): 0 on their solder side" in out
+    project.comp(g, "J1")["bom"] = False
+    project.comp(g, "J1")["waive"] = {"L-18": "test: the via is tented and far enough for this joint"}
+    project.save_graph(g)
+    code, out = route_cmd(project, "check", capsys)
+    assert code == 0 and "0 vias of other nets closer than hand_solder_keep_mm 0.5, 1 waived" in out
+    assert "– waived: test: the via is tented" in out
+
+
+def test_hand_solder_keep_on_the_solder_side_only():
+    """An SMD pad of another net 0.2 mm from J1.1: a finding on BOTTOM, J1's solder side, none on TOP, where J1 sits;
+    a part on BOTTOM has its joints on TOP. Pads of other parts count (each pair once), the part's own do not. Tracks
+    are no input: they do not count (the owner's answer on #59)."""
+    def gaps(data, vias=(), hand=("J1",)):
+        return [(g["joint"], g["kind"], g["other"], g["layer"], round(g["mil"] / MIL, 2))
+                for g in route.joint_gaps(data, 0.5 * MIL, set(hand), vias)]
+    data = json.loads(json.dumps(STAGE))
+    data["pads"].append(stage_pad("R2", "1", "BTN", 84, 11 - 0.7 - 0.2 - 0.5, 1.0, 1.0) | {"layer": 2})
+    assert gaps(data) == [("J1.1", "pad", "R2.1", "BOTTOM", 0.2)]                     # J1.2 (GND) is 2.2 mm away
+    data["pads"][-1]["layer"] = 1
+    assert gaps(data) == []                                                            # TOP: where J1 sits
+    data["pads"][-1]["net"] = "VIN"
+    data["components"][0]["layer"] = 2                                                 # J1 on BOTTOM: solder side TOP
+    assert gaps(data) == []                                                            # the joint's own net
+    data["pads"][-1]["net"] = "BTN"
+    assert gaps(data) == [("J1.1", "pad", "R2.1", "TOP", 0.2)]
+    data = json.loads(json.dumps(STAGE))
+    data["pads"].append(stage_pad("J2", "1", "BTN", 84, 11 - 0.7 - 0.2 - 0.5, 1.0, 1.0) | {"layer": 12})
+    data["components"].append({"ref": "J2", "x": 0, "y": 0, "rot": 0, "layer": 1})
+    assert gaps(data, hand=("J1", "J2")) == [("J1.1", "pad", "J2.1", "BOTTOM", 0.2)]  # two joints: the pair once
+    assert gaps(data, vias=[(None, mm(84, 11 - JOINT_TO_VIA), 24)])[1][:3] == ("J1.1", "via", None)  # net unknown
+
+
+def test_dsn_keeps_vias_away_from_hand_soldered_joints(project, tmp_path):
+    cfg = routed_stage(project)
+    data = json.loads((project.root / "build" / "edakit" / "route" / "main_board.json").read_text())
+    route.write_dsn(route.Rules(cfg.board()), data, tmp_path / "before.dsn")
+    cfg = routed_stage(project, routing="hand_solder_keep_mm = 0")
+    route.write_dsn(route.Rules(cfg.board()), data, tmp_path / "off.dsn")
+    assert (tmp_path / "off.dsn").read_text() == (tmp_path / "before.dsn").read_text()      # 0 = off, the default
+    assert "via_keepout" not in (tmp_path / "before.dsn").read_text()
+    cfg = routed_stage(project, routing=KEEP)
+    rules = route.Rules(cfg.board())
+    rules.hand = {"J1"}
+    route.write_dsn(rules, data, tmp_path / "keep.dsn")
+    found = re.findall(r'\(via_keepout "(J\d_\w+)" \(polygon (\w+) 0 ([-\d. ]+)\)\)', (tmp_path / "keep.dsn").read_text())
+    assert [(name, layer) for name, layer, _ in found] == [("J0_BOTTOM", "BOTTOM"), ("J1_BOTTOM", "BOTTOM")]
+    for (_, _, pts), centre in zip(found, ((84, 11), (84, 13))):
+        v = [float(x) for x in pts.split()]
+        reach = [math.dist(mm(*centre), p) / MIL for p in zip(v[0::2], v[1::2])]
+        assert min(reach) >= 0.7 + 0.5 - 1e-3 and max(reach) < 0.7 + 0.5 + 0.02            # the pad grown by the keep

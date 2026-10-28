@@ -22,7 +22,13 @@ profile says: `${CLAUDE_PLUGIN_ROOT}/skills/part-search/distributors/<name>.md` 
 `digikey`, `reichelt`). The profile tells how to search there, what loads without a key and what the page states.
 
 - Report stock as a number with the date ("1 902 pcs at LCSC, 2026-10-25"), not as "few".
-- Datasheet from the distributor's part page or the manufacturer; note its revision.
+- "Not available" only after the routes the profile names (at LCSC: `edakit part search`, EasyEDA's search, the
+  series name), each with its queries in the result.
+- For JLCPCB assembly: `edakit stock --lcsc <C…>` for every candidate – listed, JLCPCB's stock, "Standard Only",
+  MSL, X-ray – before it is chosen (P-4 checks the same later, from the project's snapshot).
+- Datasheet: `edakit part fetch <key>` once the entry exists (`--url` for one from the manufacturer) – it keeps the
+  PDF beside the project and says whether it is of this part (a warning names a longer variant: MT3608L for
+  MT3608); read that file and note its revision.
 - A part from outside LCSC is hand-soldered (`bom: false`) or goes to another assembler; in EasyEDA it needs a
   footprint – the `easyeda_device` of a part in the same package (handbook 3.1).
 - A part nobody sells is no search: a board of an edakit project comes with `edakit part datasheet` in its project
@@ -31,11 +37,19 @@ profile says: `${CLAUDE_PLUGIN_ROOT}/skills/part-search/distributors/<name>.md` 
 
 ## Entry
 
+- An LCSC part: `edakit part import <LCSC>` writes the start – identification, footprint, the symbol's pin numbers
+  and names – and caches the library's symbol and footprint (P-1 then compares the graph with the symbol).
 - `hardware/parts/<LCSC>.json` – from another distributor `hardware/parts/<manufacturer part number>.json` with
-  `mpn` set and `order` for the order numbers (`{"rs": "223-0562"}`); the graph names it in `part`. After the
+  `mpn` set and `order` for the order numbers (`{"rs": "223-0562"}`, with a minimum or pack size
+  `{"rs": {"code": "223-0562", "moq": 10, "step": 10}}`); the graph names it in `part`. A part bought
+  separately at LCSC with a minimum gets `{"lcsc": {"moq": 20}}` – `edakit order` rounds its cart line up. After the
   pattern of a similar part: `kind`, `pins` (names identical to the graph, `type`, `role`, `vmax`), `params`,
-  `ratings`, `spice` for diodes/transistors, `lead` for through-hole parts, `sources` (mark every assumption as
-  "assumption"). The block library (`edakit/blocks/parts/` of the plugin) has checked entries to copy from.
+  `ratings`, `spice` for diodes/transistors, `lead` for through-hole parts (P-7 stays pending without it and holds
+  it to the footprint's holes at once; with `length_mm` when the drawing gives it), `body` `h_mm` when the board goes
+  into an enclosure, `mate` for a connector whose plug needs room (the mated plug from the manufacturer's assembly
+  drawing, handbook 4.1), `sources` (mark every assumption as "assumption" – also a value taken from a
+  sibling part or the series, e.g. "VR_max = 5 V from XL-304UGD of the same series: assumption"; the gate protocol
+  lists them). The block library (`edakit/blocks/parts/` of the plugin) has checked entries to copy from.
 - What the checks read from the datasheet besides the limits: input-only pins `type: input`; strapping pins `"strap":
   "high"|"low"` with the internal `"pull"` at reset (G-12); built-in pull resistors `"pull": "up"`, `"pull_ohm"` (I2C
   modules, G-11); roles `sda`/`scl` (G-11) and `cc1`/`cc2` on a USB-C receptacle (G-14), and for a module or breakout
@@ -58,8 +72,11 @@ profile says: `${CLAUDE_PLUGIN_ROOT}/skills/part-search/distributors/<name>.md` 
   manufacturer's declaration; what nobody states stays out – the reviewer reports it as open, not as fine.
 - Check against the datasheet: pinout, polarity at the footprint (which pad is pin 1 / anode / +), package, every
   rating. Library footprints are sometimes wrong (a "+" printed at the cathode pad) – the polarity sheet of the gate
-  and the second check M-1 exist for that. Then `verified` with by, date, datasheet revision, `checked`, `open`.
+  and the second check M-1 exist for that. Then `verified` with by, date, datasheet revision, `datasheet_sha256`
+  (from `<datasheets>/<key>.json`), `checked`, `open`. An open point that only the assembly preview or the delivered
+  board answers names its phase: `{"text": "flat side of the star against the footprint", "when": "order"}`
+  (`"acceptance"`: on the delivered board) – the gate protocol puts it under that phase's manual checks.
 - Record the choice in the decision log (alternatives and why they were dropped).
 
-Then `edakit check` (P-1, P-6 – the graph's `lcsc`, `part`, `value` and `type` name this entry –, G-9), and the
-hardware-change skill if the part goes into the graph.
+Then `edakit stock` and `edakit check` (P-1, P-4, P-6 – the graph's `lcsc`, `part`, `value` and `type` name this
+entry –, G-9), and the hardware-change skill if the part goes into the graph.

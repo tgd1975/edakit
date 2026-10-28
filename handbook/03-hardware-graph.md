@@ -39,7 +39,9 @@ Example: [the Christmas bell's graph](https://github.com/tgd1975/automatic_chris
 | `nc` | pins deliberately unconnected; every pin is in exactly one net or in `nc` |
 | `board` | which board the part is on (a key of `[boards]` in edakit.toml); may be omitted with one board |
 | `value` | shown in the BOM ("10k", "100nF"); P-6 holds it to the entry's `value_ohm`, `value_f` or `value_h` |
-| `bom: false` | the part is placed on the PCB but not in the BOM for assembly (hand-soldered, bought separately) |
+| `bom: false` | the part is placed on the PCB but not in the BOM for assembly (hand-soldered, bought separately); `edakit order` puts it into the cart of its supplier (8.4) |
+| `supplier` | for a part bought separately: the supplier whose cart it goes into (default: the first of its parts entry's `order`, else `lcsc` with an LCSC number) |
+| `spare` | pieces ordered on top for the whole order (`edakit order`), e.g. `1` for an LED that is easily lost |
 | `easyeda_device` | for parts without LCSC number (bare test pads): `{name, uuid, libraryUuid}` of an EasyEDA library device |
 | `verify` | an open question about pins/polarity that the library does not settle; blocks the release (G-9) until resolved |
 | `waive` | `{check id: reason}` – a finding accepted on purpose; printed with its reason in every report |
@@ -60,9 +62,10 @@ Example: [the Christmas bell's graph](https://github.com/tgd1975/automatic_chris
 ## 3.2 Conventions that save trouble
 
 - **Pin numbers come from the EasyEDA symbol**, not from the datasheet. They usually agree; for LEDs and diodes they
-  often do not (anode = 1 for one LED, = 2 for another of the same shape). Read them once from EasyEDA
-  (`edakit schematic create --only U3` and `easyeda_schematic_component_pins`) and write the roles into the parts
-  entry. Code that needs "the cathode" asks for the role, never for the pin name.
+  often do not (anode = 1 for one LED, = 2 for another of the same shape). `edakit part import C2297` reads them
+  from the library without EasyEDA (4.2) and keeps the symbol, so P-1 compares the graph with it; inside EasyEDA,
+  `edakit schematic create --only U3` and `easyeda_schematic_component_pins` show the placed symbol. Write the roles
+  into the parts entry. Code that needs "the cathode" asks for the role, never for the pin name.
 - **Net names are stable identifiers** used by firmware, simulation config and docs. Rename deliberately.
 - **Voltage ranges are worst case.** `v` is what G-3 compares with the pin limits and what the simulation checks every
   scenario against. Think about the unloaded supply, the reversed supply, a programming cable plugged in at the same time.
@@ -93,9 +96,13 @@ check that fails is explained once below the findings (chapter 14.2).
 | G-16 | ground and supply pins: every `ground` pin on the ground net (or one joined to it by a 0 Ω bridge or an inductor, or in `grounds`); every `power_in` pin on a net that a supply reaches – a `power_output` pin, a battery holder, a connector with a `vbus` pin or in `checks.reverse_protect`, a simulation source – directly or through fuses, switches, connectors, inductors, MOSFETs, resistors up to 100 Ω and diodes in forward direction | a rail split by a typo in its name, a ground pin on a net of its own, VDD swapped with a signal |
 | G-17 | fuse against what it protects: the hold current of every fuse (`i_hold_a`; at the lowest ambient `ambient_min_c` of sim.json from `i_hold_vs_temp`) is at most the `i_max_a` of every connector, switch and cable its current flows through – its own nets and on through fuses and switches; a trip current (`i_trip_a`) above it is a warning | a 1.5-A polyfuse in front of a connector rated 1.25 A, an overload that heats the contacts instead of tripping the fuse |
 | G-18 | hot loop in the hand-over: a part whose entry names its hot-loop pins (`hot_loop`, 4.1) has a `layout.loops` entry on every net of the loop – the nets of those pins and, one diode further, the net behind the rectifier on its switch node (`sw`); a buck or boost IC (`behavior`) without `hot_loop` is a warning; `waive` on the part, or on a net whose part of the loop closes over a pour | a boost whose output loop was routed 61 mm across the board, passing every check because nobody listed it |
-| P-1 | graph pins (number and name) = parts entry; an entry exists for every LCSC number; no supply pin marked `nc` | a wrong part number, pins shifted by one |
+| G-19 | documents quote the design data: every value block of `[docs] files` equals its source, every source of a block or a schematic-note placeholder exists – run by `edakit docs` and the gate's stage G, not by `edakit check` (6.6) | a description still on an old graph version, a current that changed with R1 |
+| P-1 | graph pins (number and name) = parts entry; an entry exists for every LCSC number; no supply pin marked `nc`; with the library's symbol cached by `edakit part import`, graph pins = that symbol (case and blanks ignored, as S-2; `waive` on the component) | a wrong part number, pins shifted by one, an LED whose pin 1 is the cathode |
 | P-6 | part identity: the component and its parts entry name the same part – the entry's `lcsc` is its file name; the component's `lcsc` is no `C99…` user-library number (unless `bom: false`); its `part` names the entry's `mpn` (remarks in parentheses or after `;` left out, case ignored, a manufacturer before it allowed; a `part` that starts with a value, "330 Ω 0805", is compared as that value); its `value` reads as the entry's `value_ohm` / `value_f` / `value_h` within 1 % ("4k7", "100nF", "2R2"); its `type` fits the entry's `kind` (microcontroller, regulator: ic or module; transistor: npn, pnp, nmos, pmos; led: led, led_rgb; switch: switch, dip_switch; audio: buzzer; otherwise the same word); `waive` on the component. A designator prefix against the kind (R, C, L, D, Q, U, J, SW, F, BT, BZ, K, TP) is a warning | C25789 written for a 74HC165 (a 464 kΩ resistor), R2 "1k" on a 10 kΩ entry, an LED that came in as U1 |
 | P-3 | own parts (4.5): a board copied with `edakit part own` is its project's current datasheet, copied from a commit (pending otherwise); a board not released at that state is a warning; the project's own datasheets are of its current state | a board changed after it was copied into the host |
+| P-4 | parts orderable (4.2): every assembled part listed at JLCPCB, in stock for `quantity` boards (with the attrition under Standard), its entry's MPN, not "Standard Only" on an Economic order – from the snapshot of `edakit stock`; MSL ≥ 5, a thin margin, another class warn; an old snapshot is pending, none a note | a part that is pre-order only, Standard-only or baked, found in the quote |
+| P-5 | supplier per part: a part bought separately (`bom: false`) has an LCSC number – a `C99…` EasyEDA library number is none – or `order` in its parts entry (warning) | a module or LED nobody wrote an order code for, found when the order list is written by hand |
+| P-7 | through-hole leads known and fitting the footprint, before the layout: L-9's test (8.1) on the holes of the footprint geometry – the board's `pcb dump`, else the library footprint of `edakit part import`; plated holes without `lead` in the entry pending, a hole that does not take the lead an error (`waive` on the component), tight in the worst case or a plated slot below 0.5 mm a warning; without geometry a note | a library footprint drilling 0.70 mm for □0.5 mm legs, found before anything is placed |
 | G-9 | sign-off: every part `verified` against its datasheet, no open `verify` note (pending – blocks only the release) | an unchecked part going into an order |
 
 **0 Ω bridges.** A resistor whose parts entry has `value_ohm: 0` is copper – the usual way to cross a track on a board
@@ -124,4 +131,31 @@ polarity check; it is retired and its number is not used again.
 3. `edakit check` and `edakit sim` before every commit that touches `hardware/` – the pre-commit hook does it.
 4. A finding is fixed or waived with a reason. Never edit a check to make a finding go away.
 5. Generated files (firmware pin tables, the circuit description's parts list) are regenerated from the graph, never
-   edited, and committed together with the graph change.
+   edited, and committed together with the graph change – the firmware contract with `edakit firmware` (3.5).
+
+## 3.5 The firmware contract
+
+Opt-in: with `[firmware]` in edakit.toml (10.1), `edakit firmware` writes what the firmware must know about the board
+as neutral JSON (default `hardware/firmware.json`), and `edakit firmware --check` exits 2 when the committed file no
+longer matches – for the pre-commit hook, next to `edakit check` and `edakit sim`. Without the table nothing changes.
+It runs the other way round from G-2: there the firmware is the reference and `pin_locks` hold the graph to it; here
+the graph is the reference and the firmware follows. A project may use both.
+
+| Key | Content |
+|---|---|
+| `graph_version`, `graph_date`, `state_sha256` | the circuit it was written from – `state_sha256` is the gate's circuit hash (8.2), so any change to graph, parts or sim config asks for `edakit firmware` again; `--check` lists what differs |
+| `mcu` | the MCU it describes (`[firmware] mcu`, default the one part with pins of the role `gpio`) |
+| `pins` | `{net: {pin, name, gpio, dir, pull, idle, active}}` for every connected `gpio` pin of the MCU. `gpio`: the number in the pin's name (`[firmware] gpio`). `dir`: `out` when it drives an input, an LED or a transistor's base or gate (directly or through one resistor), `in` when a button, a switch or an output drives the net, `inout` for both or only bidirectional pins, `null` when nothing says. `pull`: `{dir, by, ohm}` of the resistors to a rail or ground – on the net or behind one series resistor (a base resistor and its pull-down) –, `{dir, by: "internal"}` for a switch without one (the firmware switches the MCU's pull on), `{dir, by: "pin"}` for a pin's built-in `pull`. `idle`: the level of the pull. `active`: the level a switch gives when closed, the level that lights an LED on the pin (`leds`, with the side it is on), or for an output with a pull the opposite of `idle`. Copied from the net where they are set: `fn`, `fn_bus`, `pwm_hz` (G-15) |
+| `pwm` | `{net: pwm_hz}` of the nets with `fn: "pwm"` |
+| `inputs` | buttons and switches on MCU pins with their `active` level; a DIP switch as `bits` in the order of its roles `a1` … `aN` / `b1` … `bN` |
+| `buses` | `{fn_bus: {fn: net}}`, and I2C lines by pin role `sda`/`scl` as `i2c` |
+| `chains` | from an MCU net through the roles `sdi` → `sdo`: `data`, `parts` in shift order, `read_back` (the last `sdo` on an MCU pin), `common` (MCU nets every part of the chain shares: clock, latch, enable) and `first_bit_to` (the part fact `params.first_bit_to`, `"unknown"` without it) |
+| `channels` | `{channel, chain, driver, output, pin, net, leds}` for every output with the role `out0` … `outN`, the LEDs traced as E-3/E-4 trace them: cathode on the output directly, behind 0 Ω bridges or behind a balancing resistor (5.3); `channel` = the outputs of the drivers before it in its chain + its number. A reversed LED is listed under `reversed` |
+
+Only roles decide which pin is a cathode, a data input or output 3 – never a pin name (in the origin project an
+exporter once found a cathode by the name "K" and nearly wrote a wrong channel table). The one exception is the GPIO
+number, taken from the MCU pin's name. A driver in a chain whose outputs have only the role `out` is an error: the
+channel order needs the numbers.
+
+The contract has no firmware format. Turning it into source – a MicroPython module, a C header – is the project's own
+script, which reads the JSON and runs after `edakit firmware` (MicroPython can also read the JSON as it is).

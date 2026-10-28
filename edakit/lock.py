@@ -13,8 +13,9 @@ a 20-minute routing run was lost that way.) So EasyEDA is claimed per session, s
 
 The first EasyEDA access of a session claims automatically – the hook for MCP tools, `edakit` commands for scripts –
 and every access renews it. A claim expires after 15 minutes without EasyEDA access. Tools that only ask about the
-server or the connection are allowed without a claim. Sessions are told apart by CLAUDE_CODE_SESSION_ID (or the
-hook's session_id); without one (a terminal) nothing is claimed.
+server or the connection are allowed without a claim, and so are library lookups that leave the open document and tab
+as they are (READ_ONLY_TOOLS, READ_ONLY_API): they neither take nor renew a claim, for every session. Sessions are told
+apart by CLAUDE_CODE_SESSION_ID (or the hook's session_id); without one (a terminal) nothing is claimed.
 
 State: $XDG_STATE_HOME/edakit/easyeda-lock.json (default ~/.local/state/edakit/), guarded with flock – one file for
 the whole machine, because there is one EasyEDA per machine, whatever project it has open.
@@ -36,6 +37,19 @@ LOG_MAX = 100
 # MCP tools that only query the server and the connection – allowed without a claim
 FREE = ("bridge_status", "health_check", "get_capabilities", "get_feature_flags", "get_server_config",
         "get_tool_profiles", "api_inventory", "catalog_list", "observability_report")
+# Library lookups that leave the active document and tab as they are – allowed without a claim and without renewing
+# one. An entry joins only with its evidence; here the source of easyeda-mcp-pro 1.4.0 (the version mcp-server.sh
+# pins): the call goes request -> dispatcher -> the one API function, with nothing that opens, focuses or saves a
+# document on the way (bridge index.ts:976-984, dispatcher-domain-router.ts:249-254, system-api-operations.ts:224-229,
+# api-runtime.ts:199-223). A live check is `DMT_SelectControl.getCurrentDocumentInfo` before and after the call.
+READ_ONLY_TOOLS = (
+    "schematic_search_device",  # readOnlyHint, one bridge call (L1_schematic_read.ts:706-768) -> LIB_Device.search
+)                               # only (bridge read-only-operations.ts:248-258)
+# easyeda_api_call paths, matched as a prefix of "Class.method" (class prefix in any case, as the bridge accepts it)
+READ_ONLY_API = (
+    "LIB_Device.search",  # search, searchByProperties: the device search of READ_ONLY_TOOLS (see above)
+    "LIB_Device.get",     # get, getByLcscIds: the bridge's own existence check and LCSC lookup
+)                         # (dispatcher.ts:177-183, read-only-operations.ts:278-282)
 
 
 def state_file():
@@ -170,8 +184,20 @@ def status_text(s, session):
 
 
 def tool_name(tool):
-    """mcp__easyeda__easyeda_x or mcp__plugin_edakit_easyeda__easyeda_x -> x."""
-    return tool.split("__", 2)[-1].removeprefix("easyeda_") if tool.startswith("mcp__") else tool
+    """mcp__easyeda__easyeda_x, mcp__plugin_edakit_easyeda__easyeda_x or (edakit's own client) easyeda_x -> x."""
+    return (tool.split("__", 2)[-1] if tool.startswith("mcp__") else tool).removeprefix("easyeda_")
+
+
+def read_only(tool, args=None):
+    """A library lookup of READ_ONLY_TOOLS or, for easyeda_api_call, of READ_ONLY_API: needs no claim."""
+    name = tool_name(tool)
+    if name in READ_ONLY_TOOLS:
+        return True
+    path = (args or {}).get("path") if isinstance(args, dict) else None
+    if name != "api_call" or not isinstance(path, str) or "_" not in path:
+        return False
+    prefix, rest = path.split("_", 1)
+    return (prefix.upper() + "_" + rest).startswith(READ_ONLY_API)
 
 
 def is_easyeda_tool(tool):
@@ -184,7 +210,7 @@ def is_easyeda_tool(tool):
 def hook():
     data = json.load(sys.stdin)
     session, tool = data.get("session_id"), data.get("tool_name", "")
-    if not session or not is_easyeda_tool(tool) or tool_name(tool) in FREE:
+    if not session or not is_easyeda_tool(tool) or tool_name(tool) in FREE or read_only(tool, data.get("tool_input")):
         return 0
     with state() as s:
         reason = claim(s, session, tool_name(tool), auto=True, cwd=data.get("cwd"))

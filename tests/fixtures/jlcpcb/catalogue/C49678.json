@@ -1,0 +1,52 @@
+{
+ "code": 200,
+ "data": {
+  "componentPageInfo": {
+   "list": [
+    {
+     "componentCode": "C49678",
+     "componentModelEn": "CC0805KRX7R9BB104",
+     "componentBrandEn": "YAGEO",
+     "componentLibraryType": "base",
+     "preferredComponentFlag": false,
+     "stockCount": 21658585,
+     "componentPrices": [
+      {
+       "startNumber": 1,
+       "endNumber": 199,
+       "productPrice": 0.0205
+      },
+      {
+       "startNumber": 200,
+       "endNumber": 599,
+       "productPrice": 0.0155
+      },
+      {
+       "startNumber": 600,
+       "endNumber": 3999,
+       "productPrice": 0.0128
+      },
+      {
+       "startNumber": 4000,
+       "endNumber": 7999,
+       "productPrice": 0.0107
+      },
+      {
+       "startNumber": 8000,
+       "endNumber": 19999,
+       "productPrice": 0.0093
+      },
+      {
+       "startNumber": 20000,
+       "endNumber": -1,
+       "productPrice": 0.0085
+      }
+     ],
+     "lossNumber": 10,
+     "leastPatchNumber": 20,
+     "describe": "100nF 50V X7R ±10% 0805 Multilayer Ceramic Capacitors MLCC - SMD/SMT ROHS"
+    }
+   ]
+  }
+ }
+}

@@ -10,8 +10,9 @@ checked them – against the graph, on the exported files themselves. Nobody dra
 EasyEDA project is generated and can be regenerated.
 
 It comes as a **Claude Code plugin** (skills, agents, the pinned EasyEDA MCP server, a hook that lets parallel
-sessions share EasyEDA) and as a **Python command line** (`edakit`), plus a **handbook** that explains what, how and
-why – including the ~25 EasyEDA API behaviours that cost us time.
+sessions share EasyEDA, one that starts every session with the working agreements) and as a **Python command line**
+(`edakit`), plus a **handbook** that explains what, how and why – including the ~25 EasyEDA API behaviours that
+cost us time.
 
 ```text
  parts database ──► hardware graph ──► schematic ──► PCB ──► manufacturing files ──► JLCPCB ──► acceptance
@@ -61,20 +62,33 @@ Without Claude Code: `uvx --from git+https://github.com/tgd1975/edakit edakit <c
 ```bash
 edakit doctor                   # tool chain ready?
 edakit block add led --as STATUS --connect in=LED_STATUS   # a building block with checked parts into the graph
+edakit part import C2297        # symbol pins and footprint of an LCSC number from the library – no EasyEDA
+edakit part diff C17179532 C49284748   # before a swap: how the new footprint lies over the old one
+edakit part fetch C2297         # the datasheet PDF, kept with the project and checked to be of that part
+edakit part search "RGB LED 5mm common cathode"   # JLCPCB's catalogue: number, class, stock – no EasyEDA
 edakit check                    # rule checks on the graph (P, G) – < 1 s, failed checks explained
 edakit hints                    # design hints for the parts in the graph (bulk capacitor, debouncing, ESD …)
+edakit stock                    # what JLCPCB says about the assembled parts, dated – check P-4 reads it
+edakit cost                     # the order for `quantity` boards: class, fees, parts, drivers, budget
+edakit order                    # assembler's BOM, a cart per other supplier, hand-assembly list for all sets
 edakit rules G-11               # what a check is about, why, what to do, sources
 edakit sim                      # ngspice: every supply x load x tolerance corner (E) – seconds
+edakit docs --write             # values quoted in documents and schematic notes, from the design data (G-19)
+edakit firmware                 # the board's firmware contract as JSON from the graph; --check reports drift
 edakit schematic draw           # the schematic as SVG from graph and parts – no EasyEDA (enough without a PCB)
 edakit handover                 # what the circuit hands over to the layout – where the PCB designer starts
 edakit schematic create --save  # template schematic from the graph
 edakit schematic layout --save  # readable board schematic: blocks, wires, GPIO table
 edakit pcb parts --write        # parts into the PCB, no "Import Changes" dialog
+edakit pcb place --write        # decoupling capacitors, pull resistors next to their host – offline
 edakit pcb apply                # outline, holes, tooling holes, fixed parts from the plan
 edakit pcb autolayout           # the small parts
 edakit route all                # Freerouting -> EasyEDA, pours, reload, DRC
+edakit route diagnose           # why a connection stays open: walled in, blocked by other nets, or free – offline
 edakit silk apply               # designators where there is room, silkscreen check
 edakit gate --easyeda           # release gate: protocol, manifest, files for JLCPCB
+edakit fab diff RUN_A RUN_B     # where the manufacturing files of two gate runs differ – raster, drills, BOM, CPL
+edakit release current|withdraw|verify   # the one run that may be uploaded; verify the files right before upload
 ```
 
 In Claude Code the skills do the orchestration: `/edakit:new-project`, `/edakit:circuit-design`, `/edakit:start`,
@@ -137,7 +151,8 @@ Where it stands:
   parts (checks, simulation, DSN/Freerouting/check, Gerber analysis, the board and manufacturing checks) are verified
   against that project's data; the EasyEDA-writing commands are ports of scripts used there daily.
 - Two copper layers. Rectangular or polygonal outlines with straight segments (arcs as point lists).
-- The simulation is DC operating points; transients are left to the acceptance test.
+- The simulation is DC operating points, plus transient runs of plug, unplug and switch-over where sim.json names
+  them (E-5); switching spikes and fast edges are left to the acceptance test.
 - The MCP server cannot order, by design.
 - Used components and their licences: [easyeda-mcp-pro](https://github.com/oaslananka/easyeda-mcp-pro) (PolyForm
   Noncommercial 1.0.0 – check before commercial use), EasyEDA Pro (proprietary), Freerouting (GPL-3.0), ngspice (BSD).

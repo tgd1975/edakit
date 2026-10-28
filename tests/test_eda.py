@@ -1,6 +1,7 @@
 """open_project never lets a command go on in another project (it once wrote a schematic into the wrong one)."""
 
 import json
+import re
 
 import pytest
 
@@ -60,3 +61,89 @@ def test_wrong_project_after_open_is_an_error(cfg):
     cfg.artifact("easyeda_project.json").write_text(json.dumps({"name": cfg.project, "uuid": f"uuid-{cfg.project}"}))
     with pytest.raises(eda.MCPError, match="did not open .*'other'"):
         eda.open_project(FakeEasyEDA("other", opens=False), cfg)
+
+
+# --- schematic create|layout --save: only a netlist that equals the graph is saved (#69) ----------------------------
+
+class FakeNetlist:
+    """Answers easyeda_schematic_nets with the given nets ({name: [(ref, pin)]}) and records the tool calls."""
+
+    def __init__(self, nets):
+        self.nets, self.tools = nets, []
+
+    def call(self, tool, timeout=130, **args):
+        self.tools.append(tool)
+        if tool == "easyeda_schematic_nets":
+            return {"nets": [{"net_name": n, "nodes": [{"component_ref": r, "pin": p} for r, p in nodes]}
+                             for n, nodes in self.nets.items()]}
+        if tool == "easyeda_project_save":
+            return {"ok": True}
+        raise AssertionError(tool)
+
+
+GRAPH_NETS = {"VIN": ["J1.1", "D1.2"], "GND": ["J1.2", "C2.2"]}
+PLACED = {d: {"ref": d} for d in ("J1", "D1", "C2")}
+ALL_PINS = {"VIN": [("J1", "1"), ("D1", "2")], "GND": [("J1", "2"), ("C2", "2")]}
+
+
+def save_step(mcp, **more):
+    diffs = eda.verify_nets(mcp, GRAPH_NETS, PLACED)
+    return eda.save_if_matching(mcp, diffs, **more)
+
+
+def test_a_matching_netlist_is_saved(cfg):
+    mcp = FakeNetlist(ALL_PINS)
+    assert save_step(mcp) == 0
+    assert "easyeda_project_save" in mcp.tools
+
+
+def test_a_pin_missing_from_the_netlist_is_not_saved(cfg, capsys):
+    mcp = FakeNetlist({"VIN": [("J1", "1"), ("D1", "2")], "GND": [("J1", "2")]})
+    assert save_step(mcp) == 2
+    assert "easyeda_project_save" not in mcp.tools
+    assert "not saved: 1 differing nets, 0 failed connections, 0 pin mismatches" in capsys.readouterr().out
+
+
+def test_an_empty_netlist_on_every_read_is_not_saved(cfg):
+    mcp = FakeNetlist({})
+    assert save_step(mcp) == 2
+    assert mcp.tools.count("easyeda_schematic_nets") == 10 and "easyeda_project_save" not in mcp.tools
+
+
+def test_failed_connections_and_pin_mismatches_hold_the_save_too(cfg, capsys):
+    mcp = FakeNetlist(ALL_PINS)
+    assert save_step(mcp, failures=1, pin_problems=2, skipped=1) == 2
+    assert "easyeda_project_save" not in mcp.tools
+    assert "1 failed connections, 2 pin mismatches, 1 parts skipped" in capsys.readouterr().out
+
+
+def test_steps_print_n_of_m_with_minutes(capsys):
+    from edakit import eda
+    t = iter([0.0, 30.0, 150.0, 400.0])
+    steps = eda.Steps(3, clock=lambda: next(t))
+    for name in ("read", "route", "write"):
+        steps(name)
+    lines = capsys.readouterr().out.splitlines()
+    assert lines == ["[ 0.5 min] step 1/3: read", "[ 2.5 min] step 2/3: route", "[ 6.7 min] step 3/3: write"]
+
+
+def test_steps_go_to_the_stream_given(capsys):
+    import sys
+
+    from edakit import eda
+    eda.Steps(1, out=sys.stderr)("export")
+    cap = capsys.readouterr()
+    assert cap.out == "" and "step 1/1: export" in cap.err
+
+
+def test_progress_with_a_total_numbers_its_phases(capsys, monkeypatch):
+    from edakit import eda
+    monkeypatch.setattr(eda, "easyeda_memory", lambda: "EasyEDA 1.00 GB")
+    phase = eda.Progress(2)
+    phase("bridge")
+    phase("place")
+    phase(None)
+    out = capsys.readouterr().out
+    assert re.search(r"^\[ *\d+\.\d min\] step 1/2: bridge$", out, re.M)
+    assert re.search(r"^\[ *\d+\.\d min\] step 2/2: place$", out, re.M)
+    assert "  (place: " in out                                    # the duration of each phase stays

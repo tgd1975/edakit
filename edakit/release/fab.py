@@ -2,6 +2,7 @@
 
     edakit fab --board main --out DIR            read the PCB, save + reload, DRC, export Gerber/CPL, BOM from the graph
     edakit fab --board main --out DIR --offline  only check what is already in DIR/<board>/
+    edakit fab diff RUN_A RUN_B [--board B]     where the manufacturing files of two gate runs differ
 
 Result in DIR/<board>/:
     gerber/ and gerber_<board>.zip   Gerber and drill files as EasyEDA exports them (upload the ZIP)
@@ -9,12 +10,17 @@ Result in DIR/<board>/:
     cpl_<board>.csv                  pick-and-place file in JLCPCB format (BOM parts only)
     jlc_parts.json                   JLCPCB assembly catalogue entry per LCSC number of the BOM (F-2)
     pcb.json, drc.json, bom_easyeda.json, cpl_easyeda.xlsx   raw data from EasyEDA (for --offline)
+    order.md                         with [order] in the board file: the order form of this board (order_sheet.py)
+    netlist_diff.json                schematic against PCB (`pcb parts`, `pcb nets`), when the DRC has an Import
+                                     Changes item
 and DIR/polarity_<board>.png: every polarised part with pad, role and net, to compare with datasheets and with the
 assembly preview at JLCPCB.
 
   L-1  parts in the PCB = graph; every pad carries the graph's net; every graph pin has a pad
   L-2  copper from the Gerber files: every net connected, no short, every connected pad present
-  L-3  EasyEDA DRC without findings (after save and reload)
+  L-3  EasyEDA DRC without findings (after save and reload): other kinds; and schematic and PCB in sync – a
+       "Netlist Error – Import Changes" item with no difference in netlist_diff.json is EasyEDA waiting for the
+       import acknowledgement (Design → Import Changes once), otherwise the differences with the command that fixes them
   L-4  footprint per part = parts database
   L-5  track width per net >= IPC-2221 for 1.5 x the simulated current (fail); below the practical class width (warn);
        voltage drop as an upper bound (info)
@@ -41,17 +47,32 @@ assembly preview at JLCPCB.
   L-17 silkscreen from the Gerber files: edakit's own print on a solder-mask opening (fail), other print there per part,
        print beyond the outline, a part of the designators side without a visible designator or group label (not in
        [silk] unlabelled), a text height edakit prints below 1.0 mm (warn)
+  L-18 with [routing] hand_solder_keep_mm: on the solder side of every through-hole pad of a hand-soldered part
+       (bom: false), vias and pads of other nets at least that far away; pads as L-13, vias from the via drill file
+       (net: the tracks of pcb.json that end on them)
+  [looks] of the board file: the visible side's track length and the board's vias, an information row; above
+       max_track_m or max_vias a warning (row ID "L": the stage's own, no check of the catalog)
   F-1  BOM from the graph = BOM of EasyEDA; every LCSC number in the parts database
-  F-2  every BOM part listed in JLCPCB's assembly catalogue with stock for `quantity` boards
+  F-2  every BOM part listed in JLCPCB's assembly catalogue with stock for `quantity` boards, under the MPN of its
+       parts entry; another class than the entry's jlc_class warns (check P-4 reads the same offline, from the stock
+       snapshot)
   F-3  pick and place: every BOM part exactly once, side and rotation = PCB; sides/SMD as [release] assembly says
   F-5  Gerber set complete; outline and holes = plan (± 0.2 mm); tooling holes in the NPTH file, mask open, no copper
+  F-6  with [order] in the board file: remark <= 200 ASCII characters, mark = placeholder on the silkscreen, Economic
+       with its own tooling holes, no copper near the edge in a tab zone (order_sheet.py)
 Last stdout line: JSON list of rows {stage, id, item, check, actual, expected, result}. Exit 0 / 2 / 1.
+
+What the manufacturer builds from, hashed for the sign-offs with scope 'fab' (fab_sha256, FAB_METHOD): every Gerber
+layer rasterised as L-2 does (gerber.RES) in the frame of the board outline – documentation and drill-drawing layers
+left out –, the drill hits rounded to 1 µm, the BOM and CPL rows sorted. Aperture numbers, comments and the order in
+which EasyEDA writes its objects do not change it. `fab diff` compares the same rasters: XOR, labelled into spots.
 """
 
 from __future__ import annotations
 
 import contextlib
 import csv
+import hashlib
 import io
 import json
 import math
@@ -61,7 +82,7 @@ import zipfile
 from collections import Counter, defaultdict
 from pathlib import Path
 
-from .. import gerber, handover
+from .. import gerber, handover, stock
 from ..config import BOTTOM, MIL_PER_MM, TOP
 from ..design import Design, natural_key
 
@@ -97,7 +118,8 @@ def merge_bom(entries):
 # --- collect from EasyEDA -----------------------------------------------------------------------------------------
 
 def collect(cfg, board, d, verbose=False):
-    from .. import eda
+    from .. import eda, pcb
+    (d / "netlist_diff.json").unlink(missing_ok=True)
     mcp = eda.connect(cfg, verbose, artifact_dir=d)
     try:
         eda.open_project(mcp, cfg)
@@ -138,6 +160,12 @@ def collect(cfg, board, d, verbose=False):
             res = mcp.call("easyeda_bom_generate", projectId="current", format="json", groupBy="lcsc", timeout=120)
             entries += res.get("entries", [])
         (d / "bom_easyeda.json").write_text(json.dumps(merge_bom(entries), indent=1, ensure_ascii=False))
+        if pcb.import_items(found):   # last: the comparison focuses the schematic pages
+            try:
+                diff = pcb.netlist_diff(cfg, board, mcp)
+                (d / "netlist_diff.json").write_text(json.dumps(diff, indent=1, ensure_ascii=False))
+            except eda.MCPError as e:          # L-3 then says: not compared
+                print(f"  schematic and PCB not compared: {e}", file=sys.stderr)
     finally:
         mcp.close()
     shutil.rmtree(d / "gerber", ignore_errors=True)
@@ -145,22 +173,33 @@ def collect(cfg, board, d, verbose=False):
         z.extractall(d / "gerber")
 
 
-def fetch_jlc(bom, d):
-    """F-2: JLCPCB's public assembly catalogue (no login; only part numbers leave the machine). A number missing there
-    can only be pre-ordered."""
+def jlc_search(keyword, page_size=10, timeout=30):
+    """JLCPCB's public assembly catalogue (no login; only the keyword leaves the machine): the hits of a full-text
+    search as the catalogue gives them. Network errors and a changed answer raise."""
     import urllib.request
+    req = urllib.request.Request(JLC_SEARCH, headers={"Content-Type": "application/json", "User-Agent": "Mozilla/5.0"},
+                                 data=json.dumps({"keyword": keyword, "currentPage": 1, "pageSize": page_size}).encode())
+    with urllib.request.urlopen(req, timeout=timeout) as resp:
+        return json.load(resp)["data"]["componentPageInfo"]["list"] or []
+
+
+def jlc_part(lcsc, timeout=30):
+    """The catalogue entry of exactly this LCSC number – the search is full text – or None: not listed, a number that
+    can only be pre-ordered."""
+    return next((c for c in jlc_search(lcsc, timeout=timeout) if c.get("componentCode") == lcsc), None)
+
+
+def fetch_jlc(bom, d):
+    """F-2: the catalogue entry per LCSC number of the BOM, into jlc_parts.json."""
     out = {}
     for lcsc in sorted({r["LCSC Part #"] for r in bom}):
-        req = urllib.request.Request(JLC_SEARCH, headers={"Content-Type": "application/json", "User-Agent": "Mozilla/5.0"},
-                                     data=json.dumps({"keyword": lcsc, "currentPage": 1, "pageSize": 10}).encode())
         try:
-            with urllib.request.urlopen(req, timeout=30) as resp:
-                found = json.load(resp)["data"]["componentPageInfo"]["list"] or []
+            hit = jlc_part(lcsc)
         except Exception as e:  # network, changed API
             out[lcsc] = {"error": str(e)[:200]}
             continue
-        hit = next((c for c in found if c.get("componentCode") == lcsc), None)  # full-text search: exact number only
-        out[lcsc] = hit and {k: hit.get(k) for k in ("componentModelEn", "componentLibraryType", "stockCount")}
+        out[lcsc] = hit and {k: hit.get(k) for k in ("componentModelEn", "componentLibraryType",
+                                                     "preferredComponentFlag", "stockCount")}
     (d / "jlc_parts.json").write_text(json.dumps(out, indent=1, ensure_ascii=False))
 
 
@@ -200,6 +239,14 @@ def bom_rows(design, board):
                     "Designator": ",".join(sorted(refs, key=natural_key)), "Footprint": part.get("footprint", ""),
                     "LCSC Part #": lcsc})
     return out
+
+
+def write_bom(bom, path):
+    """The BOM in JLCPCB's columns – F-1 and `edakit order` write the same file."""
+    with open(path, "w", newline="", encoding="utf-8") as f:
+        w = csv.DictWriter(f, fieldnames=["Comment", "Designator", "Footprint", "LCSC Part #"])
+        w.writeheader()
+        w.writerows(bom)
 
 
 def required_widths(cfg, design, board):
@@ -300,9 +347,14 @@ def check_pcb(cfg, board, design, d, rows):
                      True, ", ".join(f"{n} {v * 1e3:.0f} mV" for n, v in sorted(drop.items(), key=lambda kv: -kv[1])),
                      "information", "info")
     drc = json.loads((d / "drc.json").read_text())
-    kinds = Counter(f"{f.get('errorType')} ({f.get('ruleName')})" for f in drc)
-    rows.add("L", "L-3", board.name, "EasyEDA DRC without findings", not drc,
+    items = pcbmod.import_items(drc)
+    other = [f for f in drc if f not in items]
+    kinds = Counter(f"{f.get('errorType')} ({f.get('ruleName')})" for f in other)
+    rows.add("L", "L-3", board.name, "EasyEDA DRC without findings (other kinds)", not other,
              ", ".join(f"{k}: {n}" for k, n in kinds.items()) or "0", "0")
+    diff = json.loads((d / "netlist_diff.json").read_text()) if (d / "netlist_diff.json").exists() else None
+    ok, what = pcbmod.import_verdict(items, diff)
+    rows.add("L", "L-3", board.name, "schematic and PCB in sync (Import Changes)", ok, what, "no Import Changes item")
     check_polarity_marks(cfg, board, design, d, data, want, on_pcb, rows)
 
 
@@ -589,6 +641,75 @@ def check_paste_gap(cfg, board, design, d, rows):
         if g["waived"]:
             rows.add("L", "L-14", board.name, f"paste gap: {route.gap_text(g, gap, 'the paste gap')}", True,
                      f"{g['mil'] * MM:.3f} mm", want, "waived")
+            rows[-1]["reason"] = g["waived"]
+
+
+def check_looks(board, d, rows):
+    """[looks] of the board file: the visible side's track length (pcb.json, lines per layer) and the vias of the board
+    (the via drill file; none when EasyEDA wrote none) – an information row, and a warning per limit it exceeds. No
+    check of the catalog: the stage's own row, like route check's line."""
+    from .. import route
+    if not board.looks:
+        return
+    data = json.loads((d / "pcb.json").read_text())
+    length = {"TOP": 0.0, "BOTTOM": 0.0}
+    for ln in data["lines"]:
+        length[route.LAYERS[ln["Layer"]]] += math.hypot(ln["EndX"] - ln["StartX"], ln["EndY"] - ln["StartY"]) * MM / 1000
+    vias = len(gerber.parse_holes(d / "gerber" / gerber.FILES["vias"]))
+    row, warns = route.looks_rows(board, length, vias)
+    lk = board.looks
+    limits = ([f"<= {lk['max_track_m']:g} m"] if "max_track_m" in lk else []) + \
+        ([f"<= {lk['max_vias']} vias"] if "max_vias" in lk else [])
+    rows.add("L", "L", board.name, f"visible side ([looks] visible = {lk['visible']}): track length on it, vias of the "
+             "board", True, f"{row} (TOP {length['TOP']:.2f} m, BOTTOM {length['BOTTOM']:.2f} m)",
+             ", ".join(limits) or "information", "info")
+    for text, actual, limit in warns:
+        rows.add("L", "L", board.name, f"visible side within its [looks] limit: {text}", False, actual, limit, "warn")
+
+
+def pcb_vias(d, lines, diameter_mil):
+    """Vias of the PCB from the via drill file (pcb.json has none): [(net or None, (x, y) mil, diameter mil)], the
+    copper diameter the routing's (vias are created at [routing] via), the net that of the tracks ending on the via –
+    None when no track or several nets end there."""
+    holes = gerber.parse_holes(d / "gerber" / gerber.FILES["vias"])
+    out = []
+    for x, y, _, _ in holes:
+        v = (x * MIL_PER_MM, y * MIL_PER_MM)
+        nets = {ln["Net"] for ln in lines if ln["Net"] and any(
+            math.dist(v, e) <= diameter_mil / 2 for e in ((ln["StartX"], ln["StartY"]), (ln["EndX"], ln["EndY"])))}
+        out.append((nets.pop() if len(nets) == 1 else None, v, diameter_mil))
+    return out
+
+
+def check_hand_joints(cfg, board, design, d, rows):
+    """L-18 with [routing] hand_solder_keep_mm: on the solder side of every through-hole pad of a hand-soldered part
+    (bom: false), no via or pad of another net closer than the keep – the pads as `route read` saw them (as L-13), the
+    vias from the via drill file with the net of the tracks of pcb.json that end on them. Tracks do not count. A pair
+    waived in the graph (waive L-18 on the joint's part or net, or on the other part or net) is listed with its reason.
+    Off (0): no row."""
+    from .. import route
+    rules = route.Rules(board)
+    keep = rules.joint_keep
+    if not keep:
+        return
+    want = f">= {keep * MM:g} mm ([routing] hand_solder_keep_mm)"
+    pcb = json.loads((d / "pcb.json").read_text())
+    data, why = route.board_as_read(cfg, board, pcb["components"])
+    if data is None:
+        rows.add("L", "L-18", board.name, "pad shapes for the hand-soldered joints", False, why, "the PCB as read")
+        return
+    hand = route.hand_soldered(design.graph, board.name)
+    vias = pcb_vias(d, pcb["lines"], rules.via[1])
+    gaps = route.joint_gaps(data, keep, hand, vias, route.pad_waivers(design.graph, "L-18"))
+    bad = [route.joint_text(g, keep, board) for g in gaps if not g["waived"]]
+    joints = route.hand_joints(data, hand)
+    rows.add("L", "L-18", board.name, "vias and pads of other nets keep clear of the hand-soldered joints on their "
+             "solder side", not bad, "; ".join(bad[:10]) + (f" … ({len(bad)} findings)" if len(bad) > 10 else "")
+             or f"{len(joints)} joints of {len({p['ref'] for p, _ in joints})} parts, {len(vias)} vias", want)
+    for g in gaps:
+        if g["waived"]:
+            rows.add("L", "L-18", board.name, f"hand-soldered joint: {route.joint_text(g, keep, board)}", True,
+                     f"{g['mil'] * MM:.2f} mm", want, "waived")
             rows[-1]["reason"] = g["waived"]
 
 
@@ -1005,10 +1126,7 @@ def check_copper_sides(board, design, d, rows):
 def check_fab(cfg, board, design, d, rows):
     want = design.board_comps(board.name)
     bom = bom_rows(design, board)
-    with open(d / f"bom_{board.name}.csv", "w", newline="", encoding="utf-8") as f:
-        w = csv.DictWriter(f, fieldnames=["Comment", "Designator", "Footprint", "LCSC Part #"])
-        w.writeheader()
-        w.writerows(bom)
+    write_bom(bom, d / f"bom_{board.name}.csv")
     ours = {ref: r["LCSC Part #"] for r in bom for ref in r["Designator"].split(",")}
     eda_bom = {ref.strip(): e["lcsc"] for e in json.loads((d / "bom_easyeda.json").read_text())
                for ref in e["reference"].split(",") if ref.strip() in want}
@@ -1022,17 +1140,28 @@ def check_fab(cfg, board, design, d, rows):
     jlc_file = d / "jlc_parts.json"
     if not jlc_file.exists():
         fetch_jlc(bom, d)
-    jlc, bad = json.loads(jlc_file.read_text()), []
+    jlc, bad, other = json.loads(jlc_file.read_text()), [], []
     for r in bom:
         n, hit = len(r["Designator"].split(",")) * cfg.quantity, jlc.get(r["LCSC Part #"])
+        who, entry = f"{r['Designator']} {r['LCSC Part #']}", design.parts.get(r["LCSC Part #"]) or {}
         if not hit:
-            bad.append(f"{r['Designator']} {r['LCSC Part #']}: not in the catalogue (pre-order only)")
-        elif hit.get("error"):
-            bad.append(f"{r['Designator']} {r['LCSC Part #']}: catalogue not reachable ({hit['error'][:60]})")
-        elif (hit.get("stockCount") or 0) < n:
-            bad.append(f"{r['Designator']} {r['LCSC Part #']}: {hit.get('stockCount')} in stock, {n} needed")
-    rows.add("F", "F-2", board.name, f"every BOM part in JLCPCB's assembly catalogue, stock for {cfg.quantity} boards",
-             not bad, "; ".join(bad) or f"{len(bom)} lines listed and in stock", "all")
+            bad.append(f"{who}: not in the catalogue (pre-order only)")
+            continue
+        if hit.get("error"):
+            bad.append(f"{who}: catalogue not reachable ({hit['error'][:60]})")
+            continue
+        if (hit.get("stockCount") or 0) < n:
+            bad.append(f"{who}: {hit.get('stockCount')} in stock, {n} needed")
+        if entry.get("mpn") and hit.get("componentModelEn") and not stock.same_mpn(entry["mpn"], hit["componentModelEn"]):
+            bad.append(f"{who}: JLCPCB names it {hit['componentModelEn']}, the parts entry {entry['mpn']}")
+        cls = stock.CLASS.get(hit.get("componentLibraryType"), hit.get("componentLibraryType"))
+        if stock.class_differs(cls, hit.get("preferredComponentFlag"), entry.get("jlc_class")):
+            other.append(f"{who}: JLCPCB lists it as {cls}, the parts entry as {entry['jlc_class']}")
+    rows.add("F", "F-2", board.name, f"every BOM part in JLCPCB's assembly catalogue, stock for {cfg.quantity} boards, "
+             "the MPN of its parts entry", not bad, "; ".join(bad) or f"{len(bom)} lines listed and in stock", "all")
+    if other:
+        rows.add("F", "F-2", board.name, "catalogue class = jlc_class of the parts entry", False, "; ".join(other),
+                 "equal", "warn")
     import openpyxl
     ws = openpyxl.load_workbook(d / "cpl_easyeda.xlsx", read_only=True).worksheets[0]
     rx = list(ws.iter_rows(values_only=True))
@@ -1132,7 +1261,11 @@ def run(cfg, board, out, offline=False, verbose=False):
     check_loops(board, design, d, rows)
     check_pad_clearance(cfg, board, design, d, rows)
     check_paste_gap(cfg, board, design, d, rows)
+    check_hand_joints(cfg, board, design, d, rows)
+    check_looks(board, d, rows)
     check_fab(cfg, board, design, d, rows)
+    from . import order_sheet
+    order_sheet.check(cfg, board, design, d, rows, bom_rows(design, board))   # F-6, only with [order]
     if not gerber.missing(d / "gerber", "top", "bottom", "top_silk", "bottom_silk"):   # otherwise F-5 names them
         from . import polarity
         img, n = polarity.sheet(cfg, board, design, d)
@@ -1141,7 +1274,189 @@ def run(cfg, board, out, offline=False, verbose=False):
     return rows
 
 
+# --- what the manufacturer builds from: fab_sha256 and `edakit fab diff` ----------------------------------------------
+
+FAB_METHOD = f"raster {gerber.RES} mm v1"
+NOT_BUILT = ("Gerber_DocumentLayer", "Gerber_DrillDrawingLayer")   # drawings for people; the factory builds nothing
+FRAME_MM = 1.0           # the raster frame: the board outline and this much around it
+SPOT_MM2 = 0.01          # changed spots below this area are only counted and summed
+SHOW = 5                 # changed spots, drill hits and rows listed per file
+
+
+def sha(data):
+    return hashlib.sha256(data).hexdigest()
+
+
+def built_files(g):
+    """(Gerber layers, drill files) in a gerber folder that the manufacturer builds from – without the documentation
+    and drill-drawing layers, the probe file and the order notes."""
+    files = sorted(p for p in Path(g).iterdir() if p.is_file()) if Path(g).is_dir() else []
+    return ([p for p in files if p.name.startswith("Gerber_") and not p.name.startswith(NOT_BUILT)],
+            [p for p in files if p.name.startswith("Drill_")])
+
+
+def outline_box(g, gerbers):
+    """(x0, y0, x1, y1) in mm: the board outline – without one, every layer's extent – and FRAME_MM around it."""
+    outline = Path(g) / gerber.FILES["outline"]
+    pts = (gerber.points(gerber.parse_gerber(outline)) if outline.exists() else
+           [p for f in gerbers for p in gerber.points(gerber.parse_gerber(f))]) or [(0.0, 0.0)]
+    return (min(p[0] for p in pts) - FRAME_MM, min(p[1] for p in pts) - FRAME_MM,
+            max(p[0] for p in pts) + FRAME_MM, max(p[1] for p in pts) + FRAME_MM)
+
+
+def frame(g, gerbers):
+    return gerber.Raster(*outline_box(g, gerbers))
+
+
+def drill_rows(path):
+    """Drill hits [x0, y0, x1, y1, diameter] rounded to 1 µm, sorted."""
+    return sorted([round(v, 3) for v in hit] for hit in gerber.parse_drills(path))
+
+
+def csv_rows(path):
+    """Header, then the rows sorted."""
+    with open(path, newline="", encoding="utf-8-sig") as f:
+        rows = [r for r in csv.reader(f) if r]
+    return rows[:1] + sorted(rows[1:])
+
+
+def fab_layers(d, board):
+    """SHA-256 per file the manufacturer builds from, for one board folder <run>/fab/<board>: every Gerber layer
+    rasterised in the outline's frame, the drill hits, the BOM and CPL rows."""
+    import numpy as np
+    gerbers, drills = built_files(Path(d) / "gerber")
+    out = {}
+    if gerbers:
+        r = frame(Path(d) / "gerber", gerbers)
+        where = f"{r.x0:.3f} {r.y0:.3f} {r.w} {r.h} ".encode()
+        for f in gerbers:
+            out[f.name] = sha(where + np.packbits(r.render(gerber.parse_gerber(f))).tobytes())
+    for f in drills:
+        out[f.name] = sha(json.dumps(drill_rows(f)).encode())
+    for name in (f"bom_{board}.csv", f"cpl_{board}.csv"):
+        if (Path(d) / name).exists():
+            out[name] = sha(json.dumps(csv_rows(Path(d) / name), ensure_ascii=False).encode())
+    return out
+
+
+def fab_hash(layers):
+    """fab_sha256 over {board: fab_layers(…)} and the method."""
+    return sha(json.dumps({"method": FAB_METHOD, "boards": layers}, sort_keys=True).encode())
+
+
+def spots(xor, r):
+    """Changed spots of a XOR image, largest first: [(area mm², (x0, x1, y0, y1) mm)]."""
+    import numpy as np
+    from scipy import ndimage
+    lab, n = ndimage.label(xor, structure=np.ones((3, 3)))
+    if not n:
+        return []
+    out = []
+    for size, (rows, cols) in zip(ndimage.sum(xor, lab, range(1, n + 1)), ndimage.find_objects(lab)):
+        x0, y0 = r.mm(cols.start, rows.stop)
+        x1, y1 = r.mm(cols.stop, rows.start)
+        out.append((float(size) * gerber.RES ** 2, (x0, x1, y0, y1)))
+    return sorted(out, key=lambda s: -s[0])
+
+
+def diff_layer(r, fa, fb):
+    """Detail lines of one Gerber layer in two runs, or [] when the raster is the same."""
+    a, b = r.render(gerber.parse_gerber(fa)), r.render(gerber.parse_gerber(fb))
+    if (a == b).all():
+        return []
+    found = spots(a ^ b, r)
+    big, small = [s for s in found if s[0] >= SPOT_MM2], [s for s in found if s[0] < SPOT_MM2]
+    lines = [f"+{(b & ~a).sum() * gerber.RES ** 2:.3f} mm² / −{(a & ~b).sum() * gerber.RES ** 2:.3f} mm² in "
+             f"{len(found)} spot(s)"]
+    lines += [f"{area:.3f} mm² at x {x0:.2f}–{x1:.2f}, y {y0:.2f}–{y1:.2f} mm" for area, (x0, x1, y0, y1) in big[:SHOW]]
+    if len(big) > SHOW:
+        lines.append(f"{len(big) - SHOW} more spot(s), {sum(s[0] for s in big[SHOW:]):.3f} mm² together")
+    if small:
+        lines.append(f"{len(small)} spot(s) under {SPOT_MM2} mm², {sum(s[0] for s in small):.3f} mm² together")
+    return lines
+
+
+def diff_rows(a, b, show):
+    """Detail lines of rows removed (−) and added (+) between two lists of rows."""
+    ca, cb = Counter(map(tuple, a)), Counter(map(tuple, b))
+    gone, new = sorted((ca - cb).elements()), sorted((cb - ca).elements())
+    lines = [f"- {show(x)}" for x in gone[:SHOW]] + ([f"  … {len(gone) - SHOW} more removed"] if len(gone) > SHOW else [])
+    lines += [f"+ {show(x)}" for x in new[:SHOW]] + ([f"  … {len(new) - SHOW} more added"] if len(new) > SHOW else [])
+    return lines
+
+
+def hole(h):
+    x0, y0, x1, y1, d = h
+    return f"Ø{d:.3f} at ({x0:.3f}, {y0:.3f})" + (f"–({x1:.3f}, {y1:.3f})" if (x0, y0) != (x1, y1) else "")
+
+
+def diff_board(da, db, board):
+    """[(file, changed, detail lines)] for one board folder in two runs: Gerber layers, drill hits, BOM and CPL."""
+    (ga, dra), (gb, drb) = built_files(da / "gerber"), built_files(db / "gerber")
+    out = []
+    boxes = [outline_box(d / "gerber", g) for d, g in ((da, ga), (db, gb)) if g]
+    r = gerber.Raster(min(b[0] for b in boxes), min(b[1] for b in boxes), max(b[2] for b in boxes),
+                      max(b[3] for b in boxes)) if boxes else None
+    pairs = [({f.name: f for f in xa}, {f.name: f for f in xb}) for xa, xb in ((ga, gb), (dra, drb))]
+    csvs = [f"bom_{board}.csv", f"cpl_{board}.csv"]
+    pairs.append(({n: da / n for n in csvs if (da / n).exists()}, {n: db / n for n in csvs if (db / n).exists()}))
+    for kind, (fa, fb) in zip(("gerber", "drill", "csv"), pairs):
+        for name in sorted(set(fa) | set(fb), key=lambda n: (csvs.index(n) if n in csvs else 0, n)):
+            if name not in fb or name not in fa:
+                out.append((name, True, ["only in " + ("the first run" if name in fa else "the second run")]))
+            elif kind == "gerber":
+                lines = diff_layer(r, fa[name], fb[name])
+                out.append((name, bool(lines), lines))
+            elif kind == "drill":
+                lines = diff_rows(drill_rows(fa[name]), drill_rows(fb[name]), hole)
+                out.append((name, bool(lines), lines))
+            else:
+                lines = diff_rows(csv_rows(fa[name])[1:], csv_rows(fb[name])[1:], ",".join)
+                out.append((name, bool(lines) or csv_rows(fa[name])[:1] != csv_rows(fb[name])[:1], lines))
+    return out
+
+
+def run_folder(cfg, run):
+    p = Path(run)
+    for d in (p, cfg.reports / run):
+        if (d / "fab").is_dir():
+            return d
+    raise SystemExit(f"edakit fab diff: {run}: no gate run with manufacturing files (neither a folder nor in "
+                     f"{cfg.reports})")
+
+
+def main_diff(cfg, args):
+    if len(args.runs) != 2:
+        print("edakit fab diff RUN_A RUN_B: two gate runs", file=sys.stderr)
+        return 1
+    try:
+        a, b = (run_folder(cfg, r) for r in args.runs)
+    except SystemExit as e:
+        print(e, file=sys.stderr)
+        return 1
+    boards = [args.board] if args.board else sorted({d.name for run in (a, b) for d in (run / "fab").iterdir()
+                                                     if d.is_dir()})
+    changed = 0
+    for board in boards:
+        print(f"{board}: {a.name} → {b.name}")
+        if not (a / "fab" / board).is_dir() or not (b / "fab" / board).is_dir():
+            print(f"  {board}  only in {'the first run' if (a / 'fab' / board).is_dir() else 'the second run'}")
+            changed += 1
+            continue
+        for name, diff, lines in diff_board(a / "fab" / board, b / "fab" / board, board):
+            changed += diff
+            print(f"  {name}  {'changed' if diff else 'equal'}")
+            print("".join(f"      {ln}\n" for ln in lines), end="")
+    print(f"{changed} file(s) changed" if changed else "the manufacturing files are equal")
+    return 2 if changed else 0
+
+
 def main(cfg, args):
+    if args.action == "diff":
+        return main_diff(cfg, args)
+    if not args.out:
+        print("edakit fab: --out is required (or: edakit fab diff RUN_A RUN_B)", file=sys.stderr)
+        return 1
     board = cfg.board(args.board)
     rows = run(cfg, board, args.out, args.offline, args.verbose)
     for r in rows:

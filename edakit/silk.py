@@ -3,6 +3,8 @@
     edakit silk apply   hide the designators of the sides in [silk] hide of the board file; place those of the side
                         in `designators` next to their part where nothing is in the way; export Gerber, check, DRC
     edakit silk check   export Gerber and only check: own silkscreen on solder-mask openings (JLCPCB cuts it off there)
+Both end with EasyEDA's DRC: exit 2 on findings, 3 when the only one is EasyEDA waiting for the import
+acknowledgement (schematic = PCB, compared as `pcb parts` and `pcb nets` do; Design → Import Changes once).
 
 Placement: every designator gets the first free spot above, below, right or left of its part (horizontal, then
 vertical, then at the corners) – not on pads, footprint silkscreen, other parts or other labels. Test points and the
@@ -39,7 +41,7 @@ from pathlib import Path
 from shapely.geometry import Point, Polygon, box
 from shapely.ops import unary_union
 
-from . import eda, gerber
+from . import eda, gerber, pcb
 from .config import BOTTOM, MIL_PER_MM, TOP
 from .design import natural_key
 from .eda import api, ensure_pcb_focus
@@ -355,7 +357,13 @@ def picture(silk, openings, area, out, mirror=False, extra=(), texts=()):
     plt.close(fig)
 
 
-def apply(cfg, board, mcp):
+APPLY_STEPS = 8   # bridge and PCB (main), the five of apply, the two of check
+
+
+def apply(cfg, board, mcp, step=None):
+    """step: eda.Steps of `silk apply` (APPLY_STEPS)."""
+    step = step or (lambda _: None)
+    step("hide designators, remove the last run's print")
     s = board.silk
     side = s.get("designators", "top")
     h, gap = float(s.get("label_h_mm", 1.0)), float(s.get("gap_mm", 0.25))
@@ -380,6 +388,7 @@ def apply(cfg, board, mcp):
             if c.get("Layer") in hide and a.get("ValueVisible"):
                 api(mcp, "PCB_PrimitiveAttribute.modify", a["PrimitiveId"], {"valueVisible": False})
     eda.save_pcb(mcp)
+    step("Gerber export: the footprints' own print")
     folder = export_gerber(cfg, board, mcp)  # now the silk layer holds only the footprints' own print
     kept = footprint_print(cfg, board)
     kept.mkdir(parents=True, exist_ok=True)
@@ -408,6 +417,7 @@ def apply(cfg, board, mcp):
         res = api(mcp, "PCB_PrimitiveString.create", on + 2, to_mil(x), to_mil(y), text, font, to_mil(font_size(size)), 6,
                   5, rot, False, 0, False, False)  # EasyEDA mirrors texts on the bottom by itself
         created["strings"].append(eda.state(res).get("PrimitiveId") if isinstance(res, dict) else res)
+    step("artwork and texts")
     for art_side, art_layer in SIDE.items():
         art = art_shapes(cfg, board, art_side)
         texts = silk_texts(board, art_side)
@@ -433,6 +443,7 @@ def apply(cfg, board, mcp):
             else:
                 label_art = keep
         print(f"  {art_side}: artwork {len(polygons(art))} shapes ({art.area:.0f} mm²), {len(texts)} texts")
+    step("designators")
     placed, grouped, missing = place_labels(parts, blocked, vias, area, h, gap, s.get("groups"),
                                             tuple(s.get("priority", ["TP"])))
     for n, (name, (x, y, rot)) in enumerate(placed.items()):
@@ -445,6 +456,7 @@ def apply(cfg, board, mcp):
                  "valueVisible": True})
         else:  # group label, or a part of the other side (its attribute prints there): a text in the same stroke font
             string(name, x, y, rot, h)
+    step("board label, save")
     text = board_label_text(cfg, board)
     if text:
         lh = float(s.get("board_label_h_mm", 1.2))
@@ -482,10 +494,12 @@ def apply(cfg, board, mcp):
              if solder_side else "")
           + (f", groups {', '.join(g for g in (s.get('groups') or {}) if g in placed)}" if grouped else "")
           + f"; without room: {', '.join(missing) or '–'}")
-    return check(cfg, board, mcp, fp_silk)
+    return check(cfg, board, mcp, fp_silk, step)
 
 
-def check(cfg, board, mcp, footprint_silk=None):
+def check(cfg, board, mcp, footprint_silk=None, step=None):
+    step = step or (lambda _: None)
+    step("Gerber export: silkscreen on mask openings")
     folder = export_gerber(cfg, board, mcp)
     bad = 0
     for side, layer in SIDE.items():
@@ -497,9 +511,9 @@ def check(cfg, board, mcp, footprint_silk=None):
         picture(silk, openings, board_shape(board), img, mirror=layer == BOTTOM)
         print(f"  {side}: silkscreen on mask openings {hit:.3f} mm² (target 0), picture -> {img}")
         bad += hit > 0.001
-    found = eda.drc(mcp)
-    print("  " + eda.describe_drc(found))
-    return 2 if bad or found else 0
+    step("DRC")
+    code = pcb.drc_report(cfg, board, mcp, eda.drc(mcp))
+    return 2 if bad else code
 
 
 def preview(cfg, board):
@@ -530,11 +544,14 @@ def main(cfg, args):
     board = cfg.board(args.board)
     if args.action == "preview":
         return preview(cfg, board)
+    step = eda.Steps(APPLY_STEPS) if args.action == "apply" else None
+    if step:
+        step("bridge and PCB")
     mcp = eda.connect(cfg, args.verbose)
     try:
         eda.open_project(mcp, cfg)
         eda.open_pcb(mcp, board.pcb)
-        return apply(cfg, board, mcp) if args.action == "apply" else check(cfg, board, mcp)
+        return apply(cfg, board, mcp, step) if args.action == "apply" else check(cfg, board, mcp)
     except eda.MCPError as e:
         return eda.die(str(e))
     finally:

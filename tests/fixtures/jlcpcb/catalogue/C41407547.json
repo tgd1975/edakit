@@ -1,0 +1,52 @@
+{
+ "code": 200,
+ "data": {
+  "componentPageInfo": {
+   "list": [
+    {
+     "componentCode": "C41407547",
+     "componentModelEn": "Raspberry Pi Pico 2",
+     "componentBrandEn": "Raspberry Pi",
+     "componentLibraryType": "expand",
+     "preferredComponentFlag": false,
+     "stockCount": 0,
+     "componentPrices": [
+      {
+       "startNumber": 1,
+       "endNumber": 9,
+       "productPrice": 9.2955
+      },
+      {
+       "startNumber": 10,
+       "endNumber": 29,
+       "productPrice": 7.9746
+      },
+      {
+       "startNumber": 30,
+       "endNumber": 99,
+       "productPrice": 7.1676
+      },
+      {
+       "startNumber": 100,
+       "endNumber": 101,
+       "productPrice": 6.4933
+      },
+      {
+       "startNumber": 102,
+       "endNumber": 103,
+       "productPrice": 6.4933
+      },
+      {
+       "startNumber": 104,
+       "endNumber": -1,
+       "productPrice": 6.4933
+      }
+     ],
+     "lossNumber": 0,
+     "leastPatchNumber": 0,
+     "describe": "- Raspberry Pi ROHS"
+    }
+   ]
+  }
+ }
+}
