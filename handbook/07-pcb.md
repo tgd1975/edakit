@@ -86,6 +86,8 @@ moves the part); 2 is something to decide. It writes nothing but `--json F`. The
 1→3, 2→2, 3→1, 4→4, 5→5, pitch 4.70 → 4.80 mm, the 0.40 mm tab slots below 0.5 mm, `SW5: BAT_SW 1 → 3` – what took
 an hour with both datasheet drawings and was first described as a turn when it is a mirror image.
 
+The same matching of a board footprint against itself is P-8 (3.3): when the project's footprint moves holes away from the library's – leads formed for the board, a part fitted by hand – `edakit check` fails if a turn of 90°, 180° or 270° lays the formed holes onto themselves with a pin in another net's hole. Offset the leads so that none does: two in opposite directions, one only, or by different amounts.
+
 A new project comes with one empty default board (Board1 = Schematic1 + PCB1). The first `edakit schematic layout`
 renames it to the board of edakit.toml (board name, `schematic`, `pcb`) and fills the schematic from the graph; any
 other board setup is left alone and must match edakit.toml.

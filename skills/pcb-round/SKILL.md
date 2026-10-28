@@ -63,7 +63,9 @@ describes (section 3); a list of parts or pads is fixed with `pcb parts --write`
    - New or swapped parts first: `edakit pcb parts --write`; then `edakit pcb dump` for their geometry if needed
      (dump turns all parts to 0°/TOP – afterwards always apply and the auto-layout again). Before they are in the
      PCB, `edakit part import <LCSC>` gives the plan of step 2 their library footprint; for a swapped part
-     `edakit part diff OLD NEW` says how the new footprint lies over the old one (turn, shift, pad map).
+     `edakit part diff OLD NEW` says how the new footprint lies over the old one (turn, shift, pad map). A footprint
+     whose holes the project moves for leads formed by hand: `edakit pcb dump`, then `edakit check` – P-8 fails when
+     a turn lays the formed holes onto themselves with a pin in another net's hole (handbook 3.3).
    - `edakit pcb apply` (outline, holes, tooling holes, fixed parts locked; pad positions verified against the plan)
    - `edakit pcb autolayout` (unlocked parts, TOP only, waits for stable positions)
    - `edakit route all 2>&1 | cat` (read → DSN → Freerouting → check → apply → pours → reload → DRC; exit 0 = DRC 0, 3 =

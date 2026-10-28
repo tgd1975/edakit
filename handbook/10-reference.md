@@ -256,7 +256,7 @@ Claude Code: `edakit … 2>&1 | cat`. The long commands – `route all`, `gate`,
 
 | Command | EasyEDA | Reads | Writes |
 |---|---|---|---|
-| `edakit check [--release] [--json F]` | – | graph, parts (pins, identity P-6), pin table; if there: footprint geometry and library footprints (P-7), library symbols (P-1); `[scripts]`, `[[release.stages]]` and `sim_plugin` with the board files' `[[silk.art]]` (8.6) | – |
+| `edakit check [--release] [--json F]` | – | graph, parts (pins, identity P-6), pin table; if there: footprint geometry and library footprints (P-7, P-8), library symbols (P-1); `[scripts]`, `[[release.stages]]` and `sim_plugin` with the board files' `[[silk.art]]` (8.6) | – |
 | `edakit rules [ID …]` | – | the rule catalog (no project needed) | – |
 | `edakit hints [--json F]` | – | graph, parts, sim config | – |
 | `edakit block list\|show NAME` | – | the block library (no project needed) | – |

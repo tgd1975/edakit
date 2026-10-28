@@ -56,6 +56,19 @@
     "edakit handbook 13.6 and 8.1 (L-9)"
    ]
   },
+  "P-8": {
+   "title": "formed leads fit only one way round",
+   "rule": "A through-hole part whose plated holes the board's footprint (pcb dump) moves away from its library footprint – a hole more than 0.05 mm from the library's hole of the same number, the two footprints laid on each other by their numbers – and that has three or more plated holes is not laid onto itself by a turn of 90°, 180° or 270° about its holes, every hole within 0.25 mm of a hole, with a pin in the hole of a pin on another net of the graph. Pins on one net do not count, two holes and a part on its library pattern are not judged; without the library footprint of edakit part import it is a note.",
+   "why": "A part fitted by hand with formed leads loses the cues of its library pattern: the longest lead is bent like the others, and the body's flat stands millimetres above the silkscreen mark. If the formed pattern maps onto itself, the part goes in turned as easily as the right way – an RGB LED with its anode in a cathode's hole stays dark, a transistor or regulator is reversed. No other check sees it: L-10 compares the PCB with the board's own footprint, L-8 judges a sign next to a pad, P-7, L-9 and L-16 the hole size, ring and spacing, and part diff sees the symmetry only when a part is swapped. In the reference project the star LED's four legs in one row at 1.25 mm got two of them bent 1.6 mm the same way: turned by 180° the anode's hole lay on the green cathode's and red on blue, to 0.00 mm, the print had its '+' at the anode, and every check passed; the second datasheet check found it by hand. Bending one of the two legs the other way left no turn that fits (the closest 1.25 mm off).",
+   "fix": "Choose the offsets so that no turn lays the pattern onto itself: two leads in opposite directions, one lead only, or different amounts – then check ring and hole spacing again (L-16). Where the pattern stays symmetric for a mechanical reason, waive P-8 on the component with that reason and let the print show the orientation (L-8).",
+   "sources": [
+    "The reference project (pytree), decision D-49 of 2026-10-27 (docs/hardware.md, bullets 'Biegen' and 'Footprint'): pin 1 bent 1.6 mm towards the tip, pin 4 1.6 mm towards the trunk – the opposite offsets make the hole pattern asymmetric; with both legs towards the tip the star also fitted turned by 180° and would have stayed dark",
+    "The reference project, hardware/release/signoff.json, the second datasheet check M-1 of 2026-10-27: all nine bend patterns computed, only the right one fits (turned 1.25 mm off); in the first round the hole pattern with pins 1 and 4 towards the tip was point-symmetric (finding 'important', fixed with pin 4 towards the trunk)",
+    "The reference project's gate runs 20261027-211238 (round 1) and 20261027-214622 (round 2): D31's pads in pcb.json – pads 1 and 4 1.6 mm off the row the same way in round 1, pad 4 1.6 mm the other way in round 2; the library footprint LED-TH_4P-BD5.8-P1.25 as edakit part import C7371895 cached it (2026-10-28): one row at 1.25 mm, holes Ø 0.70 mm",
+    "0.05 mm: L-10's tolerance (pad against library position); 0.25 mm: about the radius of a formed lead (the reference project's star LED: legs 0.49 mm) – the triage's choice, no standard was opened",
+    "edakit handbook 3.3 (P-7) and 7.3 (part diff: pads matched by position under each turn, 'symmetric: the numbers decide')"
+   ]
+  },
   "G-1": {
    "title": "structure",
    "rule": "Designators and net names are unique, every pin is in exactly one net or in nc, every net has at least two pins and a voltage range v, every part is on a known board, a part on a bought board is bom: false, a net spans boards only through a cable, the layout requirements and the check settings name parts and pins of the graph, the ground net is a net of the graph, and purpose.use is private, gift or sale.",

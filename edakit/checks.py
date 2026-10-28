@@ -51,6 +51,11 @@
        on the holes of the footprint geometry – the board's `pcb dump`, else the library footprint cached by `edakit
        part import`; plated holes without `lead` in the parts entry pending, a hole that does not take the lead an
        error, tight in the worst case or a plated slot narrower than 0.5 mm a warning
+  P-8  formed leads fit only one way round: a part whose board footprint (`pcb dump`) has its plated holes away from
+       the library footprint's (more than 0.05 mm from the hole of the same number, the two laid on each other by
+       their numbers), three or more of them, is not laid onto itself by a turn of 90°, 180° or 270° – every hole
+       within 0.25 mm of a hole – with a pin in the hole of a pin on another net (pins on one net do not count);
+       without the library footprint a note
   P-3  own parts (part.py): a board copied from its project with `edakit part own` is that project's current
        datasheet, copied from a commit (pending otherwise); a board that is not released is a warning; the project's
        own datasheets (hardware/datasheet/) are of its current state
@@ -116,7 +121,7 @@ MULTIPLIERS = {"p": 1e-12, "n": 1e-9, "u": 1e-6, "µ": 1e-6, "μ": 1e-6, "m": 1e
 QUANTITY = re.compile(r"\s*(\d+)(?:[.,](\d+))?\s*([pnuµμmkKMG]|[RΩ])?(\d+)?\s*(Ω|[oO]hms?|F|H)?(?=$|[\s,;/()])")
 
 EXECUTED = ["G-1", "G-2", "G-3", "G-4", "G-5", "G-6", "G-8", "G-10", "G-11", "G-12", "G-13", "G-14", "G-15", "G-16",
-            "G-17", "G-18", "P-1", "P-3", "P-4", "P-5", "P-6", "P-7", "G-9"]
+            "G-17", "G-18", "P-1", "P-3", "P-4", "P-5", "P-6", "P-7", "P-8", "G-9"]
 
 
 class Report:
@@ -934,18 +939,27 @@ def check_identity(d, rep):
                                             + (f" ({usual})" if usual else "")))
 
 
-def footprint_geometry(d, cfg):
-    """geometry(des) -> (footprint geometry, where from) or (None, None): the dump of the component's board – the
-    project's footprint as placed –, else the library footprint `edakit part import` cached."""
+def board_dumps(d, cfg):
+    """dumped(des) -> the component's footprint as `pcb dump` measured it on its board, or None."""
     from . import part as parts
     from .pcb import geometry_file
     dumps = {name: parts._read(geometry_file(cfg, b)) or {} for name, b in cfg.boards.items()}
 
-    def geometry(des):
+    def dumped(des):
         board = d.comps[des].get("board")
-        for name, dump in dumps.items():
-            if board in (None, name) and des in dump:
-                return dump[des], "pcb dump"
+        return next((dump[des] for name, dump in dumps.items() if board in (None, name) and des in dump), None)
+    return dumped
+
+
+def footprint_geometry(d, cfg):
+    """geometry(des) -> (footprint geometry, where from) or (None, None): the dump of the component's board – the
+    project's footprint as placed –, else the library footprint `edakit part import` cached."""
+    from . import part as parts
+    dumped = board_dumps(d, cfg)
+
+    def geometry(des):
+        if geo := dumped(des):
+            return geo, "pcb dump"
         lib = parts.library_footprint(cfg, d, des)
         return (lib, f"library geometry {lib['footprint']}") if lib else (None, None)
     return geometry
@@ -1006,6 +1020,91 @@ def check_holes(d, rep, geometry):
     return seen
 
 
+FORMED_MM = 0.05      # P-8: a hole this far from the library's hole of its number is formed for the board (L-10)
+LEAD_PUSH_MM = 0.25   # P-8: a formed lead this far off a hole still goes in with a push (about a lead's radius)
+
+
+def plated_holes(geo):
+    """[(number, x mm, y mm, pad)] of the plated through-hole pads of a footprint geometry (P-7 reads the same)."""
+    from .part import pad_points
+    return [pt for pt in pad_points(geo) if pt[3].get("tht") and pt[3].get("plated", True)]
+
+
+def on_library_pattern(holes, lib, pad_map):
+    """P-8: every hole lies within FORMED_MM of the library footprint's pad of its number (pad_map: intended swaps, as
+    L-10), the two laid on each other by the shift that fits the numbers best – a footprint drawn around another
+    origin keeps the library's pattern. -> True, False, or the numbers the library lacks."""
+    import math
+
+    from .part import pad_points
+    at = defaultdict(list)
+    for n, x, y, _ in pad_points(lib):
+        at[n].append((x, y))
+    pairs = [(x, y, at.get(pad_map.get(n, n))) for n, x, y, _ in holes]
+    if lacks := sorted({n for (n, *_), (*_, c) in zip(holes, pairs) if not c}, key=natural_key):
+        return lacks
+    ones = [(c[0][0] - x, c[0][1] - y) for x, y, c in pairs if len(c) == 1]   # shell legs: no shift from them
+    dx, dy = (sum(v[0] for v in ones) / len(ones), sum(v[1] for v in ones) / len(ones)) if ones else (0.0, 0.0)
+    return all(min(math.dist((x + dx, y + dy), q) for q in c) <= FORMED_MM for x, y, c in pairs)
+
+
+def self_fits(holes):
+    """P-8: [(turn, [(pin, pin whose hole it lands in)])] for every turn of 90°, 180° and 270° that lays the holes on
+    themselves, every hole within LEAD_PUSH_MM of a hole – the position-only matching of `part diff` (part.fit)."""
+    from .part import TURNS, fit
+    out = []
+    for turn in (t for t in TURNS if t):
+        c = fit(holes, holes, turn, False)
+        if max(r for _, _, r in c["pairs"]) <= LEAD_PUSH_MM:
+            out.append((turn, [(holes[j][0], holes[i][0]) for i, j, _ in c["pairs"]]))
+    return out
+
+
+def check_formed(d, rep, cfg):
+    """P-8: a through-hole part whose plated holes the board's footprint (`pcb dump`) moves away from its library
+    footprint – leads formed for this board – and that has three or more of them fits only one way round: no turn by
+    90°, 180° or 270° lays its holes onto themselves with a pin in the hole of a pin on another net of the graph. The
+    library footprint is the one of the dump's footprint name that `edakit part import` cached; without it, or when
+    it lacks a pad number of the dump, a note. A part on its library pattern is not judged: its orientation is the
+    print's job (L-8, P-2, M-2)."""
+    from . import part as parts
+    dumped = board_dumps(d, cfg)
+    for des in sorted(d.comps, key=natural_key):
+        geo = dumped(des)
+        holes = plated_holes(geo) if geo else []
+        if len(holes) < 3:
+            continue
+        name = geo.get("footprint")
+        lib = parts.cached_footprint(cfg, name)
+        if not lib:
+            rep.notes.append(("P-8", f"{des}: formed leads not judged – no library footprint {name} to compare the "
+                                     "holes with (edakit part import <LCSC>)"))
+            continue
+        same = on_library_pattern(holes, lib, (d.part(des) or {}).get("pad_map") or {})
+        if isinstance(same, list):
+            rep.notes.append(("P-8", f"{des}: formed leads not judged – the library footprint {name} has no pad "
+                                     f"{', '.join(same)}"))
+            continue
+        if same:
+            continue
+        net = lambda n: d.pin_net.get(f"{des}.{n}")  # noqa: E731
+        swaps = []
+        for turn, pairs in self_fits(holes):
+            shown = []
+            for pin, hole in sorted(set(pairs), key=lambda p: (natural_key(p[0]), natural_key(p[1]))):
+                if net(pin) != net(hole) and (hole, pin) not in shown:
+                    shown.append((pin, hole))
+            if shown:
+                swaps.append((turn, shown))
+        if swaps:
+            (turn, shown), more = swaps[0], [t for t, _ in swaps[1:]]
+            pin = lambda n: f"pin {n} ({net(n) or 'no net'})"  # noqa: E731
+            rep.error("P-8", f"{des}: its formed holes lie on each other turned by {turn}°"
+                             + (f" (also {', '.join(f'{t}°' for t in more)})" if more else "") + " – "
+                             + ", ".join(f"{pin(a)} in the hole of {pin(b)}" for a, b in shown),
+                      d.comps[des].get("waive"))
+
+
 def check_signoff(d, rep):
     for key in sorted({d.entry_key(des) for des in d.comps} - {None}):
         part = d.parts[key]
@@ -1053,6 +1152,7 @@ def run(design, cfg=None):
         if not check_holes(design, rep, footprint_geometry(design, cfg)):
             rep.notes.append(("P-7", "not run: no footprint geometry – edakit pcb dump once the parts are in the PCB, "
                                      "or edakit part import <LCSC> for the library's"))
+        check_formed(design, rep, cfg)
         stock.check(design, rep, cfg)
         order.check(design, rep, cfg)
     check_signoff(design, rep)

@@ -22,7 +22,7 @@ Before each stage – each project stage, and with `--easyeda` each board of sta
 
 | Stage | What | Checks |
 |---|---|---|
-| P – Parts | parts database complete and signed, every part named by its entry, through-hole leads fitting their holes, own parts equal to their source, parts orderable, a supplier per part | P-1, P-3, P-4, P-5, P-6, P-7, G-9 (chapter 3, 4) |
+| P – Parts | parts database complete and signed, every part named by its entry, through-hole leads fitting their holes and, formed for the board, fitting only one way round, own parts equal to their source, parts orderable, a supplier per part | P-1, P-3, P-4, P-5, P-6, P-7, P-8, G-9 (chapter 3, 4) |
 | G – Graph | rule checks; with quoted values (6.6) G-19 on this run's simulation | G-1 … G-19 (chapter 3) |
 | E – Simulation | operating points, stress, function, every LED checked, transient runs; with sim.json `copper` on the routing of `edakit route` as it is | E-1 … E-5 (chapter 5) |
 | *project stages* | e.g. K – mechanics of an enclosure | `[[release.stages]]`, see below |
