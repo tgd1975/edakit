@@ -7,7 +7,8 @@ with the nets VIN, +5V and GND, on a board of 30 x 20 mm with one M3 hole and tw
 no pours (`pours = []`).
 The whole example has never been routed or exported, so no real export of it exists. This one has the files that
 `fab.collect` leaves, with the fields the checks read: pcb.json, drc.json, bom_easyeda.json, cpl_easyeda.xlsx,
-jlc_parts.json (so F-2 stays offline), and the Gerber and drill files with FlyingProbeTesting.json. pcb.json has every
+jlc_parts.json (so F-2 stays offline), and the Gerber and drill files with FlyingProbeTesting.json; drc_rules.json
+only where a test puts [routing] drc_rules into the board file. pcb.json has every
 designator visible (L-17). It also has the
 footprint geometry of `edakit pcb dump`, the net currents of `edakit sim` – 0.5 A on all three nets, which puts
 them in class POWER (0.6 mm), with an IPC-2221 width of 0.20 mm – and the board as `edakit route read` saw it (pads
@@ -17,13 +18,15 @@ example orders Economic assembly (SMD only), so J1 is not in its BOM: it is sold
 A new check of stage L or F gets its fault here: one more entry in FAULTS.
 """
 
+import copy
 import json
 import math
+from pathlib import Path
 
 import openpyxl
 import pytest
 
-from edakit import cli, gerber
+from edakit import cli, drc_rules, gerber
 from edakit.release import fab
 
 MIL = 1000 / 25.4
@@ -185,6 +188,7 @@ class Export:
                                           "PAD_SIZEY"], "rows": probe}}
         self.drc = []
         self.netlist_diff = None       # the dry runs of `pcb parts` and `pcb nets` (only with an Import Changes item)
+        self.drc_rules = None          # the DRC's rule set as EasyEDA answered (only with [routing] drc_rules)
         self.bom = [{"reference": r, "lcsc": LCSC[r], "value": v, "quantity": 1}
                     for r, v in (("J1", ""), ("D1", "SS34"), ("C2", "22uF"))]
         self.jlc = {"C8678": {"componentModelEn": "SS34", "componentLibraryType": "base", "stockCount": 52000},
@@ -269,7 +273,7 @@ class Export:
         d = root / "build" / "fab" / "main"
         (d / "gerber").mkdir(parents=True)
         for name, data in (("pcb", self.pcb), ("drc", self.drc), ("bom_easyeda", self.bom), ("jlc_parts", self.jlc),
-                           ("netlist_diff", self.netlist_diff)):
+                           ("netlist_diff", self.netlist_diff), ("drc_rules", self.drc_rules)):
             if data is not None:
                 (d / f"{name}.json").write_text(json.dumps(data, ensure_ascii=False))
         wb = openpyxl.Workbook()
@@ -314,6 +318,7 @@ def test_the_clean_export_passes_every_check(project):
     assert findings(rows) == []
     assert sorted({r["id"] for r in rows if r["stage"] in "LF"}, key=CHECKS.index) == CHECKS   # no [order]: no F-6
     assert not (project.root / "build" / "fab" / "main" / "order.md").exists()
+    assert len([r for r in rows if r["id"] == "L-3"]) == 2      # no [routing] drc_rules: the DRC's rules not compared
     by = {(r["id"], r["check"]): r["actual"] for r in rows}
     assert by["L-11", "short current loops: path over tracks per pad pair within the limit"] == "J1.1-D1.2 7.8 mm"
     assert by["L-9", "hole takes the lead at nominal size (diagonal or edge, or manufacturer's value)"] == "2 holes"
@@ -322,6 +327,18 @@ def test_the_clean_export_passes_every_check(project):
     paste_row = next(r for r in rows if r["id"] == "L-14")
     assert (paste_row["actual"], paste_row["expected"]) == (
         "4 SMD pads", ">= 0.400 mm on TOP ([release] assembly paste_gap_mm)")     # J1 is through-hole
+
+
+def test_the_drc_ran_with_the_board_files_rule_set(project):
+    """[routing] drc_rules = "check": a third row of L-3 names the rule set EasyEDA's DRC ran with and holds it to
+    [routing] of the board file – here the board file's own (the input stage keeps route's defaults)."""
+    rows = run(project, drc_rules_of_the_board)
+    assert findings(rows) == []
+    assert sorted({r["id"] for r in rows if r["stage"] in "LF"}, key=CHECKS.index) == CHECKS   # every check still runs
+    assert len([r for r in rows if r["id"] == "L-3"]) == 3
+    row = next(r for r in rows if r["id"] == "L-3" and r["check"].startswith("EasyEDA's DRC rule set"))
+    assert (row["actual"], row["expected"]) == ("rule set 'Custom Config': the board file's", (
+        "clearance 0.165 mm, edge 0.400 mm, tracks 0.254 mm, via Ø 0.610 / drill 0.305 mm"))
 
 
 def test_edakit_fab_offline_on_the_clean_export(project, monkeypatch, capsys):
@@ -364,6 +381,30 @@ IMPORT = {"errorType": "Netlist Error", "ruleName": "Import Changes", "obj1": {"
           "obj2": {"typeName": "PCB Netlist"}}
 CLEARANCE = {"errorType": "Clearance", "ruleName": "Safe Spacing"}
 NO_DIFF = {"parts": {}, "nets": []}
+
+
+# the rule set of EasyEDA's DRC as EasyEDA answered on the reference project (EasyEDA Pro 3.2.206, test_drc_rules.py)
+RECORDED = json.loads((Path(__file__).parent / "fixtures" / "easyeda" / "drc_rules_3.2.206.json").read_text())
+
+
+def drc_rules_of_the_board(ex, project, change=None):
+    """[routing] drc_rules = "check" in the board file, and drc_rules.json with the rule set the board file asks for:
+    the recorded configuration with its values, the stage's nets on the default rules, no net class – as EasyEDA would
+    answer once it holds them. change(config) alters the configuration EasyEDA answers with."""
+    board_file(project, "[routing]\n", '[routing]\ndrc_rules = "check"\n')
+    want = drc_rules.wanted(project.config().board())
+    config = drc_rules.config_for(want, RECORDED["configuration"])
+    if change:
+        change(config)
+    net = next(e for e in RECORDED["net_rules"] if e["type"] == "net")
+    ex.drc_rules = {"configuration": {"config": config, "name": RECORDED["configuration"]["name"]},
+                    "net_rules": [{**copy.deepcopy(net), "name": n} for n in ("VIN", "+5V", "GND")], "net_classes": []}
+
+
+def track_to_track(mm):
+    def change(config):
+        config["Spacing"]["Safe Spacing"]["copperThickness1oz"]["tables"]["1"]["content"][0][0] = mm
+    return lambda ex, p: drc_rules_of_the_board(ex, p, change)
 
 
 def import_pending(diff, *more):
@@ -587,6 +628,14 @@ FAULTS = [
      [("L-3", "fail", "schematic and PCB not compared")]),
     ("an Import Changes item and a clearance error", import_pending(NO_DIFF, CLEARANCE),
      [("L-3", "fail", "Clearance (Safe Spacing): 1"), ("L-3", "fail", "EasyEDA waits for the import acknowledgement")]),
+    ("the DRC ran with a clearance below the board file's", track_to_track(0.10199878),   # the recorded value
+     [("L-3", "fail", "rule set 'Custom Config': clearance Track–Track: EasyEDA 0.102 mm (Safe Spacing "
+                      "'copperThickness1oz'), the board file 0.165 mm (clearance_mil 6.5)")]),
+    ("the DRC's rule set not read", lambda ex, p: (drc_rules_of_the_board(ex, p), setattr(ex, "drc_rules", None)),
+     [("L-3", "fail", "drc_rules.json missing (edakit fab without --offline reads it with the DRC)")]),
+    ("the DRC's rule set cut off by the bridge",
+     lambda ex, p: (drc_rules_of_the_board(ex, p), ex.drc_rules.update(net_rules="[MaxDepth]")),
+     [("L-3", "fail", "cut off at [MaxDepth] – the rule set needs the bridge's return depth 12")]),
     # L-4
     ("another footprint", lambda ex, p: ex.comp("C2").update(footprintName="C0603"),
      [("L-4", "fail", "C2: C0603 instead of C0805")]),

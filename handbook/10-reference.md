@@ -206,7 +206,8 @@ from the outline, in the DSN and in Freerouting; the pours: `pour_inset_mm`), `p
 IPC-2221 width of its nets' simulated currents, a net outside the classes that needs more than `signal_mil` a class of
 its own – needs `net_currents.json`, 7.5), `hand_solder_keep_mm` (0 = off: L-18, vias and pads of other nets at
 least this far, in mm, from the through-hole pads of `bom: false` parts on their solder side; `route dsn` writes via
-keep-outs around them, 7.5),
+keep-outs around them, 7.5), `drc_rules` (none: L-3 as before; `"check"`: the gate reads the rule set of EasyEDA's DRC
+with the DRC and L-3 holds it to these rules – clearance, edge clearance, track widths, via, classes, 7.5),
 `[[routing.keepouts]]` ({layer, what = "wire"|"all", rect | polygon, windows, window_mm}), `[[routing.fixed_wires]]`
 ({net, layer, width_mil, points}).
 
@@ -326,7 +327,7 @@ Claude Code: `edakit … 2>&1 | cat`. The long commands – `route all`, `gate`,
 | `edakit release current` | – | the manifests under `reports` | – |
 | `edakit release withdraw RUN --reason TEXT` | – | the run's manifest | its `fab/manifest.json`: `status`, `withdrawn` {reason, by, date} |
 | `edakit release verify FILE…\|DIR…` | – | the files (a folder: its `.zip` and `.csv` files), the manifests | – |
-| `edakit fab --board B --out DIR [--offline]` | ✓ / – | PCB, exports, `route/<board>_board.json` (L-13, L-14, L-18), `silk_strings_<board>.json` and `silk_footprints_<board>/` (L-17), the stock snapshot (`order.md`) | `DIR/<board>/`, with `[order]` also `order.md` and `order.json` (the settings in the fab hash) |
+| `edakit fab --board B --out DIR [--offline]` | ✓ / – | PCB, exports, `route/<board>_board.json` (L-13, L-14, L-18), `silk_strings_<board>.json` and `silk_footprints_<board>/` (L-17), the stock snapshot (`order.md`), with `[routing] drc_rules` the rule set of EasyEDA's DRC (L-3) | `DIR/<board>/`, with `[order]` also `order.md` and `order.json` (the settings in the fab hash), with `[routing] drc_rules` also `drc_rules.json` |
 | `edakit fab diff RUN_A RUN_B [--board B]` | – | `fab/<board>/` of two gate runs: Gerber layers, drill files, BOM, CPL, the order settings (`order.json`) | – |
 | `edakit lock [status\|claim\|release\|yield CHAT\|hook] [--note]` | – | – (hook: tool name and, for `easyeda_api_call`, its `path`; library lookups of `READ_ONLY_TOOLS`/`READ_ONLY_API` pass without a claim, 11.2) | `~/.local/state/edakit/easyeda-lock.json` |
 | `edakit proposal template [--feature]\|seal FILE [--out F]\|verify FILE` | – | a rule or feature proposal (no project needed) | seal: the issue body with its SHA-256 |

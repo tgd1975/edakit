@@ -591,6 +591,43 @@ def drc(mcp, out=None):
     return found
 
 
+def read_drc_rules(mcp):
+    """The rule set of the DRC of the active PCB, as EasyEDA answers (drc_rules.py): {"configuration": {"name",
+    "config"}, "net_rules": [...], "net_classes": [...]} from PCB_Drc.getCurrentRuleConfiguration, getNetRules and
+    getAllNetClasses. The PCB tab must count as active (activate_pcb – drc() does it). The configuration lies up to 9
+    levels deep: with the original bridge (depth 5) it is cut off, and that raises."""
+    out = {"configuration": api(mcp, "PCB_Drc.getCurrentRuleConfiguration"),
+           "net_rules": api(mcp, "PCB_Drc.getNetRules"),
+           "net_classes": api(mcp, "PCB_Drc.getAllNetClasses")}
+    if "[MaxDepth]" in json.dumps(out):
+        raise MCPError("DRC rule set cut off ([MaxDepth]) – import the patched bridge (edakit/easyeda/"
+                       "bridge-extension-patch.sh)")
+    if not (out["configuration"] or {}).get("config"):
+        raise MCPError(f"no DRC rule configuration ({out['configuration']!r}) – PCB tab inactive?")
+    return out
+
+
+def write_drc_rules(mcp, want):
+    """Make the DRC rule set of the active PCB the board file's (want = drc_rules.wanted(board)): the net classes
+    first, then the rule configuration, then the net rules – each call stops on an answer that is not true – and return
+    the differences read back right after ([] = written). The editor takes either overwrite without a check and answers
+    true whenever the PCB tab counts as active (handbook 9.4), so only the read-back says what came of it. NOT RUN
+    against EasyEDA yet: the live probe of step 2.2 decides whether edakit writes the rule set this way. Before
+    reporting anything written, the caller saves, reloads (reload_pcb) and reads back once more – working agreement 16."""
+    from . import drc_rules
+
+    def call(method, *args):
+        if (res := api(mcp, f"PCB_Drc.{method}", *args)) is not True:
+            raise MCPError(f"PCB_Drc.{method} returned {json.dumps(res)} "
+                           f"({json.dumps(args, ensure_ascii=False)[:200]})")
+    for method, *args in drc_rules.class_changes(want, read_drc_rules(mcp)):
+        call(method, *args)
+    have = read_drc_rules(mcp)
+    call("overwriteCurrentRuleConfiguration", drc_rules.config_for(want, have["configuration"]))
+    call("overwriteNetRules", drc_rules.net_rules_for(want, read_drc_rules(mcp)["net_rules"]))
+    return drc_rules.differences(want, read_drc_rules(mcp))
+
+
 def describe_drc(found, limit=25):
     from collections import Counter
     counts = Counter((f["errorType"], f.get("ruleName"), f.get("net")) for f in found)

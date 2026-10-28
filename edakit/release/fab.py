@@ -14,6 +14,8 @@ Result in DIR/<board>/:
     order.json                       with [order]: the order settings that change the board as made (fab hash)
     netlist_diff.json                schematic against PCB (`pcb parts`, `pcb nets`), when the DRC has an Import
                                      Changes item
+    drc_rules.json                   with [routing] drc_rules in the board file: the rule set the DRC ran with, as
+                                     EasyEDA answers (configuration, net rules, net classes – eda.read_drc_rules)
 and DIR/polarity_<board>.png: every polarised part with pad, role and net, to compare with datasheets and with the
 assembly preview at JLCPCB.
 
@@ -21,7 +23,10 @@ assembly preview at JLCPCB.
   L-2  copper from the Gerber files: every net connected, no short, every connected pad present
   L-3  EasyEDA DRC without findings (after save and reload): other kinds; and schematic and PCB in sync – a
        "Netlist Error – Import Changes" item with no difference in netlist_diff.json is EasyEDA waiting for the
-       import acknowledgement (Design → Import Changes once), otherwise the differences with the command that fixes them
+       import acknowledgement (Design → Import Changes once), otherwise the differences with the command that fixes
+       them. With [routing] drc_rules = "check" in the board file also: the rule set the DRC ran with = the board
+       file's (clearance, edge clearance, track widths of the classes, via, net classes – drc_rules.py), named in the
+       row
   L-4  footprint per part = parts database
   L-5  track width per net >= IPC-2221 for 1.5 x the simulated current (fail); below the practical class width (warn);
        voltage drop as an upper bound (info)
@@ -93,7 +98,7 @@ import zipfile
 from collections import Counter, defaultdict
 from pathlib import Path
 
-from .. import gerber, handover, stock
+from .. import drc_rules, gerber, handover, stock
 from ..config import BOTTOM, MIL_PER_MM, TOP
 from ..design import Design, natural_key
 
@@ -131,6 +136,8 @@ def merge_bom(entries):
 def collect(cfg, board, d, verbose=False):
     from .. import eda, pcb
     (d / "netlist_diff.json").unlink(missing_ok=True)
+    (d / "drc_rules.json").unlink(missing_ok=True)
+    compare_rules = drc_rules.mode(board)    # [routing] drc_rules: L-3 compares the rule set the DRC ran with
     mcp = eda.connect(cfg, verbose, artifact_dir=d)
     try:
         eda.open_project(mcp, cfg)
@@ -153,6 +160,12 @@ def collect(cfg, board, d, verbose=False):
         eda.reload_pcb(mcp)  # the DRC is reliable only on the saved, reloaded state
         found = eda.drc(mcp)
         (d / "drc.json").write_text(json.dumps(found, indent=1, ensure_ascii=False))
+        if compare_rules:
+            try:
+                held = eda.read_drc_rules(mcp)
+            except eda.MCPError as e:          # L-3 then says: not read
+                held = {"error": str(e)}
+            (d / "drc_rules.json").write_text(json.dumps(held, indent=1, ensure_ascii=False))
         res = mcp.call("easyeda_export_gerbers", projectId="current", drillFormat="millimeter",
                        productionReview={"mode": "off"}, timeout=300)
         if not res.get("exported"):
@@ -366,6 +379,9 @@ def check_pcb(cfg, board, design, d, rows):
     diff = json.loads((d / "netlist_diff.json").read_text()) if (d / "netlist_diff.json").exists() else None
     ok, what = pcbmod.import_verdict(items, diff)
     rows.add("L", "L-3", board.name, "schematic and PCB in sync (Import Changes)", ok, what, "no Import Changes item")
+    if drc_rules.mode(board):
+        ok, what, expected = drc_rules.verdict(board, d / "drc_rules.json")
+        rows.add("L", "L-3", board.name, "EasyEDA's DRC rule set = [routing] of the board file", ok, what, expected)
     check_polarity_marks(cfg, board, design, d, data, want, on_pcb, rows)
 
 

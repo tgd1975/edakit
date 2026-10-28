@@ -385,6 +385,26 @@ pour_only = true                   # no tracks: the pour between the tracks conn
 
 Class widths must be at least the minimum of the matching EasyEDA net class rule, or the DRC complains.
 
+**EasyEDA's DRC rule set.** L-3 asks for a DRC without findings – with the rules EasyEDA holds, set in its GUI and in
+no file. With `drc_rules = "check"` in `[routing]`, the gate reads the rule set the DRC ran with and holds it to the
+board file, in a third row of L-3 (8.1) that names it:
+
+- the clearance `clearance_mil` from track to track, pad and via, and from via to pad and via (EasyEDA's Safe Spacing);
+  pads among themselves are the footprints' – L-13 measures pads of different parts;
+- the edge clearance `edge_clearance_um` of tracks and vias;
+- the least width of every net's tracks: `width_mil` of its class in `classes`, `signal_mil` without one – a narrower
+  fixed wire of the class lowers it, the board file prescribes it; with `widths = "sim"` the classes keep their
+  `width_mil` here, wider tracks pass, and L-5 holds each track to its current;
+- the least via `via`, and the net classes of `classes` with their nets in the PCB.
+
+Equal means within 1 µm – in every rule a net of the PCB uses, the default one too, and in every layer entry of a rule.
+The row lists each difference with both numbers, e.g. `clearance Track–Track: EasyEDA 0.102 mm (Safe Spacing
+'copperThickness1oz'), the board file 0.165 mm (clearance_mil 6.5)` – the reference project's DRC ran with that. Set
+what it names in EasyEDA (Design → Design Rule: Safe Spacing, Track, Via Size, the net classes), or change
+`[routing]`. The name in the row is the one EasyEDA reports, the template the rules came from – a write through the
+API keeps it (9.4), so the name alone says nothing about the values. Without the key nothing is read and L-3 is as it
+was. edakit does not write the rule set yet: the API takes it (9.4), the live probe of step 2.2 has not run.
+
 **Widths from the simulation.** `widths = "classes"` (the default) writes the widths of `classes` and `signal_mil` into
 the DSN as they are. With `widths = "sim"`, `route dsn`, `route` and `all` read `<artifacts>/sim/net_currents.json`
 (`edakit sim`) and give every net at least its IPC-2221 width for 1.5 × its simulated current – the width L-5 of the
