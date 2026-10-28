@@ -1,9 +1,9 @@
 # Implementation plan: requirements, design as text, project scripts
 
-Status 2026-10-28: plan; 1.1, 1.2, 1.3, 1.5 and 1.7 are done, 1.6 is in progress. It builds the three concepts
-of this folder after the user took their decisions on 2026-10-28 (e5caf42, 301fd90): [requirements.md](requirements.md),
-[design-as-text.md](design-as-text.md) and [project-scripts.md](project-scripts.md). Each step starts when the user
-asks for it.
+Status 2026-10-28: plan; 1.1, 1.2, 1.3, 1.5, 1.6 and 1.7 are done. It builds the three concepts of this folder after the
+user took their decisions on 2026-10-28 (e5caf42, 301fd90): [requirements.md](requirements.md),
+[design-as-text.md](design-as-text.md) and [project-scripts.md](project-scripts.md). Each step starts when the user asks
+for it.
 
 ## Ground rules
 
@@ -29,7 +29,7 @@ asks for it.
 | 1.3 | Names for edakit's data, each with a hash | project-scripts block 2 | S | no | 1.2 | done (74279e8) |
 | 1.4 | Stamps in `hardware/scripts.lock`; `edakit scripts` | project-scripts block 3, decision 2 | M | no | 1.3 | open |
 | 1.5 | Requirements: format, parser, `edakit req` | requirements order 1, decisions 1–3 | M | no | – | done (ba4d28b, f7adcf4) |
-| 1.6 | Requirements: checks, protocol section, `accept` lines, circuit hash | requirements order 2, decisions 4, 6, 8 | M | no | 1.5 | in progress, branch `step-1.6-requirement-checks` |
+| 1.6 | Requirements: checks, protocol section, `accept` lines, circuit hash | requirements order 2, decisions 4, 6, 8 | M | no | 1.5 | done (384385e) |
 | 1.7 | `[order]`: mask and print colour, thickness from `thickness_mm` | design-as-text, smaller findings | S | no | – | done (80c750e) |
 | 1.8 | The footprint geometry in the repository | project-scripts block 5, decision 5 | S | no | – | open |
 | 2.1 | Positions of the auto-layout as text, one-time takeover, every part in the plan | design-as-text gap 1, decisions 3, 4 | M | yes | – | open |

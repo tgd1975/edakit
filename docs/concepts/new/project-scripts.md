@@ -618,7 +618,8 @@ edakit's data.
 
 ## What would change in edakit
 
-Eight building blocks, none of them built. The order is also the order to build them in.
+Eight building blocks; the order is also the order to build them in, and
+[implementation-plan.md](implementation-plan.md) has the state of each.
 
 1. **Read the entries:** read `[scripts.*]` in `config.py` and check that they resolve into a DAG with edakit's steps
    (Checking the TOML). `[[release.stages]]` and `sim_plugin` become the kinds `check` and `sim`; the old keys keep
@@ -646,8 +647,8 @@ of the run its reviewer checked (D-20).
 
 ## Decisions
 
-1–8 taken on 2026-10-28. "Accepted" is the user's yes to the recommendation; "decided by Claude" marks a technical
-point the user left to Claude and then confirmed.
+1–8 and 12 taken on 2026-10-28. "Accepted" is the user's yes to the recommendation; "decided by Claude" marks a
+technical point the user left to Claude and then confirmed.
 
 | No. | Question | Recommendation | Decision |
 | --- | --- | --- | --- |
