@@ -1,7 +1,8 @@
 # Implementation plan: requirements, design as text, project scripts
 
-Status 2026-10-28: plan; phase 1 (1.1 to 1.8), 3.1, 3.4 and the follow-ups below are done. It builds the three concepts
-of this folder after the user took their decisions on 2026-10-28 (e5caf42, 301fd90): [requirements.md](requirements.md),
+Status 2026-10-28: plan; phase 1 (1.1 to 1.8), 3.1, 3.2, 3.4, 3.5 and the follow-ups below are done; 2.1 and 2.3 are
+built and wait for their live run in EasyEDA; 2.2, 2.4 and 3.7 are in progress. It builds the three concepts of this
+folder after the user took their decisions on 2026-10-28 (e5caf42, 301fd90): [requirements.md](requirements.md),
 [design-as-text.md](design-as-text.md) and [project-scripts.md](project-scripts.md). Each step starts when the user asks
 for it.
 
@@ -32,17 +33,17 @@ for it.
 | 1.6 | Requirements: checks, protocol section, `accept` lines, circuit hash | requirements order 2, decisions 4, 6, 8 | M | no | 1.5 | done (384385e) |
 | 1.7 | `[order]`: mask and print colour, thickness from `thickness_mm` | design-as-text, smaller findings | S | no | – | done (80c750e) |
 | 1.8 | The footprint geometry in the repository | project-scripts block 5, decision 5 | S | no | – | done (d63a81a) |
-| 2.1 | Positions of the auto-layout as text, one-time takeover, every part in the plan | design-as-text gap 1, decisions 3, 4 | M | yes | – | open |
-| 2.2 | Rule set of EasyEDA's DRC | design-as-text decision 6 | S–M | yes | – | open |
-| 2.3 | Positions of single designators in `[silk]` | design-as-text, smaller findings | S | yes | – | open |
-| 2.4 | Outdated inputs run first; `edakit run` | project-scripts block 4, decision 7 | M | yes | 1.4 | open |
+| 2.1 | Positions of the auto-layout as text, one-time takeover, every part in the plan | design-as-text gap 1, decisions 3, 4 | M | yes | – | built offline (5d8a5df), live run open |
+| 2.2 | Rule set of EasyEDA's DRC | design-as-text decision 6 | S–M | yes | – | in progress, branch `step-2.2-drc-rules` |
+| 2.3 | Positions of single designators in `[silk]` | design-as-text, smaller findings | S | yes | – | built offline (112de3a), live run open |
+| 2.4 | Outdated inputs run first; `edakit run` | project-scripts block 4, decision 7 | M | yes | 1.4 | in progress, branch `step-2.4-scripts-run` |
 | 3.1 | Checks in the gate: `at`, phase `acceptance`; then `verify = script` | project-scripts block 6 | M | no | 1.2, 1.6 | done (9e63afd) |
-| 3.2 | Project agents: `[agents.*]`, `replaces`, their sign-offs required | project-scripts block 7, decisions 10, 11 | M | no | 1.2 | open |
+| 3.2 | Project agents: `[agents.*]`, `replaces`, their sign-offs required | project-scripts block 7, decisions 10, 11 | M | no | 1.2 | done (8d3cc15) |
 | 3.3 | Skills and the SessionStart hook use `edakit scripts` | project-scripts block 8 | S–M | no | 2.4, 3.2 | open |
 | 3.4 | Skill `requirements`, agent `requirements-engineer`, reviewers read the file | requirements order 3, decision 7 | M | no | 1.6 | done (0099ee3) |
-| 3.5 | `req:` as a source of value blocks | requirements order 4 | S | no | 1.5 | open |
+| 3.5 | `req:` as a source of value blocks | requirements order 4 | S | no | 1.5 | done (abf40d4) |
 | 3.6 | Own footprints as data in the parts entry | design-as-text gap 2, decision 5 | L | yes | 1.8 | open |
-| 3.7 | Project setup: `new-project` with two ways, agent `project-surveyor` | project-setup, decisions 1–6 | M | no | 3.2, 3.4 | open |
+| 3.7 | Project setup: `new-project` with two ways, agent `project-surveyor` | project-setup, decisions 1–6 | M | no | 3.2, 3.4 | in progress, branch `step-3.7-project-setup` |
 | 4.1 | Bell: requirements file | requirements order 5, decision 9 | M | no | 3.4, the bell's order | open |
 | 4.2 | Bell: entries for `kunst` and `tdisplay` | project-scripts example | S | no | 2.4 | open |
 | 4.3 | Bell: the circuit as a language and as TOML with names, then the choice | design-as-text decision 8 | M | no | – | open |
@@ -53,7 +54,9 @@ S, M and L are the sizes the concepts give: small, medium, large.
 
 Follow-ups the user decided on 2026-10-28, done: a draft requirement only warns and never blocks (1.6, b885376); the
 order settings that change the made board join the fab hash (b5af0c6), and `edakit cost` names an order that deviates
-from the board it prices (5a51877) (1.7). `edakit cost` no longer fails on a board nobody assembles (09f591d).
+from the board it prices (5a51877) (1.7). `edakit cost` no longer fails on a board nobody assembles (09f591d). Further, on the user's word: the regulatory
+review says everywhere that it is support and not legal advice (0fddac4); `python` in a project check is edakit's
+own (cfe053c); a missing sign-off file leaves the required checks open (2bb219f).
 
 ```mermaid
 flowchart LR
