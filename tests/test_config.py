@@ -279,13 +279,14 @@ def test_order_keys(tmp_path):
     (tmp_path / "hardware" / "boards").mkdir(parents=True)
     (tmp_path / "hardware" / "boards" / "main.toml").write_text("[order]\n")
     assert load(tmp_path / "edakit.toml").board().order == {
-        "finish": "LeadFree HASL", "mark": "default", "remark": "", "tab_zones": [], "tab_copper_mm": 1.0}
+        "finish": "LeadFree HASL", "mark": "default", "remark": "", "tab_zones": [], "tab_copper_mm": 1.0,
+        "mask": "green", "silkscreen": "white"}
     (tmp_path / "hardware" / "boards" / "main.toml").write_text(
         '[order]\nfinish = "ENIG"\nmark = "specify"\nremark = "No V-cut."\ntab_copper_mm = 0.5\n'
-        'tab_zones = [{ from = [0, 0], to = [0, 20] }]\n')
+        'tab_zones = [{ from = [0, 0], to = [0, 20] }]\nmask = "black"\nsilkscreen = "white"\n')
     assert load(tmp_path / "edakit.toml").board().order == {
         "finish": "ENIG", "mark": "specify", "remark": "No V-cut.", "tab_zones": [((0.0, 0.0), (0.0, 20.0))],
-        "tab_copper_mm": 0.5}
+        "tab_copper_mm": 0.5, "mask": "black", "silkscreen": "white"}
     for order, msg in (({"marks": "specify"}, r"order: unknown key 'marks' \(known: finish, mark, remark"),
                        ({"mark": "place"}, "order.mark must be one of default, specify, remove, not 'place'"),
                        ({"remark": 3}, "order.remark must be a string"),
@@ -325,6 +326,26 @@ def test_bought_key(tmp_path):
     with pytest.raises(ConfigError, match=r"hardware/boards/usb.toml: a bought board \(bought = true in "
                                           r"\[boards.usb\]\) has no board file"):
         load(toml)
+
+
+def test_order_colour_keys():
+    """Step 1.7: [order] mask and silkscreen – JLCPCB's colours of solder mask and silkscreen. Without them its
+    defaults: a green mask with white print; on a white mask JLCPCB prints black."""
+    from edakit.config import _board
+    order = _board("b", {}, {"order": {}}).order
+    assert (order["mask"], order["silkscreen"]) == ("green", "white")       # no key: JLCPCB's default, as before
+    assert _board("b", {}, {"order": {"mask": "white"}}).order["silkscreen"] == "black"
+    for mask in ("green", "purple", "red", "yellow", "blue", "white", "black"):
+        assert _board("b", {}, {"order": {"mask": mask}}).order["mask"] == mask
+    order = _board("b", {}, {"order": {"mask": "white", "silkscreen": "white"}}).order   # F-6 judges the pair
+    assert (order["mask"], order["silkscreen"]) == ("white", "white")
+    for order, msg in (({"mask": "orange"},
+                        "order.mask must be one of green, purple, red, yellow, blue, white, black, not 'orange'"),
+                       ({"mask": "Black"}, "order.mask must be one of green, purple"),
+                       ({"silkscreen": "yellow"}, "order.silkscreen must be one of white, black, not 'yellow'"),
+                       ({"colour": "black"}, r"order: unknown key 'colour' \(known: .*mask, silkscreen\)")):
+        with pytest.raises(ConfigError, match=msg):
+            _board("b", {}, {"order": order})
 
 
 def test_firmware_table_is_opt_in(tmp_path):
@@ -424,7 +445,7 @@ def test_looks_key():
 
 def test_thickness_key(tmp_path):
     from edakit.config import _board
-    assert _board("b", {}, {}).thickness_mm == 1.6                         # no key: 1.6 mm, only the mechanical model reads it
+    assert _board("b", {}, {}).thickness_mm == 1.6                         # no key: 1.6 mm, JLCPCB's default
     assert _board("b", {}, {"thickness_mm": 1.0}).thickness_mm == 1.0
     for value in (0, -1, "1.6", True):
         with pytest.raises(ConfigError, match="thickness_mm must be a thickness in mm, more than 0"):

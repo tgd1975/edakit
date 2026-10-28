@@ -1,17 +1,18 @@
-"""The order form of one board – written per gate run from [order] of the board file, [release] assembly, the stock
-snapshot and the manufacturing files of the run – and check F-6 (order settings = board). Both only when the board
-file has [order]; `fab.run` calls `check` after the F checks.
+"""The order form of one board – written per gate run from [order] and thickness_mm of the board file, [release]
+assembly, the stock snapshot and the manufacturing files of the run – and check F-6 (order settings = board). Both
+only when the board file has [order]; `fab.run` calls `check` after the F checks.
 
-    DIR/<board>/order.md   every field of JLCPCB's form that depends on the board: layers, size, quantity, surface
-                           finish, mark on PCB (at the placeholder), remark; PCBA type and side, tooling holes, bake,
-                           the upload files; the tab zones and the outline stretches free of copper; what is bought
-                           separately (edakit order)
+    DIR/<board>/order.md   every field of JLCPCB's form that depends on the board: layers, size, quantity, thickness,
+                           colours of solder mask and silkscreen, surface finish, mark on PCB (at the placeholder),
+                           remark; PCBA type and side, tooling holes, bake, the upload files; the tab zones and the
+                           outline stretches free of copper; what is bought separately (edakit order)
 
-  F-6  the remark fits the form (at most 200 characters, ASCII) (fail); mark = "specify" needs the placeholder
-       JLCJLCJLCJLC on a silkscreen layer of pcb.json, at least 0.8 mm high in [[silk.texts]] (fail; height not in
-       [[silk.texts]]: warn); the placeholder with another mark warns; Economic PCBA with fewer than 2 tooling holes
-       warns (JLCPCB adds its own); copper within tab_copper_mm of a declared tab zone fails – measured on the Gerber
-       copper of both sides against the Gerber outline. The free outline stretches are information.
+  F-6  the remark fits the form (at most 200 characters, ASCII) (fail); thickness_mm is a thickness of JLCPCB's form
+       (fail); the silkscreen colour is the one JLCPCB prints on the mask colour (fail); mark = "specify" needs the
+       placeholder JLCJLCJLCJLC on a silkscreen layer of pcb.json, at least 0.8 mm high in [[silk.texts]] (fail;
+       height not in [[silk.texts]]: warn); the placeholder with another mark warns; Economic PCBA with fewer than 2
+       tooling holes warns (JLCPCB adds its own); copper within tab_copper_mm of a declared tab zone fails – measured
+       on the Gerber copper of both sides against the Gerber outline. The free outline stretches are information.
 
 Coordinates in messages and in order.md are Gerber mm (EasyEDA, seen from the top) – what JLCPCB sees; tab zones are
 declared in plan mm like the rest of the board file.
@@ -22,11 +23,13 @@ from __future__ import annotations
 import math
 
 from .. import gerber, order, stock
+from ..config import silkscreen_on
 from ..design import natural_key
 
 PLACEHOLDER = "JLCJLCJLCJLC"   # JLCPCB prints the order number here with "Order Number (Specify Position)"
 PLACEHOLDER_MIN_MM = 0.8       # least height of the placeholder JLCPCB recognises (#40)
 REMARK_MAX = 200               # JLCPCB's remark field
+THICKNESSES_MM = (0.4, 0.6, 0.8, 1.0, 1.2, 1.6, 2.0)   # "PCB Thickness" of JLCPCB's form, FR-4 with 2 layers
 TOOLING_MIN = 2                # Economic PCBA: fewer and JLCPCB drills its own ("Added by JLCPCB")
 ON_OUTLINE_MM = 0.5            # a tab zone's end points lie this close to the outline
 CORNER_DEG = 45                # an outline stretch ends where the outline has turned this far
@@ -121,6 +124,22 @@ def check_remark(remark, rows, name):
         else "no remark"
     rows.add("F", "F-6", name, "remark fits JLCPCB's order form", len(remark) <= REMARK_MAX and not bad, actual,
              f"<= {REMARK_MAX} characters, ASCII")
+
+
+def check_material(board, rows):
+    """The board thickness and the colours: thickness_mm one of the form's thicknesses, the silkscreen the colour
+    JLCPCB prints on the mask."""
+    t = board.thickness_mm
+    ok = any(abs(t - x) < 1e-6 for x in THICKNESSES_MM)
+    rows.add("F", "F-6", board.name, "board thickness JLCPCB makes (FR-4, 2 layers)", ok,
+             f"{t:g} mm (thickness_mm)" + ("" if ok else " – not a thickness of JLCPCB's form"),
+             ", ".join(f"{x:g}" for x in THICKNESSES_MM) + " mm")
+    mask, silk = board.order["mask"], board.order["silkscreen"]
+    want = silkscreen_on(mask)
+    rows.add("F", "F-6", board.name, "silkscreen colour JLCPCB prints on the solder mask", silk == want,
+             f"{silk} on a {mask} mask" if silk == want else
+             f'silkscreen = "{silk}" on a {mask} mask – JLCPCB prints {want} on it; choose silkscreen = "{want}" or '
+             "another mask", f"{want} on a {mask} mask")
 
 
 def placeholders(board, data):
@@ -241,7 +260,7 @@ def bought(design, board):
 def sheet(cfg, design, board, d, bom, pcba, tabs, found):
     o, g = board.order, d / "gerber"
     sides = cfg.release.get("assembly", {}).get("sides", ["top", "bottom"])
-    side = "Both Sides" if len(sides) > 1 else f"{sides[0].capitalize()} Side"
+    side = "Both Sides" if len(sides) > 1 else f"{sides[0].capitalize()} Side" if sides else "–"
     size = "–"
     if tabs:
         x0, y0, x1, y1 = tabs[0].bounds
@@ -254,7 +273,9 @@ def sheet(cfg, design, board, d, bom, pcba, tabs, found):
          "Written by edakit from [order] of the board file, [release] assembly, the stock snapshot and the files of "
          "this run; check F-6 compares them. Upload only from a released run (manifest.json). Coordinates: Gerber mm.\n",
          "## PCB\n", "| Field | Value |", "|---|---|", f"| Layers | {layers} |", f"| Dimensions | {size} |",
-         f"| PCB Qty | {cfg.quantity} |", f"| Surface Finish | {o['finish']} |", f"| Mark on PCB | {mark} |",
+         f"| PCB Qty | {cfg.quantity} |", f"| PCB Thickness | {board.thickness_mm:g} mm |",
+         f"| PCB Color | {o['mask'].capitalize()} |", f"| Silkscreen | {o['silkscreen'].capitalize()} |",
+         f"| Surface Finish | {o['finish']} |", f"| Mark on PCB | {mark} |",
          f"| Remark | {remark} |", ""]
     if o["remark"]:
         L += ["```text", o["remark"], "```", ""]
@@ -302,6 +323,7 @@ def check(cfg, board, design, d, rows, bom):
     pcba = cfg.pcba()
     data = json.loads((d / "pcb.json").read_text())
     check_remark(board.order["remark"], rows, board.name)
+    check_material(board, rows)
     check_mark(board, data, rows)
     if bom and pcba[0] == "economic":
         check_tooling(board, pcba, rows)

@@ -51,9 +51,10 @@ The MCP server cannot order on purpose. Checklist for the user:
 - [ ] Assembly type matches `[release] assembly` (Economic: one side, SMD; two SMD sides or a "Standard Only" part
       need Standard PCBA – `assembly.pcba`, P-4); bake set when P-4 warns about MSL ≥ 5
 - [ ] The form as `fab/<b>/order.md` of the released run says (with `[order]` in the board file; F-6 checked it):
-      tooling holes "added by customer" when the board has its own, order number "specify position" at the
-      placeholder, the remark (≤ 200 ASCII characters, tabs only on stretches order.md lists as free), bake.
-      Without `[order]`: tooling holes, order number position and remark by hand as in handbook 8.4
+      thickness, mask and silkscreen colour, tooling holes "added by customer" when the board has its own, order
+      number "specify position" at the placeholder, the remark (≤ 200 ASCII characters, tabs only on stretches
+      order.md lists as free), bake. Without `[order]`: thickness, colours, tooling holes, order number position and
+      remark by hand as in handbook 8.4
 - [ ] M-2: in JLCPCB's assembly preview the rotation and polarity of every polarised part (compare with
       `polarity_<b>.png`), no missing part in the BOM tool, price, and the datasheet points section 6 lists under
       "after uploading"; then sign M-2

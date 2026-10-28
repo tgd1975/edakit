@@ -72,7 +72,7 @@ project the layout review measured the LED side by hand at every round; the row 
 | F-3 | pick and place: every BOM part exactly once, side and rotation = PCB; sides and SMD-only as `[release] assembly` says (Economic PCBA: one side, SMD only; two SMD sides need Standard PCBA) |
 | F-4 | Gerber ZIP, BOM and pick and place from the same run; `fab/manifest.json` with SHA-256 per file, the state hashes and the fab hash (8.2) |
 | F-5 | Gerber set complete (a missing file is named here, and L-2, L-8, L-9 and L-17, which read it, report it as not checked); outline and mounting holes from the outline layer = plan (± 0.2 mm); tooling holes in the NPTH file, mask open, no copper in the opening |
-| F-6 | only with `[order]` in the board file (8.4): the remark at most 200 characters, ASCII (fail); `mark = "specify"` with the placeholder `JLCJLCJLCJLC` on a silkscreen layer of pcb.json, at least 0.8 mm high in `[[silk.texts]]` (fail; no height there: warning); the placeholder with another mark (warning); Economic PCBA with fewer than 2 tooling holes (warning: JLCPCB drills its own); no copper of either side within `tab_copper_mm` of a declared tab zone, measured on the Gerber copper against the Gerber outline (fail, with the distance and the position); the outline stretches free of copper (information) |
+| F-6 | only with `[order]` in the board file (8.4): the remark at most 200 characters, ASCII (fail); `thickness_mm` a thickness of JLCPCB's form – 0.4, 0.6, 0.8, 1.0, 1.2, 1.6 or 2.0 mm (fail); the silkscreen colour the one JLCPCB prints on the mask colour – black on white, white on every other (fail); `mark = "specify"` with the placeholder `JLCJLCJLCJLC` on a silkscreen layer of pcb.json, at least 0.8 mm high in `[[silk.texts]]` (fail; no height there: warning); the placeholder with another mark (warning); Economic PCBA with fewer than 2 tooling holes (warning: JLCPCB drills its own); no copper of either side within `tab_copper_mm` of a declared tab zone, measured on the Gerber copper against the Gerber outline (fail, with the distance and the position); the outline stretches free of copper (information) |
 
 Plus P-2: a **polarity sheet** per board – every polarised part drawn from the Gerber data with copper, silkscreen,
 pad numbers, pin roles and nets, bottom parts mirrored as seen from below. It is what the second check compares with
@@ -296,14 +296,21 @@ the carts and in `hand_assembly.md` under the board, marked bought; `edakit cost
 
 **The order form as data.** The form fields that depend on the board go into `[order]` of the board file (10.2):
 `finish`, `mark` (`"default"` – JLCPCB prints its number anywhere, `"specify"` – at the placeholder, `"remove"`),
-`remark` and the tab zones (`tab_zones`, stretches of the outline in plan mm, with `tab_copper_mm`). The board file is
-in the layout hash, so a changed remark needs the layout review again. Every gate run then writes
-`fab/<board>/order.md` next to the upload files – layers, size, quantity, finish, the mark at the placeholder, the
-remark; PCBA type and side from `[release] assembly`, tooling holes "Added by Customer" when the board has
-`[tooling]`, bake "Yes" when the stock snapshot gives a BOM part MSL ≥ 5; the tab zones with their nearest copper and
-every outline stretch with no copper within `tab_copper_mm` (Gerber coordinates, what JLCPCB sees); the parts bought
-separately with their supplier (`edakit order`) – and F-6 checks the settings against the files. Fill the form from
-order.md of the released run and write tab zones only on stretches it lists as free.
+`remark`, the tab zones (`tab_zones`, stretches of the outline in plan mm, with `tab_copper_mm`) and the colours:
+`mask` (JLCPCB's "PCB Color": green, purple, red, yellow, blue, white or black) and `silkscreen`. The thickness is
+the board file's `thickness_mm`, the value the mechanical model takes (7.4). Without these keys the form's defaults
+hold: 1.6 mm, green, white print. JLCPCB prints white on every mask but white, and black on white – `silkscreen`
+states the colour the artwork is drawn for, and F-6 fails it on a mask that gets the other one, as it fails a
+thickness the form does not offer (FR-4, 2 layers: 0.4, 0.6, 0.8, 1.0, 1.2, 1.6 or 2.0 mm). Every colour other than
+green takes two more days at JLCPCB (its quote form, read 2026-10-28); `edakit cost` prices the fee table's board –
+green, 1.6 mm, lead-free HASL – whatever `[order]` says. The board file is in the layout hash, so a changed remark,
+colour or thickness needs the layout review again. Every gate run then writes `fab/<board>/order.md` next to the
+upload files – layers, size, quantity, thickness, the colours of mask and silkscreen, finish, the mark at the
+placeholder, the remark; PCBA type and side from `[release] assembly`, tooling holes "Added by Customer" when the
+board has `[tooling]`, bake "Yes" when the stock snapshot gives a BOM part MSL ≥ 5; the tab zones with their nearest
+copper and every outline stretch with no copper within `tab_copper_mm` (Gerber coordinates, what JLCPCB sees); the
+parts bought separately with their supplier (`edakit order`) – and F-6 checks the settings against the files. Fill the
+form from order.md of the released run and write tab zones only on stretches it lists as free.
 
 The MCP server cannot order. Lessons from the reference order:
 

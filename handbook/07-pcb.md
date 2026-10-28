@@ -630,6 +630,8 @@ Good to know:
 - JLCPCB prints its order number somewhere unless you place the placeholder `JLCJLCJLCJLC` and choose
   "specify a location" when ordering: a `[[silk.texts]]` entry of at least 0.8 mm and `mark = "specify"` in `[order]`
   of the board file – F-6 checks that both are there (8.4).
+- The print colour follows the solder mask: JLCPCB prints white, on a white mask black. Artwork drawn for one colour
+  says so with `silkscreen` next to `mask` in `[order]`; F-6 fails a pair JLCPCB does not print (8.4).
 - Run `silk apply` again after every auto-layout and routing – spots depend on parts and vias.
 
 **In the gate** (L-17, 8.1) the silkscreen is checked as the fab gets it. `silk apply` keeps the silk files of its first

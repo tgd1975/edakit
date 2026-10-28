@@ -536,6 +536,14 @@ def stray_text(ex, project):
     ex.pcb["strings"].append({"Text": "TEST", "X": TEST[0] * MIL, "Y": TEST[1] * MIL, "Layer": 3})
 
 
+def thickness(mm, order=None):
+    """[order] in the board file (as ordered) on a board of thickness_mm = mm."""
+    def fault(ex, project):
+        ordered(ex, project, order)
+        board_file(project, 'edge_ok = ["J1"]', f'edge_ok = ["J1"]\nthickness_mm = {mm}')
+    return fault
+
+
 FAULTS = [
     # L-1
     ("a pad on another net", lambda ex, p: ex.pad("D1.1").update(Net="VIN"),
@@ -745,6 +753,10 @@ FAULTS = [
      [("F-6", "warn", "no tooling holes ([tooling]) – JLCPCB adds its own")]),
     ("copper in a tab zone", edge_track,       # the track touches no pad: loose copper for L-15 too
      [("F-6", "fail", "copper 0.45 mm from the edge at (0.0, "), ("L-15", "warn", "TOP: 1 piece without pad")]),
+    ("a board thickness JLCPCB does not make", thickness(1.57),         # 62 mil: JLCPCB's form has 1.6 mm
+     [("F-6", "fail", "1.57 mm (thickness_mm) – not a thickness of JLCPCB's form")]),
+    ("white print on a white mask", lambda ex, p: ordered(ex, p, {"mask": "white", "silkscreen": "white"}),
+     [("F-6", "fail", 'silkscreen = "white" on a white mask – JLCPCB prints black on it')]),
 ]
 
 
@@ -938,7 +950,12 @@ def test_the_order_form_of_the_clean_export(project):
     f6 = [r for r in rows if r["id"] == "F-6"]
     assert {r["result"] for r in f6} == {"pass", "info"}
     assert len(REMARK) <= 200 and any(r["actual"] == f"{len(REMARK)} characters, ASCII" for r in f6)
+    assert {(r["check"], r["actual"]) for r in f6} >= {
+        ("board thickness JLCPCB makes (FR-4, 2 layers)", "1.6 mm (thickness_mm)"),       # JLCPCB's defaults
+        ("silkscreen colour JLCPCB prints on the solder mask", "white on a green mask")}
     sheet = (project.root / "build" / "fab" / "main" / "order.md").read_text()
+    assert "| PCB Qty | 5 |\n| PCB Thickness | 1.6 mm |\n| PCB Color | Green |\n| Silkscreen | White |\n" \
+           "| Surface Finish | LeadFree HASL |" in sheet                            # in the order of JLCPCB's form
     for text in ("| Layers | 2 |", "| Dimensions | 30.00 x 20.00 mm (Gerber outline) |", "| PCB Qty | 5 |",
                  "| Surface Finish | LeadFree HASL |",
                  "| Mark on PCB | Order Number (Specify Position) – JLCJLCJLCJLC at (18.0, 3.0) on the top silkscreen |",
@@ -969,6 +986,42 @@ def test_the_order_form_bakes_an_msl5_part(project):
     run(project, snapshot)
     sheet = (project.root / "build" / "fab" / "main" / "order.md").read_text()
     assert "| Bake Components | Yes – D1 C8678 MSL 5 (stock snapshot 2026-10-27) |" in sheet
+
+
+def test_the_order_form_names_thickness_and_colours(project):
+    """Step 1.7: order.md takes the board thickness from thickness_mm and the colours from [order] mask and
+    silkscreen; F-6 passes a thickness of JLCPCB's form and the print JLCPCB puts on the mask."""
+    rows = run(project, thickness(1.0, {"mask": "black"}))
+    assert findings(rows) == []
+    sheet = (project.root / "build" / "fab" / "main" / "order.md").read_text()
+    assert "| PCB Thickness | 1 mm |\n| PCB Color | Black |\n| Silkscreen | White |\n" in sheet
+    f6 = {r["check"]: (r["result"], r["actual"]) for r in rows if r["id"] == "F-6"}
+    assert f6["board thickness JLCPCB makes (FR-4, 2 layers)"] == ("pass", "1 mm (thickness_mm)")
+    assert f6["silkscreen colour JLCPCB prints on the solder mask"] == ("pass", "white on a black mask")
+
+
+def test_the_order_form_of_a_white_mask(project):
+    """Step 1.7: on a white mask JLCPCB prints black – the silkscreen without a key of its own."""
+    rows = run(project, lambda ex, p: ordered(ex, p, {"mask": "white"}))
+    assert findings(rows) == []
+    sheet = (project.root / "build" / "fab" / "main" / "order.md").read_text()
+    assert "| PCB Color | White |\n| Silkscreen | Black |\n" in sheet
+    assert ("pass", "black on a white mask") in {(r["result"], r["actual"]) for r in rows if r["id"] == "F-6"}
+
+
+def test_the_order_form_of_a_bare_board(project):
+    """A board nobody assembles ([release] assembly.sides = [], every part bom: false) gets its order form too, PCB
+    only – the assembly side of the sheet is not asked for."""
+    def bare(ex, p):
+        ordered(ex, p)
+        graph(p, lambda g: [c.update(bom=False) for c in g["graph"]["components"]])
+        f = p.root / "edakit.toml"
+        assert 'sides = ["top"]' in f.read_text()
+        f.write_text(f.read_text().replace('sides = ["top"]', "sides = []"))
+    rows = run(project, bare)
+    assert findings(rows) == []
+    sheet = (project.root / "build" / "fab" / "main" / "order.md").read_text()
+    assert "## PCB Assembly\n\nNone – no part of this board is assembled (PCB only)." in sheet
 
 
 # --- a declared visible side (#61): stage L adds the side's numbers as a row of its own, and warns above a limit

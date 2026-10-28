@@ -62,8 +62,9 @@ assembly preview at JLCPCB.
        snapshot)
   F-3  pick and place: every BOM part exactly once, side and rotation = PCB; sides/SMD as [release] assembly says
   F-5  Gerber set complete; outline and holes = plan (± 0.2 mm); tooling holes in the NPTH file, mask open, no copper
-  F-6  with [order] in the board file: remark <= 200 ASCII characters, mark = placeholder on the silkscreen, Economic
-       with its own tooling holes, no copper near the edge in a tab zone (order_sheet.py)
+  F-6  with [order] in the board file: remark <= 200 ASCII characters, thickness_mm and the colours of mask and
+       silkscreen as JLCPCB's form has them, mark = placeholder on the silkscreen, Economic with its own tooling holes,
+       no copper near the edge in a tab zone (order_sheet.py)
 Last stdout line: JSON list of rows {stage, id, item, check, actual, expected, result}. Exit 0 / 2 / 1.
 
 What the manufacturer builds from, hashed for the sign-offs with scope 'fab' (fab_sha256, FAB_METHOD): every Gerber

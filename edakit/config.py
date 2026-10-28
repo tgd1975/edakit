@@ -44,7 +44,7 @@ PASTE_GAP_MM = 0.4               # [release] assembly paste_gap_mm: SMD pads of 
 MAX_BARE_MM = 5.0                # [copper] max_bare_mm: largest copper-free circle on a poured layer (L-15)
 UNIFORM = {"led": "row"}         # uniform: LEDs side by side point the same way – the plan check without the key
 UNIFORM_WAYS = ("row", "+x", "-x", "+y", "-y")
-THICKNESS_MM = 1.6               # board thickness: the lead protrusion of the mechanical model (pcb plan)
+THICKNESS_MM = 1.6               # board thickness: the order (F-6) and the lead protrusion of the mechanical model
 
 PROJECT_KEYS = ("name", "company", "quantity", "distributors", "lock", "agreements", "graph", "parts", "sim",
                 "sim_plugin", "schematic", "signoff", "artifacts", "reports", "datasheets", "stock", "stock_margin_pct",
@@ -60,8 +60,10 @@ PCBA = ("economic", "standard")  # [release] assembly.pcba: the assembler's clas
 COST_KEYS = ("fees", "budget", "currency", "rates", "shipping", "coupon", "vat_pct", "pcb_price")   # [cost]
 EXTRA_KEYS = ("item", "supplier", "code", "per_set", "spare", "moq", "step", "unit_price", "currency")   # [[extra]]
 STOCK_MAX_AGE_DAYS = 14          # [project] stock_max_age_days: an older stock snapshot is pending (P-4)
-ORDER_KEYS = ("finish", "mark", "remark", "tab_zones", "tab_copper_mm")   # [order] of a board file (F-6)
+ORDER_KEYS = ("finish", "mark", "remark", "tab_zones", "tab_copper_mm", "mask", "silkscreen")   # [order] (F-6)
 MARKS = ("default", "specify", "remove")   # order.mark: JLCPCB's order number anywhere, at the placeholder, none
+MASKS = ("green", "purple", "red", "yellow", "blue", "white", "black")   # order.mask: JLCPCB's solder mask colours
+SILKSCREENS = ("white", "black")   # order.silkscreen: JLCPCB prints white, on a white mask black (silkscreen_on)
 FIRMWARE_KEYS = ("mcu", "out", "gpio")    # [firmware]: the board's firmware contract (edakit firmware), opt-in
 DOCS_KEYS = ("files", "decimal")                     # [docs]: Markdown files with quoted values (edakit docs, G-19)
 
@@ -122,7 +124,7 @@ class Board:
     order: dict | None = None                         # [order]: the order form fields of this board (F-6); None: none
     uniform: dict | None = None                       # kind -> "row" | "+x" | "-x" | "+y" | "-y"; None: UNIFORM
     looks: dict | None = None                         # [looks]: visible ("top" | "bottom"), max_track_m, max_vias
-    thickness_mm: float = THICKNESS_MM                # board thickness: lead protrusion in mech_<board>.json
+    thickness_mm: float = THICKNESS_MM                # board thickness: the order, lead protrusion in mech_<board>.json
     bought: bool = False        # bought = true: on a cable, checked with the graph and the simulation, made by nobody
 
     # --- plan <-> EasyEDA -------------------------------------------------------------------------------------------
@@ -349,6 +351,11 @@ def _copper(name, c):
     return {"max_bare_mm": bare, "min_cover": {k: float(v) for k, v in cover.items()}}
 
 
+def silkscreen_on(mask):
+    """The silkscreen colour JLCPCB prints on a solder mask colour: black on a white mask, white on every other."""
+    return "black" if mask == "white" else "white"
+
+
 def _order(name, o):
     """[order] of a board file, with its defaults; None without the table (no order form, no F-6)."""
     if o is None:
@@ -362,6 +369,10 @@ def _order(name, o):
             raise ConfigError(f"board {name}: order.{key} must be a string")
     if o.get("mark", "default") not in MARKS:
         raise ConfigError(f"board {name}: order.mark must be one of {', '.join(MARKS)}, not {o['mark']!r}")
+    for key, known in (("mask", MASKS), ("silkscreen", SILKSCREENS)):
+        if key in o and o[key] not in known:
+            raise ConfigError(f"board {name}: order.{key} must be one of {', '.join(known)}, not {o[key]!r}")
+    mask = o.get("mask", "green")
     if bad := _number(f"board {name}: order.tab_copper_mm", o.get("tab_copper_mm", 1.0)):
         raise ConfigError(bad[0])
     zones = o.get("tab_zones", [])
@@ -378,7 +389,8 @@ def _order(name, o):
             raise ConfigError(f"{where}: needs from = [x, y] and to = [x, y] (plan mm, two points on the outline)")
         out.append((tuple(map(float, z["from"])), tuple(map(float, z["to"]))))
     return {"finish": o.get("finish", "LeadFree HASL"), "mark": o.get("mark", "default"), "remark": o.get("remark", ""),
-            "tab_zones": out, "tab_copper_mm": float(o.get("tab_copper_mm", 1.0))}
+            "tab_zones": out, "tab_copper_mm": float(o.get("tab_copper_mm", 1.0)),
+            "mask": mask, "silkscreen": o.get("silkscreen", silkscreen_on(mask))}
 
 
 def _board(name, entry, b, file=""):

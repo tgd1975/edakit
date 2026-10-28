@@ -156,7 +156,6 @@ Where it stands:
     next to their host;
   - own footprints and symbols: a part without an LCSC number points into an EasyEDA library;
   - the rule set of EasyEDA's DRC;
-  - the solder mask and silkscreen colours and the board thickness of the order;
   - the position of single designators.
 
   Creating the EasyEDA project and one *Import Changes* stay two clicks by hand until the API allows them.
