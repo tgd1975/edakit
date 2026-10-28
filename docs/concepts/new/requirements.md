@@ -1,8 +1,8 @@
 # Requirements for the circuit
 
-Status 2026-10-28: proposal, all nine decisions taken on 2026-10-28 (table at the end). Nothing of it is built. The
-findings come from reading edakit at `a8b6011` (with PRs #78 and #79) and the repositories of the reference project
-and the Christmas bell.
+Status 2026-10-28: being built; all nine decisions are taken (table at the end), and the state of each step is in
+[implementation-plan.md](implementation-plan.md). The findings come from reading edakit at `a8b6011` (with PRs #78
+and #79) and the repositories of the reference project and the Christmas bell.
 
 ## Goal
 

@@ -1,10 +1,9 @@
 # Project scripts and agents
 
-Status 2026-10-28: being built, step by step after [implementation-plan.md](implementation-plan.md): the entries and
-their check (step 1.2) and the data names with their hashes (step 1.3) are on main. It was checked against edakit
-`a8b6011` (with PRs #78 and #79); edakit had built pieces it builds on: the firmware contract (#70), a stamp on the
-simulation result, the fab hash (#65) and the mechanical model (#62). All decisions are taken: 1–8 and 12 on
-2026-10-28, 9 by #70. The rules that resolve a project's entries into a DAG were tried with a prototype on the
+Status 2026-10-28: being built; the state of each step is in [implementation-plan.md](implementation-plan.md). It was
+checked against edakit `a8b6011` (with PRs #78 and #79); edakit had built pieces it builds on: the firmware contract
+(#70), a stamp on the simulation result, the fab hash (#65) and the mechanical model (#62). All decisions are taken: 1–8
+and 12 on 2026-10-28, 9 by #70. The rules that resolve a project's entries into a DAG were tried with a prototype on the
 reference project and the Christmas bell ([prototypes/project-scripts](prototypes/project-scripts/)).
 
 ## Why
