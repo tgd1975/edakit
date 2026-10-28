@@ -160,8 +160,111 @@ def test_the_requirements_engineer_reads_everything_and_changes_nothing():
 
 
 def test_a_new_project_may_have_a_requirements_file():
-    files = section(ROOT / "skills" / "new-project" / "SKILL.md", "1. Files")
+    files = section(ROOT / "skills" / "new-project" / "SKILL.md", "3. Files")
     assert "hardware/requirements.toml" in files and "optional" in files and "skill requirements" in files
+
+
+# The interview of the setup (concept project-setup): each topic and the keys its answer sets.
+INTERVIEW = {
+    "board": ("[boards.<name>]", "title", "board file"),
+    "boards": ("bought = true",),
+    "variants": ("variants/<v>/edakit.toml",),
+    "assembly": ("[release] assembly", "sides", "pcba", "smd_only"),
+    "order": ("[project] quantity", "[order]", "thickness_mm"),
+    "money": ("[cost]", "budget", "currency"),
+    "purpose": ("purpose", "use", "market", "m-6"),
+    "requirements": ("skill requirements", "[project] requirements"),
+    "firmware": ("[firmware]", "edakit firmware --check"),
+    "documents": ("[docs] files",),
+    "own tools": ("[scripts.<name>]", "[agents.<name>]"),
+}
+
+
+def test_new_project_has_two_ways_and_sets_every_key_from_an_answer():
+    """Step 3.7: one entry point with two ways – new, and moving with the inventory of project-surveyor and
+    requirements-engineer first –, the interview as a form where the tool offers one (AskUserQuestion, up to four
+    questions per call), otherwise one decision round in text, and per topic the keys its answer sets. It writes after
+    the user's OK and ends with a report that lists the project's own skills, deleting none."""
+    path = ROOT / "skills" / "new-project" / "SKILL.md"
+    way = section(path, "0. Which way")
+    assert "**new:**" in way and "**moving:**" in way and "no `edakit.toml`" in way
+    inventory = section(path, "1. Inventory (moving)")
+    assert "**project-surveyor**" in inventory and "**requirements-engineer**" in inventory
+    interview = section(path, "2. Interview")
+    for words in ("one round", "askuserquestion", "up to four questions per call", "decision round in text",
+                  "the inventory's answer", "stays open with its default", "decision log"):
+        assert words in interview, words
+    rows = dict(re.findall(r"^\| ([a-z ]+) \| (.*)$", section(path, "2. Interview", raw=True), re.M))
+    assert set(rows) == set(INTERVIEW), set(rows) ^ set(INTERVIEW)
+    for topic, keys in INTERVIEW.items():
+        missing = [key for key in keys if key not in flat(rows[topic])]
+        assert not missing, (topic, missing)
+    text = flat(path.read_text(encoding="utf-8"))
+    assert "only after the user's ok" in text and "no silent change" in text
+    guard = section(path, "4. Guard rails")
+    for words in ("edakit check", "edakit sim", "edakit firmware --check", "edakit docs", "--no-verify", ".mcp.json",
+                  "edakit@edakit"):
+        assert words in guard, words
+    hand_over = section(path, "5. First run and hand-over")
+    for words in ("skill requirements", "circuit-design", "start skill", "createproject", "edakit scripts"):
+        assert words in hand_over, words
+    report = section(path, "Report")
+    for words in ("open", "skill by skill", "deletes none", "next"):
+        assert words in report, words
+
+
+def units(path):
+    """Paragraphs, list items and table rows of a skill or agent – each says one thing."""
+    out, current = [], []
+    for line in path.read_text(encoding="utf-8").splitlines():
+        if not line.strip() or re.match(r"\s*(\||- |\d+\. )", line):
+            if current:
+                out.append(flat(" ".join(current)))
+            current = [line] if line.strip() else []
+        else:
+            current.append(line)
+    return out + ([flat(" ".join(current))] if current else [])
+
+
+def test_where_the_setup_speaks_of_the_purpose_and_m6_the_review_is_support_not_legal_advice():
+    """The user's wording wherever regulation comes up: the regulatory review is support, not legal advice – nothing
+    in it is legally guaranteed, and it claims no correctness. In the skill: the purpose of the interview and the
+    report; in the agent: the purpose among the interview's answers."""
+    for path, least in ((ROOT / "skills" / "new-project" / "SKILL.md", 2), (ROOT / "agents" / "project-surveyor.md", 1)):
+        speaking = [u for u in units(path) if "purpose" in u and "m-6" in u]
+        assert len(speaking) >= least, path.name
+        for unit in speaking:
+            for words in ("support, not legal advice", "nothing in it is legally guaranteed", "claims no correctness"):
+                assert words in unit, (path.name, words, unit[:80])
+
+
+def test_the_project_surveyor_reads_a_repository_and_changes_nothing():
+    """Step 3.7: the agent has no tool that writes and runs nothing of the project; it returns numbered lists per
+    edakit place – the places of the concept's inventory, each candidate with where it was found, the proposal and its
+    reason, the interview's answers –, then contradictions, what it could not read and a count per place."""
+    path = ROOT / "agents" / "project-surveyor.md"
+    assert {t.strip() for t in frontmatter(path)["tools"].split(",")} == {"Read", "Grep", "Glob", "Bash"}
+    text = flat(path.read_text(encoding="utf-8"))
+    assert "change no files" in text and "run nothing of the project" in text
+    places = section(path, "The places", raw=True)
+    numbered = re.findall(r"^(\d+)\. \*\*(.+?)\*\*(.*?)(?=^\d+\. \*\*|^Each candidate|\Z)", places, re.M | re.S)
+    assert [int(n) for n, _, _ in numbered] == list(range(1, len(numbered) + 1))
+    place = {name.lower(): flat(body) for _, name, body in numbered}
+    for name in ("hardware data", "easyeda project and released runs", "scripts", "agents", "skills",
+                 "documents with values", "decisions", "guard rails", "the interview's answers", "requirements"):
+        assert name in place, name
+    for words in ("`[scripts.<name>]`", "`kind`", "`reads`", "`writes`", "`about`", "the project's business"):
+        assert words in place["scripts"], words
+    for words in ("`[agents.<name>]`", "`signs`", "`replaces`"):
+        assert words in place["agents"], words
+    for words in ("counterpart", "not registered", "the user's decision, skill by skill"):
+        assert words in place["skills"], words
+    assert "`[docs] files`" in place["documents with values"] and "requirements-engineer" in place["requirements"]
+    form = flat(places)
+    assert all(f"**{field}**" in form for field in ("found", "proposal", "reason"))
+    result = section(path, "Result")
+    for words in ("**contradictions**", "**not read**", "**count**"):
+        assert words in result, words
 
 
 def test_circuit_design_reads_pin_functions_and_header_pins():

@@ -1,8 +1,9 @@
 # Project setup
 
-Status 2026-10-28: proposal; nothing of it is built, all six decisions are taken (table at the end), and it is
-step 3.7 of the [implementation plan](implementation-plan.md). The findings come from
-edakit at `f04dee5` and the repositories of the reference project and the Christmas bell.
+Status 2026-10-28: being built as step 3.7 of the [implementation plan](implementation-plan.md), which has its
+state – the skill `new-project` with its two ways and the agent `project-surveyor`; the trial on the reference
+project's move is step 4.4. All six decisions are taken (table at the end). The findings come from edakit at
+`f04dee5` and the repositories of the reference project and the Christmas bell.
 
 ## Goal
 

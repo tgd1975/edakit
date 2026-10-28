@@ -8,7 +8,7 @@ agreements are as important as the scripts.
 | Component | Name | Use |
 |---|---|---|
 | skill | `/edakit:start` | EasyEDA ready, long runs, GUI clicks, crash recovery – before any EasyEDA work |
-| skill | `/edakit:new-project` | set up edakit in a repository |
+| skill | `/edakit:new-project` | set up edakit in a repository – a new project, or one that moves to edakit with hardware files, scripts or agents of its own (then the inventory first): an interview from boards, assembly, order, money and purpose to firmware, documents and the project's own tools, every key from an answer, written after the user's OK (2.7) |
 | skill | `/edakit:requirements` | what the circuit must do, with the user: needs and requirements with their evidence in `hardware/requirements.toml`, asked back in a decision round until vague words are numbers – Claude drafts, the user accepts (3.6) |
 | skill | `/edakit:circuit-design` | from requirements to a graph: blocks, parts, computed values, checks, hints, simulation (chapter 14) |
 | skill | `/edakit:hardware-change` | a change from graph to PCB and docs |
@@ -20,6 +20,7 @@ agreements are as important as the scripts.
 | skill | `/edakit:propose-rule` | a check, hint, block or part fact as a sealed issue to the edakit repository, and its outcome back into the decision (chapter 14.4) |
 | skill | `/edakit:propose-feature` | a feature edakit lacks and a project had to build or work around, as a sealed issue to the edakit repository, and its outcome back into the project (11.6) |
 | agent | `edakit:requirements-engineer` | reads every document of a project for what its circuit must do and returns candidates with their source, contradictions, vague words and requirements without evidence – the first inventory and a second opinion on the requirements file, in its own context; changes nothing (3.6) |
+| agent | `edakit:project-surveyor` | reads a repository that moves to edakit and returns per place – hardware data, EasyEDA project and released runs, scripts, agents, skills, documents with values, decisions, guard rails – candidates with where it found them, a proposal and its reason, the answers the repository gives to the setup's interview, contradictions and what it could not read – the inventory of the skill new-project, in its own context; changes nothing (2.7) |
 | agent | `edakit:part-selector` | finds a part at the project's distributors (a profile each) and writes its parts entry, in its own context (chapter 4.2) |
 | agent | `edakit:easyeda-operator` | runs one long EasyEDA step and returns only the result – keeps the main conversation clean |
 | agent | `edakit:electrical-reviewer` | independent circuit review; its result is the sign-off M-1 |

@@ -26,9 +26,10 @@ reversed, the current it allows, the minimum load of a power bank), every input 
 it, enclosure and what a person touches, what matters to the user (cost, looks, robustness, loudness …).
 
 Either way you settle the MCU or main part, quantity and assembly (JLCPCB SMD, hand-soldered), and **what the board
-is for**: built for oneself, given away or sold, and where – it decides which rules apply (handbook 15). Default what
-you can; ask the rest in **one** decision round (skill decision-round), not one question after the other. The purpose
-goes into the graph:
+is for**: built for oneself, given away or sold, and where – it decides which rules apply (handbook 15). What the
+setup asked already (skill new-project: the graph's `purpose`, `[project] quantity`, `[release] assembly`) stands – a
+change is the user's decision. Default what you can; ask the rest in **one** decision round (skill decision-round),
+not one question after the other. The purpose goes into the graph:
 `"purpose": {"use": "private" | "gift" | "sale", "market": "EU", "notes": "what it is, who uses it"}`.
 
 ## 2. Building blocks first

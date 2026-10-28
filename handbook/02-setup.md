@@ -131,6 +131,25 @@ edakit doctor                         # tool chain ready?
 edakit check && edakit sim            # offline, seconds
 ```
 
+The skill sets the project up from an interview, not from the example's defaults. It asks for the boards – one or
+several, a bought board on a cable (4.5), variants –, who assembles, the order, a budget, the purpose, the
+requirements, firmware that follows the graph, documents that quote values, and the project's own scripts and agents.
+Each answer sets its keys; the skill proposes every file and key with its reason and writes only after your OK. In
+Claude Code the interview is a form with options – up to four questions at a time, your own words for the rest –,
+elsewhere one decision round in text. The purpose – private, a gift or for sale – decides how deep the regulatory
+review M-6 goes (chapter 15); the review is support, not legal advice: nothing in it is legally guaranteed, and it
+claims no correctness.
+
+**Moving a project to edakit.** A repository without edakit.toml but with hardware files, scripts or agents of its
+own – a netlist, parts, a board, gate runs, `.claude/agents/` – takes the same skill. First the agent
+`project-surveyor` makes the inventory, beside the agent `requirements-engineer`: per place – hardware data, the
+EasyEDA project and released runs, scripts, agents, skills, documents with values, decisions, hooks and CI – what it
+found and where, the proposal (a key, an entry of `[scripts]` or `[agents]`, a file) and its reason, the
+contradictions between the project's documents and what it could not read. Its proposals are the interview's answers
+to confirm. The project's files stay where they lie and edakit.toml names them; the project's own skills are listed
+with their edakit counterpart and what they do beyond it – keeping or deleting each is your decision, the setup
+deletes none.
+
 Then open the EasyEDA project once (edakit remembers its UUID and reopens it after an EasyEDA restart) and follow
 chapters 6–8. Daily: start EasyEDA → open the project → work.
 

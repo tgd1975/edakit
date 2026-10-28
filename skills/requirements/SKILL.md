@@ -27,8 +27,9 @@ changes nothing.
 - The project has documents – a README, a circuit description, a decision log, the firmware's requirements, an
   acceptance list: the agent requirements-engineer makes the **inventory** first. Its prompt: "inventory", what the
   user wants (the arguments of this skill), the documents you know of. It returns candidates with the place it found
-  each (`source`), contradictions, vague words and requirements without evidence. A project without documents starts
-  at section 1.
+  each (`source`), contradictions, vague words and requirements without evidence. For a project that moves to edakit
+  the skill new-project has had it made already: start from that one. A project without documents starts at
+  section 1.
 
 ## 1. Ask
 

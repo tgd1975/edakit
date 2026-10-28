@@ -15,7 +15,8 @@ complete; nothing in them is legally guaranteed. Whoever sells or gives away the
 ## 15.1 The purpose decides
 
 `purpose` in the graph (3.1): `{"use": "private" | "gift" | "sale", "market": "EU", "notes": "what it is, who uses
-it"}`. It is part of the circuit hash: a new purpose needs a new M-6.
+it"}`. It is part of the circuit hash: a new purpose needs a new M-6. The skill new-project asks for it when the
+project is set up (2.7), before the first part is chosen.
 
 | `use` | Means | What applies |
 |---|---|---|
