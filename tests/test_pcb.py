@@ -471,7 +471,9 @@ def test_autolayout_writes_back_once_the_positions_stand_still(project, monkeypa
     moving = led_bar_pcb(board, {r: (x - 5, y, rot) for r, (x, y, rot) in AUTO.items()})
     turned = led_bar_pcb(board, {**AUTO, "R2": (40.0, 30.0, 0)})       # the same spots, R2 turned: still moving
     still = led_bar_pcb(board, AUTO)
-    readings = iter([moving, turned, still, still, still])
+    noisy = json.loads(json.dumps(still))                               # as EasyEDA reports it now and then
+    next(c for c in noisy if c["designator"] == "C1")["rotation"] = 90.00000000000001
+    readings = iter([moving, turned, still, noisy, still])
     calls = stub_autolayout(monkeypatch, readings)
     assert pcb.autolayout(cfg, board, None) == 0
     assert calls == ["PCB_Document.autoLayout"] and next(readings, None) is None   # three readings alike, then written

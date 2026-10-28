@@ -1638,9 +1638,9 @@ def autolayout(cfg, board, mcp, timeout_min=20):
     last, stable, t0 = None, 0, time.monotonic()
     while time.monotonic() - t0 < timeout_min * 60:
         time.sleep(10)
-        comps = eda.list_pcb_components(mcp)
-        now = sorted((c.get("designator") or "", round(c["x"], 1), round(c["y"], 1), c["rotation"], c["layer"])
-                     for c in comps)
+        comps = eda.list_pcb_components(mcp)   # rotation to 0.01°: EasyEDA reports -90.00000000000001 now and then
+        now = sorted((c.get("designator") or "", round(c["x"], 1), round(c["y"], 1), round(c["rotation"], 2),
+                      c["layer"]) for c in comps)
         stable = stable + 1 if now == last else 0
         last = now
         print(f"  {(time.monotonic() - t0) / 60:4.1f} min: {'stable' if stable else 'moving'}")
