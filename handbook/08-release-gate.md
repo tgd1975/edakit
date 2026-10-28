@@ -239,8 +239,8 @@ finding its probability and its cost; a deviation without a realistic consequenc
 
 RELEASED only if every stage ran, no check failed, every warning is accepted, every part is signed, every manual check
 of phase `export` is signed – all for the current hashes – and, with `[project] requirements`, every requirement
-`must` has passing evidence and every `should` without it is accepted (8.7). Otherwise NOT RELEASED with the
-reasons. Exit 0 / 2.
+`must` the user has accepted has passing evidence and every accepted `should` without it is accepted like a warning
+(8.7); a draft binds nothing yet. Otherwise NOT RELEASED with the reasons. Exit 0 / 2.
 
 The protocol names every check with its words next to the ID ("L-9 (hole fits the lead)"), and its section 10, "The
 rules behind the findings", gives rule, reason, fix and sources of every check that failed or warned – from the rule
@@ -493,7 +493,8 @@ scripts no longer in `[scripts]`. What the author leaves out of `reads` is not n
 
 With `[project] requirements` (3.6) the gate holds the circuit to what it must do. A file the key names that is
 missing or not valid stops the gate before its first stage (exit 1, no run folder), as it stops `edakit check`. Stage
-G runs G-20 to G-23 on the file (3.3). After the stages, every requirement's evidence is evaluated against this run:
+G runs G-20 to G-23 on the file (3.3); a finding about a draft is information there. After the stages, every
+requirement's evidence is evaluated against this run:
 
 | `verify` | passes when | otherwise |
 |---|---|---|
@@ -502,7 +503,7 @@ G runs G-20 to G-23 on the file (3.3). After the stages, every requirement's evi
 | `accept` | M-4 is signed | open after delivery; the step is on the acceptance list of section 6 (8.5) |
 | `script` | – | not evaluated yet: the gate runs no project scripts so far |
 
-What a requirement without passing evidence does to the release, its binding says:
+What an accepted requirement without passing evidence does to the release, its binding says:
 
 | Binding | Without passing evidence |
 |---|---|
@@ -515,21 +516,29 @@ step that M-4 has not signed yet, or a sign-off of phase `order` or `acceptance`
 requirement "open after the export". A requirement whose evidence includes a project script, with nothing else
 failed, is "not evaluated yet": section 11 and the gate's output show it, and it does not block the release – the gate
 cannot run project scripts yet (8.6), so until it can, nothing but the reader holds such a requirement to its script.
-A draft is evaluated as written, and G-23 warns about it as well; a dropped requirement is listed, not evaluated.
+
+**A draft binds nothing yet** (`status = "draft"`, or no `status`). It is evaluated like any requirement and listed in
+section 11 with its evidence, marked as a draft – `→ draft, not binding yet – no passing evidence` –, but it never
+blocks the release and needs no acceptance in the sign-off file, whatever its binding. What G-20 to G-23 find about it
+is information in stage G (`edakit check` warns about it, 3.6). Errors and blocking start once the user has set
+`status = "accepted"`. A dropped requirement is listed, not evaluated.
 
 **Section 11 "Requirements"** of the protocol lists every requirement with binding and status, each piece of evidence
 with what it found, and the result; the gate's output has it in one line (`requirements: 2 passed, 1 open after the
-export, 1 FAILED`). It follows section 10, so that every other section keeps its number, and a project without the
-key has none. From the tests' led-bar (`tests/test_requirements.py`), offline:
+export, 1 draft`) – a draft counts as a draft, whatever its evidence did. It follows section 10, so that every other
+section keeps its number, and a project without the key has none. From the tests' led-bar
+(`tests/test_requirements.py`), offline:
 
 ```markdown
 - **R-1** must, accepted: With all eight LEDs on, the board draws at most 500 mA from J1 at 4.75 to 5.25 V. → open after the export – does not block the release
   - rows `E-3 * J1 current from the supply` – 12 rows: 12 passed
   - accept: on the USB port of a laptop: all eight LEDs on, the port stays on – after delivery: M-4 not signed yet (section 6)
-- **R-4** must, draft: From power-up until the firmware drives LED_OE low, no LED carries more than 10 µA. → **FAILED** – blocks the release
+- **R-4** must, draft: From power-up until the firmware drives LED_OE low, no LED carries more than 10 µA. → draft, not binding yet – no passing evidence
   - rows `E-3 * D? LED dark` – 48 rows: 48 passed
   - signoff M-1 – not signed for this state (section 6)
 ```
+
+Accepted as it stands, R-4 would block the release until M-1 is signed with a note that names it.
 
 **Signing for a requirement.** A reviewer whose check a requirement names in `verify` – the agent electrical-reviewer
 for `signoff = "M-1"`, regulatory-reviewer for `"M-6"`, pcb-reviewer for `"M-5"` – judges it and names the

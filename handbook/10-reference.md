@@ -244,7 +244,7 @@ status = "accepted"
 | `from` | requirement | a list of where it comes from: needs (`N-2`), decisions (`D-8`), a standard (`USB 2.0: 500 mA`), a sign-off (`M-6`) |
 | `binding` | requirement, required | `must`, `should` or `may` |
 | `verify` | requirement | a list of what tests it, one kind per entry: `{ rows = "…" }` rows of the gate protocol, a pattern over "ID scenario item check" as `accepted_warnings` match them (8.2); `{ signoff = "M-1" }` a manual check, which counts when its `note` names the requirement's ID; `{ script = "…" }` a project script of kind `check` or the id of a `[[release.stages]]` (not evaluated yet); `{ accept = "…" }` a step of the acceptance test, on the list of protocol section 6. `edakit req` shows it as written, the gate evaluates it (8.7) |
-| `status` | both | `draft` (written, not approved – also an entry without `status`), `accepted` (only the user sets it), `dropped`; a value that is written must be one of the three |
+| `status` | both | `draft` (written, not approved – also an entry without `status`), `accepted` (only the user sets it), `dropped`; a value that is written must be one of the three. A draft binds nothing yet: G-20 to G-23 only warn about it, the gate lists it and neither blocks nor asks for an acceptance (8.7); from `accepted` on, the findings are errors and the binding counts |
 | `reason` | both | why; required with `dropped` |
 
 A variant – a project of its own with its own edakit.toml in a folder below the main project – names the main

@@ -74,7 +74,9 @@ Only with [project] requirements (requirements.py, handbook 3.6) – the require
   G-21 every accepted need is in from of a requirement that is not dropped
   G-22 every requirement that is not dropped has evidence (verify)
   G-23 a draft need or requirement is a warning until the user accepts or drops it
-A file named there that is missing or not valid stops edakit check (exit 1) before any check runs.
+A draft never blocks: every finding about one is a warning (Report.drafts), in the gate's stage G information; it is
+an error once the user has accepted the entry. A file named there that is missing or not valid stops edakit check
+(exit 1) before any check runs.
 
 0 Ω bridges (resistors with value_ohm 0 in the parts entry) join their nets: G-4, G-5, G-6, G-10 to G-17 see the
 joined nets as one net under the group's name (the ground net if it is one of them, else the first in the graph) and
@@ -147,6 +149,7 @@ class Report:
     def __init__(self):
         self.errors, self.pending, self.waived = [], [], []
         self.warnings, self.notes = [], []   # a warning the gate wants accepted in the sign-off file; information
+        self.drafts = []   # about a draft of the requirements file: a warning here, in the gate information (3.6)
 
     def error(self, check, msg, waive=None):
         if waive and check in waive:
@@ -158,7 +161,8 @@ class Report:
         return {"errors": [{"check": c, "msg": m} for c, m in self.errors],
                 "pending": [{"check": c, "msg": m} for c, m in self.pending],
                 "waived": [{"check": c, "msg": m, "reason": r} for c, m, r in self.waived],
-                "warnings": [{"check": c, "msg": m} for c, m in self.warnings],
+                "warnings": [{"check": c, "msg": m} for c, m in self.warnings]
+                + [{"check": c, "msg": m, "draft": True} for c, m in self.drafts],
                 "notes": [{"check": c, "msg": m} for c, m in self.notes]}
 
 
@@ -1202,7 +1206,8 @@ def main(cfg, args):
         print(f"WAIVED  {check}  {msg}\n                 reason: {reason}")
     for check, msg in rep.pending:
         print(f"PENDING {check}  {msg}")
-    for check, msg in rep.warnings:
+    warnings = rep.warnings + rep.drafts   # a finding about a draft only warns: a draft never blocks (3.6)
+    for check, msg in warnings:
         print(f"WARNING {check}  {msg}")
     for check, msg in rep.notes:
         print(f"NOTE    {check}  {msg}")
@@ -1222,7 +1227,7 @@ def main(cfg, args):
     hints = rules.open_hints(d, cfg, rules.load_sim(cfg))
     print(f"{len(d.comps)} components, {len(d.nets)} nets, {len(d.parts)} parts entries; "
           f"{len(rep.errors)} errors, {len(rep.waived)} waived, {len(rep.pending)} open sign-offs"
-          + (f", {len(rep.warnings)} warnings" if rep.warnings else "")
+          + (f", {len(warnings)} warnings" if warnings else "")
           + (f"; requirements: {requirements.counts(entries)}" if cfg.requirements else "")
           + (f"; design hints open: {', '.join(hints)} (edakit hints)" if hints else ""))
     if args.json:

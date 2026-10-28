@@ -25,11 +25,12 @@ def rewrite(project, old, new):
 
 
 def found(project):
-    """(errors, warnings) of G-20 to G-23 in the example's edakit check, each as (ID, message)."""
+    """(errors, warnings) of G-20 to G-23 in the example's edakit check, each as (ID, message) – the warnings as edakit
+    check prints them, the findings about a draft included."""
     cfg = project.config()
     rep = checks.run(Design.from_config(cfg), cfg)
     mine = lambda items: [(c, m) for c, m in items if c in REQUIREMENT_CHECKS]   # noqa: E731
-    return mine(rep.errors), mine(rep.warnings)
+    return mine(rep.errors), mine(rep.warnings + rep.drafts)
 
 
 def check(project, capsys):
@@ -69,6 +70,7 @@ def test_the_example_is_clean_but_for_its_draft(project):
 ])
 def test_g20_every_reference_resolves(project, old, new, message):
     with_requirements(project)
+    rewrite(project, 'status = "draft"', 'status = "accepted"')                 # R-4: a draft only warns
     rewrite(project, old, new)
     errors, _ = found(project)
     assert errors == [("G-20", message)]
@@ -171,6 +173,48 @@ def test_edakit_check_reports_and_explains_them(project, capsys):
     assert code == 1
     assert "ERROR   G-21  N-2: accepted, but no requirement names it in from" in out
     assert "G-21 (accepted need has a requirement): " in out.split("What the failed checks are about")[1]
+
+
+DRAFT = " (draft: an error once accepted)"
+
+
+@pytest.mark.parametrize("old, new, finding", [
+    # G-22: a draft without evidence yet – the file is unfinished, and the pre-commit hook lets it pass
+    ('verify = [{ rows = "E-3 * D? LED dark" }, { signoff = "M-1" }]\n', "",
+     "G-22  R-4: no evidence – verify names nothing that tests it"),
+    # G-20: a draft's reference that does not resolve, in verify and in from
+    ('{ signoff = "M-1" }', '{ signoff = "M-7" }',
+     "G-20  R-4: verify signoff M-7 – no manual check M-7 in hardware/signoff.json (M-1, M-6, M-5, M-2, M-4)"),
+    ('from = ["N-3"]', 'from = ["N-3", "N-9"]', "G-20  R-4: from N-9 – not in the requirements file"),
+])
+def test_a_finding_about_a_draft_only_warns(project, capsys, old, new, finding):
+    """Decided 2026-10-28: a draft never blocks. What is an error for an accepted requirement is a warning while it is
+    a draft – edakit check exits 0. Once the user accepts it, it is an error."""
+    with_requirements(project)
+    rewrite(project, old, new)
+    code, out, _ = check(project, capsys)
+    assert code == 0 and f"WARNING {finding}{DRAFT}\n" in out and "ERROR" not in out
+    assert "WARNING G-23  R-4: a draft" in out
+    rewrite(project, 'status = "draft"', 'status = "accepted"')
+    code, out, _ = check(project, capsys)
+    assert code == 1 and f"ERROR   {finding}\n" in out and "G-23" not in out
+
+
+def test_findings_about_a_draft_are_information_in_the_gate(project):
+    """In the gate's stage G a finding about a draft is information: it needs no acceptance and fails nothing – a
+    draft's reference to a dropped need included. graph_checks.json keeps them as edakit check reports them."""
+    with_requirements(project)
+    rewrite(project, '{ signoff = "M-1" }', '{ signoff = "M-7" }')                 # R-4, a draft
+    rewrite(project, 'from = ["N-3"]', 'from = ["N-3", "N-4"]')
+    cfg = project.config()
+    rows, raw = gate.stage_graph(cfg, Design.from_config(cfg))
+    mine = [(r["id"], r["result"], r["check"].split(" – ")[0]) for r in rows
+            if r["id"] in REQUIREMENT_CHECKS and r["result"] != "pass"]
+    assert mine == [("G-20", "info", "R-4: from N-4"), ("G-20", "info", "R-4: verify signoff M-7"),
+                    ("G-23", "info", "R-4: a draft")]
+    assert [(w["check"], w["draft"]) for w in raw["warnings"] if w["check"] in REQUIREMENT_CHECKS] == [
+        ("G-20", True), ("G-20", True), ("G-23", True)]
+    assert gate.decide(rows, [], {"manual": [], "accepted_warnings": []}, ALL, gate.STAGES) == ("RELEASED", [])
 
 
 def test_a_broken_or_missing_file_stops_check_and_gate(project, capsys, monkeypatch):
@@ -336,6 +380,27 @@ def test_a_dropped_requirement_is_listed_not_evaluated(tmp_path):
     assert requirements.acceptance(results) == []
 
 
+@pytest.mark.parametrize("binding, state", [("must", "fail"), ("should", "warn")])
+def test_a_draft_never_blocks_the_release(tmp_path, binding, state):
+    """Decided 2026-10-28: a draft is evaluated and listed, but its binding counts only once the user accepts it – no
+    reason against the release, no acceptance needed."""
+    text = requirement(binding, ("rows", "E-3 * J1 *")).replace('status = "accepted"', 'status = "draft"')
+    results, signoff = evaluate(tmp_path, text, [row("E-3", "current from the supply", "fail")])
+    assert states(results) == [("R-1", state, ["fail"])]                       # its evidence as evaluated
+    assert requirements.reasons(results, signoff) == []
+    assert gate.decide(rows("pass"), [], signoff, ALL, gate.STAGES, results) == ("RELEASED", [])
+    assert requirements.section(results, signoff, ["r.toml"])[1:] == [
+        f"- **R-1** {binding}, draft: t → draft, not binding yet – no passing evidence",
+        "  - rows `E-3 * J1 *` – 1 row: 1 FAILED"]
+    assert requirements.summary(results) == "requirements: 1 draft (section 11 of the protocol)"
+
+
+def test_a_draft_with_passing_evidence_says_so(tmp_path):
+    text = requirement("must", ("rows", "E-3 * J1 *")).replace('status = "accepted"', 'status = "draft"')
+    results, signoff = evaluate(tmp_path, text, [row("E-3", "current from the supply", "pass")])
+    assert requirements.verdict(results[0], signoff) == "draft, not binding yet – passed"
+
+
 # --- the gate run: section 11, the acceptance list, the decision ------------------------------------------------------
 
 def sign(project, *manual):
@@ -367,17 +432,17 @@ def test_the_protocol_lists_each_requirement_with_its_evidence(project, monkeypa
     assert "- **R-2** must, accepted: A supply plugged into J1 the wrong way round reaches only the anode of D1. → passed\n" \
            "  - rows `G-10 *` – 1 row: 1 passed\n" in eleven
     assert "  - rows `E-3 * D? LED current *` – 48 rows: 48 passed\n" in eleven
+    # R-4 is a draft: listed with its evidence as evaluated, it binds nothing yet – no reason, no acceptance (G-23)
     assert ("- **R-4** must, draft: From power-up until the firmware drives LED_OE low, no LED carries more than "
-            "10 µA. → **FAILED** – blocks the release\n"
+            "10 µA. → draft, not binding yet – no passing evidence\n"
             "  - rows `E-3 * D? LED dark` – 48 rows: 48 passed\n"
             "  - signoff M-1 – not signed for this state (section 6)\n") in eleven
     reasons = decision(text)
-    assert "- 1 requirement(s) must without passing evidence: R-4 (section 11)" in reasons
-    assert "- 1 warning(s) not accepted (section 3)" in reasons                     # G-23: R-4 is a draft
-    assert "`G-23 R-4: a draft" in section(text, 3)
+    assert "requirement(s)" not in reasons and "warning(s) not accepted" not in reasons
+    assert "G-23" not in section(text, 3)
     assert "| SHA-256 circuit | `" in text and "` (graph, parts database, simulation config, requirements) |" in text
     out = capsys.readouterr().out
-    assert "requirements: 2 passed, 1 open after the export, 1 FAILED (section 11 of the protocol)" in out
+    assert "requirements: 2 passed, 1 open after the export, 1 draft (section 11 of the protocol)" in out
 
 
 def test_a_requirement_passes_with_its_sign_off(project, monkeypatch):
@@ -484,5 +549,6 @@ def test_with_the_key_the_requirement_checks_count_as_executed(project, monkeypa
     assert checks.executed(cfg) == checks.EXECUTED + list(REQUIREMENT_CHECKS)
     one = section(gate_run(project, monkeypatch), 1)
     assert "G-22 (requirement has evidence)" in one
-    # 16 as before and G-20 to G-23 (a check that only warns counts as passed, as P-4 does); G-23 warns about R-4
-    assert re.search(r"\| G Graph \| [^|]+ \| 20 \| 0 \| 1 \| 3 \| 0 \| passed with reservations \|", one)
+    # 16 as before and G-20 to G-23 (a check that only warns counts as passed, as P-4 does); G-23 about the draft R-4
+    # is information in the gate, no warning to accept
+    assert re.search(r"\| G Graph \| [^|]+ \| 20 \| 0 \| 0 \| 3 \| 0 \| passed \|", one)

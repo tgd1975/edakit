@@ -25,7 +25,8 @@ RELEASED only if
     that names its parts ({designator: LCSC}) counts only while they are the same parts.
   - with [project] requirements (requirements.py): every requirement 'must' has passing evidence in this run, and
     every 'should' without it is accepted like a warning – section 11 of the protocol lists them all, section 6 the
-    acceptance steps. The requirements files count in the circuit hash byte for byte, after its other files. A
+    acceptance steps. A draft binds nothing yet: it never blocks and needs no acceptance, the findings about it are
+    information. The requirements files count in the circuit hash byte for byte, after its other files. A
     requirements file that is missing or not valid stops the gate before its first stage.
 [release] hash_ignore leaves documentation keys (notes, sources, verified, …) out of the circuit hash: graph and parts
 entries are hashed as canonical JSON without them. Turning it on is recorded in `rehashed` of the sign-off file when
@@ -322,7 +323,7 @@ def stage_graph(cfg, design):
         rows.append({"stage": stage_of(c), "id": c, "item": "", "check": m, "result": "pending"})
     for c, m in rep.warnings:
         rows.append({"stage": stage_of(c), "id": c, "item": "", "check": m, "result": "warn"})
-    for c, m in rep.notes:
+    for c, m in rep.notes + rep.drafts:   # a finding about a draft requirement: never blocks, needs no acceptance
         rows.append({"stage": stage_of(c), "id": c, "item": "", "check": m, "result": "info"})
     hit = {r["id"] for r in rows if r["result"] in ("fail", "pending")}
     rows += [{"stage": stage_of(c), "id": c, "item": "", "check": rules.title(c), "result": "pass"}
