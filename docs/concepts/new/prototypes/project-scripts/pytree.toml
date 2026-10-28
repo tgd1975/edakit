@@ -1,0 +1,75 @@
+# pytree – edakit.toml wie im Konzept (Abschnitt Beispiel pytree)
+[project]
+name      = "pytree"
+company   = "Der schlafende Baum"
+quantity  = 5
+graph     = "hardware/graph/hardware_graph.json"
+parts     = "hardware/parts"
+sim       = "hardware/sim.json"
+signoff   = "hardware/release/signoff.json"
+reports   = "hardware/release/reports"
+
+[boards.tree]
+file = ["hardware/boards/tree.toml", "hardware/boards/tree_geometrie.toml"]
+art_assumed = ["hardware/art/baum_vorne.svg", "hardware/art/baum_hinten.svg"]   # nur Test: tree.toml gibt es noch nicht
+
+[release]
+assembly = { sides = ["top"], smd_only = true }
+
+[scripts.platine]
+kind   = "input"
+cmd    = ["uv", "run", "hardware/easyeda/pcb_layout.py", "platine"]
+about  = "Kontur, Bohrungen, LED-Plätze und feste Bahnen sind berechnet (feste Bahnen: D-48)"
+reads  = ["hardware/easyeda/bahnen_hinten.py", "versionen.toml"]
+writes = ["hardware/boards/tree_geometrie.toml"]
+
+[scripts.baumgrafik]
+kind   = "input"
+cmd    = ["uv", "run", "hardware/easyeda/baum_druck.py", "svg"]
+about  = "Baumgrafik im Bestückungsdruck, frei von Pads und Vias (KONZEPT_bestueckungsdruck.md)"
+reads  = ["hardware/easyeda/pcb_layout.py", "footprints:tree", "routing:tree"]
+writes = ["hardware/art/baum_vorne.svg", "hardware/art/baum_hinten.svg"]
+
+[scripts.led-footprints]
+kind   = "easyeda"
+cmd    = ["uv", "run", "hardware/easyeda/led_footprints.py", "apply"]
+about  = "Gleicher Polaritätsdruck auf allen LED-Footprints (Vorgabe 2026-10-25)"
+reads  = ["hardware/easyeda/pcb_layout.py"]
+writes = ["footprints:tree"]
+
+[scripts.firmware]
+kind   = "derive"
+cmd    = ["uv", "run", "hardware/graph/export_firmware.py"]
+about  = "Pins, Treiberkette, Kanäle und LED-Plätze für die Firmware"
+reads  = ["graph", "hardware/easyeda/pcb_layout.py"]
+writes = ["firmware/board.py"]
+check  = ["uv", "run", "hardware/graph/export_firmware.py", "--check"]
+
+[scripts.sockel]
+kind   = "derive"
+cmd    = ["uv", "run", "hardware/sockel/sockel.py"]
+about  = "Druckmodell des Hügels, passend zur Platine (D-36)"
+reads  = ["hardware/sockel/huegel.py", "hardware/easyeda/pcb_layout.py", "footprints:tree"]
+writes = ["hardware/sockel/stl/"]
+
+[scripts.review]
+kind   = "derive"
+cmd    = ["uv", "run", "hardware/review/review_paket.py"]
+about  = "Review-Paket für Schaltungsexperten aus dem letzten freigegebenen Lauf"
+reads  = ["graph", "parts", "release:tree"]
+writes = ["build/review/"]
+
+[scripts.mechanik]
+kind     = "check"
+id       = "K"
+cmd      = ["uv", "run", "hardware/sockel/sockel.py", "--pruefen"]
+about    = "Der Baum passt in den Sockel: Schlitz, Hügel, Kabel, Füße (D-36)"
+phase    = "export"
+advisory = true
+
+[scripts.abnahme]
+kind  = "check"
+id    = "A"
+cmd   = ["uv", "run", "simulator/pico/pruefstand.py", "mitlesen"]
+about = "Kamera-Test je Baum nach der Lieferung: jede LED an ihrem Platz, Kette in Reihenfolge"
+phase = "acceptance"

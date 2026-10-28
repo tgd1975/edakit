@@ -1,0 +1,31 @@
+# edakit project file of the Christmas bell, variant ESP32 – reference: edakit/handbook/10-reference.md
+#
+# Like the variant SMD (../smd/edakit.toml), with a LILYGO T-Display V1.1 (ESP32, 1.14 inch TFT) instead of the Nano
+# (D-13): 3.3 V logic, the buttons switch 3V3, yellow-green instead of emerald-green LEDs (D-14). JLCPCB's Economic
+# assembly places every SMD part; the module's two 1x12 female headers are hand-soldered. Board 85 x 56 mm like the
+# main board; its own board "esp32" in the EasyEDA project christmas-bell. The module's symbol, footprint and device
+# are in the project library (hardware/lib/tdisplay_device.py).
+
+[project]
+name = "christmas-bell"           # the EasyEDA project of the main board; this variant is its board "esp32"
+graph = "hardware/graph.json"
+parts = "hardware/parts"
+artifacts = "build/edakit"
+reports = "build/release"
+company = "Christmas bell"
+quantity = 5
+
+[boards.esp32]
+title = "Christmas bell ESP32"
+template = "generated_esp32"
+schematic = "layout_esp32"
+pcb = "esp32"
+
+[release]
+assembly = { sides = ["top"], smd_only = true }
+
+[scripts.tdisplay]
+kind   = "easyeda"
+cmd    = ["python", "hardware/lib/tdisplay_device.py"]
+about  = "Symbol und Footprint des LILYGO T-Display, umgebaut aus dem Ersatzteil C18722937 (D-13)"
+writes = ["footprints:esp32"]

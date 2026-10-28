@@ -1,0 +1,30 @@
+# edakit project file of the Christmas bell – reference: edakit/handbook/10-reference.md
+#
+# Carrier board for a plugged-in Arduino Nano: servo connector, buffer capacitor, five 5 mm LEDs, two buttons.
+# Two layers, 85 x 56 mm like the Fritzing board. JLCPCB assembles only the SMD parts (resistors, buttons); the Nano's
+# female headers, the LEDs, the capacitor and the servo header are hand-soldered (docs/decisions.md D-1).
+
+[project]
+name = "christmas-bell"           # EasyEDA project, created by hand once
+graph = "hardware/graph.json"
+parts = "hardware/parts"
+artifacts = "build/edakit"
+reports = "build/release"
+company = "Christmas bell"
+quantity = 5
+
+[boards.main]
+title = "Christmas bell"
+template = "generated_main"
+schematic = "layout_main"
+pcb = "main"
+
+[release]
+assembly = { sides = ["top"], smd_only = true }
+
+[scripts.kunst]
+kind   = "input"
+cmd    = ["python", "hardware/art/make_art.py"]
+about  = "Glocke, Gruß, Stern und Schneeflocke als Flächen für den Bestückungsdruck"
+writes = ["hardware/art/bell.svg", "hardware/art/greeting.svg", "hardware/art/small_bell.svg",
+          "hardware/art/chevron.svg", "hardware/art/star.svg", "hardware/art/snowflake.svg"]
