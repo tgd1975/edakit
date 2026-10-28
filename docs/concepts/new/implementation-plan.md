@@ -1,8 +1,9 @@
 # Implementation plan: requirements, design as text, project scripts
 
-Status 2026-10-28: plan, no step started. It builds the three concepts of this folder after the user took their
-decisions on 2026-10-28 (e5caf42, 301fd90): [requirements.md](requirements.md), [design-as-text.md](design-as-text.md)
-and [project-scripts.md](project-scripts.md). Each step starts when the user asks for it.
+Status 2026-10-28: plan; 1.1 is done, 1.2 and 1.5 are in progress. It builds the three concepts of this folder after
+the user took their decisions on 2026-10-28 (e5caf42, 301fd90): [requirements.md](requirements.md),
+[design-as-text.md](design-as-text.md) and [project-scripts.md](project-scripts.md). Each step starts when the user
+asks for it.
 
 ## Ground rules
 
@@ -23,11 +24,11 @@ and [project-scripts.md](project-scripts.md). Each step starts when the user ask
 
 | Step | What | Concept, decision | Size | EasyEDA | Waits for | State |
 | --- | --- | --- | --- | --- | --- | --- |
-| 1.1 | README: "circuit design as code", with "Status and limits" | design-as-text 1, 2 | S | no | – | open |
-| 1.2 | Read `[scripts.*]` and check that they resolve into a DAG | project-scripts block 1, decision 1 | M | no | – | open |
+| 1.1 | README: "circuit design as code", with "Status and limits" | design-as-text 1, 2 | S | no | – | done (ef6b2aa) |
+| 1.2 | Read `[scripts.*]` and check that they resolve into a DAG | project-scripts block 1, decision 1 | M | no | – | in progress, branch `step-1.2-scripts` |
 | 1.3 | Names for edakit's data, each with a hash | project-scripts block 2 | S | no | 1.2 | open |
 | 1.4 | Stamps in `hardware/scripts.lock`; `edakit scripts` | project-scripts block 3, decision 2 | M | no | 1.3 | open |
-| 1.5 | Requirements: format, parser, `edakit req` | requirements order 1, decisions 1–3 | M | no | – | open |
+| 1.5 | Requirements: format, parser, `edakit req` | requirements order 1, decisions 1–3 | M | no | – | in progress, branch `step-1.5-requirements` |
 | 1.6 | Requirements: checks, protocol section, `accept` lines, circuit hash | requirements order 2, decisions 4, 6, 8 | M | no | 1.5 | open |
 | 1.7 | `[order]`: mask and print colour, thickness from `thickness_mm` | design-as-text, smaller findings | S | no | – | open |
 | 1.8 | The footprint geometry in the repository | project-scripts block 5, decision 5 | S | no | the bell's order | open |
@@ -104,8 +105,9 @@ in EasyEDA. Each later step removes its line. Documentation only, so it may go t
 **1.2 Script entries.** `edakit/config.py` reads `[scripts.<name>]` with the fields of the concept; a new module
 resolves them together with edakit's fixed steps and reports R1–R9 in `edakit check`. `[[release.stages]]` and
 `sim_plugin` count as the kinds `check` and `sim`, and the old keys keep working. Tests: one fault per rule, as the
-concept's prototype did with 28 copies. The prototype lives outside the repository; its rules and cases become
-`tests/test_scripts.py`.
+concept's prototype did with 28 copies. The prototype is kept in
+[prototypes/project-scripts](prototypes/project-scripts/); its README names what the decisions changed since.
+Its rules and cases become `tests/test_scripts.py`.
 
 **1.3 Data names.** `graph`, `parts`, `sim`, `board:<b>`, `footprints:<b>`, `routing:<b>`, `mech:<b>`, `gerber:<b>`,
 `release` and `firmware`, each with its hash; `gerber:<b>` takes `fab_layers` of the fab hash. To settle on the way:
