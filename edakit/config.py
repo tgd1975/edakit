@@ -3,6 +3,7 @@
 edakit.toml is the table of contents: the project, its boards with their EasyEDA documents, where the files are, and
 the release settings. What one role decides lives in a file of its own, with one owner and one hash (handbook 10.1):
 
+    hardware/requirements.toml    what the circuit must do: needs, requirements            the user          –
     hardware/graph.json           circuit, purpose, hand-over, ground net, check settings  circuit designer  circuit
     hardware/parts/, sim.json     parts database, simulation scenarios                     circuit designer  circuit
     hardware/schematic.toml       arrangement of the schematic: blocks, notes, pin table   circuit designer  –
@@ -47,7 +48,7 @@ THICKNESS_MM = 1.6               # board thickness: the lead protrusion of the m
 
 PROJECT_KEYS = ("name", "company", "quantity", "distributors", "lock", "agreements", "graph", "parts", "sim",
                 "sim_plugin", "schematic", "signoff", "artifacts", "reports", "datasheets", "stock", "stock_margin_pct",
-                "stock_max_age_days", "spare_pct")
+                "stock_max_age_days", "spare_pct", "requirements")
 BOARD_KEYS = ("title", "template", "schematic", "pcb", "file")            # [boards.<name>] in edakit.toml
 BOARD_FILE_KEYS = ("revision", "view", "outline", "holes", "tooling", "place", "near", "near_mm", "edge_mm", "edge_ok",
                    "on_headers", "header_keep_mm", "silk_overlap_mm", "park", "routing", "pours", "pour_regions",
@@ -177,6 +178,9 @@ class Config:
     lock: str
     agreements: bool            # the working agreements of handbook 11.4 at session start (edakit/agreements.py)
     raw: dict
+    # [project] requirements: the requirements files `edakit req` reads, in the order named (a variant: the main
+    # project's file, then its own); [] without the key – no file, no change
+    requirements: list = field(default_factory=list)
     stock: Path | None = None           # the stock snapshot of `edakit stock` (P-4); not in the circuit hash
     stock_margin_pct: float = 0.0       # P-4 warns below need x (1 + margin / 100)
     stock_max_age_days: int = STOCK_MAX_AGE_DAYS
@@ -617,6 +621,24 @@ def _scripts(scripts):
     return out, problems
 
 
+def _requirements(p, root):
+    """[project] requirements: the requirements file of `edakit req` – a path, or a list of paths: a variant names the
+    main project's file and its own. Relative to edakit.toml. Returns (paths, problems); without the key no file."""
+    value = p.get("requirements", [])
+    names = [value] if isinstance(value, str) else value
+    if not isinstance(names, list) or not all(isinstance(n, str) and n.strip() for n in names):
+        return [], ['[project] requirements: a path or a list of paths, e.g. "hardware/requirements.toml"; a variant '
+                    'names the main project\'s file and its own: ["../../hardware/requirements.toml", '
+                    '"hardware/requirements.toml"]']
+    paths = [Path(n) if Path(n).is_absolute() else root / n for n in names]
+    seen, problems = set(), []
+    for name, path in zip(names, paths):
+        if path.resolve() in seen:
+            problems.append(f"[project] requirements: {name} named twice")
+        seen.add(path.resolve())
+    return paths, problems
+
+
 def find_config(start=None) -> Path:
     env = os.environ.get("EDAKIT_CONFIG")
     if env:
@@ -652,6 +674,8 @@ def load(path=None) -> Config:
     problems += _unknown("[firmware]", raw.get("firmware", {}), FIRMWARE_KEYS)
     if not isinstance(p.get("agreements", True), bool):
         problems.append("[project] agreements: true or false")
+    requirements, bad = _requirements(p, root)
+    problems += bad
     problems += _unknown("[docs]", raw.get("docs", {}), DOCS_KEYS)
     doc_files = raw.get("docs", {}).get("files", [])
     if not isinstance(doc_files, list) or not all(isinstance(f, str) for f in doc_files):
@@ -707,6 +731,7 @@ def load(path=None) -> Config:
         lock=p.get("lock", "auto"),
         agreements=p.get("agreements", True),
         raw=raw,
+        requirements=requirements,
         stock=rel("stock", "hardware/stock.json"),
         stock_margin_pct=float(p.get("stock_margin_pct", 0)),
         stock_max_age_days=int(p.get("stock_max_age_days", STOCK_MAX_AGE_DAYS)),

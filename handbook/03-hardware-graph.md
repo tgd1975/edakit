@@ -159,3 +159,31 @@ channel order needs the numbers.
 
 The contract has no firmware format. Turning it into source – a MicroPython module, a C header – is the project's own
 script, which reads the JSON and runs after `edakit firmware` (MicroPython can also read the JSON as it is).
+
+## 3.6 Requirements
+
+The graph says what the circuit is, the decision log why it is so; the requirements file says what it must do. It is
+opt-in: `[project] requirements` in edakit.toml names it, usually `hardware/requirements.toml` (format: 10.4). Two
+levels, along the gap between a wish and a circuit:
+
+| Level | ID | Content | Example (the tests' led-bar) |
+|---|---|---|---|
+| need | N-… | what someone wants, in their words: who, in which situation, what for | N-1 "The bar runs from a USB charger or from the USB port of a laptop." |
+| requirement | R-… | one testable sentence with quantity, limit and condition, bound as `must`, `should` or `may` | R-1 "With all eight LEDs on, the board draws at most 500 mA from J1 at 4.75 to 5.25 V." |
+
+`from` says where a requirement comes from: a need, a decision (D-8), a standard (USB 2.0: 500 mA), a sign-off
+(M-6). `verify` says what tests it: rows of the gate protocol, a manual check, a project script, a step of the
+acceptance test. The file covers the circuit only – what the boards must do and withstand; what firmware and mechanics
+must do stays in the project's own documents. IDs are stable, as in the rule catalog: a requirement that no longer
+holds stays in the file with `status = "dropped"` and its `reason`. Claude drafts (`status = "draft"`), only the user
+sets `accepted`; a change to an accepted requirement is a decision in the decision log.
+
+```bash
+edakit req        # needs and requirements: status, binding, and the evidence as written in verify
+edakit req R-1    # one chain: where R-1 comes from, the requirement, what verifies it
+edakit req N-1    # the requirements a need leads to, with their evidence
+```
+
+`edakit req` shows the evidence, it does not evaluate it: no check and no gate stage reads the file yet, and it is in
+no hash. A variant – a project of its own in a folder below the main project – reads the main project's file and its
+own; an ID stands in only one of them (10.4).

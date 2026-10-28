@@ -9,6 +9,7 @@ are. What one role decides lives in a file of its own, with one owner and one ha
 | File | Content | Written by | Hash |
 |---|---|---|---|
 | `edakit.toml` | project, boards with their EasyEDA documents, where the files are, release settings, the project's scripts | new-project, the user | – |
+| `hardware/requirements.toml` | what the circuit must do: needs and requirements with their evidence (3.6, 10.4), with `[project] requirements` | Claude drafts, only the user accepts | – |
 | `hardware/graph.json` | the circuit with its purpose, the hand-over to the layout, the ground net and the check settings (3.1) | circuit designer | circuit |
 | `hardware/parts/`, `hardware/sim.json` | parts database (4), simulation scenarios (5) | part-selector, circuit designer | circuit |
 | `hardware/schematic.toml` | arrangement of the schematic: blocks, notes, pin table (10.3) | circuit designer | – |
@@ -37,6 +38,7 @@ board, the schematic or the checks (the earlier one-file form) is refused with a
 | `sim_plugin` | – | optional Python file with `MODELS` and `checks` (5.1) |
 | `schematic` | `hardware/schematic.toml` | the schematic file (10.3) |
 | `signoff` | `hardware/signoff.json` | the sign-off file (8.2) |
+| `requirements` | – | the requirements file of `edakit req` (3.6, 10.4), e.g. `"hardware/requirements.toml"`; a variant names the main project's file and its own, `["../../hardware/requirements.toml", "hardware/requirements.toml"]`. A file named here must exist, else `edakit req` stops. Without the key no file is read and nothing changes |
 | `artifacts` | `build/edakit` | caches, previews, routing files, exports, Gerber exports (not versioned) |
 | `reports` | `build/release` | gate runs |
 | `datasheets` | `<artifacts>/datasheets` | the datasheets `edakit part fetch` keeps, `<key>.pdf` and `<key>.json` (4.6); a folder in the repository versions them |
@@ -201,7 +203,48 @@ stand one below the other), `[layout.notes]` ({block title = [lines]}), `[layout
 the drawing explains the circuit, it is not the circuit. Without the file `edakit schematic draw` arranges the schematic
 by itself (6.5).
 
-## 10.4 Commands
+## 10.4 The requirements file
+
+`hardware/requirements.toml`, named in `[project] requirements`: what the circuit must do (3.6) – only the circuit,
+what firmware and mechanics must do stays in the project's own documents. `edakit req` reads it; it is in no hash. A
+key edakit does not know is an error, as in edakit.toml. From the example of the tests
+([tests/test_requirements.py](../tests/test_requirements.py), for the circuit of led-bar):
+
+```toml
+[[need]]
+id = "N-1"
+text = "The bar runs from a USB charger or from the USB port of a laptop."
+who = "whoever uses the bar"
+source = "README.md, sim.json J1"
+status = "accepted"
+
+[[requirement]]
+id = "R-1"
+text = "With all eight LEDs on, the board draws at most 500 mA from J1 at 4.75 to 5.25 V."
+from = ["N-1", "USB 2.0: 500 mA per port"]
+binding = "must"
+verify = [{ rows = "E-3 * J1 current from the supply" },
+          { accept = "on the USB port of a laptop: all eight LEDs on, the port stays on" }]
+status = "accepted"
+```
+
+| Key | In | Meaning |
+|---|---|---|
+| `id` | both, required | `N-<n>` in a `[[need]]`, `R-<n>` in a `[[requirement]]`, without a leading zero; unique across the files of the project, a variant's own included; stable – a dropped entry keeps its number |
+| `text` | both, required | a need in the words of those who want it; a requirement as one testable sentence: quantity with unit, limit, condition |
+| `who` | need | who wants it |
+| `source` | need | where it was found: a document, a decision |
+| `from` | requirement | a list of where it comes from: needs (`N-2`), decisions (`D-8`), a standard (`USB 2.0: 500 mA`), a sign-off (`M-6`) |
+| `binding` | requirement, required | `must`, `should` or `may` |
+| `verify` | requirement | a list of what tests it, one kind per entry: `{ rows = "…" }` rows of the gate protocol, a pattern over "ID scenario item check" as `accepted_warnings` match them (8.2); `{ signoff = "M-1" }` a manual check; `{ script = "…" }` a project script; `{ accept = "…" }` a step of the acceptance test. Whether it passes is not evaluated – `edakit req` shows it as written |
+| `status` | both, required | `draft` (written, not approved), `accepted` (only the user sets it), `dropped` |
+| `reason` | both | why; required with `dropped` |
+
+A variant – a project of its own with its own edakit.toml in a folder below the main project – names the main
+project's file and its own: `requirements = ["../../hardware/requirements.toml", "hardware/requirements.toml"]`.
+`edakit req` lists both, in that order; an ID stands in only one of them.
+
+## 10.5 Commands
 
 All commands: `--config`, `-v` (MCP traffic). Exit codes: 0 ok, 2 findings, 1 error; 3 from `edakit lock` (another
 session holds EasyEDA) and from `route all|drc` and `silk apply|check` when the DRC's only item is EasyEDA waiting
@@ -229,6 +272,7 @@ Claude Code: `edakit … 2>&1 | cat`. The long commands – `route all`, `gate`,
 | `edakit sim [--json F] [--keep DIR]` | – | graph, parts, sim config, plugin; with `copper` `route/<board>.ses`, `route/<board>_board.json` and the board file's pours | `<artifacts>/sim/net_currents.json`, `<artifacts>/sim/result.json` (the whole result with the hash of its inputs, 6.6); with `--keep` each netlist and ngspice log, for a transient run its waveforms (`<run>.dat`) |
 | `edakit docs [--write]` | – | `[docs] files`, the schematic notes, graph, parts; for `sim:` the saved simulation result (or a new run) | with `--write` the value blocks of `[docs] files` |
 | `edakit firmware [--check]` | – | graph, parts, `[firmware]`; for `state_sha256` the files of the circuit hash | `[firmware] out` (not with `--check`: exit 2 on drift) |
+| `edakit req [ID …]` | – | the files of `[project] requirements` (10.4) | – (prints the needs and requirements with status, binding and `verify` as written; with IDs the chain of each, 3.6); exit 1 without the key, with a file missing or not valid, or an ID not in the files |
 | `edakit handover [--board B]` | – | graph, parts, sign-offs | – |
 | `edakit schematic create [--board] [--only] [--dry-run] [--save] [--create-project] [--refresh-devices]` | ✓ | graph | template, `device_cache.json`, `schematic_map_<name>.json`; `--save` only when the netlist equals the graph (6.1) |
 | `edakit schematic check [--schematic] [--no-pins] [--json F]` | ✓ read | graph, schematic | – |
@@ -257,10 +301,11 @@ Claude Code: `edakit … 2>&1 | cat`. The long commands – `route all`, `gate`,
 | `edakit proposal template [--feature]\|seal FILE [--out F]\|verify FILE` | – | a rule or feature proposal (no project needed) | seal: the issue body with its SHA-256 |
 | `edakit doctor [--offline]` | ✓ read (not with `--offline`) | tool chain; `BRIDGE_TIMEOUT_MS` of the running easyeda-mcp-pro servers (`/proc/<pid>/environ`); with EasyEDA running, through an own server that claims nothing: `easyeda_bridge_status`, `easyeda_health_check` (connected, extension against server version, registry) and, while the claim is free or yours, `DMT_Project.getCurrentProjectInfo` (`[MaxDepth]` = the original extension) – 2.5, 12 | – |
 
-## 10.5 Files in a project
+## 10.6 Files in a project
 
 ```text
 edakit.toml                 the table of contents: project, boards, where the files are
+hardware/requirements.toml  what the circuit must do: needs and requirements, if [project] requirements names it
 hardware/graph.json         the hardware graph (only source of parts and connections), ground net, check settings
 hardware/parts/*.json       parts database
 hardware/datasheet/<name>.* the board as a part for other projects: parts entry and datasheet (edakit part datasheet)

@@ -15,6 +15,8 @@
     edakit sim                       stage E: ngspice operating points of all scenarios (offline, seconds)
     edakit docs [--write]            values quoted in documents and schematic notes: G-19 for stale ones, --write fills in
     edakit firmware [--check]        the board's firmware contract as JSON from the graph; --check: drift (opt-in)
+    edakit req [ID ...]              what the circuit must do: needs and requirements with status, binding, evidence;
+                                     with an ID its chain – from where, the requirement, what verifies it (opt-in)
     edakit handover                  what the circuit hands over to the layout: state, sign-offs, layout requirements
     edakit schematic create|check|copy|layout
     edakit schematic draw            the schematic as SVG from graph and parts database – no EasyEDA (offline)
@@ -119,6 +121,11 @@ def build_parser():
 
     p = sub.add_parser("firmware", help="the board's firmware contract from the graph ([firmware] in edakit.toml)")
     p.add_argument("--check", action="store_true", help="compare the committed contract with the graph, write nothing")
+    _common(p)
+
+    p = sub.add_parser("req", help="what the circuit must do: needs and requirements with status, binding and "
+                                   "evidence ([project] requirements in edakit.toml)")
+    p.add_argument("ids", nargs="*", help="need or requirement IDs, e.g. R-4 N-2: the chain of each (default: a list)")
     _common(p)
 
     p = sub.add_parser("handover", help="the hand-over from the circuit to the layout: state, sign-offs, requirements")
@@ -278,6 +285,9 @@ def main(argv=None):
     if args.command == "firmware":
         from . import firmware
         return firmware.main(cfg, args)
+    if args.command == "req":
+        from . import requirements
+        return requirements.main(cfg, args)
     if args.command == "handover":
         from . import handover
         return handover.main(cfg, args)

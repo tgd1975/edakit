@@ -325,6 +325,30 @@ def test_docs_files(tmp_path):
             load(tmp_path / "edakit.toml")
 
 
+def test_requirements_key(tmp_path):
+    """[project] requirements: the requirements file (edakit req), or a list of them for a variant."""
+    (tmp_path / "edakit.toml").write_text('[project]\nname = "t"\n[boards.main]\n')
+    assert load(tmp_path / "edakit.toml").requirements == []             # no key: no requirements file, no change
+    (tmp_path / "edakit.toml").write_text('[project]\nname = "t"\nrequirements = "hardware/requirements.toml"\n'
+                                          '[boards.main]\n')
+    cfg = load(tmp_path / "edakit.toml")
+    assert cfg.requirements == [cfg.root / "hardware" / "requirements.toml"]
+    variant = tmp_path / "variants" / "v"                                # the main project's file and its own
+    variant.mkdir(parents=True)
+    (variant / "edakit.toml").write_text('[project]\nname = "t"\nrequirements = ["../../hardware/requirements.toml", '
+                                         '"hardware/requirements.toml"]\n[boards.v]\n')
+    cfg = load(variant / "edakit.toml")
+    assert cfg.requirements == [cfg.root / "../../hardware/requirements.toml", cfg.root / "hardware/requirements.toml"]
+    assert [cfg.relative(f) for f in cfg.requirements] == ["../../hardware/requirements.toml",
+                                                           "hardware/requirements.toml"]
+    for bad, msg in (('requirements = 3', "a path or a list of paths"), ('requirements = [""]', "a path or a list"),
+                     ('requirements = ["a.toml", 1]', "a path or a list"), ("requirements = true", "a path or a list"),
+                     ('requirements = ["a.toml", "./a.toml"]', "a.toml named twice")):
+        (tmp_path / "edakit.toml").write_text(f'[project]\nname = "t"\n{bad}\n[boards.main]\n')
+        with pytest.raises(ConfigError, match=rf"\[project\] requirements: .*{msg}"):
+            load(tmp_path / "edakit.toml")
+
+
 def test_place_auto_key(tmp_path):
     from edakit.config import _placement
     assert _placement("C1", {"x": 1, "y": 2}).auto is False               # no key: a row written by hand, as before

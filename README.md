@@ -79,6 +79,7 @@ edakit rules G-11               # what a check is about, why, what to do, source
 edakit sim                      # ngspice: every supply x load x tolerance corner (E) – seconds
 edakit docs --write             # values quoted in documents and schematic notes, from the design data (G-19)
 edakit firmware                 # the board's firmware contract as JSON from the graph; --check reports drift
+edakit req                      # what the circuit must do: needs, requirements, their evidence; req R-1: one chain
 edakit schematic draw           # the schematic as SVG from graph and parts – no EasyEDA (enough without a PCB)
 edakit handover                 # what the circuit hands over to the layout – where the PCB designer starts
 edakit schematic create --save  # template schematic from the graph
