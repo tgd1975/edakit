@@ -264,6 +264,7 @@ technical point the user left to Claude and then confirmed.
 | 6 | Rule set of EasyEDA's DRC | write it if the API carries it; otherwise read and check it | decided by Claude: reading works, net rules can be written (`overwriteNetRules`); step 4 finds out about the whole set |
 | 7 | Where the order settings go | `[order]` in the board file (#40); mask and print colour join it | settled by #40 |
 | 8 | A language, or TOML with names | first sketch both on the Christmas bell | accepted |
+| 9 | The order settings in the fab hash and the estimate | thickness, colours, finish and mark count in the fab hash, the remark does not; `edakit cost` names an order it does not price | the user's choice on 2026-10-28, built as a follow-up of step 1.7 |
 
 ## Sources
 

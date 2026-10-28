@@ -1,9 +1,9 @@
 # Implementation plan: requirements, design as text, project scripts
 
-Status 2026-10-28: plan; phase 1 (1.1 to 1.8) and 3.4 are done, 3.1 is next. It builds the three concepts of this folder
-after the user took their decisions on 2026-10-28 (e5caf42, 301fd90): [requirements.md](requirements.md),
-[design-as-text.md](design-as-text.md) and [project-scripts.md](project-scripts.md). Each step starts when the user asks
-for it.
+Status 2026-10-28: plan; phase 1 (1.1 to 1.8), 3.4 and the follow-ups below are done, 3.1 is in progress. It builds the
+three concepts of this folder after the user took their decisions on 2026-10-28 (e5caf42, 301fd90):
+[requirements.md](requirements.md), [design-as-text.md](design-as-text.md) and [project-scripts.md](project-scripts.md).
+Each step starts when the user asks for it.
 
 ## Ground rules
 
@@ -36,7 +36,7 @@ for it.
 | 2.2 | Rule set of EasyEDA's DRC | design-as-text decision 6 | S–M | yes | – | open |
 | 2.3 | Positions of single designators in `[silk]` | design-as-text, smaller findings | S | yes | – | open |
 | 2.4 | Outdated inputs run first; `edakit run` | project-scripts block 4, decision 7 | M | yes | 1.4 | open |
-| 3.1 | Checks in the gate: `at`, phase `acceptance`; then `verify = script` | project-scripts block 6 | M | no | 1.2, 1.6 | open |
+| 3.1 | Checks in the gate: `at`, phase `acceptance`; then `verify = script` | project-scripts block 6 | M | no | 1.2, 1.6 | in progress, branch `step-3.1-gate-checks` |
 | 3.2 | Project agents: `[agents.*]`, `replaces`, their sign-offs required | project-scripts block 7, decisions 10, 11 | M | no | 1.2 | open |
 | 3.3 | Skills and the SessionStart hook use `edakit scripts` | project-scripts block 8 | S–M | no | 2.4, 3.2 | open |
 | 3.4 | Skill `requirements`, agent `requirements-engineer`, reviewers read the file | requirements order 3, decision 7 | M | no | 1.6 | done (0099ee3) |
@@ -50,9 +50,9 @@ for it.
 
 S, M and L are the sizes the concepts give: small, medium, large.
 
-Follow-ups the user decided on 2026-10-28, on the branch `followups-1.6-1.7`: a draft requirement only warns and never
-blocks (1.6); the order settings that change the made board join the fab hash, and `edakit cost` names an order that
-deviates from the board it prices (1.7).
+Follow-ups the user decided on 2026-10-28, done: a draft requirement only warns and never blocks (1.6, b885376); the
+order settings that change the made board join the fab hash (b5af0c6), and `edakit cost` names an order that deviates
+from the board it prices (5a51877) (1.7). `edakit cost` no longer fails on a board nobody assembles (09f591d).
 
 ```mermaid
 flowchart LR

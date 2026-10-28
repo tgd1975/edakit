@@ -265,6 +265,7 @@ user left to Claude and then confirmed.
 | 7 | Role | skill `requirements` in the conversation, agent `requirements-engineer` for the inventory and a second opinion | decided by Claude: asking back needs the conversation, reading every document a context of its own |
 | 8 | Acceptance | `accept` steps join the protocol's acceptance list (section 6, after delivery); M-4 names the IDs it tested | decided by Claude: the list exists since #42, a second one would compete with it |
 | 9 | Trial | first on the bell after its order, then on the reference project | accepted |
+| 10 | Drafts | a draft only warns: it blocks neither the release nor a commit; errors and blocking start once the user accepts it | the user's choice on 2026-10-28, built as a follow-up of step 1.6 |
 
 ## Sources
 
