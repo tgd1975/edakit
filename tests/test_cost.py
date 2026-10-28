@@ -327,3 +327,17 @@ def test_an_order_of_the_fee_tables_board_changes_nothing(project, monkeypatch, 
     run_cost(project, monkeypatch)
     assert capsys.readouterr().out == before
     assert "not_in_price" not in last_estimate(project)["boards"]["main"]
+
+
+def test_a_board_nobody_assembles_is_priced_as_pcb_only(project, monkeypatch, capsys):
+    """[release] assembly.sides = [] and every part bom: false (the bell's THT variant): no PCBA, no main side – the
+    estimate prices the PCB only instead of failing on the first side."""
+    toml = project.root / "edakit.toml"
+    toml.write_text(toml.read_text().replace('sides = ["top"]', "sides = []"))
+    g = project.graph()
+    for c in g["graph"]["components"]:
+        c["bom"] = False
+    project.save_graph(g)
+    assert run_cost(project, monkeypatch) == 0
+    main = last_estimate(project)["boards"]["main"]
+    assert main["fees"] == [] and main["parts"] == []

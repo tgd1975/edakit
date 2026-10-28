@@ -265,6 +265,8 @@ def estimate_board(fees, quantity, lines, declared, main_side="top", size_mm=Non
 
 def board_lines(cfg, design, board, snap):
     sides = cfg.release.get("assembly", {}).get("sides", ["top", "bottom"])
+    if not sides:                        # [release] assembly.sides = []: nobody assembles – the PCB only
+        return []
     lines = []
     for lcsc, refs in stock.assembled(design, board.name).items():
         entry = design.parts.get(lcsc) or {}
@@ -331,7 +333,8 @@ def estimate(cfg, board=None):
             size = (round(max(xs) - min(xs), 2), round(max(ys) - min(ys), 2))
         price = override.get(b.name) if isinstance(override, dict) else override
         boards[b.name] = estimate_board(fees, cfg.quantity, board_lines(cfg, design, b, snap), cfg.pcba(),
-                                        main_side=sides[0], size_mm=size, pcb_override=price, name=b.name)
+                                        main_side=sides[0] if sides else "top", size_mm=size, pcb_override=price,
+                                        name=b.name)
         if differ := not_in_price(b, fees):   # [order] orders another board than the fee table prices
             boards[b.name]["not_in_price"] = differ
     extras = extra_lines(cfg, rate)
