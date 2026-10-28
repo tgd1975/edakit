@@ -34,7 +34,7 @@ for it.
 | 1.7 | `[order]`: mask and print colour, thickness from `thickness_mm` | design-as-text, smaller findings | S | no | – | done (80c750e) |
 | 1.8 | The footprint geometry in the repository | project-scripts block 5, decision 5 | S | no | – | done (d63a81a) |
 | 2.1 | Positions of the auto-layout as text, one-time takeover, every part in the plan | design-as-text gap 1, decisions 3, 4 | M | yes | – | built offline (5d8a5df), live run open |
-| 2.2 | Rule set of EasyEDA's DRC | design-as-text decision 6 | S–M | yes | – | in progress, branch `step-2.2-drc-rules` |
+| 2.2 | Rule set of EasyEDA's DRC | design-as-text decision 6 | S–M | yes | – | built offline, live probe open |
 | 2.3 | Positions of single designators in `[silk]` | design-as-text, smaller findings | S | yes | – | built offline (112de3a), live run open |
 | 2.4 | Outdated inputs run first; `edakit run` | project-scripts block 4, decision 7 | M | yes | 1.4 | in progress, branch `step-2.4-scripts-run` |
 | 3.1 | Checks in the gate: `at`, phase `acceptance`; then `verify = script` | project-scripts block 6 | M | no | 1.2, 1.6 | done (9e63afd) |
@@ -163,6 +163,51 @@ The bell's session is told first, since board files change.
 (`getCurrentRuleConfiguration`, with the bridge's return depth 12), and net rules can be written
 (`overwriteNetRules`). If a whole rule set can be written, edakit writes it from the board file; otherwise it reads it
 and checks it against the board file (decision 6).
+
+Found without EasyEDA (handbook 9.4): the format, from the reference project's read of 2026-10-22 on 3.2.206
+(`tests/fixtures/easyeda/drc_rules_3.2.206.json`); the signatures, from the client's `pro-api/0.3.50…/api-types.d.ts`;
+and from its editor bundle that `overwriteCurrentRuleConfiguration` and `overwriteNetRules` put what they get into the
+PCB's rules without a check and answer true, and that the net classes are the `netClass` entries of the net rules.
+Built on the branch, for every project without effect until it opts in: `edakit/drc_rules.py` (the board file's rule
+set, the differences to EasyEDA's, what edakit would write), `eda.read_drc_rules` and `eda.write_drc_rules` (the
+second not run), and a third row of L-3 with `[routing] drc_rules = "check"`.
+
+The live probe, in one sitting with the EasyEDA claim; EasyEDA unthrottled, the patched bridge (`edakit doctor`):
+
+1. **Throwaway document** (agreement 18): a project `edakit-probe-drc` made by hand (File → New → Project), its PCB
+   open and active. Three free pads put nets into it: `PCB_PrimitivePad.create(1, "1", 0, 0, 0, ["ELLIPSE", 60, 60],
+   "VIN", null, 0, 0, 0, false, 0)`, the same with `"2"`, `0, 200`, `"+5V"` and `"3"`, `0, 400`, `"GND"`. Tracks of
+   10 mil on TOP (`PCB_PrimitiveLine.create(net, 1, x1, y1, x2, y2, 10, false)`): VIN 1000,0 → 2000,0 and +5V
+   1000,15.9 → 2000,15.9 – 0.150 mm apart; VIN 1000,300 → 2000,300; and on BOTTOM (layer 2) VIN 1000,500 → 2000,500.
+2. **Read and keep:** `eda.read_drc_rules` (or the three `easyeda_api_call`s) into the scratchpad as the restore
+   point, and `getCurrentRuleConfigurationName`, `getAllRuleConfigurations(true)` (the names),
+   `getDefaultRuleConfigurationName`. Expected: no `[MaxDepth]`, likely the name "JLCPCB Capability(Two Layers
+   Board)" (the types' note for a PCB that never had other rules), the kinds and row/column lists of the recording, a
+   Track–Track value below 0.15 mm. `PCB_Drc.check(true, false, true)` → DRC A.
+3. **Write one value:** the configuration with Track–Track of the default Safe Spacing rule at 0.2 mm,
+   `overwriteCurrentRuleConfiguration(config)` (the inner `config`) → true; read back: 0.2, the name unchanged, the
+   named configurations unchanged; Design → Design Rule shows 0.2 mm. DRC B: a Clearance Error between VIN and +5V
+   that A did not have – the DRC uses what was written, at once.
+4. **Kept:** save, close, open the PCB again (`eda.reload_pcb`), read back: still 0.2 mm (agreement 16). A second PCB
+   of the throwaway project (made by hand) still reads the value of 2: the rules are the PCB's own.
+5. **Classes and track rules:** `createNetClass("POWER", ["VIN", "+5V"], null)` → true; `getNetRules` shows the class
+   with VIN and +5V under `sub` – which rules do the moved nets keep? A Track rule `POWER` (min 0.4572 mm, entries
+   "1" and "2") through `drc_rules.config_for`, the net rules through `drc_rules.net_rules_for`, written as in 3. DRC C:
+   a width finding on both 10-mil VIN tracks, TOP and BOTTOM. With only the entry "1" in the rule: is the BOTTOM track
+   still found? (What a lone "1" covers.) Then save, reload, read back.
+6. **edakit's way:** a board file in the scratchpad with led-bar's `[routing]` and an edakit.toml naming the throwaway
+   project; `eda.write_drc_rules(mcp, drc_rules.wanted(board))` → `[]`; `eda.reload_pcb`; `drc_rules.differences`
+   on a new read → `[]`; DRC D: the board file's rules at work – the 10-mil VIN tracks found (class POWER, 18 mil),
+   the gap of 0.150 mm found (clearance 6.5 mil = 0.165 mm).
+7. **Restore and clean up:** `overwriteCurrentRuleConfiguration` and `overwriteNetRules` with the restore point,
+   `deleteNetClass` for what was made, read back = the restore point; the named configurations and the default name
+   as in 2; the throwaway project deleted by hand.
+
+What decides: if 3 and 4 hold and 5 and 6 hold, edakit writes the rule set (a value `"write"` of `drc_rules`: `route
+all` writes it before its DRC; the gate goes on checking, it changes nothing). If the configuration holds (3, 4) but
+classes or net rules do not (5), edakit writes the configuration and checks the classes. If a written value does not survive the reload, the DRC
+ignores it, or it reaches another PCB or a named configuration, edakit only reads and checks – the row of L-3 as built.
+The answer goes into handbook 9.4 and this step's line.
 
 **2.3 Single designators.** A position per designator in `[silk]`, as `[place]` has one per part; `silk apply` keeps
 it.
