@@ -50,6 +50,10 @@ assembly preview at JLCPCB.
   L-18 with [routing] hand_solder_keep_mm: on the solder side of every through-hole pad of a hand-soldered part
        (bom: false), vias and pads of other nets at least that far away; pads as L-13, vias from the via drill file
        (net: the tracks of pcb.json that end on them)
+  L-19 with [looks]: on the visible side every PCB text of the silkscreen is one the board file puts there (the board
+       label on its side, the [[silk.texts]] of the side, with [silk] designators on it the designators and group
+       labels), and no part on it shows its designator while [silk] designators names the other side (waive L-19 on
+       the part)
   [looks] of the board file: the visible side's track length and the board's vias, an information row; above
        max_track_m or max_vias a warning (row ID "L": the stage's own, no check of the catalog)
   F-1  BOM from the graph = BOM of EasyEDA; every LCSC number in the parts database
@@ -667,6 +671,65 @@ def check_looks(board, d, rows):
         rows.add("L", "L", board.name, f"visible side within its [looks] limit: {text}", False, actual, limit, "warn")
 
 
+def check_visible_print(cfg, board, design, d, rows):
+    """L-19 with [looks]: the visible side carries only the texts the board file puts there. Every PCB text of its
+    silkscreen (pcb.json strings) is the board label of that side (board_label_side, default the designators side),
+    the text of a [[silk.texts]] entry of that side, or – when [silk] designators is that side – a designator of the
+    board or a key of [silk] groups (what silk apply prints there). While [silk] designators names the other side, no
+    part on the visible side shows its designator (pcb.json designators; waive L-19 on the part). The footprints'
+    own print is no PCB text (L-8 and L-17 read it from the Gerber files), artwork is fills. Without [looks]: no row."""
+    from .. import silk
+    if not board.looks:
+        return
+    side = board.looks["visible"]
+    name, layer = side.upper(), silk.SIDE[side]
+    data = json.loads((d / "pcb.json").read_text())
+    s = board.silk
+    labelled = s.get("designators", "top")
+    want = design.board_comps(board.name)
+    allowed = {t for t, *_ in silk.silk_texts(board, side)}
+    label = silk.board_label_text(cfg, board)
+    if label and s.get("board_label_side", labelled) == side:
+        allowed.add(label)
+    if labelled == side:
+        allowed |= set(want) | set(s.get("groups") or {})
+    allowed = {t.strip() for t in allowed}
+    texts = [t for t in data["strings"] if t["Layer"] == layer + 2]
+    what = "the board label" if labelled != side else "the board label, a designator, a group label"
+    check = f"{name} (visible): only the texts the board file puts there"
+    expected = "the board label, [[silk.texts]] of this side" + (", designators, group labels" if labelled == side
+                                                                  else "")
+    stray = [t for t in texts if t["Text"].strip() not in allowed]
+    for t in stray:
+        rows.add("L", "L-19", board.name, check, False, f"{name} (visible): text '{t['Text']}' at ({t['X'] * MM:.1f}, "
+                 f"{t['Y'] * MM:.1f}) mm is neither {what} nor a [[silk.texts]] entry of this side", expected)
+    if not stray:
+        rows.add("L", "L-19", board.name, check, True, f"{name}: {len(texts)} PCB text{'' if len(texts) == 1 else 's'}"
+                 ", each one the board file puts there" if texts else f"{name}: no PCB text", expected)
+    if labelled == side:
+        return
+    check = f"{name} (visible): no designator shown – [silk] designators is {labelled}"
+    shown = data.get("designators")
+    if shown is None:
+        rows.add("L", "L-19", board.name, f"designators of the {side} side (visible) read with the PCB", False,
+                 "pcb.json without the designators (written by an older edakit) – edakit fab without --offline",
+                 "read with the PCB")
+        return
+    parts = sorted((c["designator"] for c in data["components"] if c.get("designator") in want and c["layer"] == layer),
+                   key=natural_key)
+    for ref in (r for r in parts if shown.get(r)):
+        text = f"{name} (visible): {ref} shows its designator – [silk] designators is {labelled}"
+        reason = (want[ref].get("waive") or {}).get("L-19")
+        if reason:
+            rows.add("L", "L-19", board.name, f"designator on the visible side: {text}", True, text, "hidden", "waived")
+            rows[-1]["reason"] = reason
+        else:
+            rows.add("L", "L-19", board.name, check, False, text, "hidden (silk apply hides it: [silk] hide)")
+    if not any(shown.get(r) for r in parts):
+        rows.add("L", "L-19", board.name, check, True, f"{len(parts)} parts on the {side}, none shows its designator",
+                 "hidden")
+
+
 def pcb_vias(d, lines, diameter_mil):
     """Vias of the PCB from the via drill file (pcb.json has none): [(net or None, (x, y) mil, diameter mil)], the
     copper diameter the routing's (vias are created at [routing] via), the net that of the tracks ending on the via –
@@ -1263,6 +1326,7 @@ def run(cfg, board, out, offline=False, verbose=False):
     check_paste_gap(cfg, board, design, d, rows)
     check_hand_joints(cfg, board, design, d, rows)
     check_looks(board, d, rows)
+    check_visible_print(cfg, board, design, d, rows)
     check_fab(cfg, board, design, d, rows)
     from . import order_sheet
     order_sheet.check(cfg, board, design, d, rows, bom_rows(design, board))   # F-6, only with [order]

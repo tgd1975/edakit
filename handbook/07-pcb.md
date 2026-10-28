@@ -441,8 +441,8 @@ BOTTOM (visible): 0.18 m of track, 2 vias
 ```
 
 The lengths are those of the routing preview's titles. A warning changes no exit code: the routing is not wrong, the
-look is not what the board file asked for. Stage L of the gate gives the same row from the PCB itself (8.1). Without
-`[looks]` nothing is printed.
+look is not what the board file asked for. Stage L of the gate gives the same row from the PCB itself (8.1), and L-19
+holds the side's print to the board file (7.7). Without `[looks]` nothing is printed.
 Preview: `<artifacts>/route/<board>_routing.png`, open connections dashed yellow. Nothing is written to EasyEDA until
 the check passes.
 
@@ -644,6 +644,12 @@ purpose goes into `unlabelled` with the reason, so the warning does not come bac
 designators = "top"
 unlabelled = { R21 = "no room between the star tracks" }
 ```
+
+With `[looks]` (7.5) the gate also holds the visible side to the board file (L-19): its PCB texts are the board label of
+that side, the `[[silk.texts]]` of that side and – when `designators` is that side – the designators and group
+labels; and while `designators` names the other side, no part on the visible side shows its designator. A part placed
+again after `silk apply` (a swap, a footprint rebuilt) comes back with its designator shown: run `silk apply` again.
+A text placed by hand that belongs there goes into `[[silk.texts]]`; a designator wanted there is waived on the part.
 
 ## 7.8 Export for documentation
 

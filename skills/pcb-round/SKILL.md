@@ -74,7 +74,9 @@ describes (section 3); a list of parts or pads is fixed with `pcb parts --write`
    - `edakit silk apply 2>&1 | cat` (designators where there is room; silkscreen on pads = 0; DRC). Through-hole parts
      of the other side, soldered from the designators side: `[silk] solder_side = true` (handbook 7.7). A part listed
      "without room": more room, a group label (`[silk] groups`) or `[silk] unlabelled` with the reason – the gate warns
-     on it otherwise (L-17). Run it last, after the routing: the gate fails on edakit's own print on a mask opening.
+     on it otherwise (L-17). Run it last, after the routing: the gate fails on edakit's own print on a mask opening,
+     and with `[looks]` on a designator shown on the visible side or a text there the board file does not put
+     there (L-19) – a part placed again after `silk apply` shows its designator until it runs again.
 4. **Check:** `edakit pcb nets` (pad nets = graph), DRC details in `<artifacts>/route/<board>_drc.json`. With sim.json
    `copper` (power nets whose track drop matters): `edakit sim 2>&1 | cat` on the new routing – the drop of the tracks
    is in every check now (handbook 5.2); a failure there goes back to the routing (wider class, a pour) or the circuit.

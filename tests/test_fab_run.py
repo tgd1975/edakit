@@ -303,7 +303,7 @@ def findings(rows):
 
 CHECKS = ["L-1", "L-2", "L-3", "L-4", "L-5", "L-7", "L-8", "L-9", "L-10", "L-11", "L-12", "L-13", "L-14", "L-15", "L-16",
           "L-17", "L-18", "F-1", "F-2", "F-3", "F-5"]
-ON_REQUEST = ["F-6"]               # runs only when the board file asks for it ([order])
+ON_REQUEST = ["F-6", "L-19"]       # run only when the board file asks for them ([order], [looks])
 
 
 def test_the_clean_export_passes_every_check(project):
@@ -510,6 +510,32 @@ def no_tooling(ex, project):
     board_file(project, "[tooling]\nholes", "# [tooling]\n# holes")
 
 
+TEST = (15.0, 3.0)                 # a PCB text "TEST" on the top silkscreen (#81)
+
+
+def visible(project, side="top", silk="", plus=True):
+    """#81: [looks] visible = side, the [silk] table `silk`, and – plus – the export's "+" at D1 as a [[silk.texts]]
+    entry of the top side, so that the board file puts it there."""
+    text = f'\n[looks]\nvisible = "{side}"\n\n[silk]\n{silk}\n'
+    if plus:
+        text += f'\n[[silk.texts]]\ntext = "+"\nx = {PLUS[0]}\ny = {PLUS[1]}\nside = "top"\n'
+    f = project.root / "hardware" / "boards" / "main.toml"
+    f.write_text(f.read_text() + text)
+
+
+def visible_designator(ex, project):
+    """The designators belong on BOTTOM, TOP is the visible side, and C2 shows its designator there – a part placed
+    again after silk apply hid it."""
+    visible(project, silk='designators = "bottom"\nhide = ["top"]')
+    ex.pcb["designators"].update(J1=False, D1=False)
+
+
+def stray_text(ex, project):
+    """A PCB text "TEST" on the visible TOP side that no line of the board file puts there."""
+    visible(project)
+    ex.pcb["strings"].append({"Text": "TEST", "X": TEST[0] * MIL, "Y": TEST[1] * MIL, "Layer": 3})
+
+
 FAULTS = [
     # L-1
     ("a pad on another net", lambda ex, p: ex.pad("D1.1").update(Net="VIN"),
@@ -653,6 +679,15 @@ FAULTS = [
        "hand_solder_keep_mm 0.5")]),
     ("a via without a track next to a hand-soldered joint", lambda ex, p: via(ex, 1.6, 9),
      [("L-18", "fail", "J1.1 (VIN) – via (no track, net unknown) at (1.60, 9.00): 0.40 mm")]),
+    # L-19 (#81) – only with [looks] in the board file
+    ("a designator shown on the visible side", visible_designator,
+     [("L-19", "fail", "TOP (visible): C2 shows its designator – [silk] designators is bottom")]),
+    ("a text on the visible side the board file does not put there", stray_text,
+     [("L-19", "fail", "TOP (visible): text 'TEST' at (15.0, 3.0) mm is neither the board label, a designator, a "
+       "group label nor a [[silk.texts]] entry of this side")]),
+    ("the designators not read with the PCB, the visible side without them",
+     lambda ex, p: (visible(p, silk='designators = "bottom"'), ex.pcb.pop("designators")),
+     [("L-17", "fail", "pcb.json without the designators"), ("L-19", "fail", "pcb.json without the designators")]),
     # F-1
     ("another LCSC number in EasyEDA's BOM", lambda ex, p: ex.bom[2].update(lcsc="C15850"),
      [("F-1", "fail", "C2: graph C45783, EasyEDA C15850")]),
@@ -996,3 +1031,66 @@ def test_the_clean_export_names_the_hand_soldered_joints(project):
 def test_a_track_at_a_hand_soldered_joint_does_not_count(project):
     rows = run(project, track_at_joint)
     assert findings(rows) == [] and next(r for r in rows if r["id"] == "L-18")["result"] == "pass"
+
+
+# --- the visible side carries only the texts the board file puts there (#81, L-19)
+
+def l19(rows):
+    return [(r["result"], r["actual"]) for r in rows if r["id"] == "L-19"]
+
+
+def test_the_visible_side_of_the_proposal(project):
+    """#81's finding on the export: designators on BOTTOM, TOP visible, a PCB text "TEST" added – the three
+    designators, "TEST" and the "+" (until it is a [[silk.texts]] entry) are findings; the [looks] row stays."""
+    def fault(ex, p):
+        visible(p, silk='designators = "bottom"\nhide = ["top"]', plus=False)
+        ex.pcb["strings"].append({"Text": "TEST", "X": TEST[0] * MIL, "Y": TEST[1] * MIL, "Layer": 3})
+    rows = run(project, fault)
+    assert findings(rows) == [("L-19", "fail")] * 5
+    assert sorted(a for _, a in l19(rows)) == [
+        "TOP (visible): C2 shows its designator – [silk] designators is bottom",
+        "TOP (visible): D1 shows its designator – [silk] designators is bottom",
+        "TOP (visible): J1 shows its designator – [silk] designators is bottom",
+        "TOP (visible): text '+' at (10.8, 10.9) mm is neither the board label nor a [[silk.texts]] entry of this side",
+        "TOP (visible): text 'TEST' at (15.0, 3.0) mm is neither the board label nor a [[silk.texts]] entry of this "
+        "side"]
+    assert [r["actual"] for r in rows if r["id"] == "L"] == [
+        "TOP (visible): 0.04 m of track, 0 vias (TOP 0.04 m, BOTTOM 0.00 m)"]
+
+
+def test_a_visible_side_as_the_board_file_puts_it(project):
+    """TOP visible and the designators side: the designators, a group label, the board label of that side and the
+    [[silk.texts]] are the texts the board file puts there."""
+    def fault(ex, p):
+        board_file(p, 'view = "top"', 'view = "top"\nrevision = "1"')
+        visible(p, silk='groups = { IN = ["J1", "D1"] }')
+        ex.pcb["strings"] += [{"Text": t, "X": x * MIL, "Y": y * MIL, "Layer": 3}
+                              for t, x, y in (("IN", 10, 15), ("C2", 20, 12), ("LED bar rev 1", 5, 2))]
+    rows = run(project, fault)
+    assert findings(rows) == []
+    assert l19(rows) == [("pass", "TOP: 4 PCB texts, each one the board file puts there")]
+
+
+@pytest.mark.parametrize("text, first", [
+    ("LED bar rev 1", ("pass", "BOTTOM: 1 PCB text, each one the board file puts there")),
+    ("LED bar rev 0", ("fail", "BOTTOM (visible): text 'LED bar rev 0' at (5.0, 2.0) mm is neither the board label nor "
+                               "a [[silk.texts]] entry of this side"))])
+def test_the_board_label_counts_on_its_own_side(project, text, first):
+    """BOTTOM visible, the board label printed there (board_label_side): it passes; an old revision left on the board
+    is no text the board file puts there. The designators of TOP are not on the visible side."""
+    def fault(ex, p):
+        board_file(p, 'view = "top"', 'view = "top"\nrevision = "1"')
+        visible(p, "bottom", silk='board_label_side = "bottom"')
+        ex.pcb["strings"].append({"Text": text, "X": 5 * MIL, "Y": 2 * MIL, "Layer": 4})
+    assert l19(run(project, fault)) == [first, ("pass", "0 parts on the bottom, none shows its designator")]
+
+
+def test_a_waived_designator_on_the_visible_side(project):
+    def waived(ex, p):
+        visible_designator(ex, p)
+        graph(p, lambda g: p.comp(g, "C2").update(waive={"L-19": "test: the label is wanted there"}))
+    rows = run(project, waived)
+    assert findings(rows) == [("L-19", "waived")]
+    w = next(r for r in rows if r["result"] == "waived")
+    assert w["reason"] == "test: the label is wanted there"
+    assert "C2 shows its designator – [silk] designators is bottom" in w["check"]

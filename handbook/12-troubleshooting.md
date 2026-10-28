@@ -48,6 +48,8 @@ Start with `edakit doctor`.
 | L-17: "TOP: … mm² beyond it" | footprint print over the board edge (a connector's outline), or a frame drawn on the edge | correct the footprint or the drawing, or accept the warning; JLCPCB's DFM says "silkscreen outside board" |
 | L-17: "R21: no visible designator, no group label, not in [silk] unlabelled" | `silk apply` found no room for it ("without room"), or it was hidden | more room, a group label, or `[silk] unlabelled = { R21 = "…" }` with the reason |
 | L-17: "pcb.json without the designators" | an export by an older edakit, checked with `--offline` | `edakit fab` without `--offline` (or the gate with `--easyeda`) |
+| L-19: "BOTTOM (visible): D31 shows its designator – [silk] designators is top" | the part was placed again after `silk apply` (a swap, a footprint rebuilt) and came back with its designator shown | `edakit silk apply` (it hides the designators of `[silk] hide`), then the gate again; wanted there: `waive` L-19 on the part |
+| L-19: "TOP (visible): text 'TEST' at (15.0, 3.0) mm is neither the board label nor a [[silk.texts]] entry of this side" | a text placed by hand, or an old board label `silk apply` did not make | delete it, or put it into `[[silk.texts]]` with `side` = the visible side and run `silk apply` |
 | `uv run …` exits 120 without output inside Claude Code | uv from snap cannot write to the file Claude Code hands it | `… 2>&1 \| cat` |
 | a wait loop never ends | `pgrep -f` matches its own shell | wait for an end line or the PID (chapter 11.3) |
 | EasyEDA crashed during a long run | V8 out of memory | restart, find the state, rerun the whole step; second crash: smaller blocks (start skill, section 4) |
