@@ -63,7 +63,9 @@ describes (section 3); a list of parts or pads is fixed with `pcb parts --write`
    - New or swapped parts first: `edakit pcb parts --write`; then `edakit pcb dump` for their geometry if needed
      (dump turns all parts to 0°/TOP – afterwards always apply and the auto-layout again). Before they are in the
      PCB, `edakit part import <LCSC>` gives the plan of step 2 their library footprint; for a swapped part
-     `edakit part diff OLD NEW` says how the new footprint lies over the old one (turn, shift, pad map).
+     `edakit part diff OLD NEW` says how the new footprint lies over the old one (turn, shift, pad map). A footprint
+     whose holes the project moves for leads formed by hand: `edakit pcb dump`, then `edakit check` – P-8 fails when
+     a turn lays the formed holes onto themselves with a pin in another net's hole (handbook 3.3).
    - `edakit pcb apply` (outline, holes, tooling holes, fixed parts locked; pad positions verified against the plan)
    - `edakit pcb autolayout` (unlocked parts, TOP only, waits for stable positions)
    - `edakit route all 2>&1 | cat` (read → DSN → Freerouting → check → apply → pours → reload → DRC; exit 0 = DRC 0, 3 =
@@ -72,7 +74,9 @@ describes (section 3); a list of parts or pads is fixed with `pcb parts --write`
    - `edakit silk apply 2>&1 | cat` (designators where there is room; silkscreen on pads = 0; DRC). Through-hole parts
      of the other side, soldered from the designators side: `[silk] solder_side = true` (handbook 7.7). A part listed
      "without room": more room, a group label (`[silk] groups`) or `[silk] unlabelled` with the reason – the gate warns
-     on it otherwise (L-17). Run it last, after the routing: the gate fails on edakit's own print on a mask opening.
+     on it otherwise (L-17). Run it last, after the routing: the gate fails on edakit's own print on a mask opening,
+     and with `[looks]` on a designator shown on the visible side or a text there the board file does not put
+     there (L-19) – a part placed again after `silk apply` shows its designator until it runs again.
 4. **Check:** `edakit pcb nets` (pad nets = graph), DRC details in `<artifacts>/route/<board>_drc.json`. With sim.json
    `copper` (power nets whose track drop matters): `edakit sim 2>&1 | cat` on the new routing – the drop of the tracks
    is in every check now (handbook 5.2); a failure there goes back to the routing (wider class, a pour) or the circuit.
