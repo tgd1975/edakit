@@ -541,7 +541,7 @@ def preview(cfg, board):
 
 
 def main(cfg, args):
-    board = cfg.board(args.board)
+    board = cfg.board(args.board, made=True)
     if args.action == "preview":
         return preview(cfg, board)
     step = eda.Steps(APPLY_STEPS) if args.action == "apply" else None

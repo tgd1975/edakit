@@ -1521,7 +1521,7 @@ def autolayout(cfg, board, mcp, timeout_min=20):
 
 
 def main(cfg, args):
-    board = cfg.board(args.board)
+    board = cfg.board(args.board, made=True)
     if args.action == "plan":
         return 2 if plan(cfg, board) else 0
     if args.action == "place":

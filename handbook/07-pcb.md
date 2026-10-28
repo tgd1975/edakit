@@ -3,6 +3,9 @@
 The PCB is generated in layers: parts and nets from the board schematic (without dialogs), a **placement plan** for
 everything that matters (in the board file `hardware/boards/<name>.toml`, 10.2), EasyEDA's auto-layout for the rest,
 **Freerouting** for the tracks, pours, silkscreen. Every step can be repeated; every step checks itself.
+A bought board on a cable (`bought = true`, 4.5) has no PCB: `pcb`, `route`, `silk`, `fab` and `export` refuse it
+with one line when `--board` names it, and without `--board` take the one made board; `handover` and `export` over
+all boards leave it out.
 
 ```bash
 edakit handover              # what the circuit hands over: state, sign-offs, what the plan must keep (14.1)

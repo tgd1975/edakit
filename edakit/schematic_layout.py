@@ -778,7 +778,7 @@ def write_svg(path, geo, sheet):
 
 
 def main(cfg, args):
-    board = cfg.board(args.board)
+    board = cfg.board(args.board, made=True)
     name = args.schematic or board.schematic
     if name == board.template and not args.dry_run:
         return eda.die(f"{name} is the template – copy it first (edakit schematic copy)")

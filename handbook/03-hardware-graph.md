@@ -37,7 +37,7 @@ Example: [the Christmas bell's graph](https://github.com/tgd1975/automatic_chris
 | `part` | the manufacturer part number; without `lcsc` it names the parts entry (its `mpn`) – a part bought elsewhere (chapter 4); with `lcsc` it must name the entry's `mpn` too (P-6) |
 | `pins` | pin number → pin name, **with the pin numbers of the EasyEDA/LCSC symbol of exactly this part**. The names must equal the parts entry (P-1). |
 | `nc` | pins deliberately unconnected; every pin is in exactly one net or in `nc` |
-| `board` | which board the part is on (a key of `[boards]` in edakit.toml); may be omitted with one board |
+| `board` | which board the part is on (a key of `[boards]` in edakit.toml); may be omitted with one board. On a bought board (`bought = true`, 4.5) every part has `bom: false` (G-1) |
 | `value` | shown in the BOM ("10k", "100nF"); P-6 holds it to the entry's `value_ohm`, `value_f` or `value_h` |
 | `bom: false` | the part is placed on the PCB but not in the BOM for assembly (hand-soldered, bought separately); `edakit order` puts it into the cart of its supplier (8.4) |
 | `supplier` | for a part bought separately: the supplier whose cart it goes into (default: the first of its parts entry's `order`, else `lcsc` with an LCSC number) |
@@ -80,7 +80,7 @@ check that fails is explained once below the findings (chapter 14.2).
 
 | Check | What | Finds e.g. |
 |---|---|---|
-| G-1 | structure: unique designators and nets, every pin in exactly one net or `nc`, nets with ≥ 2 pins, a voltage range per net, a known board per part, nets across boards only through a cable; the names in `layout` and `checks`, the `ground` net, `purpose.use` | a forgotten pin, a typo in a pin reference |
+| G-1 | structure: unique designators and nets, every pin in exactly one net or `nc`, nets with ≥ 2 pins, a voltage range per net, a known board per part, `bom: false` on a bought board, nets across boards only through a cable; the names in `layout` and `checks`, the `ground` net, `purpose.use` | a forgotten pin, a typo in a pin reference |
 | G-2 | pin locks: pins the firmware relies on are on the expected nets (`checks.pin_locks`); optionally a pin table in a Markdown document equals the graph (`checks.doc_pin_table`) | firmware and hardware disagree |
 | G-3 | voltage domains: every net's range within `vmax` of every pin on it | a 5-V signal on a 3.3-V GPIO |
 | G-4 | no floating input: an input needs a driver or a pull resistor; an input driven only by MCU pins needs a pull (floats until the firmware runs); every BJT needs a base-emitter resistor, every MOSFET a resistor from its gate to the source or a rail | a floating OE or EN pin at power-up, a MOSFET half on while the MCU boots |

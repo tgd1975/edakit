@@ -1457,7 +1457,7 @@ def main(cfg, args):
     if not args.out:
         print("edakit fab: --out is required (or: edakit fab diff RUN_A RUN_B)", file=sys.stderr)
         return 1
-    board = cfg.board(args.board)
+    board = cfg.board(args.board, made=True)
     rows = run(cfg, board, args.out, args.offline, args.verbose)
     for r in rows:
         print(f"  {r['result']:<4} {r['id']} {r['check']}: {r['actual']}", file=sys.stderr)

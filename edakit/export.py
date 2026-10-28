@@ -154,7 +154,7 @@ def copy_project(mcp, out):
 
 def main(cfg, args):
     out = cfg.artifact("export", ".keep").parent
-    boards = [cfg.board(args.board)] if args.board else list(cfg.boards.values())
+    boards = [cfg.board(args.board, made=True)] if args.board else list(cfg.made().values())
     step = eda.Steps(1 + 2 * len(boards) + (0 if args.board else 1))
     step("bridge and project")
     mcp = eda.connect(cfg, args.verbose, artifact_dir=out)  # the export tools write only into the server's ARTIFACT_DIR
