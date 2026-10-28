@@ -23,7 +23,8 @@ keep = 3.2
 [tooling]                        # JLCPCB Economic PCBA tooling holes: NPTH 1.152 mm, mask 0.148 mm larger
 holes = [[3.5, 36.5], [86.5, 3.5]]
 
-[place]                          # fixed parts (mm, degrees, side); the rest goes to EasyEDA's auto-layout
+[place]                          # mm, degrees, side; auto = true: a spot nobody designed – pcb place put it
+                                 # next to its host, or pcb autolayout wrote back where the auto-layout left it
 U1 = { x = 29, y = 14.5, rot = 0, side = "top" }
 U2 = { x = 66, y = 17, rot = 90, side = "top" }
 J1 = { x = 84, y = 12, rot = 90, side = "top" }
@@ -39,6 +40,8 @@ D9 = { x = 81, y = 34, rot = 0, side = "top" }
 C1 = { x = 66, y = 25, rot = 0, side = "top" }    # decoupling of U2 – the circuit wants it next to U2 (L-12)
 R1 = { x = 59, y = 17, rot = 90, side = "top" }   # layout.near of the graph
 C2 = { x = 29, y = 28, rot = 0, side = "top" }
+D1 = { x = 75.0, y = 12.0, rot = 0, side = "top", auto = true }   # the example never ran through EasyEDA: D1 and R2
+R2 = { x = 40.0, y = 30.0, rot = 0, side = "top", auto = true }   # stand where the tests put them (test_route, test_pcb)
 
 [near]                           # the layout's own: within near_mm of the host; the circuit's are in the graph
 C2 = "U1"

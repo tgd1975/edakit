@@ -316,11 +316,12 @@ def test_place_write_adds_the_rows_and_the_plan_passes(project, capsys):
 
 def test_place_never_moves_a_hand_written_row(project, capsys):
     hand = 'R1 = { x = 59, y = 17, rot = 90, side = "top" }   # by hand\n'
-    loose = 'R2 = { x = 40, y = 30, rot = 0, side = "top", auto = true }\n'   # an auto row whose part has no host
-    f = place_project(project, add=hand + loose)
+    f = place_project(project, add=hand)
+    loose = [ln for ln in f.read_text().splitlines(keepends=True) if ln.startswith(("D1 = ", "R2 = "))]
+    assert len(loose) == 2 and all("auto = true" in ln for ln in loose)    # the example's auto rows: no host
     assert cli.main(["pcb", "place", "--write", "--config", str(project.root / "edakit.toml")]) == 0
     text = f.read_text()
-    assert hand in text and loose in text and text.count("auto = true") == 2 and "\nC1 = " in text
+    assert hand in text and all(ln in text for ln in loose) and text.count("auto = true }") == 3 and "\nC1 = " in text
 
 
 def test_place_moves_its_own_rows(project, capsys):
@@ -617,7 +618,9 @@ def test_the_bar_with_d3_turned(project, capsys):
                                           "other way than D2 – turn it by 180°"]
     f.write_text(f.read_text().replace('uniform = { diode = "row" }', 'uniform = { diode = "+x" }'))
     cfg = project.config()
-    assert pcb.plan(cfg, cfg.board()) == ["D3 (diode): cathode points -x, uniform +x – turn it by 180° (rot = 0)"]
+    assert pcb.plan(cfg, cfg.board()) == [                             # the whole board: D1, the SS34, is a diode too
+        "D1 (diode): cathode points -x, uniform +x – turn it by 180° (rot = 180)",
+        "D3 (diode): cathode points -x, uniform +x – turn it by 180° (rot = 0)"]
 
 
 # --- mated plugs and the mechanical model (#62): the example with the test geometry; J1 at (84, 12) turned by 90°, so
@@ -642,7 +645,7 @@ TO_EDGE = {"box": [-2.5, -7.5, 2.5, -5.5], "h_mm": 4.5, "exit": "-y"}       # 2 
 def test_a_mated_plug_into_the_board_names_the_part_it_hits(project, capsys):
     with_mate(project, INTO_BOARD)
     cfg = project.config()
-    assert pcb.plan(cfg, cfg.board()) == ["J1: mated plug reaches into U2 (top)",
+    assert pcb.plan(cfg, cfg.board()) == ["J1: mated plug reaches into D1 (top)", "J1: mated plug reaches into U2 (top)",
                                           "J1: mated plug leaves towards -x but ends 69.8 mm inside the outline"]
 
 
@@ -662,14 +665,14 @@ def test_a_sideways_plug_that_stops_short_of_the_outline(project):
 def test_a_cable_that_leaves_upwards_needs_no_outline(project):
     with_mate(project, {**INTO_BOARD, "exit": "+z"})
     cfg = project.config()
-    assert pcb.plan(cfg, cfg.board()) == ["J1: mated plug reaches into U2 (top)"]
+    assert pcb.plan(cfg, cfg.board()) == ["J1: mated plug reaches into D1 (top)", "J1: mated plug reaches into U2 (top)"]
 
 
 def test_a_mated_plug_over_an_smd_part_within_the_silkscreen_tolerance(project):
     """The plug is a body without a margin, the other part's box has its silkscreen and pads: silk_overlap_mm holds
     for an SMD part as it does between two SMD boxes."""
     mate = {"box": [-2.5, 2.25, 2.5, 14.25], "exit": "+z"}                      # y = 9.5 … 14.5: 0.5 mm into U2
-    f = with_mate(project, mate)
+    f = with_mate(project, mate, f=place_project(project, drop=("D1",)))       # D1 out of its way
     f.write_text(f.read_text().replace('view = "top"', 'view = "top"\nsilk_overlap_mm = 0.8'))
     cfg = project.config()
     assert pcb.plan(cfg, cfg.board()) == []
@@ -722,7 +725,7 @@ def test_a_parts_entry_with_a_wrong_mate_is_named(project):
 def test_mechanical_model(project, capsys):
     lead = project.part("C131337")["lead"]
     lead["*"]["length_mm"] = 3.4
-    f = with_mate(project, TO_EDGE, body={"h_mm": 6.0}, lead=lead)
+    f = with_mate(project, TO_EDGE, f=place_project(project, drop=("D1", "R2")), body={"h_mm": 6.0}, lead=lead)
     key = project.comp(project.graph(), "U2")["lcsc"]
     part = project.part(key)
     part["body"] = {"h_mm": 1.75}
@@ -744,7 +747,7 @@ def test_mechanical_model(project, capsys):
                                                                 ("2", pytest.approx(84), pytest.approx(13))]
     assert mech["parts"]["U2"]["h_mm"] == 1.75 and "mate" not in mech["parts"]["U2"]
     assert set(mech["parts"]["R1"]) == {"side", "x", "y", "rot", "box"}       # nothing known: nothing guessed
-    assert mech["unplaced"] == ["D1", "R2"]
+    assert mech["unplaced"] == ["D1", "R2"]                                   # their rows taken out above
     f.write_text(f.read_text().replace('view = "top"', 'view = "top"\nthickness_mm = 1.0'))
     cfg = project.config()
     pcb.plan(cfg, cfg.board())
