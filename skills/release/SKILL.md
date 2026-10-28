@@ -29,8 +29,12 @@ Concept: `${CLAUDE_PLUGIN_ROOT}/handbook/08-release-gate.md`.
    step" as shown in section 3 of the protocol, `scope`, `reason`, `by`, `date`, and `parts` {designator: LCSC} for
    a warning about particular parts – it lapses when one of them is swapped) and add it after their OK. A lapsed
    acceptance (section 3) goes back to the user: judge again, then update `parts` or remove it. A row `scripts` of
-   stage G is a project script (handbook 8.6): outdated or never run – run it (its `cmd`, `edakit scripts` shows it),
-   then `edakit scripts stamp <name>`, and commit `hardware/scripts.lock` with what it wrote; entries that do not
+   stage G is a project script (handbook 8.6). An input the gate reads runs by itself before it ("project scripts
+   before edakit gate" in its output) – one that failed stops the gate: fix it, never `--no-scripts` for a release
+   run. A derive or easyeda script outdated or never run: `edakit run <name> 2>&1 | cat` – an easyeda script claims
+   EasyEDA, so start skill first –, then the gate again. "project-library:<b> changed by …": the parts in the PCB keep
+   their old footprint until deleted and recreated – skill pcb-round (`pcb parts --write`, `pcb dump`, `route all`),
+   or the user accepts the warning. Commit `hardware/scripts.lock` with what the scripts wrote; entries that do not
    resolve – fix `[scripts]` in edakit.toml. A project check is a stage of its own, its `id` the stage letter
    (handbook 8.1): what it printed is `<reports>/<run>/stage_<id>.txt`; a failed one is a finding like any other, an
    advisory one is listed and does not block.

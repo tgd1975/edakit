@@ -18,7 +18,7 @@ are. What one role decides lives in a file of its own, with one owner and one ha
 | the SVGs of `[[silk.art]]` | artwork on the silkscreen (7.7), drawn by hand or by a project script | PCB designer | layout |
 | `hardware/signoff.json` | sign-offs and accepted warnings, each bound to the hash of its scope: circuit, layout or fab (8.2); an accepted warning with `parts` {designator: LCSC} also to those parts; `rehashed` records a change of the hash method (the gate writes it for `hash_ignore`) | reviewers, the user | – |
 | `hardware/firmware.json` | the firmware contract, with `[firmware]` (3.5) | `edakit firmware` | – |
-| `hardware/scripts.lock` | the stamps of the project scripts: per script its `cmd`, the script itself and the hashes of what it reads, at its last run (8.6) | `edakit scripts stamp` | – |
+| `hardware/scripts.lock` | the stamps of the project scripts: per script its `cmd`, the script itself and the hashes of what it reads, at its last run; after an `easyeda` script ran through `edakit run`, what it changed and what is from before it (8.6) | `edakit run`, `edakit scripts stamp`, the steps that run an input first; `pcb dump` and `route all` take off what they made again | – |
 
 Complete example: [tests/fixtures/led-bar](../tests/fixtures/led-bar/). A key edakit does not know is an error with
 the list of the known ones – a typo does not fall back to a default unnoticed. An edakit.toml that still holds the
@@ -123,8 +123,10 @@ Optional: a project script that touches edakit's flow – it writes a file edaki
 edakit's data, changes the project library in EasyEDA, or is a check of its own (8.6). `edakit check` and the gate
 resolve the entries with edakit's steps into one order, report what keeps them from it, and compare each script's
 stamp in `hardware/scripts.lock`: an input outdated or never run is an error, a derive or easyeda script a warning.
-`edakit scripts` lists them, `edakit scripts stamp` records a run. The gate runs the checks (8.1); no command runs
-the other kinds yet. Without the table nothing changes.
+`edakit scripts` lists them. `edakit run` runs input, derive and easyeda scripts – an easyeda script only so, under the
+EasyEDA claim – and records each run; the steps that read what an input writes run it first when it is outdated
+(`--no-scripts`: none); `edakit scripts stamp` records a run made by hand. The gate runs the checks (8.1). Without the
+table nothing changes.
 
 | Key | For | Meaning |
 |---|---|---|
@@ -274,11 +276,14 @@ project's file and its own: `requirements = ["../../hardware/requirements.toml",
 
 ## 10.5 Commands
 
-All commands: `--config`, `-v` (MCP traffic). Exit codes: 0 ok, 2 findings, 1 error; 3 from `edakit lock` (another
-session holds EasyEDA) and from `route all|drc` and `silk apply|check` when the DRC's only item is EasyEDA waiting
-for the import acknowledgement (schematic = PCB; *Design → Import Changes* once – 7.5). With uv from snap inside
-Claude Code: `edakit … 2>&1 | cat`. The long commands – `route all`, `gate`, `pcb apply`, `silk apply`, `export`,
-`schematic create|layout` – print `[x.x min] step n/m: <step>` before each step (11.3).
+All commands: `--config`, `-v` (MCP traffic). Exit codes: 0 ok, 2 findings, 1 error; 3 from `edakit lock` and from
+`edakit run` of an easyeda script (another session holds EasyEDA) and from `route all|drc` and `silk apply|check` when
+the DRC's only item is EasyEDA waiting for the import acknowledgement (schematic = PCB; *Design → Import Changes* once
+– 7.5). With uv from snap inside Claude Code: `edakit … 2>&1 | cat`. The long commands – `route all`, `gate`,
+`pcb apply`, `silk apply`, `export`, `schematic create|layout` – print `[x.x min] step n/m: <step>` before each step
+(11.3). With `[scripts]`, `pcb place|parts|plan|apply`, `route all`, `silk apply|preview` and `gate` run the input
+scripts that write what they read first, when those are outdated or never ran, and stop when one fails;
+`--no-scripts` runs none (8.6).
 
 | Command | EasyEDA | Reads | Writes |
 |---|---|---|---|
@@ -303,6 +308,7 @@ Claude Code: `edakit … 2>&1 | cat`. The long commands – `route all`, `gate`,
 | `edakit req [ID …]` | – | the files of `[project] requirements` (10.4) | – (prints the needs and requirements with status, binding and `verify` as written – the gate evaluates it, 8.7; with IDs the chain of each, 3.6); exit 1 without the key, with a file missing or not valid, or an ID not in the files |
 | `edakit scripts` | – | `[scripts]`, `[[release.stages]]`, `sim_plugin`, the board files' `[[silk.art]]`, `hardware/scripts.lock`, what the scripts read; `[agents]` and the agent files (8.6) | – (prints every script with kind, state – current, outdated, never run –, about, cmd and its last run; the order; with `[agents]` every agent with what it signs, and who reviews where – each hook point with its agents in the order to start them; exit 2 when a script is outdated or never ran or the entries of `[scripts]` or `[agents]` do not resolve, 1 when the lock cannot be read) |
 | `edakit scripts stamp NAME …` | – | the same | `hardware/scripts.lock`: the stamp of each script named – it ran by hand; refused, writing nothing, for a check, entries that do not resolve, or a script whose `writes` are not there |
+| `edakit run NAME …` | – (an easyeda script changes EasyEDA itself, under the claim) | the same | runs the scripts named in their order, in the project directory (`python` = edakit's), and records each run: its stamp; for an easyeda script also its change of `project-library:<b>` (8.6); `<artifacts>/scripts/<name>.log` per script. Refused for a check, a name not in `[scripts]`, entries that do not resolve; a failed script records nothing and stops the run; exit 2 when a script named is still outdated, 3 when another session holds EasyEDA |
 | `edakit handover [--board B]` | – | graph, parts, sign-offs | – |
 | `edakit schematic create [--board] [--only] [--dry-run] [--save] [--create-project] [--refresh-devices]` | ✓ | graph | template, `device_cache.json`, `schematic_map_<name>.json`; `--save` only when the netlist equals the graph (6.1) |
 | `edakit schematic check [--schematic] [--no-pins] [--json F]` | ✓ read | graph, schematic | – |
@@ -349,12 +355,13 @@ hardware/boards/<name>.geometry.json
                             its footprint geometry, as edakit pcb dump measured it (in the layout hash)
 hardware/signoff.json       manual checks and accepted warnings, bound to hashes
 hardware/firmware.json      the firmware contract, if [firmware] is set (edakit firmware)
-hardware/scripts.lock       the stamps of the project scripts, if [scripts] is set (edakit scripts stamp)
+hardware/scripts.lock       the stamps of the project scripts and the changes of easyeda scripts, if [scripts] is set
+                            (edakit run, edakit scripts stamp)
 .claude/agents/<name>.md    the project's own agents; those that sign a sign-off are registered in [agents]
 docs/decisions.md           numbered decisions (or wherever the project keeps them)
 build/edakit/               artifacts (not versioned): caches, previews, routing, exports, cost.json;
                             library/ and footprints/: the library's symbols and footprints (edakit part import);
                             datasheets/: the datasheets edakit part fetch keeps (unless [project] datasheets names
-                            another folder)
+                            another folder); scripts/: the output of each project script's last run (edakit run)
 build/release/<run>/        gate runs (archive the released ones; fab/manifest.json says which one is current)
 ```

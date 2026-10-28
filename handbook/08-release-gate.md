@@ -439,18 +439,19 @@ follows from that and from edakit's steps in their fixed order, so nobody has to
 
 | Kind | What it writes | Its place |
 |---|---|---|
-| `input` | a file edakit reads: the board file (`board:<b>`, its own sections – every writer keeps the lines of the others, as `pcb place --write` does), an SVG of `[[silk.art]]`, the simulation plugin | before the first step that reads it |
-| `derive` | files no edakit step reads: the firmware's pin table, pictures, the enclosure | before `edakit check`, where its result is to be current – before the gate when the script reads what comes after `edakit check` (footprints, routing) |
-| `easyeda` | changes in EasyEDA: the project library, `project-library:<b>` | on command only |
+| `input` | a file edakit reads: the board file (`board:<b>`, its own sections – every writer keeps the lines of the others, as `pcb place --write` does), an SVG of `[[silk.art]]`, the simulation plugin | before the first step that reads it – the step runs it when it is outdated |
+| `derive` | files no edakit step reads: the firmware's pin table, pictures, the enclosure | before `edakit check`, where its result is to be current – before the gate when the script reads what comes after `edakit check` (footprints, routing); `edakit run` runs it |
+| `easyeda` | changes in EasyEDA: the project library, `project-library:<b>` | on command only: `edakit run`, under the EasyEDA claim |
 | `check` | – | phase `export`: a stage of the gate (8.1), before S, or with `at = "after F"` after stage F on the run's manufacturing files; phase `order` and `acceptance`: a line of section 6, after the export |
 | `sim` | – | `[project] sim_plugin`, inside `edakit sim` (5.1) |
 
 **`cmd` and Python.** `cmd` is free: a list, its first word a program, run in the project directory. `python` or
 `python3` as the first word is edakit's own interpreter – the one edakit itself runs in –, whatever python the PATH
 holds, so that the script can `from edakit import …`: `cmd = ["python", "hardware/sockel/sockel.py", "--pruefen"]`.
-That holds where edakit runs the entry – today the gate, for a check of phase export (8.1); the protocol shows `cmd`
-as written. A script you run by hand – an input, derive or easyeda script, a check of phase order or acceptance –
-gets the python of your shell. **`[[release.stages]]` stay exactly as they are:** their `cmd` runs as written,
+That holds wherever edakit runs the entry – `edakit run`, a step that runs an input first, the gate for a check of
+phase export (8.1); the protocol shows `cmd` as written. A script you run by hand – a check of phase order or
+acceptance, or any script outside edakit – gets the python of your shell. **`[[release.stages]]` stay exactly as they
+are:** their `cmd` runs as written,
 `python` the one of the PATH, since existing projects rely on it – a stage that wants edakit's Python becomes a
 `[scripts]` entry of kind `check`.
 
@@ -476,10 +477,11 @@ is its data: `hardware/boards/main.toml` is `board:main`, `hardware/boards/main.
 
 Data that does not exist yet – no board file, no geometry, no routing, no gate run with stage F, no current release –
 hashes as `absent` until it is made. A run from before the fab hash has no `fab_layers` in its manifest: they are
-computed from its files, as `edakit fab diff` does. The project library has no hash: it is in EasyEDA only, and edakit
-cannot read it offline. What changes it is an `easyeda` script, and that the script ran is what will tell edakit. So
-an `easyeda` script writes `project-library:<b>`, never `footprints:<b>`: the geometry is edakit's own data, measured
-anew from the PCB by `pcb dump`.
+computed from its files, as `edakit fab diff` does. The project library is in EasyEDA only, and edakit cannot read it
+offline. What changes it is an `easyeda` script, and that the script ran is what tells edakit: its hash is the last
+change `edakit run` saw an `easyeda` script make (which script, when – kept in `hardware/scripts.lock`, below); before
+the first there is none. So an `easyeda` script writes `project-library:<b>`, never `footprints:<b>`: the geometry is
+edakit's own data, measured anew from the PCB by `pcb dump`.
 
 `edakit check` resolves the entries with edakit's steps into one order and reports what keeps them from it, as errors
 with the ID `scripts`:
@@ -528,28 +530,96 @@ Compared with its stamp, a script is
 What is absent here is not compared, whatever the stamp says: the routing, the mechanical model, the Gerber data and
 the release live in `build/`, which a fresh clone and the CI do not have, and a file outside the project – a system
 font – may be missing on another machine. A note names it, and the stamp counts again where the data is; data made
-since a stamp that found it absent is a change. The project library has no offline hash: a script that reads
-`project-library:<b>` is not compared there either – that an `easyeda` script ran will tell, once edakit runs them
-(`edakit run`, not built yet).
+since a stamp that found it absent is a change. A script that reads `project-library:<b>` is not compared there before
+`edakit run` saw an `easyeda` script change the library; after it, it is outdated until it ran again.
 
 | Kind | Outdated or never run: `edakit check` | the gate, stage G |
 |---|---|---|
-| `input` | error | fails |
-| `derive`, `easyeda` | warning | a warning: the script runs, or the owner accepts it (`"match": "scripts sockel outdated*"`, 8.2) |
+| `input` | error | fails – the gate runs it first, unless `--no-scripts` |
+| `derive`, `easyeda` | warning | a warning: the script runs (`edakit run`), or the owner accepts it (`"match": "scripts sockel outdated*"`, 8.2) |
 | `check`, `sim` | – (no stamp: a check runs in every gate and its result is the gate's protocol, 8.1; the plugin runs inside `edakit sim`) | |
+| a change of the project library, with something from before it (below) | warning | a warning: the steps make it again, or the owner accepts it |
 
 ```text
 ERROR   scripts  kunst outdated: hardware/art/make_art.py changed – Bell, greeting, star and snowflake as shapes for the silkscreen
 NOTE    scripts  baumgrafik: not compared – routing:tree absent here
 ```
 
-A current script is a passed row of stage G. **No command runs an `input`, `derive` or `easyeda` script yet** – the
-gate runs the checks (8.1): run it by hand – its `cmd`, in the project directory –, then record the run, and commit
-the lock with what the script wrote:
+A current script is a passed row of stage G.
+
+**Running the scripts.** edakit runs `input` scripts itself, `easyeda` scripts on command only (concept
+project-scripts, decision 7). `edakit run NAME …` runs the named `input`, `derive` and `easyeda` scripts – in the order
+`edakit scripts` shows, whatever order they are named in; an `easyeda` script, which has no place in that order, before
+the first step that reads the project library – and records each run as `edakit scripts stamp` does. A check is not
+run so: phase export is the gate's, phase order and acceptance a line of section 6 (8.1). Only the named scripts run;
+one that comes after a script that is not current is still outdated after its run, and `edakit run` says which to run
+with it ("jahr still outdated: after kunst, which never ran – edakit run kunst jahr", exit 2).
+
+A step that reads what an input writes runs the inputs that are outdated or never ran first, in their order: an input
+that writes what the step reads, and the inputs before it – those it reads from, those `after` names. Which steps:
+
+| Command | What of the inputs it reads |
+|---|---|
+| `pcb place`, `pcb parts`, `pcb plan`, `pcb apply`, `route all` | the board file of its board |
+| `silk apply`, `silk preview` | the board file and the SVGs of `[[silk.art]]` of its board – preview shows what apply places |
+| `gate` (with and without `--easyeda`) | every made board's board file and artwork, and the simulation plugin |
+
+The other actions – `pcb dump`, `nets`, `tooling`, `pour`, `autolayout`, the single actions of `route`, `silk check`
+– run none, and neither do `edakit sim` and `edakit firmware`, which read the simulation plugin: they run in the
+pre-commit hook and the CI, where a command that writes files is not wanted – `edakit check` there names an outdated
+input. A step runs no `derive` script: it names the ones before it in the order that are outdated or never ran, with
+`edakit run <name>`. It never runs an `easyeda` script: it names one that changes its board's project library and is
+outdated or never ran. Each script's output goes to `<artifacts>/scripts/<name>.log`, a line with its `about` to the
+terminal; commit `hardware/scripts.lock` with what the scripts wrote:
+
+```text
+project scripts before edakit gate (handbook 8.6):
+  kunst ran (0.4 s) – Bell, greeting, star and snowflake as shapes for the silkscreen
+  pins never run – a derive, no step runs it: edakit run pins
+  tdisplay never run – an easyeda script, on command only: edakit run tdisplay (under the EasyEDA claim)
+  output in build/edakit/scripts/<name>.log – commit hardware/scripts.lock with what the scripts wrote
+```
+
+- **A failed script** – an exit code other than 0, or no file where `writes` names one – records nothing and shows the
+  end of its output; a step does not run then: "edakit silk apply: not run – kunst failed; fix it, or --no-scripts
+  runs the step with the files as they are" (exit 1). A script may run 15 minutes, as a check of the gate.
+- **The way out**, for one run: `--no-scripts` on each of these commands. The step reads the files as they are and
+  names the inputs it did not run; stage G of a gate run so fails on them.
+- **Entries that do not resolve** or a lock that cannot be read: no input runs, the step says so and runs –
+  `edakit check` and stage G fail on them.
+- **Inside a script edakit runs**, `EDAKIT_SCRIPT` holds its name: a step the script calls runs no script, and
+  `edakit run` refuses to run that script again. `EDAKIT_CONFIG` names the project's edakit.toml, so that the
+  script's own edakit calls find it.
+
+**An `easyeda` script under the EasyEDA claim.** `edakit run` claims EasyEDA for it as every edakit command that
+touches EasyEDA does (11.2): in a Claude session, with `[project] lock = "auto"`, it claims or renews the session's
+claim – the note says `edakit run <name>` –, renews it every minute while the script runs, and keeps it afterwards, as
+the other commands do (`edakit lock release` when the series is done). Another session holds EasyEDA: nothing runs,
+exit 3, with who holds it since when. In a terminal – no session – and with `lock = "off"` nothing is claimed, and the
+script runs.
+
+**What an `easyeda` script changed.** When it ran through `edakit run`, the lock records the change of each project
+library it writes: which script, when, by whom, and what is from before it – the parts placed in the PCB with their
+geometry, and the routing of the board. EasyEDA keeps a placed part's old copy of a footprint until the part is
+deleted and recreated (9); `edakit pcb parts --write` recreates the deleted parts from the project library. Until
+`edakit pcb dump` measured every part again (not with `--ref`) and `edakit route all` wrote its routing into EasyEDA
+(exit 0, 2 or 3), `edakit check`, `edakit scripts` and stage G of the gate warn; each of the two steps takes its part
+off and says so. The warning also names the scripts made from them – they read the board's footprints, mechanical
+model, routing or Gerber data: the reference project's tree artwork. Once the steps made the data again, their stamps
+tell them outdated, and an input among them runs before its step (`silk apply`). A script that reads
+`project-library:<b>` itself is outdated at once.
+
+```text
+WARNING scripts  project-library:main changed by tdisplay (2026-10-28 23:46) – from before it: the parts in the PCB, which keep their old copy until deleted and recreated (edakit pcb parts --write, then edakit pcb dump); the routing (edakit route all)
+```
+
+`edakit scripts stamp` records no change: it records the run of a script run by hand, also long ago – a project that
+registers an `easyeda` script whose change is in the PCB since stamps it so.
 
 ```bash
 edakit scripts                 # every script: kind, state, about, cmd, last run; the order, and what is to run
-edakit scripts stamp kunst     # kunst ran: its stamp into hardware/scripts.lock
+edakit run kunst               # kunst runs, its stamp goes into hardware/scripts.lock
+edakit scripts stamp kunst     # kunst ran by hand: its stamp into hardware/scripts.lock
 ```
 
 ```text
@@ -559,13 +629,18 @@ kunst  input    outdated: hardware/art/make_art.py changed
                 stamped 2026-10-28 21:33 by tobias
 
 order: edakit firmware → edakit check → edakit sim → … → edakit route all → kunst → edakit silk apply → edakit gate
+
+1 to run: edakit run kunst; an input also runs by itself before the step that reads it (handbook 8.6)
 ```
 
-`edakit scripts` exits 0 when every script is current, 2 when one is outdated or never ran or the entries do not
-resolve, 1 when the lock cannot be read. `stamp` refuses – and writes nothing – a name that is not in `[scripts]`, a
-check, entries that do not resolve, and a script whose `writes` are not there ("run it first"); it drops the stamps of
-scripts no longer in `[scripts]`. What the author leaves out of `reads` is not noticed – the system font the bell's
-`make_art.py` draws with –, and the entry's `check`, an exact check for when the stamp is not enough, does not run yet.
+`edakit scripts` exits 0 when every script is current, 2 when one is outdated or never ran, something is from before a
+change of the project library, or the entries do not resolve, 1 when the lock cannot be read. `edakit run` exits 0
+when every named script ran and is current, 2 when one is still outdated, 1 when it refuses – a name not in
+`[scripts]`, a check, entries that do not resolve, a lock that cannot be read – or a script failed, 3 when another
+session holds EasyEDA. `stamp` refuses – and writes nothing – a name that is not in `[scripts]`, a check, entries that
+do not resolve, and a script whose `writes` are not there ("run it first"); it drops the stamps of scripts no longer
+in `[scripts]`. What the author leaves out of `reads` is not noticed – the system font the bell's `make_art.py` draws
+with –, and the entry's `check`, an exact check for when the stamp is not enough, does not run yet.
 
 **Project agents.** A project registers its own agents in edakit.toml too (`[agents.<name>]`, 10.1). An agent
 delivers a sign-off, and a sign-off is bound to a hash: a project agent signs a sign-off of its own, in addition to

@@ -19,6 +19,9 @@
                                      with an ID its chain – from where, the requirement, what verifies it (opt-in)
     edakit scripts [stamp NAME ...]  the project's scripts: about, state (current, outdated, never run), the order;
                                      stamp records the run of scripts that ran by hand (hardware/scripts.lock)
+    edakit run NAME ...              runs project scripts in their order and records their runs – an easyeda script
+                                     under the EasyEDA claim. pcb place|parts|plan|apply, route all, silk apply|preview
+                                     and gate run the outdated input scripts they read first (--no-scripts: none)
     edakit handover                  what the circuit hands over to the layout: state, sign-offs, layout requirements
     edakit schematic create|check|copy|layout
     edakit schematic draw            the schematic as SVG from graph and parts database – no EasyEDA (offline)
@@ -36,7 +39,8 @@
     edakit proposal template|seal|verify   a rule or feature proposal for the edakit repository, sealed with its SHA-256
     edakit doctor                    Node, easyeda-mcp-pro, bridge, EasyEDA process, ngspice, Freerouting
 
-Exit codes everywhere: 0 = ok, 2 = findings, 1 = error. `edakit lock`: 3 = another session holds EasyEDA.
+Exit codes everywhere: 0 = ok, 2 = findings, 1 = error. `edakit lock`, `edakit run` of an easyeda script: 3 = another
+session holds EasyEDA.
 `route all|drc` and `silk apply|check`: 3 = the DRC's only item is "Import Changes" and schematic = PCB – EasyEDA
 waits for the import acknowledgement (Design → Import Changes once).
 """
@@ -50,6 +54,11 @@ import sys
 def _common(p):
     p.add_argument("--config", help="path to edakit.toml (default: search upwards from the current directory)")
     p.add_argument("-v", "--verbose", action="store_true", help="show the MCP traffic")
+
+
+def _no_scripts(p):
+    p.add_argument("--no-scripts", action="store_true", help="run no project script first – the step reads the files "
+                                                             "as they are (handbook 8.6)")
 
 
 def build_parser():
@@ -137,6 +146,12 @@ def build_parser():
     p.add_argument("names", nargs="*", help="stamp: the scripts that ran")
     _common(p)
 
+    p = sub.add_parser("run", help="run project scripts ([scripts.<name>]) in their order and record their runs; an "
+                                   "easyeda script under the EasyEDA claim")
+    p.add_argument("names", nargs="+", metavar="NAME", help="input, derive or easyeda scripts – they run in the order "
+                                                            "edakit scripts shows, whatever order they are named in")
+    _common(p)
+
     p = sub.add_parser("handover", help="the hand-over from the circuit to the layout: state, sign-offs, requirements")
     p.add_argument("--board")
     _common(p)
@@ -170,6 +185,7 @@ def build_parser():
     p.add_argument("--ref", help="dump: only these designators, comma-separated")
     p.add_argument("--only", help="place: only these designators, comma-separated")
     p.add_argument("--verify-all", action="store_true", help="apply: compare the pads of every part with the plan")
+    _no_scripts(p)
     _common(p)
 
     p = sub.add_parser("route", help="route with Freerouting and write the result into EasyEDA")
@@ -182,11 +198,13 @@ def build_parser():
     p.add_argument("--clearance", type=float, help="copper-to-copper clearance in mil")
     p.add_argument("--no-optimizer", action="store_true", help="route only, skip Freerouting's optimiser")
     p.add_argument("--cleanup", action="store_true", help="verify: delete tracks and vias that are not planned")
+    _no_scripts(p)
     _common(p)
 
     p = sub.add_parser("silk", help="designators where there is room, silkscreen check on the Gerber export")
     p.add_argument("action", choices=["apply", "check", "preview"])
     p.add_argument("--board")
+    _no_scripts(p)
     _common(p)
 
     p = sub.add_parser("export", help="documentation and manufacturing files from EasyEDA")
@@ -195,6 +213,7 @@ def build_parser():
 
     p = sub.add_parser("gate", help="release gate: all stages, test protocol, manufacturing files")
     p.add_argument("--easyeda", action="store_true", help="also run S, L and F (EasyEDA with the bridge)")
+    _no_scripts(p)
     _common(p)
 
     p = sub.add_parser("release", help="the current release: show it, withdraw a run, check the files to upload")
@@ -269,6 +288,11 @@ def _main(argv=None):
         else:
             print(f"edakit: {e}", file=sys.stderr)
             return 1
+    if args.command in ("pcb", "route", "silk", "gate"):    # the outdated input scripts a step reads run first (8.6)
+        from . import scripts
+        code, cfg = scripts.before_step(cfg, args)
+        if code is not None:
+            return code
     if args.command == "check":
         from . import checks
         return checks.main(cfg, args)
@@ -309,18 +333,21 @@ def _main(argv=None):
     if args.command == "scripts":
         from . import scripts
         return scripts.main(cfg, args)
+    if args.command == "run":
+        from . import scripts
+        return scripts.main_run(cfg, args)
     if args.command == "handover":
         from . import handover
         return handover.main(cfg, args)
     if args.command == "schematic":
         from . import schematic
         return schematic.main(cfg, args)
-    if args.command == "pcb":
-        from . import pcb
-        return pcb.main(cfg, args)
+    if args.command == "pcb":      # pcb dump, route all: made again after an easyeda script changed the library (8.6)
+        from . import pcb, scripts
+        return scripts.after_step(cfg, args, pcb.main(cfg, args))
     if args.command == "route":
-        from . import route
-        return route.main(cfg, args)
+        from . import route, scripts
+        return scripts.after_step(cfg, args, route.main(cfg, args))
     if args.command == "silk":
         from . import silk
         return silk.main(cfg, args)

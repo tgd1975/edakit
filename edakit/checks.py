@@ -85,7 +85,8 @@ the bridges as copper; G-1, G-2, G-3, G-8, G-18, P-1 and G-9 see every net and p
 edakit check also resolves the project's scripts ([scripts.*] of edakit.toml, with [[release.stages]] and sim_plugin)
 with edakit's steps into one order and compares their stamps (hardware/scripts.lock), with the ID scripts – no check
 of the catalog (scripts.py, handbook 8.6): what keeps the entries from one order is an error, as an input that is
-outdated or never ran; a derive or easyeda script outdated or never run is a warning, what was not compared a note.
+outdated or never ran; a derive or easyeda script outdated or never run is a warning, and so is what is from before a
+change an easyeda script made to the project library (edakit run); what was not compared is a note.
 The project's agents ([agents.*]) are checked too, with the ID agents: an agent file that is missing, a sign-off that
 is not the agent's to sign, an after that names no agent – each an error (scripts.agents). The gate reports the same
 in stage G.
@@ -1222,8 +1223,8 @@ def main(cfg, args):
             print("  " + "\n  ".join(rules.explain(c)))
     if any(level != "note" for level, _ in found):
         print("\nProject scripts: the entries [scripts.<name>] of edakit.toml – what each script reads and writes – "
-              "resolve into one order with edakit's steps; a script that is outdated or never ran runs again by hand – "
-              "its cmd –, then edakit scripts stamp <name> records the run (handbook 8.6)")
+              "resolve into one order with edakit's steps; edakit run <name> runs a script that is outdated or never "
+              "ran and records the run – an input also runs by itself before the step that reads it (handbook 8.6)")
     if team:
         print("\nProject agents: each entry [agents.<name>] of edakit.toml names its agent file and what the agent signs "
               "– a sign-off of its own, or one of edakit's reviews in place of edakit's agent (replaces); edakit scripts "

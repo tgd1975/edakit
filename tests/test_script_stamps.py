@@ -112,8 +112,9 @@ def test_edakit_scripts_lists_every_script_with_its_state_and_the_order(project,
     order = " ".join(line.strip() for line in out.split("\norder: ")[1].split("\non command only")[0].splitlines())
     assert order.endswith("edakit route all → kunst → edakit silk apply → bild → lage → edakit gate")
     assert "on command only: lib" in lines
-    assert lines[-1] == ("2 to run: kunst, lib – each by hand (its cmd), then edakit scripts stamp <name> records the "
-                         "run")
+    assert " ".join(line.strip() for line in out.rstrip().split("\n\n")[-1].splitlines()) == (
+        "2 to run: edakit run kunst lib – an easyeda script under the EasyEDA claim; an input also runs by itself "
+        "before the step that reads it (handbook 8.6)")
 
 
 def test_edakit_scripts_without_scripts(project, monkeypatch, capsys):
@@ -266,12 +267,14 @@ def test_entries_that_do_not_resolve_fail_the_gate(project):
 
 
 def test_the_gate_reports_the_scripts_in_stage_g(project, monkeypatch, capsys):
-    """Offline: kunst never ran – a failed check in section 2; bild a warning to accept in section 3; a current script
-    passes."""
+    """Offline, with --no-scripts – else the gate runs kunst first (test_script_runs.py): kunst never ran – a failed
+    check in section 2; bild a warning to accept in section 3; a current script passes."""
     bell(project, ts.KUNST + BILD + LIB)
     write(project, "hardware/lib/device.py", "print('footprint')\n")
     stamp(project, monkeypatch, capsys, "lib")
-    text = tg.gate_run(project, monkeypatch)
+    code, _ = edakit(project, monkeypatch, capsys, "gate", "--no-scripts")
+    assert code == 2
+    text = (sorted((project.root / "build" / "release").iterdir())[-1] / "protocol.md").read_text()
     assert f"| G | scripts |  |  | kunst never run: no stamp in {LOCK} – {ABOUT} |  |  |" in tg.section(text, 2)
     assert (f"- `scripts bild never run: no stamp in {LOCK} – The board as a picture for the README` (project check). "
             "Actual: . Expected: . → **not accepted**") in tg.section(text, 3)

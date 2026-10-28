@@ -4,20 +4,28 @@ stamps that tell an outdated script. Project agents: the entries [agents.<name>]
 
     edakit scripts               every script with its about and state – current, outdated, never run – and the order;
                                  with [agents] every agent and who reviews at each hook point
+    edakit run NAME …            runs scripts in their order and records their stamps – an easyeda script under the
+                                 EasyEDA claim; a check is the gate's (main_run)
     edakit scripts stamp NAME …  records the run of scripts that ran by hand: their stamps in hardware/scripts.lock
     edakit check, edakit gate    report what keeps the entries from resolving and every outdated script (handbook 8.6)
+    edakit pcb place|parts|plan|apply, route all, silk apply|preview, gate
+                                 run the outdated inputs they read first (before_step, decision 7); --no-scripts runs
+                                 none. pcb dump and route all take their data off what an easyeda script left from
+                                 before it (after_step)
 
 A project registers the scripts that touch edakit's flow: a script writes a file edakit reads, derives something from
 edakit's data, changes the project library in EasyEDA, or holds up the release as a check of its own. Its entry says
-what it reads and writes; when it runs follows from that and from edakit's steps in their fixed order (STEPS). Nothing
-is run here: the gate runs the checks, as gate_checks gives them (handbook 8.1).
+what it reads and writes; when it runs follows from that and from edakit's steps in their fixed order (STEPS). edakit
+runs an input before the step that reads it and every script on command (edakit run); the gate runs the checks, as
+gate_checks gives them (handbook 8.1).
 
   kind     when                                                     what it writes
   input    before the first edakit step that reads what it writes   a file edakit reads: the board file (board:<b>),
                                                                     an SVG of [[silk.art]], the simulation plugin
   derive   before edakit check, where its result is to be current;  files no edakit step reads
            before the gate when it reads what comes after edakit check
-  easyeda  on command only                                          project-library:<b> in EasyEDA
+           – no step runs it: edakit run
+  easyeda  on command only: edakit run, under the EasyEDA claim     project-library:<b> in EasyEDA
   check    phase export: a stage of the gate, before S or at        nothing
            "after F"; phase order and acceptance: a line of the
            protocol's list of its phase (gate_checks)
@@ -30,7 +38,8 @@ Names of edakit's data in reads and writes: graph, parts, sim (written by hand, 
 firmware (edakit firmware, with [firmware]); <b> is a made board – a bought one has none of them. Anything else is a
 path relative to edakit.toml: a folder holds the files in it, and an edakit file named by its path is its data
 (hardware/boards/<b>.toml is board:<b>, route/<b>.ses routing:<b>, a gate run's fab/<b>/ gerber:<b>). Each name has a
-hash of what edakit has of it offline (data_hash) – the project library none, it is in EasyEDA only.
+hash of what edakit has of it offline (data_hash) – the project library, which is in EasyEDA only, the last change
+edakit run saw an easyeda script make, none before.
 
 The stamp of a script (input, derive, easyeda) in hardware/scripts.lock: its cmd, the script itself – the first word of
 cmd that names a file (script_file) – and the hash of everything it reads, at its last run (input_hash: a name's
@@ -39,9 +48,12 @@ data_hash, a file's bytes, a folder's files). A script is
   outdated   cmd changed, a hash changed, reads names what the stamp lacks, or it comes after a script – through after,
              or reading what that one writes – that is outdated or never ran
   never run  no stamp
-What is absent here – build/ in the CI or a fresh clone, a file outside the project – and the project library are not
-compared, whatever the stamp says: a note names them. Outdated or never run, an input is an error (the gate: a failed
-check of stage G), a derive or easyeda script a warning; a check has no stamp, its result is the gate's protocol.
+What is absent here – build/ in the CI or a fresh clone, a file outside the project – and the project library before
+any change edakit run saw are not compared, whatever the stamp says: a note names them. Outdated or never run, an input
+is an error (the gate: a failed check of stage G), a derive or easyeda script a warning; a check has no stamp, its
+result is the gate's protocol. After an easyeda script ran through edakit run, the lock also keeps what it changed –
+project-library:<b> – and what is from before it: the parts in the PCB with their geometry, and the routing, until
+edakit pcb dump and edakit route all made them again; a warning until then (open_changes).
 
 The entries resolve when (docs/concepts/new/project-scripts.md, "Checking the TOML", its rules 1 to 9; 10 and 11 are
 about agents, see agents):
@@ -66,8 +78,11 @@ import hashlib
 import json
 import os
 import re
+import shlex
+import subprocess
 import sys
 import textwrap
+import time
 from collections import defaultdict, deque
 from dataclasses import dataclass, field
 from pathlib import Path
@@ -128,6 +143,8 @@ class Resolution(NamedTuple):
     order: list     # edakit's steps and the scripts in one order that keeps every edge – easyeda scripts run on
                     # command and have no place in it; empty when the entries do not resolve
     before: dict    # name of a [scripts] entry -> the entries it comes after: through after, or reading what they write
+    sequence: list  # order with the easyeda scripts, each before the first step that reads what it changes – the
+                    # order edakit run runs scripts in
 
 
 @dataclass
@@ -243,26 +260,27 @@ def _cycle(start, edges):
     return None
 
 
+def _keys(cfg, names, spec, boards):
+    """The keys of what a step of STEPS reads or writes (spec), for these made boards."""
+    made, out = cfg.made(), set()
+    for n in spec:
+        if n == "plugin":
+            out |= {("file", names.path(cfg.sim_plugin))} if cfg.sim_plugin else set()
+        elif n == "art:<b>":
+            out |= {("file", names.path(a["svg"])) for b in boards
+                    for a in (made[b].silk.get("art") if isinstance(made[b].silk.get("art"), list) else [])
+                    if isinstance(a, dict) and isinstance(a.get("svg"), str)}
+        elif n.endswith(":<b>"):
+            out |= {(n[:-4], b) for b in boards}
+        else:
+            out.add((n, None))
+    return out
+
+
 def _step_data(cfg, names):
     """Per step of STEPS: the keys it reads and the keys it writes, for every made board."""
-    art = {("file", names.path(a["svg"])) for board in cfg.made().values()
-           for a in (board.silk.get("art") if isinstance(board.silk.get("art"), list) else [])
-           if isinstance(a, dict) and isinstance(a.get("svg"), str)}
-    plugin = {("file", names.path(cfg.sim_plugin))} if cfg.sim_plugin else set()
-
-    def keys(spec):
-        out = set()
-        for n in spec:
-            if n == "plugin":
-                out |= plugin
-            elif n == "art:<b>":
-                out |= art
-            elif n.endswith(":<b>"):
-                out |= {(n[:-4], b) for b in cfg.made()}
-            else:
-                out.add((n, None))
-        return out
-    return [keys(r) for _, r, _ in STEPS], [keys(w) for _, _, w in STEPS]
+    boards = list(cfg.made())
+    return [_keys(cfg, names, r, boards) for _, r, _ in STEPS], [_keys(cfg, names, w, boards) for _, _, w in STEPS]
 
 
 def _entries(cfg, names, finding):
@@ -473,11 +491,19 @@ def _resolve(cfg):
                 (f" –[{edges[a][b]}]→ " if edges[a][b] else " → ") + labels[b] for a, b in zip(cycle, cycle[1:])))
     before = {e.label: [a.label for a in entries if a.node[0] == "script" and e.node in edges.get(a.node, {})]
               for e in entries if e.node[0] == "script"}
-    return Resolution(found, _order(steps, entries, edges, labels) if not found else [], before), entries, names
+    # an easyeda script has no edge to the steps – it runs on command –, but edakit run runs it before the first step
+    # that reads what it changes: before schematic layout and pcb parts
+    feeds = {e.node: min((i for i, read in enumerate(reads_of) if any(_overlap(k, r) for _, k in e.writes
+                                                                      for r in read)), default=len(STEPS))
+             for e in entries if e.kind == "easyeda"}
+    sequence = _order(steps, entries, edges, labels, feeds) if not found else []
+    on_command = {e.label for e in entries if e.kind == "easyeda"}
+    return Resolution(found, [n for n in sequence if n not in on_command], before, sequence), entries, names
 
 
-def _order(steps, entries, edges, labels):
-    """One order that keeps every edge: each script just before the first of edakit's steps it comes before."""
+def _order(steps, entries, edges, labels, feeds):
+    """One order that keeps every edge: each script just before the first of edakit's steps it comes before – an
+    easyeda script at the latest before the step feeds names."""
     nodes = steps + [e.node for e in entries]
     first = {}
 
@@ -485,7 +511,7 @@ def _order(steps, entries, edges, labels):
         if n[0] == "step":
             return n[1]
         if n not in first:
-            first[n] = min((first_step(m) for m in edges.get(n, {})), default=len(STEPS))
+            first[n] = min([first_step(m) for m in edges.get(n, {})] + [feeds.get(n, len(STEPS))])
         return first[n]
     rank = {n: (first_step(n), n[0] == "step", i) for i, n in enumerate(nodes)}
     count = defaultdict(int)
@@ -501,19 +527,19 @@ def _order(steps, entries, edges, labels):
             count[m] -= 1
             if not count[m]:
                 ready.append(m)
-    on_command = {e.node for e in entries if e.kind == "easyeda"}
-    return [labels[n] for n in out if n not in on_command]
+    return [labels[n] for n in out]
 
 
 # --- the hash of each name ------------------------------------------------------------------------------------------
 
 def data_hash(cfg, name):
     """The hash of one of edakit's data, by its name as reads and writes spell it (an edakit file named by its path is
-    its data): the SHA-256 of what edakit has of it offline, ABSENT while the data does not exist. None for
-    project-library:<b>: the project library is in EasyEDA only and has no offline hash – what changes it is an easyeda
-    script, and running the script is what tells edakit. A name that is not edakit's data: ValueError; a manifest that
-    is not readable: gate.ReleaseError, as in edakit release.
+    its data): the SHA-256 of what edakit has of it offline, ABSENT while the data does not exist. A name that is not
+    edakit's data: ValueError; a manifest that is not readable: gate.ReleaseError, as in edakit release.
 
+      project-library:<b> the project library is in EasyEDA only: what changes it is an easyeda script, and running
+                          the script is what tells edakit – the hash of its last change edakit run recorded in
+                          hardware/scripts.lock (which script, when); None before any
       graph, parts, sim   the files as the circuit hash reads them – graph and parts without [release] hash_ignore
       board:<b>           the board file
       footprints:<b>      the geometry edakit pcb dump measures, beside the board file (<b>.geometry.json) – one
@@ -532,7 +558,8 @@ def data_hash(cfg, name):
         raise ValueError(f"{name}: " + (why or "a path, not a name of edakit's data"))
     kind, b = key
     if kind == "project-library":
-        return None
+        change = load_changes(cfg).get(_spell(key))
+        return _change_hash(change) if change else None
     if kind == "gerber":
         return _gerber_hash(cfg, b)
     route = cfg.artifacts / "route"
@@ -576,8 +603,9 @@ RESULT = {"error": "fail", "warning": "warn", "note": "info"}          # the gat
 SKIP = ("__pycache__",)                   # left out of a folder's hash, with every name that starts with a dot (.git,
 SKIP_SUFFIXES = (".pyc", ".pyo")          # .venv, editor files) and compiled Python
 ABOUT_LOCK = ("The stamps of the project scripts ([scripts.<name>] of edakit.toml): per script, at its last run, "
-              "its cmd, the script itself and the hash of everything it reads. edakit scripts stamp writes it, edakit "
-              "check and the gate compare it (handbook 8.6). Commit it with what the scripts wrote.")
+              "its cmd, the script itself and the hash of everything it reads; after an easyeda script ran, what it "
+              "changed in EasyEDA and what is from before it (changed). edakit run and edakit scripts stamp write it, "
+              "edakit check and the gate compare it (handbook 8.6). Commit it with what the scripts wrote.")
 
 
 class StampError(Exception):
@@ -675,11 +703,42 @@ def load_lock(cfg):
     return stamps
 
 
-def save_lock(cfg, stamps):
+def save_lock(cfg, stamps, changed=None):
+    """Writes the stamps and what easyeda scripts changed – changed None keeps what the lock has; a lock without any
+    change has no table changed."""
     path = cfg.root / LOCK
+    changed = load_changes(cfg) if changed is None else changed
     path.parent.mkdir(parents=True, exist_ok=True)
     data = {"about": ABOUT_LOCK, "scripts": {n: stamps[n] for n in sorted(stamps)}}
+    if changed:
+        data["changed"] = {n: changed[n] for n in sorted(changed)}
     path.write_text(json.dumps(data, indent=1, ensure_ascii=False) + "\n", encoding="utf-8")
+
+
+def load_changes(cfg):
+    """What easyeda scripts changed in EasyEDA, as edakit run recorded it in hardware/scripts.lock: {data name, e.g.
+    project-library:main: {script, at, by, from_before: [footprints:<b>, routing:<b>, …]}}; {} without – or with a
+    lock that cannot be read, which load_lock reports."""
+    path = cfg.root / LOCK
+    try:
+        data = json.loads(path.read_text(encoding="utf-8")) if path.exists() else {}
+    except (OSError, UnicodeDecodeError, json.JSONDecodeError):
+        return {}
+    changed = data.get("changed") if isinstance(data, dict) else None
+    return {n: c for n, c in changed.items() if isinstance(c, dict) and isinstance(c.get("script"), str)
+            and isinstance(c.get("at"), str) and isinstance(c.get("from_before", []), list)} \
+        if isinstance(changed, dict) else {}
+
+
+def _change_hash(change):
+    """The hash of a change of the project library: which script made it, when – what a stamp compares."""
+    return hashlib.sha256(json.dumps({"script": change["script"], "at": change["at"]}, sort_keys=True)
+                          .encode()).hexdigest()
+
+
+def _user(cfg):
+    from .release import gate
+    return gate.sh(cfg.root, "git", "config", "user.name") or getpass.getuser()
 
 
 def _inputs(cfg, names, e):
@@ -731,6 +790,11 @@ def review(cfg):
     """(resolution, states, problem): the entries resolved with edakit's steps; the state of every entry – [scripts] in
     the order of edakit.toml, then [[release.stages]] and sim_plugin; what kept the stamps from being compared (a lock
     that cannot be read), else None. Stamps are compared only when the entries resolve."""
+    return _review(cfg)[:3]
+
+
+def _review(cfg):
+    """review, and the entries and names it resolved with."""
     from .release import gate
     res, entries, names = _resolve(cfg)
     stamps, problem = {}, None
@@ -767,7 +831,7 @@ def review(cfg):
     if cfg.sim_plugin:
         states = [s._replace(about=f"{cfg.relative(cfg.sim_plugin)} – MODELS and checks for edakit sim (5.1)")
                   if s.kind == "sim" else s for s in states]
-    return res, states, problem
+    return res, states, problem, entries, names
 
 
 def _findings(res, states, problem):
@@ -784,19 +848,29 @@ def _findings(res, states, problem):
     return out
 
 
+def _change_findings(cfg, problem, res, entries):
+    """A warning per change of a project library with something from before it (open_changes), with the scripts made
+    from that – none while the lock cannot be read."""
+    return [] if problem or not cfg.scripts else [
+        ("warning", _change_said(n, c, () if res.findings else _made_from(res, entries, c))) for n, c in open_changes(cfg)]
+
+
 def findings(cfg):
     """What edakit check and the gate report with the ID scripts, [(level, message)] with level error, warning or note:
     what keeps the entries from one order (nothing is compared then), a lock that cannot be read, every script outdated
-    or never run – an input an error, a derive or easyeda script a warning –, and what was not compared."""
-    return _findings(*review(cfg))
+    or never run – an input an error, a derive or easyeda script a warning –, what was not compared, and what is from
+    before a change an easyeda script made – a warning."""
+    res, states, problem, entries, _ = _review(cfg)
+    return _findings(res, states, problem) + _change_findings(cfg, problem, res, entries)
 
 
 def gate_rows(cfg):
-    """The rows of stage G with the ID scripts: an error fails, a warning wants accepting – or the script run –, a note
-    informs, and a current script passes. A project without [scripts], [[release.stages]] and sim_plugin gets none."""
-    res, states, problem = review(cfg)
+    """The rows of stage G with the ID scripts: an error fails, a warning wants accepting – or the script run, the step
+    made again –, a note informs, and a current script passes. A project without [scripts], [[release.stages]] and
+    sim_plugin gets none."""
+    res, states, problem, entries, _ = _review(cfg)
     rows = [{"stage": "G", "id": "scripts", "item": "", "check": msg, "result": RESULT[level]}
-            for level, msg in _findings(res, states, problem)]
+            for level, msg in _findings(res, states, problem) + _change_findings(cfg, problem, res, entries)]
     return rows + [{"stage": "G", "id": "scripts", "item": "", "check": f"{s.name} current – {s.about}",
                     "result": "pass"} for s in states if s.state == "current"]
 
@@ -864,11 +938,11 @@ def gate_checks(cfg):
     return [c for _, c in sorted(out, key=lambda rc: rc[0])]
 
 
-def stamp(cfg, names):
-    """Records the run of each script of names – it ran by hand: its stamp in hardware/scripts.lock; the stamps of
-    scripts no longer in [scripts] are dropped. Returns (the new stamps, the names dropped). StampError with what keeps
-    a script from its stamp: then nothing is written."""
-    from .release import gate
+def stamp(cfg, names, ran=False):
+    """Records the run of each script of names – it ran by hand, or edakit run ran it (ran): its stamp in
+    hardware/scripts.lock; the stamps of scripts no longer in [scripts] are dropped. Returns (the new stamps, the names
+    dropped). StampError with what keeps a script from its stamp: then nothing is written. A stamp records no change of
+    the project library – only edakit run sees an easyeda script change it (main_run)."""
     if not names:
         raise StampError("name the scripts that ran: edakit scripts stamp NAME …")
     if unknown := [n for n in names if n not in cfg.scripts]:
@@ -880,15 +954,17 @@ def stamp(cfg, names):
     stamps = load_lock(cfg)
     entry = {e.label: e for e in entries if e.node[0] == "script"}
     when = dt.datetime.now().astimezone().isoformat(timespec="seconds")
-    by = gate.sh(cfg.root, "git", "config", "user.name") or getpass.getuser()
+    by = _user(cfg)
     new = {}
     for name in dict.fromkeys(names):
         e = entry[name]
         if e.kind not in STAMPED:
             raise StampError(f"{name} is a check: its result is the gate's protocol, not a file – a check has no stamp")
         if gone := [s for s, _ in e.writes if input_hash(cfg, s, nm) == ABSENT]:
-            raise StampError(f"{name} writes {', '.join(gone)}, which {'is' if len(gone) == 1 else 'are'} not there – "
-                             "run it first; nothing stamped")
+            are = "is" if len(gone) == 1 else "are"
+            raise StampError(f"{name} ran, but {', '.join(gone)} {are} not there – its cmd does not write what writes "
+                             "names; nothing recorded" if ran else
+                             f"{name} writes {', '.join(gone)}, which {are} not there – run it first; nothing stamped")
         script, now = _inputs(cfg, nm, e)
         new[name] = {"stamped": when, "by": by, "cmd": list(e.raw["cmd"]), "script": script,
                      "hashes": dict(sorted(now.items()))}
@@ -907,9 +983,9 @@ def _said(s):
         (f" – not compared: {', '.join(s.unseen)}" if s.unseen else "")
 
 
-def listing(cfg, res, states, problem):
+def listing(cfg, res, states, problem, changes=()):
     """edakit scripts: every entry with kind, state, about, cmd and its last run; the order, or what keeps the entries
-    from it; what is to run."""
+    from it; what is from before a change of the project library; what is to run."""
     lines = [f"The project's scripts – [scripts.<name>] of {cfg.path.name}, their stamps in {LOCK} (handbook 8.6)", ""]
     if not cfg.scripts:
         lines += [f"none – {cfg.path.name} has no [scripts.<name>]", ""]
@@ -935,18 +1011,24 @@ def listing(cfg, res, states, problem):
             lines.append(f"on command only: {', '.join(on_command)}")
     if problem:
         lines += ["", problem]
-    if todo := [s.name for s in states if s.state in ("outdated", "never run")]:
-        lines += ["", f"{len(todo)} to run: {', '.join(todo)} – each by hand (its cmd), then edakit scripts stamp "
-                      "<name> records the run"]
+    if changes:
+        lines += ["", *changes]
+    if todo := [s for s in states if s.state in ("outdated", "never run")]:
+        lines += [""] + textwrap.wrap(
+            f"{len(todo)} to run: edakit run {' '.join(s.name for s in todo)}"
+            + (" – an easyeda script under the EasyEDA claim" if any(s.kind == "easyeda" for s in todo) else "")
+            + "; an input also runs by itself before the step that reads it (handbook 8.6)", 120,
+            subsequent_indent="  ", break_long_words=False, break_on_hyphens=False)
     elif any(s.state == "current" for s in states):
         lines += ["", "every script current"]
     return lines
 
 
 def main(cfg, args):
-    """edakit scripts [stamp NAME …]. Exit 0: every script current, or stamped; 2: one is outdated or never ran, or
-    the entries – of [scripts] or of [agents] – do not resolve; 1: the lock cannot be read, or a stamp was refused.
-    With [agents] the listing ends with the project's agents and who reviews at each hook point."""
+    """edakit scripts [stamp NAME …]. Exit 0: every script current, or stamped; 2: one is outdated or never ran,
+    something is from before a change of the project library, or the entries – of [scripts] or of [agents] – do not
+    resolve; 1: the lock cannot be read, or a stamp was refused. With [agents] the listing ends with the project's
+    agents and who reviews at each hook point."""
     if args.action == "stamp":
         try:
             new, dropped = stamp(cfg, args.names)
@@ -965,15 +1047,350 @@ def main(cfg, args):
                 print(f"{s.name} still {s.state}: {', '.join(s.why)}")
         print(f"Commit {LOCK} with what the scripts wrote.")
         return 0
-    res, states, problem = review(cfg)
-    print("\n".join(listing(cfg, res, states, problem)))
+    res, states, problem, entries, _ = _review(cfg)
+    changes = [msg for _, msg in _change_findings(cfg, problem, res, entries)]
+    print("\n".join(listing(cfg, res, states, problem, changes)))
     team = agents(cfg) if cfg.agents else None        # [agents]: who reviews where (handbook 8.6)
     if team:
         print("\n".join(agent_listing(cfg, team)))
     if problem:
         return 1
     return 2 if res.findings or any(s.state in ("outdated", "never run") for s in states) or team and team.findings \
-        else 0
+        or changes else 0
+
+
+# --- running the scripts: edakit run, and the inputs before the steps that read them (handbook 8.6) -------------------
+#
+# edakit runs input scripts itself, easyeda scripts on command only (decision 7). edakit run NAME … runs input, derive
+# and easyeda scripts in their order and records each run as edakit scripts stamp does; a check is the gate's. A step
+# that reads what an input writes runs the outdated inputs first (before_step); a derive or easyeda script it does not
+# run, it names. Each script's output goes to <artifacts>/scripts/<name>.log, a line with its about to the terminal.
+
+HOOKED = {   # the commands that run the outdated inputs they read first – with the step of STEPS whose reads count
+    ("pcb", "place"): "edakit pcb place", ("pcb", "parts"): "edakit pcb parts", ("pcb", "plan"): "edakit pcb plan",
+    ("pcb", "apply"): "edakit pcb apply", ("route", "all"): "edakit route all", ("silk", "apply"): "edakit silk apply",
+    ("silk", "preview"): "edakit silk apply",       # it shows what silk apply places
+    ("gate", None): "edakit gate",
+}
+REMADE = {("pcb", "dump"): "footprints", ("route", "all"): "routing"}   # what these steps make again for their board
+FROM_BEFORE = {   # what is from before a change of the project library until the step of REMADE made it again
+    "footprints": "the parts in the PCB, which keep their old copy until deleted and recreated (edakit pcb parts "
+                  "--write, then edakit pcb dump)",
+    "routing": "the routing (edakit route all)",
+}
+RUNNING = "EDAKIT_SCRIPT"   # set for a script edakit runs, to its name: a step inside it runs no script
+TAIL = 40                   # lines of a failed script's output shown – all of it is in the log
+FOOTER = "output in {}/<name>.log – commit " + LOCK + " with what the scripts wrote"
+
+
+class Ran(NamedTuple):
+    code: int | None    # its exit code; None when it did not start or was stopped
+    seconds: float
+    why: str            # what kept it from starting or ending: "" when it ended by itself
+    output: str         # stdout and stderr, as in the log
+    log: Path
+
+
+def _execute(cfg, name, cmd, renew=None):
+    """Runs the cmd of the script name in the project folder – python as its first word is edakit's own (command) –,
+    with EDAKIT_SCRIPT = the name and EDAKIT_CONFIG = this edakit.toml, no input. Its output goes to
+    <artifacts>/scripts/<name>.log after a head with time and cmd. It may run TIMEOUT seconds; renew is called about
+    every minute while it runs (the EasyEDA claim of an easyeda script)."""
+    log = cfg.artifact("scripts", f"{name}.log")
+    argv = command(cmd)
+    log.write_text(f"{name} – {dt.datetime.now().astimezone().isoformat(timespec='seconds')}\ncmd: {shlex.join(cmd)}\n"
+                   + (f"runs: {shlex.join(argv)}\n" if argv != list(cmd) else "") + "\n", encoding="utf-8")
+    start = log.stat().st_size
+    env = {**os.environ, RUNNING: name, "EDAKIT_CONFIG": str(cfg.path)}
+    t0, code, why = time.monotonic(), None, ""
+    with open(log, "a", encoding="utf-8") as out:
+        try:
+            proc = subprocess.Popen(argv, cwd=cfg.root, stdin=subprocess.DEVNULL, stdout=out, stderr=subprocess.STDOUT,
+                                    env=env)
+        except OSError as e:
+            why = f"cannot run: {e}"
+        else:
+            while code is None and not why:
+                try:
+                    code = proc.wait(timeout=max(0.1, min(60.0, t0 + TIMEOUT - time.monotonic())))
+                except subprocess.TimeoutExpired:
+                    if time.monotonic() - t0 >= TIMEOUT:
+                        proc.kill()
+                        proc.wait()
+                        why = f"stopped after {TIMEOUT} s"
+                    elif renew:
+                        renew()
+        seconds = time.monotonic() - t0
+    output = log.read_bytes()[start:].decode("utf-8", errors="replace")
+    with open(log, "a", encoding="utf-8") as out:
+        out.write(f"\n{why or f'exit {code}'} after {seconds:.1f} s\n")
+    return Ran(code, seconds, why, output, log)
+
+
+def _run_one(cfg, name, indent=""):
+    """Runs one script and records its run – the stamp, and for an easyeda script what it changed (_record_change):
+    (the config read again – the script may have written a board file –, whether it ran and is recorded). Prints its
+    line, or what failed and the end of its output (stderr)."""
+    from . import config
+    e = cfg.scripts[name]
+    ran = _execute(cfg, name, list(e["cmd"]), _renew(cfg) if e["kind"] == "easyeda" else None)
+    if ran.code != 0:
+        lines = ran.output.splitlines()
+        shown = [f"… {len(lines) - TAIL} lines before"] * (len(lines) > TAIL) + lines[-TAIL:] or ["(no output)"]
+        print("\n".join([f"{indent}{name} failed ({ran.why or f'exit {ran.code}'}, {ran.seconds:.1f} s) – nothing "
+                         f"recorded; its output, also in {cfg.relative(ran.log)}:",
+                         *(f"{indent}  {line}" for line in shown)]), file=sys.stderr)
+        return cfg, False
+    cfg = config.load(cfg.path)
+    try:
+        changes = _record_change(cfg, name) if e["kind"] == "easyeda" else []
+        stamp(cfg, [name], ran=True)
+    except StampError as err:
+        print(f"{indent}{err}", file=sys.stderr)
+        return cfg, False
+    print(f"{indent}{name} ran ({ran.seconds:.1f} s) – {e.get('about', '')}")
+    if changes:
+        res, entries, _ = _resolve(cfg)
+        for n, c in changes:
+            print(f"{indent}  {_change_said(n, c, () if res.findings else _made_from(res, entries, c))}")
+    return cfg, True
+
+
+def _claim(cfg, names):
+    """Claims EasyEDA for easyeda scripts, as every edakit command that touches EasyEDA does: in a Claude session, with
+    [project] lock = "auto" (lock.claim_for_script). None, or why not – another session holds it."""
+    from . import lock
+    try:
+        lock.claim_for_script(note=f"edakit run {' '.join(names)}"[:80], mode=cfg.lock)
+    except SystemExit as e:
+        return str(e.code)
+    return None
+
+
+def _renew(cfg):
+    from . import lock
+
+    def renew():        # every minute while an easyeda script runs: the claim expires after 15 minutes without access
+        try:
+            lock.claim_for_script(renew=True, mode=cfg.lock)
+        except SystemExit:
+            pass        # taken over meanwhile – the script runs on; edakit lock says who holds EasyEDA
+    return renew
+
+
+def main_run(cfg, args):
+    """edakit run NAME …: the named scripts in the order edakit scripts shows – an easyeda script before the steps that
+    read the project library –, each recorded after it ran (stamp; an easyeda script also what it changed), a failed one
+    shown and nothing recorded; the scripts after it do not run. An easyeda script runs under the EasyEDA claim. Only
+    the named scripts run. Exit 0: each ran and is current; 2: one is still not current – it comes after a script that
+    is not; 1: refused – a name not in [scripts], a check, entries that do not resolve, a lock that cannot be read –, or
+    a script failed; 3: another session holds EasyEDA."""
+    def refuse(why):
+        print(f"edakit run: {why}", file=sys.stderr)
+        return 1
+    names = list(dict.fromkeys(args.names))
+    if unknown := [n for n in names if n not in cfg.scripts]:
+        return refuse(f"no [scripts.{unknown[0]}] in {cfg.path.name} ({', '.join(cfg.scripts) or 'none'})")
+    if (running := os.environ.get(RUNNING)) in names:
+        return refuse(f"{running} is running – it does not run itself")
+    res, entries, _ = _resolve(cfg)
+    if res.findings:
+        return refuse("the entries do not resolve into one order – edakit check names what keeps them; nothing ran")
+    entry = {e.label: e for e in entries if e.node[0] == "script"}
+    if checks := [n for n in names if entry[n].kind == "check"]:
+        return refuse(f"{checks[0]} is {_place(entry[checks[0]])} – edakit run runs input, derive and easyeda scripts")
+    try:
+        load_lock(cfg)
+    except StampError as e:
+        return refuse(f"{e} – nothing ran; fix it, or delete it and stamp every script again")
+    todo = [n for n in res.sequence if n in names]
+    if easyeda := [n for n in todo if entry[n].kind == "easyeda"]:
+        if why := _claim(cfg, easyeda):
+            print(f"edakit run: {why} – nothing ran", file=sys.stderr)
+            return 3
+    for n in todo:
+        cfg, ok = _run_one(cfg, n)
+        if not ok:
+            return 1
+    print(FOOTER.format(cfg.relative(cfg.artifacts / "scripts")))
+    res, states, _ = review(cfg)
+    stale = {s.name for s in states if s.state in ("outdated", "never run")}
+    still = [s for s in states if s.name in names and s.name in stale]
+    for s in still:
+        first = [n for n in res.sequence if n in stale and n in _upstream(res, [s.name])]
+        print(f"{s.name} still {_said(s)} – edakit run {' '.join(first + [s.name])}")
+    return 2 if still else 0
+
+
+def _upstream(res, names):
+    """The scripts names come after, through after or reading what they write – and those before them."""
+    seen, todo = set(), list(names)
+    while todo:
+        for b in res.before.get(todo.pop(), []):
+            if b not in seen:
+                seen.add(b)
+                todo.append(b)
+    return seen
+
+
+class Due(NamedTuple):
+    problem: str | None     # why no input can run first: the entries do not resolve, the lock cannot be read
+    run: list               # [State]: the inputs the step reads – directly or through another input –, outdated or
+                            # never run, in their order
+    report: list            # [str]: the derive and easyeda scripts before the step that are not current, which no step
+                            # runs
+
+
+def _due(cfg, step, boards):
+    """What runs before the step of STEPS for these boards, and what it names."""
+    res, states, problem, entries, names = _review(cfg)
+    if res.findings:
+        return Due("the entries do not resolve into one order – edakit check names what keeps them", [], [])
+    if problem:
+        return Due(problem, [], [])
+    state = {s.name: s for s in states}
+    by = {e.label: e for e in entries if e.node[0] == "script"}
+    reads = _keys(cfg, names, next(r for name, r, _ in STEPS if name == step), boards)
+    direct = [n for n, e in by.items() if e.kind == "input" and any(_overlap(k, r) for _, k in e.writes for r in reads)]
+    need = set(direct) | _upstream(res, direct)
+    stale = {n for n, s in state.items() if s.state in ("outdated", "never run")}
+    run = [state[n] for n in res.sequence if n in need and n in stale and by[n].kind == "input"]
+    libraries = {("project-library", b) for b in boards}
+    report = []
+    for n in res.sequence[:res.sequence.index(step)]:
+        e = by.get(n)
+        if e is None or n not in stale:
+            continue
+        if e.kind == "derive":
+            report.append(f"{n} {_said(state[n])} – a derive, no step runs it: edakit run {n}")
+        elif e.kind == "easyeda" and any(k in libraries for _, k in e.writes):
+            report.append(f"{n} {_said(state[n])} – an easyeda script, on command only: edakit run {n} (under the "
+                          "EasyEDA claim)")
+    return Due(None, run, report)
+
+
+def before_step(cfg, args):
+    """Decision 7: before a command of HOOKED – for its board; the gate for every made board – the inputs that write
+    what its step reads, directly or through another input, run when they are outdated or never ran, in their order,
+    each recorded as edakit run records it; a derive or easyeda script before the step that is not current is named, not
+    run. Returns (an exit code – an input failed: the step does not run –, or None to go on; the config, read again
+    after a script ran). Nothing happens without [scripts], for another command, or inside a script edakit runs
+    (EDAKIT_SCRIPT): it would run itself. --no-scripts names what it does not run; entries that do not resolve and a
+    lock that cannot be read run nothing, the step goes on – edakit check and the gate fail on them."""
+    from .config import ConfigError
+    action = getattr(args, "action", None)
+    step = HOOKED.get((args.command, action))
+    if step is None or not cfg.scripts or os.environ.get(RUNNING):
+        return None, cfg
+    try:
+        boards = list(cfg.made()) if args.command == "gate" else [cfg.board(args.board, made=True).name]
+    except ConfigError:
+        return None, cfg        # the step says why
+    me = " ".join(["edakit", args.command] + ([action] if action else []))
+    head = f"project scripts before {me} (handbook 8.6):"
+    due = _due(cfg, step, boards)
+    if due.problem or getattr(args, "no_scripts", False) or not due.run:
+        lines = [f"none run: {due.problem}"] if due.problem else [
+            f"{s.name} {_said(s)} – not run (--no-scripts): the step reads what is there" for s in due.run
+        ] if getattr(args, "no_scripts", False) else []
+        if lines := lines + due.report:
+            print("\n".join([head, *(f"  {line}" for line in lines)]))
+        return None, cfg
+    print(head)
+    for s in due.run:
+        cfg, ok = _run_one(cfg, s.name, "  ")
+        if not ok:
+            print(f"{me}: not run – {s.name} failed; fix it, or --no-scripts runs the step with the files as they are",
+                  file=sys.stderr)
+            return 1, cfg
+    after = _due(cfg, step, boards)
+    lines = [f"{s.name} still {_said(s)}" for s in after.run] + after.report
+    print("\n".join(f"  {line}" for line in [*lines, FOOTER.format(cfg.relative(cfg.artifacts / "scripts"))]))
+    return None, cfg
+
+
+# --- what an easyeda script changed: project-library:<b>, and what is from before it ------------------------------
+def _record_change(cfg, name):
+    """The easyeda script name ran through edakit run: each project library it writes changed now. Its hash is this
+    change (data_hash), and from before it are the parts in the PCB with their geometry, and the routing of its board,
+    until edakit pcb dump and edakit route all made them again (after_step). Returns [(data name, change)]."""
+    changed, out = load_changes(cfg), []
+    nm, when = _Names(cfg), dt.datetime.now().astimezone().isoformat(timespec="seconds")
+    for spelling in cfg.scripts[name].get("writes", []):
+        key, why = nm.parse(spelling)
+        if key is not None and not why and key[0] in IN_EASYEDA:
+            change = {"script": name, "at": when, "by": _user(cfg),
+                      "from_before": [f"{d}:{key[1]}" for d in FROM_BEFORE]}
+            changed[_spell(key)] = change
+            out.append((_spell(key), change))
+    save_lock(cfg, load_lock(cfg), changed)
+    return out
+
+
+def open_changes(cfg):
+    """[(data name, change)]: the changes of a made board's project library with something still from before them."""
+    made = cfg.made()
+    return [(n, c) for n, c in load_changes(cfg).items() if n.partition(":")[2] in made and c.get("from_before")]
+
+
+def _before_it(change):
+    return "; ".join(FROM_BEFORE[d.partition(":")[0]] for d in change.get("from_before", [])
+                     if d.partition(":")[0] in FROM_BEFORE)
+
+
+AFTER = {"footprints": ("footprints", "mech", "routing", "gerber"), "routing": ("routing", "gerber")}   # made from it
+
+
+def _made_from(res, entries, change):
+    """The input and derive scripts made from what is still from before a change – they read the board's footprints,
+    mechanical model, routing or Gerber data made from it, or come after such a script –, in their order: the tree
+    artwork of the reference project. Their stamps tell them outdated once the steps made the data again."""
+    b = next(iter(change.get("from_before", [])), "").partition(":")[2]
+    keys = {(k, b) for d in change.get("from_before", []) for k in AFTER.get(d.partition(":")[0], ())}
+    kind = {e.label: e.kind for e in entries if e.node[0] == "script"}
+    made = {e.label for e in entries if kind.get(e.label) in ("input", "derive") and any(k in keys for _, k in e.reads)}
+    todo = list(made)
+    while todo:
+        n = todo.pop()
+        for m, before in res.before.items():
+            if n in before and m not in made and kind.get(m) in ("input", "derive"):
+                made.add(m)
+                todo.append(m)
+    return [n for n in res.sequence if n in made]
+
+
+def _change_said(name, change, made=()):
+    """project-library:main changed by lib (2026-10-28 21:40) – from before it: the parts in the PCB …; the routing …;
+    and what is made from them: baumgrafik"""
+    return (f"{name} changed by {change['script']} ({change['at'][:16].replace('T', ' ')}) – from before it: "
+            f"{_before_it(change)}" + (f"; and what is made from them: {', '.join(made)}" if made else ""))
+
+
+def after_step(cfg, args, code):
+    """A step of REMADE made its data of the board again – edakit pcb dump of every part (no --ref), edakit route all
+    that wrote its routing into EasyEDA (exit 0; 2: DRC findings; 3: the import acknowledgement pending): it is no
+    longer from before the last change of the board's project library – the lock says so. Returns code."""
+    from .config import ConfigError
+    made = REMADE.get((args.command, getattr(args, "action", None)))
+    if made is None or not cfg.scripts or code not in ((0,) if made == "footprints" else (0, 2, 3)) or \
+            getattr(args, "ref", None):
+        return code
+    try:
+        b = cfg.board(args.board, made=True).name
+    except ConfigError:
+        return code
+    changed, name, data = load_changes(cfg), f"project-library:{b}", f"{made}:{b}"
+    if data not in (change := changed.get(name) or {}).get("from_before", []):
+        return code
+    change["from_before"] = [d for d in change["from_before"] if d != data]
+    try:
+        save_lock(cfg, load_lock(cfg), changed)
+    except StampError:
+        return code     # edakit check names the lock that cannot be read
+    left = _before_it(change)
+    print(f"{LOCK}: {data} made again after {name} changed ({change['script']}) – "
+          + (f"from before it: {left}" if left else "nothing from before it any more") + "; commit the lock")
+    return code
 
 
 # --- project agents: [agents.<name>] of edakit.toml (handbook 8.6) ----------------------------------------------------
