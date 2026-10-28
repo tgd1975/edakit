@@ -34,6 +34,15 @@ def test_catalog_entries_are_complete():
     assert all(rules.entry(cid) and not rules.entry(cid).get("retired") for cid in checks.EXECUTED)
 
 
+def test_the_requirement_checks_are_in_the_catalog_and_run_only_with_the_key():
+    """G-20 to G-23 (handbook 3.6) are complete entries, not in EXECUTED – a project without [project] requirements
+    runs the checks it ran before – and no check has the letter of a need N-… or a requirement R-…."""
+    from edakit import requirements
+    assert all(rules.entry(cid) and not rules.entry(cid).get("retired") for cid in requirements.CHECKS)
+    assert not set(requirements.CHECKS) & set(checks.EXECUTED)
+    assert not [cid for cid in rules.catalog()["checks"] if cid[0] in "NR"]
+
+
 def test_hint_conditions_are_known():
     kinds = {"resistor", "capacitor", "inductor", "fuse", "diode", "led", "led_rgb", "npn", "pnp", "pmos", "nmos",
              "switch", "dip_switch", "button", "potentiometer", "battery_holder", "buzzer", "relay", "connector", "ic",

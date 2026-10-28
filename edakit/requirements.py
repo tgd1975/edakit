@@ -30,17 +30,32 @@ in the project's own documents. Two levels (handbook 3.6, 10.4):
                       { script = "<name>" } (a project script), { accept = "<step>" } (a step of the acceptance test)
       status, reason  as for a need
 
-A key edakit does not know is an error, as in edakit.toml. Whether the evidence passes is not evaluated here: edakit req
-prints verify as written.
+A key edakit does not know is an error, as in edakit.toml. edakit req prints verify as written; it does not evaluate it.
+
+With the key, the file is part of the circuit (handbook 3.6, 8.7):
+  edakit check   G-20 every reference resolves (from, the IDs in verify), G-21 every accepted need has a requirement,
+                 G-22 every requirement has evidence, G-23 drafts warn – also in the gate's stage G
+  edakit gate    evaluates each requirement's evidence against its run (evaluate): rows – at least one protocol row
+                 matches and none failed; signoff – the manual check is signed for the current hash of its scope and
+                 its note names the requirement's ID; accept – M-4 is signed, the step is on the acceptance list of
+                 section 6; script – not evaluated yet. must without passing evidence blocks the release, should is
+                 a warning to accept, may informs; what is tested only after the export does not hold it up.
+                 Section 11 of the protocol lists every requirement with its evidence and the result.
+  circuit hash   the files count byte for byte, [release] hash_ignore does not reach into them: a changed
+                 requirement voids M-1 and M-6, and the firmware contract shows drift.
+A file named in the key that is missing or not valid stops edakit check and the gate as it stops edakit req.
 Exit codes: 0 = listed, 1 = error (no key, a file missing or not valid, an ID not in the files).
 """
 
 from __future__ import annotations
 
+import json
 import re
 import sys
 import tomllib
+from collections import Counter
 from dataclasses import dataclass, field
+from fnmatch import fnmatch
 from pathlib import Path
 
 PREFIX = {"need": "N", "requirement": "R"}           # [[need]] N-<n>, [[requirement]] R-<n>
@@ -50,6 +65,10 @@ STATUS = ("draft", "accepted", "dropped")
 BINDING = ("must", "should", "may")
 VERIFY = ("rows", "signoff", "script", "accept")
 ENTRY_ID = re.compile(r"[NR]-[1-9]\d*")
+CHECKS = ("G-20", "G-21", "G-22", "G-23")   # run with [project] requirements only: edakit check, the gate's stage G
+SIGNOFF_ID = re.compile(r"M-[1-9]\d*")      # a manual check of the sign-off file
+CHECK_ID = re.compile(r"[PGESLF]-\d+")      # a check of the catalog, as a rows pattern may start with it
+ACCEPTANCE = "M-4"                          # the manual check that works through the acceptance list (section 6)
 
 
 class RequirementsError(Exception):
@@ -235,7 +254,8 @@ def listing(cfg, entries):
             lines += labelled("verify: ", evidence(e), REQUIREMENT_COLUMN)
             lines += labelled("reason: ", [e.reason], REQUIREMENT_COLUMN) if e.reason else []
         lines.append("")
-    lines.append("verify as written – the evidence is not evaluated. One chain: edakit req <ID> …")
+    lines.append("verify as written – not evaluated here: the gate does (section 11 of its protocol). One chain: "
+                 "edakit req <ID> …")
     return lines
 
 
@@ -256,7 +276,7 @@ def chain(cfg, entries, eid):
         lines += labelled(f"{'text':<8}", [e.text], 2)
         lines += labelled(f"{'reason':<8}", [e.reason], 2) if e.reason else []
         lines += labelled(f"{'verify':<8}", evidence(e), 2)
-        lines += labelled("", ["not evaluated – edakit req shows verify as written"], 10) if e.verify else []
+        lines += labelled("", [NOT_HERE], 10) if e.verify else []
         return lines
     lines += [line for k, v in (("who", e.who), ("source", e.source)) if v for line in labelled(f"{k:<8}", [v], 2)]
     lines += labelled(f"{'text':<8}", [e.text], 2)
@@ -268,7 +288,238 @@ def chain(cfg, entries, eid):
     for r in follow:
         lines.append(f"{' ' * 10}{r.id}  {state(r)}: {r.text}")
         lines += labelled("verify ", evidence(r), 12 + len(r.id))
-    return lines + labelled("", ["not evaluated – edakit req shows verify as written"], 10)
+    return lines + labelled("", [NOT_HERE], 10)
+
+
+NOT_HERE = "not evaluated here – edakit req shows verify as written; the gate evaluates it (section 11 of its protocol)"
+
+
+# --- G-20 to G-23: the file in edakit check and in the gate's stage G -------------------------------------------------
+
+def manual_checks(cfg):
+    """(the IDs of the manual checks a requirement may name, the sign-off file as messages name it): the sign-off
+    file's, then the ones every release needs (the gate's REQUIRED). A file that cannot be read lists none."""
+    from .release.gate import REQUIRED
+    try:
+        manual = json.loads(cfg.signoff.read_text(encoding="utf-8")).get("manual", [])
+    except (OSError, ValueError, AttributeError):
+        manual = []
+    ids = [m["id"] for m in manual if isinstance(m, dict) and isinstance(m.get("id"), str)]
+    return list(dict.fromkeys(ids + list(REQUIRED))), cfg.relative(cfg.signoff)
+
+
+def unresolved(kind, text, cfg, catalog, signoffs):
+    """Why an entry of verify does not resolve, or None. rows: a check ID the pattern starts with is a check of the
+    catalog and not retired – a wildcard or a project stage's ID only the gate run can tell; signoff: a manual check
+    of the sign-off file or a required one; script: a [scripts.<name>] of kind check or a [[release.stages]] id;
+    accept: a step in words, nothing to resolve."""
+    ids, name = signoffs
+    if kind == "rows":
+        first = (text.split() or [""])[0]
+        if CHECK_ID.fullmatch(first) and first not in catalog:
+            return f"{first} is not a check of the catalog"
+        if CHECK_ID.fullmatch(first) and catalog[first].get("retired"):
+            return f"{first} is retired (edakit rules {first})"
+    elif kind == "signoff" and text not in ids:
+        return f"no manual check {text} in {name} ({', '.join(ids)})"
+    elif kind == "script":
+        entry = cfg.scripts.get(text)
+        stages = cfg.release.get("stages", [])
+        stages = {st.get("id") for st in stages if isinstance(st, dict)} if isinstance(stages, list) else set()
+        if isinstance(entry, dict) and entry.get("kind") != "check":
+            return f"[scripts.{text}] is of kind {entry.get('kind')}; evidence comes from a check"
+        if entry is None and text not in stages:
+            return f"no [scripts.{text}] of kind check and no [[release.stages]] id {text} in {cfg.path.name}"
+    return None
+
+
+def check(rep, cfg):
+    """G-20 to G-23 on the files of [project] requirements, into rep (checks.Report): every reference resolves – a need
+    or requirement in from (N-…, R-…), a manual check in from (M-…), the IDs in verify –, a from that names a dropped
+    entry warns (G-20); every accepted need is in from of a requirement that is not dropped (G-21); every requirement
+    has evidence (G-22); a draft warns (G-23). A dropped entry is history: it is not checked. Messages start with the
+    entry's ID. RequirementsError for a file that is missing or not valid – edakit check and the gate stop on it
+    before they get here."""
+    from . import rules
+    entries = load(cfg)
+    by_id = {e.id: e for e in entries}
+    live = [e for e in entries if e.status != "dropped"]
+    reqs = [e for e in live if e.kind == "requirement"]
+    files = "the requirements file" + ("s" if len(cfg.requirements) > 1 else "")
+    signoffs, catalog = manual_checks(cfg), rules.catalog()["checks"]
+    for e in reqs:
+        for ref in e.from_:
+            target = by_id.get(ref)
+            if ENTRY_ID.fullmatch(ref) and target is None:
+                rep.errors.append(("G-20", f"{e.id}: from {ref} – not in {files}"))
+            elif target is not None and target.status == "dropped":
+                rep.warnings.append(("G-20", f"{e.id}: from {ref} – dropped: {target.reason}"))
+            elif SIGNOFF_ID.fullmatch(ref) and ref not in signoffs[0]:
+                rep.errors.append(("G-20", f"{e.id}: from {ref} – no manual check {ref} in {signoffs[1]} "
+                                           f"({', '.join(signoffs[0])})"))
+        for kind, text in e.verify:
+            if why := unresolved(kind, text, cfg, catalog, signoffs):
+                rep.errors.append(("G-20", f"{e.id}: verify {kind} {repr(text) if kind == 'rows' else text} – {why}"))
+    for n in live:
+        if n.kind == "need" and n.status == "accepted" and not any(n.id in r.from_ for r in reqs):
+            rep.errors.append(("G-21", f"{n.id}: accepted, but no requirement names it in from"))
+    rep.errors += [("G-22", f"{r.id}: no evidence – verify names nothing that tests it") for r in reqs if not r.verify]
+    rep.warnings += [("G-23", f'{e.id}: a draft – the user has not approved it (status "accepted", or "dropped" with '
+                              "a reason)") for e in live if e.status == "draft"]
+
+
+# --- the gate: each requirement's evidence against the run (handbook 8.7) ---------------------------------------------
+
+FAILED = ("fail", "advisory")   # a protocol row that did not pass – an advisory finding does not block, it failed still
+FAILS = {"must": "fail", "should": "warn", "may": "info"}   # binding: what a requirement without passing evidence is
+WORDS = {"pass": "passed", "later": "open after the export", "unevaluated": "not evaluated yet", "info": "information",
+         "warn": "warning", "fail": "FAILED", "dropped": "dropped"}
+
+
+@dataclass
+class Result:
+    entry: Entry                # the requirement
+    items: list                 # per entry of verify: (kind, text, state, what) – state pass, fail, later, unevaluated
+    state: str                  # pass, later, unevaluated, info, warn, fail (from the items and the binding), dropped
+
+
+def names(note, rid):
+    """The note of a manual check names the requirement: R-4, not R-40."""
+    return re.search(rf"(?<![\w-]){re.escape(rid)}(?!\w)", str(note or "")) is not None
+
+
+def _rows(pattern, protocol_rows, stages_run):
+    """At least one protocol row matches ("ID scenario item check", as accepted_warnings match) and none failed."""
+    from .release.gate import RESULT, key_of
+    hits = Counter(r["result"] for r in protocol_rows if fnmatch(key_of(r), pattern))
+    if not hits:
+        first = (pattern.split() or [""])[0]
+        stage = first[0] if CHECK_ID.fullmatch(first) and first[0] not in stages_run else None
+        return "fail", "no row of this run matches" + (f" – stage {stage} did not run" if stage else "")
+    n = sum(hits.values())
+    counts = ", ".join(f"{hits[k]} {word}" for k, word in RESULT.items() if hits[k])
+    return ("fail" if any(hits[k] for k in FAILED) else "pass"), f"{n} row{'s' if n != 1 else ''}: {counts}"
+
+
+def _signoff(sid, rid, signoff):
+    """The manual check is signed for the current hash of its scope – load_signoff leaves done_by only then – and its
+    note names the requirement. Not so: failed in phase export, open after the export in a later phase."""
+    from .release.gate import PHASES
+    m = next((x for x in signoff.get("manual", []) if x.get("id") == sid), None)
+    if m is None:
+        return "fail", f"no manual check {sid} in the sign-off file"
+    phase = m.get("phase", "export")
+    by = f"signed by {m.get('done_by')} ({m.get('date')})"
+    if not m.get("done_by"):
+        what = "not signed for this state" if phase == "export" else "not signed yet"
+    elif names(m.get("note"), rid):
+        return "pass", f"{by}, its note names {rid}"
+    else:
+        what = f"{by}, but its note does not name {rid}"
+    if phase == "export":
+        return "fail", f"{what} (section 6)"
+    return "later", f"{what} – {dict(PHASES).get(phase, phase)}"
+
+
+def _accept(signoff):
+    """An acceptance step passes once M-4 is signed; until then it is open after delivery – it never holds up the
+    release."""
+    m = next((x for x in signoff.get("manual", []) if x.get("id") == ACCEPTANCE), None)
+    if m and m.get("done_by"):
+        return "pass", f"{ACCEPTANCE} signed by {m['done_by']} ({m.get('date')})"
+    why = "not signed yet" if m else "is not in the sign-off file"
+    return "later", f"after delivery: {ACCEPTANCE} {why} (section 6)"
+
+
+def evaluate(entries, protocol_rows, signoff, stages_run):
+    """Every requirement against a gate run: per entry of verify (kind, text, state, what), and the requirement's
+    state. protocol_rows: every row of the run, the simulation's included; signoff: as load_signoff returns it. Any
+    item failed, or no evidence: the binding decides – must fail, should warn, may info; else a script: unevaluated
+    (warns, does not block); else an item after the export: later; else pass. A dropped requirement is listed, not
+    evaluated."""
+    out = []
+    for e in (e for e in entries if e.kind == "requirement"):
+        if e.status == "dropped":
+            out.append(Result(e, [], "dropped"))
+            continue
+        items = []
+        for kind, text in e.verify:
+            if kind == "rows":
+                found = _rows(text, protocol_rows, stages_run)
+            elif kind == "signoff":
+                found = _signoff(text, e.id, signoff)
+            elif kind == "accept":
+                found = _accept(signoff)
+            else:   # script: project scripts do not run in the gate yet
+                found = ("unevaluated", "not evaluated yet – the gate runs no project scripts so far")
+            items.append((kind, text, *found))
+        states = {state for _, _, state, _ in items}
+        state = (FAILS[e.binding] if not items or "fail" in states else
+                 next((s for s in ("unevaluated", "later") if s in states), "pass"))
+        out.append(Result(e, items, state))
+    return out
+
+
+def accepted(result, signoff):
+    """The accepted warning of the sign-off file that covers a should requirement without passing evidence – matched
+    over "R-3 <its text>" like any warning – or None."""
+    from .release.gate import accepted as acceptance
+    return acceptance({"id": result.entry.id, "check": result.entry.text}, signoff)
+
+
+def reasons(results, signoff):
+    """Why the gate does not release, from the requirements: must without passing evidence; should without it and
+    not accepted."""
+    must = [r.entry.id for r in results if r.state == "fail"]
+    should = [r.entry.id for r in results if r.state == "warn" and not accepted(r, signoff)]
+    out = [f"{len(must)} requirement(s) must without passing evidence: {', '.join(must)} (section 11)"] if must else []
+    if should:
+        out.append(f"{len(should)} requirement(s) should without passing evidence, not accepted: {', '.join(should)} "
+                   "(section 11)")
+    return out
+
+
+VERDICT = {"pass": "passed", "fail": "**FAILED** – blocks the release", "info": "information – no passing evidence",
+           "unevaluated": "**not evaluated yet** – does not block the release",
+           "later": "open after the export – does not block the release"}
+SHOWN = {"rows": "rows `{}`", "signoff": "signoff {}", "script": "script `{}`", "accept": "accept: {}"}
+
+
+def verdict(result, signoff):
+    """A requirement's result as section 11 writes it."""
+    if result.state == "warn":
+        a = accepted(result, signoff)
+        return "**warning** – " + (f"accepted by {a.get('by')} ({a.get('date')}): {a.get('reason')}" if a
+                                   else "**not accepted**")
+    if result.state == "dropped":
+        return f"dropped: {result.entry.reason}"
+    return VERDICT[result.state]
+
+
+def section(results, signoff, files):
+    """Section 11 of the protocol, below its heading: every requirement with its evidence and the result."""
+    lines = [f"From {', '.join(f'`{f}`' for f in files)}, each requirement with its evidence in this run (handbook "
+             "8.7): `must` without passing evidence blocks the release, `should` is a warning to accept, `may` "
+             "informs; what is tested only after the export – an acceptance step (section 6), a sign-off of a later "
+             "phase – does not hold it up.\n"]
+    for r in results:
+        e = r.entry
+        lines.append(f"- **{e.id}** {e.binding}, {e.status}: {e.text} → {verdict(r, signoff)}")
+        lines += [f"  - {SHOWN[kind].format(text)} – {what}" for kind, text, _, what in r.items]
+    return lines if results else lines + ["No requirements yet."]
+
+
+def acceptance(results):
+    """The acceptance steps, one unchecked line each with the requirement's ID, for the list after delivery (section
+    6) that M-4 works through."""
+    return [f"- [ ] {r.entry.id}: {text}" for r in results for kind, text, _, _ in r.items if kind == "accept"]
+
+
+def summary(results):
+    """One line for the gate's output: how many requirements passed, are open, failed …"""
+    n = Counter(r.state for r in results)
+    counts = ", ".join(f"{n[s]} {WORDS[s]}" for s in WORDS if n[s]) or "none"
+    return f"requirements: {counts} (section 11 of the protocol)"
 
 
 def main(cfg, args):

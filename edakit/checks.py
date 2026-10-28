@@ -66,6 +66,16 @@
        `order` in its parts entry (order.py, warning)
   G-9  sign-off: every part verified against its datasheet, no open "verify" notes (pending, blocks only the release)
 
+Only with [project] requirements (requirements.py, handbook 3.6) – the requirements file, which the circuit hash covers:
+  G-20 every reference resolves: a need or requirement in from (N-…, R-…) is in the files, a manual check in from or
+       in verify signoff (M-…) is one of the sign-off file or a required one, a rows pattern that starts with a check
+       ID names a check of the catalog that is not retired, a script is a [scripts.<name>] of kind check or a
+       [[release.stages]] id; a from that names a dropped entry is a warning
+  G-21 every accepted need is in from of a requirement that is not dropped
+  G-22 every requirement that is not dropped has evidence (verify)
+  G-23 a draft need or requirement is a warning until the user accepts or drops it
+A file named there that is missing or not valid stops edakit check (exit 1) before any check runs.
+
 0 Ω bridges (resistors with value_ohm 0 in the parts entry) join their nets: G-4, G-5, G-6, G-10 to G-17 see the
 joined nets as one net under the group's name (the ground net if it is one of them, else the first in the graph) and
 the bridges as copper; G-1, G-2, G-3, G-8, G-18, P-1 and G-9 see every net and part as the graph has them.
@@ -83,10 +93,11 @@ from __future__ import annotations
 
 import json
 import re
+import sys
 from collections import Counter, defaultdict
 from pathlib import Path
 
-from . import handover, rules
+from . import handover, requirements, rules
 from .design import natural_key
 
 CAP_FACTOR = 1.5      # rated voltage >= 1.5 x max. voltage across
@@ -122,6 +133,12 @@ QUANTITY = re.compile(r"\s*(\d+)(?:[.,](\d+))?\s*([pnuµμmkKMG]|[RΩ])?(\d+)?\s
 
 EXECUTED = ["G-1", "G-2", "G-3", "G-4", "G-5", "G-6", "G-8", "G-10", "G-11", "G-12", "G-13", "G-14", "G-15", "G-16",
             "G-17", "G-18", "P-1", "P-3", "P-4", "P-5", "P-6", "P-7", "P-8", "G-9"]
+
+
+def executed(cfg=None):
+    """The checks run() runs for this project: EXECUTED, and with [project] requirements G-20 to G-23 – a project
+    without the key gets the same checks as before."""
+    return EXECUTED + (list(requirements.CHECKS) if cfg is not None and cfg.requirements else [])
 
 
 class Report:
@@ -1156,12 +1173,19 @@ def run(design, cfg=None):
         stock.check(design, rep, cfg)
         order.check(design, rep, cfg)
     check_signoff(design, rep)
+    if cfg is not None and cfg.requirements:
+        requirements.check(rep, cfg)      # G-20 to G-23 on the requirements file (handbook 3.6)
     return rep
 
 
 def main(cfg, args):
     from . import scripts
     from .design import Design
+    try:        # a requirements file named in [project] requirements that is missing or not valid stops the check
+        entries = requirements.load(cfg)
+    except requirements.RequirementsError as e:
+        print(f"edakit check: {e}", file=sys.stderr)
+        return 1
     d = Design.from_config(cfg)
     rep = run(d, cfg)
     rep.errors += [("scripts", f.msg) for f in scripts.resolve(cfg).findings]   # [scripts.*]: one order (8.6)
@@ -1191,6 +1215,7 @@ def main(cfg, args):
     print(f"{len(d.comps)} components, {len(d.nets)} nets, {len(d.parts)} parts entries; "
           f"{len(rep.errors)} errors, {len(rep.waived)} waived, {len(rep.pending)} open sign-offs"
           + (f", {len(rep.warnings)} warnings" if rep.warnings else "")
+          + (f"; requirements: {requirements.counts(entries)}" if cfg.requirements else "")
           + (f"; design hints open: {', '.join(hints)} (edakit hints)" if hints else ""))
     if args.json:
         Path(args.json).write_text(json.dumps({**rep.to_dict(), "hints_open": hints}, indent=2, ensure_ascii=False)

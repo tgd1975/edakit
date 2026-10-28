@@ -72,8 +72,9 @@ schematic and the PCB (`schematic create/layout`, `pcb parts/nets`) and checks t
 ## 4. Documentation and sign-offs
 
 - Circuit description / decision log / BOM notes of the project.
-- Every change of graph, parts database or simulation config changes the circuit hash: sign-offs with scope
-  'circuit' (e.g. M-1) no longer count and must be redone for the new state – by the agent, not the user. Keys in
+- Every change of graph, parts database, simulation config or – with `[project] requirements` – the requirements file
+  changes the circuit hash: sign-offs with scope 'circuit' (e.g. M-1) no longer count and must be redone for the new
+  state – by the agent, not the user. Keys in
   `[release] hash_ignore` (notes, sources, verified, …) are the exception: they are not in the hash. Never carry a
   hash forward by hand.
 - A part swapped (another LCSC number): accepted warnings that name it in `parts` lapse – the protocol lists them;

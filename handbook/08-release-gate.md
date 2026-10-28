@@ -23,7 +23,7 @@ Before each stage – each project stage, and with `--easyeda` each board of sta
 | Stage | What | Checks |
 |---|---|---|
 | P – Parts | parts database complete and signed, every part named by its entry, through-hole leads fitting their holes and, formed for the board, fitting only one way round, own parts equal to their source, parts orderable, a supplier per part | P-1, P-3, P-4, P-5, P-6, P-7, P-8, G-9 (chapter 3, 4) |
-| G – Graph | rule checks; with quoted values (6.6) G-19 on this run's simulation | G-1 … G-19 (chapter 3) |
+| G – Graph | rule checks; with quoted values (6.6) G-19 on this run's simulation; with `[project] requirements` the requirements file (3.6) | G-1 … G-23 (chapter 3) |
 | E – Simulation | operating points, stress, function, every LED checked, transient runs; with sim.json `copper` on the routing of `edakit route` as it is | E-1 … E-5 (chapter 5) |
 | *project stages* | e.g. K – mechanics of an enclosure | `[[release.stages]]`, see below |
 | S – Schematic | EasyEDA schematic = graph | S-2 per board |
@@ -105,7 +105,8 @@ gets its fault there.
 Every run records two hashes in the protocol header, and a run with stage F a third:
 
 - **circuit** (`state_sha256`): graph (with its ground net and check settings), parts database, simulation config
-  (and plugin, `[release] state_files`)
+  (and plugin, `[release] state_files`), and the requirements files of `[project] requirements` (3.6, 8.7) – a
+  changed requirement voids M-1 and M-6, as a new purpose does: the reviews read the requirements
 - **layout** (`layout_sha256`): the board files with the artwork they place (`[[silk.art]]`), the footprint geometry
   (and `[release] layout_files`) – of the made boards; a bought board has none
 - **fab** (`fab_sha256`): what the manufacturer builds from, per made board – every Gerber layer of
@@ -131,8 +132,9 @@ documentation, e.g. `["notes", "sources", "description", "verified", "datasheet"
 are then hashed as canonical JSON (keys sorted, no whitespace) without these keys, at any depth. A pin, a value, a
 rating or an LCSC number still changes the hash. Only keys that no check and no review reads belong in the list.
 Two things stay whole whatever the list says: `purpose` of the graph and `compliance` of a parts entry (the
-regulatory review M-6 reads them, `purpose.notes` included), and the simulation config, the plugin and `state_files`
-stay bytes – the simulation config's `sources` are its supplies, not references. Turning the list on (or changing
+regulatory review M-6 reads them, `purpose.notes` included), and the simulation config, the plugin, `state_files` and
+the requirements files stay bytes – the simulation config's `sources` are its supplies, not references, and the
+reviews read a requirement whole, its `source` and `reason` included. Turning the list on (or changing
 it) changes the hash once: when the sign-off file's `state_sha256` is the hash of the current files with the list
 before (none: the bytes), nothing but the method changed – the gate counts the sign-offs, writes the new hash into the
 file and records both in `rehashed` (`by` "edakit gate", `hash_ignore`, `state_sha256` [old, new]). When the circuit
@@ -227,11 +229,14 @@ finding its probability and its cost; a deviation without a realistic consequenc
 ## 8.3 The decision
 
 RELEASED only if every stage ran, no check failed, every warning is accepted, every part is signed, every manual check
-of phase `export` is signed – all for the current hashes. Otherwise NOT RELEASED with the reasons. Exit 0 / 2.
+of phase `export` is signed – all for the current hashes – and, with `[project] requirements`, every requirement
+`must` has passing evidence and every `should` without it is accepted (8.7). Otherwise NOT RELEASED with the
+reasons. Exit 0 / 2.
 
-The protocol names every check with its words next to the ID ("L-9 (hole fits the lead)"), and its last section,
-"The rules behind the findings", gives rule, reason, fix and sources of every check that failed or warned – from the
-rule catalog (chapter 14.2), so that the protocol can be read without this handbook.
+The protocol names every check with its words next to the ID ("L-9 (hole fits the lead)"), and its section 10, "The
+rules behind the findings", gives rule, reason, fix and sources of every check that failed or warned – from the rule
+catalog (chapter 14.2), so that the protocol can be read without this handbook. With `[project] requirements` a
+section 11, "Requirements", follows it (8.7).
 
 Result folder `<reports>/<YYYYMMDD-hhmmss>/`: `protocol.md`, `graph_checks.json`, `sim.json`, `schematic_<board>.json`,
 `fab/<board>/` (Gerber ZIP, BOM, CPL, raw data, with `[order]` the order form `order.md`), `fab/polarity_<board>.png`,
@@ -342,6 +347,11 @@ After delivery every board gets a short acceptance test: visual check (polarity 
 current at the nominal voltage against the simulated value, every LED/output, every input, the firmware's self-test.
 Deviation beyond tolerance → find the cause (model, firmware, assembly) before the board is used.
 
+The list is section 6 of the protocol, "after delivery, per board": M-4, the datasheet points with `when =
+"acceptance"` (8.2) and, with `[project] requirements`, every acceptance step of a requirement with its ID –
+`- [ ] R-1: on the USB port of a laptop: all eight LEDs on, the port stays on`. M-4 works through it and names the
+requirements it tested in its note; signed, it lets their acceptance steps pass (8.7).
+
 ## 8.6 Project scripts
 
 A project registers in edakit.toml the scripts that touch edakit's flow (`[scripts.<name>]`, 10.1): one that writes a
@@ -407,3 +417,50 @@ ERROR   scripts  review: in a cycle – review –[stamp]→ edakit gate –[rel
 A derive that reads the release cannot be checked by the gate that writes it. So far edakit only resolves the
 entries: no command runs them, and the gate runs `[[release.stages]]` as before and does not report these findings.
 The hashes of the names are there for the stamps that will tell an outdated script; no command shows them yet.
+
+## 8.7 Requirements
+
+With `[project] requirements` (3.6) the gate holds the circuit to what it must do. A file the key names that is
+missing or not valid stops the gate before its first stage (exit 1, no run folder), as it stops `edakit check`. Stage
+G runs G-20 to G-23 on the file (3.3). After the stages, every requirement's evidence is evaluated against this run:
+
+| `verify` | passes when | otherwise |
+|---|---|---|
+| `rows` | at least one row of the protocol matches – a pattern over "ID scenario item check", matched as `accepted_warnings` match (8.2), the rows of the simulation included – and none of them failed. An advisory finding of a project stage did not pass; a warning, a waiver or an open sign-off is no failure | no passing evidence; when no row matches because the pattern's stage did not run – S, L and F in the offline gate –, the protocol says so |
+| `signoff` | the manual check is signed for the current hash of its scope – only then does it count at all (8.2) – and its `note` names the requirement's ID, e.g. `"note": "OK for state 1a2d…; R-4: R2 holds LED_OE high until the firmware drives it"` (R-40 does not name R-4) | phase `export`: no passing evidence; a later phase (M-2, M-4): open after the export |
+| `accept` | M-4 is signed | open after delivery; the step is on the acceptance list of section 6 (8.5) |
+| `script` | – | not evaluated yet: the gate runs no project scripts so far |
+
+What a requirement without passing evidence does to the release, its binding says:
+
+| Binding | Without passing evidence |
+|---|---|
+| `must` | blocks the release: "1 requirement(s) must without passing evidence: R-4 (section 11)" |
+| `should` | a warning – it holds up the release until the owner accepts it in `accepted_warnings`, matched over "R-3 <its text>": `{"match": "R-3 *", "scope": "decision", "reason": "D-9: …", "by": "owner", "date": "…"}` |
+| `may` | information |
+
+What is only tested after the export does not hold up the release: as long as nothing else failed, an acceptance
+step that M-4 has not signed yet, or a sign-off of phase `order` or `acceptance` that is still open, leaves the
+requirement "open after the export". A requirement whose evidence includes a project script, with nothing else
+failed, is "not evaluated yet": section 11 and the gate's output show it, and it does not block the release – the gate
+cannot run project scripts yet (8.6), so until it can, nothing but the reader holds such a requirement to its script.
+A draft is evaluated as written, and G-23 warns about it as well; a dropped requirement is listed, not evaluated.
+
+**Section 11 "Requirements"** of the protocol lists every requirement with binding and status, each piece of evidence
+with what it found, and the result; the gate's output has it in one line (`requirements: 2 passed, 1 open after the
+export, 1 FAILED`). It follows section 10, so that every other section keeps its number, and a project without the
+key has none. From the tests' led-bar (`tests/test_requirements.py`), offline:
+
+```markdown
+- **R-1** must, accepted: With all eight LEDs on, the board draws at most 500 mA from J1 at 4.75 to 5.25 V. → open after the export – does not block the release
+  - rows `E-3 * J1 current from the supply` – 12 rows: 12 passed
+  - accept: on the USB port of a laptop: all eight LEDs on, the port stays on – after delivery: M-4 not signed yet (section 6)
+- **R-4** must, draft: From power-up until the firmware drives LED_OE low, no LED carries more than 10 µA. → **FAILED** – blocks the release
+  - rows `E-3 * D? LED dark` – 48 rows: 48 passed
+  - signoff M-1 – not signed for this state (section 6)
+```
+
+**Signing for a requirement.** A reviewer whose check a requirement names in `verify` – the electrical reviewer for
+`signoff = "M-1"`, the regulatory reviewer for `"M-6"`, the layout review for `"M-5"` – names the requirements it
+judged in the note it signs with. The sign-off file needs no other field. Because the requirements files are in the
+circuit hash (8.2), a changed requirement voids M-1 and M-6, and the next signature names it again.

@@ -23,6 +23,10 @@ RELEASED only if
     Gerber layers rasterised, the drill hits, BOM and CPL rows – known after stage F, fab.fab_layers). An accepted
     warning with scope 'decision' counts regardless of the hash and refers to a numbered decision in the docs; one
     that names its parts ({designator: LCSC}) counts only while they are the same parts.
+  - with [project] requirements (requirements.py): every requirement 'must' has passing evidence in this run, and
+    every 'should' without it is accepted like a warning – section 11 of the protocol lists them all, section 6 the
+    acceptance steps. The requirements files count in the circuit hash byte for byte, after its other files. A
+    requirements file that is missing or not valid stops the gate before its first stage.
 [release] hash_ignore leaves documentation keys (notes, sources, verified, …) out of the circuit hash: graph and parts
 entries are hashed as canonical JSON without them. Turning it on is recorded in `rehashed` of the sign-off file when
 the files are the signed ones.
@@ -51,7 +55,7 @@ from collections import Counter, defaultdict
 from fnmatch import fnmatch
 from pathlib import Path
 
-from .. import checks, docs, eda, rules
+from .. import checks, docs, eda, requirements, rules
 from ..design import Design
 
 STAGES = [
@@ -134,12 +138,14 @@ def state_files(cfg):
     files = [cfg.graph, cfg.sim_config, *sorted(cfg.parts.glob("*.json"))]
     if cfg.sim_plugin:
         files.append(cfg.sim_plugin)
-    return files + [cfg.resolve(f) for f in cfg.release.get("state_files", [])]
+    files += [cfg.resolve(f) for f in cfg.release.get("state_files", [])]
+    return files + list(cfg.requirements)   # [project] requirements, last: without the key the hash stays as it was
 
 
 def state_hash(cfg, ignore=None):
     """The circuit hash (state_sha256). [release] hash_ignore leaves its keys out of the graph and the parts entries;
-    the simulation config (its `sources` are the supplies), the plugin and state_files stay bytes."""
+    the simulation config (its `sources` are the supplies), the plugin, state_files and the requirements files stay
+    bytes – the reviews read the requirements whole."""
     ignore = cfg.release.get("hash_ignore", []) if ignore is None else ignore
     return file_hash(cfg.root, state_files(cfg), ignore, [cfg.graph, *cfg.parts.glob("*.json")])
 
@@ -318,7 +324,7 @@ def stage_graph(cfg, design):
         rows.append({"stage": stage_of(c), "id": c, "item": "", "check": m, "result": "info"})
     hit = {r["id"] for r in rows if r["result"] in ("fail", "pending")}
     rows += [{"stage": stage_of(c), "id": c, "item": "", "check": rules.title(c), "result": "pass"}
-             for c in checks.EXECUTED if c not in hit]
+             for c in checks.executed(cfg) if c not in hit]
     from .. import cost
     rows += cost.gate_rows(cfg)   # with [cost]: the estimate, above the budget a warning
     return rows, rep.to_dict()
@@ -415,7 +421,8 @@ def fab_hashes(cfg, outdir):
     return {"fab_method": fab.FAB_METHOD, "fab_layers": layers, "fab_sha256": fab.fab_hash(layers)}
 
 
-def decide(rows, sim_checks, signoff, stages_run, stages):
+def decide(rows, sim_checks, signoff, stages_run, stages, reqs=()):
+    """reqs: requirements.evaluate of this run – [] without [project] requirements."""
     reasons = []
     n_fail = sum(r["result"] == "fail" for r in rows) + sum(c["result"] == "fail" for c in sim_checks)
     if n_fail:
@@ -433,6 +440,7 @@ def decide(rows, sim_checks, signoff, stages_run, stages):
     missing = [f"{sid} ({name})" for sid, name, _ in stages if sid not in stages_run]
     if missing:
         reasons.append("stages not run: " + ", ".join(missing))
+    reasons += requirements.reasons(reqs, signoff)   # [project] requirements: must blocks, should until accepted
     return ("RELEASED" if not reasons else "NOT RELEASED"), reasons
 
 
@@ -606,7 +614,10 @@ def main_release(cfg, args):
         return 1
 
 
-def write_protocol(cfg, outdir, head, rows, sim, signoff, notes, decision, reasons, stages_run, stages, files):
+def write_protocol(cfg, outdir, head, rows, sim, signoff, notes, decision, reasons, stages_run, stages, files,
+                   reqs=()):
+    """reqs: requirements.evaluate of this run; with [project] requirements the protocol gets section 11 and the
+    acceptance steps in section 6 – without the key it is the protocol it always was."""
     by_stage = defaultdict(Counter)
     for r in rows:
         by_stage[r["stage"]][r["result"]] += 1
@@ -619,7 +630,8 @@ def write_protocol(cfg, outdir, head, rows, sim, signoff, notes, decision, reaso
          f"{', '.join(cfg.made())} in EasyEDA project {cfg.project}"
          f"{'; bought, not made: ' + bought if bought else ''} |",
          f"| SHA-256 graph | `{head['graph_sha256']}` |",
-         f"| SHA-256 circuit | `{head['state_sha256']}` (graph, parts database, simulation config) |",
+         f"| SHA-256 circuit | `{head['state_sha256']}` (graph, parts database, simulation config"
+         f"{', requirements' if cfg.requirements else ''}) |",
          f"| SHA-256 layout | `{head['layout_sha256']}` (board files, artwork, layout files, footprint geometry) |",
          *([f"| SHA-256 fab | `{head['fab_sha256']}` (what the manufacturer builds from: Gerber layers, drill hits, "
             f"BOM and CPL rows – {head['fab_method']}) |"] if head.get("fab_sha256") else []),
@@ -638,7 +650,7 @@ def write_protocol(cfg, outdir, head, rows, sim, signoff, notes, decision, reaso
                "advisories (do not block)" if c["advisory"] else "passed")
         L.append(f"| {sid} {name} | {what} | {c['pass']} | {c['fail']} | {c['warn']} | {c['waived']} | {c['pending']} | {res} |")
     L += ["\nIn P (parts) and G (graph) every rule without a finding counts once as passed; executed: "
-          + ", ".join(rules.label(k) for k in checks.EXECUTED) + ".\n", "## 2 Findings\n"]
+          + ", ".join(rules.label(k) for k in checks.executed(cfg)) + ".\n", "## 2 Findings\n"]
     fails = [r for r in rows if r["result"] == "fail"] + [c | {"stage": "E"} for c in sim["checks"] if c["result"] == "fail"]
     advis = [r for r in rows if r["result"] == "advisory"]
     if advis:
@@ -678,6 +690,7 @@ def write_protocol(cfg, outdir, head, rows, sim, signoff, notes, decision, reaso
     for phase, title in PHASES:
         items = [m for m in signoff.get("manual", []) if m.get("phase", "export") == phase]
         answered = [f"- [ ] {e['who']}: {t}" for e in sheet for t, w in e["open"] if w == phase]
+        answered += requirements.acceptance(reqs) if phase == "acceptance" else []   # the requirements' steps
         if items or answered:
             L.append(f"**{title}**\n")
             for m in items:
@@ -724,12 +737,20 @@ def write_protocol(cfg, outdir, head, rows, sim, signoff, notes, decision, reaso
         L += [f"**{lines[0]}**\n", *[f"- {line}" for line in lines[1:]], ""]
     if not explained:
         L.append("No check of the catalog failed or warned. Every check: `edakit rules`.")
+    if cfg.requirements:    # [project] requirements: section 11, only then – every other section keeps its number
+        L += ["\n## 11 Requirements\n",
+              *requirements.section(reqs, signoff, [cfg.relative(p) for p in cfg.requirements])]
     (outdir / "protocol.md").write_text("\n".join(L) + "\n", encoding="utf-8")
 
 
 def main(cfg, args):
     from ..sim import copper
     from ..sim import run as simrun
+    try:        # [project] requirements: a file named there that is missing or not valid stops the gate, before a run
+        entries = requirements.load(cfg)
+    except requirements.RequirementsError as e:
+        print(f"edakit gate: {e}", file=sys.stderr)
+        return 1
     head = header(cfg)
     outdir = cfg.reports / dt.datetime.fromisoformat(head["time"]).strftime("%Y%m%d-%H%M%S")
     outdir.mkdir(parents=True, exist_ok=True)
@@ -761,12 +782,15 @@ def main(cfg, args):
         stages_run |= set(WITH_EASYEDA)
         head.update(fab_hashes(cfg, outdir))
     signoff, notes = load_signoff(cfg, head, write=True)   # after stage F: sign-offs with scope 'fab' need its hash
-    decision, reasons = decide(rows, sim["checks"], signoff, stages_run, stages)
+    reqs = requirements.evaluate(entries, [*sim["checks"], *rows], signoff, stages_run)   # [] without the key
+    decision, reasons = decide(rows, sim["checks"], signoff, stages_run, stages, reqs)
     if args.easyeda:
         files = write_manifest(cfg, outdir, head, decision)
-    write_protocol(cfg, outdir, head, rows, sim, signoff, notes, decision, reasons, stages_run, stages, files)
+    write_protocol(cfg, outdir, head, rows, sim, signoff, notes, decision, reasons, stages_run, stages, files, reqs)
     print(f"\n{decision}")
     for r in reasons:
         print(f"  - {r}")
+    if cfg.requirements:
+        print(requirements.summary(reqs))
     print(f"protocol: {outdir / 'protocol.md'}")
     return 0 if decision == "RELEASED" else 2

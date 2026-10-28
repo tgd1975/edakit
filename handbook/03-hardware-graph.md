@@ -97,6 +97,10 @@ check that fails is explained once below the findings (chapter 14.2).
 | G-17 | fuse against what it protects: the hold current of every fuse (`i_hold_a`; at the lowest ambient `ambient_min_c` of sim.json from `i_hold_vs_temp`) is at most the `i_max_a` of every connector, switch and cable its current flows through – its own nets and on through fuses and switches; a trip current (`i_trip_a`) above it is a warning | a 1.5-A polyfuse in front of a connector rated 1.25 A, an overload that heats the contacts instead of tripping the fuse |
 | G-18 | hot loop in the hand-over: a part whose entry names its hot-loop pins (`hot_loop`, 4.1) has a `layout.loops` entry on every net of the loop – the nets of those pins and, one diode further, the net behind the rectifier on its switch node (`sw`); a buck or boost IC (`behavior`) without `hot_loop` is a warning; `waive` on the part, or on a net whose part of the loop closes over a pour | a boost whose output loop was routed 61 mm across the board, passing every check because nobody listed it |
 | G-19 | documents quote the design data: every value block of `[docs] files` equals its source, every source of a block or a schematic-note placeholder exists – run by `edakit docs` and the gate's stage G, not by `edakit check` (6.6) | a description still on an old graph version, a current that changed with R1 |
+| G-20 | requirement references resolve – G-20 to G-23 only with `[project] requirements` (3.6), on every entry that is not dropped: a need or requirement in `from` (N-…, R-…) is in the files, a manual check in `from` or in `verify` `signoff` (M-…) is one of the sign-off file or a required one (8.2), a `rows` pattern that starts with a check ID names a check of the catalog that is not retired, a `script` is an entry `[scripts.<name>]` of kind `check` or the id of a `[[release.stages]]`; a `from` that names a dropped need or requirement is a warning. Decisions, standards and words in `from` are not resolved | `from = ["N-12"]` for N-2, `rows = "E-30 *"`, `signoff = "M-7"`, a requirement that still comes from a dropped need |
+| G-21 | accepted need has a requirement: every accepted need is in `from` of a requirement that is not dropped | a need the user accepted that no requirement made testable |
+| G-22 | requirement has evidence: every requirement that is not dropped has `verify` | a requirement the gate has nothing to evaluate for |
+| G-23 | draft not approved: a need or requirement with `status = "draft"`, or without `status`, is a warning until the user accepts or drops it | a requirement Claude wrote and nobody approved, on its way into a release |
 | P-1 | graph pins (number and name) = parts entry; an entry exists for every LCSC number; no supply pin marked `nc`; with the library's symbol cached by `edakit part import`, graph pins = that symbol (case and blanks ignored, as S-2; `waive` on the component) | a wrong part number, pins shifted by one, an LED whose pin 1 is the cathode |
 | P-6 | part identity: the component and its parts entry name the same part – the entry's `lcsc` is its file name; the component's `lcsc` is no `C99…` user-library number (unless `bom: false`); its `part` names the entry's `mpn` (remarks in parentheses or after `;` left out, case ignored, a manufacturer before it allowed; a `part` that starts with a value, "330 Ω 0805", is compared as that value); its `value` reads as the entry's `value_ohm` / `value_f` / `value_h` within 1 % ("4k7", "100nF", "2R2"); its `type` fits the entry's `kind` (microcontroller, regulator: ic or module; transistor: npn, pnp, nmos, pmos; led: led, led_rgb; switch: switch, dip_switch; audio: buzzer; otherwise the same word); `waive` on the component. A designator prefix against the kind (R, C, L, D, Q, U, J, SW, F, BT, BZ, K, TP) is a warning | C25789 written for a 74HC165 (a 464 kΩ resistor), R2 "1k" on a 10 kΩ entry, an LED that came in as U1 |
 | P-3 | own parts (4.5): a board copied with `edakit part own` is its project's current datasheet, copied from a commit (pending otherwise); a board not released at that state is a warning; the project's own datasheets are of its current state | a board changed after it was copied into the host |
@@ -186,6 +190,19 @@ edakit req R-1    # one chain: where R-1 comes from, the requirement, what verif
 edakit req N-1    # the requirements a need leads to, with their evidence
 ```
 
-`edakit req` shows the evidence, it does not evaluate it: no check and no gate stage reads the file yet, and it is in
-no hash. A variant – a project of its own in a folder below the main project – reads the main project's file and its
-own; an ID stands in only one of them (10.4).
+`edakit req` shows the evidence as written; checks and gate do the rest, only in a project with the key:
+
+- **`edakit check`** (3.3) – and the gate's stage G – checks the file: every reference resolves (G-20), every accepted
+  need has a requirement (G-21), every requirement has evidence (G-22), and a draft warns until the user decides
+  (G-23).
+- **The gate** evaluates every requirement's evidence against its run (8.7): `must` without passing evidence blocks
+  the release, `should` is a warning the owner accepts, `may` informs. Section 11 of the protocol lists every
+  requirement with its evidence and the result; the acceptance steps (`accept`) join the list of section 6 that M-4
+  works through.
+- **The circuit hash** covers the file byte for byte, `[release] hash_ignore` does not reach into it (8.2): a changed
+  requirement voids M-1 and M-6 – the reviews read the requirements –, and with `[firmware]` the contract shows drift
+  (3.5).
+- A file the key names that is missing or not valid stops `edakit req`, `edakit check` and the gate alike.
+
+A variant – a project of its own in a folder below the main project – reads the main project's file and its own; an
+ID stands in only one of them (10.4). Both count in the variant's circuit hash.

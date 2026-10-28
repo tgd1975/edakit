@@ -226,6 +226,46 @@
     "edakit handbook 6.6"
    ]
   },
+  "G-20": {
+   "title": "requirement references resolve",
+   "rule": "In the requirements file of [project] requirements, every reference of a requirement that is not dropped resolves: a need or requirement in from (N-…, R-…) stands in the files, a manual check in from or in verify signoff (M-…) is one of the sign-off file or one the gate requires, a rows pattern that starts with a check ID names a check of the catalog that is not retired, and verify script names an entry [scripts.<name>] of kind check or the id of a [[release.stages]]. A from that names a dropped need or requirement is a warning.",
+   "why": "A requirement is traced through its references: where it comes from and what tests it. A typo in an ID – N-12 for N-2, E-30 for E-3, M-7 for M-6 – breaks the chain without anybody noticing: the gate finds no protocol row for the pattern and the requirement fails for the wrong reason, or it points to an origin that does not exist. A requirement that comes from a dropped need may no longer be wanted at all.",
+   "fix": "Correct the ID, or add what it names: the need or requirement to the requirements file, the manual check to the sign-off file, the check to [scripts]. A from that names a dropped entry: drop the requirement too, or name what it comes from now. Decisions (D-…), standards and documents in from are words to edakit, it does not resolve them.",
+   "sources": [
+    "edakit handbook 3.6, 8.7 and 10.4",
+    "Concept docs/concepts/new/requirements.md, 'Traceability and the gate' and its decisions of 2026-10-28"
+   ]
+  },
+  "G-21": {
+   "title": "accepted need has a requirement",
+   "rule": "Every accepted need of the requirements file is named in from of at least one requirement that is not dropped.",
+   "why": "A need says what someone wants, in their words; only a requirement makes it testable – a quantity, a limit, a condition – and points to its evidence. An accepted need that no requirement takes up is a wish the circuit is never measured against: the chain from the need to the evidence ends before it starts.",
+   "fix": "Write the requirement that follows from the need (from = [\"N-…\"], with binding and verify), or name the need in the from of an existing requirement. A need that is no longer wanted gets status = \"dropped\" with its reason.",
+   "sources": [
+    "edakit handbook 3.6 and 10.4",
+    "Concept docs/concepts/new/requirements.md, 'Traceability and the gate': every need leads to requirements"
+   ]
+  },
+  "G-22": {
+   "title": "requirement has evidence",
+   "rule": "Every requirement of the requirements file that is not dropped has evidence: at least one entry in verify – rows of the gate protocol, a manual check, a project script or a step of the acceptance test.",
+   "why": "A requirement without evidence is a promise nobody checks: the gate cannot tell whether the circuit meets it, and its binding decides nothing. The evidence often exists already – a simulation scenario, a check, a review – and only the pointer to it is missing.",
+   "fix": "Add verify: rows of the gate protocol ({ rows = \"E-3 * J1 current from the supply\" }), a manual check whose note names the requirement ({ signoff = \"M-1\" }), a project script ({ script = \"…\" }) or a step of the acceptance test ({ accept = \"…\" }) – what only a delivered board can show is an acceptance step.",
+   "sources": [
+    "edakit handbook 3.6, 8.7 and 10.4",
+    "Concept docs/concepts/new/requirements.md, 'Traceability and the gate': every requirement ends in evidence"
+   ]
+  },
+  "G-23": {
+   "title": "draft not approved",
+   "rule": "A need or requirement of the requirements file that is a draft – status draft, or no status – is a warning until the user accepts it or drops it with a reason.",
+   "why": "Claude drafts requirements, only the user approves them: like accepting a warning, it is one of the user's decisions. A draft that goes into a release unapproved holds the circuit to something nobody agreed to, or leaves out what was meant.",
+   "fix": "The user decides: status = \"accepted\", the text changed and then accepted, or status = \"dropped\" with a reason. A draft left on purpose for this release: accept the warning in the sign-off file.",
+   "sources": [
+    "edakit handbook 3.6 and 11.4 (working agreement 4: only real decisions go to the user)",
+    "Concept docs/concepts/new/requirements.md, 'Proposal: the requirements file': the agent drafts, the user approves"
+   ]
+  },
   "E-1": {
    "title": "operating point",
    "rule": "The DC operating point of every scenario and every transient run converges, and the simulation config fits the graph.",

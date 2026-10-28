@@ -51,6 +51,9 @@ test makes sure that every check ID the code can report has an entry.
 **Check IDs are stable.** A check that is retired keeps its entry and its number is not reused – G-7 (polarity in the
 graph) moved to the simulation and stays G-7, retired. A protocol from last year must still mean what it meant.
 
+N and R are no letters of the catalog: N-… and R-… are the needs and requirements of a project's requirements file
+(3.6), and a protocol names both. The checks on that file are G-20 to G-23.
+
 **Findings come only from code.** A check is a function with a negative test; Claude does not invent checks at
 runtime. What Claude knows beyond the catalog goes into a review as a finding with its evidence, or into a check
 candidate (14.4) – not into a finding that looks like a check.

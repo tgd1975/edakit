@@ -3,7 +3,7 @@
 edakit.toml is the table of contents: the project, its boards with their EasyEDA documents, where the files are, and
 the release settings. What one role decides lives in a file of its own, with one owner and one hash (handbook 10.1):
 
-    hardware/requirements.toml    what the circuit must do: needs, requirements            the user          –
+    hardware/requirements.toml    what the circuit must do: needs, requirements            the user          circuit
     hardware/graph.json           circuit, purpose, hand-over, ground net, check settings  circuit designer  circuit
     hardware/parts/, sim.json     parts database, simulation scenarios                     circuit designer  circuit
     hardware/schematic.toml       arrangement of the schematic: blocks, notes, pin table   circuit designer  –
