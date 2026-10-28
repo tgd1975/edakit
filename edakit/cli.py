@@ -17,6 +17,8 @@
     edakit firmware [--check]        the board's firmware contract as JSON from the graph; --check: drift (opt-in)
     edakit req [ID ...]              what the circuit must do: needs and requirements with status, binding, evidence;
                                      with an ID its chain – from where, the requirement, what verifies it (opt-in)
+    edakit scripts [stamp NAME ...]  the project's scripts: about, state (current, outdated, never run), the order;
+                                     stamp records the run of scripts that ran by hand (hardware/scripts.lock)
     edakit handover                  what the circuit hands over to the layout: state, sign-offs, layout requirements
     edakit schematic create|check|copy|layout
     edakit schematic draw            the schematic as SVG from graph and parts database – no EasyEDA (offline)
@@ -126,6 +128,12 @@ def build_parser():
     p = sub.add_parser("req", help="what the circuit must do: needs and requirements with status, binding and "
                                    "evidence ([project] requirements in edakit.toml)")
     p.add_argument("ids", nargs="*", help="need or requirement IDs, e.g. R-4 N-2: the chain of each (default: a list)")
+    _common(p)
+
+    p = sub.add_parser("scripts", help="the project's scripts ([scripts.<name>]): state and order; stamp records a run")
+    p.add_argument("action", nargs="?", choices=["stamp"], help="stamp NAME …: the named scripts ran by hand – their "
+                                                                 "stamps go into hardware/scripts.lock")
+    p.add_argument("names", nargs="*", help="stamp: the scripts that ran")
     _common(p)
 
     p = sub.add_parser("handover", help="the hand-over from the circuit to the layout: state, sign-offs, requirements")
@@ -297,6 +305,9 @@ def _main(argv=None):
     if args.command == "req":
         from . import requirements
         return requirements.main(cfg, args)
+    if args.command == "scripts":
+        from . import scripts
+        return scripts.main(cfg, args)
     if args.command == "handover":
         from . import handover
         return handover.main(cfg, args)

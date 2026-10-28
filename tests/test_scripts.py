@@ -317,6 +317,51 @@ def test_old_stage_without_its_fields(project):
         (1, "[[release.stages]] K: name missing – the gate runs a project stage by id, name and cmd")]
 
 
+def test_data_of_a_bought_board(project):
+    """#82: a bought board is made by nobody – it has no board file, project library, footprints, mechanical model,
+    routing or Gerber data; its name in reads or writes is a finding of rule 2, and edakit's steps leave it out."""
+    toml = project.root / "edakit.toml"
+    toml.write_text(toml.read_text() + '\n[boards.usb]\ntitle = "USB-C breakout"\nbought = true\n')
+    assert tree(project).findings == []
+    toml.write_text(toml.read_text() + entry("x", kind="derive", **X, reads=["routing:usb"], writes=["build/x"])
+                    + entry("y", kind="input", **X, writes=["board:usb"]))
+    res = scripts.resolve(project.config())
+    why = "usb is a bought board (bought = true): edakit makes none of its data – <name>:<b> names a made board (tree)"
+    assert [(f.rule, f.msg) for f in res.findings] == [(2, f"x: reads routing:usb – {why}"),
+                                                       (2, f"y: writes board:usb – {why}")]
+    with pytest.raises(ValueError, match="usb is a bought board"):
+        scripts.data_hash(project.config(), "mech:usb")
+
+
+def test_the_routing_by_its_path(project):
+    """route/<b>.ses and the stitching vias of route pours are routing:<b>, also when an entry names their path."""
+    res = tree(project, entry("x", kind="derive", **X, writes=["build/edakit/route/tree_stitch.json"]))
+    assert [(f.rule, f.msg) for f in res.findings] == [
+        (3, "x: writes build/edakit/route/tree_stitch.json (routing:tree) – made by edakit route; a script writes "
+            "files, an input also board:<b>")]
+    ses = project.root / "build" / "edakit" / "route" / "tree.ses"
+    ses.parent.mkdir(parents=True)
+    ses.write_text("(session tree)\n")
+    cfg = project.config()
+    assert scripts.data_hash(cfg, "build/edakit/route/tree.ses") == scripts.data_hash(cfg, "routing:tree") != \
+        scripts.ABSENT
+
+
+def test_a_gate_runs_files_by_their_path(project):
+    """The files of a gate run's fab/<b>/ are gerber:<b>: a check that reads them by path needs at = "after F"."""
+    run = "build/release/20261025-204229/fab/tree/gerber_tree.zip"
+    res = tree(project, entry("x", kind="check", **X, id="X", phase="export", reads=[run]))
+    assert [(f.rule, f.msg) for f in res.findings] == [
+        (8, f'x: reads {run}, which the gate makes in stage F – the check needs at = "after F"')]
+
+
+def test_a_gate_runs_files_hash_as_gerber(project):
+    cfg = project.config()
+    gate_run(project, "20261025-204229")
+    assert scripts.data_hash(cfg, "build/release/20261025-204229/fab/main/") == scripts.data_hash(cfg, "gerber:main") \
+        != scripts.ABSENT
+
+
 # --- edakit check ---------------------------------------------------------------------------------------------------
 def test_edakit_check_reports_the_findings(project, capsys, tmp_path):
     toml = project.root / "edakit.toml"
@@ -331,12 +376,15 @@ def test_edakit_check_reports_the_findings(project, capsys, tmp_path):
 
 
 def test_edakit_check_with_entries_that_resolve(project, capsys):
+    """Nothing keeps them from one order: what edakit check says about kunst is its stamp (test_script_stamps.py)."""
     toml = project.root / "edakit.toml"
     toml.write_text(toml.read_text() + KUNST.replace("hardware/art/bell.svg", "hardware/art/x.svg"))
     f = project.root / "hardware" / "boards" / "main.toml"
     f.write_text(f.read_text() + '\n[[silk.art]]\nsvg = "hardware/art/x.svg"\nx = 20\ny = 20\nwidth_mm = 10\n')
-    assert checks.main(project.config(), argparse.Namespace(release=False, json=None)) == 0
-    assert "scripts" not in capsys.readouterr().out
+    assert checks.main(project.config(), argparse.Namespace(release=False, json=None)) == 1
+    assert [line for line in capsys.readouterr().out.splitlines() if line.split()[1:2] == ["scripts"]] == [
+        "ERROR   scripts  kunst never run: no stamp in hardware/scripts.lock – Bell, greeting, star and snowflake as "
+        "shapes for the silkscreen"]
 
 
 # --- edakit's data by name, each with a hash -------------------------------------------------------------------------

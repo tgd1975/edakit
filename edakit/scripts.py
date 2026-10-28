@@ -1,6 +1,9 @@
-"""Project scripts: the entries [scripts.<name>] of edakit.toml and edakit's own steps, resolved into one order.
+"""Project scripts: the entries [scripts.<name>] of edakit.toml and edakit's own steps, resolved into one order, and the
+stamps that tell an outdated script.
 
-    edakit check     reports what keeps the entries from resolving (handbook 8.6)
+    edakit scripts               every script with its about and state – current, outdated, never run – and the order
+    edakit scripts stamp NAME …  records the run of scripts that ran by hand: their stamps in hardware/scripts.lock
+    edakit check, edakit gate    report what keeps the entries from resolving and every outdated script (handbook 8.6)
 
 A project registers the scripts that touch edakit's flow: a script writes a file edakit reads, derives something from
 edakit's data, changes the project library in EasyEDA, or holds up the release as a check of its own. Its entry says
@@ -21,14 +24,26 @@ is run here.
 Names of edakit's data in reads and writes: graph, parts, sim (written by hand, edakit block, edakit part), board:<b>
 (the board file), project-library:<b> (EasyEDA's project library: schematic create, easyeda scripts), footprints:<b>
 (<b>.geometry.json: pcb dump), mech:<b> (pcb plan), routing:<b> (route), gerber:<b> and release (the gate),
-firmware (edakit firmware, with [firmware]). Anything else is a path relative to edakit.toml: a folder holds the files
-in it, and an edakit file named by its path is its data (hardware/boards/<b>.toml is board:<b>). Each name has a hash
-of what edakit has of it offline (data_hash) – the project library none, it is in EasyEDA only.
+firmware (edakit firmware, with [firmware]); <b> is a made board – a bought one has none of them. Anything else is a
+path relative to edakit.toml: a folder holds the files in it, and an edakit file named by its path is its data
+(hardware/boards/<b>.toml is board:<b>, route/<b>.ses routing:<b>, a gate run's fab/<b>/ gerber:<b>). Each name has a
+hash of what edakit has of it offline (data_hash) – the project library none, it is in EasyEDA only.
+
+The stamp of a script (input, derive, easyeda) in hardware/scripts.lock: its cmd, the script itself – the first word of
+cmd that names a file (script_file) – and the hash of everything it reads, at its last run (input_hash: a name's
+data_hash, a file's bytes, a folder's files). A script is
+  current    every hash as stamped
+  outdated   cmd changed, a hash changed, reads names what the stamp lacks, or it comes after a script – through after,
+             or reading what that one writes – that is outdated or never ran
+  never run  no stamp
+What is absent here – build/ in the CI or a fresh clone, a file outside the project – and the project library are not
+compared, whatever the stamp says: a note names them. Outdated or never run, an input is an error (the gate: a failed
+check of stage G), a derive or easyeda script a warning; a check has no stamp, its result is the gate's protocol.
 
 The entries resolve when (docs/concepts/new/project-scripts.md, "Checking the TOML", its rules 1 to 9; 10 and 11 are
 about agents):
   1  kind is input, derive, easyeda or check, the fields of the kind are there, and no field of another kind
-  2  every data name is edakit's, with a board of [boards]; firmware only with [firmware]
+  2  every data name is edakit's, with a made board of [boards]; firmware only with [firmware]
   3  a script writes files, an input also board:<b>; an easyeda script changes project-library:<b> – footprints:<b> is
      the geometry pcb dump measures, edakit's own data like the others
   4  scripts that write the same file or change the same data run in a fixed order through after
@@ -42,10 +57,14 @@ about agents):
 
 from __future__ import annotations
 
+import datetime as dt
+import getpass
 import hashlib
 import json
 import os
 import re
+import sys
+import textwrap
 from collections import defaultdict, deque
 from dataclasses import dataclass, field
 from pathlib import Path
@@ -105,6 +124,7 @@ class Resolution(NamedTuple):
     findings: list  # [Finding]
     order: list     # edakit's steps and the scripts in one order that keeps every edge – easyeda scripts run on
                     # command and have no place in it; empty when the entries do not resolve
+    before: dict    # name of a [scripts] entry -> the entries it comes after: through after, or reading what they write
 
 
 @dataclass
@@ -128,16 +148,19 @@ class _Names:
         from .pcb import geometry_home, unmoved_geometry
         self.cfg = cfg
         own = {cfg.graph: ("graph", None), cfg.sim_config: ("sim", None)}
-        for b, board in cfg.boards.items():
+        for b, board in cfg.made().items():        # a bought board has no layout: none of a board's data
             own[cfg.resolve(board.file)] = ("board", b)
             own[geometry_home(cfg, board)] = ("footprints", b)        # beside the board file, where pcb dump writes
             if old := unmoved_geometry(cfg, board):                   # the one from before, read until it is moved
                 own[old] = ("footprints", b)
             own[cfg.artifacts / f"mech_{b}.json"] = ("mech", b)
+            for f in (f"{b}.ses", f"{b}_stitch.json"):     # the tracks and vias of edakit route, its stitching vias
+                own[cfg.artifacts / "route" / f] = ("routing", b)
         if cfg.firmware is not None:
             own[cfg.resolve(cfg.firmware["out"])] = ("firmware", None)
         self.own = {self.path(p): key for p, key in own.items()}
         self.parts = self.path(cfg.parts)
+        self.reports = self.path(cfg.reports)
 
     def path(self, p):
         """A path as entries are compared: relative to the project when inside it, normalised, without a final /."""
@@ -156,6 +179,9 @@ class _Names:
                 return (kind, None), f"{kind} is data of a board: {kind}:<b>"
             if board not in self.cfg.boards:
                 return (kind, board), f"no board {board} in [boards] ({', '.join(self.cfg.boards)})"
+            if self.cfg.boards[board].bought:
+                return (kind, board), (f"{board} is a bought board (bought = true): edakit makes none of its data – "
+                                       f"<name>:<b> names a made board ({', '.join(self.cfg.made()) or 'none'})")
             return (kind, board), None
         if m and m[2] is not None:
             return None, ("no data name of edakit (graph, parts, sim, release, firmware; board, project-library, "
@@ -165,6 +191,9 @@ class _Names:
             return self.own[p], None
         if p == self.parts or p.startswith(self.parts + "/"):
             return ("parts", None), None
+        run = p[len(self.reports) + 1:].split("/") if p.startswith(self.reports + "/") else []
+        if len(run) > 2 and run[1] == "fab" and run[2] in self.cfg.made():   # <reports>/<run>/fab/<b>/…: a gate run's
+            return ("gerber", run[2]), None                                   # manufacturing files of the board
         return ("file", p), None
 
 
@@ -212,8 +241,8 @@ def _cycle(start, edges):
 
 
 def _step_data(cfg, names):
-    """Per step of STEPS: the keys it reads and the keys it writes, for every board."""
-    art = {("file", names.path(a["svg"])) for board in cfg.boards.values()
+    """Per step of STEPS: the keys it reads and the keys it writes, for every made board."""
+    art = {("file", names.path(a["svg"])) for board in cfg.made().values()
            for a in (board.silk.get("art") if isinstance(board.silk.get("art"), list) else [])
            if isinstance(a, dict) and isinstance(a.get("svg"), str)}
     plugin = {("file", names.path(cfg.sim_plugin))} if cfg.sim_plugin else set()
@@ -226,7 +255,7 @@ def _step_data(cfg, names):
             elif n == "art:<b>":
                 out |= art
             elif n.endswith(":<b>"):
-                out |= {(n[:-4], b) for b in cfg.boards}
+                out |= {(n[:-4], b) for b in cfg.made()}
             else:
                 out.add((n, None))
         return out
@@ -323,6 +352,11 @@ def _entries(cfg, names, finding):
 
 def resolve(cfg) -> Resolution:
     """The entries of cfg with edakit's steps: what keeps them from resolving, and else one order."""
+    return _resolve(cfg)[0]
+
+
+def _resolve(cfg):
+    """(Resolution, the entries as _entries read them, _Names)."""
     found = []
 
     def finding(rule, msg):
@@ -434,7 +468,9 @@ def resolve(cfg) -> Resolution:
             cyclic |= {n for n in _reach(e.node, edges) if e.node in _reach(n, edges)}
             finding(7, f"{e.label}: in a cycle – " + labels[cycle[0]] + "".join(
                 (f" –[{edges[a][b]}]→ " if edges[a][b] else " → ") + labels[b] for a, b in zip(cycle, cycle[1:])))
-    return Resolution(found, _order(steps, entries, edges, labels) if not found else [])
+    before = {e.label: [a.label for a in entries if a.node[0] == "script" and e.node in edges.get(a.node, {})]
+              for e in entries if e.node[0] == "script"}
+    return Resolution(found, _order(steps, entries, edges, labels) if not found else [], before), entries, names
 
 
 def _order(steps, entries, edges, labels):
@@ -526,3 +562,336 @@ def _gerber_hash(cfg, b):
     if not layers:
         return ABSENT
     return hashlib.sha256(json.dumps({"method": method, "boards": {b: layers}}, sort_keys=True).encode()).hexdigest()
+
+
+# --- stamps: what each script's result was made from, at its last run -----------------------------------------------
+
+LOCK = "hardware/scripts.lock"           # versioned, in no hash
+STAMPED = ("input", "derive", "easyeda")  # a check's result is the gate's protocol, sim_plugin runs inside edakit sim
+LEVEL = {"input": "error", "derive": "warning", "easyeda": "warning"}   # of a script outdated or never run
+RESULT = {"error": "fail", "warning": "warn", "note": "info"}          # the gate's row for a level
+SKIP = ("__pycache__",)                   # left out of a folder's hash, with every name that starts with a dot (.git,
+SKIP_SUFFIXES = (".pyc", ".pyo")          # .venv, editor files) and compiled Python
+ABOUT_LOCK = ("The stamps of the project scripts ([scripts.<name>] of edakit.toml): per script, at its last run, "
+              "its cmd, the script itself and the hash of everything it reads. edakit scripts stamp writes it, edakit "
+              "check and the gate compare it (handbook 8.6). Commit it with what the scripts wrote.")
+
+
+class StampError(Exception):
+    """hardware/scripts.lock cannot be read, or a stamp cannot be recorded."""
+
+
+class State(NamedTuple):
+    name: str           # the [scripts] name; [[release.stages]] <id>, sim_plugin
+    kind: str
+    about: str
+    cmd: list
+    script: str | None  # the script itself (script_file); None when cmd names no file
+    state: str          # current, outdated, never run – "" when nothing was compared: a kind without a stamp, entries
+                        # that do not resolve, a lock that cannot be read
+    why: list           # what makes it outdated
+    unseen: list        # what was not compared, and why
+    stamp: dict | None  # its stamp in the lock
+    place: str = ""     # a kind without a stamp: where it runs
+
+
+def lock_name(cfg, spelling, names=None):
+    """How a stamp names what a script reads: a name of edakit's data by its name, also when the entry gives its path
+    (hardware/boards/main.toml is board:main); a path relative to edakit.toml – one outside the project as written, so
+    that the lock reads the same on every machine."""
+    key, _ = (names or _Names(cfg)).parse(spelling)
+    if key is not None and key[0] != "file":
+        return _spell(key)
+    p = Path(os.path.normpath(cfg.resolve(spelling)))
+    if p.is_relative_to(cfg.root):
+        return p.relative_to(cfg.root).as_posix()
+    return Path(os.path.normpath(spelling)).as_posix()
+
+
+def script_file(cfg, cmd):
+    """The script itself: the first word of cmd that names a file – relative to edakit.toml, or inside the project when
+    it is absolute, since a program of the system is no script of the project –, as a stamp names it. None when cmd
+    names no such file – a program on PATH (make, python -m …): then only reads count, and the script's files belong in
+    reads."""
+    names = _Names(cfg)
+    for word in cmd:
+        p = Path(word)
+        if word.startswith("-") or p.is_absolute() and not p.is_relative_to(cfg.root):
+            continue
+        if cfg.resolve(word).is_file() and names.parse(word)[0] is not None:   # not a word:word such as host:port
+            return lock_name(cfg, word, names)
+    return None
+
+
+def input_hash(cfg, spelling, names=None):
+    """The hash of what reads may name, as a stamp holds it: a name of edakit's data (also by its path) its data_hash –
+    None for the project library –, a file its bytes, a folder every file below it with its path in the folder, without
+    __pycache__, *.pyc, *.pyo, names that start with a dot and the lock itself, which a stamp would change. ABSENT when
+    there is nothing. ValueError for a name that is not edakit's."""
+    key, why = (names or _Names(cfg)).parse(spelling)
+    if key is None or why:
+        raise ValueError(f"{spelling}: {why}")
+    if key[0] != "file":
+        return data_hash(cfg, spelling)
+    p = cfg.resolve(key[1])
+    if p.is_file():
+        return hashlib.sha256(p.read_bytes()).hexdigest()
+    files = [f for f in _files(p) if p / f != cfg.root / LOCK] if p.is_dir() else []
+    if not files:
+        return ABSENT
+    h = hashlib.sha256()
+    for rel in files:
+        h.update(rel.encode() + b"\0" + hashlib.sha256((p / rel).read_bytes()).digest())
+    return h.hexdigest()
+
+
+def _files(folder):
+    """The files below folder, as sorted paths relative to it – without caches and hidden names."""
+    out = []
+    for top, dirs, files in os.walk(folder):
+        dirs[:] = [d for d in dirs if not d.startswith(".") and d not in SKIP]
+        rel = Path(top).relative_to(folder)
+        out += [(rel / f).as_posix() for f in files if not f.startswith(".") and not f.endswith(SKIP_SUFFIXES)]
+    return sorted(out)
+
+
+def load_lock(cfg):
+    """The stamps of hardware/scripts.lock, {name: stamp}; {} while there is no file. StampError when it is not a lock
+    as edakit scripts stamp writes it."""
+    path = cfg.root / LOCK
+    if not path.exists():
+        return {}
+    try:
+        data = json.loads(path.read_text(encoding="utf-8"))
+    except (OSError, UnicodeDecodeError, json.JSONDecodeError) as e:
+        raise StampError(f"{LOCK}: not readable ({e})") from None
+    stamps = data.get("scripts") if isinstance(data, dict) else None
+    if not isinstance(stamps, dict) or not all(isinstance(s, dict) and isinstance(s.get("cmd"), list)
+                                               and isinstance(s.get("hashes"), dict) for s in stamps.values()):
+        raise StampError(f"{LOCK}: not readable (no table scripts of stamps, each with cmd and hashes)")
+    return stamps
+
+
+def save_lock(cfg, stamps):
+    path = cfg.root / LOCK
+    path.parent.mkdir(parents=True, exist_ok=True)
+    data = {"about": ABOUT_LOCK, "scripts": {n: stamps[n] for n in sorted(stamps)}}
+    path.write_text(json.dumps(data, indent=1, ensure_ascii=False) + "\n", encoding="utf-8")
+
+
+def _inputs(cfg, names, e):
+    """(the script itself, {name in the stamp: hash} of the script and of everything the entry reads)."""
+    script = script_file(cfg, e.raw.get("cmd") or [])
+    now = {script: input_hash(cfg, script, names)} if script else {}
+    for spelling, _ in e.reads:
+        now.setdefault(lock_name(cfg, spelling, names), input_hash(cfg, spelling, names))
+    return script, now
+
+
+def _compare(stamp, cmd, script, now):
+    """(why, unseen): what makes the stamp outdated; what was not compared – absent here, or without an offline hash."""
+    moved = stamp["cmd"] != cmd
+    why, unseen, old = ["cmd changed"] if moved else [], [], stamp["hashes"]
+    for k, h in now.items():
+        if h is None:
+            unseen.append(f"{k} has no offline hash")
+        elif h == ABSENT:
+            if old.get(k) != ABSENT:
+                unseen.append(f"{k} absent here")
+        elif k not in old:
+            if not (moved and k == script):        # another cmd runs another script: cmd changed says it
+                why.append(f"{k} new in reads")
+        elif old[k] != h:
+            why.append(f"{k} changed")
+    if stamp.get("script") and stamp["script"] not in now and not moved:
+        unseen.append(f"{stamp['script']} absent here")       # the script of the same cmd is gone
+    return why, unseen
+
+
+def _place(e):
+    """Where a kind without a stamp runs."""
+    if e.kind == "sim":
+        return "the simulation plugin, it runs inside edakit sim"
+    where = f"phase {e.phase}" + (f" {e.at or 'before S'}" if e.phase == "export" else "")
+    return f"a check, {where}; " + ("the gate runs it" if e.node[0] == "stage" else "the gate does not run it yet")
+
+
+def review(cfg):
+    """(resolution, states, problem): the entries resolved with edakit's steps; the state of every entry – [scripts] in
+    the order of edakit.toml, then [[release.stages]] and sim_plugin; what kept the stamps from being compared (a lock
+    that cannot be read), else None. Stamps are compared only when the entries resolve."""
+    from .release import gate
+    res, entries, names = _resolve(cfg)
+    stamps, problem = {}, None
+    try:            # only a project with scripts to stamp reads the lock
+        stamps = load_lock(cfg) if any(e.kind in STAMPED for e in entries) else {}
+    except StampError as e:
+        problem = f"{e} – nothing compared; fix it, or delete it and stamp every script again"
+    compare = not res.findings and problem is None
+    scripts, memo = {e.label: e for e in entries if e.node[0] == "script"}, {}
+
+    def state(e):
+        if e.label not in memo:
+            cmd = list(e.raw.get("cmd") or [])
+            s = stamps.get(e.label) if e.kind in STAMPED else None
+            out = State(e.label, e.kind, str(e.raw.get("about") or e.raw.get("name") or ""), cmd,
+                        script_file(cfg, cmd) if e.kind in STAMPED else None, "", [], [], s,
+                        _place(e) if e.kind not in STAMPED else "")
+            if compare and e.kind in STAMPED and s is None:
+                out = out._replace(state="never run")
+            elif compare and e.kind in STAMPED:
+                script, now = _inputs(cfg, names, e)
+                why, unseen = _compare(s, cmd, script, now)
+                for b in res.before.get(e.label, []):        # a script it comes after that is not current
+                    if scripts[b].kind in STAMPED and (prior := state(scripts[b]).state) != "current":
+                        why.append(f"after {b}, which " + ("never ran" if prior == "never run" else "is outdated"))
+                out = out._replace(script=script, state="outdated" if why else "current", why=why, unseen=unseen)
+            memo[e.label] = out
+        return memo[e.label]
+    try:
+        states = [state(e) for e in entries]
+    except gate.ReleaseError as e:          # a script reads the release or Gerber data, and a manifest is not readable
+        problem, compare, memo = f"{e} – nothing compared", False, {}
+        states = [state(e) for e in entries]
+    if cfg.sim_plugin:
+        states = [s._replace(about=f"{cfg.relative(cfg.sim_plugin)} – MODELS and checks for edakit sim (5.1)")
+                  if s.kind == "sim" else s for s in states]
+    return res, states, problem
+
+
+def _findings(res, states, problem):
+    out = [("error", f.msg) for f in res.findings]
+    if problem:
+        out.append(("error", problem))
+    for s in states:
+        if s.state == "outdated":
+            out.append((LEVEL[s.kind], f"{s.name} outdated: {', '.join(s.why)} – {s.about}"))
+        elif s.state == "never run":
+            out.append((LEVEL[s.kind], f"{s.name} never run: no stamp in {LOCK} – {s.about}"))
+        if s.unseen:
+            out.append(("note", f"{s.name}: not compared – {', '.join(s.unseen)}"))
+    return out
+
+
+def findings(cfg):
+    """What edakit check and the gate report with the ID scripts, [(level, message)] with level error, warning or note:
+    what keeps the entries from one order (nothing is compared then), a lock that cannot be read, every script outdated
+    or never run – an input an error, a derive or easyeda script a warning –, and what was not compared."""
+    return _findings(*review(cfg))
+
+
+def gate_rows(cfg):
+    """The rows of stage G with the ID scripts: an error fails, a warning wants accepting – or the script run –, a note
+    informs, and a current script passes. A project without [scripts], [[release.stages]] and sim_plugin gets none."""
+    res, states, problem = review(cfg)
+    rows = [{"stage": "G", "id": "scripts", "item": "", "check": msg, "result": RESULT[level]}
+            for level, msg in _findings(res, states, problem)]
+    return rows + [{"stage": "G", "id": "scripts", "item": "", "check": f"{s.name} current – {s.about}",
+                    "result": "pass"} for s in states if s.state == "current"]
+
+
+def stamp(cfg, names):
+    """Records the run of each script of names – it ran by hand: its stamp in hardware/scripts.lock; the stamps of
+    scripts no longer in [scripts] are dropped. Returns (the new stamps, the names dropped). StampError with what keeps
+    a script from its stamp: then nothing is written."""
+    from .release import gate
+    if not names:
+        raise StampError("name the scripts that ran: edakit scripts stamp NAME …")
+    if unknown := [n for n in names if n not in cfg.scripts]:
+        raise StampError(f"no [scripts.{unknown[0]}] in {cfg.path.name} ({', '.join(cfg.scripts) or 'none'})")
+    res, entries, nm = _resolve(cfg)
+    if res.findings:
+        raise StampError("the entries do not resolve into one order – edakit check names what keeps them; nothing "
+                         "stamped")
+    stamps = load_lock(cfg)
+    entry = {e.label: e for e in entries if e.node[0] == "script"}
+    when = dt.datetime.now().astimezone().isoformat(timespec="seconds")
+    by = gate.sh(cfg.root, "git", "config", "user.name") or getpass.getuser()
+    new = {}
+    for name in dict.fromkeys(names):
+        e = entry[name]
+        if e.kind not in STAMPED:
+            raise StampError(f"{name} is a check: its result is the gate's protocol, not a file – a check has no stamp")
+        if gone := [s for s, _ in e.writes if input_hash(cfg, s, nm) == ABSENT]:
+            raise StampError(f"{name} writes {', '.join(gone)}, which {'is' if len(gone) == 1 else 'are'} not there – "
+                             "run it first; nothing stamped")
+        script, now = _inputs(cfg, nm, e)
+        new[name] = {"stamped": when, "by": by, "cmd": list(e.raw["cmd"]), "script": script,
+                     "hashes": dict(sorted(now.items()))}
+    dropped = [n for n in stamps if n not in cfg.scripts]
+    save_lock(cfg, {**{n: s for n, s in stamps.items() if n in cfg.scripts}, **new})
+    return new, dropped
+
+
+def _said(s):
+    """The state as edakit scripts shows it."""
+    if s.place:
+        return f"no stamp – {s.place}"
+    if not s.state:
+        return "–"
+    return (f"outdated: {', '.join(s.why)}" if s.state == "outdated" else s.state) + \
+        (f" – not compared: {', '.join(s.unseen)}" if s.unseen else "")
+
+
+def listing(cfg, res, states, problem):
+    """edakit scripts: every entry with kind, state, about, cmd and its last run; the order, or what keeps the entries
+    from it; what is to run."""
+    lines = [f"The project's scripts – [scripts.<name>] of {cfg.path.name}, their stamps in {LOCK} (handbook 8.6)", ""]
+    if not cfg.scripts:
+        lines += [f"none – {cfg.path.name} has no [scripts.<name>]", ""]
+    width = max([len(s.name) for s in states] or [0])
+    pad = " " * (width + 11)
+    for s in states:
+        lines.append(f"{s.name:<{width}}  {s.kind:<7}  {_said(s)}")
+        lines += [pad + s.about] if s.about else []
+        if s.cmd:
+            lines.append(pad + " ".join(s.cmd) + (" – it names no file of the project: only reads count"
+                                                  if s.kind in STAMPED and not s.script else ""))
+        if s.stamp:
+            lines.append(pad + f"stamped {str(s.stamp.get('stamped', '?'))[:16].replace('T', ' ')} by "
+                               f"{s.stamp.get('by', '?')}")
+    lines.append("")
+    if res.findings:
+        lines += ["The entries do not resolve into one order (edakit check, handbook 8.6):",
+                  *[f"  {f.msg}" for f in res.findings]]
+    else:
+        lines += textwrap.wrap("order: " + " → ".join(res.order), 120, subsequent_indent=" " * 7,
+                               break_long_words=False, break_on_hyphens=False)
+        if on_command := [s.name for s in states if s.kind == "easyeda"]:
+            lines.append(f"on command only: {', '.join(on_command)}")
+    if problem:
+        lines += ["", problem]
+    if todo := [s.name for s in states if s.state in ("outdated", "never run")]:
+        lines += ["", f"{len(todo)} to run: {', '.join(todo)} – each by hand (its cmd), then edakit scripts stamp "
+                      "<name> records the run"]
+    elif any(s.state == "current" for s in states):
+        lines += ["", "every script current"]
+    return lines
+
+
+def main(cfg, args):
+    """edakit scripts [stamp NAME …]. Exit 0: every script current, or stamped; 2: one is outdated or never ran, or
+    the entries do not resolve; 1: the lock cannot be read, or a stamp was refused."""
+    if args.action == "stamp":
+        try:
+            new, dropped = stamp(cfg, args.names)
+        except StampError as e:
+            print(f"edakit scripts stamp: {e}", file=sys.stderr)
+            return 1
+        for name, s in new.items():
+            print(f"{name}: stamped in {LOCK} – {' '.join(s['cmd'])}")
+            for k, h in s["hashes"].items():
+                print(f"  {k}  " + ("no offline hash" if h is None else h if h == ABSENT else h[:16] + "…"))
+        if dropped:
+            print(f"dropped the stamps of {', '.join(dropped)} – no such [scripts.<name>] any more")
+        _, states, _ = review(cfg)
+        for s in states:
+            if s.name in new and s.state != "current":
+                print(f"{s.name} still {s.state}: {', '.join(s.why)}")
+        print(f"Commit {LOCK} with what the scripts wrote.")
+        return 0
+    res, states, problem = review(cfg)
+    print("\n".join(listing(cfg, res, states, problem)))
+    if problem:
+        return 1
+    return 2 if res.findings or any(s.state in ("outdated", "never run") for s in states) else 0

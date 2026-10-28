@@ -18,6 +18,7 @@ are. What one role decides lives in a file of its own, with one owner and one ha
 | the SVGs of `[[silk.art]]` | artwork on the silkscreen (7.7), drawn by hand or by a project script | PCB designer | layout |
 | `hardware/signoff.json` | sign-offs and accepted warnings, each bound to the hash of its scope: circuit, layout or fab (8.2); an accepted warning with `parts` {designator: LCSC} also to those parts; `rehashed` records a change of the hash method (the gate writes it for `hash_ignore`) | reviewers, the user | – |
 | `hardware/firmware.json` | the firmware contract, with `[firmware]` (3.5) | `edakit firmware` | – |
+| `hardware/scripts.lock` | the stamps of the project scripts: per script its `cmd`, the script itself and the hashes of what it reads, at its last run (8.6) | `edakit scripts stamp` | – |
 
 Complete example: [tests/fixtures/led-bar](../tests/fixtures/led-bar/). A key edakit does not know is an error with
 the list of the known ones – a typo does not fall back to a default unnoticed. An edakit.toml that still holds the
@@ -119,19 +120,21 @@ work without it.
 ### [scripts.&lt;name&gt;]
 
 Optional: a project script that touches edakit's flow – it writes a file edakit reads, derives something from
-edakit's data, changes the project library in EasyEDA, or is a check of its own (8.6). `edakit check` resolves the
-entries with edakit's steps into one order and reports what keeps them from it; no command runs them yet. Without the
-table nothing changes.
+edakit's data, changes the project library in EasyEDA, or is a check of its own (8.6). `edakit check` and the gate
+resolve the entries with edakit's steps into one order, report what keeps them from it, and compare each script's
+stamp in `hardware/scripts.lock`: an input outdated or never run is an error, a derive or easyeda script a warning.
+`edakit scripts` lists them, `edakit scripts stamp` records a run; no command runs them yet. Without the table nothing
+changes.
 
 | Key | For | Meaning |
 |---|---|---|
 | `kind` | every entry | `input`, `derive`, `easyeda` or `check` (8.6); the kind `sim` is `[project] sim_plugin` |
 | `cmd` | every entry | the command as a list, run in the project directory |
 | `about` | every entry | one sentence why the script exists, citing a decision |
-| `writes` | input, derive, easyeda (required) | what it makes: paths; an input also `board:<b>`; an easyeda script changes `project-library:<b>` (not `footprints:<b>`, the geometry `pcb dump` measures) |
-| `reads` | every kind (optional) | what its result is made from: edakit's data (8.6, each with a hash; the project library has none) and paths – the script itself counts anyway |
+| `writes` | input, derive, easyeda (required) | what it makes: paths; an input also `board:<b>`; an easyeda script changes `project-library:<b>` (not `footprints:<b>`, the geometry `pcb dump` measures); `<b>` a made board |
+| `reads` | every kind (optional) | what its result is made from: edakit's data (8.6, each with a hash; the project library has none), files and folders – the script itself, the first file `cmd` names, counts anyway |
 | `after` | every kind (optional) | other entries of `[scripts]` this one runs after – needed when several write the same file or change the same data |
-| `check` | input, derive, easyeda (optional) | an exact check command, when the stamp is not enough |
+| `check` | input, derive, easyeda (optional) | an exact check command, when the stamp is not enough (not run yet) |
 | `id` | check (required) | its ID in the protocol: no stage of the gate (P, G, E, S, L, F), no sign-off (M-…), no ID of the rule catalog, and none twice – `[[release.stages]]` included |
 | `phase` | check (required) | `export` (holds up the release), `order` or `acceptance` |
 | `at` | check (optional) | phase `export` only: `"before S"` (default) or `"after F"`, to read the run's Gerber data (`gerber:<b>`) |
@@ -258,7 +261,7 @@ Claude Code: `edakit … 2>&1 | cat`. The long commands – `route all`, `gate`,
 
 | Command | EasyEDA | Reads | Writes |
 |---|---|---|---|
-| `edakit check [--release] [--json F]` | – | graph, parts (pins, identity P-6), pin table; if there: footprint geometry and library footprints (P-7, P-8), library symbols (P-1); `[scripts]`, `[[release.stages]]` and `sim_plugin` with the board files' `[[silk.art]]` (8.6); with `[project] requirements` the requirements files and the sign-off file's manual checks (G-20 to G-23; a file missing or not valid: exit 1) | – |
+| `edakit check [--release] [--json F]` | – | graph, parts (pins, identity P-6), pin table; if there: footprint geometry and library footprints (P-7, P-8), library symbols (P-1); `[scripts]`, `[[release.stages]]` and `sim_plugin` with the board files' `[[silk.art]]`, `hardware/scripts.lock` and what the scripts read (8.6); with `[project] requirements` the requirements files and the sign-off file's manual checks (G-20 to G-23; a file missing or not valid: exit 1) | – |
 | `edakit rules [ID …]` | – | the rule catalog (no project needed) | – |
 | `edakit hints [--json F]` | – | graph, parts, sim config | – |
 | `edakit block list\|show NAME` | – | the block library (no project needed) | – |
@@ -277,6 +280,8 @@ Claude Code: `edakit … 2>&1 | cat`. The long commands – `route all`, `gate`,
 | `edakit docs [--write]` | – | `[docs] files`, the schematic notes, graph, parts; for `sim:` the saved simulation result (or a new run) | with `--write` the value blocks of `[docs] files` |
 | `edakit firmware [--check]` | – | graph, parts, `[firmware]`; for `state_sha256` the files of the circuit hash | `[firmware] out` (not with `--check`: exit 2 on drift) |
 | `edakit req [ID …]` | – | the files of `[project] requirements` (10.4) | – (prints the needs and requirements with status, binding and `verify` as written – the gate evaluates it, 8.7; with IDs the chain of each, 3.6); exit 1 without the key, with a file missing or not valid, or an ID not in the files |
+| `edakit scripts` | – | `[scripts]`, `[[release.stages]]`, `sim_plugin`, the board files' `[[silk.art]]`, `hardware/scripts.lock`, what the scripts read (8.6) | – (prints every script with kind, state – current, outdated, never run –, about, cmd and its last run; the order; exit 2 when one is outdated or never ran or the entries do not resolve, 1 when the lock cannot be read) |
+| `edakit scripts stamp NAME …` | – | the same | `hardware/scripts.lock`: the stamp of each script named – it ran by hand; refused, writing nothing, for a check, entries that do not resolve, or a script whose `writes` are not there |
 | `edakit handover [--board B]` | – | graph, parts, sign-offs | – |
 | `edakit schematic create [--board] [--only] [--dry-run] [--save] [--create-project] [--refresh-devices]` | ✓ | graph | template, `device_cache.json`, `schematic_map_<name>.json`; `--save` only when the netlist equals the graph (6.1) |
 | `edakit schematic check [--schematic] [--no-pins] [--json F]` | ✓ read | graph, schematic | – |
@@ -321,6 +326,7 @@ hardware/boards/<name>.geometry.json
                             its footprint geometry, as edakit pcb dump measured it (in the layout hash)
 hardware/signoff.json       manual checks and accepted warnings, bound to hashes
 hardware/firmware.json      the firmware contract, if [firmware] is set (edakit firmware)
+hardware/scripts.lock       the stamps of the project scripts, if [scripts] is set (edakit scripts stamp)
 docs/decisions.md           numbered decisions (or wherever the project keeps them)
 build/edakit/               artifacts (not versioned): caches, previews, routing, exports, cost.json;
                             library/ and footprints/: the library's symbols and footprints (edakit part import);

@@ -23,7 +23,7 @@ Before each stage – each project stage, and with `--easyeda` each board of sta
 | Stage | What | Checks |
 |---|---|---|
 | P – Parts | parts database complete and signed, every part named by its entry, through-hole leads fitting their holes and, formed for the board, fitting only one way round, own parts equal to their source, parts orderable, a supplier per part | P-1, P-3, P-4, P-5, P-6, P-7, P-8, G-9 (chapter 3, 4) |
-| G – Graph | rule checks; with quoted values (6.6) G-19 on this run's simulation; with `[project] requirements` the requirements file (3.6) | G-1 … G-23 (chapter 3) |
+| G – Graph | rule checks; with quoted values (6.6) G-19 on this run's simulation; with `[project] requirements` the requirements file (3.6); the project scripts: their entries resolve into one order, their results are current (8.6) | G-1 … G-23 (chapter 3), `scripts` |
 | E – Simulation | operating points, stress, function, every LED checked, transient runs; with sim.json `copper` on the routing of `edakit route` as it is | E-1 … E-5 (chapter 5) |
 | *project stages* | e.g. K – mechanics of an enclosure | `[[release.stages]]`, see below |
 | S – Schematic | EasyEDA schematic = graph | S-2 per board |
@@ -378,7 +378,8 @@ follows from that and from edakit's steps in their fixed order, so nobody has to
 | `sim` | – | `[project] sim_plugin`, inside `edakit sim` (5.1) |
 
 `[[release.stages]]` (8.1) take part as checks of phase export before S. The names of edakit's data in `reads` and
-`writes`, each with a hash of what edakit has of it offline:
+`writes`, each with a hash of what edakit has of it offline – `<b>` is a made board; a bought one (4.5) has none of
+this data:
 
 | Name | What | Made by | Hash of |
 |---|---|---|---|
@@ -393,7 +394,8 @@ follows from that and from edakit's steps in their fixed order, so nobody has to
 | `firmware` | the firmware contract, with `[firmware]` (3.5) | `edakit firmware` | the file `[firmware] out` |
 
 Anything else is a path relative to edakit.toml. A folder holds the files in it, and an edakit file named by its path
-is its data: `hardware/boards/main.toml` is `board:main`, `hardware/boards/main.geometry.json` is `footprints:main`.
+is its data: `hardware/boards/main.toml` is `board:main`, `hardware/boards/main.geometry.json` `footprints:main`,
+`build/edakit/route/main.ses` `routing:main`, the files of a gate run's `fab/main/` `gerber:main`.
 
 Data that does not exist yet – no board file, no geometry, no routing, no gate run with stage F, no current release –
 hashes as `absent` until it is made. A run from before the fab hash has no `fab_layers` in its manifest: they are
@@ -406,7 +408,7 @@ anew from the PCB by `pcb dump`.
 with the ID `scripts`:
 
 - `kind` and the fields of the kind are there, and no field of another kind
-- every data name is edakit's, with a board of `[boards]`; `firmware` only with `[firmware]`
+- every data name is edakit's, with a made board of `[boards]`; `firmware` only with `[firmware]`
 - a script writes files, an input also `board:<b>`, an `easyeda` script changes `project-library:<b>`; graph, parts,
   sim and edakit's other data – `footprints:<b>` too – are written by edakit or by hand
 - scripts that write the same file or change the same data run in a fixed order through `after`; a script that writes
@@ -423,9 +425,69 @@ with the ID `scripts`:
 ERROR   scripts  review: in a cycle – review –[stamp]→ edakit gate –[release]→ review
 ```
 
-A derive that reads the release cannot be checked by the gate that writes it. So far edakit only resolves the
-entries: no command runs them, and the gate runs `[[release.stages]]` as before and does not report these findings.
-The hashes of the names are there for the stamps that will tell an outdated script; no command shows them yet.
+A derive that reads the release cannot be checked by the gate that writes it. The gate reports the same in stage G,
+with the ID `scripts`: entries that do not resolve fail it – edakit refuses them.
+
+**Stamps.** For every script of kind `input`, `derive` and `easyeda`, `hardware/scripts.lock` keeps what its result was
+made from at its last run: its `cmd`, the script itself and the hash of everything it `reads`. The file is versioned,
+so that the CI sees the stamps too, and it is in no hash (8.2).
+
+- **The script itself** is the first word of `cmd` that names a file – relative to edakit.toml, or inside the project
+  when it is absolute: `hardware/art/make_art.py` of `["python", "hardware/art/make_art.py"]`, also
+  `../../hardware/art/make_art.py` of a variant. Options (`-…`) and the system's programs do not count. A `cmd` that
+  names no file – `make art`, `python -m art` – stamps its `reads` only; the script's files then belong in `reads`.
+- **What it reads** hashes as its name says (table above), a file as its bytes, a folder as every file below it with
+  its path in the folder – without `__pycache__`, `*.pyc`, `*.pyo` and names that start with a dot (`.git`, editor
+  files).
+
+Compared with its stamp, a script is
+
+| State | When |
+|---|---|
+| current | every hash as stamped |
+| outdated | `cmd` changed, a hash changed, `reads` names something the stamp lacks, or it comes after a script that is outdated or never ran – through `after`, or because it reads what that script writes |
+| never run | it has no stamp |
+
+What is absent here is not compared, whatever the stamp says: the routing, the mechanical model, the Gerber data and
+the release live in `build/`, which a fresh clone and the CI do not have, and a file outside the project – a system
+font – may be missing on another machine. A note names it, and the stamp counts again where the data is; data made
+since a stamp that found it absent is a change. The project library has no offline hash: a script that reads
+`project-library:<b>` is not compared there either – that an `easyeda` script ran will tell, once edakit runs them
+(`edakit run`, not built yet).
+
+| Kind | Outdated or never run: `edakit check` | the gate, stage G |
+|---|---|---|
+| `input` | error | fails |
+| `derive`, `easyeda` | warning | a warning: the script runs, or the owner accepts it (`"match": "scripts sockel outdated*"`, 8.2) |
+| `check`, `sim` | – (no stamp: a check's result is the gate's protocol, the plugin runs inside `edakit sim`) | |
+
+```text
+ERROR   scripts  kunst outdated: hardware/art/make_art.py changed – Bell, greeting, star and snowflake as shapes for the silkscreen
+NOTE    scripts  baumgrafik: not compared – routing:tree absent here
+```
+
+A current script is a passed row of stage G. **No command runs a script yet:** run it by hand – its `cmd`, in the
+project directory –, then record the run, and commit the lock with what the script wrote:
+
+```bash
+edakit scripts                 # every script: kind, state, about, cmd, last run; the order, and what is to run
+edakit scripts stamp kunst     # kunst ran: its stamp into hardware/scripts.lock
+```
+
+```text
+kunst  input    outdated: hardware/art/make_art.py changed
+                Bell, greeting, star and snowflake as shapes for the silkscreen
+                python hardware/art/make_art.py
+                stamped 2026-10-28 21:33 by tobias
+
+order: edakit firmware → edakit check → edakit sim → … → edakit route all → kunst → edakit silk apply → edakit gate
+```
+
+`edakit scripts` exits 0 when every script is current, 2 when one is outdated or never ran or the entries do not
+resolve, 1 when the lock cannot be read. `stamp` refuses – and writes nothing – a name that is not in `[scripts]`, a
+check, entries that do not resolve, and a script whose `writes` are not there ("run it first"); it drops the stamps of
+scripts no longer in `[scripts]`. What the author leaves out of `reads` is not noticed – the system font the bell's
+`make_art.py` draws with –, and the entry's `check`, an exact check for when the stamp is not enough, does not run yet.
 
 ## 8.7 Requirements
 

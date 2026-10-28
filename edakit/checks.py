@@ -80,9 +80,11 @@ A file named there that is missing or not valid stops edakit check (exit 1) befo
 joined nets as one net under the group's name (the ground net if it is one of them, else the first in the graph) and
 the bridges as copper; G-1, G-2, G-3, G-8, G-18, P-1 and G-9 see every net and part as the graph has them.
 
-edakit check (not the gate) also resolves the project's scripts ([scripts.*] of edakit.toml, with [[release.stages]]
-and sim_plugin) with edakit's steps into one order: what keeps them from it is an error with the ID scripts – no
-check of the catalog (scripts.py, handbook 8.6).
+edakit check also resolves the project's scripts ([scripts.*] of edakit.toml, with [[release.stages]] and sim_plugin)
+with edakit's steps into one order and compares their stamps (hardware/scripts.lock), with the ID scripts – no check
+of the catalog (scripts.py, handbook 8.6): what keeps the entries from one order is an error, as an input that is
+outdated or never ran; a derive or easyeda script outdated or never run is a warning, what was not compared a note.
+The gate reports the same in stage G.
 
 Rule, reason, fix and sources of every check: rules.json (`edakit rules G-4`). A failed check is explained once
 below the findings. A finding listed in "waive" of the net or component is accepted on purpose and reported with
@@ -1190,7 +1192,10 @@ def main(cfg, args):
         return 1
     d = Design.from_config(cfg)
     rep = run(d, cfg)
-    rep.errors += [("scripts", f.msg) for f in scripts.resolve(cfg).findings]   # [scripts.*]: one order (8.6)
+    found = scripts.findings(cfg)     # [scripts.*]: one order, every script current (8.6)
+    rep.errors += [("scripts", m) for level, m in found if level == "error"]
+    rep.warnings += [("scripts", m) for level, m in found if level == "warning"]
+    rep.notes += [("scripts", m) for level, m in found if level == "note"]
     for check, msg in rep.errors:
         print(f"ERROR   {check}  {msg}")
     for check, msg, reason in rep.waived:
@@ -1206,9 +1211,10 @@ def main(cfg, args):
         print("\nWhat the failed checks are about (edakit rules <ID>):")
         for c in explained:
             print("  " + "\n  ".join(rules.explain(c)))
-    if "scripts" in failed:
+    if any(level != "note" for level, _ in found):
         print("\nProject scripts: the entries [scripts.<name>] of edakit.toml – what each script reads and writes – "
-              "resolve into one order with edakit's steps (handbook 8.6)")
+              "resolve into one order with edakit's steps; a script that is outdated or never ran runs again by hand – "
+              "its cmd –, then edakit scripts stamp <name> records the run (handbook 8.6)")
     groups = d.bridge_groups()
     if groups:
         print("joined by 0 Ω bridges, checked as one net: " + "; ".join(

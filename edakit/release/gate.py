@@ -764,6 +764,10 @@ def main(cfg, args):
     step("P/G parts and graph")
     rows, g_json = stage_graph(cfg, design)
     (outdir / "graph_checks.json").write_text(json.dumps(g_json, indent=1, ensure_ascii=False) + "\n", encoding="utf-8")
+
+    from .. import scripts     # project scripts (8.6), stage G: entries that do not resolve and an outdated input fail
+    rows += scripts.gate_rows(cfg)
+
     step("E simulation")
     sim_cfg, _ = simrun.load_sim_config(cfg)
     plugin = simrun.load_plugin(cfg.sim_plugin) if cfg.sim_plugin else None
