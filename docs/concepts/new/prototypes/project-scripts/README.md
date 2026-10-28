@@ -19,6 +19,8 @@ builds the real check from it, with these differences:
 
 - The board file stays one file (decision 4): an `input` script may write `board:<b>`, which R3 here still reports,
   and `pytree.toml` still splits the board file with `file = […]`.
+- An `easyeda` script changes `project-library:<b>` (decision 12, step 1.3). `pytree.toml` and `glocke-esp32.toml`
+  still write `footprints:<b>`, which edakit reports under R3.
 - edakit's messages are English; the prototype's are German.
 - `art_assumed` is a key of the prototype only. It stands in for the `[[silk.art]]` of a board file that does not
   exist yet.

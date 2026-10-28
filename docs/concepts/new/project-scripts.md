@@ -1,10 +1,11 @@
 # Project scripts and agents
 
-Status 2026-10-28: proposal, checked against edakit `a8b6011` (with PRs #78 and #79). Nothing of it is built, but
-edakit has since built pieces it builds on: the firmware contract (#70), a stamp on the simulation result, the fab
-hash (#65) and the mechanical model (#62). All decisions are taken, 1–8 on 2026-10-28 and 9 by #70. The rules that
-resolve a project's entries into a DAG were tried with a prototype outside edakit on the reference project and the
-Christmas bell.
+Status 2026-10-28: being built, step by step after [implementation-plan.md](implementation-plan.md): the entries and
+their check (step 1.2) and the data names with their hashes (step 1.3) are on main. It was checked against edakit
+`a8b6011` (with PRs #78 and #79); edakit had built pieces it builds on: the firmware contract (#70), a stamp on the
+simulation result, the fab hash (#65) and the mechanical model (#62). All decisions are taken: 1–8 and 12 on
+2026-10-28, 9 by #70. The rules that resolve a project's entries into a DAG were tried with a prototype on the
+reference project and the Christmas bell ([prototypes/project-scripts](prototypes/project-scripts/)).
 
 ## Why
 
@@ -71,7 +72,8 @@ and `firmware` exist once per project.
 | --- | --- | --- |
 | `graph`, `parts`, `sim` | graph, parts database, simulation scenarios | by hand, `edakit block`, `edakit part` |
 | `board:<b>` | board file | by hand, `edakit pcb place --write` (rows with `auto = true`) or an `input` script |
-| `footprints:<b>` | footprint geometry with pads (`pcb_geometry_<b>.json`) | `edakit pcb dump`, `easyeda` scripts |
+| `project-library:<b>` | the project library in EasyEDA, which `pcb parts` takes the parts from | `edakit schematic create`, `easyeda` scripts |
+| `footprints:<b>` | footprint geometry with pads (`pcb_geometry_<b>.json`) | `edakit pcb dump` |
 | `routing:<b>` | tracks and vias | `edakit route` |
 | `mech:<b>` | the board as a mechanical model (`<artifacts>/mech_<b>.json`, #62) | `edakit pcb plan` |
 | `gerber:<b>` | the gate run's manufacturing files, hashed per file (`fab_layers`, #65) | `edakit gate`, stage F |
@@ -99,7 +101,8 @@ outdated; before `silk apply` the tree artwork runs again, and the gate checks t
   hook that brings the working agreements into every session (#74) lists the scripts too. So Claude knows what exists
   and why.
 - **EasyEDA:** `edakit run <name>` claims EasyEDA before an `easyeda` script runs. What it writes (e.g.
-  `footprints:tree`) makes everything after it outdated: parts, routing, artwork.
+  `project-library:tree`) makes everything after it outdated: parts, routing, artwork. edakit has no hash of the
+  project library offline; that it ran is what tells edakit it changed.
 - **Limit:** an input the author forgets is not noticed – for example the system font the bell's `make_art.py` draws
   with.
 
@@ -402,7 +405,7 @@ kind   = "easyeda"
 cmd    = ["uv", "run", "hardware/easyeda/led_footprints.py", "apply"]
 about  = "The same polarity print on every LED footprint (owner, 2026-10-25)"
 reads  = ["hardware/easyeda/pcb_layout.py"]
-writes = ["footprints:tree"]                    # afterwards parts, routing and artwork are outdated
+writes = ["project-library:tree"]               # afterwards parts, routing and artwork are outdated
 
 # --- derived from edakit's data -------------------------------------------------------------------------------
 [scripts.firmware]
@@ -567,7 +570,7 @@ writes = ["hardware/art/bell.svg", "hardware/art/greeting.svg", "hardware/art/sm
 kind   = "easyeda"
 cmd    = ["python", "hardware/lib/tdisplay_device.py"]
 about  = "Symbol and footprint of the LILYGO T-Display, rebuilt from the stand-in C18722937 (D-13)"
-writes = ["footprints:esp32"]
+writes = ["project-library:esp32"]
 ```
 
 `kunst` has no `reads`, so edakit runs it again only when `make_art.py` changes. Today nobody runs it automatically,
@@ -584,7 +587,7 @@ checks eleven rules. `edakit check` does that on every run; `edakit scripts` sho
 | --- | --- | --- |
 | R1 | `kind` is input, derive, easyeda or check, and the fields of that kind are there | `about` missing |
 | R2 | every data name with `:<b>` names a board of `[boards]` | `routing:baum`, but no board baum |
-| R3 | only edakit writes its data and the sources graph, parts, sim; a script writes files, an easyeda script changes data in EasyEDA | a script writes `routing:tree` |
+| R3 | only edakit writes its data and the sources graph, parts, sim; a script writes files, an easyeda script changes the project library in EasyEDA | a script writes `routing:tree` |
 | R4 | several writers of one file or of the same EasyEDA data only in a fixed order through `after`; a writer that also reads the file gets the version of the one before it | two scripts write the same SVG, without `after` |
 | R5 | what an input writes is read by an edakit step: the board file or `[[silk.art]]` | otherwise it is a derive |
 | R6 | what a derive writes is read by no edakit step | otherwise it is an input |
@@ -606,11 +609,13 @@ The bell resolves, main and esp32 alike; `kunst` runs before `silk apply`. The r
 not: the gate writes `release`, `review` reads it, and the gate checks `review`'s stamp. Without `review` it
 resolves into the DAG above, which supports decision 8.
 
-A second finding concerns the names. `led-footprints` and `tdisplay` write `footprints:<b>`, but that is the geometry
-`pcb dump` measures. The scripts change the project library that `pcb parts` creates the parts from. With
-`footprints:<b>`, edakit would hold only `check` (P-7 reads the footprint geometry), `pcb plan` and later for
-outdated, but `pcb parts` is affected already, because placed parts keep their old copy. That needs a name of its own,
-e.g. `project-library:<b>`; plain `library:` would read like the cache `<artifacts>/library/` of `edakit part import`.
+A second finding concerned the names, and is settled (decision 12). `led-footprints` and `tdisplay` wrote
+`footprints:<b>`, but that is the geometry `pcb dump` measures. The scripts change the project library that `pcb parts`
+creates the parts from. With `footprints:<b>`, edakit would hold only `check` (P-7 reads the footprint geometry),
+`pcb plan` and later for outdated, but `pcb parts` is affected already, because placed parts keep their old copy. So
+they write `project-library:<b>`; plain `library:` would read like the cache `<artifacts>/library/` of
+`edakit part import`. An `easyeda` script that writes `footprints:<b>` is a finding of R3, like any script that writes
+edakit's data.
 
 ## What would change in edakit
 
@@ -620,7 +625,8 @@ Eight building blocks, none of them built. The order is also the order to build 
    (Checking the TOML). `[[release.stages]]` and `sim_plugin` become the kinds `check` and `sim`; the old keys keep
    working.
 2. **Names for edakit's data:** `graph`, `board:<b>`, `footprints:<b>`, `routing:<b>`, `mech:<b>`, `gerber:<b>`,
-   `release`, `firmware`, each with a hash; `gerber:<b>` takes the fab hash's `fab_layers`.
+   `release`, `firmware`, each with a hash; `gerber:<b>` takes the fab hash's `fab_layers`. `project-library:<b>` has
+   no hash offline: running an `easyeda` script is what tells edakit it changed (block 4).
 3. **Stamps:** write `hardware/scripts.lock` when a script runs. A difference is a finding in `edakit check` and in the
    gate. `edakit sim` already stamps its result this way (`inputs_sha256` in `<artifacts>/sim/result.json`).
 4. **Order and commands:** steps such as `pcb apply`, `silk apply` and `gate` run outdated `input` scripts first. New
@@ -657,6 +663,7 @@ point the user left to Claude and then confirmed.
 | 9 | Feature proposal F12 `edakit firmware`: a fixed command with a neutral contract, the rendering in the project? | Yes | settled by #70: `edakit firmware` writes the contract, the rendering stays in the project |
 | 10 | May a project agent take over a review of edakit (`replaces`)? | Yes, but only explicitly with `replaces`; otherwise an ID of its own. The reference project needs it for `elektrotechniker` and `pcb-pruefer` | accepted |
 | 11 | Register a project's skills? | No: no step, no inputs and outputs to check, and Claude Code finds them by itself | accepted |
+| 12 | What does an `easyeda` script change: `footprints:<b>` or a name of its own? | `project-library:<b>`, the library `pcb parts` takes the parts from; `footprints:<b>` stays the geometry `pcb dump` measures | decided by Claude on 2026-10-28, built in step 1.3 |
 
 ## Sources
 

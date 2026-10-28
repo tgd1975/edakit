@@ -127,8 +127,8 @@ table nothing changes.
 | `kind` | every entry | `input`, `derive`, `easyeda` or `check` (8.6); the kind `sim` is `[project] sim_plugin` |
 | `cmd` | every entry | the command as a list, run in the project directory |
 | `about` | every entry | one sentence why the script exists, citing a decision |
-| `writes` | input, derive, easyeda (required) | what it makes: paths; an input also `board:<b>`; an easyeda script changes `project-library:<b>` or `footprints:<b>` |
-| `reads` | every kind (optional) | what its result is made from: edakit's data (8.6) and paths – the script itself counts anyway |
+| `writes` | input, derive, easyeda (required) | what it makes: paths; an input also `board:<b>`; an easyeda script changes `project-library:<b>` (not `footprints:<b>`, the geometry `pcb dump` measures) |
+| `reads` | every kind (optional) | what its result is made from: edakit's data (8.6, each with a hash; the project library has none) and paths – the script itself counts anyway |
 | `after` | every kind (optional) | other entries of `[scripts]` this one runs after – needed when several write the same file or change the same data |
 | `check` | input, derive, easyeda (optional) | an exact check command, when the stamp is not enough |
 | `id` | check (required) | its ID in the protocol: no stage of the gate (P, G, E, S, L, F), no sign-off (M-…), no ID of the rule catalog, and none twice – `[[release.stages]]` included |

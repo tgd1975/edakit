@@ -12,23 +12,25 @@ is run here.
                                                                     an SVG of [[silk.art]], the simulation plugin
   derive   before edakit check, where its result is to be current;  files no edakit step reads
            before the gate when it reads what comes after edakit check
-  easyeda  on command only                                          project-library:<b> or footprints:<b> in EasyEDA
+  easyeda  on command only                                          project-library:<b> in EasyEDA
   check    phase export: in the gate before S, or at "after F";     nothing
            phase order and acceptance: after the gate
   sim      inside edakit sim: [project] sim_plugin                  nothing
 [[release.stages]] are checks of phase export before S.
 
 Names of edakit's data in reads and writes: graph, parts, sim (written by hand, edakit block, edakit part), board:<b>
-(the board file), project-library:<b> (EasyEDA's project library: schematic create), footprints:<b>
+(the board file), project-library:<b> (EasyEDA's project library: schematic create, easyeda scripts), footprints:<b>
 (pcb_geometry_<b>.json: pcb dump), mech:<b> (pcb plan), routing:<b> (route), gerber:<b> and release (the gate),
 firmware (edakit firmware, with [firmware]). Anything else is a path relative to edakit.toml: a folder holds the files
-in it, and an edakit file named by its path is its data (hardware/boards/<b>.toml is board:<b>).
+in it, and an edakit file named by its path is its data (hardware/boards/<b>.toml is board:<b>). Each name has a hash
+of what edakit has of it offline (data_hash) – the project library none, it is in EasyEDA only.
 
 The entries resolve when (docs/concepts/new/project-scripts.md, "Checking the TOML", its rules 1 to 9; 10 and 11 are
 about agents):
   1  kind is input, derive, easyeda or check, the fields of the kind are there, and no field of another kind
   2  every data name is edakit's, with a board of [boards]; firmware only with [firmware]
-  3  a script writes files, an input also board:<b>; an easyeda script changes project-library:<b> or footprints:<b>
+  3  a script writes files, an input also board:<b>; an easyeda script changes project-library:<b> – footprints:<b> is
+     the geometry pcb dump measures, edakit's own data like the others
   4  scripts that write the same file or change the same data run in a fixed order through after
   5  an edakit step needs what an input writes, directly or through another input
   6  no edakit step needs what a derive writes
@@ -40,6 +42,8 @@ about agents):
 
 from __future__ import annotations
 
+import hashlib
+import json
 import os
 import re
 from collections import defaultdict, deque
@@ -61,11 +65,12 @@ GATE_STAGES = ("P", "G", "E", "S", "L", "F")
 SOURCES = ("graph", "parts", "sim")                  # written by hand, edakit block, edakit part
 ONCE = ("release", "firmware")                       # one per project
 PER_BOARD = ("board", "project-library", "footprints", "mech", "routing", "gerber")   # <name>:<b>
-IN_EASYEDA = ("project-library", "footprints")       # what an easyeda script changes
+IN_EASYEDA = ("project-library",)                    # what an easyeda script changes
 MADE_BY = {"graph": "hand or edakit block", "parts": "hand or edakit part", "sim": "hand",
-           "project-library": "edakit schematic create, changed by easyeda scripts",
-           "footprints": "edakit pcb dump, changed in EasyEDA by easyeda scripts", "mech": "edakit pcb plan",
-           "routing": "edakit route", "gerber": "the gate", "release": "the gate", "firmware": "edakit firmware"}
+           "project-library": "edakit schematic create, changed by easyeda scripts", "footprints": "edakit pcb dump",
+           "mech": "edakit pcb plan", "routing": "edakit route", "gerber": "the gate", "release": "the gate",
+           "firmware": "edakit firmware"}
+ABSENT = "absent"      # data_hash of data that does not exist yet: no gate run, no geometry, no routing, no contract
 NAME = re.compile(r"([A-Za-z][\w-]*)(?::([^/\\]*))?")   # graph, routing:tree; a word:word that is none is a typo
 
 # edakit's steps in their fixed order, with what each reads and writes. <b> stands for every board, art:<b> for the
@@ -266,8 +271,10 @@ def _entries(cfg, names, finding):
             what = spelling if key is None or key[0] == "file" or _spell(key) == spelling \
                 else f"{spelling} ({_spell(key)})"
             if key is not None and kind == "easyeda" and key[0] not in IN_EASYEDA:
-                finding(3, f"{name}: writes {what} – an easyeda script changes data in EasyEDA: project-library:<b> "
-                           "or footprints:<b>")
+                made = f"made by {MADE_BY[key[0]]}; " if key[0] in MADE_BY else ""
+                board = key[1] if key[0] != "file" and key[1] in cfg.boards else "<b>"
+                finding(3, f"{name}: writes {what} – {made}an easyeda script changes the project library in EasyEDA: "
+                           f"project-library:{board}")
                 e.flawed = True
             elif key is not None and kind != "easyeda" and key[0] not in ("file", "board"):
                 finding(3, f"{name}: writes {what} – made by {MADE_BY[key[0]]}; a script writes files, an input also "
@@ -454,3 +461,64 @@ def _order(steps, entries, edges, labels):
                 ready.append(m)
     on_command = {e.node for e in entries if e.kind == "easyeda"}
     return [labels[n] for n in out if n not in on_command]
+
+
+# --- the hash of each name ------------------------------------------------------------------------------------------
+
+def data_hash(cfg, name):
+    """The hash of one of edakit's data, by its name as reads and writes spell it (an edakit file named by its path is
+    its data): the SHA-256 of what edakit has of it offline, ABSENT while the data does not exist. None for
+    project-library:<b>: the project library is in EasyEDA only and has no offline hash – what changes it is an easyeda
+    script, and running the script is what tells edakit. A name that is not edakit's data: ValueError; a manifest that
+    is not readable: gate.ReleaseError, as in edakit release.
+
+      graph, parts, sim   the files as the circuit hash reads them – graph and parts without [release] hash_ignore
+      board:<b>           the board file
+      footprints:<b>      pcb_geometry_<b>.json, the geometry edakit pcb dump measures
+      mech:<b>            mech_<b>.json of edakit pcb plan
+      routing:<b>         the tracks and vias of edakit route: route/<b>.ses, and route/<b>_stitch.json where route
+                          pours stitched islands with vias
+      gerber:<b>          the board's fab_layers in the last gate run with manufacturing files, hashed with their
+                          method as fab_hash hashes a run – with one board the run's fab_sha256
+      release             fab/manifest.json of the current release
+      firmware            the contract, [firmware] out"""
+    from .release import gate
+    names = _Names(cfg)
+    key, why = names.parse(name)
+    if key is None or key[0] == "file" or why:
+        raise ValueError(f"{name}: " + (why or "a path, not a name of edakit's data"))
+    kind, b = key
+    if kind == "project-library":
+        return None
+    if kind == "gerber":
+        return _gerber_hash(cfg, b)
+    route = cfg.artifacts / "route"
+    if kind == "parts":
+        files = sorted(cfg.parts.glob("*.json"))
+    elif kind == "routing":       # the stitching vias count only with the routing they belong to
+        files = [route / f"{b}.ses", route / f"{b}_stitch.json"] if (route / f"{b}.ses").is_file() else []
+    elif kind == "release":
+        cur = gate.current(cfg)
+        files = [cfg.reports / cur[0] / "fab" / "manifest.json"] if cur else []
+    else:                         # graph, sim, board, footprints, mech, firmware: the one file that is the data
+        files = [cfg.resolve(p) for p, k in names.own.items() if k == key]
+    files = [f for f in files if f.is_file()]
+    ignore = cfg.release.get("hash_ignore", []) if kind in ("graph", "parts") else ()
+    return gate.file_hash(cfg.root, files, ignore, files) if files else ABSENT
+
+
+def _gerber_hash(cfg, b):
+    """gerber:<b>: the board's fab_layers of the last gate run with manufacturing files – from its manifest, for a run
+    from before the fab hash (#65) from its files, as edakit fab diff reads them. ABSENT without such a run, or when it
+    has no files of the board."""
+    from .release import fab, gate
+    runs = gate.runs(cfg)
+    if not runs:
+        return ABSENT
+    _, manifest, data = runs[-1]
+    layers, method = (data.get("fab_layers") or {}).get(b), data.get("fab_method")
+    if layers is None and (manifest.parent / b).is_dir():
+        layers, method = fab.fab_layers(manifest.parent / b, b), fab.FAB_METHOD
+    if not layers:
+        return ABSENT
+    return hashlib.sha256(json.dumps({"method": method, "boards": {b: layers}}, sort_keys=True).encode()).hexdigest()

@@ -1,13 +1,19 @@
 """Project scripts resolve into one order with edakit's steps (handbook 8.6): the entries of the concept green, every
 rule of the concept (docs/concepts/new/project-scripts.md, "Checking the TOML") seen red once – one fault per copy of
-the reference project's entries in the example, and the fault finds exactly its rule."""
+the reference project's entries in the example, and the fault finds exactly its rule. Each name of edakit's data has a
+hash of what edakit has of it, absent while the data does not exist."""
 
 import argparse
 import json
+import re
 
 import pytest
+import test_fab_hash as fh
+import test_fab_run as fr
+import test_release as rel
 
 from edakit import checks, scripts
+from edakit.release import fab, gate
 
 # The reference project as the concept writes it, without review (decision 8); platine writes its sections into the
 # tree's board file (decision 4). In the example the board main is named tree.
@@ -33,7 +39,7 @@ kind   = "easyeda"
 cmd    = ["uv", "run", "hardware/easyeda/led_footprints.py", "apply"]
 about  = "The same polarity print on every LED footprint (owner, 2026-10-25)"
 reads  = ["hardware/easyeda/pcb_layout.py"]
-writes = ["footprints:tree"]
+writes = ["project-library:tree"]
 
 [scripts.firmware]
 kind   = "derive"
@@ -91,7 +97,7 @@ TDISPLAY = """
 kind   = "easyeda"
 cmd    = ["python", "hardware/lib/tdisplay_device.py"]
 about  = "Symbol and footprint of the LILYGO T-Display, rebuilt from the stand-in C18722937 (D-13)"
-writes = ["footprints:esp32"]
+writes = ["project-library:esp32"]
 """
 
 
@@ -150,9 +156,12 @@ def test_bell_esp32_resolves(project):
 
 
 def test_easyeda_script_changes_the_project_library(project):
-    """The concept's second finding: what led-footprints and tdisplay change is the project library."""
-    res = resolve(project, TDISPLAY.replace("footprints:esp32", "project-library:esp32"), board="esp32")
-    assert res.findings == []
+    """The concept's second finding: what led-footprints and tdisplay change is the project library that pcb parts takes
+    the parts from – footprints:<b> is the geometry pcb dump measures, edakit's own data."""
+    res = resolve(project, TDISPLAY.replace("project-library:esp32", "footprints:esp32"), board="esp32")
+    assert [(f.rule, f.msg) for f in res.findings] == [
+        (3, "tdisplay: writes footprints:esp32 – made by edakit pcb dump; an easyeda script changes the project "
+            "library in EasyEDA: project-library:esp32")]
 
 
 def test_after_orders_a_post_processing(project):
@@ -167,9 +176,9 @@ def test_after_orders_a_post_processing(project):
 def test_after_orders_three_easyeda_scripts(project):
     """led_footprints.py changes the same LED footprints with apply, bohrungen and plus – as a chain."""
     res = tree(project, entry("led-bohrungen", kind="easyeda", cmd=["true"], about="hole and pad (D31)",
-                              writes=["footprints:tree"], after=["led-footprints"])
-               + entry("led-plus", kind="easyeda", cmd=["true"], about="+ at the anode", writes=["footprints:tree"],
-                       after=["led-bohrungen"]))
+                              writes=["project-library:tree"], after=["led-footprints"])
+               + entry("led-plus", kind="easyeda", cmd=["true"], about="+ at the anode",
+                       writes=["project-library:tree"], after=["led-bohrungen"]))
     assert res.findings == []
 
 
@@ -225,6 +234,10 @@ FAULTS = {
                                             "x: writes hardware/graph.json (graph)"),
     "easyeda script writes a file": (3, entry("x", kind="easyeda", **X, writes=["hardware/art/x.svg"]),
                                      "x: writes hardware/art/x.svg – an easyeda script changes"),
+    "easyeda script writes the footprint geometry": (3, entry("x", kind="easyeda", **X, writes=["footprints:tree"]),
+                                                     "x: writes footprints:tree – made by edakit pcb dump; an easyeda "
+                                                     "script changes the project library in EasyEDA: "
+                                                     "project-library:tree"),
     # rule 4: several writers of one file in a fixed order through after
     "two writers of one file": (4, entry("x", kind="input", **X, writes=["hardware/art/baum_vorne.svg"]),
                                 "baumgrafik, x: both write hardware/art/baum_vorne.svg"),
@@ -278,10 +291,11 @@ def test_after_against_the_data_is_a_cycle(project):
 
 
 def test_three_easyeda_scripts_without_after(project):
-    res = tree(project, entry("led-bohrungen", kind="easyeda", **X, writes=["footprints:tree"])
-               + entry("led-plus", kind="easyeda", **X, writes=["footprints:tree"]))
+    res = tree(project, entry("led-bohrungen", kind="easyeda", **X, writes=["project-library:tree"])
+               + entry("led-plus", kind="easyeda", **X, writes=["project-library:tree"]))
     assert [(f.rule, f.msg) for f in res.findings] == [
-        (4, "led-footprints, led-bohrungen, led-plus: all change footprints:tree, but after sets no order between them")]
+        (4, "led-footprints, led-bohrungen, led-plus: all change project-library:tree, but after sets no order between "
+            "them")]
 
 
 def test_firmware_needs_its_table(project):
@@ -323,3 +337,156 @@ def test_edakit_check_with_entries_that_resolve(project, capsys):
     f.write_text(f.read_text() + '\n[[silk.art]]\nsvg = "hardware/art/x.svg"\nx = 20\ny = 20\nwidth_mm = 10\n')
     assert checks.main(project.config(), argparse.Namespace(release=False, json=None)) == 0
     assert "scripts" not in capsys.readouterr().out
+
+
+# --- edakit's data by name, each with a hash -------------------------------------------------------------------------
+HEX = re.compile("[0-9a-f]{64}")
+
+
+def hashes(cfg, *names):
+    return {n: scripts.data_hash(cfg, n) for n in names}
+
+
+def test_graph_parts_and_sim_as_the_circuit_hash_reads_them(project):
+    """Graph and parts without the keys of [release] hash_ignore, the simulation scenarios byte by byte."""
+    toml = project.root / "edakit.toml"
+    toml.write_text(toml.read_text().replace("[release]\n", '[release]\nhash_ignore = ["notes"]\n'))
+    cfg = project.config()
+    first = hashes(cfg, "graph", "parts", "sim")
+    assert all(HEX.fullmatch(h) for h in first.values()) and len(set(first.values())) == 3
+    assert scripts.data_hash(cfg, "hardware/graph.json") == first["graph"]    # an edakit file by its path is its data
+    g, p = project.graph(), project.part("C17414")
+    project.comp(g, "R1")["notes"] = "documentation only"
+    p["notes"] = "documentation only"
+    project.save_graph(g)
+    project.save_part("C17414", p)
+    assert hashes(cfg, "graph", "parts", "sim") == first                      # what the circuit hash leaves out
+    project.comp(g, "R1")["lcsc"] = "C17513"
+    project.save_graph(g)
+    now = hashes(cfg, "graph", "parts", "sim")
+    assert now["graph"] != first["graph"] and (now["parts"], now["sim"]) == (first["parts"], first["sim"])
+    project.use_library_part("C2146")
+    assert scripts.data_hash(cfg, "parts") not in (first["parts"], scripts.ABSENT)
+    sim = project.root / "hardware" / "sim.json"
+    sim.write_text(sim.read_text().replace('"ambient_c": 40', '"ambient_c": 45'))
+    assert scripts.data_hash(cfg, "sim") not in (first["sim"], scripts.ABSENT)
+
+
+def test_board_is_its_board_file(project):
+    """A board without its board file has no layout yet: absent."""
+    toml = project.root / "edakit.toml"
+    toml.write_text(toml.read_text() + "\n[boards.second]\n")
+    cfg = project.config()
+    first = scripts.data_hash(cfg, "board:main")
+    assert HEX.fullmatch(first) and scripts.data_hash(cfg, "hardware/boards/main.toml") == first
+    assert scripts.data_hash(cfg, "board:second") == scripts.ABSENT
+    f = project.root / "hardware" / "boards" / "main.toml"
+    f.write_text(f.read_text() + "\n# a comment\n")
+    assert scripts.data_hash(cfg, "board:main") not in (first, scripts.ABSENT)
+
+
+MADE = {"footprints:main": "build/edakit/pcb_geometry_main.json", "mech:main": "build/edakit/mech_main.json",
+        "routing:main": "build/edakit/route/main.ses", "firmware": "hardware/firmware.json"}
+
+
+@pytest.mark.parametrize("name", MADE)
+def test_data_edakit_makes_is_absent_until_made(project, name):
+    """The geometry of pcb dump, the mechanical model of pcb plan, the routing of route, the contract of edakit
+    firmware: absent until edakit made it, then the file byte by byte."""
+    toml = project.root / "edakit.toml"
+    toml.write_text(toml.read_text() + "\n[firmware]\n")
+    cfg = project.config()
+    assert scripts.data_hash(cfg, name) == scripts.ABSENT
+    f = project.root / MADE[name]
+    f.parent.mkdir(parents=True, exist_ok=True)
+    f.write_text("{}\n")
+    first = scripts.data_hash(cfg, name)
+    assert HEX.fullmatch(first)
+    f.write_text('{"changed": true}\n')
+    assert scripts.data_hash(cfg, name) not in (first, scripts.ABSENT)
+
+
+def test_firmware_without_its_table_is_absent(project):
+    """Without [firmware] edakit firmware writes no contract, whatever lies at the default path."""
+    (project.root / "hardware" / "firmware.json").write_text("{}\n")
+    assert scripts.data_hash(project.config(), "firmware") == scripts.ABSENT
+
+
+def test_routing_is_the_tracks_and_vias_of_edakit_route(project):
+    """The routing session and the stitching vias of route pours; the pads route read takes from EasyEDA are not the
+    routing."""
+    cfg = project.config()
+    route = project.root / "build" / "edakit" / "route"
+    route.mkdir(parents=True)
+    (route / "main_board.json").write_text('{"pads": []}')
+    assert scripts.data_hash(cfg, "routing:main") == scripts.ABSENT
+    (route / "main.ses").write_text("(session main)\n")
+    first = scripts.data_hash(cfg, "routing:main")
+    (route / "main_board.json").write_text('{"pads": [{"ref": "R1"}]}')
+    assert scripts.data_hash(cfg, "routing:main") == first
+    (route / "main_stitch.json").write_text('[["GND", 10.0, 20.0]]')
+    assert scripts.data_hash(cfg, "routing:main") not in (first, scripts.ABSENT)
+
+
+def gate_run(project, run, fab_hash=True, renumber=False):
+    """A gate run with stage F, as gate.main leaves it: the export and the manifest; without fab_hash a run from before
+    the fab hash (#65), whose manifest has no fab_layers."""
+    cfg = project.config()
+    fh.write(project, run, renumber=renumber)
+    head = rel.head(run)
+    if fab_hash:
+        head.update(gate.fab_hashes(cfg, cfg.reports / run))
+    gate.write_manifest(cfg, cfg.reports / run, head, "NOT RELEASED")
+    return json.loads((cfg.reports / run / "fab" / "manifest.json").read_text())
+
+
+def test_gerber_is_the_boards_fab_layers_of_the_last_gate_run(project, monkeypatch):
+    """With one board the run's fab hash. A later run without stage F changes nothing; a run from before the fab hash
+    gets its layers from its files."""
+    cfg = project.config()
+    assert scripts.data_hash(cfg, "gerber:main") == scripts.ABSENT                    # no gate run yet
+    m = gate_run(project, "20261025-204229")
+    with monkeypatch.context() as mp:
+        mp.setattr(fab, "fab_layers", None)                                          # from the manifest
+        assert scripts.data_hash(cfg, "gerber:main") == m["fab_sha256"]
+    (cfg.reports / "20261025-204500").mkdir()                                        # offline: no manufacturing files
+    assert scripts.data_hash(cfg, "gerber:main") == m["fab_sha256"]
+    gate_run(project, "20261025-205344", fab_hash=False, renumber=True)              # the same board, written anew
+    assert scripts.data_hash(cfg, "gerber:main") == m["fab_sha256"]
+    fp, x, y, rot = fr.PLACE["C2"]
+    monkeypatch.setitem(fr.PLACE, "C2", (fp, x + 0.1, y, rot))
+    moved = gate_run(project, "20261025-224607")
+    assert scripts.data_hash(cfg, "gerber:main") == moved["fab_sha256"] != m["fab_sha256"]
+    toml = project.root / "edakit.toml"
+    toml.write_text(toml.read_text() + "\n[boards.second]\n")
+    assert scripts.data_hash(project.config(), "gerber:second") == scripts.ABSENT    # not in the last run
+
+
+def test_release_is_the_current_release(project):
+    """A run that is not released leaves it; a withdrawn release leaves none."""
+    cfg = project.config()
+    assert scripts.data_hash(cfg, "release") == scripts.ABSENT                        # nothing released yet
+    rel.gate_run(cfg, rel.OLD)
+    first = scripts.data_hash(cfg, "release")
+    assert HEX.fullmatch(first)
+    rel.gate_run(cfg, "20261025-210000", "NOT RELEASED")
+    assert scripts.data_hash(cfg, "release") == first
+    rel.gate_run(cfg, rel.NEW)
+    assert scripts.data_hash(cfg, "release") not in (first, scripts.ABSENT)
+    gate.withdraw(cfg, rel.NEW, "back copper missing")
+    assert scripts.data_hash(cfg, "release") == scripts.ABSENT
+
+
+def test_the_project_library_has_no_hash_offline(project):
+    """It lives in EasyEDA only; an easyeda script changes it, and running the script is what tells edakit."""
+    assert scripts.data_hash(project.config(), "project-library:main") is None
+
+
+@pytest.mark.parametrize("name, why", [("routing:tree", "no board tree in [boards] (main)"),
+                                       ("routing", "routing is data of a board"),
+                                       ("release:main", "release has no board"),
+                                       ("library:main", "no data name of edakit"),
+                                       ("hardware/art/x.svg", "a path, not a name of edakit's data")])
+def test_only_edakits_data_has_a_data_hash(project, name, why):
+    with pytest.raises(ValueError, match=re.escape(f"{name}: {why}")):
+        scripts.data_hash(project.config(), name)

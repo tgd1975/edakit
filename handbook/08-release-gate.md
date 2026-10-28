@@ -345,34 +345,42 @@ follows from that and from edakit's steps in their fixed order, so nobody has to
 |---|---|---|
 | `input` | a file edakit reads: the board file (`board:<b>`, its own sections – every writer keeps the lines of the others, as `pcb place --write` does), an SVG of `[[silk.art]]`, the simulation plugin | before the first step that reads it |
 | `derive` | files no edakit step reads: the firmware's pin table, pictures, the enclosure | before `edakit check`, where its result is to be current – before the gate when the script reads what comes after `edakit check` (footprints, routing) |
-| `easyeda` | changes in EasyEDA: `project-library:<b>`, `footprints:<b>` | on command only |
+| `easyeda` | changes in EasyEDA: the project library, `project-library:<b>` | on command only |
 | `check` | – | phase `export`: in the gate before S, or with `at = "after F"` after the run's Gerber data; phase `order` and `acceptance`: after the gate |
 | `sim` | – | `[project] sim_plugin`, inside `edakit sim` (5.1) |
 
 `[[release.stages]]` (8.1) take part as checks of phase export before S. The names of edakit's data in `reads` and
-`writes`:
+`writes`, each with a hash of what edakit has of it offline:
 
-| Name | What | Made by |
-|---|---|---|
-| `graph`, `parts`, `sim` | graph, parts database, simulation scenarios | by hand, `edakit block`, `edakit part` |
-| `board:<b>` | the board file | by hand, `edakit pcb place --write`, `input` scripts |
-| `project-library:<b>` | the project library in EasyEDA, which `pcb parts` takes the parts from | `edakit schematic create`, `easyeda` scripts |
-| `footprints:<b>` | footprint geometry with pads (`pcb_geometry_<b>.json`) | `edakit pcb dump`, `easyeda` scripts |
-| `mech:<b>` | the board as a mechanical model (`mech_<b>.json`, 7.4) | `edakit pcb plan` |
-| `routing:<b>` | tracks and vias | `edakit route` |
-| `gerber:<b>`, `release` | the gate run's manufacturing files, the current release (8.3) | `edakit gate` |
-| `firmware` | the firmware contract, with `[firmware]` (3.5) | `edakit firmware` |
+| Name | What | Made by | Hash of |
+|---|---|---|---|
+| `graph`, `parts`, `sim` | graph, parts database, simulation scenarios | by hand, `edakit block`, `edakit part` | the files as the circuit hash reads them – graph and parts without the keys of `hash_ignore` (8.2) |
+| `board:<b>` | the board file | by hand, `edakit pcb place --write`, `input` scripts | the board file |
+| `project-library:<b>` | the project library in EasyEDA, which `pcb parts` takes the parts from | `edakit schematic create`, `easyeda` scripts | – (in EasyEDA only) |
+| `footprints:<b>` | footprint geometry with pads (`pcb_geometry_<b>.json`), as `pcb dump` measures it in the PCB | `edakit pcb dump` | the file |
+| `mech:<b>` | the board as a mechanical model (`mech_<b>.json`, 7.4) | `edakit pcb plan` | the file |
+| `routing:<b>` | tracks and vias | `edakit route` | the routing session `route/<b>.ses` and the stitching vias of `route pours` (`route/<b>_stitch.json`) |
+| `gerber:<b>` | the gate run's manufacturing files | `edakit gate` | the board's `fab_layers` (8.2) in the last run with stage F – with one board the run's fab hash |
+| `release` | the current release (8.3) | `edakit gate`, `edakit release withdraw` | its `fab/manifest.json` |
+| `firmware` | the firmware contract, with `[firmware]` (3.5) | `edakit firmware` | the file `[firmware] out` |
 
 Anything else is a path relative to edakit.toml. A folder holds the files in it, and an edakit file named by its path
 is its data: `hardware/boards/main.toml` is `board:main`.
+
+Data that does not exist yet – no board file, no geometry, no routing, no gate run with stage F, no current release –
+hashes as `absent` until it is made. A run from before the fab hash has no `fab_layers` in its manifest: they are
+computed from its files, as `edakit fab diff` does. The project library has no hash: it is in EasyEDA only, and edakit
+cannot read it offline. What changes it is an `easyeda` script, and that the script ran is what will tell edakit. So
+an `easyeda` script writes `project-library:<b>`, never `footprints:<b>`: the geometry is edakit's own data, measured
+anew from the PCB by `pcb dump`.
 
 `edakit check` resolves the entries with edakit's steps into one order and reports what keeps them from it, as errors
 with the ID `scripts`:
 
 - `kind` and the fields of the kind are there, and no field of another kind
 - every data name is edakit's, with a board of `[boards]`; `firmware` only with `[firmware]`
-- a script writes files, an input also `board:<b>`; graph, parts, sim and edakit's other data are written by edakit
-  or by hand
+- a script writes files, an input also `board:<b>`, an `easyeda` script changes `project-library:<b>`; graph, parts,
+  sim and edakit's other data – `footprints:<b>` too – are written by edakit or by hand
 - scripts that write the same file or change the same data run in a fixed order through `after`; a script that writes
   what it reads gets the version of the one before it
 - an edakit step needs what an input writes – directly or through another input – and nothing a derive writes
@@ -389,3 +397,4 @@ ERROR   scripts  review: in a cycle – review –[stamp]→ edakit gate –[rel
 
 A derive that reads the release cannot be checked by the gate that writes it. So far edakit only resolves the
 entries: no command runs them, and the gate runs `[[release.stages]]` as before and does not report these findings.
+The hashes of the names are there for the stamps that will tell an outdated script; no command shows them yet.
