@@ -1,7 +1,7 @@
 # Requirements for the circuit
 
-Status 2026-10-27: proposal. Nothing of it is built, and every decision is open. The findings come from reading edakit
-at `f24084a` and the repositories of the reference project and the Christmas bell.
+Status 2026-10-28: proposal. Nothing of it is built, and every decision is open. The findings come from reading edakit
+at `a8b6011` (with PRs #78 and #79) and the repositories of the reference project and the Christmas bell.
 
 ## Goal
 
@@ -16,8 +16,8 @@ Two questions show whether the goal is reached:
 2. **Does the circuit do it, and how do we know?** Every requirement points to its evidence – simulation, check or
    measurement – and edakit shows which ones have none yet.
 
-It complements the concept `design-as-text.md`: that one is about the circuit being text, this one about what the
-circuit should do.
+It complements the concept [design-as-text.md](design-as-text.md): that one is about the circuit being text, this one
+about what the circuit should do.
 
 ## Where it stands
 
@@ -26,7 +26,7 @@ evidence. Exactly two are traceable today: FW-4 and FW-5 of the reference projec
 
 | Where | What it says | ID | Evidence linked |
 | --- | --- | --- | --- |
-| edakit, skill `circuit-design` §1 | asks for supply, inputs and outputs, quantity, enclosure, purpose and "what matters to the user" | – | no: only `purpose` goes into the graph, the rest stays in the report in the chat |
+| edakit, skill `circuit-design` §1 | asks for supply, inputs and outputs, quantity, enclosure, purpose and "what matters to the user" | – | partly: `purpose` goes into the graph, the touch limit into `touch_c` (E-2), a budget into `[cost] budget`; the rest stays in the report in the chat |
 | edakit, skill `decision-round` | "… is a must" counts as a hard requirement | D-… | as a decision, not as a requirement |
 | edakit, acceptance M-4 | test steps after delivery | M-4 | names parts and functions, not requirements |
 | bell, `README.md` and `docs/IMPLEMENTIERUNG.md` | Christmas Eve step by step: press start, the bell rings mechanically after 65 s | – | no |
@@ -54,8 +54,9 @@ show in both projects already:
   rings 65 s after start and lasts on a power bank (D-8), it does not test.
 - **Requirements hide in decisions.** D-13 holds "Requirements from the M-1 review" for the ESP32 firmware. The
   firmware cites D-13 in a comment; no test checks it.
-- **Collected and lost.** `circuit-design` asks for the requirements in a decision round but writes only `purpose`
-  into the graph. The rest is in the report and goes with the chat.
+- **Collected and lost.** `circuit-design` asks for the requirements in a decision round. Only a few find a home:
+  `purpose` in the graph, the touch limit in `touch_c` (E-2), a budget in `[cost] budget` (skill `new-project`). The
+  rest is in the report and goes with the chat.
 
 So the gate knows no requirements: a changed requirement voids no sign-off, and no check reports a requirement without
 evidence.
@@ -96,11 +97,12 @@ status = "accepted"
   conditions of M-6).
 - **`verify` says what tests it.** `rows` are rows of the gate protocol, matched as `accepted_warnings` are ("ID
   scenario item check"). `signoff` is a manual check, `accept` a step of the acceptance test, `script` a project script
-  of the kind check (concept `project-scripts.md`).
+  of the kind check (concept [project-scripts.md](project-scripts.md)).
 - **IDs are stable,** as in the rule catalog. A dropped requirement stays with its reason (`status = "dropped"`,
   `reason = "D-47: no cells"`), like FW-1 to FW-3 of the reference project.
-- **The agent drafts, the user approves.** Drafts carry `draft`; only the user sets `accepted`. A change to an accepted
-  requirement is a decision in the decision log.
+- **The agent drafts, the user approves.** Drafts carry `draft`; only the user sets `accepted`. Approving a requirement
+  joins the user's real decisions in working agreement 4 (handbook 11.4), next to accepting a warning and money. A
+  change to an accepted requirement is a decision in the decision log.
 
 TOML as for the board and schematic files: readable by people and LLMs, no JSON. Variants read the main project's file
 and add their own entries – the ESP32 bell, for instance, its web page (D-17).
@@ -132,8 +134,8 @@ Four rules keep it honest:
 
 1. **Vague words become numbers.** "Loud" becomes a question with a proposal, for instance: audible in the next room
    with the door open?
-2. **Contradictions become questions, never resolved silently.** "Servo separat (5V, 1A)" against D-3 is an item of the
-   decision round.
+2. **Contradictions become questions, never resolved silently** – in a decision round, as working agreement 5 has it
+   for every open question. "Servo separat (5V, 1A)" against D-3 is an item of that round.
 3. **What it does not know stays open.** A draft carries the open question, not an invented number.
 4. **Every requirement gets evidence,** existing or proposed: a scenario, an acceptance step, an item for a review or a
    project script.
@@ -157,29 +159,33 @@ flowchart LR
     rows --> G["gate protocol<br/>table of requirements<br/>before the order: must blocks"]
     signoff --> G
     script --> G
-    accept --> M4["acceptance M-4<br/>after delivery"]
+    accept --> M4["acceptance list in the protocol<br/>M-4 after delivery"]
 ```
 
 | `verify` | passes when | blocks the release |
 | --- | --- | --- |
 | `rows` | at least one protocol row matches and none failed | yes, for `must` |
-| `signoff` | the manual check is signed for the current hash and names the ID | yes, if its phase is `export` |
+| `signoff` | the manual check is signed for the current hash of its scope (circuit, layout or fab) and names the ID | yes, if its phase is `export` |
 | `script` | the project script passes in the gate | yes, for `must` |
-| `accept` | M-4 is signed; the step is on the acceptance list | no, phase `acceptance` |
+| `accept` | M-4 is signed; the step is on the protocol's acceptance list | no, phase `acceptance` |
 
-What can only be tested at acceptance does not hold up the release; it is on the acceptance list that M-4 works
-through. New in edakit:
+What can only be tested at acceptance does not hold up the release. The protocol already has an acceptance list
+(#42): section 6 lists M-4 under "after delivery", and below it every open datasheet point with
+`when = "acceptance"` as an unchecked line. An `accept` step joins it the same way, with its ID:
+`- [ ] R-4: on a power bank: press start, the bell rings`. M-4 works through the list. New in edakit:
 
 - **`edakit req`** lists needs and requirements with status and evidence. `edakit req R-4` shows the chain of one
-  requirement, `--acceptance` prints the acceptance list from all `accept` steps.
+  requirement.
 - **New checks in the catalog:** every reference resolves. Every accepted need has a requirement, every requirement
   evidence. Drafts warn as long as the user has not approved them.
 - **A section "Requirements" in the gate protocol:** per requirement its evidence and the result. It answers the second
   question without another file.
-- **The file counts in the circuit hash.** A changed requirement voids M-1 and M-6, as the new purpose of D-16 voided
-  M-1.
-- **The reviewers get the file as a source.** What a requirement with `signoff = "M-1"` asks for, the electrical
-  reviewer judges, and it names the ID in its result.
+- **The file counts in the circuit hash,** byte for byte like `purpose`: `[release] hash_ignore` does not reach into
+  it, because the reviews read it whole. A changed requirement voids M-1 and M-6, as the new purpose of D-16 voided
+  M-1. In a project with `[firmware]`, the firmware contract shows drift as well, because it carries the circuit hash.
+- **The reviewers get the file as a source.** The electrical reviewer judges the requirements with `signoff = "M-1"`,
+  the PCB reviewer those with `"M-5"`, the regulatory reviewer those with `"M-6"`. Each names the ID in its result.
+  For the electrical reviewer the file replaces "requirements the firmware relies on", which it reads today.
 
 ## Trial on the bell and the reference project
 
@@ -230,15 +236,17 @@ ask the contradictions as questions.
 - **No silent import.** The agent proposes, the user approves; nothing is taken over from documents unasked.
 - **No tool for large projects:** no ReqIF, no baselines, no access rights. Git is the history, the decision log the
   reasoning.
-- **The documents stay.** README, circuit description and calendar go on telling the story, but point to IDs instead of
-  repeating requirements.
+- **The documents stay.** README, circuit description and calendar go on telling the story. They quote a requirement
+  by its ID, as they quote a value since #71: a value block with the source `req:R-4` in a file of `[docs] files`
+  (handbook 6.6), and G-19 finds a stale quote.
 
 ## Order
 
 1. Format, parser and `edakit req`, tested on the example project `led-bar`.
-2. Checks, the section in the gate protocol, the file in the circuit hash.
-3. Skill `requirements` and agent `requirements-engineer`; `circuit-design` and the reviewers read the file.
-4. `edakit req --acceptance`: the acceptance list from the `accept` steps.
+2. Checks, the section "Requirements" and the `accept` lines in the gate protocol, the file in the circuit hash.
+3. Skill `requirements` and agent `requirements-engineer`; `circuit-design` and the reviewers read the file. The
+   plugin test that lets the reviewer prompts name only catalog IDs learns N- and R-.
+4. `req:` as a source of the value blocks (G-19).
 5. Trial on the bell: inventory, decision round, file – in the bell's repository, at the user's request.
 6. The reference project, once it has moved to edakit (after its order, EK-1 of its concept).
 
@@ -250,20 +258,24 @@ ask the contradictions as questions.
 | 2 | Place and format | `hardware/requirements.toml` in `[project] requirements`; variants read the main project's file too | open |
 | 3 | Scope | the whole device; edakit checks what it sees, a project script or the acceptance test the rest | open |
 | 4 | Binding | `must` without passing evidence blocks the release, `should` warns, `may` informs | open |
-| 5 | Required | optional until the bell and the reference project have a file; then required, as M-6 is | open |
-| 6 | Hash | the whole file counts in the circuit hash, like the graph | open |
+| 5 | Required | optional until the bell and the reference project have a file; then required, as M-1, M-5 and M-6 are | open |
+| 6 | Hash | the whole file counts in the circuit hash, byte for byte like `purpose`; `hash_ignore` does not reach into it | open |
 | 7 | Role | skill `requirements` in the conversation, agent `requirements-engineer` for the inventory and a second opinion | open |
-| 8 | Acceptance | `edakit req --acceptance` makes the acceptance list; M-4 names the IDs it tested | open |
+| 8 | Acceptance | `accept` steps join the protocol's acceptance list (section 6, after delivery); M-4 names the IDs it tested | open |
 | 9 | Trial | first on the bell, then on the reference project | open |
 
 ## Sources
 
-- edakit at `f24084a`: skills [circuit-design](../../../skills/circuit-design/SKILL.md),
+- edakit at `a8b6011`: skills [circuit-design](../../../skills/circuit-design/SKILL.md),
   [decision-round](../../../skills/decision-round/SKILL.md) and [new-project](../../../skills/new-project/SKILL.md),
-  agent [electrical-reviewer](../../../agents/electrical-reviewer.md), handbook
-  [8](../../../handbook/08-release-gate.md) (M-4, `accepted_warnings`) and [14](../../../handbook/14-design.md)
-  (roles), [gate.py](../../../edakit/release/gate.py) (`key_of`, `state_files`), [run.py](../../../edakit/sim/run.py)
-  (E-3, `i_min_a`).
+  agents [electrical-reviewer](../../../agents/electrical-reviewer.md) and
+  [pcb-reviewer](../../../agents/pcb-reviewer.md), handbook [6.6](../../../handbook/06-schematic.md) (value blocks,
+  G-19), [8](../../../handbook/08-release-gate.md) (8.2 hashes and sign-offs, `hash_ignore`, the acceptance list, M-4),
+  [11.4](../../../handbook/11-working-with-claude.md) (working agreements) and [14](../../../handbook/14-design.md)
+  (roles), [gate.py](../../../edakit/release/gate.py) (`key_of`, `state_files`, `state_hash`, `REQUIRED`, protocol
+  section 6), [firmware.py](../../../edakit/firmware.py) (the contract carries the circuit hash),
+  [run.py](../../../edakit/sim/run.py) (E-3, `i_min_a`), [test_plugin.py](../../../tests/test_plugin.py) (IDs in the
+  reviewer prompts).
 - The Christmas bell: `README.md`, `docs/IMPLEMENTIERUNG.md`, `docs/decisions.md`, `hardware/graph.json`,
   `hardware/sim.json`, `hardware/signoff.json`, `src/firmware/buttons.ino`,
   `variants/esp32/firmware/test/test_bell_timer/test_main.cpp`.
