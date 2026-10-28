@@ -402,3 +402,27 @@ def test_hash_ignore_is_a_list_of_key_names(project):
     toml.write_text(text.replace("[release]\n", '[release]\nhash_ignore = "notes"\n'))
     with pytest.raises(ConfigError, match="hash_ignore: a list of key names"):
         project.config()
+
+
+def test_scripts_entries(tmp_path):
+    """[scripts.<name>]: the project's scripts as written; edakit check resolves them (test_scripts.py)."""
+    (tmp_path / "edakit.toml").write_text('[project]\nname = "t"\n[boards.main]\n')
+    assert load(tmp_path / "edakit.toml").scripts == {}                   # no key, no change
+    kunst = ('[scripts.kunst]\nkind = "input"\ncmd = ["python", "hardware/art/make_art.py"]\nabout = "artwork"\n'
+             'writes = ["hardware/art/bell.svg"]\n')
+    (tmp_path / "edakit.toml").write_text('[project]\nname = "t"\n[boards.main]\n' + kunst)
+    assert load(tmp_path / "edakit.toml").scripts == {"kunst": {
+        "kind": "input", "cmd": ["python", "hardware/art/make_art.py"], "about": "artwork",
+        "writes": ["hardware/art/bell.svg"]}}
+    for bad, msg in (('writs = ["x"]', r"\[scripts.k\]: unknown key 'writs' \(known: kind, cmd, about"),
+                     ('cmd = "python make.py"', r"\[scripts.k\] cmd must be a list of strings"),
+                     ('reads = ["graph", 3]', r"\[scripts.k\] reads must be a list of data names and paths"),
+                     ('after = "kunst"', r"\[scripts.k\] after must be a list of script names"),
+                     ('about = 1', r"\[scripts.k\] about must be a string"),
+                     ('advisory = "yes"', r"\[scripts.k\] advisory: true or false")):
+        (tmp_path / "edakit.toml").write_text(f'[project]\nname = "t"\n[boards.main]\n[scripts.k]\n{bad}\n')
+        with pytest.raises(ConfigError, match=msg):
+            load(tmp_path / "edakit.toml")
+    (tmp_path / "edakit.toml").write_text('[project]\nname = "t"\n[boards.main]\n[scripts]\nkind = "input"\n')
+    with pytest.raises(ConfigError, match=r"\[scripts\] kind: a table \[scripts.kind\]"):
+        load(tmp_path / "edakit.toml")

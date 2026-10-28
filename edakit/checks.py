@@ -65,6 +65,10 @@
 joined nets as one net under the group's name (the ground net if it is one of them, else the first in the graph) and
 the bridges as copper; G-1, G-2, G-3, G-8, G-18, P-1 and G-9 see every net and part as the graph has them.
 
+edakit check (not the gate) also resolves the project's scripts ([scripts.*] of edakit.toml, with [[release.stages]]
+and sim_plugin) with edakit's steps into one order: what keeps them from it is an error with the ID scripts – no
+check of the catalog (scripts.py, handbook 8.6).
+
 Rule, reason, fix and sources of every check: rules.json (`edakit rules G-4`). A failed check is explained once
 below the findings. A finding listed in "waive" of the net or component is accepted on purpose and reported with
 its reason. Exit code 1 on errors; with --release also on pending sign-offs.
@@ -1054,9 +1058,11 @@ def run(design, cfg=None):
 
 
 def main(cfg, args):
+    from . import scripts
     from .design import Design
     d = Design.from_config(cfg)
     rep = run(d, cfg)
+    rep.errors += [("scripts", f.msg) for f in scripts.resolve(cfg).findings]   # [scripts.*]: one order (8.6)
     for check, msg in rep.errors:
         print(f"ERROR   {check}  {msg}")
     for check, msg, reason in rep.waived:
@@ -1068,10 +1074,13 @@ def main(cfg, args):
     for check, msg in rep.notes:
         print(f"NOTE    {check}  {msg}")
     failed = list(dict.fromkeys(c for c, _ in rep.errors))
-    if failed:
+    if explained := [c for c in failed if rules.entry(c)]:
         print("\nWhat the failed checks are about (edakit rules <ID>):")
-        for c in failed:
+        for c in explained:
             print("  " + "\n  ".join(rules.explain(c)))
+    if "scripts" in failed:
+        print("\nProject scripts: the entries [scripts.<name>] of edakit.toml – what each script reads and writes – "
+              "resolve into one order with edakit's steps (handbook 8.6)")
     groups = d.bridge_groups()
     if groups:
         print("joined by 0 Ω bridges, checked as one net: " + "; ".join(

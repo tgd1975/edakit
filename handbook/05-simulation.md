@@ -59,7 +59,8 @@ its output and its input current fall to 0 over the 0.2 V below `vin_min`. A con
 0 V instead of being pulled below ground. Above these voltages both are what the table says; a DC result with every
 input above its minimum is the same as without them.
 
-A project adds its own models in a plugin file (`sim_plugin = "hardware/sim_plugin.py"` in `[project]`):
+A project adds its own models in a plugin file (`sim_plugin = "hardware/sim_plugin.py"` in `[project]`; among the
+project's scripts it is the kind `sim`, 8.6):
 
 ```python
 def my_boost(nl, des, part):            # nl: the netlist builder, see edakit/sim/netlist.py

@@ -92,7 +92,7 @@ gets its fault there.
 (in the reference project the printed enclosure was adapted after delivery anyway). A mechanics stage reads the board
 – outline, holes, part boxes, heights, lead protrusion, mated plugs – from `<artifacts>/mech_<board>.json`, which
 `edakit pcb plan` writes (7.4); the gate does not run the plan, so a stage that needs the file current runs
-`edakit pcb plan` first.
+`edakit pcb plan` first. Among the project's scripts (8.6) a stage counts as a check of phase export before S.
 
 ## 8.2 Hashes and sign-offs
 
@@ -327,3 +327,60 @@ The MCP server cannot order. Lessons from the reference order:
 After delivery every board gets a short acceptance test: visual check (polarity of every polarised part), supply
 current at the nominal voltage against the simulated value, every LED/output, every input, the firmware's self-test.
 Deviation beyond tolerance → find the cause (model, firmware, assembly) before the board is used.
+
+## 8.6 Project scripts
+
+A project registers in edakit.toml the scripts that touch edakit's flow (`[scripts.<name>]`, 10.1): one that writes a
+file edakit reads, derives something from edakit's data, changes the project library in EasyEDA, or holds up the
+release as a check of its own. A script that only reads what edakit made – a review package from the release – stays
+unregistered, like every other script of the project. Each entry says what its script reads and writes; when it runs
+follows from that and from edakit's steps in their fixed order, so nobody has to write that rule into a skill.
+
+| Kind | What it writes | Its place |
+|---|---|---|
+| `input` | a file edakit reads: the board file (`board:<b>`, its own sections – every writer keeps the lines of the others, as `pcb place --write` does), an SVG of `[[silk.art]]`, the simulation plugin | before the first step that reads it |
+| `derive` | files no edakit step reads: the firmware's pin table, pictures, the enclosure | before `edakit check`, where its result is to be current – before the gate when the script reads what comes after `edakit check` (footprints, routing) |
+| `easyeda` | changes in EasyEDA: `project-library:<b>`, `footprints:<b>` | on command only |
+| `check` | – | phase `export`: in the gate before S, or with `at = "after F"` after the run's Gerber data; phase `order` and `acceptance`: after the gate |
+| `sim` | – | `[project] sim_plugin`, inside `edakit sim` (5.1) |
+
+`[[release.stages]]` (8.1) take part as checks of phase export before S. The names of edakit's data in `reads` and
+`writes`:
+
+| Name | What | Made by |
+|---|---|---|
+| `graph`, `parts`, `sim` | graph, parts database, simulation scenarios | by hand, `edakit block`, `edakit part` |
+| `board:<b>` | the board file | by hand, `edakit pcb place --write`, `input` scripts |
+| `project-library:<b>` | the project library in EasyEDA, which `pcb parts` takes the parts from | `edakit schematic create`, `easyeda` scripts |
+| `footprints:<b>` | footprint geometry with pads (`pcb_geometry_<b>.json`) | `edakit pcb dump`, `easyeda` scripts |
+| `mech:<b>` | the board as a mechanical model (`mech_<b>.json`, 7.4) | `edakit pcb plan` |
+| `routing:<b>` | tracks and vias | `edakit route` |
+| `gerber:<b>`, `release` | the gate run's manufacturing files, the current release (8.3) | `edakit gate` |
+| `firmware` | the firmware contract, with `[firmware]` (3.5) | `edakit firmware` |
+
+Anything else is a path relative to edakit.toml. A folder holds the files in it, and an edakit file named by its path
+is its data: `hardware/boards/main.toml` is `board:main`.
+
+`edakit check` resolves the entries with edakit's steps into one order and reports what keeps them from it, as errors
+with the ID `scripts`:
+
+- `kind` and the fields of the kind are there, and no field of another kind
+- every data name is edakit's, with a board of `[boards]`; `firmware` only with `[firmware]`
+- a script writes files, an input also `board:<b>`; graph, parts, sim and edakit's other data are written by edakit
+  or by hand
+- scripts that write the same file or change the same data run in a fixed order through `after`; a script that writes
+  what it reads gets the version of the one before it
+- an edakit step needs what an input writes – directly or through another input – and nothing a derive writes
+- the steps, the data and `after` make no cycle; the message names the cycle with the data on each edge. Read-backs
+  of a later round do not count: `edakit check` reads the footprints (P-7), `edakit sim` the routing (`copper`),
+  `pcb place` the footprints
+- a check has an `id` of its own – no stage of the gate, no sign-off, no ID of the rule catalog, none twice with
+  `[[release.stages]]` –, a `phase`, and reads `gerber:<b>` only at `"after F"`
+- `after` names other entries of `[scripts]`
+
+```text
+ERROR   scripts  review: in a cycle – review –[stamp]→ edakit gate –[release]→ review
+```
+
+A derive that reads the release cannot be checked by the gate that writes it. So far edakit only resolves the
+entries: no command runs them, and the gate runs `[[release.stages]]` as before and does not report these findings.

@@ -8,7 +8,7 @@ are. What one role decides lives in a file of its own, with one owner and one ha
 
 | File | Content | Written by | Hash |
 |---|---|---|---|
-| `edakit.toml` | project, boards with their EasyEDA documents, where the files are, release settings | new-project, the user | – |
+| `edakit.toml` | project, boards with their EasyEDA documents, where the files are, release settings, the project's scripts | new-project, the user | – |
 | `hardware/graph.json` | the circuit with its purpose, the hand-over to the layout, the ground net and the check settings (3.1) | circuit designer | circuit |
 | `hardware/parts/`, `hardware/sim.json` | parts database (4), simulation scenarios (5) | part-selector, circuit designer | circuit |
 | `hardware/schematic.toml` | arrangement of the schematic: blocks, notes, pin table (10.3) | circuit designer | – |
@@ -112,6 +112,29 @@ work without it.
 | `files` | `[]` | Markdown files with value blocks `<!--edakit SOURCE [FORMAT]-->value<!--/edakit-->`, relative to edakit.toml |
 | `decimal` | `"."` | `","` writes quoted numbers with a decimal comma |
 
+### [scripts.&lt;name&gt;]
+
+Optional: a project script that touches edakit's flow – it writes a file edakit reads, derives something from
+edakit's data, changes the project library in EasyEDA, or is a check of its own (8.6). `edakit check` resolves the
+entries with edakit's steps into one order and reports what keeps them from it; no command runs them yet. Without the
+table nothing changes.
+
+| Key | For | Meaning |
+|---|---|---|
+| `kind` | every entry | `input`, `derive`, `easyeda` or `check` (8.6); the kind `sim` is `[project] sim_plugin` |
+| `cmd` | every entry | the command as a list, run in the project directory |
+| `about` | every entry | one sentence why the script exists, citing a decision |
+| `writes` | input, derive, easyeda (required) | what it makes: paths; an input also `board:<b>`; an easyeda script changes `project-library:<b>` or `footprints:<b>` |
+| `reads` | every kind (optional) | what its result is made from: edakit's data (8.6) and paths – the script itself counts anyway |
+| `after` | every kind (optional) | other entries of `[scripts]` this one runs after – needed when several write the same file or change the same data |
+| `check` | input, derive, easyeda (optional) | an exact check command, when the stamp is not enough |
+| `id` | check (required) | its ID in the protocol: no stage of the gate (P, G, E, S, L, F), no sign-off (M-…), no ID of the rule catalog, and none twice – `[[release.stages]]` included |
+| `phase` | check (required) | `export` (holds up the release), `order` or `acceptance` |
+| `at` | check (optional) | phase `export` only: `"before S"` (default) or `"after F"`, to read the run's Gerber data (`gerber:<b>`) |
+| `advisory` | check (optional) | `true`: warns only |
+
+A field of another kind is a finding of `edakit check`, a key no kind has an error of edakit.toml.
+
 ## 10.2 The board file
 
 `hardware/boards/<name>.toml`: what the PCB designer decides (14.1). The layout hash covers it and the SVGs its
@@ -188,7 +211,7 @@ Claude Code: `edakit … 2>&1 | cat`. The long commands – `route all`, `gate`,
 
 | Command | EasyEDA | Reads | Writes |
 |---|---|---|---|
-| `edakit check [--release] [--json F]` | – | graph, parts (pins, identity P-6), pin table; if there: footprint geometry and library footprints (P-7), library symbols (P-1) | – |
+| `edakit check [--release] [--json F]` | – | graph, parts (pins, identity P-6), pin table; if there: footprint geometry and library footprints (P-7), library symbols (P-1); `[scripts]`, `[[release.stages]]` and `sim_plugin` with the board files' `[[silk.art]]` (8.6) | – |
 | `edakit rules [ID …]` | – | the rule catalog (no project needed) | – |
 | `edakit hints [--json F]` | – | graph, parts, sim config | – |
 | `edakit block list\|show NAME` | – | the block library (no project needed) | – |

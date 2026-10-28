@@ -64,6 +64,10 @@ MARKS = ("default", "specify", "remove")   # order.mark: JLCPCB's order number a
 FIRMWARE_KEYS = ("mcu", "out", "gpio")    # [firmware]: the board's firmware contract (edakit firmware), opt-in
 DOCS_KEYS = ("files", "decimal")                     # [docs]: Markdown files with quoted values (edakit docs, G-19)
 
+# [scripts.<name>]: a project script that touches edakit's flow – what it reads and writes; edakit/scripts.py
+# resolves the entries with edakit's steps into one order (edakit check, handbook 8.6)
+SCRIPT_KEYS = ("kind", "cmd", "about", "reads", "writes", "after", "check", "id", "phase", "at", "advisory")
+
 
 class ConfigError(Exception):
     pass
@@ -180,6 +184,7 @@ class Config:
     spare_pct: float = 0.0              # edakit order: spares on every cart line, in % of quantity sets
     extras: list = field(default_factory=list)   # [[extra]]: items off the board – cost estimate and carts
     firmware: dict | None = None  # [firmware] with its defaults; None without the table: no contract
+    scripts: dict = field(default_factory=dict)   # [scripts.<name>] as written: name -> entry (edakit/scripts.py)
     docs: list = field(default_factory=list)   # [docs] files: Markdown files whose value blocks edakit docs reads
     docs_decimal: str = "."                    # [docs] decimal: "." or "," in quoted numbers
 
@@ -586,6 +591,32 @@ def _firmware(fw):
     return out
 
 
+def _scripts(scripts):
+    """[scripts.<name>]: (entries as written, problems). Here only their form – known keys, strings, lists of strings;
+    whether they resolve with edakit's steps into one order is edakit check's (edakit/scripts.py)."""
+    if scripts is None:
+        return {}, []
+    if not isinstance(scripts, dict):
+        return {}, ["[scripts] must be tables [scripts.<name>] with kind, cmd, about, …"]
+    out, problems = {}, []
+    lists = {"cmd": "strings: the command and its arguments", "check": "strings: the command and its arguments",
+             "reads": "data names and paths", "writes": "data names and paths", "after": "script names"}
+    for name, s in scripts.items():
+        where = f"[scripts.{name}]"
+        if not isinstance(s, dict):
+            problems.append(f"[scripts] {name}: a table [scripts.{name}] with kind, cmd, about, … – not a value")
+            continue
+        problems += _unknown(where, s, SCRIPT_KEYS)
+        problems += [f"{where} {k} must be a string" for k in ("kind", "about", "id", "phase", "at")
+                     if k in s and not isinstance(s[k], str)]
+        problems += [f"{where} {k} must be a list of {what}" for k, what in lists.items()
+                     if k in s and not (isinstance(s[k], list) and all(isinstance(v, str) and v for v in s[k]))]
+        if not isinstance(s.get("advisory", False), bool):
+            problems.append(f"{where} advisory: true or false")
+        out[name] = dict(s)
+    return out, problems
+
+
 def find_config(start=None) -> Path:
     env = os.environ.get("EDAKIT_CONFIG")
     if env:
@@ -610,7 +641,8 @@ def load(path=None) -> Config:
         return v if v.is_absolute() else root / v
 
     moved = _one_file_form(raw, path.name)
-    problems = _unknown(path.name, raw, ("project", "boards", "release", "cost", "extra", "firmware", "docs"),
+    problems = _unknown(path.name, raw, ("project", "boards", "release", "cost", "extra", "firmware", "docs",
+                                         "scripts"),
                         ("schematic", "checks", "net_classes", "sim"))
     problems += _unknown("[project]", p, PROJECT_KEYS, ("ground",))
     problems += _unknown("[release]", raw.get("release", {}), RELEASE_KEYS, ("signoff",))
@@ -626,6 +658,10 @@ def load(path=None) -> Config:
         problems.append("[docs] files must be a list of paths")
     if raw.get("docs", {}).get("decimal", ".") not in (".", ","):
         problems.append('[docs] decimal must be "." or ","')
+
+    scripts, bad = _scripts(raw.get("scripts"))       # [scripts.<name>]: their form; the order is edakit check's
+    problems += bad
+
     files = {}
     for name, entry in raw.get("boards", {}).items():
         problems += _unknown(f"[boards.{name}]", entry, BOARD_KEYS, BOARD_FILE_KEYS)
@@ -678,6 +714,7 @@ def load(path=None) -> Config:
         spare_pct=float(p.get("spare_pct", 0)),
         extras=list(raw.get("extra", [])),
         firmware=_firmware(raw["firmware"]) if "firmware" in raw else None,
+        scripts=scripts,
         docs=list(doc_files),
         docs_decimal=raw.get("docs", {}).get("decimal", "."),
     )
