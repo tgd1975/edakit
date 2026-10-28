@@ -107,8 +107,9 @@ Every run records two hashes in the protocol header, and a run with stage F a th
 - **circuit** (`state_sha256`): graph (with its ground net and check settings), parts database, simulation config
   (and plugin, `[release] state_files`), and the requirements files of `[project] requirements` (3.6, 8.7) – a
   changed requirement voids M-1 and M-6, as a new purpose does: the reviews read the requirements
-- **layout** (`layout_sha256`): the board files with the artwork they place (`[[silk.art]]`), the footprint geometry
-  (and `[release] layout_files`) – of the made boards; a bought board has none
+- **layout** (`layout_sha256`): the board files with the artwork they place (`[[silk.art]]`) and the footprint
+  geometry beside them (`<board>.geometry.json`, 7.4), and `[release] layout_files` – of the made boards; a bought
+  board has none
 - **fab** (`fab_sha256`): what the manufacturer builds from, per made board – every Gerber layer of
   `fab/<board>/gerber/` rasterised at 0.02 mm as L-2 does, in the frame of the board outline (documentation and
   drill-drawing layers left out: nobody builds from them), the drill hits (both ends, diameter) rounded to 1 µm and
@@ -125,6 +126,14 @@ Each file belongs to one of them or to none (10.1): edakit.toml, the schematic f
 are in no hash, so a new order quantity, a note in the schematic or a corrected number (6.6) voids no review. A project
 that moved from the one-file edakit.toml (October 2026) records the hashes before and after in `rehashed` of its
 sign-off file: the move changed files, not what they say.
+
+**The footprint geometry in the repository.** The hash takes each file with its path, so CI and a fresh clone compute
+the same hash only from versioned files. The footprint geometry lay among the artifacts until October 2026
+(`<artifacts>/pcb_geometry_<board>.json`, not versioned); `pcb dump` now writes it beside the board file (7.4). A
+geometry not moved yet is hashed where it lies, so nothing lapses before the move; `edakit check`, `pcb plan` and the
+gate (a note in section 6) give the `mv` command. The move changes the layout hash once – the path, not the content:
+sign-offs with scope `layout` are signed again, nothing is rehashed. The circuit and the fab hash stay, so M-1, M-6 and
+M-5 with its default scope `fab` keep counting.
 
 **What the circuit hash leaves out.** By default it takes the files byte by byte: a corrected note, a source added
 or the `verified` record a datasheet check writes voids M-1 and M-6. `[release] hash_ignore` lists keys that are
@@ -376,7 +385,7 @@ follows from that and from edakit's steps in their fixed order, so nobody has to
 | `graph`, `parts`, `sim` | graph, parts database, simulation scenarios | by hand, `edakit block`, `edakit part` | the files as the circuit hash reads them – graph and parts without the keys of `hash_ignore` (8.2) |
 | `board:<b>` | the board file | by hand, `edakit pcb place --write`, `input` scripts | the board file |
 | `project-library:<b>` | the project library in EasyEDA, which `pcb parts` takes the parts from | `edakit schematic create`, `easyeda` scripts | – (in EasyEDA only) |
-| `footprints:<b>` | footprint geometry with pads (`pcb_geometry_<b>.json`), as `pcb dump` measures it in the PCB | `edakit pcb dump` | the file |
+| `footprints:<b>` | footprint geometry with pads, as `pcb dump` measures it in the PCB: `<b>.geometry.json` beside the board file – one not moved yet in `<artifacts>/pcb_geometry_<b>.json` (7.4) | `edakit pcb dump` | the file it is read from |
 | `mech:<b>` | the board as a mechanical model (`mech_<b>.json`, 7.4) | `edakit pcb plan` | the file |
 | `routing:<b>` | tracks and vias | `edakit route` | the routing session `route/<b>.ses` and the stitching vias of `route pours` (`route/<b>_stitch.json`) |
 | `gerber:<b>` | the gate run's manufacturing files | `edakit gate` | the board's `fab_layers` (8.2) in the last run with stage F – with one board the run's fab hash |
@@ -384,7 +393,7 @@ follows from that and from edakit's steps in their fixed order, so nobody has to
 | `firmware` | the firmware contract, with `[firmware]` (3.5) | `edakit firmware` | the file `[firmware] out` |
 
 Anything else is a path relative to edakit.toml. A folder holds the files in it, and an edakit file named by its path
-is its data: `hardware/boards/main.toml` is `board:main`.
+is its data: `hardware/boards/main.toml` is `board:main`, `hardware/boards/main.geometry.json` is `footprints:main`.
 
 Data that does not exist yet – no board file, no geometry, no routing, no gate run with stage F, no current release –
 hashes as `absent` until it is made. A run from before the fab hash has no `fab_layers` in its manifest: they are

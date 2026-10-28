@@ -14,6 +14,7 @@ are. What one role decides lives in a file of its own, with one owner and one ha
 | `hardware/parts/`, `hardware/sim.json` | parts database (4), simulation scenarios (5) | part-selector, circuit designer | circuit |
 | `hardware/schematic.toml` | arrangement of the schematic: blocks, notes, pin table (10.3) | circuit designer | – |
 | `hardware/boards/<name>.toml` | one board: outline, holes, placement, routing, pours, silkscreen (10.2) | PCB designer | layout |
+| `hardware/boards/<name>.geometry.json` | the footprint geometry of the board's parts as placed in the PCB: boxes, pads, holes (7.4) – beside the board file, with its name | `edakit pcb dump` | layout |
 | the SVGs of `[[silk.art]]` | artwork on the silkscreen (7.7), drawn by hand or by a project script | PCB designer | layout |
 | `hardware/signoff.json` | sign-offs and accepted warnings, each bound to the hash of its scope: circuit, layout or fab (8.2); an accepted warning with `parts` {designator: LCSC} also to those parts; `rehashed` records a change of the hash method (the gate writes it for `hash_ignore`) | reviewers, the user | – |
 | `hardware/firmware.json` | the firmware contract, with `[firmware]` (3.5) | `edakit firmware` | – |
@@ -140,10 +141,10 @@ A field of another kind is a finding of `edakit check`, a key no kind has an err
 
 ## 10.2 The board file
 
-`hardware/boards/<name>.toml`: what the PCB designer decides (14.1). The layout hash covers it and the SVGs its
-`[[silk.art]]` places – a change voids the sign-offs with scope `layout`; the layout review M-5 with scope `fab` (8.2)
-lapses when the manufacturing files change. The keys stand at the top of the file, without a prefix (`[place]`,
-`[[holes]]`):
+`hardware/boards/<name>.toml`: what the PCB designer decides (14.1). The layout hash covers it, the SVGs its
+`[[silk.art]]` places and the footprint geometry beside it (`<name>.geometry.json`, written by `pcb dump`, 7.4) – a
+change voids the sign-offs with scope `layout`; the layout review M-5 with scope `fab` (8.2) lapses when the
+manufacturing files change. The keys stand at the top of the file, without a prefix (`[place]`, `[[holes]]`):
 
 | Key | Default | Meaning |
 |---|---|---|
@@ -282,7 +283,7 @@ Claude Code: `edakit … 2>&1 | cat`. The long commands – `route all`, `gate`,
 | `edakit schematic copy [--source] [--target] [--save]` | ✓ | schematic | copy |
 | `edakit schematic layout [--dry-run] [--reread] [--force] [--save]` | ✓ / – | graph, schematic, cached geometry | board schematic, `layout_preview_<name>.svg`; `--save` only when the netlist equals the graph (6.1) |
 | `edakit schematic draw [--board] [--out F] [--force]` | – | graph, parts, the schematic file if there; for a `{sim:…}` note the saved simulation result | `schematic_<board>.svg` (or F) |
-| `edakit pcb dump [--ref]` | ✓ | PCB | `pcb_geometry_<board>.json` (parts end at 0°/TOP; through-hole pads with `hole` [w, l] mm and `plated`) |
+| `edakit pcb dump [--ref]` | ✓ | PCB | `hardware/boards/<board>.geometry.json`, beside the board file and versioned (parts end at 0°/TOP; through-hole pads with `hole` [w, l] mm and `plated`); a `<artifacts>/pcb_geometry_<board>.json` from before is moved there (7.4) |
 | `edakit pcb plan` | – | plan, geometry (the dump; library footprints of `part import` for parts not in it), net currents, graph (`layout`, L-12), parts entries (`body`, `lead` `length_mm`, `mate`) | `pcb_plan_<board>.png/.json`, `pcb_netclasses_<board>.json`, `mech_<board>.json` (7.4) |
 | `edakit pcb place [--write] [--only C1,R1]` | – | plan, geometry as `pcb plan` reads it, graph (`layout.near`, decoupling of L-12), `[near]` | with `--write`: rows with `auto = true` at the end of `[place]` |
 | `edakit pcb parts [--write]` | ✓ | board schematic, PCB, graph | PCB parts, UniqueIds, geometry |
@@ -316,10 +317,12 @@ hardware/sim.json           simulation scenarios
 hardware/stock.json         what the assembler said about the parts, dated (edakit stock, P-4)
 hardware/schematic.toml     arrangement of the schematic
 hardware/boards/<name>.toml one board: outline, holes, placement, routing, pours, silkscreen
+hardware/boards/<name>.geometry.json
+                            its footprint geometry, as edakit pcb dump measured it (in the layout hash)
 hardware/signoff.json       manual checks and accepted warnings, bound to hashes
 hardware/firmware.json      the firmware contract, if [firmware] is set (edakit firmware)
 docs/decisions.md           numbered decisions (or wherever the project keeps them)
-build/edakit/               artifacts (not versioned): caches, geometry, previews, routing, exports, cost.json;
+build/edakit/               artifacts (not versioned): caches, previews, routing, exports, cost.json;
                             library/ and footprints/: the library's symbols and footprints (edakit part import);
                             datasheets/: the datasheets edakit part fetch keeps (unless [project] datasheets names
                             another folder)

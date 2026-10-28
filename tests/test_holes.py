@@ -16,7 +16,7 @@ ANSWERS = Path(__file__).resolve().parent / "fixtures" / "easyeda"
 
 
 def dump(project, hole=(0.9, 0.9), **pad):
-    """pcb_geometry_main.json with the parts of the plan; J1's two pads plated with `hole` (None: an older dump)."""
+    """main.geometry.json with the parts of the plan; J1's two pads plated with `hole` (None: an older dump)."""
     cfg = project.config()
     geo = {r: {"footprint": "X", "bbox": [-MIL, -MIL, MIL, MIL], "pads": {"1": {"x": 0, "y": 0, "net": "",
                                                                               "tht": False}}}
@@ -25,9 +25,7 @@ def dump(project, hole=(0.9, 0.9), **pad):
                  "pads": {n: {"x": x * MIL, "y": 0, "net": "", "tht": True,
                               **({"hole": list(hole), "plated": True} if hole else {}), **pad}
                           for n, x in (("1", 1.0), ("2", -1.0))}}
-    f = project.root / "build" / "edakit" / "pcb_geometry_main.json"
-    f.parent.mkdir(parents=True, exist_ok=True)
-    f.write_text(json.dumps(geo))
+    (project.root / "hardware" / "boards" / "main.geometry.json").write_text(json.dumps(geo))
 
 
 def lead(project, **change):

@@ -385,7 +385,7 @@ def test_board_is_its_board_file(project):
     assert scripts.data_hash(cfg, "board:main") not in (first, scripts.ABSENT)
 
 
-MADE = {"footprints:main": "build/edakit/pcb_geometry_main.json", "mech:main": "build/edakit/mech_main.json",
+MADE = {"footprints:main": "hardware/boards/main.geometry.json", "mech:main": "build/edakit/mech_main.json",
         "routing:main": "build/edakit/route/main.ses", "firmware": "hardware/firmware.json"}
 
 

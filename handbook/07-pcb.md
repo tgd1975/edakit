@@ -10,7 +10,7 @@ all boards leave it out.
 ```bash
 edakit handover              # what the circuit hands over: state, sign-offs, what the plan must keep (14.1)
 edakit pcb parts --write     # parts of the board schematic -> PCB (no "Import Changes" dialog)
-edakit pcb dump              # footprint geometry -> <artifacts>/pcb_geometry_<board>.json
+edakit pcb dump              # footprint geometry -> hardware/boards/<board>.geometry.json, beside the board file
 edakit pcb plan              # offline: check the plan, preview PNG, net classes, mechanical model
 edakit pcb place --write     # offline: decoupling capacitors, pull and series resistors next to their host
 edakit pcb apply             # outline, holes, tooling holes, fixed parts locked; pads verified
@@ -123,6 +123,22 @@ is printed. A geometry file from before has no holes – dump again (it changes 
 Pro agree on the pads within 0.1 mil (eleven footprints of the reference project; one switch 1 mil); the boxes differ by
 up to 0.3 mm, because EasyEDA Pro measures the silkscreen of the placed part. Without a dump and without a cached
 footprint a planned part stays a finding.
+
+The dump lies beside the board file, with its name: `hardware/boards/main.toml` has `hardware/boards/main.geometry.json`.
+It is versioned with the board file and in the layout hash (8.2), so CI and a fresh clone have it – P-7 and P-8 judge
+the project's footprints there too, and the layout hash is the same. Commit it with the board file. Until October 2026
+`pcb dump` wrote it among the artifacts, `<artifacts>/pcb_geometry_<board>.json`, which are not versioned. Such a file
+is still read – by the plan, the checks, stage L and the layout hash – until it is moved, and `edakit check` (a note to
+P-7), `pcb plan` and the gate say how:
+
+```text
+NOTE    P-7  build/edakit/pcb_geometry_main.json: footprint geometry of board main among the artifacts, which are not
+             versioned – move it beside the board file and commit it: mv build/edakit/pcb_geometry_main.json
+             hardware/boards/main.geometry.json (the layout hash changes once, sign-offs with scope 'layout' lapse)
+```
+
+`pcb dump` moves it as well, and so does `pcb parts --write` when it measures new parts. When both files exist, the
+one beside the board file counts.
 
 **What the circuit hands over** (L-12) comes first. The circuit designer writes it into the graph, the PCB designer
 keeps it (14.1); `edakit handover` lists it:

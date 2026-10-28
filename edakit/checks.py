@@ -1169,6 +1169,8 @@ def run(design, cfg=None):
         if not check_holes(design, rep, footprint_geometry(design, cfg)):
             rep.notes.append(("P-7", "not run: no footprint geometry – edakit pcb dump once the parts are in the PCB, "
                                      "or edakit part import <LCSC> for the library's"))
+        from .pcb import move_notes        # a geometry still among the artifacts is read; how to move it
+        rep.notes += [("P-7", note) for note in move_notes(cfg)]
         check_formed(design, rep, cfg)
         stock.check(design, rep, cfg)
         order.check(design, rep, cfg)

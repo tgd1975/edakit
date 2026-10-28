@@ -253,9 +253,12 @@ class Export:
         art = root / "build" / "edakit"
         (art / "sim").mkdir(parents=True, exist_ok=True)
         (art / "route").mkdir()
-        for f, data in (("pcb_geometry_main.json", self.geo), ("sim/net_currents.json", self.currents),
+        if self.geo is not None:       # None: `pcb dump` never ran; it writes beside the board file
+            (root / "hardware" / "boards").mkdir(parents=True, exist_ok=True)
+            (root / "hardware" / "boards" / "main.geometry.json").write_text(json.dumps(self.geo))
+        for f, data in (("sim/net_currents.json", self.currents),
                         ("route/main_board.json", self.shapes and self.board_read())):
-            if data is not None:       # None: `pcb dump`, `edakit sim` or `route read` never ran
+            if data is not None:       # None: `edakit sim` or `route read` never ran
                 (art / f).write_text(json.dumps(data))
         if self.silk_memo is not None:
             (art / "silk_strings_main.json").write_text(json.dumps(self.silk_memo))
@@ -596,7 +599,7 @@ FAULTS = [
     ("a plan finding", lambda ex, p: board_file(p, 'C2 = "D1"', 'C2 = "J1"'),
      [("L-7", "fail", "C2: 12.9 mm from J1 (near_mm 6)")]),
     ("no footprint geometry", lambda ex, p: setattr(ex, "geo", None),
-     [("L-7", "fail", "pcb_geometry_main.json missing (edakit pcb dump)")]),
+     [("L-7", "fail", "main.geometry.json missing (edakit pcb dump)")]),
     # L-8
     ("a minus sign at the anode", lambda ex, p: ex.pcb["strings"][0].update(Text="−"),
      [("L-8", "fail", "'−' at (10.8, 10.9) mm: nearest pad D1.2 is anode")]),

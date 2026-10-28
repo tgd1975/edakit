@@ -235,9 +235,7 @@ def place_project(project, drop=("C1", "R1"), add="", geo=None):
         text = text.replace('C2 = { x = 29, y = 28, rot = 0, side = "top" }\n',
                             f'C2 = {{ x = 29, y = 28, rot = 0, side = "top" }}\n{add}')
     f.write_text(text)
-    out = project.root / "build" / "edakit" / "pcb_geometry_main.json"
-    out.parent.mkdir(parents=True, exist_ok=True)
-    out.write_text(json.dumps(geo or led_bar_geo()))
+    (project.root / "hardware" / "boards" / "main.geometry.json").write_text(json.dumps(geo or led_bar_geo()))
     return f
 
 
@@ -511,7 +509,7 @@ def test_two_mated_plugs_side_by_side(project):
     f.write_text(f.read_text().replace('SW1 = {', 'J2 = { x = 84, y = 19, rot = 90, side = "top" }\nSW1 = {'))
     geo = led_bar_geo()
     geo["J2"] = geo["J1"]
-    (project.root / "build" / "edakit" / "pcb_geometry_main.json").write_text(json.dumps(geo))
+    (project.root / "hardware" / "boards" / "main.geometry.json").write_text(json.dumps(geo))
     cfg = project.config()
     assert pcb.plan(cfg, cfg.board()) == ["J1: mated plug reaches into the mated plug of J2 (top)"]
 

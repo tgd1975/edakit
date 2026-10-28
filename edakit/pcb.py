@@ -1,8 +1,9 @@
 """PCB: placement plan, footprint geometry, parts and nets from the schematic without dialogs, fixed parts, outline,
 mounting and tooling holes, copper pours, EasyEDA's auto-layout.
 
-    edakit pcb dump [--ref U1,J1]   footprint geometry -> <artifacts>/pcb_geometry_<board>.json, through-hole pads
-                                    with their hole [w, l] in mm (P-7)
+    edakit pcb dump [--ref U1,J1]   footprint geometry -> <board file>.geometry.json beside the board file
+                                    (hardware/boards/<board>.geometry.json), versioned – the layout hash covers it;
+                                    through-hole pads with their hole [w, l] in mm (P-7)
                                     (turns every measured part to 0°/TOP and leaves it there – run apply afterwards)
     edakit pcb plan                 offline: check the plan (overlaps – under a part on pin headers only its pins,
                                     SMD parts within silk_overlap_mm –, outline, holes, THT pins under parts of the
@@ -55,14 +56,62 @@ def to_mil(v):
     return round(v * MIL_PER_MM, 3)
 
 
+GEOMETRY = ".geometry.json"     # the footprint geometry beside the board file: hardware/boards/main.geometry.json
+
+
+def geometry_home(cfg, board):
+    """Where `pcb dump` writes the footprint geometry: beside the board file, with its name (hardware/boards/main.toml:
+    hardware/boards/main.geometry.json) – versioned with it, so that CI and a fresh clone have the layout hash."""
+    f = cfg.resolve(board.file or f"hardware/boards/{board.name}.toml")
+    return f.with_name(f.stem + GEOMETRY)
+
+
+def unmoved_geometry(cfg, board):
+    """<artifacts>/pcb_geometry_<board>.json, where `pcb dump` wrote the geometry before it was versioned – while it
+    lies only there, else None."""
+    old = cfg.artifacts / f"pcb_geometry_{board.name}.json"
+    return old if old.is_file() and not geometry_home(cfg, board).exists() else None
+
+
 def geometry_file(cfg, board):
-    return cfg.artifact(f"pcb_geometry_{board.name}.json")
+    """The footprint geometry the plan, the checks and the layout hash read: the one beside the board file – until it
+    is moved there, the one from before among the artifacts."""
+    return unmoved_geometry(cfg, board) or geometry_home(cfg, board)
+
+
+def move_note(cfg, board):
+    """What edakit check, pcb plan and the gate say while the board's geometry lies only among the artifacts; None
+    once it is moved."""
+    if old := unmoved_geometry(cfg, board):
+        return (f"{cfg.relative(old)}: footprint geometry of board {board.name} among the artifacts, which are not "
+                f"versioned – move it beside the board file and commit it: mv {cfg.relative(old)} "
+                f"{cfg.relative(geometry_home(cfg, board))} (the layout hash changes once, sign-offs with scope "
+                "'layout' lapse)")
+    return None
+
+
+def move_notes(cfg):
+    """move_note of every made board."""
+    return [note for b in cfg.made().values() if (note := move_note(cfg, b))]
+
+
+def save_geometry(cfg, board, geo):
+    """Writes the geometry beside the board file; one from before that was read among the artifacts goes – it is
+    moved."""
+    f, moving = geometry_home(cfg, board), unmoved_geometry(cfg, board)
+    f.parent.mkdir(parents=True, exist_ok=True)
+    f.write_text(json.dumps(geo, indent=1, ensure_ascii=False))
+    if moving:
+        moving.unlink()
+        print(f"  {cfg.relative(moving)} moved beside the board file: commit {cfg.relative(f)} – the layout hash "
+              "covers it (it changes once, sign-offs with scope 'layout' lapse)")
+    return f
 
 
 def load_geometry(cfg, board):
     f = geometry_file(cfg, board)
     if not f.exists():
-        raise SystemExit(f"{f} is missing – run `edakit pcb dump` once the parts are in the PCB")
+        raise SystemExit(f"{cfg.relative(f)} is missing – run `edakit pcb dump` once the parts are in the PCB")
     return json.loads(f.read_text())
 
 
@@ -77,8 +126,8 @@ def plan_geometry(cfg, board, design, refs=None):
             pads = {n: {**p, "net": design.pin_net.get(f"{ref}.{n}", "")} for n, p in lib["pads"].items()}
             geo[ref] = {**lib, "pads": pads, "source": "library"}
     if not geo:
-        raise SystemExit(f"{f} is missing – run `edakit pcb dump` once the parts are in the PCB, or `edakit part "
-                         "import <LCSC>` for the library's footprints")
+        raise SystemExit(f"{cfg.relative(f)} is missing – run `edakit pcb dump` once the parts are in the PCB, or "
+                         "`edakit part import <LCSC>` for the library's footprints")
     return geo
 
 
@@ -650,6 +699,8 @@ def net_classes(cfg, board):
 def plan(cfg, board):
     design = Design.from_config(cfg)
     geo = plan_geometry(cfg, board, design)
+    if note := move_note(cfg, board):
+        print(f"  {note}")
     place, boxes, tht, unplaced, missing = build_plan(cfg, board, geo)
     problems = [f"{r}: in the plan but not in the footprint geometry (edakit pcb parts --write, then dump)"
                 for r in missing]
@@ -1079,8 +1130,7 @@ def dump(cfg, board, mcp, refs=None):
     out = json.loads(f.read_text()) if refs and f.exists() else {}
     out |= {c["designator"]: measure(mcp, c) for c in eda.list_pcb_components(mcp)
             if c.get("designator") and (not refs or c["designator"] in refs)}
-    f.write_text(json.dumps(out, indent=1, ensure_ascii=False))
-    print(f"{len(out)} parts -> {f}")
+    print(f"{len(out)} parts -> {save_geometry(cfg, board, out)}")
 
 
 def outline_arg(points):
@@ -1431,7 +1481,7 @@ def sync_parts(cfg, board, mcp, write=False):
         for c in eda.list_pcb_components(mcp):
             if c["designator"] in created:
                 geo[c["designator"]] = measure(mcp, c)
-        f.write_text(json.dumps(geo, indent=1, ensure_ascii=False))
+        save_geometry(cfg, board, geo)
     print(f"  PCB saved: {eda.save_pcb(mcp)}")
     return 0
 

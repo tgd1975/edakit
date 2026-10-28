@@ -151,13 +151,15 @@ def state_hash(cfg, ignore=None):
 
 
 def layout_files(cfg):
+    from ..pcb import geometry_file
     made = cfg.made()     # a bought board has no layout: no board file, no artwork, no footprint geometry
     files = [cfg.resolve(b.file) for b in made.values()]
     # the artwork the board files place ([[silk.art]]), each SVG once however often it is placed
     files += dict.fromkeys(cfg.resolve(a["svg"]) for b in made.values() for a in b.silk.get("art", [])
                            if "svg" in a)
     files += [cfg.resolve(f) for f in cfg.release.get("layout_files", [])]
-    return files + [cfg.artifacts / f"pcb_geometry_{b}.json" for b in made]
+    # the footprint geometry beside each board file; one not moved there yet where it lies (pcb.geometry_file)
+    return files + [geometry_file(cfg, b) for b in made.values()]
 
 
 def header(cfg):
@@ -744,6 +746,7 @@ def write_protocol(cfg, outdir, head, rows, sim, signoff, notes, decision, reaso
 
 
 def main(cfg, args):
+    from .. import pcb as pcbmod
     from ..sim import copper
     from ..sim import run as simrun
     try:        # [project] requirements: a file named there that is missing or not valid stops the gate, before a run
@@ -782,6 +785,7 @@ def main(cfg, args):
         stages_run |= set(WITH_EASYEDA)
         head.update(fab_hashes(cfg, outdir))
     signoff, notes = load_signoff(cfg, head, write=True)   # after stage F: sign-offs with scope 'fab' need its hash
+    notes += pcbmod.move_notes(cfg)        # a footprint geometry still among the artifacts: how to move it
     reqs = requirements.evaluate(entries, [*sim["checks"], *rows], signoff, stages_run)   # [] without the key
     decision, reasons = decide(rows, sim["checks"], signoff, stages_run, stages, reqs)
     if args.easyeda:

@@ -20,7 +20,7 @@ is run here.
 
 Names of edakit's data in reads and writes: graph, parts, sim (written by hand, edakit block, edakit part), board:<b>
 (the board file), project-library:<b> (EasyEDA's project library: schematic create, easyeda scripts), footprints:<b>
-(pcb_geometry_<b>.json: pcb dump), mech:<b> (pcb plan), routing:<b> (route), gerber:<b> and release (the gate),
+(<b>.geometry.json: pcb dump), mech:<b> (pcb plan), routing:<b> (route), gerber:<b> and release (the gate),
 firmware (edakit firmware, with [firmware]). Anything else is a path relative to edakit.toml: a folder holds the files
 in it, and an edakit file named by its path is its data (hardware/boards/<b>.toml is board:<b>). Each name has a hash
 of what edakit has of it offline (data_hash) – the project library none, it is in EasyEDA only.
@@ -125,11 +125,14 @@ class _Names:
     """Data names and paths as keys: ("graph", None), ("board", "tree"), ("file", "hardware/art/x.svg")."""
 
     def __init__(self, cfg):
+        from .pcb import geometry_home, unmoved_geometry
         self.cfg = cfg
         own = {cfg.graph: ("graph", None), cfg.sim_config: ("sim", None)}
         for b, board in cfg.boards.items():
             own[cfg.resolve(board.file)] = ("board", b)
-            own[cfg.artifacts / f"pcb_geometry_{b}.json"] = ("footprints", b)
+            own[geometry_home(cfg, board)] = ("footprints", b)        # beside the board file, where pcb dump writes
+            if old := unmoved_geometry(cfg, board):                   # the one from before, read until it is moved
+                own[old] = ("footprints", b)
             own[cfg.artifacts / f"mech_{b}.json"] = ("mech", b)
         if cfg.firmware is not None:
             own[cfg.resolve(cfg.firmware["out"])] = ("firmware", None)
@@ -474,7 +477,8 @@ def data_hash(cfg, name):
 
       graph, parts, sim   the files as the circuit hash reads them – graph and parts without [release] hash_ignore
       board:<b>           the board file
-      footprints:<b>      pcb_geometry_<b>.json, the geometry edakit pcb dump measures
+      footprints:<b>      the geometry edakit pcb dump measures, beside the board file (<b>.geometry.json) – one
+                          from before among the artifacts (pcb_geometry_<b>.json) until it is moved
       mech:<b>            mech_<b>.json of edakit pcb plan
       routing:<b>         the tracks and vias of edakit route: route/<b>.ses, and route/<b>_stitch.json where route
                           pours stitched islands with vias

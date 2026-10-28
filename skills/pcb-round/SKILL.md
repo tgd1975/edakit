@@ -61,7 +61,10 @@ describes (section 3); a list of parts or pads is fixed with `pcb parts --write`
    change.
 3. **EasyEDA** (start skill, claim EasyEDA):
    - New or swapped parts first: `edakit pcb parts --write`; then `edakit pcb dump` for their geometry if needed
-     (dump turns all parts to 0°/TOP – afterwards always apply and the auto-layout again). Before they are in the
+     (dump turns all parts to 0°/TOP – afterwards always apply and the auto-layout again). The geometry lies beside the
+     board file, `hardware/boards/<board>.geometry.json`, and is committed with it – the layout hash covers it, CI
+     reads it. One that still lies among the artifacts (`pcb_geometry_<board>.json`) is named by `edakit check` and
+     `pcb plan` with the `mv` that moves it; the next dump moves it too (handbook 7.4). Before they are in the
      PCB, `edakit part import <LCSC>` gives the plan of step 2 their library footprint; for a swapped part
      `edakit part diff OLD NEW` says how the new footprint lies over the old one (turn, shift, pad map). A footprint
      whose holes the project moves for leads formed by hand: `edakit pcb dump`, then `edakit check` – P-8 fails when

@@ -122,10 +122,11 @@ def test_layout_hash_covers_the_artwork(project):
 
 
 def test_a_board_without_artwork_keeps_its_layout_hash(project):
-    """Without [[silk.art]] the layout hash covers the same files in the same order as before the artwork joined it."""
+    """Without [[silk.art]] the layout hash covers the same files in the same order as before the artwork joined it:
+    the board file, then the footprint geometry beside it (step 1.8)."""
     cfg = project.config()
     assert gate.layout_files(cfg) == [project.root / "hardware" / "boards" / "main.toml",
-                                      cfg.artifacts / "pcb_geometry_main.json"]
+                                      project.root / "hardware" / "boards" / "main.geometry.json"]
 
 
 def test_regulatory_review_is_required_also_when_the_file_lacks_it(project):

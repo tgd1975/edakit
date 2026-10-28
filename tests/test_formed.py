@@ -54,9 +54,8 @@ def library(project, name, at, hole=0.7):
 
 
 def dump(project, at, ref="D10", name=STAR):
-    """pcb_geometry_main.json with the footprint of `ref` as placed: its holes at `at` (mm)."""
-    f = project.root / "build" / "edakit" / "pcb_geometry_main.json"
-    f.parent.mkdir(parents=True, exist_ok=True)
+    """main.geometry.json with the footprint of `ref` as placed: its holes at `at` (mm)."""
+    f = project.root / "hardware" / "boards" / "main.geometry.json"
     geo = json.loads(f.read_text()) if f.exists() else {}
     geo[ref] = {"footprint": name, "bbox": [-120, -120, 120, 120], "pads": pads(at)}
     f.write_text(json.dumps(geo))

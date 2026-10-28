@@ -145,15 +145,13 @@ def test_p1_compares_the_graph_with_the_symbol(project, library):
 
 
 def placed_geometry(project, without=()):
-    """pcb_geometry_main.json for every placed part of the example but `without`: 2 x 2 mm, one pad."""
+    """main.geometry.json for every placed part of the example but `without`: 2 x 2 mm, one pad."""
     cfg = project.config()
     side = 1 * MIL
     geo = {r: {"footprint": "X", "bbox": [-side, -side, side, side], "pads": {"1": {"x": 0, "y": 0, "net": "",
                                                                                    "tht": False}}}
            for r in cfg.board().place if r not in without}
-    f = project.root / "build" / "edakit" / "pcb_geometry_main.json"
-    f.parent.mkdir(parents=True, exist_ok=True)
-    f.write_text(json.dumps(geo))
+    (project.root / "hardware" / "boards" / "main.geometry.json").write_text(json.dumps(geo))
     return cfg
 
 
@@ -169,7 +167,7 @@ def test_plan_takes_the_library_geometry_of_a_part_not_yet_in_the_pcb(project, l
 
 def test_plan_without_a_dump_runs_on_the_library_geometry(project, library):
     cfg = project.config()
-    with pytest.raises(SystemExit, match="pcb_geometry_main.json is missing"):
+    with pytest.raises(SystemExit, match="hardware/boards/main.geometry.json is missing"):
         pcb.plan(cfg, cfg.board())                                  # as today
     run(project, "import", "C131337")
     problems = pcb.plan(cfg, cfg.board())
