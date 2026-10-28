@@ -17,6 +17,8 @@ Sources:
     sim:<max|min|one> <pattern>       the numeric actual of the simulation rows whose "ID scenario item check" matches
                                       the fnmatch pattern – the key the sign-off file's `match` uses; the result is the
                                       one `edakit sim` saved while its inputs are unchanged, else a new run
+    req:<ID>                          the text of a need or requirement of [project] requirements (N-2, R-4), on one
+                                      line; a draft as it stands. A dropped entry is G-19: it no longer holds
 A FORMAT after the source, e.g. "%.2f mA", formats the number (scaled to the prefix written after it); without one:
 three significant digits and the unit of the source (4.02 mA). [docs] decimal = "," writes numbers with a decimal comma. Documents and the schematic file are in no hash, so
 correcting a quoted number voids no sign-off. G-19 also runs in the gate's stage G, on the gate's own simulation.
@@ -31,7 +33,7 @@ import sys
 from fnmatch import fnmatch
 
 BLOCK = re.compile(r"<!--edakit\s+(.*?)\s*-->(.*?)<!--/edakit-->")
-PLACEHOLDER = re.compile(r"\{((?:graph|part|sim):[^{}]*)\}")
+PLACEHOLDER = re.compile(r"\{((?:graph|part|sim|req):[^{}]*)\}")
 FORMAT = re.compile(r"\s(%[-+ 0#]*\d*(?:\.\d+)?[diouxXeEfFgGs].*)$")
 NUMBER = re.compile(r"^\s*([-+]?(?:\d+\.?\d*|\.\d+)(?:[eE][-+]?\d+)?)\s*(\S*)\s*$")
 PREFIXES = [(1e9, "G"), (1e6, "M"), (1e3, "k"), (1.0, ""), (1e-3, "m"), (1e-6, "µ"), (1e-9, "n"), (1e-12, "p")]
@@ -93,7 +95,8 @@ class Sources:
     def __init__(self, cfg, design, sim=None):
         self.cfg, self.d, self._sim = cfg, design, sim
         self.decimal = cfg.docs_decimal
-        self.prefixes = {"graph": self.graph, "part": self.part, "sim": self.sim}
+        self.prefixes = {"graph": self.graph, "part": self.part, "sim": self.sim, "req": self.req}
+        self._entries = None     # req: the needs and requirements by ID, read once – or why the files do not read
 
     def graph(self, rest):
         name, dot, path = rest.partition(".")
@@ -145,6 +148,31 @@ class Sources:
             raise QuoteError(f"the rows have different units: {', '.join(sorted(units))}")
         value = (max if how == "max" else min)(x for x, _ in found)
         return value, units.pop()
+
+    def req(self, rest):
+        """A need or requirement by its ID: its text, its white space on one line – a block is one line. A draft as it
+        stands; a dropped entry no longer holds, like a part gone from the graph – its text stays in the file for the
+        history, where edakit req shows it."""
+        from . import requirements
+        eid, cfg = rest.strip(), self.cfg
+        if not cfg.requirements:
+            raise QuoteError("no [project] requirements in edakit.toml – req: quotes the requirements file it names "
+                             "(handbook 3.6)")
+        if not requirements.ENTRY_ID.fullmatch(eid):
+            raise QuoteError(f"{eid!r} is no ID of a need or requirement (N-<n>, R-<n>)")
+        if self._entries is None:
+            try:
+                self._entries = {e.id: e for e in requirements.load(cfg)}
+            except requirements.RequirementsError as e:
+                self._entries = " ".join(str(e).split())
+        if isinstance(self._entries, str):
+            raise QuoteError(f"the requirements file does not read: {self._entries}")
+        entry = self._entries.get(eid)
+        if entry is None:
+            raise QuoteError(f"no need or requirement {eid} in {', '.join(map(cfg.relative, cfg.requirements))}")
+        if entry.status == "dropped":
+            raise QuoteError(f"{eid} is dropped: {entry.reason} – quote the entry that holds now, or drop the quote")
+        return " ".join(entry.text.split()), ""
 
     def text(self, source, fmt=None):
         prefix, colon, rest = source.partition(":")

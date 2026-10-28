@@ -205,9 +205,9 @@ switching node).
 `{title, start}`), `power_flags` ({NET = "Ground"|"Power"}), `near` ({CAP = "PART"}), `stacked` (blocks whose trees
 stand one below the other), `[layout.notes]` ({block title = [lines]}), `[layout.pin_table]` (`component`, `block`,
 `prefix`, `notes` {NET = "function"}). A note may quote the design data: `{graph:R1.value}`,
-`{part:C90107.params.vrext_v}`, `{sim:max E-3 * D2 LED current*}`, optionally with a format (6.6). It changes no hash –
-the drawing explains the circuit, it is not the circuit. Without the file `edakit schematic draw` arranges the schematic
-by itself (6.5).
+`{part:C90107.params.vrext_v}`, `{sim:max E-3 * D2 LED current*}`, optionally with a format, a requirement's text
+`{req:R-1}` (6.6). It changes no hash – the drawing explains the circuit, it is not the circuit. Without the file
+`edakit schematic draw` arranges the schematic by itself (6.5).
 
 ## 10.4 The requirements file
 
@@ -278,7 +278,7 @@ Claude Code: `edakit … 2>&1 | cat`. The long commands – `route all`, `gate`,
 | `edakit order [--out DIR]` | – | graph, parts (`order`), board files (side), `[[extra]]`, `spare_pct` | `<artifacts>/order/` or DIR: `bom_<board>.csv` (the F-1 BOM; none for a bought board), `cart_<supplier>.csv`, `hand_assembly.md` |
 | `edakit part own PATH [--name N]` | – | the board's project at PATH: its datasheet, state, git, gate runs | `hardware/parts/<N>.json` |
 | `edakit sim [--json F] [--keep DIR]` | – | graph, parts, sim config, plugin; with `copper` `route/<board>.ses`, `route/<board>_board.json` and the board file's pours | `<artifacts>/sim/net_currents.json`, `<artifacts>/sim/result.json` (the whole result with the hash of its inputs, 6.6); with `--keep` each netlist and ngspice log, for a transient run its waveforms (`<run>.dat`) |
-| `edakit docs [--write]` | – | `[docs] files`, the schematic notes, graph, parts; for `sim:` the saved simulation result (or a new run) | with `--write` the value blocks of `[docs] files` |
+| `edakit docs [--write]` | – | `[docs] files`, the schematic notes, graph, parts; for `sim:` the saved simulation result (or a new run); for `req:` the files of `[project] requirements` | with `--write` the value blocks of `[docs] files` |
 | `edakit firmware [--check]` | – | graph, parts, `[firmware]`; for `state_sha256` the files of the circuit hash | `[firmware] out` (not with `--check`: exit 2 on drift) |
 | `edakit req [ID …]` | – | the files of `[project] requirements` (10.4) | – (prints the needs and requirements with status, binding and `verify` as written – the gate evaluates it, 8.7; with IDs the chain of each, 3.6); exit 1 without the key, with a file missing or not valid, or an ID not in the files |
 | `edakit scripts` | – | `[scripts]`, `[[release.stages]]`, `sim_plugin`, the board files' `[[silk.art]]`, `hardware/scripts.lock`, what the scripts read (8.6) | – (prints every script with kind, state – current, outdated, never run –, about, cmd and its last run; the order; exit 2 when one is outdated or never ran or the entries do not resolve, 1 when the lock cannot be read) |

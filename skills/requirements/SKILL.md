@@ -148,6 +148,10 @@ findings are the next round.
 - A new function starts here: its requirement first, then the skill circuit-design designs it.
 - The file is in the circuit hash (handbook 8.2): every change voids M-1 and M-6, and their agents sign again – the
   note names the requirements they found met (handbook 8.7).
+- Documents that quote an entry by its ID (`req:R-4` in a value block of `[docs] files`, handbook 6.6): `edakit docs`
+  names the quotes a change made stale, `edakit docs --write` fills them in – it writes the value blocks only. A
+  quote of a dropped entry stays G-19 until its document quotes the entry that holds now or drops the block: the
+  report names it.
 
 ## Report
 

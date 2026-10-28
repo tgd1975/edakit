@@ -152,7 +152,7 @@ drawing work from the graph alone. For a PCB, EasyEDA's board schematic stays th
 
 A number in a note or a document goes stale when the circuit changes: R1 swapped from 2 k to 4.7 k, the simulation
 gives 4.02 mA, and the note still says "I_OUT = … = 9.45 mA". So a note or a document names the source of the number
-and edakit fills it in.
+and edakit fills it in – a requirement's sentence the same way.
 
 - **Schematic notes** (`[layout.notes]`, 10.3) hold placeholders: `"I_OUT = {sim:max E-3 * D2 LED current*}"`.
   `schematic draw` and `schematic layout` fill them in when they draw; one that cannot be filled stays as written,
@@ -167,11 +167,27 @@ and edakit fills it in.
 | `graph:<part, net or cable>.<key>` | `graph:R1.value`, `graph:+5V.v` (a net's range, in V), further keys with dots |
 | `part:<parts entry>.<path>` | `part:C90107.params.vrext_v` – the unit follows the key's ending (`_v`, `_a`, `_ohm`, `_w`, `_f`, `_h`, `_hz`, `_c`, `_mm`, `_s`) |
 | `sim:max\|min\|one <pattern>` | the numeric actual of the simulation rows whose `ID scenario item check` matches the pattern – the key the sign-off file's `match` uses (8.2); `one` wants exactly one row |
+| `req:<ID>` | the `text` of a need or requirement of `[project] requirements` (3.6): `req:R-1`, `req:N-2` – on one line |
 
 A format after the source – `{sim:max E-3 * D2 LED current* %.1f mA}` – formats the number, scaled to the prefix
 written after it; without one: three significant digits and the unit of the source (`4.02 mA`). `[docs] decimal =
 ","` writes a decimal comma. The simulation result is the one `edakit sim` saved last
 (`<artifacts>/sim/result.json`) while its inputs are unchanged; otherwise edakit simulates once.
+
+**Requirements.** The README and the circuit description go on telling the story; where they say what the circuit
+must do, they quote the requirements file (3.6) by ID instead of copying the sentence:
+
+```markdown
+- **R-1** <!--edakit req:R-1-->With all eight LEDs on, the board draws at most 500 mA from J1 at 4.75 to 5.25 V.<!--/edakit-->
+```
+
+The quote is the entry's `text`, a line break in it as a space – a block is one line. A draft is quoted as it
+stands; when its text changes, the quote is stale like any other. A dropped entry is not quoted: it no longer holds,
+and a document that quotes it reads as if it did – G-19 names it with its reason; quote the entry that holds now, or
+drop the block. Its text stays in the requirements file, where `edakit req` shows it. Without `[project] requirements`
+a `req:` source is G-19 that names the key; a requirements file that does not read, G-19 with what is wrong in it.
+The requirements file is in the circuit hash (8.2), the documents are not: a changed requirement voids M-1 and M-6,
+`edakit docs --write` then brings the quotes along without voiding anything.
 
 ```bash
 edakit docs            # G-19 for every block that differs from its source and every source that does not exist; exit 2
