@@ -40,6 +40,7 @@ reason = "the TLC5916 and the Pico 2 want 5 V: a cell needs a boost converter, w
 [[requirement]]
 id = "R-1"
 text = "With all eight LEDs on, the board draws at most 500 mA from J1 at 4.75 to 5.25 V."
+source = "sim.json: the note of source J1"
 from = ["N-1", "USB 2.0: 500 mA per port"]
 binding = "must"
 verify = [{ rows = "E-3 * J1 current from the supply" },
@@ -161,11 +162,33 @@ def test_the_example_reads_without_problems(project):
     assert [e.id for e in entries] == ["N-1", "N-2", "N-3", "N-4", "R-1", "R-2", "R-3", "R-4"]
     r1 = next(e for e in entries if e.id == "R-1")
     assert r1.kind == "requirement" and r1.binding == "must" and r1.status == "accepted"
-    assert r1.from_ == ["N-1", "USB 2.0: 500 mA per port"]
+    assert r1.from_ == ["N-1", "USB 2.0: 500 mA per port"] and r1.source == "sim.json: the note of source J1"
     assert r1.verify == [("rows", "E-3 * J1 current from the supply"),
                          ("accept", "on the USB port of a laptop: all eight LEDs on, the port stays on")]
     n4 = next(e for e in entries if e.id == "N-4")
     assert n4.kind == "need" and n4.status == "dropped" and n4.reason.startswith("the TLC5916")
+
+
+def test_a_requirement_names_where_it_was_found(project, capsys):
+    """source on a requirement: where it was found, as on a need; from stays where it comes from."""
+    toml = with_requirements(project)
+    assert req(toml) == 0
+    assert re.search(r"R-1 +accepted +must +With all eight LEDs on.*\n +source: sim.json: the note of source J1\n"
+                     r" +from: N-1, USB 2.0: 500 mA per port\n", capsys.readouterr().out)
+    assert req(toml, "R-1") == 0
+    assert re.search(r"\n  source +sim.json: the note of source J1\n  from +N-1 ", capsys.readouterr().out)
+
+
+def test_a_missing_status_is_a_draft(project, tmp_path, capsys):
+    """Only the user sets accepted: an entry without status is a draft; a status that is written is still checked."""
+    text = LED_BAR.replace('source = "README.md"\nstatus = "accepted"\n', 'source = "README.md"\n')    # N-2
+    assert text != LED_BAR
+    toml = with_requirements(project, text)
+    assert req(toml) == 0
+    assert re.search(r"N-2 +draft +The LEDs can be read in a lit room", capsys.readouterr().out)
+    assert req(toml, "N-2") == 0
+    assert "N-2  need, draft" in capsys.readouterr().out
+    assert problems(tmp_path, REQUIREMENT.replace('status = "accepted"\n', "")) == []
 
 
 @pytest.mark.parametrize("kind", ["rows", "signoff", "script", "accept"])
@@ -184,8 +207,9 @@ def test_every_binding_reads(tmp_path, binding):
     ('[need]\nid = "N-1"\n', "need must be an array of tables: [[need]]"),
     (NEED + 'binding = "must"\n', "N-1: unknown key 'binding' (known: id, text, who, source, status, reason)"),
     (NEED + 'verify = [{ rows = "E-3 *" }]\n', "N-1: unknown key 'verify'"),
-    (REQUIREMENT + 'who = "the user"\n', "R-1: unknown key 'who' (known: id, text, from, binding, verify, status, "
-                                         "reason)"),
+    (REQUIREMENT + 'who = "the user"\n', "R-1: unknown key 'who' (known: id, text, source, from, binding, verify, "
+                                         "status, reason)"),
+    (REQUIREMENT + "source = 3\n", "R-1: source must be a text"),
     (REQUIREMENT + 'form = ["N-1"]\n', "R-1: unknown key 'form'"),
     # IDs: N-<n> for a need, R-<n> for a requirement
     (NEED.replace('"N-1"', '"R-1"'), "[[need]] 1: id 'R-1' – a need is N-<n>, e.g. N-1"),
@@ -197,7 +221,7 @@ def test_every_binding_reads(tmp_path, binding):
     (REQUIREMENT.replace('"must"', '"shall"'), "R-1: binding must be must, should or may, not 'shall'"),
     (REQUIREMENT.replace('binding = "must"\n', ""), "R-1: binding is missing (must, should or may)"),
     (NEED.replace('"accepted"', '"approved"'), "N-1: status must be draft, accepted or dropped, not 'approved'"),
-    (NEED.replace('status = "accepted"\n', ""), "N-1: status is missing (draft, accepted or dropped)"),
+    (NEED.replace('"accepted"', '""'), "N-1: status must be draft, accepted or dropped, not ''"),
     (REQUIREMENT + 'verify = [{ test = "x" }]\n', "R-1: verify 1: unknown kind 'test' (known: rows, signoff, script, "
                                                   "accept)"),
     (REQUIREMENT + 'verify = [{ rows = "E-3 *", accept = "x" }]\n', "R-1: verify 1: one kind per entry"),

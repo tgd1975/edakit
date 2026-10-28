@@ -221,6 +221,7 @@ status = "accepted"
 [[requirement]]
 id = "R-1"
 text = "With all eight LEDs on, the board draws at most 500 mA from J1 at 4.75 to 5.25 V."
+source = "sim.json: the note of source J1"
 from = ["N-1", "USB 2.0: 500 mA per port"]
 binding = "must"
 verify = [{ rows = "E-3 * J1 current from the supply" },
@@ -233,11 +234,11 @@ status = "accepted"
 | `id` | both, required | `N-<n>` in a `[[need]]`, `R-<n>` in a `[[requirement]]`, without a leading zero; unique across the files of the project, a variant's own included; stable – a dropped entry keeps its number |
 | `text` | both, required | a need in the words of those who want it; a requirement as one testable sentence: quantity with unit, limit, condition |
 | `who` | need | who wants it |
-| `source` | need | where it was found: a document, a decision |
+| `source` | both | where it was found: a document, a decision; on a requirement next to `from`, which says where it comes from |
 | `from` | requirement | a list of where it comes from: needs (`N-2`), decisions (`D-8`), a standard (`USB 2.0: 500 mA`), a sign-off (`M-6`) |
 | `binding` | requirement, required | `must`, `should` or `may` |
 | `verify` | requirement | a list of what tests it, one kind per entry: `{ rows = "…" }` rows of the gate protocol, a pattern over "ID scenario item check" as `accepted_warnings` match them (8.2); `{ signoff = "M-1" }` a manual check; `{ script = "…" }` a project script; `{ accept = "…" }` a step of the acceptance test. Whether it passes is not evaluated – `edakit req` shows it as written |
-| `status` | both, required | `draft` (written, not approved), `accepted` (only the user sets it), `dropped` |
+| `status` | both | `draft` (written, not approved – also an entry without `status`), `accepted` (only the user sets it), `dropped`; a value that is written must be one of the three |
 | `reason` | both | why; required with `dropped` |
 
 A variant – a project of its own with its own edakit.toml in a folder below the main project – names the main

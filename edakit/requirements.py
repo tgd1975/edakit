@@ -17,11 +17,12 @@ in the project's own documents. Two levels (handbook 3.6, 10.4):
       text            the need
       who             who wants it (optional)
       source          where it was found: a document, a decision (optional)
-      status          draft | accepted | dropped – the agent drafts, only the user accepts
+      status          draft | accepted | dropped – the agent drafts, only the user accepts; without the key a draft
       reason          why (required when dropped)
     [[requirement]]   one testable sentence: quantity, limit, condition
       id              R-<n>
       text            the sentence
+      source          where it was found, as for a need (optional)
       from            where it comes from: needs N-…, decisions D-…, a standard, a sign-off (a list, optional)
       binding         must | should | may
       verify          what tests it, a list of { rows = "<pattern over 'ID scenario item check'>" } (rows of the gate
@@ -44,7 +45,7 @@ from pathlib import Path
 
 PREFIX = {"need": "N", "requirement": "R"}           # [[need]] N-<n>, [[requirement]] R-<n>
 KEYS = {"need": ("id", "text", "who", "source", "status", "reason"),
-        "requirement": ("id", "text", "from", "binding", "verify", "status", "reason")}
+        "requirement": ("id", "text", "source", "from", "binding", "verify", "status", "reason")}
 STATUS = ("draft", "accepted", "dropped")
 BINDING = ("must", "should", "may")
 VERIFY = ("rows", "signoff", "script", "accept")
@@ -60,10 +61,10 @@ class Entry:
     kind: str                   # "need" or "requirement"
     id: str                     # N-<n> or R-<n>
     text: str
-    status: str                 # draft, accepted, dropped
+    status: str                 # draft (also without the key), accepted, dropped
     file: Path                  # the requirements file it stands in
     who: str = ""               # need: who wants it
-    source: str = ""            # need: where it was found
+    source: str = ""            # where it was found: a document, a decision
     from_: list = field(default_factory=list)    # requirement: the needs, decisions, standards, sign-offs it comes from
     binding: str = ""           # requirement: must, should, may
     verify: list = field(default_factory=list)   # requirement: [(kind, text)] – rows, signoff, script, accept
@@ -83,9 +84,9 @@ def _text(raw, key, required=False):
     return [f"{key} is missing"] if required and not raw[key].strip() else []
 
 
-def _choice(raw, key, choices):
+def _choice(raw, key, choices, required=True):
     if key not in raw:
-        return [f"{key} is missing ({_either(choices)})"]
+        return [f"{key} is missing ({_either(choices)})"] if required else []
     return [] if raw[key] in choices else [f"{key} must be {_either(choices)}, not {raw[key]!r}"]
 
 
@@ -118,12 +119,13 @@ def _entry(kind, i, raw, path):
     bad = [] if eid else [f"id is missing ({prefix}-<n>)" if "id" not in raw else
                           f"id {raw['id']!r} – a {kind} is {prefix}-<n>, e.g. {prefix}-1"]
     bad += [f"unknown key '{k}' (known: {', '.join(KEYS[kind])})" for k in raw if k not in KEYS[kind]]
-    bad += _text(raw, "text", required=True) + _choice(raw, "status", STATUS) + _text(raw, "reason")
+    bad += _text(raw, "text", required=True) + _text(raw, "source") + _text(raw, "reason")
+    bad += _choice(raw, "status", STATUS, required=False)            # without the key a draft
     reason = raw.get("reason", "")
     if raw.get("status") == "dropped" and isinstance(reason, str) and not reason.strip():
         bad.append("dropped – it needs a reason")
     if kind == "need":
-        bad += _text(raw, "who") + _text(raw, "source")
+        bad += _text(raw, "who")
     else:
         bad += _choice(raw, "binding", BINDING) + _verify(raw)
         refs = raw.get("from", [])
@@ -133,7 +135,7 @@ def _entry(kind, i, raw, path):
     problems = [f"{where}: {b}" for b in dict.fromkeys(bad)]
     if problems:
         return None, eid, problems
-    return Entry(kind, eid, raw["text"], raw["status"], Path(path), who=raw.get("who", ""),
+    return Entry(kind, eid, raw["text"], raw.get("status", "draft"), Path(path), who=raw.get("who", ""),
                  source=raw.get("source", ""), from_=list(raw.get("from", [])), binding=raw.get("binding", ""),
                  verify=[next(iter(v.items())) for v in raw.get("verify", [])], reason=raw.get("reason", "")), eid, []
 
@@ -213,7 +215,7 @@ NEED_COLUMN, REQUIREMENT_COLUMN = 18, 26     # where the text starts in the list
 
 
 def listing(cfg, entries):
-    """Every file with its needs and requirements: ID, status, binding, text; who and source, from, verify as written,
+    """Every file with its needs and requirements: ID, status, binding, text; who, source, from, verify as written,
     the reason."""
     lines = []
     for path in cfg.requirements:
@@ -228,6 +230,7 @@ def listing(cfg, entries):
         lines += [""] if needs and reqs else []
         for e in reqs:
             lines.append(f"  {e.id:<5} {e.status:<9} {e.binding:<7} {e.text}")
+            lines += labelled("source: ", [e.source], REQUIREMENT_COLUMN) if e.source else []
             lines += labelled("from: ", [", ".join(e.from_) or "–"], REQUIREMENT_COLUMN)
             lines += labelled("verify: ", evidence(e), REQUIREMENT_COLUMN)
             lines += labelled("reason: ", [e.reason], REQUIREMENT_COLUMN) if e.reason else []
@@ -238,7 +241,8 @@ def listing(cfg, entries):
 
 def chain(cfg, entries, eid):
     """The chain of one entry, None when it is not in the files. A requirement: where it comes from, the requirement,
-    what verifies it. A need: who and where, the need, the requirements that name it in from with their verify."""
+    what verifies it – where it was found first, if it says. A need: who and where, the need, the requirements that
+    name it in from with their verify."""
     by_id = {e.id: e for e in entries}
     e = by_id.get(eid)
     if e is None:
@@ -247,6 +251,7 @@ def chain(cfg, entries, eid):
     if e.kind == "requirement":
         refs = [f"{r}  {state(by_id[r])}: {by_id[r].text}" if r in by_id else
                 f"{r}  not in the requirements file" if ENTRY_ID.fullmatch(r) else r for r in e.from_]
+        lines += labelled(f"{'source':<8}", [e.source], 2) if e.source else []
         lines += labelled(f"{'from':<8}", refs or ["–"], 2)
         lines += labelled(f"{'text':<8}", [e.text], 2)
         lines += labelled(f"{'reason':<8}", [e.reason], 2) if e.reason else []

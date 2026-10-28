@@ -171,12 +171,13 @@ levels, along the gap between a wish and a circuit:
 | need | N-… | what someone wants, in their words: who, in which situation, what for | N-1 "The bar runs from a USB charger or from the USB port of a laptop." |
 | requirement | R-… | one testable sentence with quantity, limit and condition, bound as `must`, `should` or `may` | R-1 "With all eight LEDs on, the board draws at most 500 mA from J1 at 4.75 to 5.25 V." |
 
-`from` says where a requirement comes from: a need, a decision (D-8), a standard (USB 2.0: 500 mA), a sign-off
-(M-6). `verify` says what tests it: rows of the gate protocol, a manual check, a project script, a step of the
-acceptance test. The file covers the circuit only – what the boards must do and withstand; what firmware and mechanics
-must do stays in the project's own documents. IDs are stable, as in the rule catalog: a requirement that no longer
-holds stays in the file with `status = "dropped"` and its `reason`. Claude drafts (`status = "draft"`), only the user
-sets `accepted`; a change to an accepted requirement is a decision in the decision log.
+`source` says where an entry was found – a document, a decision –, `from` where a requirement comes from: a need, a
+decision (D-8), a standard (USB 2.0: 500 mA), a sign-off (M-6). `verify` says what tests it: rows of the gate
+protocol, a manual check, a project script, a step of the acceptance test. The file covers the circuit only – what the
+boards must do and withstand; what firmware and mechanics must do stays in the project's own documents. IDs are
+stable, as in the rule catalog: a requirement that no longer holds stays in the file with `status = "dropped"` and its
+`reason`. Claude drafts – `status = "draft"`, which is also what an entry without `status` is –, only the user sets
+`accepted`; a change to an accepted requirement is a decision in the decision log.
 
 ```bash
 edakit req        # needs and requirements: status, binding, and the evidence as written in verify
