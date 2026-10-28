@@ -142,6 +142,17 @@ def test_regulatory_review_is_required_also_when_the_file_lacks_it(project):
     assert d == "NOT RELEASED" and "M-6" in reasons[0]
 
 
+def test_without_a_sign_off_file_every_required_check_is_open(project):
+    """No hardware/signoff.json at all: nothing is signed, and M-1, M-5 and M-6 are open as with a file that lacks them
+    – a missing file must not let a release past its required checks."""
+    (project.root / "hardware" / "signoff.json").unlink()
+    loaded, notes = gate.load_signoff(project.config(), {"state_sha256": None, "layout_sha256": None})
+    assert {m["id"]: m["done_by"] for m in loaded["manual"]} == {"M-1": None, "M-5": None, "M-6": None}
+    assert any("signoff.json missing" in n for n in notes)
+    d, reasons = gate.decide(rows("pass"), [], loaded, ALL, gate.STAGES)
+    assert d == "NOT RELEASED" and all(sid in " ".join(reasons) for sid in ("M-1", "M-5", "M-6"))
+
+
 def gate_run(project, monkeypatch):
     """`edakit gate` offline on the project; the protocol."""
     from edakit import cli

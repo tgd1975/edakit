@@ -242,11 +242,11 @@ def load_signoff(cfg, head, write=False):
     the old and new hash go into `rehashed` – into the file only with write (the gate)."""
     from .. import scripts
     path = cfg.signoff
-    if not path.exists():
-        return {"manual": [], "accepted_warnings": [], "lapsed_warnings": []}, [f"{path.name} missing – no sign-offs"]
-    s = json.loads(path.read_text(encoding="utf-8"))
-    notes, valid = [], {"decision": True}
-    if entry := rehash(cfg, s, head):
+    missing = not path.exists()          # no file: nothing is signed, and every required check is open
+    s = {} if missing else json.loads(path.read_text(encoding="utf-8"))
+    notes = [f"{path.name} missing – no sign-offs; the required checks are open"] if missing else []
+    valid = {"decision": True}
+    if not missing and (entry := rehash(cfg, s, head)):
         old, new = entry["state_sha256"]
         s["state_sha256"] = new
         s.setdefault("rehashed", []).append(entry)
@@ -263,7 +263,7 @@ def load_signoff(cfg, head, write=False):
                              "(no fab_sha256) and do not count")
             continue
         valid[scope] = s.get(key) == head.get(key)
-        if not valid[scope] and (scope != "fab" or scope in used or key in s):
+        if not (missing or valid[scope]) and (scope != "fab" or scope in used or key in s):
             notes.append(f"{path.name}: sign-offs with scope '{scope}' belong to another state ({key}) and do not count")
     manual = [m if valid.get(m.get("scope", "circuit")) else {**m, "done_by": None} for m in s.get("manual", [])]
     team = scripts.agents(cfg)          # [agents.<name>]: what the project's agents sign, held to them
