@@ -63,7 +63,9 @@ part of the class: read its result and ask the rest.
 - **What an off-board module brings** (graph): a plugged-in module or breakout board is a black box in the graph – its
   USB-C CC resistors, its VBUS diode or fuse, its regulator. What does each mean for the board: termination, a
   back-feed path, a second regulator on a rail? G-14 tests the termination of a module's receptacle from
-  `params.usb_c.cc` in its entry; the VBUS path and the regulator no check sees.
+  `params.usb_c.cc` in its entry; the VBUS path and the regulator no check sees. A board bought and wired on a cable
+  belongs in the graph as a board with `bought = true` (handbook 4.5) – ask for it where the project keeps one in
+  prose or in a lumped source resistance only.
 
 Decided items (numbered decisions) you question only with a concrete technical reason, naming the number. Name gold
 plating as such: if something does not matter for the quantity and the purpose, say so.

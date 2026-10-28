@@ -274,7 +274,7 @@ def mark_nc(mcp, comps, placed):
 
 
 def create(cfg, args):
-    board = cfg.board(args.board)
+    board = cfg.board(args.board, made=True)
     design = Design.from_config(cfg)
     comps, nets = design.board_comps(board.name), design.board_nets(board.name)
     if args.only:
@@ -407,7 +407,7 @@ def check_pins(mcp, graph_comps, sch, graph_nets, rep):
 
 def check(cfg, args):
     """Read only (it activates the pages, though). Exit 0 = same as the graph, 2 = differences, 1 = error."""
-    board = cfg.board(args.board)
+    board = cfg.board(args.board, made=True)
     design = Design.from_config(cfg)
     graph_comps, graph_nets = design.board_comps(board.name), design.board_nets(board.name)
     name = args.schematic or board.template
@@ -454,7 +454,7 @@ def check(cfg, args):
 def copy(cfg, args):
     """Copy a schematic in seconds instead of generating it for minutes (DMT_Schematic.copySchematic copies parts,
     wires, net names and no-connect markers). Replaces the target unless a board hangs on it."""
-    board = cfg.board(args.board)
+    board = cfg.board(args.board, made=True)
     source, target = args.source or board.template, args.target or board.schematic
     if source == target:
         return eda.die("source and target are the same")

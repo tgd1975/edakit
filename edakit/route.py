@@ -2134,7 +2134,7 @@ def pours(cfg, board, rules, mcp, data=None, routes=None, stitch_file=None, regi
 
 
 def main(cfg, args):
-    board = cfg.board(args.board)
+    board = cfg.board(args.board, made=True)
     rules = Rules(board, args.clearance)
     if rules.joint_keep and cfg.graph.exists():
         from .design import load_graph

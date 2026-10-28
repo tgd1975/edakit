@@ -3,7 +3,7 @@ and check P-5 (every bought part has a supplier).
 
     edakit order [--out DIR]          default <artifacts>/order/
 
-    bom_<board>.csv        the assembler's BOM, the file F-1 writes
+    bom_<board>.csv        the assembler's BOM, the file F-1 writes – none for a bought board (bought = true)
     cart_<supplier>.csv    LCSC in its BOM tool's columns "LCSC Part Number,Quantity,Comment"; any other supplier
                            "Code,Quantity,Item,Designators"
     hand_assembly.md       per board the parts fitted by hand (designator, part, side, supplier), and the items off the
@@ -147,7 +147,7 @@ def hand_assembly(cfg, design, lost):
     hand = set(bought_by_hand(design))
     for b in cfg.boards.values():
         mine = sorted((d for d in hand if design.comps[d].get("board") == b.name), key=natural_key)
-        L.append(f"## Board {b.name} ({b.title})\n")
+        L.append(f"## Board {b.name} ({b.title}){' – bought, nobody assembles it' if b.bought else ''}\n")
         if not mine:
             L.append("Nothing by hand.\n")
             continue
@@ -197,6 +197,9 @@ def main(cfg, args):
     for old in out.glob("cart_*.csv"):     # a supplier no line names any more leaves no cart behind
         old.unlink()
     for b in cfg.boards.values():
+        if b.bought:              # nobody assembles it: no BOM; its parts are in the carts and hand_assembly.md
+            (out / f"bom_{b.name}.csv").unlink(missing_ok=True)
+            continue
         bom = fab.bom_rows(design, b)
         fab.write_bom(bom, out / f"bom_{b.name}.csv")
         print(f"bom_{b.name}.csv: {len(bom)} lines for the assembler ({cfg.quantity} boards)")

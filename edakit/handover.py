@@ -145,7 +145,7 @@ def main(cfg, args):
     bad = problems(design)
     for p in bad:
         print(f"  ! G-1 {p}")
-    boards = [cfg.board(args.board).name] if args.board else list(cfg.boards)
+    boards = [cfg.board(args.board, made=True).name] if args.board else list(cfg.made())   # the layout part
     for line in sheet(cfg, design, boards):
         print(line)
     return 2 if bad else 0

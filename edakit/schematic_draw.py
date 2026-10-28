@@ -691,7 +691,7 @@ def render(sheet, size, syms, power, ground, title_lines):
 
 
 def main(cfg, args):
-    board = cfg.board(args.board)
+    board = cfg.board(args.board, made=True)
     design = Design.from_config(cfg)
     comps = design.board_comps(board.name)
     if not comps:

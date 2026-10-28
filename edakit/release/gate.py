@@ -145,12 +145,13 @@ def state_hash(cfg, ignore=None):
 
 
 def layout_files(cfg):
-    files = [cfg.resolve(b.file) for b in cfg.boards.values()]
+    made = cfg.made()     # a bought board has no layout: no board file, no artwork, no footprint geometry
+    files = [cfg.resolve(b.file) for b in made.values()]
     # the artwork the board files place ([[silk.art]]), each SVG once however often it is placed
-    files += dict.fromkeys(cfg.resolve(a["svg"]) for b in cfg.boards.values() for a in b.silk.get("art", [])
+    files += dict.fromkeys(cfg.resolve(a["svg"]) for b in made.values() for a in b.silk.get("art", [])
                            if "svg" in a)
     files += [cfg.resolve(f) for f in cfg.release.get("layout_files", [])]
-    return files + [cfg.artifacts / f"pcb_geometry_{b}.json" for b in cfg.boards]
+    return files + [cfg.artifacts / f"pcb_geometry_{b}.json" for b in made]
 
 
 def header(cfg):
@@ -351,10 +352,19 @@ def stage_custom(cfg, outdir, step=None):
     return rows, run
 
 
+def bought_row(stage, sid, board):
+    """The information row of a stage that leaves a bought board out."""
+    return {"stage": stage, "id": sid, "item": board.name, "check": "bought board – no schematic, PCB or manufacturing "
+            "files", "result": "info"}
+
+
 def stage_schematic(cfg, outdir):
     from .. import schematic
     rows = []
     for board in cfg.boards.values():
+        if board.bought:
+            rows.append(bought_row("S", "S-2", board))
+            continue
         out = outdir / f"schematic_{board.name}.json"
         args = argparse.Namespace(board=board.name, schematic=None, no_pins=False, json=str(out), verbose=False, wait=90)
         code = schematic.check(cfg, args)
@@ -376,7 +386,8 @@ def stage_fab(cfg, outdir, step=None):
     rows = []
     d = outdir / "fab"
     d.mkdir(exist_ok=True)
-    for board in cfg.boards.values():
+    rows += [bought_row("L", "L", b) for b in cfg.boards.values() if b.bought]
+    for board in cfg.made().values():
         if step:  # one step per board: with EasyEDA up to five minutes each
             step(f"L/F board and manufacturing files: {board.name}")
         else:
@@ -397,7 +408,7 @@ def fab_hashes(cfg, outdir):
     """fab_method, fab_layers per board and fab_sha256 of this run's manufacturing files (stage F)."""
     from . import fab
     try:
-        layers = {b: fab.fab_layers(outdir / "fab" / b, b) for b in cfg.boards}
+        layers = {b: fab.fab_layers(outdir / "fab" / b, b) for b in cfg.made()}
     except Exception as e:   # unreadable files: F-4/F-5 name them; the sign-offs with scope 'fab' then do not count
         print(f"  fab hash not computed: {e}", file=sys.stderr)
         return {}
@@ -430,7 +441,7 @@ def write_manifest(cfg, outdir, head, decision):
     superseded by it."""
     fab = outdir / "fab"
     files = {}
-    for b in cfg.boards:
+    for b in cfg.made():
         for pattern in UPLOAD:
             f = fab / b / pattern.format(b=b)
             if f.exists():
@@ -601,10 +612,12 @@ def write_protocol(cfg, outdir, head, rows, sim, signoff, notes, decision, reaso
         by_stage[r["stage"]][r["result"]] += 1
     for c in sim["checks"]:
         by_stage["E"][c["result"]] += 1
+    bought = ", ".join(name for name, b in cfg.boards.items() if b.bought)
     L = [f"# Test protocol – release check {cfg.project}\n", "| | |\n|---|---|",
          f"| Date | {head['time']} |", f"| Run by | {head['tester']} |",
          f"| Object | `{cfg.relative(cfg.graph)}` v{head['graph_version']} ({head['graph_date']}), boards "
-         f"{', '.join(cfg.boards)} in EasyEDA project {cfg.project} |",
+         f"{', '.join(cfg.made())} in EasyEDA project {cfg.project}"
+         f"{'; bought, not made: ' + bought if bought else ''} |",
          f"| SHA-256 graph | `{head['graph_sha256']}` |",
          f"| SHA-256 circuit | `{head['state_sha256']}` (graph, parts database, simulation config) |",
          f"| SHA-256 layout | `{head['layout_sha256']}` (board files, artwork, layout files, footprint geometry) |",
@@ -723,7 +736,7 @@ def main(cfg, args):
     design = Design.from_config(cfg)
     custom = [(st["id"], st["name"], st.get("about", " ".join(st["cmd"]))) for st in cfg.release.get("stages", [])]
     stages = STAGES[:3] + custom + STAGES[3:]
-    step = eda.Steps(2 + len(custom) + (1 + len(cfg.boards) if args.easyeda else 0))
+    step = eda.Steps(2 + len(custom) + (1 + len(cfg.made()) if args.easyeda else 0))
     step("P/G parts and graph")
     rows, g_json = stage_graph(cfg, design)
     (outdir / "graph_checks.json").write_text(json.dumps(g_json, indent=1, ensure_ascii=False) + "\n", encoding="utf-8")

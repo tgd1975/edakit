@@ -167,7 +167,7 @@ def resistors_to(d, net, targets):
     return out
 
 
-def check_structure(d, rep, boards):
+def check_structure(d, rep, boards, bought=()):
     g = d.graph
     for des, n in Counter(c["designator"] for c in g["components"]).items():
         if n > 1:
@@ -198,6 +198,8 @@ def check_structure(d, rep, boards):
             rep.error("G-1", f"{des}.{p} in nc but not a pin")
         if boards and c.get("board") not in boards:
             rep.error("G-1", f"{des}: 'board' must be one of {sorted(boards)} (edakit.toml [boards])")
+        if c.get("board") in bought and c.get("bom") is not False:
+            rep.error("G-1", f"{des}: on the bought board {c['board']} – nobody assembles it: bom: false")
     for ref, n in used.items():
         if n > 1:
             rep.error("G-1", f"{ref} used in {n} nets")
@@ -1027,7 +1029,7 @@ def run(design, cfg=None):
     checks = design.graph.get("checks") or {}
     sim = rules.load_sim(cfg) if cfg else None   # sources (G-16) and the lowest ambient (G-17)
     joined = design.joined()   # nets joined by 0 Ω bridges as one net
-    check_structure(design, rep, set(cfg.boards) if cfg else set())
+    check_structure(design, rep, set(cfg.boards) if cfg else set(), set(cfg.boards) - set(cfg.made()) if cfg else ())
     check_pin_locks(design, rep, checks, cfg.root if cfg else ".")
     check_domains(design, rep)
     check_inputs(joined, rep)

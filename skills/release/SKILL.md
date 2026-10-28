@@ -47,7 +47,7 @@ Concept: `${CLAUDE_PLUGIN_ROOT}/handbook/08-release-gate.md`.
 The MCP server cannot order on purpose. Checklist for the user:
 
 - [ ] `edakit release verify <the files about to be uploaded>` says every file is of the current release (exit 0) –
-      per board `gerber_<b>.zip`, `bom_<b>.csv`, `cpl_<b>.csv`
+      per made board `gerber_<b>.zip`, `bom_<b>.csv`, `cpl_<b>.csv` (a bought board, `bought = true`, has none)
 - [ ] Assembly type matches `[release] assembly` (Economic: one side, SMD; two SMD sides or a "Standard Only" part
       need Standard PCBA – `assembly.pcba`, P-4); bake set when P-4 warns about MSL ≥ 5
 - [ ] The form as `fab/<b>/order.md` of the released run says (with `[order]` in the board file; F-6 checked it):
@@ -58,7 +58,8 @@ The MCP server cannot order on purpose. Checklist for the user:
       `polarity_<b>.png`), no missing part in the BOM tool, price, and the datasheet points section 6 lists under
       "after uploading"; then sign M-2
 - [ ] The cart against `edakit cost` – class, fees and parts; a difference of more than a few dollars has a reason
-- [ ] Parts that do not come from JLCPCB (hand-soldered, cables, enclosure) ordered in the same go: `edakit order`
+- [ ] Parts that do not come from JLCPCB (hand-soldered, cables, enclosure, a bought board and what is soldered onto
+      it) ordered in the same go: `edakit order`
       writes a cart per supplier and `hand_assembly.md` for all sets, with spares and minimum quantities
 
 After delivery: acceptance test of every board (M-4), with the datasheet points section 6 of the protocol lists

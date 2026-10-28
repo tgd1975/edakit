@@ -245,10 +245,24 @@ out. A USB-C receptacle on such a board is checked by G-14 in one of two ways:
 - its receptacle inside the board, CC lines no pins of the entry (an MCU module with USB-C on board): `params.usb_c`
   says what the board has – `rd_5k1` and `controller` pass, `none` fails.
 
-A bought board on a cable – a breakout in an enclosure wired to the board's power connector – has no place in the
-graph yet: every board of `[boards]` is one edakit makes, with schematic, PCB and manufacturing files in the gate.
-Its supply goes into sim.json as the source at your connector (5.1), and its CC termination is a question for the
-electrical review (M-1) until it is.
+A bought board on a cable – a breakout in an enclosure wired to the board's power connector – is a board of its own
+that nobody makes:
+
+```toml
+[boards.usb]                 # Soldered 333011 on the cable W1 to J1 – bought, nobody draws it
+title = "USB-C breakout"
+bought = true                # no template, schematic, pcb or file: there is nothing to draw (10.1)
+```
+
+Its parts are components with `"board": "usb"` and `"bom": false` – the breakout with the eyes it brings out, and what
+you solder onto it, such as the two 5.1 kΩ from CC1 and CC2 to GND; G-1 wants `bom: false` on every one, nobody
+assembles them. A cable joins it to your connector (`cables`, 3.1) with the resistance of its wires. The checks and the
+simulation see it like any board: G-14 the CC eyes, G-17 the cable's rating, and sim.json's source sits at the
+breakout's connector, with the cable in the path (5.1). Nobody draws it: the gate's stages S and L/F leave it out with
+an information row each, the manifest, the `fab` hash, the layout hash and so the layout review M-5 cover the made
+boards (8.1, 8.2), and the commands that make or read a layout refuse it with one line (`--board usb`) or skip it.
+`edakit order` writes no BOM for it and puts its parts into the carts and under its board, marked bought, in
+`hand_assembly.md`; `edakit cost` prices no PCB and no assembly for it (8.4).
 
 **Without an edakit project** – a perfboard, an older board, a part from the bin, something made by hand – the user is
 the datasheet. The skill `own-part` asks for pins, supply range and current once, has what nobody knows measured, and

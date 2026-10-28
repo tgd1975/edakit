@@ -283,7 +283,7 @@ def estimate(cfg, board=None):
     sides = cfg.release.get("assembly", {}).get("sides", ["top", "bottom"])
     override = (cfg.cost or {}).get("pcb_price")
     boards = {}
-    for b in ([cfg.board(board)] if board else cfg.boards.values()):
+    for b in ([cfg.board(board, made=True)] if board else cfg.made().values()):   # a bought board: no PCB, no PCBA
         size = None
         if b.outline:
             xs, ys = [p[0] for p in b.outline], [p[1] for p in b.outline]

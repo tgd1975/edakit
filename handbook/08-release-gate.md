@@ -30,6 +30,10 @@ Before each stage – each project stage, and with `--easyeda` each board of sta
 | L – Board | PCB = graph and plan, copper from the Gerber files, the circuit's hand-over kept, pads apart, silkscreen as printed, hand-soldered joints clear | L-1 … L-18 |
 | F – Manufacturing | BOM, stock, pick and place, Gerber set, order settings | F-1 … F-6 |
 
+A bought board on a cable (`bought = true`, 4.5) is in stages P, G and E like any board. Stages S and L/F leave it out
+with one information row each (`S-2` and `L`: "bought board – no schematic, PCB or manufacturing files"); F-4, the
+manifest and the protocol header ("bought, not made: usb") count the made boards only.
+
 **Stage L** (per board, `edakit fab`):
 
 | Check | What | Why it exists |
@@ -101,12 +105,12 @@ Every run records two hashes in the protocol header, and a run with stage F a th
 - **circuit** (`state_sha256`): graph (with its ground net and check settings), parts database, simulation config
   (and plugin, `[release] state_files`)
 - **layout** (`layout_sha256`): the board files with the artwork they place (`[[silk.art]]`), the footprint geometry
-  (and `[release] layout_files`)
-- **fab** (`fab_sha256`): what the manufacturer builds from, per board – every Gerber layer of `fab/<board>/gerber/`
-  rasterised at 0.02 mm as L-2 does, in the frame of the board outline (documentation and drill-drawing layers left
-  out: nobody builds from them), the drill hits (both ends, diameter) rounded to 1 µm and sorted, the rows of
-  `bom_<b>.csv` and `cpl_<b>.csv` sorted; with the method (`fab_method`, "raster 0.02 mm v1"), so that a new method
-  shows. The manifest has it with the hash per board and file (`fab_layers`).
+  (and `[release] layout_files`) – of the made boards; a bought board has none
+- **fab** (`fab_sha256`): what the manufacturer builds from, per made board – every Gerber layer of
+  `fab/<board>/gerber/` rasterised at 0.02 mm as L-2 does, in the frame of the board outline (documentation and
+  drill-drawing layers left out: nobody builds from them), the drill hits (both ends, diameter) rounded to 1 µm and
+  sorted, the rows of `bom_<b>.csv` and `cpl_<b>.csv` sorted; with the method (`fab_method`, "raster 0.02 mm v1"), so
+  that a new method shows. The manifest has it with the hash per board and file (`fab_layers`).
 
 The raw files differ on every export (a date comment, other aperture numbers, another order of objects), the layout
 hash changes with a comment in a board file and does not change when edakit's code, a router option or EasyEDA's pour
@@ -285,7 +289,8 @@ component's `supplier`, else the first supplier of its entry's `order`, else LCS
 up to the supplier's minimum and pack size (`moq`, `step` in `order` or the item). The LCSC cart has the columns of its
 BOM tool ("LCSC Part Number, Quantity, Comment"), the others "Code, Quantity, Item, Designators". A `C99…` number is
 an EasyEDA library entry that LCSC does not sell: no cart line. P-5 warns about a part bought separately that names no
-supplier – also one that has only such a number.
+supplier – also one that has only such a number. A bought board (`bought = true`, 4.5) gets no BOM: its parts are in
+the carts and in `hand_assembly.md` under the board, marked bought; `edakit cost` prices no PCB and no assembly for it.
 
 **The order form as data.** The form fields that depend on the board go into `[order]` of the board file (10.2):
 `finish`, `mark` (`"default"` – JLCPCB prints its number anywhere, `"specify"` – at the placeholder, `"remove"`),

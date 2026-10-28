@@ -300,6 +300,33 @@ def test_order_keys(tmp_path):
             _board("b", {}, {"order": order})
 
 
+def test_bought_key(tmp_path):
+    """#82: [boards.<name>] bought = true – a board nobody draws or assembles: no EasyEDA documents, no board file."""
+    toml = tmp_path / "edakit.toml"
+    toml.write_text('[project]\nname = "t"\n[boards.main]\n')
+    assert load(toml).board().bought is False                             # no key: the board is made, as before
+    toml.write_text('[project]\nname = "t"\n[boards.main]\n[boards.usb]\nbought = true\n')
+    cfg = load(toml)
+    assert cfg.boards["usb"].bought and list(cfg.boards) == ["main", "usb"] and list(cfg.made()) == ["main"]
+    assert cfg.board(made=True).name == "main" and cfg.board("usb").name == "usb"
+    with pytest.raises(ConfigError, match=r"^board usb is bought \(bought = true in edakit.toml \[boards.usb\]\)"):
+        cfg.board("usb", made=True)
+    for key in ("template", "schematic", "pcb", "file"):
+        toml.write_text(f'[project]\nname = "t"\n[boards.main]\n[boards.usb]\nbought = true\n{key} = "usb"\n')
+        with pytest.raises(ConfigError, match=rf"\[boards.usb\] {key}: a bought board is not drawn – no schematic, "
+                                              "PCB or board file"):
+            load(toml)
+    toml.write_text('[project]\nname = "t"\n[boards.main]\n[boards.usb]\nbought = "yes"\n')
+    with pytest.raises(ConfigError, match=r"\[boards.usb\] bought: true or false"):
+        load(toml)
+    toml.write_text('[project]\nname = "t"\n[boards.main]\n[boards.usb]\nbought = true\n')
+    (tmp_path / "hardware" / "boards").mkdir(parents=True)
+    (tmp_path / "hardware" / "boards" / "usb.toml").write_text("[order]\n")
+    with pytest.raises(ConfigError, match=r"hardware/boards/usb.toml: a bought board \(bought = true in "
+                                          r"\[boards.usb\]\) has no board file"):
+        load(toml)
+
+
 def test_firmware_table_is_opt_in(tmp_path):
     (tmp_path / "edakit.toml").write_text('[project]\nname = "t"\n[boards.main]\n')
     assert load(tmp_path / "edakit.toml").firmware is None

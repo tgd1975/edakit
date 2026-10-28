@@ -225,6 +225,15 @@ def build_parser():
 
 
 def main(argv=None):
+    from .config import ConfigError
+    try:
+        return _main(argv)
+    except ConfigError as e:     # a board refused while a command runs (unknown, or bought for a layout command)
+        print(f"edakit: {e}", file=sys.stderr)
+        return 1
+
+
+def _main(argv=None):
     args = build_parser().parse_args(argv)
     sys.stdout.reconfigure(line_buffering=True)  # progress shows up at once, also when piped
     if args.command == "lock":
