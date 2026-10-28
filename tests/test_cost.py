@@ -277,3 +277,53 @@ def test_cost_keys(project):
     cfg = project.config()
     assert cfg.cost == {"budget": 100} and cfg.extras[0]["per_set"] == 4
     assert math.isclose(cost.load_fee_table(cfg)["pcba"]["bake"]["value"], 7.94)
+
+
+# --- [order]: what the fee table's board is not -----------------------------------------------------------------------
+
+PRICED = "1.6 mm, green mask, white silkscreen, LeadFree HASL"   # the shipped fee table's board (pcb.board)
+
+
+def order(project, text, thickness=None):
+    """[order] in the example's board file, and thickness_mm at its top."""
+    f = project.root / "hardware" / "boards" / "main.toml"
+    f.write_text((f"thickness_mm = {thickness}\n" if thickness else "") + f.read_text() + f"\n[order]\n{text}")
+
+
+def test_a_deviating_order_is_named_as_not_in_the_price(project, monkeypatch, capsys):
+    """Decided 2026-10-28: edakit cost prices the fee table's board; what [order] orders otherwise it names per board,
+    with what that may mean at JLCPCB – it does not price it."""
+    order(project, 'mask = "black"\n', thickness=1.0)
+    assert run_cost(project, monkeypatch) == 0
+    out = capsys.readouterr().out
+    assert (f"  not in the price: thickness 1 mm, mask black ([order]; the fee table prices {PRICED})\n"
+            "    JLCPCB may charge extra for another thickness; a colour other than green takes about two days longer\n"
+            ) in out
+    main = last_estimate(project)["boards"]["main"]
+    assert main["not_in_price"] == {"thickness_mm": 1.0, "mask": "black"}
+    assert main["pcb"]["how"] == "at most the price of the smallest size in the fee table, 110 × 100 mm – [cost] " \
+                                 "pcb_price"                                       # the price itself as before
+
+
+@pytest.mark.parametrize("text, shown, hint", [
+    ('finish = "ENIG"\n', "finish ENIG", "JLCPCB may charge extra for another finish"),
+    ('mask = "white"\n', "mask white, silkscreen black", "a colour other than green takes about two days longer"),
+])
+def test_each_deviating_setting_with_its_hint(project, monkeypatch, capsys, text, shown, hint):
+    order(project, text)
+    run_cost(project, monkeypatch, "--board", "main")
+    out = capsys.readouterr().out
+    assert f"  not in the price: {shown} ([order]; the fee table prices {PRICED})\n    {hint}\n" in out
+
+
+def test_an_order_of_the_fee_tables_board_changes_nothing(project, monkeypatch, capsys):
+    """Without [order], or with its defaults – the remark, the mark and the tab zones are no question of price –,
+    the output stays as it was."""
+    run_cost(project, monkeypatch)
+    before = capsys.readouterr().out
+    (project.root / "build" / "edakit" / "cost.json").unlink()               # no "since the last estimate"
+    order(project, 'mask = "green"\nsilkscreen = "white"\nfinish = "LeadFree HASL"\nmark = "specify"\n'
+                   'remark = "No V-cut."\n', thickness=1.6)
+    run_cost(project, monkeypatch)
+    assert capsys.readouterr().out == before
+    assert "not_in_price" not in last_estimate(project)["boards"]["main"]

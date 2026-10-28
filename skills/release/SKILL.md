@@ -67,6 +67,7 @@ The MCP server cannot order on purpose. Checklist for the user:
       `polarity_<b>.png`), no missing part in the BOM tool, price, and the datasheet points section 6 lists under
       "after uploading"; then sign M-2
 - [ ] The cart against `edakit cost` – class, fees and parts; a difference of more than a few dollars has a reason
+      (a thickness, colour or finish `edakit cost` names as not in the price is one)
 - [ ] Parts that do not come from JLCPCB (hand-soldered, cables, enclosure, a bought board and what is soldered onto
       it) ordered in the same go: `edakit order`
       writes a cart per supplier and `hand_assembly.md` for all sets, with spares and minimum quantities

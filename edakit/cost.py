@@ -22,6 +22,11 @@ and beside it the other class: Standard for an Economic board, Economic for a St
 force Standard. For the order: shipping, coupon, VAT on the assembler's order ([cost]), items off the board
 ([[extra]]), the total in [cost] currency against the budget, the drivers, and the change since the last estimate
 (<artifacts>/cost.json). Without a snapshot the parts have no price and only PCB and fees are estimated.
+
+The PCB price is that of the fee table's board (pcb.board: 1.6 mm, green mask, white silkscreen, LeadFree HASL). A
+board whose [order] orders another thickness, colour or finish gets a line of its own: the settings that differ, not in
+the price – JLCPCB may charge extra for another thickness or finish, a colour other than green takes about two days
+longer (handbook 8.4). edakit prices neither; without [order], or with its defaults, there is no such line.
 """
 
 from __future__ import annotations
@@ -35,6 +40,10 @@ from . import stock
 from .design import Design, natural_key
 
 FEE_TABLE = Path(__file__).with_name("fees") / "jlcpcb.json"
+# The board a fee table's PCB prices are for when it does not say (pcb.board): the defaults of [order], which the
+# shipped table prices; and how edakit cost names a setting of [order] that differs from it.
+PRICED = {"thickness_mm": 1.6, "mask": "green", "silkscreen": "white", "finish": "LeadFree HASL"}
+SETTING = {"thickness_mm": "thickness {:g} mm", "mask": "mask {}", "silkscreen": "silkscreen {}", "finish": "finish {}"}
 
 
 class CostError(Exception):
@@ -78,6 +87,38 @@ def pcb_price(fees, w, h, quantity):
     a0, a1 = lo["w_mm"] * lo["h_mm"], hi["w_mm"] * hi["h_mm"]
     price = lo["value"] + (hi["value"] - lo["value"]) * (area - a0) / (a1 - a0)
     return round(price, 2), f"interpolated by area between {size(lo)} and {size(hi)} of the fee table"
+
+
+def priced_board(fees):
+    """The board the fee table's PCB prices are for: thickness, mask, silkscreen, finish (pcb.board; a table without
+    it prices the defaults of [order])."""
+    board = fees["pcb"].get("board") or {}
+    return {k: board.get(k, v) for k, v in PRICED.items()}
+
+
+def not_in_price(board, fees):
+    """{setting: value} of the board's [order] that differ from the fee table's board – the thickness as ordered, the
+    colours of mask and silkscreen, the finish; {} without [order]. edakit does not price them."""
+    if board.order is None:
+        return {}
+    ordered = {"thickness_mm": board.thickness_mm, **{k: board.order[k] for k in ("mask", "silkscreen", "finish")}}
+    priced = priced_board(fees)
+    return {k: v for k, v in ordered.items() if (abs(v - priced[k]) > 1e-9 if k == "thickness_mm" else v != priced[k])}
+
+
+def unpriced_lines(differ, fees):
+    """What edakit cost says about a board whose [order] differs from the fee table's board: the settings, and what
+    they may mean at JLCPCB – another thickness or finish may cost extra, a colour other than green takes about two
+    days longer (handbook 8.4)."""
+    p = priced_board(fees)
+    shown = ", ".join(SETTING[k].format(v) for k, v in differ.items())
+    lines = [f"not in the price: {shown} ([order]; the fee table prices {p['thickness_mm']:g} mm, {p['mask']} mask, "
+             f"{p['silkscreen']} silkscreen, {p['finish']})"]
+    extra = [word for k, word in (("thickness_mm", "thickness"), ("finish", "finish")) if k in differ]
+    hints = [f"JLCPCB may charge extra for another {' or '.join(extra)}"] if extra else []
+    if differ.get("mask", "green") != "green":
+        hints.append("a colour other than green takes about two days longer")
+    return lines + (["  " + "; ".join(hints)] if hints else [])
 
 
 def klass(line):
@@ -291,6 +332,8 @@ def estimate(cfg, board=None):
         price = override.get(b.name) if isinstance(override, dict) else override
         boards[b.name] = estimate_board(fees, cfg.quantity, board_lines(cfg, design, b, snap), cfg.pcba(),
                                         main_side=sides[0], size_mm=size, pcb_override=price, name=b.name)
+        if differ := not_in_price(b, fees):   # [order] orders another board than the fee table prices
+            boards[b.name]["not_in_price"] = differ
     extras = extra_lines(cfg, rate)
     order = order_total(list(boards.values()), cfg.cost or {}, rate(fees["currency"]), extras)
     est = {"date": dt.date.today().isoformat(), "fees": {"date": fees["date"], "assembler": fees["assembler"]},
@@ -338,8 +381,8 @@ def money(v):
     return "–" if v is None else f"{v:.2f}"
 
 
-def print_board(b, cur_fee):
-    w = 46
+def print_board(b, fees):
+    cur_fee, w = fees["currency"], 46
     size = b["size_mm"]
     print(f"board {b['name']}{', ' + ' × '.join(mm(v) for v in size) + ' mm' if size else ''}: "
           f"{b['class'].capitalize()} PCBA ({b['why']})")
@@ -360,6 +403,8 @@ def print_board(b, cur_fee):
         label = f"as {alt['class'].capitalize()}" + (f" without {few(alt['without'])}" if alt["without"] else "")
         print(f"  {label + ':':<{w}} {alt['total']:>9.2f} {cur_fee} (fees {alt['fees_total']:.2f}, parts "
               f"{alt['parts_total']:.2f})")
+    for line in unpriced_lines(b["not_in_price"], fees) if b.get("not_in_price") else []:
+        print(f"  {line}")
 
 
 def main(cfg, args):
@@ -374,7 +419,7 @@ def main(cfg, args):
           + (f"stock snapshot {est['snapshot']}" if est["snapshot"] else "no stock snapshot: parts without price "
              "(edakit stock)"))
     for b in est["boards"].values():
-        print_board(b, fees["currency"])
+        print_board(b, fees)
     drivers = [d for b in est["boards"].values() for d in b["drivers"]]
     if drivers:
         print("what drives the cost:")

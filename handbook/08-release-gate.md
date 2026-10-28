@@ -298,7 +298,12 @@ assembly fees with the page and the day they were read, bake, edge rails and PCB
 - the parts at their price break – Economic exactly the placements, Standard with JLCPCB's attrition;
 - shipping, coupon and VAT (`[cost]`), the items off the board (`[[extra]]`), the budget;
 - what drives the cost (the part or side that forces Standard, each Extended type, a bake, an X-ray part, the edge
-  rails), the other class beside it, and the change since the last estimate.
+  rails), the other class beside it, and the change since the last estimate;
+- per board whose `[order]` orders another board than the fee table prices (`pcb.board`: 1.6 mm, green mask, white
+  silkscreen, lead-free HASL), the settings that differ, as not in the price – JLCPCB may charge extra for another
+  thickness or finish, and a colour other than green takes about two days longer:
+  `not in the price: thickness 1 mm, mask black ([order]; the fee table prices 1.6 mm, green mask, white silkscreen,
+  LeadFree HASL)`. edakit prices neither; without `[order]`, or with its defaults, there is no such line.
 
 Without a stock snapshot the parts have no price. On the reference project the estimate came within about 1 $ of
 the cart (USB tree, 2026-10-25: 71.53 $ with the fees of that day against 72.58 $); the fees JLCPCB does not itemise
@@ -324,17 +329,18 @@ hold: 1.6 mm, green, white print. JLCPCB prints white on every mask but white, a
 states the colour the artwork is drawn for, and F-6 fails it on a mask that gets the other one, as it fails a
 thickness the form does not offer (FR-4, 2 layers: 0.4, 0.6, 0.8, 1.0, 1.2, 1.6 or 2.0 mm). Every colour other than
 green takes two more days at JLCPCB (its quote form, read 2026-10-28); `edakit cost` prices the fee table's board –
-green, 1.6 mm, lead-free HASL – whatever `[order]` says. The board file is in the layout hash, so a changed remark,
-colour or thickness voids the sign-offs of scope `layout`; the settings that change the board as made – thickness,
-colours, finish and mark – are in the fab hash as well (8.2), so the layout review M-5 of scope `fab` lapses with
-them too, while a new remark or tab zone leaves it standing. Every gate run then writes `fab/<board>/order.md` next to
-the upload files – layers, size, quantity, thickness, the colours of mask and silkscreen, finish, the mark at the
-placeholder, the remark; PCBA type and side from `[release] assembly`, tooling holes "Added by Customer" when the
-board has `[tooling]`, bake "Yes" when the stock snapshot gives a BOM part MSL ≥ 5; the tab zones with their nearest
-copper and every outline stretch with no copper within `tab_copper_mm` (Gerber coordinates, what JLCPCB sees); the
-parts bought separately with their supplier (`edakit order`) – and `fab/<board>/order.json` with the settings the fab
-hash takes; F-6 checks the settings against the files. Fill the form from order.md of the released run – with M-5 of
-scope `fab` its settings are the ones the review signed – and write tab zones only on stretches it lists as free.
+green, 1.6 mm, lead-free HASL – and names the settings of `[order]` that differ from it as not in the price. The board
+file is in the layout hash, so a changed remark, colour or thickness voids the sign-offs of scope `layout`; the
+settings that change the board as made – thickness, colours, finish and mark – are in the fab hash as well (8.2), so
+the layout review M-5 of scope `fab` lapses with them too, while a new remark or tab zone leaves it standing. Every
+gate run then writes `fab/<board>/order.md` next to the upload files – layers, size, quantity, thickness, the
+colours of mask and silkscreen, finish, the mark at the placeholder, the remark; PCBA type and side from
+`[release] assembly`, tooling holes "Added by Customer" when the board has `[tooling]`, bake "Yes" when the stock
+snapshot gives a BOM part MSL ≥ 5; the tab zones with their nearest copper and every outline stretch with no copper
+within `tab_copper_mm` (Gerber coordinates, what JLCPCB sees); the parts bought separately with their supplier
+(`edakit order`) – and `fab/<board>/order.json` with the settings the fab hash takes; F-6 checks the settings
+against the files. Fill the form from order.md of the released run – with M-5 of scope `fab` its settings are the
+ones the review signed – and write tab zones only on stretches it lists as free.
 
 The MCP server cannot order. Lessons from the reference order:
 

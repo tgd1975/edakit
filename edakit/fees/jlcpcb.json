@@ -2,7 +2,7 @@
  "assembler": "JLCPCB",
  "currency": "USD",
  "date": "2026-10-27",
- "about": "Fees of JLCPCB's PCB assembly and PCB prices for edakit cost (handbook 8.5). Every value carries the date it was read and its source. The assembly fees are those of JLCPCB's page 'PCB Assembly Cost: What Does the Price Include?' (last updated 2026-10-22, read 2026-10-27); JLCPCB converts to USD daily, so a value may differ by a cent from one week to the next. Bake, edge rails and the PCB prices are what JLCPCB charged in the carts of 2026-10-24 and 2026-10-25 (2 layers, FR-4 TG135, 1.6 mm, 1 oz, lead-free HASL, green, 5 boards). Tiers: [from, to, price per unit]; the price of the tier the whole order falls in applies to every unit.",
+ "about": "Fees of JLCPCB's PCB assembly and PCB prices for edakit cost (handbook 8.4). Every value carries the date it was read and its source. The assembly fees are those of JLCPCB's page 'PCB Assembly Cost: What Does the Price Include?' (last updated 2026-10-22, read 2026-10-27); JLCPCB converts to USD daily, so a value may differ by a cent from one week to the next. Bake, edge rails and the PCB prices are what JLCPCB charged in the carts of 2026-10-24 and 2026-10-25 (2 layers, FR-4 TG135, 1.6 mm, 1 oz, lead-free HASL, green, 5 boards). Tiers: [from, to, price per unit]; the price of the tier the whole order falls in applies to every unit. pcb.board is the board the PCB prices are for, in the words of [order] of a board file: edakit cost names an [order] that differs from it and does not price the difference.",
  "pcba": {
   "economic_setup": {"value": 8.18, "per": "order", "date": "2026-10-27", "source": "https://jlcpcb.com/help/article/pcb-assembly-price – Setup fee, Economic PCBA"},
   "economic_stencil": {"value": 1.53, "per": "order", "date": "2026-10-27", "source": "https://jlcpcb.com/help/article/pcb-assembly-price – Stencil, Economic PCBA"},
@@ -23,7 +23,8 @@
   "standard_edge_rails_mm": {"value": 5, "per": "edge rail on each of the two long edges (the PCB is priced that much larger)", "date": "2026-10-24", "source": "JLCPCB carts of 2026-10-24: a 100 × 100 mm and a 100 × 170 mm board under Standard PCBA were priced as 110 × 100 mm and 110 × 170 mm"}
  },
  "pcb": {
-  "spec": "2 layers, FR-4 TG135, 1.6 mm, 1 oz, lead-free HASL, green, tented vias, 5 boards, 24 h",
+  "spec": "2 layers, FR-4 TG135, 1.6 mm, 1 oz, lead-free HASL, green, white silkscreen, tented vias, 5 boards, 24 h",
+  "board": {"thickness_mm": 1.6, "mask": "green", "silkscreen": "white", "finish": "LeadFree HASL", "date": "2026-10-25", "source": "JLCPCB carts of 2026-10-24 and 2026-10-25, the prices below: PCB Thickness 1.6mm, PCB Color Green, Silkscreen White (the form's defaults), Surface Finish LeadFree HASL"},
   "qty": 5,
   "layers": 2,
   "prices": [
