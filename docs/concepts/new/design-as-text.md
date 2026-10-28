@@ -32,7 +32,7 @@ generated: the EasyEDA project, Gerber, BOM, CPL and the pictures for the review
 | Operating cases of the simulation | `hardware/sim.json` | Claude | stage E, circuit hash |
 | Arrangement of the schematic | `hardware/schematic.toml` | Claude | stage S |
 | Board: outline, holes, plan, routing rules, pours, silkscreen, order form | `hardware/boards/<name>.toml` | Claude as PCB designer, `edakit pcb place --write` | stage L, F-6, layout hash |
-| Silkscreen artwork | SVG, often from a generator | Claude | fab hash through the gate run's silkscreen (M-5); layout hash only on the branch `silk-art-hash` |
+| Silkscreen artwork | SVG, often from a generator | Claude | layout hash (sign-offs of scope `layout`), and the fab hash through the gate run's silkscreen (M-5) |
 | Project steps edakit cannot do | project scripts | Claude | nothing yet (concept [project-scripts.md](project-scripts.md)) |
 | Project, boards, gate | `edakit.toml` | Claude | checked on loading |
 | Decisions | `docs/decisions.md` | Claude writes, the owner decides | – |

@@ -90,9 +90,9 @@ outdated; before `silk apply` the tree artwork runs again, and the gate checks t
   `hardware/scripts.lock`, so that the CI sees it too. A difference is a finding in `edakit check` and in the gate,
   with the `about` sentence: "baumgrafik outdated: routing:tree changed – tree artwork on the silkscreen, clear of pads
   and vias".
-- **Hash:** what edakit reads goes into the hash of its scope by itself. Board files belong to the layout hash, the
-  simulation plugin to the circuit hash. Artwork reaches the fab hash through the gate run's silkscreen (#65);
-  documents, the firmware contract and the stock snapshot are in no hash. A script's code does not count, only its
+- **Hash:** what edakit reads goes into the hash of its scope by itself. Board files and the artwork they place belong
+  to the layout hash, the simulation plugin to the circuit hash. The artwork also reaches the fab hash through the gate
+  run's silkscreen (#65); documents, the firmware contract and the stock snapshot are in no hash. A script's code does not count, only its
   result.
 - **Display:** `edakit scripts` lists every script with `about`, state (current, outdated, never run) and its last
   run. The skills `start`, `pcb-round`, `hardware-change` and `release` call it at their steps, and the SessionStart
@@ -638,11 +638,10 @@ Nine building blocks, none of them built. The order is also the order to build t
 9. **Skills and the session:** `start`, `pcb-round`, `hardware-change`, `release` and `new-project` use
    `edakit scripts`; the SessionStart hook lists the scripts.
 
-Built, committed on the branch `silk-art-hash` and not pushed: the SVGs of `[[silk.art]]` count in the layout hash, a
-special case of block 2. Since #65 the gate run's silkscreen is in the fab hash, so a new motif voids M-5 with its
-default scope `fab` anyway. The branch still matters for sign-offs of scope `layout`: the bell lists M-5 so in all four
-variants. It needs a rebase onto `a8b6011`. The bell then records M-5 again in all four variants, without a new review,
-because its SVGs are unchanged since 7667817.
+Built and on main (4161350): the SVGs of `[[silk.art]]` count in the layout hash, a special case of block 2. Since #65
+the gate run's silkscreen is in the fab hash as well, so a new motif voids M-5 with its default scope `fab` anyway; the
+layout hash matters for sign-offs of scope `layout`, and the bell lists M-5 so in all four variants. The bell records
+M-5 again in all four variants, without a new review, because its SVGs are unchanged since 7667817.
 
 ## Decisions
 
@@ -673,5 +672,4 @@ because its SVGs are unchanged since 7667817.
   mechanical model) and [8.2](../../../handbook/08-release-gate.md) (hashes)
 - the [Christmas bell](https://github.com/tgd1975/automatic_christmas_bell) as the second project
 
-On hold: pushing the branch `silk-art-hash`, and feature proposal F19 (a `cmd` on `[[silk.art]]`), which this concept
-takes up.
+On hold: feature proposal F19 (a `cmd` on `[[silk.art]]`), which this concept takes up.
