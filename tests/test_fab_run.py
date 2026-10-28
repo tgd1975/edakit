@@ -305,7 +305,7 @@ def findings(rows):
 
 
 CHECKS = ["L-1", "L-2", "L-3", "L-4", "L-5", "L-7", "L-8", "L-9", "L-10", "L-11", "L-12", "L-13", "L-14", "L-15", "L-16",
-          "L-17", "L-18", "F-1", "F-2", "F-3", "F-5"]
+          "L-17", "L-18", "L-20", "F-1", "F-2", "F-3", "F-5"]
 ON_REQUEST = ["F-6", "L-19"]       # run only when the board file asks for them ([order], [looks])
 
 
@@ -539,6 +539,13 @@ def stray_text(ex, project):
     ex.pcb["strings"].append({"Text": "TEST", "X": TEST[0] * MIL, "Y": TEST[1] * MIL, "Layer": 3})
 
 
+def c2_without_row(ex, project):
+    """C2 left to the auto-layout, as a board was before step 2.1: no row in [place], and so no [near] entry for it –
+    near holds only between parts with a row (L-7). The PCB has it where it was."""
+    board_file(project, 'C2 = "D1"', "")
+    board_file(project, "C2 = { x = 20,", "# C2 = { x = 20,")
+
+
 def thickness(mm, order=None):
     """[order] in the board file (as ordered) on a board of thickness_mm = mm."""
     def fault(ex, project):
@@ -634,7 +641,8 @@ FAULTS = [
      [("L-1", "fail", "D1.2: +5V instead of VIN"), ("L-11", "fail", "J1.1-D1.2 (input): different nets (VIN, +5V)")]),
     # L-12
     ("the circuit's edge part not fixed", lambda ex, p: board_file(p, "J1 = { x = 3", "# J1 = { x = 3"),
-     [("L-12", "fail", "J1: not in hardware/boards/main.toml [place] – the circuit wants it at the board edge")]),
+     [("L-12", "fail", "J1: not in hardware/boards/main.toml [place] – the circuit wants it at the board edge"),
+      ("L-20", "fail", "J1: no row in hardware/boards/main.toml [place] (1 of 3 parts)")]),
     # L-13
     ("two parts with their pads closer than the clearance", crowd,
      [("L-13", "fail", "C2.2 (GND) – D1.2 (VIN): 0.090 mm apart on TOP, below the clearance 0.165 mm"),
@@ -699,6 +707,9 @@ FAULTS = [
     ("the designators not read with the PCB, the visible side without them",
      lambda ex, p: (visible(p, silk='designators = "bottom"'), ex.pcb.pop("designators")),
      [("L-17", "fail", "pcb.json without the designators"), ("L-19", "fail", "pcb.json without the designators")]),
+    # L-20 (step 2.1)
+    ("a part without a row in [place]", c2_without_row,
+     [("L-20", "fail", "C2: no row in hardware/boards/main.toml [place] (1 of 3 parts)")]),
     # F-1
     ("another LCSC number in EasyEDA's BOM", lambda ex, p: ex.bom[2].update(lcsc="C15850"),
      [("F-1", "fail", "C2: graph C45783, EasyEDA C15850")]),

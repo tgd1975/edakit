@@ -10,9 +10,9 @@ import shutil
 import pytest
 from test_checks import BREAKOUT, run
 
-from edakit import cli, cost
+from edakit import cli, cost, pcb
 from edakit.design import Design
-from edakit.release import gate
+from edakit.release import fab, gate
 from edakit.sim import run as simrun
 
 KEY = "bought = true"
@@ -138,6 +138,20 @@ def test_the_gate_makes_only_the_made_boards(project, monkeypatch):
     assert "| F | F-4 | main |" in other and "| F | F-4 | usb |" not in other
 
 
+def test_parts_on_the_bought_board_need_no_row_in_the_plan(project):
+    """L-20 wants a row in [place] for every part the graph puts on a made board. J9 and its two resistors are on the
+    bought board – off the made board, at the far end of the cable W1: no row, and the auto-layout's write-back and the
+    takeover give them none."""
+    usb_board(project)
+    cfg = project.config()
+    design = Design.from_config(cfg)
+    rows = fab.Rows()
+    fab.check_rows(cfg.board("main"), design, rows)
+    assert [(r["id"], r["result"], r["actual"]) for r in rows] == [("L-20", "pass", "17 parts, each with a row")]
+    pcb_parts = [{"designator": r, "x": 0, "y": 0, "rotation": 0, "layer": 1} for r in ("J9", "R21", "R22")]
+    assert pcb.eda_rows(cfg.board("main"), design, pcb_parts, auto=True) == ({}, [])
+
+
 def test_the_layout_hash_covers_the_made_boards_only(project):
     before = gate.layout_files(project.config())
     usb_board(project)
@@ -146,7 +160,8 @@ def test_the_layout_hash_covers_the_made_boards_only(project):
 
 # --- the commands that make or read a layout --------------------------------------------------------------------------
 
-@pytest.mark.parametrize("argv", [["pcb", "plan"], ["route", "dsn"], ["silk", "preview"], ["schematic", "draw"],
+@pytest.mark.parametrize("argv", [["pcb", "plan"], ["pcb", "takeover"], ["route", "dsn"], ["silk", "preview"],
+                                  ["schematic", "draw"],
                                   ["schematic", "check"], ["fab", "--out", "x", "--offline"], ["handover"],
                                   ["export"], ["cost"]])
 def test_layout_commands_refuse_the_bought_board_with_one_line(project, monkeypatch, capsys, argv):

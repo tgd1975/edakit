@@ -55,6 +55,8 @@ assembly preview at JLCPCB.
        label on its side, the [[silk.texts]] of the side, with [silk] designators on it the designators and group
        labels), and no part on it shows its designator while [silk] designators names the other side (waive L-19 on
        the part)
+  L-20 every part the graph puts on the board has a row in [place] of the board file – fixed, from pcb place, or
+       written back by pcb autolayout (auto = true); a part on a bought board is on no made board and needs none
   [looks] of the board file: the visible side's track length and the board's vias, an information row; above
        max_track_m or max_vias a warning (row ID "L": the stage's own, no check of the catalog)
   F-1  BOM from the graph = BOM of EasyEDA; every LCSC number in the parts database
@@ -365,6 +367,21 @@ def check_pcb(cfg, board, design, d, rows):
     ok, what = pcbmod.import_verdict(items, diff)
     rows.add("L", "L-3", board.name, "schematic and PCB in sync (Import Changes)", ok, what, "no Import Changes item")
     check_polarity_marks(cfg, board, design, d, data, want, on_pcb, rows)
+
+
+ROWS_NAMED = 20       # L-20: parts without a row named in the protocol row, the others counted
+
+
+def check_rows(board, design, rows):
+    """L-20: every part the graph puts on the board has a row in [place] of the board file (pcb.parts_without_row) –
+    position, rotation and side as text, whoever wrote it. The board file decides it alone: no export is read."""
+    from .. import pcb as pcbmod
+    want = design.board_comps(board.name)
+    missing = pcbmod.parts_without_row(board, design)
+    names = ", ".join(missing[:ROWS_NAMED]) + (f" … (+{len(missing) - ROWS_NAMED})" if len(missing) > ROWS_NAMED else "")
+    rows.add("L", "L-20", board.name, "every part of the board has a row in [place] (position, rotation, side)",
+             not missing, f"{names}: no row in {board.file} [place] ({len(missing)} of {len(want)} parts)" if missing
+             else f"{len(want)} parts, each with a row", "a row for every part")
 
 
 TEXT_REACH_MM = 1.2   # L-8: how far from its anchor, per character, the strokes of a PCB text may lie
@@ -1321,6 +1338,7 @@ def run(cfg, board, out, offline=False, verbose=False):
         (d / "jlc_parts.json").unlink(missing_ok=True)
     rows = Rows()
     check_pcb(cfg, board, design, d, rows)
+    check_rows(board, design, rows)
     check_silk(cfg, board, design, d, rows)
     check_copper(board, design, d, rows)
     check_copper_sides(board, design, d, rows)

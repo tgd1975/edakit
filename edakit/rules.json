@@ -443,6 +443,16 @@
     "edakit handbook 7.5 (the visible side, [looks]), 7.7 (silkscreen: hide, [[silk.texts]], the board label) and 8.1 (L-17)"
    ]
   },
+  "L-20": {
+   "title": "every part in the plan",
+   "rule": "Every part the graph puts on a made board has a row in [place] of the board file – fixed by hand, set next to its host by pcb place, or written back by pcb autolayout with auto = true. A part on a bought board (bought = true) – off the made boards, at the far end of a cable – is on none of them and needs no row.",
+   "why": "What EasyEDA's auto-layout placed was in no file: the layout hash did not cover it, L-7 held it to nothing, the direction of polarised parts (uniform), the mated plugs and the mechanical model did not see it, and after a dump the next auto-layout could put it elsewhere without a trace in the repository. Only with every position as text is the placement checked, reviewed and diffed like the rest of the board.",
+   "fix": "Run edakit pcb autolayout: once the positions stand still it writes a row with auto = true for every part it placed. A board placed and routed before takes over its positions once with edakit pcb takeover --write, before any dump: fixed rows where the parts stand, so that pcb apply leaves them there and the tracks stay on their pads – a new auto-layout would move them off. Or write the row by hand.",
+   "sources": [
+    "edakit concept 'Circuit design as code' (docs/concepts/new/design-as-text.md), gap 1 and decisions 3 and 4 of 2026-10-28: the positions of the auto-layout into [place] with auto = true, the check an error in the gate, a board placed before takes over its positions once",
+    "edakit handbook 7.4 (the placement plan) and 8.1 (stage L)"
+   ]
+  },
   "F-1": {
    "title": "BOM = graph",
    "rule": "The BOM generated from the graph equals EasyEDA's BOM per designator, and every LCSC number is in the parts database; parts with bom: false are left out on purpose.",

@@ -1,10 +1,13 @@
-"""Pieces of stages L and F that work on files: hole vs lead (L-9), loop length (L-11), Gerber parsing (L-2)."""
+"""Pieces of stages L and F that work on files: hole vs lead (L-9), loop length (L-11), Gerber parsing (L-2), every
+part in the plan (L-20)."""
 
 import json
+from types import SimpleNamespace
 
 import pytest
 
-from edakit import gerber
+from edakit import config, gerber
+from edakit.design import Design
 from edakit.release import fab
 
 
@@ -97,3 +100,33 @@ def test_annular_ring_is_the_copper_around_the_hole():
     assert fab.ring_mm(parts, (0.0, 0.0, 0.0, 0.0, 1.0)) == pytest.approx(0.2, abs=1e-4)    # the track leaves it
     assert fab.ring_mm(parts, (0.0, -0.375, 0.0, 0.375, 0.45)) == pytest.approx(0.1, abs=1e-4)   # a slot along y
     assert fab.ring_mm(parts, (3.0, 2.0, 3.0, 2.0, 0.3)) is None                         # no copper there
+
+
+# --- L-20: every part of the board has a row in [place] (step 2.1) ---------------------------------------------------
+
+def rows_check(project):
+    cfg = project.config()
+    rows = fab.Rows()
+    fab.check_rows(cfg.board(), Design.from_config(cfg), rows)
+    return [(r["id"], r["result"], r["actual"]) for r in rows]
+
+
+def test_every_part_of_the_example_has_a_row(project):
+    assert rows_check(project) == [("L-20", "pass", "17 parts, each with a row")]
+
+
+def test_parts_left_to_the_auto_layout_without_a_row_fail(project):
+    """The example as it was before step 2.1: D1 and R2 left to the auto-layout, in no file."""
+    f = project.root / "hardware" / "boards" / "main.toml"
+    f.write_text("".join(ln for ln in f.read_text().splitlines(keepends=True) if not ln.startswith(("D1 = ", "R2 = "))))
+    assert rows_check(project) == [("L-20", "fail", "D1, R2: no row in hardware/boards/main.toml [place] (2 of 17 "
+                                                    "parts)")]
+
+
+def test_a_board_without_any_row_names_twenty_parts_and_counts_the_rest():
+    board = config.Board(name="tree", title="t", template="t", schematic="s", pcb="p", file="hardware/boards/tree.toml")
+    design = SimpleNamespace(board_comps=lambda name: {f"D{i}": {} for i in range(1, 26)})
+    rows = fab.Rows()
+    fab.check_rows(board, design, rows)
+    assert rows[0]["result"] == "fail" and rows[0]["actual"] == (
+        ", ".join(f"D{i}" for i in range(1, 21)) + " … (+5): no row in hardware/boards/tree.toml [place] (25 of 25 parts)")
