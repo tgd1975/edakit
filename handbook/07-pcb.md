@@ -246,9 +246,9 @@ into D32 (top) – 1.01 mm (silk_overlap_mm 0.8)` –, `J1: mated plug reaches i
 `length_mm` or `mate` that is not as 4.1 says is named with its parts entry. Without `mate` nothing changes.
 
 **The mechanical model.** `pcb plan` writes `<artifacts>/mech_<board>.json` on every run, for the project's own
-mechanics stage (`[[release.stages]]`, 8.1) and its enclosure scripts – they read the board from it instead of keeping
-the part boxes, heights, plug sizes and the board thickness as constants of their own. Plan coordinates in mm, as seen
-from `view`:
+mechanics check (a `[scripts.<name>]` of kind `check` or a `[[release.stages]]`, 8.1) and its enclosure scripts – they
+read the board from it instead of keeping the part boxes, heights, plug sizes and the board thickness as constants of
+their own. Plan coordinates in mm, as seen from `view`:
 
 | Key | Content |
 |---|---|

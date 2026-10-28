@@ -8,7 +8,7 @@ stamps that tell an outdated script.
 A project registers the scripts that touch edakit's flow: a script writes a file edakit reads, derives something from
 edakit's data, changes the project library in EasyEDA, or holds up the release as a check of its own. Its entry says
 what it reads and writes; when it runs follows from that and from edakit's steps in their fixed order (STEPS). Nothing
-is run here.
+is run here: the gate runs the checks, as gate_checks gives them (handbook 8.1).
 
   kind     when                                                     what it writes
   input    before the first edakit step that reads what it writes   a file edakit reads: the board file (board:<b>),
@@ -16,8 +16,9 @@ is run here.
   derive   before edakit check, where its result is to be current;  files no edakit step reads
            before the gate when it reads what comes after edakit check
   easyeda  on command only                                          project-library:<b> in EasyEDA
-  check    phase export: in the gate before S, or at "after F";     nothing
-           phase order and acceptance: after the gate
+  check    phase export: a stage of the gate, before S or at        nothing
+           "after F"; phase order and acceptance: a line of the
+           protocol's list of its phase (gate_checks)
   sim      inside edakit sim: [project] sim_plugin                  nothing
 [[release.stages]] are checks of phase export before S.
 
@@ -710,10 +711,18 @@ def _compare(stamp, cmd, script, now):
 
 def _place(e):
     """Where a kind without a stamp runs."""
+    from .requirements import WORKS_THROUGH
     if e.kind == "sim":
         return "the simulation plugin, it runs inside edakit sim"
-    where = f"phase {e.phase}" + (f" {e.at or 'before S'}" if e.phase == "export" else "")
-    return f"a check, {where}; " + ("the gate runs it" if e.node[0] == "stage" else "the gate does not run it yet")
+    if e.phase == "export":
+        return f"a check, phase export {e.at or 'before S'}: the gate runs it" + (
+            " with --easyeda, on the run's manufacturing files" if e.at == "after F" else "")
+    if e.phase in WORKS_THROUGH:
+        where = "the acceptance list after delivery" if e.phase == "acceptance" else \
+            "the list after uploading, before paying"
+        return f"a check, phase {e.phase}: a line of {where} (protocol section 6), {WORKS_THROUGH[e.phase]} works " \
+               "through it"
+    return "a check without a valid phase (edakit check)"
 
 
 def review(cfg):
@@ -788,6 +797,54 @@ def gate_rows(cfg):
             for level, msg in _findings(res, states, problem)]
     return rows + [{"stage": "G", "id": "scripts", "item": "", "check": f"{s.name} current – {s.about}",
                     "result": "pass"} for s in states if s.state == "current"]
+
+
+# --- the checks in the gate (handbook 8.1) ----------------------------------------------------------------------------
+
+TIMEOUT = 900       # seconds a check may run in the gate – of a [[release.stages]] its timeout, this by default
+
+
+class Check(NamedTuple):
+    """A check of the project as the gate takes it: a [scripts.<name>] of kind check, or a [[release.stages]]."""
+    name: str           # what verify = script names: the [scripts] name, the id of a [[release.stages]]
+    id: str             # its stage in the protocol
+    title: str          # its name in the protocol: the [scripts] name, the name of a [[release.stages]]
+    about: str          # what it checks – of a [[release.stages]] without about its cmd
+    cmd: list
+    phase: str          # export, order, acceptance
+    at: str             # phase export: "before S" or "after F"; "" in the phases after the export
+    advisory: bool      # a failure is listed and does not block
+    timeout: float
+
+
+def gate_checks(cfg):
+    """The project's checks, in the order edakit scripts shows: [[release.stages]], each a check of phase export before
+    S, and the entries of [scripts] of kind check – these only when the entries resolve into one order: edakit refuses
+    them otherwise, and stage G says why. A [[release.stages]] without an id is a finding of stage G, no check.
+
+      phase export, before S   a stage of the gate between E and S, where [[release.stages]] always ran
+      phase export, after F    a stage after stage F, with --easyeda: it reads the run's manufacturing files
+      order, acceptance        no stage: a line of the protocol's list of its phase (section 6), which the manual
+                               check of the phase works through – M-2 at the manufacturer, M-4 after delivery"""
+    res, entries, _ = _resolve(cfg)
+    rank = {label: i for i, label in enumerate(res.order)}
+    out = []
+    for e in entries:
+        s = e.raw
+        if e.kind != "check" or e.node[0] == "script" and res.findings:
+            continue
+        if e.node[0] == "stage":
+            if not s.get("id"):
+                continue
+            cmd = s.get("cmd", [])
+            check = Check(str(s["id"]), str(s["id"]), str(s.get("name", "")), s.get("about", " ".join(cmd)), cmd,
+                          "export", "before S", bool(s.get("advisory")), s.get("timeout", TIMEOUT))
+        else:
+            check = Check(e.label, s["id"], e.label, s["about"], list(s["cmd"]), s["phase"],
+                          (s.get("at") or "before S") if s["phase"] == "export" else "", bool(s.get("advisory")),
+                          TIMEOUT)
+        out.append((rank.get(e.label, len(rank)), check))
+    return [c for _, c in sorted(out, key=lambda rc: rc[0])]
 
 
 def stamp(cfg, names):

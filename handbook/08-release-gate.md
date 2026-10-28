@@ -5,11 +5,11 @@ whose manifest says `"released": true` – a newer released run supersedes it (8
 files themselves, and writes a test protocol.
 
 ```bash
-edakit gate              # P, G, E and the project's own stages – offline, seconds
-edakit gate --easyeda    # plus S, L, F – EasyEDA with the bridge, minutes
+edakit gate              # P, G, E and the project's checks before S – offline, seconds
+edakit gate --easyeda    # plus S, L, F and the project's checks after F – EasyEDA with the bridge, minutes
 ```
 
-Before each stage – each project stage, and with `--easyeda` each board of stages L/F – the gate prints
+Before each stage – each project check, and with `--easyeda` each board of stages L/F – the gate prints
 `[x.x min] step n/m: <stage>` (11.3).
 
 "Guaranteed correct" is not reachable with any tool chain. Reachable is:
@@ -25,10 +25,11 @@ Before each stage – each project stage, and with `--easyeda` each board of sta
 | P – Parts | parts database complete and signed, every part named by its entry, through-hole leads fitting their holes and, formed for the board, fitting only one way round, own parts equal to their source, parts orderable, a supplier per part | P-1, P-3, P-4, P-5, P-6, P-7, P-8, G-9 (chapter 3, 4) |
 | G – Graph | rule checks; with quoted values (6.6) G-19 on this run's simulation; with `[project] requirements` the requirements file (3.6); the project scripts: their entries resolve into one order, their results are current (8.6) | G-1 … G-23 (chapter 3), `scripts` |
 | E – Simulation | operating points, stress, function, every LED checked, transient runs; with sim.json `copper` on the routing of `edakit route` as it is | E-1 … E-5 (chapter 5) |
-| *project stages* | e.g. K – mechanics of an enclosure | `[[release.stages]]`, see below |
+| *project checks* | e.g. K – the board fits its stand | `[scripts.<name>]` of kind `check`, phase `export`, and `[[release.stages]]` – see below |
 | S – Schematic | EasyEDA schematic = graph | S-2 per board |
 | L – Board | PCB = graph and plan, copper from the Gerber files, the circuit's hand-over kept, pads apart, silkscreen as printed, hand-soldered joints clear, the visible side's print as the board file puts it | L-1 … L-19 |
 | F – Manufacturing | BOM, stock, pick and place, Gerber set, order settings | F-1 … F-6 |
+| *project checks after F* | e.g. a check of this run's Gerber files | `[scripts.<name>]` with `at = "after F"` – see below |
 
 A bought board on a cable (`bought = true`, 4.5) is in stages P, G and E like any board. Stages S and L/F leave it out
 with one information row each (`S-2` and `L`: "bought board – no schematic, PCB or manufacturing files"); F-4, the
@@ -92,13 +93,46 @@ without its hole (L-9, and GND open in L-2), a copper dot in a tooling hole's op
 L-15), a plated slot 1.2 mm long in a round pad of 1.4 mm (L-9, and its ring of 0.1 mm in L-16). A new check of L or F
 gets its fault there.
 
-**Project stages** (`[[release.stages]]` in edakit.toml): `{id = "K", name = "Mechanics", cmd = ["uv", "run",
-"mech/check.py", "--json"], advisory = true}`. The command's last stdout line may be a JSON list of
-`[id, check, actual, expected, ok]`; otherwise its exit code counts. `advisory` findings are listed but do not block
-(in the reference project the printed enclosure was adapted after delivery anyway). A mechanics stage reads the board
-– outline, holes, part boxes, heights, lead protrusion, mated plugs – from `<artifacts>/mech_<board>.json`, which
-`edakit pcb plan` writes (7.4); the gate does not run the plan, so a stage that needs the file current runs
-`edakit pcb plan` first. Among the project's scripts (8.6) a stage counts as a check of phase export before S.
+**Project checks.** A project holds up the release with checks of its own: a script registered in edakit.toml as
+`[scripts.<name>]` of kind `check` (8.6, 10.1), or the older `[[release.stages]]` – `{id = "K", name = "Mechanics",
+cmd = ["uv", "run", "mech/check.py", "--json"], advisory = true}` –, which counts as a check of phase `export` before
+S. Every check of phase `export` is a stage of its own, with its `id` – the reference project's stand:
+
+```toml
+[scripts.mechanik]
+kind     = "check"
+id       = "K"
+cmd      = ["uv", "run", "hardware/sockel/sockel.py", "--pruefen"]
+about    = "The tree fits the stand: slot, hill, cable, feet (D-36)"
+phase    = "export"
+advisory = true             # the stand is adapted after delivery anyway (D-37)
+```
+
+- **Where it runs:** `at = "before S"`, the default, between E and S, where `[[release.stages]]` always ran – in the
+  order `edakit scripts` shows, `after` orders checks among each other; `at = "after F"` after stage F, to read this
+  run's manufacturing files – only in `edakit gate --easyeda`: the offline gate lists it as a stage not run, as S, L
+  and F.
+- **What it gets:** its `cmd` runs in the project folder, with the gate's environment and `EDAKIT_RUN`, the absolute
+  path of this run's folder `<reports>/<run>/` – its `sim.json` and `graph_checks.json`, after F `fab/<board>/` with
+  `gerber/`, `gerber_<board>.zip`, `bom_<board>.csv` and `cpl_<board>.csv`. It may take 900 s; a
+  `[[release.stages]]` sets its own with `timeout`.
+- **Its result:** stdout and stderr go to `stage_<id>.txt` in the run's folder. The last stdout line may be a JSON
+  list of `[id, check, actual, expected, ok]`, one row each; otherwise one row with the exit code, and 0 passes. The
+  rows stand in section 8 of the protocol, the stage with its counts in section 1, a failed row in section 2.
+- **A failure** blocks the release. With `advisory = true` it is an advisory finding instead: section 2 lists it
+  under "Advisories (do not block the release)", and nobody accepts it.
+- **No stamp:** a check runs in every gate; its `reads` only order it among the scripts (8.6).
+- **After the export** nothing runs in the gate. A check of phase `order` – the owner runs it at the manufacturer,
+  after uploading, before paying – is an unchecked line of section 6 under "after uploading to the manufacturer,
+  before paying", which M-2 works through; one of phase `acceptance` – the reference project's camera test of every
+  delivered tree – a line of the acceptance list "after delivery, per board", which M-4 works through (8.5). Each line
+  has the check's id, name, `about` and command.
+- **Entries that do not resolve** (8.6) run none of their checks: stage G fails and names why. `[[release.stages]]`
+  run as before.
+
+A mechanics check reads the board – outline, holes, part boxes, heights, lead protrusion, mated plugs – from
+`<artifacts>/mech_<board>.json`, which `edakit pcb plan` writes (7.4); the gate does not run the plan, so a check that
+needs the file current runs `edakit pcb plan` first.
 
 ## 8.2 Hashes and sign-offs
 
@@ -246,7 +280,9 @@ finding its probability and its cost; a deviation without a realistic consequenc
 RELEASED only if every stage ran, no check failed, every warning is accepted, every part is signed, every manual check
 of phase `export` is signed – all for the current hashes – and, with `[project] requirements`, every requirement
 `must` the user has accepted has passing evidence and every accepted `should` without it is accepted like a warning
-(8.7); a draft binds nothing yet. Otherwise NOT RELEASED with the reasons. Exit 0 / 2.
+(8.7); a draft binds nothing yet. Otherwise NOT RELEASED with the reasons. Exit 0 / 2. Every project check of phase `export` is a stage (8.1): it has to run – one after F runs only
+with `--easyeda` – and pass, unless it is advisory; a check of phase `order` or `acceptance` does not hold up the
+release, it is a line of section 6.
 
 The protocol names every check with its words next to the ID ("L-9 (hole fits the lead)"), and its section 10, "The
 rules behind the findings", gives rule, reason, fix and sources of every check that failed or warned – from the rule
@@ -373,9 +409,18 @@ current at the nominal voltage against the simulated value, every LED/output, ev
 Deviation beyond tolerance → find the cause (model, firmware, assembly) before the board is used.
 
 The list is section 6 of the protocol, "after delivery, per board": M-4, the datasheet points with `when =
-"acceptance"` (8.2) and, with `[project] requirements`, every acceptance step of a requirement with its ID –
-`- [ ] R-1: on the USB port of a laptop: all eight LEDs on, the port stays on`. M-4 works through it and names the
-requirements it tested in its note; signed, it lets their acceptance steps pass (8.7).
+"acceptance"` (8.2), with `[project] requirements` every acceptance step of a requirement with its ID, and the
+project's checks of phase `acceptance` (8.1), each with its command:
+
+```text
+- [ ] M-4 Acceptance test of every delivered board: visual check, supply current, every LED, the button
+- [ ] R-1: on the USB port of a laptop: all eight LEDs on, the port stays on
+- [ ] A abnahme: Camera test of every board after delivery: each LED at its place – `uv run simulator/pico/pruefstand.py mitlesen`
+```
+
+M-4 works through it and names the requirements it tested in its note; signed, it lets their acceptance steps pass,
+and the requirements whose evidence is such a check (8.7). The list "after uploading to the manufacturer, before
+paying" works the same way for M-2: the datasheet points with `when = "order"` and the checks of phase `order`.
 
 ## 8.6 Project scripts
 
@@ -390,7 +435,7 @@ follows from that and from edakit's steps in their fixed order, so nobody has to
 | `input` | a file edakit reads: the board file (`board:<b>`, its own sections – every writer keeps the lines of the others, as `pcb place --write` does), an SVG of `[[silk.art]]`, the simulation plugin | before the first step that reads it |
 | `derive` | files no edakit step reads: the firmware's pin table, pictures, the enclosure | before `edakit check`, where its result is to be current – before the gate when the script reads what comes after `edakit check` (footprints, routing) |
 | `easyeda` | changes in EasyEDA: the project library, `project-library:<b>` | on command only |
-| `check` | – | phase `export`: in the gate before S, or with `at = "after F"` after the run's Gerber data; phase `order` and `acceptance`: after the gate |
+| `check` | – | phase `export`: a stage of the gate (8.1), before S, or with `at = "after F"` after stage F on the run's manufacturing files; phase `order` and `acceptance`: a line of section 6, after the export |
 | `sim` | – | `[project] sim_plugin`, inside `edakit sim` (5.1) |
 
 `[[release.stages]]` (8.1) take part as checks of phase export before S. The names of edakit's data in `reads` and
@@ -475,15 +520,16 @@ since a stamp that found it absent is a change. The project library has no offli
 |---|---|---|
 | `input` | error | fails |
 | `derive`, `easyeda` | warning | a warning: the script runs, or the owner accepts it (`"match": "scripts sockel outdated*"`, 8.2) |
-| `check`, `sim` | – (no stamp: a check's result is the gate's protocol, the plugin runs inside `edakit sim`) | |
+| `check`, `sim` | – (no stamp: a check runs in every gate and its result is the gate's protocol, 8.1; the plugin runs inside `edakit sim`) | |
 
 ```text
 ERROR   scripts  kunst outdated: hardware/art/make_art.py changed – Bell, greeting, star and snowflake as shapes for the silkscreen
 NOTE    scripts  baumgrafik: not compared – routing:tree absent here
 ```
 
-A current script is a passed row of stage G. **No command runs a script yet:** run it by hand – its `cmd`, in the
-project directory –, then record the run, and commit the lock with what the script wrote:
+A current script is a passed row of stage G. **No command runs an `input`, `derive` or `easyeda` script yet** – the
+gate runs the checks (8.1): run it by hand – its `cmd`, in the project directory –, then record the run, and commit
+the lock with what the script wrote:
 
 ```bash
 edakit scripts                 # every script: kind, state, about, cmd, last run; the order, and what is to run
@@ -514,10 +560,10 @@ requirement's evidence is evaluated against this run:
 
 | `verify` | passes when | otherwise |
 |---|---|---|
-| `rows` | at least one row of the protocol matches – a pattern over "ID scenario item check", matched as `accepted_warnings` match (8.2), the rows of the simulation included – and none of them failed. An advisory finding of a project stage did not pass; a warning, a waiver or an open sign-off is no failure | no passing evidence; when no row matches because the pattern's stage did not run – S, L and F in the offline gate –, the protocol says so |
+| `rows` | at least one row of the protocol matches – a pattern over "ID scenario item check", matched as `accepted_warnings` match (8.2), the rows of the simulation included – and none of them failed. An advisory finding of a project check did not pass; a warning, a waiver or an open sign-off is no failure | no passing evidence; when no row matches because the pattern's stage did not run – S, L and F in the offline gate –, the protocol says so |
 | `signoff` | the manual check is signed for the current hash of its scope – only then does it count at all (8.2) – and its `note` names the requirement's ID, e.g. `"note": "OK for state 1a2d…; R-4: R2 holds LED_OE high until the firmware drives it"` (R-40 does not name R-4) | phase `export`: no passing evidence; a later phase (M-2, M-4): open after the export |
 | `accept` | M-4 is signed | open after delivery; the step is on the acceptance list of section 6 (8.5) |
-| `script` | – | not evaluated yet: the gate runs no project scripts so far |
+| `script` | the project's check (8.1) – a `[scripts]` name, the `id` of a `[[release.stages]]` – passed in this run: it ran, and no row of its stage failed; an advisory finding did not pass either. A check of phase `order` or `acceptance` counts like an `accept` step: M-2 or M-4 is signed | phase `export`: no passing evidence – also when the check did not run (one after F in the offline gate) or is not part of the run (entries that do not resolve: stage G says why); phase `order` or `acceptance`: open after the export, the check is a line of section 6 |
 
 What an accepted requirement without passing evidence does to the release, its binding says:
 
@@ -528,10 +574,8 @@ What an accepted requirement without passing evidence does to the release, its b
 | `may` | information |
 
 What is only tested after the export does not hold up the release: as long as nothing else failed, an acceptance
-step that M-4 has not signed yet, or a sign-off of phase `order` or `acceptance` that is still open, leaves the
-requirement "open after the export". A requirement whose evidence includes a project script, with nothing else
-failed, is "not evaluated yet": section 11 and the gate's output show it, and it does not block the release – the gate
-cannot run project scripts yet (8.6), so until it can, nothing but the reader holds such a requirement to its script.
+step that M-4 has not signed yet, a project check of phase `order` or `acceptance` whose list is not signed yet, or a
+sign-off of phase `order` or `acceptance` that is still open, leaves the requirement "open after the export".
 
 **A draft binds nothing yet** (`status = "draft"`, or no `status`). It is evaluated like any requirement and listed in
 section 11 with its evidence, marked as a draft – `→ draft, not binding yet – no passing evidence` –, but it never
@@ -555,6 +599,14 @@ section keeps its number, and a project without the key has none. From the tests
 ```
 
 Accepted as it stands, R-4 would block the release until M-1 is signed with a note that names it.
+
+A requirement whose evidence is a project check – the rule watcher of the tests, a check `W` of phase `export`
+(`tests/test_requirement_checks.py`) – passes or fails with the check's rows in this run:
+
+```markdown
+- **R-5** must, accepted: Until the firmware drives LED_OE low, no LED lights. → passed
+  - script `rule-watcher` – check W: 1 row: 1 passed
+```
 
 **Signing for a requirement.** A reviewer whose check a requirement names in `verify` – the agent electrical-reviewer
 for `signoff = "M-1"`, regulatory-reviewer for `"M-6"`, pcb-reviewer for `"M-5"` – judges it and names the

@@ -1,6 +1,6 @@
 ---
 name: release
-description: Release a hardware state for manufacturing with the edakit release gate – all stages (P parts, G graph, E simulation, project stages, S schematic, L board, F manufacturing files), sign-offs bound to hashes, manifest, test protocol, order checklist for JLCPCB. Use before an order, for "release", "gate", "test protocol", "manufacturing files", "Gerber", "BOM".
+description: Release a hardware state for manufacturing with the edakit release gate – all stages (P parts, G graph, E simulation, project checks, S schematic, L board, F manufacturing files), sign-offs bound to hashes, manifest, test protocol, order checklist for JLCPCB. Use before an order, for "release", "gate", "test protocol", "manufacturing files", "Gerber", "BOM".
 ---
 
 # Release for manufacturing
@@ -11,14 +11,14 @@ Concept: `${CLAUDE_PLUGIN_ROOT}/handbook/08-release-gate.md`.
 ## Procedure
 
 1. **Offline** (seconds): `edakit stock 2>&1 | cat` when the snapshot is older than `stock_max_age_days` (P-4 is
-   pending then), then `edakit gate 2>&1 | cat` – P, G, E and the project's own stages. A footprint geometry that
+   pending then), then `edakit gate 2>&1 | cat` – P, G, E and the project's checks before S. A footprint geometry that
    still lies among the artifacts (a note of `edakit check` and in section 6 of the protocol) is moved first, as the
    note says, and committed: the move changes the layout hash once, and a sign-off with scope `layout` recorded before
    it would lapse (handbook 8.2).
 2. **With EasyEDA** (start skill, claim EasyEDA, reference schematic checked): `edakit gate --easyeda 2>&1 | cat` in the
    background (minutes). Adds S, L and F per board: read the PCB, save and reload, DRC, export Gerber and pick-and-place,
    BOM from the graph, JLCPCB stock, copper connectivity from the Gerber files, holes against leads, outline, tooling
-   holes, polarity sheet. Files in `<reports>/<run>/fab/<board>/`.
+   holes, polarity sheet; then the project's checks after F. Files in `<reports>/<run>/fab/<board>/`.
 3. Read `<reports>/<run>/protocol.md`. Summarise per stage passed / failed / warning / open, then the findings with
    actual and expected value. Always name stages and checks with their short name next to the letter: "stage L
    (board)", "L-9 (hole fits the lead)" – nobody remembers the letters; the names come from the rule catalog
@@ -31,7 +31,9 @@ Concept: `${CLAUDE_PLUGIN_ROOT}/handbook/08-release-gate.md`.
    acceptance (section 3) goes back to the user: judge again, then update `parts` or remove it. A row `scripts` of
    stage G is a project script (handbook 8.6): outdated or never run – run it (its `cmd`, `edakit scripts` shows it),
    then `edakit scripts stamp <name>`, and commit `hardware/scripts.lock` with what it wrote; entries that do not
-   resolve – fix `[scripts]` in edakit.toml.
+   resolve – fix `[scripts]` in edakit.toml. A project check is a stage of its own, its `id` the stage letter
+   (handbook 8.1): what it printed is `<reports>/<run>/stage_<id>.txt`; a failed one is a finding like any other, an
+   advisory one is listed and does not block.
 5. **Manual checks an agent can do are signed by the agent's result** (no checklist for the user; M-1, M-6 and M-5
    are required – the gate adds them as open when the sign-off file lacks them): M-1 – agent
    electrical-reviewer checks the critical parts again against their datasheets with the polarity sheet; M-6 – agent
@@ -64,8 +66,8 @@ The MCP server cannot order on purpose. Checklist for the user:
       order.md lists as free), bake. Without `[order]`: thickness, colours, tooling holes, order number position and
       remark by hand as in handbook 8.4
 - [ ] M-2: in JLCPCB's assembly preview the rotation and polarity of every polarised part (compare with
-      `polarity_<b>.png`), no missing part in the BOM tool, price, and the datasheet points section 6 lists under
-      "after uploading"; then sign M-2
+      `polarity_<b>.png`), no missing part in the BOM tool, price, and the datasheet points and the project's checks
+      section 6 lists under "after uploading" (a check: run its command); then sign M-2
 - [ ] The cart against `edakit cost` – class, fees and parts; a difference of more than a few dollars has a reason
       (a thickness, colour or finish `edakit cost` names as not in the price is one)
 - [ ] Parts that do not come from JLCPCB (hand-soldered, cables, enclosure, a bought board and what is soldered onto
@@ -73,5 +75,6 @@ The MCP server cannot order on purpose. Checklist for the user:
       writes a cart per supplier and `hand_assembly.md` for all sets, with spares and minimum quantities
 
 After delivery: acceptance test of every board (M-4), with the datasheet points section 6 of the protocol lists
-under "after delivery, per board" (`verified.open` with `when`) and, with `[project] requirements`, the acceptance
-steps of the requirements (`- [ ] R-4: …`); M-4's note names the requirements it tested.
+under "after delivery, per board" (`verified.open` with `when`), the project's checks of phase acceptance there (each
+with its command) and, with `[project] requirements`, the acceptance steps of the requirements (`- [ ] R-4: …`);
+M-4's note names the requirements it tested.

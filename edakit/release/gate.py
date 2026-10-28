@@ -1,7 +1,11 @@
 """Release gate: runs every stage and writes a test protocol. Only a run that says RELEASED may go to the manufacturer.
 
-    edakit gate             P (parts), G (graph), E (simulation) and the project's own stages; offline, seconds
-    edakit gate --easyeda   plus S (schematic), L (board), F (manufacturing files); EasyEDA with the bridge, minutes
+    edakit gate             P (parts), G (graph), E (simulation) and the project's checks before S; offline, seconds
+    edakit gate --easyeda   plus S (schematic), L (board), F (manufacturing files) and the project's checks after F;
+                            EasyEDA with the bridge, minutes
+
+The project's checks ([[release.stages]] and [scripts.<name>] of kind check, scripts.gate_checks): phase export is a
+stage each, with its id – stage_checks runs it; phase order and acceptance are lines of section 6, after the export.
 
 Result: <reports>/<YYYYMMDD-hhmmss>/
     protocol.md            readable protocol: header with hashes, stages, findings with actual and expected value,
@@ -49,8 +53,10 @@ import datetime as dt
 import getpass
 import hashlib
 import json
+import os
 import platform
 import re
+import shlex
 import subprocess
 import sys
 from collections import Counter, defaultdict
@@ -334,32 +340,46 @@ def stage_graph(cfg, design):
     return rows, rep.to_dict()
 
 
-def stage_custom(cfg, outdir, step=None):
-    """[[release.stages]]: id, name, cmd (list), advisory. The command's last stdout line may be a JSON list of
-    [id, check, actual, expected, ok]; otherwise only its exit code counts. step: eda.Steps, one step per stage."""
+def stage_checks(cfg, outdir, project_checks, step=None):
+    """The project's checks of phase export (scripts.gate_checks: [[release.stages]] and [scripts] of kind check), each
+    a stage of its own. Its cmd runs in the project folder, with EDAKIT_RUN naming this run's folder – after stage F
+    its fab/<board>/ holds the manufacturing files; stdout and stderr go to stage_<id>.txt there. The last stdout line
+    may be a JSON list of [id, check, actual, expected, ok]; otherwise only the exit code counts, 0 passes. A failure
+    of an advisory check is an advisory row: listed, it does not block. Returns (rows, the ids of the checks run);
+    step: eda.Steps, one step per check."""
     rows, run = [], set()
-    for st in cfg.release.get("stages", []):
+    env = {**os.environ, "EDAKIT_RUN": str(outdir.resolve())}
+    for c in project_checks:
         if step:
-            step(f"{st['id']} {st['name']}")
-        run.add(st["id"])
-        log = outdir / f"stage_{st['id']}.txt"
+            step(f"{c.id} {c.title}")
+        run.add(c.id)
+        log = outdir / f"stage_{c.id}.txt"
         try:
-            res = subprocess.run(st["cmd"], capture_output=True, text=True, cwd=cfg.root, timeout=st.get("timeout", 900))
+            if not c.cmd:
+                raise OSError("no cmd")
+            res = subprocess.run(c.cmd, capture_output=True, text=True, cwd=cfg.root, timeout=c.timeout, env=env)
             log.write_text(res.stdout + res.stderr, encoding="utf-8")
         except (OSError, subprocess.TimeoutExpired) as e:
-            rows.append({"stage": st["id"], "id": st["id"], "item": st["name"], "check": f"not runnable: {e}",
-                         "result": "fail"})
+            rows.append({"stage": c.id, "id": c.id, "item": c.title, "check": f"not runnable: {e}", "result": "fail"})
             continue
-        bad = "advisory" if st.get("advisory") else "fail"
+        bad = "advisory" if c.advisory else "fail"
         try:
             items = json.loads(res.stdout.strip().splitlines()[-1])
-            rows += [{"stage": st["id"], "id": i[0], "item": st["name"], "check": i[1], "actual": i[2], "expected": i[3],
+            rows += [{"stage": c.id, "id": i[0], "item": c.title, "check": i[1], "actual": i[2], "expected": i[3],
                       "result": "pass" if i[4] else bad} for i in items]
         except (IndexError, json.JSONDecodeError, TypeError):
-            rows.append({"stage": st["id"], "id": st["id"], "item": st["name"], "check": " ".join(st["cmd"]),
+            rows.append({"stage": c.id, "id": c.id, "item": c.title, "check": " ".join(c.cmd),
                          "actual": f"exit {res.returncode}", "expected": "exit 0",
                          "result": "pass" if res.returncode == 0 else bad})
     return rows, run
+
+
+def listed_checks(project_checks, phase):
+    """The project's checks of a phase after the export, one unchecked line each for that phase's list in section 6 –
+    the manual check of the phase (M-2, M-4) works through it: id, name, what it checks, its command. A check of phase
+    export is a stage, no line."""
+    return [f"- [ ] {c.id} {c.title}: {c.about} – `{shlex.join(c.cmd)}`" for c in project_checks
+            if c.phase == phase and phase in WHEN]
 
 
 def bought_row(stage, sid, board):
@@ -619,9 +639,10 @@ def main_release(cfg, args):
 
 
 def write_protocol(cfg, outdir, head, rows, sim, signoff, notes, decision, reasons, stages_run, stages, files,
-                   reqs=()):
+                   reqs=(), project_checks=()):
     """reqs: requirements.evaluate of this run; with [project] requirements the protocol gets section 11 and the
-    acceptance steps in section 6 – without the key it is the protocol it always was."""
+    acceptance steps in section 6 – without the key it is the protocol it always was. project_checks: the project's
+    checks (scripts.gate_checks); those of phase order and acceptance are lines of section 6."""
     by_stage = defaultdict(Counter)
     for r in rows:
         by_stage[r["stage"]][r["result"]] += 1
@@ -696,6 +717,7 @@ def write_protocol(cfg, outdir, head, rows, sim, signoff, notes, decision, reaso
         items = [m for m in signoff.get("manual", []) if m.get("phase", "export") == phase]
         answered = [f"- [ ] {e['who']}: {t}" for e in sheet for t, w in e["open"] if w == phase]
         answered += requirements.acceptance(reqs) if phase == "acceptance" else []   # the requirements' steps
+        answered += listed_checks(project_checks, phase)   # the project's checks of phase order and acceptance
         if items or answered:
             L.append(f"**{title}**\n")
             for m in items:
@@ -761,14 +783,18 @@ def main(cfg, args):
     outdir = cfg.reports / dt.datetime.fromisoformat(head["time"]).strftime("%Y%m%d-%H%M%S")
     outdir.mkdir(parents=True, exist_ok=True)
     design = Design.from_config(cfg)
-    custom = [(st["id"], st["name"], st.get("about", " ".join(st["cmd"]))) for st in cfg.release.get("stages", [])]
-    stages = STAGES[:3] + custom + STAGES[3:]
-    step = eda.Steps(2 + len(custom) + (1 + len(cfg.made()) if args.easyeda else 0))
+    from .. import scripts     # the project's checks (8.1, 8.6): phase export a stage each, before S or after F
+    project_checks = scripts.gate_checks(cfg)
+    before = [c for c in project_checks if c.at == "before S"]
+    after = [c for c in project_checks if c.at == "after F"]
+    stages = STAGES[:3] + [(c.id, c.title, c.about) for c in before] + STAGES[3:] + [
+        (c.id, c.title, c.about) for c in after]
+    step = eda.Steps(2 + len(before) + (1 + len(cfg.made()) + len(after) if args.easyeda else 0))
     step("P/G parts and graph")
     rows, g_json = stage_graph(cfg, design)
     (outdir / "graph_checks.json").write_text(json.dumps(g_json, indent=1, ensure_ascii=False) + "\n", encoding="utf-8")
 
-    from .. import scripts     # project scripts (8.6), stage G: entries that do not resolve and an outdated input fail
+    # project scripts (8.6), stage G: entries that do not resolve and an outdated input fail
     rows += scripts.gate_rows(cfg)
 
     step("E simulation")
@@ -780,8 +806,8 @@ def main(cfg, args):
     rows += docs.stage_rows(cfg, design, sim)    # G-19: quoted values against this run's simulation
     (outdir / "sim.json").write_text(json.dumps(sim, indent=1, ensure_ascii=False) + "\n", encoding="utf-8")
     stages_run = set(OFFLINE)
-    if custom:
-        more, ran = stage_custom(cfg, outdir, step)
+    if before:      # the checks before S, where [[release.stages]] always ran
+        more, ran = stage_checks(cfg, outdir, before, step)
         rows += more
         stages_run |= ran
     files = {}
@@ -791,13 +817,20 @@ def main(cfg, args):
         rows += stage_fab(cfg, outdir, step)
         stages_run |= set(WITH_EASYEDA)
         head.update(fab_hashes(cfg, outdir))
+
+        if after:   # the checks after F: the run's manufacturing files are in fab/<board>/ of EDAKIT_RUN
+            more, ran = stage_checks(cfg, outdir, after, step)
+            rows += more
+            stages_run |= ran
     signoff, notes = load_signoff(cfg, head, write=True)   # after stage F: sign-offs with scope 'fab' need its hash
     notes += pcbmod.move_notes(cfg)        # a footprint geometry still among the artifacts: how to move it
-    reqs = requirements.evaluate(entries, [*sim["checks"], *rows], signoff, stages_run)   # [] without the key
+    reqs = requirements.evaluate(entries, [*sim["checks"], *rows], signoff, stages_run,
+                                 project_checks)   # [] without the key; script: the checks of this run
     decision, reasons = decide(rows, sim["checks"], signoff, stages_run, stages, reqs)
     if args.easyeda:
         files = write_manifest(cfg, outdir, head, decision)
-    write_protocol(cfg, outdir, head, rows, sim, signoff, notes, decision, reasons, stages_run, stages, files, reqs)
+    write_protocol(cfg, outdir, head, rows, sim, signoff, notes, decision, reasons, stages_run, stages, files, reqs,
+                   project_checks)
     print(f"\n{decision}")
     for r in reasons:
         print(f"  - {r}")

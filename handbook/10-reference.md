@@ -72,7 +72,7 @@ of the graph and the parts entries, e.g. `["notes", "sources", "description", "v
 check and no review reads; empty: the bytes are hashed, 8.2), `assembly` ({`sides` (both), `smd_only`, `paste_gap_mm`
 (0.4: SMD pads of different parts on an assembled side, L-14), `pcba` (`"economic"` or `"standard"`: the assembler's
 class of the order, P-4; default from `sides` – one side Economic, two Standard)}), `[[stages]]` ({`id`, `name`, `cmd`,
-`advisory`, `timeout`, `about`}).
+`advisory`, `timeout`, `about`}: project checks of phase export before S, 8.1).
 
 ### [cost]
 
@@ -123,22 +123,22 @@ Optional: a project script that touches edakit's flow – it writes a file edaki
 edakit's data, changes the project library in EasyEDA, or is a check of its own (8.6). `edakit check` and the gate
 resolve the entries with edakit's steps into one order, report what keeps them from it, and compare each script's
 stamp in `hardware/scripts.lock`: an input outdated or never run is an error, a derive or easyeda script a warning.
-`edakit scripts` lists them, `edakit scripts stamp` records a run; no command runs them yet. Without the table nothing
-changes.
+`edakit scripts` lists them, `edakit scripts stamp` records a run. The gate runs the checks (8.1); no command runs
+the other kinds yet. Without the table nothing changes.
 
 | Key | For | Meaning |
 |---|---|---|
 | `kind` | every entry | `input`, `derive`, `easyeda` or `check` (8.6); the kind `sim` is `[project] sim_plugin` |
-| `cmd` | every entry | the command as a list, run in the project directory |
+| `cmd` | every entry | the command as a list, run in the project directory; a check gets `EDAKIT_RUN`, the gate run's folder (8.1) |
 | `about` | every entry | one sentence why the script exists, citing a decision |
 | `writes` | input, derive, easyeda (required) | what it makes: paths; an input also `board:<b>`; an easyeda script changes `project-library:<b>` (not `footprints:<b>`, the geometry `pcb dump` measures); `<b>` a made board |
 | `reads` | every kind (optional) | what its result is made from: edakit's data (8.6, each with a hash; the project library has none), files and folders – the script itself, the first file `cmd` names, counts anyway |
 | `after` | every kind (optional) | other entries of `[scripts]` this one runs after – needed when several write the same file or change the same data |
 | `check` | input, derive, easyeda (optional) | an exact check command, when the stamp is not enough (not run yet) |
 | `id` | check (required) | its ID in the protocol: no stage of the gate (P, G, E, S, L, F), no sign-off (M-…), no ID of the rule catalog, and none twice – `[[release.stages]]` included |
-| `phase` | check (required) | `export` (holds up the release), `order` or `acceptance` |
-| `at` | check (optional) | phase `export` only: `"before S"` (default) or `"after F"`, to read the run's Gerber data (`gerber:<b>`) |
-| `advisory` | check (optional) | `true`: warns only |
+| `phase` | check (required) | `export`: a stage of the gate, its failure holds up the release; `order`: a line of the protocol's list after uploading, before paying, which M-2 works through; `acceptance`: a line of the acceptance list after delivery, which M-4 works through – neither of the two runs in the gate (8.1, 8.5) |
+| `at` | check (optional) | phase `export` only: `"before S"` (default) – between E and S, where `[[release.stages]]` run – or `"after F"`: after stage F, only in `edakit gate --easyeda`, to read the run's manufacturing files (`gerber:<b>`, in `fab/<b>/` of `$EDAKIT_RUN`) |
+| `advisory` | check (optional) | `true`: a failure is an advisory finding – listed in section 2 of the protocol, it does not hold up the release |
 
 A field of another kind is a finding of `edakit check`, a key no kind has an error of edakit.toml.
 
@@ -244,7 +244,7 @@ status = "accepted"
 | `source` | both | where it was found: a document, a decision; on a requirement next to `from`, which says where it comes from |
 | `from` | requirement | a list of where it comes from: needs (`N-2`), decisions (`D-8`), a standard (`USB 2.0: 500 mA`), a sign-off (`M-6`) |
 | `binding` | requirement, required | `must`, `should` or `may` |
-| `verify` | requirement | a list of what tests it, one kind per entry: `{ rows = "…" }` rows of the gate protocol, a pattern over "ID scenario item check" as `accepted_warnings` match them (8.2); `{ signoff = "M-1" }` a manual check, which counts when its `note` names the requirement's ID; `{ script = "…" }` a project script of kind `check` or the id of a `[[release.stages]]` (not evaluated yet); `{ accept = "…" }` a step of the acceptance test, on the list of protocol section 6. `edakit req` shows it as written, the gate evaluates it (8.7) |
+| `verify` | requirement | a list of what tests it, one kind per entry: `{ rows = "…" }` rows of the gate protocol, a pattern over "ID scenario item check" as `accepted_warnings` match them (8.2); `{ signoff = "M-1" }` a manual check, which counts when its `note` names the requirement's ID; `{ script = "…" }` a project script of kind `check` or the id of a `[[release.stages]]` – it passes when the check passed in the gate's run, one of phase `order` or `acceptance` once M-2 or M-4 is signed; `{ accept = "…" }` a step of the acceptance test, on the list of protocol section 6. `edakit req` shows it as written, the gate evaluates it (8.7) |
 | `status` | both | `draft` (written, not approved – also an entry without `status`), `accepted` (only the user sets it), `dropped`; a value that is written must be one of the three. A draft binds nothing yet: G-20 to G-23 only warn about it, the gate lists it and neither blocks nor asks for an acceptance (8.7); from `accepted` on, the findings are errors and the binding counts |
 | `reason` | both | why; required with `dropped` |
 
@@ -301,7 +301,7 @@ Claude Code: `edakit … 2>&1 | cat`. The long commands – `route all`, `gate`,
 | `edakit route diagnose [--net N]` | – | `route/<board>_board.json`, the board file's rules, the last SES | `route/<board>_diagnose/` (a PNG per open connection, `congestion.png`, `diagnose.json`), 7.5 |
 | `edakit silk apply\|check` | ✓ | PCB, Gerber export | designators, `silk_<board>_<side>.png`, `gerber_<board>/`; apply: `silk_footprints_<board>/` (the print it found, for L-17) |
 | `edakit export [--board]` | ✓ read | schematic, PCB, project file | `<artifacts>/export/` |
-| `edakit gate [--easyeda]` | – / ✓ | everything; with `[project] requirements` the requirements files (8.7 – a file missing or not valid: exit 1 before a run) | `<reports>/<run>/`; a RELEASED run supersedes the earlier ones in their `fab/manifest.json` (8.3) |
+| `edakit gate [--easyeda]` | – / ✓ | everything; with `[project] requirements` the requirements files (8.7 – a file missing or not valid: exit 1 before a run) | `<reports>/<run>/`, with `stage_<id>.txt` the output of each project check that ran (8.1); a RELEASED run supersedes the earlier ones in their `fab/manifest.json` (8.3) |
 | `edakit release current` | – | the manifests under `reports` | – |
 | `edakit release withdraw RUN --reason TEXT` | – | the run's manifest | its `fab/manifest.json`: `status`, `withdrawn` {reason, by, date} |
 | `edakit release verify FILE…\|DIR…` | – | the files (a folder: its `.zip` and `.csv` files), the manifests | – |

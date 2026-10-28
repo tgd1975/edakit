@@ -4,12 +4,13 @@ in the circuit hash – and no change for a project without [project] requiremen
 
 import json
 import re
+import sys
 
 import pytest
 from test_gate import ALL, decision, gate_run, rows, section
 from test_requirements import LED_BAR, variant_of, with_requirements
 
-from edakit import checks, cli, requirements
+from edakit import checks, cli, requirements, scripts
 from edakit.design import Design
 from edakit.release import gate
 
@@ -254,9 +255,10 @@ def row(cid, check, result, scenario="usb-min/all_on/vf-min", item="J1"):
     return {"stage": cid[0], "id": cid, "scenario": scenario, "item": item, "check": check, "result": result}
 
 
-def evaluate(tmp_path, text, protocol_rows=(), manual=(), stages_run=ALL, warnings=()):
+def evaluate(tmp_path, text, protocol_rows=(), manual=(), stages_run=ALL, warnings=(), checks=()):
     signoff = {"manual": list(manual), "accepted_warnings": list(warnings)}
-    return requirements.evaluate(entries(tmp_path, text), list(protocol_rows), signoff, set(stages_run)), signoff
+    return requirements.evaluate(entries(tmp_path, text), list(protocol_rows), signoff, set(stages_run),
+                                 list(checks)), signoff
 
 
 def states(results):
@@ -323,21 +325,74 @@ def test_accept_passes_once_m4_is_signed(tmp_path):
     assert results[0].state == "pass"
 
 
-def test_script_evidence_is_not_evaluated_yet_and_does_not_block(tmp_path):
-    """Project scripts run in the gate from step 3.1 of the implementation plan on; until then a requirement whose
-    evidence is a script warns as not evaluated, and that alone does not hold up the release."""
-    text = requirement("must", ("rows", "E-3 *"), ("script", "rule-watcher"))
-    results, signoff = evaluate(tmp_path, text, [row("E-3", "current from the supply", "pass")])
-    assert states(results) == [("R-1", "unevaluated", ["pass", "unevaluated"])]
-    assert results[0].items[1][3] == "not evaluated yet – the gate runs no project scripts so far"
-    assert requirements.reasons(results, signoff) == []
-    assert gate.decide(rows("pass"), [], signoff, ALL, gate.STAGES, results) == ("RELEASED", [])
+def gate_check(name, cid, phase="export", at="before S", advisory=False):
+    """A project check as the gate takes it (scripts.gate_checks)."""
+    return scripts.Check(name, cid, name, "the rule watcher", ["python3", "watch.py"], phase,
+                         at if phase == "export" else "", advisory, scripts.TIMEOUT)
 
 
-def test_failing_evidence_also_fails_with_a_script_beside_it(tmp_path):
-    text = requirement("must", ("rows", "E-3 *"), ("script", "rule-watcher"))
-    results, _ = evaluate(tmp_path, text, [row("E-3", "current from the supply", "fail")])
-    assert results[0].state == "fail"
+WATCHER = gate_check("rule-watcher", "W")
+
+
+@pytest.mark.parametrize("results, state, what", [
+    (["pass"], "pass", "check W: 1 row: 1 passed"),
+    (["pass", "fail"], "fail", "check W: 2 rows: 1 passed, 1 FAILED"),
+    (["advisory"], "fail", "check W: 1 row: 1 advisory"),           # listed, not blocking – but it did not pass
+])
+def test_script_evidence_passes_when_its_check_passed_in_this_run(tmp_path, results, state, what):
+    """Step 3.1: the gate runs the project's checks – a requirement's script passes when its check passed, every row of
+    its stage."""
+    protocol = [row("W-1", "no LED before the firmware", r, scenario="", item="rule-watcher") for r in results]
+    found, _ = evaluate(tmp_path, requirement("must", ("script", "rule-watcher")), protocol + [row("E-3", "x", "fail")],
+                        stages_run=ALL | {"W"}, checks=[WATCHER])
+    assert found[0].items[0][2:] == (state, what) and found[0].state == state
+
+
+@pytest.mark.parametrize("binding, reason", [
+    ("must", "1 requirement(s) must without passing evidence: R-1 (section 11)"),
+    ("should", "1 requirement(s) should without passing evidence, not accepted: R-1 (section 11)"),
+])
+def test_a_failed_check_blocks_a_must_and_warns_a_should(tmp_path, binding, reason):
+    results, signoff = evaluate(tmp_path, requirement(binding, ("script", "rule-watcher")),
+                                [row("W-1", "no LED before the firmware", "fail")], stages_run=ALL | {"W"},
+                                checks=[WATCHER])
+    assert gate.decide(rows("pass"), [], signoff, ALL, gate.STAGES, results) == ("NOT RELEASED", [reason])
+
+
+def test_a_check_that_did_not_run_is_no_passing_evidence(tmp_path):
+    """A check after F in the offline gate; a name that is no check of this run – stage G says why."""
+    gerber = gate_check("gerber", "X", at="after F")
+    text = requirement("must", ("script", "gerber"), rid="R-1") + requirement("must", ("script", "pins"), rid="R-2")
+    results, _ = evaluate(tmp_path, text, stages_run="PGE", checks=[gerber])
+    assert [r.items[0][2:] for r in results] == [
+        ("fail", "check X did not run – it runs after stage F, in edakit gate --easyeda"),
+        ("fail", "no check pins in this run – stage G says why (scripts, G-20)")]
+
+
+def test_a_release_stage_is_named_by_its_id(tmp_path):
+    stage = scripts.Check("K", "K", "Mechanics", "mech/check.py", ["mech/check.py"], "export", "before S", False, 900)
+    results, _ = evaluate(tmp_path, requirement("must", ("script", "K")), [row("K", "mech/check.py", "pass")],
+                          stages_run=ALL | {"K"}, checks=[stage])
+    assert results[0].items[0][2:] == ("pass", "check K: 1 row: 1 passed")
+
+
+@pytest.mark.parametrize("phase, sid, title", [
+    ("acceptance", "M-4", "after delivery, per board"),
+    ("order", "M-2", "after uploading to the manufacturer, before paying"),
+])
+def test_a_check_after_the_export_counts_like_an_acceptance_step(tmp_path, phase, sid, title):
+    """It is a line of its phase's list in section 6: open after the export until the manual check that works through
+    that list is signed – M-4 after delivery, M-2 at JLCPCB."""
+    camera = gate_check("camera", "A", phase=phase)
+    m = {"id": sid, "phase": phase, "scope": "layout", "done_by": None}
+    for manual, found in [
+            ([], ("later", f"{title}: {sid} is not in the sign-off file – check A is a line of its list (section 6)")),
+            ([m], ("later", f"{title}: {sid} not signed yet – check A is a line of its list (section 6)")),
+            ([{**m, **SIGNED}], ("pass", f"{sid} signed by agent electrical-reviewer (2026-10-28)"))]:
+        results, signoff = evaluate(tmp_path, requirement("must", ("script", "camera")), manual=manual,
+                                    checks=[camera])
+        assert results[0].items[0][2:] == found
+        assert requirements.reasons(results, signoff) == []
 
 
 @pytest.mark.parametrize("binding, state, reason", [
@@ -454,6 +509,31 @@ def test_a_requirement_passes_with_its_sign_off(project, monkeypatch):
     assert "→ **FAILED**" not in section(text, 11)
     assert "  - signoff M-1 – signed by agent (2026-10-28), its note names R-4\n" in section(text, 11)
     assert "requirement(s)" not in decision(text)
+
+
+WATCH = ('"""The rule watcher of the tests: its verdict from the first argument."""\nimport json, sys\n'
+         'print(json.dumps([["W-1", "no LED before the firmware", "0 uA", "<= 10 uA", sys.argv[1] == "pass"]]))\n')
+R5 = ('\n[[requirement]]\nid = "R-5"\ntext = "Until the firmware drives LED_OE low, no LED lights."\nfrom = ["N-3"]\n'
+      'binding = "must"\nverify = [{ script = "rule-watcher" }]\nstatus = "accepted"\n')
+
+
+@pytest.mark.parametrize("verdict, result", [
+    ("pass", "→ passed\n  - script `rule-watcher` – check W: 1 row: 1 passed\n"),
+    ("fail", "→ **FAILED** – blocks the release\n  - script `rule-watcher` – check W: 1 row: 1 FAILED\n"),
+])
+def test_a_requirement_names_a_check_of_the_gate(project, monkeypatch, verdict, result):
+    """R-5 is verified by the project's rule watcher, a check of phase export: the gate runs it, and its result is the
+    requirement's evidence."""
+    with_requirements(project, LED_BAR + R5)
+    (project.root / "hardware" / "watch.py").write_text(WATCH)
+    toml = project.root / "edakit.toml"
+    toml.write_text(toml.read_text() + f'\n[scripts.rule-watcher]\nkind = "check"\nid = "W"\nphase = "export"\n'
+                    f'cmd = ["{sys.executable}", "hardware/watch.py", "{verdict}"]\n'
+                    'about = "The rule watcher: no LED lights before the firmware drives LED_OE"\n')
+    text = gate_run(project, monkeypatch)
+    r5 = "- **R-5** must, accepted: Until the firmware drives LED_OE low, no LED lights. "
+    assert r5 + result in section(text, 11)
+    assert ("R-5 (section 11)" in decision(text)) == (verdict == "fail")
 
 
 def test_accept_steps_join_the_acceptance_list(project, monkeypatch):

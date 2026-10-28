@@ -40,9 +40,10 @@ With the key, the file is part of the circuit (handbook 3.6, 8.7):
   edakit gate    evaluates each requirement's evidence against its run (evaluate): rows – at least one protocol row
                  matches and none failed; signoff – the manual check is signed for the current hash of its scope and
                  its note names the requirement's ID; accept – M-4 is signed, the step is on the acceptance list of
-                 section 6; script – not evaluated yet. must without passing evidence blocks the release, should is
-                 a warning to accept, may informs; what is tested only after the export does not hold it up; a draft
-                 binds nothing yet – it is evaluated and listed, it neither blocks nor needs acceptance.
+                 section 6; script – the project's check passed in this run, one of phase order or acceptance counts
+                 like an acceptance step, with M-2 or M-4. must without passing evidence blocks the release, should
+                 is a warning to accept, may informs; what is tested only after the export does not hold it up; a
+                 draft binds nothing yet – it is evaluated and listed, it neither blocks nor needs acceptance.
                  Section 11 of the protocol lists every requirement with its evidence and the result.
   circuit hash   the files count byte for byte, [release] hash_ignore does not reach into them: a changed
                  requirement voids M-1 and M-6, and the firmware contract shows drift.
@@ -72,6 +73,8 @@ CHECKS = ("G-20", "G-21", "G-22", "G-23")   # run with [project] requirements on
 SIGNOFF_ID = re.compile(r"M-[1-9]\d*")      # a manual check of the sign-off file
 CHECK_ID = re.compile(r"[PGESLF]-\d+")      # a check of the catalog, as a rows pattern may start with it
 ACCEPTANCE = "M-4"                          # the manual check that works through the acceptance list (section 6)
+ORDER = "M-2"                               # the one that works through the list after uploading: JLCPCB's preview
+WORKS_THROUGH = {"order": ORDER, "acceptance": ACCEPTANCE}   # a phase after the export: who works through its list
 
 
 class RequirementsError(Exception):
@@ -387,15 +390,15 @@ def check(rep, cfg):
 
 FAILED = ("fail", "advisory")   # a protocol row that did not pass – an advisory finding does not block, it failed still
 FAILS = {"must": "fail", "should": "warn", "may": "info"}   # binding: what a requirement without passing evidence is
-WORDS = {"pass": "passed", "later": "open after the export", "unevaluated": "not evaluated yet", "info": "information",
-         "warn": "warning", "fail": "FAILED", "draft": "draft", "dropped": "dropped"}
+WORDS = {"pass": "passed", "later": "open after the export", "info": "information", "warn": "warning",
+         "fail": "FAILED", "draft": "draft", "dropped": "dropped"}
 
 
 @dataclass
 class Result:
     entry: Entry                # the requirement
-    items: list                 # per entry of verify: (kind, text, state, what) – state pass, fail, later, unevaluated
-    state: str                  # pass, later, unevaluated, info, warn, fail (from the items and the binding), dropped
+    items: list                 # per entry of verify: (kind, text, state, what) – state pass, fail, later
+    state: str                  # pass, later, info, warn, fail (from the items and the binding), dropped
 
 
 def names(note, rid):
@@ -446,12 +449,41 @@ def _accept(signoff):
     return "later", f"after delivery: {ACCEPTANCE} {why} (section 6)"
 
 
-def evaluate(entries, protocol_rows, signoff, stages_run):
+def _script(name, checks, protocol_rows, stages_run, signoff):
+    """A project check (handbook 8.6), named as G-20 resolves it: a [scripts] name, the id of a [[release.stages]].
+    Phase export: it passed in this run – it ran, and none of the rows of its stage failed; an advisory row did not
+    pass either. Phase order or acceptance: it is a line of its phase's list in section 6 and counts like an acceptance
+    step – open after the export until the manual check that works through that list (M-2, M-4) is signed. Not a check
+    of this run – the entries of [scripts] do not resolve, or the name is no check –: failed, stage G says why."""
+    from .release.gate import PHASES, RESULT
+    check = next((c for c in checks if c.name == name), None)
+    if check is None:
+        return "fail", f"no check {name} in this run – stage G says why (scripts, G-20)"
+    if check.phase in WORKS_THROUGH:
+        sid = WORKS_THROUGH[check.phase]
+        m = next((x for x in signoff.get("manual", []) if x.get("id") == sid), None)
+        if m and m.get("done_by"):
+            return "pass", f"{sid} signed by {m['done_by']} ({m.get('date')})"
+        why = "not signed yet" if m else "is not in the sign-off file"
+        return "later", f"{dict(PHASES)[check.phase]}: {sid} {why} – check {check.id} is a line of its list (section 6)"
+    if check.id not in stages_run:
+        return "fail", f"check {check.id} did not run" + (
+            " – it runs after stage F, in edakit gate --easyeda" if check.at == "after F" else "")
+    hits = Counter(r["result"] for r in protocol_rows if r.get("stage") == check.id)
+    n = sum(hits.values())
+    if not n:
+        return "pass", f"check {check.id}: no rows – nothing failed"
+    counts = ", ".join(f"{hits[k]} {word}" for k, word in RESULT.items() if hits[k])
+    return ("fail" if any(hits[k] for k in FAILED) else "pass"), \
+        f"check {check.id}: {n} row{'s' if n != 1 else ''}: {counts}"
+
+
+def evaluate(entries, protocol_rows, signoff, stages_run, checks=()):
     """Every requirement against a gate run: per entry of verify (kind, text, state, what), and the requirement's
-    state. protocol_rows: every row of the run, the simulation's included; signoff: as load_signoff returns it. Any
-    item failed, or no evidence: the binding decides – must fail, should warn, may info; else a script: unevaluated
-    (warns, does not block); else an item after the export: later; else pass. A draft is evaluated the same way – its
-    binding counts only once accepted (reasons, verdict). A dropped requirement is listed, not evaluated."""
+    state. protocol_rows: every row of the run, the simulation's included; signoff: as load_signoff returns it;
+    checks: the project's checks of the run (scripts.gate_checks). Any item failed, or no evidence: the binding decides
+    – must fail, should warn, may info; else an item after the export: later; else pass. A draft is evaluated the same
+    way – its binding counts only once accepted (reasons, verdict). A dropped requirement is listed, not evaluated."""
     out = []
     for e in (e for e in entries if e.kind == "requirement"):
         if e.status == "dropped":
@@ -465,12 +497,12 @@ def evaluate(entries, protocol_rows, signoff, stages_run):
                 found = _signoff(text, e.id, signoff)
             elif kind == "accept":
                 found = _accept(signoff)
-            else:   # script: project scripts do not run in the gate yet
-                found = ("unevaluated", "not evaluated yet – the gate runs no project scripts so far")
+            else:   # script: a project check of the gate, or one after the export
+                found = _script(text, checks, protocol_rows, stages_run, signoff)
             items.append((kind, text, *found))
         states = {state for _, _, state, _ in items}
         state = (FAILS[e.binding] if not items or "fail" in states else
-                 next((s for s in ("unevaluated", "later") if s in states), "pass"))
+                 "later" if "later" in states else "pass")
         out.append(Result(e, items, state))
     return out
 
@@ -500,10 +532,9 @@ def reasons(results, signoff):
 
 
 VERDICT = {"pass": "passed", "fail": "**FAILED** – blocks the release", "info": "information – no passing evidence",
-           "unevaluated": "**not evaluated yet** – does not block the release",
            "later": "open after the export – does not block the release"}
 DRAFT_VERDICT = {"pass": "passed", "fail": "no passing evidence", "warn": "no passing evidence",
-                 "info": "no passing evidence", "unevaluated": "not evaluated yet", "later": "open after the export"}
+                 "info": "no passing evidence", "later": "open after the export"}
 SHOWN = {"rows": "rows `{}`", "signoff": "signoff {}", "script": "script `{}`", "accept": "accept: {}"}
 
 

@@ -108,7 +108,7 @@ def test_edakit_scripts_lists_every_script_with_its_state_and_the_order(project,
     assert lines[bild + 2] == pad + "python docs/bild.py – it names no file of the project: only reads count"
     assert lines[bild + 3].startswith(pad + "stamped 20")
     assert "lib    easyeda  never run" in lines
-    assert "lage   check    no stamp – a check, phase export before S; the gate does not run it yet" in lines
+    assert "lage   check    no stamp – a check, phase export before S: the gate runs it" in lines
     order = " ".join(line.strip() for line in out.split("\norder: ")[1].split("\non command only")[0].splitlines())
     assert order.endswith("edakit route all → kunst → edakit silk apply → bild → lage → edakit gate")
     assert "on command only: lib" in lines

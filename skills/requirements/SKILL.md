@@ -95,7 +95,7 @@ missing:
 | `rows` | rows of the gate protocol – a simulation scenario, a check of the graph, the board or the manufacturing files: a pattern over "ID scenario item check", matched as `accepted_warnings` are (handbook 8.2) | `{ rows = "E-3 * J1 current from the supply" }` |
 | `signoff` | a review that names the requirement in the note it signs with when it finds it met: `M-1` the circuit (electrical-reviewer: a stalled motor, the state at power-up), `M-6` purpose and law (regulatory-reviewer: the board does not transmit), `M-5` the layout (pcb-reviewer: a connector reachable at the edge) | `{ signoff = "M-1" }` |
 | `accept` | what only the delivered board shows: a step of the acceptance test, on the protocol's acceptance list that M-4 works through | `{ accept = "on a power bank: press start, the bell rings" }` |
-| `script` | a project script of kind check (`[scripts.<name>]`, handbook 8.6) – the gate does not run it yet | `{ script = "rule-watcher" }` |
+| `script` | a project script of kind check (`[scripts.<name>]`, handbook 8.1, 8.6): of phase export the gate runs it, and it passes when it passed in the run; one of phase acceptance (a camera test of the delivered board) counts like an `accept` step | `{ script = "rule-watcher" }` |
 
 A rows pattern names the rows that test the sentence – the scenario and the part it is about; `E-3 *` matches every
 row of the check and says nothing about the sentence. Rows of the stages S, L and F come only with
