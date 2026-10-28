@@ -590,8 +590,9 @@ copper have the last word either way.
 `edakit silk apply` hides the designators of the configured sides, exports Gerber (so the silk layer shows only the
 footprints' own print), places every designator of the `designators` side at the first free spot (above, below, right,
 left, then vertical, then at the corners; not on pads, footprint print, parts or other labels; over a tented via only as
-last resort; test points first), then exports again and checks that no own silkscreen lies on a solder-mask opening
-(JLCPCB cuts it off there) – target 0 mm² – and runs the DRC. Pictures per side in `<artifacts>/silk_<board>_<side>.png`.
+last resort; test points first) or at its fixed spot (`[silk.place]`, below), then exports again and checks that no own
+silkscreen lies on a solder-mask opening (JLCPCB cuts it off there) – target 0 mm² – and runs the DRC. Pictures per side
+in `<artifacts>/silk_<board>_<side>.png`.
 The export stays in `<artifacts>/gerber_<board>/` (`edakit silk check` writes it again without placing anything): the
 copper of every layer as EasyEDA filled it, which the layout review at the end of the round reads (skill pcb-round) –
 the routing picture shows the pours edakit computed, not what EasyEDA made of them.
@@ -603,6 +604,32 @@ that side. A part's designator prints only on its own side, so the name is a fre
 and height, remembered and replaced like the board label. A part counts as through-hole with at least one through-hole
 pad; SMD parts of the other side get no label. `hide = ["bottom"]` (or `"top"`) keeps the part's own side free of
 designators. A large through-hole part there – a module on pin headers – blocks label spots over its whole box.
+
+**Single designators at a fixed spot.** `[silk.place]` fixes a designator as `[place]` fixes a part: `x`, `y` in plan
+mm (the centre of the text), `rot` (0; the rotation EasyEDA gets, as for `[[silk.texts]]`: 0 and 180 lie, 90 and 270
+stand) and `side` (the side the name prints on; default the `designators` side). `silk apply` writes it there in the
+designators' font and height and places the rest around it – the free-spot search, the group labels and the board label
+keep clear of it. On the side its part sits on, the part's own designator moves there and shows, on a side in `hide`
+too; on the other side the name is a free text, remembered and replaced like a group label, as with `solder_side`. It
+prints there and nowhere else, and it leaves its group:
+
+```toml
+[silk.place]                                     # hardware/boards/main.toml
+R4 = { x = 30, y = 41.5, rot = 90 }              # left of its part, standing
+LED5 = { x = 30, y = 44, side = "bottom" }       # on the LED's solder side
+```
+
+No spot is searched for it, so `silk apply` checks it as the search checks a spot: on a pad (within 0.15 mm of a
+solder-mask opening), beyond the printable board (the outline less 0.5 mm, the holes) or on a text (within 0.3 mm of a
+`[[silk.texts]]` entry of its side, within 0.2 mm of another fixed designator) it is a finding – `R4: fixed designator
+on a pad (top) – 0.42 mm² of its box within 0.15 mm of a solder-mask opening` – and the exit code is 2; it is written
+all the same. A row for a designator the board does not have is a finding too. `edakit silk preview` draws the fixed
+designators as blue boxes onto the last Gerber export and reports the same findings offline (exit 2), so a spot can be
+tuned without EasyEDA. In the gate a fixed designator is edakit's print like any other (L-17). A part of the
+`designators` side whose name goes to the other side has none on its own side: L-17 warns unless `unlabelled` gives the
+reason. With `[looks]`, L-19 does not know `[silk.place]` yet: a fixed designator on the visible side while
+`designators` names the other side is a finding there – a part's own designator can be waived on the part (`waive`
+L-19), a free text not.
 
 It also prints the **board label** – title and revision, `"{title} rev {revision}"` by default – at the free spot
 nearest to the bottom-left corner of the printed side (`board_label_corner`), clear of pads, parts, labels, vias and the

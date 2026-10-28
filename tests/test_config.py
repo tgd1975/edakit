@@ -250,6 +250,30 @@ def test_silk_board_label_side_and_region_keys(tmp_path):
             _board("b", {}, {"silk": {"board_label_region": region}})
 
 
+def test_silk_place_key(tmp_path):
+    """Step 2.3: [silk.place] fixes single designators – x, y (plan mm), rot, side – as [place] fixes parts."""
+    from edakit.config import _board
+    assert "place" not in _board("b", {}, {}).silk                     # no key: silk apply places every designator
+    (tmp_path / "edakit.toml").write_text('[project]\nname = "t"\n[boards.main]\n')
+    (tmp_path / "hardware" / "boards").mkdir(parents=True)
+    (tmp_path / "hardware" / "boards" / "main.toml").write_text(
+        '[silk]\ndesignators = "top"\n[silk.place]\nR4 = { x = 12.5, y = 30, rot = 90 }\nLED1 = { x = 5, y = 3, side = '
+        '"bottom" }\n')
+    assert load(tmp_path / "edakit.toml").board().silk["place"] == {
+        "R4": {"x": 12.5, "y": 30, "rot": 90}, "LED1": {"x": 5, "y": 3, "side": "bottom"}}
+    for bad, msg in ((["R4"], r"silk.place must be a table of designator = \{ x, y, rot, side \}"),
+                     ({"R4": [12.5, 30]}, r"silk.place.R4: needs x and y \(plan mm\)"),
+                     ({"R4": {"x": 12.5}}, r"silk.place.R4: needs x and y \(plan mm\)"),
+                     ({"R4": {"x": "12.5", "y": 30}}, "silk.place.R4: x, y and rot must be numbers"),
+                     ({"R4": {"x": 12.5, "y": 30, "rot": True}}, "silk.place.R4: x, y and rot must be numbers"),
+                     ({"R4": {"x": 12.5, "y": 30, "side": "back"}},
+                      "silk.place.R4: side must be 'top' or 'bottom', not 'back'"),
+                     ({"R4": {"x": 12.5, "y": 30, "lock": True}},
+                      r"silk.place.R4: unknown key 'lock' \(known: x, y, rot, side\)")):
+        with pytest.raises(ConfigError, match=msg):
+            _board("b", {}, {"silk": {"place": bad}})
+
+
 def test_copper_key(tmp_path):
     from edakit.config import _board
     assert _board("b", {}, {}).copper == {"max_bare_mm": 5.0, "min_cover": {}}     # no key: 5 mm, no share required

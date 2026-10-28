@@ -459,6 +459,21 @@ def _board(name, entry, b, file=""):
             isinstance(p, list) and len(p) == 2 and all(isinstance(v, (int, float)) for v in p) for p in region)):
         raise ConfigError(f"board {name}: silk.board_label_region must be a polygon [[x, y], …] of at least 3 points "
                           "in plan mm")
+    fixed = silk.get("place", {})       # [silk.place]: single designators at a fixed spot, as [place] fixes parts
+    if not isinstance(fixed, dict):
+        raise ConfigError(f"board {name}: silk.place must be a table of designator = {{ x, y, rot, side }}, e.g. "
+                          "{ R4 = { x = 12.5, y = 30, rot = 90 } } (plan mm)")
+    for ref, p in fixed.items():
+        where = f"board {name}: silk.place.{ref}"
+        if not isinstance(p, dict) or "x" not in p or "y" not in p:
+            raise ConfigError(f"{where}: needs x and y (plan mm), e.g. {{ x = 12.5, y = 30, rot = 90 }}")
+        if bad := _unknown(where, p, ("x", "y", "rot", "side")):
+            raise ConfigError(bad[0])
+        if not all(isinstance(p.get(k, 0), (int, float)) and not isinstance(p.get(k, 0), bool)
+                   for k in ("x", "y", "rot")):
+            raise ConfigError(f"{where}: x, y and rot must be numbers (plan mm, degrees)")
+        if p.get("side", "top") not in ("top", "bottom"):
+            raise ConfigError(f"{where}: side must be 'top' or 'bottom', not {p['side']!r}")
     return Board(
         name=name,
         title=entry.get("title", name),

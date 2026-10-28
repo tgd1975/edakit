@@ -13,6 +13,12 @@ tightest parts come first. A spot on a via (tented, the print holds) only when n
 through-hole parts of the other side are labelled on this side too, next to their solder joints: a free text in the
 same font, remembered and replaced like the group labels.
 
+Fixed designators ([silk.place] R4 = {x, y, rot, side}, plan mm as [place]) go where the row says, and the rest is
+placed around them. side (default the designators side) is where the name prints: on the part's side its own designator,
+on the other a free text, as with solder_side – there and nowhere else. One on a pad (solder-mask opening + 0.15 mm),
+beyond the printable board or on a text ([[silk.texts]] + 0.3 mm, another fixed one + 0.2 mm) is a finding, exit 2; it
+is written all the same. `edakit silk preview` shows them on the last Gerber export with the same findings, offline.
+
 Board label: the board's title and revision (revision and [silk] board_label of the board file, default
 "{title} rev {revision}", also {project} and {board}) in the free spot nearest to a corner (board_label_corner, default
 "bottom-left" as seen from the printed side), not on pads, parts, labels, vias or the keep-outs of holes. It goes on the
@@ -81,7 +87,15 @@ def label_size(name, h):
 
 
 def label_box(x, y, rot, w, h):
-    return box(x - w / 2, y - h / 2, x + w / 2, y + h / 2) if rot == 0 else box(x - h / 2, y - w / 2, x + h / 2, y + w / 2)
+    """The box of a text w long and h high centred on (x, y): lying at 0° and 180°, standing at 90° and 270°, turned
+    with the text at any other angle."""
+    turn = float(rot) % 180
+    if turn == 0:
+        return box(x - w / 2, y - h / 2, x + w / 2, y + h / 2)
+    if turn == 90:
+        return box(x - h / 2, y - w / 2, x + h / 2, y + w / 2)
+    from shapely.affinity import rotate
+    return rotate(box(x - w / 2, y - h / 2, x + w / 2, y + h / 2), turn, origin=(x, y))
 
 
 def label_spots(bb, w, h, gap):
@@ -96,11 +110,61 @@ def label_spots(bb, w, h, gap):
     return sides + corners
 
 
-def place_labels(parts, blocked, vias, area, h, gap, groups=None, priority=("TP",)):
-    """parts: {designator: bbox}, blocked: pads, footprint silk, parts; vias: via areas; area: printable board.
-    Returns {label: (x, y, rotation)}, parts covered by a group label, parts without a spot."""
+def fixed_labels(board):
+    """[silk.place] of the board file: {designator: (x, y, rot, side)} – the spot in EasyEDA mm (the rows are plan mm,
+    as [place]), the rotation EasyEDA gets (as for [[silk.texts]]), the side the name prints on (default: the
+    designators side)."""
+    side = board.silk.get("designators", "top")
+    return {ref: (*board.eda_point(float(p["x"]), float(p["y"])), float(p.get("rot", 0)), p.get("side", side))
+            for ref, p in (board.silk.get("place") or {}).items()}
+
+
+def fixed_findings(fixed, h, area, openings, texts=(), side="top"):
+    """What is in the way of the fixed designators of one side – what place_labels keeps a placed label clear of:
+    a pad (the side's solder-mask openings + 0.15 mm), the edge of the printable `area`, a text of [[silk.texts]]
+    (silk_texts, + 0.3 mm) and another fixed designator (+ 0.2 mm). fixed: {designator: (x, y, rot)} in EasyEDA mm,
+    h: their height. -> ["R4: fixed designator on a pad (top) – 0.42 mm² …"]"""
+    if not fixed:
+        return []
+    out, pads = [], openings.buffer(0.15)
+    boxes = {r: label_box(*fixed[r], *label_size(r, h)) for r in sorted(fixed, key=natural_key)}
+    for ref, b in boxes.items():
+        if b.intersects(pads):
+            out.append(f"{ref}: fixed designator on a pad ({side}) – {b.intersection(pads).area:.2f} mm² of its box "
+                       "within 0.15 mm of a solder-mask opening")
+        if not area.contains(b):
+            out.append(f"{ref}: fixed designator beyond the printable board ({side}) – "
+                       f"{b.difference(area).area:.2f} mm² of its box outside the outline less 0.5 mm or on a hole")
+        for t, x, y, rot, th, *_ in texts:
+            other = label_box(x, y, rot, *label_size(t, th))
+            if b.intersects(other):
+                out.append(f"{ref} / {t}: fixed designator on the text ({side}) – {b.intersection(other).area:.2f} mm² "
+                           "in common")
+            elif b.distance(other) <= 0.3:
+                out.append(f"{ref} / {t}: fixed designator {b.distance(other):.2f} mm from the text ({side}) – a "
+                           "placed one keeps 0.3 mm")
+    refs = list(boxes)
+    for i, a in enumerate(refs):
+        for c in refs[i + 1:]:
+            if boxes[a].intersects(boxes[c]):
+                out.append(f"{a} / {c}: fixed designators overlap ({side}) – "
+                           f"{boxes[a].intersection(boxes[c]).area:.2f} mm² in common")
+            elif boxes[a].distance(boxes[c]) <= 0.2:
+                out.append(f"{a} / {c}: fixed designators {boxes[a].distance(boxes[c]):.2f} mm apart ({side}) – placed "
+                           "ones keep 0.2 mm")
+    return out
+
+
+def place_labels(parts, blocked, vias, area, h, gap, groups=None, priority=("TP",), fixed=None):
+    """parts: {designator: bbox}, blocked: pads, footprint silk, parts; vias: via areas; area: printable board;
+    fixed: {label: (x, y, rotation)} of [silk.place], taken as given – the rest keeps clear of them.
+    Returns {label: (x, y, rotation)} with the fixed ones, parts covered by a group label, parts without a spot."""
     hard, soft = blocked, blocked.union(vias)
     placed, taken = {}, []
+    for name, spot in (fixed or {}).items():
+        placed[name] = spot
+        taken.append(label_box(*spot, *label_size(name, h)).buffer(0.2))
+    parts = {r: bb for r, bb in parts.items() if r not in placed}   # a fixed one leaves its group too
 
     def spots(name, bb, obstacles=soft):
         w, hh = label_size(name, h)
@@ -380,12 +444,14 @@ def apply(cfg, board, mcp, step=None):
             if gone:
                 api(mcp, f"{cls}.delete", gone)
     comps = {c["PrimitiveId"]: c for c in map(eda.state, api(mcp, "PCB_PrimitiveComponent.getAll") or [])}
+    fixed = fixed_labels(board)
     attrs = {}
     for a in map(eda.state, api(mcp, "PCB_PrimitiveAttribute.getAll") or []):
         c = comps.get(a.get("ParentPrimitiveId"))
         if a.get("Key") == "Designator" and c:
             attrs[c["Designator"]] = (a, c)
-            if c.get("Layer") in hide and a.get("ValueVisible"):
+            away = c["Designator"] in fixed and SIDE[fixed[c["Designator"]][3]] != c.get("Layer")  # name: other side
+            if (c.get("Layer") in hide or away) and a.get("ValueVisible"):
                 api(mcp, "PCB_PrimitiveAttribute.modify", a["PrimitiveId"], {"valueVisible": False})
     eda.save_pcb(mcp)
     step("Gerber export: the footprints' own print")
@@ -444,18 +510,28 @@ def apply(cfg, board, mcp, step=None):
                 label_art = keep
         print(f"  {art_side}: artwork {len(polygons(art))} shapes ({art.area:.0f} mm²), {len(texts)} texts")
     step("designators")
-    placed, grouped, missing = place_labels(parts, blocked, vias, area, h, gap, s.get("groups"),
-                                            tuple(s.get("priority", ["TP"])))
-    for n, (name, (x, y, rot)) in enumerate(placed.items()):
+    far = "bottom" if side == "top" else "top"  # [silk.place] rows of the other side print there, nowhere else
+    here = {r: (x, y, rot) for r, (x, y, rot, on) in fixed.items() if r in attrs and on == side}
+    there = {r: (x, y, rot) for r, (x, y, rot, on) in fixed.items() if r in attrs and on != side}
+    findings = [f"{r}: in [silk] place, but no part of this board" for r in sorted(fixed, key=natural_key)
+                if r not in attrs]
+    findings += fixed_findings(here, h, area, openings, silk_texts(board, side), side)
+    if there:
+        findings += fixed_findings(there, h, area, gerber.shape(gerber.parse_gerber(
+            folder / gerber.FILES[GERBER_KEYS[SIDE[far]][0]])), silk_texts(board, far), far)
+    placed, grouped, missing = place_labels({r: bb for r, bb in parts.items() if r not in there}, blocked, vias, area,
+                                            h, gap, s.get("groups"), tuple(s.get("priority", ["TP"])), here)
+    labels = [(name, spot, layer) for name, spot in placed.items()] + [(r, v, SIDE[far]) for r, v in there.items()]
+    for n, (name, (x, y, rot), on) in enumerate(labels):
         if n % 20 == 0:
             ensure_pcb_focus(mcp)
-        if name in attrs and name not in other:
+        if name in attrs and attrs[name][1].get("Layer") == on:
             api(mcp, "PCB_PrimitiveAttribute.modify", attrs[name][0]["PrimitiveId"],
                 {"x": to_mil(x), "y": to_mil(y), "rotation": rot, "alignMode": 5, "fontSize": to_mil(font_size(h)),
                  "lineWidth": 6,
                  "valueVisible": True})
         else:  # group label, or a part of the other side (its attribute prints there): a text in the same stroke font
-            string(name, x, y, rot, h)
+            string(name, x, y, rot, h, on=on)
     step("board label, save")
     text = board_label_text(cfg, board)
     if text:
@@ -464,7 +540,7 @@ def apply(cfg, board, mcp, step=None):
         if label_layer == layer:  # what the designators keep clear of, and the designators
             near = [blocked, *[label_box(x, y, rot, *label_size(name, h)).buffer(0.3) for name, (x, y, rot) in
                                placed.items()]]
-        else:  # board_label_side: the other side's openings, print, parts, artwork and texts
+        else:  # board_label_side: the other side's openings, print, parts, artwork and texts, its fixed designators
             mask_key, silk_key = GERBER_KEYS[label_layer]
             bbs = [api(mcp, "PCB_Primitive.getPrimitivesBBox", [cid]) for cid, c in comps.items()
                    if c.get("Layer") == label_layer]
@@ -472,6 +548,7 @@ def apply(cfg, board, mcp, step=None):
                                    gerber.shape(gerber.parse_gerber(folder / gerber.FILES[silk_key])),
                                    [(mm(b["minX"]), mm(b["minY"]), mm(b["maxX"]), mm(b["maxY"])) for b in bbs],
                                    label_art)]
+            near += [label_box(x, y, rot, *label_size(r, h)).buffer(0.3) for r, (x, y, rot) in there.items()]
         keeps = [Point(*board.eda_point(hl["x"], hl["y"])).buffer(hl["keep"]) for hl in board.holes]
         keeps += [Point(*board.eda_point(x, y)).buffer(board.tooling_keep) for x, y in board.tooling]
         corner = s.get("board_label_corner", "bottom-left")
@@ -489,12 +566,20 @@ def apply(cfg, board, mcp, step=None):
         print(f"  ! no board label: set revision in {board.file}")
     memo.write_text(json.dumps(created))
     eda.save_pcb(mcp)
-    print(f"  {side}: {sum(1 for n in placed if n in attrs)} of {len(parts)} designators placed"
+    print(f"  {side}: {sum(1 for n in placed if n in attrs)} of {len((set(parts) - set(there)) | set(here))} "
+          "designators placed"
           + (f" ({sum(1 for n in placed if n in other)} of {len(other)} through-hole parts of the other side)"
              if solder_side else "")
+          + (f", fixed: {', '.join(sorted(here, key=natural_key))}" if here else "")
           + (f", groups {', '.join(g for g in (s.get('groups') or {}) if g in placed)}" if grouped else "")
           + f"; without room: {', '.join(missing) or '–'}")
-    return check(cfg, board, mcp, fp_silk, step)
+    if there:
+        print(f"  {far}: {len(there)} fixed designator{'s' if len(there) > 1 else ''}: "
+              f"{', '.join(sorted(there, key=natural_key))}")
+    for finding in findings:
+        print(f"  ! {finding}")
+    code = check(cfg, board, mcp, fp_silk, step)
+    return 2 if findings else code
 
 
 def check(cfg, board, mcp, footprint_silk=None, step=None):
@@ -517,27 +602,36 @@ def check(cfg, board, mcp, footprint_silk=None, step=None):
 
 
 def preview(cfg, board):
-    """Offline: the artwork and texts of the board file on the last Gerber export (edakit silk apply/check)."""
+    """Offline: the artwork, texts and fixed designators ([silk.place]) of the board file on the last Gerber export
+    (edakit silk apply/check). A fixed designator in the way is a finding, as in apply: exit 2."""
     folder = cfg.artifact(f"gerber_{board.name}", ".keep").parent
     top = folder / gerber.FILES["top_silk"]
     if not top.exists():
         return eda.die(f"no Gerber export in {folder} – run `edakit silk check` once")
     area = board_shape(board).buffer(-0.5)
+    h, fixed, findings = float(board.silk.get("label_h_mm", 1.0)), fixed_labels(board), []
     for side, layer in SIDE.items():
         mask_key, silk_key = GERBER_KEYS[layer]
         openings = gerber.shape(gerber.parse_gerber(folder / gerber.FILES[mask_key]))
         silk = gerber.shape(gerber.parse_gerber(folder / gerber.FILES[silk_key]))
         art = printable(art_shapes(cfg, board, side), area, openings)
         texts = silk_texts(board, side)
-        if art.is_empty and not texts:
+        here = {r: (x, y, rot) for r, (x, y, rot, on) in fixed.items() if on == side}
+        if art.is_empty and not texts and not here:
             continue
-        boxes = unary_union([label_box(x, y, rot, *label_size(t, th)) for t, x, y, rot, th, _ in texts]) \
-            if texts else Polygon()
+        labels = texts + [(r, x, y, rot, h, "default") for r, (x, y, rot) in here.items()]
+        boxes = unary_union([label_box(x, y, rot, *label_size(t, th)) for t, x, y, rot, th, _ in labels]) \
+            if labels else Polygon()
         img = cfg.artifact(f"silk_preview_{board.name}_{side}.png")
         picture(silk.union(art), openings, board_shape(board), img, mirror=layer == BOTTOM,
-                extra=[(boxes, "#7fb3ff")], texts=texts)
-        print(f"  {side}: artwork {art.area:.0f} mm², {len(texts)} texts (blue boxes) -> {img}")
-    return 0
+                extra=[(boxes, "#7fb3ff")], texts=labels)
+        findings += fixed_findings(here, h, area, openings, texts, side)
+        print(f"  {side}: artwork {art.area:.0f} mm², {len(texts)} texts"
+              + (f", {len(here)} fixed designator{'s' if len(here) > 1 else ''}" if here else "")
+              + f" (blue boxes) -> {img}")
+    for finding in findings:
+        print(f"  ! {finding}")
+    return 2 if findings else 0
 
 
 def main(cfg, args):

@@ -1,5 +1,5 @@
 """Board label: title and revision in the free spot nearest to the requested corner, on a chosen side, inside a region;
-designators of through-hole parts on their solder side."""
+designators of through-hole parts on their solder side; designators at a fixed spot ([silk] place)."""
 
 from pathlib import Path
 from types import SimpleNamespace
@@ -51,6 +51,14 @@ BOTTOM_OPENINGS = unary_union([box(19, 9.5, 19.6, 10.5), box(20.4, 9.5, 21, 10.5
 BOTTOM_PRINT = box(33, 0.5, 39.5, 3)                    # print already on the bottom, in its lower right corner
 
 
+def project(path, table, head=""):
+    """A project with one board of 40 x 20 mm and the given [silk] table -> its configuration."""
+    (path / "edakit.toml").write_text('[project]\nname = "t"\n[boards.main]\n')
+    (path / "hardware" / "boards").mkdir(parents=True, exist_ok=True)
+    (path / "hardware" / "boards" / "main.toml").write_text(head + "[outline]\nrect = [40, 20]\n[silk]\n" + table)
+    return config.load(path / "edakit.toml")
+
+
 @pytest.fixture
 def silk_run(tmp_path, monkeypatch):
     """-> run(the [silk] table) -> the API calls of `silk.apply` on the three parts."""
@@ -79,13 +87,10 @@ def silk_run(tmp_path, monkeypatch):
     monkeypatch.setattr(silk, "check", lambda *a, **k: 0)
     monkeypatch.setattr(silk.eda, "save_pcb", lambda mcp: None)
 
-    def run(table, head=""):
-        (tmp_path / "edakit.toml").write_text('[project]\nname = "t"\n[boards.main]\n')
-        (tmp_path / "hardware" / "boards").mkdir(parents=True, exist_ok=True)
-        (tmp_path / "hardware" / "boards" / "main.toml").write_text(head + "[outline]\nrect = [40, 20]\n[silk]\n" + table)
-        cfg = config.load(tmp_path / "edakit.toml")
+    def run(table, head="", code=0):
+        cfg = project(tmp_path, table, head)
         calls.clear()
-        assert silk.apply(cfg, cfg.board(), None) == 0
+        assert silk.apply(cfg, cfg.board(), None) == code
         return list(calls)
     return run
 
@@ -194,3 +199,144 @@ def test_board_label_region_is_in_plan_mm():
     assert silk.board_label_area(board, area).bounds == pytest.approx((-10, 0.5, -0.5, 5))
     board.silk = {}
     assert silk.board_label_area(board, area) is area                      # no region: the whole board, as before
+
+
+# --- designators at a fixed spot ([silk] place, step 2.3): the same three parts. A row puts a designator where the
+# board file says (plan mm – EasyEDA mm here, the plan is seen from the top), silk apply places the rest around it. On a
+# pad, beyond the board or on another text it is a finding, as silk apply keeps a placed one clear of them.
+
+def moved(calls):
+    """The designators moved: {attribute id: (x mm, y mm, rotation)}."""
+    return {a[0]: (a[1]["x"] / MIL, a[1]["y"] / MIL, a[1]["rotation"]) for name, a in calls
+            if name == "PCB_PrimitiveAttribute.modify" and "x" in a[1]}
+
+
+def test_a_fixed_designator_goes_where_the_board_file_says(silk_run):
+    calls = silk_run('designators = "top"\n[silk.place]\nR1 = { x = 5, y = 15, rot = 90 }\n')
+    assert moved(calls) == {"ac1": pytest.approx((5, 15, 90), abs=0.001)}    # before: above R1, at (10, 11.5), lying
+    assert shown(calls) == {"ac1"} and strings(calls) == {}
+
+
+def test_the_rest_is_placed_around_a_fixed_designator(silk_run):
+    """D1's label (solder_side) goes above its box, at (30, 13.5) – R1's fixed label takes that spot."""
+    calls = silk_run('designators = "top"\nhide = ["bottom"]\nsolder_side = true\n'
+                     '[silk.place]\nR1 = { x = 30, y = 13.5 }\n')
+    assert moved(calls)["ac1"] == pytest.approx((30, 13.5, 0), abs=0.001)
+    _, x, y, rot = strings(calls)["D1"]
+    fixed = silk.label_box(30, 13.5, 0, *silk.label_size("R1", 1.0))
+    assert silk.label_box(x, y, rot, *silk.label_size("D1", 1.0)).distance(fixed) > 0.2   # before: right under R1's
+    assert silk.label_box(x, y, rot, *silk.label_size("D1", 1.0)).distance(box(*COMPS["c3"][2])) == pytest.approx(
+        0.25, abs=0.01)                                                                   # still next to D1
+
+
+def test_the_board_label_keeps_clear_of_a_fixed_designator(silk_run):
+    layer, b = board_label(silk_run('designators = "top"\n[silk.place]\nR1 = { x = 6, y = 1.5 }\n',
+                                    head='revision = "2"\n'))
+    assert layer == TOP + 2
+    assert b.distance(silk.label_box(6, 1.5, 0, *silk.label_size("R1", 1.0))) > 0.3   # before: at (6.2, 1.1), under it
+
+
+def test_a_fixed_designator_on_its_part_s_side_moves_that_part_s_own(silk_run):
+    """R2 sits on the bottom, whose designators silk apply hides; side = "bottom" shows R2's own one there."""
+    calls = silk_run('designators = "top"\nhide = ["bottom"]\n[silk.place]\nR2 = { x = 20, y = 5, side = "bottom" }\n')
+    assert moved(calls)["ac2"] == pytest.approx((20, 5, 0), abs=0.001)        # before: hidden
+    assert shown(calls) == {"ac1", "ac2"} and strings(calls) == {}
+
+
+def test_a_fixed_designator_on_the_other_side_of_its_part_is_a_free_text(silk_run):
+    """A designator prints only on its part's side: D1 (bottom) labelled on top without solder_side, R1 (top) on the
+    bottom – both free texts, as with solder_side, and nowhere else."""
+    calls = silk_run('designators = "top"\nhide = ["bottom"]\n[silk.place]\nD1 = { x = 30, y = 16 }\n'
+                     'R1 = { x = 10, y = 6, side = "bottom" }\n')
+    texts = strings(calls)
+    assert texts["D1"] == pytest.approx((TOP + 2, 30, 16, 0), abs=0.001)      # before: no label for D1
+    assert texts["R1"] == pytest.approx((BOTTOM + 2, 10, 6, 0), abs=0.001)    # before: R1's own, placed on top
+    assert shown(calls) == set()
+
+
+def test_a_fixed_designator_prints_nowhere_else(silk_run):
+    """Without hide the bottom keeps its designators – but D1's name goes to the top, so its own one is hidden."""
+    calls = silk_run('designators = "top"\n[silk.place]\nD1 = { x = 30, y = 16 }\n')
+    hidden = {a[0] for name, a in calls if name == "PCB_PrimitiveAttribute.modify" and a[1] == {"valueVisible": False}}
+    assert hidden == {"ac1", "ac3"}        # before: ac1 only – R1's, hidden first and shown at its spot; R2's stays
+    assert strings(calls)["D1"] == pytest.approx((TOP + 2, 30, 16, 0), abs=0.001)
+
+
+@pytest.mark.parametrize("rows, finding", [
+    ("R1 = { x = 10, y = 10 }\n", "R1: fixed designator on a pad (top) – "),                       # on its own pads
+    ("R1 = { x = 39.5, y = 15 }\n", "R1: fixed designator beyond the printable board (top) – "),    # half off the board
+    ('R1 = { x = 20, y = 15.5 }\n[[silk.texts]]\ntext = "START"\nx = 20\ny = 15\n',
+     "R1 / START: fixed designator on the text (top) – "),
+    ('R1 = { x = 20, y = 16.73 }\n[[silk.texts]]\ntext = "START"\nx = 20\ny = 15\n',
+     "R1 / START: fixed designator 0.11 mm from the text (top) – "),
+    ("R1 = { x = 5, y = 15 }\nD1 = { x = 6, y = 15 }\n", "D1 / R1: fixed designators overlap (top) – "),
+    ('R2 = { x = 20, y = 10, side = "bottom" }\n', "R2: fixed designator on a pad (bottom) – "),   # its own pads there
+    ("R9 = { x = 5, y = 15 }\n", "R9: in [silk] place, but no part of this board"),
+])
+def test_a_fixed_designator_in_the_way_is_a_finding(silk_run, capsys, rows, finding):
+    silk_run('designators = "top"\nhide = ["bottom"]\n[silk.place]\n' + rows, code=2)     # before: exit 0
+    assert f"  ! {finding}" in capsys.readouterr().out
+
+
+def test_a_fixed_designator_in_the_way_is_written_all_the_same(silk_run):
+    calls = silk_run('designators = "top"\n[silk.place]\nR1 = { x = 10, y = 10 }\nR9 = { x = 5, y = 15 }\n', code=2)
+    assert moved(calls) == {"ac1": pytest.approx((10, 10, 0), abs=0.001)}     # where the board file says; R9 nowhere
+    assert strings(calls) == {}
+
+
+def test_place_labels_takes_the_fixed_ones_as_given():
+    parts = {"R1": (9, 9.5, 11, 10.5), "R2": (19, 9.5, 21, 10.5)}
+    blocked = unary_union([box(*bb) for bb in parts.values()])
+    args = blocked, Polygon(), box(0, 0, 40, 20), 1.0, 0.25
+    before, _, _ = silk.place_labels(parts, *args)
+    placed, grouped, missing = silk.place_labels(parts, *args, fixed={"R2": before["R1"]})   # R2 where R1's would go
+    assert placed["R2"] == before["R1"] and placed["R1"] != before["R1"]
+    r1, r2 = (silk.label_box(*placed[r], *silk.label_size(r, 1.0)) for r in ("R1", "R2"))
+    assert r1.distance(r2) > 0.2 and not r1.intersects(blocked)
+    assert (grouped, missing) == (set(), [])
+
+
+def test_fixed_findings_without_anything_in_the_way():
+    assert silk.fixed_findings({"R1": (5, 15, 0), "R2": (5, 12, 90)}, 1.0, box(0, 0, 40, 20), TOP_OPENINGS, []) == []
+
+
+def test_preview_draws_the_fixed_designators_and_names_what_is_in_their_way(silk_run, tmp_path, capsys):
+    cfg = project(tmp_path, 'designators = "top"\n[silk.place]\nR1 = { x = 10, y = 10 }\nD1 = { x = 30, y = 16 }\n')
+    folder = tmp_path / "build" / "edakit" / "gerber_main"
+    folder.mkdir(parents=True)
+    (folder / gerber.FILES["top_silk"]).write_text("")                     # the last export of silk apply or check
+    assert silk.preview(cfg, cfg.board()) == 2                              # before: 0, and nothing to draw
+    out = capsys.readouterr().out
+    assert "  top: artwork 0 mm², 0 texts, 2 fixed designators (blue boxes) -> " in out
+    assert "  ! R1: fixed designator on a pad (top) – " in out and "D1:" not in out
+    assert (tmp_path / "build" / "edakit" / "silk_preview_main_top.png").exists()
+
+
+def test_a_fixed_designator_leaves_its_group():
+    """Three resistors too close for three labels share one; with R2 fixed elsewhere R1 and R3 have room each."""
+    parts = {"R1": (10, 9.5, 11, 10.5), "R2": (11.3, 9.5, 12.3, 10.5), "R3": (12.6, 9.5, 13.6, 10.5)}
+    args = unary_union([box(*bb) for bb in parts.values()]), Polygon(), box(8.5, 8.9, 15, 16), 1.0, 0.25
+    groups = {"R1-R3": ["R1", "R2", "R3"]}
+    placed, grouped, _ = silk.place_labels(parts, *args, groups)
+    assert set(placed) == {"R1-R3"} and grouped == {"R1", "R2", "R3"}
+    placed, grouped, missing = silk.place_labels(parts, *args, groups, fixed={"R2": (11.8, 14.5, 0)})
+    assert set(placed) == {"R1", "R2", "R3"} and placed["R2"] == (11.8, 14.5, 0)
+    assert (grouped, missing) == (set(), [])
+
+
+def test_label_box_lies_at_0_and_180_degrees_and_stands_at_90_and_270():
+    assert silk.label_box(0, 0, 180, 4, 1).bounds == pytest.approx((-2, -0.5, 2, 0.5))   # before: standing
+    assert silk.label_box(0, 0, 270, 4, 1).bounds == pytest.approx((-0.5, -2, 0.5, 2))
+    turned = silk.label_box(0, 0, 45, 4, 1)                                                # before: standing
+    assert turned.area == pytest.approx(4) and turned.bounds == pytest.approx((-1.768, -1.768, 1.768, 1.768), abs=0.001)
+
+
+def test_fixed_labels_are_plan_mm_on_the_designators_side():
+    """Seen from below, plan x is EasyEDA's -x (as [place]); the rotation goes to EasyEDA as written (as for
+    [[silk.texts]]); side defaults to the designators side."""
+    from edakit.config import _board
+    board = _board("b", {}, {"view": "bottom", "outline": {"rect": [40, 20]}, "silk": {
+        "designators": "bottom", "place": {"R4": {"x": 12.5, "y": 3, "rot": 90}, "LED1": {"x": 5, "y": 3, "side": "top"}}}})
+    assert silk.fixed_labels(board) == {"R4": (-12.5, 3, 90, "bottom"), "LED1": (-5, 3, 0, "top")}
+    board.silk = {}
+    assert silk.fixed_labels(board) == {}                                  # no key: none
