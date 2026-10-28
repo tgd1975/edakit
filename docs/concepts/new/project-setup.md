@@ -1,6 +1,7 @@
 # Project setup
 
-Status 2026-10-28: proposal; nothing of it is built, and the decisions at the end are open. The findings come from
+Status 2026-10-28: proposal; nothing of it is built, all six decisions are taken (table at the end), and it is
+step 3.7 of the [implementation plan](implementation-plan.md). The findings come from
 edakit at `f04dee5` and the repositories of the reference project and the Christmas bell.
 
 ## Goal
@@ -128,14 +129,17 @@ with contradictions between the project's documents and with what it could not r
 
 ## Decisions
 
+All taken on 2026-10-28. "Accepted" is the user's yes to the recommendation; "decided by Claude" marks a
+technical point the user left to Claude and then confirmed.
+
 | # | Question | Recommendation | State |
 | --- | --- | --- | --- |
-| 1 | One entry point, or a new skill for moving beside `new-project`? | one: `new-project` with two ways | open |
-| 2 | Name of the agent | `project-surveyor` | open |
-| 3 | A command `edakit init` that writes the skeleton? | not for now: the skill writes the files, as today; a command once two projects show the same writing errors | open |
-| 4 | The interview as a form with options, or as text? | a form where the tool offers one (options, free text for the rest), otherwise a decision round in text | open |
-| 5 | The project's own skills that overlap edakit's | the report lists each with what it does beyond edakit's; keeping or deleting it is the user's decision, skill by skill | open |
-| 6 | Trial | first on the reference project's move; the setup comes before step 4.4 in the plan | open |
+| 1 | One entry point, or a new skill for moving beside `new-project`? | one: `new-project` with two ways | accepted |
+| 2 | Name of the agent | `project-surveyor` | decided by Claude |
+| 3 | A command `edakit init` that writes the skeleton? | not for now: the skill writes the files, as today; a command once two projects show the same writing errors | decided by Claude |
+| 4 | The interview as a form with options, or as text? | a form where the tool offers one (options, free text for the rest), otherwise a decision round in text | accepted |
+| 5 | The project's own skills that overlap edakit's | the report lists each with what it does beyond edakit's; keeping or deleting it is the user's decision, skill by skill | accepted |
+| 6 | Trial | first on the reference project's move; the setup comes before step 4.4 in the plan | decided by Claude |
 
 ## Sources
 

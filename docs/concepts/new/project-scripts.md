@@ -381,7 +381,7 @@ points for further agents stay empty.
 `review` is missing, because it reads the release (decision 8).
 
 ```toml
-# reference project – edakit.toml (draft; [scripts.*] does not exist in edakit yet)
+# reference project – edakit.toml (draft of its move; [scripts.*] exists since step 1.2)
 
 # --- inputs for edakit ----------------------------------------------------------------------------------------
 [scripts.platine]

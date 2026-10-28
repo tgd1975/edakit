@@ -1,9 +1,9 @@
 # Implementation plan: requirements, design as text, project scripts
 
-Status 2026-10-28: plan; phase 1 (1.1 to 1.8), 3.4 and the follow-ups below are done, 3.1 is in progress. It builds the
-three concepts of this folder after the user took their decisions on 2026-10-28 (e5caf42, 301fd90):
-[requirements.md](requirements.md), [design-as-text.md](design-as-text.md) and [project-scripts.md](project-scripts.md).
-Each step starts when the user asks for it.
+Status 2026-10-28: plan; phase 1 (1.1 to 1.8), 3.1, 3.4 and the follow-ups below are done. It builds the three concepts
+of this folder after the user took their decisions on 2026-10-28 (e5caf42, 301fd90): [requirements.md](requirements.md),
+[design-as-text.md](design-as-text.md) and [project-scripts.md](project-scripts.md). Each step starts when the user asks
+for it.
 
 ## Ground rules
 
@@ -36,16 +36,17 @@ Each step starts when the user asks for it.
 | 2.2 | Rule set of EasyEDA's DRC | design-as-text decision 6 | S–M | yes | – | open |
 | 2.3 | Positions of single designators in `[silk]` | design-as-text, smaller findings | S | yes | – | open |
 | 2.4 | Outdated inputs run first; `edakit run` | project-scripts block 4, decision 7 | M | yes | 1.4 | open |
-| 3.1 | Checks in the gate: `at`, phase `acceptance`; then `verify = script` | project-scripts block 6 | M | no | 1.2, 1.6 | in progress, branch `step-3.1-gate-checks` |
+| 3.1 | Checks in the gate: `at`, phase `acceptance`; then `verify = script` | project-scripts block 6 | M | no | 1.2, 1.6 | done (9e63afd) |
 | 3.2 | Project agents: `[agents.*]`, `replaces`, their sign-offs required | project-scripts block 7, decisions 10, 11 | M | no | 1.2 | open |
 | 3.3 | Skills and the SessionStart hook use `edakit scripts` | project-scripts block 8 | S–M | no | 2.4, 3.2 | open |
 | 3.4 | Skill `requirements`, agent `requirements-engineer`, reviewers read the file | requirements order 3, decision 7 | M | no | 1.6 | done (0099ee3) |
 | 3.5 | `req:` as a source of value blocks | requirements order 4 | S | no | 1.5 | open |
 | 3.6 | Own footprints as data in the parts entry | design-as-text gap 2, decision 5 | L | yes | 1.8 | open |
+| 3.7 | Project setup: `new-project` with two ways, agent `project-surveyor` | project-setup, decisions 1–6 | M | no | 3.2, 3.4 | open |
 | 4.1 | Bell: requirements file | requirements order 5, decision 9 | M | no | 3.4, the bell's order | open |
 | 4.2 | Bell: entries for `kunst` and `tdisplay` | project-scripts example | S | no | 2.4 | open |
 | 4.3 | Bell: the circuit as a language and as TOML with names, then the choice | design-as-text decision 8 | M | no | – | open |
-| 4.4 | Tree: its positions, scripts, agents and requirements | all three | M | yes | the tree's move, 2.1, 3.2, 3.4 | open |
+| 4.4 | Tree: its positions, scripts, agents and requirements | all three | M | yes | the tree's move, 2.1, 3.7 | open |
 | 4.5 | The requirements file becomes required | requirements decision 5 | S | no | 4.1, 4.4 | open |
 
 S, M and L are the sizes the concepts give: small, medium, large.
@@ -76,6 +77,7 @@ flowchart LR
     s34["3.4 requirements engineer"]
     s35["3.5 req: in value blocks"]
     s36["3.6 footprints as data"]
+    s37["3.7 project setup"]
   end
   subgraph P4["4 · in the projects"]
     s41["4.1 bell: requirements"]
@@ -92,9 +94,10 @@ flowchart LR
   s15 --> s35
   s18 --> s36
   s24 --> s42
+  s32 --> s37
+  s34 --> s37
   s21 --> s44
-  s32 --> s44
-  s34 --> s44
+  s37 --> s44
   s41 --> s45
   s44 --> s45
 ```
