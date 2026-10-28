@@ -20,7 +20,12 @@ mounting and tooling holes, copper pours, EasyEDA's auto-layout.
     edakit pcb parts [--write]      parts of the board schematic -> PCB without the "Import Changes" dialog
     edakit pcb nets [--write]       pad nets in the PCB = graph
     edakit pcb apply                outline, holes, tooling holes, fixed parts (locked); all other parts unlocked
-    edakit pcb autolayout           EasyEDA auto-layout of the unlocked parts, waits until positions are stable
+    edakit pcb autolayout           EasyEDA auto-layout of the unlocked parts, waits until positions are stable, then
+                                    writes the position of every part of the board without a row into [place], with
+                                    auto = true
+    edakit pcb takeover [--write]   a board placed before: the position EasyEDA has for every part of the board
+                                    without a row; --write adds them to [place] as fixed rows – pcb apply leaves the
+                                    parts where they are, the tracks stay on their pads
     edakit pcb tooling              only the tooling holes again
     edakit pcb pour                 copper pours of [[pours]] in the board file (replaces old ones, not filled);
                                     with pour_regions the outlines on a shared layer from the last routing
@@ -1011,8 +1016,21 @@ def _auto_place(cfg, board, geo, design, moving, keep):
     return rows, problems
 
 
+ROW_DECIMALS = 3                   # rows from EasyEDA: mm and degrees to 0.001 – well inside L-7's 0.02 mm and 0.01°
+
+
+def row_number(v):
+    """A coordinate of a row of [place]: at most ROW_DECIMALS decimals, at least one (62.8, 75.0, 31.356) – the rows
+    of pcb place, on their 0.1 mm grid, read as they always did."""
+    text = f"{round(v, ROW_DECIMALS) + 0.0:.{ROW_DECIMALS}f}".rstrip("0")
+    return text + "0" if text.endswith(".") else text
+
+
 def place_row(p):
-    return f'{{ x = {p.x:.1f}, y = {p.y:.1f}, rot = {p.rot:g}, side = "{p.side}", auto = true }}'
+    """A row of [place] as an inline table; auto = true for a spot nobody designed (pcb place, the auto-layout)."""
+    rot = round(p.rot, ROW_DECIMALS) + 0.0
+    return (f'{{ x = {row_number(p.x)}, y = {row_number(p.y)}, rot = {rot:g}, side = "{p.side}"'
+            + (", auto = true" if p.auto else "") + " }")
 
 
 def write_place_rows(path, rows):
@@ -1046,10 +1064,31 @@ def write_place_rows(path, rows):
     return changed + len(new)
 
 
+def write_rows(cfg, board, rows):
+    """rows {ref: Placement} into [place] of the board file (write_place_rows), then read back: when one does not read
+    back as written, the file is put back as it was and the command stops. -> number of lines changed or added."""
+    from . import config
+    f = cfg.resolve(board.file)
+    old = f.read_text(encoding="utf-8") if f.exists() else None
+    n = write_place_rows(f, {ref: place_row(p) for ref, p in rows.items()})
+    try:
+        got = config.load(cfg.path).board(board.name).place
+        off = [ref for ref, p in rows.items() if ref not in got or (got[ref].x, got[ref].y, got[ref].rot, got[ref].side,
+                                                                    got[ref].auto) != (p.x, p.y, p.rot, p.side, p.auto)]
+    except config.ConfigError as e:
+        off = [str(e)]
+    if off:
+        if old is None:
+            f.unlink()
+        else:
+            f.write_text(old, encoding="utf-8")
+        raise SystemExit(f"{board.file}: {', '.join(off)} did not read back as written – the file is left as it was")
+    return n
+
+
 def place_main(cfg, board, write=False, only=None):
     """pcb place: the geometry as pcb plan reads it, for every part of the board – a part not yet in the PCB is
     placed by the library footprint `edakit part import` cached."""
-    from . import config
     design = Design.from_config(cfg)
     geo = plan_geometry(cfg, board, design, [*board.place, *(r for r in sorted(design.board_comps(board.name),
                                                                                 key=natural_key) if r not in board.place)])
@@ -1061,22 +1100,7 @@ def place_main(cfg, board, write=False, only=None):
     for p in problems:
         print("  !", p)
     if write and rows:
-        f = cfg.resolve(board.file)
-        old = f.read_text(encoding="utf-8") if f.exists() else None
-        n = write_place_rows(f, {ref: place_row(p) for ref, p, _ in rows})
-        try:
-            got = config.load(cfg.path).board(board.name).place
-            off = [ref for ref, p, _ in rows if ref not in got or (got[ref].x, got[ref].y, got[ref].rot, got[ref].side,
-                                                                    got[ref].auto) != (p.x, p.y, p.rot, p.side, True)]
-        except config.ConfigError as e:
-            off = [str(e)]
-        if off:
-            if old is None:
-                f.unlink()
-            else:
-                f.write_text(old, encoding="utf-8")
-            raise SystemExit(f"{board.file}: {', '.join(off)} did not read back as written – the file is left as it "
-                             "was")
+        n = write_rows(cfg, board, {ref: p for ref, p, _ in rows})
         print(f"  {n} row{'s' * (n != 1)} written into {board.file} [place]"
               + (f", {len(rows) - n} unchanged" if len(rows) > n else ""))
     elif not rows and not problems:
@@ -1085,6 +1109,57 @@ def place_main(cfg, board, write=False, only=None):
         print(f"  {len(rows)} part{'s' * (len(rows) != 1)} next to {'its' if len(rows) == 1 else 'their'} host"
               + ("" if write else " – --write puts them into [place]"))
     return 2 if problems else 0
+
+
+# --- the positions EasyEDA has: the auto-layout's, written back; a board placed before, taken over -----------------
+
+def parts_without_row(board, design):
+    """The parts the graph puts on the board that have no row in [place], by designator (L-20). A part on a bought
+    board – off the board, at the far end of a cable – is on no made board and needs none."""
+    return sorted((r for r in design.board_comps(board.name) if r not in board.place), key=natural_key)
+
+
+def eda_rows(board, design, comps, auto):
+    """Rows for [place] from the positions EasyEDA reports – comps as eda.list_pcb_components gives them: designator,
+    x and y in mil, rotation, layer. Every part of parts_without_row that is in the PCB gets one, in plan coordinates
+    (Board.from_eda, mm and degrees to ROW_DECIMALS) with its side; a row the board file holds stays as it is, and a
+    part of the PCB the graph does not put on the board gets none. auto: the auto-layout placed them (auto = true – a
+    later pcb place may move the row); otherwise fixed rows, the takeover of a board placed before.
+    -> ({ref: Placement}, [parts without a row that are not in the PCB])."""
+    from .config import Placement
+    at = {c.get("designator"): c for c in comps}
+    rows, absent = {}, []
+    for ref in parts_without_row(board, design):
+        c = at.get(ref)
+        if c is None:
+            absent.append(ref)
+            continue
+        x, y, rot, side = board.from_eda(mm(c["x"]), mm(c["y"]), c["rotation"], c["layer"])
+        rows[ref] = Placement(round(x, ROW_DECIMALS) + 0.0, round(y, ROW_DECIMALS) + 0.0,
+                              round(rot, ROW_DECIMALS) % 360 + 0.0, side, auto=auto)
+    return rows, absent
+
+
+def write_back(cfg, board, comps, auto, write=True):
+    """The rows eda_rows makes of the positions EasyEDA reports, printed, and with write added to [place] of the board
+    file – read again first, so that a row written there meanwhile stays as it is. -> 0, or 2 when a part of the board
+    without a row is not in the PCB."""
+    from . import config
+    board = config.load(cfg.path).board(board.name)
+    rows, absent = eda_rows(board, Design.from_config(cfg), comps, auto)
+    for ref, p in rows.items():
+        print(f"  {ref} = {place_row(p)}")
+    for ref in absent:
+        print(f"  ! {ref}: not in the PCB – no position to write (edakit pcb parts --write)")
+    if not rows:
+        print(f"  nothing to write: every part of board {board.name} in the PCB has a row in [place]")
+    elif write:
+        n = write_rows(cfg, board, rows)
+        print(f"  {n} row{'s' * (n != 1)} written into {board.file} [place]"
+              + (" with auto = true" if auto else " (fixed)"))
+    else:
+        print(f"  {len(rows)} part{'s' * (len(rows) != 1)} without a row – --write puts them into [place]")
+    return 2 if absent else 0
 
 
 # --- EasyEDA ------------------------------------------------------------------------------------------------------
@@ -1551,7 +1626,10 @@ def drc_report(cfg, board, mcp, found, out=None, say=print):
 def autolayout(cfg, board, mcp, timeout_min=20):
     """EasyEDA's auto-layout places only unlocked parts and only on TOP; it knows nothing about belonging
     (decoupling capacitors, pull-ups) – fix those in the plan. It keeps running after the bridge timeout, so the end is
-    detected by positions that stay the same for two readings."""
+    detected by positions, rotations and sides that stay the same for two readings. Then every part of the board
+    without a row in [place] – the parts it placed – gets one where it stands, with auto = true (write_back): from then
+    on the plan holds them like any row, and the auto-layout places only parts without one. Not settled in time:
+    nothing is written."""
     ensure_pcb_focus(mcp)
     try:
         api(mcp, "PCB_Document.autoLayout", timeout=20)
@@ -1560,14 +1638,24 @@ def autolayout(cfg, board, mcp, timeout_min=20):
     last, stable, t0 = None, 0, time.monotonic()
     while time.monotonic() - t0 < timeout_min * 60:
         time.sleep(10)
-        now = sorted((c["designator"], round(c["x"], 1), round(c["y"], 1)) for c in eda.list_pcb_components(mcp))
+        comps = eda.list_pcb_components(mcp)
+        now = sorted((c.get("designator") or "", round(c["x"], 1), round(c["y"], 1), c["rotation"], c["layer"])
+                     for c in comps)
         stable = stable + 1 if now == last else 0
         last = now
         print(f"  {(time.monotonic() - t0) / 60:4.1f} min: {'stable' if stable else 'moving'}")
         if stable >= 2:
-            return 0
-    print("  auto-layout did not settle in time")
+            return write_back(cfg, board, comps, auto=True)
+    print("  auto-layout did not settle in time – nothing written into [place]")
     return 2
+
+
+def takeover(cfg, board, mcp, write=False):
+    """pcb takeover, once for a board placed before – by hand, or by the auto-layout before it wrote its positions
+    back – and maybe routed: every part of the board without a row in [place] gets a fixed row (no auto) where EasyEDA
+    has it, so that pcb apply locks it there and the tracks stay on its pads; a new auto-layout would move it off them.
+    Rows the board file holds stay as they are – L-7 compares them with the PCB. Without write: shown only."""
+    return write_back(cfg, board, eda.list_pcb_components(mcp), auto=False, write=write)
 
 
 def main(cfg, args):
@@ -1605,6 +1693,8 @@ def main(cfg, args):
             return 2 if n and not args.write else 0
         elif args.action == "autolayout":
             return autolayout(cfg, board, mcp)
+        elif args.action == "takeover":
+            return takeover(cfg, board, mcp, args.write)
         return 0
     except MCPError as e:
         return eda.die(str(e))

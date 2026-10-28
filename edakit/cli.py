@@ -22,7 +22,7 @@
     edakit handover                  what the circuit hands over to the layout: state, sign-offs, layout requirements
     edakit schematic create|check|copy|layout
     edakit schematic draw            the schematic as SVG from graph and parts database – no EasyEDA (offline)
-    edakit pcb dump|plan|place|parts|nets|apply|tooling|pour|autolayout
+    edakit pcb dump|plan|place|parts|nets|apply|tooling|pour|autolayout|takeover
     edakit route all|read|dsn|route|check|apply|verify|pours|reload|drc|save
     edakit route diagnose [--net N]  why each open connection is open: walled in, blocked, or a free way (offline)
     edakit silk apply|check
@@ -163,10 +163,10 @@ def build_parser():
 
     p = sub.add_parser("pcb", help="placement plan, parts and nets sync, fixed parts, tooling holes, pours")
     p.add_argument("action", choices=["dump", "plan", "place", "parts", "nets", "apply", "tooling", "pour",
-                                      "autolayout"])
+                                      "autolayout", "takeover"])
     p.add_argument("--board")
-    p.add_argument("--write", action="store_true", help="parts/nets: change the PCB; place: add the rows to [place] "
-                                                        "(default: show only)")
+    p.add_argument("--write", action="store_true", help="parts/nets: change the PCB; place, takeover: add the rows to "
+                                                        "[place] (default: show only)")
     p.add_argument("--ref", help="dump: only these designators, comma-separated")
     p.add_argument("--only", help="place: only these designators, comma-separated")
     p.add_argument("--verify-all", action="store_true", help="apply: compare the pads of every part with the plan")
