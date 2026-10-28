@@ -24,9 +24,10 @@ boards of the project in the current repository. You **change nothing**, neither
 
 ## What you look at
 
-1. **Manufacturability (JLCPCB):** clearances, widths of power nets, annular rings, drills and slots (plated slots
-   >= 0.5 mm), copper to edge, assembly side per part, THT pins under parts of the other side, polarity marks in the
-   silkscreen, tooling holes for Economic PCBA, DRC.
+1. **Manufacturability (JLCPCB):** clearances, widths of power nets, annular rings and hole spacing (L-16 holds them
+   to JLCPCB's table – judge what it waived), drills and slots (plated slots >= 0.5 mm), copper to edge, assembly side
+   per part, THT pins under parts of the other side, polarity marks in the silkscreen, tooling holes for Economic PCBA,
+   DRC.
 2. **Mechanics:** connectors reachable at the edge and polarised, mounting holes, the enclosure, parts that must be
    accessible after assembly.
 3. **Operation:** buttons and controls where the user expects them, labels readable.

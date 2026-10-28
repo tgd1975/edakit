@@ -7,14 +7,19 @@ plus "extra_scenarios" listed there.
 
   E-1  the operating point converges
   E-2  stress of every part against the ratings in the parts database, with the derating from the config; MCU output
-       current per pin (gpio_i_max_a) and of all outputs together (gpio_i_total_max_a)
-  E-3  function: supply currents, regulator outputs and headroom, MCU supply and input levels, MCU outputs only on
+       current per pin (gpio_i_max_a) and of all outputs together (gpio_i_total_max_a); the junction temperature
+       ambient + P x rth_ja_k_per_w of every part whose entry gives it, against its tj_max_c (at most the criteria's),
+       and on a board of touch_c against the temperature people may touch
+  E-3  function: supply currents, no supply fed backwards (sources: i_back_max_a, cells: i_charge_max_a, default the
+       criteria's blocking_max_a), regulator outputs and headroom, MCU supply and input levels, MCU outputs only on
        pins that can drive, constant-current driver headroom and junction temperature, LED currents on/off as the load
        says (an LED behind a 0 Ω bridge counts on the driver output the bridge joins it to, an LED behind one resistor
        to a single driver output on that output – parallel LEDs with balancing resistors), relays pull in and release
        (v_operate, v_release), a module modelled as a constant current (an own board, part.py) supplied inside
-       vin_min … vin_max, blocking diodes, every net inside its declared voltage range 'v', plus the project
-       plugin's own checks
+       vin_min … vin_max, every part with an operating range (ratings vdd_op_min/vdd_op_max, pin v_op) supplied
+       inside it, every input with thresholds (vih_*/vil_* on the pin or in the params) at a valid logic level and
+       the high level of every MCU output reaching them, blocking diodes, every net inside its declared voltage range
+       'v', plus the project plugin's own checks
   E-4  every LED – each colour of an RGB LED – has a state E-3 checks in every scenario: its cathode on a driver output
        (directly, behind 0 Ω bridges or behind a balancing resistor) or the load has leds_on; an LED with neither, or
        one the netlist left out because its parts entry lacks a role, fails as "LED without a known driver"
@@ -174,6 +179,9 @@ def stress(design, cfg, res, meta, ck):
                 if "p_max_w" in r:
                     ck.add("E-2", des, "power dissipation", abs(vds * i), f"≤ {der['p'] * r['p_max_w']:.3g} W",
                            abs(vds * i) <= der["p"] * r["p_max_w"], unit=" W")
+        heat = [w for el in els if (w := dissipation(el, res)) is not None]
+        if "rth_ja_k_per_w" in r and heat:   # one package: the power of all its elements
+            junction(design, cfg, des, sum(heat), r, ck)
     for des, m in meta["mcu"].items():  # MCU outputs: every pin, and all of them through the package's supply pins
         r = m["ratings"]
         cur = {net: res.get(am, 0.0) for net, am in m.get("gpio_ammeters", {}).items()}  # > 0: sourced, < 0: sunk
@@ -188,6 +196,65 @@ def stress(design, cfg, res, meta, ck):
                             ("sunk", -sum(x for x in cur.values() if x < 0))):
                 ck.add("E-2", des, f"GPIO current {what} by all outputs together", i, f"≤ {lim * 1e3:.3g} mA",
                        i <= lim, unit=" A")
+
+
+def dissipation(el, res):
+    """Power an element of the netlist turns into heat in its part (W); None where the part is not what dissipates it –
+    a capacitor, the resistance of a source or a cell, an external load."""
+    kind, nodes = el["kind"], el["nodes"]
+    if kind in ("capacitor", "source", "battery", "load"):
+        return None
+    if kind in ("led", "diode"):
+        a, k = (v(res, n) for n in nodes)
+        return abs((a - k) * res.get(f"@{el['name']}[id]", 0.0))
+    if kind in ("npn", "pnp"):
+        c, b, e = (v(res, n) for n in nodes)
+        return abs((c - e) * res.get(f"@{el['name']}[ic]", 0.0)) + abs((b - e) * res.get(f"@{el['name']}[ib]", 0.0))
+    if kind in ("pmos", "nmos"):   # @m[id] includes the body diode's current
+        d_, _, s = (v(res, n) for n in nodes)
+        return abs((d_ - s) * res.get(f"@{el['name']}[id]", 0.0))
+    if "value" in el:
+        a, b = (v(res, n) for n in nodes[:2])
+        return (a - b) ** 2 / el["value"]
+    return None
+
+
+def tj_limit(ratings, crit):
+    """Junction limit of a part: its own tj_max_c, the criteria's tj_max_c where that is lower or the part has none."""
+    return min(ratings.get("tj_max_c", math.inf), crit["tj_max_c"])
+
+
+def junction(design, cfg, des, p, r, ck):
+    """E-2: ambient + P x Rth(j-a) of a part whose entry gives rth_ja_k_per_w stays at or below its junction limit, and
+    on a board people touch at or below the touch limit (touch)."""
+    crit = {**DEFAULT_CRITERIA, **cfg.get("criteria", {})}
+    amb, rth = cfg.get("ambient_c", 25), r["rth_ja_k_per_w"]
+    tj, lim = amb + p * rth, tj_limit(r, crit)
+    ck.add("E-2", des, f"junction temperature at {amb} °C: {p:.3g} W × {rth:g} K/W", tj, f"≤ {lim:g} °C", tj <= lim,
+           unit=" °C")
+    touch(design, cfg, des, tj, ck)
+
+
+def touch(design, cfg, des, tj, ck):
+    """E-2: on a board of touch_c – a board people reach – a part's junction temperature, the upper bound of its
+    surface, stays at or below the limit the product's standard sets for that surface and contact time."""
+    board = (design.comps.get(des) or {}).get("board")
+    lim = (cfg.get("touch_c") or {}).get(board)
+    if lim is not None:
+        ck.add("E-2", des, f"temperature where people touch (board {board})", tj, f"≤ {lim:g} °C", tj <= lim,
+               unit=" °C")
+
+
+def touch_limits(design, sim):
+    """touch_c of the simulation config: {board: °C}, every key a board of the project."""
+    touch_c = sim.get("touch_c", {})
+    if not isinstance(touch_c, dict) or not all(
+            isinstance(x, (int, float)) and not isinstance(x, bool) for x in touch_c.values()):
+        raise SimError(f"touch_c: a map from each board people touch to its limit in °C expected, not {touch_c!r}")
+    for board in touch_c:
+        if design.boards and board not in design.boards:
+            raise SimError(f"touch_c: {board} is no board of the project (boards: {', '.join(design.boards)})")
+    return touch_c
 
 
 def reg_input_current(res, reg):
@@ -231,6 +298,7 @@ def functional(design, cfg, res, meta, load, ck, plugin):
         if s.get("i_min_a"):  # power banks switch off below a minimum load
             ck.add("E-3", des, "current keeps the supply on", i, f"≥ {s['i_min_a'] * 1e3:.0f} mA", i >= s["i_min_a"],
                    unit=" A")
+    back_feed(cfg, res, meta, crit, ck)
     for des, reg in meta["regs"].items():
         vin = v(res, reg["vin"]) - v(res, reg["gnd"])
         vout = v(res, reg["vout"]) - v(res, reg["gnd"])
@@ -244,9 +312,9 @@ def functional(design, cfg, res, meta, load, ck, plugin):
             ck.add("E-3", des, "output current", iout, f"≤ {r['i_out_max_a'] * 1e3:.0f} mA", iout <= r["i_out_max_a"],
                    unit=" A")
         if reg["kind"] == "ldo" and "rth_ja_k_per_w" in r:
-            tj = amb + (vin - vout) * iout * r["rth_ja_k_per_w"]
-            ck.add("E-3", des, f"junction temperature at {amb} °C", tj, f"≤ {crit['tj_max_c']} °C",
-                   tj <= crit["tj_max_c"], unit=" °C")
+            tj, lim = amb + (vin - vout) * iout * r["rth_ja_k_per_w"], tj_limit(r, crit)
+            ck.add("E-3", des, f"junction temperature at {amb} °C", tj, f"≤ {lim:g} °C", tj <= lim, unit=" °C")
+            touch(design, cfg, des, tj, ck)
     for des, m in meta["mcu"].items():
         r = m["ratings"]
         vin = v(res, m["vin"])
@@ -295,6 +363,8 @@ def functional(design, cfg, res, meta, load, ck, plugin):
                 x = v(res, netlist.node(net, design.ground)) - v(res, netlist.node(ground, design.ground))
                 ck.add("E-3", des, f"supply voltage at {info.get('name', num)} within vin_min … vin_max", x, want,
                        lo <= x <= hi, unit=" V")
+    operating_range(design, res, ck)
+    logic_levels(design, res, meta, ck)
 
     joined = design.joined_nets()   # nets joined by 0 Ω bridges: an LED behind a bridge is on the driver output
     chan_of = {}
@@ -312,9 +382,9 @@ def functional(design, cfg, res, meta, load, ck, plugin):
             ck.add("E-3", f"{des} {net}", "output headroom", vo, f"≥ {p.get('vout_knee_v', 0.6)} V",
                    vo >= p.get("vout_knee_v", 0.6), unit=" V")
         if "rth_ja_k_per_w" in r:
-            tj = amb + pd * r["rth_ja_k_per_w"]
-            ck.add("E-3", des, f"junction temperature at {amb} °C", tj, f"≤ {crit['tj_max_c']} °C",
-                   tj <= crit["tj_max_c"], unit=" °C")
+            tj, lim = amb + pd * r["rth_ja_k_per_w"], tj_limit(r, crit)
+            ck.add("E-3", des, f"junction temperature at {amb} °C", tj, f"≤ {lim:g} °C", tj <= lim, unit=" °C")
+            touch(design, cfg, des, tj, ck)
 
     leds_on = load.get("leds_on")
     groups = defaultdict(list)
@@ -376,6 +446,124 @@ def functional(design, cfg, res, meta, load, ck, plugin):
                unit=" V")
     if plugin and hasattr(plugin, "checks"):
         plugin.checks(design=design, cfg=cfg, res=res, meta=meta, load=load, add=ck.add)
+
+
+def back_feed(cfg, res, meta, crit, ck):
+    """E-3: no supply is fed backwards. The current into a source of `sources` – against its direction – stays at or
+    below its i_back_max_a, the current into each cell of a battery holder at or below the i_charge_max_a of its cell
+    state; both are the criteria's blocking_max_a (1 mA) unless set. Where two supplies meet, the higher one feeds the
+    lower one wherever nothing blocks the way: into a PC's USB port, into a primary cell."""
+    for des, s in meta["sources"].items():
+        lim = cfg.get("sources", {}).get(des, {}).get("i_back_max_a", crit["blocking_max_a"])
+        i = res.get(s["branch"], 0.0)                 # ngspice: > 0 flows into the source's plus terminal
+        i = i if i > 0 else 0.0
+        ck.add("E-3", des, "current into the supply (fed backwards)", i, f"≤ {lim * 1e3:.3g} mA", i <= lim, unit=" A")
+    for name, cell in meta.get("cells", {}).items():
+        lim = cfg["cells"][cell["state"]].get("i_charge_max_a", crit["blocking_max_a"])
+        i = res.get(cell["branch"], 0.0)
+        i = i if i > 0 else 0.0
+        ck.add("E-3", name, "current into the cell (charging)", i, f"≤ {lim * 1e3:.3g} mA", i <= lim, unit=" A")
+
+
+SUPPLY_ROLES = ("vdd", "vcc")
+
+
+def supply_pins(part):
+    """The supply pins of a part: its power_in pins with the role vdd or vcc, else all of its power_in pins."""
+    pins = {n: i for n, i in (part.get("pins") or {}).items() if i.get("type") == "power_in"}
+    return {n: i for n, i in pins.items() if i.get("role") in SUPPLY_ROLES} or pins
+
+
+def own_ground(design, des, part):
+    """The net of the part's first ground pin – what its supply and its input levels are measured against."""
+    return next((design.pin_net[f"{des}.{n}"] for n, i in (part.get("pins") or {}).items()
+                 if i.get("type") == "ground" and f"{des}.{n}" in design.pin_net), design.ground)
+
+
+def against(design, res, net, ground):
+    """Voltage of a net against a ground net; nan for a net no element of the netlist reaches."""
+    return v(res, netlist.node(net, design.ground)) - v(res, netlist.node(ground, design.ground))
+
+
+def operating_range(design, res, ck):
+    """E-3: a part with an operating supply range – ratings vdd_op_min/vdd_op_max for its supply pins, or v_op
+    [min, max] on a pin of its own – is supplied inside it, measured to its own ground pin. Absolute maxima are G-3's;
+    this is the range in which the part works."""
+    for des in sorted(design.comps):
+        part = design.part(des) or {}
+        r = part.get("ratings") or {}
+        ranges = {n: (r.get("vdd_op_min"), r.get("vdd_op_max")) for n in supply_pins(part)}
+        ranges.update({n: tuple(i["v_op"]) for n, i in (part.get("pins") or {}).items() if i.get("v_op")})
+        ground, seen = own_ground(design, des, part), set()
+        for num, (lo, hi) in ranges.items():
+            net = design.pin_net.get(f"{des}.{num}")
+            if net is None or (lo is None and hi is None) or (net, lo, hi) in seen:
+                continue
+            seen.add((net, lo, hi))
+            x = against(design, res, net, ground)
+            if math.isnan(x):
+                continue
+            want = f"{lo} … {hi} V" if lo is not None and hi is not None else f"≥ {lo} V" if hi is None else f"≤ {hi} V"
+            ok = (lo is None or x >= lo) and (hi is None or x <= hi)
+            ck.add("E-3", des, f"supply voltage at {part['pins'][num].get('name', num)} inside its operating range", x,
+                   want, ok, unit=" V")
+
+
+def threshold(params, pin, kind, vdd):
+    """VIL or VIH (`kind` 'vil'|'vih') of an input pin: the pin's own kind_v|kind_ratio, else the part's params; a ratio
+    is taken of the supply `vdd` (None: no single supply)."""
+    for src in (pin, params):
+        if f"{kind}_v" in src:
+            return src[f"{kind}_v"]
+        if f"{kind}_ratio" in src:
+            return None if vdd is None else src[f"{kind}_ratio"] * vdd
+    return None
+
+
+def logic_levels(design, res, meta, ck):
+    """E-3: every input pin (type input) with thresholds – vih_v|vih_ratio and vil_v|vil_ratio on the pin or in the
+    part's params – sits at ≤ VIL or ≥ VIH, a ratio taken of the voltage at the part's supply pin; and the high level
+    of every MCU output on its net (behind 0 Ω bridges too) reaches VIH, whatever the load drives. An MCU's own inputs
+    go by the config's `inputs` (functional)."""
+    joined = design.joined_nets()
+    reach = defaultdict(list)                     # net -> (input, VIH) on it
+    for des in sorted(design.comps):
+        part = design.part(des) or {}
+        p = part.get("params") or {}
+        if p.get("behavior") == "mcu":
+            continue
+        inputs = [(n, i) for n, i in (part.get("pins") or {}).items() if i.get("type") == "input"
+                  and f"{des}.{n}" in design.pin_net and all(any(f"{k}_{x}" in s for s in (i, p) for x in ("v", "ratio"))
+                                                             for k in ("vil", "vih"))]
+        if not inputs:
+            continue
+        ground = own_ground(design, des, part)
+        nets = sorted({design.pin_net[f"{des}.{n}"] for n in supply_pins(part) if f"{des}.{n}" in design.pin_net})
+        vdd = against(design, res, nets[0], ground) if len(nets) == 1 else None
+        for num, info in inputs:
+            vil, vih = (threshold(p, info, k, vdd) for k in ("vil", "vih"))
+            if vil is None or vih is None:
+                ck.add("E-3", des, "input thresholds as a ratio of the supply",
+                       f"{len(nets)} supply nets ({', '.join(nets) or 'none'}), none with the role vdd or vcc",
+                       "one supply pin: a power_in pin with the role vdd or vcc", False)
+                break
+            net, name = design.pin_net[f"{des}.{num}"], info.get("name", num)
+            x = against(design, res, net, ground)
+            if math.isnan(vil) or math.isnan(vih):
+                continue
+            reach[joined.get(net, net)].append((f"{des} {name}", vih))
+            if math.isnan(x):
+                continue
+            level = "high" if x >= vih else "low" if x <= vil else "undefined"
+            ck.add("E-3", f"{des} {net}", f"input level {level} at {name} (VIL {vil:.2f} V, VIH {vih:.2f} V)", x,
+                   f"≤ {vil:.2f} V or ≥ {vih:.2f} V", level != "undefined", unit=" V")
+    for des, m in meta["mcu"].items():
+        p = m["params"]
+        high = v(res, m["vin"]) if p.get("v_io") == "vin" else p.get("v_io", 3.3)
+        for net in m.get("gpio_ammeters", {}):
+            for who, vih in reach.get(joined.get(net, net), []):
+                ck.add("E-3", f"{des} {net}", f"output high level reaches VIH of {who}", high, f"≥ {vih:.2f} V",
+                       high >= vih, unit=" V")
 
 
 def net_currents(design, res, meta):
@@ -447,6 +635,7 @@ def load_plugin(path):
 def run_all(design, sim, keep=None, plugin=None):
     """All scenarios; `sim` is the parsed simulation config (tests pass modified copies)."""
     models = getattr(plugin, "MODELS", {}) if plugin else {}
+    touch_limits(design, sim)
     out = {"scenarios": [], "checks": [], "net_currents": {}}
     for sc in scenarios(sim):
         ck = Checks(sc["name"])

@@ -59,7 +59,9 @@ describes (section 3).
    - `edakit route all 2>&1 | cat` (read → DSN → Freerouting → check → apply → pours → reload → DRC; exit 0 = DRC 0).
      Open connections are yellow in `<artifacts>/route/<board>_routing.png`. Never EasyEDA's autorouter.
    - `edakit silk apply 2>&1 | cat` (designators where there is room; silkscreen on pads = 0; DRC). Through-hole parts
-     of the other side, soldered from the designators side: `[silk] solder_side = true` (handbook 7.7)
+     of the other side, soldered from the designators side: `[silk] solder_side = true` (handbook 7.7). A part listed
+     "without room": more room, a group label (`[silk] groups`) or `[silk] unlabelled` with the reason – the gate warns
+     on it otherwise (L-17). Run it last, after the routing: the gate fails on edakit's own print on a mask opening
 4. **Check:** `edakit pcb nets` (pad nets = graph), DRC details in `<artifacts>/route/<board>_drc.json`.
 5. **Picture:** routing preview and silk pictures; a canvas capture may be stale. For an overall view or a second
    opinion use the agent pcb-reviewer – its result is the sign-off M-5, not a checklist for the user.
@@ -74,6 +76,9 @@ describes (section 3).
   distance of their own (handbook 7.6), e.g. further from the milled edge than tracks that run along it.
 - Two nets pouring on one layer: the one with priority fills it all unless `pour_regions = true` gives each its own
   area (handbook 7.6); an area enclosed by another net's is an error, solved in the routing.
+- EasyEDA drops every pour piece without a pad of its net: where the pour net has no pad, that side stays bare. The gate
+  warns (L-15: a copper-free circle above `[copper] max_bare_mm`, 5 mm); give the area a second pour net
+  (`pour_regions`) or a pad or via of the pour net, then `route pours` again.
 - While a free pad (tooling hole) is in the PCB, filling pours fails – edakit takes them out and puts them back.
 - Net classes need the simulated currents (`edakit sim` first).
 - Freerouting cannot move a pad: pads of different parts on different nets closer than `clearance_mil` (L-13), or

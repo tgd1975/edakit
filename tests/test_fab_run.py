@@ -3,10 +3,12 @@ every row passes – and one fault per check built into a copy of it: the check 
 file. Each test lists every row that fails or warns, so a check that fires as well shows up.
 
 The export is the example's input stage: J1 (JST PH, through-hole), D1 (SS34 against reverse polarity) and C2 (22 µF)
-with the nets VIN, +5V and GND, on a board of 30 x 20 mm with one M3 hole and two tooling holes, every track on TOP.
+with the nets VIN, +5V and GND, on a board of 30 x 20 mm with one M3 hole and two tooling holes, every track on TOP,
+no pours (`pours = []`).
 The whole example has never been routed or exported, so no real export of it exists. This one has the files that
 `fab.collect` leaves, with the fields the checks read: pcb.json, drc.json, bom_easyeda.json, cpl_easyeda.xlsx,
-jlc_parts.json (so F-2 stays offline), and the Gerber and drill files with FlyingProbeTesting.json. It also has the
+jlc_parts.json (so F-2 stays offline), and the Gerber and drill files with FlyingProbeTesting.json. pcb.json has every
+designator visible (L-17). It also has the
 footprint geometry of `edakit pcb dump`, the net currents of `edakit sim` – 0.5 A on all three nets, which puts
 them in class POWER (0.6 mm), with an IPC-2221 width of 0.20 mm – and the board as `edakit route read` saw it (pads
 with their shapes, for L-13 and L-14), written from pcb.json when the export is written. J1 is through-hole and the
@@ -42,8 +44,10 @@ HOLE = (26, 16, 3.2)               # M3, a circle on the outline layer
 TOOLING = [(2.5, 17.5), (27.5, 2.5)]
 TOOLING_D, TOOLING_OPEN = 1.152, 1.152 + 2 * 0.148
 PLUS = (10.8, 10.9)                # "+" on the top silkscreen, next to D1's anode
+CATHODE = (15.2, 10.9)             # 1.9 mm above D1.1, D1's cathode
 BOARD = f"""# The input stage of the example on a board of its own (tests/test_fab_run.py)
 view = "top"
+pours = []
 edge_ok = ["J1"]
 
 [outline]
@@ -133,6 +137,7 @@ class Export:
         self.at, comps, self.geo, probe = {}, [], {}, []
         cu = {k: Layer() for k in gerber.FILES if k not in ("pth", "vias", "npth", "probe")}
         self.pth, self.npth = [], [(x, y, TOOLING_D) for x, y in TOOLING]
+        self.vias = []                 # (x, y, d): EasyEDA writes them into the PTH file and into a file of their own
         for ref, (fp, x, y, rot) in PLACE.items():
             (w, h), pads, (k, a, b), tht = FOOTPRINTS[fp]
             self.geo[ref] = {"footprint": fp, "bbox": [-w / 2 * MIL, -h / 2 * MIL, w / 2 * MIL, h / 2 * MIL],
@@ -171,7 +176,8 @@ class Export:
         cu["outline"].append(("draw", 0.1, ring, "hole"))
         self.gerber = cu
         self.pcb = {"components": comps, "lines": lines,
-                    "strings": [{"Text": "+", "X": PLUS[0] * MIL, "Y": PLUS[1] * MIL, "Layer": 3}]}
+                    "strings": [{"Text": "+", "X": PLUS[0] * MIL, "Y": PLUS[1] * MIL, "Layer": 3}],
+                    "designators": {ref: True for ref in PLACE}}
         self.probe = {"pins": {"fields": ["PIN_NAME", "PIN_X", "PIN_Y", "NET_NAME", "PIN_TYPE", "LAYER", "PAD_SIZEX",
                                           "PAD_SIZEY"], "rows": probe}}
         self.drc = []
@@ -189,6 +195,8 @@ class Export:
         self.shapes = {fp: [kinds[k], a * MIL, b * MIL] for fp, (_, _, (k, a, b), _) in FOOTPRINTS.items()}
         self.read_off = {}
         self.lost = set()              # keys of gerber.FILES the export leaves out
+        self.silk_memo = None          # silk_strings_main.json of `silk apply`; None: it never ran
+        self.kept = None               # {silk key: Layer}: the footprint print `silk apply` saved; None: none saved
 
     def board_read(self):
         """<board>_board.json of `edakit route read`, from the PCB as pcb.json has it."""
@@ -240,6 +248,12 @@ class Export:
                         ("route/main_board.json", self.shapes and self.board_read())):
             if data is not None:       # None: `pcb dump`, `edakit sim` or `route read` never ran
                 (art / f).write_text(json.dumps(data))
+        if self.silk_memo is not None:
+            (art / "silk_strings_main.json").write_text(json.dumps(self.silk_memo))
+        if self.kept is not None:
+            (art / "silk_footprints_main").mkdir()
+            for key, layer in self.kept.items():
+                (art / "silk_footprints_main" / gerber.FILES[key]).write_text(layer.text())
         d = root / "build" / "fab" / "main"
         (d / "gerber").mkdir(parents=True)
         for name, data in (("pcb", self.pcb), ("drc", self.drc), ("bom_easyeda", self.bom), ("jlc_parts", self.jlc)):
@@ -253,7 +267,9 @@ class Export:
         wb.save(d / "cpl_easyeda.xlsx")
         g = d / "gerber"
         files = {key: layer.text() for key, layer in self.gerber.items()}
-        files.update(pth=drill(self.pth), npth=drill(self.npth), probe=json.dumps(self.probe))
+        files.update(pth=drill(self.pth + self.vias), npth=drill(self.npth), probe=json.dumps(self.probe))
+        if self.vias:
+            files["vias"] = drill(self.vias)
         for key, text in files.items():
             if key not in self.lost:
                 (g / gerber.FILES[key]).write_text(text)
@@ -274,8 +290,8 @@ def findings(rows):
     return sorted((r["id"], r["result"]) for r in rows if r["result"] not in ("pass", "info"))
 
 
-CHECKS = ["L-1", "L-2", "L-3", "L-4", "L-5", "L-7", "L-8", "L-9", "L-10", "L-11", "L-12", "L-13", "L-14", "F-1", "F-2",
-          "F-3", "F-5"]
+CHECKS = ["L-1", "L-2", "L-3", "L-4", "L-5", "L-7", "L-8", "L-9", "L-10", "L-11", "L-12", "L-13", "L-14", "L-15", "L-16",
+          "L-17", "F-1", "F-2", "F-3", "F-5"]
 
 
 def test_the_clean_export_passes_every_check(project):
@@ -285,7 +301,8 @@ def test_the_clean_export_passes_every_check(project):
     by = {(r["id"], r["check"]): r["actual"] for r in rows}
     assert by["L-11", "short current loops: path over tracks per pad pair within the limit"] == "J1.1-D1.2 7.8 mm"
     assert by["L-9", "hole takes the lead at nominal size (diagonal or edge, or manufacturer's value)"] == "2 holes"
-    assert by["L-8", "silkscreen '+'/'−' = role of the nearest polarised pad"] == "1 signs correct"
+    assert by["L-8", "silkscreen '+'/'−' = role of the nearest polarised pad"] == \
+        "1 signs correct: 1 as PCB text, 0 drawn in the silkscreen"     # the text's strokes are that text
     paste_row = next(r for r in rows if r["id"] == "L-14")
     assert (paste_row["actual"], paste_row["expected"]) == (
         "4 SMD pads", ">= 0.400 mm on TOP ([release] assembly paste_gap_mm)")     # J1 is through-hole
@@ -345,6 +362,63 @@ def paste(ex, project):
     ex.move("C2", 7.8 - 20)
 
 
+def bare_bottom(ex, project):
+    """GND poured on BOTTOM by the board file, but the BOTTOM Gerber holds only J1's two pads: a pour never filled."""
+    board_file(project, "pours = []\n", "")
+    f = project.root / "hardware" / "boards" / "main.toml"
+    f.write_text(f.read_text() + '\n[[pours]]\nnet = "GND"\nlayers = ["BOTTOM"]\n')
+
+
+def loose_copper(ex, project):
+    """A copper stroke of 3 x 3 mm with round ends (16 mm²) on TOP that touches no pad, via or hole."""
+    ex.gerber["top"].append(("draw", 3.0, [(9, 4.5), (12, 4.5)], "loose"))
+
+
+def j1_pads(mm):
+    """J1's round pads (Ø 1.4 mm on 1.0 mm holes, a ring of 0.2 mm) at another diameter on both copper layers."""
+    def fault(ex, project):
+        for layer in ("top", "bottom"):
+            ex.gerber[layer][:] = [("flash", ("C", mm, mm), *i[2:]) if i[:2] == ("flash", ("C", 1.4, 1.4)) else i
+                                   for i in ex.gerber[layer]]
+    return fault
+
+
+def via(ex, x, y, pad=0.6096, hole=0.3048):
+    """A via as edakit routes it ([24, 12] mil), tented: drill files and a pad on both copper layers."""
+    ex.vias.append((x, y, hole))
+    for layer in ("top", "bottom"):
+        ex.gerber[layer].append(("flash", ("C", pad, pad), x, y))
+
+
+def plus_at(x, y, text=True):
+    """The "+" of the export moved to (x, y): drawn in the top silkscreen as two crossing strokes, the way a footprint
+    draws it, and as a PCB text unless text is False (a footprint's own print)."""
+    def fault(ex, project):
+        ex.gerber["top_silk"].drop("+")
+        ex.gerber["top_silk"] += [("draw", 0.15, [(x - 0.4, y), (x + 0.4, y)], "+"),
+                                  ("draw", 0.15, [(x, y - 0.4), (x, y + 0.4)], "+")]
+        ex.pcb["strings"] = [{**s, "X": x * MIL, "Y": y * MIL} for s in ex.pcb["strings"]] if text else []
+    return fault
+
+
+def silk_line(*pts):
+    """A 0.15 mm line of print on the top silkscreen."""
+    def fault(ex, project):
+        ex.gerber["top_silk"].append(("draw", 0.15, list(pts), "line"))
+    return fault
+
+
+ACROSS_C2 = ((18, 9), (20, 9))     # across C2.1's mask opening (1.1 x 1.4 mm): 0.165 mm² of print on it
+
+
+def own_print(ex, project):
+    """`silk apply` ran – its memo, and the print it found before placing anything, saved – and then a line of its
+    own print lies across C2.1: a part moved after it, say."""
+    ex.silk_memo = {"strings": ["s1"], "fills": []}
+    ex.kept = {k: Layer(ex.gerber[k]) for k in ("top_silk", "bottom_silk")}
+    silk_line(*ACROSS_C2)(ex, project)
+
+
 def assembled_j1(ex, project):
     graph(project, lambda g: project.comp(g, "J1").pop("bom"))
     ex.jlc["C131337"] = {"componentModelEn": "B2B-PH-K-S(LF)(SN)", "componentLibraryType": "extend",
@@ -367,9 +441,11 @@ FAULTS = [
     ("a connected pad missing from the files", lambda ex, p: ex.probe["pins"]["rows"].pop(4),
      [("L-2", "fail", "C2.1")]),
     ("a copper file missing", lambda ex, p: ex.lost.add("top"),
-     [("L-2", "fail", "Gerber_TopLayer.GTL missing"), ("F-5", "fail", "Gerber_TopLayer.GTL")]),
+     [("L-2", "fail", "Gerber_TopLayer.GTL missing"), ("F-5", "fail", "Gerber_TopLayer.GTL"),
+      ("L-15", "fail", "Gerber_TopLayer.GTL missing"), ("L-16", "fail", "Gerber_TopLayer.GTL missing")]),
     ("the probe file missing", lambda ex, p: ex.lost.add("probe"),
-     [("L-2", "fail", "FlyingProbeTesting.json missing"), ("F-5", "fail", "FlyingProbeTesting.json")]),
+     [("L-2", "fail", "FlyingProbeTesting.json missing"), ("F-5", "fail", "FlyingProbeTesting.json"),
+      ("L-15", "fail", "FlyingProbeTesting.json missing")]),
     # L-3
     ("a DRC finding", lambda ex, p: ex.drc.append({"errorType": "Clearance", "ruleName": "Safe Spacing"}),
      [("L-3", "fail", "Clearance (Safe Spacing): 1")]),
@@ -399,18 +475,23 @@ FAULTS = [
     ("a plus sign on a side without polarised pads",
      lambda ex, p: ex.pcb["strings"].append({**ex.pcb["strings"][0], "Layer": 4}),
      [("L-8", "fail", "'+' at (10.8, 10.9) mm: no polarised pad on this side")]),
+    ("a plus sign at the cathode", plus_at(*CATHODE),           # a cathode had no sign: compared with the anode
+     [("L-8", "fail", "'+' at (15.2, 10.9) mm: nearest pad D1.1 is cathode")]),
+    ("a footprint's own plus sign at the cathode", plus_at(*CATHODE, text=False),   # only the Gerber has it
+     [("L-8", "fail", "'+' at (15.2, 10.9) mm: nearest pad D1.1 is cathode")]),
     # L-9
     ("a through-hole part without lead data", lambda ex, p: p.save_part("C131337", {
         k: v for k, v in p.part("C131337").items() if k != "lead"}), [("L-9", "fail", "J1")]),
     ("holes too small for the lead", lambda ex, p: ex.pth.__setitem__(slice(None), [h[:2] + (0.5,) for h in ex.pth]),
      [("L-9", "fail", "J1.1: hole 0.50 mm for diagonal 0.71 mm")]),
-    ("a plated slot narrower than 0.5 mm", slot,
-     [("L-9", "fail", "J1.1: slot 0.45 x 1.20 mm"), ("L-9", "warn", "pad 1: 0.45 x 1.20 mm")]),
+    ("a plated slot narrower than 0.5 mm", slot,        # 1.2 mm long in J1's round 1.4 mm pad: 0.1 mm at its ends
+     [("L-9", "fail", "J1.1: slot 0.45 x 1.20 mm"), ("L-9", "warn", "pad 1: 0.45 x 1.20 mm"),
+      ("L-16", "fail", "J1.1: 0.100 mm on TOP and BOTTOM (hole 0.45 x 1.20 mm)")]),
     ("a through-hole pad without its hole", lambda ex, p: ex.pth.pop(),     # the bottom pad of J1.2 loses GND too
      [("L-9", "fail", "J1.2: no hole"), ("L-2", "fail", "GND: 2 groups")]),
     ("the drill file missing", lambda ex, p: ex.lost.add("pth"),
      [("L-2", "fail", "Drill_PTH_Through.DRL missing"), ("L-9", "fail", "Drill_PTH_Through.DRL missing"),
-      ("F-5", "fail", "Drill_PTH_Through.DRL")]),
+      ("F-5", "fail", "Drill_PTH_Through.DRL"), ("L-16", "fail", "Drill_PTH_Through.DRL missing")]),
     # L-10
     ("a pad away from its library position", lambda ex, p: ex.pad("C2.1").update(X=ex.at_mil("C2.1")[0] + 0.2 * MIL),
      [("L-10", "fail", "C2.1: 0.20 mm away from its footprint position")]),
@@ -436,6 +517,39 @@ FAULTS = [
     # L-14
     ("two SMD parts with their pads closer than the paste gap", paste,
      [("L-14", "fail", "C2.2 (GND) – D1.2 (VIN): 0.300 mm apart on TOP, below the paste gap 0.400 mm")]),
+    # L-15
+    ("a poured layer left bare", bare_bottom,
+     [("L-15", "warn", "BOTTOM: 1 % copper, largest copper-free circle Ø 19.0 mm at (13.2, 10.1) mm")]),
+    ("copper that touches no pad, via or hole", loose_copper,
+     [("L-15", "warn", "TOP: 1 piece without pad, via or hole: 16.2 mm² around (10.5, 4.5) mm")]),
+    # L-16
+    ("a pad ring below JLCPCB's minimum", j1_pads(1.25),
+     [("L-16", "fail", "J1.1: 0.125 mm on TOP and BOTTOM (hole Ø 1.00 mm); J1.2: 0.125 mm on TOP and BOTTOM")]),
+    ("a pad ring below JLCPCB's capability value", j1_pads(1.38),
+     [("L-16", "warn", "pad 1, 2: 0.190 mm on TOP and BOTTOM (hole Ø 1.00 mm)")]),
+    ("a via ring below 0.05 mm", lambda ex, p: via(ex, 8, 13.5, pad=0.38),     # on TOP the GND track is its ring
+     [("L-16", "fail", "via at (8.00, 13.50): 0.037 mm on BOTTOM (hole Ø 0.30 mm)")]),
+    ("two vias closer than 0.2 mm", lambda ex, p: (via(ex, 8, 13.5), via(ex, 8.45, 13.5)),
+     [("L-16", "fail", "via at (8.00, 13.50) – via at (8.45, 13.50): 0.145 mm apart, below 0.20 mm")]),
+    ("a via closer than 0.45 mm to a component hole", lambda ex, p: via(ex, 3, 12.05),
+     [("L-16", "fail", "J1.2 – via at (3.00, 12.05): 0.398 mm apart, below 0.45 mm")]),
+    # L-17
+    ("edakit's own print on a mask opening", own_print,
+     [("L-17", "fail", "TOP: 0.165 mm² in 1 spot: (19.1, 9.0) mm at C2.1")]),
+    ("edakit printed, but its print cannot be told from the footprints'",
+     lambda ex, p: setattr(ex, "silk_memo", {"strings": ["s1"], "fills": []}),
+     [("L-17", "fail", "silk_strings_main.json exists, silk_footprints_main/ does not")]),
+    ("a footprint's print on a mask opening", silk_line(*ACROSS_C2),
+     [("L-17", "warn", "TOP: 0.165 mm² in 1 spot: (19.1, 9.0) mm at C2.1")]),
+    ("print beyond the board outline", silk_line((29, 15), (31, 15)),
+     [("L-17", "warn", "TOP: 0.157 mm² beyond it in 1 spot: around (30.5, 15.0) mm")]),
+    ("a part without a visible designator", lambda ex, p: ex.pcb["designators"].update(C2=False),
+     [("L-17", "warn", "C2 on the top without a visible designator")]),
+    ("the designators not read with the PCB", lambda ex, p: ex.pcb.pop("designators"),
+     [("L-17", "fail", "pcb.json without the designators")]),
+    ("a text height below the fab's minimum",
+     lambda ex, p: board_file(p, 'edge_ok = ["J1"]', 'edge_ok = ["J1"]\n\n[silk]\nlabel_h_mm = 0.8'),
+     [("L-17", "warn", "label_h_mm = 0.8 mm")]),
     # F-1
     ("another LCSC number in EasyEDA's BOM", lambda ex, p: ex.bom[2].update(lcsc="C15850"),
      [("F-1", "fail", "C2: graph C45783, EasyEDA C15850")]),
@@ -457,10 +571,12 @@ FAULTS = [
     ("a through-hole part in the BOM of an SMD-only assembly", assembled_j1, [("F-3", "fail", "Top THT 1")]),
     # F-5
     ("a Gerber file missing", lambda ex, p: ex.gerber.pop("outline"),
-     [("F-5", "fail", "Gerber_BoardOutlineLayer.GKO")]),
+     [("F-5", "fail", "Gerber_BoardOutlineLayer.GKO"), ("L-17", "fail", "Gerber_BoardOutlineLayer.GKO missing")]),
     ("a silkscreen file missing", lambda ex, p: ex.lost.add("bottom_silk"),
-     [("F-5", "fail", "Gerber_BottomSilkscreenLayer.GBO")]),
-    ("no outline in the outline file", lambda ex, p: ex.gerber["outline"].clear(), [("F-5", "fail", "none")]),
+     [("F-5", "fail", "Gerber_BottomSilkscreenLayer.GBO"), ("L-8", "fail", "Gerber_BottomSilkscreenLayer.GBO missing"),
+      ("L-17", "fail", "Gerber_BottomSilkscreenLayer.GBO missing")]),
+    ("no outline in the outline file", lambda ex, p: ex.gerber["outline"].clear(),
+     [("F-5", "fail", "none"), ("L-17", "fail", "no closed outline in Gerber_BoardOutlineLayer.GKO")]),
     ("the outline off the plan", lambda ex, p: ex.gerber["outline"].__setitem__(0, (
         "draw", 0.1, [(0, 0), (31, 0), (31, 20), (0, 20), (0, 0)], "outline")),
      [("F-5", "fail", "31.00 x 20.00 mm at (0.00, 0.00)")]),
@@ -469,9 +585,9 @@ FAULTS = [
      [("F-5", "fail", "1 NPTH holes, missing 1")]),
     ("the mask closed over a tooling hole", lambda ex, p: ex.gerber["top_mask"].pop(),
      [("F-5", "fail", "top_mask: opening at (27.5, 2.5) smaller than Ø 1.448 mm")]),
-    ("copper in a tooling hole's opening",
+    ("copper in a tooling hole's opening",     # the dot is no pad either: what the drill leaves of it is loose
      lambda ex, p: ex.gerber["top"].append(("flash", ("C", 0.3, 0.3), 3.15, 17.5)),
-     [("F-5", "fail", "top: copper in the opening at (2.5, 17.5)")]),
+     [("F-5", "fail", "top: copper in the opening at (2.5, 17.5)"), ("L-15", "warn", "TOP: 1 piece without pad")]),
 ]
 
 
@@ -513,6 +629,136 @@ def test_no_paste_gap_on_a_side_that_is_not_assembled(project):
     rows = run(project, bottom_only)
     assert not [r for r in rows if r["id"] == "L-14" and r["result"] != "pass"]
     assert next(r for r in rows if r["id"] == "L-14")["actual"] == "0 SMD pads"
+
+
+def test_copper_per_side_of_the_clean_export(project):
+    """L-15 on the clean export: nothing poured (pours = []), so share and bare circle are information; the 3 pieces of
+    TOP (the three nets' tracks with their pads) and J1's two pads on BOTTOM all touch a pad."""
+    rows = {r["check"]: (r["result"], r["actual"]) for r in run(project) if r["id"] == "L-15"}
+    assert rows == {
+        "TOP: copper share and largest copper-free circle (no pour)":
+            ("info", "TOP: 6 % copper, largest copper-free circle Ø 8.2 mm at (5.0, 4.5) mm"),
+        "TOP: every copper piece touches a pad, via or plated hole": ("pass", "TOP: 3 pieces"),
+        "BOTTOM: copper share and largest copper-free circle (no pour)":
+            ("info", "BOTTOM: 1 % copper, largest copper-free circle Ø 19.0 mm at (13.2, 10.1) mm"),
+        "BOTTOM: every copper piece touches a pad, via or plated hole": ("pass", "BOTTOM: 2 pieces")}
+
+
+def test_copper_per_side_settings(project):
+    """[copper] of the board file: max_bare_mm lets the bare BOTTOM pass, min_cover warns below its share."""
+    def settings(ex, p):
+        bare_bottom(ex, p)
+        f = p.root / "hardware" / "boards" / "main.toml"
+        f.write_text(f.read_text() + "\n[copper]\nmax_bare_mm = 20\nmin_cover = { TOP = 10 }\n")
+    rows = run(project, settings)
+    assert findings(rows) == [("L-15", "warn")]
+    by = {r["check"]: (r["result"], r["actual"]) for r in rows if r["id"] == "L-15"}
+    assert by["BOTTOM: no copper-free circle above 20 mm inside the pour outline (poured: GND)"][0] == "pass"
+    assert by["TOP: copper share at least 10 % ([copper] min_cover)"] == ("warn", "TOP: 6 % copper")
+
+
+def test_rings_and_hole_spacing_of_the_clean_export(project):
+    """L-16 on the clean export: J1's two holes of 1.0 mm in pads of 1.4 mm, 2 mm apart – a ring of 0.2 mm is kept."""
+    rows = [(r["result"], r["actual"]) for r in run(project) if r["id"] == "L-16"]
+    assert rows == [("pass", "2 holes (narrowest ring 0.200 mm, J1.1), 0 vias"), ("pass", "closest 1.000 mm (J1.1 – J1.2)")]
+
+
+def test_a_waived_annular_ring_is_listed_with_its_reason(project):
+    def waived(ex, p):
+        j1_pads(1.25)(ex, p)
+        graph(p, lambda g: p.comp(g, "J1").update(waive={"L-16": "test: JLCPCB confirmed the ring"}))
+    rows = run(project, waived)
+    assert findings(rows) == [("L-16", "waived"), ("L-16", "waived")]                  # one row per hole
+    w = [r for r in rows if r["result"] == "waived"]
+    assert {r["reason"] for r in w} == {"test: JLCPCB confirmed the ring"}
+    assert [(r["check"], r["actual"]) for r in w] == [
+        ("annular ring: J1.1: 0.125 mm on TOP and BOTTOM (hole Ø 1.00 mm)", "0.125 mm"),
+        ("annular ring: J1.2: 0.125 mm on TOP and BOTTOM (hole Ø 1.00 mm)", "0.125 mm")]
+
+
+def test_a_minus_sign_at_the_cathode_is_right(project):
+    def minus(ex, p):
+        ex.pcb["strings"] = [{"Text": "−", "X": CATHODE[0] * MIL, "Y": CATHODE[1] * MIL, "Layer": 3}]
+    rows = run(project, minus)                  # the drawn "+" stays at the anode
+    assert findings(rows) == []
+    assert next(r for r in rows if r["id"] == "L-8")["actual"] == \
+        "2 signs correct: 1 as PCB text, 1 drawn in the silkscreen"
+
+
+def test_a_cross_in_the_artwork_is_not_read(project):
+    def art(ex, p):
+        plus_at(*CATHODE, text=False)(ex, p)
+        (p.root / "star.svg").write_text('<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 10 10">'
+                                         '<rect x="0" y="0" width="10" height="10" fill="black"/></svg>')
+        board_file(p, 'edge_ok = ["J1"]', 'edge_ok = ["J1"]\n\n[[silk.art]]\nsvg = "star.svg"\n'
+                   f"x = {CATHODE[0]}\ny = {CATHODE[1]}\nwidth_mm = 3")
+    rows = run(project, art)
+    assert findings(rows) == []
+    assert not [r for r in rows if r["id"] == "L-8"]                    # no sign left to compare
+
+
+def test_a_waived_sign_is_listed_with_its_reason(project):
+    def waived(ex, p):
+        plus_at(*CATHODE, text=False)(ex, p)
+        graph(p, lambda g: p.comp(g, "D1").update(waive={"L-8": "test: the library's print, the roles are right"}))
+    rows = run(project, waived)
+    assert findings(rows) == [("L-8", "waived")]
+    w = next(r for r in rows if r["result"] == "waived")
+    assert w["reason"] == "test: the library's print, the roles are right"
+    assert "'+' at (15.2, 10.9) mm: nearest pad D1.1 is cathode" in w["check"]
+
+
+def test_plus_signs_in_a_silkscreen_file(tmp_path):
+    lay = Layer([("draw", 0.15, [(0, 1), (1.2, 1)], "+"), ("draw", 0.15, [(0.6, 0.4), (0.6, 1.6)], "+"),   # a "+"
+                 ("draw", 0.15, [(5, 0), (6, 0), (6, 1), (5, 1), (5, 0)], "frame"),       # corners meet at their ends
+                 ("draw", 0.15, [(10, 0), (10.5, 0.866)], "X"), ("draw", 0.15, [(10.5, 0), (10, 0.866)], "X"),  # 60°
+                 ("draw", 0.15, [(20, 0), (20.2, 0)], "short"), ("draw", 0.15, [(20.1, -0.1), (20.1, 0.1)], "short"),
+                 ("draw", 0.15, [(30, 0), (33, 0)], "long"), ("draw", 0.15, [(31.5, -1.5), (31.5, 1.5)], "long")])
+    (tmp_path / "silk.gbr").write_text(lay.text())
+    assert [tuple(round(v, 3) for v in p) for p in gerber.plus_signs(tmp_path / "silk.gbr")] == [(0.6, 1.0)]
+
+
+def l17(rows):
+    return {r["check"]: (r["result"], r["actual"]) for r in rows if r["id"] == "L-17"}
+
+
+def test_silkscreen_of_the_clean_export(project):
+    assert l17(run(project)) == {
+        "edakit's own print (designators, texts, artwork of silk apply) off the solder-mask openings":
+            ("pass", "edakit printed nothing on this board (no silk apply)"),
+        "TOP: other print (footprints, texts by hand) off the solder-mask openings": ("pass", "TOP: 0.000 mm²"),
+        "BOTTOM: other print (footprints, texts by hand) off the solder-mask openings": ("pass", "BOTTOM: 0.000 mm²"),
+        "TOP: silkscreen inside the board outline": ("pass", "TOP: 0.000 mm² beyond it"),
+        "BOTTOM: silkscreen inside the board outline": ("pass", "BOTTOM: 0.000 mm² beyond it"),
+        "designators of the top side read with the PCB": ("pass", "3 parts: 3 with a visible designator"),
+        "text heights edakit prints at least 1.0 mm (JLCPCB minimum text height)": ("pass", "label_h_mm 1 mm"),
+    }
+
+
+def test_silk_apply_run_again_leaves_only_the_footprints_print(project):
+    """After `silk apply` the footprint print it saved covers the print on the opening: a warning for C2, no fail."""
+    def again(ex, p):
+        silk_line(*ACROSS_C2)(ex, p)
+        ex.silk_memo = {"strings": [], "fills": []}
+        ex.kept = {k: Layer(ex.gerber[k]) for k in ("top_silk", "bottom_silk")}
+    rows = run(project, again)
+    assert findings(rows) == [("L-17", "warn")]
+    assert l17(rows)["TOP: edakit's own print (designators, texts, artwork of silk apply) off the solder-mask "
+                     "openings"] == ("pass", "TOP: 0.000 mm²")
+    assert l17(rows)["C2: silkscreen on its solder-mask openings – JLCPCB clips it there"][0] == "warn"
+
+
+def test_a_group_label_or_unlabelled_covers_a_part(project):
+    def grouped(ex, p):
+        ex.pcb["designators"].update(J1=False, C2=False, D1=False)
+        ex.pcb["strings"].append({"Text": "IN", "X": 10 * MIL, "Y": 15 * MIL, "Layer": 3})
+        board_file(p, 'edge_ok = ["J1"]', 'edge_ok = ["J1"]\n\n[silk]\ngroups = { IN = ["J1", "D1"] }\n'
+                   'unlabelled = { C2 = "no room next to D1" }')
+    rows = run(project, grouped)
+    assert findings(rows) == []
+    assert l17(rows)["designators of the top side read with the PCB"] == (
+        "pass", "3 parts: 0 with a visible designator, 2 under a group label, unlabelled on purpose: "
+                "C2 (no room next to D1)")
 
 
 def test_every_check_has_a_fault():

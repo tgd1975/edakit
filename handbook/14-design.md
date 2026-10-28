@@ -67,9 +67,11 @@ in the graph or by a pattern, shown by `edakit hints`, never blocking.
 | H-2 | a MOSFET | gate series resistor against ringing |
 | H-3 | a button, switch or DIP switch | debouncing |
 | H-4 | a transistor switching a connector pin | flyback diode for an inductive load off the board |
-| H-5 | a buck or boost regulator, an inductor | the hot loop – and L-11 to check it |
+| H-5 | a buck or boost regulator, an inductor | the hot loop – G-18 wants it in `layout.loops`, L-11 measures it |
 | H-6 | a battery holder | protection for lithium cells |
 | H-7 | a signal line from a connector to an IC pin | ESD protection at the connector |
+| H-8 | two supplies reach one net – power inputs as for H-1 and a module's `power_output` pin with the role `vbus` – and at least one of them without a diode on the way; fuses, switches, inductors and a single MOSFET pass, a back-to-back MOSFET pair passes nothing | back-feed into a supply: cells charged, a PC's USB port fed, a body diode heating |
+| H-9 | an `output` pin of a part the MCU drives (its clock among the inputs) on a net with an MCU pin (role `gpio`), directly or through one resistor – a read-back from a chain or a shift register | the output's edge and delay (`out_edge`, `t_pd_ns`) against the SPI mode the firmware samples in |
 
 The designer handles each one and writes down how, in the graph:
 
@@ -151,6 +153,7 @@ edakit block add led --as STATUS --connect in=LED_STATUS
 | `i2c-pullups` | 4.7 kΩ on SDA and SCL, marks both nets as I2C |
 | `npn-switch` | S8050 low-side switch with base and base-emitter resistor and a flyback diode |
 | `power-input-jst` | JST PH input, SS34 against reverse polarity, 22 µF |
+| `power-or-pmos` | two supplies ORed onto one rail: USB through an SS34, cells or a second input through two AO3401A back-to-back that USB switches off – neither supply is fed backwards (H-8) |
 | `reverse-pmos` | AO3401A reverse-polarity protection with its gate resistor |
 | `usb-c-sink` | USB-C power input with 5.1 kΩ per CC pin and a polyfuse |
 

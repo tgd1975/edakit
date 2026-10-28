@@ -220,6 +220,18 @@ def test_silk_solder_side_key(tmp_path):
         _board("b", {}, {"silk": {"solder_side": "yes"}})
 
 
+def test_silk_unlabelled_key(tmp_path):
+    from edakit.config import _board
+    assert "unlabelled" not in _board("b", {}, {}).silk                  # no key: every part needs its designator (L-17)
+    (tmp_path / "edakit.toml").write_text('[project]\nname = "t"\n[boards.main]\n')
+    (tmp_path / "hardware" / "boards").mkdir(parents=True)
+    (tmp_path / "hardware" / "boards" / "main.toml").write_text('[silk]\nunlabelled = { R21 = "no room in the star" }\n')
+    assert load(tmp_path / "edakit.toml").board().silk["unlabelled"] == {"R21": "no room in the star"}
+    for bad in (["R21"], {"R21": ""}, {"R21": 1}, "R21"):
+        with pytest.raises(ConfigError, match="silk.unlabelled must be a table of designator = reason"):
+            _board("b", {}, {"silk": {"unlabelled": bad}})
+
+
 def test_silk_board_label_side_and_region_keys(tmp_path):
     from edakit.config import _board
     silk = _board("b", {}, {}).silk
@@ -235,3 +247,14 @@ def test_silk_board_label_side_and_region_keys(tmp_path):
     for region in ([[0, 0], [40, 0]], [[0, 0], [40, 0], [40]], "y < 34", [[0, 0], [40, 0], ["a", 3]]):
         with pytest.raises(ConfigError, match=r"silk.board_label_region must be a polygon \[\[x, y\], …\]"):
             _board("b", {}, {"silk": {"board_label_region": region}})
+
+
+def test_copper_key(tmp_path):
+    from edakit.config import _board
+    assert _board("b", {}, {}).copper == {"max_bare_mm": 5.0, "min_cover": {}}     # no key: 5 mm, no share required
+    b = _board("b", {}, {"copper": {"max_bare_mm": 8, "min_cover": {"BOTTOM": 60}}})
+    assert b.copper == {"max_bare_mm": 8.0, "min_cover": {"BOTTOM": 60.0}}
+    for bad, msg in (({"max_bare_mm": 0}, "max_bare_mm must be positive"), ({"min_cover": {"INNER1": 50}}, "min_cover"),
+                     ({"min_cover": {"TOP": 150}}, "min_cover"), ({"bare_mm": 5}, "unknown key 'bare_mm'")):
+        with pytest.raises(ConfigError, match=msg):
+            _board("b", {}, {"copper": bad})

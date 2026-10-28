@@ -78,7 +78,7 @@ def test_example_is_drawn(project, tmp_path, capsys):
     assert code == 0, capsys.readouterr().out
     texts = {t.text for t in ET.parse(out).getroot().iter(f"{SVG}text")}
     assert {c["designator"] for c in project.graph()["graph"]["components"]} <= texts
-    assert {"Power Input", "MCU", "LED Driver", "GP2  LED_SDI  out, SPI TX"} <= texts   # blocks and pin table
+    assert {"Power Input", "MCU", "LED Driver", "GP2  LED_CLK  out, SPI SCK"} <= texts   # blocks and pin table
 
 
 def test_without_layout_config_every_part_finds_a_block(project, tmp_path, capsys):

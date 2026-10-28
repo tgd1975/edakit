@@ -24,9 +24,14 @@ on the delivered board instead (acceptance test).
   `nc`.
 - Supplies: connectors listed under `sources` (a voltage source behind a source resistance), battery holders with a
   cell state (`cells`). A module that brings its own supply (an Arduino Nano on USB) is a source as well: `plus` is
-  its 5V pin, the voltage is USB minus its on-board diode.
+  its 5V pin, the voltage is USB minus its on-board diode – or USB itself on a module without that diode.
 - `i_min_a` on a source: the least current the supply needs to stay on – USB power banks switch off below
   50–100 mA after a few seconds. E-3 checks every scenario against it.
+- No supply is fed backwards: where two supplies meet and nothing blocks the way, the higher one feeds the lower one –
+  into a PC's USB port through a module whose 5 V pin is its VBUS, into primary cells. E-3 holds the current into
+  every source (against its direction) to `i_back_max_a` of the source, and the current into every cell of a battery
+  holder to `i_charge_max_a` of its cell state (`"cells": {"nimh": {"v": 1.3, "r": 0.05, "i_charge_max_a": 0.1}}` for a
+  pack its charger charges on purpose); both are `criteria.blocking_max_a` (1 mA) unless set.
 - Off-board loads (a servo, a motor, a strip at a connector): the load's `external`, e.g.
   `{"J1": {"plus": "2", "minus": "1", "i_a": 0.3}}` – a constant current between the two pins; it counts for the
   connector's contact current and for the track widths.
@@ -81,8 +86,16 @@ module with a servo: [Christmas bell](https://github.com/tgd1975/automatic_chris
 Scenarios = supplies × loads × corners (LED forward voltage at min/max), plus `extra_scenarios` (e.g. "programming
 cable plugged in, external supply off"; `"info": true` turns failures into information). A load with
 `"matrix": false` runs only where an extra scenario names it – fault cases such as a stalled servo, whose result you
-want to see and record as a decision, but which must not block every commit. Battery projects add
+want to see and record as a decision, but which must not block every commit. `ambient_c` is the ambient of the
+scenarios (E-2 derates the fuses' hold current to it); `ambient_min_c`, optional, the lowest one – G-17 holds a fuse's
+hold current there against the connectors it protects (without it: the datasheet's `i_hold_a`). Battery projects add
 `"cells": {"fresh": {"v": 1.6, "r": 0.15}, "empty": {"v": 1.0, "r": 0.4}}` and supplies like `{"BT1": "fresh"}`.
+
+A board people reach – picked up, held, pressed – gets its touch limit: `"touch_c": {"main": 48}`, a map from each such
+board to the temperature in °C its parts may reach (E-2, 5.3). The number comes from the standard the product follows,
+for the surface and the time a hand stays on it; IEC 62368-1 TS1 allows 48 °C for longer than a minute, 60 °C on plastic
+(51 °C on metal) for 10 s to 1 min and 77 °C (60 °C) for 1–10 s. A board without it gets no touch item; a name that is
+no board of edakit.toml stops the run.
 
 `leds_on` lists the LEDs that light in a load – the designator, or `D10_RED` for one colour of an RGB LED, `"all"` for
 every one; the others are expected dark. LEDs on the output of a constant-current sink go by the channel instead (5.3).
@@ -93,9 +106,30 @@ As soon as an LED is on no driver output, every load needs `leds_on`, `[]` when 
 | Check | What |
 |---|---|
 | E-1 | the operating point converges |
-| E-2 | stress of every part against its ratings with derating: resistor power ≤ 50 %, currents ≤ 80 %, capacitor/diode/transistor voltages ≤ 67 %, LED forward current and reverse voltage, fuse hold current at ambient, connector, switch and relay contact current, relay coil voltage, the current of every MCU output (`gpio_i_max_a`) and of all outputs together, sourced and sunk (`gpio_i_total_max_a`) – each pin may be fine and the sum beyond the package |
-| E-3 | function: current from every source (≤ `i_max_a`), regulator outputs within tolerance, input above `vin_min`, LDO junction temperature, MCU supply voltage and load on its regulator, MCU inputs at a defined level (≤ VIL or ≥ VIH – a 3.3 V signal into a 5 V AVR is the classic case), MCU outputs only on pins that can drive (an output on an input-only pin is reported and not driven), LED driver output headroom and junction temperature, every LED on or dark as the load says (driver channels: ≥ 80 % of its share of the set current, also for an LED behind 0 Ω bridges or one resistor; parallel LEDs share within a ratio – below the table), relays pull in (`v_operate`) and release (`v_release`) as the load says, an own board supplied inside the range it was simulated for (`vin_min` … `vin_max`, 4.5), diodes that must block (`expect_blocking`), every net inside its declared range `v`, plus the plugin's checks |
+| E-2 | stress of every part against its ratings with derating: resistor power ≤ 50 %, currents ≤ 80 %, capacitor/diode/transistor voltages ≤ 67 %, LED forward current and reverse voltage, fuse hold current at ambient, connector, switch and relay contact current, relay coil voltage, the current of every MCU output (`gpio_i_max_a`) and of all outputs together, sourced and sunk (`gpio_i_total_max_a`) – each pin may be fine and the sum beyond the package; the junction temperature of every part with `rth_ja_k_per_w` against its `tj_max_c`, and on a board of `touch_c` against the touch limit (below the table) |
+| E-3 | function: current from every source (≤ `i_max_a`), no source and no cell fed backwards (≤ `i_back_max_a`, `i_charge_max_a`, 1 mA by default), regulator outputs within tolerance, input above `vin_min`, LDO junction temperature (against the same limit as E-2's), MCU supply voltage and load on its regulator, MCU inputs at a defined level (≤ VIL or ≥ VIH – a 3.3 V signal into a 5 V AVR is the classic case), every part with an operating supply range inside it, every input pin with thresholds at a defined level and the high level of every MCU output reaching the VIH of the inputs on its net (below the table), MCU outputs only on pins that can drive (an output on an input-only pin is reported and not driven), LED driver output headroom and junction temperature, every LED on or dark as the load says (driver channels: ≥ 80 % of its share of the set current, also for an LED behind 0 Ω bridges or one resistor; parallel LEDs share within a ratio – below the table), relays pull in (`v_operate`) and release (`v_release`) as the load says, an own board supplied inside the range it was simulated for (`vin_min` … `vin_max`, 4.5), diodes that must block (`expect_blocking`), every net inside its declared range `v`, plus the plugin's checks |
 | E-4 | LED has a known driver: in every scenario every LED – each colour of an RGB LED – has a state E-3 checks, its cathode on a driver output (directly, behind 0 Ω bridges or one resistor) or the load's `leds_on`; an LED with neither, or one the netlist left out because its parts entry lacks a role it reads (anode, cathode and their colours, 4.1), fails as "LED without a known driver" |
+
+**Heat and touch.** Half the power rating is no temperature: an AO3401A (125 K/W) at E-2's 0.45 W runs at 96 °C
+at 40 °C ambient. Every part whose entry gives `rth_ja_k_per_w` gets its junction temperature in every scenario,
+`ambient_c` + P × Rth(j-a), with P the power of all its elements – a resistor's I²R, a diode's or LED's VF × IF, a
+transistor's VCE × IC + VBE × IB, a MOSFET's VDS × ID, its body diode included (ngspice counts it in the drain
+current). It is held to the part's `tj_max_c`, at most the criteria's `tj_max_c` (default 125 °C) – the limit of the
+LDO and LED driver items of E-3 as well ("junction temperature at 40 °C: 0.0751 W × 125 K/W"). On a board of
+`touch_c` the same temperature – the upper bound of the part's surface – is held to the touch limit, for the LDOs and
+LED drivers too ("temperature where people touch (board main)"). A P-MOSFET switched off while fresh cells and USB
+meet passes every rating with 0.27 W in its body diode and still reaches 74 °C under a hand.
+
+**Operating range and logic levels.** A part whose entry gives its operating supply range – `ratings` `vdd_op_min` /
+`vdd_op_max` for its supply pins (the `power_in` pins with the role `vdd` or `vcc`, else all of them), or `v_op: [min,
+max]` on a pin – is supplied inside it in every scenario, measured from the pin to the part's own ground pin. An input
+pin (type `input`) of a part with thresholds – `vih_v` | `vih_ratio` and `vil_v` | `vil_ratio` on the pin, else in the
+part's `params`; a ratio is taken of the voltage at the part's supply pin – sits at ≤ VIL or ≥ VIH ("input level
+undefined at OE(ED2)"). A DC scenario drives most outputs low, so the high level of every MCU output on the input's
+net (behind 0 Ω bridges too) is held against VIH as well, whatever the load drives: `v_io`, or the supply pin's
+voltage with `"vin"` ("output high level reaches VIH of U2 SDI"). These are the recommended operating conditions of
+the datasheet, not its absolute maxima (G-3): a 5 V-only LED driver behind a 3.3 V MCU stays inside every absolute
+maximum and does not work. A part entry without them gets no item; an MCU's own inputs go by the config's `inputs`.
 
 A reversed LED on a driver output fails as "LED reversed"; a reversed LED elsewhere stays dark where it should light.
 That is the polarity check of the graph – for an LED with an expected state. E-4 makes sure every LED has one: an LED

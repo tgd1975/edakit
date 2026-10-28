@@ -19,13 +19,13 @@ Example: [the Christmas bell's graph](https://github.com/tgd1975/automatic_chris
   ],
   "nets": [
     {"name": "+5V", "pins": ["D1.1", "U1.39", "C2.1", "D2.1"], "v": [0, 5.5], "notes": "behind the reverse diode"},
-    {"name": "LED_CLK", "pins": ["U1.5", "U2.3"], "v": [0, 3.4],
+    {"name": "LED_CLK", "pins": ["U1.4", "U2.3"], "v": [0, 3.4], "fn": "spi.sck", "fn_bus": "LED",
      "waive": {"G-4": "floating until the firmware runs, harmless: OE is pulled high"}}
   ],
   "cables": [
     {"name": "W1", "from": "J2", "to": "J1", "pins": {"1": "1", "2": "2"}, "r_ohm_per_wire": 0.065}
   ],
-  "checks": {"reverse_protect": ["J1"], "pin_locks": {"U1.4": "LED_SDI", "U1.5": "LED_CLK"}}
+  "checks": {"reverse_protect": ["J1"], "pin_locks": {"U1.4": "LED_CLK", "U1.5": "LED_SDI"}}
 }}
 ```
 
@@ -34,11 +34,11 @@ Example: [the Christmas bell's graph](https://github.com/tgd1975/automatic_chris
 | `designator` | as on schematic, PCB and silkscreen |
 | `type` | rough class for the generated template layout and the schematic blocks: `microcontroller`, `module`, `ic`, `transistor`, `connector`, `regulator`, `diode`, `led`, `resistor`, `capacitor`, `inductor`, `button`, `switch`, `potentiometer`, `audio`, `testpoint`, `battery_holder`, `fuse` |
 | `lcsc` | the LCSC number – identifies symbol, footprint, parts entry and the BOM line |
-| `part` | the manufacturer part number; without `lcsc` it names the parts entry (its `mpn`) – a part bought elsewhere (chapter 4) |
+| `part` | the manufacturer part number; without `lcsc` it names the parts entry (its `mpn`) – a part bought elsewhere (chapter 4); with `lcsc` it must name the entry's `mpn` too (P-6) |
 | `pins` | pin number → pin name, **with the pin numbers of the EasyEDA/LCSC symbol of exactly this part**. The names must equal the parts entry (P-1). |
 | `nc` | pins deliberately unconnected; every pin is in exactly one net or in `nc` |
 | `board` | which board the part is on (a key of `[boards]` in edakit.toml); may be omitted with one board |
-| `value` | shown in the BOM ("10k", "100nF") |
+| `value` | shown in the BOM ("10k", "100nF"); P-6 holds it to the entry's `value_ohm`, `value_f` or `value_h` |
 | `bom: false` | the part is placed on the PCB but not in the BOM for assembly (hand-soldered, bought separately) |
 | `easyeda_device` | for parts without LCSC number (bare test pads): `{name, uuid, libraryUuid}` of an EasyEDA library device |
 | `verify` | an open question about pins/polarity that the library does not settle; blocks the release (G-9) until resolved |
@@ -46,11 +46,15 @@ Example: [the Christmas bell's graph](https://github.com/tgd1975/automatic_chris
 | `notes` | free text; cite decision numbers here |
 | net `v` | `[min, max]` voltage over **all** intended operating states (all supply variants, reversed supply, unloaded) |
 | net `bus` | `"i2c"` marks SDA and SCL nets whose pins do not say so (MCU pins called GP4): G-11 checks them |
-| `cables` | wires between boards: connector pins joined 1:1; the cable is no part, its resistance feeds the simulation |
+| net `fn` | the function the net needs from its MCU pin: `pwm`, `adc`, `spi.sck`, `spi.tx`, `spi.rx`, `spi.cs`, `i2c.sda`, `i2c.scl`, `uart.tx`, `uart.rx` – G-15 holds it to the pin's `functions` (4.1); without `fn` the pin is a plain GPIO (bit-banged, PIO) |
+| net `fn_bus` | a name the nets of one bus share (`"LED"` on SDI and CLK): G-15 wants them on one peripheral instance (`spi0`, not `spi0` and `spi1`) |
+| net `pwm_hz` | the PWM frequency of a net with `fn: "pwm"` – a number, or `[min, max]` for one that changes (a buzzer playing notes): two PWM nets on one slice need the same fixed frequency (G-15) |
+| `cables` | wires between boards: connector pins joined 1:1; the cable is no part, its resistance (`r_ohm_per_wire`) feeds the simulation, its rating per wire (`i_max_a`, optional) G-17 |
 | `hints` | design hints that are taken care of, `{"H-1": "C1 1000 µF next to J1"}` – chapter 14.3 |
 | `layout` | the hand-over to the layout: `fixed`, `edge`, `near`, `loops`, `notes` – chapters 7.4 and 14.1; G-1 checks that the names exist |
 | `purpose` | what the board is for: `use` (`private` – built for oneself, `gift` – given away, `sale` – sold, also in small series), `market` (`"EU"`), `notes` (what it is, who uses it) – it decides which rules the regulatory review applies (chapter 15); part of the circuit hash |
 | `ground` | name of the ground net (default `GND`) – the checks, the simulation and the schematic's flags use it; G-1 checks that the net exists |
+| `grounds` | further nets that are ground on purpose, `["AGND"]` – an analog ground joined at one point, an isolated side: their `ground` pins pass G-16 (default: none) |
 | `checks` | settings of the graph checks: `pin_locks` (`{"U1.4": "LED_SDI"}` – pins the firmware relies on, G-2), `doc_pin_table` (`{component, file, prefix, regex}` – a pin table in the documentation, G-2), `reverse_protect` (connectors that may be plugged in the wrong way round, G-10; also a power input for the design hints); part of the circuit hash, G-1 checks the names |
 
 ## 3.2 Conventions that save trouble
@@ -84,16 +88,22 @@ check that fails is explained once below the findings (chapter 14.2).
 | G-11 | I2C pull-ups: every I2C line has a pull-up to a supply between (V − 0.4 V) / 3 mA and 10 kΩ, parallel ones added up; a line is I2C by the net's `bus`, an SDA/SCL net name, a pin role `sda`/`scl` or a pin name with SDA/SCL (a role decides over the name); pins with `pull`/`pull_ohm` count (modules) | a bus without pull-ups, 47 kΩ, a module's pull-ups plus your own below 1 kΩ |
 | G-12 | strapping pins: a pin with `strap` in its parts entry is at that level at reset – no pull, rail or output on its net says otherwise, and something holds it (a pull, or the pin's internal `pull`) | a pull-down on the ESP32's GPIO0, an I2C pull-up on GPIO12 |
 | G-13 | flyback diode: a relay coil or a buzzer with `coil_ohm`, switched by a transistor or an output, has a diode across it with the cathode at its plus terminal | a relay that kills its transistor at the first switch-off |
-| G-14 | USB-C sink: a receptacle with `cc1`/`cc2` pins has its own 5.1 kΩ ± 10 % to ground on each CC pin; silent when an IC is on the CC lines | no 5 V from a USB-C charger, CC1 and CC2 on one resistor |
+| G-14 | USB-C sink: a receptacle with `cc1`/`cc2` pins has its own 5.1 kΩ ± 10 % to ground on each CC pin; silent when an IC is on the CC lines. A module or breakout states its receptacle's termination in `params.usb_c` (4.1): `rd_5k1` or `controller` passes, `none` has its CC pins checked the same way and fails without them | no 5 V from a USB-C charger, CC1 and CC2 on one resistor, a breakout without its two resistors |
+| G-15 | pin functions: a net with `fn` is on a pin whose parts entry lists that function (`functions`), the nets of one `fn_bus` on one peripheral instance, two PWM nets of one slice with the same fixed `pwm_hz` and a channel each; a net with `fn` on pins without `functions` is a note | SPI data on the clock pin, an analog input without ADC, a buzzer on the PWM slice of an LED |
+| G-16 | ground and supply pins: every `ground` pin on the ground net (or one joined to it by a 0 Ω bridge or an inductor, or in `grounds`); every `power_in` pin on a net that a supply reaches – a `power_output` pin, a battery holder, a connector with a `vbus` pin or in `checks.reverse_protect`, a simulation source – directly or through fuses, switches, connectors, inductors, MOSFETs, resistors up to 100 Ω and diodes in forward direction | a rail split by a typo in its name, a ground pin on a net of its own, VDD swapped with a signal |
+| G-17 | fuse against what it protects: the hold current of every fuse (`i_hold_a`; at the lowest ambient `ambient_min_c` of sim.json from `i_hold_vs_temp`) is at most the `i_max_a` of every connector, switch and cable its current flows through – its own nets and on through fuses and switches; a trip current (`i_trip_a`) above it is a warning | a 1.5-A polyfuse in front of a connector rated 1.25 A, an overload that heats the contacts instead of tripping the fuse |
+| G-18 | hot loop in the hand-over: a part whose entry names its hot-loop pins (`hot_loop`, 4.1) has a `layout.loops` entry on every net of the loop – the nets of those pins and, one diode further, the net behind the rectifier on its switch node (`sw`); a buck or boost IC (`behavior`) without `hot_loop` is a warning; `waive` on the part, or on a net whose part of the loop closes over a pour | a boost whose output loop was routed 61 mm across the board, passing every check because nobody listed it |
 | P-1 | graph pins (number and name) = parts entry; an entry exists for every LCSC number; no supply pin marked `nc` | a wrong part number, pins shifted by one |
+| P-6 | part identity: the component and its parts entry name the same part – the entry's `lcsc` is its file name; the component's `lcsc` is no `C99…` user-library number (unless `bom: false`); its `part` names the entry's `mpn` (remarks in parentheses or after `;` left out, case ignored, a manufacturer before it allowed; a `part` that starts with a value, "330 Ω 0805", is compared as that value); its `value` reads as the entry's `value_ohm` / `value_f` / `value_h` within 1 % ("4k7", "100nF", "2R2"); its `type` fits the entry's `kind` (microcontroller, regulator: ic or module; transistor: npn, pnp, nmos, pmos; led: led, led_rgb; switch: switch, dip_switch; audio: buzzer; otherwise the same word); `waive` on the component. A designator prefix against the kind (R, C, L, D, Q, U, J, SW, F, BT, BZ, K, TP) is a warning | C25789 written for a 74HC165 (a 464 kΩ resistor), R2 "1k" on a 10 kΩ entry, an LED that came in as U1 |
 | P-3 | own parts (4.5): a board copied with `edakit part own` is its project's current datasheet, copied from a commit (pending otherwise); a board not released at that state is a warning; the project's own datasheets are of its current state | a board changed after it was copied into the host |
 | G-9 | sign-off: every part `verified` against its datasheet, no open `verify` note (pending – blocks only the release) | an unchecked part going into an order |
 
 **0 Ω bridges.** A resistor whose parts entry has `value_ohm: 0` is copper – the usual way to cross a track on a board
-with all tracks on one side. The nets it joins are one net for G-4, G-5, G-6 and G-10 to G-14: a pull-up behind a
+with all tracks on one side. The nets it joins are one net for G-4, G-5, G-6 and G-10 to G-17: a pull-up behind a
 bridge holds its input, a capacitor to a ground net behind a bridge decouples, two outputs on either side clash. A
 finding names the joined net after the ground net if that is one of them, else after the first of them in the graph;
-a waiver on any of them counts. G-1, G-2, G-3, G-8, P-1 and G-9 see every net and the bridge as the graph has them.
+a waiver on any of them counts. G-1, G-2, G-3, G-8, G-18, P-1 and G-9 see every net and the bridge as the graph has
+them (G-18: the pads of `layout.loops` lie on one net of the graph).
 `edakit check` lists the joined nets above its last line:
 `joined by 0 Ω bridges, checked as one net: GND = GND_B (R11); 3V3 = 3V3_B = 3V3_C (R10, R13)`.
 

@@ -81,3 +81,19 @@ def test_merge_bom_counts_every_designator_once():
     merged = {e["lcsc"]: e for e in fab.merge_bom(entries)}
     assert merged["C439782"]["reference"] == "C1" and merged["C439782"]["quantity"] == 1
     assert merged["C17630"]["reference"] == "R1, R2, R3" and merged["C17630"]["quantity"] == 3
+
+
+def test_drills_keep_the_ends_of_a_slot(tmp_path):
+    f = tmp_path / "Drill_PTH_Through.DRL"
+    f.write_text("M48\nT01C1.000\nT02C0.600\n%\nT01\nX3.0Y9.0\nT02\nX1.0Y1.0G85X1.0Y2.0\nM30\n")
+    assert gerber.parse_drills(f) == [(3.0, 9.0, 3.0, 9.0, 1.0), (1.0, 1.0, 1.0, 2.0, 0.6)]
+    assert gerber.parse_holes(f) == [(3.0, 9.0, 1.0, 1.0), (1.0, 1.5, 0.6, 1.6)]      # centre, width, overall length
+
+
+def test_annular_ring_is_the_copper_around_the_hole():
+    pad = ("flash", (("C", 1.4, 1.4), 0.0, 0.0))
+    track = ("draw", (("C", 0.6, 0.6), [(0.0, 0.0), (5.0, 0.0)]))
+    parts = [(a.bounds, a) for a in (gerber.shape([op], 64) for op in (pad, track))]
+    assert fab.ring_mm(parts, (0.0, 0.0, 0.0, 0.0, 1.0)) == pytest.approx(0.2, abs=1e-4)    # the track leaves it
+    assert fab.ring_mm(parts, (0.0, -0.375, 0.0, 0.375, 0.45)) == pytest.approx(0.1, abs=1e-4)   # a slot along y
+    assert fab.ring_mm(parts, (3.0, 2.0, 3.0, 2.0, 0.3)) is None                         # no copper there

@@ -24,17 +24,36 @@
   G-13 flyback diode across inductive loads (relay coil, buzzer with coil_ohm) that a transistor or an output
        switches: cathode at the positive terminal
   G-14 USB-C sink: CC1 and CC2 of a receptacle (role cc1/cc2) each with its own 5.1 kOhm ± 10 % to ground, unless
-       an IC (a Type-C controller) is on the CC lines
+       an IC (a Type-C controller) is on the CC lines; a module or breakout states the termination of its receptacle
+       in params.usb_c: rd_5k1 or controller passes, none has its CC pins checked like a receptacle's and fails
+       without them
+  G-15 pin functions: a net's "fn" (pwm, adc, spi.sck, i2c.sda, uart.tx, …) is on a pin whose parts entry lists it
+       in "functions", the nets of one "fn_bus" on one peripheral instance, PWM nets of one slice with one fixed
+       "pwm_hz" and a channel each; a pin without "functions" is a note
+  G-16 ground and supply pins: a ground pin on the ground net (or one joined to it by an inductor, or in the graph's
+       "grounds"), a supply pin (power_in) on a net that a supply reaches – a power output, a battery holder, a
+       connector with a vbus pin or in checks.reverse_protect, a sim source – directly or through fuses, switches,
+       connectors, inductors, MOSFETs, resistors up to 100 Ohm and diodes in forward direction
+  G-17 fuses: the hold current of a fuse (at the lowest ambient, ambient_min_c of sim.json) is at most the i_max_a of
+       every connector, switch and cable its current flows through; a trip current above it is a warning
+  G-18 hot loops: a part whose parts entry names its hot-loop pin roles (hot_loop; "gnd" also for ground pins) has
+       a layout.loops entry on each net of the loop – the nets of those pins and the net behind a diode on its
+       switch node (sw); a buck or boost IC without hot_loop is a warning
   P-1  graph pins (number + name) = parts database, an entry exists for every LCSC number – or, for a part bought
        elsewhere, for its manufacturer part number `part`
+  P-6  part identity: the component and its parts entry name the same part – the entry's lcsc is its file name,
+       the component's lcsc no C99… user-library number (unless bom: false), its part names the entry's mpn (remarks
+       in parentheses or after ";" left out, case ignored; a part that starts with a value is that value), its
+       value reads as the entry's value_ohm / value_f / value_h within 1 %, its type fits the entry's kind; a
+       designator prefix (R, C, L, D, Q, U, J, SW, F, BT, BZ, K, TP) against the kind is a warning
   P-3  own parts (part.py): a board copied from its project with `edakit part own` is that project's current
        datasheet, copied from a commit (pending otherwise); a board that is not released is a warning; the project's
        own datasheets (hardware/datasheet/) are of its current state
   G-9  sign-off: every part verified against its datasheet, no open "verify" notes (pending, blocks only the release)
 
-0 Ω bridges (resistors with value_ohm 0 in the parts entry) join their nets: G-4, G-5, G-6, G-10 to G-14 see the
+0 Ω bridges (resistors with value_ohm 0 in the parts entry) join their nets: G-4, G-5, G-6, G-10 to G-16 see the
 joined nets as one net under the group's name (the ground net if it is one of them, else the first in the graph) and
-the bridges as copper; G-1, G-2, G-3, G-8, P-1 and G-9 see every net and part as the graph has them.
+the bridges as copper; G-1, G-2, G-3, G-8, G-18, P-1 and G-9 see every net and part as the graph has them.
 
 Rule, reason, fix and sources of every check: rules.json (`edakit rules G-4`). A failed check is explained once
 below the findings. A finding listed in "waive" of the net or component is accepted on purpose and reported with
@@ -49,6 +68,7 @@ from collections import Counter, defaultdict
 from pathlib import Path
 
 from . import handover, rules
+from .design import natural_key
 
 CAP_FACTOR = 1.5      # rated voltage >= 1.5 x max. voltage across
 DIODE_FACTOR = 1.5    # VRRM >= 1.5 x max. reverse voltage
@@ -61,10 +81,28 @@ PURPOSES = ("private", "gift", "sale")                 # purpose.use of the grap
 CHECK_KEYS = ("pin_locks", "reverse_protect", "doc_pin_table")   # checks of the graph
 I2C_SINK_A, I2C_VOL, I2C_R_MAX = 0.003, 0.4, 10e3    # UM10204 7.1: Rp(min) = (V - VOL) / 3 mA; 10 k for 100 kHz
 USB_RD, USB_RD_TOL = 5100, 0.10                      # USB Type-C sink termination Rd
+USB_C_CC = ("rd_5k1", "controller", "none")          # params.usb_c.cc: how a module or breakout terminates its CC lines
 COILS = {"relay": ("coil_plus", "coil_minus"), "buzzer": ("plus", "minus")}   # inductive kinds: their coil roles
+FN_LINES = {"pwm": (), "adc": (), "spi": ("sck", "tx", "rx", "cs"), "i2c": ("sda", "scl"), "uart": ("tx", "rx")}
+FN_NAMES = [k + (f".{line}" if line else "") for k, lines in FN_LINES.items() for line in lines or [""]]   # net fn
+SUPPLY_R_MAX = 100                                   # a resistor up to this passes a supply (shunt, filter)
+SWITCHERS = ("buck", "boost")                        # behaviour models of switching regulators (hot loop, G-18)
+PIN_FUNCTION = re.compile(r"([a-z][a-z0-9]*?)(\d+)(?:\.([a-z]+))?")   # "spi0.sck", "i2c1.sda", "pwm1.a", "adc0"
+KINDS_OF_TYPE = {"microcontroller": ("ic", "module"), "regulator": ("ic", "module"),   # P-6: graph type -> parts
+                 "transistor": ("npn", "pnp", "nmos", "pmos"), "led": ("led", "led_rgb"),   # entry kinds; any other
+                 "switch": ("switch", "dip_switch"), "audio": ("buzzer",)}                  # type: the same word
+KINDS_OF_PREFIX = {"R": ("resistor", "potentiometer"), "C": ("capacitor",), "L": ("inductor",),
+                   "D": ("diode", "led", "led_rgb"), "Q": ("npn", "pnp", "nmos", "pmos"), "U": ("ic", "module"),
+                   "J": ("connector",), "SW": ("switch", "button", "dip_switch"), "F": ("fuse",),
+                   "BT": ("battery_holder",), "BZ": ("buzzer",), "K": ("relay",), "TP": ("connector",)}
+VALUE_PARAMS = {"value_ohm": ("Ω", "resistance"), "value_f": ("F", "capacitance"), "value_h": ("H", "inductance")}
+VALUE_TOL = 0.01      # graph value vs the entry's value parameter
+MULTIPLIERS = {"p": 1e-12, "n": 1e-9, "u": 1e-6, "µ": 1e-6, "μ": 1e-6, "m": 1e-3, "k": 1e3, "K": 1e3, "M": 1e6,
+               "G": 1e9, "R": 1, "Ω": 1}
+QUANTITY = re.compile(r"\s*(\d+)(?:[.,](\d+))?\s*([pnuµμmkKMG]|[RΩ])?(\d+)?\s*(Ω|[oO]hms?|F|H)?(?=$|[\s,;/()])")
 
-EXECUTED = ["G-1", "G-2", "G-3", "G-4", "G-5", "G-6", "G-8", "G-10", "G-11", "G-12", "G-13", "G-14", "P-1", "P-3",
-            "G-9"]
+EXECUTED = ["G-1", "G-2", "G-3", "G-4", "G-5", "G-6", "G-8", "G-10", "G-11", "G-12", "G-13", "G-14", "G-15", "G-16",
+            "G-17", "G-18", "P-1", "P-3", "P-6", "G-9"]
 
 
 class Report:
@@ -460,14 +498,32 @@ def cc_lines(d, des):
 
 
 def check_usb_c(d, rep):
-    for des in d.comps_of_kind("connector"):
-        cc = cc_lines(d, des)
-        if set(cc) != {"cc1", "cc2"}:
+    """G-14 on the receptacles the graph shows with their CC pins, and on the ones a parts entry states (usb_c): a
+    module or breakout that terminates its own receptacle passes, one without termination is checked through its CC
+    pins, or fails when they are no pins of the graph."""
+    for des in d.comps:
+        part = d.part(des)
+        if not part:
+            continue
+        cc, usb, waive = cc_lines(d, des), (part.get("params") or {}).get("usb_c"), d.comps[des].get("waive")
+        if usb is not None:
+            state = usb.get("cc") if isinstance(usb, dict) else None
+            if state not in USB_C_CC:
+                rep.error("G-14", f"{des}: params.usb_c of {d.entry_key(des)} needs cc {', '.join(USB_C_CC[:-1])} or "
+                                  f"{USB_C_CC[-1]}, not {state!r}")
+                continue
+            if state != "none":
+                continue  # the board terminates its receptacle itself: Rd on it, or a Type-C or PD controller
+            if set(cc) != {"cc1", "cc2"}:
+                rep.error("G-14", f"{des}: USB-C receptacle without CC termination (params.usb_c of "
+                                  f"{d.entry_key(des)}: cc none) and its CC lines are no pins of the graph – a USB-C "
+                                  f"source switches VBUS on only with {ohm(USB_RD)} to {d.ground} on each CC pin", waive)
+                continue
+        elif part.get("kind") != "connector" or set(cc) != {"cc1", "cc2"}:
             continue
         if any(d.pin_info(r).get("type") not in (None, "passive") for n in cc.values() if n
                for r in d.nets[n]["pins"] if not r.startswith(f"{des}.")):
             continue  # a Type-C or PD controller drives the CC lines
-        waive = d.comps[des].get("waive")
         if cc["cc1"] and cc["cc1"] == cc["cc2"]:
             rep.error("G-14", f"{des}: CC1 and CC2 on one net {cc['cc1']} – each needs its own {ohm(USB_RD)} to "
                               f"{d.ground}", waive)
@@ -485,6 +541,274 @@ def check_usb_c(d, rep):
             elif known and not any(abs(r - USB_RD) <= USB_RD * USB_RD_TOL for r in known):
                 rep.error("G-14", f"{des}: {line.upper()} ({net}) has {', '.join(ohm(r) for r in known)} to "
                                   f"{d.ground} – needs {ohm(USB_RD)} ± {USB_RD_TOL:.0%}", waive)
+
+
+def fn_match(fn, function):
+    """(instance, line) if the pin function serves the net's fn: 'spi.tx' and 'spi0.tx' -> ('0', 'tx'); 'pwm' and
+    'pwm1.b' -> ('1', 'b') – slice and channel; 'adc' and 'adc0' -> ('0', None)."""
+    m = PIN_FUNCTION.fullmatch(str(function))
+    kind, _, line = fn.partition(".")
+    if not m or m[1] != kind or (line and m[3] != line):
+        return None
+    return m[2], m[3]
+
+
+def hz_text(hz):
+    if hz is None:
+        return "pwm_hz missing"
+    return f"{hz[0]:g}–{hz[1]:g} Hz" if isinstance(hz, list) else f"{hz:g} Hz"
+
+
+def valid_hz(hz):
+    def num(x):
+        return isinstance(x, (int, float)) and not isinstance(x, bool) and x > 0
+    return hz is None or num(hz) or (isinstance(hz, list) and len(hz) == 2 and all(map(num, hz)) and hz[0] <= hz[1])
+
+
+def check_pin_functions(d, rep):
+    """G-15: the pin of a net with `fn` has that function (`functions` of its parts entry), the nets of one `fn_bus`
+    use one peripheral instance per part, PWM nets of one slice have one fixed `pwm_hz` and a channel each."""
+    hits = {}   # net -> [(ref, instance, line)] of the pins that serve its fn
+    for name, net in sorted(d.nets.items()):
+        fn, waive = net.get("fn"), net.get("waive")
+        if not valid_hz(net.get("pwm_hz")):
+            rep.error("G-15", f"{name}: pwm_hz must be a frequency in Hz or [min, max], not {net['pwm_hz']!r}", waive)
+        if not fn:
+            continue
+        if fn not in FN_NAMES:
+            rep.error("G-15", f"{name}: unknown fn {fn!r} (known: {', '.join(FN_NAMES)})", waive)
+            continue
+        known = [(r, d.pin_info(r)) for r in net["pins"] if isinstance(d.pin_info(r).get("functions"), list)]
+        if not known:
+            rep.notes.append(("G-15", f"{name}: needs {fn}, but no pin on it has functions in its parts entry – not "
+                                      "checked"))
+            continue
+        hits[name] = [(r, *m) for r, info in known for f in info["functions"] if (m := fn_match(fn, f))]
+        if not hits[name]:
+            has = "; ".join(f"{r} ({info['name']}) has " + (", ".join(info["functions"]) or "no free function")
+                            for r, info in known)
+            rep.error("G-15", f"{name}: needs {fn}, but {has}", waive)
+    buses = defaultdict(dict)   # (bus, peripheral, part) -> {net: {instance: pin}}
+    for name, pins in hits.items():
+        if bus := d.nets[name].get("fn_bus"):
+            for ref, inst, _ in pins:
+                buses[(bus, d.nets[name]["fn"].partition(".")[0], ref.partition(".")[0])].setdefault(name, {})[inst] = ref
+    for (bus, kind, des), nets in sorted(buses.items()):
+        if len(nets) > 1 and not set.intersection(*map(set, nets.values())):
+            waive = {k: v for n in nets for k, v in (d.nets[n].get("waive") or {}).items()}
+            on = ", ".join(f"{n} on " + "/".join(f"{kind}{i}" for i in sorted(inst)) + " ("
+                           + ", ".join(inst[i] for i in sorted(inst)) + ")" for n, inst in sorted(nets.items()))
+            rep.error("G-15", f"bus {bus}: {on} – the nets of one bus need one {kind} of {des}", waive)
+    slices = defaultdict(list)   # (part, slice) -> [(net, channel, ref)]
+    for name, pins in hits.items():
+        if d.nets[name]["fn"] == "pwm":
+            for ref, inst, channel in pins:
+                slices[(ref.partition(".")[0], inst)].append((name, channel, ref))
+    for (des, inst), users in sorted(slices.items()):
+        for i, (a, ch_a, ref_a) in enumerate(users):
+            for b, ch_b, ref_b in users[i + 1:]:
+                if a == b:
+                    continue
+                waive = {**(d.nets[b].get("waive") or {}), **(d.nets[a].get("waive") or {})}
+                hz_a, hz_b = d.nets[a].get("pwm_hz"), d.nets[b].get("pwm_hz")
+                where = f"PWM slice {inst} of {des} ({ref_a}, {ref_b})"
+                if ch_a == ch_b:
+                    rep.error("G-15", f"{a} and {b} on the same PWM channel pwm{inst}.{ch_a} of {des} ({ref_a}, "
+                                      f"{ref_b}) – one output for both", waive)
+                elif hz_a is None or hz_b is None:
+                    rep.error("G-15", f"{a} ({hz_text(hz_a)}) and {b} ({hz_text(hz_b)}) share {where} – give both "
+                                      "their pwm_hz: a slice has one frequency", waive)
+                elif isinstance(hz_a, list) or isinstance(hz_b, list):
+                    rep.error("G-15", f"{a} ({hz_text(hz_a)}) and {b} ({hz_text(hz_b)}) share {where} – a slice has "
+                                      "one frequency, a net whose frequency changes needs a slice of its own", waive)
+                elif hz_a != hz_b:
+                    rep.error("G-15", f"{a} ({hz_text(hz_a)}) and {b} ({hz_text(hz_b)}) share {where} – a slice has "
+                                      "one frequency", waive)
+
+
+def supply_inputs(d, sim=None):
+    """Nets a supply feeds: power outputs, and where the supply comes in (the design hint H-1's power inputs) – the
+    plus of a battery holder, the vbus pins of a connector, every pin of a connector in checks.reverse_protect, the
+    plus of a simulation source."""
+    out = {n for n, net in d.nets.items() if any(d.pin_info(r).get("type") == "power_output" for r in net["pins"])}
+    protect = set((d.graph.get("checks") or {}).get("reverse_protect") or [])
+    for des in d.comps:
+        part = d.part(des) or {}
+        roles = {num: str(p.get("role") or "") for num, p in (part.get("pins") or {}).items()}
+        if part.get("kind") == "battery_holder":
+            take = [n for n, r in roles.items() if r.startswith("plus")] or list(roles)
+        elif part.get("kind") == "connector" and "vbus" in roles.values():
+            take = [n for n, r in roles.items() if r == "vbus"]
+        elif des in protect:
+            take = list(roles)
+        else:
+            continue
+        out |= {d.pin_net.get(f"{des}.{n}") for n in take}
+    for des, src in ((sim or {}).get("sources") or {}).items():
+        if des in d.comps and isinstance(src, dict) and "plus" in src:
+            out.add(d.pin_net.get(f"{des}.{src['plus']}"))
+    return out - {None}
+
+
+def supply_paths(d):
+    """{net: nets a supply reaches from it through one part}: fuses, switches, connectors and inductors (every pin),
+    MOSFETs (drain and source), resistors up to SUPPLY_R_MAX both ways, diodes from anode to cathode."""
+    nxt = defaultdict(set)
+    for des in d.comps:
+        part = d.part(des) or {}
+        kind, value = part.get("kind"), resistor_value(d, des)
+        if kind == "diode":
+            a, k = d.net_of(des, "anode"), d.net_of(des, "cathode")
+            if a and k:
+                nxt[a].add(k)
+            continue
+        if kind in ("nmos", "pmos"):
+            nets = {d.net_of(des, "drain"), d.net_of(des, "source")}
+        elif kind in PASS_THROUGH + ("inductor",) or (value is not None and value <= SUPPLY_R_MAX):
+            nets = {d.pin_net.get(f"{des}.{p}") for p in part.get("pins") or {}}
+        else:
+            continue
+        for n in nets - {None}:
+            nxt[n] |= nets - {None, n}
+    return nxt
+
+
+def reach(starts, nxt, stop=()):
+    seen, todo = set(starts), list(starts)
+    while todo:
+        for n in nxt.get(todo.pop(), ()):
+            if n not in seen and n not in stop:
+                seen.add(n)
+                todo.append(n)
+    return seen
+
+
+def check_power_pins(d, rep, sim=None):
+    """G-16: ground pins on ground, supply pins on a net that a supply reaches."""
+    alias = {a: name for name, net in d.nets.items() for a in net.get("joined") or [name]}   # 0 Ω bridges joined
+    named = d.graph.get("grounds") or []
+    for n in named:
+        if n not in alias:
+            rep.error("G-16", f"grounds: no net {n} in the graph")
+    inductors = defaultdict(set)
+    for des in d.comps_of_kind("inductor"):
+        nets = {d.pin_net.get(f"{des}.{p}") for p in d.part(des)["pins"]} - {None}
+        for n in nets:
+            inductors[n] |= nets - {n}
+    grounds = reach({d.ground} | {alias[n] for n in named if n in alias}, inductors)
+    supplied = reach(supply_inputs(d, sim) - grounds, supply_paths(d), stop=grounds)
+    for des in d.comps:
+        for num, info in ((d.part(des) or {}).get("pins") or {}).items():
+            ref, net = f"{des}.{num}", d.pin_net.get(f"{des}.{num}")
+            if net is None:
+                continue
+            what, waive = f"{ref} ({info.get('name', num)}) on {net}", d.nets[net].get("waive")
+            if info.get("type") == "ground" and net not in grounds:
+                rep.error("G-16", f"{what}, not on {d.ground}", waive)
+            elif info.get("type") == "power_in" and net in grounds:
+                rep.error("G-16", f"{what}: a supply pin on ground", waive)
+            elif info.get("type") == "power_in" and net not in supplied:
+                rep.error("G-16", f"{what}: nothing supplies this net", waive)
+
+
+def hold_current(part, t_min=None):
+    """i_hold_a of a fuse, or at the lowest ambient t_min from params.i_hold_vs_temp: linear between its points, the
+    end values beyond them."""
+    table = sorted((part.get("params") or {}).get("i_hold_vs_temp") or [])
+    if t_min is None or not table:
+        return part["ratings"]["i_hold_a"]
+    if t_min <= table[0][0]:
+        return table[0][1]
+    for (t0, h0), (t1, h1) in zip(table, table[1:]):
+        if t0 <= t_min <= t1:
+            return h0 + (h1 - h0) * (t_min - t0) / (t1 - t0)
+    return table[-1][1]
+
+
+def series_nets(d, des):
+    """The nets the current of a part flows on: its own, and on through fuses and switches (G-10's walk without the
+    connectors – a connector hands the current on through a cable on the same net, not to its other pins); not
+    ground."""
+    nets = {d.pin_net.get(f"{des}.{p}") for p in d.part(des)["pins"]} - {None, d.ground}
+    todo = list(nets)
+    while todo:
+        for ref in d.nets[todo.pop()]["pins"]:
+            other = ref.split(".", 1)[0]
+            if (d.part(other) or {}).get("kind") in ("fuse", "switch"):
+                for p in d.part(other)["pins"]:
+                    n = d.pin_net.get(f"{other}.{p}")
+                    if n and n != d.ground and n not in nets:
+                        nets.add(n)
+                        todo.append(n)
+    return nets
+
+
+def check_fuses(d, rep, sim=None):
+    """G-17: a fuse holds no more than the connectors, switches and cables its current flows through carry."""
+    t_min = (sim or {}).get("ambient_min_c")
+    for fuse in d.comps_of_kind("fuse"):
+        part = d.part(fuse)
+        r = part.get("ratings") or {}
+        if "i_hold_a" not in r:
+            continue
+        hold, trip, waive = hold_current(part, t_min), r.get("i_trip_a"), d.comps[fuse].get("waive")
+        at = f" at {t_min:g} °C" if t_min is not None and (part.get("params") or {}).get("i_hold_vs_temp") else ""
+        nets = series_nets(d, fuse)
+        rated = [(des, p["ratings"]["i_max_a"]) for des in d.comps_of_kind("connector", "switch")
+                 if "i_max_a" in ((p := d.part(des)).get("ratings") or {})
+                 and any(d.pin_net.get(f"{des}.{n}") in nets for n in p["pins"])]
+        rated += [(f"cable {c['name']}", c["i_max_a"]) for c in d.graph.get("cables", [])
+                  if "i_max_a" in c and any(d.pin_net.get(f"{c['from']}.{a}") in nets for a in c["pins"])]
+        for what, i_max in rated:
+            if hold > i_max:
+                rep.error("G-17", f"{fuse}: holds {hold:.3g} A{at}, above the {i_max:g} A of {what} – an overload in "
+                                  "between never trips it", waive)
+            elif trip is not None and trip > i_max:
+                msg = f"{fuse}: trips at {trip:g} A, above the {i_max:g} A of {what} – an overload in between may " \
+                      "last for minutes"
+                if waive and "G-17" in waive:
+                    rep.waived.append(("G-17", msg, waive["G-17"]))
+                else:
+                    rep.warnings.append(("G-17", msg))
+
+
+def check_hot_loops(d, rep):
+    """G-18: a part whose entry names its hot-loop pins (hot_loop: pin roles, "gnd" also for pins of type ground) has
+    a layout.loops entry on every net of that loop – the nets of those pins and, one diode further, the net behind
+    the rectifier on the switch node (sw). A buck or boost IC without hot_loop is a warning."""
+    covered = {d.pin_net.get(lp.get("a")) for lp in (d.graph.get("layout") or {}).get("loops") or []} - {None}
+    for des in d.comps:
+        part = d.part(des) or {}
+        roles, behavior = part.get("hot_loop"), (part.get("params") or {}).get("behavior")
+        who, waive = f"{des} ({behavior})" if behavior else des, d.comps[des].get("waive")
+        if roles is None:
+            if part.get("kind") == "ic" and behavior in SWITCHERS:
+                msg = f"{who}: parts entry {d.entry_key(des)} names no hot_loop – G-18 cannot ask for its hot loop " \
+                      "in layout.loops"
+                if waive and "G-18" in waive:
+                    rep.waived.append(("G-18", msg, waive["G-18"]))
+                else:
+                    rep.warnings.append(("G-18", msg))
+            continue
+        pins = {num: "gnd" if p.get("type") == "ground" and p.get("role") is None else p.get("role")
+                for num, p in part["pins"].items()}
+        for role in [r for r in roles if r not in pins.values()]:
+            rep.error("G-18", f"{des}: hot_loop of {d.entry_key(des)} names '{role}', no pin role of the part")
+        nets = {}   # net -> why it belongs to the loop
+        for num, role in pins.items():
+            if role in roles and (net := d.pin_net.get(f"{des}.{num}")):
+                nets.setdefault(net, f"{des}.{num} {part['pins'][num]['name']}")
+        sw = {d.pin_net.get(f"{des}.{num}") for num, role in pins.items() if role == "sw" and role in roles} - {None}
+        for dio in d.comps_of_kind("diode"):
+            a, k = d.net_of(dio, "anode"), d.net_of(dio, "cathode")
+            for here, there in ((a, k), (k, a)):
+                if here in sw and there and there not in nets:
+                    nets[there] = f"behind {dio}"
+        for net, why in nets.items():
+            if net not in covered:
+                on_net = d.nets[net].get("waive") or {}
+                rep.error("G-18", f"{who}: no layout.loops entry on {net} ({why})",
+                          on_net if "G-18" in on_net else waive)
 
 
 def check_part_pins(d, rep):
@@ -505,6 +829,87 @@ def check_part_pins(d, rep):
             if part["pins"].get(str(pin), {}).get("type") == "power_in":
                 rep.error("P-1", f"{des}.{pin} ({part['pins'][str(pin)]['name']}) is a supply pin but marked nc",
                           c.get("waive"))
+
+
+def read_value(text):
+    """(number, unit or None) of a value as the graph writes it – 10k, 4k7, 2R2, 100nF, 22 µF, 330 Ω 0805 (the
+    leading quantity) –, or None when it starts with no quantity (green, 1N4148, 0805W8F…)."""
+    m = QUANTITY.match(str(text or ""))
+    if not m or (m.group(2) and m.group(4)):
+        return None
+    whole, frac, mult, frac2, unit = m.groups()
+    number = float(f"{whole}.{frac or frac2 or 0}") * MULTIPLIERS.get(mult, 1)
+    if (unit and unit[0] in "ΩoO") or (mult in ("R", "Ω") and not unit):
+        unit = "Ω"
+    return number, unit
+
+
+def si(x, unit):
+    for f, p in ((1e9, "G"), (1e6, "M"), (1e3, "k"), (1, ""), (1e-3, "m"), (1e-6, "µ"), (1e-9, "n"), (1e-12, "p")):
+        if abs(x) >= f or f == 1e-12:
+            return f"{x / f:.4g} {p}{unit}" if x else f"0 {unit}"
+    return f"{x} {unit}"
+
+
+def core_mpn(mpn):
+    """The part number of an mpn without the remarks entries add: in parentheses, after a semicolon."""
+    return " ".join(re.sub(r"\([^)]*\)", " ", str(mpn)).split(";")[0].split())
+
+
+def value_problem(text, part, key, what):
+    """What is wrong with a value of the graph against the value parameter of parts entry `key`, or None."""
+    params = part.get("params") or {}
+    param = next((k for k in VALUE_PARAMS if isinstance(params.get(k), (int, float))), None)
+    if not param:
+        return None
+    (unit, name), want = VALUE_PARAMS[param], float(params[param])
+    got = read_value(text)
+    if got is None:
+        return f"{what} {text} does not read as a {name} – parts entry {key} has {param} {si(want, unit)}"
+    if got[1] and got[1] != unit:
+        return f"{what} {text} is no {name} – parts entry {key} has {param} {si(want, unit)}"
+    if abs(got[0] - want) > VALUE_TOL * abs(want):
+        return f"{what} {text} reads {si(got[0], unit)}, parts entry {key} has {param} {si(want, unit)}"
+    return None
+
+
+def check_identity(d, rep):
+    """P-6: the component and its parts entry name the same part."""
+    users = defaultdict(list)
+    for des in sorted(d.comps, key=natural_key):
+        if (key := d.entry_key(des)) is not None:
+            users[key].append(des)
+    for key, dess in sorted(users.items()):
+        lcsc = d.parts[key].get("lcsc")
+        if lcsc and lcsc != key:
+            rep.error("P-6", f"{key}.json: lcsc {lcsc} – the file is named {key} ({', '.join(dess)})")
+    for key, dess in users.items():
+        part = d.parts[key]
+        for des in dess:
+            c, waive = d.comps[des], d.comps[des].get("waive")
+            if str(c.get("lcsc") or "").startswith("C99") and c.get("bom") is not False:
+                rep.error("P-6", f"{des}: lcsc {c['lcsc']} is a part of an EasyEDA user library – nobody sells it "
+                                 "(handbook 4.2)", waive)
+            mpn = core_mpn(part.get("mpn") or "")
+            if c.get("part") and mpn:
+                if read_value(c["part"]):                   # a description ("330 Ω 0805"): its value counts
+                    if problem := value_problem(c["part"], part, key, "part"):
+                        rep.error("P-6", f"{des}: {problem}", waive)
+                elif not re.search(r"(?<![A-Za-z0-9])" + re.escape(mpn).replace(r"\ ", r"\s+") + r"(?![A-Za-z0-9])",
+                                   c["part"], re.I):
+                    rep.error("P-6", f"{des}: part {c['part']} does not name {mpn}, the mpn of parts entry {key}", waive)
+            if c.get("value") not in (None, "") and (problem := value_problem(c["value"], part, key, "value")):
+                rep.error("P-6", f"{des}: {problem}", waive)
+            kind = part.get("kind")
+            if not kind:
+                continue
+            if c.get("type") and kind not in KINDS_OF_TYPE.get(c["type"], (c["type"],)):
+                rep.error("P-6", f"{des}: type {c['type']} does not fit kind {kind} of parts entry {key}", waive)
+            prefix = re.match(r"[A-Za-z]*", des).group(0).upper()
+            if prefix in KINDS_OF_PREFIX and kind not in KINDS_OF_PREFIX[prefix]:
+                usual = next((p for p, kinds in KINDS_OF_PREFIX.items() if kind in kinds), None)
+                rep.warnings.append(("P-6", f"{des}: designator prefix {prefix}, but parts entry {key} is a {kind}"
+                                            + (f" ({usual})" if usual else "")))
 
 
 def check_signoff(d, rep):
@@ -528,6 +933,7 @@ def check_signoff(d, rep):
 def run(design, cfg=None):
     rep = Report()
     checks = design.graph.get("checks") or {}
+    sim = rules.load_sim(cfg) if cfg else None   # sources (G-16) and the lowest ambient (G-17)
     joined = design.joined()   # nets joined by 0 Ω bridges as one net
     check_structure(design, rep, set(cfg.boards) if cfg else set())
     check_pin_locks(design, rep, checks, cfg.root if cfg else ".")
@@ -541,7 +947,12 @@ def run(design, cfg=None):
     check_straps(joined, rep)
     check_flyback(joined, rep)
     check_usb_c(joined, rep)
+    check_pin_functions(joined, rep)
+    check_power_pins(joined, rep, sim)
+    check_fuses(joined, rep, sim)
+    check_hot_loops(design, rep)   # layout.loops name pads of the graph's own nets (G-1, L-11)
     check_part_pins(design, rep)
+    check_identity(design, rep)
     if cfg:
         from . import part
         part.check(design, rep, cfg)

@@ -133,7 +133,8 @@ class Design:
 
     def joined(self):
         """The design as the graph checks see it: the nets of every bridge group merged into one net under the group's
-        name (pins, voltage range, waivers and bus of all of them), the bridges taken out. Without bridges: itself."""
+        name (pins, voltage range, waivers, bus, fn, fn_bus and pwm_hz of all of them), the bridges taken out. Without
+        bridges: itself."""
         bridges = set(self.bridges())
         if not bridges:
             return self
@@ -150,7 +151,8 @@ class Design:
                 if isinstance(v, list) and isinstance(w, list) and len(v) == len(w) == 2:
                     m["v"] = [min(v[0], w[0]), max(v[1], w[1])]
                 m["waive"] = {**(net.get("waive") or {}), **(m.get("waive") or {})} or None
-                m["bus"] = m.get("bus") or net.get("bus")
+                for key in ("bus", "fn", "fn_bus", "pwm_hz"):
+                    m[key] = m.get(key) or net.get(key)
         out = copy.copy(self)
         out.graph = {**self.graph, "nets": list(nets.values()),
                      "components": [c for c in self.graph["components"] if c["designator"] not in bridges]}

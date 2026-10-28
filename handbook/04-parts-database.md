@@ -12,19 +12,20 @@ Examples: [the Christmas bell's parts](https://github.com/tgd1975/automatic_chri
 
 | Field | Content |
 |---|---|
-| `lcsc`, `mpn`, `manufacturer` | identification; `mpn` is what a component without `lcsc` names in `part` |
+| `lcsc`, `mpn`, `manufacturer` | identification; `lcsc` equals the file name, `mpn` is what a component names in `part` – P-6 compares them, with the `kind` and the value parameters |
 | `order` | order numbers at other distributors: `{"rs": "223-0562", "farnell": "…", "mouser": "…", "digikey": "…"}` |
 | `kind` | `resistor`, `capacitor`, `inductor`, `fuse`, `diode`, `led`, `led_rgb`, `npn`, `pnp`, `pmos`, `nmos`, `switch`, `dip_switch`, `button`, `potentiometer`, `battery_holder`, `buzzer`, `relay`, `connector`, `ic`, `module` |
 | `package`, `footprint` | the footprint name must equal the EasyEDA footprint (L-4 compares it with the PCB) |
 | `jlc_class` | Basic / Extended Part |
 | `datasheet` | `url`, `pinout_page` |
-| `pins` | pin number → `name` (as in the EasyEDA symbol and identical to the graph – S-2 compares them), `type`, `role` (the meaning; for polarised parts it follows the footprint's polarity print when symbol and footprint disagree), `vmax`; from the datasheet where it applies: `strap` (`"high"`/`"low"`: level the pin needs at reset, G-12), `pull` (`"up"`/`"down"`: internal or built-in pull resistor, with `pull_ohm` if known – G-11, G-12), `hint` (a warning from the datasheet, e.g. "ADC2: no analog reads while WiFi is on") |
+| `pins` | pin number → `name` (as in the EasyEDA symbol and identical to the graph – S-2 compares them), `type`, `role` (the meaning; for polarised parts it follows the footprint's polarity print when symbol and footprint disagree), `vmax`; from the datasheet where it applies: `strap` (`"high"`/`"low"`: level the pin needs at reset, G-12), `pull` (`"up"`/`"down"`: internal or built-in pull resistor, with `pull_ohm` if known – G-11, G-12), `hint` (a warning from the datasheet, e.g. "ADC2: no analog reads while WiFi is on"); on MCU and module pins `functions` – what the pin-mux table offers, `<peripheral><instance>.<line>`: `["spi0.sck", "uart0.cts", "i2c1.sda", "pwm1.a", "uart0.tx"]`, `adc0`; for PWM the instance is the slice and the line the channel; `[]` = no free function (used on the module), no key = unknown (G-15); from the recommended operating conditions: `v_op` (`[min, max]` of a supply pin that differs from the part's `vdd_op_min`/`vdd_op_max`) and the thresholds of one input pin, `vih_v` or `vih_ratio`, `vil_v` or `vil_ratio`, where they differ from the part's (E-3); on a serial output (SDO, Q7) of a clocked part: `out_edge` (`"rising"`/`"falling"`: the clock edge after which it changes) and `t_pd_ns` (`[min, max]` clock-to-output delay at the part's supply, `null` where the datasheet gives none) – `edakit hints` shows them with H-9 |
 | `hints` | warnings of the datasheet for the part as a whole; `edakit hints` shows them and the pin `hint`s of connected pins |
+| `hot_loop` | switching regulators: the pin roles of the loop that carries the pulsed current, from the datasheet's layout section – a buck `["vin", "sw", "gnd"]`, an asynchronous boost `["sw", "gnd"]`; a ground pin without a role is `gnd`. G-18 wants a `layout.loops` entry on each of their nets and on the net behind a diode on `sw` |
 | `symbol` | optional: the sides of the box `edakit schematic draw` draws for an IC or module – `{"left": [pins], "right": [pins], "top": [pins], "bottom": [pins]}`; without it the pins run as on a DIP package (6.5) |
 | `params` | values for simulation and calculations; `behavior` for ICs (chapter 5) |
 | `ratings` | limits for the stress checks |
 | `spice` | `{"model": ".model SS34 D(IS=20u N=1.2 RS=0.04 …)"}` for diodes and transistors |
-| `lead` | through-hole parts only: lead cross-section per pad number or `"*"`: `shape` (`square`, `round`, `rect`), `a_mm`, `b_mm`, `tol_mm`, `hole_rec_mm`, `source` – check L-9 |
+| `lead` | through-hole parts only: lead cross-section per pad number or `"*"`: `shape` (`square`, `round`, `rect`), `a_mm`, `b_mm`, `tol_mm`, `hole_rec_mm`, `source` – check L-9; the ring a widened hole leaves: L-16 |
 | `pad_map` | only when pad numbers are deliberately swapped on the placed part: `{PCB pad: library pad}` – check L-10 |
 | `sources` | where every value comes from; "assumption …" marks what must be checked with extra care |
 | `compliance` | for the regulatory review (M-6, chapter 15): `rohs` (true, false or the exemption), `reach` (the supplier's SVHC statement), `radio` for a part that transmits (`bands_mhz` [[from, to]], `max_dbm`, `doc` = URL of the EU declaration of conformity), `source` (page and date) |
@@ -32,9 +33,15 @@ Examples: [the Christmas bell's parts](https://github.com/tgd1975/automatic_chri
 | `own` | a part nobody sells (4.5): `what` – `pcb` (a board of an edakit project), `bin` (from your stock, no longer to be had), `handmade`; for `pcb` its source: `project`, `connectors`, `state_sha256` (the board's circuit hash), and in the copy `path`, `commit`, `repo`, `released` – P-3 compares them |
 
 **Pin types** (`type`): `passive`, `input`, `output`, `bidirectional`, `power_in`, `power_output`, `ground`, `analog`,
-`current_sink`, `no_connect`, `mechanical`. G-4, G-5 and G-6 work with them: `power_in` needs a capacitor, two
-`output`s on one net are a conflict, an `input` needs a driver. An MCU pin that can only read (the ESP32's GPIO34–39)
-is `input`, even with the role `gpio`: the simulation refuses to drive it (E-3).
+`current_sink`, `no_connect`, `mechanical`. G-4, G-5, G-6 and G-16 work with them: `power_in` needs a capacitor and
+a net that a supply reaches, a `ground` pin the ground net, two `output`s on one net are a conflict, an `input` needs a
+driver. An MCU pin that can only read (the ESP32's GPIO34–39) is `input`, even with the role `gpio`: the simulation
+refuses to drive it (E-3).
+
+**Pin functions** (`functions`) come from the MCU's pin-mux table, not from memory: the example's Pico 2 entry
+(`tests/fixtures/led-bar/hardware/parts/C41407547.json`) has them for the RP2350, from the pico-sdk headers it names
+in `sources` – any RP2350 module takes the same list per GPIO. On the RP2040 and RP2350 the PWM slice of GPIO n is
+(n >> 1) & 7 and the channel `a` for even, `b` for odd n.
 
 **Pin roles** (`role`) tell the code what a pin does, independent of its name:
 
@@ -51,23 +58,33 @@ is `input`, even with the role `gpio`: the simulation refuses to drive it (E-3).
 | battery_holder | `plus`, `minus` (several cells: `plus_a`, `minus_a`, …) |
 | buzzer | `plus`, `minus` |
 | relay | `coil_plus`, `coil_minus`, `common`, `no`, `nc` |
-| connector | free (`pin1`, …); `vbus`/`gnd` for a supply input; `cc1`, `cc2` on a USB-C receptacle (G-14) |
+| connector | free (`pin1`, …); `vbus`/`gnd` for a supply input; `cc1`, `cc2` on a USB-C receptacle (G-14; a module or breakout without these roles: `params.usb_c`) |
 | ic, module | as the behaviour model needs them: `vin`, `vout`, `gnd`, `vsys`, `3v3`, `gpio`, `rext`, `out`, `oe_n`, `vdd`; `sda`, `scl` for I2C pins (G-11) |
 
 **Ratings** per kind (what the checks read): resistor `p_max_w`, `v_max`; capacitor `v_max`; diode `if_avg_a`, `vrrm`;
 LED `if_max_a`, `vr_max` (per colour for RGB); BJT `ic_max_a`, `vceo`, `vebo`, `p_max_w`; MOSFET `id_max_a`, `vds_max`,
-`vgs_max`, `p_max_w`; fuse `i_hold_a` (+ `params.i_hold_vs_temp`); switch/connector `i_max_a`, `v_max`; inductor
-`i_rated_a`, `i_sat_a`; regulators `vin_min`, `i_out_max_a`, `rth_ja_k_per_w`; MCU modules `vin_min`/`vsys_min`,
-`i_out_max_a`, `gpio_i_max_a` (per output pin) and `gpio_i_total_max_a` (all outputs together, sourced and sunk
-separately – the package's supply pins); relays `v_coil_max`, `i_max_a` (contacts); LED drivers `rth_ja_k_per_w`;
-own boards (behaviour `current`) `vin_min`, `vin_max` – the voltage at the connector over the board's own simulation
-(4.5, E-3).
+`vgs_max`, `p_max_w`; fuse `i_hold_a`, `i_trip_a` (+ `params.i_hold_vs_temp`: `[[°C, A], …]`, G-17); switch/connector
+`i_max_a` (what the part carries as a whole: a USB-C receptacle's two ground contacts at 1.25 A each are 2.5 A),
+`v_max`; inductor `i_rated_a`, `i_sat_a`; regulators `vin_min`, `i_out_max_a`, `rth_ja_k_per_w`; MCU modules
+`vin_min`/`vsys_min`, `i_out_max_a`, `gpio_i_max_a` (per output pin) and `gpio_i_total_max_a` (all outputs together,
+sourced and sunk separately – the package's supply pins); relays `v_coil_max`, `i_max_a` (contacts); LED drivers
+`rth_ja_k_per_w`; any IC or module `vdd_op_min`, `vdd_op_max` – the operating supply range of the recommended operating
+conditions, not the absolute maximum (E-3 holds every supply pin to it); own boards (behaviour `current`) `vin_min`,
+`vin_max` – the voltage at the connector over the board's own simulation (4.5, E-3); any part that dissipates –
+resistor, diode, LED, BJT, MOSFET – `rth_ja_k_per_w` (thermal resistance junction to ambient) and `tj_max_c`: E-2 holds
+ambient + P × Rth(j-a) to the junction limit and, on a board people touch, to `touch_c` (5.3); without `rth_ja_k_per_w`
+the part gets no temperature item.
 
 **Parameters**: resistor `value_ohm` (`0`: a bridge that joins its nets, 3.3), `r_max_ohm` (a bridge's maximum
 resistance from the datasheet, simulated instead of 0 Ω; 50 mΩ without it); capacitor `value_f`; inductor `value_h`,
 `dcr_ohm`; LED `vf_typ`, `vf_min`, `vf_max`, `vf_at_a`, `rs_ohm` (RGB: one set per colour, under `red`, `green`,
 `blue`); switch/button `r_on_ohm`; buzzer `coil_ohm` (a magnetic buzzer; it is a coil for G-13); relay `coil_ohm`,
-`v_operate`, `v_release` (must-operate and must-release voltage), `r_contact_ohm`; ICs see chapter 5.
+`v_operate`, `v_release` (must-operate and must-release voltage), `r_contact_ohm`; a module or breakout with a USB-C
+receptacle `usb_c`: `{"cc": "rd_5k1" | "controller" | "none", "source": "…"}` – how the board terminates its
+CC lines, from its schematic (G-14; the RP2350-Zero has 5.1 kΩ on CC1 and CC2, the breakout Soldered 333011 has
+none); ICs see chapter 5 – and for any IC with logic inputs the thresholds of the recommended operating
+conditions, `vih_v` | `vih_ratio` and `vil_v` | `vil_ratio` (a ratio of its supply, e.g. 0.7 and 0.3 for VIH 0.7 × VDD),
+which E-3 holds its `input` pins and the MCU outputs that drive them to.
 
 The block library (`edakit/blocks/parts/`) holds checked entries of the parts the building blocks use – resistors,
 LEDs, the SS14/SS34 diodes, S8050, AO3401A, a USB-C receptacle, a polyfuse, buttons, a JST connector – to copy from.
@@ -104,7 +121,7 @@ At LCSC and JLCPCB:
   Free text ("led 5mm red") returns mostly noise; the classification filter has no effect. Series names work
   (e.g. `XL-304`, `KT-0805`, `UNI-ROYAL 0805W8F…`).
 - **Exact match only:** the search is full text – take hits whose `supplierId` equals the number.
-- `C99…` numbers are user libraries without an orderable part.
+- `C99…` numbers are user libraries without an orderable part – P-6 refuses one on a part that goes into the BOM.
 - **Stock and price:** `https://wmsc.lcsc.com/ftps/wm/product/detail?productCode=Cxxxx` (stock, price breaks,
   parameters). LCSC's own search blocks automated requests (HTTP 403); jlcsearch is too thin for single parts.
 - **JLCPCB's assembly stock differs from LCSC's.** The gate asks JLCPCB's public catalogue
@@ -130,7 +147,9 @@ In the reference project the EasyEDA footprint of a 5-mm LED printed "+" next to
 called pad 1 the cathode. Editing the project's footprint through the API went nowhere (chapter 9.4). The fix was in
 the graph: the net of the anode goes to the pad with the "+" print, and the parts entry gives pin 1 the role `anode` –
 so every check, the simulation and the firmware pin tables follow automatically. The gate's polarity sheet (one tile
-per polarised part: copper, silkscreen, pad numbers, roles, nets) is what makes this visible at a glance.
+per polarised part: copper, silkscreen, pad numbers, roles, nets) is what makes this visible at a glance. L-8 of the
+gate finds it on its own: it reads the "+" the footprint draws in the silk Gerber and fails when the nearest pad with a
+polarity role is a cathode (8.1).
 
 ## 4.5 Own parts
 
@@ -176,6 +195,22 @@ only in that range; give its own `sim.json` more if the host needs more. P-3 com
 Not covered: the board's logic levels and timing – its signal pins are typed, not simulated. A board on a cable is no
 part of the host's PCB: it goes into the same project as a second board (`cables`, 3.1), or the host's connector gets
 its current as an `external` load (5.1).
+
+**Bought boards** – an MCU module, a sensor board, a USB-C breakout – are parts with an entry like any other (kind
+`module`, or `connector` for a breakout that only passes lines on), written from the seller's schematic, with
+`"bom": false` when JLCPCB does not assemble them. Plugged or soldered onto the board (pin headers, castellated pads)
+they are components of that board: the footprint is the header or pad row, the pins are the ones the board brings
+out. A USB-C receptacle on such a board is checked by G-14 in one of two ways:
+
+- its CC eyes as pins of the entry – a `connector` with the roles `cc1`, `cc2`, or a `module` whose entry says
+  `params.usb_c` `{"cc": "none"}`: G-14 wants the two 5.1 kΩ on those pins, as parts of the graph;
+- its receptacle inside the board, CC lines no pins of the entry (an MCU module with USB-C on board): `params.usb_c`
+  says what the board has – `rd_5k1` and `controller` pass, `none` fails.
+
+A bought board on a cable – a breakout in an enclosure wired to the board's power connector – has no place in the
+graph yet: every board of `[boards]` is one edakit makes, with schematic, PCB and manufacturing files in the gate.
+Its supply goes into sim.json as the source at your connector (5.1), and its CC termination is a question for the
+electrical review (M-1) until it is.
 
 **Without an edakit project** – a perfboard, an older board, a part from the bin, something made by hand – the user is
 the datasheet. The skill `own-part` asks for pins, supply range and current once, has what nobody knows measured, and

@@ -36,12 +36,22 @@ profile says: `${CLAUDE_PLUGIN_ROOT}/skills/part-search/distributors/<name>.md` 
   pattern of a similar part: `kind`, `pins` (names identical to the graph, `type`, `role`, `vmax`), `params`,
   `ratings`, `spice` for diodes/transistors, `lead` for through-hole parts, `sources` (mark every assumption as
   "assumption"). The block library (`edakit/blocks/parts/` of the plugin) has checked entries to copy from.
-- What the checks read from the datasheet besides the limits: input-only pins `type: input`; strapping pins
-  `"strap": "high"|"low"` with the internal `"pull"` at reset (G-12); built-in pull resistors `"pull": "up"`,
-  `"pull_ohm"` (I2C modules, G-11); roles `sda`/`scl` (G-11) and `cc1`/`cc2` on a USB-C receptacle (G-14); MCU output
-  current `gpio_i_max_a` per pin and `gpio_i_total_max_a` for all together (E-2); a 0 Ω jumper `value_ohm: 0` with
-  its maximum resistance `r_max_ohm` (it joins its nets, handbook 3.3); a pin `hint` or part `hints` for what the
-  datasheet warns about (shown by `edakit hints`).
+- What the checks read from the datasheet besides the limits: input-only pins `type: input`; strapping pins `"strap":
+  "high"|"low"` with the internal `"pull"` at reset (G-12); built-in pull resistors `"pull": "up"`, `"pull_ohm"` (I2C
+  modules, G-11); roles `sda`/`scl` (G-11) and `cc1`/`cc2` on a USB-C receptacle (G-14), and for a module or breakout
+  with USB-C `params.usb_c` `{"cc": "rd_5k1" | "controller" | "none"}` from its schematic (G-14); MCU output current
+  `gpio_i_max_a` per pin and `gpio_i_total_max_a` for all together (E-2); from the recommended operating conditions of
+  an IC the supply range `vdd_op_min`/`vdd_op_max` (`v_op` on a pin with a range of its own) and the input thresholds
+  `vih_v`|`vih_ratio`, `vil_v`|`vil_ratio` (E-3); for a part that dissipates – resistor, diode, transistor, MOSFET,
+  regulator, LED driver – `rth_ja_k_per_w` (RθJA, steady state) and `tj_max_c` (E-2: junction and touch temperature); on
+  the serial output of a shift register or LED driver (SDO, Q7) the clock edge it changes after, `out_edge`, and its
+  delay from the switching characteristics, `t_pd_ns: [min, max]` with `null` for a value the datasheet does not give
+  (H-9); MCU pin `functions` from the pin-mux table (`["spi0.sck", "i2c1.sda", "pwm1.a", "adc0"]`, `[]` for a pin used
+  on the module – G-15, handbook 4.1); a fuse's `i_hold_a`, `i_trip_a` and its derating table `i_hold_vs_temp`, and the
+  `i_max_a` of a connector or switch as a whole – every contact of the current path counted (G-17); a 0 Ω jumper
+  `value_ohm: 0` with its maximum resistance `r_max_ohm` (it joins its nets, handbook 3.3); a switching regulator's
+  `hot_loop`, the pin roles of its hot loop from the datasheet's layout section (G-18); a pin `hint` or part `hints` for
+  what the datasheet warns about (shown by `edakit hints`).
 - `compliance` for the regulatory review (M-6, handbook 15): `rohs` (true, false or the exemption), `reach` (the
   supplier's SVHC statement), for a part that transmits `radio` (`bands_mhz`, `max_dbm`, `doc` = URL of the EU
   declaration of conformity), and `source` (page and date). Take it from the distributor's part page or the
@@ -51,4 +61,5 @@ profile says: `${CLAUDE_PLUGIN_ROOT}/skills/part-search/distributors/<name>.md` 
   and the second check M-1 exist for that. Then `verified` with by, date, datasheet revision, `checked`, `open`.
 - Record the choice in the decision log (alternatives and why they were dropped).
 
-Then `edakit check` (P-1, G-9), and the hardware-change skill if the part goes into the graph.
+Then `edakit check` (P-1, P-6 – the graph's `lcsc`, `part`, `value` and `type` name this entry –, G-9), and the
+hardware-change skill if the part goes into the graph.

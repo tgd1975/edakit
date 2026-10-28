@@ -104,8 +104,8 @@ def arc(x0, y0, x1, y1, i, j, cw):
     return [(cx + r * math.cos(a0 + (a1 - a0) * k / n), cy + r * math.sin(a0 + (a1 - a0) * k / n)) for k in range(n + 1)]
 
 
-def parse_holes(path):
-    """Drill file -> [(x, y, width, length)] in mm; slots (G85) with centre and overall length."""
+def parse_drills(path):
+    """Drill file -> [(x0, y0, x1, y1, width)] in mm: a round hole has x1, y1 = x0, y0, a slot (G85) its two ends."""
     path = Path(path)
     if not path.exists():
         return []
@@ -118,12 +118,17 @@ def parse_holes(path):
         elif (m := re.match(r"^X(-?[\d.]+)Y(-?[\d.]+)(?:G85X(-?[\d.]+)Y(-?[\d.]+))?", line)) and cur:
             x0, y0 = float(m.group(1)), float(m.group(2))
             x1, y1 = (float(m.group(3)), float(m.group(4))) if m.group(3) else (x0, y0)
-            out.append(((x0 + x1) / 2, (y0 + y1) / 2, cur, cur + math.hypot(x1 - x0, y1 - y0)))
+            out.append((x0, y0, x1, y1, cur))
     return out
 
 
-def shape(ops):
-    """Gerber operations as one shapely area (mm)."""
+def parse_holes(path):
+    """Drill file -> [(x, y, width, length)] in mm; slots (G85) with centre and overall length."""
+    return [((x0 + x1) / 2, (y0 + y1) / 2, w, w + math.hypot(x1 - x0, y1 - y0)) for x0, y0, x1, y1, w in parse_drills(path)]
+
+
+def shape(ops, quad_segs=16):
+    """Gerber operations as one shapely area (mm); circles as polygons of quad_segs segments a quarter."""
     from shapely.geometry import LineString, Point, Polygon, box
     from shapely.ops import unary_union
     parts = []
@@ -133,16 +138,18 @@ def shape(ops):
         elif kind_ == "flash":
             (kind, a, b), x, y = dat
             if kind == "C":
-                parts.append(Point(x, y).buffer(a / 2))
+                parts.append(Point(x, y).buffer(a / 2, quad_segs))
             elif kind == "O":
                 d = abs(a - b) / 2
                 seg = ((x - d, y), (x + d, y)) if a > b else ((x, y - d), (x, y + d))
-                parts.append(LineString(seg).buffer(min(a, b) / 2) if d else Point(x, y).buffer(a / 2))
+                parts.append(LineString(seg).buffer(min(a, b) / 2, quad_segs) if d else
+                             Point(x, y).buffer(a / 2, quad_segs))
             else:
                 parts.append(box(x - a / 2, y - b / 2, x + a / 2, y + b / 2))
         else:
             (kind, a, b), pts = dat
-            parts.append(LineString(pts).buffer(a / 2) if len(pts) > 1 else Point(pts[0]).buffer(a / 2))
+            parts.append(LineString(pts).buffer(a / 2, quad_segs) if len(pts) > 1 else
+                         Point(pts[0]).buffer(a / 2, quad_segs))
     return unary_union(parts)
 
 
@@ -176,9 +183,10 @@ def bbox(pts):
 
 
 class Copper:
-    """Rasterised copper layers, islands, connections through plated holes, pads per island and net."""
+    """Rasterised copper layers, islands, connections through plated holes, pads per island and net. The raster covers
+    the copper and 3 mm around it, and the points of extent (mm) as well – the board outline, say (L-15)."""
 
-    def __init__(self, folder, pin_net):
+    def __init__(self, folder, pin_net, extent=()):
         import numpy as np
         from scipy import ndimage
         self.d = Path(folder)
@@ -186,6 +194,7 @@ class Copper:
         self.holes = [(x, y, w) for x, y, w, _ in parse_holes(self.d / FILES["pth"]) + parse_holes(self.d / FILES["vias"])]
         pts = [p for ops in self.ops.values() for kind, dat in ops for p in
                ([dat[1:]] if kind == "flash" else dat[1] if kind == "draw" else [q for c in dat for q in c])]
+        pts += list(extent)
         self.x0, self.y0 = min(p[0] for p in pts) - 3, min(p[1] for p in pts) - 3
         self.w = int((max(p[0] for p in pts) + 3 - self.x0) / RES)
         self.h = int((max(p[1] for p in pts) + 3 - self.y0) / RES)
@@ -269,3 +278,51 @@ class Copper:
     def net_groups(self, net):
         """Pad groups of a net, largest first; more than one = the net is open in the copper."""
         return sorted((sorted(p) for p in self.groups.get(net, {}).values()), key=len, reverse=True)
+
+
+def plus_signs(path, lo=0.3, hi=2.0, tol=0.1):
+    """'+' signs drawn in a silkscreen file the way footprints draw them (L-8): two straight strokes of lo to hi mm,
+    as long as each other (± 0.2 mm), at right angles (|cos| < 0.1), their middles within tol mm of each other.
+    -> [(x, y)] in mm, one per sign. A frame, an arc or a letter does not qualify: its strokes meet at their ends, are
+    shorter or longer, or cross at another angle."""
+    strokes = []
+    for kind, dat in parse_gerber(path):
+        if kind == "draw":
+            strokes += [(a, b) for a, b in zip(dat[1], dat[1][1:]) if lo <= math.dist(a, b) <= hi]
+    mids = [((a[0] + b[0]) / 2, (a[1] + b[1]) / 2) for a, b in strokes]
+    cells = defaultdict(list)
+    for i, (x, y) in enumerate(mids):
+        cells[(math.floor(x / tol), math.floor(y / tol))].append(i)
+    found = []
+    for i, ((a, b), m) in enumerate(zip(strokes, mids)):
+        cx, cy = math.floor(m[0] / tol), math.floor(m[1] / tol)
+        for j in (j for dx in (-1, 0, 1) for dy in (-1, 0, 1) for j in cells.get((cx + dx, cy + dy), ()) if j > i):
+            (c, e), n = strokes[j], mids[j]
+            u, v = (b[0] - a[0], b[1] - a[1]), (e[0] - c[0], e[1] - c[1])
+            if (math.dist(m, n) <= tol and abs(math.hypot(*u) - math.hypot(*v)) <= 0.2
+                    and abs(u[0] * v[0] + u[1] * v[1]) < 0.1 * math.hypot(*u) * math.hypot(*v)):
+                found.append(((m[0] + n[0]) / 2, (m[1] + n[1]) / 2))
+    signs = []
+    for p in found:                     # a sign drawn twice is one sign
+        if not any(math.dist(p, q) <= tol for q in signs):
+            signs.append(p)
+    return signs
+
+
+def outline_shape(folder):
+    """The board as the outline file draws it (mm, L-17): the area its closed paths enclose – mounting holes and
+    cut-outs left open – without the NPTH holes of the drill file. None without a closed path."""
+    from shapely.geometry import LineString, Point
+    from shapely.ops import polygonize, unary_union
+    folder = Path(folder)
+    lines = []
+    for kind, dat in parse_gerber(folder / FILES["outline"]):
+        pts = [(round(x, 3), round(y, 3)) for x, y in (dat[1] if kind == "draw" else [])]
+        lines += [LineString([a, b]) for a, b in zip(pts, pts[1:]) if a != b]
+    faces = sorted(polygonize(unary_union(lines)), key=lambda p: -p.area) if lines else []
+    if not faces:
+        return None
+    board = faces[0]
+    inner = [f for f in faces[1:] if board.contains(f)]     # a closed path inside the board is a cut-out
+    drilled = [Point(x, y).buffer(w / 2) for x, y, w, _ in parse_holes(folder / FILES["npth"])]
+    return board.difference(unary_union(inner + drilled))

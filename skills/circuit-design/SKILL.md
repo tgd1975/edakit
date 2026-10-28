@@ -39,8 +39,10 @@ say what is left: values, sim.json, the graph's `checks`.
   a similar part's datasheet.
 - Prefer parts the project uses already, Basic parts, parts in stock.
 - MCU pins: read the entry first – strapping pins (`strap`), input-only pins (`type: input`), notes (`hint`, e.g. an
-  ADC that does not work with WiFi). Buttons, LEDs and pulls stay off strapping pins unless they agree with the boot
-  level (G-12).
+  ADC that does not work with WiFi), what each pin can do (`functions`). Buttons, LEDs and pulls stay off strapping
+  pins unless they agree with the boot level (G-12). A net that needs a peripheral says so – `fn` (`spi.tx`, `pwm`,
+  `adc`, …), `fn_bus` for the nets of one bus, `pwm_hz` for PWM – and G-15 checks the pin, the bus and the PWM
+  slices; a pin's function is chosen here, not when the firmware is written.
 
 ## 4. Values are computed
 
@@ -51,9 +53,14 @@ check candidate (handbook 14.4) – do not present it as an established check.
 
 ## 5. Into the graph
 
-Nets with worst-case voltage ranges `v`. Decisions numbered (D-…) in the decision log and cited in `notes`. sim.json:
+Nets with worst-case voltage ranges `v`. A ground that is separate on purpose (an analog ground joined at one point)
+goes into the graph's `grounds` – every other ground pin belongs on the ground net (G-16). Decisions numbered (D-…) in
+the decision log and cited in `notes`. sim.json:
 sources, supplies at their limits, loads with the MCU's outputs, inputs, LEDs on (`leds_on` in every load once an LED is
-on no driver output, `[]` when none lights – E-4), buttons, relays.
+on no driver output, `[]` when none lights – E-4), buttons, relays. No source and no cell takes more than 1 mA back
+(E-3); a cell its charger charges on purpose gets `i_charge_max_a` in its cell state.
+A board people touch (requirements: what a person touches): `touch_c` with its limit from the product's standard
+(IEC 62368-1 TS1: 48 °C for longer than a minute) – E-2 holds every part with `rth_ja_k_per_w` on it to that limit.
 
 ## 6. Check loop (seconds)
 
@@ -84,7 +91,8 @@ holds the layout to it (L-12, handbook 7.4):
   constraint from the enclosure.
 - `near`: helpers that belong to a pin – a current-setting resistor, a crystal and its capacitors, ESD protection at
   its connector, a feedback divider. The decoupling capacitor of every IC is derived, no line needed.
-- `loops`: the hot loop of a switching regulator (pads of one net, checked on the routed board by L-11).
+- `loops`: the hot loop of a switching regulator (pads of one net, checked on the routed board by L-11) – one entry
+  on every net of it, the net behind the diode included; G-18 asks for them from the regulator's `hot_loop`.
 - `notes`: everything else the layout must know and no program checks – the layout review reads it.
 
 ```bash

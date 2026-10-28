@@ -19,7 +19,8 @@ assembly preview at JLCPCB.
   L-5  track width per net >= IPC-2221 for 1.5 x the simulated current (fail); below the practical class width (warn);
        voltage drop as an upper bound (info)
   L-7  fixed parts in the PCB = plan (± 0.02 mm, rotation, side); the plan itself without findings
-  L-8  silkscreen "+"/"−" next to a pad with that polarity role
+  L-8  silkscreen "+"/"−" next to a pad of that sign: PCB texts, and the "+" footprints draw as two crossing strokes in
+       the silk Gerber files; cathode and minus pads "−", anode, plus and vbus pads "+" (waive L-8 on the nearest part)
   L-9  every through hole takes its lead at nominal size (lead data in the parts database); tight in the worst case
        or plated slots narrower than JLCPCB's minimum: warn
   L-10 every pad sits where the library footprint has the pad with that number (pad_map in the parts DB for
@@ -32,6 +33,14 @@ assembly preview at JLCPCB.
        `edakit route read` while they are the PCB's (route.pad_gaps, as `route check` measures)
   L-14 on every assembled side, SMD pads of different parts on different nets at least the paste gap apart
        ([release] assembly paste_gap_mm), measured as L-13
+  L-15 copper per layer from the Gerber files: share of the board area and largest copper-free circle (info); a
+       circle above [copper] max_bare_mm on a poured layer, a share below [copper] min_cover, a copper piece without
+       pad, via or plated hole: warn
+  L-16 every plated hole keeps JLCPCB's annular ring (component hole 0.18 mm, warn below 0.20 mm; via 0.05 mm) and
+       every two plated holes JLCPCB's hole-to-hole spacing, edge to edge (0.45 mm with a component hole, 0.2 mm vias)
+  L-17 silkscreen from the Gerber files: edakit's own print on a solder-mask opening (fail), other print there per part,
+       print beyond the outline, a part of the designators side without a visible designator or group label (not in
+       [silk] unlabelled), a text height edakit prints below 1.0 mm (warn)
   F-1  BOM from the graph = BOM of EasyEDA; every LCSC number in the parts database
   F-2  every BOM part listed in JLCPCB's assembly catalogue with stock for `quantity` boards
   F-3  pick and place: every BOM part exactly once, side and rotation = PCB; sides/SMD as [release] assembly says
@@ -102,7 +111,12 @@ def collect(cfg, board, d, verbose=False):
                  for s in (eda.state(x) for x in eda.api(mcp, "PCB_PrimitiveLine.getAll") or []) if s["Layer"] in (1, 2)]
         strings = [{k: s[k] for k in ("Text", "X", "Y", "Layer")}
                    for s in (eda.state(x) for x in eda.api(mcp, "PCB_PrimitiveString.getAll") or [])]
-        (d / "pcb.json").write_text(json.dumps({"components": comps, "lines": lines, "strings": strings}, indent=1))
+        ids = {c["primitiveId"]: c["designator"] for c in comps if c.get("designator")}
+        shown = {ids[a["ParentPrimitiveId"]]: bool(a.get("ValueVisible"))       # L-17: designator printed or hidden
+                 for a in map(eda.state, eda.api(mcp, "PCB_PrimitiveAttribute.getAll") or [])
+                 if a.get("Key") == "Designator" and a.get("ParentPrimitiveId") in ids}
+        (d / "pcb.json").write_text(json.dumps({"components": comps, "lines": lines, "strings": strings,
+                                                "designators": shown}, indent=1))
         eda.reload_pcb(mcp)  # the DRC is reliable only on the saved, reloaded state
         found = eda.drc(mcp)
         (d / "drc.json").write_text(json.dumps(found, indent=1, ensure_ascii=False))
@@ -161,11 +175,13 @@ def pin_role(design, comp, num):
 
 
 def role_sign(role):
+    """The sign a pin role takes in the silkscreen (L-8): anode, plus… and vbus "+", cathode and minus… "−"; the
+    anodes and cathodes of the colours of an RGB LED (anode_red, cathode_red …) like the plain ones."""
     if not role:
         return None
-    if role.startswith("plus") or role in ("vbus", "anode"):
+    if role.startswith(("plus", "anode")) or role == "vbus":
         return "+"
-    if role.startswith("minus"):
+    if role.startswith(("minus", "cathode")):
         return "−"
     return None
 
@@ -287,24 +303,215 @@ def check_pcb(cfg, board, design, d, rows):
     kinds = Counter(f"{f.get('errorType')} ({f.get('ruleName')})" for f in drc)
     rows.add("L", "L-3", board.name, "EasyEDA DRC without findings", not drc,
              ", ".join(f"{k}: {n}" for k, n in kinds.items()) or "0", "0")
-    labels = [s for s in data["strings"] if s["Layer"] in SILK and s["Text"] in ("+", "−", "-")]
+    check_polarity_marks(cfg, board, design, d, data, want, on_pcb, rows)
+
+
+TEXT_REACH_MM = 1.2   # L-8: how far from its anchor, per character, the strokes of a PCB text may lie
+
+
+def polarity_signs(cfg, board, d, data):
+    """L-8: the signs of the silkscreen as [(sign, x, y, silk layer, how)] in mm – the PCB texts "+", "−", "-", and the
+    "+" a footprint draws as two crossing strokes, read from the silk Gerber files (gerber.plus_signs). A drawn "+"
+    near a PCB text with a "+" is that text's print (a "+" text counts once, a "+5V" is a label); one inside the box
+    of a [[silk.art]] item is artwork. -> (signs, silk files missing)."""
+    from shapely.geometry import Point
+
+    from .. import silk
+    signs = [("+" if s["Text"] == "+" else "−", s["X"] * MM, s["Y"] * MM, s["Layer"], "text")
+             for s in data["strings"] if s["Layer"] in SILK and s["Text"] in ("+", "−", "-")]
+    lost = gerber.missing(d / "gerber", "top_silk", "bottom_silk")
+    for key, layer, side in (("top_silk", 3, "top"), ("bottom_silk", 4, "bottom")):
+        if gerber.FILES[key] in lost:
+            continue
+        drawn = gerber.plus_signs(d / "gerber" / gerber.FILES[key])
+        texts = [(s["X"] * MM, s["Y"] * MM, TEXT_REACH_MM * len(s["Text"])) for s in data["strings"]
+                 if s["Layer"] == layer and "+" in s["Text"]]
+        drawn = [p for p in drawn if not any(math.dist(p, t[:2]) <= t[2] for t in texts)]
+        if drawn and board.silk.get("art"):
+            art = [g.envelope for g in silk.art_items(cfg, board, side)]
+            drawn = [p for p in drawn if not any(a.covers(Point(p)) for a in art)]
+        signs += [("+", x, y, layer, "drawn") for x, y in drawn]
+    return signs, lost
+
+
+def check_polarity_marks(cfg, board, design, d, data, want, on_pcb, rows):
+    """L-8: every sign of the silkscreen (polarity_signs) is compared with the nearest pad on its side whose pin role
+    has a sign (role_sign); a sign at a pad of the other sign fails. `waive: {"L-8": "…"}` on the nearest part lists
+    its finding as waived – a decorative cross, or a footprint whose print is known and wrong."""
+    signs, lost = polarity_signs(cfg, board, d, data)
+    if lost:
+        rows.add("L", "L-8", board.name, "silk Gerber files for the drawn signs", False,
+                 f"{', '.join(lost)} missing (Gerber export)", "present")
     polar = {r for r in want if r in on_pcb and any(role_sign(p.get("role")) for p in
                                                    (design.parts.get(want[r].get("lcsc") or "", {}).get("pins") or {}).values())}
-    if labels and polar:
-        wrong = []
-        for s in labels:
-            pads = [(ref, p) for ref in polar for p in on_pcb[ref]["pads"]
-                    if p["Layer"] in (SILK[s["Layer"]], MULTI) and role_sign(pin_role(design, want[ref], p["PadNumber"]))]
-            if not pads:
-                wrong.append(f"'{s['Text']}' at ({s['X'] * MM:.1f}, {s['Y'] * MM:.1f}) mm: no polarised pad on this side")
-                continue
-            ref, p = min(pads, key=lambda rp: math.hypot(rp[1]["X"] - s["X"], rp[1]["Y"] - s["Y"]))
-            role = pin_role(design, want[ref], p["PadNumber"])
-            if role_sign(role) != ("+" if s["Text"] == "+" else "−"):
-                wrong.append(f"'{s['Text']}' at ({s['X'] * MM:.1f}, {s['Y'] * MM:.1f}) mm: nearest pad {ref}.{p['PadNumber']} "
-                             f"is {role}")
-        rows.add("L", "L-8", board.name, "silkscreen '+'/'−' = role of the nearest polarised pad", not wrong,
-                 "; ".join(wrong) or f"{len(labels)} signs correct", "every sign at the right pole")
+    if not signs or not polar:
+        return
+    wrong, waived = [], []
+    for sign, x, y, layer, _ in signs:
+        pads = [(ref, p) for ref in polar for p in on_pcb[ref]["pads"]
+                if p["Layer"] in (SILK[layer], MULTI) and role_sign(pin_role(design, want[ref], p["PadNumber"]))]
+        if not pads:
+            wrong.append(f"'{sign}' at ({x:.1f}, {y:.1f}) mm: no polarised pad on this side")
+            continue
+        ref, p = min(pads, key=lambda rp: math.hypot(rp[1]["X"] * MM - x, rp[1]["Y"] * MM - y))
+        role = pin_role(design, want[ref], p["PadNumber"])
+        if role_sign(role) != sign:
+            text = f"'{sign}' at ({x:.1f}, {y:.1f}) mm: nearest pad {ref}.{p['PadNumber']} is {role}"
+            reason = (want[ref].get("waive") or {}).get("L-8")
+            if reason:
+                waived.append((text, reason))
+            else:
+                wrong.append(text)
+    n_text = sum(1 for s in signs if s[4] == "text")
+    rows.add("L", "L-8", board.name, "silkscreen '+'/'−' = role of the nearest polarised pad", not wrong,
+             "; ".join(wrong) or f"{len(signs) - len(waived)} signs correct" + (f", {len(waived)} waived" if waived else "")
+             + f": {n_text} as PCB text, {len(signs) - n_text} drawn in the silkscreen", "every sign at the right pole")
+    for text, reason in waived:
+        rows.add("L", "L-8", board.name, f"polarity mark: {text}", True, text, "every sign at the right pole", "waived")
+        rows[-1]["reason"] = reason
+
+
+SILK_SPOT_MM2 = 0.0005    # L-17: smaller pieces of print on an opening or beyond the outline are rounding
+SILK_LIMIT_MM2 = 0.001    # L-17: from this much on, a side or a part has print where it is not printed
+SILK_PART_MM = 3.0        # L-17: print on an opening further than this from every pad belongs to no part
+
+
+def check_silk(cfg, board, design, d, rows):
+    """L-17: the silkscreen as the fab gets it – the print on solder-mask openings and beyond the outline (silk_print),
+    the designators (silk_designators) and the text heights edakit prints (silk_heights)."""
+    data = json.loads((d / "pcb.json").read_text())
+    if lost := gerber.missing(d / "gerber", "top_silk", "bottom_silk", "top_mask", "bottom_mask", "outline"):
+        rows.add("L", "L-17", board.name, "Gerber files for the silkscreen check", False,
+                 f"{', '.join(lost)} missing (Gerber export)", "present")
+    else:
+        silk_print(cfg, board, data, d / "gerber", rows)
+    silk_designators(board, design, data, rows)
+    silk_heights(cfg, board, rows)
+
+
+def silk_spots(g):
+    """The pieces of a geometry larger than SILK_SPOT_MM2, largest first."""
+    return sorted((p for p in getattr(g, "geoms", [g]) if p.area > SILK_SPOT_MM2), key=lambda p: -p.area)
+
+
+def nearest_pad(pads, spot):
+    """'C2.1': the pad of pads [(name, x, y)] nearest to the spot's centre, within SILK_PART_MM; '' if none."""
+    c = spot.centroid
+    dist, name = min(((math.dist((x, y), (c.x, c.y)), name) for name, x, y in pads), default=(None, ""))
+    return name if dist is not None and dist <= SILK_PART_MM else ""
+
+
+def spots_text(spots, pads=None, around=""):
+    """'0.165 mm² in 1 spot: (19.1, 9.0) mm at C2.1' – the five largest, with their nearest pad if pads are given."""
+    def mm1(v):
+        return f"{v:.1f}" if round(v, 1) else "0.0"         # never "-0.0"
+    at = [f"{around}({mm1(p.centroid.x)}, {mm1(p.centroid.y)}) mm"
+          + (f" at {pin}" if pads is not None and (pin := nearest_pad(pads, p)) else "") for p in spots[:5]]
+    return (f"{sum(p.area for p in spots):.3f} mm² in {len(spots)} spot{'s' if len(spots) > 1 else ''}: "
+            + ", ".join(at) + (" …" if len(spots) > 5 else ""))
+
+
+def silk_print(cfg, board, data, g, rows):
+    """L-17, per side from the silk, mask and outline Gerber files. Print on a solder-mask opening: edakit's own –
+    what is not in the footprint print `silk apply` kept (silk.footprint_print) – fails, the rest warns per part, the
+    part of the nearest pad (JLCPCB clips print on openings). Print beyond the outline warns."""
+    from .. import silk
+    memo, kept = cfg.artifacts / f"silk_strings_{board.name}.json", silk.footprint_print(cfg, board)
+    what = "edakit's own print (designators, texts, artwork of silk apply) off the solder-mask openings"
+    if not kept.is_dir():
+        rows.add("L", "L-17", board.name, what, not memo.exists(), f"{memo.name} exists, {kept.name}/ does not: "
+                 "edakit's print cannot be told from the footprints' (silk apply of an older edakit) – run edakit silk "
+                 "apply" if memo.exists() else "edakit printed nothing on this board (no silk apply)",
+                 "0 mm² – the footprint print silk apply keeps tells it apart")
+    outline = gerber.outline_shape(g)
+    if outline is None:
+        rows.add("L", "L-17", board.name, "board outline for the print beyond it", False,
+                 f"no closed outline in {gerber.FILES['outline']}", "a closed outline")
+    for side, layer in silk.SIDE.items():
+        name = side.upper()
+        mask_key, silk_key = silk.GERBER_KEYS[layer]
+        pads = [(f"{c['designator']}.{p['PadNumber']}", p["X"] * MM, p["Y"] * MM) for c in data["components"]
+                if c.get("designator") for p in c["pads"] if p["Layer"] in (layer, MULTI)]
+        printed = gerber.shape(gerber.parse_gerber(g / gerber.FILES[silk_key]))
+        other = printed.intersection(gerber.shape(gerber.parse_gerber(g / gerber.FILES[mask_key])))
+        if kept.is_dir():
+            if (kept / gerber.FILES[silk_key]).exists():
+                theirs = gerber.shape(gerber.parse_gerber(kept / gerber.FILES[silk_key])).buffer(0.02)
+                own, other = silk_spots(other.difference(theirs)), other.intersection(theirs)
+            else:
+                own, other = silk_spots(other), other.difference(other)
+            rows.add("L", "L-17", board.name, f"{name}: {what}", sum(p.area for p in own) <= SILK_LIMIT_MM2,
+                     f"{name}: " + (spots_text(own, pads) if own else "0.000 mm²"),
+                     "0 mm² – run silk apply after the last routing")
+        by_part = defaultdict(list)
+        for p in silk_spots(other):
+            by_part[nearest_pad(pads, p).split(".")[0]].append(p)
+        bad = {ref: spots for ref, spots in by_part.items() if sum(p.area for p in spots) > SILK_LIMIT_MM2}
+        for ref, spots in sorted(bad.items(), key=lambda kv: natural_key(kv[0])):
+            rows.add("L", "L-17", board.name, f"{ref}: silkscreen on its solder-mask openings – JLCPCB clips it there"
+                     if ref else f"{name}: silkscreen on solder-mask openings away from every pad", False,
+                     f"{name}: {spots_text(spots, pads)}", "0 mm²", "warn")
+        if not bad:
+            rows.add("L", "L-17", board.name, f"{name}: other print (footprints, texts by hand) off the solder-mask "
+                     "openings", True, f"{name}: {sum(p.area for p in silk_spots(other)):.3f} mm²", "0 mm²")
+        if outline is not None:
+            out = silk_spots(printed.difference(outline.buffer(0.01)))
+            area = sum(p.area for p in out)
+            rows.add("L", "L-17", board.name, f"{name}: silkscreen inside the board outline", area <= SILK_LIMIT_MM2,
+                     f"{name}: " + (spots_text(out, around="around ").replace(" in ", " beyond it in ", 1) if out
+                                    else "0.000 mm² beyond it"), "0 mm²", None if area <= SILK_LIMIT_MM2 else "warn")
+
+
+def silk_designators(board, design, data, rows):
+    """L-17: every part of the `designators` side has a visible designator (read with the PCB into pcb.json), lies
+    under a group label ([silk] groups, printed as a text) or a text with its name, or is listed in [silk] unlabelled
+    with the reason – otherwise a warning per part."""
+    from .. import silk
+    side = board.silk.get("designators", "top")
+    layer = silk.SIDE[side]
+    shown = data.get("designators")
+    if shown is None:
+        rows.add("L", "L-17", board.name, f"designators of the {side} side read with the PCB", False,
+                 "pcb.json without the designators (written by an older edakit) – edakit fab without --offline",
+                 "read with the PCB")
+        return
+    want = design.board_comps(board.name)
+    texts = {s["Text"] for s in data["strings"] if s["Layer"] == layer + 2}
+    grouped = {r for name, refs in (board.silk.get("groups") or {}).items() if name in texts for r in refs}
+    unlabelled = board.silk.get("unlabelled") or {}
+    parts = sorted((c["designator"] for c in data["components"] if c.get("designator") in want and c["layer"] == layer),
+                   key=natural_key)
+    bare = [r for r in parts if not shown.get(r) and r not in texts]
+    in_group = [r for r in bare if r in grouped]
+    listed = [r for r in bare if r not in grouped and r in unlabelled]
+    rows.add("L", "L-17", board.name, f"designators of the {side} side read with the PCB", True,
+             f"{len(parts)} parts: {len(parts) - len(bare)} with a visible designator"
+             + (f", {len(in_group)} under a group label" if in_group else "")
+             + (", unlabelled on purpose: " + "; ".join(f"{r} ({unlabelled[r]})" for r in listed) if listed else ""),
+             "every part labelled")
+    for r in bare:
+        if r not in grouped and r not in unlabelled:
+            rows.add("L", "L-17", board.name, f"{r}: no visible designator, no group label, not in [silk] unlabelled",
+                     False, f"{r} on the {side} without a visible designator",
+                     "a visible designator, a group label or [silk] unlabelled", "warn")
+
+
+def silk_heights(cfg, board, rows):
+    """L-17: the text heights edakit prints – label_h_mm, board_label_h_mm when there is a board label, h_mm of
+    [[silk.texts]] – at least JLCPCB's minimum text height; a warning per height below it."""
+    from .. import silk
+    s = board.silk
+    heights = [("label_h_mm", float(s.get("label_h_mm", 1.0)))]
+    if silk.board_label_text(cfg, board):
+        heights.append(("board_label_h_mm", float(s.get("board_label_h_mm", 1.2))))
+    heights += [(f"h_mm of [[silk.texts]] '{t['text']}'", float(t.get("h_mm", 1.2))) for t in s.get("texts", [])]
+    low = [(k, h) for k, h in heights if h < silk.MIN_TEXT_MM - 1e-9]
+    for k, h in low:
+        rows.add("L", "L-17", board.name, f"{k}: text height below JLCPCB's minimum", False, f"{k} = {h:g} mm",
+                 f">= {silk.MIN_TEXT_MM:.1f} mm", "warn")
+    if not low:
+        rows.add("L", "L-17", board.name, f"text heights edakit prints at least {silk.MIN_TEXT_MM:.1f} mm (JLCPCB minimum "
+                 "text height)", True, ", ".join(f"{k} {h:g} mm" for k, h in heights), f">= {silk.MIN_TEXT_MM:.1f} mm")
 
 
 def check_pad_layout(board, design, on_pcb, want, geo, rows):
@@ -459,6 +666,148 @@ def check_drills(board, design, d, rows):
                  "JLCPCB widens it or asks", False, "; ".join(slots), f">= {JLC_SLOT_MM} mm", "warn")
 
 
+JLC_RING_MM = 0.18           # L-16, JLCPCB 2 layers 1 oz: PTH annular ring, absolute minimum (fail below)
+JLC_RING_WARN_MM = 0.20      # ... the capability value "≧0.20mm" (warn below; recommended 0.25 mm)
+JLC_VIA_RING_MM = 0.05       # ... via diameter at least the via hole + 0.1 mm
+JLC_PAD_GAP_MM = 0.45        # ... "Pad Hole-to-Hole Spacing", read edge to edge (a component hole is one of the two)
+JLC_VIA_GAP_MM = 0.2         # ... "Via Hole-to-Hole Spacing" (two vias), edge to edge
+RING_TOL_MM = 0.001          # the files' rounding (EasyEDA keeps mil, writes mm) and the circle polygons (64 a quarter)
+RING_REACH_MM = 1.0          # a ring is measured up to this width – wider is wide enough
+
+
+def drill_axis(h):
+    """A drilled hole (x0, y0, x1, y1, width) as its centre point, or a slot as the line between its two ends."""
+    from shapely.geometry import LineString, Point
+    return Point(h[0], h[1]) if (h[0], h[1]) == (h[2], h[3]) else LineString([h[:2], h[2:4]])
+
+
+def ring_mm(parts, hole):
+    """Narrowest copper around a drilled hole on one layer: from the hole's edge to the nearest point without copper
+    (mm, at most RING_REACH_MM); None when no copper covers the hole's centre. Pad, track and pour count alike – it is
+    the copper the plating sits in. parts: [(bounds, area)] per Gerber operation of the layer."""
+    import shapely
+    from shapely.geometry import box
+    axis, half = drill_axis(hole), hole[4] / 2
+    x0, y0, x1, y1 = axis.bounds
+    m = half + RING_REACH_MM
+    win = (x0 - m, y0 - m, x1 + m, y1 + m)
+    near = [g.intersection(box(*win)) for b, g in parts
+            if b[0] <= win[2] and b[2] >= win[0] and b[1] <= win[3] and b[3] >= win[1]]
+    centre = axis.interpolate(0.5, normalized=True) if axis.geom_type == "LineString" else axis
+    pieces = shapely.get_parts(shapely.unary_union(near)) if near else []
+    piece = next((q for q in pieces if q.geom_type == "Polygon" and q.covers(centre)), None)
+    return None if piece is None else piece.boundary.distance(axis) - half
+
+
+def check_rings(board, design, d, rows):
+    """L-16: every plated hole keeps JLCPCB's annular ring on TOP and BOTTOM (2 layers, 1 oz: a component hole 0.18 mm,
+    warning below 0.20 mm; a via 0.05 mm, via Ø >= hole + 0.1 mm), and every two plated holes – also two of one part –
+    keep JLCPCB's hole-to-hole spacing, edge to edge (0.45 mm when a component hole is one of them, 0.2 mm between two
+    vias). Vias are the holes of the via drill file (EasyEDA writes them into the PTH file as well); the other plated
+    holes are named by the through-hole pad of pcb.json at their place. The ring is the copper around the hole in the
+    Gerber files, whatever it belongs to. waive {"L-16": …} on a part or net of the graph lists its findings as waived."""
+    g = d / "gerber"
+    if lost := gerber.missing(g, "top", "bottom", "pth"):
+        rows.add("L", "L-16", board.name, "Gerber and drill files for the annular rings", False,
+                 f"{', '.join(lost)} missing (Gerber export)", "present")
+        return
+    from shapely import STRtree
+
+    from .. import route
+    vias = list(dict.fromkeys(gerber.parse_drills(g / gerber.FILES["vias"])))
+    at_via = {(round(h[0], 3), round(h[1], 3)) for h in vias}
+    pth = [h for h in dict.fromkeys(gerber.parse_drills(g / gerber.FILES["pth"]))
+           if (round(h[0], 3), round(h[1], 3)) not in at_via]
+    pads = [(f"{c['designator']}.{p['PadNumber']}", c["designator"], p.get("Net") or "", p["X"] * MM, p["Y"] * MM)
+            for c in json.loads((d / "pcb.json").read_text())["components"] if c.get("designator")
+            for p in c["pads"] if p["tht"]]
+    holes = []                   # (hole, name, part, net, via)
+    for h in pth:
+        x, y = drill_axis(h).centroid.coords[0]
+        pad = min(pads, key=lambda p: math.hypot(p[3] - x, p[4] - y), default=None)
+        if pad and math.hypot(pad[3] - x, pad[4] - y) < 0.3:
+            holes.append((h, pad[0], pad[1], pad[2], False))
+        else:
+            holes.append((h, f"plated hole at ({x:.2f}, {y:.2f})", "", "", False))
+    holes += [(h, f"via at ({h[0]:.2f}, {h[1]:.2f})", "", "", True) for h in vias]
+    parts_of, nets_of = route.pad_waivers(design.graph, "L-16")
+
+    def waiver(*items):
+        return next((parts_of.get(p) or nets_of.get(n) for _, _, p, n, _ in items if parts_of.get(p) or nets_of.get(n)),
+                    None)
+
+    def size(h):
+        return f"Ø {h[4]:.2f} mm" if h[:2] == h[2:4] else \
+            f"{h[4]:.2f} x {h[4] + math.hypot(h[2] - h[0], h[3] - h[1]):.2f} mm"
+    copper = {name: [(a.bounds, a) for a in (gerber.shape([op], 64) for op in gerber.parse_gerber(g / gerber.FILES[k]))
+                      if not a.is_empty] for name, k in (("TOP", "top"), ("BOTTOM", "bottom"))}
+    narrow, low, waived, narrowest = [], defaultdict(lambda: defaultdict(list)), [], {}   # narrowest: via? -> ring
+    for item in holes:
+        h, name, part, _, is_via = item
+        rings = {layer: ring_mm(parts, h) for layer, parts in copper.items()}
+        none = [layer for layer, r in rings.items() if r is None]
+        least = min((r for r in rings.values() if r is not None), default=None)
+        where = " and ".join(layer for layer, r in rings.items() if r is not None and abs(r - least) < RING_TOL_MM)
+        limit = JLC_VIA_RING_MM if is_via else JLC_RING_MM
+        if none:
+            text, value = f"{name}: no copper around the hole on {' and '.join(none)} (hole {size(h)})", "no copper"
+        elif least + RING_TOL_MM < limit:
+            text, value = f"{name}: {least:.3f} mm on {where} (hole {size(h)})", f"{least:.3f} mm"
+        else:
+            if not is_via and least + RING_TOL_MM < JLC_RING_WARN_MM:
+                low[part or name][f"{least:.3f} mm on {where} (hole {size(h)})"].append(name.partition(".")[2] or name)
+            if is_via not in narrowest or least < narrowest[is_via][0]:
+                narrowest[is_via] = (least, name)
+            continue
+        if reason := waiver(item):
+            waived.append(("annular ring", text, value, f">= {limit} mm", reason))
+        else:
+            narrow.append(text)
+    n_via = sum(1 for *_, v in holes if v)
+    count = [f"{len(holes) - n_via} holes", f"{n_via} vias"]
+    for k, (ring, name) in narrowest.items():
+        count[k] += f" (narrowest ring {ring:.3f} mm" + ("" if k else f", {name}") + ")"
+    narrow.sort(key=natural_key)
+    rows.add("L", "L-16", board.name, f"plated holes keep JLCPCB's annular ring: component holes {JLC_RING_MM} mm, vias "
+             f"{JLC_VIA_RING_MM} mm (2 layers, 1 oz)", not narrow, "; ".join(narrow[:10])
+             + (f" … ({len(narrow)} holes)" if len(narrow) > 10 else "") or ", ".join(count),
+             f">= {JLC_RING_MM} mm (component hole), >= {JLC_VIA_RING_MM} mm (via)")
+    for ref, by_text in low.items():   # one warning per part, so an accepted warning covers only that part
+        reason = waiver(*(item for item in holes if item[2] == ref))
+        rows.add("L", "L-16", board.name, f"{ref}: annular ring below {JLC_RING_WARN_MM} mm – JLCPCB's capability value "
+                 "(recommended 0.25 mm)", False, "; ".join(f"pad {', '.join(sorted(p, key=natural_key))}: {t}"
+                                                         for t, p in by_text.items()),
+                 f">= {JLC_RING_WARN_MM} mm", "waived" if reason else "warn")
+        if reason:
+            rows[-1]["reason"] = reason
+    geoms = [drill_axis(h) for h, *_ in holes]
+    tree, reach = STRtree(geoms), max((h[4] for h, *_ in holes), default=0) + RING_REACH_MM + JLC_PAD_GAP_MM
+    close, kept = [], []
+    for i, a in enumerate(holes):
+        for j in sorted(tree.query(geoms[i].buffer(reach))):
+            if j <= i:
+                continue
+            b = holes[j]
+            gap = geoms[i].distance(geoms[j]) - (a[0][4] + b[0][4]) / 2
+            limit = JLC_VIA_GAP_MM if a[4] and b[4] else JLC_PAD_GAP_MM
+            if gap + RING_TOL_MM >= limit:
+                kept.append((gap, f"{a[1]} – {b[1]}"))
+            elif reason := waiver(a, b):
+                waived.append(("hole spacing", f"{a[1]} – {b[1]}: {gap:.3f} mm apart, below {limit:.2f} mm",
+                               f"{gap:.3f} mm", f">= {limit} mm", reason))
+            else:
+                close.append(f"{a[1]} – {b[1]}: {gap:.3f} mm apart, below {limit:.2f} mm")
+    least = min(kept, default=None)
+    rows.add("L", "L-16", board.name, f"plated holes at least JLCPCB's hole-to-hole spacing apart, edge to edge: "
+             f"{JLC_PAD_GAP_MM} mm with a component hole, {JLC_VIA_GAP_MM} mm between vias", not close,
+             "; ".join(close[:10]) + (f" … ({len(close)} pairs)" if len(close) > 10 else "")
+             or (f"closest {least[0]:.3f} mm ({least[1]})" if least else f"{len(holes)} holes, none near another"),
+             f">= {JLC_PAD_GAP_MM} mm, between vias >= {JLC_VIA_GAP_MM} mm")
+    for what, text, value, want, reason in sorted(waived, key=lambda w: natural_key(w[1])):
+        rows.add("L", "L-16", board.name, f"{what}: {text}", True, value, want, "waived")
+        rows[-1]["reason"] = reason
+
+
 def loop_length_mm(data, a, b, snap=0.5, pad_mm=0.9):
     """Shortest path (mm) from pad a to pad b over tracks of their net on their layer; None without a connection.
     Pours do not count: the loop is supposed to be closed by a track, not by a detour through a plane."""
@@ -542,6 +891,113 @@ def check_copper(board, design, d, rows):
     shorts = [f"{' + '.join(n)} ({', '.join(p[:4])})" for n, p in cu.shorts]
     rows.add("L", "L-2", board.name, "copper from the Gerber files: no short between nets", not shorts,
              "; ".join(shorts[:8]) or "none", "none")
+
+
+BARE_STEP = 5                # L-15: the copper-free circle is measured on blocks of 5 x 5 raster points (0.1 mm)
+
+
+def free_circle(free, step=BARE_STEP):
+    """Largest circle inside the True area of a raster: (diameter, row, column) in raster points, measured on blocks
+    of step x step points that are free throughout (so never larger than the truth, at most a block smaller)."""
+    import numpy as np
+    from scipy import ndimage
+    h, w = free.shape[0] // step * step, free.shape[1] // step * step
+    blocks = free[:h, :w].reshape(h // step, step, w // step, step).all(axis=(1, 3))
+    if not blocks.any():
+        return 0.0, 0, 0
+    dist = ndimage.distance_transform_edt(blocks)
+    r, c = np.unravel_index(np.argmax(dist), dist.shape)
+    return 2 * dist[r, c] * step, (r + 0.5) * step, (c + 0.5) * step
+
+
+def check_copper_sides(board, design, d, rows):
+    """L-15: copper per layer from the Gerber files on the raster of L-2, widened to the outline. Per layer the copper
+    share of the board area (outline without mounting and NPTH holes) and the largest copper-free circle inside
+    the pour outline (pcb.pour_outline, as `pcb pour` pours): information on a layer without pour, a warning above
+    [copper] max_bare_mm on a layer the board file pours ([[pours]], default GND on both) – a pour EasyEDA left empty
+    where its net has no pad, or never filled. A share below [copper] min_cover warns. On every layer a copper piece that
+    touches no pad (FlyingProbeTesting.json), via or plated hole warns: an island left by a fill with islands kept.
+    Copper inside an NPTH or mounting hole is drilled away and does not count."""
+    g = d / "gerber"
+    if lost := gerber.missing(g, "top", "bottom", "probe"):
+        rows.add("L", "L-15", board.name, "Gerber files for the copper per side", False,
+                 f"{', '.join(lost)} missing (Gerber export)", "present")
+        return
+    import numpy as np
+    from PIL import Image, ImageDraw
+    from scipy import ndimage
+
+    from .. import pcb
+    with contextlib.redirect_stdout(io.StringIO()):
+        pour = [board.eda_point(*p) for p in pcb.pour_outline(board)]
+        outline = [board.eda_point(*p) for p in board.outline]
+        cu = gerber.Copper(g, design.pin_net, extent=outline)
+    res = gerber.RES
+
+    def area(poly, cut=()):
+        """The polygon without the circles (x, y, r) – or, without a polygon, the circles alone."""
+        img = Image.new("1", (cu.w, cu.h), 0)
+        dr = ImageDraw.Draw(img)
+        if poly:
+            dr.polygon([cu.px(*q) for q in poly], fill=1)
+        for x, y, r in cut:
+            (cx, cy), rr = cu.px(x, y), r / res
+            dr.ellipse([cx - rr, cy - rr, cx + rr, cy + rr], fill=0 if poly else 1)
+        return np.array(img, dtype=bool)
+    drilled = area([], [(x, y, w / 2) for x, y, w, _ in gerber.parse_holes(g / gerber.FILES["npth"])]
+                   + [(*board.eda_point(h["x"], h["y"]), h["d"] / 2) for h in board.holes])   # NPTH, mounting holes
+    whole = area(outline) & ~drilled
+    inside = area(pour) & ~drilled
+    probe = json.loads((g / gerber.FILES["probe"]).read_text())["pins"]
+    anchors = {"T": [], "B": []}       # (x, y, r): pads of FlyingProbeTesting.json (all of them), plated holes and vias
+    for row in probe["rows"]:
+        p = dict(zip(probe["fields"], row))
+        r = min(p["PAD_SIZEX"], p["PAD_SIZEY"]) / MIL_PER_MM / 4
+        for k in ("TB" if p["PIN_TYPE"] != "SMD" else "T" if p["LAYER"] in ("T", "TOP") else "B"):
+            anchors[k].append((p["PIN_X"] / MIL_PER_MM, p["PIN_Y"] / MIL_PER_MM, r))
+    for x, y, w in cu.holes:
+        for k in "TB":
+            anchors[k].append((x, y, w / 2 + 0.05))
+    poured = defaultdict(list)
+    for p in board.pours:
+        for layer in p.get("layers", ["TOP", "BOTTOM"]):
+            poured[layer].append(p["net"])
+    limit, cover = board.copper["max_bare_mm"], board.copper["min_cover"]
+    for k, layer in (("T", "TOP"), ("B", "BOTTOM")):
+        copper = cu.render(cu.ops[k]) & ~drilled
+        share = 100 * (copper & whole).sum() / max(1, whole.sum())
+        dia, r, c = free_circle(inside & ~copper)
+        dia *= res
+        at = f"({cu.x0 + c * res:.1f}, {cu.y0 + (cu.h - r) * res:.1f}) mm"
+        text = f"{share:.0f} % copper, largest copper-free circle Ø {dia:.1f} mm" + (f" at {at}" if dia else "")
+        if poured[layer]:
+            rows.add("L", "L-15", board.name, f"{layer}: no copper-free circle above {limit:g} mm inside the pour "
+                     f"outline (poured: {', '.join(poured[layer])})", dia <= limit, f"{layer}: {text}",
+                     f"Ø <= {limit:g} mm ([copper] max_bare_mm)", None if dia <= limit else "warn")
+        else:
+            rows.add("L", "L-15", board.name, f"{layer}: copper share and largest copper-free circle (no pour)", True,
+                     f"{layer}: {text}", "information", "info")
+        if layer in cover:
+            rows.add("L", "L-15", board.name, f"{layer}: copper share at least {cover[layer]:g} % ([copper] min_cover)",
+                     share >= cover[layer], f"{layer}: {share:.0f} % copper", f">= {cover[layer]:g} %",
+                     None if share >= cover[layer] else "warn")
+        lab, n = ndimage.label(copper, structure=np.ones((3, 3)))
+        held = set()
+        for x, y, rad in anchors[k]:
+            (cx, cy), rr = cu.px(x, y), max(1, int(rad / res))
+            held |= set(np.unique(lab[max(0, int(cy) - rr):int(cy) + rr + 1, max(0, int(cx) - rr):int(cx) + rr + 1]))
+        size = np.bincount(lab.ravel(), minlength=n + 1) * res * res
+        loose = sorted((i for i in range(1, n + 1) if i not in held), key=lambda i: -size[i])
+        where, boxes = [], ndimage.find_objects(lab) if loose else []
+        for i in loose[:5]:
+            rs, cs = boxes[i - 1]
+            x = cu.x0 + (cs.start + cs.stop) / 2 * res
+            y = cu.y0 + (cu.h - (rs.start + rs.stop) / 2) * res
+            where.append(f"{size[i]:.1f} mm² around ({x:.1f}, {y:.1f}) mm")
+        many = f"{len(loose)} pieces, {sum(size[i] for i in loose):.1f} mm² together" if len(loose) > 1 else "1 piece"
+        rows.add("L", "L-15", board.name, f"{layer}: every copper piece touches a pad, via or plated hole", not loose,
+                 f"{layer}: {many} without pad, via or hole: " + "; ".join(where) + (" …" if len(loose) > 5 else "")
+                 if loose else f"{layer}: {n} pieces", "none loose", None if not loose else "warn")
 
 
 # --- F checks -----------------------------------------------------------------------------------------------------
@@ -668,8 +1124,11 @@ def run(cfg, board, out, offline=False, verbose=False):
         (d / "jlc_parts.json").unlink(missing_ok=True)
     rows = Rows()
     check_pcb(cfg, board, design, d, rows)
+    check_silk(cfg, board, design, d, rows)
     check_copper(board, design, d, rows)
+    check_copper_sides(board, design, d, rows)
     check_drills(board, design, d, rows)
+    check_rings(board, design, d, rows)
     check_loops(board, design, d, rows)
     check_pad_clearance(cfg, board, design, d, rows)
     check_paste_gap(cfg, board, design, d, rows)
