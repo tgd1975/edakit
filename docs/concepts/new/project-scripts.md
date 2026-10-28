@@ -72,7 +72,7 @@ and `firmware` exist once per project.
 | `graph`, `parts`, `sim` | graph, parts database, simulation scenarios | by hand, `edakit block`, `edakit part` |
 | `board:<b>` | board file | by hand, `edakit pcb place --write` (rows with `auto = true`) or an `input` script |
 | `project-library:<b>` | the project library in EasyEDA, which `pcb parts` takes the parts from | `edakit schematic create`, `easyeda` scripts |
-| `footprints:<b>` | footprint geometry with pads (`pcb_geometry_<b>.json`) | `edakit pcb dump` |
+| `footprints:<b>` | footprint geometry with pads (`<b>.geometry.json` beside the board file, step 1.8) | `edakit pcb dump` |
 | `routing:<b>` | tracks and vias | `edakit route` |
 | `mech:<b>` | the board as a mechanical model (`<artifacts>/mech_<b>.json`, #62) | `edakit pcb plan` |
 | `gerber:<b>` | the gate run's manufacturing files, hashed per file (`fab_layers`, #65) | `edakit gate`, stage F |
@@ -631,8 +631,8 @@ Eight building blocks; the order is also the order to build them in, and
    gate. `edakit sim` already stamps its result this way (`inputs_sha256` in `<artifacts>/sim/result.json`).
 4. **Order and commands:** steps such as `pcb apply`, `silk apply` and `gate` run outdated `input` scripts first. New
    are `edakit scripts` (list with state) and `edakit run <name>`.
-5. **Version the footprint geometry:** `pcb_geometry_<b>.json` lies in `build/` today but is hashed, so a fresh clone
-   and the CI cannot compute the layout hash.
+5. **Version the footprint geometry:** `pcb_geometry_<b>.json` lay in `build/` but was hashed, so a fresh clone and
+   the CI could not compute the layout hash. Since step 1.8 it is `<b>.geometry.json` beside the board file.
 6. **Checks in the gate:** a place (`at`, also after F, to see the Gerber data of the own run) and the phase
    `acceptance`.
 7. **Agents:** read and check `[agents.*]` (R9–R11). The gate requires their sign-offs; the skills start them at their
