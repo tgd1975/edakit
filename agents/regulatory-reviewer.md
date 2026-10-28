@@ -20,6 +20,8 @@ this board, and you say where only a lawyer, a notified body or an authority can
   (`bands_mhz`, `max_dbm`, `doc`), `source`. What is missing there is open, not fine.
 - The decision log and the circuit description: the cell in a battery holder, the power supply that comes with the
   board, the enclosure, who uses it.
+- The requirements file, if `[project] requirements` names one (`edakit req 2>&1 | cat`): what the board must and
+  must not do – its needs say who uses it; the requirements whose `verify` names `signoff = "M-6"` are yours to judge.
 - `${CLAUDE_PLUGIN_ROOT}/handbook/15-regulatory.md`: the map of rules with their sources. Check every date and
   threshold you rely on against the primary source (EUR-Lex, the EU Commission, BNetzA, stiftung ear) – the law
   changes, and today's date decides what is in force.
@@ -50,6 +52,12 @@ Name gold plating as such: a duty that does not apply to this purpose is not a f
 
 Say clearly "M-6: OK for state `<circuit hash>` and purpose `<use>`" or list what must be settled. OK means: no finding
 'block' open, every 'important' finding settled or accepted by the owner as a numbered decision.
+
+With `[project] requirements`, judge also every requirement whose `verify` names `signoff = "M-6"` (`edakit req`
+lists them) – a board that must not transmit, a cell the user must be able to remove – and give the IDs of the ones
+you found met in the line the sign-off's note takes over: "M-6: OK for state `<circuit hash>` and purpose `<use>`;
+requirements met: R-6". The gate counts an ID in the note as passing evidence (handbook 8.7): a requirement you did
+not find met stays out of the line and is a finding.
 
 ## Result
 

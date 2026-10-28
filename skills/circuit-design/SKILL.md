@@ -15,12 +15,20 @@ designer's, in a session of its own that gets only what you write down (section 
 
 ## 1. Requirements
 
-Collect them before choosing parts: the supply (source, voltage range including unloaded and reversed, the current it
-allows, the minimum load of a power bank), every input and output and what drives or reads it, the MCU or main part,
-quantity and assembly (JLCPCB SMD, hand-soldered), enclosure and what a person touches, what matters to the user
-(cost, looks, robustness, loudness …), and **what the board is for**: built for oneself, given away or sold, and
-where – it decides which rules apply (handbook 15). Default what you can; ask the rest in **one** decision round
-(skill decision-round), not one question after the other. The purpose goes into the graph:
+With `[project] requirements` in edakit.toml, read the file instead of asking for the requirements yourself:
+`edakit req 2>&1 | cat` (handbook 3.6). The accepted requirements are what the circuit must meet, the needs say whom
+it is for; a draft is not agreed yet. What the design needs and the file does not say, or says only in a draft, goes
+to the skill requirements – it asks the user and writes the file, you do not. A new function starts with its
+requirement there, before you choose its parts.
+
+Without the file, collect them before choosing parts: the supply (source, voltage range including unloaded and
+reversed, the current it allows, the minimum load of a power bank), every input and output and what drives or reads
+it, enclosure and what a person touches, what matters to the user (cost, looks, robustness, loudness …).
+
+Either way you settle the MCU or main part, quantity and assembly (JLCPCB SMD, hand-soldered), and **what the board
+is for**: built for oneself, given away or sold, and where – it decides which rules apply (handbook 15). Default what
+you can; ask the rest in **one** decision round (skill decision-round), not one question after the other. The purpose
+goes into the graph:
 `"purpose": {"use": "private" | "gift" | "sale", "market": "EU", "notes": "what it is, who uses it"}`.
 
 ## 2. Building blocks first
@@ -74,6 +82,8 @@ the plug-in, the unplug and the switch-over ramp, with the rail's lowest voltage
 the MCU above its minimum once it has started.
 A board people touch (requirements: what a person touches): `touch_c` with its limit from the product's standard
 (IEC 62368-1 TS1: 48 °C for longer than a minute) – E-2 holds every part with `rth_ja_k_per_w` on it to that limit.
+A requirement that simulation rows verify (`edakit req`) needs its scenario here – sim.json is yours, the pattern in
+its `verify` belongs to the requirements file.
 
 ## 6. Check loop (seconds)
 
@@ -122,5 +132,6 @@ wiring) the drawing is the schematic, and the project is done without EasyEDA.
 
 ## Report
 
-Requirements as understood, blocks and parts used, computed values, open decisions, results of check, hints and sim,
-check candidates, where the drawing is, the hand-over (`edakit handover`).
+Requirements as understood – with a requirements file, which parts meet which requirement: per R-… the parts and
+values that meet it and the rows or the review that test it –, blocks and parts used, computed values, open
+decisions, results of check, hints and sim, check candidates, where the drawing is, the hand-over (`edakit handover`).

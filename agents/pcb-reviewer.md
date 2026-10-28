@@ -29,6 +29,9 @@ boards of the project in the current repository. You **change nothing**, neither
 - EasyEDA only if `easyeda_bridge_status` reports connected. A picture can be stale; if it is byte-identical to the
   previous one, say so instead of drawing conclusions.
 - Track widths: `<artifacts>/sim/net_currents.json` (simulated currents) and the routing classes.
+- The requirements file, if `[project] requirements` names one (`edakit req 2>&1 | cat`): the requirements whose
+  `verify` names `signoff = "M-5"` are what the layout must keep – a connector reachable at the edge, nothing on the
+  visible side but the LEDs – and yours to judge.
 
 ## What you look at
 
@@ -51,6 +54,17 @@ boards of the project in the current repository. You **change nothing**, neither
    visible side's track length and vias against its limits, and L-19 its texts and designators against the board
    file – a visible side without `[looks]` is worth a note.
 
+## For the M-5 sign-off
+
+On the manufacturing files of the gate run (Sources). Say clearly "M-5: OK for fab hash <hash>" (the `fab_sha256` in
+the protocol header of the run whose files you reviewed; "layout hash" when the sign-off file gives M-5 the scope
+`layout`) or what must be fixed first. With `[project] requirements`, judge also every requirement whose `verify`
+names `signoff = "M-5"` (`edakit req` lists them) on the plan and the files; the line names the ones you found met –
+"M-5: OK for fab hash <hash>; requirements met: R-7" – and the sign-off's note takes it over. The gate counts an ID in
+the note as passing evidence (handbook 8.7): a requirement you did not find met stays out of the line and is a
+finding. Reviewing again after a change: `edakit fab diff <reviewed run> <new run>` lists the changed layers and
+spots.
+
 ## Result
 
 A numbered list by severity (**block** = do not order like this, **important**, **note**). Per finding: designator and
@@ -60,7 +74,4 @@ proposal (concrete move, rotation or side), and **rule**: the check it falls und
 rules`, e.g. "L-11 (short current loops)"), or **check candidate**: what a rule over the plan, the geometry or the
 Gerber files would test to find it again, or "judgement" (looks, operation). A deviation from a guideline or a
 datasheet recommendation without a realistic consequence is not a finding; name gold plating as such. Then what is
-good (short) and what you could not check. For M-5 say clearly "M-5: OK for fab hash <hash>" (the `fab_sha256` in
-the protocol header of the run whose files you reviewed; "layout hash" when the sign-off file gives M-5 the scope
-`layout`) or what must be fixed first. Reviewing again after a change: `edakit fab diff <reviewed run> <new run>`
-lists the changed layers and spots.
+good (short) and what you could not check; for M-5 the line of the sign-off.

@@ -4,7 +4,12 @@ import json
 import re
 from pathlib import Path
 
+import pytest
+
+from edakit.requirements import ENTRY_ID
+
 ROOT = Path(__file__).resolve().parents[1]
+REVIEWERS = {"electrical-reviewer": "M-1", "pcb-reviewer": "M-5", "regulatory-reviewer": "M-6"}   # agent: its sign-off
 
 
 def frontmatter(path):
@@ -28,6 +33,25 @@ def test_agents_have_name_description_and_tools():
         assert meta.get("name") == path.stem, path
         assert len(meta.get("description", "")) > 80, path
         assert "tools" not in meta or "Read" in meta["tools"], path
+
+
+def test_skills_have_name_and_description():
+    for path in sorted((ROOT / "skills").glob("*/SKILL.md")):
+        meta = frontmatter(path)
+        assert meta.get("name") == path.parent.name, path
+        assert len(meta.get("description", "")) > 80, path
+
+
+def test_every_skill_and_agent_is_listed():
+    """What the plugin brings is in the table of handbook 11.1 and in the README: every skill as /edakit:<name>, every
+    agent by its name."""
+    chapter = (ROOT / "handbook" / "11-working-with-claude.md").read_text(encoding="utf-8")
+    table = chapter.split("## 11.1 ")[1].split("## 11.2 ")[0]
+    readme = (ROOT / "README.md").read_text(encoding="utf-8")
+    for name in sorted(p.parent.name for p in (ROOT / "skills").glob("*/SKILL.md")):
+        assert f"`/edakit:{name}`" in table and f"`/edakit:{name}`" in readme, name
+    for name in sorted(p.stem for p in (ROOT / "agents").glob("*.md")):
+        assert f"`edakit:{name}`" in table and f"`{name}`" in readme, name
 
 
 def flat(text):
@@ -54,18 +78,91 @@ def test_the_electrical_review_asks_what_no_check_answers_yet():
 
 
 def test_the_reviewers_name_the_checks_that_now_answer_part_of_a_class():
-    """A question a check covers in part names that check, and every ID a reviewer names is in the catalogue."""
+    """A question a check covers in part names that check, and every ID a reviewer names is in the catalogue – or is
+    one of the reviewers' sign-offs, or a need N-… or requirement R-… of a project's requirements file (handbook 3.6),
+    which the catalogue never names: it has no check of the letters N and R."""
     rules = json.loads((ROOT / "edakit" / "rules.json").read_text(encoding="utf-8"))
-    known = {*rules["checks"], *rules["hints"]}
+    known = {*rules["checks"], *rules["hints"], *REVIEWERS.values()}
     look = section(ROOT / "agents" / "electrical-reviewer.md", "What you look at")
     sources = look.split("**several sources**")[1].split("**mcu pin functions**")[0]
     supply = look.split("**supply range")[1].split("**read-back")[0]
     assert "e-5" in sources and "transients" in sources and "`copper`" in supply
     pcb = section(ROOT / "agents" / "pcb-reviewer.md", "What you look at")
     assert all(cid in pcb for cid in ("l-15", "l-16", "l-17", "l-18"))
-    for agent in ("electrical-reviewer", "pcb-reviewer"):
+    for agent in REVIEWERS:
         named = set(re.findall(r"\b[A-Z]-\d+\b", (ROOT / "agents" / f"{agent}.md").read_text(encoding="utf-8")))
-        assert named - {"M-1", "M-5"} <= known, (agent, named - known)
+        foreign = {cid for cid in named - known if not ENTRY_ID.fullmatch(cid)}
+        assert not foreign, (agent, foreign)
+
+
+@pytest.mark.parametrize("agent, signoff", REVIEWERS.items())
+def test_each_reviewer_judges_the_requirements_its_sign_off_verifies(agent, signoff):
+    """With [project] requirements a reviewer reads the file, judges the requirements whose verify names its sign-off,
+    and gives the IDs of the ones it found met for the note – the gate counts an ID in the note as passing evidence
+    (handbook 8.7), so one not met is a finding and stays out of it."""
+    path = ROOT / "agents" / f"{agent}.md"
+    sources = section(path, "Sources")
+    assert "[project] requirements" in sources and "edakit req" in sources, agent
+    sign = section(path, f"For the {signoff} sign-off")
+    for words in (f'signoff = "{signoff.lower()}"', "note", "requirements met", "finding"):
+        assert words in sign, (agent, words)
+
+
+def test_for_the_electrical_review_the_file_replaces_what_the_firmware_relies_on():
+    """The requirements file takes the place of the requirements the firmware relies on – those stay its source in a
+    project without one."""
+    sources = section(ROOT / "agents" / "electrical-reviewer.md", "Sources")
+    assert "requirements file" in sources and "without one" in sources
+
+
+def test_circuit_design_reads_the_requirements_file_instead_of_asking():
+    """§1 reads the file when [project] requirements names one; what it lacks goes to the skill requirements, a new
+    function starts with its requirement, and the report says which parts meet which requirement."""
+    path = ROOT / "skills" / "circuit-design" / "SKILL.md"
+    first = section(path, "1. Requirements")
+    for words in ("[project] requirements", "edakit req", "instead of asking", "skill requirements",
+                  "a new function starts with its requirement"):
+        assert words in first, words
+    assert "which parts meet which requirement" in section(path, "Report")
+
+
+def test_the_requirements_skill_drafts_and_the_user_accepts():
+    """The skill requirements, in the conversation: the agent's inventory first, the questions of the concept in one
+    decision round, its four rules, drafts in the file that only the user accepts – the file and the decision log
+    are all it writes, and only for the circuit."""
+    path = ROOT / "skills" / "requirements" / "SKILL.md"
+    text = flat(path.read_text(encoding="utf-8"))
+    for words in ("hardware/requirements.toml", "agent requirements-engineer", "inventory", "skill decision-round",
+                  'status = "draft"', "only the user", "agreement 4", "never the graph", "decision log",
+                  "only the circuit", "firmware", "mechanics", "edakit req", "edakit check", "second opinion"):
+        assert words in text, words
+    asked = section(path, "1. Ask")
+    for topic in ("people", "course", "surroundings", "operation", "limits", "frame", "non-goals"):
+        assert f"| {topic} |" in asked, topic
+    for rule in ("vague words become numbers", "contradictions become questions", "stays open",
+                 "every requirement gets evidence"):
+        assert rule in asked, rule
+    evidence = section(path, "3. Evidence")
+    assert all(f"`{kind}`" in evidence for kind in ("rows", "signoff", "accept", "script"))
+
+
+def test_the_requirements_engineer_reads_everything_and_changes_nothing():
+    """The agent has no tool that writes, and returns what the skill turns into a decision round: candidates with
+    the place they were found, contradictions, vague words, requirements without evidence."""
+    path = ROOT / "agents" / "requirements-engineer.md"
+    tools = {t.strip() for t in frontmatter(path)["tools"].split(",")}
+    assert "Read" in tools and not tools & {"Write", "Edit", "NotebookEdit"}
+    assert "change no files" in flat(path.read_text(encoding="utf-8"))
+    result = section(path, "Result")
+    for words in ("candidates", "`source`", "contradictions", "vague words", "without evidence",
+                  "left to the project's documents"):
+        assert words in result, words
+
+
+def test_a_new_project_may_have_a_requirements_file():
+    files = section(ROOT / "skills" / "new-project" / "SKILL.md", "1. Files")
+    assert "hardware/requirements.toml" in files and "optional" in files and "skill requirements" in files
+
 
 def test_circuit_design_reads_pin_functions_and_header_pins():
     pins = section(ROOT / "skills" / "circuit-design" / "SKILL.md", "3. Parts and pins")

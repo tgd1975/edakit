@@ -7,17 +7,19 @@ to a graph – and about the knowledge the checks are made of.
 
 | Role | Who | Does |
 |---|---|---|
-| circuit designer | a session with the skills `circuit-design` and `hardware-change` | asks for the requirements in one decision round, picks blocks and parts, computes values, writes the graph with its check settings and the schematic file, works through `edakit check`, `edakit hints` and `edakit sim`, draws the schematic, writes the hand-over |
+| requirements engineer | a session with the skill `requirements`, and the agent `requirements-engineer` in its own context | the skill collects with the user what the circuit must do, asks back in a decision round until vague words are numbers, writes drafts into the requirements file and has the user approve them – never the graph; the agent reads every document of the project, changes nothing, and returns candidates with their source, contradictions, vague words and requirements without evidence: the first inventory and a second opinion (3.6) |
+| circuit designer | a session with the skills `circuit-design` and `hardware-change` | reads the requirements file – without one, asks for the requirements in one decision round –, picks blocks and parts, computes values, writes the graph with its check settings and the schematic file, works through `edakit check`, `edakit hints` and `edakit sim`, draws the schematic, writes the hand-over |
 | part selector | agent `part-selector`, its own context | finds parts for the circuit designer at the project's distributors (one profile each), compares stock, price, lifecycle and compliance data, recommends one and writes its parts entry; never touches the graph (chapter 4.2) |
 | electrical reviewer | agent `electrical-reviewer`, its own session | reads graph, hand-over, parts, simulation and datasheets, changes nothing, returns numbered findings with probability and cost – before the first layout, before every hand-over that changes parts or the power path, and as the sign-off M-1 |
 | regulatory reviewer | agent `regulatory-reviewer`, its own session | checks circuit and parts against EU law for the purpose in the graph (RoHS, REACH, radio, batteries, product safety), changes nothing, returns numbered findings with their sources – its result is the sign-off M-6 (chapter 15) |
 | PCB designer | a session of its own with the skill `pcb-round` | works from the hand-over: EasyEDA schematic, PCB, and in its board file `hardware/boards/<name>.toml` placement plan, routing, silkscreen; does not change the graph |
 | EasyEDA operator | agent `easyeda-operator` | runs one long EasyEDA step for the PCB designer and returns only the result |
 | PCB reviewer | agent `pcb-reviewer`, its own session | reads plan, hand-over, routing and the copper of every layer from the Gerber files, changes nothing, returns numbered findings with probability and cost – at the end of every layout round that changed placement, routing or pours, and on the gate run's files as the sign-off M-5 |
-| decider | the user | answers the decision rounds: warnings, looks and operation, money, what becomes a check |
+| decider | the user | answers the decision rounds: warnings, requirements, looks and operation, money, what becomes a check |
 
 No role checks its own work: a second opinion from the session that made the decisions repeats the decisions; the
-reviewer starts without them.
+reviewer starts without them. With a requirements file each reviewer also judges the requirements whose `verify` names
+its sign-off and names the ones it found met in the note it signs with (8.7).
 
 **The hand-over.** Circuit and layout are separate sessions, so what the layout must know is written down – the
 PCB designer gets nothing else. It is `layout` in the graph: parts that are fixed (pressed, looked at), at the edge
@@ -28,9 +30,10 @@ regulators, and notes no program checks. The decoupling capacitor of every IC is
 the layout needs – another GPIO, another footprint – goes back as a written request in the decision log; the PCB
 designer does not change the graph. A project without a PCB ends at the hand-over: the drawing is the schematic.
 
-**Files.** Each role writes its own (10.1): the circuit designer the graph, the simulation config and the schematic
-file, the part selector the parts database, the PCB designer the board files. A file has one owner, and its hash says
-which sign-offs a change voids – a new placement voids the layout review, not the circuit's.
+**Files.** Each role writes its own (10.1): the requirements engineer the requirements file, the circuit designer the
+graph, the simulation config and the schematic file, the part selector the parts database, the PCB designer the board
+files. A file has one owner, and its hash says which sign-offs a change voids – a new placement voids the layout
+review, not the circuit's.
 
 ## 14.2 The rule catalog
 

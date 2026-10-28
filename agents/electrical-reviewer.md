@@ -12,7 +12,10 @@ calculate, research and report.
 
 - The hardware graph (edakit.toml `[project] graph`) is the only source for parts, values, pins and nets.
 - The parts database (`[project] parts`, one JSON per LCSC number): parameters, ratings, pin roles, datasheet sign-off.
-- The project's decision log and circuit description; requirements the firmware relies on.
+- The project's decision log and circuit description.
+- What the circuit must do: the requirements file, if `[project] requirements` names one (`edakit req 2>&1 | cat` –
+  needs, requirements and what verifies each); without one, the requirements the firmware relies on, from the
+  project's documents.
 - Offline checks you may run: `edakit check 2>&1 | cat`, `edakit sim --json /tmp/sim.json 2>&1 | cat`,
   `edakit hints 2>&1 | cat` (design hints that apply and how the graph handles them), `edakit handover 2>&1 | cat`
   (what the circuit hands over to the layout – `layout` in the graph and the derived decoupling).
@@ -78,8 +81,15 @@ the graph holds. Blocks (`notes` say "block …") passed the checks once – rev
 Check every critical part again, independently: pinout and pin names, polarity at the footprint (compare the polarity
 sheet with the datasheet drawing), package, every rating and parameter, especially values marked as assumption. Read
 the datasheet the sign-off read: `<datasheets>/<key>.pdf` (`edakit part fetch <key>` if it is missing; its sha256
-against `verified.datasheet_sha256`), not a download of your own. Your
-result is the sign-off: say clearly "M-1: OK for state <circuit hash>" or list what must be fixed.
+against `verified.datasheet_sha256`), not a download of your own. With `[project] requirements`, judge also every
+requirement whose `verify` names `signoff = "M-1"` (`edakit req` lists them) on the circuit, with a calculation, a
+simulation row or a datasheet page as evidence.
+
+Your result is the sign-off: say clearly "M-1: OK for state <circuit hash>" or list what must be fixed. With
+requirements the line names the ones you found met – "M-1: OK for state <circuit hash>; requirements met: R-4, R-5" –
+and the sign-off's note takes it over. The gate counts an ID in the note as passing evidence (handbook 8.7): a
+requirement you did not find met stays out of the line and is a finding; one that cannot be judged as written (no
+number, no condition) is a finding for the requirements file.
 
 ## Result
 

@@ -184,6 +184,15 @@ stable, as in the rule catalog: a requirement that no longer holds stays in the 
 `reason`. Claude drafts – `status = "draft"`, which is also what an entry without `status` is –, only the user sets
 `accepted`; a change to an accepted requirement is a decision in the decision log.
 
+**Who writes it.** The skill `requirements`, in the conversation with the user: it collects what the circuit must do,
+asks back in one decision round until vague words are numbers and contradictions are decided, writes drafts and has
+the user approve them – approving a requirement is one of the user's real decisions (11.4). It writes this file and
+the decision log, never the graph. In a project with documents the agent `requirements-engineer` makes the inventory
+first: it reads every document in its own context, changes nothing, and returns candidates with the place it found
+them, contradictions, vague words and requirements without evidence; on a finished file it gives a second opinion.
+The circuit designer reads the file instead of asking for the requirements (skill circuit-design), a new function
+starts with its requirement, and each reviewer judges the requirements its sign-off verifies (8.7). The roles: 14.1.
+
 ```bash
 edakit req        # needs and requirements: status, binding, and the evidence as written in verify
 edakit req R-1    # one chain: where R-1 comes from, the requirement, what verifies it

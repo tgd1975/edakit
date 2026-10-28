@@ -9,7 +9,7 @@ are. What one role decides lives in a file of its own, with one owner and one ha
 | File | Content | Written by | Hash |
 |---|---|---|---|
 | `edakit.toml` | project, boards with their EasyEDA documents, where the files are, release settings, the project's scripts | new-project, the user | – |
-| `hardware/requirements.toml` | what the circuit must do: needs and requirements with their evidence (3.6, 10.4), with `[project] requirements` | Claude drafts, only the user accepts | circuit |
+| `hardware/requirements.toml` | what the circuit must do: needs and requirements with their evidence (3.6, 10.4), with `[project] requirements` | the skill requirements drafts, only the user accepts | circuit |
 | `hardware/graph.json` | the circuit with its purpose, the hand-over to the layout, the ground net and the check settings (3.1) | circuit designer | circuit |
 | `hardware/parts/`, `hardware/sim.json` | parts database (4), simulation scenarios (5) | part-selector, circuit designer | circuit |
 | `hardware/schematic.toml` | arrangement of the schematic: blocks, notes, pin table (10.3) | circuit designer | – |

@@ -460,7 +460,10 @@ key has none. From the tests' led-bar (`tests/test_requirements.py`), offline:
   - signoff M-1 – not signed for this state (section 6)
 ```
 
-**Signing for a requirement.** A reviewer whose check a requirement names in `verify` – the electrical reviewer for
-`signoff = "M-1"`, the regulatory reviewer for `"M-6"`, the layout review for `"M-5"` – names the requirements it
-judged in the note it signs with. The sign-off file needs no other field. Because the requirements files are in the
-circuit hash (8.2), a changed requirement voids M-1 and M-6, and the next signature names it again.
+**Signing for a requirement.** A reviewer whose check a requirement names in `verify` – the agent electrical-reviewer
+for `signoff = "M-1"`, regulatory-reviewer for `"M-6"`, pcb-reviewer for `"M-5"` – judges it and names the
+requirements it found met in the note it signs with; its result gives the line,
+`M-1: OK for state 1a2d…; requirements met: R-4, R-5`. An ID in the note is passing evidence, so a requirement the
+review did not find met stays out of the note and is a finding of the review. The sign-off file needs no other field.
+Because the requirements files are in the circuit hash (8.2), a changed requirement voids M-1 and M-6, and the next
+signature names it again.

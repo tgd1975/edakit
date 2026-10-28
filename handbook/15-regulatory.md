@@ -57,8 +57,11 @@ an imported power supply or cell is its importer.
 
 ## 15.4 The sign-off
 
-M-6 has the scope `circuit` (graph with its purpose, parts database, simulation config): a changed part or purpose
-needs a new review. The gate requires it even when the sign-off file does not list it (8.2). The agent's findings are
-numbered – **block** (may not be sold or operated like this), **important**, **note** – each with the rule, its
-source and a proposal, and they go into the decision round with the electrical review. What a program could decide –
-a band outside the EU's, a part without a RoHS status – the agent marks as a check candidate (14.4).
+M-6 has the scope `circuit` (graph with its purpose, parts database, simulation config, and the requirements file
+of `[project] requirements`): a changed part, purpose or requirement needs a new review. The gate requires it even
+when the sign-off file does not list it (8.2). With a requirements file the review also judges the requirements whose
+`verify` names `signoff = "M-6"` – a board that must not transmit – and names the ones it found met in its note
+(8.7). The agent's findings are numbered – **block** (may not be sold or operated like this), **important**,
+**note** – each with the rule, its source and a proposal, and they go into the decision round with the electrical
+review. What a program could decide – a band outside the EU's, a part without a RoHS status – the agent marks as a
+check candidate (14.4).

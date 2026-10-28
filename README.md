@@ -96,13 +96,16 @@ edakit fab diff RUN_A RUN_B     # where the manufacturing files of two gate runs
 edakit release current|withdraw|verify   # the one run that may be uploaded; verify the files right before upload
 ```
 
-In Claude Code the skills do the orchestration: `/edakit:new-project`, `/edakit:circuit-design`, `/edakit:start`,
-`/edakit:hardware-change`, `/edakit:part-search`, `/edakit:own-part`, `/edakit:pcb-round`, `/edakit:release`,
-`/edakit:decision-round`;
-the agent `part-selector` finds parts at the project's distributors (LCSC/JLCPCB, RS, Farnell, Mouser, DigiKey,
-Reichelt) and writes their entries; the agents `electrical-reviewer`, `regulatory-reviewer` (EU law for the board's
-purpose: RoHS, REACH, radio, batteries) and `pcb-reviewer` do the independent reviews whose results are the
-sign-offs.
+In Claude Code the skills do the orchestration: `/edakit:new-project`, `/edakit:requirements`,
+`/edakit:circuit-design`, `/edakit:start`, `/edakit:hardware-change`, `/edakit:part-search`, `/edakit:own-part`,
+`/edakit:pcb-round`, `/edakit:release`, `/edakit:decision-round`;
+`/edakit:requirements` writes what the circuit must do into `hardware/requirements.toml` with the user, and the agent
+`requirements-engineer` reads a project's documents for it – candidates with their source, contradictions, vague
+words, requirements without evidence; the agent `part-selector` finds parts at the project's distributors
+(LCSC/JLCPCB, RS, Farnell, Mouser, DigiKey, Reichelt) and writes their entries; the agent `easyeda-operator` runs one
+long EasyEDA step and returns only its result; the agents `electrical-reviewer`, `regulatory-reviewer` (EU law for
+the board's purpose: RoHS, REACH, radio, batteries) and `pcb-reviewer` do the independent reviews whose results are
+the sign-offs – each also judges the requirements its sign-off verifies.
 Circuit, layout and review are separate roles: the circuit designer hands the board over in writing – `layout` in the
 graph, shown by `edakit handover` and kept by the plan check L-12 – the PCB designer works from that in a session of
 its own, and the session that designs does not review ([handbook 14.1](handbook/14-design.md#141-roles)).

@@ -9,6 +9,7 @@ agreements are as important as the scripts.
 |---|---|---|
 | skill | `/edakit:start` | EasyEDA ready, long runs, GUI clicks, crash recovery – before any EasyEDA work |
 | skill | `/edakit:new-project` | set up edakit in a repository |
+| skill | `/edakit:requirements` | what the circuit must do, with the user: needs and requirements with their evidence in `hardware/requirements.toml`, asked back in a decision round until vague words are numbers – Claude drafts, the user accepts (3.6) |
 | skill | `/edakit:circuit-design` | from requirements to a graph: blocks, parts, computed values, checks, hints, simulation (chapter 14) |
 | skill | `/edakit:hardware-change` | a change from graph to PCB and docs |
 | skill | `/edakit:part-search` | find a part at the project's distributors, create and sign its parts entry |
@@ -18,6 +19,7 @@ agreements are as important as the scripts.
 | skill | `/edakit:decision-round` | numbered findings, short answers, numbered decisions |
 | skill | `/edakit:propose-rule` | a check, hint, block or part fact as a sealed issue to the edakit repository, and its outcome back into the decision (chapter 14.4) |
 | skill | `/edakit:propose-feature` | a feature edakit lacks and a project had to build or work around, as a sealed issue to the edakit repository, and its outcome back into the project (11.6) |
+| agent | `edakit:requirements-engineer` | reads every document of a project for what its circuit must do and returns candidates with their source, contradictions, vague words and requirements without evidence – the first inventory and a second opinion on the requirements file, in its own context; changes nothing (3.6) |
 | agent | `edakit:part-selector` | finds a part at the project's distributors (a profile each) and writes its parts entry, in its own context (chapter 4.2) |
 | agent | `edakit:easyeda-operator` | runs one long EasyEDA step and returns only the result – keeps the main conversation clean |
 | agent | `edakit:electrical-reviewer` | independent circuit review; its result is the sign-off M-1 |
@@ -94,7 +96,8 @@ section – with the path of this chapter. A new agreement needs nothing but its
    copy or judge a dialog's content. Ask when they are there, and only then say "click now".
 4. **An agent's check is the sign-off.** If an independent agent checked it, it is either OK (signed, `done_by` = the
    agent) or not OK (fixed and checked again). No checklists for the user to re-check what an agent can check. Only
-   real decisions go to the user: accepting a warning, looks and operation, money.
+   real decisions go to the user: accepting a warning, approving a requirement (skill requirements), looks and
+   operation, money.
 5. **Open questions go to the user in decision rounds.** Numbered findings with consequence and a recommended
    proposal; the user answers "ad 1 ack, ad 2 b, ad 3 you decide"; every answer becomes a numbered decision with
    reason and date (decision-round skill).

@@ -22,6 +22,7 @@ Create in the repository root (ask only for what you cannot sensibly default):
 | `hardware/parts/` | empty; every LCSC number gets an entry through the part-search skill |
 | `hardware/sim.json` | from the example: sources (the supply connector), supplies at min/nominal/max, loads, corners; with several sources `combine_sources` (handbook 5.2) |
 | `hardware/signoff.json` | from the example: M-1 (critical parts, second check), M-6 (regulatory review), M-5 (layout review), M-2 (manufacturer preview), M-4 (acceptance) |
+| `hardware/requirements.toml` | optional: what the circuit must do – needs and requirements with their evidence, written with the user by the skill requirements and named in `[project] requirements` (handbook 3.6); the gate will require it once the Christmas bell and the reference project have theirs |
 | `docs/decisions.md` | numbered decisions D-1, … with reason and date (the decision-round skill appends) |
 | `.gitignore` | `build/` |
 
@@ -40,15 +41,17 @@ Create in the repository root (ask only for what you cannot sensibly default):
 
 ## 3. First run
 
-1. Graph skeleton with the skill circuit-design: power input, MCU, the main functions – building blocks where they fit
+1. Optional: what the circuit must do, with the skill requirements – it writes `hardware/requirements.toml` with the
+   user, and circuit-design reads the file instead of asking.
+2. Graph skeleton with the skill circuit-design: power input, MCU, the main functions – building blocks where they fit
    (`edakit block list`), other parts by LCSC number (part-search skill), nets with voltage ranges `v`. `edakit check`
    until 0 errors, `edakit hints` worked through.
-2. `edakit sim` – scenarios first at the supply limits.
-3. Without a PCB (a development board and hand wiring) the project stops here: `edakit schematic draw` gives the
+3. `edakit sim` – scenarios first at the supply limits.
+4. Without a PCB (a development board and hand wiring) the project stops here: `edakit schematic draw` gives the
    schematic, EasyEDA is not needed, and `edakit.toml` needs only `[project] name` and a `[boards.<name>]` with a
    `title`. With a PCB: the user creates the EasyEDA project once by hand (File → New → Project, named like
    `[project] name`) – the local desktop client refuses `DMT_Project.createProject`. Then the start skill.
-4. Continue with the hardware-change skill for every further change of the circuit. The layout is the PCB
+5. Continue with the hardware-change skill for every further change of the circuit. The layout is the PCB
    designer's: skill pcb-round in a session of its own, starting from `edakit handover` (handbook 14.1).
 
 Report: which files were created, what is still open (parts without entry, missing outline, first decisions).

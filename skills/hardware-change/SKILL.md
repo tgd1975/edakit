@@ -18,6 +18,9 @@ This is the circuit designer's side. EasyEDA – schematic and PCB – is the PC
 - A new design decision gets the next free number (D-…) in the project's decision log with reason, date and the
   alternatives; cite the number in `notes` of the component or net.
 - Several open questions: first a decision round (decision-round skill), then implement.
+- With `[project] requirements` (`edakit req`): a new function starts with its requirement (skill requirements), and
+  a change that would no longer meet an accepted requirement goes to the user first – changing the requirement is a
+  decision.
 - Before proposing hardware: check that it fits – dimensions from the datasheet of the exact part (including solder
   tabs), against the board geometry. A proposal that does not fit wastes a round with the user.
 
