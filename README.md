@@ -1,6 +1,10 @@
 # edakit
 
-**From a JSON hardware graph to a released, manufacturable PCB with EasyEDA Pro, driven by Claude Code.**
+**Circuit design as code.** Everything a board is made of is text in your repository: the circuit, the parts with
+their datasheet sources, placement, routing rules, copper pours and silkscreen per board, every decision and every
+review sign-off. Claude Code does every step from there – checks, simulation, schematic, PCB, routing, release –
+through edakit and EasyEDA Pro. A change is a diff, and the release gate checks it on the files that go to the
+manufacturer. What is not text yet is listed under [Status and limits](#status-and-limits).
 
 You describe the circuit once – parts by LCSC number, pins, nets with voltage ranges – in a JSON *hardware graph*.
 edakit checks it with rules, simulates every operating case with ngspice, generates the schematic in EasyEDA Pro,
@@ -146,6 +150,15 @@ Where it stands:
 
 ## Status and limits
 
+- Not text yet ([concept](docs/concepts/new/design-as-text.md), [plan](docs/concepts/new/implementation-plan.md)):
+  - the positions EasyEDA's auto-layout sets: the board file holds only the fixed parts and those `pcb place` puts
+    next to their host;
+  - own footprints and symbols: a part without an LCSC number points into an EasyEDA library;
+  - the rule set of EasyEDA's DRC;
+  - the solder mask and silkscreen colours and the board thickness of the order;
+  - the position of single designators.
+
+  Creating the EasyEDA project and one *Import Changes* stay two clicks by hand until the API allows them.
 - Grown on one real project (EasyEDA Pro 3.2.206, easyeda-mcp-pro 1.4.0, Linux), made generic, then taken through a
   second one end to end (the Christmas bell). The offline
   parts (checks, simulation, DSN/Freerouting/check, Gerber analysis, the board and manufacturing checks) are verified
