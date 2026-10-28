@@ -1,8 +1,9 @@
 # 7 PCB (stage L)
 
 The PCB is generated in layers: parts and nets from the board schematic (without dialogs), a **placement plan** for
-everything that matters (in the board file `hardware/boards/<name>.toml`, 10.2), EasyEDA's auto-layout for the rest,
-**Freerouting** for the tracks, pours, silkscreen. Every step can be repeated; every step checks itself.
+everything that matters (in the board file `hardware/boards/<name>.toml`, 10.2), EasyEDA's auto-layout for the rest –
+its positions go into the plan as well (7.4) –, **Freerouting** for the tracks, pours, silkscreen. Every step can be
+repeated; every step checks itself.
 A bought board on a cable (`bought = true`, 4.5) has no PCB: `pcb`, `route`, `silk`, `fab` and `export` refuse it
 with one line when `--board` names it, and without `--board` take the one made board; `handover` and `export` over
 all boards leave it out.
@@ -14,7 +15,7 @@ edakit pcb dump              # footprint geometry -> hardware/boards/<board>.geo
 edakit pcb plan              # offline: check the plan, preview PNG, net classes, mechanical model
 edakit pcb place --write     # offline: decoupling capacitors, pull and series resistors next to their host
 edakit pcb apply             # outline, holes, tooling holes, fixed parts locked; pads verified
-edakit pcb autolayout        # the unlocked small parts, waits until positions are stable
+edakit pcb autolayout        # the parts without a row; once they stand still, their rows into [place]
 edakit route all             # Freerouting -> EasyEDA, pours, reload, DRC (exit 0 = DRC 0)
 edakit silk apply            # designators where there is room, silkscreen check on the Gerber, DRC
 ```
@@ -283,12 +284,54 @@ $ edakit pcb place
 `--write` adds the rows as new lines at the end of `[place]`; every other line and comment stays as it is. A later run
 may move a row with `auto = true` (its part is placed anew; one that has no host any more stays), never a row written
 by hand – delete `auto = true` to keep a spot. To every other command an `auto` row is a fixed, locked part like any
-other. `--only C1,R1` places only those. A part without a spot is named with its host and pin – `C1: no free spot
-within near_mm 6 of U2 (pin 16, 3V3)` – and the command exits 2. It reads the geometry as `pcb plan` does: the dump of
-`pcb dump`, and for a part not yet in the PCB the library footprint `edakit part import` cached (4.2).
+other – the auto-layout writes such rows too (below). `--only C1,R1` places only those. A part without a spot is named
+with its host and pin – `C1: no free spot within near_mm 6 of U2 (pin 16, 3V3)` – and the command exits 2. It reads
+the geometry as `pcb plan` does: the dump of `pcb dump`, and for a part not yet in the PCB the library footprint
+`edakit part import` cached (4.2).
+
+**The auto-layout's positions.** `edakit pcb autolayout` lets EasyEDA place the parts `pcb apply` left unlocked –
+every part without a row – and waits until positions, rotations and sides stay the same for two readings. Then it
+writes a row for every part of the board without one, where EasyEDA put it, as a new line at the end of `[place]`
+with `auto = true`; every other line stays as it is, and the rows are read back:
+
+```text
+$ edakit pcb autolayout
+   0.2 min: moving
+   …
+   1.4 min: stable
+  D1 = { x = 75.0, y = 12.0, rot = 0, side = "top", auto = true }
+  R2 = { x = 40.0, y = 30.0, rot = 0, side = "top", auto = true }
+  2 rows written into hardware/boards/main.toml [place] with auto = true
+```
+
+From then on they are plan like any row: `pcb plan` checks them (overlaps, outline, `near`, `uniform`, mated plugs) and
+puts them into the mechanical model, `pcb apply` puts them back after a dump and locks them, L-7 holds the PCB to
+them, and the layout hash covers them – commit them with the board file. The next auto-layout places only parts
+without a row: delete a row to have its part placed anew, change it to move the part. `pcb place` may still move an
+`auto` row next to the part's host. The rows are plan coordinates to 0.001 mm and 0.001° – what `pcb apply` writes
+back is what EasyEDA reported. A part of the board that is not in the PCB is named (`! R2: not in the PCB – …`, exit
+2); a part in the PCB that the graph does not put on the board gets no row (L-1 names it). Not settled within 20
+minutes: nothing is written, exit 2.
+
+**A board placed before.** A board placed by hand or by the auto-layout before edakit wrote its positions back – and
+maybe routed – takes over its positions once:
+
+```bash
+edakit pcb takeover            # the rows it would write
+edakit pcb takeover --write    # written into [place]
+```
+
+Every part of the board without a row gets a fixed row (no `auto`) where EasyEDA has it, so that `pcb apply` locks it
+there and the tracks stay on its pads; a new auto-layout would move the parts off them. Rows the board file holds
+stay as they are – L-7 compares them with the PCB. Run it before any `pcb dump`: the dump turns every part to 0° on
+TOP, and only the rows bring rotation and side back.
+
+**Every part in the plan (L-20).** Stage L of the gate fails for every part the graph puts on the board that has no
+row in `[place]` – by hand, from `pcb place`, or written back by the auto-layout. Parts on a bought board (4.5) – off
+the made boards, at the far end of a cable – are on none of them and need no row.
 
 `edakit pcb dump` turns every part it measures to 0° on TOP to read its geometry and **leaves it there** – run `apply`
-and the auto-layout afterwards.
+afterwards: it puts every part with a row back; the auto-layout is needed again only for parts without one.
 
 ## 7.5 Routing with Freerouting
 

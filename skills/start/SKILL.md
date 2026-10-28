@@ -83,7 +83,7 @@ read calls in a row.
 2. **Find out the state, do not guess.** Unsaved work is gone. Count: `easyeda_schematic_components`,
    `easyeda_pcb_components`, `easyeda_pcb_tracks`; `edakit schematic check`, `edakit pcb nets`.
 3. Resume: edakit commands are idempotent and replace what they draw. Run the broken step completely again, not from
-   its middle. Exception: `edakit pcb dump` turns every part to 0°/TOP – afterwards always `pcb apply` and the
-   auto-layout.
+   its middle. Exception: `edakit pcb dump` turns every part to 0°/TOP – afterwards always `pcb apply` (it puts back
+   every part with a row in `[place]`) and, for parts without one, the auto-layout.
 4. Second crash in the same step: smaller blocks or split the step, instead of a third try.
 5. Save after success and report the state in 2–3 lines.

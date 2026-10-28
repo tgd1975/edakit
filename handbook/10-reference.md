@@ -183,7 +183,7 @@ mark. The keys stand at the top of the file, without a prefix (`[place]`, `[[hol
 | `outline` | – | `rect = [w, h]` (+ `origin`, `corner_radius`, `arc_steps`) or `polygon = [[x, y], …]` |
 | `[[holes]]` | `[]` | `x`, `y`, `d` (3.2), `keep` (radius free of parts and copper) |
 | `tooling` | – | `holes = [[x, y], …]`, `d` (1.152), `mask` (0.148), `keep` (1.5) |
-| `place` | `{}` | `REF = {x, y, rot, side, lock, auto}` fixed parts; `auto = true` marks a row `pcb place` wrote – a later `pcb place` may move it, every other command treats it as any row (7.4) |
+| `place` | `{}` | `REF = {x, y, rot, side, lock, auto}` every part of the board (L-20); `auto = true` marks a spot nobody designed, a row `pcb place` or `pcb autolayout` wrote – a later `pcb place` may move it, every other command treats it as any row (7.4) |
 | `near` | `{}` | `PART = "HOST"` or a list – the layout's own, between fixed parts; the circuit's are `layout.near` of the graph |
 | `uniform` | `{ led = "row" }` | polarised parts that point the same way, per `kind` of the parts entry: `"row"` – parts of the kind side by side on one line (centres within 1 mm) have their plus pin towards the same side; `"+x"`, `"-x"`, `"+y"`, `"-y"` – the cathode or minus pin of every part of the kind points that way, seen from the side the part sits on. A part counts with exactly one pin `anode` or `plus…` and one `cathode` or `minus…`; the table names every kind it checks – without `led` the LEDs are not compared (7.4) |
 | `routing` | see below | Freerouting rules |
@@ -314,7 +314,8 @@ Claude Code: `edakit … 2>&1 | cat`. The long commands – `route all`, `gate`,
 | `edakit pcb parts [--write]` | ✓ | board schematic, PCB, graph | PCB parts, UniqueIds, geometry |
 | `edakit pcb nets [--write]` | ✓ | graph, PCB | pad nets |
 | `edakit pcb apply [--verify-all]` | ✓ | plan, geometry | outline, holes, tooling, fixed parts |
-| `edakit pcb autolayout` | ✓ | – | positions of unlocked parts |
+| `edakit pcb autolayout` | ✓ | graph, board file | positions of the unlocked parts; once they stand still, a row with `auto = true` at the end of `[place]` for every part of the board without one (7.4) |
+| `edakit pcb takeover [--write]` | ✓ read | PCB, graph, board file | with `--write`: a fixed row at the end of `[place]` for every part of the board without one, where EasyEDA has it – once, for a board placed before (7.4) |
 | `edakit pcb tooling` / `pour` | ✓ | plan; `pour` with `pour_regions`: board file and SES of `route` | tooling holes / pours (unfilled) |
 | `edakit route all\|read\|dsn\|route\|check\|apply\|verify [--cleanup]\|pours\|reload\|drc\|save` | ✓ / – (dsn, route, check offline) | PCB, rules; `net_currents.json` (check: L-5 offline; `widths = "sim"`) | `route/<board>_board.json`, `.dsn`, `.ses`, `_routing.png`, `_drc.json`, `_netlist_diff.json` (with an Import Changes item); tracks, vias, pours |
 | `edakit route diagnose [--net N]` | – | `route/<board>_board.json`, the board file's rules, the last SES | `route/<board>_diagnose/` (a PNG per open connection, `congestion.png`, `diagnose.json`), 7.5 |

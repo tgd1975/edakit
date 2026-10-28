@@ -61,16 +61,20 @@ describes (section 3); a list of parts or pads is fixed with `pcb parts --write`
    change.
 3. **EasyEDA** (start skill, claim EasyEDA):
    - New or swapped parts first: `edakit pcb parts --write`; then `edakit pcb dump` for their geometry if needed
-     (dump turns all parts to 0°/TOP – afterwards always apply and the auto-layout again). The geometry lies beside the
-     board file, `hardware/boards/<board>.geometry.json`, and is committed with it – the layout hash covers it, CI
-     reads it. One that still lies among the artifacts (`pcb_geometry_<board>.json`) is named by `edakit check` and
-     `pcb plan` with the `mv` that moves it; the next dump moves it too (handbook 7.4). Before they are in the
-     PCB, `edakit part import <LCSC>` gives the plan of step 2 their library footprint; for a swapped part
+     (dump turns all parts to 0°/TOP – afterwards always apply, which puts back every part with a row). The geometry
+     lies beside the board file, `hardware/boards/<board>.geometry.json`, and is committed with it – the layout hash
+     covers it, CI reads it. One that still lies among the artifacts (`pcb_geometry_<board>.json`) is named by
+     `edakit check` and `pcb plan` with the `mv` that moves it; the next dump moves it too (handbook 7.4). Before they
+     are in the PCB, `edakit part import <LCSC>` gives the plan of step 2 their library footprint; for a swapped part
      `edakit part diff OLD NEW` says how the new footprint lies over the old one (turn, shift, pad map). A footprint
      whose holes the project moves for leads formed by hand: `edakit pcb dump`, then `edakit check` – P-8 fails when
      a turn lays the formed holes onto themselves with a pin in another net's hole (handbook 3.3).
    - `edakit pcb apply` (outline, holes, tooling holes, fixed parts locked; pad positions verified against the plan)
-   - `edakit pcb autolayout` (unlocked parts, TOP only, waits for stable positions)
+   - `edakit pcb autolayout` (the parts without a row, TOP only; once they stand still it writes their rows into
+     `[place]` with `auto = true` – commit them with the board file, `pcb plan` checks them like any row). A board
+     placed before edakit wrote these back – L-20 names its parts without a row – takes over its positions once,
+     before any dump: `edakit pcb takeover --write`, fixed rows where the parts stand, the tracks stay on their pads
+     (handbook 7.4)
    - `edakit route all 2>&1 | cat` (read → DSN → Freerouting → check → apply → pours → reload → DRC; exit 0 = DRC 0, 3 =
      only the import acknowledgement pending). Open connections are yellow in `<artifacts>/route/<board>_routing.png`.
      Never EasyEDA's autorouter.
