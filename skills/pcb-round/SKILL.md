@@ -88,9 +88,12 @@ describes (section 3); a list of parts or pads is fixed with `pcb parts --write`
    placement, routing or pours ends with the agent pcb-reviewer in its own session, on this round's data: the plan,
    the routing files and the round's Gerber export `<artifacts>/gerber_<board>/` – the copper of every layer as
    EasyEDA filled it. `silk apply` writes that export; a round that did not run it runs `edakit silk check 2>&1 | cat`
-   first. Its findings are fixed or decided (skill decision-round) before the next round and before the gate, not
-   after it. A round that changed only the silkscreen may skip the review. At release the same agent signs M-5 on the
-   gate run's files (skill release); its result is a sign-off, not a checklist for the user.
+   first. With `[agents.<name>]` in edakit.toml (handbook 8.6) the project agent that replaces pcb-reviewer
+   (`replaces`) reviews the round in place of pcb-reviewer, and the project's agents of the round review – a sign-off
+   of scope `layout`, signed here on the round's layout hash – beside it: `edakit scripts 2>&1 | cat` shows who
+   reviews where. The findings are fixed or decided (skill decision-round) before the next round and before the gate,
+   not after it. A round that changed only the silkscreen may skip the review. At release the same agent signs M-5 on
+   the gate run's files (skill release); its result is a sign-off, not a checklist for the user.
 6. Save only when the state is better than the saved one; `route all` and `silk apply` save themselves.
 
 ## Known limits

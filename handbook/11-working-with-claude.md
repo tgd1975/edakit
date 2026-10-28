@@ -34,6 +34,12 @@ Skills trigger on their description; you can also call them by name. Put project
 from the layout, which parts must stay hand-soldered, decision numbering) into the project's own CLAUDE.md or skills –
 the plugin's skills stay generic.
 
+A project's own agents that sign what edakit releases are registered in edakit.toml (`[agents.<name>]`, 8.6): one
+that takes over an edakit reviewer – only explicitly, with `replaces`; the reference project's elektrotechniker for
+M-1, pcb-pruefer for M-5 and its round reviews – or one with a sign-off of its own. The skills start them where
+`edakit scripts` says ("Who reviews where"), and the gate counts their sign-offs only when `done_by` names them. The
+project's skills are not registered: Claude Code finds them by itself.
+
 ## 11.2 Parallel sessions share one EasyEDA
 
 Several Claude sessions working at the same time is normal (one routes, one writes docs, one researches a part). But
@@ -95,9 +101,9 @@ section – with the path of this chapter. A new agreement needs nothing but its
 3. **A dialog the user must handle is a plain OK.** Prepare everything so that OK is right; never ask them to read,
    copy or judge a dialog's content. Ask when they are there, and only then say "click now".
 4. **An agent's check is the sign-off.** If an independent agent checked it, it is either OK (signed, `done_by` = the
-   agent) or not OK (fixed and checked again). No checklists for the user to re-check what an agent can check. Only
-   real decisions go to the user: accepting a warning, approving a requirement (skill requirements), looks and
-   operation, money.
+   agent – a project agent by its name, the gate holds its sign-off to it, 8.6) or not OK (fixed and checked again). No
+   checklists for the user to re-check what an agent can check. Only real decisions go to the user: accepting a warning,
+   approving a requirement (skill requirements), looks and operation, money.
 5. **Open questions go to the user in decision rounds.** Numbered findings with consequence and a recommended
    proposal; the user answers "ad 1 ack, ad 2 b, ad 3 you decide"; every answer becomes a numbered decision with
    reason and date (decision-round skill).

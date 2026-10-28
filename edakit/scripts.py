@@ -1,7 +1,9 @@
 """Project scripts: the entries [scripts.<name>] of edakit.toml and edakit's own steps, resolved into one order, and the
-stamps that tell an outdated script.
+stamps that tell an outdated script. Project agents: the entries [agents.<name>] – what each signs, where it reviews
+(agents, at the end).
 
-    edakit scripts               every script with its about and state – current, outdated, never run – and the order
+    edakit scripts               every script with its about and state – current, outdated, never run – and the order;
+                                 with [agents] every agent and who reviews at each hook point
     edakit scripts stamp NAME …  records the run of scripts that ran by hand: their stamps in hardware/scripts.lock
     edakit check, edakit gate    report what keeps the entries from resolving and every outdated script (handbook 8.6)
 
@@ -42,7 +44,7 @@ compared, whatever the stamp says: a note names them. Outdated or never run, an 
 check of stage G), a derive or easyeda script a warning; a check has no stamp, its result is the gate's protocol.
 
 The entries resolve when (docs/concepts/new/project-scripts.md, "Checking the TOML", its rules 1 to 9; 10 and 11 are
-about agents):
+about agents, see agents):
   1  kind is input, derive, easyeda or check, the fields of the kind are there, and no field of another kind
   2  every data name is edakit's, with a made board of [boards]; firmware only with [firmware]
   3  a script writes files, an input also board:<b>; an easyeda script changes project-library:<b> – footprints:<b> is
@@ -943,7 +945,8 @@ def listing(cfg, res, states, problem):
 
 def main(cfg, args):
     """edakit scripts [stamp NAME …]. Exit 0: every script current, or stamped; 2: one is outdated or never ran, or
-    the entries do not resolve; 1: the lock cannot be read, or a stamp was refused."""
+    the entries – of [scripts] or of [agents] – do not resolve; 1: the lock cannot be read, or a stamp was refused.
+    With [agents] the listing ends with the project's agents and who reviews at each hook point."""
     if args.action == "stamp":
         try:
             new, dropped = stamp(cfg, args.names)
@@ -964,6 +967,267 @@ def main(cfg, args):
         return 0
     res, states, problem = review(cfg)
     print("\n".join(listing(cfg, res, states, problem)))
+    team = agents(cfg) if cfg.agents else None        # [agents]: who reviews where (handbook 8.6)
+    if team:
+        print("\n".join(agent_listing(cfg, team)))
     if problem:
         return 1
-    return 2 if res.findings or any(s.state in ("outdated", "never run") for s in states) else 0
+    return 2 if res.findings or any(s.state in ("outdated", "never run") for s in states) or team and team.findings \
+        else 0
+
+
+# --- project agents: [agents.<name>] of edakit.toml (handbook 8.6) ----------------------------------------------------
+#
+# An agent delivers a sign-off, and a sign-off is bound to a hash: an agent of the project signs a sign-off of its own
+# (M-7), or takes over one of edakit's reviews – explicitly, with replaces (decision 10). Where it reviews follows from
+# that, at the four hook points of the flow. Skills are not registered (decision 11).
+
+REVIEWS = {"M-1": "electrical-reviewer", "M-6": "regulatory-reviewer", "M-5": "pcb-reviewer"}   # edakit's reviews
+REVIEW_WORDS = {"M-1": "electrical review", "M-6": "regulatory review", "M-5": "layout review"}
+OWNER = {"M-2": "the owner's check at the manufacturer, after uploading",     # signed by a human, never by an agent
+         "M-4": "the owner's acceptance test after delivery"}
+SIGNOFF = re.compile(r"M-[1-9]\d*")             # a manual check of the sign-off file
+AGENT_NEEDS = ("file", "about", "signs", "phase")
+AGENT_PHASES = ("export", "acceptance")         # order: the owner checks at the manufacturer, no agent gets there
+SCOPES = ("circuit", "layout", "fab")           # the hashes of the gate (gate.SCOPE_KEY)
+HOOKS = {   # where agents review, in the order of the flow, with the skill that starts them
+    "circuit": "circuit review – before the layout (skills circuit-design, hardware-change)",
+    "round": "round review – after a layout round that changed placement, routing or pours (skill pcb-round)",
+    "release": "layout review – between the first and the second gate run (skill release)",
+    "delivery": "after delivery – a line of the acceptance list, which M-4 works through (section 6 of the protocol)",
+}
+HOOK_AT = {"circuit": "at the circuit review", "round": "at the round review", "release": "at the layout review",
+           "delivery": "after delivery"}
+REVIEWED = {   # edakit's reviews at their hook points, and what each looks at there
+    "M-1": {"circuit": "M-1: the circuit and its hand-over",
+            "release": "M-1: the critical parts again, with the polarity sheet"},
+    "M-6": {"circuit": "M-6: circuit and parts against the rules for the purpose"},
+    "M-5": {"round": "the round's Gerber export – findings, no sign-off",
+            "release": "M-5: the gate run's manufacturing files"},
+}
+OWN_HOOK = {"circuit": "circuit", "layout": "round", "fab": "release"}   # a sign-off of its own, phase export: by scope
+
+
+class Agent(NamedTuple):
+    """A project agent whose sign-off is clear: what the gate binds and the skills start."""
+    name: str           # the [agents] name – the skills start it by it, done_by names it
+    file: str
+    about: str
+    signs: str          # the sign-off its OK is
+    replaces: str       # the edakit agent it takes the place of; "" for a sign-off of its own
+    scope: str          # a sign-off of its own: the hash it is bound to; "" with replaces – the sign-off file's counts
+    phase: str          # export: the release waits for it; acceptance: after delivery
+    hooks: tuple        # where it reviews (HOOKS), in the order of the flow
+    after: tuple        # the project agents it reviews after
+
+
+class Agents(NamedTuple):
+    findings: list      # [Finding]: what keeps the entries from resolving – the concept's rules 7, 9, 10, 11
+    signers: dict       # sign-off -> Agent: what the project's agents sign – the gate requires it, held to done_by
+    at: dict            # hook point -> [(who, what)]: who reviews there, in the order to start them – edakit's agents
+                        # (edakit:<name>) and the project's, one that replaces an edakit agent in its place
+
+
+def names_agent(text, name):
+    """done_by names the agent (handbook 11.4, agreement 4): its name as a word, in any case – "Agent pcb-pruefer (own
+    session)" names pcb-pruefer, "agent pcb-pruefer-2" does not."""
+    return bool(text) and re.search(rf"(?<![\w-]){re.escape(name)}(?![\w-])", str(text), re.I) is not None
+
+
+def _agent_file(cfg, file):
+    """(why, the name in its front matter): what is wrong with an agent's file – it does not exist, cannot be read –,
+    or None; the name the file gives the agent, None without one."""
+    path = cfg.resolve(file)
+    if not path.is_file():
+        return f"file {file} does not exist", None
+    try:
+        text = path.read_text(encoding="utf-8")
+    except (OSError, UnicodeDecodeError) as e:
+        return f"file {file} cannot be read ({e})", None
+    head = text.split("---", 2)[1] if text.startswith("---") and text.count("---") > 1 else ""
+    named = re.search(r"^name:\s*(.+?)\s*$", head, re.M)
+    return None, named[1].strip("'\"") if named else None
+
+
+def agents(cfg) -> Agents:
+    """The project's agents ([agents.<name>] of cfg): what keeps their entries from resolving, what they sign, and who
+    reviews at each hook point. The rules (docs/concepts/new/project-scripts.md, "Checking the TOML"):
+      10  file – it exists and is the agent of this name (name in its front matter) –, about, signs and phase export or
+          acceptance; with an ID of its own also scope (circuit, layout, fab); with edakit's review neither scope – the
+          sign-off file gives it its scope – nor phase acceptance; not the name of an edakit agent
+      11  signs is a sign-off (M-<n>), used once per project; edakit's review (M-1, M-5, M-6) only with replaces = the
+          agent that signs it otherwise, and replaces only so; never the owner's (M-2, M-4)
+       9  after names other entries of [agents]
+       7  after makes no cycle at a hook point, and names no agent that reviews only later
+    An entry whose sign-off is not clear – signs, replaces, scope or phase wrong, or a sign-off of two – signs nothing
+    here: the gate requires nothing of it, stage G fails on the finding."""
+    found = []
+
+    def finding(rule, msg):
+        found.append(Finding(rule, msg))
+    entries, sound, by_sid = cfg.agents, {}, defaultdict(list)
+    for name, a in entries.items():
+        sid, repl, scope, phase = a.get("signs"), a.get("replaces"), a.get("scope"), a.get("phase")
+        clear = bool(sid and phase)      # its sign-off is clear: what it signs, in which phase, bound to which hash
+        if missing := [f for f in AGENT_NEEDS if not a.get(f)]:
+            finding(10, f"{name}: {', '.join(missing)} missing – an agent needs file, about, signs and phase")
+        if a.get("file"):
+            why, front = _agent_file(cfg, a["file"])
+            if why:
+                finding(10, f"{name}: {why}")
+            elif front not in (None, name):
+                finding(10, f"{name}: {a['file']} is the agent {front} (name in its front matter) – the skills start an "
+                            f"agent by that name, and done_by names it: [agents.{front}]")
+        if name in REVIEWS.values():
+            finding(10, f"{name}: the name of edakit's agent – a project agent needs a name of its own, so that "
+                        "done_by tells the two apart")
+        if phase and phase not in AGENT_PHASES:
+            finding(10, f'{name}: phase = "{phase}" – export or acceptance' + (
+                "; in phase order the owner checks at the manufacturer, no agent gets there" if phase == "order" else ""))
+            clear = False
+        if not sid:
+            pass
+        elif not SIGNOFF.fullmatch(sid):
+            finding(11, f'{name}: signs = "{sid}" – a sign-off is M-<number>, e.g. M-7')
+            clear = False
+        elif sid in OWNER:
+            finding(11, f"{name}: signs {sid} – {OWNER[sid]}: no agent signs it")
+            clear = False
+        elif sid in REVIEWS:
+            if repl != REVIEWS[sid]:
+                finding(11, f"{name}: signs {sid}, edakit's {REVIEW_WORDS[sid]} – only with replaces = "
+                            f'"{REVIEWS[sid]}", the agent that signs it otherwise'
+                            + (f' (replaces = "{repl}")' if repl else ""))
+                clear = False
+            if scope is not None:
+                finding(10, f"{name}: scope belongs to a sign-off of its own – {sid} keeps the scope the sign-off file "
+                            "gives it")
+                clear = False
+            if phase == "acceptance":
+                finding(10, f'{name}: {sid} is a review before the release – phase = "export"')
+                clear = False
+        else:
+            if repl is not None:
+                finding(11, f'{name}: replaces = "{repl}", but {sid} is no review of edakit – replaces goes with M-1, '
+                            "M-5 or M-6")
+                clear = False
+            if scope is None:
+                finding(10, f"{name}: scope missing – a sign-off of its own is bound to the hash of its scope: circuit, "
+                            "layout or fab")
+                clear = False
+            elif scope not in SCOPES:
+                finding(10, f'{name}: scope = "{scope}" – circuit, layout or fab')
+                clear = False
+        if sid and SIGNOFF.fullmatch(sid) and sid not in OWNER:      # a sign-off an agent may sign: one agent each
+            by_sid[sid].append(name)
+        if clear:
+            hooks = (tuple(REVIEWED[sid]) if sid in REVIEWS else ("delivery",) if phase == "acceptance"
+                     else (OWN_HOOK[scope],))
+            sound[name] = Agent(name, a.get("file", ""), a.get("about", ""), sid, repl or "",
+                                "" if sid in REVIEWS else scope, phase, hooks, tuple(a.get("after", [])))
+    for sid, names in by_sid.items():
+        if len(names) > 1:
+            finding(11, f"{', '.join(names)}: {'both' if len(names) == 2 else 'all'} sign {sid} – a sign-off has one "
+                        "agent")
+            for n in names:
+                sound.pop(n, None)
+
+    # rules 9 and 7: after names other agents; at a hook point both review at it orders them, and an agent that
+    # reviews only later cannot come before
+    edges = {h: defaultdict(dict) for h in HOOKS}
+    rank = {h: i for i, h in enumerate(HOOKS)}
+    for name, a in entries.items():
+        for b in a.get("after", []):
+            if b == name:
+                finding(9, f"{name}: after names itself")
+            elif b not in entries:
+                finding(9, f"{name}: after names {b} – there is no [agents.{b}]")
+            elif name in sound and b in sound:
+                for h in sound[name].hooks:
+                    if h in sound[b].hooks:
+                        edges[h][b][name] = "after"
+                    elif all(rank[x] > rank[h] for x in sound[b].hooks):
+                        finding(7, f"{name}: after {b}, which reviews later – {b} first {HOOK_AT[sound[b].hooks[0]]}, "
+                                   f"{name} {HOOK_AT[h]}")
+    seen = set()
+    for h in HOOKS:
+        for n in [x for x in sound if h in sound[x].hooks]:
+            if cycle := _cycle(n, edges[h]):
+                group = frozenset(m for m in _reach(n, edges[h]) if n in _reach(m, edges[h]))
+                if group not in seen:
+                    seen.add(group)
+                    finding(7, f"{n}: in a cycle {HOOK_AT[h]} – " + " –[after]→ ".join(cycle))
+
+    # who reviews where: edakit's reviews in their order, each by its agent or the one that replaces it, then the
+    # project's own sign-offs; after orders them at a hook point
+    at = {h: [] for h in HOOKS}
+    instead = {a.replaces: a for a in sound.values() if a.replaces}
+
+    def also(a, h):
+        before = [b for b in a.after if b in sound and h in sound[b].hooks]
+        return f", after {', '.join(before)}" if before else ""
+    for sid, agent in REVIEWS.items():
+        for h, what in REVIEWED[sid].items():
+            a = instead.get(agent)
+            at[h].append((a.name, f"{what} – in place of {agent}{also(a, h)}") if a else (f"edakit:{agent}", what))
+    for a in sound.values():
+        if not a.replaces:
+            h = a.hooks[0]
+            at[h].append((a.name, f"{a.signs} on the {a.scope} hash{also(a, h)}"))
+    return Agents(found, {a.signs: a for a in sound.values()},
+                  {h: _in_order(items, edges[h]) for h, items in at.items()})
+
+
+def _in_order(items, edges):
+    """items (who, what), each after the ones edges put before it; otherwise as they come – a cycle (rule 7) keeps
+    them so."""
+    out, rest = [], list(items)
+    while rest:
+        waiting = {w for w, _ in rest}
+        pick = next((it for it in rest if not any(it[0] in edges.get(b, {}) for b in waiting)), rest[0])
+        out.append(pick)
+        rest.remove(pick)
+    return out
+
+
+def agent_rows(cfg):
+    """The rows of stage G with the ID agents: every finding fails – edakit refuses the entries –; when there is none,
+    each agent passes with what it signs. A project without [agents] gets none."""
+    if not cfg.agents:
+        return []
+    review = agents(cfg)
+    if review.findings:
+        return [{"stage": "G", "id": "agents", "item": "", "check": f.msg, "result": "fail"} for f in review.findings]
+    return [{"stage": "G", "id": "agents", "item": "", "check": f"{name}: {_agent_said(a, phase=False)} – "
+                                                                f"{a.get('about', '')}", "result": "pass"}
+            for name, a in cfg.agents.items()]
+
+
+def _agent_said(a, phase=True):
+    """What an entry signs, as edakit scripts shows it: signs M-5 in place of pcb-reviewer, signs M-7 on the layout
+    hash."""
+    how = f" in place of {a['replaces']}" if a.get("replaces") else f" on the {a['scope']} hash" if a.get("scope") else ""
+    return f"signs {a.get('signs') or '?'}{how}" + (f", phase {a.get('phase') or '?'}" if phase else "") + (
+        f"; after {', '.join(a['after'])}" if phase and a.get("after") else "")
+
+
+def agent_listing(cfg, review):
+    """edakit scripts, with [agents]: each agent with what it signs, its about and its file; who reviews at each hook
+    point – or what keeps the entries from resolving."""
+    lines = ["", f"The project's agents – [agents.<name>] of {cfg.path.name} (handbook 8.6)", ""]
+    width = max(len(n) for n in cfg.agents)
+    pad = " " * (width + 2)
+    for name, a in cfg.agents.items():
+        lines.append(f"{name:<{width}}  {_agent_said(a)}")
+        lines += [pad + a[k] for k in ("about", "file") if a.get(k)]
+    lines.append("")
+    if review.findings:
+        return lines + ["The agents' entries do not resolve (edakit check, handbook 8.6):",
+                        *[f"  {f.msg}" for f in review.findings]]
+    who = max(len(w) for items in review.at.values() for w, _ in items)
+    lines.append("Who reviews where – each in its own session; a project agent in place of the edakit agent it "
+                 "replaces:")
+    for h, title in HOOKS.items():
+        lines.append(f"  {title}")
+        lines += [f"    {w:<{who}}  {what}" for w, what in review.at[h]] or ["    none"]
+    return lines

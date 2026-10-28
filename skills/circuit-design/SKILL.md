@@ -126,10 +126,13 @@ edakit handover 2>&1 | cat   # the hand-over as the PCB designer will read it
 
 Two agents review in sessions of their own, side by side: electrical-reviewer the circuit and the hand-over (M-1),
 regulatory-reviewer the circuit and its parts against the rules for its purpose (M-6) – before the layout, because its
-findings usually change parts. Its result is support, not legal advice: say so when you report it. Their findings go
-into one decision round. Then the PCB designer takes over in a session of its own: skill pcb-round, starting with
-`edakit handover`. Without a PCB (a development board and hand wiring) the drawing is the schematic, and the project is
-done without EasyEDA.
+findings usually change parts. Its result is support, not legal advice: say so when you report it. A project with agents
+of its own (`[agents.<name>]` in edakit.toml, handbook 8.6) has them review here as well: `edakit scripts 2>&1 | cat`
+shows under "Who reviews where" who reviews at the circuit review – a project agent in place of the edakit agent it
+replaces (`replaces`), and the project's agents with a sign-off of scope `circuit` beside them, each after the ones its
+`after` names. Their findings go into one decision round. Then the PCB designer takes over in a session of its own:
+skill pcb-round, starting with `edakit handover`. Without a PCB (a development board and hand wiring) the drawing is the
+schematic, and the project is done without EasyEDA.
 
 ## Report
 

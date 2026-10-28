@@ -20,7 +20,10 @@ RELEASED only if
   - every stage ran and no check failed,
   - every warning is accepted in the sign-off file (only a human accepts warnings – it is a decision),
   - every part is verified and every manual check of phase 'export' is signed – the second datasheet check M-1, the
-    regulatory review M-6 and the layout review M-5 also when the sign-off file does not list them (REQUIRED),
+    regulatory review M-6 and the layout review M-5 also when the sign-off file does not list them (REQUIRED), and so
+    the sign-off of a project agent ([agents.<name>], handbook 8.6: its own ID, or edakit's review it replaces); such a
+    sign-off counts only signed by its agent – done_by names it –, one of its own only in the phase and scope of the
+    agent's entry (held); one of phase acceptance is a line of the acceptance list,
   - all of that for exactly this state: sign-offs count only for the hash of their scope – 'circuit' (graph with its
     check settings, parts database, simulation config), 'layout' (the board files with the artwork they place,
     further layout_files of [release], the footprint geometry) or 'fab' (what the manufacturer builds from: the
@@ -234,8 +237,10 @@ def lapsed(cfg, warns):
 
 def load_signoff(cfg, head, write=False):
     """Sign-offs and accepted warnings that count for the current hash of their scope. A required manual check the
-    file does not list is added as open. When only [release] hash_ignore changed, the circuit sign-offs keep counting
-    and the old and new hash go into `rehashed` – into the file only with write (the gate)."""
+    file does not list is added as open – also the sign-off of a project agent ([agents.<name>], required): it counts
+    only signed by its agent (held). When only [release] hash_ignore changed, the circuit sign-offs keep counting and
+    the old and new hash go into `rehashed` – into the file only with write (the gate)."""
+    from .. import scripts
     path = cfg.signoff
     if not path.exists():
         return {"manual": [], "accepted_warnings": [], "lapsed_warnings": []}, [f"{path.name} missing – no sign-offs"]
@@ -261,10 +266,16 @@ def load_signoff(cfg, head, write=False):
         if not valid[scope] and (scope != "fab" or scope in used or key in s):
             notes.append(f"{path.name}: sign-offs with scope '{scope}' belong to another state ({key}) and do not count")
     manual = [m if valid.get(m.get("scope", "circuit")) else {**m, "done_by": None} for m in s.get("manual", [])]
-    for sid, m in REQUIRED.items():
+    team = scripts.agents(cfg)          # [agents.<name>]: what the project's agents sign, held to them
+    manual = [held(m, team.signers.get(m.get("id")), path.name, notes) for m in manual]
+    for sid, m in required(cfg, team).items():
         if sid not in {x.get("id") for x in manual}:
-            manual.append({"id": sid, **m, "done_by": None})
-            notes.append(f"{path.name}: {sid} is missing – added as open, every release needs it")
+            agent = team.signers.get(sid)
+            manual.append({"id": sid, **m, "done_by": None,
+                           **({"agent": agent.name, "replaces": agent.replaces} if agent else {})})
+            notes.append(f"{path.name}: {sid} is missing – added as open, " + (
+                "every release needs it" if sid in REQUIRED else
+                f"the project agent {agent.name} signs it ([agents.{agent.name}])"))
     warns, gone = lapsed(cfg, [a for a in s.get("accepted_warnings", []) if valid.get(a.get("scope", "circuit"))])
     return {**s, "manual": manual, "accepted_warnings": warns, "lapsed_warnings": gone}, notes
 
@@ -499,6 +510,51 @@ def write_manifest(cfg, outdir, head, decision):
     return files
 
 
+# --- the sign-offs of the project's agents ([agents.<name>], handbook 8.6) --------------------------------------------
+
+def required(cfg, team=None):
+    """The manual checks every release needs (REQUIRED), then the sign-offs of the project's agents with an ID of their
+    own (scripts.agents, team) in the phase and scope of their entry: {id: {phase, scope, text}}. An agent that takes
+    over one of edakit's reviews (replaces) signs that one – REQUIRED has it."""
+    from .. import scripts
+    team = team or scripts.agents(cfg)
+    return {**REQUIRED, **{sid: {"phase": a.phase, "scope": a.scope,
+                                 "text": (f"{a.about} – " if a.about else "") + f"the project agent {a.name}, in its "
+                                                                                 "own session"}
+                           for sid, a in team.signers.items() if not a.replaces}}
+
+
+def held(m, agent, name, notes):
+    """A manual check of the sign-off file (its name) that a project agent signs: one of its own in the phase and scope
+    of the agent's entry – signed for another binding it does not count –, and every one only signed by the agent:
+    done_by names it (scripts.names_agent). The entry gets the agent and the edakit agent it replaces."""
+    from .. import scripts
+    if agent is None:
+        return m
+    m = {**m, "agent": agent.name, "replaces": agent.replaces}
+    was = (m.get("phase", "export"), m.get("scope", "circuit"))
+    if not agent.replaces and was != (agent.phase, agent.scope):
+        if m.get("done_by"):
+            notes.append(f"{name}: {m['id']} has phase {was[0]} and scope {was[1]}, [agents.{agent.name}] phase "
+                         f"{agent.phase} and scope {agent.scope} – signed for another binding, it does not count")
+        m.update(phase=agent.phase, scope=agent.scope, done_by=None)
+    elif m.get("done_by") and not scripts.names_agent(m["done_by"], agent.name):
+        notes.append(f"{name}: {m['id']} is signed by {m['done_by']} – [agents.{agent.name}]: the project agent "
+                     f"{agent.name} signs it" + (f" in place of {agent.replaces}" if agent.replaces else "")
+                     + "; it does not count")
+        m["done_by"] = None
+    return m
+
+
+def signer(m):
+    """Who signs an open manual check that a project agent signs, for its line in section 6 – nothing when its text
+    names the agent already."""
+    from .. import scripts
+    if not m.get("agent") or m.get("done_by") or scripts.names_agent(m.get("text"), m["agent"]):
+        return ""
+    return f" – the project agent {m['agent']} signs it" + (f", in place of {m['replaces']}" if m.get("replaces") else "")
+
+
 # --- one current release ------------------------------------------------------------------------------------------
 
 class ReleaseError(Exception):
@@ -724,7 +780,7 @@ def write_protocol(cfg, outdir, head, rows, sim, signoff, notes, decision, reaso
             L.append(f"**{title}**\n")
             for m in items:
                 by = (f" – {m['done_by']}, {m.get('date')}" + (f": {m['note']}" if m.get("note") else "")) if m.get("done_by") else ""
-                L.append(f"- [{'x' if m.get('done_by') else ' '}] {m['id']} {m['text']}{by}")
+                L.append(f"- [{'x' if m.get('done_by') else ' '}] {m['id']} {m['text']}{signer(m)}{by}")
             L += answered
             L.append("")
     L += [f"- note: {n}" for n in notes + sheet_notes]
@@ -798,6 +854,7 @@ def main(cfg, args):
 
     # project scripts (8.6), stage G: entries that do not resolve and an outdated input fail
     rows += scripts.gate_rows(cfg)
+    rows += scripts.agent_rows(cfg)     # project agents (8.6), stage G: entries that do not resolve fail
 
     step("E simulation")
     sim_cfg, _ = simrun.load_sim_config(cfg)

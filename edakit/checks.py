@@ -86,7 +86,9 @@ edakit check also resolves the project's scripts ([scripts.*] of edakit.toml, wi
 with edakit's steps into one order and compares their stamps (hardware/scripts.lock), with the ID scripts – no check
 of the catalog (scripts.py, handbook 8.6): what keeps the entries from one order is an error, as an input that is
 outdated or never ran; a derive or easyeda script outdated or never run is a warning, what was not compared a note.
-The gate reports the same in stage G.
+The project's agents ([agents.*]) are checked too, with the ID agents: an agent file that is missing, a sign-off that
+is not the agent's to sign, an after that names no agent – each an error (scripts.agents). The gate reports the same
+in stage G.
 
 Rule, reason, fix and sources of every check: rules.json (`edakit rules G-4`). A failed check is explained once
 below the findings. A finding listed in "waive" of the net or component is accepted on purpose and reported with
@@ -1200,6 +1202,8 @@ def main(cfg, args):
     rep.errors += [("scripts", m) for level, m in found if level == "error"]
     rep.warnings += [("scripts", m) for level, m in found if level == "warning"]
     rep.notes += [("scripts", m) for level, m in found if level == "note"]
+    team = scripts.agents(cfg).findings if cfg.agents else []     # [agents.*]: what each signs, where it reviews
+    rep.errors += [("agents", f.msg) for f in team]
     for check, msg in rep.errors:
         print(f"ERROR   {check}  {msg}")
     for check, msg, reason in rep.waived:
@@ -1220,6 +1224,10 @@ def main(cfg, args):
         print("\nProject scripts: the entries [scripts.<name>] of edakit.toml – what each script reads and writes – "
               "resolve into one order with edakit's steps; a script that is outdated or never ran runs again by hand – "
               "its cmd –, then edakit scripts stamp <name> records the run (handbook 8.6)")
+    if team:
+        print("\nProject agents: each entry [agents.<name>] of edakit.toml names its agent file and what the agent signs "
+              "– a sign-off of its own, or one of edakit's reviews in place of edakit's agent (replaces); edakit scripts "
+              "shows who reviews where (handbook 8.6)")
     groups = d.bridge_groups()
     if groups:
         print("joined by 0 Ω bridges, checked as one net: " + "; ".join(

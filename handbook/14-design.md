@@ -15,6 +15,7 @@ to a graph – and about the knowledge the checks are made of.
 | PCB designer | a session of its own with the skill `pcb-round` | works from the hand-over: EasyEDA schematic, PCB, and in its board file `hardware/boards/<name>.toml` placement plan, routing, silkscreen; does not change the graph |
 | EasyEDA operator | agent `easyeda-operator` | runs one long EasyEDA step for the PCB designer and returns only the result |
 | PCB reviewer | agent `pcb-reviewer`, its own session | reads plan, hand-over, routing and the copper of every layer from the Gerber files, changes nothing, returns numbered findings with probability and cost – at the end of every layout round that changed placement, routing or pours, and on the gate run's files as the sign-off M-5 |
+| project reviewer | an agent of the project (`[agents.<name>]` in edakit.toml, 8.6), its own session | reviews with the project's own knowledge and changes nothing: in place of the edakit reviewer it replaces (`replaces`) – the reference project's pcb-pruefer reviews the rounds and signs M-5 –, or for a sign-off of its own (M-7) at its hook point; its sign-off counts only signed by it |
 | decider | the user | answers the decision rounds: warnings, requirements, looks and operation, money, what becomes a check |
 
 No role checks its own work: a second opinion from the session that made the decisions repeats the decisions; the

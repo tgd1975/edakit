@@ -2,9 +2,10 @@
 
 Status 2026-10-28: being built; the state of each step is in [implementation-plan.md](implementation-plan.md). It was
 checked against edakit `a8b6011` (with PRs #78 and #79); edakit had built pieces it builds on: the firmware contract
-(#70), a stamp on the simulation result, the fab hash (#65) and the mechanical model (#62). All decisions are taken: 1–8
-and 12 on 2026-10-28, 9 by #70. The rules that resolve a project's entries into a DAG were tried with a prototype on the
-reference project and the Christmas bell ([prototypes/project-scripts](prototypes/project-scripts/)).
+(#70), a stamp on the simulation result, the fab hash (#65) and the mechanical model (#62). Decisions 1–8 and 12 were
+taken on 2026-10-28, 9 by #70; 13, decided by Claude in step 3.2, waits for the user's confirmation. The rules that
+resolve a project's entries into a DAG were tried with a prototype on the reference project and the Christmas bell
+([prototypes/project-scripts](prototypes/project-scripts/)).
 
 ## Why
 
@@ -126,7 +127,8 @@ for agents: the circuit review before the layout (`circuit`), the round review a
 layout review between the first and the second gate run (`fab`), or after delivery. Since #73 every layout round that
 changed placement, routing or pours ends with pcb-reviewer on the round's Gerber export; that review is no sign-off.
 With `replaces` an agent takes the place of edakit's agent: one that replaces pcb-reviewer reviews the rounds too and
-signs M-5 on the fab hash. In phase `order` the owner checks at JLCPCB; no agent gets there.
+signs M-5 on the fab hash. The gate counts a sign-off a project agent signs only when `done_by` names that agent
+(decision 13). In phase `order` the owner checks at JLCPCB; no agent gets there.
 
 The reference project would take over the two reviews it already has agents for:
 
@@ -664,6 +666,7 @@ technical point the user left to Claude and then confirmed.
 | 10 | May a project agent take over a review of edakit (`replaces`)? | Yes, but only explicitly with `replaces`; otherwise an ID of its own. The reference project needs it for `elektrotechniker` and `pcb-pruefer` | accepted |
 | 11 | Register a project's skills? | No: no step, no inputs and outputs to check, and Claude Code finds them by itself | accepted |
 | 12 | What does an `easyeda` script change: `footprints:<b>` or a name of its own? | `project-library:<b>`, the library `pcb parts` takes the parts from; `footprints:<b>` stays the geometry `pcb dump` measures | decided by Claude on 2026-10-28, built in step 1.3 |
+| 13 | Does the gate hold the sign-off a project agent signs – its own, or edakit's review it replaces – to `done_by`? | Yes: it counts only when `done_by` names the agent (its name as a word, in any case: "Agent pcb-pruefer (own session)"), one of its own only in the phase and scope of the agent's entry; signed by edakit's agent once a project agent took its place, it is open, with a note in section 6. Otherwise `replaces` would change only the skills, and the gate could not tell the reviews apart. Without `[agents]` nothing is checked | decided by Claude in step 3.2, built there; waits for the user's confirmation |
 
 ## Sources
 

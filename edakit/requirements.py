@@ -304,14 +304,15 @@ NOT_HERE = "not evaluated here – edakit req shows verify as written; the gate 
 
 def manual_checks(cfg):
     """(the IDs of the manual checks a requirement may name, the sign-off file as messages name it): the sign-off
-    file's, then the ones every release needs (the gate's REQUIRED). A file that cannot be read lists none."""
-    from .release.gate import REQUIRED
+    file's, then the ones every release needs (the gate's required: REQUIRED and the sign-offs of the project's agents,
+    [agents.<name>]). A file that cannot be read lists none."""
+    from .release.gate import required
     try:
         manual = json.loads(cfg.signoff.read_text(encoding="utf-8")).get("manual", [])
     except (OSError, ValueError, AttributeError):
         manual = []
     ids = [m["id"] for m in manual if isinstance(m, dict) and isinstance(m.get("id"), str)]
-    return list(dict.fromkeys(ids + list(REQUIRED))), cfg.relative(cfg.signoff)
+    return list(dict.fromkeys(ids + list(required(cfg)))), cfg.relative(cfg.signoff)
 
 
 def unresolved(kind, text, cfg, catalog, signoffs):

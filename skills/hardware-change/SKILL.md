@@ -65,7 +65,9 @@ edakit handover 2>&1 | cat         # what the PCB designer gets
 ```
 
 A change of parts or of the power path is reviewed before the hand-over: the agent electrical-reviewer in its own
-session, on this state – the changed circuit and the hand-over. Its findings are fixed or decided (skill
+session, on this state – the changed circuit and the hand-over. With `[agents.<name>]` in edakit.toml (handbook 8.6) the
+project agent that replaces it (`replaces`) reviews in place of electrical-reviewer, and the project's agents of the
+circuit review beside it: `edakit scripts 2>&1 | cat` shows who reviews where. Its findings are fixed or decided (skill
 decision-round) first; the PCB designer takes over the reviewed state and the review's result, not a circuit whose
 review is still to come after the layout. The release sign-offs stay as they are (skill release).
 

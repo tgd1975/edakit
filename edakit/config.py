@@ -71,6 +71,10 @@ DOCS_KEYS = ("files", "decimal")                     # [docs]: Markdown files wi
 # resolves the entries with edakit's steps into one order (edakit check, handbook 8.6)
 SCRIPT_KEYS = ("kind", "cmd", "about", "reads", "writes", "after", "check", "id", "phase", "at", "advisory")
 
+# [agents.<name>]: a project agent – a sign-off of its own, or one of edakit's reviews it takes over (replaces);
+# edakit/scripts.py checks what it signs and where it reviews (edakit check, handbook 8.6)
+AGENT_KEYS = ("file", "about", "signs", "replaces", "scope", "phase", "after")
+
 
 class ConfigError(Exception):
     pass
@@ -192,6 +196,7 @@ class Config:
     extras: list = field(default_factory=list)   # [[extra]]: items off the board – cost estimate and carts
     firmware: dict | None = None  # [firmware] with its defaults; None without the table: no contract
     scripts: dict = field(default_factory=dict)   # [scripts.<name>] as written: name -> entry (edakit/scripts.py)
+    agents: dict = field(default_factory=dict)    # [agents.<name>] as written: name -> entry (edakit/scripts.py)
     docs: list = field(default_factory=list)   # [docs] files: Markdown files whose value blocks edakit docs reads
     docs_decimal: str = "."                    # [docs] decimal: "." or "," in quoted numbers
 
@@ -661,6 +666,28 @@ def _scripts(scripts):
     return out, problems
 
 
+def _agents(agents):
+    """[agents.<name>]: (entries as written, problems). Here only their form – known keys, strings, after a list of
+    agent names; what each signs and where it reviews is edakit check's (edakit/scripts.py)."""
+    if agents is None:
+        return {}, []
+    if not isinstance(agents, dict):
+        return {}, ["[agents] must be tables [agents.<name>] with file, about, signs, phase, …"]
+    out, problems = {}, []
+    for name, a in agents.items():
+        where = f"[agents.{name}]"
+        if not isinstance(a, dict):
+            problems.append(f"[agents] {name}: a table [agents.{name}] with file, about, signs, phase, … – not a value")
+            continue
+        problems += _unknown(where, a, AGENT_KEYS)
+        problems += [f"{where} {k} must be a string" for k in AGENT_KEYS if k != "after" and k in a
+                     and not isinstance(a[k], str)]
+        if "after" in a and not (isinstance(a["after"], list) and all(isinstance(v, str) and v for v in a["after"])):
+            problems.append(f"{where} after must be a list of agent names")
+        out[name] = dict(a)
+    return out, problems
+
+
 def _requirements(p, root):
     """[project] requirements: the requirements file of `edakit req` – a path, or a list of paths: a variant names the
     main project's file and its own. Relative to edakit.toml. Returns (paths, problems); without the key no file."""
@@ -704,7 +731,7 @@ def load(path=None) -> Config:
 
     moved = _one_file_form(raw, path.name)
     problems = _unknown(path.name, raw, ("project", "boards", "release", "cost", "extra", "firmware", "docs",
-                                         "scripts"),
+                                         "scripts", "agents"),
                         ("schematic", "checks", "net_classes", "sim"))
     problems += _unknown("[project]", p, PROJECT_KEYS, ("ground",))
     problems += _unknown("[release]", raw.get("release", {}), RELEASE_KEYS, ("signoff",))
@@ -724,6 +751,8 @@ def load(path=None) -> Config:
         problems.append('[docs] decimal must be "." or ","')
 
     scripts, bad = _scripts(raw.get("scripts"))       # [scripts.<name>]: their form; the order is edakit check's
+    problems += bad
+    agents, bad = _agents(raw.get("agents"))          # [agents.<name>]: their form; what they sign is edakit check's
     problems += bad
 
     files = {}
@@ -790,6 +819,7 @@ def load(path=None) -> Config:
         extras=list(raw.get("extra", [])),
         firmware=_firmware(raw["firmware"]) if "firmware" in raw else None,
         scripts=scripts,
+        agents=agents,
         docs=list(doc_files),
         docs_decimal=raw.get("docs", {}).get("decimal", "."),
     )

@@ -522,3 +522,28 @@ def test_scripts_entries(tmp_path):
     (tmp_path / "edakit.toml").write_text('[project]\nname = "t"\n[boards.main]\n[scripts]\nkind = "input"\n')
     with pytest.raises(ConfigError, match=r"\[scripts\] kind: a table \[scripts.kind\]"):
         load(tmp_path / "edakit.toml")
+
+
+def test_agents_entries(tmp_path):
+    """[agents.<name>]: the project's agents as written – what each signs and when it reviews is edakit check's
+    (test_agents.py). Red before step 3.2: [agents] was an unknown key of edakit.toml."""
+    (tmp_path / "edakit.toml").write_text('[project]\nname = "t"\n[boards.main]\n')
+    assert load(tmp_path / "edakit.toml").agents == {}                    # no key, no change
+    pruefer = ('[agents.pcb-pruefer]\nfile = ".claude/agents/pcb-pruefer.md"\nabout = "the tree board"\n'
+               'signs = "M-5"\nreplaces = "pcb-reviewer"\nphase = "export"\nafter = ["optik"]\n')
+    (tmp_path / "edakit.toml").write_text('[project]\nname = "t"\n[boards.main]\n' + pruefer)
+    assert load(tmp_path / "edakit.toml").agents == {"pcb-pruefer": {
+        "file": ".claude/agents/pcb-pruefer.md", "about": "the tree board", "signs": "M-5", "replaces": "pcb-reviewer",
+        "phase": "export", "after": ["optik"]}}
+    for bad, msg in (('sings = "M-7"', r"\[agents.a\]: unknown key 'sings' \(known: file, about, signs, replaces, "
+                                       r"scope, phase, after\)"),
+                     ('signs = 7', r"\[agents.a\] signs must be a string"),
+                     ('scope = ["layout"]', r"\[agents.a\] scope must be a string"),
+                     ('after = "optik"', r"\[agents.a\] after must be a list of agent names"),
+                     ('after = ["optik", ""]', r"\[agents.a\] after must be a list of agent names")):
+        (tmp_path / "edakit.toml").write_text(f'[project]\nname = "t"\n[boards.main]\n[agents.a]\n{bad}\n')
+        with pytest.raises(ConfigError, match=msg):
+            load(tmp_path / "edakit.toml")
+    (tmp_path / "edakit.toml").write_text('[project]\nname = "t"\n[boards.main]\n[agents]\nsigns = "M-7"\n')
+    with pytest.raises(ConfigError, match=r"\[agents\] signs: a table \[agents.signs\]"):
+        load(tmp_path / "edakit.toml")

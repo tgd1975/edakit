@@ -39,13 +39,19 @@ Concept: `${CLAUDE_PLUGIN_ROOT}/handbook/08-release-gate.md`.
    critical parts again against their datasheets with the polarity sheet; M-6 – agent regulatory-reviewer checks circuit
    and parts against the rules for the purpose in the graph (usually done at the hand-over already; it counts as long as
    the circuit hash is the same) – support, not legal advice, and you say so when you report it; M-5 – agent
-   pcb-reviewer checks the layout on the manufacturing files of this run. OK → `done_by` = the agent, date, note – with
-   `[project] requirements` the note names every requirement the check found met, as the agent's line gives them
-   ("requirements met: R-4, R-5"; `verify = [{ signoff = "M-1" }]`, handbook 8.7) –, and the hash of its scope from the
-   protocol header into the sign-off file – for scope `fab` (M-5, M-2) the `fab_sha256` of the run whose files were
-   reviewed; a later run with the same files – and the same thickness, colours, finish and mark of `[order]` – keeps it.
-   When it lapsed: `edakit fab diff <reviewed run> <new run>` shows what changed, and the review looks at that. Not OK →
-   fix the cause and check again. What changes looks or operation is the user's call (decision-round skill).
+   pcb-reviewer checks the layout on the manufacturing files of this run. With `[agents.<name>]` in edakit.toml
+   (handbook 8.6), `edakit scripts 2>&1 | cat` shows who reviews where: a project agent signs the review it replaces
+   (`replaces`) in place of edakit's agent, and a project agent's sign-off of its own of phase export – scope `fab` at
+   this review, `circuit` and `layout` at their hook point and here again once lapsed – is required like M-5: the gate
+   adds it as open. A sign-off a project agent signs counts only when `done_by` names that agent ("agent pcb-pruefer");
+   signed by edakit's agent, or for another scope than the agent's entry gives, it is open (a note in section 6 says
+   why). OK → `done_by` = the agent, date, note – with `[project] requirements` the note names every requirement the
+   check found met, as the agent's line gives them ("requirements met: R-4, R-5"; `verify = [{ signoff = "M-1" }]`,
+   handbook 8.7) –, and the hash of its scope from the protocol header into the sign-off file – for scope `fab` (M-5,
+   M-2) the `fab_sha256` of the run whose files were reviewed; a later run with the same files – and the same thickness,
+   colours, finish and mark of `[order]` – keeps it. When it lapsed: `edakit fab diff <reviewed run> <new run>` shows
+   what changed, and the review looks at that. Not OK → fix the cause and check again. What changes looks or operation
+   is the user's call (decision-round skill).
 6. **RELEASED:** `fab/manifest.json` says `"released": true`, and the run is the current release – the gate marked
    every earlier released run as superseded (`edakit release current` shows it). Archive the folder in git
    (`git add -f`) together with the superseded manifests through the project's git workflow. A released run that must
@@ -76,5 +82,6 @@ The MCP server cannot order on purpose. Checklist for the user:
 
 After delivery: acceptance test of every board (M-4), with the datasheet points section 6 of the protocol lists
 under "after delivery, per board" (`verified.open` with `when`), the project's checks of phase acceptance there (each
-with its command) and, with `[project] requirements`, the acceptance steps of the requirements (`- [ ] R-4: …`);
-M-4's note names the requirements it tested.
+with its command), the project agents of phase acceptance (`- [ ] M-8 … – the project agent kamera`: start it in its
+own session, its OK signs the line, `done_by` = the agent) and, with `[project] requirements`, the acceptance steps of
+the requirements (`- [ ] R-4: …`); M-4's note names the requirements it tested.

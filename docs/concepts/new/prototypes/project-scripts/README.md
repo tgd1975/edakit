@@ -24,3 +24,15 @@ builds the real check from it, with these differences:
 - edakit's messages are English; the prototype's are German.
 - `art_assumed` is a key of the prototype only. It stands in for the `[[silk.art]]` of a board file that does not
   exist yet.
+
+Step 3.2 built the agent rules of `test_agents.py` into `tests/test_agents.py` (`agents` in `edakit/scripts.py`), with
+these differences:
+
+- The scope `fab` joins `circuit` and `layout`. A sign-off of its own reviews by its scope: `circuit` at the circuit
+  review, `layout` at the round review, `fab` between the first and the second gate run – the prototype put `layout`
+  there.
+- `after` is a list of agent names, as for scripts; rule 7 also refuses an `after` that names an agent reviewing only
+  later, at a hook point after this one's.
+- edakit checks more than the prototype: the `name` in the agent file's front matter is the entry's, no project agent
+  is named like an edakit reviewer, edakit's review takes neither `scope` nor phase `acceptance`, and `signs` is a
+  sign-off, `M-<number>`.

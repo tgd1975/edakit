@@ -8,7 +8,7 @@ are. What one role decides lives in a file of its own, with one owner and one ha
 
 | File | Content | Written by | Hash |
 |---|---|---|---|
-| `edakit.toml` | project, boards with their EasyEDA documents, where the files are, release settings, the project's scripts | new-project, the user | – |
+| `edakit.toml` | project, boards with their EasyEDA documents, where the files are, release settings, the project's scripts and agents | new-project, the user | – |
 | `hardware/requirements.toml` | what the circuit must do: needs and requirements with their evidence (3.6, 10.4), with `[project] requirements` | the skill requirements drafts, only the user accepts | circuit |
 | `hardware/graph.json` | the circuit with its purpose, the hand-over to the layout, the ground net and the check settings (3.1) | circuit designer | circuit |
 | `hardware/parts/`, `hardware/sim.json` | parts database (4), simulation scenarios (5) | part-selector, circuit designer | circuit |
@@ -142,6 +142,25 @@ the other kinds yet. Without the table nothing changes.
 
 A field of another kind is a finding of `edakit check`, a key no kind has an error of edakit.toml.
 
+### [agents.&lt;name&gt;]
+
+Optional: an agent of the project – it signs a sign-off of its own, or takes over one of edakit's reviews (8.6).
+`edakit check` and the gate check the entries (ID `agents`), the gate requires their sign-offs – each counts only when
+`done_by` names its agent (8.2) –, and `edakit scripts` shows who reviews where, for the skills that start the agents.
+Without the table nothing changes.
+
+| Key | For | Meaning |
+|---|---|---|
+| `file` | every agent | the agent file, relative to edakit.toml, e.g. `.claude/agents/pcb-pruefer.md`: it exists, and the `name` in its front matter is the entry's name – the skills start the agent by it |
+| `about` | every agent | one sentence what the agent checks |
+| `signs` | every agent | the sign-off its OK is: an ID of its own, `M-<number>` (`M-7`), or edakit's review it takes over – `M-1`, `M-5`, `M-6` – with `replaces`; never the owner's `M-2` or `M-4`; one agent per sign-off |
+| `replaces` | with `M-1`, `M-5`, `M-6` | the edakit agent it takes the place of, at each of its hook points: `electrical-reviewer` (M-1), `pcb-reviewer` (M-5 – the round reviews too), `regulatory-reviewer` (M-6) |
+| `scope` | with an ID of its own | `circuit`, `layout` or `fab`: the hash its sign-off is bound to (8.2), and where it reviews – the circuit review before the layout, the round review after a layout round, the layout review between the two gate runs (8.6). edakit's review keeps the scope of the sign-off file |
+| `phase` | every agent | `export`: the release waits for its sign-off; `acceptance`: a line of the acceptance list after delivery (8.5), whatever its scope. edakit's review: `export` |
+| `after` | every agent (optional) | other entries of `[agents]` this one reviews after, at a hook point both review at; not one that reviews only later |
+
+A key no agent has is an error of edakit.toml; what an entry signs and where it reviews is checked by `edakit check`.
+
 ## 10.2 The board file
 
 `hardware/boards/<name>.toml`: what the PCB designer decides (14.1). The layout hash covers it, the SVGs its
@@ -262,7 +281,7 @@ Claude Code: `edakit … 2>&1 | cat`. The long commands – `route all`, `gate`,
 
 | Command | EasyEDA | Reads | Writes |
 |---|---|---|---|
-| `edakit check [--release] [--json F]` | – | graph, parts (pins, identity P-6), pin table; if there: footprint geometry and library footprints (P-7, P-8), library symbols (P-1); `[scripts]`, `[[release.stages]]` and `sim_plugin` with the board files' `[[silk.art]]`, `hardware/scripts.lock` and what the scripts read (8.6); with `[project] requirements` the requirements files and the sign-off file's manual checks (G-20 to G-23; a file missing or not valid: exit 1) | – |
+| `edakit check [--release] [--json F]` | – | graph, parts (pins, identity P-6), pin table; if there: footprint geometry and library footprints (P-7, P-8), library symbols (P-1); `[scripts]`, `[[release.stages]]` and `sim_plugin` with the board files' `[[silk.art]]`, `hardware/scripts.lock` and what the scripts read (8.6); `[agents]` and the agent files (8.6); with `[project] requirements` the requirements files and the sign-off file's manual checks (G-20 to G-23; a file missing or not valid: exit 1) | – |
 | `edakit rules [ID …]` | – | the rule catalog (no project needed) | – |
 | `edakit hints [--json F]` | – | graph, parts, sim config | – |
 | `edakit block list\|show NAME` | – | the block library (no project needed) | – |
@@ -281,7 +300,7 @@ Claude Code: `edakit … 2>&1 | cat`. The long commands – `route all`, `gate`,
 | `edakit docs [--write]` | – | `[docs] files`, the schematic notes, graph, parts; for `sim:` the saved simulation result (or a new run); for `req:` the files of `[project] requirements` | with `--write` the value blocks of `[docs] files` |
 | `edakit firmware [--check]` | – | graph, parts, `[firmware]`; for `state_sha256` the files of the circuit hash | `[firmware] out` (not with `--check`: exit 2 on drift) |
 | `edakit req [ID …]` | – | the files of `[project] requirements` (10.4) | – (prints the needs and requirements with status, binding and `verify` as written – the gate evaluates it, 8.7; with IDs the chain of each, 3.6); exit 1 without the key, with a file missing or not valid, or an ID not in the files |
-| `edakit scripts` | – | `[scripts]`, `[[release.stages]]`, `sim_plugin`, the board files' `[[silk.art]]`, `hardware/scripts.lock`, what the scripts read (8.6) | – (prints every script with kind, state – current, outdated, never run –, about, cmd and its last run; the order; exit 2 when one is outdated or never ran or the entries do not resolve, 1 when the lock cannot be read) |
+| `edakit scripts` | – | `[scripts]`, `[[release.stages]]`, `sim_plugin`, the board files' `[[silk.art]]`, `hardware/scripts.lock`, what the scripts read; `[agents]` and the agent files (8.6) | – (prints every script with kind, state – current, outdated, never run –, about, cmd and its last run; the order; with `[agents]` every agent with what it signs, and who reviews where – each hook point with its agents in the order to start them; exit 2 when a script is outdated or never ran or the entries of `[scripts]` or `[agents]` do not resolve, 1 when the lock cannot be read) |
 | `edakit scripts stamp NAME …` | – | the same | `hardware/scripts.lock`: the stamp of each script named – it ran by hand; refused, writing nothing, for a check, entries that do not resolve, or a script whose `writes` are not there |
 | `edakit handover [--board B]` | – | graph, parts, sign-offs | – |
 | `edakit schematic create [--board] [--only] [--dry-run] [--save] [--create-project] [--refresh-devices]` | ✓ | graph | template, `device_cache.json`, `schematic_map_<name>.json`; `--save` only when the netlist equals the graph (6.1) |
@@ -329,6 +348,7 @@ hardware/boards/<name>.geometry.json
 hardware/signoff.json       manual checks and accepted warnings, bound to hashes
 hardware/firmware.json      the firmware contract, if [firmware] is set (edakit firmware)
 hardware/scripts.lock       the stamps of the project scripts, if [scripts] is set (edakit scripts stamp)
+.claude/agents/<name>.md    the project's own agents; those that sign a sign-off are registered in [agents]
 docs/decisions.md           numbered decisions (or wherever the project keeps them)
 build/edakit/               artifacts (not versioned): caches, previews, routing, exports, cost.json;
                             library/ and footprints/: the library's symbols and footprints (edakit part import);

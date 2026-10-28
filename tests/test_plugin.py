@@ -186,6 +186,25 @@ def test_every_layout_round_and_circuit_hand_over_ends_with_its_review():
         assert words in hand_over, words
 
 
+def test_the_skills_start_the_projects_agents_where_edakit_scripts_says():
+    """Step 3.2: a project agent ([agents.<name>], handbook 8.6) reviews at its hook point, and one with replaces in
+    place of the edakit agent it replaces – the skills that start reviewers learn from edakit scripts who reviews where,
+    and the gate counts a project agent's sign-off only when done_by names it."""
+    skills = ROOT / "skills"
+    places = {
+        "circuit review": section(skills / "circuit-design" / "SKILL.md", "7. Hand over"),
+        "circuit review, again": section(skills / "hardware-change" / "SKILL.md", "3. Hand-over to the layout"),
+        "round review": step(section(skills / "pcb-round" / "SKILL.md", "Round", raw=True), 5),
+        "layout review": step(section(skills / "release" / "SKILL.md", "Procedure", raw=True), 5),
+    }
+    for place, text in places.items():
+        for words in ("[agents.<name>]", "edakit scripts", "who reviews where", "in place of", "replaces"):
+            assert words in text, (place, words)
+    assert "done_by" in places["layout review"] and "names" in places["layout review"]
+    delivery = flat((skills / "release" / "SKILL.md").read_text(encoding="utf-8").split("After delivery:")[1])
+    assert "project agents of phase acceptance" in delivery
+
+
 def test_the_layout_review_reads_the_rounds_copper_per_layer():
     sources = section(ROOT / "agents" / "pcb-reviewer.md", "Sources")
     assert "gerber_<board>" in sources and "silk apply" in sources

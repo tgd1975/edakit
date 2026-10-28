@@ -23,7 +23,7 @@ Before each stage – each project check, and with `--easyeda` each board of sta
 | Stage | What | Checks |
 |---|---|---|
 | P – Parts | parts database complete and signed, every part named by its entry, through-hole leads fitting their holes and, formed for the board, fitting only one way round, own parts equal to their source, parts orderable, a supplier per part | P-1, P-3, P-4, P-5, P-6, P-7, P-8, G-9 (chapter 3, 4) |
-| G – Graph | rule checks; with quoted values (6.6) G-19 on this run's simulation; with `[project] requirements` the requirements file (3.6); the project scripts: their entries resolve into one order, their results are current (8.6) | G-1 … G-23 (chapter 3), `scripts` |
+| G – Graph | rule checks; with quoted values (6.6) G-19 on this run's simulation; with `[project] requirements` the requirements file (3.6); the project scripts: their entries resolve into one order, their results are current; the project agents: their entries resolve (8.6) | G-1 … G-23 (chapter 3), `scripts`, `agents` |
 | E – Simulation | operating points, stress, function, every LED checked, transient runs; with sim.json `copper` on the routing of `edakit route` as it is | E-1 … E-5 (chapter 5) |
 | *project checks* | e.g. K – the board fits its stand | `[scripts.<name>]` of kind `check`, phase `export`, and `[[release.stages]]` – see below |
 | S – Schematic | EasyEDA schematic = graph | S-2 per board |
@@ -263,7 +263,10 @@ no key to switch them off.
 | M-5 | export | fab | the layout review on the manufacturing files of a gate run – agent pcb-reviewer |
 
 A sign-off file that lists one of them keeps its own phase, scope and text (an older M-5 with scope `layout` stays
-so). Not everything that can be ordered may be sold or even operated in the EU, and nothing else in the gate looks at
+so). A project's agents (`[agents.<name>]`, 8.6) add to the list: a sign-off of its own of phase `export` – M-7 of the
+agent optik – is required the same way, in the phase and bound to the hash of the scope the agent's entry gives; with
+`replaces` edakit's review stays required and the project agent signs it. Such a sign-off counts only when its
+`done_by` names the agent. Not everything that can be ordered may be sold or even operated in the EU, and nothing else in the gate looks at
 that (M-6).
 
 The lesson behind M-5: the first released run of the reference project had passed every automatic check, and nobody
@@ -279,7 +282,7 @@ finding its probability and its cost; a deviation without a realistic consequenc
 ## 8.3 The decision
 
 RELEASED only if every stage ran, no check failed, every warning is accepted, every part is signed, every manual check
-of phase `export` is signed – all for the current hashes – and, with `[project] requirements`, every requirement
+of phase `export` is signed – a project agent's by that agent (8.6), all for the current hashes – and, with `[project] requirements`, every requirement
 `must` the user has accepted has passing evidence and every accepted `should` without it is accepted like a warning
 (8.7); a draft binds nothing yet. Otherwise NOT RELEASED with the reasons. Exit 0 / 2. Every project check of phase `export` is a stage (8.1): it has to run – one after F runs only
 with `--easyeda` – and pass, unless it is advisory; a check of phase `order` or `acceptance` does not hold up the
@@ -410,11 +413,13 @@ current at the nominal voltage against the simulated value, every LED/output, ev
 Deviation beyond tolerance → find the cause (model, firmware, assembly) before the board is used.
 
 The list is section 6 of the protocol, "after delivery, per board": M-4, the datasheet points with `when =
-"acceptance"` (8.2), with `[project] requirements` every acceptance step of a requirement with its ID, and the
-project's checks of phase `acceptance` (8.1), each with its command:
+"acceptance"` (8.2), with `[project] requirements` every acceptance step of a requirement with its ID, the project's
+checks of phase `acceptance` (8.1), each with its command, and the sign-offs of the project's agents of phase
+`acceptance` (8.6), each with the agent that signs it – started in its own session after delivery:
 
 ```text
 - [ ] M-4 Acceptance test of every delivered board: visual check, supply current, every LED, the button
+- [ ] M-8 Photos of every delivered board against the polarity sheet – the project agent fotos, in its own session
 - [ ] R-1: on the USB port of a laptop: all eight LEDs on, the port stays on
 - [ ] A abnahme: Camera test of every board after delivery: each LED at its place – `uv run simulator/pico/pruefstand.py mitlesen`
 ```
@@ -423,7 +428,7 @@ M-4 works through it and names the requirements it tested in its note; signed, i
 and the requirements whose evidence is such a check (8.7). The list "after uploading to the manufacturer, before
 paying" works the same way for M-2: the datasheet points with `when = "order"` and the checks of phase `order`.
 
-## 8.6 Project scripts
+## 8.6 Project scripts and agents
 
 A project registers in edakit.toml the scripts that touch edakit's flow (`[scripts.<name>]`, 10.1): one that writes a
 file edakit reads, derives something from edakit's data, changes the project library in EasyEDA, or holds up the
@@ -560,6 +565,96 @@ resolve, 1 when the lock cannot be read. `stamp` refuses – and writes nothing 
 check, entries that do not resolve, and a script whose `writes` are not there ("run it first"); it drops the stamps of
 scripts no longer in `[scripts]`. What the author leaves out of `reads` is not noticed – the system font the bell's
 `make_art.py` draws with –, and the entry's `check`, an exact check for when the stamp is not enough, does not run yet.
+
+**Project agents.** A project registers its own agents in edakit.toml too (`[agents.<name>]`, 10.1). An agent
+delivers a sign-off, and a sign-off is bound to a hash: a project agent signs a sign-off of its own, in addition to
+edakit's, or takes over one of edakit's reviews – only explicitly, with `replaces`. The reference project's two
+reviewers, and an agent with a sign-off of its own:
+
+```toml
+[agents.elektrotechniker]
+file     = ".claude/agents/elektrotechniker.md"
+about    = "Checks circuit and hand-over with the project's knowledge: graph, parts, simulation, datasheets"
+signs    = "M-1"
+replaces = "electrical-reviewer"
+phase    = "export"
+
+[agents.pcb-pruefer]
+file     = ".claude/agents/pcb-pruefer.md"
+about    = "Checks the tree board for manufacturability, mechanics, operation and looks"
+signs    = "M-5"
+replaces = "pcb-reviewer"
+phase    = "export"
+
+[agents.optik]
+file  = ".claude/agents/optik.md"
+about = "Looks of the visible side: calm, symmetric, few tracks"
+signs = "M-7"                  # a sign-off of its own
+scope = "layout"               # bound to the layout hash – it reviews at the round review
+phase = "export"               # the release waits for it
+after = ["pcb-pruefer"]
+```
+
+Where an agent reviews follows from what it signs – at one of four hook points of the flow:
+
+| Hook point | When, and the skill that starts the agents | edakit's agents there | A sign-off of its own |
+|---|---|---|---|
+| circuit review | before the layout: circuit-design, hardware-change | electrical-reviewer (M-1), regulatory-reviewer (M-6) | scope `circuit` |
+| round review | after a layout round that changed placement, routing or pours: pcb-round | pcb-reviewer – findings, no sign-off | scope `layout`, on the round's layout hash |
+| layout review | between the first and the second gate run: release | electrical-reviewer (M-1, with the polarity sheet), pcb-reviewer (M-5) | scope `fab` |
+| after delivery | a line of the acceptance list (8.5), which M-4 works through | – | phase `acceptance` |
+
+An agent with `replaces` takes the place of the edakit agent at each of its hook points: the one that replaces
+pcb-reviewer reviews the layout rounds as well – that review is no sign-off – and signs M-5. `after` orders the agents
+of one hook point; the project's skills are not registered – Claude Code finds them by itself. `edakit scripts` lists
+the agents and, under "Who reviews where", each hook point with its agents in the order to start them – edakit's as
+`edakit:<name>`, a project agent in the place of the one it replaces; the skills circuit-design, hardware-change,
+pcb-round and release start the agents it names there:
+
+```text
+Who reviews where – each in its own session; a project agent in place of the edakit agent it replaces:
+  circuit review – before the layout (skills circuit-design, hardware-change)
+    elektrotechniker            M-1: the circuit and its hand-over – in place of electrical-reviewer
+    edakit:regulatory-reviewer  M-6: circuit and parts against the rules for the purpose
+  round review – after a layout round that changed placement, routing or pours (skill pcb-round)
+    pcb-pruefer                 the round's Gerber export – findings, no sign-off – in place of pcb-reviewer
+    optik                       M-7 on the layout hash, after pcb-pruefer
+  layout review – between the first and the second gate run (skill release)
+    elektrotechniker            M-1: the critical parts again, with the polarity sheet – in place of electrical-reviewer
+    pcb-pruefer                 M-5: the gate run's manufacturing files – in place of pcb-reviewer
+  after delivery – a line of the acceptance list, which M-4 works through (section 6 of the protocol)
+    none
+```
+
+`edakit check` checks the entries and reports what keeps them from resolving as errors with the ID `agents`; the gate
+fails stage G on them, and passes a row per agent when they resolve:
+
+- `file` exists and is the agent of this name – the `name` in its front matter: the skills start the agent by it and
+  `done_by` names it –, and `about`, `signs` and `phase` are there; `phase` is `export` or `acceptance` – in phase
+  `order` the owner checks at the manufacturer, no agent gets there
+- a sign-off of its own has a `scope` (`circuit`, `layout`, `fab`); edakit's review has neither a `scope` – it keeps
+  the one the sign-off file gives it – nor phase `acceptance`; no project agent has the name of an edakit reviewer
+- `signs` is a sign-off, `M-<number>`, signed by one agent of the project; edakit's review (M-1, M-5, M-6) only with
+  `replaces` naming the agent that signs it otherwise, and `replaces` only so; never the owner's (M-2, M-4)
+- `after` names other entries of `[agents]`, makes no cycle at a hook point, and names no agent that reviews only
+  later – an agent at the circuit review cannot come after one that reviews the layout
+
+```text
+ERROR   agents  optik: signs M-5, edakit's layout review – only with replaces = "pcb-reviewer", the agent that signs it otherwise
+```
+
+**The gate requires their sign-offs** (8.2). A sign-off of its own of phase `export` is a condition of the release
+like M-1, M-5 and M-6, bound to the hash of its `scope`: when the sign-off file does not list it, the gate adds it as
+open ("M-7 is missing – added as open, the project agent optik signs it ([agents.optik])"). One of phase `acceptance`
+is a line of the acceptance list after delivery and does not hold up the release. With `replaces` edakit's review
+stays required, and the project agent signs it. The gate holds each of these sign-offs to its agent: it counts only
+when `done_by` names the agent – its name as a word, in any case: "Agent pcb-pruefer (own session)" names
+pcb-pruefer, "agent pcb-reviewer" does not –, and one of its own only in the phase and scope of the agent's entry.
+Signed by another – by edakit's pcb-reviewer once pcb-pruefer took its place – or for another scope, it is open, and
+section 6 has a note why. An open line there names the project agent that signs it: "- [ ] M-5 Layout reviewed … –
+the project agent pcb-pruefer signs it, in place of pcb-reviewer". A requirement may name a project agent's sign-off
+(`signoff = "M-7"`, 8.7). Without `[agents]` nothing changes: edakit's agents review and sign as before, and nobody
+checks who signed them.
 
 ## 8.7 Requirements
 
