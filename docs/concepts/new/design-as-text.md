@@ -1,8 +1,8 @@
 # Circuit design as text
 
-Status 2026-10-28: proposal. Nothing of it is built. Decision 7 is settled by #40, the others are open. The findings
-come from reading edakit at `a8b6011` (with PRs #78 and #79) and the repositories of the reference project and the
-Christmas bell.
+Status 2026-10-28: proposal, all decisions taken (table at the end); nothing of it is built. The findings come from
+reading edakit at `a8b6011` (with PRs #78 and #79) and the repositories of the reference project and the Christmas
+bell.
 
 ## Goal
 
@@ -64,8 +64,8 @@ after the auto-layout.
 - The layout hash covers the board files, `[release] layout_files` and the footprint geometry
   ([gate.py](../../../edakit/release/gate.py), `layout_files`). The geometry measures each part relative to its own
   origin (`measure`), without its position. A new auto-layout changes the board. Since #65 the fab hash sees that, so
-  M-5 with its scope `fab` lapses at the next gate run. Only an older M-5 with scope `layout` still counts, as in the
-  Christmas bell.
+  M-5 with its scope `fab` lapses at the next gate run. Only an M-5 listed with scope `layout` would still count; the
+  Christmas bell binds its M-5 to the fab hash of the run its reviewer checked (D-20).
 - L-7 holds only the parts in `[place]` to the plan. For parts from the auto-layout there is nothing to hold them to.
   The same goes for the direction of polarised parts (`uniform`, #60), the mated plugs (`mate`, #62) and the
   mechanical model: they see only `[place]`.
@@ -75,15 +75,18 @@ after the auto-layout.
 **Proposal:**
 
 1. After the positions stand still, `edakit pcb autolayout` writes position, rotation and side of every part it placed
-   as an entry in `[place]`. The entry carries `auto = true`, as the rows of `pcb place` do: a reader sees that nobody
-   designed it.
+   as an entry in `[place]` of the board file, next to the entries by hand (decision 3). The entry carries
+   `auto = true`, as the rows of `pcb place` do: a reader sees that nobody designed it.
 2. Everything that holds for fixed parts then holds for these: `pcb apply` puts them back after a dump, L-7 holds them
    to the plan, the plan check sees overlaps and `near`, the direction and plug checks and the mechanical model see
    them, and the layout hash covers them.
 3. From then on the auto-layout only runs for parts without an entry. To have a part placed anew, delete its entry; to
    move it, change it.
-4. A new check in stage L: every part of the graph has an entry in the plan. That makes "everything as text" checkable
-   for the placement.
+4. A new check in stage L: every part of the graph has an entry in the plan, as an error, not a hint. That makes
+   "everything as text" checkable for the placement. A board placed before, with its routing, gets its positions once
+   from a command that reads them in EasyEDA and writes them into `[place]` as fixed entries; a new auto-layout would
+   move the parts off their tracks. The reference project needs that when it moves to edakit. The bell has all 19
+   parts in `[place]`, on all four boards.
 
 Effort: small. The loop already reads the positions while it waits, the conversion from EasyEDA to plan coordinates
 exists (`Board.from_eda`), and `write_place_rows` already writes rows into `[place]`.
@@ -166,8 +169,8 @@ do, which today is spread over READMEs, decisions and chats.
 
 ## README
 
-The README advertises circuit design as code. The name is decision 1; the draft uses "circuit design as code",
-alternatives are "hardware as text" or a name of its own.
+The README advertises circuit design as code, the name the user chose (decision 1); "hardware as text" was the
+alternative.
 
 Draft for the head of the README:
 
@@ -179,8 +182,8 @@ through edakit and EasyEDA Pro. A change is a diff, and the release gate checks 
 manufacturer.
 ```
 
-The paragraph is fully true only once the gaps and findings above are closed. Proposal: take it in now and name the
-open points under "Status and limits"; each closed point removes a line there.
+The paragraph is fully true only once the gaps and findings above are closed. It goes in now anyway, with the open
+points under "Status and limits"; each closed point removes a line there (decision 2).
 
 ## Further: a language of its own
 
@@ -230,8 +233,8 @@ use TOML instead of JSON for the comments. That needs no parser.
 graph exactly – voltage ranges, waivers with their reason, the hand-over to the layout, the purpose – so every check
 stays.
 
-Recommendation: first write the whole Christmas bell down both ways, as a language and as TOML with names, then decide
-(decision 8).
+Decided: first write the whole Christmas bell down both ways, as a language and as TOML with names, then choose which
+to build (decision 8).
 
 ## Order
 
@@ -248,16 +251,19 @@ A fixed layer change in `fixed_wires` comes when a project needs one.
 
 ## Decisions
 
-| # | Question | Recommendation | Status |
+All taken on 2026-10-28, 7 by #40. "Accepted" is the user's yes to the recommendation; "decided by Claude" marks a
+technical point the user left to Claude and then confirmed.
+
+| # | Question | Decision | Status |
 | --- | --- | --- | --- |
-| 1 | Name in the README | "circuit design as code" | open |
-| 2 | README now with its limits, or only after the gaps | now, with its limits | open |
-| 3 | Gap 1: where the positions go | into `[place]`, marked `auto = true` like the rows of `pcb place` | open |
-| 4 | Gap 1: check "every part in the plan" | an error in the gate, not only a hint | open |
-| 5 | Gap 2: where the footprint data goes | into the parts entry; a change then voids the circuit reviews too – right for M-1, which checks polarity | open |
-| 6 | Rule set of EasyEDA's DRC | write it if the API carries it; otherwise read and check it | open |
+| 1 | Name in the README | "circuit design as code" | accepted |
+| 2 | README now with its limits, or only after the gaps | now, with its limits | accepted |
+| 3 | Gap 1: where the positions go | into `[place]` of the board file, marked `auto = true` like the rows of `pcb place` | the user's choice; a file of their own beside the board file (`<b>.auto.toml`) was weighed and not taken |
+| 4 | Gap 1: check "every part in the plan" | an error in the gate, not only a hint; a board placed before takes over its positions once | accepted |
+| 5 | Gap 2: where the footprint data goes | into the parts entry; a change then voids the circuit reviews too – right for M-1, which checks polarity | decided by Claude |
+| 6 | Rule set of EasyEDA's DRC | write it if the API carries it; otherwise read and check it | decided by Claude: reading works, net rules can be written (`overwriteNetRules`); step 4 finds out about the whole set |
 | 7 | Where the order settings go | `[order]` in the board file (#40); mask and print colour join it | settled by #40 |
-| 8 | A language, or TOML with names | first sketch both on the Christmas bell | open |
+| 8 | A language, or TOML with names | first sketch both on the Christmas bell | accepted |
 
 ## Sources
 

@@ -2,9 +2,9 @@
 
 Status 2026-10-28: proposal, checked against edakit `a8b6011` (with PRs #78 and #79). Nothing of it is built, but
 edakit has since built pieces it builds on: the firmware contract (#70), a stamp on the simulation result, the fab
-hash (#65) and the mechanical model (#62). Decisions 10 and 11 are taken, 9 is settled by #70, 1–8 are open. The rules
-that resolve a project's entries into a DAG were tried with a prototype outside edakit on the reference project and
-the Christmas bell.
+hash (#65) and the mechanical model (#62). All decisions are taken, 1–8 on 2026-10-28 and 9 by #70. The rules that
+resolve a project's entries into a DAG were tried with a prototype outside edakit on the reference project and the
+Christmas bell.
 
 ## Why
 
@@ -92,8 +92,8 @@ outdated; before `silk apply` the tree artwork runs again, and the gate checks t
   and vias".
 - **Hash:** what edakit reads goes into the hash of its scope by itself. Board files and the artwork they place belong
   to the layout hash, the simulation plugin to the circuit hash. The artwork also reaches the fab hash through the gate
-  run's silkscreen (#65); documents, the firmware contract and the stock snapshot are in no hash. A script's code does not count, only its
-  result.
+  run's silkscreen (#65); documents, the firmware contract and the stock snapshot are in no hash. A script's code does
+  not count, only its result (decision 3).
 - **Display:** `edakit scripts` lists every script with `about`, state (current, outdated, never run) and its last
   run. The skills `start`, `pcb-round`, `hardware-change` and `release` call it at their steps, and the SessionStart
   hook that brings the working agreements into every session (#74) lists the scripts too. So Claude knows what exists
@@ -628,7 +628,9 @@ Nine building blocks, none of them built. The order is also the order to build t
    gate. `edakit sim` already stamps its result this way (`inputs_sha256` in `<artifacts>/sim/result.json`).
 4. **Order and commands:** steps such as `pcb apply`, `silk apply` and `gate` run outdated `input` scripts first. New
    are `edakit scripts` (list with state) and `edakit run <name>`.
-5. **A board file from several files:** `file = […]`, so that what is written by hand and what is generated stay apart.
+5. **A board file from several files:** `file = […]`, so that what is written by hand and what a project script
+   generates stay apart. edakit's own rows (`pcb place --write`, later the auto-layout) stay in `[place]` of the first
+   file, the one by hand, marked `auto = true` (decision 4).
 6. **Version the footprint geometry:** `pcb_geometry_<b>.json` lies in `build/` today but is hashed, so a fresh clone
    and the CI cannot compute the layout hash.
 7. **Checks in the gate:** a place (`at`, also after F, to see the Gerber data of the own run) and the phase
@@ -640,21 +642,24 @@ Nine building blocks, none of them built. The order is also the order to build t
 
 Built and on main (4161350): the SVGs of `[[silk.art]]` count in the layout hash, a special case of block 2. Since #65
 the gate run's silkscreen is in the fab hash as well, so a new motif voids M-5 with its default scope `fab` anyway; the
-layout hash matters for sign-offs of scope `layout`, and the bell lists M-5 so in all four variants. The bell records
-M-5 again in all four variants, without a new review, because its SVGs are unchanged since 7667817.
+layout hash matters for sign-offs of scope `layout`. The bell has since bound M-5 in all four variants to the fab hash
+of the run its reviewer checked (D-20).
 
 ## Decisions
 
+1–8 taken on 2026-10-28. "Accepted" is the user's yes to the recommendation; "decided by Claude" marks a technical
+point the user left to Claude and then confirmed.
+
 | No. | Question | Recommendation | Decision |
 | --- | --- | --- | --- |
-| 1 | Where do the fields live: in `edakit.toml`, or as a header block in the script (like `# /// script`)? | In the script, next to the code; `edakit.toml` only names the scripts that belong to the project | open |
-| 2 | How does edakit know "outdated": a stamp over the inputs, or a check command per script? | The stamp as default, `check` optional for an exact check | open |
-| 3 | What goes into the hash: the result or the script's code? | The result. Who wants the code to count names it in `layout_files` | open |
-| 4 | Split the board file into a part by hand and a generated part? | Yes, every file has exactly one owner. Which part `pcb place --write` writes its `auto` rows into is decided with it | open |
-| 5 | Version the footprint geometry? | Yes, otherwise CI and a fresh clone lack the layout hash | open |
-| 6 | Which Python runs the scripts? | `cmd` stays free; edakit passes itself on, so that `from edakit import …` works in every call | open |
-| 7 | Does edakit run `input` scripts itself or only report them? | It runs them; `easyeda` scripts on command only | open |
-| 8 | Register consumers of the release such as `review_paket.py`? | No, as long as edakit needs nothing from them | open |
+| 1 | Where do the fields live: in `edakit.toml`, or as a header block in the script (like `# /// script`)? | In `edakit.toml`, as `[scripts.*]` next to `[[release.stages]]` and `sim_plugin`: one file shows the whole flow, and a script with subcommands gives several entries | accepted; the first recommendation, a header block in the script, was dropped |
+| 2 | How does edakit know "outdated": a stamp over the inputs, or a check command per script? | The stamp as default, `check` optional for an exact check | decided by Claude: `edakit sim` stamps its result this way already |
+| 3 | What goes into the hash: the result or the script's code? | The result. Who wants the code to count names it in `layout_files` | decided by Claude: a sign-off depends on what is built |
+| 4 | Split the board file into a part by hand and a generated part? | A project script that generates whole sections writes a file of its own (`file = […]`); edakit's own `auto` rows stay in `[place]` of the board file | the user's choice, with decision 3 of design-as-text; a file of their own beside it (`<b>.auto.toml`) was weighed and not taken |
+| 5 | Version the footprint geometry? | Yes, otherwise CI and a fresh clone lack the layout hash | decided by Claude |
+| 6 | Which Python runs the scripts? | `cmd` stays free; edakit passes itself on, so that `from edakit import …` works in every call | decided by Claude |
+| 7 | Does edakit run `input` scripts itself or only report them? | It runs them; `easyeda` scripts on command only | accepted |
+| 8 | Register consumers of the release such as `review_paket.py`? | No, as long as edakit needs nothing from them | decided by Claude: registered, they close a cycle (gate → release → review → gate) |
 | 9 | Feature proposal F12 `edakit firmware`: a fixed command with a neutral contract, the rendering in the project? | Yes | settled by #70: `edakit firmware` writes the contract, the rendering stays in the project |
 | 10 | May a project agent take over a review of edakit (`replaces`)? | Yes, but only explicitly with `replaces`; otherwise an ID of its own. The reference project needs it for `elektrotechniker` and `pcb-pruefer` | accepted |
 | 11 | Register a project's skills? | No: no step, no inputs and outputs to check, and Claude Code finds them by itself | accepted |

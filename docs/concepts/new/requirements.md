@@ -1,7 +1,8 @@
 # Requirements for the circuit
 
-Status 2026-10-28: proposal. Nothing of it is built, and every decision is open. The findings come from reading edakit
-at `a8b6011` (with PRs #78 and #79) and the repositories of the reference project and the Christmas bell.
+Status 2026-10-28: proposal, all nine decisions taken on 2026-10-28 (table at the end). Nothing of it is built. The
+findings come from reading edakit at `a8b6011` (with PRs #78 and #79) and the repositories of the reference project
+and the Christmas bell.
 
 ## Goal
 
@@ -11,8 +12,9 @@ approves it.
 
 Two questions show whether the goal is reached:
 
-1. **What should the tree of the reference project do, and what the Christmas bell?** The answer is in one file per
-   project, not spread over READMEs, decisions and chats.
+1. **What should the circuits of the reference project's tree and of the Christmas bell do?** The answer is in one
+   file per project, not spread over READMEs, decisions and chats. What firmware and mechanics must do stays in the
+   projects' own documents (decision 3).
 2. **Does the circuit do it, and how do we know?** Every requirement points to its evidence – simulation, check or
    measurement – and edakit shows which ones have none yet.
 
@@ -51,7 +53,7 @@ show in both projects already:
   Zellen schaltet der Baum nie ab": with full cells the tree never switches off) contradicted decision D-38; only a
   risk review found it.
 - **The acceptance test checks parts, not requirements.** The bell's M-4 asks for "the servo swings". Whether the bell
-  rings 65 s after start and lasts on a power bank (D-8), it does not test.
+  runs on a power bank (D-8), it does not test.
 - **Requirements hide in decisions.** D-13 holds "Requirements from the M-1 review" for the ESP32 firmware. The
   firmware cites D-13 in a comment; no test checks it.
 - **Collected and lost.** `circuit-design` asks for the requirements in a decision round. Only a few find a home:
@@ -64,7 +66,8 @@ evidence.
 ## Proposal: the requirements file
 
 Every project gets `hardware/requirements.toml`, named in `edakit.toml` under `[project] requirements`. The file
-describes the device, not only the board: what firmware and mechanics must do is in it too, each with its evidence.
+describes the circuit: what the boards must do and withstand, each requirement with its evidence. What firmware and
+mechanics must do stays in the project's own documents, such as the tree's `firmware/ANFORDERUNGEN.md` (decision 3).
 
 It has two levels, along the gap between wish and circuit:
 
@@ -105,7 +108,7 @@ status = "accepted"
   change to an accepted requirement is a decision in the decision log.
 
 TOML as for the board and schematic files: readable by people and LLMs, no JSON. Variants read the main project's file
-and add their own entries – the ESP32 bell, for instance, its web page (D-17).
+and add entries for what only they have.
 
 ## The agent
 
@@ -118,7 +121,8 @@ session does not talk to the user.
   candidates with the place it found them, contradictions, vague words and requirements without evidence. It does the
   first inventory and checks a finished file as a second opinion.
 
-It asks these questions until the idea has become requirements:
+It asks these questions until the idea has become requirements for the circuit; what it learns about firmware or
+mechanics, it leaves to the project's documents.
 
 | Topic | Question | Example: the bell |
 | --- | --- | --- |
@@ -196,43 +200,37 @@ the evidence – even where the evidence has existed for a while.
 
 | Draft | Source today | Evidence today | Evidence with this concept |
 | --- | --- | --- | --- |
-| **N-1** The parents start the bell and leave the room; the children hear it ring. | README, `IMPLEMENTIERUNG.md` | – | through R-1 to R-3 |
-| **R-1** The bell rings 65 s after start is pressed. | README, `buttons.ino` (60 s + 5 s) | ESP32: host test `test_countdown_warning_ring_idle`, not linked; Nano: none | `script` (host tests), `accept` with a stopwatch |
-| **R-2** The countdown shows the time left on five LEDs; in the last 5 s all of them blink. | `IMPLEMENTIERUNG.md` | M-4 "every LED", without the sequence | `accept` |
-| **R-3** The bell is struck mechanically; there is no electronic sound. | README | – | `accept` |
 | **N-2** The bell runs from a USB port or a power bank. | `purpose`, D-8 | – | through R-4 |
 | **R-4** In operation the circuit draws 100 to 500 mA from USB. | D-3, D-8 | E-3 in `sim.json`, not linked | `rows = "E-3 * U1 *"`, `accept` on a power bank |
 | **R-5** A stalled servo loads USB for one bell phase at most. | D-3 | scenario `servo-stalled` as information; the firmware cites D-3 | `signoff = "M-1"` |
 | **R-6** The main board, SMD and THT do not transmit. | `purpose`, M-6 | M-6 | `signoff = "M-6"` |
 
-Three questions the agent would ask:
-
-1. The servo on a 5 V, 1 A supply of its own (README, `IMPLEMENTIERUNG.md`) or on the Nano's 5V pin (D-3)? Proposal:
-   D-3 holds, and the two texts are corrected.
-2. 65 s (README) or the 30 to 45 s that `IMPLEMENTIERUNG.md` recommends? Proposal: 65 s, which D-17 sets as default.
-3. How loud must it be? Proposal: audible in the next room with the door open, tested at acceptance.
+N-1 and R-1 to R-3 of the first draft – the bell rings 65 s after start, the countdown runs on five LEDs, the bell is
+struck mechanically – are firmware and mechanics. They stay in the README and `IMPLEMENTIERUNG.md` (decision 3), and
+so do two questions of the first draft: 65 s or 30 to 45 s, and how loud. The question the agent would ask: the servo
+on a 5 V, 1 A supply of its own (README, `IMPLEMENTIERUNG.md`) or on the Nano's 5V pin (D-3)? Proposal: D-3 holds,
+and the two texts are corrected.
 
 **The reference project**
 
 | Draft | Source today | Evidence today | Evidence with this concept |
 | --- | --- | --- | --- |
-| **N-1** The recipient enters a code every day, and the tree wakes up one stage further. | `kalender.md`, `schaltungsbeschreibung.md` | – | through R-1 to R-5 |
+| **N-1** The recipient enters a code every day, and the tree wakes up one stage further. | `kalender.md`, `schaltungsbeschreibung.md` | – | through R-1 to R-3 |
 | **R-1** 0.5 A from a USB 2.0 port is enough in every state. | `schaltungsbeschreibung.md` | `usb_i_max_a` in the simulation; its note points to `usb_baum.md` | `rows` of the simulation |
 | **R-2** Swapped wires do no harm. | `schaltungsbeschreibung.md` | the tree's check G-10, acceptance step 2.4 | `rows`, `accept` |
 | **R-3** Nothing lights or hums before the firmware runs. | `schaltungsbeschreibung.md`, FW-5 | rule watcher | `script` |
-| **R-4** The buzzer is never high permanently. | FW-4 | rule watcher | `script` |
-| **R-5** The progress survives unplugging. | `kalender.md` | – | `accept` |
 
-"With full cells the tree never switches off" from `firmware_test.md` would go in as dropped, with the reason D-47: the
-USB tree has no cells. The inventory itself is the agent's work: read, return candidates with the place it found them,
-ask the contradictions as questions.
+R-4 and R-5 of the first draft – the buzzer is never high permanently (FW-4), the progress survives unplugging – are
+firmware and stay in `ANFORDERUNGEN.md` and `kalender.md`. "With full cells the tree never switches off" from
+`firmware_test.md` would go in as dropped, with the reason D-47: the USB tree has no cells. The inventory itself is the
+agent's work: read, return candidates with the place it found them, ask the contradictions as questions.
 
 ## Scope
 
-- **Only the device.** The codes the tree accepts belong in the file, the learning path of the advent calendar does
-  not.
-- **edakit checks what it sees.** Requirements on firmware and mechanics are in the file; their evidence runs as a
-  project script or at acceptance. edakit does not run firmware tests itself.
+- **Only the circuit.** What the boards must do and withstand belongs in the file. The codes the tree accepts, the
+  bell's countdown and the fit in the stand stay in the projects' documents (decision 3).
+- **edakit checks everything in the file:** protocol rows, sign-offs, project scripts of the kind check and acceptance
+  steps. It does not run firmware tests.
 - **No silent import.** The agent proposes, the user approves; nothing is taken over from documents unasked.
 - **No tool for large projects:** no ReqIF, no baselines, no access rights. Git is the history, the decision log the
   reasoning.
@@ -247,22 +245,26 @@ ask the contradictions as questions.
 3. Skill `requirements` and agent `requirements-engineer`; `circuit-design` and the reviewers read the file. The
    plugin test that lets the reviewer prompts name only catalog IDs learns N- and R-.
 4. `req:` as a source of the value blocks (G-19).
-5. Trial on the bell: inventory, decision round, file – in the bell's repository, at the user's request.
+5. Trial on the bell after its order: inventory, decision round, file – in the bell's repository, at the user's
+   request. Before the order the file would reopen M-1 and M-6.
 6. The reference project, once it has moved to edakit (after its order, EK-1 of its concept).
 
 ## Decisions
 
-| # | Decision | Proposal | State |
+All taken on 2026-10-28. "Accepted" is the user's yes to the proposal; "decided by Claude" marks a technical point the
+user left to Claude and then confirmed.
+
+| # | Decision | Taken | State |
 | --- | --- | --- | --- |
-| 1 | Two levels | need N-… and requirement R-…; the hyphen tells R-4 from R4, as it tells D-8 from D8 today | open |
-| 2 | Place and format | `hardware/requirements.toml` in `[project] requirements`; variants read the main project's file too | open |
-| 3 | Scope | the whole device; edakit checks what it sees, a project script or the acceptance test the rest | open |
-| 4 | Binding | `must` without passing evidence blocks the release, `should` warns, `may` informs | open |
-| 5 | Required | optional until the bell and the reference project have a file; then required, as M-1, M-5 and M-6 are | open |
-| 6 | Hash | the whole file counts in the circuit hash, byte for byte like `purpose`; `hash_ignore` does not reach into it | open |
-| 7 | Role | skill `requirements` in the conversation, agent `requirements-engineer` for the inventory and a second opinion | open |
-| 8 | Acceptance | `accept` steps join the protocol's acceptance list (section 6, after delivery); M-4 names the IDs it tested | open |
-| 9 | Trial | first on the bell, then on the reference project | open |
+| 1 | Two levels | need N-… and requirement R-…; the hyphen tells R-4 from R4, as it tells D-8 from D8 today | accepted |
+| 2 | Place and format | `hardware/requirements.toml` in `[project] requirements`; variants read the main project's file too | decided by Claude: TOML like the board files |
+| 3 | Scope | only the circuit: what the boards must do and withstand; firmware and mechanics stay in the projects' documents | the user's choice; the proposal was the whole device |
+| 4 | Binding | `must` without passing evidence blocks the release, `should` warns, `may` informs | accepted |
+| 5 | Required | optional until the bell and the reference project have a file; then required, as M-1, M-5 and M-6 are | accepted |
+| 6 | Hash | the whole file counts in the circuit hash, byte for byte like `purpose`; `hash_ignore` does not reach into it | accepted |
+| 7 | Role | skill `requirements` in the conversation, agent `requirements-engineer` for the inventory and a second opinion | decided by Claude: asking back needs the conversation, reading every document a context of its own |
+| 8 | Acceptance | `accept` steps join the protocol's acceptance list (section 6, after delivery); M-4 names the IDs it tested | decided by Claude: the list exists since #42, a second one would compete with it |
+| 9 | Trial | first on the bell after its order, then on the reference project | accepted |
 
 ## Sources
 
