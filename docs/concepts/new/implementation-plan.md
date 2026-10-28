@@ -1,7 +1,7 @@
 # Implementation plan: requirements, design as text, project scripts
 
-Status 2026-10-28: plan; 1.1 is done, 1.2 and 1.5 are in progress. It builds the three concepts of this folder after
-the user took their decisions on 2026-10-28 (e5caf42, 301fd90): [requirements.md](requirements.md),
+Status 2026-10-28: plan; 1.1, 1.2 and 1.5 are done, 1.3, 1.6 and 1.7 are in progress. It builds the three concepts
+of this folder after the user took their decisions on 2026-10-28 (e5caf42, 301fd90): [requirements.md](requirements.md),
 [design-as-text.md](design-as-text.md) and [project-scripts.md](project-scripts.md). Each step starts when the user
 asks for it.
 
@@ -13,9 +13,9 @@ asks for it.
 - **No key, no change.** Every new key, file and check leaves a project without it as it is. The bell and the
   reference project change only at the user's request, in their own repositories.
 - **Hashes are named.** A step that changes a hash says which one, and for which sign-offs (table at the end).
-- **The bell orders first.** All sessions run the edakit of the shared tree. Until the bell has ordered after its
-  EasyEDA gates on Saturday 31.10., only steps that leave the bell's gate result and hashes alone go to main; the
-  others wait on their branch.
+- **The bell is told.** All sessions run the edakit of the shared tree. The user decided on 2026-10-28 not to wait for
+  the bell's order: a step goes to main when it is ready, and one that changes the bell's gate result or hashes is
+  announced to the bell's session first.
 - **EasyEDA steps in one sitting.** Steps that need EasyEDA take its claim, probe on a throwaway document (working
   agreement 18) and run together while EasyEDA is free.
 - **This file is the list.** The state of each step is in the overview; a finished step names its commit.
@@ -25,14 +25,14 @@ asks for it.
 | Step | What | Concept, decision | Size | EasyEDA | Waits for | State |
 | --- | --- | --- | --- | --- | --- | --- |
 | 1.1 | README: "circuit design as code", with "Status and limits" | design-as-text 1, 2 | S | no | – | done (ef6b2aa) |
-| 1.2 | Read `[scripts.*]` and check that they resolve into a DAG | project-scripts block 1, decision 1 | M | no | – | in progress, branch `step-1.2-scripts` |
-| 1.3 | Names for edakit's data, each with a hash | project-scripts block 2 | S | no | 1.2 | open |
+| 1.2 | Read `[scripts.*]` and check that they resolve into a DAG | project-scripts block 1, decision 1 | M | no | – | done (37376e8) |
+| 1.3 | Names for edakit's data, each with a hash | project-scripts block 2 | S | no | 1.2 | in progress, branch `step-1.3-data-names` |
 | 1.4 | Stamps in `hardware/scripts.lock`; `edakit scripts` | project-scripts block 3, decision 2 | M | no | 1.3 | open |
-| 1.5 | Requirements: format, parser, `edakit req` | requirements order 1, decisions 1–3 | M | no | – | in progress, branch `step-1.5-requirements` |
-| 1.6 | Requirements: checks, protocol section, `accept` lines, circuit hash | requirements order 2, decisions 4, 6, 8 | M | no | 1.5 | open |
-| 1.7 | `[order]`: mask and print colour, thickness from `thickness_mm` | design-as-text, smaller findings | S | no | – | open |
-| 1.8 | The footprint geometry in the repository | project-scripts block 5, decision 5 | S | no | the bell's order | open |
-| 2.1 | Positions of the auto-layout as text, one-time takeover, every part in the plan | design-as-text gap 1, decisions 3, 4 | M | yes | the bell's order | open |
+| 1.5 | Requirements: format, parser, `edakit req` | requirements order 1, decisions 1–3 | M | no | – | done (ba4d28b, f7adcf4) |
+| 1.6 | Requirements: checks, protocol section, `accept` lines, circuit hash | requirements order 2, decisions 4, 6, 8 | M | no | 1.5 | in progress, branch `step-1.6-requirement-checks` |
+| 1.7 | `[order]`: mask and print colour, thickness from `thickness_mm` | design-as-text, smaller findings | S | no | – | in progress, branch `step-1.7-order` |
+| 1.8 | The footprint geometry in the repository | project-scripts block 5, decision 5 | S | no | – | open |
+| 2.1 | Positions of the auto-layout as text, one-time takeover, every part in the plan | design-as-text gap 1, decisions 3, 4 | M | yes | – | open |
 | 2.2 | Rule set of EasyEDA's DRC | design-as-text decision 6 | S–M | yes | – | open |
 | 2.3 | Positions of single designators in `[silk]` | design-as-text, smaller findings | S | yes | – | open |
 | 2.4 | Outdated inputs run first; `edakit run` | project-scripts block 4, decision 7 | M | yes | 1.4 | open |
@@ -134,8 +134,7 @@ must not be R or N, the prefixes of the requirement IDs. `verify = script` repor
 
 **1.8 Geometry in the repository.** `pcb_geometry_<b>.json` moves from `build/` to a versioned place, so CI and a
 fresh clone can compute the layout hash. The path counts in the hash, so the layout hash changes once and sign-offs
-with scope `layout` are recorded again. The bell's M-5 has scope `fab` (D-20) and keeps counting. After the bell's
-order.
+with scope `layout` are recorded again. The bell's M-5 has scope `fab` (D-20) and keeps counting.
 
 ## Phase 2: with EasyEDA
 
@@ -148,7 +147,7 @@ order.
 3. A check in stage L, as an error: every part of the graph has a row (decision 4). `led-bar` lacks D1 and R2 and
    gets them first; the bell has all 19 parts on all four boards.
 
-After the bell's order, since the board files change.
+The bell's session is told first, since board files change.
 
 **2.2 DRC rules.** First a probe on a throwaway document of what `PCB_Drc` carries. Reading works
 (`getCurrentRuleConfiguration`, with the bridge's return depth 12), and net rules can be written
@@ -237,4 +236,4 @@ Steps that share one of these files go to main one after the other, and the next
 
 1. 1.1, the README: documentation only, may go to main at once.
 2. 1.2 and 1.5 side by side on branches. They need neither EasyEDA nor the bell.
-3. After the bell's order: merge what is ready, then 1.8 and 2.1.
+3. Each step goes to main when it is ready; then 1.8 and 2.1.
