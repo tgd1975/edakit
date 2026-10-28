@@ -1,10 +1,13 @@
 """Sign-offs on the manufacturing files (#65): `fab_sha256` over what the manufacturer builds from – every Gerber layer
-rasterised as L-2 does (0.02 mm), the drill hits, the BOM and CPL rows – and `edakit fab diff`, on the export of
-tests/test_fab_run.py written twice. Documentation and drill-drawing layers are left out."""
+rasterised as L-2 does (0.02 mm), the drill hits, the BOM and CPL rows, and with [order] the order settings that change
+the made board – and `edakit fab diff`, on the export of tests/test_fab_run.py written twice. Documentation and
+drill-drawing layers are left out."""
 
 import json
 import re
+import shutil
 
+import pytest
 import test_fab_run as fr
 from edakit import cli, gerber
 from edakit.release import fab, gate
@@ -138,3 +141,97 @@ def test_the_gate_writes_the_fab_hash_into_the_manifest(project):
     m = json.loads((out / "fab" / "manifest.json").read_text())
     assert m["fab_sha256"] == fab.fab_hash(m["fab_layers"]) == head["fab_sha256"]
     assert m["fab_layers"]["main"]["Gerber_TopLayer.GTL"] == layers(out / "fab" / "main")["Gerber_TopLayer.GTL"]
+
+
+# --- the order settings that change the made board: thickness, colours, finish, mark ([order], step 1.7) --------------
+
+def exported(project, fault=None):
+    """`edakit fab --offline` on the export of test_fab_run, the board file changed by fault: (the board folder, its
+    fab hash)."""
+    shutil.rmtree(project.root / "build", ignore_errors=True)
+    fr.run(project, fault)
+    d = project.root / "build" / "fab" / "main"
+    return d, fab.fab_hash({"main": layers(d)})
+
+
+def ordered(**order):
+    """[order] in the board file as test_fab_run orders it (mark = "specify", the placeholder, a remark), changed by
+    order."""
+    return lambda ex, p: fr.ordered(ex, p, order)
+
+
+def test_a_board_without_order_keeps_its_fab_hash(project):
+    """No [order], no order settings: fab_layers holds the files the manufacturer builds from and nothing else, so the
+    fab hash of a board without [order] stays what it was (the bell's reviewed runs, its D-20)."""
+    d, _ = exported(project)
+    gerbers, drills = fab.built_files(d / "gerber")
+    assert set(layers(d)) == {f.name for f in gerbers + drills} | {"bom_main.csv", "cpl_main.csv"}
+    assert not (d / "order.json").exists()
+
+
+def test_a_stale_order_file_leaves_with_the_order(project):
+    """`edakit fab --offline` on the folder of a run with [order], when the board file has none any more: the settings
+    leave the folder and the fab hash."""
+    d, _ = exported(project, ordered())
+    assert "order.json" in layers(d)
+    f = project.root / "hardware" / "boards" / "main.toml"
+    f.write_text(f.read_text().split("\n[order]\n")[0] + "\n")
+    cfg = project.config()
+    fab.run(cfg, cfg.board(), d.parent, offline=True)
+    assert not (d / "order.json").exists() and "order.json" not in layers(d)
+
+
+@pytest.mark.parametrize("fault", [ordered(mask="black"), ordered(mask="white"), ordered(finish="ENIG"),
+                                   ordered(mark="remove"), fr.thickness(1.0)],
+                         ids=["mask black", "mask white", "finish ENIG", "mark remove", "1.0 mm"])
+def test_an_order_setting_that_changes_the_board_changes_the_fab_hash(project, fault):
+    """Thickness as ordered, the colours of mask and silkscreen, finish and mark change what JLCPCB makes: they are
+    in the fab hash – with every Gerber layer, drill hit and BOM and CPL row the same."""
+    d, green = exported(project, ordered())
+    settings = json.loads((d / "order.json").read_text())
+    assert settings == {"thickness_mm": 1.6, "mask": "green", "silkscreen": "white", "finish": "LeadFree HASL",
+                        "mark": "specify"}
+    files = {k: v for k, v in layers(d).items() if k != "order.json"}
+    d, other = exported(project, fault)
+    assert other != green and {k: v for k, v in layers(d).items() if k != "order.json"} == files
+
+
+@pytest.mark.parametrize("change", [{"remark": "No V-cut."}, {"tab_zones": [((30, 0), (30, 20))]},
+                                    {"tab_copper_mm": 0.5}])
+def test_remark_and_tab_zones_stay_out_of_the_fab_hash(project, change):
+    """The remark is free text to JLCPCB, and the tab zones reach it only through the remark: neither changes the
+    board as made, so neither is in the fab hash (both are in the layout hash with the board file)."""
+    _, h = exported(project, ordered())
+    assert exported(project, ordered(**change))[1] == h
+
+
+def test_a_new_colour_lets_the_layout_review_of_scope_fab_lapse(project):
+    """M-5 signed on the fab hash of a green board does not count for the same files ordered black – and counts
+    again when the order is green again."""
+    _, green = exported(project, ordered())
+    _, black = exported(project, ordered(mask="black"))
+    cfg = project.config()
+    s = json.loads(cfg.signoff.read_text())
+    s["fab_sha256"] = green
+    for m in s["manual"]:
+        if m["id"] == "M-5":
+            m.update(scope="fab", done_by="agent pcb-reviewer", date="2026-10-28")
+    cfg.signoff.write_text(json.dumps(s))
+    m5 = lambda h: {m["id"]: m["done_by"] for m in gate.load_signoff(cfg, {"fab_sha256": h})[0]["manual"]}["M-5"]  # noqa: E731
+    assert m5(black) is None and m5(green) == "agent pcb-reviewer"
+    assert exported(project, ordered(mask="green"))[1] == green
+
+
+def test_fab_diff_names_the_changed_order_settings(project, capsys):
+    runs = project.root / "runs"
+    for run, fault in (("20261028-100000", ordered()), ("20261028-110000", fr.thickness(1.0, {"mask": "black"}))):
+        d, _ = exported(project, fault)
+        (runs / run / "fab").mkdir(parents=True)
+        d.rename(runs / run / "fab" / "main")
+    cfg = project.config()
+    assert cli.main(["fab", "diff", str(runs / "20261028-100000"), str(runs / "20261028-110000"),
+                     "--config", str(cfg.root / "edakit.toml")]) == 2
+    out = capsys.readouterr().out
+    assert "  order.json  changed\n" in out and "1 file(s) changed" in out
+    for line in ('- mask = "green"', '+ mask = "black"', "- thickness_mm = 1.6", "+ thickness_mm = 1.0"):
+        assert f"      {line}\n" in out, line

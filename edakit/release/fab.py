@@ -11,6 +11,7 @@ Result in DIR/<board>/:
     jlc_parts.json                   JLCPCB assembly catalogue entry per LCSC number of the BOM (F-2)
     pcb.json, drc.json, bom_easyeda.json, cpl_easyeda.xlsx   raw data from EasyEDA (for --offline)
     order.md                         with [order] in the board file: the order form of this board (order_sheet.py)
+    order.json                       with [order]: the order settings that change the board as made (fab hash)
     netlist_diff.json                schematic against PCB (`pcb parts`, `pcb nets`), when the DRC has an Import
                                      Changes item
 and DIR/polarity_<board>.png: every polarised part with pad, role and net, to compare with datasheets and with the
@@ -69,8 +70,11 @@ Last stdout line: JSON list of rows {stage, id, item, check, actual, expected, r
 
 What the manufacturer builds from, hashed for the sign-offs with scope 'fab' (fab_sha256, FAB_METHOD): every Gerber
 layer rasterised as L-2 does (gerber.RES) in the frame of the board outline – documentation and drill-drawing layers
-left out –, the drill hits rounded to 1 µm, the BOM and CPL rows sorted. Aperture numbers, comments and the order in
-which EasyEDA writes its objects do not change it. `fab diff` compares the same rasters: XOR, labelled into spots.
+left out –, the drill hits rounded to 1 µm, the BOM and CPL rows sorted, and with [order] the order settings that
+change the board as made (order.json: thickness, colours of mask and silkscreen, finish, mark – not the remark, not the
+tab zones). Aperture numbers, comments and the order in which EasyEDA writes its objects do not change it; a board
+without [order] keeps the hash it had. `fab diff` compares the same rasters: XOR, labelled into spots – and the
+settings one by one.
 """
 
 from __future__ import annotations
@@ -1385,10 +1389,24 @@ def csv_rows(path):
     return rows[:1] + sorted(rows[1:])
 
 
+def order_settings(path):
+    """The order settings of a run (order_sheet.SETTINGS): {setting: value}."""
+    return json.loads(Path(path).read_text(encoding="utf-8"))
+
+
+def setting_rows(path):
+    """The order settings as rows [setting, value as JSON], sorted – for `fab diff`."""
+    return sorted([k, json.dumps(v, ensure_ascii=False)] for k, v in order_settings(path).items())
+
+
 def fab_layers(d, board):
     """SHA-256 per file the manufacturer builds from, for one board folder <run>/fab/<board>: every Gerber layer
-    rasterised in the outline's frame, the drill hits, the BOM and CPL rows."""
+    rasterised in the outline's frame, the drill hits, the BOM and CPL rows – and with [order] the order settings that
+    change the board as made (order.json: thickness, colours, finish, mark). A board without [order] has no such file:
+    its hash is the files' alone, as before."""
     import numpy as np
+
+    from .order_sheet import SETTINGS
     gerbers, drills = built_files(Path(d) / "gerber")
     out = {}
     if gerbers:
@@ -1401,6 +1419,8 @@ def fab_layers(d, board):
     for name in (f"bom_{board}.csv", f"cpl_{board}.csv"):
         if (Path(d) / name).exists():
             out[name] = sha(json.dumps(csv_rows(Path(d) / name), ensure_ascii=False).encode())
+    if (Path(d) / SETTINGS).exists():
+        out[SETTINGS] = sha(json.dumps(order_settings(Path(d) / SETTINGS), sort_keys=True, ensure_ascii=False).encode())
     return out
 
 
@@ -1456,7 +1476,9 @@ def hole(h):
 
 
 def diff_board(da, db, board):
-    """[(file, changed, detail lines)] for one board folder in two runs: Gerber layers, drill hits, BOM and CPL."""
+    """[(file, changed, detail lines)] for one board folder in two runs: Gerber layers, drill hits, BOM and CPL, the
+    order settings."""
+    from .order_sheet import SETTINGS
     (ga, dra), (gb, drb) = built_files(da / "gerber"), built_files(db / "gerber")
     out = []
     boxes = [outline_box(d / "gerber", g) for d, g in ((da, ga), (db, gb)) if g]
@@ -1465,7 +1487,8 @@ def diff_board(da, db, board):
     pairs = [({f.name: f for f in xa}, {f.name: f for f in xb}) for xa, xb in ((ga, gb), (dra, drb))]
     csvs = [f"bom_{board}.csv", f"cpl_{board}.csv"]
     pairs.append(({n: da / n for n in csvs if (da / n).exists()}, {n: db / n for n in csvs if (db / n).exists()}))
-    for kind, (fa, fb) in zip(("gerber", "drill", "csv"), pairs):
+    pairs.append(tuple({SETTINGS: d / SETTINGS} if (d / SETTINGS).exists() else {} for d in (da, db)))
+    for kind, (fa, fb) in zip(("gerber", "drill", "csv", "order"), pairs):
         for name in sorted(set(fa) | set(fb), key=lambda n: (csvs.index(n) if n in csvs else 0, n)):
             if name not in fb or name not in fa:
                 out.append((name, True, ["only in " + ("the first run" if name in fa else "the second run")]))
@@ -1474,6 +1497,9 @@ def diff_board(da, db, board):
                 out.append((name, bool(lines), lines))
             elif kind == "drill":
                 lines = diff_rows(drill_rows(fa[name]), drill_rows(fb[name]), hole)
+                out.append((name, bool(lines), lines))
+            elif kind == "order":
+                lines = diff_rows(setting_rows(fa[name]), setting_rows(fb[name]), " = ".join)
                 out.append((name, bool(lines), lines))
             else:
                 lines = diff_rows(csv_rows(fa[name])[1:], csv_rows(fb[name])[1:], ",".join)

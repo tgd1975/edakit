@@ -30,7 +30,8 @@
     edakit gate [--easyeda]          release gate with test protocol and manufacturing files
     edakit release current|withdraw RUN --reason T|verify FILE…   the one current release, the files to upload
     edakit fab --board B --out DIR   stages L/F for one board (the gate calls it)
-    edakit fab diff RUN_A RUN_B      where the manufacturing files of two gate runs differ (raster, drill, BOM, CPL)
+    edakit fab diff RUN_A RUN_B      where the manufacturing files of two gate runs differ (raster, drill, BOM, CPL,
+                                     the order settings of [order])
     edakit lock [status|claim|release|yield CHAT]   share EasyEDA between parallel Claude sessions
     edakit proposal template|seal|verify   a rule or feature proposal for the edakit repository, sealed with its SHA-256
     edakit doctor                    Node, easyeda-mcp-pro, bridge, EasyEDA process, ngspice, Freerouting
@@ -206,7 +207,7 @@ def build_parser():
     p = sub.add_parser("fab", help="stages L and F for one board; diff: where the manufacturing files of two runs "
                                    "differ")
     p.add_argument("action", nargs="?", choices=["diff"], help="diff RUN_A RUN_B: Gerber layers, drill hits, BOM "
-                                                               "and CPL rows of two gate runs compared")
+                                                               "and CPL rows, order settings of two gate runs compared")
     p.add_argument("runs", nargs="*", help="diff: two gate runs (folder names under reports, or their folders)")
     p.add_argument("--board")
     p.add_argument("--out", help="report folder; files go to OUT/<board>/ (required unless diff)")

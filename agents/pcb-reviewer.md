@@ -25,7 +25,9 @@ boards of the project in the current repository. You **change nothing**, neither
   geometry in mm, `gerber.loops(path)` the outline's closed paths. If the export is older than the round's last
   routing or pour, say so instead of drawing conclusions.
 - For M-5: the manufacturing files of the gate run (`<reports>/<run>/fab/<board>/gerber/`, pick and place, BOM,
-  polarity sheet), read the same way.
+  polarity sheet), read the same way; with `[order]` in the board file also `order.md` – thickness, the colours of
+  mask and silkscreen, finish and mark are in the fab hash you sign (`order.json`), so judge them with the board:
+  the silkscreen artwork on that colour, the mark where it may go.
 - EasyEDA only if `easyeda_bridge_status` reports connected. A picture can be stale; if it is byte-identical to the
   previous one, say so instead of drawing conclusions.
 - Track widths: `<artifacts>/sim/net_currents.json` (simulated currents) and the routing classes.

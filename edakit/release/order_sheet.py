@@ -6,6 +6,11 @@ only when the board file has [order]; `fab.run` calls `check` after the F checks
                            colours of solder mask and silkscreen, surface finish, mark on PCB (at the placeholder),
                            remark; PCBA type and side, tooling holes, bake, the upload files; the tab zones and the
                            outline stretches free of copper; what is bought separately (edakit order)
+    DIR/<board>/order.json the order settings that change the board as made – thickness_mm, mask, silkscreen, finish,
+                           mark (settings): fab.fab_layers puts them into the fab hash. The remark is free text to
+                           JLCPCB and the tab zones reach it only through the remark: neither changes the board as
+                           made, neither is in it. Without [order] the file is not there (a stale one is removed), and
+                           the fab hash is the files' alone, as before
 
   F-6  the remark fits the form (at most 200 characters, ASCII) (fail); thickness_mm is a thickness of JLCPCB's form
        (fail); the silkscreen colour is the one JLCPCB prints on the mask colour (fail); mark = "specify" needs the
@@ -26,6 +31,7 @@ from .. import gerber, order, stock
 from ..config import silkscreen_on
 from ..design import natural_key
 
+SETTINGS = "order.json"        # the order settings that change the board as made, in the fab hash (fab.fab_layers)
 PLACEHOLDER = "JLCJLCJLCJLC"   # JLCPCB prints the order number here with "Order Number (Specify Position)"
 PLACEHOLDER_MIN_MM = 0.8       # least height of the placeholder JLCPCB recognises (#40)
 REMARK_MAX = 200               # JLCPCB's remark field
@@ -117,6 +123,16 @@ def piece_text(p):
 
 
 # --- F-6 and order.md -------------------------------------------------------------------------------------------------
+
+def settings(board):
+    """The order settings that change the board as JLCPCB makes it – the thickness as ordered (thickness_mm), the
+    colours of solder mask and silkscreen, the surface finish, the order-number mark –; None without [order]."""
+    if board.order is None:
+        return None
+    o = board.order
+    return {"thickness_mm": board.thickness_mm, "mask": o["mask"], "silkscreen": o["silkscreen"],
+            "finish": o["finish"], "mark": o["mark"]}
+
 
 def check_remark(remark, rows, name):
     bad = sorted({ch for ch in remark if not ch.isascii()})
@@ -271,7 +287,9 @@ def sheet(cfg, design, board, d, bom, pcba, tabs, found):
     remark = f"below ({len(o['remark'])} characters)" if o["remark"] else "–"
     L = [f"# Order form – board {board.name} ({board.title}), {cfg.project}\n",
          "Written by edakit from [order] of the board file, [release] assembly, the stock snapshot and the files of "
-         "this run; check F-6 compares them. Upload only from a released run (manifest.json). Coordinates: Gerber mm.\n",
+         "this run; check F-6 compares them. Upload only from a released run (manifest.json). Coordinates: Gerber mm. "
+         "Thickness, colours, finish and mark count in the fab hash (order.json): a sign-off of scope fab, like M-5, "
+         "holds for them as written here.\n",
          "## PCB\n", "| Field | Value |", "|---|---|", f"| Layers | {layers} |", f"| Dimensions | {size} |",
          f"| PCB Qty | {cfg.quantity} |", f"| PCB Thickness | {board.thickness_mm:g} mm |",
          f"| PCB Color | {o['mask'].capitalize()} |", f"| Silkscreen | {o['silkscreen'].capitalize()} |",
@@ -316,10 +334,13 @@ def sheet(cfg, design, board, d, bom, pcba, tabs, found):
 
 
 def check(cfg, board, design, d, rows, bom):
-    """F-6 and order.md for one board – only when its board file has [order]."""
+    """F-6, order.md and order.json for one board – only when its board file has [order]; without it a stale
+    order.json of an earlier run in d goes, so that the fab hash holds no settings the board file does not give."""
     import json
     if board.order is None:
+        (d / SETTINGS).unlink(missing_ok=True)
         return
+    (d / SETTINGS).write_text(json.dumps(settings(board), indent=1, ensure_ascii=False) + "\n", encoding="utf-8")
     pcba = cfg.pcba()
     data = json.loads((d / "pcb.json").read_text())
     check_remark(board.order["remark"], rows, board.name)

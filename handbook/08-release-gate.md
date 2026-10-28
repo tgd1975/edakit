@@ -113,14 +113,20 @@ Every run records two hashes in the protocol header, and a run with stage F a th
 - **fab** (`fab_sha256`): what the manufacturer builds from, per made board – every Gerber layer of
   `fab/<board>/gerber/` rasterised at 0.02 mm as L-2 does, in the frame of the board outline (documentation and
   drill-drawing layers left out: nobody builds from them), the drill hits (both ends, diameter) rounded to 1 µm and
-  sorted, the rows of `bom_<b>.csv` and `cpl_<b>.csv` sorted; with the method (`fab_method`, "raster 0.02 mm v1"), so
-  that a new method shows. The manifest has it with the hash per board and file (`fab_layers`).
+  sorted, the rows of `bom_<b>.csv` and `cpl_<b>.csv` sorted; with `[order]` in the board file (8.4) also the order
+  settings that change the board as made – the thickness as ordered (`thickness_mm`), the colours of mask and
+  silkscreen, the finish and the order-number mark, which stage F writes to `fab/<board>/order.json`; with the method
+  (`fab_method`, "raster 0.02 mm v1"), so that a new method shows. The manifest has it with the hash per board and
+  file (`fab_layers`). The remark and the tab zones stay out: the remark is free text to JLCPCB, and the tab zones
+  reach it only through the remark – neither changes the board as made. A board without `[order]` has no order
+  settings in the hash and keeps the fab hash it had.
 
 The raw files differ on every export (a date comment, other aperture numbers, another order of objects), the layout
 hash changes with a comment in a board file and does not change when edakit's code, a router option or EasyEDA's pour
 fill changes the copper. The fab hash changes exactly when what the factory builds changes – down to one raster point
-(0.02 mm, below the manufacturer's tolerance). A Pillow update that draws edges differently changes it too: the
-sign-offs then lapse, a change never passes unseen.
+(0.02 mm, below the manufacturer's tolerance), or a colour, the thickness, the finish or the mark the board is ordered
+with. A Pillow update that draws edges differently changes it too: the sign-offs then lapse, a change never passes
+unseen.
 
 Each file belongs to one of them or to none (10.1): edakit.toml, the schematic file and the documents of `[docs] files`
 are in no hash, so a new order quantity, a note in the schematic or a corrected number (6.6) voids no review. A project
@@ -182,9 +188,9 @@ not checked and do not count.
 | `acceptance` | after delivery (M-4: acceptance test of every board) | no |
 
 Scope `fab` suits what is checked on the manufacturing files: the layout review M-5 and the manufacturer's preview
-M-2 (the example and new projects use it). A later gate run whose files are the same keeps the sign-off, whatever
-changed upstream; a run whose files differ voids it. Existing sign-off files keep `circuit` and `layout` as they are.
-What changed between two runs:
+M-2 (the example and new projects use it). A later gate run whose files and order settings are the same keeps the
+sign-off, whatever changed upstream; a run whose files differ, or a board now ordered black or 1.0 mm thick, voids it.
+Existing sign-off files keep `circuit` and `layout` as they are. What changed between two runs:
 
 ```bash
 edakit fab diff 20261025-205344 20261025-224607 [--board B]   # run folder names under reports, or their paths
@@ -192,8 +198,8 @@ edakit fab diff 20261025-205344 20261025-224607 [--board B]   # run folder names
 
 per board and file `equal` or `changed`: for a Gerber layer the area added and removed and the largest changed spots
 (XOR of the two rasters, labelled as in L-2) with their bounding box in Gerber coordinates, spots under 0.01 mm² only
-counted and summed; drill hits and BOM/CPL rows removed (−) and added (+). Exit 0 when everything is equal, 2
-otherwise.
+counted and summed; drill hits and BOM/CPL rows removed (−) and added (+); the order settings (`order.json`) one by
+one, `- mask = "green"` and `+ mask = "black"`. Exit 0 when everything is equal, 2 otherwise.
 
 `match` is an fnmatch pattern over "ID scenario item step" as section 3 of the protocol prints it – for a warning of
 the graph checks the ID and the message, e.g. `"P-3 M1 ring: ../ring is not released*"` for an own board that is
@@ -248,7 +254,8 @@ catalog (chapter 14.2), so that the protocol can be read without this handbook. 
 section 11, "Requirements", follows it (8.7).
 
 Result folder `<reports>/<YYYYMMDD-hhmmss>/`: `protocol.md`, `graph_checks.json`, `sim.json`, `schematic_<board>.json`,
-`fab/<board>/` (Gerber ZIP, BOM, CPL, raw data, with `[order]` the order form `order.md`), `fab/polarity_<board>.png`,
+`fab/<board>/` (Gerber ZIP, BOM, CPL, raw data, with `[order]` the order form `order.md` and the order settings
+`order.json`), `fab/polarity_<board>.png`,
 `fab/manifest.json`. Archive a released folder in git (`git add -f`) – it is the record of what was ordered.
 
 **One current release.** A project has at most one run that may be uploaded. When the gate decides RELEASED, it
@@ -318,13 +325,16 @@ states the colour the artwork is drawn for, and F-6 fails it on a mask that gets
 thickness the form does not offer (FR-4, 2 layers: 0.4, 0.6, 0.8, 1.0, 1.2, 1.6 or 2.0 mm). Every colour other than
 green takes two more days at JLCPCB (its quote form, read 2026-10-28); `edakit cost` prices the fee table's board –
 green, 1.6 mm, lead-free HASL – whatever `[order]` says. The board file is in the layout hash, so a changed remark,
-colour or thickness needs the layout review again. Every gate run then writes `fab/<board>/order.md` next to the
-upload files – layers, size, quantity, thickness, the colours of mask and silkscreen, finish, the mark at the
+colour or thickness voids the sign-offs of scope `layout`; the settings that change the board as made – thickness,
+colours, finish and mark – are in the fab hash as well (8.2), so the layout review M-5 of scope `fab` lapses with
+them too, while a new remark or tab zone leaves it standing. Every gate run then writes `fab/<board>/order.md` next to
+the upload files – layers, size, quantity, thickness, the colours of mask and silkscreen, finish, the mark at the
 placeholder, the remark; PCBA type and side from `[release] assembly`, tooling holes "Added by Customer" when the
 board has `[tooling]`, bake "Yes" when the stock snapshot gives a BOM part MSL ≥ 5; the tab zones with their nearest
 copper and every outline stretch with no copper within `tab_copper_mm` (Gerber coordinates, what JLCPCB sees); the
-parts bought separately with their supplier (`edakit order`) – and F-6 checks the settings against the files. Fill the
-form from order.md of the released run and write tab zones only on stretches it lists as free.
+parts bought separately with their supplier (`edakit order`) – and `fab/<board>/order.json` with the settings the fab
+hash takes; F-6 checks the settings against the files. Fill the form from order.md of the released run – with M-5 of
+scope `fab` its settings are the ones the review signed – and write tab zones only on stretches it lists as free.
 
 The MCP server cannot order. Lessons from the reference order:
 

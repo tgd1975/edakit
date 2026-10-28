@@ -20,9 +20,10 @@ RELEASED only if
   - all of that for exactly this state: sign-offs count only for the hash of their scope – 'circuit' (graph with its
     check settings, parts database, simulation config), 'layout' (the board files with the artwork they place,
     further layout_files of [release], the footprint geometry) or 'fab' (what the manufacturer builds from: the
-    Gerber layers rasterised, the drill hits, BOM and CPL rows – known after stage F, fab.fab_layers). An accepted
-    warning with scope 'decision' counts regardless of the hash and refers to a numbered decision in the docs; one
-    that names its parts ({designator: LCSC}) counts only while they are the same parts.
+    Gerber layers rasterised, the drill hits, BOM and CPL rows, with [order] the order settings that change the board
+    as made – known after stage F, fab.fab_layers). An accepted warning with scope 'decision' counts regardless of the
+    hash and refers to a numbered decision in the docs; one that names its parts ({designator: LCSC}) counts only
+    while they are the same parts.
   - with [project] requirements (requirements.py): every requirement 'must' has passing evidence in this run, and
     every 'should' without it is accepted like a warning – section 11 of the protocol lists them all, section 6 the
     acceptance steps. A draft binds nothing yet: it never blocks and needs no acceptance, the findings about it are
@@ -637,7 +638,8 @@ def write_protocol(cfg, outdir, head, rows, sim, signoff, notes, decision, reaso
          f"{', requirements' if cfg.requirements else ''}) |",
          f"| SHA-256 layout | `{head['layout_sha256']}` (board files, artwork, layout files, footprint geometry) |",
          *([f"| SHA-256 fab | `{head['fab_sha256']}` (what the manufacturer builds from: Gerber layers, drill hits, "
-            f"BOM and CPL rows – {head['fab_method']}) |"] if head.get("fab_sha256") else []),
+            f"BOM and CPL rows, with [order] the order settings – {head['fab_method']}) |"]
+           if head.get("fab_sha256") else []),
          f"| Git | `{head['git_commit']}`{' + uncommitted changes' if head['git_dirty'] else ''} |",
          f"| Tools | Python {head['tools']['python']}, edakit {head['tools']['edakit']}, {head['tools']['ngspice']}, "
          f"easyeda-mcp-pro {head['tools']['easyeda-mcp-pro']} |",
