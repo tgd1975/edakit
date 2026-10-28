@@ -376,3 +376,13 @@ def test_gate_counts_the_project_stages(project, monkeypatch, capsys):
     out = capsys.readouterr().out
     steps = [(m[1], m[2]) for m in map(STEP.match, out.splitlines()) if m]
     assert steps == [("1", "3"), ("2", "3"), ("3", "3")] and "step 3/3: X firmware build" in out
+
+
+def test_gate_with_the_graph_outside_the_project(project, monkeypatch, tmp_path):
+    """A path in edakit.toml may be absolute (handbook 10.1): the protocol names a graph outside the project in full."""
+    shared = tmp_path / "shared" / "graph.json"
+    shared.parent.mkdir()
+    project.graph_file.rename(shared)
+    toml = project.root / "edakit.toml"
+    toml.write_text(toml.read_text().replace('graph = "hardware/graph.json"', f'graph = "{shared}"'))
+    assert f"| Object | `{shared}` v" in gate_run(project, monkeypatch)

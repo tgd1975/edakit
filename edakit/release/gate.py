@@ -600,7 +600,7 @@ def write_protocol(cfg, outdir, head, rows, sim, signoff, notes, decision, reaso
         by_stage["E"][c["result"]] += 1
     L = [f"# Test protocol – release check {cfg.project}\n", "| | |\n|---|---|",
          f"| Date | {head['time']} |", f"| Run by | {head['tester']} |",
-         f"| Object | `{cfg.graph.relative_to(cfg.root)}` v{head['graph_version']} ({head['graph_date']}), boards "
+         f"| Object | `{cfg.relative(cfg.graph)}` v{head['graph_version']} ({head['graph_date']}), boards "
          f"{', '.join(cfg.boards)} in EasyEDA project {cfg.project} |",
          f"| SHA-256 graph | `{head['graph_sha256']}` |",
          f"| SHA-256 circuit | `{head['state_sha256']}` (graph, parts database, simulation config) |",
