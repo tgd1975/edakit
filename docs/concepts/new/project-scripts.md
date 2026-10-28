@@ -270,7 +270,7 @@ entries and the names above. Shown is the run without findings. Left out are the
 
 ## Example: the reference project
 
-Eight entries. The board file is split here into a part written by hand and a generated part (decision 4).
+Eight entries. `platine` writes its sections into the tree's board file, next to what is written by hand (decision 4).
 
 ```mermaid
 flowchart TD
@@ -380,9 +380,6 @@ points for further agents stay empty.
 
 ```toml
 # reference project – edakit.toml (draft; [scripts.*] does not exist in edakit yet)
-[boards.tree]
-file = ["hardware/boards/tree.toml",            # by hand: routing rules, pours, silkscreen
-        "hardware/boards/tree_geometrie.toml"]  # written by scripts.platine
 
 # --- inputs for edakit ----------------------------------------------------------------------------------------
 [scripts.platine]
@@ -390,7 +387,7 @@ kind   = "input"
 cmd    = ["uv", "run", "hardware/easyeda/pcb_layout.py", "platine"]   # new subcommand
 about  = "Outline, holes, LED spots and fixed tracks are computed (fixed tracks: D-48)"
 reads  = ["hardware/easyeda/bahnen_hinten.py", "versionen.toml"]
-writes = ["hardware/boards/tree_geometrie.toml"]
+writes = ["board:tree"]                         # its sections of hardware/boards/tree.toml (decision 4)
 
 [scripts.baumgrafik]
 kind   = "input"
@@ -617,7 +614,7 @@ e.g. `project-library:<b>`; plain `library:` would read like the cache `<artifac
 
 ## What would change in edakit
 
-Nine building blocks, none of them built. The order is also the order to build them in.
+Eight building blocks, none of them built. The order is also the order to build them in.
 
 1. **Read the entries:** read `[scripts.*]` in `config.py` and check that they resolve into a DAG with edakit's steps
    (Checking the TOML). `[[release.stages]]` and `sim_plugin` become the kinds `check` and `sim`; the old keys keep
@@ -628,16 +625,13 @@ Nine building blocks, none of them built. The order is also the order to build t
    gate. `edakit sim` already stamps its result this way (`inputs_sha256` in `<artifacts>/sim/result.json`).
 4. **Order and commands:** steps such as `pcb apply`, `silk apply` and `gate` run outdated `input` scripts first. New
    are `edakit scripts` (list with state) and `edakit run <name>`.
-5. **A board file from several files:** `file = […]`, so that what is written by hand and what a project script
-   generates stay apart. edakit's own rows (`pcb place --write`, later the auto-layout) stay in `[place]` of the first
-   file, the one by hand, marked `auto = true` (decision 4).
-6. **Version the footprint geometry:** `pcb_geometry_<b>.json` lies in `build/` today but is hashed, so a fresh clone
+5. **Version the footprint geometry:** `pcb_geometry_<b>.json` lies in `build/` today but is hashed, so a fresh clone
    and the CI cannot compute the layout hash.
-7. **Checks in the gate:** a place (`at`, also after F, to see the Gerber data of the own run) and the phase
+6. **Checks in the gate:** a place (`at`, also after F, to see the Gerber data of the own run) and the phase
    `acceptance`.
-8. **Agents:** read and check `[agents.*]` (R9–R11). The gate requires their sign-offs; the skills start them at their
+7. **Agents:** read and check `[agents.*]` (R9–R11). The gate requires their sign-offs; the skills start them at their
    hook point or in the place of the agent they replace.
-9. **Skills and the session:** `start`, `pcb-round`, `hardware-change`, `release` and `new-project` use
+8. **Skills and the session:** `start`, `pcb-round`, `hardware-change`, `release` and `new-project` use
    `edakit scripts`; the SessionStart hook lists the scripts.
 
 Built and on main (4161350): the SVGs of `[[silk.art]]` count in the layout hash, a special case of block 2. Since #65
@@ -655,7 +649,7 @@ point the user left to Claude and then confirmed.
 | 1 | Where do the fields live: in `edakit.toml`, or as a header block in the script (like `# /// script`)? | In `edakit.toml`, as `[scripts.*]` next to `[[release.stages]]` and `sim_plugin`: one file shows the whole flow, and a script with subcommands gives several entries | accepted; the first recommendation, a header block in the script, was dropped |
 | 2 | How does edakit know "outdated": a stamp over the inputs, or a check command per script? | The stamp as default, `check` optional for an exact check | decided by Claude: `edakit sim` stamps its result this way already |
 | 3 | What goes into the hash: the result or the script's code? | The result. Who wants the code to count names it in `layout_files` | decided by Claude: a sign-off depends on what is built |
-| 4 | Split the board file into a part by hand and a generated part? | A project script that generates whole sections writes a file of its own (`file = […]`); edakit's own `auto` rows stay in `[place]` of the board file | the user's choice, with decision 3 of design-as-text; a file of their own beside it (`<b>.auto.toml`) was weighed and not taken |
+| 4 | Split the board file into a part by hand and a generated part? | No, the board file stays one file. edakit's `auto` rows and the sections a project script generates go into it; every writer keeps the lines of the others, as `pcb place --write` does | the user's choice, with decision 3 of design-as-text; the first recommendation was to split it with one owner per file, and a file `<b>.auto.toml` beside it was weighed too |
 | 5 | Version the footprint geometry? | Yes, otherwise CI and a fresh clone lack the layout hash | decided by Claude |
 | 6 | Which Python runs the scripts? | `cmd` stays free; edakit passes itself on, so that `from edakit import …` works in every call | decided by Claude |
 | 7 | Does edakit run `input` scripts itself or only report them? | It runs them; `easyeda` scripts on command only | accepted |
