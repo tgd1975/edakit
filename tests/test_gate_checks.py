@@ -4,12 +4,14 @@ manufacturing files; a failure blocks the release, with advisory = true it is li
 acceptance do not run in the gate: they are lines on the lists of section 6. A check has no stamp – it runs in every
 gate. On the example, with the reference project's mechanik (stage K) and abnahme (A, after delivery) as models."""
 
+import os
 import sys
 
+import pytest
 import test_scripts as ts
 from test_gate import decision, gate_run, section
 
-from edakit import cli, scripts
+from edakit import __version__, cli, scripts
 
 # A project check of the tests: its verdict from its first argument; what it saw of the run's folder in its output.
 FITS = '''\
@@ -250,3 +252,53 @@ def test_the_checks_as_the_gate_takes_them(project):
                    "R": ("R", "firmware build", "export", "before S", False),
                    "gerber": ("X", "gerber", "export", "after F", False),
                    "abnahme": ("A", "abnahme", "acceptance", "", False)}
+
+
+# --- python in cmd: edakit's own interpreter (concept project-scripts, decision 6) -------------------------------------
+# A check that uses edakit itself: which edakit and which interpreter ran it.
+USES_EDAKIT = '''\
+"""The check imports edakit – it needs edakit's own Python."""
+import json, sys
+from edakit import __version__
+print(json.dumps([["Y-1", "edakit importable", __version__, sys.executable, True]]))
+'''
+
+
+def python_without_edakit(tmp_path, monkeypatch):
+    """python and python3 of the PATH: an interpreter without edakit, which says so and exits 7."""
+    path = tmp_path / "path"
+    path.mkdir()
+    for name in ("python", "python3"):
+        (path / name).write_text("#!/bin/sh\necho 'the python of the PATH, without edakit' >&2\nexit 7\n")
+        (path / name).chmod(0o755)
+    monkeypatch.setenv("PATH", f"{path}{os.pathsep}{os.environ['PATH']}")
+
+
+@pytest.mark.parametrize("python", ["python", "python3"])
+def test_python_in_a_checks_cmd_is_edakits_own_interpreter(project, tmp_path, monkeypatch, python):
+    """Red before: the gate ran the python of the PATH, here one without edakit. Decision 6 of the concept
+    project-scripts: python or python3 as the first word of a [scripts] cmd is edakit's own interpreter
+    (sys.executable), so that the check can import edakit; the protocol shows the cmd as written."""
+    python_without_edakit(tmp_path, monkeypatch)
+    write(project, "hardware/checks/uses_edakit.py", USES_EDAKIT)
+    with_checks(project, ts.entry("edakit-version", kind="check", id="Y", cmd=[python, "hardware/checks/uses_edakit.py"],
+                                  about="The check runs with edakit's own Python", phase="export")
+                + ts.entry("mechanik", kind="check", id="K", cmd=[python, "hardware/checks/fits.py", "exit", "3"],
+                           about=ABOUT, phase="export"))
+    text = gate_run(project, monkeypatch)
+    assert stage(text, "Y").endswith("| 1 | 0 | 0 | 0 | 0 | passed |")
+    assert (f"| Y | Y-1 | edakit-version | edakit importable | {__version__} | {sys.executable} | passed |"
+            in section(text, 8))
+    assert f"| K | K | mechanik | {python} hardware/checks/fits.py exit 3 | exit 3 | exit 0 | FAILED |" in section(text, 8)
+
+
+def test_a_release_stage_runs_its_cmd_exactly_as_written(project, tmp_path, monkeypatch):
+    """[[release.stages]] stay as they are – existing projects rely on them: their python is the one of the PATH."""
+    python_without_edakit(tmp_path, monkeypatch)
+    with_checks(project, '\n[[release.stages]]\nid = "R"\nname = "firmware build"\n'
+                         'cmd = ["python", "hardware/checks/uses_edakit.py"]\n')
+    write(project, "hardware/checks/uses_edakit.py", USES_EDAKIT)
+    text = gate_run(project, monkeypatch)
+    assert ("| R | R | firmware build | python hardware/checks/uses_edakit.py | exit 7 | exit 0 | FAILED |"
+            in section(text, 8))
+    assert (run_folder(project) / "stage_R.txt").read_text() == "the python of the PATH, without edakit\n"

@@ -802,6 +802,15 @@ def gate_rows(cfg):
 # --- the checks in the gate (handbook 8.1) ----------------------------------------------------------------------------
 
 TIMEOUT = 900       # seconds a check may run in the gate – of a [[release.stages]] its timeout, this by default
+PYTHON = ("python", "python3")   # the first word of a [scripts] cmd that stands for edakit's own interpreter
+
+
+def command(cmd):
+    """What edakit runs for the cmd of a [scripts] entry: cmd stays free, and python or python3 as its first word is
+    edakit's own interpreter (sys.executable), whatever python the PATH holds – so that the script can import edakit
+    (concept project-scripts, decision 6)."""
+    cmd = list(cmd)
+    return [sys.executable, *cmd[1:]] if cmd and cmd[0] in PYTHON and sys.executable else cmd
 
 
 class Check(NamedTuple):
@@ -810,11 +819,17 @@ class Check(NamedTuple):
     id: str             # its stage in the protocol
     title: str          # its name in the protocol: the [scripts] name, the name of a [[release.stages]]
     about: str          # what it checks – of a [[release.stages]] without about its cmd
-    cmd: list
+    cmd: list           # as written – the protocol shows it so
     phase: str          # export, order, acceptance
     at: str             # phase export: "before S" or "after F"; "" in the phases after the export
     advisory: bool      # a failure is listed and does not block
     timeout: float
+    release_stage: bool = False   # a [[release.stages]]: its cmd runs exactly as written
+
+    def argv(self):
+        """What the gate runs: of a [scripts] entry its cmd with python as edakit's own (command); of a
+        [[release.stages]] the cmd exactly as written – their python is the PATH's, as projects rely on it."""
+        return list(self.cmd) if self.release_stage else command(self.cmd)
 
 
 def gate_checks(cfg):
@@ -838,7 +853,7 @@ def gate_checks(cfg):
                 continue
             cmd = s.get("cmd", [])
             check = Check(str(s["id"]), str(s["id"]), str(s.get("name", "")), s.get("about", " ".join(cmd)), cmd,
-                          "export", "before S", bool(s.get("advisory")), s.get("timeout", TIMEOUT))
+                          "export", "before S", bool(s.get("advisory")), s.get("timeout", TIMEOUT), release_stage=True)
         else:
             check = Check(e.label, s["id"], e.label, s["about"], list(s["cmd"]), s["phase"],
                           (s.get("at") or "before S") if s["phase"] == "export" else "", bool(s.get("advisory")),

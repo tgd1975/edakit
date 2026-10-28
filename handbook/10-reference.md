@@ -129,7 +129,7 @@ the other kinds yet. Without the table nothing changes.
 | Key | For | Meaning |
 |---|---|---|
 | `kind` | every entry | `input`, `derive`, `easyeda` or `check` (8.6); the kind `sim` is `[project] sim_plugin` |
-| `cmd` | every entry | the command as a list, run in the project directory; a check gets `EDAKIT_RUN`, the gate run's folder (8.1) |
+| `cmd` | every entry | the command as a list, run in the project directory – `python` or `python3` as its first word is edakit's own interpreter, where edakit runs the entry (8.6); a check gets `EDAKIT_RUN`, the gate run's folder (8.1) |
 | `about` | every entry | one sentence why the script exists, citing a decision |
 | `writes` | input, derive, easyeda (required) | what it makes: paths; an input also `board:<b>`; an easyeda script changes `project-library:<b>` (not `footprints:<b>`, the geometry `pcb dump` measures); `<b>` a made board |
 | `reads` | every kind (optional) | what its result is made from: edakit's data (8.6, each with a hash; the project library has none), files and folders – the script itself, the first file `cmd` names, counts anyway |

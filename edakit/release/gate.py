@@ -343,7 +343,8 @@ def stage_graph(cfg, design):
 def stage_checks(cfg, outdir, project_checks, step=None):
     """The project's checks of phase export (scripts.gate_checks: [[release.stages]] and [scripts] of kind check), each
     a stage of its own. Its cmd runs in the project folder, with EDAKIT_RUN naming this run's folder – after stage F
-    its fab/<board>/ holds the manufacturing files; stdout and stderr go to stage_<id>.txt there. The last stdout line
+    its fab/<board>/ holds the manufacturing files; python as the first word of a [scripts] cmd is edakit's own, a
+    [[release.stages]] runs as written (Check.argv). stdout and stderr go to stage_<id>.txt there. The last stdout line
     may be a JSON list of [id, check, actual, expected, ok]; otherwise only the exit code counts, 0 passes. A failure
     of an advisory check is an advisory row: listed, it does not block. Returns (rows, the ids of the checks run);
     step: eda.Steps, one step per check."""
@@ -357,7 +358,7 @@ def stage_checks(cfg, outdir, project_checks, step=None):
         try:
             if not c.cmd:
                 raise OSError("no cmd")
-            res = subprocess.run(c.cmd, capture_output=True, text=True, cwd=cfg.root, timeout=c.timeout, env=env)
+            res = subprocess.run(c.argv(), capture_output=True, text=True, cwd=cfg.root, timeout=c.timeout, env=env)
             log.write_text(res.stdout + res.stderr, encoding="utf-8")
         except (OSError, subprocess.TimeoutExpired) as e:
             rows.append({"stage": c.id, "id": c.id, "item": c.title, "check": f"not runnable: {e}", "result": "fail"})

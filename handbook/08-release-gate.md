@@ -114,8 +114,9 @@ advisory = true             # the stand is adapted after delivery anyway (D-37)
   and F.
 - **What it gets:** its `cmd` runs in the project folder, with the gate's environment and `EDAKIT_RUN`, the absolute
   path of this run's folder `<reports>/<run>/` – its `sim.json` and `graph_checks.json`, after F `fab/<board>/` with
-  `gerber/`, `gerber_<board>.zip`, `bom_<board>.csv` and `cpl_<board>.csv`. It may take 900 s; a
-  `[[release.stages]]` sets its own with `timeout`.
+  `gerber/`, `gerber_<board>.zip`, `bom_<board>.csv` and `cpl_<board>.csv`. `python` or `python3` as the first word
+  of a `[scripts]` check's `cmd` is edakit's own interpreter, so the check can import edakit; a `[[release.stages]]`
+  runs as written (8.6). It may take 900 s; a `[[release.stages]]` sets its own with `timeout`.
 - **Its result:** stdout and stderr go to `stage_<id>.txt` in the run's folder. The last stdout line may be a JSON
   list of `[id, check, actual, expected, ok]`, one row each; otherwise one row with the exit code, and 0 passes. The
   rows stand in section 8 of the protocol, the stage with its counts in section 1, a failed row in section 2.
@@ -437,6 +438,15 @@ follows from that and from edakit's steps in their fixed order, so nobody has to
 | `easyeda` | changes in EasyEDA: the project library, `project-library:<b>` | on command only |
 | `check` | – | phase `export`: a stage of the gate (8.1), before S, or with `at = "after F"` after stage F on the run's manufacturing files; phase `order` and `acceptance`: a line of section 6, after the export |
 | `sim` | – | `[project] sim_plugin`, inside `edakit sim` (5.1) |
+
+**`cmd` and Python.** `cmd` is free: a list, its first word a program, run in the project directory. `python` or
+`python3` as the first word is edakit's own interpreter – the one edakit itself runs in –, whatever python the PATH
+holds, so that the script can `from edakit import …`: `cmd = ["python", "hardware/sockel/sockel.py", "--pruefen"]`.
+That holds where edakit runs the entry – today the gate, for a check of phase export (8.1); the protocol shows `cmd`
+as written. A script you run by hand – an input, derive or easyeda script, a check of phase order or acceptance –
+gets the python of your shell. **`[[release.stages]]` stay exactly as they are:** their `cmd` runs as written,
+`python` the one of the PATH, since existing projects rely on it – a stage that wants edakit's Python becomes a
+`[scripts]` entry of kind `check`.
 
 `[[release.stages]]` (8.1) take part as checks of phase export before S. The names of edakit's data in `reads` and
 `writes`, each with a hash of what edakit has of it offline – `<b>` is a made board; a bought one (4.5) has none of
