@@ -14,9 +14,9 @@ checked them – against the graph, on the exported files themselves. Nobody dra
 EasyEDA project is generated and can be regenerated.
 
 It comes as a **Claude Code plugin** (skills, agents, the pinned EasyEDA MCP server, a hook that lets parallel
-sessions share EasyEDA, one that starts every session with the working agreements) and as a **Python command line**
-(`edakit`), plus a **handbook** that explains what, how and why – including the ~25 EasyEDA API behaviours that
-cost us time.
+sessions share EasyEDA, one that starts every session with the working agreements and the project's own scripts and
+agents) and as a **Python command line** (`edakit`), plus a **handbook** that explains what, how and why – including
+the ~25 EasyEDA API behaviours that cost us time.
 
 ```text
  parts database ──► hardware graph ──► schematic ──► PCB ──► manufacturing files ──► JLCPCB ──► acceptance

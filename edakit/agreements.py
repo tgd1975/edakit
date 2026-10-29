@@ -85,7 +85,7 @@ def read(path):
         return True, unread
     return data.get("project", {}).get("agreements", True) is not False, [
         (table, name, entry) for table in ("scripts", "agents") if isinstance(data.get(table), dict)
-        for name, entry in data[table].items() if isinstance(entry, dict)]     # a value, no table: edakit check's
+        for name, entry in data[table].items() if isinstance(entry, dict)]     # not a table: edakit check reports it
 
 
 def agreements(chapter=CHAPTER):
