@@ -67,7 +67,8 @@ the pour gets a notch from the edge around each tooling hole instead.
 
 **Before a swap** – another part for the same place, because the old one is out of stock or not in JLCPCB's library –
 `edakit part diff OLD NEW` (LCSC numbers or parts-entry keys) compares the footprints without EasyEDA. The geometry is
-the dump of a placed part, else the library footprint of `edakit part import`. Pads are matched by position only: for
+the dump of a placed part, else the footprint data of the parts entry (4.5), else the library footprint of
+`edakit part import`. Pads are matched by position only: for
 each turn of 0, 90, 180 and 270° on the same side, and for the mirror image (the other side), the nearest assignment
 after laying origins and centroids on each other, with the shift that lays the assigned pads over each other best. A
 turn fits when every pad of OLD lies on the copper of its new pad (shape, size and rotation from the library; for a
@@ -116,14 +117,19 @@ places is a finding – `edakit pcb place` (below) gives such a part a spot next
 
 **Geometry.** The plan works with footprint boxes and pads relative to the part origin: from `edakit pcb dump` once the
 parts are in the PCB – the project's footprints as placed – and, for a planned part that is not in the dump yet, from
-the library footprint `edakit part import <LCSC>` cached (4.2): `pcb plan` names those parts ("library geometry") and
-takes their pad nets from the graph. The dump wins. The dump keeps the hole of every through-hole pad (`hole` [w, l] in
+the footprint data of its parts entry (4.5), else from the library footprint `edakit part import <LCSC>` cached (4.2):
+`pcb plan` names those parts ("footprint data of the parts entry", "library geometry") and takes their pad nets from
+the graph. The dump wins. The dump keeps the hole of every through-hole pad (`hole` [w, l] in
 mm, `plated`), and `pcb plan` runs P-7 on the plan's geometry: a hole that does not take its lead is a plan finding
 (`P-7 D31 (pads 1, 2, 3, 4, library geometry …): hole 0.70 mm for diagonal 0.71 mm …`), a tight hole or a missing `lead`
 is printed. A geometry file from before has no holes – dump again (it changes the layout hash once). Library and EasyEDA
 Pro agree on the pads within 0.1 mil (eleven footprints of the reference project; one switch 1 mil); the boxes differ by
 up to 0.3 mm, because EasyEDA Pro measures the silkscreen of the placed part. Without a dump and without a cached
 footprint a planned part stays a finding.
+
+The dump of a part whose parts entry has footprint data (4.5) gives every pad its shape, size, rotation and layer as
+well (`shape`, `w`, `h` in mil, `rot`, `layer`, the form of the library cache), so that P-10 holds the copy to the
+data; every other part is measured as before, and its lines in the file stay as they were.
 
 The dump lies beside the board file, with its name: `hardware/boards/main.toml` has `hardware/boards/main.geometry.json`.
 It is versioned with the board file and in the layout hash (8.2), so CI and a fresh clone have it – P-7 and P-8 judge

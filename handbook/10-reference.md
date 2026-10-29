@@ -287,13 +287,15 @@ scripts that write what they read first, when those are outdated or never ran, a
 
 | Command | EasyEDA | Reads | Writes |
 |---|---|---|---|
-| `edakit check [--release] [--json F]` | – | graph, parts (pins, identity P-6), pin table; if there: footprint geometry and library footprints (P-7, P-8), library symbols (P-1); `[scripts]`, `[[release.stages]]` and `sim_plugin` with the board files' `[[silk.art]]`, `hardware/scripts.lock` and what the scripts read (8.6); `[agents]` and the agent files (8.6); with `[project] requirements` the requirements files and the sign-off file's manual checks (G-20 to G-23; a file missing or not valid: exit 1) | – |
+| `edakit check [--release] [--json F]` | – | graph, parts (pins, identity P-6), pin table; if there: footprint geometry and library footprints (P-7, P-8), library symbols (P-1), the footprint data of parts entries with the footprint geometry (P-9, P-10); `[scripts]`, `[[release.stages]]` and `sim_plugin` with the board files' `[[silk.art]]`, `hardware/scripts.lock` and what the scripts read (8.6); `[agents]` and the agent files (8.6); with `[project] requirements` the requirements files and the sign-off file's manual checks (G-20 to G-23; a file missing or not valid: exit 1) | – |
 | `edakit rules [ID …]` | – | the rule catalog (no project needed) | – |
 | `edakit hints [--json F]` | – | graph, parts, sim config | – |
 | `edakit block list\|show NAME` | – | the block library (no project needed) | – |
 | `edakit block add NAME --as I [--connect PORT=NET …] [--board B] [--file F] [--dry-run]` | – | graph, parts, block | graph (formatting kept), missing parts entries |
 | `edakit part import LCSC [--update]` | – (internet) | EasyEDA's public component data of that number (4.2) | a new `hardware/parts/<LCSC>.json`, else nothing (`--update`: the fields it lacks); `<artifacts>/library/<LCSC>.json`, `<artifacts>/footprints/<footprint>.json`; exit 2 = the entry differs |
-| `edakit part diff OLD NEW [--json F]` | – | geometry of both (the dump of a placed part, else the library footprint of `part import`), their parts entries (roles, `lead`), graph | – (F: the comparison as JSON); exit 0 = drop-in, 2 = something to decide (7.3) |
+| `edakit part diff OLD NEW [--json F]` | – | geometry of both (the dump of a placed part, else the footprint data of the entry, else the library footprint of `part import`), their parts entries (roles, `lead`), graph | – (F: the comparison as JSON); exit 0 = drop-in, 2 = something to decide (7.3) |
+| `edakit part footprint KEY [--board B] [--write]` | – | the footprint geometry of a placed part of KEY (`--board`: that board's), else the library footprint of `part import`; with the dump also the library footprint, for shapes and sizes (4.5) | – (prints the footprint as data); `--write`: `footprint_data` and a line of `sources` in the parts entry. Refused for an entry that has the data; exit 2 when P-9 finds something missing |
+| `edakit part build KEY [--board B] [--write]` | – / ✓ with `--write` | the entry's `footprint_data`, `pins` and `symbol` (P-9 must pass), the graph (the parts of the board that use it); with `--write` the board's template in EasyEDA, where the carrier is placed (4.5) | – (prints what it would build); `--write`: the copy of the carrier in the project library – footprint, with `"symbol": "box"` symbol –, the project saved; with `[scripts]` the change of `project-library:<b>` in `hardware/scripts.lock` (8.6). Exit 2 when the copy read back differs from the data; not run against EasyEDA yet |
 | `edakit part fetch KEY [--url U] \| --all` | – (internet) | the parts entry (`mpn`, `datasheet.url`, `lcsc`, `verified.datasheet_sha256`); the sources of 4.6 | `<datasheets>/<KEY>.pdf` and `.json` (a failed download keeps the earlier copy, exit 2; variant or changed since the sign-off: exit 2) |
 | `edakit part search "KEYWORDS" [--basic] [--min-stock N] [--limit 25] [--json F]` | – (internet) | JLCPCB's public parts catalogue (4.2) | – (F: the hits); exit 2 = no hits |
 | `edakit part datasheet [--connector C …] [--name N]` | – | graph, parts, sim config, board file (4.5) | `hardware/datasheet/<N>.json` and `.md`; without `--connector` every datasheet renewed |
@@ -315,8 +317,8 @@ scripts that write what they read first, when those are outdated or never ran, a
 | `edakit schematic copy [--source] [--target] [--save]` | ✓ | schematic | copy |
 | `edakit schematic layout [--dry-run] [--reread] [--force] [--save]` | ✓ / – | graph, schematic, cached geometry | board schematic, `layout_preview_<name>.svg`; `--save` only when the netlist equals the graph (6.1) |
 | `edakit schematic draw [--board] [--out F] [--force]` | – | graph, parts, the schematic file if there; for a `{sim:…}` note the saved simulation result | `schematic_<board>.svg` (or F) |
-| `edakit pcb dump [--ref]` | ✓ | PCB | `hardware/boards/<board>.geometry.json`, beside the board file and versioned (parts end at 0°/TOP; through-hole pads with `hole` [w, l] mm and `plated`); a `<artifacts>/pcb_geometry_<board>.json` from before is moved there (7.4) |
-| `edakit pcb plan` | – | plan, geometry (the dump; library footprints of `part import` for parts not in it), net currents, graph (`layout`, L-12), parts entries (`body`, `lead` `length_mm`, `mate`) | `pcb_plan_<board>.png/.json`, `pcb_netclasses_<board>.json`, `mech_<board>.json` (7.4) |
+| `edakit pcb dump [--ref]` | ✓ | PCB; the parts entries (which have footprint data) | `hardware/boards/<board>.geometry.json`, beside the board file and versioned (parts end at 0°/TOP; through-hole pads with `hole` [w, l] mm and `plated`; the pads of a part whose entry has footprint data with `shape`, `w`, `h`, `rot`, `layer`); a `<artifacts>/pcb_geometry_<board>.json` from before is moved there (7.4) |
+| `edakit pcb plan` | – | plan, geometry (the dump; for parts not in it the footprint data of their entry, else the library footprints of `part import`), net currents, graph (`layout`, L-12), parts entries (`body`, `lead` `length_mm`, `mate`) | `pcb_plan_<board>.png/.json`, `pcb_netclasses_<board>.json`, `mech_<board>.json` (7.4) |
 | `edakit pcb place [--write] [--only C1,R1]` | – | plan, geometry as `pcb plan` reads it, graph (`layout.near`, decoupling of L-12), `[near]` | with `--write`: rows with `auto = true` at the end of `[place]` |
 | `edakit pcb parts [--write]` | ✓ | board schematic, PCB, graph | PCB parts, UniqueIds, geometry |
 | `edakit pcb nets [--write]` | ✓ | graph, PCB | pad nets |
@@ -345,7 +347,7 @@ scripts that write what they read first, when those are outdated or never ran, a
 edakit.toml                 the table of contents: project, boards, where the files are
 hardware/requirements.toml  what the circuit must do: needs and requirements, if [project] requirements names it
 hardware/graph.json         the hardware graph (only source of parts and connections), ground net, check settings
-hardware/parts/*.json       parts database
+hardware/parts/*.json       parts database; an own footprint as data in its entry (footprint_data, 4.5)
 hardware/datasheet/<name>.* the board as a part for other projects: parts entry and datasheet (edakit part datasheet)
 hardware/sim.json           simulation scenarios
 hardware/stock.json         what the assembler said about the parts, dated (edakit stock, P-4)

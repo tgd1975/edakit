@@ -79,7 +79,10 @@ the graph holds. Blocks (`notes` say "block …") passed the checks once – rev
 ## For the M-1 sign-off
 
 Check every critical part again, independently: pinout and pin names, polarity at the footprint (compare the polarity
-sheet with the datasheet drawing), package, every rating and parameter, especially values marked as assumption. Read
+sheet with the datasheet drawing), package, every rating and parameter, especially values marked as assumption. A part
+whose parts entry has `footprint_data` (an own footprint, handbook 4.5) has its footprint in the entry: compare its
+pads – pin 1, the square pad, the polarity mark (P-9 holds the mark to the pin roles, not to the datasheet) – and the
+outline with the datasheet drawing. Read
 the datasheet the sign-off read: `<datasheets>/<key>.pdf` (`edakit part fetch <key>` if it is missing; its sha256
 against `verified.datasheet_sha256`), not a download of your own. With `[project] requirements`, judge also every
 requirement whose `verify` names `signoff = "M-1"` (`edakit req` lists them) on the circuit, with a calculation, a

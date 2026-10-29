@@ -145,7 +145,12 @@ Every run records two hashes in the protocol header, and a run with stage F a th
   changed requirement voids M-1 and M-6, as a new purpose does: the reviews read the requirements
 - **layout** (`layout_sha256`): the board files with the artwork they place (`[[silk.art]]`) and the footprint
   geometry beside them (`<board>.geometry.json`, 7.4), and `[release] layout_files` – of the made boards; a bought
-  board has none
+  board has none. Where a parts entry has footprint data (4.5), the data of every entry a part of a made board uses
+  as well, after the files, as canonical JSON without the keys of `[release] hash_ignore`: a changed pad voids the
+  sign-offs of scope `layout` as a changed geometry does. A project without footprint data keeps its hash; one with
+  it has "footprint data" among what the protocol header says the hash covers. The circuit hash covers the data
+  without more: it takes every parts file, byte for byte or (with `hash_ignore`) as canonical JSON – a changed pad
+  voids M-1 too, which checks polarity at the footprint
 - **fab** (`fab_sha256`): what the manufacturer builds from, per made board – every Gerber layer of
   `fab/<board>/gerber/` rasterised at 0.02 mm as L-2 does, in the frame of the board outline (documentation and
   drill-drawing layers left out: nobody builds from them), the drill hits (both ends, diameter) rounded to 1 µm and

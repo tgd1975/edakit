@@ -16,12 +16,13 @@ Examples: [the Christmas bell's parts](https://github.com/tgd1975/automatic_chri
 | `order` | where a part bought separately is ordered, supplier → order code: `{"rs": "223-0562", "farnell": "…"}`; a value may be `{code, moq, step}` with the supplier's minimum and pack size, `{"lcsc": {"moq": 20, "step": 20}}` (the LCSC code defaults to `lcsc`). The first supplier is the default of `edakit order`; P-5 warns about a `bom: false` part with neither an LCSC number nor `order` – a `C99…` library number counts as none, LCSC does not sell it |
 | `kind` | `resistor`, `capacitor`, `inductor`, `fuse`, `diode`, `led`, `led_rgb`, `npn`, `pnp`, `pmos`, `nmos`, `switch`, `dip_switch`, `button`, `potentiometer`, `battery_holder`, `buzzer`, `relay`, `connector`, `ic`, `module` |
 | `package`, `footprint` | the footprint name must equal the EasyEDA footprint (L-4 compares it with the PCB) |
+| `footprint_data` | optional: the footprint as data – origin, pads, outline and print in mm –, from which `edakit part build` builds the project's copy and to which P-10 holds it; an own footprint as text (4.5) |
 | `jlc_class` | Basic / Extended Part; P-4 and F-2 warn when JLCPCB's catalogue lists another class |
 | `datasheet` | `url`, `pinout_page`; `edakit part fetch` keeps the PDF beside the project, not in the entry (4.3) |
 | `pins` | pin number → `name` (as in the EasyEDA symbol and identical to the graph – S-2 compares them), `type`, `role` (the meaning; for polarised parts it follows the footprint's polarity print when symbol and footprint disagree), `vmax`; from the datasheet where it applies: `strap` (`"high"`/`"low"`: level the pin needs at reset, G-12), `pull` (`"up"`/`"down"`: internal or built-in pull resistor, with `pull_ohm` if known – G-11, G-12), `hint` (a warning from the datasheet, e.g. "ADC2: no analog reads while WiFi is on"); on MCU and module pins `functions` – what the pin-mux table offers, `<peripheral><instance>.<line>`: `["spi0.sck", "uart0.cts", "i2c1.sda", "pwm1.a", "uart0.tx"]`, `adc0`; for PWM the instance is the slice and the line the channel; `[]` = no free function (used on the module), no key = unknown (G-15); from the recommended operating conditions: `v_op` (`[min, max]` of a supply pin that differs from the part's `vdd_op_min`/`vdd_op_max`) and the thresholds of one input pin, `vih_v` or `vih_ratio`, `vil_v` or `vil_ratio`, where they differ from the part's (E-3); on a serial output (SDO, Q7) of a clocked part: `out_edge` (`"rising"`/`"falling"`: the clock edge after which it changes) and `t_pd_ns` (`[min, max]` clock-to-output delay at the part's supply, `null` where the datasheet gives none) – `edakit hints` shows them with H-9 |
 | `hints` | warnings of the datasheet for the part as a whole; `edakit hints` shows them and the pin `hint`s of connected pins |
 | `hot_loop` | switching regulators: the pin roles of the loop that carries the pulsed current, from the datasheet's layout section – a buck `["vin", "sw", "gnd"]`, an asynchronous boost `["sw", "gnd"]`; a ground pin without a role is `gnd`. G-18 wants a `layout.loops` entry on each of their nets and on the net behind a diode on `sw` |
-| `symbol` | optional: the sides of the box `edakit schematic draw` draws for an IC or module – `{"left": [pins], "right": [pins], "top": [pins], "bottom": [pins]}`; without it the pins run as on a DIP package (6.5) |
+| `symbol` | optional: the sides of the box `edakit schematic draw` draws for an IC or module – `{"left": [pins], "right": [pins], "top": [pins], "bottom": [pins]}`; without it the pins run as on a DIP package (6.5). With `footprint_data` and its `"symbol": "box"` also the box `edakit part build` draws as the copy's symbol in EasyEDA (4.5) |
 | `params` | values for simulation and calculations; `behavior` for ICs (chapter 5) |
 | `ratings` | limits for the stress checks |
 | `spice` | `{"model": ".model SS34 D(IS=20u N=1.2 RS=0.04 …)"}` for diodes and transistors |
@@ -269,6 +270,113 @@ the datasheet. The skill `own-part` asks for pins, supply range and current once
 writes the entry with `own: {"what": "pcb" | "bin" | "handmade", "notes": …}`: every value with its source ("measured
 2026-11-02, multimeter …, all LEDs on: 182 mA"), what is guessed as "assumption …", and the sign-off against those
 notes. The checks treat it like the copy of an edakit board; P-3 has nothing to compare it with.
+
+### Own footprints as data
+
+A footprint that exists only in EasyEDA – drawn in its editor, or rebuilt there by a script of the project – is not
+text: the repository knows its name, `pcb dump` measures what was put there, and nobody can review or diff it. The
+parts entry can hold it as data instead, in `footprint_data` beside `footprint`. edakit builds the project's copy from
+it (`edakit part build`), holds the copy to it (P-10), and a change of the footprint is a line of text. The Christmas
+bell's T-Display, rebuilt today by its script `tdisplay_device.py` from the copy of a 2×12 female header, as data:
+
+```json
+"footprint": "HDR-TH_24P-P2.54-V-F-R2-C12-S2.54-2",
+"footprint_data": {
+ "symbol": "box",
+ "origin": [0, 0],
+ "pads": {
+  "1": {"x": 11.43, "y": -13.97, "shape": "RECT", "w": 1.7, "h": 1.7, "hole": [1.1, 1.1]},
+  "2": {"x": 11.43, "y": -11.43, "shape": "ELLIPSE", "w": 1.7, "h": 1.7, "hole": [1.1, 1.1]},
+  …
+  "24": {"x": -11.43, "y": 13.97, "shape": "ELLIPSE", "w": 1.7, "h": 1.7, "hole": [1.1, 1.1]}
+ },
+ "lines": [{"points": [[-12.83, -30.2], [12.83, -30.2], [12.83, 21.9], [-12.83, 21.9], [-12.83, -30.2]],
+            "width": 0.1524},
+           {"points": [[-4.6, -29.9], [4.6, -29.9], [4.6, -27.9], [-4.6, -27.9], [-4.6, -29.9]], "width": 0.1524}],
+ "texts": [{"text": "USB", "x": 0, "y": -25.8, "size": 1.5, "width": 0.1524},
+           {"text": "T-Display", "x": 0, "y": 18.3, "size": 1.5, "width": 0.1524}],
+ "outline": [[-12.83, -30.2], [12.83, -30.2], [12.83, 21.9], [-12.83, 21.9]]
+}
+```
+
+– the right row 1–12, the left row 13–24 at x = −11.43, pitch 2.54 mm, square pads 1 and 13 at the USB end. Lengths in
+mm, y up, the footprint seen from the top at 0° – the axes of `pcb dump` (which measures in mil) and of the library
+footprints `edakit part import` caches:
+
+| Field | Content |
+|---|---|
+| `origin` | optional, `[x, y]`: where the footprint's origin lies in these coordinates – the point `[place]` positions and `pcb dump` measures from; default `[0, 0]`. Lets pads be written as a datasheet dimensions them (pin 1 at 0, 0) and the origin put elsewhere |
+| `pads` | pad number → `x`, `y`, `shape` (`RECT`, `ELLIPSE`, `OVAL`), `w`, `h`, `rot` (degrees, default 0), `layer` (`TOP`, `BOTTOM`, `MULTI`; default `MULTI` with a hole, `TOP` without), `hole` `[w, l]` (a slot when l > w), `plated` (default true), `mechanical` (true on a pad whose number is no pin of the entry: a mounting pad) – the form `part import` caches pads in, in mm |
+| `pads_same_number` | optional: number → every pad of a number used several times (shell legs), as the cache has them; `pads` holds the first |
+| `lines` | silkscreen polylines `{points, width}`, closed when the last point is the first; width default 0.15 mm (JLCPCB prints nothing thinner) |
+| `texts` | silkscreen texts `{text, x, y, size, width, rot}`, centred on x, y |
+| `marks` | polarity marks `{sign, x, y, size, width}`: a `"+"` drawn as two strokes of `size` – as L-8 finds a "+" in the silk Gerber (strokes of 0.3 to 2 mm) –, a `"−"` as one |
+| `outline` | the body on the component-shape layer, `[[x, y], …]`: the part's extent in EasyEDA |
+| `symbol` | `"box"`: the copy's symbol is rebuilt too (below); without it the carrier's symbol stays |
+
+**Why beside `footprint`, not in it.** `footprint` stays the name of the copy in EasyEDA: L-4 compares it with the PCB,
+`part import` writes and compares it, `pcb plan`, P-7 and `part diff` find the library footprint by it, and the copy
+keeps the carrier's footprint name (the bell's T-Display is still `HDR-TH_24P-…`, decision D-13 there). An object in
+its place would break every reader of the name – and every older edakit that reads the entry; beside it, an entry
+without `footprint_data` is what it was, and no project changes until it adds the data. The name says which copy, the
+data what it looks like.
+
+**The symbol** follows from `pins` and `symbol`, as `edakit schematic draw` draws a box (6.5): every pin of the entry
+on the side `symbol` names (the others on the right), 10 units of 10 mil long, its name and number from the entry, the
+body as wide as the names need. Nothing is missing for such a box. What the entry does not have is any other drawing:
+a diode, an LED or a transistor is a shape `schematic draw` makes up, not data – so `"symbol": "box"` is for modules,
+ICs and boards, and for every other part the carrier's symbol stays; its pins must be the entry's (P-1 against the
+library symbol, S-2 in the gate). The designator prefix (U, J …) and the device's other properties stay the carrier's.
+With `"symbol": "box"` P-1 does not compare the graph with the carrier's library symbol: it is not the copy's.
+
+**The way:**
+
+1. **A library footprint becomes an own one:** `edakit part footprint KEY` shows the footprint as data,
+   `--write` puts it into the entry as `footprint_data` (with a line in `sources`); an entry that has the data is
+   refused. The source is the dump of a placed part (`<board>.geometry.json`, `--board` picks the board), else the
+   library footprint of `edakit part import`. The dump measures places and holes – shapes and sizes only of parts that
+   have footprint data, and older dumps not even holes –, so shape and size come from the library footprint where it
+   has the pad at the same place; what is still missing, P-9 names ("pads 1–24: shape missing"), exit 2. Neither the
+   dump nor the cache has the print: without `lines`, `texts`, `marks` and `outline` the build keeps the copy's print,
+   with any of them the copy's print is exactly the data's.
+2. **Change the data** – a pad is a line. The circuit hash changes (the parts file, byte for byte), so M-1, which
+   checks polarity at the footprint, is done again (decision 5 of design-as-text), and the layout hash, so a sign-off of
+   scope `layout` lapses; the fab hash sees the copper at the next gate run.
+3. **Build the copy:** `edakit part build KEY` checks the data (P-9) and shows what it would build –
+   `24 pads (24 with a hole), 2 lines, 2 texts, outline, symbol: a box with 24 pins`; `--write` builds it in
+   EasyEDA, under the claim (`--board` picks the board; default the only made one). The carrier is the device the part
+   is placed with – its LCSC number, which for a stand-in is another part's (the bell's T-Display on the female header
+   C18722937), or its `easyeda_device` – and must be on the board's template once (`edakit schematic create`): a device
+   created through the API cannot be placed in the local client, the copy of a system part can. edakit finds the
+   carrier's copies there, opens the footprint copy in its editor, deletes its pads – and, where the data has print,
+   the silkscreen, component-shape, marking and pin-soldering layers –, creates the data's, saves and reads the pads
+   back; with `"symbol": "box"` the same for the symbol. Then it saves the project. With `[scripts]` the build is
+   recorded like an easyeda script: `project-library:<b>` changed, the parts in the PCB and the routing from before it
+   (8.6).
+4. **Into the PCB:** placed parts keep their old copy (9.4) – delete them in the PCB, `edakit pcb parts --write`,
+   `edakit pcb dump` (it measures the pads of parts with footprint data with shape, size, rotation and layer), then
+   `edakit check`: P-10 holds the copy to the data. Then the round as usual, through `route all`.
+
+**Checks** (3.3), only in a project where a parts entry has `footprint_data` – every other project runs the checks it
+ran: **P-9** the data is complete and consistent – every pad its place, shape and size, a through-hole pad its hole;
+every pad a pin of the entry or `mechanical`, every pin a pad; lines, texts, marks and outline well formed; a `"+"`
+mark nearest to a pad whose role is anode, plus or vbus, a `"−"` to cathode or minus (L-8's test, on the text); a symbol
+box whose sides name pins of the entry, each once. **P-10** the copy equals the data – the footprint the dump measured
+on the board has the footprint name of the entry and the data's pads: the same numbers, each within 0.02 mm of its
+place (L-7's tolerance; the bell's copy lies 0.0013 mm off), the same hole within 0.01 mm, and where the dump measured
+them shape, size, rotation and layer. P-10 runs on the dump, offline: in every `edakit check`, right after the dump of
+a round, where a stale copy is found before anything is routed on it, and in the gate's stage P. Stage L does not
+repeat it: there L-10 holds the PCB's pads to the same dump within 0.05 mm – data = dump in P-10, dump = PCB in L-10 –,
+and the PCB export has no holes and shapes, the dump has. The print is not measured by `pcb dump`; the gate sees it on
+the silkscreen (L-8, L-17).
+
+Until the dump has the part, `pcb plan`, `pcb place`, P-7 and `part diff` take the data as the part's geometry
+("footprint data", before the library footprint), so holes and leads are checked on the text already.
+
+Not covered yet: pad shapes NGON and POLYGON (written as RECT, ELLIPSE or OVAL), arcs and circles in the print
+(written as points), the direction of a slot (built along the pad's longer side – the live run of step 3.6 has to show
+it), and the print in P-10. The build runs EasyEDA calls the bell's and the reference project's scripts use, but in this
+form it has not run against EasyEDA yet (implementation plan, live run of 3.6).
 
 ## 4.6 Datasheets kept with the project
 
