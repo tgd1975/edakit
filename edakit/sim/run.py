@@ -13,8 +13,12 @@ the operating point at t = 0, judged by E-5 only; without the key nothing runs.
        current per pin (gpio_i_max_a) and of all outputs together (gpio_i_total_max_a); the junction temperature
        ambient + P x rth_ja_k_per_w of every part whose entry gives it, against its tj_max_c (at most the criteria's),
        and on a board of touch_c against the temperature people may touch
-  E-3  function: supply currents, no supply fed backwards (sources: i_back_max_a, cells: i_charge_max_a, default the
-       criteria's blocking_max_a), regulator outputs and headroom, MCU supply and input levels, MCU outputs only on
+  E-3  function: supply currents, the minimum load of a source with i_min_a – in an operating point of its own with
+       every MCU at its least current (params i_core_min_a) where one gives it; every other check keeps the upper
+       bound i_core_a –, no supply fed backwards (sources: i_back_max_a, cells: i_charge_max_a, default the
+       criteria's blocking_max_a), regulator outputs and headroom, the junction temperature of an LDO with
+       rth_ja_k_per_w – an MCU module's own LDO too (regulator "ldo", its regulator's rth_ja_k_per_w in the module's
+       ratings), with the core current it carries besides its load –, MCU supply and input levels, MCU outputs only on
        pins that can drive, constant-current driver headroom and junction temperature, LED currents on/off as the load
        says (an LED behind a 0 Ω bridge counts on the driver output the bridge joins it to, an LED behind one resistor
        to a single driver output on that output – parallel LEDs with balancing resistors), relays pull in and release
@@ -289,15 +293,30 @@ def touch_limits(design, sim):
     return touch_c
 
 
+def lockout(res, reg):
+    """The `on` of a regulator model: 1 at and above its vin_min, falling to 0 over the UVLO_V below it."""
+    if reg.get("vin_min") is None:
+        return 1.0
+    vin = v(res, reg["vin"]) - v(res, reg["gnd"])
+    return min(1.0, max(vin - reg["vin_min"] + netlist.UVLO_V, 0) / netlist.UVLO_V)
+
+
 def reg_input_current(res, reg):
     """Current a regulator model draws from its input (the same expression as its B-source, lockout included)."""
     iout = max(res.get(reg["ammeter"], 0.0), 0.0)
     p = reg["params"]
     vin = v(res, reg["vin"]) - v(res, reg["gnd"])
-    on = 1.0 if reg.get("vin_min") is None else min(1.0, max(vin - reg["vin_min"] + netlist.UVLO_V, 0) / netlist.UVLO_V)
+    on = lockout(res, reg)
     if reg["kind"] == "ldo":
         return on * (iout + p.get("iq_a", 0.0) + reg["extra_i"])
     return on * (reg["vset"] * (iout + reg["extra_i"]) / (p.get("efficiency", 0.85) * max(vin, 0.3)) + p.get("iq_a", 0.0))
+
+
+def ldo_power(res, reg):
+    """Heat of an LDO model: (vin − vout) × all the current it carries – the load at its output, and what it feeds
+    inside a module besides (extra_i: the MCU's core), off below its lockout."""
+    vin, vout = (v(res, reg[k]) - v(res, reg["gnd"]) for k in ("vin", "vout"))
+    return (vin - vout) * (max(res.get(reg["ammeter"], 0.0), 0.0) + lockout(res, reg) * reg["extra_i"])
 
 
 def behind_resistor(design, joined, outputs):
@@ -332,7 +351,9 @@ def led_on_output(outputs, behind, anode, cathode):
     return None
 
 
-def functional(design, cfg, res, meta, load, ck, plugin):
+def functional(design, cfg, res, meta, load, ck, plugin, low=None):
+    """E-3 and E-4 of one scenario. `low`: (the MCUs' least currents, the result of that operating point) from
+    least_current – the minimum load is checked there."""
     crit = {**DEFAULT_CRITERIA, **cfg.get("criteria", {})}
     amb = cfg.get("ambient_c", 25)
     for des, s in meta["sources"].items():
@@ -342,8 +363,12 @@ def functional(design, cfg, res, meta, load, ck, plugin):
         else:
             ck.add("E-3", des, "current from the supply", i, "information", True, "info", unit=" A")
         if s.get("i_min_a"):  # power banks switch off below a minimum load
-            ck.add("E-3", des, "current keeps the supply on", i, f"≥ {s['i_min_a'] * 1e3:.0f} mA", i >= s["i_min_a"],
-                   unit=" A")
+            what, i_on = "current keeps the supply on", i
+            if low:            # the least the board draws: the MCUs at their least current
+                cores, res_low = low
+                what += " (least current: " + ", ".join(f"{d} {x * 1e3:.3g} mA" for d, x in cores.items()) + ")"
+                i_on = -res_low.get(s["branch"], 0.0)
+            ck.add("E-3", des, what, i_on, f"≥ {s['i_min_a'] * 1e3:.0f} mA", i_on >= s["i_min_a"], unit=" A")
     back_feed(cfg, res, meta, crit, ck)
     for des, reg in meta["regs"].items():
         vin = v(res, reg["vin"]) - v(res, reg["gnd"])
@@ -358,7 +383,7 @@ def functional(design, cfg, res, meta, load, ck, plugin):
             ck.add("E-3", des, "output current", iout, f"≤ {r['i_out_max_a'] * 1e3:.0f} mA", iout <= r["i_out_max_a"],
                    unit=" A")
         if reg["kind"] == "ldo" and "rth_ja_k_per_w" in r:
-            tj, lim = amb + (vin - vout) * iout * r["rth_ja_k_per_w"], tj_limit(r, crit)
+            tj, lim = amb + ldo_power(res, reg) * r["rth_ja_k_per_w"], tj_limit(r, crit)
             ck.add("E-3", des, f"junction temperature at {amb} °C", tj, f"≤ {lim:g} °C", tj <= lim, unit=" °C")
             touch(design, cfg, des, tj, ck)
     for des, m in meta["mcu"].items():
@@ -372,6 +397,12 @@ def functional(design, cfg, res, meta, load, ck, plugin):
         if reg and lim is not None:
             iout = max(res.get(reg["ammeter"], 0.0), 0.0)
             ck.add("E-3", des, "load on the on-board regulator", iout, f"≤ {lim * 1e3:.0f} mA", iout <= lim, unit=" A")
+        if reg and reg["kind"] == "ldo" and "rth_ja_k_per_w" in r:   # a module's own LDO, with the core it feeds
+            heat, rth, tj_max = ldo_power(res, reg), r["rth_ja_k_per_w"], tj_limit(r, crit)
+            tj = amb + heat * rth
+            what = f"junction temperature of the on-board regulator at {amb} °C: {heat:.3g} W × {rth:g} K/W"
+            ck.add("E-3", des, what, tj, f"≤ {tj_max:g} °C", tj <= tj_max, unit=" °C")
+            touch(design, cfg, des, tj, ck)
         p = m["params"]
         v_io = v(res, m["io_rail"]) if m.get("io_rail") else p.get("v_io", 3.3)
         vih = p.get("vih_v", p["vih_ratio"] * v_io if "vih_ratio" in p else None)
@@ -661,7 +692,7 @@ def net_currents(design, res, meta):
         put([reg["vin"]], reg_input_current(res, reg))
     for des, m in meta["mcu"].items():
         if des not in meta["regs"] and m["vin"]:
-            put([m["vin"]], m["params"].get("i_core_a", 0.03))
+            put([m["vin"]], m["params"].get("i_core_a", netlist.I_CORE_A))
     return cur
 
 
@@ -865,6 +896,22 @@ def load_plugin(path):
     return mod
 
 
+def least_current(design, sim, sc, meta, models=None, keep=None):
+    """The operating point of E-3's minimum load: the scenario with every MCU at its least current (params
+    i_core_min_a) instead of its upper bound i_core_a, which every other check keeps. -> ({MCU: least current in A},
+    ngspice result); None where no source of the scenario has i_min_a or no MCU a least current below its i_core_a –
+    the scenario's own operating point is then the check's, as without the key."""
+    cores = {des: m["params"]["i_core_min_a"] for des, m in meta["mcu"].items() if "i_core_min_a" in m["params"]
+             and m["params"]["i_core_min_a"] != m["params"].get("i_core_a", netlist.I_CORE_A)}
+    if not cores or not any(s.get("i_min_a") for s in meta["sources"].values()):
+        return None
+    text, _ = netlist.build(design, sim, {**sc, "least_current": True}, models)
+    try:
+        return cores, ngspice(text, keep, f"{sc['name']} least current")
+    except SimError as e:
+        raise SimError(f"at the least current ({', '.join(cores)} at i_core_min_a): {e}") from None
+
+
 def run_all(design, sim, keep=None, plugin=None, routing=None):
     """All scenarios; `sim` is the parsed simulation config (tests pass modified copies). `routing`: the routed boards
     for sim.json copper (copper.load_routing)."""
@@ -886,6 +933,7 @@ def run_all(design, sim, keep=None, plugin=None, routing=None):
         try:
             text, meta = netlist.build(design, sim, sc, models)
             res = ngspice(text, keep, sc["name"])
+            low = least_current(design, sim, sc, meta, models, keep)
         except (ValueError, KeyError, SimError) as e:
             ck.add("E-1", "circuit", "operating point", f"{type(e).__name__}: {e}", "converges", False)
             row["status"] = "error"
@@ -894,7 +942,7 @@ def run_all(design, sim, keep=None, plugin=None, routing=None):
             continue
         ck.add("E-1", "circuit", "operating point", "converged", "converges", True)
         stress(design, sim, res, meta, ck)
-        functional(design, sim, res, meta, sc["load"], ck, plugin)
+        functional(design, sim, res, meta, sc["load"], ck, plugin, low)
         if sc.get("info"):
             for c in ck.items:
                 if c["result"] == "fail":

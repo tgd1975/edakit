@@ -57,7 +57,8 @@ profile says: `${CLAUDE_PLUGIN_ROOT}/skills/part-search/distributors/<name>.md` 
   `gpio_i_max_a` per pin and `gpio_i_total_max_a` for all together (E-2); from the recommended operating conditions of
   an IC the supply range `vdd_op_min`/`vdd_op_max` (`v_op` on a pin with a range of its own) and the input thresholds
   `vih_v`|`vih_ratio`, `vil_v`|`vil_ratio` (E-3); for a part that dissipates – resistor, diode, transistor, MOSFET,
-  regulator, LED driver – `rth_ja_k_per_w` (RθJA, steady state) and `tj_max_c` (E-2: junction and touch temperature); on
+  regulator, LED driver – `rth_ja_k_per_w` (RθJA, steady state) and `tj_max_c` (E-2: junction and touch temperature),
+  on an MCU module with an on-board LDO (`regulator: "ldo"`) those of that regulator, from its datasheet (E-3); on
   the serial output of a shift register or LED driver (SDO, Q7) the clock edge it changes after, `out_edge`, and its
   delay from the switching characteristics, `t_pd_ns: [min, max]` with `null` for a value the datasheet does not give
   (H-9); MCU pin `functions` from the pin-mux table (`["spi0.sck", "i2c1.sda", "pwm1.a", "adc0"]`, `[]` for a pin used

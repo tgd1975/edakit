@@ -78,6 +78,8 @@ sources, supplies at their limits, loads with the MCU's outputs, inputs, LEDs on
 on no driver output, `[]` when none lights – E-4), buttons, relays. No source and no cell takes more than 1 mA back
 (E-3); a cell its charger charges on purpose gets `i_charge_max_a` in its cell state. Several sources (a module with
 its own USB, cells next to USB): `combine_sources` with the range of each, not combinations written by hand.
+A power bank gets its minimum load `i_min_a`; an MCU whose current swings (Wi-Fi on and off) gets its upper bound as
+`i_core_a` and its least current as `i_core_min_a` – E-3 holds the minimum load at the least (handbook 5.1).
 A supply that comes and goes – USB plugged and unplugged, a switch-over to cells – gets `transients` (handbook 5.2):
 the plug-in, the unplug and the switch-over ramp, with the rail's lowest voltage and the inrush as `expect`; E-5 holds
 the MCU above its minimum once it has started.

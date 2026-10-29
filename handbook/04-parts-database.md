@@ -70,7 +70,9 @@ LED `if_max_a`, `vr_max` (per colour for RGB); BJT `ic_max_a`, `vceo`, `vebo`, `
 `i_max_a` (what the part carries as a whole: a USB-C receptacle's two ground contacts at 1.25 A each are 2.5 A),
 `v_max`; inductor `i_rated_a`, `i_sat_a`; regulators `vin_min`, `i_out_max_a`, `rth_ja_k_per_w`; MCU modules
 `vin_min`/`vsys_min`, `i_out_max_a`, `gpio_i_max_a` (per output pin) and `gpio_i_total_max_a` (all outputs together,
-sourced and sunk separately – the package's supply pins); relays `v_coil_max`, `i_max_a` (contacts); LED drivers
+sourced and sunk separately – the package's supply pins), and with an on-board LDO (`regulator: "ldo"`) the
+`rth_ja_k_per_w` and `tj_max_c` of that regulator, from its datasheet (E-3 holds its junction temperature with the
+core current it carries, 5.3); relays `v_coil_max`, `i_max_a` (contacts); LED drivers
 `rth_ja_k_per_w`; any IC or module `vdd_op_min`, `vdd_op_max` – the operating supply range of the recommended operating
 conditions, not the absolute maximum (E-3 holds every supply pin to it); own boards (behaviour `current`) `vin_min`,
 `vin_max` – the voltage at the connector over the board's own simulation (4.5, E-3); any part that dissipates –

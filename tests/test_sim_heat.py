@@ -1,4 +1,5 @@
-"""Stage E seen red at the heat of a part: a junction above its limit, a part too hot to touch."""
+"""Stage E seen red at the heat of a part: a junction above its limit – a module's own LDO too –, a part too hot to
+touch."""
 
 import json
 import shutil
@@ -75,6 +76,46 @@ def test_driver_junction_against_its_own_limit(project):
     project.save_part("C90107", part)
     bad = failing(simulate(project))
     assert {(c["id"], c["item"], c["expected"]) for c in bad} == {("E-3", "U2", "≤ 50 °C")}
+
+
+REGULATOR = "junction temperature of the on-board regulator at 40 °C"
+
+
+def ldo_module(project, regulator="ldo", rth=184):
+    """U1 with an on-board LDO in place of the Pico 2's buck, like the LILYGO T-Display: an AP2112K-3.3 (Diodes
+    DS39724 Rev. 2-2: θJA 184 °C/W in SOT25, dropout 250 mV at 600 mA) feeds an ESP32 at 0.27 A and the 3V3 pin."""
+    part = project.part("C41407547")
+    part["params"].update(regulator=regulator, dropout_v=0.25, i_core_a=0.27)
+    if rth is not None:
+        part["ratings"]["rth_ja_k_per_w"] = rth
+    project.save_part("C41407547", part)
+
+
+def test_junction_of_a_module_ldo(project):
+    ldo_module(project)
+    sim = sim_config(project)
+    sim["touch_c"] = {"main": 150}
+    out = simulate(project, sim)
+    tj = {c["scenario"]: c for c in out["checks"] if c["item"] == "U1" and c["check"].startswith(REGULATOR)}
+    assert len(tj) == 12 and all(c["id"] == "E-3" and c["expected"] == "≤ 110 °C" for c in tj.values())
+    of = {(c["scenario"], c["check"]): float(c["actual"].split()[0]) for c in out["checks"] if c["item"] == "U1"}
+    for sc, c in tj.items():                   # (vin − vout) × (the load at its 3V3 + the core's 0.27 A) × θJA
+        vin, vout = of[sc, "supply voltage"], of[sc, "output voltage (ldo)"]
+        load = of[sc, "load on the on-board regulator"]
+        assert float(c["actual"].split()[0]) == pytest.approx(40 + (vin - vout) * (load + 0.27) * 184, abs=0.1)
+    hot = tj["usb-max/idle/vf-min"]
+    assert hot["check"] == f"{REGULATOR}: 0.442 W × 184 K/W" and hot["actual"] == "121.3 °C"
+    bad = failing(out)                         # USB at 5.25 V: 0.43–0.44 W, 120–121 °C against the criteria's 110 °C
+    assert {(c["id"], c["item"], c["check"].split(":")[0]) for c in bad} == {("E-3", "U1", REGULATOR)}
+    assert {c["scenario"].split("/")[0] for c in bad} == {"usb-max"} and len(bad) == 4
+    assert len([c for c in out["checks"] if c["item"] == "U1" and c["check"] == TOUCH]) == 12
+
+
+def test_module_regulator_without_a_junction(project):
+    ldo_module(project, rth=None)              # no rth_ja_k_per_w: no item, as before
+    assert not [c for c in simulate(project)["checks"] if c["item"] == "U1" and "junction" in c["check"]]
+    ldo_module(project, regulator="buck")      # a buck, like a separate one: no item
+    assert not [c for c in simulate(project)["checks"] if c["item"] == "U1" and "junction" in c["check"]]
 
 
 def test_touch_limit_of_an_unknown_board(project):
