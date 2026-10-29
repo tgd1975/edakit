@@ -323,6 +323,10 @@
     "gpio_v_max": 3.63
   },
   "spice": {},
+  "compliance": {
+    "radio": "none",
+    "source": "Raspberry Pi Pico 2 Datasheet, release 5 (build 2026-07-03, d4e0f1799616), chapter 1: RP2350A with 4 MB flash, micro-USB, SWD port and power supply – no transmitter"
+  },
   "sources": [
     "pin names from the EasyEDA symbol",
     "Raspberry Pi Pico 2 datasheet: VSYS 1.8-5.5 V, keep the external load on 3V3(OUT) below 300 mA",

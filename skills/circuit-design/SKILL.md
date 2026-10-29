@@ -30,7 +30,11 @@ is for**: built for oneself, given away or sold, and where – it decides which 
 setup asked already (skill new-project: the graph's `purpose`, `[project] quantity`, `[release] assembly`) stands – a
 change is the user's decision. Default what you can; ask the rest in **one** decision round (skill decision-round),
 not one question after the other. The purpose goes into the graph:
-`"purpose": {"use": "private" | "gift" | "sale", "market": "EU", "notes": "what it is, who uses it"}`.
+`"purpose": {"use": "private" | "gift" | "sale", "market": "EU", "notes": "what it is, who uses it"}`. A part that
+can transmit more than the EU allows – an ESP32's Wi-Fi channel 14, a LoRa chip's 902–928 MHz – can get its use
+there too, what the firmware will keep: `"radio": {"U1": {"bands_mhz": [[2412, 2472]], "notes": "Wi-Fi channels
+1–13"}}` or `{"U1": "off"}`. Without it G-25 tells what the firmware must keep – information, for a board that is
+sold a warning; a part that can transmit in no EU band at all is an error (handbook 15 – support, not legal advice).
 
 ## 2. Building blocks first
 

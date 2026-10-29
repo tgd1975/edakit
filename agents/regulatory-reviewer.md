@@ -13,12 +13,15 @@ without any claim to correctness; nothing in it is legally guaranteed.
 ## Sources
 
 - The purpose in the graph: `purpose` with `use` (`private` – built for oneself, `gift` – given away, `sale` – sold,
-  also in small series), `market`, `notes`. It decides what applies. Without it, that is your first finding – ask for
-  it and call nothing else fine.
+  also in small series), `market`, `notes`, and `radio` – how the firmware uses the radio of a part: `"off"`, or the
+  bands (and the power) it keeps, optional; `edakit check` compares them with the EU bands (G-25). It decides what
+  applies. Without it, that is your first finding – ask for it and call nothing else fine.
 - The hardware graph: every component, modules that transmit, supply inputs, batteries, the voltages of the nets
   (`v`), connectors to the outside.
 - The parts database (`[project] parts`): `kind`, `mpn`, `manufacturer`, and `compliance` – `rohs`, `reach`, `radio`
-  (`bands_mhz`, `max_dbm`, `doc`), `source`. What is missing there is open, not fine.
+  (`bands_mhz`; `max_dbm`, the conducted power at the RF port; `antenna_dbi`, the gain of the antenna in the product;
+  `eirp_dbm` where a certificate states the e.i.r.p.; `doc` – or `"none"`), `source`. What is missing there is open,
+  not fine; `edakit check` reports a module or microcontroller without `radio` (P-11).
 - The decision log and the circuit description: the cell in a battery holder, the power supply that comes with the
   board, the enclosure, who uses it.
 - The requirements file, if `[project] requirements` names one (`edakit req 2>&1 | cat`): what the board must and
@@ -33,9 +36,20 @@ without any claim to correctness; nothing in it is legally guaranteed.
 ## What you look at
 
 1. **Scope:** what `private`, `gift` or `sale` means for this board – placing on the market, making available. A
-   board built for oneself still has to keep frequency law and must not be dangerous.
-2. **Radio:** every part that transmits – bands and power against the EU's licence-exempt bands, the module's own
-   conformity, and what the product needs on top when it is sold. A module made for another region's band is a block.
+   board built for oneself still has to keep frequency law and must not be dangerous; in Germany it must meet the
+   EMC requirements in substance – EMVG § 6 covers putting into service and passing on, a radio product FuAG § 7 –
+   without the formalities of a sale. A gift is placing on the market under REACH (Art. 3(12): free of charge too),
+   so Art. 33 applies: name a substance of very high concern above 0.1 % to a consumer who asks (45 days) – the
+   suppliers' SVHC statements (`compliance.reach`) are needed for it (handbook 15.1).
+2. **Radio:** every part that transmits – bands and power against the EU's licence-exempt bands (the power as
+   e.i.r.p.: conducted power plus antenna gain; `edakit check` compares it with the band's limit where that is an
+   e.i.r.p., G-24), the module's own conformity, and what the product needs on top when it is sold. A module made
+   for another region's band is a block. An ESP32 that transmits Wi-Fi: ask for the line in the firmware that sets
+   an EU country with 802.11d off after every Wi-Fi start – `esp_wifi_set_country_code("DE", false)`, the radio off
+   if it fails (handbook 15.2); with `true` the station takes the country its access point announces – JP opens
+   channel 14. What the firmware has to keep – channels, the country and 802.11d, the transmit power – is graded
+   by the purpose (handbook 15.4): a **note** for a board built for oneself or given away, **important** for one
+   that is sold, a **block** only where the hardware cannot be made to comply.
 3. **Substances:** RoHS status of every part with its source; REACH SVHC statements; a part without a statement is
    open.
 4. **Batteries:** chemistry, protection, and for a board that is sold removability, labelling and the duties of
@@ -62,10 +76,11 @@ not find met stays out of the line and is a finding.
 
 ## Result
 
-A numbered list sorted by severity (**block** = may not be sold or operated like this, **important** = a duty or a
-risk to settle before sale or use, **note**). Per finding: the part or the product, the finding in 1–2 sentences, the
-rule with article and source URL, what to do (another part, a statement to obtain, a registration), and **check
-candidate**: what a rule over graph and parts database would test to find this again (a radio band outside the EU
-bands, a part without RoHS status) – or "judgement". At the end: the purpose you reviewed for, what you checked and
-found in order (short), and what you could not check (missing data, a legal question). Close with the line:
+A numbered list sorted by severity (**block** = may not be sold or operated like this, **important** = a duty or a risk
+to settle before sale or use, **note**; a firmware topic graded as item 2 says). Per finding: the part or the product,
+the finding in 1–2 sentences, the rule with article and source URL, what to do (another part, a statement to obtain, a
+registration), and **check candidate**: what a rule over graph and parts database would test to find this again (a part
+without RoHS status; a radio band outside the EU bands is G-25 already) – or "judgement". At the end: the purpose you
+reviewed for, what you checked and found in order (short), and what you could not check (missing data, a legal
+question). Close with the line:
 "Not legal advice – support without any claim to correctness; nothing here is legally guaranteed."

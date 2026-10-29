@@ -22,8 +22,8 @@ Before each stage – each project check, and with `--easyeda` each board of sta
 
 | Stage | What | Checks |
 |---|---|---|
-| P – Parts | parts database complete and signed, every part named by its entry, through-hole leads fitting their holes and, formed for the board, fitting only one way round, own parts equal to their source, parts orderable, a supplier per part | P-1, P-3, P-4, P-5, P-6, P-7, P-8, G-9 (chapter 3, 4) |
-| G – Graph | rule checks; with quoted values (6.6) G-19 on this run's simulation; with `[project] requirements` the requirements file (3.6); the project scripts: their entries resolve into one order, their results are current; the project agents: their entries resolve (8.6) | G-1 … G-23 (chapter 3), `scripts`, `agents` |
+| P – Parts | parts database complete and signed, every part named by its entry, through-hole leads fitting their holes and, formed for the board, fitting only one way round, own parts equal to their source, parts orderable, a supplier per part, the radio of every module and microcontroller stated | P-1, P-3, P-4, P-5, P-6, P-7, P-8, P-11, G-9 (chapter 3, 4) |
+| G – Graph | rule checks; with quoted values (6.6) G-19 on this run's simulation; with `[project] requirements` the requirements file (3.6); the project scripts: their entries resolve into one order, their results are current; the project agents: their entries resolve (8.6) | G-1 … G-25 (chapter 3), `scripts`, `agents` |
 | E – Simulation | operating points, stress, function, every LED checked, transient runs; with sim.json `copper` on the routing of `edakit route` as it is | E-1 … E-5 (chapter 5) |
 | *project checks* | e.g. K – the board fits its stand | `[scripts.<name>]` of kind `check`, phase `export`, and `[[release.stages]]` – see below |
 | S – Schematic | EasyEDA schematic = graph | S-2 per board |
@@ -34,6 +34,12 @@ Before each stage – each project check, and with `--easyeda` each board of sta
 A bought board on a cable (`bought = true`, 4.5) is in stages P, G and E like any board. Stages S and L/F leave it out
 with one information row each (`S-2` and `L`: "bought board – no schematic, PCB or manufacturing files"); F-4, the
 manifest and the protocol header ("bought, not made: usb") count the made boards only.
+
+**The radio checks** G-24, G-25 (stage G) and P-11 (stage P) grade by the graph's `purpose.use` (chapter 15): what
+the firmware or a parts entry can settle – a band or a power the firmware has to keep, a radio nobody stated – is a
+warning for a board that is sold (`"sale"`), accepted in the sign-off file (8.2) or waived on the component, and
+information for one built for oneself or given away, or without a purpose. They fail only on data that cannot be
+read and, G-25, on a part that can transmit in no EU band at all.
 
 **Stage L** (per board, `edakit fab`):
 
