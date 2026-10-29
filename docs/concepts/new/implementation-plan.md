@@ -1,8 +1,8 @@
 # Implementation plan: requirements, design as text, project scripts
 
 Status 2026-10-29: plan; phase 1 (1.1 to 1.8), 3.1 to 3.5, 3.7 and the follow-ups below are done; 2.1 to 2.4 and the
-offline part of 3.6 are built and wait for their live run in EasyEDA; 4.3 is being written. It builds the three
-concepts of this folder after the user took their decisions on 2026-10-28 (e5caf42, 301fd90):
+offline part of 3.6 are built and wait for their live run in EasyEDA; 4.3 is written and waits for the user's choice.
+It builds the three concepts of this folder after the user took their decisions on 2026-10-28 (e5caf42, 301fd90):
 [requirements.md](requirements.md), [design-as-text.md](design-as-text.md) and [project-scripts.md](project-scripts.md).
 Each step starts when the user asks for it.
 
@@ -46,7 +46,7 @@ Each step starts when the user asks for it.
 | 3.7 | Project setup: `new-project` with two ways, agent `project-surveyor` | project-setup, decisions 1–6 | M | no | 3.2, 3.4 | done (92db89f) |
 | 4.1 | Bell: requirements file | requirements order 5, decision 9 | M | no | 3.4, the bell's order | open |
 | 4.2 | Bell: entries for `kunst` and `tdisplay` | project-scripts example | S | no | 2.4 | open |
-| 4.3 | Bell: the circuit as a language and as TOML with names, then the choice | design-as-text decision 8 | M | no | – | being written |
+| 4.3 | Bell: the circuit as a language and as TOML with names, then the choice | design-as-text decision 8 | M | no | – | written (3f2b9e3, 7bbf3ce), the choice open |
 | 4.4 | Tree: its positions, scripts, agents and requirements | all three | M | yes | the tree's move, 2.1, 3.7 | open |
 | 4.5 | The requirements file becomes required | requirements decision 5 | S | no | 4.1, 4.4 | open |
 
@@ -300,8 +300,9 @@ and the patched bridge (`edakit doctor`):
 
 1. **Throwaway** (agreement 18): a project `edakit-probe-fp` made by hand (File → New → Project); in the scratchpad a
    copy of the bell (`edakit.toml` and `hardware/` of the main project and of `variants/esp32`), the esp32 variant's
-   `[project] name = "edakit-probe-fp"`, and `C18722937.json` with the T-Display's data of the dry run. Add one pad to
-   try a slot: `"MH": {"x": 0, "y": 0, "shape": "OVAL", "w": 1.0, "h": 2.0, "hole": [0.6, 1.4], "plated": false,
+   `[project] name = "edakit-probe-fp"`, and `C18722937.json` with the T-Display's data of the dry run –
+   [prototypes/footprint-data](prototypes/footprint-data/) writes it into the copy. Add one pad to try a slot:
+   `"MH": {"x": 0, "y": 0, "shape": "OVAL", "w": 1.0, "h": 2.0, "hole": [0.6, 1.4], "plated": false,
    "mechanical": true}` – `edakit check` passes P-9.
 2. **The carrier, not rebuilt:** `schematic create --save`, `schematic layout --save`, `pcb parts --write`, `pcb dump`,
    `edakit check`: P-10 fails on U1 – the header's pads, 2.54 mm between its rows, against the data's 22.86 mm. This
@@ -325,8 +326,11 @@ and the patched bridge (`edakit doctor`):
 
 What decides: if 3 to 6 hold, the data path replaces `tdisplay_device.py` – the bell's T-Display gets the dry run's
 data, the script and the planned `[scripts.tdisplay]` go (step 4.2 keeps `kunst`), and the README drops "own
-footprints and symbols"; the esp32 variant's circuit and layout hashes change once (M-1 and the layout sign-offs anew),
-so the bell's session is told first. If the copy is built but the box symbol does not suit the bell's schematic (the
+footprints and symbols"; the esp32 variant's circuit and layout hashes change once, so the bell's session is told
+first. M-1 and M-6 (scope circuit) are then signed anew; M-5 (scope fab since the bell's D-20) still counts when the
+esp32 gate exports the same files as the reviewed run, and its layout sign-offs M-2 and M-4 are open anyway. Whether a
+footprint change should void M-6 at all is a question for the user (the bell's session, 2026-10-29): a footprint has
+no regulatory content. If the copy is built but the box symbol does not suit the bell's schematic (the
 script draws a box 120 wide, edakit one as wide as the names need, and `schematic layout` places it anew), the data
 keeps the footprint and the symbol stays the script's: without `"symbol": "box"` the build leaves the carrier's symbol,
 and `tdisplay_device.py symbol` remains an easyeda script. If the build does not hold – the editor opens another
@@ -344,6 +348,11 @@ the README), the file, only for the circuit. M-1 and M-6 open again, as decision
 
 **4.3 Bell: language sketch.** The whole bell written down twice, as a language of its own and as TOML with pin
 names; then the user chooses (decision 8). Building the language would be a step of its own, size L.
+
+Written in [circuit-language.md](circuit-language.md), with the prototype in
+[prototypes/circuit-language](prototypes/circuit-language/): `bell.circuit` and `bell.toml` by hand, and a translator
+that takes all four configurations of the bell, led-bar and a graph with every field there and back without a
+difference. The recommendation is the language; six decisions are open.
 
 **4.4 The tree moves.** When the reference project moves to edakit after its order (EK-1 of its concept): the
 takeover of its positions (2.1), seven of its eight scripts – `review` only reads the release (decision 8) – with

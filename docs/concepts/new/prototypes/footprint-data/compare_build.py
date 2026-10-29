@@ -2,7 +2,6 @@
 script's own functions, which only compute: pin_xy, rect_poly – nothing of EasyEDA is called)."""
 import importlib.util
 import json
-import math
 import sys
 from pathlib import Path
 
