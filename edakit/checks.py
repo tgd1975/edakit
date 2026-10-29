@@ -41,7 +41,11 @@
        switch node (sw); a buck or boost IC without hot_loop is a warning
   G-24 radio power: a part that transmits (compliance.radio with bands_mhz) stays within the e.i.r.p. limit of each
        EU band it transmits in whose limit is an e.i.r.p. (2400–2483.5 MHz 100 mW, 5150–5350 MHz 200 mW, 5470–5725 MHz
-       1 W) – eirp_dbm, else max_dbm at the RF port + antenna_dbi; an e.i.r.p. that is not known is pending
+       1 W) – eirp_dbm, else max_dbm at the RF port + antenna_dbi; an e.i.r.p. that is not known is pending; where
+       purpose.radio states the use, in the bands stated there and with the conducted power the firmware keeps
+  G-25 radio bands: every range a part transmits in lies within an EU licence-exempt band (433.05–434.79, 863–870,
+       2400–2483.5, 5150–5350, 5470–5725 MHz) – its entry's bands_mhz, or what the graph's purpose.radio states:
+       "off", or the bands the firmware keeps, each within the entry's bands_mhz
   P-1  graph pins (number + name) = parts database, an entry exists for every LCSC number – or, for a part bought
        elsewhere, for its manufacturer part number `part`; with the library's symbol cached by `edakit part import`,
        the graph's pins = that symbol (case and blanks ignored, as S-2) – unless the entry's footprint data builds the
@@ -149,7 +153,7 @@ MULTIPLIERS = {"p": 1e-12, "n": 1e-9, "u": 1e-6, "µ": 1e-6, "μ": 1e-6, "m": 1e
 QUANTITY = re.compile(r"\s*(\d+)(?:[.,](\d+))?\s*([pnuµμmkKMG]|[RΩ])?(\d+)?\s*(Ω|[oO]hms?|F|H)?(?=$|[\s,;/()])")
 
 EXECUTED = ["G-1", "G-2", "G-3", "G-4", "G-5", "G-6", "G-8", "G-10", "G-11", "G-12", "G-13", "G-14", "G-15", "G-16",
-            "G-17", "G-18", "G-24", "P-1", "P-3", "P-4", "P-5", "P-6", "P-7", "P-8", "G-9"]
+            "G-17", "G-18", "G-24", "G-25", "P-1", "P-3", "P-4", "P-5", "P-6", "P-7", "P-8", "G-9"]
 
 
 FOOTPRINT_CHECKS = ("P-9", "P-10")   # own footprints as data (footprint.py): only where a parts entry has any
@@ -887,6 +891,9 @@ NOT_LEGAL_ADVICE = "support, not legal advice: no claim to correctness, nothing 
 # MHz wideband data transmission and WLAN (BNetzA Vfg. 91/2025 entries 57c, D57c), 5150–5350 and 5470–5725 MHz WAS/RLAN,
 # mean e.i.r.p. (Vfg. 136/2022 tables 1–3). G-24 holds a part's e.i.r.p. to them.
 EIRP_BANDS = ((2400, 2483.5, 100), (5150, 5350, 200), (5470, 5725, 1000))
+# EU licence-exempt bands (G-25, handbook 15.2): 433.05–434.79 and 863–870 MHz short range devices (Vfg. 91/2025 entries
+# 44a–45c and 46a–56b, limits in e.r.p.) and the bands of EIRP_BANDS
+EU_BANDS = ((433.05, 434.79), (863, 870)) + tuple((lo, hi) for lo, hi, _ in EIRP_BANDS)
 RADIO_KEYS = {"max_dbm": "max_dbm (the conducted power at the RF port)",       # what G-24 asks for when it is missing
               "antenna_dbi": "antenna_dbi (the gain of its antenna, from the module's datasheet or a certificate)",
               "eirp_dbm": "eirp_dbm (the e.i.r.p. a certificate states)"}
@@ -914,47 +921,79 @@ def mhz_ranges(value):
     return [(r[0], r[1]) for r in value]
 
 
+def within(a, b, ranges):
+    """The range a…b lies inside one of the ranges."""
+    return any(lo <= a and b <= hi for lo, hi in ranges)
+
+
 def overlaps(a, b, lo, hi):
     """The range a…b transmits inside the band lo…hi (a single frequency on its edge counts)."""
     return max(a, lo) < min(b, hi) or (a == b and lo <= a <= hi)
 
 
-def eirp(radio):
+def eirp(radio, kept=None):
     """(e.i.r.p. in dBm, how it was found) of one radio of a parts entry: eirp_dbm as a certificate states it, else
     max_dbm – the conducted power at the RF port – plus antenna_dbi, the gain of the antenna in the product; (None,
-    the keys that are missing) without them."""
+    the keys that are missing) without them. kept: a lower conducted power the firmware keeps (purpose.radio max_dbm),
+    which goes before eirp_dbm where antenna_dbi is known."""
+    p, g = radio.get("max_dbm"), radio.get("antenna_dbi")
+    if is_number(kept) and is_number(g) and not (is_number(p) and p <= kept):
+        return kept + g, f"max_dbm {kept:g} kept by the firmware (purpose.radio) + antenna_dbi {g:g}"
     if is_number(radio.get("eirp_dbm")):
         return radio["eirp_dbm"], "eirp_dbm of the parts entry"
-    p, g = radio.get("max_dbm"), radio.get("antenna_dbi")
     if is_number(p) and is_number(g):
         return p + g, f"max_dbm {p:g} at the RF port + antenna_dbi {g:g}"
     return None, [k for k, v in (("max_dbm", p), ("antenna_dbi", g)) if not is_number(v)]
 
 
+def stated_use(d):
+    """purpose.radio of the graph, {designator: "off" | {"bands_mhz": [[from, to], …], "max_dbm": …, "notes": …}}:
+    how the firmware uses the radio of a part – not at all, or in these bands (with this conducted power)."""
+    use = (d.graph.get("purpose") or {}).get("radio")
+    return use if isinstance(use, dict) else {}
+
+
+def bands_in_use(d, des):
+    """[(radio, its ranges in use, the conducted power the firmware keeps or None)] for the radios of a component's
+    parts entry with bands_mhz: without a statement in purpose.radio the entry's bands; with "off" none; with stated
+    bands those of them that lie in the radio's own bands_mhz."""
+    stated = stated_use(d).get(des)
+    ranges = mhz_ranges(stated.get("bands_mhz")) if isinstance(stated, dict) else None
+    kept = stated.get("max_dbm") if isinstance(stated, dict) and is_number(stated.get("max_dbm")) else None
+    out = []
+    for radio in radios(d.part(des)):
+        own = mhz_ranges(radio.get("bands_mhz"))
+        if own is None or stated == "off":
+            continue
+        out.append((radio, own, None) if ranges is None else
+                   (radio, [(a, b) for a, b in ranges if within(a, b, own)], kept))
+    return out
+
+
 def check_radio_power(d, rep):
     """G-24: the e.i.r.p. of every part that transmits (compliance.radio with bands_mhz) within the limit of each band of
-    EIRP_BANDS it transmits in – eirp_dbm, else max_dbm + antenna_dbi; an e.i.r.p. that is not known is pending. A radio
-    value that is no number, or bands_mhz that is no list of [from, to], is an error."""
+    EIRP_BANDS it transmits in – where purpose.radio states its use, in the bands stated there and with the power the
+    firmware keeps – eirp_dbm, else max_dbm + antenna_dbi; an e.i.r.p. that is not known is pending. A radio value that
+    is no number, or bands_mhz that is no list of [from, to], is an error."""
     for des in sorted(d.comps, key=natural_key):
         key, waive = d.entry_key(des), d.comps[des].get("waive")
+        wrong = set()
         for radio in radios(d.part(des)):
-            wrong = [k for k in ("max_dbm", "antenna_dbi", "eirp_dbm") if k in radio and not is_number(radio[k])]
-            if wrong:
+            if bad := [k for k in ("max_dbm", "antenna_dbi", "eirp_dbm") if k in radio and not is_number(radio[k])]:
+                wrong.add(id(radio))
                 rep.error("G-24", f"{des}: compliance.radio of parts entry {key}: "
-                                  + ", ".join(f"{k} {radio[k]!r} is no number" for k in wrong))
+                                  + ", ".join(f"{k} {radio[k]!r} is no number" for k in bad))
             if "bands_mhz" not in radio:
                 rep.pending.append(("G-24", f"{des}: compliance.radio of parts entry {key} states no bands_mhz – the "
                                             f"bands it transmits in, [[from, to], …] in MHz ({NOT_LEGAL_ADVICE})"))
-                continue
-            ranges = mhz_ranges(radio["bands_mhz"])
-            if ranges is None:
+            elif mhz_ranges(radio["bands_mhz"]) is None:
                 rep.error("G-24", f"{des}: compliance.radio of parts entry {key}: bands_mhz {radio['bands_mhz']!r} – "
                                   "a list of [from, to] in MHz, from <= to")
-                continue
+        for radio, ranges, kept in bands_in_use(d, des):
             bands = [(lo, hi, mw) for lo, hi, mw in EIRP_BANDS if any(overlaps(a, b, lo, hi) for a, b in ranges)]
-            if not bands or wrong:
+            if not bands or id(radio) in wrong:
                 continue
-            dbm, how = eirp(radio)
+            dbm, how = eirp(radio, kept)
             if dbm is None:
                 missing = [RADIO_KEYS[k] for k in how] + [RADIO_KEYS["eirp_dbm"]]
                 rep.pending.append(("G-24", f"{des}: e.i.r.p. in {', '.join(f'{lo:g}–{hi:g}' for lo, hi, _ in bands)} "
@@ -966,6 +1005,51 @@ def check_radio_power(d, rep):
                     rep.error("G-24", f"{des}: {dbm:.1f} dBm e.i.r.p. in {lo:g}–{hi:g} MHz ({how}) – the band allows "
                                       f"at most {mw:g} mW ({10 * math.log10(mw):.1f} dBm) e.i.r.p. ({NOT_LEGAL_ADVICE})",
                               waive)
+
+
+def check_radio_bands(d, rep):
+    """G-25: every range a part transmits in lies within an EU licence-exempt band (EU_BANDS) – the bands_mhz of its
+    parts entry, or what purpose.radio states: "off", or the bands the firmware keeps, each within the entry's
+    bands_mhz. A statement that names no part with a radio, or cannot be read, is an error."""
+    use = (d.graph.get("purpose") or {}).get("radio")
+    if use is not None and not isinstance(use, dict):
+        rep.error("G-25", "purpose.radio: {designator: \"off\" or {\"bands_mhz\": [[from, to], …], \"max_dbm\": …}}")
+    for des, stated in stated_use(d).items():
+        if des not in d.comps:
+            rep.error("G-25", f"purpose.radio: no part {des} in the graph")
+            continue
+        own = [r for radio in radios(d.part(des)) for r in mhz_ranges(radio.get("bands_mhz")) or []]
+        if not own:
+            rep.error("G-25", f"purpose.radio {des}: parts entry {d.entry_key(des)} states no bands_mhz to keep to")
+            continue
+        if stated == "off":
+            continue
+        ranges = mhz_ranges(stated.get("bands_mhz")) if isinstance(stated, dict) else None
+        if ranges is None or ("max_dbm" in stated and not is_number(stated["max_dbm"])):
+            rep.error("G-25", f"purpose.radio {des}: \"off\" or {{\"bands_mhz\": [[from, to], …] in MHz, from <= to, "
+                              "\"max_dbm\": a number (optional)}")
+            continue
+        for a, b in ranges:
+            if not within(a, b, own):
+                rep.error("G-25", f"purpose.radio {des}: {a:g}–{b:g} MHz is no band of parts entry "
+                                  f"{d.entry_key(des)} (bands_mhz {', '.join(f'{lo:g}–{hi:g}' for lo, hi in own)} MHz)")
+    known = ", ".join(f"{lo:g}–{hi:g}" for lo, hi in EU_BANDS)
+    for des in sorted(d.comps, key=natural_key):
+        key, waive = d.entry_key(des), d.comps[des].get("waive")
+        stated = stated_use(d).get(des)
+        read = isinstance(stated, dict) and mhz_ranges(stated.get("bands_mhz")) is not None   # else the entry's bands
+        source = "purpose.radio" if read else f"bands_mhz of parts entry {key}"
+        seen = set()
+        for _, ranges, _ in bands_in_use(d, des):
+            for a, b in ranges:
+                if within(a, b, EU_BANDS) or (a, b) in seen:
+                    continue
+                seen.add((a, b))
+                near = [f"{lo:g}–{hi:g} MHz" for lo, hi in EU_BANDS if overlaps(a, b, lo, hi)]
+                where = f"beyond the EU band {near[0]}" if near else f"in no EU licence-exempt band ({known} MHz)"
+                rep.error("G-25", f"{des}: transmits in {a:g}–{b:g} MHz ({source}) – {where}: state the bands the "
+                                  "firmware keeps in purpose.radio, or choose a part made for the EU bands "
+                                  f"({NOT_LEGAL_ADVICE})", waive)
 
 
 def check_part_pins(d, rep, cfg=None):
@@ -1288,6 +1372,7 @@ def run(design, cfg=None):
     check_fuses(joined, rep, sim)
     check_hot_loops(design, rep)   # layout.loops name pads of the graph's own nets (G-1, L-11)
     check_radio_power(design, rep)
+    check_radio_bands(design, rep)
     check_part_pins(design, rep, cfg)
     check_identity(design, rep)
     if cfg:

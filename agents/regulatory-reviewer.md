@@ -13,8 +13,9 @@ without any claim to correctness; nothing in it is legally guaranteed.
 ## Sources
 
 - The purpose in the graph: `purpose` with `use` (`private` – built for oneself, `gift` – given away, `sale` – sold,
-  also in small series), `market`, `notes`. It decides what applies. Without it, that is your first finding – ask for
-  it and call nothing else fine.
+  also in small series), `market`, `notes`, and `radio` – how the firmware uses the radio of a part: `"off"`, or the
+  bands (and the power) it keeps; `edakit check` holds them to the EU bands (G-25). It decides what applies. Without
+  it, that is your first finding – ask for it and call nothing else fine.
 - The hardware graph: every component, modules that transmit, supply inputs, batteries, the voltages of the nets
   (`v`), connectors to the outside.
 - The parts database (`[project] parts`): `kind`, `mpn`, `manufacturer`, and `compliance` – `rohs`, `reach`, `radio`
@@ -68,7 +69,7 @@ not find met stays out of the line and is a finding.
 A numbered list sorted by severity (**block** = may not be sold or operated like this, **important** = a duty or a
 risk to settle before sale or use, **note**). Per finding: the part or the product, the finding in 1–2 sentences, the
 rule with article and source URL, what to do (another part, a statement to obtain, a registration), and **check
-candidate**: what a rule over graph and parts database would test to find this again (a radio band outside the EU
-bands, a part without RoHS status) – or "judgement". At the end: the purpose you reviewed for, what you checked and
-found in order (short), and what you could not check (missing data, a legal question). Close with the line:
+candidate**: what a rule over graph and parts database would test to find this again (a part without RoHS status; a
+radio band outside the EU bands is G-25 already) – or "judgement". At the end: the purpose you reviewed for, what you
+checked and found in order (short), and what you could not check (missing data, a legal question). Close with the line:
 "Not legal advice – support without any claim to correctness; nothing here is legally guaranteed."

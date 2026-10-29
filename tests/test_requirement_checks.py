@@ -629,6 +629,6 @@ def test_with_the_key_the_requirement_checks_count_as_executed(project, monkeypa
     assert checks.executed(cfg) == checks.EXECUTED + list(REQUIREMENT_CHECKS)
     one = section(gate_run(project, monkeypatch), 1)
     assert "G-22 (requirement has evidence)" in one
-    # 17 as before and G-20 to G-23 (a check that only warns counts as passed, as P-4 does); G-23 about the draft R-4
+    # 18 as before and G-20 to G-23 (a check that only warns counts as passed, as P-4 does); G-23 about the draft R-4
     # is information in the gate, no warning to accept
-    assert re.search(r"\| G Graph \| [^|]+ \| 21 \| 0 \| 0 \| 3 \| 0 \| passed \|", one)
+    assert re.search(r"\| G Graph \| [^|]+ \| 22 \| 0 \| 0 \| 3 \| 0 \| passed \|", one)

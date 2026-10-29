@@ -31,7 +31,7 @@ def test_g24_the_bells_t_display_is_within_the_limit(project):
     give_radio(project, bands_mhz=[[2402, 2480], [2412, 2484]], max_dbm=20.5, antenna_dbi=-4.32, doc=None)
     rep = run(project)
     assert found(rep, "G-24") == {"errors": [], "pending": [], "waived": []}
-    assert rep.errors == [] and rep.pending == []
+    assert {c for c, _ in rep.errors} <= {"G-25"} and rep.pending == []          # G-25: its channel 14
 
 
 def test_g24_over_the_limit(project):
@@ -129,3 +129,110 @@ def test_g24_runs_in_the_gate_stage_g(project):
     give_radio(project, bands_mhz=[[2412, 2472]], max_dbm=20.5, antenna_dbi=-4.32)
     rows, _ = gate.stage_graph(cfg, Design.from_config(cfg))
     assert [(r["stage"], r["result"]) for r in rows if r["id"] == "G-24"] == [("G", "pass")]
+
+
+# --- G-25 (#22): a transmitter stays in the EU bands, or the graph says how it is used --------------------------------
+
+ESP32 = {"bands_mhz": [[2402, 2480], [2412, 2484]], "max_dbm": 20.5, "antenna_dbi": -4.32, "doc": None}
+
+
+def state_use(project, **use):
+    """purpose.radio of the example's graph: how the firmware uses the radio of each part."""
+    g = project.graph()
+    g["graph"]["purpose"]["radio"] = use
+    project.save_graph(g)
+
+
+def test_g25_the_bells_t_display_reaches_channel_14(project):
+    """The proposal's finding: bands_mhz up to 2484 MHz, and edakit check reported nothing."""
+    give_radio(project, **ESP32)
+    rep = run(project)
+    assert found(rep, "G-25")["errors"] == [
+        "U1: transmits in 2412–2484 MHz (bands_mhz of parts entry C41407547) – beyond the EU band 2400–2483.5 MHz: "
+        f"state the bands the firmware keeps in purpose.radio, or choose a part made for the EU bands {LEGAL}"]
+    assert {c for c, _ in rep.errors} == {"G-25"}
+    state_use(project, U1={"bands_mhz": [[2412, 2472]], "notes": "Wi-Fi channels 1–13: country DE, 802.11d off"})
+    rep = run(project)
+    assert rep.errors == [] and rep.pending == []
+
+
+def test_g25_a_radio_that_stays_off(project):
+    give_radio(project, bands_mhz=[[2412, 2484]], max_dbm=22, antenna_dbi=3)     # over in band and power …
+    state_use(project, U1="off")                                                # … and never switched on
+    rep = run(project)
+    assert found(rep, "G-25")["errors"] == [] and found(rep, "G-24")["errors"] == []
+
+
+def test_g25_a_lora_chip_for_the_us_band(project):
+    give_radio(project, bands_mhz=[[902, 928]], max_dbm=20)
+    assert found(run(project), "G-25")["errors"] == [
+        "U1: transmits in 902–928 MHz (bands_mhz of parts entry C41407547) – in no EU licence-exempt band "
+        "(433.05–434.79, 863–870, 2400–2483.5, 5150–5350, 5470–5725 MHz): state the bands the firmware keeps in "
+        f"purpose.radio, or choose a part made for the EU bands {LEGAL}"]
+
+
+def test_g25_a_wide_chip_kept_to_868_mhz(project):
+    give_radio(project, bands_mhz=[[137, 1020]], max_dbm=20)                     # SX1276: the synthesizer's range
+    assert len(found(run(project), "G-25")["errors"]) == 1
+    state_use(project, U1={"bands_mhz": [[863, 870]]})
+    assert found(run(project), "G-25")["errors"] == []
+
+
+def test_g25_a_stated_band_outside_the_eu_counts_too(project):
+    give_radio(project, **ESP32)
+    state_use(project, U1={"bands_mhz": [[2412, 2484]]})
+    assert [m.split(" – ", 1)[0] for m in found(run(project), "G-25")["errors"]] == [
+        "U1: transmits in 2412–2484 MHz (purpose.radio)"]
+
+
+@pytest.mark.parametrize("use, msg", [
+    ({"U1": {"bands_mhz": [[868, 870]]}},
+     "purpose.radio U1: 868–870 MHz is no band of parts entry C41407547 (bands_mhz 2402–2480, 2412–2484 MHz)"),
+    ({"U9": "off"}, "purpose.radio: no part U9 in the graph"),
+    ({"U2": "off"}, "purpose.radio U2: parts entry C90107 states no bands_mhz to keep to"),
+    ({"U1": "on"}, 'purpose.radio U1: "off" or {"bands_mhz": [[from, to], …] in MHz, from <= to, "max_dbm": a number '
+                   '(optional)}'),
+    ({"U1": {"bands_mhz": [[2412, 2472]], "max_dbm": "17"}},
+     'purpose.radio U1: "off" or {"bands_mhz": [[from, to], …] in MHz, from <= to, "max_dbm": a number (optional)}'),
+])
+def test_g25_a_statement_that_does_not_fit(project, use, msg):
+    give_radio(project, **ESP32)
+    state_use(project, **use)
+    assert msg in found(run(project), "G-25")["errors"]
+
+
+def test_g25_a_statement_that_cannot_be_read_holds_the_entrys_bands(project):
+    give_radio(project, **ESP32)
+    state_use(project, U1={"bands_mhz": "2412-2472"})
+    assert sorted(m.split(" – ", 1)[0] for m in found(run(project), "G-25")["errors"]) == [
+        "U1: transmits in 2412–2484 MHz (bands_mhz of parts entry C41407547)",
+        'purpose.radio U1: "off" or {"bands_mhz": [[from, to], …] in MHz, from <= to, "max_dbm": a number (optional)}']
+
+
+def test_g25_the_power_the_firmware_keeps_counts_for_g24(project):
+    give_radio(project, bands_mhz=[[2412, 2472]], max_dbm=20.5, antenna_dbi=3)
+    assert len(found(run(project), "G-24")["errors"]) == 1                      # 23.5 dBm e.i.r.p.
+    state_use(project, U1={"bands_mhz": [[2412, 2472]], "max_dbm": 17})
+    rep = run(project)
+    assert found(rep, "G-24")["errors"] == [] and found(rep, "G-25")["errors"] == []
+    state_use(project, U1={"bands_mhz": [[2412, 2472]], "max_dbm": 18})        # 21 dBm: over again, and said how
+    assert found(run(project), "G-24")["errors"] == [
+        "U1: 21.0 dBm e.i.r.p. in 2400–2483.5 MHz (max_dbm 18 kept by the firmware (purpose.radio) + antenna_dbi 3) – "
+        f"the band allows at most 100 mW (20.0 dBm) e.i.r.p. {LEGAL}"]
+
+
+def test_g25_waived_for_a_licensed_use(project):
+    give_radio(project, bands_mhz=[[880, 915], [1710, 1785]], max_dbm=33)       # a GSM module: the operator's licence
+    g = project.graph()
+    project.comp(g, "U1")["waive"] = {"G-25": "GSM 900/1800 under the mobile operator's licence"}
+    project.save_graph(g)
+    rep = run(project)
+    assert found(rep, "G-25")["errors"] == [] and len(found(rep, "G-25")["waived"]) == 2
+
+
+def test_g25_runs_in_the_gate_stage_g(project):
+    from edakit.release import gate
+    give_radio(project, **ESP32)
+    cfg = project.config()
+    rows, _ = gate.stage_graph(cfg, Design.from_config(cfg))
+    assert [(r["stage"], r["result"]) for r in rows if r["id"] in ("G-24", "G-25")] == [("G", "fail"), ("G", "pass")]

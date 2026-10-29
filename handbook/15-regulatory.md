@@ -15,7 +15,9 @@ complete; nothing in them is legally guaranteed. Whoever sells or gives away the
 ## 15.1 The purpose decides
 
 `purpose` in the graph (3.1): `{"use": "private" | "gift" | "sale", "market": "EU", "notes": "what it is, who uses
-it"}`. It is part of the circuit hash: a new purpose needs a new M-6. The skill new-project asks for it when the
+it"}`, and for a part that can transmit more than the EU allows `radio`, how its firmware uses it:
+`{"U1": {"bands_mhz": [[2412, 2472]], "notes": "Wi-Fi channels 1–13"}}` or `{"U1": "off"}` – G-25 holds it to the EU
+bands. It is part of the circuit hash: a new purpose needs a new M-6. The skill new-project asks for it when the
 project is set up (2.7), before the first part is chosen.
 
 | `use` | Means | What applies |
@@ -28,7 +30,7 @@ project is set up (2.7), before the first part is chosen.
 
 | Rule | What it asks | Applies to | Source |
 |---|---|---|---|
-| Frequency use | transmit only in a licence-exempt band within its power and duty cycle: 433.05–434.79 MHz, 863–870 MHz (868.0–868.6 MHz: 25 mW, ≤ 1 %), 2400–2483.5 MHz (100 mW e.i.r.p.), 5 GHz RLAN (5150–5350 MHz 200 mW, 5470–5725 MHz 1 W mean e.i.r.p.). The e.i.r.p. is the power fed to the antenna times its gain – the datasheet's conducted power in dBm plus the antenna's gain in dBi; G-24 holds it to the band's limit (3.3). 902–928 MHz (US LoRa) is none of them – 880–915 MHz is mobile uplink in Europe. Operating radio equipment that does not comply is prohibited also privately | every board that transmits | [2006/771/EC](https://eur-lex.europa.eu/legal-content/EN/TXT/?uri=CELEX:32006D0771) (as amended), [BNetzA Vfg. 91/2025](https://www.bundesnetzagentur.de/DE/Fachthemen/Telekommunikation/Frequenzen/Allgemeinzuteilungen/_DL/vfg91_2025.pdf), [Vfg. 136/2022](https://www.bundesnetzagentur.de/DE/Fachthemen/Telekommunikation/Frequenzen/Allgemeinzuteilungen/_DL/MobilfunkDectWlanCBFunk/vfg136_2022.pdf), [FuAG § 7](https://www.gesetze-im-internet.de/fuag/__7.html) |
+| Frequency use | transmit only in a licence-exempt band within its power and duty cycle: 433.05–434.79 MHz, 863–870 MHz (868.0–868.6 MHz: 25 mW, ≤ 1 %), 2400–2483.5 MHz (100 mW e.i.r.p.), 5 GHz RLAN (5150–5350 MHz 200 mW, 5470–5725 MHz 1 W mean e.i.r.p.). The e.i.r.p. is the power fed to the antenna times its gain – the datasheet's conducted power in dBm plus the antenna's gain in dBi; G-24 holds it to the band's limit (3.3). G-25 holds the bands a part transmits in – its `bands_mhz`, or what `purpose.radio` says the firmware keeps (15.1) – to these bands. 902–928 MHz (US LoRa) is none of them – 880–915 MHz is mobile uplink in Europe. Operating radio equipment that does not comply is prohibited also privately | every board that transmits | [2006/771/EC](https://eur-lex.europa.eu/legal-content/EN/TXT/?uri=CELEX:32006D0771) (as amended), [BNetzA Vfg. 91/2025](https://www.bundesnetzagentur.de/DE/Fachthemen/Telekommunikation/Frequenzen/Allgemeinzuteilungen/_DL/vfg91_2025.pdf), [Vfg. 136/2022](https://www.bundesnetzagentur.de/DE/Fachthemen/Telekommunikation/Frequenzen/Allgemeinzuteilungen/_DL/MobilfunkDectWlanCBFunk/vfg136_2022.pdf), [FuAG § 7](https://www.gesetze-im-internet.de/fuag/__7.html) |
 | Radio equipment | anything that transmits or receives: the board with a fixed module is one radio product – the module's certificates are input, not a substitute. Own conformity assessment, EU declaration of conformity, instructions with bands and power. Internet-connected: cybersecurity since 1 Aug 2025; EN 18031 gives no presumption of conformity where the user may skip setting a password – then a notified body | sale | [2014/53/EU](https://eur-lex.europa.eu/legal-content/EN/TXT/?uri=CELEX:32014L0053), [2022/30](https://eur-lex.europa.eu/legal-content/EN/TXT/?uri=CELEX:32022R0030) |
 | EMC | electromagnetic compatibility, no lower voltage limit; a radio product is covered by RED instead | sale | [2014/30/EU](https://eur-lex.europa.eu/legal-content/EN/TXT/?uri=CELEX:32014L0030) |
 | Low voltage | 50–1000 V AC, 75–1500 V DC: a 5 V board is outside, the mains power supply that comes with it is not (its own CE, ecodesign) | sale | [2014/35/EU](https://eur-lex.europa.eu/legal-content/EN/TXT/?uri=CELEX:32014L0035) |
@@ -69,5 +71,5 @@ when the sign-off file does not list it (8.2). With a requirements file the revi
 `verify` names `signoff = "M-6"` – a board that must not transmit – and names the ones it found met in its note
 (8.7). The agent's findings are numbered – **block** (may not be sold or operated like this), **important**,
 **note** – each with the rule, its source and a proposal, and they go into the decision round with the electrical
-review. What a program could decide – a band outside the EU's, a part without a RoHS status – the agent marks as a
-check candidate (14.4).
+review. What a program could decide – a part without a RoHS status – the agent marks as a check candidate (14.4); a
+band outside the EU's is G-25 already, an e.i.r.p. over the band's limit G-24.

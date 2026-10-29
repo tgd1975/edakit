@@ -23,7 +23,7 @@ Before each stage – each project check, and with `--easyeda` each board of sta
 | Stage | What | Checks |
 |---|---|---|
 | P – Parts | parts database complete and signed, every part named by its entry, through-hole leads fitting their holes and, formed for the board, fitting only one way round, own parts equal to their source, parts orderable, a supplier per part | P-1, P-3, P-4, P-5, P-6, P-7, P-8, G-9 (chapter 3, 4) |
-| G – Graph | rule checks; with quoted values (6.6) G-19 on this run's simulation; with `[project] requirements` the requirements file (3.6); the project scripts: their entries resolve into one order, their results are current; the project agents: their entries resolve (8.6) | G-1 … G-24 (chapter 3), `scripts`, `agents` |
+| G – Graph | rule checks; with quoted values (6.6) G-19 on this run's simulation; with `[project] requirements` the requirements file (3.6); the project scripts: their entries resolve into one order, their results are current; the project agents: their entries resolve (8.6) | G-1 … G-25 (chapter 3), `scripts`, `agents` |
 | E – Simulation | operating points, stress, function, every LED checked, transient runs; with sim.json `copper` on the routing of `edakit route` as it is | E-1 … E-5 (chapter 5) |
 | *project checks* | e.g. K – the board fits its stand | `[scripts.<name>]` of kind `check`, phase `export`, and `[[release.stages]]` – see below |
 | S – Schematic | EasyEDA schematic = graph | S-2 per board |
