@@ -285,6 +285,54 @@ copy to the data, and a library footprint can become an own one. The data counts
 checks polarity, and in the layout hash (decision 5). It would replace the bell's `tdisplay_device.py` and the tree's
 `led_footprints.py`.
 
+Built offline on its branch (handbook 4.5): `footprint_data` beside `footprint` in the parts entry; P-9 (the data
+complete and consistent) and P-10 (the copy `pcb dump` measured equals the data), both in stage P and only where an
+entry has the data; `edakit part footprint KEY [--write]` takes a measured footprint over as data; `edakit part build
+KEY [--write]` builds the copy – the translation a pure function, the EasyEDA part (`eda.find_copies`,
+`eda.build_copy`) tested on a fake and not run; `pcb dump` measures shape, size, rotation and layer of the pads of
+parts with data (`pcb.pad_shape`, not run). The circuit hash covers the data without code; the layout hash adds it only
+where it exists. Dry run on a scratch copy of the bell's esp32 variant: the T-Display as data from `tdisplay_device.py`
+passes P-9 and P-10 against the bell's dump (0.0013 mm), the build's pad, polyline and string calls equal the script's
+to 0.000 mil, one changed line fails P-10.
+
+The live run, in one sitting with the EasyEDA claim (`edakit lock claim --note "3.6 live run"`), EasyEDA unthrottled
+and the patched bridge (`edakit doctor`):
+
+1. **Throwaway** (agreement 18): a project `edakit-probe-fp` made by hand (File → New → Project); in the scratchpad a
+   copy of the bell (`edakit.toml` and `hardware/` of the main project and of `variants/esp32`), the esp32 variant's
+   `[project] name = "edakit-probe-fp"`, and `C18722937.json` with the T-Display's data of the dry run. Add one pad to
+   try a slot: `"MH": {"x": 0, "y": 0, "shape": "OVAL", "w": 1.0, "h": 2.0, "hole": [0.6, 1.4], "plated": false,
+   "mechanical": true}` – `edakit check` passes P-9.
+2. **The carrier, not rebuilt:** `schematic create --save`, `schematic layout --save`, `pcb parts --write`, `pcb dump`,
+   `edakit check`: P-10 fails on U1 – the header's pads, 2.54 mm between its rows, against the data's 22.86 mm. This
+   shows that P-10 sees a copy that is not the data.
+3. **Build:** `edakit part build C18722937` prints the plan (25 pads, 2 lines, 2 texts, outline, symbol box); `--write`
+   finds the copies on `generated_esp32`, rebuilds and reads back – exit 0, no "read back" line, `lock status` names
+   the claim. In EasyEDA's library view of the project: the footprint 2 × 12 at 22.86 mm with square pads 1 and 13, the
+   outline, the USB box and both texts, the slot of MH upright (along h – the build turns a slot along the pad's longer
+   side, an assumption until here); the symbol a box with 24 named pins.
+4. **Into the PCB:** delete U1 in the PCB, `pcb parts --write`, `pcb dump`: U1's pads in `esp32.geometry.json` carry
+   `shape`, `w`, `h`, `rot`, `layer` and `hole` [1.1, 1.1] (MH [0.6, 1.4], not plated); `edakit check`: P-10 passes, no
+   note "not measured". If the shapes are missing, the bridge names the pad fields otherwise: read one pin of
+   `getAllPinsByPrimitiveId` and fix `pcb.pad_shape`. `schematic check` (S-2) passes on the box.
+5. **A pad as a line of text:** pad 3 `"y": -8.89` → `-8.79` in the entry; `edakit check` – P-10 fails on pad 3 with
+   both places, P-9 passes; `part build --write`, delete U1, `pcb parts --write`, `pcb dump`, `edakit check` – P-10
+   passes, the dump has pad 3 at −346.06 mil.
+6. **Kept** (agreement 16): close and reopen the project; the library footprint and the placed U1 as built,
+   `pcb dump` gives the same file. Optionally `edakit gate --easyeda`: L-4 (the header's name kept), L-10 against the
+   dump, L-8 and L-17 on the print, the drill file with 24 holes of 1.1 mm and the slot.
+7. **Clean up:** delete the throwaway project by hand – the copies are its own, no library object stays.
+
+What decides: if 3 to 6 hold, the data path replaces `tdisplay_device.py` – the bell's T-Display gets the dry run's
+data, the script and the planned `[scripts.tdisplay]` go (step 4.2 keeps `kunst`), and the README drops "own
+footprints and symbols"; the esp32 variant's circuit and layout hashes change once (M-1 and the layout sign-offs anew),
+so the bell's session is told first. If the copy is built but the box symbol does not suit the bell's schematic (the
+script draws a box 120 wide, edakit one as wide as the names need, and `schematic layout` places it anew), the data
+keeps the footprint and the symbol stays the script's: without `"symbol": "box"` the build leaves the carrier's symbol,
+and `tdisplay_device.py symbol` remains an easyeda script. If the build does not hold – the editor opens another
+document, the print is not replaced, the read-back or the reload differs –, the bell keeps its script, the data still
+describes the footprint for P-9 and P-10, and the failing call goes into handbook 9.4.
+
 ## Phase 4: in the projects
 
 Each at the user's request, in the project's repository.
