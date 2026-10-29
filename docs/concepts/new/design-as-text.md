@@ -236,6 +236,9 @@ stays.
 Decided: first write the whole Christmas bell down both ways, as a language and as TOML with names, then choose which
 to build (decision 8).
 
+The sketch is [circuit-language.md](circuit-language.md): the bell both ways, a translator that takes all four
+configurations there and back without a difference, what each form costs, and the decisions to take.
+
 ## Order
 
 First the small things, then gap 2, the language last. Each step is useful on its own.
