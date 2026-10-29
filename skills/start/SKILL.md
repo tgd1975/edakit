@@ -37,6 +37,14 @@ Background and every API quirk: `${CLAUDE_PLUGIN_ROOT}/handbook/02-setup.md`, `0
 7. **Reference schematic still equal to the graph** (seconds): `edakit schematic check 2>&1 | cat`. A generated
    template once drifted (one pin suddenly on two nets) without anyone touching it; regenerating fixed it. Check before
    every gate run, not only at the start.
+8. **The project's scripts and agents** (seconds; a project without entries – no `[scripts]`, no `[agents]` in
+   edakit.toml – skips this): `edakit scripts 2>&1 | cat` (handbook 8.6) shows each script with its state – current,
+   outdated, never run – and the order it runs in among edakit's steps. An input runs by itself before the step that
+   reads it; a derive or an easyeda script runs with `edakit run <name> 2>&1 | cat` – an easyeda script on command
+   only, under the claim of 6. With `[agents]` it lists the project's agents with their `about` and what each signs,
+   and under "Who reviews where" the hook point each reviews at and the edakit agent each replaces (`replaces`): the
+   skills circuit-design, hardware-change, pcb-round and release start them there. Entries that do not resolve are
+   fixed in edakit.toml first – until then no input runs before its step.
 
 ## 2. Long runs
 

@@ -35,6 +35,12 @@ edakit pcb parts 2>&1 | cat                   # parts added, swapped or removed:
 edakit pcb nets 2>&1 | cat                    # only nets changed: show, then --write
 ```
 
+An easyeda script (`[scripts]` in edakit.toml, handbook 8.6) changes the project library in EasyEDA – a footprint, a
+module's device – and runs on command only: right after `schematic create`, before `schematic layout` and `pcb parts`
+take the parts from the library, `edakit run <name> 2>&1 | cat` under the claim, when `edakit scripts` shows it
+outdated or never run or `schematic create` brought new or swapped parts it changes. One that built a device the
+template places needs `schematic create` once more. A project without entries skips this.
+
 Before the PCB is linked: `edakit schematic copy` + `layout`. After that `copy` refuses (the PCB would lose its
 schematic) and `layout` syncs parts in place. If parts were newly placed in the schematic, the DRC may show "Netlist
 Error – Import Changes" until the import view was opened once in the GUI. edakit compares schematic and PCB then:
@@ -100,12 +106,13 @@ describes (section 3); a list of parts or pads is fixed with `pcb parts --write`
    the gate run's files (skill release); its result is a sign-off, not a checklist for the user.
 6. Save only when the state is better than the saved one; `route all` and `silk apply` save themselves.
 
-**Project scripts** (`[scripts]` in edakit.toml, handbook 8.6): `pcb place`, `pcb parts`, `pcb plan`, `pcb apply`,
-`route all`, `silk apply` and `silk preview` run the input scripts that write what they read – the board file, the
-artwork – first when they are outdated, a line each under "project scripts before …"; one that failed stops the step:
-fix it (its output is in `<artifacts>/scripts/<name>.log`). `--no-scripts` only for a single run on purpose. A derive
-or easyeda script they name runs with `edakit run <name>`; an easyeda script changes the project library in EasyEDA and
-runs on command only, under the claim. After it the parts in the PCB keep their old footprint until deleted and
+**Project scripts** (`[scripts]` in edakit.toml, handbook 8.6; a project without entries skips this): `pcb place`,
+`pcb parts`, `pcb plan`, `pcb apply`, `route all`, `silk apply` and `silk preview` run the input scripts that write
+what they read – the board file, the silkscreen artwork – first when they are outdated, a line each under "project
+scripts before …"; one that failed stops the step: fix it (its output is in `<artifacts>/scripts/<name>.log`).
+`--no-scripts` is the exception, for a single run on purpose. A derive or easyeda script they name runs with
+`edakit run <name>`; an easyeda script changes the project library in EasyEDA and runs on command only, under the
+claim, after `schematic create` (section 0). After it the parts in the PCB keep their old footprint until deleted and
 recreated: delete them, `edakit pcb parts --write`, `edakit pcb dump`, then the round as usual through `route all` –
 `edakit check` warns until `pcb dump` and `route all` ran. Commit `hardware/scripts.lock` with what the scripts wrote.
 

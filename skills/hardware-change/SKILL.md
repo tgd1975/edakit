@@ -38,6 +38,11 @@ circuit-design.
 
 ## 2. Offline (seconds)
 
+With `[scripts]` in edakit.toml (handbook 8.6) a derive script made from the graph – it reads the graph, the parts or
+the firmware contract: the firmware's pin table, a picture for the documentation – is outdated after the change. It
+runs before `edakit check`, which warns on it otherwise: `edakit run <name> 2>&1 | cat` (`edakit scripts` names it;
+one that reads the contract after `edakit firmware`, below). A project without entries skips this.
+
 ```bash
 edakit check 2>&1 | cat     # ERROR: fix. WAIVED: only with a reason in the graph. PENDING blocks only the release
 edakit hints 2>&1 | cat     # design hints of new parts: handle them or note why not ("hints" in the graph)
@@ -64,12 +69,15 @@ edakit schematic draw 2>&1 | cat   # the changed circuit as a drawing
 edakit handover 2>&1 | cat         # what the PCB designer gets
 ```
 
-A change of parts or of the power path is reviewed before the hand-over: the agent electrical-reviewer in its own
-session, on this state – the changed circuit and the hand-over. With `[agents.<name>]` in edakit.toml (handbook 8.6) the
-project agent that replaces it (`replaces`) reviews in place of electrical-reviewer, and the project's agents of the
-circuit review beside it: `edakit scripts 2>&1 | cat` shows who reviews where. Its findings are fixed or decided (skill
-decision-round) first; the PCB designer takes over the reviewed state and the review's result, not a circuit whose
-review is still to come after the layout. The release sign-offs stay as they are (skill release).
+A change of parts or of the power path is reviewed before the hand-over, once `edakit sim` passed: the agent
+electrical-reviewer in its own session, on this state – the changed circuit and the hand-over –, and for a change of
+parts or of the purpose regulatory-reviewer beside it (M-6 – support, not legal advice: nothing in it is legally
+guaranteed, and it claims no correctness). With `[agents.<name>]` in edakit.toml (handbook 8.6) a project agent that
+replaces one of them (`replaces`) reviews in place of electrical-reviewer or regulatory-reviewer, and the project's
+agents of the circuit review – a sign-off of scope `circuit` – beside them: `edakit scripts 2>&1 | cat` shows who
+reviews where; a project without entries skips this. Their findings are fixed or decided (skill decision-round) first;
+the PCB designer takes over the reviewed state and the reviews' results, not a circuit whose review is still to come
+after the layout. The release sign-offs stay as they are (skill release).
 
 The PCB designer takes it over in its own session with the skill pcb-round – it brings the change into the EasyEDA
 schematic and the PCB (`schematic create/layout`, `pcb parts/nets`) and checks the plan against the hand-over (L-12).

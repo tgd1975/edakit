@@ -308,6 +308,58 @@ def test_the_skills_start_the_projects_agents_where_edakit_scripts_says():
     assert "project agents of phase acceptance" in delivery
 
 
+def test_the_skills_use_the_projects_scripts_and_agents_at_their_steps():
+    """Step 3.3: the skills of the flow (concept project-scripts, "The flow and its hook points") say at each step what
+    of the project's own runs, and who starts it – start: edakit scripts for the state, the order, the agents and where
+    each reviews; hardware-change: a derive made from the graph before edakit check, the agents of the circuit review
+    after edakit sim, in place of the reviewer they replace; pcb-round: an easyeda script on command only after
+    schematic create, the inputs before the steps that read the board file and the silkscreen artwork; release: a
+    derive made from the layout before the gate, the checks at their place in the gate, after delivery checks and
+    agents of phase acceptance; new-project: edakit scripts shows that the entries resolve before a script runs. Each
+    such place says that a project without entries skips it."""
+    def skill(name):
+        return ROOT / "skills" / name / "SKILL.md"
+    places = {   # place: (its text, what it says)
+        "start: state, order, agents": (
+            step(section(skill("start"), "1. Readiness", raw=True), 8),
+            ("`edakit scripts", "current", "outdated", "never run", "order", "`edakit run <name>", "on command only",
+             "claim", "`[agents]`", "`about`", "who reviews where", "hook point", "replaces")),
+        "hardware-change: a derive from the graph": (
+            section(skill("hardware-change"), "2. Offline (seconds)"),
+            ("derive", "the graph", "`edakit run <name>", "before `edakit check`")),
+        "hardware-change: the circuit review": (
+            section(skill("hardware-change"), "3. Hand-over to the layout"),
+            ("once `edakit sim` passed", "electrical-reviewer", "regulatory-reviewer", "in place of", "replaces",
+             "scope `circuit`", "`edakit scripts", "support, not legal advice", "nothing in it is legally guaranteed",
+             "claims no correctness")),
+        "pcb-round: an easyeda script": (
+            section(skill("pcb-round"), "0. Take over"),
+            ("easyeda script", "project library", "on command only", "right after `schematic create`",
+             "`edakit run <name>", "under the claim")),
+        "pcb-round: the inputs": (
+            section(skill("pcb-round"), "Round"),
+            ("input scripts", "board file", "silkscreen artwork", "`pcb parts`", "`silk apply`",
+             "`--no-scripts` is the exception")),
+        "release: a derive from the layout": (
+            step(section(skill("release"), "Procedure", raw=True), 1),
+            ("derive", "the layout", "`edakit scripts", "`edakit run <name>", "before the gate", "phase export",
+             "`at`")),
+        "new-project: the entries resolve": (
+            step(section(skill("new-project"), "5. First run and hand-over", raw=True), 1),
+            ("`edakit scripts", "resolve", "before any script runs", "do not resolve", "entry is wrong",
+             "`edakit run <name>", "`edakit scripts stamp <name>`")),
+    }
+    for place, (text, says) in places.items():
+        missing = [words for words in says + ("without entries",) if words not in text]
+        assert not missing, (place, missing)
+    assert 'at = "after f"' in step(section(skill("release"), "Procedure", raw=True), 2)
+    delivery = flat(skill("release").read_text(encoding="utf-8").split("After delivery:")[1])
+    assert "checks of phase acceptance" in delivery and "project agents of phase acceptance" in delivery
+    for name in ("start", "hardware-change", "pcb-round", "release", "new-project"):
+        text = skill(name).read_text(encoding="utf-8")
+        assert "edakit scripts" in text or "edakit run" in text, name
+
+
 def test_the_layout_review_reads_the_rounds_copper_per_layer():
     sources = section(ROOT / "agents" / "pcb-reviewer.md", "Sources")
     assert "gerber_<board>" in sources and "silk apply" in sources

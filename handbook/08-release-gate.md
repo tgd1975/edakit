@@ -732,6 +732,29 @@ the project agent pcb-pruefer signs it, in place of pcb-reviewer". A requirement
 (`signoff = "M-7"`, 8.7). Without `[agents]` nothing changes: edakit's agents review and sign as before, and nobody
 checks who signed them.
 
+**Who starts what.** edakit's steps run the inputs they read, the gate runs the checks; the rest – a derive or an
+`easyeda` script, the project's agents – Claude starts, where the skills say it at their steps (the flow of the concept
+project-scripts and its hook points). Every session starts with a line per script and agent (11.4); their state, the
+order and who reviews where are in `edakit scripts`. A project without `[scripts]` and `[agents]` has none of this,
+and the skills skip it.
+
+| Where in the flow | What of the project's | Who starts it |
+|---|---|---|
+| before EasyEDA work | the state of every script, the order, who reviews where | Claude, `edakit scripts` (skill start) |
+| after a change of the graph, before `edakit check` | a derive made from the graph – the firmware's pin table | Claude, `edakit run` (skill hardware-change); `edakit check` warns until it ran |
+| circuit review, once `edakit sim` passed | the agents of scope `circuit`; one that replaces electrical-reviewer or regulatory-reviewer, in its place | Claude (skills circuit-design, hardware-change) |
+| right after `schematic create`, before `schematic layout` | an `easyeda` script: the project library | Claude, `edakit run`, on command only, under the claim (skill pcb-round) |
+| before `pcb place`, `pcb parts`, `pcb plan`, `pcb apply`, `route all` | an input that writes the board file | the step itself; `--no-scripts` is the exception |
+| before `silk apply`, `silk preview` | an input that draws the silkscreen artwork | the step itself |
+| round review, after a round that changed placement, routing or pours | the agents of scope `layout`; the one that replaces pcb-reviewer, in its place | Claude (skill pcb-round) |
+| before the gate | a derive made from the layout – the stand that fits the board | Claude, `edakit run` (skill release); the inputs it reads the gate runs itself |
+| in the gate | the checks of phase `export`: `at` before S or after F | the gate (8.1) |
+| layout review, between the two gate runs | the agents of scope `fab`; the ones that replace pcb-reviewer and electrical-reviewer – the sign-off counts when `done_by` names the agent | Claude (skill release) |
+| after uploading, after delivery | the checks of phase `order` and `acceptance`, the agents of phase `acceptance` – lines of section 6 | the owner; an agent Claude, in its own session (skill release) |
+
+When the skill new-project has written the entries, `edakit scripts` shows that they resolve before any script runs;
+entries that do not resolve are fixed first.
+
 ## 8.7 Requirements
 
 With `[project] requirements` (3.6) the gate holds the circuit to what it must do. A file the key names that is

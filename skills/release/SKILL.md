@@ -11,14 +11,19 @@ Concept: `${CLAUDE_PLUGIN_ROOT}/handbook/08-release-gate.md`.
 ## Procedure
 
 1. **Offline** (seconds): `edakit stock 2>&1 | cat` when the snapshot is older than `stock_max_age_days` (P-4 is
-   pending then), then `edakit gate 2>&1 | cat` – P, G, E and the project's checks before S. A footprint geometry that
-   still lies among the artifacts (a note of `edakit check` and in section 6 of the protocol) is moved first, as the
-   note says, and committed: the move changes the layout hash once, and a sign-off with scope `layout` recorded before
-   it would lapse (handbook 8.2).
+   pending then), then `edakit gate 2>&1 | cat` – P, G, E and the project's checks of phase export before S (their
+   `at`, handbook 8.1). Before it, with `[scripts]` in edakit.toml (handbook 8.6): `edakit scripts 2>&1 | cat`, and a
+   derive script made from the layout – it reads the footprints, the mechanical model or the routing: the stand that
+   fits the board, a picture of it – that is outdated or never ran runs before the gate with
+   `edakit run <name> 2>&1 | cat`; the gate only warns on it, and runs the inputs it reads itself. A project
+   without entries skips this. A footprint geometry that still lies among the artifacts (a note of `edakit check` and
+   in section 6 of the protocol) is moved first, as the note says, and committed: the move changes the layout hash
+   once, and a sign-off with scope `layout` recorded before it would lapse (handbook 8.2).
 2. **With EasyEDA** (start skill, claim EasyEDA, reference schematic checked): `edakit gate --easyeda 2>&1 | cat` in the
    background (minutes). Adds S, L and F per board: read the PCB, save and reload, DRC, export Gerber and pick-and-place,
    BOM from the graph, JLCPCB stock, copper connectivity from the Gerber files, holes against leads, outline, tooling
-   holes, polarity sheet; then the project's checks after F. Files in `<reports>/<run>/fab/<board>/`.
+   holes, polarity sheet; then the project's checks with `at = "after F"`, on this run's manufacturing files. Files in
+   `<reports>/<run>/fab/<board>/`.
 3. Read `<reports>/<run>/protocol.md`. Summarise per stage passed / failed / warning / open, then the findings with
    actual and expected value. Always name stages and checks with their short name next to the letter: "stage L
    (board)", "L-9 (hole fits the lead)" – nobody remembers the letters; the names come from the rule catalog

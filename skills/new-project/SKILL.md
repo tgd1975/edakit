@@ -124,9 +124,13 @@ report names them.
 
 1. `edakit check 2>&1 | cat` and `edakit sim 2>&1 | cat` – on a new project the empty graph; on a moving one what
    edakit finds in the project's data. Findings go into the report and to the skill that owns them, not fixed
-   silently here. With `[scripts]` or `[agents]`: `edakit scripts 2>&1 | cat` – an input script that never ran fails
-   `edakit check` until it ran as its `cmd` says and `edakit scripts stamp <name>` recorded it (handbook 8.6), with
-   the user's OK.
+   silently here. With `[scripts]` or `[agents]` (a project without entries skips this): `edakit scripts 2>&1 | cat`
+   shows that the entries resolve, before any script runs – "do not resolve", an error `scripts` or `agents` of
+   `edakit check`, means an entry is wrong: a kind, a path, what it reads or writes, what an agent signs, its file. Fix
+   the entry and name the fix in the report. Then each script that never ran, with the user's OK:
+   `edakit run <name> 2>&1 | cat` runs and records it – an easyeda script under the claim, once the EasyEDA project
+   exists –, and `edakit scripts stamp <name>` records one whose result is there from before (moving, handbook 8.6).
+   An input that never ran fails `edakit check` until then.
 2. Requirements "now": the skill requirements – it writes `hardware/requirements.toml` with the user, and
    circuit-design reads the file instead of asking.
 3. Graph with the skill circuit-design: power input, MCU, the main functions – building blocks where they fit
