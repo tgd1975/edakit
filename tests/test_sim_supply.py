@@ -1,5 +1,5 @@
 """Stage E seen red at the supplies: a part outside its operating range, an input between its thresholds, a source or
-a cell fed backwards."""
+a cell fed backwards, a power bank that switches off at the board's least current."""
 
 import json
 import shutil
@@ -146,6 +146,68 @@ def test_no_cell_is_charged(project):
     assert len(alone) == 4 and all(c["result"] == "pass" and c["actual"] == "0 A" for c in alone)
     sim["cells"]["fresh"]["i_charge_max_a"] = 0.5                 # a rechargeable pack, charged on purpose
     assert not failing(simulate(project, sim))
+
+
+ON = "current keeps the supply on"
+LEAST = f"{ON} (least current: U1 40 mA)"
+
+
+def power_bank_and_wifi(project):
+    """J1 a power bank that switches off below 100 mA; U1 a module whose current varies – 0.27 A while it transmits
+    Wi-Fi (an ESP32: 240 mA at +19.5 dBm, Espressif ESP32 datasheet v5.3 table 5-4), 40 mA at the least."""
+    part = project.part("C41407547")
+    part["params"].update(i_core_a=0.27, i_core_min_a=0.04)
+    project.save_part("C41407547", part)
+    sim = sim_config(project)
+    sim["sources"]["J1"]["i_min_a"] = 0.1
+    return sim
+
+
+def test_minimum_load_at_the_least_current(project):
+    sim = power_bank_and_wifi(project)
+    out = simulate(project, sim)
+    on = {c["scenario"]: c for c in out["checks"] if c["item"] == "J1" and c["check"].startswith(ON)}
+    assert len(on) == 12 and {c["check"] for c in on.values()} == {LEAST}
+    bad = failing(out)                                            # idle with U1 at 40 mA: 42–47 mA from J1
+    assert {(c["id"], c["item"], c["check"], c["expected"]) for c in bad} == {("E-3", "J1", LEAST, "≥ 100 mA")}
+    assert {c["scenario"].split("/")[1] for c in bad} == {"idle"} and len(bad) == 6
+    assert all(0.04 < float(c["actual"].split()[0]) < 0.05 for c in bad)
+    assert all(0.11 < float(c["actual"].split()[0]) < 0.13 for s, c in on.items() if "/all_on/" in s)
+    drawn = {c["scenario"]: c for c in out["checks"] if c["item"] == "J1" and c["check"] == "current from the supply"}
+    for row in out["scenarios"]:                                  # every other check: U1 at its upper bound, 0.27 A
+        assert drawn[row["name"]]["actual"] == f"{row['sources']['J1']:.4g} A" and row["sources"]["J1"] > 0.22
+    part = project.part("C41407547")
+    del part["params"]["i_core_min_a"]                            # without it: the minimum load at i_core_a, as before
+    project.save_part("C41407547", part)
+    out = simulate(project, sim)
+    on = [c for c in out["checks"] if c["item"] == "J1" and c["check"].startswith(ON)]
+    assert len(on) == 12 and {c["check"] for c in on} == {ON} and not failing(out)
+
+
+def test_least_current_runs_only_for_a_minimum_load(project, monkeypatch):
+    sim = power_bank_and_wifi(project)
+    runs, real = [], simrun.ngspice
+
+    def counted(text, keep=None, name="run"):
+        runs.append(name)
+        return real(text, keep, name)
+    monkeypatch.setattr(simrun, "ngspice", counted)
+    simulate(project, sim)
+    assert len(runs) == 24 and runs[:2] == ["usb-min/idle/vf-min", "usb-min/idle/vf-min least current"]
+    runs.clear()
+    del sim["sources"]["J1"]["i_min_a"]                           # no source with a minimum load: no second run
+    out = simulate(project, sim)
+    assert len(runs) == 12 and not [c for c in out["checks"] if c["check"].startswith(ON)]
+
+
+def test_least_current_inside_the_upper_bound(project):
+    sim = power_bank_and_wifi(project)
+    part = project.part("C41407547")
+    part["params"]["i_core_min_a"] = 0.3                          # above i_core_a: no least current
+    project.save_part("C41407547", part)
+    bad = failing(simulate(project, sim))
+    assert {(c["id"], c["item"]) for c in bad} == {("E-1", "circuit")} and len(bad) == 12
+    assert "U1: i_core_min_a 0.3 – the least current, a number from 0 to i_core_a (0.27 A)" in bad[0]["actual"]
 
 
 def names(sim):

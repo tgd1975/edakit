@@ -59,6 +59,10 @@ part of the class: read its result and ask the rest.
 - **Read-back of synchronous outputs** (parts database): on which clock edge does a shift register or driver chain
   change its serial output, against the edge the MCU samples on in the SPI mode it uses? H-9 asks it for every output
   the MCU reads from a part whose inputs it also drives.
+- **Minimum load of a supply** (simulation): does a power bank or another supply with a minimum load stay on at the
+  least current the board draws – firmware idle, radio off, LEDs dark? E-3 holds every source with `i_min_a` to it,
+  with every MCU at its least current `i_core_min_a` where its entry gives one; without it at `i_core_a`, an upper
+  bound, and the check passes too easily – ask for it where an MCU's current swings (Wi-Fi, sleep modes).
 - **Junction and touch temperature** (simulation): for every part that dissipates – a conducting diode or body diode,
   a linear regulator, a resistor at its limit – its junction temperature, and its touch temperature (the surface)
   where a person can reach it. E-2 holds every part with `rth_ja_k_per_w` in its parts entry to its `tj_max_c`, and

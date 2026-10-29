@@ -21,7 +21,9 @@ ICs and modules are replaced by behaviour models, chosen by params.behavior in t
             below it: output and input current fall to 0 over the UVLO_V below vin_min – a DC result above it is the
             same, a transient run sees the regulator switch off
   mcu       roles vin|vsys|vdd (supply), optional vout|3v3 (on-board regulator: params regulator = "buck"|"ldo",
-            output vout_v, default v_io), gpio pins: outputs from the load's "gpio" levels as source + gpio_r_out_ohm,
+            output vout_v, default v_io), the core's current i_core_a – an upper bound; i_core_min_a, the least
+            current, only in the operating point of E-3's minimum load (scenario "least_current", run.least_current) –,
+            gpio pins: outputs from the load's "gpio" levels as source + gpio_r_out_ohm,
             high level v_io in V or "vin" (follows the supply pin, e.g. a 5 V AVR), pull-ups from the config; the
             config's "inputs" are checked for a defined logic level (params vih_v|vih_ratio, vil_v|vil_ratio); an
             output on a pin of type "input" (input-only) is not driven and reported; every output's current is measured
@@ -53,6 +55,19 @@ LED_N = 2.0
 BRIDGE_OHM = 0.05   # a 0 Ω bridge without r_max_ohm: the usual maximum of thick-film jumpers
 UVLO_V = 0.2        # undervoltage lockout: a regulator's output falls to 0 over this much below its vin_min
 DEAD_RAIL_V = 0.5   # a constant-current load falls to 0 below this voltage across it
+I_CORE_A = 0.03     # an MCU's core current without params i_core_a
+
+
+def core_current(des, p, least=False):
+    """An MCU's core current from its params: i_core_a, the upper bound every check uses – or with `least` its least
+    current i_core_min_a (default i_core_a), the operating point of E-3's minimum load."""
+    high = p.get("i_core_a", I_CORE_A)
+    if "i_core_min_a" not in p:
+        return high
+    low = p["i_core_min_a"]
+    if not all(isinstance(x, (int, float)) and not isinstance(x, bool) for x in (low, high)) or not 0 <= low <= high:
+        raise ValueError(f"{des}: i_core_min_a {low!r} – the least current, a number from 0 to i_core_a ({high} A)")
+    return low if least else high
 
 
 def pwl(points):
@@ -388,15 +403,16 @@ class Netlist:
         vout = self.pn(rp.get("vout") or rp.get("3v3"))
         v_io = p.get("v_io", 3.3)  # a number, or "vin": the I/O runs from the supply pin (5 V AVR boards)
         mcfg = self.cfg.get("mcu", {}).get(des) or self.cfg.get("mcu", {})
+        i_core = core_current(des, p, self.sc.get("least_current", False))
         if vout and p.get("regulator"):
             vset = p.get("vout_v", v_io)
             if not isinstance(vset, (int, float)):
                 raise ValueError(f"{des}: v_io = '{v_io}' – give the on-board regulator's output as params vout_v")
             r = part.get("ratings", {})
-            self._regulator(des, vin, vout, "0", p["regulator"], {**p, "vout_v": vset}, extra_i=p.get("i_core_a", 0.03),
+            self._regulator(des, vin, vout, "0", p["regulator"], {**p, "vout_v": vset}, extra_i=i_core,
                             vin_min=r.get("vin_min", r.get("vsys_min")))
         elif vin:
-            self.current_load(f"{des}_CORE", vin, "0", p.get("i_core_a", 0.03))
+            self.current_load(f"{des}_CORE", vin, "0", i_core)
         gpio = {self.d.pin_net.get(f"{des}.{n}") for n, i in part["pins"].items() if i.get("role") == "gpio"}
         rail = (self.pn(self.pin_on(des, mcfg["io_rail"])) or self.n(mcfg["io_rail"])) if mcfg.get("io_rail") \
             else (vin if v_io == "vin" else vout or vin)
