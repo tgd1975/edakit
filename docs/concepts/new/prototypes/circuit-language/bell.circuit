@@ -1,0 +1,114 @@
+# The Christmas bell, main configuration, as a language of its own – the prototype of edakit's step 4.3.
+# It translates to the bell's hardware/graph.json without a difference:
+#   python3 translate.py json bell.circuit --parts <bell>/hardware/parts
+# The language and its rules: docs/concepts/new/circuit-language.md.
+#
+# A pin is written by role or name; the parts entries in hardware/parts/ say which pin that is. LED5.anode is pin 1
+# of the green LED, which its symbol calls "C"; U1.PD6 is pin 9 of the Nano. A net is a line with its voltage range
+# over all operating states; a later line "net GND …" adds pins to it. "(locked)" marks a pin the firmware relies
+# on (G-2). Text in quotes may go on over several lines.
+
+graph christmas-bell version 0.3 date 2026-10-25
+description "Automatic Christmas bell: an Arduino Nano counts down on five LEDs, then a servo swings a real bell.
+    Start and reset buttons. Taken over from the Fritzing drawing weihnachtsglocke.fzz."
+
+purpose private market EU
+  notes "Automatic Christmas bell for the owner's home, built and used by the owner – not sold or given away (D-16).
+    Powered from a USB port or power bank through the Nano's USB; no battery holder, no mains, no radio."
+
+# The graph's own conventions, word for word. They describe the JSON; here pins go by role or name.
+convention pin_reference "'<designator>.<pin>' with the pin numbers of the EasyEDA symbol"
+convention v "per net: [min, max] in V over all operating states"
+convention waive "per net or component: {check id: reason} accepts a finding on purpose"
+set cables []    # no wires between boards; the servo's own cable plugs into J1
+
+
+# ── Parts ─────────────────────────────────────────────────────────────────────────────────────────────────────────
+# no-bom: soldered by hand. JLCPCB places only the resistors and the buttons (D-1).
+
+part U1    module     "Arduino Nano V3"   lcsc C9900187880  no-bom      "Arduino Nano 3 (plugged in)"
+  nc     TXD RXD RESET PD7 PB1 PB2 PB5 3V3 AREF PC0 PC1 PC2 PC3 PC4 PC5 ADC6 ADC7 PC6 VIN
+  waive  P-1 "VIN stays free: the Nano runs from its USB socket"
+  notes  "Plugs into two 1x15 female headers, pitch 2.54 mm (hand-soldered, not in the graph). Powered through its
+         USB socket; its 5V pin (USB minus a Schottky diode) supplies the servo, C1 and the buttons. Pin names are the
+         library symbol's ATmega port names; its labels of pins 14/15 are swapped (pin 14 = D11 = PB3, pin 15 = D12 =
+         PB4 on the Nano)."
+
+part J1    connector  PZ254V-11-03P       lcsc C2937625     no-bom      "Servo (GND, +5 V, signal)"
+  notes  "Standard servo plug: brown = GND (1), red = +5 V (2), orange = signal (3)."
+part C1    capacitor  "1000uF 16V"        lcsc C439782      no-bom      "Buffer capacitor for the servo"
+  notes  "Absorbs the servo's start-up peaks so the Nano does not reset."
+
+part LED5  led        XL-504UGD           lcsc C2895549     no-bom      "5 mm LED, green, countdown step 1"
+part R4    resistor   "330 Ω 0805"        lcsc C17630       value 330Ω  "Series resistor LED5"
+part LED4  led        XL-504UGD           lcsc C2895549     no-bom      "5 mm LED, green, countdown step 2"
+part R3    resistor   "330 Ω 0805"        lcsc C17630       value 330Ω  "Series resistor LED4"
+part LED3  led        XL-504UYD           lcsc C2895495     no-bom      "5 mm LED, yellow, countdown step 3"
+part R2    resistor   "330 Ω 0805"        lcsc C17630       value 330Ω  "Series resistor LED3"
+part LED2  led        XL-504UYD           lcsc C2895495     no-bom      "5 mm LED, yellow, countdown step 4"
+part R1    resistor   "330 Ω 0805"        lcsc C17630       value 330Ω  "Series resistor LED2"
+part LED1  led        XL-504SURD          lcsc C2895493     no-bom      "5 mm LED, red, countdown step 5"
+part R5    resistor   "330 Ω 0805"        lcsc C17630       value 330Ω  "Series resistor LED1"
+
+part S1    button     K2-1102SP-C4SC-04   lcsc C127509                  "Start button"
+  notes  "1/2 and 3/4 are connected inside the button."
+part R7    resistor   "4.7 kΩ 0805"       lcsc C17673       value 4.7kΩ "Pull-down, start button"
+part S2    button     K2-1102SP-C4SC-04   lcsc C127509                  "Reset button"
+  notes  "1/2 and 3/4 are connected inside the button."
+part R6    resistor   "4.7 kΩ 0805"       lcsc C17673       value 4.7kΩ "Pull-down, reset button"
+
+part R8    resistor   "100 Ω 2512 1 W"    lcsc C35218       value 100Ω
+  label  "Base load for USB power banks (R8 ∥ R9 = 50 Ω, 100 mA)"
+  notes  "Keeps a power bank from switching off: the circuit alone draws 35–75 mA (D-8)."
+part R9    resistor   "100 Ω 2512 1 W"    lcsc C35218       value 100Ω
+  label  "Base load for USB power banks (R8 ∥ R9 = 50 Ω, 100 mA)"
+  notes  "Keeps a power bank from switching off: the circuit alone draws 35–75 mA (D-8)."
+
+
+# ── Wiring ────────────────────────────────────────────────────────────────────────────────────────────────────────
+# The Arduino pins in the comments (D2 … D12) are those of the firmware, src/firmware/buttons.ino.
+
+# Supply: the Nano's 5V pin feeds the servo, C1, the buttons and the base load.
+net +5V        0..5.5 V  U1.5V
+  notes "5V pin of the Nano: USB minus its Schottky diode; supplies the servo and the buttons."
+net GND        0 V       U1.GND                        # both GND pins of the Nano, 4 and 29
+
+# Servo on D8. Its own cable plugs into J1: brown GND, red +5 V, orange signal. C1 takes its start-up peaks.
+net +5V                  C1.plus J1.2
+net GND                  C1.minus J1.1
+net SERVO      0..5.5 V  U1.PB0 (locked) J1.3
+
+# Buttons: each joins its side a (pins 1, 2) to side b (pins 3, 4). Pressed = 5 V at the input, else the pull-down
+# holds it at GND (D-4). The symbol swaps the labels of pins 14 and 15: U1.PB4 is D11, U1.PB3 is D12.
+net +5V                  S1.a S2.a
+net GND                  R6.2 R7.2
+net BTN_START  0..5.5 V  U1.PB4 (locked) S1.b R7.1
+  notes "Pressed = 5 V at D11, else R7 pulls to GND (D-4)."
+net BTN_RESET  0..5.5 V  U1.PB3 (locked) S2.b R6.1
+  notes "Pressed = 5 V at D12, else R6 pulls to GND (D-4)."
+
+# Countdown: five steps, each a pin of the Nano → 330 Ω → LED → GND.
+# Step 1: D6 → R4 → green LED5 → GND
+net LED_G1     0..5.5 V  U1.PD6 (locked) R4.1
+net LED_G1_A   0..5.5 V  R4.2 LED5.anode
+net GND                  LED5.cathode
+# Step 2: D5 → R3 → green LED4 → GND
+net LED_G2     0..5.5 V  U1.PD5 (locked) R3.1
+net LED_G2_A   0..5.5 V  R3.2 LED4.anode
+net GND                  LED4.cathode
+# Step 3: D2 → R2 → yellow LED3 → GND
+net LED_Y1     0..5.5 V  U1.PD2 (locked) R2.1
+net LED_Y1_A   0..5.5 V  R2.2 LED3.anode
+net GND                  LED3.cathode
+# Step 4: D3 → R1 → yellow LED2 → GND
+net LED_Y2     0..5.5 V  U1.PD3 (locked) R1.1
+net LED_Y2_A   0..5.5 V  R1.2 LED2.anode
+net GND                  LED2.cathode
+# Step 5: D4 → R5 → red LED1 → GND
+net LED_R      0..5.5 V  U1.PD4 (locked) R5.1
+net LED_R_A    0..5.5 V  R5.2 LED1.anode
+net GND                  LED1.cathode
+
+# Base load: R8 ∥ R9 = 50 Ω draw 100 mA, so that a power bank stays on (D-8).
+net +5V                  R8.1 R9.1
+net GND                  R8.2 R9.2

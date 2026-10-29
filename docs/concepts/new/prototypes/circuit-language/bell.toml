@@ -1,0 +1,281 @@
+# The Christmas bell, main configuration, as TOML with pin names – the prototype of edakit's step 4.3.
+# It translates to the bell's hardware/graph.json without a difference:
+#   python3 translate.py json bell.toml --parts <bell>/hardware/parts
+# The rules: docs/concepts/new/circuit-language.md.
+#
+# Today's graph, written as TOML: components and nets are tables keyed by designator and net name, and a pin goes
+# by role or name. The parts entries in hardware/parts/ say which pin that is: LED5.anode is pin 1 of the green LED,
+# which its symbol calls "C"; U1.PD6 is pin 9 of the Nano.
+
+name = "christmas-bell"
+version = "0.3"
+date = "2026-10-25"
+description = """\
+  Automatic Christmas bell: an Arduino Nano counts down on five LEDs, then a servo swings a real bell. Start and \
+  reset buttons. Taken over from the Fritzing drawing weihnachtsglocke.fzz."""
+cables = []    # no wires between boards; the servo's own cable plugs into J1
+
+[purpose]
+use = "private"
+market = "EU"
+notes = """\
+  Automatic Christmas bell for the owner's home, built and used by the owner – not sold or given away (D-16). \
+  Powered from a USB port or power bank through the Nano's USB; no battery holder, no mains, no radio."""
+
+# The graph's own conventions, word for word. They describe the JSON; here pins go by role or name.
+[conventions]
+pin_reference = "'<designator>.<pin>' with the pin numbers of the EasyEDA symbol"
+v = "per net: [min, max] in V over all operating states"
+waive = "per net or component: {check id: reason} accepts a finding on purpose"
+
+
+# ── Components ────────────────────────────────────────────────────────────────────────────────────────────────────
+# bom = false: soldered by hand. JLCPCB places only the resistors and the buttons (D-1).
+
+[components.U1]
+type = "module"
+label = "Arduino Nano 3 (plugged in)"
+part = "Arduino Nano V3"
+lcsc = "C9900187880"
+bom = false
+nc = ["TXD", "RXD", "RESET", "PD7", "PB1", "PB2", "PB5", "3V3", "AREF", "PC0", "PC1", "PC2", "PC3", "PC4", "PC5",
+      "ADC6", "ADC7", "PC6", "VIN"]
+waive.P-1 = "VIN stays free: the Nano runs from its USB socket"
+notes = """\
+  Plugs into two 1x15 female headers, pitch 2.54 mm (hand-soldered, not in the graph). Powered through its USB \
+  socket; its 5V pin (USB minus a Schottky diode) supplies the servo, C1 and the buttons. Pin names are the library \
+  symbol's ATmega port names; its labels of pins 14/15 are swapped (pin 14 = D11 = PB3, pin 15 = D12 = PB4 on the \
+  Nano)."""
+
+# The servo's plug and its buffer
+[components.J1]
+type = "connector"
+label = "Servo (GND, +5 V, signal)"
+part = "PZ254V-11-03P"
+lcsc = "C2937625"
+bom = false
+notes = "Standard servo plug: brown = GND (1), red = +5 V (2), orange = signal (3)."
+
+[components.C1]
+type = "capacitor"
+label = "Buffer capacitor for the servo"
+part = "1000uF 16V"
+lcsc = "C439782"
+bom = false
+notes = "Absorbs the servo's start-up peaks so the Nano does not reset."
+
+# The countdown: five LEDs, each with its series resistor
+[components.LED5]
+type = "led"
+label = "5 mm LED, green, countdown step 1"
+part = "XL-504UGD"
+lcsc = "C2895549"
+bom = false
+
+[components.R4]
+type = "resistor"
+label = "Series resistor LED5"
+part = "330 Ω 0805"
+lcsc = "C17630"
+value = "330Ω"
+
+[components.LED4]
+type = "led"
+label = "5 mm LED, green, countdown step 2"
+part = "XL-504UGD"
+lcsc = "C2895549"
+bom = false
+
+[components.R3]
+type = "resistor"
+label = "Series resistor LED4"
+part = "330 Ω 0805"
+lcsc = "C17630"
+value = "330Ω"
+
+[components.LED3]
+type = "led"
+label = "5 mm LED, yellow, countdown step 3"
+part = "XL-504UYD"
+lcsc = "C2895495"
+bom = false
+
+[components.R2]
+type = "resistor"
+label = "Series resistor LED3"
+part = "330 Ω 0805"
+lcsc = "C17630"
+value = "330Ω"
+
+[components.LED2]
+type = "led"
+label = "5 mm LED, yellow, countdown step 4"
+part = "XL-504UYD"
+lcsc = "C2895495"
+bom = false
+
+[components.R1]
+type = "resistor"
+label = "Series resistor LED2"
+part = "330 Ω 0805"
+lcsc = "C17630"
+value = "330Ω"
+
+[components.LED1]
+type = "led"
+label = "5 mm LED, red, countdown step 5"
+part = "XL-504SURD"
+lcsc = "C2895493"
+bom = false
+
+[components.R5]
+type = "resistor"
+label = "Series resistor LED1"
+part = "330 Ω 0805"
+lcsc = "C17630"
+value = "330Ω"
+
+# The buttons, each with its pull-down
+[components.S1]
+type = "button"
+label = "Start button"
+part = "K2-1102SP-C4SC-04"
+lcsc = "C127509"
+notes = "1/2 and 3/4 are connected inside the button."
+
+[components.R7]
+type = "resistor"
+label = "Pull-down, start button"
+part = "4.7 kΩ 0805"
+lcsc = "C17673"
+value = "4.7kΩ"
+
+[components.S2]
+type = "button"
+label = "Reset button"
+part = "K2-1102SP-C4SC-04"
+lcsc = "C127509"
+notes = "1/2 and 3/4 are connected inside the button."
+
+[components.R6]
+type = "resistor"
+label = "Pull-down, reset button"
+part = "4.7 kΩ 0805"
+lcsc = "C17673"
+value = "4.7kΩ"
+
+# The base load for power banks
+[components.R8]
+type = "resistor"
+label = "Base load for USB power banks (R8 ∥ R9 = 50 Ω, 100 mA)"
+part = "100 Ω 2512 1 W"
+lcsc = "C35218"
+value = "100Ω"
+notes = "Keeps a power bank from switching off: the circuit alone draws 35–75 mA (D-8)."
+
+[components.R9]
+type = "resistor"
+label = "Base load for USB power banks (R8 ∥ R9 = 50 Ω, 100 mA)"
+part = "100 Ω 2512 1 W"
+lcsc = "C35218"
+value = "100Ω"
+notes = "Keeps a power bank from switching off: the circuit alone draws 35–75 mA (D-8)."
+
+
+# ── Nets: v is [min, max] in V over all operating states ──────────────────────────────────────────────────────────
+# The Arduino pins in the comments (D2 … D12) are those of the firmware, src/firmware/buttons.ino.
+
+[nets."+5V"]
+v = [0, 5.5]
+pins = [
+  "U1.5V",                 # the Nano's 5V pin
+  "C1.plus", "J1.2",       # servo: buffer and plug (red wire)
+  "S1.a", "S2.a",          # side a of both buttons (pins 1, 2)
+  "R8.1", "R9.1",          # base load
+]
+notes = "5V pin of the Nano: USB minus its Schottky diode; supplies the servo and the buttons."
+
+[nets.GND]
+v = [0, 0]
+pins = [
+  "U1.GND",                # both GND pins of the Nano, 4 and 29
+  "C1.minus", "J1.1",      # servo: buffer and plug (brown wire)
+  "R6.2", "R7.2",          # the pull-downs of the buttons
+  "LED5.cathode", "LED4.cathode", "LED3.cathode", "LED2.cathode", "LED1.cathode",    # countdown, steps 1 to 5
+  "R8.2", "R9.2",          # base load
+]
+
+# Servo on D8 (orange wire)
+[nets.SERVO]
+v = [0, 5.5]
+pins = ["U1.PB0", "J1.3"]
+
+# Buttons: pressed = 5 V at the input, else the pull-down holds it at GND. The symbol swaps the labels of pins 14
+# and 15: U1.PB4 is D11, U1.PB3 is D12.
+[nets.BTN_START]
+v = [0, 5.5]
+pins = ["U1.PB4", "S1.b", "R7.1"]
+notes = "Pressed = 5 V at D11, else R7 pulls to GND (D-4)."
+
+[nets.BTN_RESET]
+v = [0, 5.5]
+pins = ["U1.PB3", "S2.b", "R6.1"]
+notes = "Pressed = 5 V at D12, else R6 pulls to GND (D-4)."
+
+# Countdown: five steps, each a pin of the Nano → 330 Ω → LED → GND. The cathodes are in GND above.
+# Step 1: D6 → R4 → green LED5
+[nets.LED_G1]
+v = [0, 5.5]
+pins = ["U1.PD6", "R4.1"]
+
+[nets.LED_G1_A]
+v = [0, 5.5]
+pins = ["R4.2", "LED5.anode"]
+
+# Step 2: D5 → R3 → green LED4
+[nets.LED_G2]
+v = [0, 5.5]
+pins = ["U1.PD5", "R3.1"]
+
+[nets.LED_G2_A]
+v = [0, 5.5]
+pins = ["R3.2", "LED4.anode"]
+
+# Step 3: D2 → R2 → yellow LED3
+[nets.LED_Y1]
+v = [0, 5.5]
+pins = ["U1.PD2", "R2.1"]
+
+[nets.LED_Y1_A]
+v = [0, 5.5]
+pins = ["R2.2", "LED3.anode"]
+
+# Step 4: D3 → R1 → yellow LED2
+[nets.LED_Y2]
+v = [0, 5.5]
+pins = ["U1.PD3", "R1.1"]
+
+[nets.LED_Y2_A]
+v = [0, 5.5]
+pins = ["R1.2", "LED2.anode"]
+
+# Step 5: D4 → R5 → red LED1
+[nets.LED_R]
+v = [0, 5.5]
+pins = ["U1.PD4", "R5.1"]
+
+[nets.LED_R_A]
+v = [0, 5.5]
+pins = ["R5.2", "LED1.anode"]
+
+
+# The pins the firmware relies on (G-2), with their names in src/firmware/buttons.ino
+[checks.pin_locks]
+"U1.PD2" = "LED_Y1"       # D2
+"U1.PD3" = "LED_Y2"       # D3
+"U1.PD4" = "LED_R"        # D4
+"U1.PD5" = "LED_G2"       # D5
+"U1.PD6" = "LED_G1"       # D6
+"U1.PB0" = "SERVO"        # D8
+"U1.PB4" = "BTN_START"    # D11
+"U1.PB3" = "BTN_RESET"    # D12
