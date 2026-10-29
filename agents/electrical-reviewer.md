@@ -66,7 +66,8 @@ part of the class: read its result and ask the rest.
 - **Junction and touch temperature** (simulation): for every part that dissipates – a conducting diode or body diode,
   a linear regulator, a resistor at its limit – its junction temperature, and its touch temperature (the surface)
   where a person can reach it. E-2 holds every part with `rth_ja_k_per_w` in its parts entry to its `tj_max_c`, and
-  to `touch_c` on a board people touch; ask for the parts without it.
+  to `touch_c` on a board people touch; E-3 does so for an LDO, an LED driver and an MCU module's own LDO, with the
+  core current it carries (the regulator's `rth_ja_k_per_w` in the module's ratings); ask for the parts without it.
 - **What an off-board module brings** (graph): a plugged-in module or breakout board is a black box in the graph – its
   USB-C CC resistors, its VBUS diode or fuse, its regulator. What does each mean for the board: termination, a
   back-feed path, a second regulator on a rail? G-14 tests the termination of a module's receptacle from
