@@ -41,6 +41,11 @@ take the parts from the library, `edakit run <name> 2>&1 | cat` under the claim,
 outdated or never run or `schematic create` brought new or swapped parts it changes. One that built a device the
 template places needs `schematic create` once more. A project without entries skips this.
 
+A part whose parts entry has `footprint_data` (an own footprint, handbook 4.5) gets its copy from the data at the same
+place: `edakit part build <key> --write 2>&1 | cat` under the claim, right after `schematic create` and after every
+change of the data. Parts already in the PCB keep their old copy – delete them, `edakit pcb parts --write`,
+`edakit pcb dump` –, and `edakit check` holds the copy to the data (P-10).
+
 Before the PCB is linked: `edakit schematic copy` + `layout`. After that `copy` refuses (the PCB would lose its
 schematic) and `layout` syncs parts in place. If parts were newly placed in the schematic, the DRC may show "Netlist
 Error – Import Changes" until the import view was opened once in the GUI. edakit compares schematic and PCB then:

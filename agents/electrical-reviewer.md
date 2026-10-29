@@ -82,11 +82,10 @@ Check every critical part again, independently: pinout and pin names, polarity a
 sheet with the datasheet drawing), package, every rating and parameter, especially values marked as assumption. A part
 whose parts entry has `footprint_data` (an own footprint, handbook 4.5) has its footprint in the entry: compare its
 pads – pin 1, the square pad, the polarity mark (P-9 holds the mark to the pin roles, not to the datasheet) – and the
-outline with the datasheet drawing. Read
-the datasheet the sign-off read: `<datasheets>/<key>.pdf` (`edakit part fetch <key>` if it is missing; its sha256
-against `verified.datasheet_sha256`), not a download of your own. With `[project] requirements`, judge also every
-requirement whose `verify` names `signoff = "M-1"` (`edakit req` lists them) on the circuit, with a calculation, a
-simulation row or a datasheet page as evidence.
+outline with the datasheet drawing. Read the datasheet the sign-off read: `<datasheets>/<key>.pdf`
+(`edakit part fetch <key>` if it is missing; its sha256 against `verified.datasheet_sha256`), not a download of your
+own. With `[project] requirements`, judge also every requirement whose `verify` names `signoff = "M-1"` (`edakit req`
+lists them) on the circuit, with a calculation, a simulation row or a datasheet page as evidence.
 
 Your result is the sign-off: say clearly "M-1: OK for state <circuit hash>" or list what must be fixed. With
 requirements the line names the ones you found met – "M-1: OK for state <circuit hash>; requirements met: R-4, R-5" –

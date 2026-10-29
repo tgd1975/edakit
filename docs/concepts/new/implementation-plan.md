@@ -1,10 +1,10 @@
 # Implementation plan: requirements, design as text, project scripts
 
-Status 2026-10-29: plan; phase 1 (1.1 to 1.8), 3.1 to 3.5, 3.7 and the follow-ups below are done; 2.1 to 2.4 are built
-and wait for their live run in EasyEDA; the offline part of 3.6 and 4.3 are being built. It builds the three concepts of
-this folder after the user took their decisions on 2026-10-28 (e5caf42, 301fd90): [requirements.md](requirements.md),
-[design-as-text.md](design-as-text.md) and [project-scripts.md](project-scripts.md). Each step starts when the user asks
-for it.
+Status 2026-10-29: plan; phase 1 (1.1 to 1.8), 3.1 to 3.5, 3.7 and the follow-ups below are done; 2.1 to 2.4 and the
+offline part of 3.6 are built and wait for their live run in EasyEDA; 4.3 is being written. It builds the three
+concepts of this folder after the user took their decisions on 2026-10-28 (e5caf42, 301fd90):
+[requirements.md](requirements.md), [design-as-text.md](design-as-text.md) and [project-scripts.md](project-scripts.md).
+Each step starts when the user asks for it.
 
 ## Ground rules
 
@@ -42,7 +42,7 @@ for it.
 | 3.3 | Skills and the SessionStart hook use `edakit scripts` | project-scripts block 8 | S–M | no | 2.4, 3.2 | done (9b4d834, 834f623) |
 | 3.4 | Skill `requirements`, agent `requirements-engineer`, reviewers read the file | requirements order 3, decision 7 | M | no | 1.6 | done (0099ee3) |
 | 3.5 | `req:` as a source of value blocks | requirements order 4 | S | no | 1.5 | done (abf40d4) |
-| 3.6 | Own footprints as data in the parts entry | design-as-text gap 2, decision 5 | L | yes | 1.8 | offline part being built |
+| 3.6 | Own footprints as data in the parts entry | design-as-text gap 2, decision 5 | L | yes | 1.8 | built offline (8fd8e17), live run open |
 | 3.7 | Project setup: `new-project` with two ways, agent `project-surveyor` | project-setup, decisions 1–6 | M | no | 3.2, 3.4 | done (92db89f) |
 | 4.1 | Bell: requirements file | requirements order 5, decision 9 | M | no | 3.4, the bell's order | open |
 | 4.2 | Bell: entries for `kunst` and `tdisplay` | project-scripts example | S | no | 2.4 | open |

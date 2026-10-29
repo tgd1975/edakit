@@ -468,7 +468,7 @@ this data:
 |---|---|---|---|
 | `graph`, `parts`, `sim` | graph, parts database, simulation scenarios | by hand, `edakit block`, `edakit part` | the files as the circuit hash reads them – graph and parts without the keys of `hash_ignore` (8.2) |
 | `board:<b>` | the board file | by hand, `edakit pcb place --write`, `input` scripts | the board file |
-| `project-library:<b>` | the project library in EasyEDA, which `pcb parts` takes the parts from | `edakit schematic create`, `easyeda` scripts | – (in EasyEDA only) |
+| `project-library:<b>` | the project library in EasyEDA, which `pcb parts` takes the parts from | `edakit schematic create`, `easyeda` scripts, `edakit part build` (own footprints as data, 4.5) | – (in EasyEDA only) |
 | `footprints:<b>` | footprint geometry with pads, as `pcb dump` measures it in the PCB: `<b>.geometry.json` beside the board file – one not moved yet in `<artifacts>/pcb_geometry_<b>.json` (7.4) | `edakit pcb dump` | the file it is read from |
 | `mech:<b>` | the board as a mechanical model (`mech_<b>.json`, 7.4) | `edakit pcb plan` | the file |
 | `routing:<b>` | tracks and vias | `edakit route` | the routing session `route/<b>.ses` and the stitching vias of `route pours` (`route/<b>_stitch.json`) |
