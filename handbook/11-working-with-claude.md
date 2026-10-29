@@ -28,7 +28,7 @@ agreements are as important as the scripts.
 | agent | `edakit:pcb-reviewer` | independent layout review (read-only EasyEDA tools); its result is the sign-off M-5 |
 | MCP | `easyeda` | easyeda-mcp-pro, pinned, safe defaults |
 | hook | PreToolUse on the easyeda tools | claims EasyEDA for the session, refuses when another session holds it |
-| hook | SessionStart | in an edakit project: the working agreements of 11.4, one line each, into the session's context |
+| hook | SessionStart | in an edakit project: the working agreements of 11.4 and the project's own scripts and agents (8.6), one line each, into the session's context |
 | bin | `edakit` | the command line on the Bash PATH |
 
 Skills trigger on their description; you can also call them by name. Put project-specific rules (what the user wants
@@ -37,9 +37,10 @@ the plugin's skills stay generic.
 
 A project's own agents that sign what edakit releases are registered in edakit.toml (`[agents.<name>]`, 8.6): one
 that takes over an edakit reviewer – only explicitly, with `replaces`; the reference project's elektrotechniker for
-M-1, pcb-pruefer for M-5 and its round reviews – or one with a sign-off of its own. The skills start them where
-`edakit scripts` says ("Who reviews where"), and the gate counts their sign-offs only when `done_by` names them. The
-project's skills are not registered: Claude Code finds them by itself.
+M-1, pcb-pruefer for M-5 and its round reviews – or one with a sign-off of its own. Every session starts with a line
+for each of them, as for each script of the project (11.4); the skills start them where `edakit scripts` says ("Who
+reviews where"), and the gate counts their sign-offs only when `done_by` names them. The project's skills are not
+registered: Claude Code finds them by itself.
 
 ## 11.2 Parallel sessions share one EasyEDA
 
@@ -92,7 +93,9 @@ EDA-specific), but if you run parallel sessions in one repository, build or adop
 Every session in an edakit project starts with this list: the plugin's SessionStart hook (`edakit/agreements.py`)
 finds the project's edakit.toml and adds one line per agreement – its number and bold title, read from this
 section – with the path of this chapter. A new agreement needs nothing but its numbered item with a bold title here.
-`[project] agreements = false` in edakit.toml turns it off; outside an edakit project the hook adds nothing.
+Outside an edakit project the hook adds nothing. After the agreements it lists the project's own scripts and
+agents, one line each (below the list); `[project] agreements = false` in edakit.toml turns off the agreements,
+not that list.
 
 1. **Everything in EasyEDA is generated, so it may be deleted.** Claude deletes tracks, pours, parts, schematics and
    regenerates them without asking for permission or proposing a backup.
@@ -167,6 +170,32 @@ section – with the path of this chapter. A new agreement needs nothing but its
 25. **Project documents stay in the repository.** Reports and documentation are files in the repository; nothing is
     published to an outside service unless the user asks. A documentation request once ended as a page hosted outside
     the repository.
+
+**The project's scripts and agents.** After the agreements the hook lists the project's own scripts and agents
+(`[scripts.<name>]`, `[agents.<name>]`, 8.6), one line each – a script with its kind and `about`, a check also with
+its `id` and phase, an agent with what it signs, whom it replaces and its `about` –, in the order of edakit.toml, each
+group under a line that says where its entries run and points to `edakit scripts`. So every session knows what the
+project registered and why, also once the skill that used to run a script is gone. A project without `[scripts]` and
+`[agents]` gets the agreements alone.
+
+```text
+The project's scripts – [scripts.<name>] of edakit.toml (handbook 8.6): an input runs by itself before the step that reads it, a derive or easyeda script with `edakit run <name>` – an easyeda script on command only, under the EasyEDA claim –, a check in the gate or on the protocol's list of its phase. Their state – current, outdated, never run – and the order: `edakit scripts`
+- baumgrafik (input) – Tree artwork on the silkscreen, clear of pads and vias
+- led-footprints (easyeda) – The same polarity print on every LED footprint (owner, 2026-10-25)
+- mechanik (check K, phase export) – The tree fits the stand: slot, hill, cable, feet (D-36)
+The project's agents – [agents.<name>] of edakit.toml (handbook 8.6): each reviews in its own session at its hook point, one with replaces in place of that edakit agent; its sign-off counts only when done_by names it. Who reviews where: `edakit scripts`
+- pcb-pruefer (signs M-5 in place of pcb-reviewer, phase export) – Checks the tree board for manufacturability, mechanics, operation and looks
+```
+
+The state – current, outdated, never run – is not in it: it is the hash of everything a script reads, from the board
+files to a gate run's Gerber files, compared with `hardware/scripts.lock`, and computing it needs edakit's own modules;
+a session must start at once, so the hook reads edakit.toml and nothing else. `edakit scripts` gives the state, and the
+skills call it at their steps (8.6). `[[release.stages]]` and `sim_plugin` are not listed: the gate and `edakit sim`
+run them. With a python3 older than 3.11, which lacks `tomllib`, or an edakit.toml that does not parse, one line says
+that the project registers scripts or agents and that `edakit scripts` lists them.
+
+`[project] agreements = false` turns off the agreements and leaves the list: the list is the project's own data,
+registered so that every session knows it – a project that keeps working agreements of its own still needs it.
 
 ## 11.5 Memory and project knowledge
 

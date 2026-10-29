@@ -33,7 +33,7 @@ board, the schematic or the checks (the earlier one-file form) is refused with a
 | `quantity` | `5` | boards per order (stock checks P-4 and F-2) |
 | `distributors` | `["lcsc"]` | where the agent part-selector searches, in this order: `lcsc`, `rs`, `farnell`, `mouser`, `digikey`, `reichelt` (chapter 4.2) |
 | `lock` | `auto` | EasyEDA claim between Claude sessions: `auto` (when `CLAUDE_CODE_SESSION_ID` is set) or `off` |
-| `agreements` | `true` | the working agreements of handbook 11.4, one line each, in the context of every Claude Code session in the project (plugin hook at session start); `false` turns it off |
+| `agreements` | `true` | the working agreements of handbook 11.4, one line each, in the context of every Claude Code session in the project (plugin hook at session start); `false` turns them off – not the lines of the project's scripts and agents the hook adds after them (11.4) |
 | `graph` | `hardware/graph.json` | the hardware graph |
 | `parts` | `hardware/parts` | parts database, one JSON per part (LCSC number or manufacturer part number) |
 | `sim` | `hardware/sim.json` | simulation config (chapter 5) |
