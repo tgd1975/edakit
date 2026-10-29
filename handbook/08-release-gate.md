@@ -299,6 +299,11 @@ rules behind the findings", gives rule, reason, fix and sources of every check t
 catalog (chapter 14.2), so that the protocol can be read without this handbook. With `[project] requirements` a
 section 11, "Requirements", follows it (8.7).
 
+Section 2 ends with the information of stages P and G – what `edakit check` prints as a note, such as P-7 before the
+first `pcb dump` or P-4 without a stock snapshot – under "Information (does not block the release, needs no
+acceptance)": one line per finding, with the check's words. It changes neither the decision nor section 1's counts;
+the simulation's information is in section 7, that of the other stages in section 8.
+
 Result folder `<reports>/<YYYYMMDD-hhmmss>/`: `protocol.md`, `graph_checks.json`, `sim.json`, `schematic_<board>.json`,
 `fab/<board>/` (Gerber ZIP, BOM, CPL, raw data, with `[order]` the order form `order.md` and the order settings
 `order.json`), `fab/polarity_<board>.png`,

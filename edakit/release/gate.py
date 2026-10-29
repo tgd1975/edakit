@@ -776,6 +776,11 @@ def write_protocol(cfg, outdir, head, rows, sim, signoff, notes, decision, reaso
         L += [f"| {f['stage']} | {rules.label(f['id'])} | {f.get('scenario', '')} | {f['item']} | {f['check']} | "
               f"{f.get('actual', '')} | {f.get('expected', '')} |" for f in fails]
         L.append("")
+    # the notes of stages P and G, as edakit check prints them – E lists its own in section 7, P-2 and cost stand in 8
+    infos = [r for r in rows if r["result"] == "info" and r["stage"] in ("P", "G") and r["id"] not in ("P-2", "cost")]
+    if infos:
+        L += ["Information (does not block the release, needs no acceptance):\n",
+              *[f"- {rules.label(r['id'])}: {r['check']}" for r in infos], ""]
     L.append("## 3 Warnings\n")
     warns = [c for c in [*sim["checks"], *rows] if c["result"] == "warn"]
     gone = signoff.get("lapsed_warnings", [])

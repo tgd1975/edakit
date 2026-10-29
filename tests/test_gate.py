@@ -194,6 +194,19 @@ def test_open_datasheet_points_in_the_protocol(project, monkeypatch):
     assert "datasheets" not in section(empty, 6) and "- [ ] C" not in section(empty, 6)   # section 6 as before
 
 
+def test_information_of_stages_p_and_g_in_the_protocol(project, monkeypatch):
+    """A note of stage P or G – the example has P-7 without a footprint geometry and P-4 without a stock snapshot – is
+    listed at the end of section 2: information, which neither blocks nor needs acceptance; section 3 stays empty."""
+    from edakit import rules
+    text = gate_run(project, monkeypatch)
+    two = section(text, 2)
+    assert two.startswith("Findings\n\nNo check failed.\n")
+    listed = two.split("Information (does not block the release, needs no acceptance):\n\n")[1]
+    assert f"- {rules.label('P-7')}: not run: no footprint geometry – edakit pcb dump once the parts" in listed
+    assert f"- {rules.label('P-4')}: no stock snapshot (hardware/stock.json) – edakit stock asks JLCPCB" in listed
+    assert section(text, 3).strip() == "Warnings\n\nNone."
+
+
 def test_an_open_point_with_its_phase_is_a_manual_check(project, monkeypatch):
     """#42: {text, when: "acceptance"} is an unchecked line under "after delivery, per board", after M-4."""
     e = project.part("C2297")
