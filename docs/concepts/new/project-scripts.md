@@ -1,11 +1,10 @@
 # Project scripts and agents
 
-Status 2026-10-28: being built; the state of each step is in [implementation-plan.md](implementation-plan.md). It was
+Status 2026-10-29: being built; the state of each step is in [implementation-plan.md](implementation-plan.md). It was
 checked against edakit `a8b6011` (with PRs #78 and #79); edakit had built pieces it builds on: the firmware contract
-(#70), a stamp on the simulation result, the fab hash (#65) and the mechanical model (#62). Decisions 1–8 and 12 were
-taken on 2026-10-28, 9 by #70; 13, decided by Claude in step 3.2, waits for the user's confirmation. The rules that
-resolve a project's entries into a DAG were tried with a prototype on the reference project and the Christmas bell
-([prototypes/project-scripts](prototypes/project-scripts/)).
+(#70), a stamp on the simulation result, the fab hash (#65) and the mechanical model (#62). Decisions 1–8, 12 and 13
+were taken on 2026-10-28, 9 by #70. The rules that resolve a project's entries into a DAG were tried with a prototype
+on the reference project and the Christmas bell ([prototypes/project-scripts](prototypes/project-scripts/)).
 
 ## Why
 
@@ -649,8 +648,8 @@ of the run its reviewer checked (D-20).
 
 ## Decisions
 
-1–8 and 12 taken on 2026-10-28. "Accepted" is the user's yes to the recommendation; "decided by Claude" marks a
-technical point the user left to Claude and then confirmed.
+1–8, 12 and 13 taken on 2026-10-28, 9 settled by #70. "Accepted" is the user's yes to the recommendation; "decided by
+Claude" marks a technical point the user left to Claude and then confirmed.
 
 | No. | Question | Recommendation | Decision |
 | --- | --- | --- | --- |
