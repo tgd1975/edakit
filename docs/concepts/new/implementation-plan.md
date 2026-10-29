@@ -1,10 +1,9 @@
 # Implementation plan: requirements, design as text, project scripts
 
-Status 2026-10-28: plan; phase 1 (1.1 to 1.8), 3.1, 3.2, 3.4, 3.5 and the follow-ups below are done; 2.1 and 2.3 are
-built and wait for their live run in EasyEDA; 2.2, 2.4 and 3.7 are in progress. It builds the three concepts of this
-folder after the user took their decisions on 2026-10-28 (e5caf42, 301fd90): [requirements.md](requirements.md),
-[design-as-text.md](design-as-text.md) and [project-scripts.md](project-scripts.md). Each step starts when the user asks
-for it.
+Status 2026-10-29: plan; phase 1 (1.1 to 1.8), 3.1, 3.2, 3.4, 3.5, 3.7 and the follow-ups below are done; 2.1 to 2.4 are
+built and wait for their live run in EasyEDA. It builds the three concepts of this folder after the user took their
+decisions on 2026-10-28 (e5caf42, 301fd90): [requirements.md](requirements.md), [design-as-text.md](design-as-text.md)
+and [project-scripts.md](project-scripts.md). Each step starts when the user asks for it.
 
 ## Ground rules
 
@@ -34,16 +33,16 @@ for it.
 | 1.7 | `[order]`: mask and print colour, thickness from `thickness_mm` | design-as-text, smaller findings | S | no | – | done (80c750e) |
 | 1.8 | The footprint geometry in the repository | project-scripts block 5, decision 5 | S | no | – | done (d63a81a) |
 | 2.1 | Positions of the auto-layout as text, one-time takeover, every part in the plan | design-as-text gap 1, decisions 3, 4 | M | yes | – | built offline (5d8a5df), live run open |
-| 2.2 | Rule set of EasyEDA's DRC | design-as-text decision 6 | S–M | yes | – | built offline, live probe open |
+| 2.2 | Rule set of EasyEDA's DRC | design-as-text decision 6 | S–M | yes | – | built offline (a71567f), live probe open |
 | 2.3 | Positions of single designators in `[silk]` | design-as-text, smaller findings | S | yes | – | built offline (112de3a), live run open |
-| 2.4 | Outdated inputs run first; `edakit run` | project-scripts block 4, decision 7 | M | yes | 1.4 | in progress, branch `step-2.4-scripts-run` |
+| 2.4 | Outdated inputs run first; `edakit run` | project-scripts block 4, decision 7 | M | yes | 1.4 | built (47ae793), live check open |
 | 3.1 | Checks in the gate: `at`, phase `acceptance`; then `verify = script` | project-scripts block 6 | M | no | 1.2, 1.6 | done (9e63afd) |
 | 3.2 | Project agents: `[agents.*]`, `replaces`, their sign-offs required | project-scripts block 7, decisions 10, 11 | M | no | 1.2 | done (8d3cc15) |
 | 3.3 | Skills and the SessionStart hook use `edakit scripts` | project-scripts block 8 | S–M | no | 2.4, 3.2 | open |
 | 3.4 | Skill `requirements`, agent `requirements-engineer`, reviewers read the file | requirements order 3, decision 7 | M | no | 1.6 | done (0099ee3) |
 | 3.5 | `req:` as a source of value blocks | requirements order 4 | S | no | 1.5 | done (abf40d4) |
 | 3.6 | Own footprints as data in the parts entry | design-as-text gap 2, decision 5 | L | yes | 1.8 | open |
-| 3.7 | Project setup: `new-project` with two ways, agent `project-surveyor` | project-setup, decisions 1–6 | M | no | 3.2, 3.4 | in progress, branch `step-3.7-project-setup` |
+| 3.7 | Project setup: `new-project` with two ways, agent `project-surveyor` | project-setup, decisions 1–6 | M | no | 3.2, 3.4 | done (92db89f) |
 | 4.1 | Bell: requirements file | requirements order 5, decision 9 | M | no | 3.4, the bell's order | open |
 | 4.2 | Bell: entries for `kunst` and `tdisplay` | project-scripts example | S | no | 2.4 | open |
 | 4.3 | Bell: the circuit as a language and as TOML with names, then the choice | design-as-text decision 8 | M | no | – | open |
@@ -54,9 +53,9 @@ S, M and L are the sizes the concepts give: small, medium, large.
 
 Follow-ups the user decided on 2026-10-28, done: a draft requirement only warns and never blocks (1.6, b885376); the
 order settings that change the made board join the fab hash (b5af0c6), and `edakit cost` names an order that deviates
-from the board it prices (5a51877) (1.7). `edakit cost` no longer fails on a board nobody assembles (09f591d). Further, on the user's word: the regulatory
-review says everywhere that it is support and not legal advice (0fddac4); `python` in a project check is edakit's
-own (cfe053c); a missing sign-off file leaves the required checks open (2bb219f).
+from the board it prices (5a51877) (1.7). `edakit cost` no longer fails on a board nobody assembles (09f591d). Further,
+on the user's word: the regulatory review says everywhere that it is support and not legal advice (0fddac4); `python` in
+a project check is edakit's own (cfe053c); a missing sign-off file leaves the required checks open (2bb219f).
 
 ```mermaid
 flowchart LR
@@ -174,11 +173,11 @@ second not run), and a third row of L-3 with `[routing] drc_rules = "check"`.
 
 The live probe, in one sitting with the EasyEDA claim; EasyEDA unthrottled, the patched bridge (`edakit doctor`):
 
-1. **Throwaway document** (agreement 18): a project `edakit-probe-drc` made by hand (File → New → Project), its PCB
-   open and active. Three free pads put nets into it: `PCB_PrimitivePad.create(1, "1", 0, 0, 0, ["ELLIPSE", 60, 60],
-   "VIN", null, 0, 0, 0, false, 0)`, the same with `"2"`, `0, 200`, `"+5V"` and `"3"`, `0, 400`, `"GND"`. Tracks of
-   10 mil on TOP (`PCB_PrimitiveLine.create(net, 1, x1, y1, x2, y2, 10, false)`): VIN 1000,0 → 2000,0 and +5V
-   1000,15.9 → 2000,15.9 – 0.150 mm apart; VIN 1000,300 → 2000,300; and on BOTTOM (layer 2) VIN 1000,500 → 2000,500.
+1. **Throwaway document** (agreement 18): a project `edakit-probe-drc` made by hand (File → New → Project), its PCB open
+   and active. Three free pads put nets into it: `PCB_PrimitivePad.create(1, "1", 0, 0, 0, ["ELLIPSE", 60, 60], "VIN",
+   null, 0, 0, 0, false, 0)`, the same with `"2"`, `0, 200`, `"+5V"` and `"3"`, `0, 400`, `"GND"`. Tracks of 10 mil on
+   TOP (`PCB_PrimitiveLine.create(net, 1, x1, y1, x2, y2, 10, false)`): VIN 1000,0 → 2000,0 and +5V 1000,15.9 →
+   2000,15.9 – 0.150 mm apart; VIN 1000,300 → 2000,300; and on BOTTOM (layer 2) VIN 1000,500 → 2000,500.
 2. **Read and keep:** `eda.read_drc_rules` (or the three `easyeda_api_call`s) into the scratchpad as the restore
    point, and `getCurrentRuleConfigurationName`, `getAllRuleConfigurations(true)` (the names),
    `getDefaultRuleConfigurationName`. Expected: no `[MaxDepth]`, likely the name "JLCPCB Capability(Two Layers
@@ -205,9 +204,9 @@ The live probe, in one sitting with the EasyEDA claim; EasyEDA unthrottled, the 
 
 What decides: if 3 and 4 hold and 5 and 6 hold, edakit writes the rule set (a value `"write"` of `drc_rules`: `route
 all` writes it before its DRC; the gate goes on checking, it changes nothing). If the configuration holds (3, 4) but
-classes or net rules do not (5), edakit writes the configuration and checks the classes. If a written value does not survive the reload, the DRC
-ignores it, or it reaches another PCB or a named configuration, edakit only reads and checks – the row of L-3 as built.
-The answer goes into handbook 9.4 and this step's line.
+classes or net rules do not (5), edakit writes the configuration and checks the classes. If a written value does not
+survive the reload, the DRC ignores it, or it reaches another PCB or a named configuration, edakit only reads and checks
+– the row of L-3 as built. The answer goes into handbook 9.4 and this step's line.
 
 **2.3 Single designators.** A position per designator in `[silk]`, as `[place]` has one per part; `silk apply` keeps
 it.

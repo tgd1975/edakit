@@ -1,8 +1,8 @@
 # Project setup
 
-Status 2026-10-28: being built as step 3.7 of the [implementation plan](implementation-plan.md), which has its
-state – the skill `new-project` with its two ways and the agent `project-surveyor`; the trial on the reference
-project's move is step 4.4. All six decisions are taken (table at the end). The findings come from edakit at
+Status 2026-10-29: built as step 3.7 of the [implementation plan](implementation-plan.md) (92db89f): the skill
+`new-project` with its two ways and the agent `project-surveyor`; the trial on the reference project's move is step
+4.4. All six decisions are taken (table at the end). The findings come from edakit at
 `f04dee5` and the repositories of the reference project and the Christmas bell.
 
 ## Goal
@@ -33,10 +33,11 @@ Two questions show whether it works:
   nobody. A project with a bought board on a cable, with firmware that follows the graph or with documents that quote
   values gets the matching key only if someone remembers it.
 - **Moving is not covered.** The reference project brings to edakit, by its own concept (EK-1, after its order):
-  - eleven skills of its own, several with an edakit counterpart: `easyeda-start` – `start`, `entscheidungsrunde` –
+  - twelve skills of its own, several with an edakit counterpart: `easyeda-start` – `start`, `entscheidungsrunde` –
     `decision-round`, `hardware-aenderung` – `hardware-change`, `pcb-iteration` – `pcb-round`, `teil-suchen` –
-    `part-search`, `freigabe` and `release` – `release`. A replaced skill can lose a step: `pcb-iteration` runs
-    `baum_druck.py` after every routing, `pcb-round` does not – the reason the project-scripts concept exists;
+    `part-search`, `freigabe` – `release` (its own `release` numbers versions). A replaced skill can lose a step:
+    `pcb-iteration` runs `baum_druck.py` after every routing, `pcb-round` does not – the reason the project-scripts
+    concept exists;
   - six agents, two of which do edakit's reviews (`elektrotechniker`, `pcb-pruefer`);
   - eight scripts that touch edakit's flow (the inventory in [project-scripts.md](project-scripts.md));
   - requirements spread over six documents (the inventory in [requirements.md](requirements.md));
@@ -93,6 +94,8 @@ A question the user cannot answer yet stays open with its default, and the repor
 | documents with values | `[docs] files` |
 | decisions | the decision log, keeping its numbers |
 | requirements | the `requirements-engineer`'s inventory |
+| guard rails: pre-commit hook, CI, Claude Code settings, `.mcp.json` | what the setup rewrites, and what goes |
+| answers to the interview | proposed from the documents, for the user to confirm |
 
 The agent returns numbered lists per place: the candidate, where it was found, the proposal and its reason. It ends
 with contradictions between the project's documents and with what it could not read.
@@ -111,8 +114,8 @@ with contradictions between the project's documents and with what it could not r
 
 - **New:** a project like `led-bar`, set up from scratch. No value of the example stays unasked.
 - **Moving:** the reference project's move, step 4.4 of the [implementation plan](implementation-plan.md): the
-  takeover of its positions (2.1), seven scripts, two agents with `replaces`, its requirements file and its eleven
-  skills mapped.
+  takeover of its positions (2.1), its scripts (the dry run of step 3.7 found ten entries and one conditional), two
+  agents with `replaces`, its requirements file and its twelve skills mapped.
 
 ## Scope
 
