@@ -44,7 +44,10 @@ without any claim to correctness; nothing in it is legally guaranteed.
 2. **Radio:** every part that transmits – bands and power against the EU's licence-exempt bands (the power as
    e.i.r.p.: conducted power plus antenna gain; `edakit check` holds it to the band's limit where that is an
    e.i.r.p., G-24), the module's own conformity, and what the product needs on top when it is sold. A module made
-   for another region's band is a block.
+   for another region's band is a block. An ESP32 that transmits Wi-Fi: ask for the line in the firmware that sets
+   an EU country with 802.11d off after every Wi-Fi start – `esp_wifi_set_country_code("DE", false)`, the radio off
+   if it fails (handbook 15.2); with `true` the station takes the country its access point announces – JP opens
+   channel 14.
 3. **Substances:** RoHS status of every part with its source; REACH SVHC statements; a part without a statement is
    open.
 4. **Batteries:** chemistry, protection, and for a board that is sold removability, labelling and the duties of
