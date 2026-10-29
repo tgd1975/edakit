@@ -215,6 +215,46 @@ it.
 (decision 7). `edakit run <name>` runs one script; an `easyeda` script runs only so, under the EasyEDA claim, and what
 it changes makes the steps after it outdated.
 
+### Live runs of phase 2
+
+2.1 to 2.4 are built and tested without EasyEDA; their EasyEDA part waits for a session with the user. Claim EasyEDA
+first (`edakit lock claim --note "live runs"`), with EasyEDA unthrottled and the patched bridge (skill `start`), and
+release it at the end. 2.2's probe is written out above.
+
+**2.1 Positions as text** (`pcb autolayout` writes `auto = true` rows, `pcb takeover` takes a placed board, L-20):
+
+1. On a scratch copy of the bell with all `[place]` rows deleted: `edakit pcb takeover` in main and in
+   `variants/esp32`, `smd` and `tht` shows 19 rows per board, without `auto`, each equal to the real board file's
+   row; nothing is written.
+2. In a throwaway led-bar project (made by hand once) without the rows of D1 and R2: `schematic create --save`,
+   `schematic layout --save`, `pcb parts --write`, `pcb dump`, `pcb apply` (two parts unlocked), then
+   `pcb autolayout`. It writes two `auto = true` rows at the end of `[place]` and nothing else; a second run writes
+   nothing; `pcb dump` and `pcb apply` bring D1 and R2 back to their rows.
+3. After `route all`, delete every row but U1, U2, J1 and SW1: `pcb takeover` shows 13 rows, `--write` writes them
+   fixed, `pcb apply` leaves the parts on their tracks (pad check about 0), `route drc` finds nothing new.
+4. `edakit gate --easyeda` shows L-20 with every part in a row and L-7 passing.
+
+**2.3 Single designators** (`[silk.place]`), on a throwaway or led-bar, e.g. `R1 = { x = 59, y = 20, rot = 90 }`,
+then `edakit silk apply`:
+
+1. R1's designator stands at the given spot and rotation, centred and visible; the summary says "fixed: R1"; the
+   other designators and the board label keep clear of it.
+2. 90, 180 and 270 read as expected, and an angle such as 45 prints as the turned box.
+3. A row on the other side of its part gives a free text there (mirrored on the bottom), the part's own designator
+   is hidden, and a second `silk apply` replaces the text instead of doubling it.
+4. A row on a pad prints the finding and exits 2; the Gerber check after the run reports the overlap.
+5. `edakit gate --easyeda` shows the expected L-17 rows; on a board with `view = "bottom"`, check whether `rot`
+   reads right from below.
+
+**2.4 Scripts run** (`edakit run`, inputs before the steps):
+
+1. `edakit run <easyeda script>` in a Claude session: `edakit lock status` names the run, the script reaches EasyEDA
+   under that claim, and a second session gets exit 3; a run over a minute keeps the claim.
+2. Afterwards: delete the affected parts in the PCB, `pcb parts --write` (recreated with the new footprint, tracks
+   kept?), `pcb dump` and `route all`; the warning about the changed project library clears.
+3. `pcb parts`, `pcb apply`, `route all`, `silk apply` and `gate --easyeda` with an outdated input: the input runs
+   before the EasyEDA work.
+
 ## Phase 3: the larger pieces
 
 **3.1 Checks in the gate.** A `check` script gets its place (`at`: before S, or after F to see the run's Gerber data)
