@@ -28,7 +28,7 @@ project is set up (2.7), before the first part is chosen.
 
 | Rule | What it asks | Applies to | Source |
 |---|---|---|---|
-| Frequency use | transmit only in a licence-exempt band within its power and duty cycle: 433.05–434.79 MHz, 863–870 MHz (868.0–868.6 MHz: 25 mW, ≤ 1 %), 2400–2483.5 MHz (100 mW e.i.r.p.), 5 GHz RLAN. 902–928 MHz (US LoRa) is none of them – 880–915 MHz is mobile uplink in Europe. Operating radio equipment that does not comply is prohibited also privately | every board that transmits | [2006/771/EC](https://eur-lex.europa.eu/legal-content/EN/TXT/?uri=CELEX:32006D0771) (as amended), [BNetzA Vfg. 91/2025](https://www.bundesnetzagentur.de/DE/Fachthemen/Telekommunikation/Frequenzen/Allgemeinzuteilungen/_DL/vfg91_2025.pdf), [FuAG § 7](https://www.gesetze-im-internet.de/fuag/__7.html) |
+| Frequency use | transmit only in a licence-exempt band within its power and duty cycle: 433.05–434.79 MHz, 863–870 MHz (868.0–868.6 MHz: 25 mW, ≤ 1 %), 2400–2483.5 MHz (100 mW e.i.r.p.), 5 GHz RLAN (5150–5350 MHz 200 mW, 5470–5725 MHz 1 W mean e.i.r.p.). The e.i.r.p. is the power fed to the antenna times its gain – the datasheet's conducted power in dBm plus the antenna's gain in dBi; G-24 holds it to the band's limit (3.3). 902–928 MHz (US LoRa) is none of them – 880–915 MHz is mobile uplink in Europe. Operating radio equipment that does not comply is prohibited also privately | every board that transmits | [2006/771/EC](https://eur-lex.europa.eu/legal-content/EN/TXT/?uri=CELEX:32006D0771) (as amended), [BNetzA Vfg. 91/2025](https://www.bundesnetzagentur.de/DE/Fachthemen/Telekommunikation/Frequenzen/Allgemeinzuteilungen/_DL/vfg91_2025.pdf), [Vfg. 136/2022](https://www.bundesnetzagentur.de/DE/Fachthemen/Telekommunikation/Frequenzen/Allgemeinzuteilungen/_DL/MobilfunkDectWlanCBFunk/vfg136_2022.pdf), [FuAG § 7](https://www.gesetze-im-internet.de/fuag/__7.html) |
 | Radio equipment | anything that transmits or receives: the board with a fixed module is one radio product – the module's certificates are input, not a substitute. Own conformity assessment, EU declaration of conformity, instructions with bands and power. Internet-connected: cybersecurity since 1 Aug 2025; EN 18031 gives no presumption of conformity where the user may skip setting a password – then a notified body | sale | [2014/53/EU](https://eur-lex.europa.eu/legal-content/EN/TXT/?uri=CELEX:32014L0053), [2022/30](https://eur-lex.europa.eu/legal-content/EN/TXT/?uri=CELEX:32022R0030) |
 | EMC | electromagnetic compatibility, no lower voltage limit; a radio product is covered by RED instead | sale | [2014/30/EU](https://eur-lex.europa.eu/legal-content/EN/TXT/?uri=CELEX:32014L0030) |
 | Low voltage | 50–1000 V AC, 75–1500 V DC: a 5 V board is outside, the mains power supply that comes with it is not (its own CE, ecodesign) | sale | [2014/35/EU](https://eur-lex.europa.eu/legal-content/EN/TXT/?uri=CELEX:32014L0035) |
@@ -49,7 +49,9 @@ an imported power supply or cell is its importer.
 
 - **Per part** – `compliance` in the parts entry (4.1), filled by the agent part-selector or the skill part-search: RoHS
   status (and the exemption it relies on), the supplier's REACH SVHC statement, and for a part that transmits its
-  bands, maximum power and the EU declaration of conformity. What nobody states is open, not fine.
+  bands, its power at the RF port and the gain of its antenna – or the e.i.r.p. a certificate states – and the EU
+  declaration of conformity (`compliance.radio`, 4.1); G-24 holds the e.i.r.p. to the band's limit. What nobody
+  states is open, not fine.
 - **Per own board** (4.5) – its `compliance` collects what its parts entries state, with the parts that state nothing.
   An own board is no module with certificates of its own: it is part of the product, and whoever gives the product
   away or sells it is the manufacturer of the board in it too.

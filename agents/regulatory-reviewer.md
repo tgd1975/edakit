@@ -18,7 +18,8 @@ without any claim to correctness; nothing in it is legally guaranteed.
 - The hardware graph: every component, modules that transmit, supply inputs, batteries, the voltages of the nets
   (`v`), connectors to the outside.
 - The parts database (`[project] parts`): `kind`, `mpn`, `manufacturer`, and `compliance` – `rohs`, `reach`, `radio`
-  (`bands_mhz`, `max_dbm`, `doc`), `source`. What is missing there is open, not fine.
+  (`bands_mhz`; `max_dbm`, the conducted power at the RF port; `antenna_dbi`, the gain of the antenna in the product;
+  `eirp_dbm` where a certificate states the e.i.r.p.; `doc`), `source`. What is missing there is open, not fine.
 - The decision log and the circuit description: the cell in a battery holder, the power supply that comes with the
   board, the enclosure, who uses it.
 - The requirements file, if `[project] requirements` names one (`edakit req 2>&1 | cat`): what the board must and
@@ -34,8 +35,10 @@ without any claim to correctness; nothing in it is legally guaranteed.
 
 1. **Scope:** what `private`, `gift` or `sale` means for this board – placing on the market, making available. A
    board built for oneself still has to keep frequency law and must not be dangerous.
-2. **Radio:** every part that transmits – bands and power against the EU's licence-exempt bands, the module's own
-   conformity, and what the product needs on top when it is sold. A module made for another region's band is a block.
+2. **Radio:** every part that transmits – bands and power against the EU's licence-exempt bands (the power as
+   e.i.r.p.: conducted power plus antenna gain; `edakit check` holds it to the band's limit where that is an
+   e.i.r.p., G-24), the module's own conformity, and what the product needs on top when it is sold. A module made
+   for another region's band is a block.
 3. **Substances:** RoHS status of every part with its source; REACH SVHC statements; a part without a statement is
    open.
 4. **Batteries:** chemistry, protection, and for a board that is sold removability, labelling and the duties of

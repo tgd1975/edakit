@@ -67,9 +67,12 @@ profile says: `${CLAUDE_PLUGIN_ROOT}/skills/part-search/distributors/<name>.md` 
   `hot_loop`, the pin roles of its hot loop from the datasheet's layout section (G-18); a pin `hint` or part `hints` for
   what the datasheet warns about (shown by `edakit hints`).
 - `compliance` for the regulatory review (M-6, handbook 15): `rohs` (true, false or the exemption), `reach` (the
-  supplier's SVHC statement), for a part that transmits `radio` (`bands_mhz`, `max_dbm`, `doc` = URL of the EU
-  declaration of conformity), and `source` (page and date). Take it from the distributor's part page or the
-  manufacturer's declaration; what nobody states stays out – the reviewer reports it as open, not as fine.
+  supplier's SVHC statement), for a part that transmits `radio` (`bands_mhz`; `max_dbm`, the conducted power at the
+  RF port as the datasheet states it; `antenna_dbi`, the gain of its antenna in the product – a module's datasheet
+  or certificate; `eirp_dbm` where a certificate states the e.i.r.p.; `doc` = URL of the EU declaration of
+  conformity – G-24 holds the e.i.r.p. to the band's limit), and `source` (page and date). Take it from the
+  distributor's part page or the manufacturer's declaration; what nobody states stays out – the reviewer reports it
+  as open, not as fine.
 - Check against the datasheet: pinout, polarity at the footprint (which pad is pin 1 / anode / +), package, every
   rating. Library footprints are sometimes wrong (a "+" printed at the cathode pad) – the polarity sheet of the gate
   and the second check M-1 exist for that. Then `verified` with by, date, datasheet revision, `datasheet_sha256`
