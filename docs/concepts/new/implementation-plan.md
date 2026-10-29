@@ -1,10 +1,10 @@
 # Implementation plan: requirements, design as text, project scripts
 
-Status 2026-10-29: plan; phase 1 (1.1 to 1.8), 3.1, 3.2, 3.4, 3.5, 3.7 and the follow-ups below are done; 2.1 to 2.4 are
-built and wait for their live run in EasyEDA; 3.3, the offline part of 3.6 and 4.3 are being built. It builds the three
-concepts of this folder after the user took their decisions on 2026-10-28 (e5caf42, 301fd90):
-[requirements.md](requirements.md), [design-as-text.md](design-as-text.md) and [project-scripts.md](project-scripts.md).
-Each step starts when the user asks for it.
+Status 2026-10-29: plan; phase 1 (1.1 to 1.8), 3.1 to 3.5, 3.7 and the follow-ups below are done; 2.1 to 2.4 are built
+and wait for their live run in EasyEDA; the offline part of 3.6 and 4.3 are being built. It builds the three concepts of
+this folder after the user took their decisions on 2026-10-28 (e5caf42, 301fd90): [requirements.md](requirements.md),
+[design-as-text.md](design-as-text.md) and [project-scripts.md](project-scripts.md). Each step starts when the user asks
+for it.
 
 ## Ground rules
 
@@ -39,7 +39,7 @@ Each step starts when the user asks for it.
 | 2.4 | Outdated inputs run first; `edakit run` | project-scripts block 4, decision 7 | M | yes | 1.4 | built (47ae793), live check open |
 | 3.1 | Checks in the gate: `at`, phase `acceptance`; then `verify = script` | project-scripts block 6 | M | no | 1.2, 1.6 | done (9e63afd) |
 | 3.2 | Project agents: `[agents.*]`, `replaces`, their sign-offs required | project-scripts block 7, decisions 10, 11 | M | no | 1.2 | done (8d3cc15) |
-| 3.3 | Skills and the SessionStart hook use `edakit scripts` | project-scripts block 8 | S–M | no | 2.4, 3.2 | being built |
+| 3.3 | Skills and the SessionStart hook use `edakit scripts` | project-scripts block 8 | S–M | no | 2.4, 3.2 | done (9b4d834, 834f623) |
 | 3.4 | Skill `requirements`, agent `requirements-engineer`, reviewers read the file | requirements order 3, decision 7 | M | no | 1.6 | done (0099ee3) |
 | 3.5 | `req:` as a source of value blocks | requirements order 4 | S | no | 1.5 | done (abf40d4) |
 | 3.6 | Own footprints as data in the parts entry | design-as-text gap 2, decision 5 | L | yes | 1.8 | offline part being built |
