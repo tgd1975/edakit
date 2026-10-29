@@ -36,7 +36,11 @@ without any claim to correctness; nothing in it is legally guaranteed.
 ## What you look at
 
 1. **Scope:** what `private`, `gift` or `sale` means for this board – placing on the market, making available. A
-   board built for oneself still has to keep frequency law and must not be dangerous.
+   board built for oneself still has to keep frequency law and must not be dangerous; in Germany it must meet the
+   EMC requirements in substance – EMVG § 6 covers putting into service and passing on, a radio product FuAG § 7 –
+   without the formalities of a sale. A gift is placing on the market under REACH (Art. 3(12): free of charge too),
+   so Art. 33 applies: name a substance of very high concern above 0.1 % to a consumer who asks (45 days) – the
+   suppliers' SVHC statements (`compliance.reach`) are needed for it (handbook 15.1).
 2. **Radio:** every part that transmits – bands and power against the EU's licence-exempt bands (the power as
    e.i.r.p.: conducted power plus antenna gain; `edakit check` holds it to the band's limit where that is an
    e.i.r.p., G-24), the module's own conformity, and what the product needs on top when it is sold. A module made
