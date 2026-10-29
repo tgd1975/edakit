@@ -23,10 +23,15 @@ parts.
                                 manufacturer, class (Basic, Extended, preferred), assembly stock, package, category;
                                 C99… dropped, Basic first, then by stock; an LCSC number gives only its exact hit.
                                 Exit 2 when nothing is found
+    edakit part footprint KEY [--board B] [--write]
+    edakit part build KEY [--board B] [--write]
+                                own footprints as data in the parts entry (footprint.py, handbook 4.5): a library
+                                footprint taken over as footprint_data, the project's copy in EasyEDA built from it
 
 The library geometry has the units and axes of `edakit pcb dump` (mil, y up, relative to the part origin at 0° on
 TOP); a pad with a hole adds `hole` [w, l] in mm and `plated`, every pad its shape, size `w` × `h` (mil) and `rot`.
-P-1 compares the graph with a cached symbol, `pcb plan` takes a cached footprint for a part that is not in the PCB yet.
+P-1 compares the graph with a cached symbol, `pcb plan` takes a cached footprint for a part that is not in the PCB yet
+– or, where the parts entry has footprint data, that data (library_footprint).
 
 Own parts: a board of an edakit project used as a part in another project. No distributor sells it; its datasheet
 comes from the project that designed it (handbook 4.5).
@@ -549,9 +554,14 @@ def cached_footprint(cfg, footprint):
 
 
 def library_footprint(cfg, design, des):
-    """The cached library geometry of a component's footprint: the name of its parts entry, else of the library."""
-    name = (design.part(des) or {}).get("footprint") or (cached(cfg, design.comps[des].get("lcsc")) or {}).get(
-        "footprint")
+    """A component's footprint before its dump: the footprint data of its parts entry (4.5) – the copy edakit builds,
+    "source": "data"; None while the data is not complete (P-9) –, else the cached library geometry of its footprint:
+    the name of its parts entry, else of the library."""
+    entry = design.part(des) or {}
+    if "footprint_data" in entry:
+        from .footprint import geometry
+        return geometry(entry)
+    name = entry.get("footprint") or (cached(cfg, design.comps[des].get("lcsc")) or {}).get("footprint")
     return cached_footprint(cfg, name)
 
 
@@ -967,7 +977,9 @@ ROW_MM = 0.05         # pads whose centres share a coordinate within this stand 
 
 def part_geometry(cfg, d, key):
     """(geometry, where it comes from) of a part named by its LCSC number or parts-entry key: the dump of a placed
-    component that uses it – the project's footprint –, else the library footprint part import cached."""
+    component that uses it – the project's footprint –, else the footprint data of its entry (4.5), else the library
+    footprint part import cached."""
+    from .footprint import geometry as data_geometry
     from .pcb import geometry_file
     for board in cfg.boards.values():
         dump = _read(geometry_file(cfg, board)) or {}
@@ -975,6 +987,8 @@ def part_geometry(cfg, d, key):
             if des in dump and key in (d.entry_key(des), d.comps[des].get("lcsc")):
                 return dump[des], f"pcb dump of {des}"
     entry = d.parts.get(key) or d.parts.get(d.by_mpn.get(key, "")) or {}
+    if "footprint_data" in entry and (geo := data_geometry(entry)):
+        return geo, f"footprint data of {key}"
     name = entry.get("footprint") or (cached(cfg, key) or {}).get("footprint")
     geo = cached_footprint(cfg, name)
     if geo:
@@ -1278,6 +1292,13 @@ def main(cfg, args):
             return main_fetch(cfg, args)
         if args.action == "search":
             return main_search(cfg, args)
+        if args.action in ("footprint", "build"):
+            from . import footprint
+            try:
+                return (footprint.main_footprint if args.action == "footprint" else footprint.main_build)(cfg, args)
+            except footprint.FootprintError as e:
+                print(f"edakit part {args.action}: {e}", file=sys.stderr)
+                return 1
         if args.action == "datasheet":
             if args.connector:
                 done = [write_datasheet(cfg, args.connector, args.name)[0]]

@@ -628,6 +628,95 @@ def write_drc_rules(mcp, want):
     return drc_rules.differences(want, read_drc_rules(mcp))
 
 
+# --- the project's copy of a device: an own footprint built from data (edakit part build, handbook 4.5) -------------
+
+def find_copies(mcp, template, designators, lcsc=None):
+    """{"symbol": uuid, "footprint": uuid} of the project's copies of the device a component of designators – or,
+    failing that, a part of the LCSC number lcsc – is placed with on the template schematic: the carrier of an own
+    footprint. The template holds every part of the graph (edakit schematic create); its pages are searched in turn.
+    NOT RUN against EasyEDA yet (step 3.6): the bell's tdisplay_device.py finds the copies of its stand-in this way."""
+    sch_uuid, pages = find_pages(mcp, template)
+    for page in pages:
+        focus_page(mcp, sch_uuid, page)
+        for c in (state(x) for x in api(mcp, "SCH_PrimitiveComponent.getAll", "part") or []):
+            if c.get("Designator") in designators or (lcsc and c.get("SupplierId") == lcsc):
+                symbol, footprint = (c.get("Symbol") or {}).get("uuid"), (c.get("Footprint") or {}).get("uuid")
+                if symbol and footprint:
+                    return {"symbol": symbol, "footprint": footprint}
+    raise MCPError(f"none of {', '.join(designators)} on the template '{template}' – edakit schematic create places "
+                   "the carrier first")
+
+
+def open_library_editor(mcp, cls, uuid, project, wait_s=30):
+    """Open a library document of the project (LIB_Footprint, LIB_Symbol) in its editor and wait until it is the
+    active document; its tab id. openInEditor takes the project's UUID ("project" fails, 9.4) and may report an error
+    while it opens anyway – the active document decides."""
+    try:
+        api(mcp, f"{cls}.openInEditor", uuid, project, timeout=30)
+    except MCPError as e:
+        print(f"  ({cls}.openInEditor: {str(e)[:80]})")
+    for _ in range(wait_s):
+        cur = api(mcp, "DMT_SelectControl.getCurrentDocumentInfo") or {}
+        if cur.get("uuid") == uuid:
+            time.sleep(2)
+            return cur["tabId"]
+        time.sleep(1)
+    raise MCPError(f"{cls} {uuid} did not become the active document")
+
+
+def _create(mcp, path, args):
+    if not api(mcp, path, *args):
+        raise MCPError(f"{path} created nothing ({json.dumps(args, ensure_ascii=False)[:160]})")
+
+
+def build_copy(mcp, project, copies, ops):
+    """Rebuild the project's copy of a device from its footprint data (footprint.build_ops): in the footprint editor
+    every pad deleted and the data's pads created – with print in the data also the old print deleted (silkscreen,
+    component shape, marking and pin-soldering layers) and the data's drawn –, saved; with a symbol box the symbol's
+    pins and body deleted and the box drawn, saved. Returns what the editors hold afterwards: {"pads": [the state of
+    every pad], "pins": {number: name} or None}, for footprint.readback_differences. Parts placed in the PCB keep
+    their old copy until they are deleted and created again (9.4). The bell's tdisplay_device.py and the reference
+    project's led_footprints.py rebuild their copies with these calls; NOT RUN in this form against EasyEDA yet – the
+    live run of step 3.6 (implementation plan) does it on a throwaway document first."""
+    from .footprint import PRINT_CLASSES, PRINT_LAYERS
+    tab = open_library_editor(mcp, "LIB_Footprint", copies["footprint"], project)
+    try:
+        if old := api(mcp, "PCB_PrimitivePad.getAllPrimitiveId") or []:
+            api(mcp, "PCB_PrimitivePad.delete", old)
+        if ops["print"] is not None:
+            for cls in PRINT_CLASSES:
+                for prim in map(state, api(mcp, f"{cls}.getAll") or []):
+                    if prim.get("Layer") in PRINT_LAYERS:
+                        api(mcp, f"{cls}.delete", [prim["PrimitiveId"]])
+        for args in ops["pads"]:
+            _create(mcp, "PCB_PrimitivePad.create", args)
+        for path, args in ops["print"] or []:
+            _create(mcp, path, args)
+        if not api(mcp, "PCB_Document.save"):
+            raise MCPError("the footprint editor did not save")
+        pads = [state(p) for p in api(mcp, "PCB_PrimitivePad.getAll") or []]
+    finally:
+        api(mcp, "DMT_EditorControl.closeDocument", tab)
+    pins = None
+    if ops["symbol"]:
+        rect, made = ops["symbol"]
+        tab = open_library_editor(mcp, "LIB_Symbol", copies["symbol"], project)
+        try:
+            for cls in ("SCH_PrimitivePin", "SCH_PrimitiveRectangle", "SCH_PrimitivePolygon", "SCH_PrimitiveCircle"):
+                if old := api(mcp, f"{cls}.getAllPrimitiveId") or []:
+                    api(mcp, f"{cls}.delete", old)
+            _create(mcp, "SCH_PrimitiveRectangle.create", rect)
+            for args in made:            # pins anew: SCH_PrimitivePin.modify is not saved (the bell, 2026-10-26)
+                _create(mcp, "SCH_PrimitivePin.create", args)
+            if not api(mcp, "SCH_Document.save"):
+                raise MCPError("the symbol editor did not save")
+            pins = {str(p.get("PinNumber")): p.get("PinName") for p in map(state, api(mcp, "SCH_PrimitivePin.getAll")
+                                                                               or [])}
+        finally:
+            api(mcp, "DMT_EditorControl.closeDocument", tab)
+    return {"pads": pads, "pins": pins}
+
+
 def describe_drc(found, limit=25):
     from collections import Counter
     counts = Counter((f["errorType"], f.get("ruleName"), f.get("net")) for f in found)

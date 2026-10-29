@@ -26,7 +26,8 @@ RELEASED only if
     agent's entry (held); one of phase acceptance is a line of the acceptance list,
   - all of that for exactly this state: sign-offs count only for the hash of their scope – 'circuit' (graph with its
     check settings, parts database, simulation config), 'layout' (the board files with the artwork they place,
-    further layout_files of [release], the footprint geometry) or 'fab' (what the manufacturer builds from: the
+    further layout_files of [release], the footprint geometry, the footprint data of the parts entries – footprint.py,
+    only where an entry has it) or 'fab' (what the manufacturer builds from: the
     Gerber layers rasterised, the drill hits, BOM and CPL rows, with [order] the order settings that change the board
     as made – known after stage F, fab.fab_layers). An accepted warning with scope 'decision' counts regardless of the
     hash and refers to a numbered decision in the docs; one that names its parts ({designator: LCSC}) counts only
@@ -136,13 +137,16 @@ def content(path, ignore=()):
     return json.dumps(strip(data, set(ignore)), sort_keys=True, separators=(",", ":"), ensure_ascii=False).encode()
 
 
-def file_hash(root, files, ignore=(), documented=()):
-    """SHA-256 over the names and contents of files; the files in `documented` without the keys in ignore."""
+def file_hash(root, files, ignore=(), documented=(), extra=()):
+    """SHA-256 over the names and contents of files; the files in `documented` without the keys in ignore. extra:
+    [(name, bytes)] taken after the files the same way – none, and the hash is that of the files alone."""
     h = hashlib.sha256()
     documented = {Path(f) for f in documented}
     for f in files:
         h.update(str(Path(f).relative_to(root) if Path(f).is_relative_to(root) else f).encode() + b"\0"
                  + content(f, ignore if Path(f) in documented else ()))
+    for name, data in extra:
+        h.update(name.encode() + b"\0" + data)
     return h.hexdigest()
 
 
@@ -174,6 +178,30 @@ def layout_files(cfg):
     return files + [geometry_file(cfg, b) for b in made.values()]
 
 
+def footprint_data(cfg):
+    """[(name, bytes)] the layout hash takes after its files: the footprint data (4.5) of every parts entry that a
+    part of a made board uses, as "footprint_data:<entry>" and canonical JSON without the keys of [release]
+    hash_ignore, in the order of the entries – none where no entry has footprint data, so every project without it
+    keeps its layout hash. The data is the copy's geometry before any dump: a changed pad voids the sign-offs of scope
+    layout as a changed geometry does."""
+    from ..footprint import has_data
+    design = Design.from_config(cfg)
+    if not has_data(design.parts):
+        return []
+    made = set(cfg.made())
+    keys = {k for des, c in design.comps.items() if (c.get("board") in made or c.get("board") is None)
+            and (k := design.entry_key(des)) and "footprint_data" in design.parts[k]}
+    ignore = set(cfg.release.get("hash_ignore", []))
+    return [(f"footprint_data:{k}", json.dumps(strip(design.parts[k]["footprint_data"], ignore), sort_keys=True,
+                                               separators=(",", ":"), ensure_ascii=False).encode())
+            for k in sorted(keys)]
+
+
+def layout_hash(cfg):
+    """The layout hash (layout_sha256): the files of layout_files and the footprint data of the made boards' parts."""
+    return file_hash(cfg.root, layout_files(cfg), extra=footprint_data(cfg))
+
+
 def header(cfg):
     from .. import __version__
     design = Design.from_config(cfg)
@@ -182,7 +210,7 @@ def header(cfg):
     return {
         "graph_sha256": hashlib.sha256(cfg.graph.read_bytes()).hexdigest(),
         "state_sha256": state_hash(cfg),
-        "layout_sha256": file_hash(cfg.root, layout_files(cfg)),
+        "layout_sha256": layout_hash(cfg),
         "graph_version": design.version, "graph_date": design.graph.get("date"),
         "git_commit": sh(cfg.root, "git", "rev-parse", "--short", "HEAD"),
         "git_dirty": bool(sh(cfg.root, "git", "status", "--porcelain")),
@@ -715,7 +743,8 @@ def write_protocol(cfg, outdir, head, rows, sim, signoff, notes, decision, reaso
          f"| SHA-256 graph | `{head['graph_sha256']}` |",
          f"| SHA-256 circuit | `{head['state_sha256']}` (graph, parts database, simulation config"
          f"{', requirements' if cfg.requirements else ''}) |",
-         f"| SHA-256 layout | `{head['layout_sha256']}` (board files, artwork, layout files, footprint geometry) |",
+         f"| SHA-256 layout | `{head['layout_sha256']}` (board files, artwork, layout files, footprint geometry"
+         + (", footprint data" if footprint_data(cfg) else "") + ") |",
          *([f"| SHA-256 fab | `{head['fab_sha256']}` (what the manufacturer builds from: Gerber layers, drill hits, "
             f"BOM and CPL rows, with [order] the order settings – {head['fab_method']}) |"]
            if head.get("fab_sha256") else []),

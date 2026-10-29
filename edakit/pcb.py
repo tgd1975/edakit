@@ -3,7 +3,8 @@ mounting and tooling holes, copper pours, EasyEDA's auto-layout.
 
     edakit pcb dump [--ref U1,J1]   footprint geometry -> <board file>.geometry.json beside the board file
                                     (hardware/boards/<board>.geometry.json), versioned – the layout hash covers it;
-                                    through-hole pads with their hole [w, l] in mm (P-7)
+                                    through-hole pads with their hole [w, l] in mm (P-7); the pads of a part whose
+                                    parts entry has footprint data also with shape, size, rotation, layer (P-10)
                                     (turns every measured part to 0°/TOP and leaves it there – run apply afterwards)
     edakit pcb plan                 offline: check the plan (overlaps – under a part on pin headers only its pins,
                                     SMD parts within silk_overlap_mm –, outline, holes, THT pins under parts of the
@@ -122,14 +123,15 @@ def load_geometry(cfg, board):
 
 def plan_geometry(cfg, board, design, refs=None):
     """The geometry the plan works with: the dump of the PCB, and for a part of refs (default: the planned ones) that
-    is not in it the footprint `edakit part import` cached – "source": "library", the pad nets from the graph."""
+    is not in it the footprint data of its parts entry ("source": "data", 4.5), else the footprint `edakit part
+    import` cached ("source": "library") – the pad nets from the graph."""
     from . import part
     f = geometry_file(cfg, board)
     geo = json.loads(f.read_text()) if f.exists() else {}
     for ref in board.place if refs is None else refs:
         if ref not in geo and ref in design.comps and (lib := part.library_footprint(cfg, design, ref)):
             pads = {n: {**p, "net": design.pin_net.get(f"{ref}.{n}", "")} for n, p in lib["pads"].items()}
-            geo[ref] = {**lib, "pads": pads, "source": "library"}
+            geo[ref] = {**lib, "pads": pads, "source": "data" if lib.get("source") == "data" else "library"}
     if not geo:
         raise SystemExit(f"{cfg.relative(f)} is missing – run `edakit pcb dump` once the parts are in the PCB, or "
                          "`edakit part import <LCSC>` for the library's footprints")
@@ -137,6 +139,18 @@ def plan_geometry(cfg, board, design, refs=None):
 
 
 # --- plan ---------------------------------------------------------------------------------------------------------
+
+GEOMETRY_FROM = {"library": "library geometry {}", "data": "footprint data ({})"}   # what P-7 names besides pcb dump
+
+
+def say_unmeasured(geo, refs):
+    """The parts of refs the plan takes from the library footprint or from the footprint data – not yet from the
+    PCB."""
+    for source, what in (("library", "library geometry (edakit part import, not yet from the PCB)"),
+                         ("data", "footprint data of the parts entry (not yet from the PCB)")):
+        if found := sorted((r for r in refs if geo.get(r, {}).get("source") == source), key=natural_key):
+            print(f"  {what}: {', '.join(found)}")
+
 
 def part_box(board, geo, p):
     x0, y0, x1, y1 = geo["bbox"]
@@ -709,13 +723,12 @@ def plan(cfg, board):
     place, boxes, tht, unplaced, missing = build_plan(cfg, board, geo)
     problems = [f"{r}: in the plan but not in the footprint geometry (edakit pcb parts --write, then dump)"
                 for r in missing]
-    if lib := sorted((r for r in place if geo.get(r, {}).get("source") == "library"), key=natural_key):
-        print(f"  library geometry (edakit part import, not yet from the PCB): {', '.join(lib)}")
+    say_unmeasured(geo, place)
     problems += check_plan(cfg, board, geo, place, boxes, tht)
     problems += [f"L-12 {p}" for p in check_handover(board, design, place, boxes)]
     holes = checks.Report()      # P-7 on the plan's geometry: a hole that does not take its lead is a plan finding
-    checks.check_holes(design, holes, lambda r: (geo[r], f"library geometry {geo[r]['footprint']}" if geo[r].get(
-        "source") == "library" else "pcb dump") if r in geo else (None, None))
+    checks.check_holes(design, holes, lambda r: (geo[r], GEOMETRY_FROM.get(geo[r].get("source"), "{}").format(
+        geo[r].get("footprint")) if geo[r].get("source") else "pcb dump") if r in geo else (None, None))
     problems += [f"P-7 {m}" for _, m in holes.errors]
     for kind, found in (("pending", holes.pending), ("warning", holes.warnings)):
         for _, m in found:
@@ -1093,8 +1106,7 @@ def place_main(cfg, board, write=False, only=None):
     geo = plan_geometry(cfg, board, design, [*board.place, *(r for r in sorted(design.board_comps(board.name),
                                                                                 key=natural_key) if r not in board.place)])
     rows, problems = auto_place(cfg, board, geo, design, set(only) if only else None)
-    if lib := [r for r, _, _ in rows if geo[r].get("source") == "library"]:
-        print(f"  library geometry (edakit part import, not yet from the PCB): {', '.join(lib)}")
+    say_unmeasured(geo, [r for r, _, _ in rows])
     for ref, p, why in rows:
         print(f"  {ref} = {place_row(p)}   # {why}")
     for p in problems:
@@ -1175,9 +1187,28 @@ def pad_hole(p):
     return {"hole": [round(w, 3), round(length, 3)], "plated": bool(p.get("metallization", True))}
 
 
-def measure(mcp, c):
+PAD_LAYER_NAMES = {TOP: "TOP", BOTTOM: "BOTTOM", MULTI_LAYER: "MULTI"}
+
+
+def pad_shape(p):
+    """{"shape", "w", "h", "rot", "layer"} of a pin as the import cache has them (mil, degrees) – read from the pad's
+    own fields (pad: [shape, w, h, …], rotation, layer), for a part whose parts entry has footprint data: P-10 holds
+    them to the data. {} where the API gives none. NOT RUN against EasyEDA yet (step 3.6): the fields are those of
+    IPCB_PrimitivePad in the client's api-types.d.ts, as measure reads x, y and hole."""
+    st = p.get("state") or {}
+    shape = p.get("pad") or st.get("Pad")
+    if not (isinstance(shape, list) and len(shape) >= 3 and shape[0] in ("RECT", "ELLIPSE", "OVAL")):
+        return {}
+    layer = p.get("layer", st.get("Layer"))
+    return {"shape": shape[0], "w": round(shape[1], 2), "h": round(shape[2], 2),
+            "rot": round((p.get("rotation", st.get("Rotation")) or 0) % 360, 2),
+            "layer": PAD_LAYER_NAMES.get(layer, layer)}
+
+
+def measure(mcp, c, shapes=False):
     """Geometry of a part relative to its origin; turns it to 0°/TOP for that and leaves it so. Through-hole pads keep
-    their hole (P-7)."""
+    their hole (P-7); with shapes – a part whose parts entry has footprint data (4.5) – every pad its shape, size,
+    rotation and layer too (P-10)."""
     pid = c["primitiveId"]
     if c["rotation"] or c["layer"] != TOP:
         ensure_pcb_focus(mcp)
@@ -1190,21 +1221,27 @@ def measure(mcp, c):
     g = {"primitiveId": pid, "footprint": c["footprintName"], "device": c["deviceName"],
          "bbox": [round(bb["minX"] - x, 2), round(bb["minY"] - y, 2), round(bb["maxX"] - x, 2), round(bb["maxY"] - y, 2)],
          "pads": {p["padNumber"]: {"x": round(p["x"] - x, 2), "y": round(p["y"] - y, 2), "net": p["net"],
-                                   "tht": p["hole"] is not None, **pad_hole(p)} for p in pads}}
+                                   "tht": p["hole"] is not None, **pad_hole(p), **(pad_shape(p) if shapes else {})}
+                  for p in pads}}
     nums = [p["padNumber"] for p in pads]  # numbers used several times (shell legs): "pads" keeps one, all here
     if dup := sorted({n for n in nums if nums.count(n) > 1}):
-        g["pads_same_number"] = {n: [{"x": round(p["x"] - x, 2), "y": round(p["y"] - y, 2), **pad_hole(p)} for p in pads
-                                     if p["padNumber"] == n] for n in dup}
+        g["pads_same_number"] = {n: [{"x": round(p["x"] - x, 2), "y": round(p["y"] - y, 2), **pad_hole(p),
+                                      **(pad_shape(p) if shapes else {})} for p in pads if p["padNumber"] == n]
+                                 for n in dup}
     w, h = g["bbox"][2] - g["bbox"][0], g["bbox"][3] - g["bbox"][1]
     print(f"  {c['designator']:<6} {mm(w):6.1f} x {mm(h):5.1f} mm  {c['footprintName']}")
     return g
 
 
 def dump(cfg, board, mcp, refs=None):
+    from .footprint import has_data, users
     f = geometry_file(cfg, board)
     out = json.loads(f.read_text()) if refs and f.exists() else {}
-    out |= {c["designator"]: measure(mcp, c) for c in eda.list_pcb_components(mcp)
-            if c.get("designator") and (not refs or c["designator"] in refs)}
+    design = Design.from_config(cfg)
+    own = {des for key, e in design.parts.items() if "footprint_data" in e for des in users(design, key)} \
+        if has_data(design.parts) else set()       # their pads with shape and size: P-10 holds them to the data
+    out |= {c["designator"]: measure(mcp, c, shapes=True) if c["designator"] in own else measure(mcp, c)
+            for c in eda.list_pcb_components(mcp) if c.get("designator") and (not refs or c["designator"] in refs)}
     print(f"{len(out)} parts -> {save_geometry(cfg, board, out)}")
 
 

@@ -33,7 +33,8 @@ gate_checks gives them (handbook 8.1).
 [[release.stages]] are checks of phase export before S.
 
 Names of edakit's data in reads and writes: graph, parts, sim (written by hand, edakit block, edakit part), board:<b>
-(the board file), project-library:<b> (EasyEDA's project library: schematic create, easyeda scripts), footprints:<b>
+(the board file), project-library:<b> (EasyEDA's project library: schematic create, easyeda scripts, part build –
+recorded like an easyeda script's change, record_library_change), footprints:<b>
 (<b>.geometry.json: pcb dump), mech:<b> (pcb plan), routing:<b> (route), gerber:<b> and release (the gate),
 firmware (edakit firmware, with [firmware]); <b> is a made board – a bought one has none of them. Anything else is a
 path relative to edakit.toml: a folder holds the files in it, and an edakit file named by its path is its data
@@ -104,7 +105,8 @@ ONCE = ("release", "firmware")                       # one per project
 PER_BOARD = ("board", "project-library", "footprints", "mech", "routing", "gerber")   # <name>:<b>
 IN_EASYEDA = ("project-library",)                    # what an easyeda script changes
 MADE_BY = {"graph": "hand or edakit block", "parts": "hand or edakit part", "sim": "hand",
-           "project-library": "edakit schematic create, changed by easyeda scripts", "footprints": "edakit pcb dump",
+           "project-library": "edakit schematic create, changed by easyeda scripts and edakit part build",
+           "footprints": "edakit pcb dump",
            "mech": "edakit pcb plan", "routing": "edakit route", "gerber": "the gate", "release": "the gate",
            "firmware": "edakit firmware"}
 ABSENT = "absent"      # data_hash of data that does not exist yet: no gate run, no geometry, no routing, no contract
@@ -1310,6 +1312,12 @@ def before_step(cfg, args):
 
 
 # --- what an easyeda script changed: project-library:<b>, and what is from before it ------------------------------
+def _change(cfg, by, board, when=None):
+    """A change of a board's project library made by `by` (an easyeda script, or edakit part build), now."""
+    return {"script": by, "at": when or dt.datetime.now().astimezone().isoformat(timespec="seconds"), "by": _user(cfg),
+            "from_before": [f"{d}:{board}" for d in FROM_BEFORE]}
+
+
 def _record_change(cfg, name):
     """The easyeda script name ran through edakit run: each project library it writes changed now. Its hash is this
     change (data_hash), and from before it are the parts in the PCB with their geometry, and the routing of its board,
@@ -1319,12 +1327,26 @@ def _record_change(cfg, name):
     for spelling in cfg.scripts[name].get("writes", []):
         key, why = nm.parse(spelling)
         if key is not None and not why and key[0] in IN_EASYEDA:
-            change = {"script": name, "at": when, "by": _user(cfg),
-                      "from_before": [f"{d}:{key[1]}" for d in FROM_BEFORE]}
+            change = _change(cfg, name, key[1], when)
             changed[_spell(key)] = change
             out.append((_spell(key), change))
     save_lock(cfg, load_lock(cfg), changed)
     return out
+
+
+def record_library_change(cfg, board, by):
+    """edakit part build rebuilt a copy in the project library of a made board (handbook 4.5): recorded as edakit run
+    records an easyeda script – project-library:<b> changed by `by`, its hash this change, and the parts in the PCB
+    with their geometry and the routing from before it until edakit pcb dump and edakit route all made them again.
+    Only with [scripts]: nothing else reads the lock (8.6). -> the message to print, or None. StampError when the lock
+    cannot be read."""
+    if not cfg.scripts:
+        return None
+    changed, name = load_changes(cfg), f"project-library:{board}"
+    changed[name] = _change(cfg, by, board)
+    save_lock(cfg, load_lock(cfg), changed)
+    res, entries, _ = _resolve(cfg)
+    return _change_said(name, changed[name], () if res.findings else _made_from(res, entries, changed[name]))
 
 
 def open_changes(cfg):

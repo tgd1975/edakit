@@ -108,7 +108,7 @@ def signoffs(cfg):
     """Manual checks of scope 'circuit': (id, text, done or None) – done only for the current state of the circuit."""
     from .release import gate
     head = {"state_sha256": gate.state_hash(cfg),
-            "layout_sha256": gate.file_hash(cfg.root, gate.layout_files(cfg))}
+            "layout_sha256": gate.layout_hash(cfg)}
     signoff, _ = gate.load_signoff(cfg, head)
     done = lambda m: f"{m['done_by']}, {m.get('date', '?')}" if m.get("done_by") else None  # noqa: E731
     return head["state_sha256"], [(m["id"], m.get("text", ""), done(m)) for m in signoff.get("manual", [])

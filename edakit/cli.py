@@ -9,6 +9,8 @@
     edakit part fetch KEY [--url U] | --all   a part's datasheet PDF, kept beside the project and checked to be of it
     edakit part search "KEYWORDS"    JLCPCB's parts catalogue: LCSC number, class, stock – no EasyEDA
     edakit part datasheet|own        own parts: a board of an edakit project as a part in another project
+    edakit part footprint KEY [--write]   a library footprint as data in the parts entry (footprint_data) – offline
+    edakit part build KEY [--write]  the project's copy in EasyEDA built from the entry's footprint data
     edakit stock [--refresh]         what JLCPCB says about the assembled parts, as a dated snapshot (check P-4)
     edakit cost [--json F]           the order for `quantity` boards from BOM, board and the dated fee table
     edakit order [--out DIR]         the assembler's BOM, a cart per other supplier, the hand-assembly list (P-5)
@@ -88,11 +90,11 @@ def build_parser():
     _common(p)
 
     p = sub.add_parser("part", help="the library's data of an LCSC number, a footprint swap compared, datasheets, "
-                                    "a catalogue search, own parts")
-    p.add_argument("action", choices=["import", "diff", "fetch", "search", "datasheet", "own"])
-    p.add_argument("source", nargs="?", help="import: the LCSC number; diff: the old part; fetch: the parts-entry key; "
-                                             "search: the keywords; own: the board's project (its directory or "
-                                             "edakit.toml)")
+                                    "a catalogue search, own parts, own footprints as data")
+    p.add_argument("action", choices=["import", "diff", "fetch", "search", "datasheet", "own", "footprint", "build"])
+    p.add_argument("source", nargs="?", help="import: the LCSC number; diff: the old part; fetch, footprint, build: "
+                                             "the parts-entry key; search: the keywords; own: the board's project (its "
+                                             "directory or edakit.toml)")
     p.add_argument("new", nargs="?", help="diff: the new part (LCSC number or parts-entry key)")
     p.add_argument("--update", action="store_true", help="import: fill in what the existing entry lacks")
     p.add_argument("--url", help="fetch: try this URL first")
@@ -104,6 +106,10 @@ def build_parser():
     p.add_argument("--connector", action="append", help="datasheet: a connector of the board, in the order of the "
                                                         "part's pins (repeat for several; none: renew the datasheets)")
     p.add_argument("--name", help="the part's name (mpn) – datasheet: default the project name; own: which datasheet")
+    p.add_argument("--board", help="footprint: the board whose dump to read (default: each made board); build: the "
+                                   "board whose template holds the carrier (default: the only made board)")
+    p.add_argument("--write", action="store_true", help="footprint: write the data into the parts entry; build: "
+                                                        "rebuild the copy in EasyEDA (default: show only)")
     _common(p)
 
     p = sub.add_parser("stock", help="ask JLCPCB about every assembled part and write the stock snapshot (P-4)")

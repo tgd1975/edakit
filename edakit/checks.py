@@ -41,7 +41,8 @@
        switch node (sw); a buck or boost IC without hot_loop is a warning
   P-1  graph pins (number + name) = parts database, an entry exists for every LCSC number – or, for a part bought
        elsewhere, for its manufacturer part number `part`; with the library's symbol cached by `edakit part import`,
-       the graph's pins = that symbol (case and blanks ignored, as S-2)
+       the graph's pins = that symbol (case and blanks ignored, as S-2) – unless the entry's footprint data builds the
+       copy's symbol as a box ("symbol": "box", 4.5): the carrier's library symbol is not the copy's then
   P-6  part identity: the component and its parts entry name the same part – the entry's lcsc is its file name,
        the component's lcsc no C99… user-library number (unless bom: false), its part names the entry's mpn (remarks
        in parentheses or after ";" left out, case ignored; a part that starts with a value is that value), its
@@ -56,6 +57,11 @@
        their numbers), three or more of them, is not laid onto itself by a turn of 90°, 180° or 270° – every hole
        within 0.25 mm of a hole – with a pin in the hole of a pin on another net (pins on one net do not count);
        without the library footprint a note
+  P-9  footprint data complete (footprint.py, only where a parts entry has footprint_data): every pad with place,
+       shape and size, a through-hole pad with its hole; every pad a pin of the entry or mechanical, every pin a pad;
+       lines, texts, marks and outline well formed; a polarity mark next to a pad of its sign (L-8 on the data)
+  P-10 the copy equals the data (footprint.py): the footprint pcb dump measured on the board has the data's pads – the
+       same numbers, each within 0.02 mm of its place, holes and (where measured) shapes and sizes within 0.01 mm
   P-3  own parts (part.py): a board copied from its project with `edakit part own` is that project's current
        datasheet, copied from a commit (pending otherwise); a board that is not released is a warning; the project's
        own datasheets (hardware/datasheet/) are of its current state
@@ -142,10 +148,23 @@ EXECUTED = ["G-1", "G-2", "G-3", "G-4", "G-5", "G-6", "G-8", "G-10", "G-11", "G-
             "G-17", "G-18", "P-1", "P-3", "P-4", "P-5", "P-6", "P-7", "P-8", "G-9"]
 
 
+FOOTPRINT_CHECKS = ("P-9", "P-10")   # own footprints as data (footprint.py): only where a parts entry has any
+
+
+def has_footprint_data(cfg, design=None):
+    """Whether a parts entry of the project has footprint data (4.5): P-9 and P-10 run then."""
+    from .design import load_parts
+    from .footprint import has_data
+    return has_data(design.parts if design is not None else load_parts(cfg.parts))
+
+
 def executed(cfg=None):
-    """The checks run() runs for this project: EXECUTED, and with [project] requirements G-20 to G-23 – a project
-    without the key gets the same checks as before."""
-    return EXECUTED + (list(requirements.CHECKS) if cfg is not None and cfg.requirements else [])
+    """The checks run() runs for this project: EXECUTED; where a parts entry has footprint data P-9 and P-10 after
+    P-8; with [project] requirements G-20 to G-23 – a project without either gets the same checks as before."""
+    out = list(EXECUTED)
+    if cfg is not None and has_footprint_data(cfg):
+        out[out.index("P-8") + 1:out.index("P-8") + 1] = FOOTPRINT_CHECKS
+    return out + (list(requirements.CHECKS) if cfg is not None and cfg.requirements else [])
 
 
 class Report:
@@ -860,11 +879,14 @@ def check_hot_loops(d, rep):
 
 def check_part_pins(d, rep, cfg=None):
     from . import part as parts
+    from .footprint import own_symbol
     from .schematic import pin_differences
     for des, c in d.comps.items():
         if not c.get("lcsc") and not c.get("part"):
             continue   # a bare test pad: no part to buy, no entry
         symbol = parts.cached(cfg, c.get("lcsc")) if cfg else None   # the library's symbol (edakit part import)
+        if symbol and own_symbol(d.part(des)):
+            symbol = None       # the copy's symbol is a box built from the entry (footprint data, 4.5), not the carrier's
         if symbol and (diffs := pin_differences(symbol["pins"], c["pins"])):
             rep.error("P-1", f"{des}: pins differ from the library symbol of {c['lcsc']} "
                              f"({cfg.relative(parts.library_file(cfg, c['lcsc']))}): {'; '.join(diffs)}", c.get("waive"))
@@ -979,7 +1001,8 @@ def board_dumps(d, cfg):
 
 def footprint_geometry(d, cfg):
     """geometry(des) -> (footprint geometry, where from) or (None, None): the dump of the component's board – the
-    project's footprint as placed –, else the library footprint `edakit part import` cached."""
+    project's footprint as placed –, else the footprint data of its parts entry (4.5), else the library footprint
+    `edakit part import` cached."""
     from . import part as parts
     dumped = board_dumps(d, cfg)
 
@@ -987,7 +1010,10 @@ def footprint_geometry(d, cfg):
         if geo := dumped(des):
             return geo, "pcb dump"
         lib = parts.library_footprint(cfg, d, des)
-        return (lib, f"library geometry {lib['footprint']}") if lib else (None, None)
+        if not lib:
+            return None, None
+        return lib, (f"footprint data of {d.entry_key(des)}" if lib.get("source") == "data"
+                     else f"library geometry {lib['footprint']}")
     return geometry
 
 
@@ -1181,6 +1207,9 @@ def run(design, cfg=None):
         from .pcb import move_notes        # a geometry still among the artifacts is read; how to move it
         rep.notes += [("P-7", note) for note in move_notes(cfg)]
         check_formed(design, rep, cfg)
+        if has_footprint_data(cfg, design):
+            from . import footprint
+            footprint.check(design, rep, cfg)      # P-9, P-10: own footprints as data (4.5)
         stock.check(design, rep, cfg)
         order.check(design, rep, cfg)
     check_signoff(design, rep)

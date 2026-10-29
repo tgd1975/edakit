@@ -69,6 +69,29 @@
     "edakit handbook 3.3 (P-7) and 7.3 (part diff: pads matched by position under each turn, 'symmetric: the numbers decide')"
    ]
   },
+  "P-9": {
+   "title": "footprint data complete",
+   "rule": "A parts entry with footprint_data – an own footprint as text (handbook 4.5) – gives every pad its place, its shape (RECT, ELLIPSE or OVAL) and size, and a through-hole pad (MULTI) its hole; every pad number is a pin of the entry or the pad is marked mechanical, and every pin of the entry has a pad; lines, texts, polarity marks and the outline are well formed; a polarity mark '+' or '−' lies nearest to a pad whose pin role has that sign (L-8's test, on the data); with \"symbol\": \"box\" the sides of the entry's symbol name pins of the entry, each once. Only where an entry of the project has footprint_data.",
+   "why": "The data is what edakit builds the project's copy from and what the layout hash covers. A pad without a pin carries no net and the board misses a connection, a pin without a pad cannot be soldered, a through-hole pad without a hole is a pad on both sides with nothing between, and a '+' next to the cathode is the reference project's 5-mm LED again (handbook 4.4). Here it is found on the text, before EasyEDA has the copy – not in the gate's silkscreen (L-8) or in the polarity review M-1, whose circuit hash the data changes (decision 5).",
+   "fix": "Complete the data in the parts entry: place, shape, size and hole of the pad from the datasheet's land pattern; a pin for every pad that carries a net, \"mechanical\": true on a mounting pad; the mark next to the pad of its sign – or the pin's role corrected where the datasheet says so. edakit part footprint KEY writes the footprint pcb dump measured as a start.",
+   "sources": [
+    "edakit concept 'Circuit design as code' (docs/concepts/new/design-as-text.md), gap 2, proposals 1 and 3, and decision 5 of 2026-10-28: the footprint as data in the parts entry – origin, pads in the form part import caches them, outline and print; a pad without a pin in the entry is a finding, and so is the reverse",
+    "edakit handbook 4.4 (the reference project's LED footprint printed '+' next to pad 1, the cathode) and 8.1 (L-8: a sign of the silkscreen against the role of the nearest polarised pad, release/fab.py check_polarity_marks)",
+    "EasyEDA Pro extension API types 0.3.50 (resources/app/assets/pro-api/0.3.50.ab46409c/api-types.d.ts, read 2026-10-29): pad shapes ELLIPSE, OVAL, RECT, NGON and POLYGON (EPCB_PrimitivePadShapeType), pad layers TOP, BOTTOM and MULTI (TPCB_LayersOfPad), holes ROUND [diameter] and SLOT [diameter, length] (TPCB_PrimitivePadHole)"
+   ]
+  },
+  "P-10": {
+   "title": "the copy equals the footprint data",
+   "rule": "Every part whose parts entry has footprint_data and that pcb dump measured on its board (<board>.geometry.json) has the footprint the entry names and the data's pads: the same numbers, each pad within 0.02 mm of its place in the data (relative to the data's origin), the same hole within 0.01 mm, and where the dump measured them the same shape, size, rotation and layer (sizes within 0.01 mm). A part not in the dump yet is a note. Only where an entry of the project has footprint_data.",
+   "why": "The data is the text; what goes to the manufacturer is the copy in EasyEDA, and a placed part keeps its embedded copy until it is deleted and created again – the reference project changed a hole in its project library and the placed star LED kept 0.70 mm (2026-10-25). After a change of the data, the copy in the PCB and the dump are from before it until the copy is rebuilt and measured again; without this check the board would be routed and released on the old pads while the repository says otherwise. In the gate L-10 holds the PCB's pads to the dump: data = dump here, dump = PCB there.",
+   "fix": "Rebuild the copy from the data – edakit part build KEY --write, delete the part in the PCB, edakit pcb parts --write, edakit pcb dump –, or correct the data where the copy is right and the data is not. Another footprint name is L-4's finding: the part in the PCB is not the copy (edakit pcb parts --write).",
+   "sources": [
+    "edakit concept 'Circuit design as code' (docs/concepts/new/design-as-text.md), gap 2, proposal 3 ('a check holds the copy to the data: pins and pads in EasyEDA equal the parts entry'), and the implementation plan, step 3.6 and 'Hashes and gate results' ('a new check: the copy equals the data')",
+    "edakit handbook 9.4 ('Footprints in the project': placed parts keep their embedded copy until deleted and recreated); the reference project's hardware/easyeda/led_footprints.py, bohrungen: changed pads of the placed part are dropped on saving, D31 stayed at 0.70 mm (2026-10-25)",
+    "0.02 mm: L-7's tolerance for a placed part against its plan (release/fab.py check_pcb); the Christmas bell's variants/esp32/hardware/boards/esp32.geometry.json has the T-Display's pads 0.05 mil (0.0013 mm) from where variants/esp32/hardware/lib/tdisplay_device.py created them, and handbook 7.4 has the library and EasyEDA Pro agreeing on the pads within 0.1 mil. 0.01 mm for holes and sizes: pcb dump keeps holes to 0.001 mm and pads to 0.01 mil – the step's choice, no standard was opened",
+    "The Christmas bell's variants/esp32/hardware/lib/tdisplay_device.py: its check reopens the rebuilt copy and compares pins and pad positions with what it built"
+   ]
+  },
   "G-1": {
    "title": "structure",
    "rule": "Designators and net names are unique, every pin is in exactly one net or in nc, every net has at least two pins and a voltage range v, every part is on a known board, a part on a bought board is bom: false, a net spans boards only through a cable, the layout requirements and the check settings name parts and pins of the graph, the ground net is a net of the graph, and purpose.use is private, gift or sale.",
