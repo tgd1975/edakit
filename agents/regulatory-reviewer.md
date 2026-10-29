@@ -20,7 +20,8 @@ without any claim to correctness; nothing in it is legally guaranteed.
   (`v`), connectors to the outside.
 - The parts database (`[project] parts`): `kind`, `mpn`, `manufacturer`, and `compliance` – `rohs`, `reach`, `radio`
   (`bands_mhz`; `max_dbm`, the conducted power at the RF port; `antenna_dbi`, the gain of the antenna in the product;
-  `eirp_dbm` where a certificate states the e.i.r.p.; `doc`), `source`. What is missing there is open, not fine.
+  `eirp_dbm` where a certificate states the e.i.r.p.; `doc` – or `"none"`), `source`. What is missing there is open,
+  not fine; `edakit check` keeps a module or microcontroller without `radio` pending (P-11).
 - The decision log and the circuit description: the cell in a battery holder, the power supply that comes with the
   board, the enclosure, who uses it.
 - The requirements file, if `[project] requirements` names one (`edakit req 2>&1 | cat`): what the board must and

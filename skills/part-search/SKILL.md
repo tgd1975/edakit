@@ -70,7 +70,8 @@ profile says: `${CLAUDE_PLUGIN_ROOT}/skills/part-search/distributors/<name>.md` 
   supplier's SVHC statement), for a part that transmits `radio` (`bands_mhz`; `max_dbm`, the conducted power at the
   RF port as the datasheet states it; `antenna_dbi`, the gain of its antenna in the product – a module's datasheet
   or certificate; `eirp_dbm` where a certificate states the e.i.r.p.; `doc` = URL of the EU declaration of
-  conformity – G-24 holds the e.i.r.p. to the band's limit), and `source` (page and date). Take it from the
+  conformity – G-24 holds the e.i.r.p. to the band's limit), `"radio": "none"` for a module or microcontroller
+  without a transmitter (P-11 asks every one of them), and `source` (page and date). Take it from the
   distributor's part page or the manufacturer's declaration; what nobody states stays out – the reviewer reports it
   as open, not as fine.
 - Check against the datasheet: pinout, polarity at the footprint (which pad is pin 1 / anode / +), package, every

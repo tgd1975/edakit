@@ -52,8 +52,9 @@ an imported power supply or cell is its importer.
 - **Per part** – `compliance` in the parts entry (4.1), filled by the agent part-selector or the skill part-search: RoHS
   status (and the exemption it relies on), the supplier's REACH SVHC statement, and for a part that transmits its
   bands, its power at the RF port and the gain of its antenna – or the e.i.r.p. a certificate states – and the EU
-  declaration of conformity (`compliance.radio`, 4.1); G-24 holds the e.i.r.p. to the band's limit. What nobody
-  states is open, not fine.
+  declaration of conformity (`compliance.radio`, 4.1); G-24 holds the e.i.r.p. to the band's limit. A part that does
+  not transmit says `"none"`; for a module or microcontroller P-11 keeps the release open until it says one or the
+  other. What nobody states is open, not fine.
 - **Per own board** (4.5) – its `compliance` collects what its parts entries state, with the parts that state nothing.
   An own board is no module with certificates of its own: it is part of the product, and whoever gives the product
   away or sells it is the manufacturer of the board in it too.

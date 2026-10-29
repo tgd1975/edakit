@@ -58,7 +58,8 @@ Each result with date, instrument and conditions – they become `sources`.
   pin
 - `ratings`: `vin_min`, `vin_max` – the measured or documented supply range; E-3 holds the host to it
 - `compliance`: what is known of its parts; of an own board whose parts nobody knows, `"rohs": "not known"` – the
-  regulatory review reports it as open (handbook 15)
+  regulatory review reports it as open (handbook 15); `radio` with its bands and power when something on it
+  transmits, `"none"` when nothing does – a host that uses it as a module asks for one of the two (P-11)
 - `sources`: every value with its origin – "measured 2026-11-02, multimeter UT61E, all LEDs on: 182 mA", "from the
   schematic of …", "assumption: …"
 - `verified`: only after the user checked the entry against the notes – `by`, `date`, `datasheet` ("measurement

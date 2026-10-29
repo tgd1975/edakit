@@ -69,6 +69,8 @@
        lines, texts, marks and outline well formed; a polarity mark next to a pad of its sign (L-8 on the data)
   P-10 the copy equals the data (footprint.py): the footprint pcb dump measured on the board has the data's pads – the
        same numbers, each within 0.02 mm of its place, holes and (where measured) shapes and sizes within 0.01 mm
+  P-11 radio stated: a part of graph type module or microcontroller has compliance.radio in its parts entry – its
+       bands and power, or "none" (pending, blocks only the release); a radio value of another shape is an error
   P-3  own parts (part.py): a board copied from its project with `edakit part own` is that project's current
        datasheet, copied from a commit (pending otherwise); a board that is not released is a warning; the project's
        own datasheets (hardware/datasheet/) are of its current state
@@ -153,7 +155,7 @@ MULTIPLIERS = {"p": 1e-12, "n": 1e-9, "u": 1e-6, "µ": 1e-6, "μ": 1e-6, "m": 1e
 QUANTITY = re.compile(r"\s*(\d+)(?:[.,](\d+))?\s*([pnuµμmkKMG]|[RΩ])?(\d+)?\s*(Ω|[oO]hms?|F|H)?(?=$|[\s,;/()])")
 
 EXECUTED = ["G-1", "G-2", "G-3", "G-4", "G-5", "G-6", "G-8", "G-10", "G-11", "G-12", "G-13", "G-14", "G-15", "G-16",
-            "G-17", "G-18", "G-24", "G-25", "P-1", "P-3", "P-4", "P-5", "P-6", "P-7", "P-8", "G-9"]
+            "G-17", "G-18", "G-24", "G-25", "P-1", "P-3", "P-4", "P-5", "P-6", "P-7", "P-8", "P-11", "G-9"]
 
 
 FOOTPRINT_CHECKS = ("P-9", "P-10")   # own footprints as data (footprint.py): only where a parts entry has any
@@ -894,6 +896,7 @@ EIRP_BANDS = ((2400, 2483.5, 100), (5150, 5350, 200), (5470, 5725, 1000))
 # EU licence-exempt bands (G-25, handbook 15.2): 433.05–434.79 and 863–870 MHz short range devices (Vfg. 91/2025 entries
 # 44a–45c and 46a–56b, limits in e.r.p.) and the bands of EIRP_BANDS
 EU_BANDS = ((433.05, 434.79), (863, 870)) + tuple((lo, hi) for lo, hi, _ in EIRP_BANDS)
+RADIO_TYPES = ("module", "microcontroller")   # graph types whose parts entry states its radio, "none" too (P-11)
 RADIO_KEYS = {"max_dbm": "max_dbm (the conducted power at the RF port)",       # what G-24 asks for when it is missing
               "antenna_dbi": "antenna_dbi (the gain of its antenna, from the module's datasheet or a certificate)",
               "eirp_dbm": "eirp_dbm (the e.i.r.p. a certificate states)"}
@@ -1050,6 +1053,28 @@ def check_radio_bands(d, rep):
                 rep.error("G-25", f"{des}: transmits in {a:g}–{b:g} MHz ({source}) – {where}: state the bands the "
                                   "firmware keeps in purpose.radio, or choose a part made for the EU bands "
                                   f"({NOT_LEGAL_ADVICE})", waive)
+
+
+def check_radio_stated(d, rep):
+    """P-11: every part of graph type module or microcontroller states its radio in its parts entry – compliance.radio
+    with its bands and power, or "none"; missing is pending, like an unsigned part (G-9). On any entry the graph uses,
+    a radio that is neither "none" nor {…} nor a list of them (an own board, 4.5) is an error."""
+    users = defaultdict(list)
+    for des in sorted(d.comps, key=natural_key):
+        if (key := d.entry_key(des)) is not None:
+            users[key].append(des)
+    for key, dess in sorted(users.items()):
+        part = d.parts[key]
+        r = (part.get("compliance") or {}).get("radio")
+        if r is None:
+            if any(d.comps[des].get("type") in RADIO_TYPES for des in dess):
+                rep.pending.append(("P-11", f"{key} {part.get('mpn', '')} ({', '.join(dess)}) states no radio – "
+                                            "compliance.radio in its parts entry: its bands and power, or \"none\" when "
+                                            "it does not transmit; the regulatory review (M-6) reads it"))
+        elif not (r == "none" or isinstance(r, dict) or (isinstance(r, list) and r
+                                                         and all(isinstance(x, dict) for x in r))):
+            rep.error("P-11", f"{key} ({', '.join(dess)}): compliance.radio {r!r} – \"none\", or its bands and power: "
+                              "{\"bands_mhz\": [[from, to], …], \"max_dbm\": …, \"antenna_dbi\": …, \"doc\": …}")
 
 
 def check_part_pins(d, rep, cfg=None):
@@ -1375,6 +1400,7 @@ def run(design, cfg=None):
     check_radio_bands(design, rep)
     check_part_pins(design, rep, cfg)
     check_identity(design, rep)
+    check_radio_stated(design, rep)
     if cfg:
         from . import order, part, stock
         part.check(design, rep, cfg)

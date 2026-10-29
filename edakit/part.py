@@ -199,9 +199,11 @@ def classify(d, net, inside, powered):
 
 
 def compliance(d, project, state):
-    """What the parts entries of the board say about RoHS, REACH and radio."""
+    """What the parts entries of the board say about RoHS, REACH and radio. radio: the radios of its parts, "none"
+    when none transmits and every module and microcontroller says so (P-11), else left out – not known."""
+    from .checks import RADIO_TYPES
     rohs = {"not compliant": [], "exemption": [], "not known": []}
-    reach, radio, n = [], [], 0
+    reach, radio, unstated, n = [], [], [], 0
     for des in sorted(d.comps, key=natural_key):
         p = d.part(des)
         if not p:
@@ -217,13 +219,20 @@ def compliance(d, project, state):
             rohs["exemption"].append(f"{des} ({r})")
         if not c.get("reach"):
             reach.append(des)
-        if c.get("radio"):
-            radio.append({"part": des, **c["radio"]})
+        r = c.get("radio")
+        if isinstance(r, dict):
+            radio.append({"part": des, **r})
+        elif isinstance(r, list):                       # an own board on the board: the radios of its parts
+            radio += [{"part": des, **x} for x in r if isinstance(x, dict)]
+        elif r != "none" and d.comps[des].get("type") in RADIO_TYPES:
+            unstated.append(des)
     out = {"rohs": True if not any(rohs.values()) else "; ".join(f"{k}: {', '.join(v)}" for k, v in rohs.items() if v),
            "reach": (f"a supplier statement for each of the {n} parts" if not reach else
                      f"{n - len(reach)} of {n} parts with a supplier statement; none for {', '.join(reach)}")}
     if radio:
         out["radio"] = radio[0] if len(radio) == 1 else radio
+    elif not unstated:
+        out["radio"] = "none"
     out["source"] = f"the parts database of {project} (state {state[:12]}), by edakit part datasheet"
     return out
 
@@ -324,7 +333,8 @@ def markdown(cfg, d, entry, notes, rows, des, plus, minus):
     lines += ["", "## Compliance", "",
               f"- RoHS: {'all parts compliant' if c['rohs'] is True else c['rohs']}",
               f"- REACH: {c['reach']}",
-              "- radio: " + ("none" if not radio else "; ".join(
+              "- radio: " + ("none" if radio == "none" else "not stated by every module and microcontroller of "
+                             "the board" if not radio else "; ".join(
                   f"{x['part']} {x.get('bands_mhz', '')} MHz, {x.get('max_dbm', '?')} dBm"
                   for x in (radio if isinstance(radio, list) else [radio]))),
               f"- from {c['source']}"]

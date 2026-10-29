@@ -236,3 +236,55 @@ def test_g25_runs_in_the_gate_stage_g(project):
     cfg = project.config()
     rows, _ = gate.stage_graph(cfg, Design.from_config(cfg))
     assert [(r["stage"], r["result"]) for r in rows if r["id"] in ("G-24", "G-25")] == [("G", "fail"), ("G", "pass")]
+
+
+# --- P-11 (#23): modules and microcontrollers state their radio -------------------------------------------------------
+
+def test_p11_a_module_that_states_nothing_is_open_for_the_release(project):
+    """The example's Pico 2 states "none"; without it the release waits for the statement, like an unsigned part."""
+    part = project.part("C41407547")
+    del part["compliance"]
+    project.save_part("C41407547", part)
+    rep = run(project)
+    assert rep.errors == []
+    assert found(rep, "P-11")["pending"] == [
+        "C41407547 Raspberry Pi Pico 2 (U1) states no radio – compliance.radio in its parts entry: its bands and power, "
+        'or "none" when it does not transmit; the regulatory review (M-6) reads it']
+    g = project.graph()
+    project.comp(g, "U1")["type"] = "module"                                    # a module the same
+    project.save_graph(g)
+    assert len(found(run(project), "P-11")["pending"]) == 1
+
+
+def test_p11_none_or_a_radio_is_a_statement(project):
+    assert found(run(project), "P-11") == {"errors": [], "pending": [], "waived": []}      # "none"
+    give_radio(project, bands_mhz=[[2412, 2472]], max_dbm=20.5, antenna_dbi=-4.32)
+    assert found(run(project), "P-11") == {"errors": [], "pending": [], "waived": []}
+
+
+def test_p11_other_parts_state_it_only_when_they_transmit(project):
+    """U2, the TLC5916 (type ic), and the passives state nothing and are not asked for it."""
+    assert "compliance" not in project.part("C90107")
+    assert found(run(project), "P-11")["pending"] == []
+
+
+@pytest.mark.parametrize("radio", ["no", [], 5, ["none"]])
+def test_p11_a_statement_of_another_shape(project, radio):
+    part = project.part("C41407547")
+    part["compliance"]["radio"] = radio
+    project.save_part("C41407547", part)
+    assert found(run(project), "P-11")["errors"] == [
+        f"C41407547 (U1): compliance.radio {radio!r} – \"none\", or its bands and power: {{\"bands_mhz\": [[from, to], "
+        "…], \"max_dbm\": …, \"antenna_dbi\": …, \"doc\": …}"]
+
+
+def test_p11_holds_the_release_in_the_gate_stage_p(project):
+    from edakit.release import gate
+    part = project.part("C41407547")
+    del part["compliance"]
+    project.save_part("C41407547", part)
+    cfg = project.config()
+    rows, _ = gate.stage_graph(cfg, Design.from_config(cfg))
+    assert [(r["stage"], r["result"]) for r in rows if r["id"] == "P-11"] == [("P", "pending")]
+    decision, reasons = gate.decide(rows, [], {"manual": []}, "PGESLF", gate.STAGES)
+    assert decision == "NOT RELEASED" and "1 open sign-off(s) (section 5)" in reasons

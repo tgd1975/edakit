@@ -93,6 +93,25 @@ def test_datasheet_of_the_example(board):
     assert "| 1 | VIN | power_in | vin |" in md and "J1" in md and f"{i_max * 1e3:.0f} mA" in md
 
 
+def test_datasheet_states_the_radio_of_the_board(board):
+    """P-11 (#23): the board states "none" when none of its parts transmits and its modules and microcontrollers say
+    so; the radios of its parts when they transmit; nothing – not known – while a module states nothing."""
+    cfg = cfg_of(board)
+    assert part.datasheet(cfg, ["J1"])[0]["compliance"]["radio"] == "none"      # the Pico 2: "none"
+    pico = board / "hardware/parts/C41407547.json"
+    entry = json.loads(pico.read_text())
+    entry["compliance"] = {"radio": {"bands_mhz": [[2412, 2472]], "max_dbm": 20, "antenna_dbi": 0}}
+    pico.write_text(json.dumps(entry))
+    data, md = part.datasheet(cfg, ["J1"])
+    assert data["compliance"]["radio"] == {"part": "U1", "bands_mhz": [[2412, 2472]], "max_dbm": 20, "antenna_dbi": 0}
+    assert "- radio: U1 [[2412, 2472]] MHz, 20 dBm" in md
+    del entry["compliance"]
+    pico.write_text(json.dumps(entry))
+    data, md = part.datasheet(cfg, ["J1"])
+    assert "radio" not in data["compliance"]
+    assert "- radio: not stated by every module and microcontroller of the board" in md
+
+
 def test_datasheet_reads_pull_ups_and_signals(board):
     """A second connector J2 with SDA: its pins follow those of J1, the type comes from the board's parts, the
     pull-up from its resistors, the limit from the MCU pin."""
