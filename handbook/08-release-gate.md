@@ -35,6 +35,12 @@ A bought board on a cable (`bought = true`, 4.5) is in stages P, G and E like an
 with one information row each (`S-2` and `L`: "bought board – no schematic, PCB or manufacturing files"); F-4, the
 manifest and the protocol header ("bought, not made: usb") count the made boards only.
 
+**The radio checks** G-24, G-25 (stage G) and P-11 (stage P) grade by the graph's `purpose.use` (chapter 15): what
+the firmware or a parts entry can settle – a band or a power the firmware has to keep, a radio nobody stated – is a
+warning for a board that is sold (`"sale"`), accepted in the sign-off file (8.2) or waived on the component, and
+information for one built for oneself or given away, or without a purpose. They fail only on data that cannot be
+read and, G-25, on a part that can transmit in no EU band at all.
+
 **Stage L** (per board, `edakit fab`):
 
 | Check | What | Why it exists |
