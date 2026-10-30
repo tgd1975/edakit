@@ -6,8 +6,9 @@ catalog entry (skill add-rule, step 2). Basis: edakit at `bf7450a`, seven resear
 about 80 maker project types and the guitar's pedals, instrument and amplifiers, and the owner's 21 repositories. Of the
 249, 50 are covered, 11 covered once the parts entry carries the datasheet value, 69 partly and 119 not – some of
 those judgement or out of scope. Every pitfall with its numbers, its source and what covers it:
-[the appendix](#appendix-the-pitfalls). The concept is a backlog, not a build list (section "Keeping the catalog
-stable").
+[the appendix](#appendix-the-pitfalls). edakit is open source and meant for makers' boards in general, not only the
+owner's: the candidates are a build list in the order of section "Priority", and section "Keeping the catalog stable"
+says how it stays trustworthy while it grows.
 
 ## Question
 
@@ -38,15 +39,16 @@ Do the checks, hints and blocks of edakit cover what typical maker projects get 
   11. guitar circuits – the input impedance a pickup needs, op-amps at 9 V, DC at switches and pots, the bias spread of
       discrete stages.
 - **Stability:** today the catalog is quiet – 0–1 waiver per board on the bell, 7 for the reference project's 84
-  parts. Built one by one, the candidates would about double it, mostly without a real project to test them against.
-  Seven mechanisms cover 91 of the 128 open maker pitfalls; with a coverage report, domains per project and a project
-  as the trigger for every build, it stays stable. The context of a session is no immediate limit: the SessionStart
-  hook adds 1.5 KB whatever the catalog's size; only files read whole grow – `rules.json` is 114 KB today (section
-  "Keeping the catalog stable").
-- **Recommendation:** first the coverage report (FT-19) and domains (FT-20), then load steps in transients (FT-1), pin
-  requirements from the parts entry (CK-13) together with a library of checked entries for the parts makers use most
-  (PF), and the pin semantics (CK-1 to CK-3): they cover the most findings per line of code. Mains and high voltage
-  only if edakit is to take such boards; until then one warning that says edakit does not check them (CK-22).
+  parts. Built one by one, the candidates would about double it. Decided by the owner: domains per project, and rules
+  condensed into mechanisms – seven of them cover 91 of the 128 open maker pitfalls. Proposed besides: a report of
+  what went unchecked, new checks as warnings first, and reference circuits per domain to test them against. The
+  context of a session is no immediate limit: the SessionStart hook adds 1.5 KB whatever the catalog's size; only
+  files read whole grow – `rules.json` is 114 KB today (section "Keeping the catalog stable").
+- **Recommendation:** first domains (FT-20), reference circuits (FT-21) and the report of what went unchecked (FT-19),
+  then load steps in transients (FT-1), pin requirements from the parts entry (CK-13) together with a library of
+  checked entries for the parts makers use most (PF), and the pin semantics (CK-1 to CK-3): they cover the most
+  findings per line of code. Mains and high voltage as the domain `mains`, with the warning CK-22 as its first step
+  (open decision 3).
 
 ## Basis and limits
 
@@ -218,7 +220,7 @@ Two more research clusters: effect pedals (37 pitfalls) and the instrument, ampl
   a regulator's temperature (E-3), capacitor ratings at 18 V (G-8 with the supply corner), flyback diodes and pull-in of
   relays (G-13, E-3), reverse polarity (G-10).
 - **Out of scope:** tube amplifiers – B+ of 250–500 V, heaters, output transformers, and tube models that do not hold at
-  low anode voltage – as long as edakit takes no hazardous voltage (FT-7).
+  low anode voltage – unless edakit takes hazardous voltage in (open decision 3).
 
 ## Candidates
 
@@ -243,7 +245,7 @@ DI, switching), OWN (the owner's projects).
 | FT-9 | **DC bias of ceramic capacitors.** Capacitance against voltage in the entry; the effective value counts in CK-14 and in transients (4.7 µF, 6.3 V, 0603 X5R at 5 V: about 0.33 µF, x). | PWR 16 |
 | FT-10 | **Analog constants in the firmware contract.** Divider ratios, pull-up values (a thermistor's 4.7 kΩ that Marlin and Klipper assume, r), sense resistors and ADC channels into `edakit firmware`, with drift reported. | MOT 29; MCU 22; PWR 17 |
 | FT-11 | **Expectations for DC loads.** `expect` per load as transients have it: a source's current in the load "sleep" against a budget – evidence for a battery-life requirement. | PWR 10, 17 |
-| FT-12 | **AC analysis** (ngspice `.ac`, `.noise`) with expected gain and corner frequency. Later: it goes against edakit's DC first. | AUD 7 |
+| FT-12 | **AC analysis** (ngspice `.ac`, `.noise`) with expected gain and corner frequency. Open decision 5: it goes against edakit's DC first. | AUD 7 |
 | FT-13 | **LED strip model** with resistance per segment and injection points. | LED 9–12 |
 | FT-14 | **Constant-current LED buck** (PT4115, AL8860): output current V_sense / R_S (PT4115: 0.1 V, x), headroom against the LEDs' forward voltage. | LED 19 |
 | FT-15 | **`fn` for I2S, CAN, 1-Wire and USB** (`i2s.bclk`, `i2s.ws`, `i2s.sd`, `can.tx`, `can.rx`, `onewire`, `usb.dp`, `usb.dn`): G-15 then holds them to the pin functions as it does SPI, I2C and UART. | topic "Communication between ICs" |
@@ -252,6 +254,7 @@ DI, switching), OWN (the owner's projects).
 | FT-18 | **Source models for the audio band:** a passive pickup (inductance, resistance, capacitance), a piezo (voltage source behind its capacitance), a cable's capacitance per metre – for FT-12 and the loading of CK-27. | GTI 1–5, 10, 12; GTP 3 |
 | FT-19 | **Coverage report:** per check what it could not check for lack of data – "E-3: U4.3, U4.5 without thresholds" – in `edakit check` and the gate protocol. The first step before any check that depends on part facts (section "Keeping the catalog stable"). | stability |
 | FT-20 | **Domains:** `[project] domains` – audio, motors, radio, mains – switch domain checks and hints on; `edakit rules` and `edakit hints` show what applies to the project. | stability |
+| FT-21 | **Reference circuits per domain:** well-known open designs as edakit graphs in the test fixtures, beside `tests/fixtures/led-bar` – an ESP32 DevKitC, a WLED controller, a QMK keyboard, a Tube Screamer and a Fuzz Face, a relay board with an HLK-PM01, a LiPo charger. add-rule's run against real projects (step 5) uses them for every domain none of the owner's projects has. | stability |
 
 ### Checks
 
@@ -374,13 +377,13 @@ the context of a Claude session become the limit?
 | Dimension | Today (measured 2026-10-30) | Risk if the candidates were built one by one | Guardrail |
 | --- | --- | --- | --- |
 | false alarms | the bell: 0–1 waived finding and 0–1 accepted warning per variant (19 parts); the reference project: 7 waived findings for 84 parts and 77 nets, one accepted warning | most candidates come from research: add-rule's run against real projects (step 5) cannot show their false alarms while no project of the owner has audio, mains or a guitar circuit – a check that guesses produces waivers | 4, 5 |
-| silent passes | checks that need data pass without it, unreported: E-3 checks only inputs with thresholds, G-12 only pins with `strap` | more such checks are more coverage on paper | 2 |
-| conflicts and overlaps | one known conflict: H-1's bulk capacitor at a power input against USB's 10 µF at attach (HT-3); overlaps G-4 and CK-1, G-11 with CK-2 and CK-3, G-12 and CK-20, G-14 and CK-12, H-7 and CK-16 | two messages that contradict each other, one fault found twice | 1 |
-| tests | 983 tests in 16,700 lines; every check seen red once; the example project stays clean | none in itself – but a negative test cannot show a false alarm | 4 |
-| maintenance | 23,900 lines of Python; a catalog of 101 KB, 1.25 KB per entry (median); the handbook repeats every check in a table | catalog and tables about twice as large; more fields in every parts entry, each one to sign (G-9) | 1, 7 |
+| silent passes | checks that need data pass without it, unreported: E-3 checks only inputs with thresholds, G-12 only pins with `strap` | more such checks are more coverage on paper | 3 |
+| conflicts and overlaps | one known conflict: H-1's bulk capacitor at a power input against USB's 10 µF at attach (HT-3); overlaps G-4 and CK-1, G-11 with CK-2 and CK-3, G-12 and CK-20, G-14 and CK-12, H-7 and CK-16 | two messages that contradict each other, one fault found twice | 2 |
+| tests | 983 tests in 16,700 lines; every check seen red once; the example project stays clean | none in itself – but a negative test cannot show a false alarm | 5 |
+| maintenance | 23,900 lines of Python; a catalog of 101 KB, 1.25 KB per entry (median); the handbook repeats every check in a table | catalog and tables about twice as large; more fields in every parts entry, each one to sign (G-9) | 2 |
 | run time | `edakit check` under a second, `edakit sim` seconds | load steps and fault scenarios add runs | they run only where sim.json asks for them |
-| context of a Claude session | always loaded: the SessionStart hook, 1.5 KB (about 400 tokens), independent of the catalog; on demand: `edakit rules` 2.2 KB, one entry 1.25 KB, a skill 3–16 KB, a reviewer 2–12 KB in a context of its own; read whole: `rules.json` 114 KB (about 30,000 tokens), the handbook 409 KB (chapter 8 alone 80 KB), this concept 91 KB | growth only where a file is read whole: `rules.json` raw (about 60,000 tokens at twice the size), long handbook chapters, the reviewers' question lists | 3, 7 |
-| process | 77 proposals, all accepted – the triage has never rejected one | research-based proposals are the first real test of "rejected" and "question" | 4 |
+| context of a Claude session | always loaded: the SessionStart hook, 1.5 KB (about 400 tokens), independent of the catalog; on demand: `edakit rules` 2.2 KB, one entry 1.25 KB, a skill 3–16 KB, a reviewer 2–12 KB in a context of its own; read whole: `rules.json` 114 KB (about 30,000 tokens), the handbook 409 KB (chapter 8 alone 80 KB), this concept 91 KB | growth only where a file is read whole: `rules.json` raw (about 60,000 tokens at twice the size), long handbook chapters, the reviewers' question lists | 1; edakit's skills read the catalog by ID |
+| process | 77 proposals, all accepted – the triage has never rejected one | research-based proposals are the first real test of "rejected" and "question" | 5 |
 
 **Verdict:** stable today, and the context is no immediate limit – what every session loads does not grow with the
 catalog. Built one by one, the candidates would make it worse in four places at once: false alarms without a project to
@@ -388,28 +391,39 @@ find them, silent passes, overlapping messages, and files read whole. The guardr
 
 ### Guardrails
 
-1. **Mechanisms, not rules.** Seven mechanisms cover 91 of the 128 maker pitfalls of the first five clusters that are
+edakit is open source: its rules are meant for the boards of everybody who uses it, not only for the owner's. A
+guardrail therefore never waits for one of the owner's projects; it keeps a growing catalog trustworthy.
+
+Decided by the owner:
+
+1. **Domains (FT-20).** A project states its domains – audio, motors, radio, mains, guitar; domain checks, hints and
+   the reviewers' questions run only there, and `edakit rules` and `edakit hints` show what applies. A board without
+   audio never sees an audio hint, and a session never reads rules it does not need.
+2. **Condensed rules.** Seven mechanisms cover 91 of the 128 maker pitfalls of the first five clusters that are
    not fully covered: requirements from parts entries (38: CK-13, CK-14, CK-20, CK-12, CK-21, CK-23, CK-3, PF), loads
    over time (16: FT-1, FT-8, FT-11, CK-18), analog windows (13: CK-5, CK-6, CK-25, FT-3), pin semantics (10: CK-1,
    CK-2, CK-26), cables (10: FT-2, CK-16, CK-17, HT-1), hazardous voltage and RF geometry (9: FT-7, CK-9, CK-10, CK-11,
    CK-22, CK-24), switching parts and polarity (7: CK-4, CK-7, CK-8, CK-15). The guitar clusters fall into the same
    mechanisms, plus CK-27 and CK-30. The knowledge goes into parts entries as data, as `strap` and `pull` do today –
    not into new check IDs.
-2. **Coverage visible first (FT-19).** Before a check that depends on data is added, `edakit check` and the gate
-   protocol say per check what it could not check. Silent passes become open points.
-3. **Domains (FT-20).** A project states its domains; domain checks and hints run only there, and `edakit rules` lists
-   what applies. A board without audio never sees an audio hint.
-4. **A project triggers the build.** A candidate is built when a project has the case or plans it – asp_pro's MIDI
-   and battery, tinyjukebox's amplifier – so that add-rule's run on a real project means something. Until then it is a
-   row in this concept.
-5. **New checks start as warnings,** graded as P-11, G-24 and G-25 are, and become errors after two projects without a
-   false alarm.
-6. **Hints sparingly:** only with a trigger that decides when one applies; judgement without such a trigger goes into
-   the reviewers' questions.
-7. **Context discipline.** Sessions read the catalog by ID or as the listing (`edakit rules`, `edakit rules G-11`),
-   never `rules.json` whole – add-rule and triage-rule included, which point at the file today. Domains (FT-20) also
-   filter `edakit rules`, `edakit hints` and the reviewers' questions. The handbook's check tables give ID, title and an
-   example finding; the rule's text lives in the catalog only.
+
+Proposed, for the owner's decision:
+
+3. **Say what was not checked (FT-19).** A check that needs a datasheet value skips a part without it and stays
+   silent: G-12 finds the GPIO 12 fault of the owner's pedal only if the ESP32's entry has `strap`; without it the
+   check passes, and nobody sees that it never looked. The report names it – "G-12: U1 without strap data, not
+   checked" – in `edakit check` and the gate protocol. The more checks rest on part facts, the more this matters.
+4. **New checks as warnings first.** A new check has been seen red once and has run on the test projects; on a board
+   nobody tested it against it can still be wrong. As a warning it shows its finding without stopping a release – the
+   user fixes the board or accepts the finding with a reason –; once it has run on several boards without a false
+   alarm it becomes an error. P-11, G-24 and G-25 are graded by the board's purpose this way already.
+5. **Reference circuits per domain (FT-21).** add-rule runs a new check against real projects before its merge
+   (step 5), so that false alarms show before anybody else meets them. For the domains none of the owner's projects
+   has, well-known open designs become edakit graphs in the test fixtures, and each domain's checks run against them.
+
+For the context of a session: edakit's own skills read the catalog by ID or as the listing (`edakit rules`, `edakit
+rules G-11`), never `rules.json` whole – add-rule and triage-rule point at the file today –, and the handbook's check
+tables give ID, title and an example finding, the rule's text living in the catalog only.
 
 ## Priority
 
@@ -418,7 +432,7 @@ within the guardrails above:
 
 | # | Candidate | Why first |
 | --- | --- | --- |
-| 0 | FT-19 coverage report, FT-20 domains | the frame every later check runs in; they make the existing catalog's gaps visible and keep domain rules off boards that do not need them |
+| 0 | FT-20 domains, FT-21 reference circuits, FT-19 report of what went unchecked | the frame every check runs in: domains keep rules off boards that do not need them, the reference circuits let a new check meet real designs before its merge, the report makes silent passes visible |
 | 1 | FT-1 load steps | in all five maker clusters and in both guitar clusters; the most frequent "it resets when the motor starts"; the bell's servo |
 | 2 | CK-13 with PF | one mechanism for about 15 pitfalls; the knowledge stays in parts entries, as `strap` and `pull` do |
 | 3 | CK-1, CK-2 | small changes to G-4 and G-5; floating inputs and missing pull-ups recur in four clusters |
@@ -434,9 +448,9 @@ For the owner's projects in particular: CK-8 (tinyjukebox), BL-11 and FT-6's opt
 (jacks with a supply), FT-4 (asp_pro's battery), CK-11 (ESP32 boards). For a guitar circuit: CK-27 (input impedance),
 FT-3 (op-amps at 9 V), CK-30 (DC at switches), FT-17 (bias of discrete stages), BL-16 to BL-18.
 
-Mains and high voltage (FT-7, CK-9, CK-10, CK-24) prevent the most expensive faults – shock and fire – but none of the
-owner's projects has them. CK-22 says honestly what edakit does not check and costs a few lines; the rest follows when
-edakit is to take such boards.
+Mains and high voltage (FT-7, CK-9, CK-10, CK-24) prevent the most expensive faults – shock and fire. They become
+the domain `mains`, with CK-22 as its first step: a net above the ES1 limits says that edakit does not check its
+spacing. Whether edakit then measures safety distances – a statement other people may rely on – is open decision 3.
 
 ## Out of scope
 
@@ -445,13 +459,12 @@ edakit is to take such boards.
   firmware contract, and H-9 where a part of the circuit decides.
 - Certification itself: the regulatory review (M-6) is support, not a test lab.
 - Tube amplifiers: B+ of 250–500 V, heaters, output transformers, tube models that do not hold at low anode voltage –
-  as long as edakit takes no hazardous voltage.
+  unless edakit takes hazardous voltage in (open decision 3).
 - The pinball machine (owner's decision).
 
 ## Open decisions
 
-1. Whether the guardrails hold (section "Keeping the catalog stable"): this concept as a backlog that a project
-   triggers, FT-19 and FT-20 first.
+1. The proposed guardrails 3 to 5 (section "Keeping the catalog stable"); domains and condensed rules are decided.
 2. Which candidates become proposals – one issue each through `/edakit:propose-rule` and `/edakit:propose-feature`,
    or built directly with add-rule and add-feature.
 3. Whether edakit takes boards with mains or high voltage (FT-7, CK-9, CK-10), or only says that it does not check them
