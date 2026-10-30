@@ -20,7 +20,8 @@ and check F-6 (order settings = board, per maker). Both when the board has [orde
        the remark fits the form (JLCPCB: at most 200 characters, ASCII); thickness_mm is a thickness of the form; the
        silkscreen colour is the one the maker prints on the mask colour; mark = "specify" needs the maker's placeholder
        (JLCPCB: JLCJLCJLCJLC, PCBWay: WayWayWay) on a silkscreen layer of pcb.json, at least its least height in
-       [[silk.texts]] (height not in [[silk.texts]]: warn); the placeholder with another mark warns; another maker's
+       [[silk.texts]] (height not in [[silk.texts]]: warn); the placeholder with another mark warns, and so do the
+       placeholder and mark = "specify" while the profile reports the order number gone (JLCPCB); another maker's
        placeholder on the silkscreen is a finding – this maker prints the letters as they are; an assembly class with fewer tooling holes than the profile's
        tooling_min warns (JLCPCB: Economic, 2 – it adds its own); a provisional profile is named as information.
        Independent of the maker: layers and size_mm, where set, are those of the Gerber files; panel_by_customer fails
@@ -52,7 +53,8 @@ SETTING_KEYS = FIVE + tuple(k for k, (_, _, made) in ORDER.items() if made and k
 # the fields of a form in edakit's order – a maker's profile lists its own order, these follow for what it does not
 FORM = ("material", "layers", "size_mm", "quantity", "delivery", "thickness_mm", "mask", "silkscreen", "finish", "tg",
         "copper_oz", "inner_copper_oz", "vias", "outline_tolerance", "gold_fingers", "castellated", "edge_plating",
-        "mark", "electrical_test", "quality", "confirm_production_file", "paper_between", "packaging", "remark",
+        "mark", "barcode", "serial_number", "electrical_test", "quality", "confirm_production_file", "paper_between",
+        "packaging", "remark",
         "pcba", "sides", "pcba_quantity", "tooling", "confirm_placement", "photo_confirmation", "bake", "depanel",
         "conformal_coating", "function_test", "pcba_packaging", "ship_to", "shipping")
 PCBA_KEYS = FORM[FORM.index("pcba"):FORM.index("ship_to")]
@@ -335,6 +337,13 @@ def check_mark(c, o, data):
               f"release that carries it is a release for {owner}", "no placeholder of another maker")
     if not holder:
         return
+    gone = m.rules.get("placeholder_gone")    # the maker reports its order number gone: the letters may be printed
+    if gone and (mark == "specify" or foreign(board, data, holder)):
+        at = foreign(board, data, holder)
+        c.add(f"{holder}: {m.name}'s order number at the placeholder", False,
+              (f"{holder} at {pt(at[0][1])} on the {at[0][0]} silkscreen" if at else f'mark = "{mark}"')
+              + f" – {gone}; take the placeholder off (mark = \"remove\", a barcode = \"qr\" or \"datamatrix\" "
+              "for traceability), or accept it once ordering step 0 has seen the form", "no placeholder", "warn")
     word = m.word("mark", mark)
     found, heights = placeholders(board, data, m)
     what = f"order-number mark = placeholder {holder} on the silkscreen"

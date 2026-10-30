@@ -118,7 +118,7 @@ def test_the_project_order_gives_every_board_an_order_json(project):
         f.write_text(head + rest[rest.index("\n[[silk.texts]]"):])
         toml(p, '[order]\nmark = "specify"\nmask = "black"')
     rows = run(project, project_wide)
-    assert fr.findings(rows) == []
+    assert fr.findings(rows) == [("F-6", "warn")]       # the placeholder: JLCPCB's order number reported gone
     settings = json.loads((project.root / "build" / "fab" / "main" / "order.json").read_text())
     assert (settings["mask"], settings["mark"]) == ("black", "specify")
     assert "| PCB Color | Black | edakit.toml |" in sheet(project)
@@ -230,7 +230,7 @@ def test_the_placeholder_is_jlcpcbs(project):
             "(18.0, 3.0) on the top silkscreen – Eurocircuits prints it as it is; a release that carries it is a "
             "release for JLCPCB")
     assert ("warn", *text) in f6(rows)
-    assert fr.findings(rows) == [("F-6", "warn")]
+    assert fr.findings(rows) == [("F-6", "warn"), ("F-6", "warn")]       # and JLCPCB's own, reported gone
     rows = run(project, both("eurocircuits"))
     assert ("fail", *text) in f6(rows)
 
@@ -269,7 +269,7 @@ def test_keys_only_to_check_and_the_quantities(project, order, expected):
 
 def test_layers_and_size_that_agree_pass(project):
     rows = run(project, lambda ex, p: fr.ordered(ex, p, {"layers": 2, "size_mm": [30.05, 20]}))
-    assert fr.findings(rows) == []
+    assert fr.findings(rows) == [("F-6", "warn")]       # the placeholder: JLCPCB's order number reported gone
 
 
 # --- edakit cart fields ----------------------------------------------------------------------------------------------
@@ -437,4 +437,20 @@ def test_pcbways_placeholder_is_text_to_jlcpcb(project):
     assert ("fail", "no WayWayWay on the silkscreen – JLCPCB's placeholder is JLCJLCJLCJLC",
             "WayWayWay at (18.0, 3.0) on the top silkscreen – JLCPCB prints it as it is; a release that carries it is "
             "a release for PCBWay") in f6(rows)
+
+
+def test_jlcpcbs_placeholder_warns_and_the_barcode_is_a_key(project):
+    """The owner's decision of 2026-10-30: JLCPCB reports its order number gone since May 2026 – F-6 warns about the
+    placeholder, as long as the profile says so (rules.placeholder_gone); without the placeholder, mark = "remove" and
+    a QR code nothing warns. The barcode and the serial number change the board: order.json has them where set."""
+    rows = run(project, lambda ex, p: fr.ordered(ex, p))
+    warn = [a for r, c, a in f6(rows) if r == "warn"]
+    assert len(warn) == 1 and warn[0].startswith("JLCJLCJLCJLC at (18.0, 3.0) on the top silkscreen – JLCPCB's help "
+                                                 "article (last updated 2026-05-22) reports the order number gone")
+    rows = run(project, lambda ex, p: fr.ordered(ex, p, {"mark": "remove", "barcode": "qr", "serial_number": True},
+                                                  placeholder=False))
+    assert fr.findings(rows) == []
+    settings = json.loads((project.root / "build" / "fab" / "main" / "order.json").read_text())
+    assert (settings["barcode"], settings["serial_number"]) == ("qr", True)
+    assert "| 2D Barcode | QR Code | board file |\n| Serial Number | Yes | board file |" in sheet(project)
 

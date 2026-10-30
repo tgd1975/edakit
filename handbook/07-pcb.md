@@ -741,7 +741,10 @@ Good to know:
   lines yourself.
 - JLCPCB prints its order number somewhere unless you place the placeholder `JLCJLCJLCJLC` and choose
   "specify a location" when ordering: a `[[silk.texts]]` entry of at least 0.8 mm and `mark = "specify"` in `[order]`
-  of the board file – F-6 checks that both are there (8.4).
+  of the board file – F-6 checks that both are there (8.4). JLCPCB's help article reports the order number gone since
+  May 2026: F-6 warns about the placeholder until ordering step 0 has seen the form, and a 2D barcode or a serial
+  number (`barcode`, `serial_number`) take its place. PCBWay's placeholder is `WayWayWay`; another maker's on the
+  board is printed as text, and F-6 finds it.
 - The print colour follows the solder mask: JLCPCB prints white, on a white mask black. Artwork drawn for one colour
   says so with `silkscreen` next to `mask` in `[order]`; F-6 fails a pair JLCPCB does not print (8.4).
 - Run `silk apply` again after every auto-layout and routing – spots depend on parts and vias.

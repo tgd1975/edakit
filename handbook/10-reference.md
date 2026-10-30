@@ -268,7 +268,8 @@ where its value differs from the default; so a project that sets none of them ke
 | `vias` | `"tented"` | `"untented"`, `"plugged"`, `"epoxy_filled"` | ✓ |
 | `outline_tolerance` | `"regular"` | `"precision"` | ✓ |
 | `gold_fingers`, `castellated`, `edge_plating` | `false` | true or false | ✓ |
-| `mark` | `"default"` | `"specify"`: at the maker's placeholder (JLCPCB: `JLCJLCJLCJLC`), `"remove"` – JLCPCB's order number | ✓ |
+| `mark` | `"default"` | `"specify"`: at the maker's placeholder (JLCPCB: `JLCJLCJLCJLC`, PCBWay: `WayWayWay`), `"remove"` – the maker's order number; JLCPCB reports its own gone since May 2026, and F-6 warns about the placeholder | ✓ |
+| `barcode`, `serial_number` | `"none"`, `false` | `"qr"`, `"datamatrix"`; true or false – for traceability, printed by the maker where there is room (JLCPCB since May 2026) | ✓ |
 | `electrical_test`, `quality` | `"flying_probe"`, `"ipc2"` | the maker's words | – |
 | `confirm_production_file`, `paper_between` | `false` | true or false | – |
 | `packaging` | `"standard"` | the maker's words | – |

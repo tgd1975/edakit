@@ -90,6 +90,8 @@ ORDER = {
     "gold_fingers": (False, bool, True),
     "castellated": (False, bool, True),
     "edge_plating": (False, bool, True),
+    "barcode": ("none", ("none", "qr", "datamatrix"), True),   # a 2D barcode the maker prints for traceability
+    "serial_number": (False, bool, True),                      # a serial number the maker prints on every board
     "electrical_test": ("flying_probe", str, False),
     "quality": ("ipc2", str, False),
     "confirm_production_file": (False, bool, False),

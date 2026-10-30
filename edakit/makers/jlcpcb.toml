@@ -37,6 +37,11 @@ thicknesses_for = "FR-4, 2 layers"
 remark_max = 200                  # characters of the remark field, ASCII
 placeholder = "JLCJLCJLCJLC"      # JLCPCB prints the order number here with "Order Number (Specify Position)"
 placeholder_min_mm = 0.8          # least height of the placeholder JLCPCB recognises (#40)
+# The owner's decision of 2026-10-30: F-6 warns about the placeholder until ordering step 0 has seen the form – then
+# this line goes, or the placeholder (and with it mark specify) leaves the profile.
+placeholder_gone = """\
+  JLCPCB's help article (last updated 2026-05-22) reports the order number gone since May 2026 and asks not to add \
+  JLCJLCJLCJLC – it may be printed as text"""
 silkscreen_on = { white = "black", other = "white" }   # the print colour JLCPCB puts on a mask colour
 tooling_min = { economic = 2 }    # fewer and JLCPCB drills its own ("Added by JLCPCB")
 class_of_sides = { one = "economic", two = "standard" }   # without [release] assembly.pcba
@@ -139,8 +144,9 @@ words = { false = "No", true = "Yes" }
 
 # Reported, not yet seen on the form: JLCPCB's help article "How to remove order number from your PCB" (last updated
 # 2026-05-22; read in search summaries on 2026-10-30) says the order number is not available since May 2026 and asks
-# not to add JLCJLCJLCJLC – a 2D barcode or a serial number instead. Ordering step 0 checks the form; until then
-# these words and F-6's placeholder rule stay as the reference orders had them.
+# not to add JLCJLCJLCJLC – a 2D barcode (QR or Data Matrix) or a serial number instead, printed where there is room.
+# Ordering step 0 checks the form; until then these words stay as the reference orders had them, and F-6 warns about
+# the placeholder (rules.placeholder_gone).
 [fields.mark]
 section = "PCB"
 label = "Mark on PCB"
@@ -149,6 +155,20 @@ label = "Mark on PCB"
 default = "Order Number (JLCPCB places it)"
 specify = "Order Number (Specify Position)"
 remove = "Remove Mark"
+
+[fields.barcode]                   # labels and words of the help article of 2026-05-22 – ordering step 0
+section = "PCB"
+label = "2D Barcode"
+
+[fields.barcode.words]
+none = "No"
+qr = "QR Code"
+datamatrix = "Data Matrix"
+
+[fields.serial_number]
+section = "PCB"
+label = "Serial Number"
+words = { false = "No", true = "Yes" }
 
 [fields.electrical_test]
 section = "PCB"

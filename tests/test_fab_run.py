@@ -587,6 +587,9 @@ def c2_without_row(ex, project):
     board_file(project, "C2 = { x = 20,", "# C2 = { x = 20,")
 
 
+GONE = ("F-6", "warn", "reports the order number gone since May 2026")   # JLCPCB's placeholder (2026-10-30)
+
+
 def thickness(mm, order=None):
     """[order] in the board file (as ordered) on a board of thickness_mm = mm."""
     def fault(ex, project):
@@ -803,23 +806,23 @@ FAULTS = [
      [("F-5", "fail", "top: copper in the opening at (2.5, 17.5)"), ("L-15", "warn", "TOP: 1 piece without pad")]),
     # F-6 (#40) – only with [order] in the board file
     ("a remark longer than 200 characters", lambda ex, p: ordered(ex, p, {"remark": "x" * 201}),
-     [("F-6", "fail", "201 characters")]),
+     [GONE, ("F-6", "fail", "201 characters")]),
     ("a remark that is not ASCII", lambda ex, p: ordered(ex, p, {"remark": "Tabs only where copper is ≥ 1 mm away"}),
-     [("F-6", "fail", "not ASCII: ≥")]),
+     [GONE, ("F-6", "fail", "not ASCII: ≥")]),
     ("mark specify without the placeholder", lambda ex, p: ordered(ex, p, placeholder=False),
-     [("F-6", "fail", "no JLCJLCJLCJLC on a silkscreen layer")]),
+     [GONE, ("F-6", "fail", "no JLCJLCJLCJLC on a silkscreen layer")]),
     ("the placeholder too small", lambda ex, p: ordered(ex, p, h_mm=0.6),   # below L-17's 1.0 mm for edakit's texts too
-     [("F-6", "fail", "JLCJLCJLCJLC 0.60 mm high"), ("L-17", "warn", "'JLCJLCJLCJLC' = 0.6 mm")]),
+     [GONE, ("F-6", "fail", "JLCJLCJLCJLC 0.60 mm high"), ("L-17", "warn", "'JLCJLCJLCJLC' = 0.6 mm")]),
     ("the placeholder kept with mark default", lambda ex, p: ordered(ex, p, {"mark": "default"}),
-     [("F-6", "warn", 'JLCJLCJLCJLC at (18.0, 3.0) on the top silkscreen, but mark = "default"')]),
+     [GONE, ("F-6", "warn", 'JLCJLCJLCJLC at (18.0, 3.0) on the top silkscreen, but mark = "default"')]),
     ("Economic without tooling holes", no_tooling,
-     [("F-6", "warn", "no tooling holes ([tooling]) – JLCPCB adds its own")]),
+     [GONE, ("F-6", "warn", "no tooling holes ([tooling]) – JLCPCB adds its own")]),
     ("copper in a tab zone", edge_track,       # the track touches no pad: loose copper for L-15 too
-     [("F-6", "fail", "copper 0.45 mm from the edge at (0.0, "), ("L-15", "warn", "TOP: 1 piece without pad")]),
+     [GONE, ("F-6", "fail", "copper 0.45 mm from the edge at (0.0, "), ("L-15", "warn", "TOP: 1 piece without pad")]),
     ("a board thickness JLCPCB does not make", thickness(1.57),         # 62 mil: JLCPCB's form has 1.6 mm
-     [("F-6", "fail", "1.57 mm (thickness_mm) – not a thickness of JLCPCB's form")]),
+     [GONE, ("F-6", "fail", "1.57 mm (thickness_mm) – not a thickness of JLCPCB's form")]),
     ("white print on a white mask", lambda ex, p: ordered(ex, p, {"mask": "white", "silkscreen": "white"}),
-     [("F-6", "fail", 'silkscreen = "white" on a white mask – JLCPCB prints black on it')]),
+     [GONE, ("F-6", "fail", 'silkscreen = "white" on a white mask – JLCPCB prints black on it')]),
 ]
 
 
@@ -1009,9 +1012,10 @@ def test_the_order_form_of_the_clean_export(project):
     """#40: with [order] F-6 passes, and order.md holds every field of the order form – the class and side from
     [release] assembly, the tooling holes, the mark at the placeholder, the remark, bake, the free outline stretches."""
     rows = run(project, ordered)
-    assert findings(rows) == []
+    assert findings(rows) == [("F-6", "warn")]       # JLCPCB reports its order number gone (decided 2026-10-30)
     f6 = [r for r in rows if r["id"] == "F-6"]
-    assert {r["result"] for r in f6} == {"pass", "info"}
+    assert {r["result"] for r in f6} == {"pass", "info", "warn"}
+    assert any(r["result"] == "warn" and "reports the order number gone since May 2026" in r["actual"] for r in f6)
     assert len(REMARK) <= 200 and any(r["actual"] == f"{len(REMARK)} characters, ASCII" for r in f6)
     assert {(r["check"], r["actual"]) for r in f6} >= {
         ("board thickness JLCPCB makes (FR-4, 2 layers)", "1.6 mm (thickness_mm)"),       # JLCPCB's defaults
@@ -1057,7 +1061,7 @@ def test_the_order_form_names_thickness_and_colours(project):
     """Step 1.7: order.md takes the board thickness from thickness_mm and the colours from [order] mask and
     silkscreen; F-6 passes a thickness of JLCPCB's form and the print JLCPCB puts on the mask."""
     rows = run(project, thickness(1.0, {"mask": "black"}))
-    assert findings(rows) == []
+    assert findings(rows) == [("F-6", "warn")]         # the placeholder: JLCPCB's order number reported gone
     sheet = (project.root / "build" / "fab" / "main" / "order.md").read_text()
     assert "| PCB Thickness | 1 mm | board file |\n| PCB Color | Black | board file |\n| Silkscreen | White | edakit |\n" \
         in sheet
@@ -1069,7 +1073,7 @@ def test_the_order_form_names_thickness_and_colours(project):
 def test_the_order_form_of_a_white_mask(project):
     """Step 1.7: on a white mask JLCPCB prints black – the silkscreen without a key of its own."""
     rows = run(project, lambda ex, p: ordered(ex, p, {"mask": "white"}))
-    assert findings(rows) == []
+    assert findings(rows) == [("F-6", "warn")]         # the placeholder: JLCPCB's order number reported gone
     sheet = (project.root / "build" / "fab" / "main" / "order.md").read_text()
     assert "| PCB Color | White | board file |\n| Silkscreen | Black | edakit |\n" in sheet
     assert ("pass", "black on a white mask") in {(r["result"], r["actual"]) for r in rows if r["id"] == "F-6"}
@@ -1085,7 +1089,7 @@ def test_the_order_form_of_a_bare_board(project):
         assert 'sides = ["top"]' in f.read_text()
         f.write_text(f.read_text().replace('sides = ["top"]', "sides = []"))
     rows = run(project, bare)
-    assert findings(rows) == []
+    assert findings(rows) == [("F-6", "warn")]         # the placeholder: JLCPCB's order number reported gone
     sheet = (project.root / "build" / "fab" / "main" / "order.md").read_text()
     assert "## PCB Assembly\n\nNone – no part of this board is assembled (PCB only)." in sheet
 

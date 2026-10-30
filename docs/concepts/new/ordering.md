@@ -95,9 +95,11 @@ is **not available since May 2026** and asks not to add `JLCJLCJLCJLC` to the si
 optional 2D barcode (QR or Data Matrix) or a serial number for traceability, printed only where there is room. If
 that holds, `mark = "specify"` with the placeholder is gone at JLCPCB, the letters of a board that carries them are
 printed as text, and the barcode and serial number are new keys of 2. – it contradicts the reference orders of
-2026-10-24 and -25, whose form still had "Mark on PCB". Step 0 settles it on the form; until then F-6 and the
-profile keep the rule of the reference orders (noted in `edakit/makers/jlcpcb.toml`). Whether F-6 warns about the
-placeholder earlier is the owner's decision (Decisions).
+2026-10-24 and -25, whose form still had "Mark on PCB". Step 0 settles it on the form. The owner's decision of
+2026-10-30: F-6 warns now – about `JLCJLCJLCJLC` on the board and about `mark = "specify"`, as long as JLCPCB's profile
+says the number is reported gone (`rules.placeholder_gone`) –, and the barcode (`barcode`: `"none"`, `"qr"`,
+`"datamatrix"`) and the serial number (`serial_number`) are keys of 2., both changing the board as made. Once step 0
+has seen the form, the line of the profile goes, or the placeholder (and `mark = "specify"`) leaves the profile.
 
 ## PCBWay
 
@@ -299,6 +301,7 @@ profile's `ignore` becomes a key.
 | | `outline_tolerance` | `"regular"` (`"precision"`) | yes |
 | | `gold_fingers`, `castellated`, `edge_plating` | `false` | yes |
 | | `mark` | `"default"` (as today) | yes |
+| | `barcode`, `serial_number` | `"none"`, `false` – JLCPCB's traceability since May 2026 (reported) | yes |
 | | `electrical_test` | `"flying_probe"` | – |
 | | `quality` | `"ipc2"` | – |
 | | `confirm_production_file` | `false` | – |
@@ -682,10 +685,10 @@ shows that EasyEDA's ODB++ has no component layers, AISLER waits (Decisions).
 All taken by the owner on 2026-10-30: Claude in Chrome; up to the cart, never further; the regulatory review at every
 order; a choice of maker, asked when the project is set up (11.), JLCPCB without an answer; ODB++ from EasyEDA Pro;
 the skill is used whatever the makers' terms say, the risk is the owner's; real cost goes into the project's fee table
-at once; PCBWay planned in as a fourth maker (the user, 2026-10-30, after the rest was built). Open: whether F-6
-warns now about JLCPCB's placeholder, which JLCPCB reportedly no longer replaces since May 2026, or only after step 0
-has seen the form – until the owner decides, the rule stays as the reference orders had it. One decision follows only
-if step 0b finds no component layers in EasyEDA's ODB++: KiCad 9 as a converter for AISLER (import of the EasyEDA Pro
+at once; PCBWay planned in as a fourth maker (the user, 2026-10-30, after the rest was built); F-6 warns about
+JLCPCB's placeholder now, which JLCPCB reportedly no longer replaces since May 2026, and the barcode and the serial
+number are keys (the owner, "Ad barcode – ok"). Nothing is open now. One decision follows only if step 0b finds no
+component layers in EasyEDA's ODB++: KiCad 9 as a converter for AISLER (import of the EasyEDA Pro
 project, `kicad-cli pcb export odb`, F-7 on its result), or no AISLER.
 
 ## Sources

@@ -441,11 +441,16 @@ Built on 2026-10-30, branch `ccr-341cce07-y5or0n`:
   F-6 finds the placeholder of another maker on the silkscreen, whichever it is (JLCPCB's at PCBWay, PCBWay's at
   JLCPCB); new-project offers it.
 
+- **JLCPCB's order number** (the owner's decision of 2026-10-30, "Ad barcode – ok"): F-6 warns about the placeholder
+  and `mark = "specify"` while JLCPCB's profile reports the number gone (`rules.placeholder_gone`), and `barcode` and
+  `serial_number` are keys of `[order]` that change the board as made – no project that sets neither changes its fab
+  hash; a board with the placeholder gets the warning to accept or the placeholder taken off.
+
 Open: 5.0 (it decides the profiles' words, the CPL format of Eurocircuits and PCBWay, PCBWay's BOM template, the cart
-buttons, whether the placement preview opens again from the cart, whether JLCPCB's order number is gone since May
-2026 as its help article reports – then the placeholder rule of F-6 for JLCPCB goes and its barcode and serial number
-become keys –, and in 0b the component layers, part numbers and rotation of EasyEDA's ODB++ – F-7 assumes ODB++'s
-clockwise rotation and checks it then), the live runs of 5.7, 5.8, 5.10 and 5.12, 5.11.
+buttons, whether the placement preview opens again from the cart, whether JLCPCB's order number is gone as its help
+article reports – then the placeholder leaves JLCPCB's profile, else the warning goes –, and in 0b the component layers,
+part numbers and rotation of EasyEDA's ODB++ – F-7 assumes ODB++'s clockwise rotation and checks it then), the live runs
+of 5.7, 5.8, 5.10 and 5.12, 5.11.
 
 ## Hashes and gate results
 
@@ -458,7 +463,7 @@ clockwise rotation and checks it then), the live runs of 5.7, 5.8, 5.10 and 5.12
 | 3.6 | changes where footprint data is added | changes likewise | a new check: the copy equals the data |
 | 4.5 | – | – | a missing requirements file blocks |
 | 5.2 | – | changes where a board file sets a new key, as any edit of it; the fab hash where a key differs from edakit's default | F-6 checks every key |
-| 5.3 | – | – | P-4 and F-2 run only with JLCPCB among the makers; a finding for a second maker warns |
+| 5.3 | – | – | P-4 and F-2 run only with JLCPCB among the makers; a finding for a second maker warns; JLCPCB's placeholder on a board warns (its order number reported gone) |
 | 5.8 | – | – | P-12, only with a maker that matches by MPN |
 | 5.10 | – | – | F-7, only with a maker that takes ODB++ |
 

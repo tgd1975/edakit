@@ -14,7 +14,8 @@ maker takes and refuses:
     excludes, ignore   combinations the form refuses; fields of the page edakit does not set, each with its reason
     classes            the assembly classes – the values of [release] assembly.pcba
     rules              the form's limits F-6 checks: thicknesses_mm (and what they are for), remark_max, placeholder,
-                       placeholder_min_mm, silkscreen_on, tooling_min (per class), class_of_sides
+                       placeholder_min_mm, placeholder_gone (the maker reports its order number gone: F-6 warns about
+                       the placeholder), silkscreen_on, tooling_min (per class), class_of_sides
     catalogue          whose parts catalogue P-4, F-2 and edakit stock ask ("jlcpcb"); none: the maker's matching at
                        the order (B-2)
     dnp                how a part not to place is marked: "omit" (left out of BOM and CPL); otherwise the job lists it
@@ -40,8 +41,8 @@ UPLOAD = {"gerber": "gerber_{b}.zip", "bom": "bom_{b}.csv", "bom_mpn": "bom_{b}_
 PROFILE_KEYS = ("name", "recorded", "start", "seat", "currency", "catalogue", "fees", "files", "classes", "dnp",
                 "cart", "never", "ignore", "excludes", "bom", "cpl", "rules", "fields", "about", "sources")
 FIELD_KEYS = ("section", "label", "words", "unit", "values")
-RULE_KEYS = ("thicknesses_mm", "thicknesses_for", "remark_max", "placeholder", "placeholder_min_mm", "silkscreen_on",
-             "tooling_min", "class_of_sides")
+RULE_KEYS = ("thicknesses_mm", "thicknesses_for", "remark_max", "placeholder", "placeholder_min_mm", "placeholder_gone",
+             "silkscreen_on", "tooling_min", "class_of_sides")
 SECTIONS = ("PCB", "PCBA", "Shipping")
 CART_KEYS = ("maker", "makers", "ship_to", "shipping", "tolerance", "profiles")
 TOLERANCE = 0.10                 # [cart] tolerance: per price line, in the maker's currency, before B-3 warns
