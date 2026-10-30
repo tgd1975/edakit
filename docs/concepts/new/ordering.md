@@ -223,10 +223,11 @@ The gate writes the files of every maker in `[cart] makers` into the run, next t
 `release verify` and the manifest cover them:
 
 - **BOM with MPN** (`bom_<b>_mpn.csv`, when a maker's `bom` asks for it): the rows of F-1 with `manufacturer` and `mpn`
-  of the parts entry. **F-7** fails a BOM part whose entry has no `mpn` or `manufacturer`.
+  of the parts entry. **P-12** fails a BOM part whose entry has no `mpn` or `manufacturer` – in stage P, so it is found
+  when the part is chosen, not at the release (10.).
 - **ODB++** (`odb_<b>.zip`, when a maker's `files` asks for it): `edakit gate --easyeda` exports it with the Gerber,
   through the patched bridge (`getOpenDatabaseDoublePlusFile`, millimetres, plated and non-plated holes), and
-  `edakit export` too. **F-8** checks it against the released files, without trusting EasyEDA:
+  `edakit export` too. **F-7** checks it against the released files, without trusting EasyEDA:
   - every copper, mask and silkscreen layer of the ODB++, rasterised as L-2 does (`gerber.RES`), XOR the Gerber layer
     of the same run: no spot above `SPOT_MM2`;
   - the drill holes = the drill files (position to 1 µm, diameter, plated or not);
@@ -234,10 +235,10 @@ The gate writes the files of every maker in `[cart] makers` into the run, next t
   - the components (`comp_+_top`, `comp_+_bot`): every BOM part exactly once, position, rotation and side as in the
     CPL, part number as in the BOM – and no part with `bom: false` among them unless the maker is told to leave it;
   - the nets of the pads as in the graph, as `gerber.py` already maps pads to nets.
-  F-8 needs a small ODB++ reader in edakit (`edakit/odb.py`: matrix, features with the standard symbols, surfaces,
+  F-7 needs a small ODB++ reader in edakit (`edakit/odb.py`: matrix, features with the standard symbols, surfaces,
   drill, components); reading is far smaller than writing, and it is tested on the export of step 0b.
 
-The fab hash does not change with them: F-8 holds the ODB++ to the Gerber and CPL that are in the hash, and the BOM
+The fab hash does not change with them: F-7 holds the ODB++ to the Gerber and CPL that are in the hash, and the BOM
 with MPN adds nothing the manufacturer builds from beyond the parts entries already in scope `circuit`. A project
 without `[cart]` gets no new file and no new check.
 
@@ -364,7 +365,36 @@ tolerance = 0.10                     # per price line, in the maker's currency, 
 No credentials anywhere: the owner is logged in in their browser, edakit never sees an account. `quote.json` and
 `actual.json` hold prices and the order number, no address.
 
-### 10. Interfaces later
+### 10. When the project is set up
+
+Which maker builds the board is decided with the project, not at the order: it decides what the parts entries need,
+which assembly the board can get and what the regulatory review looks at. The skill new-project asks it in its
+interview (its section 2), as a topic of its own before `assembly`:
+
+| Topic | Question | Options – the first is the default | What it sets |
+| --- | --- | --- | --- |
+| maker | Who makes and assembles the board? Another one to compare or to fall back on? | JLCPCB · Eurocircuits · AISLER · several: which, and which first | `[cart] maker` (the first) and `[cart] makers` (all) |
+
+What the answer changes in the rest of the interview and of the project:
+
+- **assembly:** the options are the maker's – JLCPCB Economic or Standard, Eurocircuits PCB Proto or a larger run,
+  AISLER's assembly – from the profile (1.); with several makers, the board is planned so the first can assemble it,
+  and the report names what the others would need.
+- **order:** only the fields the maker has (the order-number mark is JLCPCB's) and the values its form offers.
+- **parts:** a maker that matches by MPN (Eurocircuits) makes `mpn` and `manufacturer` required in every BOM part's
+  entry – P-12 from the first part on, and the agent part-selector and the skill part-search fill them; parts are still
+  chosen by LCSC number. With JLCPCB the classes (Basic, Extended) and `edakit stock` stay as they are.
+- **files:** a maker that takes ODB++ (AISLER) needs the patched bridge with `getOpenDatabaseDoublePlusFile`; doctor
+  checks it like the schematic PDF patch.
+- **purpose:** the report says what the maker's seat means for it – outside the EU and `sale`: the owner imports the
+  boards; inside the EU: no import (7.).
+- **money:** `[cost] currency` the first maker's currency, unless the user names another.
+
+The answers go into the decision log entry of the set-up ("D-1: … JLCPCB, Eurocircuits to compare …"). A project
+moving to edakit takes the maker from the inventory (past orders, an order sheet), to confirm. A project set up before
+this has no `[cart]` and stays with JLCPCB, as today; `edakit cart` asks for nothing then, it uses the default.
+
+### 11. Interfaces later
 
 - **JLCPCB's official API**, if granted: `edakit cart quote --api` uploads the Gerber (`pcb/uploadGerber`), runs its
   pre-review (`pcb/audit/get`) and prices the board (`pcb/calculate`) without a browser, and `edakit stock` reads all
@@ -374,7 +404,7 @@ No credentials anywhere: the owner is logged in in their browser, edakit never s
 - The user asks JLCPCB (API access, an assembly interface for partners), AISLER (upload key, ODB++ from EasyEDA for
   assembly) and Beta LAYOUT (API) in parallel to steps 1 to 3.
 
-### 11. What stays
+### 12. What stays
 
 - **The regulatory review sees every order.** No cart without K-7 on the current job and quote; M-6 is not replaced
   by it, only completed for what the order adds.
@@ -384,7 +414,7 @@ No credentials anywhere: the owner is logged in in their browser, edakit never s
   and the sign-offs do not change. Everything under `cart/` is output of an order, not input of a hash.
 - **Stock.** P-4 and `edakit stock` ask JLCPCB's catalogue; for another maker the stock is what its matching shows,
   checked by K-2.
-- **Tests without the network.** `prepare`, `check`, `actual`, F-7 and F-8 are tested on recorded data: page texts,
+- **Tests without the network.** `prepare`, `check`, `actual`, P-12 and F-7 are tested on recorded data: page texts,
   a saved invoice, the ODB++ of step 0b. The skill is tried live only on the owner's request, up to the cart, nothing
   ordered.
 - **Where it runs.** Claude in Chrome needs the owner's Chrome with the extension – on the owner's machine, or a cloud
@@ -403,19 +433,20 @@ No credentials anywhere: the owner is logged in in their browser, edakit never s
 | 4 | `edakit cart prepare` and `edakit cart check` (K-1 to K-7) on recorded data | steps 1, 2 |
 | 4b | Agent regulatory-reviewer: section "At the order", `regulatory.md`; tried on recorded data with a replaced part, lead HASL, and a maker inside and outside the EU | step 4 |
 | 5 | Skill `cart`, live up to the cart at JLCPCB | steps 0, 4, 4b |
-| 6 | BOM with MPN and F-7; Eurocircuits live up to the basket | step 5 |
-| 7 | Bridge patch for `getOpenDatabaseDoublePlusFile` (and the upstream issue, as for the schematic PDF), `edakit/odb.py`, F-8; AISLER live up to the cart | steps 0b, 5 |
-| 8 | Interfaces of 10., where granted | the makers |
+| 6 | BOM with MPN and P-12; Eurocircuits live up to the basket | step 5 |
+| 7 | Bridge patch for `getOpenDatabaseDoublePlusFile` (and the upstream issue, as for the schematic PDF), `edakit/odb.py`, F-7; AISLER live up to the cart | steps 0b, 5 |
+| 6b | Skill new-project: topic `maker` and what follows from it (10.); its test project with Eurocircuits | step 2, P-12 |
+| 8 | Interfaces of 11., where granted | the makers |
 
 If step 0 shows that the extension cannot upload a local file, the owner drops the files into the upload fields
 when the skill asks for them, and the skill carries on from there; everything else stays. If step 0b shows that
 EasyEDA's ODB++ has no component layers, AISLER waits: then the choice is KiCad 9 as a converter (import of the
-EasyEDA Pro project, `kicad-cli pcb export odb`, F-8 on its result) or none – a decision of its own.
+EasyEDA Pro project, `kicad-cli pcb export odb`, F-7 on its result) or none – a decision of its own.
 
 ## Decisions
 
 All taken by the owner on 2026-10-30: Claude in Chrome; up to the cart, never further; the regulatory review at every
-order; a choice of maker with JLCPCB as the default (`[cart] maker`, also in new projects); ODB++ from EasyEDA Pro;
+order; a choice of maker, asked when the project is set up (10.), JLCPCB without an answer; ODB++ from EasyEDA Pro;
 the skill is used whatever the makers' terms say, the risk is the owner's; real cost goes into the project's fee table
 at once. Nothing is open.
 
