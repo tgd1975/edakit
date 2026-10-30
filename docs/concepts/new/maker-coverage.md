@@ -63,7 +63,7 @@ Do the checks, hints and blocks of edakit cover what typical maker projects get 
 | AwesomeStudioPedal | NodeMCU-32S (ESP32-WROOM-32), five buttons or footswitches with 10 kΩ pull-ups, five LEDs, USB or a LiPo with regulator; nRF52840 Feather variant | wiring from CircuitSmith | G-12 with an ESP32 entry (finding below); LEDs and footswitches 30 cm and more from the board: FT-2, HT-1, CK-16; FT-4 and H-6 for the LiPo |
 | asp_pro | concept: BLE-HID gateway for existing footswitches, ESP32 or nRF52840, MIDI out on DIN or TRS at 3.3 V, battery, to be sold | concept | `purpose.use = "sale"`: P-11, G-24, G-25 as warnings; BL MIDI in/out, FT-6 optocoupler, HT-6 (TRS-MIDI type A or B), HT-7 (jacks that carry a supply: expression pedal), FT-4 charger, CK-16 outputs on jacks; battery transport and battery law in M-6 |
 | bustaferl | ESP32 DevKit, Waveshare 4.2″ e-paper on SPI, deep sleep, USB | firmware only | nothing new; the e-paper module is a black box (reviewer question exists); CS on GPIO 5 idles high, the strap's default level |
-| system-engineering-fuer-kids | kits: tone generator, active speaker with amplifier, sound-book module | workshop, no PCB | CK-25, HT-8 – the README notes the active speaker playing with its cables not connected |
+| system-engineering-fuer-kids | kits: tone generator, active speaker with amplifier, sound-book module | workshop, no PCB | HT-8, HT-13, HT-1 – the active speaker played the sound module's sound with no connection between the two (topic "Audio") |
 | CircuitSmith (archived) | rule catalog E1–E22 | taken over | E9, reverse protection at every power input, is opt-in in edakit (`checks.reverse_protect`): HT-6 |
 
 Software only: FehlerJagd, agent-chat-ui, signal-backup-extract, AwesomeTaskSystem, test, antoniea-testbed, PartsLedger
@@ -158,7 +158,7 @@ entry gives `hot_loop`) apply as anywhere.
 | hum | an analog input without a DC path floats and catches 50 Hz | yes | CK-25 |
 | transmitter | filterless class-D (PAM8403, MAX98357A, PAM8302) drives a square wave of several hundred kHz onto the speaker leads | with the lead length and the datasheet's limit | HT-13, FT-2 |
 | transmitter | PWM and clock lines on cables | – | HT-1 |
-| receiver | RF rectified at the first junction of an audio input – the board's own Wi-Fi or BLE bursts, a mobile phone | partly: a board with a radio and an audio input without RC low-pass | HT-8 |
+| receiver | RF rectified at the first junction of an audio input – the board's own Wi-Fi or BLE bursts, a mobile phone, the PWM speaker leads of a device nearby | partly: a board with a radio and an audio input without RC low-pass | HT-8 |
 | receiver | high-impedance inputs on long leads – guitar 1 MΩ, piezo, electret | – | HT-1 |
 | receiver | magnetic coupling – a speaker's magnet, coils next to leads and sensors (tinyjukebox's README) | no | reviewer |
 
@@ -166,13 +166,20 @@ Beyond these: bridge-tied outputs (CK-8), DC on a speaker (FT-6), the pop at pow
 op-amp's operating point (FT-3), outputs on jacks shorted while a plug goes in (CK-16, HT-7); level, impedance and
 frequency response only with AC analysis (FT-12).
 
-**The owner's case – the steering wheel of system-engineering-fuer-kids.** The active speaker played the sound
-module's donkey with its cables not connected; shorter and shielded cables – and luck – made it work. Two mechanisms
-fit, often together: an amplifier input with high gain left open, a cable on it as an antenna next to the module's
-speaker leads (sound-book modules drive their speaker directly, with PWM or a bridge output); and a shared battery or
-ground, whose current from the module moves the amplifier's reference. Shorter and shielded cables lower the first
-coupling; the open input stays (CK-25, HT-8, HT-13 – and CK-8 where one side of the module's bridge output is tied to
-the amplifier's ground).
+**The owner's case – the steering wheel of system-engineering-fuer-kids.** The active speaker (a DIY kit from Conrad)
+played the sound module's donkey with no connection between the two: each ran from a battery of its own, no wire, no
+common ground. Shorter and shielded cables – and luck – made it work. Without a conductive path only fields couple:
+
+- **electric (capacitive):** sound-book modules drive their speaker directly, often with PWM or a bridge output, so the
+  module's speaker leads swing with steep edges; an input cable lying next to them picks up a few pF of it, and the
+  amplifier's first junction rectifies the carrier back into audio;
+- **magnetic (inductive):** the audio current in the module's speaker coil and leads induces a voltage in the loop of
+  the amplifier's input cable – the larger the loop and the closer, the more.
+
+A shielded cable stops the electric field, a shorter and twisted one has less loop for the magnetic one; distance helps
+both. Separate batteries do not help at all. What edakit can decide sits on each side alone: on the receiver an input
+without RC low-pass or ferrite (HT-8), on the transmitter a PWM speaker output on leads (HT-13), and cables as such
+(HT-1, FT-2). The coupling between two devices that share nothing is no check: it stays judgement.
 
 ## Candidates
 
@@ -230,7 +237,7 @@ edakit lacks the capability (add-feature). "Seen" names the clusters of the pitf
 | CK-22 | G | **Hazardous voltage without a spacing check:** a net above the ES1 limits is a warning that edakit does not check creepage and clearance – the first step before FT-7 and CK-9. | net `v` | AUD 14–27; LED 30, 31 |
 | CK-23 | E | **MCU clock against its supply:** the maximum clock at the lowest supply from the entry's curve (ATmega328P at 16 MHz needs about 3.78 V, from 10 MHz at 2.7 V and 20 MHz at 4.5 V, v). | `f_max_vs_v`, the crystal's frequency | PWR 19; MOT 35 |
 | CK-24 | G | **Capacitor banks above the hazardous limit discharge:** a resistor across them brings them below 60 V within 60 s. | FT-7 | AUD 27 |
-| CK-25 | G | **Analog nodes have a DC path:** a net with an `analog` input that reaches no resistor or driver to a defined level – only capacitors – floats: it picks up hum, and a switch on it pops. The analog sibling of G-4. | – | AUD 13; OWN horn |
+| CK-25 | G | **Analog nodes have a DC path:** a net with an `analog` input that reaches no resistor or driver to a defined level – only capacitors – floats: it picks up hum, and a switch on it pops. The analog sibling of G-4. | – | AUD 13 |
 | CK-26 | G | **UART lines cross:** a net with `fn` `uart.tx` or `uart.rx` has exactly one output (a TX) and at least one input (an RX); a net with inputs only is an error, also with a pull-up – G-4 lets it pass then. | – | MCU 14; topic "Communication between ICs" |
 
 ### Hints
@@ -249,7 +256,7 @@ edakit lacks the capability (add-feature). "Seen" names the clusters of the pitf
 | HT-10 | a heater (FT-6) switched by one MOSFET or SSR | a second, independent interruption: thermal fuse, relay, PSU enable (Marlin, Klipper, Voron, r) | MOT 30 |
 | HT-11 | a part with `rth_ja_k_per_w` | Rth(j-a) holds for the datasheet's copper; the layout must give it (hand-over) | MOT 11; PWR 3, 12; LED 20 |
 | HT-12 | a motor driver | bulk capacitor at VM per driver (Pololu: ≥ 47 µF, x); a series diode in front of VM blocks the motor's returned energy | MOT 5, 9 |
-| HT-13 | a filterless class-D output at a connector | ferrite or LC filter above the datasheet's lead length – a check with FT-2 and the length in the entry | AUD 1–3 |
+| HT-13 | a filterless class-D output at a connector | ferrite or LC filter above the datasheet's lead length – a check with FT-2 and the length in the entry | AUD 1–3; OWN horn |
 | HT-14 | a relay whose contacts switch an off-board load | the rating is resistive; LED drivers and switch-mode supplies draw tens of amps at start, inductive loads need a snubber | AUD 20 |
 
 ### Blocks
