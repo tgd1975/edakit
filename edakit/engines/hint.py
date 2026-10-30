@@ -233,8 +233,24 @@ def matching(design, cfg=None, sim=None):
     return out
 
 
+def part_notes(design):
+    """(place, note) from the parts entries: the part's `hints` at its designators, a pin's `hint` at its connected
+    pins."""
+    out = []
+    for key in sorted({design.entry_key(d) for d in design.comps} - {None}, key=natural_key):
+        part = design.parts[key]
+        users = sorted((d for d in design.comps if design.entry_key(d) == key), key=natural_key)
+        out += [(", ".join(users), note) for note in part.get("hints", [])]
+        for num, pin in part["pins"].items():
+            refs = [f"{d}.{num}" for d in users if f"{d}.{num}" in design.pin_net]
+            if pin.get("hint") and refs:
+                out.append((f"{', '.join(refs)} ({pin['name']})", pin["hint"]))
+    return out
+
+
 def run(ctx):
-    old = {c: catalog.code(c)["replaces"][0] for c in catalog.codes() if c.startswith("HINT.")}
-    return [Finding(code, "G", place, catalog.title(code), on=(("component", place),) if place in ctx.design.comps
-                    else (), old=old[code])
-            for code, places in matching(ctx.design, ctx.cfg, ctx.sim).items() for place in places]
+    found = [Finding(code, "G", place, catalog.title(code), on=(("component", place),) if place in ctx.design.comps
+                     else ())
+             for code, places in matching(ctx.design, ctx.cfg, ctx.sim).items() for place in places]
+    return found + [Finding("HINT.datasheet", "P", place, note, "the parts entry") for place, note in
+                    part_notes(ctx.design)]

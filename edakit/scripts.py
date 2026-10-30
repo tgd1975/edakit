@@ -89,7 +89,7 @@ from dataclasses import dataclass, field
 from pathlib import Path
 from typing import NamedTuple
 
-from . import rules
+from . import catalog
 
 KINDS = ("input", "derive", "easyeda", "check")      # of a [scripts.*] entry; the kind sim is [project] sim_plugin
 NEEDS = {"input": ("cmd", "about", "writes"), "derive": ("cmd", "about", "writes"),
@@ -364,7 +364,7 @@ def _entries(cfg, names, finding):
             sid = str(e.raw["id"])
             ids[sid].append(e.label)
             why = ("a stage of the gate" if sid in GATE_STAGES else "a sign-off" if sid.startswith("M-") else
-                   "an ID of the rule catalog" if rules.entry(sid) else None)
+                   "a code of the catalog" if catalog.code(sid) else None)
             if why:
                 finding(8, f"{e.label}: id {sid} is {why} – a check needs an id of its own")
     for sid, labels in ids.items():

@@ -702,7 +702,7 @@ def check_project(tmp_path, pads, release=""):
 
 def waive(tmp_path, **rules):
     (tmp_path / "hardware" / "graph.json").write_text(json.dumps(
-        {"components": [{"designator": "R2", "waive": rules}], "nets": []}))
+        {"components": [{"designator": "R2", "accept": rules}], "nets": []}))
 
 
 def test_route_check_finds_pads_too_close_before_anything_is_written(tmp_path, capsys):
@@ -714,12 +714,12 @@ def test_route_check_finds_pads_too_close_before_anything_is_written(tmp_path, c
     out = capsys.readouterr().out
     assert "pads of different parts: 1 pairs closer than the clearance 6.5 mil" in out
     assert "R1.2 (N2) – R2.1 (N3): 0.090 mm apart on TOP" in out and "clearances/keep-outs: 0 findings" in out
-    waive(tmp_path, **{"L-13": "close on purpose"})
+    waive(tmp_path, **{"GEO.spacing": "close on purpose"})
     assert route.main(cfg, args) == 2                                              # the paste gap (L-14) still
     out = capsys.readouterr().out
     assert "0 pairs closer than the clearance 6.5 mil, 1 waived (L-13)" in out
     assert "SMD pads of different parts on TOP and BOTTOM: 1 pairs closer than the paste gap 0.4 mm" in out
-    waive(tmp_path, **{"L-13": "close on purpose", "L-14": "close on purpose"})
+    waive(tmp_path, **{"GEO.spacing": "close on purpose", "GEO.spacing": "close on purpose"})
     assert route.main(cfg, args) == 0                                              # waived in the graph
     assert "0 pairs closer than the paste gap 0.4 mm, 1 waived (L-14)" in capsys.readouterr().out
 
@@ -752,9 +752,9 @@ def test_paste_gap_between_smd_pads_on_the_assembled_sides():
     assert paste_gaps(paste_pads(**{"R2.1": {"net": "N2"}})) == []                  # one net
     assert paste_gaps(paste_pads(**{"R1.2": {"net": ""}}))[0][:2] == ("R1.2", "R2.1")  # no net: a net of its own
     assert paste_gaps(paste_pads(**{"R2.1": {"x": mm(12.8, 10)[0]}})) == []         # 0.40 mm: at the paste gap
-    only_l13 = route.pad_waivers({"components": [{"designator": "R2", "waive": {"L-13": "x"}}]}, "L-14")
+    only_l13 = route.pad_waivers({"components": [{"designator": "R2", "accept": {"GEO.spacing": "x"}}]}, "GEO.spacing")
     assert paste_gaps(paste_pads(), waivers=only_l13)[0][4] is None                 # waivers per check
-    net = route.pad_waivers({"nets": [{"name": "N3", "waive": {"L-14": "paste reduced"}}]}, "L-14")
+    net = route.pad_waivers({"nets": [{"name": "N3", "accept": {"GEO.spacing": "paste reduced"}}]}, "GEO.spacing")
     assert paste_gaps(paste_pads(), waivers=net)[0][4] == "paste reduced"
 
 
@@ -860,7 +860,7 @@ def test_route_check_without_net_currents_as_before(project, capsys):
     routed_stage(project)
     code, out = route_cmd(project, "check", capsys)
     assert code == 0 and "open: 0" in out and "clearances/keep-outs: 0 findings" in out
-    assert [ln for ln in out.splitlines() if "L-5" in ln] == [
+    assert [ln for ln in out.splitlines() if "GEO.width" in ln] == [
         "track widths (L-5 offline): no net currents – run `edakit sim` first"]
 
 
@@ -1051,7 +1051,7 @@ def test_route_check_finds_a_via_next_to_a_hand_soldered_joint(project, capsys):
     routed_stage(project)
     with_via(project)
     code, out = route_cmd(project, "check", capsys)
-    assert code == 0 and "1 vias; open: 0" in out and "L-18" not in out                # no key: as before
+    assert code == 0 and "1 vias; open: 0" in out and "GEO.spacing" not in out                # no key: as before
     routed_stage(project, routing=KEEP)
     with_via(project)
     code, out = route_cmd(project, "check", capsys)
@@ -1091,7 +1091,7 @@ def test_hand_solder_keep_counts_only_other_nets_of_hand_soldered_parts(project,
     code, out = route_cmd(project, "check", capsys)
     assert code == 0 and "hand-soldered joints (L-18): 0 on their solder side" in out
     project.comp(g, "J1")["bom"] = False
-    project.comp(g, "J1")["waive"] = {"L-18": "test: the via is tented and far enough for this joint"}
+    project.comp(g, "J1")["accept"] = {"GEO.spacing": "test: the via is tented and far enough for this joint"}
     project.save_graph(g)
     code, out = route_cmd(project, "check", capsys)
     assert code == 0 and "0 vias of other nets closer than hand_solder_keep_mm 0.5, 1 waived" in out

@@ -27,15 +27,15 @@
       "role": "collector"
     }
   },
-  "params": {
+  "values": {
     "hfe_min": 200,
     "hfe_max": 350,
     "vce_sat_v": 0.6
   },
-  "ratings": {
+  "limits": {
     "ic_max_a": 0.5,
-    "vceo": 25,
-    "vebo": 5,
+    "vce_max_v": 25,
+    "veb_max_v": 5,
     "p_max_w": 0.3
   },
   "spice": {

@@ -13,9 +13,19 @@
    "label": "{as}: USB-C power input",
    "part": "SHOU HAN TYPE-C 6P",
    "lcsc": "C456012",
-   "pins": {"A12": "GND", "A9": "VBUS", "A5": "CC1", "B5": "CC2", "B9": "VBUS", "B12": "GND", "7": "EH"},
+   "pins": {
+    "A12": "GND",
+    "A9": "VBUS",
+    "A5": "CC1",
+    "B5": "CC2",
+    "B9": "VBUS",
+    "B12": "GND",
+    "7": "EH"
+   },
    "notes": "Power only: VBUS, GND and CC; the shell (EH) on GND.",
-   "waive": {"G-8": "The drawing's '5 V max.' is the USB rated voltage; USB-C vSafe5V allows 4.75–5.5 V and every USB-C receptacle works there. Insulation tested with 100 V AC (drawing 1006-FGBXXX)."}
+   "accept": {
+    "LIM.v": "The drawing's '5 V max.' is the USB rated voltage; USB-C vSafe5V allows 4.75–5.5 V and every USB-C receptacle works there. Insulation tested with 100 V AC (drawing 1006-FGBXXX)."
+   }
   },
   {
    "designator": "R1",
@@ -24,7 +34,10 @@
    "part": "0805W8F5101T5E",
    "lcsc": "C27834",
    "value": "5.1k",
-   "pins": {"1": "1", "2": "2"}
+   "pins": {
+    "1": "1",
+    "2": "2"
+   }
   },
   {
    "designator": "R2",
@@ -33,7 +46,10 @@
    "part": "0805W8F5101T5E",
    "lcsc": "C27834",
    "value": "5.1k",
-   "pins": {"1": "1", "2": "2"}
+   "pins": {
+    "1": "1",
+    "2": "2"
+   }
   },
   {
    "designator": "F1",
@@ -42,17 +58,74 @@
    "part": "SMD1206P150TFT",
    "lcsc": "C495353",
    "value": "1.5A",
-   "pins": {"1": "1", "2": "2"}
+   "pins": {
+    "1": "1",
+    "2": "2"
+   }
   }
  ],
  "nets": [
-  {"name": "vbus_in", "pins": ["J1.A9", "J1.B9", "F1.1"], "v": [0, 5.5], "notes": "VBUS at the receptacle, in front of the fuse."},
-  {"name": "cc1", "pins": ["J1.A5", "R1.1"], "v": [0, 5.5]},
-  {"name": "cc2", "pins": ["J1.B5", "R2.1"], "v": [0, 5.5]},
-  {"name": "vbus", "pins": ["F1.2"], "v": [0, 5.5]},
-  {"name": "gnd", "pins": ["J1.A12", "J1.B12", "J1.7", "R1.2", "R2.2"]}
+  {
+   "name": "vbus_in",
+   "pins": [
+    "J1.A9",
+    "J1.B9",
+    "F1.1"
+   ],
+   "v": [
+    0,
+    5.5
+   ],
+   "notes": "VBUS at the receptacle, in front of the fuse."
+  },
+  {
+   "name": "cc1",
+   "pins": [
+    "J1.A5",
+    "R1.1"
+   ],
+   "v": [
+    0,
+    5.5
+   ]
+  },
+  {
+   "name": "cc2",
+   "pins": [
+    "J1.B5",
+    "R2.1"
+   ],
+   "v": [
+    0,
+    5.5
+   ]
+  },
+  {
+   "name": "vbus",
+   "pins": [
+    "F1.2"
+   ],
+   "v": [
+    0,
+    5.5
+   ]
+  },
+  {
+   "name": "gnd",
+   "pins": [
+    "J1.A12",
+    "J1.B12",
+    "J1.7",
+    "R1.2",
+    "R2.2"
+   ]
+  }
  ],
- "covers": ["G-14"],
+ "covers": [
+  "REQ.missing:cc",
+  "REQ.value:cc",
+  "REQ.forbidden:cc"
+ ],
  "notes": [
   "Without a USB-PD controller the source supplies 5 V only; the Rp a charger shows on CC tells whether it allows 0.5, 1.5 or 3 A – this block does not read it.",
   "sim.json: the receptacle under sources (plus \"A9\", minus \"A12\").",

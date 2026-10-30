@@ -40,6 +40,19 @@ def load_parts(directory):
             if p.name != "README.json"}
 
 
+def old_form(graph, parts):
+    """What is still in the form of before the restructuring (convert.py), or None."""
+    for key, p in parts.items():
+        if "ratings" in p or "params" in p or any("vmax" in (pin or {}) for pin in (p.get("pins") or {}).values()):
+            return f"parts entry {key}: ratings, params or a pin's vmax"
+    for obj in [*graph.get("components", []), *graph.get("nets", [])]:
+        if "waive" in obj:
+            return f"{obj.get('designator') or obj.get('name')}: waive"
+    if "hints" in graph or {"pin_locks", "doc_pin_table"} & set(graph.get("checks") or {}):
+        return "the graph: hints or checks"
+    return None
+
+
 class Design:
     def __init__(self, graph_path, parts_dir, boards=None, graph=None, parts=None):
         self.graph_path = Path(graph_path)
@@ -53,6 +66,10 @@ class Design:
         self.nets = {n["name"]: n for n in self.graph["nets"]}
         self.pin_net = {ref: n["name"] for n in self.graph["nets"] for ref in n["pins"]}
         self.parts = load_parts(parts_dir) if parts is None else parts
+        if why := old_form(self.graph, self.parts):
+            from .config import ConfigError
+            raise ConfigError(f"{why} – the form of before the restructuring; edakit convert --write converts the "
+                              "project once (handbook 10.5)")
         self.by_mpn = {}
         for key, entry in self.parts.items():
             self.by_mpn.setdefault(str(entry.get("mpn") or key), key)
@@ -104,7 +121,7 @@ class Design:
     def bridges(self):
         """Designators of the resistors whose parts entry has value_ohm 0."""
         return [d for d in self.comps if (p := self.part(d) or {}).get("kind") == "resistor"
-                and (p.get("values") or p.get("params") or {}).get("value_ohm") == 0]
+                and (p.get("values") or {}).get("value_ohm") == 0]
 
     def bridge_groups(self):
         """[(name, nets, bridges)] for every set of nets that bridges join: the nets in graph order, the name is the

@@ -11,7 +11,6 @@ from edakit import catalog, convert, schema
 from edakit.findings import Finding, Profile, Report, format_findings
 
 ROOT = Path(__file__).resolve().parents[1]
-OLD = json.loads((ROOT / "edakit" / "rules.json").read_text(encoding="utf-8"))
 
 
 def test_catalog_lint_is_clean():
@@ -19,10 +18,10 @@ def test_catalog_lint_is_clean():
 
 
 def test_every_check_and_hint_of_before_has_a_code():
-    retired = {cid for cid, e in OLD["checks"].items() if e.get("retired")}
-    old = set(OLD["checks"]) | set(OLD["hints"])
-    assert old - retired - set(catalog.old_map()) == set()
-    assert set(catalog.old_map()) <= old
+    """The 66 checks and 9 hints of before the restructuring (G-7 was retired) each name the codes that replace them."""
+    old = {f"{s}-{n}" for s, last in (("P", 11), ("G", 25), ("E", 5), ("H", 9)) for n in range(1, last + 1)}
+    old |= {"S-2"} | {f"L-{n}" for n in range(1, 21) if n != 6} | {f"F-{n}" for n in range(1, 7)}
+    assert old - {"G-7"} == set(catalog.old_map())
 
 
 def test_every_code_names_its_engine():
@@ -64,12 +63,11 @@ def test_explain_command(capsys):
 
 
 def test_rules_lists_the_codes(capsys):
-    from edakit import rules
-    assert rules.main_rules(argparse.Namespace(ids=[])) == 0
+    assert catalog.main_rules(argparse.Namespace(ids=[])) == 0
     out = capsys.readouterr().out
     assert "LIMITS – every quantity within its limit" in out and "LIM.v" in out
-    assert rules.main_rules(argparse.Namespace(ids=["G-8"])) == 0       # until the switch-over: the old entry
-    assert "replaced by: LIM.v" in capsys.readouterr().out
+    assert catalog.main_rules(argparse.Namespace(ids=["G-8"])) == 0
+    assert "G-8: replaced by LIM.v" in capsys.readouterr().out
 
 
 # --- parts schema and conversion -------------------------------------------------------------------------------------
@@ -78,12 +76,10 @@ PARTS = sorted(glob.glob(str(ROOT / "edakit" / "blocks" / "parts" / "*.json"))
 
 
 @pytest.mark.parametrize("path", PARTS, ids=lambda p: Path(p).stem)
-def test_every_entry_converts_once_and_fits_its_schema(path):
+def test_every_entry_is_converted_and_fits_its_schema(path):
     entry = json.loads(Path(path).read_text(encoding="utf-8"))
-    new = convert.part(entry)
-    assert convert.part(new) == new
-    assert schema.problems(new) == []
-    assert "ratings" not in new and "params" not in new
+    assert convert.part(entry) == entry
+    assert schema.problems(entry) == []
 
 
 def test_conversion_renames_by_unit():
@@ -112,15 +108,21 @@ def test_schema_names_what_does_not_fit():
         "limits: vdd_op_min_v 5 above vdd_op_max_v 3"]
 
 
-def test_part_lint_command(project, capsys):
+def test_part_lint_and_convert_commands(project, capsys):
     from edakit import cli
-    assert cli.main(["part", "lint", "--config", str(project.root / "edakit.toml")]) == 2   # the form of before
-    assert "edakit convert converts it" in capsys.readouterr().out
-    assert cli.main(["convert", "--write", "--config", str(project.root / "edakit.toml")]) == 0
-    assert "converted: hardware/graph.json" in capsys.readouterr().out
     assert cli.main(["part", "lint", "--config", str(project.root / "edakit.toml")]) == 0
     assert cli.main(["convert", "--config", str(project.root / "edakit.toml")]) == 0
     assert capsys.readouterr().out.strip().endswith("0 files – edakit convert --write converts them")
+    p = project.part("C8678")
+    p["ratings"] = p.pop("limits")       # a parts entry of before
+    project.save_part("C8678", p)
+    assert cli.main(["part", "lint", "--config", str(project.root / "edakit.toml")]) == 2
+    assert "edakit convert converts it" in capsys.readouterr().out
+    assert cli.main(["check", "--config", str(project.root / "edakit.toml")]) == 1
+    assert "the form of before the restructuring; edakit convert --write" in capsys.readouterr().err
+    assert cli.main(["convert", "--write", "--config", str(project.root / "edakit.toml")]) == 0
+    assert "converted: hardware/parts/C8678.json" in capsys.readouterr().out
+    assert project.part("C8678")["limits"]["vr_max_v"] == 40
 
 
 def test_conversion_of_graph_and_signoff():

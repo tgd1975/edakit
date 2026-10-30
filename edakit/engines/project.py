@@ -1,11 +1,12 @@
-"""SYNC, GEO, FILES, PARTS, DOCS before the layout: what `edakit check` checks beyond the graph – own parts against
-their source and footprint copies against their data (SYNC), holes and formed leads on the footprint geometry (GEO),
-stock, supplier, footprint data and the sign-off of every part (PARTS), the requirements file (DOCS), the project's
-scripts and agents (SYNC) – and the gate's rows of stages S, L and F (row_code).
+"""SYNC, GEO, PARTS and DOCS before the layout: what `edakit check` checks beyond the graph – own parts against their
+source and footprint copies against their data (SYNC.source, SYNC.footprint), holes and formed leads on the
+footprint geometry (GEO.hole, GEO.formed), stock, supplier, footprint data and the sign-off of every part (PARTS.*),
+the requirements file (DOCS.*), the project's scripts and agents (SYNC.scripts, SYNC.agents).
 
-The checks are where they were (part.py, stock.py, order.py, footprint.py, checks.py, requirements.py, scripts.py,
-release/fab.py); they report into a Recorder, which gives every report its code and grade (MAP): the regrouping of
-build step 4 is naming and the finding format (concept rules-at-scale.md, section 10).
+These checks live with what they read (part.py, stock.py, order.py, footprint.py, checks.py, requirements.py,
+scripts.py) and report into a Recorder: an error, a warning, a pending point, a note or a draft of the requirements
+file – the class gives the finding its grade where the code has one for it (GRADES), so that its severity is the
+profile's (catalog/codes.toml, edakit/domains).
 """
 
 from __future__ import annotations
@@ -14,63 +15,26 @@ import re
 
 from ..findings import Finding
 
-# check ID of before -> (code, {class of before: grade}); class: error, warning, pending, note
-MAP = {
-    "P-2": ("FILES.sheet", {}),
-    "P-3": ("SYNC.source", {"warning": "margin", "pending": "stale", "note": "unchecked"}),
-    "P-4": ("PARTS.stock", {"warning": "margin", "pending": "stale", "note": "unchecked"}),
-    "P-5": ("PARTS.supplier", {}),
-    "P-7": ("GEO.hole", {"warning": "margin", "note": "unknown"}),
-    "P-8": ("GEO.formed", {"note": "unknown"}),
-    "P-9": ("PARTS.footprint", {}),
-    "P-10": ("SYNC.footprint", {"note": "unknown"}),
-    "G-9": ("PARTS.verified", {}),
-    "G-19": ("DOCS.quote", {}),
-    "G-20": ("DOCS.ref", {"warning": "margin", "draft": "draft"}),
-    "G-21": ("DOCS.need", {"draft": "draft"}),
-    "G-22": ("DOCS.evidence", {"draft": "draft"}),
-    "G-23": ("DOCS.draft", {"draft": ""}),
-    "scripts": ("SYNC.scripts", {"warning": "margin", "note": "unchecked"}),
-    "agents": ("SYNC.agents", {}),
-    # the gate's rows of stages S, L, F
-    "S-2": ("SYNC.schematic", {}), "L-1": ("SYNC.pcb", {}), "L-2": ("GEO.copper", {}), "L-3": ("GEO.drc", {}),
-    "L-4": ("SYNC.footprint", {}), "L-5": ("GEO.width", {}), "L-7": ("SYNC.plan", {}), "L-8": ("GEO.mark", {}),
-    "L-9": ("GEO.hole", {}), "L-10": ("SYNC.footprint", {}), "L-11": ("GEO.loop", {}), "L-12": ("SYNC.plan", {}),
-    "L-13": ("GEO.spacing", {}), "L-14": ("GEO.spacing", {}), "L-15": ("GEO.pour", {}), "L-16": ("GEO.ring", {}),
-    "L-17": ("GEO.silk", {}), "L-18": ("GEO.spacing", {}), "L-19": ("GEO.silk", {}), "L-20": ("SYNC.plan", {}),
-    "F-1": ("SYNC.bom", {}), "F-2": ("PARTS.stock", {}), "F-3": ("SYNC.cpl", {}), "F-4": ("FILES.manifest", {}),
-    "F-5": ("FILES.set", {}), "F-6": ("FILES.order", {}),
+# code -> {class of a report: grade}; class: error, warning, pending, note, draft
+GRADES = {
+    "SYNC.source": {"warning": "margin", "pending": "stale", "note": "unchecked"},
+    "PARTS.stock": {"warning": "margin", "pending": "stale", "note": "unchecked"},
+    "GEO.hole": {"warning": "margin", "note": "unknown"},
+    "GEO.formed": {"note": "unknown"},
+    "SYNC.footprint": {"note": "unknown"},
+    "DOCS.ref": {"warning": "margin", "draft": "draft"},
+    "DOCS.need": {"draft": "draft"},
+    "DOCS.evidence": {"draft": "draft"},
+    "DOCS.draft": {"draft": ""},
+    "SYNC.scripts": {"warning": "margin", "note": "unchecked"},
 }
-# a report of before that goes to another code than its check's: (check ID, class, words in the message) -> code/grade
-SPECIAL = [
-    ("P-7", "pending", "lead", ("PARTS.fact", "lead")),
-    ("G-9", "pending", "neither an LCSC part nor an EasyEDA device", ("PARTS.verified", "device")),
-    ("G-9", "waived", "neither an LCSC part nor an EasyEDA device", ("PARTS.verified", "device")),
-    ("L-16", None, "hole-to-hole", ("GEO.spacing", "")),
-]
 PLACE = re.compile(r"^([A-Za-z][\w.+-]*?)(?:[:\s(]|$)")
 
 
-def code_of(old, cls, msg=""):
-    """(code, grade) of a report of before: its check ID, its class, its message."""
-    for cid, c, words, out in SPECIAL:
-        if cid == old and c in (None, cls) and words in msg:
-            return out
-    code, grades = MAP[old]
-    return code, grades.get(cls, "")
-
-
-def row_code(row):
-    """The code of a row of the gate protocol (stages S, L, F, and the project's own): its check ID mapped, the row's
-    result its severity; None for a row of a project check whose ID is its own."""
-    if row.get("id") not in MAP:
-        return None
-    return code_of(row["id"], {"warn": "warning"}.get(row.get("result"), row.get("result")), row.get("check", ""))[0]
-
-
 class Recorder:
-    """The report interface of before (checks.Report), recording findings: error(), and the lists errors, pending,
-    warnings, notes, waived, drafts – each append becomes a finding with its code and grade."""
+    """The report interface the checks beyond the graph write to: error(code, msg, accept), add(class, code, msg,
+    reason, grade), and the lists errors, pending, warnings, notes, waived, drafts – each entry a finding with its
+    code and grade; its place the message's first word."""
 
     def __init__(self, stage="P"):
         self.stage, self.findings = stage, []
@@ -89,21 +53,25 @@ class Recorder:
                     self.append(item)
                 return self
         self.errors, self.pending, self.warnings = Into("error"), Into("pending"), Into("warning")
-        self.notes, self.waived, self.drafts = Into("note"), Into("waived"), Into("draft")
+        self.notes, self.waived, self.drafts = Into("note"), Into("accepted"), Into("draft")
 
-    def error(self, cid, msg, waive=None):
-        if waive and cid in waive:
-            self.add("waived", cid, msg, waive[cid])
-        else:
-            self.add("error", cid, msg)
+    def error(self, code, msg, accept=None):
+        grade = GRADES.get(code, {}).get("error", "")
+        reason = next((accept[k] for k in ([f"{code}/{grade}"] if grade else []) + [code] if k in (accept or {})), "")
+        self.add("error", code, msg, reason)
 
-    def add(self, cls, cid, msg, reason=""):
-        code, grade = code_of(cid, cls, msg)
+    def add(self, cls, code, msg, reason="", grade=None):
         m = PLACE.match(msg)
-        f = Finding(code, self.stage, m.group(1) if m else cid, msg, grade=grade, old=cid, accepted=reason)
+        f = Finding(code, self.stage, m.group(1) if m else code, msg,
+                    grade=GRADES.get(code, {}).get(cls, "") if grade is None else grade, accepted=reason or "")
+        f.data["class"] = cls
         if cls == "draft":
             f.data["draft"] = True
         self.findings.append(f)
+
+    @property
+    def codes(self):
+        return [f.code for f in self.findings]
 
 
 def run(design, cfg):
@@ -112,10 +80,10 @@ def run(design, cfg):
     rec = Recorder()
     part.check(design, rec, cfg)
     if not checks.check_holes(design, rec, checks.footprint_geometry(design, cfg)):
-        rec.notes.append(("P-7", "not run: no footprint geometry – edakit pcb dump once the parts are in the PCB, or "
-                                 "edakit part import <LCSC> for the library's"))
+        rec.notes.append(("GEO.hole", "not run: no footprint geometry – edakit pcb dump once the parts are in the PCB, "
+                                      "or edakit part import <LCSC> for the library's"))
     from ..pcb import move_notes
-    rec.notes += [("P-7", note) for note in move_notes(cfg)]
+    rec.notes += [("GEO.hole", note) for note in move_notes(cfg)]
     checks.check_formed(design, rec, cfg)
     if checks.has_footprint_data(cfg, design):
         footprint.check(design, rec, cfg)
@@ -125,9 +93,9 @@ def run(design, cfg):
     if cfg.requirements:
         requirements.check(rec, cfg)
     for level, msg in scripts.findings(cfg):
-        rec.add(level, "scripts", msg)
+        rec.add(level, "SYNC.scripts", msg)
     for f in (scripts.agents(cfg).findings if cfg.agents else []):
-        rec.add("error", "agents", f.msg)
+        rec.add("error", "SYNC.agents", f.msg)
     for f in rec.findings:
         f.stage = "G" if f.code.startswith(("DOCS.", "SYNC.scripts", "SYNC.agents")) else "P"
     return rec.findings

@@ -305,7 +305,7 @@ def test_hash_ignore_in_the_parts_entries(project):
     part["sources"].append("datasheet p. 3 read again")
     project.save_part("C2297", part)
     assert state(project) == h
-    part["ratings"]["if_max_a"] = 0.02
+    part["limits"]["if_max_a"] = 0.02
     project.save_part("C2297", part)
     assert state(project) != h
 

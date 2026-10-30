@@ -69,9 +69,9 @@ STATUS = ("draft", "accepted", "dropped")
 BINDING = ("must", "should", "may")
 VERIFY = ("rows", "signoff", "script", "accept")
 ENTRY_ID = re.compile(r"[NR]-[1-9]\d*")
-CHECKS = ("G-20", "G-21", "G-22", "G-23")   # run with [project] requirements only: edakit check, the gate's stage G
+CHECKS = ("DOCS.ref", "DOCS.need", "DOCS.evidence", "DOCS.draft")   # run with [project] requirements only: edakit check, the gate's stage G
 SIGNOFF_ID = re.compile(r"M-[1-9]\d*")      # a manual check of the sign-off file
-CHECK_ID = re.compile(r"[PGESLF]-\d+")      # a check of the catalog, as a rows pattern may start with it
+CHECK_ID = re.compile(r"[A-Z]+\.[a-z][a-z0-9_]*")      # a code of the catalog, as a rows pattern may start with it
 ACCEPTANCE = "M-4"                          # the manual check that works through the acceptance list (section 6)
 ORDER = "M-2"                               # the one that works through the list after uploading: JLCPCB's preview
 WORKS_THROUGH = {"order": ORDER, "acceptance": ACCEPTANCE}   # a phase after the export: who works through its list
@@ -315,18 +315,33 @@ def manual_checks(cfg):
     return list(dict.fromkeys(ids + list(required(cfg)))), cfg.relative(cfg.signoff)
 
 
+OLD_ID = re.compile(r"[PGESLFH]-\d+")
+
+
+def old_codes(old):
+    from . import catalog
+    return catalog.old_map().get(old, [])
+
+
+def stage_of(code):
+    """The stage whose rows carry a code: the one stage of the checks it replaces, else None (LIM.v: G and E)."""
+    from . import catalog
+    stages = {old[0] for old in (catalog.code(code) or {}).get("replaces", [])} - {"H"}
+    return stages.pop() if len(stages) == 1 else None
+
+
 def unresolved(kind, text, cfg, catalog, signoffs):
-    """Why an entry of verify does not resolve, or None. rows: a check ID the pattern starts with is a check of the
-    catalog and not retired – a wildcard or a project stage's ID only the gate run can tell; signoff: a manual check
+    """Why an entry of verify does not resolve, or None. rows: a code the pattern starts with is a code of the catalog
+    – a wildcard or a project stage's ID only the gate run can tell; signoff: a manual check
     of the sign-off file or a required one; script: a [scripts.<name>] of kind check or a [[release.stages]] id;
     accept: a step in words, nothing to resolve."""
     ids, name = signoffs
     if kind == "rows":
         first = (text.split() or [""])[0]
         if CHECK_ID.fullmatch(first) and first not in catalog:
-            return f"{first} is not a check of the catalog"
-        if CHECK_ID.fullmatch(first) and catalog[first].get("retired"):
-            return f"{first} is retired (edakit rules {first})"
+            return f"{first} is not a code of the catalog (edakit rules)"
+        if OLD_ID.fullmatch(first):
+            return f"{first} is a check ID of before the restructuring – {', '.join(old_codes(first)) or 'retired'}"
     elif kind == "signoff" and text not in ids:
         return f"no manual check {text} in {name} ({', '.join(ids)})"
     elif kind == "script":
@@ -351,13 +366,13 @@ def check(rep, cfg):
     warning in edakit check, information in the gate –, and what would be an error says so (DRAFT). A dropped entry is
     history: it is not checked. Messages start with the entry's ID. RequirementsError for a file that is missing or not
     valid – edakit check and the gate stop on it before they get here."""
-    from . import rules
+    from . import catalog as codes
     entries = load(cfg)
     by_id = {e.id: e for e in entries}
     live = [e for e in entries if e.status != "dropped"]
     reqs = [e for e in live if e.kind == "requirement"]
     files = "the requirements file" + ("s" if len(cfg.requirements) > 1 else "")
-    signoffs, catalog = manual_checks(cfg), rules.catalog()["checks"]
+    signoffs, catalog = manual_checks(cfg), codes.codes()
 
     def found(e, cid, msg, error=True):
         if e.status == "draft":
@@ -368,22 +383,22 @@ def check(rep, cfg):
         for ref in e.from_:
             target = by_id.get(ref)
             if ENTRY_ID.fullmatch(ref) and target is None:
-                found(e, "G-20", f"{e.id}: from {ref} – not in {files}")
+                found(e, "DOCS.ref", f"{e.id}: from {ref} – not in {files}")
             elif target is not None and target.status == "dropped":
-                found(e, "G-20", f"{e.id}: from {ref} – dropped: {target.reason}", error=False)
+                found(e, "DOCS.ref", f"{e.id}: from {ref} – dropped: {target.reason}", error=False)
             elif SIGNOFF_ID.fullmatch(ref) and ref not in signoffs[0]:
-                found(e, "G-20", f"{e.id}: from {ref} – no manual check {ref} in {signoffs[1]} "
+                found(e, "DOCS.ref", f"{e.id}: from {ref} – no manual check {ref} in {signoffs[1]} "
                                  f"({', '.join(signoffs[0])})")
         for kind, text in e.verify:
             if why := unresolved(kind, text, cfg, catalog, signoffs):
-                found(e, "G-20", f"{e.id}: verify {kind} {repr(text) if kind == 'rows' else text} – {why}")
+                found(e, "DOCS.ref", f"{e.id}: verify {kind} {repr(text) if kind == 'rows' else text} – {why}")
     for n in live:   # an accepted need: never a draft
         if n.kind == "need" and n.status == "accepted" and not any(n.id in r.from_ for r in reqs):
-            found(n, "G-21", f"{n.id}: accepted, but no requirement names it in from")
+            found(n, "DOCS.need", f"{n.id}: accepted, but no requirement names it in from")
     for r in reqs:
         if not r.verify:
-            found(r, "G-22", f"{r.id}: no evidence – verify names nothing that tests it")
-    rep.drafts += [("G-23", f'{e.id}: a draft – the user has not approved it (status "accepted", or "dropped" with '
+            found(r, "DOCS.evidence", f"{r.id}: no evidence – verify names nothing that tests it")
+    rep.drafts += [("DOCS.draft", f'{e.id}: a draft – the user has not approved it (status "accepted", or "dropped" with '
                             "a reason)") for e in live if e.status == "draft"]
 
 
@@ -413,7 +428,8 @@ def _rows(pattern, protocol_rows, stages_run):
     hits = Counter(r["result"] for r in protocol_rows if fnmatch(key_of(r), pattern))
     if not hits:
         first = (pattern.split() or [""])[0]
-        stage = first[0] if CHECK_ID.fullmatch(first) and first[0] not in stages_run else None
+        stage = stage_of(first) if CHECK_ID.fullmatch(first) else None
+        stage = stage if stage and stage not in stages_run else None
         return "fail", "no row of this run matches" + (f" – stage {stage} did not run" if stage else "")
     n = sum(hits.values())
     counts = ", ".join(f"{hits[k]} {word}" for k, word in RESULT.items() if hits[k])

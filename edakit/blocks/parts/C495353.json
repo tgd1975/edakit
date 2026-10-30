@@ -22,7 +22,7 @@
       "role": "2"
     }
   },
-  "params": {
+  "values": {
     "r_min_ohm": 0.04,
     "r_max_ohm": 0.12,
     "i_hold_vs_temp": [
@@ -64,10 +64,10 @@
       ]
     ]
   },
-  "ratings": {
+  "limits": {
     "i_hold_a": 1.5,
     "i_trip_a": 3.0,
-    "v_max": 8,
+    "v_max_v": 8,
     "i_max_a": 100,
     "p_max_w": 0.8
   },

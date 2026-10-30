@@ -47,13 +47,13 @@
       "role": "shell"
     }
   },
-  "params": {
+  "values": {
     "r_contact_ohm": 0.04,
     "r_source_ohm": 0.25
   },
-  "ratings": {
+  "limits": {
     "i_max_a": 2.5,
-    "v_max": 5.0,
+    "v_max_v": 5.0,
     "t_min_c": -30,
     "t_max_c": 85
   },

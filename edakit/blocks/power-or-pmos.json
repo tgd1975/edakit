@@ -15,7 +15,11 @@
    "label": "{as}: bat cut-off PMOS, drain at bat",
    "part": "AO3401A",
    "lcsc": "C15127",
-   "pins": {"1": "G", "2": "S", "3": "D"}
+   "pins": {
+    "1": "G",
+    "2": "S",
+    "3": "D"
+   }
   },
   {
    "designator": "Q2",
@@ -23,7 +27,11 @@
    "label": "{as}: bat cut-off PMOS, drain at the rail",
    "part": "AO3401A",
    "lcsc": "C15127",
-   "pins": {"1": "G", "2": "S", "3": "D"}
+   "pins": {
+    "1": "G",
+    "2": "S",
+    "3": "D"
+   }
   },
   {
    "designator": "R1",
@@ -32,7 +40,10 @@
    "part": "0805W8F1002T5E",
    "lcsc": "C17414",
    "value": "10k",
-   "pins": {"1": "1", "2": "2"}
+   "pins": {
+    "1": "1",
+    "2": "2"
+   }
   },
   {
    "designator": "D1",
@@ -40,17 +51,67 @@
    "label": "{as}: usb OR diode",
    "part": "SS34",
    "lcsc": "C8678",
-   "pins": {"1": "K", "2": "A"}
+   "pins": {
+    "1": "K",
+    "2": "A"
+   }
   }
  ],
  "nets": [
-  {"name": "bat", "pins": ["Q1.3"]},
-  {"name": "usb", "pins": ["Q1.1", "Q2.1", "R1.1", "D1.2"], "v": [0, 5.5]},
-  {"name": "mid", "pins": ["Q1.2", "Q2.2"], "v": [-0.5, 5.5], "notes": "Common source of the back-to-back pair."},
-  {"name": "out", "pins": ["Q2.3", "D1.1"], "v": [0, 5.5]},
-  {"name": "gnd", "pins": ["R1.2"]}
+  {
+   "name": "bat",
+   "pins": [
+    "Q1.3"
+   ]
+  },
+  {
+   "name": "usb",
+   "pins": [
+    "Q1.1",
+    "Q2.1",
+    "R1.1",
+    "D1.2"
+   ],
+   "v": [
+    0,
+    5.5
+   ]
+  },
+  {
+   "name": "mid",
+   "pins": [
+    "Q1.2",
+    "Q2.2"
+   ],
+   "v": [
+    -0.5,
+    5.5
+   ],
+   "notes": "Common source of the back-to-back pair."
+  },
+  {
+   "name": "out",
+   "pins": [
+    "Q2.3",
+    "D1.1"
+   ],
+   "v": [
+    0,
+    5.5
+   ]
+  },
+  {
+   "name": "gnd",
+   "pins": [
+    "R1.2"
+   ]
+  }
  ],
- "covers": ["G-4", "G-10", "H-8"],
+ "covers": [
+  "LVL.undefined",
+  "PATH.reverse",
+  "HINT.two_supplies"
+ ],
  "notes": [
   "Both MOSFETs stay off only while bat stays below usb + |VGS(th)|. Above it they conduct in part: fresh lithium AA cells (5.4 V) against USB at 4.75 V with the worst-case VGS(th) of -0.5 V gave about 0.18 A and 0.17 W in the reference project (M-1). The simulation uses the typical threshold.",
   "AO3401A: VGS max ±12 V – both supplies up to about 10 V, as for reverse-pmos; 3.2 A at 70 °C, 85 mΩ at VGS -2.5 V.",

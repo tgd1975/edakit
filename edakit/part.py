@@ -75,7 +75,7 @@ import urllib.request
 from collections import Counter
 from pathlib import Path
 
-from . import checks, config
+from . import circuit, config
 from .config import MIL_PER_MM
 from .design import Design, natural_key
 
@@ -160,24 +160,26 @@ def simulate(cfg, d, sim, probe):
 
 def pull(d, net):
     """('up'|'down', parallel resistance or None) of the resistors from the net to a supply or to ground."""
-    for way, targets in (("up", checks.supply_nets(d)), ("down", {d.ground})):
-        rs = [r for _, r, _ in checks.resistors_to(d, net, targets)]
+    for way, targets in (("up", circuit.supply_nets(d)), ("down", {d.ground})):
+        rs = [r for _, r, _ in circuit.resistors_to(d, net, targets)]
         if rs:
             return way, (1 / sum(1 / r for r in rs) if all(rs) else None)
     return None, None
 
 
 def limit(d, net, inside):
-    """Lowest voltage limit on the net: pin vmax, capacitor v_max / 1.5 (G-8's margin) – with what sets it."""
+    """Lowest voltage limit on the net: a pin's v_max_v, a capacitor's v_max_v / its derating factor (LIM.v's margin,
+    catalog/tables/derating.toml) – with what sets it."""
+    from .engines.quantities import FACTOR
     found = []
     for ref in inside:
         info = d.pin_info(ref)
-        if info.get("vmax") is not None:
-            found.append((float(info["vmax"]), f"{ref} ({info.get('name', '')}) vmax"))
+        if info.get("v_max_v") is not None:
+            found.append((float(info["v_max_v"]), f"{ref} ({info.get('name', '')}) v_max_v"))
         p = d.part(ref.split(".", 1)[0]) or {}
-        if p.get("kind") == "capacitor" and (p.get("ratings") or {}).get("v_max"):
-            found.append((round(p["ratings"]["v_max"] / checks.CAP_FACTOR, 2),
-                          f"{ref.split('.', 1)[0]} v_max {p['ratings']['v_max']} V / {checks.CAP_FACTOR}"))
+        if p.get("kind") == "capacitor" and circuit.limits(p).get("v_max_v"):
+            v_max, f = circuit.limits(p)["v_max_v"], FACTOR["capacitor"]
+            found.append((round(v_max / f, 2), f"{ref.split('.', 1)[0]} v_max_v {v_max} V / {f}"))
     return min(found) if found else (None, "")
 
 
@@ -190,7 +192,7 @@ def classify(d, net, inside, powered):
         return {"type": "power_output", "role": "vout"}
     if "power_in" in types:
         return None   # a supply input the simulation does not feed
-    line = checks.i2c_name(net) or next((x for x in map(checks.i2c_line, map(d.pin_info, inside)) if x), None)
+    line = circuit.i2c_name(net) or next((x for x in map(circuit.i2c_line, map(d.pin_info, inside)) if x), None)
     if line:
         return {"type": "bidirectional", "role": line}
     if d.nets[net].get("bus") == "i2c":
@@ -201,7 +203,7 @@ def classify(d, net, inside, powered):
 def compliance(d, project, state):
     """What the parts entries of the board say about RoHS, REACH and radio. radio: the radios of its parts, "none"
     when none transmits and every module and microcontroller says so (P-11), else left out – not known."""
-    from .checks import RADIO_TYPES
+    from .radio import RADIO_TYPES
     rohs = {"not compliant": [], "exemption": [], "not known": []}
     reach, radio, unstated, n = [], [], [], 0
     for des in sorted(d.comps, key=natural_key):
@@ -275,21 +277,21 @@ def datasheet(cfg, connectors, name=None):
                     info["pull_ohm"] = round(ohm, 1)
         vmax, why = limit(d, net, inside)
         if vmax is not None and kind["type"] != "ground":
-            info["vmax"] = vmax
-            srcs.append(f"pin {num} vmax: {why}")
+            info["v_max_v"] = vmax
+            srcs.append(f"pin {num} v_max_v: {why}")
         entry_pins[num] = info
         notes[num] = inside
     i_a = round(worst["sources"][des], 4)
     lo, hi = round(min(volts), 3), round(max(volts), 3)
-    srcs += [f"params.i_a: the largest current from {des} over {len(rows)} scenarios of "
+    srcs += [f"values.i_a: the largest current from {des} over {len(rows)} scenarios of "
              f"{cfg.relative(cfg.sim_config)} ({worst['name']})",
-             f"ratings vin_min, vin_max: the voltage at {des} over those scenarios"]
+             f"limits vin_min_v, vin_max_v: the voltage at {des} over those scenarios"]
     entry = {
         "mpn": name or cfg.project, "manufacturer": f"own board ({cfg.project})", "kind": "module",
         "datasheet": {"url": file_name(name or cfg.project)[:-5] + ".md"},
         "pins": entry_pins,
-        "params": {"behavior": "current", "i_a": i_a},
-        "ratings": {"vin_min": lo, "vin_max": hi},
+        "values": {"behavior": "current", "i_a": i_a},
+        "limits": {"vin_min_v": lo, "vin_max_v": hi},
         "compliance": compliance(d, cfg.project, state),
         "sources": srcs,
         "own": {"what": "pcb", "project": cfg.project, "connectors": list(connectors), "graph_version": d.version,
@@ -315,15 +317,15 @@ def markdown(cfg, d, entry, notes, rows, des, plus, minus):
         inside = notes.get(num, [])
         there = ", ".join(f"{r} ({n})" if (n := d.pin_info(r).get("name")) and n != r.split(".", 1)[1] else r
                           for r in inside[:4]) + (f", … ({len(inside)} pins)" if len(inside) > 4 else "")
-        pull_txt = f"{p['pull']} {checks.ohm(p['pull_ohm'])}" if p.get("pull_ohm") else p.get("pull", "–")
-        lines.append(f"| {num} | {p['name']} | {p['type']} | {p.get('role', '–')} | {p.get('vmax', '–')} | "
+        pull_txt = f"{p['pull']} {circuit.ohm(p['pull_ohm'])}" if p.get("pull_ohm") else p.get("pull", "–")
+        lines.append(f"| {num} | {p['name']} | {p['type']} | {p.get('role', '–')} | {p.get('v_max_v', '–')} | "
                      f"{pull_txt} | {there or '–'} |")
-    i_a, r = entry["params"]["i_a"], entry["ratings"]
+    i_a, r = entry["values"]["i_a"], entry["limits"]
     lines += ["", "## Supply", "",
               f"Through {plus} against {minus} at {des}, as simulated over {len(rows)} scenarios of "
               f"{cfg.relative(cfg.sim_config)} (`edakit sim` there):", "",
-              f"- voltage at the connector: {r['vin_min']} … {r['vin_max']} V – a project that uses the board must "
-              "keep it there (E-3)",
+              f"- voltage at the connector: {r['vin_min_v']} … {r['vin_max_v']} V – a project that uses the board must "
+              "keep it there (LIM.range)",
               f"- largest current: {i_a * 1e3:.0f} mA", "",
               "| Scenario | Voltage | Current |", "|---|---|---|"]
     lines += [f"| {s['name']} | {s['nets'][plus] - s['nets'][minus]:.3f} V | {s['sources'][des] * 1e3:.0f} mA |"
@@ -1253,33 +1255,33 @@ def check(d, rep, cfg):
             continue
         who = f"{', '.join(des for des in d.comps if d.entry_key(des) == key)} {entry.get('mpn', key)}"
         if own_.get("what") not in WHAT:
-            rep.error("P-3", f"{who}: own.what is {own_.get('what')!r} – one of {', '.join(WHAT)}")
+            rep.error("SYNC.source", f"{who}: own.what is {own_.get('what')!r} – one of {', '.join(WHAT)}")
             continue
         if own_["what"] != "pcb":
             continue
         missing = [k for k in ("path", "connectors", "state_sha256", "commit") if not own_.get(k)]
         if missing:
-            rep.error("P-3", f"{who}: own part without own.{missing[0]} – edakit part own")
+            rep.error("SYNC.source", f"{who}: own part without own.{missing[0]} – edakit part own")
             continue
         path = own_["path"]
         if "uncommitted" in own_["commit"]:
-            rep.pending.append(("P-3", f"{who}: copied from uncommitted changes in {path} – commit there and renew "
+            rep.pending.append(("SYNC.source", f"{who}: copied from uncommitted changes in {path} – commit there and renew "
                                        f"with edakit part own {path}"))
         toml = cfg.root / path / "edakit.toml"
         if not toml.is_file():
-            rep.notes.append(("P-3", f"{who}: {path} not found – the copy is not compared with its source"))
+            rep.notes.append(("SYNC.source", f"{who}: {path} not found – the copy is not compared with its source"))
         else:
             try:
                 changed = state_hash(config.load(toml)) != own_["state_sha256"]
             except config.ConfigError as e:
-                rep.notes.append(("P-3", f"{who}: {path} cannot be read ({e}) – the copy is not compared with its "
+                rep.notes.append(("SYNC.source", f"{who}: {path} cannot be read ({e}) – the copy is not compared with its "
                                          "source"))
             else:
                 if changed:
-                    rep.pending.append(("P-3", f"{who}: {path} has changed since its datasheet – edakit part "
+                    rep.pending.append(("SYNC.source", f"{who}: {path} has changed since its datasheet – edakit part "
                                                f"datasheet there, then edakit part own {path}"))
         if not own_.get("released"):
-            rep.warnings.append(("P-3", f"{who}: {path} is not released at the state of its datasheet – release it "
+            rep.warnings.append(("SYNC.source", f"{who}: {path} is not released at the state of its datasheet – release it "
                                         f"(edakit gate) and renew with edakit part own {path}, or accept the warning "
                                         "in the sign-off file"))
     sheets = sorted(datasheet_dir(cfg).glob("*.json"))
@@ -1287,7 +1289,7 @@ def check(d, rep, cfg):
     for f in sheets:
         sheet = json.loads(f.read_text(encoding="utf-8"))
         if (sheet.get("own") or {}).get("state_sha256") != state:
-            rep.pending.append(("P-3", f"{sheet.get('mpn', f.stem)}: datasheet export of an older state – edakit "
+            rep.pending.append(("SYNC.source", f"{sheet.get('mpn', f.stem)}: datasheet export of an older state – edakit "
                                        "part datasheet"))
 
 
@@ -1324,8 +1326,8 @@ def main(cfg, args):
             for f in done:
                 e = json.loads(f.read_text(encoding="utf-8"))
                 print(f"{cfg.relative(f)} and {f.with_suffix('.md').name}: {e['mpn']} through "
-                      f"{', '.join(e['own']['connectors'])}, {e['params']['i_a'] * 1e3:.0f} mA at "
-                      f"{e['ratings']['vin_min']} … {e['ratings']['vin_max']} V")
+                      f"{', '.join(e['own']['connectors'])}, {e['values']['i_a'] * 1e3:.0f} mA at "
+                      f"{e['limits']['vin_min_v']} … {e['limits']['vin_max_v']} V")
                 for num, p in e["pins"].items():
                     print(f"  {num:>3} {p['name']:<12} {p['type']:<14} {p.get('role', '')}")
             return 0

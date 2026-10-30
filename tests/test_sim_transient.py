@@ -46,7 +46,7 @@ def test_regulator_below_its_minimum_is_off(project):
 
 def test_constant_current_load_on_a_dead_rail(project):
     part = project.part("C41407547")                                    # U1 as a plain current at its supply pins
-    part["params"] = {"behavior": "current", "i_a": 0.05}
+    part["values"] = {"behavior": "current", "i_a": 0.05}
     project.save_part("C41407547", part)
     nets, _ = dc_only(project, sim_config(project), {})                  # nothing plugged in
     assert abs(nets["+5V"]) < 0.01 and abs(nets["3V3"]) < 0.01         # not pulled below ground
@@ -77,7 +77,7 @@ def test_unplug_held_by_the_bulk_capacitor(project):
 
 def test_unplug_without_the_bulk_capacitor(project):
     part = project.part("C45783")                                       # C2 22 µF -> 1 µF
-    part["params"]["value_f"] = 1e-6
+    part["values"]["value_f"] = 1e-6
     project.save_part("C45783", part)
     sim = sim_config(project)
     sim["transients"] = {"usb-unplug": UNPLUG}
@@ -101,7 +101,7 @@ def test_plug_starts_from_zero_and_shows_the_inrush(project):
     assert 0.2 < row["sources"]["J1"] < 0.25                             # about 0.22 A into C2 and the loads
     bad = failing(out)
     assert {(c["id"], c["item"], c["check"], c["expected"]) for c in bad} == {
-        ("E-5", "J1", "peak current from the supply", "≤ 100 mA")}
+        ("LIM.i", "J1", "peak current from the supply", "≤ 100 mA")}
     assert next(c for c in e5(out) if c["item"] == "U1")["result"] == "pass"     # judged once it has started
     sim["transients"]["usb-plug"]["expect"] = {"J1": {"i_max_a": 0.3}, "3V3": {"min_v": -0.01, "max_v": 3.4}}
     items = {(c["item"], c["check"]): c["result"] for c in e5(simulate(project, sim))}
@@ -128,7 +128,7 @@ def test_datasheet_of_the_board_leaves_the_runs_out(project):
     sim["transients"] = {"usb-plug": PLUG}                               # 0.224 A peak, the DC scenarios 0.114 A
     (project.root / "hardware" / "sim.json").write_text(json.dumps(sim))
     entry, _ = part.datasheet(project.config(), ["J1"])
-    assert entry["params"]["i_a"] < 0.12
+    assert entry["values"]["i_a"] < 0.12
 
 
 @pytest.mark.parametrize("bad,match", [

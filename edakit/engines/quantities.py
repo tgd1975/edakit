@@ -46,8 +46,8 @@ class Quantity:
     code: str = ""            # LIM.v, LIM.i … – by default from the unit
     grade: str = ""
     on: tuple = ()
-    old: str = ""
     limits: list = field(default_factory=list)   # limits that come with the quantity (the project's)
+    say: object = None        # (value, limit, factor) -> the finding's text where it says more than the default
     color: str = ""           # one colour of an RGB LED: its limits are the entry's limits.<color>
     derate: float = 1.0       # stage E: the derating of the entry's limit (derating.toml, sim.json)
 
@@ -86,9 +86,12 @@ def pin_voltages(d):
         for ref in net["pins"]:
             des, _, num = ref.partition(".")
             info = d.pin_info(ref)
+            pin = f"{ref} ({info.get('name', num)})"
             out.append(Quantity(ref, "v", hi, lo=lo, entry=d.entry_key(des) if des in d.comps else None, pin=num,
-                                pin_type=info.get("type", ""), how=f"{name} {lo:g}…{hi:g} V at {ref} "
-                                f"({info.get('name', num)})", on=(("net", name),), old="G-3"))
+                                pin_type=info.get("type", ""), how=f"{name} {lo:g}…{hi:g} V at {pin}", on=(("net", name),),
+                                say=lambda v, lim, f, name=name, pin=pin: (
+                                    f"{name} up to {v:g} V, but {pin} allows {lim:g} V" if v > 0 or lim > 0
+                                    else f"{name} down to {v:g} V at {pin}")))
     return out
 
 
@@ -121,16 +124,22 @@ def part_voltages(d):
         for name, what in ACROSS.get(kind, []):
             if what == "across":
                 v, how = across(*nets[:2]), f"{des}: across its pins"
+                say = (lambda v, lim, f, des=des: f"{des}: up to {v:.1f} V, rated {lim:g} V (needs ×{f:g})")
             elif what == "reverse":
                 a, k = d.net_of(des, "anode"), d.net_of(des, "cathode")
                 v, how = rng(k)[1] - rng(a)[0], f"{des}: reverse from {k} to {a}"
+                say = (lambda v, lim, f, des=des: f"{des}: reverse up to {v:.1f} V, VRRM {lim:g} V")
             else:
                 x, y = TERMINALS[what]
                 v, how = across(d.net_of(des, x), d.net_of(des, y)), f"{des}: |{name.upper()}|"
-            out.append(Quantity(des, name, v, kind=kind, entry=key, how=how, on=on, old="G-8"))
+                label = "VCE" if name == "vce" else name.upper()
+                say = (lambda v, lim, f, des=des, label=label: f"{des}: |{label}| up to {v:.1f} V, "
+                       + (f"VCEO {lim:g} V" if label == "VCE" else f"rated {lim:g} V"))
+            out.append(Quantity(des, name, v, kind=kind, entry=key, how=how, on=on, say=say))
         if kind in PASSIVE:
             v = max((abs(x) for n in nets if n for x in rng(n)), default=0)
-            out.append(Quantity(des, "v", v, kind=kind, entry=key, how=f"{des}: its nets up to", on=on, old="G-8"))
+            out.append(Quantity(des, "v", v, kind=kind, entry=key, how=f"{des}: its nets up to", on=on,
+                                say=lambda v, lim, f, des=des: f"{des}: nets up to {v:.1f} V, rated {lim:g} V"))
     return out
 
 
@@ -154,10 +163,15 @@ def fuse_currents(d, sim=None):
                   for c in d.graph.get("cables", [])
                   if "i_max_a" in c and any(d.pin_net.get(f"{c['from']}.{a}") in nets for a in c["pins"])]
         for place, key, lims in rated:
-            out.append(Quantity(place, "i", hold, unit="A", entry=key, limits=lims, on=on, old="G-17",
-                                how=f"{fuse} holds {hold:.3g} A{at} – an overload below it never trips it"))
+            out.append(Quantity(place, "i", hold, unit="A", entry=key, limits=lims, on=on,
+                                how=f"{fuse} holds {hold:.3g} A{at}",
+                                say=lambda v, lim, f, fuse=fuse, at=at, place=place: (
+                                    f"{fuse}: holds {v:.3g} A{at}, above the {lim:g} A of {place} – an overload in "
+                                    "between never trips it")))
             if trip is not None:
-                out.append(Quantity(place, "i", trip, unit="A", entry=key, limits=lims, on=on, old="G-17",
-                                    grade="margin", how=f"{fuse} trips at {trip:g} A – an overload in between may "
-                                                        "last for minutes"))
+                out.append(Quantity(place, "i", trip, unit="A", entry=key, limits=lims, on=on, grade="margin",
+                                    how=f"{fuse} trips at {trip:g} A",
+                                    say=lambda v, lim, f, fuse=fuse, place=place: (
+                                        f"{fuse}: trips at {v:g} A, above the {lim:g} A of {place} – an overload in "
+                                        "between may last for minutes")))
     return out

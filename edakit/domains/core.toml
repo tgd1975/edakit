@@ -16,7 +16,7 @@ module = ["compliance.radio"]        # its bands and power, or "none" – the re
 microcontroller = ["compliance.radio"]
 
 [hints]
-apply = ["HINT.bulk", "HINT.gate", "HINT.debounce", "HINT.inductive", "HINT.switcher", "HINT.lithium", "HINT.esd",
+apply = ["HINT.datasheet", "HINT.bulk", "HINT.gate", "HINT.debounce", "HINT.inductive", "HINT.switcher", "HINT.lithium", "HINT.esd",
          "HINT.two_supplies", "HINT.readback"]
 
 [review]

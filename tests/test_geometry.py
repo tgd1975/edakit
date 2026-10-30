@@ -6,6 +6,8 @@ hash takes it where it lies, and pcb dump moves it."""
 import json
 import shutil
 
+from helpers import check
+
 from edakit import checks, cli, config, pcb, scripts
 from edakit.design import Design
 from edakit.release import gate
@@ -45,7 +47,7 @@ def layout_hash(cfg):
 
 
 def p7(cfg):
-    rep = checks.run(Design.from_config(cfg), cfg)
+    rep = check(Design.from_config(cfg), cfg)
     return [m for c, m in rep.errors if c == "P-7"], [m for c, m in rep.notes if c == "P-7"]
 
 

@@ -318,13 +318,13 @@ def test_the_clean_export_passes_every_check(project):
     assert findings(rows) == []
     assert sorted({r["id"] for r in rows if r["stage"] in "LF"}, key=CHECKS.index) == CHECKS   # no [order]: no F-6
     assert not (project.root / "build" / "fab" / "main" / "order.md").exists()
-    assert len([r for r in rows if r["id"] == "L-3"]) == 2      # no [routing] drc_rules: the DRC's rules not compared
+    assert len([r for r in rows if r["id"] == "GEO.drc"]) == 2      # no [routing] drc_rules: the DRC's rules not compared
     by = {(r["id"], r["check"]): r["actual"] for r in rows}
-    assert by["L-11", "short current loops: path over tracks per pad pair within the limit"] == "J1.1-D1.2 7.8 mm"
-    assert by["L-9", "hole takes the lead at nominal size (diagonal or edge, or manufacturer's value)"] == "2 holes"
-    assert by["L-8", "silkscreen '+'/'−' = role of the nearest polarised pad"] == \
+    assert by["GEO.loop", "short current loops: path over tracks per pad pair within the limit"] == "J1.1-D1.2 7.8 mm"
+    assert by["GEO.hole", "hole takes the lead at nominal size (diagonal or edge, or manufacturer's value)"] == "2 holes"
+    assert by["GEO.mark", "silkscreen '+'/'−' = role of the nearest polarised pad"] == \
         "1 signs correct: 1 as PCB text, 0 drawn in the silkscreen"     # the text's strokes are that text
-    paste_row = next(r for r in rows if r["id"] == "L-14")
+    paste_row = next(r for r in rows if r["id"] == "GEO.spacing")
     assert (paste_row["actual"], paste_row["expected"]) == (
         "4 SMD pads", ">= 0.400 mm on TOP ([release] assembly paste_gap_mm)")     # J1 is through-hole
 
@@ -335,8 +335,8 @@ def test_the_drc_ran_with_the_board_files_rule_set(project):
     rows = run(project, drc_rules_of_the_board)
     assert findings(rows) == []
     assert sorted({r["id"] for r in rows if r["stage"] in "LF"}, key=CHECKS.index) == CHECKS   # every check still runs
-    assert len([r for r in rows if r["id"] == "L-3"]) == 3
-    row = next(r for r in rows if r["id"] == "L-3" and r["check"].startswith("EasyEDA's DRC rule set"))
+    assert len([r for r in rows if r["id"] == "GEO.drc"]) == 3
+    row = next(r for r in rows if r["id"] == "GEO.drc" and r["check"].startswith("EasyEDA's DRC rule set"))
     assert (row["actual"], row["expected"]) == ("rule set 'Custom Config': the board file's", (
         "clearance 0.165 mm, edge 0.400 mm, tracks 0.254 mm, via Ø 0.610 / drill 0.305 mm"))
 
@@ -835,9 +835,9 @@ def test_each_fault_is_found_by_its_check(project, fault, expected):
 def test_a_waived_pad_pair_is_listed_with_its_reason(project):
     def waived(ex, p):
         crowd(ex, p)
-        graph(p, lambda g: p.comp(g, "C2").update(waive={"L-13": "test: close on purpose"}))
+        graph(p, lambda g: p.comp(g, "C2").update(accept={"GEO.spacing": "test: close on purpose"}))
     rows = run(project, waived)
-    assert findings(rows) == [("L-13", "waived"), ("L-14", "fail")]          # a waiver holds for its own check
+    assert findings(rows) == [("GEO.spacing", "waived"), ("GEO.spacing", "fail")]          # a waiver holds for its own check
     w = next(r for r in rows if r["result"] == "waived")
     assert w["reason"] == "test: close on purpose" and "C2.2 (GND) – D1.2 (VIN): 0.090 mm" in w["check"]
 
@@ -846,9 +846,9 @@ def test_a_waived_paste_gap_is_listed_with_its_reason(project):
     def waived(ex, p):
         paste(ex, p)
         graph(p, lambda g: next(n for n in g["graph"]["nets"] if n["name"] == "VIN").update(
-            waive={"L-14": "test: paste reduced on D1"}))
+            accept={"GEO.spacing": "test: paste reduced on D1"}))
     rows = run(project, waived)
-    assert findings(rows) == [("L-14", "waived")]
+    assert findings(rows) == [("GEO.spacing", "waived")]
     w = next(r for r in rows if r["result"] == "waived")
     assert w["reason"] == "test: paste reduced on D1" and "C2.2 (GND) – D1.2 (VIN): 0.300 mm" in w["check"]
 
@@ -859,14 +859,14 @@ def test_no_paste_gap_on_a_side_that_is_not_assembled(project):
         f = p.root / "edakit.toml"
         f.write_text(f.read_text().replace('sides = ["top"]', 'sides = ["bottom"]'))   # F-3 fails, not L-14
     rows = run(project, bottom_only)
-    assert not [r for r in rows if r["id"] == "L-14" and r["result"] != "pass"]
-    assert next(r for r in rows if r["id"] == "L-14")["actual"] == "0 SMD pads"
+    assert not [r for r in rows if r["id"] == "GEO.spacing" and r["result"] != "pass"]
+    assert next(r for r in rows if r["id"] == "GEO.spacing")["actual"] == "0 SMD pads"
 
 
 def test_copper_per_side_of_the_clean_export(project):
     """L-15 on the clean export: nothing poured (pours = []), so share and bare circle are information; the 3 pieces of
     TOP (the three nets' tracks with their pads) and J1's two pads on BOTTOM all touch a pad."""
-    rows = {r["check"]: (r["result"], r["actual"]) for r in run(project) if r["id"] == "L-15"}
+    rows = {r["check"]: (r["result"], r["actual"]) for r in run(project) if r["id"] == "GEO.pour"}
     assert rows == {
         "TOP: copper share and largest copper-free circle (no pour)":
             ("info", "TOP: 6 % copper, largest copper-free circle Ø 8.2 mm at (5.0, 4.5) mm"),
@@ -883,8 +883,8 @@ def test_copper_per_side_settings(project):
         f = p.root / "hardware" / "boards" / "main.toml"
         f.write_text(f.read_text() + "\n[copper]\nmax_bare_mm = 20\nmin_cover = { TOP = 10 }\n")
     rows = run(project, settings)
-    assert findings(rows) == [("L-15", "warn")]
-    by = {r["check"]: (r["result"], r["actual"]) for r in rows if r["id"] == "L-15"}
+    assert findings(rows) == [("GEO.pour", "warn")]
+    by = {r["check"]: (r["result"], r["actual"]) for r in rows if r["id"] == "GEO.pour"}
     assert by["BOTTOM: no copper-free circle above 20 mm inside the pour outline (poured: GND)"][0] == "pass"
     assert by["TOP: copper share at least 10 % ([copper] min_cover)"] == ("warn", "TOP: 6 % copper")
 
@@ -898,7 +898,7 @@ def test_rings_and_hole_spacing_of_the_clean_export(project):
 def test_a_waived_annular_ring_is_listed_with_its_reason(project):
     def waived(ex, p):
         j1_pads(1.25)(ex, p)
-        graph(p, lambda g: p.comp(g, "J1").update(waive={"L-16": "test: JLCPCB confirmed the ring"}))
+        graph(p, lambda g: p.comp(g, "J1").update(accept={"L-16": "test: JLCPCB confirmed the ring"}))
     rows = run(project, waived)
     assert findings(rows) == [("L-16", "waived"), ("L-16", "waived")]                  # one row per hole
     w = [r for r in rows if r["result"] == "waived"]
@@ -913,7 +913,7 @@ def test_a_minus_sign_at_the_cathode_is_right(project):
         ex.pcb["strings"] = [{"Text": "−", "X": CATHODE[0] * MIL, "Y": CATHODE[1] * MIL, "Layer": 3}]
     rows = run(project, minus)                  # the drawn "+" stays at the anode
     assert findings(rows) == []
-    assert next(r for r in rows if r["id"] == "L-8")["actual"] == \
+    assert next(r for r in rows if r["id"] == "GEO.mark")["actual"] == \
         "2 signs correct: 1 as PCB text, 1 drawn in the silkscreen"
 
 
@@ -926,15 +926,15 @@ def test_a_cross_in_the_artwork_is_not_read(project):
                    f"x = {CATHODE[0]}\ny = {CATHODE[1]}\nwidth_mm = 3")
     rows = run(project, art)
     assert findings(rows) == []
-    assert not [r for r in rows if r["id"] == "L-8"]                    # no sign left to compare
+    assert not [r for r in rows if r["id"] == "GEO.mark"]                    # no sign left to compare
 
 
 def test_a_waived_sign_is_listed_with_its_reason(project):
     def waived(ex, p):
         plus_at(*CATHODE, text=False)(ex, p)
-        graph(p, lambda g: p.comp(g, "D1").update(waive={"L-8": "test: the library's print, the roles are right"}))
+        graph(p, lambda g: p.comp(g, "D1").update(accept={"GEO.mark": "test: the library's print, the roles are right"}))
     rows = run(project, waived)
-    assert findings(rows) == [("L-8", "waived")]
+    assert findings(rows) == [("GEO.mark", "waived")]
     w = next(r for r in rows if r["result"] == "waived")
     assert w["reason"] == "test: the library's print, the roles are right"
     assert "'+' at (15.2, 10.9) mm: nearest pad D1.1 is cathode" in w["check"]
@@ -951,7 +951,7 @@ def test_plus_signs_in_a_silkscreen_file(tmp_path):
 
 
 def l17(rows):
-    return {r["check"]: (r["result"], r["actual"]) for r in rows if r["id"] == "L-17"}
+    return {r["check"]: (r["result"], r["actual"]) for r in rows if r["id"] == "GEO.silk"}
 
 
 def test_silkscreen_of_the_clean_export(project):
@@ -974,7 +974,7 @@ def test_silk_apply_run_again_leaves_only_the_footprints_print(project):
         ex.silk_memo = {"strings": [], "fills": []}
         ex.kept = {k: Layer(ex.gerber[k]) for k in ("top_silk", "bottom_silk")}
     rows = run(project, again)
-    assert findings(rows) == [("L-17", "warn")]
+    assert findings(rows) == [("GEO.silk", "warn")]
     assert l17(rows)["TOP: edakit's own print (designators, texts, artwork of silk apply) off the solder-mask "
                      "openings"] == ("pass", "TOP: 0.000 mm²")
     assert l17(rows)["C2: silkscreen on its solder-mask openings – JLCPCB clips it there"][0] == "warn"
@@ -995,7 +995,7 @@ def test_a_group_label_or_unlabelled_covers_a_part(project):
 
 def test_the_acknowledgement_alone_leaves_the_other_kinds_passing(project):
     rows = run(project, import_pending(NO_DIFF))
-    other, sync = [r for r in rows if r["id"] == "L-3"]
+    other, sync = [r for r in rows if r["id"] == "GEO.drc"]
     assert (other["check"], other["result"]) == ("EasyEDA DRC without findings (other kinds)", "pass")
     assert (sync["check"], sync["result"]) == ("schematic and PCB in sync (Import Changes)", "fail")
     assert "it shows no changes" in sync["actual"]
@@ -1010,7 +1010,7 @@ def test_the_order_form_of_the_clean_export(project):
     [release] assembly, the tooling holes, the mark at the placeholder, the remark, bake, the free outline stretches."""
     rows = run(project, ordered)
     assert findings(rows) == []
-    f6 = [r for r in rows if r["id"] == "F-6"]
+    f6 = [r for r in rows if r["id"] == "FILES.order"]
     assert {r["result"] for r in f6} == {"pass", "info"}
     assert len(REMARK) <= 200 and any(r["actual"] == f"{len(REMARK)} characters, ASCII" for r in f6)
     assert {(r["check"], r["actual"]) for r in f6} >= {
@@ -1033,7 +1033,7 @@ def test_the_order_form_of_the_clean_export(project):
 def test_the_order_form_lists_only_the_free_edges(project):
     """#40: copper 0.45 mm from the left edge – the tab zone there fails, the right edge is still free."""
     rows = run(project, edge_track)
-    row = next(r for r in rows if r["id"] == "F-6" and r["result"] == "fail")
+    row = next(r for r in rows if r["id"] == "FILES.order" and r["result"] == "fail")
     assert row["actual"].startswith("copper 0.45 mm from the edge at (0.0, ") and row["expected"] == ">= 1.00 mm (tab_copper_mm)"
     sheet = (project.root / "build" / "fab" / "main" / "order.md").read_text()
     assert "(30.0, 0.0) → (30.0, 20.0), 20.0 mm" in sheet and "| (0.0, 0.0) → (0.0, 20.0) | 0.45 mm" in sheet
@@ -1058,7 +1058,7 @@ def test_the_order_form_names_thickness_and_colours(project):
     assert findings(rows) == []
     sheet = (project.root / "build" / "fab" / "main" / "order.md").read_text()
     assert "| PCB Thickness | 1 mm |\n| PCB Color | Black |\n| Silkscreen | White |\n" in sheet
-    f6 = {r["check"]: (r["result"], r["actual"]) for r in rows if r["id"] == "F-6"}
+    f6 = {r["check"]: (r["result"], r["actual"]) for r in rows if r["id"] == "FILES.order"}
     assert f6["board thickness JLCPCB makes (FR-4, 2 layers)"] == ("pass", "1 mm (thickness_mm)")
     assert f6["silkscreen colour JLCPCB prints on the solder mask"] == ("pass", "white on a black mask")
 
@@ -1069,7 +1069,7 @@ def test_the_order_form_of_a_white_mask(project):
     assert findings(rows) == []
     sheet = (project.root / "build" / "fab" / "main" / "order.md").read_text()
     assert "| PCB Color | White |\n| Silkscreen | Black |\n" in sheet
-    assert ("pass", "black on a white mask") in {(r["result"], r["actual"]) for r in rows if r["id"] == "F-6"}
+    assert ("pass", "black on a white mask") in {(r["result"], r["actual"]) for r in rows if r["id"] == "FILES.order"}
 
 
 def test_the_order_form_of_a_bare_board(project):
@@ -1123,9 +1123,9 @@ def test_a_waived_hand_soldered_joint_is_listed_with_its_reason(project):
     def waived(ex, p):
         via_at_joint(ex, p)
         graph(p, lambda g: next(n for n in g["graph"]["nets"] if n["name"] == "VIN").update(
-            waive={"L-18": "test: the via is tented"}))
+            accept={"GEO.spacing": "test: the via is tented"}))
     rows = run(project, waived)
-    assert findings(rows) == [("L-18", "waived")]
+    assert findings(rows) == [("GEO.spacing", "waived")]
     w = next(r for r in rows if r["result"] == "waived")
     assert w["reason"] == "test: the via is tented" and "J1.1 (VIN) – via GND at (1.60, 9.00)" in w["check"]
 
@@ -1135,24 +1135,24 @@ def test_hand_solder_keep_off_gives_no_row(project):
         via_at_joint(ex, p)
         board_file(p, "hand_solder_keep_mm = 0.5", "hand_solder_keep_mm = 0")
     rows = run(project, off)
-    assert findings(rows) == [] and not [r for r in rows if r["id"] == "L-18"]
+    assert findings(rows) == [] and not [r for r in rows if r["id"] == "GEO.spacing"]
 
 
 def test_the_clean_export_names_the_hand_soldered_joints(project):
-    row = next(r for r in run(project) if r["id"] == "L-18")
+    row = next(r for r in run(project) if r["id"] == "GEO.spacing")
     assert (row["result"], row["actual"], row["expected"]) == (
         "pass", "2 joints of 1 parts, 0 vias", ">= 0.5 mm ([routing] hand_solder_keep_mm)")
 
 
 def test_a_track_at_a_hand_soldered_joint_does_not_count(project):
     rows = run(project, track_at_joint)
-    assert findings(rows) == [] and next(r for r in rows if r["id"] == "L-18")["result"] == "pass"
+    assert findings(rows) == [] and next(r for r in rows if r["id"] == "GEO.spacing")["result"] == "pass"
 
 
 # --- the visible side carries only the texts the board file puts there (#81, L-19)
 
 def l19(rows):
-    return [(r["result"], r["actual"]) for r in rows if r["id"] == "L-19"]
+    return [(r["result"], r["actual"]) for r in rows if r["id"] == "GEO.silk"]
 
 
 def test_the_visible_side_of_the_proposal(project):
@@ -1162,7 +1162,7 @@ def test_the_visible_side_of_the_proposal(project):
         visible(p, silk='designators = "bottom"\nhide = ["top"]', plus=False)
         ex.pcb["strings"].append({"Text": "TEST", "X": TEST[0] * MIL, "Y": TEST[1] * MIL, "Layer": 3})
     rows = run(project, fault)
-    assert findings(rows) == [("L-19", "fail")] * 5
+    assert findings(rows) == [("GEO.silk", "fail")] * 5
     assert sorted(a for _, a in l19(rows)) == [
         "TOP (visible): C2 shows its designator – [silk] designators is bottom",
         "TOP (visible): D1 shows its designator – [silk] designators is bottom",
@@ -1204,9 +1204,9 @@ def test_the_board_label_counts_on_its_own_side(project, text, first):
 def test_a_waived_designator_on_the_visible_side(project):
     def waived(ex, p):
         visible_designator(ex, p)
-        graph(p, lambda g: p.comp(g, "C2").update(waive={"L-19": "test: the label is wanted there"}))
+        graph(p, lambda g: p.comp(g, "C2").update(accept={"GEO.silk": "test: the label is wanted there"}))
     rows = run(project, waived)
-    assert findings(rows) == [("L-19", "waived")]
+    assert findings(rows) == [("GEO.silk", "waived")]
     w = next(r for r in rows if r["result"] == "waived")
     assert w["reason"] == "test: the label is wanted there"
     assert "C2 shows its designator – [silk] designators is bottom" in w["check"]

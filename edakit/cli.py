@@ -1,9 +1,8 @@
 """edakit command line. Every command reads the project's edakit.toml (see handbook/10-reference.md).
 
     edakit check                     stages P/G: rule checks on the graph (offline, < 1 s)
-    edakit rules [CODE ...]          the engines and the codes of the catalog; an old check ID (G-4) its old entry
+    edakit rules [CODE ...]          the engines and the codes of the catalog
     edakit explain CODE ...          rule, why, fix and sources of a code (LIM.v, REQ.missing …)
-    edakit hints                     design hints that apply to the graph, notes from the parts database
     edakit block list|show|add       building blocks with checked parts into the graph
     edakit part import LCSC [--update]   symbol pins and footprint of an LCSC number from the library – no EasyEDA
     edakit part lint [KEY ...]       every parts entry held to the schema of its kind (catalog/kinds.toml)
@@ -78,7 +77,8 @@ def build_parser():
     _common(p)
 
     p = sub.add_parser("rules", help="the engines and codes of the catalog")
-    p.add_argument("ids", nargs="*", help="codes (LIM.v) or old check IDs (G-4); default: the list")
+    p.add_argument("ids", nargs="*", help="codes (LIM.v); an old check ID (G-4) names the codes replacing it; default: "
+                                          "the list")
 
     p = sub.add_parser("explain", help="rule, why, fix and sources of a code")
     p.add_argument("ids", nargs="+", help="codes, e.g. LIM.v REQ.missing (an old ID such as G-8 names its codes)")
@@ -90,10 +90,6 @@ def build_parser():
 
     p = sub.add_parser("convert", help="graph, parts entries and sign-off file into the form of the restructuring")
     p.add_argument("--write", action="store_true", help="write the converted files (default: list them)")
-    _common(p)
-
-    p = sub.add_parser("hints", help="design hints that apply to the graph, and notes from the parts database")
-    p.add_argument("--json", help="write them as JSON")
     _common(p)
 
     p = sub.add_parser("block", help="building blocks: list, show, or add one to the graph")
@@ -292,8 +288,8 @@ def _main(argv=None):
         from . import lock
         return lock.main(args)
     if args.command == "rules":
-        from . import rules
-        return rules.main_rules(args)
+        from . import catalog
+        return catalog.main_rules(args)
     if args.command == "explain":
         from . import catalog
         return catalog.main_explain(args)
@@ -323,9 +319,6 @@ def _main(argv=None):
     if args.command == "check":
         from . import checks
         return checks.main(cfg, args)
-    if args.command == "hints":
-        from . import rules
-        return rules.main_hints(cfg, args)
     if args.command == "block":
         from . import block
         return block.main(cfg, args)

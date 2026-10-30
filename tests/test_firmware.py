@@ -20,7 +20,7 @@ def chain_roles(project, first_bit_to=None):
     for i, pin in enumerate(range(5, 13)):
         p["pins"][str(pin)]["role"] = f"out{i}"
     if first_bit_to:
-        p["params"]["first_bit_to"] = first_bit_to
+        p["values"]["first_bit_to"] = first_bit_to
     project.save_part("C90107", p)
 
 
@@ -89,7 +89,7 @@ def test_leds_behind_bridges_and_balancing_resistors(project):
     """Traced as E-3/E-4 trace them: D2 behind a 0 Ω bridge, D3 and a second LED behind balancing resistors."""
     with_firmware(project)
     project.use_library_part("C17513")    # 1 kΩ as balancing resistor
-    zero = project.part("C17414") | {"lcsc": "C99000", "params": {"value_ohm": 0}}
+    zero = project.part("C17414") | {"lcsc": "C99000", "values": {"value_ohm": 0}}
     project.save_part("C99000", zero)
     g = project.graph()
     comps, nets = g["graph"]["components"], g["graph"]["nets"]
@@ -113,7 +113,7 @@ def test_led_on_a_gpio_and_a_dip_switch(project):
     """An LED on a GPIO through its series resistor lights high (anode side); DIP bits in the order a1 … aN."""
     with_firmware(project)
     project.use_library_part("C17513")
-    project.save_part("C99001", {"lcsc": "C99001", "mpn": "DIP-2", "kind": "dip_switch", "params": {"positions": 2},
+    project.save_part("C99001", {"lcsc": "C99001", "mpn": "DIP-2", "kind": "dip_switch", "values": {"positions": 2},
                                  "pins": {"1": {"name": "A1", "type": "passive", "role": "a1"},
                                           "2": {"name": "A2", "type": "passive", "role": "a2"},
                                           "3": {"name": "B2", "type": "passive", "role": "b2"},

@@ -8,6 +8,8 @@ no EU band at all (G-25)."""
 
 import pytest
 
+from helpers import check
+
 from edakit import checks
 from edakit.design import Design
 from edakit.release import gate
@@ -18,7 +20,7 @@ NOTHING = {"errors": [], "pending": [], "waived": [], "warnings": [], "notes": [
 
 def run(project):
     cfg = project.config()
-    return checks.run(Design.from_config(cfg), cfg)
+    return check(Design.from_config(cfg), cfg)
 
 
 def found(rep, cid):
@@ -76,12 +78,12 @@ def test_g24_over_the_limit_is_the_firmwares_to_keep(project, use, where):
     purpose(project, use)
     give_radio(project, bands_mhz=[[2412, 2472]], max_dbm=22, antenna_dbi=0)
     rep = run(project)
-    assert found(rep, "G-24")[where] == [
+    assert found(rep, "LIM.eirp")[where] == [
         "U1: 22.0 dBm e.i.r.p. in 2400–2483.5 MHz (max_dbm 22 at the RF port + antenna_dbi 0) – the band allows at "
         f"most 100 mW (20.0 dBm) e.i.r.p.: the firmware must keep the conducted power at or below 20.0 dBm {LEGAL}"]
     assert rep.errors == [] and rep.pending == []
     give_radio(project, bands_mhz=[[2412, 2472]], max_dbm=22, antenna_dbi=-2)      # within: exactly 20 dBm
-    assert found(run(project), "G-24") == NOTHING
+    assert found(run(project), "LIM.eirp") == NOTHING
 
 
 @pytest.mark.parametrize("use, where", GRADES)
@@ -90,22 +92,22 @@ def test_g24_without_the_antenna_gain_the_eirp_is_not_known(project, use, where)
     give_radio(project, bands_mhz=[[2412, 2472]], max_dbm=20.5)
     rep = run(project)
     assert rep.errors == [] and rep.pending == []
-    assert found(rep, "G-24")[where] == [
+    assert found(rep, "LIM.eirp")[where] == [
         "U1: e.i.r.p. in 2400–2483.5 MHz not known – parts entry C41407547 has no antenna_dbi (the gain of its antenna, "
         "from the module's datasheet or a certificate) and no eirp_dbm (the e.i.r.p. a certificate states) " + LEGAL]
     give_radio(project, bands_mhz=[[2412, 2472]])
-    assert found(run(project), "G-24")[where][0].startswith(
+    assert found(run(project), "LIM.eirp")[where][0].startswith(
         "U1: e.i.r.p. in 2400–2483.5 MHz not known – parts entry C41407547 has no max_dbm (the conducted power at the "
         "RF port), no antenna_dbi (")
 
 
 def test_g24_eirp_of_a_certificate_comes_first(project):
     give_radio(project, bands_mhz=[[2412, 2472]], max_dbm=10, antenna_dbi=0, eirp_dbm=21)
-    assert found(run(project), "G-24")["notes"] == [
+    assert found(run(project), "LIM.eirp")["notes"] == [
         "U1: 21.0 dBm e.i.r.p. in 2400–2483.5 MHz (eirp_dbm of the parts entry) – the band allows at most 100 mW "
         f"(20.0 dBm) e.i.r.p.: the firmware must lower the power by at least 1.0 dB {LEGAL}"]
     give_radio(project, bands_mhz=[[2412, 2472]], eirp_dbm=19)                    # no max_dbm needed with it
-    assert found(run(project), "G-24") == NOTHING
+    assert found(run(project), "LIM.eirp") == NOTHING
 
 
 @pytest.mark.parametrize("bands, over", [
@@ -118,7 +120,7 @@ def test_g24_eirp_of_a_certificate_comes_first(project):
 def test_g24_the_bands_with_an_eirp_limit(project, bands, over):
     give_radio(project, bands_mhz=bands, max_dbm=24, antenna_dbi=0)
     rep = run(project)
-    assert [m.split(" (", 1)[0].split(" in ", 1)[1] for m in found(rep, "G-24")["notes"]] == over
+    assert [m.split(" (", 1)[0].split(" in ", 1)[1] for m in found(rep, "LIM.eirp")["notes"]] == over
 
 
 def test_g24_a_band_without_an_eirp_limit_needs_no_power(project):
@@ -130,9 +132,9 @@ def test_g24_waived_on_the_component(project):
     purpose(project, "sale")
     give_radio(project, bands_mhz=[[2412, 2472]], max_dbm=22, antenna_dbi=0)
     g = project.graph()
-    project.comp(g, "U1")["waive"] = {"G-24": "firmware limits the power to 17 dBm (D-5)"}
+    project.comp(g, "U1")["accept"] = {"LIM.eirp": "firmware limits the power to 17 dBm (D-5)"}
     project.save_graph(g)
-    assert found(run(project), "G-24") == {**NOTHING, "waived": [
+    assert found(run(project), "LIM.eirp") == {**NOTHING, "waived": [
         "U1: 22.0 dBm e.i.r.p. in 2400–2483.5 MHz (max_dbm 22 at the RF port + antenna_dbi 0) – the band allows at "
         f"most 100 mW (20.0 dBm) e.i.r.p.: the firmware must keep the conducted power at or below 20.0 dBm {LEGAL}"]}
 
@@ -143,7 +145,7 @@ def test_g24_every_radio_of_an_own_board(project):
     part["compliance"] = {"radio": [{"part": "U1", "bands_mhz": [[2412, 2472]], "max_dbm": 20, "antenna_dbi": 3},
                                     {"part": "U3", "bands_mhz": [[868, 868.6]], "max_dbm": 14}]}
     project.save_part("C41407547", part)
-    assert found(run(project), "G-24")["notes"] == [
+    assert found(run(project), "LIM.eirp")["notes"] == [
         "U1: 23.0 dBm e.i.r.p. in 2400–2483.5 MHz (max_dbm 20 at the RF port + antenna_dbi 3) – the band allows at "
         f"most 100 mW (20.0 dBm) e.i.r.p.: the firmware must keep the conducted power at or below 17.0 dBm {LEGAL}"]
 
@@ -166,11 +168,11 @@ def test_g24_radio_data_that_cannot_be_read_is_an_error(project):
 
 def test_g24_in_the_gate_information_or_a_warning_to_accept(project):
     give_radio(project, bands_mhz=[[2412, 2472]], max_dbm=22, antenna_dbi=0)
-    rows, g24 = gate_rows(project, "G-24")
+    rows, g24 = gate_rows(project, "LIM.eirp")
     assert g24 == [("G", "info"), ("G", "pass")]
     assert gate.decide(rows, [], {"manual": []}, "PGESLF", gate.STAGES) == ("RELEASED", [])
     purpose(project, "sale")
-    rows, g24 = gate_rows(project, "G-24")
+    rows, g24 = gate_rows(project, "LIM.eirp")
     assert g24 == [("G", "warn"), ("G", "pass")]
     assert gate.decide(rows, [], {"manual": []}, "PGESLF", gate.STAGES)[1] == ["1 warning(s) not accepted (section 3)"]
     signoff = {"manual": [], "accepted_warnings": [{"match": "G-24 U1: *", "scope": "decision",
@@ -193,13 +195,13 @@ def test_g25_the_bells_t_display_reaches_channel_14(project, use, where):
     purpose(project, use)
     give_radio(project, **ESP32)
     rep = run(project)
-    assert found(rep, "G-25") == {**NOTHING, where: [REACHES_14]}
+    assert found(rep, "LIM.band") == {**NOTHING, where: [REACHES_14]}
     assert rep.errors == [] and rep.pending == []
     if use is None:
         return                                                                  # no purpose: no purpose.radio either
     state_use(project, U1={"bands_mhz": [[2412, 2472]], "notes": "Wi-Fi channels 1–13: country DE, 802.11d off"})
     rep = run(project)
-    assert found(rep, "G-25") == NOTHING and found(rep, "G-24") == NOTHING
+    assert found(rep, "LIM.band") == NOTHING and found(rep, "G-24") == NOTHING
 
 
 def test_g25_a_radio_that_stays_off(project):
@@ -214,12 +216,12 @@ def test_g25_a_lora_chip_for_the_us_band_is_an_error(project, use):
     """No firmware makes a part comply that transmits in no EU band at all: an error, whatever the purpose."""
     purpose(project, use)
     give_radio(project, bands_mhz=[[902, 928]], max_dbm=20)
-    assert found(run(project), "G-25") == {**NOTHING, "errors": [
+    assert found(run(project), "LIM.band") == {**NOTHING, "errors": [
         "U1: transmits only in 902–928 MHz (bands_mhz of parts entry C41407547), in no EU licence-exempt band "
         "(433.05–434.79, 863–870, 2400–2483.5, 5150–5350, 5470–5725 MHz) – no firmware makes it comply: choose a part "
         f"made for the EU bands, keep it off (purpose.radio), or waive G-25 with the allocation of a licensed use {LEGAL}"]}
     state_use(project, U1="off")                                                # kept off: the firmware's to keep
-    assert found(run(project), "G-25")["notes" if use == "private" else "warnings"] == [
+    assert found(run(project), "LIM.band")["notes" if use == "private" else "warnings"] == [
         "U1: transmits only in 902–928 MHz (bands_mhz of parts entry C41407547), in no EU licence-exempt band – "
         f"purpose.radio keeps it off: the firmware must never switch it on {LEGAL}"]
 
@@ -227,22 +229,22 @@ def test_g25_a_lora_chip_for_the_us_band_is_an_error(project, use):
 def test_g25_waived_for_a_licensed_use(project):
     give_radio(project, bands_mhz=[[880, 915], [1710, 1785]], max_dbm=33)       # a GSM module: the operator's licence
     g = project.graph()
-    project.comp(g, "U1")["waive"] = {"G-25": "GSM 900/1800 under the mobile operator's licence"}
+    project.comp(g, "U1")["accept"] = {"LIM.band": "GSM 900/1800 under the mobile operator's licence"}
     project.save_graph(g)
     rep = run(project)
-    assert found(rep, "G-25")["errors"] == [] and len(found(rep, "G-25")["waived"]) == 1
+    assert found(rep, "LIM.band")["errors"] == [] and len(found(rep, "LIM.band")["waived"]) == 1
 
 
 def test_g25_a_wide_chip_kept_to_868_mhz(project):
     give_radio(project, bands_mhz=[[137, 1020]], max_dbm=20)                     # SX1276: the synthesizer's range
-    assert found(run(project), "G-25")["notes"] == [
+    assert found(run(project), "LIM.band")["notes"] == [
         "U1: 137–1020 MHz (bands_mhz of parts entry C41407547) reaches beyond the EU bands 433.05–434.79 MHz and "
         "863–870 MHz – the firmware must keep to 433.05–434.79 MHz or 863–870 MHz; purpose.radio can state that it does "
         + LEGAL]
     state_use(project, U1={"bands_mhz": [[863, 870]]})
-    assert found(run(project), "G-25") == NOTHING
+    assert found(run(project), "LIM.band") == NOTHING
     state_use(project, U1={"bands_mhz": [[902, 928]]})                         # the US band stated: the firmware's
-    assert found(run(project), "G-25")["notes"] == [
+    assert found(run(project), "LIM.band")["notes"] == [
         "U1: purpose.radio states 902–928 MHz, in no EU licence-exempt band – the firmware must keep to "
         f"433.05–434.79 MHz or 863–870 MHz {LEGAL}"]
 
@@ -251,7 +253,7 @@ def test_g25_a_stated_band_outside_the_eu_counts_too(project):
     purpose(project, "sale")
     give_radio(project, **ESP32)
     state_use(project, U1={"bands_mhz": [[2412, 2484]]})
-    assert found(run(project), "G-25") == {**NOTHING, "warnings": [
+    assert found(run(project), "LIM.band") == {**NOTHING, "warnings": [
         "U1: purpose.radio states 2412–2484 MHz, beyond the EU band 2400–2483.5 MHz – the firmware must keep to "
         f"2400–2483.5 MHz (for Wi-Fi: channels 1–13) {LEGAL}"]}
 
@@ -283,12 +285,12 @@ def test_g25_a_statement_that_cannot_be_read_holds_the_entrys_bands(project):
 
 def test_g25_the_power_the_firmware_keeps_counts_for_g24(project):
     give_radio(project, bands_mhz=[[2412, 2472]], max_dbm=20.5, antenna_dbi=3)
-    assert len(found(run(project), "G-24")["notes"]) == 1                       # 23.5 dBm e.i.r.p.
+    assert len(found(run(project), "LIM.eirp")["notes"]) == 1                       # 23.5 dBm e.i.r.p.
     state_use(project, U1={"bands_mhz": [[2412, 2472]], "max_dbm": 17})
     rep = run(project)
-    assert found(rep, "G-24") == NOTHING and found(rep, "G-25") == NOTHING
+    assert found(rep, "LIM.eirp") == NOTHING and found(rep, "G-25") == NOTHING
     state_use(project, U1={"bands_mhz": [[2412, 2472]], "max_dbm": 18})        # 21 dBm: over again, and said how
-    assert found(run(project), "G-24")["notes"] == [
+    assert found(run(project), "LIM.eirp")["notes"] == [
         "U1: 21.0 dBm e.i.r.p. in 2400–2483.5 MHz (max_dbm 18 kept by the firmware (purpose.radio) + antenna_dbi 3) – "
         f"the band allows at most 100 mW (20.0 dBm) e.i.r.p.: the firmware must keep the conducted power at or below "
         f"17.0 dBm {LEGAL}"]
@@ -296,11 +298,11 @@ def test_g25_the_power_the_firmware_keeps_counts_for_g24(project):
 
 def test_g25_in_the_gate(project):
     give_radio(project, **ESP32)
-    assert gate_rows(project, "G-25")[1] == [("G", "info"), ("G", "pass")]       # the bell: information
+    assert gate_rows(project, "LIM.band")[1] == [("G", "info"), ("G", "pass")]       # the bell: information
     purpose(project, "sale")
-    assert gate_rows(project, "G-25")[1] == [("G", "warn"), ("G", "pass")]
+    assert gate_rows(project, "LIM.band")[1] == [("G", "warn"), ("G", "pass")]
     give_radio(project, bands_mhz=[[902, 928]], max_dbm=20)
-    assert gate_rows(project, "G-25")[1] == [("G", "fail")]
+    assert gate_rows(project, "LIM.band")[1] == [("G", "fail")]
 
 
 # --- P-11 (#23): modules and microcontrollers state their radio -------------------------------------------------------
@@ -322,11 +324,11 @@ def test_p11_a_module_that_states_nothing(project, use, where):
     no_statement(project)
     rep = run(project)
     assert rep.errors == [] and rep.pending == []
-    assert found(rep, "P-11") == {**NOTHING, where: [P11_PICO]}
+    assert found(rep, "PARTS.fact") == {**NOTHING, where: [P11_PICO]}
     g = project.graph()
     project.comp(g, "U1")["type"] = "module"                                    # a module the same
     project.save_graph(g)
-    assert found(run(project), "P-11")[where] == [P11_PICO]
+    assert found(run(project), "PARTS.fact")[where] == [P11_PICO]
 
 
 def test_p11_none_or_a_radio_is_a_statement(project):
@@ -344,9 +346,9 @@ def test_p11_other_parts_state_it_only_when_they_transmit(project):
 def test_p11_waived_on_a_component_of_the_entry(project):
     no_statement(project)
     g = project.graph()
-    project.comp(g, "U1")["waive"] = {"P-11": "a Pico 2 without the W: no radio on the board"}
+    project.comp(g, "U1")["accept"] = {"PARTS.fact": "a Pico 2 without the W: no radio on the board"}
     project.save_graph(g)
-    assert found(run(project), "P-11") == {**NOTHING, "waived": [P11_PICO]}
+    assert found(run(project), "PARTS.fact") == {**NOTHING, "waived": [P11_PICO]}
 
 
 @pytest.mark.parametrize("radio", ["no", [], 5, ["none"]])
@@ -354,18 +356,18 @@ def test_p11_a_statement_of_another_shape_is_an_error(project, radio):
     part = project.part("C41407547")
     part["compliance"]["radio"] = radio
     project.save_part("C41407547", part)
-    assert found(run(project), "P-11")["errors"] == [
+    assert found(run(project), "PARTS.schema")["errors"] == [
         f"C41407547 (U1): compliance.radio {radio!r} – \"none\", or its bands and power: {{\"bands_mhz\": [[from, to], "
         "…], \"max_dbm\": …, \"antenna_dbi\": …, \"doc\": …}"]
 
 
 def test_p11_in_the_gate_stage_p(project):
     no_statement(project)
-    rows, p11 = gate_rows(project, "P-11")
+    rows, p11 = gate_rows(project, "PARTS.fact")
     assert p11 == [("P", "info"), ("P", "pass")]
     assert gate.decide(rows, [], {"manual": []}, "PGESLF", gate.STAGES) == ("RELEASED", [])
     purpose(project, "sale")
-    rows, p11 = gate_rows(project, "P-11")
+    rows, p11 = gate_rows(project, "PARTS.fact")
     assert p11 == [("P", "warn"), ("P", "pass")]
     assert gate.decide(rows, [], {"manual": []}, "PGESLF", gate.STAGES)[1] == ["1 warning(s) not accepted (section 3)"]
     signoff = {"manual": [], "accepted_warnings": [{"match": "P-11 C41407547 *", "scope": "decision",

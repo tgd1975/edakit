@@ -138,7 +138,7 @@ def check_remark(remark, rows, name):
     bad = sorted({ch for ch in remark if not ch.isascii()})
     actual = (f"{len(remark)} characters" + (f", not ASCII: {' '.join(bad)}" if bad else ", ASCII")) if remark \
         else "no remark"
-    rows.add("F", "F-6", name, "remark fits JLCPCB's order form", len(remark) <= REMARK_MAX and not bad, actual,
+    rows.add("F", "FILES.order", name, "remark fits JLCPCB's order form", len(remark) <= REMARK_MAX and not bad, actual,
              f"<= {REMARK_MAX} characters, ASCII")
 
 
@@ -147,12 +147,12 @@ def check_material(board, rows):
     JLCPCB prints on the mask."""
     t = board.thickness_mm
     ok = any(abs(t - x) < 1e-6 for x in THICKNESSES_MM)
-    rows.add("F", "F-6", board.name, "board thickness JLCPCB makes (FR-4, 2 layers)", ok,
+    rows.add("F", "FILES.order", board.name, "board thickness JLCPCB makes (FR-4, 2 layers)", ok,
              f"{t:g} mm (thickness_mm)" + ("" if ok else " – not a thickness of JLCPCB's form"),
              ", ".join(f"{x:g}" for x in THICKNESSES_MM) + " mm")
     mask, silk = board.order["mask"], board.order["silkscreen"]
     want = silkscreen_on(mask)
-    rows.add("F", "F-6", board.name, "silkscreen colour JLCPCB prints on the solder mask", silk == want,
+    rows.add("F", "FILES.order", board.name, "silkscreen colour JLCPCB prints on the solder mask", silk == want,
              f"{silk} on a {mask} mask" if silk == want else
              f'silkscreen = "{silk}" on a {mask} mask – JLCPCB prints {want} on it; choose silkscreen = "{want}" or '
              "another mask", f"{want} on a {mask} mask")
@@ -174,21 +174,21 @@ def check_mark(board, data, rows):
     where = f"{PLACEHOLDER} at {pt(found[0][1])} on the {found[0][0]} silkscreen" if found else ""
     if mark != "specify":
         if found:
-            rows.add("F", "F-6", board.name, what, False, f'{where}, but mark = "{mark}" – JLCPCB prints its number '
+            rows.add("F", "FILES.order", board.name, what, False, f'{where}, but mark = "{mark}" – JLCPCB prints its number '
                      'elsewhere and leaves the placeholder as text; choose mark = "specify"', "mark = specify", "warn")
         else:
-            rows.add("F", "F-6", board.name, what, True, f'mark = "{mark}": {MARK[mark]}', "no placeholder")
+            rows.add("F", "FILES.order", board.name, what, True, f'mark = "{mark}": {MARK[mark]}', "no placeholder")
         return
     want = f">= {PLACEHOLDER_MIN_MM} mm high"
     if not found:
-        rows.add("F", "F-6", board.name, what, False, f"no {PLACEHOLDER} on a silkscreen layer (pcb.json) – place it "
+        rows.add("F", "FILES.order", board.name, what, False, f"no {PLACEHOLDER} on a silkscreen layer (pcb.json) – place it "
                  "([[silk.texts]], edakit silk apply) or choose another mark", f"placeholder, {want}")
     elif not heights:
-        rows.add("F", "F-6", board.name, what, False, f"{where}: its height is not in [[silk.texts]] – not checked",
+        rows.add("F", "FILES.order", board.name, what, False, f"{where}: its height is not in [[silk.texts]] – not checked",
                  want, "warn")
     else:
         h = min(heights)
-        rows.add("F", "F-6", board.name, what, h >= PLACEHOLDER_MIN_MM - 1e-9,
+        rows.add("F", "FILES.order", board.name, what, h >= PLACEHOLDER_MIN_MM - 1e-9,
                  f"{where}, {h:.2f} mm high" if h >= PLACEHOLDER_MIN_MM - 1e-9
                  else f"{PLACEHOLDER} {h:.2f} mm high ([[silk.texts]] h_mm) – JLCPCB needs {want}", want)
 
@@ -200,7 +200,7 @@ def check_tooling(board, pcba, rows):
     else:
         actual = (f"{n} tooling hole" if n else "no tooling holes ([tooling])") + " – JLCPCB adds its own (Added by " \
             "JLCPCB), maybe on a visible edge; add [tooling] holes or accept"
-    rows.add("F", "F-6", board.name, f"tooling holes of the Economic PCBA ({pcba[1]})", n >= TOOLING_MIN, actual,
+    rows.add("F", "FILES.order", board.name, f"tooling holes of the Economic PCBA ({pcba[1]})", n >= TOOLING_MIN, actual,
              f">= {TOOLING_MIN} ([tooling])", None if n >= TOOLING_MIN else "warn")
 
 
@@ -212,12 +212,12 @@ def check_tabs(board, g, rows):
     lost = gerber.missing(g, "outline", "top", "bottom")
     if lost:
         if o["tab_zones"]:
-            rows.add("F", "F-6", board.name, "tab zones free of copper", False, f"{', '.join(lost)} missing", "present")
+            rows.add("F", "FILES.order", board.name, "tab zones free of copper", False, f"{', '.join(lost)} missing", "present")
         return None
     poly = outline(g)
     if poly is None:
         if o["tab_zones"]:
-            rows.add("F", "F-6", board.name, "tab zones free of copper", False, "no closed outline in the Gerber files",
+            rows.add("F", "FILES.order", board.name, "tab zones free of copper", False, "no closed outline in the Gerber files",
                      "closed outline")
         return None
     ring, cu, mm = poly.exterior, copper(g), o["tab_copper_mm"]
@@ -228,7 +228,7 @@ def check_tabs(board, g, rows):
         off = [f"{pt(p)} is {Point(p).distance(ring):.2f} mm off the outline" for p in (ea, eb)
                if Point(p).distance(ring) > ON_OUTLINE_MM]
         if off:
-            rows.add("F", "F-6", board.name, f"tab zone {name} on the outline", False, "; ".join(off),
+            rows.add("F", "FILES.order", board.name, f"tab zone {name} on the outline", False, "; ".join(off),
                      f"<= {ON_OUTLINE_MM} mm")
             zones.append((name, None))
             continue
@@ -236,13 +236,13 @@ def check_tabs(board, g, rows):
         dist = line.distance(cu) if not cu.is_empty else math.inf
         at = nearest_points(line, cu)[0] if not cu.is_empty else None
         ok = dist >= mm - 1e-6
-        rows.add("F", "F-6", board.name, f"tab zone {name}: no copper within tab_copper_mm of the edge", ok,
+        rows.add("F", "FILES.order", board.name, f"tab zone {name}: no copper within tab_copper_mm of the edge", ok,
                  f"{line.length:.1f} mm, nearest copper {dist:.2f} mm" if ok
                  else f"copper {dist:.2f} mm from the edge at {pt((at.x, at.y))}", f">= {mm:.2f} mm (tab_copper_mm)")
         zones.append((name, dist))
     free = free_stretches(ring, cu, mm)
     longest = sorted(free, key=lambda p: -p.length)
-    rows.add("F", "F-6", board.name, f"outline stretches with no copper within {mm:.2f} mm (where tabs can go)", True,
+    rows.add("F", "FILES.order", board.name, f"outline stretches with no copper within {mm:.2f} mm (where tabs can go)", True,
              f"{len(free)}, {sum(p.length for p in free):.1f} of {ring.length:.1f} mm"
              + (": " + "; ".join(piece_text(p) for p in longest[:4]) if free else ""), "information", "info")
     return poly, free, zones
@@ -351,7 +351,7 @@ def check(cfg, board, design, d, rows, bom):
     tabs = check_tabs(board, d / "gerber", rows)
     found, _ = placeholders(board, data)
     (d / "order.md").write_text(sheet(cfg, design, board, d, bom, pcba, tabs, found), encoding="utf-8")
-    rows.add("F", "F-6", board.name, "order form of this run", True,
+    rows.add("F", "FILES.order", board.name, "order form of this run", True,
              f"order.md: {pcba[0].capitalize() + ' PCBA' if bom else 'PCB only'}, mark {MARK[board.order['mark']]}"
              + (f", tooling {'Added by Customer' if board.tooling else 'Added by JLCPCB'}" if bom else ""),
              "information", "info")

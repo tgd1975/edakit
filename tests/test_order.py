@@ -8,6 +8,8 @@ import json
 
 import pytest
 
+from helpers import check
+
 from edakit import checks, cli
 from edakit.design import Design
 
@@ -35,8 +37,8 @@ def append_toml(project, text):
 
 def p5(project):
     cfg = project.config()
-    rep = checks.run(Design.from_config(cfg), cfg)
-    return [m for c, m in rep.warnings if c == "P-5"], rep
+    rep = check(Design.from_config(cfg), cfg)
+    return [m for c, m in rep.warnings if c == "PARTS.supplier"], rep
 
 
 def test_j1_lands_in_the_lcsc_cart(project, monkeypatch, capsys):
@@ -132,7 +134,7 @@ def test_the_assemblers_bom_is_the_f1_bom(project, monkeypatch):
 
 def test_the_example_has_no_p5_row(project):
     warnings, rep = p5(project)
-    assert warnings == [] and "P-5" in checks.EXECUTED and not rep.errors
+    assert warnings == [] and "PARTS.supplier" in checks.EXECUTED and not rep.errors
 
 
 def test_a_part_bought_separately_without_a_supplier(project, monkeypatch, capsys):

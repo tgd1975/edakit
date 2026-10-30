@@ -9,6 +9,8 @@ from pathlib import Path
 
 import pytest
 
+from helpers import check
+
 from edakit import checks, cli, config, part
 from edakit.design import Design
 from edakit.release import gate
@@ -63,12 +65,12 @@ def use_own(project, net="+5V", name="ring"):
 
 def run_checks(root):
     cfg = cfg_of(root)
-    return checks.run(Design.from_config(cfg), cfg)
+    return check(Design.from_config(cfg), cfg)
 
 
 def p3(rep):
-    return ([m for c, m in rep.errors if c == "P-3"], [m for c, m in rep.pending if c == "P-3"],
-            [m for c, m in rep.warnings if c == "P-3"], [m for c, m in rep.notes if c == "P-3"])
+    return ([m for c, m in rep.errors if c == "SYNC.source"], [m for c, m in rep.pending if c == "SYNC.source"],
+            [m for c, m in rep.warnings if c == "SYNC.source"], [m for c, m in rep.notes if c == "SYNC.source"])
 
 
 # --- the datasheet of the board ------------------------------------------------------------------------------------
@@ -84,9 +86,9 @@ def test_datasheet_of_the_example(board):
     out = simrun.run_all(Design.from_config(cfg), {**sim, "report": ["VIN", "GND"]})
     i_max = max(s["sources"]["J1"] for s in out["scenarios"])
     volts = [s["nets"]["VIN"] - s["nets"]["GND"] for s in out["scenarios"]]
-    assert entry["params"] == {"behavior": "current", "i_a": round(i_max, 4)}
-    assert entry["ratings"] == {"vin_min": round(min(volts), 3), "vin_max": round(max(volts), 3)}
-    assert 4.5 < entry["ratings"]["vin_min"] < 4.75 <= 5.0 < entry["ratings"]["vin_max"] <= 5.25
+    assert entry["values"] == {"behavior": "current", "i_a": round(i_max, 4)}
+    assert entry["limits"] == {"vin_min_v": round(min(volts), 3), "vin_max_v": round(max(volts), 3)}
+    assert 4.5 < entry["limits"]["vin_min_v"] < 4.75 <= 5.0 < entry["limits"]["vin_max_v"] <= 5.25
     assert entry["own"]["what"] == "pcb" and entry["own"]["connectors"] == ["J1"]
     assert entry["own"]["state_sha256"] == gate.file_hash(cfg.root, gate.state_files(cfg))
     assert entry["verified"] is None and "rohs" in entry["compliance"]
@@ -132,7 +134,7 @@ def test_datasheet_reads_pull_ups_and_signals(board):
     sda = entry["pins"]["3"]
     assert sda["role"] == "sda" and sda["type"] == "bidirectional"
     assert sda["pull"] == "up" and sda["pull_ohm"] == 10000.0
-    assert sda["vmax"] == 3.63                                             # the Pico's GPIO limit
+    assert sda["v_max_v"] == 3.63                                             # the Pico's GPIO limit
     assert "| 3 | SDA | bidirectional | sda | 3.63 | up 10 kΩ |" in md
 
 
@@ -268,7 +270,7 @@ def test_gate_asks_to_accept_the_warning(project, board):
     use_own(project)
     cfg = project.config()
     rows, _ = gate.stage_graph(cfg, Design.from_config(cfg))
-    row = next(r for r in rows if r["id"] == "P-3")
+    row = next(r for r in rows if r["id"] == "SYNC.source")
     assert row["stage"] == "P" and row["result"] == "warn" and row["check"].startswith("M1 ring: ../ring is not")
 
 
@@ -295,7 +297,7 @@ def test_e3_holds_the_board_to_its_simulated_range(project, board):
     use_own(project)                         # behind the host's reverse-polarity diode: half a volt below the range
     rows = supply_rows(project)
     assert rows and any(r["result"] == "fail" for r in rows)
-    lo = json.loads((project.root / "hardware/parts/ring.json").read_text())["ratings"]["vin_min"]
+    lo = json.loads((project.root / "hardware/parts/ring.json").read_text())["limits"]["vin_min_v"]
     assert all(r["expected"].startswith(f"{lo}") for r in rows)
 
 
@@ -312,7 +314,7 @@ def test_e3_passes_inside_the_range(project, board):
 
 def test_p3_and_e3_leave_the_example_alone(project):
     rep = run_checks(project.root)
-    assert p3(rep) == ([], [], [], []) and "P-3" in checks.EXECUTED
+    assert p3(rep) == ([], [], [], []) and "SYNC.source" in checks.EXECUTED
     assert not [c for c in simrun.run_all(Design.from_config(project.config()),
                                           json.loads((project.root / "hardware/sim.json").read_text()))["checks"]
                 if "vin_min … vin_max" in c["check"]]

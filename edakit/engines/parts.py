@@ -42,15 +42,15 @@ def run(ctx):
         on = tuple(("component", x) for x in dess)
         for fact in need:
             if get(entry, fact) is None:
-                why = " – the regulatory review (M-6) reads it" if fact == "compliance.radio" else ""
-                out.append(Finding("PARTS.fact", "P", key, f"{entry.get('mpn', '')} ({', '.join(dess)}) states no "
-                                   f"{fact}{why}", "[facts] of the profile's domains", "fill it in from the datasheet"
-                                   + (": its bands and power, or \"none\" when it does not transmit"
-                                      if fact == "compliance.radio" else ""),
-                                   grade=fact.rsplit(".", 1)[-1], on=on, old="P-11" if fact == "compliance.radio" else ""))
+                text = (f"{key} {entry.get('mpn', '')} ({', '.join(dess)}) states no radio – compliance.radio in its "
+                        "parts entry: its bands and power, or \"none\" when it does not transmit; the regulatory review "
+                        "(M-6) reads it" if fact == "compliance.radio" else
+                        f"{key} {entry.get('mpn', '')} ({', '.join(dess)}) states no {fact}")
+                out.append(Finding("PARTS.fact", "P", key, text, "[facts] of the profile's domains",
+                                   "fill it in from the datasheet", grade=fact.rsplit(".", 1)[-1], on=on))
         r = (entry.get("compliance") or {}).get("radio")
         if r is not None and not (r == "none" or isinstance(r, dict) or (isinstance(r, list) and r
                                                                         and all(isinstance(x, dict) for x in r))):
-            out.append(Finding("PARTS.schema", "P", key, f"compliance.radio {r!r} ({', '.join(dess)}) – {RADIO_FORM}",
-                               old="P-11"))
+            out.append(Finding("PARTS.schema", "P", key, f"{key} ({', '.join(dess)}): compliance.radio {r!r} – "
+                                                         f"{RADIO_FORM}"))
     return out

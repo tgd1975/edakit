@@ -63,10 +63,10 @@ def reverse(d, design):
             if any(b["kind"] == k and b["role"] == role and all(d.net_of(des, o) not in side for o in b["outside"])
                    for b in t["blocks"]):
                 continue
-            out.append(Finding("PATH.reverse", "G", ref, f"on {net}: a reversed source reaches this pin without a "
+            out.append(Finding("PATH.reverse", "G", ref, f"{ref} on {net}: a reversed source reaches this pin without a "
                                "blocking device", "catalog/paths.toml [reverse]",
                                "a series Schottky diode, or a PMOS with its gate to ground (block reverse-pmos)",
-                               on=(("net", net),), old="G-10"))
+                               on=(("net", net),)))
     return out
 
 
@@ -123,7 +123,7 @@ def supply(d, sim=None):
     reaches. A net in the graph's grounds that does not exist: STRUCT.ref."""
     alias = {a: name for name, net in d.nets.items() for a in net.get("joined") or [name]}
     named = d.graph.get("grounds") or []
-    out = [Finding("STRUCT.ref", "G", "grounds", f"no net {n} in the graph", old="G-16") for n in named
+    out = [Finding("STRUCT.ref", "G", "grounds", f"grounds: no net {n} in the graph") for n in named
            if n not in alias]
     joins = defaultdict(set)
     for des in d.comps_of_kind(*data()["ground"]["joins"]):
@@ -137,12 +137,12 @@ def supply(d, sim=None):
             ref, net = f"{des}.{num}", d.pin_net.get(f"{des}.{num}")
             if net is None:
                 continue
-            what, on = f"{info.get('name', num)} on {net}", (("net", net),)
+            what, on = f"{ref} ({info.get('name', num)}) on {net}", (("net", net),)
             if info.get("type") == "ground" and net not in grounds:
-                out.append(Finding("PATH.ground", "G", ref, f"{what}, not on {d.ground}", on=on, old="G-16"))
+                out.append(Finding("PATH.ground", "G", ref, f"{what}, not on {d.ground}", on=on))
             elif info.get("type") == "power_in" and net in grounds:
-                out.append(Finding("PATH.ground", "G", ref, f"{what}: a supply pin on ground", on=on, old="G-16"))
+                out.append(Finding("PATH.ground", "G", ref, f"{what}: a supply pin on ground", on=on))
             elif info.get("type") == "power_in" and net not in supplied:
                 out.append(Finding("PATH.unfed", "G", ref, f"{what}: nothing supplies this net",
-                                   "catalog/paths.toml [supply]", on=on, old="G-16"))
+                                   "catalog/paths.toml [supply]", on=on))
     return out

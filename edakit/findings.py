@@ -13,7 +13,8 @@ profile says nothing.
 
 One mechanism accepts what a person has seen and answered: `accept` with a reason, keyed by code – on a net or a
 component of the graph, or on the graph itself keyed by "code" or "code place" (circuit scope: part of the circuit
-hash), or in the sign-off file for a warning (release scope). A key "LIM.i/margin" accepts only that grade.
+hash), or in the sign-off file for a warning (release scope). A key "LIM.i/margin" accepts only that grade,
+"GEO.spacing:paste" only that topic.
 """
 
 from __future__ import annotations
@@ -40,7 +41,6 @@ class Finding:
     topic: str = ""           # part of a code a domain may switch on alone: "cc" of REQ.missing (code:topic)
     scenario: str = ""        # the simulation scenario or run (stage E)
     on: tuple = ()            # where an accept may sit: (("net", "BTN"), ("component", "C1"))
-    old: str = ""             # the check ID of before the restructuring – for the parity test until the cut
     severity: str = ""        # set by Report.resolve from the profile
     accepted: str = ""        # the reason, once accepted
     data: dict = field(default_factory=dict)   # value, limit, unit … for programs reading the JSON
@@ -52,13 +52,12 @@ class Finding:
 
     @property
     def keyed(self):
-        """The accept keys that name this finding, most specific first."""
-        out = [f"{self.code}/{self.grade}"] if self.grade else []
-        return out + [self.code]
+        """The accept keys that name this finding, most specific first: code/grade, code:topic, code."""
+        return keys(self.code, self.topic, self.grade)
 
     def line(self):
-        where = f"{self.stage}  {self.place}" + (f" [{self.scenario}]" if self.scenario else "")
-        out = f"{where}: {self.text}"
+        where = f"{self.stage}  " + (f"[{self.scenario}] " if self.scenario else "")
+        out = where + (self.text if self.place in self.text else f"{self.place}: {self.text}")
         if self.source:
             out += f"   ({self.source})"
         if self.fix:
@@ -69,6 +68,17 @@ class Finding:
         d = {k: v for k, v in asdict(self).items() if v not in ("", (), {}, None)}
         d.pop("on", None)
         return d
+
+
+def keys(code, topic="", grade=""):
+    """The accept keys of a finding, most specific first."""
+    return ([f"{code}/{grade}"] if grade else []) + ([f"{code}:{topic}"] if topic else []) + [code]
+
+
+def accept_reason(obj, code, topic="", grade=""):
+    """The reason a net, component or graph (`obj`) gives for accepting a finding of this code, or None."""
+    acc = (obj or {}).get("accept") or {}
+    return next((acc[k] for k in keys(code, topic, grade) if k in acc), None)
 
 
 class Profile:

@@ -44,6 +44,7 @@ import re
 import time
 
 from . import checks, eda, handover
+from .engines.project import Recorder
 from .config import BOTTOM, MIL_PER_MM, TOP
 from .design import Design, natural_key
 from .eda import MCPError, api, ensure_pcb_focus
@@ -725,14 +726,14 @@ def plan(cfg, board):
                 for r in missing]
     say_unmeasured(geo, place)
     problems += check_plan(cfg, board, geo, place, boxes, tht)
-    problems += [f"L-12 {p}" for p in check_handover(board, design, place, boxes)]
-    holes = checks.Report()      # P-7 on the plan's geometry: a hole that does not take its lead is a plan finding
+    problems += [f"SYNC.plan {p}" for p in check_handover(board, design, place, boxes)]
+    holes = Recorder()      # GEO.hole on the plan's geometry: a hole that does not take its lead is a plan finding
     checks.check_holes(design, holes, lambda r: (geo[r], GEOMETRY_FROM.get(geo[r].get("source"), "{}").format(
         geo[r].get("footprint")) if geo[r].get("source") else "pcb dump") if r in geo else (None, None))
-    problems += [f"P-7 {m}" for _, m in holes.errors]
-    for kind, found in (("pending", holes.pending), ("warning", holes.warnings)):
-        for _, m in found:
-            print(f"  P-7 {kind}: {m}")
+    problems += [f"{f.code} {f.text}" for f in holes.findings if f.data["class"] == "error" and not f.accepted]
+    for f in holes.findings:
+        if f.data["class"] in ("pending", "warning"):
+            print(f"  {f.code} {f.data['class']}: {f.text}")
     for p in problems:
         print("  !", p)
     if board.uniform is not None:   # the board asks for its kinds: name the parts the polarity check cannot judge

@@ -101,6 +101,7 @@ from pathlib import Path
 from .. import drc_rules, gerber, handover, stock
 from ..config import BOTTOM, MIL_PER_MM, TOP
 from ..design import Design, natural_key
+from ..findings import accept_reason
 
 MM = 1 / MIL_PER_MM
 SILK = {3: TOP, 4: BOTTOM}   # silkscreen layer -> copper layer of the SMD pads on the same side
@@ -299,7 +300,7 @@ def check_pcb(cfg, board, design, d, rows):
     want = design.board_comps(board.name)
     on_pcb = {c["designator"]: c for c in data["components"] if c.get("designator")}
     missing, extra = sorted(set(want) - set(on_pcb), key=natural_key), sorted(set(on_pcb) - set(want), key=natural_key)
-    rows.add("L", "L-1", board.name, "parts in the PCB = graph", not missing and not extra,
+    rows.add("L", "SYNC.pcb", board.name, "parts in the PCB = graph", not missing and not extra,
              f"{len(on_pcb)} in the PCB" + (f", missing {missing}" if missing else "") + (f", extra {extra}" if extra else ""),
              f"{len(want)} in the graph")
     bad, total = [], 0
@@ -315,14 +316,14 @@ def check_pcb(cfg, board, design, d, rows):
         for pin in want[ref]["pins"]:
             if f"{ref}.{pin}" in design.pin_net and pin not in have:
                 bad.append(f"{ref}.{pin}: pad missing in the footprint ({design.pin_net[f'{ref}.{pin}']})")
-    rows.add("L", "L-1", board.name, "pad nets in the PCB = graph, every graph pin has a pad", not bad,
+    rows.add("L", "SYNC.pcb", board.name, "pad nets in the PCB = graph, every graph pin has a pad", not bad,
              f"{total} pads" + (f", {len(bad)} differences: {'; '.join(bad[:12])}" if bad else ""), "no difference")
     wrong = []
     for ref, c in sorted(on_pcb.items()):
         part = design.part(ref) if ref in want else None
         if part and part.get("footprint") and c["footprintName"] != part["footprint"]:
             wrong.append(f"{ref}: {c['footprintName']} instead of {part['footprint']}")
-    rows.add("L", "L-4", board.name, "footprint per part = parts database", not wrong, "; ".join(wrong) or "all equal", "equal")
+    rows.add("L", "SYNC.footprint", board.name, "footprint per part = parts database", not wrong, "; ".join(wrong) or "all equal", "equal")
     geo_file = pcbmod.geometry_file(cfg, board)
     if geo_file.exists():
         geo = json.loads(geo_file.read_text())
@@ -336,15 +337,15 @@ def check_pcb(cfg, board, design, d, rows):
             x, y, rot, side = to_plan(board, on_pcb[ref])
             if math.hypot(x - p.x, y - p.y) > 0.02 or abs((rot - p.rot + 180) % 360 - 180) > 0.01 or side != p.side:
                 off.append(f"{ref}: ({x:.2f}, {y:.2f}, {rot:g}°, {side}) instead of ({p.x:.2f}, {p.y:.2f}, {p.rot:g}°, {p.side})")
-        rows.add("L", "L-7", board.name, "fixed parts in the PCB = plan (position, rotation, side)", not off,
+        rows.add("L", "SYNC.plan", board.name, "fixed parts in the PCB = plan (position, rotation, side)", not off,
                  f"{len(place)} parts" + (f", {len(off)} off: {'; '.join(off[:8])}" if off else ""), "± 0.02 mm")
-        rows.add("L", "L-7", board.name, "plan without findings (outline, overlaps, holes, THT pins, near)", not problems,
+        rows.add("L", "SYNC.plan", board.name, "plan without findings (outline, overlaps, holes, THT pins, near)", not problems,
                  "; ".join(problems[:10]) or "none", "none")
         kept = pcbmod.check_handover(board, design, place, boxes)
-        rows.add("L", "L-12", board.name, "plan keeps the layout requirements of the circuit (fixed, edge, near, "
+        rows.add("L", "SYNC.plan", board.name, "plan keeps the layout requirements of the circuit (fixed, edge, near, "
                  "decoupling)", not kept, "; ".join(kept[:10]) or "all kept", "all kept")
     else:
-        rows.add("L", "L-7", board.name, "footprint geometry for the plan checks", False, f"{geo_file.name} missing "
+        rows.add("L", "SYNC.plan", board.name, "footprint geometry for the plan checks", False, f"{geo_file.name} missing "
                  "(edakit pcb dump)", "present")
     widths, length = defaultdict(lambda: 1e9), defaultdict(float)
     for ln in data["lines"]:
@@ -353,35 +354,35 @@ def check_pcb(cfg, board, design, d, rows):
             length[ln["Net"]] += math.hypot(ln["EndX"] - ln["StartX"], ln["EndY"] - ln["StartY"]) * MM
     need = required_widths(cfg, design, board)
     if need is None:
-        rows.add("L", "L-5", board.name, "simulated net currents for the track widths", False,
+        rows.add("L", "GEO.width", board.name, "simulated net currents for the track widths", False,
                  "net_currents.json missing (edakit sim)", "present")
     else:
         ipc = [f"{n}: {w:.2f} < {need[n][0]:.2f} mm" for n, w in sorted(widths.items()) if n in need and w < need[n][0] - 0.005]
-        rows.add("L", "L-5", board.name, "track width per net >= IPC-2221 for 1.5 x the simulated current (1 oz, 10 K)",
+        rows.add("L", "GEO.width", board.name, "track width per net >= IPC-2221 for 1.5 x the simulated current (1 oz, 10 K)",
                  not ipc, "; ".join(ipc) or f"{len(widths)} nets with tracks", ">= IPC width")
         thin = [f"{n}: {w:.2f} < {need[n][1]:.2f} mm" for n, w in sorted(widths.items()) if n in need and w < need[n][1] - 0.005]
         if thin:
-            rows.add("L", "L-5", board.name, "track width >= practical width of the net class", False, "; ".join(thin),
+            rows.add("L", "GEO.width", board.name, "track width >= practical width of the net class", False, "; ".join(thin),
                      ">= class width", "warn")
         # upper bound: all pieces of the net in series, narrowest width, 35 µm copper (0.0172 Ohm mm²/m), no pours
         drop = {n: length[n] / 1000 * 0.0172 / (widths[n] * 0.035) * need[n][2] for n in length
                 if n in need and need[n][2] > 0.05}
         if drop:
-            rows.add("L", "L-5", board.name, "voltage drop on tracks, upper bound (all pieces in series x largest current)",
+            rows.add("L", "GEO.width", board.name, "voltage drop on tracks, upper bound (all pieces in series x largest current)",
                      True, ", ".join(f"{n} {v * 1e3:.0f} mV" for n, v in sorted(drop.items(), key=lambda kv: -kv[1])),
                      "information", "info")
     drc = json.loads((d / "drc.json").read_text())
     items = pcbmod.import_items(drc)
     other = [f for f in drc if f not in items]
     kinds = Counter(f"{f.get('errorType')} ({f.get('ruleName')})" for f in other)
-    rows.add("L", "L-3", board.name, "EasyEDA DRC without findings (other kinds)", not other,
+    rows.add("L", "GEO.drc", board.name, "EasyEDA DRC without findings (other kinds)", not other,
              ", ".join(f"{k}: {n}" for k, n in kinds.items()) or "0", "0")
     diff = json.loads((d / "netlist_diff.json").read_text()) if (d / "netlist_diff.json").exists() else None
     ok, what = pcbmod.import_verdict(items, diff)
-    rows.add("L", "L-3", board.name, "schematic and PCB in sync (Import Changes)", ok, what, "no Import Changes item")
+    rows.add("L", "GEO.drc", board.name, "schematic and PCB in sync (Import Changes)", ok, what, "no Import Changes item")
     if drc_rules.mode(board):
         ok, what, expected = drc_rules.verdict(board, d / "drc_rules.json")
-        rows.add("L", "L-3", board.name, "EasyEDA's DRC rule set = [routing] of the board file", ok, what, expected)
+        rows.add("L", "GEO.drc", board.name, "EasyEDA's DRC rule set = [routing] of the board file", ok, what, expected)
     check_polarity_marks(cfg, board, design, d, data, want, on_pcb, rows)
 
 
@@ -395,7 +396,7 @@ def check_rows(board, design, rows):
     want = design.board_comps(board.name)
     missing = pcbmod.parts_without_row(board, design)
     names = ", ".join(missing[:ROWS_NAMED]) + (f" … (+{len(missing) - ROWS_NAMED})" if len(missing) > ROWS_NAMED else "")
-    rows.add("L", "L-20", board.name, "every part of the board has a row in [place] (position, rotation, side)",
+    rows.add("L", "SYNC.plan", board.name, "every part of the board has a row in [place] (position, rotation, side)",
              not missing, f"{names}: no row in {board.file} [place] ({len(missing)} of {len(want)} parts)" if missing
              else f"{len(want)} parts, each with a row", "a row for every part")
 
@@ -430,11 +431,11 @@ def polarity_signs(cfg, board, d, data):
 
 def check_polarity_marks(cfg, board, design, d, data, want, on_pcb, rows):
     """L-8: every sign of the silkscreen (polarity_signs) is compared with the nearest pad on its side whose pin role
-    has a sign (role_sign); a sign at a pad of the other sign fails. `waive: {"L-8": "…"}` on the nearest part lists
+    has a sign (role_sign); a sign at a pad of the other sign fails. `accept: {"GEO.mark": "…"}` on the nearest part lists
     its finding as waived – a decorative cross, or a footprint whose print is known and wrong."""
     signs, lost = polarity_signs(cfg, board, d, data)
     if lost:
-        rows.add("L", "L-8", board.name, "silk Gerber files for the drawn signs", False,
+        rows.add("L", "GEO.mark", board.name, "silk Gerber files for the drawn signs", False,
                  f"{', '.join(lost)} missing (Gerber export)", "present")
     polar = {r for r in want if r in on_pcb and any(role_sign(p.get("role")) for p in
                                                    (design.parts.get(want[r].get("lcsc") or "", {}).get("pins") or {}).values())}
@@ -451,17 +452,17 @@ def check_polarity_marks(cfg, board, design, d, data, want, on_pcb, rows):
         role = pin_role(design, want[ref], p["PadNumber"])
         if role_sign(role) != sign:
             text = f"'{sign}' at ({x:.1f}, {y:.1f}) mm: nearest pad {ref}.{p['PadNumber']} is {role}"
-            reason = (want[ref].get("waive") or {}).get("L-8")
+            reason = accept_reason(want[ref], "GEO.mark")
             if reason:
                 waived.append((text, reason))
             else:
                 wrong.append(text)
     n_text = sum(1 for s in signs if s[4] == "text")
-    rows.add("L", "L-8", board.name, "silkscreen '+'/'−' = role of the nearest polarised pad", not wrong,
+    rows.add("L", "GEO.mark", board.name, "silkscreen '+'/'−' = role of the nearest polarised pad", not wrong,
              "; ".join(wrong) or f"{len(signs) - len(waived)} signs correct" + (f", {len(waived)} waived" if waived else "")
              + f": {n_text} as PCB text, {len(signs) - n_text} drawn in the silkscreen", "every sign at the right pole")
     for text, reason in waived:
-        rows.add("L", "L-8", board.name, f"polarity mark: {text}", True, text, "every sign at the right pole", "waived")
+        rows.add("L", "GEO.mark", board.name, f"polarity mark: {text}", True, text, "every sign at the right pole", "waived")
         rows[-1]["reason"] = reason
 
 
@@ -475,7 +476,7 @@ def check_silk(cfg, board, design, d, rows):
     the designators (silk_designators) and the text heights edakit prints (silk_heights)."""
     data = json.loads((d / "pcb.json").read_text())
     if lost := gerber.missing(d / "gerber", "top_silk", "bottom_silk", "top_mask", "bottom_mask", "outline"):
-        rows.add("L", "L-17", board.name, "Gerber files for the silkscreen check", False,
+        rows.add("L", "GEO.silk", board.name, "Gerber files for the silkscreen check", False,
                  f"{', '.join(lost)} missing (Gerber export)", "present")
     else:
         silk_print(cfg, board, data, d / "gerber", rows)
@@ -513,13 +514,13 @@ def silk_print(cfg, board, data, g, rows):
     memo, kept = cfg.artifacts / f"silk_strings_{board.name}.json", silk.footprint_print(cfg, board)
     what = "edakit's own print (designators, texts, artwork of silk apply) off the solder-mask openings"
     if not kept.is_dir():
-        rows.add("L", "L-17", board.name, what, not memo.exists(), f"{memo.name} exists, {kept.name}/ does not: "
+        rows.add("L", "GEO.silk", board.name, what, not memo.exists(), f"{memo.name} exists, {kept.name}/ does not: "
                  "edakit's print cannot be told from the footprints' (silk apply of an older edakit) – run edakit silk "
                  "apply" if memo.exists() else "edakit printed nothing on this board (no silk apply)",
                  "0 mm² – the footprint print silk apply keeps tells it apart")
     outline = gerber.outline_shape(g)
     if outline is None:
-        rows.add("L", "L-17", board.name, "board outline for the print beyond it", False,
+        rows.add("L", "GEO.silk", board.name, "board outline for the print beyond it", False,
                  f"no closed outline in {gerber.FILES['outline']}", "a closed outline")
     for side, layer in silk.SIDE.items():
         name = side.upper()
@@ -534,7 +535,7 @@ def silk_print(cfg, board, data, g, rows):
                 own, other = silk_spots(other.difference(theirs)), other.intersection(theirs)
             else:
                 own, other = silk_spots(other), other.difference(other)
-            rows.add("L", "L-17", board.name, f"{name}: {what}", sum(p.area for p in own) <= SILK_LIMIT_MM2,
+            rows.add("L", "GEO.silk", board.name, f"{name}: {what}", sum(p.area for p in own) <= SILK_LIMIT_MM2,
                      f"{name}: " + (spots_text(own, pads) if own else "0.000 mm²"),
                      "0 mm² – run silk apply after the last routing")
         by_part = defaultdict(list)
@@ -542,16 +543,16 @@ def silk_print(cfg, board, data, g, rows):
             by_part[nearest_pad(pads, p).split(".")[0]].append(p)
         bad = {ref: spots for ref, spots in by_part.items() if sum(p.area for p in spots) > SILK_LIMIT_MM2}
         for ref, spots in sorted(bad.items(), key=lambda kv: natural_key(kv[0])):
-            rows.add("L", "L-17", board.name, f"{ref}: silkscreen on its solder-mask openings – JLCPCB clips it there"
+            rows.add("L", "GEO.silk", board.name, f"{ref}: silkscreen on its solder-mask openings – JLCPCB clips it there"
                      if ref else f"{name}: silkscreen on solder-mask openings away from every pad", False,
                      f"{name}: {spots_text(spots, pads)}", "0 mm²", "warn")
         if not bad:
-            rows.add("L", "L-17", board.name, f"{name}: other print (footprints, texts by hand) off the solder-mask "
+            rows.add("L", "GEO.silk", board.name, f"{name}: other print (footprints, texts by hand) off the solder-mask "
                      "openings", True, f"{name}: {sum(p.area for p in silk_spots(other)):.3f} mm²", "0 mm²")
         if outline is not None:
             out = silk_spots(printed.difference(outline.buffer(0.01)))
             area = sum(p.area for p in out)
-            rows.add("L", "L-17", board.name, f"{name}: silkscreen inside the board outline", area <= SILK_LIMIT_MM2,
+            rows.add("L", "GEO.silk", board.name, f"{name}: silkscreen inside the board outline", area <= SILK_LIMIT_MM2,
                      f"{name}: " + (spots_text(out, around="around ").replace(" in ", " beyond it in ", 1) if out
                                     else "0.000 mm² beyond it"), "0 mm²", None if area <= SILK_LIMIT_MM2 else "warn")
 
@@ -565,7 +566,7 @@ def silk_designators(board, design, data, rows):
     layer = silk.SIDE[side]
     shown = data.get("designators")
     if shown is None:
-        rows.add("L", "L-17", board.name, f"designators of the {side} side read with the PCB", False,
+        rows.add("L", "GEO.silk", board.name, f"designators of the {side} side read with the PCB", False,
                  "pcb.json without the designators (written by an older edakit) – edakit fab without --offline",
                  "read with the PCB")
         return
@@ -578,14 +579,14 @@ def silk_designators(board, design, data, rows):
     bare = [r for r in parts if not shown.get(r) and r not in texts]
     in_group = [r for r in bare if r in grouped]
     listed = [r for r in bare if r not in grouped and r in unlabelled]
-    rows.add("L", "L-17", board.name, f"designators of the {side} side read with the PCB", True,
+    rows.add("L", "GEO.silk", board.name, f"designators of the {side} side read with the PCB", True,
              f"{len(parts)} parts: {len(parts) - len(bare)} with a visible designator"
              + (f", {len(in_group)} under a group label" if in_group else "")
              + (", unlabelled on purpose: " + "; ".join(f"{r} ({unlabelled[r]})" for r in listed) if listed else ""),
              "every part labelled")
     for r in bare:
         if r not in grouped and r not in unlabelled:
-            rows.add("L", "L-17", board.name, f"{r}: no visible designator, no group label, not in [silk] unlabelled",
+            rows.add("L", "GEO.silk", board.name, f"{r}: no visible designator, no group label, not in [silk] unlabelled",
                      False, f"{r} on the {side} without a visible designator",
                      "a visible designator, a group label or [silk] unlabelled", "warn")
 
@@ -601,10 +602,10 @@ def silk_heights(cfg, board, rows):
     heights += [(f"h_mm of [[silk.texts]] '{t['text']}'", float(t.get("h_mm", 1.2))) for t in s.get("texts", [])]
     low = [(k, h) for k, h in heights if h < silk.MIN_TEXT_MM - 1e-9]
     for k, h in low:
-        rows.add("L", "L-17", board.name, f"{k}: text height below JLCPCB's minimum", False, f"{k} = {h:g} mm",
+        rows.add("L", "GEO.silk", board.name, f"{k}: text height below JLCPCB's minimum", False, f"{k} = {h:g} mm",
                  f">= {silk.MIN_TEXT_MM:.1f} mm", "warn")
     if not low:
-        rows.add("L", "L-17", board.name, f"text heights edakit prints at least {silk.MIN_TEXT_MM:.1f} mm (JLCPCB minimum "
+        rows.add("L", "GEO.silk", board.name, f"text heights edakit prints at least {silk.MIN_TEXT_MM:.1f} mm (JLCPCB minimum "
                  "text height)", True, ", ".join(f"{k} {h:g} mm" for k, h in heights), f">= {silk.MIN_TEXT_MM:.1f} mm")
 
 
@@ -631,7 +632,7 @@ def check_pad_layout(board, design, on_pcb, want, geo, rows):
             n += 1
             if off > 0.05:
                 bad.append(f"{ref}.{pad['PadNumber']}: {off:.2f} mm away from its footprint position")
-    rows.add("L", "L-10", board.name, "pad numbers sit as in the library footprint (exceptions: pad_map)", not bad,
+    rows.add("L", "SYNC.footprint", board.name, "pad numbers sit as in the library footprint (exceptions: pad_map)", not bad,
              "; ".join(bad[:10]) or f"{n} pads", "± 0.05 mm")
 
 
@@ -644,16 +645,16 @@ def check_pad_clearance(cfg, board, design, d, rows):
     want = f">= {clear * MM:.3f} mm (clearance_mil {clear:g})"
     data, why = route.board_as_read(cfg, board, json.loads((d / "pcb.json").read_text())["components"])
     if data is None:
-        rows.add("L", "L-13", board.name, "pad shapes for the pad clearance", False, why, "the PCB as read")
+        rows.add("L", "GEO.spacing", board.name, "pad shapes for the pad clearance", False, why, "the PCB as read")
         return
-    gaps = route.pad_gaps(data, clear, route.pad_waivers(design.graph))
+    gaps = route.pad_gaps(data, clear, route.pad_accepts(design.graph))
     bad = [route.gap_text(g, clear) for g in gaps if not g["waived"]]
-    rows.add("L", "L-13", board.name, "pads of different parts on different nets at least the routing clearance apart",
+    rows.add("L", "GEO.spacing", board.name, "pads of different parts on different nets at least the routing clearance apart",
              not bad, "; ".join(bad[:10]) + (f" … ({len(bad)} pairs)" if len(bad) > 10 else "")
              or f"{sum(1 for p in data['pads'] if p['ref'])} pads", want)
     for g in gaps:
         if g["waived"]:
-            rows.add("L", "L-13", board.name, f"pad clearance: {route.gap_text(g, clear)}", True,
+            rows.add("L", "GEO.spacing", board.name, f"pad clearance: {route.gap_text(g, clear)}", True,
                      f"{g['mil'] * MM:.3f} mm", want, "waived")
             rows[-1]["reason"] = g["waived"]
 
@@ -667,21 +668,21 @@ def check_paste_gap(cfg, board, design, d, rows):
     gap, sides = route.paste_rule(cfg)
     what = "SMD pads of different parts on different nets at least the paste gap apart on the assembled sides"
     if not sides:
-        rows.add("L", "L-14", board.name, what, True, "no side assembled ([release] assembly sides)", "–")
+        rows.add("L", "GEO.spacing", board.name, what, True, "no side assembled ([release] assembly sides)", "–")
         return
     want = f">= {gap * MM:.3f} mm on {' and '.join(sides)} ([release] assembly paste_gap_mm)"
     data, why = route.board_as_read(cfg, board, json.loads((d / "pcb.json").read_text())["components"])
     if data is None:
-        rows.add("L", "L-14", board.name, "pad shapes for the paste gap", False, why, "the PCB as read")
+        rows.add("L", "GEO.spacing", board.name, "pad shapes for the paste gap", False, why, "the PCB as read")
         return
-    gaps = route.pad_gaps(data, gap, route.pad_waivers(design.graph, "L-14"), sides)
+    gaps = route.pad_gaps(data, gap, route.pad_accepts(design.graph, "GEO.spacing", "paste"), sides)
     bad = [route.gap_text(g, gap, "the paste gap") for g in gaps if not g["waived"]]
     smd = sum(1 for p in data["pads"] if p["ref"] and route.LAYERS.get(p["layer"]) in sides)
-    rows.add("L", "L-14", board.name, what, not bad,
+    rows.add("L", "GEO.spacing", board.name, what, not bad,
              "; ".join(bad[:10]) + (f" … ({len(bad)} pairs)" if len(bad) > 10 else "") or f"{smd} SMD pads", want)
     for g in gaps:
         if g["waived"]:
-            rows.add("L", "L-14", board.name, f"paste gap: {route.gap_text(g, gap, 'the paste gap')}", True,
+            rows.add("L", "GEO.spacing", board.name, f"paste gap: {route.gap_text(g, gap, 'the paste gap')}", True,
                      f"{g['mil'] * MM:.3f} mm", want, "waived")
             rows[-1]["reason"] = g["waived"]
 
@@ -739,17 +740,17 @@ def check_visible_print(cfg, board, design, d, rows):
                                                                   else "")
     stray = [t for t in texts if t["Text"].strip() not in allowed]
     for t in stray:
-        rows.add("L", "L-19", board.name, check, False, f"{name} (visible): text '{t['Text']}' at ({t['X'] * MM:.1f}, "
+        rows.add("L", "GEO.silk", board.name, check, False, f"{name} (visible): text '{t['Text']}' at ({t['X'] * MM:.1f}, "
                  f"{t['Y'] * MM:.1f}) mm is neither {what} nor a [[silk.texts]] entry of this side", expected)
     if not stray:
-        rows.add("L", "L-19", board.name, check, True, f"{name}: {len(texts)} PCB text{'' if len(texts) == 1 else 's'}"
+        rows.add("L", "GEO.silk", board.name, check, True, f"{name}: {len(texts)} PCB text{'' if len(texts) == 1 else 's'}"
                  ", each one the board file puts there" if texts else f"{name}: no PCB text", expected)
     if labelled == side:
         return
     check = f"{name} (visible): no designator shown – [silk] designators is {labelled}"
     shown = data.get("designators")
     if shown is None:
-        rows.add("L", "L-19", board.name, f"designators of the {side} side (visible) read with the PCB", False,
+        rows.add("L", "GEO.silk", board.name, f"designators of the {side} side (visible) read with the PCB", False,
                  "pcb.json without the designators (written by an older edakit) – edakit fab without --offline",
                  "read with the PCB")
         return
@@ -757,14 +758,14 @@ def check_visible_print(cfg, board, design, d, rows):
                    key=natural_key)
     for ref in (r for r in parts if shown.get(r)):
         text = f"{name} (visible): {ref} shows its designator – [silk] designators is {labelled}"
-        reason = (want[ref].get("waive") or {}).get("L-19")
+        reason = accept_reason(want[ref], "GEO.silk", "visible")
         if reason:
-            rows.add("L", "L-19", board.name, f"designator on the visible side: {text}", True, text, "hidden", "waived")
+            rows.add("L", "GEO.silk", board.name, f"designator on the visible side: {text}", True, text, "hidden", "waived")
             rows[-1]["reason"] = reason
         else:
-            rows.add("L", "L-19", board.name, check, False, text, "hidden (silk apply hides it: [silk] hide)")
+            rows.add("L", "GEO.silk", board.name, check, False, text, "hidden (silk apply hides it: [silk] hide)")
     if not any(shown.get(r) for r in parts):
-        rows.add("L", "L-19", board.name, check, True, f"{len(parts)} parts on the {side}, none shows its designator",
+        rows.add("L", "GEO.silk", board.name, check, True, f"{len(parts)} parts on the {side}, none shows its designator",
                  "hidden")
 
 
@@ -797,19 +798,19 @@ def check_hand_joints(cfg, board, design, d, rows):
     pcb = json.loads((d / "pcb.json").read_text())
     data, why = route.board_as_read(cfg, board, pcb["components"])
     if data is None:
-        rows.add("L", "L-18", board.name, "pad shapes for the hand-soldered joints", False, why, "the PCB as read")
+        rows.add("L", "GEO.spacing", board.name, "pad shapes for the hand-soldered joints", False, why, "the PCB as read")
         return
     hand = route.hand_soldered(design.graph, board.name)
     vias = pcb_vias(d, pcb["lines"], rules.via[1])
-    gaps = route.joint_gaps(data, keep, hand, vias, route.pad_waivers(design.graph, "L-18"))
+    gaps = route.joint_gaps(data, keep, hand, vias, route.pad_accepts(design.graph, "GEO.spacing", "joint"))
     bad = [route.joint_text(g, keep, board) for g in gaps if not g["waived"]]
     joints = route.hand_joints(data, hand)
-    rows.add("L", "L-18", board.name, "vias and pads of other nets keep clear of the hand-soldered joints on their "
+    rows.add("L", "GEO.spacing", board.name, "vias and pads of other nets keep clear of the hand-soldered joints on their "
              "solder side", not bad, "; ".join(bad[:10]) + (f" … ({len(bad)} findings)" if len(bad) > 10 else "")
              or f"{len(joints)} joints of {len({p['ref'] for p, _ in joints})} parts, {len(vias)} vias", want)
     for g in gaps:
         if g["waived"]:
-            rows.add("L", "L-18", board.name, f"hand-soldered joint: {route.joint_text(g, keep, board)}", True,
+            rows.add("L", "GEO.spacing", board.name, f"hand-soldered joint: {route.joint_text(g, keep, board)}", True,
                      f"{g['mil'] * MM:.2f} mm", want, "waived")
             rows[-1]["reason"] = g["waived"]
 
@@ -844,7 +845,7 @@ def hole_ok(lead, width, length):
 
 def check_drills(board, design, d, rows):
     if lost := gerber.missing(d / "gerber", "pth"):
-        rows.add("L", "L-9", board.name, "drill file for the hole check", False, f"{lost[0]} missing (Gerber export)",
+        rows.add("L", "GEO.hole", board.name, "drill file for the hole check", False, f"{lost[0]} missing (Gerber export)",
                  "present")
         return
     data = json.loads((d / "pcb.json").read_text())
@@ -874,17 +875,17 @@ def check_drills(board, design, d, rows):
                 bad.append(f"{c['designator']}.{pad['PadNumber']}: {text}")
             elif is_tight:
                 tight[c["designator"]][text].append(pad["PadNumber"])
-    rows.add("L", "L-9", board.name, "lead size of every through-hole part in the parts database (field lead)",
+    rows.add("L", "GEO.hole", board.name, "lead size of every through-hole part in the parts database (field lead)",
              not nodata, ", ".join(nodata) or "all", "all")
-    rows.add("L", "L-9", board.name, "hole takes the lead at nominal size (diagonal or edge, or manufacturer's value)",
+    rows.add("L", "GEO.hole", board.name, "hole takes the lead at nominal size (diagonal or edge, or manufacturer's value)",
              not bad, "; ".join(bad[:10]) or f"{n} holes", "play >= 0")
     for ref, by_text in tight.items():  # one warning per part, so an accepted warning covers only that part
-        rows.add("L", "L-9", board.name, f"{ref}: tight hole – worst case below {HOLE_PLAY_MM} mm play (hole -{HOLE_TOL_MM} "
+        rows.add("L", "GEO.hole", board.name, f"{ref}: tight hole – worst case below {HOLE_PLAY_MM} mm play (hole -{HOLE_TOL_MM} "
                  "mm, lead + tolerance): lead only with force, or the part sits higher", False,
                  "; ".join(f"pad {', '.join(sorted(p, key=natural_key))}: {t}" for t, p in by_text.items()),
                  f">= {HOLE_PLAY_MM} mm", "warn")
     for ref, slots in narrow.items():
-        rows.add("L", "L-9", board.name, f"{ref}: slot narrower than {JLC_SLOT_MM} mm (JLCPCB minimum, plated, 2 layers) – "
+        rows.add("L", "GEO.hole", board.name, f"{ref}: slot narrower than {JLC_SLOT_MM} mm (JLCPCB minimum, plated, 2 layers) – "
                  "JLCPCB widens it or asks", False, "; ".join(slots), f">= {JLC_SLOT_MM} mm", "warn")
 
 
@@ -927,10 +928,10 @@ def check_rings(board, design, d, rows):
     keep JLCPCB's hole-to-hole spacing, edge to edge (0.45 mm when a component hole is one of them, 0.2 mm between two
     vias). Vias are the holes of the via drill file (EasyEDA writes them into the PTH file as well); the other plated
     holes are named by the through-hole pad of pcb.json at their place. The ring is the copper around the hole in the
-    Gerber files, whatever it belongs to. waive {"L-16": …} on a part or net of the graph lists its findings as waived."""
+    Gerber files, whatever it belongs to. accept {"GEO.ring": …} (or "GEO.spacing:holes") on a part or net of the graph lists them as accepted."""
     g = d / "gerber"
     if lost := gerber.missing(g, "top", "bottom", "pth"):
-        rows.add("L", "L-16", board.name, "Gerber and drill files for the annular rings", False,
+        rows.add("L", "GEO.ring", board.name, "Gerber and drill files for the annular rings", False,
                  f"{', '.join(lost)} missing (Gerber export)", "present")
         return
     from shapely import STRtree
@@ -952,9 +953,11 @@ def check_rings(board, design, d, rows):
         else:
             holes.append((h, f"plated hole at ({x:.2f}, {y:.2f})", "", "", False))
     holes += [(h, f"via at ({h[0]:.2f}, {h[1]:.2f})", "", "", True) for h in vias]
-    parts_of, nets_of = route.pad_waivers(design.graph, "L-16")
+    ring_acc = route.pad_accepts(design.graph, "GEO.ring")
+    gap_acc = route.pad_accepts(design.graph, "GEO.spacing", "holes")
 
-    def waiver(*items):
+    def waiver(*items, acc=ring_acc):
+        parts_of, nets_of = acc
         return next((parts_of.get(p) or nets_of.get(n) for _, _, p, n, _ in items if parts_of.get(p) or nets_of.get(n)),
                     None)
 
@@ -990,13 +993,13 @@ def check_rings(board, design, d, rows):
     for k, (ring, name) in narrowest.items():
         count[k] += f" (narrowest ring {ring:.3f} mm" + ("" if k else f", {name}") + ")"
     narrow.sort(key=natural_key)
-    rows.add("L", "L-16", board.name, f"plated holes keep JLCPCB's annular ring: component holes {JLC_RING_MM} mm, vias "
+    rows.add("L", "GEO.ring", board.name, f"plated holes keep JLCPCB's annular ring: component holes {JLC_RING_MM} mm, vias "
              f"{JLC_VIA_RING_MM} mm (2 layers, 1 oz)", not narrow, "; ".join(narrow[:10])
              + (f" … ({len(narrow)} holes)" if len(narrow) > 10 else "") or ", ".join(count),
              f">= {JLC_RING_MM} mm (component hole), >= {JLC_VIA_RING_MM} mm (via)")
     for ref, by_text in low.items():   # one warning per part, so an accepted warning covers only that part
         reason = waiver(*(item for item in holes if item[2] == ref))
-        rows.add("L", "L-16", board.name, f"{ref}: annular ring below {JLC_RING_WARN_MM} mm – JLCPCB's capability value "
+        rows.add("L", "GEO.ring", board.name, f"{ref}: annular ring below {JLC_RING_WARN_MM} mm – JLCPCB's capability value "
                  "(recommended 0.25 mm)", False, "; ".join(f"pad {', '.join(sorted(p, key=natural_key))}: {t}"
                                                          for t, p in by_text.items()),
                  f">= {JLC_RING_WARN_MM} mm", "waived" if reason else "warn")
@@ -1014,19 +1017,20 @@ def check_rings(board, design, d, rows):
             limit = JLC_VIA_GAP_MM if a[4] and b[4] else JLC_PAD_GAP_MM
             if gap + RING_TOL_MM >= limit:
                 kept.append((gap, f"{a[1]} – {b[1]}"))
-            elif reason := waiver(a, b):
+            elif reason := waiver(a, b, acc=gap_acc):
                 waived.append(("hole spacing", f"{a[1]} – {b[1]}: {gap:.3f} mm apart, below {limit:.2f} mm",
                                f"{gap:.3f} mm", f">= {limit} mm", reason))
             else:
                 close.append(f"{a[1]} – {b[1]}: {gap:.3f} mm apart, below {limit:.2f} mm")
     least = min(kept, default=None)
-    rows.add("L", "L-16", board.name, f"plated holes at least JLCPCB's hole-to-hole spacing apart, edge to edge: "
+    rows.add("L", "GEO.spacing", board.name, f"plated holes at least JLCPCB's hole-to-hole spacing apart, edge to edge: "
              f"{JLC_PAD_GAP_MM} mm with a component hole, {JLC_VIA_GAP_MM} mm between vias", not close,
              "; ".join(close[:10]) + (f" … ({len(close)} pairs)" if len(close) > 10 else "")
              or (f"closest {least[0]:.3f} mm ({least[1]})" if least else f"{len(holes)} holes, none near another"),
              f">= {JLC_PAD_GAP_MM} mm, between vias >= {JLC_VIA_GAP_MM} mm")
     for what, text, value, want, reason in sorted(waived, key=lambda w: natural_key(w[1])):
-        rows.add("L", "L-16", board.name, f"{what}: {text}", True, value, want, "waived")
+        rows.add("L", "GEO.spacing" if what == "hole spacing" else "GEO.ring", board.name, f"{what}: {text}", True,
+                 value, want, "waived")
         rows[-1]["reason"] = reason
 
 
@@ -1084,13 +1088,13 @@ def check_loops(board, design, d, rows):
             found.append(f"{a}-{b} {mm} mm")
             if mm is None or mm > limit:
                 bad.append(f"{a}-{b} ({what}): " + ("no track" if mm is None else f"{mm} mm") + f" > {limit} mm")
-    rows.add("L", "L-11", board.name, "short current loops: path over tracks per pad pair within the limit", not bad,
+    rows.add("L", "GEO.loop", board.name, "short current loops: path over tracks per pad pair within the limit", not bad,
              "; ".join(bad) or "; ".join(found), ", ".join(f"{a}-{b} <= {limit} mm" for a, b, limit, _ in loops))
 
 
 def check_copper(board, design, d, rows):
     if lost := gerber.missing(d / "gerber", "top", "bottom", "pth", "probe"):
-        rows.add("L", "L-2", board.name, "Gerber and drill files for the copper check", False,
+        rows.add("L", "GEO.copper", board.name, "Gerber and drill files for the copper check", False,
                  f"{', '.join(lost)} missing (Gerber export)", "present")
         return
     with contextlib.redirect_stdout(io.StringIO()):
@@ -1102,16 +1106,16 @@ def check_copper(board, design, d, rows):
             nets[n].append(p)
     have = {name.replace("_", ".", 1) for name in cu.pins}
     lost = sorted((p for ps in nets.values() if len(ps) > 1 for p in ps if p not in have), key=natural_key)
-    rows.add("L", "L-2", board.name, "every connected pad is in the manufacturing files", not lost,
+    rows.add("L", "GEO.copper", board.name, "every connected pad is in the manufacturing files", not lost,
              ", ".join(lost[:15]) or f"{len(have)} pads", "all")
     broken = []
     for net, ps in sorted(nets.items()):
         if len(ps) > 1 and len(groups := cu.net_groups(net)) > 1:
             broken.append(f"{net}: {len(groups)} groups ({' | '.join(', '.join(g[:4]) for g in groups[:3])})")
-    rows.add("L", "L-2", board.name, "copper from the Gerber files: every net connected", not broken,
+    rows.add("L", "GEO.copper", board.name, "copper from the Gerber files: every net connected", not broken,
              "; ".join(broken[:8]) or f"{sum(len(p) > 1 for p in nets.values())} nets complete", "1 group per net")
     shorts = [f"{' + '.join(n)} ({', '.join(p[:4])})" for n, p in cu.shorts]
-    rows.add("L", "L-2", board.name, "copper from the Gerber files: no short between nets", not shorts,
+    rows.add("L", "GEO.copper", board.name, "copper from the Gerber files: no short between nets", not shorts,
              "; ".join(shorts[:8]) or "none", "none")
 
 
@@ -1142,7 +1146,7 @@ def check_copper_sides(board, design, d, rows):
     Copper inside an NPTH or mounting hole is drilled away and does not count."""
     g = d / "gerber"
     if lost := gerber.missing(g, "top", "bottom", "probe"):
-        rows.add("L", "L-15", board.name, "Gerber files for the copper per side", False,
+        rows.add("L", "GEO.pour", board.name, "Gerber files for the copper per side", False,
                  f"{', '.join(lost)} missing (Gerber export)", "present")
         return
     import numpy as np
@@ -1193,14 +1197,14 @@ def check_copper_sides(board, design, d, rows):
         at = f"({cu.x0 + c * res:.1f}, {cu.y0 + (cu.h - r) * res:.1f}) mm"
         text = f"{share:.0f} % copper, largest copper-free circle Ø {dia:.1f} mm" + (f" at {at}" if dia else "")
         if poured[layer]:
-            rows.add("L", "L-15", board.name, f"{layer}: no copper-free circle above {limit:g} mm inside the pour "
+            rows.add("L", "GEO.pour", board.name, f"{layer}: no copper-free circle above {limit:g} mm inside the pour "
                      f"outline (poured: {', '.join(poured[layer])})", dia <= limit, f"{layer}: {text}",
                      f"Ø <= {limit:g} mm ([copper] max_bare_mm)", None if dia <= limit else "warn")
         else:
-            rows.add("L", "L-15", board.name, f"{layer}: copper share and largest copper-free circle (no pour)", True,
+            rows.add("L", "GEO.pour", board.name, f"{layer}: copper share and largest copper-free circle (no pour)", True,
                      f"{layer}: {text}", "information", "info")
         if layer in cover:
-            rows.add("L", "L-15", board.name, f"{layer}: copper share at least {cover[layer]:g} % ([copper] min_cover)",
+            rows.add("L", "GEO.pour", board.name, f"{layer}: copper share at least {cover[layer]:g} % ([copper] min_cover)",
                      share >= cover[layer], f"{layer}: {share:.0f} % copper", f">= {cover[layer]:g} %",
                      None if share >= cover[layer] else "warn")
         lab, n = ndimage.label(copper, structure=np.ones((3, 3)))
@@ -1217,7 +1221,7 @@ def check_copper_sides(board, design, d, rows):
             y = cu.y0 + (cu.h - (rs.start + rs.stop) / 2) * res
             where.append(f"{size[i]:.1f} mm² around ({x:.1f}, {y:.1f}) mm")
         many = f"{len(loose)} pieces, {sum(size[i] for i in loose):.1f} mm² together" if len(loose) > 1 else "1 piece"
-        rows.add("L", "L-15", board.name, f"{layer}: every copper piece touches a pad, via or plated hole", not loose,
+        rows.add("L", "GEO.pour", board.name, f"{layer}: every copper piece touches a pad, via or plated hole", not loose,
                  f"{layer}: {many} without pad, via or hole: " + "; ".join(where) + (" …" if len(loose) > 5 else "")
                  if loose else f"{layer}: {n} pieces", "none loose", None if not loose else "warn")
 
@@ -1233,10 +1237,10 @@ def check_fab(cfg, board, design, d, rows):
                for ref in e["reference"].split(",") if ref.strip() in want}
     diff = [f"{r}: graph {ours.get(r, '–')}, EasyEDA {eda_bom.get(r, '–')}" for r in sorted(set(ours) | set(eda_bom), key=natural_key)
             if ours.get(r) != eda_bom.get(r) and not (r not in ours and want[r].get("bom") is False)]
-    rows.add("F", "F-1", board.name, "BOM (from the graph) = BOM of EasyEDA, LCSC per designator", not diff,
+    rows.add("F", "SYNC.bom", board.name, "BOM (from the graph) = BOM of EasyEDA, LCSC per designator", not diff,
              "; ".join(diff[:10]) or f"{len(ours)} parts in {len(bom)} lines", "equal")
     unknown = sorted({lc for lc in ours.values() if lc not in design.parts})
-    rows.add("F", "F-1", board.name, "every LCSC number of the BOM is in the parts database", not unknown,
+    rows.add("F", "SYNC.bom", board.name, "every LCSC number of the BOM is in the parts database", not unknown,
              ", ".join(unknown) or "all", "all")
     jlc_file = d / "jlc_parts.json"
     if not jlc_file.exists():
@@ -1258,10 +1262,10 @@ def check_fab(cfg, board, design, d, rows):
         cls = stock.CLASS.get(hit.get("componentLibraryType"), hit.get("componentLibraryType"))
         if stock.class_differs(cls, hit.get("preferredComponentFlag"), entry.get("jlc_class")):
             other.append(f"{who}: JLCPCB lists it as {cls}, the parts entry as {entry['jlc_class']}")
-    rows.add("F", "F-2", board.name, f"every BOM part in JLCPCB's assembly catalogue, stock for {cfg.quantity} boards, "
+    rows.add("F", "PARTS.stock", board.name, f"every BOM part in JLCPCB's assembly catalogue, stock for {cfg.quantity} boards, "
              "the MPN of its parts entry", not bad, "; ".join(bad) or f"{len(bom)} lines listed and in stock", "all")
     if other:
-        rows.add("F", "F-2", board.name, "catalogue class = jlc_class of the parts entry", False, "; ".join(other),
+        rows.add("F", "PARTS.stock", board.name, "catalogue class = jlc_class of the parts entry", False, "; ".join(other),
                  "equal", "warn")
     import openpyxl
     ws = openpyxl.load_workbook(d / "cpl_easyeda.xlsx", read_only=True).worksheets[0]
@@ -1275,7 +1279,7 @@ def check_fab(cfg, board, design, d, rows):
               if r["Designator"] in ours and r["Designator"] in data and side.get(r["Layer"]) != data[r["Designator"]]["layer"]]
     probs += [f"{r['Designator']}: rotation {r['Rotation']} differs from the PCB" for r in cpl if r["Designator"] in ours
               and r["Designator"] in data and abs((float(r["Rotation"]) - data[r["Designator"]]["rotation"] + 180) % 360 - 180) > 0.01]
-    rows.add("F", "F-3", board.name, "pick and place: every BOM part exactly once, side and rotation = PCB", not probs,
+    rows.add("F", "SYNC.cpl", board.name, "pick and place: every BOM part exactly once, side and rotation = PCB", not probs,
              "; ".join(probs[:10]) or f"{len(ours)} parts", "exactly once, equal")
     with open(d / f"cpl_{board.name}.csv", "w", newline="", encoding="utf-8") as f:
         w = csv.writer(f)
@@ -1286,12 +1290,12 @@ def check_fab(cfg, board, design, d, rows):
     mix = Counter((r["Layer"], "SMD" if r.get("SMD") == "Yes" else "THT") for r in cpl if r["Designator"] in ours)
     allowed = {("T" if s == "top" else "B", k) for s in assembly.get("sides", ["top", "bottom"])
                for k in (("SMD",) if assembly.get("smd_only") else ("SMD", "THT"))}
-    rows.add("F", "F-3", board.name, f"assembly only on {', '.join(assembly.get('sides', ['top', 'bottom']))}"
+    rows.add("F", "SYNC.cpl", board.name, f"assembly only on {', '.join(assembly.get('sides', ['top', 'bottom']))}"
              + (", SMD only" if assembly.get("smd_only") else "") + " ([release] assembly)", set(mix) <= allowed,
              ", ".join(f"{'Top' if s == 'T' else 'Bottom'} {k} {n}" for (s, k), n in sorted(mix.items())), str(sorted(allowed)))
     g = d / "gerber"
     lost = gerber.missing(g, *gerber.REQUIRED)
-    rows.add("F", "F-5", board.name, "Gerber set complete (copper, silk, mask, outline, drills)", not lost,
+    rows.add("F", "FILES.set", board.name, "Gerber set complete (copper, silk, mask, outline, drills)", not lost,
              ", ".join(lost) or f"{len(gerber.REQUIRED)} files", "all")
     if not lost:
         check_outline(board, g, rows)
@@ -1304,17 +1308,17 @@ def check_outline(board, g, rows):
     found = sorted((gerber.bbox(lp) for lp in gerber.loops(g / gerber.FILES["outline"])),
                    key=lambda b: -(b[2] - b[0]) * (b[3] - b[1]))
     if not found:
-        rows.add("F", "F-5", board.name, "outline in the Gerber files", False, "none", "closed outline")
+        rows.add("F", "FILES.set", board.name, "outline in the Gerber files", False, "none", "closed outline")
         return
     o, want = found[0], gerber.bbox(outline)
-    rows.add("F", "F-5", board.name, "outline (Gerber) = plan", all(abs(a - b) <= 0.2 for a, b in zip(o, want)),
+    rows.add("F", "FILES.set", board.name, "outline (Gerber) = plan", all(abs(a - b) <= 0.2 for a, b in zip(o, want)),
              f"{o[2] - o[0]:.2f} x {o[3] - o[1]:.2f} mm at ({o[0]:.2f}, {o[1]:.2f})",
              f"{want[2] - want[0]:.2f} x {want[3] - want[1]:.2f} mm at ({want[0]:.2f}, {want[1]:.2f}) ± 0.2")
     inner = found[1:]
     expect = [(x - dia / 2, y - dia / 2, x + dia / 2, y + dia / 2) for x, y, dia in holes]
     miss = [e for e in expect if not any(all(abs(a - b) <= 0.2 for a, b in zip(e, f)) for f in inner)]
     extra = [f for f in inner if not any(all(abs(a - b) <= 0.2 for a, b in zip(e, f)) for e in expect)]
-    rows.add("F", "F-5", board.name, f"mounting holes (Gerber) = plan ({len(holes)} holes)", not miss and not extra,
+    rows.add("F", "FILES.set", board.name, f"mounting holes (Gerber) = plan ({len(holes)} holes)", not miss and not extra,
              f"{len(inner)} inner outlines" + (f", missing {len(miss)}" if miss else "") + (f", extra {len(extra)}" if extra else ""),
              f"{len(expect)}, position ± 0.2 mm")
 
@@ -1328,7 +1332,7 @@ def check_tooling(board, g, rows):
     want = [board.eda_point(x, y) for x, y in board.tooling]
     holes = gerber.parse_holes(g / gerber.FILES["npth"])
     miss = [w for w in want if not any(math.dist(w, h[:2]) <= 0.05 and abs(h[2] - board.tooling_d) <= 0.01 for h in holes)]
-    rows.add("F", "F-5", board.name, f"tooling holes in the NPTH drill file = plan ({len(want)} x Ø {board.tooling_d} mm)",
+    rows.add("F", "FILES.set", board.name, f"tooling holes in the NPTH drill file = plan ({len(want)} x Ø {board.tooling_d} mm)",
              not miss, f"{len(holes)} NPTH holes" + (f", missing {len(miss)}" if miss else ""), f"{len(want)}, ± 0.05 mm")
     r_open = board.tooling_d / 2 + board.tooling_mask
     bad = []
@@ -1341,7 +1345,7 @@ def check_tooling(board, g, rows):
             ring = Point(x, y).buffer(r_open + 0.05).difference(Point(x, y).buffer(board.tooling_d / 2 + 0.01))
             if copper.intersects(ring):
                 bad.append(f"{cu}: copper in the opening at ({x:.1f}, {y:.1f})")
-    rows.add("F", "F-5", board.name, "tooling holes: mask open, no copper in the opening", not bad,
+    rows.add("F", "FILES.set", board.name, "tooling holes: mask open, no copper in the opening", not bad,
              "; ".join(bad) or "both sides clear", f"opening Ø {2 * r_open:.3f} mm, clear")
 
 
@@ -1372,7 +1376,7 @@ def run(cfg, board, out, offline=False, verbose=False):
     if not gerber.missing(d / "gerber", "top", "bottom", "top_silk", "bottom_silk"):   # otherwise F-5 names them
         from . import polarity
         img, n = polarity.sheet(cfg, board, design, d)
-        rows.add("P", "P-2", board.name, "polarity sheet to compare with the datasheets and the JLCPCB preview", True,
+        rows.add("P", "FILES.sheet", board.name, "polarity sheet to compare with the datasheets and the JLCPCB preview", True,
                  f"{img.name}: {n} parts", "information", "info")
     return rows
 

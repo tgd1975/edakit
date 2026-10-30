@@ -15,7 +15,10 @@
    "part": "0805W8F4701T5E",
    "lcsc": "C17673",
    "value": "4.7k",
-   "pins": {"1": "1", "2": "2"}
+   "pins": {
+    "1": "1",
+    "2": "2"
+   }
   },
   {
    "designator": "R2",
@@ -24,15 +27,41 @@
    "part": "0805W8F4701T5E",
    "lcsc": "C17673",
    "value": "4.7k",
-   "pins": {"1": "1", "2": "2"}
+   "pins": {
+    "1": "1",
+    "2": "2"
+   }
   }
  ],
  "nets": [
-  {"name": "sda", "pins": ["R1.2"], "v": "@vcc", "bus": "i2c"},
-  {"name": "scl", "pins": ["R2.2"], "v": "@vcc", "bus": "i2c"},
-  {"name": "vcc", "pins": ["R1.1", "R2.1"]}
+  {
+   "name": "sda",
+   "pins": [
+    "R1.2"
+   ],
+   "v": "@vcc",
+   "bus": "i2c"
+  },
+  {
+   "name": "scl",
+   "pins": [
+    "R2.2"
+   ],
+   "v": "@vcc",
+   "bus": "i2c"
+  },
+  {
+   "name": "vcc",
+   "pins": [
+    "R1.1",
+    "R2.1"
+   ]
+  }
  ],
- "covers": ["G-11"],
+ "covers": [
+  "REQ.missing",
+  "REQ.value"
+ ],
  "notes": [
   "Once per bus. Modules often bring their own pull-ups (\"pull\": \"up\" with \"pull_ohm\" on their pins); parallel pull-ups lower the value, and G-11 adds them up.",
   "The block marks both nets with \"bus\": \"i2c\", so that G-11 checks them even when the MCU's pins are called GP4/GP5."

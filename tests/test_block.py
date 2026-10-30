@@ -6,6 +6,8 @@ import shutil
 
 import pytest
 
+from helpers import check
+
 from edakit import block, checks, rules, schematic_draw
 from edakit.design import Design
 from edakit.sim import run as simrun
@@ -35,7 +37,7 @@ def signals(project, names=("SIG", "SIG2")):
 
 def errors(project):
     cfg = project.config()
-    return checks.run(Design.from_config(cfg), cfg).errors
+    return check(Design.from_config(cfg), cfg).errors
 
 
 def test_every_block_is_in_this_test():
@@ -100,9 +102,9 @@ def test_block_marks_its_nets(project):
     g = project.graph()
     assert project.net(g, "SIG")["bus"] == "i2c"
     part = project.part("C17673")
-    part["params"]["value_ohm"] = 47000
+    part["values"]["value_ohm"] = 47000
     project.save_part("C17673", part)
-    assert any(c == "G-11" for c, _ in errors(project))   # the mark makes G-11 check GPIO nets
+    assert any(c == "REQ.value" for c, _ in errors(project))   # the mark makes G-11 check GPIO nets
 
 
 def test_dry_run_writes_nothing(project):

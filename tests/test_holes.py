@@ -7,6 +7,8 @@ from pathlib import Path
 
 import pytest
 
+from helpers import check
+
 from edakit import checks, cli, part, pcb
 from edakit.design import Design
 from edakit.release import gate
@@ -39,7 +41,7 @@ def lead(project, **change):
 
 def p7(project):
     cfg = project.config()
-    rep = checks.run(Design.from_config(cfg), cfg)
+    rep = check(Design.from_config(cfg), cfg)
     return {kind: [m for c, m, *_ in getattr(rep, kind) if c == "P-7"]
             for kind in ("errors", "pending", "warnings", "notes", "waived")}
 
@@ -103,7 +105,7 @@ def test_the_library_footprint_is_the_second_source(project, monkeypatch):
 def test_waive(project):
     dump(project, (0.65, 0.65))
     g = project.graph()
-    project.comp(g, "J1")["waive"] = {"P-7": "reworked by hand"}
+    project.comp(g, "J1")["accept"] = {"GEO.hole": "reworked by hand"}
     project.save_graph(g)
     assert p7(project)["errors"] == [] and len(p7(project)["waived"]) == 1
 
@@ -112,7 +114,7 @@ def test_the_gate_counts_p7_in_stage_p(project):
     dump(project, (0.65, 0.65))
     cfg = project.config()
     rows, _ = gate.stage_graph(cfg, Design.from_config(cfg))
-    assert {r["stage"] for r in rows if r["id"] == "P-7"} == {"P"}
+    assert {r["stage"] for r in rows if r["id"] == "GEO.hole"} == {"P"}
 
 
 def test_plan_reports_p7(project):

@@ -10,6 +10,8 @@ import pytest
 from test_gate import ALL, decision, gate_run, rows, section
 from test_requirements import LED_BAR, variant_of, with_requirements
 
+from helpers import check
+
 from edakit import checks, cli, requirements, scripts
 from edakit.design import Design
 from edakit.release import gate
@@ -29,7 +31,7 @@ def found(project):
     """(errors, warnings) of G-20 to G-23 in the example's edakit check, each as (ID, message) – the warnings as edakit
     check prints them, the findings about a draft included."""
     cfg = project.config()
-    rep = checks.run(Design.from_config(cfg), cfg)
+    rep = check(Design.from_config(cfg), cfg)
     mine = lambda items: [(c, m) for c, m in items if c in REQUIREMENT_CHECKS]   # noqa: E731
     return mine(rep.errors), mine(rep.warnings + rep.drafts)
 
@@ -49,7 +51,7 @@ def test_the_example_is_clean_but_for_its_draft(project):
     with_requirements(project)
     errors, warnings = found(project)
     assert errors == []
-    assert [(c, m.split(" – ")[0]) for c, m in warnings] == [("G-23", "R-4: a draft")]
+    assert [(c, m.split(" – ")[0]) for c, m in warnings] == [("DOCS.draft", "R-4: a draft")]
     rewrite(project, 'status = "draft"', 'status = "accepted"')
     assert found(project) == ([], [])
 
@@ -74,7 +76,7 @@ def test_g20_every_reference_resolves(project, old, new, message):
     rewrite(project, 'status = "draft"', 'status = "accepted"')                 # R-4: a draft only warns
     rewrite(project, old, new)
     errors, _ = found(project)
-    assert errors == [("G-20", message)]
+    assert errors == [("DOCS.ref", message)]
     rewrite(project, new, old)
     assert found(project)[0] == []
 
@@ -98,7 +100,7 @@ def test_g20_a_script_must_be_a_check(project):
                     'id = "W"\nphase = "export"\n'
                     '\n[[release.stages]]\nid = "K"\nname = "Mechanics"\ncmd = ["python3", "-c", "print(1)"]\n')
     rewrite(project, '{ rows = "G-10 *" }', '{ script = "pins" }')
-    assert found(project)[0] == [("G-20", "R-2: verify script pins – [scripts.pins] is of kind derive; evidence "
+    assert found(project)[0] == [("DOCS.ref", "R-2: verify script pins – [scripts.pins] is of kind derive; evidence "
                                           "comes from a check")]
     rewrite(project, '{ script = "pins" }', '{ script = "watch" }, { script = "K" }')
     assert found(project)[0] == []
@@ -109,7 +111,7 @@ def test_g20_from_a_dropped_need_warns(project):
     rewrite(project, 'from = ["N-2"]', 'from = ["N-2", "N-4"]')
     errors, warnings = found(project)
     assert errors == []
-    assert ("G-20", "R-3: from N-4 – dropped: the TLC5916 and the Pico 2 want 5 V: a cell needs a boost converter, "
+    assert ("DOCS.ref", "R-3: from N-4 – dropped: the TLC5916 and the Pico 2 want 5 V: a cell needs a boost converter, "
                     "which the example does not have") in warnings
 
 
@@ -126,13 +128,13 @@ def test_a_dropped_requirement_is_not_checked(project):
 def test_g21_every_accepted_need_has_a_requirement(project):
     with_requirements(project)
     rewrite(project, 'from = ["N-2"]', 'from = ["N-1"]')                       # R-3 was N-2's only requirement
-    assert found(project)[0] == [("G-21", "N-2: accepted, but no requirement names it in from")]
+    assert found(project)[0] == [("DOCS.need", "N-2: accepted, but no requirement names it in from")]
     rewrite(project, 'from = ["N-1"]\nbinding = "should"', 'from = ["N-2"]\nbinding = "should"')
     assert found(project)[0] == []
     # a dropped requirement does not count
     rewrite(project, 'verify = [{ rows = "E-3 * D? LED current *" }]\nstatus = "accepted"',
             'verify = [{ rows = "E-3 * D? LED current *" }]\nstatus = "dropped"\nreason = "D-3: any brightness"')
-    assert found(project)[0] == [("G-21", "N-2: accepted, but no requirement names it in from")]
+    assert found(project)[0] == [("DOCS.need", "N-2: accepted, but no requirement names it in from")]
 
 
 def test_g21_only_for_accepted_needs(project):
@@ -147,9 +149,9 @@ def test_g21_only_for_accepted_needs(project):
 def test_g22_every_requirement_has_evidence(project):
     with_requirements(project)
     rewrite(project, 'verify = [{ rows = "G-10 *" }]\n', "")
-    assert found(project)[0] == [("G-22", "R-2: no evidence – verify names nothing that tests it")]
+    assert found(project)[0] == [("DOCS.evidence", "R-2: no evidence – verify names nothing that tests it")]
     rewrite(project, 'from = ["N-1"]\nbinding = "must"\nstatus', 'from = ["N-1"]\nbinding = "must"\nverify = []\nstatus')
-    assert found(project)[0] == [("G-22", "R-2: no evidence – verify names nothing that tests it")]
+    assert found(project)[0] == [("DOCS.evidence", "R-2: no evidence – verify names nothing that tests it")]
 
 
 def test_g23_drafts_warn(project):
@@ -158,7 +160,7 @@ def test_g23_drafts_warn(project):
     rewrite(project, 'source = "README.md"\nstatus = "accepted"\n', 'source = "README.md"\n')     # N-2
     errors, warnings = found(project)
     assert errors == []
-    assert [m.split(" – ")[0] for c, m in warnings if c == "G-23"] == ["N-2: a draft", "R-4: a draft"]
+    assert [m.split(" – ")[0] for c, m in warnings if c == "DOCS.draft"] == ["N-2: a draft", "R-4: a draft"]
     assert warnings[0][1] == ('N-2: a draft – the user has not approved it (status "accepted", or "dropped" with a '
                               'reason)')
 
@@ -198,7 +200,7 @@ def test_a_finding_about_a_draft_only_warns(project, capsys, old, new, finding):
     assert "WARNING G-23  R-4: a draft" in out
     rewrite(project, 'status = "draft"', 'status = "accepted"')
     code, out, _ = check(project, capsys)
-    assert code == 1 and f"ERROR   {finding}\n" in out and "G-23" not in out
+    assert code == 1 and f"ERROR   {finding}\n" in out and "DOCS.draft" not in out
 
 
 def test_findings_about_a_draft_are_information_in_the_gate(project):
@@ -211,10 +213,10 @@ def test_findings_about_a_draft_are_information_in_the_gate(project):
     rows, raw = gate.stage_graph(cfg, Design.from_config(cfg))
     mine = [(r["id"], r["result"], r["check"].split(" – ")[0]) for r in rows
             if r["id"] in REQUIREMENT_CHECKS and r["result"] != "pass"]
-    assert mine == [("G-20", "info", "R-4: from N-4"), ("G-20", "info", "R-4: verify signoff M-7"),
-                    ("G-23", "info", "R-4: a draft")]
+    assert mine == [("DOCS.ref", "info", "R-4: from N-4"), ("DOCS.ref", "info", "R-4: verify signoff M-7"),
+                    ("DOCS.draft", "info", "R-4: a draft")]
     assert [(w["check"], w["draft"]) for w in raw["warnings"] if w["check"] in REQUIREMENT_CHECKS] == [
-        ("G-20", True), ("G-20", True), ("G-23", True)]
+        ("DOCS.ref", True), ("DOCS.ref", True), ("DOCS.draft", True)]
     assert gate.decide(rows, [], {"manual": [], "accepted_warnings": []}, ALL, gate.STAGES) == ("RELEASED", [])
 
 
@@ -494,7 +496,7 @@ def test_the_protocol_lists_each_requirement_with_its_evidence(project, monkeypa
             "  - signoff M-1 – not signed for this state (section 6)\n") in eleven
     reasons = decision(text)
     assert "requirement(s)" not in reasons and "warning(s) not accepted" not in reasons
-    assert "G-23" not in section(text, 3)
+    assert "DOCS.draft" not in section(text, 3)
     assert "| SHA-256 circuit | `" in text and "` (graph, parts database, simulation config, requirements) |" in text
     out = capsys.readouterr().out
     assert "requirements: 2 passed, 1 open after the export, 1 draft (section 11 of the protocol)" in out

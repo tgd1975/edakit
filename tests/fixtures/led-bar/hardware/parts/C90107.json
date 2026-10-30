@@ -18,70 +18,70 @@
     "2": {
       "name": "SDI",
       "type": "input",
-      "vmax": 3.7
+      "v_max_v": 3.7
     },
     "3": {
       "name": "CLK",
       "type": "input",
-      "vmax": 3.7
+      "v_max_v": 3.7
     },
     "4": {
       "name": "LE(ED1)",
       "type": "input",
-      "vmax": 3.7
+      "v_max_v": 3.7
     },
     "5": {
       "name": "OUT0",
       "type": "current_sink",
       "role": "out",
-      "vmax": 20.0
+      "v_max_v": 20.0
     },
     "6": {
       "name": "OUT1",
       "type": "current_sink",
       "role": "out",
-      "vmax": 20.0
+      "v_max_v": 20.0
     },
     "7": {
       "name": "OUT2",
       "type": "current_sink",
       "role": "out",
-      "vmax": 20.0
+      "v_max_v": 20.0
     },
     "8": {
       "name": "OUT3",
       "type": "current_sink",
       "role": "out",
-      "vmax": 20.0
+      "v_max_v": 20.0
     },
     "9": {
       "name": "OUT4",
       "type": "current_sink",
       "role": "out",
-      "vmax": 20.0
+      "v_max_v": 20.0
     },
     "10": {
       "name": "OUT5",
       "type": "current_sink",
       "role": "out",
-      "vmax": 20.0
+      "v_max_v": 20.0
     },
     "11": {
       "name": "OUT6",
       "type": "current_sink",
       "role": "out",
-      "vmax": 20.0
+      "v_max_v": 20.0
     },
     "12": {
       "name": "OUT7",
       "type": "current_sink",
       "role": "out",
-      "vmax": 20.0
+      "v_max_v": 20.0
     },
     "13": {
       "name": "OE(ED2)",
       "type": "input",
-      "vmax": 3.7,
+      "v_max_v": 3.7,
       "role": "oe_n"
     },
     "14": {
@@ -96,11 +96,11 @@
     "16": {
       "name": "VDD",
       "type": "power_in",
-      "vmax": 7.0,
+      "v_max_v": 7.0,
       "role": "vdd"
     }
   },
-  "params": {
+  "values": {
     "behavior": "cc_sink",
     "vrext_v": 1.26,
     "iout_gain": 15,
@@ -108,12 +108,12 @@
     "idd_max_a": 0.014,
     "iout_accuracy": 0.06
   },
-  "ratings": {
-    "vdd_max": 7,
-    "vdd_op_min": 3.0,
-    "vdd_op_max": 5.5,
-    "vout_max": 20,
-    "iout_max_a": 0.12,
+  "limits": {
+    "vdd_max_v": 7,
+    "vdd_op_min_v": 3.0,
+    "vdd_op_max_v": 5.5,
+    "vout_max_v": 20,
+    "i_out_max_a": 0.12,
     "tj_max_c": 150,
     "rth_ja_k_per_w": 87.4
   },

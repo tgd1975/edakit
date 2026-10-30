@@ -28,32 +28,31 @@ def num(x, unit):
     return f"{x:.3g} {unit}" if abs(x) < 1000 else f"{x:.0f} {unit}"
 
 
+def compare(q, lim):
+    """The comparisons of a quantity with one limit: [(ok, what was found, what is allowed, value, bound)] – one per
+    side the limit has and the quantity gives. A value that is not a number (nan: not simulated) is not ok."""
+    out = []
+    if lim.max is not None and q.hi is not None:
+        value, bound = q.hi * lim.factor, lim.max * lim.derate
+        need = f" × {lim.factor:g} = {num(value, q.unit)}" if lim.factor != 1 and not math.isnan(value) else ""
+        allowed = f"≤ {num(bound, q.unit)}" + (f" ({lim.derate:.0%} of {num(lim.max, q.unit)})"
+                                               if lim.derate != 1 else "")
+        found = f"{q.how}: not simulated (no value)" if math.isnan(value) else f"{q.how} {num(q.hi, q.unit)}{need}"
+        out.append((not math.isnan(value) and value <= bound + lim.eps, found, allowed, q.hi, bound))
+    if lim.min is not None and q.lo is not None:
+        found = f"{q.how}: not simulated (no value)" if math.isnan(q.lo) else f"{q.how} {num(q.lo, q.unit)}"
+        out.append((not math.isnan(q.lo) and q.lo >= lim.min - lim.eps, found, f"≥ {num(lim.min, q.unit)}", q.lo,
+                    lim.min))
+    return out
+
+
 def judge(q, lims):
     """Findings of one quantity against its limits."""
-    out = []
     code = q.code or CODE.get(q.unit, "LIM.v")
-    for lim in lims:
-        if lim.max is not None and q.hi is not None:
-            value, bound = q.hi * lim.factor, lim.max * lim.derate
-            if math.isnan(value):
-                out.append(Finding(code, q.stage, q.place, f"{q.how}: not simulated (no value)", lim.source,
-                                   grade=q.grade, scenario=q.scenario, on=q.on, old=q.old))
-            elif value > bound + lim.eps:
-                need = f" × {lim.factor:g} = {num(value, q.unit)}" if lim.factor != 1 else ""
-                allowed = f"{num(bound, q.unit)} ({lim.derate:.0%} of {num(lim.max, q.unit)})" if lim.derate != 1 \
-                    else num(lim.max, q.unit)
-                out.append(Finding(code, q.stage, q.place, f"{q.how} {num(q.hi, q.unit)}{need}, allowed {allowed}",
-                                   lim.source, grade=q.grade, scenario=q.scenario, on=q.on, old=q.old,
-                                   data={"value": q.hi, "limit": bound, "unit": q.unit}))
-        if lim.min is not None and q.lo is not None and math.isnan(q.lo):
-            out.append(Finding(code, q.stage, q.place, f"{q.how}: not simulated (no value)", lim.source,
-                               grade=q.grade, scenario=q.scenario, on=q.on, old=q.old))
-        elif lim.min is not None and q.lo is not None and q.lo < lim.min - lim.eps:
-            out.append(Finding(code, q.stage, q.place, f"{q.how} down to {num(q.lo, q.unit)}, at least "
-                                                        f"{num(lim.min, q.unit)}", lim.source, grade=q.grade,
-                               scenario=q.scenario, on=q.on, old=q.old,
-                               data={"value": q.lo, "limit": lim.min, "unit": q.unit}))
-    return out
+    return [Finding(code, q.stage, q.place, q.say(value, bound, lim.factor) if q.say and not math.isnan(value)
+                    else f"{found}, allowed {allowed}", lim.source, grade=q.grade, scenario=q.scenario, on=q.on,
+                    data={"value": value, "limit": bound, "unit": q.unit})
+            for lim in lims for ok, found, allowed, value, bound in compare(q, lim) if not ok]
 
 
 def judge_all(design, quantities):
@@ -85,14 +84,14 @@ def radio_power(d):
             if bad := [k for k in ("max_dbm", "antenna_dbi", "eirp_dbm") if k in radio and not is_number(radio[k])]:
                 wrong.add(id(radio))
                 out.append(Finding("PARTS.schema", "P", key, "compliance.radio: " + ", ".join(
-                    f"{k} {radio[k]!r} is no number" for k in bad), old="G-24", topic="radio"))
+                    f"{k} {radio[k]!r} is no number" for k in bad), topic="radio"))
             if "bands_mhz" not in radio:
                 out.append(Finding("LIM.eirp", "G", des, f"compliance.radio of {key} states no bands_mhz – the bands "
                                    f"it transmits in, [[from, to], …] in MHz ({NOT_LEGAL_ADVICE})", grade="unknown",
-                                   on=on, old="G-24", topic="radio"))
+                                   on=on, topic="radio"))
             elif mhz_ranges(radio["bands_mhz"]) is None:
                 out.append(Finding("PARTS.schema", "P", key, f"compliance.radio: bands_mhz {radio['bands_mhz']!r} – a "
-                                   "list of [from, to] in MHz, from <= to", old="G-24", topic="radio"))
+                                   "list of [from, to] in MHz, from <= to", topic="radio"))
         for radio, ranges, kept in bands_in_use(d, des):
             bands = [(lo, hi, mw) for lo, hi, mw in EIRP_BANDS if any(overlaps(a, b, lo, hi) for a, b in ranges)]
             if not bands or id(radio) in wrong:
@@ -102,7 +101,7 @@ def radio_power(d):
                 missing = [RADIO_KEYS[k] for k in how] + [RADIO_KEYS["eirp_dbm"]]
                 out.append(Finding("LIM.eirp", "G", des, f"e.i.r.p. in {', '.join(f'{lo:g}–{hi:g}' for lo, hi, _ in bands)}"
                                    f" MHz not known – {key} has no {', no '.join(missing[:-1])} and no {missing[-1]} "
-                                   f"({NOT_LEGAL_ADVICE})", grade="unknown", on=on, old="G-24", topic="radio"))
+                                   f"({NOT_LEGAL_ADVICE})", grade="unknown", on=on, topic="radio"))
                 continue
             gain = radio.get("antenna_dbi") if is_number(radio.get("antenna_dbi")) and "eirp_dbm" not in how else None
             for lo, hi, mw in bands:
@@ -112,7 +111,7 @@ def radio_power(d):
                             if gain is not None else f"the firmware lowers the power by at least {dbm - limit:.1f} dB")
                     out.append(Finding("LIM.eirp", "G", des, f"{dbm:.1f} dBm e.i.r.p. in {lo:g}–{hi:g} MHz ({how}), "
                                        f"allowed {mw:g} mW ({limit:.1f} dBm)", "catalog/tables/radio_eu.toml",
-                                       f"{keep} ({NOT_LEGAL_ADVICE})", on=on, old="G-24", topic="radio",
+                                       f"{keep} ({NOT_LEGAL_ADVICE})", on=on, topic="radio",
                                        data={"value": dbm, "limit": limit, "unit": "dBm"}))
     return out
 
@@ -125,28 +124,28 @@ def radio_bands(d):
     use = (d.graph.get("purpose") or {}).get("radio")
     if use is not None and not isinstance(use, dict):
         out.append(Finding("STRUCT.purpose", "G", "purpose.radio", "{designator: \"off\" or {\"bands_mhz\": "
-                           "[[from, to], …], \"max_dbm\": …}}", old="G-25", topic="radio"))
+                           "[[from, to], …], \"max_dbm\": …}}", topic="radio"))
     for des, stated in stated_use(d).items():
         if des not in d.comps:
-            out.append(Finding("STRUCT.ref", "G", "purpose.radio", f"no part {des} in the graph", old="G-25", topic="radio"))
+            out.append(Finding("STRUCT.ref", "G", "purpose.radio", f"no part {des} in the graph", topic="radio"))
             continue
         own = [r for radio in radios(d.part(des)) for r in mhz_ranges(radio.get("bands_mhz")) or []]
         if not own:
             out.append(Finding("STRUCT.ref", "G", "purpose.radio", f"{des}: its parts entry {d.entry_key(des)} states "
-                               "no bands_mhz to keep to", old="G-25", topic="radio"))
+                               "no bands_mhz to keep to", topic="radio"))
             continue
         if stated == "off":
             continue
         ranges = mhz_ranges(stated.get("bands_mhz")) if isinstance(stated, dict) else None
         if ranges is None or ("max_dbm" in stated and not is_number(stated["max_dbm"])):
             out.append(Finding("STRUCT.purpose", "G", "purpose.radio", f"{des}: \"off\" or {{\"bands_mhz\": [[from, "
-                               "to], …] in MHz, from <= to, \"max_dbm\": a number (optional)}", old="G-25", topic="radio"))
+                               "to], …] in MHz, from <= to, \"max_dbm\": a number (optional)}", topic="radio"))
             continue
         for a, b in ranges:
             if not within(a, b, own):
                 out.append(Finding("STRUCT.purpose", "G", "purpose.radio", f"{des}: {a:g}–{b:g} MHz is no band of "
                                    f"{d.entry_key(des)} (bands_mhz {', '.join(f'{lo:g}–{hi:g}' for lo, hi in own)} "
-                                   "MHz)", old="G-25", topic="radio"))
+                                   "MHz)", topic="radio"))
     known = ", ".join(f"{lo:g}–{hi:g}" for lo, hi in EU_BANDS)
     for des in sorted(d.comps, key=natural_key):
         key, on = d.entry_key(des), (("component", des),)
@@ -164,12 +163,12 @@ def radio_bands(d):
                     out.append(Finding("LIM.band", "G", des, f"transmits only in {where}, in no EU licence-exempt band"
                                        " – purpose.radio keeps it off", "catalog/tables/radio_eu.toml",
                                        f"the firmware never switches it on ({NOT_LEGAL_ADVICE})", grade="firmware",
-                                       on=on, old="G-25", topic="radio"))
+                                       on=on, topic="radio"))
                 else:
                     out.append(Finding("LIM.band", "G", des, f"transmits only in {where}, in no EU licence-exempt band "
                                        f"({known} MHz)", "catalog/tables/radio_eu.toml", "a part made for the EU bands, "
                                        "kept off (purpose.radio), or accept with the allocation of a licensed use "
-                                       f"({NOT_LEGAL_ADVICE})", on=on, old="G-25", topic="radio"))
+                                       f"({NOT_LEGAL_ADVICE})", on=on, topic="radio"))
                 continue
             for a, b in in_use.get(id(radio), []):
                 if within(a, b, EU_BANDS) or (a, b) in seen:
@@ -184,5 +183,5 @@ def radio_bands(d):
                 out.append(Finding("LIM.band", "G", des, what, "catalog/tables/radio_eu.toml",
                                    f"the firmware keeps to {keep}" + ("" if read else "; purpose.radio can state that it "
                                                                       "does") + f" ({NOT_LEGAL_ADVICE})",
-                                   grade="firmware", on=on, old="G-25", topic="radio"))
+                                   grade="firmware", on=on, topic="radio"))
     return out

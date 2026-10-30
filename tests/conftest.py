@@ -4,8 +4,6 @@ from pathlib import Path
 
 import pytest
 
-import parity
-
 EXAMPLE = Path(__file__).resolve().parent / "fixtures" / "led-bar"
 LIBRARY_PARTS = Path(__file__).resolve().parents[1] / "edakit" / "blocks" / "parts"
 JLCPCB = Path(__file__).resolve().parent / "fixtures" / "jlcpcb"   # recorded catalogue answers and part pages
@@ -73,28 +71,3 @@ def project(tmp_path):
             return next(c for c in g["graph"]["components"] if c["designator"] == des)
     return P()
 
-
-@pytest.fixture(autouse=True)
-def engines_agree(monkeypatch, request):
-    """Every run of the checks of before is also run by the engines of the restructuring, and both must agree
-    (parity.py). A test that breaks a design on purpose for the checks of before only: @pytest.mark.no_parity."""
-    from edakit import checks
-    if request.node.get_closest_marker("no_parity"):
-        return
-    before = checks.run
-
-    def run(design, cfg=None):
-        rep = before(design, cfg)
-        diff = parity.compare(design, cfg, rep)
-        assert not diff, "the engines differ from the checks of before:\n" + diff
-        return rep
-    monkeypatch.setattr(checks, "run", run)
-    from edakit.sim import run as simrun
-    before_sim = simrun.run_all
-
-    def run_all(*args, **kwargs):
-        out = before_sim(*args, **kwargs)
-        diff = parity.compare_sim(out)
-        assert not diff, "the engine SIM differs from the simulation checks of before:\n" + diff
-        return out
-    monkeypatch.setattr(simrun, "run_all", run_all)

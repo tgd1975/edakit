@@ -13,7 +13,10 @@
    "label": "{as}: supply input (JST PH, pin 1 = +)",
    "part": "B2B-PH-K-S(LF)(SN)",
    "lcsc": "C131337",
-   "pins": {"1": "1", "2": "2"},
+   "pins": {
+    "1": "1",
+    "2": "2"
+   },
    "notes": "Pin 1 = +, pin 2 = GND."
   },
   {
@@ -22,7 +25,10 @@
    "label": "{as}: reverse-polarity protection",
    "part": "SS34",
    "lcsc": "C8678",
-   "pins": {"1": "K", "2": "A"}
+   "pins": {
+    "1": "K",
+    "2": "A"
+   }
   },
   {
    "designator": "C1",
@@ -31,16 +37,49 @@
    "part": "CL21A226MAQNNNE",
    "lcsc": "C45783",
    "value": "22uF",
-   "pins": {"1": "1", "2": "2"},
+   "pins": {
+    "1": "1",
+    "2": "2"
+   },
    "notes": "X5R: at 5 V only about 30–50 % of the 22 µF are left (DC bias)."
   }
  ],
  "nets": [
-  {"name": "vin", "pins": ["J1.1", "D1.2"], "v": [0, 5.5], "notes": "Connector side of the diode; for another supply voltage change v here and on the output."},
-  {"name": "out", "pins": ["D1.1", "C1.1"], "v": [0, 5.5]},
-  {"name": "gnd", "pins": ["J1.2", "C1.2"]}
+  {
+   "name": "vin",
+   "pins": [
+    "J1.1",
+    "D1.2"
+   ],
+   "v": [
+    0,
+    5.5
+   ],
+   "notes": "Connector side of the diode; for another supply voltage change v here and on the output."
+  },
+  {
+   "name": "out",
+   "pins": [
+    "D1.1",
+    "C1.1"
+   ],
+   "v": [
+    0,
+    5.5
+   ]
+  },
+  {
+   "name": "gnd",
+   "pins": [
+    "J1.2",
+    "C1.2"
+   ]
+  }
  ],
- "covers": ["G-10", "H-1"],
+ "covers": [
+  "PATH.reverse",
+  "HINT.bulk"
+ ],
  "notes": [
   "Graph: add the connector to checks.reverse_protect – G-10 then checks that a reversed plug reaches only the diode's anode.",
   "sim.json: the connector under sources (plus \"1\", minus \"2\") and its voltages under supplies.",

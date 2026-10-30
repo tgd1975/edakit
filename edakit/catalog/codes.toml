@@ -995,6 +995,17 @@ sources = [
   "The user's decision of 2026-10-28, after step 1.6: a draft never blocks – errors and blocking start with status = \"accepted\"",
 ]
 
+[codes."HINT.datasheet"]
+title = "notes of the parts entries"
+rule = "A parts entry's own warnings – hints of the part, hint of a connected pin (an ESP32 pin of ADC2: no analog reads while Wi-Fi is on) – are shown for every part and pin of the graph they belong to."
+why = "A datasheet's warning that no check can decide is still knowledge; it belongs where the part is used."
+fix = "Consider the note where the part is used; what is taken care of: accept HINT.datasheet <place> with how."
+severity = "note"
+replaces = []
+sources = [
+  "edakit handbook 4.1 (hints and hint in a parts entry)",
+]
+
 [codes."HINT.bulk"]
 title = "bulk capacitor at the power input"
 rule = "Bulk capacitor at the power input: consider it where it applies."

@@ -10,7 +10,7 @@ designer or derived from it. The PCB designer works from it and does not change 
     loops  [{a, b, max_mm, what}]     short current loop between two pads of one net, checked on the routed board (L-11)
     notes  [text]                     what no program checks – for the PCB designer and the layout review (M-5)
 Derived without a line in the graph: every IC (kind "ic") with a supply pin is fixed with a capacitor of its own from
-that supply to ground within near_mm – a module brings its own decoupling. An IC's waive {"L-12": reason} lifts it.
+that supply to ground within near_mm – a module brings its own decoupling. An IC's accept {"SYNC.plan:handover": reason} lifts it.
 
   G-1  the layout requirements name parts and pins of the graph (edakit check)
   L-12 the plan keeps them (edakit pcb plan, the gate)
@@ -22,6 +22,7 @@ from collections import defaultdict
 from dataclasses import dataclass
 
 from .design import Design, natural_key
+from .findings import accept_reason
 
 KEYS = ("fixed", "edge", "near", "loops", "notes")
 
@@ -90,7 +91,7 @@ def requirements(design, board):
     caps = decoupling_caps(joined, ics)
     for d in sorted(ics, key=natural_key):
         part = joined.part(d) or {}
-        if part.get("kind") != "ic" or "L-12" in (ics[d].get("waive") or {}):
+        if part.get("kind") != "ic" or accept_reason(ics[d], "SYNC.plan", "handover"):
             continue
         supplies = {joined.pin_net.get(f"{d}.{n}") for n, p in part["pins"].items() if p.get("type") == "power_in"}
         out += [Requirement("decoupling", d, tuple(caps[n]), n) for n in sorted(supplies - {None}) if caps[n]]

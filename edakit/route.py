@@ -392,7 +392,7 @@ def joint_gaps(data, keep_mil, hand, vias=(), waivers=({}, {})):
     of a 2.54 mm part too (the owner's decision on #59). A pad without a net counts as a net of its own; the part's own
     pads are not compared, nor pads without a part (tooling holes). vias: [(net, or None when unknown, (x, y),
     diameter)] in mil; a via of unknown net counts as another net's. A finding is waived when the joint's part or net,
-    or the other pad's part or the other net, has the waiver (pad_waivers(graph, "L-18")). -> [{"joint", "net",
+    or the other pad's part or the other net, has the accept (pad_accepts(graph, "GEO.spacing", "joint")). -> [{"joint", "net",
     "layer", "kind" ("pad", "via"), "other" (pad name, net or None), "other_net", "mil", "at" (the other pad's
     closest point, the via's centre), "waived"}], closest first; a pair of two joints once."""
     from shapely.ops import nearest_points
@@ -1123,22 +1123,26 @@ def clearance_check(rules, data, routes):
     return found
 
 
-def pad_waivers(graph, rule="L-13"):
-    """The waivers of one rule (L-13, L-14) in the graph (the inner object, as design.load_graph returns it):
-    ({designator: reason}, {net: reason})."""
+def pad_accepts(graph, code="GEO.spacing", topic="clearance"):
+    """The accepts of one code (and topic) in the graph (the inner object, as design.load_graph returns it): ({designator:
+    reason}, {net: reason}) – GEO.spacing:clearance between pads of different parts, :paste the paste gap, :joint the
+    hand-soldered joints, :holes the hole-to-hole spacing; GEO.ring the annular ring."""
+    from .findings import accept_reason
+
     def of(items, key):
-        return {x[key]: x["waive"][rule] for x in items if rule in (x.get("waive") or {})}
+        return {x[key]: r for x in items if (r := accept_reason(x, code, topic))}
     return of(graph.get("components", []), "designator"), of(graph.get("nets", []), "name")
 
 
-def graph_waivers(cfg, rule="L-13"):
-    """pad_waivers of the project's graph; none for a board without its graph file."""
+def graph_accepts(cfg, code="GEO.spacing", topic="clearance"):
+    """pad_accepts of the project's graph; none for a board without its graph file."""
     from .design import load_graph
-    return pad_waivers(load_graph(cfg.graph), rule) if cfg.graph.exists() else ({}, {})
+    return pad_accepts(load_graph(cfg.graph), code, topic) if cfg.graph.exists() else ({}, {})
 
 
 def paste_rule(cfg):
-    """L-14 from [release] assembly: (paste gap in mil, the assembled sides as copper layers, e.g. ("TOP",))."""
+    """GEO.spacing:paste from [release] assembly: (paste gap in mil, the assembled sides as copper layers, e.g.
+    ("TOP",))."""
     assembly = cfg.release.get("assembly", {})
     sides = tuple(s.upper() for s in assembly.get("sides", ["top", "bottom"]))
     return assembly.get("paste_gap_mm", PASTE_GAP_MM) * MIL_PER_MM, sides
@@ -1148,7 +1152,7 @@ def pad_gaps(data, gap_mil, waivers=({}, {}), smd_on=None):
     """L-13: pads of different parts on different nets closer than gap_mil on a copper layer both are on (a
     through-hole pad is on both). A pad without a net counts as a net of its own; pads of one part belong to its
     footprint, and a pad without a part (a tooling hole) is no part. A pair is waived when one of its parts or nets
-    has the rule's waiver in the graph (waivers: pad_waivers). smd_on (L-14): only SMD pads on these layers ("TOP",
+    has the code's accept in the graph (waivers: pad_accepts). smd_on (L-14): only SMD pads on these layers ("TOP",
     "BOTTOM") – the sides that get paste. -> [{"a", "b" (pad names), "nets", "layers", "mil", "waived" (reason or
     None)}], closest first."""
     from shapely.strtree import STRtree
@@ -1231,7 +1235,7 @@ def report_paste(cfg, data):
     gap, sides = paste_rule(cfg)
     if not sides:
         return []
-    gaps = pad_gaps(data, gap, graph_waivers(cfg, "L-14"), sides)
+    gaps = pad_gaps(data, gap, graph_accepts(cfg, "GEO.spacing", "paste"), sides)
     tight = [g for g in gaps if not g["waived"]]
     say(f"SMD pads of different parts on {' and '.join(sides)}: {len(tight)} pairs closer than the paste gap "
         f"{gap / MIL_PER_MM:g} mm" + (f", {len(gaps) - len(tight)} waived (L-14)" if len(gaps) > len(tight) else ""))
@@ -1283,7 +1287,7 @@ def report_joints(cfg, board, rules, data, routes=None):
     if not rules.joint_keep:
         return []
     vias = [] if routes is None else [(net, tuple(v), rules.via[1]) for net, r in routes.items() for v in r["vias"]]
-    gaps = [g for g in joint_gaps(data, rules.joint_keep, rules.hand, vias, graph_waivers(cfg, "L-18"))
+    gaps = [g for g in joint_gaps(data, rules.joint_keep, rules.hand, vias, graph_accepts(cfg, "GEO.spacing", "joint"))
             if (g["kind"] == "pad") == (routes is None)]
     near = [g for g in gaps if not g["waived"]]
     what = "pads" if routes is None else "vias"
@@ -2163,7 +2167,7 @@ def main(cfg, args):
                 run_freerouting(P["dsn"], P["ses"], P["log"], passes, args.threads, not args.no_optimizer, rules.edge_um)
             elif step == "check":
                 data = json.loads(P["board"].read_text())
-                tight = report_pads(rules, data, graph_waivers(cfg))  # the placement's: another routing keeps them
+                tight = report_pads(rules, data, graph_accepts(cfg))  # the placement's: another routing keeps them
                 tight += report_paste(cfg, data)
                 tight += report_joints(cfg, board, rules, data)
                 attempts = rules.attempts if args.action == "all" and not tight else 1

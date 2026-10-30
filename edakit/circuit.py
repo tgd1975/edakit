@@ -1,6 +1,6 @@
 """What the engines and the checks read off the graph: voltage ranges, resistors between nets, supplies and how far
 they reach, I2C and CC lines, pin functions, values as the graph writes them. Pure functions of a Design – either form
-of the parts entries (limits/values of the restructuring, ratings/params of before) – that decide nothing.
+of the parts entries – that decide nothing.
 """
 
 from __future__ import annotations
@@ -12,13 +12,13 @@ from .catalog import table
 
 
 def values(part):
-    """The values of a parts entry (values; params in the form of before)."""
-    return (part or {}).get("values") or (part or {}).get("params") or {}
+    """The values of a parts entry."""
+    return (part or {}).get("values") or {}
 
 
 def limits(part):
-    """The limits of a parts entry (limits; ratings in the form of before)."""
-    return (part or {}).get("limits") or (part or {}).get("ratings") or {}
+    """The limits of a parts entry."""
+    return (part or {}).get("limits") or {}
 
 
 ACTIVE_TYPES = {"input", "output", "bidirectional", "power_in", "power_output", "analog", "current_sink"}

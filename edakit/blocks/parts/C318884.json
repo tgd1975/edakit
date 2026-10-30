@@ -32,13 +32,13 @@
       "role": "b"
     }
   },
-  "params": {
+  "values": {
     "r_on_ohm": 0.1,
     "force_n": 1.6
   },
-  "ratings": {
+  "limits": {
     "i_max_a": 0.05,
-    "v_max": 12
+    "v_max_v": 12
   },
   "spice": {},
   "sources": [

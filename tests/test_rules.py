@@ -5,6 +5,8 @@ import json
 import re
 from pathlib import Path
 
+from helpers import check
+
 from edakit import checks, rules
 from edakit.design import Design
 from edakit.release import gate
@@ -54,7 +56,7 @@ def test_hint_conditions_are_known():
 
 
 def test_label_names_the_check_with_words():
-    assert rules.label("L-9") == "L-9 (hole fits the lead)"
+    assert rules.label("GEO.hole") == "L-9 (hole fits the lead)"
     assert rules.label("K-1") == "K-1"   # a project's own stage: no entry, the ID stays as it is
     lines = rules.explain("G-14")
     assert lines[0].startswith("G-14 (USB-C sink termination): ")
@@ -154,8 +156,8 @@ def test_protocol_names_and_explains_the_findings(project, tmp_path):
     head = {"time": "2026-10-25T20:00:00+01:00", "tester": "test", "graph_version": "1.0", "graph_date": "2026-10-25",
             "graph_sha256": "a", "state_sha256": "b", "layout_sha256": "c", "git_commit": "abc", "git_dirty": False,
             "tools": {"python": "3", "edakit": "0", "ngspice": "ngspice-45", "easyeda-mcp-pro": "1.4.0"}}
-    rows = [{"stage": "L", "id": "L-9", "item": "main", "check": "hole takes the lead", "result": "fail"},
-            {"stage": "L", "id": "L-5", "item": "main", "check": "track width >= class width", "result": "warn"},
+    rows = [{"stage": "L", "id": "GEO.hole", "item": "main", "check": "hole takes the lead", "result": "fail"},
+            {"stage": "L", "id": "GEO.width", "item": "main", "check": "track width >= class width", "result": "warn"},
             {"stage": "K", "id": "K-1", "item": "Mechanics", "check": "door fits", "result": "fail"}]
     gate.write_protocol(cfg, tmp_path, head, rows, {"checks": [], "scenarios": []}, {"manual": []}, [], "NOT RELEASED",
                         [], set("PGESLF"), gate.STAGES, {})
@@ -219,7 +221,7 @@ def test_h8_a_single_pmos_is_no_block(project):
     second_supply(project)
     assert h8(project) == ["BAT (J1 unblocked, J2)", "VIN (J1 unblocked, J2)"]   # Q10 conducts both ways
     cfg = project.config()
-    assert checks.run(Design.from_config(cfg), cfg).errors == []     # no check sees it
+    assert check(Design.from_config(cfg), cfg).errors == []     # no check sees it
 
 
 def test_h8_back_to_back_pair_or_a_diode_blocks(project):

@@ -69,14 +69,14 @@ def test_limits_from_entry_pin_and_pin_type():
     found = limits.run(engines.context(d))
     assert codes(found) == ["LIM.v", "LIM.v"]
     by = {f.place: f for f in found}
-    assert "7.5 V × 1.5 = 11.2 V, allowed 10 V" in by["C1"].text and by["C1"].source == "v_max_v of C"
+    assert by["C1"].text == "C1: up to 7.5 V, rated 10 V (needs ×1.5)" and by["C1"].source == "v_max_v of C"
     assert by["U1.3"].source == "v_max_v of pin 3 (IN) of U" and by["U1.3"].stage == "G"
 
 
 def test_a_negative_net_on_an_active_pin():
     d = design({"U1": "U"}, {"N": ([-1, 0], ["U1.3", "U1.4"]), "GND": ([0, 0], ["U1.2"]), "V": ([0, 3.3], ["U1.1"])},
                {"U": IC})
-    found = [f for f in limits.run(engines.context(d)) if "down to" in f.text]
+    found = [f for f in limits.run(engines.context(d)) if f.text.startswith("N down to -1 V")]
     assert {f.place for f in found} == {"U1.3", "U1.4"}
 
 
@@ -186,31 +186,26 @@ def test_every_finding_is_well_formed(project, fault):
             assert f.source, f
 
 
-def test_every_check_id_the_code_reports_has_a_code():
-    """Every check ID of before a module reports – the gate's rows of stages S, L and F among them – maps to a code
-    (engines/project.py MAP, catalog replaces): the regrouping of step 4 leaves nothing without a name."""
+def test_no_check_id_of_before_is_left_in_the_code():
+    """Every finding, row and accept key in edakit names a code of the catalog; the check IDs of before stay only where
+    the conversion reads them (convert.py, the catalog's replaces) – the manual checks M-… are no codes."""
     import re
     from pathlib import Path
-
-    from edakit.engines.project import MAP
     root = Path(__file__).resolve().parents[1] / "edakit"
-    found = set()
-    for path in root.rglob("*.py"):
-        found |= set(re.findall(r'"([PGESLF]-\d+)"', path.read_text(encoding="utf-8")))
-    retired = {"G-7"}
-    assert {i for i in found - retired if i not in MAP and i not in catalog.old_map()} == set()
+    left = {str(p.relative_to(root)): ids for p in root.rglob("*.py") if p.name != "convert.py"
+            if (ids := set(re.findall(r'"([PGESLFH]-\d+)"', p.read_text(encoding="utf-8"))))}
+    assert left == {}
 
 
-def test_row_codes_and_recorded_grades():
-    from edakit.engines.project import Recorder, row_code
-    assert row_code({"id": "L-16", "check": "plated hole-to-hole spacing", "result": "fail"}) == "GEO.spacing"
-    assert row_code({"id": "L-16", "check": "annular ring", "result": "warn"}) == "GEO.ring"
-    assert row_code({"id": "K-1", "check": "door fits"}) is None
+def test_recorded_classes_and_grades():
+    from edakit.engines.project import Recorder
     rec = Recorder()
-    rec.pending.append(("P-7", "D1 C1: plated holes but no lead in the parts entry"))
-    rec.warnings.append(("P-4", "U1: thin stock"))
-    rec.error("G-9", "X1: neither an LCSC part nor an EasyEDA device", {"G-9": "a test pad"})
-    rec.drafts.append(("G-22", "R-3: no evidence"))
+    rec.add("pending", "PARTS.fact", "D1 C1: plated holes but no lead in the parts entry", grade="lead")
+    rec.warnings.append(("PARTS.stock", "U1: thin stock"))
+    rec.add("warning", "PARTS.verified", "X1: neither an LCSC part nor an EasyEDA device", "a test pad", grade="device")
+    rec.drafts.append(("DOCS.evidence", "R-3: no evidence"))
+    rec.error("GEO.hole", "J1 (pads 1): the hole is too small", {"GEO.hole": "a press-fit pin"})
     got = [(f.code, f.grade, f.place, f.accepted) for f in rec.findings]
     assert got == [("PARTS.fact", "lead", "D1", ""), ("PARTS.stock", "margin", "U1", ""),
-                   ("PARTS.verified", "device", "X1", "a test pad"), ("DOCS.evidence", "draft", "R-3", "")]
+                   ("PARTS.verified", "device", "X1", "a test pad"), ("DOCS.evidence", "draft", "R-3", ""),
+                   ("GEO.hole", "", "J1", "a press-fit pin")]

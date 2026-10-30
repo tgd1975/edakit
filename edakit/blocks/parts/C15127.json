@@ -27,7 +27,7 @@
       "role": "drain"
     }
   },
-  "params": {
+  "values": {
     "vgs_th_v": [
       -1.3,
       -0.9,
@@ -40,9 +40,9 @@
     },
     "vsd_v_at_1a": 0.7
   },
-  "ratings": {
-    "vds_max": 30,
-    "vgs_max": 12,
+  "limits": {
+    "vds_max_v": 30,
+    "vgs_max_v": 12,
     "id_max_a": 3.2,
     "p_max_w": 0.9,
     "is_body_max_a": 2.0,

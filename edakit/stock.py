@@ -190,25 +190,25 @@ def check(design, rep, cfg):
     snap = load(cfg)
     where = cfg.relative(cfg.stock) if cfg.stock else "hardware/stock.json"
     if snap is None:
-        rep.notes.append(("P-4", f"no stock snapshot ({where}) – edakit stock asks JLCPCB about the {len(lines)} "
+        rep.notes.append(("PARTS.stock", f"no stock snapshot ({where}) – edakit stock asks JLCPCB about the {len(lines)} "
                                  "assembled parts"))
         return
     pcba, why = cfg.pcba()
     old = []
     for lcsc, refs in lines.items():
         who = f"{refs_text(refs)} {lcsc}"
-        waive = next((w for d in refs if (w := design.comps[d].get("waive")) and "P-4" in w), None)
+        waive = next((w for d in refs if (w := design.comps[d].get("accept")) and "PARTS.stock" in w), None)
         row = snap.get("parts", {}).get(lcsc)
         if row is None:
-            rep.pending.append(("P-4", f"{who}: not in the stock snapshot – edakit stock"))
+            rep.pending.append(("PARTS.stock", f"{who}: not in the stock snapshot – edakit stock"))
             continue
         if row.get("error"):
-            rep.pending.append(("P-4", f"{who}: not read on {row.get('date')} ({row['error']}) – edakit stock"))
+            rep.pending.append(("PARTS.stock", f"{who}: not read on {row.get('date')} ({row['error']}) – edakit stock"))
             continue
         if age_days(row) > cfg.stock_max_age_days:
             old.append(row)
         if not row.get("listed"):
-            rep.error("P-4", f"{who}: not in JLCPCB's assembly catalogue on {row['date']} – pre-order only", waive)
+            rep.error("PARTS.stock", f"{who}: not in JLCPCB's assembly catalogue on {row['date']} – pre-order only", waive)
             continue
         entry = design.parts.get(lcsc) or {}
         n = len(refs) * cfg.quantity
@@ -218,25 +218,25 @@ def check(design, rep, cfg):
         stock = int(row.get("stock") or 0)
         margin = math.ceil(want * (1 + cfg.stock_margin_pct / 100))
         if stock < want:
-            rep.error("P-4", f"{who}: {stock} in stock at JLCPCB on {row['date']}, {want} needed ({how})", waive)
+            rep.error("PARTS.stock", f"{who}: {stock} in stock at JLCPCB on {row['date']}, {want} needed ({how})", waive)
         elif stock < margin:
-            rep.warnings.append(("P-4", f"{who}: {stock} in stock at JLCPCB on {row['date']}, below {want} needed + "
+            rep.warnings.append(("PARTS.stock", f"{who}: {stock} in stock at JLCPCB on {row['date']}, below {want} needed + "
                                         f"{cfg.stock_margin_pct:g} % ({margin})"))
         if entry.get("mpn") and row.get("mpn") and not same_mpn(entry["mpn"], row["mpn"]):
-            rep.error("P-4", f"{who}: JLCPCB names it {row['mpn']}, the parts entry {entry['mpn']}", waive)
+            rep.error("PARTS.stock", f"{who}: JLCPCB names it {row['mpn']}, the parts entry {entry['mpn']}", waive)
         name = f"{who} {row.get('mpn') or entry.get('mpn', '')}".rstrip()
         if row.get("assembly_type") == STANDARD_ONLY and pcba == "economic":
-            rep.error("P-4", f"{name}: '{STANDARD_ONLY}' at JLCPCB, the order is Economic ({why}) – solder it by hand "
+            rep.error("PARTS.stock", f"{name}: '{STANDARD_ONLY}' at JLCPCB, the order is Economic ({why}) – solder it by hand "
                              "(bom: false), take another part, or order Standard (assembly.pcba)", waive)
         if (row.get("msl") or 0) >= BAKE_MSL:
-            rep.warnings.append(("P-4", f"{name}: MSL {row['msl']} at JLCPCB – baked before assembly (fee and 2 days "
+            rep.warnings.append(("PARTS.stock", f"{name}: MSL {row['msl']} at JLCPCB – baked before assembly (fee and 2 days "
                                         "more)"))
         if class_differs(row.get("class"), row.get("preferred"), entry.get("jlc_class")):
-            rep.warnings.append(("P-4", f"{who}: JLCPCB lists it as {row['class']}, the parts entry as "
+            rep.warnings.append(("PARTS.stock", f"{who}: JLCPCB lists it as {row['class']}, the parts entry as "
                                         f"{entry['jlc_class']}"))
     if old:
         oldest = max(age_days(r) for r in old)
-        rep.pending.append(("P-4", f"{where}: {len(old)} of {len(lines)} parts read {oldest} days ago "
+        rep.pending.append(("PARTS.stock", f"{where}: {len(old)} of {len(lines)} parts read {oldest} days ago "
                                    f"(stock_max_age_days {cfg.stock_max_age_days}) – edakit stock"))
 
 
@@ -263,7 +263,6 @@ def main_lcsc(numbers):
 
 
 def main(cfg, args):
-    from .checks import Report
     design = Design.from_config(cfg)
     lines = assembled(design, cfg.board(args.board).name if args.board else None)
     snap = load(cfg) or {"parts": {}}
@@ -280,14 +279,11 @@ def main(cfg, args):
     for lcsc, refs in lines.items():
         row = snap["parts"][lcsc]
         print("  " + describe(lcsc, row, refs, need(len(refs) * cfg.quantity, pcba, row) if row.get("listed") else None))
-    rep = Report()
-    check(design, rep, cfg)
-    for c, m in rep.errors:
-        print(f"ERROR   {c}  {m}")
-    for c, m, reason in rep.waived:
-        print(f"WAIVED  {c}  {m}\n                 reason: {reason}")
-    for c, m in rep.pending:
-        print(f"PENDING {c}  {m}")
-    for c, m in rep.warnings:
-        print(f"WARNING {c}  {m}")
+    from .engines.project import Recorder
+    from .findings import Report, format_findings
+    rec = Recorder()
+    check(design, rec, cfg)
+    rep = Report(rec.findings).resolve()
+    if rep.findings:
+        print("\n".join(format_findings(rep.findings)))
     return 2 if rep.errors else 0

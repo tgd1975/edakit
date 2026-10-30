@@ -22,16 +22,16 @@
       "role": "anode"
     }
   },
-  "params": {
+  "values": {
     "vf_v": 0.55,
     "vf_at_a": 1.0,
     "ir_a": 0.0003,
     "ir_at_v": 40
   },
-  "ratings": {
-    "if_avg_a": 1.0,
-    "ifsm_a": 25,
-    "vrrm": 40,
+  "limits": {
+    "if_max_a": 1.0,
+    "ifsm_max_a": 25,
+    "vr_max_v": 40,
     "tj_max_c": 150
   },
   "spice": {

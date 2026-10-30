@@ -10,6 +10,8 @@ import json
 
 import pytest
 
+from helpers import check
+
 from edakit import checks, part
 from edakit.design import Design
 from edakit.release import gate
@@ -72,8 +74,8 @@ ROUND_2 = bent(p1=1.6, p4=-1.6)      # pin 4 towards the trunk
 
 def p8(project):
     cfg = project.config()
-    rep = checks.run(Design.from_config(cfg), cfg)
-    return {kind: [m for c, m, *_ in getattr(rep, kind) if c == "P-8"]
+    rep = check(Design.from_config(cfg), cfg)
+    return {kind: [m for c, m, *_ in getattr(rep, kind) if c == "GEO.formed"]
             for kind in ("errors", "pending", "warnings", "notes", "waived")}
 
 
@@ -83,7 +85,7 @@ def test_round_1_fits_turned(project):
     assert p8(project)["errors"] == [
         "D10: its formed holes lie on each other turned by 180° – pin 1 (+5V) in the hole of pin 3 (STAR_G_K), "
         "pin 2 (STAR_R_K) in the hole of pin 4 (STAR_B_K)"]
-    assert "P-8" in checks.EXECUTED
+    assert "GEO.formed" in checks.EXECUTED
 
 
 def test_round_2_fits_one_way_only(project):
@@ -138,7 +140,7 @@ def test_waive(project):
     star(project)
     dump(project, ROUND_1)
     g = project.graph()
-    project.comp(g, "D10")["waive"] = {"P-8": "the print shows the anode, the body's flat stands on the board"}
+    project.comp(g, "D10")["accept"] = {"GEO.formed": "the print shows the anode, the body's flat stands on the board"}
     project.save_graph(g)
     found = p8(project)
     assert found["errors"] == [] and len(found["waived"]) == 1
@@ -166,4 +168,4 @@ def test_the_gate_counts_p8_in_stage_p(project):
     dump(project, ROUND_1)
     cfg = project.config()
     rows, _ = gate.stage_graph(cfg, Design.from_config(cfg))
-    assert [(r["stage"], r["result"]) for r in rows if r["id"] == "P-8"] == [("P", "fail")]
+    assert [(r["stage"], r["result"]) for r in rows if r["id"] == "GEO.formed"] == [("P", "fail")]

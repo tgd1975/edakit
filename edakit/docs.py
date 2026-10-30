@@ -276,17 +276,17 @@ def fill_notes(cfg, design, notes, warn=print):
 
 def stage_rows(cfg, design, sim):
     """G-19 in the gate's stage G, on the gate's own simulation result; no quotes, no rows."""
-    from . import rules
+    from . import catalog
     found, n = findings(cfg, design, sim)
     if not n and not found:
         return []
-    rows = [{"stage": "G", "id": "G-19", "item": "", "check": f, "result": "fail"} for f in found]
-    return rows or [{"stage": "G", "id": "G-19", "item": "", "check": f"{rules.title('G-19')}: {n} quoted values",
+    rows = [{"stage": "G", "id": "DOCS.quote", "item": "", "check": f, "result": "fail"} for f in found]
+    return rows or [{"stage": "G", "id": "DOCS.quote", "item": "", "check": f"{catalog.title('DOCS.quote')}: {n} quoted values",
                      "result": "pass"}]
 
 
 def main(cfg, args):
-    from . import rules
+    from . import catalog
     from .design import Design
     from .sim.run import SimError
     design = Design.from_config(cfg)
@@ -311,6 +311,6 @@ def main(cfg, args):
     print(f"{n} quoted values, {len(found)} stale or unresolvable" + (" – edakit docs --write fills in the current "
                                                                        "values" if found else ""))
     if found:
-        print("\n  " + "\n  ".join(rules.explain("G-19")))
+        print("\n  " + "\n  ".join(catalog.explain("DOCS.quote")))
     return 2 if found else 0
 

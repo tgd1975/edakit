@@ -451,7 +451,7 @@ def check(d, rep, cfg):
     for key in keys:
         found = problems(d.parts[key])
         for _, text in found:
-            rep.errors.append(("P-9", f"{', '.join(users(d, key))} {key}: {text}"))
+            rep.errors.append(("PARTS.footprint", f"{', '.join(users(d, key))} {key}: {text}"))
         if not found:
             valid.add(key)
     dumped = board_dumps(d, cfg)
@@ -462,26 +462,26 @@ def check(d, rep, cfg):
             continue
         geo = dumped(des)
         if not geo:
-            rep.notes.append(("P-10", f"{des}: not in the footprint geometry of its board – edakit pcb dump once it is "
+            rep.notes.append(("SYNC.footprint", f"{des}: not in the footprint geometry of its board – edakit pcb dump once it is "
                                       f"in the PCB; until then the copy is not compared with the data of {key}"))
             continue
         if key not in valid:
             continue                                  # P-9 says what the data lacks
         entry = d.parts[key]
         if geo.get("footprint") != entry.get("footprint"):
-            rep.error("P-10", f"{des}: the dump measured footprint {geo.get('footprint')}, the entry {key} names "
+            rep.error("SYNC.footprint", f"{des}: the dump measured footprint {geo.get('footprint')}, the entry {key} names "
                               f"{entry.get('footprint')} – not the copy (L-4): edakit pcb parts --write, then pcb dump",
-                      d.comps[des].get("waive"))
+                      d.comps[des].get("accept"))
             continue
         diffs, lacks = copy_differences(entry, geo)
         for what in lacks:
             unmeasured.setdefault(what, []).append(des)
         if diffs:
-            rep.error("P-10", f"{des}: the copy differs from the footprint data of {key} – " + "; ".join(diffs)
+            rep.error("SYNC.footprint", f"{des}: the copy differs from the footprint data of {key} – " + "; ".join(diffs)
                       + f" – rebuild it (edakit part build {key} --write, delete {des} in the PCB, edakit pcb parts "
-                        "--write, edakit pcb dump) or correct the data", d.comps[des].get("waive"))
+                        "--write, edakit pcb dump) or correct the data", d.comps[des].get("accept"))
     for what, des in unmeasured.items():
-        rep.notes.append(("P-10", f"{', '.join(des)}: {what} not measured – the dump is older than the footprint data "
+        rep.notes.append(("SYNC.footprint", f"{', '.join(des)}: {what} not measured – the dump is older than the footprint data "
                                   "(edakit pcb dump measures them)"))
 
 

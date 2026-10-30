@@ -25,7 +25,7 @@ def usb_board(project, fixed=True):
     toml = project.root / "edakit.toml"
     toml.write_text(toml.read_text() + f'\n[boards.usb]\ntitle = "USB-C breakout"\n{KEY}\n')
     part = json.loads(json.dumps(BREAKOUT))
-    part["params"] = {"usb_c": {"cc": "none", "source": "Soldered 333011 KiCad data V1.2.0: no CC resistors"}}
+    part["values"] = {"usb_c": {"cc": "none", "source": "Soldered 333011 KiCad data V1.2.0: no CC resistors"}}
     part["order"] = {"berrybase": "SOL-333011"}
     project.save_part("333011", part)
     g = project.graph()
@@ -69,7 +69,7 @@ def found(project, check):
 
 def test_g14_finds_the_missing_cc_resistors_on_the_bought_board(project):
     usb_board(project, fixed=False)
-    assert found(project, "G-14") == [
+    assert found(project, "REQ.missing") == [
         "J9: CC1 not connected – a USB-C source switches VBUS on only with 5.1 kΩ to GND on each CC pin",
         "J9: CC2 not connected – a USB-C source switches VBUS on only with 5.1 kΩ to GND on each CC pin"]
 
@@ -83,7 +83,7 @@ def test_a_part_on_a_bought_board_without_bom_false_is_g1(project):
     g = usb_board(project)
     project.comp(g, "R21")["bom"] = True
     project.save_graph(g)
-    assert found(project, "G-1") == ["R21: on the bought board usb – nobody assembles it: bom: false"]
+    assert found(project, "STRUCT.board") == ["R21: on the bought board usb – nobody assembles it: bom: false"]
 
 
 @pytest.mark.skipif(not shutil.which("ngspice"), reason="ngspice not installed")
@@ -147,7 +147,7 @@ def test_parts_on_the_bought_board_need_no_row_in_the_plan(project):
     design = Design.from_config(cfg)
     rows = fab.Rows()
     fab.check_rows(cfg.board("main"), design, rows)
-    assert [(r["id"], r["result"], r["actual"]) for r in rows] == [("L-20", "pass", "17 parts, each with a row")]
+    assert [(r["id"], r["result"], r["actual"]) for r in rows] == [("SYNC.plan", "pass", "17 parts, each with a row")]
     pcb_parts = [{"designator": r, "x": 0, "y": 0, "rotation": 0, "layer": 1} for r in ("J9", "R21", "R22")]
     assert pcb.eda_rows(cfg.board("main"), design, pcb_parts, auto=True) == ({}, [])
 

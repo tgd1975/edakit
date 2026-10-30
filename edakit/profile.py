@@ -47,7 +47,7 @@ def suggests(design, rule):
     if roles and any(pin.get("role") in roles for p in parts for pin in (p.get("pins") or {}).values()):
         return True
     keys = set(rule.get("values", []))
-    if keys and any(keys & set(p.get("values") or p.get("params") or {}) for p in parts):
+    if keys and any(keys & set(p.get("values") or {}) for p in parts):
         return True
     if rule.get("radio"):
         if (design.graph.get("purpose") or {}).get("radio") is not None:

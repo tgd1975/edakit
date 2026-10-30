@@ -13,14 +13,13 @@ catalog/paths.toml and the tables.
     SIM       the scenarios run and reach their states (stage E)        sim.py
 
 run(design, cfg) gives the findings of stages P and G these engines decide, as a Report with severities from the
-profile and the graph's accepts applied. A design in the form of before is converted in memory (convert.py).
+profile and the graph's accepts applied.
 """
 
 from __future__ import annotations
 
 from dataclasses import dataclass, field
 
-from .. import convert
 from .. import profile as profiles
 from ..findings import Report
 
@@ -40,23 +39,20 @@ class Context:
         return self.cfg.root if self.cfg else "."
 
 
-def is_converted(design):
-    return not any("ratings" in p or "params" in p for p in design.parts.values()) \
-        and not any("waive" in x for x in [*design.graph.get("components", []), *design.graph.get("nets", [])]) \
-        and "hints" not in design.graph and "reverse_protect" not in (design.graph.get("checks") or {}) \
-        and "pin_locks" not in (design.graph.get("checks") or {})
-
-
-def converted(design):
-    """The design in the form of the restructuring: itself, or converted in memory."""
-    return design if is_converted(design) else convert.design(design)
+def load_sim(cfg):
+    """The simulation config if there is one – the engines read its sources and ambient; a missing or broken file is
+    no error here."""
+    import json
+    try:
+        return json.loads(cfg.sim_config.read_text(encoding="utf-8"))
+    except (OSError, ValueError, AttributeError):
+        return None
 
 
 def context(design, cfg=None, sim=None):
-    from .. import rules
-    d = converted(design)
+    d = design
     if sim is None and cfg is not None:
-        sim = rules.load_sim(cfg)
+        sim = load_sim(cfg)
     return Context(d, d.joined(), cfg, sim or {}, profiles.build(d, cfg))
 
 

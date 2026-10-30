@@ -103,7 +103,7 @@ def sheet(cfg, board, design, d):
     layers = {"T": (gerber.parse_gerber(g / gerber.FILES["top"]), gerber.parse_gerber(g / gerber.FILES["top_silk"])),
               "B": (gerber.parse_gerber(g / gerber.FILES["bottom"]), gerber.parse_gerber(g / gerber.FILES["bottom_silk"]))}
     def polar(part):  # electrolytic and tantalum capacitors count as well
-        return part.get("kind") in POLAR or (part.get("kind") == "capacitor" and part.get("params", {}).get("polarized"))
+        return part.get("kind") in POLAR or (part.get("kind") == "capacitor" and (part.get("values") or {}).get("polarized"))
     comps = [c for c in design.board_comps(board.name).values() if c["designator"] in data
              and polar(design.part(c["designator"]) or {})]
     comps.sort(key=lambda c: (not c.get("verify"), design.part(c["designator"])["kind"], c["designator"]))

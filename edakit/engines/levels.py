@@ -52,12 +52,10 @@ def undefined_inputs(d):
             continue
         on = (("net", name),)
         if not any(defines(t) or reset(t) == "floating" for t in types):
-            out.append(Finding("LVL.undefined", "G", name, "an input without a driver or a pull resistor", on=on,
-                               old="G-4"))
+            out.append(Finding("LVL.undefined", "G", name, f"{name}: input without driver or pull resistor", on=on))
         elif not any(defines(t) for t in types):
-            out.append(Finding("LVL.undefined", "G", name, "only pins that float at reset drive this input – "
-                               "undefined until the firmware runs", fix="a pull resistor to the inactive level",
-                               on=on, old="G-4"))
+            out.append(Finding("LVL.undefined", "G", name, f"{name}: only MCU pins drive this input – floating until the "
+                               "firmware runs", fix="a pull resistor to the inactive level", on=on))
     return out
 
 
@@ -77,10 +75,11 @@ def control_pins(d):
                 targets |= held
             if pin is not None and resistors_to(d, pin, targets):
                 continue
-            to = " or ".join("a rail" if r == "rail" else f"its {r}" for r in c["to"])
-            out.append(Finding("LVL.undefined", "G", des, f"no resistor from its {role} to {to} – undefined while the "
-                               "firmware is not running", fix=f"10–100 kΩ from {role} to {c['to'][0]}",
-                               on=(("component", des),), old="G-4"))
+            text = (f"{des}: no base-emitter resistor – state undefined while the firmware is not running" if role == "base"
+                    else f"{des}: no resistor from the gate to its source or a rail – the MOSFET is undefined while the "
+                         "firmware is not running")
+            out.append(Finding("LVL.undefined", "G", des, text, fix=f"10–100 kΩ from {role} to {c['to'][0]}",
+                               on=(("component", des),)))
     return out
 
 
@@ -91,8 +90,8 @@ def contention(d):
     for name, net in d.nets.items():
         drivers = [r for r in net["pins"] if d.pin_info(r).get("type") in kinds]
         if len(drivers) > 1:
-            out.append(Finding("LVL.contention", "G", name, f"{len(drivers)} outputs drive it: {', '.join(drivers)}",
-                               on=(("net", name),), old="G-5"))
+            out.append(Finding("LVL.contention", "G", name, f"{name}: several outputs drive this net: {', '.join(drivers)}",
+                               on=(("net", name),)))
     return out
 
 
@@ -120,12 +119,11 @@ def straps(d):
             wrong = [by for lvl, by in forces if lvl not in (want, "driven")]
             if driven:
                 out.append(Finding("LVL.boot", "G", ref, f"{what}, but {', '.join(driven)} drives it – its level at "
-                                   "power-up is not defined by the graph", src, on=on, old="G-12"))
+                                   "power-up is not defined by the graph", src, on=on))
             if wrong:
                 out.append(Finding("LVL.boot", "G", ref, f"{what}, but {', '.join(wrong)} holds it "
-                                   f"{'low' if want == 'high' else 'high'}", src, "another pin, or no pull", on=on,
-                                   old="G-12"))
+                                   f"{'low' if want == 'high' else 'high'}", src, "another pin, or no pull", on=on))
             elif not forces and info.get("pull") != {"high": "up", "low": "down"}[want]:
                 out.append(Finding("LVL.boot", "G", ref, f"{what}, but nothing holds it there: no pull on {net} and "
-                                   "no internal pull in the parts entry", src, on=on, old="G-12"))
+                                   "no internal pull in the parts entry", src, on=on))
     return out

@@ -178,7 +178,7 @@ def check(design, rep, cfg=None):
             continue
         by_entry[(entry.get("mpn") or c.get("part") or c["lcsc"], c.get("lcsc"))].append(des)
     for (mpn, lcsc), refs in sorted(by_entry.items(), key=lambda kv: natural_key(kv[1][0])):
-        rep.warnings.append(("P-5", f"{refs_text(sorted(refs, key=natural_key))} {mpn}: bought separately (bom: false), "
+        rep.warnings.append(("PARTS.supplier", f"{refs_text(sorted(refs, key=natural_key))} {mpn}: bought separately (bom: false), "
                                     "but neither an LCSC number nor `order` in its parts entry"
                                     + (f" ({lcsc} is an EasyEDA library number, LCSC does not sell it)" if lcsc else "")
                                     + " – name the supplier and its order code"))
