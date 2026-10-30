@@ -58,7 +58,7 @@ switched on under `/plugin` → Marketplaces (off by default for marketplaces ou
 **Two tool chains.** A project draws its boards in EasyEDA Pro (the default) or in KiCad 10 – `toolchain = "kicad"`
 in `[project]` of edakit.toml. On KiCad edakit writes one KiCad project per board and calls kicad-cli: no bridge, no
 claim, no clicks; graph, checks, simulation, plan, routing and gate are the same ([handbook 16](handbook/16-kicad.md);
-built and tested offline, the first run against a real KiCad is open).
+tested offline and in CI against KiCad 10, the first real project is open).
 
 Needed besides: EasyEDA Pro desktop, Node 24, [uv](https://docs.astral.sh/uv/), ngspice. Freerouting downloads itself
 on Linux x64. Then build and import the patched bridge extension once and start EasyEDA unthrottled –
