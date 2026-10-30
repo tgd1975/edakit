@@ -316,3 +316,17 @@ def test_export_on_kicad_keeps_a_copy_of_the_project(project, fake_cli):
         assert (d / name).exists(), name
     with zipfile.ZipFile(d / "kicad_main.zip") as z:
         assert "main/main.kicad_pcb" in z.namelist() and "main/main.kicad_sch" in z.namelist()
+
+
+def test_doctor_asks_kicad_cli_and_not_the_bridge(project, fake_cli, capsys):
+    kicad_project(project)
+    run_cli(project, "doctor", "--offline")
+    out = capsys.readouterr().out
+    assert "KiCad 10.0.6 (kicad-cli" in out and "Node" not in out and "bridge port" not in out
+
+
+def test_a_session_learns_the_tool_chain(project):
+    from edakit import agreements
+    kicad_project(project)
+    out = agreements.hook({"cwd": str(project.root)})
+    assert "Tool chain: KiCad" in out["hookSpecificOutput"]["additionalContext"]
