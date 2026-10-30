@@ -218,7 +218,8 @@ def build_parser():
     _common(p)
 
     p = sub.add_parser("gate", help="release gate: all stages, test protocol, manufacturing files")
-    p.add_argument("--easyeda", action="store_true", help="also run S, L and F (EasyEDA with the bridge)")
+    p.add_argument("--easyeda", "--eda", dest="easyeda", action="store_true",
+                   help="also run S, L and F (EasyEDA with the bridge, or KiCad with kicad-cli: [project] toolchain)")
     _no_scripts(p)
     _common(p)
 

@@ -721,3 +721,25 @@ def rules_differences(cfg, board):
     off += [f"net {net} not in class {name}" for name, nets in want["classes"].items() for net in nets
             if (name, net) not in patterns]
     return off
+
+
+def part_boxes(cfg, board, pcb=None):
+    """{ref: (x0, y0, x1, y1)} in EasyEDA's frame (mm, y up): what a part covers on the board – its fabrication and
+    silkscreen lines and its pads, as EasyEDA's bounding box of a part (silk apply keeps the designators off them)."""
+    pcb = pcb or load(cfg, board)
+    out = {}
+    for ref, fp in parts(pcb):
+        x0, y0, angle, _ = footprint_at(fp)
+        pts = []
+        for d in fp:
+            if isinstance(d, list) and d and d[0] == "fp_line" and str(value(d, "layer", "")).endswith((".Fab", ".SilkS")):
+                pts += [floats(d, "start"), floats(d, "end")]
+        for pad in find(fp, "pad"):
+            (ax, ay), r = floats(pad, "at")[:2], max(floats(pad, "size") or [0]) / 2
+            pts += [[ax - r, ay - r], [ax + r, ay + r], [ax - r, ay + r], [ax + r, ay - r]]
+        if not pts:
+            continue
+        absolute = [(x0 + dx, -(y0 + dy)) for dx, dy in (turn(px, py, angle) for px, py in pts)]
+        xs, ys = [p[0] for p in absolute], [p[1] for p in absolute]
+        out[ref] = (min(xs), min(ys), max(xs), max(ys))
+    return out

@@ -125,3 +125,54 @@ def drc_report(found, say=say):
     for f in found[:15]:
         say(f"    {f['errorType']}: {f['description']} {' / '.join(f['items'][:2])}")
     return 2
+
+
+def export_main(cfg, args):
+    """edakit export on a KiCad project: per board the schematic and PCB as PDF, the Gerber ZIP and the CPL as the gate
+    makes them, the netlist and BOM of the schematic, and the KiCad project as kicad_<board>.zip – as the EasyEDA side
+    keeps a copy of its project file. Not for ordering: the gate's files are."""
+    import shutil
+    import zipfile
+    from . import fab as kfab
+    out = cfg.artifact("export", ".keep").parent
+    boards = [cfg.board(args.board, made=True)] if args.board else list(cfg.made().values())
+    missing = 0
+    for board in boards:
+        d = out / board.name
+        d.mkdir(parents=True, exist_ok=True)
+        p = kb.paths(cfg, board)
+        print(f"[{board.name}] -> {d}")
+        rows = []
+        try:
+            if p["sch"].exists():
+                rows.append((cli.pdf_schematic(p["sch"], d / f"schematic_{board.name}.pdf", args.verbose)))
+                nets, comps = cli.netlist(p["sch"], d / f"netlist_{board.name}.net", args.verbose)
+                (d / f"nets_{board.name}.txt").write_text("".join(f"{n}: {' '.join(pins)}\n"
+                                                                  for n, pins in sorted(nets.items())))
+                rows.append(d / f"nets_{board.name}.txt")
+                (d / f"bom_{board.name}.json").write_text(json.dumps(kfab.bom(comps), indent=1, ensure_ascii=False))
+                rows.append(d / f"bom_{board.name}.json")
+            rows.append(cli.pdf_pcb(p["pcb"], d / f"pcb_{board.name}.pdf", args.verbose))
+            raw = d / "kicad_export"
+            shutil.rmtree(raw, ignore_errors=True)
+            cli.gerbers(p["pcb"], raw, args.verbose)
+            cli.drill(p["pcb"], raw, args.verbose)
+            with zipfile.ZipFile(d / f"gerber_{board.name}.zip", "w", zipfile.ZIP_DEFLATED) as z:
+                for name, text in sorted(kfab.normalize(raw, kb.vias(cfg, board)).items()):
+                    z.writestr(name, text)
+            rows.append(d / f"gerber_{board.name}.zip")
+            kfab.write_cpl(cli.pos(p["pcb"], raw / "pos.csv", args.verbose), kb.pcb_json(cfg, board),
+                           d / f"cpl_{board.name}.csv")
+            rows.append(d / f"cpl_{board.name}.csv")
+        except (cli.CliError, kb.BoardError) as e:
+            print(f"  ! {e}")
+            missing += 1
+        with zipfile.ZipFile(d / f"kicad_{board.name}.zip", "w", zipfile.ZIP_DEFLATED) as z:
+            for f in sorted(p["dir"].rglob("*")):
+                if f.is_file() and "kicad_export" not in f.parts:
+                    z.write(f, f.relative_to(p["dir"].parent))
+        rows.append(d / f"kicad_{board.name}.zip")
+        for f in rows:
+            print(f"  {f.name:<40} {f'{f.stat().st_size / 1000:.0f} kB' if f.exists() else 'missing'}")
+            missing += not f.exists()
+    return 2 if missing else 0

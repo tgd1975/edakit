@@ -211,6 +211,25 @@ elif args[:3] == ["pcb", "export", "pos"]:
                 continue
             x, y, *r = sexp.floats(fp, "at")
             w.writerow([ref, "", "", x, -y, (r or [0])[0], "bottom" if sexp.value(fp, "layer") == "B.Cu" else "top"])
+elif args[:2] == ["sch", "erc"]:
+    out.write_text(json.dumps({{"sheets": [{{"violations": []}}]}}))
+elif args[:3] == ["sch", "export", "netlist"]:
+    from edakit import config
+    from edakit.design import Design
+    root = Path(args[-1]).resolve()
+    while not (root / "edakit.toml").exists():
+        root = root.parent
+    cfg = config.load(root / "edakit.toml")
+    design = Design.from_config(cfg)
+    board = Path(args[-1]).stem
+    comps = " ".join(f'(comp (ref "{{r}}") (value "v") (fields (field (name "LCSC") "{{c.get('lcsc', '')}}")))'
+                     for r, c in design.board_comps(board).items())
+    nets = " ".join(f'(net (code "{{k}}") (name "/{{n}}") ' + " ".join(
+        f'(node (ref "{{q.split(".")[0]}}") (pin "{{q.split(".")[1]}}"))' for q in pins) + ")"
+        for k, (n, pins) in enumerate(design.board_nets(board).items(), 1))
+    out.write_text(f"(export (version \\"E\\") (components {{comps}}) (nets {{nets}}))")
+elif args[:3] in (["sch", "export", "pdf"], ["pcb", "export", "pdf"]):
+    out.write_bytes(b"%PDF-1.4 fake")
 else:
     print("fake kicad-cli: " + " ".join(args), file=sys.stderr)
     sys.exit(1)
@@ -250,3 +269,50 @@ def test_fab_collects_the_files_of_stages_l_and_f_from_kicad(project, fake_cli):
     assert f1["result"] == "pass" and "KiCad" in f1["check"], f1
     f3 = next(r for r in rows if r["id"] == "F-3")
     assert f3["result"] == "pass", f3
+
+
+def run_cli(project, *args):
+    from edakit import cli as edakit_cli
+    return edakit_cli.main([*args, "--config", str(project.root / "edakit.toml")])
+
+
+def test_the_commands_run_on_kicad(project, fake_cli, capsys):
+    kicad_project(project)
+    assert run_cli(project, "pcb", "parts") == 2                      # no PCB yet: every part is missing
+    assert run_cli(project, "pcb", "apply", "--no-scripts") == 0
+    assert run_cli(project, "pcb", "parts") == 0 and run_cli(project, "pcb", "nets") == 0
+    assert run_cli(project, "pcb", "dump", "--no-scripts") == 0
+    assert (project.root / "hardware" / "boards" / "main.geometry.json").exists()
+    assert run_cli(project, "pcb", "autolayout", "--no-scripts") == 1
+    assert "pcb place --rest" in capsys.readouterr().err
+    assert run_cli(project, "schematic", "create") == 0
+    assert run_cli(project, "schematic", "check") == 0
+    out = capsys.readouterr().out
+    assert "schematic = graph: yes" in out
+
+
+def test_silk_apply_places_the_designators_into_the_kicad_pcb(project, fake_cli):
+    from edakit.toolchain.kicad import silk as ksilk
+    cfg = kicad_project(project)
+    board = cfg.board()
+    kb.write_parts(cfg, board)
+    assert ksilk.apply(cfg, board) in (0, 2)
+    pcb = kb.load(cfg, board)
+    shown = {ref for ref, fp in kb.parts(pcb)
+             if not any(c[0] == "hide" for c in next(c for c in kb.find(fp, "property") if c[1] == "Reference")
+                        if isinstance(c, list))}
+    assert len(shown) >= len(kb.parts(pcb)) // 2                     # most designators found a spot
+    assert (cfg.artifacts / "silk_footprints_main").exists()
+
+
+def test_export_on_kicad_keeps_a_copy_of_the_project(project, fake_cli):
+    kicad_project(project)
+    assert run_cli(project, "pcb", "apply", "--no-scripts") == 0
+    assert run_cli(project, "schematic", "create") == 0
+    assert run_cli(project, "export") == 0
+    d = project.root / "build" / "edakit" / "export" / "main"
+    for name in ("kicad_main.zip", "gerber_main.zip", "cpl_main.csv", "pcb_main.pdf", "schematic_main.pdf",
+                 "nets_main.txt", "bom_main.json"):
+        assert (d / name).exists(), name
+    with zipfile.ZipFile(d / "kicad_main.zip") as z:
+        assert "main/main.kicad_pcb" in z.namelist() and "main/main.kicad_sch" in z.namelist()

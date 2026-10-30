@@ -70,6 +70,7 @@ from pathlib import Path
 
 from .. import checks, docs, eda, requirements, rules
 from ..design import Design
+from ..toolchain import is_kicad
 
 STAGES = [
     ("P", "Parts", "parts database complete, graph pins = parts database, parts verified, parts orderable"),
@@ -208,6 +209,15 @@ def header(cfg):
     design = Design.from_config(cfg)
     mcp = re.search(r"EASYEDA_MCP_VERSION:-([\d.]+)",
                     (Path(__file__).resolve().parents[1] / "easyeda" / "mcp-server.sh").read_text())
+    tools = {"python": platform.python_version(), "edakit": __version__,
+             "ngspice": (re.findall(r"ngspice-[\d.]+", sh(cfg.root, "ngspice", "-v")) or ["ngspice ?"])[0],
+             "easyeda-mcp-pro": mcp.group(1) if mcp else "?"}
+    if is_kicad(cfg):                 # the tool chain the stages S, L and F ran with (handbook 16)
+        from ..toolchain.kicad import cli
+        try:
+            tools["kicad"] = cli.version()
+        except cli.CliError:
+            tools["kicad"] = "?"
     return {
         "graph_sha256": hashlib.sha256(cfg.graph.read_bytes()).hexdigest(),
         "state_sha256": state_hash(cfg),
@@ -217,9 +227,7 @@ def header(cfg):
         "git_dirty": bool(sh(cfg.root, "git", "status", "--porcelain")),
         "time": dt.datetime.now().astimezone().isoformat(timespec="seconds"),
         "tester": sh(cfg.root, "git", "config", "user.name") or getpass.getuser(),
-        "tools": {"python": platform.python_version(), "edakit": __version__,
-                  "ngspice": (re.findall(r"ngspice-[\d.]+", sh(cfg.root, "ngspice", "-v")) or ["ngspice ?"])[0],
-                  "easyeda-mcp-pro": mcp.group(1) if mcp else "?"},
+        "tools": tools,
     }
 
 
@@ -742,8 +750,10 @@ def write_protocol(cfg, outdir, head, rows, sim, signoff, notes, decision, reaso
     L = [f"# Test protocol – release check {cfg.project}\n", "| | |\n|---|---|",
          f"| Date | {head['time']} |", f"| Run by | {head['tester']} |",
          f"| Object | `{cfg.relative(cfg.graph)}` v{head['graph_version']} ({head['graph_date']}), boards "
-         f"{', '.join(cfg.made())} in EasyEDA project {cfg.project}"
-         f"{'; bought, not made: ' + bought if bought else ''} |",
+         f"{', '.join(cfg.made())} in "
+         + (f"KiCad projects {cfg.relative(cfg.artifacts / 'kicad')}/<board>" if is_kicad(cfg) else
+            f"EasyEDA project {cfg.project}")
+         + f"{'; bought, not made: ' + bought if bought else ''} |",
          f"| SHA-256 graph | `{head['graph_sha256']}` |",
          f"| SHA-256 circuit | `{head['state_sha256']}` (graph, parts database, simulation config"
          f"{', requirements' if cfg.requirements else ''}) |",
@@ -754,7 +764,8 @@ def write_protocol(cfg, outdir, head, rows, sim, signoff, notes, decision, reaso
            if head.get("fab_sha256") else []),
          f"| Git | `{head['git_commit']}`{' + uncommitted changes' if head['git_dirty'] else ''} |",
          f"| Tools | Python {head['tools']['python']}, edakit {head['tools']['edakit']}, {head['tools']['ngspice']}, "
-         f"easyeda-mcp-pro {head['tools']['easyeda-mcp-pro']} |",
+         + (f"KiCad {head['tools'].get('kicad', '?')} (kicad-cli) |" if "kicad" in head["tools"] else
+          f"easyeda-mcp-pro {head['tools']['easyeda-mcp-pro']} |"),
          f"| **Result** | **{decision}** |\n"]
     if reasons:
         L += ["Reasons:\n", *[f"- {r}" for r in reasons], ""]
