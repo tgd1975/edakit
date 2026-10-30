@@ -31,7 +31,8 @@ packages = ["edakit"]
 
 [tool.pytest.ini_options]
 testpaths = ["tests"]
-markers = ["ngspice: needs ngspice on PATH", "freerouting: downloads and runs Freerouting"]
+markers = ["ngspice: needs ngspice on PATH", "freerouting: downloads and runs Freerouting",
+           "kicad: needs kicad-cli of KiCad 10 (the CI job kicad runs them)"]
 
 [tool.ruff]
 line-length = 120

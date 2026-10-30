@@ -222,7 +222,9 @@ it changes makes the steps after it outdated.
 first (`edakit lock claim --note "live runs"`), with EasyEDA unthrottled and the patched bridge (skill `start`), and
 release it at the end. 2.2's probe is written out above.
 
-**2.1 Positions as text** (`pcb autolayout` writes `auto = true` rows, `pcb takeover` takes a placed board, L-20):
+**2.1 Positions as text** (`pcb autolayout` writes `auto = true` rows, `pcb takeover` takes a placed board, L-20).
+Since 2026-10-30 edakit's own placer is to replace the auto-layout ([kicad-toolchain.md](kicad-toolchain.md), T.1, the
+user's decision): run 2 matters only while `pcb autolayout` exists; 1, 3 and 4 – the takeover and L-20 – stay.
 
 1. On a scratch copy of the bell with all `[place]` rows deleted: `edakit pcb takeover` in main and in
    `variants/esp32`, `smd` and `tht` shows 19 rows per board, without `auto`, each equal to the real board file's

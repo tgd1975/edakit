@@ -190,6 +190,8 @@ def build_parser():
                                                         "[place] (default: show only)")
     p.add_argument("--ref", help="dump: only these designators, comma-separated")
     p.add_argument("--only", help="place: only these designators, comma-separated")
+    p.add_argument("--rest", action="store_true", help="place: every other part of the board without a row, or with "
+                                                       "an auto row, as well – by airline length")
     p.add_argument("--verify-all", action="store_true", help="apply: compare the pads of every part with the plan")
     _no_scripts(p)
     _common(p)
@@ -218,7 +220,8 @@ def build_parser():
     _common(p)
 
     p = sub.add_parser("gate", help="release gate: all stages, test protocol, manufacturing files")
-    p.add_argument("--easyeda", action="store_true", help="also run S, L and F (EasyEDA with the bridge)")
+    p.add_argument("--easyeda", "--eda", dest="easyeda", action="store_true",
+                   help="also run S, L and F (EasyEDA with the bridge, or KiCad with kicad-cli: [project] toolchain)")
     _no_scripts(p)
     _common(p)
 

@@ -143,13 +143,25 @@ def registered(entries):
     return lines
 
 
+KICAD = ("Tool chain: KiCad ([project] toolchain = \"kicad\", handbook 16) – every board is a KiCad project in "
+         "<artifacts>/kicad/<board>/ that edakit writes; no EasyEDA, no claim, no easyeda-operator: the commands run "
+         "kicad-cli in the session.")
+
+
+def kicad(path):
+    """True when edakit.toml says toolchain = "kicad" in [project] – read by hand, like the hook's other key."""
+    text = path.read_text(encoding="utf-8", errors="replace")
+    project = re.search(r"^\[project\][^\n]*\n(.*?)(?=^\[|\Z)", text, re.M | re.S)
+    return bool(project and re.search(r'^\s*toolchain\s*=\s*"kicad"', project.group(1), re.M))
+
+
 def hook(data):
     """The hook's output for the hook JSON `data`, or None for no output."""
     path = find_project(data.get("cwd") or os.getcwd())
     if path is None:
         return None
     wanted, entries = read(path)
-    lines = ([digest()] if wanted else []) + registered(entries)
+    lines = ([digest()] if wanted else []) + ([KICAD] if kicad(path) else []) + registered(entries)
     if not lines:
         return None
     return {"hookSpecificOutput": {"hookEventName": "SessionStart", "additionalContext": "\n".join(lines)}}

@@ -25,6 +25,7 @@ import json
 from . import eda
 from .design import Design, natural_key
 from .eda import FOCUS, FOCUS_LOST, PROJECT, MCPError, api, batch_write, ensure_focus
+from .toolchain import is_kicad
 
 # Template layout: groups as bands from top to bottom, cells (width, height, per row) by component type
 GROUPS = [
@@ -407,6 +408,9 @@ def check_pins(mcp, graph_comps, sch, graph_nets, rep):
 
 def check(cfg, args):
     """Read only (it activates the pages, though). Exit 0 = same as the graph, 2 = differences, 1 = error."""
+    if is_kicad(cfg):                 # the gate's stage S calls this directly: KiCad's netlist and ERC (handbook 16)
+        from .toolchain.kicad import schematic as kicad_schematic
+        return kicad_schematic.run_check(cfg, args)
     board = cfg.board(args.board, made=True)
     design = Design.from_config(cfg)
     graph_comps, graph_nets = design.board_comps(board.name), design.board_nets(board.name)
@@ -493,6 +497,9 @@ def copy(cfg, args):
 
 
 def main(cfg, args):
+    if is_kicad(cfg) and args.action != "draw":     # the KiCad project: one schematic per board (handbook 16)
+        from .toolchain.kicad import schematic as kicad_schematic
+        return kicad_schematic.main(cfg, args)
     if args.action == "create":
         return create(cfg, args)
     if args.action == "check":

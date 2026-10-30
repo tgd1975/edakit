@@ -153,6 +153,10 @@ def copy_project(mcp, out):
 
 
 def main(cfg, args):
+    from .toolchain import is_kicad
+    if is_kicad(cfg):                 # the KiCad project: kicad-cli's exports and a copy of the project (handbook 16)
+        from .toolchain.kicad import commands
+        return commands.export_main(cfg, args)
     out = cfg.artifact("export", ".keep").parent
     boards = [cfg.board(args.board, made=True)] if args.board else list(cfg.made().values())
     step = eda.Steps(1 + 2 * len(boards) + (0 if args.board else 1))

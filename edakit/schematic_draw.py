@@ -690,19 +690,19 @@ def render(sheet, size, syms, power, ground, title_lines):
     return g.done()
 
 
-def main(cfg, args):
-    board = cfg.board(args.board, made=True)
+def drawing(cfg, board, drawn_by="edakit schematic draw"):
+    """The board's sheet as this drawing lays it out – for the SVG here and the KiCad schematic (toolchain/kicad):
+    {"design", "sheet", "size", "syms", "power", "problems"}, or None when the board has no parts in the graph."""
     design = Design.from_config(cfg)
     comps = design.board_comps(board.name)
     if not comps:
-        print(f"edakit: board {board.name} has no parts in the graph", file=sys.stderr)
-        return 1
+        return None
     syms = {d: symbol(design, d) for d in comps}
     geo = {d: {"type": comps[d].get("type"), "pins": s.pins, "body": s.body} for d, s in syms.items()}
     lc = layout_config(cfg, design)
     if not cfg.schematic.get("layout", {}).get("power_flags"):
         lc["power"] = default_power(design)
-    notes = block_notes(cfg, design, board, lc, drawn_by="edakit schematic draw")
+    notes = block_notes(cfg, design, board, lc, drawn_by=drawn_by)
     seeds = seed_parts(cfg, design, comps)
     if not lc["rows"]:
         lc["rows"], graph_notes = default_rows(comps, seeds)
@@ -719,6 +719,16 @@ def main(cfg, args):
         print(f"  ! {warning}")
     problems = [p for s in syms.values() for p in s.problems] + check_geometry(sheet, geo, lay.pin_net) \
         + loose_pins(sheet, geo, lay.pin_net)
+    return {"design": design, "sheet": sheet, "size": size, "syms": syms, "power": lc["power"], "problems": problems}
+
+
+def main(cfg, args):
+    board = cfg.board(args.board, made=True)
+    drawn = drawing(cfg, board)
+    if drawn is None:
+        print(f"edakit: board {board.name} has no parts in the graph", file=sys.stderr)
+        return 1
+    design, sheet, size, syms, problems = (drawn[k] for k in ("design", "sheet", "size", "syms", "problems"))
     for prob in problems:
         print(f"  ! {prob}")
     mm = f"{size[0] * MM:.0f} x {size[1] * MM:.0f} mm"
@@ -732,6 +742,6 @@ def main(cfg, args):
     title_lines = [(board.title, 16, True), (f"{cfg.project} · board {board.name}", 8, False),
                    (f"graph v{design.version}" + (f" ({date})" if date else "") + f" · {mm}", 8, False),
                    ("drawn by edakit schematic draw – change the graph, not this drawing", 7, False)]
-    out.write_text(render(sheet, size, syms, lc["power"], design.ground, title_lines), encoding="utf-8")
+    out.write_text(render(sheet, size, syms, drawn["power"], design.ground, title_lines), encoding="utf-8")
     print(f"  -> {out}")
     return 2 if problems else 0

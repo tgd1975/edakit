@@ -347,6 +347,85 @@ def test_place_names_a_part_without_a_free_spot(project, capsys):
     assert "C1: no free spot within near_mm 6 of U2 (pin 16, 3V3)" in capsys.readouterr().out
 
 
+# --- pcb place --rest (T.1): every part of the board without a row, or with an auto row – not only those tied to a
+# host. Taken out of the example: R1 (layout.near: next to U2), its auto rows D1 and R2, J1 (layout.edge), SW1, D5, D6.
+
+REST = ("R1", "D1", "R2", "D5", "D6", "J1", "SW1")
+
+
+def placed_rows(out):
+    return re.findall(r"^  (\w+) = \{", out, re.M)
+
+
+def test_place_rest_gives_every_part_a_row_and_the_plan_passes(project, capsys):
+    f = place_project(project, drop=REST)
+    toml = str(project.root / "edakit.toml")
+    capsys.readouterr()
+    assert cli.main(["pcb", "place", "--config", toml]) == 0                # without --rest: only R1, next to U2
+    assert placed_rows(capsys.readouterr().out) == ["R1"]
+    assert cli.main(["pcb", "place", "--rest", "--only", "J1,D5", "--config", toml]) == 0
+    assert placed_rows(capsys.readouterr().out) == ["D5", "J1"]
+    assert cli.main(["pcb", "place", "--rest", "--write", "--config", toml]) == 0
+    out = capsys.readouterr().out
+    # R1 next to its host first; then the part with the most pins on nets of placed parts – D5, D6, R2 two, D1 and SW1
+    # one, J1 none until D1 stands (VIN) –, by designator
+    assert placed_rows(out) == ["R1", "D5", "D6", "R2", "D1", "J1", "SW1"]
+    start, end = map(float, re.search(r"improvement: .*airline length \(without GND\) ([\d.]+) -> ([\d.]+) mm",
+                                      out).groups())
+    assert end < start                                                       # the improvement pass shortened it
+    cfg = project.config()
+    board = cfg.board()
+    assert pcb.parts_without_row(board, Design.from_config(cfg)) == []
+    assert all(board.place[r].auto for r in REST) and pcb.plan(cfg, board) == []
+    after = f.read_text()
+    assert cli.main(["pcb", "place", "--rest", "--write", "--config", toml]) == 0  # the same files give the same rows
+    assert f.read_text() == after
+
+
+def test_place_rest_brings_the_parts_tied_to_a_host_it_places(project, capsys):
+    """U2 without a row: its R-EXT (layout.near) and its decoupling capacitor (L-12) come with it – U2 takes a spot only
+    where they find theirs next to it."""
+    place_project(project, drop=("U2", "R1", "C1"))
+    toml = str(project.root / "edakit.toml")
+    capsys.readouterr()
+    assert cli.main(["pcb", "place", "--config", toml]) == 2
+    assert "R1: next to U2, which is not in [place] – fix the host first" in capsys.readouterr().out
+    assert cli.main(["pcb", "place", "--rest", "--write", "--config", toml]) == 0
+    assert placed_rows(capsys.readouterr().out) == ["U2", "R1", "C1", "D1", "R2"]
+    cfg = project.config()
+    assert pcb.plan(cfg, cfg.board()) == []
+
+
+def test_place_rest_improvement_swaps_and_moves_its_rows(project):
+    """The improvement pass: D5 and D6 in the LED row, each in the other's slot – their cathodes cross on the way to
+    U2.8 and U2.9, swapping the rows shortens the airline length by 0.18 mm; back would lengthen it. A move takes D5
+    off the row to a spot shorter still. The plan check stays clean."""
+    place_project(project, drop=("D5", "D6"))
+    cfg = project.config()
+    board, design = cfg.board(), Design.from_config(cfg)
+    s = pcb.Placing(cfg, board, pcb.plan_geometry(cfg, board, design), design, set(), lambda r: True)
+    s.add("D5", config.Placement(69, 34, 0, "top", auto=True))
+    s.add("D6", config.Placement(65, 34, 0, "top", auto=True))
+    found, total = s.findings(), s.total()
+    assert s.swap("D5", "D6", found) == found
+    assert (s.place["D5"].x, s.place["D6"].x) == (65, 69) and s.total() == pytest.approx(total - 0.18, abs=0.005)
+    assert s.swap("D5", "D6", found) is None
+    total = s.total()
+    assert s.move("D5", found) == found and s.total() < total - pcb.PLACE_REST_EPS and s.place["D5"].y < 34
+
+
+def test_place_rest_names_a_part_without_a_spot(project, capsys):
+    geo = led_bar_geo()
+    geo["SW1"] = footprint(60, 30, BUTTON)                                   # larger than any free part of the board
+    f = place_project(project, drop=("SW1", "D5"), geo=geo)
+    capsys.readouterr()
+    assert cli.main(["pcb", "place", "--rest", "--write", "--config", str(project.root / "edakit.toml")]) == 2
+    out = capsys.readouterr().out
+    assert "SW1: no free spot on the top side – its box (60.0 x 30.0 mm) fits nowhere clear of the placed parts, the " \
+           "holes and the outline" in out
+    assert "\nD5 = " in f.read_text() and "SW1 = " not in f.read_text()      # the others are written
+
+
 # --- the auto-layout's positions into [place], the takeover of a board placed before (step 2.1) ---------------------
 
 # Recorded: easyeda_pcb_components of the Christmas bell's SMD board in its gate run 20261026-123018 (fab/smd/pcb.json),

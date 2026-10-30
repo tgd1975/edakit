@@ -26,6 +26,10 @@ extension API. edakit uses the same server.
 4. **ngspice** (stage E): `sudo apt install ngspice` (or your package manager).
    **pdftotext** (optional, poppler-utils): `edakit part fetch` checks with it whether a datasheet has a text layer
    and names its part number (4.3).
+With `toolchain = "kicad"` (chapter 16) steps 1 and 2 and sections 2.4 to 2.6 are not needed; instead **KiCad 10**
+from KiCad's PPA: `sudo add-apt-repository ppa:kicad/kicad-10.0-releases && sudo apt install kicad` – `edakit doctor`
+asks kicad-cli for its version (16.2).
+
 5. **Freerouting**: nothing to do on Linux x64 – `edakit route` downloads the pinned release (with its own Java)
    to `~/.local/share/freerouting/` and checks its SHA-256. Elsewhere: download `freerouting-2.4.1.jar`, install
    Java 21+, set `FREEROUTING_JAR`. (Java 17 is too old for Freerouting 2.x.)
