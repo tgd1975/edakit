@@ -4,7 +4,8 @@ Status 2026-10-29: plan; phase 1 (1.1 to 1.8), 3.1 to 3.5, 3.7 and the follow-up
 offline part of 3.6 are built and wait for their live run in EasyEDA; 4.3 is written and waits for the user's choice.
 It builds the three concepts of this folder after the user took their decisions on 2026-10-28 (e5caf42, 301fd90):
 [requirements.md](requirements.md), [design-as-text.md](design-as-text.md) and [project-scripts.md](project-scripts.md).
-Each step starts when the user asks for it.
+Phase 5 builds a fourth, [ordering.md](ordering.md) – ordering at the manufacturer, decided on 2026-10-30 –; none of
+its steps is started. Each step starts when the user asks for it.
 
 ## Ground rules
 
@@ -49,6 +50,18 @@ Each step starts when the user asks for it.
 | 4.3 | Bell: the circuit as a language and as TOML with names, then the choice | design-as-text decision 8 | M | no | – | written (3f2b9e3, 7bbf3ce), the choice open |
 | 4.4 | Tree: its positions, scripts, agents and requirements | all three | M | yes | the tree's move, 2.1, 3.7 | open |
 | 4.5 | The requirements file becomes required | requirements decision 5 | S | no | 4.1, 4.4 | open |
+| 5.0 | Probes: the makers' pages in the owner's browser, EasyEDA's ODB++ | ordering steps 0, 0b | – | yes (0b) | the owner's Chrome | open |
+| 5.1 | The order form as fields, `order.md` from them | ordering step 1 | S | no | – | open |
+| 5.2 | Every field of the form as a key, edakit's defaults, `edakit cart fields` | ordering step 2 | M | no | 5.0, 5.1 | open |
+| 5.3 | Maker profiles; P-4, F-2 and F-6 per maker | ordering step 3 | M | no | 5.2 | open |
+| 5.4 | `edakit cart prepare` and `check` (K-1 to K-7), the order record | ordering step 4 | M | no | 5.3 | open |
+| 5.5 | Agent regulatory-reviewer at the order | ordering step 5 | S | no | 5.4 | open |
+| 5.6 | `edakit cart actual`: real cost, the fee table | ordering step 6 | M | no | 5.4 | open |
+| 5.7 | Skill `cart`, live at JLCPCB up to the cart | ordering step 7 | M | no | 5.0, 5.4, 5.5 | open |
+| 5.8 | BOM with MPN, P-12; Eurocircuits | ordering step 8 | M | no | 5.3, 5.7 | open |
+| 5.9 | new-project asks for the maker | ordering step 9 | S | no | 5.3, 5.8 | open |
+| 5.10 | ODB++: MCP tool and bridge patch, F-7; AISLER | ordering step 10 | L | yes | 5.0, 5.7 | open |
+| 5.11 | The makers' interfaces, where granted | ordering step 11 | – | no | the makers | open |
 
 S, M and L are the sizes the concepts give: small, medium, large.
 
@@ -89,6 +102,16 @@ flowchart LR
     s44["4.4 tree moves"]
     s45["4.5 requirements required"]
   end
+  subgraph P5["5 · ordering"]
+    s50["5.0 probes"]
+    s51["5.1 form as fields"] --> s52["5.2 every field a key"] --> s53["5.3 makers"] --> s54["5.4 cart prepare, check"]
+    s54 --> s55["5.5 regulatory at the order"]
+    s54 --> s56["5.6 real cost"]
+    s57["5.7 skill cart"]
+    s58["5.8 MPN, Eurocircuits"]
+    s59["5.9 setup asks the maker"]
+    s510["5.10 ODB++, AISLER"]
+  end
   s14 --> s24 --> s33
   s12 --> s31
   s16 --> s31
@@ -103,6 +126,14 @@ flowchart LR
   s37 --> s44
   s41 --> s45
   s44 --> s45
+  s50 --> s52
+  s50 --> s57
+  s55 --> s57
+  s53 --> s58
+  s57 --> s58 --> s59
+  s50 --> s510
+  s57 --> s510
+  s17 --> s51
 ```
 
 ## Phase 1: offline
@@ -362,6 +393,22 @@ its requirements file.
 **4.5 Requirements required.** Once the bell and the tree have a file, a project without one fails the gate
 (decision 5).
 
+## Phase 5: ordering at the manufacturer
+
+Each at the user's request. The concept is [ordering.md](ordering.md); its "Order of work" says what each step builds,
+and its "Decisions" what the user decided on 2026-10-30: Claude fills the maker's form in the owner's browser and
+stops at the cart – never orders, never pays –; the regulatory reviewer looks at every order; JLCPCB, Eurocircuits or
+AISLER, asked when the project is set up; ODB++ from EasyEDA Pro; real cost into the project's fee table. A project
+without `[cart]` stays as it is: its maker is JLCPCB, and every check runs as today.
+
+**5.0 Probes.** The makers' pages in the owner's Chrome (file upload, read back, screenshots, the placement preview
+from the cart, labels and values for the profiles, test data) and the ODB++ export of a throwaway board under the
+EasyEDA claim. 5.2 waits for the field list, 5.7 and 5.10 for the probes.
+
+**5.1 to 5.6** are offline and tested on recorded data. **5.7, 5.8 and 5.10** are live, each up to the cart and
+nothing ordered. **5.10** changes the pinned MCP server and the bridge, as the schematic PDF did, with an issue and a
+pull request upstream.
+
 ## Hashes and gate results
 
 | Step | Circuit hash | Layout hash | Gate result |
@@ -372,6 +419,10 @@ its requirements file.
 | 3.2 | – | – | a project agent's sign-off is required, where a project registers one |
 | 3.6 | changes where footprint data is added | changes likewise | a new check: the copy equals the data |
 | 4.5 | – | – | a missing requirements file blocks |
+| 5.2 | – | changes where a board file sets a new key, as any edit of it; the fab hash where a key differs from edakit's default | F-6 checks every key |
+| 5.3 | – | – | P-4 and F-2 run only with JLCPCB among the makers; a finding for a second maker warns |
+| 5.8 | – | – | P-12, only with a maker that matches by MPN |
+| 5.10 | – | – | F-7, only with a maker that takes ODB++ |
 
 ## Working in parallel
 
