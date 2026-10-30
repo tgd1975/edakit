@@ -1,6 +1,6 @@
 # Ordering at JLCPCB through its interfaces
 
-Status 2026-10-30: proposal; the path is decided (Claude in Chrome, below). Nothing is built, and no call has been
+Status 2026-10-30: proposal; the path is decided (Claude in Chrome, up to "Save to Cart", below). Nothing is built, and no call has been
 made live. The findings come from JLCPCB's help
 article on its online API, search summaries of the developer portal (api.jlcpcb.com, behind a login), the code of
 open-source clients of the official API and of the web shop, and EasyEDA Pro's documentation. jlcpcb.com and
@@ -21,8 +21,9 @@ The typing is still by hand, and so is reading what the order really costs. Thre
 
 **Goal:** from a released run, the files are uploaded, every form field is set from `order.md`, the quote is read
 (PCB, assembly fees, parts, shipping) and compared with `edakit cost`, and after the order the real cost is read and
-kept with the run – each checked by edakit against the release. **Not a goal:** paying. The order is placed and paid
-by the owner, after M-2 – a human sign-off that no agent gives (handbook 10, `signs`).
+kept with the run – each checked by edakit against the release. **Not a goal:** ordering and paying. The skill ends
+with the board in the cart; the order is placed and paid by the owner, after M-2 – a human
+sign-off that no agent gives (handbook 10, `signs`).
 
 ## What JLCPCB offers
 
@@ -98,7 +99,7 @@ change. Nothing Claude reads counts until edakit has checked it.
 ```text
  edakit jlc prepare ──► order_job.json ──► skill jlc-order (Claude in Chrome) ──► quote.json + page text
  (verify, form, files)    (one board)       upload, fill, read back, quote,          │
-                                            stop at the assembly preview             ▼
+                                            Save to Cart after a passed check        ▼
                                                                           edakit jlc check  (form = job,
  owner: M-2, pay ──► skill jlc-order: order page ──► actual.json + page text ──► edakit jlc actual   quote vs cost)
                                                                                  (actual vs quote vs cost, fee table)
@@ -149,10 +150,15 @@ owner. It reads `order_job.json` and nothing else of the project.
    (not matched, out of stock, replaced, "Standard Only").
 5. **Quote.** Read every price line JLCPCB shows (PCB, each assembly fee, parts, shipping, total, currency) and the
    lead time.
-6. **Stop** at the assembly preview. Write `jlc/quote.json` (fields as read, BOM as read, price lines) and
-   `jlc/quote_page.txt` (the page text of the form, the BOM tool and the quote, as read). Run `edakit jlc check`.
-   Tell the owner: the result, then that M-2 and paying are theirs. Never press "Save to Cart" with a failed check,
-   never "Pay" at all.
+6. **Check.** Write `jlc/quote.json` (fields as read, BOM as read, price lines) and `jlc/quote_page.txt` (the page
+   text of the form, the BOM tool and the quote, as read). Run `edakit jlc check`.
+7. **Cart.** Only when the check passed: press "Save to Cart", read the cart line back (board, quantity, price) into
+   `quote.json`, and stop. With a failed check: stop on the form, nothing in the cart. Tell the owner the result and
+   that M-2 in the assembly preview, ordering and paying are theirs.
+
+**Never** (user's decision 2026-10-30): the skill does not press "Order", "Buy", "Checkout", "Pay", "Submit order" or
+any button that places or pays an order, does not enter or confirm an address, a payment method or a coupon, and does
+not change or delete what is already in the cart. When the next step of a page would be one of these, it stops.
 
 Rules of the skill: one field at a time, read back after each; a field it cannot find, or a value the form does not
 offer, stops with the field's name – no guessing, no nearby option; a dialog the job does not explain (DFM warning,
@@ -207,11 +213,12 @@ interface for partners in parallel.
 
 ### 8. What stays
 
-- **M-2 and paying are the owner's.** The skill stops at the preview; `pcb/create` is never called.
+- **Ordering and paying are the owner's, and so is M-2.** The skill ends with "Save to Cart"; no command, skill or
+  API path places or pays an order – `pcb/create` is never called.
 - **No key, no change.** Without `[jlc]` and without an `order_job.json`, nothing runs; the gate result, the hashes and
   the sign-offs do not change. Everything under `jlc/` is output of an order, not input of a hash.
 - **Tests without the network.** `prepare`, `check` and `actual` are tested on recorded `quote.json`, page texts and
-  a saved invoice. The skill is tried live only on the owner's request, up to the preview, nothing in the cart.
+  a saved invoice. The skill is tried live only on the owner's request, up to the cart, nothing ordered.
 - **Where it runs.** Claude in Chrome needs the owner's Chrome with the extension – on the owner's machine, or a cloud
   session linked to it. Without it the skill prints the job as a checklist and `edakit jlc check` checks a
   `quote.json` the owner fills by hand.
@@ -224,7 +231,7 @@ interface for partners in parallel.
 | 1 | `order_sheet.form`: the form as fields, `order.md` printed from it – no change of output | – |
 | 2 | `edakit jlc actual --from FILE` on a saved order page or invoice; three columns; fee table proposal | step 1, a saved page from step 0 |
 | 3 | `edakit jlc prepare` and `edakit jlc check` (J-1 to J-5) on recorded data | step 1 |
-| 4 | Skill `jlc-order`, live up to the preview | steps 0, 3 |
+| 4 | Skill `jlc-order`, live up to the cart | steps 0, 3 |
 | 5 | Official API (7.), if granted | JLCPCB |
 
 If step 0 shows that the extension cannot upload a local file, the owner drops the three files into the upload fields
@@ -234,8 +241,7 @@ when the skill asks for them, and the skill carries on from there; everything el
 
 1. **Terms of use:** read in step 0. If JLCPCB forbids automated use of the shop, the skill only reads (fields,
    BOM tool, quote) after the owner has filled the form, and J-1 to J-5 still check it.
-2. **Cart:** may the skill press "Save to Cart" after a passed check, or does it stop before that?
-3. **Fee table:** real cost as a proposal to review (as above), or committed automatically from the owner's own
+2. **Fee table:** real cost as a proposal to review (as above), or committed automatically from the owner's own
    orders?
 
 ## Sources
