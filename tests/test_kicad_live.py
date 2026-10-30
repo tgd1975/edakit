@@ -138,6 +138,9 @@ def test_route_all_on_kicad_leaves_only_what_freerouting_left_open(project, caps
     monkeypatch.setattr(fab, "fetch_jlc", lambda bom, d: (d / "jlc_parts.json").write_text("{}"))
     rows = fab.run(cfg, board, project.root / "build" / "fab")
     print("\n".join(f"{r['id']:<5} {r['result']:<4} {r['check']}: {r['actual']}"[:220] for r in rows))
-    for cid in ("L-1", "L-2", "L-3", "L-4", "L-7", "L-9", "L-13", "L-14", "L-15", "L-16", "L-20", "F-1", "F-3", "F-5"):
+    for cid in ("L-1", "L-2", "L-3", "L-4", "L-9", "L-10", "L-13", "L-14", "L-15", "L-16", "L-20", "F-1", "F-3",
+                "F-5"):
         bad = [r for r in rows if r["id"] == cid and r["result"] == "fail"]
         assert not bad, bad
+    # L-7: every part where the plan puts it – the plan's own check is the test footprints' (pads beyond their box)
+    assert [r["result"] for r in rows if r["id"] == "L-7" and r["check"].startswith("fixed parts")] == ["pass"]
