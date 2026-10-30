@@ -340,18 +340,21 @@ it, and a new quote (another price, another match) needs a new review, because i
 After the owner has paid, the skill opens the order in the maker's order history and writes `actual.json` and
 `actual_page.txt` as in 5.5–5.6, plus the order number. Alternatively the owner saves the order page or the invoice
 (HTML or PDF) and passes it with `--from FILE`; then Claude reads that file instead of the tab. `edakit cart actual`
-checks K-4 on it, prints estimate, quote and actual line by line with the difference, and with `--fees` writes a
-proposal for the maker's fee table: each changed value with the order as its `source` and the order's date. For a
-maker without a table the first order starts one – its lines, dated, as `edakit/fees/<maker>.json`; `edakit cost`
-prices with it once its model for that maker exists (the fee model of `cost.py` is JLCPCB's: Economic, Standard,
-feeders, joints). Every proposal is reviewed and committed like any other change of a table. The gate protocol of the
-run lists the three totals once `actual.json` exists.
+checks K-4 on it, prints estimate, quote and actual line by line with the difference, and writes every fee the order
+shows into the project's fee table, `hardware/fees/<maker>.json`, at once – no proposal, no review (the owner's
+decision of 2026-10-30): each value with the order number as its `source` and the order's date. `edakit cost` takes
+per fee the value with the newest date, from the project's table or the shipped `edakit/fees/<maker>.json`, so the
+next estimate is priced with what the last order cost. A value the order does not show stays as it was. For a maker
+without a shipped table the first order starts the project's; `edakit cost` prices with it once its model for that
+maker exists (the fee model of `cost.py` is JLCPCB's: Economic, Standard, feeders, joints). Values from the owner's
+orders reach the shipped table of edakit, for every project, through `edakit proposal` like any other change. The
+gate protocol of the run lists the three totals once `actual.json` exists.
 
 ### 9. Configuration
 
 ```toml
 [cart]
-maker = "jlcpcb"                     # the default of --maker
+maker = "jlcpcb"                     # the default of --maker; jlcpcb without [cart] maker
 makers = ["jlcpcb", "eurocircuits"]  # the makers whose files the gate writes (3.); default [maker]
 country = "DE"                       # shipping, as the forms name it
 shipping = { jlcpcb = "DHL Express" }
@@ -396,7 +399,7 @@ No credentials anywhere: the owner is logged in in their browser, edakit never s
 | 0b | ODB++ export of a throwaway board under the EasyEDA claim (working agreement 18): through the bridge with a patched call, and by hand (File > Export > ODB++) for comparison. Does it hold `comp_+_top`/`comp_+_bot` with packages, pins and part numbers? | EasyEDA |
 | 1 | `order_sheet.form`: the form as fields, `order.md` printed from it – no change of output | – |
 | 2 | Maker profiles: `jlcpcb.toml` from today's knowledge, `eurocircuits.toml` and `aisler.toml` from step 0 | step 0 |
-| 3 | `edakit cart actual --from FILE` on a saved order page or invoice; three columns; fee table proposal | steps 1, 2 |
+| 3 | `edakit cart actual --from FILE` on a saved order page or invoice; three columns; the project's fee table, newest value wins in `edakit cost` | steps 1, 2 |
 | 4 | `edakit cart prepare` and `edakit cart check` (K-1 to K-7) on recorded data | steps 1, 2 |
 | 4b | Agent regulatory-reviewer: section "At the order", `regulatory.md`; tried on recorded data with a replaced part, lead HASL, and a maker inside and outside the EU | step 4 |
 | 5 | Skill `cart`, live up to the cart at JLCPCB | steps 0, 4, 4b |
@@ -409,11 +412,12 @@ when the skill asks for them, and the skill carries on from there; everything el
 EasyEDA's ODB++ has no component layers, AISLER waits: then the choice is KiCad 9 as a converter (import of the
 EasyEDA Pro project, `kicad-cli pcb export odb`, F-8 on its result) or none – a decision of its own.
 
-## Open decisions
+## Decisions
 
-1. **Fee tables:** real cost as a proposal to review (as above), or committed automatically from the owner's own
-   orders?
-2. **Default maker** in new projects (`edakit new`): JLCPCB as today, or a maker in the EU?
+All taken by the owner on 2026-10-30: Claude in Chrome; up to the cart, never further; the regulatory review at every
+order; a choice of maker with JLCPCB as the default (`[cart] maker`, also in new projects); ODB++ from EasyEDA Pro;
+the skill is used whatever the makers' terms say, the risk is the owner's; real cost goes into the project's fee table
+at once. Nothing is open.
 
 ## Sources
 
