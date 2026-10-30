@@ -182,6 +182,22 @@ def load(cfg, board):
 
 # --- writing the parts -------------------------------------------------------------------------------------------------
 
+def root_uid(cfg, board):
+    """The uuid of the schematic's root sheet – the project file names it too."""
+    return uid(cfg.project, board.name, "sheet")
+
+
+def symbol_uid(cfg, board, ref):
+    """The uuid of a part's symbol: the path of its footprint, so that schematic and PCB belong together."""
+    return uid(cfg.project, board.name, "symbol", ref)
+
+
+def part_value(design, ref, fp):
+    """The value a part shows – the same in schematic and PCB (KiCad's schematic parity compares them)."""
+    comp, entry = design.comps.get(ref, {}), design.part(ref) or {}
+    return str(comp.get("value") or entry.get("mpn") or fp.name)
+
+
 def net_names(design, board):
     return sorted(design.board_nets(board.name), key=natural_key)
 
@@ -202,7 +218,6 @@ def placed(cfg, board, design, fp, ref, at, nets, symbol=None, locked=False):
     key = (board.name, "footprint", ref)
     silk, fab = ("B.SilkS", "B.Fab") if mirror else ("F.SilkS", "F.Fab")
     comp = design.comps.get(ref, {})
-    entry = design.part(ref) or {}
     ref_y = fp.bbox[1] - library.REF_SIZE_MM
     item = ["footprint", f"{library.LIB}:{fp.name}", ["layer", "B.Cu" if mirror else "F.Cu"], ["uuid", uid(*key)],
             ["at", x, y, angle]]
@@ -210,7 +225,7 @@ def placed(cfg, board, design, fp, ref, at, nets, symbol=None, locked=False):
         item.insert(2, ["locked", True])
     item += [["property", "Reference", ref, ["at", 0, -ref_y if mirror else ref_y, angle], ["layer", silk],
               ["uuid", uid(*key, "Reference")], *library.font(library.REF_SIZE_MM, library.SILK_WIDTH_MM, mirror)],
-             ["property", "Value", str(comp.get("value") or entry.get("mpn") or fp.name), ["at", 0, 0, angle],
+             ["property", "Value", part_value(design, ref, fp), ["at", 0, 0, angle],
               ["layer", fab], ["hide", True], ["uuid", uid(*key, "Value")], *library.font(1.0, 0.15, mirror)],
              hidden_prop("Footprint", f"{library.LIB}:{fp.name}", fab, key),
              hidden_prop("Package", fp.package, fab, key)]
@@ -278,7 +293,7 @@ def write_parts(cfg, board, design=None, fps=None, symbols=None):
     refs = sorted(design.board_comps(board.name), key=natural_key)
     fps = fps or library.footprints(cfg, design, refs)
     library.write(cfg, board, fps)
-    symbols = symbols or {ref: uid(cfg.project, board.name, "symbol", ref) for ref in refs}
+    symbols = symbols or {ref: symbol_uid(cfg, board, ref) for ref in refs}
     p = paths(cfg, board)
     old = Pcb.load(p["pcb"])
     pcb = old or Pcb()
@@ -339,7 +354,7 @@ def write_project(cfg, board, design):
         "erc": {"rule_severities": ERC_SEVERITIES},
         "meta": {"filename": p["pro"].name, "version": 1},
         "net_settings": {"classes": classes, "meta": {"version": 3}, "netclass_patterns": patterns},
-        "sheets": [[uid(cfg.project, board.name, "sheet"), "Root"]],
+        "sheets": [[root_uid(cfg, board), "Root"]],
         "text_variables": {},
     }
     p["pro"].write_text(json.dumps(project, indent=2) + "\n", encoding="utf-8")

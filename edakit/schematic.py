@@ -25,6 +25,7 @@ import json
 from . import eda
 from .design import Design, natural_key
 from .eda import FOCUS, FOCUS_LOST, PROJECT, MCPError, api, batch_write, ensure_focus
+from .toolchain import is_kicad
 
 # Template layout: groups as bands from top to bottom, cells (width, height, per row) by component type
 GROUPS = [
@@ -493,6 +494,9 @@ def copy(cfg, args):
 
 
 def main(cfg, args):
+    if is_kicad(cfg) and args.action != "draw":     # the KiCad project: one schematic per board (handbook 16)
+        from .toolchain.kicad import schematic as kicad_schematic
+        return kicad_schematic.main(cfg, args)
     if args.action == "create":
         return create(cfg, args)
     if args.action == "check":

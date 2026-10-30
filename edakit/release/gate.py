@@ -53,6 +53,7 @@ One current release: a RELEASED run supersedes every earlier released run of the
 from __future__ import annotations
 
 import argparse
+import dataclasses
 import datetime as dt
 import getpass
 import hashlib
@@ -431,11 +432,14 @@ def bought_row(stage, sid, board):
 
 def stage_schematic(cfg, outdir):
     from .. import schematic
+    from ..toolchain import is_kicad
     rows = []
     for board in cfg.boards.values():
         if board.bought:
             rows.append(bought_row("S", "S-2", board))
             continue
+        if is_kicad(cfg):              # the schematic is the KiCad project's (handbook 16): name it by its file
+            board = dataclasses.replace(board, template=f"{board.name}.kicad_sch")
         out = outdir / f"schematic_{board.name}.json"
         args = argparse.Namespace(board=board.name, schematic=None, no_pins=False, json=str(out), verbose=False, wait=90)
         code = schematic.check(cfg, args)

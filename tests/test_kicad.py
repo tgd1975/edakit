@@ -264,3 +264,90 @@ def test_the_project_file_carries_the_rules_of_the_board_file(project):
     assert classes["POWER"]["track_width"] == pytest.approx(18 / config.MIL_PER_MM)
     assert {"netclass": "POWER", "pattern": "+5V"} in pro["net_settings"]["netclass_patterns"]
     assert pro["board"]["design_settings"]["rule_severities"]["lib_footprint_mismatch"] == "ignore"
+
+
+# --- the schematic -----------------------------------------------------------------------------------------------------
+
+def connectivity(text):
+    """The nets of a .kicad_sch as KiCad finds them on one sheet: wires join at their ends, a pin, label or junction
+    joins a wire it lies on, labels of one name are one net. -> {net: {ref.pin}} – our own reading, KiCad's is
+    kicad-cli's (cli.netlist)."""
+    from edakit.toolchain.kicad import sexp as sx
+    root = sx.loads(text)
+    libs = {s[1]: s for s in sx.find(sx.first(root, "lib_symbols"), "symbol")}
+    q = lambda x, y: (round(x, 3), round(y, 3))  # noqa: E731
+    parent = {}
+
+    def find(a):
+        parent.setdefault(a, a)
+        while parent[a] != a:
+            parent[a] = parent[parent[a]]
+            a = parent[a]
+        return a
+
+    def join(a, b):
+        parent[find(a)] = find(b)
+    wires = [tuple(q(float(xy[1]), float(xy[2])) for xy in sx.find(sx.first(w, "pts"), "xy"))
+             for w in sx.find(root, "wire")]
+
+    def on(p, w):
+        (x1, y1), (x2, y2) = w
+        return (min(x1, x2) - 1e-3 <= p[0] <= max(x1, x2) + 1e-3 and min(y1, y2) - 1e-3 <= p[1] <= max(y1, y2) + 1e-3
+                and abs((x2 - x1) * (p[1] - y1) - (y2 - y1) * (p[0] - x1)) < 1e-3)
+    for a, b in wires:
+        join(("pt", a), ("pt", b))
+    points = []
+    for j in sx.find(root, "junction"):
+        points.append(("pt", q(*sx.floats(j, "at")[:2])))
+    names = {}
+    for lab in sx.find(root, "label"):
+        p = q(*sx.floats(lab, "at")[:2])
+        join(("pt", p), ("net", str(lab[1])))
+        points.append(("pt", p))
+    pins = {}
+    for s in sx.find(root, "symbol"):
+        if not sx.first(s, "lib_id"):
+            continue
+        lib = libs[sx.value(s, "lib_id")]
+        X, Y = sx.floats(s, "at")[:2]
+        ref = next(c[2] for c in sx.find(s, "property") if c[1] == "Reference")
+        for unit in sx.find(lib, "symbol"):
+            for pin in sx.find(unit, "pin"):
+                lx, ly = sx.floats(pin, "at")[:2]
+                p = q(X + lx, Y - ly)
+                pins[f"{ref}.{sx.value(pin, 'number')}"] = ("pt", p)
+                points.append(("pt", p))
+    for p in points:
+        for w in wires:
+            if on(p[1], w):
+                join(p, ("pt", w[0]))
+    for key, p in pins.items():
+        names.setdefault(find(p), set()).add(key)
+    out = {}
+    for lab in sx.find(root, "label"):
+        out.setdefault(str(lab[1]), set()).update(names.get(find(("net", str(lab[1]))), set()))
+    return out
+
+
+def test_the_schematic_connects_every_pin_as_the_graph(project):
+    from edakit.toolchain.kicad import schematic as ks
+    cfg = kicad_project(project)
+    board, design = cfg.board(), Design.from_config(cfg)
+    path, problems = ks.write(cfg, board)
+    assert problems == [] and path.exists()
+    nets = connectivity(path.read_text())
+    for name, pins in design.board_nets("main").items():
+        assert nets.get(name) == set(pins), name
+    root = sexp.loads(path.read_text())
+    syms = [s for s in sexp.find(root, "symbol") if sexp.first(s, "lib_id")]
+    assert len(syms) == len(design.board_comps("main"))
+    fps = {r: f for r, f in kb.parts(kb.Pcb.load(kb.write_parts(cfg, board)[0]))}
+    for s in syms:                                       # the link to the PCB: the footprint's path is the symbol
+        ref = next(c[2] for c in sexp.find(s, "property") if c[1] == "Reference")
+        assert sexp.value(fps[ref], "path") == f"/{sexp.value(s, 'uuid')}"
+        foot = next(c[2] for c in sexp.find(s, "property") if c[1] == "Footprint")
+        assert foot == str(fps[ref][1])
+        value = next(c[2] for c in sexp.find(s, "property") if c[1] == "Value")
+        assert value == kb.prop(fps[ref], "Value")
+    j1 = next(s for s in syms if sexp.value(s, "lib_id") == "edakit:J1")
+    assert sexp.value(j1, "in_bom") == "no"              # bom: false in the graph – soldered by hand
