@@ -175,10 +175,14 @@ def has_footprint_data(cfg, design=None):
 
 def executed(cfg=None):
     """The checks run() runs for this project: EXECUTED; where a parts entry has footprint data P-9 and P-10 after
-    P-8; with [project] requirements G-20 to G-23 – a project without either gets the same checks as before."""
+    P-8; with [project] requirements G-20 to G-23; without a maker that orders from JLCPCB's catalogue no P-4 – a
+    project without these keys gets the same checks as before."""
+    from . import makers
     out = list(EXECUTED)
     if cfg is not None and has_footprint_data(cfg):
         out[out.index("P-8") + 1:out.index("P-8") + 1] = FOOTPRINT_CHECKS
+    if cfg is not None and not makers.with_catalogue(cfg, "jlcpcb"):
+        out.remove("P-4")             # no maker of [cart] makers orders from JLCPCB's catalogue: P-4 does not run
     return out + (list(requirements.CHECKS) if cfg is not None and cfg.requirements else [])
 
 

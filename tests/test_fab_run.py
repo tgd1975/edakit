@@ -1017,13 +1017,15 @@ def test_the_order_form_of_the_clean_export(project):
         ("board thickness JLCPCB makes (FR-4, 2 layers)", "1.6 mm (thickness_mm)"),       # JLCPCB's defaults
         ("silkscreen colour JLCPCB prints on the solder mask", "white on a green mask")}
     sheet = (project.root / "build" / "fab" / "main" / "order.md").read_text()
-    assert "| PCB Qty | 5 |\n| PCB Thickness | 1.6 mm |\n| PCB Color | Green |\n| Silkscreen | White |\n" \
-           "| Surface Finish | LeadFree HASL |" in sheet                            # in the order of JLCPCB's form
-    for text in ("| Layers | 2 |", "| Dimensions | 30.00 x 20.00 mm (Gerber outline) |", "| PCB Qty | 5 |",
-                 "| Surface Finish | LeadFree HASL |",
-                 "| Mark on PCB | Order Number (Specify Position) – JLCJLCJLCJLC at (18.0, 3.0) on the top silkscreen |",
-                 REMARK, "| PCBA Type | Economic ([release] assembly.sides top: one side) |",
-                 "| Assembly Side | Top Side |", "| PCBA Qty | 5 |", "| Tooling holes | Added by Customer (2 x Ø 1.152 mm) |",
+    assert "| PCB Thickness | 1.6 mm | edakit |\n| PCB Color | Green | edakit |\n| Silkscreen | White | edakit |\n" \
+           "| Surface Finish | LeadFree HASL | edakit |" in sheet                   # in the order of JLCPCB's form
+    for text in ("| Layers | 2 | Gerber files |", "| Dimensions | 30.00 x 20.00 mm | Gerber outline |",
+                 "| PCB Qty | 5 | [project] quantity |", "| Surface Finish | LeadFree HASL |",
+                 "| Mark on PCB | Order Number (Specify Position) – JLCJLCJLCJLC at (18.0, 3.0) on the top silkscreen "
+                 "| board file |",
+                 REMARK, "| PCBA Type | Economic | [release] assembly.sides top: one side |",
+                 "| Assembly Side | Top Side |", "| PCBA Qty | 5 | quantity |",
+                 "| Tooling holes | Added by Customer – 2 x Ø 1.152 mm | [tooling] |",
                  "| Bake Components | check the BOM tool – no stock snapshot (edakit stock) |",
                  "| BOM / CPL | bom_main.csv (2 lines) / cpl_main.csv |", "| Gerber | gerber_main.zip |",
                  "(30.0, 0.0) → (30.0, 20.0), 20.0 mm", "| J1 | C131337 B2B-PH-K-S(LF)(SN) | lcsc | C131337 |"):
@@ -1048,7 +1050,7 @@ def test_the_order_form_bakes_an_msl5_part(project):
         (p.root / "hardware" / "stock.json").write_text(json.dumps({"date": "2026-10-27", "parts": rows}))
     run(project, snapshot)
     sheet = (project.root / "build" / "fab" / "main" / "order.md").read_text()
-    assert "| Bake Components | Yes – D1 C8678 MSL 5 (stock snapshot 2026-10-27) |" in sheet
+    assert "| Bake Components | Yes – D1 C8678 MSL 5 | stock snapshot 2026-10-27 |" in sheet
 
 
 def test_the_order_form_names_thickness_and_colours(project):
@@ -1057,7 +1059,8 @@ def test_the_order_form_names_thickness_and_colours(project):
     rows = run(project, thickness(1.0, {"mask": "black"}))
     assert findings(rows) == []
     sheet = (project.root / "build" / "fab" / "main" / "order.md").read_text()
-    assert "| PCB Thickness | 1 mm |\n| PCB Color | Black |\n| Silkscreen | White |\n" in sheet
+    assert "| PCB Thickness | 1 mm | board file |\n| PCB Color | Black | board file |\n| Silkscreen | White | edakit |\n" \
+        in sheet
     f6 = {r["check"]: (r["result"], r["actual"]) for r in rows if r["id"] == "F-6"}
     assert f6["board thickness JLCPCB makes (FR-4, 2 layers)"] == ("pass", "1 mm (thickness_mm)")
     assert f6["silkscreen colour JLCPCB prints on the solder mask"] == ("pass", "white on a black mask")
@@ -1068,7 +1071,7 @@ def test_the_order_form_of_a_white_mask(project):
     rows = run(project, lambda ex, p: ordered(ex, p, {"mask": "white"}))
     assert findings(rows) == []
     sheet = (project.root / "build" / "fab" / "main" / "order.md").read_text()
-    assert "| PCB Color | White |\n| Silkscreen | Black |\n" in sheet
+    assert "| PCB Color | White | board file |\n| Silkscreen | Black | edakit |\n" in sheet
     assert ("pass", "black on a white mask") in {(r["result"], r["actual"]) for r in rows if r["id"] == "F-6"}
 
 

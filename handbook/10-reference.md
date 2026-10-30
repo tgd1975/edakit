@@ -89,6 +89,33 @@ it the gate has an information row "estimated order cost" in stage P, and above 
 | `vat_pct` | `0` | import VAT on the assembler's order (boards + shipping − coupon) |
 | `pcb_price` | from the fee table | the quoted price of the PCBs (all `quantity` of them) – a number, or `{ board = price }` |
 
+### [order]
+
+The project's choice of order keys for every board – the keys of `[order]` of a board file (10.2) but the board's own
+(`tab_zones`, `size_mm`, `layers`), e.g. `[order] mask = "black"` for all boards. A board file's `[order]` wins per
+key. With the table every made board has an order form: `fab/<board>/order.md`, `order.json` and F-6.
+
+### [cart]
+
+Optional: the makers of the boards (8.4). Without the table the maker is JLCPCB, the makers are `["jlcpcb"]`, and
+every check runs as before.
+
+| Key | Default | Meaning |
+|---|---|---|
+| `maker` | `"jlcpcb"` | the maker the boards are planned for: its checks fail (P-4, F-2, F-6, P-12, F-7), its form is `order.md`, `[release] assembly.pcba` is one of its classes, `edakit cost` prices with its fee table |
+| `makers` | `[maker]` | every maker whose checks and files the gate runs and writes; a finding for a maker other than `maker` is a warning, and `edakit cart prepare` for that maker stops on it |
+| `ship_to` | – | the country the order goes to, as the form names it; `edakit cart prepare` needs it |
+| `shipping` | `{}` | per maker, the name of its shipping method: `{ jlcpcb = "DHL Express" }` |
+| `tolerance` | `0.10` | per price line, in the maker's currency, before B-3 warns |
+| `profiles` | `{}` | a project's own maker profiles, `{ name = "hardware/makers/name.toml" }`, beside the shipped ones (`jlcpcb`, `eurocircuits`, `aisler` in `edakit/makers/`) |
+
+A maker's profile holds no defaults of the board: its form's labels and words for edakit's keys (`fields`), the
+values it offers, its limits (`rules`: thicknesses, remark, placeholder, tooling holes per class), the files it takes,
+its assembly `classes`, whose parts catalogue P-4 and F-2 ask (`catalogue`), the one cart button the skill cart may
+press and the ones it must not touch, its seat and currency, its fee table. `recorded = false` marks a profile whose
+words are not yet read off the form (ordering step 0); F-6 names it as information. No credentials anywhere: the
+owner is logged in in their browser, edakit never sees an account.
+
 ### [[extra]]
 
 Items off the board that belong to the order – a cable, feet, a module that is plugged in: `item`, `supplier`,
@@ -197,8 +224,8 @@ mark. The keys stand at the top of the file, without a prefix (`[place]`, `[[hol
 | `[looks]` | – | the side people look at: `visible` (`"top"` or `"bottom"`, required in the table), `max_track_m` and `max_vias` (optional limits). `route check` prints the track length per side and the vias, and the visible side's row; stage L gives the row too; above a limit a warning (7.5, 8.1); stage L checks the side's print against the board file (L-19: the board label, `[[silk.texts]]` of the side and, with `[silk] designators` on it, designators and group labels; no designator shown there while `designators` is the other side, 7.7). Without the table nothing is reported |
 | `[[loops]]` | `[]` | `a`, `b` (pads "D1.2"), `max_mm`, `what` – check L-11; the circuit's are `layout.loops` of the graph |
 | `copper` | see below | copper per layer in the Gerber files, check L-15 |
-| `order` | – | the order form fields of this board (8.4); with the table the gate writes `fab/<board>/order.md` and runs F-6: `finish` (`"LeadFree HASL"`), `mark` (`"default"`, `"specify"`: at the placeholder `JLCJLCJLCJLC`, `"remove"`), `remark` (`""`; at most 200 ASCII characters), `tab_zones` (`[]`: `{from = [x, y], to = [x, y]}`, two points on the outline in plan mm – the shorter stretch between them), `tab_copper_mm` (`1.0`: no copper of either side this close to a tab zone), `mask` (`"green"`: the solder mask colour, JLCPCB's "PCB Color" – `"green"`, `"purple"`, `"red"`, `"yellow"`, `"blue"`, `"white"`, `"black"`), `silkscreen` (what JLCPCB prints on the mask: `"white"`, on a white mask `"black"`; F-6 fails the other). `thickness_mm`, `mask`, `silkscreen`, `finish` and `mark` change the board as made: stage F writes them to `fab/<board>/order.json`, and they are in the fab hash (8.2); `remark` and the tab zones are not |
-| `thickness_mm` | `1.6` | board thickness (mm); the mechanical model `mech_<board>.json` takes the lead protrusion from it (lead `length_mm` − `thickness_mm`, 7.4), and with `order` the order form and the fab hash (8.2) – F-6 fails a thickness JLCPCB's form does not have (FR-4, 2 layers: 0.4, 0.6, 0.8, 1.0, 1.2, 1.6, 2.0) |
+| `order` | – | every field of the maker's order form as a key (below, 8.4), over `[order]` of edakit.toml; with the table – or with `[cart]` – the gate writes `fab/<board>/order.md` and runs F-6 |
+| `thickness_mm` | `1.6` | board thickness (mm); the mechanical model `mech_<board>.json` takes the lead protrusion from it (lead `length_mm` − `thickness_mm`, 7.4), and with `order` the order form and the fab hash (8.2) – F-6 fails a thickness the maker's form does not have (JLCPCB, FR-4, 2 layers: 0.4, 0.6, 0.8, 1.0, 1.2, 1.6, 2.0) |
 | `net_classes` | see below | track widths from the simulated currents |
 
 `[routing]`: `clearance_mil` (6.5; also the least gap between pads of different parts, L-13), `signal_mil` (10), `via` ([24, 12]), `edge_clearance_um` (400: tracks and vias
@@ -220,6 +247,43 @@ below it L-15 warns).
 `[net_classes]`: `NAME = {min_a, width_mm}` – class by the largest simulated current, practical minimum width (default
 POWER ≥ 0.3 A 0.6 mm, SUPPLY ≥ 0.1 A 0.4 mm, SIGNAL 0.25 mm). `force = {NET = "CLASS"}` pins a net to a class (e.g. a
 switching node).
+
+`[order]`: every question a maker's order form asks, as a key in edakit's words with edakit's default – the board
+edakit assumes when nothing is said, the same for every maker (8.4). Three layers, the later one wins per key: these
+defaults, `[order]` of edakit.toml (every board, 10.1), `[order]` of the board file. The maker's profile only
+translates a value into its word (`edakit/makers/<maker>.toml`, `edakit cart fields`); a value the maker does not
+offer is a finding of F-6 for that maker. "Board": the key changes the board as made – `fab/<board>/order.json` has
+`thickness_mm`, `mask`, `silkscreen`, `finish` and `mark` whenever the board has `[order]`, and every other such key
+where its value differs from the default; so a project that sets none of them keeps its fab hash (8.2).
+
+| Key | Default | Values | Board |
+|---|---|---|---|
+| `material`, `tg` | `"FR-4"`, `"TG135"` | strings, the maker's words in its profile | ✓ |
+| `layers`, `size_mm` | – (derived) | only to check: the copper layers and `[w, h]` of the run's Gerber files (F-6, ± 0.1 mm) | – |
+| `quantity` | `[project] quantity` | PCBs ordered, a whole number | – |
+| `delivery` | `"single"` | `"single"`, `"panel_by_maker"` with `panel = {x, y, rails_mm}`; `"panel_by_customer"` fails F-6 (edakit draws no panel) | ✓ |
+| `mask`, `silkscreen` | `"green"`, the print on the mask (`"white"`, on a white mask `"black"`) | mask `"green"`, `"purple"`, `"red"`, `"yellow"`, `"blue"`, `"white"`, `"black"`; silkscreen `"white"`, `"black"` – F-6 fails a pair the maker does not print | ✓ |
+| `finish` | `"LeadFree HASL"` | the maker's words (JLCPCB: `"HASL(with lead)"`, `"LeadFree HASL"`, `"ENIG"`) | ✓ |
+| `copper_oz`, `inner_copper_oz` | `1`, `0.5` (inner: from 4 layers) | oz | ✓ |
+| `vias` | `"tented"` | `"untented"`, `"plugged"`, `"epoxy_filled"` | ✓ |
+| `outline_tolerance` | `"regular"` | `"precision"` | ✓ |
+| `gold_fingers`, `castellated`, `edge_plating` | `false` | true or false | ✓ |
+| `mark` | `"default"` | `"specify"`: at the maker's placeholder (JLCPCB: `JLCJLCJLCJLC`), `"remove"` – JLCPCB's order number | ✓ |
+| `electrical_test`, `quality` | `"flying_probe"`, `"ipc2"` | the maker's words | – |
+| `confirm_production_file`, `paper_between` | `false` | true or false | – |
+| `packaging` | `"standard"` | the maker's words | – |
+| `remark` | `""` | text to the maker (JLCPCB: at most 200 ASCII characters) | – |
+| `tab_zones`, `tab_copper_mm` | `[]`, `1.0` | `{from = [x, y], to = [x, y]}`, two points on the outline in plan mm – the shorter stretch between them; no copper of either side within `tab_copper_mm` of it (F-6). Board file only | – |
+| `pcba_quantity` | `quantity` | boards assembled, at most `quantity`; another number than `[project] quantity` warns (P-4 and F-2 count that many sets) | – |
+| `confirm_placement` | `true` | edakit's choice: the maker shows its placement before it builds, a second look beside M-2 | – |
+| `photo_confirmation`, `depanel`, `function_test` | `false` | true or false | – |
+| `conformal_coating` | `false` | true or false | ✓ |
+| `pcba_packaging` | `"antistatic_bag"` | the maker's words | – |
+
+Not keys of `[order]`, but fields of the form all the same: the thickness (`thickness_mm` of the board file), the
+assembly class and side (`[release] assembly`, the class one of the maker's `classes`), the tooling holes
+(`[tooling]`: by the customer, else by the maker), bake (the stock snapshot, MSL ≥ 5), the parts not to place
+(`bom: false`), the country and shipping method (`[cart]`). `edakit cart fields` prints them all with their source.
 
 ## 10.3 The schematic file
 
@@ -287,6 +351,7 @@ scripts that write what they read first, when those are outdated or never ran, a
 
 | Command | EasyEDA | Reads | Writes |
 |---|---|---|---|
+| `edakit cart fields [--board B] [--maker M]` | – | `[order]` of edakit.toml and the board file, `thickness_mm`, `[release] assembly`, `[tooling]`, the stock snapshot, `[cart]`, the maker's profile; the Gerber files of the current release (else the newest run) for layers and size | – (prints every field of the maker's form: its label, the maker's word, where it comes from, edakit's key and value) |
 | `edakit check [--release] [--json F]` | – | graph, parts (pins, identity P-6), pin table; if there: footprint geometry and library footprints (P-7, P-8), library symbols (P-1), the footprint data of parts entries with the footprint geometry (P-9, P-10); `[scripts]`, `[[release.stages]]` and `sim_plugin` with the board files' `[[silk.art]]`, `hardware/scripts.lock` and what the scripts read (8.6); `[agents]` and the agent files (8.6); with `[project] requirements` the requirements files and the sign-off file's manual checks (G-20 to G-23; a file missing or not valid: exit 1) | – |
 | `edakit rules [ID …]` | – | the rule catalog (no project needed) | – |
 | `edakit hints [--json F]` | – | graph, parts, sim config | – |

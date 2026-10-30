@@ -15,7 +15,9 @@ the part page jlcpcb.com/partdetail/<C…> (`fetch_part_page` → `from_part_pag
 "Standard Only", MSL, X-ray, machine or hand soldering). Without --refresh only the parts that are missing, unread or
 older than [project] stock_max_age_days are asked again.
 
-  P-4  every assembled part (an LCSC number, not bom: false) is in the snapshot and listed, in stock for `quantity`
+  P-4  for a maker of [cart] makers that orders from JLCPCB's catalogue (catalogue = "jlcpcb" in its profile; a finding
+       fails for the planned maker and warns for another one; without such a maker P-4 does not run, a note):
+       every assembled part (an LCSC number, not bom: false) is in the snapshot and listed, in stock for `quantity`
        boards – under Standard PCBA with the assembler's attrition, max(n + attrition, min_qty) – named as its parts
        entry names it (MPN, case and blanks ignored), and not "Standard Only" on an Economic order (fail). MSL >= 5
        (bake), stock below need x (1 + stock_margin_pct / 100) and another class than the entry's jlc_class warn. A
@@ -183,17 +185,41 @@ def age_days(row, today=None):
 # --- P-4 ------------------------------------------------------------------------------------------------------------
 
 def check(design, rep, cfg):
-    """P-4 on the snapshot, offline."""
+    """P-4 on the snapshot, offline – for the maker of [cart] makers that orders from JLCPCB's catalogue: as the planned
+    maker its findings fail, as another maker they warn (makers.result); without such a maker P-4 does not run, and
+    the note says so (no snapshot is needed)."""
+    from . import makers
+    from .checks import Report
     lines = assembled(design)
     if not lines:
         return
+    users = makers.with_catalogue(cfg, "jlcpcb")
+    if not users:
+        names = ", ".join(makers.get(cfg, k).name for k in makers.listed(cfg))
+        rep.notes.append(("P-4", f"not run: no maker of [cart] makers orders from JLCPCB's parts catalogue – {names} "
+                                 "matches the parts at the order (B-2); no stock snapshot needed"))
+        return
+    if users[0] == makers.planned(cfg):
+        check_at(design, rep, cfg, users[0])
+        return
+    sub = Report()
+    check_at(design, sub, cfg, users[0])
+    name = makers.get(cfg, users[0]).name
+    rep.warnings += [(c, f"{name} (not the planned maker): {m}") for c, m in sub.errors + sub.pending + sub.warnings]
+    rep.waived += [(c, f"{name} (not the planned maker): {m}", r) for c, m, r in sub.waived]
+    rep.notes += [(c, f"{name} (not the planned maker): {m}") for c, m in sub.notes]
+
+
+def check_at(design, rep, cfg, maker):
+    """P-4 for one maker that orders from JLCPCB's catalogue."""
+    lines = assembled(design)
     snap = load(cfg)
     where = cfg.relative(cfg.stock) if cfg.stock else "hardware/stock.json"
     if snap is None:
         rep.notes.append(("P-4", f"no stock snapshot ({where}) – edakit stock asks JLCPCB about the {len(lines)} "
                                  "assembled parts"))
         return
-    pcba, why = cfg.pcba()
+    pcba, why = cfg.pcba(maker)
     old = []
     for lcsc, refs in lines.items():
         who = f"{refs_text(refs)} {lcsc}"
@@ -263,7 +289,13 @@ def main_lcsc(numbers):
 
 
 def main(cfg, args):
+    from . import makers
     from .checks import Report
+    if not makers.with_catalogue(cfg, "jlcpcb"):
+        print("edakit stock: no maker of [cart] makers orders from JLCPCB's parts catalogue – "
+              f"{', '.join(makers.listed(cfg))} match the parts at the order (B-2); no snapshot needed",
+              file=sys.stderr)
+        return 1
     design = Design.from_config(cfg)
     lines = assembled(design, cfg.board(args.board).name if args.board else None)
     snap = load(cfg) or {"parts": {}}
@@ -274,7 +306,7 @@ def main(cfg, args):
         print(f"[{i}/{len(todo)}] {lcsc} …", flush=True)
         rows[lcsc] = read_part(lcsc)
     snap = write(cfg, snap)
-    pcba, why = cfg.pcba()
+    pcba, why = cfg.pcba(makers.with_catalogue(cfg, "jlcpcb")[0])
     print(f"{cfg.relative(cfg.stock)}: {len(todo)} of {len(lines)} assembled parts asked, {pcba} PCBA ({why}), "
           f"{cfg.quantity} boards")
     for lcsc, refs in lines.items():

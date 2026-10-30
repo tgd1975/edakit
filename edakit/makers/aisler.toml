@@ -1,0 +1,22 @@
+# AISLER (Netherlands, with a site in Germany) – the maker's profile for edakit's order form (handbook 8.4). Data,
+# no code, no defaults of the board: those are edakit's keys of [order] (handbook 10.2).
+#
+# recorded = false: only what the search of 2026-10-30 found (docs/concepts/new/ordering.md, European
+# manufacturers): AISLER assembles from ODB++ or native design files, not from Gerber. The upload page, the form's
+# labels and words, how a part not to place is marked (ordering step 0b) and the cart button are recorded by
+# ordering step 0. Until then F-6 names the fields as not checked, and the skill cart stops before the cart.
+
+name = "AISLER"
+recorded = false
+start = "https://aisler.net/en/products/assembly"
+seat = "NL"                            # inside the EU: no import; for "sale" the owner stays the manufacturer (15.1)
+currency = "EUR"
+files = ["odb"]                        # odb_<b>.zip: board, parts and placement in one file (F-7)
+classes = ["assembly"]                 # "Amazing Assembly" – words: step 0
+never = ["Order", "Buy", "Checkout", "Pay", "Place order", "Confirm order"]
+ignore = {}
+excludes = []
+
+[rules]                                # the form's limits: ordering step 0 – none known, and no order-number placeholder
+
+[fields]                               # labels and words: ordering step 0

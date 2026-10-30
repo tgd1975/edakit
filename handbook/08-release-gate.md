@@ -76,11 +76,11 @@ project the layout review measured the LED side by hand at every round; the row 
 | Check | What |
 |---|---|
 | F-1 | BOM generated **from the graph** in JLCPCB format = EasyEDA's BOM per designator; every LCSC number in the parts database; parts with `bom: false` left out on purpose |
-| F-2 | every BOM line in JLCPCB's public assembly catalogue with stock for `quantity` boards (otherwise only pre-order), under the MPN of its parts entry; another class than `jlc_class` warns – P-4 checks the same and more from the stock snapshot when the part is chosen |
+| F-2 | for the maker of `[cart] makers` that orders from JLCPCB's catalogue (fail as the planned maker, warning as another one, not run without it): every BOM line in JLCPCB's public assembly catalogue with stock for `quantity` boards (otherwise only pre-order), under the MPN of its parts entry; another class than `jlc_class` warns – P-4 checks the same and more from the stock snapshot when the part is chosen |
 | F-3 | pick and place: every BOM part exactly once, side and rotation = PCB; sides and SMD-only as `[release] assembly` says (Economic PCBA: one side, SMD only; two SMD sides need Standard PCBA) |
 | F-4 | Gerber ZIP, BOM and pick and place from the same run; `fab/manifest.json` with SHA-256 per file, the state hashes and the fab hash (8.2) |
 | F-5 | Gerber set complete (a missing file is named here, and L-2, L-8, L-9 and L-17, which read it, report it as not checked); outline and mounting holes from the outline layer = plan (± 0.2 mm); tooling holes in the NPTH file, mask open, no copper in the opening |
-| F-6 | only with `[order]` in the board file (8.4): the remark at most 200 characters, ASCII (fail); `thickness_mm` a thickness of JLCPCB's form – 0.4, 0.6, 0.8, 1.0, 1.2, 1.6 or 2.0 mm (fail); the silkscreen colour the one JLCPCB prints on the mask colour – black on white, white on every other (fail); `mark = "specify"` with the placeholder `JLCJLCJLCJLC` on a silkscreen layer of pcb.json, at least 0.8 mm high in `[[silk.texts]]` (fail; no height there: warning); the placeholder with another mark (warning); Economic PCBA with fewer than 2 tooling holes (warning: JLCPCB drills its own); no copper of either side within `tab_copper_mm` of a declared tab zone, measured on the Gerber copper against the Gerber outline (fail, with the distance and the position); the outline stretches free of copper (information) |
+| F-6 | with `[order]` (board file or edakit.toml) or `[cart]` (8.4), per maker of `[cart] makers` – a finding fails for the planned maker and warns for every other one: every field a value the maker's form offers (its profile), no combination it excludes; the remark at most 200 characters, ASCII (JLCPCB); `thickness_mm` a thickness of the form – JLCPCB 0.4, 0.6, 0.8, 1.0, 1.2, 1.6 or 2.0 mm; the silkscreen colour the one the maker prints on the mask colour – JLCPCB black on white, white on every other; `mark = "specify"` with the maker's placeholder (`JLCJLCJLCJLC`) on a silkscreen layer of pcb.json, at least 0.8 mm high in `[[silk.texts]]` (no height there: warning); the placeholder with another mark (warning); JLCPCB's placeholder at a maker without one (it prints the letters); fewer tooling holes than the class needs (warning: JLCPCB drills its own). For every maker: `layers` and `size_mm` where set = the Gerber files; `panel_by_customer` (fail); `pcba_quantity` at most `quantity`, another number than `[project] quantity` (warning); no copper of either side within `tab_copper_mm` of a declared tab zone, measured on the Gerber copper against the Gerber outline (fail, with the distance and the position); the outline stretches free of copper and a provisional profile (information) |
 
 Plus P-2: a **polarity sheet** per board – every polarised part drawn from the Gerber data with copper, silkscreen,
 pad numbers, pin roles and nets, bottom parts mirrored as seen from below. It is what the second check compares with
@@ -377,26 +377,36 @@ an EasyEDA library entry that LCSC does not sell: no cart line. P-5 warns about 
 supplier – also one that has only such a number. A bought board (`bought = true`, 4.5) gets no BOM: its parts are in
 the carts and in `hand_assembly.md` under the board, marked bought; `edakit cost` prices no PCB and no assembly for it.
 
-**The order form as data.** The form fields that depend on the board go into `[order]` of the board file (10.2):
-`finish`, `mark` (`"default"` – JLCPCB prints its number anywhere, `"specify"` – at the placeholder, `"remove"`),
-`remark`, the tab zones (`tab_zones`, stretches of the outline in plan mm, with `tab_copper_mm`) and the colours:
-`mask` (JLCPCB's "PCB Color": green, purple, red, yellow, blue, white or black) and `silkscreen`. The thickness is
-the board file's `thickness_mm`, the value the mechanical model takes (7.4). Without these keys the form's defaults
-hold: 1.6 mm, green, white print. JLCPCB prints white on every mask but white, and black on white – `silkscreen`
+**The order form as data.** Every question a maker's form asks has an answer in the project – a key of `[order]`
+with edakit's default (10.2) – and the form is filled from the keys, never from what the page happens to preselect.
+edakit's defaults are the board of the reference orders, the same for every maker: FR-4 TG135, 1.6 mm, green mask,
+white print, lead-free HASL, 1 oz, tented vias, regular outline tolerance, flying-probe test, IPC class 2, the
+placement confirmed by the maker before it builds. `[order]` of edakit.toml sets a key for every board, `[order]`
+of the board file for one board; the later wins. Which maker builds the board is `[cart]` (10.1): JLCPCB without it.
+The maker's profile (`edakit/makers/<maker>.toml`) only translates – a value into the form's word – and holds the
+form's limits; `edakit cart fields` prints every field with the maker's word and where its value comes from. The
+form fields that depend on the board are among the keys: `finish`, `mark` (`"default"` – JLCPCB prints its number
+anywhere, `"specify"` – at the placeholder, `"remove"`), `remark`, the tab zones (`tab_zones`, stretches of the
+outline in plan mm, with `tab_copper_mm`) and the colours: `mask` (JLCPCB's "PCB Color": green, purple, red,
+yellow, blue, white or black) and `silkscreen`. The thickness is the board file's `thickness_mm`, the value the
+mechanical model takes (7.4). Without these keys edakit's defaults hold: 1.6 mm, green, white print. JLCPCB prints white on every mask but white, and black on white – `silkscreen`
 states the colour the artwork is drawn for, and F-6 fails it on a mask that gets the other one, as it fails a
 thickness the form does not offer (FR-4, 2 layers: 0.4, 0.6, 0.8, 1.0, 1.2, 1.6 or 2.0 mm). Every colour other than
 green takes two more days at JLCPCB (its quote form, read 2026-10-28); `edakit cost` prices the fee table's board –
 green, 1.6 mm, lead-free HASL – and names the settings of `[order]` that differ from it as not in the price. The board
 file is in the layout hash, so a changed remark, colour or thickness voids the sign-offs of scope `layout`; the
-settings that change the board as made – thickness, colours, finish and mark – are in the fab hash as well (8.2), so
+settings that change the board as made – thickness, colours, finish and mark, and copper weight, vias, material and
+the other keys marked so in 10.2 where they differ from edakit's default – are in the fab hash as well (8.2), so
 the layout review M-5 of scope `fab` lapses with them too, while a new remark or tab zone leaves it standing. Every
-gate run then writes `fab/<board>/order.md` next to the upload files – layers, size, quantity, thickness, the
-colours of mask and silkscreen, finish, the mark at the placeholder, the remark; PCBA type and side from
-`[release] assembly`, tooling holes "Added by Customer" when the board has `[tooling]`, bake "Yes" when the stock
-snapshot gives a BOM part MSL ≥ 5; the tab zones with their nearest copper and every outline stretch with no copper
-within `tab_copper_mm` (Gerber coordinates, what JLCPCB sees); the parts bought separately with their supplier
-(`edakit order`) – and `fab/<board>/order.json` with the settings the fab hash takes; F-6 checks the settings
-against the files. Fill the form from order.md of the released run – with M-5 of scope `fab` its settings are the
+gate run then writes `fab/<board>/order.md` next to the upload files – every field of the planned maker's form in
+the order of its form, with the maker's word and where it comes from (edakit, edakit.toml, board file, the Gerber
+files, `[project] quantity`, `[release] assembly`, `[tooling]`, the stock snapshot, `[cart]`): layers, size,
+quantity, thickness, the colours of mask and silkscreen, finish, the mark at the placeholder, the remark; PCBA type
+and side, tooling holes "Added by Customer" when the board has `[tooling]`, bake "Yes" when the stock snapshot gives
+a BOM part MSL ≥ 5; the upload files; the tab zones with their nearest copper and every outline stretch with no
+copper within `tab_copper_mm` (Gerber coordinates, what the maker sees); the parts bought separately with their
+supplier (`edakit order`) – and, with `[order]`, `fab/<board>/order.json` with the settings the fab hash takes; F-6
+checks the settings against the files, for every maker of `[cart] makers`. Fill the form from order.md of the released run – with M-5 of scope `fab` its settings are the
 ones the review signed – and write tab zones only on stretches it lists as free.
 
 The MCP server cannot order. Lessons from the reference order:

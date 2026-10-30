@@ -10,7 +10,8 @@ Result in DIR/<board>/:
     cpl_<board>.csv                  pick-and-place file in JLCPCB format (BOM parts only)
     jlc_parts.json                   JLCPCB assembly catalogue entry per LCSC number of the BOM (F-2)
     pcb.json, drc.json, bom_easyeda.json, cpl_easyeda.xlsx   raw data from EasyEDA (for --offline)
-    order.md                         with [order] in the board file: the order form of this board (order_sheet.py)
+    order.md                         with [order] (board file or edakit.toml) or [cart]: the order form of this
+                                     board at the planned maker, every field with where it comes from (order_sheet.py)
     order.json                       with [order]: the order settings that change the board as made (fab hash)
     netlist_diff.json                schematic against PCB (`pcb parts`, `pcb nets`), when the DRC has an Import
                                      Changes item
@@ -65,14 +66,17 @@ assembly preview at JLCPCB.
   [looks] of the board file: the visible side's track length and the board's vias, an information row; above
        max_track_m or max_vias a warning (row ID "L": the stage's own, no check of the catalog)
   F-1  BOM from the graph = BOM of EasyEDA; every LCSC number in the parts database
-  F-2  every BOM part listed in JLCPCB's assembly catalogue with stock for `quantity` boards, under the MPN of its
-       parts entry; another class than the entry's jlc_class warns (check P-4 reads the same offline, from the stock
-       snapshot)
+  F-2  for the maker of [cart] makers that orders from JLCPCB's catalogue (fails as the planned maker, warns as another
+       one, does not run without it): every BOM part listed in JLCPCB's assembly catalogue with stock for `quantity`
+       boards, under the MPN of its parts entry; another class than the entry's jlc_class warns (check P-4 reads the
+       same offline, from the stock snapshot)
   F-3  pick and place: every BOM part exactly once, side and rotation = PCB; sides/SMD as [release] assembly says
   F-5  Gerber set complete; outline and holes = plan (± 0.2 mm); tooling holes in the NPTH file, mask open, no copper
-  F-6  with [order] in the board file: remark <= 200 ASCII characters, thickness_mm and the colours of mask and
-       silkscreen as JLCPCB's form has them, mark = placeholder on the silkscreen, Economic with its own tooling holes,
-       no copper near the edge in a tab zone (order_sheet.py)
+  F-6  with [order] or [cart], per maker of [cart] makers (fails for the planned maker, warns for another one): every
+       field a value of the maker's form, the remark, thickness_mm and the colours of mask and silkscreen as its form
+       has them, mark = its placeholder on the silkscreen – JLCPCB's placeholder at a maker without one –, its tooling
+       holes; for every maker layers and size where set, the quantities, no copper near the edge in a tab zone
+       (order_sheet.py)
 Last stdout line: JSON list of rows {stage, id, item, check, actual, expected, result}. Exit 0 / 2 / 1.
 
 What the manufacturer builds from, hashed for the sign-offs with scope 'fab' (fab_sha256, FAB_METHOD): every Gerber
@@ -1238,6 +1242,18 @@ def check_fab(cfg, board, design, d, rows):
     unknown = sorted({lc for lc in ours.values() if lc not in design.parts})
     rows.add("F", "F-1", board.name, "every LCSC number of the BOM is in the parts database", not unknown,
              ", ".join(unknown) or "all", "all")
+    from .. import makers
+    users = makers.with_catalogue(cfg, "jlcpcb")     # F-2: for the maker that orders from JLCPCB's catalogue
+    if users:
+        check_catalogue(cfg, board, design, d, bom, rows, users[0])
+    check_cpl(cfg, board, design, d, ours, rows)
+
+
+def check_catalogue(cfg, board, design, d, bom, rows, maker):
+    """F-2 for a maker that orders from JLCPCB's catalogue: fails for the planned maker, warns for another one."""
+    from .. import makers
+    other_maker = maker != makers.planned(cfg)
+    who_of = f"{makers.get(cfg, maker).name} (not the planned maker): " if other_maker else ""
     jlc_file = d / "jlc_parts.json"
     if not jlc_file.exists():
         fetch_jlc(bom, d)
@@ -1259,10 +1275,15 @@ def check_fab(cfg, board, design, d, rows):
         if stock.class_differs(cls, hit.get("preferredComponentFlag"), entry.get("jlc_class")):
             other.append(f"{who}: JLCPCB lists it as {cls}, the parts entry as {entry['jlc_class']}")
     rows.add("F", "F-2", board.name, f"every BOM part in JLCPCB's assembly catalogue, stock for {cfg.quantity} boards, "
-             "the MPN of its parts entry", not bad, "; ".join(bad) or f"{len(bom)} lines listed and in stock", "all")
+             "the MPN of its parts entry", not bad, who_of + "; ".join(bad) if bad else f"{len(bom)} lines listed and "
+             "in stock", "all", makers.result(cfg, maker, not bad))
     if other:
-        rows.add("F", "F-2", board.name, "catalogue class = jlc_class of the parts entry", False, "; ".join(other),
-                 "equal", "warn")
+        rows.add("F", "F-2", board.name, "catalogue class = jlc_class of the parts entry", False,
+                 who_of + "; ".join(other), "equal", "warn")
+
+
+def check_cpl(cfg, board, design, d, ours, rows):
+    """F-3 and F-5: pick and place against the PCB, the Gerber set, outline and tooling holes."""
     import openpyxl
     ws = openpyxl.load_workbook(d / "cpl_easyeda.xlsx", read_only=True).worksheets[0]
     rx = list(ws.iter_rows(values_only=True))
