@@ -148,12 +148,17 @@ Confirmed by the CI job `kicad` on the led-bar example (KiCad 10.0, its containe
   has nothing but the connections the routing has not made yet. The first run found every pad in conflict with the
   schematic: local labels name a net "/GND" – the schematic has global labels since;
 - the flags of 16.5 for Gerber, drill and position file; the file names of the export; the Gerber reader on KiCad's
-  files; the position file's place and turn of every part against `pcb.json` (F-3).
+  files; the position file's place and turn of every part against `pcb.json` (F-3);
+- the frames: KiCad's own Gerber copper lies at every pad edakit reads, also for turned parts and parts on the bottom;
+- `route all` on KiCad: Freerouting routed all 18 nets of the example, edakit wrote 208 track pieces and 29 vias, KiCad
+  filled the zones, its DRC found nothing. Then `pcb apply` and `silk apply` wrote the file KiCad had saved again –
+  two things had to be learnt there: KiCad 10 names nets in items by name, and leaves out
+  `(filled_areas_thickness no)`, which under KiCad 8's version gives a fill a stroke of `min_thickness` – and the DRC
+  found nothing again.
 
-Open – the first runs on a real project, the led-bar example in EasyEDA and KiCad, then the Christmas bell:
+Open – the first runs on a real project, the led-bar example in EasyEDA and KiCad, then the Christmas bell (the steps
+are in the concept, "Live test"):
 
-- the parts on the bottom and turned parts against KiCad's own Gerber copper, and `route all` with Freerouting on a
-  KiCad project (both live tests are in `tests/test_kicad_live.py`);
 - footprints from the real LCSC data (the tests use footprints of their own): silkscreen, polygon pads, slots;
-- `silk apply` on a routed board, the gate `--eda` end to end, `export`;
+- the gate `--eda` end to end with the sign-offs, `export`;
 - the comparison run: one project through both tool chains, `edakit fab diff` (concept, "Comparison run").
