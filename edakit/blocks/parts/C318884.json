@@ -17,7 +17,7 @@
       "role": "a"
     },
     "2": {
-      "name": "B (internal to A)",
+      "name": "B",
       "type": "passive",
       "role": "a"
     },
@@ -27,7 +27,7 @@
       "role": "b"
     },
     "4": {
-      "name": "D (internal to C)",
+      "name": "D",
       "type": "passive",
       "role": "b"
     }
