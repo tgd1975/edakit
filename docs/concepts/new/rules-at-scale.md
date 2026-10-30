@@ -239,6 +239,7 @@ Steps 1 to 4 change no finding on any board; the parity test says so. Step 5 is 
 | Step | State | What exists |
 | --- | --- | --- |
 | 1 | built | `edakit/catalog/`: `codes.toml` (80 codes, 12 engines, each with the IDs it replaces), `kinds.toml` (the parts schema per kind), `tables/` (EU radio bands, USB, I2C, derating, JLCPCB, IPC-2221 – each row with source and tag); `edakit/findings.py` (finding, profile, severity, grade, accept, the grouped format); `edakit/convert.py` (old → new in memory, `edakit convert`); `edakit part lint`, `edakit rules`, `edakit explain`; `tests/test_catalog.py`. No finding of `edakit check` changed. |
+| 2 | built | `edakit/engines/`: STRUCT, LIMITS (with the producers of stage G in `quantities.py`), LEVELS, REQUIRES, PATHS, HINT, SIM (the simulation as a producer, beside `sim/run.py` on the same ngspice result); their data `catalog/levels.toml`, `needs.toml`, `paths.toml`; the pure graph helpers moved from `checks.py` to `circuit.py` and `radio.py`, the hint matchers to `engines/hint.py`. Parity (`tests/parity.py`, run on every check of the test suite): per check ID of before and severity the same number of findings – 180 graph runs with 1141 findings and 171 simulation runs with 458 failures in the seeded faults of `led-bar`, and the bell, agree. `tests/test_engines.py`: every relation on synthetic circuits, property tests of LIMITS and PATHS. |
 
 ### When maker-coverage's candidates are built
 

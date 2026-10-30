@@ -1,0 +1,37 @@
+# REQUIRES: what a pin or a part requires, unless its parts entry says otherwise – `needs` in the entry switches a
+# default off for its pins ("needs": {"decoupling": false}, with the reason in sources). Each section is one kind of
+# requirement the engine knows; its numbers are in tables/ (concept rules-at-scale.md, section 4: defaults).
+
+[table]
+about = "the requirements every part of a type, role or kind has by default"
+source = "as noted per section"
+tag = "r"
+
+[decoupling]          # REQ.missing: per supply pin on a net a capacitor from that net to ground
+pin_type = "power_in"
+source = "Analog Devices MT-101, Decoupling Techniques (Rev. 0, 2009)"
+tag = "r"
+
+[i2c]                 # REQ.missing, REQ.value: a pull-up to a supply on every I2C line (window: tables/i2c.toml)
+roles = ["sda", "scl"]
+names = ["SDA", "SCL"]          # a net, or a pin without a role, named so
+bus = "i2c"                     # a net with "bus": "i2c"
+source = "NXP UM10204 Rev. 7.0 (2021), 7.1"
+tag = "r"
+
+[flyback]             # REQ.missing: a diode across a coil a transistor or an output switches, cathode at its plus
+coils = { relay = ["coil_plus", "coil_minus"], buzzer = ["plus", "minus"] }
+coil_if = { buzzer = "coil_ohm" }   # a buzzer is a coil only with this value (a piezo buzzer has none)
+source = "TE Connectivity, The Application of Relay Coil Suppression with DC Relays"
+tag = "r"
+
+[cc]                  # REQ.missing, REQ.value, REQ.forbidden: Rd to ground on each CC pin of a USB-C receptacle
+roles = ["cc1", "cc2"]          # (numbers: tables/usb.toml); silent where a Type-C or PD controller drives them
+kind = "connector"
+source = "USB Type-C Cable and Connector Specification (USB-IF); Richtek AN064 (2021)"
+tag = "r"
+
+[hot_loop]            # REQ.missing: a layout.loops entry on each net of the hot loop a parts entry names (hot_loop)
+switchers = ["buck", "boost"]   # behaviours whose entry must name it (PARTS.fact/hot_loop)
+source = "TI SNVA021C, AN-1149 Layout Guidelines for Switching Power Supplies (2013), 5"
+tag = "r"

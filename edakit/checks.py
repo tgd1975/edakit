@@ -126,38 +126,19 @@ from collections import Counter, defaultdict
 from pathlib import Path
 
 from . import handover, requirements, rules
+from .circuit import (ACTIVE_TYPES, BOOT_DRIVERS, COILS, FN_NAMES, I2C_R_MAX, I2C_SINK_A, I2C_VOL,  # noqa: F401
+                      KINDS_OF_PREFIX, KINDS_OF_TYPE, PASS_THROUGH, PURPOSES, REVERSE_OK, SWITCHERS, USB_C_CC, USB_RD,
+                      USB_RD_TOL, cc_lines, core_mpn, fn_match, hold_current, hz_text, i2c_line, i2c_name, is_number,
+                      ohm, reach, read_value, resistor_like, resistor_value, resistors_to, series_nets, si,
+                      supply_inputs, supply_nets, supply_paths, v_range, valid_hz, value_problem)
 from .design import natural_key
+from .radio import (EIRP_BANDS, EU_BANDS, NOT_LEGAL_ADVICE, RADIO_KEYS, RADIO_TYPES, band_names,  # noqa: F401
+                    bands_in_use, eirp, mhz_ranges, overlaps, radios, stated_use, within)
 
 CAP_FACTOR = 1.5      # rated voltage >= 1.5 x max. voltage across
 DIODE_FACTOR = 1.5    # VRRM >= 1.5 x max. reverse voltage
 BJT_FACTOR = 1.5      # VCEO, VDS, VGS >= 1.5 x max.
-ACTIVE_TYPES = {"input", "output", "bidirectional", "power_in", "power_output", "analog", "current_sink"}
-BOOT_DRIVERS = {"output", "power_output", "ground"}   # define their net while the firmware is not running
-PASS_THROUGH = ("fuse", "switch", "connector")        # pass a reversed source on unchanged
-REVERSE_OK = ("battery_holder", "capacitor") + PASS_THROUGH
-PURPOSES = ("private", "gift", "sale")                 # purpose.use of the graph: built for oneself, given away, sold
 CHECK_KEYS = ("pin_locks", "reverse_protect", "doc_pin_table")   # checks of the graph
-I2C_SINK_A, I2C_VOL, I2C_R_MAX = 0.003, 0.4, 10e3    # UM10204 7.1: Rp(min) = (V - VOL) / 3 mA; 10 k for 100 kHz
-USB_RD, USB_RD_TOL = 5100, 0.10                      # USB Type-C sink termination Rd
-USB_C_CC = ("rd_5k1", "controller", "none")          # params.usb_c.cc: how a module or breakout terminates its CC lines
-COILS = {"relay": ("coil_plus", "coil_minus"), "buzzer": ("plus", "minus")}   # inductive kinds: their coil roles
-FN_LINES = {"pwm": (), "adc": (), "spi": ("sck", "tx", "rx", "cs"), "i2c": ("sda", "scl"), "uart": ("tx", "rx")}
-FN_NAMES = [k + (f".{line}" if line else "") for k, lines in FN_LINES.items() for line in lines or [""]]   # net fn
-SUPPLY_R_MAX = 100                                   # a resistor up to this passes a supply (shunt, filter)
-SWITCHERS = ("buck", "boost")                        # behaviour models of switching regulators (hot loop, G-18)
-PIN_FUNCTION = re.compile(r"([a-z][a-z0-9]*?)(\d+)(?:\.([a-z]+))?")   # "spi0.sck", "i2c1.sda", "pwm1.a", "adc0"
-KINDS_OF_TYPE = {"microcontroller": ("ic", "module"), "regulator": ("ic", "module"),   # P-6: graph type -> parts
-                 "transistor": ("npn", "pnp", "nmos", "pmos"), "led": ("led", "led_rgb"),   # entry kinds; any other
-                 "switch": ("switch", "dip_switch"), "audio": ("buzzer",)}                  # type: the same word
-KINDS_OF_PREFIX = {"R": ("resistor", "potentiometer"), "C": ("capacitor",), "L": ("inductor",),
-                   "D": ("diode", "led", "led_rgb"), "Q": ("npn", "pnp", "nmos", "pmos"), "U": ("ic", "module"),
-                   "J": ("connector",), "SW": ("switch", "button", "dip_switch"), "F": ("fuse",),
-                   "BT": ("battery_holder",), "BZ": ("buzzer",), "K": ("relay",), "TP": ("connector",)}
-VALUE_PARAMS = {"value_ohm": ("Ω", "resistance"), "value_f": ("F", "capacitance"), "value_h": ("H", "inductance")}
-VALUE_TOL = 0.01      # graph value vs the entry's value parameter
-MULTIPLIERS = {"p": 1e-12, "n": 1e-9, "u": 1e-6, "µ": 1e-6, "μ": 1e-6, "m": 1e-3, "k": 1e3, "K": 1e3, "M": 1e6,
-               "G": 1e9, "R": 1, "Ω": 1}
-QUANTITY = re.compile(r"\s*(\d+)(?:[.,](\d+))?\s*([pnuµμmkKMG]|[RΩ])?(\d+)?\s*(Ω|[oO]hms?|F|H)?(?=$|[\s,;/()])")
 
 EXECUTED = ["G-1", "G-2", "G-3", "G-4", "G-5", "G-6", "G-8", "G-10", "G-11", "G-12", "G-13", "G-14", "G-15", "G-16",
             "G-17", "G-18", "G-24", "G-25", "P-1", "P-3", "P-4", "P-5", "P-6", "P-7", "P-8", "P-11", "G-9"]
@@ -201,35 +182,6 @@ class Report:
                 "warnings": [{"check": c, "msg": m} for c, m in self.warnings]
                 + [{"check": c, "msg": m, "draft": True} for c, m in self.drafts],
                 "notes": [{"check": c, "msg": m} for c, m in self.notes]}
-
-
-def v_range(net):
-    v = net.get("v")
-    return v if isinstance(v, list) and len(v) == 2 and v[0] <= v[1] else [0, 0]
-
-
-def ohm(x):
-    return f"{x / 1000:.3g} kΩ" if x >= 1000 else f"{x:.3g} Ω"
-
-
-def supply_nets(d):
-    """Nets that carry a supply: a supply output or an IC supply pin is on them (ground excluded)."""
-    return {name for name, net in d.nets.items() if name != d.ground
-            and any(d.pin_info(r).get("type") in ("power_output", "power_in") for r in net["pins"])}
-
-
-def resistor_value(d, des):
-    part = d.part(des) or {}
-    return (part.get("params") or {}).get("value_ohm") if part.get("kind") == "resistor" else None
-
-
-def resistors_to(d, net, targets):
-    """(designator, value or None, other net) of every resistor between `net` and one of the `targets` nets."""
-    out = []
-    for des, a, b in resistor_like(d):
-        if net in (a, b) and (other := b if a == net else a) in targets:
-            out.append((des, resistor_value(d, des), other))
-    return out
 
 
 def check_structure(d, rep, boards, bought=()):
@@ -339,15 +291,6 @@ def check_domains(d, rep):
                           net.get("waive"))
             if info.get("type") in ACTIVE_TYPES and lo < -0.3:
                 rep.error("G-3", f"{name} down to {lo} V at {ref} ({info['name']})", net.get("waive"))
-
-
-def resistor_like(d):
-    """(des, net_a, net_b) for every resistive two-pole incl. both halves of a potentiometer."""
-    out = []
-    for des in d.comps_of_kind("resistor", "potentiometer"):
-        nets = [d.pin_net.get(f"{des}.{p}") for p, info in d.part(des)["pins"].items() if info.get("type") == "passive"]
-        out += [(des, a, b) for i, a in enumerate(nets) for b in nets[i + 1:] if a and b]
-    return out
 
 
 def check_inputs(d, rep):
@@ -481,19 +424,6 @@ def check_reverse(d, rep, sources=()):
                       d.nets[net].get("waive"))
 
 
-def i2c_name(text):
-    """'sda' or 'scl' if the name contains SDA or SCL as a word ('SDA/SDI', 'I2C0_SCL' yes, 'GP4' no)."""
-    tokens = set(re.split(r"[^A-Z0-9]+", str(text).upper()))
-    return next((t.lower() for t in ("SDA", "SCL") if t in tokens), None)
-
-
-def i2c_line(info):
-    """'sda' or 'scl' from the pin's role, or from its name if it has no role."""
-    if info.get("role"):
-        return info["role"] if info["role"] in ("sda", "scl") else None
-    return i2c_name(info.get("name", ""))
-
-
 def check_i2c(d, rep):
     supplies = supply_nets(d)
     for name, net in d.nets.items():
@@ -568,16 +498,6 @@ def check_flyback(d, rep):
                               f"{plus}, anode at {minus})", d.comps[des].get("waive"))
 
 
-def cc_lines(d, des):
-    """{'cc1': net, 'cc2': net} of a USB-C receptacle: pins by role, by name if they have no role."""
-    out = {}
-    for num, info in d.part(des)["pins"].items():
-        line = (info.get("role") or str(info.get("name", ""))).lower()
-        if line in ("cc1", "cc2"):
-            out[line] = d.pin_net.get(f"{des}.{num}")
-    return out
-
-
 def check_usb_c(d, rep):
     """G-14 on the receptacles the graph shows with their CC pins, and on the ones a parts entry states (usb_c): a
     module or breakout that terminates its own receptacle passes, one without termination is checked through its CC
@@ -622,28 +542,6 @@ def check_usb_c(d, rep):
             elif known and not any(abs(r - USB_RD) <= USB_RD * USB_RD_TOL for r in known):
                 rep.error("G-14", f"{des}: {line.upper()} ({net}) has {', '.join(ohm(r) for r in known)} to "
                                   f"{d.ground} – needs {ohm(USB_RD)} ± {USB_RD_TOL:.0%}", waive)
-
-
-def fn_match(fn, function):
-    """(instance, line) if the pin function serves the net's fn: 'spi.tx' and 'spi0.tx' -> ('0', 'tx'); 'pwm' and
-    'pwm1.b' -> ('1', 'b') – slice and channel; 'adc' and 'adc0' -> ('0', None)."""
-    m = PIN_FUNCTION.fullmatch(str(function))
-    kind, _, line = fn.partition(".")
-    if not m or m[1] != kind or (line and m[3] != line):
-        return None
-    return m[2], m[3]
-
-
-def hz_text(hz):
-    if hz is None:
-        return "pwm_hz missing"
-    return f"{hz[0]:g}–{hz[1]:g} Hz" if isinstance(hz, list) else f"{hz:g} Hz"
-
-
-def valid_hz(hz):
-    def num(x):
-        return isinstance(x, (int, float)) and not isinstance(x, bool) and x > 0
-    return hz is None or num(hz) or (isinstance(hz, list) and len(hz) == 2 and all(map(num, hz)) and hz[0] <= hz[1])
 
 
 def check_pin_functions(d, rep):
@@ -707,63 +605,6 @@ def check_pin_functions(d, rep):
                                       "one frequency", waive)
 
 
-def supply_inputs(d, sim=None):
-    """Nets a supply feeds: power outputs, and where the supply comes in (the design hint H-1's power inputs) – the
-    plus of a battery holder, the vbus pins of a connector, every pin of a connector in checks.reverse_protect, the
-    plus of a simulation source."""
-    out = {n for n, net in d.nets.items() if any(d.pin_info(r).get("type") == "power_output" for r in net["pins"])}
-    protect = set((d.graph.get("checks") or {}).get("reverse_protect") or [])
-    for des in d.comps:
-        part = d.part(des) or {}
-        roles = {num: str(p.get("role") or "") for num, p in (part.get("pins") or {}).items()}
-        if part.get("kind") == "battery_holder":
-            take = [n for n, r in roles.items() if r.startswith("plus")] or list(roles)
-        elif part.get("kind") == "connector" and "vbus" in roles.values():
-            take = [n for n, r in roles.items() if r == "vbus"]
-        elif des in protect:
-            take = list(roles)
-        else:
-            continue
-        out |= {d.pin_net.get(f"{des}.{n}") for n in take}
-    for des, src in ((sim or {}).get("sources") or {}).items():
-        if des in d.comps and isinstance(src, dict) and "plus" in src:
-            out.add(d.pin_net.get(f"{des}.{src['plus']}"))
-    return out - {None}
-
-
-def supply_paths(d):
-    """{net: nets a supply reaches from it through one part}: fuses, switches, connectors and inductors (every pin),
-    MOSFETs (drain and source), resistors up to SUPPLY_R_MAX both ways, diodes from anode to cathode."""
-    nxt = defaultdict(set)
-    for des in d.comps:
-        part = d.part(des) or {}
-        kind, value = part.get("kind"), resistor_value(d, des)
-        if kind == "diode":
-            a, k = d.net_of(des, "anode"), d.net_of(des, "cathode")
-            if a and k:
-                nxt[a].add(k)
-            continue
-        if kind in ("nmos", "pmos"):
-            nets = {d.net_of(des, "drain"), d.net_of(des, "source")}
-        elif kind in PASS_THROUGH + ("inductor",) or (value is not None and value <= SUPPLY_R_MAX):
-            nets = {d.pin_net.get(f"{des}.{p}") for p in part.get("pins") or {}}
-        else:
-            continue
-        for n in nets - {None}:
-            nxt[n] |= nets - {None, n}
-    return nxt
-
-
-def reach(starts, nxt, stop=()):
-    seen, todo = set(starts), list(starts)
-    while todo:
-        for n in nxt.get(todo.pop(), ()):
-            if n not in seen and n not in stop:
-                seen.add(n)
-                todo.append(n)
-    return seen
-
-
 def check_power_pins(d, rep, sim=None):
     """G-16: ground pins on ground, supply pins on a net that a supply reaches."""
     alias = {a: name for name, net in d.nets.items() for a in net.get("joined") or [name]}   # 0 Ω bridges joined
@@ -790,38 +631,6 @@ def check_power_pins(d, rep, sim=None):
                 rep.error("G-16", f"{what}: a supply pin on ground", waive)
             elif info.get("type") == "power_in" and net not in supplied:
                 rep.error("G-16", f"{what}: nothing supplies this net", waive)
-
-
-def hold_current(part, t_min=None):
-    """i_hold_a of a fuse, or at the lowest ambient t_min from params.i_hold_vs_temp: linear between its points, the
-    end values beyond them."""
-    table = sorted((part.get("params") or {}).get("i_hold_vs_temp") or [])
-    if t_min is None or not table:
-        return part["ratings"]["i_hold_a"]
-    if t_min <= table[0][0]:
-        return table[0][1]
-    for (t0, h0), (t1, h1) in zip(table, table[1:]):
-        if t0 <= t_min <= t1:
-            return h0 + (h1 - h0) * (t_min - t0) / (t1 - t0)
-    return table[-1][1]
-
-
-def series_nets(d, des):
-    """The nets the current of a part flows on: its own, and on through fuses and switches (G-10's walk without the
-    connectors – a connector hands the current on through a cable on the same net, not to its other pins); not
-    ground."""
-    nets = {d.pin_net.get(f"{des}.{p}") for p in d.part(des)["pins"]} - {None, d.ground}
-    todo = list(nets)
-    while todo:
-        for ref in d.nets[todo.pop()]["pins"]:
-            other = ref.split(".", 1)[0]
-            if (d.part(other) or {}).get("kind") in ("fuse", "switch"):
-                for p in d.part(other)["pins"]:
-                    n = d.pin_net.get(f"{other}.{p}")
-                    if n and n != d.ground and n not in nets:
-                        nets.add(n)
-                        todo.append(n)
-    return nets
 
 
 def check_fuses(d, rep, sim=None):
@@ -893,89 +702,6 @@ def check_hot_loops(d, rep):
 
 
 # --- radio (handbook 15.2) --------------------------------------------------------------------------------------------
-NOT_LEGAL_ADVICE = "support, not legal advice: no claim to correctness, nothing legally guaranteed"   # handbook 15
-# EU licence-exempt bands whose limit is an e.i.r.p., (from MHz, to MHz, the band's highest limit in mW): 2400–2483.5
-# MHz wideband data transmission and WLAN (BNetzA Vfg. 91/2025 entries 57c, D57c), 5150–5350 and 5470–5725 MHz WAS/RLAN,
-# mean e.i.r.p. (Vfg. 136/2022 tables 1–3). G-24 holds a part's e.i.r.p. to them.
-EIRP_BANDS = ((2400, 2483.5, 100), (5150, 5350, 200), (5470, 5725, 1000))
-# EU licence-exempt bands (G-25, handbook 15.2): 433.05–434.79 and 863–870 MHz short range devices (Vfg. 91/2025 entries
-# 44a–45c and 46a–56b, limits in e.r.p.) and the bands of EIRP_BANDS
-EU_BANDS = ((433.05, 434.79), (863, 870)) + tuple((lo, hi) for lo, hi, _ in EIRP_BANDS)
-RADIO_TYPES = ("module", "microcontroller")   # graph types whose parts entry states its radio, "none" too (P-11)
-RADIO_KEYS = {"max_dbm": "max_dbm (the conducted power at the RF port)",       # what G-24 asks for when it is missing
-              "antenna_dbi": "antenna_dbi (the gain of its antenna, from the module's datasheet or a certificate)",
-              "eirp_dbm": "eirp_dbm (the e.i.r.p. a certificate states)"}
-
-
-def is_number(x):
-    return isinstance(x, (int, float)) and not isinstance(x, bool)
-
-
-def radios(part):
-    """The radios a parts entry states in compliance.radio: a list of dicts – the entry of an own board lists those of
-    its parts (4.5) –, [] when it states none."""
-    r = ((part or {}).get("compliance") or {}).get("radio")
-    if isinstance(r, dict):
-        return [r]
-    return [x for x in r if isinstance(x, dict)] if isinstance(r, list) else []
-
-
-def mhz_ranges(value):
-    """[(from, to), …] of a bands_mhz value in MHz, None when it is no list of [from, to] numbers with from <= to."""
-    if not isinstance(value, list) or not value:
-        return None
-    if not all(isinstance(r, list) and len(r) == 2 and all(is_number(x) for x in r) and r[0] <= r[1] for r in value):
-        return None
-    return [(r[0], r[1]) for r in value]
-
-
-def within(a, b, ranges):
-    """The range a…b lies inside one of the ranges."""
-    return any(lo <= a and b <= hi for lo, hi in ranges)
-
-
-def overlaps(a, b, lo, hi):
-    """The range a…b transmits inside the band lo…hi (a single frequency on its edge counts)."""
-    return max(a, lo) < min(b, hi) or (a == b and lo <= a <= hi)
-
-
-def eirp(radio, kept=None):
-    """(e.i.r.p. in dBm, how it was found) of one radio of a parts entry: eirp_dbm as a certificate states it, else
-    max_dbm – the conducted power at the RF port – plus antenna_dbi, the gain of the antenna in the product; (None,
-    the keys that are missing) without them. kept: a lower conducted power the firmware keeps (purpose.radio max_dbm),
-    which goes before eirp_dbm where antenna_dbi is known."""
-    p, g = radio.get("max_dbm"), radio.get("antenna_dbi")
-    if is_number(kept) and is_number(g) and not (is_number(p) and p <= kept):
-        return kept + g, f"max_dbm {kept:g} kept by the firmware (purpose.radio) + antenna_dbi {g:g}"
-    if is_number(radio.get("eirp_dbm")):
-        return radio["eirp_dbm"], "eirp_dbm of the parts entry"
-    if is_number(p) and is_number(g):
-        return p + g, f"max_dbm {p:g} at the RF port + antenna_dbi {g:g}"
-    return None, [k for k, v in (("max_dbm", p), ("antenna_dbi", g)) if not is_number(v)]
-
-
-def stated_use(d):
-    """purpose.radio of the graph, {designator: "off" | {"bands_mhz": [[from, to], …], "max_dbm": …, "notes": …}}:
-    how the firmware uses the radio of a part – not at all, or in these bands (with this conducted power)."""
-    use = (d.graph.get("purpose") or {}).get("radio")
-    return use if isinstance(use, dict) else {}
-
-
-def bands_in_use(d, des):
-    """[(radio, its ranges in use, the conducted power the firmware keeps or None)] for the radios of a component's
-    parts entry with bands_mhz: without a statement in purpose.radio the entry's bands; with "off" none; with stated
-    bands those of them that lie in the radio's own bands_mhz."""
-    stated = stated_use(d).get(des)
-    ranges = mhz_ranges(stated.get("bands_mhz")) if isinstance(stated, dict) else None
-    kept = stated.get("max_dbm") if isinstance(stated, dict) and is_number(stated.get("max_dbm")) else None
-    out = []
-    for radio in radios(d.part(des)):
-        own = mhz_ranges(radio.get("bands_mhz"))
-        if own is None or stated == "off":
-            continue
-        out.append((radio, own, None) if ranges is None else
-                   (radio, [(a, b) for a, b in ranges if within(a, b, own)], kept))
-    return out
 
 
 def by_purpose(d, rep, cid, msg, waive=None):
@@ -989,14 +715,6 @@ def by_purpose(d, rep, cid, msg, waive=None):
         rep.warnings.append((cid, msg))
     else:
         rep.notes.append((cid, msg))
-
-
-def band_names(ranges):
-    """'2400–2483.5 MHz (for Wi-Fi: channels 1–13)' – the EU bands of EU_BANDS that ranges reach into, as a message says
-    what the firmware must keep to."""
-    near = [(lo, hi) for lo, hi in EU_BANDS if any(overlaps(a, b, lo, hi) for a, b in ranges)]
-    return " or ".join(f"{lo:g}–{hi:g} MHz" + (" (for Wi-Fi: channels 1–13)" if (lo, hi) == (2400, 2483.5) else "")
-                       for lo, hi in near)
 
 
 def check_radio_power(d, rep):
@@ -1159,48 +877,6 @@ def check_part_pins(d, rep, cfg=None):
             if part["pins"].get(str(pin), {}).get("type") == "power_in":
                 rep.error("P-1", f"{des}.{pin} ({part['pins'][str(pin)]['name']}) is a supply pin but marked nc",
                           c.get("waive"))
-
-
-def read_value(text):
-    """(number, unit or None) of a value as the graph writes it – 10k, 4k7, 2R2, 100nF, 22 µF, 330 Ω 0805 (the
-    leading quantity) –, or None when it starts with no quantity (green, 1N4148, 0805W8F…)."""
-    m = QUANTITY.match(str(text or ""))
-    if not m or (m.group(2) and m.group(4)):
-        return None
-    whole, frac, mult, frac2, unit = m.groups()
-    number = float(f"{whole}.{frac or frac2 or 0}") * MULTIPLIERS.get(mult, 1)
-    if (unit and unit[0] in "ΩoO") or (mult in ("R", "Ω") and not unit):
-        unit = "Ω"
-    return number, unit
-
-
-def si(x, unit):
-    for f, p in ((1e9, "G"), (1e6, "M"), (1e3, "k"), (1, ""), (1e-3, "m"), (1e-6, "µ"), (1e-9, "n"), (1e-12, "p")):
-        if abs(x) >= f or f == 1e-12:
-            return f"{x / f:.4g} {p}{unit}" if x else f"0 {unit}"
-    return f"{x} {unit}"
-
-
-def core_mpn(mpn):
-    """The part number of an mpn without the remarks entries add: in parentheses, after a semicolon."""
-    return " ".join(re.sub(r"\([^)]*\)", " ", str(mpn)).split(";")[0].split())
-
-
-def value_problem(text, part, key, what):
-    """What is wrong with a value of the graph against the value parameter of parts entry `key`, or None."""
-    params = part.get("params") or {}
-    param = next((k for k in VALUE_PARAMS if isinstance(params.get(k), (int, float))), None)
-    if not param:
-        return None
-    (unit, name), want = VALUE_PARAMS[param], float(params[param])
-    got = read_value(text)
-    if got is None:
-        return f"{what} {text} does not read as a {name} – parts entry {key} has {param} {si(want, unit)}"
-    if got[1] and got[1] != unit:
-        return f"{what} {text} is no {name} – parts entry {key} has {param} {si(want, unit)}"
-    if abs(got[0] - want) > VALUE_TOL * abs(want):
-        return f"{what} {text} reads {si(got[0], unit)}, parts entry {key} has {param} {si(want, unit)}"
-    return None
 
 
 def check_identity(d, rep):

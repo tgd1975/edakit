@@ -1,0 +1,26 @@
+# PATHS: through which parts a reversed or a normal supply passes, and what blocks it (concept rules-at-scale.md,
+# section 1: path = reachability through pass-through classes).
+
+[table]
+about = "pass-through classes of the reverse and supply paths"
+source = "edakit handbook 3.3; TI SLVA139 (reverse current protection)"
+tag = "r"
+
+[reverse]                                    # PATH.reverse
+sources = ["battery_holder"]                 # kinds that may be inserted reversed; also a component "source": "reversible"
+passes = ["fuse", "switch", "connector"]     # hand a reversed source on unchanged
+tolerates = ["battery_holder", "capacitor"]  # take a reversed voltage without harm
+blocks = [
+  { kind = "diode", role = "anode", outside = ["cathode"] },          # the cathode on the protected side
+  { kind = "pmos", role = "drain", outside = ["source", "gate"] },    # body diode blocks, VGS <= 0
+]
+
+[supply]                                     # PATH.unfed: what a supply reaches
+inputs = { battery_holder = "plus", connector = "vbus" }   # pin roles where a supply comes in (role prefix)
+passes = ["fuse", "switch", "connector", "inductor"]       # every pin to every pin
+passes_roles = { nmos = ["drain", "source"], pmos = ["drain", "source"] }
+forward = { diode = ["anode", "cathode"] }                 # from the first role to the second only
+resistor_max_ohm = 100                                     # a shunt or a filter resistor passes a supply
+
+[ground]                                     # PATH.ground
+joins = ["inductor"]                         # a net joined to ground through one is ground

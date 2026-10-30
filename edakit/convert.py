@@ -98,6 +98,8 @@ def graph(g):
         if des in comps:
             comps[des]["source"] = "reversible"
     unknown = {k: v for k, v in checks.items() if k not in CHECK_KEYS and k != "reverse_protect"}
+    if missing := [des for des in checks.get("reverse_protect") or [] if des not in comps]:
+        unknown["reverse_protect"] = missing   # names no part: left for STRUCT.ref to report
     if unknown:
         inner["checks"] = unknown          # left for STRUCT.ref to report
     return data

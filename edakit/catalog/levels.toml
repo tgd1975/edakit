@@ -1,0 +1,22 @@
+# LEVELS: what a pin does to its net while the firmware is not running – at reset and before the firmware configures
+# its pins (concept rules-at-scale.md, section 1: level = (input, state) -> high, low, driven, undefined).
+
+[table]
+about = "levels at reset, by pin type; control pins that need a resistor to a defined level"
+source = "edakit handbook 3.3 and 4.1; TI SCBA004E (floating CMOS inputs); TI SLUA618A 3.5 (gate-source resistor)"
+tag = "r"
+
+[reset]                      # pin type -> its level at reset
+output = "driven"            # a push-pull output: defines the net, its level unknown to the graph
+power_output = "high"
+ground = "low"
+power_in = "supply"          # a supply pin: its net is a rail (high for a strapping pin), it drives nothing
+bidirectional = "floating"   # an MCU pin: an input until the firmware configures it
+input = "reads"
+
+[drivers]                    # pin types two of which on one net fight (LVL.contention)
+types = ["output", "power_output"]
+
+[control]                    # a transistor is undefined while its control pin floats: a resistor to these roles
+base = { kinds = ["npn", "pnp"], to = ["emitter"] }
+gate = { kinds = ["nmos", "pmos"], to = ["source", "rail"] }

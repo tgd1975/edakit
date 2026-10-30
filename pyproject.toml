@@ -31,7 +31,9 @@ packages = ["edakit"]
 
 [tool.pytest.ini_options]
 testpaths = ["tests"]
-markers = ["ngspice: needs ngspice on PATH", "freerouting: downloads and runs Freerouting"]
+markers = ["ngspice: needs ngspice on PATH", "freerouting: downloads and runs Freerouting",
+           "no_parity: the engines of the restructuring are not compared with the checks of before (tests/parity.py)"]
+pythonpath = ["tests"]
 
 [tool.ruff]
 line-length = 120

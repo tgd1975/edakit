@@ -1,0 +1,240 @@
+"""HINT: patterns that need judgement, as notes (concept rules-at-scale.md, section 2). A hint has no rule a program
+could decide; it says what to consider where a kind of part or a pattern is in the graph. Each code HINT.* names in
+catalog/codes.toml when it applies – `when` with the kinds of parts, or a matcher of MATCHERS below; each place it
+applies to is one finding, severity note unless a domain says otherwise. What is taken care of is accepted in the
+graph: "accept": {"HINT.bulk": "C1 1000 µF next to J1"} for every place, "HINT.bulk J1" for one.
+"""
+
+from __future__ import annotations
+
+from collections import Counter, defaultdict
+
+from .. import catalog
+from ..circuit import values
+from ..design import natural_key
+from ..findings import Finding
+
+SIGNAL_TYPES = {"input", "output", "bidirectional", "analog"}
+
+
+def reversible(design):
+    """Sources that may be reversed: "source": "reversible" on a component, checks.reverse_protect of before."""
+    marked = {des for des, c in design.comps.items() if c.get("source") == "reversible"}
+    return marked | set((design.graph.get("checks") or {}).get("reverse_protect") or [])
+
+
+def _part_kind(design, des):
+    return (design.part(des) or {}).get("kind")
+
+
+def _power_inputs(design, cfg, sim):
+    """Where the supply comes in: battery holders, connectors with a vbus pin, checks.reverse_protect, sim sources."""
+    found = set(design.comps_of_kind("battery_holder"))
+    found |= reversible(design)
+    found |= {d for d in design.comps_of_kind("connector")
+              if "vbus" in {p.get("role") for p in design.part(d)["pins"].values()}}
+    found |= set((sim or {}).get("sources", {}))
+    return [d for d in found if d in design.comps]
+
+
+def _resistor_neighbours(design, net):
+    """Nets one resistor away from `net`."""
+    out = set()
+    for des in design.comps_of_kind("resistor"):
+        a, b = (design.pin_net.get(f"{des}.{p}") for p in ("1", "2"))
+        if net in (a, b):
+            out.add(b if a == net else a)
+    return out - {None}
+
+
+def _connector_signals(design, cfg, sim):
+    """Connectors with a signal line to an IC or module pin, directly or through one resistor (ground and supply
+    nets are no signal lines)."""
+    quiet = {design.ground} | {name for name, net in design.nets.items()
+                               if any(design.pin_info(r).get("type") in ("power_in", "power_output", "ground")
+                                      for r in net["pins"])}
+    found = []
+    for des in design.comps_of_kind("connector"):
+        for num in design.part(des)["pins"]:
+            net = design.pin_net.get(f"{des}.{num}")
+            if net is None or net in quiet:
+                continue
+            nets = ({net} | _resistor_neighbours(design, net)) - quiet
+            if any(design.pin_info(r).get("type") in SIGNAL_TYPES and _part_kind(design, r.split(".", 1)[0]) in
+                   ("ic", "module") for n in nets for r in design.nets[n]["pins"]):
+                found.append(des)
+                break
+    return found
+
+
+def _transistors_at_connectors(design, cfg, sim):
+    """A transistor whose collector or drain is on a connector pin: it switches a load off the board (a supply input
+    is no load – a reverse-polarity PMOS has its drain there)."""
+    inputs = set(_power_inputs(design, cfg, sim))
+    found = []
+    for des in design.comps_of_kind("npn", "pnp", "nmos", "pmos"):
+        for role in ("collector", "drain"):
+            net = design.net_of(des, role)
+            conns = sorted({r.split(".", 1)[0] for r in design.nets[net]["pins"]
+                            if _part_kind(design, r.split(".", 1)[0]) == "connector"} - inputs) if net else []
+            found += [f"{des} at {c}" for c in conns]
+    return found
+
+
+def _switching_regulators(design, cfg, sim):
+    regs = [d for d in design.comps_of_kind("ic", "module")
+            if values(design.part(d)).get("behavior") in ("buck", "boost")]
+    return regs + design.comps_of_kind("inductor")
+
+
+def _supply_starts(design, cfg, sim):
+    """{supply: nets it feeds directly}: the power inputs of H-1 by their supply pins – the plus of a battery holder,
+    the vbus pins of a connector, the pins of a connector in checks.reverse_protect, the plus of a sim source – and a
+    module's pin of type power_output with the role vbus (its USB VBUS brought out). Ground is no supply net."""
+    protect = reversible(design)
+    sources = (sim or {}).get("sources") or {}
+    out = {}
+    for des in design.comps:
+        part = design.part(des) or {}
+        pins = part.get("pins") or {}
+        roles = {num: str(p.get("role") or "") for num, p in pins.items()}
+        take = []
+        if part.get("kind") == "battery_holder":
+            take = [n for n, r in roles.items() if r.startswith("plus")] or list(pins)
+        elif part.get("kind") == "connector" and "vbus" in roles.values():
+            take = [n for n, r in roles.items() if r == "vbus"]
+        elif des in protect:
+            take = list(pins)
+        if part.get("kind") == "module":
+            take += [n for n, p in pins.items() if p.get("type") == "power_output" and roles[n] == "vbus"]
+        if isinstance(sources.get(des), dict) and "plus" in sources[des]:
+            take.append(str(sources[des]["plus"]))
+        nets = {design.pin_net.get(f"{des}.{n}") for n in take} - {None, design.ground}
+        if nets:
+            out[des] = nets
+    return out
+
+
+def _supply_steps(design):
+    """{net: [(next net, blocks)]} for a supply's current: fuses, switches and inductors (every pin), a MOSFET (drain
+    and source both ways – its body diode or its channel conducts), diodes from anode to cathode (a block: nothing
+    flows back). Two MOSFETs whose sources share a net – a back-to-back pair – pass nothing either way. A connector's
+    pins are separate contacts: a cable joins its nets, not the connector."""
+    fets = design.comps_of_kind("nmos", "pmos")
+    shared = Counter(design.net_of(q, "source") for q in fets)
+    steps = defaultdict(list)
+    for des in design.comps:
+        part = design.part(des) or {}
+        kind = part.get("kind")
+        if kind == "diode":
+            a, k = design.net_of(des, "anode"), design.net_of(des, "cathode")
+            if a and k and design.ground not in (a, k):
+                steps[a].append((k, True))
+            continue
+        if kind in ("nmos", "pmos"):
+            source = design.net_of(des, "source")
+            if source != design.ground and shared[source] > 1:
+                continue   # one of a back-to-back pair
+            nets = {design.net_of(des, "drain"), source}
+        elif kind in ("fuse", "switch", "inductor"):
+            nets = {design.pin_net.get(f"{des}.{p}") for p in part.get("pins") or {}}
+        else:
+            continue
+        nets -= {None, design.ground}
+        for n in nets:
+            steps[n] += [(m, False) for m in nets - {n}]
+    return steps
+
+
+def _two_supplies(design, cfg, sim):
+    """Nets that two supplies reach, at least one of them without a diode on the way – current can flow back into
+    that one: 'VIN (J1 unblocked, J2)'."""
+    starts = _supply_starts(design, cfg, sim)
+    if len(starts) < 2:
+        return []
+    steps, reached = _supply_steps(design), {}
+    for supply, nets in starts.items():
+        free = dict.fromkeys(nets, True)   # net -> reached without a block
+        todo = list(nets)
+        while todo:
+            n = todo.pop()
+            for m, block in steps.get(n, ()):
+                if m not in free or (free[n] and not block and not free[m]):
+                    free[m] = free[n] and not block
+                    todo.append(m)
+        reached[supply] = free
+    out = []
+    for net in design.nets:
+        at = sorted(((s, r[net]) for s, r in reached.items() if net in r), key=lambda x: natural_key(x[0]))
+        if len(at) > 1 and any(free for _, free in at):
+            out.append(f"{net} ({', '.join(f'{s} unblocked' if free else s for s, free in at)})")
+    return out
+
+
+def _mcu_pins(design, net):
+    """MCU pins (role gpio) on a net or one resistor away from it."""
+    return [r for n in {net} | _resistor_neighbours(design, net) for r in design.nets[n]["pins"]
+            if design.pin_info(r).get("role") == "gpio"]
+
+
+def _output_timing(info):
+    """' (changes 12–30 ns after the rising clock edge)' from a pin's out_edge and t_pd_ns ([min, max] in ns, null where
+    the datasheet gives none); '' without either."""
+    edge, tpd = info.get("out_edge"), info.get("t_pd_ns")
+    lo, hi = (tpd if isinstance(tpd, list) and len(tpd) == 2 else [tpd, tpd] if isinstance(tpd, (int, float))
+              else [None, None])
+    delay = (f"{lo:g} ns" if lo == hi and lo is not None else f"{lo:g}–{hi:g} ns" if lo is not None and hi is not None
+             else f"≥ {lo:g} ns" if lo is not None else f"≤ {hi:g} ns" if hi is not None else "")
+    if not edge and not delay:
+        return ""
+    return f" (changes {delay + ' ' if delay else ''}after the {edge + ' ' if edge else ''}clock edge)"
+
+
+def _read_backs(design, cfg, sim):
+    """A serial output read back by an MCU: an `output` pin of a part without MCU pins, on a net with an MCU pin (role
+    gpio; directly or through one resistor), of a part that MCU also drives an `input` of – its clock among them. The
+    pin's out_edge and t_pd_ns go with it where the parts entry gives them."""
+    found = []
+    for des in design.comps:
+        pins = (design.part(des) or {}).get("pins") or {}
+        if any(i.get("role") == "gpio" for i in pins.values()):
+            continue
+        nets = {num: net for num in pins if (net := design.pin_net.get(f"{des}.{num}"))}
+        driving = {r.split(".", 1)[0] for num, net in nets.items() if pins[num].get("type") == "input"
+                   for r in _mcu_pins(design, net)}
+        for num, net in nets.items():
+            if pins[num].get("type") != "output":
+                continue
+            for ref in _mcu_pins(design, net):
+                if ref.split(".", 1)[0] in driving:
+                    found.append(f"{des} {pins[num].get('name', num)} to {ref.split('.', 1)[0]} "
+                                 f"{design.pin_info(ref).get('name', ref)}{_output_timing(pins[num])}")
+    return found
+
+
+MATCHERS = {"power_input": _power_inputs, "connector_signal": _connector_signals,
+            "transistor_at_connector": _transistors_at_connectors, "switching_regulator": _switching_regulators,
+            "two_supplies": _two_supplies, "read_back": _read_backs}
+
+
+
+def matching(design, cfg=None, sim=None):
+    """{code: [places]} of every hint whose `when` fits the graph."""
+    out = {}
+    for name, e in catalog.codes().items():
+        w = e.get("when")
+        if not w:
+            continue
+        hits = list(design.comps_of_kind(*w.get("kinds", [])))
+        if "match" in w:
+            hits += MATCHERS[w["match"]](design, cfg, sim)
+        if hits:
+            out[name] = sorted(set(hits), key=natural_key)
+    return out
+
+
+def run(ctx):
+    old = {c: catalog.code(c)["replaces"][0] for c in catalog.codes() if c.startswith("HINT.")}
+    return [Finding(code, "G", place, catalog.title(code), on=(("component", place),) if place in ctx.design.comps
+                    else (), old=old[code])
+            for code, places in matching(ctx.design, ctx.cfg, ctx.sim).items() for place in places]

@@ -101,7 +101,7 @@ class Report:
         """Severity from the profile; accepted where the graph accepts it – on its net or component, or on the graph
         keyed by code or "code place". -> self"""
         for f in self.findings:
-            f.severity = self.profile.of(f)
+            f.severity = "note" if f.data.get("info") else self.profile.of(f)   # an informational scenario
             if graph is not None and not f.accepted:
                 f.accepted = accepted_in_graph(f, graph) or ""
         self.findings.sort(key=lambda f: (ORDER.get(f.severity, 9), f.code))

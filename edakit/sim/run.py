@@ -53,6 +53,9 @@ import tempfile
 from collections import defaultdict
 from pathlib import Path
 
+from .. import engines
+from ..engines import sim as esim
+from ..findings import Finding, Report
 from . import copper, netlist
 
 DEFAULT_DERATING = {"p": 0.5, "i": 0.8, "v_cap": 0.67, "v_diode": 0.67, "v_bjt": 0.67}
@@ -528,6 +531,7 @@ def functional(design, cfg, res, meta, load, ck, plugin, low=None):
         ck.add("E-3", name, "net voltage inside the declared range",
                f"{x_lo:.4g} V ({pin_at[n_lo]}) … {x_hi:.4g} V ({pin_at[n_hi]})", f"{lo} … {hi} V",
                lo - tol <= x_lo and x_hi <= hi + tol)
+    ck.plugin_from = len(ck.items)   # what the plugin adds: the engine SIM reports it as SIM.state
     if plugin and hasattr(plugin, "checks"):
         plugin.checks(design=design, cfg=cfg, res=res, meta=meta, load=load, add=ck.add)
 
@@ -833,6 +837,8 @@ def transient(design, sim, name, run, keep=None, models=None):
     except (ValueError, KeyError, SimError) as e:
         ck.add("E-1", "circuit", "transient run", f"{type(e).__name__}: {e}", "converges", False)
         row["status"] = "error"
+        row["findings"] = [Finding("SIM.converge", "E", "circuit", f"transient run: {type(e).__name__}: {e}",
+                                   scenario=name, old="E-1", data={"info": True} if run.get("info") else {})]
         return row, ck.items
     ck.add("E-1", "circuit", "transient run", "converged", "converges", True)
     wave = dict(zip(meta["tran"]["columns"], cols))
@@ -879,6 +885,9 @@ def transient(design, sim, name, run, keep=None, models=None):
         for c in ck.items:
             if c["result"] == "fail":
                 c["result"] = "info"
+    new = engines.converted(design)
+    row["findings"] = esim.transient_findings(name, expect, sources, meta, times, wave, volts, extreme, run.get("info")) \
+        + esim.mcu_once_started(name, meta, new, wave, times, extreme, run.get("info"))
     report = [n for n in sim.get("report", []) if volts(n) is not None]
     row["nets"] = {n: min(volts(n, min)) for n in report}
     row["nets_max"] = {n: max(volts(n, max)) for n in report}
@@ -919,6 +928,7 @@ def run_all(design, sim, keep=None, plugin=None, routing=None):
     touch_limits(design, sim)
     runs = transient_runs(design, sim)
     out = {"scenarios": [], "checks": [], "net_currents": {}}
+    new, found = engines.converted(design), []   # the engine SIM beside the checks of before (rules-at-scale step 2)
     try:
         cu = copper.annotate(design, sim, routing)
     except copper.CopperError as e:
@@ -926,6 +936,7 @@ def run_all(design, sim, keep=None, plugin=None, routing=None):
     notes = Checks("copper")
     for net, why in cu["notes"]:      # a listed net that stays one ideal node
         notes.add("E-1", net, "copper not annotated", why, "the routed copper of the net", True, "info")
+        found.append(Finding("SIM.copper", "E", net, f"copper not annotated: {why}", old="E-1"))
     out["checks"] += notes.items
     for sc in scenarios(sim):
         ck = Checks(sc["name"])
@@ -936,6 +947,8 @@ def run_all(design, sim, keep=None, plugin=None, routing=None):
             low = least_current(design, sim, sc, meta, models, keep)
         except (ValueError, KeyError, SimError) as e:
             ck.add("E-1", "circuit", "operating point", f"{type(e).__name__}: {e}", "converges", False)
+            found.append(Finding("SIM.converge", "E", "circuit", f"operating point: {type(e).__name__}: {e}",
+                                 scenario=sc["name"], old="E-1", data={"info": True} if sc.get("info") else {}))
             row["status"] = "error"
             out["checks"] += ck.items
             out["scenarios"].append(row)
@@ -943,6 +956,10 @@ def run_all(design, sim, keep=None, plugin=None, routing=None):
         ck.add("E-1", "circuit", "operating point", "converged", "converges", True)
         stress(design, sim, res, meta, ck)
         functional(design, sim, res, meta, sc["load"], ck, plugin, low)
+        scene = esim.Scene(design, new, sim, res, meta, sc["name"], sc.get("info", False))
+        esim.stress(scene)
+        esim.function(scene, sc["load"], low, ck.items[getattr(ck, "plugin_from", len(ck.items)):])
+        found += scene.findings()
         if sc.get("info"):
             for c in ck.items:
                 if c["result"] == "fail":
@@ -958,8 +975,11 @@ def run_all(design, sim, keep=None, plugin=None, routing=None):
         out["scenarios"].append(row)
     for name, run in runs.items():   # transient runs: E-5, no stress, not in the net currents
         row, items = transient(design, sim, name, run, keep, models)
+        found += row.pop("findings", [])
         out["checks"] += items
         out["scenarios"].append(row)
+    rep = Report(found, engines.profile(new)).resolve(new.graph)
+    out["findings"] = [f.to_dict() for f in rep.findings]
     return out
 
 
