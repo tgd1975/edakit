@@ -75,7 +75,15 @@ unit = " mm"
 [fields.mask]
 section = "PCB"
 label = "PCB Color"
-words = { green = "Green", purple = "Purple", red = "Red", yellow = "Yellow", blue = "Blue", white = "White", black = "Black" }
+
+[fields.mask.words]
+green = "Green"
+purple = "Purple"
+red = "Red"
+yellow = "Yellow"
+blue = "Blue"
+white = "White"
+black = "Black"
 
 [fields.silkscreen]
 section = "PCB"
@@ -132,7 +140,11 @@ words = { false = "No", true = "Yes" }
 [fields.mark]
 section = "PCB"
 label = "Mark on PCB"
-words = { default = "Order Number (JLCPCB places it)", specify = "Order Number (Specify Position)", remove = "Remove Mark" }
+
+[fields.mark.words]
+default = "Order Number (JLCPCB places it)"
+specify = "Order Number (Specify Position)"
+remove = "Remove Mark"
 
 [fields.electrical_test]
 section = "PCB"

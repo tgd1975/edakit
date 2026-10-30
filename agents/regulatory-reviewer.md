@@ -120,4 +120,5 @@ registration), and **check candidate**: what a rule over graph and parts databas
 without RoHS status; a radio band outside the EU bands is G-25 already) – or "judgement". At the end: the purpose you
 reviewed for, what you checked and found in order (short), and what you could not check (missing data, a legal
 question). Close with the line:
-"Not legal advice – support without any claim to correctness; nothing here is legally guaranteed."
+"Not legal advice – support without any claim to correctness; nothing here is legally guaranteed." – at the order the
+verdict line comes after it and is the very last (section "At the order").

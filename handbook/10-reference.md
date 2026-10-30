@@ -81,13 +81,13 @@ it the gate has an information row "estimated order cost" in stage P, and above 
 
 | Key | Default | Meaning |
 |---|---|---|
-| `fees` | the shipped `edakit/fees/jlcpcb.json` | another fee table in the same form (every value with `date` and `source`; `pcb.board` the board its PCB prices are for – thickness, mask, silkscreen, finish –, without it the defaults of `[order]`) |
+| `fees` | `hardware/fees/<maker>.json` over the shipped `edakit/fees/jlcpcb.json` | the project's own fee table in the same form (every value with `date` and `source`; `pcb.board` the board its PCB prices are for – thickness, mask, silkscreen, finish –, without it the defaults of `[order]`): per fee the value with the newest date wins, from this table or the shipped one of the planned maker; `edakit cart actual` writes the real costs of the project's orders into it (8.4) |
 | `budget` | – | the most the whole order may cost, in `currency`; above it `edakit cost` exits 2 and the gate warns |
 | `currency` | `"USD"` | the currency of the estimate |
 | `rates` | `{}` | the value of one unit of another currency in `currency`, e.g. `{ EUR = 1.15 }`; needed for the fee table's USD and for every `[[extra]]` in another currency |
 | `shipping`, `coupon` | `0` | per order, in `currency` |
 | `vat_pct` | `0` | import VAT on the assembler's order (boards + shipping − coupon) |
-| `pcb_price` | from the fee table | the quoted price of the PCBs (all `quantity` of them) – a number, or `{ board = price }` |
+| `pcb_price` | the board line of a checked quote of the current release, else the fee table | the quoted price of the PCBs (all `quantity` of them) – a number, or `{ board = price }`; wins over the quote |
 
 ### [order]
 
@@ -352,6 +352,9 @@ scripts that write what they read first, when those are outdated or never ran, a
 | Command | EasyEDA | Reads | Writes |
 |---|---|---|---|
 | `edakit cart fields [--board B] [--maker M]` | – | `[order]` of edakit.toml and the board file, `thickness_mm`, `[release] assembly`, `[tooling]`, the stock snapshot, `[cart]`, the maker's profile; the Gerber files of the current release (else the newest run) for layers and size | – (prints every field of the maker's form: its label, the maker's word, where it comes from, edakit's key and value) |
+| `edakit cart prepare [--board B] [--maker M]` | – | the current release (manifest, `makers.json`, the board's upload files and `order.json`), the circuit and layout hash now, the sign-off file (M-6), `[cart]`, the maker's profile, the estimate | `<reports>/<run>/fab/<board>/cart/<maker>/job.json`; exit 1 with the reason when the order cannot be placed against the release (8.4) |
+| `edakit cart check [--board B] [--maker M] [--cart]` | – | `job.json`, `quote.json`, `quote_page.txt`, `regulatory.md`, with `--cart` `cart.json` of the order's folder; the manifest | `check.md`, `check.json`; with `--cart` and every check passed the order record `hardware/orders/<date>-<board>-<maker>.json`. Exit 0 passed, 2 a finding (B-1 to B-7), 3 B-1 to B-6 passed and the review of the order (B-7) is open |
+| `edakit cart actual [--board B] [--maker M] [--from FILE]` | – | `job.json`, `quote.json`, `actual.json` and `actual_page.txt` of the order's folder – with `--from` a saved order page or invoice (HTML; PDF with pdftotext) whose text edakit reads itself; `[cost]`, the fee table | `actual.md`; the project's fee table (`[cost] fees`, else `hardware/fees/<maker>.json`) with what maps one to one; the order number and the totals in the order record. Exit 2 when B-4 fails – nothing written |
 | `edakit check [--release] [--json F]` | – | graph, parts (pins, identity P-6), pin table; if there: footprint geometry and library footprints (P-7, P-8), library symbols (P-1), the footprint data of parts entries with the footprint geometry (P-9, P-10); `[scripts]`, `[[release.stages]]` and `sim_plugin` with the board files' `[[silk.art]]`, `hardware/scripts.lock` and what the scripts read (8.6); `[agents]` and the agent files (8.6); with `[project] requirements` the requirements files and the sign-off file's manual checks (G-20 to G-23; a file missing or not valid: exit 1) | – |
 | `edakit rules [ID …]` | – | the rule catalog (no project needed) | – |
 | `edakit hints [--json F]` | – | graph, parts, sim config | – |
@@ -364,9 +367,9 @@ scripts that write what they read first, when those are outdated or never ran, a
 | `edakit part fetch KEY [--url U] \| --all` | – (internet) | the parts entry (`mpn`, `datasheet.url`, `lcsc`, `verified.datasheet_sha256`); the sources of 4.6 | `<datasheets>/<KEY>.pdf` and `.json` (a failed download keeps the earlier copy, exit 2; variant or changed since the sign-off: exit 2) |
 | `edakit part search "KEYWORDS" [--basic] [--min-stock N] [--limit 25] [--json F]` | – (internet) | JLCPCB's public parts catalogue (4.2) | – (F: the hits); exit 2 = no hits |
 | `edakit part datasheet [--connector C …] [--name N]` | – | graph, parts, sim config, board file (4.5) | `hardware/datasheet/<N>.json` and `.md`; without `--connector` every datasheet renewed |
-| `edakit stock [--board B] [--refresh]` | – | graph, parts, the snapshot; JLCPCB's catalogue and part pages (network) | `hardware/stock.json` (`[project] stock`): the parts missing, unread or older than `stock_max_age_days`, with `--refresh` all |
+| `edakit stock [--board B] [--refresh]` | – | graph, parts, the snapshot; JLCPCB's catalogue and part pages (network) – only with JLCPCB among `[cart] makers` (exit 1 otherwise) | `hardware/stock.json` (`[project] stock`): the parts missing, unread or older than `stock_max_age_days`, with `--refresh` all |
 | `edakit stock --lcsc C…` | – | JLCPCB's catalogue and part pages (no project needed) | – (prints listed, class, stock, MSL, PCBA type, X-ray, attrition) |
-| `edakit cost [--board B] [--json F]` | – | graph, parts, board files (outline, sides, `[order]`), the stock snapshot, the fee table, `[cost]`, `[[extra]]` | `<artifacts>/cost.json` (the change since the last estimate is printed; `not_in_price` per board whose `[order]` differs from the fee table's board, 8.4); exit 2 above `budget` |
+| `edakit cost [--board B] [--json F]` | – | graph, parts, board files (outline, sides, `[order]`: `quantity` PCBs, `pcba_quantity` assembled), the stock snapshot, the fee table of the planned maker with the project's own over it (newest value per fee), the PCB price of a checked quote of the current release, `[cost]`, `[[extra]]` | `<artifacts>/cost.json` (the change since the last estimate is printed; `not_in_price` per board whose `[order]` differs from the fee table's board, 8.4); exit 2 above `budget`, exit 1 for a maker without a fee table |
 | `edakit order [--out DIR]` | – | graph, parts (`order`), board files (side), `[[extra]]`, `spare_pct` | `<artifacts>/order/` or DIR: `bom_<board>.csv` (the F-1 BOM; none for a bought board), `cart_<supplier>.csv`, `hand_assembly.md` |
 | `edakit part own PATH [--name N]` | – | the board's project at PATH: its datasheet, state, git, gate runs | `hardware/parts/<N>.json` |
 | `edakit sim [--json F] [--keep DIR]` | – | graph, parts, sim config, plugin; with `copper` `route/<board>.ses`, `route/<board>_board.json` and the board file's pours | `<artifacts>/sim/net_currents.json`, `<artifacts>/sim/result.json` (the whole result with the hash of its inputs, 6.6); with `--keep` each netlist and ngspice log, for a transient run its waveforms (`<run>.dat`) |
@@ -395,12 +398,12 @@ scripts that write what they read first, when those are outdated or never ran, a
 | `edakit route diagnose [--net N]` | – | `route/<board>_board.json`, the board file's rules, the last SES | `route/<board>_diagnose/` (a PNG per open connection, `congestion.png`, `diagnose.json`), 7.5 |
 | `edakit silk apply\|check` | ✓ | PCB, Gerber export | designators, `silk_<board>_<side>.png`, `gerber_<board>/`; apply: `silk_footprints_<board>/` (the print it found, for L-17) |
 | `edakit silk preview` | – | board file, the last Gerber export (`gerber_<board>/`) | `silk_preview_<board>_<side>.png`: artwork, texts and the fixed designators of `[silk.place]` (exit 2 when one is in the way, 7.7) |
-| `edakit export [--board]` | ✓ read | schematic, PCB, project file | `<artifacts>/export/` |
+| `edakit export [--board]` | ✓ read | schematic, PCB, project file | `<artifacts>/export/`; with a maker that takes ODB++ also `odb_<board>.zip` (`easyeda_export_odb`, 2.5) |
 | `edakit gate [--easyeda]` | – / ✓ | everything; with `[project] requirements` the requirements files (8.7 – a file missing or not valid: exit 1 before a run) | `<reports>/<run>/`, with `stage_<id>.txt` the output of each project check that ran (8.1); a RELEASED run supersedes the earlier ones in their `fab/manifest.json` (8.3) |
-| `edakit release current` | – | the manifests under `reports` | – |
+| `edakit release current` | – | the manifests under `reports`; the real cost of its orders (`cart/<maker>/actual.json`) | – (with an order's real cost: estimate, quote and actual beside the release) |
 | `edakit release withdraw RUN --reason TEXT` | – | the run's manifest | its `fab/manifest.json`: `status`, `withdrawn` {reason, by, date} |
 | `edakit release verify FILE…\|DIR…` | – | the files (a folder: its `.zip` and `.csv` files), the manifests | – |
-| `edakit fab --board B --out DIR [--offline]` | ✓ / – | PCB, exports, `route/<board>_board.json` (L-13, L-14, L-18), `silk_strings_<board>.json` and `silk_footprints_<board>/` (L-17), the stock snapshot (`order.md`), with `[routing] drc_rules` the rule set of EasyEDA's DRC (L-3) | `DIR/<board>/`, with `[order]` also `order.md` and `order.json` (the settings in the fab hash), with `[routing] drc_rules` also `drc_rules.json` |
+| `edakit fab --board B --out DIR [--offline]` | ✓ / – | PCB, exports, `route/<board>_board.json` (L-13, L-14, L-18), `silk_strings_<board>.json` and `silk_footprints_<board>/` (L-17), the stock snapshot (`order.md`), with `[routing] drc_rules` the rule set of EasyEDA's DRC (L-3) | `DIR/<board>/`, with `[order]` or `[cart]` also `order.md`, with `[order]` `order.json` (the settings in the fab hash), with `[routing] drc_rules` also `drc_rules.json`; with a maker of `[cart] makers` that matches by MPN `bom_<board>_mpn.csv`, with one that takes ODB++ `odb_<board>.zip` (F-7) |
 | `edakit fab diff RUN_A RUN_B [--board B]` | – | `fab/<board>/` of two gate runs: Gerber layers, drill files, BOM, CPL, the order settings (`order.json`) | – |
 | `edakit lock [status\|claim\|release\|yield CHAT\|hook] [--note]` | – | – (hook: tool name and, for `easyeda_api_call`, its `path`; library lookups of `READ_ONLY_TOOLS`/`READ_ONLY_API` pass without a claim, 11.2) | `~/.local/state/edakit/easyeda-lock.json` |
 | `edakit proposal template [--feature]\|seal FILE [--out F]\|verify FILE` | – | a rule or feature proposal (no project needed) | seal: the issue body with its SHA-256 |
@@ -416,6 +419,11 @@ hardware/parts/*.json       parts database; an own footprint as data in its entr
 hardware/datasheet/<name>.* the board as a part for other projects: parts entry and datasheet (edakit part datasheet)
 hardware/sim.json           simulation scenarios
 hardware/stock.json         what the assembler said about the parts, dated (edakit stock, P-4)
+hardware/orders/*.json      the order records: run, hashes, maker, regulatory verdict, cart line, real cost
+                            (edakit cart)
+hardware/fees/<maker>.json  the project's fee table from its own orders (edakit cart actual); [cost] fees names another
+hardware/makers/*.toml      a maker's profile of the project's own, named in [cart] profiles (edakit ships jlcpcb,
+                            eurocircuits and aisler in edakit/makers/)
 hardware/schematic.toml     arrangement of the schematic
 hardware/boards/<name>.toml one board: outline, holes, placement, routing, pours, silkscreen
 hardware/boards/<name>.geometry.json
@@ -430,5 +438,7 @@ build/edakit/               artifacts (not versioned): caches, previews, routing
                             library/ and footprints/: the library's symbols and footprints (edakit part import);
                             datasheets/: the datasheets edakit part fetch keeps (unless [project] datasheets names
                             another folder); scripts/: the output of each project script's last run (edakit run)
-build/release/<run>/        gate runs (archive the released ones; fab/manifest.json says which one is current)
+build/release/<run>/        gate runs (archive the released ones; fab/manifest.json says which one is current);
+                            fab/<board>/cart/<maker>/ the files of an order: job, quote, page texts, screenshots,
+                            regulatory review, check, cart line, real cost (edakit cart, 8.4)
 ```

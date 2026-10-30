@@ -1,8 +1,13 @@
 # Ordering at the manufacturer
 
-Status 2026-10-30: proposal; the path is decided (Claude in Chrome, up to the cart; JLCPCB, Eurocircuits and AISLER;
-ODB++ from EasyEDA Pro – "What follows"), reviewed the same day and corrected. Nothing is built, and no call has been
-made live. The findings come from
+Status 2026-10-30: decided (Claude in Chrome, up to the cart; JLCPCB, Eurocircuits and AISLER; ODB++ from EasyEDA
+Pro – "What follows"), reviewed and corrected the same day, and **built offline** the same day – steps 1 to 6, 8 and 9,
+the offline part of 10 (implementation plan, phase 5); every command and check is tested on recorded data. Open:
+the probes of steps 0 and 0b, the live runs of steps 7, 8 and 10, step 11. No call has been made live: the makers'
+profiles are provisional (`recorded = false`) until step 0 reads their forms. Changed while building: the checks of
+the order are B-1 to B-7, not K-1 to K-7 – K is a project's stage letter (handbook 8.1: the reference project's
+mechanics, `{id = "K"}`), and edakit's catalog would have explained a project's K-1 with its own text; the key of the
+board's size is `size_mm`, as edakit names lengths. The findings come from
 JLCPCB's help article on its online API, search summaries of the developer portal (api.jlcpcb.com, behind a login),
 the code of open-source clients of the official API and of the web shop, search results on the European makers, and
 EasyEDA Pro's documentation and extension API. The makers' sites were not reachable from the session that wrote this,
@@ -165,19 +170,19 @@ interface either. Every complete automation therefore works the shop's web pages
 ## Design
 
 Two halves with a file between them. edakit is deterministic and knows the release; Claude reads and fills pages that
-change. edakit checks what Claude brings back against the release and against itself – it does not see the page. K-1
-and K-4 find a form that differs from the job and a value nobody read, as far as Claude read the page right; the
+change. edakit checks what Claude brings back against the release and against itself – it does not see the page. B-1
+and B-4 find a form that differs from the job and a value nobody read, as far as Claude read the page right; the
 screenshots of the filled pages and M-2 remain the owner's own look at the page.
 
 ```text
  edakit cart prepare ──► job.json ──► skill cart (Claude in Chrome) ──► quote.json, page text, screenshots
  (current release,        (board,      upload, fill, read back, parts, preview, quote      │
   verify, M-6, fields)     maker)                                                          ▼
-                                       edakit cart check (K-1 to K-6: form, parts, quote, files, finish)
+                                       edakit cart check (B-1 to B-6: form, parts, quote, files, finish)
                                                                                            ▼
                                        agent regulatory-reviewer on the order ──► regulatory.md
                                                                                            ▼
-                                       K-7 ──► the maker's cart button ──► cart.json, order record
+                                       B-7 ──► the maker's cart button ──► cart.json, order record
                                                                            nothing further
  owner: M-2, order, pay ──► skill cart: order page ──► actual.json + page text ──► edakit cart actual
                                                         (actual vs quote vs estimate, fee table, record)
@@ -200,11 +205,11 @@ It holds no code and no defaults of the board – those are edakit's (2.):
 | `bom` | BOM columns and the key parts are matched by | Comment, Designator, Footprint, LCSC Part # – LCSC | Designator, Quantity, Manufacturer, MPN, Comment – MPN | – (in the ODB++) |
 | `cpl` | pick-and-place columns, unit, rotation sense | Designator, Mid X, Mid Y, Layer, Rotation – mm, as F-3 writes it | step 0 | – (in the ODB++) |
 | `fields` | per key of 2.: the form's label, its word for each value, the values it offers | "Mark on PCB": `specify` → "Order Number (Specify Position)" | step 0 | step 0 |
-| `excludes` | combinations the maker does not make | gold fingers with HASL | step 0 | step 0 |
+| `excludes` | combinations the maker does not make | step 0 | step 0 | step 0 |
 | `ignore` | fields the page shows that edakit does not set, each with its reason | step 0 | step 0 | step 0 |
 | `classes` | its assembly classes – the values of `[release] assembly.pcba` | `economic`, `standard` | step 0 (PCB Proto, series) | step 0 |
 | `rules` | the form's limits F-6 checks | thicknesses 0.4–2.0 mm, black print on a white mask and white on every other, remark ≤ 200 ASCII characters, placeholder `JLCJLCJLCJLC`, Economic with 2 tooling holes | step 0; no placeholder | step 0; no placeholder |
-| `catalogue` | whose parts catalogue P-4, F-2 and `edakit stock` ask | `"jlcpcb"` | none – K-2 | none – K-2 |
+| `catalogue` | whose parts catalogue P-4, F-2 and `edakit stock` ask | `"jlcpcb"` | none – B-2 | none – B-2 |
 | `dnp` | how a part not to place is marked | not in BOM and CPL | not in BOM and CPL | step 0b (3.) |
 | `cart` | the one button the skill may press | "Save to Cart" | step 0 ("add to basket") | step 0 |
 | `never` | buttons and fields it must not touch, besides the fixed list (5.) | Order, Buy, Checkout, Pay, Submit order; address, payment, coupon | in the maker's words | in the maker's words |
@@ -246,7 +251,7 @@ profile's `ignore` becomes a key.
 | --- | --- | --- | --- |
 | PCB | `material` | `"FR-4"` | yes |
 | | `tg` | `"TG135"` | yes |
-| | `layers`, `size` | derived: Gerber of the run – a key only to check against | – |
+| | `layers`, `size_mm` | derived: Gerber of the run – a key only to check against | – |
 | | `quantity` | `[project] quantity` | – |
 | | `delivery` | `"single"` (`"panel_by_customer"`, `"panel_by_maker"` with `panel = { x, y, rails_mm }`) | yes |
 | | `thickness_mm` | `1.6` (board file, as today) | yes |
@@ -285,7 +290,7 @@ profile's `ignore` becomes a key.
   with a new colour today. A project-wide `[order]` in `edakit.toml` gives every board an `order.json`, as an `[order]`
   in a board file does today.
 - **`order.md`** lists every field with its value and source, so a look at it is the look at the form.
-- **K-1** compares every field of the job with the page (6.).
+- **B-1** compares every field of the job with the page (6.).
 - **`edakit cost`** names every key that differs from the fee table's board as not in the price (as it does for
   thickness, colours and finish today) until the table prices it.
 - **The interview** (11.): new-project shows edakit's defaults as one option ("1.6 mm, green, white, lead-free HASL,
@@ -302,7 +307,7 @@ every other maker it warns, and `edakit cart prepare` for that maker stops on it
 does not block the release for the first.
 
 - **P-4, F-2 and `edakit stock`** ask the catalogue of a maker whose profile names one (`catalogue = "jlcpcb"`):
-  JLCPCB's stock, class, "Standard Only", MSL. A maker without one is checked by its own matching at the order (K-2).
+  JLCPCB's stock, class, "Standard Only", MSL. A maker without one is checked by its own matching at the order (B-2).
   A project whose makers do not include JLCPCB runs neither P-4 nor F-2 and needs no stock snapshot; the protocol
   says so in a note.
 - **F-6** takes its limits from the profile (`rules`, `fields`, `excludes`): the thicknesses, the print colour on the
@@ -325,8 +330,11 @@ writes today, and `release verify` and the manifest cover them:
   with the Gerber, through a new MCP tool `easyeda_export_odb` (`getOpenDatabaseDoublePlusFile`, millimetres, plated
   and non-plated holes). It takes two patches (European manufacturers, above): the MCP server gets the tool –
   `mcp-server.sh` applies the patch after installing the pinned version –, the bridge its handler, which returns the
-  file through `normalizeBinaryResult` like the other exports. Both go upstream as an issue and a pull request, as the
-  schematic PDF did (`upstream/`), and `edakit doctor` checks both. **F-7** holds the export to the released files,
+  file through `normalizeBinaryResult` like the other exports. (Built: the tool calls the bridge method
+  `board.exportGerbers` with `format: "odb"`, so the server's method registry and its hash stay as in 1.4.0, and the
+  handler marks its answer `format: "odb"`, so that an extension without it is not mistaken for one with it.) Both go
+  upstream as an issue and a pull request, as the schematic PDF did (`upstream/`), and `edakit doctor` checks the
+  server; an extension without the handler shows in F-7. **F-7** holds the export to the released files,
   without trusting EasyEDA:
   - every layer of the ODB++ – copper, solder mask, paste, silkscreen, outline – against the Gerber layer of the same
     run, rasterised as L-2 does (`gerber.RES`), XOR: no spot above `SPOT_MM2`; a layer that is in one and not in the
@@ -338,7 +346,7 @@ writes today, and `release verify` and the manifest cover them:
   - the parts with `bom: false`, in the way step 0b finds: (a) EasyEDA leaves out the parts it is told to keep out of
     its BOM – an attribute edakit's `pcb` sync then sets from `bom: false` –, and F-7 fails one that is there; or (b)
     they stay in the ODB++, the job lists them as not to place (`dnp`), the skill marks them in the maker's part list
-    (5.) and K-1 checks the marks;
+    (5.) and B-1 checks the marks;
   - the nets of the pads as in the graph, as `gerber.py` already maps pads to nets.
 
   F-7 needs a small ODB++ reader (`edakit/odb.py`: matrix, features with the standard symbols, surfaces, drill,
@@ -354,7 +362,10 @@ without `[cart]` gets no new file and no new check.
 2. `release verify` on the maker's upload files of the board (the same function); a mismatch stops.
 3. M-6 is signed for the circuit hash of that run – the release gate demands it, `prepare` checks it once more, since
    the order is placed against the run and not against the working tree; otherwise it stops.
-4. The run's checks for this maker (3.) passed – a warning for it stops `prepare`, with its rows.
+4. The run's checks for this maker (3.) passed – for a maker the run was not planned for, a finding of its checks stops
+   `prepare`, with its rows; the run says which makers it checked (`makers.json`). (Built: `prepare` also stops when
+   the circuit or layout hash, or the order settings of `order.json`, are no longer the run's, and when `[cart]
+   ship_to` or the maker's `shipping` is missing – the skill sets no field it was not given.)
 5. Writes `cart/<maker>/job.json`: run, fab hash, circuit hash, `purpose` of the graph, board, maker and its profile;
    the absolute paths, names, sizes and SHA-256 of the upload files; the fields of 2. in the maker's words; the
    expected BOM (LCSC number or MPN → designators) and the parts not to place; the estimate of `edakit cost` for the
@@ -396,12 +407,12 @@ owner. It reads `job.json` and nothing else of the project.
 7. **Check.** Write `quote.json` (fields as read, parts as read, price lines) and `quote_page.txt` (the page text of
    the form, the matching and the quote, as read); put the screenshots of the filled form, the matching and the
    preview into `screens/` where the tools can save them (step 0), else show them to the owner in the conversation.
-   Run `edakit cart check`. A failed K-1 to K-6 stops here.
+   Run `edakit cart check`. A failed B-1 to B-6 stops here.
 8. **Regulatory review.** Start the agent regulatory-reviewer on the order (7.) and write its result, unchanged, to
-   `regulatory.md`. Run `edakit cart check` again for K-7.
+   `regulatory.md`. Run `edakit cart check` again for B-7.
 9. **M-2, where it cannot wait.** If step 0 found that the placement preview cannot be opened again from the cart,
    stop here: the owner does M-2 on the preview and says whether to go on.
-10. **Cart.** Only when K-1 to K-7 passed: press the profile's `cart` button, read the cart line back (board,
+10. **Cart.** Only when B-1 to B-7 passed: press the profile's `cart` button, read the cart line back (board,
     quantity, price) into `cart.json`, run `edakit cart check --cart`, and stop. Otherwise stop on the form, nothing in
     the cart, and name the findings. Tell the owner the result and that M-2 at the maker, ordering and paying are
     theirs.
@@ -425,25 +436,25 @@ is never solved, bypassed or retried (terms of use, above).
 
 What Claude brought is checked against the job, the release and the page text Claude kept:
 
-- **K-1 form = job:** every field of the job read back with its value (case and blanks ignored), the quantities and the
+- **B-1 form = job:** every field of the job read back with its value (case and blanks ignored), the quantities and the
   marks of parts not to place included; a missing or other value fails with the field's name. A field the page shows
   that is neither in the job nor in the profile's `ignore` fails: the maker added a question, and the profile gets a
   key for it, or an `ignore` with its reason, before the order goes on. This is the check that would have caught
   "Remove Mark".
-- **K-2 parts = release:** the maker's lines are those of the job's BOM – same part numbers, same designators; a line
+- **B-2 parts = release:** the maker's lines are those of the job's BOM – same part numbers, same designators; a line
   the maker marked, replaced or matched to another manufacturer fails.
-- **K-3 quote vs estimate:** the board's price lines without shipping against `edakit cost`'s lines for the board, the
+- **B-3 quote vs estimate:** the board's price lines without shipping against `edakit cost`'s lines for the board, the
   board total against `[cost] budget`; a difference above `[cart] tolerance` warns with both values. Shipping and VAT
   belong to the order, not to a board – an order may hold several boards –: `edakit cart actual` compares them with
   `[cost] shipping` and `vat_pct` (8.). A maker without a fee table: the board total against the budget only.
-- **K-4 read, not made up:** every value of `quote.json` occurs in `quote_page.txt`. Both come from Claude: K-4 finds
+- **B-4 read, not made up:** every value of `quote.json` occurs in `quote_page.txt`. Both come from Claude: B-4 finds
   a value that was not read, not a page that was read wrong.
-- **K-5 same files:** the SHA-256 of the upload files is still that of the job and of the manifest, and the file
+- **B-5 same files:** the SHA-256 of the upload files is still that of the job and of the manifest, and the file
   names – and sizes, where the page shows them – of the uploads are the job's.
-- **K-6 lead in the finish:** a finish with lead fails for `sale` (RoHS), warns for `gift` – lead is a substance of
+- **B-6 lead in the finish:** a finish with lead fails for `sale` (RoHS), warns for `gift` – lead is a substance of
   very high concern, and REACH Art. 33 asks to name it to a consumer who asks – and is a note for `private`
   (handbook 15.1, 15.2).
-- **K-7 regulatory review of this order:** `regulatory.md` exists, names the SHA-256 of `job.json` and `quote.json` as
+- **B-7 regulatory review of this order:** `regulatory.md` exists, names the SHA-256 of `job.json` and `quote.json` as
   they are now, and ends with "Order: OK". Whether every finding **important** is settled or accepted as a numbered
   decision is the agent's judgement, as for M-6 (handbook 15.4); it writes "Order: OK" only then. edakit checks the
   line and the hashes.
@@ -458,13 +469,13 @@ written into `edakit.toml`, and a `[cost] pcb_price` the project sets still wins
 ### 7. The regulatory review of the order
 
 M-6 reviews the circuit: graph with its purpose, parts database, requirements (scope `circuit`, handbook 15.4). The
-parts are not new at the order: K-2 has held them to the release, which M-6 saw, and a part the maker would replace
-fails K-2 and needs a new release – with it a new M-6. The order adds what M-6 never saw, and what may change between
+parts are not new at the order: B-2 has held them to the release, which M-6 saw, and a part the maker would replace
+fails B-2 and needs a new release – with it a new M-6. The order adds what M-6 never saw, and what may change between
 the release and the cart:
 
 | What | Why it matters | Where it comes from |
 | --- | --- | --- |
-| the surface finish and the other keys of 2. | in the layout and fab hash, not in the circuit hash; lead HASL is lead in the product (K-6 grades it), a coating or another material is part of the product | form as read back |
+| the surface finish and the other keys of 2. | in the layout and fab hash, not in the circuit hash; lead HASL is lead in the product (B-6 grades it), a coating or another material is part of the product | form as read back |
 | the quantity against `purpose` | 50 boards for `private` asks whether the purpose is still true – a new purpose is a new M-6 | job, cart |
 | where the maker sits | outside the EU (JLCPCB) and `sale`: the owner imports the boards and is the manufacturer of the product – name and address on the product, technical file, registrations before the first sale (handbook 15.2). Inside the EU: no import; for `sale` the owner stays the manufacturer (15.1), and the maker's declarations (AISLER's RoHS and REACH) are input for the technical file | profile `seat`, `purpose` |
 | parts the owner supplies to the maker | imported by the owner when bought outside the EU | job |
@@ -479,7 +490,7 @@ rule and source), the SHA-256 of the job and the quote it reviewed, and the last
 A difference that changes the circuit – another part, another purpose – is not settled at the order: it is a finding
 **block** ("new M-6 needed"), and the order waits for a new release.
 
-It is no sign-off in `signoff.json` – the release and its hashes stay as they are – but K-7 makes the cart wait for
+It is no sign-off in `signoff.json` – the release and its hashes stay as they are – but B-7 makes the cart wait for
 it, and a new quote (another price, another match) needs a new review, because its hash changes. The cart line is
 written to `cart.json`, not into the quote, so the cart does not void the review.
 
@@ -487,9 +498,10 @@ written to `cart.json`, not into the quote, so the cart does not void the review
 
 After the owner has paid, the skill opens the order in the maker's order history and writes `actual.json` and
 `actual_page.txt` as in steps 6 and 7 of the skill, plus the order number. Alternatively the owner saves the order page
-or the invoice (HTML or PDF) and passes it with `--from FILE`; then Claude reads that file instead of the tab.
+or the invoice (HTML or PDF) and passes it with `--from FILE`; then Claude reads that file instead of the tab, and
+edakit reads its text itself for B-4 (HTML without its tags, a PDF through pdftotext).
 
-`edakit cart actual` checks K-4 on it and writes `cart/<maker>/actual.md`: estimate, quote and actual line by line
+`edakit cart actual` checks B-4 on it and writes `cart/<maker>/actual.md`: estimate, quote and actual line by line
 with the difference, per board, and per order the shipping, VAT and coupon against `[cost]`. The gate protocol of the
 run is not changed – it is the record of the gate –; `edakit release current` shows the three totals beside the
 release once `actual.json` exists, and the order record gets them (9.).
@@ -527,7 +539,7 @@ maker = "jlcpcb"                       # the maker the board is planned for (3.)
 makers = ["jlcpcb", "eurocircuits"]    # the makers whose checks and files the gate runs and writes; default [maker]
 ship_to = "DE"                         # the country the order goes to
 shipping = { jlcpcb = "DHL Express" }  # per maker, the name of its shipping method
-tolerance = 0.10                       # per price line, in the maker's currency, before K-3 warns
+tolerance = 0.10                       # per price line, in the maker's currency, before B-3 warns
 ```
 
 No credentials anywhere: the owner is logged in in their browser, edakit never sees an account. `quote.json`,
@@ -576,7 +588,7 @@ this has no `[cart]`: its maker is JLCPCB, its checks run as today, and `edakit 
 
 ### 13. What stays
 
-- **The regulatory review sees every order.** No cart without K-7 on the current job and quote; M-6 is not replaced
+- **The regulatory review sees every order.** No cart without B-7 on the current job and quote; M-6 is not replaced
   by it, only completed for what the order adds.
 - **Ordering and paying are the owner's, and so is M-2.** The skill ends with the maker's cart button; no command,
   skill or API path places or pays an order – `pcb/create` is never called –, and the browser it works in pays
@@ -586,7 +598,7 @@ this has no `[cart]`: its maker is JLCPCB, its checks run as today, and `edakit 
   these defaults. A board that sets none of the new keys of 2. keeps its `order.json` and its fab hash. Everything
   under `cart/` is output of an order, not input of a hash; the order record is versioned and outside every hash.
 - **Stock.** P-4, F-2 and `edakit stock` ask JLCPCB's catalogue where JLCPCB is one of the makers; for another maker
-  the stock is what its matching shows, checked by K-2.
+  the stock is what its matching shows, checked by B-2.
 - **Tests without the network.** `prepare`, `check`, `actual`, the checks per maker, P-12 and F-7 are tested on
   recorded data: page texts, a saved invoice, the ODB++ of step 0b. The skill is tried live only on the owner's
   request, up to the cart, nothing ordered.
@@ -598,7 +610,7 @@ this has no `[cart]`: its maker is JLCPCB, its checks run as today, and `edakit 
 
 Each step is built as the steps of the [implementation plan](implementation-plan.md) are – its phase 5 lists them –:
 a branch, a failing test first, the interface, the code, the handbook (8.1 for stage K, 8.4 for ordering, 10 for the
-keys and commands), `pytest` and `ruff`. Every new check – P-12, F-7, K-1 to K-7 and what F-6 and P-4 gain – gets its
+keys and commands), `pytest` and `ruff`. Every new check – P-12, F-7, B-1 to B-7 and what F-6 and P-4 gain – gets its
 entry in the rule catalog and a negative test (skill add-rule); every command and key is built with add-feature.
 
 | Step | What | Size | EasyEDA | Needs |
@@ -608,7 +620,7 @@ entry in the rule catalog and a negative test (skill add-rule); every command an
 | 1 | `order_sheet.form`: the form as fields, `order.md` printed from it – no change of output | S | no | – |
 | 2 | Every field as a key (2.): edakit's defaults, `[order]` in edakit.toml, `order.json` with the new keys that differ from the defaults, `edakit cart fields` | M | no | 1; step 0's field list |
 | 3 | Maker profiles and the checks per maker (1., 3.): `jlcpcb.toml` with F-6's values from the code, `eurocircuits.toml` and `aisler.toml` from step 0; P-4, F-2 and F-6 for every maker – fail for `[cart] maker`, warn for the others –, the placeholder, `assembly.pcba` from `classes` | M | no | 2 |
-| 4 | `edakit cart prepare` and `edakit cart check` (K-1 to K-7, `--cart`), the order record, the PCB price from the quote | M | no | 3 |
+| 4 | `edakit cart prepare` and `edakit cart check` (B-1 to B-7, `--cart`), the order record, the PCB price from the quote | M | no | 3 |
 | 5 | Agent regulatory-reviewer: section "At the order"; tried on recorded data with lead HASL, a maker inside and one outside the EU, and a page text that addresses the assistant | S | no | 4 |
 | 6 | `edakit cart actual`: `actual.md`, the totals in `edakit release current` and the order record, the fee table one to one | M | no | 4; a saved order page from step 0 |
 | 7 | Skill `cart`, live up to the cart at JLCPCB | M | no | 0, 4, 5 |

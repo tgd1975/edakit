@@ -29,7 +29,8 @@ graph, the plan and the documents are the circuit designer's. You do not commit.
 6. **Entry**, unless told to search only: for an LCSC part start with `edakit part import <LCSC>` (identification,
    footprint and the symbol's pins from the library, no bridge needed); then as the skill part-search says (section
    Entry, `${CLAUDE_PLUGIN_ROOT}/skills/part-search/SKILL.md`) – the file named by the LCSC number or, from another
-   distributor, by the manufacturer part number; `order` with the order numbers outside LCSC and the supplier's minimum
+   distributor, by the manufacturer part number; `mpn` and `manufacturer` always (a maker that matches by MPN – P-12 –
+   needs both); `order` with the order numbers outside LCSC and the supplier's minimum
    and pack size where it has one (`{"code", "moq", "step"}`, `edakit order` rounds to them); `compliance` from the page
    or the manufacturer's declaration; the datasheet with `edakit part fetch <key>` (read the kept PDF, mind a variant
    warning); `verified` with you as `by`, the datasheet revision and `datasheet_sha256`, what you checked and what is

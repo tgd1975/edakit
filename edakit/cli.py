@@ -44,7 +44,7 @@
     edakit doctor                    Node, easyeda-mcp-pro, bridge, EasyEDA process, ngspice, Freerouting
 
 Exit codes everywhere: 0 = ok, 2 = findings, 1 = error. `edakit lock`, `edakit run` of an easyeda script: 3 = another
-session holds EasyEDA.
+session holds EasyEDA. `edakit cart check`: 3 = B-1 to B-6 passed, the regulatory review of the order (B-7) is open.
 `route all|drc` and `silk apply|check`: 3 = the DRC's only item is "Import Changes" and schematic = PCB – EasyEDA
 waits for the import acknowledgement (Design → Import Changes once).
 """

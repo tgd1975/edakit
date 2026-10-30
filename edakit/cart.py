@@ -224,8 +224,8 @@ def prepare(cfg, args):
         "layout_sha256": man.get("layout_sha256"), "purpose": design.graph.get("purpose"),
         "board": board.name, "title": board.title, "project": cfg.project,
         "maker": {"key": m.key, "name": m.name, "profile": str(m.path), "recorded": m.recorded, "start":
-                  m.data.get("start"), "cart": m.data.get("cart"), "never": list(dict.fromkeys([*NEVER,
-                                                                                               *m.data.get("never", [])])),
+                  m.data.get("start"), "cart": m.data.get("cart"),
+                  "never": list({w.casefold(): w for w in reversed([*NEVER, *m.data.get("never", [])])}.values())[::-1],
                   "ignore": m.data.get("ignore", {}), "seat": m.seat, "currency": m.currency,
                   "role": "planned" if m.key == makers.planned(cfg) else "other"},
         "quantity": o["quantity"] if o else cfg.quantity, "pcba_quantity": o["pcba_quantity"] if o else cfg.quantity,

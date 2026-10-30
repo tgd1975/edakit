@@ -94,6 +94,9 @@ edakit silk apply               # designators where there is room, silkscreen ch
 edakit gate --easyeda           # release gate: protocol, manifest, files for JLCPCB
 edakit fab diff RUN_A RUN_B     # where the manufacturing files of two gate runs differ – raster, drills, BOM, CPL
 edakit release current|withdraw|verify   # the one run that may be uploaded; verify the files right before upload
+edakit cart fields              # every field of the maker's order form from [order], with where it comes from
+edakit cart prepare|check       # the job of the skill cart from the release; B-1 to B-7 on what it brought back
+edakit cart actual              # the real cost of the order: against estimate and quote, into the fee table
 ```
 
 In Claude Code the skills do the orchestration: `/edakit:new-project`, `/edakit:requirements`,
@@ -161,6 +164,10 @@ Where it stands:
 
 - The regulatory review (M-6, [handbook 15](handbook/15-regulatory.md)) is support, not legal advice: it makes no
   claim to correctness, and nothing in it is legally guaranteed.
+- Ordering ([concept](docs/concepts/new/ordering.md), [handbook 8.4](handbook/08-release-gate.md)): edakit and the
+  skill cart put a released board into the maker's cart and stop there – nothing orders or pays. Built offline and
+  tested on recorded data; the makers' profiles (JLCPCB, Eurocircuits, AISLER) are provisional until their forms are
+  read on the sites, and the skill, the ODB++ export and AISLER have not run live yet.
 - Not text yet ([concept](docs/concepts/new/design-as-text.md), [plan](docs/concepts/new/implementation-plan.md)):
   - the positions EasyEDA's auto-layout sets: the board file holds only the fixed parts and those `pcb place` puts
     next to their host;

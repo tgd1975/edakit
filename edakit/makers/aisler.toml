@@ -17,6 +17,7 @@ never = ["Order", "Buy", "Checkout", "Pay", "Place order", "Confirm order"]
 ignore = {}
 excludes = []
 
-[rules]                                # the form's limits: ordering step 0 – none known, and no order-number placeholder
+# The form's limits: ordering step 0 – none known yet, and no order-number placeholder.
+[rules]
 
 [fields]                               # labels and words: ordering step 0
