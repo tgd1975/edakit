@@ -41,9 +41,10 @@ Do the checks, hints and blocks of edakit cover what typical maker projects get 
 - **Stability:** today the catalog is quiet – 0–1 waiver per board on the bell, 7 for the reference project's 84
   parts. Built one by one, the candidates would about double it. Decided by the owner: domains per project, and rules
   condensed into mechanisms – seven of them cover 91 of the 128 open maker pitfalls. Proposed besides: a report of
-  what went unchecked, new checks as warnings first, and reference circuits per domain to test them against. The
-  context of a session is no immediate limit: the SessionStart hook adds 1.5 KB whatever the catalog's size; only
-  files read whole grow – `rules.json` is 114 KB today (section "Keeping the catalog stable").
+  what went unchecked, new checks as warnings first, and reference circuits per domain to test them against. For the
+  model – it must run with Sonnet – a task stays at a few ten thousand tokens; the risk is density (33 words per
+  sentence in the skills) and whole files read where a slice would do (`edakit rules` prints 27.5 KB); six guardrails
+  and an eval with Sonnet on the reference circuits (section "Keeping the catalog stable").
 - **Recommendation:** first domains (FT-20), reference circuits (FT-21) and the report of what went unchecked (FT-19),
   then load steps in transients (FT-1), pin requirements from the parts entry (CK-13) together with a library of
   checked entries for the parts makers use most (PF), and the pin semantics (CK-1 to CK-3): they cover the most
@@ -255,6 +256,9 @@ DI, switching), OWN (the owner's projects).
 | FT-19 | **Coverage report:** per check what it could not check for lack of data – "E-3: U4.3, U4.5 without thresholds" – in `edakit check` and the gate protocol. The first step before any check that depends on part facts (section "Keeping the catalog stable"). | stability |
 | FT-20 | **Domains:** `[project] domains` – audio, motors, radio, mains – switch domain checks and hints on; `edakit rules` and `edakit hints` show what applies to the project. | stability |
 | FT-21 | **Reference circuits per domain:** well-known open designs as edakit graphs in the test fixtures, beside `tests/fixtures/led-bar` – an ESP32 DevKitC, a WLED controller, a QMK keyboard, a Tube Screamer and a Fuzz Face, a relay board with an HLK-PM01, a LiPo charger. add-rule's run against real projects (step 5) uses them for every domain none of the owner's projects has. | stability |
+| FT-22 | **Short rule listing:** `edakit rules` prints ID and title, `--long` the rule sentences; today the listing is 27.5 KB because it prints every rule sentence. | model stability |
+| FT-23 | **The graph by query:** `edakit graph show <designator or net>` gives a part with its nets or a net with its pins, so that a session reads a slice instead of the whole graph (65 KB in the reference project); with the circuit language of circuit-language.md the whole is half the size. | model stability |
+| FT-24 | **Eval with Sonnet:** typical tasks on the reference circuits (FT-21) as an eval suite, run with Sonnet and with Opus on every change to skills, prompts and the catalog. | model stability |
 
 ### Checks
 
@@ -382,7 +386,7 @@ the context of a Claude session become the limit?
 | tests | 983 tests in 16,700 lines; every check seen red once; the example project stays clean | none in itself – but a negative test cannot show a false alarm | 5 |
 | maintenance | 23,900 lines of Python; a catalog of 101 KB, 1.25 KB per entry (median); the handbook repeats every check in a table | catalog and tables about twice as large; more fields in every parts entry, each one to sign (G-9) | 2 |
 | run time | `edakit check` under a second, `edakit sim` seconds | load steps and fault scenarios add runs | they run only where sim.json asks for them |
-| context of a Claude session | always loaded: the SessionStart hook, 1.5 KB (about 400 tokens), independent of the catalog; on demand: `edakit rules` 2.2 KB, one entry 1.25 KB, a skill 3–16 KB, a reviewer 2–12 KB in a context of its own; read whole: `rules.json` 114 KB (about 30,000 tokens), the handbook 409 KB (chapter 8 alone 80 KB), this concept 91 KB | growth only where a file is read whole: `rules.json` raw (about 60,000 tokens at twice the size), long handbook chapters, the reviewers' question lists | 1; edakit's skills read the catalog by ID |
+| the model (also Sonnet) | per task a few ten thousand tokens; always loaded 11.4 KB (skill and agent descriptions 9.9 KB, SessionStart hook 1.5 KB); `edakit rules` prints 27.5 KB, the reference project's graph is 65 KB; skills average 33 words per sentence – section "Stability of the model" | five places grow with the catalog: the rules listing, the handbook's tables, the reviewers' questions, the hints, the fields of parts entries; dense text and whole files read where a slice would do weigh more for a smaller model than the size itself | 1; L1–L6 |
 | process | 77 proposals, all accepted – the triage has never rejected one | research-based proposals are the first real test of "rejected" and "question" | 5 |
 
 **Verdict:** stable today, and the context is no immediate limit – what every session loads does not grow with the
@@ -421,9 +425,58 @@ Proposed, for the owner's decision:
    (step 5), so that false alarms show before anybody else meets them. For the domains none of the owner's projects
    has, well-known open designs become edakit graphs in the test fixtures, and each domain's checks run against them.
 
-For the context of a session: edakit's own skills read the catalog by ID or as the listing (`edakit rules`, `edakit
-rules G-11`), never `rules.json` whole – add-rule and triage-rule point at the file today –, and the handbook's check
-tables give ID, title and an example finding, the rule's text living in the catalog only.
+### Stability of the model
+
+The owner's requirement: edakit runs reliably with Sonnet, not only with the largest model. What lands in a session's
+context, measured on the bell at `bf7450a`:
+
+| What | Size | When |
+| --- | --- | --- |
+| descriptions of the 12 skills and 7 agents | 9.9 KB, about 2,500 tokens | always, in every session with the plugin |
+| SessionStart hook: the working agreements | 1.5 KB, about 400 tokens | always, in an edakit project |
+| one skill | 2.7–15 KB (new-project 15, pcb-round 13.7, circuit-design 10.8) | when it runs; a circuit change runs start, hardware-change and part-search: about 21 KB |
+| `edakit check` | 1.5 KB | per run |
+| `edakit hints` | 1.9 KB | per run |
+| `edakit sim` | about 6 KB: a row per scenario and the failures | per run |
+| `edakit rules`, the listing | 27.5 KB, about 7,000 tokens: ID, title and the whole rule sentence of every check, lines up to 1,300 characters | the electrical reviewer and propose-rule call it |
+| `edakit rules G-11` | 1.1 KB | per ID |
+| the graph | the bell 9.3 KB; the reference project 65 KB, about 16,000 tokens | every circuit change and every review reads it |
+| a parts entry | median 1.3 KB, up to 8.9 KB | per part |
+| a handbook chapter | 34–80 KB | when a skill sends the model there |
+| datasheets | PDFs, often the largest item | the reviewers and the part selector, each in a context of its own |
+
+**The density.** The skills average 33 words per sentence and a quarter of their sentences are longer than 40 words,
+with 97 references into the handbook; the agents 38 words and 30 percent; the handbook 36 words, 30 percent and 340
+references.
+
+**What it means.** A task stays at a few ten thousand tokens – no problem of size for Sonnet. The risk for a smaller
+model lies elsewhere: dense sentences that carry a rule, its exceptions and a reference at once; whole files read where
+a slice would do – the rules listing, a 65 KB graph, a handbook chapter –; and knowledge the model applies itself where
+no code checks it, above all the fields of a parts entry taken from a datasheet.
+
+**What more rules do to it.** A check in code costs the model nothing until it fails – then its entry, about 1 KB.
+Growth reaches the model in five places: the `edakit rules` listing (about 360 bytes per check, 55 KB at twice the
+catalog), the handbook's check tables, the reviewers' question lists, the hints, and the fields of parts entries –
+condensing rules moves knowledge into parts entries, which an agent fills from datasheets.
+
+**Guardrails for the model:**
+
+- **L1 Code decides, the model orchestrates.** As today – findings come only from code; no prompt carries rule
+  knowledge for the model to apply by itself.
+- **L2 Bounded output.** `edakit rules` lists ID and title (FT-22: about 2 KB instead of 27.5); the text comes by ID.
+  Every command prints failures, open points and a summary; details go into files.
+- **L3 Domains filter what the model sees:** rules, hints, the reviewers' questions, the fields of parts entries
+  (guardrail 1).
+- **L4 Parts entries from templates:** per kind and domain only its fields; `edakit part` checks units and ranges;
+  checked library entries (PF) for common parts, so that less is taken from datasheets by the model.
+- **L5 Short texts:** one task per skill, numbered steps, short sentences (under 25 words as a target, h); the handbook
+  read by section, not by chapter; the circuit in the compact form of
+  [circuit-language.md](circuit-language.md) – half the JSON's bytes for the bell – and slices of the graph by query
+  (FT-23) instead of 65 KB read whole.
+- **L6 Measured with Sonnet (FT-24).** The reference circuits (FT-21) are also the test bench: typical tasks – add an
+  LED, swap a part, find a seeded fault, review a board – run with Sonnet and with Opus. A run passes when the checks
+  end green, the right commands were used and no finding was invented; every change to skills, prompts and the catalog
+  runs the suite (Claude Code's `claude plugin eval` runs such suites).
 
 ## Priority
 
@@ -432,7 +485,8 @@ within the guardrails above:
 
 | # | Candidate | Why first |
 | --- | --- | --- |
-| 0 | FT-20 domains, FT-21 reference circuits, FT-19 report of what went unchecked | the frame every check runs in: domains keep rules off boards that do not need them, the reference circuits let a new check meet real designs before its merge, the report makes silent passes visible |
+| 0a | FT-20 domains, FT-21 reference circuits, FT-19 report of what went unchecked | the frame every check runs in: domains keep rules off boards that do not need them, the reference circuits let a new check meet real designs before its merge, the report makes silent passes visible |
+| 0b | FT-22 short rule listing, FT-24 eval with Sonnet | edakit must run with Sonnet: the listing drops from 27.5 KB to about 2 KB, and every change is measured with Sonnet on the reference circuits |
 | 1 | FT-1 load steps | in all five maker clusters and in both guitar clusters; the most frequent "it resets when the motor starts"; the bell's servo |
 | 2 | CK-13 with PF | one mechanism for about 15 pitfalls; the knowledge stays in parts entries, as `strap` and `pull` do |
 | 3 | CK-1, CK-2 | small changes to G-4 and G-5; floating inputs and missing pull-ups recur in four clusters |
