@@ -5,8 +5,9 @@ A project draws its boards in EasyEDA Pro or in KiCad – one key in edakit.toml
 with its plan, the routing with Freerouting and every check of the gate are the same for both. Only the EDA project is
 the tool chain's: an EasyEDA project driven through the bridge, or KiCad files that edakit writes and kicad-cli reads.
 
-**State 2026-10-30:** built and tested offline, against a kicad-cli that the tests fake. The first run against a real
-KiCad 10 is open; what it has to confirm is listed in 16.8.
+**State 2026-10-30:** built; tested offline against a kicad-cli the tests fake, and in CI against KiCad 10 (the job
+`kicad` of tests.yml, KiCad's container image, `tests/test_kicad_live.py`) on the led-bar example. No board has gone
+through it to a release yet; 16.8 says what is confirmed and what is open.
 
 ## 16.1 Choosing it
 
@@ -138,15 +139,21 @@ is computed the same way; its value is the tool chain's, so a fab sign-off lapse
 
 The layout hash stays as long as `geometry.json` does; the sign-offs of scope `fab` lapse.
 
-## 16.8 Not yet run against KiCad
+## 16.8 What KiCad 10 confirmed, what is open
 
-The tests fake kicad-cli. The first live run has to confirm, on the led-bar example and then the Christmas bell:
+Confirmed by the CI job `kicad` on the led-bar example (KiCad 10.0, its container image):
 
-- KiCad 10 opens the PCB, the footprints and the schematic edakit writes (KiCad 8's format) without a complaint;
-- the flags of 16.5 – above all `--refill-zones --save-board`, `--excellon-oval-format alternate` and
-  `--schematic-parity` – and the JSON of DRC and ERC;
-- the angle KiCad gives the texts and pads of a turned part, and the place of a mirrored part's pads (16.3, frames);
-- the file names of the Gerber export and the X2 drill functions;
-- the position file's rotation and side for bottom parts against `pcb.json` (F-3);
-- that the zone fill reaches every pad (L-2);
+- KiCad reads the schematic edakit writes (KiCad 8's format); its netlist is the graph, its ERC has no error;
+- KiCad reads the PCB; `pcb drc --refill-zones --save-board` fills the zones; the DRC's JSON, with schematic parity,
+  has nothing but the connections the routing has not made yet. The first run found every pad in conflict with the
+  schematic: local labels name a net "/GND" – the schematic has global labels since;
+- the flags of 16.5 for Gerber, drill and position file; the file names of the export; the Gerber reader on KiCad's
+  files; the position file's place and turn of every part against `pcb.json` (F-3).
+
+Open – the first runs on a real project, the led-bar example in EasyEDA and KiCad, then the Christmas bell:
+
+- the parts on the bottom and turned parts against KiCad's own Gerber copper, and `route all` with Freerouting on a
+  KiCad project (both live tests are in `tests/test_kicad_live.py`);
+- footprints from the real LCSC data (the tests use footprints of their own): silkscreen, polygon pads, slots;
+- `silk apply` on a routed board, the gate `--eda` end to end, `export`;
 - the comparison run: one project through both tool chains, `edakit fab diff` (concept, "Comparison run").

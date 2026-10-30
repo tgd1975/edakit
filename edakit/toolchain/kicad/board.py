@@ -104,8 +104,10 @@ class Pcb:
             if not isinstance(item, list):
                 continue
             head = item[0]
-            if head == "net":
+            if head == "net" and len(item) > 2 and str(item[1]).isdigit():
                 self.nets[str(item[2])] = int(item[1])
+            elif head == "net":                # a net by its name only: numbered by load()'s renumber
+                self.nets.setdefault(str(item[1]) if len(item) > 1 else "", -1)
             elif head == "footprint":
                 self.footprints.append(item)
             elif head.startswith("gr_"):
@@ -120,27 +122,53 @@ class Pcb:
 
     @classmethod
     def load(cls, path):
+        """The file, its nets numbered as edakit writes them – also after KiCad saved it in its own format."""
         path = Path(path)
-        return cls(sexp.loads(path.read_text(encoding="utf-8"))) if path.exists() else None
+        if not path.exists():
+            return None
+        pcb = cls(sexp.loads(path.read_text(encoding="utf-8")))
+        pcb.renumber(pcb.used())
+        return pcb
 
     def net_name(self, number):
+        """The name of a net number – or the name itself, where a file names its nets in items."""
+        if not str(number).lstrip("-").isdigit():
+            return str(number)
         return next((n for n, k in self.nets.items() if k == int(number)), "")
 
     def footprint(self, ref):
         return next((f for f in self.footprints if reference(f) == ref), None)
 
+    def used(self):
+        """Every net name the pads, tracks and zones name – by number through the table, or by name, as KiCad 10
+        writes them when it saves the file (kicad-cli's zone fill)."""
+        names = set(self.nets)
+        for item in self.tracks + self.zones + [pad for f in self.footprints for pad in find(f, "pad")]:
+            for c in item:
+                if isinstance(c, list) and c and c[0] == "net" and len(c) > 1:
+                    names.add(str(c[2]) if len(c) > 2 else self.net_name(c[1]))
+        return names
+
     def renumber(self, names):
-        """New net numbers for these names (sorted, 0 = no net); tracks and zones keep their nets by name."""
+        """New net numbers for these names (sorted, 0 = no net); tracks, zones and pads keep their nets by name and
+        name them as KiCad 8 does – (net 3) in tracks and zones, (net 3 "GND") at pads."""
         old = {k: n for n, k in self.nets.items()}
+
+        def name_of(c):
+            return str(c[2]) if len(c) > 2 else old.get(int(c[1]), "") if str(c[1]).isdigit() else str(c[1])
         self.nets = {"": 0} | {n: k for k, n in enumerate(sorted(set(names) - {""}, key=natural_key), 1)}
         for item in self.tracks + self.zones:
             for c in item:
-                if isinstance(c, list) and c and c[0] == "net":
-                    name = old.get(int(c[1]), "")
-                    c[1] = self.nets.get(name, 0)
+                if isinstance(c, list) and c and c[0] == "net" and len(c) > 1:
+                    c[1:] = [self.nets.get(name_of(c), 0)]
             for c in item:
                 if isinstance(c, list) and c and c[0] == "net_name":
                     c[1] = self.net_name(next((x[1] for x in item if isinstance(x, list) and x[0] == "net"), 0))
+        for pad in (pad for f in self.footprints for pad in find(f, "pad")):
+            for c in pad:
+                if isinstance(c, list) and c and c[0] == "net" and len(c) > 1:
+                    name = name_of(c)
+                    c[1:] = [self.nets.get(name, 0), name]
 
     def text(self, cfg, board):
         title = ["title_block", ["title", board.title], ["company", cfg.company]]

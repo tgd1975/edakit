@@ -124,6 +124,14 @@ def test_route_all_on_kicad_leaves_only_what_freerouting_left_open(project, caps
     print(capsys.readouterr().out[-4000:])
     found = json.loads((cfg.artifacts / "route" / "main_drc.json").read_text()) if code in (0, 2) else []
     assert [f for f in found if f["ruleName"] != "unconnected"] == [], found
+    # the file KiCad saved with the filled zones, written again by edakit: pcb apply and silk apply keep the copper
+    assert run("pcb", "apply", "--no-scripts") == 0
+    assert run("silk", "apply", "--no-scripts") in (0, 2)
+    print(capsys.readouterr().out[-3000:])
+    again = cli.drc(kb.paths(cfg, board)["pcb"], project.root / "drc_again.json", verbose=True)
+    assert [f for f in again if f["ruleName"] != "unconnected"] == [], again
+    assert len([f for f in again if f["ruleName"] == "unconnected"]) == \
+        len([f for f in found if f["ruleName"] == "unconnected"])
     d = project.root / "build" / "fab" / "main"
     d.mkdir(parents=True)
     kfab.collect(cfg, board, d, verbose=True)

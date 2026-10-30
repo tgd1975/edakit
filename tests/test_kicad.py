@@ -356,3 +356,20 @@ def test_the_schematic_connects_every_pin_as_the_graph(project):
         assert value == kb.prop(fps[ref], "Value")
     j1 = next(s for s in syms if sexp.value(s, "lib_id") == "edakit:J1")
     assert sexp.value(j1, "in_bom") == "no"              # bom: false in the graph – soldered by hand
+
+
+def test_a_pcb_kicad_saved_with_nets_by_name_is_read_and_written_by_number(project):
+    """KiCad 10 names nets in items when it saves the file (zone fill): (net "GND") – read as edakit's numbers."""
+    cfg = kicad_project(project)
+    board = cfg.board()
+    path, _ = kb.write_parts(cfg, board)
+    text = path.read_text()
+    text = re.sub(r'\(net (\d+) "([^"]*)"\)', r'(net "\2")', text)               # pads: by name only
+    text = re.sub(r'^\t\(net \d+ "[^"]*"\)\n', "", text, flags=re.M)             # no table
+    path.write_text(text + "")
+    pcb = kb.load(cfg, board)
+    assert pcb.nets["GND"] > 0 and kb.pad_net(pcb, next(kb.find(pcb.footprint("C1"), "pad"))) == "3V3"
+    data = kb.pcb_json(cfg, board)
+    assert {p["Net"] for c in data["components"] for p in c["pads"]} >= {"GND", "3V3", "+5V"}
+    pcb.save(cfg, board)
+    assert '(net 0 "")' in path.read_text() and re.search(r'\(net \d+ "GND"\)', path.read_text())
