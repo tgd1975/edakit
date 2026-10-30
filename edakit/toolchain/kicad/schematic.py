@@ -95,6 +95,20 @@ def lib_symbol(name, s, r, ref, value, footprint):
             ["symbol", f"{base}_1_1", *pins]]
 
 
+GRID = 5                       # KiCad's connection grid: 50 mil, 5 units of the drawing
+
+
+def on_grid(sheet, syms, height):
+    """(shift in x, page height) that put the drawing's pin tips – and with them its wires, which lie on the same
+    grid – on KiCad's connection grid; ERC warns of every end off it (endpoint_off_grid)."""
+    tip = next(((cx + rot(lx, ly, r)[0], cy + rot(lx, ly, r)[1]) for d, cx, cy, r in sheet.comps
+                for lx, ly, _ in syms[d].pins.values()), None)
+    if tip is None:
+        return 0, height
+    sx = -round(tip[0]) % GRID
+    return sx, height + (round(tip[1]) - height) % GRID
+
+
 def write(cfg, board, verbose=False):
     """The schematic of the board into its KiCad project -> (path, problems of the drawing). Nothing is written when
     the drawing has conflicts (wires of two nets touching, a pin without its wire)."""
@@ -106,9 +120,11 @@ def write(cfg, board, verbose=False):
     if drawn["problems"]:
         return None, drawn["problems"]
     W, H = size
+    sx, H = on_grid(sheet, syms, H)
+    W += sx
 
-    def P(x, y):                       # the drawing's point -> the page (mm, y down)
-        return round(x * MM, 4), round((H - y) * MM, 4)
+    def P(x, y):                       # the drawing's point -> the page (mm, y down), pins on KiCad's 50 mil grid
+        return round((x + sx) * MM, 4), round((H - y) * MM, 4)
     refs = sorted(design.board_comps(board.name))
     fps = library.footprints(cfg, design, refs)
     root = kb.root_uid(cfg, board)

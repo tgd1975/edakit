@@ -373,3 +373,13 @@ def test_a_pcb_kicad_saved_with_nets_by_name_is_read_and_written_by_number(proje
     assert {p["Net"] for c in data["components"] for p in c["pads"]} >= {"GND", "3V3", "+5V"}
     pcb.save(cfg, board)
     assert '(net 0 "")' in path.read_text() and re.search(r'\(net \d+ "GND"\)', path.read_text())
+
+
+def test_the_schematic_puts_pins_and_wire_ends_on_kicads_grid(project):
+    from edakit.toolchain.kicad import schematic as ks
+    cfg = kicad_project(project)
+    path, _ = ks.write(cfg, cfg.board())
+    root = sexp.loads(path.read_text())
+    ends = [(float(xy[1]), float(xy[2])) for w in sexp.find(root, "wire") for xy in sexp.find(sexp.first(w, "pts"), "xy")]
+    off = [(x, y) for x, y in ends if abs(x / 1.27 - round(x / 1.27)) > 1e-6 or abs(y / 1.27 - round(y / 1.27)) > 1e-6]
+    assert ends and off == []
