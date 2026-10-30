@@ -41,6 +41,7 @@ from .design import Design, natural_key
 
 FEES = Path(__file__).with_name("fees")
 FEE_TABLE = FEES / "jlcpcb.json"
+OWN_FEES = Path("hardware") / "fees"   # the project's fee tables, from its orders (edakit cart actual)
 # The board a fee table's PCB prices are for when it does not say (pcb.board): the defaults of [order], which the
 # shipped table prices; and how edakit cost names a setting of [order] that differs from it. The other keys that change
 # the board as made (config.ORDER) are priced at edakit's defaults – the board of the reference orders.
@@ -57,12 +58,10 @@ class NoFees(CostError):
 
 
 def fee_path(cfg=None, maker=None):
-    """The shipped fee table of the planned maker ([cart] maker; its profile's fees) – or of maker –, or [cost] fees
-    for the planned maker; NoFees for a maker without one – the fee model is JLCPCB's (Economic, Standard, feeders,
-    joints)."""
+    """The shipped fee table of the planned maker ([cart] maker; its profile's fees) – or of maker; NoFees for a maker
+    without one – the fee model is JLCPCB's (Economic, Standard, feeders, joints). The project's own table over it:
+    load_fee_table."""
     from . import makers
-    if cfg is not None and (cfg.cost or {}).get("fees") and maker in (None, makers.planned(cfg)):
-        return cfg.resolve(cfg.cost["fees"])
     if cfg is None:
         return FEE_TABLE
     m = makers.get(cfg, maker)
@@ -73,8 +72,50 @@ def fee_path(cfg=None, maker=None):
     return FEES / f"{m.data['fees']}.json"
 
 
+def own_fee_path(cfg, maker=None):
+    """The project's own fee table: the file [cost] fees names, else hardware/fees/<maker>.json – written by edakit cart
+    actual from the owner's orders."""
+    from . import makers
+    if (cfg.cost or {}).get("fees") and (maker or makers.planned(cfg)) == makers.planned(cfg):
+        return cfg.resolve(cfg.cost["fees"])
+    return cfg.root / OWN_FEES / f"{maker or makers.planned(cfg)}.json"
+
+
+def newer(a, b):
+    """The fee entry with the newer date – b on a tie: the project's value wins over the shipped one of the same day."""
+    return b if str(b.get("date", "")) >= str(a.get("date", "")) else a
+
+
+def merged(shipped, own):
+    """The shipped fee table with the project's: per fee the value with the newest date, per PCB size the newest
+    price. A project table of another currency or quantity keeps the shipped values where they differ."""
+    import copy
+    if own.get("currency", shipped["currency"]) != shipped["currency"]:
+        raise CostError(f"the project's fee table is in {own['currency']}, the shipped one in {shipped['currency']}")
+    out = copy.deepcopy(shipped)
+    for k, v in (own.get("pcba") or {}).items():
+        out["pcba"][k] = newer(out["pcba"][k], v) if k in out["pcba"] else v
+    pcb = own.get("pcb") or {}
+    if pcb.get("prices") and pcb.get("qty", out["pcb"]["qty"]) == out["pcb"]["qty"]:
+        prices = {tuple(sorted((p["w_mm"], p["h_mm"]))): p for p in out["pcb"]["prices"]}
+        for p in pcb["prices"]:
+            size = tuple(sorted((p["w_mm"], p["h_mm"])))
+            prices[size] = newer(prices[size], p) if size in prices else p
+        out["pcb"]["prices"] = list(prices.values())
+    out["date"] = max(str(out.get("date", "")), str(own.get("date", "")))
+    return out
+
+
 def load_fee_table(cfg=None, maker=None):
-    return json.loads(fee_path(cfg, maker).read_text(encoding="utf-8"))
+    """The fee table edakit cost prices with: the maker's shipped table, and the project's own over it – per fee the
+    value with the newest date (own_fee_path)."""
+    shipped = json.loads(fee_path(cfg, maker).read_text(encoding="utf-8"))
+    if cfg is None:
+        return shipped
+    own = own_fee_path(cfg, maker)
+    if own.resolve() == fee_path(cfg, maker).resolve() or not own.exists():
+        return shipped
+    return merged(shipped, json.loads(own.read_text(encoding="utf-8")))
 
 
 def quoted_pcb(cfg, board, maker=None):
@@ -210,8 +251,9 @@ def price_class(fees, quantity, lines, cls, size_mm=None, pcb_override=None, pcb
     q = quantity if pcba_quantity is None else pcba_quantity
     out = []
 
-    def add(key, item, amount):
-        out.append({"key": key, "item": item, "amount": round(amount, 4)})
+    def add(key, item, amount, count=1, **more):
+        """A fee line: count – the units edakit counts (sides, joints, parts), for edakit cart actual."""
+        out.append({"key": key, "item": item, "amount": round(amount, 4), "count": count, **more})
     pcb = {"size_mm": list(size_mm) if size_mm else None, "amount": None, "how": "no outline in the board file"}
     if size_mm:
         w, h = size_mm
@@ -235,26 +277,29 @@ def price_class(fees, quantity, lines, cls, size_mm=None, pcb_override=None, pcb
         smt = f["economic_smt_joint"]
     elif lines:
         n = len(sides)
-        add("setup", f"setup, {n} side{'s' if n > 1 else ''}", f["standard_setup"]["value"] * n)
-        add("stencil", f"stencil, {n} side{'s' if n > 1 else ''}", f["standard_stencil"]["value"] * n)
+        add("setup", f"setup, {n} side{'s' if n > 1 else ''}", f["standard_setup"]["value"] * n, n)
+        add("stencil", f"stencil, {n} side{'s' if n > 1 else ''}", f["standard_stencil"]["value"] * n, n)
         for ln in lines:
             add(f"loading {ln['lcsc']}", f"loading fee {ln['lcsc']}", f["standard_loading"]["value"])
         smt = f["standard_smt_joint"]
     if joints["smt"]:
         n = joints["smt"] * q
-        add("smt joints", f"SMT joints, {joints['smt']} x {q}", n * unit_price(smt, n))
+        add("smt joints", f"SMT joints, {joints['smt']} x {q}", n * unit_price(smt, n), n)
     if joints["manual"]:
         n = joints["manual"] * q
-        add("manual joints", f"joints soldered by hand, {joints['manual']} x {q}", n * unit_price(f["manual_joint"], n))
+        add("manual joints", f"joints soldered by hand, {joints['manual']} x {q}", n * unit_price(f["manual_joint"], n),
+            n)
         add("hand soldering", "hand-soldering labour", f["hand_soldering_labour"]["value"])
     if joints["reflow"]:
         n = joints["reflow"] * q
-        add("reflow joints", f"through-hole reflow joints, {joints['reflow']} x {q}", n * unit_price(f["reflow_joint"], n))
+        add("reflow joints", f"through-hole reflow joints, {joints['reflow']} x {q}",
+            n * unit_price(f["reflow_joint"], n), n)
     xray = sum(len(ln["refs"]) for ln in lines if ln.get("xray")) * q
     if xray:
-        add("x-ray", f"X-ray, {xray} parts", xray * unit_price(f["xray"], xray))
+        add("x-ray", f"X-ray, {xray} parts", xray * unit_price(f["xray"], xray), xray)
     if lines and cls == "standard":
-        add("packing", "packing", f["standard_packing"]["value"] + f["standard_packing"]["per_cm2"] * area_cm2 * q)
+        add("packing", "packing", f["standard_packing"]["value"] + f["standard_packing"]["per_cm2"] * area_cm2 * q,
+            area_cm2=round(area_cm2 * q, 4))
     if any((ln.get("msl") or 0) >= stock.BAKE_MSL for ln in lines):
         add("bake", "bake (MSL 5 or more)", f["bake"]["value"])
     if lines and area_cm2 > f["large_size"]["above_cm2"]:

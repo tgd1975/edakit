@@ -286,3 +286,103 @@ def test_check_needs_the_job_and_the_quote(project, monkeypatch, capsys):
     assert cart(project, monkeypatch, "prepare") == 0
     assert cart(project, monkeypatch, "check") == 1
     assert "quote.json is not there – the skill cart writes it" in capsys.readouterr().err
+
+
+# --- edakit cart actual (ordering step 6) -----------------------------------------------------------------------------
+
+def actual_of(j, change=None):
+    """actual.json as the skill reads the order page – the lines of the estimate, the setup dearer – and its page."""
+    e = j["estimate"]
+    fees = {f["key"]: f for f in e["fees"]}
+    a = {"order_number": "Y8-1234567A", "date": "2026-11-02", "currency": "USD",
+         "lines": [{"label": "PCB", "amount": round(e["pcb"], 2), "kind": "pcb"},
+                   {"label": "Setup fee", "amount": 8.5, "kind": "fee", "estimate": "setup"},
+                   {"label": "Stencil", "amount": round(fees["stencil"]["amount"], 2), "kind": "fee",
+                    "estimate": "stencil"},
+                   {"label": "SMT assembly", "amount": 0.4, "kind": "fee", "estimate": "smt joints",
+                    "count": fees["smt joints"]["count"]},
+                   {"label": "Components", "amount": round(e["parts_total"], 2), "kind": "parts"}],
+         "order": [{"label": "Shipping", "amount": 20.48, "kind": "shipping"},
+                   {"label": "Total", "amount": 40.0, "kind": "total"}]}
+    if change:
+        change(a)
+    page = "\n".join([a["order_number"], *(f"{x['label']} ${x['amount']:.2f}" + (f" ({x['count']} joints)"
+                                                                                 if x.get("count") else "")
+                                           for x in a["lines"] + a["order"])])
+    return a, page
+
+
+def write_actual(project, change=None):
+    a, page = actual_of(job(project), change)
+    d = order_dir(project)
+    (d / "actual.json").write_text(json.dumps(a, indent=1))
+    (d / "actual_page.txt").write_text(page)
+    return a
+
+
+def test_real_cost_into_the_projects_fee_table(prepared, monkeypatch, capsys):
+    """What maps one to one goes into hardware/fees/jlcpcb.json with the order as its source; edakit cost takes the
+    newest value; actual.md compares estimate, quote and actual; release current shows the totals."""
+    write_quote(prepared)
+    review(prepared)
+    write_actual(prepared)
+    assert cart(prepared, monkeypatch, "actual") == 0
+    out = capsys.readouterr().out
+    assert "ok   B-4 read, not made up" in out and "fee table: Setup fee: economic_setup 8.5" in out
+    own = json.loads((prepared.root / "hardware" / "fees" / "jlcpcb.json").read_text())
+    setup = own["pcba"]["economic_setup"]
+    assert (setup["value"], setup["date"], setup["source"]) == (8.5, "2026-11-02", "order Y8-1234567A at JLCPCB, "
+                                                                "2026-11-02 (edakit cart actual)")
+    joints = own["pcba"]["economic_smt_joint"]
+    n = next(f["count"] for f in job(prepared)["estimate"]["fees"] if f["key"] == "smt joints")
+    assert joints["read"] == {"tier": [1, 100000], "count": n} and joints["tiers"][0][2] == round(0.4 / n, 4)
+    assert own["pcb"]["prices"][0]["source"].startswith("order Y8-1234567A")
+    cfg = prepared.config()
+    assert cost.load_fee_table(cfg)["pcba"]["economic_setup"]["value"] == 8.5        # the newest value wins
+    assert cost.load_fee_table(cfg)["pcba"]["bake"]["value"] == 7.94                 # not on the order: as it was
+    md = (order_dir(prepared) / "actual.md").read_text()
+    assert "| Line | Estimate | Quote | Actual | Actual − estimate |" in md and "| shipping |" in md
+    assert cli.main(["release", "current", "--config", str(cfg.root / "edakit.toml")]) == 0
+    assert "  order Y8-1234567A at jlcpcb, board main: estimate " in capsys.readouterr().out
+
+
+def test_another_count_is_named_not_written(prepared, monkeypatch, capsys):
+    write_quote(prepared)
+    write_actual(prepared, lambda a: a["lines"][3].update(count=999))
+    assert cart(prepared, monkeypatch, "actual") == 0
+    assert "not written: SMT assembly: the order counts 999, edakit " in capsys.readouterr().out
+    own = json.loads((prepared.root / "hardware" / "fees" / "jlcpcb.json").read_text())
+    assert "economic_smt_joint" not in own["pcba"] and "economic_setup" in own["pcba"]
+
+
+def test_a_value_not_on_the_page_writes_nothing(prepared, monkeypatch, capsys):
+    write_actual(prepared)
+    d = order_dir(prepared)
+    (d / "actual_page.txt").write_text((d / "actual_page.txt").read_text().replace("Y8-1234567A", ""))
+    assert cart(prepared, monkeypatch, "actual") == 2
+    assert "FAIL B-4 read, not made up: not in the page text: Y8-1234567A" in capsys.readouterr().out
+    assert not (prepared.root / "hardware" / "fees" / "jlcpcb.json").exists()
+
+
+def test_the_invoice_saved_as_html(prepared, monkeypatch, tmp_path):
+    a = write_actual(prepared)
+    _, page = actual_of(job(prepared))
+    invoice = tmp_path / "invoice.html"
+    invoice.write_text("<html><body><table>" + "".join(f"<tr><td>{line}</td></tr>" for line in page.splitlines())
+                       + "</table><script>var x = 'Y9-0';</script></body></html>")
+    assert cart(prepared, monkeypatch, "actual", "--from", str(invoice)) == 0
+    text = (order_dir(prepared) / "actual_page.txt").read_text()
+    assert a["order_number"] in text and "<td>" not in text and "Y9-0" not in text
+
+
+def test_the_record_gets_the_order_number_and_the_totals(prepared, monkeypatch):
+    q = write_quote(prepared)
+    review(prepared)
+    subtotal = round(sum(p["amount"] for p in q["prices"] if p["kind"] != "shipping"), 2)
+    (order_dir(prepared) / "cart.json").write_text(json.dumps({"name": "gerber_main", "quantity": 5,
+                                                               "price": subtotal}))
+    assert cart(prepared, monkeypatch, "check", "--cart") == 0
+    write_actual(prepared)
+    assert cart(prepared, monkeypatch, "actual") == 0
+    r = json.loads(next((prepared.root / "hardware" / "orders").glob("*.json")).read_text())
+    assert r["order_number"] == "Y8-1234567A" and r["actual"]["quote"] == subtotal and r["actual"]["currency"] == "USD"

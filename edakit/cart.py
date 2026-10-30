@@ -154,7 +154,8 @@ def estimate_of(cfg, board, m):
     fees = cost.load_fee_table(cfg, m.key)
     cur, rate = cost.converter(cfg, fees)
     return {"currency": fees["currency"], "class": b["class"], "pcb": b["pcb"]["amount"], "pcb_how": b["pcb"]["how"],
-            "fees": [{"key": f["key"], "item": f["item"], "amount": f["amount"]} for f in b["fees"]],
+            "pcb_size_mm": b["pcb"]["size_mm"], "not_in_price": b.get("not_in_price", {}),
+            "fees": [{k: f[k] for k in ("key", "item", "amount", "count", "area_cm2") if k in f} for f in b["fees"]],
             "fees_total": b["fees_total"], "parts_total": b["parts_total"], "unpriced": b["unpriced"],
             "total": b["total"], "fee_table": fees.get("date"), "budget": (cfg.cost or {}).get("budget"),
             "budget_currency": cur, "rate": rate(fees["currency"])}, ""
@@ -563,6 +564,241 @@ def load_order(cfg, args, need=(QUOTE, PAGE)):
     return board, m, out, job, got
 
 
+# --- edakit cart actual ------------------------------------------------------------------------------------------------
+
+PER_ORDER = {"setup": "{cls}_setup", "stencil": "{cls}_stencil", "hand soldering": "hand_soldering_labour",
+             "bake": "bake", "large size": "large_size", "packing": "standard_packing"}
+PER_UNIT = {"loading": "{cls}_loading", "smt joints": "{cls}_smt_joint", "manual joints": "manual_joint",
+            "reflow joints": "reflow_joint", "x-ray": "xray"}
+
+
+def page_text(path):
+    """The text of a saved order page or invoice for B-4: HTML without its tags, a PDF through pdftotext, text as is."""
+    import html
+    import shutil
+    import subprocess
+    p = Path(path)
+    if not p.exists():
+        raise CartError(f"{p}: not found")
+    if p.suffix.lower() == ".pdf":
+        if not shutil.which("pdftotext"):
+            raise CartError(f"{p.name}: a PDF needs pdftotext (poppler-utils) – or save the order page as HTML")
+        return subprocess.run(["pdftotext", "-layout", str(p), "-"], capture_output=True, text=True, check=True).stdout
+    text = p.read_text(encoding="utf-8", errors="replace")
+    if p.suffix.lower() in (".html", ".htm"):
+        text = re.sub(r"(?is)<(script|style)[^>]*>.*?</\1>", " ", text)
+        text = html.unescape(re.sub(r"<[^>]+>", " ", text))
+    return text
+
+
+def b4_actual(actual, page):
+    """B-4 on the real cost: the order number, every amount and every count of actual.json in the page text."""
+    values = [actual.get("order_number"), *(amount_text(x["amount"]) for x in [*actual.get("lines", []),
+                                                                                *actual.get("order", [])]
+                                            if x.get("amount") is not None),
+              *(x["count"] for x in actual.get("lines", []) if x.get("count") is not None)]
+    values = [v for v in values if v not in (None, "")]
+    lost = list(dict.fromkeys(str(v) for v in values if not page_has(page, v)))
+    return [f"not in the page text: {', '.join(lost[:12])}"] if lost else [], f"{len(values)} values, each in the page"
+
+
+def estimate_fees(job, key):
+    """The estimate's fee lines of an actual line's key – "loading" all the loading lines, one per type."""
+    fees = (job.get("estimate") or {}).get("fees", [])
+    return [f for f in fees if f["key"] == key or (key == "loading" and f["key"].startswith("loading "))]
+
+
+def fee_updates(job, actual, table):
+    """What maps one to one onto the fee table: [(fee, entry or None, line text)] – a fee per order or per side its
+    value, a fee per unit whose count on the order is edakit's count its value per unit, into the tier the count falls
+    in; another count: nothing written, the line named with both counts. Values before coupons and discounts."""
+    cls = (job.get("estimate") or {}).get("class", "economic")
+    out = []
+    for line in actual.get("lines", []):
+        key = line.get("estimate")
+        if line.get("kind") != "fee" or not key:
+            continue
+        mine = estimate_fees(job, key)
+        if not mine:
+            out.append((None, None, f"{line['label']}: no line {key!r} in the estimate – not written"))
+            continue
+        base = "loading" if key.startswith("loading") else key        # one type ("loading C2297") or all of them
+        units = sum(int(f.get("count", 1)) for f in mine) if key == "loading" else int(mine[0].get("count", 1))
+        name = (PER_ORDER.get(base) or PER_UNIT.get(base) or "").format(cls=cls)
+        spec = table["pcba"].get(name)
+        if spec is None:
+            out.append((None, None, f"{line['label']}: {key} has no value of its own in the fee table – not written"))
+            continue
+        count = line.get("count", units if base in PER_ORDER or key != base else None)
+        if count is None or int(count) != units:
+            out.append((name, None, f"{line['label']}: the order counts {count if count is not None else 'nothing'}, "
+                                    f"edakit {units} – the count is the finding, not the rate; not written"))
+            continue
+        amount = float(line["amount"])
+        if key == "packing":
+            amount -= spec.get("per_cm2", 0) * float(mine[0].get("area_cm2", 0))
+            value = round(amount, 4)
+        else:
+            value = round(amount / units, 4)          # per unit, per side – a fee per order has one unit
+        entry = {k: v for k, v in spec.items() if k not in ("value", "tiers", "date", "source", "read")}
+        if "tiers" in spec:
+            tiers = [list(t) for t in spec["tiers"]]
+            hit = next((t for t in tiers if t[0] <= units <= t[1]), tiers[-1])
+            hit[2] = value
+            entry.update(tiers=tiers, read={"tier": hit[:2], "count": units})
+        else:
+            entry["value"] = value
+        out.append((name, entry, f"{line['label']}: {name} {value:g}" + (f" (tier {entry['read']['tier'][0]}–"
+                                                                          f"{entry['read']['tier'][1]})"
+                                                                          if "read" in entry else "")))
+    return out
+
+
+def write_fees(cfg, m, job, actual, updates, rows):
+    """The project's fee table (cost.own_fee_path), created by the first order: the values that map one to one, each
+    with the order as its source and the order's date; the PCB price for the size, quantity and board settings as a
+    row of pcb.prices. A maker without a fee model: the order's lines kept as they are."""
+    from . import cost
+    path = cost.own_fee_path(cfg, m.key)
+    own = json.loads(path.read_text(encoding="utf-8")) if path.exists() else {}
+    source = f"order {actual.get('order_number')} at {m.name}, {actual.get('date')} (edakit cart actual)"
+    date = str(actual.get("date") or dt.date.today().isoformat())
+    if not m.data.get("fees"):
+        own.setdefault("orders", []).append({"order_number": actual.get("order_number"), "date": date,
+                                             "board": job["board"], "lines": actual.get("lines", [])})
+        own.setdefault("about", f"Real costs of {m.name} from the owner's orders, as read (edakit cart actual); no fee "
+                                "model prices them yet.")
+        written = ["the order's lines kept (no fee model for this maker)"]
+    else:
+        shipped = cost.load_fee_table(cfg, m.key)
+        own.setdefault("assembler", shipped.get("assembler", m.name))
+        own.setdefault("currency", shipped["currency"])
+        own.setdefault("about", f"The project's fee table for {m.name}: values from its own orders, written by edakit "
+                                "cart actual; edakit cost takes per fee the value with the newest date from this table "
+                                "or the shipped one.")
+        own.setdefault("pcba", {})
+        written = []
+        for name, entry, text in updates:
+            if entry is not None:
+                own["pcba"][name] = {**entry, "date": date, "source": source}
+                written.append(text)
+        e, pcb = job.get("estimate") or {}, [x for x in actual.get("lines", []) if x.get("kind") == "pcb"]
+        size = e.get("pcb_size_mm")
+        if pcb and size and job["quantity"] == shipped["pcb"]["qty"] and not e.get("not_in_price"):
+            price = round(sum(float(x["amount"]) for x in pcb), 2)
+            own.setdefault("pcb", {"qty": shipped["pcb"]["qty"], "prices": []})
+            own["pcb"]["prices"] = [x for x in own["pcb"]["prices"] if sorted((x["w_mm"], x["h_mm"])) != sorted(size)]
+            own["pcb"]["prices"].append({"w_mm": size[0], "h_mm": size[1], "value": price, "date": date,
+                                         "source": source})
+            written.append(f"PCB {size[0]:g} × {size[1]:g} mm, {job['quantity']} boards: {price:.2f}")
+        elif pcb:
+            rows.append(f"PCB: not written – {'another quantity than the table prices' if size and job['quantity'] != shipped['pcb']['qty'] else 'board settings the table does not price' if e.get('not_in_price') else 'no size'}")
+    own["date"] = max(str(own.get("date", "")), date)
+    path.parent.mkdir(parents=True, exist_ok=True)
+    path.write_text(json.dumps(own, indent=1, ensure_ascii=False) + "\n", encoding="utf-8")
+    return path, written
+
+
+def actual_cost(cfg, args):
+    """The real cost after the owner ordered and paid: B-4 on it, actual.md – estimate, quote and actual line by line,
+    per order shipping, VAT and coupon against [cost] –, the project's fee table one to one, the order record."""
+    board, m, out, job, _ = load_order(cfg, args, need=())
+    if not (out / ACTUAL).exists():
+        raise CartError(f"{cfg.relative(out / ACTUAL)} is not there – the skill cart reads the order page into it")
+    actual = json.loads((out / ACTUAL).read_text(encoding="utf-8"))
+    if args.source:
+        (out / ACTUAL_PAGE).write_text(page_text(args.source), encoding="utf-8")
+    if not (out / ACTUAL_PAGE).exists():
+        raise CartError(f"{cfg.relative(out / ACTUAL_PAGE)} is not there – the page text the skill read, or --from FILE")
+    page = (out / ACTUAL_PAGE).read_text(encoding="utf-8")
+    quote = json.loads((out / QUOTE).read_text(encoding="utf-8")) if (out / QUOTE).exists() else None
+    bad, b4_text = b4_actual(actual, page)
+    e = job.get("estimate") or {}
+    kinds = (("pcb", "PCB", e.get("pcb")), ("fee", "assembly fees", e.get("fees_total")),
+             ("parts", "parts", e.get("parts_total")))
+
+    def total(lines, kind=None):
+        got = [x for x in lines or [] if (x.get("kind") == kind if kind else x.get("kind") in ("pcb", "fee", "parts"))]
+        return round(sum(float(x["amount"]) for x in got), 2) if got else None
+    money = lambda v: "–" if v is None else f"{v:.2f}"  # noqa: E731
+    diff = lambda a, b: "–" if a is None or b is None else f"{a - b:+.2f}"  # noqa: E731
+    cur = actual.get("currency") or (quote or {}).get("currency") or e.get("currency", "")
+    L = [f"# Real cost – board {job['board']} at {m.name}, order {actual.get('order_number')} ({actual.get('date')})\n",
+         f"Written by edakit cart actual from {ACTUAL} and {'--from ' + Path(args.source).name if args.source else ACTUAL_PAGE}"
+         f" (B-4: {'; '.join(bad) if bad else b4_text}). Run {job['run']}, fab {str(job['fab_sha256'])[:12]}…, "
+         f"{job['quantity']} PCBs, {job['pcba_quantity']} assembled. Amounts in {cur}.\n",
+         "| Line | Estimate | Quote | Actual | Actual − estimate |", "|---|---:|---:|---:|---:|"]
+    for kind, label, est in kinds:
+        a, q = total(actual.get("lines"), kind), total((quote or {}).get("prices"), kind)
+        L.append(f"| {label} | {money(est)} | {money(q)} | {money(a)} | {diff(a, est)} |")
+    a, q, est = total(actual.get("lines")), total((quote or {}).get("prices")), e.get("total")
+    L += [f"| **board** | {money(est)} | {money(q)} | {money(a)} | {diff(a, est)} |", ""]
+    c = cfg.cost or {}
+    order_lines = {x.get("kind"): float(x["amount"]) for x in actual.get("order", []) if x.get("amount") is not None}
+    L += ["Per order (all boards of the order), against [cost]:\n", "| Line | [cost] | Actual |", "|---|---:|---:|",
+          f"| shipping | {money(c.get('shipping'))} | {money(order_lines.get('shipping'))} |",
+          f"| coupon | {money(c.get('coupon'))} | {money(abs(order_lines['coupon']) if 'coupon' in order_lines else None)} |",
+          f"| VAT | {c.get('vat_pct', 0):g} % | {money(order_lines.get('vat'))} |",
+          f"| total | – | {money(order_lines.get('total'))} |", ""]
+    notes, written, path = [], [], None
+    if not bad:
+        table = None
+        if m.data.get("fees"):
+            from . import cost
+            table = cost.load_fee_table(cfg, m.key)
+        updates = fee_updates(job, actual, table) if table else []
+        notes = [text for name, entry, text in updates if entry is None]
+        path, written = write_fees(cfg, m, job, actual, updates, notes)
+    L += ["## Into the fee table\n", *(f"- {w}" for w in written)] if written else ["## Into the fee table\n",
+                                                                                   "Nothing written." + (
+                                                                                       " B-4 failed." if bad else "")]
+    if path is not None:
+        L.append(f"\nTable: `{cfg.relative(path)}` – edakit cost takes per fee the newest value.")
+    if notes:
+        L += ["\nNot written:\n", *(f"- {n}" for n in notes)]
+    (out / ACTUAL_MD).write_text("\n".join(L) + "\n", encoding="utf-8")
+    rec = complete_record(cfg, job, out, actual, {"estimate": est, "quote": q, "actual": a, "currency": cur})
+    print(f"{'FAIL' if bad else 'ok  '} B-4 read, not made up: {'; '.join(bad) if bad else b4_text}")
+    print(f"board {job['board']} at {m.name}: estimate {money(est)}, quote {money(q)}, actual {money(a)} {cur}")
+    for w in written:
+        print(f"  fee table: {w}")
+    for n in notes:
+        print(f"  not written: {n}")
+    print(f"real cost: {cfg.relative(out / ACTUAL_MD)}" + (f"; order record: {cfg.relative(rec)}" if rec else ""))
+    return 2 if bad else 0
+
+
+def complete_record(cfg, job, out, actual, totals):
+    """The order record of this job, completed with the order number and the three totals; None without one."""
+    sha = sha_of(out / JOB)
+    for path in sorted((cfg.root / ORDERS).glob(f"*-{job['board']}-{job['maker']['key']}.json")):
+        data = json.loads(path.read_text(encoding="utf-8"))
+        if data.get("job_sha256") == sha:
+            data.update(order_number=actual.get("order_number"), actual=totals)
+            path.write_text(json.dumps(data, indent=1, ensure_ascii=False) + "\n", encoding="utf-8")
+            return path
+    return None
+
+
+def totals_of(cfg, run):
+    """[(board, maker, order number, estimate, quote, actual, currency)] of the run's orders with a real cost – for
+    edakit release current."""
+    out = []
+    for f in sorted(cfg.reports.glob(f"{run}/fab/*/cart/*/{ACTUAL}")):
+        board, maker = f.parent.parent.parent.name, f.parent.name
+        try:
+            a = json.loads(f.read_text(encoding="utf-8"))
+            job = json.loads((f.parent / JOB).read_text(encoding="utf-8"))
+            q = json.loads((f.parent / QUOTE).read_text(encoding="utf-8")) if (f.parent / QUOTE).exists() else {}
+        except (OSError, json.JSONDecodeError):
+            continue
+        s = lambda lines: round(sum(float(x["amount"]) for x in lines or [] if x.get("kind") in ("pcb", "fee",  # noqa: E731
+                                                                                                "parts")), 2)
+        out.append((board, maker, a.get("order_number"), (job.get("estimate") or {}).get("total"),
+                    s(q.get("prices")) if q else None, s(a.get("lines")), a.get("currency", "")))
+    return out
+
+
 def check(cfg, args):
     board, m, out, job, (quote, page) = load_order(cfg, args)
     res = evaluate(cfg, out, job, quote, page)
@@ -597,7 +833,7 @@ def main(cfg, args):
             return prepare(cfg, args)
         if args.action == "check":
             return check(cfg, args)
-        raise CartError(f"edakit cart {args.action}: not built yet")
+        return actual_cost(cfg, args)
     except (CartError, makers.MakerError) as e:
         print(f"edakit cart: {e}", file=sys.stderr)
         return 1

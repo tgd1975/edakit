@@ -732,6 +732,11 @@ def main_release(cfg, args):
                      f", graph sha256 {str(data.get('graph_sha256'))[:12]}"))
             for rel, sha in data.get("files", {}).items():
                 print(f"  {rel}  {sha}")
+            from .. import cart
+            for board, maker, number, est, quote, actual, cur in cart.totals_of(cfg, run):
+                fmt = lambda v: "–" if v is None else f"{v:.2f}"  # noqa: E731
+                print(f"  order {number} at {maker}, board {board}: estimate {fmt(est)}, quote {fmt(quote)}, actual "
+                      f"{fmt(actual)} {cur}".rstrip())
             return 0
         if args.action == "withdraw":
             if len(args.items) != 1 or not args.reason:
