@@ -1,14 +1,15 @@
 # Coverage of typical maker projects
 
-Status 2026-10-30: research and analysis, nothing is built. What becomes a check, a hint, a block or a part fact is the
-owner's decision (handbook 14.4), and every candidate below still needs its sources opened and read before it gets a
-catalog entry (skill add-rule, step 2). Basis: edakit at `bf7450a`, seven research clusters with 249 pitfalls from
-about 80 maker project types and the guitar's pedals, instrument and amplifiers, and the owner's 21 repositories. Of the
-249, 50 are covered, 11 covered once the parts entry carries the datasheet value, 69 partly and 119 not – some of
-those judgement or out of scope. Every pitfall with its numbers, its source and what covers it:
-[the appendix](#appendix-the-pitfalls). edakit is open source and meant for makers' boards in general, not only the
-owner's: the candidates are a build list in the order of section "Priority", and section "Keeping the catalog stable"
-says how it stays trustworthy while it grows.
+Status 2026-10-30: research and analysis, nothing is built. The candidates are built after the restructuring of the
+catalog in [rules-at-scale.md](rules-at-scale.md), as data per domain (its section 10). What becomes a check, a hint, a
+block or a part fact is the owner's decision (handbook 14.4), and every candidate below still needs its sources opened
+and read before it gets a catalog entry (skill add-rule, step 2). Basis: edakit at `bf7450a`, seven research clusters
+with 249 pitfalls from about 80 maker project types and the guitar's pedals, instrument and amplifiers, and the owner's
+21 repositories. Of the 249, 50 are covered, 11 covered once the parts entry carries the datasheet value, 69 partly and
+119 not – some of those judgement or out of scope. Every pitfall with its numbers, its source and what covers it: [the
+appendix](#appendix-the-pitfalls). edakit is open source and meant for makers' boards in general, not only the owner's:
+the candidates are a build list in the order of section "Priority", and section "Keeping the catalog stable" says how it
+stays trustworthy while it grows.
 
 ## Question
 

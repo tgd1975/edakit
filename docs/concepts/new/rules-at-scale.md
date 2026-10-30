@@ -228,11 +228,25 @@ Not a migration: a rebuild beside the old code, switched over on parity, the old
 
 Steps 1 to 4 change no finding on any board; the parity test says so. Step 5 is the cut.
 
-**The new rules come after the cut, not before (decided).** Most of maker-coverage's candidates are facts, defaults
-and domain changes, which exist only in the new model; built as checks of today they would be written twice and move
-the parity target while the rebuild runs. The producers (FT-1, FT-2, FT-3) can be built as soon as step 2's engines
-exist, since they feed the new LIMITS and LEVELS and nothing old. The one exception: a fault of a check of today that a
-project meets before the cut is fixed where it is, with its test, and carried over.
+### When maker-coverage's candidates are built
+
+After the cut (step 5), not before – decided by the owner. Three reasons:
+
+1. **Most candidates are data in the new model, not code.** Of maker-coverage's 31 check candidates about 12–15
+   become new relations (estimate); the rest are facts, defaults and domain profiles, which do not exist in today's
+   model. Built as checks of today they would be written twice: once as a function with its catalog entry, negative
+   test and handbook row, and after the cut again as data.
+2. **They would move the parity target.** The rebuild runs beside the old code and must yield the same findings on
+   `led-bar` and the bell. Every new check during the rebuild moves what the new engines must match.
+3. **Without domains they would reach every board.** Audio or guitar rules without a profile bring exactly the noise
+   this concept is meant to avoid.
+
+**The exception: the producers.** FT-1 (load steps in transients), FT-2 (cables with length and gauge) and FT-3 (the
+op-amp model) are no rules but producers of quantities. They can be built as soon as step 2's engines exist, since they
+feed the new LIMITS and LEVELS and touch nothing old. In step 6 they come first, because many domains depend on them.
+
+**A fault of today.** A check of today that fails a project before the cut – a false alarm or a missed fault – is fixed
+where it is, with its test, and carried over to its engine.
 
 ## 11. Costs and risks
 
@@ -257,6 +271,8 @@ Taken by the owner on 2026-10-30:
 3. **Reference circuits** come after the restructuring and after the integration of maker-coverage's candidates.
 4. **Order:** no preference beyond 3; the plan of section 10 stands until something speaks against it.
 5. **Branch:** built on this branch (`ccr-f80e23dc-ak6668`), after an explicit go.
+6. **maker-coverage's candidates** are built after the cut (step 5); the producers FT-1, FT-2 and FT-3 may start
+   with step 2. Section 10, "When maker-coverage's candidates are built".
 
 Still open, to settle in step 1: the exact relation vocabulary; whether `ratings` and `params` keep their names or
 become `limits` and `values`; the mutation sweep in CI or on demand (step 7).
