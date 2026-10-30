@@ -1,5 +1,5 @@
 {
- "about": "The rule catalog: every check edakit runs (P parts, G graph, E simulation, S schematic, L board, F manufacturing files) and every design hint (H), each with its rule, why it exists, what to do and where the knowledge comes from. Check IDs are stable: a retired check keeps its entry and its number is not reused. Hints have no rule a program could decide; 'when' says for which parts of the graph they apply. `edakit rules` prints this file, `edakit hints` the hints of a project.",
+ "about": "The rule catalog: every check edakit runs (P parts, G graph, E simulation, S schematic, L board, F manufacturing files, B the order at the maker) and every design hint (H), each with its rule, why it exists, what to do and where the knowledge comes from. Check IDs are stable: a retired check keeps its entry and its number is not reused. Hints have no rule a program could decide; 'when' says for which parts of the graph they apply. `edakit rules` prints this file, `edakit hints` the hints of a project.",
  "checks": {
   "P-1": {
    "title": "graph pins = parts database",
@@ -24,10 +24,10 @@
   },
   "P-4": {
    "title": "parts orderable",
-   "rule": "Every assembled part (an LCSC number, not bom: false) is in the stock snapshot of edakit stock, listed in JLCPCB's assembly catalogue, in stock for [project] quantity boards – under Standard PCBA with the assembler's attrition, max(placements + lossNumber, leastPatchNumber) – named as its parts entry names it, and not 'Standard Only' on an Economic order. MSL 5 or more (baked), stock below the need plus [project] stock_margin_pct and another library class than the entry's jlc_class are warnings; a part the snapshot lacks or could not read and a snapshot older than [project] stock_max_age_days are pending.",
+   "rule": "For the maker of [cart] makers that orders from JLCPCB's parts catalogue (catalogue = \"jlcpcb\" in its profile; JLCPCB without [cart]) – as the planned maker a finding fails or is pending, as another maker it is a warning named with the maker; without such a maker P-4 does not run and a note says so: every assembled part (an LCSC number, not bom: false) is in the stock snapshot of edakit stock, listed in JLCPCB's assembly catalogue, in stock for [project] quantity boards – under Standard PCBA with the assembler's attrition, max(placements + lossNumber, leastPatchNumber) – named as its parts entry names it, and not 'Standard Only' on an Economic order. MSL 5 or more (baked), stock below the need plus [project] stock_margin_pct and another library class than the entry's jlc_class are warnings; a part the snapshot lacks or could not read and a snapshot older than [project] stock_max_age_days are pending.",
    "why": "What the assembler can place is decided when the part is chosen, not when the BOM is uploaded. A part only LCSC stocks is 'pre-order only' at JLCPCB; a 'Standard Only' part (large holders, modules) turns a one-sided Economic order into Standard with setup per side and loading fees on every type; an MSL 5 part is baked for a fee and two days; a catalogue entry under another part number is another part. Found in the quote, each of these costs a part swap, sign-offs again and gate runs.",
    "fix": "edakit stock after every part change. A part that fails: another part (part-search, edakit stock --lcsc for the candidates), the part soldered by hand (bom: false), or Standard PCBA chosen on purpose ([release] assembly.pcba = \"standard\"). A wrong MPN: correct the parts entry or the LCSC number. Accept a warning in the sign-off file with its reason.",
-   "sources": ["edakit handbook 4.2 and 8.4", "JLCPCB part pages (PCBA Type, MSL, X-ray) and the quotes of 2026-10-24 and 2026-10-25 (attrition)"]
+   "sources": ["edakit handbook 4.2 and 8.4", "JLCPCB part pages (PCBA Type, MSL, X-ray) and the quotes of 2026-10-24 and 2026-10-25 (attrition)", "Ordering at the manufacturer (docs/concepts/new/ordering.md, decided 2026-10-30): the checks of a maker run for every maker of [cart] makers, fail for the planned one and warn for the others"]
   },
   "P-5": {
    "title": "supplier per part",
@@ -100,6 +100,16 @@
    "sources": [
     "edakit handbook 4.1 (field compliance) and 15.3 (what the review needs)",
     "Lesson of the Christmas bell (tgd1975/automatic_christmas_bell, D-18 from the M-6 reviews of D-16): on the boards main, smd and tht U1 is an Arduino Nano without a transmitter, no parts entry said so, and the M-6 reviews of 2026-10-26 established it from the part's identity; on esp32 the T-Display's compliance.radio was added by hand during the review"
+   ]
+  },
+  "P-12": {
+   "title": "manufacturer part number for a maker that matches by it",
+   "rule": "With a maker of [cart] makers that matches the BOM by manufacturer part number (bom.match = \"mpn\" in its profile – Eurocircuits): every assembled part (an LCSC number, not bom: false) has a parts entry with mpn and manufacturer. For [cart] maker an error, for another maker a warning named with the maker. Without such a maker it does not run.",
+   "why": "Eurocircuits matches the parts of a BOM by manufacturer part number, not by LCSC number; a line without one is a part it has to ask about or cannot source, and the order stops at its matching. The number belongs to the part when it is chosen – P-6 already holds the entry's mpn to the component –, not to the release, when the board is done.",
+   "fix": "mpn and manufacturer into the parts entry from the datasheet or the distributor's page (agent part-selector, skill part-search; edakit part import reads both for an LCSC number); a part only one distributor sells under its own number: another part, or bom: false and bought by hand.",
+   "sources": [
+    "Eurocircuits, BOM requirements (MPN and designators required): https://www.eurocircuits.com/?p=9450 – search result of 2026-10-30, the page not reachable from the session (docs/concepts/new/ordering.md)",
+    "Ordering at the manufacturer (docs/concepts/new/ordering.md, decided 2026-10-30): BOM with MPN and P-12, in stage P"
    ]
   },
   "G-1": {
@@ -520,10 +530,10 @@
   },
   "F-2": {
    "title": "stock at JLCPCB",
-   "rule": "Every BOM line is in JLCPCB's assembly catalogue with stock for [project] quantity boards, under the MPN of its parts entry (case and blanks ignored); another library class than the entry's jlc_class is a warning.",
+   "rule": "For the maker of [cart] makers that orders from JLCPCB's parts catalogue – a failure as the planned maker, a warning as another maker, not run without such a maker: every BOM line is in JLCPCB's assembly catalogue with stock for [project] quantity boards, under the MPN of its parts entry (case and blanks ignored); another library class than the entry's jlc_class is a warning.",
    "why": "LCSC's stock and JLCPCB's assembly stock differ. A part that is not available can only be pre-ordered, which delays the order or changes the price.",
    "fix": "A part in stock (part-search skill); a cheaper part that is available is worth a gate run.",
-   "sources": ["edakit handbook 4.2"]
+   "sources": ["edakit handbook 4.2", "Ordering at the manufacturer (docs/concepts/new/ordering.md, decided 2026-10-30): the checks of a maker run for every maker of [cart] makers, fail for the planned one and warn for the others"]
   },
   "F-3": {
    "title": "pick and place",
@@ -548,10 +558,92 @@
   },
   "F-6": {
    "title": "order settings = board",
-   "rule": "With [order] in the board file: the remark has at most 200 characters, all ASCII; the board's thickness_mm is a thickness of JLCPCB's form (FR-4, 2 layers: 0.4, 0.6, 0.8, 1.0, 1.2, 1.6, 2.0 mm); the silkscreen colour is the one JLCPCB prints on the solder mask colour – black on a white mask, white on every other; mark = \"specify\" has the placeholder JLCJLCJLCJLC on a silkscreen layer, at least 0.8 mm high in [[silk.texts]] (a height not given there is a warning); a placeholder with another mark is a warning; an Economic order with fewer than 2 tooling holes is a warning; no copper of either side lies within tab_copper_mm (1.0 mm) of a declared tab zone of the outline, measured on the Gerber files. The outline stretches free of copper are listed, and fab/<board>/order.md holds the form, thickness and colours included.",
-   "why": "The order form fields that depend on the board are filled in by hand while ordering: a cart with 'Remove Mark' prints the placeholder as text, a remark of 202 characters does not fit the field, a remark that allows tabs where a track runs 0.45 mm from the edge lets the tab cut it, and an Economic order without own tooling holes gets JLCPCB's, possibly on a visible edge. Each was found late in the reference project, the tooling holes only in the quote. Thickness and colours stood in no file: the form's defaults (1.6 mm, green, white print) went into the cart unless someone remembered otherwise, while the mechanical model took the board file's thickness_mm. A thickness the form does not have (1.57 mm, the 62 mil of US fabs) cannot be ordered as drawn, and the print colour follows the mask: in the reference project a white mask was an open question for one board whose silkscreen artwork was drawn for white print – JLCPCB prints black on a white mask.",
-   "fix": "Correct [order] of the board file – a shorter ASCII remark, mark = \"specify\" with the placeholder (or another mark), the silkscreen colour JLCPCB prints on the mask (or another mask), tab zones only on stretches order.md lists as free, or the copper moved back from the edge – or add [tooling] holes; set thickness_mm to a thickness of the form (the mechanical model takes the same value). A warning the owner wants (JLCPCB's tooling holes, a hand-placed placeholder) is accepted in the sign-off file.",
-   "sources": ["edakit handbook 8.4", "JLCPCB order form (Mark on PCB, Remark, PCBA Type, Tooling holes); reference order of 2026-10-25", "JLCPCB PCB Manufacturing Capabilities (read 2026-10-28): solder mask colours Green, Purple, Red, Yellow, Blue, White, Black; FR-4 thicknesses 0.4/0.6/0.8/1.0/1.2/1.6/2.0 mm, 2.5 mm and above for 12+ layers only – https://jlcpcb.com/capabilities/pcb-capabilities", "JLCPCB online quote (read 2026-10-28), PCB Color and Silkscreen: 'For most colors, the silkscreen is printed white. Only for white solder mask, the silkscreen is printed black.' – https://cart.jlcpcb.com/quote", "Reference project (pytree): the cart of 2026-10-24 with PCB Thickness 1.6mm, PCB Color Green, Silkscreen White (the form's defaults), and its silkscreen concept: with a white mask (an open question for the snow tree) JLCPCB prints black, so the artwork had to look right in black too"]
+   "rule": "With [order] (of the board file or of edakit.toml) or [cart]: per maker of [cart] makers – a finding fails for [cart] maker, JLCPCB without [cart], and warns for every other maker – every field's value is one the maker's form offers (its profile edakit/makers/<maker>.toml), no combination the profile excludes; the remark fits the form (JLCPCB: at most 200 characters, all ASCII); the board's thickness_mm is a thickness of the form (JLCPCB, FR-4, 2 layers: 0.4, 0.6, 0.8, 1.0, 1.2, 1.6, 2.0 mm); the silkscreen colour is the one the maker prints on the solder mask colour (JLCPCB: black on a white mask, white on every other); mark = \"specify\" has the maker's placeholder (JLCPCB: JLCJLCJLCJLC) on a silkscreen layer, at least its least height in [[silk.texts]] (0.8 mm; a height not given there is a warning); a placeholder with another mark is a warning; while the maker's profile reports its order number gone (rules.placeholder_gone – JLCPCB since May 2026, its help article), its placeholder on the board or mark = \"specify\" is a warning; another maker's placeholder on the silkscreen is a finding – JLCPCB's JLCJLCJLCJLC at any other maker, PCBWay's WayWayWay at any other: the maker prints the letters; an assembly class with fewer tooling holes than the profile names is a warning (JLCPCB: Economic, 2). Independent of the maker: [order] layers and size_mm, where set, are those of the Gerber files; delivery = panel_by_customer fails (the run is one board); pcba_quantity is at most quantity, and another number than [project] quantity is a warning; no copper of either side lies within tab_copper_mm (1.0 mm) of a declared tab zone of the outline, measured on the Gerber files. The outline stretches free of copper are listed, a provisional profile is named, and fab/<board>/order.md holds every field of the planned maker's form with its value and where it comes from.",
+   "why": "The order form fields that depend on the board are filled in by hand while ordering: a cart with 'Remove Mark' prints the placeholder as text, a remark of 202 characters does not fit the field, a remark that allows tabs where a track runs 0.45 mm from the edge lets the tab cut it, and an Economic order without own tooling holes gets JLCPCB's, possibly on a visible edge. Each was found late in the reference project, the tooling holes only in the quote. Thickness and colours stood in no file: the form's defaults (1.6 mm, green, white print) went into the cart unless someone remembered otherwise, while the mechanical model took the board file's thickness_mm. A thickness the form does not have (1.57 mm, the 62 mil of US fabs) cannot be ordered as drawn, and the print colour follows the mask: in the reference project a white mask was an open question for one board whose silkscreen artwork was drawn for white print – JLCPCB prints black on a white mask. With several makers to choose from, a release must describe one board whichever maker builds it: edakit's defaults are the same for every maker, the profile only translates, and a value a maker does not offer, or JLCPCB's placeholder printed as text by another maker, is found at the release – for the maker the board is planned for as a failure, for a second maker as a warning, so that a setting only the second one lacks does not block the first.",
+   "fix": "Correct [order] – a value the maker's form offers (edakit cart fields lists the fields and the maker's words), a shorter ASCII remark, mark = \"specify\" with the placeholder (or another mark), the silkscreen colour the maker prints on the mask (or another mask), tab zones only on stretches order.md lists as free, or the copper moved back from the edge – or add [tooling] holes; set thickness_mm to a thickness of the form (the mechanical model takes the same value). A placeholder at a maker without one: take the maker out of [cart] makers, or the placeholder off the board (then the release is no longer JLCPCB's). A warning the owner wants (JLCPCB's tooling holes, a hand-placed placeholder, a second maker's lack) is accepted in the sign-off file.",
+   "sources": ["edakit handbook 8.4", "JLCPCB order form (Mark on PCB, Remark, PCBA Type, Tooling holes); reference order of 2026-10-25", "JLCPCB PCB Manufacturing Capabilities (read 2026-10-28): solder mask colours Green, Purple, Red, Yellow, Blue, White, Black; FR-4 thicknesses 0.4/0.6/0.8/1.0/1.2/1.6/2.0 mm, 2.5 mm and above for 12+ layers only – https://jlcpcb.com/capabilities/pcb-capabilities", "JLCPCB online quote (read 2026-10-28), PCB Color and Silkscreen: 'For most colors, the silkscreen is printed white. Only for white solder mask, the silkscreen is printed black.' – https://cart.jlcpcb.com/quote", "Reference project (pytree): the cart of 2026-10-24 with PCB Thickness 1.6mm, PCB Color Green, Silkscreen White (the form's defaults), and its silkscreen concept: with a white mask (an open question for the snow tree) JLCPCB prints black, so the artwork had to look right in black too", "Ordering at the manufacturer (docs/concepts/new/ordering.md, decided 2026-10-30): every field of the form as a key with edakit's default, the maker's profile, checks per maker; edakit/makers/jlcpcb.toml (provisional until ordering step 0)", "JLCPCB, \"How to remove order number from your PCB\" (last updated 2026-05-22; read in search summaries on 2026-10-30): the order number not available since May 2026, JLCJLCJLCJLC not to be added, a 2D barcode or a serial number instead – https://jlcpcb.com/help/article/how-to-mark-on-pcb; the owner's decision of 2026-10-30: F-6 warns until ordering step 0 has seen the form"]
+  },
+  "F-7": {
+   "title": "ODB++ = the released files",
+   "rule": "With a maker of [cart] makers that takes ODB++ (files = [\"odb\"] in its profile – AISLER): odb_<board>.zip, exported by EasyEDA through the patched tool easyeda_export_odb, holds to this run's files – every board layer (copper, solder mask, paste, silkscreen) rasterised as L-2 does and XOR'd with the Gerber layer of the same side: no spot above 0.01 mm², no layer in one and not in the other; the drill hits = the drill files (place to 1 µm, diameter, plated or not); the profile = the Gerber outline (0.05 mm); every BOM part exactly once at the place (0.01 mm), rotation (ODB++ clockwise, the CPL counter-clockwise) and side of the CPL, with the BOM's part number; a part with bom: false as the maker's profile says – left out (dnp = \"omit\"), else listed for the skill to mark; the nets of the pins as the graph's, compared as groups of pins. An export that failed or cannot be read fails. A failure for [cart] maker, a warning for another maker.",
+   "why": "AISLER assembles from ODB++, not from Gerber, and no open-source tool turns the released Gerber, BOM and CPL into ODB++: the file comes from EasyEDA, which also wrote the Gerber – but from its own state, at its own moment, through an export nobody else checks. The gate's checks hold the Gerber to the graph; F-7 holds the ODB++ to the Gerber, so that what AISLER builds is what the gate released – without trusting EasyEDA.",
+   "fix": "Export again with the gate (edakit gate --easyeda): the ODB++ comes from the same state as the Gerber of the run. A layer that differs: the PCB changed between the exports, or EasyEDA's ODB++ export draws it otherwise – compare the spot named with the Gerber (edakit fab diff of two runs shows the Gerber side). An export that failed: the patched MCP server and bridge (edakit doctor, handbook 2.5).",
+   "sources": [
+    "ODB++ Format Specification v8.1 (Siemens): matrix, features (L, P, A, S with OB/OS/OC/OE), standard symbols, components (CMP, TOP), eda/data (NET); rotation of components clockwise",
+    "EasyEDA Pro: File > Export > ODB++ (ODB++ v8.0) – https://prodocs.easyeda.com/en/pcb/export-odb-plus-plus; extension API PCB_ManufactureData.getOpenDatabaseDoublePlusFile (BETA)",
+    "AISLER: assembly from ODB++ or native design files, not from Gerber – https://community.aisler.net/t/introducing-odb-support/2459 (search result of 2026-10-30)",
+    "Ordering at the manufacturer (docs/concepts/new/ordering.md, decided 2026-10-30): ODB++ from EasyEDA Pro, checked by F-7; the rotation convention and the part numbers in EasyEDA's export are confirmed by ordering step 0b"
+   ]
+  },
+  "B-1": {
+   "title": "form = job",
+   "rule": "edakit cart check: every field of the job (job.json, from the keys of [order] in the maker's words) is read back from the page with its value (quote.json; case and blanks ignored) – the quantities and, where the job lists parts not to place, their marks included; a field the page shows that is neither in the job nor in the profile's ignore fails.",
+   "why": "The form is the one place where the order differs from the release without any file knowing it: the reference cart still said 'Remove Mark' although the board had the placeholder, the remark was wrong three times. F-6 holds [order] to the board; only B-1 holds the form to [order]. A field the maker added is a question nobody answered – the page's preset would go into the order.",
+   "fix": "Set the field on the page to the job's value and read it back; a value the form does not offer: correct [order] and run the gate. A new field: a key for it in edakit, or the field into the profile's ignore with its reason – before the order goes on.",
+   "sources": [
+    "edakit handbook 8.4 (the reference order: 'Remove Mark', the remark)",
+    "Ordering at the manufacturer (docs/concepts/new/ordering.md, decided 2026-10-30): edakit prepares the order, Claude fills the maker's form in the owner's browser (skill cart), edakit checks what it brings back; up to the maker's cart button, never further"
+   ]
+  },
+  "B-2": {
+   "title": "parts = release",
+   "rule": "edakit cart check: the maker's matching (quote.json parts) has exactly the lines of the job's BOM – the same part numbers (LCSC or MPN, as the maker matches), the same designators; a line the maker marked (not matched, out of stock, replaced, another manufacturer, 'Standard Only') fails.",
+   "why": "The maker's BOM tool decides what is placed: a replaced part, another manufacturer or a line it could not match is a board the gate never checked and M-6 never saw. A part the maker would replace needs a new release – with it a new M-6.",
+   "fix": "A part the maker cannot place: another part in the graph (part-search), a new gate run and a new order. Never accept a replacement on the page.",
+   "sources": [
+    "Ordering at the manufacturer (docs/concepts/new/ordering.md, decided 2026-10-30): edakit prepares the order, Claude fills the maker's form in the owner's browser (skill cart), edakit checks what it brings back; up to the maker's cart button, never further",
+    "edakit handbook 8.4 and 15.4 (M-6 reviews the parts of the release)"
+   ]
+  },
+  "B-3": {
+   "title": "quote against the estimate",
+   "rule": "edakit cart check: the board's price lines of the quote without shipping and VAT – PCB, assembly fees, parts – against the estimate of edakit cost for the board in the job, each above [cart] tolerance per price line a warning with both values; the board total above [cost] budget a warning. A maker without a fee table: the board total against the budget only.",
+   "why": "edakit cost came within about 1 $ of the reference carts; a larger difference is a fee edakit does not know, a class or a side that changed, or a field set otherwise than the job says. Shipping and VAT belong to the order, which may hold several boards – edakit cart actual compares them.",
+   "fix": "Find the line that differs: a field of the form (B-1), a part line (B-2), a fee the table lacks (edakit cart actual brings real costs into the project's fee table). Accept a difference that is understood, or stop the order.",
+   "sources": [
+    "edakit handbook 8.4 (the estimate within about 1 $ of the cart of 2026-10-25)",
+    "Ordering at the manufacturer (docs/concepts/new/ordering.md, decided 2026-10-30): edakit prepares the order, Claude fills the maker's form in the owner's browser (skill cart), edakit checks what it brings back; up to the maker's cart button, never further"
+   ]
+  },
+  "B-4": {
+   "title": "read, not made up",
+   "rule": "edakit cart check: every value of quote.json – the fields, the part numbers and designators, the price amounts, the file names, the lead time – occurs in quote_page.txt, the page text Claude kept.",
+   "why": "Both files come from Claude: B-4 cannot prove the page, but it finds a value that was not read – one filled in from the job or from memory, which would make B-1 to B-3 compare the job with itself.",
+   "fix": "Read the page again and write what it shows; keep the page text whole (form, matching, quote).",
+   "sources": [
+    "Ordering at the manufacturer (docs/concepts/new/ordering.md, decided 2026-10-30): edakit prepares the order, Claude fills the maker's form in the owner's browser (skill cart), edakit checks what it brings back; up to the maker's cart button, never further"
+   ]
+  },
+  "B-5": {
+   "title": "the same files",
+   "rule": "edakit cart check: the SHA-256 of every upload file is still that of the job and of the current release's manifest, the job's run is still the current release, and the names – and sizes, where the page shows them – of the uploads the page lists are the job's files, none more.",
+   "why": "The second lesson of the reference order: the upload of another run's files. edakit release verify had to be run by hand right before the upload; B-5 checks the files and what the page says it received.",
+   "fix": "Upload the job's files again from the paths in job.json; after a new release, edakit cart prepare again.",
+   "sources": [
+    "edakit handbook 8.4 (release verify before the upload)",
+    "Ordering at the manufacturer (docs/concepts/new/ordering.md, decided 2026-10-30): edakit prepares the order, Claude fills the maker's form in the owner's browser (skill cart), edakit checks what it brings back; up to the maker's cart button, never further"
+   ]
+  },
+  "B-6": {
+   "title": "lead in the finish",
+   "rule": "edakit cart check: a surface finish with lead (HASL that is not lead-free) in the job or on the page fails for purpose.use sale, warns for gift and is a note for private.",
+   "why": "The finish is in the layout and fab hash, not in the circuit hash M-6 reviewed: leaded HASL puts lead into the product. For a board that is sold RoHS forbids it; for a gift lead is a substance of very high concern that REACH Art. 33 asks to name to a consumer who asks.",
+   "fix": "finish = \"LeadFree HASL\" or \"ENIG\" in [order] and a new gate run; a gift with lead: accept with the statement at hand, or change the finish.",
+   "sources": [
+    "edakit handbook 15.1 and 15.2 (RoHS, REACH Art. 33, graded by purpose)",
+    "Directive 2011/65/EU (RoHS 2) Annex II: lead 0.1 % by weight in homogeneous materials",
+    "Ordering at the manufacturer (docs/concepts/new/ordering.md, decided 2026-10-30): edakit prepares the order, Claude fills the maker's form in the owner's browser (skill cart), edakit checks what it brings back; up to the maker's cart button, never further"
+   ]
+  },
+  "B-7": {
+   "title": "regulatory review of this order",
+   "rule": "edakit cart check: regulatory.md, the result of the agent regulatory-reviewer on the order, exists, names the SHA-256 of job.json and quote.json as they are now and ends with the line 'Order: OK'. Without it the check is open (exit 3); another hash, 'Order: not OK' or another last line fails.",
+   "why": "M-6 reviewed the circuit; the order adds what M-6 never saw – the finish and the other keys, the quantity against the purpose, where the maker sits, parts the owner supplies. A new quote is another order: its hash changes and the review must see it. Whether every finding 'important' is settled is the agent's judgement, as for M-6; edakit checks the line and the hashes.",
+   "fix": "Run the agent regulatory-reviewer on the order (skill cart, step 8) and write its result unchanged to regulatory.md; settle a 'block' with a new release, an 'important' as a numbered decision.",
+   "sources": [
+    "edakit handbook 15.4 (M-6) and the agent regulatory-reviewer, section 'At the order'",
+    "Ordering at the manufacturer (docs/concepts/new/ordering.md, decided 2026-10-30): edakit prepares the order, Claude fills the maker's form in the owner's browser (skill cart), edakit checks what it brings back; up to the maker's cart button, never further"
+   ]
   }
  },
  "hints": {

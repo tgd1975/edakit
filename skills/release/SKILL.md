@@ -1,6 +1,6 @@
 ---
 name: release
-description: Release a hardware state for manufacturing with the edakit release gate – all stages (P parts, G graph, E simulation, project checks, S schematic, L board, F manufacturing files), sign-offs bound to hashes, manifest, test protocol, order checklist for JLCPCB. Use before an order, for "release", "gate", "test protocol", "manufacturing files", "Gerber", "BOM".
+description: Release a hardware state for manufacturing with the edakit release gate – all stages (P parts, G graph, E simulation, project checks, S schematic, L board, F manufacturing files), sign-offs bound to hashes, manifest, test protocol, the order checklist – the skill cart puts the released board into the maker's cart. Use before an order, for "release", "gate", "test protocol", "manufacturing files", "Gerber", "BOM".
 ---
 
 # Release for manufacturing
@@ -68,9 +68,14 @@ Concept: `${CLAUDE_PLUGIN_ROOT}/handbook/08-release-gate.md`.
    not be uploaded after all (a review found something): `edakit release withdraw <run> --reason "…"` – then there is
    no current release until the next RELEASED run.
 
-## Order (done by the user)
+## Order (up to the cart; ordering and paying are the user's)
 
-The MCP server cannot order on purpose. Checklist for the user:
+The released board goes into the maker's cart with the skill cart (`/edakit:cart`): `edakit cart prepare` from the
+current release, the form filled and read back with Claude in Chrome, `edakit cart check` (B-1 to B-7) with the
+regulatory review of the order, then the maker's cart button – nothing ordered or paid (handbook 8.4). Without Claude
+in Chrome the skill prints the job as a checklist and `edakit cart check` checks what the user filled in. The MCP
+server cannot order on purpose. The checklist below is what the skill and its checks cover, and what stays the
+user's:
 
 - [ ] `edakit release verify <the files about to be uploaded>` says every file is of the current release (exit 0) –
       per made board `gerber_<b>.zip`, `bom_<b>.csv`, `cpl_<b>.csv` (a bought board, `bought = true`, has none)

@@ -58,14 +58,59 @@ BOARD_FILE_KEYS = ("revision", "view", "outline", "holes", "tooling", "place", "
                    "looks", "thickness_mm")
 SCHEMATIC_KEYS = ("stub", "layout")
 RELEASE_KEYS = ("layout_files", "state_files", "hash_ignore", "assembly", "stages")
-PCBA = ("economic", "standard")  # [release] assembly.pcba: the assembler's class of the order (P-4)
+PCBA = ("economic", "standard")  # [release] assembly.pcba: JLCPCB's classes – another maker's: its profile's classes
 COST_KEYS = ("fees", "budget", "currency", "rates", "shipping", "coupon", "vat_pct", "pcb_price")   # [cost]
 EXTRA_KEYS = ("item", "supplier", "code", "per_set", "spare", "moq", "step", "unit_price", "currency")   # [[extra]]
 STOCK_MAX_AGE_DAYS = 14          # [project] stock_max_age_days: an older stock snapshot is pending (P-4)
-ORDER_KEYS = ("finish", "mark", "remark", "tab_zones", "tab_copper_mm", "mask", "silkscreen")   # [order] (F-6)
 MARKS = ("default", "specify", "remove")   # order.mark: JLCPCB's order number anywhere, at the placeholder, none
-MASKS = ("green", "purple", "red", "yellow", "blue", "white", "black")   # order.mask: JLCPCB's solder mask colours
-SILKSCREENS = ("white", "black")   # order.silkscreen: JLCPCB prints white, on a white mask black (silkscreen_on)
+MASKS = ("green", "purple", "red", "yellow", "blue", "white", "black")   # order.mask: solder mask colours
+SILKSCREENS = ("white", "black")   # order.silkscreen: white print, on a white mask black (silkscreen_on)
+# [order]: every field of a maker's order form as a key in edakit's words, with edakit's default – the board edakit
+# assumes when nothing is said, the same for every maker (handbook 10.2). Three layers, the later wins per key: these
+# defaults, [order] of edakit.toml (every board), [order] of the board file. The maker's profile only translates a value
+# into its word (makers.py). key: (default, kind, made) – kind is str, bool, "count" (a whole number > 0), "oz" (a
+# number > 0), a tuple of words, or one of the forms below; made: the key changes the board as made, and order.json –
+# the fab hash – has it where it differs from the default (order_sheet.settings). None: derived (quantity from
+# [project] quantity, pcba_quantity from quantity, layers and size_mm from the Gerber files – keys only to check).
+ORDER = {
+    "finish": ("LeadFree HASL", str, True),
+    "mark": ("default", MARKS, True),
+    "remark": ("", str, False),
+    "tab_zones": ([], "zones", False),
+    "tab_copper_mm": (1.0, "mm", False),
+    "material": ("FR-4", str, True),
+    "tg": ("TG135", str, True),
+    "layers": (None, "count", False),
+    "size_mm": (None, "size", False),
+    "quantity": (None, "count", False),
+    "delivery": ("single", ("single", "panel_by_customer", "panel_by_maker"), True),
+    "panel": (None, "panel", True),
+    "copper_oz": (1, "oz", True),
+    "inner_copper_oz": (0.5, "oz", True),
+    "vias": ("tented", ("tented", "untented", "plugged", "epoxy_filled"), True),
+    "outline_tolerance": ("regular", ("regular", "precision"), True),
+    "gold_fingers": (False, bool, True),
+    "castellated": (False, bool, True),
+    "edge_plating": (False, bool, True),
+    "barcode": ("none", ("none", "qr", "datamatrix"), True),   # a 2D barcode the maker prints for traceability
+    "serial_number": (False, bool, True),                      # a serial number the maker prints on every board
+    "electrical_test": ("flying_probe", str, False),
+    "quality": ("ipc2", str, False),
+    "confirm_production_file": (False, bool, False),
+    "paper_between": (False, bool, False),
+    "packaging": ("standard", str, False),
+    "pcba_quantity": (None, "count", False),
+    "confirm_placement": (True, bool, False),   # edakit's choice: the maker shows its placement first, beside M-2
+    "photo_confirmation": (False, bool, False),
+    "depanel": (False, bool, False),
+    "conformal_coating": (False, bool, True),
+    "function_test": (False, bool, False),
+    "pcba_packaging": ("antistatic_bag", str, False),
+    "mask": ("green", MASKS, True),
+    "silkscreen": (None, SILKSCREENS, True),    # None: silkscreen_on(mask)
+}
+ORDER_KEYS = tuple(ORDER)                       # [order] (F-6)
+BOARD_ONLY = ("tab_zones", "size_mm", "layers")  # [order] keys of a board file only, not of edakit.toml
 FIRMWARE_KEYS = ("mcu", "out", "gpio")    # [firmware]: the board's firmware contract (edakit firmware), opt-in
 DOCS_KEYS = ("files", "decimal")                     # [docs]: Markdown files with quoted values (edakit docs, G-19)
 
@@ -131,6 +176,7 @@ class Board:
     uniform: dict | None = None                       # kind -> "row" | "+x" | "-x" | "+y" | "-y"; None: UNIFORM
     looks: dict | None = None                         # [looks]: visible ("top" | "bottom"), max_track_m, max_vias
     thickness_mm: float = THICKNESS_MM                # board thickness: the order, lead protrusion in mech_<board>.json
+    thickness_given: bool = False                     # thickness_mm is in the board file (order.md: where it comes from)
     bought: bool = False        # bought = true: on a cable, checked with the graph and the simulation, made by nobody
 
     # --- plan <-> EasyEDA -------------------------------------------------------------------------------------------
@@ -202,16 +248,15 @@ class Config:
     docs: list = field(default_factory=list)   # [docs] files: Markdown files whose value blocks edakit docs reads
     docs_decimal: str = "."                    # [docs] decimal: "." or "," in quoted numbers
     toolchain: str = "easyeda"                 # [project] toolchain: "easyeda" or "kicad" (edakit/toolchain)
+    order: dict = field(default_factory=dict)  # [order] of edakit.toml: the project's order keys for every board
+    cart: dict | None = None                   # [cart] with its defaults (makers.cart); "given": the table is there
 
-    def pcba(self):
-        """(class, why) of the assembly order: [release] assembly.pcba, or derived from assembly.sides – one side
-        Economic, two sides Standard (without [release] assembly both sides count, as for F-3)."""
-        a = self.release.get("assembly", {})
-        if a.get("pcba"):
-            return a["pcba"], f'[release] assembly.pcba = "{a["pcba"]}"'
-        sides = a.get("sides", ["top", "bottom"])
-        return ("economic" if len(sides) == 1 else "standard"), \
-            f"[release] assembly.sides {' + '.join(sides)}: {'one side' if len(sides) == 1 else 'two sides'}"
+    def pcba(self, maker=None):
+        """(class, why) of the assembly order: [release] assembly.pcba, or derived from assembly.sides – at JLCPCB one
+        side Economic, two sides Standard (without [release] assembly both sides count, as for F-3). maker: the class at
+        another maker of [cart] makers (makers.pcba)."""
+        from . import makers
+        return makers.pcba(self, maker)
 
     def board(self, name=None, made=False) -> Board:
         """The board name, or the only one. made: for what draws or reads a layout – a bought board is refused, and
@@ -368,45 +413,112 @@ def silkscreen_on(mask):
     return "black" if mask == "white" else "white"
 
 
-def _order(name, o):
-    """[order] of a board file, with its defaults; None without the table (no order form, no F-6)."""
+def _order_value(where, key, v):
+    """One key of [order] as edakit takes it; ConfigError when it is not of its kind."""
+    _, kind, _ = ORDER[key]
+    if kind is str:
+        if not isinstance(v, str):
+            raise ConfigError(f"{where}.{key} must be a string")
+        return v
+    if kind is bool:
+        if not isinstance(v, bool):
+            raise ConfigError(f"{where}.{key} must be true or false")
+        return v
+    if isinstance(kind, tuple):
+        if v not in kind:
+            raise ConfigError(f"{where}.{key} must be one of {', '.join(kind)}, not {v!r}")
+        return v
+    if kind == "count":
+        if isinstance(v, bool) or not isinstance(v, int) or v < 1:
+            raise ConfigError(f"{where}.{key} must be a whole number > 0, not {v!r}")
+        return v
+    if kind in ("oz", "mm"):
+        if bad := _number(f"{where}.{key}", v, positive=kind == "oz"):
+            raise ConfigError(bad[0])
+        return float(v) if kind == "mm" else v
+    if kind == "size":
+        if not (isinstance(v, list) and len(v) == 2 and all(isinstance(x, (int, float)) and not isinstance(x, bool)
+                                                              and x > 0 for x in v)):
+            raise ConfigError(f"{where}.{key} must be [width, height] in mm, each > 0 (Gerber outline, to check)")
+        return [float(x) for x in v]
+    if kind == "panel":
+        if not isinstance(v, dict) or (bad := _unknown(f"{where}.panel", v, ("x", "y", "rails_mm"))) or not all(
+                isinstance(v.get(k), int) and not isinstance(v.get(k), bool) and v[k] >= 1 for k in ("x", "y")):
+            raise ConfigError(f"{where}.panel must be {{ x = boards across, y = boards up, rails_mm = edge rails }}"
+                              + (f" – {bad[0]}" if isinstance(v, dict) and bad else ""))
+        if bad := _number(f"{where}.panel.rails_mm", v.get("rails_mm", 0)):
+            raise ConfigError(bad[0])
+        return {"x": v["x"], "y": v["y"], "rails_mm": float(v.get("rails_mm", 0))}
+    out = []                                    # zones
+    if not isinstance(v, list):
+        raise ConfigError(f"{where}.tab_zones must be a list of {{ from = [x, y], to = [x, y] }}")
+    for i, z in enumerate(v, 1):
+        at = f"{where}.tab_zones {i}"
+        if isinstance(z, dict) and (bad := _unknown(at, z, ("from", "to"))):
+            raise ConfigError(bad[0])
+        point = lambda p: isinstance(p, list) and len(p) == 2 and all(  # noqa: E731
+            isinstance(x, (int, float)) and not isinstance(x, bool) for x in p)
+        if not isinstance(z, dict) or not point(z.get("from")) or not point(z.get("to")):
+            raise ConfigError(f"{at}: needs from = [x, y] and to = [x, y] (plan mm, two points on the outline)")
+        out.append((tuple(map(float, z["from"])), tuple(map(float, z["to"]))))
+    return out
+
+
+def project_order(o):
+    """[order] of edakit.toml: the project's choice for every board, checked as a board's; {} without the table."""
     if o is None:
+        return {}
+    if not isinstance(o, dict):
+        raise ConfigError("edakit.toml: order must be a table ([order])")
+    if bad := _unknown("edakit.toml [order]", o, tuple(k for k in ORDER_KEYS if k not in BOARD_ONLY), BOARD_ONLY):
+        raise ConfigError(bad[0])
+    if here := [k for k in o if k in BOARD_ONLY]:
+        raise ConfigError(f"edakit.toml [order] {here[0]}: a key of one board – it goes into [order] of the board file")
+    return {k: _order_value("edakit.toml order", k, v) for k, v in o.items()}
+
+
+def _order(name, o, project=None, quantity=5):
+    """[order] of a board file over [order] of edakit.toml (project) over edakit's defaults – every key with its value;
+    None without either table (no order form of its own, no order.json, as before). The keys that were set and where:
+    the dict's "_from" ({key: "project" | "board"})."""
+    project = project or {}
+    if o is None and not project:
         return None
+    o = {} if o is None else o
     if not isinstance(o, dict):
         raise ConfigError(f"board {name}: order must be a table ([order])")
     if bad := _unknown(f"board {name}: order", o, ORDER_KEYS):
         raise ConfigError(bad[0])
-    for key in ("finish", "remark"):
-        if not isinstance(o.get(key, ""), str):
-            raise ConfigError(f"board {name}: order.{key} must be a string")
-    if o.get("mark", "default") not in MARKS:
-        raise ConfigError(f"board {name}: order.mark must be one of {', '.join(MARKS)}, not {o['mark']!r}")
-    for key, known in (("mask", MASKS), ("silkscreen", SILKSCREENS)):
-        if key in o and o[key] not in known:
-            raise ConfigError(f"board {name}: order.{key} must be one of {', '.join(known)}, not {o[key]!r}")
-    mask = o.get("mask", "green")
-    if bad := _number(f"board {name}: order.tab_copper_mm", o.get("tab_copper_mm", 1.0)):
-        raise ConfigError(bad[0])
-    zones = o.get("tab_zones", [])
-    if not isinstance(zones, list):
-        raise ConfigError(f"board {name}: order.tab_zones must be a list of {{ from = [x, y], to = [x, y] }}")
-    out = []
-    for i, z in enumerate(zones, 1):
-        where = f"board {name}: order.tab_zones {i}"
-        if isinstance(z, dict) and (bad := _unknown(where, z, ("from", "to"))):
-            raise ConfigError(bad[0])
-        point = lambda p: isinstance(p, list) and len(p) == 2 and all(  # noqa: E731
-            isinstance(v, (int, float)) and not isinstance(v, bool) for v in p)
-        if not isinstance(z, dict) or not point(z.get("from")) or not point(z.get("to")):
-            raise ConfigError(f"{where}: needs from = [x, y] and to = [x, y] (plan mm, two points on the outline)")
-        out.append((tuple(map(float, z["from"])), tuple(map(float, z["to"]))))
-    return {"finish": o.get("finish", "LeadFree HASL"), "mark": o.get("mark", "default"), "remark": o.get("remark", ""),
-            "tab_zones": out, "tab_copper_mm": float(o.get("tab_copper_mm", 1.0)),
-            "mask": mask, "silkscreen": o.get("silkscreen", silkscreen_on(mask))}
+    own = {k: _order_value(f"board {name}: order", k, v) for k, v in o.items()}
+    out = {k: (default if not isinstance(default, list) else list(default)) for k, (default, _, _) in ORDER.items()}
+    out.update(project)
+    out.update(own)
+    if out["silkscreen"] is None:
+        out["silkscreen"] = silkscreen_on(out["mask"])
+    if out["quantity"] is None:
+        out["quantity"] = quantity
+    if out["pcba_quantity"] is None:
+        out["pcba_quantity"] = out["quantity"]
+    if out["delivery"] == "panel_by_maker" and not out["panel"]:
+        raise ConfigError(f"board {name}: order.delivery = \"panel_by_maker\" needs panel = {{ x, y, rails_mm }} – how "
+                          "the maker panelises the board")
+    out["_from"] = {**{k: "project" for k in project}, **{k: "board" for k in own}}
+    return out
 
 
-def _board(name, entry, b, file=""):
-    """A board: its EasyEDA documents from edakit.toml (entry), everything physical from its board file (b)."""
+def order_defaults():
+    """edakit's defaults of every key of [order] – the board edakit assumes when nothing is said."""
+    return {k: (d if not isinstance(d, list) else list(d)) for k, (d, _, _) in ORDER.items()}
+
+
+def order_values(order):
+    """The keys of a board's order without "_from"."""
+    return {k: v for k, v in order.items() if k != "_from"}
+
+
+def _board(name, entry, b, file="", project=None, quantity=5):
+    """A board: its EasyEDA documents from edakit.toml (entry), everything physical from its board file (b); project:
+    [order] of edakit.toml, quantity: [project] quantity (the defaults of the order)."""
     tooling = b.get("tooling", {})
     view = b.get("view", "top")
     if view not in ("top", "bottom"):
@@ -521,10 +633,11 @@ def _board(name, entry, b, file=""):
         net_classes=classes,
         force_class=force,
         copper=_copper(name, b.get("copper", {})),
-        order=_order(name, b.get("order")),
+        order=_order(name, b.get("order"), project, quantity),
         uniform=dict(uniform) if uniform is not None else None,
         looks=dict(looks) if looks is not None else None,
         thickness_mm=float(thickness),
+        thickness_given="thickness_mm" in b,
         bought=entry.get("bought", False),
     )
 
@@ -586,10 +699,14 @@ def _project_values(p):
     return out
 
 
-def _release_values(release):
+def _release_values(release, maker=None):
+    """[release] assembly.pcba: one of the assembly classes of the planned maker (JLCPCB: economic, standard)."""
     a = release.get("assembly", {})
-    if "pcba" in a and a["pcba"] not in PCBA:
-        return [f"[release] assembly.pcba must be one of {', '.join(PCBA)}, not {a['pcba']!r}"]
+    classes = maker.classes if maker is not None and maker.classes else list(PCBA)
+    if "pcba" in a and a["pcba"] not in classes:
+        return [f"[release] assembly.pcba must be one of {', '.join(classes)}"
+                + (f" (the classes of {maker.name}, [cart] maker)" if maker is not None and maker.key != "jlcpcb" else "")
+                + f", not {a['pcba']!r}"]
     return []
 
 
@@ -740,7 +857,7 @@ def load(path=None) -> Config:
 
     moved = _one_file_form(raw, path.name)
     problems = _unknown(path.name, raw, ("project", "boards", "release", "cost", "extra", "firmware", "docs",
-                                         "scripts", "agents"),
+                                         "scripts", "agents", "order", "cart"),
                         ("schematic", "checks", "net_classes", "sim"))
     problems += _unknown("[project]", p, PROJECT_KEYS, ("ground",))
     problems += _unknown("[release]", raw.get("release", {}), RELEASE_KEYS, ("signoff",))
@@ -797,11 +914,27 @@ def load(path=None) -> Config:
         problems = moved + problems + [
             f"{path.name} is the table of contents now: board, schematic and checks have files of their own "
             "(handbook 10.1)"]
-    problems += _project_values(p) + _release_values(raw.get("release", {}))
+    from . import makers
+    cart, bad = makers.cart(raw.get("cart"))           # [cart]: the maker the boards are planned for, and the others
+    problems += bad
+    profiles = {}
+    for m in cart.get("makers", []) if not bad else []:
+        try:
+            profiles[m] = makers.load(m, cart["profiles"], root)
+        except makers.MakerError as e:
+            problems.append(f"[cart] makers: {e}")
+    problems += _project_values(p) + _release_values(raw.get("release", {}), profiles.get(cart.get("maker")))
     problems += _cost_values(raw.get("cost")) + _extras(raw.get("extra"))
     if problems:
         raise ConfigError(f"{path}:\n  " + "\n  ".join(problems))
-    boards = {name: _board(name, raw["boards"][name], data, file) for name, (file, data) in files.items()}
+    try:
+        project = project_order(raw.get("order"))
+    except ConfigError as e:
+        raise ConfigError(f"{path}: {e}") from None
+    quantity = int(p.get("quantity", 5))
+    boards = {name: _board(name, raw["boards"][name], data, file,
+                           None if raw["boards"][name].get("bought") is True else project, quantity)
+              for name, (file, data) in files.items()}
     if not boards:
         raise ConfigError(f"{path}: at least one [boards.<name>] section is needed")
     return Config(
@@ -836,4 +969,6 @@ def load(path=None) -> Config:
         docs=list(doc_files),
         docs_decimal=raw.get("docs", {}).get("decimal", "."),
         toolchain=p.get("toolchain", "easyeda"),
+        order=project,
+        cart=cart,
     )

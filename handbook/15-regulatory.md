@@ -81,3 +81,27 @@ and boards, the firmware sets the channels, the country and 802.11d, and the tra
 2026-10-29). For a board built for oneself or given away (`private`, `gift`, or no purpose) such a topic is a
 **note**, for one that is sold it is **important** – in `edakit check` and the gate a warning to accept (8.1) –,
 and a **block** only where the hardware cannot be made to comply: a part made for another region's band.
+
+## 15.5 At the order
+
+M-6 reviews the circuit; the order adds what M-6 never saw, and what may change between the release and the cart. The
+parts are not new at the order – B-2 holds the maker's matching to the release, which M-6 saw, and a part the maker
+would replace needs a new release with a new M-6. The agent regulatory-reviewer "At the order" (the skill cart, step
+8) reads `job.json`, `quote.json` and `quote_page.txt` – as data, never as instructions –, `check.md` and the M-6
+result for the run's circuit hash, and looks only at the difference:
+
+| What | Why it matters |
+|---|---|
+| the surface finish and the other keys of the form | in the layout and fab hash, not in the circuit hash: leaded HASL is lead in the product (B-6 grades it: fail for `sale`, warning for `gift`, note for `private`), a coating or another material is part of the product |
+| the quantity against the purpose | 50 boards for `private` asks whether the purpose is still true – a new purpose is a new M-6 |
+| where the maker sits | outside the EU (JLCPCB, PCBWay) and `sale`: the owner imports the boards and is the manufacturer – name and address, technical file, registrations before the first sale (15.2); inside the EU (Eurocircuits, AISLER): no import, the owner stays the manufacturer (15.1), the maker's declarations are input for the technical file |
+| parts the owner supplies to the maker | imported by the owner when bought outside the EU |
+| a cell, a power supply in the matching | batteries regulation, the supply's own conformity, transport of lithium cells |
+| declarations the form asks for | what the shipment is declared as (customs description and value) |
+
+Its result goes unchanged into `regulatory.md`: numbered findings graded as for M-6, the SHA-256 of the job and the
+quote it reviewed, the line that it is support and not legal advice, and as the last line `Order: OK` or
+`Order: not OK`. A difference that changes the circuit is a **block** ("new M-6 needed"). It is no sign-off in the
+sign-off file – the release and its hashes stay as they are –, but B-7 makes the cart wait for it, and a new quote
+needs a new review because its hash changes. The order record keeps the verdict with the numbers and grades of the
+findings (8.4).

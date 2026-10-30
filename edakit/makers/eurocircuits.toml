@@ -1,0 +1,28 @@
+# Eurocircuits (Mechelen, Belgium) – the maker's profile for edakit's order form (handbook 8.4). Data, no code, no
+# defaults of the board: those are edakit's keys of [order] (handbook 10.2).
+#
+# recorded = false: only what the search of 2026-10-30 found (docs/concepts/new/ordering.md, European
+# manufacturers); the form's labels, words and limits, the pick-and-place format and the basket button are recorded
+# on the site by ordering step 0. Until then F-6 names the fields as not checked, and the skill cart stops before the
+# basket.
+
+name = "Eurocircuits"
+recorded = false
+start = "https://www.eurocircuits.com/pcb-assembly-proto/"
+seat = "BE"                            # inside the EU: no import; for "sale" the owner stays the manufacturer (15.1)
+currency = "EUR"
+files = ["gerber", "bom_mpn", "cpl"]   # gerber_<b>.zip, bom_<b>_mpn.csv (MPN required), cpl_<b>.csv
+classes = ["proto", "series"]          # PCB Proto (1–5 boards, 2 or 4 layers) or a larger run – words: step 0
+dnp = "omit"                           # a part not to place is left out of BOM and CPL
+never = ["Order", "Buy", "Checkout", "Pay", "Place order", "Confirm order"]
+ignore = {}
+excludes = []
+
+[bom]
+columns = ["Designator", "Quantity", "Manufacturer", "MPN", "Comment"]
+match = "mpn"                          # Eurocircuits matches the BOM by manufacturer part number (P-12)
+
+# The form's limits: ordering step 0 – none known yet, and no order-number placeholder.
+[rules]
+
+[fields]                               # labels and words: ordering step 0

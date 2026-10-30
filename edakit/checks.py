@@ -76,6 +76,8 @@
   P-11 radio stated: a part of graph type module or microcontroller has compliance.radio in its parts entry – its
        bands and power, or "none"; missing is graded by purpose.use like G-24, a radio value of another shape is an
        error
+  P-12 with a maker of [cart] makers that matches parts by manufacturer part number (Eurocircuits): every assembled
+       part's entry names its mpn and its manufacturer (error for the planned maker, warning for another one)
   P-3  own parts (part.py): a board copied from its project with `edakit part own` is that project's current
        datasheet, copied from a commit (pending otherwise); a board that is not released is a warning; the project's
        own datasheets (hardware/datasheet/) are of its current state
@@ -175,10 +177,16 @@ def has_footprint_data(cfg, design=None):
 
 def executed(cfg=None):
     """The checks run() runs for this project: EXECUTED; where a parts entry has footprint data P-9 and P-10 after
-    P-8; with [project] requirements G-20 to G-23 – a project without either gets the same checks as before."""
+    P-8; with [project] requirements G-20 to G-23; without a maker that orders from JLCPCB's catalogue no P-4 – a
+    project without these keys gets the same checks as before."""
+    from . import makers
     out = list(EXECUTED)
     if cfg is not None and has_footprint_data(cfg):
         out[out.index("P-8") + 1:out.index("P-8") + 1] = FOOTPRINT_CHECKS
+    if cfg is not None and not makers.with_catalogue(cfg, "jlcpcb"):
+        out.remove("P-4")             # no maker of [cart] makers orders from JLCPCB's catalogue: P-4 does not run
+    if cfg is not None and any(m.matches_by == "mpn" for m in makers.all_of(cfg)):
+        out.insert(out.index("P-11") + 1, "P-12")     # a maker that matches parts by MPN (Eurocircuits)
     return out + (list(requirements.CHECKS) if cfg is not None and cfg.requirements else [])
 
 
@@ -1430,6 +1438,30 @@ def check_signoff(d, rep):
                 rep.pending.append(("G-9", msg))
 
 
+def check_mpn(design, rep, cfg):
+    """P-12: with a maker of [cart] makers that matches parts by manufacturer part number (bom.match = "mpn" in its
+    profile – Eurocircuits), every assembled part's entry names its mpn and its manufacturer; an error for the planned
+    maker, a warning for another one. Found when the part is chosen, not at the release."""
+    from . import makers, stock
+    takers = [m for m in makers.all_of(cfg) if m.matches_by == "mpn"]
+    if not takers:
+        return
+    first = takers[0]
+    tag = "" if first.key == makers.planned(cfg) else f"{first.name} (not the planned maker): "
+    for lcsc, refs in stock.assembled(design).items():
+        entry = design.parts.get(lcsc) or {}
+        lost = [k for k in ("mpn", "manufacturer") if not str(entry.get(k) or "").strip()]
+        if not lost:
+            continue
+        msg = (f"{tag}{stock.refs_text(refs)} {lcsc}: the parts entry has no {' and no '.join(lost)} – "
+               f"{', '.join(m.name for m in takers)} matches the BOM by manufacturer part number")
+        if tag:
+            rep.warnings.append(("P-12", msg))
+        else:
+            waive = next((w for d in refs if (w := design.comps[d].get("waive")) and "P-12" in w), None)
+            rep.error("P-12", msg, waive)
+
+
 def run(design, cfg=None):
     rep = Report()
     checks = design.graph.get("checks") or {}
@@ -1470,6 +1502,7 @@ def run(design, cfg=None):
             footprint.check(design, rep, cfg)      # P-9, P-10: own footprints as data (4.5)
         stock.check(design, rep, cfg)
         order.check(design, rep, cfg)
+        check_mpn(design, rep, cfg)          # P-12: a maker of [cart] makers that matches parts by MPN
     check_signoff(design, rep)
     if cfg is not None and cfg.requirements:
         requirements.check(rep, cfg)      # G-20 to G-23 on the requirements file (handbook 3.6)
