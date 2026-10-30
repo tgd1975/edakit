@@ -9,7 +9,7 @@ from edakit import catalog, engines, rules
 
 # the checks of before the engines of step 2 replace
 COVERED = {"G-1", "G-2", "G-3", "G-4", "G-5", "G-6", "G-8", "G-10", "G-11", "G-12", "G-13", "G-14", "G-15", "G-16",
-           "G-17", "G-18", "G-24", "G-25", "P-1", "P-6"}
+           "G-17", "G-18", "G-24", "G-25", "P-1", "P-6", "P-11"}
 
 
 def old_counts(rep):

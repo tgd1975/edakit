@@ -41,6 +41,7 @@ board, the schematic or the checks (the earlier one-file form) is refused with a
 | `schematic` | `hardware/schematic.toml` | the schematic file (10.3) |
 | `signoff` | `hardware/signoff.json` | the sign-off file (8.2) |
 | `requirements` | – | the requirements file (3.6, 10.4), e.g. `"hardware/requirements.toml"`; a variant names the main project's file and its own, `["../../hardware/requirements.toml", "hardware/requirements.toml"]`. With it `edakit req` lists the file, `edakit check` checks it (G-20 to G-23), the gate evaluates every requirement (8.7) and the circuit hash covers it. A file named here must exist and be valid, else `edakit req`, `edakit check` and the gate stop. Without the key no file is read and nothing changes |
+| `domains` | – | the domains the project switches on besides `core` (`edakit/domains`: `usb`, `radio`), e.g. `["usb"]` – what each switches on, its severities, the facts it requires of the parts, its hints and the reviewers' questions; `edakit domains` lists them. Without the key every domain the graph suggests is on; with it a domain the graph suggests and the list leaves out is a note `STRUCT.domain` and reports nothing |
 | `artifacts` | `build/edakit` | caches, previews, routing files, exports, Gerber exports (not versioned) |
 | `reports` | `build/release` | gate runs |
 | `datasheets` | `<artifacts>/datasheets` | the datasheets `edakit part fetch` keeps, `<key>.pdf` and `<key>.json` (4.6); a folder in the repository versions them |
@@ -291,6 +292,7 @@ scripts that write what they read first, when those are outdated or never ran, a
 | `edakit rules [CODE …]` | – | the catalog `edakit/catalog/codes.toml`: engines and codes; an old check ID (G-4) its old entry with the codes that replace it (no project needed) | – |
 | `edakit explain CODE …` | – | the catalog: rule, why, fix, sources and severity of a code; an old check ID names its codes (no project needed) | – |
 | `edakit hints [--json F]` | – | graph, parts, sim config | – |
+| `edakit domains [--review R]` | – | graph, parts, `edakit/domains` | – (the domains on and off, suggested; with `--review electrical`, `regulatory` or `pcb` the questions of the enabled domains for that review) |
 | `edakit convert [--write]` | – | graph, parts entries, sign-off file | `--write`: the files in the form of the restructuring (limits and values with units, accept); without: the list |
 | `edakit block list\|show NAME` | – | the block library (no project needed) | – |
 | `edakit block add NAME --as I [--connect PORT=NET …] [--board B] [--file F] [--dry-run]` | – | graph, parts, block | graph (formatting kept), missing parts entries |

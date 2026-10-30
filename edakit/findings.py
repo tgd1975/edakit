@@ -37,6 +37,7 @@ class Finding:
     source: str = ""          # where the limit or the rule comes from
     fix: str = ""             # what to do here; empty: the code's fix
     grade: str = ""           # a sub-case with its own severity: margin, firmware, the name of a missing fact
+    topic: str = ""           # part of a code a domain may switch on alone: "cc" of REQ.missing (code:topic)
     scenario: str = ""        # the simulation scenario or run (stage E)
     on: tuple = ()            # where an accept may sit: (("net", "BTN"), ("component", "C1"))
     old: str = ""             # the check ID of before the restructuring – for the parity test until the cut

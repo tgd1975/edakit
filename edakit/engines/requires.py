@@ -129,12 +129,12 @@ def usb_c(d):
 
         def miss(text):
             out.append(Finding("REQ.missing", "G", des, text, src, f"{ohm(USB_RD)} per CC pin (block usb-c-sink)",
-                               on=on, old="G-14"))
+                               on=on, old="G-14", topic="cc"))
         if usb is not None:
             state = usb.get("cc") if isinstance(usb, dict) else None
             if state not in USB_C_CC:
                 out.append(Finding("PARTS.schema", "P", d.entry_key(des), f"values.usb_c needs cc "
-                                   f"{', '.join(USB_C_CC[:-1])} or {USB_C_CC[-1]}, not {state!r}", old="G-14"))
+                                   f"{', '.join(USB_C_CC[:-1])} or {USB_C_CC[-1]}, not {state!r}", old="G-14", topic="cc"))
                 continue
             if state != "none":
                 continue
@@ -149,7 +149,7 @@ def usb_c(d):
             continue          # a Type-C or PD controller drives the CC lines
         if cc["cc1"] and cc["cc1"] == cc["cc2"]:
             out.append(Finding("REQ.forbidden", "G", des, f"CC1 and CC2 on one net {cc['cc1']} – each needs its own "
-                               f"{ohm(USB_RD)} to {d.ground}", src, on=on, old="G-14"))
+                               f"{ohm(USB_RD)} to {d.ground}", src, on=on, old="G-14", topic="cc"))
             continue
         for line, net in sorted(cc.items()):
             if net is None:
@@ -162,7 +162,7 @@ def usb_c(d):
             elif known and not any(abs(r - USB_RD) <= USB_RD * USB_RD_TOL for r in known):
                 out.append(Finding("REQ.value", "G", des, f"{line.upper()} ({net}) has "
                                    f"{', '.join(ohm(r) for r in known)} to {d.ground}, needs {ohm(USB_RD)} ± "
-                                   f"{USB_RD_TOL:.0%}", src, on=on, old="G-14"))
+                                   f"{USB_RD_TOL:.0%}", src, on=on, old="G-14", topic="cc"))
     return out
 
 

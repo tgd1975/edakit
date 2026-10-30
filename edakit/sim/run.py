@@ -55,7 +55,7 @@ from pathlib import Path
 
 from .. import engines
 from ..engines import sim as esim
-from ..findings import Finding, Report
+from ..findings import Finding
 from . import copper, netlist
 
 DEFAULT_DERATING = {"p": 0.5, "i": 0.8, "v_cap": 0.67, "v_diode": 0.67, "v_bjt": 0.67}
@@ -978,7 +978,7 @@ def run_all(design, sim, keep=None, plugin=None, routing=None):
         found += row.pop("findings", [])
         out["checks"] += items
         out["scenarios"].append(row)
-    rep = Report(found, engines.profile(new)).resolve(new.graph)
+    rep = engines.report(found, engines.profile(new), new.graph, notes=False)
     out["findings"] = [f.to_dict() for f in rep.findings]
     return out
 

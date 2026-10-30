@@ -35,31 +35,9 @@ without any claim to correctness; nothing in it is legally guaranteed.
 
 ## What you look at
 
-1. **Scope:** what `private`, `gift` or `sale` means for this board – placing on the market, making available. A
-   board built for oneself still has to keep frequency law and must not be dangerous; in Germany it must meet the
-   EMC requirements in substance – EMVG § 6 covers putting into service and passing on, a radio product FuAG § 7 –
-   without the formalities of a sale. A gift is placing on the market under REACH (Art. 3(12): free of charge too),
-   so Art. 33 applies: name a substance of very high concern above 0.1 % to a consumer who asks (45 days) – the
-   suppliers' SVHC statements (`compliance.reach`) are needed for it (handbook 15.1).
-2. **Radio:** every part that transmits – bands and power against the EU's licence-exempt bands (the power as
-   e.i.r.p.: conducted power plus antenna gain; `edakit check` compares it with the band's limit where that is an
-   e.i.r.p., G-24), the module's own conformity, and what the product needs on top when it is sold. A module made
-   for another region's band is a block. An ESP32 that transmits Wi-Fi: ask for the line in the firmware that sets
-   an EU country with 802.11d off after every Wi-Fi start – `esp_wifi_set_country_code("DE", false)`, the radio off
-   if it fails (handbook 15.2); with `true` the station takes the country its access point announces – JP opens
-   channel 14. What the firmware has to keep – channels, the country and 802.11d, the transmit power – is graded
-   by the purpose (handbook 15.4): a **note** for a board built for oneself or given away, **important** for one
-   that is sold, a **block** only where the hardware cannot be made to comply.
-3. **Substances:** RoHS status of every part with its source; REACH SVHC statements; a part without a statement is
-   open.
-4. **Batteries:** chemistry, protection, and for a board that is sold removability, labelling and the duties of
-   whoever places it on the market.
-5. **Supply:** mains voltage on the board (low voltage directive), a power supply that comes with the product (its
-   own conformity), USB power.
-6. **A product that is sold:** product safety and EMC, the EU declaration of conformity, the technical file, the CE
-   marking, the manufacturer's name and address, the registrations (electrical equipment, packaging, batteries), and
-   rules for connected products from the date they apply.
-7. **Children:** if the notes say children use it, whether it is a toy.
+`edakit domains --review regulatory 2>&1 | cat` prints the questions of the domains the project has on (edakit/domains,
+`[review]`): the scope of private, gift or sale, radio, substances, batteries, supply, a product that is sold,
+children. Go through every one of them; what a question names as a check, read its findings first.
 
 Name gold plating as such: a duty that does not apply to this purpose is not a finding.
 

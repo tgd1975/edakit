@@ -43,6 +43,8 @@
     edakit proposal template|seal|verify   a rule or feature proposal for the edakit repository, sealed with its SHA-256
     edakit doctor                    Node, easyeda-mcp-pro, bridge, EasyEDA process, ngspice, Freerouting
     edakit convert [--write]         graph, parts entries and sign-off file into the form of the restructuring
+    edakit domains [--review R]      the project's domains (core, usb, radio …): on, off, suggested; with --review the
+                                     questions of the enabled domains for the electrical, regulatory or pcb review
 
 Exit codes everywhere: 0 = ok, 2 = findings, 1 = error. `edakit lock`, `edakit run` of an easyeda script: 3 = another
 session holds EasyEDA.
@@ -80,6 +82,11 @@ def build_parser():
 
     p = sub.add_parser("explain", help="rule, why, fix and sources of a code")
     p.add_argument("ids", nargs="+", help="codes, e.g. LIM.v REQ.missing (an old ID such as G-8 names its codes)")
+
+    p = sub.add_parser("domains", help="the domains of the project: on, off, suggested; the reviewers' questions")
+    p.add_argument("--review", choices=["electrical", "regulatory", "pcb"], help="the questions of the enabled domains "
+                                                                                "for this review")
+    _common(p)
 
     p = sub.add_parser("convert", help="graph, parts entries and sign-off file into the form of the restructuring")
     p.add_argument("--write", action="store_true", help="write the converted files (default: list them)")
@@ -328,6 +335,9 @@ def _main(argv=None):
     if args.command == "convert":
         from . import convert
         return convert.main(cfg, args)
+    if args.command == "domains":
+        from . import profile
+        return profile.main(cfg, args)
     if args.command == "stock":
         from . import stock
         return stock.main(cfg, args)

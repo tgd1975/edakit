@@ -67,26 +67,46 @@ def section(path, heading, raw=False):
     return found.group(1) if raw else flat(found.group(1))
 
 
+def review_questions(reviewer):
+    """The questions of every domain for a reviewer, flat (edakit/domains, [review])."""
+    from edakit import profile
+    return flat(" ".join(q for d in profile.domains().values() for q in (d.get("review") or {}).get(reviewer, [])))
+
+
 def test_the_electrical_review_asks_what_no_check_answers_yet():
+    """The classes no code answers yet are questions of the domains (rules-at-scale.md, section 8: no rule knowledge in
+    prompts); the agent prints them with edakit domains --review electrical and asks every one."""
     look = section(ROOT / "agents" / "electrical-reviewer.md", "What you look at")
-    assert "not covered by a check yet" in look
-    classes = [("back-feed",), ("switch-over",), ("pwm slice",), ("header",), ("supply range", "vih"),
-               ("clock edge", "spi mode"), ("touch temperature",), ("off-board module",)]
-    missing = [words for words in classes if not any(w in look for w in words)]
+    assert "not covered by a check yet" in look and "edakit domains --review electrical" in look
+    questions = review_questions("electrical")
+    classes = [("back-feed", "feed back"), ("switch-over",), ("pwm slice",), ("header",), ("supply range", "vih"),
+               ("clock edge", "spi mode"), ("touch temperature", "surface"), ("off-board module",)]
+    missing = [words for words in classes if not any(w in questions for w in words)]
     assert not missing, missing
 
 
+def test_the_regulatory_review_reads_its_questions_from_the_domains():
+    look = section(ROOT / "agents" / "regulatory-reviewer.md", "What you look at")
+    assert "edakit domains --review regulatory" in look
+    questions = review_questions("regulatory")
+    for words in ("reach (art. 3(12)", "802.11d", "e.i.r.p.", "rohs", "batteries", "low voltage directive",
+                  "declaration of conformity", "toy"):
+        assert words in questions, words
+
 
 def test_the_reviewers_name_the_checks_that_now_answer_part_of_a_class():
-    """A question a check covers in part names that check, and every ID a reviewer names is in the catalogue – or is
+    """A question a code covers in part names that code, and every ID a reviewer names is in the catalogue – or is
     one of the reviewers' sign-offs, or a need N-… or requirement R-… of a project's requirements file (handbook 3.6),
     which the catalogue never names: it has no check of the letters N and R."""
+    from edakit import catalog, profile
     rules = json.loads((ROOT / "edakit" / "rules.json").read_text(encoding="utf-8"))
     known = {*rules["checks"], *rules["hints"], *REVIEWERS.values()}
-    look = section(ROOT / "agents" / "electrical-reviewer.md", "What you look at")
-    sources = look.split("**several sources**")[1].split("**mcu pin functions**")[0]
-    supply = look.split("**supply range")[1].split("**read-back")[0]
-    assert "e-5" in sources and "transients" in sources and "`copper`" in supply
+    questions = review_questions("electrical")
+    sources = questions.split("several sources")[1].split("mcu pin functions")[0]
+    supply = questions.split("supply range")[1].split("read-back")[0]
+    assert "lim.backfeed" in sources and "transient" in sources and "copper" in supply
+    text = " ".join(q for d in profile.domains().values() for qs in (d.get("review") or {}).values() for q in qs)
+    assert {c for c in re.findall(r"\b[A-Z]+\.[a-z_]+\b", text) if not catalog.code(c)} == set()
     pcb = section(ROOT / "agents" / "pcb-reviewer.md", "What you look at")
     assert all(cid in pcb for cid in ("l-15", "l-16", "l-17", "l-18"))
     for agent in REVIEWERS:

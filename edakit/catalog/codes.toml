@@ -131,6 +131,17 @@ sources = [
   "edakit handbook 3.3",
 ]
 
+[codes."STRUCT.domain"]
+title = "suggested domains on"
+rule = "Every domain the graph suggests (edakit/domains, suggested_by) is named in [project] domains, when the project names its domains."
+why = "A domain that is off reports nothing: an audio board without the domain audio passes its audio codes without a word."
+fix = "Add the domain to [project] domains, or accept STRUCT.domain <domain> with the reason (edakit domains lists them)."
+severity = "note"
+replaces = []
+sources = [
+  "Concept docs/concepts/new/rules-at-scale.md, section 5: suggested domains",
+]
+
 [codes."STRUCT.entry"]
 title = "graph pins = parts entry"
 rule = "Every part with an LCSC number or a part number has a parts entry, its pins (number and name) equal the entry's, no supply pin is in nc, and – with the library symbol cached by edakit part import – the pins equal that symbol (case and blanks ignored)."

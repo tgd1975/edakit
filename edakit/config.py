@@ -48,7 +48,7 @@ THICKNESS_MM = 1.6               # board thickness: the order (F-6) and the lead
 
 PROJECT_KEYS = ("name", "company", "quantity", "distributors", "lock", "agreements", "graph", "parts", "sim",
                 "sim_plugin", "schematic", "signoff", "artifacts", "reports", "datasheets", "stock", "stock_margin_pct",
-                "stock_max_age_days", "spare_pct", "requirements")
+                "stock_max_age_days", "spare_pct", "requirements", "domains")
 BOARD_KEYS = ("title", "template", "schematic", "pcb", "file", "bought")  # [boards.<name>] in edakit.toml
 BOARD_FILE_KEYS = ("revision", "view", "outline", "holes", "tooling", "place", "near", "near_mm", "edge_mm", "edge_ok",
                    "on_headers", "header_keep_mm", "silk_overlap_mm", "park", "routing", "pours", "pour_regions",
@@ -188,6 +188,9 @@ class Config:
     # [project] requirements: the requirements files `edakit req` reads, in the order named (a variant: the main
     # project's file, then its own); [] without the key – no file, no change
     requirements: list = field(default_factory=list)
+    # [project] domains: the domains of edakit/domains the project switches on besides core (profile.py); None without
+    # the key – every domain the graph suggests
+    domains: list | None = None
     stock: Path | None = None           # the stock snapshot of `edakit stock` (P-4); not in the circuit hash
     stock_margin_pct: float = 0.0       # P-4 warns below need x (1 + margin / 100)
     stock_max_age_days: int = STOCK_MAX_AGE_DAYS
@@ -574,6 +577,14 @@ def _project_values(p):
             out += _number(f"[project] {key}", p[key])
     if "stock_max_age_days" in p:
         out += _number("[project] stock_max_age_days", p["stock_max_age_days"], integer=True)
+    if "domains" in p:
+        from .profile import names
+        d = p["domains"]
+        if not isinstance(d, list) or not all(isinstance(x, str) for x in d):
+            out.append(f'[project] domains: a list of domain names, e.g. ["usb", "radio"] (known: {", ".join(names())})')
+        elif bad := [x for x in d if x not in names()]:
+            out.append(f"[project] domains: {', '.join(bad)} – no domain of edakit/domains (known: {', '.join(names())}; "
+                       "core is always on)")
     return out
 
 
@@ -811,6 +822,7 @@ def load(path=None) -> Config:
         agreements=p.get("agreements", True),
         raw=raw,
         requirements=requirements,
+        domains=list(p["domains"]) if "domains" in p else None,
         stock=rel("stock", "hardware/stock.json"),
         stock_margin_pct=float(p.get("stock_margin_pct", 0)),
         stock_max_age_days=int(p.get("stock_max_age_days", STOCK_MAX_AGE_DAYS)),

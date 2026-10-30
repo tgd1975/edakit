@@ -8,6 +8,7 @@ catalog/paths.toml and the tables.
     LEVELS    every input defined at reset, no two drivers fight        levels.py
     REQUIRES  what a part requires on its pins is there and in range    requires.py
     PATHS     what a reversed, unfed or misplaced supply reaches        paths.py
+    PARTS     parts entries complete: the facts the profile requires    parts.py
     HINT      patterns that need judgement, as notes                    hint.py
     SIM       the scenarios run and reach their states (stage E)        sim.py
 
@@ -20,11 +21,8 @@ from __future__ import annotations
 from dataclasses import dataclass, field
 
 from .. import convert
-from ..findings import Profile, Report
-
-# The severities of before, until the domain files hold them (build step 3): radio findings graded by purpose.
-CORE = Profile(by_purpose={"sale": {"LIM.eirp": "warning", "LIM.band/firmware": "warning",
-                                    "PARTS.fact/radio": "warning"}})
+from .. import profile as profiles
+from ..findings import Report
 
 
 @dataclass
@@ -35,6 +33,7 @@ class Context:
     joined: object
     cfg: object = None
     sim: dict = field(default_factory=dict)
+    profile: object = None
 
     @property
     def root(self):
@@ -58,17 +57,24 @@ def context(design, cfg=None, sim=None):
     d = converted(design)
     if sim is None and cfg is not None:
         sim = rules.load_sim(cfg)
-    return Context(d, d.joined(), cfg, sim or {})
+    return Context(d, d.joined(), cfg, sim or {}, profiles.build(d, cfg))
 
 
-def profile(design):
-    return Profile(CORE.severity, CORE.by_purpose, (design.graph.get("purpose") or {}).get("use"))
+def profile(design, cfg=None):
+    """The project's profile (profile.py): its domains, their severities and switches."""
+    return profiles.build(design, cfg)
+
+
+def report(findings, prof, graph, notes=True):
+    """The findings the profile reports – with the notes of domains the graph suggests and the project left out –,
+    their severities resolved, the graph's accepts applied."""
+    return Report([f for f in findings if prof.on(f)] + (prof.notes if notes else []), prof).resolve(graph)
 
 
 def graph_findings(ctx):
-    from . import hint, levels, limits, paths, requires, struct
+    from . import hint, levels, limits, parts, paths, requires, struct
     out = []
-    for engine in (struct, limits, levels, requires, paths, hint):
+    for engine in (struct, limits, levels, requires, paths, parts, hint):
         out += engine.run(ctx)
     return out
 
@@ -76,4 +82,4 @@ def graph_findings(ctx):
 def run(design, cfg=None, sim=None):
     """The findings of the graph engines on a design (either form) as a resolved Report."""
     ctx = context(design, cfg, sim)
-    return Report(graph_findings(ctx), profile(ctx.design)).resolve(ctx.design.graph)
+    return report(graph_findings(ctx), ctx.profile, ctx.design.graph)
