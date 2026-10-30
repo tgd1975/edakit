@@ -196,26 +196,75 @@ It holds no code:
 `fields` and `cart` are what the skill looks for, and the words step 0 records on each site; when a site changes, the
 profile changes – a line of text, reviewed like any other.
 
-### 2. The form as data
+### 2. Every field of the form in the project
 
-`order_sheet.py` already computes every field of the form; today it prints them as Markdown. `order_sheet.form(…)`
-returns them as one list of fields in edakit's words – `{name, value, section}` – and `order.md` is printed from it,
-same output as today. The profile maps each to the maker's label and value:
+Every question the maker's form asks has an answer in the project – a key with a default – and the form is filled from
+the keys, never from what the page happens to preselect. Today `[order]` of the board file has six of them (`finish`,
+`mark`, `remark`, `mask`, `silkscreen`, the tab zones) and `thickness_mm`; the rest is typed by hand or left at the
+shop's default.
 
-| From | Field (section) |
-| --- | --- |
-| layers of the run, Gerber outline | layers, dimensions (PCB) |
-| `[project] quantity` | quantity (PCB) |
-| `thickness_mm`, `[order] mask`, `silkscreen`, `finish`, `mark`, `remark` | thickness, mask colour, silkscreen colour, finish, mark, remark (PCB) |
-| `[release] assembly.pcba`, sides | assembly class, assembly side (PCBA) |
-| `[tooling]` | tooling holes by the customer (PCBA) |
-| `[project] quantity` | assembled quantity (PCBA) |
-| stock snapshot, MSL ≥ 5 | bake (PCBA) |
+**Where the values live.** Three layers, the later one wins per key:
 
-A field the maker does not have (JLCPCB's Economic or Standard at Eurocircuits, the order-number mark in Europe) is
-`null` in its profile and left out; a field of the job the profile cannot map stops `prepare` with its name. Fields
-`order.md` does not set today (copper weight, via covering) get their value from `[order]` once a project sets them,
-else the form's default, named as such – the skill sets every field of the job and none it was not given.
+1. the maker's profile (1.): every field of its form with the form's default – what the owner gets when nothing is
+   said;
+2. `[order]` in `edakit.toml`: the project's choice for all boards (a black mask everywhere);
+3. `[order]` of the board file: the one board's choice, as today.
+
+`edakit cart fields [--board B] [--maker M]` prints every field with its value and where it comes from (profile,
+project, board, derived) – the order as edakit will place it in the form.
+
+**The keys.** In edakit's words, the same for every maker; the profile maps each to the maker's label and values, and
+says which it does not have (`null`). The list is that of JLCPCB's form as edakit knows it from the reference orders;
+step 0 records each form completely, and every field it finds that is missing here becomes a key.
+
+| Section | Key | Default (JLCPCB) | Changes the board as made |
+| --- | --- | --- | --- |
+| PCB | `material` | `"FR-4"` | yes |
+| | `tg` | `"TG135"` | yes |
+| | `layers`, `size` | derived: Gerber of the run – a key only to check against | – |
+| | `quantity` | `[project] quantity` | – |
+| | `delivery` | `"single"` (`"panel_by_customer"`, `"panel_by_maker"` with `panel = { x, y, rails_mm }`) | yes |
+| | `thickness_mm` | `1.6` (board file, as today) | yes |
+| | `mask`, `silkscreen` | `"green"`, `"white"` (as today) | yes |
+| | `finish` | `"LeadFree HASL"` (as today) | yes |
+| | `copper_oz`, `inner_copper_oz` | `1`, `0.5` (inner only from 4 layers) | yes |
+| | `vias` | `"tented"` (`"untented"`, `"plugged"`, `"epoxy_filled"`) | yes |
+| | `outline_tolerance` | `"regular"` (`"precision"`) | yes |
+| | `gold_fingers`, `castellated`, `edge_plating` | `false` | yes |
+| | `mark` | `"default"` (as today) | yes |
+| | `electrical_test` | `"flying_probe"` | – |
+| | `quality` | `"ipc2"` | – |
+| | `confirm_production_file` | `false` | – |
+| | `paper_between`, `packaging` | `false`, the form's default | – |
+| | `remark`, `tab_zones`, `tab_copper_mm` | as today | – |
+| PCBA | `pcba`, `sides` | `[release] assembly`, as today | – |
+| | `pcba_quantity` | `quantity` | – |
+| | `tooling` | derived: `[tooling]` → by the customer, else by the maker | – |
+| | `confirm_placement` | `true` – JLCPCB shows its placement before it builds; with M-2 in the preview a second look | – |
+| | `photo_confirmation` | `false` | – |
+| | `bake` | derived: stock snapshot, MSL ≥ 5 | – |
+| | `depanel`, `conformal_coating`, `function_test` | `false` | yes for `conformal_coating` |
+| | `pcba_packaging` | `"antistatic_bag"` | – |
+| Shipping | `country`, `shipping` | `[cart]` (9.) | – |
+
+**What follows from it.**
+
+- **F-6** checks every key, not six: the value is one the maker's profile offers, combinations the profile excludes
+  fail (gold fingers with HASL, castellated holes below the maker's minimum size, a `tg` the `material` does not have),
+  and a derived field agrees with the files (layers and size with the Gerber, tooling with `[tooling]`).
+- **The fab hash** takes every key marked "changes the board as made" (`order.json`, 8.2 of the handbook), as it takes
+  thickness, colours, finish and mark today. A board file that sets none of the new keys keeps its hash: a key at the
+  profile's default is not written to `order.json`, as a board without `[order]` has no such file today.
+- **`order.md`** lists every field with its value and source, so a look at it is the look at the form.
+- **K-1** compares every field of the job with the page. The skill also lists every field the page shows that the job
+  does not name; one such field stops it – the maker added a question, and the profile gets a key for it before the
+  order goes on.
+- **`edakit cost`** names every key that differs from the fee table's board as not in the price (as it does for
+  thickness, colours and finish today) until the table prices it.
+- **The interview** (10.): new-project shows the maker's defaults as one option ("the maker's defaults: 1.6 mm, green,
+  white, lead-free HASL, 1 oz, tented vias …") and asks only for what differs.
+
+A field the maker does not have is left out of its job; a key the maker cannot map stops `prepare` with its name.
 
 ### 3. The maker's files from the gate
 
@@ -428,6 +477,7 @@ this has no `[cart]` and stays with JLCPCB, as today; `edakit cart` asks for not
 | 0 | Probe per maker in the owner's browser, nothing ordered: can Claude in Chrome put a local file into the upload fields? Do the fields read back as text? The labels, values and cart button for the profile; the page texts of one quote and one past order as test data. Read each maker's terms on automated use, for the record | owner's Chrome with Claude in Chrome |
 | 0b | ODB++ export of a throwaway board under the EasyEDA claim (working agreement 18): through the bridge with a patched call, and by hand (File > Export > ODB++) for comparison. Does it hold `comp_+_top`/`comp_+_bot` with packages, pins and part numbers? | EasyEDA |
 | 1 | `order_sheet.form`: the form as fields, `order.md` printed from it – no change of output | – |
+| 1b | Every field as a key (2.): `[order]` in edakit.toml and the board file, the new keys with defaults, F-6 on all of them, `order.json` for the new keys of the board as made, `edakit cart fields` | step 1; the full field list from step 0 |
 | 2 | Maker profiles: `jlcpcb.toml` from today's knowledge, `eurocircuits.toml` and `aisler.toml` from step 0 | step 0 |
 | 3 | `edakit cart actual --from FILE` on a saved order page or invoice; three columns; the project's fee table, newest value wins in `edakit cost` | steps 1, 2 |
 | 4 | `edakit cart prepare` and `edakit cart check` (K-1 to K-7) on recorded data | steps 1, 2 |
