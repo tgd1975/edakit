@@ -154,7 +154,9 @@ Confirmed by the CI job `kicad` on the led-bar example (KiCad 10.0, its containe
   filled the zones, its DRC found nothing. Then `pcb apply` and `silk apply` wrote the file KiCad had saved again –
   two things had to be learnt there: KiCad 10 names nets in items by name, and leaves out
   `(filled_areas_thickness no)`, which under KiCad 8's version gives a fill a stroke of `min_thickness` – and the DRC
-  found nothing again.
+  found nothing again;
+- stages L and F of the gate on KiCad's export of the routed board: L-1, L-2 (the copper of KiCad's Gerber files:
+  every net connected, no short), L-3, L-4, L-9, L-13 to L-17, L-20, F-1, F-3 and F-5 pass.
 
 Open – the first runs on a real project, the led-bar example in EasyEDA and KiCad, then the Christmas bell (the steps
 are in the concept, "Live test"):
