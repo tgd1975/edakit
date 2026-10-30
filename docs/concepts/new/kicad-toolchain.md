@@ -1,14 +1,12 @@
 # Two tool chains: EasyEDA Pro and KiCad
 
 Status 2026-10-30: built on the branch of decision 6 (steps T.1 to T.10 and T.12, the table under Order); tested
-offline against a kicad-cli the tests fake and in CI against KiCad 10 on the led-bar example (handbook 16.8). Open: a
-real project through both tool chains (T.11) and the live tests with the user. On 2026-10-30 the user decided:
-edakit places the parts in both tool chains (gap K-1, now the section [Placement](#placement-edakit-places-for-both-tool-chains)),
-and decisions 1, 4, 5 and 6. The user left decision 2 to Claude. Claude took decision 3 as recommended because the
-user left it open, and T.4 looks at it again. Decision 7 is open and is written out again under
-[Comparison run](#comparison-run-one-project-through-both-tool-chains). The findings come from reading edakit at
-`bf7450a`. The KiCad facts are from KiCad's documentation and release pages for KiCad 10. Anything marked **(probe)**
-has not been run.
+offline against a kicad-cli the tests fake and in CI against KiCad 10 on the led-bar example (handbook 16.8). Open:
+the live tests with the user. On 2026-10-30 the user decided: edakit places the parts in both tool chains (gap K-1,
+now the section [Placement](#placement-edakit-places-for-both-tool-chains)), and decisions 1, 4, 5, 6 and 7. The user
+left decision 2 to Claude. Claude took decision 3 as recommended because the user left it open, and T.4 looks at it
+again. The findings come from reading edakit at `bf7450a`. The KiCad facts are from KiCad's documentation and release
+pages for KiCad 10. Anything marked **(probe)** has not been run.
 
 ## Goal
 
@@ -114,8 +112,7 @@ positions as fixed rows. Step 2.1's live run still checks the takeover and L-20.
 as long as `pcb autolayout` exists. This closes gap 1 of design-as-text in another way: the positions are written
 before the EDA tool sees the board, not read back from it afterwards.
 
-Once every position is in the board file, both tool chains build the board from the same rows, so the comparison
-run compares like with like.
+Once every position is in the board file, both tool chains build the board from the same rows.
 
 ## Design
 
@@ -188,8 +185,7 @@ edakit/toolchain/
 
 Every operation in the table returns or writes edakit's units (mil, y up). The conversion to KiCad's mm, y down, its
 sense of rotation and the mirroring of bottom-side footprints happens in `kicad/board.py` and nowhere else, with one
-test per direction. `board_read` rounds as the EasyEDA side rounds, so the two give the same DSN byte for byte (see
-the comparison run).
+test per direction.
 
 ### Files written, not an API
 
@@ -218,9 +214,8 @@ between them is decision 3:
 
 - **The LCSC data.** This is the geometry `edakit part import` already reads for every LCSC number, or the entry's
   `footprint_data`. It is EasyEDA's footprint, and JLCPCB's assembly works from EasyEDA's library, so origin and
-  rotation in the CPL match without a correction. The KiCad board gets exactly the pads the EasyEDA board gets, which
-  makes the two tool chains comparable. It works for every part with an LCSC number, and nobody has to choose a
-  footprint.
+  rotation in the CPL match without a correction. It works for every part with an LCSC number, and nobody has to
+  choose a footprint.
 - **KiCad's own library**, for example `Resistor_SMD:R_0603_1608Metric`. These footprints follow KiCad's library
   rules (KLC): courtyard, fabrication layer, 3D model. But someone has to choose one for every part, its pads differ
   slightly from the LCSC footprint, and for some packages JLCPCB places it turned unless the CPL is corrected.
@@ -346,28 +341,6 @@ led-bar fixture gets a KiCad export of its input stage beside the EasyEDA one (`
 | K-4 | JLCPCB's rotation for KiCad library footprints | Only for entries with `kicad_footprint`: a `jlc_offset` from the fit of `part diff` (decision 3), checked by F-3 | accepted |
 | K-5 | Vector PDF of the schematic | `kicad-cli sch export pdf`. Today's EasyEDA path needs the patched bridge, so this is a gain, not a gap. | – |
 
-## Comparison run: one project through both tool chains
-
-The same project goes through EasyEDA and through KiCad, each to a gate run of its own. Then
-`edakit fab diff RUN_A RUN_B` compares the two sets of manufacturing files: the Gerber layers as rasters, the drill
-hits, the BOM and the CPL.
-
-This is the acceptance test of the KiCad writers. Both boards come from the same board file, with every position in
-`[place]` (T.1), the same footprints (the LCSC data, decision 3) and the same DSN (`board_read` rounds alike), so
-Freerouting routes both the same way and the boards have to come out the same:
-
-- **Must match:** outline, holes and drills, pads, tracks, vias, BOM, CPL.
-- **May differ, each difference explained in this file:** the fill of the pours (the two tools fill and relieve
-  differently) and the stroke font of texts.
-
-Any other difference is a bug in one of the writers. T.11 makes the run on the led-bar fixture and on a scratch copy
-of the Christmas bell; the bell's own repository does not change. After that, the fixture's run is the regression test
-for every change to the writers. Its KiCad side runs in CI (T.12); its EasyEDA side cannot.
-
-**Decision 7** asks whether the comparison run should also be a condition of every release, as a check of the gate.
-Recommendation: no. It would need EasyEDA for every KiCad project, and running without EasyEDA is what the KiCad tool
-chain is for. It is a test of the writers, not of a board.
-
 ## Scope
 
 In:
@@ -376,8 +349,7 @@ In:
 - edakit's placer for both tool chains;
 - KiCad writers and readers for the schematic, library, PCB, routing, pours, silkscreen and DRC rules;
 - gate stages S, L and F on KiCad;
-- doctor, skills and handbook;
-- the comparison run on the fixture and the bell.
+- doctor, skills and handbook.
 
 Out:
 
@@ -407,7 +379,7 @@ without `toolchain = "kicad"` as it is: T.1 changes nothing until `--rest` is gi
 | T.8 | `kicad/schematic.py` from `Layout`; S-2 through `kicad-cli` (netlist and ERC) | M | KiCad | T.4 | built (ca16159) |
 | T.9 | `kicad/cli.py`: ERC, DRC, exports; stages L and F on KiCad; `export` with `kicad_<board>.zip` | M | KiCad | T.6, T.7, T.8 | built (6222f1f, 37e3335) |
 | T.10 | Skills, agents, hook, handbook (new chapter 16, 2 setup, 10 reference), README | M | – | T.9 | built |
-| T.11 | Comparison run: the fixture and a scratch copy of the bell through both tool chains, every difference explained here | M | KiCad, EasyEDA | T.1, T.9 | open |
+| T.11 | Comparison run: one project through both tool chains, `fab diff` of the two gate runs | – | – | – | dropped (decision 7) |
 | T.12 | CI: the fixture's stages S, L and F with `kicad-cli` in a container with KiCad 10 | S | KiCad | T.9 | built: the job `kicad` in tests.yml, `tests/test_kicad_live.py` |
 
 T.1, T.2, T.4 and T.6 have no predecessor and can run in parallel. `pcb autolayout` goes after T.1 has placed a real
@@ -430,11 +402,9 @@ test footprints (handbook 16.8). Each on a scratch copy; the bell's repository d
    0. `edakit silk apply`: designators placed, the pictures `silk_main_*.png`.
 5. **Gate.** `edakit gate --eda 2>&1 | cat`: every row of L and F runs (not released: the sign-offs are the example's).
    Look at L-2, L-8, L-15, L-17, F-1, F-3, F-5 and the polarity sheet; `edakit export`: `kicad_main.zip`.
-6. **Comparison run (T.11).** The same copy without `toolchain` through EasyEDA (`gate --easyeda`), then
-   `edakit fab diff RUN_A RUN_B`: differences in the pours' fill and the fonts only, each written down here.
-7. **Placer (T.1).** On copies with rows taken out of `[place]`: `edakit pcb place --rest --write`, then `pcb plan` –
-   once on the EasyEDA copy (and `route all` there), once on the KiCad copy.
-8. **The bell**, a scratch copy of its main board, steps 2 to 6.
+6. **Placer (T.1).** On copies with rows taken out of `[place]`: `edakit pcb place --rest --write`, then `pcb plan` –
+   once on a copy without `toolchain` (EasyEDA, and `route all` there), once on the KiCad copy.
+7. **The bell**, a scratch copy of its main board, steps 2 to 5.
 
 ## Decisions
 
@@ -447,7 +417,7 @@ test footprints (handbook 16.8). Each on a scratch copy; the bell's repository d
 | 4 | Least KiCad version | KiCad 10, the newest for Ubuntu: 10.0.x from KiCad's PPA `ppa:kicad/kicad-10.0-releases` (Ubuntu 24.04). Ubuntu's own packages are older, and KiCad recommends the PPA. `doctor` checks the major version; a new major version is a step of its own | the user's choice ("the latest available for Ubuntu"), 2026-10-30 |
 | 5 | Is the KiCad project versioned | like the EasyEDA project: no. It is generated into `<artifacts>/kicad/<board>/`, and `edakit export` keeps a copy | the user's choice ("mirror EasyEDA"), 2026-10-30 |
 | 6 | Order relative to the open steps of the implementation plan | a branch of its own that does not wait for the live runs; T.2 is a thin dispatch so the rebase stays small | the user's choice, 2026-10-30 |
-| 7 | The comparison run as a condition of release | recommended: no. It is a test of the writers (T.11, T.12), not a check of the gate | open; written out again under "Comparison run" |
+| 7 | A comparison run – one project through both tool chains, `fab diff` of the two gate runs – as a check of the gate or as the acceptance test of the KiCad writers | none. The KiCad tool chain stands on the gate's checks of what KiCad exports, as the EasyEDA tool chain does on EasyEDA's, and edakit's KiCad code on its tests (offline, and in CI with KiCad 10). Whether the two tool chains give the same files is no criterion | the user's choice, 2026-10-30 |
 
 ## Sources
 

@@ -159,9 +159,8 @@ Confirmed by the CI job `kicad` on the led-bar example (KiCad 10.0, its containe
   every net connected, no short), L-3, L-4, L-7 (every part where the plan puts it, measured by `pcb dump` from the
   file), L-9, L-10, L-13 to L-17, L-20, F-1, F-3 and F-5 pass.
 
-Open – the first runs on a real project, the led-bar example in EasyEDA and KiCad, then the Christmas bell (the steps
+Open – the first runs on a real project, the led-bar example as a KiCad project, then the Christmas bell (the steps
 are in the concept, "Live test"):
 
 - footprints from the real LCSC data (the tests use footprints of their own): silkscreen, polygon pads, slots;
-- the gate `--eda` end to end with the sign-offs, `export`;
-- the comparison run: one project through both tool chains, `edakit fab diff` (concept, "Comparison run").
+- the gate `--eda` end to end with the sign-offs, `export`.

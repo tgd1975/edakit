@@ -80,7 +80,8 @@ def test_the_exports_are_what_the_checks_read(project):
 
 def test_kicad_puts_every_pad_where_edakit_reads_it_also_on_the_bottom(project):
     """The frames (handbook 16.3): a part turned and one mirrored onto the bottom – KiCad's own Gerber copper lies at
-    every pad edakit reads from the file, on the pad's side."""
+    every pad edakit reads from the file, on the pad's side, and its position file turns the parts on the bottom as
+    the PCB does."""
     cfg = kicad_project(project, {"R2": '{ x = 40.0, y = 30.0, rot = 90, side = "bottom", auto = true }',
                                   "D1": '{ x = 75.0, y = 12.0, rot = 180, side = "bottom" }',
                                   "SW1": '{ x = 80, y = 25, rot = 270, side = "top" }'})
@@ -98,8 +99,9 @@ def test_kicad_puts_every_pad_where_edakit_reads_it_also_on_the_bottom(project):
             x, y = p["X"] / kb.MIL_PER_MM, p["Y"] / kb.MIL_PER_MM
             missing += [f"{c['designator']}.{p['PadNumber']} {k}" for k in sides if not cu.labels_at(k, x, y, 0.05)]
     assert missing == []
+    # F-3 on the bottom: a turn read from below (-a) would leave D1 at 180, one of 180-a R2 at 90 – the two together
     cpl = {r["Designator"]: r for r in kfab.read_cpl(d / "cpl_kicad.csv")}
-    assert cpl["D1"]["Layer"] == "B" and float(cpl["D1"]["Rotation"]) == pytest.approx(180)
+    assert [(cpl[r]["Layer"], float(cpl[r]["Rotation"])) for r in ("R2", "D1")] == [("B", 90), ("B", 180)]
 
 
 @pytest.mark.freerouting
