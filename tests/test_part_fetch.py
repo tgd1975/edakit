@@ -134,6 +134,37 @@ def test_a_wrapper_of_a_wrapper_is_not_followed(project, web, capsys):
     assert not kept(project, "C2297", "pdf").exists()
 
 
+LCSC_SHELL = (b'<!doctype html><html><head><title>LCSC Electronics</title></head><body><footer>'      # trimmed
+              b'<a href="https://assets.lcsc.com/datasheet/szlcsc/Download-ISO9001-Certification.pdf" target="_blank"'
+              b' rel="nofollow" aria-label="Go to Quality Assurance Page"><img src="/iso.png"></a>'
+              b'<a href="https://static.lcsc.com/feassets/pc/file/251202/ISO-IEC%20Certificate.pdf"'
+              b' aria-label="about ISO/IEC">ISO/IEC</a><a href="/payment/PCI.pdf">PCI</a></footer></body></html>')
+
+
+def test_a_page_without_the_parts_pdf(project, web, capsys):
+    """LCSC's datasheet address (JLCPCB's dataManualUrl) answers with a page of the shop (2026-10-29, curl), whose only
+    PDFs are the certificates in its footer – the first of them was kept as the datasheet of a battery holder
+    (handbook 16). None is followed, nothing is kept."""
+    shop = "https://www.lcsc.com/datasheet/lcsc_datasheet_1811061923_Q-J-CR2032-BS-6-1_C70377.pdf"
+    web[shop] = LCSC_SHELL
+    assert run(project, "C2297", "--url", shop) == 1
+    out = capsys.readouterr().out
+    assert ("whose PDF links neither name the part nor say datasheet: Download-ISO9001-Certification.pdf, "
+            "ISO-IEC Certificate.pdf, PCI.pdf") in out
+    assert not [u for u in web.asked if "Certific" in u or "PCI" in u]
+    assert not kept(project, "C2297", "pdf").exists()
+
+
+def test_a_link_that_names_the_part(project, web):
+    """Of a page's PDF links the one whose address names the part (or whose words say datasheet) is followed, not the
+    first."""
+    web["https://example.com/part"] = LCSC_SHELL.replace(
+        b"</footer>", b'</footer><a href="/files/KT-0805G%20spec.pdf">Download</a>')
+    web["https://example.com/files/KT-0805G%20spec.pdf"] = SHEET
+    assert run(project, "C2297", "--url", "https://example.com/part") == 0
+    assert record(project, "C2297")["pdf_url"] == "https://example.com/files/KT-0805G%20spec.pdf"
+
+
 def test_a_failed_retry_keeps_the_copy(project, web, capsys):
     """JLCPCB's signed URLs expire: the second fetch gets an HTML page, the first file stays."""
     web["https://jlcpcb.com/signed/C2297.pdf?Expires=1"] = SHEET
@@ -195,6 +226,26 @@ def test_jlcpcb_catalogue_is_the_last_source(project, web):
     assert record(project, "C2297")["url"] == "https://wmsc.lcsc.com/kt-0805g.pdf"
 
 
+def test_lcsc_datasheet_page_is_taken_as_its_file(project, web):
+    """The catalogue's dataManualUrl is LCSC's datasheet page – a page of the shop since 2026. Its file sends the
+    browser on to the PDF by script (2026-10-29, curl, for C2297, C17471, C318884 and C70377)."""
+    e = project.part("C2297")
+    project.save_part("C2297", {k: v for k, v in e.items() if k != "datasheet"})
+    web[LCSC_URL] = json.dumps({"code": 200, "ok": True, "result": {"productCode": "C2297", "pdfUrl": None}}).encode()
+    name = "1806151820_Hubei-KENTO-Elec-KT-0805G_C2297.pdf"
+    web.catalogue["C2297"] = [{"componentCode": "C2297",
+                               "dataManualUrl": f"https://www.lcsc.com/datasheet/lcsc_datasheet_{name}"}]
+    web[f"https://www.lcsc.com/datasheet/lcsc_datasheet_{name}"] = LCSC_SHELL     # never asked
+    web[f"https://wmsc.lcsc.com/wmsc/upload/file/pdf/v2/lcsc/{name}"] = \
+        f"<script>window.top.location.href='{LCSC_PDF}'</script>".encode()
+    web[LCSC_PDF] = SHEET
+    assert run(project, "C2297") == 0
+    r = record(project, "C2297")
+    assert (r["source"], r["url"], r["pdf_url"]) == \
+        ("JLCPCB catalogue", f"https://wmsc.lcsc.com/wmsc/upload/file/pdf/v2/lcsc/{name}", LCSC_PDF)
+    assert kept(project, "C2297", "pdf").read_bytes() == SHEET
+
+
 def test_a_new_file_against_the_sign_off(project, web, capsys):
     """verified.datasheet_sha256 tells the reader whether they hold the signed file."""
     other = pdf("0805 Package Chip LED, revision B")
@@ -232,6 +283,17 @@ def test_datasheets_key_keeps_them_in_the_repository(project, web):
     web["https://example.com/sheet.pdf"] = SHEET
     assert run(project, "C2297", "--url", "https://example.com/sheet.pdf") == 0
     assert (project.root / "docs" / "datasheets" / "C2297.pdf").read_bytes() == SHEET
+
+
+def test_before_the_graph(project, web, capsys):
+    """A datasheet is read before the part goes into the graph – in a new project before there is a graph at all
+    (the walkthrough of handbook 16 fetched one there and got a traceback)."""
+    project.graph_file.unlink()
+    web["https://example.com/sheet.pdf"] = SHEET
+    assert run(project, "C2297", "--url", "https://example.com/sheet.pdf") == 0
+    assert kept(project, "C2297", "pdf").read_bytes() == SHEET
+    assert run(project, "--all") == 2                                      # the other entries' sources answer 404
+    assert f"C2297: kept, fetched {TODAY}" in capsys.readouterr().out
 
 
 def test_no_entry_no_source(project, web, capsys):
