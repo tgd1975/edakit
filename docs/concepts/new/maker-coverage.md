@@ -40,7 +40,9 @@ Do the checks, hints and blocks of edakit cover what typical maker projects get 
 - **Stability:** today the catalog is quiet – 0–1 waiver per board on the bell, 7 for the reference project's 84
   parts. Built one by one, the candidates would about double it, mostly without a real project to test them against.
   Seven mechanisms cover 91 of the 128 open maker pitfalls; with a coverage report, domains per project and a project
-  as the trigger for every build, it stays stable (section "Keeping the catalog stable").
+  as the trigger for every build, it stays stable. The context of a session is no immediate limit: the SessionStart
+  hook adds 1.5 KB whatever the catalog's size; only files read whole grow – `rules.json` is 114 KB today (section
+  "Keeping the catalog stable").
 - **Recommendation:** first the coverage report (FT-19) and domains (FT-20), then load steps in transients (FT-1), pin
   requirements from the parts entry (CK-13) together with a library of checked entries for the parts makers use most
   (PF), and the pin semantics (CK-1 to CK-3): they cover the most findings per line of code. Mains and high voltage
@@ -364,27 +366,27 @@ What stays judgement goes into the questions of the reviewers, as "Not covered b
 
 ## Keeping the catalog stable
 
-The owner's question: with all these rules, does edakit stay stable, or does it confuse more than it helps?
+The owner's questions: with all these rules, does edakit stay stable, or does it confuse more than it helps – and does
+the context of a Claude session become the limit?
 
-**Today the catalog is quiet.** 66 active checks (G-7 is retired) and 9 hints, 983 tests; every check was seen red
-once and ran against real projects before its merge. On the owner's boards it costs little: the bell needs 0–1 waived
-finding and 0–1 accepted warning per variant (19 parts each), the reference project 7 waived findings for 84 parts and
-77 nets and one accepted warning. Where the reference project lost time was EasyEDA, waiting and dead ends against the
-API (handbook 13.2) – not the rules.
+### Stability analysis
 
-**Built one by one, the candidates of this concept would make it worse:**
+| Dimension | Today (measured 2026-10-30) | Risk if the candidates were built one by one | Guardrail |
+| --- | --- | --- | --- |
+| false alarms | the bell: 0–1 waived finding and 0–1 accepted warning per variant (19 parts); the reference project: 7 waived findings for 84 parts and 77 nets, one accepted warning | most candidates come from research: add-rule's run against real projects (step 5) cannot show their false alarms while no project of the owner has audio, mains or a guitar circuit – a check that guesses produces waivers | 4, 5 |
+| silent passes | checks that need data pass without it, unreported: E-3 checks only inputs with thresholds, G-12 only pins with `strap` | more such checks are more coverage on paper | 2 |
+| conflicts and overlaps | one known conflict: H-1's bulk capacitor at a power input against USB's 10 µF at attach (HT-3); overlaps G-4 and CK-1, G-11 with CK-2 and CK-3, G-12 and CK-20, G-14 and CK-12, H-7 and CK-16 | two messages that contradict each other, one fault found twice | 1 |
+| tests | 983 tests in 16,700 lines; every check seen red once; the example project stays clean | none in itself – but a negative test cannot show a false alarm | 4 |
+| maintenance | 23,900 lines of Python; a catalog of 101 KB, 1.25 KB per entry (median); the handbook repeats every check in a table | catalog and tables about twice as large; more fields in every parts entry, each one to sign (G-9) | 1, 7 |
+| run time | `edakit check` under a second, `edakit sim` seconds | load steps and fault scenarios add runs | they run only where sim.json asks for them |
+| context of a Claude session | always loaded: the SessionStart hook, 1.5 KB (about 400 tokens), independent of the catalog; on demand: `edakit rules` 2.2 KB, one entry 1.25 KB, a skill 3–16 KB, a reviewer 2–12 KB in a context of its own; read whole: `rules.json` 114 KB (about 30,000 tokens), the handbook 409 KB (chapter 8 alone 80 KB), this concept 91 KB | growth only where a file is read whole: `rules.json` raw (about 60,000 tokens at twice the size), long handbook chapters, the reviewers' question lists | 3, 7 |
+| process | 77 proposals, all accepted – the triage has never rejected one | research-based proposals are the first real test of "rejected" and "question" | 4 |
 
-1. The catalog would about double – the findings, `edakit rules`, the handbook's tables.
-2. Most candidates come from research, not from a project's lesson. add-rule's run against real projects (step 5)
-   cannot show their false alarms while no project of the owner has audio, mains or a guitar circuit – and a check that
-   guesses produces waivers instead of findings.
-3. Most of them need new fields in parts entries: work and a source of errors per part, and each one to sign (G-9).
-4. Checks that need data pass silently without it: E-3 checks only inputs with thresholds, G-12 only pins with
-   `strap`. More such checks are more coverage on paper; nothing says which part went unchecked.
-5. Every open hint stands in the last line of `edakit check`; 25 hints on a board where five matter teach to ignore
-   all of them.
+**Verdict:** stable today, and the context is no immediate limit – what every session loads does not grow with the
+catalog. Built one by one, the candidates would make it worse in four places at once: false alarms without a project to
+find them, silent passes, overlapping messages, and files read whole. The guardrails keep it stable.
 
-**Guardrails that keep it stable:**
+### Guardrails
 
 1. **Mechanisms, not rules.** Seven mechanisms cover 91 of the 128 maker pitfalls of the first five clusters that are
    not fully covered: requirements from parts entries (38: CK-13, CK-14, CK-20, CK-12, CK-21, CK-23, CK-3, PF), loads
@@ -404,6 +406,10 @@ API (handbook 13.2) – not the rules.
    false alarm.
 6. **Hints sparingly:** only with a trigger that decides when one applies; judgement without such a trigger goes into
    the reviewers' questions.
+7. **Context discipline.** Sessions read the catalog by ID or as the listing (`edakit rules`, `edakit rules G-11`),
+   never `rules.json` whole – add-rule and triage-rule included, which point at the file today. Domains (FT-20) also
+   filter `edakit rules`, `edakit hints` and the reviewers' questions. The handbook's check tables give ID, title and an
+   example finding; the rule's text lives in the catalog only.
 
 ## Priority
 
