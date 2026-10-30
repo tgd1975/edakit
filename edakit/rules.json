@@ -1,5 +1,5 @@
 {
- "about": "The rule catalog: every check edakit runs (P parts, G graph, E simulation, S schematic, L board, F manufacturing files) and every design hint (H), each with its rule, why it exists, what to do and where the knowledge comes from. Check IDs are stable: a retired check keeps its entry and its number is not reused. Hints have no rule a program could decide; 'when' says for which parts of the graph they apply. `edakit rules` prints this file, `edakit hints` the hints of a project.",
+ "about": "The rule catalog: every check edakit runs (P parts, G graph, E simulation, S schematic, L board, F manufacturing files, B the order at the maker) and every design hint (H), each with its rule, why it exists, what to do and where the knowledge comes from. Check IDs are stable: a retired check keeps its entry and its number is not reused. Hints have no rule a program could decide; 'when' says for which parts of the graph they apply. `edakit rules` prints this file, `edakit hints` the hints of a project.",
  "checks": {
   "P-1": {
    "title": "graph pins = parts database",
@@ -100,6 +100,16 @@
    "sources": [
     "edakit handbook 4.1 (field compliance) and 15.3 (what the review needs)",
     "Lesson of the Christmas bell (tgd1975/automatic_christmas_bell, D-18 from the M-6 reviews of D-16): on the boards main, smd and tht U1 is an Arduino Nano without a transmitter, no parts entry said so, and the M-6 reviews of 2026-10-26 established it from the part's identity; on esp32 the T-Display's compliance.radio was added by hand during the review"
+   ]
+  },
+  "P-12": {
+   "title": "manufacturer part number for a maker that matches by it",
+   "rule": "With a maker of [cart] makers that matches the BOM by manufacturer part number (bom.match = \"mpn\" in its profile – Eurocircuits): every assembled part (an LCSC number, not bom: false) has a parts entry with mpn and manufacturer. For [cart] maker an error, for another maker a warning named with the maker. Without such a maker it does not run.",
+   "why": "Eurocircuits matches the parts of a BOM by manufacturer part number, not by LCSC number; a line without one is a part it has to ask about or cannot source, and the order stops at its matching. The number belongs to the part when it is chosen – P-6 already holds the entry's mpn to the component –, not to the release, when the board is done.",
+   "fix": "mpn and manufacturer into the parts entry from the datasheet or the distributor's page (agent part-selector, skill part-search; edakit part import reads both for an LCSC number); a part only one distributor sells under its own number: another part, or bom: false and bought by hand.",
+   "sources": [
+    "Eurocircuits, BOM requirements (MPN and designators required): https://www.eurocircuits.com/?p=9450 – search result of 2026-10-30, the page not reachable from the session (docs/concepts/new/ordering.md)",
+    "Ordering at the manufacturer (docs/concepts/new/ordering.md, decided 2026-10-30): BOM with MPN and P-12, in stage P"
    ]
   },
   "G-1": {
@@ -552,6 +562,76 @@
    "why": "The order form fields that depend on the board are filled in by hand while ordering: a cart with 'Remove Mark' prints the placeholder as text, a remark of 202 characters does not fit the field, a remark that allows tabs where a track runs 0.45 mm from the edge lets the tab cut it, and an Economic order without own tooling holes gets JLCPCB's, possibly on a visible edge. Each was found late in the reference project, the tooling holes only in the quote. Thickness and colours stood in no file: the form's defaults (1.6 mm, green, white print) went into the cart unless someone remembered otherwise, while the mechanical model took the board file's thickness_mm. A thickness the form does not have (1.57 mm, the 62 mil of US fabs) cannot be ordered as drawn, and the print colour follows the mask: in the reference project a white mask was an open question for one board whose silkscreen artwork was drawn for white print – JLCPCB prints black on a white mask. With several makers to choose from, a release must describe one board whichever maker builds it: edakit's defaults are the same for every maker, the profile only translates, and a value a maker does not offer, or JLCPCB's placeholder printed as text by another maker, is found at the release – for the maker the board is planned for as a failure, for a second maker as a warning, so that a setting only the second one lacks does not block the first.",
    "fix": "Correct [order] – a value the maker's form offers (edakit cart fields lists the fields and the maker's words), a shorter ASCII remark, mark = \"specify\" with the placeholder (or another mark), the silkscreen colour the maker prints on the mask (or another mask), tab zones only on stretches order.md lists as free, or the copper moved back from the edge – or add [tooling] holes; set thickness_mm to a thickness of the form (the mechanical model takes the same value). A placeholder at a maker without one: take the maker out of [cart] makers, or the placeholder off the board (then the release is no longer JLCPCB's). A warning the owner wants (JLCPCB's tooling holes, a hand-placed placeholder, a second maker's lack) is accepted in the sign-off file.",
    "sources": ["edakit handbook 8.4", "JLCPCB order form (Mark on PCB, Remark, PCBA Type, Tooling holes); reference order of 2026-10-25", "JLCPCB PCB Manufacturing Capabilities (read 2026-10-28): solder mask colours Green, Purple, Red, Yellow, Blue, White, Black; FR-4 thicknesses 0.4/0.6/0.8/1.0/1.2/1.6/2.0 mm, 2.5 mm and above for 12+ layers only – https://jlcpcb.com/capabilities/pcb-capabilities", "JLCPCB online quote (read 2026-10-28), PCB Color and Silkscreen: 'For most colors, the silkscreen is printed white. Only for white solder mask, the silkscreen is printed black.' – https://cart.jlcpcb.com/quote", "Reference project (pytree): the cart of 2026-10-24 with PCB Thickness 1.6mm, PCB Color Green, Silkscreen White (the form's defaults), and its silkscreen concept: with a white mask (an open question for the snow tree) JLCPCB prints black, so the artwork had to look right in black too", "Ordering at the manufacturer (docs/concepts/new/ordering.md, decided 2026-10-30): every field of the form as a key with edakit's default, the maker's profile, checks per maker; edakit/makers/jlcpcb.toml (provisional until ordering step 0)"]
+  },
+  "B-1": {
+   "title": "form = job",
+   "rule": "edakit cart check: every field of the job (job.json, from the keys of [order] in the maker's words) is read back from the page with its value (quote.json; case and blanks ignored) – the quantities and, where the job lists parts not to place, their marks included; a field the page shows that is neither in the job nor in the profile's ignore fails.",
+   "why": "The form is the one place where the order differs from the release without any file knowing it: the reference cart still said 'Remove Mark' although the board had the placeholder, the remark was wrong three times. F-6 holds [order] to the board; only B-1 holds the form to [order]. A field the maker added is a question nobody answered – the page's preset would go into the order.",
+   "fix": "Set the field on the page to the job's value and read it back; a value the form does not offer: correct [order] and run the gate. A new field: a key for it in edakit, or the field into the profile's ignore with its reason – before the order goes on.",
+   "sources": [
+    "edakit handbook 8.4 (the reference order: 'Remove Mark', the remark)",
+    "Ordering at the manufacturer (docs/concepts/new/ordering.md, decided 2026-10-30): edakit prepares the order, Claude fills the maker's form in the owner's browser (skill cart), edakit checks what it brings back; up to the maker's cart button, never further"
+   ]
+  },
+  "B-2": {
+   "title": "parts = release",
+   "rule": "edakit cart check: the maker's matching (quote.json parts) has exactly the lines of the job's BOM – the same part numbers (LCSC or MPN, as the maker matches), the same designators; a line the maker marked (not matched, out of stock, replaced, another manufacturer, 'Standard Only') fails.",
+   "why": "The maker's BOM tool decides what is placed: a replaced part, another manufacturer or a line it could not match is a board the gate never checked and M-6 never saw. A part the maker would replace needs a new release – with it a new M-6.",
+   "fix": "A part the maker cannot place: another part in the graph (part-search), a new gate run and a new order. Never accept a replacement on the page.",
+   "sources": [
+    "Ordering at the manufacturer (docs/concepts/new/ordering.md, decided 2026-10-30): edakit prepares the order, Claude fills the maker's form in the owner's browser (skill cart), edakit checks what it brings back; up to the maker's cart button, never further",
+    "edakit handbook 8.4 and 15.4 (M-6 reviews the parts of the release)"
+   ]
+  },
+  "B-3": {
+   "title": "quote against the estimate",
+   "rule": "edakit cart check: the board's price lines of the quote without shipping and VAT – PCB, assembly fees, parts – against the estimate of edakit cost for the board in the job, each above [cart] tolerance per price line a warning with both values; the board total above [cost] budget a warning. A maker without a fee table: the board total against the budget only.",
+   "why": "edakit cost came within about 1 $ of the reference carts; a larger difference is a fee edakit does not know, a class or a side that changed, or a field set otherwise than the job says. Shipping and VAT belong to the order, which may hold several boards – edakit cart actual compares them.",
+   "fix": "Find the line that differs: a field of the form (B-1), a part line (B-2), a fee the table lacks (edakit cart actual brings real costs into the project's fee table). Accept a difference that is understood, or stop the order.",
+   "sources": [
+    "edakit handbook 8.4 (the estimate within about 1 $ of the cart of 2026-10-25)",
+    "Ordering at the manufacturer (docs/concepts/new/ordering.md, decided 2026-10-30): edakit prepares the order, Claude fills the maker's form in the owner's browser (skill cart), edakit checks what it brings back; up to the maker's cart button, never further"
+   ]
+  },
+  "B-4": {
+   "title": "read, not made up",
+   "rule": "edakit cart check: every value of quote.json – the fields, the part numbers and designators, the price amounts, the file names, the lead time – occurs in quote_page.txt, the page text Claude kept.",
+   "why": "Both files come from Claude: B-4 cannot prove the page, but it finds a value that was not read – one filled in from the job or from memory, which would make B-1 to B-3 compare the job with itself.",
+   "fix": "Read the page again and write what it shows; keep the page text whole (form, matching, quote).",
+   "sources": [
+    "Ordering at the manufacturer (docs/concepts/new/ordering.md, decided 2026-10-30): edakit prepares the order, Claude fills the maker's form in the owner's browser (skill cart), edakit checks what it brings back; up to the maker's cart button, never further"
+   ]
+  },
+  "B-5": {
+   "title": "the same files",
+   "rule": "edakit cart check: the SHA-256 of every upload file is still that of the job and of the current release's manifest, the job's run is still the current release, and the names – and sizes, where the page shows them – of the uploads the page lists are the job's files, none more.",
+   "why": "The second lesson of the reference order: the upload of another run's files. edakit release verify had to be run by hand right before the upload; B-5 checks the files and what the page says it received.",
+   "fix": "Upload the job's files again from the paths in job.json; after a new release, edakit cart prepare again.",
+   "sources": [
+    "edakit handbook 8.4 (release verify before the upload)",
+    "Ordering at the manufacturer (docs/concepts/new/ordering.md, decided 2026-10-30): edakit prepares the order, Claude fills the maker's form in the owner's browser (skill cart), edakit checks what it brings back; up to the maker's cart button, never further"
+   ]
+  },
+  "B-6": {
+   "title": "lead in the finish",
+   "rule": "edakit cart check: a surface finish with lead (HASL that is not lead-free) in the job or on the page fails for purpose.use sale, warns for gift and is a note for private.",
+   "why": "The finish is in the layout and fab hash, not in the circuit hash M-6 reviewed: leaded HASL puts lead into the product. For a board that is sold RoHS forbids it; for a gift lead is a substance of very high concern that REACH Art. 33 asks to name to a consumer who asks.",
+   "fix": "finish = \"LeadFree HASL\" or \"ENIG\" in [order] and a new gate run; a gift with lead: accept with the statement at hand, or change the finish.",
+   "sources": [
+    "edakit handbook 15.1 and 15.2 (RoHS, REACH Art. 33, graded by purpose)",
+    "Directive 2011/65/EU (RoHS 2) Annex II: lead 0.1 % by weight in homogeneous materials",
+    "Ordering at the manufacturer (docs/concepts/new/ordering.md, decided 2026-10-30): edakit prepares the order, Claude fills the maker's form in the owner's browser (skill cart), edakit checks what it brings back; up to the maker's cart button, never further"
+   ]
+  },
+  "B-7": {
+   "title": "regulatory review of this order",
+   "rule": "edakit cart check: regulatory.md, the result of the agent regulatory-reviewer on the order, exists, names the SHA-256 of job.json and quote.json as they are now and ends with the line 'Order: OK'. Without it the check is open (exit 3); another hash, 'Order: not OK' or another last line fails.",
+   "why": "M-6 reviewed the circuit; the order adds what M-6 never saw – the finish and the other keys, the quantity against the purpose, where the maker sits, parts the owner supplies. A new quote is another order: its hash changes and the review must see it. Whether every finding 'important' is settled is the agent's judgement, as for M-6; edakit checks the line and the hashes.",
+   "fix": "Run the agent regulatory-reviewer on the order (skill cart, step 8) and write its result unchanged to regulatory.md; settle a 'block' with a new release, an 'important' as a numbered decision.",
+   "sources": [
+    "edakit handbook 15.4 (M-6) and the agent regulatory-reviewer, section 'At the order'",
+    "Ordering at the manufacturer (docs/concepts/new/ordering.md, decided 2026-10-30): edakit prepares the order, Claude fills the maker's form in the owner's browser (skill cart), edakit checks what it brings back; up to the maker's cart button, never further"
+   ]
   }
  },
  "hints": {

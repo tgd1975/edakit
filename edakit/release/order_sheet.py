@@ -269,6 +269,7 @@ class Check:
         result = "pass" if ok and level != "info" else level if level in ("warn", "info") else \
             makers.result(self.cfg, self.maker.key, False)
         self.rows.add("F", "F-6", self.board.name, check, ok, actual, expected, result)
+        self.rows[-1]["maker"] = self.maker.key
 
 
 def check_remark(c, remark):

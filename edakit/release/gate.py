@@ -13,8 +13,11 @@ Result: <reports>/<YYYYMMDD-hhmmss>/
                            and the rule, reason and fix of every check that failed or warned (rules.json)
     graph_checks.json, sim.json, schematic_<board>.json   raw results
     fab/<board>/           Gerber ZIP, BOM and CPL in JLCPCB format plus raw data (stages L, F)
-    fab/manifest.json      SHA-256 of every file to upload, the hashes of the checked state, the decision, and
-                           whether the run is the current release (status: released, superseded, withdrawn)
+    fab/manifest.json      SHA-256 of every file to upload – the files of every maker of [cart] makers –, the
+                           hashes of the checked state, the decision, and whether the run is the current release
+                           (status: released, superseded, withdrawn)
+    makers.json            per maker of [cart] makers its role (planned or other) and the findings of its checks
+                           (P-4, F-2, F-6, P-12, F-7) – edakit cart prepare stops for another maker with one
 
 RELEASED only if
   - every stage ran and no check failed,
@@ -96,7 +99,8 @@ REQUIRED = {   # manual checks every release needs, also when an older sign-off 
                     "manufacturing files of a gate run – the agent pcb-reviewer. No finding 'block' open, every "
                     "'important' finding fixed or rejected by the owner"},
 }
-UPLOAD = ["gerber_{b}.zip", "bom_{b}.csv", "cpl_{b}.csv"]
+UPLOAD = ["gerber_{b}.zip", "bom_{b}.csv", "cpl_{b}.csv"]   # JLCPCB's; with [cart] the files of every maker (upload)
+MAKERS = "makers.json"   # per maker of [cart] makers: its role in the run and its findings (edakit cart prepare)
 WHEN = ("order", "acceptance")   # verified.open {text, when}: the phase whose manual checks answer the point
 RESULT = {"pass": "passed", "fail": "FAILED", "warn": "warning", "info": "information", "advisory": "advisory",
           "waived": "waived", "pending": "open"}
@@ -452,6 +456,29 @@ def stage_schematic(cfg, outdir):
     return rows
 
 
+def upload(cfg, board):
+    """The files of a board every maker of [cart] makers takes, in the order of the makers – JLCPCB's three without
+    [cart]."""
+    from .. import makers
+    return list(dict.fromkeys(name for m in makers.all_of(cfg) for name in m.upload(board)))
+
+
+def maker_findings(cfg, rows):
+    """{maker: {name, role, findings}} of a run: the rows a check that holds the board to that maker failed, warned or
+    left open (P-4, F-2, F-6, P-12, F-7 – the row names its maker, or its text starts with it)."""
+    from .. import makers
+    out = {}
+    for key in makers.listed(cfg):
+        m = makers.get(cfg, key)
+        tag = f"{m.name} (not the planned maker): "
+        hits = [r for r in rows if r["result"] in ("fail", "warn", "pending") and (
+            r.get("maker") == key or str(r.get("check", "")).startswith(tag) or str(r.get("actual", "")).startswith(tag))]
+        out[key] = {"name": m.name, "role": "planned" if key == makers.planned(cfg) else "other",
+                    "findings": [{k: r.get(k, "") for k in ("stage", "id", "item", "check", "actual", "expected",
+                                                            "result")} for r in hits]}
+    return out
+
+
 def stage_fab(cfg, outdir, step=None):
     from . import fab
     rows = []
@@ -468,9 +495,12 @@ def stage_fab(cfg, outdir, step=None):
         except (SystemExit, Exception) as e:  # one board failing must not hide the others
             rows.append({"stage": "L", "id": "L", "item": board.name, "check": f"fab stage not runnable: {e}",
                          "result": "fail"})
-        lost = [p.format(b=board.name) for p in UPLOAD if not (d / board.name / p.format(b=board.name)).exists()]
-        rows.append({"stage": "F", "id": "F-4", "item": board.name, "check": "manufacturing files of this run complete "
-                     "(Gerber ZIP, BOM, CPL), checksums in the manifest", "actual": ", ".join(lost) or "complete",
+        files = upload(cfg, board.name)
+        lost = [f for f in files if not (d / board.name / f).exists()]
+        what = "(Gerber ZIP, BOM, CPL)" if files == [p.format(b=board.name) for p in UPLOAD] else \
+            f"of [cart] makers ({', '.join(files)})"
+        rows.append({"stage": "F", "id": "F-4", "item": board.name, "check": f"manufacturing files of this run complete "
+                     f"{what}, checksums in the manifest", "actual": ", ".join(lost) or "complete",
                      "expected": "complete", "result": "fail" if lost else "pass"})
     return rows
 
@@ -515,8 +545,8 @@ def write_manifest(cfg, outdir, head, decision):
     fab = outdir / "fab"
     files = {}
     for b in cfg.made():
-        for pattern in UPLOAD:
-            f = fab / b / pattern.format(b=b)
+        for name in upload(cfg, b):
+            f = fab / b / name
             if f.exists():
                 files[str(f.relative_to(outdir))] = hashlib.sha256(f.read_bytes()).hexdigest()
     manifest = {"released": decision == "RELEASED", "decision": decision, "time": head["time"],
@@ -922,6 +952,8 @@ def main(cfg, args):
     decision, reasons = decide(rows, sim["checks"], signoff, stages_run, stages, reqs)
     if args.easyeda:
         files = write_manifest(cfg, outdir, head, decision)
+        (outdir / MAKERS).write_text(json.dumps(maker_findings(cfg, rows), indent=1, ensure_ascii=False) + "\n",
+                                     encoding="utf-8")
     write_protocol(cfg, outdir, head, rows, sim, signoff, notes, decision, reasons, stages_run, stages, files, reqs,
                    project_checks)
     print(f"\n{decision}")

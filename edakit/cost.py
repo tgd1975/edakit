@@ -56,23 +56,53 @@ class NoFees(CostError):
     """The planned maker has no fee table: nothing to estimate – information in the gate, not a failure."""
 
 
-def fee_path(cfg=None):
-    """The shipped fee table of the planned maker ([cart] maker; its profile's fees), or [cost] fees; CostError for a
-    maker without one – the fee model is JLCPCB's (Economic, Standard, feeders, joints)."""
-    if cfg is not None and (cfg.cost or {}).get("fees"):
+def fee_path(cfg=None, maker=None):
+    """The shipped fee table of the planned maker ([cart] maker; its profile's fees) – or of maker –, or [cost] fees
+    for the planned maker; NoFees for a maker without one – the fee model is JLCPCB's (Economic, Standard, feeders,
+    joints)."""
+    from . import makers
+    if cfg is not None and (cfg.cost or {}).get("fees") and maker in (None, makers.planned(cfg)):
         return cfg.resolve(cfg.cost["fees"])
     if cfg is None:
         return FEE_TABLE
-    from . import makers
-    m = makers.get(cfg)
+    m = makers.get(cfg, maker)
     if not m.data.get("fees"):
-        raise NoFees(f"no fee table for {m.name} ([cart] maker) – edakit cost prices JLCPCB's assembly (Economic, "
+        raise NoFees(f"no fee table for {m.name}{' ([cart] maker)' if m.key == makers.planned(cfg) else ''} – edakit "
+                     "cost prices JLCPCB's assembly (Economic, "
                         "Standard, feeders, joints); [cost] fees names a table in that form")
     return FEES / f"{m.data['fees']}.json"
 
 
-def load_fee_table(cfg=None):
-    return json.loads(fee_path(cfg).read_text(encoding="utf-8"))
+def load_fee_table(cfg=None, maker=None):
+    return json.loads(fee_path(cfg, maker).read_text(encoding="utf-8"))
+
+
+def quoted_pcb(cfg, board, maker=None):
+    """(price, how) of the PCBs from the quote of the current release – the board line of the maker's quote.json, as
+    long as its fab hash, quantity and maker are the board's and B-1 to B-5 passed on it (edakit cart check); None
+    otherwise. Nothing is written into edakit.toml, and [cost] pcb_price wins."""
+    from . import cart, makers
+    from .release import gate
+    maker = maker or makers.planned(cfg)
+    cur = gate.current(cfg)
+    if not cur:
+        return None
+    run, man = cur
+    folder = cart.folder(cfg, run, board.name, maker)
+    try:
+        job, quote, done = (json.loads((folder / n).read_text(encoding="utf-8")) for n in
+                            (cart.JOB, cart.QUOTE, cart.CHECK_JSON))
+    except (OSError, json.JSONDecodeError):
+        return None
+    quantity = (board.order or {}).get("quantity", cfg.quantity)
+    if (job.get("fab_sha256") != man.get("fab_sha256") or job.get("quantity") != quantity
+            or not done.get("quote_ok") or done.get("quote_sha256") != cart.sha_of(folder / cart.QUOTE)):
+        return None
+    lines = [p for p in quote.get("prices", []) if p.get("kind") == "pcb"]
+    if not lines:
+        return None
+    return round(sum(float(p["amount"]) for p in lines), 2), f"quote of {run} ({makers.get(cfg, maker).name}, " \
+        f"{str(quote.get('read', ''))[:10]})"
 
 
 def unit_price(spec, count):
@@ -172,7 +202,8 @@ def few(refs, n=6):
     return stock.refs_text(refs) if len(refs) <= n else f"{stock.refs_text(refs[:n])} and {len(refs) - n} more"
 
 
-def price_class(fees, quantity, lines, cls, size_mm=None, pcb_override=None, pcba_quantity=None):
+def price_class(fees, quantity, lines, cls, size_mm=None, pcb_override=None, pcba_quantity=None,
+                pcb_how="[cost] pcb_price"):
     """PCB, fees and parts of one board design under one PCBA class: quantity PCBs, pcba_quantity of them assembled
     (default all)."""
     f, n_pcb = fees["pcba"], quantity
@@ -190,7 +221,7 @@ def price_class(fees, quantity, lines, cls, size_mm=None, pcb_override=None, pcb
         pcb["size_mm"] = [w, h]
         pcb["amount"], pcb["how"] = pcb_price(fees, w, h, n_pcb)
     if pcb_override is not None:
-        pcb["amount"], pcb["how"] = float(pcb_override), "[cost] pcb_price"
+        pcb["amount"], pcb["how"] = float(pcb_override), pcb_how
     area_cm2 = pcb["size_mm"][0] * pcb["size_mm"][1] / 100 if pcb["size_mm"] else 0
     sides = sorted({s for ln in lines for s in ln["sides"].values()})
     joints = {m: sum(ln["joints"] * len(ln["refs"]) for ln in lines if (ln.get("mode") or "smt") == m)
@@ -243,7 +274,7 @@ def price_class(fees, quantity, lines, cls, size_mm=None, pcb_override=None, pcb
 
 
 def estimate_board(fees, quantity, lines, declared, main_side="top", size_mm=None, pcb_override=None, name="",
-                   pcba_quantity=None):
+                   pcba_quantity=None, pcb_how="[cost] pcb_price"):
     """One board design: the class (declared, raised by what forces Standard), its PCB, fees and parts, the drivers,
     and the other class beside it. lines: stock snapshot rows plus lcsc, refs, sides {ref: side}, joints (per part).
     quantity PCBs, pcba_quantity of them assembled (default all)."""
@@ -262,16 +293,16 @@ def estimate_board(fees, quantity, lines, declared, main_side="top", size_mm=Non
         drivers.append(f"{few(refs)} on {side} – both sides assembled, Standard PCBA")
         forced |= set(refs)
     cls = "standard" if pcba == "standard" or forced else "economic"
-    res = price_class(fees, quantity, lines, cls, size_mm, pcb_override, pcba_quantity)
+    res = price_class(fees, quantity, lines, cls, size_mm, pcb_override, pcba_quantity, pcb_how)
     if forced:
         rest = [{**ln, "refs": [r for r in ln["refs"] if r not in forced],
                  "sides": {r: s for r, s in ln["sides"].items() if r not in forced}} for ln in lines]
         alt = price_class(fees, quantity, [ln for ln in rest if ln["refs"]], "economic", size_mm, pcb_override,
-                          pcba_quantity)
+                          pcba_quantity, pcb_how)
         alt["without"] = sorted(forced, key=natural_key)
     else:
         alt = price_class(fees, quantity, lines, "economic" if cls == "standard" else "standard", size_mm, pcb_override,
-                          pcba_quantity)
+                          pcba_quantity, pcb_how)
         alt["without"] = []
     if cls == "standard" and not forced and lines:
         least = fees["pcba"]["handling_min_difference"]["value"]
@@ -354,8 +385,9 @@ def order_total(boards, cost_cfg, rate=1.0, extras=()):
             "total": round(sub + vat + sum(e["amount"] or 0 for e in extras), 2)}
 
 
-def estimate(cfg, board=None):
-    fees = load_fee_table(cfg)
+def estimate(cfg, board=None, maker=None):
+    """The estimate of the order for the planned maker – or another maker of [cart] makers with a fee table."""
+    fees = load_fee_table(cfg, maker)
     cur, rate = converter(cfg, fees)
     snap = stock.load(cfg)
     design = Design.from_config(cfg)
@@ -368,11 +400,14 @@ def estimate(cfg, board=None):
             xs, ys = [p[0] for p in b.outline], [p[1] for p in b.outline]
             size = (round(max(xs) - min(xs), 2), round(max(ys) - min(ys), 2))
         price = override.get(b.name) if isinstance(override, dict) else override
+        how = "[cost] pcb_price"
+        if price is None and (quoted := quoted_pcb(cfg, b, maker)):   # the checked quote of the current release
+            price, how = quoted
         o = b.order or {}           # [order] quantity: PCBs ordered; pcba_quantity: of them assembled
         boards[b.name] = estimate_board(fees, o.get("quantity", cfg.quantity), board_lines(cfg, design, b, snap),
-                                        cfg.pcba(), main_side=sides[0] if sides else "top", size_mm=size,
+                                        cfg.pcba(maker), main_side=sides[0] if sides else "top", size_mm=size,
                                         pcb_override=price, name=b.name,
-                                        pcba_quantity=o.get("pcba_quantity", cfg.quantity))
+                                        pcba_quantity=o.get("pcba_quantity", cfg.quantity), pcb_how=how)
         if differ := not_in_price(b, fees):   # [order] orders another board than the fee table prices
             boards[b.name]["not_in_price"] = differ
     extras = extra_lines(cfg, rate)

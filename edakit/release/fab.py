@@ -7,6 +7,8 @@
 Result in DIR/<board>/:
     gerber/ and gerber_<board>.zip   Gerber and drill files as EasyEDA exports them (upload the ZIP)
     bom_<board>.csv                  BOM in JLCPCB format, generated from the graph
+    bom_<board>_mpn.csv              with a maker of [cart] makers that matches by MPN (Eurocircuits): the same rows
+                                     with manufacturer and MPN of the parts entries, in the maker's columns
     cpl_<board>.csv                  pick-and-place file in JLCPCB format (BOM parts only)
     jlc_parts.json                   JLCPCB assembly catalogue entry per LCSC number of the BOM (F-2)
     pcb.json, drc.json, bom_easyeda.json, cpl_easyeda.xlsx   raw data from EasyEDA (for --offline)
@@ -275,6 +277,38 @@ def write_bom(bom, path):
         w = csv.DictWriter(f, fieldnames=["Comment", "Designator", "Footprint", "LCSC Part #"])
         w.writeheader()
         w.writerows(bom)
+
+
+MPN_COLUMNS = ["Designator", "Quantity", "Manufacturer", "MPN", "Comment"]
+
+
+def mpn_rows(design, bom):
+    """The rows of F-1 with the manufacturer and the manufacturer part number of each line's parts entry – the BOM of a
+    maker that matches parts by MPN (P-12 finds an entry without them)."""
+    out = []
+    for r in bom:
+        entry = design.parts.get(r["LCSC Part #"]) or {}
+        out.append({"Designator": r["Designator"], "Quantity": len(r["Designator"].split(",")),
+                    "Manufacturer": entry.get("manufacturer", ""), "MPN": entry.get("mpn", ""),
+                    "Comment": r["Comment"], "Footprint": r["Footprint"], "LCSC Part #": r["LCSC Part #"]})
+    return out
+
+
+def write_mpn_bom(cfg, design, board, bom, d):
+    """bom_<b>_mpn.csv for the makers of [cart] makers that take a BOM with MPN, in the columns of the first one's
+    profile; none without such a maker. Not in the fab hash: it adds nothing the maker builds from beyond the parts
+    entries, which are in the circuit hash."""
+    from .. import makers
+    takers = [m for m in makers.all_of(cfg) if "bom_mpn" in m.files]
+    path = d / f"bom_{board.name}_mpn.csv"
+    if not takers:
+        path.unlink(missing_ok=True)
+        return
+    columns = (takers[0].data.get("bom") or {}).get("columns") or MPN_COLUMNS
+    with open(path, "w", newline="", encoding="utf-8") as f:
+        w = csv.DictWriter(f, fieldnames=columns, extrasaction="ignore")
+        w.writeheader()
+        w.writerows(mpn_rows(design, bom))
 
 
 def required_widths(cfg, design, board):
@@ -1232,6 +1266,7 @@ def check_fab(cfg, board, design, d, rows):
     want = design.board_comps(board.name)
     bom = bom_rows(design, board)
     write_bom(bom, d / f"bom_{board.name}.csv")
+    write_mpn_bom(cfg, design, board, bom, d)          # a maker that matches by MPN (Eurocircuits)
     ours = {ref: r["LCSC Part #"] for r in bom for ref in r["Designator"].split(",")}
     eda_bom = {ref.strip(): e["lcsc"] for e in json.loads((d / "bom_easyeda.json").read_text())
                for ref in e["reference"].split(",") if ref.strip() in want}
@@ -1277,9 +1312,11 @@ def check_catalogue(cfg, board, design, d, bom, rows, maker):
     rows.add("F", "F-2", board.name, f"every BOM part in JLCPCB's assembly catalogue, stock for {cfg.quantity} boards, "
              "the MPN of its parts entry", not bad, who_of + "; ".join(bad) if bad else f"{len(bom)} lines listed and "
              "in stock", "all", makers.result(cfg, maker, not bad))
+    rows[-1]["maker"] = maker
     if other:
         rows.add("F", "F-2", board.name, "catalogue class = jlc_class of the parts entry", False,
                  who_of + "; ".join(other), "equal", "warn")
+        rows[-1]["maker"] = maker
 
 
 def check_cpl(cfg, board, design, d, ours, rows):

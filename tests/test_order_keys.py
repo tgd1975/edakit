@@ -371,3 +371,43 @@ def test_cost_without_a_fee_table_for_the_maker(project, monkeypatch, capsys):
     assert cli.main(["cost"]) == 1
     assert "no fee table for Eurocircuits ([cart] maker)" in capsys.readouterr().err
     assert [r["result"] for r in cost.gate_rows(project.config())] == ["info"]
+
+
+# --- P-12 and the BOM with MPN (ordering step 8) ---------------------------------------------------------------------
+
+def test_p12_needs_mpn_and_manufacturer_for_a_maker_that_matches_by_mpn(project):
+    """Ordering step 8: Eurocircuits matches by MPN – every assembled part's entry names mpn and manufacturer; an
+    error while Eurocircuits is the planned maker, a warning while it is the second; not run without such a maker."""
+    from edakit import checks
+    from edakit.design import Design
+
+    def p12():
+        cfg = project.config()
+        rep = checks.run(Design.from_config(cfg), cfg)
+        return [m for c, m in rep.errors if c == "P-12"], [m for c, m in rep.warnings if c == "P-12"], cfg
+    errors, warnings, cfg = p12()
+    assert (errors, warnings) == ([], []) and "P-12" not in checks.executed(cfg)
+    part = project.part("C8678")
+    del part["manufacturer"]
+    project.save_part("C8678", part)
+    assert p12()[:2] == ([], [])
+    toml(project, '[cart]\nmaker = "eurocircuits"')
+    errors, warnings, cfg = p12()
+    assert errors == ["D1 C8678: the parts entry has no manufacturer – Eurocircuits matches the BOM by manufacturer "
+                      "part number"] and "P-12" in checks.executed(cfg)
+    toml(project, '[cart]\nmakers = ["jlcpcb", "eurocircuits"]')
+    errors, warnings, _ = p12()
+    assert not errors and warnings == ["Eurocircuits (not the planned maker): D1 C8678: the parts entry has no "
+                                       "manufacturer – Eurocircuits matches the BOM by manufacturer part number"]
+
+
+def test_the_bom_with_mpn_for_a_maker_that_takes_it(project):
+    import csv
+    run(project, lambda ex, p: toml(p, '[cart]\nmakers = ["jlcpcb", "eurocircuits"]'))
+    d = project.root / "build" / "fab" / "main"
+    with open(d / "bom_main_mpn.csv", newline="") as f:
+        rows = list(csv.reader(f))
+    assert rows == [["Designator", "Quantity", "Manufacturer", "MPN", "Comment"],
+                    ["C2", "1", "SAMSUNG(三星)", "CL21A226MAQNNNE", "22uF"], ["D1", "1", "MDD(辰达半导体)", "SS34", "SS34"]]
+    run(project, lambda ex, p: toml(p, '[cart]\nmakers = ["jlcpcb"]'))
+    assert not (d / "bom_main_mpn.csv").exists()

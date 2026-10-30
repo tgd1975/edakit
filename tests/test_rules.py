@@ -15,7 +15,7 @@ CODE = Path(rules.__file__).parent
 def ids_in_code():
     found = set()
     for f in CODE.rglob("*.py"):
-        found |= set(re.findall(r'"([PGESLF]-\d+)"', f.read_text(encoding="utf-8")))
+        found |= set(re.findall(r'"([PGESLFB]-\d+)"', f.read_text(encoding="utf-8")))
     return found
 
 
@@ -258,3 +258,13 @@ def test_h8_simulation_sources_and_fuses(project):
     sim["sources"]["U1"] = {"plus": "40", "minus": "38", "r_ohm": 0.3, "i_max_a": 0.5}
     sim_file.write_text(json.dumps(sim))
     assert h8(project) == ["+5V (J1, U1 unblocked)", "VBUS_U1 (J1, U1 unblocked)"]
+
+
+def test_the_order_checks_are_in_the_catalog():
+    """B-1 to B-7 (edakit cart check, handbook 8.4) are complete entries; no project stage takes their letter – K is
+    a project's (handbook 8.1: the reference project's mechanics)."""
+    from edakit import cart
+    assert set(cart.CHECKS) == {f"B-{i}" for i in range(1, 8)}
+    assert all(rules.entry(cid) and not rules.entry(cid).get("retired") for cid in cart.CHECKS)
+    assert all(rules.title(cid) == cart.CHECKS[cid] for cid in cart.CHECKS)
+
