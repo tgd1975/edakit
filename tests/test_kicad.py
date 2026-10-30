@@ -12,7 +12,7 @@ from edakit import config
 from edakit.config import ConfigError
 from edakit.design import Design
 from edakit.part import file_name
-from edakit.toolchain import kicad
+from edakit.toolchain import is_kicad
 from edakit.toolchain.kicad import board as kb
 from edakit.toolchain.kicad import library, sexp
 
@@ -55,12 +55,12 @@ def cached(cfg, design, ref):
 
 def test_without_the_key_the_project_stays_easyeda(project):
     cfg = project.config()
-    assert cfg.toolchain == "easyeda" and not kicad(cfg)
+    assert cfg.toolchain == "easyeda" and not is_kicad(cfg)
 
 
 def test_the_key_chooses_kicad_and_its_folder(project):
     cfg = kicad_project(project)
-    assert kicad(cfg)
+    assert is_kicad(cfg)
     assert cfg.kicad_dir(cfg.board()) == project.root / "build" / "edakit" / "kicad" / "main"
 
 

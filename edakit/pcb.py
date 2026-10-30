@@ -47,6 +47,7 @@ from . import checks, eda, handover
 from .config import BOTTOM, MIL_PER_MM, TOP
 from .design import Design, natural_key
 from .eda import MCPError, api, ensure_pcb_focus
+from .toolchain import is_kicad
 
 BOARD_OUTLINE_LAYER = 11  # EPCB_LayerId.BOARD_OUTLINE
 MULTI_LAYER = 12          # through-hole pads
@@ -1705,6 +1706,9 @@ def main(cfg, args):
     if args.action == "pour":  # pour_regions: the outlines from the last routing, before EasyEDA is touched
         from . import route
         regions = route.region_outlines(cfg, board)
+    if is_kicad(cfg):                 # the KiCad project: files and kicad-cli (handbook 16)
+        from .toolchain.kicad import commands
+        return commands.pcb_main(cfg, board, args, regions)
     step = eda.Steps(APPLY_STEPS) if args.action == "apply" else None
     if step:
         step("bridge and PCB")

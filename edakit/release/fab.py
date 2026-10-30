@@ -101,6 +101,7 @@ from pathlib import Path
 from .. import drc_rules, gerber, handover, stock
 from ..config import BOTTOM, MIL_PER_MM, TOP
 from ..design import Design, natural_key
+from ..toolchain import is_kicad
 
 MM = 1 / MIL_PER_MM
 SILK = {3: TOP, 4: BOTTOM}   # silkscreen layer -> copper layer of the SMD pads on the same side
@@ -371,15 +372,30 @@ def check_pcb(cfg, board, design, d, rows):
                      True, ", ".join(f"{n} {v * 1e3:.0f} mV" for n, v in sorted(drop.items(), key=lambda kv: -kv[1])),
                      "information", "info")
     drc = json.loads((d / "drc.json").read_text())
-    items = pcbmod.import_items(drc)
-    other = [f for f in drc if f not in items]
-    kinds = Counter(f"{f.get('errorType')} ({f.get('ruleName')})" for f in other)
-    rows.add("L", "L-3", board.name, "EasyEDA DRC without findings (other kinds)", not other,
-             ", ".join(f"{k}: {n}" for k, n in kinds.items()) or "0", "0")
-    diff = json.loads((d / "netlist_diff.json").read_text()) if (d / "netlist_diff.json").exists() else None
-    ok, what = pcbmod.import_verdict(items, diff)
-    rows.add("L", "L-3", board.name, "schematic and PCB in sync (Import Changes)", ok, what, "no Import Changes item")
-    if drc_rules.mode(board):
+    if is_kicad(cfg):                     # KiCad: schematic parity is part of its DRC (cli.findings)
+        items = [f for f in drc if f.get("ruleName") == "parity"]
+        other = [f for f in drc if f not in items]
+        kinds = Counter(f"{f.get('errorType')} ({f.get('severity')})" for f in other)
+        rows.add("L", "L-3", board.name, "KiCad DRC without findings (other kinds)", not other,
+                 ", ".join(f"{k}: {n}" for k, n in kinds.items()) or "0", "0")
+        rows.add("L", "L-3", board.name, "schematic and PCB in sync (KiCad's schematic parity)", not items,
+                 "; ".join(f"{f['errorType']}: {', '.join(f['items'][:2])}" for f in items[:8]) or "in sync",
+                 "no parity finding")
+    else:
+        items = pcbmod.import_items(drc)
+        other = [f for f in drc if f not in items]
+        kinds = Counter(f"{f.get('errorType')} ({f.get('ruleName')})" for f in other)
+        rows.add("L", "L-3", board.name, "EasyEDA DRC without findings (other kinds)", not other,
+                 ", ".join(f"{k}: {n}" for k, n in kinds.items()) or "0", "0")
+        diff = json.loads((d / "netlist_diff.json").read_text()) if (d / "netlist_diff.json").exists() else None
+        ok, what = pcbmod.import_verdict(items, diff)
+        rows.add("L", "L-3", board.name, "schematic and PCB in sync (Import Changes)", ok, what, "no Import Changes item")
+    if drc_rules.mode(board) and is_kicad(cfg):
+        from ..toolchain.kicad import board as kicad_board
+        off = kicad_board.rules_differences(cfg, board)
+        rows.add("L", "L-3", board.name, "KiCad's DRC rule set = [routing] of the board file", not off,
+                 "; ".join(off) or "written from the board file", drc_rules.summary(drc_rules.wanted(board)))
+    elif drc_rules.mode(board):
         ok, what, expected = drc_rules.verdict(board, d / "drc_rules.json")
         rows.add("L", "L-3", board.name, "EasyEDA's DRC rule set = [routing] of the board file", ok, what, expected)
     check_polarity_marks(cfg, board, design, d, data, want, on_pcb, rows)
@@ -1229,11 +1245,12 @@ def check_fab(cfg, board, design, d, rows):
     bom = bom_rows(design, board)
     write_bom(bom, d / f"bom_{board.name}.csv")
     ours = {ref: r["LCSC Part #"] for r in bom for ref in r["Designator"].split(",")}
-    eda_bom = {ref.strip(): e["lcsc"] for e in json.loads((d / "bom_easyeda.json").read_text())
+    tool = "KiCad" if is_kicad(cfg) else "EasyEDA"
+    eda_bom = {ref.strip(): e["lcsc"] for e in json.loads((d / f"bom_{tool.lower()}.json").read_text())
                for ref in e["reference"].split(",") if ref.strip() in want}
-    diff = [f"{r}: graph {ours.get(r, '–')}, EasyEDA {eda_bom.get(r, '–')}" for r in sorted(set(ours) | set(eda_bom), key=natural_key)
+    diff = [f"{r}: graph {ours.get(r, '–')}, {tool} {eda_bom.get(r, '–')}" for r in sorted(set(ours) | set(eda_bom), key=natural_key)
             if ours.get(r) != eda_bom.get(r) and not (r not in ours and want[r].get("bom") is False)]
-    rows.add("F", "F-1", board.name, "BOM (from the graph) = BOM of EasyEDA, LCSC per designator", not diff,
+    rows.add("F", "F-1", board.name, f"BOM (from the graph) = BOM of {tool}, LCSC per designator", not diff,
              "; ".join(diff[:10]) or f"{len(ours)} parts in {len(bom)} lines", "equal")
     unknown = sorted({lc for lc in ours.values() if lc not in design.parts})
     rows.add("F", "F-1", board.name, "every LCSC number of the BOM is in the parts database", not unknown,
@@ -1263,10 +1280,14 @@ def check_fab(cfg, board, design, d, rows):
     if other:
         rows.add("F", "F-2", board.name, "catalogue class = jlc_class of the parts entry", False, "; ".join(other),
                  "equal", "warn")
-    import openpyxl
-    ws = openpyxl.load_workbook(d / "cpl_easyeda.xlsx", read_only=True).worksheets[0]
-    rx = list(ws.iter_rows(values_only=True))
-    cpl = [dict(zip(rx[0], r)) for r in rx[1:] if r and r[0]]
+    if is_kicad(cfg):                     # kicad-cli's position file in the columns of EasyEDA's CPL
+        from ..toolchain.kicad import fab as kicad_fab
+        cpl = kicad_fab.read_cpl(d / "cpl_kicad.csv")
+    else:
+        import openpyxl
+        ws = openpyxl.load_workbook(d / "cpl_easyeda.xlsx", read_only=True).worksheets[0]
+        rx = list(ws.iter_rows(values_only=True))
+        cpl = [dict(zip(rx[0], r)) for r in rx[1:] if r and r[0]]
     count = Counter(r["Designator"] for r in cpl)
     data = {c["designator"]: c for c in json.loads((d / "pcb.json").read_text())["components"] if c.get("designator")}
     probs = [f"{r}: {count[r]}x" for r in sorted(ours, key=natural_key) if count[r] != 1]
@@ -1350,7 +1371,11 @@ def run(cfg, board, out, offline=False, verbose=False):
     d.mkdir(parents=True, exist_ok=True)
     design = Design.from_config(cfg)
     if not offline:
-        collect(cfg, board, d, verbose)
+        if is_kicad(cfg):                 # the same files from the KiCad project and kicad-cli (handbook 16.6)
+            from ..toolchain.kicad import fab as kicad_fab
+            kicad_fab.collect(cfg, board, d, verbose)
+        else:
+            collect(cfg, board, d, verbose)
         (d / "jlc_parts.json").unlink(missing_ok=True)
     rows = Rows()
     check_pcb(cfg, board, design, d, rows)

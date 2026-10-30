@@ -678,3 +678,31 @@ def write_silk(cfg, board, designators, texts, fills, hide_sides):
                                  ["stroke", ["width", 0], ["type", Sym("solid")]], ["fill", Sym("solid")],
                                  ["layer", SILK[side]], ["uuid", uid(board.name, "fill", k, i)]])
     pcb.save(cfg, board)
+
+
+def rules_differences(cfg, board):
+    """Where the rules of <board>.kicad_pro differ from what [routing] of the board file asks (drc_rules.wanted) – the
+    file is written from it, so only a hand in KiCad or an older run makes a difference. L-3 with drc_rules = "check"."""
+    from ...drc_rules import wanted
+    want = wanted(board)
+    f = paths(cfg, board)["pro"]
+    if not f.exists():
+        return [f"{f.name} missing (edakit pcb apply writes it)"]
+    pro = json.loads(f.read_text(encoding="utf-8"))
+    rules = pro.get("board", {}).get("design_settings", {}).get("rules", {})
+    classes = {c.get("name"): c for c in pro.get("net_settings", {}).get("classes", [])}
+    off = []
+    for what, have, soll in (("clearance", rules.get("min_clearance"), want["clearance"]),
+                             ("edge clearance", rules.get("min_copper_edge_clearance"), want["edge"]),
+                             ("via diameter", rules.get("min_via_diameter"), want["via"][0]),
+                             ("track", (classes.get("Default") or {}).get("track_width"), want["track"][""])):
+        if have is None or abs(have - soll) > 1e-4:
+            off.append(f"{what} {have if have is not None else '–'} mm instead of {soll:.4f} mm")
+    for name, width in want["track"].items():
+        if name and abs(((classes.get(name) or {}).get("track_width") or 0) - width) > 1e-4:
+            off.append(f"class {name}: track {(classes.get(name) or {}).get('track_width', '–')} mm instead of "
+                       f"{width:.4f} mm")
+    patterns = {(p.get("netclass"), p.get("pattern")) for p in pro.get("net_settings", {}).get("netclass_patterns", [])}
+    off += [f"net {net} not in class {name}" for name, nets in want["classes"].items() for net in nets
+            if (name, net) not in patterns]
+    return off

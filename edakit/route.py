@@ -66,6 +66,7 @@ from . import eda, pcb
 from .config import MIL_PER_MM, PASTE_GAP_MM, POUR_CLEARANCE_MM, POUR_MIN_WIDTH_MM
 from .design import natural_key
 from .eda import api, ensure_pcb_focus
+from .toolchain import is_kicad
 
 LAYERS = {1: "TOP", 2: "BOTTOM"}
 SNAP_MIL = 0.5  # points closer than this count as one (EasyEDA drops pieces < ~0.5 mil)
@@ -2145,17 +2146,26 @@ def main(cfg, args):
     if board.routing.get("widths") == "sim" and {"dsn", "route", "check", "diagnose"} & set(steps):
         sim_widths(cfg, board, rules)
     mcp = None
+    kc = is_kicad(cfg)                # the KiCad project: files and kicad-cli instead of the bridge (handbook 16)
+    if kc:
+        from .toolchain.kicad import board as kicad_board
+        from .toolchain.kicad import cli as kicad_cli
+        from .toolchain.kicad import commands as kicad_commands
     step_line = eda.Steps(len(steps), clock=time.time, t0=T0)   # the minutes of say()
     try:
         for step in steps:
             if len(steps) > 1:
                 step_line(step)
-            if step in ("read", "apply", "verify", "pours", "reload", "drc", "save") and mcp is None:
+            if step in ("read", "apply", "verify", "pours", "reload", "drc", "save") and mcp is None and not kc:
                 mcp = eda.connect(cfg, args.verbose)
                 eda.open_project(mcp, cfg)
                 eda.open_pcb(mcp, board.pcb)
             if step == "read":
-                P["board"].write_text(json.dumps(read_board(mcp, board), indent=1))
+                data = kicad_board.board_json(cfg, board) if kc else read_board(mcp, board)
+                if kc:
+                    say(f"read: {len(data['components'])} parts, {len(data['pads'])} pads, "
+                        f"{len(data['outlines'])} outlines from {cfg.relative(kicad_board.paths(cfg, board)['pcb'])}")
+                P["board"].write_text(json.dumps(data, indent=1))
             elif step == "dsn":
                 write_dsn(rules, json.loads(P["board"].read_text()), P["dsn"])
             elif step == "route":  # always a fresh DSN: a stale one routes against old rules (cheap, ~1 s)
@@ -2212,8 +2222,14 @@ def main(cfg, args):
                     return 2
             elif step == "diagnose":
                 return diagnose_main(cfg, board, rules, getattr(args, "net", None))
+            elif step == "apply" and kc:
+                n, v = kicad_board.write_copper(cfg, board, rules, read_ses(P["ses"], rules),
+                                                json.loads(P["board"].read_text()))
+                say(f"written: {n} track pieces, {v} vias")
             elif step == "apply":
                 apply_ses(rules, mcp, read_ses(P["ses"], rules), json.loads(P["board"].read_text()), P["stitch"])
+            elif step == "verify" and kc:
+                say("verify: the copper is written into the file as planned – nothing to compare")
             elif step == "verify":
                 data, routes = json.loads(P["board"].read_text()), read_ses(P["ses"], rules)
                 segs = segments(rules, routes, data)
@@ -2223,24 +2239,45 @@ def main(cfg, args):
                     print(f"    {line}", flush=True)
                 if problems:
                     return 2
+            elif step == "pours" and kc:
+                if any(p.get("stitch") for p in board.pours):
+                    say("  stitch of [[pours]]: EasyEDA's step – KiCad removes the loose islands")
+                n = kicad_board.write_zones(cfg, board, region_outlines(cfg, board, rules))
+                kicad_cli.fill_zones(kicad_board.paths(cfg, board)["pcb"], args.verbose)
+                say(f"pours: {n} zones written and filled by kicad-cli")
             elif step == "pours":
                 regions = region_outlines(cfg, board, rules)  # before anything is written
                 data = json.loads(P["board"].read_text()) if P["board"].exists() else None
                 routes = read_ses(P["ses"], rules) if P["ses"].exists() else {}
                 pours(cfg, board, rules, mcp, data, routes, P["stitch"], regions)
+            elif step == "reload" and kc:
+                say("nothing to reload: the KiCad PCB is a file")
             elif step == "reload":
                 eda.reload_pcb(mcp)
                 say("PCB saved and reloaded")
+            elif step == "drc" and kc:
+                found = kicad_cli.drc(kicad_board.paths(cfg, board)["pcb"], P["drc"].with_suffix(".kicad.json"),
+                                      verbose=args.verbose)
+                P["drc"].write_text(json.dumps(found, indent=1, ensure_ascii=False))
+                code = kicad_commands.drc_report(found, say=say)
+                if code:
+                    return code
             elif step == "drc":
                 found = eda.drc(mcp, P["drc"])
                 P["netlist_diff"].unlink(missing_ok=True)
                 code = pcb.drc_report(cfg, board, mcp, found, P["netlist_diff"], say=say)
                 if code:
                     return code
+            elif step == "save" and kc:
+                say("nothing to save: the KiCad PCB is a file")
             elif step == "save":
                 say(f"PCB saved: {eda.save_pcb(mcp)}")
     except eda.MCPError as e:
         return eda.die(str(e))
+    except Exception as e:
+        if kc and type(e).__name__ in ("BoardError", "CliError"):
+            return eda.die(str(e))
+        raise
     finally:
         if mcp:
             mcp.close()
