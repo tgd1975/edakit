@@ -1,12 +1,13 @@
 # Two tool chains: EasyEDA Pro and KiCad
 
-Status 2026-10-30: built on the branch of decision 6 (steps T.1 to T.10 and T.12, the table under Order); tested
-offline against a kicad-cli the tests fake and in CI against KiCad 10 on the led-bar example (handbook 16.8). Open:
-the live tests with the user. On 2026-10-30 the user decided: edakit places the parts in both tool chains (gap K-1,
-now the section [Placement](#placement-edakit-places-for-both-tool-chains)), and decisions 1, 4, 5, 6 and 7. The user
-left decision 2 to Claude. Claude took decision 3 as recommended because the user left it open; the user accepted
-the reason the same day. The findings come from reading edakit at `bf7450a`. The KiCad facts are from KiCad's
-documentation and release pages for KiCad 10. Anything marked **(probe)** has not been run.
+Status 2026-10-30: built on the branch of decision 6 (steps T.1 to T.10 and T.12, the table under Order) and merged into
+main the same day, before the live tests, at the user's word; tested offline against a kicad-cli the tests fake and in
+CI against KiCad 10 on the led-bar example (handbook 16.8). Open: the live tests with the user. On 2026-10-30 the user
+decided: edakit places the parts in both tool chains (gap K-1, now the section
+[Placement](#placement-edakit-places-for-both-tool-chains)), and decisions 1, 4, 5, 6 and 7. The user left decision 2 to
+Claude. Claude took decision 3 as recommended because the user left it open; the user accepted the reason the same day.
+The findings come from reading edakit at `bf7450a`. The KiCad facts are from KiCad's documentation and release pages for
+KiCad 10. Anything marked **(probe)** has not been run.
 
 ## Goal
 
@@ -375,10 +376,10 @@ Out:
 
 ## Order
 
-The KiCad work runs on a branch of its own (decision 6). It does not wait for the live runs of 2.1 to 2.4 and 3.6,
-and is rebased when they land. Each step is built with add-feature, test first, as in
-[implementation-plan.md](implementation-plan.md), and goes to main when the user says so. Each step leaves a project
-without `toolchain = "kicad"` as it is: T.1 changes nothing until `--rest` is given.
+The KiCad work ran on a branch of its own (decision 6), without waiting for the live runs of 2.1 to 2.4 and 3.6, and
+went to main on 2026-10-30. Each step is built with add-feature, test first, as in
+[implementation-plan.md](implementation-plan.md). Each step leaves a project without `toolchain = "kicad"` as it is:
+T.1 changes nothing until `--rest` is given.
 
 | Step | What | Size | Needs | Waits for | State |
 | --- | --- | --- | --- | --- | --- |
