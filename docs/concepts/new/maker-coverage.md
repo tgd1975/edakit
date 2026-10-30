@@ -2,9 +2,12 @@
 
 Status 2026-10-30: research and analysis, nothing is built. What becomes a check, a hint, a block or a part fact is the
 owner's decision (handbook 14.4), and every candidate below still needs its sources opened and read before it gets a
-catalog entry (skill add-rule, step 2). Basis: edakit at `bf7450a`, five research clusters with 173 pitfalls from about
-80 project types, and the owner's 21 repositories. Every pitfall with its numbers, its source and what covers it:
-[the appendix](#appendix-the-pitfalls).
+catalog entry (skill add-rule, step 2). Basis: edakit at `bf7450a`, seven research clusters with 249 pitfalls from
+about 80 maker project types and the guitar's pedals, instrument and amplifiers, and the owner's 21 repositories. Of the
+249, 50 are covered, 11 covered once the parts entry carries the datasheet value, 69 partly and 119 not – some of
+those judgement or out of scope. Every pitfall with its numbers, its source and what covers it:
+[the appendix](#appendix-the-pitfalls). The concept is a backlog, not a build list (section "Keeping the catalog
+stable").
 
 ## Question
 
@@ -31,17 +34,26 @@ Do the checks, hints and blocks of edakit cover what typical maker projects get 
   8. hazardous voltage – spacing, isolation and input topology of mains and high-voltage boards;
   9. RF placement – the antenna keep-out of modules;
   10. support circuits a datasheet asks for (EN RC, VCAP, crystal load, USB series resistors), and kinds the graph has
-      no word for: speaker, optocoupler, motor, heater.
-- **Recommendation:** first load steps in transients (FT-1), pin requirements from the parts entry (CK-13) together
-  with a library of checked entries for the parts makers use most (PF), and the pin semantics (CK-1 to CK-3): they
-  cover the most findings per line of code. Mains and high voltage only if edakit is to take such boards; until then
-  one warning that says edakit does not check them (CK-22).
+      no word for: speaker, optocoupler, motor, heater;
+  11. guitar circuits – the input impedance a pickup needs, op-amps at 9 V, DC at switches and pots, the bias spread of
+      discrete stages.
+- **Stability:** today the catalog is quiet – 0–1 waiver per board on the bell, 7 for the reference project's 84
+  parts. Built one by one, the candidates would about double it, mostly without a real project to test them against.
+  Seven mechanisms cover 91 of the 128 open maker pitfalls; with a coverage report, domains per project and a project
+  as the trigger for every build, it stays stable (section "Keeping the catalog stable").
+- **Recommendation:** first the coverage report (FT-19) and domains (FT-20), then load steps in transients (FT-1), pin
+  requirements from the parts entry (CK-13) together with a library of checked entries for the parts makers use most
+  (PF), and the pin semantics (CK-1 to CK-3): they cover the most findings per line of code. Mains and high voltage
+  only if edakit is to take such boards; until then one warning that says edakit does not check them (CK-22).
 
 ## Basis and limits
 
-- Five research agents, one cluster each: LEDs and displays (32 pitfalls), motors and robotics (35), power and
-  batteries (32), MCU boards, buses, radio and keyboards (39), audio, mains, high voltage and measurement (35). Each
-  pitfall comes with its numbers, the project types, the usual fix, what would detect it and its source.
+- Seven research agents, one cluster each: LEDs and displays (32 pitfalls), motors and robotics (35), power and
+  batteries (32), MCU boards, buses, radio and keyboards (39), audio, mains, high voltage and measurement (35), guitar
+  effect pedals (37), and the guitar's instrument, amplifiers, DI boxes and switching (39). Each pitfall comes with its
+  numbers, the project types, the usual fix, what would detect it and its source. The guitar clusters read
+  ElectroSmash's circuit analyses in a GitHub archive (mstratman/electrosmash-pdf-backups) and the FV-1, TL07x and
+  CA3080 datasheets in GitHub repositories; most other guitar sources were search extracts (x).
 - Sources are tagged **r** (read in the primary document), **x** (from a search engine's extract of the cited page)
   and **v** (to verify: the host was not reachable, or the value is from memory). The environment's network policy
   blocked most vendor hosts (ti.com, st.com, espressif.com, microchip.com, analog.com, nxp.com, pololu.com, adafruit.com
@@ -181,12 +193,38 @@ both. Separate batteries do not help at all. What edakit can decide sits on each
 without RC low-pass or ferrite (HT-8), on the transmitter a PWM speaker output on leads (HT-13), and cables as such
 (HT-1, FT-2). The coupling between two devices that share nothing is no check: it stays judgement.
 
+### Guitar electronics
+
+Two more research clusters: effect pedals (37 pitfalls) and the instrument, amplifiers, DI boxes and switching (39).
+
+- **The audio band at its operating point only.** Most of it is analog in the audio band, which edakit's DC-first
+  simulation sees at its operating point. The bias of discrete stages – fuzz, boosts, phasers – rests on the spread of
+  the transistors (AC128 gain 45–165, r; J201 IDSS 0.2–1.0 mA, r); the simulation has corners for the LEDs' forward
+  voltage only (FT-17).
+- **Impedance is the guitar's main topic.** A passive pickup wants about 1 MΩ, a piezo 10 MΩ and more; LM386 inputs,
+  codecs and passive DI boxes load it to 10–300 kΩ (CK-27, FT-18).
+- **Op-amps at 9 V** run out of swing and common-mode range (TL07x: 1.5–3 V short of each rail, r), and the Klon's
+  charge pump puts 27 V across one – 36 V from a 12 V outlet (r): FT-3, and E-3 with the op-amp's `vdd_op_max` and a
+  12 V supply corner.
+- **Pops and scratches are DC where it should not be:** across switches, relay contacts and pots, and polarized
+  capacitors around the 4.5 V reference in every state (CK-30, CK-7).
+- **The pedalboard is a system:** outlets with a current each, positive-ground and AC pedals, daisy chains as ground
+  loops (HT-18), charge pumps and PWM in the audio band (HT-16).
+- **Layout:** input and output of a high-gain stage apart, a charge pump or a converter's switch node away from inputs,
+  the PT2399's two grounds joined short (CK-31).
+- **Covered already:** pinouts of regulators and transistors (P-1, L-10: 78L05 against 7805, BS170 against 2N7000),
+  a regulator's temperature (E-3), capacitor ratings at 18 V (G-8 with the supply corner), flyback diodes and pull-in of
+  relays (G-13, E-3), reverse polarity (G-10).
+- **Out of scope:** tube amplifiers – B+ of 250–500 V, heaters, output transformers, and tube models that do not hold at
+  low anode voltage – as long as edakit takes no hazardous voltage (FT-7).
+
 ## Candidates
 
 The kinds are those of add-rule: a **check** where a program decides without guessing, a **hint** where it takes
 judgement, a **block** for a circuit worth reusing, a **part fact** for one part's datasheet, and a **feature** where
 edakit lacks the capability (add-feature). "Seen" names the clusters of the pitfalls list: LED, MOT (motors), PWR
-(power), MCU, AUD (audio, mains, high voltage, measurement), OWN (the owner's projects).
+(power), MCU, AUD (audio, mains, high voltage, measurement), GTP (guitar pedals), GTI (guitar instrument, amplifiers,
+DI, switching), OWN (the owner's projects).
 
 ### Features
 
@@ -208,6 +246,10 @@ edakit lacks the capability (add-feature). "Seen" names the clusters of the pitf
 | FT-14 | **Constant-current LED buck** (PT4115, AL8860): output current V_sense / R_S (PT4115: 0.1 V, x), headroom against the LEDs' forward voltage. | LED 19 |
 | FT-15 | **`fn` for I2S, CAN, 1-Wire and USB** (`i2s.bclk`, `i2s.ws`, `i2s.sd`, `can.tx`, `can.rx`, `onewire`, `usb.dp`, `usb.dn`): G-15 then holds them to the pin functions as it does SPI, I2C and UART. | topic "Communication between ICs" |
 | FT-16 | **Bus parameters in the firmware contract:** per SPI device its mode and maximum clock, per I2C device its address and the bus speed its pull-ups allow, from the parts entries; drift reported as for the pins. | topic "Communication between ICs"; H-9 |
+| FT-17 | **Corners of transistor parameters:** hFE, leakage (doubling per 10 °C), IDSS and VGS(off), VGS(th) – min and max from the entry as corners of the simulation, as the LEDs' forward voltage is today; with expected windows on nets (FT-11) the bias of fuzz, boost and phaser stages is checked. | GTP 1, 5, 6, 12, 13, 18 |
+| FT-18 | **Source models for the audio band:** a passive pickup (inductance, resistance, capacitance), a piezo (voltage source behind its capacitance), a cable's capacitance per metre – for FT-12 and the loading of CK-27. | GTI 1–5, 10, 12; GTP 3 |
+| FT-19 | **Coverage report:** per check what it could not check for lack of data – "E-3: U4.3, U4.5 without thresholds" – in `edakit check` and the gate protocol. The first step before any check that depends on part facts (section "Keeping the catalog stable"). | stability |
+| FT-20 | **Domains:** `[project] domains` – audio, motors, radio, mains – switch domain checks and hints on; `edakit rules` and `edakit hints` show what applies to the project. | stability |
 
 ### Checks
 
@@ -239,6 +281,11 @@ edakit lacks the capability (add-feature). "Seen" names the clusters of the pitf
 | CK-24 | G | **Capacitor banks above the hazardous limit discharge:** a resistor across them brings them below 60 V within 60 s. | FT-7 | AUD 27 |
 | CK-25 | G | **Analog nodes have a DC path:** a net with an `analog` input that reaches no resistor or driver to a defined level – only capacitors – floats: it picks up hum, and a switch on it pops. The analog sibling of G-4. | – | AUD 13 |
 | CK-26 | G | **UART lines cross:** a net with `fn` `uart.tx` or `uart.rx` has exactly one output (a TX) and at least one input (an RX); a net with inputs only is an error, also with a pull-up – G-4 lets it pass then. | – | MCU 14; topic "Communication between ICs" |
+| CK-27 | G | **Instrument inputs load their source within its limit:** a connector input declared for a passive pickup (guideline 1 MΩ, x) or a piezo (10 MΩ and more, x) sees the shunt resistors and the first active input's impedance in parallel above that; tuners and other branches on the node count. | `z_in_ohm` on input pins; `source` on the connector pin | GTI 1, 10, 15, 33, 34; GTP 3, 14, 19, 26 |
+| CK-28 | G | **Amplifiers inside their stable gain:** the closed-loop gain from the feedback network is at least the part's minimum stable gain (LM1875: 10, x), and a part that needs external compensation has its capacitor (LM308: 30 pF across pins 1 and 8, r). | `gain_min`, `requires_ext_comp` | GTI 19; GTP 11 |
+| CK-29 | G | **Series capacitors share their voltage:** two or more capacitors in series across a supply have balancing resistors (2 × 450 V in a tube supply, supercapacitor stacks). | – | GTI 21; PWR 23 |
+| CK-30 | E | **No DC where signals are switched:** both sides of a switch, relay contact or pot in a signal path sit at the same DC level within a few mV in every state (the pop, the scratchy pot), and a contact that carries signal currents is rated for them (gold, minimum load 10 µA / 1 mV, x). | nets marked as signal path; `min_load` of contacts | GTP 31, 37; GTI 31; AUD 13 |
+| CK-31 | L | **Nets kept apart:** pairs the hand-over names (`layout.apart`: two nets, a distance, a parallel length) keep them on the board – input and output of a high-gain stage (2.5 mm, x), a charge pump or switch node against high-impedance inputs, a crystal against noisy lines. The same measurement serves CK-9 and CK-11. | `layout.apart` | GTP 10, 22, 23, 25, 33; GTI 16, 26, 29; MCU 6, 7 |
 
 ### Hints
 
@@ -258,6 +305,11 @@ edakit lacks the capability (add-feature). "Seen" names the clusters of the pitf
 | HT-12 | a motor driver | bulk capacitor at VM per driver (Pololu: ≥ 47 µF, x); a series diode in front of VM blocks the motor's returned energy | MOT 5, 9 |
 | HT-13 | a filterless class-D output at a connector | ferrite or LC filter above the datasheet's lead length – a check with FT-2 and the length in the entry | AUD 1–3; OWN horn |
 | HT-14 | a relay whose contacts switch an off-board load | the rating is resistive; LED drivers and switch-mode supplies draw tens of amps at start, inductive loads need a snubber | AUD 20 |
+| HT-15 | a battery whose minus reaches ground through a jack's ring | a cable left plugged drains it, a TRS cable leaves the circuit off; the DC jack's switch lug must break battery plus (EMG: about 80 µA per pickup, x) | GTI 8; GTP 32 |
+| HT-16 | a charge pump, a converter with a light-load mode, or PWM on a board with an audio path | switching in the audio band: ICL7660 and TC1044 at about 10 kHz with a 5 kHz subharmonic (x), boost converters bursting at light load, LED and tap-tempo PWM – above 20 kHz or filtered | GTI 29, 38; GTP 17, 34; AUD 12 |
+| HT-17 | a class-2 ceramic (X7R, Y5V) in a signal path | it distorts; C0G or film (r) | GTI 36; GTP 24 |
+| HT-18 | a pedal's supply input | positive-ground and AC pedals need an isolated outlet; a series part in the DC jack's ground leg is bypassed by the audio cables; daisy chains form ground loops | GTP 2, 35; GTI 32, 38 |
+| HT-19 | an instrument's string ground, a capacitor from mains to chassis | the bridge ground ties the player to the amplifier's ground: a line-to-chassis capacitor (death cap) is Y-class or gone – the amplifier's side is CK-10 | GTI 7, 27 |
 
 ### Blocks
 
@@ -278,6 +330,9 @@ edakit lacks the capability (add-feature). "Seen" names the clusters of the pitf
 | BL-13 | servo connector with bulk capacitor | MOT 16 |
 | BL-14 | DC motor driver (DRV8833 or TB6612) with VM capacitors | MOT 1–5 |
 | BL-15 | Eurorack power entry: keyed 10- or 16-pin header, series Schottky per rail, 10 µF | AUD 10 |
+| BL-16 | instrument buffer: 1 MΩ JFET or op-amp input, 100 Ω–1 kΩ output resistor, RF filter at the jack (series resistor, then 47–100 pF) | GTI 1, 2, 39; GTP 14 |
+| BL-17 | pedal power entry: 9 V centre-negative jack, series Schottky or P-MOSFET, 100 Ω and 100 µF, 4.5 V reference with ≥ 10 µF | GTP 9, 34, 36; AUD 11 |
+| BL-18 | relay bypass with mute: signal relay with gold contacts, transistor coil drive with flyback diode, photo-MOS mute window (35 ms, r) | GTP 31; GTI 30, 31 |
 
 ### Part facts
 
@@ -307,13 +362,58 @@ What stays judgement goes into the questions of the reviewers, as "Not covered b
 - pcb-reviewer – **RF:** antenna areas of modules and of modules plugged over the board; **hazardous voltage:** spacing
   between domains, slots; **thermal pads:** copper and vias under exposed pads.
 
+## Keeping the catalog stable
+
+The owner's question: with all these rules, does edakit stay stable, or does it confuse more than it helps?
+
+**Today the catalog is quiet.** 66 active checks (G-7 is retired) and 9 hints, 983 tests; every check was seen red
+once and ran against real projects before its merge. On the owner's boards it costs little: the bell needs 0–1 waived
+finding and 0–1 accepted warning per variant (19 parts each), the reference project 7 waived findings for 84 parts and
+77 nets and one accepted warning. Where the reference project lost time was EasyEDA, waiting and dead ends against the
+API (handbook 13.2) – not the rules.
+
+**Built one by one, the candidates of this concept would make it worse:**
+
+1. The catalog would about double – the findings, `edakit rules`, the handbook's tables.
+2. Most candidates come from research, not from a project's lesson. add-rule's run against real projects (step 5)
+   cannot show their false alarms while no project of the owner has audio, mains or a guitar circuit – and a check that
+   guesses produces waivers instead of findings.
+3. Most of them need new fields in parts entries: work and a source of errors per part, and each one to sign (G-9).
+4. Checks that need data pass silently without it: E-3 checks only inputs with thresholds, G-12 only pins with
+   `strap`. More such checks are more coverage on paper; nothing says which part went unchecked.
+5. Every open hint stands in the last line of `edakit check`; 25 hints on a board where five matter teach to ignore
+   all of them.
+
+**Guardrails that keep it stable:**
+
+1. **Mechanisms, not rules.** Seven mechanisms cover 91 of the 128 maker pitfalls of the first five clusters that are
+   not fully covered: requirements from parts entries (38: CK-13, CK-14, CK-20, CK-12, CK-21, CK-23, CK-3, PF), loads
+   over time (16: FT-1, FT-8, FT-11, CK-18), analog windows (13: CK-5, CK-6, CK-25, FT-3), pin semantics (10: CK-1,
+   CK-2, CK-26), cables (10: FT-2, CK-16, CK-17, HT-1), hazardous voltage and RF geometry (9: FT-7, CK-9, CK-10, CK-11,
+   CK-22, CK-24), switching parts and polarity (7: CK-4, CK-7, CK-8, CK-15). The guitar clusters fall into the same
+   mechanisms, plus CK-27 and CK-30. The knowledge goes into parts entries as data, as `strap` and `pull` do today –
+   not into new check IDs.
+2. **Coverage visible first (FT-19).** Before a check that depends on data is added, `edakit check` and the gate
+   protocol say per check what it could not check. Silent passes become open points.
+3. **Domains (FT-20).** A project states its domains; domain checks and hints run only there, and `edakit rules` lists
+   what applies. A board without audio never sees an audio hint.
+4. **A project triggers the build.** A candidate is built when a project has the case or plans it – asp_pro's MIDI
+   and battery, tinyjukebox's amplifier – so that add-rule's run on a real project means something. Until then it is a
+   row in this concept.
+5. **New checks start as warnings,** graded as P-11, G-24 and G-25 are, and become errors after two projects without a
+   false alarm.
+6. **Hints sparingly:** only with a trigger that decides when one applies; judgement without such a trigger goes into
+   the reviewers' questions.
+
 ## Priority
 
-Ordered by how often the pitfall appeared across the clusters, what it costs when it happens, and how much it takes:
+Ordered by how often the pitfall appeared across the clusters, what it costs when it happens, and how much it takes –
+within the guardrails above:
 
 | # | Candidate | Why first |
 | --- | --- | --- |
-| 1 | FT-1 load steps | in all five clusters; the most frequent "it resets when the motor starts"; the bell's servo |
+| 0 | FT-19 coverage report, FT-20 domains | the frame every later check runs in; they make the existing catalog's gaps visible and keep domain rules off boards that do not need them |
+| 1 | FT-1 load steps | in all five maker clusters and in both guitar clusters; the most frequent "it resets when the motor starts"; the bell's servo |
 | 2 | CK-13 with PF | one mechanism for about 15 pitfalls; the knowledge stays in parts entries, as `strap` and `pull` do |
 | 3 | CK-1, CK-2 | small changes to G-4 and G-5; floating inputs and missing pull-ups recur in four clusters |
 | 4 | CK-3 | fully decidable, frequent in sensor stacks |
@@ -325,7 +425,8 @@ Ordered by how often the pitfall appeared across the clusters, what it costs whe
 | 10 | FT-2 with HT-1, CK-16 | the owner's pedal; cable length is a question that comes back |
 
 For the owner's projects in particular: CK-8 (tinyjukebox), BL-11 and FT-6's optocoupler (asp_pro's MIDI), HT-7
-(jacks with a supply), FT-4 (asp_pro's battery), CK-11 (ESP32 boards).
+(jacks with a supply), FT-4 (asp_pro's battery), CK-11 (ESP32 boards). For a guitar circuit: CK-27 (input impedance),
+FT-3 (op-amps at 9 V), CK-30 (DC at switches), FT-17 (bias of discrete stages), BL-16 to BL-18.
 
 Mains and high voltage (FT-7, CK-9, CK-10, CK-24) prevent the most expensive faults – shock and fire – but none of the
 owner's projects has them. CK-22 says honestly what edakit does not check and costs a few lines; the rest follows when
@@ -337,18 +438,22 @@ edakit is to take such boards.
 - Settings that live in firmware only: SPI mode, motor PWM frequency, debounce times, brown-out levels – hints, the
   firmware contract, and H-9 where a part of the circuit decides.
 - Certification itself: the regulatory review (M-6) is support, not a test lab.
+- Tube amplifiers: B+ of 250–500 V, heaters, output transformers, tube models that do not hold at low anode voltage –
+  as long as edakit takes no hazardous voltage.
 - The pinball machine (owner's decision).
 
 ## Open decisions
 
-1. Which candidates become proposals – one issue each through `/edakit:propose-rule` and `/edakit:propose-feature`,
+1. Whether the guardrails hold (section "Keeping the catalog stable"): this concept as a backlog that a project
+   triggers, FT-19 and FT-20 first.
+2. Which candidates become proposals – one issue each through `/edakit:propose-rule` and `/edakit:propose-feature`,
    or built directly with add-rule and add-feature.
-2. Whether edakit takes boards with mains or high voltage (FT-7, CK-9, CK-10), or only says that it does not check them
+3. Whether edakit takes boards with mains or high voltage (FT-7, CK-9, CK-10), or only says that it does not check them
    (CK-22).
-3. Whether a library of checked entries for popular parts (PF) belongs into edakit – who signs them, and how a project
+4. Whether a library of checked entries for popular parts (PF) belongs into edakit – who signs them, and how a project
    takes one over (today: `edakit/blocks/parts/`, copied by `edakit block add`).
-4. Whether AC analysis (FT-12) fits edakit's DC-first approach at all.
-5. The network policy: the vendor hosts the sources need (ti.com, st.com, espressif.com, microchip.com, analog.com,
+5. Whether AC analysis (FT-12) fits edakit's DC-first approach at all.
+6. The network policy: the vendor hosts the sources need (ti.com, st.com, espressif.com, microchip.com, analog.com,
    nxp.com, pololu.com, adafruit.com, onsemi.com, diodes.com, vishay.com, infineon.com, allegromicro.com, midi.org,
    usb.org) are allowed in the environment, or the sources are read on a machine that reaches them.
 
@@ -371,6 +476,13 @@ Per pitfall with its tag in [the appendix](#appendix-the-pitfalls). The document
 - SparkFun Weather Meter Kit library, SparkFun BOB-12009 schematic; RF24 `COMMON_ISSUES.md`; RadioLib troubleshooting;
   RobTillaart PCF8574, INA219, INA226 and ACS712 READMEs; bogde/HX711 and olkal/HX711_ADC; autowp/arduino-mcp2515;
   sandeepmistry arduino-CAN and arduino-LoRa; Arduino `analogWrite` reference; ArduinoCore-avr `boards.txt`; MiniCore
+- Guitar: ElectroSmash's circuit analyses (Fuzz Face, germanium fuzz, Rangemaster, Big Muff, Tube Screamer, Klon,
+  ProCo RAT, 1Wamp, Dyna Comp, Phase 90, CE-2, Crybaby, PT2399, MN3007, Back Talk, JRC4558) in
+  `mstratman/electrosmash-pdf-backups`; Spin FV-1 datasheet SPN1001-DS-170829, ST TL074 datasheet DocID2297 Rev 5 and
+  the Intersil CA3080 datasheet, each in a GitHub repository; PJRC Audio library (`control_sgtl5000.cpp`,
+  `gui/index.html`); `mstratman/relay-bypass`; `tardate/LittleArduinoProjects` (Little Gem, Ruby); `jonnor/piezopro`;
+  `wagiminator/ADuM3160-USB-Isolator`; `DIYSynthMNL/Eurorack-PT2399-Delay`; `flpvsk/pt-workshop`;
+  `ElectricCanary/Bontempo`; `Eight4aWish/eurorack_electronics` (PCM3060 notes); `hed0rah/partinfo`
 
 ## Appendix: the pitfalls
 
@@ -575,3 +687,89 @@ One row per pitfall: the pitfall with its numbers, what edakit does about it tod
 | 33 | thermocouple: MAX6675 T− to ground, MAX31855 T− never to ground, 10 nF across | no | CK-13 | Analog Devices MAX31855, MAX6675 (x) |
 | 34 | ADC window and source impedance (ESP32 per attenuation; ESP8266 0–1 V; ACS712-05B 3.43 V at +5 A) | no | CK-6 | ESP-IDF (r); ESPHome ADC (r) |
 | 35 | measurement front ends on mains: CAT II 300 V → 2.5 kV impulse, clearance 3.0 / 5.5 / 8.0 mm for 4 / 6 / 8 kV | no | CK-9, CK-10 | KiCad IEC 60664 F.1, F.2 (r) |
+
+### Guitar effect pedals (37)
+
+| # | Pitfall | edakit today | Candidate | Source |
+| --- | --- | --- | --- | --- |
+| 1 | germanium Fuzz Face bias: the fixed parts need Q1 gain 70–80 and Q2 110–130; AC128 spans 45–165; leakage doubles every 10 °C | no – no transistor corners | FT-17, FT-11 | ElectroSmash Fuzz Face, germanium fuzz (r) |
+| 2 | PNP positive ground: the jack sleeves sit on +9 V and short a shared supply | no | HT-18 | ElectroSmash germanium fuzz, Rangemaster (r) |
+| 3 | Fuzz Face input 5.2–8.4 kΩ, output 15 kΩ (about 125 kΩ at mid volume: 2.1 kHz with 600 pF of cable) | no | CK-27, FT-18, FT-12 | ElectroSmash Fuzz Face (r) |
+| 4 | AM radio in high-gain transistor stages: the base–emitter junction rectifies; 100 pF base–collector, base stopper | no | HT-8 | ElectroSmash germanium fuzz (r); forums (x) |
+| 5 | Big Muff: 48.6 dB in two clipping stages, 470 pF Miller capacitors for stability, bias windows | no | FT-17, FT-11, CK-31 | ElectroSmash Big Muff (r) |
+| 6 | Tone Bender MKII self-biases through leakage; the bias target is disputed | no | FT-17 | forums (x) |
+| 7 | op-amps at 9 V: TL07x swing 1.5–3 V short of each rail, common mode 3–4 V above V−; phase reversal | no model | FT-3 | ST TL07x (r); ElectroSmash Klon (r) |
+| 8 | clipping diodes against the swing: an LED (1.5–1.7 V) in a 9 V feedback loop; octave rectifiers need matched diodes | no | FT-3, FT-12 | ElectroSmash Tube Screamer, Klon, Big Muff (r) |
+| 9 | 4.5 V reference: loads ≥ 10 × the divider, 47–100 µF, 0.5 s settling thump | partly: G-6 | FT-11, BL-17 | ElectroSmash Klon, Tube Screamer (r) |
+| 10 | Klon charge pump +18/−9 V: 27 V across an op-amp; from 12 V about 36 V, the TL07x maximum | with part facts: E-3 `vdd_op_max` with a 12 V supply corner | PF, CK-31 | ElectroSmash Klon (r); ST TL07x (r) |
+| 11 | LM308 needs 30 pF across pins 1 and 8; slew rate 0.3 V/µs | no | CK-28 | ElectroSmash ProCo RAT (r) |
+| 12 | JFET spread (J201 IDSS 0.2–1.0 mA, VGS(off) −0.3…−1.5 V): drain between about 5.2 and 8.2 V with fixed resistors | no | FT-17 | ElectroSmash 1Wamp (r) |
+| 13 | BS170 is D-G-S, 2N7000 S-G-D; VGS(th) 0.8–3.0 V; gate unprotected | covered: P-1, L-10 for the pinout; the spread: no | FT-17 | forums (x); partinfo (r) |
+| 14 | input impedance against 1 MΩ (Tube Screamer 446k, RAT 494k, V847 wah 69.5k); input high-pass; series resistor against ESD | no | CK-27, BL-16, HT-8 | ElectroSmash analyses (r) |
+| 15 | output impedance and minimum load: PT2399 output wants > 100 kΩ, FV-1 ≥ 10 kΩ, PCM3060 ≥ 10 kΩ | no | CK-13 | ElectroSmash PT2399 (r); FV-1 datasheet (r) |
+| 16 | OTA compressors: CA3080 bias current ≤ 2 mA, differential input ≤ 5 V, about 100 mVpp linear range | no model | CK-13, FT-3 | CA3080 datasheet (r); ElectroSmash Dyna Comp (r) |
+| 17 | LFO and tap-tempo ticks through supply and ground (vactrol LED 20–40 mA; 1 kHz PWM into a PT2399) | no | HT-16, HT-8 | ElectroSmash CE-2 (r); Bontempo (r) |
+| 18 | phaser: 2N5952 VGS(off) −1.3…−3.5 V, matched FETs, trimmer range | no | FT-17 | ElectroSmash Phase 90 (r) |
+| 19 | wah: V847 input 69.5 kΩ; the 500 mH inductor picks up the amplifier's transformer field | no | CK-27; reviewer question | ElectroSmash Crybaby (r) |
+| 20 | 5 V regulators for PT2399 (30 mA) and Belton (60–100 mA): 78L05 at about 200 °C/W; 78L05 OUT-GND-IN against 7805 IN-GND-OUT | covered: E-3 regulator temperature with `rth_ja_k_per_w`, P-1 and L-10 for the pinout | – | ElectroSmash PT2399 (r); forums (x) |
+| 21 | PT2399 pin 6 below 2 kΩ during the first 400 ms latches the chip | no | CK-13 | ElectroSmash PT2399 (r); DIYSynthMNL (r) |
+| 22 | PT2399 noise: pins 3 and 4 joined short; filter capacitors per delay; input 0.5–1 Vrms, clips above 1.3 Vrms | no | CK-13, CK-31 | ElectroSmash PT2399 (r) |
+| 23 | BBDs: MN3007 −10…−15 V, MN3207 +5…+10 V (a 12 V outlet exceeds it); clock pins about 700 pF; clock filter | with part facts: E-3 supply range | PF, CK-31 | ElectroSmash MN3007, CE-2 (r) |
+| 24 | FV-1: 3.3 V, abs. max 3.5 V; every pin −0.5 V … VDD + 0.5 V, so pots go to 3.3 V; T0 and T1 tied; input RC; output load ≥ 10 kΩ | partly: G-3, E-3 | CK-5, CK-13 | FV-1 datasheet (r) |
+| 25 | FV-1 crystal 32.768 kHz: short leads, 15 pF on X2; EEPROM solder joints | no | CK-13, CK-31 | FV-1 datasheet (r) |
+| 26 | converter full scale and input impedance against the guitar: SGTL5000 0.24–3.12 Vpp, PCM3060 10 kΩ, Daisy Seed 3.6 Vpp at 13.6–30 kΩ | no | CK-6, CK-27, BL-16 | PJRC Audio library (r); PCM3060 via a GitHub transcription (r) |
+| 27 | anti-aliasing: pedalSHIELD first order near 5 kHz; RP2040 ADC about 8.7 effective bits | no | FT-12 | x |
+| 28 | 3.3 V and 9 V domains: a 4.5 V bias into 3.3 V parts; 9 V live while the 3.3 V rail is still 0 V | partly: G-3 | CK-5, FT-8 | FV-1 datasheet (r); ST TL07x (r) |
+| 29 | digital pedals against the outlet: FV-1 40–70 mA, an ESP32 asks for ≥ 500 mA, outlets 100–500 mA | covered: E-3 source `i_max_a`; the bursts: no | FT-1 | FV-1 datasheet (r); Espressif HDG (r) |
+| 30 | power-up and brown-out: reset held until VDD is valid; the DC step at the output; relay state | partly: E-5 supply ramps | FT-1, FT-11 | ElectroSmash Back Talk (r); relay-bypass (r) |
+| 31 | relay bypass: a latching relay keeps its state when power is lost – silence; coil 20–34 mA; mute 35 ms | partly: G-13, E-3 pull-in | BL-18, CK-30 | relay-bypass (r) |
+| 32 | battery switched through the input jack's ring; the DC jack's lug must break battery plus | no | HT-15 | ElectroSmash (r); forums (x) |
+| 33 | layout oscillation: input and output closer than 2.5 mm along a run; shared return paths | no | CK-31 | forums (x); ElectroSmash 1Wamp (r) |
+| 34 | supply filtering against current (47 Ω at 30 mA drops 1.4 V); switch-mode adapter noise | partly: E-3 voltage at the part | HT-16, BL-17 | ElectroSmash (r) |
+| 35 | daisy chains, AC and centre-positive pedals; a series part in the DC jack's ground leg bypassed by the cable shields | no | HT-18 | ElectroSmash CE-2 (r); x |
+| 36 | 12 and 18 V outlets: 16 V electrolytics marginal; a 9.1 V shunt Zener on 12 or 18 V; a shunt reverse diode | covered: G-8 with the supply corner, G-10, E-2 for the Zener | – | ElectroSmash Crybaby, Dyna Comp (r) |
+| 37 | electrolytic polarity around the 4.5 V reference in every state; DC across pots | no | CK-7, CK-30 | forums (x) |
+
+### Guitar instrument, amplifiers, DI and switching (39)
+
+| # | Pitfall | edakit today | Candidate | Source |
+| --- | --- | --- | --- | --- |
+| 1 | pickup loaded by a low input impedance: LM386 50 kΩ, Daisy Seed 13.6–30 kΩ, SGTL5000 about 29 kΩ, passive DI 140–290 kΩ | no | CK-27, BL-16, FT-18 | x |
+| 2 | cable 66–164 pF/m; an op-amp buffer oscillates into the cable without a series resistor (about 100 Ω) | no | CK-16, FT-2, FT-18 | x |
+| 3 | pot load and taper: 500k ∥ 500k ∥ 1 MΩ = 200 kΩ; "A" is log in the US and linear in Europe; 25k for EMG | no | PF, FT-12 | x |
+| 4 | treble loss with the volume turned down (about R/4 = 125 kΩ: 2.1 kHz with 600 pF); treble-bleed values | no | FT-12, FT-18 | x |
+| 5 | humbucker colour codes, phase and coil split | no – judgement | FT-18 | x |
+| 6 | cavity shielding not grounded; copper tape shorting the jack | partly: L-15 finds floating copper on a board | – | x |
+| 7 | the string ground ties the player to the amplifier's ground; an RC in it needs a Y-class capacitor | no | HT-19 | x |
+| 8 | battery switched through the output jack's ring; EMG about 80 µA per pickup | no | HT-15, FT-11 | x |
+| 9 | headroom at 9 V against 18 V: TL072 about 1.5 V from each rail | no model | FT-3 | x |
+| 10 | piezo needs 10–20 MΩ and more; a charge amplifier needs its feedback resistor | no | CK-27, CK-25 | x; piezopro (r) |
+| 11 | op-amp bias current through a bias resistor of megohms: NE5532 200–800 nA × 10 MΩ = 2–8 V offset | no model | FT-3 | x |
+| 12 | passive DI: the input impedance is the preamp's input × n² (12:1 gives 216–288 kΩ) | no | FT-12, FT-18 | x |
+| 13 | 48 V phantom power reaching the circuit through 6.81 kΩ, 10 mA; hot-plug surges to −25…−30 V | partly: G-8 when the net's range holds 48 V | FT-8, CK-13 | x |
+| 14 | XLR pin 1 on signal ground (the pin-1 problem) | no | CK-13 | x |
+| 15 | LM386: inputs 50 kΩ to ground and ground-referenced; DC coupling from a biased stage | no | CK-27, FT-3 | x; tardate Ruby (r) |
+| 16 | LM386 oscillation: Zobel 10 Ω + 47 nF at pin 5, bypass at pin 7, decoupling at pin 6 | partly: G-6 | CK-13, CK-31 | x; tardate Little Gem (r) |
+| 17 | LM386 supply (N-1 and N-3 4–12 V, N-4 5–18 V), output capacitor 220–250 µF, a 9 V battery's internal resistance | partly: E-3 supply range, cell `r` | FT-1, FT-12 | x |
+| 18 | TDA2003 18 V maximum; TDA7052 bridge-tied with a fixed 40 dB | partly: E-3, G-3 | CK-8 | x |
+| 19 | LM1875 and TDA2050: tab at V− on a grounded heat sink; stable only at a gain of 10 or more | partly: E-2 temperature with `rth_ja_k_per_w` | CK-28, HT-11 | x |
+| 20 | headphone amplifiers: 1 V into 32 Ω is 31 mA; TL072 wants ≥ 2 kΩ; a divider as virtual ground | no model | FT-3 | x |
+| 21 | tube filter capacitors below the unloaded B+ (330 VAC: 467 V, 513 V at +10 % mains); series capacitors without balancing | partly: G-8 when the net's range holds it | CK-29, FT-7 | x |
+| 22 | bleeders and standby: the charge stays with the tubes pulled; standby ahead of the reservoir | no | CK-24 | x |
+| 23 | heater supply: reference, elevation (12AX7 Vhk 180 V), 6.3 VAC too low for an LM317 | no | out of scope | x |
+| 24 | output transformer without a load: plate spikes arc | no | out of scope | x |
+| 25 | fuses: primary at most V / R_primary, slow-blow; an HT fuse | partly: G-17 | CK-10 | x |
+| 26 | tube amplifier ground returns; grid stoppers at the pin | no | CK-31; out of scope | x |
+| 27 | death cap and ground switch: 0.047 µF from line to chassis | no | CK-10, HT-19 | x |
+| 28 | starved-plate 12AX7 at 9–24 V: models do not hold; heater 300 mA, cold inrush 2.5–7 × | partly: E-3 source current, with a heater (FT-6) | FT-1, FT-6 | x |
+| 29 | high-voltage boost in pedals (12 → 200–300 V): MOSFET ≥ 400 V, light-load bursts in the audio band | partly: G-8 | CK-22, HT-16, CK-31 | x |
+| 30 | relay coils on the pedalboard supply (TQ2-9V 15.5 mA, eight relays 124 mA); relays on the MCU's rail cause brown-outs | covered: E-3 pull-in, G-13; the dip: no | FT-1, BL-18 | x; relay-bypass (r) |
+| 31 | relay contacts at signal level need gold (minimum load 10 µA / 1 mV); DC across the contact pops | no | CK-30, BL-18 | x; relay-bypass (r) |
+| 32 | ground loops between loops, amplifiers and supplies | no – judgement | HT-18 | x |
+| 33 | a tuner or analyser loads the pickup | no | CK-27 | x |
+| 34 | codec line inputs against guitar level (120–850 mV peak); a TL072 does not work on 3.3 or 5 V | no | CK-6, CK-27, FT-3 | PJRC Audio library (r); x |
+| 35 | the MCU's ADC as guitar input: ESP32 windows, bias at the window's centre, anti-aliasing | no | CK-6, FT-12 | ESP-IDF ADC (r); PJRC (r) |
+| 36 | codec outputs: SGTL5000 HP_VGND never to ground; out-of-band noise; X7R and Y5V distort | no | CK-13, HT-17 | x; PJRC (r) |
+| 37 | USB audio: ground loop with the PC; ADuM3160 full speed only; its isolated converter needs 10 % load | partly: E-3 minimum load of a source | FT-5, HT-8 | ADuM3160 USB isolator repository (r) |
+| 38 | pedalboard power: shared returns; charge pumps at about 10 kHz | no | HT-16, HT-18 | x |
+| 39 | RF at high-impedance inputs: a series resistor first, then 47–100 pF at the jack | partly: H-7 | HT-8, BL-16 | x |
