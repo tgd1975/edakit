@@ -104,8 +104,8 @@ def test_kicad_puts_every_pad_where_edakit_reads_it_also_on_the_bottom(project):
 
 @pytest.mark.freerouting
 def test_route_all_on_kicad_leaves_only_what_freerouting_left_open(project, capsys, monkeypatch):
-    """route all on the KiCad project: Freerouting, the SES into the file, the zones filled by kicad-cli, KiCad's DRC –
-    nothing in it but connections the routing left open; then L-2 on KiCad's Gerber copper."""
+    """route all on the KiCad project: Freerouting, the SES into the file, the zones filled by kicad-cli, KiCad's
+    DRC without findings; the file KiCad saved written again; then stages L and F on KiCad's export."""
     import json
 
     from edakit import cli as edakit_cli
