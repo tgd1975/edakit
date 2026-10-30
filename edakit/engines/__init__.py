@@ -83,3 +83,11 @@ def run(design, cfg=None, sim=None):
     """The findings of the graph engines on a design (either form) as a resolved Report."""
     ctx = context(design, cfg, sim)
     return report(graph_findings(ctx), ctx.profile, ctx.design.graph)
+
+
+def run_all(design, cfg=None, sim=None):
+    """What edakit check checks: the graph engines, and with a project the checks beyond the graph (project.py)."""
+    from . import project
+    ctx = context(design, cfg, sim)
+    found = graph_findings(ctx) + (project.run(design, cfg) if cfg is not None else [])
+    return report(found, ctx.profile, ctx.design.graph)

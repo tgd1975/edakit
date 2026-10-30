@@ -542,6 +542,7 @@ rule = "Every part on the board has the footprint its entry names, every pad sit
 why = "A footprint that differs from its source puts pads where the part has no pins."
 fix = "Correct the footprint or the entry; an intended swap goes into pad_map."
 severity = "error"
+grades = { unknown = "note" }
 replaces = ["L-4", "L-10", "P-10"]
 sources = [
   "edakit handbook 4.1",
@@ -595,7 +596,7 @@ rule = "A board copied from another edakit project (own.what pcb, edakit part ow
 why = "An own board has no distributor and no manufacturer's datasheet: its parts entry is derived from the project that designed it – pins, supply range, current, compliance. When that project changes, the copy describes another board than the one that gets plugged in, and every check of the host reasons about the old one. A copy of uncommitted changes names no state anyone can find again. A board that has not passed its own gate is not checked as a product, whatever its datasheet says – that is the user's decision, so it is a warning to accept, not an error."
 fix = "In the board's project: edakit part datasheet, then commit. In the host: edakit part own <path to the board's project>. Release the board there (edakit gate) and copy again, or accept the warning in the sign-off file with the reason."
 severity = "error"
-grades = { margin = "warning", stale = "pending" }
+grades = { margin = "warning", stale = "pending", unchecked = "note" }
 replaces = ["P-3"]
 sources = [
   "edakit handbook 4.5",
@@ -695,7 +696,7 @@ rule = "A through-hole part whose plated holes the board's footprint (pcb dump) 
 why = "A part fitted by hand with formed leads loses the cues of its library pattern: the longest lead is bent like the others, and the body's flat stands millimetres above the silkscreen mark. If the formed pattern maps onto itself, the part goes in turned as easily as the right way – an RGB LED with its anode in a cathode's hole stays dark, a transistor or regulator is reversed. No other check sees it: L-10 compares the PCB with the board's own footprint, L-8 judges a sign next to a pad, P-7, L-9 and L-16 the hole size, ring and spacing, and part diff sees the symmetry only when a part is swapped. In the reference project the star LED's four legs in one row at 1.25 mm got two of them bent 1.6 mm the same way: turned by 180° the anode's hole lay on the green cathode's and red on blue, to 0.00 mm, the print had its '+' at the anode, and every check passed; the second datasheet check found it by hand. Bending one of the two legs the other way left no turn that fits (the closest 1.25 mm off)."
 fix = "Choose the offsets so that no turn lays the pattern onto itself: two leads in opposite directions, one lead only, or different amounts – then check ring and hole spacing again (L-16). Where the pattern stays symmetric for a mechanical reason, waive P-8 on the component with that reason and let the print show the orientation (L-8)."
 severity = "error"
-grades = { margin = "warning" }
+grades = { margin = "warning", unknown = "note" }
 replaces = ["P-8"]
 sources = [
   "The reference project (pytree), decision D-49 of 2026-10-27 (docs/hardware.md, bullets 'Biegen' and 'Footprint'): pin 1 bent 1.6 mm towards the tip, pin 4 1.6 mm towards the trunk – the opposite offsets make the hole pattern asymmetric; with both legs towards the tip the star also fitted turned by 180° and would have stayed dark",
@@ -851,6 +852,7 @@ rule = "Every parts entry is verified against its datasheet (verified), no compo
 why = "The parts database feeds every check. A value copied from a distributor's table without a look at the datasheet is an assumption; the sign-off records who checked what against which revision."
 fix = "Check the part (handbook 4.3) and fill in verified; resolve verify notes in the graph."
 severity = "pending"
+grades = { device = "warning" }
 replaces = ["G-9"]
 sources = [
   "edakit handbook 4.3",
@@ -862,7 +864,7 @@ rule = "Every assembled part is listed at JLCPCB, in stock for [project] quantit
 why = "What the assembler can place is decided when the part is chosen, not when the BOM is uploaded. A part only LCSC stocks is 'pre-order only' at JLCPCB; a 'Standard Only' part (large holders, modules) turns a one-sided Economic order into Standard with setup per side and loading fees on every type; an MSL 5 part is baked for a fee and two days; a catalogue entry under another part number is another part. Found in the quote, each of these costs a part swap, sign-offs again and gate runs."
 fix = "edakit stock after every part change. A part that fails: another part (part-search, edakit stock --lcsc for the candidates), the part soldered by hand (bom: false), or Standard PCBA chosen on purpose ([release] assembly.pcba = \"standard\"). A wrong MPN: correct the parts entry or the LCSC number. Accept a warning in the sign-off file with its reason."
 severity = "error"
-grades = { margin = "warning", stale = "pending" }
+grades = { margin = "warning", stale = "pending", unchecked = "note" }
 replaces = ["P-4", "F-2"]
 sources = [
   "edakit handbook 4.2 and 8.4",
@@ -944,7 +946,7 @@ rule = "In the requirements file of [project] requirements, every reference of a
 why = "A requirement is traced through its references: where it comes from and what tests it. A typo in an ID – N-12 for N-2, E-30 for E-3, M-7 for M-6 – breaks the chain without anybody noticing: the gate finds no protocol row for the pattern and the requirement fails for the wrong reason, or it points to an origin that does not exist. A requirement that comes from a dropped need may no longer be wanted at all."
 fix = "Correct the ID, or add what it names: the need or requirement to the requirements file, the manual check to the sign-off file, the check to [scripts]. A from that names a dropped entry: drop the requirement too, or name what it comes from now. Decisions (D-…), standards and documents in from are words to edakit, it does not resolve them."
 severity = "error"
-grades = { margin = "warning" }
+grades = { margin = "warning", draft = "warning" }
 replaces = ["G-20"]
 sources = [
   "edakit handbook 3.6, 8.7 and 10.4",
@@ -958,6 +960,7 @@ rule = "Every accepted need of the requirements file is named in from of at leas
 why = "A need says what someone wants, in their words; only a requirement makes it testable – a quantity, a limit, a condition – and points to its evidence. An accepted need that no requirement takes up is a wish the circuit is never measured against: the chain from the need to the evidence ends before it starts."
 fix = "Write the requirement that follows from the need (from = [\"N-…\"], with binding and verify), or name the need in the from of an existing requirement. A need that is no longer wanted gets status = \"dropped\" with its reason."
 severity = "error"
+grades = { draft = "warning" }
 replaces = ["G-21"]
 sources = [
   "edakit handbook 3.6 and 10.4",
@@ -970,6 +973,7 @@ rule = "Every requirement of the requirements file that is not dropped has evide
 why = "A requirement without evidence is a promise nobody checks: the gate cannot tell whether the circuit meets it, and its binding decides nothing. The evidence often exists already – a simulation scenario, a check, a review – and only the pointer to it is missing. While a requirement is a draft, the file is being written and its evidence may still be missing: the pre-commit hook lets it pass; once the user accepts it, the gate must be able to evaluate it."
 fix = "Add verify: rows of the gate protocol ({ rows = \"E-3 * J1 current from the supply\" }), a manual check whose note names the requirement ({ signoff = \"M-1\" }), a project script ({ script = \"…\" }) or a step of the acceptance test ({ accept = \"…\" }) – what only a delivered board can show is an acceptance step."
 severity = "error"
+grades = { draft = "warning" }
 replaces = ["G-22"]
 sources = [
   "edakit handbook 3.6, 8.7 and 10.4",
@@ -983,6 +987,7 @@ rule = "A need or requirement of the requirements file that is a draft – statu
 why = "Claude drafts requirements, only the user approves them: like accepting a warning, it is one of the user's decisions. Until then the requirement binds nothing – the gate evaluates and lists it, but does not hold the circuit to it: a draft left standing is a requirement the release was never held to."
 fix = "The user decides: status = \"accepted\", the text changed and then accepted, or status = \"dropped\" with a reason. Nothing to accept in the sign-off file: a draft does not hold up the release."
 severity = "warning"
+grades = { draft = "warning" }
 replaces = ["G-23"]
 sources = [
   "edakit handbook 3.6, 8.7 and 11.4 (working agreement 4: only real decisions go to the user)",

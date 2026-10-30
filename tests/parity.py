@@ -9,16 +9,18 @@ from edakit import catalog, engines, rules
 
 # the checks of before the engines of step 2 replace
 COVERED = {"G-1", "G-2", "G-3", "G-4", "G-5", "G-6", "G-8", "G-10", "G-11", "G-12", "G-13", "G-14", "G-15", "G-16",
-           "G-17", "G-18", "G-24", "G-25", "P-1", "P-6", "P-11"}
+           "G-17", "G-18", "G-24", "G-25", "P-1", "P-6", "P-11",
+           "P-3", "P-4", "P-5", "P-7", "P-8", "P-9", "P-10", "G-9", "G-20", "G-21", "G-22", "G-23"}
+DEVICE = "neither an LCSC part nor an EasyEDA device"   # pending before, a warning to accept now (PARTS.verified/device)
 
 
 def old_counts(rep):
     out = Counter()
     for sev, items in (("error", rep.errors), ("warning", rep.warnings), ("note", rep.notes),
-                       ("pending", rep.pending), ("accepted", rep.waived)):
+                       ("pending", rep.pending), ("accepted", rep.waived), ("warning", rep.drafts)):
         for item in items:
             if item[0] in COVERED:
-                out[(item[0], sev)] += 1
+                out[(item[0], "warning" if sev == "pending" and DEVICE in item[1] else sev)] += 1
     return out
 
 
@@ -29,7 +31,7 @@ def new_counts(report):
 
 def compare(design, cfg, rep):
     """'' when the engines agree with the report of before, else what differs."""
-    new = engines.run(design, cfg)
+    new = engines.run_all(design, cfg) if cfg is not None else engines.run(design)
     a, b = old_counts(rep), new_counts(new)
     lines = [f"{f.code}{'/' + f.grade if f.grade else ''}: no code or grade of the catalog" for f in new.findings
              if not catalog.code(f.code) or (f.grade and f.grade not in (catalog.code(f.code).get("grades") or {}))]
@@ -37,7 +39,8 @@ def compare(design, cfg, rep):
         for key in sorted(set(a) | set(b)):
             if a[key] != b[key]:
                 lines.append(f"{key[0]} {key[1]}: before {a[key]}, engines {b[key]}")
-        olds = [f"  before {c}: {m}" for c, m in rep.errors + rep.warnings + rep.notes + rep.pending if c in COVERED]
+        olds = [f"  before {c}: {m}" for c, m in rep.errors + rep.warnings + rep.notes + rep.pending + rep.drafts
+                if c in COVERED]
         olds += [f"  before {c} (waived): {m}" for c, m, _ in rep.waived if c in COVERED]
         lines += olds + [f"  engines {f.old} -> {f.code} {f.severity}{' accepted' if f.accepted else ''}: {f.place}: "
                          f"{f.text}" for f in new.findings if f.old in COVERED]

@@ -184,3 +184,33 @@ def test_every_finding_is_well_formed(project, fault):
         assert f.stage in catalog.STAGES and f.place and f.text and f.severity in catalog.SEVERITIES
         if f.code.startswith("LIM."):
             assert f.source, f
+
+
+def test_every_check_id_the_code_reports_has_a_code():
+    """Every check ID of before a module reports – the gate's rows of stages S, L and F among them – maps to a code
+    (engines/project.py MAP, catalog replaces): the regrouping of step 4 leaves nothing without a name."""
+    import re
+    from pathlib import Path
+
+    from edakit.engines.project import MAP
+    root = Path(__file__).resolve().parents[1] / "edakit"
+    found = set()
+    for path in root.rglob("*.py"):
+        found |= set(re.findall(r'"([PGESLF]-\d+)"', path.read_text(encoding="utf-8")))
+    retired = {"G-7"}
+    assert {i for i in found - retired if i not in MAP and i not in catalog.old_map()} == set()
+
+
+def test_row_codes_and_recorded_grades():
+    from edakit.engines.project import Recorder, row_code
+    assert row_code({"id": "L-16", "check": "plated hole-to-hole spacing", "result": "fail"}) == "GEO.spacing"
+    assert row_code({"id": "L-16", "check": "annular ring", "result": "warn"}) == "GEO.ring"
+    assert row_code({"id": "K-1", "check": "door fits"}) is None
+    rec = Recorder()
+    rec.pending.append(("P-7", "D1 C1: plated holes but no lead in the parts entry"))
+    rec.warnings.append(("P-4", "U1: thin stock"))
+    rec.error("G-9", "X1: neither an LCSC part nor an EasyEDA device", {"G-9": "a test pad"})
+    rec.drafts.append(("G-22", "R-3: no evidence"))
+    got = [(f.code, f.grade, f.place, f.accepted) for f in rec.findings]
+    assert got == [("PARTS.fact", "lead", "D1", ""), ("PARTS.stock", "margin", "U1", ""),
+                   ("PARTS.verified", "device", "X1", "a test pad"), ("DOCS.evidence", "draft", "R-3", "")]
