@@ -77,7 +77,7 @@ def build_parser():
     _common(p)
 
     p = sub.add_parser("rules", help="the engines and codes of the catalog")
-    p.add_argument("ids", nargs="*", help="codes (LIM.v); an old check ID (LVL.undefined) names the codes replacing it; default: "
+    p.add_argument("ids", nargs="*", help="codes (LIM.v); an old check ID (G-4) names the codes replacing it; default: "
                                           "the list")
 
     p = sub.add_parser("explain", help="rule, why, fix and sources of a code")

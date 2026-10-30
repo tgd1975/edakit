@@ -172,3 +172,42 @@ def test_format_groups_by_code():
     assert lines[0] == "LIM.v – voltage within its limit: 7 error"
     assert lines[1] == "  G  C0: 0 V across, rated 6.3 V   (limits.v_max_v of C1)   → a 16 V part"
     assert "  … 2 more (--json)" in lines and any(x.startswith("  LIM.v: A part with a higher") for x in lines)
+
+
+def test_the_handbook_lists_what_the_catalog_holds():
+    """The handbook's lists of codes, the parts schema and the map of before are generated from the catalog: a change
+    to codes.toml or kinds.toml without python -m edakit.catalog.handbook --write fails here."""
+    from edakit.catalog import handbook
+    assert handbook.stale() == []
+    shown = "".join(p.read_text(encoding="utf-8") for p in handbook.ROOT.glob("*.md"))
+    assert all(f"**`{name}`**" in shown for name in catalog.codes())          # every code in one of the lists
+    assert all(f"`{kind}`" in shown for kind in schema.kinds()["kinds"])
+
+
+def test_a_detail_belongs_to_one_code():
+    seen = {}
+    for name, e in catalog.codes().items():
+        for d in e.get("details", []):
+            assert d not in seen, f"{name} repeats a detail of {seen.get(d)}"
+            seen[d] = name
+
+
+def test_the_generator_renders_a_section_anew(tmp_path):
+    from edakit.catalog import handbook
+    page = tmp_path / "x.md"
+    page.write_text("before\n<!-- edakit:generated codes FILES -->\nold text\n<!-- edakit:end -->\nafter\n")
+    assert handbook.stale(tmp_path) == [page]
+    new = handbook.update(page.read_text())
+    assert "old text" not in new and "**`FILES.sheet`**" in new and new.startswith("before\n")
+    assert new.endswith("<!-- edakit:end -->\nafter\n")
+    page.write_text(new)
+    assert handbook.stale(tmp_path) == []
+
+
+def test_a_retired_code_explains_itself_and_stays_taken(monkeypatch):
+    data = dict(catalog.data(), retired={"GEO.old": "GEO.spacing holds it now"})
+    monkeypatch.setattr(catalog, "data", lambda: data)
+    assert catalog.explain("GEO.old") == ["GEO.old: retired – GEO.spacing holds it now"]
+    assert catalog.lint() == []
+    data["retired"] = {"GEO.hole": "taken again"}
+    assert catalog.lint() == ["GEO.hole: retired and still a code – a name once retired is not used again"]

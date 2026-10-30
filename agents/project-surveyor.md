@@ -85,8 +85,8 @@ One numbered list per place, in this order:
    user's decision, skill by skill – propose, never conclude; a skill without a counterpart stays.
 6. **Documents with values** – Markdown documents that state a number edakit has – a current, a voltage, a value, a
    requirement's sentence – for `[docs] files` (and `decimal = ","` for a decimal comma), each with the values it
-   states and the source a value block would quote (`sim:max E-3 …`, `graph:R1.value`, `part:…`, `req:R-1`). A pin
-   table belongs to the graph's `checks.doc_pin_table` (G-2), a section a script writes to that script.
+   states and the source a value block would quote (`sim:max SIM.state …`, `graph:R1.value`, `part:…`, `req:R-1`). A pin
+   table belongs to the graph's `locks.doc_pin_table` (STRUCT.lock), a section a script writes to that script.
 7. **Decisions** – each decision log with its numbering (D-…, E-…, the project's own series), how many, the newest,
    and where else decisions are recorded. Proposed: the log keeps its place and its numbers; the skill decision-round
    appends to it.

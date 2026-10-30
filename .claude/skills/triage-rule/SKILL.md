@@ -28,7 +28,9 @@ uv run edakit proposal verify "$RUNNER_TEMP/body.md"
 
 ## 2. Correctly made?
 
-`edakit proposal verify` passes: every section filled in, a known kind, the checksum matches. If not: **Question**
+`edakit proposal verify` passes: every section filled in, a known kind, the checksum matches. The kinds are `fact`,
+`relation`, `domain`, `block` and `retire`; a proposal sealed before the codes says `check` or `hint` (read it as a
+relation) or `part` (read it as a fact). If not: **Question**
 that quotes what verify reports and asks to seal the proposal again with `/edakit:propose-rule` – a body edited by
 hand fails the checksum on purpose.
 
@@ -38,14 +40,14 @@ In this order; the first question that fails decides.
 
 | Question | If not |
 |---|---|
-| **New?** `edakit rules`, `edakit/rules.json` (retired checks too), `edakit block list`, `edakit/blocks/parts/`, the other proposals (`gh issue list --label rule-proposal --state all`) | **Rejected**, naming what covers it. Covered in part: **Question** – extend that one? |
+| **New?** `edakit rules`, `edakit explain <code>`, `[retired]` of `edakit/catalog/codes.toml`, the domain files `edakit/domains/`, the defaults and tables in `edakit/catalog/`, `edakit block list`, `edakit/blocks/parts/`, the other proposals (`gh issue list --label rule-proposal --state all`) | **Rejected**, naming what covers it. Covered in part: **Question** – extend that one? |
 | **The right kind?** The table in section 1 of `.claude/skills/add-rule/SKILL.md` | clearly another kind: go on with that kind and say so. Unclear: **Question** |
 | **Do the sources hold?** Open and read every source; the rule and its numbers must be in it | the source says otherwise: **Rejected**. Missing, unreachable, or it does not cover the numbers: **Question** |
 | **General?** It holds for other projects with these parts or this pattern, not only for the origin's choices | **Rejected**: it belongs into that project – its parts entry, its CLAUDE.md, its decision log |
-| **Decidable?** For a check: a program over graph, parts database, simulation, plan or Gerber files decides it without guessing | needs judgement: go on as a hint and say so. Neither: **Rejected** |
-| **Clear enough to build?** What fires, at which numbers, what a `waive` accepts | **Question**, with the concrete alternatives |
+| **Which engine, which data?** A fact where a number of a part, a default or a table row is what was missing – the engine then finds it with no new code. A relation where an engine decides it from graph, parts database, simulation, plan or Gerber files without guessing | a fact that was proposed as a relation: go on as a fact and say so. Needs judgement: go on as a hint and say so. Neither: **Rejected** |
+| **Clear enough to build?** What fires, at which numbers, which code and severity, what an `accept` accepts | **Question**, with the concrete alternatives |
 
-Rejected only with a reason a person can check: the rule ID, the datasheet section, the counter-example. In doubt
+Rejected only with a reason a person can check: the code, the datasheet section, the counter-example. In doubt
 between rejected and question: question.
 
 ## 4. Accepted: build it
@@ -53,30 +55,31 @@ between rejected and question: question.
 1. **Branch.** All accepted proposals go into one open pull request from `rules/proposals`:
    `gh pr list --head rules/proposals --state open --json number`. With one: `git fetch origin rules/proposals` and
    `git checkout rules/proposals`. Without: `git checkout -B rules/proposals origin/main`.
-2. **Build** with `.claude/skills/add-rule/SKILL.md`, all of it: catalog entry, code, negative test, handbook. Real
-   projects for its step 5: the example `tests/fixtures/led-bar`, and the origin if it can be cloned
+2. **Build** with `.claude/skills/add-rule/SKILL.md`, all of it: the data or the catalog entry and its engine, the
+   negative test, the generated handbook. Real projects for its run against real projects: the example `tests/fixtures/led-bar`, and the origin if it can be cloned
    (`git clone --depth 1 https://github.com/<owner>/<repo> "$RUNNER_TEMP/<repo>"`, read only). A private origin can
    not be reached from the Action – the pull request says so, the owner runs it there before merging.
 3. **Building can overturn the acceptance.** False alarms on a real project, a source that does not cover the
    numbers, a rule that cannot be decided after all: no commit, **Question** or **Rejected** with what showed it.
-4. **Commit.** Step 6 of add-rule passes (tests, ruff, the example). One commit per proposal:
-   `G-15: <title> (#12)`, with the repository's trailer.
+4. **Commit.** Section 8 of add-rule passes (handbook generated, tests, ruff, the example). One commit per proposal:
+   `REQ.function: <title> (#12)` – for a fact or a domain setting the code it serves, or the part –, with the
+   repository's trailer.
 5. **Pull request.** `git push origin rules/proposals` – never to `main`; `--force` only for a branch that step 1
    started new (a left-over of a merged pull request is overwritten then). New: `gh pr create --base main --head
    rules/proposals --title "Rule proposals" --body-file …`; existing: `gh pr edit --body-file …`. The body has one
-   line per proposal – `Closes #12 – G-15 (hole fits the lead)` – the real projects each one ran on, and what could
+   line per proposal – `Closes #12 – REQ.function (hole fits the lead)` – the real projects each one ran on, and what could
    not be run.
 6. Label `accepted`, remove `needs-info`.
 
-Step 7 of add-rule – the origin's decision gets the ID – is the project's: the comment says it, `/edakit:propose-rule`
+Closing the loop of add-rule – the origin's decision gets the code – is the project's: the comment says it, `/edakit:propose-rule`
 in the project does it.
 
 ## 5. Comment
 
 One comment per run with `gh issue comment N --body-file …`:
 
-- **Accepted** – built as G-15 in #20; what was changed against the proposal and why; in the project: D-17 →
-  `edakit: G-15` once #20 is merged.
+- **Accepted** – built as REQ.function in #20; what was changed against the proposal and why; in the project: D-17 →
+  `edakit: REQ.function` once #20 is merged.
 - **Rejected** – the reason with its evidence. Label `rejected`, remove `needs-info`, then
   `gh issue close N --reason "not planned"`.
 - **Question** – numbered questions, each with the alternatives and a recommendation. Label `needs-info`. The owner

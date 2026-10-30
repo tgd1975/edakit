@@ -10,7 +10,7 @@ stage each, with its id – stage_checks runs it; phase order and acceptance are
 Result: <reports>/<YYYYMMDD-hhmmss>/
     protocol.md            readable protocol: header with hashes, stages, findings with actual and expected value,
                            warnings and who accepted them, waivers, open sign-offs, manual checks, simulation table,
-                           and the rule, reason and fix of every check that failed or warned (rules.json)
+                           and the rule, reason and fix of every code that failed or warned (the catalog)
     graph_checks.json, sim.json, schematic_<board>.json   raw results
     fab/<board>/           Gerber ZIP, BOM and CPL in JLCPCB format plus raw data (stages L, F)
     fab/manifest.json      SHA-256 of every file to upload, the hashes of the checked state, the decision, and

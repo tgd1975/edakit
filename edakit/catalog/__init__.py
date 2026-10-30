@@ -41,6 +41,11 @@ def engines():
     return data()["engines"]
 
 
+def retired():
+    """{code: what holds it now} – codes taken out of the engines; a name once used is not used again."""
+    return data().get("retired") or {}
+
+
 def code(name):
     """The entry of a code, or None."""
     return codes().get(name)
@@ -92,6 +97,8 @@ def explain(name, indent="    "):
     if OLD_ID.fullmatch(name):
         new = old_map().get(name)
         return [f"{name}: replaced by {', '.join(new)} (edakit explain {new[0]})"] if new else []
+    if name in retired():
+        return [f"{name}: retired – {retired()[name]}"]
     e = code(name)
     if not e:
         return []
@@ -120,6 +127,8 @@ def lint():
         for old in e.get("replaces", []):
             if not OLD_ID.fullmatch(old):
                 out.append(f"{name}: replaces {old!r} – no check ID of before the restructuring")
+    out += [f"{name}: retired and still a code – a name once retired is not used again"
+            for name in retired() if name in codes()]
     for t in table_names():
         out += [f"tables/{t}.toml: {p}" for p in table_problems(table(t))]
     return out

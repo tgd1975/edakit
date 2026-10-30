@@ -70,14 +70,14 @@ edakit part import C2297        # symbol pins and footprint of an LCSC number fr
 edakit part diff C17179532 C49284748   # before a swap: how the new footprint lies over the old one
 edakit part fetch C2297         # the datasheet PDF, kept with the project and checked to be of that part
 edakit part search "RGB LED 5mm common cathode"   # JLCPCB's catalogue: number, class, stock – no EasyEDA
-edakit check                    # rule checks on the graph (P, G) – < 1 s, failed checks explained
-edakit hints                    # design hints for the parts in the graph (bulk capacitor, debouncing, ESD …)
-edakit stock                    # what JLCPCB says about the assembled parts, dated – check P-4 reads it
+edakit check                    # the engines on the graph (P, G) – < 1 s, findings by code, explained
+edakit domains                  # the domains of rules on for the project (core, usb, radio) and the suggested ones
+edakit stock                    # what JLCPCB says about the assembled parts, dated – check PARTS.stock reads it
 edakit cost                     # the order for `quantity` boards: class, fees, parts, drivers, budget
 edakit order                    # assembler's BOM, a cart per other supplier, hand-assembly list for all sets
-edakit rules G-11               # what a check is about, why, what to do, sources
+edakit explain REQ.missing      # what a code is about, why, what to do, sources
 edakit sim                      # ngspice: every supply x load x tolerance corner (E) – seconds
-edakit docs --write             # values quoted in documents and schematic notes, from the design data (G-19)
+edakit docs --write             # values quoted in documents and schematic notes, from the design data (DOCS.quote)
 edakit firmware                 # the board's firmware contract as JSON from the graph; --check reports drift
 edakit req                      # what the circuit must do: needs, requirements, their evidence; req R-1: one chain
 edakit schematic draw           # the schematic as SVG from graph and parts – no EasyEDA (enough without a PCB)
@@ -111,7 +111,7 @@ long EasyEDA step and returns only its result; the agents `electrical-reviewer`,
 board's purpose: RoHS, REACH, radio, batteries – support, not legal advice) and `pcb-reviewer` do the independent
 reviews whose results are the sign-offs – each also judges the requirements its sign-off verifies. Circuit, layout and
 review are separate roles: the circuit designer hands the board over in writing – `layout` in the graph, shown by
-`edakit handover` and kept by the plan check L-12 – the PCB designer works from that in a session of its own, and the
+`edakit handover` and kept by the plan check SYNC.plan – the PCB designer works from that in a session of its own, and the
 session that designs does not review ([handbook 14.1](handbook/14-design.md#141-roles)).
 
 What a project teaches goes back with `/edakit:propose-rule`: a check, hint, block or part fact as an issue here,
@@ -137,7 +137,7 @@ Where it stands:
 - **Schematic:** equal to the graph (17 parts, 15 nets), ERC clean.
 - **PCB:** 85 × 56 mm from a placement plan, routed by Freerouting (3 vias), DRC 0, silkscreen without findings.
 - **Release gate:** released. Two of its reviews failed first and were fixed:
-  - **L-9:** the first Nano footprint's 0.9 mm holes were too small for the header tails; it was replaced by one with
+  - **GEO.hole:** the first Nano footprint's 0.9 mm holes were too small for the header tails; it was replaced by one with
     1.1 mm holes.
   - **M-5, the layout review:** printed texts below 1 mm and copper close to the mounting holes. Both were fixed in
     edakit itself.
@@ -150,7 +150,8 @@ Where it stands:
 |---|---|
 | [handbook/](handbook/README.md) | the approach, setup, graph, parts, simulation, schematic, PCB, release gate, EasyEDA API notes, reference, working with Claude, troubleshooting, lessons learned, designing a circuit, regulatory review |
 | [edakit/](edakit/) | the Python package: checks, simulation, EasyEDA client, schematic, PCB, routing, Gerber analysis, silkscreen, export, release gate, EasyEDA claim |
-| [edakit/rules.json](edakit/rules.json) | the rule catalog: every check and design hint with rule, reason, fix and sources |
+| [edakit/catalog/](edakit/catalog/) | the catalog: engines and their codes with rule, reason, fix and sources, the parts schema, the defaults and tables (handbook 14.2) |
+| [edakit/domains/](edakit/domains/) | the domains of rules – core, usb, radio: severities, required facts, hints, the reviewers' questions |
 | [edakit/blocks/](edakit/blocks/) | building blocks (LED, button, I2C pull-ups, transistor switch, supply inputs, USB-C) and the checked parts entries they use |
 | [edakit/easyeda/](edakit/easyeda/) | `mcp-server.sh` (pinned easyeda-mcp-pro with safe defaults), `bridge-extension-patch.sh` |
 | [skills/](skills/), [agents/](agents/), [hooks/](hooks/hooks.json), [bin/](bin/) | the Claude Code plugin |
@@ -174,7 +175,7 @@ Where it stands:
   against that project's data; the EasyEDA-writing commands are ports of scripts used there daily.
 - Two copper layers. Rectangular or polygonal outlines with straight segments (arcs as point lists).
 - The simulation is DC operating points, plus transient runs of plug, unplug and switch-over where sim.json names
-  them (E-5); switching spikes and fast edges are left to the acceptance test.
+  them (LIM.v); switching spikes and fast edges are left to the acceptance test.
 - The MCP server cannot order, by design.
 - Used components and their licences: [easyeda-mcp-pro](https://github.com/oaslananka/easyeda-mcp-pro) (PolyForm
   Noncommercial 1.0.0 – check before commercial use), EasyEDA Pro (proprietary), Freerouting (GPL-3.0), ngspice (BSD).

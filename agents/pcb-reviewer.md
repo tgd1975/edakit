@@ -9,7 +9,7 @@ boards of the project in the current repository. You **change nothing**, neither
 
 ## Sources
 
-- The hand-over of the circuit: `edakit handover 2>&1 | cat` – what the plan must keep (L-12 checks that) and the
+- The hand-over of the circuit: `edakit handover 2>&1 | cat` – what the plan must keep (SYNC.plan checks that) and the
   notes for the layout, which no program checks: you do.
 - Plan: the board file `hardware/boards/<b>.toml` (outline, holes, tooling holes, `place`, routing classes,
   keep-outs). Coordinates and sides: `${CLAUDE_PLUGIN_ROOT}/handbook/07-pcb.md`.
@@ -37,15 +37,15 @@ boards of the project in the current repository. You **change nothing**, neither
 
 ## What you look at
 
-1. **Manufacturability (JLCPCB):** clearances, widths of power nets, annular rings and hole spacing (L-16 holds them
-   to JLCPCB's table – judge what it waived), drills and slots (plated slots >= 0.5 mm), copper to edge, assembly side
-   per part, THT pins under parts of the other side, polarity marks in the silkscreen (L-8), silkscreen on pads and
-   beyond the outline and the designators (L-17 reads them from the Gerber files), tooling holes for Economic PCBA,
-   DRC; vias and foreign pads next to joints soldered by hand on their solder side (L-18 with
+1. **Manufacturability (JLCPCB):** clearances, widths of power nets, annular rings and hole spacing (GEO.ring holds them
+   to JLCPCB's table – judge what it accepted), drills and slots (plated slots >= 0.5 mm), copper to edge, assembly side
+   per part, THT pins under parts of the other side, polarity marks in the silkscreen (GEO.mark), silkscreen on pads and
+   beyond the outline and the designators (GEO.silk reads them from the Gerber files), tooling holes for Economic PCBA,
+   DRC; vias and foreign pads next to joints soldered by hand on their solder side (GEO.spacing with
    `[routing] hand_solder_keep_mm` – without the key, note them).
    **Copper per layer** from the Gerber files: the share of the board each layer covers, the largest bare area where
    a pour should be (on a board that is seen it reads as a failed pour), floating copper – an island connected to no
-   pad. L-15 tests the same in the gate; after a round, read the round's export yourself.
+   pad. GEO.pour tests the same in the gate; after a round, read the round's export yourself.
 2. **Mechanics:** connectors reachable at the edge and polarised, mounting holes, the enclosure, parts that must be
    accessible after assembly. The mated plugs `pcb plan` checks and the board in three dimensions are in
    `<artifacts>/mech_<board>.json` (heights, lead protrusion, plug boxes); a connector without `mate` in its parts entry
@@ -53,7 +53,7 @@ boards of the project in the current repository. You **change nothing**, neither
 3. **Operation:** buttons and controls where the user expects them, labels readable.
 4. **Looks:** where the board is visible: calm arrangement, symmetry where intended, no crowded area next to empty
    space, few and quiet tracks on a visible side. With `[looks]` in the board file, `route check` and stage L give the
-   visible side's track length and vias against its limits, and L-19 its texts and designators against the board
+   visible side's track length and vias against its limits, and GEO.silk its texts and designators against the board
    file – a visible side without `[looks]` is worth a note.
 
 ## For the M-5 sign-off
@@ -72,8 +72,8 @@ spots.
 A numbered list by severity (**block** = do not order like this, **important**, **note**). Per finding: designator and
 position (mm in plan coordinates), the finding, its **probability** (how likely the consequence is: at the fab, in
 assembly, in use) and its **cost** if it happens (a dead batch, a fix round, five minutes with a soldering iron), a
-proposal (concrete move, rotation or side), and **rule**: the check it falls under, named with its words (`edakit
-rules`, e.g. "L-11 (short current loops)"), or **check candidate**: what a rule over the plan, the geometry or the
+proposal (concrete move, rotation or side), and **rule**: the code it falls under, named with its words (`edakit
+rules`, e.g. "GEO.loop (short current loops)"), or **candidate**: what a rule over the plan, the geometry or the
 Gerber files would test to find it again, or "judgement" (looks, operation). A deviation from a guideline or a
 datasheet recommendation without a realistic consequence is not a finding; name gold plating as such. Then what is
 good (short) and what you could not check; for M-5 the line of the sign-off.

@@ -66,8 +66,8 @@
   "HINT.debounce"
  ],
  "notes": [
-  "Debounce in the firmware (hint H-3).",
-  "sim.json: the net under the MCU's inputs; the button under buttons in one load, so that E-3 sees both levels.",
-  "On a strapping pin the pull-up must agree with the boot level (G-12)."
+  "Debounce in the firmware (hint HINT.debounce).",
+  "sim.json: the net under the MCU's inputs; the button under buttons in one load, so that LVL.threshold sees both levels.",
+  "On a strapping pin the pull-up must agree with the boot level (LVL.boot)."
  ]
 }

@@ -81,8 +81,8 @@
   "HINT.bulk"
  ],
  "notes": [
-  "Graph: add the connector to checks.reverse_protect – G-10 then checks that a reversed plug reaches only the diode's anode.",
+  "Graph: give the connector \"source\": \"reversible\" – PATH.reverse then checks that a reversed plug reaches only the diode's anode.",
   "sim.json: the connector under sources (plus \"1\", minus \"2\") and its voltages under supplies.",
-  "The 22 µF ceramic is the buffer of the example; for long cables or plugging in while powered add an electrolytic (hint H-1)."
+  "The 22 µF ceramic is the buffer of the example; for long cables or plugging in while powered add an electrolytic (hint HINT.bulk)."
  ]
 }

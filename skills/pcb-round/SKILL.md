@@ -44,7 +44,7 @@ template places needs `schematic create` once more. A project without entries sk
 A part whose parts entry has `footprint_data` (an own footprint, handbook 4.5) gets its copy from the data at the same
 place: `edakit part build <key> --write 2>&1 | cat` under the claim, right after `schematic create` and after every
 change of the data. Parts already in the PCB keep their old copy – delete them, `edakit pcb parts --write`,
-`edakit pcb dump` –, and `edakit check` holds the copy to the data (P-10).
+`edakit pcb dump` –, and `edakit check` holds the copy to the data (SYNC.footprint).
 
 Before the PCB is linked: `edakit schematic copy` + `layout`. After that `copy` refuses (the PCB would lose its
 schematic) and `layout` syncs parts in place. If parts were newly placed in the schematic, the DRC may show "Netlist
@@ -63,7 +63,7 @@ describes (section 3); a list of parts or pads is fixed with `pcb parts --write`
    cat` proposes a spot next to the host, `--write` adds the rows with `auto = true` (a later run may move those,
    never a row written by hand).
 2. **Check offline before EasyEDA is touched:** `edakit pcb plan 2>&1 | cat` – overlaps, outline, holes, THT pins under
-   parts of the other side, near-distances, the circuit's layout requirements (L-12), holes against leads (P-7),
+   parts of the other side, near-distances, the circuit's layout requirements (SYNC.plan), holes against leads (GEO.hole),
    polarised parts turned as `uniform` says (default: LEDs in a row alike; a direction per kind for parts soldered by
    hand, handbook 7.4), mated plugs of connectors whose parts entry has `mate` (clear of other parts, out through the
    outline), airline length, net classes; it writes `<artifacts>/mech_<board>.json` for the project's mechanics stage
@@ -78,12 +78,12 @@ describes (section 3); a list of parts or pads is fixed with `pcb parts --write`
      `edakit check` and `pcb plan` with the `mv` that moves it; the next dump moves it too (handbook 7.4). Before they
      are in the PCB, `edakit part import <LCSC>` gives the plan of step 2 their library footprint; for a swapped part
      `edakit part diff OLD NEW` says how the new footprint lies over the old one (turn, shift, pad map). A footprint
-     whose holes the project moves for leads formed by hand: `edakit pcb dump`, then `edakit check` – P-8 fails when
+     whose holes the project moves for leads formed by hand: `edakit pcb dump`, then `edakit check` – GEO.formed fails when
      a turn lays the formed holes onto themselves with a pin in another net's hole (handbook 3.3).
    - `edakit pcb apply` (outline, holes, tooling holes, fixed parts locked; pad positions verified against the plan)
    - `edakit pcb autolayout` (the parts without a row, TOP only; once they stand still it writes their rows into
      `[place]` with `auto = true` – commit them with the board file, `pcb plan` checks them like any row). A board
-     placed before edakit wrote these back – L-20 names its parts without a row – takes over its positions once,
+     placed before edakit wrote these back – SYNC.plan names its parts without a row – takes over its positions once,
      before any dump: `edakit pcb takeover --write`, fixed rows where the parts stand, the tracks stay on their pads
      (handbook 7.4)
    - `edakit route all 2>&1 | cat` (read → DSN → Freerouting → check → apply → pours → reload → DRC; exit 0 = DRC 0, 3 =
@@ -92,9 +92,9 @@ describes (section 3); a list of parts or pads is fixed with `pcb parts --write`
    - `edakit silk apply 2>&1 | cat` (designators where there is room; silkscreen on pads = 0; DRC). Through-hole parts
      of the other side, soldered from the designators side: `[silk] solder_side = true` (handbook 7.7). A part listed
      "without room": more room, a group label (`[silk] groups`), a fixed spot (`[silk.place]`, tried offline with
-     `edakit silk preview`) or `[silk] unlabelled` with the reason – the gate warns on it otherwise (L-17). Run it
+     `edakit silk preview`) or `[silk] unlabelled` with the reason – the gate warns on it otherwise (GEO.silk). Run it
      last, after the routing: the gate fails on edakit's own print on a mask opening, and with `[looks]` on a
-     designator shown on the visible side or a text there the board file does not put there (L-19) – a part placed
+     designator shown on the visible side or a text there the board file does not put there (GEO.silk) – a part placed
      again after `silk apply` shows its designator until it runs again.
 4. **Check:** `edakit pcb nets` (pad nets = graph), DRC details in `<artifacts>/route/<board>_drc.json`. With sim.json
    `copper` (power nets whose track drop matters): `edakit sim 2>&1 | cat` on the new routing – the drop of the tracks
@@ -124,26 +124,26 @@ recreated: delete them, `edakit pcb parts --write`, `edakit pcb dump`, then the 
 ## Known limits
 
 - The auto-layout knows nothing about belonging: decoupling capacitors and pull-ups that must sit at their IC go into
-  `place` – L-12 names the ones the circuit asks for, `pcb place` puts the ones with a host next to it.
+  `place` – SYNC.plan names the ones the circuit asks for, `pcb place` puts the ones with a host next to it.
 - A pour polygon with a hole is taken only as its outer contour; tooling holes get a notch to the edge instead.
 - The pours keep the tracks' edge clearance + 0.1 mm from the outline; `pour_inset_mm` in the board file gives them a
   distance of their own (handbook 7.6), e.g. further from the milled edge than tracks that run along it.
 - Panel tabs: the remark and the tab zones in `[order]` of the board file belong to the layout. A new pour or a track
-  along the edge can put copper into a tab zone – F-6 measures it at the gate, and `fab/<board>/order.md` lists the
+  along the edge can put copper into a tab zone – FILES.order measures it at the gate, and `fab/<board>/order.md` lists the
   stretches that are still free (handbook 8.4).
 - Two nets pouring on one layer: the one with priority fills it all unless `pour_regions = true` gives each its own
   area (handbook 7.6); an area enclosed by another net's is an error, solved in the routing.
 - EasyEDA drops every pour piece without a pad of its net: where the pour net has no pad, that side stays bare. The gate
-  warns (L-15: a copper-free circle above `[copper] max_bare_mm`, 5 mm); give the area a second pour net
+  warns (GEO.pour: a copper-free circle above `[copper] max_bare_mm`, 5 mm); give the area a second pour net
   (`pour_regions`) or a pad or via of the pour net, then `route pours` again.
 - While a free pad (tooling hole) is in the PCB, filling pours fails – edakit takes them out and puts them back.
 - Net classes need the simulated currents (`edakit sim` first). `route check` holds the routed tracks and fixed wires
-  to L-5 before anything is written; `[routing] widths = "sim"` routes at the IPC widths of the simulation instead of
+  to GEO.width before anything is written; `[routing] widths = "sim"` routes at the IPC widths of the simulation instead of
   a hand-written class table (handbook 7.5).
-- Freerouting cannot move a pad: pads of different parts on different nets closer than `clearance_mil` (L-13), or
-  SMD pads on an assembled side closer than the paste gap (L-14, `[release] assembly` `paste_gap_mm`, 0.4 mm), stop
+- Freerouting cannot move a pad: pads of different parts on different nets closer than `clearance_mil` (GEO.spacing), or
+  SMD pads on an assembled side closer than the paste gap (GEO.spacing, `[release] assembly` `paste_gap_mm`, 0.4 mm), stop
   `route all` at its check, without retries – move or turn one of the two parts in `place`. So do pads of other nets
-  closer than `[routing] hand_solder_keep_mm` to a joint soldered by hand (`bom: false`) on its solder side (L-18);
+  closer than `[routing] hand_solder_keep_mm` to a joint soldered by hand (`bom: false`) on its solder side (GEO.spacing);
   vias are kept away there by the DSN (handbook 7.5).
 - Freerouting is deterministic but order-dependent: `route all` retries with reshuffled DSNs when nets stay open. Before
   relaxing rules or moving parts, `edakit route diagnose 2>&1 | cat` says per open connection why: unreachable (what

@@ -8,7 +8,7 @@ BOM line.
 queries in the result:
 
 1. **Search the catalogue:** `edakit part search "<keywords>"`. It asks JLCPCB's public parts catalogue (the endpoint
-   of F-2) and needs no bridge and no claim. Each hit shows the LCSC number, manufacturer part number, manufacturer,
+   of PARTS.stock) and needs no bridge and no claim. Each hit shows the LCSC number, manufacturer part number, manufacturer,
    class (Basic, Extended, preferred), JLCPCB's assembly stock, package and category. `C99…` numbers are dropped, and
    the order is Basic first, then by stock. Function and package words work ("RGB LED 5mm common cathode" gives the
    Kingbright C6751358 and the XINGLIGHT C7371894 in one query). `--basic`, `--min-stock N`, `--json FILE`. An LCSC
@@ -30,7 +30,7 @@ Then:
   - It writes a new entry with manufacturer, manufacturer part number, footprint, Basic/Extended and the symbol's
     pins. Kind, types, roles and values are yours to fill in.
   - For an existing entry it lists where it differs (exit 2). `--update` fills in missing fields only.
-  - It caches symbol and footprint for P-1 and `pcb plan`.
+  - It caches symbol and footprint for STRUCT.entry and `pcb plan`.
   - Import one number at a time: the endpoint throttles after a few dozen requests (HTTP 403 for a while).
 - **Stock, price breaks, RoHS** (curl, no key):
   `https://wmsc.lcsc.com/ftps/wm/product/detail?productCode=C17414` (JSON), or the part page
@@ -43,7 +43,7 @@ Then:
   baked for a fee), X-ray, hand soldering, attrition and minimum. Basic parts first (no loading fee in Economic),
   Extended when needed, "Standard Only" only on a Standard order.
 - JLCPCB's assembly stock differs from LCSC's. Once the part is in the graph, `edakit stock` records it in the
-  project's snapshot and P-4 checks it on every `edakit check`; at the export F-2 asks the catalogue again.
+  project's snapshot and PARTS.stock checks it on every `edakit check`; at the export PARTS.stock asks the catalogue again.
 - **Compliance:** RoHS only (with certificate); no REACH statement, no country of origin.
 
 A part outside JLCPCB's library can still be assembled there, at a cost: *Global Sourcing* (JLCPCB buys it at DigiKey,

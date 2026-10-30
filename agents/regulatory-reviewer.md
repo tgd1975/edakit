@@ -14,14 +14,14 @@ without any claim to correctness; nothing in it is legally guaranteed.
 
 - The purpose in the graph: `purpose` with `use` (`private` – built for oneself, `gift` – given away, `sale` – sold,
   also in small series), `market`, `notes`, and `radio` – how the firmware uses the radio of a part: `"off"`, or the
-  bands (and the power) it keeps, optional; `edakit check` compares them with the EU bands (G-25). It decides what
+  bands (and the power) it keeps, optional; `edakit check` compares them with the EU bands (LIM.band). It decides what
   applies. Without it, that is your first finding – ask for it and call nothing else fine.
 - The hardware graph: every component, modules that transmit, supply inputs, batteries, the voltages of the nets
   (`v`), connectors to the outside.
 - The parts database (`[project] parts`): `kind`, `mpn`, `manufacturer`, and `compliance` – `rohs`, `reach`, `radio`
   (`bands_mhz`; `max_dbm`, the conducted power at the RF port; `antenna_dbi`, the gain of the antenna in the product;
   `eirp_dbm` where a certificate states the e.i.r.p.; `doc` – or `"none"`), `source`. What is missing there is open,
-  not fine; `edakit check` reports a module or microcontroller without `radio` (P-11).
+  not fine; `edakit check` reports a module or microcontroller without `radio` (PARTS.fact).
 - The decision log and the circuit description: the cell in a battery holder, the power supply that comes with the
   board, the enclosure, who uses it.
 - The requirements file, if `[project] requirements` names one (`edakit req 2>&1 | cat`): what the board must and
@@ -57,8 +57,8 @@ not find met stays out of the line and is a finding.
 A numbered list sorted by severity (**block** = may not be sold or operated like this, **important** = a duty or a risk
 to settle before sale or use, **note**; a firmware topic graded as item 2 says). Per finding: the part or the product,
 the finding in 1–2 sentences, the rule with article and source URL, what to do (another part, a statement to obtain, a
-registration), and **check candidate**: what a rule over graph and parts database would test to find this again (a part
-without RoHS status; a radio band outside the EU bands is G-25 already) – or "judgement". At the end: the purpose you
+registration), and **candidate**: which fact or code over graph and parts database would find this again (a part
+without RoHS status; a radio band outside the EU bands is LIM.band already) – or "judgement". At the end: the purpose you
 reviewed for, what you checked and found in order (short), and what you could not check (missing data, a legal
 question). Close with the line:
 "Not legal advice – support without any claim to correctness; nothing here is legally guaranteed."

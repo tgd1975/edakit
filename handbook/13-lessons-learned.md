@@ -12,7 +12,7 @@ built with Claude Code between 18 and 25 October 2026, for one order at JLCPCB w
 | 20 Oct | Verification pipeline: parts database, rule checks, ngspice simulation, release gate; second board; `batch_write`, focus guard, guarded renaming; sides swapped so the auto-layout (TOP only) can work | renaming acts on the active schematic; big batches crash EasyEDA; the auto-layout ignores belonging |
 | 21 Oct | Fixed-part plan, LED-to-channel assignment by wire length, pours; EasyEDA autorouter + a tool to repair GND islands from the Gerber export | the autorouter discards everything on failure; repairing its result does not converge |
 | 22 Oct | Bridge patch (return depth 12); routing with Freerouting from our own DSN; EasyEDA unthrottled; 120-s bridge timeout; EasyEDA claim between sessions; parts without the import dialog; silkscreen; release gate on the real manufacturing files; second datasheet check by an agent | the most productive day – each fix removed a class of problems instead of a symptom |
-| 23 Oct | Layout review by an agent: switching loop 61 mm long, visible side crowded → compact loop, quieter side, L-11; USB-C input; release gate passed | an automatic gate without a layout review released a layout nobody had looked at |
+| 23 Oct | Layout review by an agent: switching loop 61 mm long, visible side crowded → compact loop, quieter side, GEO.loop; USB-C input; release gate passed | an automatic gate without a layout review released a layout nobody had looked at |
 | 24 Oct | Part swaps for stock and price, gate passed again; order list | a gate run is routine – a cheaper part is worth one |
 | 25 Oct | Power concept redesigned (one board instead of two): graph, schematic, PCB, routing within a day; tooling holes for Economic PCBA | the pipeline makes even a redesign a matter of hours |
 
@@ -100,12 +100,12 @@ could go through:
 
 - **Off-board loads** in the simulation (`external`: the servo at its connector) and **fault cases** that do not block
   every commit (`"matrix": false`): a stalled servo draws more than the Nano's 500 mA polyfuse holds.
-- **5 V I/O modules** (`v_io = "vin"`) and an **input level check**: the buttons switched 3.3 V into a 5 V AVR,
+- **5 V I/O modules** (`v_io_v = "vin"`) and an **input level check**: the buttons switched 3.3 V into a 5 V AVR,
   0.28 V above its VIH – visible now, and moved to 5 V.
 - **Pin names** are compared with the symbol: it caught three LED entries whose names disagreed with their symbols –
   one library series marks the anode with "+" on pad 1 for green and red and on pad 2 for yellow.
 - **LEDs side by side point the same way** (plan check), after the first silkscreen showed the yellow ones turned.
 - **A new project's default board** is adopted, and **project creation is manual** in the local desktop client
   (chapter 9.2) – with a guard after the first generated schematic landed in the wrong project.
-- The gate's hole check (L-9) failed the Nano footprint from a user library: 0.9 mm holes for 0.64 mm square header
+- The gate's hole check (GEO.hole) failed the Nano footprint from a user library: 0.9 mm holes for 0.64 mm square header
   tails. Library footprints are not checked by anyone else.

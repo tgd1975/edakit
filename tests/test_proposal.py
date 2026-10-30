@@ -3,7 +3,7 @@ from edakit import cli, proposal
 FILLED = """## hole fits the lead
 
 ### Kind
-check
+relation
 
 ### Rule
 Every plated hole of a THT footprint is at least 0.2 mm larger than the lead it takes.
@@ -88,11 +88,20 @@ def test_sealing_again_replaces_the_seal():
 
 
 def test_unsealed_missing_and_unknown():
-    text = FILLED.replace("### Fix\nA footprint with 1.0–1.1 mm holes.\n", "").replace("check\n", "rule\n", 1)
+    text = FILLED.replace("### Fix\nA footprint with 1.0–1.1 mm holes.\n", "").replace("relation\n", "rule\n", 1)
     problems = proposal.verify(text)
     assert problems[0].startswith("no seal")
     assert any("section 'Fix' is missing" in p for p in problems)
     assert any(p.startswith("kind 'rule'") for p in problems)
+
+
+def test_kinds_of_the_restructuring_and_of_before():
+    """fact, relation, domain, block, retire; a proposal sealed before the restructuring (check, hint, part) still
+    verifies – the triage reads check and hint as relation, part as fact."""
+    assert "one of: fact, relation, domain, block, retire" in proposal.template()
+    for kind in (*proposal.RULE_KINDS, *proposal.OLD_KINDS):
+        body, problems = proposal.seal(FILLED.replace("relation\n", f"{kind}\n", 1))
+        assert problems == [] and proposal.verify(body) == [], kind
 
 
 def test_cli(tmp_path, capsys):
@@ -121,7 +130,7 @@ def test_feature_proposal_verifies_with_its_own_sections():
 
 
 def test_rule_sections_do_not_make_a_feature():
-    problems = proposal.check(FILLED.replace("check\n", "feature\n", 1))
+    problems = proposal.check(FILLED.replace("relation\n", "feature\n", 1))
     assert any("section 'Capability' is missing" in p for p in problems)
     assert not any("kind" in p for p in problems)
 

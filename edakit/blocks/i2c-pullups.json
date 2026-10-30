@@ -1,7 +1,7 @@
 {
  "name": "i2c-pullups",
  "title": "I2C pull-up pair",
- "about": "One 4.7 kΩ pull-up on SDA and one on SCL to the bus supply: the value for 100 kHz on a small board (G-11). For Fast mode (400 kHz) 2.2 kΩ.",
+ "about": "One 4.7 kΩ pull-up on SDA and one on SCL to the bus supply: the value for 100 kHz on a small board (REQ.missing). For Fast mode (400 kHz) 2.2 kΩ.",
  "ports": {
   "sda": "the SDA net",
   "scl": "the SCL net",
@@ -63,7 +63,7 @@
   "REQ.value"
  ],
  "notes": [
-  "Once per bus. Modules often bring their own pull-ups (\"pull\": \"up\" with \"pull_ohm\" on their pins); parallel pull-ups lower the value, and G-11 adds them up.",
-  "The block marks both nets with \"bus\": \"i2c\", so that G-11 checks them even when the MCU's pins are called GP4/GP5."
+  "Once per bus. Modules often bring their own pull-ups (\"pull\": \"up\" with \"pull_ohm\" on their pins); parallel pull-ups lower the value, and REQ.missing adds them up.",
+  "The block marks both nets with \"bus\": \"i2c\", so that REQ.missing checks them even when the MCU's pins are called GP4/GP5."
  ]
 }

@@ -1,8 +1,9 @@
 """Proposals: an issue in the edakit repository, written in a project and triaged in the edakit repository by the
 Action proposals. Two sorts, told apart by the section Kind:
 
-- a rule proposal asks for a check, a hint, a block, a part fact or the retirement of a check (plugin skill
-  propose-rule, repository skill triage-rule; handbook 14.4)
+- a rule proposal asks for a fact (a row of data: a part fact, a default, a table row), a relation (a new code of an
+  engine, a hint too), a domain change (a severity, a required fact, a reviewer's question), a block, or the
+  retirement of a code (plugin skill propose-rule, repository skill triage-rule; handbook 14.4)
 - a feature proposal asks for something edakit cannot do yet and a project had to build or work around itself
   (plugin skill propose-feature, repository skill triage-feature; handbook 11.6)
 
@@ -24,14 +25,16 @@ import sys
 from pathlib import Path
 
 VERSION = 1
-RULE_KINDS = ("check", "hint", "block", "part", "retire")
+RULE_KINDS = ("fact", "relation", "domain", "block", "retire")
+OLD_KINDS = {"check": "relation", "hint": "relation", "part": "fact"}   # proposals sealed before the restructuring
 FEATURE = "feature"
 KINDS = RULE_KINDS + (FEATURE,)
 TITLE = "a few words, like the title of a check"
 # section -> what goes in it (also the placeholder of the template)
 SECTIONS = {
     "Kind": "one of: " + ", ".join(RULE_KINDS),
-    "Rule": "the rule in one sentence – what a check would test, what a hint says, what a block is for",
+    "Rule": "the rule in one sentence – the fact and its source, what a code would find, what a domain changes, "
+            "what a block is for",
     "Why": "what goes wrong without it",
     "Finding": "where it showed: designator or net, the numbers, the state (circuit hash or commit)",
     "Fix": "what to do about a finding",
@@ -121,7 +124,7 @@ def check(text):
             problems.append(f"section '{name}' is missing – {what}")
         elif not content or content == f"<{what}>":
             problems.append(f"section '{name}' is not filled in – {what}")
-    if kind and sections.get("Kind") != f"<{SECTIONS['Kind']}>" and kind not in KINDS:
+    if kind and sections.get("Kind") != f"<{SECTIONS['Kind']}>" and kind not in KINDS and kind not in OLD_KINDS:
         problems.append(f"kind '{sections['Kind'].split()[0]}' – one of: {', '.join(KINDS)}")
     return problems
 

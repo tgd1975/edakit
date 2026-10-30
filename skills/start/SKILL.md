@@ -70,7 +70,7 @@ Some things only a human can click (e.g. after parts were newly placed in the sc
 Import Changes" until the import view was opened once). Avoid dialogs: parts go into the PCB with
 `edakit pcb parts --write`, nets with `edakit pcb nets --write`. edakit compares schematic and PCB when the DRC has
 that item: "EasyEDA waits for the import acknowledgement" (exit 3 of `route all|drc` and `silk apply|check`, a fail
-row of L-3) means nothing differs and only the click is left; a list of parts or pads means fix those first, do not
+row of GEO.drc) means nothing differs and only the click is left; a list of parts or pads means fix those first, do not
 ask for the click. If a click is unavoidable:
 
 1. Prepare everything so that the click is a plain **OK** – never ask the user to read, copy or judge dialog contents.

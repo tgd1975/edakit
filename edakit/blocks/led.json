@@ -18,7 +18,7 @@
     "1": "1",
     "2": "2"
    },
-   "notes": "150 Ω with this green LED (Vf 2.6 to 3.1 V): about 1.6 to 4 mA from a 3.3 V GPIO, 10 to 15 mA from 5 V – at the high end of Vf it still lights (E-3: at least 1 mA). Another current: another value of the same series (part-search skill)."
+   "notes": "150 Ω with this green LED (Vf 2.6 to 3.1 V): about 1.6 to 4 mA from a 3.3 V GPIO, 10 to 15 mA from 5 V – at the high end of Vf it still lights (SIM.state: at least 1 mA). Another current: another value of the same series (part-search skill)."
   },
   {
    "designator": "D1",
@@ -69,7 +69,7 @@
   "SIM.state"
  ],
  "notes": [
-  "sim.json: the driving net under the MCU's outputs, and leds_on in every load – the LED's designator where it lights, [] or the others where it is dark (E-4); edakit sim then checks the current against the LED and the MCU pin (E-2) and that it lights or stays dark (E-3).",
+  "sim.json: the driving net under the MCU's outputs, and leds_on in every load – the LED's designator where it lights, [] or the others where it is dark (SIM.driver); edakit sim then checks the current against the LED and the MCU pin (LIM) and that it lights or stays dark (SIM.state).",
   "From an MCU pin keep the current within the pin's rating (gpio_i_max_a in the MCU's parts entry); for more light a transistor (block npn-switch) or an LED driver."
  ]
 }
