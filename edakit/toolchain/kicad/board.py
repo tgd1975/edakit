@@ -128,6 +128,10 @@ class Pcb:
             return None
         pcb = cls(sexp.loads(path.read_text(encoding="utf-8")))
         pcb.renumber(pcb.used())
+        for zone in pcb.zones:     # KiCad 10 leaves the flag out; under KiCad 8's version a fill without it would be
+            if first(zone, "filled_areas_thickness") is None:     # drawn with a stroke of min_thickness (16.8)
+                zone.insert(len(zone) - 1 if zone and isinstance(zone[-1], list) else len(zone),
+                            ["filled_areas_thickness", False])
         return pcb
 
     def net_name(self, number):

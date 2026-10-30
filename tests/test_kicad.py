@@ -420,3 +420,17 @@ def test_a_zone_keeps_its_net_however_the_file_names_it(project, form):
     assert len(pcb.zones) == 2
     for z in pcb.zones:
         assert sexp.value(z, "net_name") == "GND" and pcb.net_name(sexp.value(z, "net")) == "GND"
+
+
+def test_a_zone_kicad_saved_without_the_thickness_flag_keeps_its_fill_exact(project):
+    """KiCad 10 writes no (filled_areas_thickness no); written back under KiCad 8's version the fill would get a stroke
+    of min_thickness – the CI job measured 0.1255 mm instead of the zone clearance 0.25 mm."""
+    cfg = kicad_project(project)
+    board = cfg.board()
+    kb.write_parts(cfg, board)
+    kb.write_zones(cfg, board)
+    path = kb.paths(cfg, board)["pcb"]
+    path.write_text(path.read_text().replace("(filled_areas_thickness no)", ""))
+    kb.write_parts(cfg, board)
+    assert all(sexp.value(z, "filled_areas_thickness") == "no" for z in kb.load(cfg, board).zones)
+    assert path.read_text().count("(filled_areas_thickness no)") == 2
