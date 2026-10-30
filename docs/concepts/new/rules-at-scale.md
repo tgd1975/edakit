@@ -1,6 +1,6 @@
 # Rules at scale
 
-Status 2026-10-30: final for the owner's decision; built on this branch only after an explicit go. Nothing is built.
+Status 2026-10-30: the owner gave the go; built on this branch step by step (section 10, "Build log").
 
 It answers the owner's concern that the rule catalog does not scale – electrically (are the rules consistent, free of
 contradiction, correct?) and in use (many rules, most of them irrelevant to a given project, too much context for the
@@ -70,26 +70,28 @@ Twelve engines; GEO is the largest and may split. Each is a module with its own 
 
 ## 3. Codes and findings
 
-**Scheme.** A code is `ENGINE.relation`. It says what kind of finding it is, without a lookup. Draft vocabulary,
-fixed in build step 1:
+**Scheme.** A code is `ENGINE.relation`. It says what kind of finding it is, without a lookup. The vocabulary as
+fixed in build step 1 (`edakit/catalog/codes.toml`):
 
 | Engine | Relations |
 | --- | --- |
-| STRUCT | `pin`, `net`, `name`, `ref`, `identity`, `purpose` |
-| SYNC | `schematic`, `pcb`, `footprint`, `plan`, `files`, `source` |
-| LIM | `v`, `i`, `p`, `t`, `band`, `range` (a supply outside its operating range) |
-| LVL | `undefined`, `boot`, `contention`, `threshold`, `direction` |
-| REQ | `missing`, `value`, `conflict`, `forbidden`, `address` |
-| PATH | `reverse`, `unfed`, `backfeed`, `exposed`, `hazard`, `isolation` |
-| SIM | `config`, `converge`, `state` |
-| GEO | `copper`, `spacing`, `width`, `ring`, `hole`, `loop`, `silk`, `drc` |
-| FILES | `set`, `order`, `sheet`, `manifest` |
-| PARTS | `verified`, `fact`, `stock`, `supplier`, `source` |
-| DOCS | `quote`, `ref`, `evidence`, `draft` |
-| HINT | `bulk`, `gate`, `debounce`, `inductive`, `hot_loop`, `lithium`, `esd`, `readback`, … |
+| STRUCT | `name`, `pin`, `net`, `board`, `ref`, `purpose`, `lock`, `entry`, `identity`, `prefix` |
+| SYNC | `schematic`, `pcb`, `footprint`, `plan`, `bom`, `cpl`, `source`, `scripts`, `agents` |
+| LIM | `v`, `i`, `p`, `t`, `range`, `declared`, `backfeed`, `eirp`, `band` |
+| LVL | `undefined`, `contention`, `boot`, `threshold`, `direction` |
+| REQ | `missing`, `value`, `forbidden`, `function` |
+| PATH | `reverse`, `unfed`, `ground` |
+| SIM | `config`, `converge`, `state`, `driver`, `copper` |
+| GEO | `copper`, `drc`, `width`, `loop`, `mark`, `formed`, `pour`, `spacing`, `ring`, `hole`, `silk` |
+| FILES | `sheet`, `manifest`, `set`, `order` |
+| PARTS | `verified`, `stock`, `supplier`, `fact`, `schema`, `footprint` |
+| DOCS | `quote`, `ref`, `need`, `evidence`, `draft` |
+| HINT | `bulk`, `gate`, `debounce`, `inductive`, `switcher`, `lithium`, `esd`, `two_supplies`, `readback` |
 
-About 50 codes for today's 76 checks and hints and maker-coverage's candidates together (estimate). Today's IDs are
-retired without aliases (decided). A table old ID → new code goes into the handbook once, for reading old protocols.
+80 codes for today's 66 checks and 9 hints – more than the estimate of 50: the hints keep a code each, and where one
+check of today held two things a person accepts separately (G-1, G-14, G-16), they became two codes. Today's IDs are
+retired without aliases (decided); every code lists the IDs it replaces (`replaces`), and `edakit explain G-8` names
+them, for reading old protocols.
 
 **Format.** Every finding, in every command and in the protocol:
 
@@ -105,6 +107,10 @@ in a file.
 **Severity** is set by the profile, not by the code: `error` (blocks `edakit check`), `warning` (the gate wants it
 accepted), `note` (information), `pending` (blocks the release and cannot be accepted – an unverified part, a missing
 stock snapshot). A new code starts as `warning` in its domain and becomes `error` by a change of the domain file.
+A finding may carry a **grade** – a sub-case with its own severity: `margin` (inside the limit but in its margin: a
+fuse's trip current above a contact rating, a tight hole), `firmware` (the firmware keeps it: a radio band), the name
+of a missing fact (`PARTS.fact/lead`). The catalog gives each code its default severity and those of its grades; a
+profile sets `"LIM.i/margin" = "error"` like any code.
 
 **Acceptance** is one mechanism for everything a person has seen and answered: `accept` with a reason, keyed by code
 and, where needed, by name – `"accept": {"LIM.v": "7.5 V only in the fault case servo-stalled (D-3)"}`. Errors and
@@ -228,6 +234,12 @@ Not a migration: a rebuild beside the old code, switched over on parity, the old
 
 Steps 1 to 4 change no finding on any board; the parity test says so. Step 5 is the cut.
 
+### Build log
+
+| Step | State | What exists |
+| --- | --- | --- |
+| 1 | built | `edakit/catalog/`: `codes.toml` (80 codes, 12 engines, each with the IDs it replaces), `kinds.toml` (the parts schema per kind), `tables/` (EU radio bands, USB, I2C, derating, JLCPCB, IPC-2221 – each row with source and tag); `edakit/findings.py` (finding, profile, severity, grade, accept, the grouped format); `edakit/convert.py` (old → new in memory, `edakit convert`); `edakit part lint`, `edakit rules`, `edakit explain`; `tests/test_catalog.py`. No finding of `edakit check` changed. |
+
 ### When maker-coverage's candidates are built
 
 After the cut (step 5), not before – decided by the owner. Three reasons:
@@ -274,5 +286,7 @@ Taken by the owner on 2026-10-30:
 6. **maker-coverage's candidates** are built after the cut (step 5); the producers FT-1, FT-2 and FT-3 may start
    with step 2. Section 10, "When maker-coverage's candidates are built".
 
-Still open, to settle in step 1: the exact relation vocabulary; whether `ratings` and `params` keep their names or
-become `limits` and `values`; the mutation sweep in CI or on demand (step 7).
+Settled in step 1 (2026-10-30), after the go, as proposed: the relation vocabulary of section 3; `ratings` and
+`params` become `limits` and `values`, every name with its unit (`vrrm` → `vr_max_v`, a pin's `vmax` → `v_max_v`) –
+`edakit/convert.py` holds the table, `edakit convert --write` converts a project once at the cut. Still open: the
+mutation sweep in CI or on demand (step 7; proposed: on demand).

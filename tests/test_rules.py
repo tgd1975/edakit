@@ -142,10 +142,11 @@ def test_hints_command(project, capsys):
 
 def test_rules_command(capsys):
     assert rules.main_rules(argparse.Namespace(ids=[])) == 0
-    assert "G-12  strapping pins" in capsys.readouterr().out
-    assert rules.main_rules(argparse.Namespace(ids=["G-11", "X-99"])) == 1
+    assert "LVL.boot             error    strapping pins at their level at reset" in capsys.readouterr().out
+    assert rules.main_rules(argparse.Namespace(ids=["G-11", "LVL.boot", "X-99"])) == 1
     out = capsys.readouterr().out
-    assert "UM10204" in out and "X-99: not in the catalog" in out
+    assert "UM10204" in out and "replaced by: REQ.missing, REQ.value" in out and "X-99: not in the catalog" in out
+    assert "LVL.boot (strapping pins at their level at reset):" in out
 
 
 def test_protocol_names_and_explains_the_findings(project, tmp_path):

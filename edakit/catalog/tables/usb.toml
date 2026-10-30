@@ -1,0 +1,13 @@
+# USB numbers – REQ.missing, REQ.value and REQ.forbidden on the CC pins of a USB-C sink.
+
+[table]
+about = "USB Type-C sink termination"
+source = "USB Type-C Cable and Connector Specification (USB-IF); Richtek AN064 (2021)"
+tag = "r"
+
+[cc]
+rd_ohm = 5100
+rd_tol = 0.10
+termination = ["rd_5k1", "controller", "none"]   # values.usb_c.cc of a module or breakout
+source = "USB Type-C Cable and Connector Specification (USB-IF): sink termination Rd = 5.1 kΩ ± 10 %"
+tag = "r"

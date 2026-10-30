@@ -1296,6 +1296,9 @@ def main(cfg, args):
     try:
         if args.action == "import":
             return main_import(cfg, args)
+        if args.action == "lint":
+            from . import schema
+            return schema.main_lint(cfg, args)
         if args.action == "diff":
             return main_diff(cfg, args)
         if args.action == "fetch":

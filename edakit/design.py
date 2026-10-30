@@ -41,9 +41,9 @@ def load_parts(directory):
 
 
 class Design:
-    def __init__(self, graph_path, parts_dir, boards=None):
+    def __init__(self, graph_path, parts_dir, boards=None, graph=None, parts=None):
         self.graph_path = Path(graph_path)
-        self.graph = load_graph(graph_path)
+        self.graph = load_graph(graph_path) if graph is None else graph
         self.ground = self.graph.get("ground", "GND")
         self.boards = list(boards or [])
         default = self.boards[0] if len(self.boards) == 1 else None
@@ -52,7 +52,7 @@ class Design:
             c.setdefault("board", default)
         self.nets = {n["name"]: n for n in self.graph["nets"]}
         self.pin_net = {ref: n["name"] for n in self.graph["nets"] for ref in n["pins"]}
-        self.parts = load_parts(parts_dir)
+        self.parts = load_parts(parts_dir) if parts is None else parts
         self.by_mpn = {}
         for key, entry in self.parts.items():
             self.by_mpn.setdefault(str(entry.get("mpn") or key), key)
@@ -60,6 +60,11 @@ class Design:
     @classmethod
     def from_config(cls, cfg):
         return cls(cfg.graph, cfg.parts, list(cfg.boards))
+
+    @classmethod
+    def from_data(cls, graph, parts, boards=None, graph_path="graph.json"):
+        """A design from a graph (the dict inside "graph") and parts entries {key: entry} already in memory."""
+        return cls(graph_path, None, boards, graph=copy.deepcopy(graph), parts=parts)
 
     # --- lookups -------------------------------------------------------------------------------------------------
     def entry_key(self, des):
@@ -99,7 +104,7 @@ class Design:
     def bridges(self):
         """Designators of the resistors whose parts entry has value_ohm 0."""
         return [d for d in self.comps if (p := self.part(d) or {}).get("kind") == "resistor"
-                and (p.get("params") or {}).get("value_ohm") == 0]
+                and (p.get("values") or p.get("params") or {}).get("value_ohm") == 0]
 
     def bridge_groups(self):
         """[(name, nets, bridges)] for every set of nets that bridges join: the nets in graph order, the name is the
@@ -133,8 +138,8 @@ class Design:
 
     def joined(self):
         """The design as the graph checks see it: the nets of every bridge group merged into one net under the group's
-        name (pins, voltage range, waivers, bus, fn, fn_bus and pwm_hz of all of them), the bridges taken out. Without
-        bridges: itself."""
+        name (pins, voltage range, waivers and accepts, bus, fn, fn_bus and pwm_hz of all of them), the bridges taken
+        out. Without bridges: itself."""
         bridges = set(self.bridges())
         if not bridges:
             return self
@@ -151,6 +156,7 @@ class Design:
                 if isinstance(v, list) and isinstance(w, list) and len(v) == len(w) == 2:
                     m["v"] = [min(v[0], w[0]), max(v[1], w[1])]
                 m["waive"] = {**(net.get("waive") or {}), **(m.get("waive") or {})} or None
+                m["accept"] = {**(net.get("accept") or {}), **(m.get("accept") or {})} or None
                 for key in ("bus", "fn", "fn_bus", "pwm_hz"):
                     m[key] = m.get(key) or net.get(key)
         out = copy.copy(self)

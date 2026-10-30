@@ -302,24 +302,23 @@ def load_sim(cfg):
 
 # --- command line ----------------------------------------------------------------------------------------------------
 def main_rules(args):
-    c = catalog()
-    if args.ids:
-        unknown = [i for i in args.ids if not entry(i)]
-        for i in args.ids:
-            if entry(i):
-                print("\n".join(explain(i)) + "\n")
-        for i in unknown:
-            print(f"{i}: not in the catalog")
-        return 1 if unknown else 0
-    print("Checks (they block the release):")
-    for cid, e in c["checks"].items():
-        print(f"  {cid:<5} {e['title']:<32} {'retired – ' + e['retired'] if e.get('retired') else e['rule']}")
-    print("\nHints (things to consider, no rule a program could decide):")
-    for hid, h in c["hints"].items():
-        when = h["when"].get("match") or "parts of kind " + ", ".join(h["when"]["kinds"])
-        print(f"  {hid:<5} {h['title']:<32} when: {when}")
-    print("\nDetails: edakit rules <ID> …")
-    return 0
+    """edakit rules: the engines and codes of the catalog (edakit/catalog); per name a code's explanation, or – until
+    the switch-over – an old check ID's entry of rules.json with the codes that replace it."""
+    from . import catalog as codes
+    if not args.ids:
+        return codes.main_rules(args)
+    unknown = []
+    for i in args.ids:
+        if entry(i):
+            new = codes.old_map().get(i)
+            print("\n".join(explain(i)) + (f"\n    replaced by: {', '.join(new)}" if new else "") + "\n")
+        elif lines := codes.explain(i):
+            print("\n".join(lines) + "\n")
+        else:
+            unknown.append(i)
+    for i in unknown:
+        print(f"{i}: not in the catalog")
+    return 1 if unknown else 0
 
 
 def main_hints(cfg, args):

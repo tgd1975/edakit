@@ -1,0 +1,36 @@
+# Derating – the margin LIM.v, LIM.i and LIM.p keep. Stage G multiplies the declared value by `factor`; stage E
+# multiplies the limit by `derate` (sim.json derating overrides the stage E numbers per project).
+
+[table]
+about = "margins of the limits on declared ranges (G) and simulated values (E)"
+source = "edakit handbook 3.3 and 5.3 (the margins of the reference project)"
+tag = "r"
+
+[G.factor]          # value × factor ≤ limit
+capacitor = 1.5
+diode = 1.5
+led = 1.0
+npn = 1.5
+pnp = 1.5
+nmos = 1.5
+pmos = 1.5
+
+[E.derate]          # value ≤ derate × limit
+p = 0.5
+i = 0.8
+v_cap = 0.67
+v_diode = 0.67
+v_bjt = 0.67
+
+[E.criteria]        # sim.json criteria overrides them
+net_range_tol_v = 0.05
+led_on_min_a = 0.001
+led_on_min_ratio = 0.8
+led_off_max_a = 1e-5
+chain_min_ratio = 0.7
+blocking_max_a = 0.001
+rail_tol = 0.03
+tj_max_c = 125
+
+[pin]               # an active pin (input, output, …) below this is beyond its protection diodes
+v_min_v = -0.3

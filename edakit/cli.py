@@ -1,10 +1,12 @@
 """edakit command line. Every command reads the project's edakit.toml (see handbook/10-reference.md).
 
     edakit check                     stages P/G: rule checks on the graph (offline, < 1 s)
-    edakit rules [ID ...]            the rule catalog: what each check and hint is about, why, what to do
+    edakit rules [CODE ...]          the engines and the codes of the catalog; an old check ID (G-4) its old entry
+    edakit explain CODE ...          rule, why, fix and sources of a code (LIM.v, REQ.missing …)
     edakit hints                     design hints that apply to the graph, notes from the parts database
     edakit block list|show|add       building blocks with checked parts into the graph
     edakit part import LCSC [--update]   symbol pins and footprint of an LCSC number from the library – no EasyEDA
+    edakit part lint [KEY ...]       every parts entry held to the schema of its kind (catalog/kinds.toml)
     edakit part diff OLD NEW         how a new footprint maps onto the old one before a swap (offline)
     edakit part fetch KEY [--url U] | --all   a part's datasheet PDF, kept beside the project and checked to be of it
     edakit part search "KEYWORDS"    JLCPCB's parts catalogue: LCSC number, class, stock – no EasyEDA
@@ -40,6 +42,7 @@
     edakit lock [status|claim|release|yield CHAT]   share EasyEDA between parallel Claude sessions
     edakit proposal template|seal|verify   a rule or feature proposal for the edakit repository, sealed with its SHA-256
     edakit doctor                    Node, easyeda-mcp-pro, bridge, EasyEDA process, ngspice, Freerouting
+    edakit convert [--write]         graph, parts entries and sign-off file into the form of the restructuring
 
 Exit codes everywhere: 0 = ok, 2 = findings, 1 = error. `edakit lock`, `edakit run` of an easyeda script: 3 = another
 session holds EasyEDA.
@@ -72,8 +75,15 @@ def build_parser():
     p.add_argument("--json", help="write the findings as JSON")
     _common(p)
 
-    p = sub.add_parser("rules", help="the rule catalog: checks and hints with reason, fix and sources")
-    p.add_argument("ids", nargs="*", help="check or hint IDs, e.g. G-4 L-9 H-1 (default: the list)")
+    p = sub.add_parser("rules", help="the engines and codes of the catalog")
+    p.add_argument("ids", nargs="*", help="codes (LIM.v) or old check IDs (G-4); default: the list")
+
+    p = sub.add_parser("explain", help="rule, why, fix and sources of a code")
+    p.add_argument("ids", nargs="+", help="codes, e.g. LIM.v REQ.missing (an old ID such as G-8 names its codes)")
+
+    p = sub.add_parser("convert", help="graph, parts entries and sign-off file into the form of the restructuring")
+    p.add_argument("--write", action="store_true", help="write the converted files (default: list them)")
+    _common(p)
 
     p = sub.add_parser("hints", help="design hints that apply to the graph, and notes from the parts database")
     p.add_argument("--json", help="write them as JSON")
@@ -91,7 +101,8 @@ def build_parser():
 
     p = sub.add_parser("part", help="the library's data of an LCSC number, a footprint swap compared, datasheets, "
                                     "a catalogue search, own parts, own footprints as data")
-    p.add_argument("action", choices=["import", "diff", "fetch", "search", "datasheet", "own", "footprint", "build"])
+    p.add_argument("action", choices=["import", "diff", "fetch", "search", "datasheet", "own", "footprint", "build",
+                                      "lint"])
     p.add_argument("source", nargs="?", help="import: the LCSC number; diff: the old part; fetch, footprint, build: "
                                              "the parts-entry key; search: the keywords; own: the board's project (its "
                                              "directory or edakit.toml)")
@@ -276,6 +287,9 @@ def _main(argv=None):
     if args.command == "rules":
         from . import rules
         return rules.main_rules(args)
+    if args.command == "explain":
+        from . import catalog
+        return catalog.main_explain(args)
     if args.command == "proposal":
         from . import proposal
         return proposal.main(args)
@@ -311,6 +325,9 @@ def _main(argv=None):
     if args.command == "part":
         from . import part
         return part.main(cfg, args)
+    if args.command == "convert":
+        from . import convert
+        return convert.main(cfg, args)
     if args.command == "stock":
         from . import stock
         return stock.main(cfg, args)

@@ -1,0 +1,172 @@
+"""The catalog of the restructuring (rules-at-scale.md, step 1): codes, tables, parts schema, conversion, findings."""
+
+import argparse
+import glob
+import json
+from pathlib import Path
+
+import pytest
+
+from edakit import catalog, convert, schema
+from edakit.findings import Finding, Profile, Report, format_findings
+
+ROOT = Path(__file__).resolve().parents[1]
+OLD = json.loads((ROOT / "edakit" / "rules.json").read_text(encoding="utf-8"))
+
+
+def test_catalog_lint_is_clean():
+    assert catalog.lint() == []
+
+
+def test_every_check_and_hint_of_before_has_a_code():
+    retired = {cid for cid, e in OLD["checks"].items() if e.get("retired")}
+    old = set(OLD["checks"]) | set(OLD["hints"])
+    assert old - retired - set(catalog.old_map()) == set()
+    assert set(catalog.old_map()) <= old
+
+
+def test_every_code_names_its_engine():
+    for name in catalog.codes():
+        assert catalog.engine_of(name), name
+
+
+def test_lint_finds_what_is_missing(monkeypatch):
+    bad = {"engines": catalog.engines(), "codes": {"LIM.x": {"title": "t", "rule": "", "why": "w", "fix": "f",
+                                                            "severity": "fatal", "replaces": ["G8"]},
+                                                  "lim.v": {"title": "t", "rule": "r", "why": "w", "fix": "f",
+                                                            "severity": "error"}}}
+    monkeypatch.setattr(catalog, "data", lambda: bad)
+    problems = "\n".join(catalog.lint())
+    assert "LIM.x: no rule" in problems and "severity 'fatal'" in problems and "replaces 'G8'" in problems
+    assert "lim.v: not ENGINE.relation" in problems
+
+
+def test_table_rows_need_a_read_source():
+    assert catalog.table_problems({"table": {"source": "s", "tag": "r"}, "x": {"a": 1, "tag": "v"}}) == \
+        ["x: tag 'v' – a table row is read from its source (r) before it is used"]
+    assert catalog.table_problems({"x": {"a": 1}})[0] == "[table] needs source and tag"
+    assert catalog.table("radio_eu")["eirp"][0]["limit_mw"] == 100
+
+
+def test_explain_a_code_and_an_old_id():
+    lines = catalog.explain("LIM.v")
+    assert lines[0].startswith("LIM.v (voltage within its limit): ")
+    assert any(x.strip().startswith("source: ") for x in lines)
+    assert catalog.explain("G-8") == ["G-8: replaced by LIM.v (edakit explain LIM.v)"]
+    assert catalog.explain("XYZ.q") == []
+
+
+def test_explain_command(capsys):
+    assert catalog.main_explain(argparse.Namespace(ids=["REQ.missing"])) == 0
+    assert "what to do:" in capsys.readouterr().out
+    assert catalog.main_explain(argparse.Namespace(ids=["REQ.nothing"])) == 1
+    assert "REQ.missing" in capsys.readouterr().out
+
+
+def test_rules_lists_the_codes(capsys):
+    from edakit import rules
+    assert rules.main_rules(argparse.Namespace(ids=[])) == 0
+    out = capsys.readouterr().out
+    assert "LIMITS – every quantity within its limit" in out and "LIM.v" in out
+    assert rules.main_rules(argparse.Namespace(ids=["G-8"])) == 0       # until the switch-over: the old entry
+    assert "replaced by: LIM.v" in capsys.readouterr().out
+
+
+# --- parts schema and conversion -------------------------------------------------------------------------------------
+PARTS = sorted(glob.glob(str(ROOT / "edakit" / "blocks" / "parts" / "*.json"))
+               + glob.glob(str(ROOT / "tests" / "fixtures" / "led-bar" / "hardware" / "parts" / "*.json")))
+
+
+@pytest.mark.parametrize("path", PARTS, ids=lambda p: Path(p).stem)
+def test_every_entry_converts_once_and_fits_its_schema(path):
+    entry = json.loads(Path(path).read_text(encoding="utf-8"))
+    new = convert.part(entry)
+    assert convert.part(new) == new
+    assert schema.problems(new) == []
+    assert "ratings" not in new and "params" not in new
+
+
+def test_conversion_renames_by_unit():
+    old = {"kind": "diode", "pins": {"1": {"name": "K", "type": "passive", "role": "cathode", "vmax": 5,
+                                           "v_op": [1.8, 3.6]}},
+           "ratings": {"vrrm": 40, "if_avg_a": 1}, "params": {"vf_v": 0.5}}
+    new = convert.part(old)
+    assert new["limits"] == {"vr_max_v": 40, "if_max_a": 1} and new["values"] == {"vf_v": 0.5}
+    assert new["pins"]["1"] == {"name": "K", "type": "passive", "role": "cathode", "v_max_v": 5, "v_op_min_v": 1.8,
+                                "v_op_max_v": 3.6}
+    rgb = convert.part({"kind": "led_rgb", "pins": {}, "ratings": {"red": {"vr_max": 5}}, "params": {"red": {"vf_typ": 2}}})
+    assert rgb["limits"] == {"red": {"vr_max_v": 5}} and rgb["values"] == {"red": {"vf_typ_v": 2}}
+
+
+def test_schema_names_what_does_not_fit():
+    entry = {"kind": "capacitor", "pins": {"1": {"name": "+", "type": "pasive", "role": "plus", "vmx": 3}},
+             "limits": {"v_max": 10, "v_max_v": "ten"}, "values": {"dielectric": "X9Z", "value_f": 1e-6}}
+    p = schema.problems(entry)
+    assert "limits.v_max: not a limit of kind capacitor (known: v_max_v)" in p
+    assert "limits.v_max_v: 'ten' is no number in V" in p
+    assert any(x.startswith("values.dielectric: 'X9Z'") for x in p)
+    assert any(x.startswith("pins.1.type: 'pasive'") for x in p) and "pins.1.vmx: not a pin field" in p
+    assert schema.problems({"kind": "diode", "pins": {}, "ratings": {}}) == [
+        "the form of before (ratings, params, vmax …) – edakit convert converts it"]
+    assert schema.problems({"kind": "ic", "pins": {}, "limits": {"vdd_op_min_v": 5, "vdd_op_max_v": 3}}) == [
+        "limits: vdd_op_min_v 5 above vdd_op_max_v 3"]
+
+
+def test_part_lint_command(project, capsys):
+    from edakit import cli
+    assert cli.main(["part", "lint", "--config", str(project.root / "edakit.toml")]) == 2   # the form of before
+    assert "edakit convert converts it" in capsys.readouterr().out
+    assert cli.main(["convert", "--write", "--config", str(project.root / "edakit.toml")]) == 0
+    assert "converted: hardware/graph.json" in capsys.readouterr().out
+    assert cli.main(["part", "lint", "--config", str(project.root / "edakit.toml")]) == 0
+    assert cli.main(["convert", "--config", str(project.root / "edakit.toml")]) == 0
+    assert capsys.readouterr().out.strip().endswith("0 files – edakit convert --write converts them")
+
+
+def test_conversion_of_graph_and_signoff():
+    g = {"graph": {"components": [{"designator": "J1", "waive": {"P-1": "free"}}, {"designator": "F1"}],
+                   "nets": [{"name": "OE", "waive": {"G-4": "held by U1"}}],
+                   "hints": {"H-1": "C1 next to J1"},
+                   "checks": {"pin_locks": {"U1.4": "CLK"}, "reverse_protect": ["J1"]}}}
+    new = convert.graph(g)["graph"]
+    assert new["components"][0] == {"designator": "J1", "accept": {"STRUCT.entry": "free"}, "source": "reversible"}
+    assert new["nets"][0]["accept"] == {"LVL.undefined": "held by U1"}
+    assert new["accept"] == {"HINT.bulk": "C1 next to J1"} and new["locks"] == {"pins": {"U1.4": "CLK"}}
+    assert "checks" not in new and convert.graph(convert.graph(g)) == convert.graph(g)
+    s = convert.signoff({"accepted_warnings": [{"match": "P-5 U1 *", "by": "x"}]})
+    assert s["accept"] == [{"match": "PARTS.supplier U1 *", "by": "x", "converted_from": "P-5 U1 *"}]
+
+
+# --- findings --------------------------------------------------------------------------------------------------------
+def test_severity_comes_from_the_profile_and_its_purpose():
+    f = Finding("LIM.eirp", "G", "U1", "21 dBm")
+    assert Profile().of(f) == "note"
+    p = Profile(by_purpose={"sale": {"LIM.eirp": "warning"}}, purpose="sale")
+    assert p.of(f) == "warning"
+    m = Finding("LIM.i", "G", "F1", "trips at 3 A", grade="margin")
+    assert Profile().of(m) == "warning" and Profile({"LIM.i/margin": "error"}).of(m) == "error"
+    assert Profile({"LIM.i": "note"}).of(m) == "note"
+
+
+def test_accept_on_net_component_and_graph():
+    graph = {"nets": [{"name": "OE", "accept": {"LVL.undefined": "held"}}],
+             "components": [{"designator": "F1", "accept": {"LIM.i/margin": "short trips fast"}}],
+             "accept": {"HINT.bulk J1": "C1 next to J1"}}
+    rep = Report([Finding("LVL.undefined", "G", "OE", "x", on=(("net", "OE"),)),
+                  Finding("LIM.i", "G", "F1", "holds", on=(("component", "F1"),)),
+                  Finding("LIM.i", "G", "F1", "trips", grade="margin", on=(("component", "F1"),)),
+                  Finding("HINT.bulk", "G", "J1", "no bulk"), Finding("HINT.bulk", "G", "J2", "no bulk"),
+                  Finding("PARTS.verified", "P", "C1", "not verified")]).resolve(graph)
+    assert [f.text for f in rep.errors] == ["holds"]
+    assert {f.text for f in rep.accepted} == {"x", "trips", "no bulk"}
+    assert [f.place for f in rep.notes] == ["J2"] and len(rep.pending) == 1
+    assert rep.counts() == {"error": 1, "accepted": 3, "note": 1, "pending": 1}
+
+
+def test_format_groups_by_code():
+    fs = [Finding("LIM.v", "G", f"C{i}", f"{i} V across, rated 6.3 V", source="limits.v_max_v of C1",
+                  fix="a 16 V part", severity="error") for i in range(7)]
+    lines = format_findings(fs)
+    assert lines[0] == "LIM.v – voltage within its limit: 7 error"
+    assert lines[1] == "  G  C0: 0 V across, rated 6.3 V   (limits.v_max_v of C1)   → a 16 V part"
+    assert "  … 2 more (--json)" in lines and any(x.startswith("  LIM.v: A part with a higher") for x in lines)
