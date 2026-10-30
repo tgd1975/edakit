@@ -8,7 +8,7 @@ agreements are as important as the scripts.
 | Component | Name | Use |
 |---|---|---|
 | skill | `/edakit:start` | EasyEDA ready, long runs, GUI clicks, crash recovery – before any EasyEDA work |
-| skill | `/edakit:new-project` | set up edakit in a repository – a new project, or one that moves to edakit with hardware files, scripts or agents of its own (then the inventory first): an interview from boards, assembly, order, money and purpose to firmware, documents and the project's own tools, every key from an answer, written after the user's OK (2.7) |
+| skill | `/edakit:new-project` | set up edakit in a repository – a new project, or one that moves to edakit with hardware files, scripts or agents of its own (then the inventory first): an interview from boards, the maker, assembly, order, money and purpose to firmware, documents and the project's own tools, every key from an answer, written after the user's OK (2.7) |
 | skill | `/edakit:requirements` | what the circuit must do, with the user: needs and requirements with their evidence in `hardware/requirements.toml`, asked back in a decision round until vague words are numbers – Claude drafts, the user accepts (3.6) |
 | skill | `/edakit:circuit-design` | from requirements to a graph: blocks, parts, computed values, checks, hints, simulation (chapter 14) |
 | skill | `/edakit:hardware-change` | a change from graph to PCB and docs |
@@ -16,6 +16,7 @@ agreements are as important as the scripts.
 | skill | `/edakit:own-part` | the parts entry of a part nobody sells and no edakit project describes – own board, from the bin, made by hand – from the user's documents and measurement (4.5) |
 | skill | `/edakit:pcb-round` | one layout round |
 | skill | `/edakit:release` | the gate, sign-offs, order checklist |
+| skill | `/edakit:cart` | a released board into the maker's cart with Claude in Chrome in the owner's browser – JLCPCB, Eurocircuits, AISLER –: the job of `edakit cart prepare`, every field set and read back, the quote checked (B-1 to B-7), the regulatory review of the order, then the cart button and stop – never orders, never pays; afterwards the real cost into the fee table (8.4) |
 | skill | `/edakit:decision-round` | numbered findings, short answers, numbered decisions |
 | skill | `/edakit:propose-rule` | a check, hint, block or part fact as a sealed issue to the edakit repository, and its outcome back into the decision (chapter 14.4) |
 | skill | `/edakit:propose-feature` | a feature edakit lacks and a project had to build or work around, as a sealed issue to the edakit repository, and its outcome back into the project (11.6) |
@@ -24,7 +25,7 @@ agreements are as important as the scripts.
 | agent | `edakit:part-selector` | finds a part at the project's distributors (a profile each) and writes its parts entry, in its own context (chapter 4.2) |
 | agent | `edakit:easyeda-operator` | runs one long EasyEDA step and returns only the result – keeps the main conversation clean |
 | agent | `edakit:electrical-reviewer` | independent circuit review; its result is the sign-off M-1 |
-| agent | `edakit:regulatory-reviewer` | circuit and parts against EU law for the board's purpose; its result is the sign-off M-6 (chapter 15) |
+| agent | `edakit:regulatory-reviewer` | circuit and parts against EU law for the board's purpose; its result is the sign-off M-6 (chapter 15) – and "At the order" what an order adds (finish, quantity, the maker's seat), checked by B-7 |
 | agent | `edakit:pcb-reviewer` | independent layout review (read-only EasyEDA tools); its result is the sign-off M-5 |
 | MCP | `easyeda` | easyeda-mcp-pro, pinned, safe defaults |
 | hook | PreToolUse on the easyeda tools | claims EasyEDA for the session, refuses when another session holds it |

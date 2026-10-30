@@ -98,11 +98,12 @@ edakit release current|withdraw|verify   # the one run that may be uploaded; ver
 
 In Claude Code the skills do the orchestration: `/edakit:new-project`, `/edakit:requirements`,
 `/edakit:circuit-design`, `/edakit:start`, `/edakit:hardware-change`, `/edakit:part-search`, `/edakit:own-part`,
-`/edakit:pcb-round`, `/edakit:release`, `/edakit:decision-round`;
-`/edakit:new-project` sets a project up from an interview – boards, assembly, order, money, purpose, firmware,
-documents, the project's own tools –, every key from an answer, and for a project that moves to edakit the agent
-`project-surveyor` first makes the inventory of what it brings – scripts, agents, skills, hardware data, documents,
-decisions –, each with where it was found, the proposal and its reason;
+`/edakit:pcb-round`, `/edakit:release`, `/edakit:cart`, `/edakit:decision-round`;
+`/edakit:new-project` sets a project up from an interview – boards, the maker, assembly, order, money, purpose,
+firmware, documents, the project's own tools –, every key from an answer, and for a project that moves to edakit the
+agent `project-surveyor` first makes the inventory of what it brings – scripts, agents, skills, hardware data,
+documents, decisions –, each with where it was found, the proposal and its reason; `/edakit:cart` puts a released
+board into the maker's cart with Claude in Chrome, checked by edakit, and never orders or pays;
 `/edakit:requirements` writes what the circuit must do into `hardware/requirements.toml` with the user, and the agent
 `requirements-engineer` reads a project's documents for it – candidates with their source, contradictions, vague
 words, requirements without evidence; the agent `part-selector` finds parts at the project's distributors
