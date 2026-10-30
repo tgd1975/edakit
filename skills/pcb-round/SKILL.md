@@ -16,6 +16,12 @@ needs a circuit change – another GPIO for a shorter route, another footprint, 
 it into the project's decision log as a request to the circuit (what, why, which requirement) and ask the user to take
 it to the circuit designer. The layout review (agent pcb-reviewer) checks your work; you do not sign it off.
 
+**KiCad** (`toolchain = "kicad"` in `[project]`, handbook 16): the same round with the same commands, on the board's
+KiCad project – no start skill, no claim, no easyeda-operator, no *Import Changes*. `schematic create` writes and checks
+the KiCad schematic; `pcb apply` writes parts, outline, holes and rules; KiCad has no auto-layout: the parts without a
+row get one from `edakit pcb place --rest --write`. Everything below that names EasyEDA's GUI or the claim does not
+apply.
+
 ## 0. Take over
 
 ```bash

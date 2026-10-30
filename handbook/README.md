@@ -19,6 +19,7 @@ How we work, what the tools do, and why they do it that way – including everyt
 | 13 | [Lessons learned](13-lessons-learned.md) | you want the short version of a week of mistakes |
 | 14 | [Designing a circuit](14-design.md) | you design a circuit, want to know what a check or hint means, or use building blocks |
 | 15 | [Regulatory review](15-regulatory.md) | a board is sold or given away, or it transmits – support, not legal advice |
+| 16 | [KiCad as the tool chain](16-kicad.md) | a project draws its boards in KiCad instead of EasyEDA (`toolchain = "kicad"`) |
 
 **Reading paths**
 

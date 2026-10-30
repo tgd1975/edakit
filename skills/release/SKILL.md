@@ -19,7 +19,8 @@ Concept: `${CLAUDE_PLUGIN_ROOT}/handbook/08-release-gate.md`.
    without entries skips this. A footprint geometry that still lies among the artifacts (a note of `edakit check` and
    in section 6 of the protocol) is moved first, as the note says, and committed: the move changes the layout hash
    once, and a sign-off with scope `layout` recorded before it would lapse (handbook 8.2).
-2. **With EasyEDA** (start skill, claim EasyEDA, reference schematic checked): `edakit gate --easyeda 2>&1 | cat` in the
+2. **With EasyEDA** (start skill, claim EasyEDA, reference schematic checked) – or on KiCad (`toolchain = "kicad"`,
+   handbook 16: no start skill, no claim, `--eda` is the same flag): `edakit gate --easyeda 2>&1 | cat` in the
    background (minutes). Adds S, L and F per board: read the PCB, save and reload, DRC, export Gerber and pick-and-place,
    BOM from the graph, JLCPCB stock, copper connectivity from the Gerber files, holes against leads, outline, tooling
    holes, polarity sheet; then the project's checks with `at = "after F"`, on this run's manufacturing files. Files in

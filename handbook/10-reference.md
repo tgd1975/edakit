@@ -48,6 +48,7 @@ board, the schematic or the checks (the earlier one-file form) is refused with a
 | `stock_margin_pct` | `0` | P-4 warns when the assembler's stock is below the need plus this margin |
 | `stock_max_age_days` | `14` | an older snapshot (or snapshot row) is pending in P-4 – it blocks the release, not `edakit check` |
 | `spare_pct` | `0` | `edakit order`: spares on every cart line, in % of `quantity` sets (rounded up) |
+| `toolchain` | `easyeda` | the EDA tool the boards are drawn in: `easyeda` (EasyEDA Pro through the bridge) or `kicad` (KiCad 10: edakit writes one KiCad project per board into `<artifacts>/kicad/<board>/` and calls kicad-cli, chapter 16). With `kicad` the EasyEDA document names of `[boards.<name>]` are refused |
 
 The name of the ground net is in the graph (`ground`, default `GND`), with the circuit it belongs to; nets that are
 ground on purpose besides it (an analog ground) in `grounds` (3.1, G-16).
@@ -57,9 +58,9 @@ ground on purpose besides it (an analog ground) in `grounds` (3.1, G-16).
 | Key | Default | Meaning |
 |---|---|---|
 | `title` | the board name | page name of the board schematic |
-| `template` | `generated_<name>` | schematic generated from the graph |
-| `schematic` | `layout_<name>` | board schematic (the PCB is linked to it) |
-| `pcb` | `<name>` | PCB document in EasyEDA |
+| `template` | `generated_<name>` | schematic generated from the graph (EasyEDA only) |
+| `schematic` | `layout_<name>` | board schematic, the PCB is linked to it (EasyEDA only) |
+| `pcb` | `<name>` | PCB document in EasyEDA (EasyEDA only – a KiCad board is `<artifacts>/kicad/<name>/`, 16.3) |
 | `file` | `hardware/boards/<name>.toml` | the board file (10.2); while it does not exist the board has no layout yet – a file named here must exist |
 | `bought` | `false` | `true`: a bought board on a cable (4.5) – in the graph, checks and simulation like any board, made by nobody: no `template`, `schematic`, `pcb`, `file` or board file (each an error); stages S and L/F, the manifest, the `fab` and the layout hash leave it out, layout commands refuse it with `--board` and skip it without, `edakit order` writes no BOM and `edakit cost` no PCB or assembly for it |
 
@@ -331,7 +332,7 @@ scripts that write what they read first, when those are outdated or never ran, a
 | `edakit silk apply\|check` | ✓ | PCB, Gerber export | designators, `silk_<board>_<side>.png`, `gerber_<board>/`; apply: `silk_footprints_<board>/` (the print it found, for L-17) |
 | `edakit silk preview` | – | board file, the last Gerber export (`gerber_<board>/`) | `silk_preview_<board>_<side>.png`: artwork, texts and the fixed designators of `[silk.place]` (exit 2 when one is in the way, 7.7) |
 | `edakit export [--board]` | ✓ read | schematic, PCB, project file | `<artifacts>/export/` |
-| `edakit gate [--easyeda]` | – / ✓ | everything; with `[project] requirements` the requirements files (8.7 – a file missing or not valid: exit 1 before a run) | `<reports>/<run>/`, with `stage_<id>.txt` the output of each project check that ran (8.1); a RELEASED run supersedes the earlier ones in their `fab/manifest.json` (8.3) |
+| `edakit gate [--easyeda \| --eda]` | – / ✓ | everything; with `[project] requirements` the requirements files (8.7 – a file missing or not valid: exit 1 before a run) | `<reports>/<run>/`, with `stage_<id>.txt` the output of each project check that ran (8.1); a RELEASED run supersedes the earlier ones in their `fab/manifest.json` (8.3) |
 | `edakit release current` | – | the manifests under `reports` | – |
 | `edakit release withdraw RUN --reason TEXT` | – | the run's manifest | its `fab/manifest.json`: `status`, `withdrawn` {reason, by, date} |
 | `edakit release verify FILE…\|DIR…` | – | the files (a folder: its `.zip` and `.csv` files), the manifests | – |
@@ -340,6 +341,9 @@ scripts that write what they read first, when those are outdated or never ran, a
 | `edakit lock [status\|claim\|release\|yield CHAT\|hook] [--note]` | – | – (hook: tool name and, for `easyeda_api_call`, its `path`; library lookups of `READ_ONLY_TOOLS`/`READ_ONLY_API` pass without a claim, 11.2) | `~/.local/state/edakit/easyeda-lock.json` |
 | `edakit proposal template [--feature]\|seal FILE [--out F]\|verify FILE` | – | a rule or feature proposal (no project needed) | seal: the issue body with its SHA-256 |
 | `edakit doctor [--offline]` | ✓ read (not with `--offline`) | tool chain; `BRIDGE_TIMEOUT_MS` of the running easyeda-mcp-pro servers (`/proc/<pid>/environ`); with EasyEDA running, through an own server that claims nothing: `easyeda_bridge_status`, `easyeda_health_check` (connected, extension against server version, registry) and, while the claim is free or yours, `DMT_Project.getCurrentProjectInfo` (`[MaxDepth]` = the original extension) – 2.5, 12 | – |
+
+With `toolchain = "kicad"` the commands marked ✓ run on the board's KiCad project and kicad-cli instead of EasyEDA –
+what each does there is in 16.4; `pcb autolayout` and `lock` have no KiCad side, `KICAD_CLI` names another kicad-cli.
 
 ## 10.6 Files in a project
 

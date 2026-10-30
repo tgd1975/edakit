@@ -1,6 +1,7 @@
 # Two tool chains: EasyEDA Pro and KiCad
 
-Status 2026-10-30: proposal. Nothing is built and nothing has been run with KiCad yet. On 2026-10-30 the user decided:
+Status 2026-10-30: built on the branch of decision 6 (steps T.2 to T.10 and T.12, the table under Order), tested
+offline against a kicad-cli the tests fake; the first run against a real KiCad 10 is open (handbook 16.8). On 2026-10-30 the user decided:
 edakit places the parts in both tool chains (gap K-1, now the section [Placement](#placement-edakit-places-for-both-tool-chains)),
 and decisions 1, 4, 5 and 6. The user left decision 2 to Claude. Claude took decision 3 as recommended because the
 user left it open, and T.4 looks at it again. Decision 7 is open and is written out again under
@@ -153,11 +154,16 @@ The EasyEDA side calls the functions where they are today (`eda.py`, `route.read
 live runs of 2.1 to 2.4 and 3.6 still change that code, and a thin dispatch keeps the rebase small. Moving the EasyEDA
 code into `toolchain/easyeda.py` is a cleanup for later, not a step of this concept.
 
+As built, the dispatch is one branch at the top of each command (`is_kicad(cfg)`), and the EasyEDA side needs no
+module of its own:
+
 ```text
 edakit/toolchain/
-  __init__.py     select(cfg); the operations below, dispatched to one of the two
-  easyeda.py      thin: calls eda.py, pcb.py, route.py, schematic*.py, silk.py, fab.collect, export.py as they are
+  __init__.py     is_kicad(cfg), only_easyeda(cfg, what, instead)
   kicad/
+    commands.py   the KiCad side of pcb, route's EasyEDA steps, export
+    silk.py       silk apply|check: silk.py's placement written into the KiCad PCB
+    fab.py        stages L and F: the files fab.collect gets from EasyEDA, from KiCad's exports
     sexp.py       read and write S-expressions (route.py's sexp and find become this module)
     library.py    .kicad_sym and .pretty from the parts database
     schematic.py  .kicad_sch from schematic_layout.Layout
@@ -388,20 +394,20 @@ and is rebased when they land. Each step is built with add-feature, test first, 
 [implementation-plan.md](implementation-plan.md), and goes to main when the user says so. Each step leaves a project
 without `toolchain = "kicad"` as it is: T.1 changes nothing until `--rest` is given.
 
-| Step | What | Size | Needs | Waits for |
-| --- | --- | --- | --- | --- |
-| T.1 | `pcb place --rest`: edakit places every part without a row, deterministically, for both tool chains | M–L | – | – |
-| T.2 | `edakit/toolchain/`: dispatch at the commands, EasyEDA behind it where it is; every test passes as before and offline runs stay byte-identical | M | – | – |
-| T.3 | `[project] toolchain`, the KiCad folder `<artifacts>/kicad/<board>/`, config checks, `doctor` per tool chain | S | – | T.2 |
-| T.4 | `kicad/sexp.py` (from `route.py`), `kicad/library.py`: footprints and symbols from the parts database; both footprint sources side by side for the fixture's parts (decision 3) | M | – | – |
-| T.5 | `kicad/board.py` reads `.kicad_pcb` into `board.json`, `pcb.json` and `geometry.json`, rounded as the EasyEDA side rounds; round-trip tests | M | – | T.4 |
-| T.6 | `gerber.py` for KiCad's Gerber and drill files (K-2), on a recorded KiCad export of the fixture | M | KiCad once | – |
-| T.7 | `kicad/board.py` writes outline, holes, parts, nets and the rule set; the SES as tracks and vias; zones filled through `kicad-cli`; the silkscreen | L | KiCad (probe) | T.5 |
-| T.8 | `kicad/schematic.py` from `Layout`; S-2 and S-3 through `kicad-cli` | M | KiCad | T.4 |
-| T.9 | `kicad/cli.py`: ERC, DRC, exports; stages L and F on KiCad; `export` with `kicad_<board>.zip` | M | KiCad | T.6, T.7, T.8 |
-| T.10 | Skills, agents, hook, handbook (new chapter 16, 2 setup, 10 reference), README | M | – | T.9 |
-| T.11 | Comparison run: the fixture and a scratch copy of the bell through both tool chains, every difference explained here | M | KiCad, EasyEDA | T.1, T.9 |
-| T.12 | CI: the fixture's stages S, L and F with `kicad-cli` in a container with KiCad 10 | S | KiCad | T.9 |
+| Step | What | Size | Needs | Waits for | State |
+| --- | --- | --- | --- | --- | --- |
+| T.1 | `pcb place --rest`: edakit places every part without a row, deterministically, for both tool chains | M–L | – | – | being built |
+| T.2 | `edakit/toolchain/`: dispatch at the commands, EasyEDA behind it where it is; every test passes as before and offline runs stay byte-identical | M | – | – | built (b2852f2, 6222f1f) |
+| T.3 | `[project] toolchain`, the KiCad folder `<artifacts>/kicad/<board>/`, config checks, `doctor` per tool chain | S | – | T.2 | built (b2852f2, de2e95d) |
+| T.4 | `kicad/sexp.py`, `kicad/library.py`: footprints and symbols from the parts database; both footprint sources side by side for the fixture's parts (decision 3) | M | – | – | built (b2852f2, ca16159); the side-by-side waits for KiCad's library |
+| T.5 | `kicad/board.py` reads `.kicad_pcb` into `board.json`, `pcb.json` and `geometry.json`, rounded as the EasyEDA side rounds; round-trip tests | M | – | T.4 | built (b2852f2) |
+| T.6 | `gerber.py` for KiCad's Gerber and drill files (K-2), on a recorded KiCad export of the fixture | M | KiCad once | – | built on files written as KiCad writes them (6222f1f); a recorded export is open |
+| T.7 | `kicad/board.py` writes outline, holes, parts, nets and the rule set; the SES as tracks and vias; zones filled through `kicad-cli`; the silkscreen | L | KiCad (probe) | T.5 | built (b2852f2, 6222f1f, 37e3335); probe open |
+| T.8 | `kicad/schematic.py` from `Layout`; S-2 through `kicad-cli` (netlist and ERC) | M | KiCad | T.4 | built (ca16159) |
+| T.9 | `kicad/cli.py`: ERC, DRC, exports; stages L and F on KiCad; `export` with `kicad_<board>.zip` | M | KiCad | T.6, T.7, T.8 | built (6222f1f, 37e3335) |
+| T.10 | Skills, agents, hook, handbook (new chapter 16, 2 setup, 10 reference), README | M | – | T.9 | built |
+| T.11 | Comparison run: the fixture and a scratch copy of the bell through both tool chains, every difference explained here | M | KiCad, EasyEDA | T.1, T.9 | open |
+| T.12 | CI: the fixture's stages S, L and F with `kicad-cli` in a container with KiCad 10 | S | KiCad | T.9 | built: the job `kicad` in tests.yml, `tests/test_kicad_live.py` |
 
 T.1, T.2, T.4 and T.6 have no predecessor and can run in parallel. `pcb autolayout` goes after T.1 has placed a real
 board that routed and passed the gate.

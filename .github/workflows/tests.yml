@@ -24,3 +24,18 @@ jobs:
           uv run --project ../../.. edakit gate || test $? -eq 2   # NOT RELEASED is expected without EasyEDA
       - name: Shell scripts parse
         run: bash -n edakit/easyeda/mcp-server.sh && bash -n edakit/easyeda/bridge-extension-patch.sh && bash -n bin/edakit
+
+  kicad:
+    # The KiCad tool chain against a real kicad-cli (handbook 16.8): KiCad reads the files edakit writes, and its
+    # exports are what the gate's checks read. KiCad's own container image of the version edakit writes for.
+    runs-on: ubuntu-24.04
+    container:
+      image: kicad/kicad:10.0
+      options: --user root
+    steps:
+      - uses: actions/checkout@v4
+      - uses: astral-sh/setup-uv@v6
+      - name: kicad-cli
+        run: kicad-cli version
+      - name: Tests against kicad-cli
+        run: uv run --group dev pytest -q -rs -m kicad tests/test_kicad_live.py

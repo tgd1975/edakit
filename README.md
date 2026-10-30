@@ -55,6 +55,11 @@ claude plugin marketplace update edakit && claude plugin update edakit@edakit
 The plugin pins no version, so every commit on `main` is an update. Auto-update for the edakit marketplace can be
 switched on under `/plugin` → Marketplaces (off by default for marketplaces outside Anthropic).
 
+**Two tool chains.** A project draws its boards in EasyEDA Pro (the default) or in KiCad 10 – `toolchain = "kicad"`
+in `[project]` of edakit.toml. On KiCad edakit writes one KiCad project per board and calls kicad-cli: no bridge, no
+claim, no clicks; graph, checks, simulation, plan, routing and gate are the same ([handbook 16](handbook/16-kicad.md);
+built and tested offline, the first run against a real KiCad is open).
+
 Needed besides: EasyEDA Pro desktop, Node 24, [uv](https://docs.astral.sh/uv/), ngspice. Freerouting downloads itself
 on Linux x64. Then build and import the patched bridge extension once and start EasyEDA unthrottled –
 [handbook/02-setup.md](handbook/02-setup.md).
@@ -168,6 +173,8 @@ Where it stands:
   - the position of single designators.
 
   Creating the EasyEDA project and one *Import Changes* stay two clicks by hand until the API allows them.
+- The KiCad tool chain ([handbook 16](handbook/16-kicad.md)) is tested against a kicad-cli the tests fake and, in CI,
+  against KiCad 10's container; no board has gone through it to a release yet (16.8 lists what the first run checks).
 - Grown on one real project (EasyEDA Pro 3.2.206, easyeda-mcp-pro 1.4.0, Linux), made generic, then taken through a
   second one end to end (the Christmas bell). The offline
   parts (checks, simulation, DSN/Freerouting/check, Gerber analysis, the board and manufacturing checks) are verified
