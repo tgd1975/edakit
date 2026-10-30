@@ -1,7 +1,8 @@
 # Two tool chains: EasyEDA Pro and KiCad
 
-Status 2026-10-30: built on the branch of decision 6 (steps T.2 to T.10 and T.12, the table under Order), tested
-offline against a kicad-cli the tests fake; the first run against a real KiCad 10 is open (handbook 16.8). On 2026-10-30 the user decided:
+Status 2026-10-30: built on the branch of decision 6 (steps T.1 to T.10 and T.12, the table under Order); tested
+offline against a kicad-cli the tests fake and in CI against KiCad 10 on the led-bar example (handbook 16.8). Open: a
+real project through both tool chains (T.11) and the live tests with the user. On 2026-10-30 the user decided:
 edakit places the parts in both tool chains (gap K-1, now the section [Placement](#placement-edakit-places-for-both-tool-chains)),
 and decisions 1, 4, 5 and 6. The user left decision 2 to Claude. Claude took decision 3 as recommended because the
 user left it open, and T.4 looks at it again. Decision 7 is open and is written out again under
@@ -396,7 +397,7 @@ without `toolchain = "kicad"` as it is: T.1 changes nothing until `--rest` is gi
 
 | Step | What | Size | Needs | Waits for | State |
 | --- | --- | --- | --- | --- | --- |
-| T.1 | `pcb place --rest`: edakit places every part without a row, deterministically, for both tool chains | M–L | – | – | being built |
+| T.1 | `pcb place --rest`: edakit places every part without a row, deterministically, for both tool chains | M–L | – | – | built (b66c249); a real board is open |
 | T.2 | `edakit/toolchain/`: dispatch at the commands, EasyEDA behind it where it is; every test passes as before and offline runs stay byte-identical | M | – | – | built (b2852f2, 6222f1f) |
 | T.3 | `[project] toolchain`, the KiCad folder `<artifacts>/kicad/<board>/`, config checks, `doctor` per tool chain | S | – | T.2 | built (b2852f2, de2e95d) |
 | T.4 | `kicad/sexp.py`, `kicad/library.py`: footprints and symbols from the parts database; both footprint sources side by side for the fixture's parts (decision 3) | M | – | – | built (b2852f2, ca16159); the side-by-side waits for KiCad's library |
@@ -411,6 +412,29 @@ without `toolchain = "kicad"` as it is: T.1 changes nothing until `--rest` is gi
 
 T.1, T.2, T.4 and T.6 have no predecessor and can run in parallel. `pcb autolayout` goes after T.1 has placed a real
 board that routed and passed the gate.
+
+## Live test
+
+The steps for the first session with a real KiCad 10 and EasyEDA, after CI has run them on the led-bar example with
+test footprints (handbook 16.8). Each on a scratch copy; the bell's repository does not change.
+
+1. **Setup.** KiCad 10 from KiCad's PPA (handbook 16.2); in a KiCad project `edakit doctor 2>&1 | cat` shows
+   "KiCad 10.0.x (kicad-cli: …)" and no bridge lines.
+2. **The example as a KiCad project.** A copy of `tests/fixtures/led-bar` with `toolchain = "kicad"` in `[project]` and
+   without `template`, `schematic`, `pcb` in `[boards.main]`. `edakit schematic create`: "schematic = graph: yes"; open
+   `build/edakit/kicad/main/main.kicad_sch` in KiCad and look at it – symbols, labels, notes, readability.
+3. **The PCB.** `edakit pcb apply`: every footprint read from the LCSC library at first (network), no pad off the plan;
+   open `main.kicad_pcb` – the footprints' silkscreen and polarity marks as EasyEDA shows them, the parts on their rows.
+   `edakit pcb dump`, `edakit check`: P-10 where an entry has footprint data.
+4. **Routing.** `edakit route all 2>&1 | cat`: Freerouting, tracks and vias into the file, zones filled, KiCad's DRC
+   0. `edakit silk apply`: designators placed, the pictures `silk_main_*.png`.
+5. **Gate.** `edakit gate --eda 2>&1 | cat`: every row of L and F runs (not released: the sign-offs are the example's).
+   Look at L-2, L-8, L-15, L-17, F-1, F-3, F-5 and the polarity sheet; `edakit export`: `kicad_main.zip`.
+6. **Comparison run (T.11).** The same copy without `toolchain` through EasyEDA (`gate --easyeda`), then
+   `edakit fab diff RUN_A RUN_B`: differences in the pours' fill and the fonts only, each written down here.
+7. **Placer (T.1).** On copies with rows taken out of `[place]`: `edakit pcb place --rest --write`, then `pcb plan` –
+   once on the EasyEDA copy (and `route all` there), once on the KiCad copy.
+8. **The bell**, a scratch copy of its main board, steps 2 to 6.
 
 ## Decisions
 
