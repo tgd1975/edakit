@@ -398,6 +398,9 @@ find them, silent passes, overlapping messages, and files read whole. The guardr
 edakit is open source: its rules are meant for the boards of everybody who uses it, not only for the owner's. A
 guardrail therefore never waits for one of the owner's projects; it keeps a growing catalog trustworthy.
 
+How the catalog itself is restructured so that it scales – engines, data, domain profiles, engine-level tests – is
+the concept [rules-at-scale.md](rules-at-scale.md); the guardrails below are its ground rules.
+
 Decided by the owner:
 
 1. **Domains (FT-20).** A project states its domains – audio, motors, radio, mains, guitar; domain checks, hints and
