@@ -98,11 +98,15 @@ change. Nothing Claude reads counts until edakit has checked it.
 
 ```text
  edakit jlc prepare ──► order_job.json ──► skill jlc-order (Claude in Chrome) ──► quote.json + page text
- (verify, form, files)    (one board)       upload, fill, read back, quote,          │
-                                            Save to Cart after a passed check        ▼
-                                                                          edakit jlc check  (form = job,
- owner: M-2, pay ──► skill jlc-order: order page ──► actual.json + page text ──► edakit jlc actual   quote vs cost)
-                                                                                 (actual vs quote vs cost, fee table)
+ (verify, M-6, form)      (one board)       upload, fill, read back, quote           │
+                                                                                     ▼
+                                                     edakit jlc check (J-1 to J-6: form = job, BOM, quote, files)
+                                                                                     ▼
+                                                     agent regulatory-reviewer on the order ──► jlc/regulatory.md
+                                                                                     ▼
+                                                     J-7, then Save to Cart – nothing further
+ owner: M-2, order, pay ──► skill jlc-order: order page ──► actual.json + page text ──► edakit jlc actual
+                                                                       (actual vs quote vs cost, fee table)
 ```
 
 All files of an order live next to the upload files of the released run, `<run>/fab/<board>/jlc/`, so a quote and
@@ -133,10 +137,13 @@ and leaves none at a default it was not given.
 
 1. Takes the current release (`edakit release current`); a board not in it, or no release, stops.
 2. `release verify` on the three upload files of the board (the same function); a mismatch stops.
-3. Writes `jlc/order_job.json`: run, fab hash, board, the absolute paths of `gerber_<b>.zip`, `bom_<b>.csv`,
+3. M-6 is signed for the circuit hash of that run – the release gate demands it, `prepare` checks it once more, since
+   the order is placed against the run and not against the working tree; otherwise it stops.
+4. Writes `jlc/order_job.json`: run, fab hash, circuit hash, `purpose` of the graph, board, the absolute paths of `gerber_<b>.zip`, `bom_<b>.csv`,
    `cpl_<b>.csv`, the fields of 1., the expected BOM (LCSC number → designators, from `bom_<b>.csv`), the estimate of
-   `edakit cost` for the board (total and lines), and the SHA-256 of each upload file.
-4. Prints the job as the skill reads it.
+   `edakit cost` for the board (total and lines), the `compliance` of each BOM part from its parts entry, and the
+   SHA-256 of each upload file.
+5. Prints the job as the skill reads it.
 
 ### 3. Skill `jlc-order`
 
@@ -151,10 +158,12 @@ owner. It reads `order_job.json` and nothing else of the project.
 5. **Quote.** Read every price line JLCPCB shows (PCB, each assembly fee, parts, shipping, total, currency) and the
    lead time.
 6. **Check.** Write `jlc/quote.json` (fields as read, BOM as read, price lines) and `jlc/quote_page.txt` (the page
-   text of the form, the BOM tool and the quote, as read). Run `edakit jlc check`.
-7. **Cart.** Only when the check passed: press "Save to Cart", read the cart line back (board, quantity, price) into
-   `quote.json`, and stop. With a failed check: stop on the form, nothing in the cart. Tell the owner the result and
-   that M-2 in the assembly preview, ordering and paying are theirs.
+   text of the form, the BOM tool and the quote, as read). Run `edakit jlc check`. A failed J-1 to J-6 stops here.
+7. **Regulatory review.** Start the agent regulatory-reviewer on the order (5.) and write its result, unchanged, to
+   `jlc/regulatory.md`. Run `edakit jlc check` again for J-7.
+8. **Cart.** Only when J-1 to J-7 passed: press "Save to Cart", read the cart line back (board, quantity, price) into
+   `quote.json`, and stop. Otherwise stop on the form, nothing in the cart, and name the findings. Tell the owner the
+   result and that M-2 in the assembly preview, ordering and paying are theirs.
 
 **Never** (user's decision 2026-10-30): the skill does not press "Order", "Buy", "Checkout", "Pay", "Submit order" or
 any button that places or pays an order, does not enter or confirm an address, a payment method or a coupon, and does
@@ -177,11 +186,42 @@ What Claude brought is checked against the job and against the page text:
 - **J-4 read, not made up:** every value of `quote.json` occurs in `quote_page.txt`. It does not prove the page, but a
   value Claude did not read from it fails.
 - **J-5 same files:** the SHA-256 of the upload files is still that of the job and of the manifest.
+- **J-6 order and purpose:** what a program can decide of 5. – a finish with lead (`HASL(with lead)` as the form
+  reads back) fails for `gift` and `sale` and warns for `private`; a part in the BOM tool without `compliance.rohs`
+  in its parts entry fails for `sale` and warns otherwise; the PCBA quantity is `[project] quantity`.
+- **J-7 regulatory review of this order:** `jlc/regulatory.md` exists, names the SHA-256 of `order_job.json` and
+  `quote.json` as they are now, and ends with "Order: OK"; a finding **block** fails, an **important** one fails
+  until the owner has accepted it as a numbered decision in the decision log (as for M-6, handbook 15.4).
 
 The result goes to `jlc/check.md`, and the PCB line of the quote becomes `[cost] pcb_price` for this fab hash
 (`edakit cost` takes it as long as the hash is the same).
 
-### 5. Real cost: `edakit jlc actual`
+### 5. The regulatory review of the order
+
+M-6 reviews the circuit: graph with its purpose, parts database, requirements (scope `circuit`, handbook 15.4). The
+order adds what M-6 never saw, and what may change between the release and the cart:
+
+| What | Why it matters | Where it comes from |
+| --- | --- | --- |
+| the parts JLCPCB actually places – a line matched to another number, a part it replaces or sources elsewhere | another part, another RoHS status and SVHC statement (REACH Art. 33 for `gift` and `sale`) | BOM tool, `quote.json` |
+| the surface finish and the other settings of `[order]` | they are in the layout and fab hash, not in the circuit hash; lead HASL is lead in the product (RoHS; lead is an SVHC) | form as read back |
+| the quantity against `purpose` | 50 boards for `private` asks whether the purpose is still true – a new purpose is a new M-6 | job, cart |
+| the import | for `sale`, ordering from China makes the owner the manufacturer or importer of the boards – name and address on the product, the technical file, registrations before the first sale (handbook 15.2) | `purpose`, shipping country |
+| items in the order that bring duties of their own – a cell, a power supply in the BOM | batteries regulation, the supply's own conformity, transport of lithium cells | BOM tool |
+| the order's own declarations, if JLCPCB's form asks for any (customs description and value) | what the shipment is declared as; not checked whether the form asks (step 0) | form as read |
+
+The agent regulatory-reviewer gets a section "At the order": it reads `order_job.json`, `quote.json`,
+`quote_page.txt`, `jlc/check.md` and the M-6 result for the run's circuit hash, and looks only at the difference –
+what the order adds or changes against what M-6 signed. It changes no file, as for M-6; its result, which the skill
+writes to `jlc/regulatory.md`, has numbered findings graded as for M-6 (block, important, note, each with rule and
+source), the SHA-256 of the job and the quote it reviewed, and the last line "Order: OK" or "Order: not OK". A
+difference that changes the circuit – another part, another purpose – is not settled at the order: it is a finding
+**block** ("new M-6 needed"), and the order waits for a new release.
+
+It is no sign-off in `signoff.json` – the release and its hashes stay as they are – but J-7 makes the cart wait for
+it, and a new quote (another price, another BOM match) needs a new review, because its hash changes.
+
+### 6. Real cost: `edakit jlc actual`
 
 After the owner has paid, the skill opens the order in the order history and writes `jlc/actual.json` and
 `jlc/actual_page.txt` as in 3.5–3.6, plus the order number. Alternatively the owner saves the order page or the
@@ -191,7 +231,7 @@ invoice (HTML or PDF) and passes it with `--from FILE`; then Claude reads that f
 order's date. The proposal is reviewed and committed like any other change of the table. The gate protocol of the run
 lists the three totals once `actual.json` exists.
 
-### 6. Configuration
+### 7. Configuration
 
 ```toml
 [jlc]
@@ -203,7 +243,7 @@ tolerance = 0.10       # $ per price line before J-3 warns
 No credentials anywhere: the owner is logged in in their browser, edakit never sees the account. `quote.json` and
 `actual.json` hold prices and the order number, no address.
 
-### 7. The official API later
+### 8. The official API later
 
 If JLCPCB grants API access, `edakit jlc quote --api` uploads the Gerber (`pcb/uploadGerber`), runs its pre-review
 (`pcb/audit/get`) and prices the PCB (`pcb/calculate`) without a browser, and `edakit stock` reads all parts in one
@@ -211,8 +251,10 @@ call (`component/getComponentDetailByCode`). The assembly still goes through the
 `JLCPCB_ACCESS_KEY`, `JLCPCB_SECRET_KEY` or the keyring. The user asks JLCPCB for API access and for an assembly
 interface for partners in parallel.
 
-### 8. What stays
+### 9. What stays
 
+- **The regulatory review sees every order.** No cart without J-7 on the current job and quote; M-6 is not replaced
+  by it, only completed for what the order adds.
 - **Ordering and paying are the owner's, and so is M-2.** The skill ends with "Save to Cart"; no command, skill or
   API path places or pays an order – `pcb/create` is never called.
 - **No key, no change.** Without `[jlc]` and without an `order_job.json`, nothing runs; the gate result, the hashes and
@@ -230,9 +272,10 @@ interface for partners in parallel.
 | 0 | Probe in the owner's browser, nothing ordered: can Claude in Chrome put a local file into the upload fields (Gerber, BOM, CPL)? Do the form's fields read back as text? Record the page texts of one quote and one past order as test data. Read JLCPCB's terms on automated use | owner's Chrome with Claude in Chrome |
 | 1 | `order_sheet.form`: the form as fields, `order.md` printed from it – no change of output | – |
 | 2 | `edakit jlc actual --from FILE` on a saved order page or invoice; three columns; fee table proposal | step 1, a saved page from step 0 |
-| 3 | `edakit jlc prepare` and `edakit jlc check` (J-1 to J-5) on recorded data | step 1 |
-| 4 | Skill `jlc-order`, live up to the cart | steps 0, 3 |
-| 5 | Official API (7.), if granted | JLCPCB |
+| 3 | `edakit jlc prepare` and `edakit jlc check` (J-1 to J-7) on recorded data | step 1 |
+| 3b | Agent regulatory-reviewer: section "At the order", `jlc/regulatory.md`; tried on recorded data with a replaced part and lead HASL | step 3 |
+| 4 | Skill `jlc-order`, live up to the cart | steps 0, 3, 3b |
+| 5 | Official API (8.), if granted | JLCPCB |
 
 If step 0 shows that the extension cannot upload a local file, the owner drops the three files into the upload fields
 when the skill asks for them, and the skill carries on from there; everything else stays.
@@ -240,7 +283,7 @@ when the skill asks for them, and the skill carries on from there; everything el
 ## Open decisions
 
 1. **Terms of use:** read in step 0. If JLCPCB forbids automated use of the shop, the skill only reads (fields,
-   BOM tool, quote) after the owner has filled the form, and J-1 to J-5 still check it.
+   BOM tool, quote) after the owner has filled the form, and J-1 to J-7 still check it.
 2. **Fee table:** real cost as a proposal to review (as above), or committed automatically from the owner's own
    orders?
 
