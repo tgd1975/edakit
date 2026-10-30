@@ -48,7 +48,9 @@ THICKNESS_MM = 1.6               # board thickness: the order (F-6) and the lead
 
 PROJECT_KEYS = ("name", "company", "quantity", "distributors", "lock", "agreements", "graph", "parts", "sim",
                 "sim_plugin", "schematic", "signoff", "artifacts", "reports", "datasheets", "stock", "stock_margin_pct",
-                "stock_max_age_days", "spare_pct", "requirements")
+                "stock_max_age_days", "spare_pct", "requirements", "toolchain")
+TOOLCHAINS = ("easyeda", "kicad")   # [project] toolchain: the EDA tool the boards are drawn in (handbook 16)
+EASYEDA_BOARD_KEYS = ("template", "schematic", "pcb")   # [boards.<name>]: names of EasyEDA documents
 BOARD_KEYS = ("title", "template", "schematic", "pcb", "file", "bought")  # [boards.<name>] in edakit.toml
 BOARD_FILE_KEYS = ("revision", "view", "outline", "holes", "tooling", "place", "near", "near_mm", "edge_mm", "edge_ok",
                    "on_headers", "header_keep_mm", "silk_overlap_mm", "park", "routing", "pours", "pour_regions",
@@ -199,6 +201,7 @@ class Config:
     agents: dict = field(default_factory=dict)    # [agents.<name>] as written: name -> entry (edakit/scripts.py)
     docs: list = field(default_factory=list)   # [docs] files: Markdown files whose value blocks edakit docs reads
     docs_decimal: str = "."                    # [docs] decimal: "." or "," in quoted numbers
+    toolchain: str = "easyeda"                 # [project] toolchain: "easyeda" or "kicad" (edakit/toolchain)
 
     def pcba(self):
         """(class, why) of the assembly order: [release] assembly.pcba, or derived from assembly.sides – one side
@@ -238,6 +241,10 @@ class Config:
         """A path for messages: relative to the project when it lies inside."""
         p = Path(p)
         return str(p.relative_to(self.root)) if p.is_relative_to(self.root) else str(p)
+
+    def kicad_dir(self, board) -> Path:
+        """The KiCad project of a board (toolchain = "kicad"): generated, not versioned, like the EasyEDA project."""
+        return self.artifacts / "kicad" / board.name
 
     def artifact(self, *parts) -> Path:
         out = self.artifacts.joinpath(*parts)
@@ -569,6 +576,8 @@ def _number(where, v, integer=False, positive=False):
 
 def _project_values(p):
     out = []
+    if p.get("toolchain", "easyeda") not in TOOLCHAINS:
+        out.append(f"[project] toolchain must be one of {', '.join(TOOLCHAINS)}, not {p['toolchain']!r}")
     for key in ("stock_margin_pct", "spare_pct"):
         if key in p:
             out += _number(f"[project] {key}", p[key])
@@ -758,6 +767,10 @@ def load(path=None) -> Config:
     files = {}
     for name, entry in raw.get("boards", {}).items():
         problems += _unknown(f"[boards.{name}]", entry, BOARD_KEYS, BOARD_FILE_KEYS)
+        if p.get("toolchain") == "kicad":     # KiCad: one project per board, written by edakit – no documents to name
+            problems += [f"[boards.{name}] {k}: the name of an EasyEDA document – with toolchain = \"kicad\" the "
+                         f"board is the KiCad project <artifacts>/kicad/{name}/ (handbook 16)"
+                         for k in EASYEDA_BOARD_KEYS if k in entry]
         file = entry.get("file", f"hardware/boards/{name}.toml")
         bought = entry.get("bought", False)
         if not isinstance(bought, bool):
@@ -822,4 +835,5 @@ def load(path=None) -> Config:
         agents=agents,
         docs=list(doc_files),
         docs_decimal=raw.get("docs", {}).get("decimal", "."),
+        toolchain=p.get("toolchain", "easyeda"),
     )
