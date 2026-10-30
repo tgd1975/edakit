@@ -117,6 +117,22 @@ the makers' pages). Parts the owner supplies from outside the EU are imported by
   export holds the component layers (`comp_+_top`, packages, pins, part numbers) the documentation does not say –
   step 0b. AISLER has a guide "Export ODB++ from EasyEDA", which points to yes.
 
+### Terms of use (state 2026-10-30)
+
+Searched, not read: the documents were not reachable from the session (network policy), so what follows are search
+snippets; step 0 reads the documents themselves. Not legal advice.
+
+| Maker | Documents | On automated use | Assessment |
+| --- | --- | --- | --- |
+| JLCPCB | Terms & Conditions https://jlcpcb.com/help/article/terms-&-conditions (JiaLiChuang (HongKong) Co., Limited), API notice; parts sales contract under Hong Kong law | no clause found; the sister company EasyEDA forbids "any robot, spider, scraper, crawler, script or other automated means" unless authorised in writing (second-hand, an issue of rjwalters/kicad-tools); automation is meant to go through the gated API | not settled; the highest risk of the three |
+| Eurocircuits | Terms of Use https://www.eurocircuits.com/termofuse/, Terms of Sales (revision 2025-12-01), Belgian law likely | the tools "are free to use by anyone who wants to use them in a fair way"; to avoid unfair use it may "limit the number of calculations that can be added to the shopping basket" | not addressed; fair use for ordering, which an order of one's own design is |
+| AISLER | Terms and Conditions https://aisler.net/en-US/terms, Dutch law | none found in the shop terms; the forum's terms (Discourse template) forbid "a web crawler, browser add-on, or other program that is not a web browser" – for the forum only | not addressed for the shop |
+
+What speaks for the use: the owner's own account and own designs, one order at a time at a human pace, no catalogue
+data collected, nothing ordered or paid. What speaks against it: a literal "any automated means" clause would still
+cover a browser extension. If step 0 finds such a clause, open decision 1 applies – the skill only reads after the
+owner has filled the form – or the maker is asked for written consent.
+
 ## What follows
 
 The official API covers the PCB but not the assembly, and the shop has no interface for BOM, CPL, the assembly form or
@@ -387,8 +403,9 @@ EasyEDA Pro project, `kicad-cli pcb export odb`, F-8 on its result) or none – 
 
 ## Open decisions
 
-1. **Terms of use:** read in step 0, per maker. Where a maker forbids automated use of its shop, the skill only reads
-   (fields, matching, quote) after the owner has filled the form, and K-1 to K-7 still check it.
+1. **Terms of use:** searched (above), read in step 0, per maker. Where a maker forbids automated use of its shop,
+   the skill only reads (fields, matching, quote) after the owner has filled the form, and K-1 to K-7 still check it –
+   or the owner asks the maker for written consent (JLCPCB first).
 2. **Fee tables:** real cost as a proposal to review (as above), or committed automatically from the owner's own
    orders?
 3. **Default maker** in new projects (`edakit new`): JLCPCB as today, or a maker in the EU?
