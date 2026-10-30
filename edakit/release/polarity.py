@@ -1,4 +1,4 @@
-"""Polarity sheet per board (P-2, M-2): every polarised part drawn from the exported Gerber data, with pad number,
+"""Polarity sheet per board (FILES.sheet, M-2): every polarised part drawn from the exported Gerber data, with pad number,
 pin role from the parts database and net from the graph.
 
 Meant for the comparison with the datasheet drawing (link in the parts entry) and with JLCPCB's assembly preview.

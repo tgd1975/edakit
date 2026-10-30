@@ -13,8 +13,8 @@ BANDS = table("radio_eu")
 EIRP_BANDS = tuple((b["from_mhz"], b["to_mhz"], b["limit_mw"]) for b in BANDS["eirp"])
 # EU licence-exempt bands: the short range devices (limits in e.r.p.) and the bands of EIRP_BANDS
 EU_BANDS = tuple((b["from_mhz"], b["to_mhz"]) for b in BANDS["band"]) + tuple((lo, hi) for lo, hi, _ in EIRP_BANDS)
-RADIO_TYPES = ("module", "microcontroller")   # graph types whose parts entry states its radio, "none" too (P-11)
-RADIO_KEYS = {"max_dbm": "max_dbm (the conducted power at the RF port)",       # what G-24 asks for when it is missing
+RADIO_TYPES = ("module", "microcontroller")   # graph types whose parts entry states its radio, "none" too (PARTS.fact)
+RADIO_KEYS = {"max_dbm": "max_dbm (the conducted power at the RF port)",       # what LIM.eirp asks for when it is missing
               "antenna_dbi": "antenna_dbi (the gain of its antenna, from the module's datasheet or a certificate)",
               "eirp_dbm": "eirp_dbm (the e.i.r.p. a certificate states)"}
 

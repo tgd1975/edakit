@@ -203,8 +203,8 @@ def test_edakit_check_reports_the_agents(project, capsys):
     with_agents(project, own(file=".claude/agents/fehlt.md"))
     assert checks.main(project.config(), argparse.Namespace(release=False, json=None)) == 1
     out = capsys.readouterr().out
-    assert "ERROR   agents  optik: file .claude/agents/fehlt.md does not exist" in out
-    assert "Project agents:" in out and "handbook 8.6" in out
+    assert "SYNC.agents – project agents complete: 1 error\n  G  optik: file .claude/agents/fehlt.md does not exist" in out
+    assert "  SYNC.agents: Correct the entry in edakit.toml or add the agent file (handbook 8.6)." in out
 
 
 def test_edakit_check_without_findings(project, capsys):
@@ -216,9 +216,9 @@ def test_edakit_check_without_findings(project, capsys):
 def test_stage_g_fails_on_the_agents_findings_and_passes_the_rest(project):
     cfg = with_agents(project, PYTREE)
     assert [(r["stage"], r["id"], r["result"], r["check"]) for r in scripts.agent_rows(cfg)] == [
-        ("G", "agents", "pass", "elektrotechniker: signs M-1 in place of electrical-reviewer – Checks circuit and "
+        ("G", "SYNC.agents", "pass", "elektrotechniker: signs M-1 in place of electrical-reviewer – Checks circuit and "
                                 "hand-over with the project's knowledge: graph, parts, simulation, datasheets"),
-        ("G", "agents", "pass", "pcb-pruefer: signs M-5 in place of pcb-reviewer – Checks the tree board for "
+        ("G", "SYNC.agents", "pass", "pcb-pruefer: signs M-5 in place of pcb-reviewer – Checks the tree board for "
                                 "manufacturability, mechanics, operation and looks")]
     (project.root / ".claude" / "agents" / "pcb-pruefer.md").unlink()
     rows = scripts.agent_rows(project.config())
@@ -353,13 +353,13 @@ def test_the_gate_lists_who_signs_and_the_acceptance_agent(project, monkeypatch)
     assert "M-1, M-6, M-5, M-7 (section 6)" in reasons and "M-8" not in reasons
     one = tg.section(text, 1)
     assert "| G Graph |" in one
-    assert "| G | agents |" not in tg.section(text, 2)                                # the entries resolve
+    assert "| G | SYNC.agents" not in tg.section(text, 2)                                # the entries resolve
 
 
 def test_the_gate_fails_on_the_agents_findings(project, monkeypatch):
     with_agents(project, own(signs="M-5", scope=None))
     text = tg.gate_run(project, monkeypatch)
-    assert ('| G | agents |  |  | optik: signs M-5, edakit\'s layout review – only with replaces = "pcb-reviewer"'
+    assert ('| G | SYNC.agents (project agents complete) |  |  | optik: signs M-5, edakit\'s layout review – only with replaces = "pcb-reviewer"'
             in tg.section(text, 2))
     assert "check(s) failed (section 2)" in tg.decision(text)
 
@@ -408,7 +408,7 @@ def test_edakit_scripts_without_agents_as_before(project, monkeypatch, capsys):
 
 # --- what a requirement may name ---------------------------------------------------------------------------------------
 def test_a_requirement_may_name_an_agents_sign_off(project):
-    """G-20: signoff = "M-7" resolves once an agent signs M-7, before the sign-off file lists it."""
+    """DOCS.ref: signoff = "M-7" resolves once an agent signs M-7, before the sign-off file lists it."""
     with_agents(project, own())
     assert "M-7" in requirements.manual_checks(project.config())[0]
 

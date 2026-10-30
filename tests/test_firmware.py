@@ -41,10 +41,10 @@ def test_contract_of_the_example(project):
     c = contract(project)
     pins = c["pins"]
     assert c["mcu"] == "U1" and c["graph_version"] == "1.0" and len(c["state_sha256"]) == 64
-    assert {pins["LED_SDI"]["gpio"], pins["LED_CLK"]["gpio"]} == {2, 3}   # G-15 (#43) swaps the two in the example
+    assert {pins["LED_SDI"]["gpio"], pins["LED_CLK"]["gpio"]} == {2, 3}   # REQ.function (#43) swaps the two in the example
     assert pins["LED_LE"] == {"pin": "U1.6", "name": "GP4", "gpio": 4, "dir": "out", "pull": None, "idle": None,
                               "active": None}
-    oe = {k: v for k, v in pins["LED_OE"].items() if k not in ("fn", "fn_bus", "pwm_hz")}   # G-15 (#43) adds fn
+    oe = {k: v for k, v in pins["LED_OE"].items() if k not in ("fn", "fn_bus", "pwm_hz")}   # REQ.function (#43) adds fn
     assert oe == {"pin": "U1.7", "name": "GP5", "gpio": 5, "dir": "out",
                   "pull": {"dir": "up", "by": ["R2"], "ohm": 10000.0}, "idle": 1, "active": 0}
     assert pins["BTN"] == {"pin": "U1.9", "name": "GP6", "gpio": 6, "dir": "in",
@@ -86,7 +86,7 @@ def test_roles_not_names(project):
 
 
 def test_leds_behind_bridges_and_balancing_resistors(project):
-    """Traced as E-3/E-4 trace them: D2 behind a 0 Ω bridge, D3 and a second LED behind balancing resistors."""
+    """Traced as SIM.state/SIM.driver trace them: D2 behind a 0 Ω bridge, D3 and a second LED behind balancing resistors."""
     with_firmware(project)
     project.use_library_part("C17513")    # 1 kΩ as balancing resistor
     zero = project.part("C17414") | {"lcsc": "C99000", "values": {"value_ohm": 0}}
@@ -184,4 +184,4 @@ def test_cli_writes_and_check_finds_drift(project, monkeypatch, capsys):
 def test_opt_in(project, monkeypatch, capsys):
     monkeypatch.chdir(project.root)
     assert cli.main(["firmware"]) == 1 and "no [firmware] table" in capsys.readouterr().err
-    assert cli.main(["check"]) == 0          # G-2 with pin_locks as before
+    assert cli.main(["check"]) == 0          # STRUCT.lock with pin_locks as before

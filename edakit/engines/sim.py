@@ -91,9 +91,24 @@ class Scene:
                 rows.append({"id": code, "scenario": self.name, "item": q.place, "check": q.how,
                              "actual": fmt(value, q.unit), "expected": "information", "result": "info"})
             for lim in lims:
-                for ok, what, allowed, value, bound in compare(q, lim):
-                    rows.append({"id": code, "scenario": self.name, "item": q.place, "check": q.how,
-                                 "actual": fmt(value, q.unit), "expected": allowed, "result": "pass" if ok else "fail"})
+                sides = compare(q, lim)
+                if len(sides) == 2:      # a range: one row and at most one finding, as the protocol always had it
+                    lo, hi = q.lo, q.hi
+                    actual = getattr(q, "actual", None) or (fmt(hi, q.unit) if lo == hi else
+                                                            f"{lo:.4g} … {hi:.4g} {q.unit}")
+                    expected = f"{lim.min:g} … {lim.max:g} {q.unit}"
+                    ok = all(ok for ok, *_ in sides)
+                    rows.append({"id": code, "scenario": self.name, "item": q.place, "check": q.how, "actual": actual,
+                                 "expected": expected, "result": "pass" if ok else "fail"})
+                    if not ok:
+                        found.append(Finding(code, "E", q.place, f"{q.how}: {actual}, expected {expected}", lim.source,
+                                             scenario=self.name, on=q.on, data={"value": [lo, hi], "unit": q.unit}))
+                    continue
+                for ok, what, allowed, value, bound in sides:
+                    if len(sides) == 1:
+                        rows.append({"id": code, "scenario": self.name, "item": q.place, "check": q.how,
+                                     "actual": fmt(value, q.unit), "expected": allowed,
+                                     "result": "pass" if ok else "fail"})
                     if not ok:
                         found.append(Finding(code, "E", q.place, f"{what}, allowed {allowed}", lim.source,
                                              scenario=self.name, on=q.on,
@@ -406,10 +421,15 @@ def function(s, load, low=None, plugin=None):
     for name, net in d.nets.items():
         g = v(res, netlist.node(netlist.local_ground(d, name), gnd))
         lo, hi = net.get("v", [0, 0])
-        xs = [v(res, x) - g for x in netlist.net_nodes(d, name)]
-        s.q(name, "v_net", max(xs), "V", "", None, "net voltage inside the declared range", lo=min(xs),
+        nodes = netlist.net_nodes(d, name)
+        xs = [(v(res, x) - g, x) for x in nodes]
+        s.q(name, "v_net", max(xs)[0], "V", "", None, "net voltage inside the declared range", lo=min(xs)[0],
             code="LIM.declared", entry=False, lims=[Limit(max=hi, min=lo, eps=tol, source=f"v of net {name} in the "
                                                                                           "graph")])
+        if len(nodes) > 1:      # the routed copper: the pins of the lowest and the highest voltage
+            pin_at = {netlist.pin_node(d, ref): ref for ref in reversed(net["pins"])}
+            (x_lo, n_lo), (x_hi, n_hi) = min(xs), max(xs)
+            s.qs[-1].actual = f"{x_lo:.4g} V ({pin_at[n_lo]}) … {x_hi:.4g} V ({pin_at[n_hi]})"
     if plugin and hasattr(plugin, "checks"):
         plugin.checks(design=d, cfg=s.sim, res=res, meta=meta, load=load, add=s.plugin_add)
 

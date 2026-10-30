@@ -30,3 +30,10 @@ class Checked:
 def check(design, cfg=None):
     """What edakit check finds: the graph engines, and with a project the checks beyond the graph."""
     return Checked(engines.run_all(design, cfg) if cfg is not None else engines.run(design))
+
+
+def executed(cfg):
+    """The codes of stages P and G the gate counts as passed when they have no finding."""
+    from edakit.design import Design
+    from edakit.release import gate
+    return gate.executed(engines.profile(Design.from_config(cfg), cfg), cfg)

@@ -1,4 +1,4 @@
-"""P-8 (#80): formed leads fit only one way round. A through-hole part whose plated holes the board's footprint moves
+"""GEO.formed (#80): formed leads fit only one way round. A through-hole part whose plated holes the board's footprint moves
 away from its library footprint, with three or more of them, has a hole pattern that no turn by 90°, 180° or 270°
 lays onto itself with a pin in the hole of a pin on another net.
 
@@ -10,7 +10,7 @@ import json
 
 import pytest
 
-from helpers import check
+from helpers import check, executed
 
 from edakit import checks, part
 from edakit.design import Design
@@ -85,7 +85,7 @@ def test_round_1_fits_turned(project):
     assert p8(project)["errors"] == [
         "D10: its formed holes lie on each other turned by 180° – pin 1 (+5V) in the hole of pin 3 (STAR_G_K), "
         "pin 2 (STAR_R_K) in the hole of pin 4 (STAR_B_K)"]
-    assert "GEO.formed" in checks.EXECUTED
+    assert "GEO.formed" in executed(project.config())
 
 
 def test_round_2_fits_one_way_only(project):
@@ -103,7 +103,7 @@ def test_a_lead_off_by_a_push_still_goes_in(project, p4, found):
 
 
 def test_the_library_pattern_is_not_judged(project):
-    """One row is symmetric by nature – its orientation is the print's job (L-8, P-2, M-2), not this check's. A
+    """One row is symmetric by nature – its orientation is the print's job (GEO.mark, FILES.sheet, M-2), not this check's. A
     footprint drawn around another origin is still the library's pattern."""
     star(project)
     dump(project, {n: (x, 0) for n, x in ROW.items()})

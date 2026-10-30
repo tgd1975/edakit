@@ -62,7 +62,7 @@ class Recorder:
 
     def add(self, cls, code, msg, reason="", grade=None):
         m = PLACE.match(msg)
-        f = Finding(code, self.stage, m.group(1) if m else code, msg,
+        f = Finding(code, self.stage, m.group(1) if m else msg.split(":")[0].split()[0] if msg.strip() else code, msg,
                     grade=GRADES.get(code, {}).get(cls, "") if grade is None else grade, accepted=reason or "")
         f.data["class"] = cls
         if cls == "draft":

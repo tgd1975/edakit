@@ -26,7 +26,7 @@ def test_supply_inside_the_operating_range(project):
         ("LIM.range", "U2", RANGE, "3.3 V", "4.5 … 5.5 V")}
     assert len(bad) == 12                                         # in every scenario
     part["limits"]["vdd_op_min_v"] = 3.0
-    part["pins"]["16"]["v_op"] = [4.5, 5.5]                       # the pin's own range wins over the part's
+    part["pins"]["16"].update(v_op_min_v=4.5, v_op_max_v=5.5)    # the pin's own range wins over the part's
     project.save_part("C90107", part)
     assert {(c["item"], c["expected"]) for c in failing(simulate(project))} == {("U2", "4.5 … 5.5 V")}
 
@@ -227,7 +227,7 @@ def test_scenarios_for_every_combination_of_sources(project):
     out = simulate(project, sim)
     row = next(s for s in out["scenarios"] if s["name"] == "J1 5.25 + U1 4.75/all_on/vf-min")
     assert row["supply"] == "J1 5.25 + U1 4.75" and row["sources"]["U1"] == pytest.approx(-0.247, abs=0.01)
-    bad = failing(out)                                            # the back-feed into U1 – E-3 says so
+    bad = failing(out)                                            # the back-feed into U1 – SIM.state says so
     assert {(c["scenario"].split("/")[0], c["item"], c["check"]) for c in bad} == {
         ("J1 5.25 + U1 4.75", "U1", "current into the supply (fed backwards)")}
     sim.pop("combine_sources")

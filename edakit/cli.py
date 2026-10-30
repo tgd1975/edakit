@@ -12,11 +12,11 @@
     edakit part datasheet|own        own parts: a board of an edakit project as a part in another project
     edakit part footprint KEY [--write]   a library footprint as data in the parts entry (footprint_data) – offline
     edakit part build KEY [--write]  the project's copy in EasyEDA built from the entry's footprint data
-    edakit stock [--refresh]         what JLCPCB says about the assembled parts, as a dated snapshot (check P-4)
+    edakit stock [--refresh]         what JLCPCB says about the assembled parts, as a dated snapshot (check PARTS.stock)
     edakit cost [--json F]           the order for `quantity` boards from BOM, board and the dated fee table
-    edakit order [--out DIR]         the assembler's BOM, a cart per other supplier, the hand-assembly list (P-5)
+    edakit order [--out DIR]         the assembler's BOM, a cart per other supplier, the hand-assembly list (PARTS.supplier)
     edakit sim                       stage E: ngspice operating points of all scenarios (offline, seconds)
-    edakit docs [--write]            values quoted in documents and schematic notes: G-19 for stale ones, --write fills in
+    edakit docs [--write]            values quoted in documents and schematic notes: DOCS.quote for stale ones, --write fills in
     edakit firmware [--check]        the board's firmware contract as JSON from the graph; --check: drift (opt-in)
     edakit req [ID ...]              what the circuit must do: needs and requirements with status, binding, evidence;
                                      with an ID its chain – from where, the requirement, what verifies it (opt-in)
@@ -77,11 +77,11 @@ def build_parser():
     _common(p)
 
     p = sub.add_parser("rules", help="the engines and codes of the catalog")
-    p.add_argument("ids", nargs="*", help="codes (LIM.v); an old check ID (G-4) names the codes replacing it; default: "
+    p.add_argument("ids", nargs="*", help="codes (LIM.v); an old check ID (LVL.undefined) names the codes replacing it; default: "
                                           "the list")
 
     p = sub.add_parser("explain", help="rule, why, fix and sources of a code")
-    p.add_argument("ids", nargs="+", help="codes, e.g. LIM.v REQ.missing (an old ID such as G-8 names its codes)")
+    p.add_argument("ids", nargs="+", help="codes, e.g. LIM.v REQ.missing (an old ID such as LIM.v names its codes)")
 
     p = sub.add_parser("domains", help="the domains of the project: on, off, suggested; the reviewers' questions")
     p.add_argument("--review", choices=["electrical", "regulatory", "pcb"], help="the questions of the enabled domains "
@@ -126,7 +126,7 @@ def build_parser():
                                                         "rebuild the copy in EasyEDA (default: show only)")
     _common(p)
 
-    p = sub.add_parser("stock", help="ask JLCPCB about every assembled part and write the stock snapshot (P-4)")
+    p = sub.add_parser("stock", help="ask JLCPCB about every assembled part and write the stock snapshot (PARTS.stock)")
     p.add_argument("--board", help="only the parts of this board")
     p.add_argument("--refresh", action="store_true", help="ask about every part again, not only missing or old ones")
     p.add_argument("--lcsc", nargs="+", metavar="C", help="print what JLCPCB says about these parts, write nothing "
@@ -147,7 +147,7 @@ def build_parser():
     p.add_argument("--keep", help="keep netlists and ngspice output in this directory")
     _common(p)
 
-    p = sub.add_parser("docs", help="values quoted from the design data in documents and notes (G-19)")
+    p = sub.add_parser("docs", help="values quoted from the design data in documents and notes (DOCS.quote)")
     p.add_argument("--write", action="store_true", help="fill in the current values")
     _common(p)
 

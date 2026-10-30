@@ -117,19 +117,19 @@ def check_holes(d, rep, geometry):
                     "entry", grade="lead")
     if unknown:
         rep.notes.append(("GEO.hole", f"{', '.join(unknown)}: hole size unknown – edakit pcb dump (the geometry is older "
-                                 "than P-7)"))
+                                 "than GEO.hole)"))
     return seen
 
 
 def plated_holes(geo):
-    """[(number, x mm, y mm, pad)] of the plated through-hole pads of a footprint geometry (P-7 reads the same)."""
+    """[(number, x mm, y mm, pad)] of the plated through-hole pads of a footprint geometry (GEO.hole reads the same)."""
     from .part import pad_points
     return [pt for pt in pad_points(geo) if pt[3].get("tht") and pt[3].get("plated", True)]
 
 
 def on_library_pattern(holes, lib, pad_map):
     """GEO.formed: every hole lies within FORMED_MM of the library footprint's pad of its number (pad_map: intended swaps, as
-    L-10), the two laid on each other by the shift that fits the numbers best – a footprint drawn around another
+    SYNC.footprint), the two laid on each other by the shift that fits the numbers best – a footprint drawn around another
     origin keeps the library's pattern. -> True, False, or the numbers the library lacks."""
     import math
 
@@ -163,7 +163,7 @@ def check_formed(d, rep, cfg):
     90°, 180° or 270° lays its holes onto themselves with a pin in the hole of a pin on another net of the graph. The
     library footprint is the one of the dump's footprint name that `edakit part import` cached; without it, or when
     it lacks a pad number of the dump, a note. A part on its library pattern is not judged: its orientation is the
-    print's job (L-8, P-2, M-2)."""
+    print's job (GEO.mark, FILES.sheet, M-2)."""
     from . import part as parts
     dumped = board_dumps(d, cfg)
     for des in sorted(d.comps, key=natural_key):

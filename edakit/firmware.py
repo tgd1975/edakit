@@ -13,14 +13,14 @@ What the contract holds (handbook 3.5):
     mcu        the MCU it describes ([firmware] mcu, default the one part with GPIO pins)
     pins       {net: {pin, name, gpio, dir, pull, idle, active[, leds, fn, fn_bus, pwm_hz]}} – every connected pin of
                the MCU with the role gpio; gpio is the first group of [firmware] gpio over the pin's name
-    pwm        {net: pwm_hz or null} of the nets with fn "pwm" (graph, G-15)
+    pwm        {net: pwm_hz or null} of the nets with fn "pwm" (graph, REQ.function)
     inputs     buttons and switches on MCU pins with their active level; DIP switches bit by bit in the order of their
                roles a1 … aN / b1 … bN
-    buses      {fn_bus: {fn: net}} (graph, G-15), I2C lines by pin role sda/scl as "i2c"
+    buses      {fn_bus: {fn: net}} (graph, REQ.function), I2C lines by pin role sda/scl as "i2c"
     chains     from an MCU net through the roles sdi → sdo of shift registers and LED drivers: data net, parts in
                shift order, read-back net (the last sdo on an MCU pin), the MCU nets every part of it shares, and
                values.first_bit_to of its parts ("unknown" without it)
-    channels   driver outputs (roles out0 … outN) → the LEDs they light, traced as E-3/E-4 trace them (directly, behind
+    channels   driver outputs (roles out0 … outN) → the LEDs they light, traced as SIM.state/SIM.driver trace them (directly, behind
                0 Ω bridges, behind a balancing resistor); channel = the outputs of the drivers before it in its chain
                + its output number
 
@@ -259,7 +259,7 @@ def chains(board, pins):
 
 
 def channels(board, chain_list):
-    """Driver output → LEDs, as E-3/E-4 trace them."""
+    """Driver output → LEDs, as SIM.state/SIM.driver trace them."""
     d = board.d
     drivers = [x for x in d.comps if role_pins(d, x, out_role)]
     chained = {p: (i, pos) for i, ch in enumerate(chain_list) for pos, p in enumerate(ch["parts"])}

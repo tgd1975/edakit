@@ -6,6 +6,7 @@ import shutil
 import pytest
 
 from edakit.design import Design
+from edakit.engines import sim as esim
 from edakit.sim import run as simrun
 
 pytestmark = pytest.mark.skipif(not shutil.which("ngspice"), reason="ngspice not installed")
@@ -154,7 +155,7 @@ def test_gpio_current_per_pin_and_in_total(project):
     part["limits"].update(gpio_i_max_a=0.5, gpio_i_total_max_a=1.0)
     project.save_part("C41407547", part)
     gpio = lambda out: [c for c in out["checks"] if c["check"].startswith("GPIO")]  # noqa: E731
-    out = simulate(project, sim)                                  # (the 50-mA button itself fails E-2 here)
+    out = simulate(project, sim)                                  # (the 50-mA button itself fails LIM.* here)
     assert any(c["item"] == "U1 BTN" for c in gpio(out)) and not failing({"checks": gpio(out)})
     part["limits"].update(gpio_i_max_a=0.012, gpio_i_total_max_a=0.05)   # RP2040-like: 12 mA per pin, 50 mA in all
     project.save_part("C41407547", part)
@@ -255,14 +256,14 @@ def test_rgb_led_with_a_common_anode(project):
         on = [c for c in mine if c["check"] == f"LED current ({net})"]
         assert len(on) == 6 and all(float(c["actual"].split()[0]) == pytest.approx(0.00945, rel=0.02) for c in on)
         assert len([c for c in mine if c["check"] == "LED dark"]) == 6          # idle: 3 supplies x 2 corners
-        assert len([c for c in mine if c["id"] == "E-2"]) == 24                 # forward current, reverse voltage
+        assert len([c for c in mine if c["id"] in ("LIM.i", "LIM.v")]) == 24    # forward current, reverse voltage
     j1 = next(s for s in out["scenarios"] if s["name"] == "usb-min/all_on/vf-max")["sources"]["J1"]
     assert j1 == pytest.approx(0.114, abs=0.002)
 
 
 def test_rgb_led_with_a_common_anode_by_leds_on(project):
     rgb_led(project)                                              # each cathode through 1 kΩ to GND, no driver output:
-    project.use_library_part("C17513")                            # E-3 goes by the load's leds_on
+    project.use_library_part("C17513")                            # SIM.state goes by the load's leds_on
     g = project.graph()
     for pin, net, des in (("2", "LED5", "R10"), ("3", "LED6", "R11"), ("4", "LED7", "R12")):
         project.net(g, net)["pins"].remove(f"D10.{pin}")
@@ -276,7 +277,7 @@ def test_rgb_led_with_a_common_anode_by_leds_on(project):
     sim["loads"]["all_on"]["leds_on"] = ["D10_RED"]               # one colour – green and blue light all the same
     out = simulate(project, sim)
     led = {(c["scenario"].split("/")[1], c["item"], c["check"], c["result"]) for c in out["checks"]
-           if c["item"].startswith("D10_") and c["id"] == "E-3"}
+           if c["item"].startswith("D10_") and c["id"] == "SIM.state"}
     assert led == {("idle", f"D10_{x}", "LED on", "pass") for x in ("RED", "GREEN", "BLUE")} | {
         ("all_on", "D10_RED", "LED on", "pass"), ("all_on", "D10_GREEN", "LED dark", "fail"),
         ("all_on", "D10_BLUE", "LED dark", "fail")}
@@ -326,9 +327,9 @@ def test_leds_behind_balancing_resistors_count_on_their_output(project):
     balanced(project)
     out = simulate(project)
     assert not failing(out) and all(s["status"] == "ok" for s in out["scenarios"])
-    assert len(out["checks"]) == 828                              # 810 before: no E-3 for D9, D10, LED7 in all_on
+    assert len(out["checks"]) == 828                              # 810 before: no SIM.state for D9, D10, LED7 in all_on
     for led in ("D9", "D10"):
-        mine = [c for c in out["checks"] if c["item"] == led and c["id"] == "E-3"]
+        mine = [c for c in out["checks"] if c["item"] == led and c["id"] == "SIM.state"]
         on = [c for c in mine if c["check"] == "LED current (LED7)"]
         assert len(on) == 6                                       # all_on: 3 supplies x 2 corners, half of 9.45 mA
         assert all(float(c["actual"].split()[0]) == pytest.approx(0.00945 / 2, rel=0.02) for c in on)
@@ -361,7 +362,7 @@ def test_which_nets_are_behind_a_balancing_resistor(project):
     project.net(g, "GND")["pins"].append("R14.2")                 # behind an output
     project.save_graph(g)
     d = Design.from_config(project.config())
-    assert simrun.behind_resistor(d, d.joined_nets(), {f"LED{i}" for i in range(8)}) == {"D9_K": "LED7"}
+    assert esim.behind_resistor(d, d.joined_nets(), {f"LED{i}" for i in range(8)}) == {"D9_K": "LED7"}
 
 
 def read_back(project):
@@ -418,12 +419,12 @@ def test_led_without_a_known_driver(project):
         ("SIM.driver", "all_on", "D10", "LED without a known driver")}
     assert len(bad) == 6                                          # 3 supplies x 2 corners
     assert bad[0]["actual"] == "cathode at GND, on no driver output; the load has no leds_on"
-    sim["loads"]["all_on"]["leds_on"] = ["D10"]                   # the load says it lights: E-3 checks it
+    sim["loads"]["all_on"]["leds_on"] = ["D10"]                   # the load says it lights: SIM.state checks it
     out = simulate(project, sim)
     assert not failing(out)
     on = [c for c in out["checks"] if c["item"] == "D10" and c["check"] == "LED on"]
     assert len(on) == 6 and all(c["result"] == "pass" for c in on)
-    assert not [c for c in out["checks"] if c["id"] == "SIM.driver"]   # E-4 reports only an LED without a state
+    assert not [c for c in out["checks"] if c["id"] == "SIM.driver"]   # SIM.driver reports only an LED without a state
 
 
 def test_led_left_out_of_the_simulation(project):

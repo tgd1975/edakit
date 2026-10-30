@@ -19,7 +19,7 @@ parts.
                                 The entry is not touched (a change would lapse its sign-off); verified.datasheet_sha256
                                 of a sign-off says which file was signed
     edakit part search "KEYWORDS" [--basic] [--min-stock N] [--limit 25] [--json FILE]
-                                JLCPCB's public parts catalogue (F-2's endpoint), without EasyEDA: LCSC number, mpn,
+                                JLCPCB's public parts catalogue (PARTS.stock's endpoint), without EasyEDA: LCSC number, mpn,
                                 manufacturer, class (Basic, Extended, preferred), assembly stock, package, category;
                                 C99… dropped, Basic first, then by stock; an LCSC number gives only its exact hit.
                                 Exit 2 when nothing is found
@@ -30,7 +30,7 @@ parts.
 
 The library geometry has the units and axes of `edakit pcb dump` (mil, y up, relative to the part origin at 0° on
 TOP); a pad with a hole adds `hole` [w, l] in mm and `plated`, every pad its shape, size `w` × `h` (mil) and `rot`.
-P-1 compares the graph with a cached symbol, `pcb plan` takes a cached footprint for a part that is not in the PCB yet
+STRUCT.entry compares the graph with a cached symbol, `pcb plan` takes a cached footprint for a part that is not in the PCB yet
 – or, where the parts entry has footprint data, that data (library_footprint).
 
 Own parts: a board of an edakit project used as a part in another project. No distributor sells it; its datasheet
@@ -52,12 +52,12 @@ Derived from the board's project:
               analog, passive among its pins. pull and pull_ohm from resistors to a supply or to ground; vmax is the
               lowest limit on the net: pin vmax, capacitor v_max / 1.5
   params      behaviour "current": the largest current from the connector over the board's scenarios
-  ratings     vin_min, vin_max: the voltage at the connector over those scenarios – E-3 holds the host to it
+  ratings     vin_min, vin_max: the voltage at the connector over those scenarios – SIM.state holds the host to it
   compliance  from the board's parts: RoHS, REACH statements, radio
   own         what "pcb", connectors, the hash of the board's circuit (state_sha256); the copy adds path, commit,
               repository and the release of that state
 
-P-3 compares the copy with its source and a project's datasheets with its state (checks.py calls check()).
+SYNC.source compares the copy with its source and a project's datasheets with its state (checks.py calls check()).
 """
 
 from __future__ import annotations
@@ -202,7 +202,7 @@ def classify(d, net, inside, powered):
 
 def compliance(d, project, state):
     """What the parts entries of the board say about RoHS, REACH and radio. radio: the radios of its parts, "none"
-    when none transmits and every module and microcontroller says so (P-11), else left out – not known."""
+    when none transmits and every module and microcontroller says so (PARTS.fact), else left out – not known."""
     from .radio import RADIO_TYPES
     rohs = {"not compliant": [], "exemption": [], "not known": []}
     reach, radio, unstated, n = [], [], [], 0
@@ -350,7 +350,7 @@ def markdown(cfg, d, entry, notes, rows, des, plus, minus):
     lines += ["", "## Not in this datasheet", "",
               "- the footprint and the EasyEDA device the board gets in a project that uses it",
               "- the board's logic levels and timing: its signal pins are typed, not simulated – a project that uses "
-              "it checks them with G-3, G-4, G-5 and G-11"]
+              "it checks them with LIM.v, LVL.undefined, LVL.contention and REQ.missing"]
     return "\n".join(lines) + "\n"
 
 
@@ -432,12 +432,12 @@ def own(cfg, source, name=None):
     out.write_text(json.dumps(entry, indent=1, ensure_ascii=False) + "\n", encoding="utf-8")
     todo = []
     if dirty:
-        todo.append(f"copied from uncommitted changes in {path} – commit there and copy again (P-3 stays open)")
+        todo.append(f"copied from uncommitted changes in {path} – commit there and copy again (SYNC.source stays open)")
     if not entry["own"]["released"]:
-        todo.append(f"{path} is not released at this state – P-3 warns until it is (edakit gate there, then copy "
+        todo.append(f"{path} is not released at this state – SYNC.source warns until it is (edakit gate there, then copy "
                     "again) or the warning is accepted in the sign-off file")
     if not entry["verified"]:
-        todo.append("sign it off against its datasheet (handbook 4.3; G-9 stays open until then)")
+        todo.append("sign it off against its datasheet (handbook 4.3; PARTS.verified stays open until then)")
     todo.append(f"the component: \"part\": \"{entry['mpn']}\", \"bom\": false, pins "
                 + json.dumps({k: p["name"] for k, p in entry["pins"].items()}, ensure_ascii=False)
                 + ", an easyeda_device with symbol and footprint of the board")
@@ -567,7 +567,7 @@ def cached_footprint(cfg, footprint):
 
 def library_footprint(cfg, design, des):
     """A component's footprint before its dump: the footprint data of its parts entry (4.5) – the copy edakit builds,
-    "source": "data"; None while the data is not complete (P-9) –, else the cached library geometry of its footprint:
+    "source": "data"; None while the data is not complete (PARTS.footprint) –, else the cached library geometry of its footprint:
     the name of its parts entry, else of the library."""
     entry = design.part(des) or {}
     if "footprint_data" in entry:
@@ -591,7 +591,7 @@ def write_cache(cfg, lib, today):
 
 def entry_differences(entry, lib):
     """Where a parts entry differs from the library: fields it lacks, values that differ (case and blanks ignored but
-    in the footprint name, which L-4 compares as it is), pins as S-2 compares them."""
+    in the footprint name, which SYNC.footprint compares as it is), pins as SYNC.schematic compares them."""
     from .schematic import pin_differences
     out = []
     for k in ENTRY_FIELDS:
@@ -650,7 +650,7 @@ def main_import(cfg, args):
         print(f"{cfg.relative(out)}: new entry – {lib['mpn']} ({lib['manufacturer']}), footprint {lib['footprint']}, "
               f"{lib['jlc_class']}, {len(lib['pins'])} pins")
         print("  kind, pin types and roles, values and ratings are for whoever signs it off against its datasheet "
-              "(handbook 4.3; G-9 stays open until then)")
+              "(handbook 4.3; PARTS.verified stays open until then)")
     elif diffs:
         print(f"{cfg.relative(out)}: differs from the library – the entry is kept" +
               (f" (filled in: {', '.join(done)})" if done else ""))
@@ -665,7 +665,7 @@ def main_import(cfg, args):
         print(f"  library geometry: {cfg.relative(cache['footprint'])} ({len(geo['pads'])} pads"
               + (f", {holes} with a hole" if holes else "") + f", {(x1 - x0) / MIL_PER_MM:.1f} x "
               f"{(y1 - y0) / MIL_PER_MM:.1f} mm)")
-    print(f"  symbol: {cfg.relative(cache['symbol'])} – P-1 compares the graph with it")
+    print(f"  symbol: {cfg.relative(cache['symbol'])} – STRUCT.entry compares the graph with it")
     return 2 if diffs else 0
 
 
@@ -690,7 +690,7 @@ def _download(url):
 
 
 def catalogue_search(keyword, page_size=25):
-    """JLCPCB's public parts catalogue through F-2's client (release/fab.py jlc_search; no login, only the keyword
+    """JLCPCB's public parts catalogue through PARTS.stock's client (release/fab.py jlc_search; no login, only the keyword
     leaves the machine): the hits of a full-text search as the catalogue gives them. Network errors and a changed
     answer raise. The one place part fetch and part search reach the catalogue."""
     from .release import fab
@@ -1162,7 +1162,7 @@ def compare(cfg, old_key, new_key):
                 + (f" – slot narrower than {JLC_SLOT_MM} mm (JLCPCB minimum)" if narrow else "")
             holes_fit &= fits and not narrow
         elif h:
-            line["l9"] = f"no lead data in the entry of {new_key} – the fit is not checked (P-7)"
+            line["l9"] = f"no lead data in the entry of {new_key} – the fit is not checked (GEO.hole)"
         if not any(x["old"] == line["old"] and x["text"] == line["text"] for x in holes):   # shell legs: once
             holes.append(line)
     box = lambda g: ((g["bbox"][2] - g["bbox"][0]) / MIL_PER_MM, (g["bbox"][3] - g["bbox"][1]) / MIL_PER_MM)  # noqa
@@ -1226,7 +1226,7 @@ def text(r):
         out.append(f"row {p['row']}: pitch {p['old_mm']:.2f} → {p['new_mm']:.2f} mm")
     for h in r["holes"]:
         pads = h["old"] if h["old"] == h["new"] else f"{h['old']}→{h['new']}"
-        out.append(f"hole {pads}: {h['text']}" + (f" – L-9: {h['l9']}" if h.get("l9") else ""))
+        out.append(f"hole {pads}: {h['text']}" + (f" – GEO.hole: {h['l9']}" if h.get("l9") else ""))
     b = r["box_mm"]
     out.append(f"box: {b['old'][0]:.1f} x {b['old'][1]:.1f} mm → {b['new'][0]:.1f} x {b['new'][1]:.1f} mm")
     out += [f"graph change: {g}" for g in r["graph"]]
@@ -1244,10 +1244,10 @@ def main_diff(cfg, args):
     return 0 if r["drop_in"] else 2
 
 
-# --- P-3 -------------------------------------------------------------------------------------------------------------
+# --- SYNC.source -------------------------------------------------------------------------------------------------------------
 
 def check(d, rep, cfg):
-    """P-3: own parts against their source, and this project's datasheets against its state."""
+    """SYNC.source: own parts against their source, and this project's datasheets against its state."""
     for key in sorted({d.entry_key(des) for des in d.comps} - {None}):
         entry = d.parts[key]
         own_ = entry.get("own")

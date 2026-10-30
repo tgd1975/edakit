@@ -1,5 +1,5 @@
 """The order form of one board – written per gate run from [order] and thickness_mm of the board file, [release]
-assembly, the stock snapshot and the manufacturing files of the run – and check F-6 (order settings = board). Both
+assembly, the stock snapshot and the manufacturing files of the run – and check FILES.order (order settings = board). Both
 only when the board file has [order]; `fab.run` calls `check` after the F checks.
 
     DIR/<board>/order.md   every field of JLCPCB's form that depends on the board: layers, size, quantity, thickness,
@@ -12,7 +12,7 @@ only when the board file has [order]; `fab.run` calls `check` after the F checks
                            made, neither is in it. Without [order] the file is not there (a stale one is removed), and
                            the fab hash is the files' alone, as before
 
-  F-6  the remark fits the form (at most 200 characters, ASCII) (fail); thickness_mm is a thickness of JLCPCB's form
+  FILES.order  the remark fits the form (at most 200 characters, ASCII) (fail); thickness_mm is a thickness of JLCPCB's form
        (fail); the silkscreen colour is the one JLCPCB prints on the mask colour (fail); mark = "specify" needs the
        placeholder JLCJLCJLCJLC on a silkscreen layer of pcb.json, at least 0.8 mm high in [[silk.texts]] (fail;
        height not in [[silk.texts]]: warn); the placeholder with another mark warns; Economic PCBA with fewer than 2
@@ -122,7 +122,7 @@ def piece_text(p):
     return f"{pt(c[0])} → {pt(c[-1])}, {p.length:.1f} mm"
 
 
-# --- F-6 and order.md -------------------------------------------------------------------------------------------------
+# --- FILES.order and order.md -------------------------------------------------------------------------------------------------
 
 def settings(board):
     """The order settings that change the board as JLCPCB makes it – the thickness as ordered (thickness_mm), the
@@ -287,7 +287,7 @@ def sheet(cfg, design, board, d, bom, pcba, tabs, found):
     remark = f"below ({len(o['remark'])} characters)" if o["remark"] else "–"
     L = [f"# Order form – board {board.name} ({board.title}), {cfg.project}\n",
          "Written by edakit from [order] of the board file, [release] assembly, the stock snapshot and the files of "
-         "this run; check F-6 compares them. Upload only from a released run (manifest.json). Coordinates: Gerber mm. "
+         "this run; check FILES.order compares them. Upload only from a released run (manifest.json). Coordinates: Gerber mm. "
          "Thickness, colours, finish and mark count in the fab hash (order.json): a sign-off of scope fab, like M-5, "
          "holds for them as written here.\n",
          "## PCB\n", "| Field | Value |", "|---|---|", f"| Layers | {layers} |", f"| Dimensions | {size} |",
@@ -310,7 +310,7 @@ def sheet(cfg, design, board, d, bom, pcba, tabs, found):
               f"| Gerber | gerber_{board.name}.zip |", ""]
     L += ["## Tabs\n"]
     if tabs is None:
-        L.append("Not measured – Gerber outline or copper missing (F-5).\n")
+        L.append("Not measured – Gerber outline or copper missing (FILES.set).\n")
     else:
         _, free, zones = tabs
         L.append(f"Copper kept from the edge where a tab may go: {o['tab_copper_mm']:.2f} mm (tab_copper_mm), "
@@ -334,7 +334,7 @@ def sheet(cfg, design, board, d, bom, pcba, tabs, found):
 
 
 def check(cfg, board, design, d, rows, bom):
-    """F-6, order.md and order.json for one board – only when its board file has [order]; without it a stale
+    """FILES.order, order.md and order.json for one board – only when its board file has [order]; without it a stale
     order.json of an earlier run in d goes, so that the fab hash holds no settings the board file does not give."""
     import json
     if board.order is None:

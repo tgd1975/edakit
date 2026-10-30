@@ -8,7 +8,8 @@ import pytest
 
 from helpers import check
 
-from edakit import block, checks, rules, schematic_draw
+from edakit import block, catalog, checks, engines, schematic_draw
+from edakit.engines import hint
 from edakit.design import Design
 from edakit.sim import run as simrun
 
@@ -61,7 +62,7 @@ def test_library_block_is_consistent(name):
             assert (f"{des}.{pin}" in used) != (pin in c.get("nc", [])), f"{des}.{pin}"
     for name_, n in nets.items():
         assert name_ in b["ports"] or "v" in n, name_
-    assert all(rules.entry(cid) for cid in b.get("covers", []))
+    assert all(catalog.code(cid.split(":")[0].split("/")[0]) for cid in b.get("covers", []))
 
 
 @pytest.mark.parametrize("name", sorted(CONNECT))
@@ -104,7 +105,7 @@ def test_block_marks_its_nets(project):
     part = project.part("C17673")
     part["values"]["value_ohm"] = 47000
     project.save_part("C17673", part)
-    assert any(c == "REQ.value" for c, _ in errors(project))   # the mark makes G-11 check GPIO nets
+    assert any(c == "REQ.value" for c, _ in errors(project))   # the mark makes REQ.missing check GPIO nets
 
 
 def test_dry_run_writes_nothing(project):
@@ -161,8 +162,8 @@ def test_block_in_the_example_passes_the_simulation(project, name):
     _, comps, *_ = block.add(project.config(), name, "T", CONNECT[name])
     sim = json.loads((project.root / "hardware" / "sim.json").read_text())
     leds = [c["designator"] for c in comps if c["type"] == "led"]
-    if leds:   # as the block's notes ask: the signal is an MCU output, a load lights the LED (E-3), the others say
-        sim["mcu"]["U1"]["outputs"].append("SIG")             # that it is dark (E-4)
+    if leds:   # as the block's notes ask: the signal is an MCU output, a load lights the LED (SIM.state), the others say
+        sim["mcu"]["U1"]["outputs"].append("SIG")             # that it is dark (SIM.driver)
         for load in sim["loads"].values():
             load.setdefault("leds_on", [])
         sim["loads"]["t_on"] = {"gpio": {"LED_OE": 1, "SIG": 1}, "leds_on": leds}
@@ -200,7 +201,7 @@ def test_power_or_pmos_with_two_supplies_passes_the_checks(project):
     two_supplies(project)
     assert errors(project) == []
     cfg = project.config()
-    assert "H-8" not in rules.matching_hints(Design.from_config(cfg), cfg, rules.load_sim(cfg))
+    assert "HINT.two_supplies" not in hint.matching(Design.from_config(cfg), cfg, engines.load_sim(cfg))
 
 
 @pytest.mark.skipif(not shutil.which("ngspice"), reason="ngspice not installed")

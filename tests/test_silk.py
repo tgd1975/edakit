@@ -96,7 +96,7 @@ def silk_run(tmp_path, monkeypatch):
 
 
 def test_apply_keeps_the_print_it_did_not_place(silk_run, tmp_path):
-    """The silk files of the first export – before edakit prints – stay for the gate (L-17)."""
+    """The silk files of the first export – before edakit prints – stay for the gate (GEO.silk)."""
     for key in ("top_silk", "bottom_silk"):
         (tmp_path / gerber.FILES[key]).write_text(f"{key} before apply")
     silk_run('designators = "top"\n')

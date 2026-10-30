@@ -170,7 +170,7 @@ def test_a_net_without_routing_stays_ideal(project):
 def test_sim_names_a_net_it_could_not_annotate(project, capsys):
     (project.root / "hardware" / "sim.json").write_text(json.dumps(sim_config(project, nets=["+5V"])))
     assert cli.main(["sim", "--config", str(project.root / "edakit.toml")]) == 0
-    assert "INFO  E-1 copper                         +5V          copper not annotated: no routing of board main" \
+    assert "SIM.copper – copper annotated: 1 note\n  E  +5V: copper not annotated: no routing of board main" \
         in capsys.readouterr().out
     assert not (project.root / "build" / "edakit" / "route").exists()        # reading the routing creates nothing
 

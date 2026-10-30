@@ -35,9 +35,9 @@ COILS = {"relay": ("coil_plus", "coil_minus"), "buzzer": ("plus", "minus")}   # 
 FN_LINES = {"pwm": (), "adc": (), "spi": ("sck", "tx", "rx", "cs"), "i2c": ("sda", "scl"), "uart": ("tx", "rx")}
 FN_NAMES = [k + (f".{line}" if line else "") for k, lines in FN_LINES.items() for line in lines or [""]]   # net fn
 SUPPLY_R_MAX = 100                                   # a resistor up to this passes a supply (shunt, filter)
-SWITCHERS = ("buck", "boost")                        # behaviour models of switching regulators (hot loop, G-18)
+SWITCHERS = ("buck", "boost")                        # behaviour models of switching regulators (hot loop, REQ.missing)
 PIN_FUNCTION = re.compile(r"([a-z][a-z0-9]*?)(\d+)(?:\.([a-z]+))?")   # "spi0.sck", "i2c1.sda", "pwm1.a", "adc0"
-KINDS_OF_TYPE = {"microcontroller": ("ic", "module"), "regulator": ("ic", "module"),   # P-6: graph type -> parts
+KINDS_OF_TYPE = {"microcontroller": ("ic", "module"), "regulator": ("ic", "module"),   # STRUCT.identity: graph type -> parts
                  "transistor": ("npn", "pnp", "nmos", "pmos"), "led": ("led", "led_rgb"),   # entry kinds; any other
                  "switch": ("switch", "dip_switch"), "audio": ("buzzer",)}                  # type: the same word
 KINDS_OF_PREFIX = {"R": ("resistor", "potentiometer"), "C": ("capacitor",), "L": ("inductor",),
@@ -135,7 +135,7 @@ def valid_hz(hz):
 
 
 def supply_inputs(d, sim=None):
-    """Nets a supply feeds: power outputs, and where the supply comes in (the design hint H-1's power inputs) – the
+    """Nets a supply feeds: power outputs, and where the supply comes in (the design hint HINT.bulk's power inputs) – the
     plus of a battery holder, the vbus pins of a connector, every pin of a connector in checks.reverse_protect, the
     plus of a simulation source."""
     out = {n for n, net in d.nets.items() if any(d.pin_info(r).get("type") == "power_output" for r in net["pins"])}
@@ -206,7 +206,7 @@ def hold_current(part, t_min=None):
 
 
 def series_nets(d, des):
-    """The nets the current of a part flows on: its own, and on through fuses and switches (G-10's walk without the
+    """The nets the current of a part flows on: its own, and on through fuses and switches (PATH.reverse's walk without the
     connectors – a connector hands the current on through a cable on the same net, not to its other pins); not
     ground."""
     nets = {d.pin_net.get(f"{des}.{p}") for p in d.part(des)["pins"]} - {None, d.ground}

@@ -1,14 +1,14 @@
-"""Values that documents and schematic notes quote from the design data – and G-19 for the ones gone stale.
+"""Values that documents and schematic notes quote from the design data – and DOCS.quote for the ones gone stale.
 
-    edakit docs            every quoted value against its source: G-19 for each that differs, exit 2
+    edakit docs            every quoted value against its source: DOCS.quote for each that differs, exit 2
     edakit docs --write    fill in the current values
 
 Markdown files listed in [docs] files of edakit.toml hold value blocks, invisible when rendered:
 
-    LED current <!--edakit sim:max E-3 * D2 LED current*-->9.45 mA<!--/edakit--> per output
+    LED current <!--edakit sim:max SIM.state * D2 LED current*-->9.45 mA<!--/edakit--> per output
 
 The notes of the schematic file ([layout.notes]) hold placeholders that `schematic draw` and `schematic layout` fill
-in when they draw: `I_OUT = {sim:max E-3 * D2 LED current*}`. Only braces that start with a source are read.
+in when they draw: `I_OUT = {sim:max SIM.state * D2 LED current*}`. Only braces that start with a source are read.
 
 Sources:
     graph:<key>                       a key of the graph itself: graph:version, graph:date
@@ -18,11 +18,11 @@ Sources:
                                       the fnmatch pattern – the key the sign-off file's `match` uses; the result is the
                                       one `edakit sim` saved while its inputs are unchanged, else a new run
     req:<ID>                          the text of a need or requirement of [project] requirements (N-2, R-4), on one
-                                      line; a draft as it stands. A dropped entry is G-19: it no longer holds
+                                      line; a draft as it stands. A dropped entry is DOCS.quote: it no longer holds
 A FORMAT after the source, e.g. "%.2f mA", formats the number (scaled to the prefix written after it); without one:
 three significant digits and the unit of the source (4.02 mA). [docs] decimal = "," writes numbers with a decimal comma. Documents and the schematic file are in no hash, so
-correcting a quoted number voids no sign-off. G-19 also runs in the gate's stage G, on the gate's own simulation.
-Exit codes: 0 = every value current (or written), 2 = G-19 findings, 1 = error.
+correcting a quoted number voids no sign-off. DOCS.quote also runs in the gate's stage G, on the gate's own simulation.
+Exit codes: 0 = every value current (or written), 2 = DOCS.quote findings, 1 = error.
 """
 
 from __future__ import annotations
@@ -208,7 +208,7 @@ def note_quotes(cfg):
 
 
 def findings(cfg, design, sim=None):
-    """(G-19 findings, number of quotes)."""
+    """(DOCS.quote findings, number of quotes)."""
     src, out = Sources(cfg, design, sim), []
     blocks, notes = doc_blocks(cfg), note_quotes(cfg)
     for path, line, spec, written in blocks:
@@ -275,7 +275,7 @@ def fill_notes(cfg, design, notes, warn=print):
 
 
 def stage_rows(cfg, design, sim):
-    """G-19 in the gate's stage G, on the gate's own simulation result; no quotes, no rows."""
+    """DOCS.quote in the gate's stage G, on the gate's own simulation result; no quotes, no rows."""
     from . import catalog
     found, n = findings(cfg, design, sim)
     if not n and not found:
@@ -296,7 +296,7 @@ def main(cfg, args):
             for f in changed:
                 print(f"written: {f}")
             for p in problems:
-                print(f"G-19  {p}")
+                print(f"DOCS.quote  {p}")
             print(f"{n} quoted values brought up to date" + (f", {len(problems)} not resolvable" if problems else ""))
             return 2 if problems else 0
         found, n = findings(cfg, design)
@@ -307,7 +307,7 @@ def main(cfg, args):
         print("nothing quoted: no [docs] files and no placeholders in the schematic notes (handbook 6.6)")
         return 0
     for f in found:
-        print(f"G-19  {f}")
+        print(f"DOCS.quote  {f}")
     print(f"{n} quoted values, {len(found)} stale or unresolvable" + (" – edakit docs --write fills in the current "
                                                                        "values" if found else ""))
     if found:

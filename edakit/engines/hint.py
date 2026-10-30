@@ -88,7 +88,7 @@ def _switching_regulators(design, cfg, sim):
 
 
 def _supply_starts(design, cfg, sim):
-    """{supply: nets it feeds directly}: the power inputs of H-1 by their supply pins – the plus of a battery holder,
+    """{supply: nets it feeds directly}: the power inputs of HINT.bulk by their supply pins – the plus of a battery holder,
     the vbus pins of a connector, the pins of a connector in checks.reverse_protect, the plus of a sim source – and a
     module's pin of type power_output with the role vbus (its USB VBUS brought out). Ground is no supply net."""
     protect = reversible(design)

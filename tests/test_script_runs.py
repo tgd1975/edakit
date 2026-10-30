@@ -362,7 +362,7 @@ def test_the_gate_runs_a_stale_input_first(project, monkeypatch, capsys):
     assert drawn(project) and "kunst" in stamps(project)
     run = sorted((project.root / "build" / "release").iterdir())[-1]
     text = (run / "protocol.md").read_text()
-    assert "kunst never run" not in text and "| G | scripts |" not in text
+    assert "kunst never run" not in text and "| G | SYNC.scripts" not in text
 
 
 def test_inputs_run_in_their_order(project, monkeypatch, capsys):

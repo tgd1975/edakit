@@ -33,8 +33,8 @@ in the project's own documents. Two levels (handbook 3.6, 10.4):
 A key edakit does not know is an error, as in edakit.toml. edakit req prints verify as written; it does not evaluate it.
 
 With the key, the file is part of the circuit (handbook 3.6, 8.7):
-  edakit check   G-20 every reference resolves (from, the IDs in verify), G-21 every accepted need has a requirement,
-                 G-22 every requirement has evidence, G-23 drafts warn – also in the gate's stage G. A draft never
+  edakit check   DOCS.ref every reference resolves (from, the IDs in verify), DOCS.need every accepted need has a requirement,
+                 DOCS.evidence every requirement has evidence, DOCS.draft drafts warn – also in the gate's stage G. A draft never
                  blocks: every finding about it is a warning (rep.drafts), in the gate information; errors start
                  once the user has set status = "accepted"
   edakit gate    evaluates each requirement's evidence against its run (evaluate): rows – at least one protocol row
@@ -119,11 +119,11 @@ def _verify(raw):
     """verify: a list of tables with one kind each and its text."""
     items = raw.get("verify", [])
     if not isinstance(items, list):
-        return ['verify must be a list, e.g. [{ rows = "E-3 * J1 *" }]']
+        return ['verify must be a list, e.g. [{ rows = "LIM.i * J1 *" }]']
     out = []
     for i, item in enumerate(items, 1):
         if not isinstance(item, dict):
-            out.append(f'verify {i}: a table with one kind, e.g. {{ rows = "E-3 * J1 *" }}')
+            out.append(f'verify {i}: a table with one kind, e.g. {{ rows = "LIM.i * J1 *" }}')
             continue
         unknown = [k for k in item if k not in VERIFY]
         out += [f"verify {i}: unknown kind '{k}' (known: {', '.join(VERIFY)})" for k in unknown]
@@ -300,7 +300,7 @@ def chain(cfg, entries, eid):
 NOT_HERE = "not evaluated here – edakit req shows verify as written; the gate evaluates it (section 11 of its protocol)"
 
 
-# --- G-20 to G-23: the file in edakit check and in the gate's stage G -------------------------------------------------
+# --- DOCS.ref to DOCS.draft: the file in edakit check and in the gate's stage G -------------------------------------------------
 
 def manual_checks(cfg):
     """(the IDs of the manual checks a requirement may name, the sign-off file as messages name it): the sign-off
@@ -341,7 +341,9 @@ def unresolved(kind, text, cfg, catalog, signoffs):
         if CHECK_ID.fullmatch(first) and first not in catalog:
             return f"{first} is not a code of the catalog (edakit rules)"
         if OLD_ID.fullmatch(first):
-            return f"{first} is a check ID of before the restructuring – {', '.join(old_codes(first)) or 'retired'}"
+            new = old_codes(first)
+            return (f"{first} is a check ID of before the restructuring – now {', '.join(new)}" if new else
+                    f"{first} is not a code of the catalog (edakit rules)")
     elif kind == "signoff" and text not in ids:
         return f"no manual check {text} in {name} ({', '.join(ids)})"
     elif kind == "script":
@@ -359,10 +361,10 @@ DRAFT = " (draft: an error once accepted)"   # an error of an accepted entry, ab
 
 
 def check(rep, cfg):
-    """G-20 to G-23 on the files of [project] requirements, into rep (checks.Report): every reference resolves – a need
+    """DOCS.ref to DOCS.draft on the files of [project] requirements, into rep (checks.Report): every reference resolves – a need
     or requirement in from (N-…, R-…), a manual check in from (M-…), the IDs in verify –, a from that names a dropped
-    entry warns (G-20); every accepted need is in from of a requirement that is not dropped (G-21); every requirement
-    has evidence (G-22); a draft warns (G-23). A draft never blocks: every finding about one goes into rep.drafts – a
+    entry warns (DOCS.ref); every accepted need is in from of a requirement that is not dropped (DOCS.need); every requirement
+    has evidence (DOCS.evidence); a draft warns (DOCS.draft). A draft never blocks: every finding about one goes into rep.drafts – a
     warning in edakit check, information in the gate –, and what would be an error says so (DRAFT). A dropped entry is
     history: it is not checked. Messages start with the entry's ID. RequirementsError for a file that is missing or not
     valid – edakit check and the gate stop on it before they get here."""
@@ -467,7 +469,7 @@ def _accept(signoff):
 
 
 def _script(name, checks, protocol_rows, stages_run, signoff):
-    """A project check (handbook 8.6), named as G-20 resolves it: a [scripts] name, the id of a [[release.stages]].
+    """A project check (handbook 8.6), named as DOCS.ref resolves it: a [scripts] name, the id of a [[release.stages]].
     Phase export: it passed in this run – it ran, and none of the rows of its stage failed; an advisory row did not
     pass either. Phase order or acceptance: it is a line of its phase's list in section 6 and counts like an acceptance
     step – open after the export until the manual check that works through that list (M-2, M-4) is signed. Not a check
@@ -475,7 +477,7 @@ def _script(name, checks, protocol_rows, stages_run, signoff):
     from .release.gate import PHASES, RESULT
     check = next((c for c in checks if c.name == name), None)
     if check is None:
-        return "fail", f"no check {name} in this run – stage G says why (scripts, G-20)"
+        return "fail", f"no check {name} in this run – stage G says why (scripts, DOCS.ref)"
     if check.phase in WORKS_THROUGH:
         sid = WORKS_THROUGH[check.phase]
         m = next((x for x in signoff.get("manual", []) if x.get("id") == sid), None)

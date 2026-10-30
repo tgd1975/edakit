@@ -929,7 +929,7 @@ sources = [
 ]
 
 [codes."DOCS.quote"]
-title = "documents quote the design"
+title = "documents quote the design data"
 rule = "Every value block in a Markdown file of [docs] files equals its source – a graph value, a parts entry field, the simulation result or the text of a need or requirement of [project] requirements (req:) – and every source quoted in a block or in a placeholder of the schematic notes exists; a need or requirement quoted is not dropped."
 why = "Numbers in descriptions, decisions and schematic notes are typed once and then lag behind the circuit: a resistor swapped, a margin changed, a part removed. Reviewers and the next session read the stale number as a fact. A requirement copied into a README lags behind the requirements file the same way, and a dropped one still reads as if it held."
 fix = "edakit docs --write fills in the current values. A source that no longer exists: quote the part or net that replaced it, or drop the block. A dropped need or requirement: quote the entry that holds now, or drop the block; req: needs [project] requirements. Documents are in no hash, so this voids no sign-off."

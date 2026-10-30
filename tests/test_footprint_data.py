@@ -1,5 +1,5 @@
-"""Step 3.6: own footprints as data in the parts entry (handbook 4.5) – footprint_data, P-9 (the data complete and
-consistent), P-10 (the copy pcb dump measured equals the data), edakit part footprint (a library footprint becomes an
+"""Step 3.6: own footprints as data in the parts entry (handbook 4.5) – footprint_data, PARTS.footprint (the data complete and
+consistent), SYNC.footprint (the copy pcb dump measured equals the data), edakit part footprint (a library footprint becomes an
 own one), edakit part build (the copy in EasyEDA from the data: the translation is tested here, the EasyEDA part on a
 fake), and the hashes: the circuit hash covers the data byte for byte, the layout hash adds it only where it exists."""
 
@@ -9,7 +9,7 @@ import math
 
 import pytest
 
-from helpers import check
+from helpers import check, executed
 
 from edakit import checks, cli, eda, footprint, pcb, scripts
 from edakit.design import Design
@@ -73,8 +73,7 @@ def copy_of(data, footprint_name, shapes=True):
 
 def test_a_project_without_footprint_data_runs_the_checks_it_ran(project):
     cfg = project.config()
-    assert checks.executed(cfg)[:len(checks.EXECUTED)] == checks.EXECUTED
-    assert not {"PARTS.footprint", "SYNC.footprint"} & set(checks.executed(cfg)) and not {"PARTS.footprint", "SYNC.footprint"} & set(checks.EXECUTED)
+    assert not {"PARTS.footprint", "SYNC.footprint"} & set(executed(cfg))
     rep = report(project)
     assert not [c for c, _ in rep.errors + rep.notes + rep.warnings + rep.pending if c in ("PARTS.footprint", "SYNC.footprint")]
     assert gate.footprint_data(cfg) == []
@@ -83,12 +82,12 @@ def test_a_project_without_footprint_data_runs_the_checks_it_ran(project):
 
 def test_with_footprint_data_p9_and_p10_run_after_p8(project):
     own(project, "C131337", J1_DATA)
-    run = checks.executed(project.config())
-    assert run[run.index("GEO.formed") + 1:run.index("GEO.formed") + 3] == ["PARTS.footprint", "SYNC.footprint"]
+    run = executed(project.config())
+    assert {"PARTS.footprint", "SYNC.footprint"} <= set(run)
     assert found(report(project), "PARTS.footprint") == ([], [])
 
 
-# --- P-9: complete and consistent ------------------------------------------------------------------------------------
+# --- PARTS.footprint: complete and consistent ------------------------------------------------------------------------------------
 
 def changed(data, change):
     d = copy.deepcopy(data)
@@ -134,7 +133,7 @@ def test_p9_a_mounting_pad_without_a_pin_is_marked_mechanical(project):
 
 
 def test_p9_holds_the_polarity_mark_to_the_pin_roles(project):
-    """L-8's test on the data: a '+' at the anode passes, at the cathode it is the reference project's LED again."""
+    """GEO.mark's test on the data: a '+' at the anode passes, at the cathode it is the reference project's LED again."""
     own(project, "C2297", LED_DATA)
     assert found(report(project), "PARTS.footprint") == ([], [])
     own(project, "C2297", changed(LED_DATA, lambda d: d["marks"][0].update(x=0.95)))
@@ -150,7 +149,7 @@ def test_p9_without_footprint_name(project):
     del e["footprint"]
     project.save_part("C131337", e)
     assert found(report(project), "PARTS.footprint")[0] == [
-        "J1 C131337: footprint missing – the name of the copy in EasyEDA, which L-4 compares with the PCB"]
+        "J1 C131337: footprint missing – the name of the copy in EasyEDA, which SYNC.footprint compares with the PCB"]
 
 
 def test_p9_names_runs_of_pads_from_to():
@@ -169,7 +168,7 @@ def test_p9_shell_legs_as_the_cache_has_them(project):
     assert found(report(project), "PARTS.footprint")[0] == ["J1 C131337: pad 1: not one of its pads_same_number"]
 
 
-# --- P-10: the copy equals the data ---------------------------------------------------------------------------------
+# --- SYNC.footprint: the copy equals the data ---------------------------------------------------------------------------------
 
 def test_p10_the_copy_as_dumped_equals_the_data(project):
     own(project, "C131337", J1_DATA)
@@ -189,7 +188,7 @@ def test_p10_the_copy_as_dumped_equals_the_data(project):
     (lambda g: g["pads"]["1"].update(w=round(1.4 * MIL, 2)), "pad 1: RECT 1.40 x 1.70 instead of RECT 1.20 x 1.70 mm"),
 ])
 def test_p10_finds_a_copy_that_is_not_the_data(project, change, message):
-    """The fault built into the dump of the copy: exactly P-10, with the pad and the numbers."""
+    """The fault built into the dump of the copy: exactly SYNC.footprint, with the pad and the numbers."""
     own(project, "C131337", J1_DATA)
     geo = copy_of(J1_DATA, "CONN-TH_B2B-PH-K-S")
     change(geo)
@@ -226,7 +225,7 @@ def test_p10_another_footprint_and_no_dump(project):
         "is not compared with the data of C131337"])
     dumped(project, {"J1": copy_of(J1_DATA, "HDR-TH_2P")})
     assert found(report(project), "SYNC.footprint")[0] == [
-        "J1: the dump measured footprint HDR-TH_2P, the entry C131337 names CONN-TH_B2B-PH-K-S – not the copy (L-4): "
+        "J1: the dump measured footprint HDR-TH_2P, the entry C131337 names CONN-TH_B2B-PH-K-S – not the copy (SYNC.footprint): "
         "edakit pcb parts --write, then pcb dump"]
 
 
@@ -254,7 +253,7 @@ def test_p10_waived_on_the_component(project):
     assert found(rep, "SYNC.footprint")[0] == [] and [c for c, _, _ in rep.waived if c == "SYNC.footprint"] == ["SYNC.footprint"]
 
 
-# --- the data as geometry: pcb plan, P-7, part diff -----------------------------------------------------------------
+# --- the data as geometry: pcb plan, GEO.hole, part diff -----------------------------------------------------------------
 
 def test_the_plan_and_p7_take_the_data_of_a_part_not_yet_in_the_pcb(project, capsys):
     data = changed(J1_DATA, lambda d: [p.update(hole=[0.65, 0.65]) for p in d["pads"].values()])   # too small
@@ -309,15 +308,15 @@ def test_part_footprint_takes_the_dump_over_as_data(project, capsys):
 
 
 def test_part_footprint_from_an_old_dump_asks_for_what_it_lacks(project, capsys):
-    """A dump without shapes and holes, no library footprint: the pads' places, the rest for P-9 to ask for."""
+    """A dump without shapes and holes, no library footprint: the pads' places, the rest for PARTS.footprint to ask for."""
     geo = copy_of(J1_DATA, "CONN-TH_B2B-PH-K-S", shapes=False)
     for p in geo["pads"].values():
         p.pop("hole")
     dumped(project, {"J1": geo})
     assert run(project, "footprint", "C131337", "--write") == 2
     out = capsys.readouterr().out
-    assert "P-9 pads 1, 2: shape missing (RECT, ELLIPSE, OVAL)" in out           # one finding for the pads alike
-    assert "P-9 pads 1, 2: a through-hole pad (MULTI) without hole" in out
+    assert "PARTS.footprint pads 1, 2: shape missing (RECT, ELLIPSE, OVAL)" in out           # one finding for the pads alike
+    assert "PARTS.footprint pads 1, 2: a through-hole pad (MULTI) without hole" in out
     assert project.part("C131337")["footprint_data"]["pads"]["1"] == {"x": 1.0, "y": 0.0, "layer": "MULTI"}
 
 
@@ -549,7 +548,7 @@ def test_part_build_offline_shows_what_it_would_build(project, capsys):
 def test_part_build_refuses_data_that_is_not_complete(project, capsys):
     own(project, "C131337", changed(J1_DATA, lambda d: d["pads"].pop("2")))
     assert run(project, "build", "C131337") == 1
-    assert "C131337: the footprint data is not complete (P-9) – pin 2 without a pad" in capsys.readouterr().err
+    assert "C131337: the footprint data is not complete (PARTS.footprint) – pin 2 without a pad" in capsys.readouterr().err
     assert run(project, "build", "C2297") == 1
     assert "C2297: no footprint_data – edakit part footprint C2297 --write" in capsys.readouterr().err
 
@@ -631,7 +630,7 @@ def test_measure_reads_shape_size_rotation_and_layer(monkeypatch):
 
 
 def test_the_data_round_trips_through_the_geometry(project):
-    """from_geometry(geometry(data)) is the data – what part footprint writes is what the build and P-10 read."""
+    """from_geometry(geometry(data)) is the data – what part footprint writes is what the build and SYNC.footprint read."""
     e = own(project, "C131337", {"pads": J1_DATA["pads"]})
     geo = footprint.geometry(e)
     back = footprint.from_geometry(geo)

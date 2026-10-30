@@ -1,4 +1,4 @@
-"""`edakit order` and check P-5 (#41): a supplier per line – the assembler's BOM, one cart per other supplier with
+"""`edakit order` and check PARTS.supplier (#41): a supplier per line – the assembler's BOM, one cart per other supplier with
 spares and minimum or pack size, and the hand-assembly list, for `quantity` sets. The example's J1 (JST PH, C131337,
 bom: false) is soldered by hand and bought at LCSC.
 """
@@ -8,7 +8,7 @@ import json
 
 import pytest
 
-from helpers import check
+from helpers import check, executed
 
 from edakit import checks, cli
 from edakit.design import Design
@@ -130,11 +130,11 @@ def test_the_assemblers_bom_is_the_f1_bom(project, monkeypatch):
         "C131337" not in (project.root / "o" / "bom_main.csv").read_text()
 
 
-# --- P-5 ------------------------------------------------------------------------------------------------------------
+# --- PARTS.supplier ------------------------------------------------------------------------------------------------------------
 
 def test_the_example_has_no_p5_row(project):
     warnings, rep = p5(project)
-    assert warnings == [] and "PARTS.supplier" in checks.EXECUTED and not rep.errors
+    assert warnings == [] and "PARTS.supplier" in executed(project.config()) and not rep.errors
 
 
 def test_a_part_bought_separately_without_a_supplier(project, monkeypatch, capsys):
@@ -172,7 +172,7 @@ def test_order_keys(project, toml, msg):
 
 
 def test_an_easyeda_library_number_is_no_number(project, monkeypatch, capsys):
-    """C99… numbers are EasyEDA user-library entries (handbook 4.2): LCSC does not sell them – not carted, and P-5
+    """C99… numbers are EasyEDA user-library entries (handbook 4.2): LCSC does not sell them – not carted, and PARTS.supplier
     counts them as no number (the owner's answer to #41). With `part` or without, as the bell's Nano has both."""
     part = project.part("C131337")
     part["lcsc"] = "C9900187880"

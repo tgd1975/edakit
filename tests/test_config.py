@@ -223,7 +223,7 @@ def test_silk_solder_side_key(tmp_path):
 
 def test_silk_unlabelled_key(tmp_path):
     from edakit.config import _board
-    assert "unlabelled" not in _board("b", {}, {}).silk                  # no key: every part needs its designator (L-17)
+    assert "unlabelled" not in _board("b", {}, {}).silk                  # no key: every part needs its designator (GEO.silk)
     (tmp_path / "edakit.toml").write_text('[project]\nname = "t"\n[boards.main]\n')
     (tmp_path / "hardware" / "boards").mkdir(parents=True)
     (tmp_path / "hardware" / "boards" / "main.toml").write_text('[silk]\nunlabelled = { R21 = "no room in the star" }\n')
@@ -296,9 +296,9 @@ def test_agreements_key(tmp_path):
 
 
 def test_order_keys(tmp_path):
-    """#40: [order] of the board file – the order form fields that depend on the board (F-6)."""
+    """#40: [order] of the board file – the order form fields that depend on the board (FILES.order)."""
     from edakit.config import _board
-    assert _board("b", {}, {}).order is None                              # no key: no order form, no F-6, as before
+    assert _board("b", {}, {}).order is None                              # no key: no order form, no FILES.order, as before
     (tmp_path / "edakit.toml").write_text('[project]\nname = "t"\n[boards.main]\n')
     (tmp_path / "hardware" / "boards").mkdir(parents=True)
     (tmp_path / "hardware" / "boards" / "main.toml").write_text("[order]\n")
@@ -361,7 +361,7 @@ def test_order_colour_keys():
     assert _board("b", {}, {"order": {"mask": "white"}}).order["silkscreen"] == "black"
     for mask in ("green", "purple", "red", "yellow", "blue", "white", "black"):
         assert _board("b", {}, {"order": {"mask": mask}}).order["mask"] == mask
-    order = _board("b", {}, {"order": {"mask": "white", "silkscreen": "white"}}).order   # F-6 judges the pair
+    order = _board("b", {}, {"order": {"mask": "white", "silkscreen": "white"}}).order   # FILES.order judges the pair
     assert (order["mask"], order["silkscreen"]) == ("white", "white")
     for order, msg in (({"mask": "orange"},
                         "order.mask must be one of green, purple, red, yellow, blue, white, black, not 'orange'"),
@@ -482,7 +482,7 @@ def test_thickness_key(tmp_path):
 
 def test_routing_hand_solder_keep_key():
     from edakit.config import _board
-    assert "hand_solder_keep_mm" not in _board("b", {}, {}).routing        # no key: L-18 off, as before
+    assert "hand_solder_keep_mm" not in _board("b", {}, {}).routing        # no key: GEO.spacing off, as before
     assert _board("b", {}, {"routing": {"hand_solder_keep_mm": 0.5}}).routing["hand_solder_keep_mm"] == 0.5
     for value in (-0.1, "0.5", True):
         with pytest.raises(ConfigError, match="routing.hand_solder_keep_mm must be a distance in mm"):

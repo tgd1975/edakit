@@ -40,11 +40,11 @@ POUR_CLEARANCE_MM = 0.25         # pour_only: what the computed pour keeps from 
 POUR_MIN_WIDTH_MM = 0.25         # pour_only: the narrowest neck the computed pour fills
 POUR_MIN_PIECE_MM2 = 2.0         # pour_regions: the smallest piece of a shared layer that gets an outline
 HEADER_KEEP_MM = 1.27            # on_headers: the plastic of a 2.54 mm pin header, half its width around each pin
-PASTE_GAP_MM = 0.4               # [release] assembly paste_gap_mm: SMD pads of different parts, assembled side (L-14)
-MAX_BARE_MM = 5.0                # [copper] max_bare_mm: largest copper-free circle on a poured layer (L-15)
+PASTE_GAP_MM = 0.4               # [release] assembly paste_gap_mm: SMD pads of different parts, assembled side (GEO.spacing)
+MAX_BARE_MM = 5.0                # [copper] max_bare_mm: largest copper-free circle on a poured layer (GEO.pour)
 UNIFORM = {"led": "row"}         # uniform: LEDs side by side point the same way – the plan check without the key
 UNIFORM_WAYS = ("row", "+x", "-x", "+y", "-y")
-THICKNESS_MM = 1.6               # board thickness: the order (F-6) and the lead protrusion of the mechanical model
+THICKNESS_MM = 1.6               # board thickness: the order (FILES.order) and the lead protrusion of the mechanical model
 
 PROJECT_KEYS = ("name", "company", "quantity", "distributors", "lock", "agreements", "graph", "parts", "sim",
                 "sim_plugin", "schematic", "signoff", "artifacts", "reports", "datasheets", "stock", "stock_margin_pct",
@@ -56,16 +56,16 @@ BOARD_FILE_KEYS = ("revision", "view", "outline", "holes", "tooling", "place", "
                    "looks", "thickness_mm")
 SCHEMATIC_KEYS = ("stub", "layout")
 RELEASE_KEYS = ("layout_files", "state_files", "hash_ignore", "assembly", "stages")
-PCBA = ("economic", "standard")  # [release] assembly.pcba: the assembler's class of the order (P-4)
+PCBA = ("economic", "standard")  # [release] assembly.pcba: the assembler's class of the order (PARTS.stock)
 COST_KEYS = ("fees", "budget", "currency", "rates", "shipping", "coupon", "vat_pct", "pcb_price")   # [cost]
 EXTRA_KEYS = ("item", "supplier", "code", "per_set", "spare", "moq", "step", "unit_price", "currency")   # [[extra]]
-STOCK_MAX_AGE_DAYS = 14          # [project] stock_max_age_days: an older stock snapshot is pending (P-4)
-ORDER_KEYS = ("finish", "mark", "remark", "tab_zones", "tab_copper_mm", "mask", "silkscreen")   # [order] (F-6)
+STOCK_MAX_AGE_DAYS = 14          # [project] stock_max_age_days: an older stock snapshot is pending (PARTS.stock)
+ORDER_KEYS = ("finish", "mark", "remark", "tab_zones", "tab_copper_mm", "mask", "silkscreen")   # [order] (FILES.order)
 MARKS = ("default", "specify", "remove")   # order.mark: JLCPCB's order number anywhere, at the placeholder, none
 MASKS = ("green", "purple", "red", "yellow", "blue", "white", "black")   # order.mask: JLCPCB's solder mask colours
 SILKSCREENS = ("white", "black")   # order.silkscreen: JLCPCB prints white, on a white mask black (silkscreen_on)
 FIRMWARE_KEYS = ("mcu", "out", "gpio")    # [firmware]: the board's firmware contract (edakit firmware), opt-in
-DOCS_KEYS = ("files", "decimal")                     # [docs]: Markdown files with quoted values (edakit docs, G-19)
+DOCS_KEYS = ("files", "decimal")                     # [docs]: Markdown files with quoted values (edakit docs, DOCS.quote)
 
 # [scripts.<name>]: a project script that touches edakit's flow – what it reads and writes; edakit/scripts.py
 # resolves the entries with edakit's steps into one order (edakit check, handbook 8.6)
@@ -121,11 +121,11 @@ class Board:
     pour_min_piece_mm2: float = POUR_MIN_PIECE_MM2
     pour_inset_mm: float | None = None                # pours inside the outline; None: edge clearance + 0.1 mm
     silk: dict = field(default_factory=dict)
-    loops: list = field(default_factory=list)         # [(pad a, pad b, max mm, what)] short current loops (L-11)
+    loops: list = field(default_factory=list)         # [(pad a, pad b, max mm, what)] short current loops (GEO.loop)
     net_classes: dict = field(default_factory=lambda: dict(DEFAULT_NET_CLASSES))  # by falling min_a
     force_class: dict = field(default_factory=dict)   # net -> class, whatever its current
-    copper: dict = field(default_factory=lambda: _copper("", {}))  # [copper]: max_bare_mm, min_cover (L-15)
-    order: dict | None = None                         # [order]: the order form fields of this board (F-6); None: none
+    copper: dict = field(default_factory=lambda: _copper("", {}))  # [copper]: max_bare_mm, min_cover (GEO.pour)
+    order: dict | None = None                         # [order]: the order form fields of this board (FILES.order); None: none
     uniform: dict | None = None                       # kind -> "row" | "+x" | "-x" | "+y" | "-y"; None: UNIFORM
     looks: dict | None = None                         # [looks]: visible ("top" | "bottom"), max_track_m, max_vias
     thickness_mm: float = THICKNESS_MM                # board thickness: the order, lead protrusion in mech_<board>.json
@@ -191,8 +191,8 @@ class Config:
     # [project] domains: the domains of edakit/domains the project switches on besides core (profile.py); None without
     # the key – every domain the graph suggests
     domains: list | None = None
-    stock: Path | None = None           # the stock snapshot of `edakit stock` (P-4); not in the circuit hash
-    stock_margin_pct: float = 0.0       # P-4 warns below need x (1 + margin / 100)
+    stock: Path | None = None           # the stock snapshot of `edakit stock` (PARTS.stock); not in the circuit hash
+    stock_margin_pct: float = 0.0       # PARTS.stock warns below need x (1 + margin / 100)
     stock_max_age_days: int = STOCK_MAX_AGE_DAYS
     cost: dict | None = None            # [cost] of edakit.toml; None: no cost estimate in the gate
     spare_pct: float = 0.0              # edakit order: spares on every cart line, in % of quantity sets
@@ -205,7 +205,7 @@ class Config:
 
     def pcba(self):
         """(class, why) of the assembly order: [release] assembly.pcba, or derived from assembly.sides – one side
-        Economic, two sides Standard (without [release] assembly both sides count, as for F-3)."""
+        Economic, two sides Standard (without [release] assembly both sides count, as for SYNC.cpl)."""
         a = self.release.get("assembly", {})
         if a.get("pcba"):
             return a["pcba"], f'[release] assembly.pcba = "{a["pcba"]}"'
@@ -343,7 +343,7 @@ def _net_classes(nc):
 
 
 def _copper(name, c):
-    """[copper] of a board file (L-15): max_bare_mm (largest copper-free circle on a poured layer, mm) and min_cover
+    """[copper] of a board file (GEO.pour): max_bare_mm (largest copper-free circle on a poured layer, mm) and min_cover
     {layer: least copper share in % of the board area}; without it no share is required."""
     if not isinstance(c, dict):
         raise ConfigError(f"board {name}: [copper] must be a table")
@@ -365,7 +365,7 @@ def silkscreen_on(mask):
 
 
 def _order(name, o):
-    """[order] of a board file, with its defaults; None without the table (no order form, no F-6)."""
+    """[order] of a board file, with its defaults; None without the table (no order form, no FILES.order)."""
     if o is None:
         return None
     if not isinstance(o, dict):
@@ -460,7 +460,7 @@ def _board(name, entry, b, file=""):
         raise ConfigError(f"board {name}: silk.board_label_side must be 'top' or 'bottom'")
     unlabelled = silk.get("unlabelled", {})
     if not isinstance(unlabelled, dict) or not all(isinstance(v, str) and v.strip() for v in unlabelled.values()):
-        raise ConfigError(f"board {name}: silk.unlabelled must be a table of designator = reason (L-17), "
+        raise ConfigError(f"board {name}: silk.unlabelled must be a table of designator = reason (GEO.silk), "
                           "e.g. { R21 = \"no room between the star tracks\" }")
     region = silk.get("board_label_region")
     if region is not None and not (isinstance(region, list) and len(region) >= 3 and all(

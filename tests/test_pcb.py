@@ -262,8 +262,8 @@ def test_place_puts_the_parts_next_to_their_host(project, capsys):
     cfg = project.config()
     board, geo = cfg.board(), led_bar_geo()
     assert pcb.plan(cfg, board) == [                                       # today: two positions to work out by hand
-        "L-12 R1: not in hardware/boards/main.toml [place] – the circuit wants it next to U2",
-        "L-12 U2: no capacitor of its own from 3V3 to GND within 6 mm – fix C1 next to it"]
+        "SYNC.plan R1: not in hardware/boards/main.toml [place] – the circuit wants it next to U2",
+        "SYNC.plan U2: no capacitor of its own from 3V3 to GND within 6 mm – fix C1 next to it"]
     capsys.readouterr()
     assert cli.main(["pcb", "place", "--config", str(project.root / "edakit.toml")]) == 0
     out = capsys.readouterr().out
@@ -425,7 +425,7 @@ def test_write_back_adds_auto_rows_for_the_parts_without_one(project, capsys):
     cfg = project.config()
     board = cfg.board()
     comps = led_bar_pcb(board, AUTO)
-    next(c for c in comps if c["designator"] == "U2")["x"] += MIL      # 1 mm off its row: the row stays, L-7 says so
+    next(c for c in comps if c["designator"] == "U2")["x"] += MIL      # 1 mm off its row: the row stays, SYNC.plan says so
     comps.append(eda_at(board, "X1", 10, 10))                         # in the PCB, not in the graph: no row
     assert pcb.write_back(cfg, board, comps, auto=True) == 0
     after = f.read_text()

@@ -1,4 +1,4 @@
-"""`edakit stock` and check P-4 (parts orderable), offline: JLCPCB's answers are recorded in tests/fixtures/jlcpcb/ –
+"""`edakit stock` and check PARTS.stock (parts orderable), offline: JLCPCB's answers are recorded in tests/fixtures/jlcpcb/ –
 the catalogue answer of `selectSmtComponentList` per LCSC number (the fields edakit reads) and an excerpt of each part
 page jlcpcb.com/partdetail/<C…> (its "PCBA Type" cell and the part's record in the page data), read 2026-10-27.
 
@@ -12,7 +12,7 @@ from pathlib import Path
 
 import pytest
 
-from helpers import check
+from helpers import check, executed
 
 from edakit import checks, cli
 from edakit.design import Design
@@ -110,7 +110,7 @@ def test_edakit_stock_writes_the_snapshot_of_the_assembled_parts(project, jlcpcb
         "min_qty": 5, "price_breaks": None}
     out = capsys.readouterr().out
     assert "[9/9]" in out and "C41407547" in out and "Standard Only" in out
-    assert "ERROR   P-4  U1 C41407547" in out
+    assert "PARTS.stock – parts orderable: " in out and "\n  P  U1 C41407547" in out
     jlcpcb.clear()
     assert stock_cli(project, monkeypatch) == 2 and jlcpcb == []          # everything is fresh: nothing asked
     assert stock_cli(project, monkeypatch, "--refresh") == 2 and sorted(jlcpcb) == ASSEMBLED
@@ -136,13 +136,13 @@ def test_edakit_stock_lcsc_prints_and_writes_nothing(tmp_path, jlcpcb, monkeypat
     assert not list(tmp_path.iterdir())
 
 
-# --- P-4 ------------------------------------------------------------------------------------------------------------
+# --- PARTS.stock ------------------------------------------------------------------------------------------------------------
 
 def test_without_a_snapshot_p4_is_a_note_and_the_rest_unchanged(project):
     rep = run_checks(project)
     assert p4(rep) == ([], [], [], ["no stock snapshot (hardware/stock.json) – edakit stock asks JLCPCB about the 9 "
                                     "assembled parts"])
-    assert not rep.errors and not rep.pending and not rep.warnings and "PARTS.stock" in checks.EXECUTED
+    assert not rep.errors and not rep.pending and not rep.warnings and "PARTS.stock" in executed(project.config())
 
 
 def test_the_example_with_its_snapshot_fails_u1(project, jlcpcb, monkeypatch, capsys):

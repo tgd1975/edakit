@@ -1,5 +1,5 @@
 """edakit part import (#32): the symbol pins and the footprint of an LCSC number from the library data, without
-EasyEDA – the parts entry, the geometry cache, P-1 against the symbol, `pcb plan` on library geometry.
+EasyEDA – the parts entry, the geometry cache, STRUCT.entry against the symbol, `pcb plan` on library geometry.
 
 fixtures/easyeda/ holds EasyEDA's public component data as https://easyeda.com/api/products/<LCSC>/components
 ?version=6.4.19.5 answered on 2026-10-27, trimmed to the fields edakit reads; not-found.json is the answer to a number
@@ -11,7 +11,7 @@ from pathlib import Path
 
 import pytest
 
-from helpers import check
+from helpers import check as engines_check
 
 from edakit import checks, cli, part, pcb
 from edakit.design import Design
@@ -48,7 +48,7 @@ def cache(project, footprint):
 
 def check(project):
     cfg = project.config()
-    return check(Design.from_config(cfg), cfg)
+    return engines_check(Design.from_config(cfg), cfg)
 
 
 def test_import_writes_a_new_entry(project, library, capsys):

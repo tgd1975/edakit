@@ -1,4 +1,4 @@
-"""P-6 (#35): the graph and the parts entry name the same part – number, file name, mpn, value, kind – seen red in a
+"""STRUCT.identity (#35): the graph and the parts entry name the same part – number, file name, mpn, value, kind – seen red in a
 copy of the example, and the patterns of the real projects that must stay quiet."""
 
 import json
@@ -8,7 +8,7 @@ import pytest
 
 from helpers import check
 
-from edakit import checks
+from edakit import circuit, checks
 from edakit.design import Design
 
 
@@ -18,7 +18,7 @@ def run(project):
 
 
 def p6(rep):
-    return sorted(m for c, m in rep.errors if c == "P-6")
+    return sorted(m for c, m in rep.errors if c == "STRUCT.identity")
 
 
 def rename(g, old, new):
@@ -60,7 +60,7 @@ def test_five_identity_faults(project):
     ("green", None), ("0805W8F3300T5E", None), ("1N4148", None), ("74HC165", None), ("5V", None), ("", None),
 ])
 def test_values_read_as_a_quantity(text, value):
-    got = checks.read_value(text)
+    got = circuit.read_value(text)
     assert (got is None) == (value is None)
     if value:
         assert got[0] == pytest.approx(value[0], rel=1e-9) and got[1] == value[1]
@@ -136,11 +136,11 @@ def test_a_designator_prefix_against_the_kind_is_a_warning(project):
 
 
 def test_an_entry_without_kind_is_not_compared(project):
-    """A fresh `edakit part import` writes kind null: whoever signs it off fills it in (G-9 stays open)."""
+    """A fresh `edakit part import` writes kind null: whoever signs it off fills it in (PARTS.verified stays open)."""
     e = project.part("C49678")
     project.save_part("C49678", {**e, "kind": None})
     g = project.graph()
     project.comp(g, "C1")["type"] = "resistor"
     project.save_graph(g)
     rep = run(project)
-    assert not [m for m in p6(rep) if "kind" in m] and not [m for c, m in rep.warnings if c == "P-6"]
+    assert not [m for m in p6(rep) if "kind" in m] and not [m for c, m in rep.warnings if c == "STRUCT.prefix"]

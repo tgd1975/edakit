@@ -48,7 +48,7 @@ def layout_hash(cfg):
 
 def p7(cfg):
     rep = check(Design.from_config(cfg), cfg)
-    return [m for c, m in rep.errors if c == "P-7"], [m for c, m in rep.notes if c == "P-7"]
+    return [m for c, m in rep.errors if c == "GEO.hole"], [m for c, m in rep.notes if c == "GEO.hole"]
 
 
 def test_dump_writes_the_geometry_beside_the_board_file(project, monkeypatch):
@@ -69,7 +69,7 @@ def test_a_fresh_clone_computes_the_layout_hash(project, monkeypatch, tmp_path):
     clone = tmp_path / "clone"
     shutil.copytree(project.root, clone, ignore=shutil.ignore_patterns("build"))
     assert layout_hash(config.load(clone / "edakit.toml")) == layout_hash(cfg)
-    assert p7(config.load(clone / "edakit.toml")) == p7(cfg) == ([], [])     # P-7 judges the holes in the clone too
+    assert p7(config.load(clone / "edakit.toml")) == p7(cfg) == ([], [])     # GEO.hole judges the holes in the clone too
 
 
 def test_the_geometry_lies_beside_a_board_file_of_another_name(project, monkeypatch):
@@ -84,7 +84,7 @@ def test_the_geometry_lies_beside_a_board_file_of_another_name(project, monkeypa
 
 
 def test_a_geometry_from_before_is_read_until_it_is_moved(project, capsys):
-    """Read from <artifacts> while it lies only there – P-7 judges it, the layout hash is the one before –, and edakit
+    """Read from <artifacts> while it lies only there – GEO.hole judges it, the layout hash is the one before –, and edakit
     check, which writes nothing, says how to move it. The move changes the layout hash once: the path counts."""
     cfg = project.config()
     old = from_before(project, geometry(cfg.board().place, hole=0.65))      # a hole too small for J1's lead
@@ -96,8 +96,8 @@ def test_a_geometry_from_before_is_read_until_it_is_moved(project, capsys):
                      f"it beside the board file and commit it: mv {OLD} {NEW} (the layout hash changes once, sign-offs "
                      "with scope 'layout' lapse)"]
     assert layout_hash(cfg) == before
-    assert cli.main(["check", "--config", str(project.root / "edakit.toml")]) == 1     # P-7 fails, as it should
-    assert f"NOTE    P-7  {notes[0]}" in capsys.readouterr().out
+    assert cli.main(["check", "--config", str(project.root / "edakit.toml")]) == 1     # GEO.hole fails, as it should
+    assert f"GEO.hole – hole fits the lead: 1 note\n  P  {notes[0]}" in capsys.readouterr().out
     pcb.plan(cfg, cfg.board())
     assert f"  {notes[0]}" in capsys.readouterr().out.splitlines()
     assert old.exists() and not (project.root / NEW).exists()                 # nothing moved on its own

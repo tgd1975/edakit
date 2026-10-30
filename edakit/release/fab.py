@@ -8,7 +8,7 @@ Result in DIR/<board>/:
     gerber/ and gerber_<board>.zip   Gerber and drill files as EasyEDA exports them (upload the ZIP)
     bom_<board>.csv                  BOM in JLCPCB format, generated from the graph
     cpl_<board>.csv                  pick-and-place file in JLCPCB format (BOM parts only)
-    jlc_parts.json                   JLCPCB assembly catalogue entry per LCSC number of the BOM (F-2)
+    jlc_parts.json                   JLCPCB assembly catalogue entry per LCSC number of the BOM (PARTS.stock)
     pcb.json, drc.json, bom_easyeda.json, cpl_easyeda.xlsx   raw data from EasyEDA (for --offline)
     order.md                         with [order] in the board file: the order form of this board (order_sheet.py)
     order.json                       with [order]: the order settings that change the board as made (fab hash)
@@ -19,64 +19,64 @@ Result in DIR/<board>/:
 and DIR/polarity_<board>.png: every polarised part with pad, role and net, to compare with datasheets and with the
 assembly preview at JLCPCB.
 
-  L-1  parts in the PCB = graph; every pad carries the graph's net; every graph pin has a pad
-  L-2  copper from the Gerber files: every net connected, no short, every connected pad present
-  L-3  EasyEDA DRC without findings (after save and reload): other kinds; and schematic and PCB in sync – a
+  SYNC.pcb  parts in the PCB = graph; every pad carries the graph's net; every graph pin has a pad
+  GEO.copper  copper from the Gerber files: every net connected, no short, every connected pad present
+  GEO.drc  EasyEDA DRC without findings (after save and reload): other kinds; and schematic and PCB in sync – a
        "Netlist Error – Import Changes" item with no difference in netlist_diff.json is EasyEDA waiting for the
        import acknowledgement (Design → Import Changes once), otherwise the differences with the command that fixes
        them. With [routing] drc_rules = "check" in the board file also: the rule set the DRC ran with = the board
        file's (clearance, edge clearance, track widths of the classes, via, net classes – drc_rules.py), named in the
        row
-  L-4  footprint per part = parts database
-  L-5  track width per net >= IPC-2221 for 1.5 x the simulated current (fail); below the practical class width (warn);
+  SYNC.footprint  footprint per part = parts database
+  GEO.width  track width per net >= IPC-2221 for 1.5 x the simulated current (fail); below the practical class width (warn);
        voltage drop as an upper bound (info)
-  L-7  fixed parts in the PCB = plan (± 0.02 mm, rotation, side); the plan itself without findings
-  L-8  silkscreen "+"/"−" next to a pad of that sign: PCB texts, and the "+" footprints draw as two crossing strokes in
-       the silk Gerber files; cathode and minus pads "−", anode, plus and vbus pads "+" (waive L-8 on the nearest part)
-  L-9  every through hole takes its lead at nominal size (lead data in the parts database); tight in the worst case
+  SYNC.plan  fixed parts in the PCB = plan (± 0.02 mm, rotation, side); the plan itself without findings
+  GEO.mark  silkscreen "+"/"−" next to a pad of that sign: PCB texts, and the "+" footprints draw as two crossing strokes in
+       the silk Gerber files; cathode and minus pads "−", anode, plus and vbus pads "+" (waive GEO.mark on the nearest part)
+  GEO.hole  every through hole takes its lead at nominal size (lead data in the parts database); tight in the worst case
        or plated slots narrower than JLCPCB's minimum: warn
-  L-10 every pad sits where the library footprint has the pad with that number (pad_map in the parts DB for
+  SYNC.footprint every pad sits where the library footprint has the pad with that number (pad_map in the parts DB for
        intended swaps)
-  L-11 short current loops ([[loops]] of the board file and layout.loops of the graph): shortest path over tracks of the
+  GEO.loop short current loops ([[loops]] of the board file and layout.loops of the graph): shortest path over tracks of the
        same net per pad pair
-  L-12 the plan keeps the layout requirements of the circuit: layout.fixed, .edge, .near of the graph and a
+  SYNC.plan the plan keeps the layout requirements of the circuit: layout.fixed, .edge, .near of the graph and a
        decoupling capacitor next to every IC (handover.py)
-  L-13 pads of different parts on different nets at least the routing clearance apart, on the pad shapes of
+  GEO.spacing pads of different parts on different nets at least the routing clearance apart, on the pad shapes of
        `edakit route read` while they are the PCB's (route.pad_gaps, as `route check` measures)
-  L-14 on every assembled side, SMD pads of different parts on different nets at least the paste gap apart
-       ([release] assembly paste_gap_mm), measured as L-13
-  L-15 copper per layer from the Gerber files: share of the board area and largest copper-free circle (info); a
+  GEO.spacing on every assembled side, SMD pads of different parts on different nets at least the paste gap apart
+       ([release] assembly paste_gap_mm), measured as GEO.spacing
+  GEO.pour copper per layer from the Gerber files: share of the board area and largest copper-free circle (info); a
        circle above [copper] max_bare_mm on a poured layer, a share below [copper] min_cover, a copper piece without
        pad, via or plated hole: warn
-  L-16 every plated hole keeps JLCPCB's annular ring (component hole 0.18 mm, warn below 0.20 mm; via 0.05 mm) and
+  GEO.ring every plated hole keeps JLCPCB's annular ring (component hole 0.18 mm, warn below 0.20 mm; via 0.05 mm) and
        every two plated holes JLCPCB's hole-to-hole spacing, edge to edge (0.45 mm with a component hole, 0.2 mm vias)
-  L-17 silkscreen from the Gerber files: edakit's own print on a solder-mask opening (fail), other print there per part,
+  GEO.silk silkscreen from the Gerber files: edakit's own print on a solder-mask opening (fail), other print there per part,
        print beyond the outline, a part of the designators side without a visible designator or group label (not in
        [silk] unlabelled), a text height edakit prints below 1.0 mm (warn)
-  L-18 with [routing] hand_solder_keep_mm: on the solder side of every through-hole pad of a hand-soldered part
-       (bom: false), vias and pads of other nets at least that far away; pads as L-13, vias from the via drill file
+  GEO.spacing with [routing] hand_solder_keep_mm: on the solder side of every through-hole pad of a hand-soldered part
+       (bom: false), vias and pads of other nets at least that far away; pads as GEO.spacing, vias from the via drill file
        (net: the tracks of pcb.json that end on them)
-  L-19 with [looks]: on the visible side every PCB text of the silkscreen is one the board file puts there (the board
+  GEO.silk with [looks]: on the visible side every PCB text of the silkscreen is one the board file puts there (the board
        label on its side, the [[silk.texts]] of the side, with [silk] designators on it the designators and group
-       labels), and no part on it shows its designator while [silk] designators names the other side (waive L-19 on
+       labels), and no part on it shows its designator while [silk] designators names the other side (waive GEO.silk on
        the part)
-  L-20 every part the graph puts on the board has a row in [place] of the board file – fixed, from pcb place, or
+  SYNC.plan every part the graph puts on the board has a row in [place] of the board file – fixed, from pcb place, or
        written back by pcb autolayout (auto = true); a part on a bought board is on no made board and needs none
   [looks] of the board file: the visible side's track length and the board's vias, an information row; above
        max_track_m or max_vias a warning (row ID "L": the stage's own, no check of the catalog)
-  F-1  BOM from the graph = BOM of EasyEDA; every LCSC number in the parts database
-  F-2  every BOM part listed in JLCPCB's assembly catalogue with stock for `quantity` boards, under the MPN of its
-       parts entry; another class than the entry's jlc_class warns (check P-4 reads the same offline, from the stock
+  SYNC.bom  BOM from the graph = BOM of EasyEDA; every LCSC number in the parts database
+  PARTS.stock  every BOM part listed in JLCPCB's assembly catalogue with stock for `quantity` boards, under the MPN of its
+       parts entry; another class than the entry's jlc_class warns (check PARTS.stock reads the same offline, from the stock
        snapshot)
-  F-3  pick and place: every BOM part exactly once, side and rotation = PCB; sides/SMD as [release] assembly says
-  F-5  Gerber set complete; outline and holes = plan (± 0.2 mm); tooling holes in the NPTH file, mask open, no copper
-  F-6  with [order] in the board file: remark <= 200 ASCII characters, thickness_mm and the colours of mask and
+  SYNC.cpl  pick and place: every BOM part exactly once, side and rotation = PCB; sides/SMD as [release] assembly says
+  FILES.set  Gerber set complete; outline and holes = plan (± 0.2 mm); tooling holes in the NPTH file, mask open, no copper
+  FILES.order  with [order] in the board file: remark <= 200 ASCII characters, thickness_mm and the colours of mask and
        silkscreen as JLCPCB's form has them, mark = placeholder on the silkscreen, Economic with its own tooling holes,
        no copper near the edge in a tab zone (order_sheet.py)
 Last stdout line: JSON list of rows {stage, id, item, check, actual, expected, result}. Exit 0 / 2 / 1.
 
 What the manufacturer builds from, hashed for the sign-offs with scope 'fab' (fab_sha256, FAB_METHOD): every Gerber
-layer rasterised as L-2 does (gerber.RES) in the frame of the board outline – documentation and drill-drawing layers
+layer rasterised as GEO.copper does (gerber.RES) in the frame of the board outline – documentation and drill-drawing layers
 left out –, the drill hits rounded to 1 µm, the BOM and CPL rows sorted, and with [order] the order settings that
 change the board as made (order.json: thickness, colours of mask and silkscreen, finish, mark – not the remark, not the
 tab zones). Aperture numbers, comments and the order in which EasyEDA writes its objects do not change it; a board
@@ -138,7 +138,7 @@ def collect(cfg, board, d, verbose=False):
     from .. import eda, pcb
     (d / "netlist_diff.json").unlink(missing_ok=True)
     (d / "drc_rules.json").unlink(missing_ok=True)
-    compare_rules = drc_rules.mode(board)    # [routing] drc_rules: L-3 compares the rule set the DRC ran with
+    compare_rules = drc_rules.mode(board)    # [routing] drc_rules: GEO.drc compares the rule set the DRC ran with
     mcp = eda.connect(cfg, verbose, artifact_dir=d)
     try:
         eda.open_project(mcp, cfg)
@@ -153,7 +153,7 @@ def collect(cfg, board, d, verbose=False):
         strings = [{k: s[k] for k in ("Text", "X", "Y", "Layer")}
                    for s in (eda.state(x) for x in eda.api(mcp, "PCB_PrimitiveString.getAll") or [])]
         ids = {c["primitiveId"]: c["designator"] for c in comps if c.get("designator")}
-        shown = {ids[a["ParentPrimitiveId"]]: bool(a.get("ValueVisible"))       # L-17: designator printed or hidden
+        shown = {ids[a["ParentPrimitiveId"]]: bool(a.get("ValueVisible"))       # GEO.silk: designator printed or hidden
                  for a in map(eda.state, eda.api(mcp, "PCB_PrimitiveAttribute.getAll") or [])
                  if a.get("Key") == "Designator" and a.get("ParentPrimitiveId") in ids}
         (d / "pcb.json").write_text(json.dumps({"components": comps, "lines": lines, "strings": strings,
@@ -164,7 +164,7 @@ def collect(cfg, board, d, verbose=False):
         if compare_rules:
             try:
                 held = eda.read_drc_rules(mcp)
-            except eda.MCPError as e:          # L-3 then says: not read
+            except eda.MCPError as e:          # GEO.drc then says: not read
                 held = {"error": str(e)}
             (d / "drc_rules.json").write_text(json.dumps(held, indent=1, ensure_ascii=False))
         res = mcp.call("easyeda_export_gerbers", projectId="current", drillFormat="millimeter",
@@ -189,7 +189,7 @@ def collect(cfg, board, d, verbose=False):
             try:
                 diff = pcb.netlist_diff(cfg, board, mcp)
                 (d / "netlist_diff.json").write_text(json.dumps(diff, indent=1, ensure_ascii=False))
-            except eda.MCPError as e:          # L-3 then says: not compared
+            except eda.MCPError as e:          # GEO.drc then says: not compared
                 print(f"  schematic and PCB not compared: {e}", file=sys.stderr)
     finally:
         mcp.close()
@@ -215,7 +215,7 @@ def jlc_part(lcsc, timeout=30):
 
 
 def fetch_jlc(bom, d):
-    """F-2: the catalogue entry per LCSC number of the BOM, into jlc_parts.json."""
+    """PARTS.stock: the catalogue entry per LCSC number of the BOM, into jlc_parts.json."""
     out = {}
     for lcsc in sorted({r["LCSC Part #"] for r in bom}):
         try:
@@ -239,7 +239,7 @@ def pin_role(design, comp, num):
 
 
 def role_sign(role):
-    """The sign a pin role takes in the silkscreen (L-8): anode, plus… and vbus "+", cathode and minus… "−"; the
+    """The sign a pin role takes in the silkscreen (GEO.mark): anode, plus… and vbus "+", cathode and minus… "−"; the
     anodes and cathodes of the colours of an RGB LED (anode_red, cathode_red …) like the plain ones."""
     if not role:
         return None
@@ -267,7 +267,7 @@ def bom_rows(design, board):
 
 
 def write_bom(bom, path):
-    """The BOM in JLCPCB's columns – F-1 and `edakit order` write the same file."""
+    """The BOM in JLCPCB's columns – SYNC.bom and `edakit order` write the same file."""
     with open(path, "w", newline="", encoding="utf-8") as f:
         w = csv.DictWriter(f, fieldnames=["Comment", "Designator", "Footprint", "LCSC Part #"])
         w.writeheader()
@@ -386,11 +386,11 @@ def check_pcb(cfg, board, design, d, rows):
     check_polarity_marks(cfg, board, design, d, data, want, on_pcb, rows)
 
 
-ROWS_NAMED = 20       # L-20: parts without a row named in the protocol row, the others counted
+ROWS_NAMED = 20       # SYNC.plan: parts without a row named in the protocol row, the others counted
 
 
 def check_rows(board, design, rows):
-    """L-20: every part the graph puts on the board has a row in [place] of the board file (pcb.parts_without_row) –
+    """SYNC.plan: every part the graph puts on the board has a row in [place] of the board file (pcb.parts_without_row) –
     position, rotation and side as text, whoever wrote it. The board file decides it alone: no export is read."""
     from .. import pcb as pcbmod
     want = design.board_comps(board.name)
@@ -401,11 +401,11 @@ def check_rows(board, design, rows):
              else f"{len(want)} parts, each with a row", "a row for every part")
 
 
-TEXT_REACH_MM = 1.2   # L-8: how far from its anchor, per character, the strokes of a PCB text may lie
+TEXT_REACH_MM = 1.2   # GEO.mark: how far from its anchor, per character, the strokes of a PCB text may lie
 
 
 def polarity_signs(cfg, board, d, data):
-    """L-8: the signs of the silkscreen as [(sign, x, y, silk layer, how)] in mm – the PCB texts "+", "−", "-", and the
+    """GEO.mark: the signs of the silkscreen as [(sign, x, y, silk layer, how)] in mm – the PCB texts "+", "−", "-", and the
     "+" a footprint draws as two crossing strokes, read from the silk Gerber files (gerber.plus_signs). A drawn "+"
     near a PCB text with a "+" is that text's print (a "+" text counts once, a "+5V" is a label); one inside the box
     of a [[silk.art]] item is artwork. -> (signs, silk files missing)."""
@@ -430,7 +430,7 @@ def polarity_signs(cfg, board, d, data):
 
 
 def check_polarity_marks(cfg, board, design, d, data, want, on_pcb, rows):
-    """L-8: every sign of the silkscreen (polarity_signs) is compared with the nearest pad on its side whose pin role
+    """GEO.mark: every sign of the silkscreen (polarity_signs) is compared with the nearest pad on its side whose pin role
     has a sign (role_sign); a sign at a pad of the other sign fails. `accept: {"GEO.mark": "…"}` on the nearest part lists
     its finding as waived – a decorative cross, or a footprint whose print is known and wrong."""
     signs, lost = polarity_signs(cfg, board, d, data)
@@ -466,13 +466,13 @@ def check_polarity_marks(cfg, board, design, d, data, want, on_pcb, rows):
         rows[-1]["reason"] = reason
 
 
-SILK_SPOT_MM2 = 0.0005    # L-17: smaller pieces of print on an opening or beyond the outline are rounding
-SILK_LIMIT_MM2 = 0.001    # L-17: from this much on, a side or a part has print where it is not printed
-SILK_PART_MM = 3.0        # L-17: print on an opening further than this from every pad belongs to no part
+SILK_SPOT_MM2 = 0.0005    # GEO.silk: smaller pieces of print on an opening or beyond the outline are rounding
+SILK_LIMIT_MM2 = 0.001    # GEO.silk: from this much on, a side or a part has print where it is not printed
+SILK_PART_MM = 3.0        # GEO.silk: print on an opening further than this from every pad belongs to no part
 
 
 def check_silk(cfg, board, design, d, rows):
-    """L-17: the silkscreen as the fab gets it – the print on solder-mask openings and beyond the outline (silk_print),
+    """GEO.silk: the silkscreen as the fab gets it – the print on solder-mask openings and beyond the outline (silk_print),
     the designators (silk_designators) and the text heights edakit prints (silk_heights)."""
     data = json.loads((d / "pcb.json").read_text())
     if lost := gerber.missing(d / "gerber", "top_silk", "bottom_silk", "top_mask", "bottom_mask", "outline"):
@@ -507,7 +507,7 @@ def spots_text(spots, pads=None, around=""):
 
 
 def silk_print(cfg, board, data, g, rows):
-    """L-17, per side from the silk, mask and outline Gerber files. Print on a solder-mask opening: edakit's own –
+    """GEO.silk, per side from the silk, mask and outline Gerber files. Print on a solder-mask opening: edakit's own –
     what is not in the footprint print `silk apply` kept (silk.footprint_print) – fails, the rest warns per part, the
     part of the nearest pad (JLCPCB clips print on openings). Print beyond the outline warns."""
     from .. import silk
@@ -558,7 +558,7 @@ def silk_print(cfg, board, data, g, rows):
 
 
 def silk_designators(board, design, data, rows):
-    """L-17: every part of the `designators` side has a visible designator (read with the PCB into pcb.json), lies
+    """GEO.silk: every part of the `designators` side has a visible designator (read with the PCB into pcb.json), lies
     under a group label ([silk] groups, printed as a text) or a text with its name, or is listed in [silk] unlabelled
     with the reason – otherwise a warning per part."""
     from .. import silk
@@ -592,7 +592,7 @@ def silk_designators(board, design, data, rows):
 
 
 def silk_heights(cfg, board, rows):
-    """L-17: the text heights edakit prints – label_h_mm, board_label_h_mm when there is a board label, h_mm of
+    """GEO.silk: the text heights edakit prints – label_h_mm, board_label_h_mm when there is a board label, h_mm of
     [[silk.texts]] – at least JLCPCB's minimum text height; a warning per height below it."""
     from .. import silk
     s = board.silk
@@ -610,7 +610,7 @@ def silk_heights(cfg, board, rows):
 
 
 def check_pad_layout(board, design, on_pcb, want, geo, rows):
-    """L-10: every pad sits where the library footprint has the pad with this number. Intended swaps are listed as
+    """SYNC.footprint: every pad sits where the library footprint has the pad with this number. Intended swaps are listed as
     pad_map {PCB pad: library pad} in the parts database. Numbers used several times (shell legs) count at each of
     their positions (pads_same_number from the dump)."""
     bad, n = [], 0
@@ -637,9 +637,9 @@ def check_pad_layout(board, design, on_pcb, want, geo, rows):
 
 
 def check_pad_clearance(cfg, board, design, d, rows):
-    """L-13: pads of different parts on different nets keep the routing clearance on every copper layer – measured as
+    """GEO.spacing: pads of different parts on different nets keep the routing clearance on every copper layer – measured as
     `edakit route check` does, on the pad shapes of `route read` (pcb.json has none), when they still are the PCB's.
-    A pair waived in the graph (waive L-13 on one of its parts or nets) is listed with its reason."""
+    A pair waived in the graph (waive GEO.spacing on one of its parts or nets) is listed with its reason."""
     from .. import route
     clear = route.Rules(board).clear
     want = f">= {clear * MM:.3f} mm (clearance_mil {clear:g})"
@@ -660,9 +660,9 @@ def check_pad_clearance(cfg, board, design, d, rows):
 
 
 def check_paste_gap(cfg, board, design, d, rows):
-    """L-14: on every side that is assembled ([release] assembly sides), SMD pads of different parts on different nets
+    """GEO.spacing: on every side that is assembled ([release] assembly sides), SMD pads of different parts on different nets
     at least the paste gap apart (paste_gap_mm, 0.4 mm) – the stencil keeps a web between their prints. Measured on
-    the pad shapes of `route read` as L-13 and `route check` measure them. A pair waived in the graph (waive L-14 on
+    the pad shapes of `route read` as GEO.spacing and `route check` measure them. A pair waived in the graph (waive GEO.spacing on
     one of its parts or nets) is listed with its reason."""
     from .. import route
     gap, sides = route.paste_rule(cfg)
@@ -711,12 +711,12 @@ def check_looks(board, d, rows):
 
 
 def check_visible_print(cfg, board, design, d, rows):
-    """L-19 with [looks]: the visible side carries only the texts the board file puts there. Every PCB text of its
+    """GEO.silk with [looks]: the visible side carries only the texts the board file puts there. Every PCB text of its
     silkscreen (pcb.json strings) is the board label of that side (board_label_side, default the designators side),
     the text of a [[silk.texts]] entry of that side, or – when [silk] designators is that side – a designator of the
     board or a key of [silk] groups (what silk apply prints there). While [silk] designators names the other side, no
-    part on the visible side shows its designator (pcb.json designators; waive L-19 on the part). The footprints'
-    own print is no PCB text (L-8 and L-17 read it from the Gerber files), artwork is fills. Without [looks]: no row."""
+    part on the visible side shows its designator (pcb.json designators; waive GEO.silk on the part). The footprints'
+    own print is no PCB text (GEO.mark and GEO.silk read it from the Gerber files), artwork is fills. Without [looks]: no row."""
     from .. import silk
     if not board.looks:
         return
@@ -784,10 +784,10 @@ def pcb_vias(d, lines, diameter_mil):
 
 
 def check_hand_joints(cfg, board, design, d, rows):
-    """L-18 with [routing] hand_solder_keep_mm: on the solder side of every through-hole pad of a hand-soldered part
-    (bom: false), no via or pad of another net closer than the keep – the pads as `route read` saw them (as L-13), the
+    """GEO.spacing with [routing] hand_solder_keep_mm: on the solder side of every through-hole pad of a hand-soldered part
+    (bom: false), no via or pad of another net closer than the keep – the pads as `route read` saw them (as GEO.spacing), the
     vias from the via drill file with the net of the tracks of pcb.json that end on them. Tracks do not count. A pair
-    waived in the graph (waive L-18 on the joint's part or net, or on the other part or net) is listed with its reason.
+    waived in the graph (waive GEO.spacing on the joint's part or net, or on the other part or net) is listed with its reason.
     Off (0): no row."""
     from .. import route
     rules = route.Rules(board)
@@ -889,7 +889,7 @@ def check_drills(board, design, d, rows):
                  "JLCPCB widens it or asks", False, "; ".join(slots), f">= {JLC_SLOT_MM} mm", "warn")
 
 
-JLC_RING_MM = 0.18           # L-16, JLCPCB 2 layers 1 oz: PTH annular ring, absolute minimum (fail below)
+JLC_RING_MM = 0.18           # GEO.ring, JLCPCB 2 layers 1 oz: PTH annular ring, absolute minimum (fail below)
 JLC_RING_WARN_MM = 0.20      # ... the capability value "≧0.20mm" (warn below; recommended 0.25 mm)
 JLC_VIA_RING_MM = 0.05       # ... via diameter at least the via hole + 0.1 mm
 JLC_PAD_GAP_MM = 0.45        # ... "Pad Hole-to-Hole Spacing", read edge to edge (a component hole is one of the two)
@@ -923,7 +923,7 @@ def ring_mm(parts, hole):
 
 
 def check_rings(board, design, d, rows):
-    """L-16: every plated hole keeps JLCPCB's annular ring on TOP and BOTTOM (2 layers, 1 oz: a component hole 0.18 mm,
+    """GEO.ring: every plated hole keeps JLCPCB's annular ring on TOP and BOTTOM (2 layers, 1 oz: a component hole 0.18 mm,
     warning below 0.20 mm; a via 0.05 mm, via Ø >= hole + 0.1 mm), and every two plated holes – also two of one part –
     keep JLCPCB's hole-to-hole spacing, edge to edge (0.45 mm when a component hole is one of them, 0.2 mm between two
     vias). Vias are the holes of the via drill file (EasyEDA writes them into the PTH file as well); the other plated
@@ -1070,8 +1070,8 @@ def loop_length_mm(data, a, b, snap=0.5, pad_mm=0.9):
 
 
 def check_loops(board, design, d, rows):
-    """L-11 over the loops of the plan and those the circuit hands over (layout.loops of the graph). A pad that is not
-    in the PCB, or two pads on different nets there, is a finding of the loop (L-1 names the cause)."""
+    """GEO.loop over the loops of the plan and those the circuit hands over (layout.loops of the graph). A pad that is not
+    in the PCB, or two pads on different nets there, is a finding of the loop (SYNC.pcb names the cause)."""
     loops = board.loops + handover.loops(design, board.name)
     if not loops:
         return
@@ -1119,7 +1119,7 @@ def check_copper(board, design, d, rows):
              "; ".join(shorts[:8]) or "none", "none")
 
 
-BARE_STEP = 5                # L-15: the copper-free circle is measured on blocks of 5 x 5 raster points (0.1 mm)
+BARE_STEP = 5                # GEO.pour: the copper-free circle is measured on blocks of 5 x 5 raster points (0.1 mm)
 
 
 def free_circle(free, step=BARE_STEP):
@@ -1137,7 +1137,7 @@ def free_circle(free, step=BARE_STEP):
 
 
 def check_copper_sides(board, design, d, rows):
-    """L-15: copper per layer from the Gerber files on the raster of L-2, widened to the outline. Per layer the copper
+    """GEO.pour: copper per layer from the Gerber files on the raster of GEO.copper, widened to the outline. Per layer the copper
     share of the board area (outline without mounting and NPTH holes) and the largest copper-free circle inside
     the pour outline (pcb.pour_outline, as `pcb pour` pours): information on a layer without pour, a warning above
     [copper] max_bare_mm on a layer the board file pours ([[pours]], default GND on both) – a pour EasyEDA left empty
@@ -1372,8 +1372,8 @@ def run(cfg, board, out, offline=False, verbose=False):
     check_visible_print(cfg, board, design, d, rows)
     check_fab(cfg, board, design, d, rows)
     from . import order_sheet
-    order_sheet.check(cfg, board, design, d, rows, bom_rows(design, board))   # F-6, only with [order]
-    if not gerber.missing(d / "gerber", "top", "bottom", "top_silk", "bottom_silk"):   # otherwise F-5 names them
+    order_sheet.check(cfg, board, design, d, rows, bom_rows(design, board))   # FILES.order, only with [order]
+    if not gerber.missing(d / "gerber", "top", "bottom", "top_silk", "bottom_silk"):   # otherwise FILES.set names them
         from . import polarity
         img, n = polarity.sheet(cfg, board, design, d)
         rows.add("P", "FILES.sheet", board.name, "polarity sheet to compare with the datasheets and the JLCPCB preview", True,

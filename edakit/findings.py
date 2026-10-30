@@ -171,10 +171,11 @@ def accepted_in_graph(f, graph):
 
 
 def grouped(findings):
-    """{code: [findings]} in the order the findings come."""
+    """{code: [findings]} in the order the findings come – a code with findings of several severities, or some
+    accepted, once per severity and acceptance ("GEO.hole" errors, then its notes)."""
     out = defaultdict(list)
     for f in findings:
-        out[f.code].append(f)
+        out[(f.code, f.severity, bool(f.accepted))].append(f)
     return out
 
 
@@ -182,7 +183,7 @@ def format_findings(findings, shown=SHOWN, explain=True):
     """The findings grouped by code, each group with its severity and count, the first `shown` of each; below them
     the fix of every code that failed (its rule: edakit explain). -> lines"""
     lines = []
-    for code, fs in grouped(findings).items():
+    for (code, _, _), fs in grouped(findings).items():
         sev = fs[0].severity + (" (accepted)" if fs[0].accepted else "")
         lines.append(f"{code} – {catalog.title(code)}: {len(fs)} {sev}")
         for f in fs[:shown]:
@@ -191,8 +192,8 @@ def format_findings(findings, shown=SHOWN, explain=True):
                 lines.append(f"      accepted: {f.accepted}")
         if len(fs) > shown:
             lines.append(f"  … {len(fs) - shown} more (--json)")
-    failing = [c for c, fs in grouped(findings).items() if not all(f.accepted for f in fs)
-               and fs[0].severity in ("error", "warning")]
+    failing = list(dict.fromkeys(c for (c, sev, acc), fs in grouped(findings).items()
+                                 if not acc and sev in ("error", "warning")))
     if explain and failing:
         lines.append("\nWhat to do (edakit explain <code> for rule, why and sources):")
         lines += [f"  {c}: {(catalog.code(c) or {}).get('fix', '')}" for c in failing]

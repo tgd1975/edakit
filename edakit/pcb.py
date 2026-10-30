@@ -3,20 +3,20 @@ mounting and tooling holes, copper pours, EasyEDA's auto-layout.
 
     edakit pcb dump [--ref U1,J1]   footprint geometry -> <board file>.geometry.json beside the board file
                                     (hardware/boards/<board>.geometry.json), versioned – the layout hash covers it;
-                                    through-hole pads with their hole [w, l] in mm (P-7); the pads of a part whose
-                                    parts entry has footprint data also with shape, size, rotation, layer (P-10)
+                                    through-hole pads with their hole [w, l] in mm (GEO.hole); the pads of a part whose
+                                    parts entry has footprint data also with shape, size, rotation, layer (SYNC.footprint)
                                     (turns every measured part to 0°/TOP and leaves it there – run apply afterwards)
     edakit pcb plan                 offline: check the plan (overlaps – under a part on pin headers only its pins,
                                     SMD parts within silk_overlap_mm –, outline, holes, THT pins under parts of the
                                     other side, near, polarised parts of the kinds in `uniform` pointing the same way
                                     (default: LEDs in a row), mated plugs (`mate` of the parts entry) clear of the
-                                    other parts and out through the outline; L-12 the layout requirements of the
-                                    circuit; P-7 holes and leads), airline length, preview PNG, net classes from the
+                                    other parts and out through the outline; SYNC.plan the layout requirements of the
+                                    circuit; GEO.hole holes and leads), airline length, preview PNG, net classes from the
                                     simulation, the mechanical model mech_<board>.json; a part not in the dump yet
                                     takes the library footprint `edakit part import` cached
     edakit pcb place [--write] [--only C1,R1]
                                     offline: a spot next to its host for every part the circuit or the board file
-                                    ties to one (layout.near, [near], the decoupling of L-12) and [place] lacks;
+                                    ties to one (layout.near, [near], the decoupling of SYNC.plan) and [place] lacks;
                                     --write adds the rows to [place] with auto = true (a later run may move those)
     edakit pcb parts [--write]      parts of the board schematic -> PCB without the "Import Changes" dialog
     edakit pcb nets [--write]       pad nets in the PCB = graph
@@ -141,7 +141,7 @@ def plan_geometry(cfg, board, design, refs=None):
 
 # --- plan ---------------------------------------------------------------------------------------------------------
 
-GEOMETRY_FROM = {"library": "library geometry {}", "data": "footprint data ({})"}   # what P-7 names besides pcb dump
+GEOMETRY_FROM = {"library": "library geometry {}", "data": "footprint data ({})"}   # what GEO.hole names besides pcb dump
 
 
 def say_unmeasured(geo, refs):
@@ -309,7 +309,7 @@ def check_plan(cfg, board, geo, place, boxes, tht):
 
 
 def check_handover(board, design, place, boxes):
-    """L-12: the plan keeps the layout requirements of the circuit (handover.py) – parts that are not fixed, too far
+    """SYNC.plan: the plan keeps the layout requirements of the circuit (handover.py) – parts that are not fixed, too far
     from the edge or from their host, an IC without a decoupling capacitor of its own next to it."""
     from shapely.geometry import box
     edge = outline_polygon(board).exterior
@@ -477,7 +477,7 @@ def _given_mm(v, low=None, above=False):
 def part_mech(part):
     """The third dimension of a parts entry, every field optional: `body.h_mm` (height of the body above the board, on
     the part's side), `lead.<pad or "*">.length_mm` (lead length below the seating plane, beside the cross-section of
-    L-9), `mate` – the mated plug with its strain relief: `box` [x0, y0, x1, y1] in footprint mm (relative to the
+    GEO.hole), `mate` – the mated plug with its strain relief: `box` [x0, y0, x1, y1] in footprint mm (relative to the
     part's origin at 0° on TOP, as the geometry dump), `h_mm`, and `exit`, the direction the cable leaves the box:
     "+x", "-x", "+y", "-y", or "+z" away from the board. -> ({"h_mm", "leads": {pad: length}, "mate"} as far as the
     entry gives them, [what is wrong])."""
@@ -778,7 +778,7 @@ def declared_hosts(board, design):
 
 
 def missing_decoupling(board, reqs, boxes):
-    """The decoupling requirements of L-12 the plan does not keep yet – one capacitor of its own per IC within near_mm,
+    """The decoupling requirements of SYNC.plan the plan does not keep yet – one capacitor of its own per IC within near_mm,
     matched as check_handover matches them."""
     ics = [r for r in reqs if r.kind == "decoupling" and r.part in boxes]
     out = []
@@ -945,7 +945,7 @@ def find_spot(cfg, board, geo, design, state, part, hosts, rows):
 
 def auto_place(cfg, board, geo, design, only=None):
     """pcb place: a spot for every part that is not in [place] (or is there with auto = true) but tied to a host –
-    by layout.near of the graph, [near] of the board file (in that order, by designator), then the decoupling of L-12:
+    by layout.near of the graph, [near] of the board file (in that order, by designator), then the decoupling of SYNC.plan:
     an IC without a capacitor of its own within near_mm gets the first free capacitor between its supply and ground
     that declares no host. The spot: on the host's side, within near_mm of every host, at 0/90/180/270°, the part's
     pad on a net it shares with the host as close as possible to the host's pin on that net (decoupling: the supply,
@@ -1030,7 +1030,7 @@ def _auto_place(cfg, board, geo, design, moving, keep):
     return rows, problems
 
 
-ROW_DECIMALS = 3                   # rows from EasyEDA: mm and degrees to 0.001 – well inside L-7's 0.02 mm and 0.01°
+ROW_DECIMALS = 3                   # rows from EasyEDA: mm and degrees to 0.001 – well inside SYNC.plan's 0.02 mm and 0.01°
 
 
 def row_number(v):
@@ -1127,7 +1127,7 @@ def place_main(cfg, board, write=False, only=None):
 # --- the positions EasyEDA has: the auto-layout's, written back; a board placed before, taken over -----------------
 
 def parts_without_row(board, design):
-    """The parts the graph puts on the board that have no row in [place], by designator (L-20). A part on a bought
+    """The parts the graph puts on the board that have no row in [place], by designator (SYNC.plan). A part on a bought
     board – off the board, at the far end of a cable – is on no made board and needs none."""
     return sorted((r for r in design.board_comps(board.name) if r not in board.place), key=natural_key)
 
@@ -1193,7 +1193,7 @@ PAD_LAYER_NAMES = {TOP: "TOP", BOTTOM: "BOTTOM", MULTI_LAYER: "MULTI"}
 
 def pad_shape(p):
     """{"shape", "w", "h", "rot", "layer"} of a pin as the import cache has them (mil, degrees) – read from the pad's
-    own fields (pad: [shape, w, h, …], rotation, layer), for a part whose parts entry has footprint data: P-10 holds
+    own fields (pad: [shape, w, h, …], rotation, layer), for a part whose parts entry has footprint data: SYNC.footprint holds
     them to the data. {} where the API gives none. NOT RUN against EasyEDA yet (step 3.6): the fields are those of
     IPCB_PrimitivePad in the client's api-types.d.ts, as measure reads x, y and hole."""
     st = p.get("state") or {}
@@ -1208,8 +1208,8 @@ def pad_shape(p):
 
 def measure(mcp, c, shapes=False):
     """Geometry of a part relative to its origin; turns it to 0°/TOP for that and leaves it so. Through-hole pads keep
-    their hole (P-7); with shapes – a part whose parts entry has footprint data (4.5) – every pad its shape, size,
-    rotation and layer too (P-10)."""
+    their hole (GEO.hole); with shapes – a part whose parts entry has footprint data (4.5) – every pad its shape, size,
+    rotation and layer too (SYNC.footprint)."""
     pid = c["primitiveId"]
     if c["rotation"] or c["layer"] != TOP:
         ensure_pcb_focus(mcp)
@@ -1240,7 +1240,7 @@ def dump(cfg, board, mcp, refs=None):
     out = json.loads(f.read_text()) if refs and f.exists() else {}
     design = Design.from_config(cfg)
     own = {des for key, e in design.parts.items() if "footprint_data" in e for des in users(design, key)} \
-        if has_data(design.parts) else set()       # their pads with shape and size: P-10 holds them to the data
+        if has_data(design.parts) else set()       # their pads with shape and size: SYNC.footprint holds them to the data
     out |= {c["designator"]: measure(mcp, c, shapes=True) if c["designator"] in own else measure(mcp, c)
             for c in eda.list_pcb_components(mcp) if c.get("designator") and (not refs or c["designator"] in refs)}
     print(f"{len(out)} parts -> {save_geometry(cfg, board, out)}")
@@ -1692,7 +1692,7 @@ def takeover(cfg, board, mcp, write=False):
     """pcb takeover, once for a board placed before – by hand, or by the auto-layout before it wrote its positions
     back – and maybe routed: every part of the board without a row in [place] gets a fixed row (no auto) where EasyEDA
     has it, so that pcb apply locks it there and the tracks stay on its pads; a new auto-layout would move it off them.
-    Rows the board file holds stay as they are – L-7 compares them with the PCB. Without write: shown only."""
+    Rows the board file holds stay as they are – SYNC.plan compares them with the PCB. Without write: shown only."""
     return write_back(cfg, board, eda.list_pcb_components(mcp), auto=False, write=write)
 
 

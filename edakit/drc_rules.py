@@ -1,9 +1,9 @@
 """The rule set of EasyEDA's DRC as text: what the board file's [routing] asks of it, and where the rule set EasyEDA
 holds differs (design-as-text decision 6, step 2.2 of the implementation plan).
 
-L-3 asks for a DRC without findings – with the rules EasyEDA holds, set in its GUI (Design → Design Rule), which no
+GEO.drc asks for a DRC without findings – with the rules EasyEDA holds, set in its GUI (Design → Design Rule), which no
 file shows. With `[routing] drc_rules = "check"` in the board file, stage L reads the rule set the DRC ran with
-(eda.read_drc_rules, into drc_rules.json of the run) and L-3 compares it with the board file. Nothing here talks to
+(eda.read_drc_rules, into drc_rules.json of the run) and GEO.drc compares it with the board file. Nothing here talks to
 EasyEDA: eda.read_drc_rules and eda.write_drc_rules are the thin calls around these functions. Writing has not run
 against EasyEDA yet – the live probe of step 2.2 decides whether edakit writes the rule set or only checks it
 (handbook 9.4).
@@ -11,11 +11,11 @@ against EasyEDA yet – the live probe of step 2.2 decides whether edakit writes
 What the board file asks (route.Rules reads the same keys for the DSN; mil there, mm here):
     clearance   clearance_mil: track to track, pad and via, via to pad and via, of different nets – the cells of
                 EasyEDA's Safe Spacing table between Track, SMD Pad, TH Pad and Via. Pads among themselves are left to
-                the footprints: L-13 measures pads of different parts.
+                the footprints: GEO.spacing measures pads of different parts.
     edge        edge_clearance_um: track and via to the board outline
     tracks      the least width of a track: signal_mil for a net without a class, width_mil for the nets of a class
                 of [routing.classes]; a fixed wire narrower than that lowers it – the board file prescribes the wire.
-                With widths = "sim" the classes keep their width_mil here: wider tracks pass the DRC, and L-5 holds
+                With widths = "sim" the classes keep their width_mil here: wider tracks pass the DRC, and GEO.width holds
                 every track to its simulated current.
     via         via = [diameter, drill]: the least via
     classes     [routing.classes]: EasyEDA's net classes, each with its nets that are in the PCB
@@ -55,10 +55,10 @@ SHOWN_NETS = 6           # a message names this many nets of a group, then "…"
 
 
 def mode(board):
-    """[routing] drc_rules of the board file: None without the key (L-3 as before), or "check"."""
+    """[routing] drc_rules of the board file: None without the key (GEO.drc as before), or "check"."""
     m = board.routing.get("drc_rules")
     if m is not None and m not in MODES:
-        raise ConfigError(f"board {board.name}: routing.drc_rules must be \"check\" (L-3: the rule set EasyEDA's DRC "
+        raise ConfigError(f"board {board.name}: routing.drc_rules must be \"check\" (GEO.drc: the rule set EasyEDA's DRC "
                           f"ran with = [routing]), not {m!r} – writing it waits for the live probe (handbook 9.4)")
     return m
 
@@ -84,7 +84,7 @@ def wanted(board):
 
 
 def summary(want):
-    """The rule set of the board file in one line, the expected value of L-3's row."""
+    """The rule set of the board file in one line, the expected value of GEO.drc's row."""
     classes = ", ".join(f"{c} {w:.3f}" for c, w in want["track"].items() if c)
     return (f"clearance {want['clearance']:.3f} mm, edge {want['edge']:.3f} mm, tracks {want['track']['']:.3f} mm"
             + (f" ({classes} mm)" if classes else "")
@@ -260,7 +260,7 @@ def name_of(have):
 
 
 def verdict(board, path):
-    """L-3 with [routing] drc_rules: (ok, actual, expected) of the row "EasyEDA's DRC rule set = [routing] of the board
+    """GEO.drc with [routing] drc_rules: (ok, actual, expected) of the row "EasyEDA's DRC rule set = [routing] of the board
     file", from drc_rules.json of the run (path)."""
     want = wanted(board)
     expected = summary(want)

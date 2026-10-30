@@ -15,7 +15,7 @@ def rows(*results):
 
 
 def signoff(manual=(), warnings=()):
-    return {"manual": list(manual), "accepted_warnings": list(warnings)}
+    return {"manual": list(manual), "accept": list(warnings)}
 
 
 def test_released_when_everything_passes():
@@ -84,7 +84,7 @@ def test_each_hash_covers_its_files(project):
     board.write_text(board.read_text().replace('C2 = "U1"', 'C2 = "U2"'))
     assert gate.header(project.config())["layout_sha256"] != h["layout_sha256"]
     g = project.graph()
-    g["graph"]["checks"]["reverse_protect"] = []
+    project.comp(g, "J1").pop("source")
     project.save_graph(g)
     assert gate.header(project.config())["state_sha256"] != h["state_sha256"]
 
@@ -195,15 +195,15 @@ def test_open_datasheet_points_in_the_protocol(project, monkeypatch):
 
 
 def test_information_of_stages_p_and_g_in_the_protocol(project, monkeypatch):
-    """A note of stage P or G – the example has P-7 without a footprint geometry and P-4 without a stock snapshot – is
+    """A note of stage P or G – the example has GEO.hole without a footprint geometry and PARTS.stock without a stock snapshot – is
     listed at the end of section 2: information, which neither blocks nor needs acceptance; section 3 stays empty."""
-    from edakit import rules
+    from edakit import catalog
     text = gate_run(project, monkeypatch)
     two = section(text, 2)
     assert two.startswith("Findings\n\nNo check failed.\n")
     listed = two.split("Information (does not block the release, needs no acceptance):\n\n")[1]
-    assert f"- {rules.label('P-7')}: not run: no footprint geometry – edakit pcb dump once the parts" in listed
-    assert f"- {rules.label('P-4')}: no stock snapshot (hardware/stock.json) – edakit stock asks JLCPCB" in listed
+    assert f"- {catalog.label('GEO.hole')}: not run: no footprint geometry – edakit pcb dump once the parts" in listed
+    assert f"- {catalog.label('PARTS.stock')}: no stock snapshot (hardware/stock.json) – edakit stock asks JLCPCB" in listed
     assert section(text, 3).strip() == "Warnings\n\nNone."
 
 
@@ -367,21 +367,21 @@ def test_no_rehash_when_the_circuit_changed_as_well(project):
     assert "rehashed" not in json.loads(path.read_text())
 
 
-WARN = {"stage": "L", "id": "L-9", "item": "main", "check": "D2: hole tight at the lower tolerance", "result": "warn"}
-ACCEPT = {"match": "L-9 main D2: hole tight*", "scope": "decision", "reason": "D-1", "by": "owner", "date": "2026-10-27"}
+WARN = {"stage": "L", "id": "GEO.hole", "item": "main", "check": "D2: hole tight at the lower tolerance", "result": "warn"}
+ACCEPT = {"match": "GEO.hole main D2: hole tight*", "scope": "decision", "reason": "D-1", "by": "owner", "date": "2026-10-27"}
 
 
 def accept(project, **extra):
     path = project.root / "hardware" / "signoff.json"
     s = json.loads(path.read_text())
-    s["accepted_warnings"] = [{**ACCEPT, **extra}]
+    s["accept"] = [{**ACCEPT, **extra}]
     path.write_text(json.dumps(s, indent=2))
     return gate.load_signoff(project.config(), {"state_sha256": None, "layout_sha256": None})
 
 
 def test_an_acceptance_naming_its_parts_counts_while_they_are_the_same(project):
     loaded, _ = accept(project, parts={"D2": "C2297"})
-    assert gate.accepted(WARN, loaded) and not loaded["lapsed_warnings"]
+    assert gate.accepted(WARN, loaded) and not loaded["lapsed"]
     assert not any("warning" in r for r in gate.decide([WARN], [], loaded, ALL, gate.STAGES)[1])
 
 
@@ -389,19 +389,19 @@ def test_an_acceptance_lapses_when_its_part_changes(project, tmp_path):
     edit(project, lambda g: project.comp(g, "D2").update(lcsc="C2895549"))
     loaded, _ = accept(project, parts={"D2": "C2297"})
     assert not gate.accepted(WARN, loaded)
-    assert loaded["lapsed_warnings"][0]["lapsed"] == "D2 is now C2895549"
+    assert loaded["lapsed"][0]["lapsed"] == "D2 is now C2895549"
     _, reasons = gate.decide([WARN], [], loaded, ALL, gate.STAGES)
     assert any("1 warning(s) not accepted" in r for r in reasons)
     edit(project, lambda g: g["graph"].update(components=[c for c in g["graph"]["components"]
                                                           if c["designator"] != "D2"]))
     loaded, _ = accept(project, parts={"D2": "C2297"})
-    assert loaded["lapsed_warnings"][0]["lapsed"] == "D2 is not in the graph"
+    assert loaded["lapsed"][0]["lapsed"] == "D2 is not in the graph"
 
 
 def test_without_parts_an_acceptance_works_as_before(project):
     edit(project, lambda g: project.comp(g, "D2").update(lcsc="C2895549"))
     loaded, _ = accept(project)
-    assert gate.accepted(WARN, loaded) and not loaded["lapsed_warnings"]
+    assert gate.accepted(WARN, loaded) and not loaded["lapsed"]
 
 
 def test_the_protocol_lists_a_lapsed_acceptance(project, monkeypatch):

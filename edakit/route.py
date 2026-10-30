@@ -8,14 +8,14 @@ start, has a fixed 900 s limit and left nets open. So routing happens outside Ea
     2 dsn      offline: our own Specctra DSN (rules from [routing] of the board file; with widths = "sim" every net
                at least the IPC-2221 width of its simulated current); parts, pins and nets in a fixed order; with
                fanout on a plane, a protected via and stub for each SMD pad on the other layer; with
-               hand_solder_keep_mm a via keep-out around every hand-soldered joint on its solder side (L-18)
+               hand_solder_keep_mm a via keep-out around every hand-soldered joint on its solder side (GEO.spacing)
     3 route    offline: Freerouting (pinned, downloads itself once, SHA-256 checked), no GUI -> <board>.ses
-    4 check    offline: pads of different parts on different nets at least the clearance apart (L-13), SMD pads on
-               an assembled side at least the paste gap apart (L-14), pads of other nets at least
-               hand_solder_keep_mm from a hand-soldered joint on its solder side (L-18; no new attempt helps there),
+    4 check    offline: pads of different parts on different nets at least the clearance apart (GEO.spacing), SMD pads on
+               an assembled side at least the paste gap apart (GEO.spacing), pads of other nets at least
+               hand_solder_keep_mm from a hand-soldered joint on its solder side (GEO.spacing; no new attempt helps there),
                every net connected, clearances >= rule, nothing in keep-outs, vias of other nets at least
-               hand_solder_keep_mm from a hand-soldered joint (L-18), track widths of the SES and the fixed wires
-               against the simulated currents (L-5 as in the gate: below IPC-2221 fails, below the class width
+               hand_solder_keep_mm from a hand-soldered joint (GEO.spacing), track widths of the SES and the fixed wires
+               against the simulated currents (GEO.width as in the gate: below IPC-2221 fails, below the class width
                warns); with [looks] the track length per side, the vias and the visible side against its limits
                (warnings only); preview PNG with open connections in yellow.
                In `all`: up to `attempts` runs with a reshuffled DSN while something is open.
@@ -111,7 +111,7 @@ class Rules:
                     self.pour_only[p["net"]].append((layer, p.get("clearance_mm", POUR_CLEARANCE_MM) * MIL_PER_MM,
                                                      p.get("min_width_mm", POUR_MIN_WIDTH_MM) * MIL_PER_MM))
         self.pour_only = dict(self.pour_only)
-        # L-18: copper of other nets keeps this much (mil) from a hand-soldered joint on its solder side; 0 = off.
+        # GEO.spacing: copper of other nets keeps this much (mil) from a hand-soldered joint on its solder side; 0 = off.
         # hand: the designators soldered by hand (bom: false in the graph) – set by the caller, who has the graph
         self.joint_keep = r.get("hand_solder_keep_mm", 0) * MIL_PER_MM
         self.hand = set()
@@ -367,7 +367,7 @@ def hand_soldered(graph, board):
 
 
 def hand_joints(data, hand):
-    """L-18: every through-hole pad of a part in `hand`, with its solder side – the copper layer its part does not sit
+    """GEO.spacing: every through-hole pad of a part in `hand`, with its solder side – the copper layer its part does not sit
     on. -> [(pad, layer)] in the order of the pads."""
     side = {c["ref"]: c["layer"] for c in data["components"]}
     return [(p, LAYERS[3 - side[p["ref"]]]) for p in data["pads"]
@@ -375,7 +375,7 @@ def hand_joints(data, hand):
 
 
 def joint_keepouts(rules, data):
-    """L-18 in the DSN: a via keep-out on the solder side around every hand-soldered joint, the pad grown by
+    """GEO.spacing in the DSN: a via keep-out on the solder side around every hand-soldered joint, the pad grown by
     joint_keep – Specctra via_keepout, which Freerouting 2.4.1 reads. Its chords lie outside the true distance.
     Freerouting's keep-outs are not per net: a via of the joint's own net stays out too, its tracks still reach it.
     -> [(layer, convex polygon in mil)]"""
@@ -387,7 +387,7 @@ def joint_keepouts(rules, data):
 
 
 def joint_gaps(data, keep_mil, hand, vias=(), waivers=({}, {})):
-    """L-18: on the solder side of every through-hole pad of a hand-soldered part (hand_joints), vias and pads of other
+    """GEO.spacing: on the solder side of every through-hole pad of a hand-soldered part (hand_joints), vias and pads of other
     nets closer than keep_mil, copper to copper. Tracks do not count: they run under the solder mask, between the pins
     of a 2.54 mm part too (the owner's decision on #59). A pad without a net counts as a net of its own; the part's own
     pads are not compared, nor pads without a part (tooling holes). vias: [(net, or None when unknown, (x, y),
@@ -461,7 +461,7 @@ def fanout(rules, data):
     FANOUT_STEP_MIL steps up to FANOUT_REACH_MIL further), at each distance FANOUT_DIRECTIONS directions, the one closest
     to the direction away from the part's centre first. Via and stub keep the clearance from foreign copper (pads, fixed
     wires, the other fanouts) and the fanout vias from each other; the via stays inside the edge clearance and off the
-    hole, tooling and `what = "all"` keep-outs, the stub off those and off every keep-out on its layer; with L-18 on, the
+    hole, tooling and `what = "all"` keep-outs, the stub off those and off every keep-out on its layer; with GEO.spacing on, the
     via keeps joint_keep from the hand-soldered joints of other nets. A pad without a spot stops the run. -> [(net, "R1.1", layer, width, pad centre, via)] in mil, by net and pad."""
     on_plane = defaultdict(set)
     for net, layer in planes(rules):
@@ -652,7 +652,7 @@ def write_dsn(rules, data, out, variant=0):
     say(f"DSN: {len(routed)} nets with >= 2 pins, {len(data['pads'])} pads, {len(padstacks)} padstacks, {len(keep)} hole "
         f"keep-outs, {len(strips)} edge strips, {len(extra)} keep-out pieces, {len(fixed)} fixed wires, "
         + (f"{len(fans)} fanout vias, " if fans else "")
-        + (f"{len(joints)} via keep-outs at hand-soldered joints (L-18), " if joints else "") + f"clearance {rules.clear} mil"
+        + (f"{len(joints)} via keep-outs at hand-soldered joints (GEO.spacing), " if joints else "") + f"clearance {rules.clear} mil"
         + (f", order {variant}" if variant else "")
         + (f", pour-only (no tracks): {', '.join(sorted(rules.pour_only))}" if rules.pour_only else "") + f" -> {out}")
     for (name, w), members in sorted(cls.items()):
@@ -661,7 +661,7 @@ def write_dsn(rules, data, out, variant=0):
 
 def sim_widths(cfg, board, rules):
     """[routing] widths = "sim": every class of [routing.classes] at least the IPC-2221 width (1.5 x the simulated
-    current, as L-5 of the gate) of its widest net, and a net outside the classes that needs more than signal_mil a
+    current, as GEO.width of the gate) of its widest net, and a net outside the classes that needs more than signal_mil a
     class of its own, named after the net; widths rounded up to 0.1 mil. Changes rules.classes, prints what it widened.
     Fixed wires keep their own width_mil – `route check` measures them."""
     from .design import Design
@@ -690,14 +690,14 @@ def sim_widths(cfg, board, rules):
 
 
 def report_widths(cfg, board, rules, routes):
-    """L-5 offline: the narrowest SES track of every net and every fixed wire against the widths of the gate's L-5
+    """GEO.width offline: the narrowest SES track of every net and every fixed wire against the widths of the gate's GEO.width
     (release.fab.required_widths): below IPC-2221 for 1.5 x the simulated current fails, below the practical width of
     the net class warns. Without net_currents.json one line and nothing fails, as before. -> the failures."""
     from .design import Design
     from .release.fab import required_widths
     need = required_widths(cfg, Design.from_config(cfg), board) if cfg.graph.exists() else None
     if need is None:
-        say("track widths (L-5 offline): no net currents – run `edakit sim` first")
+        say("track widths (GEO.width offline): no net currents – run `edakit sim` first")
         return []
     fixed = fixed_wires(rules)
     mm = 1 / MIL_PER_MM
@@ -714,12 +714,12 @@ def report_widths(cfg, board, rules, routes):
     for spec, (net, _, w, _) in zip(rules.board.routing.get("fixed_wires", []), fixed):
         (x0, y0), (x1, y1) = spec["points"][0], spec["points"][-1]
         items.append((net, f"fixed wire {net} ({x0:g}, {y0:g})–({x1:g}, {y1:g})", w * mm))
-    fail = [f"L-5 (offline) {what}: {w:.2f} < {need[net][0]:.2f} mm" for net, what, w in items
+    fail = [f"GEO.width (offline) {what}: {w:.2f} < {need[net][0]:.2f} mm" for net, what, w in items
             if net in need and w < need[net][0] - 0.005]
-    warn = [f"L-5 (offline) {what}: {w:.2f} < {need[net][1]:.2f} mm – below the practical width of its class "
+    warn = [f"GEO.width (offline) {what}: {w:.2f} < {need[net][1]:.2f} mm – below the practical width of its class "
             "(warning)" for net, what, w in items if net in need and need[net][0] - 0.005 <= w < need[net][1] - 0.005]
     wires = f" and {len(fixed)} fixed wire{'s' * (len(fixed) != 1)}" if fixed else ""
-    say(f"track widths (L-5 offline): {len(narrow)} nets{wires}, {len(fail)} below IPC-2221 for 1.5 x the simulated "
+    say(f"track widths (GEO.width offline): {len(narrow)} nets{wires}, {len(fail)} below IPC-2221 for 1.5 x the simulated "
         f"current, {len(warn)} below the class width")
     for line in fail + warn:
         print(f"    {line}", flush=True)
@@ -1149,10 +1149,10 @@ def paste_rule(cfg):
 
 
 def pad_gaps(data, gap_mil, waivers=({}, {}), smd_on=None):
-    """L-13: pads of different parts on different nets closer than gap_mil on a copper layer both are on (a
+    """GEO.spacing: pads of different parts on different nets closer than gap_mil on a copper layer both are on (a
     through-hole pad is on both). A pad without a net counts as a net of its own; pads of one part belong to its
     footprint, and a pad without a part (a tooling hole) is no part. A pair is waived when one of its parts or nets
-    has the code's accept in the graph (waivers: pad_accepts). smd_on (L-14): only SMD pads on these layers ("TOP",
+    has the code's accept in the graph (waivers: pad_accepts). smd_on (GEO.spacing): only SMD pads on these layers ("TOP",
     "BOTTOM") – the sides that get paste. -> [{"a", "b" (pad names), "nets", "layers", "mil", "waived" (reason or
     None)}], closest first."""
     from shapely.strtree import STRtree
@@ -1218,19 +1218,19 @@ def board_as_read(cfg, board, components):
 
 
 def report_pads(rules, data, waivers):
-    """The placement's part of the check, printed: pads of different parts closer than the clearance (L-13), waived
+    """The placement's part of the check, printed: pads of different parts closer than the clearance (GEO.spacing), waived
     ones with their reason -> those not waived."""
     gaps = pad_gaps(data, rules.clear, waivers)
     tight = [g for g in gaps if not g["waived"]]
     say(f"pads of different parts: {len(tight)} pairs closer than the clearance {rules.clear} mil"
-        + (f", {len(gaps) - len(tight)} waived (L-13)" if len(gaps) > len(tight) else ""))
+        + (f", {len(gaps) - len(tight)} waived (GEO.spacing)" if len(gaps) > len(tight) else ""))
     for g in gaps[:20]:
         print(f"    {gap_text(g, rules.clear)}" + (f" – waived: {g['waived']}" if g["waived"] else ""), flush=True)
     return tight
 
 
 def report_paste(cfg, data):
-    """L-14, printed: SMD pads of different parts on different nets closer than the paste gap on an assembled side,
+    """GEO.spacing, printed: SMD pads of different parts on different nets closer than the paste gap on an assembled side,
     waived ones with their reason -> those not waived."""
     gap, sides = paste_rule(cfg)
     if not sides:
@@ -1238,7 +1238,7 @@ def report_paste(cfg, data):
     gaps = pad_gaps(data, gap, graph_accepts(cfg, "GEO.spacing", "paste"), sides)
     tight = [g for g in gaps if not g["waived"]]
     say(f"SMD pads of different parts on {' and '.join(sides)}: {len(tight)} pairs closer than the paste gap "
-        f"{gap / MIL_PER_MM:g} mm" + (f", {len(gaps) - len(tight)} waived (L-14)" if len(gaps) > len(tight) else ""))
+        f"{gap / MIL_PER_MM:g} mm" + (f", {len(gaps) - len(tight)} waived (GEO.spacing)" if len(gaps) > len(tight) else ""))
     for g in gaps[:20]:
         print(f"    {gap_text(g, gap, 'the paste gap')}" + (f" – waived: {g['waived']}" if g["waived"] else ""),
               flush=True)
@@ -1282,7 +1282,7 @@ def report_looks(rules, data, routes):
 
 
 def report_joints(cfg, board, rules, data, routes=None):
-    """L-18, printed: with routes None the pads of other nets at the hand-soldered joints (the placement's part: no
+    """GEO.spacing, printed: with routes None the pads of other nets at the hand-soldered joints (the placement's part: no
     new routing moves them), else the vias of the SES. Waived ones with their reason -> those not waived."""
     if not rules.joint_keep:
         return []
@@ -1292,7 +1292,7 @@ def report_joints(cfg, board, rules, data, routes=None):
     near = [g for g in gaps if not g["waived"]]
     what = "pads" if routes is None else "vias"
     n = len(hand_joints(data, rules.hand))
-    say(f"hand-soldered joints (L-18): {n} on their solder side, {len(near)} {what} of other nets closer than "
+    say(f"hand-soldered joints (GEO.spacing): {n} on their solder side, {len(near)} {what} of other nets closer than "
         f"hand_solder_keep_mm {rules.joint_keep / MIL_PER_MM:g}"
         + (f", {len(gaps) - len(near)} waived" if len(gaps) > len(near) else ""))
     for g in gaps[:20]:
@@ -2194,15 +2194,15 @@ def main(cfg, args):
                 else:
                     if args.action == "all":
                         raise SystemExit(f"after {attempts} attempts nets are still open, clearances too small, a via "
-                                         "at a hand-soldered joint (L-18) or a pour inside another – nothing "
+                                         "at a hand-soldered joint (GEO.spacing) or a pour inside another – nothing "
                                          "written to EasyEDA. More passes (--passes), or check rules/placement."
                                          + (" Pads too close as well (above)." if tight else ""))
                     return 2
                 if tight:
                     if args.action == "all":
                         pairs = len({(g["a"], g["b"]) if "a" in g else (g["joint"], g["other"]) for g in tight})
-                        raise SystemExit(f"{pairs} pad pairs of different parts closer than the clearance (L-13), "
-                                         "the paste gap (L-14) or the keep of a hand-soldered joint (L-18) – nothing "
+                        raise SystemExit(f"{pairs} pad pairs of different parts closer than the clearance (GEO.spacing), "
+                                         "the paste gap (GEO.spacing) or the keep of a hand-soldered joint (GEO.spacing) – nothing "
                                          "written to EasyEDA. Freerouting cannot move a pad: move or turn one of the "
                                          "two parts in [place] of the board file (fix it there if the auto-layout put "
                                          "it), then place and read the board again.")
@@ -2210,7 +2210,7 @@ def main(cfg, args):
                 if thin:
                     if args.action == "all":
                         raise SystemExit(f"{len(thin)} track widths below IPC-2221 for 1.5 x the simulated current "
-                                         "(L-5, above) – nothing written to EasyEDA. Widen the class in "
+                                         "(GEO.width, above) – nothing written to EasyEDA. Widen the class in "
                                          '[routing.classes] or the fixed wire, or route with [routing] widths = "sim".'
                                          + (" Nets are open as well (above)." if open_nets else ""))
                     return 2

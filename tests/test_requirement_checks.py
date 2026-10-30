@@ -10,13 +10,13 @@ import pytest
 from test_gate import ALL, decision, gate_run, rows, section
 from test_requirements import LED_BAR, variant_of, with_requirements
 
-from helpers import check
+from helpers import check as engines_check
 
-from edakit import checks, cli, requirements, scripts
+from edakit import engines, checks, cli, requirements, scripts
 from edakit.design import Design
 from edakit.release import gate
 
-REQUIREMENT_CHECKS = ("G-20", "G-21", "G-22", "G-23")
+REQUIREMENT_CHECKS = ("DOCS.ref", "DOCS.need", "DOCS.evidence", "DOCS.draft")
 
 
 def rewrite(project, old, new):
@@ -31,7 +31,7 @@ def found(project):
     """(errors, warnings) of G-20 to G-23 in the example's edakit check, each as (ID, message) – the warnings as edakit
     check prints them, the findings about a draft included."""
     cfg = project.config()
-    rep = check(Design.from_config(cfg), cfg)
+    rep = engines_check(Design.from_config(cfg), cfg)
     mine = lambda items: [(c, m) for c, m in items if c in REQUIREMENT_CHECKS]   # noqa: E731
     return mine(rep.errors), mine(rep.warnings + rep.drafts)
 
@@ -63,11 +63,13 @@ def test_the_example_is_clean_but_for_its_draft(project):
     ('from = ["N-3"]', 'from = ["N-3", "M-9"]', "R-4: from M-9 – no manual check M-9 in hardware/signoff.json "
                                                "(M-1, M-6, M-5, M-2, M-4)"),
     # verify: the check a rows pattern starts with, a manual check, a project script
-    ('{ rows = "G-10 *" }', '{ rows = "G-99 *" }', "R-2: verify rows 'G-99 *' – G-99 is not a check of the catalog"),
-    ('{ rows = "G-10 *" }', '{ rows = "G-7 *" }', "R-2: verify rows 'G-7 *' – G-7 is retired (edakit rules G-7)"),
+    ('{ rows = "PATH.reverse *" }', '{ rows = "XYZ.nope *" }', "R-2: verify rows 'XYZ.nope *' – XYZ.nope is not a code of the "
+                                                            "catalog (edakit rules)"),
+    ('{ rows = "PATH.reverse *" }', '{ rows = "G-10 *" }', "R-2: verify rows 'G-10 *' – G-10 is a check ID of before the "
+                                                        "restructuring – now PATH.reverse"),
     ('{ signoff = "M-1" }', '{ signoff = "M-7" }', "R-4: verify signoff M-7 – no manual check M-7 in "
                                                   "hardware/signoff.json (M-1, M-6, M-5, M-2, M-4)"),
-    ('{ rows = "G-10 *" }', '{ script = "rule-watcher" }', "R-2: verify script rule-watcher – no [scripts.rule-watcher] "
+    ('{ rows = "PATH.reverse *" }', '{ script = "rule-watcher" }', "R-2: verify script rule-watcher – no [scripts.rule-watcher] "
                                                           "of kind check and no [[release.stages]] id rule-watcher in "
                                                           "edakit.toml"),
 ])
@@ -86,7 +88,7 @@ def test_g20_what_edakit_cannot_resolve_is_not_a_finding(project):
     another requirement in from: nothing to report."""
     with_requirements(project)
     rewrite(project, 'from = ["N-2"]', 'from = ["N-2", "D-8", "R-1", "IEC 62368-1", "M-6"]')
-    rewrite(project, '{ rows = "G-10 *" }', '{ rows = "* reverse polarity" }, { rows = "K-1 enclosure *" }')
+    rewrite(project, '{ rows = "PATH.reverse *" }', '{ rows = "* reverse polarity" }, { rows = "K-1 enclosure *" }')
     assert found(project)[0] == []
 
 
@@ -99,7 +101,7 @@ def test_g20_a_script_must_be_a_check(project):
                     '\n[scripts.watch]\nkind = "check"\ncmd = ["python3", "watch.py"]\nabout = "rule watcher"\n'
                     'id = "W"\nphase = "export"\n'
                     '\n[[release.stages]]\nid = "K"\nname = "Mechanics"\ncmd = ["python3", "-c", "print(1)"]\n')
-    rewrite(project, '{ rows = "G-10 *" }', '{ script = "pins" }')
+    rewrite(project, '{ rows = "PATH.reverse *" }', '{ script = "pins" }')
     assert found(project)[0] == [("DOCS.ref", "R-2: verify script pins – [scripts.pins] is of kind derive; evidence "
                                           "comes from a check")]
     rewrite(project, '{ script = "pins" }', '{ script = "watch" }, { script = "K" }')
@@ -118,7 +120,7 @@ def test_g20_from_a_dropped_need_warns(project):
 def test_a_dropped_requirement_is_not_checked(project):
     """A dropped entry stays for the record: no evidence needed, its references are history."""
     with_requirements(project)
-    rewrite(project, 'verify = [{ rows = "G-10 *" }]\nstatus = "accepted"',      # R-2: no evidence, a broken from
+    rewrite(project, 'verify = [{ rows = "PATH.reverse *" }]\nstatus = "accepted"',      # R-2: no evidence, a broken from
             'status = "dropped"\nreason = "D-2: no longer wanted"')
     rewrite(project, 'from = ["N-1"]\nbinding = "must"', 'from = ["N-9"]\nbinding = "must"')
     errors, warnings = found(project)
@@ -132,8 +134,8 @@ def test_g21_every_accepted_need_has_a_requirement(project):
     rewrite(project, 'from = ["N-1"]\nbinding = "should"', 'from = ["N-2"]\nbinding = "should"')
     assert found(project)[0] == []
     # a dropped requirement does not count
-    rewrite(project, 'verify = [{ rows = "E-3 * D? LED current *" }]\nstatus = "accepted"',
-            'verify = [{ rows = "E-3 * D? LED current *" }]\nstatus = "dropped"\nreason = "D-3: any brightness"')
+    rewrite(project, 'verify = [{ rows = "SIM.state * D? LED current *" }]\nstatus = "accepted"',
+            'verify = [{ rows = "SIM.state * D? LED current *" }]\nstatus = "dropped"\nreason = "D-3: any brightness"')
     assert found(project)[0] == [("DOCS.need", "N-2: accepted, but no requirement names it in from")]
 
 
@@ -148,7 +150,7 @@ def test_g21_only_for_accepted_needs(project):
 
 def test_g22_every_requirement_has_evidence(project):
     with_requirements(project)
-    rewrite(project, 'verify = [{ rows = "G-10 *" }]\n', "")
+    rewrite(project, 'verify = [{ rows = "PATH.reverse *" }]\n', "")
     assert found(project)[0] == [("DOCS.evidence", "R-2: no evidence – verify names nothing that tests it")]
     rewrite(project, 'from = ["N-1"]\nbinding = "must"\nstatus', 'from = ["N-1"]\nbinding = "must"\nverify = []\nstatus')
     assert found(project)[0] == [("DOCS.evidence", "R-2: no evidence – verify names nothing that tests it")]
@@ -169,13 +171,14 @@ def test_edakit_check_reports_and_explains_them(project, capsys):
     with_requirements(project)
     code, out, _ = check(project, capsys)
     assert code == 0                                                    # a draft only warns
-    assert "WARNING G-23  R-4: a draft" in out
+    assert "DOCS.draft – draft not approved: 1 warning" in out and "  G  R-4: a draft" in out
     assert re.search(r"\n\d+ components, .*; requirements: 4 needs, 4 requirements", out)
     rewrite(project, 'from = ["N-2"]', 'from = ["N-1"]')
     code, out, _ = check(project, capsys)
     assert code == 1
-    assert "ERROR   G-21  N-2: accepted, but no requirement names it in from" in out
-    assert "G-21 (accepted need has a requirement): " in out.split("What the failed checks are about")[1]
+    assert "DOCS.need – accepted need has a requirement: 1 error" in out
+    assert "  G  N-2: accepted, but no requirement names it in from" in out
+    assert "  DOCS.need: Write the requirement" in out.split("What to do")[1]
 
 
 DRAFT = " (draft: an error once accepted)"
@@ -183,12 +186,12 @@ DRAFT = " (draft: an error once accepted)"
 
 @pytest.mark.parametrize("old, new, finding", [
     # G-22: a draft without evidence yet – the file is unfinished, and the pre-commit hook lets it pass
-    ('verify = [{ rows = "E-3 * D? LED dark" }, { signoff = "M-1" }]\n', "",
-     "G-22  R-4: no evidence – verify names nothing that tests it"),
+    ('verify = [{ rows = "SIM.state * D? LED dark" }, { signoff = "M-1" }]\n', "",
+     "R-4: no evidence – verify names nothing that tests it"),
     # G-20: a draft's reference that does not resolve, in verify and in from
     ('{ signoff = "M-1" }', '{ signoff = "M-7" }',
-     "G-20  R-4: verify signoff M-7 – no manual check M-7 in hardware/signoff.json (M-1, M-6, M-5, M-2, M-4)"),
-    ('from = ["N-3"]', 'from = ["N-3", "N-9"]', "G-20  R-4: from N-9 – not in the requirements file"),
+     "R-4: verify signoff M-7 – no manual check M-7 in hardware/signoff.json (M-1, M-6, M-5, M-2, M-4)"),
+    ('from = ["N-3"]', 'from = ["N-3", "N-9"]', "R-4: from N-9 – not in the requirements file"),
 ])
 def test_a_finding_about_a_draft_only_warns(project, capsys, old, new, finding):
     """Decided 2026-10-28: a draft never blocks. What is an error for an accepted requirement is a warning while it is
@@ -196,11 +199,11 @@ def test_a_finding_about_a_draft_only_warns(project, capsys, old, new, finding):
     with_requirements(project)
     rewrite(project, old, new)
     code, out, _ = check(project, capsys)
-    assert code == 0 and f"WARNING {finding}{DRAFT}\n" in out and "ERROR" not in out
-    assert "WARNING G-23  R-4: a draft" in out
+    assert code == 0 and f"  G  {finding}{DRAFT}\n" in out and " error" not in out.splitlines()[-1]
+    assert "  G  R-4: a draft" in out
     rewrite(project, 'status = "draft"', 'status = "accepted"')
     code, out, _ = check(project, capsys)
-    assert code == 1 and f"ERROR   {finding}\n" in out and "DOCS.draft" not in out
+    assert code == 1 and f"  G  {finding}\n" in out and "DOCS.draft" not in out
 
 
 def test_findings_about_a_draft_are_information_in_the_gate(project):
@@ -213,11 +216,11 @@ def test_findings_about_a_draft_are_information_in_the_gate(project):
     rows, raw = gate.stage_graph(cfg, Design.from_config(cfg))
     mine = [(r["id"], r["result"], r["check"].split(" – ")[0]) for r in rows
             if r["id"] in REQUIREMENT_CHECKS and r["result"] != "pass"]
-    assert mine == [("DOCS.ref", "info", "R-4: from N-4"), ("DOCS.ref", "info", "R-4: verify signoff M-7"),
-                    ("DOCS.draft", "info", "R-4: a draft")]
-    assert [(w["check"], w["draft"]) for w in raw["warnings"] if w["check"] in REQUIREMENT_CHECKS] == [
-        ("DOCS.ref", True), ("DOCS.ref", True), ("DOCS.draft", True)]
-    assert gate.decide(rows, [], {"manual": [], "accepted_warnings": []}, ALL, gate.STAGES) == ("RELEASED", [])
+    assert sorted(mine) == [("DOCS.draft", "info", "R-4: a draft"), ("DOCS.ref", "info", "R-4: from N-4"),
+                            ("DOCS.ref", "info", "R-4: verify signoff M-7")]
+    assert sorted(f["code"] for f in raw["findings"] if f["code"] in REQUIREMENT_CHECKS
+                  and f.get("data", {}).get("draft")) == ["DOCS.draft", "DOCS.ref", "DOCS.ref"]
+    assert gate.decide(rows, [], {"manual": [], "accept": []}, ALL, gate.STAGES) == ("RELEASED", [])
 
 
 def test_a_broken_or_missing_file_stops_check_and_gate(project, capsys, monkeypatch):
@@ -258,7 +261,7 @@ def row(cid, check, result, scenario="usb-min/all_on/vf-min", item="J1"):
 
 
 def evaluate(tmp_path, text, protocol_rows=(), manual=(), stages_run=ALL, warnings=(), checks=()):
-    signoff = {"manual": list(manual), "accepted_warnings": list(warnings)}
+    signoff = {"manual": list(manual), "accept": list(warnings)}
     return requirements.evaluate(entries(tmp_path, text), list(protocol_rows), signoff, set(stages_run),
                                  list(checks)), signoff
 
@@ -268,10 +271,10 @@ def states(results):
 
 
 def test_rows_pass_with_a_match_and_no_failure(tmp_path):
-    current = [row("E-3", "current from the supply", "pass"), row("E-3", "current from the supply", "warn"),
-               row("E-3", "LED current (LED0)", "fail", item="D2")]
-    text = (requirement("must", ("rows", "E-3 * J1 current from the supply"), rid="R-1")
-            + requirement("must", ("rows", "E-3 * D? LED current *"), rid="R-2")
+    current = [row("LIM.i", "current from the supply", "pass"), row("LIM.i", "current from the supply", "warn"),
+               row("SIM.state", "LED current (LED0)", "fail", item="D2")]
+    text = (requirement("must", ("rows", "LIM.i * J1 current from the supply"), rid="R-1")
+            + requirement("must", ("rows", "SIM.state * D? LED current *"), rid="R-2")
             + requirement("must", ("rows", "E-9 *"), rid="R-3"))
     results, _ = evaluate(tmp_path, text, current)
     assert states(results) == [("R-1", "pass", ["pass"]), ("R-2", "fail", ["fail"]), ("R-3", "fail", ["fail"])]
@@ -281,7 +284,7 @@ def test_rows_pass_with_a_match_and_no_failure(tmp_path):
 
 
 def test_a_rows_pattern_of_a_stage_that_did_not_run(tmp_path):
-    results, _ = evaluate(tmp_path, requirement("must", ("rows", "L-5 main *")), stages_run="PGE")
+    results, _ = evaluate(tmp_path, requirement("must", ("rows", "GEO.width main *")), stages_run="PGE")
     assert results[0].items[0][2:] == ("fail", "no row of this run matches – stage L did not run")
 
 
@@ -345,7 +348,7 @@ def test_script_evidence_passes_when_its_check_passed_in_this_run(tmp_path, resu
     """Step 3.1: the gate runs the project's checks – a requirement's script passes when its check passed, every row of
     its stage."""
     protocol = [row("W-1", "no LED before the firmware", r, scenario="", item="rule-watcher") for r in results]
-    found, _ = evaluate(tmp_path, requirement("must", ("script", "rule-watcher")), protocol + [row("E-3", "x", "fail")],
+    found, _ = evaluate(tmp_path, requirement("must", ("script", "rule-watcher")), protocol + [row("SIM.state", "x", "fail")],
                         stages_run=ALL | {"W"}, checks=[WATCHER])
     assert found[0].items[0][2:] == (state, what) and found[0].state == state
 
@@ -368,7 +371,7 @@ def test_a_check_that_did_not_run_is_no_passing_evidence(tmp_path):
     results, _ = evaluate(tmp_path, text, stages_run="PGE", checks=[gerber])
     assert [r.items[0][2:] for r in results] == [
         ("fail", "check X did not run – it runs after stage F, in edakit gate --easyeda"),
-        ("fail", "no check pins in this run – stage G says why (scripts, G-20)")]
+        ("fail", "no check pins in this run – stage G says why (scripts, DOCS.ref)")]
 
 
 def test_a_release_stage_is_named_by_its_id(tmp_path):
@@ -404,8 +407,8 @@ def test_a_check_after_the_export_counts_like_an_acceptance_step(tmp_path, phase
 ])
 def test_binding_decides_what_missing_evidence_does(tmp_path, binding, state, reason):
     """must blocks the release, should warns until the owner accepts it, may informs."""
-    results, signoff = evaluate(tmp_path, requirement(binding, ("rows", "E-3 * J1 *")),
-                                [row("E-3", "current from the supply", "fail")])
+    results, signoff = evaluate(tmp_path, requirement(binding, ("rows", "LIM.i * J1 *")),
+                                [row("LIM.i", "current from the supply", "fail")])
     assert results[0].state == state
     d, reasons = gate.decide(rows("pass"), [], signoff, ALL, gate.STAGES, results)
     assert reasons == ([reason] if reason else []) and d == ("NOT RELEASED" if reason else "RELEASED")
@@ -414,8 +417,8 @@ def test_binding_decides_what_missing_evidence_does(tmp_path, binding, state, re
 def test_a_should_requirement_is_accepted_like_a_warning(tmp_path):
     accept = {"match": "R-1 *", "scope": "decision", "reason": "D-9: 7 mA is bright enough", "by": "owner",
               "date": "2026-10-28"}
-    results, signoff = evaluate(tmp_path, requirement("should", ("rows", "E-3 * J1 *")),
-                                [row("E-3", "current from the supply", "fail")], warnings=[accept])
+    results, signoff = evaluate(tmp_path, requirement("should", ("rows", "LIM.i * J1 *")),
+                                [row("LIM.i", "current from the supply", "fail")], warnings=[accept])
     assert requirements.reasons(results, signoff) == []
     lines = requirements.section(results, signoff, ["hardware/requirements.toml"])
     assert any(line.startswith("- **R-1** should, accepted: t → **warning** – accepted by owner (2026-10-28): D-9: 7 mA")
@@ -441,20 +444,20 @@ def test_a_dropped_requirement_is_listed_not_evaluated(tmp_path):
 def test_a_draft_never_blocks_the_release(tmp_path, binding, state):
     """Decided 2026-10-28: a draft is evaluated and listed, but its binding counts only once the user accepts it – no
     reason against the release, no acceptance needed."""
-    text = requirement(binding, ("rows", "E-3 * J1 *")).replace('status = "accepted"', 'status = "draft"')
-    results, signoff = evaluate(tmp_path, text, [row("E-3", "current from the supply", "fail")])
+    text = requirement(binding, ("rows", "LIM.i * J1 *")).replace('status = "accepted"', 'status = "draft"')
+    results, signoff = evaluate(tmp_path, text, [row("LIM.i", "current from the supply", "fail")])
     assert states(results) == [("R-1", state, ["fail"])]                       # its evidence as evaluated
     assert requirements.reasons(results, signoff) == []
     assert gate.decide(rows("pass"), [], signoff, ALL, gate.STAGES, results) == ("RELEASED", [])
     assert requirements.section(results, signoff, ["r.toml"])[1:] == [
         f"- **R-1** {binding}, draft: t → draft, not binding yet – no passing evidence",
-        "  - rows `E-3 * J1 *` – 1 row: 1 FAILED"]
+        "  - rows `LIM.i * J1 *` – 1 row: 1 FAILED"]
     assert requirements.summary(results) == "requirements: 1 draft (section 11 of the protocol)"
 
 
 def test_a_draft_with_passing_evidence_says_so(tmp_path):
-    text = requirement("must", ("rows", "E-3 * J1 *")).replace('status = "accepted"', 'status = "draft"')
-    results, signoff = evaluate(tmp_path, text, [row("E-3", "current from the supply", "pass")])
+    text = requirement("must", ("rows", "LIM.i * J1 *")).replace('status = "accepted"', 'status = "draft"')
+    results, signoff = evaluate(tmp_path, text, [row("LIM.i", "current from the supply", "pass")])
     assert requirements.verdict(results[0], signoff) == "draft, not binding yet – passed"
 
 
@@ -483,16 +486,16 @@ def test_the_protocol_lists_each_requirement_with_its_evidence(project, monkeypa
                              "in this run")
     assert ("- **R-1** must, accepted: With all eight LEDs on, the board draws at most 500 mA from J1 at 4.75 to "
             "5.25 V. → open after the export – does not block the release\n"
-            "  - rows `E-3 * J1 current from the supply` – 12 rows: 12 passed\n"
+            "  - rows `LIM.i * J1 current from the supply` – 12 rows: 12 passed\n"
             "  - accept: on the USB port of a laptop: all eight LEDs on, the port stays on – after delivery: M-4 not "
             "signed yet (section 6)\n") in eleven
     assert "- **R-2** must, accepted: A supply plugged into J1 the wrong way round reaches only the anode of D1. → passed\n" \
-           "  - rows `G-10 *` – 1 row: 1 passed\n" in eleven
-    assert "  - rows `E-3 * D? LED current *` – 48 rows: 48 passed\n" in eleven
+           "  - rows `PATH.reverse *` – 1 row: 1 passed\n" in eleven
+    assert "  - rows `SIM.state * D? LED current *` – 48 rows: 48 passed\n" in eleven
     # R-4 is a draft: listed with its evidence as evaluated, it binds nothing yet – no reason, no acceptance (G-23)
     assert ("- **R-4** must, draft: From power-up until the firmware drives LED_OE low, no LED carries more than "
             "10 µA. → draft, not binding yet – no passing evidence\n"
-            "  - rows `E-3 * D? LED dark` – 48 rows: 48 passed\n"
+            "  - rows `SIM.state * D? LED dark` – 48 rows: 48 passed\n"
             "  - signoff M-1 – not signed for this state (section 6)\n") in eleven
     reasons = decision(text)
     assert "requirement(s)" not in reasons and "warning(s) not accepted" not in reasons
@@ -617,20 +620,20 @@ def test_without_the_key_nothing_changes(project, monkeypatch, capsys):
     cfg = project.config()
     parts = sorted((project.root / "hardware" / "parts").glob("*.json"))
     assert gate.state_files(cfg) == [cfg.graph, cfg.sim_config, *parts]
-    assert checks.executed(cfg) == checks.EXECUTED
     text = gate_run(project, monkeypatch)
     assert "## 11" not in text and "- [ ] R-" not in text and "requirement" not in decision(text)
     assert "` (graph, parts database, simulation config) |" in text
     assert "requirements:" not in capsys.readouterr().out
-    assert section(text, 10).startswith("The rules behind the findings\n\nNo check of the catalog failed or warned.")
+    assert section(text, 10).startswith("The rules behind the findings\n\nNo code of the catalog failed or warned.")
 
 
 def test_with_the_key_the_requirement_checks_count_as_executed(project, monkeypatch):
     with_requirements(project)
     cfg = project.config()
-    assert checks.executed(cfg) == checks.EXECUTED + list(REQUIREMENT_CHECKS)
+    prof = engines.profile(Design.from_config(cfg), cfg)
+    assert gate.executed(prof, cfg)[-4:] == list(REQUIREMENT_CHECKS)
     one = section(gate_run(project, monkeypatch), 1)
-    assert "G-22 (requirement has evidence)" in one
-    # 18 as before and G-20 to G-23 (a check that only warns counts as passed, as P-4 does); G-23 about the draft R-4
-    # is information in the gate, no warning to accept
-    assert re.search(r"\| G Graph \| [^|]+ \| 22 \| 0 \| 0 \| 3 \| 0 \| passed \|", one)
+    assert "DOCS.evidence" in one
+    # every code of stage G the profile has on, DOCS.ref to DOCS.draft among them (a code that only warns counts as
+    # passed); DOCS.draft about the draft R-4 is information in the gate, no warning to accept
+    assert re.search(r"\| G Graph \| [^|]+ \| 34 \| 0 \| 0 \| 3 \| 0 \| passed \|", one)

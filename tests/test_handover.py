@@ -1,5 +1,5 @@
-"""The hand-over from the circuit to the layout: requirements in the graph and derived from it, G-1 for their names,
-L-12 for the plan, L-11 for the loops the circuit hands over."""
+"""The hand-over from the circuit to the layout: requirements in the graph and derived from it, STRUCT for their names,
+SYNC.plan for the plan, GEO.loop for the loops the circuit hands over."""
 
 import json
 from types import SimpleNamespace

@@ -86,7 +86,7 @@ def test_g5_two_outputs(project):
     g["graph"]["nets"].append(sdo)
     project.save_graph(g)
     rep = run(project)
-    # U1.10 is bidirectional, U2.14 an output: one output – no G-5; make the MCU pin an output too
+    # U1.10 is bidirectional, U2.14 an output: one output – no LVL.contention; make the MCU pin an output too
     part = project.part("C41407547")
     part["pins"]["10"]["type"] = "output"
     project.save_part("C41407547", part)
@@ -394,7 +394,7 @@ def g14(rep):
 
 def test_g14_breakout_as_a_module_without_the_field_is_not_checked(project):
     breakout(project)
-    assert g14(run(project)) == []                     # as before: a module is no receptacle for G-14
+    assert g14(run(project)) == []                     # as before: a module is no receptacle for REQ.missing:cc
 
 
 def test_g14_breakout_without_rd_and_its_cc_pins_unconnected(project):
@@ -486,7 +486,7 @@ def bridge(project, g, des, net, pin, value_ohm=0.0):
     """`pin` moves from `net` to a new net <net>_B, joined to `net` by the resistor `des` – a 0 Ω bridge that crosses a
     track on a board with all tracks on one side."""
     project.save_part(BRIDGE["lcsc"], {**BRIDGE, "values": {"value_ohm": value_ohm}})
-    g["graph"]["components"].append(comp(des, BRIDGE["lcsc"], R, value=f"{value_ohm:g}"))   # P-6: as the entry says
+    g["graph"]["components"].append(comp(des, BRIDGE["lcsc"], R, value=f"{value_ohm:g}"))   # STRUCT.identity: as the entry says
     project.net(g, net)["pins"].remove(pin)
     project.net(g, net)["pins"].append(f"{des}.1")
     g["graph"]["nets"].append({"name": f"{net}_B", "pins": [f"{des}.2", pin], "v": project.net(g, net)["v"]})
@@ -557,13 +557,13 @@ def test_a_part_bought_elsewhere_finds_its_entry_by_the_manufacturer_number(proj
     assert ("STRUCT.entry", "R2: no parts entry with mpn RC0805FR-0710KX") in run(project).errors
 
 
-# --- G-15 pin functions (rule proposal #43) -------------------------------------------------------------------------
+# --- REQ.function pin functions (rule proposal #43) -------------------------------------------------------------------------
 def g15(rep):
     return sorted(m for c, m in rep.errors if c in ("REQ.function", "STRUCT.net"))
 
 
 def test_g15_spi_roles_swapped(project):
-    """The example before G-15: data on GP2 (SPI0 SCK), clock on GP3 (SPI0 TX) – fine bit-banged, not on SPI0."""
+    """The example before REQ.function: data on GP2 (SPI0 SCK), clock on GP3 (SPI0 TX) – fine bit-banged, not on SPI0."""
     g = project.graph()
     project.net(g, "LED_SDI")["pins"][0], project.net(g, "LED_CLK")["pins"][0] = "U1.4", "U1.5"
     g["graph"]["locks"]["pins"].update({"U1.4": "LED_SDI", "U1.5": "LED_CLK"})
@@ -689,7 +689,7 @@ def test_g15_sees_through_0_ohm_bridges(project):
         in g15(run(project))
 
 
-# --- G-16 ground and supply pins (rule proposal #44) ----------------------------------------------------------------
+# --- PATH.unfed ground and supply pins (rule proposal #44) ----------------------------------------------------------------
 def g16(rep):
     return sorted(m for c, m in rep.errors if c in ("PATH.unfed", "PATH.ground", "STRUCT.ref"))
 
@@ -705,7 +705,7 @@ def move(project, g, pins, to, v=(0, 3.4)):
 
 def test_g16_supply_rail_split_by_a_typo(project):
     g = project.graph()
-    move(project, g, ["U2.16", "C1.1"], "3.3V")       # 3.3V instead of 3V3: G-6 is content, the capacitor came along
+    move(project, g, ["U2.16", "C1.1"], "3.3V")       # 3.3V instead of 3V3: REQ.missing is content, the capacitor came along
     project.save_graph(g)
     rep = run(project)
     assert g16(rep) == ["U2.16 (VDD) on 3.3V: nothing supplies this net"] and "REQ.missing" not in ids(rep)
@@ -783,7 +783,7 @@ def test_g16_supply_only_through_a_diode_in_forward_direction(project):
     assert g16(run(project)) == ["U1.39 (VSYS) on +5V: nothing supplies this net"]
 
 
-# --- G-17 fuse against what it protects (rule proposal #45) ---------------------------------------------------------
+# --- LIM.i fuse against what it protects (rule proposal #45) ---------------------------------------------------------
 def g17(rep):
     return sorted(m for c, m in rep.errors if c == "LIM.i"), sorted(m for c, m in rep.warnings if c == "LIM.i")
 
@@ -866,7 +866,7 @@ def test_g17_needs_the_ratings(project):
     assert g17(run(project)) == ([], [])
 
 
-# --- G-18 hot loop of a switching regulator in layout.loops (rule proposal #47) --------------------------------------
+# --- REQ.missing hot loop of a switching regulator in layout.loops (rule proposal #47) --------------------------------------
 BOOST = {"lcsc": "C9000010", "mpn": "test boost converter (MT3608-like)", "kind": "ic", "verified": {"by": "test"},
          "values": {"behavior": "boost", "vout_v": 12, "efficiency": 0.85}, "hot_loop": ["sw", "gnd"],
          "pins": {"1": {"name": "SW", "type": "passive", "role": "sw"}, "2": {"name": "GND", "type": "ground"},

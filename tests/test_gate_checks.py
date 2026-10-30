@@ -153,7 +153,7 @@ def test_entries_that_do_not_resolve_run_no_check_of_theirs(project, monkeypatch
     text = gate_run(project, monkeypatch)
     assert "| K mechanik" not in section(text, 1) and not (run_folder(project) / "stage_K.txt").exists()
     assert stage(text, "R").endswith("| passed |")
-    assert "| G | scripts |  |  | x: an input, but no edakit step reads what it writes" in section(text, 2)
+    assert "| G | SYNC.scripts (project scripts current) |  |  | x: an input, but no edakit step reads what it writes" in section(text, 2)
 
 
 # --- phase export, after F --------------------------------------------------------------------------------------------

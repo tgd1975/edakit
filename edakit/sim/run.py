@@ -35,7 +35,6 @@ from pathlib import Path
 
 from .. import engines
 from ..engines import sim as esim
-from ..engines.sim import lockout, v
 from ..findings import Finding, format_findings
 from . import copper, netlist
 
@@ -109,8 +108,8 @@ def reg_input_current(res, reg):
     """Current a regulator model draws from its input (the same expression as its B-source, lockout included)."""
     iout = max(res.get(reg["ammeter"], 0.0), 0.0)
     p = reg["values"]
-    vin = v(res, reg["vin"]) - v(res, reg["gnd"])
-    on = lockout(res, reg)
+    vin = esim.v(res, reg["vin"]) - esim.v(res, reg["gnd"])
+    on = esim.lockout(res, reg)
     if reg["kind"] == "ldo":
         return on * (iout + p.get("iq_a", 0.0) + reg["extra_i"])
     return on * (reg["vset"] * (iout + reg["extra_i"]) / (p.get("efficiency", 0.85) * max(vin, 0.3)) + p.get("iq_a", 0.0))
@@ -135,7 +134,7 @@ def net_currents(design, res, meta):
             if el["kind"] == "capacitor":
                 continue
             if "value" in el:
-                put(el["nodes"][:2], (v(res, el["nodes"][0]) - v(res, el["nodes"][1])) / el["value"])
+                put(el["nodes"][:2], (esim.v(res, el["nodes"][0]) - esim.v(res, el["nodes"][1])) / el["value"])
             elif el["kind"] in ("led", "diode"):
                 put(el["nodes"], res.get(f"@{el['name']}[id]", 0.0))
             elif el["kind"] == "load":
@@ -332,7 +331,7 @@ def load_plugin(path):
 
 
 def least_current(design, sim, sc, meta, models=None, keep=None):
-    """The operating point of E-3's minimum load: the scenario with every MCU at its least current (params
+    """The operating point of SIM.state's minimum load: the scenario with every MCU at its least current (params
     i_core_min_a) instead of its upper bound i_core_a, which every other check keeps. -> ({MCU: least current in A},
     ngspice result); None where no source of the scenario has i_min_a or no MCU a least current below its i_core_a –
     the scenario's own operating point is then the check's, as without the key."""
@@ -384,7 +383,7 @@ def run_all(design, sim, keep=None, plugin=None, routing=None):
         esim.stress(s)
         esim.function(s, sc["load"], low, plugin)
         rows, fs = s.finish()
-        row["nets"] = {n: min(v(res, x) for x in netlist.net_nodes(design, n)) for n in sim.get("report", [])}
+        row["nets"] = {n: min(esim.v(res, x) for x in netlist.net_nodes(design, n)) for n in sim.get("report", [])}
         row["sources"] = {d: -res.get(src["branch"], 0.0) for d, src in meta["sources"].items()}
         for net, i in net_currents(design, res, meta).items():
             e = out["net_currents"].setdefault(net, {"i_max_a": 0.0, "scenario": ""})
@@ -432,7 +431,7 @@ def save_result(cfg, sim, out):
 
 def current_result(cfg):
     """The simulation result of the current state: the one saved by the last run when its inputs are unchanged, else a
-    new run (saved in turn) – for values quoted from the simulation (edakit docs, G-19)."""
+    new run (saved in turn) – for values quoted from the simulation (edakit docs, DOCS.quote)."""
     sim, _ = load_sim_config(cfg)
     path = cfg.artifacts / "sim" / "result.json"
     if path.exists():

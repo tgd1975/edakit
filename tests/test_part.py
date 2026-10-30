@@ -1,5 +1,5 @@
-"""Own parts: a board of another edakit project as a part – its datasheet, the copy in the host project, P-3, and the
-supply range the simulation holds it to (E-3)."""
+"""Own parts: a board of another edakit project as a part – its datasheet, the copy in the host project, SYNC.source, and the
+supply range the simulation holds it to (SIM.state)."""
 
 import argparse
 import json
@@ -9,7 +9,7 @@ from pathlib import Path
 
 import pytest
 
-from helpers import check
+from helpers import check, executed
 
 from edakit import checks, cli, config, part
 from edakit.design import Design
@@ -52,7 +52,7 @@ def export(board, connectors=("J1",)):
 
 
 def use_own(project, net="+5V", name="ring"):
-    """M1, the own board, on the host's net `net` and GND – with its capacitor C9, as for any supply pin (G-6)."""
+    """M1, the own board, on the host's net `net` and GND – with its capacitor C9, as for any supply pin (REQ.missing)."""
     g = project.graph()
     g["graph"]["components"] += [
         {"designator": "M1", "type": "module", "label": "own board", "part": name, "bom": False,
@@ -96,7 +96,7 @@ def test_datasheet_of_the_example(board):
 
 
 def test_datasheet_states_the_radio_of_the_board(board):
-    """P-11 (#23): the board states "none" when none of its parts transmits and its modules and microcontrollers say
+    """PARTS.fact (#23): the board states "none" when none of its parts transmits and its modules and microcontrollers say
     so; the radios of its parts when they transmit; nothing – not known – while a module states nothing."""
     cfg = cfg_of(board)
     assert part.datasheet(cfg, ["J1"])[0]["compliance"]["radio"] == "none"      # the Pico 2: "none"
@@ -314,7 +314,7 @@ def test_e3_passes_inside_the_range(project, board):
 
 def test_p3_and_e3_leave_the_example_alone(project):
     rep = run_checks(project.root)
-    assert p3(rep) == ([], [], [], []) and "SYNC.source" in checks.EXECUTED
+    assert p3(rep) == ([], [], [], []) and "SYNC.source" in executed(project.config())
     assert not [c for c in simrun.run_all(Design.from_config(project.config()),
                                           json.loads((project.root / "hardware/sim.json").read_text()))["checks"]
                 if "vin_min … vin_max" in c["check"]]

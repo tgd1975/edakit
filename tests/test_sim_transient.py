@@ -1,4 +1,4 @@
-"""Stage E over time: plug, unplug and switch-over as transient runs (E-5), and the behaviour models on a dead rail."""
+"""Stage E over time: plug, unplug and switch-over as transient runs (LIM.v), and the behaviour models on a dead rail."""
 
 import json
 import shutil
@@ -18,7 +18,7 @@ PLUG = {"supply": {"J1": [[0, 0], [0.001, 4.75]]}, "load": "all_on", "corner": "
         "step_s": 1e-6, "expect": {"J1": {"i_max_a": 0.1}}}
 
 
-MCU = ("U1", "lowest supply voltage once started (vsys_min)")
+MCU = ("U1", "lowest supply voltage once started (vsys_min_v)")
 
 
 def sim_config(project):
@@ -26,7 +26,10 @@ def sim_config(project):
 
 
 def e5(out):
-    return [c for c in out["checks"] if c["id"] == "E-5"]
+    """The rows of the transient runs' limits: expect and the MCU's supply once started."""
+    return [c for c in out["checks"] if c["scenario"].startswith("usb-") and c["id"] != "SIM.converge"
+            and c["check"] in ("lowest voltage", "highest voltage", "peak current from the supply")
+            or c["check"].startswith("lowest supply voltage once started")]
 
 
 def dc_only(project, sim, supply, load="idle"):
@@ -83,7 +86,7 @@ def test_unplug_without_the_bulk_capacitor(project):
     sim["transients"] = {"usb-unplug": UNPLUG}
     out = simulate(project, sim)
     bad = failing(out)
-    assert {(c["id"], c["item"], c["expected"]) for c in bad} == {("E-5", "+5V", "≥ 1.8 V"), ("E-5", "U1", "≥ 1.8 V")}
+    assert {(c["id"], c["item"], c["expected"]) for c in bad} == {("LIM.v", "+5V", "≥ 1.8 V"), ("LIM.range", "U1", "≥ 1.8 V")}
     assert 1.4 < out["scenarios"][-1]["nets"]["+5V"] < 1.7                    # about 1.59 V
     assert out["scenarios"][-1]["nets"]["3V3"] < 0.1                         # U1 below its 1.8 V: 3V3 gone
     sim["transients"]["usb-unplug"]["info"] = True
@@ -120,7 +123,7 @@ def test_protocol_shows_the_run(project, tmp_path):
                         gate.STAGES, {})
     text = (tmp_path / "protocol.md").read_text()
     assert "| usb-unplug (transient) | ok | +5V 2.985 … 4.443 V, 3V3 3.300 … 3.300 V | J1 peak 114 mA |" in text
-    assert "| E-5 | lowest voltage | 1 | 0 | 0 | 0 |" in text
+    assert "| LIM.v | lowest voltage | 1 | 0 | 0 | 0 |" in text
 
 
 def test_datasheet_of_the_board_leaves_the_runs_out(project):

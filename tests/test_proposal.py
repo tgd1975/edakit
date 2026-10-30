@@ -36,18 +36,18 @@ feature
 A 0 Ω resistor (value_ohm 0) joins its two nets for the checks and the simulation, as copper would.
 
 ### Gap
-`edakit check` on the origin: G-4 on TLC_OE (pull-up behind R35) and G-6 on V_LED (capacitors behind R55), both
+`edakit check` on the origin: LVL.undefined on TLC_OE (pull-up behind R35) and REQ.missing on V_LED (capacitors behind R55), both
 false; `edakit sim` stops with ZeroDivisionError in stress().
 
 ### Reference
 pytree hardware/graph/check_graph.py bridged() at 9d9efad: nets joined through parts with value_ohm 0 count as one
-for G-4 and G-6; run_sims.py uses r_max_ohm instead of 0.
+for LVL.undefined and REQ.missing; run_sims.py uses r_max_ohm instead of 0.
 
 ### Interface
 none – a parts entry with value_ohm 0 is enough.
 
 ### Test
-The example gets a 0 Ω bridge between the button's pull-up and 3V3: today G-4 fires and sim crashes, then neither.
+The example gets a 0 Ω bridge between the button's pull-up and 3V3: today LVL.undefined fires and sim crashes, then neither.
 
 ### Origin
 - project: pytree (private)

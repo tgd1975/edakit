@@ -7,13 +7,13 @@ designer or derived from it. The PCB designer works from it and does not change 
     fixed  [parts]                    the auto-layout must not decide them: a position in [place] of the board file
     edge   [parts]                    fixed at the board edge: within edge_mm of the outline (plan, default 1 mm)
     near   {part: host or [hosts]}    fixed within near_mm of the host (plan, default 6 mm)
-    loops  [{a, b, max_mm, what}]     short current loop between two pads of one net, checked on the routed board (L-11)
+    loops  [{a, b, max_mm, what}]     short current loop between two pads of one net, checked on the routed board (GEO.loop)
     notes  [text]                     what no program checks – for the PCB designer and the layout review (M-5)
 Derived without a line in the graph: every IC (kind "ic") with a supply pin is fixed with a capacitor of its own from
 that supply to ground within near_mm – a module brings its own decoupling. An IC's accept {"SYNC.plan:handover": reason} lifts it.
 
-  G-1  the layout requirements name parts and pins of the graph (edakit check)
-  L-12 the plan keeps them (edakit pcb plan, the gate)
+  STRUCT  the layout requirements name parts and pins of the graph (edakit check)
+  SYNC.plan the plan keeps them (edakit pcb plan, the gate)
 """
 
 from __future__ import annotations
@@ -48,7 +48,7 @@ def board_of(design, ref):
 
 
 def problems(design):
-    """G-1: unknown keys, parts or pins the graph does not have, a host on another board, a loop across nets."""
+    """STRUCT: unknown keys, parts or pins the graph does not have, a host on another board, a loop across nets."""
     lay = layout(design)
     out = [f"layout: unknown key '{k}' (known: {', '.join(KEYS)})" for k in lay if k not in KEYS]
     for key in ("fixed", "edge"):
@@ -124,7 +124,7 @@ def sheet(cfg, design, boards):
     notes = layout(design).get("notes", [])
     for name in boards:
         req = requirements(design, name)
-        lines.append(f"board {name} – the plan keeps this (L-12: edakit pcb plan, the gate)")
+        lines.append(f"board {name} – the plan keeps this (SYNC.plan: edakit pcb plan, the gate)")
         for kind in ("fixed", "edge"):
             parts = [r.part for r in req if r.kind == kind]
             if parts:
@@ -133,7 +133,7 @@ def sheet(cfg, design, boards):
         lines += [f"  near   {r.others[0] if len(r.others) == 1 else 'one of ' + ', '.join(r.others)} next to "
                   f"{r.part} – decoupling of {r.net}, a capacitor of its own (derived)"
                   for r in req if r.kind == "decoupling"]
-        lines += [f"  loop   {a}-{b} at most {m:g} mm over tracks{f' ({w})' if w else ''} – L-11 on the routed board"
+        lines += [f"  loop   {a}-{b} at most {m:g} mm over tracks{f' ({w})' if w else ''} – GEO.loop on the routed board"
                   for a, b, m, w in loops(design, name)]
         if not req and not loops(design, name):
             lines.append("  nothing – no layout requirements in the graph and no IC to decouple")
@@ -145,7 +145,7 @@ def main(cfg, args):
     design = Design.from_config(cfg)
     bad = problems(design)
     for p in bad:
-        print(f"  ! G-1 {p}")
+        print(f"  ! STRUCT {p}")
     boards = [cfg.board(args.board, made=True).name] if args.board else list(cfg.made())   # the layout part
     for line in sheet(cfg, design, boards):
         print(line)

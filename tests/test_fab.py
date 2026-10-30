@@ -1,5 +1,5 @@
-"""Pieces of stages L and F that work on files: hole vs lead (L-9), loop length (L-11), Gerber parsing (L-2), every
-part in the plan (L-20)."""
+"""Pieces of stages L and F that work on files: hole vs lead (GEO.hole), loop length (GEO.loop), Gerber parsing (GEO.copper), every
+part in the plan (SYNC.plan)."""
 
 import json
 from types import SimpleNamespace
@@ -102,7 +102,7 @@ def test_annular_ring_is_the_copper_around_the_hole():
     assert fab.ring_mm(parts, (3.0, 2.0, 3.0, 2.0, 0.3)) is None                         # no copper there
 
 
-# --- L-20: every part of the board has a row in [place] (step 2.1) ---------------------------------------------------
+# --- SYNC.plan: every part of the board has a row in [place] (step 2.1) ---------------------------------------------------
 
 def rows_check(project):
     cfg = project.config()

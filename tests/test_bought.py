@@ -46,7 +46,7 @@ def usb_board(project, fixed=True):
             project.net(g, "GND")["pins"].append(f"{r}.2")
     g["graph"]["cables"] = [{"name": "W1", "from": "J9", "to": "J1", "pins": {"8": "1", "1": "2"},
                              "r_ohm_per_wire": 0.065}]
-    g["graph"]["checks"]["reverse_protect"] = []      # the supply comes from USB-C now, W1 is soldered to the breakout
+    project.comp(g, "J1").pop("source")             # the supply comes from USB-C now, W1 is soldered to the breakout
     project.save_graph(g)
     sim = json.loads((project.root / "hardware" / "sim.json").read_text())
     sim["sources"] = {"J9": {**sim["sources"].pop("J1"), "plus": "8", "minus": "1"}}
@@ -133,13 +133,13 @@ def test_the_gate_makes_only_the_made_boards(project, monkeypatch):
     text = (runs[-1] / "protocol.md").read_text()
     assert "boards main in EasyEDA project led-bar; bought, not made: usb |" in text
     other = text.split("## 8 Other stages")[1].split("\n## ")[0]
-    assert f"| S | S-2 | usb | {SKIPPED} |  |  | information |" in other
+    assert f"| S | SYNC.schematic | usb | {SKIPPED} |  |  | information |" in other
     assert f"| L | L | usb | {SKIPPED} |  |  | information |" in other
-    assert "| F | F-4 | main |" in other and "| F | F-4 | usb |" not in other
+    assert "| F | FILES.manifest | main |" in other and "| F | FILES.manifest | usb |" not in other
 
 
 def test_parts_on_the_bought_board_need_no_row_in_the_plan(project):
-    """L-20 wants a row in [place] for every part the graph puts on a made board. J9 and its two resistors are on the
+    """SYNC.plan wants a row in [place] for every part the graph puts on a made board. J9 and its two resistors are on the
     bought board – off the made board, at the far end of the cable W1: no row, and the auto-layout's write-back and the
     takeover give them none."""
     usb_board(project)

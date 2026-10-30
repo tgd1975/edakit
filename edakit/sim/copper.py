@@ -8,7 +8,7 @@ rho x L / (w x t) between its ends (t = oz x 35 µm), every via via_ohm between 
 inside a pad joins that pad's pin, ends that meet are one point (route.segments). The net's pours ([[pours]] of the
 board file) count as ideal: on a layer the net pours, all its copper is one node. A net on a board without routing,
 with a pin that has no pad, or whose copper leaves a pin unconnected stays one ideal node, and the simulation notes it
-(E-1, "copper not annotated").
+(SIM.converge, "copper not annotated").
 
 annotate() stores the result on the design (design.copper), as split_boards stores the cables; netlist.Netlist puts a
 pin of an annotated net on its pad node, run.py reads a net's voltage at the lowest and the highest of its pins.

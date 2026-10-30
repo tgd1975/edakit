@@ -1,4 +1,4 @@
-"""What the assembler says about the parts – a dated snapshot – and check P-4 (parts orderable), offline.
+"""What the assembler says about the parts – a dated snapshot – and check PARTS.stock (parts orderable), offline.
 
     edakit stock [--board B] [--refresh]   ask JLCPCB about every assembled part, write the snapshot
     edakit stock --lcsc C2297 [C…]         print what JLCPCB says about these parts, write nothing (part search)
@@ -9,13 +9,13 @@ what the assembler said on a day, not what the circuit is:
     {"date": "2026-10-27", "source": "…", "parts": {"C2297": {"date", "listed", "class", "preferred", "stock", "mpn",
      "assembly_type", "msl", "xray", "mode", "attrition", "min_qty", "price_breaks"}}}
 
-Two public sources, each read by one function: JLCPCB's assembly catalogue, the one F-2 asks (`fab.jlc_part` →
+Two public sources, each read by one function: JLCPCB's assembly catalogue, the one PARTS.stock asks (`fab.jlc_part` →
 `from_catalogue`: listed, class, stock, MPN, attrition `lossNumber`, minimum `leastPatchNumber`, price breaks), and
 the part page jlcpcb.com/partdetail/<C…> (`fetch_part_page` → `from_part_page`: PCBA type "Economic and Standard" or
 "Standard Only", MSL, X-ray, machine or hand soldering). Without --refresh only the parts that are missing, unread or
 older than [project] stock_max_age_days are asked again.
 
-  P-4  every assembled part (an LCSC number, not bom: false) is in the snapshot and listed, in stock for `quantity`
+  PARTS.stock  every assembled part (an LCSC number, not bom: false) is in the snapshot and listed, in stock for `quantity`
        boards – under Standard PCBA with the assembler's attrition, max(n + attrition, min_qty) – named as its parts
        entry names it (MPN, case and blanks ignored), and not "Standard Only" on an Economic order (fail). MSL >= 5
        (bake), stock below need x (1 + stock_margin_pct / 100) and another class than the entry's jlc_class warn. A
@@ -180,10 +180,10 @@ def age_days(row, today=None):
     return ((today or dt.date.today()) - dt.date.fromisoformat(row["date"])).days
 
 
-# --- P-4 ------------------------------------------------------------------------------------------------------------
+# --- PARTS.stock ------------------------------------------------------------------------------------------------------------
 
 def check(design, rep, cfg):
-    """P-4 on the snapshot, offline."""
+    """PARTS.stock on the snapshot, offline."""
     lines = assembled(design)
     if not lines:
         return

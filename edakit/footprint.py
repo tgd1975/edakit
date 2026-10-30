@@ -24,7 +24,7 @@ The field footprint_data of a parts entry – mm, y up, seen from the top at 0°
     lines    [{points [[x, y], …], width}]: silkscreen polylines, closed when the last point is the first
     texts    [{text, x, y, size, width, rot}]: silkscreen texts, centred on x, y
     marks    [{sign "+" or "−", x, y, size, width}]: polarity marks on the silkscreen – a "+" two strokes of size, as
-             L-8 finds them in the Gerber file, a "−" one
+             GEO.mark finds them in the Gerber file, a "−" one
     outline  [[x, y], …]: the body on the component-shape layer – the part's extent in EasyEDA
     symbol   "box": the copy's symbol is rebuilt as a box with the entry's pins on the sides its "symbol" names, as
              edakit schematic draw draws one; without it the carrier's symbol stays
@@ -33,14 +33,14 @@ of the copy; with any of them the copy's print is exactly the data's.
 
 Checks (checks.run, only where an entry of the parts database has footprint_data – a project without keeps its
 checks):
-  P-9   the footprint data of a parts entry is complete and consistent: every pad with its place, shape and size, a
+  PARTS.footprint   the footprint data of a parts entry is complete and consistent: every pad with its place, shape and size, a
         through-hole pad with its hole; every pad a pin of the entry or mechanical, every pin a pad; lines, texts,
-        marks and the outline well formed; a polarity mark next to a pad whose role has its sign (L-8's test, on the
+        marks and the outline well formed; a polarity mark next to a pad whose role has its sign (GEO.mark's test, on the
         data); a symbol box whose sides name pins of the entry, each once
-  P-10  the copy equals the data: the footprint pcb dump measured on the board (<board>.geometry.json) has the data's
-        pads – the same numbers, each within 0.02 mm of its place (L-7's tolerance), its hole and, where the dump
+  SYNC.footprint  the copy equals the data: the footprint pcb dump measured on the board (<board>.geometry.json) has the data's
+        pads – the same numbers, each within 0.02 mm of its place (SYNC.plan's tolerance), its hole and, where the dump
         measured them, its shape and size within 0.01 mm
-The print is not measured by pcb dump; the gate holds it to the silkscreen of the Gerber files (L-8, L-17).
+The print is not measured by pcb dump; the gate holds it to the silkscreen of the Gerber files (GEO.mark, GEO.silk).
 """
 
 from __future__ import annotations
@@ -58,7 +58,7 @@ PAD_KEYS = ("x", "y", "shape", "w", "h", "rot", "layer", "hole", "plated", "mech
 PRINT = ("lines", "texts", "marks", "outline")
 SHAPES = ("RECT", "ELLIPSE", "OVAL")               # pad shapes the data knows (EasyEDA's names)
 LAYERS = {"TOP": 1, "BOTTOM": 2, "MULTI": 12}       # EasyEDA layer ids of pads
-SIGNS = {"+": "+", "−": "−", "-": "−"}             # a mark's sign; "-" is read as the minus L-8 uses
+SIGNS = {"+": "+", "−": "−", "-": "−"}             # a mark's sign; "-" is read as the minus GEO.mark uses
 SILK = 3                    # EasyEDA: top silkscreen – a footprint is drawn as seen from the top
 COMPONENT_SHAPE = 48        # EasyEDA: the component's shape, its extent
 PRINT_LAYERS = (3, 48, 49, 50)   # replaced by a build with print: silkscreen, shape, marking, pin soldering
@@ -69,8 +69,8 @@ OUTLINE_MIL = 6             # the outline's line on the component-shape layer, a
 FONT = "default"            # EasyEDA's stroke font
 CENTRE = 5                  # EPCB_PrimitiveStringAlignMode.CENTER
 CHAR_W = 0.6                # the stroke font: about 0.6 × height per character (handbook 9.4) – for the box only
-POS_MM = 0.02               # P-10: a pad further than this from its place in the data is elsewhere (L-7's tolerance)
-SIZE_MM = 0.01              # P-10: a hole or pad size that differs by more than this differs
+POS_MM = 0.02               # SYNC.footprint: a pad further than this from its place in the data is elsewhere (SYNC.plan's tolerance)
+SIZE_MM = 0.01              # SYNC.footprint: a hole or pad size that differs by more than this differs
 PIN_LENGTH = 10             # symbol: pins 10 units of 10 mil long, as edakit schematic draw draws them
 READBACK_MIL = 0.5          # the editor's pads read back: within this of what was created (the bell's check)
 
@@ -130,7 +130,7 @@ def sorted_numbers(numbers):
     return sorted(numbers, key=natural_key)
 
 
-# --- P-9: complete and consistent ---------------------------------------------------------------------------------
+# --- PARTS.footprint: complete and consistent ---------------------------------------------------------------------------------
 
 def numbers_text(numbers, word="pad"):
     """"pad 3", "pads 1–24", "pads 1–3, 7, A1": runs of whole numbers written from–to."""
@@ -185,7 +185,7 @@ def same_pad(a, b):
 
 
 def mark_problems(i, mark, data, pins):
-    """A polarity mark: its sign, place and size – and L-8's test on the data: the nearest pad whose pin role has a
+    """A polarity mark: its sign, place and size – and GEO.mark's test on the data: the nearest pad whose pin role has a
     sign has this one."""
     from .release.fab import role_sign
     if not isinstance(mark, dict):
@@ -232,7 +232,7 @@ def symbol_problems(entry):
 
 
 def problems(entry):
-    """P-9: [(level, text)] – level "error" – what keeps the footprint data of a parts entry from being complete and
+    """PARTS.footprint: [(level, text)] – level "error" – what keeps the footprint data of a parts entry from being complete and
     consistent. [] when it is."""
     data = data_of(entry)
     if not isinstance(data, dict):
@@ -241,7 +241,7 @@ def problems(entry):
     if foreign := [k for k in data if k not in KEYS]:
         out.append(f"footprint_data has no field {', '.join(foreign)} ({', '.join(KEYS)})")
     if not entry.get("footprint"):
-        out.append("footprint missing – the name of the copy in EasyEDA, which L-4 compares with the PCB")
+        out.append("footprint missing – the name of the copy in EasyEDA, which SYNC.footprint compares with the PCB")
     if "origin" in data and not point(data["origin"]):
         out.append("origin is not [x, y] in mm")
     if data.get("symbol") not in (None, "box"):
@@ -350,8 +350,8 @@ def mil_pad(pad, ox, oy):
 
 def geometry(entry):
     """The footprint data of a parts entry as footprint geometry – the form pcb dump and the library cache have (mil,
-    relative to the origin), "source": "data" –, for pcb plan, P-7 and part diff before the copy is dumped. None when
-    the data is not complete (P-9 says why)."""
+    relative to the origin), "source": "data" –, for pcb plan, GEO.hole and part diff before the copy is dumped. None when
+    the data is not complete (PARTS.footprint says why)."""
     data = data_of(entry)
     if problems(entry):
         return None
@@ -363,7 +363,7 @@ def geometry(entry):
     return geo
 
 
-# --- P-10: the copy equals the data ----------------------------------------------------------------------------------
+# --- SYNC.footprint: the copy equals the data ----------------------------------------------------------------------------------
 
 def normal(shape, w, h, rot):
     """(shape, w, h, rot) of a pad, written one way: a turn by 180° is none, one by 90° swaps w and h, a round pad
@@ -388,7 +388,7 @@ def hole_text(hole):
 
 
 def copy_differences(entry, geo):
-    """P-10: ([what differs], [what the dump did not measure]) between the footprint data of a parts entry and the
+    """SYNC.footprint: ([what differs], [what the dump did not measure]) between the footprint data of a parts entry and the
     footprint pcb dump measured on the board (geo: mil, relative to the placed part's origin at 0° on TOP)."""
     from .part import pad_points
     data = data_of(entry)
@@ -442,7 +442,7 @@ def users(d, key):
 
 
 def check(d, rep, cfg):
-    """P-9 on every parts entry with footprint data that a component uses, and P-10 on every such component that pcb
+    """PARTS.footprint on every parts entry with footprint data that a component uses, and SYNC.footprint on every such component that pcb
     dump measured on its board."""
     from .checks import board_dumps
     keys = sorted({k for des in d.comps if (k := d.entry_key(des)) and "footprint_data" in d.parts[k]},
@@ -466,11 +466,11 @@ def check(d, rep, cfg):
                                       f"in the PCB; until then the copy is not compared with the data of {key}"))
             continue
         if key not in valid:
-            continue                                  # P-9 says what the data lacks
+            continue                                  # PARTS.footprint says what the data lacks
         entry = d.parts[key]
         if geo.get("footprint") != entry.get("footprint"):
             rep.error("SYNC.footprint", f"{des}: the dump measured footprint {geo.get('footprint')}, the entry {key} names "
-                              f"{entry.get('footprint')} – not the copy (L-4): edakit pcb parts --write, then pcb dump",
+                              f"{entry.get('footprint')} – not the copy (SYNC.footprint): edakit pcb parts --write, then pcb dump",
                       d.comps[des].get("accept"))
             continue
         diffs, lacks = copy_differences(entry, geo)
@@ -504,7 +504,7 @@ def data_pad(p, lib=None):
     hole = p.get("hole") or (lib or {}).get("hole") if p.get("tht") else None
     layer = (src or {}).get("layer")
     if p.get("tht") and not hole:
-        out["layer"] = "MULTI"                      # a hole nobody measured: P-9 asks for it
+        out["layer"] = "MULTI"                      # a hole nobody measured: PARTS.footprint asks for it
     elif layer == "BOTTOM" or (layer == "MULTI" and not hole) or (layer == "TOP" and hole):
         out["layer"] = layer
     if hole:
@@ -563,7 +563,7 @@ def entry_key(d, key):
 
 
 def take_over(cfg, key, board=None, write=False, today=None):
-    """part footprint: (the entry's file, the data, where from, findings of P-9 on the entry with it). With write the
+    """part footprint: (the entry's file, the data, where from, findings of PARTS.footprint on the entry with it). With write the
     data goes into the entry as footprint_data, with a line in its sources – an entry that has data is refused."""
     from . import part
     from .block import write_json
@@ -756,7 +756,7 @@ def build(cfg, key, board=None, write=False, mcp=None):
         raise FootprintError(f"{key}: no footprint_data – edakit part footprint {key} --write takes the footprint over "
                              "as data first")
     if found := problems(entry):
-        raise FootprintError(f"{key}: the footprint data is not complete (P-9) – " + "; ".join(t for _, t in found))
+        raise FootprintError(f"{key}: the footprint data is not complete (PARTS.footprint) – " + "; ".join(t for _, t in found))
     b = cfg.board(board, made=True)
     on = carrier(cfg, d, key, b)
     if not write:
@@ -795,7 +795,7 @@ def main_footprint(cfg, args):
     print("  from then on a footprint change is a line of text, and edakit part build rebuilds the copy from it; the "
           "print stays the copy's until lines, texts, marks or outline are written (handbook 4.5)")
     for _, text in found:
-        print(f"  P-9 {text}")
+        print(f"  PARTS.footprint {text}")
     return 2 if found else 0
 
 
@@ -816,6 +816,6 @@ def main_build(cfg, args):
     if said:
         print(f"  {said}")
     print(f"  the parts in the PCB keep their old copy: delete {', '.join(on)} in the PCB, edakit pcb parts --write, "
-          "edakit pcb dump – then edakit check holds the copy to the data (P-10), and the round goes on through "
+          "edakit pcb dump – then edakit check holds the copy to the data (SYNC.footprint), and the round goes on through "
           "route all (handbook 4.5)")
     return 2 if diffs else 0

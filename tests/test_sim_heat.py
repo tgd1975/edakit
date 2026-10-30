@@ -22,7 +22,7 @@ def sim_config(project):
 
 def body_diode_in_the_supply_path(project):
     """D1 replaced by the block reverse-pmos (AO3401A, RθJA 125 K/W) with its gate at its source: switched off, its
-    body diode carries the supply current – 0.07 W in all_on, inside E-2's 0.45 W."""
+    body diode carries the supply current – 0.07 W in all_on, inside LIM.*'s 0.45 W."""
     block.add(project.config(), "reverse-pmos", "T", {"in": "VIN", "out": "+5V"})      # Q1, R3, net T_GATE
     g = project.graph()
     g["graph"]["components"] = [c for c in g["graph"]["components"] if c["designator"] != "D1"]
@@ -37,7 +37,7 @@ def test_junction_of_a_discrete_part(project):
     out = simulate(project)
     assert not failing(out)
     tj = [c for c in out["checks"] if c["item"] == "Q1" and c["check"].startswith(JUNCTION)]
-    assert len(tj) == 12 and all(c["id"] == "E-2" and c["expected"] == "≤ 110 °C" for c in tj)
+    assert len(tj) == 12 and all(c["id"] == "LIM.t" and c["expected"] == "≤ 110 °C" for c in tj)
     hot = next(c for c in tj if c["scenario"] == "usb-nom/all_on/vf-min")
     assert hot["check"] == f"{JUNCTION}: 0.0751 W × 125 K/W" and hot["actual"] == "49.38 °C"
     assert not [c for c in out["checks"] if c["check"].startswith("temperature where people touch")]
@@ -131,4 +131,4 @@ def test_touch_limit_of_an_unknown_board(project):
 def test_example_has_no_new_items(project):
     out = simulate(project)
     assert len(out["checks"]) == 738
-    assert not [c for c in out["checks"] if c["check"].startswith(JUNCTION) and c["id"] == "E-2"]
+    assert not [c for c in out["checks"] if c["check"].startswith(JUNCTION + ":") and c["id"] == "LIM.t"]   # a part's own

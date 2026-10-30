@@ -309,7 +309,12 @@ def load_signoff(cfg, head, write=False):
 
 
 def key_of(item):
-    return " ".join(str(item.get(k, "")) for k in ("id", "scenario", "item", "check") if item.get(k, "") != "")
+    """'GEO.hole main D2: hole tight …' – what an accept of the sign-off file is matched against: code, scenario, item
+    and check; the item left out where the check starts with it (a finding of stage P or G names its place first)."""
+    check = str(item.get("check", ""))
+    keys = [k for k in ("id", "scenario", "item", "check") if item.get(k, "") != ""
+            and not (k == "item" and check.startswith(str(item[k])))]
+    return " ".join(str(item[k]) for k in keys)
 
 
 def accepted(item, signoff):
@@ -369,6 +374,8 @@ def stage_graph(cfg, design):
     rep = engines.run_all(design, cfg)
     rows = []
     for f in rep.findings:
+        if f.code in ("SYNC.scripts", "SYNC.agents"):
+            continue          # the project's scripts and agents: rows of their own, with what passed (scripts.gate_rows)
         result = "waived" if f.accepted and f.severity != "pending" else \
             "info" if f.data.get("draft") and f.severity == "warning" else RESULT_OF[f.severity]
         rows.append({"stage": f.stage if f.stage in "PG" else "G", "id": f.code, "item": f.place, "check": f.text,
@@ -376,19 +383,25 @@ def stage_graph(cfg, design):
     hit = {r["id"] for r in rows if r["result"] in ("fail", "pending")}
     prof = engines.profile(design, cfg)
     rows += [{"stage": "P" if code.startswith(("PARTS.", "STRUCT.entry", "STRUCT.identity")) else "G", "id": code,
-              "item": "", "check": catalog.title(code), "result": "pass"} for code in executed(prof) if code not in hit]
+              "item": "", "check": catalog.title(code), "result": "pass"} for code in executed(prof, cfg) if code not in hit]
     from .. import cost
     rows += cost.gate_rows(cfg)   # with [cost]: the estimate, above the budget a warning
     return rows, rep.to_dict()
 
 
-def executed(prof):
-    """The codes of stages P and G a profile reports: of the engines that run before the layout, every code it has on
-    that is no hint."""
+def executed(prof, cfg):
+    """The codes of stages P and G a run checks, each counted once as passed where it has no finding: those of the
+    engines on the graph and of the checks beyond it that the profile has on – the footprint data's only where an
+    entry has footprint data, the requirements file's only with [project] requirements; no hint, no suggestion note."""
     from ..findings import Finding
-    stages = ("STRUCT.", "LIM.", "LVL.", "REQ.", "PATH.", "PARTS.", "DOCS.")
-    return [c for c in catalog.codes() if c.startswith(stages) and prof.on(Finding(c, "G", "", ""))
-            and c != "STRUCT.domain"]
+    from ..checks import has_footprint_data
+    graph = ("STRUCT.", "LIM.", "LVL.", "REQ.", "PATH.", "PARTS.")
+    beyond = ["SYNC.source", "GEO.hole", "GEO.formed"]
+    beyond += ["SYNC.footprint"] if has_footprint_data(cfg) else []
+    beyond += ["DOCS.ref", "DOCS.need", "DOCS.evidence", "DOCS.draft"] if cfg.requirements else []
+    skip = {"STRUCT.domain"} | (set() if has_footprint_data(cfg) else {"PARTS.footprint"})
+    return [c for c in catalog.codes() if (c.startswith(graph) or c in beyond) and c not in skip
+            and prof.on(Finding(c, "G", "", ""))]
 
 
 def stage_checks(cfg, outdir, project_checks, step=None):
@@ -493,7 +506,7 @@ def fab_hashes(cfg, outdir):
     from . import fab
     try:
         layers = {b: fab.fab_layers(outdir / "fab" / b, b) for b in cfg.made()}
-    except Exception as e:   # unreadable files: F-4/F-5 name them; the sign-offs with scope 'fab' then do not count
+    except Exception as e:   # unreadable files: FILES.manifest/FILES.set name them; the sign-offs with scope 'fab' then do not count
         print(f"  fab hash not computed: {e}", file=sys.stderr)
         return {}
     return {"fab_method": fab.FAB_METHOD, "fab_layers": layers, "fab_sha256": fab.fab_hash(layers)}
@@ -778,7 +791,8 @@ def write_protocol(cfg, outdir, head, rows, sim, signoff, notes, decision, reaso
     from .. import engines
     prof = engines.profile(Design.from_config(cfg), cfg)
     L += [f"\nIn P (parts) and G (graph) every code without a finding counts once as passed; the domains core"
-          f"{''.join(', ' + n for n in prof.enabled)} have on: " + ", ".join(executed(prof)) + ".\n", "## 2 Findings\n"]
+          f"{''.join(', ' + n for n in prof.enabled)} have on: " + ", ".join(executed(prof, cfg)) + ".\n",
+          "## 2 Findings\n"]
     fails = [r for r in rows if r["result"] == "fail"] + [c | {"stage": "E"} for c in sim["checks"] if c["result"] == "fail"]
     advis = [r for r in rows if r["result"] == "advisory"]
     if advis:
@@ -791,7 +805,7 @@ def write_protocol(cfg, outdir, head, rows, sim, signoff, notes, decision, reaso
         L += [f"| {f['stage']} | {catalog.label(f['id'])} | {f.get('scenario', '')} | {f['item']} | {f['check']} | "
               f"{f.get('actual', '')} | {f.get('expected', '')} |" for f in fails]
         L.append("")
-    # the notes of stages P and G, as edakit check prints them – E lists its own in section 7, P-2 and cost stand in 8
+    # the notes of stages P and G, as edakit check prints them – E lists its own in section 7, FILES.sheet and cost stand in 8
     infos = [r for r in rows if r["result"] == "info" and r["stage"] in ("P", "G")
              and r["id"] not in ("FILES.sheet", "cost")]
     if infos:
@@ -836,7 +850,7 @@ def write_protocol(cfg, outdir, head, rows, sim, signoff, notes, decision, reaso
     L += [f"- note: {n}" for n in notes + sheet_notes]
     L += datasheet_list(sheet)
     L += ["\n## 7 Simulation (stage E)\n", "| Scenario | Status | Nets | Supply current |", "|---|---|---|---|"]
-    for s in sim["scenarios"]:   # a transient run (E-5): lowest … highest voltage, peak current
+    for s in sim["scenarios"]:   # a transient run (LIM.v): lowest … highest voltage, peak current
         hi = s.get("nets_max", {})
         nets = ", ".join(f"{n} {v:.3f}" + (f" … {hi[n]:.3f}" if n in hi else "") + " V" for n, v in s.get("nets", {}).items())
         src = ", ".join(f"{d} {'peak ' if s.get('transient') else ''}{i * 1e3:.0f} mA" for d, i in s.get("sources", {}).items())
@@ -912,7 +926,7 @@ def main(cfg, args):
     routing = copper.load_routing(cfg) if sim_cfg.get("copper") else None   # the routed copper, as it is now
     sim = simrun.run_all(Design.from_config(cfg), sim_cfg, plugin=plugin, routing=routing)
     simrun.write_net_currents(cfg, sim)
-    rows += docs.stage_rows(cfg, design, sim)    # G-19: quoted values against this run's simulation
+    rows += docs.stage_rows(cfg, design, sim)    # DOCS.quote: quoted values against this run's simulation
     (outdir / "sim.json").write_text(json.dumps(sim, indent=1, ensure_ascii=False) + "\n", encoding="utf-8")
     stages_run = set(OFFLINE)
     if before:      # the checks before S, where [[release.stages]] always ran
