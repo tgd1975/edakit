@@ -404,3 +404,19 @@ def test_the_library_silkscreen_of_easyeda_standard_is_cached_in_mil_y_up():
     assert sorted(map(tuple, (tuple(map(tuple, s["points"])) for s in plus))) == [((-20.0, 0.0), (20.0, 0.0)),
                                                                                   ((0.0, 20.0), (0.0, -20.0))]
     assert all(s["layer"] == "TOP" for s in silk) and len(silk) == 6     # copper (layer 1) and the designator out
+
+
+@pytest.mark.parametrize("form", ['(net "GND")', '(net_name "GND")', '(net 7) (net_name "GND")'])
+def test_a_zone_keeps_its_net_however_the_file_names_it(project, form):
+    cfg = kicad_project(project)
+    board = cfg.board()
+    kb.write_parts(cfg, board)
+    kb.write_zones(cfg, board)
+    path = kb.paths(cfg, board)["pcb"]
+    text = re.sub(r'\(net \d+\)\s*\(net_name "GND"\)', form, path.read_text())
+    path.write_text(re.sub(r'^\t\(net \d+ "[^"]*"\)\n', "", text, flags=re.M))
+    kb.write_parts(cfg, board)                            # read and written again, as after KiCad saved it
+    pcb = kb.load(cfg, board)
+    assert len(pcb.zones) == 2
+    for z in pcb.zones:
+        assert sexp.value(z, "net_name") == "GND" and pcb.net_name(sexp.value(z, "net")) == "GND"

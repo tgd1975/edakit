@@ -147,6 +147,8 @@ class Pcb:
             for c in item:
                 if isinstance(c, list) and c and c[0] == "net" and len(c) > 1:
                     names.add(str(c[2]) if len(c) > 2 else self.net_name(c[1]))
+                elif isinstance(c, list) and c and c[0] == "net_name" and len(c) > 1:
+                    names.add(str(c[1]))
         return names
 
     def renumber(self, names):
@@ -157,13 +159,22 @@ class Pcb:
         def name_of(c):
             return str(c[2]) if len(c) > 2 else old.get(int(c[1]), "") if str(c[1]).isdigit() else str(c[1])
         self.nets = {"": 0} | {n: k for k, n in enumerate(sorted(set(names) - {""}, key=natural_key), 1)}
-        for item in self.tracks + self.zones:
+        for item in self.tracks:
             for c in item:
                 if isinstance(c, list) and c and c[0] == "net" and len(c) > 1:
                     c[1:] = [self.nets.get(name_of(c), 0)]
-            for c in item:
-                if isinstance(c, list) and c and c[0] == "net_name":
-                    c[1] = self.net_name(next((x[1] for x in item if isinstance(x, list) and x[0] == "net"), 0))
+        for zone in self.zones:             # a zone names its net by number, by name, or both (net_name)
+            net = next((c for c in zone if isinstance(c, list) and c and c[0] == "net" and len(c) > 1), None)
+            label = next((c for c in zone if isinstance(c, list) and c and c[0] == "net_name"), None)
+            name = str(label[1]) if label and len(label) > 1 and str(label[1]) else name_of(net) if net else ""
+            if net is None:
+                net = ["net", 0]
+                zone.insert(1, net)
+            net[1:] = [self.nets.get(name, 0)]
+            if label is None:
+                zone.insert(2, ["net_name", name])
+            else:
+                label[1:] = [name]
         for pad in (pad for f in self.footprints for pad in find(f, "pad")):
             for c in pad:
                 if isinstance(c, list) and c and c[0] == "net" and len(c) > 1:
