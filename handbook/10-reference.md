@@ -292,7 +292,7 @@ scripts that write what they read first, when those are outdated or never ran, a
 | `edakit rules [CODE …]` | – | the catalog `edakit/catalog/codes.toml`: engines and codes; an old check ID (G-4) the codes that replace it (10.7; no project needed) | – |
 | `edakit explain CODE …` | – | the catalog: rule, why, fix, sources and severity of a code; an old check ID names its codes (no project needed) | – |
 | `edakit domains [--review R]` | – | graph, parts, `edakit/domains` | – (the domains on and off, suggested; with `--review electrical`, `regulatory` or `pcb` the questions of the enabled domains for that review) |
-| `edakit convert [--write]` | – | graph, parts entries, sign-off file | `--write`: the files in the form of the restructuring (limits and values with units, accept); without: the list |
+| `edakit convert [--write]` | – | graph, parts entries, sign-off file, documents, schematic notes, requirements files | `--write`: the files in the form of the restructuring (limits and values with units, accept by code, locks, codes in quotes and rows patterns), each with its own indent; when they were the signed ones, the sign-offs of scope 'circuit' keep counting – the new circuit hash goes into the sign-off file, both into `rehashed`; without: the list |
 | `edakit block list\|show NAME` | – | the block library (no project needed) | – |
 | `edakit block add NAME --as I [--connect PORT=NET …] [--board B] [--file F] [--dry-run]` | – | graph, parts, block | graph (formatting kept), missing parts entries |
 | `edakit part lint [KEY …]` | – | parts entries, the schema `edakit/catalog/kinds.toml` | – (PARTS.schema per problem; exit 2 on problems) |

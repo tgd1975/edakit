@@ -8,13 +8,16 @@ waive on nets and components -> accept keyed by the codes that replace the check
 {"HINT.bulk": how} on the graph; checks.pin_locks and doc_pin_table -> locks.pins and locks.doc_pin_table;
 checks.reverse_protect [J1] -> "source": "reversible" on J1. Sign-off file: accepted_warnings -> accept, the pattern's
 leading check ID replaced by its codes; documents, schematic notes and requirements files: their quotes and rows
-patterns (text). Converting what is converted changes nothing.
+patterns (text). The files written as they were: their indent, UTF-8 as it is. Converting what is converted changes
+nothing. When the files were the signed ones, the sign-offs of scope 'circuit' keep counting: the new circuit hash goes
+into the sign-off file and both into its `rehashed` (carry_signoffs).
 """
 
 from __future__ import annotations
 
 import copy
 import json
+import re
 from pathlib import Path
 
 from . import catalog
@@ -34,6 +37,7 @@ RENAME = {
 }
 COLORS = ("red", "green", "blue")
 CHECK_KEYS = {"pin_locks": "pins", "doc_pin_table": "doc_pin_table"}
+ACCEPT_NOTE = "per net or component: {code: reason} accepts a finding on purpose (edakit explain <code>)"
 
 
 def _renamed(section, table):
@@ -97,6 +101,10 @@ def graph(g):
                 obj["accept"] = acc
             else:
                 obj.pop("accept", None)
+    conv = inner.get("conventions")
+    if isinstance(conv, dict) and "waive" in conv:            # the graph's own note on its keys
+        inner["conventions"] = {("accept" if k == "waive" else k): (ACCEPT_NOTE if k == "waive" else v)
+                                for k, v in conv.items()}
     hints = inner.pop("hints", None) or {}
     if hints:
         inner["accept"] = {**_accept(hints), **(inner.get("accept") or {})}
@@ -191,7 +199,8 @@ def files(cfg):
         if not path.exists():
             return
         old = path.read_text(encoding="utf-8")
-        new = json.dumps(fn(json.loads(old)), indent=1, ensure_ascii=False) + "\n"
+        m = re.search(r"^( +)\S", old, re.M)              # written as the file was: its indent, UTF-8 as it is
+        new = json.dumps(fn(json.loads(old)), indent=len(m.group(1)) if m else 1, ensure_ascii=False) + "\n"
         if json.loads(new) != json.loads(old):
             out.append((path, old, new))
     one(Path(cfg.graph), graph)
@@ -205,11 +214,43 @@ def files(cfg):
     return out
 
 
+def carry_signoffs(cfg, before):
+    """After the conversion: when the files were the signed ones (the sign-off file's state_sha256 was their circuit
+    hash), the sign-offs of scope 'circuit' keep counting – the new hash goes into the file and both into `rehashed`,
+    as the gate records a change of [release] hash_ignore. -> the line to print, or None."""
+    import datetime as dt
+    from .release import gate
+    path = Path(cfg.signoff)
+    if not path.exists():
+        return None
+    old = path.read_text(encoding="utf-8")
+    s = json.loads(old)
+    after = gate.state_hash(cfg)
+    if s.get("state_sha256") != before or after == before:
+        return None
+    s["state_sha256"] = after
+    s.setdefault("rehashed", []).append({
+        "date": dt.date.today().isoformat(), "by": "edakit convert",
+        "why": "graph, parts entries and sign-off file in the form of the restructuring (handbook 14.2): names with "
+               "their unit, accept by code, locks – every value carried over; the files were the signed ones",
+        "state_sha256": [before, after]})
+    m = re.search(r"^( +)\S", old, re.M)
+    path.write_text(json.dumps(s, indent=len(m.group(1)) if m else 1, ensure_ascii=False) + "\n", encoding="utf-8")
+    return (f"{cfg.relative(path)}: the sign-offs of scope 'circuit' keep counting – state_sha256 {before[:12]}… → "
+            f"{after[:12]}… (rehashed)")
+
+
 def main(cfg, args):
     changed = files(cfg)
+    before = None
+    if args.write and changed:
+        from .release import gate
+        before = gate.state_hash(cfg)
     for path, _old, new in changed:
         print(f"{'converted' if args.write else 'would convert'}: {cfg.relative(path)}")
         if args.write:
             path.write_text(new, encoding="utf-8")
     print(f"{len(changed)} files" + ("" if args.write else " – edakit convert --write converts them"))
+    if before and (line := carry_signoffs(cfg, before)):
+        print(line)
     return 0

@@ -135,6 +135,8 @@ def test_conversion_of_graph_and_signoff():
     assert new["nets"][0]["accept"] == {"LVL.undefined": "held by U1"}
     assert new["accept"] == {"HINT.bulk": "C1 next to J1"} and new["locks"] == {"pins": {"U1.4": "CLK"}}
     assert "checks" not in new and convert.graph(convert.graph(g)) == convert.graph(g)
+    conv = convert.graph({"graph": {"conventions": {"v": "ranges", "waive": "per net: {check id: reason}"}}})
+    assert conv["graph"]["conventions"] == {"v": "ranges", "accept": convert.ACCEPT_NOTE}
     s = convert.signoff({"accepted_warnings": [{"match": "P-5 U1 *", "by": "x"}]})
     assert s["accept"] == [{"match": "PARTS.supplier U1 *", "by": "x", "converted_from": "P-5 U1 *"}]
 
@@ -211,3 +213,28 @@ def test_a_retired_code_explains_itself_and_stays_taken(monkeypatch):
     assert catalog.lint() == []
     data["retired"] = {"GEO.hole": "taken again"}
     assert catalog.lint() == ["GEO.hole: retired and still a code – a name once retired is not used again"]
+
+
+def test_convert_carries_the_circuit_sign_offs_of_the_signed_files(project, capsys):
+    """The files were the signed ones: the new circuit hash goes into the sign-off file, both into rehashed. Signed for
+    another state: nothing is carried over."""
+    from edakit import cli
+    from edakit.release import gate
+    cfg = project.config()
+    p = project.part("C8678")
+    p["ratings"] = p.pop("limits")
+    project.save_part("C8678", p)
+    signed = gate.state_hash(cfg)
+    s = json.loads(cfg.signoff.read_text())
+    cfg.signoff.write_text(json.dumps({**s, "state_sha256": signed}, indent=2) + "\n")
+    assert cli.main(["convert", "--write", "--config", str(project.root / "edakit.toml")]) == 0
+    assert "the sign-offs of scope 'circuit' keep counting" in capsys.readouterr().out
+    s = json.loads(cfg.signoff.read_text())
+    assert s["state_sha256"] == gate.state_hash(cfg) != signed
+    assert s["rehashed"][-1]["state_sha256"] == [signed, s["state_sha256"]] and s["rehashed"][-1]["by"] == "edakit convert"
+    p = project.part("C8678")
+    p["ratings"] = p.pop("limits")
+    project.save_part("C8678", p)
+    assert cli.main(["convert", "--write", "--config", str(project.root / "edakit.toml")]) == 0
+    assert "keep counting" not in capsys.readouterr().out          # signed for the state before this one
+    assert json.loads(cfg.signoff.read_text())["state_sha256"] == s["state_sha256"]

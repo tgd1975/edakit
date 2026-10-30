@@ -790,8 +790,10 @@ def write_protocol(cfg, outdir, head, rows, sim, signoff, notes, decision, reaso
         L.append(f"| {sid} {name} | {what} | {c['pass']} | {c['fail']} | {c['warn']} | {c['waived']} | {c['pending']} | {res} |")
     from .. import engines
     prof = engines.profile(Design.from_config(cfg), cfg)
-    L += [f"\nIn P (parts) and G (graph) every code without a finding counts once as passed; the domains core"
-          f"{''.join(', ' + n for n in prof.enabled)} have on: " + ", ".join(executed(prof, cfg)) + ".\n",
+    on = ["core", *prof.enabled]
+    L += [f"\nIn P (parts) and G (graph) every code without a finding counts once as passed – the codes the "
+          f"domain{'s' if len(on) > 1 else ''} {', '.join(on)} {'have' if len(on) > 1 else 'has'} on: "
+          + ", ".join(executed(prof, cfg)) + ".\n",
           "## 2 Findings\n"]
     fails = [r for r in rows if r["result"] == "fail"] + [c | {"stage": "E"} for c in sim["checks"] if c["result"] == "fail"]
     advis = [r for r in rows if r["result"] == "advisory"]
@@ -810,7 +812,8 @@ def write_protocol(cfg, outdir, head, rows, sim, signoff, notes, decision, reaso
              and r["id"] not in ("FILES.sheet", "cost")]
     if infos:
         L += ["Information (does not block the release, needs no acceptance):\n",
-              *[f"- {catalog.label(r['id'])}: {r['check']}" for r in infos], ""]
+              *[f"- {catalog.label(r['id'])}: " + (f"{r['item']}: " if r["item"] and not str(r["check"]).startswith(
+                  str(r["item"])) else "") + str(r["check"]) for r in infos], ""]
     L.append("## 3 Warnings\n")
     warns = [c for c in [*sim["checks"], *rows] if c["result"] == "warn"]
     gone = signoff.get("lapsed", [])

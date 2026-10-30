@@ -75,7 +75,7 @@ fixed in build step 1 (`edakit/catalog/codes.toml`):
 
 | Engine | Relations |
 | --- | --- |
-| STRUCT | `name`, `pin`, `net`, `board`, `ref`, `purpose`, `lock`, `entry`, `identity`, `prefix` |
+| STRUCT | `name`, `pin`, `net`, `board`, `ref`, `purpose`, `lock`, `domain`, `entry`, `identity`, `prefix` |
 | SYNC | `schematic`, `pcb`, `footprint`, `plan`, `bom`, `cpl`, `source`, `scripts`, `agents` |
 | LIM | `v`, `i`, `p`, `t`, `range`, `declared`, `backfeed`, `eirp`, `band` |
 | LVL | `undefined`, `contention`, `boot`, `threshold`, `direction` |
@@ -86,9 +86,9 @@ fixed in build step 1 (`edakit/catalog/codes.toml`):
 | FILES | `sheet`, `manifest`, `set`, `order` |
 | PARTS | `verified`, `stock`, `supplier`, `fact`, `schema`, `footprint` |
 | DOCS | `quote`, `ref`, `need`, `evidence`, `draft` |
-| HINT | `bulk`, `gate`, `debounce`, `inductive`, `switcher`, `lithium`, `esd`, `two_supplies`, `readback` |
+| HINT | `datasheet`, `bulk`, `gate`, `debounce`, `inductive`, `switcher`, `lithium`, `esd`, `two_supplies`, `readback` |
 
-80 codes for today's 66 checks and 9 hints – more than the estimate of 50: the hints keep a code each, and where one
+80 codes for today's 66 checks and 9 hints – 82 since step 3 (`STRUCT.domain`, `HINT.datasheet` for the notes of the parts entries) –, more than the estimate of 50: the hints keep a code each, and where one
 check of today held two things a person accepts separately (G-1, G-14, G-16), they became two codes. Today's IDs are
 retired without aliases (decided); every code lists the IDs it replaces (`replaces`), and `edakit explain G-8` names
 them, for reading old protocols.
@@ -242,6 +242,7 @@ Steps 1 to 4 change no finding on any board; the parity test says so. Step 5 is 
 | 2 | built | `edakit/engines/`: STRUCT, LIMITS (with the producers of stage G in `quantities.py`), LEVELS, REQUIRES, PATHS, HINT, SIM (the simulation as a producer, beside `sim/run.py` on the same ngspice result); their data `catalog/levels.toml`, `needs.toml`, `paths.toml`; the pure graph helpers moved from `checks.py` to `circuit.py` and `radio.py`, the hint matchers to `engines/hint.py`. Parity (`tests/parity.py`, run on every check of the test suite): per check ID of before and severity the same number of findings – 180 graph runs with 1141 findings and 171 simulation runs with 458 failures in the seeded faults of `led-bar`, and the bell, agree. `tests/test_engines.py`: every relation on synthetic circuits, property tests of LIMITS and PATHS. |
 | 3 | built | `edakit/domains/`: `core` (always on: severities by purpose, the facts every module and microcontroller states – `compliance.radio`, today's P-11 –, the nine hints, the reviewers' questions), `usb` (the CC termination, `REQ.*:cc`), `radio` (`LIM.eirp`, `LIM.band`, purpose.radio; graded by purpose); `edakit/profile.py`: the profile from `[project] domains` – without the key every domain the graph suggests, so no project of today changes; with it a suggested domain left out is a note `STRUCT.domain`; severities of several domains: the strictest wins; `code:topic` switches part of a code (`REQ.missing:cc`). `edakit domains [--review R]`; the electrical and regulatory reviewers read their questions from it, the lists left their prompts. The engine PARTS checks the facts the profile requires. Parity holds, P-11 included. |
 | 4 | built | `edakit/engines/project.py`: the checks beyond the graph – own parts and footprint copies (SYNC), holes and formed leads (GEO), stock, supplier, footprint data, sign-off (PARTS), the requirements file (DOCS), scripts and agents (SYNC) – report through a recorder that gives each report its code and grade (`MAP`, a few by their words: a missing lead is `PARTS.fact/lead`); the gate's rows of stages S, L and F get their codes by the same table (`row_code`). `engines.run_all` is what `edakit check` will print. Parity now over every check of `edakit check`. One deviation, on purpose: a part that is neither an LCSC part nor an EasyEDA device was pending and could be waived; pending cannot be accepted (section 3), so it is `PARTS.verified/device`, a warning to accept. |
+| 5 | built | The cut. Deleted: `rules.json`, `rules.py`, the parity test; `checks.py` from 1208 to 250 lines (what is left reads the footprint geometry: GEO.hole, GEO.formed, the sign-off of parts), `sim/run.py` from 1082 to 501 (the transient runs; the DC evaluation is `engines/sim.py`). `edakit check`, the gate and `edakit sim` print findings by code; `edakit hints` is gone. Data in the new form: `led-bar`, the blocks and their parts, and the bell's four projects by `edakit convert --write` – same findings under the map old ID → code; the Nano's `i_gpio_max_a`, which no code read, is `gpio_i_max_a` now (150 more simulation rows, passed). `convert` keeps each file's indent and, where the files were the signed ones, carries the circuit sign-offs over (`rehashed`, as for `hash_ignore`). Generated: the handbook's lists of codes (3.3, 5.3, 8.1, 14.3), the parts schema (4.1) and the map of before (10.7) by `python -m edakit.catalog.handbook --write`, held by a test – a test, not DOCS.quote, since the handbook is no project document. Chapter 14 rewritten; handbook, skills, agents and blocks name codes. Proposal kinds `fact`, `relation`, `domain`, `block`, `retire` (`check`, `hint`, `part` of before still verify); `[retired]` in `codes.toml` keeps a retired name taken. The concept documents keep the IDs of their time. |
 
 ### When maker-coverage's candidates are built
 
