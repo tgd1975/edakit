@@ -103,7 +103,7 @@ def test_kicad_puts_every_pad_where_edakit_reads_it_also_on_the_bottom(project):
 
 
 @pytest.mark.freerouting
-def test_route_all_on_kicad_leaves_only_what_freerouting_left_open(project, capsys):
+def test_route_all_on_kicad_leaves_only_what_freerouting_left_open(project, capsys, monkeypatch):
     """route all on the KiCad project: Freerouting, the SES into the file, the zones filled by kicad-cli, KiCad's DRC –
     nothing in it but connections the routing left open; then L-2 on KiCad's Gerber copper."""
     import json
@@ -132,10 +132,10 @@ def test_route_all_on_kicad_leaves_only_what_freerouting_left_open(project, caps
     assert [f for f in again if f["ruleName"] != "unconnected"] == [], again
     assert len([f for f in again if f["ruleName"] == "unconnected"]) == \
         len([f for f in found if f["ruleName"] == "unconnected"])
-    d = project.root / "build" / "fab" / "main"
-    d.mkdir(parents=True)
-    kfab.collect(cfg, board, d, verbose=True)
-    rows = fab.Rows()
-    fab.check_copper(board, Design.from_config(cfg), d, rows)
-    print("\n".join(f"{r['id']} {r['result']}: {r['check']} – {r['actual']}" for r in rows))
-    assert not [r for r in rows if r["result"] == "fail" and "short" in r["check"].lower()]
+    # stages L and F on what KiCad exports – JLCPCB's catalogue (F-2) left out, the rest as the gate runs it
+    monkeypatch.setattr(fab, "fetch_jlc", lambda bom, d: (d / "jlc_parts.json").write_text("{}"))
+    rows = fab.run(cfg, board, project.root / "build" / "fab")
+    print("\n".join(f"{r['id']:<5} {r['result']:<4} {r['check']}: {r['actual']}"[:220] for r in rows))
+    for cid in ("L-1", "L-2", "L-4", "L-7", "L-16", "F-1", "F-3", "F-5"):
+        bad = [r for r in rows if r["id"] == cid and r["result"] == "fail"]
+        assert not bad, bad
