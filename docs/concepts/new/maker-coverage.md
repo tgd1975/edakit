@@ -488,7 +488,7 @@ within the guardrails above:
 
 | # | Candidate | Why first |
 | --- | --- | --- |
-| 0a | FT-20 domains, FT-21 reference circuits, FT-19 report of what went unchecked | the frame every check runs in: domains keep rules off boards that do not need them, the reference circuits let a new check meet real designs before its merge, the report makes silent passes visible |
+| 0a | FT-20 domains, FT-19 report of what went unchecked – the restructuring of [rules-at-scale.md](rules-at-scale.md) | the frame every check runs in: domains keep rules off boards that do not need them, the report makes silent passes visible; the reference circuits (FT-21) come after the integration of the candidates, by the owner's decision |
 | 0b | FT-22 short rule listing, FT-24 eval with Sonnet | edakit must run with Sonnet: the listing drops from 27.5 KB to about 2 KB, and every change is measured with Sonnet on the reference circuits |
 | 1 | FT-1 load steps | in all five maker clusters and in both guitar clusters; the most frequent "it resets when the motor starts"; the bell's servo |
 | 2 | CK-13 with PF | one mechanism for about 15 pitfalls; the knowledge stays in parts entries, as `strap` and `pull` do |

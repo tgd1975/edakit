@@ -1,6 +1,6 @@
 # Rules at scale
 
-Status 2026-10-30: a proposal, nothing is built. It answers the owner's concern that the rule catalog does not scale –
+Status 2026-10-30: proposed; the owner has taken the four decisions at the end, nothing is built. It answers the owner's concern that the rule catalog does not scale –
 electrically (are the rules consistent, free of contradiction, correct?) and in use (many rules, most of them
 irrelevant to a given project, too much context for the model, which must work with Sonnet). It builds on
 [maker-coverage.md](maker-coverage.md) (what is missing) and [circuit-language.md](circuit-language.md) (the graph's
@@ -52,17 +52,27 @@ Illustrative mapping of today's checks; fixed when built.
 | SOURCING | parts are identified, verified, stated and orderable | G-9, P-4, P-5, P-11, F-2 | parts entries, stock |
 | DOCS | documents and requirements quote the design | G-19 to G-23 | docs, requirements file |
 
-**Finding codes.** Today's IDs stay as finding codes under their engine. Nothing is renumbered: protocols, waivers and
-accepted warnings keep their meaning. A new relation gets a new code; new knowledge of an existing relation gets a row
-of data. Estimate for maker-coverage's 31 check candidates: 12–15 new codes; the rest is data for LIMITS, REQUIRES,
-LEVELS and PATHS.
+**Finding codes.** Decided: today's IDs stay valid, and a new scheme may replace them where it makes sense. Proposed
+scheme: a code names its engine and its relation – `LIM.v` (a voltage above a limit), `LIM.i`, `LIM.p`, `LIM.t`,
+`LIM.band`, `REQ.missing` (a requirement a part makes is not met), `REQ.conflict`, `LVL.undefined` (an input without a
+level in a state), `LVL.contention`, `PATH.reverse`, `PATH.unfed`, `GEO.spacing`, `GEO.copper`, `SYNC.pcb` – about
+forty codes for today's 67 checks and the candidates together (estimate). A code says what kind of finding it is
+without a lookup, which serves the model as much as the user. Today's IDs become permanent aliases in the catalog, as
+the retired G-7 keeps its entry today: `edakit explain G-8` resolves to `LIM.v`, and `waive`, accepted warnings and the
+`rows` patterns of the requirements file accept both. The stage (P, G, E, S, L, F) is a property of the finding – where
+it was computed –, not of the code: LIMITS fires in stage G on declared ranges, in E on the simulation, in L on the
+geometry, and the gate's protocol still groups by stage. New knowledge of an existing relation is a row of data; a new
+code only for a new relation. Where a code of today maps to several relations (E-3 holds supply ranges, input levels
+and back-feed), the alias names them all. The exact vocabulary is fixed in step 1.
 
 **One finding format**, so that every message says the same four things – where, measured against what, from which
 source, what to do:
 
 ```text
-G-8   C1: 7.5 V across, rated 6.3 V (needs × 1.5 = 9.5 V)      ratings.v_max of C439782 (datasheet p. 2)   → a 16 V part
+LIM.v  G  C1: 7.5 V across, rated 6.3 V (needs × 1.5 = 9.5 V)   ratings.v_max of C439782 (datasheet p. 2)   → a 16 V part
 ```
+
+Code, stage, location, measured against what, source, fix – the same six for every finding.
 
 ## 2. Data
 
@@ -95,7 +105,7 @@ domains = ["usb", "radio"]        # core is always on
 ```
 
 ```toml
-# edakit/domains/audio.toml – one file per domain, data
+# edakit/domains/audio.toml – one file per domain, data; domain files live in edakit only (decided)
 [domain]
 name = "audio"
 about = "amplifiers, speakers, line and instrument inputs"
@@ -142,7 +152,10 @@ clean = ["tests/fixtures/pam8403-speaker", "tests/fixtures/tube-screamer"]
 
 The reference circuits are well-known open designs as edakit graphs in the test fixtures (maker-coverage FT-21): an
 ESP32 DevKitC, a WLED controller, a QMK keyboard, a Tube Screamer, a Fuzz Face, a relay board with an HLK-PM01, a LiPo
-charger. They also serve the eval with Sonnet (section 5).
+charger. They also serve the eval with Sonnet (section 5). Decided: they come after the restructuring and after the
+integration of maker-coverage's candidates. Until then a new code is tested as today – a seeded fault in `led-bar`, the
+run on the owner's projects – and starts as a warning in its domain; the reference circuits and the mutation sweep then
+validate the whole catalog at once, and a code that proves wrong there is corrected before it becomes an error.
 
 ## 5. The model
 
@@ -169,17 +182,21 @@ step 5 runs against the reference circuits of the domain as well as against the 
 
 ## 7. Migration, each step shippable
 
+Order as proposed; the owner has no preference except that the reference circuits come last.
+
 | Step | Content | Size (estimate) |
 | --- | --- | --- |
-| 1 | `engine` per entry in `rules.json`; `edakit rules` grouped and short; `edakit explain` | small |
-| 2 | `[project] domains`; domain files `core`, `usb`, `radio` from today's checks; severity from the profile; suggested domains; hints and reviewer questions filtered | medium |
-| 3 | parts schema per kind; `edakit part lint`; required facts per domain; the coverage line | medium |
+| 1 | the code scheme: `engine` and `code` per entry in `rules.json`, today's IDs as aliases; findings in the format of section 1; `edakit rules` grouped and short; `edakit explain` | small to medium |
+| 2 | parts schema per kind; `edakit part lint`; the coverage line ("not checked: …") | medium |
+| 3 | `[project] domains`; domain files `core`, `usb`, `radio` in edakit from today's checks; severity from the profile; required facts per domain (needs step 2's field names); suggested domains; hints and reviewer questions filtered | medium |
 | 4 | the `needs` vocabulary; REQUIRES with built-in defaults equal to G-6, G-11, G-13, G-14 – no behaviour changes | medium to large |
-| 5 | reference circuits, seeded faults, overlap test, mutation sweep – one domain at a time | large, incremental |
-| 6 | handbook check tables generated | small to medium |
-| 7 | eval with Sonnet | medium |
+| 5 | handbook check tables generated from the catalog | small to medium |
+| 6 | maker-coverage's candidates enter as data per domain, new codes as warnings – one domain at a time | per domain |
+| 7 | reference circuits, seeded-fault suite per domain, overlap test, mutation sweep | large, incremental |
+| 8 | eval with Sonnet on the reference circuits; a baseline on `led-bar` and the bell can run earlier | medium |
 
-After step 4, maker-coverage's candidates enter as data per domain. Steps 1 to 3 change no finding on any board.
+Steps 1 to 3 change no finding on any board. Step 2 before step 3 because the domain files name the schema's fields.
+Step 5 early because it is cheap and stops the handbook's tables from drifting during the restructuring.
 
 ## 8. Costs and risks
 
@@ -193,11 +210,17 @@ After step 4, maker-coverage's candidates enter as data per domain. Steps 1 to 3
   engines carry small vocabularies, and exceptions are data (pass-through sets, roles), not code per case.
 - **Estimates.** The code counts and step sizes are judgement; the mutation sweep's value shows only once it runs.
 
-## Open decisions
+## Decisions
 
-1. Engines with today's IDs as finding codes (this proposal), or a renumbering with a map from old to new.
-2. Where the domain files live: in edakit only, or also in a project (`hardware/domains/<name>.toml`) for a project's
-   own profile.
-3. Which reference circuits come first, and from which published designs.
-4. Whether the mutation sweep runs in CI on every change or on demand (run time against the number of fixtures).
-5. The order of steps 2 and 3.
+Taken by the owner on 2026-10-30:
+
+1. **IDs.** Today's IDs stay valid; a new ID scheme and methodology are welcome where they make sense. The scheme of
+   section 1 (`ENGINE.relation`, old IDs as permanent aliases, the stage as a property of the finding) is the proposal
+   for it – to be confirmed with step 1.
+2. **Domains** live in edakit only; a project's own profile is not foreseen. To be re-evaluated if a need arises.
+3. **Reference circuits** come after the restructuring and after the integration of maker-coverage's candidates (steps
+   7 and 8 of the migration).
+4. **Order:** no preference beyond 3; the order of section 7 stands until something speaks against it.
+
+Still open: the relation vocabulary of the codes (step 1), the mutation sweep in CI on every change or on demand (step
+7), and which published designs become the reference circuits (step 7).
