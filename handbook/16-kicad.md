@@ -58,12 +58,13 @@ moved by hand keeps its spot while it has no row in `[place]`, and `pcb takeover
 **Footprints** come from the parts database: the entry's `footprint_data` (4.5), else the geometry `edakit part import`
 caches from the LCSC data – EasyEDA's footprint, the one JLCPCB's assembly works from, so the CPL needs no rotation
 offsets. KiCad's own library is not used: a footprint from it would need a correction of turn and origin, and maybe of
-its pad numbers, for every part JLCPCB places (concept, decision 3). A part whose footprint is not cached yet is read
-from the library at the first `pcb apply` (cache only, the entry is not touched). The cache holds the library's
-silkscreen too – lines, circles, arcs, filled regions, the strokes of texts – so polarity marks print as the library
-draws them (L-8). A cache from an older edakit lacks it and is read again. Pads: `RECT` → rect, `ELLIPSE` → circle or
-oval, `OVAL` → oval, `POLYGON` → custom with its corners; holes as round or oval drills along the pad's long side, not
-plated → `np_thru_hole`.
+its pad numbers, for every part JLCPCB places (concept, decision 3). A part whose LCSC footprint is wrong or missing
+gets `footprint_data`, started by `edakit part footprint KEY --write` from the LCSC footprint (4.5). A part whose
+footprint is not cached yet is read from the library at the first `pcb apply` (cache only, the entry is not touched).
+The cache holds the library's silkscreen too – lines, circles, arcs, filled regions, the strokes of texts – so polarity
+marks print as the library draws them (L-8). A cache from an older edakit lacks it and is read again. Pads: `RECT` →
+rect, `ELLIPSE` → circle or oval, `OVAL` → oval, `POLYGON` → custom with its corners; holes as round or oval drills
+along the pad's long side, not plated → `np_thru_hole`.
 
 **Symbols** are the ones `schematic draw` draws (6.5), one per part, turned as the sheet turns it; their pins are the
 drawing's pin tips, of length 0 and passive – edakit's checks of stage G reason about drivers, not KiCad's ERC. Nets are

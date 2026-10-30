@@ -220,11 +220,10 @@ between them is decision 3:
   rules (KLC): courtyard, fabrication layer, 3D model. But someone has to choose one for every part, its pads differ
   slightly from the LCSC footprint, and for some packages JLCPCB places it turned unless the CPL is corrected.
 
-**Taken by Claude, because the user left it open:** every part uses the LCSC data, and KiCad's library is used only
-where a parts entry asks for it with `kicad_footprint` (not built; only when a part needs it). For such a part, the
-fit of `edakit part diff` (the turn and shift that lay one footprint's pads over the other's) gives the correction of
-its CPL row against the LCSC footprint. That correction goes into the entry as `jlc_offset`. F-3 checks it, and M-5
-sees it on JLCPCB's assembly preview. L-10 holds the part's pad numbers to the LCSC geometry.
+**Taken by Claude, because the user left it open:** every part uses the LCSC data. A part whose LCSC footprint is
+wrong or missing gets its own footprint as text, `footprint_data` in its parts entry (handbook 4.5): `edakit part
+footprint KEY --write` starts it from the LCSC footprint, in its axes and turn, and the datasheet corrects it. It works
+in both tool chains; P-9 checks that it is complete, P-10 that the board has it.
 
 On 2026-10-30 the user asked why the KiCad tool chain does not use KiCad's library, and accepted the reason: KiCad is
 the tool, the parts come from the assembler. In EasyEDA the tool's library and JLCPCB's are the same; in KiCad they
@@ -232,6 +231,14 @@ are not, and edakit takes the assembler's in both. A footprint from KiCad's libr
 and often of origin (KiCad puts the origin of a through-hole footprint on pin 1, JLCPCB places by the centre) for
 every part, and its pad numbers can differ from the LCSC symbol's (in KiCad, pad 1 of a diode is the cathode).
 Without assembly by JLCPCB, KiCad's library would be the obvious choice.
+
+A choice of KiCad's library per parts entry (`kicad_footprint`, with a CPL correction `jlc_offset`) was planned and is
+dropped, the user's choice of 2026-10-30. The same entry would give one footprint in EasyEDA and another in KiCad, so
+switching the tool chain would change the board; every such part would need its correction of turn and origin in the
+CPL, a check of it in F-3 and a map of its pad numbers; and the footprint would come from the KiCad installation,
+which an update changes. Should a part ever need a footprint from KiCad's library, it is imported once into
+`footprint_data`, turned and shifted onto the LCSC footprint by the fit of `edakit part diff`, its pad numbers checked.
+After that it takes the way every other part takes. That import is built when a part needs it.
 
 The footprint maps one to one:
 
@@ -308,7 +315,7 @@ Stages P, G and E do not change. Stages S, L and F run the same checks on the sa
 | L-5, L-11 | on the tracks of `pcb.json`; unchanged |
 | F-1 | the BOM from the graph against `kicad-cli sch export bom` instead of `easyeda_bom_generate` |
 | F-2, F-6 | unchanged |
-| F-3 | CPL from `kicad-cli pcb export pos`, turned into JLCPCB's format; no offsets with the LCSC footprints, the entry's `jlc_offset` with `kicad_footprint` |
+| F-3 | CPL from `kicad-cli pcb export pos`, turned into JLCPCB's format; no offsets: every footprint is the LCSC data or the entry's `footprint_data` (decision 3) |
 
 The rule IDs stay. The texts of `rules.json` that name EasyEDA (L-3, F-1 and some fixes) say "the EDA tool" and name
 the tool chain in a second sentence. The negative tests run per tool chain wherever the check reads an EDA file: the
@@ -344,7 +351,7 @@ led-bar fixture gets a KiCad export of its input stage beside the EasyEDA one (`
 | K-1 | KiCad has no auto-placer | edakit places in both tool chains: the section [Placement](#placement-edakit-places-for-both-tool-chains), step T.1 | decided by the user |
 | K-2 | `gerber.py` reads only EasyEDA's subset | Extend the parser to the aperture macros KiCad writes (`RoundRect`, `Outline`, `FreePoly`, `RotRect`), ignore the X2 attributes, and read Excellon in mm with KiCad's header. The pad positions of `FlyingProbeTesting.json` come from `pcb.json` instead. Nets still come from the graph. | accepted |
 | K-3 | Zone fill | `kicad-cli pcb drc --refill-zones --save-board` in KiCad 10 **(probe in T.7)**. L-2 and L-15 check the fill on the Gerber files either way. | accepted |
-| K-4 | JLCPCB's rotation for KiCad library footprints | Only for entries with `kicad_footprint`: a `jlc_offset` from the fit of `part diff` (decision 3), checked by F-3 | accepted |
+| K-4 | JLCPCB's rotation for KiCad library footprints | No footprint comes from KiCad's library (decision 3), so there is nothing to correct | closed by decision 3 |
 | K-5 | Vector PDF of the schematic | `kicad-cli sch export pdf`. Today's EasyEDA path needs the patched bridge, so this is a gain, not a gap. | – |
 
 ## Scope
@@ -419,7 +426,7 @@ test footprints (handbook 16.8). Each on a scratch copy; the bell's repository d
 | K-1 | Who places the parts without a host | edakit, in both tool chains; EasyEDA's auto-layout goes after T.1 | the user's choice, 2026-10-30 |
 | 1 | Tool chain per project or per board | per project | the user's choice, 2026-10-30 |
 | 2 | Files plus `kicad-cli`, `pcbnew` Python, or the IPC API | files plus `kicad-cli`, including the zone fill, so no `pcbnew` | decided by Claude; the user left it to Claude |
-| 3 | Footprints from the LCSC data or from KiCad's library | the LCSC data; KiCad's library per entry with `kicad_footprint` and `jlc_offset`, not built | decided by Claude because the user left it open; the user accepted the reason, 2026-10-30 (section "Library") |
+| 3 | Footprints from the LCSC data or from KiCad's library | the LCSC data; a part whose LCSC footprint is wrong or missing gets `footprint_data`. No choice of KiCad's library per entry: `kicad_footprint` and `jlc_offset` are dropped | decided by Claude because the user left it open; the user accepted the reason and dropped `kicad_footprint`, 2026-10-30 (section "Library") |
 | 4 | Least KiCad version | KiCad 10, the newest for Ubuntu: 10.0.x from KiCad's PPA `ppa:kicad/kicad-10.0-releases` (Ubuntu 24.04). Ubuntu's own packages are older, and KiCad recommends the PPA. `doctor` checks the major version; a new major version is a step of its own | the user's choice ("the latest available for Ubuntu"), 2026-10-30 |
 | 5 | Is the KiCad project versioned | like the EasyEDA project: no. It is generated into `<artifacts>/kicad/<board>/`, and `edakit export` keeps a copy | the user's choice ("mirror EasyEDA"), 2026-10-30 |
 | 6 | Order relative to the open steps of the implementation plan | a branch of its own that does not wait for the live runs; T.2 is a thin dispatch so the rebase stays small | the user's choice, 2026-10-30 |
