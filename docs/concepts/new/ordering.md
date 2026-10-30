@@ -130,8 +130,16 @@ snippets; step 0 reads the documents themselves. Not legal advice.
 
 What speaks for the use: the owner's own account and own designs, one order at a time at a human pace, no catalogue
 data collected, nothing ordered or paid. What speaks against it: a literal "any automated means" clause would still
-cover a browser extension. If step 0 finds such a clause, open decision 1 applies – the skill only reads after the
-owner has filled the form – or the maker is asked for written consent.
+cover a browser extension.
+
+**Decision of the owner (2026-10-30):** the skill is built and used regardless; a maker that offers no interface for
+its assembly accepts that its customers use its pages with an assistant. The risk – a blocked account, which takes
+open orders and the order history with it – is the owner's. What keeps it small, and binds the skill:
+
+- the owner's own account and designs only, one order at a time, at the pace of the page; no catalogue data collected;
+- a CAPTCHA, a bot check, a rate-limit page or a login prompt stops the skill: it hands over to the owner and is
+  never solved, bypassed or retried by the skill;
+- a maker that asks to stop (a message on the page, a mail to the owner) is taken out of `[cart] makers`.
 
 ## What follows
 
@@ -384,7 +392,7 @@ No credentials anywhere: the owner is logged in in their browser, edakit never s
 
 | Step | What | Needs |
 | --- | --- | --- |
-| 0 | Probe per maker in the owner's browser, nothing ordered: can Claude in Chrome put a local file into the upload fields? Do the fields read back as text? The labels, values and cart button for the profile; the page texts of one quote and one past order as test data. Read each maker's terms on automated use | owner's Chrome with Claude in Chrome |
+| 0 | Probe per maker in the owner's browser, nothing ordered: can Claude in Chrome put a local file into the upload fields? Do the fields read back as text? The labels, values and cart button for the profile; the page texts of one quote and one past order as test data. Read each maker's terms on automated use, for the record | owner's Chrome with Claude in Chrome |
 | 0b | ODB++ export of a throwaway board under the EasyEDA claim (working agreement 18): through the bridge with a patched call, and by hand (File > Export > ODB++) for comparison. Does it hold `comp_+_top`/`comp_+_bot` with packages, pins and part numbers? | EasyEDA |
 | 1 | `order_sheet.form`: the form as fields, `order.md` printed from it – no change of output | – |
 | 2 | Maker profiles: `jlcpcb.toml` from today's knowledge, `eurocircuits.toml` and `aisler.toml` from step 0 | step 0 |
@@ -403,12 +411,9 @@ EasyEDA Pro project, `kicad-cli pcb export odb`, F-8 on its result) or none – 
 
 ## Open decisions
 
-1. **Terms of use:** searched (above), read in step 0, per maker. Where a maker forbids automated use of its shop,
-   the skill only reads (fields, matching, quote) after the owner has filled the form, and K-1 to K-7 still check it –
-   or the owner asks the maker for written consent (JLCPCB first).
-2. **Fee tables:** real cost as a proposal to review (as above), or committed automatically from the owner's own
+1. **Fee tables:** real cost as a proposal to review (as above), or committed automatically from the owner's own
    orders?
-3. **Default maker** in new projects (`edakit new`): JLCPCB as today, or a maker in the EU?
+2. **Default maker** in new projects (`edakit new`): JLCPCB as today, or a maker in the EU?
 
 ## Sources
 
