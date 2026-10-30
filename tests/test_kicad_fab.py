@@ -129,7 +129,8 @@ def test_normalize_names_kicad_files_as_the_checks_know_them(tmp_path):
     (tmp_path / "main-PTH.drl").write_text(KICAD_PTH)
     (tmp_path / "main-NPTH.drl").write_text("M48\nMETRIC\nT1C3.200\n%\nT1\nX3.5Y3.5\nM30\n")
     out = kfab.normalize(tmp_path, [])
-    for key in ("top", "bottom", "top_silk", "bottom_silk", "top_mask", "bottom_mask", "outline", "pth", "vias", "npth"):
+    for key in ("top", "bottom", "top_silk", "bottom_silk", "top_mask", "bottom_mask", "outline", "pth", "vias",
+                "npth"):
         assert gerber.FILES[key] in out, key
     assert "Gerber_TopPasteMaskLayer.GTP" in out
 

@@ -41,7 +41,8 @@ def parts_state(cfg, board, design):
     if pcb is None:
         return sorted(want, key=natural_key), [], []
     have = dict(kb.parts(pcb))
-    nets = [f"{ref}.{pad[1]}: {kb.pad_net(pcb, pad) or '–'} instead of {design.pin_net.get(f'{ref}.{pad[1]}') or '–'}"
+    nets = [f"{ref}.{pad[1]}: {kb.pad_net(pcb, pad) or '–'} instead of "
+            f"{design.pin_net.get(f'{ref}.{pad[1]}') or '–'}"
             for ref, fp in have.items() if ref in want for pad in kb.find(fp, "pad")
             if kb.pad_net(pcb, pad) != design.pin_net.get(f"{ref}.{pad[1]}", "")]
     return (sorted(set(want) - set(have), key=natural_key), sorted(set(have) - set(want), key=natural_key), nets)
@@ -69,9 +70,9 @@ def pcb_main(cfg, board, args, regions=None):
         if action in ("parts", "nets"):
             missing, extra, nets = parts_state(cfg, board, design)
             todo = missing + extra if action == "parts" else nets
-            say(f"  {action}: " + ("; ".join(
-                ([f"missing {', '.join(missing)}"] if missing else []) + ([f"extra {', '.join(extra)}"] if extra else [])
-                if action == "parts" else nets[:20]) or "PCB = graph"))
+            found = ([f"missing {', '.join(missing)}"] if missing else []) + \
+                ([f"extra {', '.join(extra)}"] if extra else []) if action == "parts" else nets[:20]
+            say(f"  {action}: " + ("; ".join(found) or "PCB = graph"))
             if todo and args.write:
                 path, parked = kb.write_parts(cfg, board, design)
                 say(f"  written: {cfg.relative(path)}" + (f"; parked: {', '.join(parked)}" if parked else ""))

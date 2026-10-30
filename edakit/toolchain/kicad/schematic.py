@@ -6,10 +6,10 @@
                                     errors of KiCad's ERC
 
 Every symbol is the drawing's own, one per part, turned as the sheet turns it (no rotation is left to KiCad); its pins
-are the drawing's pin tips, of length 0 – the drawing draws the pin lines –, and passive, so that KiCad's ERC does not
-ask for power drivers edakit's own checks (G) reason about. Nets are named by labels where the drawing writes a net name
-or a flag: one sheet, so local labels connect. The link to the PCB: every symbol's uuid is the path of its footprint
-(board.symbol_uid), both written by edakit.
+are the drawing's pin tips, of length 0 – the drawing draws the pin lines –, and passive, so that KiCad's ERC does
+not ask for power drivers edakit's own checks (G) reason about. Nets are named by labels where the drawing writes a net
+name or a flag, as global labels. The link to the PCB: every symbol's uuid is the path of its
+footprint (board.symbol_uid), both written by edakit.
 
 Units: the drawing's unit is 10 mil (0.254 mm), y up; the page's origin is its upper left corner, y down.
 """
@@ -32,7 +32,7 @@ THICK_MM = 0.3
 
 
 def symbol_lines(s, r):
-    """The drawing's shapes of a symbol turned by r, in the symbol's own frame (mm, y up – KiCad's symbols are y up)."""
+    """The drawing's shapes of a symbol turned by r, in the symbol's own frame (mm, y up, as KiCad's symbols are)."""
     out = []
 
     def T(x, y):
@@ -63,6 +63,15 @@ def effects(size=FONT_MM, justify=None, hide=False, bold=False):
     if hide:
         out.append(Sym("hide"))
     return out
+
+
+def label(net, at, angle, justify, uuid):
+    """A global label: its net is named as the graph names it – a local label's net gets the sheet's path in front
+    ("/GND"), and KiCad's schematic parity then finds every pad of the PCB on another net (16.8)."""
+    return ["global_label", net, ["shape", Sym("passive")], ["at", *at, angle], ["fields_autoplaced", True],
+            effects(justify=(justify,)), uuid,
+            ["property", "Intersheetrefs", "${INTERSHEET_REFS}", ["at", *at, 0], effects(justify=(justify,),
+                                                                                         hide=True)]]
 
 
 def lib_symbol(name, s, r, ref, value, footprint):
@@ -164,11 +173,9 @@ def write(cfg, board, verbose=False):
         items.append(["junction", ["at", *P(x, y)], ["diameter", 0], ["color", 0, 0, 0, 0], tag("junction", x, y)])
     for x, y, net, anchor, angle in net_labels(sheet, power, tips):
         x, y = (x, y - 4.5) if angle == 0 else (x + 4.5, y)       # on the wire: the drawing sets its text off it
-        just = ("right", "bottom") if anchor == "end" else ("left", "bottom")
-        items.append(["label", net, ["at", *P(x, y), angle], effects(justify=just), tag("label", net, x, y)])
+        items.append(label(net, P(x, y), angle, "right" if anchor == "end" else "left", tag("label", net, x, y)))
     for net, x, y, fd in sheet.flags:
-        items.append(["label", net, ["at", *P(x, y), fd % 360], effects(justify=("left", "bottom")),
-                      tag("flag", net, x, y)])
+        items.append(label(net, P(x, y), fd % 360, "left", tag("flag", net, x, y)))
     for _, (x0, y0, x1, y1) in sheet.frames:
         pts = [P(x0, y0), P(x1, y0), P(x1, y1), P(x0, y1), P(x0, y0)]
         items.append(["polyline", ["pts", *(["xy", *q] for q in pts)], ["stroke", ["width", 0], ["type", Sym("dash")]],
@@ -180,8 +187,8 @@ def write(cfg, board, verbose=False):
     title = ["title_block", ["title", board.title], ["date", str(date)]]
     if board.revision:
         title.append(["rev", board.revision])
-    title += [["company", cfg.company], ["comment", 1, f"graph v{design.version} – drawn by edakit: change the graph, "
-                                                       "not this drawing"]]
+    title += [["company", cfg.company],
+              ["comment", 1, f"graph v{design.version} – drawn by edakit: change the graph, not this drawing"]]
     text = sexp.dumps(["kicad_sch", ["version", VERSION], ["generator", "edakit"], ["generator_version", "8.0"],
                        ["uuid", root], ["paper", "User", round(W * MM, 2), round(H * MM, 2)], title,
                        ["lib_symbols", *libs], *items, ["sheet_instances", ["path", "/", ["page", "1"]]]]) + "\n"

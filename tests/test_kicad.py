@@ -36,9 +36,13 @@ def kicad_project(project, rows=None):
         name = project.part(c["lcsc"])["footprint"]
         fp = json.loads(json.dumps(geo[c["designator"]]))
         fp["footprint"] = name
-        for p in fp["pads"].values():
+        for p in fp["pads"].values():     # pads that keep the routing clearance, as KiCad's DRC asks (16.8)
             if p["tht"]:
                 p.update(shape="ELLIPSE", w=70, h=70, rot=0, layer="MULTI", hole=[1.0, 1.0], plated=True)
+            elif c["designator"] == "U2":     # SOIC-16, 1.27 mm pitch
+                p.update(shape="RECT", w=60, h=24, rot=0, layer="TOP")
+            elif c["designator"] == "U1":     # the module's castellated pads, clear of the mounting hole
+                p.update(shape="ELLIPSE", w=35, h=35, rot=0, layer="TOP")
             else:
                 p.update(shape="RECT", w=40, h=50, rot=0, layer="TOP")
         b = fp["bbox"]
@@ -51,7 +55,7 @@ def cached(cfg, design, ref):
     return json.loads((cfg.artifacts / "footprints" / file_name(design.part(ref)["footprint"])).read_text())
 
 
-# --- the key -----------------------------------------------------------------------------------------------------------
+# --- the key ----------------------------------------------------------------------------------------------------------
 
 def test_without_the_key_the_project_stays_easyeda(project):
     cfg = project.config()
@@ -78,7 +82,7 @@ def test_easyeda_document_names_are_refused_with_kicad(project):
         config.load(project.root / "edakit.toml")
 
 
-# --- S-expressions -----------------------------------------------------------------------------------------------------
+# --- S-expressions ----------------------------------------------------------------------------------------------------
 
 def test_sexp_round_trip_keeps_quotes_words_and_numbers():
     node = ["footprint", 'a "b" \\ c', ["at", 1.5, -0.0000001, 90], ["layer", "F.Cu"], ["hide", True],
@@ -95,7 +99,7 @@ def test_uid_is_the_same_every_run():
     assert sexp.uid("main", "footprint", "R1") == sexp.uid("main", "footprint", "R1") != sexp.uid("main", "R2")
 
 
-# --- the library -------------------------------------------------------------------------------------------------------
+# --- the library ------------------------------------------------------------------------------------------------------
 
 def test_footprints_from_the_cache_with_pads_holes_and_silkscreen(project):
     cfg = kicad_project(project)
@@ -266,7 +270,7 @@ def test_the_project_file_carries_the_rules_of_the_board_file(project):
     assert pro["board"]["design_settings"]["rule_severities"]["lib_footprint_mismatch"] == "ignore"
 
 
-# --- the schematic -----------------------------------------------------------------------------------------------------
+# --- the schematic ----------------------------------------------------------------------------------------------------
 
 def connectivity(text):
     """The nets of a .kicad_sch as KiCad finds them on one sheet: wires join at their ends, a pin, label or junction
@@ -300,7 +304,8 @@ def connectivity(text):
     for j in sx.find(root, "junction"):
         points.append(("pt", q(*sx.floats(j, "at")[:2])))
     names = {}
-    for lab in sx.find(root, "label"):
+    labels = [*sx.find(root, "label"), *sx.find(root, "global_label")]
+    for lab in labels:
         p = q(*sx.floats(lab, "at")[:2])
         join(("pt", p), ("net", str(lab[1])))
         points.append(("pt", p))
@@ -324,7 +329,7 @@ def connectivity(text):
     for key, p in pins.items():
         names.setdefault(find(p), set()).add(key)
     out = {}
-    for lab in sx.find(root, "label"):
+    for lab in labels:
         out.setdefault(str(lab[1]), set()).update(names.get(find(("net", str(lab[1]))), set()))
     return out
 

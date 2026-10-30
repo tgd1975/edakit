@@ -24,7 +24,7 @@ class Sym(str):
 
 
 def uid(*parts):
-    """A uuid derived from parts – stable from run to run, so that a regenerated file differs only where it changed."""
+    """A uuid derived from parts – stable from run to run, so a regenerated file differs only where it changed."""
     return str(uuid.uuid5(NAMESPACE, "/".join(str(p) for p in parts)))
 
 

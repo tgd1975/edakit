@@ -53,7 +53,8 @@ RULE_SEVERITIES = {"lib_footprint_issues": "ignore", "lib_footprint_mismatch": "
                    "courtyards_overlap": "ignore", "missing_courtyard": "ignore", "malformed_courtyard": "ignore",
                    "silk_overlap": "ignore", "silk_over_copper": "ignore", "silk_edge_clearance": "ignore",
                    "text_height": "ignore", "text_thickness": "ignore"}
-ERC_SEVERITIES = {"lib_symbol_issues": "ignore", "lib_symbol_mismatch": "ignore", "footprint_link_issues": "ignore"}
+ERC_SEVERITIES = {"lib_symbol_issues": "ignore", "lib_symbol_mismatch": "ignore", "footprint_link_issues": "ignore",
+                  "single_global_label": "ignore"}          # a net of the drawing may have one label only
 
 
 class BoardError(Exception):
@@ -89,7 +90,7 @@ def paths(cfg, board):
             "dru": d / f"{board.name}.kicad_dru", "sch": d / f"{board.name}.kicad_sch"}
 
 
-# --- the file ----------------------------------------------------------------------------------------------------------
+# --- the file ---------------------------------------------------------------------------------------------------------
 
 class Pcb:
     """A .kicad_pcb as parts: nets (name -> number), footprints, drawings (gr_*), tracks (segment, via, arc), zones –
@@ -180,7 +181,7 @@ def load(cfg, board):
     return pcb
 
 
-# --- writing the parts -------------------------------------------------------------------------------------------------
+# --- writing the parts ------------------------------------------------------------------------------------------------
 
 def root_uid(cfg, board):
     """The uuid of the schematic's root sheet – the project file names it too."""
@@ -212,7 +213,7 @@ def hidden_prop(name, text, layer, key):
 
 
 def placed(cfg, board, design, fp, ref, at, nets, symbol=None, locked=False):
-    """The board's (footprint …) of a part: fp turned and, on the bottom, mirrored – at = (x mm, y mm, angle, side)."""
+    """The board's (footprint …) of a part: fp turned and, on the bottom, mirrored; at: (x mm, y mm, angle, side)."""
     x, y, angle, side = at
     mirror = side == "bottom"
     key = (board.name, "footprint", ref)
@@ -596,7 +597,7 @@ def local_bbox(fp, bottom):
     return [round(mil(min(xs)), 2), round(-mil(max(ys)), 2), round(mil(max(xs)), 2), round(-mil(min(ys)), 2)]
 
 
-# --- copper ------------------------------------------------------------------------------------------------------------
+# --- copper -----------------------------------------------------------------------------------------------------------
 
 def write_copper(cfg, board, rules, routes, data):
     """Tracks and vias of the SES (route.read_ses, mil) into the PCB – everything in the copper is generated: the old
@@ -607,7 +608,7 @@ def write_copper(cfg, board, rules, routes, data):
     names = set(pcb.nets)
     for net in routes:
         if net not in names:
-            raise BoardError(f"{net}: a net of the routing that the PCB does not have – edakit pcb parts --write first")
+            raise BoardError(f"{net}: a net of the routing the PCB does not have – edakit pcb parts --write first")
     tracks = []
     for net, segs in sorted(segments(rules, routes, data).items()):
         for k, (layer, w, a, b) in enumerate(segs):
@@ -618,7 +619,8 @@ def write_copper(cfg, board, rules, routes, data):
     for net in sorted(routes):
         for k, (x, y) in enumerate(routes[net]["vias"]):
             tracks.append(["via", ["at", *to_kicad(x, y)], ["size", mm(d)], ["drill", mm(drill)],
-                           ["layers", "F.Cu", "B.Cu"], ["net", pcb.nets[net]], ["uuid", uid(board.name, "via", net, k)]])
+                           ["layers", "F.Cu", "B.Cu"], ["net", pcb.nets[net]],
+                           ["uuid", uid(board.name, "via", net, k)]])
     pcb.tracks = tracks
     pcb.save(cfg, board)
     return sum(1 for t in tracks if t[0] == "segment"), sum(1 for t in tracks if t[0] == "via")
@@ -697,7 +699,7 @@ def write_silk(cfg, board, designators, texts, fills, hide_sides):
 
 def rules_differences(cfg, board):
     """Where the rules of <board>.kicad_pro differ from what [routing] of the board file asks (drc_rules.wanted) – the
-    file is written from it, so only a hand in KiCad or an older run makes a difference. L-3 with drc_rules = "check"."""
+    file is written from it, so only a hand in KiCad or an older run makes a difference. L-3, drc_rules = "check"."""
     from ...drc_rules import wanted
     want = wanted(board)
     f = paths(cfg, board)["pro"]
@@ -732,7 +734,8 @@ def part_boxes(cfg, board, pcb=None):
         x0, y0, angle, _ = footprint_at(fp)
         pts = []
         for d in fp:
-            if isinstance(d, list) and d and d[0] == "fp_line" and str(value(d, "layer", "")).endswith((".Fab", ".SilkS")):
+            if isinstance(d, list) and d and d[0] == "fp_line" and \
+                    str(value(d, "layer", "")).endswith((".Fab", ".SilkS")):
                 pts += [floats(d, "start"), floats(d, "end")]
         for pad in find(fp, "pad"):
             (ax, ay), r = floats(pad, "at")[:2], max(floats(pad, "size") or [0]) / 2

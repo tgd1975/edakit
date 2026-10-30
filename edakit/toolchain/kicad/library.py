@@ -235,8 +235,8 @@ def pad_item(pad, angle=0.0, mirror=False, net=None, key=()):
         layers = SMD_LAYERS[side]
     else:
         layers = THT_LAYERS
-    item = ["pad", pad.num, Sym(pad.kind), Sym(pad.shape), ["at", x, y, (angle + a) % 360],
-            ["size", pad.w, pad.h]]
+    size = [pad.w, pad.h] if pad.shape != "custom" else [min(pad.w, pad.h) / 2] * 2   # custom: a small anchor
+    item = ["pad", pad.num, Sym(pad.kind), Sym(pad.shape), ["at", x, y, (angle + a) % 360], ["size", *size]]
     if pad.drill:
         item.append(["drill", Sym("oval"), *pad.drill[1:]] if pad.drill[0] == "oval" else ["drill", pad.drill[0]])
     item.append(["layers", *layers])
@@ -260,8 +260,8 @@ def graphic_items(g, k, mirror=False, angle=0.0, key=()):
     pts = [[x, -y if mirror else y] for x, y in g.points]
     tag = uid(*key, "graphic", k)
     if g.kind == "text":
-        return [["fp_text", Sym("user"), g.text, ["at", pts[0][0], pts[0][1], (angle + (-g.angle if mirror else g.angle))
-                                                   % 360],
+        turned = (angle + (-g.angle if mirror else g.angle)) % 360
+        return [["fp_text", Sym("user"), g.text, ["at", pts[0][0], pts[0][1], turned],
                  ["layer", layer], ["uuid", tag], *font(g.size, g.width, mirror)]]
     stroke = ["stroke", ["width", g.width], ["type", Sym("solid")]]
     if g.kind == "poly":
