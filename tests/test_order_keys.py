@@ -152,7 +152,7 @@ def test_cart_without_order_writes_the_form_but_no_order_json(project):
 # --- the profiles ----------------------------------------------------------------------------------------------------
 
 def test_the_shipped_profiles_are_valid():
-    assert makers.shipped() == ["aisler", "eurocircuits", "jlcpcb"]
+    assert makers.shipped() == ["aisler", "eurocircuits", "jlcpcb", "pcbway"]
     for key in makers.shipped():
         m = makers.load(key)
         assert m.name and m.classes and m.files and m.seat and m.currency, key
@@ -175,7 +175,7 @@ def test_a_profile_with_an_unknown_key_is_refused(tmp_path):
 
 
 @pytest.mark.parametrize("cart, msg", [
-    ('maker = "pcbway"', r"maker pcbway: no profile – edakit ships aisler, eurocircuits, jlcpcb"),
+    ('maker = "nextpcb"', r"maker nextpcb: no profile – edakit ships aisler, eurocircuits, jlcpcb, pcbway"),
     ('maker = "jlcpcb"\nmakers = ["eurocircuits"]', r"does not name \[cart\] maker 'jlcpcb'"),
     ('shipping = { aisler = "DHL" }', r"\[cart\] shipping names aisler, which is not in \[cart\] makers"),
     ('tolerance = -1', r"\[cart\] tolerance must be a number >= 0"),
@@ -411,3 +411,30 @@ def test_the_bom_with_mpn_for_a_maker_that_takes_it(project):
                     ["C2", "1", "SAMSUNG(三星)", "CL21A226MAQNNNE", "22uF"], ["D1", "1", "MDD(辰达半导体)", "SS34", "SS34"]]
     run(project, lambda ex, p: toml(p, '[cart]\nmakers = ["jlcpcb"]'))
     assert not (d / "bom_main_mpn.csv").exists()
+
+
+def test_pcbway_has_a_placeholder_of_its_own(project):
+    """PCBWay (planned with the user on 2026-10-30): its placeholder is WayWayWay – JLCPCB's letters on the silkscreen
+    are text to it, and mark = "specify" there needs WayWayWay; it matches the BOM by MPN (P-12, bom_<b>_mpn.csv)."""
+    m = makers.load("pcbway")
+    assert (m.matches_by, m.rules["placeholder"], m.seat, m.data["cart"]) == ("mpn", "WayWayWay", "CN", "Save to Cart")
+
+    def at_pcbway(ex, p):
+        fr.ordered(ex, p)                                   # mark = "specify", JLCJLCJLCJLC on the top silkscreen
+        toml(p, '[cart]\nmaker = "pcbway"')
+    rows = run(project, at_pcbway)
+    got = {(r, c) for r, c, _ in f6(rows)}
+    assert ("fail", "no JLCJLCJLCJLC on the silkscreen – PCBWay's placeholder is WayWayWay") in got  # printed as text
+    assert ("fail", "order-number mark = placeholder WayWayWay on the silkscreen") in got
+    assert (project.root / "build" / "fab" / "main" / "bom_main_mpn.csv").exists()
+
+
+def test_pcbways_placeholder_is_text_to_jlcpcb(project):
+    def wayway(ex, p):
+        fr.ordered(ex, p, {"mark": "default"}, placeholder=False)
+        ex.pcb["strings"].append({"Text": "WayWayWay", "X": 18 * fr.MIL, "Y": 3 * fr.MIL, "Layer": 3})
+    rows = run(project, wayway)
+    assert ("fail", "no WayWayWay on the silkscreen – JLCPCB's placeholder is JLCJLCJLCJLC",
+            "WayWayWay at (18.0, 3.0) on the top silkscreen – JLCPCB prints it as it is; a release that carries it is "
+            "a release for PCBWay") in f6(rows)
+

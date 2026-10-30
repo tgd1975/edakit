@@ -339,6 +339,21 @@ def pcba(cfg, key=None):
     return cls, f"the first assembly class of {m.name}"
 
 
+def placeholders(cfg=None):
+    """{placeholder text: maker name} of every maker profile edakit ships and the project names – the texts a maker
+    replaces by its order number, and every other maker prints as they are (F-6)."""
+    keys = set(shipped()) | (set(listed(cfg)) if cfg is not None else set())
+    out = {}
+    for key in sorted(keys):
+        try:
+            m = get(cfg, key) if cfg is not None and key in listed(cfg) else load(key)
+        except MakerError:
+            continue
+        if m.rules.get("placeholder"):
+            out.setdefault(m.rules["placeholder"], m.name)
+    return out
+
+
 def with_catalogue(cfg, catalogue="jlcpcb"):
     """The makers of the project that order from that parts catalogue (P-4, F-2, edakit stock)."""
     return [k for k in listed(cfg) if get(cfg, k).catalogue == catalogue]

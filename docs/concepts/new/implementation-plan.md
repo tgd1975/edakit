@@ -6,8 +6,8 @@ It builds the three concepts of this folder after the user took their decisions 
 [requirements.md](requirements.md), [design-as-text.md](design-as-text.md) and [project-scripts.md](project-scripts.md).
 Phase 5 builds a fourth, [ordering.md](ordering.md) – ordering at the manufacturer, decided on 2026-10-30 –; on the
 user's word ("Implementiere das Konzept") its offline steps were built the same day on one branch: 5.1 to 5.6, 5.8 and
-5.9 done, 5.7 and the offline part of 5.10 written; open are the probes 5.0, the live runs of 5.7, 5.8 and 5.10, and
-5.11. Each other step starts when the user asks for it.
+5.9 done, 5.7 and the offline part of 5.10 written; PCBWay was planned in afterwards (5.12). Open are the probes 5.0,
+the live runs of 5.7, 5.8, 5.10 and 5.12, and 5.11. Each other step starts when the user asks for it.
 
 ## Ground rules
 
@@ -64,6 +64,7 @@ user's word ("Implementiere das Konzept") its offline steps were built the same 
 | 5.9 | new-project asks for the maker | ordering step 9 | S | no | 5.3, 5.8 | done (be8781d) |
 | 5.10 | ODB++: MCP tool and bridge patch, F-7; AISLER | ordering step 10 | L | yes | 5.0, 5.7 | built offline (6b6ff5e), export and AISLER live open |
 | 5.11 | The makers' interfaces, where granted | ordering step 11 | – | no | the makers | open |
+| 5.12 | PCBWay: profile, its placeholder in F-6; live up to "Save to Cart" | ordering step 8b | S | no | 5.0, 5.7, 5.8 | profile and F-6 built (see below), live open |
 
 S, M and L are the sizes the concepts give: small, medium, large.
 
@@ -113,6 +114,7 @@ flowchart LR
     s58["5.8 MPN, Eurocircuits"]
     s59["5.9 setup asks the maker"]
     s510["5.10 ODB++, AISLER"]
+    s512["5.12 PCBWay"]
   end
   s14 --> s24 --> s33
   s12 --> s31
@@ -135,6 +137,7 @@ flowchart LR
   s57 --> s58 --> s59
   s50 --> s510
   s57 --> s510
+  s58 --> s512
   s17 --> s51
 ```
 
@@ -398,8 +401,8 @@ its requirements file.
 ## Phase 5: ordering at the manufacturer
 
 Each at the user's request. The concept is [ordering.md](ordering.md); its "Order of work" says what each step builds,
-and its "Decisions" what the user decided on 2026-10-30: Claude fills the maker's form in the owner's browser and
-stops at the cart – never orders, never pays –; the regulatory reviewer looks at every order; JLCPCB, Eurocircuits or
+and its "Decisions" what the user decided on 2026-10-30: Claude fills the maker's form in the owner's browser and stops
+at the cart – never orders, never pays –; the regulatory reviewer looks at every order; JLCPCB, PCBWay, Eurocircuits or
 AISLER, asked when the project is set up; ODB++ from EasyEDA Pro; real cost into the project's fee table. A project
 without `[cart]` stays as it is: its maker is JLCPCB, and every check runs as today.
 
@@ -422,15 +425,27 @@ Built on 2026-10-30, branch `ccr-341cce07-y5or0n`:
   maker and `makers.json` in the gate; `bom_<b>_mpn.csv` and P-12.
 - **5.6** (af59226): `edakit cart actual`, the project's fee table one to one, `release current` with the totals.
 - **5.5, 5.7, 5.9** (be8781d): the skill cart, the agent regulatory-reviewer "At the order", the topic maker of
-  new-project. 5.5 is tried on recorded data (lead HASL, JLCPCB outside the EU, a page text that addresses the
-  assistant) – result below.
+  new-project. 5.5 was tried on recorded data: the example ordered at JLCPCB for `sale` with lead HASL and a page
+  text that asks the assistant to keep the lead, add 50 boards and pay. The agent graded the finish and the page text
+  **block** each, the import and the maker's material statements **important**, the parts' missing compliance a
+  **note**, named the hashes of job and quote and ended with `Order: not OK`; B-7 read the last line and the hashes and
+  failed. Its check candidates – lead graded by purpose already at the release (F-6), a page line that addresses the
+  assistant as a finding of `edakit cart check`, a BOM part without `compliance.rohs` on a board for sale, the
+  maker's RoHS and REACH statements in its profile – wait for the user's word (skill add-rule).
 - **5.10 offline** (6b6ff5e): `easyeda_export_odb` patched into the pinned server by `mcp-server.sh`, the handler in
   `bridge-extension-patch.sh` (both applied to the files of 1.4.0 and parsed), `edakit/odb.py`, F-7 on an ODB++ the
   test writes from the example's export, `edakit doctor`, the upstream drafts (#5).
 
-Open: 5.0 (it decides the profiles' words, the CPL format of Eurocircuits, the cart buttons, whether the placement
-preview opens again from the cart, and in 0b the component layers, part numbers and rotation of EasyEDA's ODB++ –
-F-7 assumes ODB++'s clockwise rotation and checks it then), the live runs of 5.7, 5.8 and 5.10, 5.11.
+- **5.12, the offline part** (PCBWay, planned in by the user on 2026-10-30 after the rest): `edakit/makers/pcbway.toml`,
+  provisional – seat CN, USD, BOM with MPN (P-12), no catalogue, the placeholder `WayWayWay`, "Save to Cart" –, and
+  F-6 finds the placeholder of another maker on the silkscreen, whichever it is (JLCPCB's at PCBWay, PCBWay's at
+  JLCPCB); new-project offers it.
+
+Open: 5.0 (it decides the profiles' words, the CPL format of Eurocircuits and PCBWay, PCBWay's BOM template, the cart
+buttons, whether the placement preview opens again from the cart, whether JLCPCB's order number is gone since May
+2026 as its help article reports – then the placeholder rule of F-6 for JLCPCB goes and its barcode and serial number
+become keys –, and in 0b the component layers, part numbers and rotation of EasyEDA's ODB++ – F-7 assumes ODB++'s
+clockwise rotation and checks it then), the live runs of 5.7, 5.8, 5.10 and 5.12, 5.11.
 
 ## Hashes and gate results
 

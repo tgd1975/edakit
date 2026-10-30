@@ -1,18 +1,17 @@
 # Ordering at the manufacturer
 
-Status 2026-10-30: decided (Claude in Chrome, up to the cart; JLCPCB, Eurocircuits and AISLER; ODB++ from EasyEDA
-Pro – "What follows"), reviewed and corrected the same day, and **built offline** the same day – steps 1 to 6, 8 and 9,
-the offline part of 10 (implementation plan, phase 5); every command and check is tested on recorded data. Open:
+Status 2026-10-30: decided (Claude in Chrome, up to the cart; JLCPCB, PCBWay, Eurocircuits and AISLER; ODB++ from
+EasyEDA Pro – "What follows"), reviewed and corrected the same day, and **built offline** the same day – steps 1 to 6, 8
+and 9, the offline part of 10 (implementation plan, phase 5); every command and check is tested on recorded data. Open:
 the probes of steps 0 and 0b, the live runs of steps 7, 8 and 10, step 11. No call has been made live: the makers'
-profiles are provisional (`recorded = false`) until step 0 reads their forms. Changed while building: the checks of
-the order are B-1 to B-7, not K-1 to K-7 – K is a project's stage letter (handbook 8.1: the reference project's
-mechanics, `{id = "K"}`), and edakit's catalog would have explained a project's K-1 with its own text; the key of the
-board's size is `size_mm`, as edakit names lengths. The findings come from
-JLCPCB's help article on its online API, search summaries of the developer portal (api.jlcpcb.com, behind a login),
-the code of open-source clients of the official API and of the web shop, search results on the European makers, and
-EasyEDA Pro's documentation and extension API. The makers' sites were not reachable from the session that wrote this,
-so every finding is marked as **verified** (in a source or in code that calls it) or **reported** (one secondary
-source), and step 0 checks them.
+profiles are provisional (`recorded = false`) until step 0 reads their forms. Changed while building: the checks of the
+order are B-1 to B-7, not K-1 to K-7 – K is a project's stage letter (handbook 8.1: the reference project's mechanics,
+`{id = "K"}`), and edakit's catalog would have explained a project's K-1 with its own text; the key of the board's size
+is `size_mm`, as edakit names lengths. The findings come from JLCPCB's help article on its online API, search summaries
+of the developer portal (api.jlcpcb.com, behind a login), the code of open-source clients of the official API and of the
+web shop, search results on the European makers, and EasyEDA Pro's documentation and extension API. The makers' sites
+were not reachable from the session that wrote this, so every finding is marked as **verified** (in a source or in code
+that calls it) or **reported** (one secondary source), and step 0 checks them.
 
 ## Why
 
@@ -88,6 +87,43 @@ engineering in the browser's DevTools, and it breaks when the shop changes.
 JLCPCB's order page. Its parameters have no effect, and it returns nothing about the order (reported). It would upload
 EasyEDA's export, not the run the gate checked – edakit does not use it.
 
+### Reported change: no order number since May 2026
+
+JLCPCB's help article "How to remove order number from your PCB" (jlcpcb.com/help/article/how-to-mark-on-pcb, last
+updated 2026-05-22; read in two search summaries on 2026-10-30, the page itself not reachable) says the order number
+is **not available since May 2026** and asks not to add `JLCJLCJLCJLC` to the silkscreen; instead it offers an
+optional 2D barcode (QR or Data Matrix) or a serial number for traceability, printed only where there is room. If
+that holds, `mark = "specify"` with the placeholder is gone at JLCPCB, the letters of a board that carries them are
+printed as text, and the barcode and serial number are new keys of 2. – it contradicts the reference orders of
+2026-10-24 and -25, whose form still had "Mark on PCB". Step 0 settles it on the form; until then F-6 and the
+profile keep the rule of the reference orders (noted in `edakit/makers/jlcpcb.toml`). Whether F-6 warns about the
+placeholder earlier is the owner's decision (Decisions).
+
+## PCBWay
+
+The user wants the second large Chinese maker planned in as well (2026-10-30): PCBWay – registered in Hangzhou, its
+PCB and PCBA factories in Shenzhen (Shenzhen JDB Technology Co., Ltd.). Searched, not read: the site was not reachable
+from the session; the findings come from search summaries of PCBWay's help pages and third-party reports, and step 0
+checks them on the site.
+
+| Item | Finding | Basis |
+| --- | --- | --- |
+| Assembly | turnkey (PCBWay buys every part), partial turnkey, consigned or kitted (the customer supplies them); parts bought by manufacturer part number, "no mark-up" on parts | reported (PCBWay's capabilities page, third-party guides) |
+| Files | Gerber; BOM as Excel or CSV with designator, quantity and **MPN** (manufacturer, description, package recommended), no PDF; pick-and-place as Excel, txt or pos with designator, X, Y in mm and angle, SMD parts only, designators as in the BOM | reported (PCBWay's "assembly file requirements" and help center) |
+| Order flow | Calculate → Save to Cart → files → engineering review → "Awaiting Payment" → checkout; the assembly price comes with PCBWay's BOM quotation, by hand (1–2 working days reported) | reported (PCBWay Q&A and blog) |
+| Order number | PCBWay prints a product number, under an IC where it can; "Remove product No.": No, Yes (a fee, 1.5 $ in the help center), "Specify a location" at the placeholder `WayWayWay` on the silkscreen, free | reported (PCBWay's help article "Notes of Product No on Your PCB") |
+| Interface | a partner API, approval only (api-partner.pcbway.com, an API key; quotation, order, status routes named by third parties); the official KiCad plug-in exports Gerber, IPC netlist, BOM and pick-and-place and sends them to PCBWay | reported (third parties); the plug-in verified on github.com/pcbway/PCBWay-Plug-in-for-Kicad |
+| Terms | Terms of Service pcbway.com/terms_service.html: the website and the quoting tools included, an account can be restricted for a breach or a security or compliance risk, a licence on uploaded data for quotes and service (its scope not read) | reported (search excerpts) |
+
+**What it means for edakit.** PCBWay is a maker like Eurocircuits for the parts – a BOM with MPN, P-12, no
+catalogue to ask beforehand (P-4 and F-2 do not run for it; its matching at the order is checked by B-2) – and like
+JLCPCB for the seat: outside the EU, so for `sale` the owner imports the boards (15.2). Its placeholder `WayWayWay` is
+text to every other maker, and `JLCJLCJLCJLC` text to PCBWay: F-6 finds the placeholder of another maker on the
+silkscreen, whichever it is. The skill stops at "Save to Cart": submitting the order for the engineering review and
+paying are the owner's; the review is a second look by the maker before payment, beside M-2. The quote the skill reads
+may lack the assembly price until PCBWay's BOM quotation; B-3 then has the board lines that are there. If PCBWay's BOM
+template differs from Eurocircuits', the BOM with MPN becomes one file per maker (`bom_<b>_<maker>.csv`) – step 0.
+
 ## European manufacturers
 
 The user wants a choice beside JLCPCB (2026-10-30). Checked: European makers that assemble small runs (1–100
@@ -135,9 +171,10 @@ snippets; step 0 reads the documents themselves. Not legal advice.
 
 | Maker | Documents | On automated use | Assessment |
 | --- | --- | --- | --- |
-| JLCPCB | Terms & Conditions https://jlcpcb.com/help/article/terms-&-conditions (JiaLiChuang (HongKong) Co., Limited), API notice; parts sales contract under Hong Kong law | no clause found; the sister company EasyEDA forbids "any robot, spider, scraper, crawler, script or other automated means" unless authorised in writing (second-hand, an issue of rjwalters/kicad-tools); automation is meant to go through the gated API | not settled; the highest risk of the three |
+| JLCPCB | Terms & Conditions https://jlcpcb.com/help/article/terms-&-conditions (JiaLiChuang (HongKong) Co., Limited), API notice; parts sales contract under Hong Kong law | no clause found; the sister company EasyEDA forbids "any robot, spider, scraper, crawler, script or other automated means" unless authorised in writing (second-hand, an issue of rjwalters/kicad-tools); automation is meant to go through the gated API | not settled; the highest risk of the four |
 | Eurocircuits | Terms of Use https://www.eurocircuits.com/termofuse/, Terms of Sales (revision 2025-12-01), Belgian law likely | the tools "are free to use by anyone who wants to use them in a fair way"; to avoid unfair use it may "limit the number of calculations that can be added to the shopping basket" | not addressed; fair use for ordering, which an order of one's own design is |
 | AISLER | Terms and Conditions https://aisler.net/en-US/terms, Dutch law | none found in the shop terms; the forum's terms (Discourse template) forbid "a web crawler, browser add-on, or other program that is not a web browser" – for the forum only | not addressed for the shop |
+| PCBWay | Terms of Service https://www.pcbway.com/terms_service.html (several PCBWay entities and sites) | none found in the search excerpts; an account can be restricted for a suspected breach or a security or compliance risk | not addressed in what was read; the partner API is the gated way, as at JLCPCB |
 
 What speaks for the use: the owner's own account and own designs, one order at a time at a human pace, no catalogue
 data collected, nothing ordered or paid. What speaks against it: a literal "any automated means" clause would still
@@ -164,7 +201,7 @@ interface either. Every complete automation therefore works the shop's web pages
    every change of a shop, and session calls need copied cookies.
 2. **Up to the maker's cart button, never further.**
 3. **The regulatory reviewer looks at every order.**
-4. **A choice of maker:** JLCPCB, Eurocircuits, AISLER – one interface, a profile per maker.
+4. **A choice of maker:** JLCPCB, PCBWay, Eurocircuits, AISLER – one interface, a profile per maker.
 5. **ODB++ from EasyEDA Pro through a patched MCP server and bridge**, checked by the gate against the released files.
 
 ## Design
@@ -198,23 +235,23 @@ versioned (handbook 10.1); what has to last is the order record in `hardware/ord
 One data file per maker, `edakit/makers/<maker>.toml`, shipped with edakit; a project may name its own in `[cart]`.
 It holds no code and no defaults of the board – those are edakit's (2.):
 
-| Key | Holds | JLCPCB | Eurocircuits | AISLER |
-| --- | --- | --- | --- | --- |
-| `start` | the page the skill opens | quote form | PCB Proto calculator | project upload |
-| `files` | what is uploaded | Gerber, BOM, CPL | Gerber, BOM with MPN, CPL | ODB++ |
-| `bom` | BOM columns and the key parts are matched by | Comment, Designator, Footprint, LCSC Part # – LCSC | Designator, Quantity, Manufacturer, MPN, Comment – MPN | – (in the ODB++) |
-| `cpl` | pick-and-place columns, unit, rotation sense | Designator, Mid X, Mid Y, Layer, Rotation – mm, as F-3 writes it | step 0 | – (in the ODB++) |
-| `fields` | per key of 2.: the form's label, its word for each value, the values it offers | "Mark on PCB": `specify` → "Order Number (Specify Position)" | step 0 | step 0 |
-| `excludes` | combinations the maker does not make | step 0 | step 0 | step 0 |
-| `ignore` | fields the page shows that edakit does not set, each with its reason | step 0 | step 0 | step 0 |
-| `classes` | its assembly classes – the values of `[release] assembly.pcba` | `economic`, `standard` | step 0 (PCB Proto, series) | step 0 |
-| `rules` | the form's limits F-6 checks | thicknesses 0.4–2.0 mm, black print on a white mask and white on every other, remark ≤ 200 ASCII characters, placeholder `JLCJLCJLCJLC`, Economic with 2 tooling holes | step 0; no placeholder | step 0; no placeholder |
-| `catalogue` | whose parts catalogue P-4, F-2 and `edakit stock` ask | `"jlcpcb"` | none – B-2 | none – B-2 |
-| `dnp` | how a part not to place is marked | not in BOM and CPL | not in BOM and CPL | step 0b (3.) |
-| `cart` | the one button the skill may press | "Save to Cart" | step 0 ("add to basket") | step 0 |
-| `never` | buttons and fields it must not touch, besides the fixed list (5.) | Order, Buy, Checkout, Pay, Submit order; address, payment, coupon | in the maker's words | in the maker's words |
-| `seat`, `currency` | where the maker sits, its currency | CN, USD | BE, EUR | NL/DE, EUR |
-| `fees` | the fee table `edakit cost` prices with | `edakit/fees/jlcpcb.json` | none yet | none yet |
+| Key | Holds | JLCPCB | PCBWay | Eurocircuits | AISLER |
+| --- | --- | --- | --- | --- | --- |
+| `start` | the page the skill opens | quote form | PCB form, assembly form linked to it | PCB Proto calculator | project upload |
+| `files` | what is uploaded | Gerber, BOM, CPL | Gerber, BOM with MPN, CPL (SMD) | Gerber, BOM with MPN, CPL | ODB++ |
+| `bom` | BOM columns and the key parts are matched by | Comment, Designator, Footprint, LCSC Part # – LCSC | Designator, Quantity, MPN (Manufacturer, Description, Package) – MPN | Designator, Quantity, Manufacturer, MPN, Comment – MPN | – (in the ODB++) |
+| `cpl` | pick-and-place columns, unit, rotation sense | Designator, Mid X, Mid Y, Layer, Rotation – mm, as F-3 writes it | designator, X, Y, angle – mm; the sense: step 0 | step 0 | – (in the ODB++) |
+| `fields` | per key of 2.: the form's label, its word for each value, the values it offers | "Mark on PCB": `specify` → "Order Number (Specify Position)" | "Remove product No.": `specify` → "Specify a location"; the rest step 0 | step 0 | step 0 |
+| `excludes` | combinations the maker does not make | step 0 | step 0 | step 0 | step 0 |
+| `ignore` | fields the page shows that edakit does not set, each with its reason | step 0 | step 0 | step 0 | step 0 |
+| `classes` | its assembly classes – the values of `[release] assembly.pcba` | `economic`, `standard` | `turnkey`, `partial_turnkey`, `kitted` | step 0 (PCB Proto, series) | step 0 |
+| `rules` | the form's limits F-6 checks | thicknesses 0.4–2.0 mm, black print on a white mask and white on every other, remark ≤ 200 ASCII characters, placeholder `JLCJLCJLCJLC`, Economic with 2 tooling holes | placeholder `WayWayWay`; the rest step 0 | step 0; no placeholder | step 0; no placeholder |
+| `catalogue` | whose parts catalogue P-4, F-2 and `edakit stock` ask | `"jlcpcb"` | none – B-2 | none – B-2 | none – B-2 |
+| `dnp` | how a part not to place is marked | not in BOM and CPL | not in BOM and CPL | not in BOM and CPL | step 0b (3.) |
+| `cart` | the one button the skill may press | "Save to Cart" | "Save to Cart" (reported) | step 0 ("add to basket") | step 0 |
+| `never` | buttons and fields it must not touch, besides the fixed list (5.) | Order, Buy, Checkout, Pay, Submit order; address, payment, coupon | the same, and Pay Now, Confirm Order – submitting for the review is the owner's | in the maker's words | in the maker's words |
+| `seat`, `currency` | where the maker sits, its currency | CN, USD | CN, USD | BE, EUR | NL/DE, EUR |
+| `fees` | the fee table `edakit cost` prices with | `edakit/fees/jlcpcb.json` | none – the assembly price is PCBWay's BOM quotation | none yet | none yet |
 
 `fields`, `ignore` and `cart` are what the skill looks for, in the words step 0 records on each site; when a site
 changes, the profile changes – a line of text, reviewed like any other. The JLCPCB values F-6 holds in code today
@@ -477,7 +514,7 @@ the release and the cart:
 | --- | --- | --- |
 | the surface finish and the other keys of 2. | in the layout and fab hash, not in the circuit hash; lead HASL is lead in the product (B-6 grades it), a coating or another material is part of the product | form as read back |
 | the quantity against `purpose` | 50 boards for `private` asks whether the purpose is still true – a new purpose is a new M-6 | job, cart |
-| where the maker sits | outside the EU (JLCPCB) and `sale`: the owner imports the boards and is the manufacturer of the product – name and address on the product, technical file, registrations before the first sale (handbook 15.2). Inside the EU: no import; for `sale` the owner stays the manufacturer (15.1), and the maker's declarations (AISLER's RoHS and REACH) are input for the technical file | profile `seat`, `purpose` |
+| where the maker sits | outside the EU (JLCPCB, PCBWay) and `sale`: the owner imports the boards and is the manufacturer of the product – name and address on the product, technical file, registrations before the first sale (handbook 15.2). Inside the EU: no import; for `sale` the owner stays the manufacturer (15.1), and the maker's declarations (AISLER's RoHS and REACH) are input for the technical file | profile `seat`, `purpose` |
 | parts the owner supplies to the maker | imported by the owner when bought outside the EU | job |
 | items that bring duties of their own – a cell, a power supply in the BOM | batteries regulation, the supply's own conformity, transport of lithium cells | the maker's matching |
 | the order's own declarations, if the form asks for any (customs description and value) | what the shipment is declared as; whether a form asks is not known (step 0) | form as read |
@@ -553,12 +590,13 @@ interview (its section 2), as a topic of its own before `assembly`:
 
 | Topic | Question | Options – the first is the default | What it sets |
 | --- | --- | --- | --- |
-| maker | Who makes and assembles the board? Another one to compare or to fall back on? | JLCPCB · Eurocircuits · AISLER · several: which, and which first | `[cart] maker` (the first) and `[cart] makers` (all) |
+| maker | Who makes and assembles the board? Another one to compare or to fall back on? | JLCPCB · PCBWay · Eurocircuits · AISLER · several: which, and which first | `[cart] maker` (the first) and `[cart] makers` (all) |
 
 What the answer changes in the rest of the interview and of the project:
 
-- **assembly:** the options are the `classes` of the maker – JLCPCB Economic or Standard, Eurocircuits PCB Proto or a
-  larger run, AISLER's assembly – and `[release] assembly.pcba` takes the one chosen; with several makers the board is
+- **assembly:** the options are the `classes` of the maker – JLCPCB Economic or Standard, PCBWay turnkey, partial
+  turnkey or kitted, Eurocircuits PCB Proto or a larger run, AISLER's assembly – and `[release] assembly.pcba` takes
+  the one chosen; with several makers the board is
   planned for the first, and the report names what the others would need.
 - **order:** edakit's defaults as one option, and a question for each key whose default the maker does not offer (2.);
   only the fields the maker has (the order-number mark is JLCPCB's).
@@ -583,8 +621,12 @@ this has no `[cart]`: its maker is JLCPCB, its checks run as today, and `edakit 
   parts in one call (`component/getComponentDetailByCode`). The assembly still goes through the skill. Keys from
   `JLCPCB_APP_ID`, `JLCPCB_ACCESS_KEY`, `JLCPCB_SECRET_KEY` or the keyring.
 - **AISLER's upload keys and Beta LAYOUT's API**, if they give them: the upload of the ODB++ without a browser.
-- The user asks JLCPCB (API access, an assembly interface for partners), AISLER (upload key, ODB++ from EasyEDA for
-  assembly) and Beta LAYOUT (API) in parallel to the first steps.
+- **PCBWay's partner API**, approval only (api-partner.pcbway.com, an API key): PCB quotation, order and its state
+  without a browser – the assembly keeps its BOM quotation by hand. The official KiCad plug-in sends Gerber, BOM and
+  pick-and-place to PCBWay: how it uploads (an open endpoint or a key) is a lead for an upload without the browser,
+  read in step 0 from its source.
+- The user asks JLCPCB (API access, an assembly interface for partners), PCBWay (partner API), AISLER (upload key,
+  ODB++ from EasyEDA for assembly) and Beta LAYOUT (API) in parallel to the first steps.
 
 ### 13. What stays
 
@@ -615,7 +657,7 @@ entry in the rule catalog and a negative test (skill add-rule); every command an
 
 | Step | What | Size | EasyEDA | Needs |
 | --- | --- | --- | --- | --- |
-| 0 | Probe per maker in the owner's browser, nothing ordered: can Claude in Chrome put a local file into the upload fields? Do the fields read back as text? Can it save screenshots to a file? Can the placement preview be opened again from the cart (M-2)? The labels, values, `ignore` list, CPL format and cart button for the profile; the page texts of one quote and one past order as test data; the terms on automated use, for the record | – | no | the owner's Chrome with Claude in Chrome |
+| 0 | Probe per maker – JLCPCB, PCBWay, Eurocircuits, AISLER – in the owner's browser, nothing ordered: can Claude in Chrome put a local file into the upload fields? Do the fields read back as text? Can it save screenshots to a file? Can the placement preview be opened again from the cart (M-2)? The labels, values, `ignore` list, CPL format and cart button for the profile; at JLCPCB whether the order number is gone (reported change of May 2026) and what the barcode and serial number options are; the page texts of one quote and one past order as test data; the terms on automated use, for the record | – | no | the owner's Chrome with Claude in Chrome |
 | 0b | ODB++ of a throwaway board under the EasyEDA claim (working agreement 18), with a patched call and by hand (File > Export > ODB++) for comparison: component layers with packages, pins and part numbers? Parts kept out of EasyEDA's BOM left out? Which rotation convention? | – | yes | – |
 | 1 | `order_sheet.form`: the form as fields, `order.md` printed from it – no change of output | S | no | – |
 | 2 | Every field as a key (2.): edakit's defaults, `[order]` in edakit.toml, `order.json` with the new keys that differ from the defaults, `edakit cart fields` | M | no | 1; step 0's field list |
@@ -625,6 +667,7 @@ entry in the rule catalog and a negative test (skill add-rule); every command an
 | 6 | `edakit cart actual`: `actual.md`, the totals in `edakit release current` and the order record, the fee table one to one | M | no | 4; a saved order page from step 0 |
 | 7 | Skill `cart`, live up to the cart at JLCPCB | M | no | 0, 4, 5 |
 | 8 | BOM with MPN and P-12; Eurocircuits live up to the basket | M | no | 3, 7 |
+| 8b | PCBWay: `pcbway.toml` (provisional, built with step 3), the placeholder `WayWayWay` in F-6; live up to "Save to Cart" – the form, its BOM template (one MPN BOM, or one per maker), the assembly price that comes later | S | no | 0, 7, 8 |
 | 9 | Skill new-project: topic `maker` and what follows from it (11.); its test project with Eurocircuits | S | no | 3, 8 |
 | 10 | ODB++: MCP tool and bridge handler (patches, upstream issue and pull request), `edakit/odb.py`, F-7, the parts not to place as step 0b found; AISLER live up to the cart | L | yes | 0b, 7 |
 | 11 | Interfaces of 12., where granted | – | no | the makers |
@@ -639,9 +682,11 @@ shows that EasyEDA's ODB++ has no component layers, AISLER waits (Decisions).
 All taken by the owner on 2026-10-30: Claude in Chrome; up to the cart, never further; the regulatory review at every
 order; a choice of maker, asked when the project is set up (11.), JLCPCB without an answer; ODB++ from EasyEDA Pro;
 the skill is used whatever the makers' terms say, the risk is the owner's; real cost goes into the project's fee table
-at once. Nothing is open now. One decision follows only if step 0b finds no component layers in EasyEDA's ODB++:
-KiCad 9 as a converter for AISLER (import of the EasyEDA Pro project, `kicad-cli pcb export odb`, F-7 on its result),
-or no AISLER.
+at once; PCBWay planned in as a fourth maker (the user, 2026-10-30, after the rest was built). Open: whether F-6
+warns now about JLCPCB's placeholder, which JLCPCB reportedly no longer replaces since May 2026, or only after step 0
+has seen the form – until the owner decides, the rule stays as the reference orders had it. One decision follows only
+if step 0b finds no component layers in EasyEDA's ODB++: KiCad 9 as a converter for AISLER (import of the EasyEDA Pro
+project, `kicad-cli pcb export odb`, F-7 on its result), or no AISLER.
 
 ## Sources
 
@@ -658,6 +703,14 @@ or no AISLER.
   https://community.aisler.net/t/pcb-design-tool-support-matrix/103, ODB++ https://community.aisler.net/t/introducing-odb-support/2459,
   EasyEDA guide https://community.aisler.net/t/export-odb-from-easyeda/3601, compliance
   https://community.aisler.net/t/clean-and-clear-compliance-rohs-reach-made-in-europe-documentation/85
+- PCBWay: assembly file requirements https://www.pcbway.com/assembly-file-requirements.html, help center
+  https://www.pcbway.com/helpcenter/pcb_assembly_ordering/What_files_are_requested_for_assembly_production_.html,
+  product number https://www.pcbway.com/blog/help_center/Notes_of_Product_No_on_Your_PCB_78d5a03c.html, ordering Q&A
+  https://www.pcbway.com/blog/News/PCBWay_Q_A_002____Common_Questions_for_PCB_Ordering.html, Terms of Service
+  https://www.pcbway.com/terms_service.html, KiCad plug-in https://github.com/pcbway/PCBWay-Plug-in-for-Kicad, partner
+  API https://api-partner.pcbway.com/Help (third-party reports)
+- JLCPCB, "How to remove order number from your PCB" (last updated 2026-05-22):
+  https://jlcpcb.com/help/article/how-to-mark-on-pcb
 - Beta LAYOUT: https://eu.beta-layout.com/pcb/assembly/; Multi-CB:
   https://www.multi-circuit-boards.eu/en/ems-provider-electronics-manufacturing.html
 - ODB++ writers: KiCad 9 (`kicad-cli pcb export odb`), Horizon EDA 2.3+; readers: nam20485/OdbDesign, ulikoehler/ODBPy

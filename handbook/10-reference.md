@@ -107,7 +107,7 @@ every check runs as before.
 | `ship_to` | – | the country the order goes to, as the form names it; `edakit cart prepare` needs it |
 | `shipping` | `{}` | per maker, the name of its shipping method: `{ jlcpcb = "DHL Express" }` |
 | `tolerance` | `0.10` | per price line, in the maker's currency, before B-3 warns |
-| `profiles` | `{}` | a project's own maker profiles, `{ name = "hardware/makers/name.toml" }`, beside the shipped ones (`jlcpcb`, `eurocircuits`, `aisler` in `edakit/makers/`) |
+| `profiles` | `{}` | a project's own maker profiles, `{ name = "hardware/makers/name.toml" }`, beside the shipped ones (`jlcpcb`, `pcbway`, `eurocircuits`, `aisler` in `edakit/makers/`) |
 
 A maker's profile holds no defaults of the board: its form's labels and words for edakit's keys (`fields`), the
 values it offers, its limits (`rules`: thicknesses, remark, placeholder, tooling holes per class), the files it takes,
@@ -423,7 +423,7 @@ hardware/orders/*.json      the order records: run, hashes, maker, regulatory ve
                             (edakit cart)
 hardware/fees/<maker>.json  the project's fee table from its own orders (edakit cart actual); [cost] fees names another
 hardware/makers/*.toml      a maker's profile of the project's own, named in [cart] profiles (edakit ships jlcpcb,
-                            eurocircuits and aisler in edakit/makers/)
+                            pcbway, eurocircuits and aisler in edakit/makers/)
 hardware/schematic.toml     arrangement of the schematic
 hardware/boards/<name>.toml one board: outline, holes, placement, routing, pours, silkscreen
 hardware/boards/<name>.geometry.json

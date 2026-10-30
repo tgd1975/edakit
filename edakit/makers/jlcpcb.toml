@@ -137,6 +137,10 @@ section = "PCB"
 label = "Edge Plating"
 words = { false = "No", true = "Yes" }
 
+# Reported, not yet seen on the form: JLCPCB's help article "How to remove order number from your PCB" (last updated
+# 2026-05-22; read in search summaries on 2026-10-30) says the order number is not available since May 2026 and asks
+# not to add JLCJLCJLCJLC – a 2D barcode or a serial number instead. Ordering step 0 checks the form; until then
+# these words and F-6's placeholder rule stay as the reference orders had them.
 [fields.mark]
 section = "PCB"
 label = "Mark on PCB"

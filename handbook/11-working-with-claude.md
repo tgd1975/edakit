@@ -16,7 +16,7 @@ agreements are as important as the scripts.
 | skill | `/edakit:own-part` | the parts entry of a part nobody sells and no edakit project describes – own board, from the bin, made by hand – from the user's documents and measurement (4.5) |
 | skill | `/edakit:pcb-round` | one layout round |
 | skill | `/edakit:release` | the gate, sign-offs, order checklist |
-| skill | `/edakit:cart` | a released board into the maker's cart with Claude in Chrome in the owner's browser – JLCPCB, Eurocircuits, AISLER –: the job of `edakit cart prepare`, every field set and read back, the quote checked (B-1 to B-7), the regulatory review of the order, then the cart button and stop – never orders, never pays; afterwards the real cost into the fee table (8.4) |
+| skill | `/edakit:cart` | a released board into the maker's cart with Claude in Chrome in the owner's browser – JLCPCB, PCBWay, Eurocircuits, AISLER –: the job of `edakit cart prepare`, every field set and read back, the quote checked (B-1 to B-7), the regulatory review of the order, then the cart button and stop – never orders, never pays; afterwards the real cost into the fee table (8.4) |
 | skill | `/edakit:decision-round` | numbered findings, short answers, numbered decisions |
 | skill | `/edakit:propose-rule` | a check, hint, block or part fact as a sealed issue to the edakit repository, and its outcome back into the decision (chapter 14.4) |
 | skill | `/edakit:propose-feature` | a feature edakit lacks and a project had to build or work around, as a sealed issue to the edakit repository, and its outcome back into the project (11.6) |

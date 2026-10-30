@@ -94,7 +94,7 @@ Look only at the difference – what the order adds or changes against what M-6 
 |---|---|
 | the surface finish and the other keys of the form | in the layout and fab hash, not in the circuit hash: leaded HASL is lead in the product (B-6 grades it by purpose), a coating or another material is part of the product |
 | the quantity against the purpose | 50 boards for `private` asks whether the purpose is still true – a new purpose is a new M-6 |
-| where the maker sits (`seat`) | outside the EU (JLCPCB) and `sale`: the owner imports the boards and is the manufacturer of the product – name and address on the product, technical file, registrations before the first sale (handbook 15.2). Inside the EU: no import; for `sale` the owner stays the manufacturer (15.1), and the maker's declarations (AISLER's RoHS and REACH) are input for the technical file |
+| where the maker sits (`seat`) | outside the EU (JLCPCB, PCBWay) and `sale`: the owner imports the boards and is the manufacturer of the product – name and address on the product, technical file, registrations before the first sale (handbook 15.2). Inside the EU: no import; for `sale` the owner stays the manufacturer (15.1), and the maker's declarations (AISLER's RoHS and REACH) are input for the technical file |
 | parts the owner supplies to the maker | imported by the owner when bought outside the EU |
 | items with duties of their own in the matching – a cell, a power supply | batteries regulation, the supply's own conformity, transport of lithium cells |
 | declarations the form asks for (customs description and value) | what the shipment is declared as |

@@ -80,7 +80,7 @@ project the layout review measured the LED side by hand at every round; the row 
 | F-3 | pick and place: every BOM part exactly once, side and rotation = PCB; sides and SMD-only as `[release] assembly` says (Economic PCBA: one side, SMD only; two SMD sides need Standard PCBA) |
 | F-4 | Gerber ZIP, BOM and pick and place from the same run; `fab/manifest.json` with SHA-256 per file, the state hashes and the fab hash (8.2) |
 | F-5 | Gerber set complete (a missing file is named here, and L-2, L-8, L-9 and L-17, which read it, report it as not checked); outline and mounting holes from the outline layer = plan (± 0.2 mm); tooling holes in the NPTH file, mask open, no copper in the opening |
-| F-6 | with `[order]` (board file or edakit.toml) or `[cart]` (8.4), per maker of `[cart] makers` – a finding fails for the planned maker and warns for every other one: every field a value the maker's form offers (its profile), no combination it excludes; the remark at most 200 characters, ASCII (JLCPCB); `thickness_mm` a thickness of the form – JLCPCB 0.4, 0.6, 0.8, 1.0, 1.2, 1.6 or 2.0 mm; the silkscreen colour the one the maker prints on the mask colour – JLCPCB black on white, white on every other; `mark = "specify"` with the maker's placeholder (`JLCJLCJLCJLC`) on a silkscreen layer of pcb.json, at least 0.8 mm high in `[[silk.texts]]` (no height there: warning); the placeholder with another mark (warning); JLCPCB's placeholder at a maker without one (it prints the letters); fewer tooling holes than the class needs (warning: JLCPCB drills its own). For every maker: `layers` and `size_mm` where set = the Gerber files; `panel_by_customer` (fail); `pcba_quantity` at most `quantity`, another number than `[project] quantity` (warning); no copper of either side within `tab_copper_mm` of a declared tab zone, measured on the Gerber copper against the Gerber outline (fail, with the distance and the position); the outline stretches free of copper and a provisional profile (information) |
+| F-6 | with `[order]` (board file or edakit.toml) or `[cart]` (8.4), per maker of `[cart] makers` – a finding fails for the planned maker and warns for every other one: every field a value the maker's form offers (its profile), no combination it excludes; the remark at most 200 characters, ASCII (JLCPCB); `thickness_mm` a thickness of the form – JLCPCB 0.4, 0.6, 0.8, 1.0, 1.2, 1.6 or 2.0 mm; the silkscreen colour the one the maker prints on the mask colour – JLCPCB black on white, white on every other; `mark = "specify"` with the maker's placeholder (`JLCJLCJLCJLC`) on a silkscreen layer of pcb.json, at least 0.8 mm high in `[[silk.texts]]` (no height there: warning); the placeholder with another mark (warning); another maker's placeholder – JLCPCB's `JLCJLCJLCJLC`, PCBWay's `WayWayWay` – on the silkscreen (the maker prints the letters); fewer tooling holes than the class needs (warning: JLCPCB drills its own). For every maker: `layers` and `size_mm` where set = the Gerber files; `panel_by_customer` (fail); `pcba_quantity` at most `quantity`, another number than `[project] quantity` (warning); no copper of either side within `tab_copper_mm` of a declared tab zone, measured on the Gerber copper against the Gerber outline (fail, with the distance and the position); the outline stretches free of copper and a provisional profile (information) |
 | F-7 | with a maker of `[cart] makers` that takes ODB++ (AISLER; fail for the planned maker, warning for another one): `odb_<board>.zip`, exported by EasyEDA through the patched `easyeda_export_odb` (2.5), against this run's files – every layer (copper, mask, paste, silkscreen) rasterised as L-2 and XOR'd with its Gerber layer, no spot above 0.01 mm², no layer in one only; the drill hits = the drill files (1 µm, diameter, plated or not); the profile = the Gerber outline (0.05 mm); every BOM part once at the CPL's place (0.01 mm), rotation (ODB++ clockwise) and side, with its part number; a part with `bom: false` as the maker's `dnp` says (left out, or listed for the skill to mark); the nets of the pins as the graph's, compared as groups – an export that failed or cannot be read fails |
 
 Plus P-2: a **polarity sheet** per board – every polarised part drawn from the Gerber data with copper, silkscreen,
@@ -466,13 +466,18 @@ are the quote's – read from `quote.json` of the current release, nothing writt
 pcb_price` still wins. Without Claude in Chrome, or without the files on the computer the browser runs on, the
 skill prints the job as a checklist, the owner fills the form and `quote.json`, and `edakit cart check` checks them.
 
-**Makers.** JLCPCB, Eurocircuits (Belgium) and AISLER (Netherlands) have a profile each in `edakit/makers/`
-(`[cart]`, 10.1); the form's labels and words of all three are provisional until ordering step 0 records them on the
-sites (`recorded = false`, named by F-6 as information). Eurocircuits matches the BOM by manufacturer part number:
-`bom_<board>_mpn.csv` and P-12. AISLER assembles from ODB++: `odb_<board>.zip` from EasyEDA through the patched MCP
-server and bridge (2.4, 2.5), held to the released files by F-7. Inside the EU there is no import; for `sale` the owner
-stays the manufacturer of the product (15.1). P-4, F-2 and `edakit stock` ask JLCPCB's catalogue only where JLCPCB is
-among the makers; another maker's stock is what its matching shows, checked by B-2.
+**Makers.** JLCPCB and PCBWay (China), Eurocircuits (Belgium) and AISLER (Netherlands) have a profile each in
+`edakit/makers/` (`[cart]`, 10.1); the form's labels and words of all four are provisional until ordering step 0 records
+them on the sites (`recorded = false`, named by F-6 as information). PCBWay and Eurocircuits match the BOM by
+manufacturer part number: `bom_<board>_mpn.csv` and P-12. PCBWay's order-number placeholder is `WayWayWay`, JLCPCB's
+`JLCJLCJLCJLC`; each is text to every other maker, and F-6 finds it there. At PCBWay engineers review the files before
+payment and the assembly price comes with its BOM quotation: the skill stops at "Save to Cart", submitting the order for
+the review is the owner's. JLCPCB's help article reports the order number gone since May 2026, a barcode or serial
+number instead – ordering step 0 checks it on the form; until then F-6 keeps the rule of the reference orders. AISLER
+assembles from ODB++: `odb_<board>.zip` from EasyEDA through the patched MCP server and bridge (2.4, 2.5), held to the
+released files by F-7. Inside the EU there is no import; for `sale` the owner stays the manufacturer of the product
+(15.1). P-4, F-2 and `edakit stock` ask JLCPCB's catalogue only where JLCPCB is among the makers; another maker's stock
+is what its matching shows, checked by B-2.
 
 The MCP server cannot order. Lessons from the reference order:
 

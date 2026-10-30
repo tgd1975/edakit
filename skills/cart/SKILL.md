@@ -1,6 +1,6 @@
 ---
 name: cart
-description: Put a released board into the maker's cart – JLCPCB, Eurocircuits or AISLER – with Claude in Chrome in the owner's browser, from the job of `edakit cart prepare`, every field set and read back, the parts matched, the quote read and checked by `edakit cart check` (B-1 to B-7), the regulatory review of the order, and stop at the cart. Never orders, never pays, never opens the checkout. Afterwards the real cost from the order page (`edakit cart actual`). Use for "order the board", "put it in the cart", "fill in the JLCPCB form", "what did the order really cost".
+description: Put a released board into the maker's cart – JLCPCB, PCBWay, Eurocircuits or AISLER – with Claude in Chrome in the owner's browser, from the job of `edakit cart prepare`, every field set and read back, the parts matched, the quote read and checked by `edakit cart check` (B-1 to B-7), the regulatory review of the order, and stop at the cart. Never orders, never pays, never opens the checkout. Afterwards the real cost from the order page (`edakit cart actual`). Use for "order the board", "put it in the cart", "fill in the JLCPCB form", "what did the order really cost".
 argument-hint: "[--board B] [--maker M] | actual"
 ---
 

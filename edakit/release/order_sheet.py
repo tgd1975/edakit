@@ -19,9 +19,9 @@ and check F-6 (order settings = board, per maker). Both when the board has [orde
        every field's value is one the maker's form offers (its profile's fields), no combination its profile excludes;
        the remark fits the form (JLCPCB: at most 200 characters, ASCII); thickness_mm is a thickness of the form; the
        silkscreen colour is the one the maker prints on the mask colour; mark = "specify" needs the maker's placeholder
-       (JLCPCB: JLCJLCJLCJLC) on a silkscreen layer of pcb.json, at least its least height in [[silk.texts]] (height
-       not in [[silk.texts]]: warn); the placeholder with another mark warns; the placeholder at a maker without one
-       is a finding – it prints the letters as they are; an assembly class with fewer tooling holes than the profile's
+       (JLCPCB: JLCJLCJLCJLC, PCBWay: WayWayWay) on a silkscreen layer of pcb.json, at least its least height in
+       [[silk.texts]] (height not in [[silk.texts]]: warn); the placeholder with another mark warns; another maker's
+       placeholder on the silkscreen is a finding – this maker prints the letters as they are; an assembly class with fewer tooling holes than the profile's
        tooling_min warns (JLCPCB: Economic, 2 – it adds its own); a provisional profile is named as information.
        Independent of the maker: layers and size_mm, where set, are those of the Gerber files; panel_by_customer fails
        – the run's Gerber is one board; pcba_quantity is at most quantity, and another number than [project] quantity
@@ -315,15 +315,25 @@ def placeholders(board, data, maker=None):
     return found, heights
 
 
+def foreign(board, data, text):
+    """[(side, (x, y))] of a placeholder text on a silkscreen layer of pcb.json."""
+    mm = 25.4 / 1000
+    return [(SILK[s["Layer"]], (s["X"] * mm, s["Y"] * mm)) for s in data.get("strings", [])
+            if s.get("Layer") in SILK and text in str(s.get("Text", ""))]
+
+
 def check_mark(c, o, data):
     board, m = c.board, c.maker
     mark, holder = o["mark"], m.rules.get("placeholder")
-    if not holder:      # the maker has no order-number placeholder: JLCPCB's letters on the silkscreen are text to it
-        found, _ = placeholders(board, data)
-        if found:
-            c.add(f"no {PLACEHOLDER} on the silkscreen – {m.name} has no order-number placeholder", False,
-                  f"{PLACEHOLDER} at {pt(found[0][1])} on the {found[0][0]} silkscreen – {m.name} prints it as it is; "
-                  "a release that carries it is a release for JLCPCB", "no placeholder")
+    # another maker's placeholder on the silkscreen is text to this one: it prints the letters as they are
+    for text, owner in makers.placeholders(c.cfg).items():
+        if text == holder or not (found := foreign(board, data, text)):
+            continue
+        c.add(f"no {text} on the silkscreen – " + (f"{m.name}'s placeholder is {holder}" if holder else
+                                                    f"{m.name} has no order-number placeholder"), False,
+              f"{text} at {pt(found[0][1])} on the {found[0][0]} silkscreen – {m.name} prints it as it is; a "
+              f"release that carries it is a release for {owner}", "no placeholder of another maker")
+    if not holder:
         return
     word = m.word("mark", mark)
     found, heights = placeholders(board, data, m)

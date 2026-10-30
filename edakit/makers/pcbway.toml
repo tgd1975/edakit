@@ -1,0 +1,44 @@
+# PCBWay (Shenzhen, registered office in Hangzhou, China) – the maker's profile for edakit's order form (handbook
+# 8.4). Data, no code, no defaults of the board: those are edakit's keys of [order] (handbook 10.2).
+#
+# recorded = false: what the search of 2026-10-30 found on PCBWay's help pages (docs/concepts/new/ordering.md,
+# PCBWay) – the order form's labels and words, the BOM template, the pick-and-place format and the cart flow are
+# recorded on the site by ordering step 0. Until then F-6 names the fields as not checked.
+#
+# What differs from JLCPCB (reported): PCBWay sources the parts itself by manufacturer part number (turnkey) – a BOM
+# with MPN (P-12), no parts catalogue edakit could ask beforehand; the assembly price comes with PCBWay's BOM
+# quotation, by hand, and engineers review the files before payment. The skill cart stops at "Save to Cart": the
+# owner submits the order for the review and pays.
+
+name = "PCBWay"
+recorded = false
+start = "https://www.pcbway.com/orderonline.aspx"   # the PCB form; the assembly form (quotesmt.aspx) links to it
+seat = "CN"                            # outside the EU: for purpose "sale" the owner imports the boards (15.2)
+currency = "USD"
+files = ["gerber", "bom_mpn", "cpl"]   # gerber_<b>.zip, bom_<b>_mpn.csv (MPN required), cpl_<b>.csv (mm, SMD parts)
+classes = ["turnkey", "partial_turnkey", "kitted"]   # PCBWay sources all parts, some of them, or none – words: step 0
+dnp = "omit"                           # a part not to place is left out of BOM and CPL
+cart = "Save to Cart"                  # "Calculate → Save to Cart → files → engineering review → payment" (reported)
+never = ["Order", "Buy", "Checkout", "Pay", "Pay Now", "Submit Order", "Place Order", "Confirm Order"]
+ignore = {}
+excludes = []
+
+[bom]
+columns = ["Designator", "Quantity", "Manufacturer", "MPN", "Comment"]   # PCBWay's BOM template: ordering step 0
+match = "mpn"                          # PCBWay buys the parts by manufacturer part number (P-12)
+
+[cpl]
+unit = "mm"
+rotation = "as F-3 writes it – PCBWay's sense: ordering step 0"
+
+[rules]
+placeholder = "WayWayWay"              # with "Specify a location": PCBWay puts its product number here (help center)
+
+[fields.mark]
+section = "PCB"
+label = "Remove product No."
+
+[fields.mark.words]
+default = "No"                         # PCBWay places its product number itself, under an IC where it can
+remove = "Yes"                         # for a fee (help center: 1.5 $)
+specify = "Specify a location"         # at the placeholder WayWayWay, free
