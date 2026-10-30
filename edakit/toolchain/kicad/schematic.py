@@ -258,9 +258,25 @@ def check(cfg, board, verbose=False):
     return rep
 
 
+def run_check(cfg, args):
+    """edakit schematic check, and the gate's stage S (gate.stage_schematic): the findings printed, with --json written
+    as the sections of schematic.check. Exit 0 = the graph, 2 = differences, 1 = error."""
+    import json
+    board = cfg.board(args.board, made=True)
+    try:
+        rep = check(cfg, board, getattr(args, "verbose", False))
+    except (kb.BoardError, cli.CliError) as e:
+        print(f"edakit schematic check: {e}", file=sys.stderr)
+        return 1
+    rep.print()
+    if getattr(args, "json", None):
+        Path(args.json).write_text(json.dumps(rep.sections, indent=1, ensure_ascii=False))
+    print(f"schematic = graph: {'yes' if not rep.count() else f'no – {rep.count()} differences'}")
+    return 2 if rep.count() else 0
+
+
 def main(cfg, args):
     """edakit schematic create|layout|check|copy on a KiCad project; draw stays the SVG."""
-    import json
     board = cfg.board(args.board, made=True)
     try:
         if args.action in ("create", "layout"):
@@ -281,12 +297,7 @@ def main(cfg, args):
             print(f"schematic = graph: {'yes' if not rep.count() else f'no – {rep.count()} differences'}")
             return 2 if rep.count() else 0
         if args.action == "check":
-            rep = check(cfg, board, getattr(args, "verbose", False))
-            rep.print()
-            if getattr(args, "json", None):
-                Path(args.json).write_text(json.dumps(rep.sections, indent=1, ensure_ascii=False))
-            print(f"schematic = graph: {'yes' if not rep.count() else f'no – {rep.count()} differences'}")
-            return 2 if rep.count() else 0
+            return run_check(cfg, args)
         if args.action == "copy":
             print("  KiCad: one schematic per board, written by schematic create – nothing to copy")
             return 0

@@ -408,6 +408,9 @@ def check_pins(mcp, graph_comps, sch, graph_nets, rep):
 
 def check(cfg, args):
     """Read only (it activates the pages, though). Exit 0 = same as the graph, 2 = differences, 1 = error."""
+    if is_kicad(cfg):                 # the gate's stage S calls this directly: KiCad's netlist and ERC (handbook 16)
+        from .toolchain.kicad import schematic as kicad_schematic
+        return kicad_schematic.run_check(cfg, args)
     board = cfg.board(args.board, made=True)
     design = Design.from_config(cfg)
     graph_comps, graph_nets = design.board_comps(board.name), design.board_nets(board.name)

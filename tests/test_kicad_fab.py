@@ -331,3 +331,14 @@ def test_a_session_learns_the_tool_chain(project):
     kicad_project(project)
     out = agreements.hook({"cwd": str(project.root)})
     assert "Tool chain: KiCad" in out["hookSpecificOutput"]["additionalContext"]
+
+
+def test_the_gates_stage_s_reads_the_kicad_schematic(project, fake_cli):
+    from edakit.release import gate
+    cfg = kicad_project(project)
+    assert run_cli(project, "schematic", "create") == 0
+    out = project.root / "build" / "release" / "run"
+    out.mkdir(parents=True)
+    rows = gate.stage_schematic(cfg, out)
+    assert rows == [{"stage": "S", "id": "S-2", "item": "main.kicad_sch", "check": "schematic = graph",
+                     "result": "pass"}]
