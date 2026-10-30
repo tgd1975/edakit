@@ -222,11 +222,17 @@ Not a migration: a rebuild beside the old code, switched over on parity, the old
 | 3 | domain files `core`, `usb`, `radio`; `[project] domains`; severity from the profile; suggested domains; reviewers read the domain files | medium |
 | 4 | SYNC, GEO, FILES, PARTS, DOCS regrouped – mostly naming and the finding format | medium |
 | 5 | switch-over: the old checks deleted, the owner's projects converted once (graph keys, parts fields, waivers), handbook tables and field reference generated, chapter 14 rewritten | medium |
-| 6 | maker-coverage's candidates enter as data per domain, new codes as warnings – one domain at a time | per domain |
+| 6 | maker-coverage's candidates enter as data per domain, new codes as warnings – one domain at a time; first the producers many domains need (load steps FT-1, cables FT-2, the op-amp model FT-3), then the domains in maker-coverage's order | per domain |
 | 7 | reference circuits, seeded-fault suite per domain, overlap test, mutation sweep | large, incremental |
 | 8 | eval with Sonnet on the reference circuits | medium |
 
 Steps 1 to 4 change no finding on any board; the parity test says so. Step 5 is the cut.
+
+**The new rules come after the cut, not before (decided).** Most of maker-coverage's candidates are facts, defaults
+and domain changes, which exist only in the new model; built as checks of today they would be written twice and move
+the parity target while the rebuild runs. The producers (FT-1, FT-2, FT-3) can be built as soon as step 2's engines
+exist, since they feed the new LIMITS and LEVELS and nothing old. The one exception: a fault of a check of today that a
+project meets before the cut is fixed where it is, with its test, and carried over.
 
 ## 11. Costs and risks
 
