@@ -148,7 +148,8 @@ Confirmed by the CI job `kicad` on the led-bar example (KiCad 10.0, its containe
   has nothing but the connections the routing has not made yet. The first run found every pad in conflict with the
   schematic: local labels name a net "/GND" – the schematic has global labels since;
 - the flags of 16.5 for Gerber, drill and position file; the file names of the export; the Gerber reader on KiCad's
-  files; the position file's place and turn of every part against `pcb.json` (F-3);
+  files; the position file's place and turn of every part against `pcb.json` (F-3), on the bottom too: a part at 90°
+  and one at 180° keep their turn in the position file (neither -a nor 180-a);
 - the frames: KiCad's own Gerber copper lies at every pad edakit reads, also for turned parts and parts on the bottom;
 - `route all` on KiCad: Freerouting routed all 18 nets of the example, edakit wrote 208 track pieces and 29 vias, KiCad
   filled the zones, its DRC found nothing. Then `pcb apply` and `silk apply` wrote the file KiCad had saved again –
