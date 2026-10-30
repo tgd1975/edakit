@@ -88,7 +88,10 @@ describes (section 3); a list of parts or pads is fixed with `pcb parts --write`
      a turn lays the formed holes onto themselves with a pin in another net's hole (handbook 3.3).
    - `edakit pcb apply` (outline, holes, tooling holes, fixed parts locked; pad positions verified against the plan)
    - `edakit pcb autolayout` (the parts without a row, TOP only; once they stand still it writes their rows into
-     `[place]` with `auto = true` – commit them with the board file, `pcb plan` checks them like any row). A board
+     `[place]` with `auto = true` – commit them with the board file, `pcb plan` checks them like any row). Or
+     offline, before EasyEDA is touched: `edakit pcb place --rest --write 2>&1 | cat` – edakit's own placer, by
+     airline length, the same rows (handbook 7.4; on KiCad the only way). The auto-layout goes once the placer has
+     placed a real board that routed and passed the gate; check the spots of `layout.fixed` parts it placed. A board
      placed before edakit wrote these back – L-20 names its parts without a row – takes over its positions once,
      before any dump: `edakit pcb takeover --write`, fixed rows where the parts stand, the tracks stay on their pads
      (handbook 7.4)
