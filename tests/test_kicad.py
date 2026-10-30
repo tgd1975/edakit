@@ -383,3 +383,24 @@ def test_the_schematic_puts_pins_and_wire_ends_on_kicads_grid(project):
     ends = [(float(xy[1]), float(xy[2])) for w in sexp.find(root, "wire") for xy in sexp.find(sexp.first(w, "pts"), "xy")]
     off = [(x, y) for x, y in ends if abs(x / 1.27 - round(x / 1.27)) > 1e-6 or abs(y / 1.27 - round(y / 1.27)) > 1e-6]
     assert ends and off == []
+
+
+def test_the_library_silkscreen_of_easyeda_standard_is_cached_in_mil_y_up():
+    """part.footprint_silk on the shapes EasyEDA Standard writes for a footprint's print (10 mil units, y down,
+    absolute): a line, a circle, an arc, a filled region and the strokes of a "+" – the designator's text is left out."""
+    from edakit.part import footprint_silk
+    ds = {"shape": ["TRACK~1~3~~3995 3004 4005 3004~gge5~0",
+                    "CIRCLE~3992~2996~0.5~1~3~gge6~0~~",
+                    "ARC~1~3~~M 3998,3004 A 2,2 0 0 1 4002,3004~~gge7~0",
+                    "SOLIDREGION~3~~M 3990 3000 L 3992 3000 L 3992 3002 Z ~solid~gge8~~~~0",
+                    "TEXT~L~4000~3000~0.6~0~0~3~~4.5~+~M 3998 3000 L 4002 3000 M 4000 2998 L 4000 3002~~gge9~~0~pinpart",
+                    "TEXT~P~4000~2990~0.6~0~0~3~~4.5~R1~M 3990 2990 L 3992 2990~~gge10~~0~pinpart",
+                    "TRACK~1~1~~3995 3004 4005 3004~gge11~0"]}
+    silk = footprint_silk(ds, 4000, 3000)
+    lines = [s for s in silk if not s["fill"]]
+    assert silk[0] == {"layer": "TOP", "points": [[-50, -40], [50, -40]], "width": 10, "fill": False}
+    assert len([s for s in silk if s["fill"]]) == 1
+    plus = [s for s in lines if s["width"] == 6]
+    assert sorted(map(tuple, (tuple(map(tuple, s["points"])) for s in plus))) == [((-20.0, 0.0), (20.0, 0.0)),
+                                                                                  ((0.0, 20.0), (0.0, -20.0))]
+    assert all(s["layer"] == "TOP" for s in silk) and len(silk) == 6     # copper (layer 1) and the designator out
