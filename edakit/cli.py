@@ -190,6 +190,8 @@ def build_parser():
                                                         "[place] (default: show only)")
     p.add_argument("--ref", help="dump: only these designators, comma-separated")
     p.add_argument("--only", help="place: only these designators, comma-separated")
+    p.add_argument("--rest", action="store_true", help="place: every other part of the board without a row, or with "
+                                                       "an auto row, as well – by airline length")
     p.add_argument("--verify-all", action="store_true", help="apply: compare the pads of every part with the plan")
     _no_scripts(p)
     _common(p)
