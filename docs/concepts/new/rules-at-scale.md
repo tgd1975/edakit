@@ -1,102 +1,137 @@
 # Rules at scale
 
-Status 2026-10-30: proposed; the owner has taken the four decisions at the end, nothing is built. It answers the owner's concern that the rule catalog does not scale –
-electrically (are the rules consistent, free of contradiction, correct?) and in use (many rules, most of them
-irrelevant to a given project, too much context for the model, which must work with Sonnet). It builds on
-[maker-coverage.md](maker-coverage.md) (what is missing) and [circuit-language.md](circuit-language.md) (the graph's
-form). Numbers are measured at edakit `bf7450a` unless marked as estimates.
+Status 2026-10-30: final for the owner's decision; built on this branch only after an explicit go. Nothing is built.
+
+It answers the owner's concern that the rule catalog does not scale – electrically (are the rules consistent, free of
+contradiction, correct?) and in use (many rules, most of them irrelevant to a given project, too much context for the
+model, which must work with Sonnet). It builds on [maker-coverage.md](maker-coverage.md) (what is missing) and is
+compatible with [circuit-language.md](circuit-language.md) (the graph's form). Decided by the owner: no regard for
+what exists today – IDs, file formats and keys may change; the owner's projects are converted once. Numbers are
+measured at edakit `bf7450a` unless marked as estimates.
 
 ## The problem
 
 Today one lesson becomes one check ID: a function, a negative test, a catalog entry, a handbook row, often a reviewer
 question. 67 checks and 9 hints came out of two projects. maker-coverage lists about 110 more candidates. Scaled the
-same way, three things break:
+same way, three things break.
 
-- **Electrically.** Rules overlap (G-4 and an `nc` input, G-11 and other open-drain lines, G-12 and voltage-window
-  straps) and contradict (H-1 asks for a bulk capacitor at a power input, USB allows 10 µF at attach). Each number sits
-  in a rule's prose, where no program can compare it with another rule's.
+- **Electrically.** Rules overlap and contradict. H-1 asks for a bulk capacitor at a power input; USB allows 10 µF at
+  attach. Each number sits in a rule's prose, where no program can compare it with another rule's.
 - **Correctness.** One negative test proves that a rule can fire. It does not prove that the rule never fires wrongly.
-  The run against real projects covers the owner's boards – none of them has audio, mains or a guitar circuit.
-- **In use.** `edakit rules` prints 27.5 KB. The handbook repeats every check in a table by hand. Hints and reviewer
-  questions grow with every domain and reach every board. A session reads rules it does not need.
+- **In use.** `edakit rules` prints 27.5 KB. The handbook repeats every check by hand. Hints and reviewer questions
+  grow with every domain and reach every board. A code like G-8 says nothing without a lookup.
 
-## The proposal
+## The design
 
-Few engines, much data, a profile per project.
+Few engines, much data, a profile per project. Findings as the only interface.
 
-- A **check** is no longer a function per lesson. It is one of about ten **engines**, each applying one kind of typed
-  data: limits a part declares, requirements a part makes on its pins, the states an input must be defined in, the
-  paths a reversed or hazardous voltage can take, the distances a voltage class needs.
-- **New knowledge is a row of data with a source**, not code. A new finding code only for a new relation.
-- A project declares its **domains**. A domain is a profile – data, not code – that switches finding codes on, sets
-  their severity, names the part facts it requires, its hints, its reviewer questions and its reference circuits.
-- **The model sees findings, never rules.**
-- **Correctness is tested at the engine level:** reference circuits that pass clean, seeded faults that are found, and
-  an automatic mutation sweep that measures what the catalog misses.
+- Everything the checks compare is one of five things: a **quantity** (a voltage, a current, a distance), a **limit**
+  on it, a **requirement** a part makes on a pin, the **level** of an input in a state, or a **path** through the
+  circuit. About ten **engines** work on these five, and nothing else. An engine knows no MOSFET and no LED.
+- What makes a MOSFET a MOSFET is **data**: which quantities its model yields, which limits its entry declares, what it
+  requires on its gate. New knowledge is a row of data with a source. A new code only for a new relation.
+- A project declares its **domains**. A domain is a profile – data in edakit – that switches codes on, sets their
+  severity, names required part facts, hints, reviewer questions and, later, reference circuits.
+- **The model sees findings, never rules.** A finding carries code, stage, place, value against limit, source and fix.
 
-## 1. Engines
+## 1. Five things and their producers
 
-Illustrative mapping of today's checks; fixed when built.
+| Thing | Produced by | Consumed by |
+| --- | --- | --- |
+| quantity: `(place, name, value, stage, scenario)` – `C1.v`, `U1.3.i`, `R7.p`, `U2.tj`, `track(+5V).width_mm`, `J1.cc1.v` | the graph's declared ranges (stage G), the simulation (E), the geometry and the Gerber files (L, F) | LIMITS |
+| limit: `(kind or part, name, min, max, factor, source)` | parts entries (`ratings`), tables (IEC, IPC, USB, radio bands), the domain | LIMITS |
+| requirement: `(pin or role, what, params, source)` – a capacitor to ground within a range, a pull to a rail within a range, a series resistor, a diode across, a unique address on the bus, never grounded, a pair joined, a termination count | parts entries (`needs`), built-in defaults per kind and role | REQUIRES |
+| level: `(input, state) → high, low, driven, undefined` – states: reset, firmware not running, each scenario, each rail off | pin types, `strap`, `pull`, thresholds, the simulation | LEVELS |
+| path: reachability through pass-through classes – a reversed source, a supply, a hazardous domain, a pin to a connector | the graph with roles | PATHS |
 
-| Engine | Decides | Absorbs | Reads |
-| --- | --- | --- | --- |
-| STRUCT | the graph is well-formed and names what exists | G-1, G-2, P-1, P-6, P-9 | graph, parts entries |
-| SYNC | every artifact equals the graph and the plan | S-2, L-1, L-4, L-7, L-10, L-12, L-20, P-3, P-10, F-1, F-3, F-4, F-5 | schematic, PCB, plan, files |
-| LIMITS | every quantity stays within the limit its part or a table declares | G-3, G-8, G-17, G-24, G-25, E-2, E-3 (ranges), E-5, L-5, L-16 | declared ranges, simulation, geometry; `ratings`, tables |
-| LEVELS | every input is defined in every state – reset, firmware not running, each scenario, a rail off | G-4, G-5, G-12, E-3 (input levels) | pin types, `strap`, `pull`, thresholds |
-| REQUIRES | what a part requires on its pins is present in the circuit | G-6, G-11, G-13, G-14, G-18 | `needs` in parts entries, built-in defaults per kind and role |
-| PATHS | what a reversed, backfed or hazardous voltage reaches | G-10, G-16, H-8's matcher | pass-through sets, voltage domains |
-| SIM | the scenarios run and are complete | E-1, E-4 | sim.json |
-| GEOMETRY | copper, holes, print and distances on plan and Gerber files | L-2, L-3, L-8, L-9, L-11, L-13, L-14, L-15, L-17, L-18, L-19, P-7, P-8 | plan, geometry, Gerber files; distance classes |
-| FILES | the manufacturing files and sheets are complete and consistent | P-2, F-6 | gate run |
-| SOURCING | parts are identified, verified, stated and orderable | G-9, P-4, P-5, P-11, F-2 | parts entries, stock |
-| DOCS | documents and requirements quote the design | G-19 to G-23 | docs, requirements file |
+The engines join. LIMITS joins quantities with limits by place and name; it reports where the value is outside. It
+does not care whether the value came from a declared range or from ngspice – the finding says which (the stage).
+Kinds matter only in the producers (which quantities a MOSFET yields) and in the schema (which limits a MOSFET
+declares).
 
-**Finding codes.** Decided: today's IDs stay valid, and a new scheme may replace them where it makes sense. Proposed
-scheme: a code names its engine and its relation – `LIM.v` (a voltage above a limit), `LIM.i`, `LIM.p`, `LIM.t`,
-`LIM.band`, `REQ.missing` (a requirement a part makes is not met), `REQ.conflict`, `LVL.undefined` (an input without a
-level in a state), `LVL.contention`, `PATH.reverse`, `PATH.unfed`, `GEO.spacing`, `GEO.copper`, `SYNC.pcb` – about
-forty codes for today's 67 checks and the candidates together (estimate). A code says what kind of finding it is
-without a lookup, which serves the model as much as the user. Today's IDs become permanent aliases in the catalog, as
-the retired G-7 keeps its entry today: `edakit explain G-8` resolves to `LIM.v`, and `waive`, accepted warnings and the
-`rows` patterns of the requirements file accept both. The stage (P, G, E, S, L, F) is a property of the finding – where
-it was computed –, not of the code: LIMITS fires in stage G on declared ranges, in E on the simulation, in L on the
-geometry, and the gate's protocol still groups by stage. New knowledge of an existing relation is a row of data; a new
-code only for a new relation. Where a code of today maps to several relations (E-3 holds supply ranges, input levels
-and back-feed), the alias names them all. The exact vocabulary is fixed in step 1.
+## 2. Engines
 
-**One finding format**, so that every message says the same four things – where, measured against what, from which
-source, what to do:
+| Engine | Decides | Today's checks it replaces |
+| --- | --- | --- |
+| STRUCT | the graph is well-formed and names what exists | G-1, G-2, P-1, P-6, P-9 |
+| SYNC | every artifact equals the graph and the plan | S-2, L-1, L-4, L-7, L-10, L-12, L-20, P-3, P-10, F-1, F-3, F-4, F-5 |
+| LIMITS | every quantity within its limit | G-3, G-8, G-17, G-24, G-25, E-2, E-3 (ranges, back-feed), E-5 |
+| LEVELS | every input defined in every state, no two drivers fight | G-4, G-5, G-12, E-3 (input levels) |
+| REQUIRES | what a part requires on its pins is present and in range | G-6, G-11, G-13, G-14, G-18 |
+| PATHS | what a reversed, unfed or hazardous voltage reaches | G-10, G-16, H-8 |
+| SIM | the scenarios run and are complete | E-1, E-4 |
+| GEO | copper, holes, print, widths and distances on plan and Gerber files | L-2, L-3, L-5, L-8, L-9, L-11, L-13 to L-19, P-7, P-8 |
+| FILES | manufacturing files and sheets complete and consistent | P-2, F-6 |
+| PARTS | parts entries complete, verified, orderable | G-9, P-4, P-5, P-11, F-2 – and the coverage: a required fact missing |
+| DOCS | documents and requirements quote the design | G-19 to G-23 |
+| HINT | patterns that need judgement, as notes | H-1 to H-7, H-9 |
+
+Twelve engines; GEO is the largest and may split. Each is a module with its own tests (section 7).
+
+## 3. Codes and findings
+
+**Scheme.** A code is `ENGINE.relation`. It says what kind of finding it is, without a lookup. Draft vocabulary,
+fixed in build step 1:
+
+| Engine | Relations |
+| --- | --- |
+| STRUCT | `pin`, `net`, `name`, `ref`, `identity`, `purpose` |
+| SYNC | `schematic`, `pcb`, `footprint`, `plan`, `files`, `source` |
+| LIM | `v`, `i`, `p`, `t`, `band`, `range` (a supply outside its operating range) |
+| LVL | `undefined`, `boot`, `contention`, `threshold`, `direction` |
+| REQ | `missing`, `value`, `conflict`, `forbidden`, `address` |
+| PATH | `reverse`, `unfed`, `backfeed`, `exposed`, `hazard`, `isolation` |
+| SIM | `config`, `converge`, `state` |
+| GEO | `copper`, `spacing`, `width`, `ring`, `hole`, `loop`, `silk`, `drc` |
+| FILES | `set`, `order`, `sheet`, `manifest` |
+| PARTS | `verified`, `fact`, `stock`, `supplier`, `source` |
+| DOCS | `quote`, `ref`, `evidence`, `draft` |
+| HINT | `bulk`, `gate`, `debounce`, `inductive`, `hot_loop`, `lithium`, `esd`, `readback`, … |
+
+About 50 codes for today's 76 checks and hints and maker-coverage's candidates together (estimate). Today's IDs are
+retired without aliases (decided). A table old ID → new code goes into the handbook once, for reading old protocols.
+
+**Format.** Every finding, in every command and in the protocol:
 
 ```text
-LIM.v  G  C1: 7.5 V across, rated 6.3 V (needs × 1.5 = 9.5 V)   ratings.v_max of C439782 (datasheet p. 2)   → a 16 V part
+LIM.v    G  C1: 7.5 V across, rated 6.3 V, needs × 1.5 = 9.5 V     ratings.v_max of C439782 (datasheet p. 2)   → a 16 V part
+REQ.missing  G  U2.16 (VDD): no capacitor to ground within 100 nF–10 µF   needs of C90107 (datasheet 9.1)             → 100 nF at the pin
+LVL.boot     G  U1.12 (GPIO12): pulled high at reset, must be low           strap of ESP32-WROOM-32 (datasheet 2.4)     → another pin, or no pull
 ```
 
-Code, stage, location, measured against what, source, fix – the same six for every finding.
+Code, stage, place, value against what, source, fix. Grouped by code with a count; the first five per code; the rest
+in a file.
 
-## 2. Data
+**Severity** is set by the profile, not by the code: `error` (blocks `edakit check`), `warning` (the gate wants it
+accepted), `note` (information), `pending` (blocks the release and cannot be accepted – an unverified part, a missing
+stock snapshot). A new code starts as `warning` in its domain and becomes `error` by a change of the domain file.
 
-Knowledge lives in three places, each with a source per value.
+**Acceptance** is one mechanism for everything a person has seen and answered: `accept` with a reason, keyed by code
+and, where needed, by name – `"accept": {"LIM.v": "7.5 V only in the fault case servo-stalled (D-3)"}`. Errors and
+notes are accepted in the graph, on the net or component (circuit scope: part of the circuit hash, renews M-1).
+Warnings are accepted in the sign-off file (release scope), as today. `waive`, `hints` and `accepted_warnings` go.
+
+## 4. Data
 
 | Place | Content | Checked by |
 | --- | --- | --- |
-| parts entry | ratings, thresholds, `strap`, `pull`, `needs` (what the part requires on a pin: a capacitor to ground in a range, a pull in a range, a series resistor, a unique address on its bus, a pin never grounded, a pair joined, a termination count) | a schema per kind: field names with units (`_v`, `_a`, `_ohm`, `_f`), ranges, required fields per domain – `edakit part lint` |
-| tables | IEC 60664-1 distances, IPC-2221 widths and spacings, USB and Type-C numbers, EU radio bands | one file each with its source; LIMITS and GEOMETRY read them |
-| built-in defaults | what every part of a kind or role requires – decoupling per `power_in`, pull-ups per I2C line, a diode per coil, Rd per CC pin: today G-6, G-11, G-13, G-14 | the same `needs` vocabulary, so a parts entry can refine or override them |
+| parts entry | `ratings` (limits), `params` (values for the models), per pin `type`, `role`, `strap`, `pull`, thresholds, `needs`; every value with its source | a schema per kind: field names carry their unit (`_v`, `_a`, `_w`, `_ohm`, `_f`, `_h`, `_c`, `_hz`, `_dbm`, `_mm`), ranges, required fields per domain – `edakit part lint` |
+| tables | IEC 60664-1 distances, IPC-2221 widths and spacings, USB and Type-C numbers, EU radio bands, derating | one file each with its source and tag |
+| defaults | what every part of a kind or role requires: decoupling per `power_in`, pull-ups per I2C line, a diode per coil, Rd per CC pin, a bulk capacitor at a power input | the same `needs` vocabulary; an entry refines or overrides a default |
+| the graph | parts, nets, `accept`, `layout`, `purpose`; settings that are facts move to pins and parts (`reverse_protect` becomes a role of the connector pin) | STRUCT |
 
-Two consequences for consistency:
+Consequences:
 
-- **A contradiction becomes a data conflict, and data conflicts are detectable.** H-1 against USB's 10 µF becomes
-  one requirement on a VBUS input with a minimum and a maximum; a range is non-empty or it is not. Two rules on one
-  quantity become one limit with two sources, and the lint names the second.
-- **A number has one home.** It stands in the entry or the table, once, with its source and tag (r, x, v as in
-  maker-coverage). A value tagged x or v does not pass `part lint` for a release.
+- **A contradiction becomes a data conflict, and data conflicts are detectable.** H-1 against USB's 10 µF becomes one
+  requirement on a VBUS input with a minimum and a maximum; the lint rejects an empty range (`REQ.conflict`). Two
+  limits on one quantity with different values from two sources: the lint names both.
+- **A number has one home**, with its source and tag – r (read), x (extract), v (to verify). A value tagged x or v
+  blocks the release of the part's project (`PARTS.verified`) until read.
+- **The data burden is real.** Mitigations: templates per kind ask only for the kind's fields; `edakit part import`
+  takes what the library has; a library of checked entries for the parts makers use most (maker-coverage PF); the
+  second check of the electrical reviewer (M-1), as today.
 
-The data burden is real: more fields per part, each to sign (G-9). Against it: templates per kind that ask only for
-the kind's fields, `edakit part import` from the library where it has the value, a library of checked entries for the
-parts makers use most (maker-coverage PF), and the second check of the electrical reviewer (M-1) as today.
-
-## 3. Profiles: domains
+## 5. Domains
 
 ```toml
 # edakit.toml of a project
@@ -105,122 +140,117 @@ domains = ["usb", "radio"]        # core is always on
 ```
 
 ```toml
-# edakit/domains/audio.toml – one file per domain, data; domain files live in edakit only (decided)
+# edakit/domains/audio.toml – domain files live in edakit only (decided)
 [domain]
 name = "audio"
 about = "amplifiers, speakers, line and instrument inputs"
-suggested_by = ["speaker", "opamp"]        # kinds in the graph that suggest the domain
+suggested_by = ["speaker", "opamp"]          # kinds in the graph that suggest the domain
 
-[severity]                                  # finding codes the domain switches on, and how hard
-CK-8 = "error"                              # bridge-tied outputs
-CK-27 = "warning"                           # input impedance against the source
-CK-30 = "warning"                           # DC where signals are switched
+[severity]
+"REQ.forbidden" = "error"                    # a bridge-tied output grounded
+"LIM.range" = "warning"
+"LVL.undefined" = "warning"                  # an analog input without a DC path
 
-[facts]                                     # part facts the domain requires; missing ones are "not checked"
-opamp = ["ratings.vdd_op_min", "ratings.vdd_op_max", "params.vicm_v", "params.vout_swing_v"]
+[facts]                                      # required per kind; a missing one is PARTS.fact: "not checked"
+opamp = ["ratings.vdd_op_min_v", "ratings.vdd_op_max_v", "params.vicm_v", "params.vout_swing_v"]
 speaker = ["params.impedance_ohm", "ratings.p_max_w"]
 
 [hints]
-apply = ["HT-8", "HT-13", "HT-16", "HT-17"]
+apply = ["HINT.ground_loop", "HINT.class_d_leads", "HINT.audio_band_switching"]
 
 [review]
 electrical = ["ground loops through USB or mains earth", "RF rectified at inputs on a board with a radio"]
 
-[fixtures]
-clean = ["tests/fixtures/pam8403-speaker", "tests/fixtures/tube-screamer"]
+[fixtures]                                   # reference circuits, after the integration (decided)
+clean = []
 ```
 
-- **Core** holds what every board needs: STRUCT, SYNC, the LIMITS and LEVELS of the basic kinds, SOURCING, FILES.
+- **Core** holds what every board needs: STRUCT, SYNC, LIMITS and LEVELS of the basic kinds, PARTS, FILES, DOCS.
 - **Purpose** (private, gift, sale) is a dimension of the profile, as P-11, G-24 and G-25 grade by it today.
-- **Severity is profile, not code.** A new code starts as a warning in its domain and becomes an error by a change
-  of the domain file – after it has run on the reference circuits and on boards without a false alarm.
-- **Suggested domains.** A speaker in the graph with `audio` off gives one note: "parts of domain audio present,
-  domain not enabled". No silent gap, no forced noise.
-- `edakit rules` lists the engines and, per enabled domain, the codes; `edakit hints` only the domain's hints; the
-  reviewers get only the domain's questions.
+- **Suggested domains.** A speaker in the graph with `audio` off gives one note. No silent gap, no forced noise.
+- `edakit rules` lists the engines and the enabled codes with their titles; `edakit hints` is gone – hints are
+  findings; the reviewers get the enabled domains' questions.
 
-## 4. Testing consistency and correctness
+## 6. One catalog
 
-| Test | What it proves | Today |
-| --- | --- | --- |
-| catalog lint | every code has engine, title, fix; every limit and table has a source tagged r; ranges non-empty; severity files name existing codes | `tests/test_rules.py` checks that every ID has an entry |
-| reference circuits per domain pass clean | no false alarm on a known-good design | the example `led-bar`, and the owner's two boards by hand |
-| seeded faults | every code is found at least once per domain it applies to – "seen red once", per domain | one negative test per check |
-| overlap | every seeded fault produces exactly the declared code or codes | – |
-| mutation sweep | generated faults on every fixture – remove each capacitor, cut each pull, reverse each diode, swap two pins of a part, a value × 10, a net joined with its neighbour; the report lists what no code caught, per operator and domain: the catalog's own coverage number | – |
-| numbers traced | a limit without a source tagged r does not merge | the catalog's `sources` by hand |
+The catalog is the single source: codes (engine, relation, title, why, fix), domain files, tables, schemas. Generated
+from it, never written by hand: the explanations below `edakit check`, `edakit explain <code>`, the handbook's check
+tables (today chapters 3.3, 5.3, 8.1) and its field reference (today 4.1), the reviewers' question lists, the
+protocol's section "The rules behind the findings". The G-19 mechanism, which holds documents to the design data,
+holds the handbook to the catalog.
 
-The reference circuits are well-known open designs as edakit graphs in the test fixtures (maker-coverage FT-21): an
-ESP32 DevKitC, a WLED controller, a QMK keyboard, a Tube Screamer, a Fuzz Face, a relay board with an HLK-PM01, a LiPo
-charger. They also serve the eval with Sonnet (section 5). Decided: they come after the restructuring and after the
-integration of maker-coverage's candidates. Until then a new code is tested as today – a seeded fault in `led-bar`, the
-run on the owner's projects – and starts as a warning in its domain; the reference circuits and the mutation sweep then
-validate the whole catalog at once, and a code that proves wrong there is corrected before it becomes an error.
+## 7. Tests
 
-## 5. The model
+| Test | Proves |
+| --- | --- |
+| engine tests | each engine on small synthetic inputs: every relation fires on its fault and on nothing else; property tests on LIMITS (a value inside its limit never fires, at random values and limits) and PATHS (a pass-through set never leaks) |
+| seeded faults | every code is seen red once on `led-bar`, as today – per domain once the domain has a fixture |
+| clean fixtures | `led-bar` and the bell pass clean under their domains; the owner's reference project by hand |
+| parity | during the rebuild, old and new run on `led-bar` and the bell and yield the same findings under the map old ID → code; the old code is deleted when parity holds |
+| catalog lint | every code has engine, title, fix; every limit, default and table row a source tagged r; every range non-empty; every domain file names existing codes and schema fields |
+| overlap | every seeded fault produces exactly the declared code or codes |
+| later | reference circuits per domain, a seeded-fault suite per domain, a mutation sweep that reports what no code catches (maker-coverage FT-21) – after the integration of the candidates (decided) |
 
-- **Findings are the interface.** `edakit check` prints domains, one coverage line ("not checked: 2 parts without
-  thresholds – `--coverage`"), the findings grouped by code with a count and the first five, and the summary. Details
-  go to a file. No command prints more than a screen by default.
-- **Rules by code.** `edakit rules` is about 2 KB (engines and the enabled codes, title only); `edakit explain G-8` or
-  `edakit explain <finding>` gives rule, why, fix, source.
-- **No rule knowledge in prompts.** Skills say: run, read the findings, fix, explain by code. Reviewer questions come
-  from the domain files, not from a growing prose list.
-- **One source for the handbook.** The check tables of chapters 3, 5 and 8 are generated from the catalog through
-  `edakit docs` blocks – the mechanism G-19 already holds documents to.
-- **Short reads.** Skills with one task and short sentences (the plugin's skills average 33 words per sentence today);
-  the handbook by section; the graph by query (`edakit graph show U1`) or in the compact form of circuit-language.md,
-  not 65 KB whole.
-- **Measured.** Typical tasks on the reference circuits – add an LED, swap a part, find a seeded fault, review a board
-  – run with Sonnet and with Opus on every change to skills, prompts, catalog and domain files (maker-coverage FT-24).
+## 8. The model
 
-## 6. What stays
+- Findings are the interface. `edakit check` prints the enabled domains, one coverage line ("not checked: 2 parts
+  without thresholds – `--coverage`"), the findings grouped by code, the summary. No command prints more than a screen
+  by default.
+- Codes explain themselves; `edakit explain` gives rule, why, fix and source for one code, about 1 KB.
+- No rule knowledge in prompts. Skills say: run, read the findings, fix, explain by code. Reviewer questions come from
+  the domain files.
+- Short reads: skills with one task and short sentences (today 33 words per sentence on average); the handbook by
+  section; the graph by query (`edakit graph show U1`) or in the compact form of circuit-language.md.
+- Measured: typical tasks run with Sonnet and with Opus on every change to skills, prompts, catalog and domain files –
+  a baseline on `led-bar` and the bell first, the full suite on the reference circuits later (maker-coverage FT-24).
 
-The proposal loop (issue, triage, add-rule), the negative test per code, waivers with a reason on net or component,
-accepted warnings in the sign-off file, the hashes and the sign-offs, the stable IDs, the gate's stages. add-rule's
-step 5 runs against the reference circuits of the domain as well as against the projects at hand.
+## 9. The proposal loop
 
-## 7. Migration, each step shippable
+Stays: an issue sealed by `edakit proposal`, the triage, one pull request. The kinds change with the design: `fact` (a
+row of data – a part fact, a default, a table row), `relation` (a new code), `domain` (a profile change: severity, a
+required fact, a question), `block`, `retire`. Most of maker-coverage's candidates are facts and domain changes; the
+triage's question "decidable by a program?" becomes "which engine, which data?".
 
-Order as proposed; the owner has no preference except that the reference circuits come last.
+## 10. Build plan
+
+Not a migration: a rebuild beside the old code, switched over on parity, the old deleted. Each step shippable.
 
 | Step | Content | Size (estimate) |
 | --- | --- | --- |
-| 1 | the code scheme: `engine` and `code` per entry in `rules.json`, today's IDs as aliases; findings in the format of section 1; `edakit rules` grouped and short; `edakit explain` | small to medium |
-| 2 | parts schema per kind; `edakit part lint`; the coverage line ("not checked: …") | medium |
-| 3 | `[project] domains`; domain files `core`, `usb`, `radio` in edakit from today's checks; severity from the profile; required facts per domain (needs step 2's field names); suggested domains; hints and reviewer questions filtered | medium |
-| 4 | the `needs` vocabulary; REQUIRES with built-in defaults equal to G-6, G-11, G-13, G-14 – no behaviour changes | medium to large |
-| 5 | handbook check tables generated from the catalog | small to medium |
+| 1 | the data model: catalog format, code scheme and vocabulary, finding format, severities and `accept`; parts schema per kind with unit suffixes; `edakit part lint`; tables as files; `edakit rules` and `edakit explain` | medium |
+| 2 | LIMITS, LEVELS, REQUIRES, PATHS, STRUCT, SIM, HINT as modules beside `checks.py` and `sim/run.py`; the producers of quantities; parity test on `led-bar` and the bell | large |
+| 3 | domain files `core`, `usb`, `radio`; `[project] domains`; severity from the profile; suggested domains; reviewers read the domain files | medium |
+| 4 | SYNC, GEO, FILES, PARTS, DOCS regrouped – mostly naming and the finding format | medium |
+| 5 | switch-over: the old checks deleted, the owner's projects converted once (graph keys, parts fields, waivers), handbook tables and field reference generated, chapter 14 rewritten | medium |
 | 6 | maker-coverage's candidates enter as data per domain, new codes as warnings – one domain at a time | per domain |
 | 7 | reference circuits, seeded-fault suite per domain, overlap test, mutation sweep | large, incremental |
-| 8 | eval with Sonnet on the reference circuits; a baseline on `led-bar` and the bell can run earlier | medium |
+| 8 | eval with Sonnet on the reference circuits | medium |
 
-Steps 1 to 3 change no finding on any board. Step 2 before step 3 because the domain files name the schema's fields.
-Step 5 early because it is cheap and stops the handbook's tables from drifting during the restructuring.
+Steps 1 to 4 change no finding on any board; the parity test says so. Step 5 is the cut.
 
-## 8. Costs and risks
+## 11. Costs and risks
 
-- **Generic engines, less specific messages** – unless every finding carries field, value, source and fix. The
-  format in section 1 is the condition, not an option.
-- **More data per part.** Section 2 names the mitigations; the burden does not go away.
-- **A configuration layer.** Domains must default right: core on, everything else off, suggestions from the kinds.
-- **Migration touches 983 tests.** Grouping instead of renumbering keeps most of them; step 4 rewrites the tests of
-  four checks.
+- **Generic engines, less specific messages** – unless every finding carries value, limit, source and fix. The format
+  of section 3 is the condition, not an option; the engine tests assert it.
+- **More data per part** (section 4). The burden does not go away; the templates and the library reduce it.
+- **A configuration layer.** Core on, everything else off, suggestions from the kinds. Wrong defaults make silent
+  gaps or noise; the suggestion note is the guard.
+- **A rebuild of 23,900 lines' core.** The parity test and the per-engine tests are the safety net; 983 tests today,
+  most of them rewritten against engines.
 - **An engine too generic for an exception** – G-10's rule that a PMOS blocks only with source and gate outside. The
-  engines carry small vocabularies, and exceptions are data (pass-through sets, roles), not code per case.
-- **Estimates.** The code counts and step sizes are judgement; the mutation sweep's value shows only once it runs.
+  engines carry small vocabularies; exceptions are data (pass-through classes, roles), not code per case.
+- **Estimates.** Code counts and step sizes are judgement; the mutation sweep's value shows only once it runs.
 
 ## Decisions
 
 Taken by the owner on 2026-10-30:
 
-1. **IDs.** Today's IDs stay valid; a new ID scheme and methodology are welcome where they make sense. The scheme of
-   section 1 (`ENGINE.relation`, old IDs as permanent aliases, the stage as a property of the finding) is the proposal
-   for it – to be confirmed with step 1.
-2. **Domains** live in edakit only; a project's own profile is not foreseen. To be re-evaluated if a need arises.
-3. **Reference circuits** come after the restructuring and after the integration of maker-coverage's candidates (steps
-   7 and 8 of the migration).
-4. **Order:** no preference beyond 3; the order of section 7 stands until something speaks against it.
+1. **IDs:** a new scheme and methodology – `ENGINE.relation` (section 3); no aliases, no regard for existing
+   protocols and waivers; the owner's projects are converted once.
+2. **Domains** live in edakit only. To be re-evaluated if a need arises.
+3. **Reference circuits** come after the restructuring and after the integration of maker-coverage's candidates.
+4. **Order:** no preference beyond 3; the plan of section 10 stands until something speaks against it.
+5. **Branch:** built on this branch (`ccr-f80e23dc-ak6668`), after an explicit go.
 
-Still open: the relation vocabulary of the codes (step 1), the mutation sweep in CI on every change or on demand (step
-7), and which published designs become the reference circuits (step 7).
+Still open, to settle in step 1: the exact relation vocabulary; whether `ratings` and `params` keep their names or
+become `limits` and `values`; the mutation sweep in CI or on demand (step 7).
