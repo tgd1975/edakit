@@ -11,7 +11,7 @@ import pytest
 
 from helpers import check, executed
 
-from edakit import checks, cli, config, part
+from edakit import cli, config, part
 from edakit.design import Design
 from edakit.release import gate
 from edakit.sim import run as simrun

@@ -1,7 +1,6 @@
 """The hints (engine HINT, edakit/engines/hint.py): what matches the graph, what is taken care of, the notes of the
 parts entries; and how the protocol names and explains a finding by its code."""
 
-import argparse
 import json
 
 from helpers import check
@@ -52,7 +51,6 @@ def test_hints_of_the_example(project):
 def test_read_back_from_a_chain(project):
     from test_sim import read_back
     read_back(project)                            # U2's SDO to GP7; the MCU drives U2's SDI, CLK, LE and OE
-    cfg = project.config()
     assert matching(project)["HINT.readback"] == ["U2 SDO to U1 GP7"]
     part = project.part("C90107")
     part["pins"]["14"].update(out_edge="rising", t_pd_ns=[12, 30])     # TI SLVS695D 7.7, VDD 3 V: tPLH4/tPHL4
@@ -75,7 +73,6 @@ def test_read_back_through_a_series_resistor(project):
     project.net(g, "LED_SDO")["pins"].append("R3.1")
     g["graph"]["nets"].append({"name": "GP7_IN", "pins": ["R3.2", "U1.10"], "v": [0, 3.4]})
     project.save_graph(g)
-    cfg = project.config()
     assert matching(project)["HINT.readback"] == ["U2 SDO to U1 GP7"]
 
 
@@ -86,7 +83,6 @@ def test_no_read_back_without_the_mcu_driving_the_part(project):
     for num in ("2", "3", "4", "13"):             # SDI, CLK, LE, OE: no input the MCU drives – an output, not a chain
         part["pins"][num]["type"] = "passive"
     project.save_part("C90107", part)
-    cfg = project.config()
     assert "HINT.readback" not in matching(project)
 
 

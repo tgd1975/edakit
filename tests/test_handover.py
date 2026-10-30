@@ -6,7 +6,7 @@ from types import SimpleNamespace
 
 from helpers import check
 
-from edakit import checks, cli, handover, pcb
+from edakit import cli, handover, pcb
 from edakit.design import Design
 from edakit.handover import Requirement
 from edakit.release import fab

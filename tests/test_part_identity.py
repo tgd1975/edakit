@@ -8,7 +8,7 @@ import pytest
 
 from helpers import check
 
-from edakit import circuit, checks
+from edakit import circuit
 from edakit.design import Design
 
 

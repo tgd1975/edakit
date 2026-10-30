@@ -10,7 +10,6 @@ import pytest
 
 from helpers import check
 
-from edakit import checks
 from edakit.design import Design
 from edakit.release import gate
 

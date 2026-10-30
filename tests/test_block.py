@@ -8,7 +8,7 @@ import pytest
 
 from helpers import check
 
-from edakit import block, catalog, checks, engines, schematic_draw
+from edakit import block, catalog, engines, schematic_draw
 from edakit.engines import hint
 from edakit.design import Design
 from edakit.sim import run as simrun

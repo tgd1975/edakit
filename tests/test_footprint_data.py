@@ -11,7 +11,7 @@ import pytest
 
 from helpers import check, executed
 
-from edakit import checks, cli, eda, footprint, pcb, scripts
+from edakit import cli, eda, footprint, pcb, scripts
 from edakit.design import Design
 from edakit.release import gate
 

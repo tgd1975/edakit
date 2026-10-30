@@ -719,7 +719,7 @@ def test_route_check_finds_pads_too_close_before_anything_is_written(tmp_path, c
     out = capsys.readouterr().out
     assert "0 pairs closer than the clearance 6.5 mil, 1 waived (GEO.spacing)" in out
     assert "SMD pads of different parts on TOP and BOTTOM: 1 pairs closer than the paste gap 0.4 mm" in out
-    waive(tmp_path, **{"GEO.spacing": "close on purpose", "GEO.spacing": "close on purpose"})
+    waive(tmp_path, **{"GEO.spacing:clearance": "close on purpose", "GEO.spacing:paste": "close on purpose"})
     assert route.main(cfg, args) == 0                                              # waived in the graph
     assert "0 pairs closer than the paste gap 0.4 mm, 1 waived (GEO.spacing)" in capsys.readouterr().out
 

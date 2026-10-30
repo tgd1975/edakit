@@ -9,7 +9,7 @@ import pytest
 
 from helpers import check
 
-from edakit import checks, cli, part, pcb
+from edakit import cli, part, pcb
 from edakit.design import Design
 from edakit.release import gate
 

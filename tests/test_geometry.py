@@ -8,7 +8,7 @@ import shutil
 
 from helpers import check
 
-from edakit import checks, cli, config, pcb, scripts
+from edakit import cli, config, pcb, scripts
 from edakit.design import Design
 from edakit.release import gate
 

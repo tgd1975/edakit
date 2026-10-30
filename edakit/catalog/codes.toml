@@ -58,6 +58,9 @@ rule = "Every designator and every net name occurs once in the graph."
 why = "Everything after the graph is generated from it; two parts or nets of one name make every later step pick one of them."
 fix = "Rename one of the two."
 severity = "error"
+details = [
+  "structure: unique designators and nets, every pin in exactly one net or `nc`, nets with ≥ 2 pins, a voltage range per net, a known board per part, `bom: false` on a bought board, nets across boards only through a cable; the names in `layout` and `locks`, the `ground` net, `purpose.use` – finds e.g.: a forgotten pin, a typo in a pin reference",
+]
 replaces = ["G-1"]
 sources = [
   "edakit handbook 3.1 and 3.2",
@@ -69,6 +72,9 @@ rule = "Every pin of a part is in exactly one net or listed in the part's nc, a 
 why = "A pin that is neither connected nor declared open is usually forgotten; a pin in two nets shorts them."
 fix = "Connect the pin, add it to nc when it is meant to stay open, or correct the pin reference."
 severity = "error"
+details = [
+  "structure: unique designators and nets, every pin in exactly one net or `nc`, nets with ≥ 2 pins, a voltage range per net, a known board per part, `bom: false` on a bought board, nets across boards only through a cable; the names in `layout` and `locks`, the `ground` net, `purpose.use` – finds e.g.: a forgotten pin, a typo in a pin reference",
+]
 replaces = ["G-1"]
 sources = [
   "edakit handbook 3.1 and 3.2",
@@ -80,6 +86,9 @@ rule = "Every net has at least two pins and a voltage range v = [min, max]; a ne
 why = "A net with one pin is a typo or an unfinished connection; a net without a voltage range cannot be compared with pin limits; a net across boards without a cable has no copper."
 fix = "Complete the net, give it its range over all operating states, or add the cable."
 severity = "error"
+details = [
+  "structure: unique designators and nets, every pin in exactly one net or `nc`, nets with ≥ 2 pins, a voltage range per net, a known board per part, `bom: false` on a bought board, nets across boards only through a cable; the names in `layout` and `locks`, the `ground` net, `purpose.use` – finds e.g.: a forgotten pin, a typo in a pin reference",
+]
 replaces = ["G-1"]
 sources = [
   "edakit handbook 3.1 and 3.2",
@@ -91,6 +100,9 @@ rule = "Every part is on a board of edakit.toml [boards]; a part on a bought boa
 why = "Plan, BOM and placement are per board; a part on no board is assembled nowhere, one on a bought board by nobody."
 fix = "Set board, or bom: false for a part on a bought board."
 severity = "error"
+details = [
+  "structure: unique designators and nets, every pin in exactly one net or `nc`, nets with ≥ 2 pins, a voltage range per net, a known board per part, `bom: false` on a bought board, nets across boards only through a cable; the names in `layout` and `locks`, the `ground` net, `purpose.use` – finds e.g.: a forgotten pin, a typo in a pin reference",
+]
 replaces = ["G-1"]
 sources = [
   "edakit handbook 3.1 and 3.2",
@@ -102,6 +114,11 @@ rule = "Every name a setting of the graph uses – ground, grounds, locks, a rev
 why = "A setting that names a missing part checks nothing and says so nowhere."
 fix = "Correct the name, or remove the setting."
 severity = "error"
+details = [
+  "structure: unique designators and nets, every pin in exactly one net or `nc`, nets with ≥ 2 pins, a voltage range per net, a known board per part, `bom: false` on a bought board, nets across boards only through a cable; the names in `layout` and `locks`, the `ground` net, `purpose.use` – finds e.g.: a forgotten pin, a typo in a pin reference",
+  "ground and supply pins: every `ground` pin on the ground net (or one joined to it by a 0 Ω bridge or an inductor, or in `grounds`); every `power_in` pin on a net that a supply reaches – a `power_output` pin, a battery holder, a connector with a `vbus` pin or in `\"source\": \"reversible\"` on the component, a simulation source – directly or through fuses, switches, connectors, inductors, MOSFETs, resistors up to 100 Ω and diodes in forward direction – finds e.g.: a rail split by a typo in its name, a ground pin on a net of its own, VDD swapped with a signal",
+  "transmitter in the EU bands: every range a part transmits in (`compliance.radio` `bands_mhz`, 4.1) lies within an EU licence-exempt band – 433.05–434.79, 863–870, 2400–2483.5, 5150–5350 or 5470–5725 MHz; where `purpose.radio` (3.1) states how the firmware uses the radio – `\"off\"`, or the bands it keeps, each within the entry's `bands_mhz` – the stated bands count. A part none of whose bands reaches into an EU band is an error – no firmware makes it comply –, unless `purpose.radio` keeps it off; a use edakit does not list (NFC at 13.56 MHz, a mobile network under the operator's licence) gets `accept` on the component with its allocation. Any other range beyond the EU bands is the firmware's to keep, graded by `purpose.use` (8.1): a warning for a board that is sold (`\"sale\"`), information for one built for oneself or given away, or without a purpose: `U1: 2412–2484 MHz (…) reaches beyond the EU band 2400–2483.5 MHz – the firmware must keep to 2400–2483.5 MHz (for Wi-Fi: channels 1–13)`. `purpose.radio` is optional; a statement within the EU bands ends the message, one that names no part with bands, a band the part lacks or a wrong shape is an error (chapter 15 – support, not legal advice) – finds e.g.: an ESP32 whose bands reach Wi-Fi channel 14 (2484 MHz), a LoRa module for 902–928 MHz – both passed `edakit check` without a word",
+]
 replaces = ["G-1", "G-16", "G-25"]
 sources = [
   "edakit handbook 3.1 and 3.2",
@@ -114,6 +131,10 @@ rule = "The graph states purpose.use – private, gift or sale – and purpose.r
 why = "Severities follow the purpose (the profile), and the regulatory review (M-6) starts there."
 fix = "Write purpose.use; correct purpose.radio to {\"U1\": \"off\"} or {\"U1\": {\"bands_mhz\": [[from, to]], \"max_dbm\": …}}."
 severity = "error"
+details = [
+  "structure: unique designators and nets, every pin in exactly one net or `nc`, nets with ≥ 2 pins, a voltage range per net, a known board per part, `bom: false` on a bought board, nets across boards only through a cable; the names in `layout` and `locks`, the `ground` net, `purpose.use` – finds e.g.: a forgotten pin, a typo in a pin reference",
+  "transmitter in the EU bands: every range a part transmits in (`compliance.radio` `bands_mhz`, 4.1) lies within an EU licence-exempt band – 433.05–434.79, 863–870, 2400–2483.5, 5150–5350 or 5470–5725 MHz; where `purpose.radio` (3.1) states how the firmware uses the radio – `\"off\"`, or the bands it keeps, each within the entry's `bands_mhz` – the stated bands count. A part none of whose bands reaches into an EU band is an error – no firmware makes it comply –, unless `purpose.radio` keeps it off; a use edakit does not list (NFC at 13.56 MHz, a mobile network under the operator's licence) gets `accept` on the component with its allocation. Any other range beyond the EU bands is the firmware's to keep, graded by `purpose.use` (8.1): a warning for a board that is sold (`\"sale\"`), information for one built for oneself or given away, or without a purpose: `U1: 2412–2484 MHz (…) reaches beyond the EU band 2400–2483.5 MHz – the firmware must keep to 2400–2483.5 MHz (for Wi-Fi: channels 1–13)`. `purpose.radio` is optional; a statement within the EU bands ends the message, one that names no part with bands, a band the part lacks or a wrong shape is an error (chapter 15 – support, not legal advice) – finds e.g.: an ESP32 whose bands reach Wi-Fi channel 14 (2484 MHz), a LoRa module for 902–928 MHz – both passed `edakit check` without a word",
+]
 replaces = ["G-1", "G-25"]
 sources = [
   "edakit handbook 3.1 and 3.2",
@@ -126,6 +147,9 @@ rule = "Every pin in locks.pins is on its net, and a pin table in a document (lo
 why = "Firmware and hardware change in different files, often in different sessions. A GPIO that moved compiles fine and fails on the board."
 fix = "Change graph, firmware pin table and locks in one commit; regenerate generated tables."
 severity = "error"
+details = [
+  "pin locks: pins the firmware relies on are on the expected nets (`locks.pins`); optionally a pin table in a Markdown document equals the graph (`locks.doc_pin_table`) – finds e.g.: firmware and hardware disagree",
+]
 replaces = ["G-2"]
 sources = [
   "edakit handbook 3.3",
@@ -148,6 +172,9 @@ rule = "Every part with an LCSC number or a part number has a parts entry, its p
 why = "Checks, simulation, schematic and BOM all read the parts entry. A shifted pin number or a missing entry makes them reason about another part than the one assembled."
 fix = "Create the entry (part-search skill); edakit part import <LCSC> reads pins from the library symbol."
 severity = "error"
+details = [
+  "graph pins (number and name) = parts entry; an entry exists for every LCSC number; no supply pin marked `nc`; with the library's symbol cached by `edakit part import`, graph pins = that symbol (case and blanks ignored, as SYNC.schematic; `accept` on the component) – not where the entry's footprint data builds the copy's symbol as a box (`\"symbol\": \"box\"`, 4.5): the carrier's library symbol is not the copy's – finds e.g.: a wrong part number, pins shifted by one, an LED whose pin 1 is the cathode",
+]
 replaces = ["P-1"]
 sources = [
   "edakit handbook 3.2 and 4.1",
@@ -159,6 +186,9 @@ rule = "A component names the part of its entry: the entry's lcsc is its file na
 why = "A wrong LCSC number with the right value text gets the wrong part assembled while every check reasons about the entry."
 fix = "Correct the component's lcsc, part, value or type, or the entry."
 severity = "error"
+details = [
+  "part identity: the component and its parts entry name the same part – the entry's `lcsc` is its file name; the component's `lcsc` is no `C99…` user-library number (unless `bom: false`); its `part` names the entry's `mpn` (remarks in parentheses or after `;` left out, case ignored, a manufacturer before it allowed; a `part` that starts with a value, \"330 Ω 0805\", is compared as that value); its `value` reads as the entry's `value_ohm` / `value_f` / `value_h` within 1 % (\"4k7\", \"100nF\", \"2R2\"); its `type` fits the entry's `kind` (microcontroller, regulator: ic or module; transistor: npn, pnp, nmos, pmos; led: led, led_rgb; switch: switch, dip_switch; audio: buzzer; otherwise the same word); `accept` on the component. A designator prefix against the kind (R, C, L, D, Q, U, J, SW, F, BT, BZ, K, TP) is a warning – finds e.g.: C25789 written for a 74HC165 (a 464 kΩ resistor), R2 \"1k\" on a 10 kΩ entry, an LED that came in as U1",
+]
 replaces = ["P-6"]
 sources = [
   "edakit handbook 3.1 (component fields type, lcsc, part, value), 4.1 (entry fields, kind, value parameters) and 4.2 (exact match only, C99… user libraries)",
@@ -171,6 +201,9 @@ rule = "The designator's letters fit the kind of its entry (R resistor, C capaci
 why = "Readers of schematic and board find a part by its letters; a Q that is a diode misleads assembly and review."
 fix = "Rename the part, or accept the code with the reason."
 severity = "warning"
+details = [
+  "part identity: the component and its parts entry name the same part – the entry's `lcsc` is its file name; the component's `lcsc` is no `C99…` user-library number (unless `bom: false`); its `part` names the entry's `mpn` (remarks in parentheses or after `;` left out, case ignored, a manufacturer before it allowed; a `part` that starts with a value, \"330 Ω 0805\", is compared as that value); its `value` reads as the entry's `value_ohm` / `value_f` / `value_h` within 1 % (\"4k7\", \"100nF\", \"2R2\"); its `type` fits the entry's `kind` (microcontroller, regulator: ic or module; transistor: npn, pnp, nmos, pmos; led: led, led_rgb; switch: switch, dip_switch; audio: buzzer; otherwise the same word); `accept` on the component. A designator prefix against the kind (R, C, L, D, Q, U, J, SW, F, BT, BZ, K, TP) is a warning – finds e.g.: C25789 written for a 74HC165 (a 464 kΩ resistor), R2 \"1k\" on a 10 kΩ entry, an LED that came in as U1",
+]
 replaces = ["P-6"]
 sources = [
   "edakit handbook 3.1 (component fields type, lcsc, part, value), 4.1 (entry fields, kind, value parameters) and 4.2 (exact match only, C99… user libraries)",
@@ -183,6 +216,12 @@ rule = "Every voltage a part sees stays within the limit of its entry: across a 
 why = "A part at its absolute maximum is at the edge of failure; ceramic capacitors lose capacitance and lifetime near their rated voltage, an input beyond its supply conducts through its protection diodes. The margin covers what a DC view does not see."
 fix = "A part with a higher rating, level shifting at a pin, or a correct (less pessimistic) net range v."
 severity = "error"
+details = [
+  "voltage domains: every net's range within `v_max_v` of every pin on it – finds e.g.: a 5-V signal on a 3.3-V GPIO",
+  "voltage ratings with margin: capacitors (×1.5), diodes VRRM (×1.5), BJT VCEO, MOSFET VDS/VGS (×1.5), fuses, switches, connectors – finds e.g.: a 6.3-V capacitor on a 5-V rail",
+  "stress of every part against its ratings with derating: resistor power ≤ 50 %, currents ≤ 80 %, capacitor/diode/transistor voltages ≤ 67 %, LED forward current and reverse voltage, fuse hold current at ambient, connector, switch and relay contact current, relay coil voltage, the current of every MCU output (`gpio_i_max_a`) and of all outputs together, sourced and sunk (`gpio_i_total_max_a`) – each pin may be fine and the sum beyond the package; the junction temperature of every part with `rth_ja_k_per_w` against its `tj_max_c`, and on a board of `touch_c` against the touch limit (below the table)",
+  "transient limits: in every run of `transients` each limit of its `expect` – a net's lowest voltage ≥ `min_v`, highest ≤ `max_v`, a source's peak current ≤ `i_max_a` – and every MCU's supply pin, once it has reached its `vin_min_v` (`vsys_min_v`), never below it again before the run ends; actual value with the time it occurs (\"2.985 V at 1.3 ms\")",
+]
 replaces = ["G-3", "G-8", "E-2", "E-5"]
 sources = [
   "the datasheet of each part: absolute maximum ratings, entered as vmax per pin",
@@ -200,6 +239,12 @@ why = "A part above its current heats and wears; a connector rated below a fuse'
 fix = "A part with a higher rating, a fuse with a lower hold current, a driver between an MCU and its load, or less load. A trip current above a rating accepted on purpose: accept LIM.i/margin on the fuse with the reason."
 severity = "error"
 grades = { margin = "warning" }
+details = [
+  "fuse against what it protects: the hold current of every fuse (`i_hold_a`; at the lowest ambient `ambient_min_c` of sim.json from `i_hold_vs_temp`) is at most the `i_max_a` of every connector, switch and cable its current flows through – its own nets and on through fuses and switches; a trip current (`i_trip_a`) above it is a warning – finds e.g.: a 1.5-A polyfuse in front of a connector rated 1.25 A, an overload that heats the contacts instead of tripping the fuse",
+  "stress of every part against its ratings with derating: resistor power ≤ 50 %, currents ≤ 80 %, capacitor/diode/transistor voltages ≤ 67 %, LED forward current and reverse voltage, fuse hold current at ambient, connector, switch and relay contact current, relay coil voltage, the current of every MCU output (`gpio_i_max_a`) and of all outputs together, sourced and sunk (`gpio_i_total_max_a`) – each pin may be fine and the sum beyond the package; the junction temperature of every part with `rth_ja_k_per_w` against its `tj_max_c`, and on a board of `touch_c` against the touch limit (below the table)",
+  "function: current from every source (≤ `i_max_a`; ≥ `i_min_a` with every MCU at its `i_core_min_a` – 5.1), no source and no cell fed backwards (≤ `i_back_max_a`, `i_charge_max_a`, 1 mA by default), regulator outputs within tolerance, input above `vin_min_v`, LDO junction temperature – an MCU module's own LDO too, with the core current it carries (below the table) – against the same limit as LIM.*'s, MCU supply voltage and load on its regulator, MCU inputs at a defined level (≤ VIL or ≥ VIH – a 3.3 V signal into a 5 V AVR is the classic case), every part with an operating supply range inside it, every input pin with thresholds at a defined level and the high level of every MCU output reaching the VIH of the inputs on its net (below the table), MCU outputs only on pins that can drive (an output on an input-only pin is reported and not driven), LED driver output headroom and junction temperature, every LED on or dark as the load says (driver channels: ≥ 80 % of its share of the set current, also for an LED behind 0 Ω bridges or one resistor; parallel LEDs share within a ratio – below the table), relays pull in (`v_operate_v`) and release (`v_release_v`) as the load says, an own board supplied inside the range it was simulated for (`vin_min_v` … `vin_max_v`, 4.5), diodes that must block (`expect_blocking`), every net inside its declared range `v` (a net of `copper`: its lowest and highest pin), plus the plugin's checks",
+  "transient limits: in every run of `transients` each limit of its `expect` – a net's lowest voltage ≥ `min_v`, highest ≤ `max_v`, a source's peak current ≤ `i_max_a` – and every MCU's supply pin, once it has reached its `vin_min_v` (`vsys_min_v`), never below it again before the run ends; actual value with the time it occurs (\"2.985 V at 1.3 ms\")",
+]
 replaces = ["G-17", "E-2", "E-3", "E-5"]
 sources = [
   "PTTC SMD1206 HF Series, Rev. K (2017-01-03), p. 2: Ihold = maximum current the device passes without tripping, Itrip = minimum current at which it trips (23 °C still air); p. 4: thermal derating, SMD1206P150TFT 2.20 A at -40 °C, 1.50 A at 23 °C, 0.84 A at 85 °C – https://datasheet.lcsc.com/datasheet/pdf/c142bd6abe50067c0e2abbe967f2fcb5.pdf?productCode=C495353",
@@ -216,6 +261,9 @@ rule = "Every part's dissipation stays within the derated p_max_w of its entry."
 why = "Derating buys lifetime and covers worst-case supply, tolerance and ambient that a DC analysis does not see."
 fix = "A part with a higher rating, another value, or another operating point."
 severity = "error"
+details = [
+  "stress of every part against its ratings with derating: resistor power ≤ 50 %, currents ≤ 80 %, capacitor/diode/transistor voltages ≤ 67 %, LED forward current and reverse voltage, fuse hold current at ambient, connector, switch and relay contact current, relay coil voltage, the current of every MCU output (`gpio_i_max_a`) and of all outputs together, sourced and sunk (`gpio_i_total_max_a`) – each pin may be fine and the sum beyond the package; the junction temperature of every part with `rth_ja_k_per_w` against its `tj_max_c`, and on a board of `touch_c` against the touch limit (below the table)",
+]
 replaces = ["E-2"]
 sources = [
   "edakit handbook 5.3",
@@ -228,6 +276,10 @@ rule = "Every part whose entry gives rth_ja_k_per_w stays at or below its juncti
 why = "Heat is what kills parts and burns fingers; a part in the open air can still reach its junction limit."
 fix = "Lower the dissipation (a lower RDS(on), a second part, less current), more copper, or a part with a lower thermal resistance."
 severity = "error"
+details = [
+  "stress of every part against its ratings with derating: resistor power ≤ 50 %, currents ≤ 80 %, capacitor/diode/transistor voltages ≤ 67 %, LED forward current and reverse voltage, fuse hold current at ambient, connector, switch and relay contact current, relay coil voltage, the current of every MCU output (`gpio_i_max_a`) and of all outputs together, sourced and sunk (`gpio_i_total_max_a`) – each pin may be fine and the sum beyond the package; the junction temperature of every part with `rth_ja_k_per_w` against its `tj_max_c`, and on a board of `touch_c` against the touch limit (below the table)",
+  "function: current from every source (≤ `i_max_a`; ≥ `i_min_a` with every MCU at its `i_core_min_a` – 5.1), no source and no cell fed backwards (≤ `i_back_max_a`, `i_charge_max_a`, 1 mA by default), regulator outputs within tolerance, input above `vin_min_v`, LDO junction temperature – an MCU module's own LDO too, with the core current it carries (below the table) – against the same limit as LIM.*'s, MCU supply voltage and load on its regulator, MCU inputs at a defined level (≤ VIL or ≥ VIH – a 3.3 V signal into a 5 V AVR is the classic case), every part with an operating supply range inside it, every input pin with thresholds at a defined level and the high level of every MCU output reaching the VIH of the inputs on its net (below the table), MCU outputs only on pins that can drive (an output on an input-only pin is reported and not driven), LED driver output headroom and junction temperature, every LED on or dark as the load says (driver channels: ≥ 80 % of its share of the set current, also for an LED behind 0 Ω bridges or one resistor; parallel LEDs share within a ratio – below the table), relays pull in (`v_operate_v`) and release (`v_release_v`) as the load says, an own board supplied inside the range it was simulated for (`vin_min_v` … `vin_max_v`, 4.5), diodes that must block (`expect_blocking`), every net inside its declared range `v` (a net of `copper`: its lowest and highest pin), plus the plugin's checks",
+]
 replaces = ["E-2", "E-3"]
 sources = [
   "edakit handbook 5.3",
@@ -244,6 +296,10 @@ rule = "Every part with an operating range – vdd_op_min_v … vdd_op_max_v, a 
 why = "A circuit can stay within every rating and still not work: a regulator without headroom at the low end of the USB voltage, a 5 V-only IC behind a 3.3 V rail, a reset whenever the supply changes."
 fix = "Supply the part from a rail inside its range, choose a part whose range fits the rail, or bridge the gap (bulk capacitance, a path that conducts before the other lets go)."
 severity = "error"
+details = [
+  "function: current from every source (≤ `i_max_a`; ≥ `i_min_a` with every MCU at its `i_core_min_a` – 5.1), no source and no cell fed backwards (≤ `i_back_max_a`, `i_charge_max_a`, 1 mA by default), regulator outputs within tolerance, input above `vin_min_v`, LDO junction temperature – an MCU module's own LDO too, with the core current it carries (below the table) – against the same limit as LIM.*'s, MCU supply voltage and load on its regulator, MCU inputs at a defined level (≤ VIL or ≥ VIH – a 3.3 V signal into a 5 V AVR is the classic case), every part with an operating supply range inside it, every input pin with thresholds at a defined level and the high level of every MCU output reaching the VIH of the inputs on its net (below the table), MCU outputs only on pins that can drive (an output on an input-only pin is reported and not driven), LED driver output headroom and junction temperature, every LED on or dark as the load says (driver channels: ≥ 80 % of its share of the set current, also for an LED behind 0 Ω bridges or one resistor; parallel LEDs share within a ratio – below the table), relays pull in (`v_operate_v`) and release (`v_release_v`) as the load says, an own board supplied inside the range it was simulated for (`vin_min_v` … `vin_max_v`, 4.5), diodes that must block (`expect_blocking`), every net inside its declared range `v` (a net of `copper`: its lowest and highest pin), plus the plugin's checks",
+  "transient limits: in every run of `transients` each limit of its `expect` – a net's lowest voltage ≥ `min_v`, highest ≤ `max_v`, a source's peak current ≤ `i_max_a` – and every MCU's supply pin, once it has reached its `vin_min_v` (`vsys_min_v`), never below it again before the run ends; actual value with the time it occurs (\"2.985 V at 1.3 ms\")",
+]
 replaces = ["E-3", "E-5"]
 sources = [
   "edakit handbook 5.3",
@@ -262,6 +318,9 @@ rule = "Every net's simulated voltage lies inside its declared range v (± the c
 why = "Stage G checks every rating against the declared ranges; a range the simulation exceeds makes those checks pass on numbers that are not true."
 fix = "Correct v of the net to what the circuit does, or fix what drives the net outside."
 severity = "error"
+details = [
+  "function: current from every source (≤ `i_max_a`; ≥ `i_min_a` with every MCU at its `i_core_min_a` – 5.1), no source and no cell fed backwards (≤ `i_back_max_a`, `i_charge_max_a`, 1 mA by default), regulator outputs within tolerance, input above `vin_min_v`, LDO junction temperature – an MCU module's own LDO too, with the core current it carries (below the table) – against the same limit as LIM.*'s, MCU supply voltage and load on its regulator, MCU inputs at a defined level (≤ VIL or ≥ VIH – a 3.3 V signal into a 5 V AVR is the classic case), every part with an operating supply range inside it, every input pin with thresholds at a defined level and the high level of every MCU output reaching the VIH of the inputs on its net (below the table), MCU outputs only on pins that can drive (an output on an input-only pin is reported and not driven), LED driver output headroom and junction temperature, every LED on or dark as the load says (driver channels: ≥ 80 % of its share of the set current, also for an LED behind 0 Ω bridges or one resistor; parallel LEDs share within a ratio – below the table), relays pull in (`v_operate_v`) and release (`v_release_v`) as the load says, an own board supplied inside the range it was simulated for (`vin_min_v` … `vin_max_v`, 4.5), diodes that must block (`expect_blocking`), every net inside its declared range `v` (a net of `copper`: its lowest and highest pin), plus the plugin's checks",
+]
 replaces = ["E-3"]
 sources = [
   "edakit handbook 5.3",
@@ -273,6 +332,9 @@ rule = "The current into a source against its direction stays at or below its i_
 why = "Where two supplies meet, the higher one feeds the lower one wherever nothing blocks: into a PC's USB port, into a primary cell, which may leak or burst."
 fix = "A blocking element in the path – a Schottky diode, two P-MOSFETs back to back, an ORing controller."
 severity = "error"
+details = [
+  "function: current from every source (≤ `i_max_a`; ≥ `i_min_a` with every MCU at its `i_core_min_a` – 5.1), no source and no cell fed backwards (≤ `i_back_max_a`, `i_charge_max_a`, 1 mA by default), regulator outputs within tolerance, input above `vin_min_v`, LDO junction temperature – an MCU module's own LDO too, with the core current it carries (below the table) – against the same limit as LIM.*'s, MCU supply voltage and load on its regulator, MCU inputs at a defined level (≤ VIL or ≥ VIH – a 3.3 V signal into a 5 V AVR is the classic case), every part with an operating supply range inside it, every input pin with thresholds at a defined level and the high level of every MCU output reaching the VIH of the inputs on its net (below the table), MCU outputs only on pins that can drive (an output on an input-only pin is reported and not driven), LED driver output headroom and junction temperature, every LED on or dark as the load says (driver channels: ≥ 80 % of its share of the set current, also for an LED behind 0 Ω bridges or one resistor; parallel LEDs share within a ratio – below the table), relays pull in (`v_operate_v`) and release (`v_release_v`) as the load says, an own board supplied inside the range it was simulated for (`vin_min_v` … `vin_max_v`, 4.5), diodes that must block (`expect_blocking`), every net inside its declared range `v` (a net of `copper`: its lowest and highest pin), plus the plugin's checks",
+]
 replaces = ["E-3"]
 sources = [
   "Raspberry Pi Pico 2 Datasheet (build d4e0f1799616, 03/07/2026), 5.5 Powering Pico 2: a second supply goes into VSYS through a Schottky diode, with the diodes preventing either supply from back-powering the other; a P-FET in its place needs care, its body diode may conduct",
@@ -286,6 +348,9 @@ why = "The EU limits are e.i.r.p.; a datasheet states the power at the chip's RF
 fix = "Fill in antenna_dbi or eirp_dbm; over the limit a lower power the firmware keeps (purpose.radio max_dbm) or an antenna with less gain. Support, not legal advice."
 severity = "note"
 grades = { unknown = "note" }
+details = [
+  "radio power within the band's limit: a part that transmits (`compliance.radio` with `bands_mhz`, 4.1) stays within the limit of each EU band it transmits in whose limit is an e.i.r.p. – the band's highest: 100 mW in 2400–2483.5 MHz, 200 mW in 5150–5350 MHz, 1 W in 5470–5725 MHz; its e.i.r.p. is `eirp_dbm`, else `max_dbm` (conducted, at the RF port) + `antenna_dbi`. Over the limit, not known without them, or no `bands_mhz`: graded by `purpose.use` (8.1): a warning for a board that is sold (`\"sale\"`), information for one built for oneself or given away, or without a purpose – the finding says what the firmware must keep (\"the firmware must keep the conducted power at or below 17.0 dBm\"); a radio value that is no number an error; `accept` on the component. A lower limit of a category of device, power density, duty cycle and the e.r.p. bands (433, 868 MHz) stay with the regulatory review M-6 (chapter 15 – support, not legal advice) – finds e.g.: an ESP32 module with an external 3-dBi antenna at its 20.5 dBm: 23.5 dBm e.i.r.p. where 20 are allowed",
+]
 replaces = ["G-24"]
 sources = [
   "Espressif, ESP32 Series Datasheet v5.3 (2026-07): 5.4 (its RF measurements are taken at the RF port) and table 5-6 (TX power in 11b mode 18.5/19.5/20.5 dBm min/typ/max; note 3: target TX power is configurable) – https://documentation.espressif.com/esp32_datasheet_en.pdf",
@@ -301,6 +366,9 @@ why = "Many radio chips can do more than the EU allows – Wi-Fi channel 14, the
 fix = "Keep the firmware to the EU bands and state it in purpose.radio; a part made for other bands: another part, or accept with the allocation of a licensed use. Support, not legal advice."
 severity = "error"
 grades = { firmware = "note" }
+details = [
+  "transmitter in the EU bands: every range a part transmits in (`compliance.radio` `bands_mhz`, 4.1) lies within an EU licence-exempt band – 433.05–434.79, 863–870, 2400–2483.5, 5150–5350 or 5470–5725 MHz; where `purpose.radio` (3.1) states how the firmware uses the radio – `\"off\"`, or the bands it keeps, each within the entry's `bands_mhz` – the stated bands count. A part none of whose bands reaches into an EU band is an error – no firmware makes it comply –, unless `purpose.radio` keeps it off; a use edakit does not list (NFC at 13.56 MHz, a mobile network under the operator's licence) gets `accept` on the component with its allocation. Any other range beyond the EU bands is the firmware's to keep, graded by `purpose.use` (8.1): a warning for a board that is sold (`\"sale\"`), information for one built for oneself or given away, or without a purpose: `U1: 2412–2484 MHz (…) reaches beyond the EU band 2400–2483.5 MHz – the firmware must keep to 2400–2483.5 MHz (for Wi-Fi: channels 1–13)`. `purpose.radio` is optional; a statement within the EU bands ends the message, one that names no part with bands, a band the part lacks or a wrong shape is an error (chapter 15 – support, not legal advice) – finds e.g.: an ESP32 whose bands reach Wi-Fi channel 14 (2484 MHz), a LoRa module for 902–928 MHz – both passed `edakit check` without a word",
+]
 replaces = ["G-25"]
 sources = [
   "Espressif, ESP32 Series Datasheet v5.3 (2026-07), table 5-6: operating frequency range 2412–2484 MHz; note 1: 'Device should operate in the frequency range allocated by regional regulatory authorities. Target operating frequency range is configurable by software.' – https://documentation.espressif.com/esp32_datasheet_en.pdf",
@@ -316,6 +384,9 @@ rule = "Every input has a driver or a pull resistor, an input that only MCU pins
 why = "A floating CMOS input reads random values and can rest where both input transistors conduct. An MCU pin is an input until the firmware configures it, so an enable line it drives floats at every reset."
 fix = "A pull resistor to the inactive level (10–100 kΩ); a base-emitter or gate-source resistor next to the transistor. Harmless on purpose: accept on the net with the reason."
 severity = "error"
+details = [
+  "no floating input: an input needs a driver or a pull resistor; an input driven only by MCU pins needs a pull (floats until the firmware runs); every BJT needs a base-emitter resistor, every MOSFET a resistor from its gate to the source or a rail – finds e.g.: a floating OE or EN pin at power-up, a MOSFET half on while the MCU boots",
+]
 replaces = ["G-4"]
 sources = [
   "TI SCBA004E, Implications of Slow or Floating CMOS Inputs (2021), section 1 – https://www.ti.com/lit/an/scba004e/scba004e.pdf",
@@ -328,6 +399,9 @@ rule = "At most one push-pull output or supply output drives a net."
 why = "Two outputs that disagree short the supply through their output stages: high current, heat, an undefined level."
 fix = "Separate the nets, make one side an input, or use open-drain outputs with a pull-up."
 severity = "error"
+details = [
+  "at most one push-pull output / supply output per net – finds e.g.: two outputs against each other",
+]
 replaces = ["G-5"]
 sources = [
   "edakit handbook 3.3",
@@ -339,6 +413,9 @@ rule = "A pin whose entry gives strap high or low is at that level at reset: no 
 why = "Many MCUs read boot options from pins at reset: the ESP32 starts its download mode with GPIO0 low and sets its flash supply to 1.8 V with GPIO12 high."
 fix = "Keep pulls and outputs that disagree off strapping pins, or move the function to another pin."
 severity = "error"
+details = [
+  "strapping pins: a pin with `strap` in its parts entry is at that level at reset – no pull, rail or output on its net says otherwise, and something holds it (a pull, or the pin's internal `pull`) – finds e.g.: a pull-down on the ESP32's GPIO0, an I2C pull-up on GPIO12",
+]
 replaces = ["G-12"]
 sources = [
   "Espressif ESP32 Series Datasheet v5.3, 3 Boot Configurations, table 3-1 – https://documentation.espressif.com/esp32_datasheet_en.pdf",
@@ -350,6 +427,9 @@ rule = "Every input with thresholds (vih/vil on the pin or in the values) sits a
 why = "A 3.3 V MCU output into a 5 V shift register with VIH 0.7 × VDD = 3.5 V works on the bench and fails at the next batch."
 fix = "A level shifter, a part with thresholds that fit the rail, or the part on the lower rail."
 severity = "error"
+details = [
+  "function: current from every source (≤ `i_max_a`; ≥ `i_min_a` with every MCU at its `i_core_min_a` – 5.1), no source and no cell fed backwards (≤ `i_back_max_a`, `i_charge_max_a`, 1 mA by default), regulator outputs within tolerance, input above `vin_min_v`, LDO junction temperature – an MCU module's own LDO too, with the core current it carries (below the table) – against the same limit as LIM.*'s, MCU supply voltage and load on its regulator, MCU inputs at a defined level (≤ VIL or ≥ VIH – a 3.3 V signal into a 5 V AVR is the classic case), every part with an operating supply range inside it, every input pin with thresholds at a defined level and the high level of every MCU output reaching the VIH of the inputs on its net (below the table), MCU outputs only on pins that can drive (an output on an input-only pin is reported and not driven), LED driver output headroom and junction temperature, every LED on or dark as the load says (driver channels: ≥ 80 % of its share of the set current, also for an LED behind 0 Ω bridges or one resistor; parallel LEDs share within a ratio – below the table), relays pull in (`v_operate_v`) and release (`v_release_v`) as the load says, an own board supplied inside the range it was simulated for (`vin_min_v` … `vin_max_v`, 4.5), diodes that must block (`expect_blocking`), every net inside its declared range `v` (a net of `copper`: its lowest and highest pin), plus the plugin's checks",
+]
 replaces = ["E-3"]
 sources = [
   "edakit handbook 5.3",
@@ -364,6 +444,9 @@ rule = "The simulation drives an MCU output only on a pin that can drive (output
 why = "An input-only pin – the ESP32's GPIO34–39 – never drives its net; the load stays off."
 fix = "Move the function to a pin that can drive."
 severity = "error"
+details = [
+  "function: current from every source (≤ `i_max_a`; ≥ `i_min_a` with every MCU at its `i_core_min_a` – 5.1), no source and no cell fed backwards (≤ `i_back_max_a`, `i_charge_max_a`, 1 mA by default), regulator outputs within tolerance, input above `vin_min_v`, LDO junction temperature – an MCU module's own LDO too, with the core current it carries (below the table) – against the same limit as LIM.*'s, MCU supply voltage and load on its regulator, MCU inputs at a defined level (≤ VIL or ≥ VIH – a 3.3 V signal into a 5 V AVR is the classic case), every part with an operating supply range inside it, every input pin with thresholds at a defined level and the high level of every MCU output reaching the VIH of the inputs on its net (below the table), MCU outputs only on pins that can drive (an output on an input-only pin is reported and not driven), LED driver output headroom and junction temperature, every LED on or dark as the load says (driver channels: ≥ 80 % of its share of the set current, also for an LED behind 0 Ω bridges or one resistor; parallel LEDs share within a ratio – below the table), relays pull in (`v_operate_v`) and release (`v_release_v`) as the load says, an own board supplied inside the range it was simulated for (`vin_min_v` … `vin_max_v`, 4.5), diodes that must block (`expect_blocking`), every net inside its declared range `v` (a net of `copper`: its lowest and highest pin), plus the plugin's checks",
+]
 replaces = ["E-3"]
 sources = [
   "edakit handbook 5.3",
@@ -375,6 +458,13 @@ rule = "What a part requires on its pins is in the graph: a capacitor to ground 
 why = "Each requirement is a datasheet's or a standard's: an IC draws its current in pulses, open-drain lines never go high alone, a coil's turn-off spike breaks the switch, a USB-C source gives no power without Rd, a long hot loop rings and radiates."
 fix = "Add the part next to the pin (blocks: i2c-pullups, usb-c-sink), or write the loop into layout.loops."
 severity = "error"
+details = [
+  "decoupling: per net at least one capacitor to ground per IC supply pin (`power_in`) – finds e.g.: the missing 100 nF",
+  "I2C pull-ups: every I2C line has a pull-up to a supply between (V − 0.4 V) / 3 mA and 10 kΩ, parallel ones added up; a line is I2C by the net's `bus`, an SDA/SCL net name, a pin role `sda`/`scl` or a pin name with SDA/SCL (a role decides over the name); pins with `pull`/`pull_ohm` count (modules) – finds e.g.: a bus without pull-ups, 47 kΩ, a module's pull-ups plus your own below 1 kΩ",
+  "flyback diode: a relay coil or a buzzer with `coil_ohm`, switched by a transistor or an output, has a diode across it with the cathode at its plus terminal – finds e.g.: a relay that kills its transistor at the first switch-off",
+  "USB-C sink: a receptacle with `cc1`/`cc2` pins has its own 5.1 kΩ ± 10 % to ground on each CC pin; silent when an IC is on the CC lines. A module or breakout states its receptacle's termination in `values.usb_c` (4.1): `rd_5k1` or `controller` passes, `none` has its CC pins checked the same way and fails without them – finds e.g.: no 5 V from a USB-C charger, CC1 and CC2 on one resistor, a breakout without its two resistors",
+  "hot loop in the hand-over: a part whose entry names its hot-loop pins (`hot_loop`, 4.1) has a `layout.loops` entry on every net of the loop – the nets of those pins and, one diode further, the net behind the rectifier on its switch node (`sw`); a buck or boost IC (`behavior`) without `hot_loop` is a warning; `accept` on the part, or on a net whose part of the loop closes over a pour – finds e.g.: a boost whose output loop was routed 61 mm across the board, passing every check because nobody listed it",
+]
 replaces = ["G-6", "G-11", "G-13", "G-14", "G-18"]
 sources = [
   "Analog Devices MT-101, Decoupling Techniques (Rev. 0, 2009) – https://www.analog.com/media/en/training-seminars/tutorials/MT-101.pdf",
@@ -392,6 +482,10 @@ rule = "A required part has its value inside the range: an I2C pull-up (in paral
 why = "A weak I2C pull-up makes the edges too slow, a strong one cannot be pulled low; a CC resistor outside its window reads as another device."
 fix = "4.7 kΩ for 100 kHz, 2.2 kΩ for 400 kHz on I2C; 5.1 kΩ per CC pin."
 severity = "error"
+details = [
+  "I2C pull-ups: every I2C line has a pull-up to a supply between (V − 0.4 V) / 3 mA and 10 kΩ, parallel ones added up; a line is I2C by the net's `bus`, an SDA/SCL net name, a pin role `sda`/`scl` or a pin name with SDA/SCL (a role decides over the name); pins with `pull`/`pull_ohm` count (modules) – finds e.g.: a bus without pull-ups, 47 kΩ, a module's pull-ups plus your own below 1 kΩ",
+  "USB-C sink: a receptacle with `cc1`/`cc2` pins has its own 5.1 kΩ ± 10 % to ground on each CC pin; silent when an IC is on the CC lines. A module or breakout states its receptacle's termination in `values.usb_c` (4.1): `rd_5k1` or `controller` passes, `none` has its CC pins checked the same way and fails without them – finds e.g.: no 5 V from a USB-C charger, CC1 and CC2 on one resistor, a breakout without its two resistors",
+]
 replaces = ["G-11", "G-14"]
 sources = [
   "NXP UM10204 Rev. 7.0, I2C-bus specification and user manual (2021), 7.1 Pull-up resistor sizing and table 10 – https://www.nxp.com/docs/en/user-guide/UM10204.pdf",
@@ -404,6 +498,9 @@ rule = "What a part forbids does not happen: CC1 and CC2 of a USB-C receptacle o
 why = "With CC1 and CC2 on one resistor an electronically marked cable reads as a fault and the source gives no power."
 fix = "One resistor per CC pin."
 severity = "error"
+details = [
+  "USB-C sink: a receptacle with `cc1`/`cc2` pins has its own 5.1 kΩ ± 10 % to ground on each CC pin; silent when an IC is on the CC lines. A module or breakout states its receptacle's termination in `values.usb_c` (4.1): `rd_5k1` or `controller` passes, `none` has its CC pins checked the same way and fails without them – finds e.g.: no 5 V from a USB-C charger, CC1 and CC2 on one resistor, a breakout without its two resistors",
+]
 replaces = ["G-14"]
 sources = [
   "Richtek AN064, USB Type-C/PD Brief Introduction and Analysis (2021): a sink asserts Rd on the CC pins – https://www.richtek.com/~/media/AN%20PDF/AN064_EN.pdf",
@@ -416,6 +513,9 @@ rule = "A net's fn (pwm, adc, spi.sck, i2c.sda, uart.tx, …) is on a pin whose 
 why = "On most MCUs a peripheral reaches only some pins, and pins share hardware: two neighbouring RP2040 GPIOs share one PWM slice and with it one frequency."
 fix = "Move the net to a pin that has the function, or give the nets of a slice one frequency. Bit-banged on purpose: leave fn out."
 severity = "error"
+details = [
+  "pin functions: a net with `fn` is on a pin whose parts entry lists that function (`functions`), the nets of one `fn_bus` on one peripheral instance, two PWM nets of one slice with the same fixed `pwm_hz` and a channel each; a net with `fn` on pins without `functions` is a note – finds e.g.: SPI data on the clock pin, an analog input without ADC, a buzzer on the PWM slice of an LED",
+]
 replaces = ["G-15"]
 sources = [
   "pico-sdk 2.1.1, src/rp2350/hardware_regs/include/hardware/regs/io_bank0.h: IO_BANK0_GPIOn_CTRL_FUNCSEL_VALUE_* – the SPI, UART, I2C and PWM function of every GPIO – https://github.com/raspberrypi/pico-sdk/blob/2.1.1/src/rp2350/hardware_regs/include/hardware/regs/io_bank0.h",
@@ -429,6 +529,9 @@ rule = "What a reversed source (a battery holder, a source marked reversible) re
 why = "A battery inserted the wrong way drives the supply negative; every IC on that rail conducts through its substrate diodes and dies within milliseconds."
 fix = "A Schottky diode in series, or a PMOS in the supply path with its gate to ground (block reverse-pmos)."
 severity = "error"
+details = [
+  "reverse polarity from the topology: what a reversed source (battery holders, `\"source\": \"reversible\"` on the component) reaches through fuses, switches and connectors may only be a capacitor, the anode of a diode whose cathode is outside, or the drain of a PMOS whose source and gate are outside – finds e.g.: the protection diode bypassed, an IC directly on the battery",
+]
 replaces = ["G-10"]
 sources = [
   "TI SLVA139, Reverse Current/Battery Protection Circuits (2003) – https://www.ti.com/lit/an/slva139/slva139.pdf",
@@ -440,6 +543,9 @@ rule = "Every supply pin (power_in) is on a net a supply reaches – a power out
 why = "A rail split by a typo in a net name kills every board and passes every other check."
 fix = "Put the pin on its rail; usually a typo in a net name or two pins swapped."
 severity = "error"
+details = [
+  "ground and supply pins: every `ground` pin on the ground net (or one joined to it by a 0 Ω bridge or an inductor, or in `grounds`); every `power_in` pin on a net that a supply reaches – a `power_output` pin, a battery holder, a connector with a `vbus` pin or in `\"source\": \"reversible\"` on the component, a simulation source – directly or through fuses, switches, connectors, inductors, MOSFETs, resistors up to 100 Ω and diodes in forward direction – finds e.g.: a rail split by a typo in its name, a ground pin on a net of its own, VDD swapped with a signal",
+]
 replaces = ["G-16"]
 sources = [
   "Lesson of the reference project (pytree MVP risk review, item 10, 2026-10-23): pin-to-net checked by hand for every IC, about 20 minutes, and nothing repeats it after the next change",
@@ -452,6 +558,9 @@ rule = "Every ground pin is on the ground net (or one joined to it by an inducto
 why = "A ground pin on a net of its own leaves the part unpowered; a supply pin on ground shorts the rail."
 fix = "Put the pin on ground; a ground separate on purpose goes into the graph's grounds."
 severity = "error"
+details = [
+  "ground and supply pins: every `ground` pin on the ground net (or one joined to it by a 0 Ω bridge or an inductor, or in `grounds`); every `power_in` pin on a net that a supply reaches – a `power_output` pin, a battery holder, a connector with a `vbus` pin or in `\"source\": \"reversible\"` on the component, a simulation source – directly or through fuses, switches, connectors, inductors, MOSFETs, resistors up to 100 Ω and diodes in forward direction – finds e.g.: a rail split by a typo in its name, a ground pin on a net of its own, VDD swapped with a signal",
+]
 replaces = ["G-16"]
 sources = [
   "Lesson of the reference project (pytree MVP risk review, item 10, 2026-10-23): pin-to-net checked by hand for every IC, about 20 minutes, and nothing repeats it after the next change",
@@ -464,6 +573,10 @@ rule = "The simulation config names existing parts, nets and boards, and every v
 why = "A config the simulation cannot read checks nothing."
 fix = "Correct sim.json as the message says."
 severity = "error"
+details = [
+  "the operating point converges, a transient run runs to its end; a net of `copper` that stays one node is noted (info) with the reason",
+  "function: current from every source (≤ `i_max_a`; ≥ `i_min_a` with every MCU at its `i_core_min_a` – 5.1), no source and no cell fed backwards (≤ `i_back_max_a`, `i_charge_max_a`, 1 mA by default), regulator outputs within tolerance, input above `vin_min_v`, LDO junction temperature – an MCU module's own LDO too, with the core current it carries (below the table) – against the same limit as LIM.*'s, MCU supply voltage and load on its regulator, MCU inputs at a defined level (≤ VIL or ≥ VIH – a 3.3 V signal into a 5 V AVR is the classic case), every part with an operating supply range inside it, every input pin with thresholds at a defined level and the high level of every MCU output reaching the VIH of the inputs on its net (below the table), MCU outputs only on pins that can drive (an output on an input-only pin is reported and not driven), LED driver output headroom and junction temperature, every LED on or dark as the load says (driver channels: ≥ 80 % of its share of the set current, also for an LED behind 0 Ω bridges or one resistor; parallel LEDs share within a ratio – below the table), relays pull in (`v_operate_v`) and release (`v_release_v`) as the load says, an own board supplied inside the range it was simulated for (`vin_min_v` … `vin_max_v`, 4.5), diodes that must block (`expect_blocking`), every net inside its declared range `v` (a net of `copper`: its lowest and highest pin), plus the plugin's checks",
+]
 replaces = ["E-1", "E-3"]
 sources = [
   "edakit handbook 5.1",
@@ -475,6 +588,9 @@ rule = "The operating point of every scenario converges, every transient run rea
 why = "A scenario that does not converge checks nothing. Usually a node has no DC path to ground or a parameter is missing."
 fix = "Give a floating node a path (often a real design fault), or complete the parts entry."
 severity = "error"
+details = [
+  "the operating point converges, a transient run runs to its end; a net of `copper` that stays one node is noted (info) with the reason",
+]
 replaces = ["E-1"]
 sources = [
   "edakit handbook 5.1",
@@ -486,6 +602,9 @@ rule = "In every scenario the circuit reaches the state its load expects: LEDs o
 why = "A circuit can stay within every rating and still not work. The simulation is the polarity check of the graph: a reversed LED stays dark where it should light."
 fix = "Depends on the item; the protocol gives the actual and the expected value per scenario."
 severity = "error"
+details = [
+  "function: current from every source (≤ `i_max_a`; ≥ `i_min_a` with every MCU at its `i_core_min_a` – 5.1), no source and no cell fed backwards (≤ `i_back_max_a`, `i_charge_max_a`, 1 mA by default), regulator outputs within tolerance, input above `vin_min_v`, LDO junction temperature – an MCU module's own LDO too, with the core current it carries (below the table) – against the same limit as LIM.*'s, MCU supply voltage and load on its regulator, MCU inputs at a defined level (≤ VIL or ≥ VIH – a 3.3 V signal into a 5 V AVR is the classic case), every part with an operating supply range inside it, every input pin with thresholds at a defined level and the high level of every MCU output reaching the VIH of the inputs on its net (below the table), MCU outputs only on pins that can drive (an output on an input-only pin is reported and not driven), LED driver output headroom and junction temperature, every LED on or dark as the load says (driver channels: ≥ 80 % of its share of the set current, also for an LED behind 0 Ω bridges or one resistor; parallel LEDs share within a ratio – below the table), relays pull in (`v_operate_v`) and release (`v_release_v`) as the load says, an own board supplied inside the range it was simulated for (`vin_min_v` … `vin_max_v`, 4.5), diodes that must block (`expect_blocking`), every net inside its declared range `v` (a net of `copper`: its lowest and highest pin), plus the plugin's checks",
+]
 replaces = ["E-3"]
 sources = [
   "edakit handbook 5.3",
@@ -497,6 +616,9 @@ rule = "Every LED – each colour of an RGB LED – has a state the simulation c
 why = "Only an LED with an expected state is checked; without one a reversed LED passes without a word."
 fix = "Give every load leds_on, or put the LED's cathode on a driver output; an LED left out needs its roles."
 severity = "error"
+details = [
+  "LED has a known driver: in every scenario every LED – each colour of an RGB LED – has a state SIM.state checks, its cathode on a driver output (directly, behind 0 Ω bridges or one resistor) or the load's `leds_on`; an LED with neither, or one the netlist left out because its parts entry lacks a role it reads (anode, cathode and their colours, 4.1), fails as \"LED without a known driver\"",
+]
 replaces = ["E-4"]
 sources = [
   "edakit handbook 5.3: a reversed LED elsewhere stays dark where it should light – the polarity check of the graph",
@@ -509,6 +631,9 @@ rule = "A net listed for copper is simulated with its routed copper; where it is
 why = "Information: the voltage drop along that net is not in the results."
 fix = "Route the net, or take it off the list."
 severity = "note"
+details = [
+  "the operating point converges, a transient run runs to its end; a net of `copper` that stays one node is noted (info) with the reason",
+]
 replaces = ["E-1"]
 sources = [
   "edakit handbook 5.1",
@@ -531,6 +656,9 @@ rule = "The PCB has exactly the graph's parts, every pad carries the graph's net
 why = "Bringing parts into the PCB can lose, double or mismatch them, and a pad on the wrong net is routed wrong without any DRC error."
 fix = "edakit pcb parts --write and edakit pcb nets --write."
 severity = "error"
+details = [
+  "parts in the PCB = graph; every pad carries the graph's net; every graph pin has a pad – why it exists: the import may lose or mismatch parts",
+]
 replaces = ["L-1"]
 sources = [
   "edakit handbook 7 and 8.1",
@@ -543,6 +671,11 @@ why = "A footprint that differs from its source puts pads where the part has no 
 fix = "Correct the footprint or the entry; an intended swap goes into pad_map."
 severity = "error"
 grades = { unknown = "note" }
+details = [
+  "footprint per part = parts database – why it exists: a swapped footprint variant",
+  "every pad sits where the library footprint has the pad with that number (`pad_map` for intended swaps) – why it exists: a pad swap that was reset by EasyEDA",
+  "the copy equals the footprint data: the footprint `pcb dump` measured on the board (`<board>.geometry.json`) has the entry's footprint name and the data's pads – the same numbers, each within 0.02 mm of its place (SYNC.plan's tolerance), the same hole within 0.01 mm, and where the dump measured them shape, size, rotation and layer; `accept` on the component. A part not dumped yet, or a dump without holes or shapes, is a note. In the gate SYNC.footprint holds the PCB's pads to the same dump (4.5) – finds e.g.: `U1: the copy differs from the footprint data of C18722937 – pad 3 at (11.430, -8.891) instead of (11.430, -8.790) mm` – a pad changed in the text and the copy in the PCB still the old one, found before anything is routed on it",
+]
 replaces = ["L-4", "L-10", "P-10"]
 sources = [
   "edakit handbook 4.1",
@@ -559,6 +692,11 @@ rule = "Fixed parts sit where the plan says (±0.02 mm, rotation, side), the pla
 why = "The plan is where mechanics and circuit meet; a part off its plan misses its hole, its edge or its capacitor."
 fix = "Correct the plan or the placement as the message says."
 severity = "error"
+details = [
+  "fixed parts in the PCB = plan (± 0.02 mm, rotation, side); the plan itself without findings – why it exists: a part moved by hand or by the auto-layout",
+  "the plan keeps the circuit's hand-over: `layout.fixed`, `.edge`, `.near` of the graph, a decoupling capacitor of its own next to every IC (7.4) – why it exists: the auto-layout put a decoupling capacitor 24 mm from its IC; what the circuit designer knew got lost on the way to the layout",
+  "every part the graph puts on the board has a row in `[place]` of the board file – by hand, from `pcb place`, or written back by `pcb autolayout` with `auto = true` (7.4); a part on a bought board (4.5) is on no made board and needs none. The board file decides it alone; the row names the parts without one: `D1, R2: no row in hardware/boards/main.toml [place] (2 of 17 parts)` – why it exists: what EasyEDA's auto-layout placed was in no file: the layout hash did not cover it, SYNC.plan held it to nothing, the direction check, the mated plugs and the mechanical model did not see it, and after a dump the next auto-layout could put it elsewhere – `pcb autolayout` writes its positions back, `pcb takeover --write` takes a board placed before",
+]
 replaces = ["L-7", "L-12", "L-20"]
 sources = [
   "edakit handbook 7",
@@ -574,6 +712,9 @@ rule = "The BOM generated from the graph equals EasyEDA's BOM per designator, an
 why = "JLCPCB assembles what the BOM says; a part that EasyEDA lists differently from the graph ends up differently on the board."
 fix = "Correct the graph and bring the PCB in line (edakit pcb parts --write)."
 severity = "error"
+details = [
+  "BOM generated **from the graph** in JLCPCB format = EasyEDA's BOM per designator; every LCSC number in the parts database; parts with `bom: false` left out on purpose",
+]
 replaces = ["F-1"]
 sources = [
   "edakit handbook 8.1",
@@ -585,6 +726,9 @@ rule = "Every BOM part is in the pick-and-place file exactly once with the PCB's
 why = "A missing or doubled line is a missing or doubled part; a part on the wrong side needs Standard PCBA at a higher price."
 fix = "Move parts to the allowed side in the plan, or mark hand-soldered parts bom: false."
 severity = "error"
+details = [
+  "pick and place: every BOM part exactly once, side and rotation = PCB; sides and SMD-only as `[release] assembly` says (Economic PCBA: one side, SMD only; two SMD sides need Standard PCBA)",
+]
 replaces = ["F-3"]
 sources = [
   "edakit handbook 8.4",
@@ -597,6 +741,9 @@ why = "An own board has no distributor and no manufacturer's datasheet: its part
 fix = "In the board's project: edakit part datasheet, then commit. In the host: edakit part own <path to the board's project>. Release the board there (edakit gate) and copy again, or accept the warning in the sign-off file with the reason."
 severity = "error"
 grades = { margin = "warning", stale = "pending", unchecked = "note" }
+details = [
+  "own parts (4.5): a board copied with `edakit part own` is its project's current datasheet, copied from a commit (pending otherwise); a board not released at that state is a warning; the project's own datasheets are of its current state – finds e.g.: a board changed after it was copied into the host",
+]
 replaces = ["P-3"]
 sources = [
   "edakit handbook 4.5",
@@ -632,6 +779,9 @@ why = "This is what the factory gets. Pours, islands and export settings can dif
 fix = "Look at the routing picture, route again or refill the pours, then export again."
 severity = "error"
 grades = { margin = "warning" }
+details = [
+  "copper from the **Gerber files**, rasterised at 0.02 mm, layers joined through plated holes, pads from FlyingProbeTesting.json, nets from the graph: every net connected, no short, every pad present – why it exists: do not trust EasyEDA – check what goes to the factory",
+]
 replaces = ["L-2"]
 sources = [
   "edakit handbook 8.1",
@@ -644,6 +794,9 @@ why = "Clearances, widths and open connections below the manufacturer's limits. 
 fix = "edakit route reload, then fix what remains (route all, the plan). Import Changes with no difference (\"EasyEDA waits for the import acknowledgement\"): open Design → Import Changes once in EasyEDA – it shows no changes. With differences: edakit pcb parts --write (parts, links, properties) or edakit pcb nets --write (pad nets), as the row says. A rule set that is not the board file's: set the values the row names in EasyEDA (Design → Design Rule: Safe Spacing, Track, Via Size, the net classes), or change [routing] of the board file."
 severity = "error"
 grades = { margin = "warning" }
+details = [
+  "EasyEDA DRC 0 (after save and reload), two rows: other kinds; schematic and PCB in sync – an Import Changes item with no difference in `netlist_diff.json` is \"EasyEDA waits for the import acknowledgement\" (still a fail, one click), otherwise the differences and `pcb parts --write` / `pcb nets --write`. With `[routing] drc_rules = \"check\"` a third row: the rule set the DRC ran with (`drc_rules.json`, read right after it) = the board file's – clearance, edge clearance, the least track width of every net, the least via, the net classes (7.5) – named, each difference with both numbers – why it exists: a DRC without findings says only that the board keeps the rules EasyEDA holds: the reference project's ran with 0.102 mm from track to track, while the board was routed with 6.5 mil",
+]
 replaces = ["L-3"]
 sources = [
   "edakit handbook 7 and 9",
@@ -658,6 +811,9 @@ why = "A track too narrow for its current heats up and drops voltage; the class 
 fix = "Wider tracks or a pour for the net; net classes in [routing.classes] and [net_classes] of the board file."
 severity = "error"
 grades = { margin = "warning" }
+details = [
+  "track width ≥ IPC-2221 for 1.5 × the simulated current (fail), ≥ class width (warn), voltage drop upper bound (info); `route check` measures the same on the SES and the fixed wires before writing (7.5) – why it exists: power tracks too thin",
+]
 replaces = ["L-5"]
 sources = [
   "IPC-2221B, Generic Standard on Printed Board Design: conductor width for a current",
@@ -671,6 +827,9 @@ why = "A switching regulator's loop carries pulsed current; a long loop radiates
 fix = "Put the regulator, its capacitors, the diode and the inductor together and route the loop first."
 severity = "error"
 grades = { margin = "warning" }
+details = [
+  "short current loops (`[[loops]]` of the board file and `layout.loops` of the graph): shortest path over tracks per pad pair within its limit – why it exists: a switching regulator loop routed 61 mm around the board",
+]
 replaces = ["L-11"]
 sources = [
   "TI SNVA021C, AN-1149 Layout Guidelines for Switching Power Supplies (2013) – https://www.ti.com/lit/an/snva021c/snva021c.pdf",
@@ -684,6 +843,9 @@ why = "A sign at the wrong pole makes whoever solders or inspects the board turn
 fix = "Compare the footprint with the datasheet. The print is right: correct the roles in the parts entry. The datasheet is right: put the anode's net on the pad with the '+' and give that pin the role anode (handbook 4.4), or use another footprint. A cross inside the box of a [[silk.art]] item is artwork and is not read; a decorative cross elsewhere is waived on the nearest part (waive L-8)."
 severity = "error"
 grades = { margin = "warning" }
+details = [
+  "every \"+\" and \"−\" of the silkscreen next to a pad of that sign: the PCB texts \"+\", \"−\", and the \"+\" a footprint draws as two crossing strokes in the **silk Gerber files** (each 0.3–2 mm, as long as the other, at right angles, middles within 0.1 mm). Each is compared with the nearest pad on its side whose role has a sign – `anode…`, `plus…`, `vbus` \"+\", `cathode…`, `minus…` \"−\". Strokes of a PCB text with a \"+\" are that text (a \"+5V\" is a label); a cross inside the box of a `[[silk.art]]` item is artwork. `waive: {\"GEO.mark\": \"…\"}` on the nearest part lists its sign as waived – why it exists: the footprint of a 5-mm LED printed \"+\" at the cathode: GEO.mark read only PCB texts and gave the cathode no sign, so nothing saw it; a review did, before five boards would have been assembled with the LED turned (4.4)",
+]
 replaces = ["L-8"]
 sources = [
   "edakit handbook 4.4 and 8.1",
@@ -697,6 +859,9 @@ why = "A part fitted by hand with formed leads loses the cues of its library pat
 fix = "Choose the offsets so that no turn lays the pattern onto itself: two leads in opposite directions, one lead only, or different amounts – then check ring and hole spacing again (L-16). Where the pattern stays symmetric for a mechanical reason, waive P-8 on the component with that reason and let the print show the orientation (L-8)."
 severity = "error"
 grades = { margin = "warning", unknown = "note" }
+details = [
+  "formed leads fit only one way round: a part whose plated holes the board's footprint (`pcb dump`) moves away from the library footprint of `edakit part import` – a hole more than 0.05 mm (SYNC.footprint's tolerance) from the library's hole of its number, the two laid on each other by their numbers –, with three or more of them, is not laid onto itself by a turn of 90°, 180° or 270°, every hole within 0.25 mm of a hole, with a pin in the hole of a pin on another net; pins on one net do not count, two holes and a part on its library pattern are not judged (its orientation is the print's job, GEO.mark). The pads are matched as `part diff` matches them (7.3). The finding names the turn and the pins: `D31: its formed holes lie on each other turned by 180° – pin 1 (V_LED) in the hole of pin 3 (STAR_G_K), pin 2 (STAR_R_K) in the hole of pin 4 (STAR_B_K)`; `accept` on the component; without the library footprint a note – finds e.g.: an RGB star LED with two legs bent the same way, which went in turned by 180° as easily – anode in a cathode's hole, the star dark –, with a \"+\" at the anode and every check passed",
+]
 replaces = ["P-8"]
 sources = [
   "The reference project (pytree), decision D-49 of 2026-10-27 (docs/hardware.md, bullets 'Biegen' and 'Footprint'): pin 1 bent 1.6 mm towards the tip, pin 4 1.6 mm towards the trunk – the opposite offsets make the hole pattern asymmetric; with both legs towards the tip the star also fitted turned by 180° and would have stayed dark",
@@ -713,6 +878,9 @@ why = "EasyEDA drops every pour piece that touches no pad of its net, so where t
 fix = "A bare area on a poured layer: give it to a net that reaches it – a second pour net on the layer (pour_regions, priority) or a pad or via of the pour net there – then route pours and run the gate again. Loose copper: connect it with a via or a track, or delete it, and fill the pours again without islands. An area bare on purpose (an antenna keep-out): accept the warning with its reason. [copper] max_bare_mm and min_cover = {TOP = %, BOTTOM = %} in the board file set the limits of a board."
 severity = "warning"
 grades = { margin = "warning" }
+details = [
+  "copper per layer on GEO.copper's raster of the **Gerber files**, widened to the outline: the copper share of the board area (without mounting and NPTH holes) and the largest copper-free circle inside the pour outline (the outline `pcb pour` pours, 7.6) – information; on a layer the board file pours (`[[pours]]`, default GND on both) a circle above `[copper] max_bare_mm` (5 mm) warns, a share below `[copper] min_cover` warns, and on every layer a copper piece that touches no pad (FlyingProbeTesting.json), via or plated hole warns, with its area and place. Copper inside an NPTH or mounting hole is drilled away. One row per layer, so an accepted warning covers its layer – why it exists: EasyEDA drops every pour piece without a pad of its net: half the back of a released board stayed bare (47 % copper, a copper-free circle of Ø 9.7 mm) where ground had no pads, with DRC 0 and every check passed; it was seen by eye before the order",
+]
 replaces = ["L-15"]
 sources = [
   "edakit handbook 7.6 (pours: EasyEDA drops islands, readback-mismatch) and 8.1 (L-2)",
@@ -727,6 +895,12 @@ why = "Pads too close bridge in soldering; holes too close break out in drilling
 fix = "Move the parts apart or change the footprint."
 severity = "error"
 grades = { margin = "warning" }
+details = [
+  "pads of different parts on different nets at least the routing clearance (`clearance_mil`) apart on every copper layer both are on; a pad without a net counts as a net of its own, pads of one part are not compared. Measured as `route check` measures it (7.5), on the pads of `route read` (`<artifacts>/route/<board>_board.json`) – pcb.json has no pad shapes –, and only while every pad there sits where the PCB has it, on its layer and net; otherwise GEO.spacing fails and asks for `route read`. `waive: {\"GEO.spacing\": \"…\"}` on one of the two parts or nets lists the pair as waived – why it exists: two resistors stood with their pads 0.09 mm apart: the plan compares boxes, `route check` measured only tracks and vias, and only EasyEDA's DRC could have seen it, after the copper was written",
+  "on every side that is assembled (`[release] assembly` `sides`), SMD pads of different parts on different nets at least the paste gap (`paste_gap_mm`, 0.4 mm) apart, so that the stencil keeps a web between their prints; a pad without a net counts as a net of its own, pads of one part, through-hole pads and pads on a side that is not assembled are not compared. Measured on the pads of `route read` like GEO.spacing, and only while they are the PCB's. `waive: {\"GEO.spacing\": \"…\"}` on one of the two parts or nets lists the pair as waived – why it exists: the paste of a ground pad and a transistor base pad of neighbouring parts was 0.06 mm apart: above every copper rule, a bridge in reflow that the bare-board test cannot see; the layout review found it",
+  "every plated hole keeps JLCPCB's annular ring on TOP and BOTTOM (2 layers, 1 oz): a component hole 0.18 mm, below 0.20 mm a warning per part, a via 0.05 mm (via Ø ≥ hole + 0.1 mm) – measured in the **Gerber files** from the hole's edge to the nearest point without copper, so a pad, a track or a pour around the hole counts alike; and every two plated holes, also two of one part, keep JLCPCB's hole-to-hole spacing edge to edge: 0.45 mm when a component hole is one of them, 0.2 mm between two vias. Vias are the holes of the via drill file, the other plated holes are named by the through-hole pad of pcb.json at their place. Within 0.001 mm counts as kept (EasyEDA keeps mil and writes mm). `waive: {\"GEO.ring\": \"…\"}` on a part or net lists its holes as waived – why it exists: an RGB LED at 1.25 mm pitch had its holes widened for its legs (GEO.hole) to 0.80 mm with pads of 1.06 mm: a ring of 0.13 mm, below the fab's minimum of 0.18 mm, passed the gate; via pairs 0.47 mm apart were flagged by a review against a figure from memory, where the fab's table allows 0.2 mm",
+  "with `[routing] hand_solder_keep_mm` (0 = off): on the solder side of every through-hole pad of a part with `bom: false` – the layer the part does not sit on – no via and no pad of another net closer than the keep, copper to copper; a pad without a net counts as a net of its own, the part's own pads are not compared, tracks do not count. Pads as `route read` saw them, like GEO.spacing; vias from the via drill file, with the net of the tracks of pcb.json that end on them – a via no track ends on counts as another net's ('via (no track, net unknown)'). `route check` measures the same before writing, and `route dsn` keeps vias away (7.5). `waive: {\"GEO.spacing\": \"…\"}` on the joint's part or net, or on the other part or net, lists the pair as waived – why it exists: the layout review found a via 0.25 mm from a hand-soldered LED joint – a bridge would have put 5 V without its resistor on an LED –, a via 0.26 mm between potentiometer pins and a resistor pad 0.37 mm from an LED joint; every check had passed",
+]
 replaces = ["L-13", "L-14", "L-16", "L-18"]
 sources = [
   "JLCPCB PCB Manufacturing Capabilities, minimum clearances: SMD pad to pad clearance (different nets) 0.15 mm (read 2026-10-26) – https://jlcpcb.com/capabilities/pcb-capabilities",
@@ -755,6 +929,9 @@ why = "Nothing else looks at the copper around a hole or at the web between two 
 fix = "Grow the pad or shrink the hole, as far as L-9's lead fit allows. Where the pitch allows neither, a footprint whose pitch carries hole + 2 × ring + the pad clearance, or a part with a matching hole pattern. Holes too close: move a via or a part, or take a smaller hole where L-9 still passes. A part whose ring the fab confirmed is waived in the graph with the reason (waive L-16 on the part or its net)."
 severity = "error"
 grades = { margin = "warning" }
+details = [
+  "every plated hole keeps JLCPCB's annular ring on TOP and BOTTOM (2 layers, 1 oz): a component hole 0.18 mm, below 0.20 mm a warning per part, a via 0.05 mm (via Ø ≥ hole + 0.1 mm) – measured in the **Gerber files** from the hole's edge to the nearest point without copper, so a pad, a track or a pour around the hole counts alike; and every two plated holes, also two of one part, keep JLCPCB's hole-to-hole spacing edge to edge: 0.45 mm when a component hole is one of them, 0.2 mm between two vias. Vias are the holes of the via drill file, the other plated holes are named by the through-hole pad of pcb.json at their place. Within 0.001 mm counts as kept (EasyEDA keeps mil and writes mm). `waive: {\"GEO.ring\": \"…\"}` on a part or net lists its holes as waived – why it exists: an RGB LED at 1.25 mm pitch had its holes widened for its legs (GEO.hole) to 0.80 mm with pads of 1.06 mm: a ring of 0.13 mm, below the fab's minimum of 0.18 mm, passed the gate; via pairs 0.47 mm apart were flagged by a review against a figure from memory, where the fab's table allows 0.2 mm",
+]
 replaces = ["L-16"]
 sources = [
   "JLCPCB PCB Manufacturing Capabilities (read 2026-10-26), Traces: PTH annular ring ≧0.20 mm; 2 layers, 1 oz: recommended 0.25 mm or above, absolute minimum 0.18 mm – https://jlcpcb.com/capabilities/pcb-capabilities",
@@ -770,6 +947,10 @@ why = "Nobody else checks library footprints: the Christmas bell's Nano footprin
 fix = "A footprint with larger holes, a part with thinner leads, or a decision (D-...) if the fit is accepted."
 severity = "error"
 grades = { margin = "warning", unknown = "note" }
+details = [
+  "through-hole leads known and fitting the footprint, before the layout: GEO.hole's test (8.1) on the holes of the footprint geometry – the board's `pcb dump`, else the library footprint of `edakit part import`; plated holes without `lead` in the entry pending, a hole that does not take the lead an error (`accept` on the component), tight in the worst case or a plated slot below 0.5 mm a warning; without geometry a note – finds e.g.: a library footprint drilling 0.70 mm for □0.5 mm legs, found before anything is placed",
+  "every through hole takes its lead at nominal size (lead data in the parts database); worst case (hole −0.08 mm, lead + tolerance) below 0.05 mm play or plated slots narrower than 0.5 mm: warning per part. GEO.hole runs the same test before the layout, on the footprint geometry (3.3) – why it exists: two parts whose leads would not have fitted the library holes",
+]
 replaces = ["P-7", "L-9"]
 sources = [
   "JLCPCB PCB capabilities: hole size tolerance +0.13/-0.08 mm, minimum plated slot width 0.5 mm on 2 layers – https://jlcpcb.com/capabilities/pcb-capabilities (read 2026-10-27)",
@@ -785,6 +966,10 @@ why = "Every reroute moves vias and parts, so a designator that had room loses i
 fix = "Own print on an opening: run edakit silk apply again after the last routing. Footprint print on an opening or beyond the outline: correct the footprint, or accept the warning. A part without a designator: give it room, a group label ([silk] groups), or list it in [silk] unlabelled with the reason. A text below 1.0 mm: raise label_h_mm, board_label_h_mm or h_mm, or accept the warning."
 severity = "error"
 grades = { margin = "warning" }
+details = [
+  "the silkscreen from the **Gerber files** (silk, mask, outline), per side. edakit's own print on a solder-mask opening fails: the designators, texts and artwork of `silk apply`, i.e. what is not in the print `silk apply` found before it placed anything (it keeps that in `<artifacts>/silk_footprints_<board>/`). Warnings: other print on an opening, one per part (the part of the nearest pad); print beyond the board outline, one per side; a part of the `designators` side without a visible designator (read with the PCB), group label (`[silk] groups`) or line in `[silk] unlabelled`; a text height edakit prints below 1.0 mm (`label_h_mm`, `board_label_h_mm`, `h_mm` of `[[silk.texts]]`). Spots below 0.0005 mm² are rounding; a side or part counts from 0.001 mm² – why it exists: designators lost after reroutes and a test point never labelled were found on pictures or in a review; the released board passed the gate with footprint print on the mask openings of 11 parts, which JLCPCB clips, and 3.3 mm² of print beyond its outline",
+  "with `[looks]` (7.5): every PCB text on the silkscreen of the visible side (pcb.json `strings`) is one the board file puts there – the board label when its side (`board_label_side`, default the `designators` side) is the visible one, the text of a `[[silk.texts]]` entry of that side, and, when `[silk] designators` is that side, a designator of the board or a key of `[silk] groups`; while `[silk] designators` names the other side, no part on the visible side shows its designator (read with the PCB, as GEO.silk). One fail per text or part, with side, text and position: `BOTTOM (visible): D31 shows its designator – [silk] designators is top`, `TOP (visible): text 'TEST' at (15.0, 3.0) mm is neither the board label nor a [[silk.texts]] entry of this side`. The footprints' own print is no PCB text (GEO.mark, GEO.silk), artwork is fills; a \"+\" placed by hand as a text goes into `[[silk.texts]]`, where GEO.mark still reads it. `waive: {\"GEO.silk\": \"…\"}` on a part lists its designator as waived – why it exists: a part placed again after `silk apply` (a footprint change) came back with its designator on the LED side, whose rule was designators off and the version line as the only text; every check passed and the layout review rated it \"block\"",
+]
 replaces = ["L-17", "L-19"]
 sources = [
   "JLCPCB PCB Manufacturing Capabilities, Legend (read 2026-10-27): minimum line width 0.15 mm; minimum text height 40 mil (1.0 mm), 'Characters height less than 40 mil(1.0mm) will be unidentifiable'; minimum distance between pad and silkscreen 0.15 mm – https://jlcpcb.com/capabilities/pcb-capabilities",
@@ -813,6 +998,9 @@ rule = "Gerber ZIP, BOM and pick-and-place file come from the same gate run, wit
 why = "Files from different states fit together only on paper; the manifest is the record of what was ordered."
 fix = "Run the gate again and upload only from its folder."
 severity = "error"
+details = [
+  "Gerber ZIP, BOM and pick and place from the same run; `fab/manifest.json` with SHA-256 per file, the state hashes and the fab hash (8.2)",
+]
 replaces = ["F-4"]
 sources = [
   "edakit handbook 8.3",
@@ -825,6 +1013,9 @@ why = "A missing layer or a shifted outline is found at the factory at best; too
 fix = "Export again; correct outline, holes or tooling holes in the board file and apply them."
 severity = "error"
 grades = { margin = "warning" }
+details = [
+  "Gerber set complete (a missing file is named here, and GEO.copper, GEO.mark, GEO.hole and GEO.silk, which read it, report it as not checked); outline and mounting holes from the outline layer = plan (± 0.2 mm); tooling holes in the NPTH file, mask open, no copper in the opening",
+]
 replaces = ["F-5"]
 sources = [
   "edakit handbook 7 and 8.1",
@@ -837,6 +1028,9 @@ why = "The order form fields that depend on the board are filled in by hand whil
 fix = "Correct [order] of the board file – a shorter ASCII remark, mark = \"specify\" with the placeholder (or another mark), the silkscreen colour JLCPCB prints on the mask (or another mask), tab zones only on stretches order.md lists as free, or the copper moved back from the edge – or add [tooling] holes; set thickness_mm to a thickness of the form (the mechanical model takes the same value). A warning the owner wants (JLCPCB's tooling holes, a hand-placed placeholder) is accepted in the sign-off file."
 severity = "error"
 grades = { margin = "warning" }
+details = [
+  "only with `[order]` in the board file (8.4): the remark at most 200 characters, ASCII (fail); `thickness_mm` a thickness of JLCPCB's form – 0.4, 0.6, 0.8, 1.0, 1.2, 1.6 or 2.0 mm (fail); the silkscreen colour the one JLCPCB prints on the mask colour – black on white, white on every other (fail); `mark = \"specify\"` with the placeholder `JLCJLCJLCJLC` on a silkscreen layer of pcb.json, at least 0.8 mm high in `[[silk.texts]]` (fail; no height there: warning); the placeholder with another mark (warning); Economic PCBA with fewer than 2 tooling holes (warning: JLCPCB drills its own); no copper of either side within `tab_copper_mm` of a declared tab zone, measured on the Gerber copper against the Gerber outline (fail, with the distance and the position); the outline stretches free of copper (information)",
+]
 replaces = ["F-6"]
 sources = [
   "edakit handbook 8.4",
@@ -853,6 +1047,9 @@ why = "The parts database feeds every check. A value copied from a distributor's
 fix = "Check the part (handbook 4.3) and fill in verified; resolve verify notes in the graph."
 severity = "pending"
 grades = { device = "warning" }
+details = [
+  "sign-off: every part `verified` against its datasheet, no open `verify` note (pending – blocks only the release) – finds e.g.: an unchecked part going into an order",
+]
 replaces = ["G-9"]
 sources = [
   "edakit handbook 4.3",
@@ -865,6 +1062,10 @@ why = "What the assembler can place is decided when the part is chosen, not when
 fix = "edakit stock after every part change. A part that fails: another part (part-search, edakit stock --lcsc for the candidates), the part soldered by hand (bom: false), or Standard PCBA chosen on purpose ([release] assembly.pcba = \"standard\"). A wrong MPN: correct the parts entry or the LCSC number. Accept a warning in the sign-off file with its reason."
 severity = "error"
 grades = { margin = "warning", stale = "pending", unchecked = "note" }
+details = [
+  "parts orderable (4.2): every assembled part listed at JLCPCB, in stock for `quantity` boards (with the attrition under Standard), its entry's MPN, not \"Standard Only\" on an Economic order – from the snapshot of `edakit stock`; MSL ≥ 5, a thin margin, another class warn; an old snapshot is pending, none a note – finds e.g.: a part that is pre-order only, Standard-only or baked, found in the quote",
+  "every BOM line in JLCPCB's public assembly catalogue with stock for `quantity` boards (otherwise only pre-order), under the MPN of its parts entry; another class than `jlc_class` warns – PARTS.stock checks the same and more from the stock snapshot when the part is chosen",
+]
 replaces = ["P-4", "F-2"]
 sources = [
   "edakit handbook 4.2 and 8.4",
@@ -878,6 +1079,9 @@ rule = "Every part bought separately and fitted by hand (bom: false) has an LCSC
 why = "The assembler's BOM leaves out every hand-soldered part, module and cable. What has no supplier and no order code is written into an order list by hand, late and without spares or the supplier's minimum – a 50-pack that does not exist, one LED short for the last board."
 fix = "Add order to the parts entry, e.g. {\"berrybase\": \"OSM5DK7331A\"} or {\"lcsc\": {\"moq\": 20, \"step\": 20}}, or give the component its LCSC number – for a C99… library number the supplier the part really comes from; then edakit order. Accept the warning in the sign-off file if the part is at hand already."
 severity = "warning"
+details = [
+  "supplier per part: a part bought separately (`bom: false`) has an LCSC number – a `C99…` EasyEDA library number is none – or `order` in its parts entry (warning) – finds e.g.: a module or LED nobody wrote an order code for, found when the order list is written by hand",
+]
 replaces = ["P-5"]
 sources = [
   "edakit handbook 4.1 and 8.4",
@@ -890,6 +1094,12 @@ why = "A check without its fact checks nothing and says so only here."
 fix = "Fill in the fact from the datasheet (handbook 4.1)."
 severity = "note"
 grades = { lead = "pending", functions = "note", hot_loop = "warning", radio = "note" }
+details = [
+  "through-hole leads known and fitting the footprint, before the layout: GEO.hole's test (8.1) on the holes of the footprint geometry – the board's `pcb dump`, else the library footprint of `edakit part import`; plated holes without `lead` in the entry pending, a hole that does not take the lead an error (`accept` on the component), tight in the worst case or a plated slot below 0.5 mm a warning; without geometry a note – finds e.g.: a library footprint drilling 0.70 mm for □0.5 mm legs, found before anything is placed",
+  "pin functions: a net with `fn` is on a pin whose parts entry lists that function (`functions`), the nets of one `fn_bus` on one peripheral instance, two PWM nets of one slice with the same fixed `pwm_hz` and a channel each; a net with `fn` on pins without `functions` is a note – finds e.g.: SPI data on the clock pin, an analog input without ADC, a buzzer on the PWM slice of an LED",
+  "hot loop in the hand-over: a part whose entry names its hot-loop pins (`hot_loop`, 4.1) has a `layout.loops` entry on every net of the loop – the nets of those pins and, one diode further, the net behind the rectifier on its switch node (`sw`); a buck or boost IC (`behavior`) without `hot_loop` is a warning; `accept` on the part, or on a net whose part of the loop closes over a pour – finds e.g.: a boost whose output loop was routed 61 mm across the board, passing every check because nobody listed it",
+  "radio stated: every part of graph type `module` or `microcontroller` has `compliance.radio` in its parts entry – its bands and power (4.1), or `\"none\"` when it does not transmit; missing is graded by `purpose.use` (8.1): a warning for a board that is sold (`\"sale\"`), information for one built for oneself or given away, or without a purpose – `accept` on one of its components –, other parts need it only if they transmit; a `radio` of another shape is an error. The entry is in the circuit hash: the statement renews M-1 and M-6 (8.2) – finds e.g.: an Arduino Nano whose entry says nothing about a radio – found by the regulatory review from the part's name; a plug-in board with an ESP32 its name does not show",
+]
 replaces = ["P-7", "G-15", "G-18", "P-11"]
 sources = [
   "JLCPCB PCB capabilities: hole size tolerance +0.13/-0.08 mm, minimum plated slot width 0.5 mm on 2 layers – https://jlcpcb.com/capabilities/pcb-capabilities (read 2026-10-27)",
@@ -909,6 +1119,12 @@ rule = "Every field of a parts entry has the form its kind's schema gives (edaki
 why = "A value of the wrong form is read as missing or wrong by every check that uses it."
 fix = "Correct the field as the message says; edakit part lint lists all."
 severity = "error"
+details = [
+  "USB-C sink: a receptacle with `cc1`/`cc2` pins has its own 5.1 kΩ ± 10 % to ground on each CC pin; silent when an IC is on the CC lines. A module or breakout states its receptacle's termination in `values.usb_c` (4.1): `rd_5k1` or `controller` passes, `none` has its CC pins checked the same way and fails without them – finds e.g.: no 5 V from a USB-C charger, CC1 and CC2 on one resistor, a breakout without its two resistors",
+  "hot loop in the hand-over: a part whose entry names its hot-loop pins (`hot_loop`, 4.1) has a `layout.loops` entry on every net of the loop – the nets of those pins and, one diode further, the net behind the rectifier on its switch node (`sw`); a buck or boost IC (`behavior`) without `hot_loop` is a warning; `accept` on the part, or on a net whose part of the loop closes over a pour – finds e.g.: a boost whose output loop was routed 61 mm across the board, passing every check because nobody listed it",
+  "radio power within the band's limit: a part that transmits (`compliance.radio` with `bands_mhz`, 4.1) stays within the limit of each EU band it transmits in whose limit is an e.i.r.p. – the band's highest: 100 mW in 2400–2483.5 MHz, 200 mW in 5150–5350 MHz, 1 W in 5470–5725 MHz; its e.i.r.p. is `eirp_dbm`, else `max_dbm` (conducted, at the RF port) + `antenna_dbi`. Over the limit, not known without them, or no `bands_mhz`: graded by `purpose.use` (8.1): a warning for a board that is sold (`\"sale\"`), information for one built for oneself or given away, or without a purpose – the finding says what the firmware must keep (\"the firmware must keep the conducted power at or below 17.0 dBm\"); a radio value that is no number an error; `accept` on the component. A lower limit of a category of device, power density, duty cycle and the e.r.p. bands (433, 868 MHz) stay with the regulatory review M-6 (chapter 15 – support, not legal advice) – finds e.g.: an ESP32 module with an external 3-dBi antenna at its 20.5 dBm: 23.5 dBm e.i.r.p. where 20 are allowed",
+  "radio stated: every part of graph type `module` or `microcontroller` has `compliance.radio` in its parts entry – its bands and power (4.1), or `\"none\"` when it does not transmit; missing is graded by `purpose.use` (8.1): a warning for a board that is sold (`\"sale\"`), information for one built for oneself or given away, or without a purpose – `accept` on one of its components –, other parts need it only if they transmit; a `radio` of another shape is an error. The entry is in the circuit hash: the statement renews M-1 and M-6 (8.2) – finds e.g.: an Arduino Nano whose entry says nothing about a radio – found by the regulatory review from the part's name; a plug-in board with an ESP32 its name does not show",
+]
 replaces = ["G-14", "G-18", "G-24", "P-11"]
 sources = [
   "edakit handbook 4.1 (field compliance) and 15.3 (what the review needs)",
@@ -921,6 +1137,9 @@ rule = "A parts entry with footprint_data – an own footprint as text (handbook
 why = "The data is what edakit builds the project's copy from and what the layout hash covers. A pad without a pin carries no net and the board misses a connection, a pin without a pad cannot be soldered, a through-hole pad without a hole is a pad on both sides with nothing between, and a '+' next to the cathode is the reference project's 5-mm LED again (handbook 4.4). Here it is found on the text, before EasyEDA has the copy – not in the gate's silkscreen (L-8) or in the polarity review M-1, whose circuit hash the data changes (decision 5)."
 fix = "Complete the data in the parts entry: place, shape, size and hole of the pad from the datasheet's land pattern; a pin for every pad that carries a net, \"mechanical\": true on a mounting pad; the mark next to the pad of its sign – or the pin's role corrected where the datasheet says so. edakit part footprint KEY writes the footprint pcb dump measured as a start."
 severity = "error"
+details = [
+  "footprint data complete – PARTS.footprint and SYNC.footprint only where a parts entry has `footprint_data` (4.5): every pad its place, its shape (`RECT`, `ELLIPSE`, `OVAL`) and size, a through-hole pad (`MULTI`) its hole; every pad a pin of the entry or `\"mechanical\": true`, every pin a pad; lines, texts, marks and outline well formed; a polarity mark nearest to a pad of its sign – GEO.mark's test (8.1) on the text; with `\"symbol\": \"box\"` the entry's `symbol` sides naming pins of the entry, each once. The same problem of several pads is one finding: `pads 1–24: shape missing` – finds e.g.: a pad the land pattern has and the entry's pins not, a \"+\" written next to the cathode",
+]
 replaces = ["P-9"]
 sources = [
   "edakit concept 'Circuit design as code' (docs/concepts/new/design-as-text.md), gap 2, proposals 1 and 3, and decision 5 of 2026-10-28: the footprint as data in the parts entry – origin, pads in the form part import caches them, outline and print; a pad without a pin in the entry is a finding, and so is the reverse",
@@ -934,6 +1153,9 @@ rule = "Every value block in a Markdown file of [docs] files equals its source �
 why = "Numbers in descriptions, decisions and schematic notes are typed once and then lag behind the circuit: a resistor swapped, a margin changed, a part removed. Reviewers and the next session read the stale number as a fact. A requirement copied into a README lags behind the requirements file the same way, and a dropped one still reads as if it held."
 fix = "edakit docs --write fills in the current values. A source that no longer exists: quote the part or net that replaced it, or drop the block. A dropped need or requirement: quote the entry that holds now, or drop the block; req: needs [project] requirements. Documents are in no hash, so this voids no sign-off."
 severity = "error"
+details = [
+  "documents quote the design data: every value block of `[docs] files` equals its source – a requirement's text too (`req:`, 3.6) –, every source of a block or a schematic-note placeholder exists, a quoted need or requirement is not dropped – run by `edakit docs` and the gate's stage G, not by `edakit check` (6.6) – finds e.g.: a description still on an old graph version, a current that changed with R1, a README with last month's R-4",
+]
 replaces = ["G-19"]
 sources = [
   "edakit handbook 6.6 and 3.6",
@@ -947,6 +1169,9 @@ why = "A requirement is traced through its references: where it comes from and w
 fix = "Correct the ID, or add what it names: the need or requirement to the requirements file, the manual check to the sign-off file, the check to [scripts]. A from that names a dropped entry: drop the requirement too, or name what it comes from now. Decisions (D-…), standards and documents in from are words to edakit, it does not resolve them."
 severity = "error"
 grades = { margin = "warning", draft = "warning" }
+details = [
+  "requirement references resolve – DOCS.ref to DOCS.draft only with `[project] requirements` (3.6), on every entry that is not dropped: a need or requirement in `from` (N-…, R-…) is in the files, a manual check in `from` or in `verify` `signoff` (M-…) is one of the sign-off file or a required one (8.2), a `rows` pattern that starts with a check ID names a check of the catalog that is not retired, a `script` is an entry `[scripts.<name>]` of kind `check` or the id of a `[[release.stages]]`; a `from` that names a dropped need or requirement is a warning. Decisions, standards and words in `from` are not resolved. About a draft every finding is a warning – an error once the user accepts the requirement (3.6) – finds e.g.: `from = [\"N-12\"]` for N-2, `rows = \"E-30 *\"`, `signoff = \"M-7\"`, a requirement that still comes from a dropped need",
+]
 replaces = ["G-20"]
 sources = [
   "edakit handbook 3.6, 8.7 and 10.4",
@@ -961,6 +1186,9 @@ why = "A need says what someone wants, in their words; only a requirement makes 
 fix = "Write the requirement that follows from the need (from = [\"N-…\"], with binding and verify), or name the need in the from of an existing requirement. A need that is no longer wanted gets status = \"dropped\" with its reason."
 severity = "error"
 grades = { draft = "warning" }
+details = [
+  "accepted need has a requirement: every accepted need is in `from` of a requirement that is not dropped – finds e.g.: a need the user accepted that no requirement made testable",
+]
 replaces = ["G-21"]
 sources = [
   "edakit handbook 3.6 and 10.4",
@@ -974,6 +1202,9 @@ why = "A requirement without evidence is a promise nobody checks: the gate canno
 fix = "Add verify: rows of the gate protocol ({ rows = \"E-3 * J1 current from the supply\" }), a manual check whose note names the requirement ({ signoff = \"M-1\" }), a project script ({ script = \"…\" }) or a step of the acceptance test ({ accept = \"…\" }) – what only a delivered board can show is an acceptance step."
 severity = "error"
 grades = { draft = "warning" }
+details = [
+  "requirement has evidence: every requirement that is not dropped has `verify` – for a draft a warning, an error once accepted – finds e.g.: a requirement the gate has nothing to evaluate for",
+]
 replaces = ["G-22"]
 sources = [
   "edakit handbook 3.6, 8.7 and 10.4",
@@ -988,6 +1219,9 @@ why = "Claude drafts requirements, only the user approves them: like accepting a
 fix = "The user decides: status = \"accepted\", the text changed and then accepted, or status = \"dropped\" with a reason. Nothing to accept in the sign-off file: a draft does not hold up the release."
 severity = "warning"
 grades = { draft = "warning" }
+details = [
+  "draft not approved: a need or requirement with `status = \"draft\"`, or without `status`, is a warning until the user accepts or drops it; in the gate information – a draft never blocks the release and needs no acceptance (8.7) – finds e.g.: a requirement Claude wrote and nobody approved, which the release is not held to",
+]
 replaces = ["G-23"]
 sources = [
   "edakit handbook 3.6, 8.7 and 11.4 (working agreement 4: only real decisions go to the user)",

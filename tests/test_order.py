@@ -10,7 +10,7 @@ import pytest
 
 from helpers import check, executed
 
-from edakit import checks, cli
+from edakit import cli
 from edakit.design import Design
 
 

@@ -12,7 +12,7 @@ import pytest
 
 from helpers import check, executed
 
-from edakit import checks, part
+from edakit import part
 from edakit.design import Design
 from edakit.release import gate
 

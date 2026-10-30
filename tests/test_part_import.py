@@ -13,7 +13,7 @@ import pytest
 
 from helpers import check as engines_check
 
-from edakit import checks, cli, part, pcb
+from edakit import cli, part, pcb
 from edakit.design import Design
 
 ANSWERS = Path(__file__).resolve().parent / "fixtures" / "easyeda"

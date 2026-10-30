@@ -12,7 +12,7 @@ from test_requirements import LED_BAR, variant_of, with_requirements
 
 from helpers import check as engines_check
 
-from edakit import engines, checks, cli, requirements, scripts
+from edakit import engines, cli, requirements, scripts
 from edakit.design import Design
 from edakit.release import gate
 
