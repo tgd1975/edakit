@@ -153,6 +153,26 @@ def bridge_part(cfg, line, verbose=False):
             mcp.close()
 
 
+ODB_TOOL = "name: 'easyeda_export_odb'"     # the tool odb-tool-patch.mjs adds to the server (handbook 2.5)
+
+
+def odb_line(cfg, runtime, installed):
+    """(level, text, hint) for the ODB++ export: the tool in the installed server – needed only with a maker of
+    [cart] makers that takes ODB++ (AISLER, F-7); the bridge's handler is in the extension bridge-extension-patch.sh
+    builds, and F-7 names an extension without it."""
+    from .release import fab
+    need = cfg is not None and bool(fab.odb_takers(cfg))
+    tools = Path(runtime) / "node_modules/easyeda-mcp-pro/dist/tools/L1_export.js"
+    has = installed and tools.exists() and ODB_TOOL in tools.read_text(encoding="utf-8", errors="replace")
+    if has:
+        return "OK", "ODB++ export: easyeda_export_odb in the server; the bridge needs the extension with ODB++ " \
+                     "(bridge-extension-patch.sh)", ""
+    return ("WARN" if need else "INFO", "ODB++ export: easyeda_export_odb not in the server"
+            + (" – a maker of [cart] makers takes ODB++ (F-7)" if need else ""),
+            "mcp-server.sh patches it in on its next start (odb-tool-patch.mjs); then build and import the bridge "
+            "extension with ODB++ (bash edakit/easyeda/bridge-extension-patch.sh, handbook 2.5)" if need else "")
+
+
 def main(cfg, args):
     bad = 0
 
@@ -174,6 +194,7 @@ def main(cfg, args):
     installed = os.path.exists(os.path.join(runtime, "node_modules/easyeda-mcp-pro/dist/index.js"))
     line("OK" if installed else "WARN", f"easyeda-mcp-pro {version} in {runtime}",
          "" if installed else "installs itself on the first start of mcp-server.sh")
+    line(*odb_line(cfg, runtime, installed))
     code, ps = run("ps", "-eo", "pid,args")
     easyeda = [p for p in ps.splitlines() if "easyeda-pro" in p and "grep" not in p]
     line("OK" if easyeda else "WARN", f"EasyEDA Pro running: {'yes' if easyeda else 'no'}",

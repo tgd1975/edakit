@@ -7,6 +7,8 @@
 Result in DIR/<board>/:
     gerber/ and gerber_<board>.zip   Gerber and drill files as EasyEDA exports them (upload the ZIP)
     bom_<board>.csv                  BOM in JLCPCB format, generated from the graph
+    odb_<board>.zip                  with a maker of [cart] makers that takes ODB++ (AISLER): EasyEDA's ODB++ export
+                                     (easyeda_export_odb), checked by F-7; odb_error.txt when the export failed
     bom_<board>_mpn.csv              with a maker of [cart] makers that matches by MPN (Eurocircuits): the same rows
                                      with manufacturer and MPN of the parts entries, in the maker's columns
     cpl_<board>.csv                  pick-and-place file in JLCPCB format (BOM parts only)
@@ -74,6 +76,12 @@ assembly preview at JLCPCB.
        same offline, from the stock snapshot)
   F-3  pick and place: every BOM part exactly once, side and rotation = PCB; sides/SMD as [release] assembly says
   F-5  Gerber set complete; outline and holes = plan (± 0.2 mm); tooling holes in the NPTH file, mask open, no copper
+  F-7  with a maker of [cart] makers that takes ODB++ (AISLER; fails for the planned maker, warns for another one):
+       odb_<board>.zip, exported through the patched easyeda_export_odb, against this run's files – every layer
+       (copper, mask, paste, silkscreen) rasterised as L-2 and XOR'd with its Gerber layer, no spot above SPOT_MM2 and
+       no layer in one only; the drill hits = the drill files (1 µm, diameter, plated or not); the profile = the Gerber
+       outline; every BOM part once at the CPL's place, rotation (ODB++ clockwise) and side with its part number, a
+       part with bom: false as the maker's dnp says; the nets of the pins as the graph's, compared as groups
   F-6  with [order] or [cart], per maker of [cart] makers (fails for the planned maker, warns for another one): every
        field a value of the maker's form, the remark, thickness_mm and the colours of mask and silkscreen as its form
        has them, mark = its placeholder on the silkscreen – JLCPCB's placeholder at a maker without one –, its tooling
@@ -98,6 +106,7 @@ import hashlib
 import io
 import json
 import math
+import re
 import shutil
 import sys
 import zipfile
@@ -177,6 +186,7 @@ def collect(cfg, board, d, verbose=False):
         if not res.get("exported"):
             raise SystemExit(f"Gerber export failed: {res}")
         shutil.copy(res["artifact_path"], d / f"gerber_{board.name}.zip")
+        export_odb(cfg, mcp, board, d)        # a maker of [cart] makers that takes ODB++ (AISLER): F-7 checks it
         res = mcp.call("easyeda_export_pick_place", projectId="current", format="csv", timeout=120)
         if not res.get("exported"):
             raise SystemExit(f"pick-and-place export failed: {res}")
@@ -201,6 +211,42 @@ def collect(cfg, board, d, verbose=False):
     shutil.rmtree(d / "gerber", ignore_errors=True)
     with zipfile.ZipFile(d / f"gerber_{board.name}.zip") as z:
         z.extractall(d / "gerber")
+
+
+ODB_ERROR = "odb_error.txt"     # why the ODB++ export of a run failed – F-7 names it
+
+
+def odb_takers(cfg):
+    from .. import makers
+    return [m for m in makers.all_of(cfg) if "odb" in m.files]
+
+
+def export_odb(cfg, mcp, board, d):
+    """odb_<b>.zip through the patched MCP tool easyeda_export_odb (handbook 2.5) – only for a maker that takes ODB++;
+    a .tgz from EasyEDA is packed into a zip with the same files. A failed export leaves odb_error.txt for F-7."""
+    from .. import eda
+    target = d / f"odb_{board.name}.zip"
+    target.unlink(missing_ok=True)
+    (d / ODB_ERROR).unlink(missing_ok=True)
+    if not odb_takers(cfg):
+        return
+    try:
+        res = mcp.call("easyeda_export_odb", projectId="current", unit="mm", timeout=300)
+    except eda.MCPError as e:
+        (d / ODB_ERROR).write_text(f"easyeda_export_odb: {e} – the patched MCP server and bridge (handbook 2.5)")
+        return
+    if not res.get("exported"):
+        (d / ODB_ERROR).write_text(f"easyeda_export_odb: {res.get('error') or res}")
+        return
+    raw = Path(res["artifact_path"]).read_bytes()
+    if raw[:2] == b"PK":
+        target.write_bytes(raw)
+        return
+    import tarfile
+    with tarfile.open(fileobj=io.BytesIO(raw)) as tar, zipfile.ZipFile(target, "w", zipfile.ZIP_DEFLATED) as z:
+        for m in sorted(tar.getmembers(), key=lambda m: m.name):
+            if m.isfile():
+                z.writestr(m.name, tar.extractfile(m).read())
 
 
 def jlc_search(keyword, page_size=10, timeout=30):
@@ -1356,6 +1402,201 @@ def check_cpl(cfg, board, design, d, ours, rows):
         check_tooling(board, g, rows)
 
 
+# --- F-7: the ODB++ export against the run's files ----------------------------------------------------------------------
+
+ODB_POS_MM = 0.01            # F-7: a part's place against the CPL
+ODB_HOLE_MM = 0.001          # F-7: a drill hit's place and diameter against the drill files
+ODB_PROFILE_MM = 0.05        # F-7: the profile against the Gerber outline (Hausdorff distance)
+ROLES = (("TopLayer", ("copper", "top")), ("BottomLayer", ("copper", "bottom")), ("TopSolderMask", ("mask", "top")),
+         ("BottomSolderMask", ("mask", "bottom")), ("TopSilkscreen", ("silk", "top")),
+         ("BottomSilkscreen", ("silk", "bottom")), ("TopPaste", ("paste", "top")), ("BottomPaste", ("paste", "bottom")))
+ODB_KIND = {"SIGNAL": "copper", "POWER_GROUND": "copper", "MIXED": "copper", "SOLDER_MASK": "mask",
+            "SILK_SCREEN": "silk", "SOLDER_PASTE": "paste"}
+
+
+def gerber_role(f):
+    """What a Gerber file of EasyEDA's export is: (kind, side) – copper, mask, silk, paste of top or bottom, an inner
+    copper layer (copper, "inner <n>") –, "outline", or None."""
+    name = f.name
+    if "BoardOutline" in name:
+        return "outline"
+    m = re.search(r"Inner(?:Layer)?(\d+)", name)
+    if m:
+        return ("copper", f"inner {m.group(1)}")
+    return next((role for key, role in ROLES if key in name), None)
+
+
+def odb_roles(job):
+    """{(kind, side): layer} of the ODB++ board layers: the copper layers in matrix order are top, inner 1 …, bottom;
+    mask, silk and paste above the top copper are of the top, below the bottom copper of the bottom."""
+    copper = [lay for lay in job.board_layers() if ODB_KIND.get(lay.type) == "copper"]
+    out = {}
+    for i, lay in enumerate(copper):
+        side = "top" if i == 0 else "bottom" if i == len(copper) - 1 else f"inner {i}"
+        out[("copper", side)] = lay
+    if copper:
+        first, last = copper[0].row, copper[-1].row
+        for lay in job.board_layers():
+            kind = ODB_KIND.get(lay.type)
+            if kind and kind != "copper":
+                side = "top" if lay.row < first else "bottom" if lay.row > last else None
+                if side and (kind, side) not in out:
+                    out[(kind, side)] = lay
+    return out
+
+
+def check_odb(cfg, board, design, d, rows):
+    """F-7 for a maker of [cart] makers that takes ODB++ (AISLER): every layer, the drill hits, the profile, the parts
+    and the nets of odb_<b>.zip against this run's Gerber, drill, BOM and CPL files and the graph – fails for the
+    planned maker, warns for another one."""
+    from .. import makers, odb
+    takers = odb_takers(cfg)
+    if not takers:
+        return
+    m = takers[0]
+    who = "" if m.key == makers.planned(cfg) else f"{m.name} (not the planned maker): "
+
+    def add(check, ok, actual, expected, level=None):
+        rows.add("F", "F-7", board.name, check, ok, actual if ok or not who else who + str(actual), expected,
+                 level or makers.result(cfg, m.key, ok))
+        rows[-1]["maker"] = m.key
+    path = d / f"odb_{board.name}.zip"
+    if not path.exists():
+        why = (d / ODB_ERROR).read_text() if (d / ODB_ERROR).exists() else "not exported"
+        add(f"ODB++ of this run for {m.name}", False, f"{path.name}: {why}", "exported")
+        return
+    try:
+        job = odb.read(path)
+    except odb.OdbError as e:
+        add(f"ODB++ of this run for {m.name}", False, str(e), "readable")
+        return
+    g = d / "gerber"
+    gerbers, drills = built_files(g)
+    roles = odb_roles(job)
+    r = frame(g, gerbers)
+    bad, seen = [], set()
+    for f in gerbers:
+        role = gerber_role(f)
+        if role == "outline":
+            continue
+        lay = roles.get(role)
+        if lay is None:
+            bad.append(f"{f.name}: no layer of the ODB++ is the {' '.join(role) if role else 'same'}")
+            continue
+        seen.add(lay.name)
+        xor = r.render(gerber.parse_gerber(f)) ^ odb.render(r, lay.features)
+        found = [s for s in spots(xor, r) if s[0] >= SPOT_MM2]
+        if found:
+            a, (x0, x1, y0, y1) = found[0]
+            bad.append(f"{f.name} ≠ {lay.name}: {len(found)} spots, the largest {a:.3f} mm² at ({(x0 + x1) / 2:.2f}, "
+                       f"{(y0 + y1) / 2:.2f})")
+    bad += [f"{lay.name}: in the ODB++, no Gerber layer of the run" for role, lay in roles.items() if lay.name not in seen]
+    add("every layer of the ODB++ = the Gerber layer of the run (copper, mask, paste, silkscreen; raster XOR)", not bad,
+        "; ".join(bad[:6]) or f"{len(seen)} layers equal (no spot above {SPOT_MM2} mm²)", "equal")
+
+    # each hole once: EasyEDA writes a via into the PTH file and into a via file of its own
+    want = sorted({(round(x, 3), round(y, 3), round(w, 3), "non_plated" if "NPTH" in f.name else "plated")
+                   for f in drills for x, y, w, _ in gerber.parse_holes(f)})
+    got = sorted({(round(x, 3), round(y, 3), round(dia, 3), "plated" if kind == "via" else kind)
+                  for lay in job.of_type("DRILL") for x, y, dia, kind in lay.holes})
+    lost = [h for h in want if not any(abs(h[0] - o[0]) <= ODB_HOLE_MM and abs(h[1] - o[1]) <= ODB_HOLE_MM
+                                       and abs(h[2] - o[2]) <= ODB_HOLE_MM and h[3] == o[3] for o in got)]
+    extra = len(got) - (len(want) - len(lost))
+    add("drill holes of the ODB++ = the drill files (place 1 µm, diameter, plated or not)", not lost and extra == 0,
+        f"{len(got)} holes" if not lost and extra == 0 else
+        "; ".join([f"({h[0]:.3f}, {h[1]:.3f}) Ø {h[2]:.3f} {h[3]}: not in the ODB++" for h in lost[:4]]
+                  + ([f"{extra} holes in the ODB++ the drill files do not have"] if extra > 0 else [])), "equal")
+
+    from shapely.geometry import Polygon
+
+    from . import order_sheet
+    edge = order_sheet.outline(g) if not gerber.missing(g, "outline") else None
+    shape = max((Polygon(c) for c in job.profile if len(c) >= 3), key=lambda p: p.area, default=None)
+    dist = edge.exterior.hausdorff_distance(shape.exterior) if edge is not None and shape is not None else None
+    add("profile of the ODB++ = the Gerber outline", dist is not None and dist <= ODB_PROFILE_MM,
+        "no profile in the ODB++" if shape is None else "no closed Gerber outline" if edge is None else
+        f"{dist:.3f} mm apart at most", f"<= {ODB_PROFILE_MM} mm")
+
+    check_odb_parts(cfg, board, design, d, job, m, add)
+    check_odb_nets(design, board, job, add)
+
+
+def mm_value(v):
+    return float(str(v).lower().replace("mm", "").strip())
+
+
+def check_odb_parts(cfg, board, design, d, job, m, add):
+    """The components of the ODB++: every BOM part exactly once, at the place, rotation and side of the CPL, with the
+    BOM's part number; the parts not to place (bom: false) as the maker's profile says (dnp)."""
+    with open(d / f"cpl_{board.name}.csv", newline="", encoding="utf-8") as f:
+        cpl = {r["Designator"]: r for r in csv.DictReader(f)}
+    bom = {}
+    with open(d / f"bom_{board.name}.csv", newline="", encoding="utf-8") as f:
+        for r in csv.DictReader(f):
+            for ref in r["Designator"].split(","):
+                bom[ref.strip()] = r
+    comps = defaultdict(list)
+    for c in job.components:
+        comps[c.designator].append(c)
+    bad = [f"{ref}: {len(comps[ref])}x in the ODB++" for ref in sorted(bom, key=natural_key) if len(comps[ref]) != 1]
+    for ref in sorted(bom, key=natural_key):
+        if len(comps[ref]) != 1 or ref not in cpl:
+            continue
+        c, row = comps[ref][0], cpl[ref]
+        x, y = mm_value(row["Mid X"]), mm_value(row["Mid Y"])
+        if abs(c.x - x) > ODB_POS_MM or abs(c.y - y) > ODB_POS_MM:
+            bad.append(f"{ref}: at ({c.x:.3f}, {c.y:.3f}), the CPL ({x:.3f}, {y:.3f})")
+        side = "top" if row["Layer"].lower().startswith("t") else "bottom"
+        if c.side != side:
+            bad.append(f"{ref}: on the {c.side} in the ODB++, the CPL {side}")
+        rot = (360 - c.rot) % 360          # ODB++ turns clockwise, the CPL counter-clockwise (ordering step 0b)
+        if abs((rot - float(row["Rotation"]) + 180) % 360 - 180) > 0.01:
+            bad.append(f"{ref}: rotation {rot:g}° (ODB++ {c.rot:g}° clockwise), the CPL {float(row['Rotation']):g}°")
+    numbered = [c for c in job.components if c.designator in bom]
+    names = lambda c: {c.part, *c.props.values()}  # noqa: E731
+    keys = lambda r: {r.get("LCSC Part #"), (design.parts.get(r.get("LCSC Part #")) or {}).get("mpn")} - {None, ""}  # noqa: E731
+    if numbered and not any(names(c) & keys(bom[c.designator]) for c in numbered):
+        bad.append("no part of the ODB++ carries its BOM's part number (LCSC or MPN) – the maker cannot match them")
+    else:
+        bad += [f"{c.designator}: part {c.part or '–'} – the BOM {', '.join(sorted(keys(bom[c.designator])))}"
+                for c in numbered if not names(c) & keys(bom[c.designator])]
+    placed = design.board_comps(board.name)
+    hand = sorted((ref for ref in comps if ref in placed and placed[ref].get("bom") is False), key=natural_key)
+    alien = sorted((ref for ref in comps if ref not in bom and ref not in hand), key=natural_key)
+    bad += [f"{ref}: in the ODB++, neither in the BOM nor a part of the board not to place" for ref in alien]
+    if hand and m.data.get("dnp") == "omit":
+        bad += [f"{ref}: bom: false, but in the ODB++ – {m.name} would place it" for ref in hand]
+    add("parts of the ODB++ = BOM and CPL (once each, place, rotation, side, part number)", not bad,
+        "; ".join(bad[:6]) or f"{len(bom)} parts", "equal")
+    if hand and m.data.get("dnp") != "omit":
+        add("parts not to place, in the ODB++", True, f"{', '.join(hand)} (bom: false) – the job lists them, the skill "
+            "cart marks them on the maker's page and B-1 checks the marks", "information", "info")
+
+
+def check_odb_nets(design, board, job, add):
+    """The nets of the ODB++ pins as the graph has them: the pins of one graph net on one ODB++ net, none other on it
+    – compared as groups, not by name (a renamed net counts as long as it joins the same pins)."""
+    pin_net = {p: name for name, pins in design.board_nets(board.name).items() for p in pins}
+    odb_net = {f"{c.designator}.{pin}": net for c in job.components for pin, _, _, net in c.pins
+               if net and not net.startswith("$NONE")}
+    groups = defaultdict(set)
+    for p, net in odb_net.items():
+        if p in pin_net:
+            groups[net].add(pin_net[p])
+    bad = [f"ODB++ net {net} joins {', '.join(sorted(n))}" for net, n in groups.items() if len(n) > 1]
+    by_graph = defaultdict(set)
+    for p, net in odb_net.items():
+        if p in pin_net:
+            by_graph[pin_net[p]].add(net)
+    bad += [f"{name}: on {len(nets)} ODB++ nets ({', '.join(sorted(nets))})" for name, nets in sorted(by_graph.items())
+            if len(nets) > 1]
+    lost = sorted((p for p in pin_net if p.split(".")[0] in {c.designator for c in job.components} and p not in odb_net),
+                  key=natural_key)
+    bad += [f"{p}: no net in the ODB++, the graph {pin_net[p]}" for p in lost[:4]]
+    add("nets of the ODB++ pins = the graph", not bad, "; ".join(bad[:6]) or f"{len(odb_net)} pins on "
+        f"{len(groups)} nets", "equal")
+
+
 def check_outline(board, g, rows):
     outline = [board.eda_point(*p) for p in board.outline]
     holes = [(*board.eda_point(h["x"], h["y"]), h["d"]) for h in board.holes]
@@ -1425,6 +1666,7 @@ def run(cfg, board, out, offline=False, verbose=False):
     check_looks(board, d, rows)
     check_visible_print(cfg, board, design, d, rows)
     check_fab(cfg, board, design, d, rows)
+    check_odb(cfg, board, design, d, rows)           # F-7, only with a maker that takes ODB++
     from . import order_sheet
     order_sheet.check(cfg, board, design, d, rows, bom_rows(design, board))   # F-6, only with [order]
     if not gerber.missing(d / "gerber", "top", "bottom", "top_silk", "bottom_silk"):   # otherwise F-5 names them
