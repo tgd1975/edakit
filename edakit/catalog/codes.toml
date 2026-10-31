@@ -261,7 +261,7 @@ sources = [
   "edakit handbook 5.3",
   "the datasheet of each part: ratings in its parts entry (MCU: gpio_i_max_a, gpio_i_total_max_a; rth_ja_k_per_w, tj_max_c)",
   "UL, IEC 62368-1 Technical Brief: Touch Temperature Limits (Flore Chiang, October 22, 2010), pp. 3–4: TS1 limits derived from table 42 of IEC 62368-1, based on ISO 13732-1:2006 – metal / plastic and rubber: longer than 1 min 48 / 48 °C, 10 s to 1 min 51 / 60 °C, 1–10 s 60 / 77 °C, less than 1 s 70 / 94 °C; TS2 10 K higher",
-  "AOS AO3401A Rev 3.1 (December 2023), as in edakit/blocks/parts/C15127.json: RθJA 125 K/W, TJ max 150 °C, PD 0.9 W at 70 °C",
+  "AOS AO3401A Rev 3.1 (December 2023), as in edakit/parts/C15127.json: RθJA 125 K/W, TJ max 150 °C, PD 0.9 W at 70 °C",
   "ngspice: the drain current @m[id] of a MOSFET includes its body diode (@m[ibd]) – a level-1 AO3401A with its gate at its source and 5.4 V at its drain gives @m[id] = −0.947 A = @m[ibd]",
   "Diodes Incorporated DS39724 Rev. 2-2 (AP2112, June 2017), Absolute Maximum Ratings: θJA 184 °C/W in SOT25 without heatsink, TJ +150 °C – the LDO of the LILYGO T-Display, which carries the ESP32's own current",
 ]
@@ -1091,6 +1091,18 @@ replaces = ["G-14", "G-18", "G-24", "P-11"]
 sources = [
   "edakit handbook 4.1 (field compliance) and 15.3 (what the review needs)",
   "Lesson of the Christmas bell (tgd1975/automatic_christmas_bell, D-18 from the M-6 reviews of D-16): on the boards main, smd and tht U1 is an Arduino Nano without a transmitter, no parts entry said so, and the M-6 reviews of 2026-10-26 established it from the part's identity; on esp32 the T-Display's compliance.radio was added by hand during the review",
+]
+
+[codes."PARTS.library"]
+title = "copy of the parts library current"
+rule = "A parts entry copied from edakit's parts library (its field library) names the library version it was taken from: a library entry that has changed since is noted (grade newer), and so is a copy of an entry the owner has not signed (grade draft)."
+why = "The library entry is corrected or extended after a project took its copy – a limit read again, a pin function added; the project does not learn it unless something says so. A copy stays the project's: it changes only on purpose, with edakit part add --update. An unsigned library entry is a draft – Claude wrote it from the datasheet, nobody has checked it."
+fix = "Compare the versions (edakit part add <key> --update shows what changed and takes the library's version over the copy), or keep the copy and accept the note; a draft: the owner checks the library entry against its datasheet and signs it (edakit part sign <key> --by NAME), or the project signs its copy as its own entry."
+severity = "note"
+grades = { newer = "note", draft = "note" }
+sources = [
+  "rules-at-scale.md, decision 8 (2026-10-31): the library in edakit, taken over as a copy that names its version, every entry signed by the owner",
+  "edakit handbook 4.1 (the parts library)",
 ]
 
 [codes."PARTS.footprint"]

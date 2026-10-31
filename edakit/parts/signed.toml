@@ -1,0 +1,7 @@
+# The owner's signatures of the library's entries (rules-at-scale.md, decision 8): an entry counts once its owner has
+# signed it – `edakit part sign <key> --by NAME` writes its line with the SHA-256 of the entry as signed. An entry
+# changed after its signature is a draft again until it is signed anew. Claude does not sign here.
+#
+#   C2297 = { by = "…", date = "2026-11-01", sha256 = "…" }
+
+[signed]

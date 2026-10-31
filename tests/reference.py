@@ -22,7 +22,7 @@ from pathlib import Path
 
 ROOT = Path(__file__).resolve().parents[1]
 EXAMPLE = ROOT / "tests" / "fixtures" / "led-bar"
-LIBRARY = ROOT / "edakit" / "blocks" / "parts"
+LIBRARY = ROOT / "edakit" / "parts"
 
 
 class Project:

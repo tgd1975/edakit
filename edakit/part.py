@@ -1360,6 +1360,13 @@ def main(cfg, args):
         if args.action == "lint":
             from . import schema
             return schema.main_lint(cfg, args)
+        if args.action in ("add", "sign"):
+            from . import library
+            try:
+                return (library.main_add if args.action == "add" else library.main_sign)(cfg, args)
+            except library.LibraryError as e:
+                print(f"edakit part {args.action}: {e}", file=sys.stderr)
+                return 1
         if args.action == "diff":
             return main_diff(cfg, args)
         if args.action == "fetch":

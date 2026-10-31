@@ -111,14 +111,17 @@ def build_parser():
     _common(p)
 
     p = sub.add_parser("part", help="the library's data of an LCSC number, a footprint swap compared, datasheets, "
-                                    "a catalogue search, own parts, own footprints as data")
+                                    "a catalogue search, own parts, own footprints as data, entries of edakit's "
+                                    "parts library")
     p.add_argument("action", choices=["import", "diff", "fetch", "search", "datasheet", "own", "footprint", "build",
-                                      "lint"])
+                                      "lint", "add", "sign"])
     p.add_argument("source", nargs="?", help="import: the LCSC number; diff: the old part; fetch, footprint, build: "
                                              "the parts-entry key; search: the keywords; own: the board's project (its "
-                                             "directory or edakit.toml)")
+                                             "directory or edakit.toml); add, sign: the library entry (edakit/parts/)")
     p.add_argument("new", nargs="?", help="diff: the new part (LCSC number or parts-entry key)")
-    p.add_argument("--update", action="store_true", help="import: fill in what the existing entry lacks")
+    p.add_argument("--update", action="store_true", help="import: fill in what the existing entry lacks; add: take "
+                                                         "the library's version over the project's copy")
+    p.add_argument("--by", help="sign: the owner's name")
     p.add_argument("--url", help="fetch: try this URL first")
     p.add_argument("--all", action="store_true", help="fetch: every parts entry without a kept datasheet")
     p.add_argument("--json", help="diff: write the comparison as JSON; search: the hits")

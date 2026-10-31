@@ -40,7 +40,7 @@ In this order; the first question that fails decides.
 
 | Question | If not |
 |---|---|
-| **New?** `edakit rules`, `edakit explain <code>`, `[retired]` of `edakit/catalog/codes.toml`, the domain files `edakit/domains/`, the defaults and tables in `edakit/catalog/`, `edakit block list`, `edakit/blocks/parts/`, the other proposals (`gh issue list --label rule-proposal --state all`) | **Rejected**, naming what covers it. Covered in part: **Question** – extend that one? |
+| **New?** `edakit rules`, `edakit explain <code>`, `[retired]` of `edakit/catalog/codes.toml`, the domain files `edakit/domains/`, the defaults and tables in `edakit/catalog/`, `edakit block list`, `edakit/parts/`, the other proposals (`gh issue list --label rule-proposal --state all`) | **Rejected**, naming what covers it. Covered in part: **Question** – extend that one? |
 | **The right kind?** The table in section 1 of `.claude/skills/add-rule/SKILL.md` | clearly another kind: go on with that kind and say so. Unclear: **Question** |
 | **Do the sources hold?** Open and read every source; the rule and its numbers must be in it | the source says otherwise: **Rejected**. Missing, unreachable, or it does not cover the numbers: **Question** |
 | **General?** It holds for other projects with these parts or this pattern, not only for the origin's choices | **Rejected**: it belongs into that project – its parts entry, its CLAUDE.md, its decision log |

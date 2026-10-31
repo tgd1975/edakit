@@ -12,7 +12,8 @@ nets, and ports – the nets that connect to the rest of the circuit. `add` copi
     --connect becomes its own net <INSTANCE>_<PORT>, except "gnd", which joins the project's ground
   - a net that does not exist yet gets the block's voltage range: [min, max], or "@port" for the range of the net that
     port is connected to
-  - missing parts entries are copied from the library (edakit/blocks/parts/); an existing entry must have the same pins
+  - missing parts entries are copied from edakit's parts library (edakit/parts/, edakit part add) with their
+    provenance; an existing entry must have the same pins
   - the graph file keeps its formatting (indent, UTF-8); nothing is written with --dry-run
 
 The block's notes say what is left to decide (values, sim.json, the graph's checks). Afterwards: edakit check, edakit hints,
@@ -23,7 +24,6 @@ from __future__ import annotations
 
 import json
 import re
-import shutil
 from pathlib import Path
 
 from .design import natural_key
@@ -47,8 +47,8 @@ def load(name=None, file=None):
 
 
 def library_part(lcsc):
-    path = LIBRARY / "parts" / f"{lcsc}.json"
-    return json.loads(path.read_text(encoding="utf-8")) if path.exists() else None
+    from . import library as parts_library
+    return parts_library.entry(lcsc)
 
 
 def split_designator(des):
@@ -146,7 +146,7 @@ def parts_to_copy(lcsc_numbers, parts_dir, comps):
         mine = parts_dir / f"{lcsc}.json"
         entry = json.loads(mine.read_text(encoding="utf-8")) if mine.exists() else library_part(lcsc)
         if entry is None:
-            raise BlockError(f"{lcsc}: neither in {parts_dir} nor in the block library – part-search skill first")
+            raise BlockError(f"{lcsc}: neither in {parts_dir} nor in the parts library – part-search skill first")
         names = {k: v["name"] for k, v in entry["pins"].items()}
         for c in comps:
             if c.get("lcsc") == lcsc and c["pins"] != names:
@@ -184,8 +184,9 @@ def add(cfg, name, instance, connect, board=None, file=None, dry_run=False):
                 net.setdefault(key, value)
         graph["nets"] += new_nets
         write_json(cfg.graph, data)
+        from . import library as parts_library
         for n in copy:
-            shutil.copy(LIBRARY / "parts" / f"{n}.json", cfg.parts / f"{n}.json")
+            parts_library.copy_into(cfg.parts, n)
     return block, comps, new_nets, extended, attrs, copy, missing
 
 
@@ -237,7 +238,7 @@ def main(cfg, args):
         print(f"  net {n['name']} (new, v {n['v']}): {', '.join(n['pins'])}"
               + ("  – created by --connect" if n["name"] in missing else ""))
     if copy:
-        print(f"  parts entries {'to copy' if args.dry_run else 'copied'} from the block library: {', '.join(copy)}")
+        print(f"  parts entries {'to copy' if args.dry_run else 'copied'} from the parts library: {', '.join(copy)}")
     for note in block.get("notes", []):
         print(f"- {note}")
     print("Next: edakit check, edakit hints, edakit sim – and the decisions the notes name.")

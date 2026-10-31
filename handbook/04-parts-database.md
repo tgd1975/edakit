@@ -145,8 +145,17 @@ entry's before the default of the pin type. What the names do not say:
   `vil_v` | `vil_ratio` (a ratio of its supply, e.g. 0.7 and 0.3 for VIH 0.7 × VDD), which LVL.threshold holds its
   `input` pins and the MCU outputs that drive them to; ICs further in chapter 5.
 
-The block library (`edakit/blocks/parts/`) holds checked entries of the parts the building blocks use – resistors,
-LEDs, the SS14/SS34 diodes, S8050, AO3401A, a USB-C receptacle, a polyfuse, buttons, a JST connector – to copy from.
+**The parts library** (`edakit/parts/`) holds entries of popular parts and of the parts the building blocks use –
+resistors, LEDs, the SS14/SS34 diodes, S8050, AO3401A, a USB-C receptacle, a polyfuse, buttons, a JST connector. Each
+is written from its datasheet (the source with its revision) and counts once the owner has signed it: `edakit part
+sign <key> --by NAME` writes the signature with the entry's SHA-256 into `edakit/parts/signed.toml`, and an entry
+changed after its signature is a draft again. `edakit part add` lists the entries, signed or draft; `edakit part add
+<key>` copies one into the project's parts folder – `edakit block add` does the same for a block's parts. The copy
+names its library version in `library` (`key`, `sha256` of the entry, `signed`, `date`) and belongs to the project
+from then on: checked like every entry, signed in the project like every entry. PARTS.library notes a copy whose
+library entry has changed since (grade `newer`) – `edakit part add <key> --update` takes the new version over the copy
+on purpose and names what changed – and a copy of an unsigned entry (grade `draft`). (Decided 2026-10-31,
+rules-at-scale.md decision 8.)
 
 ## 4.2 Finding parts
 
