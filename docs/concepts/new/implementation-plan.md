@@ -444,7 +444,7 @@ script's (`tdisplay_device.py symbol`, without `"symbol"` in the data). **`PCB_P
 the system library and with the footprint alone – while R1 was created; after a build without MH it worked, and then
 with MH in all four forms (round and slot, plated or not) too. The cause is not found; edakit's message should name
 the way out (`schematic create`, `schematic layout`, then `pcb parts`). The slot's direction in the library view and
-the look of the footprint are the owner's to check (TODO.md). By the plan's rule the bell's footprint goes to the data
+the look of the footprint are the owner's to check (TODO.md). The owner decided on 2026-10-31 that a changed footprint voids M-1, not M-6 (TODO.md). By the plan's rule the bell's footprint goes to the data
 path and the symbol stays the script's – in the bell's repository, at the owner's request.
 
 ## Phase 4: in the projects

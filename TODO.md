@@ -81,7 +81,10 @@ Ran on 2026-10-31 in throwaway projects; the results are under each live run of 
       to object" from `PCB_PrimitiveComponent.create` into that advice.
 - [ ] **The bell's T-Display on the data path** (the bell's repository, at the owner's request; its session first):
       the dry run's footprint data without `"symbol"`, `tdisplay_device.py symbol` stays an easyeda script; the esp32
-      variant's hashes change once (M-1, M-6 anew) – and the owner's answer whether a footprint change should void M-6.
+      variant's hashes change once (M-1 anew).
+- [ ] **M-6 not voided by a footprint** (the owner's decision of 2026-10-31): footprint data counts for M-1 (polarity,
+      datasheet) but not in the hash M-6 is bound to – a footprint has no regulatory content; the bell's and pytree's
+      sessions are told first, since M-6's hash changes once.
 - [ ] **Found on the way:** `schematic create` and `ensure_board` wait for the documents after `openProject` (as
       `open_pcb` does); `schematic create` honours `symbol_differs` of the entry in its pin check; led-bar's
       `[place]` without overlapping LEDs and with U1 out of the hole's keep-out; `open_project` finds a project never
