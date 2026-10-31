@@ -88,7 +88,7 @@ assembly preview at JLCPCB.
        every field a value of the maker's form, the remark, thickness_mm and the colours of mask and silkscreen as its
        form has them, mark = its placeholder on the silkscreen – JLCPCB's placeholder at a maker without one –, its
        tooling holes; for every maker layers and size where set, the quantities, no copper near the edge in a tab zone
-       (order_sheet.py)
+       (order_sheet.py); without both, an Economic board's own tooling holes warn – no order.md tells the maker
 Last stdout line: JSON list of rows {stage, id, item, check, actual, expected, result}. Exit 0 / 2 / 1.
 
 What the manufacturer builds from, hashed for the sign-offs with scope 'fab' (fab_sha256, FAB_METHOD): every Gerber
@@ -1814,7 +1814,7 @@ def run(cfg, board, out, offline=False, verbose=False):
     check_fab(cfg, board, design, d, rows)
     check_odb(cfg, board, design, d, rows)           # SYNC.odb, only with a maker that takes ODB++
     from . import order_sheet
-    order_sheet.check(cfg, board, design, d, rows, bom_rows(design, board))   # FILES.order, only with [order]
+    order_sheet.check(cfg, board, design, d, rows, bom_rows(design, board))   # FILES.order: [order], [cart], [tooling]
     if not gerber.missing(d / "gerber", "top", "bottom", "top_silk", "bottom_silk"):   # otherwise FILES.set names them
         from . import polarity
         img, n = polarity.sheet(cfg, board, design, d)

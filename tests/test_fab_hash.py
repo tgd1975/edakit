@@ -163,7 +163,7 @@ def ordered(**order):
 def test_a_board_without_order_keeps_its_fab_hash(project):
     """No [order], no order settings: fab_layers holds the files the manufacturer builds from and nothing else, so the
     fab hash of a board without [order] stays what it was (the bell's reviewed runs, its D-20)."""
-    d, _ = exported(project)
+    d, _ = exported(project, fr.unordered)
     gerbers, drills = fab.built_files(d / "gerber")
     assert set(layers(d)) == {f.name for f in gerbers + drills} | {"bom_main.csv", "cpl_main.csv"}
     assert not (d / "order.json").exists()

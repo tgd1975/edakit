@@ -28,6 +28,9 @@ and check FILES.order (order settings = board, per maker). Both when the board h
        – the run's Gerber is one board; pcba_quantity is at most quantity, and another number than [project] quantity
        warns (PARTS.stock counts that many sets); copper within tab_copper_mm of a declared tab zone fails – measured
        on the Gerber copper of both sides against the Gerber outline. The free outline stretches are information.
+       Without [order] and [cart] (no order.md): [tooling] holes on an assembled board of a class the planned maker asks
+       tooling holes for (tooling_min – JLCPCB: Economic) warn, grade tooling – no file tells the maker they are the
+       customer's, and the form stays at "Added by JLCPCB".
 
 Coordinates in messages and in order.md are Gerber mm (EasyEDA, seen from the top) – what the maker sees; tab zones
 are declared in plan mm like the rest of the board file.
@@ -383,6 +386,24 @@ def check_tooling(c, pcba):
           None if n >= least else "warn")
 
 
+def check_untold(cfg, board, rows):
+    """Grade tooling: without [order] and [cart] no order.md is written. A board with tooling holes of its own, on an
+    assembly class whose form asks who drills them (the planned maker's tooling_min – JLCPCB: Economic), then has no
+    file that tells the maker – its form stays at the maker's word (JLCPCB: "Added by JLCPCB"), and the maker drills
+    holes of its own, maybe on the face people see. A warning."""
+    m, pcba = makers.get(cfg), makers.pcba(cfg)
+    if not board.tooling or (m.rules.get("tooling_min") or {}).get(pcba[0]) is None or not m.has("tooling"):
+        return
+    customer, maker = m.word("tooling", "customer"), m.word("tooling", "maker")
+    n = len(board.tooling)
+    rows.add("F", "FILES.order", board.name, f"tooling holes of the {pcba[0].capitalize()} PCBA ({pcba[1]}) told to "
+             f"{m.name}", False, f"{n} tooling hole{'s' if n > 1 else ''} ([tooling]), but no [order] or [cart]: no "
+             f"order.md says \"{customer}\" – the form stays at \"{maker}\" and {m.name} may drill its own on a visible "
+             "face; add [order] to the board file (a remark: tooling holes added by customer)",
+             f"[order] or [cart]: order.md with {customer}", "warn")
+    rows[-1]["maker"] = m.key
+
+
 def check_fields(c, fields, o):
     """Every field's value one the maker's form offers; no combination its profile excludes."""
     m = c.maker
@@ -579,6 +600,8 @@ def check(cfg, board, design, d, rows, bom):
         (d / SETTINGS).write_text(json.dumps(settings(board), indent=1, ensure_ascii=False) + "\n", encoding="utf-8")
     o = order_of(cfg, board)
     if o is None:
+        if bom:
+            check_untold(cfg, board, rows)
         return
     data = json.loads((d / "pcb.json").read_text())
     planned = makers.get(cfg)
