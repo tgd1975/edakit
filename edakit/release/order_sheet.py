@@ -306,9 +306,13 @@ def check_material(c, o):
         t = board.thickness_mm
         ok = m.offers("thickness_mm", t)
         what = m.rules.get("thicknesses_for")
-        c.add(f"board thickness {m.name} makes" + (f" ({what})" if what else ""), ok,
-              f"{t:g} mm (thickness_mm)" + ("" if ok else f" – not a thickness of {m.name}'s form"),
-              ", ".join(f"{x:g}" for x in values) + " mm")
+        if ok is None:                    # the profile lists only some (more = true): not checked
+            c.add(f"board thickness {m.name} makes", True, f"{t:g} mm (thickness_mm) – not among the thicknesses "
+                  f"step 0 read ({', '.join(f'{x:g}' for x in values)} mm), not checked", "offered", "info")
+        else:
+            c.add(f"board thickness {m.name} makes" + (f" ({what})" if what else ""), ok,
+                  f"{t:g} mm (thickness_mm)" + ("" if ok else f" – not a thickness of {m.name}'s form"),
+                  ", ".join(f"{x:g}" for x in values) + " mm")
     want = m.silkscreen_on(o["mask"])
     if want is not None:
         mask, silk = o["mask"], o["silkscreen"]

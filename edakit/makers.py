@@ -9,7 +9,8 @@ maker takes and refuses:
     start, cart, never the page the skill cart opens, the one button it may press, buttons it must not touch
     files              what is uploaded: gerber, bom, bom_mpn, cpl, odb
     bom, cpl           the columns, and the key the maker matches parts by (bom.match: lcsc or mpn)
-    fields             per key: section, label, words (edakit's value -> the form's word), unit, values; false: the
+    fields             per key: section, label, words (edakit's value -> the form's word), unit, values, more (the
+                       form offers more than the profile lists: another value is not checked); false: the
                        maker has no such field, and the key is left out of its job
     excludes, ignore   combinations the form refuses; fields of the page edakit does not set, each with its reason
     classes            the assembly classes – the values of [release] assembly.pcba
@@ -40,7 +41,7 @@ UPLOAD = {"gerber": "gerber_{b}.zip", "bom": "bom_{b}.csv", "bom_mpn": "bom_{b}_
           "odb": "odb_{b}.zip"}
 PROFILE_KEYS = ("name", "recorded", "start", "seat", "currency", "catalogue", "fees", "files", "classes", "dnp",
                 "cart", "never", "ignore", "excludes", "bom", "cpl", "rules", "fields", "about", "sources")
-FIELD_KEYS = ("section", "label", "words", "unit", "values")
+FIELD_KEYS = ("section", "label", "words", "unit", "values", "more")
 RULE_KEYS = ("thicknesses_mm", "thicknesses_for", "remark_max", "placeholder", "placeholder_min_mm", "placeholder_gone",
              "silkscreen_on", "tooling_min", "class_of_sides")
 SECTIONS = ("PCB", "PCBA", "Shipping")
@@ -117,13 +118,16 @@ class Maker:
         return None
 
     def offers(self, key, value):
-        """True, False, or None (the profile does not say)."""
+        """True, False, or None (the profile does not say – also a value missing from a field with more = true, whose
+        list ordering step 0 read only in part: the form has more behind a "More Options")."""
         values = self.offered(key)
         if values is None:
             return None
         if isinstance(value, (int, float)) and not isinstance(value, bool):
-            return any(not isinstance(v, bool) and isinstance(v, (int, float)) and abs(v - value) < 1e-9 for v in values)
-        return value in values
+            found = any(not isinstance(v, bool) and isinstance(v, (int, float)) and abs(v - value) < 1e-9 for v in values)
+        else:
+            found = value in values
+        return True if found else None if (self.field(key) or {}).get("more") else False
 
     def label(self, key):
         f = self.field(key) or {}

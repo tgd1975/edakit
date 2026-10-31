@@ -263,7 +263,11 @@ def test_the_shipped_profiles_are_valid():
     assert jlc.word("mask", "green") == "Green" and jlc.word("gold_fingers", False) == "No"
     assert jlc.word("thickness_mm", 1.6) == "1.6 mm" and jlc.word("size_mm", [30, 20]) == "30.00 x 20.00 mm"
     assert jlc.offers("finish", "ENIG") and jlc.offers("finish", "OSP") is False
-    assert makers.load("eurocircuits").offers("finish", "ENIG") is None      # not recorded yet: not checked
+    euro = makers.load("eurocircuits")                                         # recorded by ordering step 0
+    assert euro.offers("finish", "LeadFree HASL") and euro.offers("finish", "ENIG") is None   # more = true: not read
+    assert euro.offers("thickness_mm", 1.55) and euro.offers("thickness_mm", 1.6) is None
+    assert euro.offers("mark", "specify") is False and makers.load("aisler").offers("finish", "OSP") is False
+    assert not makers.load("aisler").has("mark") and euro.data["cart"] == "Add to basket"
 
 
 def test_a_profile_with_an_unknown_key_is_refused(tmp_path):
@@ -330,7 +334,8 @@ def test_the_placeholder_is_jlcpcbs(project):
             "(18.0, 3.0) on the top silkscreen – Eurocircuits prints it as it is; a release that carries it is a "
             "release for JLCPCB")
     assert ("warn", *text) in f6(rows)
-    assert fr.findings(rows) == [("FILES.order", "warn"), ("FILES.order", "warn")]       # and JLCPCB's own, reported gone
+    # and JLCPCB's own, reported gone, and mark = "specify", which Eurocircuits does not offer
+    assert fr.findings(rows) == [("FILES.order", "warn")] * 3
     rows = run(project, both("eurocircuits"))
     assert ("fail", *text) in f6(rows)
 
@@ -344,7 +349,9 @@ def test_a_value_the_form_does_not_offer(project):
 def test_a_provisional_profile_is_named(project):
     def euro(ex, p):
         fr.ordered(ex, p)
-        toml(p, '[cart]\nmakers = ["jlcpcb", "eurocircuits"]')
+        own = makers.DIR / "eurocircuits.toml"               # the project's own copy, not recorded yet
+        (p.root / "eurocircuits.toml").write_text(own.read_text().replace('recorded = "2026-10-31"', "recorded = false"))
+        toml(p, '[cart]\nmakers = ["jlcpcb", "eurocircuits"]\nprofiles = { eurocircuits = "eurocircuits.toml" }')
     rows = run(project, euro)
     infos = [a for r, c, a in f6(rows) if r == "info" and c == "Eurocircuits's profile"]
     assert infos and "values not known for" in infos[0]
