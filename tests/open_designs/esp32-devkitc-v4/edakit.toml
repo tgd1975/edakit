@@ -1,0 +1,15 @@
+# ESP32-DevKitC V4 (Espressif), transcribed from its published schematic for edakit's tests (maker-coverage
+# FT-21). Source and what was transcribed: README.md. Not a project to order: no layout, no EasyEDA documents.
+
+[project]
+name = "esp32-devkitc-v4"
+company = "Espressif design, transcribed for edakit"
+quantity = 5
+graph = "hardware/graph.json"
+parts = "hardware/parts"
+sim = "hardware/sim.json"
+artifacts = "build/edakit"
+reports = "build/release"
+
+[boards.main]
+title = "ESP32-DevKitC V4"

@@ -1,0 +1,55 @@
+{
+ "lcsc": "C17634",
+ "mpn": "0805W8F330JT5E",
+ "manufacturer": "UNI-ROYAL(厚声)",
+ "kind": "resistor",
+ "package": "0805",
+ "footprint": "R0805",
+ "jlc_class": "Basic Part",
+ "datasheet": {
+  "url": "https://datasheet.lcsc.com/datasheet/pdf/0a975aaa49b7c97f38a963127be4a823.pdf?productCode=C17634",
+  "pinout_page": null
+ },
+ "pins": {
+  "1": {
+   "name": "1",
+   "type": "passive",
+   "role": "1"
+  },
+  "2": {
+   "name": "2",
+   "type": "passive",
+   "role": "2"
+  }
+ },
+ "values": {
+  "value_ohm": 33.0,
+  "tolerance": 0.01
+ },
+ "limits": {
+  "p_max_w": 0.125,
+  "v_max_v": 150,
+  "t_min_c": -55,
+  "t_max_c": 155
+ },
+ "sources": [
+  "UNI-ROYAL Thick Film Chip Resistors 01005…2512 series data sheet V.3 (Feb. 12, 2019), LCSC's copy for C17634 https://datasheet.lcsc.com/datasheet/pdf/0a975aaa49b7c97f38a963127be4a823.pdf?productCode=C17634, read 2026-10-31",
+  "part number system, section 2 (p. 2): 0805W8F330JT5E = 0805, W8 = 1/8 W, F = ±1 %, 330J = 330 × 10^-1 = 33.0 Ω (J = 10^-1, section 2.4.3), T = tape/reel, 5 = 5000 pcs, E = lead free",
+  "resistance range, section 6 (p. 4): 0805 1/8 W at 70 °C for 0.1 Ω ≤ R < 10 MΩ at ±1 %; ratings, section 7 (p. 5): 0805 max. working voltage 150 V, max. overload voltage 300 V, operating −55 … +155 °C; derating above 70 °C (section 9)",
+  "mpn, manufacturer, footprint, jlc_class, pin numbers and names: EasyEDA library data of C17634 via edakit part import, read 2026-10-31",
+  "stock: JLCPCB catalogue 1 305 704 pcs (2026-10-31)"
+ ],
+ "verified": {
+  "by": "Claude (datasheet check, library draft)",
+  "date": "2026-10-31",
+  "datasheet": "UNI-ROYAL Thick Film Chip Resistors 01005…2512 series data sheet V.3 (Feb. 12, 2019)",
+  "datasheet_sha256": "11cd644d5d8a34a6d12775afb80bf58d8fc11f0c3b700dbd0f7a59942ceaa5ef",
+  "checked": [
+   "order code 0805W8F330JT5E: 0805, 1/8 W, ±1 %, 330J = 330 × 10^-1 = 33.0 Ω (J = 10^-1, section 2.4.3)",
+   "0805: 150 V max. working voltage, −55 … +155 °C"
+  ],
+  "open": [
+   "no thermal resistance in the data sheet: LIM.t has no item for it; 1/8 W holds up to 70 °C ambient, derated above (section 9)"
+  ]
+ }
+}

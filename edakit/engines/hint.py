@@ -10,7 +10,7 @@ from __future__ import annotations
 from collections import Counter, defaultdict
 
 from .. import catalog
-from ..circuit import values
+from ..circuit import RELAY_SET, source_outputs, values
 from ..design import natural_key
 from ..findings import Finding
 
@@ -47,14 +47,26 @@ def _resistor_neighbours(design, net):
     return out - {None}
 
 
+def _protected(design, net):
+    """A net an ESD device guards: a pin of a part whose entry says it is one (values tvs – a TVS diode –, or an io pin
+    of a part of kind esd_array) on the net or one resistor away."""
+    def guards(ref):
+        part = design.part(ref.split(".", 1)[0]) or {}
+        if part.get("kind") == "esd_array":   # an ESD array guards the lines on its io pins
+            return str((part.get("pins") or {}).get(ref.split(".", 1)[1], {}).get("role") or "").startswith("io")
+        return bool(values(part).get("tvs"))
+    return any(guards(r) for n in {net} | _resistor_neighbours(design, net) for r in design.nets[n]["pins"])
+
+
 def _connector_signals(design, cfg, sim):
     """Connectors with a signal line to an IC or module pin, directly or through one resistor (ground and supply
-    nets are no signal lines)."""
+    nets are no signal lines) – not where every such line has its ESD device."""
     quiet = {design.ground} | {name for name, net in design.nets.items()
                                if any(design.pin_info(r).get("type") in ("power_in", "power_output", "ground")
                                       for r in net["pins"])}
     found = []
     for des in design.comps_of_kind("connector"):
+        lines = []
         for num in design.part(des)["pins"]:
             net = design.pin_net.get(f"{des}.{num}")
             if net is None or net in quiet:
@@ -62,9 +74,47 @@ def _connector_signals(design, cfg, sim):
             nets = ({net} | _resistor_neighbours(design, net)) - quiet
             if any(design.pin_info(r).get("type") in SIGNAL_TYPES and _part_kind(design, r.split(".", 1)[0]) in
                    ("ic", "module") for n in nets for r in design.nets[n]["pins"]):
-                found.append(des)
-                break
+                lines.append(net)
+        if lines and not all(_protected(design, n) for n in lines):
+            found.append(des)
     return found
+
+
+def _driven_gates(design, cfg, sim):
+    """MOSFETs whose gate a signal drives: not a gate on a supply rail or ground (a level shifter's gate sits on its
+    low-side supply, it never switches)."""
+    from ..circuit import supply_nets
+    rails = supply_nets(design) | {design.ground}
+    return [des for des in design.comps_of_kind("nmos", "pmos")
+            if (g := design.net_of(des, "gate")) is not None and g not in rails]
+
+
+def _read_switches(design, cfg, sim):
+    """Buttons and switches an MCU pin reads – a pin of theirs on an MCU pin's net or one resistor away; a switch no
+    firmware reads (a DIP switch that closes a termination) bounces unseen."""
+    out = []
+    for des in design.comps_of_kind("button", "switch", "dip_switch"):
+        nets = {design.pin_net.get(f"{des}.{n}") for n in (design.part(des) or {}).get("pins") or {}} - {None,
+                                                                                                        design.ground}
+        if any(_mcu_pins(design, n) for n in nets):
+            out.append(des)
+    return out
+
+
+def _unprotected_cells(design, cfg, sim):
+    """Battery holders whose cell no protection IC guards – recognised as a MOSFET in the cell's minus whose gate a
+    protection IC's od or oc output drives (DW01A with FS8205A)."""
+    guards = {design.pin_net.get(r) for r, info in ((r, design.pin_info(r)) for r in design.pin_net)
+              if info.get("role") in ("od", "oc") and info.get("type") == "output"} - {None}
+    out = []
+    for des in design.comps_of_kind("battery_holder"):
+        minus = {design.pin_net.get(f"{des}.{n}") for n, p in (design.part(des) or {}).get("pins", {}).items()
+                 if str(p.get("role") or "").startswith("minus")} - {None}
+        guarded = any(design.net_of(q, "gate") in guards and minus & {design.net_of(q, "source"), design.net_of(q, "drain")}
+                      for q in design.comps_of_kind("nmos"))
+        if not guarded:
+            out.append(des)
+    return out
 
 
 def _transistors_at_connectors(design, cfg, sim):
@@ -83,7 +133,7 @@ def _transistors_at_connectors(design, cfg, sim):
 
 def _switching_regulators(design, cfg, sim):
     regs = [d for d in design.comps_of_kind("ic", "module")
-            if values(design.part(d)).get("behavior") in ("buck", "boost")]
+            if values(design.part(d)).get("behavior") in ("buck", "boost", "buck_boost")]
     return regs + design.comps_of_kind("inductor")
 
 
@@ -107,8 +157,7 @@ def _supply_starts(design, cfg, sim):
             take = list(pins)
         if part.get("kind") == "module":
             take += [n for n, p in pins.items() if p.get("type") == "power_output" and roles[n] == "vbus"]
-        if isinstance(sources.get(des), dict) and "plus" in sources[des]:
-            take.append(str(sources[des]["plus"]))
+        take += [plus for _, plus, _ in source_outputs(sources.get(des))]
         nets = {design.pin_net.get(f"{des}.{n}") for n in take} - {None, design.ground}
         if nets:
             out[des] = nets
@@ -307,17 +356,75 @@ def _rated_by_copper(design, cfg, sim):
 
 
 def _cable_lines(design, cfg, sim):
-    """Signal nets that run through a cable: not ground, not a supply."""
+    """Signal nets that leave the board – through a cable of the graph, or on a connector marked off_board: not
+    ground, not a supply."""
+    from .requires import leaving
     quiet = {design.ground} | {name for name, net in design.nets.items()
                                if any(design.pin_info(r).get("type") in ("power_in", "power_output", "ground")
                                       for r in net["pins"])}
-    found = set()
-    for c in design.graph.get("cables", []):
-        for a in c.get("pins", {}):
-            net = design.pin_net.get(f"{c['from']}.{a}")
-            if net and net not in quiet:
-                found.add(net)
-    return sorted(found)
+    return sorted({net for net, _ in leaving(design) if net not in quiet})
+
+
+JACK_ROLES = {"tip", "ring", "sleeve", "tip_switch", "ring_switch", "sleeve_switch"}   # roles of a jack's contacts
+
+
+def _jacks_with_supply(design, cfg, sim):
+    """Jacks (connectors with tip, ring or sleeve contacts) where a contact carries a supply – the sleeve too when it
+    is not ground."""
+    from ..circuit import supply_nets
+    supplies = supply_nets(design)
+    found = []
+    for des in design.comps_of_kind("connector"):
+        roles = {num: p.get("role") for num, p in design.part(des)["pins"].items()}
+        if not JACK_ROLES & set(roles.values()):
+            continue
+        if any(role in JACK_ROLES and design.pin_net.get(f"{des}.{num}") in supplies for num, role in roles.items()):
+            found.append(des)
+    return found
+
+
+def _relays_switching_off_board(design, cfg, sim):
+    """Relays whose contacts (common, no, nc) reach a connector or run through a cable – the load is off the board."""
+    leaving = {design.pin_net.get(f"{c['from']}.{a}") for c in design.graph.get("cables", []) for a in c.get("pins", {})}
+    leaving |= {design.pin_net.get(f"{d}.{num}") for d in design.comps_of_kind("connector")
+                for num in design.part(d)["pins"]}
+    leaving -= {None, design.ground}
+    return [des for des in design.comps_of_kind("relay")
+            if any(RELAY_SET.match(str(p.get("role") or "")) and design.pin_net.get(f"{des}.{num}") in leaving
+                   for num, p in design.part(des)["pins"].items())]
+
+
+USB_ROLES = {"cc1", "cc2", "dp", "dn", "dp_a", "dp_b", "dn_a", "dn_b"}
+
+
+def _usb_ports(design, cfg=None, sim=None):
+    """USB receptacles of the board: a connector with a connected vbus pin and a CC or data pin of USB."""
+    out = []
+    for des in design.comps_of_kind("connector"):
+        pins = (design.part(des) or {}).get("pins") or {}
+        roles = {p.get("role") for p in pins.values()}
+        if roles & USB_ROLES and any(p.get("role") == "vbus" and design.pin_net.get(f"{des}.{num}")
+                                     for num, p in pins.items()):
+            out.append(des)
+    return out
+
+
+def vbus_capacitance(design, des):
+    """(net, farads) – the capacitance directly on a USB port's VBUS net, from the capacitors' value_f."""
+    pins = (design.part(des) or {}).get("pins") or {}
+    net = next((design.pin_net.get(f"{des}.{num}") for num, p in pins.items()
+                if p.get("role") == "vbus" and design.pin_net.get(f"{des}.{num}")), None)
+    total = 0.0
+    for c in design.comps_of_kind("capacitor"):
+        if net in {n for r, n in design.pin_net.items() if r.split(".", 1)[0] == c}:
+            total += values(design.part(c)).get("value_f") or 0
+    return net, total
+
+
+def _usb_attach_capacitance(design, cfg=None, sim=None):
+    """USB ports whose VBUS net carries more capacitance than a device may show at attach (tables/usb.toml)."""
+    limit = catalog.table("usb")["attach"]["c_max_f"]
+    return [des for des in _usb_ports(design) if vbus_capacitance(design, des)[1] > limit * (1 + 1e-9)]
 
 
 MATCHERS = {"power_input": _power_inputs, "connector_signal": _connector_signals,
@@ -327,7 +434,10 @@ MATCHERS = {"power_input": _power_inputs, "connector_signal": _connector_signals
             "instrument_input": _instrument_inputs, "battery_with_jacks": _battery_on_a_board_with_jacks,
             "pedal_power_input": _pedal_power_inputs, "pwm_leds": _pwm_leds, "boost_enable": _boost_enable_on_gpio,
             "unmarked_power_input": _unmarked_power_inputs, "rated_by_copper": _rated_by_copper,
-            "cable_line": _cable_lines}
+            "cable_line": _cable_lines, "jack_supply": _jacks_with_supply,
+            "relay_off_board": _relays_switching_off_board, "usb_port": _usb_ports,
+            "usb_attach_capacitance": _usb_attach_capacitance, "driven_gate": _driven_gates,
+            "read_switch": _read_switches, "unprotected_cell": _unprotected_cells}
 
 
 

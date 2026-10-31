@@ -12,8 +12,9 @@ profile says nothing.
     pending   blocks the release and cannot be accepted (an unverified part, an old stock snapshot)
 
 One mechanism accepts what a person has seen and answered: `accept` with a reason, keyed by code – on a net or a
-component of the graph, or on the graph itself keyed by "code" or "code place" (circuit scope: part of the circuit
-hash), or in the sign-off file for a warning (release scope). A key "LIM.i/margin" accepts only that grade,
+component of the graph (by "code", or by "code place" for the finding at one pin or designator only), or on the graph
+itself keyed by "code" or "code place" (circuit scope: part of the circuit hash), or in the sign-off file for a warning
+(release scope). A key "LIM.i/margin" accepts only that grade,
 "GEO.spacing:paste" only that topic.
 """
 
@@ -113,6 +114,8 @@ class Report:
         keyed by code or "code place". -> self"""
         for f in self.findings:
             f.severity = "note" if f.data.get("info") else self.profile.of(f)   # an informational scenario
+            if f.data.get("fault") and f.severity == "error":    # a generated fault scenario (FT-8): a warning
+                f.severity = "warning"
             if graph is not None and not f.accepted:
                 f.accepted = accepted_in_graph(f, graph) or ""
         self.findings.sort(key=lambda f: (ORDER.get(f.severity, 9), f.code))
@@ -151,20 +154,28 @@ class Report:
         return json.dumps(self.to_dict(), indent=1, ensure_ascii=False) + "\n"
 
 
+def places(f):
+    """The places an accept key may name for a finding: its place ("U1.3", "J1", "+5V") and the designator in it."""
+    des = f.place.split(".", 1)[0].split(" ", 1)[0]
+    return [f.place] + ([des] if des and des != f.place else [])
+
+
 def accepted_in_graph(f, graph):
-    """The reason the graph gives for accepting a finding, or None: accept on its net or component, else on the graph
-    keyed by code or by "code place"."""
+    """The reason the graph gives for accepting a finding, or None: accept on its net or component – keyed by code, or
+    by "code place" where only the finding at that place (a pin, a designator) is meant –, else on the graph keyed by
+    code or by "code place"."""
     nets = {n["name"]: n for n in graph.get("nets", [])}
     comps = {c["designator"]: c for c in graph.get("components", [])}
     for kind, name in f.on:
         obj = (nets if kind == "net" else comps).get(name) or {}
         acc = obj.get("accept") or {}
         for key in f.keyed:
-            if key in acc:
-                return acc[key]
+            for k in [f"{key} {p}" for p in places(f)] + [key]:
+                if k in acc:
+                    return acc[k]
     acc = graph.get("accept") or {}
     for key in f.keyed:
-        for k in (f"{key} {f.place}", key):
+        for k in [f"{key} {p}" for p in places(f)] + [key]:
             if k in acc:
                 return acc[k]
     return None

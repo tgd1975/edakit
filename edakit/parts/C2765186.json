@@ -1,0 +1,131 @@
+{
+ "lcsc": "C2765186",
+ "mpn": "TYPE-C 16PIN 2MD(073)",
+ "manufacturer": "SHOU HAN(首韩)",
+ "kind": "connector",
+ "package": "USB-C receptacle 16P SMD horizontal (12 pads, paired GND and VBUS contacts), 4 plated shell slots",
+ "footprint": "USB-C-SMD_TYPE-C-16PIN-2MD-073",
+ "jlc_class": "Extended Part",
+ "datasheet": {
+  "url": "https://datasheet.lcsc.com/datasheet/pdf/2d53d8d8199c9dd6666d9bc9ac7c3a1e.pdf?productCode=C2765186",
+  "pinout_page": 1,
+  "title": "SHOU HAN TYPE-C 16PIN 2MD(073), specification for approval",
+  "revision": "drawing rev. A (no date printed)"
+ },
+ "pins": {
+  "A1B12": {
+   "name": "GND",
+   "type": "ground",
+   "role": "gnd"
+  },
+  "A4B9": {
+   "name": "VBUS",
+   "type": "passive",
+   "role": "vbus"
+  },
+  "A5": {
+   "name": "CC1",
+   "type": "passive",
+   "role": "cc1"
+  },
+  "A6": {
+   "name": "Dp1",
+   "type": "passive",
+   "role": "dp_a"
+  },
+  "A7": {
+   "name": "Dn1",
+   "type": "passive",
+   "role": "dn_a"
+  },
+  "A8": {
+   "name": "SBU1",
+   "type": "passive",
+   "role": "sbu1"
+  },
+  "B1A12": {
+   "name": "GND",
+   "type": "ground",
+   "role": "gnd"
+  },
+  "B4A9": {
+   "name": "VBUS",
+   "type": "passive",
+   "role": "vbus"
+  },
+  "B5": {
+   "name": "CC2",
+   "type": "passive",
+   "role": "cc2"
+  },
+  "B6": {
+   "name": "Dp2",
+   "type": "passive",
+   "role": "dp_b"
+  },
+  "B7": {
+   "name": "Dn2",
+   "type": "passive",
+   "role": "dn_b"
+  },
+  "B8": {
+   "name": "SBU2",
+   "type": "passive",
+   "role": "sbu2"
+  },
+  "13": {
+   "name": "EH",
+   "type": "mechanical",
+   "role": "shell"
+  },
+  "14": {
+   "name": "EH",
+   "type": "mechanical",
+   "role": "shell"
+  }
+ },
+ "values": {
+  "r_contact_ohm": 0.04
+ },
+ "limits": {
+  "i_max_a": 3.0,
+  "v_max_v": 5.0,
+  "t_min_c": -25,
+  "t_max_c": 85
+ },
+ "spice": {},
+ "sources": [
+  "SHOU HAN TYPE-C 16PIN 2MD(073), specification for approval with drawing (LCSC's copy, edakit part fetch C2765186, sha256 fe10da58945c…, 6 pages, read 2026-10-31): p. 1 drawing – pin assignments A1 GND, A4 VBUS, A5 CC1, A6 DP1, A7 DN1, A8 SBU1, A9 VBUS, A12 GND, B12 GND, B9 VBUS, B8 SBU2, B7 DN2, B6 DP2, B5 CC2, B4 VBUS, B1 GND; recommended PCB layout (thickness 0.80 mm): 12 SMD pads, A1/B12, A4/B9, B4/A9 and B1/A12 on one pad each, 4 shell slots",
+  "p. 1 notes: 4-1 current rating 3.0 A, voltage rating 5.0 V; 4-2 LLCR VBUS, GND and other pins 40 mΩ/pin max, shield 50 mΩ max; 4-3 insulation 100 MΩ min; 4-4 dielectric withstanding voltage AC 100 V for 1 minute; 5 operating temperature –25 … +85 °C; 3 insertion 0.5–2.0 kgf, removal 0.8–2.0 kgf, 10 000 cycles; 6 reflow 260 °C for 10 s",
+  "p. 2: rating DC 5 V 3 A, –25 … 85 °C; contact resistance 40 mΩ at 100 mA",
+  "i_max_a 3.0: the product rating of note 4-1 – the drawing gives no current per contact (the 6P drawing of the same maker, C456012, does: GND 1.25 A per pin); assumption: VBUS and GND paths each carry the rated 3 A through their paired contacts",
+  "roles dp_a/dp_b, dn_a/dn_b: A6/B6 and A7/B7 – REQ.missing/usb_data asks for both rows joined; cc1/cc2 for REQ.missing:cc",
+  "pin keys and names (A1B12, A4B9, B1A12, B4A9 for the paired pads; 13, 14 EH for the shell), footprint, jlc_class: EasyEDA library data of C2765186 (edakit part import, 2026-10-31); JLCPCB catalogue 2026-10-31: Extended Part, 974 598 pcs; LCSC product data 2026-10-31: 929 860 pcs, RoHS"
+ ],
+ "compliance": {
+  "rohs": true,
+  "source": "LCSC product data C2765186 (isEnvironment), read 2026-10-31; the drawing states no RoHS"
+ },
+ "notes": "USB-C receptacle with USB 2.0 data (D+/D− in both rows, CC1/CC2, SBU1/SBU2), same maker as the power-only C456012 of block usb-c-sink. Shell (EH) to GND. Block usb-c-data.",
+ "verified": {
+  "by": "Claude (datasheet check, library draft)",
+  "date": "2026-10-31",
+  "datasheet": "SHOU HAN TYPE-C 16PIN 2MD(073), specification for approval (drawing rev. A)",
+  "datasheet_sha256": "fe10da58945c9782ffe489b2079893a9baf90ff234efa4906e5e02744735e8f5",
+  "checked": [
+   "pin assignment table p. 1 against the EasyEDA symbol: A5 CC1, A6 Dp1, A7 Dn1, A8 SBU1, B5 CC2, B6 Dp2, B7 Dn2, B8 SBU2, paired pads A1B12/B1A12 GND and A4B9/B4A9 VBUS, 13/14 EH",
+   "rating 3.0 A, 5.0 V; LLCR 40 mΩ/pin; –25 … +85 °C (notes 4, 5)",
+   "land pattern p. 1: 12 SMD pads in one row, 4 plated slots for the shell legs – the EasyEDA footprint has 12 pads and 2 shell pads of 2 slots each"
+  ],
+  "open": [
+   {
+    "text": "pad order and slot positions of the EasyEDA footprint against the recommended PCB layout of the drawing (dimensions not compared one by one)",
+    "when": "order"
+   },
+   "lead (shell legs) not entered: the drawing's leg cross-section was not read off – GEO.hole stays pending",
+   "current per contact not in the drawing: i_max_a is the product rating 3.0 A",
+   "voltage rating 5.0 V below USB-C vSafe5V 5.5 V (the same as C456012; the dielectric withstands AC 100 V for 1 min)",
+   "no RoHS or REACH statement in the drawing (LCSC lists it as RoHS)"
+  ]
+ }
+}

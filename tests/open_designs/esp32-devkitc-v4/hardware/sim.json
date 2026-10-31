@@ -1,0 +1,50 @@
+{
+ "about": "One USB port feeds the board; the module at its supply requirement (0.5 A), the CP2102N transmitting. Values with 'note' are assumptions.",
+ "ambient_c": 25,
+ "sources": {
+  "J1": {
+   "plus": "1",
+   "minus": "5",
+   "r_ohm": 0.3,
+   "i_max_a": 0.5,
+   "note": "USB 2.0 port and cable: 0.3 Ω source resistance (assumed, as edakit's example); a USB 2.0 port delivers 0.5 A"
+  }
+ },
+ "supplies": {
+  "usb-min": {
+   "J1": 4.75
+  },
+  "usb-nom": {
+   "J1": 5.0
+  },
+  "usb-max": {
+   "J1": 5.25
+  }
+ },
+ "loads": {
+  "run": {
+   "about": "firmware runs, UART idle (DTR and RTS high is not modelled: the bridge drives no output in its 'current' model)",
+   "gpio": {},
+   "leds_on": [
+    "D1"
+   ]
+  }
+ },
+ "corners": [
+  "min",
+  "max"
+ ],
+ "mcu": {
+  "D2": {
+   "outputs": [],
+   "pullups": [
+    "IO0"
+   ],
+   "pullup_ohm": 45000
+  }
+ },
+ "report": [
+  "EXT_5V",
+  "VDD33"
+ ]
+}

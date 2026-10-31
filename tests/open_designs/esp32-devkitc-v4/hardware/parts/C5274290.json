@@ -1,0 +1,55 @@
+{
+ "lcsc": "C5274290",
+ "mpn": "LESD5D5.0CT1G",
+ "manufacturer": "LRC(乐山无线电)",
+ "footprint": "SOD-523_L1.2-W0.8-LS1.6-BI",
+ "jlc_class": "Extended Part",
+ "kind": "diode",
+ "pins": {
+  "1": {
+   "name": "K",
+   "type": "passive",
+   "role": "cathode"
+  },
+  "2": {
+   "name": "A",
+   "type": "passive",
+   "role": "anode"
+  }
+ },
+ "sources": [
+  "LESD5D5.0CT1G datasheet Rev.A May 2025 (Leshan Radio Company)",
+  "Electrical characteristics: VRWM 5.0 V, IRM 1 µA at 5.0 V, VBR 5.6 … 7.8 V at 1 mA, VC 11.6 V at 5 A, CJ 15 pF; maximum ratings: IPP 9.4 A (8/20 µs), TJ 150 °C"
+ ],
+ "verified": {
+  "by": "Claude (datasheet check, open-design transcription)",
+  "date": "2026-10-31",
+  "datasheet": "LESD5D5.0CT1G Rev.A May 2025",
+  "checked": [
+   "working voltage",
+   "breakdown voltage",
+   "leakage"
+  ],
+  "open": [
+   "vr_max_v is the working peak reverse voltage VRWM; breakdown starts at 5.6 V min",
+   "the datasheet does not say whether it is uni- or bidirectional; the footprint is marked BI – modelled as a diode with its cathode on the line"
+  ]
+ },
+ "package": "SOD-523",
+ "datasheet": {
+  "url": "https://datasheet.lcsc.com/datasheet/pdf/6a6d065741f229cf3c3904c2c2bf5d8a.pdf"
+ },
+ "values": {
+  "ir_a": 1e-06,
+  "ir_at_v": 5.0,
+  "tvs": true
+ },
+ "limits": {
+  "vr_max_v": 5.0,
+  "tj_max_c": 150
+ },
+ "spice": {
+  "model": ".model LESD5D5 D(IS=1e-12 N=1 BV=5.6 IBV=1m CJO=15p)",
+  "source": "reverse breakdown at the datasheet's minimum VBR (5.6 V at 1 mA, the worst case for a line at 5.25 V), CJ 15 pF; the forward branch is a generic silicon junction (assumed)"
+ }
+}

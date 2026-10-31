@@ -1,0 +1,185 @@
+{
+ "name": "addressable-led-input",
+ "title": "Addressable LED data input: 74AHCT1G125 level shift, 330 Ω series resistor, 1000 µF at the strip's supply",
+ "about": "A 3.3 V MCU drives the data input of 5 V addressable LEDs (WS2812B, SK6812) through a 74AHCT1G125: its TTL inputs read 2.0 V as high at a 5 V supply, its output swings to the strip's supply, which also feeds it – so the data line never rises above the strip's own VDD. 330 Ω in the data line at the buffer, 10 kΩ at the buffer's input and 10 kΩ at the line holding the data low while nothing drives it, 100 nF at the buffer and 1000 µF across the strip's supply. The strip and its connector stay outside the block.",
+ "ports": {
+  "in": "the data signal from the MCU (a 3.3 V or 5 V output)",
+  "vcc": "the strip's 5 V supply – it feeds the buffer too; the bulk capacitor sits on it",
+  "dout": "the data line to the first pixel's DIN (the strip's connector)",
+  "gnd": "ground, shared with the strip"
+ },
+ "components": [
+  {
+   "designator": "U1",
+   "type": "ic",
+   "label": "{as}: data level shift 3.3 V → 5 V (74AHCT1G125)",
+   "part": "SN74AHCT1G125DBVR",
+   "lcsc": "C7484",
+   "pins": {
+    "1": "OE#",
+    "2": "A",
+    "3": "GND",
+    "4": "Y",
+    "5": "VCC"
+   },
+   "notes": "OE# on GND: the output always drives. VCC from the strip's supply, 4.5–5.5 V (SCLS378P 5.3)."
+  },
+  {
+   "designator": "R1",
+   "type": "resistor",
+   "label": "{as}: data series resistor 330",
+   "part": "0805W8F3300T5E",
+   "lcsc": "C17630",
+   "value": "330",
+   "pins": {
+    "1": "1",
+    "2": "2"
+   },
+   "notes": "At the buffer's output: limits the current of a shorted or unpowered data line to 5.5 V / 330 Ω = 17 mA, below the buffer's ±25 mA absolute maximum (SCLS378P 5.1), and damps reflections on the cable."
+  },
+  {
+   "designator": "R2",
+   "type": "resistor",
+   "label": "{as}: input pull-down 10 k",
+   "part": "0805W8F1002T5E",
+   "lcsc": "C17414",
+   "value": "10k",
+   "pins": {
+    "1": "1",
+    "2": "2"
+   },
+   "notes": "Holds A low while the MCU's pin floats (reset, boot): the buffer sends the strip no random edges."
+  },
+  {
+   "designator": "R3",
+   "type": "resistor",
+   "label": "{as}: line pull-down 10 k",
+   "part": "0805W8F1002T5E",
+   "lcsc": "C17414",
+   "value": "10k",
+   "pins": {
+    "1": "1",
+    "2": "2"
+   },
+   "notes": "Holds the strip's DIN low whenever the buffer does not drive it: OE# released (on a GPIO), buffer not fitted."
+  },
+  {
+   "designator": "C1",
+   "type": "capacitor",
+   "label": "{as}: 100 nF at the buffer",
+   "part": "CC0805KRX7R9BB104",
+   "lcsc": "C49678",
+   "value": "100nF",
+   "pins": {
+    "1": "1",
+    "2": "2"
+   },
+   "notes": "Bypass capacitor at VCC, as close to the pin as possible (SCLS378P 8.3)."
+  },
+  {
+   "designator": "C2",
+   "type": "capacitor",
+   "label": "{as}: 1000 µF at the strip's supply",
+   "part": "RVT1C102M1010",
+   "lcsc": "C3359",
+   "value": "1000uF",
+   "pins": {
+    "1": "1",
+    "2": "2"
+   },
+   "notes": "Electrolytic, pin 1 = plus. At the strip's supply connector, not at the buffer."
+  }
+ ],
+ "nets": [
+  {
+   "name": "in",
+   "pins": [
+    "U1.2",
+    "R2.1"
+   ]
+  },
+  {
+   "name": "data",
+   "pins": [
+    "U1.4",
+    "R1.1"
+   ],
+   "v": "@vcc",
+   "notes": "Buffer output, in front of the series resistor."
+  },
+  {
+   "name": "dout",
+   "pins": [
+    "R1.2",
+    "R3.1"
+   ],
+   "v": "@vcc"
+  },
+  {
+   "name": "vcc",
+   "pins": [
+    "U1.5",
+    "C1.1",
+    "C2.1"
+   ]
+  },
+  {
+   "name": "gnd",
+   "pins": [
+    "U1.1",
+    "U1.3",
+    "R2.2",
+    "R3.2",
+    "C1.2",
+    "C2.2"
+   ]
+  }
+ ],
+ "covers": [
+  "LVL.threshold",
+  "LVL.undefined",
+  "LIM.range",
+  "REQ.missing",
+  "HINT.bulk"
+ ],
+ "notes": [
+  "Why a buffer: a 5 V pixel reads high only from a fraction of its supply – WS2812B-V5 VIH ≥ 0.63 × VDD, 3.15 V at 5 V (library entry C2874885, Worldsemi V6.1) – which a 3.3 V output does not reach. The 74AHCT1G125 reads ≥ 2.0 V as high at VCC 4.5–5.5 V and drives ≥ 3.8 V at −8 mA (SCLS378P 5.3, 5.5); an HC-family buffer has CMOS thresholds of its own (maker-coverage LED 2). R3 and R1 leave 97 % of the buffer's level at DIN. Give the pixel's parts entry its vih and edakit sim checks the chain (LVL.threshold).",
+  "The buffer must run from the strip's supply: the pixel takes at most VDD + 0.7 V on DIN (C2874885) – a buffer on another 5 V rail drives a dark strip through its input clamp. In the graph: vcc on the net that feeds the strip, dout to its DIN, gnd to its ground.",
+  "VCC 4.5–5.5 V (SCLS378P 5.3): a 5 V rail behind a Schottky diode from USB sinks below 4.5 V under load – edakit sim reports it as LIM.range. The example's +5V does so (4.44 V at USB 4.75 V with all LEDs on), which is why this block's test does not simulate there.",
+  "330 Ω: design choice inside the window the sources name – the SK6812 data sheet asks for about 500 Ω at the chain's input for short runs (library entry C5378720), maker-coverage LED 4 names 300–500 Ω (Adafruit, not read here). Lower than 220 Ω lets a short of dout exceed the buffer's 25 mA (5.5 V / 25 mA). With 150 pF of cable and input (assumption) the RC is 50 ns, against T0H ≥ 220 ns (C2874885).",
+  "1000 µF / 16 V: design choice, the upper end of the 500–1000 µF the maker sources name for a strip (maker-coverage LED 6, not read here); it holds the strip's current steps and damps the ringing when the supply is plugged in (HINT.bulk). 16 V is ≥ 1.5 × 5.5 V. Put it at the strip's supply connector; with long strips one more at the far end. Each pixel's own decoupling capacitor belongs to the strip (SK6812: one at every LED, library entry C5378720).",
+  "OE# is tied to GND. To release the data line while the MCU boots or to share it, put OE# on a GPIO with a pull-up to VCC (SCLS378P 7.1); R3 then holds the strip's DIN low – it is optional: with OE# tied to GND the buffer never lets go of the line, and `--without R3` leaves it out (an unconnected dout then goes into R1's nc).",
+  "On a strapping pin the pull-down R2 must agree with the boot level (LVL.boot).",
+  "sim.json: the data net under the MCU's outputs, and a load with it high, so that LVL.threshold compares the MCU's high level with the buffer's 2.0 V. The behaviour model of the buffer holds Y low – the simulation does not pass the data through."
+ ],
+ "test": {
+  "connect": {
+   "in": "SIG",
+   "vcc": "+5V"
+  },
+  "why": "the example's +5V is USB behind its SS34 and sinks to 4.44 V with all LEDs on at USB 4.75 V – a rail of the example, not of the block: the test leaves out the supply case usb-min (VCC 4.5–5.5 V, SCLS378P 5.3); R3 left out – OE# is tied to GND, dout stays open in the example",
+  "without": [
+   "R3"
+  ],
+  "remove_supplies": [
+   "usb-min"
+  ],
+  "sim": {
+   "mcu": {
+    "U1": {
+     "outputs": [
+      "SIG"
+     ]
+    }
+   }
+  }
+ },
+ "optional": {
+  "parts": [
+   "R3"
+  ],
+  "ports": [
+   "dout"
+  ]
+ }
+}

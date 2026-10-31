@@ -11,3 +11,23 @@ rd_tol = 0.10
 termination = ["rd_5k1", "controller", "none"]   # values.usb_c.cc of a module or breakout
 source = "USB Type-C Cable and Connector Specification (USB-IF): sink termination Rd = 5.1 kΩ ± 10 %"
 tag = "r"
+
+[budget]            # what a USB port gives a device (HINT.usb_budget)
+unit_load_a = 0.1           # before configuration: one unit load
+high_power_a = 0.5          # after configuration: five unit loads (USB 2.0)
+source = "Universal Serial Bus Specification Revision 2.0 (April 27, 2000), 7.2.1: 'A unit load is defined to be 100 mA' … 'may draw up to five unit loads after being configured' – https://www.usb.org/document-library/usb-20-specification"
+tag = "r"
+
+[typec_current]     # the current a Type-C source advertises on CC at 5 V (HINT.usb_budget)
+default_usb2_a = 0.5        # Default: as configured for high power, USB 2.0
+default_usb32_a = 0.9       # Default: USB 3.2 single lane (1.5 A dual lane)
+rp_1a5_a = 1.5
+rp_3a0_a = 3.0
+source = "USB Type-C Cable and Connector Specification Release 2.0 (August 2019), 2.3.4 'USB Type-C VBUS Current Detection and Usage' and Table 2-1 – https://www.usb.org/document-library/usb-type-cr-cable-and-connector-specification-release-20"
+tag = "r"
+
+[attach]            # inrush at dynamic attach (HINT.usb_inrush)
+c_max_f = 10e-6             # the largest load at the downstream end of a cable: 10 µF in parallel with 44 Ω
+droop_max_v = 0.33          # the hub's VBUS may droop at most 330 mV
+source = "Universal Serial Bus Specification Revision 2.0 (April 27, 2000), 7.2.4.1 Inrush Current Limiting – https://www.usb.org/document-library/usb-20-specification"
+tag = "r"

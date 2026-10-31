@@ -1,0 +1,61 @@
+{
+ "lcsc": "C124187",
+ "mpn": "BAT760-7",
+ "manufacturer": "DIODES(美台)",
+ "footprint": "SOD-323_L1.8-W1.3-LS2.5-RD",
+ "jlc_class": "Extended Part",
+ "kind": "diode",
+ "pins": {
+  "1": {
+   "name": "K",
+   "type": "passive",
+   "role": "cathode"
+  },
+  "2": {
+   "name": "A",
+   "type": "passive",
+   "role": "anode"
+  }
+ },
+ "sources": [
+  "BAT760 datasheet DS30498 Rev. 10-2 (Diodes Incorporated)",
+  "Maximum ratings: VRWM 30 V, IO 1 A, IFSM 5.5 A; PD 250 mW, RθJA 500 °C/W, TJ –65 … 150 °C",
+  "Electrical characteristics: VF 495 / 550 mV at 1 A, 320 / 350 mV at 100 mA; IR 20 µA max at 8 V",
+  "pin 1 cathode: the footprint's polarity mark, as the library's SMA diodes"
+ ],
+ "verified": {
+  "by": "Claude (datasheet check, open-design transcription)",
+  "date": "2026-10-31",
+  "datasheet": "BAT760 DS30498 Rev. 10-2",
+  "checked": [
+   "ratings",
+   "forward voltage",
+   "leakage"
+  ],
+  "open": [
+   "pin 1 = cathode from the EasyEDA footprint's polarity mark, not from a drawing"
+  ]
+ },
+ "package": "SOD-323",
+ "datasheet": {
+  "url": "https://datasheet.lcsc.com/datasheet/pdf/458c44b471533662a780e908ef76073b.pdf"
+ },
+ "values": {
+  "vf_v": 0.55,
+  "vf_at_a": 1.0,
+  "ir_a": 2e-05,
+  "ir_at_v": 8
+ },
+ "limits": {
+  "vr_max_v": 30,
+  "if_max_a": 1.0,
+  "ifsm_max_a": 5.5,
+  "tj_max_c": 150,
+  "p_max_w": 0.25,
+  "rth_ja_k_per_w": 500
+ },
+ "spice": {
+  "model": ".model BAT760 D(IS=5.4u N=1.26 RS=0.1 BV=30 IBV=0.5m)",
+  "source": "fitted to the datasheet's typical VF: 245 mV at 10 mA and 320 mV at 100 mA give N·Vt = 32.6 mV (N 1.26) and IS 5.4 µA; 495 mV at 1 A gives RS 0.1 Ω; BV the V(BR)R of 30 V at 500 µA"
+ }
+}

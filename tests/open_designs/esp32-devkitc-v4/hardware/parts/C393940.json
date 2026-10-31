@@ -1,0 +1,69 @@
+{
+ "lcsc": "C393940",
+ "mpn": "MICRO5.9mmusb",
+ "manufacturer": "SHOU HAN(首韩)",
+ "footprint": "MICRO-USB-SMD_5P-P0.65-H-F_MICRO5.9MMUSB",
+ "jlc_class": "Extended Part",
+ "kind": "connector",
+ "pins": {
+  "1": {
+   "name": "VBUS",
+   "type": "power_output",
+   "role": "vbus"
+  },
+  "2": {
+   "name": "D-",
+   "type": "bidirectional",
+   "role": "dn"
+  },
+  "3": {
+   "name": "D+",
+   "type": "bidirectional",
+   "role": "dp"
+  },
+  "4": {
+   "name": "ID",
+   "type": "passive",
+   "role": "id"
+  },
+  "5": {
+   "name": "GND",
+   "type": "ground",
+   "role": "gnd"
+  },
+  "6": {
+   "name": "6",
+   "type": "mechanical",
+   "role": "shield"
+  }
+ },
+ "sources": [
+  "MICRO 5.9mmusb specification for approval (Shenzhen Shouhan Technology)",
+  "2.1 working current 1.8 A, 2.2 –30 … +80 °C, 3.1 contact resistance 50 mΩ max"
+ ],
+ "verified": {
+  "by": "Claude (datasheet check, open-design transcription)",
+  "date": "2026-10-31",
+  "datasheet": "SHOU HAN MICRO5.9mmusb specification",
+  "checked": [
+   "current",
+   "contact resistance"
+  ],
+  "open": [
+   "no rated voltage stated (only the withstanding test, 100 V AC)",
+   "the DevKitC's own receptacle (USB_CON8, 4 shell pins) is not named; this LCSC part stands in for it"
+  ]
+ },
+ "package": "micro-USB B, SMD",
+ "datasheet": {
+  "url": "LCSC datasheet of C393940 (SHOU HAN MICRO5.9mmusb)"
+ },
+ "values": {
+  "r_contact_ohm": 0.05
+ },
+ "limits": {
+  "i_max_a": 1.8,
+  "t_min_c": -30,
+  "t_max_c": 80
+ }
+}

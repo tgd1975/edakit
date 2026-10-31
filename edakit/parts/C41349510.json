@@ -1,0 +1,683 @@
+{
+ "lcsc": "C41349510",
+ "mpn": "ESP32-C3-MINI-1-H4X",
+ "manufacturer": "ESPRESSIF(乐鑫)",
+ "kind": "module",
+ "package": "SMD module 13.2 × 16.6 × 2.4 mm, 53 pads (LGA)",
+ "footprint": "WIFIM-SMD_ESP32-C3-MINI-1",
+ "jlc_class": "Extended Part",
+ "datasheet": {
+  "url": "https://documentation.espressif.com/esp32-c3-mini-1_datasheet_en.pdf",
+  "pinout_page": 10,
+  "title": "ESP32-C3-MINI-1 & ESP32-C3-MINI-1U Datasheet",
+  "revision": "v2.2"
+ },
+ "pins": {
+  "1": {
+   "name": "GND",
+   "type": "ground"
+  },
+  "2": {
+   "name": "GND",
+   "type": "ground"
+  },
+  "3": {
+   "name": "3V3",
+   "type": "power_in",
+   "role": "vdd",
+   "v_max_v": 3.6
+  },
+  "4": {
+   "name": "NC",
+   "type": "no_connect"
+  },
+  "5": {
+   "name": "IO2",
+   "type": "bidirectional",
+   "role": "gpio",
+   "v_max_v": 3.6,
+   "adc": {
+    "range_v": [
+     0.0,
+     2.5
+    ]
+   },
+   "functions": [
+    "spi2.sck",
+    "spi2.tx",
+    "spi2.rx",
+    "spi2.cs",
+    "uart0.tx",
+    "uart0.rx",
+    "uart1.tx",
+    "uart1.rx",
+    "i2c0.sda",
+    "i2c0.scl",
+    "i2s0.bclk",
+    "i2s0.ws",
+    "i2s0.sd",
+    "can0.tx",
+    "can0.rx",
+    "adc1"
+   ],
+   "strap": "high",
+   "hint": "strapping pin GPIO2: floating at reset; it does not decide the boot mode, but a pull-up is recommended because of glitches (datasheet table 4-1, 4-3 note 2)"
+  },
+  "6": {
+   "name": "IO3",
+   "type": "bidirectional",
+   "role": "gpio",
+   "v_max_v": 3.6,
+   "adc": {
+    "range_v": [
+     0.0,
+     2.5
+    ]
+   },
+   "functions": [
+    "spi2.sck",
+    "spi2.tx",
+    "spi2.rx",
+    "spi2.cs",
+    "uart0.tx",
+    "uart0.rx",
+    "uart1.tx",
+    "uart1.rx",
+    "i2c0.sda",
+    "i2c0.scl",
+    "i2s0.bclk",
+    "i2s0.ws",
+    "i2s0.sd",
+    "can0.tx",
+    "can0.rx",
+    "adc1"
+   ]
+  },
+  "7": {
+   "name": "NC",
+   "type": "no_connect"
+  },
+  "8": {
+   "name": "EN",
+   "type": "input",
+   "v_max_v": 3.6,
+   "needs": [
+    {
+     "what": "pull_up",
+     "source": "ESP32-C3-MINI-1 & ESP32-C3-MINI-1U Datasheet v2.2, 9 Peripheral Schematics: RC delay at EN, usually R = 10 kΩ and C = 1 µF, to be adjusted to the power-up timing; table 3-1: do not leave EN floating"
+    },
+    {
+     "what": "capacitor",
+     "source": "ESP32-C3-MINI-1 & ESP32-C3-MINI-1U Datasheet v2.2, 9 Peripheral Schematics: RC delay at EN, usually R = 10 kΩ and C = 1 µF, to be adjusted to the power-up timing"
+    }
+   ],
+   "hint": "chip enable: high = on, low = off; do not leave floating (datasheet table 3-1); VIL_nRST max 0.25 × VDD (table 6-3)"
+  },
+  "9": {
+   "name": "NC",
+   "type": "no_connect"
+  },
+  "10": {
+   "name": "NC",
+   "type": "no_connect"
+  },
+  "11": {
+   "name": "GND",
+   "type": "ground"
+  },
+  "12": {
+   "name": "IO0",
+   "type": "bidirectional",
+   "role": "gpio",
+   "v_max_v": 3.6,
+   "adc": {
+    "range_v": [
+     0.0,
+     2.5
+    ]
+   },
+   "functions": [
+    "spi2.sck",
+    "spi2.tx",
+    "spi2.rx",
+    "spi2.cs",
+    "uart0.tx",
+    "uart0.rx",
+    "uart1.tx",
+    "uart1.rx",
+    "i2c0.sda",
+    "i2c0.scl",
+    "i2s0.bclk",
+    "i2s0.ws",
+    "i2s0.sd",
+    "can0.tx",
+    "can0.rx",
+    "adc1"
+   ]
+  },
+  "13": {
+   "name": "IO1",
+   "type": "bidirectional",
+   "role": "gpio",
+   "v_max_v": 3.6,
+   "adc": {
+    "range_v": [
+     0.0,
+     2.5
+    ]
+   },
+   "functions": [
+    "spi2.sck",
+    "spi2.tx",
+    "spi2.rx",
+    "spi2.cs",
+    "uart0.tx",
+    "uart0.rx",
+    "uart1.tx",
+    "uart1.rx",
+    "i2c0.sda",
+    "i2c0.scl",
+    "i2s0.bclk",
+    "i2s0.ws",
+    "i2s0.sd",
+    "can0.tx",
+    "can0.rx",
+    "adc1"
+   ]
+  },
+  "14": {
+   "name": "GND",
+   "type": "ground"
+  },
+  "15": {
+   "name": "NC",
+   "type": "no_connect"
+  },
+  "16": {
+   "name": "IO10",
+   "type": "bidirectional",
+   "role": "gpio",
+   "v_max_v": 3.6,
+   "functions": [
+    "spi2.sck",
+    "spi2.tx",
+    "spi2.rx",
+    "spi2.cs",
+    "uart0.tx",
+    "uart0.rx",
+    "uart1.tx",
+    "uart1.rx",
+    "i2c0.sda",
+    "i2c0.scl",
+    "i2s0.bclk",
+    "i2s0.ws",
+    "i2s0.sd",
+    "can0.tx",
+    "can0.rx"
+   ],
+   "hint": "power-up: low-level glitch, about 5 ns (ESP32-C3 Series Datasheet v2.4, table 2-2)"
+  },
+  "17": {
+   "name": "NC",
+   "type": "no_connect"
+  },
+  "18": {
+   "name": "IO4",
+   "type": "bidirectional",
+   "role": "gpio",
+   "v_max_v": 3.6,
+   "adc": {
+    "range_v": [
+     0.0,
+     2.5
+    ]
+   },
+   "functions": [
+    "spi2.sck",
+    "spi2.tx",
+    "spi2.rx",
+    "spi2.cs",
+    "uart0.tx",
+    "uart0.rx",
+    "uart1.tx",
+    "uart1.rx",
+    "i2c0.sda",
+    "i2c0.scl",
+    "i2s0.bclk",
+    "i2s0.ws",
+    "i2s0.sd",
+    "can0.tx",
+    "can0.rx",
+    "adc1"
+   ],
+   "hint": "MTMS of the JTAG interface (datasheet table 3-1)"
+  },
+  "19": {
+   "name": "IO5",
+   "type": "bidirectional",
+   "role": "gpio",
+   "v_max_v": 3.6,
+   "functions": [
+    "spi2.sck",
+    "spi2.tx",
+    "spi2.rx",
+    "spi2.cs",
+    "uart0.tx",
+    "uart0.rx",
+    "uart1.tx",
+    "uart1.rx",
+    "i2c0.sda",
+    "i2c0.scl",
+    "i2s0.bclk",
+    "i2s0.ws",
+    "i2s0.sd",
+    "can0.tx",
+    "can0.rx",
+    "adc2"
+   ],
+   "hint": "MTDI of the JTAG interface (datasheet table 3-1); ADC2_CH0: ADC2 is not factory-calibrated and not operable on some chip revisions (datasheet 5.2.2.1); ESP-IDF v6.1 no longer supports ADC2 oneshot mode on the ESP32-C3 (ADC Oneshot Mode Driver)"
+  },
+  "20": {
+   "name": "IO6",
+   "type": "bidirectional",
+   "role": "gpio",
+   "v_max_v": 3.6,
+   "functions": [
+    "spi2.sck",
+    "spi2.tx",
+    "spi2.rx",
+    "spi2.cs",
+    "uart0.tx",
+    "uart0.rx",
+    "uart1.tx",
+    "uart1.rx",
+    "i2c0.sda",
+    "i2c0.scl",
+    "i2s0.bclk",
+    "i2s0.ws",
+    "i2s0.sd",
+    "can0.tx",
+    "can0.rx"
+   ],
+   "hint": "MTCK of the JTAG interface (datasheet table 3-1); power-up: low-level glitch, about 5 ns (ESP32-C3 Series Datasheet v2.4, table 2-2)"
+  },
+  "21": {
+   "name": "IO7",
+   "type": "bidirectional",
+   "role": "gpio",
+   "v_max_v": 3.6,
+   "functions": [
+    "spi2.sck",
+    "spi2.tx",
+    "spi2.rx",
+    "spi2.cs",
+    "uart0.tx",
+    "uart0.rx",
+    "uart1.tx",
+    "uart1.rx",
+    "i2c0.sda",
+    "i2c0.scl",
+    "i2s0.bclk",
+    "i2s0.ws",
+    "i2s0.sd",
+    "can0.tx",
+    "can0.rx"
+   ],
+   "hint": "MTDO of the JTAG interface (datasheet table 3-1); power-up: low-level glitch, about 5 ns (ESP32-C3 Series Datasheet v2.4, table 2-2)"
+  },
+  "22": {
+   "name": "IO8",
+   "type": "bidirectional",
+   "role": "gpio",
+   "v_max_v": 3.6,
+   "functions": [
+    "spi2.sck",
+    "spi2.tx",
+    "spi2.rx",
+    "spi2.cs",
+    "uart0.tx",
+    "uart0.rx",
+    "uart1.tx",
+    "uart1.rx",
+    "i2c0.sda",
+    "i2c0.scl",
+    "i2s0.bclk",
+    "i2s0.ws",
+    "i2s0.sd",
+    "can0.tx",
+    "can0.rx"
+   ],
+   "hint": "strapping pin GPIO8: floating at reset; any level for SPI boot, must be high for joint download boot (with GPIO9 low); with EFUSE_UART_PRINT_CONTROL it switches the UART0 ROM messages (datasheet table 4-1, 4-3, 4-4)"
+  },
+  "23": {
+   "name": "IO9",
+   "type": "bidirectional",
+   "role": "gpio",
+   "v_max_v": 3.6,
+   "functions": [
+    "spi2.sck",
+    "spi2.tx",
+    "spi2.rx",
+    "spi2.cs",
+    "uart0.tx",
+    "uart0.rx",
+    "uart1.tx",
+    "uart1.rx",
+    "i2c0.sda",
+    "i2c0.scl",
+    "i2s0.bclk",
+    "i2s0.ws",
+    "i2s0.sd",
+    "can0.tx",
+    "can0.rx"
+   ],
+   "strap": "high",
+   "pull": "up",
+   "pull_ohm": 45000,
+   "hint": "strapping pin GPIO9: high at reset = SPI boot, low = joint download boot; weak pull-up at reset (datasheet table 4-1, 4-3)"
+  },
+  "24": {
+   "name": "NC",
+   "type": "no_connect"
+  },
+  "25": {
+   "name": "NC",
+   "type": "no_connect"
+  },
+  "26": {
+   "name": "IO18",
+   "type": "bidirectional",
+   "role": "gpio",
+   "v_max_v": 3.6,
+   "functions": [
+    "spi2.sck",
+    "spi2.tx",
+    "spi2.rx",
+    "spi2.cs",
+    "uart0.tx",
+    "uart0.rx",
+    "uart1.tx",
+    "uart1.rx",
+    "i2c0.sda",
+    "i2c0.scl",
+    "i2s0.bclk",
+    "i2s0.ws",
+    "i2s0.sd",
+    "can0.tx",
+    "can0.rx",
+    "usb0.dn"
+   ],
+   "hint": "USB_D− of the USB Serial/JTAG controller (datasheet table 3-1); power-up: high-level glitch, about 50 µs (ESP32-C3 Series Datasheet v2.4, table 2-2)"
+  },
+  "27": {
+   "name": "IO19",
+   "type": "bidirectional",
+   "role": "gpio",
+   "v_max_v": 3.6,
+   "functions": [
+    "spi2.sck",
+    "spi2.tx",
+    "spi2.rx",
+    "spi2.cs",
+    "uart0.tx",
+    "uart0.rx",
+    "uart1.tx",
+    "uart1.rx",
+    "i2c0.sda",
+    "i2c0.scl",
+    "i2s0.bclk",
+    "i2s0.ws",
+    "i2s0.sd",
+    "can0.tx",
+    "can0.rx",
+    "usb0.dp"
+   ],
+   "hint": "USB_D+ of the USB Serial/JTAG controller (datasheet table 3-1)"
+  },
+  "28": {
+   "name": "NC",
+   "type": "no_connect"
+  },
+  "29": {
+   "name": "NC",
+   "type": "no_connect"
+  },
+  "30": {
+   "name": "RXD0",
+   "type": "bidirectional",
+   "role": "gpio",
+   "v_max_v": 3.6,
+   "functions": [
+    "spi2.sck",
+    "spi2.tx",
+    "spi2.rx",
+    "spi2.cs",
+    "uart0.tx",
+    "uart0.rx",
+    "uart1.tx",
+    "uart1.rx",
+    "i2c0.sda",
+    "i2c0.scl",
+    "i2s0.bclk",
+    "i2s0.ws",
+    "i2s0.sd",
+    "can0.tx",
+    "can0.rx"
+   ],
+   "hint": "U0RXD: UART0, firmware download (ESP32-C3 Series Datasheet 2.3.4); power-up: low-level glitch, about 5 ns (ESP32-C3 Series Datasheet v2.4, table 2-2)"
+  },
+  "31": {
+   "name": "TXD0",
+   "type": "bidirectional",
+   "role": "gpio",
+   "v_max_v": 3.6,
+   "functions": [
+    "spi2.sck",
+    "spi2.tx",
+    "spi2.rx",
+    "spi2.cs",
+    "uart0.tx",
+    "uart0.rx",
+    "uart1.tx",
+    "uart1.rx",
+    "i2c0.sda",
+    "i2c0.scl",
+    "i2s0.bclk",
+    "i2s0.ws",
+    "i2s0.sd",
+    "can0.tx",
+    "can0.rx"
+   ],
+   "hint": "U0TXD: UART0, firmware download and ROM messages (datasheet 4.2)"
+  },
+  "32": {
+   "name": "NC",
+   "type": "no_connect"
+  },
+  "33": {
+   "name": "NC",
+   "type": "no_connect"
+  },
+  "34": {
+   "name": "NC",
+   "type": "no_connect"
+  },
+  "35": {
+   "name": "NC",
+   "type": "no_connect"
+  },
+  "36": {
+   "name": "GND",
+   "type": "ground"
+  },
+  "37": {
+   "name": "GND",
+   "type": "ground"
+  },
+  "38": {
+   "name": "GND",
+   "type": "ground"
+  },
+  "39": {
+   "name": "GND",
+   "type": "ground"
+  },
+  "40": {
+   "name": "GND",
+   "type": "ground"
+  },
+  "41": {
+   "name": "GND",
+   "type": "ground"
+  },
+  "42": {
+   "name": "GND",
+   "type": "ground"
+  },
+  "43": {
+   "name": "GND",
+   "type": "ground"
+  },
+  "44": {
+   "name": "GND",
+   "type": "ground"
+  },
+  "45": {
+   "name": "GND",
+   "type": "ground"
+  },
+  "46": {
+   "name": "GND",
+   "type": "ground"
+  },
+  "47": {
+   "name": "GND",
+   "type": "ground"
+  },
+  "48": {
+   "name": "GND",
+   "type": "ground"
+  },
+  "49": {
+   "name": "GND",
+   "type": "ground"
+  },
+  "50": {
+   "name": "GND",
+   "type": "ground"
+  },
+  "51": {
+   "name": "GND",
+   "type": "ground"
+  },
+  "52": {
+   "name": "GND",
+   "type": "ground"
+  },
+  "53": {
+   "name": "GND",
+   "type": "ground"
+  }
+ },
+ "values": {
+  "behavior": "mcu",
+  "v_io_v": 3.3,
+  "vih_ratio": 0.75,
+  "vil_ratio": 0.25,
+  "i_core_a": 0.35
+ },
+ "limits": {
+  "vdd_op_min_v": 3.0,
+  "vdd_op_max_v": 3.6,
+  "gpio_v_max_v": 3.6,
+  "gpio_i_max_a": 0.028,
+  "gpio_i_total_max_a": 1.0,
+  "t_min_c": -40,
+  "t_max_c": 105
+ },
+ "antenna": {
+  "keepout_mm": [
+   -6.6,
+   5.6,
+   6.6,
+   11.0
+  ]
+ },
+ "body": {
+  "h_mm": 2.4
+ },
+ "hints": [
+  "the supply must deliver at least 0.5 A (datasheet table 6-2, IVDD); Wi-Fi TX peaks at 350 mA, Bluetooth LE at 20 dBm at 340 mA (tables 6-4, 6-5)",
+  "H4X embeds chip revision v1.1, which depends on specific ESP-IDF versions (datasheet table 1-1 note 6, Compatibility Advisory for ESP32-C3 Chip Revision v1.1)"
+ ],
+ "spice": {},
+ "compliance": {
+  "rohs": true,
+  "radio": {
+   "bands_mhz": [
+    [
+     2412,
+     2484
+    ],
+    [
+     2402,
+     2480
+    ]
+   ],
+   "max_dbm": 20.5,
+   "source": "ESP32-C3-MINI-1 & ESP32-C3-MINI-1U Datasheet v2.2: table 7-1 (Wi-Fi centre frequencies 2412–2484 MHz), table 7-2 (802.11b TX power 20.5 dBm typ, measured at the antenna port), table 7-7 (Bluetooth LE 2402–2480 MHz, –24 … +20 dBm) – read 2026-10-31"
+  },
+  "source": "ESP32-C3-MINI-1 & ESP32-C3-MINI-1U Datasheet v2.2, 1.1 Features: 'Green certification: RoHS/REACH' – read 2026-10-31"
+ },
+ "sources": [
+  "pin numbers and names, footprint, mpn, jlc_class: EasyEDA library data of C41349510 (edakit part import, 2026-10-31; the same symbol and footprint as the NRND ESP32-C3-MINI-1-N4, C2838502); JLCPCB catalogue 2026-10-31: Extended, 3 883 pcs",
+  "ESP32-C3-MINI-1 & ESP32-C3-MINI-1U Datasheet v2.2 (Espressif, documentation.espressif.com, read 2026-10-31): table 1-1 (H4X: 4 MB quad flash in package, –40 … 105 °C, chip revision v1.1, recommended; MINI-1-N4/H4 NRND), table 3-1 pin definitions (ADC1_CH0–4 on IO0–IO4, ADC2_CH0 on IO5, JTAG on IO4–IO7, USB on IO18/IO19, UART0 on GPIO20/21), table 4-1 strapping defaults (GPIO2, GPIO8 floating, GPIO9 weak pull-up), table 4-3 boot mode, table 4-4 ROM message printing, 5.2.2.1 ADC2, table 6-1 VDD33 abs. max 3.6 V, table 6-2 VDD33 3.0–3.6 V and IVDD ≥ 0.5 A, table 6-3 DC characteristics (VIH ≥ 0.75 × VDD up to VDD + 0.3 V, VIL ≤ 0.25 × VDD, IOH 40 mA typ, IOL 28 mA typ, RPU/RPD 45 kΩ typ), tables 6-4/6-5 current (Wi-Fi TX peak 350 mA, BLE 20 dBm 340 mA), 9 Peripheral Schematics (EN RC 10 kΩ / 1 µF), figure 10-1 dimensions (13.2 × 16.6 × 2.4 mm, pad field 11.2 mm from the bottom edge), figure 11-1 land pattern",
+  "ESP32-C3 Series Datasheet v2.4 (Espressif, read 2026-10-31): table 2-2 power-up glitches, 2.3.5 / table 2-7 peripheral pin assignment (UART0/1, I2C, I2S, TWAI, LED PWM, SPI2 through the GPIO matrix to any GPIO), table 5-1 cumulative IO output current 1000 mA (abs. max), table 5-6 ADC ATTEN3: 0–2500 mV",
+  "ESP-IDF Programming Guide v6.1 (esp32c3), ADC Oneshot Mode Driver: 'ADC2 oneshot mode is no longer supported, due to hardware limitations' (docs.espressif.com, read 2026-10-31)",
+  "functions: matrix signals spi2, uart0–1, i2c0, i2s0, can0 (TWAI) on every GPIO; usb0 on IO18/IO19; adc1/adc2 = the ADC unit, not the channel",
+  "functions: no pwm – LEDC reaches every GPIO through the matrix, which edakit's slice model cannot express (see verified.open)",
+  "adc.range_v [0, 2.5]: the effective range at ATTEN3 (ESP32-C3 Series Datasheet table 5-6) on the ADC1 pins – assumption: the firmware uses ATTEN3; IO5 (ADC2) without adc window",
+  "i_core_a 0.35 A: the 802.11b TX peak of table 6-4 as the upper bound",
+  "gpio_i_max_a 0.028 A: IOL typ 28 mA at VOL 0.495 V and PAD_DRIVER = 3 (table 6-3) – assumption: no absolute maximum per pin given",
+  "pin v_max_v and gpio_v_max_v 3.6 V: VIH max VDD + 0.3 V at VDD 3.3 V (table 6-3)",
+  "pull_ohm 45 kΩ: RPU/RPD typ (table 6-3)",
+  "GPIO2 strap high: the datasheet recommends a pull-up although GPIO2 does not decide the boot mode (table 4-3 note 2) – LVL.boot asks for it",
+  "antenna.keepout_mm: the antenna area above the pad field (16.6 − 11.2 = 5.4 mm × 13.2 mm, figure 10-1/11-1) placed in the EasyEDA footprint WIFIM-SMD_ESP32-C3-MINI-1 (outline x ±6.6 mm, y –5.6 … 11.0 mm, silk line of the antenna area at y = 5.6 mm) – the base-board clearance of the hardware design guidelines is not included",
+  "ESP32-C3 Series Datasheet v2.4, peripheral pin table: UART0, SPI0/1, SPI2, UART1, I2C, I2S, TWAI and LED PWM on any GPIO through the GPIO Matrix (P2/P3)"
+ ],
+ "notes": "ESP32-C3-MINI-1-H4X, the recommended variant (the MINI-1-N4 C2838502 is NRND since datasheet v1.5). functions holds no pwm on purpose (GPIO matrix, see verified.open).",
+ "verified": {
+  "by": "Claude (datasheet check, library draft)",
+  "date": "2026-10-31",
+  "datasheet": "ESP32-C3-MINI-1 & ESP32-C3-MINI-1U Datasheet v2.2",
+  "checked": [
+   "pin numbers 1–53 and names of the EasyEDA symbol against table 3-1 (GND 1, 2, 11, 14, 36–53; NC 4, 7, 9, 10, 15, 17, 24, 25, 28, 29, 32–35)",
+   "strapping pins GPIO9 (pull-up, high = SPI boot), GPIO8 (floating, high for download), GPIO2 (floating, pull-up recommended) – table 4-1, 4-3",
+   "VDD33 3.0–3.6 V, 3.6 V abs. max; IVDD ≥ 0.5 A; H4X –40 … 105 °C",
+   "VIH 0.75 × VDD, VIL 0.25 × VDD; IOH 40 mA, IOL 28 mA typ; RPU/RPD 45 kΩ typ",
+   "TX peak 350 mA (Wi-Fi), 340 mA (BLE 20 dBm)",
+   "Wi-Fi 2412–2484 MHz, 20.5 dBm; Bluetooth LE 2402–2480 MHz, up to 20 dBm",
+   "power-up glitches GPIO6, GPIO7, GPIO10, GPIO20 (5 ns), GPIO18 (50 µs) – chip table 2-2",
+   "footprint frame: outline x ±6.6 mm, y –5.6 … 11.0 mm against figure 10-1",
+   "2026-10-31: matrix ['uart', 'spi', 'i2c', 'i2s', 'pwm', 'can'] – ESP32-C3 Series Datasheet v2.4, peripheral pin table: UART0, SPI0/1, SPI2, UART1, I2C, I2S, TWAI and LED PWM on any GPIO through the GPIO Matrix (P2/P3); REQ.function takes a net's fn on any GPIO of these kinds (schema-gaps A1)"
+  ],
+  "open": [
+   "pwm: LEDC reaches any GPIO through the matrix – not expressible in functions (schema gap); fn pwm nets on this module are reported by REQ.function",
+   "adc window assumes ATTEN3 (0–2500 mV)",
+   "gpio_i_max_a is the IOL test current, not an absolute maximum",
+   "antenna_dbi of the PCB antenna and the EU declaration of conformity: not in the datasheet, certificates not read",
+   "REACH: only 'Green certification: RoHS/REACH' in the datasheet – no SVHC statement read",
+   "rth/tj: none given",
+   "least current (i_core_min_a): firmware-dependent",
+   "base-board antenna clearance per the hardware design guidelines (not read)"
+  ]
+ },
+ "matrix": [
+  "uart",
+  "spi",
+  "i2c",
+  "i2s",
+  "pwm",
+  "can"
+ ]
+}

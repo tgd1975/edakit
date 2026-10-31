@@ -110,7 +110,7 @@ def check_mpn(design, rec, cfg):
 
 def run(design, cfg):
     """The findings of the checks beyond the graph, for a project (cfg)."""
-    from .. import checks, footprint, order, part, requirements, scripts, stock
+    from .. import checks, footprint, library, order, part, requirements, scripts, stock
     rec = Recorder()
     part.check(design, rec, cfg)
     if not checks.check_holes(design, rec, checks.footprint_geometry(design, cfg)):
@@ -124,6 +124,7 @@ def run(design, cfg):
     stock.check(design, rec, cfg)
     order.check(design, rec, cfg)
     check_mpn(design, rec, cfg)
+    library.check(design, rec)
     checks.check_signoff(design, rec)
     if cfg.requirements:
         requirements.check(rec, cfg)

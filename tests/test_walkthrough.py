@@ -28,7 +28,7 @@ def test_check_has_the_accepts_and_nothing_else(example):
     rep = engines.run_all(Design.from_config(example), example)
     assert rep.errors == [] and rep.warnings == [] and rep.notes == []
     assert sorted((f.code, f.place) for f in rep.accepted) == [
-        ("HINT.bulk", "BT1"), ("HINT.debounce", "SW1"), ("HINT.lithium", "BT1"), ("PATH.reverse", "R1.1")]
+        ("HINT.bulk", "BT1"), ("HINT.lithium", "BT1"), ("PATH.reverse", "R1.1")]   # no MCU reads SW1: no HINT.debounce
     assert {f.code for f in rep.pending} <= {"PARTS.stock"}    # the stock snapshot of 2026-10-29 ages
 
 

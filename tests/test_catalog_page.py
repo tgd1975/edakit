@@ -36,7 +36,7 @@ def test_the_candidate_status_names_known_codes_and_states():
     from edakit import catalog
     s = tomllib.loads((ROOT / "docs" / "concepts" / "new" / "maker-coverage-status.toml").read_text(encoding="utf-8"))
     assert {e["status"] for sec in ("features", "checks", "hints", "blocks", "review") for e in s[sec].values()} <= \
-        {"built", "partial", "open"}
+        {"built", "partial", "open", "out"}
     assert (len(s["features"]), len(s["checks"]), len(s["hints"]), len(s["blocks"])) == (24, 31, 19, 18)
     hints = {e["where"].split()[0] for e in s["hints"].values() if e["status"] == "built"}
     assert hints - set(catalog.codes()) == set()

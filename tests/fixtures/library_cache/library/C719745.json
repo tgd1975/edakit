@@ -1,0 +1,14 @@
+{
+ "lcsc": "C719745",
+ "mpn": "AQY212GS",
+ "manufacturer": "PANASONIC(松下)",
+ "footprint": "SOP-4_L4.4-W4.3-P2.54-LS6.8-BL",
+ "jlc_class": "Extended Part",
+ "pins": {
+  "1": "1",
+  "2": "2",
+  "4": "3"
+ },
+ "source": "https://easyeda.com/api/products/C719745/components?version=6.4.19.5",
+ "read": "2026-10-31"
+}

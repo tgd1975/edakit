@@ -72,7 +72,7 @@ def test_rules_lists_the_codes(capsys):
 
 
 # --- parts schema and conversion -------------------------------------------------------------------------------------
-PARTS = sorted(glob.glob(str(ROOT / "edakit" / "blocks" / "parts" / "*.json"))
+PARTS = sorted(glob.glob(str(ROOT / "edakit" / "parts" / "*.json"))
                + glob.glob(str(ROOT / "tests" / "fixtures" / "led-bar" / "hardware" / "parts" / "*.json")))
 
 

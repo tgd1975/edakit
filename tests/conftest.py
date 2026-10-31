@@ -5,7 +5,7 @@ from pathlib import Path
 import pytest
 
 EXAMPLE = Path(__file__).resolve().parent / "fixtures" / "led-bar"
-LIBRARY_PARTS = Path(__file__).resolve().parents[1] / "edakit" / "blocks" / "parts"
+LIBRARY_PARTS = Path(__file__).resolve().parents[1] / "edakit" / "parts"
 JLCPCB = Path(__file__).resolve().parent / "fixtures" / "jlcpcb"   # recorded catalogue answers and part pages
 
 

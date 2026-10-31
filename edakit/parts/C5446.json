@@ -1,0 +1,108 @@
+{
+ "lcsc": "C5446",
+ "mpn": "XC6206P332MR-G",
+ "manufacturer": "Torex Semiconductor",
+ "kind": "ic",
+ "package": "SOT-23-3",
+ "footprint": "SOT-23-3_L2.9-W1.6-P1.90-LS2.8-BR",
+ "jlc_class": "Basic Part",
+ "datasheet": {
+  "url": "https://datasheet.lcsc.com/datasheet/pdf/221c990eb3a74b8a8233f22168ce0d59.pdf?productCode=C5446",
+  "pinout_page": 2
+ },
+ "pins": {
+  "1": {
+   "name": "GND",
+   "type": "ground",
+   "role": "gnd"
+  },
+  "2": {
+   "name": "Vin",
+   "type": "power_output",
+   "role": "vout",
+   "hint": "EasyEDA's symbol calls this pin Vin, but the data sheet's SOT-23 pin 2 is VOUT (Torex XC6206 Series data sheet ETR0305_004b p. 2) – role and type follow the data sheet",
+   "needs": [
+    {
+     "what": "capacitor",
+     "source": "Torex XC6206 Series data sheet ETR0305_004b p. 1 typical application circuit: CL 1.0 µF (ceramic); 'compatible with low ESR ceramic capacitors' – no minimum stated, so no window entered"
+    }
+   ]
+  },
+  "3": {
+   "name": "Vout",
+   "type": "power_in",
+   "role": "vin",
+   "v_max_v": 7.0,
+   "hint": "EasyEDA's symbol calls this pin Vout, but the data sheet's SOT-23 pin 3 is VIN (Torex XC6206 Series data sheet ETR0305_004b p. 2) – role and type follow the data sheet",
+   "needs": [
+    {
+     "what": "capacitor",
+     "source": "Torex XC6206 Series data sheet ETR0305_004b p. 1 typical application circuit: CIN 1.0 µF (ceramic) – no minimum stated, so no window entered"
+    }
+   ]
+  }
+ },
+ "values": {
+  "behavior": "ldo",
+  "vout_v": 3.3,
+  "dropout_v": 0.68,
+  "iq_a": 3e-06
+ },
+ "limits": {
+  "vdd_max_v": 7.0,
+  "vdd_op_min_v": 1.8,
+  "vdd_op_max_v": 6.0,
+  "vin_min_v": 1.8,
+  "i_out_max_a": 0.2,
+  "p_max_w": 0.25,
+  "t_min_c": -40,
+  "t_max_c": 85
+ },
+ "hints": [
+  "pin names of the EasyEDA symbol are swapped against the data sheet: pad 2 is VOUT, pad 3 (alone on its side) is VIN – wire by the roles, not by the symbol's names",
+  "VOUT must stay within VSS − 0.3 … VIN + 0.3 V (absolute maximum, p. 3)",
+  "dropout at 3.0–3.9 V output: 75 / 350 mV (typ / max) at 30 mA, 250 / 680 mV at 100 mA (table E-4, E-5, p. 5)"
+ ],
+ "compliance": {
+  "rohs": true,
+  "radio": "none",
+  "source": "Torex XC6206 Series data sheet ETR0305_004b p. 1: EU RoHS compliant, Pb free; p. 2: '-G' suffix halogen and antimony free, fully RoHS compliant; LCSC product data C5446 (2026-10-31): RoHS certificate listed (ROHS3)"
+ },
+ "sources": [
+  "Torex XC6206 Series data sheet ETR0305_004b, via LCSC https://datasheet.lcsc.com/datasheet/pdf/221c990eb3a74b8a8233f22168ce0d59.pdf?productCode=C5446, read 2026-10-31; product.torexsemi.com refused the connection (proxy), so the current revision was not compared",
+  "pins: p. 2 pin configuration and pin assignment, SOT-23: 1 VSS, 2 VOUT, 3 VIN (VIN alone on the top side of the top view); the cached footprint has pads 1 and 2 on one side, pad 3 alone; the EasyEDA symbol of C5446 (edakit part import 2026-10-31) names 1 GND, 2 Vin, 3 Vout – names kept as in the symbol, roles and types from the data sheet (handbook 4.1, 4.4)",
+  "for comparison: UMW's XC6206 data sheet (C347376, March 2025, via LCSC, read 2026-10-31) numbers the SOT-23 pins 1 GND, 2 Input (the single pin on its side), 3 Output – the EasyEDA symbol of C5446 carries that naming, while its footprint has pad 3, not pad 2, as the single pad; on the Torex part the single pin is VIN = pin 3",
+  "vdd_max_v 7.0, VIN v_max_v 7.0: p. 3 absolute maximum input voltage; p_max_w 0.25: p. 3 power dissipation SOT-23 250 mW; t_min_c -40, t_max_c 85: p. 3 operating ambient temperature",
+  "vdd_op_min_v 1.8, vdd_op_max_v 6.0, vin_min_v 1.8: p. 4 input voltage 1.8 … 6.0 V",
+  "vout_v 3.3: P332 = 3.3 V, accuracy code 2 = ±2 % (p. 2 ordering information); table E-1 p. 5: 3.234 … 3.366 V at IOUT 30 mA",
+  "i_out_max_a 0.2: table E-2 p. 5, maximum output current (min) 200 mA for 3.0–3.9 V outputs; p. 1 '200 mA (3.0 V type)'; the absolute maximum 500 mA (p. 3) is bounded by Pd / (VIN − VOUT)",
+  "dropout_v 0.68: table E-5 p. 5, Vdif2 at IOUT 100 mA, typ 250 mV, max 680 mV for 3.0–3.9 V outputs – the maximum entered, the ldo model takes one value; Vdif1 at 30 mA: 75 / 350 mV",
+  "iq_a 3e-06: p. 4 supply current IDD typ 1.0 µA, max 3.0 µA – the maximum entered",
+  "LDO choice for the library (2026-10-31, edakit part search and LCSC product data): XC6206P332MR-G by Torex is the only Basic Part among the low-quiescent 3.3 V candidates and has the largest JLCPCB stock (524 981 pcs; LCSC 160 825); compared: ME6211C33M5G-N C82942 (Extended, 597 pcs), HT7333-A C21583 (Holtek, Extended, 19 318 pcs), MCP1700-3302E/TO C511277 (TO-92, Extended, 318 pcs)"
+ ],
+ "notes": "Low-quiescent 3.3 V LDO (1 µA typ), 200 mA, input up to 6 V. Behaviour model ldo (pins vin, vout, gnd). The EasyEDA symbol of C5446 names pins 2 and 3 the other way round than the data sheet – the roles follow the data sheet. Library draft, group power.",
+ "verified": {
+  "by": "Claude (datasheet check, library draft)",
+  "date": "2026-10-31",
+  "datasheet": "Torex XC6206 Series data sheet ETR0305_004b",
+  "datasheet_sha256": "8fda1e40ea3e7c17178353aceba9c9a9794e56a1960d02b105c576429ce418ed",
+  "checked": [
+   "SOT-23 pin assignment p. 2: 1 VSS, 2 VOUT, 3 VIN – against the EasyEDA symbol of C5446 (1 GND, 2 Vin, 3 Vout): names of pins 2 and 3 disagree, roles set from the data sheet",
+   "absolute maximum p. 3: VIN 7.0 V, VOUT VSS − 0.3 … VIN + 0.3 V, Pd SOT-23 250 mW, Topr -40 … 85 °C",
+   "electrical characteristics p. 4–5: VIN 1.8 … 6.0 V, IDD 1.0 / 3.0 µA, VOUT 3.234 … 3.366 V, IOUTMAX ≥ 200 mA, dropout 250 / 680 mV at 100 mA",
+   "typical application p. 1: CIN 1.0 µF and CL 1.0 µF ceramic",
+   "2026-10-31: symbol_differs – the EasyEDA symbol swaps Vin and Vout against Torex's pin assignment (STRUCT.entry/declared)"
+  ],
+  "open": [
+   "the EasyEDA symbol of C5446 names pad 2 'Vin' and pad 3 'Vout' (UMW's pin numbering, where the single pin is 2), the Torex data sheet gives pad 2 VOUT and pad 3 VIN (the single pin) – a board wired by the symbol's names would feed the regulator backwards; the owner may want to confirm with a current Torex revision or a delivered part before the symbol is used",
+   "ETR0305_004b is an older revision; the current Torex revision could not be fetched",
+   "input and output capacitors: only the typical application's 1.0 µF ceramic; no minimum and no ESR window, so the needs carry no window",
+   "no θJA and no junction temperature limit in the data sheet (only Pd 250 mW for SOT-23): no LIM.t item",
+   "dropout_v is one number (680 mV max at 100 mA); at 30 mA the maximum is 350 mV"
+  ]
+ },
+ "symbol_differs": {
+  "2": "Torex ETR0305_004b, SOT-23 pin assignment: pin 2 is VOUT – the library symbol names it Vin (the entry keeps the symbol's name, its role and type follow the data sheet)",
+  "3": "Torex ETR0305_004b, SOT-23 pin assignment: pin 3 is VIN – the library symbol names it Vout; a schematic drawn by the symbol's names feeds the regulator backwards"
+ }
+}

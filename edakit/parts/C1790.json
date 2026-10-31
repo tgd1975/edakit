@@ -1,0 +1,62 @@
+{
+ "lcsc": "C1790",
+ "mpn": "CL21C101JBANNNC",
+ "manufacturer": "Samsung Electro-Mechanics",
+ "kind": "capacitor",
+ "package": "0805",
+ "footprint": "C0805",
+ "jlc_class": "Basic Part",
+ "datasheet": {
+  "url": "https://datasheet.lcsc.com/datasheet/pdf/02336ea48ea44ca18c72517dd3cb7b47.pdf?productCode=C1790",
+  "pinout_page": null
+ },
+ "pins": {
+  "1": {
+   "name": "1",
+   "type": "passive",
+   "role": "1"
+  },
+  "2": {
+   "name": "2",
+   "type": "passive",
+   "role": "2"
+  }
+ },
+ "values": {
+  "value_f": 1e-10,
+  "dielectric": "C0G",
+  "tolerance": 0.05
+ },
+ "limits": {
+  "v_max_v": 50,
+  "t_min_c": -55,
+  "t_max_c": 125
+ },
+ "spice": {},
+ "compliance": {
+  "rohs": true,
+  "source": "Samsung MLCC catalogue (November 2015), p. 2: produced in accordance with EU RoHS and REACH"
+ },
+ "sources": [
+  "Samsung Electro-Mechanics MLCC catalogue, November 2015 (84 pages) – LCSC product data of C1790, https://datasheet.lcsc.com/datasheet/pdf/02336ea48ea44ca18c72517dd3cb7b47.pdf?productCode=C1790, read 2026-10-31",
+  "part numbering (p. 5): CL = MLCC, 21 = 0805, C = C0G, 101 = 100 pF, J = ±5 %, B = 50 V, A = 0.65 mm, N = Ni/Cu/Ni/Sn, N = normal, N = reserved, C = 7\" paper tape",
+  "product line-up C0G (standard): CL21C101JBANNN 100 pF, 50 V, 5 %, thickness 0.75 mm",
+  "temperature characteristic C0G: 0 ± 30 ppm/°C, −55 … 125 °C (catalogue's dielectric table)",
+  "mpn, manufacturer, footprint, jlc_class, pins: EasyEDA library data of C1790 via edakit part import, read 2026-10-31",
+  "JLCPCB catalogue (edakit stock --lcsc, 2026-10-31): Basic Part, 600 668 pcs"
+ ],
+ "notes": "100 pF C0G 50 V – the RF filter at an instrument input (block instrument-buffer). Library draft.",
+ "verified": {
+  "by": "Claude (datasheet check, library draft)",
+  "date": "2026-10-31",
+  "datasheet": "Samsung MLCC catalogue (November 2015)",
+  "datasheet_sha256": "96baebe4bd0ce363e87be28b5b003f511f1502e084a6fc4f02333ded56c808f6",
+  "checked": [
+   "part numbering: 21 = 0805, C = C0G, 101 = 100 pF, J = ±5 %, B = 50 V",
+   "line-up: CL21C101JBANNN 100 pF 50 V 5 %"
+  ],
+  "open": [
+   "the catalogue is from 2015; a newer revision may exist at Samsung"
+  ]
+ }
+}

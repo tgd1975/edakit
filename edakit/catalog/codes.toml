@@ -156,12 +156,13 @@ sources = [
 
 [codes."STRUCT.entry"]
 title = "graph pins = parts entry"
-rule = "Every part with an LCSC number or a part number has a parts entry, its pins (number and name) equal the entry's, no supply pin is in nc, and – with the library symbol cached by edakit part import – the pins equal that symbol (case and blanks ignored)."
-why = "Checks, simulation, schematic and BOM all read the parts entry. A shifted pin number or a missing entry makes them reason about another part than the one assembled."
-fix = "Create the entry (part-search skill); edakit part import <LCSC> reads pins from the library symbol."
+rule = "Every part with an LCSC number or a part number has a parts entry, its pins (number and name) equal the entry's, no supply pin is in nc, a component's config names one of its entry's configs, and – with the library symbol cached by edakit part import – the pins equal that symbol (case and blanks ignored); the symbol gives no number to two pins and has a pin for every pad of its footprint (grade symbol). Pins the entry's symbol_differs names follow the datasheet against the symbol on purpose: left out of the comparison and named in a note with the reason (grade declared)."
+why = "Checks, simulation, schematic and BOM all read the parts entry. A shifted pin number or a missing entry makes them reason about another part than the one assembled. The library symbol is what a schematic is drawn from: a number it gives to two pins joins them on one pad (the WS2812B-V5/W's DIN on VSS), a pad it has no pin for stays unconnected (the DRV8825's PowerPAD), names swapped against the datasheet feed a regulator backwards (the XC6206) – the netlist inherits it whatever the parts entry says."
+fix = "Create the entry (part-search skill); edakit part import <LCSC> reads pins from the library symbol. A symbol that differs from the datasheet: another part number whose symbol is right, an own symbol, or – where the entry follows the datasheet – symbol_differs in the entry with the reason, and the schematic checked pin by pin against the datasheet; report the symbol to the library (upstream/issue-6-easyeda-symbols.md). A config the entry does not know: one of the names the finding lists, or the configuration added to the entry's configs from the datasheet."
 severity = "error"
+grades = { symbol = "error", declared = "note" }
 details = [
-  "graph pins (number and name) = parts entry; an entry exists for every LCSC number; no supply pin marked `nc`; with the library's symbol cached by `edakit part import`, graph pins = that symbol (case and blanks ignored, as SYNC.schematic; `accept` on the component) – not where the entry's footprint data builds the copy's symbol as a box (`\"symbol\": \"box\"`, 4.5): the carrier's library symbol is not the copy's – finds e.g.: a wrong part number, pins shifted by one, an LED whose pin 1 is the cathode",
+  "graph pins (number and name) = parts entry; an entry exists for every LCSC number; no supply pin marked `nc`; with the library's symbol cached by `edakit part import`, graph pins = that symbol (case and blanks ignored, as SYNC.schematic; `accept` on the component) – not where the entry's footprint data builds the copy's symbol as a box (`\"symbol\": \"box\"`, 4.5): the carrier's library symbol is not the copy's; the cached symbol giving one number to two pins or no pin to a pad of its footprint is grade `symbol`; pins the entry names in `symbol_differs` (`{\"<pin>\": \"reason from the datasheet\"}`) are left out of the comparison and named in a note (grade `declared`) – finds e.g.: a wrong part number, pins shifted by one, an LED whose pin 1 is the cathode, a library symbol that numbers a data input like the ground pin",
 ]
 replaces = ["P-1"]
 sources = [
@@ -197,11 +198,11 @@ sources = [
 
 [codes."LIM.v"]
 title = "voltage within its limit"
-rule = "Every voltage a part sees stays within the limit of its entry: across a capacitor, reverse across a polarized capacitor (vr_max_v, grade polarized), an input above its own part's supply (vin_rel_max_v, grade inject), reverse across a diode or LED, VCE, VEB, VDS, VGS, on a pin (v_max_v; an active pin not below −0.3 V), on a fuse, switch, resistor or connector, and every limit a transient run sets on a net. Stage G takes the declared net ranges times the derating factor (1.5 on capacitors and semiconductors), stage E the simulated value against the derated limit."
+rule = "Every voltage a part sees stays within the limit of its entry: across a capacitor, reverse across a polarized capacitor (vr_max_v, grade polarized), a pin above the supply it refers to – the pin's v_rel_max_v against the pin its ref names (null: none, a pin rated above its supply), else the part's vin_rel_max_v for its inputs, bidirectional pins and outputs against its supply; where the pin gives i_inject_max_a and only resistors feed it, the current its clamp takes against that (grade inject) –, reverse across a diode or LED – a TVS (values tvs) against its working voltage, and the rail of an ESD array (kind esd_array) against its stand-off vrwm_max_v, both without the derating factor –, VCE, VEB, VDS, VGS, on a pin (v_max_v; v_max_powered_v while the part is powered, v_max_v unpowered: grade powered; the pin's v_min_v, else an active pin not below −0.3 V, a negative rail's supply pin – role vee – excepted; against the part's own ground pin where that is not the board's ground), one supply not above another the entry orders (supply_order, grade order), on a fuse, switch, resistor or connector, and every limit a transient run sets on a net. Stage G takes the declared net ranges times the derating factor (1.5 on capacitors and semiconductors) – not the reverse voltage of a coupling capacitor in a signal path (a side on a net marked signal or instrument), whose range extremes never coincide –, stage E the simulated value against the derated limit. A net marked isolated (a MIDI-in loop, the far side of an optocoupler) has a range of its own loop: a pin there is held to it only where its part has a ground pin on an isolated net too."
 why = "A part at its absolute maximum is at the edge of failure; ceramic capacitors lose capacitance and lifetime near their rated voltage, an input beyond its supply conducts through its protection diodes. The margin covers what a DC view does not see."
 fix = "A part with a higher rating, level shifting at a pin, or a correct (less pessimistic) net range v."
 severity = "error"
-grades = { polarized = "warning", inject = "warning" }
+grades = { polarized = "warning", inject = "warning", powered = "warning", order = "warning" }
 details = [
   "voltage domains: every net's range within `v_max_v` of every pin on it – finds e.g.: a 5-V signal on a 3.3-V GPIO",
   "voltage ratings with margin: capacitors (×1.5), diodes VRRM (×1.5), BJT VCEO, MOSFET VDS/VGS (×1.5), fuses, switches, connectors – finds e.g.: a 6.3-V capacitor on a 5-V rail",
@@ -210,6 +211,7 @@ details = [
 ]
 replaces = ["G-3", "G-8", "E-2", "E-5"]
 sources = [
+  "ST USBLC6-2, Doc ID 11265 Rev 5, table 2: VRM 5.25 V (IRM 150 nA max), VBR min 6 V – an ESD array's rail against its stand-off",
   "the datasheet of each part: absolute maximum ratings, entered as vmax per pin",
   "edakit handbook 3.3 (the margins of the reference project)",
   "edakit handbook 5.3",
@@ -218,24 +220,40 @@ sources = [
   "ngspice User's Manual, independent sources: PWL(T1 V1 T2 V2 …) holds V1 before T1; .tran starts from the DC operating point unless uic is given",
 ]
 
+[codes."LIM.hazardous"]
+title = "hazardous voltage recognised, not checked"
+rule = "Every net's declared voltage range stays within the ES1 limit of IEC 62368-1 (60 V DC, catalog/tables/iec62368.toml); a net beyond it is hazardous voltage, and the finding says that edakit checks neither its spacing nor its isolation. An AC net is judged by its peak against the DC limit while the AC limit is not read."
+why = "edakit's checks are made for safety extra-low voltage. Above the ES1 limit a fault is a shock or a fire, the safeguards – creepage, clearance, insulation, the mains input – are the standard's and a test lab's, and edakit measures none of them; a board with such a net that passed every check would look checked where it was not. So edakit says it, once per net, as an error a project must accept on purpose (rules-at-scale.md, decision 7)."
+fix = "Keep the hazardous voltage off the board – a bought, certified supply that hands the board only safety extra-low voltage – or accept the finding on the net with its reason (\"mains only on the bought relay module's terminals, enclosure IP40\") and have the safeguards reviewed outside edakit (domain mains: the reviewers' questions)."
+severity = "error"
+sources = [
+  "W. Zhang, T. LaBella: Demystifying clearance and creepage distance for high-voltage end equipment, TI Power Supply Design Seminar SLUP421: '60 V – ES1 limit', '120 V – ES2 limit' (IEC 62368-1) – https://www.ti.com/lit/pdf/SLUP421",
+  "rules-at-scale.md, decision 7 (2026-10-31): mains and hazardous voltage recognised, not checked; maker-coverage CK-22",
+]
+
 [codes."LIM.i"]
 title = "current within its limit"
-rule = "Every current stays within its limit: through resistors, fuses (below the derated hold current), switches, connectors and cables, LEDs, diodes, collector and drain, an MCU's outputs per pin and together, a regulator's output, a supply's limit (sim.json sources); and what a fuse lets pass – its hold current at the lowest ambient – within every connector, switch and cable it protects."
-why = "A part above its current heats and wears; a connector rated below a fuse's hold current carries an overload the fuse never stops. A supply above its limit drops out or switches off."
+rule = "Every current stays within its limit: through resistors, fuses (below the derated hold current), switches, connectors and cables, LEDs, diodes, collector and drain, an MCU's outputs per pin and together, a regulator's output, a supply's limit (sim.json sources); a contact's current within its rating per contact (i_contact_max_a – a supply's current at a connector shared among the connector's pins on the supply's net) and, while the contact of a switch, button, DIP switch or relay is closed, within what it may break when it opens (i_switch_max_a, grade switching); and what a fuse lets pass – its hold current at the lowest ambient – within every connector, switch and cable it protects (i_max_a, i_contact_max_a). A linear charger's programmed current (values prog_v over the resistor from its PROG pin to ground) within its own i_out_max_a and the i_charge_max_a of the cell on its battery pin – the cell state of that battery holder in any supply scenario – grade charge; with behaviour charger the simulation's charge current (precondition, float voltage and the pass element's headroom included) the same way; and a pin's own current within its i_max_a, a group of pins' sourced and sunk sums within the entry's i_group_max_a, where the operating point gives them (grade pin)."
+why = "A part above its current heats and wears; a connector rated below a fuse's hold current carries an overload the fuse never stops. A switch carries more than it can break: a DIP switch rated 25 mA for switching arcs and wears when it opens 100 mA. A supply above its limit drops out or switches off. A charger's PROG resistor copied from a module charges a small cell at 1 A – 2 to 7 C on a 150–500 mAh cell (maker-coverage PWR 1)."
 fix = "A part with a higher rating, a fuse with a lower hold current, a driver between an MCU and its load, or less load. A trip current above a rating accepted on purpose: accept LIM.i/margin on the fuse with the reason."
 severity = "error"
-grades = { margin = "warning", cell = "warning", supply_pin = "warning" }
+grades = { margin = "warning", cell = "warning", supply_pin = "warning", charge = "warning", pin = "warning", switching = "warning" }
 details = [
+  "contacts: `i_contact_max_a` is what a closed contact carries (a connector's current rating per circuit), `i_switch_max_a` what it breaks when it opens (a switching or electrical-life rating) – the simulation holds the current through every closed contact to both; `i_max_a` stays the rating a datasheet gives without saying which – finds e.g.: a DIP switch rated 25 mA 24 V DC for its electrical life that closes a 120 Ω termination on a driven bus",
   "fuse against what it protects: the hold current of every fuse (`i_hold_a`; at the lowest ambient `ambient_min_c` of sim.json from `i_hold_vs_temp`) is at most the `i_max_a` of every connector, switch and cable its current flows through – its own nets and on through fuses and switches; a trip current (`i_trip_a`) above it is a warning – finds e.g.: a 1.5-A polyfuse in front of a connector rated 1.25 A, an overload that heats the contacts instead of tripping the fuse",
 ]
 replaces = ["G-17", "E-2", "E-3", "E-5"]
 sources = [
+  "Microchip MCP73831/2 data sheet DS20001984H (2005–2020), 5.1.2 Current Regulation Set (PROG): IREG = 1000 V / RPROG (kΩ → mA); programmable charge current 15–500 mA; RPROG range 2–67 kΩ – https://ww1.microchip.com/downloads/en/DeviceDoc/MCP73831-Family-Data-Sheet-DS20001984H.pdf (grade charge)",
+  "TOPPOWER TP4056 datasheet REV_2.4, PROG pin and Programming Charge Current: IBAT = (VPROG / RPROG) × 1100, VPROG 1 V in constant-current mode; 1000 mA at RPROG 1.1 kΩ – read from LCSC's copy for C16581, https://datasheet.lcsc.com/datasheet/pdf/d328ee101cbb1f3719611cd61db479c2.pdf; other makers' TP4056 state 1200 V, so prog_v belongs to the entry (grade charge)",
   "PTTC SMD1206 HF Series, Rev. K (2017-01-03), p. 2: Ihold = maximum current the device passes without tripping, Itrip = minimum current at which it trips (23 °C still air); p. 4: thermal derating, SMD1206P150TFT 2.20 A at -40 °C, 1.50 A at 23 °C, 0.84 A at 85 °C – https://datasheet.lcsc.com/datasheet/pdf/c142bd6abe50067c0e2abbe967f2fcb5.pdf?productCode=C495353",
   "Lesson of the reference project (pytree D-31/D-32, 2026-10-20): F1 (hold 1.5 A, trip 3.0 A) in series with two JST PH connectors rated 2 A – the trip current above the contacts, judged acceptable by argument only, recorded by no check",
   "edakit handbook 5.3",
   "the datasheet of each part: ratings in its parts entry (MCU: gpio_i_max_a, gpio_i_total_max_a; rth_ja_k_per_w, tj_max_c)",
   "Espressif ESP32 Series Datasheet v5.3: table 5-4, transmit 802.11b DSSS 1 Mbps at +19.5 dBm 240 mA (50 % duty cycle), receive 95–100 mA; table 4-2, modem-sleep (radio off) 20–68 mA for the dual-core chips",
   "Universal Serial Bus Specification Revision 2.0 (April 27, 2000), 7.2.4.1 Inrush Current Limiting: at most 10 µF in parallel with 44 Ω at the downstream end of a cable",
+  "Kingtek drawing DSHP01TSGER rev A (03/20/12), notes 1: '4>Electricalife Life:1000cycles 25mA 24VDC' – a switching rating without a carrying current (grade switching; LCSC's copy for C126848)",
+  "JST XH connector catalogue, p. 1: 'Current rating: 3 A AC, DC (AWG #22)' – per contact (i_contact_max_a; LCSC's copy for C158012)",
 ]
 
 [codes."LIM.p"]
@@ -261,21 +279,23 @@ sources = [
   "edakit handbook 5.3",
   "the datasheet of each part: ratings in its parts entry (MCU: gpio_i_max_a, gpio_i_total_max_a; rth_ja_k_per_w, tj_max_c)",
   "UL, IEC 62368-1 Technical Brief: Touch Temperature Limits (Flore Chiang, October 22, 2010), pp. 3–4: TS1 limits derived from table 42 of IEC 62368-1, based on ISO 13732-1:2006 – metal / plastic and rubber: longer than 1 min 48 / 48 °C, 10 s to 1 min 51 / 60 °C, 1–10 s 60 / 77 °C, less than 1 s 70 / 94 °C; TS2 10 K higher",
-  "AOS AO3401A Rev 3.1 (December 2023), as in edakit/blocks/parts/C15127.json: RθJA 125 K/W, TJ max 150 °C, PD 0.9 W at 70 °C",
+  "AOS AO3401A Rev 3.1 (December 2023), as in edakit/parts/C15127.json: RθJA 125 K/W, TJ max 150 °C, PD 0.9 W at 70 °C",
   "ngspice: the drain current @m[id] of a MOSFET includes its body diode (@m[ibd]) – a level-1 AO3401A with its gate at its source and 5.4 V at its drain gives @m[id] = −0.947 A = @m[ibd]",
   "Diodes Incorporated DS39724 Rev. 2-2 (AP2112, June 2017), Absolute Maximum Ratings: θJA 184 °C/W in SOT25 without heatsink, TJ +150 °C – the LDO of the LILYGO T-Display, which carries the ESP32's own current",
 ]
 
 [codes."LIM.range"]
 title = "supplied inside the operating range"
-rule = "Every part with an operating range – vdd_op_min_v … vdd_op_max_v, a pin's v_op, vin_min_v of a regulator, module or MCU, a relay's must-operate and must-release voltage, a driver output's knee – is supplied inside it in every scenario, measured at its own ground pin, and an MCU's supply never falls below its minimum again once it has reached it (transient runs). An op-amp's inputs stay inside its common-mode range (vicm_v) and its outputs inside their swing (vout_swing_v) unless it is a comparator – grade opamp. A MOSFET switch is off or on at a VGS its RDS(on) is specified at, not in between (rds_on_max_ohm as a table of VGS, vgs_th_v) – grade gate. An ADC pin's voltage stays inside the converter's window (adc.range_v) – grade adc."
+rule = "Every part with an operating range – vdd_op_min_v … vdd_op_max_v, a pin's v_op, vin_min_v of a regulator, module or MCU, a relay's must-operate and must-release voltage, a driver output's knee – is supplied inside it in every scenario, measured at its own ground pin, and an MCU's supply never falls below its minimum again once it has reached it (transient runs). An op-amp's inputs stay inside its common-mode range (vicm_v) and its outputs inside their swing (vout_swing_v) unless it is a comparator – grade opamp. A MOSFET switch is off or on at a VGS its RDS(on) is specified at, not in between (rds_on_max_ohm as a table of VGS, vgs_th_v), the drive taken in the device's sense – VSG for a P-MOSFET, a gate driven the other way is off – grade gate. An ADC pin's voltage stays inside the converter's window (adc.range_v) – grade adc. A regulator that needs a minimum load to regulate (i_load_min_a – LM317, AMS1117) is loaded at least that much – grade min_load. A photo-MOS output's LED current is either at its turn-on current or above (if_on_a: guaranteed on) or at its turn-off current or below (if_off_a: guaranteed off) – in between the datasheet promises neither – grade photomos."
 why = "A circuit can stay within every rating and still not work: a regulator without headroom at the low end of the USB voltage, a 5 V-only IC behind a 3.3 V rail, a reset whenever the supply changes, an LM358 at 5 V whose output cannot rise above about 3.5 V or whose inputs leave their common-mode range."
 fix = "Supply the part from a rail inside its range, choose a part whose range fits the rail, or bridge the gap (bulk capacitance, a path that conducts before the other lets go). For an op-amp: bias the stage inside its ranges, a rail-to-rail part, or a higher supply."
 severity = "error"
-grades = { opamp = "warning", gate = "warning", adc = "warning", clock = "warning" }
+grades = { opamp = "warning", gate = "warning", adc = "warning", clock = "warning", min_load = "warning", photomos = "warning" }
 replaces = ["E-3", "E-5"]
 sources = [
+  "Panasonic ASCTB133E 202103 (AQY21xGS PhotoMOS): LED operate current IFon max 3 mA, LED turn off current IFoff min 0.3 mA (AQY212GS) at IL 100 mA – the photomos grade",
   "edakit handbook 5.3",
+  "Advanced Monolithic Systems AMS1117 datasheet (1A low dropout voltage regulator), Electrical Characteristics: Minimum Load 5 typ / 10 max mA at (VIN − VOUT) = 1.5 V, Note 5 – read from LCSC's copy for C6186, https://datasheet.lcsc.com/datasheet/pdf/e6935943fc6b1bbf350a1a0f3e90dc4a.pdf (grade min_load)",
   "TI SLVS695D (TLC591x, June 2007, revised January 2015), 7.3 Recommended Operating Conditions: VDD 3–5.5 V; VIH 0.7 × VDD … VDD and VIL 0 … 0.3 × VDD for CLK, OE(ED2), LE(ED1) and SDI",
   "TI SLIS032D (TPIC6B595, July 1995, revised April 2025), 5.3 Recommended Operating Conditions: VCC 4.5–5.5 V, VIH ≥ 0.85 VCC, VIL ≤ 0.15 VCC",
   "ST DocID13524 Rev 8 (STP08CP05, August 2018), table 6 Recommended operating conditions: VDD 3.0–5.5 V, VIH 0.7 VDD … VDD + 0.3 V, VIL −0.3 … 0.3 VDD",
@@ -287,7 +307,7 @@ sources = [
 
 [codes."LIM.declared"]
 title = "net inside its declared range"
-rule = "Every net's simulated voltage lies inside its declared range v (± the criteria's net_range_tol_v)."
+rule = "Every net's simulated voltage lies inside its declared range v (± the criteria's net_range_tol_v); a net marked isolated is not compared – its range is its own loop's, not against this board's ground."
 why = "Stage G checks every rating against the declared ranges; a range the simulation exceeds makes those checks pass on numbers that are not true."
 fix = "Correct v of the net to what the circuit does, or fix what drives the net outside."
 severity = "error"
@@ -347,7 +367,7 @@ sources = [
 
 [codes."LVL.undefined"]
 title = "input defined while the firmware is not running"
-rule = "Every input has a driver or a pull resistor, an input that only MCU pins drive has a pull, a bipolar transistor has a base-emitter resistor and a MOSFET a resistor from its gate to its source or a rail. Graded as warnings while new: an input pin of an IC left in nc (nc), a net only open-drain or tri-state outputs drive without a pull-up (open_drain), an analog node only capacitors reach (analog)."
+rule = "Every input has a driver or a pull resistor, an input that only MCU pins drive has a pull, a bipolar transistor has a base-emitter resistor and a MOSFET a resistor from its gate to its source or a rail. Graded as warnings while new: an input pin of an IC left in nc (nc), a net only open-drain or tri-state outputs drive – unless their enable pins are tied active – and that no resistor path holds (open_drain; a bridge output, drive bridge, defines its net), an analog node only capacitors reach (analog; a pin the part biases itself, biased = true, gives it its level)."
 why = "A floating CMOS input reads random values and can rest where both input transistors conduct. An MCU pin is an input until the firmware configures it, so an enable line it drives floats at every reset."
 fix = "A pull resistor to the inactive level (10–100 kΩ); a base-emitter or gate-source resistor next to the transistor. Harmless on purpose: accept on the net with the reason."
 severity = "error"
@@ -416,17 +436,17 @@ sources = [
 
 [codes."REQ.missing"]
 title = "what a part requires is there"
-rule = "What a part requires on its pins is in the graph: a capacitor to ground per supply pin (power_in), a pull-up per I2C line, a diode across a switched coil (cathode at its plus), Rd on each CC pin of a USB-C receptacle without controller, a layout.loops entry on each net of a hot loop (hot_loop), and what a pin's parts entry says it needs (needs: a capacitor to ground, a pull-up or pull-down, a series resistor, ground) – grade pin. Warnings while new: D+ and D− of a USB-C receptacle joined across both rows (usb_data), a series resistance on a signal net that runs through a cable (leave), a diode per key of a matrix (matrix), balancing resistors across capacitors in series (balance)."
+rule = "What a part requires on its pins is in the graph: a capacitor to ground – or to a net of the graph's grounds – per supply pin (power_in), a pull-up per I2C line, a diode across a switched coil (cathode at its plus), Rd on each CC pin of a USB-C receptacle without controller, a layout.loops entry on each net of a hot loop (hot_loop), and what a pin's parts entry says it needs (needs: a capacitor to ground or between two of its pins, a pull-up or pull-down, a series resistor, ground, a crystal between two of its pins, a tie to another of its pins) – grade pin. Warnings while new: D+ and D− of a USB-C receptacle joined across both rows (usb_data), a series resistance on a signal net that leaves the board – through a cable, or on a connector the graph marks off_board (leave), a diode per key of a matrix (matrix), balancing resistors across capacitors in series (balance), a termination at each end of an RS-485 or CAN bus – the transceivers' pins with the roles rs485_a/rs485_b or canh/canl; one behind a switch or jumper counts closed (termination), diodes to the supply and from ground at an output without clamp diodes of its own (pin clamp = \"none\", the L298's bridges) that drives a winding or a connector (clamp), the divider of an adjustable regulator (values vref_v, a pin adj or fb – feedback)."
 why = "Each requirement is a datasheet's or a standard's: an IC draws its current in pulses, open-drain lines never go high alone, a coil's turn-off spike breaks the switch, a USB-C source gives no power without Rd, a long hot loop rings and radiates."
 fix = "Add the part next to the pin (blocks: i2c-pullups, usb-c-sink), or write the loop into layout.loops."
 severity = "error"
-grades = { pin = "warning", balance = "warning", usb_data = "warning", leave = "warning", matrix = "warning" }
+grades = { pin = "warning", balance = "warning", usb_data = "warning", leave = "warning", matrix = "warning", termination = "warning", clamp = "warning", feedback = "warning" }
 details = [
   "decoupling: per net at least one capacitor to ground per IC supply pin (`power_in`) – finds e.g.: the missing 100 nF",
   "I2C pull-ups: every I2C line has a pull-up to a supply between (V − 0.4 V) / 3 mA and 10 kΩ, parallel ones added up; a line is I2C by the net's `bus`, an SDA/SCL net name, a pin role `sda`/`scl` or a pin name with SDA/SCL (a role decides over the name); pins with `pull`/`pull_ohm` count (modules) – finds e.g.: a bus without pull-ups, 47 kΩ, a module's pull-ups plus your own below 1 kΩ",
   "flyback diode: a relay coil or a buzzer with `coil_ohm`, switched by a transistor or an output, has a diode across it with the cathode at its plus terminal – finds e.g.: a relay that kills its transistor at the first switch-off",
   "USB-C sink: a receptacle with `cc1`/`cc2` pins has its own 5.1 kΩ ± 10 % to ground on each CC pin; silent when an IC is on the CC lines. A module or breakout states its receptacle's termination in `values.usb_c` (4.1): `rd_5k1` or `controller` passes, `none` has its CC pins checked the same way and fails without them – finds e.g.: no 5 V from a USB-C charger, CC1 and CC2 on one resistor, a breakout without its two resistors",
-  "hot loop in the hand-over: a part whose entry names its hot-loop pins (`hot_loop`, 4.1) has a `layout.loops` entry on every net of the loop – the nets of those pins and, one diode further, the net behind the rectifier on its switch node (`sw`); a buck or boost IC (`behavior`) without `hot_loop` is a warning; `accept` on the part, or on a net whose part of the loop closes over a pour – finds e.g.: a boost whose output loop was routed 61 mm across the board, passing every check because nobody listed it",
+  "hot loop in the hand-over: a part whose entry names its hot-loop pins (`hot_loop`, 4.1) has a `layout.loops` entry on every net of the loop – the nets of those pins and, one diode further, the net behind the rectifier on its switch node (`sw`); a buck, boost or buck-boost IC (`behavior`) without `hot_loop` is a warning; `accept` on the part, or on a net whose part of the loop closes over a pour – finds e.g.: a boost whose output loop was routed 61 mm across the board, passing every check because nobody listed it",
 ]
 replaces = ["G-6", "G-11", "G-13", "G-14", "G-18"]
 sources = [
@@ -437,37 +457,50 @@ sources = [
   "USB Type-C Cable and Connector Specification (USB-IF): sink termination Rd = 5.1 kΩ",
   "TI SNVA021C, AN-1149 Layout Guidelines for Switching Power Supplies, Rev. C (2013), 5 Traces and Ground Plane: inductor, output capacitors and output diode as close to each other as possible; the grounds of IC, input capacitors, output capacitors and output diode connected close together directly to a ground plane – https://www.ti.com/lit/an/snva021c/snva021c.pdf",
   "Lesson of the reference project (pytree D-41, 2026-10-23): in the released run 20261023-000107 the MT3608 boost's diode cathode (D33) reached its output capacitor C13 over 61 mm of copper across the board; DRC, the gate and the electrical review passed it, the layout review (M-5) found it; the fix listed four pad pairs (L1.2–U6.1 ≤ 6 mm, U6.1–D33.2 ≤ 5 mm, D33.1–C13.1 ≤ 5 mm, C13.2–U6.2 ≤ 8 mm), the 61-mm segment on V_LED, a net without a pin of U6",
+  "TI SLLA272D, The RS-485 Design Guide (revised May 2021), 6: 120-Ω resistors, one at each cable end – https://www.ti.com/lit/pdf/slla272; TI SLOA101B (revised May 2016), 6: CAN terminated at both ends with 120 Ω – https://www.ti.com/lit/pdf/sloa101 (grade termination)",
+  "STMicroelectronics L298 Dual Full-Bridge Driver datasheet (January 2000), 3 Applications: 'An external bridge of diodes are required when inductive loads are driven and when the inputs of the IC are chopped'; diodes fast recovery, trr ≤ 200 ns – read from LCSC's copy for C19922, https://datasheet.lcsc.com/datasheet/pdf/c23fc6a8cabb45a298a1d3a512b515a9.pdf (grade clamp)",
 ]
 
 [codes."REQ.value"]
 title = "what a part requires is in range"
-rule = "A required part has its value inside the range: an I2C pull-up (in parallel with the pins' own pulls) between (V − 0.4 V) / 3 mA and 10 kΩ, Rd 5.1 kΩ ± 10 % on a CC pin, what a pin needs inside the window its entry gives (grade pin), the source resistance an ADC pin sees (adc.r_source_max_ohm, unless a hold capacitor; grade adc), the load on an instrument input (net load_min_ohm; grade instrument), an op-amp's closed-loop gain against its minimum stable gain (gain_min_ratio; grade gain)."
+rule = "A required part has its value inside the range: an I2C pull-up (in parallel with the pins' own pulls) between (V − 0.4 V) / 3 mA and 10 kΩ, Rd 5.1 kΩ ± 10 % on a CC pin, what a pin needs inside the window its entry gives – a capacitor's window on the capacitors layout.near places next to the part where it names any on the net, else on the net's sum; a crystal's frequency; a required capacitor's voltage rating at least its v_min_v (grade pin), the source resistance an ADC pin sees (adc.r_source_max_ohm, unless a hold capacitor; grade adc), the DC load on an instrument input – a resistor in series into capacitors and high-impedance pins no load (net load_min_ohm; grade instrument), an op-amp's closed-loop gain against its minimum stable gain (gain_min_ratio; grade gain), a termination of an RS-485 or CAN bus of the cable's 120 Ω (grade termination), the idle voltage an RS-485 bias pair sets across the terminations at least 200 mV at the supply's lowest voltage, the far end's termination assumed where the graph holds one end (grade failsafe), a configuration pin that reads its setting by voltage window (pin windows, with the pin's own pull in the operating point) inside one window, not between two (grade window, stage E), the output an adjustable regulator's divider sets within the output net's declared range – VOUT = VREF × (1 + R2/R1) with ADJ, × (1 + R1/R2) with FB (grade feedback), and in the simulation the DC across a switch, relay contact or pot whose sides are both in a signal path (nets with signal or instrument) within 10 mV in every scenario (grade switch), and every voltage a USB PD sink's configuration pins can request (values pd_request_v by the CFG levels on the board: ground, a supply, or either where a pin floats or the firmware sets it) within the declared range of the VBUS net its sense pin reaches (grade pd_request), the DC through a closed contact at least the minimum load of its entry (min_load_a), a contact in a signal path rated for signal currents – min_load_a at most 10 µA (grade min_load); and an output's load – its DC resistance to fixed levels at least the pin's r_load_min_ohm, the capacitors on its net at most its c_load_max_f (grade load)."
 why = "A weak I2C pull-up makes the edges too slow, a strong one cannot be pulled low; a CC resistor outside its window reads as another device."
 fix = "4.7 kΩ for 100 kHz, 2.2 kΩ for 400 kHz on I2C; 5.1 kΩ per CC pin."
 severity = "error"
-grades = { pin = "warning", adc = "warning", instrument = "warning", gain = "warning" }
+grades = { pin = "warning", adc = "warning", instrument = "warning", gain = "warning", termination = "warning", failsafe = "warning", window = "warning", feedback = "warning", switch = "warning", pd_request = "warning", load = "warning", min_load = "warning" }
+details = [
+  "minimum load: a contact needs a least current to close reliably – a film on the contact that no current breaks; a relay's datasheet calls it \"minimum applicable load\" (values `min_load_a`). The simulation compares the DC through every closed contact with it, except in a signal path: there a contact carries no DC by design (grade switch) and the signal a few µA, and its entry is held to at most 10 µA – the \"minimum load 10 µA\" maker-coverage CK-30 calls a contact rated for signal currents – finds e.g.: a relay with a 1 mA minimum load in a guitar's bypass, a gold DIP switch that closes onto a CMOS input with no pull and so carries no current",
+]
 replaces = ["G-11", "G-14"]
 sources = [
+  "WCH CH224 手册1 version 2.1: CH224K reference 6.2 p. 9 – CFG1 1 → 5 V; CFG1 0 with CFG2 CFG3 00 → 9 V, 01 → 12 V, 11 → 15 V, 10 → 20 V – the pd_request grade",
+  "docs/concepts/new/maker-coverage.md, CK-30 (appendix GTP 31, 37; GTI 31; AUD 13) – no DC where signals are switched; the 10 mV is edakit's choice for its \"within a few mV\"",
+  "Hongfa HFD4 data sheet, 2024 Rev. 1.00, contact data: 'Min. applicable load 10mV 10µA', note 2: 'Min. applicable load is reference value' (grade min_load; LCSC's copy for C64399)",
   "NXP UM10204 Rev. 7.0, I2C-bus specification and user manual (2021), 7.1 Pull-up resistor sizing and table 10 – https://www.nxp.com/docs/en/user-guide/UM10204.pdf",
   "USB Type-C Cable and Connector Specification (USB-IF): sink termination Rd = 5.1 kΩ",
+  "TI SLLA272D, The RS-485 Design Guide (revised May 2021), 6 and 7: 120 Ω at each cable end; idle-bus failsafe VAB = 200 mV + noise – https://www.ti.com/lit/pdf/slla272 (grades termination, failsafe)",
+  "TI SLOA101B, Introduction to the Controller Area Network (CAN) (revised May 2016), 6: terminated at both ends with 120 Ω – https://www.ti.com/lit/pdf/sloa101 (grade termination)",
+  "Maxim MAX98357A/MAX98357B datasheet 19-6779 Rev 11 (5/18): SD_MODE comparator trip points B0 0.08/0.16/0.355 V, B1 0.65/0.77/0.825 V, B2 1.245/1.4/1.5 V, pull-down RPD 92/100/108 kΩ, Table 5 SD_MODE Control, Table 6 pull-up examples – read from LCSC's copy for C910544, https://datasheet.lcsc.com/datasheet/pdf/9dd365a93d191d8d6f09766b0e3ea172.pdf (grade window: the example of pin windows)",
+  "Advanced Monolithic Systems AMS1117 datasheet, Application Hints, Output Voltage: a 1.25 V reference between the output and the adjust terminal, VOUT = VREF (1 + R2/R1) + IADJ R2 (Figure 2); Reference Voltage 1.232/1.250/1.268 V – read from LCSC's copy for C6186, https://datasheet.lcsc.com/datasheet/pdf/e6935943fc6b1bbf350a1a0f3e90dc4a.pdf (grade feedback)",
 ]
 
 [codes."REQ.forbidden"]
 title = "what must stay apart is apart"
-rule = "What a part forbids does not happen: CC1 and CC2 of a USB-C receptacle on one net (one resistor for both), a pin whose entry says never_to_ground on ground (grade pin), two devices on one bus at one address (grade address: base and address pins of the entries), a bridge-tied output (roles out_p, out_n) on ground, on another part's net or on another channel's (grade btl), the diodes of a key matrix pointing both ways (grade matrix)."
+rule = "What a part forbids does not happen: CC1 and CC2 of a USB-C receptacle on one net (one resistor for both), a pin whose entry says never_to_ground on ground, an external pull resistor on a pin whose entry says no_pull, a series resistor on one that says no_series (grade pin), two devices on one bus at one address (grade address: base and address pins of the entries – a pin with four states, tied to low, high, SDA or SCL, adds what its entry gives for each), a bridge-tied output (roles out_p, out_n) on ground, on another part's net or on another channel's (grade btl), the diodes of a key matrix pointing both ways (grade matrix), more than two terminations on an RS-485 or CAN bus (grade termination)."
 why = "With CC1 and CC2 on one resistor an electronically marked cable reads as a fault and the source gives no power."
 fix = "One resistor per CC pin."
 severity = "error"
-grades = { pin = "warning", address = "warning", btl = "warning", matrix = "warning" }
+grades = { pin = "warning", address = "warning", btl = "warning", matrix = "warning", termination = "warning" }
 replaces = ["G-14"]
 sources = [
   "Richtek AN064, USB Type-C/PD Brief Introduction and Analysis (2021): a sink asserts Rd on the CC pins – https://www.richtek.com/~/media/AN%20PDF/AN064_EN.pdf",
   "USB Type-C Cable and Connector Specification (USB-IF): sink termination Rd = 5.1 kΩ",
+  "TI SLLA272D, The RS-485 Design Guide (revised May 2021), 6: the cable trunk terminated with 120-Ω resistors, one at each cable end – https://www.ti.com/lit/pdf/slla272 (grade termination: more than two)",
 ]
 
 [codes."REQ.function"]
 title = "pin functions"
-rule = "A net's fn (pwm, adc, spi.sck, i2c.sda, uart.tx, …) is on a pin whose entry lists it in functions, the nets of one fn_bus use one peripheral instance, and PWM nets of one slice have one fixed pwm_hz and a channel each. A UART line crosses: on uart.tx another part receives, on uart.rx another part transmits (grade uart)."
+rule = "A net's fn (pwm, adc, spi.sck, i2c.sda, uart.tx, …) is on a pin of a microcontroller or module whose entry lists it in functions – or that its GPIO matrix serves (entry matrix: the fn kinds routed to any GPIO; an output to a pin that drives, an input line also to an input-only pin) –, the nets of one fn_bus use one peripheral instance (not asked of a matrix), and PWM nets of one slice have one fixed pwm_hz and a channel each. A peripheral's own pin functions do not answer for the MCU. A UART line crosses: on uart.tx another part receives, on uart.rx another part transmits (grade uart)."
 why = "On most MCUs a peripheral reaches only some pins, and pins share hardware: two neighbouring RP2040 GPIOs share one PWM slice and with it one frequency."
 fix = "Move the net to a pin that has the function, or give the nets of a slice one frequency. Bit-banged on purpose: leave fn out."
 severity = "error"
@@ -484,7 +517,7 @@ sources = [
 
 [codes."PATH.reverse"]
 title = "reverse polarity blocked"
-rule = "What a reversed source (a battery holder, a source marked reversible) reaches through fuses, switches, push buttons and connectors is only capacitors without polarity, holders, the anode of a blocking diode or the drain of a PMOS whose source and gate are outside; a polarized capacitor it reaches is reverse biased (grade polarized)."
+rule = "What a reversed source (a battery holder, a source marked reversible) reaches through fuses, switches, push buttons and connectors is only capacitors without polarity, holders, the anode of a blocking diode – on a negative rail (the protected net declared at or below 0 V) its cathode – or the drain of a PMOS whose source and gate are outside; a polarized capacitor it reaches is reverse biased (grade polarized)."
 why = "A battery inserted the wrong way drives the supply negative; every IC on that rail conducts through its substrate diodes and dies within milliseconds."
 fix = "A Schottky diode in series, or a PMOS in the supply path with its gate to ground (block reverse-pmos)."
 severity = "error"
@@ -499,7 +532,7 @@ sources = [
 
 [codes."PATH.unfed"]
 title = "every supply pin reached by a supply"
-rule = "Every supply pin (power_in) is on a net a supply reaches – a power output, a battery holder, a connector with a vbus pin or marked as a source, a simulation source – directly or through fuses, switches, push buttons, connectors, inductors, MOSFETs, resistors up to 100 Ω and diodes in forward direction."
+rule = "Every supply pin (power_in) is on a net a supply reaches – a power output, a battery holder, a connector with a vbus pin or marked as a source, a simulation source – directly or through fuses, switches, push buttons, connectors, inductors, MOSFETs, resistors up to 100 Ω and diodes in forward direction – on a negative rail from cathode to anode."
 why = "A rail split by a typo in a net name kills every board and passes every other check."
 fix = "Put the pin on its rail; usually a typo in a net name or two pins swapped."
 severity = "error"
@@ -530,6 +563,7 @@ rule = "The simulation config names existing parts, nets and boards, and every v
 why = "A config the simulation cannot read checks nothing."
 fix = "Correct sim.json as the message says."
 severity = "error"
+grades = { off = "note" }
 replaces = ["E-1", "E-3"]
 sources = [
   "edakit handbook 5.1",
@@ -565,7 +599,7 @@ sources = [
 
 [codes."SIM.driver"]
 title = "every LED has a known driver"
-rule = "Every LED – each colour of an RGB LED – has a state the simulation checks in every scenario: its cathode on a driver output (directly, behind 0 Ω bridges or a balancing resistor), or the load lists it in leds_on."
+rule = "Every LED – each colour of an RGB LED – has a state the simulation checks in every scenario: its cathode on a driver output (directly, behind 0 Ω bridges or a balancing resistor), or the load lists it in leds_on. An LED a multiplexing driver scans (behaviour matrix_driver, pins on both its nets) has no DC state: a row of information."
 why = "Only an LED with an expected state is checked; without one a reversed LED passes without a word."
 fix = "Give every load leds_on, or put the LED's cathode on a driver output; an LED left out needs its roles."
 severity = "error"
@@ -576,6 +610,18 @@ replaces = ["E-4"]
 sources = [
   "edakit handbook 5.3: a reversed LED elsewhere stays dark where it should light – the polarity check of the graph",
   "edakit rules.json G-7 (retired): polarity is checked by the simulation",
+]
+
+[codes."SIM.response"]
+title = "frequency response as expected"
+rule = "Every expectation of an AC run of the simulation config (ac) holds: the gain from its input to its output at the frequencies named (grade gain), and the lower and upper −3 dB corners within their ranges (grade corner). The gain is 20·log10 |V(output) / V(source)| for 1 V AC behind the run's source_ohm, linearised around a DC scenario; a corner is where the gain falls 3.01 dB below its largest value in the sweep. Runs only where sim.json names an expectation, only with the domain audio or guitar on."
+why = "A coupling capacitor ten times too small, a filter resistor of the wrong decade or a gain resistor swapped passes every DC check – the operating point is the same – and shows only as thin bass, a dull top or a level that clips the next stage. The DC-first simulation sees none of it; an expectation written next to the circuit (the corner the designer computed) holds it, the way a load's expected state holds the DC function."
+fix = "Find the part that sets the corner or the gain (an RC: f = 1 / (2π·R·C); a non-inverting stage: 1 + Rf/Rg) and correct its value, or correct the expectation where it was wrong. A corner from the op-amp's bandwidth is not modelled (no gain-bandwidth in the model) – judge it from the datasheet."
+severity = "warning"
+grades = { gain = "warning", corner = "warning" }
+sources = [
+  "rules-at-scale.md, decision 9 (2026-10-31): AC analysis opt-in, where sim.json names an expectation, in the domains audio and guitar, warnings first; maker-coverage FT-12",
+  "ngspice 42 (Ubuntu package 42+ds-3build1): the control command ac dec <points per decade> <fstart> <fstop> and wrdata of mag(v(node)), as edakit runs them (tests/test_sim_ac.py); the manual on ngspice.sourceforge.io was not reachable from the environment where this was built",
 ]
 
 [codes."SIM.copper"]
@@ -855,11 +901,11 @@ sources = [
 
 [codes."GEO.spacing"]
 title = "pads and holes keep their distance"
-rule = "Every pad keeps the routing clearance from every pad of another part on another net, SMD pads on an assembled side the paste gap, hand-soldered joints their keep-out, and every two plated holes JLCPCB's hole-to-hole spacing."
+rule = "Every pad keeps the routing clearance from every pad of another part on another net, SMD pads on an assembled side the paste gap, hand-soldered joints their keep-out, and every two plated holes JLCPCB's hole-to-hole spacing. With layout.apart in the graph: the copper of each pair of nets keeps min_mm apart on every layer, measured on the Gerber files (grade apart, a warning while new)."
 why = "Pads too close bridge in soldering; holes too close break out in drilling."
 fix = "Move the parts apart or change the footprint."
 severity = "error"
-grades = { margin = "warning" }
+grades = { margin = "warning", apart = "warning" }
 details = [
   "pads of different parts on different nets at least the routing clearance (`clearance_mil`) apart on every copper layer both are on; a pad without a net counts as a net of its own, pads of one part are not compared. Measured as `route check` measures it (7.5), on the pads of `route read` (`<artifacts>/route/<board>_board.json`) – pcb.json has no pad shapes –, and only while every pad there sits where the PCB has it, on its layer and net; otherwise GEO.spacing fails and asks for `route read`. `waive: {\"GEO.spacing\": \"…\"}` on one of the two parts or nets lists the pair as waived – why it exists: two resistors stood with their pads 0.09 mm apart: the plan compares boxes, `route check` measured only tracks and vias, and only EasyEDA's DRC could have seen it, after the copper was written",
   "on every side that is assembled (`[release] assembly` `sides`), SMD pads of different parts on different nets at least the paste gap (`paste_gap_mm`, 0.4 mm) apart, so that the stencil keeps a web between their prints; a pad without a net counts as a net of its own, pads of one part, through-hole pads and pads on a side that is not assembled are not compared. Measured on the pads of `route read` like GEO.spacing, and only while they are the PCB's. `waive: {\"GEO.spacing\": \"…\"}` on one of the two parts or nets lists the pair as waived – why it exists: the paste of a ground pad and a transistor base pad of neighbouring parts was 0.06 mm apart: above every copper rule, a bridge in reflow that the bare-board test cannot see; the layout review found it",
@@ -867,6 +913,7 @@ details = [
 ]
 replaces = ["L-13", "L-14", "L-16", "L-18"]
 sources = [
+  "docs/concepts/new/maker-coverage.md, CK-31 (appendix GTP 10, 22, 23, 25, 33; GTI 16, 26, 29; MCU 6, 7) – nets kept apart, the distance from the circuit designer",
   "JLCPCB PCB Manufacturing Capabilities, minimum clearances: SMD pad to pad clearance (different nets) 0.15 mm (read 2026-10-26) – https://jlcpcb.com/capabilities/pcb-capabilities",
   "JLCPCB, Terms and Conditions of JLCPCB Assembly Service (updated 2026-09-09), 2.2: placement and gap of the components after IPC-7351B medium or low density, components with very small gap avoided – https://jlcpcb.com/help/article/61-Terms-and-Conditions-of-JLCPCB-Assembly-Service",
   "edakit handbook 7.5 and 8.1",
@@ -902,6 +949,16 @@ sources = [
   "JLCPCB PCB Manufacturing Capabilities (read 2026-10-26), Drilling: Via Hole-to-Hole Spacing 0.2 mm, Pad Hole-to-Hole Spacing 0.45 mm (the page says neither edge nor centre; read edge to edge, the stricter reading); via diameter 0.1 mm (0.15 mm preferred) larger than the via hole; hole size tolerance +0.13/-0.08 mm – https://jlcpcb.com/capabilities/pcb-capabilities",
   "The reference project, release run 20261025-232212: D31 (XINGLIGHT XL-B504RGBC, 1.25 mm pitch) with holes of 0.80 mm and pads of 1.06 mm – ring 0.130 mm, holes 0.449 mm apart; its decision D-40 and layout review M-5 (\"D31 Restring 0,13 mm\", at the fab's limit, accepted), 2026-10-25",
   "edakit handbook 8.1 (L-9, L-13)",
+]
+
+[codes."GEO.keepout"]
+title = "keep-out areas free of copper"
+rule = "Where a part's entry gives an antenna keep-out (antenna.keepout_mm, in the footprint's frame), the board has no copper inside it on either layer – tracks, pours, pads and vias of any net – placed where the part sits; for a module plugged over a carrier the carrier's copper counts. A warning while new."
+why = "Copper under or next to a module's printed antenna detunes it and shields it: range drops, and a design that passed every electrical check needs a new board. The area is the module maker's, so it belongs into the parts entry; the board's copper is in the Gerber files (maker-coverage CK-11; the bell's ESP32 variant had the carrier's copper under the module's antenna)."
+fix = "Move the copper out of the area – pours with a keep-out region, tracks around it –, or the part so that its antenna lies over the board edge; take the area from the module's datasheet into antenna.keepout_mm."
+severity = "warning"
+sources = [
+  "docs/concepts/new/maker-coverage.md, CK-11 (appendix MCU 6; the owner's bell, ESP32 variant)",
 ]
 
 [codes."GEO.hole"]
@@ -1091,6 +1148,18 @@ replaces = ["G-14", "G-18", "G-24", "P-11"]
 sources = [
   "edakit handbook 4.1 (field compliance) and 15.3 (what the review needs)",
   "Lesson of the Christmas bell (tgd1975/automatic_christmas_bell, D-18 from the M-6 reviews of D-16): on the boards main, smd and tht U1 is an Arduino Nano without a transmitter, no parts entry said so, and the M-6 reviews of 2026-10-26 established it from the part's identity; on esp32 the T-Display's compliance.radio was added by hand during the review",
+]
+
+[codes."PARTS.library"]
+title = "copy of the parts library current"
+rule = "A parts entry copied from edakit's parts library (its field library) names the library version it was taken from: a library entry that has changed since is noted (grade newer), and so is a copy of an entry the owner has not signed (grade draft)."
+why = "The library entry is corrected or extended after a project took its copy – a limit read again, a pin function added; the project does not learn it unless something says so. A copy stays the project's: it changes only on purpose, with edakit part add --update. An unsigned library entry is a draft – Claude wrote it from the datasheet, nobody has checked it."
+fix = "Compare the versions (edakit part add <key> --update shows what changed and takes the library's version over the copy), or keep the copy and accept the note; a draft: the owner checks the library entry against its datasheet and signs it (edakit part sign <key> --by NAME), or the project signs its copy as its own entry."
+severity = "note"
+grades = { newer = "note", draft = "note" }
+sources = [
+  "rules-at-scale.md, decision 8 (2026-10-31): the library in edakit, taken over as a copy that names its version, every entry signed by the owner",
+  "edakit handbook 4.1 (the parts library)",
 ]
 
 [codes."PARTS.footprint"]
@@ -1305,7 +1374,7 @@ rule = "MOSFET gate resistor: consider it where it applies."
 why = "The gate capacitance and the inductance of the drive loop form a resonant circuit; a fast edge makes it ring, which can exceed VGS max and radiate. A GPIO that switches a small MOSFET slowly rarely needs anything."
 fix = "10–100 Ω in series with the gate, close to the gate, when the driver is fast or far from the gate; keep the gate-source resistor (LVL.undefined)."
 severity = "note"
-when = { kinds = ["nmos", "pmos"] }
+when = { match = "driven_gate" }        # a MOSFET whose gate a signal drives – not one on a rail (a level shifter)
 replaces = ["H-2"]
 sources = [
   "TI SLUA618A, Fundamentals of MOSFET and IGBT Gate Driver Circuits (2018), 2.8 Effects of parasitic components – https://www.ti.com/lit/ml/slua618a/slua618a.pdf",
@@ -1317,7 +1386,7 @@ rule = "Debounce buttons and switches: consider it where it applies."
 why = "Mechanical contacts bounce: Ganssle measured about 1.6 ms on average and up to 6 ms, one switch 157 ms. A counter or an interrupt sees several presses."
 fix = "Debounce in firmware: sample every 5–10 ms and accept a level after it was stable several times. An RC filter with a Schmitt-trigger input only where firmware cannot, for example a wake-up from sleep."
 severity = "note"
-when = { kinds = ["button", "switch", "dip_switch"] }
+when = { match = "read_switch" }        # a button or switch an MCU pin reads – not a DIP switch nobody reads
 replaces = ["H-3"]
 sources = [
   "Jack Ganssle, A Guide to Debouncing – http://www.ganssle.com/debouncing.htm",
@@ -1353,7 +1422,7 @@ rule = "Lithium cells need protection: consider it where it applies."
 why = "Li-ion and LiPo cells must not be over-discharged (below about 2 V per cell), overcharged or short-circuited, and protection circuits are mandatory for Li-ion packs. Alkaline and NiMH cells tolerate all of this far better."
 fix = "For lithium cells: protected cells or a protection IC between holder and circuit; a cut-off in the firmware is not enough while the MCU is off. For alkaline or NiMH cells nothing is needed."
 severity = "note"
-when = { kinds = ["battery_holder"] }
+when = { match = "unprotected_cell" }   # a holder whose cell no protection IC guards (od/oc driving a MOSFET in its minus)
 replaces = ["H-6"]
 sources = [
   "Battery University BU-304, Why are Protection Circuits Needed? – https://batteryuniversity.com/article/bu-304-why-are-protection-circuits-needed",
@@ -1499,6 +1568,28 @@ sources = [
   "docs/concepts/new/maker-coverage.md, appendix GTI 7 and GTI 27 (tagged extracted)",
 ]
 
+[codes."HINT.jack_supply"]
+title = "a supply on a jack contact"
+rule = "A jack whose tip, ring or a switch contact carries a supply (roles tip, ring, sleeve, tip_switch, ring_switch, sleeve_switch): consider what happens while a plug goes in and comes out."
+why = "A plug's tip slides across the ring and sleeve springs on its way in and out: a supply on the tip or ring is shorted to the sleeve – usually ground – for a moment and fed into whatever the plug's contacts touch; split keyboards with TRRS links between their halves are known to fail when plugged live (maker-coverage HT-7)."
+fix = "A series resistor or a PTC between the supply and the jack, a switch contact that connects the supply only with the plug home, or no hot-plug stated in the documentation; accept the hint with the reason where the supply is current-limited anyway."
+severity = "note"
+when = { match = "jack_supply" }
+sources = [
+  "docs/concepts/new/maker-coverage.md, HT-7 (QMK on TRRS links between the halves of a split keyboard; asp_pro's expression pedal on a TRS jack)",
+]
+
+[codes."HINT.relay_load"]
+title = "relay contacts switching a load off the board"
+rule = "A relay whose contacts (common, no, nc) reach a connector or run through a cable: consider the load they switch."
+why = "A relay's contact rating is stated for a resistive load: an LED driver or a switch-mode supply draws many times its current for a moment when switched on, a motor or solenoid arcs when switched off – contacts weld or wear long before their rated current; the load is off the board, so nothing in the graph tells what it is (maker-coverage HT-14)."
+fix = "The load's inrush and its kind against the relay's ratings for that kind of load (the datasheet's tables), an NTC or soft start for a capacitive load, a snubber or a diode across an inductive one; accept the hint naming the load."
+severity = "note"
+when = { match = "relay_off_board" }
+sources = [
+  "docs/concepts/new/maker-coverage.md, HT-14 (appendix AUD 20)",
+]
+
 [codes."HINT.flicker"]
 title = "LED flicker from PWM"
 rule = "A net with pwm_hz lights LEDs: consider whether its frequency flickers."
@@ -1519,6 +1610,31 @@ severity = "note"
 when = { match = "boost_enable" }
 sources = [
   "docs/concepts/new/maker-coverage.md, appendix PWR 15 (MT3608, tagged extracted)",
+]
+
+[codes."HINT.usb_budget"]
+title = "the current a USB port gives"
+rule = "A USB receptacle that powers the board: consider what the port gives – 100 mA before the device is configured, 500 mA after (USB 2.0), 900 mA on USB 3.2 single lane, 1.5 A or 3 A only where a Type-C source advertises it on CC and the board reads the advertisement."
+why = "A board that takes what its LEDs, motors or radio need from VBUS works at a phone charger and browns out or trips a laptop's port: the host gives five unit loads only after enumeration, and 1.5 A or 3 A only to a sink that reads the Rp advertisement on CC (maker-coverage PWR 25, LED 7, LED 8, MCU 35). Rd alone on CC says the board is a sink, not how much it may draw."
+fix = "Keep the board's draw within 500 mA (100 mA before configuration) – count it with edakit sim against the source's i_max_a –, or read the advertisement (a CC comparator or a PD controller) and limit the load to it, or supply the heavy load from its own input."
+severity = "note"
+when = { match = "usb_port" }
+sources = [
+  "Universal Serial Bus Specification Revision 2.0 (April 27, 2000), 7.2.1: a unit load is 100 mA, up to five unit loads after configuration – https://www.usb.org/document-library/usb-20-specification",
+  "USB Type-C Cable and Connector Specification Release 2.0 (August 2019), 2.3.4 and Table 2-1: Default (500 mA USB 2.0, 900 mA or 1,500 mA USB 3.2), USB Type-C Current @ 1.5 A and @ 3.0 A – https://www.usb.org/document-library/usb-type-cr-cable-and-connector-specification-release-20",
+  "catalog/tables/usb.toml [budget], [typec_current]",
+]
+
+[codes."HINT.usb_inrush"]
+title = "more than 10 µF on USB VBUS"
+rule = "A USB receptacle whose VBUS net carries more than 10 µF directly (the capacitors' value_f): consider a soft start or less capacitance ahead of it – USB 2.0 allows a device 10 µF at attach; HINT.bulk asks for a bulk capacitor at the same input, and the two meet here."
+why = "At attach the device's capacitance charges from the hub's VBUS; above 10 µF in parallel with 44 Ω the hub's VBUS droops more than 330 mV and the other ports' devices may reset (USB 2.0, 7.2.4.1). A bulk capacitor at a power input is good advice for a supply cable (HINT.bulk) and too much for a USB port."
+fix = "Keep at most 10 µF on VBUS and put the bulk capacitance behind a load switch with soft start (or a regulator that limits its inrush), or accept the hint with the inrush measured or the port known (a charger, not a hub)."
+severity = "note"
+when = { match = "usb_attach_capacitance" }
+sources = [
+  "Universal Serial Bus Specification Revision 2.0 (April 27, 2000), 7.2.4.1 Inrush Current Limiting: the maximum load at the downstream end of a cable is 10 µF in parallel with 44 Ω; hub VBUS droop at most 330 mV; more capacitance needs surge current limiting – https://www.usb.org/document-library/usb-20-specification",
+  "catalog/tables/usb.toml [attach]",
 ]
 
 [codes."HINT.input_polarity"]

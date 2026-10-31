@@ -14,18 +14,21 @@ Examples: [the Christmas bell's parts](https://github.com/tgd1975/automatic_chri
 |---|---|
 | `lcsc`, `mpn`, `manufacturer` | identification; `lcsc` equals the file name, `mpn` is what a component names in `part` – STRUCT.identity compares them, with the `kind` and the value parameters; with a maker that matches by MPN (Eurocircuits, `[cart]`) `mpn` and `manufacturer` are required for every assembled part (PARTS.fact/mpn) and go into `bom_<board>_mpn.csv` |
 | `order` | where a part bought separately is ordered, supplier → order code: `{"rs": "223-0562", "farnell": "…"}`; a value may be `{code, moq, step}` with the supplier's minimum and pack size, `{"lcsc": {"moq": 20, "step": 20}}` (the LCSC code defaults to `lcsc`). The first supplier is the default of `edakit order`; PARTS.supplier warns about a `bom: false` part with neither an LCSC number nor `order` – a `C99…` library number counts as none, LCSC does not sell it |
-| `kind` | `resistor`, `capacitor`, `inductor`, `fuse`, `diode`, `led`, `led_rgb`, `npn`, `pnp`, `pmos`, `nmos`, `switch`, `dip_switch`, `button`, `potentiometer`, `battery_holder`, `buzzer`, `relay`, `connector`, `ic`, `module` |
+| `kind` | `resistor`, `capacitor`, `inductor`, `fuse`, `diode`, `led`, `led_rgb`, `npn`, `pnp`, `pmos`, `nmos`, `switch`, `dip_switch`, `button`, `potentiometer`, `battery_holder`, `buzzer`, `relay`, `connector`, `ic`, `module`, `motor`, `solenoid`, `speaker`, `heater`, `optocoupler`, `esd_array` |
 | `package`, `footprint` | the footprint name must equal the EasyEDA footprint (SYNC.footprint compares it with the PCB) |
 | `footprint_data` | optional: the footprint as data – origin, pads, outline and print in mm –, from which `edakit part build` builds the project's copy and to which SYNC.footprint holds it; an own footprint as text (4.5) |
 | `jlc_class` | Basic / Extended Part; PARTS.stock warn when JLCPCB's catalogue lists another class |
 | `datasheet` | `url`, `pinout_page`; `edakit part fetch` keeps the PDF beside the project, not in the entry (4.3) |
-| `pins` | pin number → `name` (as in the EasyEDA symbol and identical to the graph – SYNC.schematic compares them), `type`, `role` (the meaning; for polarised parts it follows the footprint's polarity print when symbol and footprint disagree), `v_max_v`; from the datasheet where it applies: `strap` (`"high"`/`"low"`: level the pin needs at reset, LVL.boot), `pull` (`"up"`/`"down"`: internal or built-in pull resistor, with `pull_ohm` if known – REQ.missing, LVL.boot), `hint` (a warning from the datasheet, e.g. "ADC2: no analog reads while WiFi is on"); `adc` on a pin that converts (`{"range_v": [0.15, 2.45], "r_source_max_ohm": 10000, "c_hold_min_f": 1e-7}`: the window the converter reads in the attenuation the firmware uses, the source resistance it allows, the hold capacitor that lifts that limit – LIM.range/adc holds a net with `fn: adc` to the window in every scenario, REQ.value/adc the resistors on it, both warnings), `z_in_ohm` (an input's impedance, for the load on an instrument input), `short_proof` (true where a pin may go to a cable without a series resistor – REQ.missing/leave leaves it alone), `drive` (`"open_drain"` or `"tristate"` on an output that lets go of its line: such outputs share a line without LVL.contention, and a line only they drive needs a pull-up, LVL.undefined/open_drain), `float_ok` (true where the datasheet allows an unused input to float – otherwise an IC input in `nc` is LVL.undefined/nc), `needs` (what the pin needs from the circuit, from the datasheet's application section: a list of `{"what": "capacitor", "c_min_f": 1e-6, "c_max_f": 10e-6, "source": "…"}` – `what` one of `capacitor` (to ground), `pull_up` (to a supply), `pull_down` (to ground), `series_resistor` (each with `r_min_ohm`/`r_max_ohm`, a capacitor with `c_min_f`/`c_max_f`, either bound optional), `to_ground`, `never_to_ground`: an ESP32's EN with 10 kΩ and 1 µF, a regulator's output capacitor, USB series resistors, MAX6675 T− on ground and MAX31855 T− never; REQ.missing, REQ.value and REQ.forbidden hold them, grade `pin`, a warning); on MCU and module pins `functions` – what the pin-mux table offers, `<peripheral><instance>.<line>`: `["spi0.sck", "uart0.cts", "i2c1.sda", "pwm1.a", "uart0.tx"]`, `adc0`; for PWM the instance is the slice and the line the channel; `[]` = no free function (used on the module), no key = unknown (REQ.function); from the recommended operating conditions: `v_op_min_v`, `v_op_max_v` (a supply pin's range where it differs from the part's `vdd_op_min_v`/`vdd_op_max_v`) and the thresholds of one input pin, `vih_v` or `vih_ratio`, `vil_v` or `vil_ratio`, where they differ from the part's (LVL.threshold); on a serial output (SDO, Q7) of a clocked part: `out_edge` (`"rising"`/`"falling"`: the clock edge after which it changes) and `t_pd_ns` (`[min, max]` clock-to-output delay at the part's supply, `null` where the datasheet gives none) – `edakit check` shows them with HINT.readback |
-| `address` | a device on a bus: `{"base": 104, "pins": {"9": 1}, "also": [112], "on": "6"}` – its address with every address pin low, what each pin adds when high (by pin number), further addresses it always answers to (a PCA9685's All-Call), the pin whose net is the bus (default: the pin with the role `sda`). Two devices on one bus at one address are REQ.forbidden/address (a warning); a pin the graph does not hold high or low leaves the device out |
+| `pins` | pin number → `name` (as in the EasyEDA symbol and identical to the graph – SYNC.schematic compares them), `type`, `role` (the meaning; for polarised parts it follows the footprint's polarity print when symbol and footprint disagree), `v_max_v`; from the datasheet where it applies: `strap` (`"high"`/`"low"`: level the pin needs at reset, LVL.boot), `pull` (`"up"`/`"down"`: internal or built-in pull resistor, with `pull_ohm` if known – REQ.missing, LVL.boot), `hint` (a warning from the datasheet, e.g. "ADC2: no analog reads while WiFi is on"); `adc` on a pin that converts (`{"range_v": [0.15, 2.45], "r_source_max_ohm": 10000, "c_hold_min_f": 1e-7}`: the window the converter reads in the attenuation the firmware uses, the source resistance it allows, the hold capacitor that lifts that limit – LIM.range/adc holds a net with `fn: adc` to the window in every scenario, REQ.value/adc the resistors on it, both warnings), `z_in_ohm` (an input's impedance, for the load on an instrument input), `short_proof` (true where a pin may go to a cable without a series resistor – REQ.missing/leave leaves it alone), `clamp` (`"none"` on an output without clamp diodes of its own – the L298's bridges –, `"internal"` where it has them: REQ.missing/clamp asks for a diode to the supply and one from ground where such an output drives a winding or a connector), `windows` (on a configuration pin that reads its setting by voltage: `[{"state": "right", "min_v": 0.825, "max_v": 1.245}, …]`, the windows the datasheet guarantees – between one trip point's maximum and the next one's minimum –, with the pin's `pull` and `pull_ohm` in the operating point: REQ.value/window), `drive` (`"open_drain"` or `"tristate"` on an output that lets go of its line: such outputs share a line without LVL.contention, and a line only they drive needs a pull-up, LVL.undefined/open_drain; `"bridge"` on a motor driver's half-bridge output, driven high or low while enabled: it defines its net like a push-pull output), `biased` (true on an analog input the part holds at its own DC level – an amplifier input at half its supply inside, the PAM8403's INL/INR: a net only a coupling capacitor reaches has its level, no LVL.undefined/analog), `float_ok` (true where the datasheet allows an unused input to float – otherwise an IC input in `nc` is LVL.undefined/nc; `false` on a bidirectional pin the part reads and that must not float – the BME280's SDO choosing its address –, which LEVELS then holds like an input), `needs` (what the pin needs from the circuit, from the datasheet's application section: a list of `{"what": "capacitor", "c_min_f": 1e-6, "c_max_f": 10e-6, "source": "…"}` – `what` one of `capacitor` (to ground), `pull_up` (to a supply), `pull_down` (to ground), `series_resistor` (each with `r_min_ohm`/`r_max_ohm`, a capacitor with `c_min_f`/`c_max_f`, either bound optional), `to_ground`, `never_to_ground`: an ESP32's EN with 10 kΩ and 1 µF, a regulator's output capacitor, USB series resistors, MAX6675 T− on ground and MAX31855 T− never; REQ.missing, REQ.value and REQ.forbidden hold them, grade `pin`, a warning; a need with `when` holds only in that config – a name of the entry's `configs`, a list of names – or, with `"connected"`, only while the pin is in a net: an INA226's ALERT wants its pull-up where it is used, a DS18B20's VDD goes to ground in parasite power, a DS3231's VBAT wants a capacitor as the primary supply); on MCU and module pins `functions` – what the pin-mux table offers, `<peripheral><instance>.<line>`: `["spi0.sck", "uart0.cts", "i2c1.sda", "pwm1.a", "uart0.tx"]`, `adc0`; for PWM the instance is the slice and the line the channel; `[]` = no free function (used on the module), no key = unknown (REQ.function); from the recommended operating conditions: `v_op_min_v`, `v_op_max_v` (a supply pin's range where it differs from the part's `vdd_op_min_v`/`vdd_op_max_v`) and the thresholds of one input pin, `vih_v` or `vih_ratio`, `vil_v` or `vil_ratio`, where they differ from the part's (LVL.threshold); on a serial output (SDO, Q7) of a clocked part: `out_edge` (`"rising"`/`"falling"`: the clock edge after which it changes) and `t_pd_ns` (`[min, max]` clock-to-output delay at the part's supply, `null` where the datasheet gives none) – `edakit check` shows them with HINT.readback |
+| `address` | a device on a bus: `{"base": 104, "pins": {"9": 1}, "also": [112], "on": "6"}` – its address with every address pin low, what each pin adds when high (by pin number) – or, for a pin with four states, what it adds tied to each: `{"7": {"low": 0, "high": 1, "sda": 2, "scl": 3}}` (INA219, INA226: A0 on GND, VS, SDA or SCL) –, further addresses it always answers to (a PCA9685's All-Call), the pin whose net is the bus (default: the pin with the role `sda`). Two devices on one bus at one address are REQ.forbidden/address (a warning); a pin the graph does not hold high or low leaves the device out |
+| `configs`, `config_default` | the configurations a part runs in, by name – `{"5v": {…}, "3v3": {…}}`, each with `about` and what differs from the entry: `limits` and `values` (a key replaces the entry's, `null` removes it), `pins` (per pin number the keys that differ – `type`, `role`, thresholds, `strap`, `needs`; `null` removes one), `needs` and `address` (replace the entry's, `null` removes them). A component names its config (`"config": "3v3"`, 3.1); without one `config_default` applies, without that the entry as it stands. In the library: CH340C and CH340G at 5 V or 3.3 V (V3 a 100 nF capacitor at 5 V, on VCC at 3.3 V), the CP2102 with its regulator in use or bypassed, the SSD1306 panel C2890596 in I2C (D0 SCL, D1 and D2 SDA, the BS straps) or 4-wire SPI, the DS18B20 powered or in parasite power, the DS3231 with a backup cell, on VBAT alone or without a battery, the HX711 with or without its regulator. `edakit part lint` holds every config to the schema as the entry it makes (`configs.<name>: …`) and every `when` to the configs; a component's config the entry does not know is STRUCT.entry |
+| `matrix` | a microcontroller or module whose GPIO matrix routes peripherals to any GPIO: the fn kinds it routes, `["uart", "i2c", "i2s", "pwm", "can"]` (ESP32), from its datasheet's GPIO matrix section. A net's fn of those kinds is then served by any GPIO that can drive it (an input line, `rx`, also by an input-only pin), the nets of one fn_bus need no common instance, and PWM has no fixed slice (REQ.function). Without it only the pins' `functions` count – and only those of microcontrollers and modules: a peripheral's own functions do not answer for the MCU |
+| `antenna` | a module with a printed antenna: `{"keepout_mm": [x0, y0, x1, y1]}` – the area around the antenna that stays free of copper, in mm in the footprint's frame (rotation 0, top), taken from the module's datasheet. The gate holds the board's copper on both layers to it where the part sits (GEO.keepout, a warning while new); a radio without it is listed by `edakit check --coverage` |
 | `hints` | warnings of the datasheet for the part as a whole; `edakit check` shows them and the pin `hint`s of connected pins |
 | `hot_loop` | switching regulators: the pin roles of the loop that carries the pulsed current, from the datasheet's layout section – a buck `["vin", "sw", "gnd"]`, an asynchronous boost `["sw", "gnd"]`; a ground pin without a role is `gnd`. REQ.missing wants a `layout.loops` entry on each of their nets and on the net behind a diode on `sw` |
 | `symbol` | optional: the sides of the box `edakit schematic draw` draws for an IC or module – `{"left": [pins], "right": [pins], "top": [pins], "bottom": [pins]}`; without it the pins run as on a DIP package (6.5). With `footprint_data` and its `"symbol": "box"` also the box `edakit part build` draws as the copy's symbol in EasyEDA (4.5) |
 | `limits` | what the part withstands or needs, per kind below – the engine LIMITS holds every quantity to them |
-| `values` | what the simulation and the calculations read, per kind below; `behavior` for ICs (chapter 5) |
+| `values` | what the simulation and the calculations read, per kind below; `behavior` for ICs (chapter 5) – `matrix_driver` for a multiplexing LED driver (MAX7219): the LEDs between its segment and digit pins have no DC state, the simulation lists them as information instead of SIM.state or SIM.driver |
 | `spice` | `{"model": ".model SS34 D(IS=20u N=1.2 RS=0.04 …)"}` for diodes and transistors |
 | `lead` | through-hole parts only: lead cross-section per pad number or `"*"`: `shape` (`square`, `round`, `rect`), `a_mm`, `b_mm`, `tol_mm`, `hole_rec_mm`, `source` – checks GEO.hole (before the layout, on the footprint geometry) and GEO.hole (in the gate, on the drill file); the ring a widened hole leaves: GEO.ring; a footprint with plated holes and no `lead` keeps GEO.hole pending; optional `length_mm`, the lead length below the seating plane – the mechanical model gives its protrusion (7.4) |
 | `body` | optional: `{"h_mm": 2.3}`, the height of the body above the board, on the side the part sits on – for the mechanical model (7.4) |
@@ -62,10 +65,11 @@ in `sources` – any RP2350 module takes the same list per GPIO. On the RP2040 a
 | potentiometer | `end_a`, `wiper`, `end_b` |
 | battery_holder | `plus`, `minus` (several cells: `plus_a`, `minus_a`, …) |
 | buzzer | `plus`, `minus` |
-| relay | `coil_plus`, `coil_minus`, `common`, `no`, `nc` |
+| relay | `coil_plus`, `coil_minus`, `common`, `no`, `nc`; a second contact set (DPDT) `common_2`, `no_2`, `nc_2`, and so on – each set switched by the simulation |
 | motor, solenoid, speaker | `plus`, `minus` (a motor's and a solenoid's winding `coil_ohm`, a speaker's `impedance_ohm`: the simulation's resistor; a switched winding needs its flyback diode, REQ.missing) |
 | heater | the pin numbers (`value_ohm`: its resistance, LIM.p its power) |
-| optocoupler | `anode`, `cathode`, `collector`, `emitter` (`vf_v`, `vf_at_a` of the LED; `ctr_min_ratio`: the transistor passes at least that share of the LED current) |
+| optocoupler | `anode`, `cathode`, `collector`, `emitter` (`vf_v`, `vf_at_a` of the LED; `ctr_min_ratio`: the transistor passes at least that share of the LED current); a PhotoMOS output `load_a`, `load_b` with `behavior: "photomos"`, `r_on_ohm`, `if_on_a` (the LED current that guarantees on – the datasheet's maximum operate current), `if_off_a` (guaranteed off – its minimum turn-off current), `i_leak_a`, and `limits` `v_load_max_v`, `i_load_max_a` (5.1) |
+| esd_array | `io1` … `io8` (each protected line; two pins of one line share the role), `vbus` (the steering rail), `gnd` – `limits.vrwm_max_v` (the rail's stand-off: LIM.v holds the rail to it without margin), `values` `vbr_min_v`, `vf_v`, `vf_at_a`, `c_io_f`; HINT.esd counts the lines on its io pins as guarded |
 | connector | free (`pin1`, …); `vbus`/`gnd` for a supply input; `cc1`, `cc2` on a USB-C receptacle (REQ.missing:cc; a module or breakout without these roles: `values.usb_c`) |
 | ic, module | as the behaviour model needs them: `vin`, `vout`, `gnd`, `vsys`, `3v3`, `gpio`, `rext`, `out`, `oe_n`, `vdd`; `sda`, `scl` for I2C pins (REQ.missing); on shift registers and LED drivers `sdi`, `sdo` (serial data in and out) and the outputs numbered `out0` … `outN` where their order matters – the simulation reads them as `out`, the firmware contract numbers its channels by them (3.5) |
 
@@ -79,6 +83,7 @@ in `sources` – any RP2350 module takes the same list per GPIO. On the RP2040 a
 | `resistor` | `v_max_v` | `value_ohm`, `r_max_ohm`, `tolerance` |
 | `potentiometer` | `v_max_v` | `value_ohm`, `tolerance` |
 | `capacitor` | `v_max_v`, `vr_max_v`, `i_ripple_a` | `value_f`, `dielectric`, `polarized`, `tolerance` |
+| `crystal` | – | `f_hz`, `c_load_f` |
 | `inductor` | `i_max_a`, `i_sat_a` | `value_h`, `dcr_ohm` |
 | `fuse` | `v_max_v`, `i_max_a`, `i_hold_a`, `i_trip_a` | `r_min_ohm`, `r_max_ohm`, `i_hold_vs_temp` |
 | `diode` | `vr_max_v`, `if_max_a`, `ifsm_max_a` | `vf_v`, `vf_at_a`, `ir_a`, `ir_at_v` |
@@ -88,22 +93,23 @@ in `sources` – any RP2350 module takes the same list per GPIO. On the RP2040 a
 | `pnp` | `vce_max_v`, `veb_max_v`, `ic_max_a` | `hfe_min`, `hfe_max`, `vce_sat_v` |
 | `nmos` | `vds_max_v`, `vgs_max_v`, `id_max_a`, `is_body_max_a` | `vgs_th_v`, `rds_on_max_ohm`, `vsd_v_at_1a` |
 | `pmos` | `vds_max_v`, `vgs_max_v`, `id_max_a`, `is_body_max_a` | `vgs_th_v`, `rds_on_max_ohm`, `vsd_v_at_1a` |
-| `switch` | `v_max_v`, `i_max_a` | `r_on_ohm`, `force_n` |
-| `dip_switch` | `v_max_v`, `i_max_a` | `r_on_ohm` |
-| `button` | `v_max_v`, `i_max_a` | `r_on_ohm`, `force_n` |
+| `switch` | `v_max_v`, `i_max_a`, `i_contact_max_a`, `i_switch_max_a` | `r_on_ohm`, `force_n`, `min_load_a` |
+| `dip_switch` | `v_max_v`, `i_max_a`, `i_contact_max_a`, `i_switch_max_a` | `r_on_ohm`, `min_load_a` |
+| `button` | `v_max_v`, `i_max_a`, `i_contact_max_a`, `i_switch_max_a` | `r_on_ohm`, `force_n`, `min_load_a` |
 | `battery_holder` | `i_max_a`, `v_max_v` | `r_contact_ohm` |
 | `buzzer` | `v_max_v` | `coil_ohm` |
-| `relay` | `v_coil_max_v`, `i_max_a`, `v_max_v` | `coil_ohm`, `v_operate_v`, `v_release_v`, `r_contact_ohm` |
-| `connector` | `v_max_v`, `i_max_a` | `pitch_mm`, `r_contact_ohm`, `r_source_ohm`, `usb_c` |
-| `ic` | `vdd_max_v`, `vdd_op_min_v`, `vdd_op_max_v`, `vin_min_v`, `vin_max_v`, `vout_max_v`, `i_out_max_a`, `vin_rel_max_v`, `i_supply_pin_max_a`, `f_max_hz` | `behavior`, `vout_v`, `dropout_v`, `iq_a`, `efficiency`, `idd_max_a`, `iout_gain`, `iout_accuracy`, `vout_knee_v`, `vrext_v`, `vih_v`, `vil_v`, `vih_ratio`, `vil_ratio`, `first_bit_to`, `vout_swing_v`, `vicm_v`, `r_out_ohm`, `comparator`, `gain_min_ratio`, `f_clock_hz` |
+| `relay` | `v_coil_max_v`, `i_max_a`, `v_max_v`, `i_contact_max_a`, `i_switch_max_a` | `coil_ohm`, `v_operate_v`, `v_release_v`, `r_contact_ohm`, `min_load_a` |
+| `connector` | `v_max_v`, `i_max_a`, `i_contact_max_a` | `pitch_mm`, `r_contact_ohm`, `r_source_ohm`, `usb_c` |
+| `ic` | `vdd_max_v`, `vdd_op_min_v`, `vdd_op_max_v`, `vin_min_v`, `vin_max_v`, `vout_max_v`, `i_out_max_a`, `vin_rel_max_v`, `i_supply_pin_max_a`, `f_max_hz` | `behavior`, `vout_v`, `dropout_v`, `iq_a`, `efficiency`, `idd_max_a`, `iout_gain`, `iout_accuracy`, `vout_knee_v`, `vrext_v`, `vih_v`, `vil_v`, `vih_ratio`, `vil_ratio`, `first_bit_to`, `vout_swing_v`, `vicm_v`, `r_out_ohm`, `comparator`, `gain_min_ratio`, `f_clock_hz`, `vref_v`, `i_load_min_a`, `prog_v`, `icc_a`, `i_a`, `vdd_shunt_v`, `i_shunt_max_a`, `pd_request_v`, `r_on_ohm`, `vgs_th_v`, `r_on_high_ohm`, `r_on_low_ohm`, `v_headroom_v`, `uvlo_v`, `v_pre_v`, `i_pre_ratio`, `i_term_ratio`, `v_ovp_v`, `v_ovp_release_v`, `v_uvp_v`, `v_uvp_release_v`, `v_ocp_v`, `v_scp_v` |
 | `module` | `vdd_op_min_v`, `vdd_op_max_v`, `vin_min_v`, `vin_max_v`, `vsys_min_v`, `vsys_max_v`, `i_out_max_a`, `gpio_v_max_v`, `gpio_i_max_a`, `gpio_i_total_max_a`, `f_max_hz` | `behavior`, `regulator`, `v_io_v`, `vout_v`, `dropout_v`, `efficiency`, `i_core_a`, `i_core_min_a`, `gpio_r_out_ohm`, `iq_a`, `vih_v`, `vil_v`, `vih_ratio`, `vil_ratio`, `usb_c`, `f_clock_hz` |
 | `motor` | `v_max_v`, `i_max_a` | `coil_ohm` |
 | `solenoid` | `v_max_v`, `i_max_a` | `coil_ohm` |
 | `speaker` | `v_max_v` | `impedance_ohm` |
 | `heater` | `v_max_v` | `value_ohm` |
-| `optocoupler` | `if_max_a`, `vr_max_v`, `vce_max_v`, `ic_max_a` | `vf_v`, `vf_at_a`, `ctr_min_ratio` |
+| `optocoupler` | `if_max_a`, `vr_max_v`, `vce_max_v`, `ic_max_a`, `v_load_max_v`, `i_load_max_a` | `vf_v`, `vf_at_a`, `ctr_min_ratio`, `behavior`, `r_on_ohm`, `if_on_a`, `if_off_a`, `i_leak_a` |
+| `esd_array` | `vrwm_max_v` | `vbr_min_v`, `vf_v`, `vf_at_a`, `c_io_f` |
 
-Per pin: `v_max_v`, `v_op_min_v`, `v_op_max_v`, `vih_v`, `vil_v`, `vih_ratio`, `vil_ratio`, `pull_ohm`; and `name`, `type`, `role`, `strap`, `pull`, `hint`, `functions`, `out_edge`, `t_pd_ns`, `needs`, `drive`, `float_ok`, `adc`, `z_in_ohm`, `short_proof`. Every name ends in its unit: `_v` V, `_a` A, `_w` W, `_ohm` Ω, `_f` F, `_h` H, `_c` °C, `_hz` Hz, `_dbm` dBm, `_dbi` dBi, `_mm` mm, `_n` N, `_s` s, `_ns` ns, `_k_per_w` K/W, `_ratio` 1. Words: `behavior` ldo, buck, boost, mcu, cc_sink, opamp, logic, current, none; `regulator` ldo, buck, boost, none; `color` red, green, blue, yellow, orange, white, warm_white, amber, uv, ir, rgb; `dielectric` C0G, NP0, X5R, X7R, X7S, X6S, Y5V, electrolytic, polymer, tantalum, film.
+Per pin: `v_max_v`, `v_op_min_v`, `v_op_max_v`, `vih_v`, `vil_v`, `vih_ratio`, `vil_ratio`, `pull_ohm`, `v_min_v`, `v_rel_max_v`, `v_max_powered_v`, `i_max_a`, `i_inject_max_a`, `r_load_min_ohm`, `c_load_max_f`; and `name`, `type`, `role`, `strap`, `pull`, `hint`, `functions`, `out_edge`, `t_pd_ns`, `needs`, `drive`, `float_ok`, `adc`, `z_in_ohm`, `short_proof`, `clamp`, `windows`, `biased`, `ref`, `rel_ref`. Every name ends in its unit: `_v` V, `_a` A, `_w` W, `_ohm` Ω, `_f` F, `_h` H, `_c` °C, `_hz` Hz, `_dbm` dBm, `_dbi` dBi, `_mm` mm, `_n` N, `_s` s, `_ns` ns, `_k_per_w` K/W, `_ratio` 1. Words: `behavior` ldo, buck, boost, buck_boost, mcu, cc_sink, opamp, logic, current, bridge, charger, protection, pd_sink, pass_gate, photomos, matrix_driver, none; `regulator` ldo, buck, boost, buck_boost, none; `color` red, green, blue, yellow, orange, white, warm_white, amber, uv, ir, rgb; `dielectric` C0G, NP0, X5R, X7R, X7S, X6S, Y5V, electrolytic, polymer, tantalum, film.
 <!-- edakit:end -->
 
 A limit named `<quantity>_max_<unit>` or `<quantity>_min_<unit>` is held to the quantity of that name at the part
@@ -128,7 +134,9 @@ entry's before the default of the pin type. What the names do not say:
 - a constant-current driver: `limits.i_supply_pin_max_a`, what its ground pin carries – LIM.i/supply_pin holds all its outputs together.
 - an MCU: `values.f_clock_hz` and `limits.f_max_hz` as a table by supply voltage (`{"2.7": 10e6, "4.5": 20e6}`) – LIM.range/clock holds the clock to what its supply allows.
 - an op-amp that is stable only above a gain: `values.gain_min_ratio` – REQ.value/gain against its closed-loop gain.
-- an IC whose inputs must not rise above its supply: `limits.vin_rel_max_v`, how far above (e.g. 0.5 V) – LIM.v/inject holds every input in every scenario.
+- an IC whose pins must not rise above its supply: `limits.vin_rel_max_v`, how far above (e.g. 0.5 V) – LIM.v/inject holds its inputs, bidirectional pins and outputs in every scenario. A pin with a limit of its own gives `v_rel_max_v` – against the pin its `ref` names (`"ref": "VDDIO"`, the BME280's interface pins), else against the part's supply; `null` for a pin rated above its supply (TP4056 CE) –, and where only a resistor feeds it, `i_inject_max_a`: then the current the clamp takes, (V − V_ref − v_rel) / R, is held to that instead of the voltage. `vih_ratio` and `vil_ratio` refer to the same `ref`; where the datasheet refers the maximum to another supply than the thresholds, `rel_ref` names that one (the MPU-6050's AD0: thresholds of VLOGIC, at most VDD + 0.5 V).
+- pin limits beyond the voltage: `v_min_v` – the pin's own lower limit (an RS-485 line, −7.5 V) in place of the −0.3 V floor of an active pin; `v_max_powered_v` beside `v_max_v` where a pin takes more only while the part is powered (the RP2350's fault-tolerant GPIOs: 5.5 V powered, `v_max_v` unpowered) – stage G warns with grade powered, each scenario of stage E holds the one that applies; `i_max_a`, the pin's own current, and `i_group_max_a` of the entry, `{group: {pins = [numbers], max = A, dir = "sourced" | "sunk"}}` for a sum (an AVR's ports, whose datasheet sums sourced and sunk currents over different pins; an MCU's sums from its output ammeters) – LIM.i/pin on the operating point where resistors, LEDs and diodes alone are on the pin's net; `r_load_min_ohm` and `c_load_max_f`, what an output may drive (ACS712 VIOUT: 4.7 kΩ, 10 nF) – REQ.value/load on the DC load and the capacitors of its net.
+- two supplies in a fixed order: `supply_order`, `[[lower pin, higher pin]]` by pin name (the MPU-6050's VLOGIC ≤ VDD) – LIM.v/order on the declared ranges and in every scenario.
 - a polarized capacitor (an electrolytic, a tantalum): `values.polarized: true` and the pin roles `plus` and `minus`; `vr_max_v` the reverse voltage the series allows – LIM.v holds it in the declared ranges and the simulation, and PATH.reverse reports one a reversed source reaches (both grade `polarized`, warnings).
 - resistor `value_ohm` `0` is a bridge that joins its nets (3.3); `r_max_ohm` its maximum resistance from the
   datasheet, simulated instead of 0 Ω (50 mΩ without it).
@@ -138,15 +146,53 @@ entry's before the default of the pin type. What the names do not say:
   datasheet's timing diagram – copied into the firmware contract (3.5).
 - buzzer `coil_ohm`: a magnetic buzzer, a coil for REQ.missing (flyback diode); relay `v_operate_v`, `v_release_v`
   (must-operate and must-release voltage).
+- contacts – switch, button, DIP switch, relay, connector: `i_contact_max_a`, what a closed contact carries (a
+  connector's current rating per circuit, the JST XH's 3 A at AWG 22); `i_switch_max_a`, what it may break when it
+  opens (a switching or electrical-life rating: the DSHP DIP switch's 25 mA at 24 V DC); `i_max_a` where a datasheet
+  does not say which. The simulation holds the current through every closed contact to both (LIM.i; the switching
+  rating grade `switching`, a warning), a supply's current at a connector shared among the connector's pins on the
+  supply's net, and a fuse's hold current to `i_contact_max_a` as to `i_max_a`. `values.min_load_a`, the least
+  current a contact needs to close reliably (a relay's "minimum applicable load", the HFD4's 10 µA): the DC through a
+  closed contact at least that, and a contact in a signal path (3.1, net `signal`) rated for signal currents –
+  `min_load_a` at most 10 µA (REQ.value/min_load, a warning).
 - a module or breakout with a USB-C receptacle `usb_c`: `{"cc": "rd_5k1" | "controller" | "none", "source": "…"}` – how
   the board terminates its CC lines, from its schematic (REQ.missing:cc; the RP2350-Zero has 5.1 kΩ on CC1 and CC2,
   the breakout Soldered 333011 has none).
+- a linear Li-ion charger: `prog_v`, the constant of its charge-current equation (I = `prog_v` / R_PROG – MCP73831
+  1000 V, TP4056 1100 V or 1200 V by maker, read from the datasheet of that maker), its pins `prog` and `bat`, and
+  `i_out_max_a`: LIM.i/charge holds the current the PROG resistor programs to the charger and to the cell's
+  `i_charge_max_a` – of the cell state a battery holder on its battery pin has in any supply scenario of sim.json.
+  With `behavior: "charger"` the simulation charges (5.1): `vout_v` the float voltage, `i_pre_ratio` and `v_pre_v`
+  the precondition current (a ratio of the programmed one) below its threshold, `i_term_ratio` the termination
+  current, `r_on_ohm` the pass element, `v_headroom_v` the least vin − bat it charges at, `uvlo_v` its start voltage,
+  `iq_a` its supply current while charging.
+- a bridge driver (`behavior: "bridge"`, DRV8833, TB6612): `r_on_high_ohm` and `r_on_low_ohm`, the on resistance of
+  its high and low side (a datasheet that gives only their sum – the TB6612's Vsat(U+L) – split evenly, and say so in
+  `verified`), and the pin roles `in1_x`, `in2_x`, `out1_x`, `out2_x`, `pwm_x`, `sense_x` per channel `x`, `vm`, `en`,
+  `vcc`.
+- a cell protection IC (`behavior: "protection"`, DW01A): `v_ovp_v`, `v_ovp_release_v`, `v_uvp_v`,
+  `v_uvp_release_v` (overcharge and overdischarge detection and release), `v_ocp_v` and `v_scp_v` (overcurrent and
+  short at VM), `r_out_ohm` (the outputs' resistance), and the pin roles `vdd`, `gnd`, `od`, `oc`, `vm`; its dual
+  MOSFET the roles `gate_2`, `source_2` (and `drain_2`) of the second channel.
+- a module's on-board regulator `values.regulator`: `ldo`, `buck`, `boost`, `buck_boost` (the Pico's RT6150) or
+  `none`.
+- an adjustable regulator: `vref_v` and the pin role `adj` or `fb`, with `i_load_min_a` where it needs a minimum load
+  (chapter 5.2).
 - any IC with logic inputs: the thresholds of the recommended operating conditions, `vih_v` | `vih_ratio` and
   `vil_v` | `vil_ratio` (a ratio of its supply, e.g. 0.7 and 0.3 for VIH 0.7 × VDD), which LVL.threshold holds its
   `input` pins and the MCU outputs that drive them to; ICs further in chapter 5.
 
-The block library (`edakit/blocks/parts/`) holds checked entries of the parts the building blocks use – resistors,
-LEDs, the SS14/SS34 diodes, S8050, AO3401A, a USB-C receptacle, a polyfuse, buttons, a JST connector – to copy from.
+**The parts library** (`edakit/parts/`) holds entries of popular parts and of the parts the building blocks use –
+resistors, LEDs, the SS14/SS34 diodes, S8050, AO3401A, a USB-C receptacle, a polyfuse, buttons, a JST connector. Each
+is written from its datasheet (the source with its revision) and counts once the owner has signed it: `edakit part
+sign <key> --by NAME` writes the signature with the entry's SHA-256 into `edakit/parts/signed.toml`, and an entry
+changed after its signature is a draft again. `edakit part add` lists the entries, signed or draft; `edakit part add
+<key>` copies one into the project's parts folder – `edakit block add` does the same for a block's parts. The copy
+names its library version in `library` (`key`, `sha256` of the entry, `signed`, `date`) and belongs to the project
+from then on: checked like every entry, signed in the project like every entry. PARTS.library notes a copy whose
+library entry has changed since (grade `newer`) – `edakit part add <key> --update` takes the new version over the copy
+on purpose and names what changed – and a copy of an unsigned entry (grade `draft`). (Decided 2026-10-31,
+rules-at-scale.md decision 8.)
 
 ## 4.2 Finding parts
 
@@ -241,6 +287,22 @@ so every check, the simulation and the firmware pin tables follow automatically.
 per polarised part: copper, silkscreen, pad numbers, roles, nets) is what makes this visible at a glance. GEO.mark of the
 gate finds it on its own: it reads the "+" the footprint draws in the silk Gerber and fails when the nearest pad with a
 polarity role is a cathode (8.1).
+
+Library symbols are not always right either – and a schematic is drawn from the symbol, whatever the parts entry
+says. Writing the parts library (4.1) from the datasheets on 2026-10-31 turned up six whose EasyEDA symbol differs
+from the manufacturer's datasheet: the WS2812B-V5/W (C2874885) numbers DIN 3 like VSS, so a schematic puts the data
+input on ground and leaves pad 4 open; the XC6206P332MR-G (C5446) names pin 2 Vin and pin 3 Vout, Torex the other way
+round – the regulator fed backwards; the DRV8825PWPR (C81582) numbers its exposed pad 28 like GND and has no pin for
+pad 29, the PowerPAD; the Raspberry Pi Pico 2 (C41407547) numbers the test pads TP2–TP6 like pins 2–6 and swaps SWCLK
+and SWDIO; the 6N138S-TA1-L (C22451885) names the LED's anode "2" and its cathode "NC"; the AQY212GS (C719745) has
+three pins for four pads. `edakit part import` caches the symbol with the numbers it gives twice, and STRUCT.entry
+compares it: names and numbers with the graph's pins as before, and – grade `symbol`, an error – a number given to
+two pins, a pad of the footprint without a pin, a pin without a pad. Where the parts entry follows the datasheet on
+purpose, `symbol_differs` names each such pin with the reason read from the datasheet
+(`{"4": "DIN is pin 4 – Worldsemi WS2812B-V5/W V6.1, pin table"}`): the pin is left out of the comparison and a note
+(grade `declared`) tells the project that a schematic drawn from that symbol wires it otherwise – check that
+schematic against the datasheet pin by pin, or take another part number whose symbol is right. The six are written
+up for EasyEDA and LCSC in `upstream/issue-6-easyeda-symbols.md`.
 
 ## 4.5 Own parts
 

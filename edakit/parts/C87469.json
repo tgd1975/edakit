@@ -1,0 +1,150 @@
+{
+ "lcsc": "C87469",
+ "mpn": "INA219AIDCNR",
+ "manufacturer": "TI(德州仪器)",
+ "kind": "ic",
+ "package": "SOT-23-8 (TI DCN)",
+ "footprint": "SOT-23-8_L3.0-W1.7-P0.65-LS2.8-BR",
+ "jlc_class": "Extended Part",
+ "datasheet": {
+  "url": "https://www.ti.com/lit/ds/symlink/ina219.pdf",
+  "pinout_page": 3
+ },
+ "address": {
+  "base": 64,
+  "pins": {
+   "7": {
+    "low": 0,
+    "high": 1,
+    "sda": 2,
+    "scl": 3
+   },
+   "8": {
+    "low": 0,
+    "high": 4,
+    "sda": 8,
+    "scl": 12
+   }
+  }
+ },
+ "pins": {
+  "1": {
+   "name": "IN+",
+   "type": "analog",
+   "v_max_v": 26.0,
+   "hint": "positive side of the shunt; common mode -0.3…26 V, differential ±26 V, with or without supply"
+  },
+  "2": {
+   "name": "IN-",
+   "type": "analog",
+   "v_max_v": 26.0,
+   "z_in_ohm": 320000,
+   "hint": "negative side of the shunt; the bus voltage is measured from this pin to ground"
+  },
+  "3": {
+   "name": "GND",
+   "type": "ground"
+  },
+  "4": {
+   "name": "VS",
+   "type": "power_in",
+   "role": "vdd",
+   "v_max_v": 6.0,
+   "needs": [
+    {
+     "what": "capacitor",
+     "c_min_f": 1e-07,
+     "source": "TI INA219 Zerø-Drift, Bidirectional Current/Power Monitor With I2C Interface, SBOS448G (August 2008, revised December 2015), p. 25 section 9.2: 'Use a 0.1-μF ceramic capacitor for power-supply bypassing, placed as closely as possible to the supply and ground pins'"
+    }
+   ]
+  },
+  "5": {
+   "name": "SCL",
+   "type": "input",
+   "role": "scl",
+   "i_inject_max_a": 0.005
+  },
+  "6": {
+   "name": "SDA",
+   "type": "bidirectional",
+   "role": "sda",
+   "drive": "open_drain",
+   "v_max_v": 6.0,
+   "v_rel_max_v": null,
+   "i_max_a": 0.01
+  },
+  "7": {
+   "name": "A0",
+   "type": "input",
+   "hint": "address pin: GND, VS, SDA or SCL – four states; edakit's address model knows only low and high, so a pin tied to SDA or SCL is not computed right",
+   "i_inject_max_a": 0.005
+  },
+  "8": {
+   "name": "A1",
+   "type": "input",
+   "hint": "address pin: GND, VS, SDA or SCL – four states; edakit's address model knows only low and high, so a pin tied to SDA or SCL is not computed right",
+   "i_inject_max_a": 0.005
+  }
+ },
+ "values": {
+  "vih_ratio": 0.7,
+  "vil_ratio": 0.3,
+  "idd_max_a": 0.001,
+  "behavior": "logic",
+  "icc_a": 0.001
+ },
+ "limits": {
+  "vdd_max_v": 6.0,
+  "vdd_op_min_v": 3.0,
+  "vdd_op_max_v": 5.5,
+  "vin_rel_max_v": 0.3,
+  "i_out_max_a": 0.01,
+  "tj_max_c": 150,
+  "rth_ja_k_per_w": 135.4,
+  "t_min_c": -25,
+  "t_max_c": 85
+ },
+ "hints": [
+  "never more than 26 V on the device (7.5 note 2); IN+ and IN– withstand 0–26 V whether VS is applied or not",
+  "Kelvin (4-wire) connection of IN+ and IN– to the shunt (11.1)",
+  "I2C fast mode to 400 kHz, high-speed mode to 2.56 MHz; SMBus timeout resets the interface after 28–35 ms low",
+  "address pins A0/A1: GND, VS, SDA or SCL give 16 addresses 0x40–0x4F (Table 1); edakit computes only GND/VS"
+ ],
+ "sources": [
+  "pin numbers and names: EasyEDA library data of C87469 (edakit part import, 2026-10-31); checked against TI INA219 Zerø-Drift, Bidirectional Current/Power Monitor With I2C Interface, SBOS448G (August 2008, revised December 2015), p. 3 Pin Functions (DCN SOT-23 column)",
+  "TI INA219 Zerø-Drift, Bidirectional Current/Power Monitor With I2C Interface, SBOS448G (August 2008, revised December 2015), p. 4 7.1 Absolute Maximum Ratings: VS 6 V; IN+/IN– differential ±26 V, common mode -0.3…26 V; SDA GND - 0.3…6 V; SCL GND - 0.3 V…VS + 0.3 V (vin_rel_max_v – A0/A1 have no row of their own); input current into any pin 5 mA; open-drain digital output current 10 mA (i_out_max_a); TJ 150 °C",
+  "TI INA219 Zerø-Drift, Bidirectional Current/Power Monitor With I2C Interface, SBOS448G (August 2008, revised December 2015), p. 4 7.3 Recommended Operating Conditions: VCM nom 12 V, VS nom 3.3 V, TA -25…85 °C (t_min_c, t_max_c); 7.4 Thermal Information: RθJA 135.4 °C/W (DCN), 111.3 °C/W (D)",
+  "TI INA219 Zerø-Drift, Bidirectional Current/Power Monitor With I2C Interface, SBOS448G (August 2008, revised December 2015), p. 5 7.5: IN– input bias 20 µA || 320 kΩ (z_in_ohm, typical); digital inputs VIH 0.7 × VS … 6 V, VIL -0.3 V … 0.3 × VS",
+  "TI INA219 Zerø-Drift, Bidirectional Current/Power Monitor With I2C Interface, SBOS448G (August 2008, revised December 2015), p. 6 7.5 continued: SDA VOL max 0.4 V at 3 mA; operating supply range 3–5.5 V; quiescent current max 1 mA (idd_max_a); 7.6: fSCL 0.001–0.4 MHz fast mode, 0.001–2.56 MHz high-speed mode",
+  "TI INA219 Zerø-Drift, Bidirectional Current/Power Monitor With I2C Interface, SBOS448G (August 2008, revised December 2015), p. 14 Table 1: slave address 1000000 (A1 = A0 = GND) … A0 = VS +1, A1 = VS +4; SDA/SCL states give the rest",
+  "TI INA219 Zerø-Drift, Bidirectional Current/Power Monitor With I2C Interface, SBOS448G (August 2008, revised December 2015), p. 25 9.2 and p. 27 section 10: 0.1 µF ceramic bypass at VS",
+  "TI INA219 SBOS448G, 7.5 Electrical Characteristics: quiescent current max 1 mA (power-down 15 µA) (icc_a, behaviour logic)"
+ ],
+ "verified": {
+  "by": "Claude (datasheet check, library draft)",
+  "date": "2026-10-31",
+  "datasheet": "TI SBOS448G (December 2015)",
+  "datasheet_sha256": "58004eda854d07478e6fc6f4398c114f60a3bcf18d4877471c7c1a306d1fa1cb",
+  "checked": [
+   "pinout and pin names = datasheet Pin Functions, SOT-23 (DCN) column = EasyEDA symbol",
+   "abs. max VS 6 V, IN± 26 V, SDA 6 V, SCL VS + 0.3 V, TJ 150 °C; RθJA 135.4 °C/W (DCN)",
+   "VS 3–5.5 V; VIH 0.7 × VS, VIL 0.3 × VS; quiescent current max 1 mA",
+   "I2C address 0x40 + A0 (1) + A1 (4) for GND/VS",
+   "0.1 µF supply bypass",
+   "2026-10-31: address pins with four states (low, high, sda, scl) – TI SBOS448G (revised December 2015), Table 1 INA219 Address Pins and Slave Addresses: A1, A0 each on GND, VS+, SDA or SCL give 1000000 to 1001111 – A0 adds 0/1/2/3, A1 0/4/8/12 (schema-gaps A4)",
+   "2026-10-31: behaviour logic with icc_a 1 mA – the simulation draws it at the supply pin; TI INA219 SBOS448G, 7.5 Electrical Characteristics: quiescent current max 1 mA (power-down 15 µA)",
+   "2026-10-31, pin limits (schema-gaps A6, B1–B3, C1–C4): TI SBOS448G 7.1: SDA GND − 0.3 V to 6 V regardless of VS (v_rel_max_v null), SCL GND − 0.3 V to VS + 0.3 V (the entry's vin_rel_max_v), input current into any pin 5 mA (i_inject_max_a on SCL, A0, A1), open-drain digital output current 10 mA (SDA i_max_a)"
+  ],
+  "open": [
+   "address pins tied to SDA or SCL (0x42, 0x43, 0x48…) cannot be expressed in the entry's address model",
+   "A0/A1 have no absolute-maximum row; vin_rel_max_v (from SCL's row) is applied to them too",
+   "the operating supply range comes from 7.5 (Power Supply), the Recommended Operating Conditions give only a nominal 3.3 V",
+   "the entry is the INA219A grade; the INA219B column of 7.5 differs in offset and current measurement error (note 4)",
+   {
+    "text": "pin 1 of the SOT-23-8 at the footprint's pin-1 mark",
+    "when": "order"
+   },
+   "RoHS/REACH not entered"
+  ]
+ }
+}

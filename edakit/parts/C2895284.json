@@ -1,0 +1,70 @@
+{
+ "lcsc": "C2895284",
+ "mpn": "RVT10UF35V67RV0176",
+ "manufacturer": "KNSCHA(科尼盛)",
+ "kind": "capacitor",
+ "package": "SMD V-chip aluminium electrolytic D4 × L5.4 mm",
+ "footprint": "CAP-SMD_BD4.0-L4.3-W4.3-LS5.0-FD",
+ "jlc_class": "Extended Part",
+ "datasheet": {
+  "url": "https://datasheet.lcsc.com/datasheet/pdf/e3d1a8f90e6aaaebb37178eecb7d8277.pdf?productCode=C2895284",
+  "pinout_page": null
+ },
+ "pins": {
+  "1": {
+   "name": "1",
+   "type": "passive",
+   "role": "plus"
+  },
+  "2": {
+   "name": "2",
+   "type": "passive",
+   "role": "minus"
+  }
+ },
+ "values": {
+  "value_f": 1e-05,
+  "dielectric": "electrolytic",
+  "polarized": true,
+  "tolerance": 0.2
+ },
+ "limits": {
+  "v_max_v": 35,
+  "vr_max_v": 0,
+  "i_ripple_a": 0.015,
+  "t_min_c": -55,
+  "t_max_c": 105
+ },
+ "compliance": {
+  "rohs": true,
+  "source": "KNSCHA specification RVT10UF35V67RV0176, 3 'R0HS 2011/65/EU'"
+ },
+ "sources": [
+  "KNSCHA Specification for approval RVT10UF35V67RV0176, SMD E/C 10UF/35V 4*5.4mm RVT, RVT series revision table 2015-07-01 (new) and 2017-08-23 (p. 6, L tolerance), 16 pages – LCSC product data of C2895284, https://datasheet.lcsc.com/datasheet/pdf/e3d1a8f90e6aaaebb37178eecb7d8277.pdf?productCode=C2895284, read 2026-10-31",
+  "value_f 1e-5, tolerance 0.2, v_max_v 35: part table – WV 35 V, 10 µF, ±20 % (120 Hz, 20 °C), DF 0.16, LC ≤ 3.5 µA (2 min), D × L 4 × 5.4 mm, P 1.0 mm",
+  "i_ripple_a 0.015: part table 'Allowable ripple current (mA rms) at 105°C, 120Hz' ≤ 15",
+  "t_min_c -55, t_max_c 105: 4 specification 1, operating temperature range -55 ~ +105 °C; surge voltage 42 V (35 V series)",
+  "vr_max_v 0: application guideline 'Aluminum electrolytic capacitors are polar. Make sure that no reverse voltage or AC voltage is applied'",
+  "pins: EasyEDA symbol and footprint of C2895284 (edakit part import 2026-10-31): pad 1 under the chamfered corners with the '+' print = plus, pad 2 = minus",
+  "LCSC/JLCPCB catalogue 2026-10-31: Extended Part, 10 504 pcs"
+ ],
+ "notes": "10 µF/35 V aluminium electrolytic, V-chip 4 × 5.4 mm, 105 °C. Per-rail capacitor of block eurorack-power. Polar: no reverse voltage. Library draft.",
+ "verified": {
+  "by": "Claude (datasheet check, library draft)",
+  "date": "2026-10-31",
+  "datasheet": "KNSCHA Specification for approval RVT10UF35V67RV0176 (RVT series, rev. 2017-08-23)",
+  "datasheet_sha256": "34259488d0e9d7038227f53e279e2b2c3d50890e2e7f74059df2e418263acda4",
+  "checked": [
+   "part table: 10 µF ±20 %, 35 V, DF 0.16, LC 3.5 µA, 4 × 5.4 mm, ripple 15 mA rms at 105 °C / 120 Hz",
+   "operating temperature -55 … +105 °C; surge voltage 42 V; no reverse or AC voltage",
+   "polarity: footprint pad 1 under the chamfer and '+' print"
+  ],
+  "open": [
+   "ESR not given",
+   {
+    "text": "the dark polarity band (minus) of the part against the footprint's '+' and chamfer",
+    "when": "order"
+   }
+  ]
+ }
+}

@@ -1,0 +1,280 @@
+{
+ "name": "midi",
+ "title": "MIDI in and out on 5-pin DIN for a 3.3 V MCU",
+ "about": "MIDI IN: the sender's current loop through 220 Ω into a 6N138 optocoupler, a 1N4148 across its LED against a reversed loop, pin 2 of the socket open – the input stays isolated; the optocoupler's open-collector output is pulled up to the MCU's 3.3 V and goes to UART RX. MIDI OUT at 3.3 V: pin 4 through 33 Ω to 3.3 V, pin 5 through 10 Ω to UART TX, pin 2 (shield) to ground. The resistor values are those of maker-coverage BL-11 for the MIDI Association's electrical specification (CA-033); the specification itself was not reachable while the block was built (see notes).",
+ "ports": {
+  "rx": "MIDI IN data – to the MCU's UART RX (31.25 kbit/s; idle high)",
+  "tx": "MIDI OUT data – from the MCU's UART TX (idle high)",
+  "vio": "the MCU's 3.3 V logic supply: pull-up of rx and the source of the MIDI OUT loop",
+  "v5": "5 V for the optocoupler's detector (6N138: VCC 4.5–5.5 V)",
+  "gnd": "ground"
+ },
+ "components": [
+  {
+   "designator": "J1",
+   "type": "connector",
+   "label": "{as}: MIDI IN (DIN 5-pin 180°)",
+   "part": "SDS-50J",
+   "lcsc": "C6216157",
+   "pins": {
+    "1": "1",
+    "2": "2",
+    "3": "3",
+    "4": "4",
+    "5": "5",
+    "E": "E"
+   },
+   "nc": [
+    "1",
+    "2",
+    "3",
+    "E"
+   ],
+   "off_board": true,
+   "notes": "Pin 2 and the shell (E) open: the input has no galvanic connection to this board – the optocoupler isolates it."
+  },
+  {
+   "designator": "R1",
+   "type": "resistor",
+   "label": "{as}: MIDI IN series 220",
+   "part": "0805W8F2200T5E",
+   "lcsc": "C17557",
+   "value": "220",
+   "pins": {
+    "1": "1",
+    "2": "2"
+   }
+  },
+  {
+   "designator": "D1",
+   "type": "diode",
+   "label": "{as}: MIDI IN reverse diode 1N4148",
+   "part": "1N4148W",
+   "lcsc": "C81598",
+   "pins": {
+    "1": "K",
+    "2": "A"
+   },
+   "notes": "Across the optocoupler's LED, anode at pin 5: a reversed loop flows through it, the LED sees about 0.7 V (VR max 5 V)."
+  },
+  {
+   "designator": "OK1",
+   "type": "optocoupler",
+   "label": "{as}: MIDI IN optocoupler 6N138",
+   "part": "6N138-L",
+   "lcsc": "C571211",
+   "pins": {
+    "1": "NC",
+    "2": "ANODE",
+    "3": "CATHODE",
+    "4": "NC",
+    "5": "GND",
+    "6": "VO",
+    "7": "VB",
+    "8": "VCC"
+   },
+   "nc": [
+    "1",
+    "4",
+    "7"
+   ],
+   "notes": "Pin 7 (VB) open, as in every figure of the data sheet."
+  },
+  {
+   "designator": "C1",
+   "type": "capacitor",
+   "label": "{as}: 100 nF at the optocoupler's VCC",
+   "part": "CC0805KRX7R9BB104",
+   "lcsc": "C49678",
+   "value": "100nF",
+   "pins": {
+    "1": "1",
+    "2": "2"
+   },
+   "notes": "Next to pins 8 and 5: the data sheet says it must be there."
+  },
+  {
+   "designator": "R2",
+   "type": "resistor",
+   "label": "{as}: RX pull-up 1 k",
+   "part": "0805W8F1001T5E",
+   "lcsc": "C17513",
+   "value": "1k",
+   "pins": {
+    "1": "1",
+    "2": "2"
+   }
+  },
+  {
+   "designator": "J2",
+   "type": "connector",
+   "label": "{as}: MIDI OUT (DIN 5-pin 180°)",
+   "part": "SDS-50J",
+   "lcsc": "C6216157",
+   "pins": {
+    "1": "1",
+    "2": "2",
+    "3": "3",
+    "4": "4",
+    "5": "5",
+    "E": "E"
+   },
+   "nc": [
+    "1",
+    "3"
+   ],
+   "off_board": true,
+   "notes": "Pin 2 and the shell (E) on ground: the shield of the cable."
+  },
+  {
+   "designator": "R3",
+   "type": "resistor",
+   "label": "{as}: MIDI OUT pin 4 to 3.3 V, 33",
+   "part": "0805W8F330JT5E",
+   "lcsc": "C17634",
+   "value": "33",
+   "pins": {
+    "1": "1",
+    "2": "2"
+   }
+  },
+  {
+   "designator": "R4",
+   "type": "resistor",
+   "label": "{as}: MIDI OUT pin 5 to TX, 10",
+   "part": "0805W8F100JT5E",
+   "lcsc": "C17415",
+   "value": "10",
+   "pins": {
+    "1": "1",
+    "2": "2"
+   }
+  }
+ ],
+ "nets": [
+  {
+   "name": "in4",
+   "pins": [
+    "J1.4",
+    "R1.1"
+   ],
+   "v": [
+    0,
+    5.5
+   ],
+   "notes": "The sender's current loop – isolated from this board's ground (net key isolated, on in4, led_a and in5): the range is the loop's own (a 5 V sender), the simulation does not hold it to this board's ground.",
+   "isolated": true
+  },
+  {
+   "name": "led_a",
+   "pins": [
+    "R1.2",
+    "OK1.2",
+    "D1.1"
+   ],
+   "v": [
+    0,
+    5.5
+   ],
+   "isolated": true
+  },
+  {
+   "name": "in5",
+   "pins": [
+    "J1.5",
+    "OK1.3",
+    "D1.2"
+   ],
+   "v": [
+    0,
+    5.5
+   ],
+   "isolated": true
+  },
+  {
+   "name": "rx",
+   "pins": [
+    "OK1.6",
+    "R2.2"
+   ],
+   "v": "@vio"
+  },
+  {
+   "name": "tx",
+   "pins": [
+    "R4.2"
+   ],
+   "v": "@vio"
+  },
+  {
+   "name": "out4",
+   "pins": [
+    "J2.4",
+    "R3.2"
+   ],
+   "v": "@vio"
+  },
+  {
+   "name": "out5",
+   "pins": [
+    "J2.5",
+    "R4.1"
+   ],
+   "v": "@vio"
+  },
+  {
+   "name": "vio",
+   "pins": [
+    "R2.1",
+    "R3.1"
+   ]
+  },
+  {
+   "name": "v5",
+   "pins": [
+    "OK1.8",
+    "C1.1"
+   ]
+  },
+  {
+   "name": "gnd",
+   "pins": [
+    "OK1.5",
+    "C1.2",
+    "J2.2",
+    "J2.E"
+   ]
+  }
+ ],
+ "covers": [
+  "REQ.missing/leave",
+  "REQ.missing",
+  "LVL.undefined/open_drain",
+  "LIM.range",
+  "HINT.esd"
+ ],
+ "notes": [
+  "Source of the values: 220 Ω at MIDI IN, 1N4148 reverse diode, pin 2 open, and 33 Ω / 10 Ω at MIDI OUT for 3.3 V (220 Ω / 220 Ω at 5 V) are taken from maker-coverage BL-11 and the task, which name the MIDI Association's MIDI 1.0 Electrical Specification Update (CA-033, 2014) as their source. midi.org could not be reached from the environment the block was built in (proxy 403): the specification was not read – check the values against it before a board is ordered.",
+  "MIDI OUT for 5 V: R3 and R4 both 220 Ω (0805W8F2200T5E, C17557) and vio on 5 V – the TX pin must then swing to 5 V.",
+  "MIDI OUT current, against a receiver built like this block's MIDI IN (220 Ω, 6N138 LED with VF 1.1–1.7 V at 1.6 mA): about (3.3 V − 1.4 V − VOL) / (33 + 10 + 220) Ω ≈ 7 mA, which the TX pin sinks – inside the Pico 2's 12 mA (gpio_i_max_a); on an RP2350 or ESP32 set the pin's drive strength to match. The receiver is off the board: edakit sim does not see this current.",
+  "A short of MIDI OUT pin 4 to ground (a damaged cable) puts 3.3 V across R3: 0.33 W – above the 1/8 W of an 0805; take a larger resistor (1206 or bigger) where that must be survived.",
+  "Optocoupler 6N138-L: its characteristics hold for VCC 4.5–5.5 V (Lite-On DS70-2009-0001, p. 6) – so VCC is on v5, while the open-collector output is pulled up to vio (3.3 V). R2 1 kΩ: at IF 1.6 mA the CTR (≥ 300 %) sinks 4.8 mA, more than the 3.3 mA of 1 kΩ at 3.3 V – the output reaches its VOL (≤ 0.4 V) from 1.6 mA of loop current on. A smaller pull-up shortens the rising edge (tPLH ≤ 35 µs, typ. 10 µs at 1.6 mA and 2.2 kΩ – p. 7; Broadcom's figure 7: about 1.6 µs at 12 mA and 270 Ω) but needs more LED current.",
+  "Speed at 31.25 kbit/s (32 µs per bit) is not guaranteed by the data sheet at this operating point: look at RX with a scope. If the rising edge is too slow: a smaller R2, or a resistor of 47 kΩ or more from pin 7 to pin 5 (Broadcom 6N138 note 4: below 47 kΩ the gain drops markedly).",
+  "On a board without 5 V the 6N138 is outside its specified supply; an optocoupler specified at 3.3 V is then the choice – not in this block.",
+  "The SMD version 6N138S-TA1-L (C22451885) has the same data sheet; its EasyEDA symbol calls the anode '2' and the cathode 'NC' – the block takes the DIP-8 6N138-L (C571211) whose symbol is right.",
+  "J1 and J2 are marked off_board: REQ.missing/leave sees R1 and R4 between the wires and the board; pin 4 of MIDI OUT goes to the 3.3 V rail through R3.",
+  "sim.json: rx under the MCU's inputs, tx under its outputs (idle high). The connected devices are off the board – the optocoupler's LED and the MIDI OUT loop carry no current in the simulation."
+ ],
+ "test": {
+  "connect": {
+   "rx": "SIG2",
+   "tx": "SIG",
+   "vio": "3V3",
+   "v5": "+5V"
+  },
+  "why": "the example's +5V is USB behind its SS34 and sinks to 4.44 V with all LEDs on at USB 4.75 V – a rail of the example, not of the block: the test leaves out the supply case usb-min – below the 4.5 V from which the 6N138's characteristics hold (Lite-On DS70-2009-0001, p. 6)",
+  "remove_supplies": [
+   "usb-min"
+  ]
+ }
+}

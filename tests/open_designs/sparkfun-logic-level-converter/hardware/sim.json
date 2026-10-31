@@ -1,0 +1,79 @@
+{
+ "about": "LV 3.3 V on JP1, HV 5 V on JP2, every line released: each side pulled up to its own rail, the MOSFETs off. Values with 'note' are assumptions.",
+ "ambient_c": 25,
+ "sources": {
+  "JP1": {
+   "plus": "4",
+   "minus": "3",
+   "r_ohm": 0.1,
+   "note": "the low-voltage host's 3.3 V (assumed)"
+  },
+  "JP2": {
+   "plus": "3",
+   "minus": "4",
+   "r_ohm": 0.1,
+   "note": "the high-voltage side's 5 V (assumed)"
+  }
+ },
+ "supplies": {
+  "3v3-5v": {
+   "JP1": 3.3,
+   "JP2": 5.0
+  },
+  "3v3-5v25": {
+   "JP1": 3.3,
+   "JP2": 5.25
+  }
+ },
+ "loads": {
+  "idle": {
+   "about": "no device drives a line",
+   "gpio": {},
+   "leds_on": []
+  },
+  "lv1_low": {
+   "about": "a device on the low side pulls LV1 low (2 mA sink): HV1 follows through Q1's channel",
+   "gpio": {},
+   "leds_on": [],
+   "external": {
+    "JP1": {
+     "plus": "6",
+     "minus": "3",
+     "i_a": 0.002
+    }
+   },
+   "expect": {
+    "HV1": {
+     "max_v": 0.8
+    }
+   },
+   "note": "2 mA: an open-drain output (assumed); 0.8 V: a TTL low, the test's expectation"
+  },
+  "hv1_low": {
+   "about": "a device on the high side pulls HV1 low (2 mA sink): LV1 follows, first through Q1's body diode, then its channel",
+   "gpio": {},
+   "leds_on": [],
+   "external": {
+    "JP2": {
+     "plus": "1",
+     "minus": "4",
+     "i_a": 0.002
+    }
+   },
+   "expect": {
+    "LV1": {
+     "max_v": 0.8
+    }
+   },
+   "note": "as lv1_low"
+  }
+ },
+ "corners": [
+  "min",
+  "max"
+ ],
+ "report": [
+  "LV1",
+  "HV1"
+ ]
+}

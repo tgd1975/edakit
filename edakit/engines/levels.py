@@ -2,7 +2,7 @@
 level at reset (concept rules-at-scale.md, section 1: level = (input, state) -> high, low, driven, undefined).
 
 What a pin does to its net at reset comes from its type (catalog/levels.toml [reset]) – an output with drive
-open_drain or tristate defines nothing, it lets go –; what holds a net otherwise is a resistor to a net something
+open_drain or tristate defines nothing, it lets go; drive bridge (a motor driver's half-bridge) defines it –; what holds a net otherwise is a resistor to a net something
 defines. A transistor's control pin (base, gate) needs a resistor to the roles the table
 names. Stage E's levels – an input between its thresholds, an output that does not reach them – are in sim.py.
 """
@@ -32,12 +32,19 @@ def defines(t):
 
 
 def releases(info):
-    """An output that lets go of its net: drive open_drain or tristate."""
+    """An output that lets go of its net: drive open_drain or tristate. A bridge output (drive bridge – a motor
+    driver's half-bridge) defines its net while the part is enabled, as a push-pull output does."""
     return info.get("drive") in ("open_drain", "tristate")
 
 
 def pin_defines(info):
     return defines(info.get("type")) and not releases(info)
+
+
+def must_not_float(info):
+    """An input, or a bidirectional pin whose entry says float_ok = false (a pin the part reads at power-up, the
+    BME280's SDO choosing its address): its net needs a driver or a pull."""
+    return info.get("type") == "input" or (info.get("type") == "bidirectional" and info.get("float_ok") is False)
 
 
 def run(ctx):
@@ -65,16 +72,20 @@ def held_nets(d):
 
 
 def undefined_inputs(d):
-    """LVL.undefined: an input with neither a driver nor a pull, or driven only by pins that float at reset."""
-    held = held_nets(d)
+    """LVL.undefined: an input with neither a driver nor a pull – a resistor or a pin's own pull (pull up or down in
+    its parts entry) –, or driven only by pins that float at reset."""
+    held = held_nets(d) | supply_nets(d) | {d.ground}      # an input tied to a rail is defined by it
     out = []
     for name, net in d.nets.items():
         infos = [d.pin_info(r) for r in net["pins"]]
-        types = [i.get("type") for i in infos]
-        if "input" not in types or name in held:
+        if not any(must_not_float(i) for i in infos) or name in held:
             continue
+        # the pins that may drive it: not the bidirectional pins that must not float themselves
+        types = [i.get("type") for i in infos if not (i.get("type") == "bidirectional" and i.get("float_ok") is False)]
         if any(releases(i) for i in infos):
             continue              # outputs that let go: released_nets asks for the pull-up
+        if any(i.get("pull") in ("up", "down") for i in infos):
+            continue              # a pin's own pull resistor (an input's built-in pull-up) holds the net
         on = (("net", name),)
         if not any(defines(t) or reset(t) == "floating" for t in types):
             out.append(Finding("LVL.undefined", "G", name, f"{name}: input without driver or pull resistor", on=on))
@@ -86,7 +97,7 @@ def undefined_inputs(d):
 
 def control_pins(d):
     """LVL.undefined: a transistor whose control pin (base, gate) has no resistor to the roles of [control] – its
-    emitter, its source or a rail."""
+    emitter, its source – or to a rail: a net a pin defines at reset (a push-pull output, a supply, ground)."""
     rails = {name for name, net in d.nets.items() if any(defines(d.pin_info(r).get("type")) for r in net["pins"])}
     held = rails | supply_nets(d)
     out = []
@@ -110,13 +121,16 @@ def control_pins(d):
 
 def contention(d):
     """LVL.contention: two or more pins that drive (catalog/levels.toml [drivers]) on one net – open-drain and
-    tri-state outputs share a line among themselves, a push-pull output shares it with nobody."""
+    tri-state outputs share a line among themselves, a push-pull output shares it with nobody; pins of one part with
+    one name count once."""
     kinds = set(data()["drivers"]["types"])
     out = []
     for name, net in d.nets.items():
         drivers = [r for r in net["pins"] if d.pin_info(r).get("type") in kinds]
         push = [r for r in drivers if not releases(d.pin_info(r))]
-        if len(drivers) > 1 and push:
+        # pins of one part with one name are one terminal (a regulator's VOUT on pin 2 and on its tab)
+        terminals = {(r.split(".", 1)[0], d.pin_info(r).get("name") or r) for r in drivers}
+        if len(terminals) > 1 and push:
             out.append(Finding("LVL.contention", "G", name, f"{name}: several outputs drive this net: {', '.join(drivers)}",
                                on=(("net", name),)))
     return out
@@ -167,7 +181,7 @@ def open_inputs(d):
             continue
         for num in comp.get("nc") or []:
             info = (part.get("pins") or {}).get(str(num)) or {}
-            if info.get("type") == "input" and not info.get("pull") and not info.get("float_ok"):
+            if must_not_float(info) and not info.get("pull") and not info.get("float_ok"):
                 out.append(Finding("LVL.undefined", "G", f"{des}.{num}", f"{des}.{num} ({info.get('name', num)}): an input "
                                    "left open (nc) – it floats", f"pin {num} of {d.entry_key(des)}",
                                    "tie it to its inactive level, or float_ok on the pin where the datasheet allows it",
@@ -175,37 +189,60 @@ def open_inputs(d):
     return out
 
 
+ENABLE_LOW = {"oe_n", "en_n", "re_n"}    # an enable pin active low: tied to ground, its outputs drive
+ENABLE_HIGH = {"oe", "en", "de"}         # active high: tied to a supply
+
+
+def enabled(d, ref):
+    """A tri-state output whose part ties every enable pin to its active level (OE# to ground, OE or DE to a
+    supply): it drives its net while the firmware is not running. A part without enable pins: False."""
+    des = ref.split(".", 1)[0]
+    pins = (d.part(des) or {}).get("pins") or {}
+    enables = [(p.get("role"), d.pin_net.get(f"{des}.{n}")) for n, p in pins.items()
+               if p.get("role") in ENABLE_LOW | ENABLE_HIGH]
+    supplies = supply_nets(d)
+    return bool(enables) and all((net == d.ground) if role in ENABLE_LOW else (net in supplies)
+                                 for role, net in enables)
+
+
 def released_nets(d):
     """LVL.undefined/open_drain: a net whose only drivers are open-drain or tri-state outputs and that nothing pulls up
     – released, it floats. An I2C line is REQ.missing's (needs.toml [i2c])."""
     from ..circuit import i2c_name
     from .requires import i2c_line
-    rails = {name for name, net in d.nets.items() if any(pin_defines(d.pin_info(r)) for r in net["pins"])}
-    held = rails | supply_nets(d) | {d.ground}
+    held = held_nets(d)                  # a resistor path to a defined net – through a divider or a series chain too
     out = []
     for name, net in d.nets.items():
         infos = [d.pin_info(r) for r in net["pins"]]
         open_ = [r for r, i in zip(net["pins"], infos) if releases(i)]
         if not open_ or any(pin_defines(i) for i in infos) or any(i.get("pull") == "up" for i in infos):
             continue
+        if all(enabled(d, r) for r in open_):
+            continue                     # tri-state outputs whose enable is tied active drive their net at reset
         if net.get("bus") == "i2c" or any(map(i2c_name, net.get("joined") or [name])) or any(map(i2c_line, infos)):
             continue
-        if resistors_to(d, name, held - {name}):
+        if name in held:
             continue
+        roles = {i.get("role") for i in infos}
+        fix = ("a pull-down to ground – the B line of an RS-485 bias pair (REQ.value/failsafe)" if roles & {"rs485_b"}
+               else "a pull-up to the bus supply – the A line of an RS-485 bias pair (REQ.value/failsafe)"
+               if roles & {"rs485_a"} else "a pull-up to the bus supply")
         out.append(Finding("LVL.undefined", "G", name, f"{name}: driven only by outputs that let go ({', '.join(open_)}) "
-                           "and nothing holds it – released, it floats", fix="a pull-up to the bus supply",
-                           grade="open_drain", on=(("net", name),)))
+                           "and nothing holds it – released, it floats", fix=fix, grade="open_drain", on=(("net", name),)))
     return out
 
 
 def analog_nodes(d):
     """LVL.undefined/analog: a net with an analog pin that only capacitors reach – no resistor, no driver, no supply:
-    it has no DC level, picks up hum, and a switch on it pops."""
+    it has no DC level, picks up hum, and a switch on it pops. A pin the part biases itself (biased = true – an
+    amplifier input held at half its supply inside) gives the net its level."""
     resistive = {x for _, a, b in resistor_like(d) for x in (a, b)}
     out = []
     for name, net in d.nets.items():
         infos = [(r, d.pin_info(r)) for r in net["pins"]]
         if name in resistive or not any(i.get("type") == "analog" for _, i in infos):
+            continue
+        if any(i.get("biased") is True for _, i in infos):
             continue
         others = [r for r, i in infos if i.get("type") not in ("analog", "input")]
         if all((d.part(r.partition(".")[0]) or {}).get("kind") == "capacitor" for r in others):

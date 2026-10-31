@@ -689,7 +689,8 @@ def test_g15_pin_without_functions_is_a_note(project):
     project.save_part("C41407547", part)
     rep = run(project)
     assert rep.errors == []
-    assert ("PARTS.fact", "LED_SDI: needs spi.tx, but no pin on it has functions in its parts entry – not checked") \
+    assert ("PARTS.fact", "LED_SDI: needs spi.tx, but no pin of a microcontroller or module on it has functions in its "
+            "parts entry – not checked") \
         in rep.notes
 
 

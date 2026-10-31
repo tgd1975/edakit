@@ -1,0 +1,191 @@
+{
+ "name": "i2c-level-shift",
+ "title": "I2C level shifter, two BSS138 with pull-ups on both sides (100 kHz)",
+ "about": "Bidirectional I2C level shifter for Standard mode (100 kHz): per line a BSS138LT1G with its gate on the low-side supply, source on the low side, drain on the high side, and 4.7 kΩ pull-ups on both sides. Idle, both sides sit at their own supply; a low on the low side turns the MOSFET on, a low on the high side pulls the low side down through the body diode until the MOSFET turns on. For 400 kHz or a low side below 2.75 V: a PCA9306 (notes).",
+ "ports": {
+  "sda_lv": "SDA on the low-voltage side (the controller, e.g. a 3.3 V MCU)",
+  "scl_lv": "SCL on the low-voltage side",
+  "v_lv": "the low-side supply, 2.75 V or more – it is also the gates' voltage",
+  "sda_hv": "SDA on the high-voltage side (e.g. 5 V devices)",
+  "scl_hv": "SCL on the high-voltage side",
+  "v_hv": "the high-side supply, at least v_lv"
+ },
+ "components": [
+  {
+   "designator": "Q1",
+   "type": "transistor",
+   "label": "{as}: SDA level shift",
+   "part": "BSS138LT1G",
+   "lcsc": "C82045",
+   "pins": {
+    "1": "G",
+    "2": "S",
+    "3": "D"
+   }
+  },
+  {
+   "designator": "Q2",
+   "type": "transistor",
+   "label": "{as}: SCL level shift",
+   "part": "BSS138LT1G",
+   "lcsc": "C82045",
+   "pins": {
+    "1": "G",
+    "2": "S",
+    "3": "D"
+   }
+  },
+  {
+   "designator": "R1",
+   "type": "resistor",
+   "label": "{as}: SDA pull-up low side 4.7 k",
+   "part": "0805W8F4701T5E",
+   "lcsc": "C17673",
+   "value": "4.7k",
+   "pins": {
+    "1": "1",
+    "2": "2"
+   }
+  },
+  {
+   "designator": "R2",
+   "type": "resistor",
+   "label": "{as}: SCL pull-up low side 4.7 k",
+   "part": "0805W8F4701T5E",
+   "lcsc": "C17673",
+   "value": "4.7k",
+   "pins": {
+    "1": "1",
+    "2": "2"
+   }
+  },
+  {
+   "designator": "R3",
+   "type": "resistor",
+   "label": "{as}: SDA pull-up high side 4.7 k",
+   "part": "0805W8F4701T5E",
+   "lcsc": "C17673",
+   "value": "4.7k",
+   "pins": {
+    "1": "1",
+    "2": "2"
+   }
+  },
+  {
+   "designator": "R4",
+   "type": "resistor",
+   "label": "{as}: SCL pull-up high side 4.7 k",
+   "part": "0805W8F4701T5E",
+   "lcsc": "C17673",
+   "value": "4.7k",
+   "pins": {
+    "1": "1",
+    "2": "2"
+   }
+  }
+ ],
+ "nets": [
+  {
+   "name": "v_lv",
+   "pins": [
+    "Q1.1",
+    "Q2.1",
+    "R1.1",
+    "R2.1"
+   ]
+  },
+  {
+   "name": "v_hv",
+   "pins": [
+    "R3.1",
+    "R4.1"
+   ]
+  },
+  {
+   "name": "sda_lv",
+   "pins": [
+    "Q1.2",
+    "R1.2"
+   ],
+   "v": "@v_lv",
+   "bus": "i2c"
+  },
+  {
+   "name": "scl_lv",
+   "pins": [
+    "Q2.2",
+    "R2.2"
+   ],
+   "v": "@v_lv",
+   "bus": "i2c"
+  },
+  {
+   "name": "sda_hv",
+   "pins": [
+    "Q1.3",
+    "R3.2"
+   ],
+   "v": "@v_hv",
+   "bus": "i2c"
+  },
+  {
+   "name": "scl_hv",
+   "pins": [
+    "Q2.3",
+    "R4.2"
+   ],
+   "v": "@v_hv",
+   "bus": "i2c"
+  }
+ ],
+ "covers": [
+  "REQ.missing",
+  "REQ.value",
+  "LIM.range/gate"
+ ],
+ "notes": [
+  "Why BSS138 and not PCA9306: edakit simulates the BSS138 – an nmos with a SPICE model – so edakit sim checks the translation itself (in the example the 5 V side follows: 0.06 V when the controller pulls SDA low, 5 V when it lets go) and LIM.range/gate holds the gate drive to the specified on-resistance; the PCA9306 is a pass-gate IC with a VREF bias network (200 kΩ, TI SCPS113O section 9) for which edakit has no behaviour model, so its two sides would be unconnected nets in the simulation. The discrete circuit is also the one maker-coverage names (SparkFun BOB-12009) and needs one new library entry.",
+  "BSS138LT1G (onsemi BSS138LT1/D Rev. 15) rather than the plain BSS138: its RDS(on) is specified at VGS 2.75 V (10 Ω max, –40 … +85 °C), so a 3.3 V gate is inside the specification; the plain onsemi BSS138 (BSS138/D Rev. 7) specifies 4.5 V and 10 V only, and LIM.range/gate would report a 3.3 V gate. VGS(th) 0.85 … 1.5 V.",
+  "v_lv at least 2.75 V (the gates sit on it): a 1.8 V low side leaves VGS below the specified 2.75 V – LIM.range/gate reports it; use a PCA9306 there (VREF1 1.2 V up to VREF2 − 0.6 V, TI SCPS113O), not modelled by the simulation.",
+  "Pull-ups 4.7 kΩ on each of the four lines: inside edakit's I2C window (REQ.value: (V − 0.4 V) / 3 mA up to 10 kΩ, catalog tables/i2c.toml after NXP UM10204 Rev. 7.0, 7.1) on both sides. With tr = 0.8473 · Rp · Cb and Standard mode's limit (2.95 kΩ at 400 pF, i.e. about 1 µs; maker-coverage MCU 16) 4.7 kΩ allows about 250 pF per side – a small board, not a long cable.",
+  "When the low side pulls a line low it sinks both pull-ups through the MOSFET: (3.3 V − 0.4 V) / 4.7 kΩ + (5 V − 0.4 V) / 4.7 kΩ ≈ 1.6 mA, within the 3 mA of Standard mode. edakit checks each side's pull-up alone – 2.2 kΩ on both sides would pass REQ.value but sink about 3.4 mA. Fast mode (400 kHz) needs smaller pull-ups than this sum allows: PCA9306.",
+  "Each MOSFET adds its capacitance to both lines (Ciss ≤ 50 pF, Coss ≤ 25 pF, Crss ≤ 5 pF at 25 V, more at low VDS – datasheet figure 12).",
+  "Once per bus. Modules with their own pull-ups ('pull': 'up' on their pins) add in parallel on their side; the block marks all four nets with \"bus\": \"i2c\" so that REQ.missing and REQ.value check them.",
+  "sim.json: nothing needed for the idle state; to see a low cross over, the controller's SDA pin under its mcu outputs with a load at 0 and one at 1 (as the block's test does)."
+ ],
+ "test": {
+  "connect": {
+   "sda_lv": "SIG",
+   "scl_lv": "SIG2",
+   "v_lv": "3V3",
+   "v_hv": "+5V"
+  },
+  "sim": {
+   "mcu": {
+    "U1": {
+     "outputs": [
+      "LED_SDI",
+      "LED_CLK",
+      "LED_LE",
+      "LED_OE",
+      "SIG"
+     ],
+     "pullups": [
+      "BTN"
+     ],
+     "pullup_ohm": 50000
+    }
+   },
+   "loads": {
+    "sda_high": {
+     "about": "the controller releases SDA: both sides high",
+     "gpio": {
+      "LED_OE": 1,
+      "SIG": 1
+     },
+     "leds_on": []
+    }
+   }
+  }
+ }
+}

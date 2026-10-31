@@ -1,0 +1,140 @@
+{
+ "lcsc": "C19738",
+ "mpn": "MAX485ESA+T",
+ "manufacturer": "ADI(亚德诺)/MAXIM(美信)",
+ "kind": "ic",
+ "package": "SO-8",
+ "footprint": "SOIC-8_L5.0-W4.0-P1.27-LS6.0-BL",
+ "jlc_class": "Extended Part",
+ "datasheet": {
+  "url": "https://datasheet.lcsc.com/datasheet/pdf/74f9b380ee544e2e8dfb03830604bde9.pdf?productCode=C19738",
+  "pinout_page": 7
+ },
+ "pins": {
+  "1": {
+   "name": "RO",
+   "type": "output",
+   "v_max_v": 12.5,
+   "drive": "tristate",
+   "hint": "receiver output, high impedance while RE is high (p. 7); high when A − B > 200 mV, low when < −200 mV, high with open inputs (p. 10); VOH ≥ 3.5 V at 4 mA – a 5 V level into a 3.3 V microcontroller",
+   "v_min_v": -0.5
+  },
+  "2": {
+   "name": "RE#",
+   "type": "input",
+   "v_max_v": 12.5,
+   "hint": "receiver output enable, active low (p. 7)",
+   "v_min_v": -0.5
+  },
+  "3": {
+   "name": "DE",
+   "type": "input",
+   "v_max_v": 12.5,
+   "hint": "driver output enable, active high (p. 7); no internal pull is stated – a floating DE at reset leaves the bus undefined",
+   "v_min_v": -0.5
+  },
+  "4": {
+   "name": "DI",
+   "type": "input",
+   "v_max_v": 12.5,
+   "hint": "driver input (p. 7)",
+   "v_min_v": -0.5
+  },
+  "5": {
+   "name": "GND",
+   "type": "ground"
+  },
+  "6": {
+   "name": "A",
+   "type": "bidirectional",
+   "role": "rs485_a",
+   "v_max_v": 12.5,
+   "drive": "tristate",
+   "z_in_ohm": 12000.0,
+   "hint": "non-inverting receiver input and driver output; bus pin: absolute maximum −8 V … +12.5 V; receiver specified for −7 V ≤ VCM ≤ 12 V; input resistance ≥ 12 kΩ = one unit load (32 per bus); driver high impedance while DE is low",
+   "v_min_v": -8,
+   "v_rel_max_v": null
+  },
+  "7": {
+   "name": "B",
+   "type": "bidirectional",
+   "role": "rs485_b",
+   "v_max_v": 12.5,
+   "drive": "tristate",
+   "z_in_ohm": 12000.0,
+   "hint": "inverting receiver input and driver output; bus pin: absolute maximum −8 V … +12.5 V; receiver specified for −7 V ≤ VCM ≤ 12 V; input resistance ≥ 12 kΩ = one unit load (32 per bus); driver high impedance while DE is low",
+   "v_min_v": -8,
+   "v_rel_max_v": null
+  },
+  "8": {
+   "name": "VCC",
+   "type": "power_in",
+   "role": "vcc",
+   "v_max_v": 12
+  }
+ },
+ "values": {
+  "idd_max_a": 0.0009,
+  "vih_v": 2.0,
+  "vil_v": 0.8
+ },
+ "limits": {
+  "vdd_max_v": 12,
+  "vdd_op_min_v": 4.75,
+  "vdd_op_max_v": 5.25,
+  "vin_rel_max_v": 0.5,
+  "p_max_w": 0.471,
+  "t_min_c": -40,
+  "t_max_c": 85
+ },
+ "hints": [
+  "5 V part: VCC 4.75–5.25 V (p. 7); the MAX3485 is the 3.3 V counterpart with the same pinout",
+  "RS-485 bus: terminate the line at both ends in its characteristic impedance and keep stubs short (Figures 21–22 show 120 Ω at each end); the data sheet names no fail-safe bias for an idle terminated bus – its receiver fail-safe covers open inputs only (p. 13)",
+  "half duplex: DE and RE# select transmit or receive; with DE low and RE# high both outputs are released (the MAX485 has no shutdown mode, p. 11); up to 2.5 Mbps, drivers not slew-rate limited (p. 1, p. 3)",
+  "driver short-circuit current 35–250 mA over −7 … 12 V, thermal shutdown releases the driver outputs (p. 3, p. 11)",
+  "idd_max_a 0.9 mA is the no-load supply current with DE high (p. 3); a driver into a terminated bus draws its load current on top"
+ ],
+ "sources": [
+  "Maxim MAX481/MAX483/MAX485/MAX487–MAX491/MAX1487 data sheet 19-0122, Rev 9 (9/09), LCSC's copy https://datasheet.lcsc.com/datasheet/pdf/74f9b380ee544e2e8dfb03830604bde9.pdf?productCode=C19738, read 2026-10-31 (analog.com could not be reached from here; a newer ADI revision was not checked)",
+  "pin description and Figure 1 (8-pin DIP/SO), p. 7",
+  "absolute maximum ratings, p. 2: VCC 12 V; RE, DE, DI −0.5 V … VCC + 0.5 V; A, B −8 V … +12.5 V (driver output and receiver input); RO −0.5 V … VCC + 0.5 V; 8-pin SO 471 mW at TA +70 °C (derate 5.88 mW/°C); MAX4__E__ −40 … +85 °C",
+  "pin v_max_v 12.5 on RO, RE#, DE, DI: VCC + 0.5 V at the absolute maximum VCC 12 V (computed from p. 2); the bound to the actual supply is vin_rel_max_v 0.5",
+  "supply range: pin description, p. 7 ('Positive Supply: 4.75V ≤ VCC ≤ 5.25V'); DC characteristics at VCC 5 V ±5 %",
+  "DC characteristics, p. 2–3: VIH ≥ 2.0 V and VIL ≤ 0.8 V on DE, DI, RE; receiver threshold ±0.2 V for −7 V ≤ VCM ≤ 12 V; RIN ≥ 12 kΩ (z_in_ohm); RO VOH ≥ 3.5 V at −4 mA, VOL ≤ 0.4 V at 4 mA; ICC MAX485 500 µA typ. / 900 µA max. with DE = VCC, 300 / 500 µA with DE = 0 V (no load)",
+  "switching characteristics MAX485, p. 3: maximum data rate 2.5 Mbps",
+  "function tables, p. 10: driver outputs and RO high impedance when disabled; RO high with inputs open",
+  "line length and termination, p. 13; unit loads (12 kΩ = 1 unit load, 32 transceivers), p. 8",
+  "ordering information, p. 15: MAX485ESA −40 … +85 °C, 8 SO",
+  "mpn, manufacturer, footprint, jlc_class, pin numbers and names: EasyEDA library data of C19738 via edakit part import, read 2026-10-31",
+  "stock: LCSC 66 628 pcs, JLCPCB assembly 66 303 pcs (2026-10-31)"
+ ],
+ "compliance": {
+  "rohs": true,
+  "source": "LCSC product data C19738 (RoHS certificate), 2026-10-31; the data sheet (p. 16) says only that '+' in the package code indicates RoHS status"
+ },
+ "verified": {
+  "by": "Claude (datasheet check, library draft)",
+  "date": "2026-10-31",
+  "datasheet": "Maxim MAX481/MAX483/MAX485/MAX487–MAX491/MAX1487 data sheet 19-0122, Rev 9 (9/09)",
+  "datasheet_sha256": "7a9e8f89c73a71dedaa08ab261d4215ee72115a3bbc9c88a3565905251448136",
+  "checked": [
+   "pinout (p. 7, Figure 1, DIP/SO) = the EasyEDA symbol: 1 RO, 2 RE (RE# there), 3 DE, 4 DI, 5 GND, 6 A, 7 B, 8 VCC",
+   "abs. max VCC 12 V, A/B −8 … +12.5 V, logic pins VCC + 0.5 V, 471 mW at 70 °C (8-pin SO) (p. 2)",
+   "VCC 4.75–5.25 V (p. 7); VIH 2.0 V, VIL 0.8 V; RIN ≥ 12 kΩ; ICC ≤ 900 µA (p. 2–3)",
+   "RO and driver outputs high impedance when disabled (p. 7, p. 10); 2.5 Mbps (p. 3)",
+   "termination at both ends, short stubs (p. 13)",
+   "2026-10-31: bus pins A/B with the roles rs485_a/rs485_b that REQ termination and failsafe read (CK-17)",
+   "2026-10-31, pin limits (schema-gaps A6, B1–B3, C1–C4): Maxim 19-0122 Rev 9, absolute maximum: driver output and receiver input voltage (A, B) −8 V to +12.5 V regardless of VCC (v_min_v −8, v_rel_max_v null); RE, DE, DI and RO −0.5 V to VCC + 0.5 V (the entry's vin_rel_max_v; v_min_v −0.5)"
+  ],
+  "open": [
+   "termination (120 Ω at both ends), the unit load (12 kΩ = 1 UL, 32 per bus), the data rate (2.5 Mbps) and the receiver threshold (±200 mV): no schema field – in hints and sources, for CK-17",
+   "the common-mode range (−7 … +12 V) has no pin field; the bus limits v_max_v 12.5 and v_min_v −8 are entered",
+   "no junction temperature and no θJA in this data sheet revision",
+   "no supply capacitor named in the data sheet; the default decoupling requirement stays on",
+   "the data sheet text does not print the ordering code with '+T'; the ordering table lists MAX485ESA",
+   "analog.com was not reachable: whether ADI has a revision newer than Rev 9 (9/09) was not checked",
+   "no behaviour model: supply and driver currents are not simulated",
+   "drive tristate on A and B makes an RS-485 bus without bias resistors LVL.undefined/open_drain – the owner decides whether that warning is wanted (it is the fail-safe-bias question of CK-17)"
+  ]
+ }
+}

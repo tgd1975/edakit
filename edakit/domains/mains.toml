@@ -1,0 +1,33 @@
+# The domain mains: boards with hazardous voltage – mains, a high-voltage supply, a capacitor bank above the ES1 limit
+# (rules-at-scale.md, decision 7; maker-coverage CK-22). edakit recognises such a net and checks neither spacing nor
+# isolation: LIM.hazardous is core's – always on, so that a project naming its domains cannot leave it out – and this
+# domain carries the reviewers' questions. Creepage, clearance, the isolation barrier, the mains input and the
+# discharge of large capacitors stay out of edakit (FT-7, CK-9, CK-10, CK-24).
+
+[domain]
+name = "mains"
+about = "hazardous voltage on the board: recognised by LIM.hazardous, not checked – spacing, isolation and the mains input are the reviewers' and the standard's"
+suggested_by = { hazardous = true }
+
+[switch]
+on = []
+
+[severity]
+
+[hints]
+apply = []
+
+[review]
+electrical = [
+  "Every net LIM.hazardous names: where the hazardous voltage comes from, what guards an ordinary person against it (enclosure, insulation, a bought and certified supply), and whether the board can do without it – a certified external supply that hands the board only safety extra-low voltage.",
+  "The mains input, where there is one: fuse, the X and Y capacitors, a varistor, and the discharge of capacitors across the line after unplugging – none of it is checked by edakit.",
+]
+pcb = [
+  "Spacing between the hazardous nets and everything a person can touch or that leaves the board: creepage and clearance per IEC 62368-1 or IEC 60664-1 for the voltage, pollution degree and insulation grade – edakit measures none of it.",
+]
+regulatory = [
+  "A board with hazardous voltage that is sold: which standard applies (IEC 62368-1, IEC 61010-1, IEC 60335-1), the Low Voltage Directive, and whether the product needs a test lab – the regulatory review (M-6) names it, edakit does not check it.",
+]
+
+[fixtures]
+clean = []

@@ -1,0 +1,118 @@
+{
+ "lcsc": "C492442",
+ "mpn": "BH254V-10P",
+ "manufacturer": "XFCN(兴飞)",
+ "kind": "connector",
+ "package": "THT 2x5 P2.54 vertical box header (shrouded, keyed)",
+ "footprint": "IDC-TH_10P-P2.54-V-R2-C5-S2.54",
+ "jlc_class": "Extended Part",
+ "datasheet": {
+  "url": "https://datasheet.lcsc.com/datasheet/pdf/ba7420b494e9cd4a616e90e79ef1dbc1.pdf?productCode=C492442",
+  "pinout_page": 1
+ },
+ "pins": {
+  "1": {
+   "name": "1",
+   "type": "passive",
+   "role": "pin1"
+  },
+  "2": {
+   "name": "2",
+   "type": "passive",
+   "role": "pin2"
+  },
+  "3": {
+   "name": "3",
+   "type": "passive",
+   "role": "pin3"
+  },
+  "4": {
+   "name": "4",
+   "type": "passive",
+   "role": "pin4"
+  },
+  "5": {
+   "name": "5",
+   "type": "passive",
+   "role": "pin5"
+  },
+  "6": {
+   "name": "6",
+   "type": "passive",
+   "role": "pin6"
+  },
+  "7": {
+   "name": "7",
+   "type": "passive",
+   "role": "pin7"
+  },
+  "8": {
+   "name": "8",
+   "type": "passive",
+   "role": "pin8"
+  },
+  "9": {
+   "name": "9",
+   "type": "passive",
+   "role": "pin9"
+  },
+  "10": {
+   "name": "10",
+   "type": "passive",
+   "role": "pin10"
+  }
+ },
+ "values": {
+  "pitch_mm": 2.54,
+  "r_contact_ohm": 0.02
+ },
+ "limits": {
+  "i_max_a": 3.0,
+  "t_min_c": -40,
+  "t_max_c": 105
+ },
+ "lead": {
+  "*": {
+   "shape": "square",
+   "a_mm": 0.64,
+   "b_mm": 0.64,
+   "tol_mm": null,
+   "hole_rec_mm": 1.02,
+   "source": "XFCN drawing BH254V-xxP rev A1: pin '0.64*0.64', P.C.B hole layout 'Ø1.02±0.05'"
+  }
+ },
+ "compliance": {
+  "rohs": true,
+  "source": "XFCN drawing BH254V-xxP rev A1 (RoHS mark), read 2026-10-31"
+ },
+ "sources": [
+  "XFCN 2.54mm Box Header Connectors, drawing BH254V-xxP, rev A1 (2024.05.24, drawn 2024.07.19), one sheet – LCSC product data of C492442, https://datasheet.lcsc.com/datasheet/pdf/ba7420b494e9cd4a616e90e79ef1dbc1.pdf?productCode=C492442, read 2026-10-31",
+  "i_max_a 3.0: specifications 1 'Current rating: 3A' (per contact – the drawing does not say; the whole header carries more where several contacts share a rail)",
+  "t_min_c -40, t_max_c 105: specifications 2 'Temperature range: -40°C ~ +105°C'",
+  "r_contact_ohm 0.02: specifications 5 'Contact resistance: 20mΩ Max.'; insulation resistance 1000 MΩ min.; withstanding voltage 600 V AC for one minute (a test voltage, not a working voltage – v_max_v left out)",
+  "pitch_mm 2.54, 2 rows of 5: ordering code BH254V-10P (2x05: A 10.16, B 20.35 mm); pin 0.64 mm square, holes Ø1.02 ± 0.05 mm on a 2.54 mm grid",
+  "pins: EasyEDA symbol and footprint of C492442 (edakit part import 2026-10-31): pad 1 square, odd pads in the row next to the key slot, even pads in the other row (IDC numbering); the drawing's triangle marks the pin-1 end on the key-slot side",
+  "LCSC/JLCPCB catalogue 2026-10-31: Extended Part, 27 227 pcs; C492446 is the SMD variant BH254VS-10P"
+ ],
+ "notes": "Shrouded 2 × 5 box header, 2.54 mm: the key slot in the middle of one long side lets a keyed IDC socket seat one way only. As Eurorack 10-pin power entry (block eurorack-power): pins 1/2 −12 V (red stripe), 3–8 GND, 9/10 +12 V. Library draft.",
+ "verified": {
+  "by": "Claude (datasheet check, library draft)",
+  "date": "2026-10-31",
+  "datasheet": "XFCN drawing BH254V-xxP rev A1",
+  "datasheet_sha256": "bdb1827dabb2f03b3b83886ec3bd2dffeaaacf7244c982fef3fff7ad139ac0bf",
+  "checked": [
+   "specifications: current rating 3 A, -40 … +105 °C, contact resistance 20 mΩ max., 600 V AC / minute withstanding",
+   "2x05: 2 rows × 5 pins, pitch 2.54 mm, pin 0.64 mm square, hole Ø1.02 ± 0.05 mm, body 20.35 × 8.9 mm",
+   "EasyEDA footprint IDC-TH_10P-P2.54-V-R2-C5-S2.54: 10 plated holes on 2.54 mm, pad 1 square in the row at the key slot, key-slot outline and pin-1 triangle on the silkscreen"
+  ],
+  "open": [
+   "the footprint's holes are 1.1 mm against the drawing's 1.02 ± 0.05 mm",
+   "the rating does not say whether 3 A is per contact; no working voltage (only the 600 V AC test voltage)",
+   {
+    "text": "pin 1 at the key slot and the triangle against the footprint's silkscreen – a reversed header turns the key and with it the ribbon",
+    "when": "order"
+   },
+   "the drawing does not print BH254V-10P itself (series drawing BH254V-xxP)"
+  ]
+ }
+}

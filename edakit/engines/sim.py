@@ -17,17 +17,21 @@ from collections import defaultdict
 
 from .. import catalog
 from ..catalog import table
-from ..circuit import limits, polarized, values
+from ..circuit import is_number, limits, polarized, relay_sets, values
 from ..findings import Finding
 from ..sim import netlist
 from .limits import CODE, compare
-from .quantities import Limit, Quantity, part_limits
+from .quantities import SIM_EPS_V, Limit, Quantity, part_limits
 
 DERATING = table("derating")["E"]
 # (netlist element kind, quantity) -> the derating of sim.json / derating.toml [E.derate] that applies to its limit
 DERATE = {"v": {"capacitor": "v_cap"}, "vr": {"diode": "v_diode"}, "vce": {"npn": "v_bjt", "pnp": "v_bjt"},
           "vds": {"nmos": "v_bjt", "pmos": "v_bjt"}, "vgs": {"nmos": "v_bjt", "pmos": "v_bjt"}}
-DIM = {"p": "p", "i": "i", "if": "i", "ic": "i", "id": "i", "gpio_i": "i", "gpio_i_total": "i"}
+DIM = {"p": "p", "i": "i", "if": "i", "ic": "i", "id": "i", "gpio_i": "i", "gpio_i_total": "i", "i_contact": "i",
+       "i_switch": "i"}
+# what a generated fault scenario (FT-8) judges: the parts' limits – a board without its supply does not reach the
+# states its load expects, and its nets leave their declared ranges by design of the fault
+FAULT_CODES = ("LIM.v", "LIM.i", "LIM.p", "LIM.t", "LIM.backfeed")
 SUPPLY_ROLES = ("vdd", "vcc")
 
 
@@ -122,6 +126,13 @@ class Scene:
                     r["result"] = "info"
             for f in found:
                 f.data["info"] = True
+        elif getattr(self, "fault", False):      # a generated fault scenario (FT-8): the parts' limits, warnings at most
+            for r in rows:
+                if r["result"] == "fail":
+                    r["result"] = "warn" if r["id"] in FAULT_CODES else "info"
+            found = [f for f in found if f.code in FAULT_CODES]
+            for f in found:
+                f.data["fault"] = True
         return rows, found
 
 
@@ -224,6 +235,27 @@ def led_on_output(outputs, behind, anode, cathode):
 
 
 # --- stress: every part against its limits ---------------------------------------------------------------------------
+def parallel_contacts(s, des, node):
+    """How many of a connector's pins are on the net a supply feeds at `node` – USB-C's four VBUS pins share it."""
+    nets = {s.d.pin_net.get(f"{des}.{num}") for num in (s.n.part(des) or {}).get("pins") or {}
+            if netlist.pin_node(s.d, f"{des}.{num}") == node}
+    nets.discard(None)
+    if not nets:
+        return 1
+    return max(1, sum(1 for num in (s.n.part(des) or {}).get("pins") or {} if s.d.pin_net.get(f"{des}.{num}") in nets))
+
+
+def min_load(s, des, part, i):
+    """REQ.value/min_load: a closed contact carries at least the minimum load of its entry (values min_load_a) – below
+    it a contact may not close reliably: no current breaks the film on it. A contact in a signal path carries no DC by
+    design (grade switch): there its entry's rating is judged instead (switch_dc)."""
+    least = values(part).get("min_load_a")
+    if least is None or des in signal_path_contacts(s):
+        return
+    s.check("REQ.value", des, f"current through a closed contact of {des}", i * 1e6, f"≥ {least * 1e6:g} µA",
+            i >= least, "µA", f"min_load_a of {s.n.entry_key(des)}", grade="min_load", on=(("component", des),))
+
+
 def stress(s):
     """Every part's voltages, currents, power and temperature against its entry's limits."""
     res, meta = s.res, s.meta
@@ -256,6 +288,12 @@ def stress(s):
                     lims=[Limit(max=hold, derate=s.der["i"], source=f"i_hold_a of {s.n.entry_key(des)} at {s.amb} °C")])
             elif kind in ("switch", "connector", "source") and i is not None:
                 s.q(des, "i", abs(i), "A", kind, des, "contact current")
+                n = parallel_contacts(s, des, nodes[1]) if kind == "source" else 1
+                s.q(des, "i_contact", abs(i) / n, "A", kind, des,
+                    "current per contact" + (f" ({n} contacts on the supply's net)" if n > 1 else ""))
+                if kind == "switch":     # a closed contact of a switch, button, DIP switch or relay
+                    s.q(des, "i_switch", abs(i), "A", kind, des, "current it breaks when it opens", grade="switching")
+                    min_load(s, des, part, abs(i))
             elif kind == "load":
                 s.q(des, "i", el["i"], "A", kind, des, "contact current (external load)")
             elif kind == "inductor":
@@ -366,7 +404,8 @@ def function(s, load, low=None, plugin=None):
             s.check("SIM.config", key, "expect of the load", f"{key} is neither a source nor a net",
                     "a source of sources (i_max_a, i_min_a) or a net (min_v, max_v)", False)
     for des, src in meta["sources"].items():
-        lim = s.sim.get("sources", {}).get(des, {}).get("i_back_max_a", crit["blocking_max_a"])
+        lim = src.get("i_back_max_a")
+        lim = crit["blocking_max_a"] if lim is None else lim
         s.q(des, "i", max(res.get(src["branch"], 0.0), 0.0), "A", "", des, "current into the supply (fed backwards)",
             code="LIM.backfeed", entry=False,
             lims=[Limit(max=lim, source=f"i_back_max_a of sources.{des} (default the criteria's blocking_max_a)")])
@@ -391,6 +430,10 @@ def function(s, load, low=None, plugin=None):
             s.q(des, "vin", None, "V", "", des, "input voltage", lo=vin, code="LIM.range", entry=False,
                 lims=[Limit(min=r["vin_min_v"], source=f"vin_min_v of {s.n.entry_key(des)}")])
         s.q(des, "i_out", max(res.get(reg["ammeter"], 0.0), 0.0), "A", "", des, "output current")
+        if (least := reg["values"].get("i_load_min_a")) is not None:      # maker-coverage FT-5: LM317, AMS1117
+            s.q(des, "i_out_min", None, "A", "", des, "output current at least the minimum load", code="LIM.range",
+                entry=False, grade="min_load", lo=max(res.get(reg["ammeter"], 0.0), 0.0),
+                lims=[Limit(min=least, source=f"i_load_min_a of {s.n.entry_key(des)}")])
         if reg["kind"] == "ldo" and "rth_ja_k_per_w" in r:
             junction(s, des, ldo_power(res, reg), r, f"junction temperature at {s.amb} °C")
     for des, m in meta["mcu"].items():
@@ -445,8 +488,17 @@ def function(s, load, low=None, plugin=None):
                                 source=f"vin_min_v … vin_max_v of {s.n.entry_key(des)}")])
     operating_range(s)
     opamps(s)
+    bridges(s)
+    chargers(s)
     input_injection(s)
+    supply_order_e(s)
+    powered_pins(s)
+    pin_currents(s)
     adc_windows(s)
+    switch_dc(s)
+    photomos_states(s)
+    pd_shunts(s)
+    config_windows(s)
     supply_pin_currents(s)
     clocks(s)
     logic_levels(s)
@@ -457,9 +509,13 @@ def function(s, load, low=None, plugin=None):
                 abs(i) <= crit["blocking_max_a"], "A")
     tol, gnd = crit["net_range_tol_v"], d.ground
     for name, net in d.nets.items():
+        if net.get("isolated"):
+            continue        # its range is its own loop's, not against this board's ground (net key isolated)
         g = v(res, netlist.node(netlist.local_ground(d, name), gnd))
         lo, hi = net.get("v", [0, 0])
         nodes = netlist.net_nodes(d, name)
+        if nodes and all(x not in res and x != "0" for x in nodes):
+            continue        # no element of the netlist touches the net (a header pin, an MCU input): nothing to judge
         xs = [(v(res, x) - g, x) for x in nodes]
         s.q(name, "v_net", max(xs)[0], "V", "", None, "net voltage inside the declared range", lo=min(xs)[0],
             code="LIM.declared", entry=False, lims=[Limit(max=hi, min=lo, eps=tol, source=f"v of net {name} in the "
@@ -504,35 +560,344 @@ def gate_drive(s, des, part, nodes):
     table, th = p.get("rds_on_max_ohm"), p.get("vgs_th_v")
     if not isinstance(table, dict) or not table or th is None:
         return
-    vth = min(abs(x) for x in th) if isinstance(th, list) else abs(th)
+    given = [abs(x) for x in (th if isinstance(th, list) else [th]) if isinstance(x, (int, float))]
+    if not given:                       # [min, typ, max] with nothing but null: no threshold to hold the gate to
+        return
+    vth = min(given)                    # a datasheet without a typical value: [min, null, max]
     spec = min(abs(float(vgs)) for vgs in table)
     _, g, src = (v(s.res, x) for x in nodes)
-    vgs = abs(g - src)
-    half = vth < vgs < spec
-    s.check("LIM.range", des, "gate drive off or specified on", f"|VGS| {vgs:.3g} V" + (" – half on" if half else ""),
+    # the drive in the device's own sense: VGS for an N-MOSFET, VSG for a P-MOSFET – a gate driven the other way
+    # (a PMOS gate above its source) holds it off however large the magnitude
+    drive = (src - g) if part.get("kind") == "pmos" else (g - src)
+    half = vth < drive < spec
+    name = "VSG" if part.get("kind") == "pmos" else "VGS"
+    s.check("LIM.range", des, "gate drive off or specified on", f"{name} {drive:.3g} V" + (" – half on" if half else ""),
             f"≤ {vth:g} V (VGS(th)) or ≥ {spec:g} V (RDS(on) specified)", not half,
             source=f"vgs_th_v, rds_on_max_ohm of {s.n.entry_key(des)}", grade="gate", on=(("component", des),))
 
 
+RELATIVE_TYPES = ("input", "bidirectional", "output")     # the pins the part's vin_rel_max_v holds by default
+POWERED_FALLBACK_V = 1.0       # a part counts as powered from 1 V on its supply pin where its entry gives no minimum –
+                               # edakit's choice, not a datasheet's
+
+
+def pin_by_name(part, name):
+    """The number of the part's first pin of this name, or None."""
+    return next((n for n, i in (part.get("pins") or {}).items() if i.get("name") == name), None)
+
+
+def reference(d, res, des, part, info, ground, key="ref"):
+    """(volts, what) – the supply a pin's relative limit and threshold ratios refer to: the pin its `ref` names (for
+    the relative limit `rel_ref` first, where the datasheet refers it to another supply than the thresholds), else the
+    part's first connected supply pin; (None, …) without one."""
+    name = info.get(key) or info.get("ref")
+    if name:
+        num = pin_by_name(part, name)
+        if num and f"{des}.{num}" in d.pin_net:
+            return at_pin(d, res, f"{des}.{num}", ground), name
+        return None, name
+    pins = [n for n in supply_pins(part) if f"{des}.{n}" in d.pin_net]
+    if not pins:
+        return None, "its supply"
+    return at_pin(d, res, f"{des}.{pins[0]}", ground), "its supply"
+
+
+def thevenin(s, des, ref):
+    """(V, R) – the source a pin sees on its net when every other part on the net is a resistor or a capacitor: the
+    resistors to their far ends in parallel; None where anything else is on the net or a resistor has no value."""
+    d, res = s.d, s.res
+    net = d.pin_net.get(ref)
+    nodes = set(netlist.net_nodes(d, net))
+    conductance, current = 0.0, 0.0
+    for other in d.nets[net]["pins"]:
+        o_des = other.split(".", 1)[0]
+        if o_des == des:
+            continue
+        kind = (s.n.part(o_des) or {}).get("kind")
+        if kind == "capacitor":
+            continue
+        if kind != "resistor":
+            return None
+        els = [el for el in s.meta["elements"].get(o_des, []) if el["kind"] == "resistor" and el.get("value")]
+        if not els:
+            return None
+        el = els[0]
+        far = next((x for x in el["nodes"][:2] if x not in nodes), None)
+        if far is None:
+            continue
+        conductance += 1 / el["value"]
+        current += v(res, far) / el["value"]
+    if conductance == 0:
+        return None
+    return current / conductance, 1 / conductance
+
+
 def input_injection(s):
-    """LIM.v/inject: no input above its own part's supply by more than the entry allows (limits vin_rel_max_v) – the
-    clamp diode conducts, the part is powered through its input or latches up."""
+    """LIM.v/inject: no pin above the supply it refers to by more than its entry allows – the pin's v_rel_max_v (null:
+    none, a pin rated above its supply) against the pin its `ref` names, else the part's vin_rel_max_v for its inputs,
+    bidirectional pins and outputs against its supply. Where the pin gives i_inject_max_a and only resistors feed it,
+    the current its clamp diode takes – (V_open − V_ref − v_rel) / R_source – is held to that instead: the clamp
+    conducts, the part is powered through its pin or latches up."""
     d, res = s.d, s.res
     for des in sorted(s.n.comps):
         part = s.n.part(des) or {}
-        rel = limits(part).get("vin_rel_max_v")
-        pins = [n for n in supply_pins(part) if f"{des}.{n}" in d.pin_net]
-        if rel is None or not pins:
+        default = limits(part).get("vin_rel_max_v")
+        ground = ground_pin(d, des, part)
+        for num, info in (part.get("pins") or {}).items():
+            ref = f"{des}.{num}"
+            if ref not in d.pin_net:
+                continue
+            if "v_rel_max_v" in info:
+                rel, where = info["v_rel_max_v"], f"v_rel_max_v of pin {info.get('name', num)} of {s.n.entry_key(des)}"
+            elif info.get("type") in RELATIVE_TYPES:
+                rel, where = default, f"vin_rel_max_v of {s.n.entry_key(des)}"
+            else:
+                continue
+            if rel is None:
+                continue
+            vref, ref_name = reference(d, res, des, part, info, ground, key="rel_ref")
+            if vref is None or math.isnan(vref):
+                continue
+            x = at_pin(d, res, ref, ground) - vref
+            name = info.get("name", num)
+            inject = info.get("i_inject_max_a")
+            src = thevenin(s, des, ref) if is_number(inject) and x > rel else None
+            if src is not None:
+                v_open, r_src = src
+                i = max((v_open - (vref + rel)) / r_src, 0.0)
+                s.q(ref, "i_inject", i, "A", "", des, f"current into the clamp of {name} ({x:.3g} V above {ref_name} "
+                    f"through {r_src:.4g} Ω)", code="LIM.v", entry=False, grade="inject",
+                    lims=[Limit(max=inject, source=f"i_inject_max_a of pin {name} of {s.n.entry_key(des)}")])
+                continue
+            s.q(ref, "vin_rel", x, "V", "", des, f"{info.get('type', 'pin')} {name} above {ref_name}",
+                code="LIM.v", entry=False, grade="inject", lims=[Limit(max=rel, source=where)])
+
+
+def supply_order_e(s):
+    """LIM.v/order at the operating point: a supply the entry says never rises above another (supply_order) is not
+    above it in this scenario."""
+    from .limits import order_pairs
+    d, res = s.d, s.res
+    for des in sorted(s.n.comps):
+        part = s.n.part(des) or {}
+        ground = ground_pin(d, des, part)
+        for lo_pin, hi_pin, lo_name, hi_name in order_pairs(part):
+            a, b = f"{des}.{lo_pin}", f"{des}.{hi_pin}"
+            if a not in d.pin_net or b not in d.pin_net:
+                continue
+            x = at_pin(d, res, a, ground) - at_pin(d, res, b, ground)
+            s.q(des, "v_order", x, "V", "", des, f"{lo_name} above {hi_name}", code="LIM.v", entry=False,
+                grade="order", lims=[Limit(max=0.0, eps=SIM_EPS_V, source=f"supply_order of {s.n.entry_key(des)}")])
+
+
+def powered(s, des, part, ground):
+    """Whether the part is powered in this scenario: its first supply pin at least its operating minimum (the pin's
+    v_op_min_v, the entry's vdd_op_min_v, vin_min_v or vsys_min_v), else at least POWERED_FALLBACK_V."""
+    d = s.d
+    pins = [n for n in supply_pins(part) if f"{des}.{n}" in d.pin_net]
+    if not pins:
+        return False
+    info, r = part["pins"][pins[0]], limits(part)
+    least = next((x for x in (info.get("v_op_min_v"), r.get("vdd_op_min_v"), r.get("vin_min_v"), r.get("vsys_min_v"))
+                  if is_number(x)), POWERED_FALLBACK_V)
+    return at_pin(d, s.res, f"{des}.{pins[0]}", ground) >= least
+
+
+def powered_pins(s):
+    """LIM.v at a pin with v_max_powered_v (schema-gaps B3 – the RP2350's fault-tolerant GPIOs): while the part is
+    powered held to v_max_powered_v, while it is not to v_max_v (grade powered)."""
+    d, res = s.d, s.res
+    for des in sorted(s.n.comps):
+        part = s.n.part(des) or {}
+        pins = {n: i for n, i in (part.get("pins") or {}).items()
+                if is_number(i.get("v_max_powered_v")) and f"{des}.{n}" in d.pin_net}
+        if not pins:
             continue
         ground = ground_pin(d, des, part)
-        vdd = at_pin(d, res, f"{des}.{pins[0]}", ground)
-        for num, info in (part.get("pins") or {}).items():
-            if info.get("type") != "input" or f"{des}.{num}" not in d.pin_net:
+        on = powered(s, des, part, ground)
+        for num, info in pins.items():
+            x = at_pin(d, res, f"{des}.{num}", ground)
+            lim = info["v_max_powered_v"] if on else info.get("v_max_v")
+            if not is_number(lim):
                 continue
-            x = at_pin(d, res, f"{des}.{num}", ground) - vdd
-            s.q(f"{des}.{num}", "vin_rel", x, "V", "", des, f"input {info.get('name', num)} above its supply",
-                code="LIM.v", entry=False, grade="inject",
-                lims=[Limit(max=rel, source=f"vin_rel_max_v of {s.n.entry_key(des)}")])
+            s.q(f"{des}.{num}", "v_pin", x, "V", "", des, f"{info.get('name', num)} while {des} is "
+                f"{'powered' if on else 'unpowered'}", code="LIM.v", entry=False, grade="" if on else "powered",
+                lims=[Limit(max=lim, eps=SIM_EPS_V, source=f"{'v_max_powered_v' if on else 'v_max_v'} of pin "
+                                                           f"{info.get('name', num)} of {s.n.entry_key(des)}")])
+
+
+CURRENT_KINDS = ("resistor", "capacitor", "led", "diode")    # parts whose current the operating point gives
+
+
+def pin_current(s, des, ref):
+    """The current out of a pin into its net (A, + sourced), from the operating point – only where every other part on
+    the net is a resistor, a capacitor, an LED or a diode; None otherwise."""
+    d, res = s.d, s.res
+    net = d.pin_net.get(ref)
+    nodes = set(netlist.net_nodes(d, net))
+    total = 0.0
+    for other in d.nets[net]["pins"]:
+        o_des = other.split(".", 1)[0]
+        if o_des == des:
+            if other != ref:
+                return None                    # two pins of the part on the net: their shares are not known
+            continue
+        kind = (s.n.part(o_des) or {}).get("kind")
+        if kind not in CURRENT_KINDS:
+            return None
+        if kind == "capacitor":
+            continue
+        for el in s.meta["elements"].get(o_des, []):
+            here = [x for x in el["nodes"][:2] if x in nodes]
+            if len(here) != 1:
+                continue
+            if el["kind"] == "resistor" and el.get("value"):
+                near, far = (el["nodes"][0], el["nodes"][1]) if el["nodes"][0] in nodes else (el["nodes"][1],
+                                                                                              el["nodes"][0])
+                total += (v(res, near) - v(res, far)) / el["value"]
+            elif el["kind"] in ("led", "diode"):
+                i = res.get(f"@{el['name']}[id]", float("nan"))
+                total += i if el["nodes"][0] in nodes else -i
+    return total
+
+
+def mcu_pin_currents(s, des, part):
+    """{pin number: current out of the pin (A)} of an MCU's outputs, from their ammeters."""
+    amps = (s.meta["mcu"].get(des) or {}).get("gpio_ammeters", {})
+    out = {}
+    for num in (part.get("pins") or {}):
+        net = s.d.pin_net.get(f"{des}.{num}")
+        if net in amps:
+            out[num] = s.res.get(amps[net], 0.0)
+    return out
+
+
+def pin_currents(s):
+    """LIM.i/pin (schema-gaps C1): a pin's current within its i_max_a, a group's sourced and sunk sums within the max of
+    the entry's i_group_max_a ("dir": "sourced" or "sunk" for a group the datasheet sums in one direction only) – where
+    the operating point gives the currents: pin_current, an MCU's output ammeters (its pins' own limit is gpio_i)."""
+    for des in sorted(s.n.comps):
+        part = s.n.part(des) or {}
+        mcu = values(part).get("behavior") == "mcu"
+        wanted = not mcu and any(is_number(i.get("i_max_a")) for i in (part.get("pins") or {}).values())
+        if not wanted and not part.get("i_group_max_a"):
+            continue
+        known = mcu_pin_currents(s, des, part) if mcu else {}
+        for num, info in ({} if mcu else (part.get("pins") or {})).items():
+            ref = f"{des}.{num}"
+            if ref not in s.d.pin_net:
+                continue
+            i = pin_current(s, des, ref)
+            if i is None or math.isnan(i):
+                continue
+            known[num] = i
+            if is_number(info.get("i_max_a")):
+                s.q(ref, "i_pin", abs(i), "A", "", des, f"current of pin {info.get('name', num)}", code="LIM.i",
+                    entry=False, grade="pin", lims=[Limit(max=info["i_max_a"], derate=s.der.get("i", 1.0),
+                                                         source=f"i_max_a of pin {info.get('name', num)} of "
+                                                                f"{s.n.entry_key(des)}")])
+        for group, g in (part.get("i_group_max_a") or {}).items():
+            got = [known[str(n)] for n in g.get("pins", []) if str(n) in known]
+            if not got or not is_number(g.get("max")):
+                continue
+            for what, x in (("sourced", sum(i for i in got if i > 0)), ("sunk", -sum(i for i in got if i < 0))):
+                if g.get("dir") not in (None, what):
+                    continue
+                s.q(f"{des} {group}", "i_group", x, "A", "", des, f"current {what} by the pins of {group} together",
+                    code="LIM.i", entry=False, grade="pin",
+                    lims=[Limit(max=g["max"], derate=s.der.get("i", 1.0),
+                                source=f"i_group_max_a.{group} of {s.n.entry_key(des)}")])
+
+
+SWITCH_DC_MAX_V = 0.01     # edakit's choice for "within a few mV" (maker-coverage CK-30), not a datasheet figure
+SIGNAL_MIN_LOAD_A = 10e-6  # a contact rated for signal currents: "minimum load 10 µA" (maker-coverage CK-30, forums)
+CONTACT_KINDS = ("switch", "button", "dip_switch", "relay", "potentiometer")
+
+
+def photomos_states(s):
+    """A photo-MOS output (behaviour photomos): its LED current either at if_on_a or more – guaranteed on – or at
+    if_off_a or less – guaranteed off; in between the datasheet promises neither (LIM.range/photomos). The load
+    current and the voltage across the output against i_load_max_a and v_load_max_v of its entry."""
+    res = s.res
+    for des, m in sorted((s.meta.get("photomos") or {}).items()):
+        i_led = res.get(m["led"], float("nan"))
+        a, b = (v(res, x) for x in m["nodes"])
+        i_load = abs(res.get(m["ammeter"], 0.0))
+        s.q(des, "i_load", i_load, "A", "photomos", des, "load current through the photo-MOS output")
+        s.q(des, "v_load", abs(a - b), "V", "photomos", des, "voltage across the photo-MOS output")
+        if i_led != i_led:
+            continue
+        state = "on" if i_led >= m["if_on_a"] else "off" if i_led <= m["if_off_a"] else "neither"
+        s.check("LIM.range", des, f"LED current of {des} guarantees a state (on ≥ {m['if_on_a'] * 1e3:g} mA, off ≤ "
+                f"{m['if_off_a'] * 1e3:g} mA)", i_led * 1e3, f"on or off, not between – {state}", state != "neither",
+                "mA", f"if_on_a, if_off_a of {s.n.entry_key(des)}", grade="photomos", on=(("component", des),))
+
+
+def pd_shunts(s):
+    """A USB PD sink's VDD shunt (behaviour pd_sink): the current it sinks within i_shunt_max_a – at the limit it can
+    hold VDD no longer and VDD rises with the supply (the series resistor too small for the highest request)."""
+    res = s.res
+    for des, m in sorted((s.meta.get("pd_sinks") or {}).items()):
+        i = res.get(m["ammeter"], 0.0)
+        vdd = v(res, m["vdd"]) - v(res, m["gnd"])
+        s.q(des, "i_shunt", i, "A", "", des, f"VDD shunt current (VDD {vdd:.3g} V)", code="LIM.i", entry=False,
+            lims=[Limit(max=m["i_max_a"] * 0.999, source=f"i_shunt_max_a of {s.n.entry_key(des)}")])
+
+
+def signal_path_contacts(s):
+    """{designator: [{net: pin}, …]} of the switches, buttons, relays and pots whose contacts have both sides in a
+    signal path (nets with signal or instrument) – one group per contact set (a DPDT relay's two sets apart)."""
+    if getattr(s, "_signal_contacts", None) is not None:
+        return s._signal_contacts
+    d, out = s.d, {}
+    signal = {name for name, net in d.nets.items() if net.get("signal") or net.get("instrument")}
+    for des in sorted(s.n.comps) if len(signal) >= 2 else ():
+        part = s.n.part(des) or {}
+        kind = part.get("kind")
+        if kind not in CONTACT_KINDS:
+            continue
+        if kind == "relay":           # each contact set apart: a DPDT's two sets sit in two signal paths
+            groups = [sorted(n for nums in roles.values() for n in nums) for roles in relay_sets(part).values()]
+        else:
+            groups = [list((part.get("pins") or {}))]
+        found = []
+        for group in groups:
+            on = {}
+            for num in group:
+                net = d.pin_net.get(f"{des}.{num}")
+                if net in signal:
+                    on.setdefault(net, num)
+            if len(on) >= 2:
+                found.append(on)
+        if found:
+            out[des] = found
+    s._signal_contacts = out
+    return out
+
+
+def switch_dc(s):
+    """REQ.value/switch: the contacts of a switch, button, relay or pot whose sides are both in a signal path (nets
+    with signal or instrument) sit at one DC level in the scenario – a step across them is the pop when it switches
+    and the scratch when a pot turns. A side no element reaches (nan) is LVL.undefined/analog's, not this check's.
+    REQ.value/min_load: such a contact is rated for signal currents – the minimum load of its entry (values
+    min_load_a) at most 10 µA; an entry without min_load_a is not judged."""
+    d, res = s.d, s.res
+    for des, groups in signal_path_contacts(s).items():
+        least = values(s.n.part(des) or {}).get("min_load_a")
+        if least is not None:
+            s.check("REQ.value", des, f"minimum load of {des}'s contacts in the signal path", least * 1e6,
+                    f"≤ {SIGNAL_MIN_LOAD_A * 1e6:g} µA", least <= SIGNAL_MIN_LOAD_A, "µA",
+                    f"min_load_a of {s.n.entry_key(des)}; maker-coverage CK-30", grade="min_load",
+                    on=(("component", des),))
+        for on in groups:
+            xs = {net: at_pin(d, res, f"{des}.{num}") for net, num in on.items()}
+            if any(x != x for x in xs.values()):
+                continue
+            lo, hi = min(xs, key=xs.get), max(xs, key=xs.get)
+            dv = xs[hi] - xs[lo]
+            s.check("REQ.value", des, f"DC across {des} in the signal path ({lo} {xs[lo]:.3g} V, {hi} {xs[hi]:.3g} V)",
+                    dv * 1e3, f"≤ {SWITCH_DC_MAX_V * 1e3:g} mV", dv <= SWITCH_DC_MAX_V, "mV", "maker-coverage CK-30",
+                    grade="switch", on=(("component", des),))
 
 
 def adc_windows(s):
@@ -551,6 +916,31 @@ def adc_windows(s):
             x = at_pin(d, res, ref, ground_pin(d, des, s.n.part(des) or {}))
             s.q(ref, "v_adc", x, "V", "", des, f"{name} inside the ADC's window", lo=x, code="LIM.range", entry=False,
                 grade="adc", lims=[Limit(min=window[0], max=window[1], source=f"adc.range_v of {ref}")])
+
+
+
+def config_windows(s):
+    """REQ.value/window (maker-coverage CK-20): a configuration pin that reads its setting by voltage window (pin
+    windows: [{state, min_v, max_v}], the windows its datasheet guarantees – between the trip points' max and min) sits
+    inside one window in the operating point, not between two, where the part may read either; the pin's own pull is in
+    the netlist (netlist.window_pulls)."""
+    d, res = s.d, s.res
+    for des in sorted(d.comps):
+        part = s.n.part(des) or {}
+        ground = None
+        for num, p in (part.get("pins") or {}).items():
+            ws, ref = p.get("windows"), f"{des}.{num}"
+            if not isinstance(ws, list) or not ws or not d.pin_net.get(ref):
+                continue
+            ground = ground or ground_pin(d, des, part)
+            x = at_pin(d, res, ref, ground)
+            hit = [w.get("state") for w in ws if not math.isnan(x)
+                   and w.get("min_v", -math.inf) <= x <= w.get("max_v", math.inf)]
+            expected = "; ".join(f"{w.get('state')} " + (f"{w['min_v']:g}" if "min_v" in w else "") + " … "
+                                 + (f"{w['max_v']:g}" if "max_v" in w else "") + " V" for w in ws)
+            s.check("REQ.value", ref, f"{ref} ({p.get('name', num)}) inside one window of its setting"
+                    + (f": {hit[0]}" if hit else ""), x, expected, bool(hit), "V",
+                    f"pin windows of {s.n.entry_key(des)}", grade="window", on=(("component", des),))
 
 
 def supply_pin_currents(s):
@@ -589,6 +979,47 @@ def clocks(s):
         s.check("LIM.range", des, "clock within what its supply allows", f"{f / 1e6:.4g} MHz at {x:.3g} V",
                 f"≤ {fmax / 1e6:.4g} MHz (f_max_hz of {s.n.entry_key(des)})", f <= fmax * (1 + 1e-9), grade="clock",
                 on=(("component", des),))
+
+
+def bridges(s):
+    """A bridge driver (behaviour bridge): every output's current within i_out_max_a (LIM.i), the heat of its high
+    and low sides – I² × r_on – and its supply current against the junction limit (LIM.t, with rth_ja_k_per_w)."""
+    res = s.res
+    for des, br in sorted((s.meta.get("bridges") or {}).items()):
+        part = s.n.part(des)
+        r, key = limits(part), s.n.entry_key(des)
+        heat = 0.0
+        for role, o in sorted(br["outputs"].items()):
+            hi, lo = res.get(o["high"], 0.0), res.get(o["low"], 0.0)
+            vo = v(res, o["node"])
+            heat += abs((v(res, o["vm"]) - vo) * hi) + abs((vo - v(res, o["ret"])) * lo)
+            if "i_out_max_a" in r:
+                s.q(f"{des} {role}", "i_out", max(abs(hi), abs(lo)), "A", "", des, f"output {role} current", entry=False,
+                    lims=[Limit(max=r["i_out_max_a"], source=f"i_out_max_a of {key}")])
+        supply = br["vcc"] or br["vm"]
+        heat += (v(res, supply) - v(res, br["gnd"])) * br["values"].get("idd_max_a", 0.0)
+        if "rth_ja_k_per_w" in r:
+            junction(s, des, heat, r, f"junction temperature at {s.amb} °C: {heat:.3g} W in the bridges × "
+                                      f"{r['rth_ja_k_per_w']:g} K/W")
+
+
+def chargers(s):
+    """A linear charger (behaviour charger): the current it charges with within its i_out_max_a (LIM.i/charge – the
+    programmed current, prog_v / R_PROG, is held statically by engines/limits.py), and its heat, (V(vin) − V(bat)) ×
+    I plus the quiescent current, against the junction limit (LIM.t, with rth_ja_k_per_w)."""
+    res = s.res
+    for des, ch in sorted((s.meta.get("chargers") or {}).items()):
+        part = s.n.part(des)
+        r, key = limits(part), s.n.entry_key(des)
+        i = max(res.get(ch["ammeter"], 0.0), 0.0)
+        vin, bat, gnd = (v(res, ch[k]) for k in ("vin", "bat", "gnd"))
+        what = f"charge current (programmed {ch['i_set'] * 1e3:.3g} mA)" if ch["i_set"] else "charge current – no PROG resistor"
+        s.q(des, "i_charge", i, "A", "", des, what, code="LIM.i", grade="charge", entry=False, report=True,
+            lims=[Limit(max=r["i_out_max_a"], source=f"i_out_max_a of {key}")] if "i_out_max_a" in r else [])
+        heat = (vin - bat) * i + (vin - gnd) * ch["values"].get("iq_a", 0.0)
+        if "rth_ja_k_per_w" in r:
+            junction(s, des, heat, r, f"junction temperature at {s.amb} °C: {heat:.3g} W – (VIN − VBAT) × I + VIN × "
+                                      f"IQ – × {r['rth_ja_k_per_w']:g} K/W")
 
 
 def opamps(s):
@@ -642,7 +1073,8 @@ def logic_levels(s):
         nets = sorted({net for net, _ in on})
         vdd = at_pin(d, res, on[0][1], ground) if len(nets) == 1 else None
         for num, info in inputs:
-            vil, vih = (threshold(p, info, k, vdd) for k in ("vil", "vih"))
+            vio = reference(d, res, des, part, info, ground)[0] if info.get("ref") else vdd
+            vil, vih = (threshold(p, info, k, vio) for k in ("vil", "vih"))
             if vil is None or vih is None:
                 s.check("SIM.config", des, "input thresholds as a ratio of the supply",
                         f"{len(nets)} supply nets ({', '.join(nets) or 'none'}), none with the role vdd or vcc",
@@ -667,10 +1099,18 @@ def logic_levels(s):
                         f"≥ {vih:.2f} V", high >= vih, "V", f"vih of {who.split()[0]}")
 
 
+def multiplexed(d, anode_net, cathode_net):
+    """The part that scans an LED – behaviour matrix_driver (MAX7219) with pins on both its nets –, or None."""
+    on = [{r.partition(".")[0] for r in (d.nets.get(n) or {}).get("pins", [])} for n in (anode_net, cathode_net)]
+    return next((des for des in sorted(on[0] & on[1])
+                 if values(d.part(des) or {}).get("behavior") == "matrix_driver"), None)
+
+
 def leds(s, load):
     """SIM.state of the LEDs: each LED of a driver channel at its share of the set current, parallel LEDs sharing it,
     an LED on or dark as the load says, none reversed; SIM.driver: an LED with no state to check; the driver's headroom
-    and junction temperature."""
+    and junction temperature. An LED a multiplexing driver scans (matrix_driver) has no DC state: a row of
+    information."""
     res, meta, crit, d = s.res, s.meta, s.crit, s.d
     joined = d.joined_nets()
     chan_of = {}
@@ -696,6 +1136,11 @@ def leds(s, load):
     for name, info in meta["leds"].items():
         i = res.get(f"@{name}[id]", float("nan"))
         label = name[2:].upper()
+        if mux := multiplexed(d, info["anode_net"], info["cathode_net"]):
+            s.rows.append({"id": "SIM.driver", "scenario": s.name, "item": label, "check": "LED multiplexed",
+                           "actual": f"between {info['anode_net']} and {info['cathode_net']}, scanned by {mux} "
+                                     "(matrix_driver)", "expected": "no DC state to judge", "result": "info"})
+            continue
         cathode, anode = (joined.get(info[k], info[k]) for k in ("cathode_net", "anode_net"))
         hit = led_on_output(chan_of, behind, anode, cathode)
         if hit and hit[1] == "cathode":

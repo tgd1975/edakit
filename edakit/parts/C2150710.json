@@ -1,0 +1,294 @@
+{
+ "lcsc": "C2150710",
+ "mpn": "TMC2209-LA-T",
+ "manufacturer": "ADI/TRINAMIC",
+ "kind": "ic",
+ "package": "QFN-28 5×5 mm, 0.5 mm pitch, exposed pad",
+ "footprint": "QFN-28_L5.0-W5.0-P0.50-BL-EP",
+ "jlc_class": "Extended Part",
+ "datasheet": {
+  "url": "https://datasheet.lcsc.com/datasheet/pdf/8a6616d50887b5979774ccef79093f9e.pdf?productCode=C2150710",
+  "pinout_page": 9
+ },
+ "pins": {
+  "1": {
+   "name": "OB2",
+   "type": "output",
+   "drive": "bridge",
+   "short_proof": true,
+   "hint": "motor coil output (N-channel FET bridge): floating while ENN is high (2.2); short to GND and short to VS detection switches the bridge off (15.2 – 'cannot protect … for all possible short events')",
+   "v_rel_max_v": null
+  },
+  "2": {
+   "name": "ENN",
+   "type": "input",
+   "hint": "enable not: high switches the power stage off (all motor outputs floating) and resets a driver error; no internal pull stated – drive it (2.2)"
+  },
+  "3": {
+   "name": "GND",
+   "type": "ground",
+   "role": "gnd"
+  },
+  "4": {
+   "name": "CPO",
+   "type": "passive",
+   "hint": "charge pump: a 22 nF 50 V capacitor between CPO and CPI (2.2)"
+  },
+  "5": {
+   "name": "CPI",
+   "type": "passive",
+   "hint": "charge pump: a 22 nF 50 V capacitor between CPO and CPI (2.2)",
+   "needs": [
+    {
+     "what": "capacitor",
+     "to": "CPO",
+     "c_min_f": 2.2e-08,
+     "v_min_v": 50,
+     "source": "TMC2209 datasheet Rev. 1.03 (2019-06-26), pin table: CPI 'Tie to CPO using 22nF 50V capacitor', VCP 'Tie to VS using 100nF capacitor' – the values read as the minimum"
+    }
+   ]
+  },
+  "6": {
+   "name": "VCP",
+   "type": "passive",
+   "hint": "charge pump voltage: a 100 nF (16 V) capacitor from VCP to VS, not to GND (2.2, figure 3.1)",
+   "needs": [
+    {
+     "what": "capacitor",
+     "to": "VS",
+     "c_min_f": 1e-07,
+     "source": "TMC2209 datasheet Rev. 1.03 (2019-06-26), pin table: CPI 'Tie to CPO using 22nF 50V capacitor', VCP 'Tie to VS using 100nF capacitor' – the values read as the minimum"
+    }
+   ]
+  },
+  "7": {
+   "name": "SPREAD",
+   "type": "input",
+   "pull": "down",
+   "pull_ohm": 166000,
+   "float_ok": true,
+   "hint": "low = StealthChop, high = SpreadCycle; internal pull-down, may be left unconnected (2.2)"
+  },
+  "8": {
+   "name": "5VOUT",
+   "type": "power_output",
+   "hint": "internal 5 V regulator (4.80 … 5.25 V): 25 mA max including the internal load, (VS − 5 V) × I ≤ 0.5 W (19); may supply VCC_IO",
+   "needs": [
+    {
+     "what": "capacitor",
+     "c_min_f": 2.2e-06,
+     "c_max_f": 4.7e-06,
+     "source": "TMC2209 datasheet Rev. 1.03, 2.2 signal descriptions and 21.3 supply filtering: a 2.2 … 4.7 µF ceramic capacitor (6.3 V in figure 3.1) to GND near the pin, shortest loop to the die pad"
+    }
+   ]
+  },
+  "9": {
+   "name": "MS1_AD0",
+   "type": "input",
+   "pull": "down",
+   "pull_ohm": 166000,
+   "hint": "microstep setting MS2, MS1: 00 1/8, 01 1/32, 10 1/64, 11 1/16; in UART mode bit 0 of the UART address (2.2, 4)"
+  },
+  "10": {
+   "name": "MS2_AD1",
+   "type": "input",
+   "pull": "down",
+   "pull_ohm": 166000,
+   "hint": "microstep setting (with MS1); in UART mode bit 1 of the UART address (2.2, 4)"
+  },
+  "11": {
+   "name": "DIAG",
+   "type": "output",
+   "hint": "high on stall detection or driver error (2.2)"
+  },
+  "12": {
+   "name": "INDEX",
+   "type": "output",
+   "hint": "configurable index pulse output (2.2)"
+  },
+  "13": {
+   "name": "CLK",
+   "type": "input",
+   "hint": "tie to GND with a short wire for the internal 12 MHz clock, or feed an external clock 4 … 16 MHz (2.2, 18)"
+  },
+  "14": {
+   "name": "PDN_UART",
+   "type": "bidirectional",
+   "hint": "power down not (low = automatic standstill current reduction) and optional single-wire UART, 9000 baud … fCLK/16 (2.2, 4)"
+  },
+  "15": {
+   "name": "VCC_IO",
+   "type": "power_in",
+   "role": "vdd",
+   "v_max_v": 5.5,
+   "hint": "3.3 … 5 V I/O supply for all digital pins; the inputs' protection diodes do not let them rise above it (17)",
+   "needs": [
+    {
+     "what": "capacitor",
+     "c_min_f": 1e-07,
+     "source": "TMC2209 datasheet Rev. 1.03, figure 3.1 standard application circuit: 100 nF at VCC_IO"
+    }
+   ]
+  },
+  "16": {
+   "name": "STEP",
+   "type": "input"
+  },
+  "17": {
+   "name": "VREF",
+   "type": "analog",
+   "v_max_v": 6,
+   "hint": "analog current scaling, linear 0 … 5VOUT/2 (open: 5VOUT/2, 260–400 kΩ to 2.5 V); do not exceed VCC_IO and 5VOUT by more than 10 % – that enables a test mode (19, 20.2)"
+  },
+  "18": {
+   "name": "GND",
+   "type": "ground",
+   "role": "gnd"
+  },
+  "19": {
+   "name": "DIR",
+   "type": "input",
+   "pull": "down",
+   "pull_ohm": 166000
+  },
+  "20": {
+   "name": "STDBY",
+   "type": "input",
+   "pull": "down",
+   "pull_ohm": 100000,
+   "float_ok": true,
+   "hint": "high = standby, internal regulator off; 100 kΩ pull-down, may be left unconnected; also bring VREF and ENN to 0 V in standby (2.2)"
+  },
+  "21": {
+   "name": "OA2",
+   "type": "output",
+   "drive": "bridge",
+   "short_proof": true,
+   "hint": "motor coil output (N-channel FET bridge): floating while ENN is high (2.2); short to GND and short to VS detection switches the bridge off (15.2 – 'cannot protect … for all possible short events')",
+   "v_rel_max_v": null
+  },
+  "22": {
+   "name": "VS",
+   "type": "power_in",
+   "v_max_v": 32,
+   "v_op_min_v": 5.5,
+   "v_op_max_v": 29,
+   "hint": "motor supply: 5.5 … 29 V with the internal 5 V regulator (4.7 … 5.4 V with 5VOUT bridged to VS); 32 V absolute maximum with inductive load, 33 V peak – leave margin for ringing (19)",
+   "needs": [
+    {
+     "what": "capacitor",
+     "c_min_f": 4.7e-05,
+     "source": "TMC2209 datasheet Rev. 1.03, 21.3 supply filtering: an electrolytic of 47 µF or larger and a ceramic capacitor close to the VS pins (3.1: a minimum of 100 µF near the driver for best performance; figure 3.1: 100 µF low-ESR plus 2 × 100 nF)"
+    }
+   ]
+  },
+  "23": {
+   "name": "BRA",
+   "type": "passive",
+   "hint": "sense resistor to GND close to the pin (low-inductance SMD, e.g. 1206 0.5 W), its own ground via; tie to GND for internal sensing (2.2, 21.2)"
+  },
+  "24": {
+   "name": "OA1",
+   "type": "output",
+   "drive": "bridge",
+   "short_proof": true,
+   "hint": "motor coil output (N-channel FET bridge): floating while ENN is high (2.2); short to GND and short to VS detection switches the bridge off (15.2 – 'cannot protect … for all possible short events')",
+   "v_rel_max_v": null
+  },
+  "25": {
+   "name": "UNUSED",
+   "type": "passive",
+   "hint": "unused – may be connected to GND for better routing (2.2)"
+  },
+  "26": {
+   "name": "OB1",
+   "type": "output",
+   "drive": "bridge",
+   "short_proof": true,
+   "hint": "motor coil output (N-channel FET bridge): floating while ENN is high (2.2); short to GND and short to VS detection switches the bridge off (15.2 – 'cannot protect … for all possible short events')",
+   "v_rel_max_v": null
+  },
+  "27": {
+   "name": "BRB",
+   "type": "passive",
+   "hint": "sense resistor to GND close to the pin (low-inductance SMD, e.g. 1206 0.5 W), its own ground via; tie to GND for internal sensing (2.2, 21.2)"
+  },
+  "28": {
+   "name": "VS",
+   "type": "power_in",
+   "v_max_v": 32,
+   "v_op_min_v": 5.5,
+   "v_op_max_v": 29,
+   "hint": "motor supply: 5.5 … 29 V with the internal 5 V regulator (4.7 … 5.4 V with 5VOUT bridged to VS); 32 V absolute maximum with inductive load, 33 V peak – leave margin for ringing (19)"
+  },
+  "29": {
+   "name": "EP",
+   "type": "ground",
+   "role": "gnd",
+   "hint": "exposed die pad: ground of the power drivers and the analog circuitry – to the GND plane with as many vias as possible (2.2, 21.1)"
+  }
+ },
+ "address": {
+  "base": 0,
+  "pins": {
+   "9": 1,
+   "10": 2
+  },
+  "on": "14"
+ },
+ "values": {
+  "behavior": "none",
+  "vih_ratio": 0.7,
+  "vil_ratio": 0.3,
+  "idd_max_a": 0.01,
+  "r_out_ohm": 0.21
+ },
+ "limits": {
+  "vdd_max_v": 5.5,
+  "vdd_op_min_v": 3.0,
+  "vdd_op_max_v": 5.25,
+  "vin_rel_max_v": 0.5,
+  "i_out_max_a": 1.4,
+  "tj_max_c": 125,
+  "rth_ja_k_per_w": 30
+ },
+ "sources": [
+  "TRINAMIC TMC2209 datasheet Rev. 1.03 (2019-JUN-26), copy hosted by LCSC: https://datasheet.lcsc.com/datasheet/pdf/8a6616d50887b5979774ccef79093f9e.pdf?productCode=C2150710, read 2026-10-31; ADI's current revision https://www.analog.com/media/en/technical-documentation/data-sheets/TMC2209_datasheet_rev1.09.pdf broke off the connection to an automated request (empty reply), www.trinamic.com is not reachable from this session (proxy 403)",
+  "pins: 2.1 figure 2.1 pinning top view and 2.2 signal descriptions pp. 9–10 = EasyEDA symbol of C2150710 (pad 29 EP = exposed die pad, edakit part import 2026-10-31)",
+  "absolute maximum 19 p. 72: VS -0.5 … 32 V operating with inductive load (VS v_max_v; 33 V supply and bridge maximum), VCC_IO -0.5 … 5.5 V (vdd_max_v, VCC_IO v_max_v), logic inputs -0.5 V … VCC_IO + 0.5 V (vin_rel_max_v 0.5), VREF -0.5 … 6 V, digital pins ±10 mA, 5VOUT 25 mA and 0.5 W, output current 3 A repetitive, TJ -50 … 150 °C",
+  "operational range 20.1 p. 72: TJ -40 … 125 °C (tj_max_c 125), VS 5.5 … 29 V with the internal regulator (VS v_op), VCC_IO 3.00 … 5.25 V (vdd_op_min_v, vdd_op_max_v – VCC_IO carries the role vdd), RMS coil current 1.4 A per coil as design guideline (i_out_max_a; 2.0 A with duty-cycle limit), peak 2.8 A",
+  "DC characteristics 20.2 pp. 73–76: IS 10 mA max with driver disabled at fCLK 12 MHz, VS 24 V (idd_max_a), RDSON low and high side 0.17 typ / 0.21 Ω max at 200 mA, 25 °C (r_out_ohm), input low ≤ 0.3 VVIO, high ≥ 0.7 VVIO (vil_ratio, vih_ratio), outputs VOL 0.2 V / VOH VVIO − 0.2 V at 2 mA, pull-up/pull-down 132 / 166 / 200 kΩ, STDBY pull-down 80 / 100 / 120 kΩ, 5VOUT 4.80 … 5.25 V",
+  "rth_ja_k_per_w 30: 20.3 table 20.1, RTMJA on a 2s2p JEDEC board (RTJC 6 K/W)",
+  "address: 4 UART single wire interface p. 15 – 'the slave address SLAVEADDR is selected by MS1 (bit 0) and MS2 (bit 1)', SLAVEADDR = 0 … 3 on PDN_UART",
+  "capacitors: 2.2 signal descriptions (CPI–CPO 22 nF 50 V, VCP–VS 100 nF, 5VOUT 2.2 … 4.7 µF ceramic), figure 3.1 (VCC_IO 100 nF, VS 100 µF low ESR + 2 × 100 nF), 3.1 text (≥ 100 µF near the driver for best performance), 21.3 supply filtering (VS 47 µF or larger electrolytic plus ceramic)",
+  "LCSC product data C2150710 (2026-10-31): ADI/TRINAMIC TMC2209-LA-T, QFN-28-EP(5x5), 19 495 pcs; JLCPCB catalogue 2026-10-31: Extended Part, 21 811 pcs"
+ ],
+ "notes": "Bipolar stepper driver with STEP/DIR and single-wire UART, VS 5.5–29 V (32 V abs. max with inductive load), 1.4 A RMS per coil, VCC_IO 3–5 V; StealthChop/SpreadCycle, StallGuard. Up to four on one UART line, addressed by MS1_AD0/MS2_AD1 (maker-coverage CK-3). Logic inputs must not rise above VCC_IO + 0.5 V – input protection diodes (17). Mostly bought as a StepStick-format module (BIGTREETECH, FYSETC, TRINAMIC TMC2209 SilentStepStick C17375345) – this entry is the IC. No behaviour model for a bridge driver: behavior none. Library draft.",
+ "verified": {
+  "by": "Claude (datasheet check, library draft)",
+  "date": "2026-10-31",
+  "datasheet": "TRINAMIC TMC2209 Rev. 1.03 (2019-06-26)",
+  "datasheet_sha256": "db470428897cee14df3d1ac4ee48eea11962f9fbcfb94e92683886a7eff0bf00",
+  "checked": [
+   "QFN28 pinning top view and signal descriptions (2.1, 2.2) = EasyEDA symbol of C2150710 (1 OB2 … 28 VS, 29 EP = die pad)",
+   "absolute maximum (19): VS 32 V with inductive load, 33 V max, VCC_IO 5.5 V, VI ≤ VCC_IO + 0.5 V, VREF 6 V, 5VOUT 25 mA / 0.5 W, IOx 3 A, TJ 150 °C",
+   "operational range (20.1): TJ -40 … 125 °C, VS 5.5 … 29 V, VCC_IO 3.00 … 5.25 V, IRMS 1.4 A, peak 2.8 A",
+   "DC characteristics (20.2): RDSON 0.21 Ω max, input levels 0.3 / 0.7 × VVIO, pull resistors, IS 10 mA, 5VOUT",
+   "RTMJA 30 K/W (20.3); UART address by MS1 bit 0, MS2 bit 1 (4); capacitors (2.2, 3.1, 21.3)",
+   "2026-10-31: bridge outputs drive = bridge – the H-bridge outputs the datasheet of this draft describes (source above): driven high or low while enabled, off in sleep or coast; LEVELS counts them as defining their net (schema-gaps A2)",
+   "2026-10-31: CPI–CPO 22 nF 50 V, VCP–VS 100 nF (Rev. 1.03 pin table, read now)",
+   "2026-10-31, pin limits (schema-gaps A6, B1–B3, C1–C4): TMC2209 datasheet Rev. 1.03, absolute maximum: logic input voltage −0.5 V to VVIO + 0.5 V (the entry's vin_rel_max_v, against VCC_IO); the bridge outputs OA1, OA2, OB1, OB2 swing to VS (up to 32 V) and are not held against VCC_IO (v_rel_max_v null)"
+  ],
+  "open": [
+   "read the LCSC copy of Rev. 1.03 (2019); ADI's current Rev. 1.09 could not be fetched – differences not checked",
+   "CPI–CPO (22 nF) and VCP–VS (100 nF) capacitors are not to ground – pin hints only",
+   "VS capacitor: 47 µF (21.3) and 100 µF (3.1) are both 'recommended' – the entry takes 47 µF as the minimum",
+   "the outputs' clamping (body diodes of the output MOSFETs, named in note *) of 19) has no field; REQ.missing (flyback) asks for a diode across a motor on an output pin – here a false finding",
+   "drive tristate makes a motor net driven only by these outputs an LVL.undefined/open_drain warning – no pin type fits a bridge output",
+   "which pins besides those marked (pd) carry the 132–200 kΩ pull resistors is not stated per pin – ENN, STEP, CLK and PDN_UART are entered without a pull",
+   "logic inputs have no absolute v_max_v (VCC_IO + 0.5 V, held by vin_rel_max_v – the bidirectional PDN_UART too since outputs and bidirectional pins are held)",
+   "i_out_max_a 1.4 A is the RMS design guideline; peak and duty-cycle values are in sources only",
+   "no ambient operating temperature range in the datasheet (junction only)"
+  ]
+ }
+}

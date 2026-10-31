@@ -5,7 +5,9 @@
 Scenarios = supplies x loads x LED forward-voltage corners from the simulation config (edakit.toml [project] sim),
 plus "extra_scenarios" listed there. "combine_sources" adds supplies for every combination of the sources it names:
 each alone at both ends of its range, all together with one high and the others low (generated_supplies).
-"transients" adds runs over time: the supplies follow [t, V] points (plug, unplug, a switch-over), loads may step
+"ac" adds AC runs around an operating point – only where it names an expectation, only with the domain audio or guitar on
+(sim/ac.py, decision 9). "fault_scenarios" adds generated fault cases (a reversed source, a cable wire shorted at its far end, one source off),
+their findings warnings at most. "transients" adds runs over time: the supplies follow [t, V] points (plug, unplug, a switch-over), loads may step
 ([t, A] points under "steps": a servo starting, a Wi-Fi burst), ngspice .tran from the operating point at t = 0;
 without the key nothing runs.
 
@@ -45,13 +47,21 @@ class SimError(Exception):
     pass
 
 
+NGSPICE_OP_S = 120         # an operating point that takes longer does not converge
+NGSPICE_TRAN_S = 600       # a transient run that takes longer is too fine for the check
+
+
 def ngspice(text, keep=None, name="run"):
     if not shutil.which("ngspice"):
         raise SimError("ngspice not found – install it (Debian/Ubuntu: sudo apt install ngspice)")
     with tempfile.TemporaryDirectory() as tmp:
         cir = Path(keep or tmp) / (re.sub(r"[^\w.-]", "_", name) + ".cir")
         cir.write_text(text)
-        res = subprocess.run(["ngspice", "-b", str(cir)], capture_output=True, text=True, timeout=120)
+        try:
+            res = subprocess.run(["ngspice", "-b", str(cir)], capture_output=True, text=True, timeout=NGSPICE_OP_S)
+        except subprocess.TimeoutExpired:
+            raise SimError(f"{name}: ngspice found no operating point within {NGSPICE_OP_S} s – a model that does not "
+                           "converge there (the scenario's sources, a behaviour model near its threshold)") from None
         if keep:
             cir.with_suffix(".log").write_text(res.stdout + res.stderr)
     values = {}
@@ -77,7 +87,12 @@ def ngspice_tran(text, data_file, keep=None, name="run"):
         d = Path(keep or tmp)
         cir = d / (re.sub(r"[^\w.-]", "_", name) + ".cir")
         cir.write_text(text)
-        res = subprocess.run(["ngspice", "-b", cir.name], cwd=d, capture_output=True, text=True, timeout=600)
+        try:
+            res = subprocess.run(["ngspice", "-b", cir.name], cwd=d, capture_output=True, text=True,
+                                 timeout=NGSPICE_TRAN_S)
+        except subprocess.TimeoutExpired:
+            raise SimError(f"{name}: the transient run took more than {NGSPICE_TRAN_S} s – a shorter stop_s or a "
+                           "coarser step") from None
         if keep:
             cir.with_suffix(".log").write_text(res.stdout + res.stderr)
         dat = d / data_file
@@ -91,6 +106,29 @@ def ngspice_tran(text, data_file, keep=None, name="run"):
         raise SimError("transient run failed: " + " | ".join(
             line for line in (res.stdout + res.stderr).splitlines() if "rror" in line or "too small" in line)[:300])
     return [r[0] for r in rows], [list(c) for c in zip(*(r[1:] for r in rows))]
+
+
+def check_sources(design, sim):
+    """The sources of sim.json: a plus and a minus pin of their connector, or "outputs" – several rails against the
+    shared minus, each {plus, v_ratio (default 1; −1 for a rail below the minus), r_ohm, i_max_a}."""
+    for des, spec in (sim.get("sources") or {}).items():
+        at = f"sources.{des}"
+        if not isinstance(spec, dict) or spec.get("minus") is None:
+            raise SimError(f"{at}: a table with plus and minus (pin numbers of {des}) expected, not {spec!r}")
+        if "outputs" in spec:
+            outs = spec["outputs"]
+            if "plus" in spec or not isinstance(outs, dict) or not outs:
+                raise SimError(f"{at}: outputs – a table of rails {{name: {{plus, v_ratio}}}} instead of plus, "
+                               f"not {outs!r}")
+            for name, o in outs.items():
+                if not isinstance(o, dict) or o.get("plus") is None:
+                    raise SimError(f"{at}.outputs.{name}: plus, the pin of the rail, expected, not {o!r}")
+                ratio = o.get("v_ratio", 1.0)
+                if not number(ratio) or ratio == 0:
+                    raise SimError(f"{at}.outputs.{name}: v_ratio – a number other than 0 (the rail's voltage over "
+                                   f"the supply's), not {ratio!r}")
+        elif spec.get("plus") is None:
+            raise SimError(f"{at}: plus (the pin of the supply) or outputs (several rails) expected")
 
 
 def touch_limits(design, sim):
@@ -215,6 +253,53 @@ def scenarios(sim):
         yield {"name": s["name"], "supply_name": s.get("supply_name", "extra"), "supply": s["supply"],
                "load_name": s["load"], "load": sim["loads"][s["load"]], "corner": s.get("corner", "typ"),
                "info": s.get("info", False)}
+
+
+FAULT_KEYS = ("reversed", "shorted", "off", "supply", "load")
+
+
+def fault_scenarios(design, sim):
+    """The scenarios "fault_scenarios" generates (maker-coverage FT-8), opt-in – on the first supply and the first load
+    unless it names others: "reversed" a source the graph marks reversible at its voltage reversed, "shorted" each
+    signal wire of a cable shorted to ground at its far end, "off" each source of a supply with several left out while
+    the others stay on. Their findings are warnings at most (Report.resolve, data fault): what a fault does to the board
+    is a question for the designer, not a release blocker by itself."""
+    from ..circuit import supply_nets
+    spec = sim.get("fault_scenarios")
+    if not spec:
+        return []
+    if not isinstance(spec, dict) or set(spec) - set(FAULT_KEYS):
+        raise SimError(f"fault_scenarios: a table of {', '.join(FAULT_KEYS)}, not {spec!r}")
+    supplies, loads = sim.get("supplies", {}), sim.get("loads", {})
+    if not supplies or not loads:
+        return []
+    sname, lname = spec.get("supply") or next(iter(supplies)), spec.get("load") or next(iter(loads))
+    if sname not in supplies or lname not in loads:
+        raise SimError(f"fault_scenarios: no supply {sname} or no load {lname} in the simulation config")
+    supply, load, sources, cells = supplies[sname], loads[lname], sim.get("sources", {}), sim.get("cells", {})
+    base = {"load_name": lname, "load": load, "corner": "typ", "fault": True}
+    out = []
+    if spec.get("reversed"):
+        for des in sorted(d for d, c in design.comps.items() if c.get("source") == "reversible"):
+            x = supply.get(des)
+            if des in sources and isinstance(x, (int, float)) and x:
+                out.append({**base, "name": f"fault {des} reversed/{lname}", "supply_name": f"{sname}, {des} reversed",
+                            "supply": {**supply, des: -x}})
+    if spec.get("shorted"):
+        quiet = {design.ground} | supply_nets(design)
+        for c in design.graph.get("cables", []):
+            for a, b in c.get("pins", {}).items():
+                net = design.pin_net.get(f"{c['from']}.{a}")
+                if net and net not in quiet:
+                    out.append({**base, "name": f"fault {net} shorted at {c['to']}/{lname}", "supply_name": sname,
+                                "supply": supply, "short": [f"{c['to']}.{b}"]})
+    if spec.get("off"):
+        on = [d for d, x in supply.items() if d in sources or (isinstance(x, str) and x in cells)]
+        if len(on) > 1:
+            for des in on:
+                out.append({**base, "name": f"fault {des} off/{lname}", "supply_name": f"{sname}, {des} off",
+                            "supply": {k: x for k, x in supply.items() if k != des}})
+    return out
 
 
 RUN_KEYS = {"supply", "load", "corner", "stop_s", "step_s", "steps", "expect", "info", "about", "note"}
@@ -366,9 +451,16 @@ def run_all(design, sim, keep=None, plugin=None, routing=None):
     """All scenarios and transient runs; `sim` is the parsed simulation config (tests pass modified copies), `routing`
     the routed boards for sim.json copper (copper.load_routing). -> {"scenarios", "checks" (rows), "findings",
     "net_currents"}"""
+    from . import ac
     models = getattr(plugin, "MODELS", {}) if plugin else {}
+    check_sources(design, sim)
     touch_limits(design, sim)
     runs = transient_runs(design, sim)
+    dc = list(scenarios(sim))
+    try:
+        ac_runs = ac.runs(design, sim, [sc["name"] for sc in dc])
+    except ac.ACError as e:
+        raise SimError(str(e)) from None
     out = {"scenarios": [], "checks": [], "net_currents": {}}
     new, found = design, []
     try:
@@ -379,9 +471,10 @@ def run_all(design, sim, keep=None, plugin=None, routing=None):
         out["checks"].append({"id": "SIM.copper", "scenario": "copper", "item": net, "check": "copper not annotated",
                               "actual": why, "expected": "the routed copper of the net", "result": "info"})
         found.append(Finding("SIM.copper", "E", net, f"copper not annotated: {why}"))
-    for sc in scenarios(sim):
+    for sc in [*dc, *fault_scenarios(design, sim)]:
         row = {"name": sc["name"], "supply": sc["supply_name"], "load": sc["load_name"], "corner": sc["corner"]}
         s = esim.Scene(design, new, sim, {}, {}, sc["name"], sc.get("info", False))
+        s.fault = sc.get("fault", False)
         try:
             text, meta = netlist.build(design, sim, sc, models)
             res = ngspice(text, keep, sc["name"])
@@ -405,7 +498,8 @@ def run_all(design, sim, keep=None, plugin=None, routing=None):
             e = out["net_currents"].setdefault(net, {"i_max_a": 0.0, "scenario": ""})
             if i > e["i_max_a"]:
                 e.update(i_max_a=i, scenario=sc["name"])
-        row["status"] = "ok" if all(r["result"] != "fail" for r in rows) else "fail"
+        results = {r["result"] for r in rows}
+        row["status"] = "fail" if "fail" in results else "warn" if "warn" in results else "ok"
         out["checks"] += rows
         found += fs
         out["scenarios"].append(row)
@@ -414,7 +508,21 @@ def run_all(design, sim, keep=None, plugin=None, routing=None):
         out["checks"] += rows
         found += fs
         out["scenarios"].append(row)
-    rep = engines.report(found, engines.profile(new), new.graph, notes=False)
+    prof = engines.profile(new)
+    if ac_runs and not prof.on(Finding("SIM.response", "E", "", "")):
+        found.append(ac.off_note(ac_runs))       # opt-in: only with the domain audio or guitar on (decision 9)
+    elif ac_runs:
+        out["ac"] = {}
+        by_name = {sc["name"]: sc for sc in dc}
+        for name, run in ac_runs.items():        # AC runs: around a DC operating point, their expectations only
+            sc = by_name.get(run.get("scenario")) or dc[0]
+            row, rows, fs, curve = ac.run_one(design, new, sim, name, run, sc, ngspice_tran, keep, models)
+            out["checks"] += rows
+            found += fs
+            out["scenarios"].append(row)
+            if curve:
+                out["ac"][name] = curve
+    rep = engines.report(found, prof, new.graph, notes=False)
     out["findings"] = [f.to_dict() for f in rep.findings]
     return out
 

@@ -1,0 +1,160 @@
+{
+ "lcsc": "C16581",
+ "mpn": "TP4056-42-ESOP8",
+ "manufacturer": "NanJing Top Power ASIC Corp. (TOPPOWER)",
+ "kind": "ic",
+ "package": "ESOP-8 (exposed pad)",
+ "footprint": "ESOP-8_L4.9-W3.9-P1.27-LS6.0-BL-EP",
+ "jlc_class": "Extended Part",
+ "datasheet": {
+  "url": "https://datasheet.lcsc.com/datasheet/pdf/d328ee101cbb1f3719611cd61db479c2.pdf?productCode=C16581",
+  "pinout_page": 4
+ },
+ "pins": {
+  "1": {
+   "name": "TEMP",
+   "type": "analog",
+   "role": "temp",
+   "v_max_v": 10,
+   "hint": "battery NTC input: charging is suspended while TEMP is below 45 % or above 80 % of VCC; TEMP to GND disables the temperature sense (p. 7, p. 10)",
+   "v_rel_max_v": null
+  },
+  "2": {
+   "name": "PROG",
+   "type": "analog",
+   "role": "prog",
+   "hint": "charge current IBAT = 1100 V / RPROG; PROG regulated to 1 V in constant-current mode; PROG open = shutdown; keep its capacitance small (p. 7, 9, 11, 13); absolute maximum -0.3 … VCC + 0.3 V",
+   "needs": [
+    {
+     "what": "pull_down",
+     "r_min_ohm": 1100,
+     "source": "NanJing Top Power ASIC Corp. TP4056 '1A Standalone Linear Li-Ion Battery Charger' REV_2.4, p. 9 RPROG table: 1.1 kΩ → 1000 mA, the largest charge current the data sheet programs (p. 2 'up to 1000 mA'); IBAT = 1100 / RPROG (p. 7, 9)"
+    }
+   ],
+   "v_rel_max_v": 0.3
+  },
+  "3": {
+   "name": "GND",
+   "type": "ground",
+   "role": "gnd"
+  },
+  "4": {
+   "name": "VCC",
+   "type": "power_in",
+   "role": "vin",
+   "v_max_v": 8,
+   "hint": "ceramic input capacitors can ring to high voltage when plugged into a live source – a 1.5 Ω resistor in series with the ceramic capacitor minimizes the transient (p. 13)",
+   "needs": [
+    {
+     "what": "capacitor",
+     "source": "NanJing Top Power ASIC Corp. TP4056 '1A Standalone Linear Li-Ion Battery Charger' REV_2.4, p. 3 typical applications: 10 µF at VCC (fig. 3 p. 12 shows 1 µF); no minimum stated, so no window entered"
+    }
+   ]
+  },
+  "5": {
+   "name": "BAT",
+   "type": "power_output",
+   "role": "bat",
+   "hint": "battery +: float voltage 4.158 … 4.242 V; draws < 2 µA from the cell in sleep and shutdown (p. 5, 7); the data sheet's absolute maximum for BAT is misprinted ('-0.3V~0.7V', p. 2) – no v_max_v entered",
+   "needs": [
+    {
+     "what": "capacitor",
+     "source": "NanJing Top Power ASIC Corp. TP4056 '1A Standalone Linear Li-Ion Battery Charger' REV_2.4, p. 3 typical applications: 10 µF at BAT; no minimum stated, so no window entered"
+    }
+   ]
+  },
+  "6": {
+   "name": "STDBY#",
+   "type": "output",
+   "drive": "open_drain",
+   "role": "stdby_n",
+   "hint": "open drain: low when the charge cycle is complete, otherwise high impedance; VSTDBY ≤ 0.6 V at 5 mA; unused: to GND (p. 5, 7, 10)"
+  },
+  "7": {
+   "name": "CHRG#",
+   "type": "output",
+   "drive": "open_drain",
+   "role": "chrg_n",
+   "hint": "open drain: low while charging, otherwise high impedance; VCHRG ≤ 0.6 V at 5 mA; unused: to GND (p. 5, 7, 10)"
+  },
+  "8": {
+   "name": "CE",
+   "type": "input",
+   "role": "ce",
+   "v_max_v": 10,
+   "hint": "chip enable: high = normal operation, low = shutdown; 'TTL or CMOS logic level' – no thresholds given (p. 7)",
+   "v_rel_max_v": null
+  },
+  "9": {
+   "name": "EP",
+   "type": "ground",
+   "hint": "exposed pad: solder to PCB ground – the thermal path for the charge current (p. 13)"
+  }
+ },
+ "values": {
+  "behavior": "charger",
+  "vout_v": 4.2,
+  "prog_v": 1100,
+  "i_pre_ratio": 0.13,
+  "v_pre_v": 2.9,
+  "i_term_ratio": 0.13,
+  "r_on_ohm": 0.65,
+  "v_headroom_v": 0.14,
+  "uvlo_v": 3.9,
+  "iq_a": 0.0005
+ },
+ "limits": {
+  "vdd_max_v": 8,
+  "vdd_op_min_v": 4.0,
+  "vdd_op_max_v": 8.0,
+  "i_out_max_a": 1.2,
+  "tj_max_c": 145,
+  "t_min_c": -40,
+  "t_max_c": 85
+ },
+ "hints": [
+  "charge current IBAT = 1100 V / RPROG (1.1 kΩ → 1 A, 2.2 kΩ → 0.5 A); trickle charge below 2.9 V; terminates at 1/10 of the programmed current after reaching 4.2 V; recharge below 4.05 V (p. 5, 8, 9)",
+  "dissipation PD = (VCC − VBAT) × IBAT; the internal thermal regulation reduces the charge current near 145 °C die temperature (p. 8, 12; p. 10 says about 140 °C, zero beyond 150 °C); no θJA rating in the data sheet",
+  "UVLO 3.5 … 3.9 V rising; charging starts only with VCC 60 … 140 mV above BAT (p. 5, 11)"
+ ],
+ "compliance": {
+  "rohs": true,
+  "radio": "none",
+  "source": "LCSC product data C16581 (2026-10-31): RoHS certificate listed (isRohsCert, ROHS); the data sheet states nothing"
+ },
+ "sources": [
+  "NanJing Top Power ASIC Corp. TP4056 '1A Standalone Linear Li-Ion Battery Charger' REV_2.4, via LCSC https://datasheet.lcsc.com/datasheet/pdf/d328ee101cbb1f3719611cd61db479c2.pdf?productCode=C16581, read 2026-10-31 – the manufacturer's document (www.toppwr.com in every footer)",
+  "pins: p. 4 ESOP8 pinout 1 TEMP, 2 PROG, 3 GND, 4 VCC, 5 BAT, 6 STDBY, 7 CHRG, 8 CE; p. 13 exposed pad to ground – EasyEDA symbol of C16581 (edakit part import 2026-10-31): the same, 9 EP",
+  "vdd_max_v 8, VCC v_max_v 8: p. 2 absolute maximum VCC -0.3 … 8 V; TEMP and CE v_max_v 10: p. 2 -0.3 … 10 V",
+  "vdd_op_min_v 4.0, vdd_op_max_v 8.0: p. 5 input supply voltage 4.0 / 5 / 8.0 V over the full temperature range",
+  "i_out_max_a 1.2, tj_max_c 145, t_min_c -40, t_max_c 85: p. 2 ratings beside the features – BAT pin current 1200 mA, PROG pin current 1200 µA, maximum junction temperature 145 °C, operating ambient -40 … 85 °C",
+  "vout_v 4.2: p. 5 regulated (float) voltage 4.158 / 4.2 / 4.242 V (0 … 85 °C, IBAT 40 mA) – the constant-voltage level, entered as the output voltage",
+  "p. 5 electrical characteristics: ICC 150 / 500 µA charging (RPROG 1.1 kΩ), 55 / 100 µA standby and shutdown; IBAT 425 / 500 / 575 mA at 2.2 kΩ, 850 / 1000 / 1150 mA at 1.1 kΩ; ITRIKL 120 / 130 / 140 mA; VTRIKL 2.8 / 2.9 / 3.0 V; VUV 3.5 / 3.7 / 3.9 V; ITERM 120 / 130 / 140 mA at 1.1 kΩ; VPROG 0.9 / 1.0 / 1.1 V; ΔVRECHRG 100 / 150 / 200 mV; RON 650 mΩ",
+  "LCSC product data C16581 (2026-10-31): TOP POWER ASIC TP4056-42-ESOP8, 59 635 pcs; JLCPCB catalogue (edakit part search, 2026-10-31): Extended Part, preferred, 85 058 pcs"
+ ],
+ "notes": "Linear 1-cell Li-ion charger, CC/CV 4.2 V, up to 1 A set by RPROG. No charger behaviour yet (FT-4): behaviour none, the simulation draws nothing from VCC and puts nothing on BAT. Library draft, group power.",
+ "verified": {
+  "by": "Claude (datasheet check, library draft)",
+  "date": "2026-10-31",
+  "datasheet": "NanJing Top Power ASIC Corp. TP4056 '1A Standalone Linear Li-Ion Battery Charger' REV_2.4",
+  "datasheet_sha256": "10cf357f93b118dfc2154080f76f2440516f7b1881821dbbebfaf6b70338e4bf",
+  "checked": [
+   "ESOP8 pinout p. 4 and pin functions p. 7 = EasyEDA symbol of C16581 (1 TEMP … 8 CE, 9 EP); exposed pad to ground p. 13",
+   "absolute maximum p. 2: VCC 8 V, TEMP and CE 10 V, BAT pin current 1200 mA, Tj 145 °C, ambient -40 … 85 °C",
+   "electrical characteristics p. 5: VCC 4.0 … 8.0 V, VFLOAT 4.2 V ±1 %, IBAT at 1.1 / 2.2 kΩ, trickle, UVLO, termination, status outputs",
+   "charge current 1100 / RPROG and the RPROG table p. 9; status outputs open drain p. 7, 10",
+   "typical applications p. 3: 10 µF at VCC and at BAT",
+   "2026-10-31: prog_v 1100 V – I_BAT = 1100 V / R_PROG, TP4056 REV_2.4 (as read for the library draft and for FT-4)",
+   "2026-10-31: behaviour charger (schema-gaps E3) – REV_2.4 p. 5: VFLOAT 4.2 V (vout_v), ITRIKL 130 mA at RPROG 1.1 kΩ against 1000 mA (i_pre_ratio 0.13; the state diagram p. 10 says 1/10), VTRIKL 2.9 V (v_pre_v), ITERM 130 mA at 1.1 kΩ (i_term_ratio 0.13), RON 650 mΩ typ (r_on_ohm), VASD 140 mV max rising (v_headroom_v), VUV 3.9 V max rising (uvlo_v), ICC 500 µA max in charge mode (iq_a); CE and TEMP are not in the model",
+   "2026-10-31, pin limits (schema-gaps A6, B1–B3, C1–C4): TP4056 REV_2.4, absolute maximum ratings: PROG −0.3 V to Vcc + 0.3 V (v_rel_max_v 0.3); TEMP and CE −0.3 V to 10 V regardless of VCC (v_rel_max_v null)"
+  ],
+  "open": [
+   "the absolute maximum of BAT reads '-0.3V~0.7V' (p. 2) – evidently misprinted; no v_max_v for BAT",
+   "an absolute maximum line reads 'EMBED PBrush: -0.3V~10V' (p. 2) – the pin names are a broken embedded object (presumably the overlined CHRG and STDBY, not readable); no v_max_v on CHRG# and STDBY#",
+   "no θJA: the data sheet's example assumes 125 °C/W, the charge-cycle chart names 130 °C/W – no rth_ja_k_per_w, no LIM.t",
+   "CE: no input thresholds (only 'TTL or CMOS logic level')",
+   "capacitors at VCC and BAT: 10 µF in the typical applications, 1 µF in fig. 3 – no minimum stated, so no window",
+   "vout_v 4.2 holds the float voltage until a charger model (FT-4) names its own field"
+  ]
+ }
+}

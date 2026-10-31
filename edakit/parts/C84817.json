@@ -1,0 +1,123 @@
+{
+ "lcsc": "C84817",
+ "mpn": "MT3608",
+ "manufacturer": "Xi'an Aerosemi Technology",
+ "kind": "ic",
+ "package": "SOT-23-6",
+ "footprint": "SOT-23-6_L2.9-W1.6-P0.95-LS2.8-BL",
+ "jlc_class": "Extended Part",
+ "datasheet": {
+  "url": "https://datasheet.lcsc.com/datasheet/pdf/87b648f6991783104e708a12c210cc63.pdf?productCode=C84817",
+  "pinout_page": 2
+ },
+ "pins": {
+  "1": {
+   "name": "SW",
+   "type": "passive",
+   "role": "sw",
+   "v_max_v": 30,
+   "hint": "switch node, the drain of the internal MOSFET: to the inductor and the Schottky diode; swings between GND and 28 V – keep its copper area small (p. 2, p. 6)"
+  },
+  "2": {
+   "name": "GND",
+   "type": "ground",
+   "role": "gnd",
+   "hint": "to a solid ground plane for heat sinking and noise (p. 6)"
+  },
+  "3": {
+   "name": "FB",
+   "type": "analog",
+   "role": "fb",
+   "v_max_v": 6,
+   "hint": "feedback, VFB 0.588 / 0.6 / 0.612 V: VOUT = 0.6 V × (1 + R1 / R2) with the divider R1 (to VOUT), R2 (to GND) close to the pin (p. 3, 6)"
+  },
+  "4": {
+   "name": "EN",
+   "type": "input",
+   "role": "en",
+   "v_max_v": 26,
+   "vih_v": 1.5,
+   "vil_v": 0.4,
+   "hint": "high = on, low = off (shutdown current ≤ 1 µA); unused: to VIN for automatic start-up (p. 2–3)"
+  },
+  "5": {
+   "name": "IN",
+   "type": "power_in",
+   "role": "vin",
+   "v_max_v": 26,
+   "hint": "input supply, must be bypassed locally (p. 2); the input capacitor's loop VIN–CIN–GND as short as possible (fig. 3, p. 6)",
+   "needs": [
+    {
+     "what": "capacitor",
+     "c_min_f": 2.2e-05,
+     "source": "Xi'an Aerosemi Technology MT3608 data sheet Rev1.1 (copyright 2011), p. 6 capacitor selection: input and output ceramic capacitors of 22 µF recommended, X5R or X7R – the recommended value entered as the minimum"
+    }
+   ]
+  },
+  "6": {
+   "name": "NC",
+   "type": "no_connect"
+  }
+ },
+ "values": {
+  "behavior": "none",
+  "iq_a": 0.0002
+ },
+ "limits": {
+  "vdd_max_v": 26,
+  "vdd_op_min_v": 2,
+  "vdd_op_max_v": 24,
+  "vin_min_v": 2,
+  "p_max_w": 0.6,
+  "tj_max_c": 160,
+  "t_min_c": -40,
+  "t_max_c": 85,
+  "rth_ja_k_per_w": 250
+ },
+ "hot_loop": [
+  "vin",
+  "sw",
+  "gnd"
+ ],
+ "hints": [
+  "adjustable output up to 28 V, VOUT = 0.6 V × (1 + R1 / R2); 22 µF ceramic at the output (after the diode) recommended; inductor 4.7 … 22 µH; Schottky diode with a reverse voltage above VOUT (p. 1, 6)",
+  "1.2 MHz fixed frequency, PFM at light load; switch current limit 4 A typ; thermal shutdown 155 °C (p. 1, 3)",
+  "layout (p. 6, 'must be strictly followed'): input and output capacitors close to the IC and to the ground plane, SW copper small, feedback parts close to FB"
+ ],
+ "compliance": {
+  "rohs": true,
+  "radio": "none",
+  "source": "LCSC product data C84817 (2026-10-31): RoHS certificate listed (isRohsCert, ROHS; file name also names a halogen-free certificate); the data sheet states nothing"
+ },
+ "sources": [
+  "Xi'an Aerosemi Technology MT3608 data sheet Rev1.1 (copyright 2011), via LCSC https://datasheet.lcsc.com/datasheet/pdf/87b648f6991783104e708a12c210cc63.pdf?productCode=C84817, read 2026-10-31 – Aerosemi's document (www.aerosemi.com in every footer)",
+  "pins: p. 2 SOT-23-6 top view 1 SW, 2 GND, 3 FB, 4 EN, 5 VIN, 6 NC – EasyEDA symbol of C84817 (edakit part import 2026-10-31): the same, pin 5 named IN",
+  "p. 2 absolute maximum: VIN and EN -0.3 … 26 V (vdd_max_v, IN and EN v_max_v), FB -0.3 … 6 V, SW -0.3 … 30 V, power dissipation 0.6 W, θJA 250 °C/W, θJC 130 °C/W, junction temperature 160 °C, operating temperature -40 … 85 °C",
+  "p. 3 electrical characteristics: operating input voltage 2 … 24 V (vdd_op_min_v, vdd_op_max_v, vin_min_v); UVLO ≤ 1.98 V, hysteresis 100 mV; shutdown current 0.1 / 1 µA; quiescent current PFM (no switching) 100 / 200 µA, PWM (switching) 1.6 / 2.2 mA; 1.2 MHz; maximum duty cycle ≥ 90 %; EN high ≥ 1.5 V, low ≤ 0.4 V; FB 0.588 / 0.6 / 0.612 V; SW on resistance 80 / 150 mΩ; switch current limit 4 A; thermal shutdown 155 °C",
+  "iq_a 0.0002: the PFM quiescent current without switching, max 200 µA – the switching current (PWM, 2.2 mA max) is part of the losses an efficiency would cover",
+  "hot_loop vin, sw, gnd: p. 6 layout consideration and fig. 3 – the red trace VIN–CIN–GND 'as short as possible', SW node small, input and output capacitors close to the IC; REQ.missing adds the output net behind the diode on SW",
+  "LCSC product data C84817 (2026-10-31): XI'AN Aerosemi Tech MT3608, 62 749 pcs; JLCPCB catalogue (edakit part search, 2026-10-31): Extended Part, 64 553 pcs"
+ ],
+ "notes": "Asynchronous boost converter, adjustable by a feedback divider. The boost model needs a vout pin, which the MT3608 does not have (its output is behind the external diode) – behaviour none until adjustable regulators are modelled (FT-5); hot_loop is given, so REQ.missing still asks for the layout loops. Library draft, group power.",
+ "verified": {
+  "by": "Claude (datasheet check, library draft)",
+  "date": "2026-10-31",
+  "datasheet": "Xi'an Aerosemi Technology MT3608 data sheet Rev1.1 (copyright 2011)",
+  "datasheet_sha256": "b2b6d816a2a71dd4c83964becc0bd4cc39de029545126445ebf67f578d6cb2c6",
+  "checked": [
+   "SOT-23-6 pinout p. 2 = EasyEDA symbol of C84817 (1 SW, 2 GND, 3 FB, 4 EN, 5 IN, 6 NC)",
+   "absolute maximum p. 2: VIN, EN 26 V, FB 6 V, SW 30 V, 0.6 W, θJA 250 °C/W, TJ 160 °C, -40 … 85 °C",
+   "electrical characteristics p. 3: VIN 2 … 24 V, UVLO, quiescent currents, EN thresholds, VFB 0.6 V ±2 %, 1.2 MHz, 4 A limit",
+   "applications p. 6: VOUT = VREF (1 + R1/R2), 22 µF input and output ceramic, 4.7 … 22 µH, layout rules and fig. 3"
+  ],
+  "open": [
+   "adjustable output: no vout_v and behaviour none – the boost model needs a vout pin and a fixed vout_v (FT-5: output from the divider and VFB 0.6 V)",
+   "the recommended 22 µF output capacitor sits on the net behind the diode, not on a pin of the MT3608 – no need entered for it",
+   "efficiency only as curves ('up to 93 %', p. 1, 4) – no efficiency entered",
+   "'2A' in the title is not defined in the tables (switch current limit 4 A typ) – no i_out_max_a",
+   "switching frequency (1.2 MHz), maximum duty cycle (≥ 90 %) and the UVLO threshold have no fields in the schema",
+   "EN: no internal pull-up or pull-down stated",
+   "hot_loop names vin besides the handbook's generic sw, gnd of an asynchronous boost – from the data sheet's fig. 3"
+  ]
+ }
+}

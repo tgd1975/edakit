@@ -52,8 +52,12 @@ def suggests(design, rule):
     marks = set(rule.get("nets", []))
     if marks and any(marks & set(net) for net in design.nets.values()):
         return True
-    if rule.get("cables") and design.graph.get("cables"):
+    if rule.get("cables") and (design.graph.get("cables") or any(c.get("off_board") for c in design.comps.values())):
         return True
+    if rule.get("hazardous"):
+        from .engines.limits import hazardous_nets
+        if hazardous_nets(design):
+            return True
     if rule.get("radio"):
         if (design.graph.get("purpose") or {}).get("radio") is not None:
             return True

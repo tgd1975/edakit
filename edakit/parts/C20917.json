@@ -1,0 +1,83 @@
+{
+ "lcsc": "C20917",
+ "mpn": "AO3400A",
+ "manufacturer": "AOS",
+ "kind": "nmos",
+ "package": "SOT-23",
+ "footprint": "SOT-23-3_L2.9-W1.3-P1.90-LS2.4-BR",
+ "jlc_class": "Basic Part",
+ "datasheet": {
+  "url": "https://www.aosmd.com/res/datasheets/AO3400A.pdf",
+  "pinout_page": 1
+ },
+ "pins": {
+  "1": {
+   "name": "G",
+   "type": "passive",
+   "role": "gate"
+  },
+  "2": {
+   "name": "S",
+   "type": "passive",
+   "role": "source"
+  },
+  "3": {
+   "name": "D",
+   "type": "passive",
+   "role": "drain"
+  }
+ },
+ "values": {
+  "vgs_th_v": [
+   0.65,
+   1.05,
+   1.45
+  ],
+  "rds_on_max_ohm": {
+   "2.5": 0.048,
+   "4.5": 0.032,
+   "10": 0.0265
+  },
+  "vsd_v_at_1a": 0.7
+ },
+ "limits": {
+  "vds_max_v": 30,
+  "vgs_max_v": 12,
+  "id_max_a": 4.7,
+  "p_max_w": 0.9,
+  "is_body_max_a": 2,
+  "tj_max_c": 150,
+  "rth_ja_k_per_w": 125
+ },
+ "spice": {
+  "model": ".model AO3400A NMOS(LEVEL=1 VTO=1.05 KP=25 RD=0.0204 IS=1.7e-12)"
+ },
+ "sources": [
+  "AOS AO3400A datasheet Rev 3.1 (July 2023), https://www.aosmd.com/res/datasheets/AO3400A.pdf, read 2026-10-31: p. 1 SOT23 top view (pin-1 dot at G, D alone on the other side), absolute maximum ratings and thermal characteristics; p. 2 electrical characteristics",
+  "vds_max_v 30, vgs_max_v ±12: p. 1 absolute maximum ratings",
+  "id_max_a 4.7 and p_max_w 0.9: the TA = 70 °C values of p. 1 (25 °C: 5.7 A, 1.4 W) – conservative, as in the sibling C15127 (AO3401A); PD is based on the t ≤ 10 s RθJA (note B)",
+  "rth_ja_k_per_w 125: p. 1 RθJA steady state, max (typ 100; 1 in² FR-4, 2 oz copper, still air – note A); tj_max_c 150: p. 1 TJ, TSTG -55 to 150 °C",
+  "vgs_th_v 0.65 / 1.05 / 1.45 V (VDS = VGS, ID = 250 µA) and rds_on_max_ohm 48 / 32 / 26.5 mΩ at VGS 2.5 / 4.5 / 10 V (TJ = 25 °C; 38 mΩ at 10 V and TJ = 125 °C): p. 2 static parameters",
+  "vsd_v_at_1a 0.7: p. 2 VSD typ at IS = 1 A (max 1 V); is_body_max_a 2: p. 2 IS maximum body-diode continuous current",
+  "pin numbers 1 = G, 2 = S, 3 = D: EasyEDA symbol of C20917 (edakit part import 2026-10-31); the datasheet prints no pin numbers – its top view shows the pin-1 dot at G, S beside it, D alone, and the footprint has pad 3 alone",
+  "spice: assumption – level 1 fitted by Claude, no manufacturer model read: VTO = VGS(th) typ, KP and RD chosen so that RDS(on) meets the maximum values at VGS 2.5 V and 4.5 V (48 and 32 mΩ; 24.9 mΩ at 10 V); IS from VSD 0.7 V at 1 A",
+  "LCSC product data C20917 (2026-10-31): AOS AO3400A, SOT-23, 594 980 pcs; JLCPCB catalogue 2026-10-31: Basic Part, 1 148 755 pcs"
+ ],
+ "notes": "Logic-level N-channel MOSFET for low-side switching (VGS max ±12 V, RDS(on) specified from 2.5 V): the AO3400 class of maker-coverage BL-2. Library draft, N-channel sibling of C15127 (AO3401A).",
+ "verified": {
+  "by": "Claude (datasheet check, library draft)",
+  "date": "2026-10-31",
+  "datasheet": "AOS AO3400A Rev 3.1 (July 2023)",
+  "datasheet_sha256": "9c60d0b6c1ddc7609a4b788a91181468d8ffe6c3e9ba425c3d8ffc5ba88c5033",
+  "checked": [
+   "SOT23 top view p. 1: pin-1 dot at G, S beside it, D alone – EasyEDA symbol 1 = G, 2 = S, 3 = D, footprint pad 3 alone",
+   "absolute maximum p. 1: VDS 30 V, VGS ±12 V, ID 5.7 A (25 °C) / 4.7 A (70 °C), IDM 30 A, PD 1.4 / 0.9 W, TJ -55 … 150 °C",
+   "thermal p. 1: RθJA steady state 100 typ / 125 max K/W, t ≤ 10 s 70 / 90 K/W, RθJL 63 / 80 K/W",
+   "p. 2: VGS(th) 0.65 / 1.05 / 1.45 V; RDS(on) max 26.5 mΩ (10 V, 5.7 A), 32 mΩ (4.5 V, 5 A), 48 mΩ (2.5 V, 3 A); VSD 0.7 typ / 1 V max at 1 A; IS 2 A"
+  ],
+  "open": [
+   "pin numbers are not printed in the datasheet – taken from the EasyEDA symbol and the pin-1 dot of the top view",
+   "SPICE model is a level-1 fit by Claude, not a manufacturer model (AOS offers models on its product page – not read)"
+  ]
+ }
+}

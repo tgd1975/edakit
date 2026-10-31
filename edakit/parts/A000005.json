@@ -1,0 +1,481 @@
+{
+ "mpn": "A000005",
+ "manufacturer": "Arduino",
+ "kind": "module",
+ "package": "plug-in board, 2 × 15 pins (numbered as DIP-30: J1 = 1–15, J2 = 30–16), mini-USB",
+ "datasheet": {
+  "url": "https://docs.arduino.cc/resources/datasheets/A000005-datasheet.pdf",
+  "pinout_page": 9,
+  "title": "Arduino Nano User Manual (SKU A000005)",
+  "revision": "modified 30/10/2026",
+  "schematic": "https://docs.arduino.cc/resources/schematics/A000005-schematics.pdf"
+ },
+ "pins": {
+  "1": {
+   "name": "D1/TX",
+   "type": "bidirectional",
+   "role": "gpio",
+   "v_max_v": 5.5,
+   "functions": [
+    "uart0.tx"
+   ],
+   "hint": "ATmega328P PD1 (TXD); goes through 1 kΩ (RP1B) to the FT232RL RXD on the board"
+  },
+  "2": {
+   "name": "D0/RX",
+   "type": "bidirectional",
+   "role": "gpio",
+   "v_max_v": 5.5,
+   "functions": [
+    "uart0.rx"
+   ],
+   "hint": "ATmega328P PD0 (RXD); driven by the on-board FT232RL TXD through 1 kΩ (schematic RP1A) while the USB chip is powered"
+  },
+  "3": {
+   "name": "RESET",
+   "type": "input",
+   "v_max_v": 5.5,
+   "pull": "up",
+   "pull_ohm": 1000,
+   "hint": "reset, low active; 1 kΩ to +5V (schematic RP1D), reset button to GND, 100 nF from the FT232RL DTR# for the auto-reset"
+  },
+  "4": {
+   "name": "GND",
+   "type": "ground"
+  },
+  "5": {
+   "name": "D2",
+   "type": "bidirectional",
+   "role": "gpio",
+   "v_max_v": 5.5,
+   "functions": [],
+   "hint": "ATmega328P PD2 (INT0)"
+  },
+  "6": {
+   "name": "D3",
+   "type": "bidirectional",
+   "role": "gpio",
+   "v_max_v": 5.5,
+   "functions": [
+    "pwm2.b"
+   ],
+   "hint": "ATmega328P PD3 (OC2B, INT1)"
+  },
+  "7": {
+   "name": "D4",
+   "type": "bidirectional",
+   "role": "gpio",
+   "v_max_v": 5.5,
+   "functions": [],
+   "hint": "ATmega328P PD4 (XCK, T0)"
+  },
+  "8": {
+   "name": "D5",
+   "type": "bidirectional",
+   "role": "gpio",
+   "v_max_v": 5.5,
+   "functions": [
+    "pwm0.b"
+   ],
+   "hint": "ATmega328P PD5 (OC0B, T1)"
+  },
+  "9": {
+   "name": "D6",
+   "type": "bidirectional",
+   "role": "gpio",
+   "v_max_v": 5.5,
+   "functions": [
+    "pwm0.a"
+   ],
+   "hint": "ATmega328P PD6 (OC0A, AIN0)"
+  },
+  "10": {
+   "name": "D7",
+   "type": "bidirectional",
+   "role": "gpio",
+   "v_max_v": 5.5,
+   "functions": [],
+   "hint": "ATmega328P PD7 (AIN1)"
+  },
+  "11": {
+   "name": "D8",
+   "type": "bidirectional",
+   "role": "gpio",
+   "v_max_v": 5.5,
+   "functions": [],
+   "hint": "ATmega328P PB0 (ICP1)"
+  },
+  "12": {
+   "name": "D9",
+   "type": "bidirectional",
+   "role": "gpio",
+   "v_max_v": 5.5,
+   "functions": [
+    "pwm1.a"
+   ],
+   "hint": "ATmega328P PB1 (OC1A)"
+  },
+  "13": {
+   "name": "D10",
+   "type": "bidirectional",
+   "role": "gpio",
+   "v_max_v": 5.5,
+   "functions": [
+    "pwm1.b",
+    "spi0.cs"
+   ],
+   "hint": "ATmega328P PB2 (SS, OC1B)"
+  },
+  "14": {
+   "name": "D11/MOSI",
+   "type": "bidirectional",
+   "role": "gpio",
+   "v_max_v": 5.5,
+   "functions": [
+    "pwm2.a",
+    "spi0.tx"
+   ],
+   "hint": "ATmega328P PB3 (MOSI, OC2A)"
+  },
+  "15": {
+   "name": "D12/MISO",
+   "type": "bidirectional",
+   "role": "gpio",
+   "v_max_v": 5.5,
+   "functions": [
+    "spi0.rx"
+   ],
+   "hint": "ATmega328P PB4 (MISO)"
+  },
+  "16": {
+   "name": "D13/SCK",
+   "type": "bidirectional",
+   "role": "gpio",
+   "v_max_v": 5.5,
+   "functions": [
+    "spi0.sck"
+   ],
+   "hint": "ATmega328P PB5 (SCK); on-board LED 'L' with 1 kΩ (RP2A) to GND"
+  },
+  "17": {
+   "name": "3V3",
+   "type": "power_output",
+   "role": "3v3",
+   "hint": "3.3 V from the 3V3OUT of the FT232RL USB-serial chip (schematic); its current rating is in the FTDI datasheet (not read)"
+  },
+  "18": {
+   "name": "AREF",
+   "type": "analog",
+   "v_max_v": 5.5,
+   "hint": "ADC reference of the ATmega328P, 100 nF to GND on the board"
+  },
+  "19": {
+   "name": "A0",
+   "type": "bidirectional",
+   "role": "gpio",
+   "v_max_v": 5.5,
+   "functions": [
+    "adc0"
+   ],
+   "adc": {
+    "range_v": [
+     0.0,
+     5.0
+    ],
+    "r_source_max_ohm": 10000
+   },
+   "hint": "ATmega328P PC0 (ADC0)"
+  },
+  "20": {
+   "name": "A1",
+   "type": "bidirectional",
+   "role": "gpio",
+   "v_max_v": 5.5,
+   "functions": [
+    "adc1"
+   ],
+   "adc": {
+    "range_v": [
+     0.0,
+     5.0
+    ],
+    "r_source_max_ohm": 10000
+   },
+   "hint": "ATmega328P PC1 (ADC1)"
+  },
+  "21": {
+   "name": "A2",
+   "type": "bidirectional",
+   "role": "gpio",
+   "v_max_v": 5.5,
+   "functions": [
+    "adc2"
+   ],
+   "adc": {
+    "range_v": [
+     0.0,
+     5.0
+    ],
+    "r_source_max_ohm": 10000
+   },
+   "hint": "ATmega328P PC2 (ADC2)"
+  },
+  "22": {
+   "name": "A3",
+   "type": "bidirectional",
+   "role": "gpio",
+   "v_max_v": 5.5,
+   "functions": [
+    "adc3"
+   ],
+   "adc": {
+    "range_v": [
+     0.0,
+     5.0
+    ],
+    "r_source_max_ohm": 10000
+   },
+   "hint": "ATmega328P PC3 (ADC3)"
+  },
+  "23": {
+   "name": "A4",
+   "type": "bidirectional",
+   "role": "gpio",
+   "v_max_v": 5.5,
+   "functions": [
+    "adc4",
+    "i2c0.sda"
+   ],
+   "adc": {
+    "range_v": [
+     0.0,
+     5.0
+    ],
+    "r_source_max_ohm": 10000
+   },
+   "hint": "ATmega328P PC4 (ADC4, SDA)"
+  },
+  "24": {
+   "name": "A5",
+   "type": "bidirectional",
+   "role": "gpio",
+   "v_max_v": 5.5,
+   "functions": [
+    "adc5",
+    "i2c0.scl"
+   ],
+   "adc": {
+    "range_v": [
+     0.0,
+     5.0
+    ],
+    "r_source_max_ohm": 10000
+   },
+   "hint": "ATmega328P PC5 (ADC5, SCL)"
+  },
+  "25": {
+   "name": "A6",
+   "type": "analog",
+   "v_max_v": 5.5,
+   "functions": [
+    "adc6"
+   ],
+   "adc": {
+    "range_v": [
+     0.0,
+     5.0
+    ],
+    "r_source_max_ohm": 10000
+   },
+   "hint": "ATmega328P ADC6: analog input only, no digital port"
+  },
+  "26": {
+   "name": "A7",
+   "type": "analog",
+   "v_max_v": 5.5,
+   "functions": [
+    "adc7"
+   ],
+   "adc": {
+    "range_v": [
+     0.0,
+     5.0
+    ],
+    "r_source_max_ohm": 10000
+   },
+   "hint": "ATmega328P ADC7: analog input only, no digital port"
+  },
+  "27": {
+   "name": "+5V",
+   "type": "power_output",
+   "role": "vout",
+   "v_max_v": 5.5,
+   "hint": "the 5 V rail: from VIN through the LM1117IMPX-5.0, or from USB through the MFFSMF050 polyfuse and the SS1P3L diode; the user manual also allows a regulated 5 V input here (pin 27)"
+  },
+  "28": {
+   "name": "RESET",
+   "type": "input",
+   "v_max_v": 5.5,
+   "pull": "up",
+   "pull_ohm": 1000,
+   "hint": "reset, low active; 1 kΩ to +5V (schematic RP1D), reset button to GND, 100 nF from the FT232RL DTR# for the auto-reset"
+  },
+  "29": {
+   "name": "GND",
+   "type": "ground"
+  },
+  "30": {
+   "name": "VIN",
+   "type": "power_in",
+   "role": "vin",
+   "v_max_v": 15,
+   "hint": "7–15 V unregulated (user manual, pin 30) into the LM1117IMPX-5.0"
+  }
+ },
+ "values": {
+  "behavior": "mcu",
+  "regulator": "ldo",
+  "vout_v": 5.0,
+  "v_io_v": 5.0,
+  "vih_ratio": 0.6,
+  "vil_ratio": 0.3,
+  "f_clock_hz": 16000000.0
+ },
+ "limits": {
+  "vin_min_v": 7,
+  "vin_max_v": 15,
+  "gpio_v_max_v": 5.5,
+  "gpio_i_max_a": 0.04,
+  "gpio_i_total_max_a": 0.2,
+  "f_max_hz": {
+   "1.8": 4000000.0,
+   "2.7": 10000000.0,
+   "4.5": 20000000.0
+  },
+  "t_min_c": -40,
+  "t_max_c": 85
+ },
+ "hints": [
+  "ATmega328P: the sum of IOH of C0–C5, D0–D4, ADC7, RESET and the sum of B0–B5, D5–D7, ADC6, XTAL1/2 each at most 150 mA; the sum of IOL of C0–C5, ADC6/7, of B0–B5, D5–D7, XTAL1/2 and of D0–D4, RESET each at most 100 mA (data sheet table 30-1 notes 3 and 4)",
+  "USB supply passes the MFFSMF050 polyfuse and the SS1P3L Schottky diode to +5V (schematic) – their ratings were not read"
+ ],
+ "spice": {},
+ "compliance": {
+  "rohs": true,
+  "reach": "Arduino: none of the SVHCs of the ECHA candidate list present at or above 0.1 % (user manual 7.2)",
+  "radio": "none",
+  "source": "Arduino Nano User Manual, SKU A000005 (modified 30/10/2026): 7.2 RoHS 2/3, no exemptions claimed; REACH statement; board with ATmega328P and FT232RL, no transmitter (3.1 block diagram, schematic) – read 2026-10-31"
+ },
+ "sources": [
+  "Arduino Nano User Manual, SKU A000005 (modified 30/10/2026) (docs.arduino.cc, read 2026-10-31): features (ATmega328 at 16 MHz, 7–15 V unregulated on pin 30, 5 V regulated on pin 27), 2.1 conservative thermal limits of the board –40 … 85 °C, 3.3 power tree (VIN through an LDO to 5 V), 7.2 RoHS/REACH; its pinout tables 5.1/5.2 contain errors (pin 1 '+3V3' described as '5V USB Power', pin 12 twice) – pin numbers taken from the schematic",
+  "Arduino Nano schematic NanoV3.3 (A000005-schematics.pdf, dated 23/01/19) (docs.arduino.cc, read 2026-10-31, as an image): J1 1–15 D1/TX, D0/RX, RESET, GND, D2–D12; J2 1–15 VIN, GND, RESET, +5V, A7–A0, AREF, 3V3, D13/SCK; IC2 LM1117IMPX-5.0 from VIN to +5V with 1 µF; F1 MFFSMF050 and D1 SS1P3L from USB VBUS to +5V; IC1 FT232RL (3V3OUT to 3V3, TXD/RXD through 1 kΩ to D0/D1, DTR# through 100 nF to RESET); RESET 1 kΩ (RP1D) to +5V and button to GND; LED L with 1 kΩ on D13; IC3 ATmega328P (328P-MUR) at 16 MHz, AREF with 100 nF",
+  "Microchip ATmega48A/PA/88A/PA/168A/PA/328/P megaAVR Data Sheet DS40002061B (ww1.microchip.com, read 2026-10-31): 29.1/30.1 absolute maximum (pins –0.5 V … VCC + 0.5 V, RESET up to 13 V, 6.0 V operating maximum, 40 mA DC per I/O pin, 200 mA through VCC and GND pins), table 30-1 (VIL 0.3 VCC, VIH 0.6 VCC at VCC 2.4–5.5 V; port sums), 29.3 speed grades (4 MHz at 1.8 V, 10 MHz at 2.7 V, 20 MHz at 4.5 V), tables 14-3/14-6/14-9 alternate port functions (TXD/RXD, OC0A/B, OC1A/B, OC2A/B, SS/MOSI/MISO/SCK, SDA/SCL, ADC0–5; ADC6/7 analog only), 24.6.1 ADC: 'optimized for analog signals with an output impedance of approximately 10 kΩ or less'",
+  "functions: Arduino pin → ATmega328P port from the schematic, the port's alternate functions from the data sheet; PWM instance = timer (one frequency per timer), line = compare output A/B",
+  "adc.range_v [0, 5.0]: 0 V … AVCC = +5V, the default reference – assumption: the firmware keeps the default reference (AREF pin without external reference)",
+  "the AVR VIH/VIL are from table 30-1 (–40 … 105 °C table; the –40 … 85 °C table did not extract as text)",
+  "pin v_max_v and gpio_v_max_v 5.5 V: VCC + 0.5 V at VCC 5 V (abs. max); RESET held to the same 5.5 V although the AVR allows 13 V on RESET (the board joins it to +5V through 1 kΩ)",
+  "VIN v_max_v 15 V and vin_min_v/vin_max_v 7–15 V: the user manual's range; the LM1117's own ratings were not read"
+ ],
+ "notes": "Bought board without an LCSC number, keyed by its manufacturer part number (handbook 4: a part bought from another distributor; 4.5 bought boards) – a component names it with part = A000005 and bom: false. footprint and order are not filled (see verified.open).",
+ "verified": {
+  "by": "Claude (datasheet check, library draft)",
+  "date": "2026-10-31",
+  "datasheet": "Arduino Nano User Manual, SKU A000005 (modified 30/10/2026); Arduino Nano schematic NanoV3.3 (A000005-schematics.pdf, dated 23/01/19); Microchip ATmega48A/PA/88A/PA/168A/PA/328/P megaAVR Data Sheet DS40002061B",
+  "checked": [
+   "header pins J1/J2 and the DIP-30 numbering against the schematic and the user manual's pin 27 (+5V) and pin 30 (VIN)",
+   "power path: VIN → LM1117IMPX-5.0 → +5V; USB → MFFSMF050 → SS1P3L → +5V; 3V3 from the FT232RL",
+   "ATmega328P absolute maximum: VCC + 0.5 V per pin, 40 mA per pin, 200 mA VCC/GND; VIH 0.6 VCC, VIL 0.3 VCC",
+   "speed grades 4/10/20 MHz at 1.8/2.7/4.5 V; the board runs at 16 MHz",
+   "alternate functions of D0–D13 and A0–A7",
+   "RoHS (no exemptions) and REACH statement of the user manual",
+   "2026-10-31, pin limits (schema-gaps A6, B1–B3, C1–C4): Microchip ATmega328P DS40002061B: 29.1 DC current per I/O pin 40 mA (the entry's gpio_i_max_a); 29.2 notes 3 and 4 – the sum of IOH over C0–C5, D0–D4, ADC7, RESET and over B0–B5, D5–D7, ADC6, XTAL1, XTAL2 at most 150 mA, the sum of IOL over C0–C5, ADC7, ADC6, over B0–B5, D5–D7, XTAL1, XTAL2 and over D0–D4, RESET at most 100 mA (i_group_max_a with dir); the ports from the Nano schematic NanoV3.3 (23/01/19): D0–D7 PD0–PD7, D8–D13 PB0–PB5, A0–A5 PC0–PC5, A6/A7 ADC6/ADC7, RESET PC6 (header pins 3 and 28, counted once as pin 3)"
+  ],
+  "open": [
+   "footprint: no EasyEDA footprint name chosen for the plug-in board (header pair 2 × 15, 2.54 mm) – to be set with the project's footprint",
+   "order: no distributor order code read (PARTS.supplier warns about a bom: false part without one)",
+   "LM1117IMPX-5.0 (TI datasheet not read): dropout_v, iq_a, rth_ja_k_per_w and tj_max_c of the on-board LDO – LIM.t has no temperature item without them; the simulation's default dropout 0.3 V is lower than an LM1117's",
+   "core current (i_core_a): the ATmega328P table gives 9 mA max at 8 MHz/5 V only; FT232RL and LEDs add to it – the simulation's default applies",
+   "3V3 output current (FT232RL 3V3OUT) not read",
+   "MFFSMF050 polyfuse and SS1P3L diode ratings not read",
+   "the user manual's pinout tables 5.1/5.2 contradict the schematic (pin 1 '+3V3'/'5V USB Power', pin 12 twice) – the schematic is followed"
+  ]
+ },
+ "i_group_max_a": {
+  "ioh_c_d0_d4": {
+   "pins": [
+    "19",
+    "20",
+    "21",
+    "22",
+    "23",
+    "24",
+    "2",
+    "1",
+    "5",
+    "6",
+    "7",
+    "26",
+    "3"
+   ],
+   "max": 0.15,
+   "dir": "sourced"
+  },
+  "ioh_b_d5_d7": {
+   "pins": [
+    "11",
+    "12",
+    "13",
+    "14",
+    "15",
+    "16",
+    "8",
+    "9",
+    "10",
+    "25"
+   ],
+   "max": 0.15,
+   "dir": "sourced"
+  },
+  "iol_c": {
+   "pins": [
+    "19",
+    "20",
+    "21",
+    "22",
+    "23",
+    "24",
+    "26",
+    "25"
+   ],
+   "max": 0.1,
+   "dir": "sunk"
+  },
+  "iol_b_d5_d7": {
+   "pins": [
+    "11",
+    "12",
+    "13",
+    "14",
+    "15",
+    "16",
+    "8",
+    "9",
+    "10"
+   ],
+   "max": 0.1,
+   "dir": "sunk"
+  },
+  "iol_d0_d4": {
+   "pins": [
+    "2",
+    "1",
+    "5",
+    "6",
+    "7",
+    "3"
+   ],
+   "max": 0.1,
+   "dir": "sunk"
+  }
+ }
+}

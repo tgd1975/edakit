@@ -64,7 +64,7 @@ def test_names_the_graph_does_not_have_are_g1(project):
     project.save_graph(g)
     cfg = project.config()
     found = [m for c, m in check(Design.from_config(cfg), cfg).errors if c == "STRUCT.ref"]
-    assert found == ["layout: unknown key 'fixd' (known: fixed, edge, near, loops, notes)",
+    assert found == ["layout: unknown key 'fixd' (known: fixed, edge, near, loops, apart, notes)",
                      "layout.edge: no part J7 in the graph", "layout.near: no part U9 in the graph",
                      "layout.loops: C1.1 and C2.1 are not on one net of one board"]
 

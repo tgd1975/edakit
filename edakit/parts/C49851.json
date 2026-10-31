@@ -1,0 +1,169 @@
+{
+ "lcsc": "C49851",
+ "mpn": "INA226AIDGSR",
+ "manufacturer": "TI(德州仪器)",
+ "kind": "ic",
+ "package": "VSSOP-10 (TI DGS)",
+ "footprint": "MSOP-10_L3.0-W3.0-P0.50-LS5.0-BL",
+ "jlc_class": "Extended Part",
+ "datasheet": {
+  "url": "https://www.ti.com/lit/ds/symlink/ina226.pdf",
+  "pinout_page": 3
+ },
+ "address": {
+  "base": 64,
+  "pins": {
+   "2": {
+    "low": 0,
+    "high": 1,
+    "sda": 2,
+    "scl": 3
+   },
+   "1": {
+    "low": 0,
+    "high": 4,
+    "sda": 8,
+    "scl": 12
+   }
+  }
+ },
+ "pins": {
+  "1": {
+   "name": "A1",
+   "type": "input",
+   "hint": "address pin: GND, VS, SDA or SCL – four states; edakit's address model knows only low and high, so a pin tied to SDA or SCL is not computed right",
+   "i_inject_max_a": 0.005
+  },
+  "2": {
+   "name": "A0",
+   "type": "input",
+   "hint": "address pin: GND, VS, SDA or SCL – four states; edakit's address model knows only low and high, so a pin tied to SDA or SCL is not computed right",
+   "i_inject_max_a": 0.005
+  },
+  "3": {
+   "name": "Alert",
+   "type": "output",
+   "drive": "open_drain",
+   "hint": "multi-functional alert, open-drain: pull it up to the VS voltage (8.2.1.2)",
+   "v_rel_max_v": null,
+   "i_max_a": 0.01,
+   "needs": [
+    {
+     "what": "pull_up",
+     "when": "connected",
+     "source": "TI INA226 SBOS547C (revised August 2026), 8.2.1.2: 'The alert pin must to be pulled up to the VVS pin voltage via the pull-up resistors'; 6: Alert is an open-drain output"
+    }
+   ]
+  },
+  "4": {
+   "name": "SDA",
+   "type": "bidirectional",
+   "role": "sda",
+   "drive": "open_drain",
+   "v_max_v": 6.0,
+   "v_rel_max_v": null,
+   "i_max_a": 0.01
+  },
+  "5": {
+   "name": "SCL",
+   "type": "input",
+   "role": "scl",
+   "i_inject_max_a": 0.005
+  },
+  "6": {
+   "name": "VS+",
+   "type": "power_in",
+   "role": "vdd",
+   "v_max_v": 6.0,
+   "needs": [
+    {
+     "what": "capacitor",
+     "c_min_f": 1e-07,
+     "source": "TI INA226 36V, 16-Bit, Ultra-Precise I2C Output Current, Voltage, and Power Monitor With Alert, SBOS547C (June 2011, revised August 2026), p. 31 section 8.3: 'A typical value for this supply bypass capacitor is 0.1μF'; p. 29 Figure 8-1 CBYPASS 0.1 µF",
+     "why": "the datasheet names 0.1 µF as the typical value"
+    }
+   ]
+  },
+  "7": {
+   "name": "GND",
+   "type": "ground"
+  },
+  "8": {
+   "name": "VBUS",
+   "type": "analog",
+   "v_max_v": 40.0,
+   "z_in_ohm": 830000,
+   "hint": "bus voltage input; input range 0–36 V – do not apply more than 36 V (abs. max 40 V)"
+  },
+  "9": {
+   "name": "VIN-",
+   "type": "analog",
+   "v_max_v": 40.0,
+   "hint": "IN–, load side of the shunt; do not apply more than 36 V (abs. max 40 V)"
+  },
+  "10": {
+   "name": "VIN+",
+   "type": "analog",
+   "v_max_v": 40.0,
+   "hint": "IN+, supply side of the shunt; do not apply more than 36 V (abs. max 40 V)"
+  }
+ },
+ "values": {
+  "vih_ratio": 0.7,
+  "vil_ratio": 0.3,
+  "idd_max_a": 0.00042
+ },
+ "limits": {
+  "vdd_max_v": 6.0,
+  "vdd_op_min_v": 2.7,
+  "vdd_op_max_v": 5.5,
+  "vin_rel_max_v": 0.3,
+  "i_out_max_a": 0.01,
+  "tj_max_c": 150,
+  "rth_ja_k_per_w": 144.6,
+  "t_min_c": -40,
+  "t_max_c": 125
+ },
+ "hints": [
+  "input range 0–36 V on IN+, IN– and VBUS – do not apply more than 36 V; they withstand 0–36 V whether VS is applied or not",
+  "Kelvin (4-wire) connection of IN+ and IN– to the shunt (8.4.1)",
+  "I2C fast mode to 400 kHz, high-speed mode to 2.94 MHz; SMBus timeout resets the interface after 28–35 ms",
+  "address pins A0/A1: GND, VS, SDA or SCL give 16 addresses 0x40–0x4F (Table 6-2); edakit computes only GND/VS"
+ ],
+ "sources": [
+  "pin numbers and names: EasyEDA library data of C49851 (edakit part import, 2026-10-31; VS+ = VS, VIN+/VIN- = IN+/IN–); checked against TI INA226 36V, 16-Bit, Ultra-Precise I2C Output Current, Voltage, and Power Monitor With Alert, SBOS547C (June 2011, revised August 2026), p. 3 Figure 4-1 and Table 4-1",
+  "TI INA226 36V, 16-Bit, Ultra-Precise I2C Output Current, Voltage, and Power Monitor With Alert, SBOS547C (June 2011, revised August 2026), p. 4 5.1 Absolute Maximum Ratings: VS 6 V; IN+/IN– differential ±40 V, common mode -0.3…40 V; VBUS -0.3…40 V; SDA GND - 0.3…6 V; SCL GND - 0.3 V…VS + 0.3 V (vin_rel_max_v); input current 5 mA; open-drain output current 10 mA (i_out_max_a); TJ 150 °C",
+  "TI INA226 36V, 16-Bit, Ultra-Precise I2C Output Current, Voltage, and Power Monitor With Alert, SBOS547C (June 2011, revised August 2026), p. 4 5.3: VCM nom 12 V, VS nom 3.3 V, TA -40…125 °C (t_min_c, t_max_c); 5.4: RθJA 144.6 °C/W",
+  "TI INA226 36V, 16-Bit, Ultra-Precise I2C Output Current, Voltage, and Power Monitor With Alert, SBOS547C (June 2011, revised August 2026), p. 5–6 5.5: bus voltage input range 0–36 V (note 1: do not apply more than 36 V); VBUS input impedance 830 kΩ (typical, z_in_ohm); VIH 0.7 × VS … 6 V, VIL -0.5 V … 0.3 × VS; VOL 0.4 V at 3 mA (SDA, Alert); operating supply range 2.7–5.5 V; IQ max 420 µA (idd_max_a)",
+  "TI INA226 36V, 16-Bit, Ultra-Precise I2C Output Current, Voltage, and Power Monitor With Alert, SBOS547C (June 2011, revised August 2026), p. 18 Table 6-2: target address 1000000 (A1 = A0 = GND) … A0 = VS +1, A1 = VS +4",
+  "TI INA226 36V, 16-Bit, Ultra-Precise I2C Output Current, Voltage, and Power Monitor With Alert, SBOS547C (June 2011, revised August 2026), p. 21 Table 6-3: fSCL 0.001–0.4 MHz fast mode, 0.001–2.94 MHz high-speed mode",
+  "TI INA226 36V, 16-Bit, Ultra-Precise I2C Output Current, Voltage, and Power Monitor With Alert, SBOS547C (June 2011, revised August 2026), p. 30 8.2.1.2: the alert pin must be pulled up to the VS pin voltage"
+ ],
+ "verified": {
+  "by": "Claude (datasheet check, library draft)",
+  "date": "2026-10-31",
+  "datasheet": "TI SBOS547C (August 2026)",
+  "datasheet_sha256": "c9b67f886d4a5241a5e070723f7b61867409eeb27eed768b9cdd9cb17e03ca2d",
+  "checked": [
+   "pinout and pin names = datasheet Table 4-1 = EasyEDA symbol",
+   "abs. max VS 6 V, IN± and VBUS 40 V, SDA 6 V, SCL VS + 0.3 V, TJ 150 °C; RθJA 144.6 °C/W",
+   "VS 2.7–5.5 V; VIH 0.7 × VS, VIL 0.3 × VS; IQ max 420 µA",
+   "I2C address 0x40 + A0 (1) + A1 (4) for GND/VS",
+   "Alert open-drain; 0.1 µF supply bypass (typical value)",
+   "2026-10-31: address pins with four states (low, high, sda, scl) – TI SBOS547C (revised August 2026), Table 6-2 Address Pins and Target Addresses: A1, A0 each on GND, VS, SDA or SCL give 1000000 to 1001111 – A0 adds 0/1/2/3, A1 0/4/8/12 (schema-gaps A4)",
+   "2026-10-31, pin limits (schema-gaps A6, B1–B3, C1–C4): TI SBOS547C 5.1: VSDA GND − 0.3 V to 6 V regardless of VS (v_rel_max_v null), VSCL GND − 0.3 V to VS + 0.3 V (the entry's vin_rel_max_v), input current into any pin 5 mA (i_inject_max_a on SCL, A0, A1), open-drain digital output current 10 mA (SDA and Alert i_max_a); the table names no voltage limit of Alert against VS (v_rel_max_v null)",
+   "2026-10-31: Alert needs a pull-up where it is connected (SBOS547C 8.2.1.2) – an unused Alert in nc needs none"
+  ],
+  "open": [
+   "address pins tied to SDA or SCL cannot be expressed in the entry's address model",
+   "A0/A1 and Alert have no absolute-maximum row; vin_rel_max_v (from SCL's row) is applied to A0/A1, Alert is exempt from it (v_rel_max_v null) – whether Alert may be pulled above VS is not stated",
+   "the operating supply range comes from 5.5 (Power Supply), the Recommended Operating Conditions give only a nominal 3.3 V",
+   "Alert pull-up is required when Alert is used (8.2.1.2); not entered as a pin need because an unused Alert may be left open – the datasheet does not say",
+   {
+    "text": "pin 1 of the VSSOP-10 at the footprint's pin-1 mark",
+    "when": "order"
+   },
+   "RoHS/REACH not entered"
+  ]
+ }
+}

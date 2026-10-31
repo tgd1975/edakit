@@ -1,0 +1,113 @@
+{
+ "lcsc": "C2830320",
+ "mpn": "FS8205A",
+ "manufacturer": "TECH PUBLIC",
+ "kind": "nmos",
+ "package": "SOT-23-6",
+ "footprint": "SOT-23-6_L2.9-W1.6-P0.95-LS2.8-BR",
+ "jlc_class": "Extended Part",
+ "datasheet": {
+  "url": "https://datasheet.lcsc.com/datasheet/pdf/c060cb7baa8cc2b2d2a0ed3afa443ef8.pdf?productCode=C2830320",
+  "pinout_page": 1
+ },
+ "pins": {
+  "1": {
+   "name": "S1",
+   "type": "passive",
+   "role": "source",
+   "hint": "source of MOSFET 1 – the channel this entry models"
+  },
+  "2": {
+   "name": "D1/D2",
+   "type": "passive",
+   "role": "drain",
+   "hint": "common drain of both MOSFETs, the same node as pin 5"
+  },
+  "3": {
+   "name": "S2",
+   "type": "passive",
+   "hint": "source of MOSFET 2 – no role: kind nmos knows one channel, MOSFET 2 is neither simulated nor held to its limits",
+   "role": "source_2"
+  },
+  "4": {
+   "name": "G2",
+   "type": "passive",
+   "hint": "gate of MOSFET 2 – no role (see S2)",
+   "role": "gate_2"
+  },
+  "5": {
+   "name": "D1/D2",
+   "type": "passive",
+   "role": "drain",
+   "hint": "common drain of both MOSFETs, the same node as pin 2"
+  },
+  "6": {
+   "name": "G1",
+   "type": "passive",
+   "role": "gate"
+  }
+ },
+ "values": {
+  "vgs_th_v": [
+   0.5,
+   0.7,
+   1.2
+  ],
+  "rds_on_max_ohm": {
+   "2.5": 0.0315,
+   "4.5": 0.025
+  }
+ },
+ "limits": {
+  "vds_max_v": 20,
+  "vgs_max_v": 10,
+  "id_max_a": 4.8,
+  "p_max_w": 1.5,
+  "tj_max_c": 150,
+  "t_min_c": -55,
+  "rth_ja_k_per_w": 83
+ },
+ "spice": {
+  "model": ".model FS8205A NMOS(LEVEL=1 VTO=0.7 KP=45.8 RD=0.0192 IS=3.5e-18)"
+ },
+ "hints": [
+  "dual N-MOSFET with a common drain (pins 2 and 5): the entry models MOSFET 1 (S1, G1, D) only – in a cell-protection circuit the path through MOSFET 2 (S2, G2) is open in the simulation"
+ ],
+ "compliance": {
+  "radio": "none",
+  "source": "LCSC product data C2830320 (2026-10-31): no RoHS statement (isRohsCert null); the data sheet states nothing"
+ },
+ "sources": [
+  "TECH PUBLIC FS8205A data sheet (3 pages, no revision or date printed; scanned), via LCSC https://datasheet.lcsc.com/datasheet/pdf/c060cb7baa8cc2b2d2a0ed3afa443ef8.pdf?productCode=C2830320, read 2026-10-31 as images – TECH PUBLIC's document (logo and www.techpublic.com.tw on every page)",
+  "pins: p. 1 'package and pin configuration' shows the SOT-23-6 with the pin-1 dot at S1, the row S1, D1/D2, S2 and opposite G1, D1/D2, G2, but prints no pin numbers; the EasyEDA symbol of C2830320 (edakit part import 2026-10-31): 1 S1, 2 D1/D2, 3 S2, 4 G2, 5 D1/D2, 6 G1 – consistent with the dot and the usual counter-clockwise numbering",
+  "vds_max_v 20, vgs_max_v 10: p. 1 absolute maximum VDS 20 V, VGS ±10 V",
+  "id_max_a 4.8: p. 1 continuous drain current 6 A at TC = 25 °C, 4.8 A at TC = 70 °C (note 3, not printed) – the 70 °C value entered, conservative as in the siblings C15127 and C20917; pulsed 24 A; avalanche energy 7.4 mJ",
+  "p_max_w 1.5: p. 1 maximum power dissipation at TC = 25 °C; tj_max_c 150, t_min_c -55: p. 1 operating junction and storage temperature -55 … 150 °C",
+  "rth_ja_k_per_w 83: p. 1 thermal resistance junction to ambient, typ 83 °C/W (no maximum, no board stated); junction to case typ 14.4 °C/W",
+  "vgs_th_v 0.5 / 0.7 / 1.2 V (VDS = VGS, ID = 250 µA) and rds_on_max_ohm 25 / 31.5 mΩ at VGS 4.5 / 2.5 V, ID 3 A (typ 19.5 / 25 mΩ): p. 2 on characteristics; VSD ≤ 1.2 V at 6 A: p. 2",
+  "spice: assumption – level 1 fitted by Claude, no manufacturer model: VTO = VGS(th) typ; KP and RD chosen so that RDS(on) meets the maxima at 3 A (ngspice: 24.96 mΩ at 4.5 V, 31.46 mΩ at 2.5 V); IS so that the body diode drops 1.18 V at 6 A (max 1.2 V)",
+  "choice of the maker (2026-10-31): Fortune Semiconductor's FS8205A (C14212, C16052, TSSOP-8) has 0 pcs at LCSC; TECH PUBLIC's SOT-23-6 FS8205A has 139 300 pcs at LCSC and 139 306 at JLCPCB (Extended Part), FUXINSEMI's C908265 25 840 pcs; the Fortune and FUXINSEMI data sheets give other ratings (VGS ±12 V) – not used for this entry"
+ ],
+ "notes": "Dual N-MOSFET (common drain) for one-cell protection with the DW01A. Kind nmos describes one channel: MOSFET 1 carries the roles, MOSFET 2 is neither simulated nor checked (schema gap). Library draft, group power.",
+ "verified": {
+  "by": "Claude (datasheet check, library draft)",
+  "date": "2026-10-31",
+  "datasheet": "TECH PUBLIC FS8205A data sheet (3 pages, no revision or date printed; scanned)",
+  "datasheet_sha256": "e4795f69f664a75065594f766b93ca0a30e5ed4da513f96b9dc4752c1f0f5d0b",
+  "checked": [
+   "package drawing p. 1: pin-1 dot at S1; S1, D1/D2, S2 on one side, G1, D1/D2, G2 opposite – matches the EasyEDA symbol of C2830320 with counter-clockwise numbering",
+   "absolute maximum p. 1: VDS 20 V, VGS ±10 V, ID 6 / 4.8 A (TC 25 / 70 °C), PD 1.5 W, TJ -55 … 150 °C; RθJA typ 83 °C/W",
+   "electrical characteristics p. 2: VGS(th) 0.5 / 0.7 / 1.2 V; RDS(on) max 25 mΩ at 4.5 V and 31.5 mΩ at 2.5 V (3 A); VSD ≤ 1.2 V at 6 A",
+   "circuit diagram p. 1: two N-MOSFETs with body diodes, drains joined",
+   "2026-10-31: the second channel (schema-gaps E4): S2 (pin 3) and G2 (pin 4) with the roles source_2 and gate_2 on the shared drain – the simulation now builds both MOSFETs with the same model"
+  ],
+  "open": [
+   "pin numbers are not printed in the data sheet – taken from the EasyEDA symbol, consistent with the pin-1 dot of the drawing",
+   "a dual MOSFET does not fit kind nmos: MOSFET 2 (S2, G2) has no roles – not simulated and not held to VDS, VGS, ID (schema gap)",
+   "note 3 (the conditions of ID and RθJA) is referenced but not printed; RθJA is a typical value",
+   "no continuous body-diode current (is_body_max_a) and no VSD at 1 A (vsd_v_at_1a) – only VSD ≤ 1.2 V at 6 A",
+   "SPICE model is a level-1 fit by Claude, not a manufacturer model",
+   "RoHS: LCSC states nothing for C2830320"
+  ]
+ }
+}

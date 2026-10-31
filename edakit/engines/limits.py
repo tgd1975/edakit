@@ -8,6 +8,8 @@ fuse's trip current) is not reported where the limit itself is exceeded at the s
 Radio (LIM.eirp, LIM.band): a transmitter's e.i.r.p. against the limit of each EU band it transmits in, and its bands
 against the EU licence-exempt bands (radio.py, catalog/tables/radio_eu.toml); what the firmware keeps is graded
 firmware or unknown, its severity the profile's by purpose.
+
+Hazardous voltage (LIM.hazardous): a net beyond the ES1 limit of IEC 62368-1 – recognised, not checked (decision 7).
 """
 
 from __future__ import annotations
@@ -16,7 +18,7 @@ import math
 
 from ..design import natural_key
 from ..findings import Finding
-from ..circuit import is_number
+from ..circuit import is_number, v_range
 from ..radio import (EIRP_BANDS, EU_BANDS, NOT_LEGAL_ADVICE, RADIO_KEYS, band_names, bands_in_use, eirp, mhz_ranges,
                      overlaps, radios, stated_use, within)
 from .quantities import fuse_currents, part_limits, part_voltages, pin_voltages
@@ -71,7 +73,106 @@ def judge_all(design, quantities):
 def run(ctx):
     found = judge_all(ctx.design, pin_voltages(ctx.design) + part_voltages(ctx.design))
     found += judge_all(ctx.joined, fuse_currents(ctx.joined, ctx.sim))
-    return found + radio_power(ctx.design) + radio_bands(ctx.design)
+    return (found + hazardous(ctx.design) + supply_order(ctx.design) + charge_currents(ctx.design, ctx.sim)
+            + radio_power(ctx.design) + radio_bands(ctx.design))
+
+
+# --- supply order ------------------------------------------------------------------------------------------------------
+def order_pairs(part):
+    """[(lower pin number, higher pin number, lower name, higher name)] of a part's supply_order (pin names)."""
+    by_name = {}
+    for num, info in (part.get("pins") or {}).items():
+        by_name.setdefault(info.get("name"), num)
+    return [(by_name[a], by_name[b], a, b) for a, b in (part.get("supply_order") or [])
+            if a in by_name and b in by_name]
+
+
+def supply_order(d):
+    """LIM.v/order (schema-gaps B2): a supply the entry says never rises above another (supply_order – VLOGIC ≤ VDD of
+    the MPU-6050) is not declared higher than it; each scenario of stage E holds it at its operating point."""
+    out = []
+    for des in sorted(d.comps, key=natural_key):
+        part = d.part(des) or {}
+        for lo_pin, hi_pin, lo_name, hi_name in order_pairs(part):
+            a, b = d.pin_net.get(f"{des}.{lo_pin}"), d.pin_net.get(f"{des}.{hi_pin}")
+            if not a or not b or a == b:
+                continue
+            va, vb = v_range(d.nets[a])[1], v_range(d.nets[b])[1]
+            if va > vb + 1e-9:
+                out.append(Finding("LIM.v", "G", des, f"{des}: {lo_name} on {a} up to {va:g} V, above {hi_name} on {b} "
+                                   f"(up to {vb:g} V) – the entry wants {lo_name} ≤ {hi_name}",
+                                   f"supply_order of {d.entry_key(des)}", grade="order", on=(("component", des),),
+                                   data={"value": va, "limit": vb, "unit": "V"}))
+    return out
+
+
+# --- linear chargers (maker-coverage FT-4) ----------------------------------------------------------------------------
+def charge_currents(d, sim=None):
+    """LIM.i/charge: a linear charger's programmed current – values prog_v of its entry over the resistor from its PROG
+    pin (role prog) to ground: MCP73831 1000 V / R_PROG, TP4056 1100 V or 1200 V by maker – within the charger's own
+    i_out_max_a and within the cell's i_charge_max_a (sim.json cells) where a battery holder with a cell state in any
+    supply scenario sits on the charger's battery pin (role bat)."""
+    from ..circuit import resistors_to
+    out = []
+    cells = (sim or {}).get("cells") or {}
+    # every holder with a cell state in any supply scenario – not only one named "cells"
+    holders = sorted({(h, state) for supply in ((sim or {}).get("supplies") or {}).values() if isinstance(supply, dict)
+                      for h, state in supply.items() if isinstance(state, str) and state in cells})
+    for des in sorted(d.comps, key=natural_key):
+        part = d.part(des) or {}
+        k = (part.get("values") or {}).get("prog_v")
+        prog = d.net_of(des, "prog")
+        if not is_number(k) or not prog:
+            continue
+        rs = [r for _, r, _ in resistors_to(d, prog, {d.ground}) if is_number(r) and r > 0]
+        if not rs:
+            continue
+        r = 1 / sum(1 / x for x in rs)
+        i_set = k / r
+        bounds = []
+        if is_number(most := (part.get("limits") or {}).get("i_out_max_a")):
+            bounds.append((most, f"i_out_max_a of {d.entry_key(des)}"))
+        bat = d.net_of(des, "bat")
+        for h, state in holders:
+            if bat and bat in {d.pin_net.get(f"{h}.{n}") for n in ((d.part(h) or {}).get("pins") or {})}:
+                if is_number(lim := (cells.get(state) or {}).get("i_charge_max_a")):
+                    bounds.append((lim, f"i_charge_max_a of cells.{state} in sim.json ({h})"))
+        for most, src in bounds:
+            if i_set > most * (1 + 1e-9):
+                out.append(Finding("LIM.i", "G", des, f"{des}: R_PROG {r:.4g} Ω programs {num(i_set, 'A')} "
+                                   f"({k:g} V / R_PROG), allowed ≤ {num(most, 'A')}", src, grade="charge",
+                                   on=(("component", des),), data={"value": i_set, "limit": most, "unit": "A"}))
+    return out
+
+
+# --- hazardous voltage ------------------------------------------------------------------------------------------------
+def es1_v():
+    from .. import catalog
+    return float(catalog.table("iec62368")["es1"]["dc_v"])
+
+
+def hazardous_nets(d):
+    """{net: its highest voltage magnitude} of the nets whose declared range reaches beyond the ES1 limit."""
+    limit, out = es1_v(), {}
+    for name, net in d.nets.items():
+        v = net.get("v")
+        if isinstance(v, list) and len(v) == 2 and all(is_number(x) for x in v):
+            peak = max(abs(v[0]), abs(v[1]))
+            if peak > limit:
+                out[name] = peak
+    return out
+
+
+def hazardous(d):
+    """LIM.hazardous (rules-at-scale.md, decision 7): a net above the ES1 limit of IEC 62368-1 is hazardous voltage,
+    which edakit recognises and does not check – an error a project may accept with its reason. An AC net is judged by
+    its peak against the DC limit while the AC limit is not read (catalog/tables/iec62368.toml)."""
+    limit = es1_v()
+    return [Finding("LIM.hazardous", "G", name, f"{name}: up to {peak:g} V – above the ES1 limit of IEC 62368-1 "
+                    f"({limit:g} V DC): hazardous voltage, whose spacing and isolation edakit does not check",
+                    "catalog/tables/iec62368.toml", on=(("net", name),), data={"value": peak, "limit": limit,
+                                                                                 "unit": "V"})
+            for name, peak in sorted(hazardous_nets(d).items(), key=lambda x: natural_key(x[0]))]
 
 
 # --- radio ------------------------------------------------------------------------------------------------------------

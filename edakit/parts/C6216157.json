@@ -1,0 +1,86 @@
+{
+ "lcsc": "C6216157",
+ "mpn": "SDS-50J",
+ "manufacturer": "CUI",
+ "kind": "connector",
+ "package": "THT DIN socket, 5 pins at 180°, right angle",
+ "footprint": "CONN-TH_SDS-50J",
+ "jlc_class": "Extended Part",
+ "datasheet": {
+  "url": "https://datasheet.lcsc.com/datasheet/pdf/39eaa9575b3a5e3b72c3ccb70a225b56.pdf?productCode=C6216157",
+  "pinout_page": 3
+ },
+ "pins": {
+  "1": {
+   "name": "1",
+   "type": "passive",
+   "role": "pin1"
+  },
+  "2": {
+   "name": "2",
+   "type": "passive",
+   "role": "pin2"
+  },
+  "3": {
+   "name": "3",
+   "type": "passive",
+   "role": "pin3"
+  },
+  "4": {
+   "name": "4",
+   "type": "passive",
+   "role": "pin4"
+  },
+  "5": {
+   "name": "5",
+   "type": "passive",
+   "role": "pin5"
+  },
+  "E": {
+   "name": "E",
+   "type": "passive",
+   "role": "shield",
+   "hint": "the earth contacts of the metal shell – two pads with the number E (drawing SDS-50J, p. 3)"
+  }
+ },
+ "values": {
+  "r_contact_ohm": 0.03
+ },
+ "limits": {
+  "v_max_v": 24,
+  "i_max_a": 1,
+  "t_min_c": -40,
+  "t_max_c": 85
+ },
+ "hints": [
+  "5-pin DIN at 180° (part number key, p. 1) – the MIDI connector; pins 1 to 5 as numbered in the drawing (p. 3)",
+  "rated 100 V AC / 2 A, 24 V DC / 1 A; 1 000 mating cycles (p. 1)"
+ ],
+ "sources": [
+  "CUI Devices SDS-J series standard DIN connector data sheet, date 08/05/2022, LCSC's copy for C6216157 https://datasheet.lcsc.com/datasheet/pdf/39eaa9575b3a5e3b72c3ccb70a225b56.pdf?productCode=C6216157, read 2026-10-31",
+  "part number key, p. 1: SDS-50J = 5 pins, 180 degrees; specifications, p. 1: rated 100 V AC at 2 A, 24 V DC at 1 A; contact resistance 30 mΩ max (r_contact_ohm, the maximum); insulation resistance ≥ 50 MΩ at 250 V DC; withstand 250 V AC for 1 minute; −40 … +85 °C; 1 000 cycles",
+  "limits: v_max_v and i_max_a from the DC rating 24 V / 1 A – a board's DC circuit",
+  "mechanical drawing SDS-50J, p. 3: pins 3, 2, 1 in a row 7.5 mm apart, 5 and 4 offset by 2.5 mm, two E (ground) pins 5.0 mm apart, 7 holes ø1.3 mm, 2 mounting holes ø2.4 mm",
+  "mpn, manufacturer, footprint, jlc_class, pin numbers and names: EasyEDA library data of C6216157 via edakit part import, read 2026-10-31 – pads 1–5 and two pads E at the drawing's positions",
+  "stock: JLCPCB catalogue 153 pcs (2026-10-31)"
+ ],
+ "verified": {
+  "by": "Claude (datasheet check, library draft)",
+  "date": "2026-10-31",
+  "datasheet": "CUI Devices SDS-J series, date 08/05/2022",
+  "datasheet_sha256": "165789aa3f049e903c9d89570fac1fcce08fd830f70764c750b5d1a686c7fe1e",
+  "checked": [
+   "SDS-50J = 5 pins at 180° (p. 1)",
+   "24 V DC / 1 A, 100 V AC / 2 A, contact resistance ≤ 30 mΩ, −40 … +85 °C (p. 1)",
+   "pad positions of the EasyEDA footprint against the recommended PCB layout (p. 3): 1 at +7.5, 2 at 0, 3 at −7.5 mm; 4 and 5 at ±5.0 mm, 2.5 mm further back; E at ±2.5 mm, 10 mm back"
+  ],
+  "open": [
+   "the drawing's two ø2.4 mm mounting holes are not in the EasyEDA footprint's pad list – check the footprint for them",
+   "lead cross-section not legible in the drawing: no lead entry, GEO.hole stays pending",
+   {
+    "text": "pin numbers 1–5 on the footprint against the socket's face (drawing p. 3)",
+    "when": "order"
+   }
+  ]
+ }
+}

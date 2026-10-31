@@ -1,0 +1,262 @@
+{
+ "lcsc": "C9866",
+ "mpn": "DS3231SN#T&R",
+ "manufacturer": "ADI(亚德诺)/MAXIM(美信)",
+ "kind": "ic",
+ "package": "SOIC-16 300 mil (Maxim W16#H2, outline 21-0042)",
+ "footprint": "SOIC-16_L10.3-W7.5-P1.27-LS10.3-BL",
+ "jlc_class": "Extended Part",
+ "datasheet": {
+  "url": "https://datasheet.lcsc.com/datasheet/pdf/286921b764c5d30fd9b064dc4e9fde9c.pdf?productCode=C722469",
+  "pinout_page": 18,
+  "url_manufacturer": "https://www.analog.com/media/en/technical-documentation/data-sheets/DS3231.pdf"
+ },
+ "address": {
+  "base": 104
+ },
+ "needs": {
+  "decoupling": false
+ },
+ "pins": {
+  "1": {
+   "name": "32kHz",
+   "type": "output",
+   "drive": "open_drain",
+   "v_max_v": 6.0,
+   "hint": "open-drain 32.768 kHz output: needs an external pull-up when used, may be left open"
+  },
+  "2": {
+   "name": "VCC",
+   "type": "power_in",
+   "role": "vdd",
+   "v_max_v": 6.0,
+   "needs": [
+    {
+     "what": "capacitor",
+     "c_min_f": 1e-07,
+     "source": "Maxim Integrated DS3231 Extremely Accurate I2C-Integrated RTC/TCXO/Crystal, 19-5170 Rev 10 (3/15), p. 9 Pin Description: VCC 'should be decoupled using a 0.1µF to 1.0µF capacitor'",
+     "why": "0.1 µF to 1.0 µF; judged on the capacitors layout.near places next to the part, else on the net's sum – on a rail with more capacitance place the decoupling next to the DS3231 in layout.near",
+     "c_max_f": 1e-06
+    }
+   ],
+   "hint": "if VCC is not used, connect it to ground"
+  },
+  "3": {
+   "name": "INTSQW",
+   "type": "output",
+   "drive": "open_drain",
+   "v_max_v": 6.0,
+   "hint": "INT/SQW, active-low open-drain: pull-up to a supply of at most 5.5 V, regardless of VCC; at power-up an interrupt output with alarms disabled; may be left unconnected"
+  },
+  "4": {
+   "name": "RST",
+   "type": "bidirectional",
+   "drive": "open_drain",
+   "pull": "up",
+   "pull_ohm": 50000,
+   "v_max_v": 6.0,
+   "hint": "active-low open-drain reset output and debounced pushbutton input; internal 50 kΩ (nominal) pull-up to VCC – the datasheet says no external pull-up should be connected",
+   "needs": [
+    {
+     "what": "no_pull",
+     "dir": "up",
+     "source": "Maxim DS3231 19-5170 Rev 10 (3/15), pin description RST: 'It has an internal 50kΩ nominal value pullup resistor to VCC. No external pullup resistors should be connected.'"
+    }
+   ]
+  },
+  "5": {
+   "name": "NC",
+   "type": "no_connect",
+   "needs": [
+    {
+     "what": "to_ground",
+     "source": "Maxim Integrated DS3231 Extremely Accurate I2C-Integrated RTC/TCXO/Crystal, 19-5170 Rev 10 (3/15), p. 9 Pin Description and p. 18 Handling, PCB Layout, and Assembly: 'N.C. … Must be connected to ground'"
+    }
+   ]
+  },
+  "6": {
+   "name": "NC",
+   "type": "no_connect",
+   "needs": [
+    {
+     "what": "to_ground",
+     "source": "Maxim Integrated DS3231 Extremely Accurate I2C-Integrated RTC/TCXO/Crystal, 19-5170 Rev 10 (3/15), p. 9 Pin Description and p. 18 Handling, PCB Layout, and Assembly: 'N.C. … Must be connected to ground'"
+    }
+   ]
+  },
+  "7": {
+   "name": "NC",
+   "type": "no_connect",
+   "needs": [
+    {
+     "what": "to_ground",
+     "source": "Maxim Integrated DS3231 Extremely Accurate I2C-Integrated RTC/TCXO/Crystal, 19-5170 Rev 10 (3/15), p. 9 Pin Description and p. 18 Handling, PCB Layout, and Assembly: 'N.C. … Must be connected to ground'"
+    }
+   ]
+  },
+  "8": {
+   "name": "NC",
+   "type": "no_connect",
+   "needs": [
+    {
+     "what": "to_ground",
+     "source": "Maxim Integrated DS3231 Extremely Accurate I2C-Integrated RTC/TCXO/Crystal, 19-5170 Rev 10 (3/15), p. 9 Pin Description and p. 18 Handling, PCB Layout, and Assembly: 'N.C. … Must be connected to ground'"
+    }
+   ]
+  },
+  "9": {
+   "name": "NC",
+   "type": "no_connect",
+   "needs": [
+    {
+     "what": "to_ground",
+     "source": "Maxim Integrated DS3231 Extremely Accurate I2C-Integrated RTC/TCXO/Crystal, 19-5170 Rev 10 (3/15), p. 9 Pin Description and p. 18 Handling, PCB Layout, and Assembly: 'N.C. … Must be connected to ground'"
+    }
+   ]
+  },
+  "10": {
+   "name": "NC",
+   "type": "no_connect",
+   "needs": [
+    {
+     "what": "to_ground",
+     "source": "Maxim Integrated DS3231 Extremely Accurate I2C-Integrated RTC/TCXO/Crystal, 19-5170 Rev 10 (3/15), p. 9 Pin Description and p. 18 Handling, PCB Layout, and Assembly: 'N.C. … Must be connected to ground'"
+    }
+   ]
+  },
+  "11": {
+   "name": "NC",
+   "type": "no_connect",
+   "needs": [
+    {
+     "what": "to_ground",
+     "source": "Maxim Integrated DS3231 Extremely Accurate I2C-Integrated RTC/TCXO/Crystal, 19-5170 Rev 10 (3/15), p. 9 Pin Description and p. 18 Handling, PCB Layout, and Assembly: 'N.C. … Must be connected to ground'"
+    }
+   ]
+  },
+  "12": {
+   "name": "NC",
+   "type": "no_connect",
+   "needs": [
+    {
+     "what": "to_ground",
+     "source": "Maxim Integrated DS3231 Extremely Accurate I2C-Integrated RTC/TCXO/Crystal, 19-5170 Rev 10 (3/15), p. 9 Pin Description and p. 18 Handling, PCB Layout, and Assembly: 'N.C. … Must be connected to ground'"
+    }
+   ]
+  },
+  "13": {
+   "name": "GND",
+   "type": "ground"
+  },
+  "14": {
+   "name": "VBAT",
+   "type": "power_in",
+   "v_max_v": 6.0,
+   "hint": "backup supply: as backup source no capacitor is required; as primary source decouple with 0.1 µF to 1.0 µF low-leakage; if VBAT is not used, connect it to ground",
+   "needs": [
+    {
+     "what": "capacitor",
+     "c_min_f": 1e-07,
+     "when": "vbat_primary",
+     "source": "Maxim DS3231 19-5170 Rev 10 (3/15), pin description VBAT: 'When using the device with the VBAT input as the primary power source, this pin should be decoupled using a 0.1µF to 1.0µF low-leakage capacitor'"
+    },
+    {
+     "what": "to_ground",
+     "when": "no_battery",
+     "source": "Maxim DS3231 19-5170 Rev 10 (3/15), pin description VBAT: 'If VBAT is not used, connect to ground'"
+    }
+   ]
+  },
+  "15": {
+   "name": "SDA",
+   "type": "bidirectional",
+   "role": "sda",
+   "drive": "open_drain",
+   "v_max_v": 6.0,
+   "hint": "open-drain; the pull-up voltage can be up to 5.5 V regardless of VCC"
+  },
+  "16": {
+   "name": "SCL",
+   "type": "input",
+   "role": "scl",
+   "v_max_v": 6.0,
+   "hint": "up to 5.5 V regardless of VCC"
+  }
+ },
+ "values": {
+  "vih_ratio": 0.7,
+  "vil_ratio": 0.3,
+  "idd_max_a": 0.00065
+ },
+ "limits": {
+  "vdd_max_v": 6.0,
+  "vdd_op_min_v": 2.3,
+  "vdd_op_max_v": 5.5,
+  "tj_max_c": 125,
+  "rth_ja_k_per_w": 73,
+  "t_min_c": -40,
+  "t_max_c": 85
+ },
+ "hints": [
+  "VCC above VPF (2.45–2.70 V) powers the part; below VPF and below VBAT it runs from VBAT (Table 1)",
+  "contains a quartz tuning-fork crystal: no ultrasonic cleaning, avoid shocks in pick-and-place; reflow at most 2 times; no signal traces under the package unless a ground plane lies between",
+  "negative undershoots below -0.3 V in battery-backed mode may cause loss of data",
+  "I2C fast mode up to 400 kHz"
+ ],
+ "sources": [
+  "pin numbers and names: EasyEDA library data of C9866 (edakit part import, 2026-10-31); checked against Maxim Integrated DS3231 Extremely Accurate I2C-Integrated RTC/TCXO/Crystal, 19-5170 Rev 10 (3/15), p. 18 Pin Configuration (16 SO, top view)",
+  "Maxim Integrated DS3231 Extremely Accurate I2C-Integrated RTC/TCXO/Crystal, 19-5170 Rev 10 (3/15), p. 2 Absolute Maximum Ratings: any pin -0.3 V to +6.0 V, θJA 73 °C/W (JESD51-7 four-layer board), θJC 23 °C/W, junction +125 °C, operating DS3231SN -40 °C to +85 °C",
+  "Maxim Integrated DS3231 Extremely Accurate I2C-Integrated RTC/TCXO/Crystal, 19-5170 Rev 10 (3/15), p. 2 Recommended Operating Conditions: VCC 2.3–5.5 V (typ 3.3), VBAT 2.3–5.5 V (typ 3.0), SDA/SCL VIH 0.7 × VCC to VCC + 0.3 V, VIL -0.3 V to 0.3 × VCC",
+  "Maxim Integrated DS3231 Extremely Accurate I2C-Integrated RTC/TCXO/Crystal, 19-5170 Rev 10 (3/15), p. 2 Electrical Characteristics: ICCA max 200 µA (3.63 V) / 300 µA (5.5 V), ICCS max 110/170 µA, ICCSCONV max 575/650 µA – idd_max_a = 650 µA, the temperature-conversion current at 5.5 V; VOL 0.4 V at 3 mA (32kHz, INT/SQW, SDA), VPF 2.45–2.70 V",
+  "Maxim Integrated DS3231 Extremely Accurate I2C-Integrated RTC/TCXO/Crystal, 19-5170 Rev 10 (3/15), p. 6 Note 6: RST internal 50 kΩ (nominal) pull-up to VCC",
+  "Maxim Integrated DS3231 Extremely Accurate I2C-Integrated RTC/TCXO/Crystal, 19-5170 Rev 10 (3/15), p. 9 Pin Description: 32kHz, INT/SQW, SDA open-drain with external pull-up; INT/SQW, SDA and SCL up to 5.5 V regardless of VCC; VCC 0.1–1.0 µF; VBAT 0.1–1.0 µF only as primary source; N.C. pins to ground",
+  "Maxim Integrated DS3231 Extremely Accurate I2C-Integrated RTC/TCXO/Crystal, 19-5170 Rev 10 (3/15), p. 16–17 Figures 3–5: slave address 1101000 (0x68), no address pins",
+  "decoupling default switched off for this entry (needs.decoupling false): VCC carries its own capacitor need from the pin description, VBAT as backup source needs none (p. 9)"
+ ],
+ "notes": "Library draft of the RTC on the common DS3231 breakout module; that module also carries an AT24C32 EEPROM (library draft C60583). The module itself – its pull-ups, charging circuit and address jumpers – is not described by this entry.",
+ "verified": {
+  "by": "Claude (datasheet check, library draft)",
+  "date": "2026-10-31",
+  "datasheet": "Maxim DS3231 19-5170 Rev 10 (3/15)",
+  "datasheet_sha256": "dc81cd89bee82d0c57b654d6315e03dec913fb8fe753cc80b2a3f1cca71cbb34",
+  "checked": [
+   "pinout and pin names = datasheet p. 18 (16 SO top view) = EasyEDA symbol",
+   "abs. max any pin -0.3…6.0 V, TJ 125 °C, θJA 73 °C/W, operating -40…85 °C (DS3231SN)",
+   "recommended VCC and VBAT 2.3–5.5 V; VIH 0.7 × VCC, VIL 0.3 × VCC (SDA, SCL)",
+   "supply current ICCA 300 µA, ICCSCONV 650 µA max at 5.5 V",
+   "open-drain 32kHz, INT/SQW, SDA, RST; RST internal 50 kΩ pull-up",
+   "I2C address 0x68 (1101000)",
+   "VCC decoupling 0.1–1.0 µF; N.C. pins 5–12 to ground",
+   "2026-10-31: RST no external pull-up; VCC decoupling window 0.1–1.0 µF with its upper bound (19-5170 Rev 10 pin description, read now)",
+   "2026-10-31: VBAT by config from DS3231 Rev 10, pin description: backup (default) needs no capacitor, vbat_primary 0.1–1.0 µF low-leakage, no_battery on ground"
+  ],
+  "open": [
+   "the copy read is LCSC's file listed under C722469 (DS3231SN#, same device, other packing); the manufacturer's own URL (analog.com) refused automated download",
+   "VIH max: the Recommended Operating Conditions give VCC + 0.3 V for SDA/SCL, the Pin Description allows up to 5.5 V regardless of VCC – vin_rel_max_v left out; decide which applies",
+   "package outline and land pattern are not in the datasheet (Maxim 21-0042 / 90-0107): footprint and body height not checked",
+   {
+    "text": "pin 1 of the SOIC-16 at the footprint's pin-1 mark",
+    "when": "order"
+   },
+   "RoHS/REACH: the datasheet says '#' parts are RoHS-compliant and may contain exempt lead; compliance not entered"
+  ]
+ },
+ "configs": {
+  "backup": {
+   "about": "VBAT as the backup supply (a coin cell): no capacitor required (Maxim DS3231 19-5170 Rev 10 (3/15), pin description VBAT)"
+  },
+  "vbat_primary": {
+   "about": "VBAT as the primary power source: 0.1–1.0 µF low-leakage capacitor (Maxim DS3231 19-5170 Rev 10 (3/15), pin description VBAT)"
+  },
+  "no_battery": {
+   "about": "VBAT not used: on ground (Maxim DS3231 19-5170 Rev 10 (3/15), pin description VBAT)",
+   "pins": {
+    "14": {
+     "type": "ground",
+     "v_max_v": null
+    }
+   }
+  }
+ },
+ "config_default": "backup"
+}

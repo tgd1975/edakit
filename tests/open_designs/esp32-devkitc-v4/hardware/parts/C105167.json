@@ -1,0 +1,239 @@
+{
+ "lcsc": "C105167",
+ "mpn": "CP2102N-A01-GQFN28R",
+ "manufacturer": "SKYWORKS/SILICON LABS(芯科)",
+ "footprint": "QFN-28_L5.0-W5.0-P0.50-BL-EP3.3",
+ "jlc_class": "Extended Part",
+ "kind": "ic",
+ "pins": {
+  "1": {
+   "name": "DCD",
+   "type": "input",
+   "v_max_v": 5.8,
+   "pull": "up",
+   "vih_v": 2.7,
+   "vil_v": 0.6
+  },
+  "2": {
+   "name": "RI/CLK",
+   "type": "input",
+   "v_max_v": 5.8,
+   "pull": "up",
+   "vih_v": 2.7,
+   "vil_v": 0.6
+  },
+  "3": {
+   "name": "GND",
+   "type": "ground"
+  },
+  "4": {
+   "name": "D+",
+   "type": "bidirectional",
+   "role": "dp",
+   "v_max_v": 3.6
+  },
+  "5": {
+   "name": "D-",
+   "type": "bidirectional",
+   "role": "dn",
+   "v_max_v": 3.6
+  },
+  "6": {
+   "name": "VDD",
+   "type": "power_in",
+   "role": "vdd",
+   "v_max_v": 4.2,
+   "v_op_min_v": 3.0,
+   "v_op_max_v": 3.6
+  },
+  "7": {
+   "name": "VREGIN",
+   "type": "power_in",
+   "role": "vregin",
+   "v_max_v": 5.8,
+   "v_op_min_v": 3.0,
+   "v_op_max_v": 5.25
+  },
+  "8": {
+   "name": "VBUS",
+   "type": "input",
+   "role": "vbus_sense",
+   "v_max_v": 5.8,
+   "vih_v": 2.7,
+   "vil_v": 0.6
+  },
+  "9": {
+   "name": "RSTb",
+   "type": "input",
+   "v_max_v": 5.8,
+   "needs": [
+    {
+     "what": "pull_up",
+     "r_min_ohm": 1000,
+     "r_max_ohm": 1000,
+     "source": "CP2102N Data Sheet Rev. 1.1, 2.1 Power: 'In all cases, a 1 kΩ pull-up on the RSTb pin is recommended … tied to VDD'"
+    }
+   ]
+  },
+  "10": {
+   "name": "NC",
+   "type": "no_connect"
+  },
+  "11": {
+   "name": "SUSPENDb",
+   "type": "output",
+   "v_max_v": 5.8
+  },
+  "12": {
+   "name": "SUSPEND",
+   "type": "output",
+   "v_max_v": 5.8
+  },
+  "13": {
+   "name": "CHREN",
+   "type": "output",
+   "v_max_v": 5.8
+  },
+  "14": {
+   "name": "CHR1",
+   "type": "output",
+   "v_max_v": 5.8
+  },
+  "15": {
+   "name": "CHR0",
+   "type": "output",
+   "v_max_v": 5.8
+  },
+  "16": {
+   "name": "GPIO.3/WAKEUP",
+   "type": "bidirectional",
+   "v_max_v": 5.8,
+   "pull": "up",
+   "drive": "open_drain"
+  },
+  "17": {
+   "name": "GPIO.2/RS485",
+   "type": "bidirectional",
+   "v_max_v": 5.8,
+   "pull": "up",
+   "drive": "open_drain"
+  },
+  "18": {
+   "name": "GPIO.1/RXT",
+   "type": "bidirectional",
+   "v_max_v": 5.8,
+   "pull": "up",
+   "drive": "open_drain"
+  },
+  "19": {
+   "name": "GPIO.0/TXT",
+   "type": "bidirectional",
+   "v_max_v": 5.8,
+   "pull": "up",
+   "drive": "open_drain"
+  },
+  "20": {
+   "name": "GPIO.6",
+   "type": "bidirectional",
+   "v_max_v": 5.8,
+   "pull": "up",
+   "drive": "open_drain"
+  },
+  "21": {
+   "name": "GPIO.5",
+   "type": "bidirectional",
+   "v_max_v": 5.8,
+   "pull": "up",
+   "drive": "open_drain"
+  },
+  "22": {
+   "name": "GPIO.4",
+   "type": "bidirectional",
+   "v_max_v": 5.8,
+   "pull": "up",
+   "drive": "open_drain"
+  },
+  "23": {
+   "name": "CTS",
+   "type": "input",
+   "v_max_v": 5.8,
+   "pull": "up",
+   "vih_v": 2.7,
+   "vil_v": 0.6
+  },
+  "24": {
+   "name": "RTS",
+   "type": "output",
+   "v_max_v": 5.8
+  },
+  "25": {
+   "name": "RXD",
+   "type": "input",
+   "v_max_v": 5.8,
+   "pull": "up",
+   "vih_v": 2.7,
+   "vil_v": 0.6
+  },
+  "26": {
+   "name": "TXD",
+   "type": "output",
+   "v_max_v": 5.8
+  },
+  "27": {
+   "name": "DSR",
+   "type": "input",
+   "v_max_v": 5.8,
+   "pull": "up",
+   "vih_v": 2.7,
+   "vil_v": 0.6
+  },
+  "28": {
+   "name": "DTR",
+   "type": "output",
+   "v_max_v": 5.8
+  },
+  "29": {
+   "name": "EXP",
+   "type": "ground"
+  }
+ },
+ "sources": [
+  "pin names from the EasyEDA symbol",
+  "CP2102N Data Sheet Rev. 1.1 (Silicon Labs), LCSC copy https://datasheet.lcsc.com/datasheet/pdf/72310da70d5d420d845e4f2d9580d522.pdf",
+  "Table 3.10 Absolute Maximum Ratings: VDD 4.2 V, VREGIN 5.8 V, D+/D- VDD + 0.3 V, UART pins, GPIO, VBUS 5.8 V for VIO > 3.3 V (VIO + 2.5 V below), TJ –40 … 105 °C",
+  "Table 3.1: VREGIN 3.0 … 5.25 V; Table 3.2: 9.5 mA normal operation (115200 baud) plus 0.2 mA USB pull-up",
+  "Table 3.7 GPIO (all GPIO including VBUS): VIH VIO – 0.6 V, VIL 0.6 V, weak pull-up 10 … 30 µA; 4.3.1: GPIO open-drain with weak pull-up by default",
+  "2.1: 'a 1 kΩ pull-up on the RSTb pin is recommended'"
+ ],
+ "verified": {
+  "by": "Claude (datasheet check, open-design transcription)",
+  "date": "2026-10-31",
+  "datasheet": "CP2102N Data Sheet Rev. 1.1",
+  "checked": [
+   "absolute maximum ratings",
+   "supply ranges",
+   "GPIO levels and weak pull-up",
+   "RSTb pull-up recommendation"
+  ],
+  "open": [
+   "that the UART handshake inputs carry the weak pull-up is read from Table 3.7's 'all GPIO'",
+   "behaviour 'current' draws i_a at each supply pin – VDD and VREGIN are tied here, the model counts 9.7 mA twice"
+  ]
+ },
+ "package": "QFN-28 5 × 5 mm",
+ "datasheet": {
+  "url": "https://datasheet.lcsc.com/datasheet/pdf/72310da70d5d420d845e4f2d9580d522.pdf"
+ },
+ "values": {
+  "behavior": "current",
+  "i_a": 0.0097,
+  "vih_v": 2.7,
+  "vil_v": 0.6
+ },
+ "limits": {
+  "vdd_max_v": 4.2,
+  "vdd_op_min_v": 3.0,
+  "vdd_op_max_v": 3.6,
+  "tj_max_c": 105
+ }
+}

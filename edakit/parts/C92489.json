@@ -1,0 +1,149 @@
+{
+ "lcsc": "C92489",
+ "mpn": "BME280",
+ "manufacturer": "Bosch(博世)",
+ "kind": "ic",
+ "package": "LGA-8 2.5 x 2.5 x 0.93 mm, metal lid with vent hole",
+ "footprint": "LGA-8_BME280_BL",
+ "jlc_class": "Extended Part",
+ "datasheet": {
+  "url": "https://www.bosch-sensortec.com/media/boschsensortec/downloads/datasheets/bst-bme280-ds002.pdf",
+  "pinout_page": 38
+ },
+ "address": {
+  "base": 118,
+  "pins": {
+   "5": 1
+  }
+ },
+ "pins": {
+  "1": {
+   "name": "GND",
+   "type": "ground"
+  },
+  "2": {
+   "name": "CSB",
+   "type": "input",
+   "pull": "up",
+   "pull_ohm": 120000,
+   "hint": "I²C: connect CSB directly to VDDIO (required); a low level on CSB switches to SPI and disables I²C until the next power-on reset; internal pull-up 70–190 kΩ to VDDIO",
+   "ref": "VDDIO",
+   "v_rel_max_v": 0.3,
+   "v_min_v": -0.3
+  },
+  "3": {
+   "name": "SDI",
+   "type": "bidirectional",
+   "role": "sda",
+   "drive": "open_drain",
+   "hint": "I²C SDA, open drain to GND but not pure open-drain: ESD diodes to VDDIO and GND – pull it up to VDDIO only",
+   "ref": "VDDIO",
+   "v_rel_max_v": 0.3,
+   "v_min_v": -0.3
+  },
+  "4": {
+   "name": "SCK",
+   "type": "input",
+   "role": "scl",
+   "hint": "I²C SCL, high-Z input with ESD diodes to VDDIO and GND (no clock stretching)",
+   "ref": "VDDIO",
+   "v_rel_max_v": 0.3,
+   "v_min_v": -0.3
+  },
+  "5": {
+   "name": "SDO",
+   "type": "bidirectional",
+   "hint": "I²C: address LSB – GND 0x76, VDDIO 0x77; must not be left floating (address undefined)",
+   "ref": "VDDIO",
+   "v_rel_max_v": 0.3,
+   "v_min_v": -0.3
+  },
+  "6": {
+   "name": "VDDIO",
+   "type": "power_in",
+   "v_max_v": 4.25,
+   "v_op_min_v": 1.2,
+   "v_op_max_v": 3.6,
+   "needs": [
+    {
+     "what": "capacitor",
+     "c_min_f": 1e-07,
+     "source": "Bosch Sensortec BME280 Data sheet, BST-BME280-DS001-24, document revision 1.24 (February 2024), p. 39 Figure 17 I²C connection diagram: 'The recommended value for C1, C2 is 100 nF'"
+    }
+   ]
+  },
+  "7": {
+   "name": "GND",
+   "type": "ground"
+  },
+  "8": {
+   "name": "VDD",
+   "type": "power_in",
+   "role": "vdd",
+   "v_max_v": 4.25,
+   "needs": [
+    {
+     "what": "capacitor",
+     "c_min_f": 1e-07,
+     "source": "Bosch Sensortec BME280 Data sheet, BST-BME280-DS001-24, document revision 1.24 (February 2024), p. 39 Figure 17 I²C connection diagram: 'The recommended value for C1, C2 is 100 nF'"
+    }
+   ],
+   "hint": "ripple max. 50 mVpp"
+  }
+ },
+ "values": {
+  "vih_ratio": 0.8,
+  "vil_ratio": 0.2,
+  "idd_max_a": 0.000714
+ },
+ "limits": {
+  "vdd_max_v": 4.25,
+  "vdd_op_min_v": 1.71,
+  "vdd_op_max_v": 3.6,
+  "t_min_c": -40,
+  "t_max_c": 85
+ },
+ "hints": [
+  "interface pins (SDI, SDO, SCK, CSB) at most VDDIO + 0.3 V, and never high while VDDIO is off – the ESD diodes to VDDIO can be destroyed",
+  "input thresholds VIH 0.8 × VDDIO, VIL 0.2 × VDDIO – of VDDIO (pin 6), not of VDD",
+  "pin numbering runs clockwise seen from the top (Figure 16)",
+  "I²C standard, fast and high-speed mode (up to 3.4 MHz); SPI up to 10 MHz",
+  "humidity sensing degrades temporarily after reflow; reconditioning as section 7.8"
+ ],
+ "sources": [
+  "pin numbers and names: EasyEDA library data of C92489 (edakit part import, 2026-10-31); checked against Bosch Sensortec BME280 Data sheet, BST-BME280-DS001-24, document revision 1.24 (February 2024), p. 38 Figure 16 and Table 35",
+  "Bosch Sensortec BME280 Data sheet, BST-BME280-DS001-24, document revision 1.24 (February 2024), p. 8 Table 1: VDD 1.71–3.6 V (ripple max. 50 mVpp), VDDIO 1.2–3.6 V; sleep 0.3 µA max; measurement currents IDDH 340 µA ('Max value at 85 °C'), IDDP 714 µA ('Max value at -40 °C'), IDDT 350 µA ('Max value at 85 °C'), printed in the Typ column – idd_max_a = 714 µA read as the maximum the condition names: check",
+  "Bosch Sensortec BME280 Data sheet, BST-BME280-DS001-24, document revision 1.24 (February 2024), p. 11 Table 3: operating range -40 to +85 °C (t_min_c, t_max_c)",
+  "Bosch Sensortec BME280 Data sheet, BST-BME280-DS001-24, document revision 1.24 (February 2024), p. 13 Table 5 Absolute maximum ratings: VDD and VDDIO -0.3 to 4.25 V; any interface pin -0.3 V to VDDIO + 0.3 V",
+  "Bosch Sensortec BME280 Data sheet, BST-BME280-DS001-24, document revision 1.24 (February 2024), p. 14 section 3.2: no interface pin high while VDDIO is off; VDDIO without VDD keeps the pins high-Z",
+  "Bosch Sensortec BME280 Data sheet, BST-BME280-DS001-24, document revision 1.24 (February 2024), p. 32–33 sections 6.1/6.2: CSB to VDDIO selects I²C; SDA/SCL not pure open-drain, ESD diodes to VDDIO and GND; address 111011x – SDO to GND 0x76, to VDDIO 0x77, SDO must not float; SDI open drain with pull-up to VDDIO",
+  "Bosch Sensortec BME280 Data sheet, BST-BME280-DS001-24, document revision 1.24 (February 2024), p. 35 section 6.4.1: VIL max 20 % VDDIO, VIH min 80 % VDDIO; internal CSB pull-up 70/120/190 kΩ (pull_ohm = typ)",
+  "Bosch Sensortec BME280 Data sheet, BST-BME280-DS001-24, document revision 1.24 (February 2024), p. 39 Figure 17: C1 (VDD), C2 (VDDIO) 100 nF recommended; pull-ups typically 4.7 kΩ; CSB direct to VDDIO"
+ ],
+ "verified": {
+  "by": "Claude (datasheet check, library draft)",
+  "date": "2026-10-31",
+  "datasheet": "Bosch BST-BME280-DS001-24 rev 1.24 (February 2024)",
+  "datasheet_sha256": "a2ccdb449fec94380742fe8eec851a11d9bd4142252d332b34682b4deecd7d89",
+  "checked": [
+   "pinout and pin names = datasheet Table 35 = EasyEDA symbol",
+   "footprint pad order (library cache, y up): pads 1–4 on +x top to bottom, 5–8 on −x bottom to top – clockwise seen from the top, as Figure 16",
+   "abs. max VDD/VDDIO 4.25 V; interface pins VDDIO + 0.3 V",
+   "VDD 1.71–3.6 V, VDDIO 1.2–3.6 V; VIH 0.8 × VDDIO, VIL 0.2 × VDDIO",
+   "I²C address 0x76/0x77 by SDO",
+   "100 nF on VDD and VDDIO",
+   "2026-10-31, pin limits (schema-gaps A6, B1–B3, C1–C4): BST-BME280-DS001-24 rev 1.24: Table 5, voltage at any interface pin −0.3 V to VDDIO + 0.3 V (CSB, SDI, SCK, SDO: ref VDDIO, v_rel_max_v 0.3, v_min_v −0.3); Table 32, Vil_si 20 % and Vih_si 80 % of VDDIO (the entry's ratios, now of VDDIO); 'there are no limitations on slope and sequence of raising the VDD and VDDIO levels' – no supply_order"
+  ],
+  "open": [
+   "measurement currents are printed in the Typ column with the condition 'Max value at …' – whether 714 µA is a guaranteed maximum is not clear",
+   "the cover says BST-BME280-DS001-24 rev 1.24 (2024-02), the page footers read BST-BME280-DS001-23 rev 1.23 (01/2022)",
+   "landing pattern recommendation (section 7.6) not compared with the library footprint",
+   {
+    "text": "pin 1 of the LGA at the footprint's pin-1 mark",
+    "when": "order"
+   },
+   "no thermal resistance or junction temperature in the datasheet",
+   "RoHS/REACH not entered (datasheet 7.12: RoHS 2011/65/EU incl. 2015/863, halogen-free)"
+  ]
+ }
+}

@@ -201,8 +201,6 @@ DOCS.draft – draft not approved: 4 warning
   …
 HINT.bulk – bulk capacitor at the power input: 1 note
   G  BT1: bulk capacitor at the power input
-HINT.debounce – debounce buttons and switches: 1 note
-  G  SW1: debounce buttons and switches
 HINT.lithium – lithium cells need protection: 1 note
   G  BT1: lithium cells need protection
 PARTS.stock – parts orderable: 1 note
@@ -212,12 +210,12 @@ What to do (edakit explain <code> for rule, why and sources):
   PATH.reverse: A Schottky diode in series, or a PMOS in the supply path with its gate to ground (block reverse-pmos).
   …
 not checked for lack of data: LIM.t 2 parts – edakit check --coverage
-4 components, 4 nets, 4 parts entries; 1 error, 1 pending, 4 warning, 4 note; requirements: 2 needs, 2 requirements
+4 components, 4 nets, 4 parts entries; 1 error, 1 pending, 4 warning, 3 note; requirements: 2 needs, 2 requirements
 ```
 
 The first line says which rule sets are on: `core` always, and `power` because the graph has a battery holder
-(`[project] domains` fixes the list, 10.1). The three HINT notes are design hints – a bulk capacitor at a power input,
-debouncing, protection of lithium cells –, patterns that need judgement rather than a number. The last line but one names what went unchecked for lack of data: `edakit check --coverage` says that the
+(`[project] domains` fixes the list, 10.1). The two HINT notes are design hints – a bulk capacitor at a power input,
+protection of lithium cells –, patterns that need judgement rather than a number. The last line but one names what went unchecked for lack of data: `edakit check --coverage` says that the
 entries of D1 and R1 have no thermal resistance, so no junction temperature is computed (LIM.t); what they carry and
 dissipate is checked against their ratings all the same. `edakit sim` runs every scenario through ngspice
 (chapter 5):
@@ -302,12 +300,11 @@ reviewer checks the reason:
 ```json
 "accept": {
   "HINT.bulk": "no cable and no plug: the cell sits in BT1 on the board, the only load is D1 (at most 11 mA)",
-  "HINT.debounce": "no MCU reads SW1: D1 follows the contact, a bounce of a few milliseconds is not seen",
   "HINT.lithium": "a CR2032 is a primary Li-MnO2 cell, not Li-ion: nothing on the board charges it (LIM.backfeed) …"
 }
 ```
 
-Now: 0 errors, 4 accepted; 95 simulation comparisons pass.
+Now: 0 errors, 3 accepted; 95 simulation comparisons pass.
 
 ## 17.7 Stock and cost
 

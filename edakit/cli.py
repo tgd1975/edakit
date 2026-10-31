@@ -3,6 +3,7 @@
     edakit check                     stages P/G: rule checks on the graph (offline, < 1 s)
     edakit rules [CODE ...]          the engines and the codes of the catalog
     edakit explain CODE ...          rule, why, fix and sources of a code (LIM.v, REQ.missing …)
+    edakit graph show NAME           one part or net: what the graph and its parts entry say, the findings on it
     edakit block list|show|add       building blocks with checked parts into the graph
     edakit part import LCSC [--update]   symbol pins and footprint of an LCSC number from the library – no EasyEDA
     edakit part lint [KEY ...]       every parts entry held to the schema of its kind (catalog/kinds.toml)
@@ -88,6 +89,12 @@ def build_parser():
     p = sub.add_parser("explain", help="rule, why, fix and sources of a code")
     p.add_argument("ids", nargs="+", help="codes, e.g. LIM.v REQ.missing (an old ID such as LIM.v names its codes)")
 
+    p = sub.add_parser("graph", help="what the graph says about one part or net, and the findings on it")
+    p.add_argument("action", choices=["show"])
+    p.add_argument("name", help="a designator (U1) or a net name (LED_CLK)")
+    p.add_argument("--json", help="write the view and its findings as JSON")
+    _common(p)
+
     p = sub.add_parser("domains", help="the domains of the project: on, off, suggested; the reviewers' questions")
     p.add_argument("--review", choices=["electrical", "regulatory", "pcb"], help="the questions of the enabled domains "
                                                                                 "for this review")
@@ -107,20 +114,25 @@ def build_parser():
     p.add_argument("name", nargs="?", help="block name (edakit block list)")
     p.add_argument("--as", dest="instance", help="add: name of this instance, used for its nets and labels")
     p.add_argument("--connect", action="extend", nargs="+", metavar="PORT=NET", help="add: join ports to nets")
+    p.add_argument("--without", action="extend", nargs="+", metavar="DES", help="add: leave out these optional parts "
+                                                                                "of the block")
     p.add_argument("--board", help="add: board of the new parts (needed with several boards)")
     p.add_argument("--file", help="a block from this JSON file instead of the library")
     p.add_argument("--dry-run", action="store_true", help="add: show what would change, write nothing")
     _common(p)
 
     p = sub.add_parser("part", help="the library's data of an LCSC number, a footprint swap compared, datasheets, "
-                                    "a catalogue search, own parts, own footprints as data")
+                                    "a catalogue search, own parts, own footprints as data, entries of edakit's "
+                                    "parts library")
     p.add_argument("action", choices=["import", "diff", "fetch", "search", "datasheet", "own", "footprint", "build",
-                                      "lint"])
+                                      "lint", "add", "sign"])
     p.add_argument("source", nargs="?", help="import: the LCSC number; diff: the old part; fetch, footprint, build: "
                                              "the parts-entry key; search: the keywords; own: the board's project (its "
-                                             "directory or edakit.toml)")
+                                             "directory or edakit.toml); add, sign: the library entry (edakit/parts/)")
     p.add_argument("new", nargs="?", help="diff: the new part (LCSC number or parts-entry key)")
-    p.add_argument("--update", action="store_true", help="import: fill in what the existing entry lacks")
+    p.add_argument("--update", action="store_true", help="import: fill in what the existing entry lacks; add: take "
+                                                         "the library's version over the project's copy")
+    p.add_argument("--by", help="sign: the owner's name")
     p.add_argument("--url", help="fetch: try this URL first")
     p.add_argument("--all", action="store_true", help="fetch: every parts entry without a kept datasheet")
     p.add_argument("--json", help="diff: write the comparison as JSON; search: the hits")
@@ -361,6 +373,9 @@ def _main(argv=None):
     if args.command == "convert":
         from . import convert
         return convert.main(cfg, args)
+    if args.command == "graph":
+        from . import graph_show
+        return graph_show.main(cfg, args)
     if args.command == "domains":
         from . import profile
         return profile.main(cfg, args)

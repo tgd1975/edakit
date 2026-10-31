@@ -13,8 +13,9 @@ from edakit.engines import hint
 from edakit.design import Design
 from edakit.sim import run as simrun
 
-# where each block goes in the example: two free MCU pins become the nets SIG and SIG2
-CONNECT = {
+# where each block goes in the example: two free MCU pins become the nets SIG and SIG2 – the blocks of before here, a
+# newer block in its own file: "test": {"connect": {port: net}, "sim": {...}} (see block_tests below)
+OLD_CONNECT = {
     "led": {"in": "SIG"},
     "button": {"in": "SIG", "vcc": "3V3"},
     "i2c-pullups": {"sda": "SIG", "scl": "SIG2", "vcc": "3V3"},
@@ -26,14 +27,51 @@ CONNECT = {
 }
 
 
-def signals(project, names=("SIG", "SIG2")):
-    """Nets SIG (GP7) and SIG2 (GP8) with one MCU pin each, for the blocks to connect to."""
+def block_tests():
+    """{block: its "test" table} – a block file may say where it goes in the example ("connect"), what its simulation
+    needs ("sim": sim.json keys merged in at every depth; "remove_supplies": supply cases of the example it leaves out,
+    with "why"; "sim": false with "why" when the example cannot simulate it), which nets it adds beyond SIG and SIG2
+    ("nets": {name: [min, max]}) and which optional parts it leaves out ("without")."""
+    out = {}
+    for name in block.library():
+        t = block.load(name).get("test") or {}
+        out[name] = {"connect": t.get("connect", OLD_CONNECT.get(name)), **{k: v for k, v in t.items() if k != "connect"}}
+    return out
+
+
+TESTS = block_tests()
+CONNECT = {name: t["connect"] for name, t in TESTS.items() if t["connect"] is not None}
+
+
+def signals(project, names=("SIG", "SIG2"), extra=None):
+    """Nets SIG (GP7) and SIG2 (GP8) with one MCU pin each, for the blocks to connect to; extra: nets a block's test
+    names that the example lacks, {name: [min, max]} – each joined to nothing until the block's port is."""
     g = project.graph()
     for name, ref in (("SIG", "U1.10"), ("SIG2", "U1.11")):
         if name in names:
             project.free_pins(g, ref)
             g["graph"]["nets"].append({"name": name, "pins": [ref], "v": [0, 3.4]})
     project.save_graph(g)
+    return extra or {}
+
+
+def place(project, name):
+    """The block in the example as its test says: signals, extra nets, the optional parts it leaves out (`without`),
+    block.add."""
+    t = TESTS[name]
+    signals(project, set(t["connect"].values()))
+    connect = dict(t["connect"])
+    if t.get("nets"):                 # a net the example lacks becomes the block's own port net of that name
+        connect = {port: net for port, net in connect.items() if net not in t["nets"]}
+    return block.add(project.config(), name, "T", connect, without=t.get("without", ()))
+
+
+def merged(base, more):
+    """sim.json keys of a block's test merged into the example's – tables at every depth, a list or value replaced."""
+    out = dict(base)
+    for key, value in more.items():
+        out[key] = merged(base[key], value) if isinstance(value, dict) and isinstance(base.get(key), dict) else value
+    return out
 
 
 def errors(project):
@@ -42,7 +80,9 @@ def errors(project):
 
 
 def test_every_block_is_in_this_test():
+    """Every block says where it goes in the example – here or in its own "test" table."""
     assert set(block.library()) == set(CONNECT)
+    assert all("why" in t for t in TESTS.values() if t.get("sim") is False or t.get("remove_supplies"))
 
 
 @pytest.mark.parametrize("name", sorted(CONNECT))
@@ -67,15 +107,13 @@ def test_library_block_is_consistent(name):
 
 @pytest.mark.parametrize("name", sorted(CONNECT))
 def test_block_in_the_example_passes_the_checks(project, name):
-    signals(project, set(CONNECT[name].values()))
-    block.add(project.config(), name, "T", CONNECT[name])
+    place(project, name)
     assert errors(project) == []
 
 
 @pytest.mark.parametrize("name", sorted(CONNECT))
 def test_block_in_the_example_is_drawn(project, name, tmp_path):
-    signals(project, set(CONNECT[name].values()))
-    block.add(project.config(), name, "T", CONNECT[name])
+    place(project, name)
     args = argparse.Namespace(board=None, out=str(tmp_path / "schematic.svg"), force=False)
     assert schematic_draw.main(project.config(), args) == 0
 
@@ -158,9 +196,13 @@ def test_several_boards_need_a_board(project):
 @pytest.mark.skipif(not shutil.which("ngspice"), reason="ngspice not installed")
 @pytest.mark.parametrize("name", sorted(CONNECT))
 def test_block_in_the_example_passes_the_simulation(project, name):
-    signals(project, set(CONNECT[name].values()))
-    _, comps, *_ = block.add(project.config(), name, "T", CONNECT[name])
+    if TESTS[name].get("sim") is False:
+        pytest.skip(TESTS[name]["why"])
+    _, comps, *_ = place(project, name)
     sim = json.loads((project.root / "hardware" / "sim.json").read_text())
+    sim = merged(sim, TESTS[name].get("sim") or {})                     # the block's own sim.json keys
+    for scenario in TESTS[name].get("remove_supplies", []):             # a supply case the block cannot meet
+        sim["supplies"].pop(scenario)
     leds = [c["designator"] for c in comps if c["type"] == "led"]
     if leds:   # as the block's notes ask: the signal is an MCU output, a load lights the LED (SIM.state), the others say
         sim["mcu"]["U1"]["outputs"].append("SIG")             # that it is dark (SIM.driver)
@@ -219,3 +261,19 @@ def test_power_or_pmos_feeds_no_supply_backwards(project):
     assert all(i > -1e-3 for sources in rows.values() for i in sources.values()), rows
     assert all(sources["J1"] < 1e-3 for name, sources in rows.items() if name.startswith(("bat-high", "usb-high")))
     assert all(sources["J1"] > 0.01 for name, sources in rows.items() if name.startswith("bat/all_on"))
+
+
+@pytest.mark.skipif(not shutil.which("ngspice"), reason="ngspice not installed")
+def test_a_threshold_without_typical_value_holds_the_gate_all_the_same(project):
+    """vgs_th_v as [min, null, max] – a datasheet that gives no typical value (IRLZ44N, IRF520N) – is held by its
+    smallest given value; the null crashed the gate check before."""
+    sim = two_supplies(project)
+    d = Design.from_config(project.config())
+    key = d.entry_key("Q1")
+    entry = project.part(key)
+    lo, _, hi = entry["values"]["vgs_th_v"]
+    entry["values"]["vgs_th_v"] = [lo, None, hi]
+    project.save_part(key, entry)
+    out = simrun.run_all(Design.from_config(project.config()), sim)
+    bad = {(c["id"], c["item"], c["scenario"].split("/")[0]) for c in out["checks"] if c["result"] == "fail"}
+    assert bad == {("LIM.range", "Q1", "bat-high"), ("LIM.range", "Q2", "bat-high")}

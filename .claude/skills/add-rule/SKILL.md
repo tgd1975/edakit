@@ -19,7 +19,7 @@ Ask first: which engine decides it, and from which data? Most lessons are a numb
 
 | It is … | Kind | It goes into |
 |---|---|---|
-| a number or a property of one part: a limit, a value, a strapping level, a built-in pull, a pin function, a datasheet warning | fact | that parts entry (`limits`, `values`, pin fields, `hints`) – in the project, and in `edakit/blocks/parts/` if a block uses the part |
+| a number or a property of one part: a limit, a value, a strapping level, a built-in pull, a pin function, a datasheet warning | fact | that parts entry (`limits`, `values`, pin fields, `hints`) – in the project, and in `edakit/parts/` if a block uses the part |
 | what every part of a kind or role requires, a level at reset, a part a supply passes | fact | a default in `edakit/catalog/needs.toml`, `levels.toml` or `paths.toml` |
 | a number of a standard or a manufacturer | fact | a row of `edakit/catalog/tables/<name>.toml`, with `source` and tag `r` |
 | a field a kind may give | fact | `edakit/catalog/kinds.toml` (limits named `<quantity>_max_<unit>` are held by LIM without new code) |
@@ -97,7 +97,7 @@ grading follows its job.
 
 `edakit/blocks/<name>.json` after the pattern of an existing block: `ports` (the nets that connect outside; `gnd`
 joins the ground), components with `{as}` in their labels, nets with `v` (a range or `"@port"`), `covers` (the codes
-it takes care of), `notes` (what is left to decide). Its parts entries go to `edakit/blocks/parts/`: checked against
+it takes care of), `notes` (what is left to decide). Its parts entries go to `edakit/parts/`: checked against
 the datasheet, in English, passing `edakit part lint`. Add the block to `CONNECT` in `tests/test_block.py` – the tests
 then make sure that it passes `edakit check` and `edakit sim` in the example. Table in handbook 14.5.
 

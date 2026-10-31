@@ -1,0 +1,282 @@
+{
+ "name": "instrument-buffer",
+ "title": "Instrument input buffer: RF filter, 1.1 MΩ input, op-amp follower, 100 Ω output",
+ "about": "A guitar or bass input that loads the pickup with 1.1 MΩ and drives the next stage with a low impedance. At the jack 2.2 MΩ to ground and an RF filter: 10 kΩ in series, then 100 pF C0G to ground (159 kHz). The input is AC-coupled (10 nF C0G) with 2.2 MΩ to the bias vref on the op-amp side; an OPA991 (2.7–40 V, rail-to-rail input and output, CMOS input) follows it, a 100 Ω resistor isolates the cable's capacitance, and 10 µF with 100 kΩ to ground makes the output DC-free. Maker-coverage BL-16.",
+ "ports": {
+  "in": "the instrument input: the jack's tip (a passive pickup wants about 1 MΩ)",
+  "out": "the buffered output, DC-free (0 V through 100 kΩ): the next stage, a relay contact, the output jack",
+  "vcc": "the op-amp's supply, 2.7–40 V: a pedal's filtered 9 V (block pedal-power, out) or a board's 5 V",
+  "vref": "the bias: half the supply – vref of block pedal-power, or a divider with a capacitor",
+  "gnd": "ground"
+ },
+ "components": [
+  {
+   "designator": "R1",
+   "type": "resistor",
+   "label": "{as}: input series 10 k (RF filter, input current)",
+   "part": "0805W8F1002T5E",
+   "lcsc": "C17414",
+   "value": "10k",
+   "pins": {
+    "1": "1",
+    "2": "2"
+   },
+   "notes": "With the 100 pF an RF low-pass at the jack, 159 kHz; limits the current into the op-amp's input clamps."
+  },
+  {
+   "designator": "C1",
+   "type": "capacitor",
+   "label": "{as}: RF filter 100 pF C0G",
+   "part": "CL21C101JBANNNC",
+   "lcsc": "C1790",
+   "value": "100pF",
+   "pins": {
+    "1": "1",
+    "2": "2"
+   }
+  },
+  {
+   "designator": "R2",
+   "type": "resistor",
+   "label": "{as}: input pull-down 2.2 M at the jack",
+   "part": "0805W8F2204T5E",
+   "lcsc": "C26113",
+   "value": "2.2M",
+   "pins": {
+    "1": "1",
+    "2": "2"
+   }
+  },
+  {
+   "designator": "C2",
+   "type": "capacitor",
+   "label": "{as}: input coupling 10 nF C0G",
+   "part": "0805CG103J500NT",
+   "lcsc": "C2971995",
+   "value": "10nF",
+   "pins": {
+    "1": "1",
+    "2": "2"
+   }
+  },
+  {
+   "designator": "R3",
+   "type": "resistor",
+   "label": "{as}: bias 2.2 M to vref",
+   "part": "0805W8F2204T5E",
+   "lcsc": "C26113",
+   "value": "2.2M",
+   "pins": {
+    "1": "1",
+    "2": "2"
+   }
+  },
+  {
+   "designator": "U1",
+   "type": "ic",
+   "label": "{as}: buffer OPA991 (follower)",
+   "part": "OPA991IDBVR",
+   "lcsc": "C2864555",
+   "pins": {
+    "1": "OUT",
+    "2": "V-",
+    "3": "IN+",
+    "4": "IN-",
+    "5": "V+"
+   }
+  },
+  {
+   "designator": "C3",
+   "type": "capacitor",
+   "label": "{as}: 100 nF at the op-amp's V+",
+   "part": "CC0805KRX7R9BB104",
+   "lcsc": "C49678",
+   "value": "100nF",
+   "pins": {
+    "1": "1",
+    "2": "2"
+   }
+  },
+  {
+   "designator": "R4",
+   "type": "resistor",
+   "label": "{as}: output 100 Ω (isolates the cable)",
+   "part": "0805W8F1000T5E",
+   "lcsc": "C17408",
+   "value": "100",
+   "pins": {
+    "1": "1",
+    "2": "2"
+   }
+  },
+  {
+   "designator": "C4",
+   "type": "capacitor",
+   "label": "{as}: output coupling 10 µF (plus at the op-amp)",
+   "part": "RVT10UF35V67RV0176",
+   "lcsc": "C2895284",
+   "value": "10uF",
+   "pins": {
+    "1": "1",
+    "2": "2"
+   },
+   "notes": "Polarized: plus at the op-amp side (vref), minus at out (0 V)."
+  },
+  {
+   "designator": "R5",
+   "type": "resistor",
+   "label": "{as}: output pull-down 100 k",
+   "part": "0805W8F1003T5E",
+   "lcsc": "C149504",
+   "value": "100k",
+   "pins": {
+    "1": "1",
+    "2": "2"
+   }
+  }
+ ],
+ "nets": [
+  {
+   "name": "in",
+   "pins": [
+    "R1.1",
+    "R2.1"
+   ],
+   "v": [
+    -1.5,
+    1.5
+   ],
+   "instrument": "pickup",
+   "load_min_ohm": 1000000,
+   "notes": "The instrument's net: the pickup sees R2 ∥ (R1 + R3) = 1.1 MΩ in the audio band."
+  },
+  {
+   "name": "rf",
+   "pins": [
+    "R1.2",
+    "C1.1",
+    "C2.1"
+   ],
+   "v": [
+    -1.5,
+    1.5
+   ],
+   "notes": "Behind the RF filter, at 0 V DC through R1 and R2."
+  },
+  {
+   "name": "inp",
+   "pins": [
+    "C2.2",
+    "R3.1",
+    "U1.3"
+   ],
+   "v": "@vcc",
+   "notes": "The op-amp's input, at vref DC."
+  },
+  {
+   "name": "vref",
+   "pins": [
+    "R3.2"
+   ]
+  },
+  {
+   "name": "vcc",
+   "pins": [
+    "U1.5",
+    "C3.1"
+   ]
+  },
+  {
+   "name": "opout",
+   "pins": [
+    "U1.1",
+    "U1.4",
+    "R4.1"
+   ],
+   "v": "@vcc"
+  },
+  {
+   "name": "o",
+   "pins": [
+    "R4.2",
+    "C4.1"
+   ],
+   "v": "@vcc"
+  },
+  {
+   "name": "out",
+   "pins": [
+    "C4.2",
+    "R5.1"
+   ],
+   "v": [
+    -1.5,
+    1.5
+   ],
+   "signal": true
+  },
+  {
+   "name": "gnd",
+   "pins": [
+    "C1.2",
+    "R2.2",
+    "U1.2",
+    "C3.2",
+    "R5.2"
+   ]
+  }
+ ],
+ "covers": [
+  "REQ.value/instrument",
+  "REQ.value/gain",
+  "LIM.range/opamp",
+  "LVL.undefined",
+  "REQ.missing",
+  "SIM.response",
+  "HINT.signal_ceramic",
+  "HINT.string_ground"
+ ],
+ "notes": [
+  "R1 10 kΩ and C1 100 pF: an RF low-pass at the jack, 1/(2π · 10 kΩ · 100 pF) = 159 kHz – 8 × above 20 kHz (−0.07 dB there); 100 pF is small against the cable (66–164 pF/m, maker-coverage GTI 2). R1 also keeps the current into U1's input clamps within ±10 mA (OPA991 absolute maximum) up to about 100 V beyond the rails. Its thermal noise, 12.9 nV/√Hz, adds to the OPA991's 10.8 nV/√Hz – a smaller R1 for less noise moves the RF corner up.",
+  "Input impedance R2 ∥ (R1 + R3) = 1.1 MΩ – at least 1 MΩ for a passive pickup (maker-coverage GTI 1, GTP 14). R2 at the jack holds the jack and, through R1, the jack side of C2 at 0 V: no DC on the guitar's pots, no pop when the cable goes in. R3 biases U1 at vref; the OPA991's ±10 pA through 2.2 MΩ is 22 µV. A piezo wants 10 MΩ and more (GTI 10): larger R2 and R3, and load_min_ohm of the net raised.",
+  "C2 10 nF C0G: the high-pass with R3 at 1/(2π · 2.2 MΩ · 10 nF) = 7.2 Hz; C0G, not X7R, in the signal path (HINT.signal_ceramic).",
+  "U1 OPA991 as a follower (unity-gain stable, phase margin 60° at G = +1): 2.7–40 V, so the same block runs from 3.3 or 5 V and from 9 V up to an 18 V outlet. Rail-to-rail input and output: at 9 V and vref 4.5 V the output swings to within 55 mV of the rails (10 kΩ load; the data sheet's maximum, at 40 V). Its input pairs change over between (V+) − 2 V and (V+) − 1 V – keep vref at half the supply (2.5 V on 5 V) so the signal stays below.",
+  "R4 100 Ω: the OPA991 drives 1 nF directly, a longer cable with a series resistor (SBOS969F 7.3.4: 50 Ω in its figure); the loss into 100 kΩ is 0.01 dB.",
+  "C4 10 µF and R5 100 kΩ: the output is DC-free (0 V), as relay contacts and jacks want it (REQ.value/switch); corner 0.16 Hz into R5 alone, about 1.7 Hz into a 10 kΩ input. C4 is an electrolytic with its plus at U1 (vref).",
+  "Expected warnings: REQ.value/instrument counts R1 as a load on in and reports about 10 kΩ – the check takes every resistor on the instrument net as a load to a fixed level, R1 leads to R3 (2.2 MΩ to vref); LIM.v (grade polarized) sets out at the top of its range (+1.5 V) against the op-amp side of C4 at the bottom of its range (0 V, power off) – out is driven by U1 through C4 only, so the two never meet. Accept both in the sign-off with these reasons.",
+  "sim.json: an AC run from in to out shows the band – {\"input\": \"<IN>\", \"output\": \"<OUT>\", \"expect\": {\"gain_db\": [{\"at_hz\": 1000, \"min\": -0.5, \"max\": 0.5}], \"low_hz\": {\"max\": 20}, \"high_hz\": {\"min\": 100000, \"max\": 250000}}} (guitar domain on). A pickup's own resistance, inductance and cable capacitance (source r_ohm, l_h, c_f) come from its maker.",
+  "vref from block pedal-power; on a board without it two 10 kΩ from vcc to ground with ≥ 10 µF at the middle."
+ ],
+ "test": {
+  "connect": {
+   "vcc": "+5V",
+   "vref": "3V3"
+  },
+  "about": "in and out become the nets T_IN and T_OUT; vref on the example's 3V3 – inside the OPA991's rail-to-rail input range on +5V (a real board: half the supply)",
+  "sim": {
+   "ac": {
+    "band": {
+     "about": "R3 / C2: 1/(2π · 2.2 MΩ · 10 nF) = 7.2 Hz; R1 / C1: 1/(2π · 10 kΩ · 100 pF) = 159 kHz",
+     "input": "T_IN",
+     "output": "T_OUT",
+     "expect": {
+      "gain_db": [
+       {
+        "at_hz": 1000,
+        "min": -0.5,
+        "max": 0.5
+       }
+      ],
+      "low_hz": {
+       "max": 20
+      },
+      "high_hz": {
+       "min": 100000,
+       "max": 250000
+      }
+     }
+    }
+   }
+  }
+ }
+}

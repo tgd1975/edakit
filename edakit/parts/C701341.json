@@ -1,0 +1,1140 @@
+{
+ "lcsc": "C701341",
+ "mpn": "ESP32-WROOM-32E-N4",
+ "manufacturer": "ESPRESSIF(乐鑫)",
+ "kind": "module",
+ "package": "SMD module 18.0 × 25.5 × 3.1 mm, 38 castellated pads + EPAD",
+ "footprint": "WIFI-SMD_ESP32-WROOM-32E",
+ "jlc_class": "Extended Part",
+ "datasheet": {
+  "url": "https://documentation.espressif.com/esp32-wroom-32e_esp32-wroom-32ue_datasheet_en.pdf",
+  "pinout_page": 10,
+  "title": "ESP32-WROOM-32E & ESP32-WROOM-32UE Datasheet",
+  "revision": "v2.1"
+ },
+ "pins": {
+  "1": {
+   "name": "GND",
+   "type": "ground"
+  },
+  "2": {
+   "name": "3V3",
+   "type": "power_in",
+   "role": "vdd",
+   "v_max_v": 3.6
+  },
+  "3": {
+   "name": "EN",
+   "type": "input",
+   "v_max_v": 3.6,
+   "needs": [
+    {
+     "what": "pull_up",
+     "source": "ESP32-WROOM-32E & ESP32-WROOM-32UE Datasheet v2.1, 9 Peripheral Schematics: RC delay at EN, usually R = 10 kΩ and C = 1 µF, to be adjusted to the power-up timing; table 3: do not leave EN floating"
+    },
+    {
+     "what": "capacitor",
+     "source": "ESP32-WROOM-32E & ESP32-WROOM-32UE Datasheet v2.1, 9 Peripheral Schematics: RC delay at EN, usually R = 10 kΩ and C = 1 µF, to be adjusted to the power-up timing"
+    }
+   ],
+   "hint": "chip enable: high = on, low = off; do not leave floating (datasheet table 3); reset threshold VIL_nRST max 0.6 V (table 15)"
+  },
+  "4": {
+   "name": "SENSOR_VP",
+   "type": "input",
+   "role": "gpio",
+   "v_max_v": 3.6,
+   "adc": {
+    "range_v": [
+     0.15,
+     2.45
+    ]
+   },
+   "functions": [
+    "spi2.rx",
+    "spi3.rx",
+    "uart0.rx",
+    "uart1.rx",
+    "uart2.rx",
+    "i2s0.sd",
+    "i2s1.sd",
+    "can0.rx",
+    "adc1"
+   ],
+   "hint": "GPIO36: input only – no output driver, no internal pull-up or pull-down (ESP32 Series Datasheet v5.3, table 6-1 note 2)"
+  },
+  "5": {
+   "name": "SENSOR_VN",
+   "type": "input",
+   "role": "gpio",
+   "v_max_v": 3.6,
+   "adc": {
+    "range_v": [
+     0.15,
+     2.45
+    ]
+   },
+   "functions": [
+    "spi2.rx",
+    "spi3.rx",
+    "uart0.rx",
+    "uart1.rx",
+    "uart2.rx",
+    "i2s0.sd",
+    "i2s1.sd",
+    "can0.rx",
+    "adc1"
+   ],
+   "hint": "GPIO39: input only – no output driver, no internal pull-up or pull-down (ESP32 Series Datasheet v5.3, table 6-1 note 2)"
+  },
+  "6": {
+   "name": "IO34",
+   "type": "input",
+   "role": "gpio",
+   "v_max_v": 3.6,
+   "adc": {
+    "range_v": [
+     0.15,
+     2.45
+    ]
+   },
+   "functions": [
+    "spi2.rx",
+    "spi3.rx",
+    "uart0.rx",
+    "uart1.rx",
+    "uart2.rx",
+    "i2s0.sd",
+    "i2s1.sd",
+    "can0.rx",
+    "adc1"
+   ],
+   "hint": "GPIO34: input only – no output driver, no internal pull-up or pull-down (ESP32 Series Datasheet v5.3, table 6-1 note 2)"
+  },
+  "7": {
+   "name": "IO35",
+   "type": "input",
+   "role": "gpio",
+   "v_max_v": 3.6,
+   "adc": {
+    "range_v": [
+     0.15,
+     2.45
+    ]
+   },
+   "functions": [
+    "spi2.rx",
+    "spi3.rx",
+    "uart0.rx",
+    "uart1.rx",
+    "uart2.rx",
+    "i2s0.sd",
+    "i2s1.sd",
+    "can0.rx",
+    "adc1"
+   ],
+   "hint": "GPIO35: input only – no output driver, no internal pull-up or pull-down (ESP32 Series Datasheet v5.3, table 6-1 note 2)"
+  },
+  "8": {
+   "name": "IO32",
+   "type": "bidirectional",
+   "role": "gpio",
+   "v_max_v": 3.6,
+   "adc": {
+    "range_v": [
+     0.15,
+     2.45
+    ]
+   },
+   "functions": [
+    "spi2.sck",
+    "spi2.tx",
+    "spi2.rx",
+    "spi2.cs",
+    "spi3.sck",
+    "spi3.tx",
+    "spi3.rx",
+    "spi3.cs",
+    "uart0.tx",
+    "uart0.rx",
+    "uart1.tx",
+    "uart1.rx",
+    "uart2.tx",
+    "uart2.rx",
+    "i2c0.sda",
+    "i2c0.scl",
+    "i2c1.sda",
+    "i2c1.scl",
+    "i2s0.bclk",
+    "i2s0.ws",
+    "i2s0.sd",
+    "i2s1.bclk",
+    "i2s1.ws",
+    "i2s1.sd",
+    "can0.tx",
+    "can0.rx",
+    "adc1"
+   ]
+  },
+  "9": {
+   "name": "IO33",
+   "type": "bidirectional",
+   "role": "gpio",
+   "v_max_v": 3.6,
+   "adc": {
+    "range_v": [
+     0.15,
+     2.45
+    ]
+   },
+   "functions": [
+    "spi2.sck",
+    "spi2.tx",
+    "spi2.rx",
+    "spi2.cs",
+    "spi3.sck",
+    "spi3.tx",
+    "spi3.rx",
+    "spi3.cs",
+    "uart0.tx",
+    "uart0.rx",
+    "uart1.tx",
+    "uart1.rx",
+    "uart2.tx",
+    "uart2.rx",
+    "i2c0.sda",
+    "i2c0.scl",
+    "i2c1.sda",
+    "i2c1.scl",
+    "i2s0.bclk",
+    "i2s0.ws",
+    "i2s0.sd",
+    "i2s1.bclk",
+    "i2s1.ws",
+    "i2s1.sd",
+    "can0.tx",
+    "can0.rx",
+    "adc1"
+   ]
+  },
+  "10": {
+   "name": "IO25",
+   "type": "bidirectional",
+   "role": "gpio",
+   "v_max_v": 3.6,
+   "adc": {
+    "range_v": [
+     0.15,
+     2.45
+    ]
+   },
+   "functions": [
+    "spi2.sck",
+    "spi2.tx",
+    "spi2.rx",
+    "spi2.cs",
+    "spi3.sck",
+    "spi3.tx",
+    "spi3.rx",
+    "spi3.cs",
+    "uart0.tx",
+    "uart0.rx",
+    "uart1.tx",
+    "uart1.rx",
+    "uart2.tx",
+    "uart2.rx",
+    "i2c0.sda",
+    "i2c0.scl",
+    "i2c1.sda",
+    "i2c1.scl",
+    "i2s0.bclk",
+    "i2s0.ws",
+    "i2s0.sd",
+    "i2s1.bclk",
+    "i2s1.ws",
+    "i2s1.sd",
+    "can0.tx",
+    "can0.rx",
+    "adc2"
+   ],
+   "hint": "ADC2: shared with Wi-Fi (ESP-IDF v6.1 ADC oneshot driver, Hardware Limitations) – an analog read competes with the Wi-Fi driver"
+  },
+  "11": {
+   "name": "IO26",
+   "type": "bidirectional",
+   "role": "gpio",
+   "v_max_v": 3.6,
+   "adc": {
+    "range_v": [
+     0.15,
+     2.45
+    ]
+   },
+   "functions": [
+    "spi2.sck",
+    "spi2.tx",
+    "spi2.rx",
+    "spi2.cs",
+    "spi3.sck",
+    "spi3.tx",
+    "spi3.rx",
+    "spi3.cs",
+    "uart0.tx",
+    "uart0.rx",
+    "uart1.tx",
+    "uart1.rx",
+    "uart2.tx",
+    "uart2.rx",
+    "i2c0.sda",
+    "i2c0.scl",
+    "i2c1.sda",
+    "i2c1.scl",
+    "i2s0.bclk",
+    "i2s0.ws",
+    "i2s0.sd",
+    "i2s1.bclk",
+    "i2s1.ws",
+    "i2s1.sd",
+    "can0.tx",
+    "can0.rx",
+    "adc2"
+   ],
+   "hint": "ADC2: shared with Wi-Fi (ESP-IDF v6.1 ADC oneshot driver, Hardware Limitations) – an analog read competes with the Wi-Fi driver"
+  },
+  "12": {
+   "name": "IO27",
+   "type": "bidirectional",
+   "role": "gpio",
+   "v_max_v": 3.6,
+   "adc": {
+    "range_v": [
+     0.15,
+     2.45
+    ]
+   },
+   "functions": [
+    "spi2.sck",
+    "spi2.tx",
+    "spi2.rx",
+    "spi2.cs",
+    "spi3.sck",
+    "spi3.tx",
+    "spi3.rx",
+    "spi3.cs",
+    "uart0.tx",
+    "uart0.rx",
+    "uart1.tx",
+    "uart1.rx",
+    "uart2.tx",
+    "uart2.rx",
+    "i2c0.sda",
+    "i2c0.scl",
+    "i2c1.sda",
+    "i2c1.scl",
+    "i2s0.bclk",
+    "i2s0.ws",
+    "i2s0.sd",
+    "i2s1.bclk",
+    "i2s1.ws",
+    "i2s1.sd",
+    "can0.tx",
+    "can0.rx",
+    "adc2"
+   ],
+   "hint": "ADC2: shared with Wi-Fi (ESP-IDF v6.1 ADC oneshot driver, Hardware Limitations) – an analog read competes with the Wi-Fi driver"
+  },
+  "13": {
+   "name": "IO14",
+   "type": "bidirectional",
+   "role": "gpio",
+   "v_max_v": 3.6,
+   "adc": {
+    "range_v": [
+     0.15,
+     2.45
+    ]
+   },
+   "functions": [
+    "spi2.sck",
+    "spi2.tx",
+    "spi2.rx",
+    "spi2.cs",
+    "spi3.sck",
+    "spi3.tx",
+    "spi3.rx",
+    "spi3.cs",
+    "uart0.tx",
+    "uart0.rx",
+    "uart1.tx",
+    "uart1.rx",
+    "uart2.tx",
+    "uart2.rx",
+    "i2c0.sda",
+    "i2c0.scl",
+    "i2c1.sda",
+    "i2c1.scl",
+    "i2s0.bclk",
+    "i2s0.ws",
+    "i2s0.sd",
+    "i2s1.bclk",
+    "i2s1.ws",
+    "i2s1.sd",
+    "can0.tx",
+    "can0.rx",
+    "adc2"
+   ],
+   "hint": "ADC2: shared with Wi-Fi (ESP-IDF v6.1 ADC oneshot driver, Hardware Limitations) – an analog read competes with the Wi-Fi driver"
+  },
+  "14": {
+   "name": "IO12",
+   "type": "bidirectional",
+   "role": "gpio",
+   "v_max_v": 3.6,
+   "adc": {
+    "range_v": [
+     0.15,
+     2.45
+    ]
+   },
+   "functions": [
+    "spi2.sck",
+    "spi2.tx",
+    "spi2.rx",
+    "spi2.cs",
+    "spi3.sck",
+    "spi3.tx",
+    "spi3.rx",
+    "spi3.cs",
+    "uart0.tx",
+    "uart0.rx",
+    "uart1.tx",
+    "uart1.rx",
+    "uart2.tx",
+    "uart2.rx",
+    "i2c0.sda",
+    "i2c0.scl",
+    "i2c1.sda",
+    "i2c1.scl",
+    "i2s0.bclk",
+    "i2s0.ws",
+    "i2s0.sd",
+    "i2s1.bclk",
+    "i2s1.ws",
+    "i2s1.sd",
+    "can0.tx",
+    "can0.rx",
+    "adc2"
+   ],
+   "strap": "low",
+   "pull": "down",
+   "pull_ohm": 45000,
+   "hint": "strapping pin MTDI: high at reset sets VDD_SDIO to 1.8 V; datasheet figure 9: 'IO12 should be kept low when the module is powered on' (datasheet 4.2, table 4); ADC2: shared with Wi-Fi (ESP-IDF v6.1 ADC oneshot driver, Hardware Limitations) – an analog read competes with the Wi-Fi driver"
+  },
+  "15": {
+   "name": "GND",
+   "type": "ground"
+  },
+  "16": {
+   "name": "IO13",
+   "type": "bidirectional",
+   "role": "gpio",
+   "v_max_v": 3.6,
+   "adc": {
+    "range_v": [
+     0.15,
+     2.45
+    ]
+   },
+   "functions": [
+    "spi2.sck",
+    "spi2.tx",
+    "spi2.rx",
+    "spi2.cs",
+    "spi3.sck",
+    "spi3.tx",
+    "spi3.rx",
+    "spi3.cs",
+    "uart0.tx",
+    "uart0.rx",
+    "uart1.tx",
+    "uart1.rx",
+    "uart2.tx",
+    "uart2.rx",
+    "i2c0.sda",
+    "i2c0.scl",
+    "i2c1.sda",
+    "i2c1.scl",
+    "i2s0.bclk",
+    "i2s0.ws",
+    "i2s0.sd",
+    "i2s1.bclk",
+    "i2s1.ws",
+    "i2s1.sd",
+    "can0.tx",
+    "can0.rx",
+    "adc2"
+   ],
+   "hint": "ADC2: shared with Wi-Fi (ESP-IDF v6.1 ADC oneshot driver, Hardware Limitations) – an analog read competes with the Wi-Fi driver"
+  },
+  "17": {
+   "name": "NC",
+   "type": "no_connect"
+  },
+  "18": {
+   "name": "NC",
+   "type": "no_connect"
+  },
+  "19": {
+   "name": "NC",
+   "type": "no_connect"
+  },
+  "20": {
+   "name": "NC",
+   "type": "no_connect"
+  },
+  "21": {
+   "name": "NC",
+   "type": "no_connect"
+  },
+  "22": {
+   "name": "NC",
+   "type": "no_connect"
+  },
+  "23": {
+   "name": "IO15",
+   "type": "bidirectional",
+   "role": "gpio",
+   "v_max_v": 3.6,
+   "adc": {
+    "range_v": [
+     0.15,
+     2.45
+    ]
+   },
+   "functions": [
+    "spi2.sck",
+    "spi2.tx",
+    "spi2.rx",
+    "spi2.cs",
+    "spi3.sck",
+    "spi3.tx",
+    "spi3.rx",
+    "spi3.cs",
+    "uart0.tx",
+    "uart0.rx",
+    "uart1.tx",
+    "uart1.rx",
+    "uart2.tx",
+    "uart2.rx",
+    "i2c0.sda",
+    "i2c0.scl",
+    "i2c1.sda",
+    "i2c1.scl",
+    "i2s0.bclk",
+    "i2s0.ws",
+    "i2s0.sd",
+    "i2s1.bclk",
+    "i2s1.ws",
+    "i2s1.sd",
+    "can0.tx",
+    "can0.rx",
+    "adc2"
+   ],
+   "pull": "up",
+   "pull_ohm": 45000,
+   "hint": "strapping pin MTDO: low at reset disables the U0TXD boot messages, with GPIO5 it sets the SDIO slave timing; weak pull-up at reset (datasheet table 4, 7, 8); ADC2: shared with Wi-Fi (ESP-IDF v6.1 ADC oneshot driver, Hardware Limitations) – an analog read competes with the Wi-Fi driver"
+  },
+  "24": {
+   "name": "IO2",
+   "type": "bidirectional",
+   "role": "gpio",
+   "v_max_v": 3.6,
+   "adc": {
+    "range_v": [
+     0.15,
+     2.45
+    ]
+   },
+   "functions": [
+    "spi2.sck",
+    "spi2.tx",
+    "spi2.rx",
+    "spi2.cs",
+    "spi3.sck",
+    "spi3.tx",
+    "spi3.rx",
+    "spi3.cs",
+    "uart0.tx",
+    "uart0.rx",
+    "uart1.tx",
+    "uart1.rx",
+    "uart2.tx",
+    "uart2.rx",
+    "i2c0.sda",
+    "i2c0.scl",
+    "i2c1.sda",
+    "i2c1.scl",
+    "i2s0.bclk",
+    "i2s0.ws",
+    "i2s0.sd",
+    "i2s1.bclk",
+    "i2s1.ws",
+    "i2s1.sd",
+    "can0.tx",
+    "can0.rx",
+    "adc2"
+   ],
+   "pull": "down",
+   "pull_ohm": 45000,
+   "hint": "strapping pin GPIO2: any level for SPI boot, must be low for download boot; weak pull-down at reset (datasheet table 4, 6); ADC2: shared with Wi-Fi (ESP-IDF v6.1 ADC oneshot driver, Hardware Limitations) – an analog read competes with the Wi-Fi driver"
+  },
+  "25": {
+   "name": "IO0",
+   "type": "bidirectional",
+   "role": "gpio",
+   "v_max_v": 3.6,
+   "adc": {
+    "range_v": [
+     0.15,
+     2.45
+    ]
+   },
+   "functions": [
+    "spi2.sck",
+    "spi2.tx",
+    "spi2.rx",
+    "spi2.cs",
+    "spi3.sck",
+    "spi3.tx",
+    "spi3.rx",
+    "spi3.cs",
+    "uart0.tx",
+    "uart0.rx",
+    "uart1.tx",
+    "uart1.rx",
+    "uart2.tx",
+    "uart2.rx",
+    "i2c0.sda",
+    "i2c0.scl",
+    "i2c1.sda",
+    "i2c1.scl",
+    "i2s0.bclk",
+    "i2s0.ws",
+    "i2s0.sd",
+    "i2s1.bclk",
+    "i2s1.ws",
+    "i2s1.sd",
+    "can0.tx",
+    "can0.rx",
+    "adc2"
+   ],
+   "strap": "high",
+   "pull": "up",
+   "pull_ohm": 45000,
+   "hint": "strapping pin GPIO0: high at reset = SPI boot, low (with GPIO2 low) = download boot; weak pull-up at reset (datasheet table 4, 6); ADC2: shared with Wi-Fi (ESP-IDF v6.1 ADC oneshot driver, Hardware Limitations) – an analog read competes with the Wi-Fi driver"
+  },
+  "26": {
+   "name": "IO4",
+   "type": "bidirectional",
+   "role": "gpio",
+   "v_max_v": 3.6,
+   "adc": {
+    "range_v": [
+     0.15,
+     2.45
+    ]
+   },
+   "functions": [
+    "spi2.sck",
+    "spi2.tx",
+    "spi2.rx",
+    "spi2.cs",
+    "spi3.sck",
+    "spi3.tx",
+    "spi3.rx",
+    "spi3.cs",
+    "uart0.tx",
+    "uart0.rx",
+    "uart1.tx",
+    "uart1.rx",
+    "uart2.tx",
+    "uart2.rx",
+    "i2c0.sda",
+    "i2c0.scl",
+    "i2c1.sda",
+    "i2c1.scl",
+    "i2s0.bclk",
+    "i2s0.ws",
+    "i2s0.sd",
+    "i2s1.bclk",
+    "i2s1.ws",
+    "i2s1.sd",
+    "can0.tx",
+    "can0.rx",
+    "adc2"
+   ],
+   "hint": "ADC2: shared with Wi-Fi (ESP-IDF v6.1 ADC oneshot driver, Hardware Limitations) – an analog read competes with the Wi-Fi driver"
+  },
+  "27": {
+   "name": "IO16",
+   "type": "bidirectional",
+   "role": "gpio",
+   "v_max_v": 3.6,
+   "functions": [
+    "spi2.sck",
+    "spi2.tx",
+    "spi2.rx",
+    "spi2.cs",
+    "spi3.sck",
+    "spi3.tx",
+    "spi3.rx",
+    "spi3.cs",
+    "uart0.tx",
+    "uart0.rx",
+    "uart1.tx",
+    "uart1.rx",
+    "uart2.tx",
+    "uart2.rx",
+    "i2c0.sda",
+    "i2c0.scl",
+    "i2c1.sda",
+    "i2c1.scl",
+    "i2s0.bclk",
+    "i2s0.ws",
+    "i2s0.sd",
+    "i2s1.bclk",
+    "i2s1.ws",
+    "i2s1.sd",
+    "can0.tx",
+    "can0.rx"
+   ]
+  },
+  "28": {
+   "name": "IO17",
+   "type": "bidirectional",
+   "role": "gpio",
+   "v_max_v": 3.6,
+   "functions": [
+    "spi2.sck",
+    "spi2.tx",
+    "spi2.rx",
+    "spi2.cs",
+    "spi3.sck",
+    "spi3.tx",
+    "spi3.rx",
+    "spi3.cs",
+    "uart0.tx",
+    "uart0.rx",
+    "uart1.tx",
+    "uart1.rx",
+    "uart2.tx",
+    "uart2.rx",
+    "i2c0.sda",
+    "i2c0.scl",
+    "i2c1.sda",
+    "i2c1.scl",
+    "i2s0.bclk",
+    "i2s0.ws",
+    "i2s0.sd",
+    "i2s1.bclk",
+    "i2s1.ws",
+    "i2s1.sd",
+    "can0.tx",
+    "can0.rx"
+   ]
+  },
+  "29": {
+   "name": "IO5",
+   "type": "bidirectional",
+   "role": "gpio",
+   "v_max_v": 3.6,
+   "functions": [
+    "spi2.sck",
+    "spi2.tx",
+    "spi2.rx",
+    "spi2.cs",
+    "spi3.sck",
+    "spi3.tx",
+    "spi3.rx",
+    "spi3.cs",
+    "uart0.tx",
+    "uart0.rx",
+    "uart1.tx",
+    "uart1.rx",
+    "uart2.tx",
+    "uart2.rx",
+    "i2c0.sda",
+    "i2c0.scl",
+    "i2c1.sda",
+    "i2c1.scl",
+    "i2s0.bclk",
+    "i2s0.ws",
+    "i2s0.sd",
+    "i2s1.bclk",
+    "i2s1.ws",
+    "i2s1.sd",
+    "can0.tx",
+    "can0.rx"
+   ],
+   "pull": "up",
+   "pull_ohm": 45000,
+   "hint": "strapping pin GPIO5: with MTDO it sets the SDIO slave timing; weak pull-up at reset (datasheet table 4, 8)"
+  },
+  "30": {
+   "name": "IO18",
+   "type": "bidirectional",
+   "role": "gpio",
+   "v_max_v": 3.6,
+   "functions": [
+    "spi2.sck",
+    "spi2.tx",
+    "spi2.rx",
+    "spi2.cs",
+    "spi3.sck",
+    "spi3.tx",
+    "spi3.rx",
+    "spi3.cs",
+    "uart0.tx",
+    "uart0.rx",
+    "uart1.tx",
+    "uart1.rx",
+    "uart2.tx",
+    "uart2.rx",
+    "i2c0.sda",
+    "i2c0.scl",
+    "i2c1.sda",
+    "i2c1.scl",
+    "i2s0.bclk",
+    "i2s0.ws",
+    "i2s0.sd",
+    "i2s1.bclk",
+    "i2s1.ws",
+    "i2s1.sd",
+    "can0.tx",
+    "can0.rx"
+   ]
+  },
+  "31": {
+   "name": "IO19",
+   "type": "bidirectional",
+   "role": "gpio",
+   "v_max_v": 3.6,
+   "functions": [
+    "spi2.sck",
+    "spi2.tx",
+    "spi2.rx",
+    "spi2.cs",
+    "spi3.sck",
+    "spi3.tx",
+    "spi3.rx",
+    "spi3.cs",
+    "uart0.tx",
+    "uart0.rx",
+    "uart1.tx",
+    "uart1.rx",
+    "uart2.tx",
+    "uart2.rx",
+    "i2c0.sda",
+    "i2c0.scl",
+    "i2c1.sda",
+    "i2c1.scl",
+    "i2s0.bclk",
+    "i2s0.ws",
+    "i2s0.sd",
+    "i2s1.bclk",
+    "i2s1.ws",
+    "i2s1.sd",
+    "can0.tx",
+    "can0.rx"
+   ]
+  },
+  "32": {
+   "name": "NC",
+   "type": "no_connect"
+  },
+  "33": {
+   "name": "IO21",
+   "type": "bidirectional",
+   "role": "gpio",
+   "v_max_v": 3.6,
+   "functions": [
+    "spi2.sck",
+    "spi2.tx",
+    "spi2.rx",
+    "spi2.cs",
+    "spi3.sck",
+    "spi3.tx",
+    "spi3.rx",
+    "spi3.cs",
+    "uart0.tx",
+    "uart0.rx",
+    "uart1.tx",
+    "uart1.rx",
+    "uart2.tx",
+    "uart2.rx",
+    "i2c0.sda",
+    "i2c0.scl",
+    "i2c1.sda",
+    "i2c1.scl",
+    "i2s0.bclk",
+    "i2s0.ws",
+    "i2s0.sd",
+    "i2s1.bclk",
+    "i2s1.ws",
+    "i2s1.sd",
+    "can0.tx",
+    "can0.rx"
+   ]
+  },
+  "34": {
+   "name": "RXD0",
+   "type": "bidirectional",
+   "role": "gpio",
+   "v_max_v": 3.6,
+   "functions": [
+    "spi2.sck",
+    "spi2.tx",
+    "spi2.rx",
+    "spi2.cs",
+    "spi3.sck",
+    "spi3.tx",
+    "spi3.rx",
+    "spi3.cs",
+    "uart0.tx",
+    "uart0.rx",
+    "uart1.tx",
+    "uart1.rx",
+    "uart2.tx",
+    "uart2.rx",
+    "i2c0.sda",
+    "i2c0.scl",
+    "i2c1.sda",
+    "i2c1.scl",
+    "i2s0.bclk",
+    "i2s0.ws",
+    "i2s0.sd",
+    "i2s1.bclk",
+    "i2s1.ws",
+    "i2s1.sd",
+    "can0.tx",
+    "can0.rx"
+   ],
+   "hint": "U0RXD: UART0 downloads firmware and prints the log (datasheet 9 Peripheral Schematics)",
+   "pull": "up"
+  },
+  "35": {
+   "name": "TXD0",
+   "type": "bidirectional",
+   "role": "gpio",
+   "v_max_v": 3.6,
+   "functions": [
+    "spi2.sck",
+    "spi2.tx",
+    "spi2.rx",
+    "spi2.cs",
+    "spi3.sck",
+    "spi3.tx",
+    "spi3.rx",
+    "spi3.cs",
+    "uart0.tx",
+    "uart0.rx",
+    "uart1.tx",
+    "uart1.rx",
+    "uart2.tx",
+    "uart2.rx",
+    "i2c0.sda",
+    "i2c0.scl",
+    "i2c1.sda",
+    "i2c1.scl",
+    "i2s0.bclk",
+    "i2s0.ws",
+    "i2s0.sd",
+    "i2s1.bclk",
+    "i2s1.ws",
+    "i2s1.sd",
+    "can0.tx",
+    "can0.rx"
+   ],
+   "hint": "U0TXD: UART0 downloads firmware and prints the log (datasheet 9 Peripheral Schematics)",
+   "pull": "up"
+  },
+  "36": {
+   "name": "IO22",
+   "type": "bidirectional",
+   "role": "gpio",
+   "v_max_v": 3.6,
+   "functions": [
+    "spi2.sck",
+    "spi2.tx",
+    "spi2.rx",
+    "spi2.cs",
+    "spi3.sck",
+    "spi3.tx",
+    "spi3.rx",
+    "spi3.cs",
+    "uart0.tx",
+    "uart0.rx",
+    "uart1.tx",
+    "uart1.rx",
+    "uart2.tx",
+    "uart2.rx",
+    "i2c0.sda",
+    "i2c0.scl",
+    "i2c1.sda",
+    "i2c1.scl",
+    "i2s0.bclk",
+    "i2s0.ws",
+    "i2s0.sd",
+    "i2s1.bclk",
+    "i2s1.ws",
+    "i2s1.sd",
+    "can0.tx",
+    "can0.rx"
+   ]
+  },
+  "37": {
+   "name": "IO23",
+   "type": "bidirectional",
+   "role": "gpio",
+   "v_max_v": 3.6,
+   "functions": [
+    "spi2.sck",
+    "spi2.tx",
+    "spi2.rx",
+    "spi2.cs",
+    "spi3.sck",
+    "spi3.tx",
+    "spi3.rx",
+    "spi3.cs",
+    "uart0.tx",
+    "uart0.rx",
+    "uart1.tx",
+    "uart1.rx",
+    "uart2.tx",
+    "uart2.rx",
+    "i2c0.sda",
+    "i2c0.scl",
+    "i2c1.sda",
+    "i2c1.scl",
+    "i2s0.bclk",
+    "i2s0.ws",
+    "i2s0.sd",
+    "i2s1.bclk",
+    "i2s1.ws",
+    "i2s1.sd",
+    "can0.tx",
+    "can0.rx"
+   ]
+  },
+  "38": {
+   "name": "GND",
+   "type": "ground"
+  },
+  "39": {
+   "name": "GND",
+   "type": "ground"
+  }
+ },
+ "values": {
+  "behavior": "mcu",
+  "v_io_v": 3.3,
+  "vih_ratio": 0.75,
+  "vil_ratio": 0.25,
+  "i_core_a": 0.379
+ },
+ "limits": {
+  "vdd_op_min_v": 3.0,
+  "vdd_op_max_v": 3.6,
+  "gpio_v_max_v": 3.6,
+  "gpio_i_max_a": 0.028,
+  "gpio_i_total_max_a": 1.2,
+  "t_min_c": -40,
+  "t_max_c": 85
+ },
+ "antenna": {
+  "keepout_mm": [
+   -16.49,
+   -9.0,
+   -10.3,
+   9.0
+  ]
+ },
+ "body": {
+  "h_mm": 3.1
+ },
+ "hints": [
+  "the supply must deliver at least 0.5 A (datasheet table 14, IVDD); Wi-Fi TX peaks at 379 mA (table 16)",
+  "GPIO6–GPIO11 drive the module's flash and are not brought out (datasheet table 3 note 2)"
+ ],
+ "spice": {},
+ "compliance": {
+  "rohs": true,
+  "radio": {
+   "bands_mhz": [
+    [
+     2412,
+     2484
+    ],
+    [
+     2402,
+     2480
+    ]
+   ],
+   "max_dbm": 19.5,
+   "source": "ESP32-WROOM-32E & ESP32-WROOM-32UE Datasheet v2.1: table 19 (Wi-Fi centre frequencies 2412–2484 MHz), table 20 (802.11b TX power 19.5 dBm typ, measured at the antenna port), table 24 (Bluetooth LE 2402–2480 MHz, –12 … +9 dBm), tables 26/28/30 (Bluetooth power control range –12 … +9 dBm)"
+  },
+  "source": "ESP32-WROOM-32E & ESP32-WROOM-32UE Datasheet v2.1, 1.1 Features: 'Green certification: REACH/RoHS' – read 2026-10-31"
+ },
+ "sources": [
+  "pin numbers and names, footprint, mpn, jlc_class: EasyEDA library data of C701341 (edakit part import, 2026-10-31); JLCPCB catalogue 2026-10-31: Extended, 62 874 pcs",
+  "ESP32-WROOM-32E & ESP32-WROOM-32UE Datasheet v2.1 (Espressif, documentation.espressif.com, read 2026-10-31): table 1 (N4: 4 MB flash, no PSRAM, –40 … 85 °C), table 3 pin definitions (input-only IO34/35/36/39, NC pins 17–22 and 32, GPIO6–11 on the flash), table 4 strapping defaults, table 6 boot mode, 4.2 VDD_SDIO by MTDI, table 13 VDD33 abs. max 3.6 V, table 14 VDD33 3.0–3.6 V and IVDD ≥ 0.5 A, table 15 DC characteristics at 3.3 V/25 °C (VIH ≥ 0.75 × VDD up to VDD + 0.3 V, VIL ≤ 0.25 × VDD, IOH 40 mA typ, IOL 28 mA typ, RPU/RPD 45 kΩ typ, VIL_nRST ≤ 0.6 V), table 16 current (802.11b TX 239 mA average, 379 mA peak), table 11 ADC atten 3: 150–2450 mV, 9 Peripheral Schematics (EN RC 10 kΩ / 1 µF, 'IO12 should be kept low'), figure 10 dimensions (18 × 25.5 × 3.1 mm), figure 13 land pattern (antenna area 6.19 mm from the module's top edge, top edge 7.49 mm from pin 1)",
+  "ESP32 Series Datasheet v5.3 (Espressif, read 2026-10-31): table 5-1 cumulative IO output current 1200 mA (abs. max); table 6-1 note 2 (GPIO34–39 input only, no pulls); 4.8 and appendix A.2 GPIO matrix ('the signals of the on-chip functional modules can be mapped onto any GPIO pin'; HSPI = SPI2, VSPI = SPI3, U0/U1/U2, I2CEXT0/1, I2S0/1, TWAI, LEDC, MCPWM in table 6-2)",
+  "ESP-IDF Programming Guide v6.1 (esp32), API Reference > ADC Oneshot Mode Driver > Hardware Limitations: 'ADC2 is also used by Wi-Fi' (docs.espressif.com, read 2026-10-31)",
+  "functions: every output-capable GPIO lists the GPIO-matrix signals spi2/spi3 (HSPI/VSPI), uart0–2, i2c0–1, i2s0–1, can0 (TWAI); the input-only GPIOs only their input signals; adc1/adc2 = the ADC unit (ADC1_CHn, ADC2_CHn in table 3) – the channel is not in the function name",
+  "functions: no pwm – LEDC (16 channels, 8 timers) and MCPWM reach every GPIO through the matrix, which edakit's slice model cannot express (see verified.open)",
+  "adc.range_v [0.15, 2.45]: the effective range at attenuation 3 (table 11) – assumption: the firmware uses attenuation 3; atten 0/1/2 read 100–950 / 100–1250 / 150–1750 mV",
+  "i_core_a 0.379 A: the 802.11b TX peak of table 16 as the upper bound (average 239 mA at 100 % duty cycle)",
+  "gpio_i_max_a 0.028 A: IOL typ 28 mA at VOL 0.495 V and maximum drive strength (table 15; IOH typ 40 mA, falling to about 29 mA per pin as more pins source current) – assumption: the datasheet gives no absolute maximum per pin",
+  "pin v_max_v and gpio_v_max_v 3.6 V: VIH max VDD + 0.3 V at VDD 3.3 V (table 15); the module datasheet gives no absolute maximum for IO pins",
+  "pull_ohm 45 kΩ: RPU/RPD typ (table 15)",
+  "antenna.keepout_mm: the antenna area of figure 13 (6.19 mm × 18 mm at the module's antenna end) placed in the EasyEDA footprint WIFI-SMD_ESP32-WROOM-32E (pin 1 at x = –9.0 mm, the antenna end towards –x, module edge at x = –16.49 mm, silk at –16.48 mm) – the base-board clearance the ESP32 Hardware Design Guidelines recommend beyond it is not included",
+  "ESP32 Series Datasheet v5.3, 4.8 Peripheral Pin Configurations: the pins for UART, regular I2C, the I2S Controller, the LED PWM Controller, Motor Control PWM and the Two-wire Automotive Interface (TWAI) can be chosen from any GPIOs via the GPIO Matrix; SPI (HSPI, VSPI) is multiplexed via the IO MUX (4.8.2) – left to the pins' functions"
+ ],
+ "notes": "Bare ESP32 module without regulator (3V3 supplied from outside). functions holds no pwm on purpose: the GPIO matrix routes LEDC/MCPWM to any GPIO, which the slice model of REQ.function cannot express – a net with fn pwm on this module is reported by REQ.function until the schema can say 'any channel through the matrix'.",
+ "verified": {
+  "by": "Claude (datasheet check, library draft)",
+  "date": "2026-10-31",
+  "datasheet": "ESP32-WROOM-32E & ESP32-WROOM-32UE Datasheet v2.1",
+  "checked": [
+   "pin numbers 1–39 and names of the EasyEDA symbol against table 3 (39 = EPAD, GND)",
+   "input-only IO34, IO35, SENSOR_VP (GPIO36), SENSOR_VN (GPIO39): type input, no pull",
+   "strapping pins GPIO0 (pull-up, high = SPI boot), GPIO2 (pull-down), MTDI/IO12 (pull-down, must stay low: VDD_SDIO), MTDO/IO15 (pull-up), GPIO5 (pull-up) – table 4, 6, 7, 8, 4.2",
+   "VDD33 3.0–3.6 V recommended, 3.6 V abs. max; IVDD ≥ 0.5 A; –40 … 85 °C (N4)",
+   "VIH 0.75 × VDD, VIL 0.25 × VDD; IOH 40 mA typ, IOL 28 mA typ; RPU/RPD 45 kΩ typ",
+   "TX current 802.11b 239 mA average, 379 mA peak",
+   "Wi-Fi 2412–2484 MHz, 19.5 dBm (802.11b); Bluetooth 2402–2480 MHz, up to +9 dBm",
+   "ADC1 on IO32–IO39, ADC2 on IO0, IO2, IO4, IO12–IO15, IO25–IO27 (table 3)",
+   "EN: RC 10 kΩ / 1 µF recommended, not to be left floating",
+   "footprint frame: pin 1 at (–9.0, –9.0) mm, module outline x –16.49 … 9.0 mm against figure 10/13",
+   "2026-10-31: RXD0/TXD0 (pins 34, 35) with their weak pull-up during and after reset – ESP32 Series Datasheet v5.3, IO_MUX table (U0RXD, U0TXD: wpu), as read by the block agent of BL-7",
+   "2026-10-31: matrix ['uart', 'i2c', 'i2s', 'pwm', 'can'] – ESP32 Series Datasheet v5.3, 4.8 Peripheral Pin Configurations: the pins for UART, regular I2C, the I2S Controller, the LED PWM Controller, Motor Control PWM and the Two-wire Automotive Interface (TWAI) can be chosen from any GPIOs via the GPIO Matrix; SPI (HSPI, VSPI) is multiplexed via the IO MUX (4.8.2) – left to the pins' functions; REQ.function takes a net's fn on any GPIO of these kinds (schema-gaps A1)"
+  ],
+  "open": [
+   "pwm: LEDC/MCPWM reach any GPIO through the matrix – not expressible in functions (schema gap); fn pwm nets on this module are reported by REQ.function",
+   "adc window assumes attenuation 3 (150–2450 mV); a firmware with another attenuation needs its own range_v",
+   "gpio_i_max_a is the IOL test current, not an absolute maximum (none given)",
+   "antenna_dbi of the PCB antenna and the EU declaration of conformity (doc): not in the datasheet, certificates not read",
+   "REACH: only 'Green certification: REACH/RoHS' in the datasheet – no SVHC statement read",
+   "rth/tj: the module datasheet gives none",
+   "least current (i_core_min_a): sleep currents are in the ESP32 Series Datasheet, not read; firmware-dependent",
+   "base-board antenna clearance per ESP32 Hardware Design Guidelines (not read) beyond the antenna area"
+  ]
+ },
+ "matrix": [
+  "uart",
+  "i2c",
+  "i2s",
+  "pwm",
+  "can"
+ ]
+}

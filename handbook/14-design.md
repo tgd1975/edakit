@@ -198,11 +198,23 @@ An instrument board with a supply input: consider the other pedals and amplifier
 **`HINT.string_ground`** – the player on the amplifier's ground (note)  
 An instrument input: consider what ties the player to ground.
 
+**`HINT.jack_supply`** – a supply on a jack contact (note)  
+A jack whose tip, ring or a switch contact carries a supply (roles tip, ring, sleeve, tip_switch, ring_switch, sleeve_switch): consider what happens while a plug goes in and comes out.
+
+**`HINT.relay_load`** – relay contacts switching a load off the board (note)  
+A relay whose contacts (common, no, nc) reach a connector or run through a cable: consider the load they switch.
+
 **`HINT.flicker`** – LED flicker from PWM (note)  
 A net with pwm_hz lights LEDs: consider whether its frequency flickers.
 
 **`HINT.boost_enable`** – a boost converter switched off by its enable (note)  
 A boost converter whose enable an MCU drives: consider what its output does with EN low.
+
+**`HINT.usb_budget`** – the current a USB port gives (note)  
+A USB receptacle that powers the board: consider what the port gives – 100 mA before the device is configured, 500 mA after (USB 2.0), 900 mA on USB 3.2 single lane, 1.5 A or 3 A only where a Type-C source advertises it on CC and the board reads the advertisement.
+
+**`HINT.usb_inrush`** – more than 10 µF on USB VBUS (note)  
+A USB receptacle whose VBUS net carries more than 10 µF directly (the capacitors' value_f): consider a soft start or less capacitance ahead of it – USB 2.0 allows a device 10 µF at attach; HINT.bulk asks for a bulk capacitor at the same input, and the two meet here.
 
 **`HINT.input_polarity`** – a power input without a polarity check (note)  
 A supply connector the graph does not mark as reversible: consider whether it can be plugged the wrong way round. Not a battery holder – PATH.reverse checks every one as a source that may be reversed.
@@ -310,6 +322,24 @@ edakit block add led --as STATUS --connect in=LED_STATUS
 | `power-or-pmos` | two supplies ORed onto one rail: USB through an SS34, cells or a second input through two AO3401A back-to-back that USB switches off – neither supply is fed backwards (HINT.two_supplies) |
 | `reverse-pmos` | AO3401A reverse-polarity protection with its gate resistor |
 | `usb-c-sink` | USB-C power input with 5.1 kΩ per CC pin and a polyfuse |
+| `addressable-led-input` | 74AHCT1G125 level shift from 3.3 V to a 5 V pixel's data input, 330 Ω series resistor, 1000 µF at the strip's supply (BL-1) |
+| `nmos-switch` | AO3400A low-side switch, specified at 2.5 V gate drive, with gate resistor, pull-down and a flyback diode (BL-2) |
+| `pmos-high-side` | AO3401A high-side switch with an S8050 level shift (BL-3) |
+| `lipo-charger` | MCP73831 charger, DW01A and FS8205A cell protection, load sharing after Microchip AN1149 (BL-4) |
+| `ldo-3v3` | RT9080 3.3 V LDO, 600 mA and 2 µA quiescent, for an ESP32 (BL-5) |
+| `battery-sense` | battery voltage through a 1:2 divider a P-MOSFET switches on, hold capacitor at the ADC (BL-6) |
+| `esp32-wroom-32e` | ESP32-WROOM-32E with EN 10 kΩ and 1 µF, BOOT button, the auto-program circuit and a CH340C (BL-7) |
+| `usb-c-data` | USB-C with USB 2.0 data (both rows joined), USBLC6-2SC6, 5.1 kΩ per CC pin, polyfuse (BL-8) |
+| `i2c-level-shift` | two BSS138 with pull-ups on both sides, 100 kHz (BL-9) |
+| `rs485` | MAX3485 at 3.3 V with switchable 120 Ω termination, idle bias and DE pull-down (BL-10) |
+| `midi` | MIDI in through a 6N138 and MIDI out for a 3.3 V MCU on 5-pin DIN (BL-11) |
+| `cable-input` | an input on a long lead: pull-up, series resistor and capacitor, TVS at the connector (BL-12) |
+| `servo-connector` | hobby servo header with a bulk capacitor (BL-13) |
+| `dc-motor-drv8833` | DRV8833 for two DC motors with its VM, VCP and VINT capacitors (BL-14) |
+| `eurorack-power` | keyed 10-pin Eurorack header, a series Schottky per rail, 10 µF per rail (BL-15) |
+| `instrument-buffer` | OPA991 follower with a 1.1 MΩ input, RF filter at the jack, 100 Ω output, an AC expectation (BL-16) |
+| `pedal-power` | 9 V centre-negative jack, Schottky, 100 Ω and 100 µF, a 4.5 V reference (BL-17) |
+| `relay-bypass` | true bypass with a gold-contact signal relay, transistor coil drive and a photo-MOS mute (BL-18) |
 
 What `add` does: designators get the next free numbers (`R1` of the block becomes `R7`), internal nets get the
 instance's name (`STATUS_ANODE`), each port joins the net given with `--connect` – or a new net, if the block knows its
@@ -317,8 +347,25 @@ voltage range – and `gnd` joins the project's ground. Missing parts entries ar
 existing entry must have the same pins. The graph file keeps its indentation. The block's notes say what is left to
 decide: the LED current, the entries in sim.json, `"source": "reversible"` on the connector.
 
+A block may carry keys of the graph and say what can go:
+
+- `graph` – keys for the project's graph: `{"grounds": ["cell_n"]}` adds the block's net (under its instance name,
+  `CHG_CELL_N`) to the graph's `grounds` (3.1) – the lipo-charger's cell minus, the DW01A's own ground.
+- `optional` – `{"parts": ["R3"], "ports": ["dout"]}`: parts `--without R3` leaves out, and ports that may stay
+  unconnected. A pin left alone on a net by a missing part goes into its component's `nc` when the net is an optional
+  port that `--connect` does not name (addressable-led-input without its second series resistor); a net left with no
+  pin is not created. `--without` refuses a part that is not optional. The flyback diode of the nmos-, npn- and
+  pmos-switches (no winding to drive) and the bias pair of rs485 (a bus biased elsewhere) are optional.
+- `accept` on a block's net or component may name a place – `{"LIM.v D1": "…"}` –; `add` renames the designator in
+  the key as it renames the part (3.1).
+
 Every block passes `edakit check` and `edakit sim` and is drawn by `edakit schematic draw` once it is in the example
-project – a test makes sure of that. That
+project – a test makes sure of that; where in the example it goes, and what its simulation needs, stands in the block's
+own `test` table: `connect` (its ports in the example), `sim` (the block's own sim.json keys, merged deeply into the
+example's – an MCU's outputs, loads –, or `false` where the example's rails, not the block, keep it from simulating),
+`remove_supplies` (supply cases of the example the block cannot meet, the example's +5V behind its diode at USB
+minimum), `without` (optional parts the test leaves out); `sim: false` and `remove_supplies` need a `why`.
+Their parts come from the parts library and are drafts until the owner signs them (4.1). That
 makes a block a good start, not a sign-off: values, ratings and the review are still the project's. A project's own
 blocks are JSON files of the same form, added with `--file`.
 

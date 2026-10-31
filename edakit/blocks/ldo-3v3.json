@@ -1,0 +1,134 @@
+{
+ "name": "ldo-3v3",
+ "title": "3.3 V LDO for an ESP32: RT9080, 600 mA, 2 µA quiescent current",
+ "about": "RT9080-33 (Richtek) from a 3.6–5.5 V input to a 3.3 V rail: 600 mA – Espressif's schematic checklist asks for at least 500 mA for an ESP32 – with 2 µA quiescent current (4 µA max), so that a battery board keeps its deep-sleep current. 10 µF at the input, 22 µF at the output (the data sheet asks for 1 µF each, Espressif for at least 10 µF where the supply enters), EN pulled to the input through 100 kΩ. The library's XC6206 (C5446) stops at 200 mA, the AMS1117 (C6186) draws 11 mA in quiescent current and drops 1.3 V.",
+ "ports": {
+  "vin": "the input: 3.6–5.5 V – the system rail of lipo-charger, USB 5 V behind a diode, or one Li-ion cell",
+  "vout": "the 3.3 V rail",
+  "gnd": "ground"
+ },
+ "components": [
+  {
+   "designator": "U1",
+   "type": "ic",
+   "label": "{as}: 3.3 V LDO 600 mA",
+   "part": "RT9080-33GJ5",
+   "lcsc": "C841192",
+   "pins": {
+    "1": "VIN",
+    "2": "GND",
+    "3": "EN",
+    "4": "NC",
+    "5": "VOUT"
+   },
+   "nc": [
+    "4"
+   ],
+   "notes": "EN pulled to VIN through R1: on as soon as VIN is there (EN must not float). Pin 4 has no internal connection on the RT9080."
+  },
+  {
+   "designator": "R1",
+   "type": "resistor",
+   "label": "{as}: EN pull-up 100 k",
+   "part": "0805W8F1003T5E",
+   "lcsc": "C149504",
+   "value": "100k",
+   "pins": {
+    "1": "1",
+    "2": "2"
+   },
+   "notes": "Holds EN at VIN (EN draws ≤ 0.1 µA: ≤ 10 mV drop). A switch or an open-drain output from {as}_EN to ground turns the 3.3 V rail off; it then draws VIN / 100 kΩ (42 µA from 4.2 V)."
+  },
+  {
+   "designator": "C1",
+   "type": "capacitor",
+   "label": "{as}: 10 µF at the LDO input",
+   "part": "CL21A106KAYNNNE",
+   "lcsc": "C15850",
+   "value": "10uF",
+   "pins": {
+    "1": "1",
+    "2": "2"
+   },
+   "notes": "The data sheet asks for at least 1 µF close to VIN and GND; 10 µF also buffers the radio's current steps where the input comes over a cable or a diode."
+  },
+  {
+   "designator": "C2",
+   "type": "capacitor",
+   "label": "{as}: 22 µF at the LDO output",
+   "part": "CL21A226MAQNNNE",
+   "lcsc": "C45783",
+   "value": "22uF",
+   "pins": {
+    "1": "1",
+    "2": "2"
+   },
+   "notes": "The data sheet asks for at least 1 µF effective (ESR ≥ 1 mΩ) and sets no maximum; Espressif's schematic checklist for at least 10 µF where the supply enters. 22 µF rather than 10 µF because X5R loses capacitance under DC bias (the entry of C45783: about 30–50 % left at 5 V) – how much is left at 3.3 V is not in the data at hand. The module still gets its own 100 nF at its supply pins (BL-7)."
+  }
+ ],
+ "nets": [
+  {
+   "name": "vin",
+   "pins": [
+    "U1.1",
+    "C1.1",
+    "R1.1"
+   ]
+  },
+  {
+   "name": "en",
+   "pins": [
+    "U1.3",
+    "R1.2"
+   ],
+   "v": "@vin",
+   "notes": "Enable: VIN through R1; to ground to switch the rail off."
+  },
+  {
+   "name": "vout",
+   "pins": [
+    "U1.5",
+    "C2.1"
+   ],
+   "v": [
+    0,
+    3.4
+   ]
+  },
+  {
+   "name": "gnd",
+   "pins": [
+    "U1.2",
+    "C1.2",
+    "C2.2"
+   ]
+  }
+ ],
+ "covers": [
+  "LIM.range",
+  "LIM.t",
+  "REQ.missing",
+  "REQ.value",
+  "SIM.config"
+ ],
+ "notes": [
+  "Input: 3.3 V out needs VIN ≥ 3.3 V + dropout – 0.31 V typ, 0.53 V max at 600 mA (DS9080-05 p. 4): up to 3.83 V for the full 600 mA. A Li-ion cell below about 3.6 V gives less than 3.3 V at high current; the library's ESP32 modules run from 3.0 V (vdd_op_min_v). Above 5.5 V (the recommended maximum; 6.5 V absolute) another regulator.",
+  "Heat: P = (VIN − 3.3 V) × I with θJA 230.6 °C/W (four-layer JEDEC board; 0.43 W at 25 °C, TJ 125 °C). The library's ESP32 modules carry their 802.11b transmit peak as i_core_a (ESP32-WROOM-32E 0.379 A) and edakit sim holds the junction at that current: behind usb-c-sink and lipo-charger at USB 4.75 V the input is 4.2 V and the junction 119 °C at 40 °C ambient – LIM.t fails against the 110 °C of the example's criteria; at USB 5 V it is hotter. From a 3.7 V cell: 0.15 W, about 75 °C. The peak lasts milliseconds – whether the average fits is the project's judgement (accept LIM.t with the duty cycle); for continuous high current from 5 V a regulator in SOT-89 or SOT-223, or a buck.",
+  "EN: R1 pulls it to VIN – always on. To switch the 3.3 V rail off (a power switch, a supervisor, a GPIO of another supply), pull {as}_EN to ground: VIH ≥ 0.9 V, VIL ≤ 0.4 V (at VIN 5 V), ≤ 0.5 µA in shutdown; the output is then discharged through 80 Ω.",
+  "VOUT may not rise more than 0.3 V above VIN (absolute maximum): no second supply on the 3.3 V rail – a USB-UART bridge's 3V3 output, a module's own regulator – while VIN is low.",
+  "sim.json: nothing to add – the ldo model (vout_v, dropout_v, iq_a) and its junction temperature come from the parts entry."
+ ],
+ "test": {
+  "connect": {
+   "vin": "+5V",
+   "vout": "LDO_3V3"
+  },
+  "nets": {
+   "LDO_3V3": [
+    0,
+    3.4
+   ]
+  },
+  "sim": {}
+ }
+}

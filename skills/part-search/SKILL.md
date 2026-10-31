@@ -51,7 +51,8 @@ profile says: `${CLAUDE_PLUGIN_ROOT}/skills/part-search/distributors/<name>.md` 
   into an enclosure, `mate` for a connector whose plug needs room (the mated plug from the manufacturer's assembly
   drawing, handbook 4.1), `sources` (mark every assumption as "assumption" – also a value taken from a
   sibling part or the series, e.g. "VR_max = 5 V from XL-304UGD of the same series: assumption"; the gate protocol
-  lists them). The block library (`edakit/blocks/parts/` of the plugin) has checked entries to copy from.
+  lists them). edakit's parts library (`edakit/parts/` of the plugin, `edakit part add` lists it) has entries to copy
+  from – `edakit part add <key>`; an entry the owner has not signed is a draft.
 - What the checks read from the datasheet besides the limits: input-only pins `type: input`; strapping pins `"strap":
   "high"|"low"` with the internal `"pull"` at reset (LVL.boot); built-in pull resistors `"pull": "up"`, `"pull_ohm"` (I2C
   modules, REQ.missing); roles `sda`/`scl` (REQ.missing) and `cc1`/`cc2` on a USB-C receptacle (REQ.missing:cc), and for a module or breakout

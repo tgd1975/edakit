@@ -28,13 +28,14 @@ LIMITS_OF = {
     "pmos": [("LIM.v", ("vds_max_v",), "VDS"), ("LIM.v", ("vgs_max_v",), "VGS"),
              ("LIM.i", ("id_max_a",), "its drain current")],
     "fuse": [("LIM.i", ("i_hold_a",), "what it lets pass")],
-    "switch": [("LIM.i", ("i_max_a",), "its contact current")],
-    "button": [("LIM.i", ("i_max_a",), "its contact current")],
-    "connector": [("LIM.i", ("i_max_a",), "its contact current")],
-    "relay": [("LIM.i", ("i_max_a",), "its contact current")],
+    "switch": [("LIM.i", ("i_max_a", "i_contact_max_a", "i_switch_max_a"), "its contact current")],
+    "button": [("LIM.i", ("i_max_a", "i_contact_max_a", "i_switch_max_a"), "its contact current")],
+    "connector": [("LIM.i", ("i_max_a", "i_contact_max_a"), "its contact current")],
+    "relay": [("LIM.i", ("i_max_a", "i_contact_max_a", "i_switch_max_a"), "its contact current")],
 }
 DISSIPATES = ("resistor", "diode", "led", "led_rgb", "npn", "pnp", "nmos", "pmos")
-OWN_RANGE = {"ldo": ("vin_min_v",), "buck": ("vin_min_v",), "boost": ("vin_min_v",), "mcu": ("vin_min_v", "vsys_min_v"),
+OWN_RANGE = {"ldo": ("vin_min_v",), "buck": ("vin_min_v",), "boost": ("vin_min_v",), "buck_boost": ("vin_min_v",),
+             "mcu": ("vin_min_v", "vsys_min_v"),
              "current": ("vin_min_v", "vin_max_v")}
 
 
@@ -68,6 +69,9 @@ def coverage(design, prof=None):
             found[("LIM.v", key, "no vr_max_v – its reverse voltage is not held to a limit")].append(des)
         if kind in DISSIPATES and "rth_ja_k_per_w" not in r:
             found[("LIM.t", key, "no rth_ja_k_per_w – no junction temperature")].append(des)
+        from ..radio import radios
+        if radios(part) and not (part.get("antenna") or {}).get("keepout_mm"):
+            found[("GEO.keepout", key, "no antenna.keepout_mm – the copper under its antenna is not checked")].append(des)
         if kind in ("ic", "module"):
             behavior = p.get("behavior", "none")
             supply = [i for i in (part.get("pins") or {}).values() if i.get("type") == "power_in"]

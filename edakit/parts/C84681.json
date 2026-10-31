@@ -1,0 +1,248 @@
+{
+ "lcsc": "C84681",
+ "mpn": "CH340C",
+ "manufacturer": "WCH(南京沁恒)",
+ "kind": "ic",
+ "package": "SOP-16 (3.9 mm, 1.27 mm pitch)",
+ "footprint": "SOP-16_L10.0-W3.9-P1.27-LS6.0-BL",
+ "jlc_class": "Extended Part",
+ "datasheet": {
+  "url": "https://datasheet.lcsc.com/datasheet/pdf/e2f14e51aaa60c793f1f0cbc8a5d5faa.pdf?productCode=C84681",
+  "pinout_page": 3
+ },
+ "pins": {
+  "1": {
+   "name": "GND",
+   "type": "ground"
+  },
+  "2": {
+   "name": "TXD",
+   "type": "output",
+   "v_max_v": 6.5,
+   "hint": "serial data output, high when idle (p. 5)"
+  },
+  "3": {
+   "name": "RXD",
+   "type": "input",
+   "v_max_v": 6.5,
+   "float_ok": true,
+   "hint": "serial data input with built-in controllable pull-up and pull-down; idle level high; with R232 high the input is inverted (p. 3, p. 5)"
+  },
+  "4": {
+   "name": "V3",
+   "type": "passive",
+   "hint": "5 V operation: V3 is the internal 3.3 V node – only a 0.1 µF capacitor to GND, not to VCC; 3.3 V operation: V3 joined to VCC (p. 3, p. 5)",
+   "needs": [
+    {
+     "what": "capacitor",
+     "c_min_f": 1e-07,
+     "source": "WCH CH340 Datasheet (CH340DS1), English version 3C, p. 3 (pin table: 0.1 µF decoupling at 5 V) and p. 5 (5.1) – at 3.3 V V3 is on VCC with its capacitor; 0.1 µF read as the minimum: assumption"
+    }
+   ]
+  },
+  "5": {
+   "name": "D+",
+   "type": "bidirectional",
+   "hint": "USB D+: connect directly to the USB bus without a series resistor – the transceiver and the USB pull-up are inside (p. 2, p. 3, p. 5)",
+   "needs": [
+    {
+     "what": "no_series",
+     "source": "WCH CH340 Datasheet version 3C, pin table: 'Connect directly to the D± data line of the USB bus without a series resistor'"
+    }
+   ]
+  },
+  "6": {
+   "name": "D-",
+   "type": "bidirectional",
+   "hint": "USB D−: connect directly to the USB bus without a series resistor – the transceiver and the USB pull-up are inside (p. 2, p. 3, p. 5)",
+   "needs": [
+    {
+     "what": "no_series",
+     "source": "WCH CH340 Datasheet version 3C, pin table: 'Connect directly to the D± data line of the USB bus without a series resistor'"
+    }
+   ]
+  },
+  "7": {
+   "name": "NC.",
+   "type": "no_connect",
+   "hint": "CH340C: empty pin, must be left floating (p. 3)"
+  },
+  "8": {
+   "name": "OUT#",
+   "type": "output",
+   "v_max_v": 6.5,
+   "hint": "CH340C: MODEM general output, software defined, active low (p. 3); lots starting with 4 and ending above B40: weak pull-up at reset, a 4.7 kΩ pull-down turns it into an open-drain second DTR# (p. 2, p. 6)"
+  },
+  "9": {
+   "name": "CTS#",
+   "type": "input",
+   "v_max_v": 6.5,
+   "float_ok": true,
+   "hint": "MODEM input clear to send, active low; unused it may float (p. 4)"
+  },
+  "10": {
+   "name": "DSR#",
+   "type": "input",
+   "v_max_v": 6.5,
+   "float_ok": true,
+   "hint": "MODEM input data set ready, active low; unused it may float (p. 4)"
+  },
+  "11": {
+   "name": "RI#",
+   "type": "input",
+   "v_max_v": 6.5,
+   "float_ok": true,
+   "hint": "MODEM input ring indicator, active low; unused it may float (p. 4)"
+  },
+  "12": {
+   "name": "DCD#",
+   "type": "input",
+   "v_max_v": 6.5,
+   "float_ok": true,
+   "hint": "MODEM input carrier detect, active low; unused it may float (p. 4)"
+  },
+  "13": {
+   "name": "DTR#",
+   "type": "output",
+   "v_max_v": 6.5,
+   "hint": "MODEM output, active low; before USB configuration it is read as an input – a 4.7 kΩ pull-down asks the host for a larger supply current (p. 5)"
+  },
+  "14": {
+   "name": "RTS#",
+   "type": "output",
+   "v_max_v": 6.5,
+   "hint": "MODEM output request to send, active low (p. 4)"
+  },
+  "15": {
+   "name": "R232",
+   "type": "input",
+   "v_max_v": 6.5,
+   "pull": "down",
+   "float_ok": true,
+   "hint": "auxiliary RS232 enable, active high, built-in pull-down; read once after power-on reset (p. 4, p. 5)"
+  },
+  "16": {
+   "name": "VCC",
+   "type": "power_in",
+   "role": "vcc",
+   "v_max_v": 6.0,
+   "needs": [
+    {
+     "what": "capacitor",
+     "c_min_f": 1e-07,
+     "source": "WCH CH340 Datasheet (CH340DS1), English version 3C, p. 3 (pin table: 'requires an external 0.1uF power decoupling capacitor') and p. 10 (C9 0.1 µF) – 0.1 µF read as the minimum: assumption"
+    }
+   ]
+  }
+ },
+ "values": {
+  "idd_max_a": 0.02,
+  "vih_v": 2.3,
+  "vil_v": 0.8
+ },
+ "limits": {
+  "vdd_max_v": 6.0,
+  "vdd_op_min_v": 3.1,
+  "vdd_op_max_v": 5.3,
+  "vin_rel_max_v": 0.5,
+  "t_min_c": -20,
+  "t_max_c": 70
+ },
+ "hints": [
+  "CH340C: built-in clock – no crystal and no oscillator capacitors (p. 1, p. 2, p. 5); pin 7 stays open; transmit baud-rate error < 1.2 % (p. 7)",
+  "operating ambient −20 … +70 °C for the CH340C; −40 … +85 °C only for CH340C lots starting with 4 (English 3C, p. 8 – the Chinese 3D lists −20 … +70 °C only)",
+  "two supply modes (p. 5): 5 V – VCC 4.0–5.3 V, V3 only to a 0.1 µF capacitor; 3.3 V – V3 joined to VCC and every circuit on the CH340's I/O at most 3.3 V. Between 3.6 V and 4.0 V the data sheet specifies neither; vdd_op_min_v … vdd_op_max_v spans both modes and does not see that gap",
+  "the I/O pins are not 5 V tolerant on a 3.3 V supply (VIO ≤ VCC + 0.5 V, p. 8) except CH340C/N of lot numbers starting with 4 and the CH340X (p. 5); a 5 V-supplied CH340 drives 5 V into a 3.3 V microcontroller's RX",
+  "powered separately from the microcontroller, current flows back through the I/O pins; the data sheet's dual supply circuits (7.7, p. 13) add diodes and an NMOS – or power both from one supply (7.6, p. 12)",
+  "input thresholds differ by supply: VIH ≥ 2.3 V / VIL ≤ 0.9 V at 5 V, VIH ≥ 1.9 V / VIL ≤ 0.8 V at 3.3 V (p. 8–9); the entry holds the stricter pair, 2.3 V and 0.8 V"
+ ],
+ "sources": [
+  "WCH CH340 Datasheet (CH340DS1), English version 3C, LCSC's copy https://datasheet.lcsc.com/datasheet/pdf/e2f14e51aaa60c793f1f0cbc8a5d5faa.pdf?productCode=C84681, read 2026-10-31; cross-checked with WCH CH340 手册（一）(CH340DS1), Chinese version 3D, LCSC's copy https://datasheet.lcsc.com/datasheet/pdf/a3b2ca2c7638da2635df3f5b1d90bcc0.pdf?productCode=C14267 – WCH's own site (wch-ic.com) serves its files through a script page that curl cannot read, so which of the two editions is newer was not checked",
+  "pin table, p. 3–4 (SOP-16 column); 3D: p. 2–3",
+  "absolute maximum values, 6.1, p. 8: VCC −0.5 … 6.0 V; VIO −0.5 V … VCC + 0.5 V; storage −55 … 125 °C",
+  "pin v_max_v 6.5 on the I/O pins: VCC + 0.5 V at the absolute maximum VCC 6.0 V (computed from 6.1); the bound to the actual supply is vin_rel_max_v 0.5",
+  "5 V parameters, 6.2, p. 8: VCC 4.0 / 5 / 5.3 V (V3 only to a capacitor); ICC 7 mA typ., 20 mA max. (CH340G/C/N/K/E/X/T/R); VIL ≤ 0.9 V, VIH ≥ 2.3 V; VOL ≤ 0.5 V at 6 mA; VOH ≥ VCC − 0.6 V at 2 mA (100 µA during reset); pull-up input current 3 / 150 / 300 µA, pull-down −40 / −100 / −300 µA",
+  "3.3 V parameters, 6.3, p. 8–9: ICC 4 mA typ., 12 mA max.; VIL ≤ 0.8 V, VIH ≥ 1.9 V; VOL ≤ 0.5 V at 4 mA",
+  "values vih_v 2.3 and vil_v 0.8: the stricter of the 5 V and 3.3 V tables; idd_max_a 0.02: ICC max. at 5 V",
+  "power modes and connection, 5.1, p. 5; unused I/O pins may float: note under the pin table, p. 4 (float_ok)",
+  "RoHS: features, p. 1 ('lead-free packages ... RoHS compatible'); LCSC product data C84681 (RoHS), 2026-10-31",
+  "mpn, manufacturer, footprint, jlc_class, pin numbers and names: EasyEDA library data of C84681 via edakit part import, read 2026-10-31",
+  "CH340C specifics: built-in clock (p. 2 note; 5.1, p. 5); pin 7 NC., pin 8 OUT# (p. 3); OUT# as second DTR# for lots 4…, > B40 (p. 2, 5.3 p. 6); 3.3 V mode VCC 3.1–3.6 V for CH340C/N/K/E/X/B (6.3, p. 8–9); TA −20 … 70 °C (6.1, p. 8); ISLP 0.05 / 0.15 mA at 5 V",
+  "stock: LCSC 105 555 pcs, JLCPCB assembly 106 320 pcs (2026-10-31)"
+ ],
+ "compliance": {
+  "rohs": true,
+  "source": "WCH CH340 Datasheet (CH340DS1), English version 3C, p. 1; LCSC product data C84681, 2026-10-31"
+ },
+ "notes": "No behaviour model (behavior none): the simulation draws no supply current. V3 is typed passive: it is an internal node with a capacitor in 5 V operation and a supply input in 3.3 V operation – power_in would make the 5 V wiring PATH.unfed, power_output the 3.3 V wiring LVL.contention.",
+ "verified": {
+  "by": "Claude (datasheet check, library draft)",
+  "date": "2026-10-31",
+  "datasheet": "WCH CH340 Datasheet (CH340DS1), English version 3C",
+  "datasheet_sha256": "5cb6dc879dd59ee50464e45f9cda081fa675fbe34e443220d7d5acd2d7618967",
+  "checked": [
+   "SOP-16 pinout (p. 3–4) = the EasyEDA symbol: 1 GND, 2 TXD, 3 RXD, 4 V3, 5 UD+ (D+ there), 6 UD− (D− there), 7 NC., 8 OUT#, 9 CTS#, 10 DSR#, 11 RI#, 12 DCD#, 13 DTR#, 14 RTS#, 15 R232, 16 VCC",
+   "CH340C needs no crystal (p. 2, p. 5); pin 7 must stay open (p. 3)",
+   "abs. max VCC 6.0 V, VIO VCC + 0.5 V, TA −20 … 70 °C (p. 8)",
+   "VCC 4.0–5.3 V (5 V mode) and 3.1–3.6 V (3.3 V mode); ICC ≤ 20 mA; VIH/VIL per supply (p. 8–9)",
+   "0.1 µF at VCC and at V3 (p. 3, p. 5, p. 10); UD± without series resistors (p. 2–3)",
+   "same values in the Chinese edition 3D (p. 2–3, p. 5)",
+   "2026-10-31: D± without a series resistor (CH340 Datasheet 3C, read now)",
+   "2026-10-31: configs 5v and 3v3 from CH340DS1 3C, 5.1 (V3 to 0.1 µF at 5 V, joined to VCC at 3.3 V) and tables 6.2/6.3 (VCC 4.0–5.3 V; 3.1–3.6 V for CH340C/N/K/E/X/B; VIH 2.3/1.9 V, VIL 0.9/0.8 V, ICC max 20/12 mA); a component names its config – without one the entry's own union of both stays"
+  ],
+  "open": [
+   "two supply modes with a gap (3.6–4.0 V) the schema's one range cannot express; V3's pin type depends on the mode (typed passive)",
+   "'no series resistor on UD+/UD−' has no pin-needs form (no 'never a series resistor'); in the pin hint",
+   "the data sheet gives no junction temperature, no thermal resistance and no power dissipation",
+   "the I/O limit VIO ≤ VCC + 0.5 V applies to outputs too; LIM.v/inject (vin_rel_max_v) reads inputs only",
+   "lot-dependent behaviour (5 V tolerant I/O and −40 … 85 °C for lots starting with 4, OUT# as DTR#): not expressible per lot",
+   "built-in pull resistors are given as currents (IUP, IDN), not as resistances: R232 pull 'down' without pull_ohm; RXD's controllable pulls not entered",
+   "English 3C and Chinese 3D differ (lot-4 temperature row, baud error 1.2 % vs ±1.8 % at −25 … 75 °C); WCH's site could not be read to tell which is current",
+   "no behaviour model: the supply current is not drawn in the simulation"
+  ]
+ },
+ "configs": {
+  "5v": {
+   "about": "VCC 4.0–5.3 V from an external 5 V supply, V3 only to its 0.1 µF capacitor (WCH CH340 Datasheet (CH340DS1), English version 3C (LCSC copy, sha256 5cb6dc87…), 5.1 and table 6.2)",
+   "limits": {
+    "vdd_op_min_v": 4.0,
+    "vdd_op_max_v": 5.3
+   },
+   "values": {
+    "vih_v": 2.3,
+    "vil_v": 0.9,
+    "idd_max_a": 0.02
+   },
+   "pins": {
+    "4": {
+     "type": "passive",
+     "needs": [
+      {
+       "what": "capacitor",
+       "c_min_f": 1e-07,
+       "source": "WCH CH340 Datasheet (CH340DS1), English version 3C (LCSC copy, sha256 5cb6dc87…), 5.1: 'the V3 pin should be connected to an external power supply decoupling capacitor with a capacity of 0.1uF'"
+      }
+     ]
+    }
+   }
+  },
+  "3v3": {
+   "about": "VCC = V3 3.1–3.6 V (CH340C) or 2.9–3.6 V (CH340G) from an external 3.3 V supply, V3 joined to VCC; every circuit on its I/O at most 3.3 V (WCH CH340 Datasheet (CH340DS1), English version 3C (LCSC copy, sha256 5cb6dc87…), 5.1 and table 6.3)",
+   "limits": {
+    "vdd_op_min_v": 3.1,
+    "vdd_op_max_v": 3.6
+   },
+   "values": {
+    "vih_v": 1.9,
+    "vil_v": 0.8,
+    "idd_max_a": 0.012
+   },
+   "pins": {
+    "4": {
+     "needs": null,
+     "hint": "3.3 V mode: V3 joined to VCC on the 3.3 V supply, the one 0.1 µF at VCC serves both (5.1)"
+    }
+   }
+  }
+ }
+}

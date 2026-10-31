@@ -1,0 +1,108 @@
+{
+ "lcsc": "C7519",
+ "mpn": "USBLC6-2SC6",
+ "manufacturer": "ST(意法半导体)",
+ "kind": "esd_array",
+ "package": "SOT23-6L",
+ "footprint": "SOT-23-6_L2.9-W1.6-P0.95-LS2.8-BL",
+ "jlc_class": "Extended Part",
+ "datasheet": {
+  "url": "https://datasheet.lcsc.com/datasheet/pdf/0d3a2ab954b34651a0695e7ccf534db0.pdf?productCode=C7519",
+  "pinout_page": 1,
+  "title": "USBLC6-2 – Very low capacitance ESD protection",
+  "revision": "Doc ID 11265 Rev 5 (October 2011)"
+ },
+ "pins": {
+  "1": {
+   "name": "1",
+   "type": "passive",
+   "role": "io1",
+   "hint": "I/O1 (D+ in); pin 6 is the same line – route the data line through pins 1 and 6 (figure 18)"
+  },
+  "2": {
+   "name": "2",
+   "type": "ground",
+   "role": "gnd"
+  },
+  "3": {
+   "name": "3",
+   "type": "passive",
+   "role": "io2",
+   "hint": "I/O2 (D− in); pin 4 is the same line – route the data line through pins 3 and 4 (figure 18)"
+  },
+  "4": {
+   "name": "4",
+   "type": "passive",
+   "role": "io2",
+   "hint": "I/O2 (D− out), the same line as pin 3"
+  },
+  "5": {
+   "name": "5",
+   "type": "power_in",
+   "role": "vbus",
+   "hint": "VBUS: the rail of the steering diodes and the cathode of the transil to GND (VBR ≥ 6 V at 1 mA); 100 nF to GND at the pin (figure 18, CBUS)"
+  },
+  "6": {
+   "name": "6",
+   "type": "passive",
+   "role": "io1",
+   "hint": "I/O1 (D+ out), the same line as pin 1"
+  }
+ },
+ "values": {
+  "vbr_min_v": 6,
+  "vf_v": 1.1,
+  "vf_at_a": 0.01,
+  "c_io_f": [
+   null,
+   2.5e-12,
+   3.5e-12
+  ]
+ },
+ "limits": {
+  "tj_max_c": 125,
+  "t_min_c": -40,
+  "vrwm_max_v": 5.25
+ },
+ "hints": [
+  "place it as close as possible to the connector, with short tracks from the data lines to the I/O pins, from VBUS to pin 5 and from pin 2 to the ground plane – parasitic inductance adds L·dI/dt to the clamping voltage (2.2, 2.3, 'Important' on p. 6)",
+  "capacitance I/O to GND 2.5 pF typ / 3.5 pF max at VR 1.65 V, I/O to I/O 1.2 / 1.7 pF – for USB 2.0 up to 480 Mbit/s (table 2, applications)"
+ ],
+ "spice": {},
+ "sources": [
+  "ST USBLC6-2 datasheet, Doc ID 11265 Rev 5, October 2011 (LCSC's copy, edakit part fetch C7519, sha256 8ba7ab4ec178…, read 2026-10-31) – st.com (www.st.com/resource/en/datasheet/usblc6-2.pdf) closed the connection without an answer, so whether a later revision exists was not checked",
+  "p. 1 figure 1 functional diagram (top view): 1 I/O1, 2 GND, 3 I/O2, 4 I/O2, 5 VBUS, 6 I/O1; package SOT23-6L for USBLC6-2SC6; features: 2 data lines, protects VBUS, 3.5 pF max, 150 nA max leakage, IEC 61000-4-2 level 4 (15 kV air, 8 kV contact), RoHS compliant",
+  "table 1 absolute ratings: VPP 15 kV air / 15 kV contact (IEC 61000-4-2), 25 kV (MIL STD883G); Tstg –55 … +150 °C; Tj –40 … +125 °C",
+  "table 2 (25 °C): IRM 10 nA typ / 150 nA max at VRM = 5.25 V; VBR (VBUS to GND) ≥ 6 V at 1 mA; VF ≤ 1.1 V at 10 mA; VCL ≤ 12 V (1 A) / 17 V (5 A, 8/20 µs) any I/O to GND; Ci/o-GND 2.5 / 3.5 pF, Ci/o-i/o 1.2 / 1.7 pF at VR 1.65 V",
+  "figure 14: USB 2.0 port application, the USBLC6-2SC6 between connector and transceiver with VBUS on pin 5; figure 18 PCB layout: D+in pin 1 → D+out pin 6, D−in pin 3 → D−out pin 4, VBUS pin 5 with CBUS = 100 nF, GND pin 2",
+  "pin 5 type power_in: it takes only leakage current, but ST's layout asks for 100 nF at it (figure 18) – power_in makes REQ.missing ask for that capacitor; v_max_v 5.25: VRM, the voltage at which ST specifies the leakage – assumption: read as the stand-off voltage (the datasheet gives no other working-voltage limit); breakdown starts at VBR ≥ 6 V",
+  "tj_max_c 125 and t_min_c –40: the operating junction temperature range of table 1 (no ambient range given)",
+  "pin numbers 1–6 and names (the symbol names the pins by number), footprint, jlc_class: EasyEDA library data of C7519 (edakit part import, 2026-10-31); JLCPCB catalogue 2026-10-31: Extended Part, 32 425 pcs; LCSC product data 2026-10-31: 30 675 pcs, RoHS"
+ ],
+ "compliance": {
+  "rohs": true,
+  "source": "ST USBLC6-2 Doc ID 11265 Rev 5, p. 1 features ('RoHS compliant'); LCSC product data C7519 (isEnvironment), read 2026-10-31"
+ },
+ "notes": "Two-line ESD protection with VBUS clamp (rail-to-rail steering diodes and a transil) for USB 2.0 D+/D−. Typed ic without behaviour: the simulation leaves it out (it draws only leakage). Block usb-c-data.",
+ "verified": {
+  "by": "Claude (datasheet check, library draft)",
+  "date": "2026-10-31",
+  "datasheet": "ST USBLC6-2, Doc ID 11265 Rev 5 (October 2011)",
+  "datasheet_sha256": "8ba7ab4ec1781b7f6052f5999a2304bd611c0ed2b5e8f36ffa5092552932a42e",
+  "checked": [
+   "pinout figure 1 (top view) against the EasyEDA symbol: 1 I/O1, 2 GND, 3 I/O2, 4 I/O2, 5 VBUS, 6 I/O1",
+   "table 1: Tj –40 … +125 °C; IEC 61000-4-2 15 kV air, 8 kV contact (level 4, features)",
+   "table 2: IRM ≤ 150 nA at 5.25 V, VBR ≥ 6 V, VF ≤ 1.1 V at 10 mA, VCL ≤ 12 V at 1 A, capacitance 3.5 pF max",
+   "figure 18: flow-through layout (1→6, 3→4) and 100 nF at VBUS",
+   "2026-10-31: values.tvs – a TVS/ESD array (ST USBLC6-2, Doc ID 11265 Rev 5: 'very low capacitance ESD protection'), held to its working voltage, not a rectifier's margin; HINT.esd sees the lines it guards",
+   "2026-10-31 (schema W5, read again): ST Doc ID 11265 Rev 5, table 2 – IRM 150 nA max at VRM 5.25 V (the stand-off, limits vrwm_max_v, held on the VBUS rail without margin); VBR min 6 V between VBUS and GND at 1 mA (vbr_min_v); VF max 1.1 V at 10 mA (vf_v, vf_at_a); Ci/o-GND typ 2.5 pF, max 3.5 pF at 1.65 V (c_io_f) – kind esd_array: its io pins guard their lines (HINT.esd), the simulation has steering diodes from VF and a transil at VBR"
+  ],
+  "open": [
+   "st.com did not answer (connection closed) – Rev 5 from LCSC's copy; a later ST revision not checked",
+   "v_max_v 5.25 V on VBUS is VRM, the leakage test voltage, read as stand-off voltage (assumption); between 5.25 V and VBR 6 V the leakage is unspecified – USB-C vSafe5V reaches 5.5 V",
+   "I/O pins have no voltage limit in the datasheet (clamped to VBUS + VF and GND − VF): no v_max_v",
+   "no thermal resistance and no power rating in the datasheet",
+   "the simulation's steering diodes and transil are edakit's from VF and VBR, not ST's PSpice model (figure 16/17)"
+  ]
+ }
+}

@@ -32,12 +32,18 @@ source = "USB Type-C Cable and Connector Specification (USB-IF); Richtek AN064 (
 tag = "r"
 
 [hot_loop]            # REQ.missing: a layout.loops entry on each net of the hot loop a parts entry names (hot_loop)
-switchers = ["buck", "boost"]   # behaviours whose entry must name it (PARTS.fact/hot_loop)
+switchers = ["buck", "boost", "buck_boost"]   # behaviours whose entry must name it (PARTS.fact/hot_loop)
 source = "TI SNVA021C, AN-1149 Layout Guidelines for Switching Power Supplies (2013), 5"
 tag = "r"
 
 [pin]                 # REQ.missing, REQ.value, REQ.forbidden (grade pin): what a pin's parts entry says it needs
-what = ["capacitor", "pull_up", "pull_down", "series_resistor", "to_ground", "never_to_ground"]
-windows = { capacitor = ["c_min_f", "c_max_f"], pull_up = ["r_min_ohm", "r_max_ohm"], pull_down = ["r_min_ohm", "r_max_ohm"], series_resistor = ["r_min_ohm", "r_max_ohm"] }
+what = ["capacitor", "pull_up", "pull_down", "series_resistor", "to_ground", "never_to_ground", "crystal", "tie",
+        "no_pull", "no_series"]
+windows = { capacitor = ["c_min_f", "c_max_f"], pull_up = ["r_min_ohm", "r_max_ohm"], pull_down = ["r_min_ohm", "r_max_ohm"], series_resistor = ["r_min_ohm", "r_max_ohm"], crystal = ["f_min_hz", "f_max_hz"] }
+# keys beside the window: to – another pin of the same part (its number or name): a capacitor between the two pins
+# instead of to ground, the crystal's other end, the pin this one is tied to; v_min_v – the voltage rating a required
+# capacitor needs at least; dir – "up" or "down" for no_pull (default both)
+keys = { capacitor = ["to", "v_min_v"], crystal = ["to"], tie = ["to"], no_pull = ["dir"] }
+needs_to = ["crystal", "tie"]   # these always name the other pin
 source = "the pin's parts entry (needs), from its datasheet"
 tag = "r"

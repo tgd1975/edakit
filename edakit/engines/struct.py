@@ -24,7 +24,8 @@ def run(ctx):
     d, cfg = ctx.design, ctx.cfg
     boards = set(cfg.boards) if cfg else set()
     bought = boards - set(cfg.made()) if cfg else set()
-    return structure(d, boards, bought) + refs(d) + locks(d, ctx.root) + entries(d, cfg) + identity(d)
+    return (structure(d, boards, bought) + refs(d) + locks(d, ctx.root) + entries(d, cfg) + configs_named(d)
+            + identity(d))
 
 
 def structure(d, boards, bought=()):
@@ -146,9 +147,41 @@ def locks(d, root):
     return out
 
 
+def symbol_structure(cfg, symbol, entry):
+    """[(pin numbers involved, text)]: what a cached library symbol does beyond its pin names that a schematic drawn
+    from it would wire wrongly – a number it gives to two pins (they join on one pad), a pad of its footprint it has no
+    pin for (left unconnected), a pin without a pad. Names and numbers on one side only are pin_differences' (against
+    the graph's pins)."""
+    from .. import part as parts
+    norm = lambda t: "".join(str(t).split()).upper()  # noqa: E731
+    names = {n: norm(p.get("name", "")) for n, p in (entry.get("pins") or {}).items()}
+    out = []
+    for num, dup in (symbol.get("duplicate_pins") or {}).items():
+        others = {norm(x) for x in dup} - {names.get(num)}           # the pins the symbol numbers wrongly
+        pins = {num} | {n for n, name in names.items() if name in others}
+        out.append((pins, f"numbers {len(dup)} pins {num} ({', '.join(dup)}) – a schematic drawn from it joins them on "
+                          f"pad {num}"))
+    footprint = parts.cached_footprint(cfg, symbol.get("footprint"))
+    if footprint:
+        pads, have, fp = set(footprint.get("pads") or {}), set(symbol.get("pins") or {}), symbol.get("footprint")
+        for n in sorted(pads - have, key=natural_key):
+            if n in names:
+                text = (f"has no pin for pad {n} of its footprint {fp} – a schematic drawn from it leaves pad {n} "
+                        f"({entry['pins'][n].get('name', n)}) unconnected")
+            else:
+                text = (f"has no pin for pad {n} of its footprint {fp}, nor has the parts entry – a schematic drawn from "
+                        "it leaves the pad unconnected")
+            out.append(({n}, text))
+        for n in sorted(have - pads, key=natural_key):
+            out.append(({n}, f"has pin {n} ({symbol['pins'][n]}) without a pad in its footprint {fp}"))
+    return out
+
+
 def entries(d, cfg=None):
-    """STRUCT.entry: an entry for every part, its pins = the graph's (and = the library symbol where cached), no
-    supply pin in nc."""
+    """STRUCT.entry: an entry for every part, its pins = the graph's (and = the library symbol where cached – names
+    and numbers; grade symbol: a number the symbol gives twice, a pad of its footprint without a pin), no supply pin in
+    nc. Pins the entry's symbol_differs names follow the datasheet on purpose: left out of the comparison with the
+    symbol and named in a note (grade declared)."""
     from .. import part as parts
     from ..footprint import own_symbol
     from ..schematic import pin_differences
@@ -160,9 +193,23 @@ def entries(d, cfg=None):
         symbol = parts.cached(cfg, c.get("lcsc")) if cfg else None
         if symbol and own_symbol(d.part(des)):
             symbol = None
-        if symbol and (diffs := pin_differences(symbol["pins"], c["pins"])):
-            out.append(Finding("STRUCT.entry", "P", des, f"{des}: pins differ from the library symbol of {c['lcsc']} "
-                               f"({cfg.relative(parts.library_file(cfg, c['lcsc']))}): {'; '.join(diffs)}", on=on))
+        declared = {str(k): v for k, v in ((d.part(des) or {}).get("symbol_differs") or {}).items()}
+        if symbol:
+            where = cfg.relative(parts.library_file(cfg, c["lcsc"]))
+            mine = {n: v for n, v in symbol["pins"].items() if n not in declared}
+            if diffs := pin_differences(mine, {n: v for n, v in c["pins"].items() if n not in declared}):
+                out.append(Finding("STRUCT.entry", "P", des, f"{des}: pins differ from the library symbol of {c['lcsc']} "
+                                   f"({where}): {'; '.join(diffs)}", on=on))
+            if odd := [t for pins, t in symbol_structure(cfg, symbol, d.part(des) or {}) if not pins <= set(declared)]:
+                out.append(Finding("STRUCT.entry", "P", des, f"{des}: the library symbol of {c['lcsc']} ({where}) "
+                                   + "; ".join(odd), grade="symbol", on=on))
+        if declared:
+            out.append(Finding("STRUCT.entry", "P", des, f"{des}: the parts entry follows the datasheet where the library "
+                               f"symbol of {c.get('lcsc') or c.get('part')} differs – "
+                               + "; ".join(f"pin {n}: {why}" for n, why in sorted(declared.items(),
+                                                                               key=lambda kv: natural_key(kv[0])))
+                               + " – a schematic drawn from that symbol wires these pins otherwise", grade="declared",
+                               on=on))
         part = d.part(des)
         if not part:
             out.append(Finding("STRUCT.entry", "P", des, f"{des}: no parts entry " + (f"{c['lcsc']}.json" if c.get("lcsc")
@@ -178,6 +225,21 @@ def entries(d, cfg=None):
             if part["pins"].get(str(pin), {}).get("type") == "power_in":
                 out.append(Finding("STRUCT.entry", "P", f"{des}.{pin}", f"{des}.{pin} ({part['pins'][str(pin)]['name']}) "
                                    "is a supply pin but marked nc", on=on))
+    return out
+
+
+def configs_named(d):
+    """STRUCT.entry: a component's `config` is one of its parts entry's `configs` (handbook 4.1) – a config the entry
+    does not know would leave the component on the entry's own values without anyone noticing."""
+    out = []
+    for des, c in sorted(d.comps.items(), key=lambda x: natural_key(x[0])):
+        key = d.entry_key(des)
+        if not c.get("config") or key is None:
+            continue
+        known = sorted(d.parts[key].get("configs") or {})
+        if c["config"] not in known:
+            out.append(Finding("STRUCT.entry", "P", des, f"{des}: config {c['config']!r} – parts entry {key} knows "
+                               + (", ".join(known) if known else "no configs"), on=(("component", des),)))
     return out
 
 

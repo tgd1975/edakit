@@ -1,0 +1,93 @@
+{
+ "lcsc": "C38774",
+ "mpn": "IRLZ44NPBF",
+ "manufacturer": "Infineon",
+ "kind": "nmos",
+ "package": "TO-220AB",
+ "footprint": "TO-220-3_L10.0-W4.5-P2.54-T",
+ "jlc_class": "Extended Part",
+ "datasheet": {
+  "url": "https://datasheet.lcsc.com/datasheet/pdf/53cd96c8c570481fb925f4889b31295c.pdf?productCode=C38774",
+  "pinout_page": 8
+ },
+ "pins": {
+  "1": {
+   "name": "G",
+   "type": "passive",
+   "role": "gate"
+  },
+  "2": {
+   "name": "D",
+   "type": "passive",
+   "role": "drain"
+  },
+  "3": {
+   "name": "S",
+   "type": "passive",
+   "role": "source"
+  }
+ },
+ "values": {
+  "vgs_th_v": [
+   1.0,
+   null,
+   2.0
+  ],
+  "rds_on_max_ohm": {
+   "4": 0.035,
+   "5": 0.025,
+   "10": 0.022
+  }
+ },
+ "limits": {
+  "vds_max_v": 55,
+  "vgs_max_v": 16,
+  "id_max_a": 33,
+  "is_body_max_a": 47,
+  "tj_max_c": 175,
+  "rth_ja_k_per_w": 62
+ },
+ "spice": {
+  "model": ".model IRLZ44N NMOS(LEVEL=1 VTO=2.0 KP=16.7 RD=0.005)"
+ },
+ "lead": {
+  "*": {
+   "shape": "rect",
+   "a_mm": 0.55,
+   "b_mm": 0.93,
+   "tol_mm": null,
+   "source": "International Rectifier IRLZ44NPbF PD-94831 p. 8, TO-220AB package outline: lead width 0.69–0.93 mm (3X), thickness 0.46–0.55 mm (3X) – the maximum values; shoulder 1.15–1.40 mm wide; no hole recommendation"
+  }
+ },
+ "sources": [
+  "International Rectifier IRLZ44NPbF HEXFET Power MOSFET, PD-94831 (11/11/03), copy hosted by LCSC: https://datasheet.lcsc.com/datasheet/pdf/53cd96c8c570481fb925f4889b31295c.pdf?productCode=C38774, read 2026-10-31; the manufacturer's URL https://www.infineon.com/dgdl/irlz44npbf.pdf?fileId=5546d462533600a40153567217c32725 answered HTTP 202 without a body to an automated request",
+  "vds_max_v 55: p. 1 VDSS = 55 V, p. 2 V(BR)DSS min 55 V (the absolute maximum table lists no VDS)",
+  "vgs_max_v ±16, is_body_max_a 47 (IS continuous, body diode), tj_max_c 175 (TJ -55 to +175 °C): p. 1 absolute maximum ratings and p. 2 source-drain ratings",
+  "id_max_a 33: p. 1 ID at TC = 100 °C, VGS 10 V (47 A at TC = 25 °C) – the lower of the two; both are case-temperature ratings on a heat sink",
+  "rth_ja_k_per_w 62: p. 1 RθJA max (RθJC 1.4, RθCS 0.50 typ K/W)",
+  "vgs_th_v 1.0 … 2.0 V (VDS = VGS, ID = 250 µA; no typical value given – null) and rds_on_max_ohm 35 / 25 / 22 mΩ at VGS 4.0 / 5.0 / 10 V (ID 21 / 25 / 25 A, pulse ≤ 300 µs): p. 2 electrical characteristics, max column",
+  "pins 1 = gate, 2 = drain, 3 = source, 4 (tab) = drain: p. 8 TO-220AB lead assignments (HEXFET); EasyEDA symbol of C38774 1 = G, 2 = D, 3 = S (edakit part import 2026-10-31); the footprint has no pad for the tab",
+  "spice: assumption – level 1 fitted by Claude, no manufacturer model read: VTO = VGS(th) max (no typical given; the worst case for switching on), KP and RD chosen so that RDS(on) meets the maximum values at VGS 4 V and 5 V (34.9 and 25.0 mΩ; 12.5 mΩ at 10 V, below the 22 mΩ maximum); body diode IS left at the simulator default – the datasheet gives VSD only as 1.3 V max at 25 A",
+  "LCSC product data C38774 (2026-10-31): Infineon IRLZ44NPBF, TO-220AB, 1 143 pcs; JLCPCB catalogue 2026-10-31: Extended Part, 1 143 pcs"
+ ],
+ "notes": "Logic-level N-channel power MOSFET in TO-220 (RDS(on) specified from VGS 4 V): the through-hole choice for a 5 V gate drive. At 3.3 V gate drive it is not specified – LIM.range/gate reports it between 1.0 V and 4 V. Library draft.",
+ "verified": {
+  "by": "Claude (datasheet check, library draft)",
+  "date": "2026-10-31",
+  "datasheet": "International Rectifier IRLZ44NPbF PD-94831 (11/11/03)",
+  "datasheet_sha256": "afb78f103fa5fa321c09fd48735c38c6fc609896893dca01ec6aabb810873cfe",
+  "checked": [
+   "TO-220AB lead assignments p. 8: 1 gate, 2 drain, 3 source, 4 drain = EasyEDA symbol 1 G, 2 D, 3 S",
+   "p. 1: VDSS 55 V, VGS ±16 V, ID 47 A (TC 25 °C) / 33 A (TC 100 °C), IDM 160 A, PD 110 W (TC 25 °C), TJ -55 … 175 °C, RθJA 62 K/W",
+   "p. 2: RDS(on) max 22 / 25 / 35 mΩ at VGS 10 / 5 / 4 V; VGS(th) 1.0 … 2.0 V; IS 47 A, VSD 1.3 V max at 25 A",
+   "p. 8 lead cross-section 0.69–0.93 × 0.46–0.55 mm against the footprint's 1.3 mm holes (diagonal 1.08 mm at maximum)"
+  ],
+  "open": [
+   "p_max_w: the datasheet gives PD only at TC = 25 °C (110 W, on a heat sink, 0.71 W/°C) – without a heat sink LIM.t holds it through RθJA 62 K/W and TJ 175 °C",
+   "vsd_v_at_1a: the datasheet gives VSD only at IS = 25 A (1.3 V max)",
+   "vgs_th_v has no typical value (null in the middle)",
+   "SPICE model is a level-1 fit by Claude, not the manufacturer's model (Infineon publishes models – not reachable for an automated request)",
+   "datasheet read from LCSC's copy – the manufacturer's current revision could not be fetched (HTTP 202 without a body)"
+  ]
+ }
+}

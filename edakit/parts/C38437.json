@@ -1,0 +1,287 @@
+{
+ "lcsc": "C38437",
+ "mpn": "A4988SETTR-T",
+ "manufacturer": "Allegro MicroSystems",
+ "kind": "ic",
+ "package": "QFN-28 5×5 mm with exposed thermal pad (ET)",
+ "footprint": "WQFN-28_L5.0-W5.0-P0.50-BL-EP3.2",
+ "jlc_class": "Extended Part",
+ "datasheet": {
+  "url": "https://www.allegromicro.com/-/media/files/datasheets/a4988-datasheet.pdf",
+  "pinout_page": 18
+ },
+ "pins": {
+  "1": {
+   "name": "OUT2B",
+   "type": "output",
+   "drive": "bridge",
+   "short_proof": true,
+   "v_max_v": 37,
+   "hint": "DMOS full-bridge output: off while ENABLE is high, in sleep and reset; shorted-load and short-to-ground protection (a short to ground latches until SLEEP goes high or VDD is removed) – a short to VBB is not named; motor output voltage -2.0 … 37 V"
+  },
+  "2": {
+   "name": "ENABLE#",
+   "type": "input",
+   "v_max_v": 5.5,
+   "hint": "ENABLE (active low): high disables all FET outputs, low enables them; translator inputs stay active; no internal pull stated"
+  },
+  "3": {
+   "name": "GND",
+   "type": "ground",
+   "role": "gnd",
+   "hint": "pins 3 and 18 are internally fused; tie both to the PAD ground plane under the device"
+  },
+  "4": {
+   "name": "CP1",
+   "type": "passive",
+   "hint": "charge pump: a 0.1 µF ceramic capacitor between CP1 and CP2 (class 2 dielectric, ±15 % max)",
+   "needs": [
+    {
+     "what": "capacitor",
+     "to": "CP2",
+     "c_min_f": 1e-07,
+     "source": "Allegro A4988-DS Rev. 8 (April 5, 2022), Functional Description, Charge Pump (CP1 and CP2): 'A 0.1 µF ceramic capacitor should be connected between CP1 and CP2. In addition, a 0.1 µF ceramic capacitor is required between VCP and VBB' – Class 2 dielectric ±15 %; no voltage rating given"
+    }
+   ]
+  },
+  "5": {
+   "name": "CP2",
+   "type": "passive",
+   "hint": "charge pump: a 0.1 µF ceramic capacitor between CP1 and CP2 (class 2 dielectric, ±15 % max)"
+  },
+  "6": {
+   "name": "VCP",
+   "type": "passive",
+   "hint": "reservoir: a 0.1 µF ceramic capacitor between VCP and VBB, not to GND (class 2 dielectric, ±15 % max)",
+   "needs": [
+    {
+     "what": "capacitor",
+     "to": "VBB1",
+     "c_min_f": 1e-07,
+     "source": "Allegro A4988-DS Rev. 8 (April 5, 2022), Functional Description, Charge Pump (CP1 and CP2): 'A 0.1 µF ceramic capacitor should be connected between CP1 and CP2. In addition, a 0.1 µF ceramic capacitor is required between VCP and VBB' – Class 2 dielectric ±15 %; no voltage rating given"
+    }
+   ]
+  },
+  "7": {
+   "name": "NC",
+   "type": "no_connect"
+  },
+  "8": {
+   "name": "VREG",
+   "type": "power_output",
+   "hint": "internal regulator for the sink-side FET gates, 7 V nominal",
+   "needs": [
+    {
+     "what": "capacitor",
+     "c_min_f": 2.2e-07,
+     "source": "Allegro A4988 datasheet Rev. 8, functional description VREG p. 10: 'the VREG pin must be decoupled with a 0.22 µF ceramic capacitor to ground' (class 2 dielectric, ±15 % max)"
+    }
+   ]
+  },
+  "9": {
+   "name": "MS1",
+   "type": "input",
+   "v_max_v": 5.5,
+   "pull": "down",
+   "pull_ohm": 100000,
+   "hint": "microstep select MS1–MS3 (table 1); 100 kΩ pull-down; a change takes effect at the next STEP rising edge"
+  },
+  "10": {
+   "name": "MS2",
+   "type": "input",
+   "v_max_v": 5.5,
+   "pull": "down",
+   "pull_ohm": 50000,
+   "hint": "microstep select; 50 kΩ pull-down"
+  },
+  "11": {
+   "name": "MS3",
+   "type": "input",
+   "v_max_v": 5.5,
+   "pull": "down",
+   "pull_ohm": 100000,
+   "hint": "microstep select; 100 kΩ pull-down"
+  },
+  "12": {
+   "name": "RESET#",
+   "type": "input",
+   "v_max_v": 5.5,
+   "hint": "RESET (active low): translator to Home, all FET outputs off, STEP ignored until high; no internal pull stated – a floating RESET is undefined"
+  },
+  "13": {
+   "name": "ROSC",
+   "type": "passive",
+   "hint": "timing set: to VDD (30 µs off-time, auto mixed decay), to GND (30 µs, mixed decay always) or a resistor to GND (tOFF ≈ ROSC / 825 µs)"
+  },
+  "14": {
+   "name": "SLEEP#",
+   "type": "input",
+   "v_max_v": 5.5,
+   "hint": "SLEEP (active low): low = sleep (outputs, regulator, charge pump off), high = run; 1 ms before the first STEP after wake-up; the typical application pulls it to VDD with 5 kΩ"
+  },
+  "15": {
+   "name": "VDD",
+   "type": "power_in",
+   "role": "vdd",
+   "v_max_v": 5.5,
+   "needs": [
+    {
+     "what": "capacitor",
+     "c_min_f": 2.2e-07,
+     "source": "Allegro A4988 datasheet Rev. 8, typical application diagram p. 1: 0.22 µF at VDD (reference circuit)"
+    }
+   ]
+  },
+  "16": {
+   "name": "STEP",
+   "type": "input",
+   "v_max_v": 5.5,
+   "hint": "low-to-high transition = one microstep"
+  },
+  "17": {
+   "name": "REF",
+   "type": "analog",
+   "v_max_v": 5.5,
+   "v_op_min_v": 0,
+   "v_op_max_v": 4,
+   "hint": "Gm reference: ITripMAX = VREF / (8 × RS); input range 0 … 4 V (electrical characteristics), 5.5 V absolute maximum"
+  },
+  "18": {
+   "name": "GND",
+   "type": "ground",
+   "role": "gnd"
+  },
+  "19": {
+   "name": "DIR",
+   "type": "input",
+   "v_max_v": 5.5,
+   "hint": "direction; a change takes effect at the next STEP rising edge"
+  },
+  "20": {
+   "name": "NC",
+   "type": "no_connect"
+  },
+  "21": {
+   "name": "OUT1B",
+   "type": "output",
+   "drive": "bridge",
+   "short_proof": true,
+   "v_max_v": 37,
+   "hint": "DMOS full-bridge output: off while ENABLE is high, in sleep and reset; shorted-load and short-to-ground protection (a short to ground latches until SLEEP goes high or VDD is removed) – a short to VBB is not named; motor output voltage -2.0 … 37 V"
+  },
+  "22": {
+   "name": "VBB1",
+   "type": "power_in",
+   "v_max_v": 35,
+   "v_op_min_v": 8,
+   "v_op_max_v": 35,
+   "hint": "load supply 8 … 35 V (operating), 0 … 35 V in sleep; ceramic and bulk input capacitors in parallel close to the pins (application layout)",
+   "needs": [
+    {
+     "what": "capacitor",
+     "c_min_f": 0.0001,
+     "source": "Allegro A4988 datasheet Rev. 8, typical application diagram p. 1: 100 µF at VBB (reference circuit); application layout p. 12: a ceramic capacitor (CIN1) and a bulk capacitor (CIN2) in parallel, the ceramic closer to the pins"
+    }
+   ]
+  },
+  "23": {
+   "name": "SENSE1",
+   "type": "passive",
+   "v_max_v": 0.5,
+   "hint": "sense resistor terminal: ITripMAX = VREF / (8 × RS); short, low-impedance path to the star ground; absolute maximum ±0.5 V – 'it is critical that the maximum rating (0.5 V) … is not exceeded'"
+  },
+  "24": {
+   "name": "OUT1A",
+   "type": "output",
+   "drive": "bridge",
+   "short_proof": true,
+   "v_max_v": 37,
+   "hint": "DMOS full-bridge output: off while ENABLE is high, in sleep and reset; shorted-load and short-to-ground protection (a short to ground latches until SLEEP goes high or VDD is removed) – a short to VBB is not named; motor output voltage -2.0 … 37 V"
+  },
+  "25": {
+   "name": "NC",
+   "type": "no_connect"
+  },
+  "26": {
+   "name": "OUT2A",
+   "type": "output",
+   "drive": "bridge",
+   "short_proof": true,
+   "v_max_v": 37,
+   "hint": "DMOS full-bridge output: off while ENABLE is high, in sleep and reset; shorted-load and short-to-ground protection (a short to ground latches until SLEEP goes high or VDD is removed) – a short to VBB is not named; motor output voltage -2.0 … 37 V"
+  },
+  "27": {
+   "name": "SENSE2",
+   "type": "passive",
+   "v_max_v": 0.5,
+   "hint": "sense resistor terminal: ITripMAX = VREF / (8 × RS); short, low-impedance path to the star ground; absolute maximum ±0.5 V – 'it is critical that the maximum rating (0.5 V) … is not exceeded'"
+  },
+  "28": {
+   "name": "VBB2",
+   "type": "power_in",
+   "v_max_v": 35,
+   "v_op_min_v": 8,
+   "v_op_max_v": 35,
+   "hint": "load supply 8 … 35 V (operating), 0 … 35 V in sleep; ceramic and bulk input capacitors in parallel close to the pins (application layout)"
+  },
+  "29": {
+   "name": "PAD",
+   "type": "ground",
+   "role": "gnd",
+   "hint": "exposed thermal pad: solder to a ground plane with thermal vias; the star ground point under the device (application layout)"
+  }
+ },
+ "values": {
+  "behavior": "none",
+  "vih_ratio": 0.7,
+  "vil_ratio": 0.3,
+  "idd_max_a": 0.008,
+  "r_out_ohm": 0.43
+ },
+ "limits": {
+  "vdd_max_v": 5.5,
+  "vdd_op_min_v": 3,
+  "vdd_op_max_v": 5.5,
+  "vout_max_v": 37,
+  "i_out_max_a": 2,
+  "tj_max_c": 150,
+  "rth_ja_k_per_w": 32,
+  "t_min_c": -20,
+  "t_max_c": 85
+ },
+ "sources": [
+  "Allegro MicroSystems A4988 DMOS Microstepping Driver with Translator and Overcurrent Protection, A4988-DS Rev. 8 (April 5, 2022), MCO-0000827, https://www.allegromicro.com/-/media/files/datasheets/a4988-datasheet.pdf, read 2026-10-31",
+  "pins: terminal list table and pin-out diagram p. 18 = EasyEDA symbol of C38437 (ENABLE#, RESET#, SLEEP# for the overlined names; pad 29 PAD = exposed pad; edakit part import 2026-10-31)",
+  "absolute maximum p. 2: VBB 35 V (VBB v_max_v), IOUT ±2 A (i_out_max_a), logic inputs -0.3 … 5.5 V (input v_max_v), VDD -0.3 … 5.5 V (vdd_max_v), motor outputs -2.0 … 37 V (vout_max_v, output v_max_v), VSENSE -0.5 … 0.5 V (sense v_max_v), VREF 5.5 V (REF v_max_v), TA -20 … 85 °C range S (t_min_c, t_max_c), TJ(max) 150 °C (tj_max_c), Tstg -55 … 150 °C",
+  "electrical characteristics p. 4 (TA 25 °C, VBB 35 V): VBB 8 … 35 V operating (VBB v_op), VDD 3 … 5.5 V (vdd_op_min_v, vdd_op_max_v – VDD carries the role vdd), Rds(on) source and sink 320 typ / 430 mΩ max at 1.5 A (r_out_ohm 0.43), body diode VF 1.2 V max at 1.5 A, IBB 4 mA max, IDD 8 mA max at fPWM < 50 kHz (idd_max_a), VIN(1) ≥ VDD × 0.7, VIN(0) ≤ VDD × 0.3 (vih_ratio, vil_ratio), MS1/MS3 100 kΩ and MS2 50 kΩ pull-down typ, VREF 0 … 4 V (REF v_op), IOCPST ≥ 2.1 A",
+  "rth_ja_k_per_w 32: thermal characteristics p. 5, four-layer PCB based on JEDEC standard",
+  "functional description pp. 7–11: RESET, STEP, DIR, MSx, ROSC settings, shorted-load and short-to-ground protection, charge pump (0.1 µF CP1–CP2, 0.1 µF VCP–VBB), VREG 0.22 µF to ground, ENABLE, SLEEP (1 ms before STEP); synchronous rectification shorts out the body diodes during decay",
+  "capacitors and pull-up: typical application diagram p. 1 – VDD 0.22 µF, VREG 0.22 µF, CP1–CP2 0.1 µF, VCP–VBB 0.1 µF, VBB 100 µF, SLEEP 5 kΩ to VDD; application layout p. 12 – ceramic CIN1 and bulk CIN2 in parallel at the supply pins",
+  "LCSC product data C38437 (2026-10-31): ALLEGRO A4988SETTR-T, WQFN-28-EP(5x5), 46 245 pcs; JLCPCB catalogue 2026-10-31: Extended Part, 47 385 pcs"
+ ],
+ "notes": "Bipolar stepper driver with STEP/DIR translator up to 1/16 step, VBB 8–35 V, ±2 A, logic VDD 3–5.5 V with inputs at 0.7 × VDD (5 V logic needs 3.5 V high – a 3.3 V MCU does not reach it, maker-coverage MOT 13). RESET, SLEEP, ENABLE, STEP and DIR have no internal pull stated: a floating RESET is undefined (maker-coverage MOT 14). Outputs are DMOS bridges with body diodes (VF 1.2 V max) and synchronous rectification – no external clamp diodes in the typical application. Mostly bought as a carrier board (Pololu A4988 and StepStick-format clones; their sense resistors differ by board, maker-coverage MOT 10) – this entry is the IC. No behaviour model for a bridge driver: behavior none. Library draft.",
+ "verified": {
+  "by": "Claude (datasheet check, library draft)",
+  "date": "2026-10-31",
+  "datasheet": "Allegro A4988-DS Rev. 8 (April 5, 2022)",
+  "datasheet_sha256": "d1dfba3bb7be2cbf2b689f39424569fc78b1f4fd1f427648bbd8f291ebb933ea",
+  "checked": [
+   "terminal list and pin-out p. 18 = EasyEDA symbol of C38437 (1 OUT2B … 28 VBB2, 29 PAD; NC 7, 20, 25; GND 3, 18)",
+   "absolute maximum p. 2: VBB 35 V, IOUT ±2 A, VIN and VDD -0.3 … 5.5 V, outputs -2 … 37 V, VSENSE ±0.5 V, VREF 5.5 V, TA -20 … 85 °C, TJ 150 °C",
+   "electrical p. 4: VBB 8 … 35 V, VDD 3 … 5.5 V, Rds(on) 430 mΩ max, VF 1.2 V, IDD 8 mA, VIN 0.7 / 0.3 × VDD, MSx pull-downs, VREF 0 … 4 V",
+   "RθJA 32 K/W (p. 5); capacitors VREG 0.22 µF (must), CP 0.1 µF, VCP 0.1 µF to VBB (pp. 9–10, p. 1)",
+   "protection p. 9: shorted load and short to ground",
+   "2026-10-31: bridge outputs drive = bridge – the H-bridge outputs the datasheet of this draft describes (source above): driven high or low while enabled, off in sleep or coast; LEVELS counts them as defining their net (schema-gaps A2)",
+   "2026-10-31: CP1–CP2 0.1 µF and VCP–VBB 0.1 µF (A4988-DS Rev. 8, Charge Pump, read now)"
+  ],
+  "open": [
+   "CP1–CP2 and VCP–VBB capacitors are not to ground – pin hints only",
+   "the VDD 0.22 µF, VBB 100 µF and SLEEP 5 kΩ come from the typical application diagram, a reference circuit",
+   "the outputs' body diodes (VF 1.2 V max) have no field in the schema; REQ.missing (flyback) asks for a diode across a motor on an output pin – here a false finding",
+   "drive tristate makes a motor net driven only by these outputs an LVL.undefined/open_drain warning – no pin type fits a bridge output",
+   "short_proof: the datasheet names shorted-load and short-to-ground protection, not a short to VBB",
+   "r_out_ohm 0.43 Ω is the 25 °C maximum at 1.5 A; no value at temperature",
+   "RθJA 32 K/W holds on a four-layer JEDEC board – on two layers it is higher (not given)"
+  ]
+ }
+}

@@ -1,16 +1,20 @@
 """The catalog as one page: every engine and code with its rule, why, fix and sources, the domains, the tables with
-their sources, the parts schema, the reference circuits drawn by edakit schematic draw with their seeded faults, what
-became of maker-coverage's candidates, and the check IDs of before.
+their sources, the parts schema, the reference circuits drawn by edakit schematic draw with their seeded faults, the
+published open designs with every finding judged, what became of maker-coverage's candidates, and the check IDs of
+before.
 
     .venv/bin/python docs/catalog/build.py          writes docs/catalog/index.html and docs/catalog/circuits/*.svg
 
-Everything comes from the catalog (edakit/catalog, edakit/domains), tests/reference.py and
+Everything comes from the catalog (edakit/catalog, edakit/domains), tests/reference.py, tests/open_designs/ and
 docs/concepts/new/maker-coverage-status.toml; tests/test_catalog_page.py fails while the files here differ.
 """
 
 from __future__ import annotations
 
+import contextlib
+import io
 import re
+import shutil
 import sys
 import tempfile
 import tomllib
@@ -26,6 +30,7 @@ from edakit.schema import kinds  # noqa: E402
 
 OUT = Path(__file__).resolve().parent
 STATUS = ROOT / "docs" / "concepts" / "new" / "maker-coverage-status.toml"
+OPEN = ROOT / "tests" / "open_designs"
 CIRCUITS = ["led-bar", "motors", "audio", "guitar", "power", "cables", "usb", "keyboard"]
 
 
@@ -75,6 +80,33 @@ def circuits():
                      "constant-current sink, 5 V through a JST PH connector and a reverse diode, one button. Every "
                      "reference circuit adds its domain's circuit to it.")
             out.append((name, " ".join(about.split()), doms, svg, reference.FAULTS.get(name, [])))
+    return out
+
+
+def open_designs():
+    """[(name, title, source, svg, judged)] of tests/open_designs/<name>/ – each copied to a scratch directory and drawn;
+    source the README's **Source:** paragraph, judged its findings.toml."""
+    from edakit import config
+    from edakit.schematic_draw import main as draw
+
+    class Args:
+        board = None
+        force = False
+        out = None
+    out = []
+    with tempfile.TemporaryDirectory() as tmp:
+        for d in sorted(p for p in OPEN.iterdir() if (p / "edakit.toml").is_file()):
+            target = Path(tmp) / d.name
+            shutil.copytree(d, target, ignore=shutil.ignore_patterns("build"))
+            args = Args()
+            args.out = str(target / "drawing.svg")
+            with contextlib.redirect_stdout(io.StringIO()):
+                draw(config.load(target / "edakit.toml"), args)
+            readme = (d / "README.md").read_text(encoding="utf-8")
+            title = readme.splitlines()[0].lstrip("# ").split(" – ")[0]
+            source = " ".join(readme.split("**Source:**", 1)[1].split("\n\n", 1)[0].split())
+            judged = tomllib.loads((d / "findings.toml").read_text(encoding="utf-8"))
+            out.append((d.name, title, source, Path(args.out).read_text(encoding="utf-8"), judged))
     return out
 
 
@@ -240,6 +272,41 @@ def circuits_section(items):
     return "".join(out) + "</section>"
 
 
+JUDGED_CHIP = {"real": "warning", "lacks": "note", "criterion": "pending", "known gap": "open"}
+
+
+def links(html_text):
+    """<https://…> of a README, escaped by md, as links; *words* in italics."""
+    html_text = re.sub(r"(?<![\w*])\*([^*\s][^*]*?)\*(?![\w*])", r"<em>\1</em>", html_text)
+    return re.sub(r"&lt;(https?://[^&\s]+)&gt;", r'<a href="\1">\1</a>', html_text)
+
+
+def open_designs_section(designs):
+    out = ['<section id="open-designs"><h2>Published open designs</h2><p>Real designs, transcribed from their published '
+           'schematics into edakit projects (<code>tests/open_designs/</code>, maker-coverage FT-21), with parts '
+           'entries from the parts\' datasheets. Every finding of <code>edakit check</code> and <code>edakit sim</code> '
+           'is judged: <em>real</em> – a point of the design, <em>lacks</em> – a fact the transcription or the '
+           'datasheets lack, <em>criterion</em> – edakit\'s yardstick, not the design\'s, <em>known gap</em> – edakit '
+           'judges it wrong, not fixed yet. The false alarms the designs showed are fixed '
+           '(<code>tests/test_open_designs.py</code>, <code>tests/test_open_design_fixes.py</code>).</p>']
+    for name, title, source, svg, j in designs:
+        rows = "".join(
+            f'<tr><td>{stage}</td><td><a href="#{escape(f["code"])}"><code>{escape(f["code"])}</code></a>'
+            + (f'/{escape(f["grade"])}' if f.get("grade") else "") + f'</td><td>{escape(f["place"])}</td>'
+            f'<td>{chip(JUDGED_CHIP.get(f["judged"], "open"), f["judged"])}</td><td>{md(f["why"])}</td></tr>'
+            for stage, key in (("check", "check"), ("sim", "sim")) for f in j.get(key, []))
+        table = (f'<div class="scroll"><table class="faults"><thead><tr><th>Stage</th><th>Code</th><th>Where</th>'
+                 f'<th>Judged</th><th>Why</th></tr></thead><tbody>{rows}</tbody></table></div>' if rows
+                 else "<p>edakit raises nothing beyond notes.</p>")
+        fixed = "".join(f"<li>{md(f['what'])}</li>" for f in j.get("fixed", []))
+        out.append(f'<article class="circuit" id="open-{name}"><h3>{escape(title)}</h3>'
+                   f'<p class="meta">{links(md(source))} · <a href="circuits/open-{name}.svg">SVG</a></p>'
+                   f'<div class="drawing">{svg_inline(svg)}</div>{table}'
+                   + (f'<p class="meta">edakit\'s false alarms on this design, fixed</p><ul>{fixed}</ul>' if fixed else "")
+                   + "</article>")
+    return "".join(out) + "</section>"
+
+
 def candidates_section():
     s = tomllib.loads(STATUS.read_text(encoding="utf-8"))
     tiles, groups = [], []
@@ -248,7 +315,8 @@ def candidates_section():
     for sec, label in labels.items():
         c = Counter(e["status"] for e in s[sec].values())
         tiles.append(f'<div class="tile"><span class="big">{c["built"]}</span><span class="of">of {len(s[sec])}</span>'
-                     f'<span class="lbl">{label}</span><span class="sub">{c["partial"]} partial · {c["open"]} open</span>'
+                     f'<span class="lbl">{label}</span><span class="sub">{c["partial"]} partial · {c["open"]} open'
+                     + (f' · {c["out"]} out' if c["out"] else "") + '</span>'
                      "</div>")
         rows = "".join(f'<tr><td><code>{escape(k)}</code></td><td>{chip(e["status"])}</td>'
                        f'<td>{md(e.get("where", ""))}</td><td>{md(e.get("missing", ""))}</td></tr>'
@@ -257,15 +325,21 @@ def candidates_section():
                       f'<th>Where</th><th>Missing</th></tr></thead><tbody>{rows}</tbody></table></div>')
     pf = s["part_facts"]
     n = sum(len(e["parts"]) for e in pf.values())
-    tiles.append(f'<div class="tile"><span class="big">0</span><span class="of">of {n}</span><span class="lbl">Part facts'
-                 '</span><span class="sub">open decision 4 · datasheets</span></div>')
-    groups.append("<h3>Part facts</h3><ul>" + "".join(f"<li><strong>{escape(k.replace('_', ' '))}:</strong> "
-                                                       f"{escape(', '.join(e['parts']))}</li>" for k, e in pf.items())
-                  + "</ul>")
+    from edakit import library
+    keys = library.keys()
+    drafts = [k for k in keys if "library draft" in str((library.entry(k).get("verified") or {}).get("by", ""))]
+    signed = sum(1 for k in keys if library.signature(k))
+    tiles.append(f'<div class="tile"><span class="big">{signed}</span><span class="of">of {len(keys)} signed</span>'
+                 f'<span class="lbl">Parts library</span><span class="sub">{len(drafts)} drafts for {n} part facts · '
+                 'the owner signs</span></div>')
+    rows = "".join(f'<tr><td>{escape(k.replace("_", " "))}</td><td>{chip(e["status"])}</td><td>{md(e.get("where", ""))}'
+                   f'</td><td>{md(e.get("missing", ""))}</td></tr>' for k, e in pf.items())
+    groups.append('<h3>Part facts – the parts library</h3><div class="scroll"><table class="cand"><thead><tr><th>Group</th>'
+                  f'<th>Status</th><th>Entries</th><th>Missing</th></tr></thead><tbody>{rows}</tbody></table></div>')
     return ('<section id="candidates"><h2>maker-coverage candidates</h2><p>The candidates of '
             '<code>docs/concepts/new/maker-coverage.md</code> and what became of them '
-            '(<code>maker-coverage-status.toml</code>). Open for lack of read datasheets or standards, or by an open '
-            'decision.</p><div class="tiles">' + "".join(tiles) + "</div>" + "".join(groups) + "</section>")
+            '(<code>maker-coverage-status.toml</code>). Open where a datasheet or standard could not be read, or where '
+            'the change was not a contained one.</p><div class="tiles">' + "".join(tiles) + "</div>" + "".join(groups) + "</section>")
 
 
 def old_ids_section():
@@ -331,7 +405,7 @@ td.num, th.num { text-align: right; font-variant-numeric: tabular-nums; }
   border: 1px solid currentColor; white-space: nowrap; }
 .chip.error { color: var(--err); } .chip.warning { color: var(--warn); } .chip.pending { color: var(--pend); }
 .chip.note { color: var(--note); } .chip.built { color: var(--ok); } .chip.partial { color: var(--warn); }
-.chip.open { color: var(--muted); }
+.chip.open { color: var(--muted); } .chip.out { color: var(--muted); text-decoration: line-through; }
 .engine > h3 { border-bottom: 1px solid var(--line); padding-bottom: 0.3rem; }
 article.code { background: var(--surface); border: 1px solid var(--line); border-left: 3px solid var(--accent);
   border-radius: 4px; padding: 0.8rem 1rem; margin: 0.7rem 0; }
@@ -387,7 +461,7 @@ q.addEventListener('input', () => {
 """
 
 
-def page(items):
+def page(items, designs=()):
     codes = catalog.codes()
     hints = [n for n in codes if n.startswith("HINT.")]
     grades = sum(len(e.get("grades") or {}) for e in codes.values())
@@ -396,20 +470,26 @@ def page(items):
     nav_circuits = "".join(f'<li><a href="#circuit-{n}">{n}</a></li>' for n, *_ in items)
     tiles = "".join(f'<div class="tile"><span class="big">{v}</span><span class="lbl">{k}</span></div>' for k, v in (
         ("Engines", len(catalog.engines())), ("Codes", len(codes)), ("Grades", grades), ("Hints", len(hints)),
-        ("Domains", len(profile.domains())), ("Sources cited", sources), ("Reference circuits", len(items))))
+        ("Domains", len(profile.domains())), ("Sources cited", sources), ("Reference circuits", len(items)),
+        ("Open designs", len(designs))))
+    nav_open = "".join(f'<li><a href="#open-{n}">{escape(t)}</a></li>' for n, t, *_ in designs)
     body = (f'<header class="top"><p class="meta brand"><a href="../"><picture><source media="(prefers-color-scheme: dark)" srcset="../brand/edakit-mark-dark.svg"><img src="../brand/edakit-mark.svg" width="28" height="28" alt=""></picture>edakit documentation</a></p><h1>edakit rule catalog</h1><p>Every rule edakit checks – engine, code, severity, '
             'rule, why, what to do and its sources –, the domains that switch rules on, the tables of numbers, the parts '
-            'schema, the reference circuits with their seeded faults, and what became of the maker-coverage '
-            'candidates. Generated from <code>edakit/catalog</code>, <code>edakit/domains</code> and '
-            f'<code>tests/reference.py</code>.</p></header><div class="tiles">{tiles}</div>'
+            'schema, the reference circuits with their seeded faults, published open designs with every finding '
+            'judged, and what became of the maker-coverage candidates. Generated from <code>edakit/catalog</code>, '
+            '<code>edakit/domains</code>, <code>tests/reference.py</code> and <code>tests/open_designs/</code>.</p>'
+            f'</header><div class="tiles">{tiles}</div>'
             + engines_section() + codes_section() + domains_section() + tables_section() + kinds_section()
-            + circuits_section(items) + candidates_section() + old_ids_section()
+            + circuits_section(items) + (open_designs_section(designs) if designs else "") + candidates_section()
+            + old_ids_section()
             + '<footer>Written by <code>docs/catalog/build.py</code>; <code>tests/test_catalog_page.py</code> holds it to '
               'the catalog.</footer>')
     nav = ('<nav aria-label="Contents"><ol><li><a href="#engines">Engines</a></li><li><a href="#codes">Codes</a>'
            f'<ol>{nav_engines}</ol></li><li><a href="#domains">Domains</a></li><li><a href="#tables">Tables</a></li>'
            f'<li><a href="#schema">Parts schema</a></li><li><a href="#circuits">Reference circuits</a><ol>{nav_circuits}'
-           '</ol></li><li><a href="#candidates">maker-coverage candidates</a></li><li><a href="#before">Check IDs of '
+           '</ol></li>' + (f'<li><a href="#open-designs">Published open designs</a><ol>{nav_open}</ol></li>'
+                           if designs else "")
+           + '<li><a href="#candidates">maker-coverage candidates</a></li><li><a href="#before">Check IDs of '
            'before</a></li></ol></nav>')
     return ('<!DOCTYPE html>\n<html lang="en"><head><meta charset="utf-8"><meta name="viewport" '
             'content="width=device-width, initial-scale=1"><title>edakit rule catalog</title>'
@@ -424,14 +504,18 @@ def build(out=OUT):
     """Write the page and the drawings into out; -> the files written."""
     out = Path(out)
     (out / "circuits").mkdir(parents=True, exist_ok=True)
-    items = circuits()
+    items, designs = circuits(), open_designs()
     written = []
     for name, _, _, svg, _ in items:
         f = out / "circuits" / f"{name}.svg"
         f.write_text(svg, encoding="utf-8")
         written.append(f)
+    for name, _, _, svg, _ in designs:
+        f = out / "circuits" / f"open-{name}.svg"
+        f.write_text(svg, encoding="utf-8")
+        written.append(f)
     f = out / "index.html"
-    f.write_text(page(items), encoding="utf-8")
+    f.write_text(page(items, designs), encoding="utf-8")
     return [f, *written]
 
 

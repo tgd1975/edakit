@@ -1,0 +1,68 @@
+{
+ "lcsc": "C158012",
+ "mpn": "B2B-XH-A(LF)(SN)",
+ "manufacturer": "JST",
+ "kind": "connector",
+ "package": "THT 1x2 P2.5 vertical (top entry), shrouded",
+ "footprint": "CONN-TH_B2B-XH-A-LF-SN",
+ "jlc_class": "Extended Part",
+ "datasheet": {
+  "url": "https://datasheet.lcsc.com/datasheet/pdf/51bbcb0476af7caf7f697437212da775.pdf?productCode=C158012",
+  "pinout_page": 3
+ },
+ "pins": {
+  "1": {
+   "name": "1",
+   "type": "passive",
+   "role": "pin1"
+  },
+  "2": {
+   "name": "2",
+   "type": "passive",
+   "role": "pin2"
+  }
+ },
+ "values": {
+  "pitch_mm": 2.5,
+  "r_contact_ohm": 0.01
+ },
+ "limits": {
+  "i_contact_max_a": 3.0,
+  "v_max_v": 250,
+  "t_min_c": -25,
+  "t_max_c": 85
+ },
+ "compliance": {
+  "rohs": true,
+  "source": "JST XH catalogue p. 1 'Compliant with RoHS', p. 3 '(LF)(SN) on a label', read 2026-10-31"
+ },
+ "sources": [
+  "JST XH CONNECTOR catalogue (2.5 mm pitch, disconnectable crimp style), 5 pages – LCSC product data of C158012, https://datasheet.lcsc.com/datasheet/pdf/51bbcb0476af7caf7f697437212da775.pdf?productCode=C158012, read 2026-10-31 (the copy lacks the fonts of the drawings' dimensions)",
+  "i_contact_max_a 3.0, v_max_v 250: p. 1 specifications 'Current rating: 3 A AC, DC (AWG #22)', 'Voltage rating: 250 V AC, DC' (3 A with AWG 22 wire; thinner wire carries less)",
+  "t_min_c -25, t_max_c 85: p. 1 'Temperature range: -25˚C to +85˚C (including temperature rise in applying electrical current)'",
+  "r_contact_ohm 0.01: p. 1 'Contact resistance: Initial value/ 10 mΩ max. After environmental tests/ 20 mΩ max.'; withstanding voltage 1,000 V AC/minute; wire AWG #30 to #22; PC board 1.6 mm",
+  "B2B-XH-A: p. 3 through-hole shrouded header, top entry, 2 circuits, A 2.5 mm, B 7.4 mm; post 0.64 mm square, brass, tin-plated; wafer PA 66, UL94V-0; mating housing XHP-2 with SXH-001T-P0.6 contacts (p. 2)",
+  "pins: EasyEDA symbol and footprint of C158012 (edakit part import 2026-10-31): 2 plated holes 1.0 mm on 2.5 mm",
+  "LCSC/JLCPCB catalogue 2026-10-31: Extended Part, 632 478 pcs"
+ ],
+ "notes": "JST XH 2-pin header, 2.5 mm, top entry, keyed by its shroud. A motor output of block dc-motor-drv8833 – another family than the JST PH supply input (power-input-jst), so that a supply plug does not fit the motor output. Library draft.",
+ "verified": {
+  "by": "Claude (datasheet check, library draft)",
+  "date": "2026-10-31",
+  "datasheet": "JST XH CONNECTOR catalogue (LCSC copy, 5 pages, undated)",
+  "datasheet_sha256": "389be59ed37c479038b3b5902d064f056f27a3c966bebbdda2f1a5a4bbde20a8",
+  "checked": [
+   "p. 1: 3 A AC/DC at AWG 22, 250 V AC/DC, -25 … +85 °C including temperature rise, contact resistance 10 mΩ initial / 20 mΩ after tests",
+   "p. 3: B2B-XH-A = 2 circuits, top entry, pitch A 2.5 mm, width B 7.4 mm, post □0.64",
+   "i_contact_max_a 3.0: p. 1 'Current rating: 3 A AC, DC (AWG #22)' – per contact (circuit) – reread 2026-10-31"
+  ],
+  "open": [
+   "the LCSC copy prints no dimensions in its drawings (fonts missing): PCB hole diameter and the circuit-1 position not read – no lead entry, GEO.hole stays pending",
+   {
+    "text": "circuit No. 1 against footprint pad 1 (only the direction of the motor depends on it)",
+    "when": "order"
+   },
+   "the catalogue carries no revision or date"
+  ]
+ }
+}

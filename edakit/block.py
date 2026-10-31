@@ -2,7 +2,8 @@
 
     edakit block list
     edakit block show NAME
-    edakit block add NAME --as INSTANCE [--connect PORT=NET ...] [--board B] [--file BLOCK.json] [--dry-run]
+    edakit block add NAME --as INSTANCE [--connect PORT=NET ...] [--without DES ...] [--board B] [--file BLOCK.json]
+                     [--dry-run]
 
 A block (edakit/blocks/<name>.json, or any file given with --file) is a piece of graph: components with LCSC numbers,
 nets, and ports – the nets that connect to the rest of the circuit. `add` copies it into the project's graph:
@@ -12,7 +13,13 @@ nets, and ports – the nets that connect to the rest of the circuit. `add` copi
     --connect becomes its own net <INSTANCE>_<PORT>, except "gnd", which joins the project's ground
   - a net that does not exist yet gets the block's voltage range: [min, max], or "@port" for the range of the net that
     port is connected to
-  - missing parts entries are copied from the library (edakit/blocks/parts/); an existing entry must have the same pins
+  - missing parts entries are copied from edakit's parts library (edakit/parts/, edakit part add) with their
+    provenance; an existing entry must have the same pins
+  - "graph": {"grounds": [net, …]} – graph-level keys the block brings: its nets that are a ground of their own (a
+    protection IC on the cell's minus) join the project's `grounds`
+  - "optional": {"parts": [designator, …], "ports": [port, …]} – parts --without may leave out, and ports that may stay
+    unconnected: a pin left alone on its net goes into its component's nc instead of a net of one pin
+  - an accept keyed by "code place" names the block's designators; they are renamed with the parts
   - the graph file keeps its formatting (indent, UTF-8); nothing is written with --dry-run
 
 The block's notes say what is left to decide (values, sim.json, the graph's checks). Afterwards: edakit check (its HINT
@@ -23,7 +30,6 @@ from __future__ import annotations
 
 import json
 import re
-import shutil
 from pathlib import Path
 
 from .design import natural_key
@@ -47,8 +53,8 @@ def load(name=None, file=None):
 
 
 def library_part(lcsc):
-    path = LIBRARY / "parts" / f"{lcsc}.json"
-    return json.loads(path.read_text(encoding="utf-8")) if path.exists() else None
+    from . import library as parts_library
+    return parts_library.entry(lcsc)
 
 
 def split_designator(des):
@@ -68,15 +74,52 @@ def free_numbers(graph):
     return top
 
 
-def plan(block, graph, instance, connect, ground, board=None):
+def without_parts(block, without):
+    """The block with the optional parts `without` names left out – their pins out of the nets (a net left without
+    pins is not made; one pin alone on an unconnected optional port goes into its component's nc, plan)."""
+    optional = block.get("optional") or {}
+    unknown = sorted(set(without) - set(optional.get("parts", [])))
+    if unknown:
+        raise BlockError(f"block {block['name']}: {', '.join(unknown)} is no optional part (optional: "
+                         f"{', '.join(optional.get('parts', [])) or 'none'})")
+    gone = set(without)
+    comps = [dict(c) for c in block["components"] if c["designator"] not in gone]
+    nets = [{**n, "pins": [r for r in n["pins"] if r.split(".", 1)[0] not in gone]} for n in block["nets"]]
+    return {**block, "components": comps, "nets": nets}     # a net left without pins still lends its range (@port)
+
+
+def rename_accept(acc, rename):
+    """An accept table with the designators its "code place" keys name renamed as the parts are."""
+    out = {}
+    for key, reason in (acc or {}).items():
+        code, sep, place = key.partition(" ")
+        if sep:
+            des, dot, rest = place.partition(".")
+            place = rename.get(des, des) + dot + rest
+        out[code + sep + place] = reason
+    return out
+
+
+def plan(block, graph, instance, connect, ground, board=None, without=()):
     """What `add` would do: (components, new nets, extended nets {name: [pins]}, attributes for existing nets
-    {name: {key: value}} such as "bus": "i2c", LCSC numbers used)."""
+    {name: {key: value}} such as "bus": "i2c", LCSC numbers used, grounds the block brings)."""
     if not re.fullmatch(r"[A-Za-z][A-Za-z0-9_]*", instance or ""):
         raise BlockError("--as needs a name for this instance: letters, digits, underscore (e.g. STATUS, BUZ)")
+    block = without_parts(block, without)
     ports = block.get("ports", {})
     unknown = sorted(set(connect) - set(ports))
     if unknown:
         raise BlockError(f"block {block['name']} has no port {', '.join(unknown)} (ports: {', '.join(ports)})")
+    loose = set((block.get("optional") or {}).get("ports", []))       # unconnected, a pin alone goes into nc
+    nc_more = {}
+    kept = []
+    for net in block["nets"]:
+        if net["name"] in loose and net["name"] not in connect and len(net["pins"]) == 1:
+            des, _, pin = net["pins"][0].partition(".")
+            nc_more.setdefault(des, []).append(pin)
+            continue
+        kept.append(net)
+    block = {**block, "nets": kept}
     top = free_numbers(graph)
     rename = {}
     for c in block["components"]:
@@ -116,6 +159,10 @@ def plan(block, graph, instance, connect, ground, board=None):
         new = {k: v for k, v in c.items() if k != "designator"}
         new = {"designator": rename[c["designator"]], **{k: (v.replace("{as}", instance) if isinstance(v, str) else v)
                                                           for k, v in new.items()}}
+        if c["designator"] in nc_more:
+            new["nc"] = list(dict.fromkeys(list(new.get("nc", [])) + nc_more[c["designator"]]))
+        if new.get("accept"):
+            new["accept"] = rename_accept(new["accept"], rename)
         new["notes"] = (new.get("notes", "") + f" (block {block['name']}, {instance})").strip()
         if board:
             new["board"] = board
@@ -123,8 +170,12 @@ def plan(block, graph, instance, connect, ground, board=None):
     new_nets, extended, attrs = {}, {}, {}
     for net in block["nets"]:
         pins = [f"{rename[p.split('.', 1)[0]]}.{p.split('.', 1)[1]}" for p in net["pins"]]
+        if not pins:                       # all its pins were optional parts left out
+            continue
         name = target[net["name"]]
         extra = {k: v for k, v in net.items() if k not in ("name", "pins", "v", "notes")}  # e.g. "bus": "i2c"
+        if extra.get("accept"):
+            extra["accept"] = rename_accept(extra["accept"], rename)
         if name in existing:
             extended.setdefault(name, []).extend(pins)
             attrs.setdefault(name, {}).update(extra)
@@ -136,7 +187,12 @@ def plan(block, graph, instance, connect, ground, board=None):
             if net.get("notes"):
                 new_nets[name]["notes"] = net["notes"].replace("{as}", instance)
     lcsc = sorted({c["lcsc"] for c in comps if c.get("lcsc")}, key=natural_key)
-    return comps, list(new_nets.values()), extended, attrs, lcsc
+    grounds = []
+    for name in (block.get("graph") or {}).get("grounds", []):
+        if name not in target:
+            raise BlockError(f"block {block['name']}: graph.grounds names {name}, which is none of its nets")
+        grounds.append(target[name])
+    return comps, list(new_nets.values()), extended, attrs, lcsc, grounds
 
 
 def parts_to_copy(lcsc_numbers, parts_dir, comps):
@@ -146,7 +202,7 @@ def parts_to_copy(lcsc_numbers, parts_dir, comps):
         mine = parts_dir / f"{lcsc}.json"
         entry = json.loads(mine.read_text(encoding="utf-8")) if mine.exists() else library_part(lcsc)
         if entry is None:
-            raise BlockError(f"{lcsc}: neither in {parts_dir} nor in the block library – part-search skill first")
+            raise BlockError(f"{lcsc}: neither in {parts_dir} nor in the parts library – part-search skill first")
         names = {k: v["name"] for k, v in entry["pins"].items()}
         for c in comps:
             if c.get("lcsc") == lcsc and c["pins"] != names:
@@ -164,7 +220,7 @@ def write_json(path, data):
     path.write_text(json.dumps(data, indent=len(m.group(1)) if m else 1, ensure_ascii=False) + "\n", encoding="utf-8")
 
 
-def add(cfg, name, instance, connect, board=None, file=None, dry_run=False):
+def add(cfg, name, instance, connect, board=None, file=None, dry_run=False, without=()):
     block = load(name, file)
     data = json.loads(cfg.graph.read_text(encoding="utf-8"))
     graph = data.get("graph", data)
@@ -173,10 +229,12 @@ def add(cfg, name, instance, connect, board=None, file=None, dry_run=False):
     if board is not None and board not in cfg.boards:
         raise BlockError(f"no board '{board}' in edakit.toml (boards: {', '.join(cfg.boards)})")
     missing = sorted(t for t in connect.values() if t not in {n["name"] for n in graph["nets"]})
-    comps, new_nets, extended, attrs, lcsc = plan(block, graph, instance, connect, graph.get("ground", "GND"),
-                                                  board if len(cfg.boards) > 1 else None)
+    comps, new_nets, extended, attrs, lcsc, grounds = plan(block, graph, instance, connect, graph.get("ground", "GND"),
+                                                           board if len(cfg.boards) > 1 else None, without)
     copy = parts_to_copy(lcsc, cfg.parts, comps)
     if not dry_run:
+        if grounds:
+            graph["grounds"] = list(dict.fromkeys(list(graph.get("grounds") or []) + grounds))
         graph["components"] += comps
         for net in graph["nets"]:
             net["pins"] += extended.get(net["name"], [])
@@ -184,8 +242,9 @@ def add(cfg, name, instance, connect, board=None, file=None, dry_run=False):
                 net.setdefault(key, value)
         graph["nets"] += new_nets
         write_json(cfg.graph, data)
+        from . import library as parts_library
         for n in copy:
-            shutil.copy(LIBRARY / "parts" / f"{n}.json", cfg.parts / f"{n}.json")
+            parts_library.copy_into(cfg.parts, n)
     return block, comps, new_nets, extended, attrs, copy, missing
 
 
@@ -222,7 +281,8 @@ def main(cfg, args):
                 raise BlockError(f"--connect {item}: expected PORT=NET")
             connect[port] = net
         block, comps, new_nets, extended, attrs, copy, missing = add(cfg, args.name, args.instance, connect,
-                                                                     args.board, args.file, args.dry_run)
+                                                                     args.board, args.file, args.dry_run,
+                                                                     getattr(args, "without", None) or ())
     except (BlockError, KeyError, ValueError) as e:
         print(f"edakit block: {e}")
         return 1
@@ -237,7 +297,7 @@ def main(cfg, args):
         print(f"  net {n['name']} (new, v {n['v']}): {', '.join(n['pins'])}"
               + ("  – created by --connect" if n["name"] in missing else ""))
     if copy:
-        print(f"  parts entries {'to copy' if args.dry_run else 'copied'} from the block library: {', '.join(copy)}")
+        print(f"  parts entries {'to copy' if args.dry_run else 'copied'} from the parts library: {', '.join(copy)}")
     for note in block.get("notes", []):
         print(f"- {note}")
     print("Next: edakit check, edakit sim – and the decisions the notes name.")

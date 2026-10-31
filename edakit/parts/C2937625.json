@@ -1,0 +1,83 @@
+{
+ "lcsc": "C2937625",
+ "mpn": "PZ254V-11-03P",
+ "manufacturer": "XFCN(兴飞)",
+ "kind": "connector",
+ "package": "THT 1x3 P2.54 vertical pin header",
+ "footprint": "HDR-TH_3P-P2.54-V-M_PZ254V-11-03P",
+ "jlc_class": "Extended Part",
+ "datasheet": {
+  "url": "https://datasheet.lcsc.com/datasheet/pdf/3b85a1cdf6ed945f2e278f00c1e42442.pdf?productCode=C2937625",
+  "pinout_page": 1
+ },
+ "pins": {
+  "1": {
+   "name": "1",
+   "type": "passive",
+   "role": "pin1"
+  },
+  "2": {
+   "name": "2",
+   "type": "passive",
+   "role": "pin2"
+  },
+  "3": {
+   "name": "3",
+   "type": "passive",
+   "role": "pin3"
+  }
+ },
+ "values": {
+  "r_contact_ohm": 0.02,
+  "pitch_mm": 2.54
+ },
+ "limits": {
+  "i_max_a": 3.0,
+  "t_min_c": -40,
+  "t_max_c": 105
+ },
+ "lead": {
+  "*": {
+   "shape": "square",
+   "a_mm": 0.64,
+   "b_mm": 0.64,
+   "tol_mm": null,
+   "hole_rec_mm": 1.02,
+   "length_mm": 3.0,
+   "source": "XFCN PZ254V-11-XX drawing rev A1 (2024-06-11): pin '0.64*0.64', P.C.B hole layout 'Ø1.02', tail 3.0 ± 0.20 mm below the insulator; no tolerance on the pin section"
+  }
+ },
+ "body": {
+  "h_mm": 8.6
+ },
+ "spice": {},
+ "sources": [
+  "XFCN PZ254V-11-XX 2.54mm Pin Header Connectors, drawing rev A1 (2024-05-24, drawn 2024-06-11, 1 page), LCSC's copy https://datasheet.lcsc.com/datasheet/pdf/3b85a1cdf6ed945f2e278f00c1e42442.pdf?productCode=C2937625, read 2026-10-31 (a series drawing; 03 = 3 positions, A 5.08 mm, B 7.62 mm)",
+  "specifications on the drawing: current rating 3 A; temperature range −40…+105 °C; insulation resistance ≥ 1000 MΩ; withstanding voltage 500 V AC for one minute; contact resistance ≤ 20 mΩ; insulator PA6T UL 94V-0, contacts brass, matte tin or gold over nickel; mates with XFCN PM254",
+  "i_max_a 3 A: the rating per contact; a servo's current passes the + and the GND contact in series, so the part carries 3 A as a whole",
+  "body h_mm 8.6: insulator 2.50 mm plus pin 6.1 ± 0.20 mm above it (drawing side view)",
+  "pin 1 = the square pad of the EasyEDA footprint (pads 1–3 in a row at 2.54 mm, Ø1.02 mm plated holes, edakit part import 2026-10-31); the drawing numbers positions 1, 2 from one end",
+  "mpn, manufacturer, footprint, jlc_class, pin numbers and names: EasyEDA library data of C2937625 via edakit part import, read 2026-10-31",
+  "stock: JLCPCB 739 601 pcs, Extended Part, hand-soldered at JLCPCB (edakit stock --lcsc, 2026-10-31)"
+ ],
+ "compliance": {
+  "rohs": true,
+  "source": "XFCN PZ254V-11-XX drawing rev A1: 'RoHS' in the title block area"
+ },
+ "notes": "3-pin 2.54 mm header: the hobby-servo connector of block servo-connector (maker-coverage BL-13). Library draft.",
+ "verified": {
+  "by": "Claude (datasheet check, library draft)",
+  "date": "2026-10-31",
+  "datasheet": "XFCN PZ254V-11-XX drawing rev A1 (2024)",
+  "datasheet_sha256": "d4cb67e0fd15267bd26f8e782f79b44bc2c8e05fd2ac63c5a88712860c9aacd0",
+  "checked": [
+   "3 A, −40…+105 °C, contact resistance ≤ 20 mΩ, 500 V AC withstand (drawing)",
+   "pitch 2.54 ± 0.05 mm, pin 0.64 × 0.64 mm, hole Ø1.02 mm = the footprint's holes",
+   "insulator 2.5 mm, pin 6.1 mm above, tail 3.0 mm"
+  ],
+  "open": [
+   "no rated working voltage on the drawing (only the 500 V AC withstand test): v_max_v left out, LIM.v does not hold the connector",
+   "the drawing does not say whether C2937625 is the tin- or the gold-plated version"
+  ]
+ }
+}

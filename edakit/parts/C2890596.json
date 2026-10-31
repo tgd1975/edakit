@@ -1,0 +1,421 @@
+{
+ "lcsc": "C2890596",
+ "mpn": "N096-2864KSWEG01-H30",
+ "manufacturer": "Wisevision(新智景)",
+ "kind": "ic",
+ "package": "0.96\" 128 × 64 white PMOLED panel, SSD1306 on glass, 30-pin FPC, pitch 0.7 mm",
+ "footprint": "OLED_0.96-30P-P0.70-12864",
+ "jlc_class": "Extended Part",
+ "datasheet": {
+  "url": "https://datasheet.lcsc.com/datasheet/pdf/83ad7b8fd0565400f786e46751651e65.pdf?productCode=C2890596",
+  "pinout_page": 3
+ },
+ "pins": {
+  "1": {
+   "name": "N.C.(GND)",
+   "type": "ground",
+   "hint": "supporting pin: connect to ground for the ESD protection circuit (1.5)"
+  },
+  "2": {
+   "name": "C2P",
+   "type": "passive",
+   "hint": "charge-pump flying capacitor C1P–C1N and C2P–C2N (1 µF/16 V X5R in the application examples) when the internal DC/DC is used; floating when it is not (1.5, 3.3)"
+  },
+  "3": {
+   "name": "C2N",
+   "type": "passive",
+   "hint": "charge-pump flying capacitor C1P–C1N and C2P–C2N (1 µF/16 V X5R in the application examples) when the internal DC/DC is used; floating when it is not (1.5, 3.3)"
+  },
+  "4": {
+   "name": "C1P",
+   "type": "passive",
+   "hint": "charge-pump flying capacitor C1P–C1N and C2P–C2N (1 µF/16 V X5R in the application examples) when the internal DC/DC is used; floating when it is not (1.5, 3.3)"
+  },
+  "5": {
+   "name": "C1N",
+   "type": "passive",
+   "hint": "charge-pump flying capacitor C1P–C1N and C2P–C2N (1 µF/16 V X5R in the application examples) when the internal DC/DC is used; floating when it is not (1.5, 3.3)"
+  },
+  "6": {
+   "name": "VBAT",
+   "type": "power_in",
+   "v_max_v": 5,
+   "needs": [
+    {
+     "what": "never_to_ground",
+     "source": "Wisevision N096-2864KSWEG01-H30 OEL display module product specification Ver. A (2019-04-26, doc. SAS1-09046-A), 4.2 note 13, p. 19: power pins VDD, VCC, VBAT can never be pulled to ground"
+    }
+   ],
+   "hint": "VBAT: 3.5–4.2 V with the internal DC/DC; tied to VDD when VCC comes from outside (1.5, 3.2)"
+  },
+  "7": {
+   "name": "N.C.",
+   "type": "no_connect"
+  },
+  "8": {
+   "name": "VSS",
+   "type": "ground",
+   "role": "gnd"
+  },
+  "9": {
+   "name": "VDD",
+   "type": "power_in",
+   "role": "vdd",
+   "needs": [
+    {
+     "what": "never_to_ground",
+     "source": "Wisevision N096-2864KSWEG01-H30 OEL display module product specification Ver. A (2019-04-26, doc. SAS1-09046-A), 4.2 note 13, p. 19: power pins VDD, VCC, VBAT can never be pulled to ground"
+    }
+   ]
+  },
+  "10": {
+   "name": "BS0",
+   "type": "input",
+   "hint": "interface select BS0/BS1/BS2: I2C 0/1/0, 3-wire SPI 1/0/0, 4-wire SPI 0/0/0, 68XX 0/0/1, 80XX 0/1/1 (1.5)"
+  },
+  "11": {
+   "name": "BS1",
+   "type": "input",
+   "hint": "interface select BS0/BS1/BS2: I2C 0/1/0, 3-wire SPI 1/0/0, 4-wire SPI 0/0/0, 68XX 0/0/1, 80XX 0/1/1 (1.5)"
+  },
+  "12": {
+   "name": "BS2",
+   "type": "input",
+   "hint": "interface select BS0/BS1/BS2: I2C 0/1/0, 3-wire SPI 1/0/0, 4-wire SPI 0/0/0, 68XX 0/0/1, 80XX 0/1/1 (1.5)"
+  },
+  "13": {
+   "name": "CS#",
+   "type": "input"
+  },
+  "14": {
+   "name": "RES#",
+   "type": "input",
+   "hint": "low = reset; keep high in operation; after power-up hold low, then high (3 µs minimum before commands) (1.5, 4.4.1)"
+  },
+  "15": {
+   "name": "D/C#",
+   "type": "input",
+   "hint": "in I2C mode SA0: low 0x3C, high (VDD) 0x3D (1.5, 3.3.5.2)"
+  },
+  "16": {
+   "name": "R/W#",
+   "type": "input",
+   "hint": "to VSS in serial and I2C mode (1.5)"
+  },
+  "17": {
+   "name": "E/RD#",
+   "type": "input",
+   "hint": "to VSS in serial and I2C mode (1.5)"
+  },
+  "18": {
+   "name": "D0",
+   "type": "bidirectional",
+   "hint": "D0: SCLK in SPI mode, SCL in I2C mode (1.5)"
+  },
+  "19": {
+   "name": "D1",
+   "type": "bidirectional",
+   "hint": "D1: SDIN in SPI mode, SDAin in I2C mode – tie to D2 (SDAout) as SDA (1.5)"
+  },
+  "20": {
+   "name": "D2",
+   "type": "bidirectional",
+   "hint": "D2: SDAout in I2C mode – tie to D1; in serial mode the one unused data pin not to be tied to VSS (1.5)"
+  },
+  "21": {
+   "name": "D3",
+   "type": "bidirectional",
+   "hint": "unused data pins to VSS (1.5)"
+  },
+  "22": {
+   "name": "D4",
+   "type": "bidirectional",
+   "hint": "unused data pins to VSS (1.5)"
+  },
+  "23": {
+   "name": "D5",
+   "type": "bidirectional",
+   "hint": "unused data pins to VSS (1.5)"
+  },
+  "24": {
+   "name": "D6",
+   "type": "bidirectional",
+   "hint": "unused data pins to VSS (1.5)"
+  },
+  "25": {
+   "name": "D7",
+   "type": "bidirectional",
+   "hint": "unused data pins to VSS (1.5)"
+  },
+  "26": {
+   "name": "IREF",
+   "type": "analog",
+   "needs": [
+    {
+     "what": "pull_down",
+     "source": "Wisevision N096-2864KSWEG01-H30 OEL display module product specification Ver. A (2019-04-26, doc. SAS1-09046-A), 1.5, p. 3: a resistor between IREF and VSS, current at most 12.5 µA (910 kΩ in the application examples)"
+    }
+   ]
+  },
+  "27": {
+   "name": "VCOMH",
+   "type": "output",
+   "needs": [
+    {
+     "what": "capacitor",
+     "source": "Wisevision N096-2864KSWEG01-H30 OEL display module product specification Ver. A (2019-04-26, doc. SAS1-09046-A), 1.5, p. 3: a capacitor between VCOMH and VSS (4.7 µF/16 V X7R in the application examples)"
+    }
+   ]
+  },
+  "28": {
+   "name": "VCC",
+   "type": "passive",
+   "v_max_v": 16,
+   "needs": [
+    {
+     "what": "never_to_ground",
+     "source": "Wisevision N096-2864KSWEG01-H30 OEL display module product specification Ver. A (2019-04-26, doc. SAS1-09046-A), 4.2 note 13, p. 19: power pins VDD, VCC, VBAT can never be pulled to ground"
+    }
+   ],
+   "hint": "VCC: 8.5–9.5 V from outside with the DC/DC disabled, or 7.0–7.5 V generated by the internal DC/DC – then a stabilisation capacitor to VSS (2.2 µF in the application examples) (1.5, 3.2)"
+  },
+  "29": {
+   "name": "VLSS",
+   "type": "ground",
+   "hint": "analog ground: connect to VSS (1.5)"
+  },
+  "30": {
+   "name": "N.C.(GND)",
+   "type": "ground",
+   "hint": "supporting pin: connect to ground for the ESD protection circuit (1.5)"
+  }
+ },
+ "address": {
+  "base": 60,
+  "pins": {
+   "15": 1
+  },
+  "on": "19"
+ },
+ "values": {
+  "vih_ratio": 0.8,
+  "vil_ratio": 0.2
+ },
+ "limits": {
+  "vdd_max_v": 4,
+  "vdd_op_min_v": 1.65,
+  "vdd_op_max_v": 3.3,
+  "t_min_c": -40,
+  "t_max_c": 85
+ },
+ "hints": [
+  "controller SSD1306 (block diagram 1.6); commands per the SSD1306 technical manual (4.1)",
+  "logic supply VDD 1.65–3.3 V, absolute maximum 4 V; VIH ≥ 0.8 VDD, VIL ≤ 0.2 VDD: the interface runs at VDD, which should equal the MCU's I/O voltage (3.2, application notes)",
+  "I2C: BS0/BS1/BS2 = 0/1/0, D0 = SCL, D1 and D2 tied together as SDA, R/W# and E/RD# to VSS; 7-bit address 0x3C, 0x3D with D/C# at VDD; clock cycle ≥ 2.5 µs (400 kHz) (1.5, 3.3.5)",
+  "internal DC/DC: VBAT 3.5–4.2 V, VCC 7.0–7.5 V generated, flying capacitors between C1P–C1N and C2P–C2N; without it: VBAT to VDD, VCC 8.5–9.5 V from outside, C1P…C2N floating (1.5, 3.2)",
+  "power-up: VDD (and VBAT), display off, initialise, clear, then VCC, 100 ms, display on; power-down in reverse – VDD never off before VCC/VBAT; VCC/VBAT floating (not grounded) when off (4.2, note 13)",
+  "the data sheet asks for an electronic switch in the panel supply (VBAT) on the main board, otherwise leakage current ('Special Tips' of the application examples 3.3.4.2 and 3.3.5.2; P-/N-MOSFET pair Q1/Q2 there)",
+  "operating current: IDD ≤ 300 µA, IBAT ≤ 32 mA with the DC/DC (VDD 2.8 V, all pixels on), ICC ≤ 15 mA with external VCC 9 V (3.2)",
+  "polarizer withstands at most 80 °C (2, note 3)"
+ ],
+ "sources": [
+  "Wisevision N096-2864KSWEG01-H30 OEL display module product specification Ver. A (2019-04-26, doc. SAS1-09046-A), via LCSC https://datasheet.lcsc.com/datasheet/pdf/83ad7b8fd0565400f786e46751651e65.pdf?productCode=C2890596, read 2026-10-31",
+  "pin definition 1.5, p. 3–4: 30 pins, symbols and functions; BS0–BS2 table",
+  "absolute maximum ratings, section 2, p. 7: VDD −0.3 … 4 V, VCC 0 … 16 V, VBAT −0.3 … 5 V, TOP −40 … 85 °C, TSTG −40 … 85 °C",
+  "DC characteristics 3.2, p. 8: VDD 1.65 / 2.8 / 3.3 V; VCC 8.5–9.5 V (external) or 7.0–7.5 V (internal DC/DC); VBAT 3.5–4.2 V; VIH 0.8 VDD … VDD, VIL 0 … 0.2 VDD; VOH ≥ 0.9 VDD, VOL ≤ 0.1 VDD; IDD 180/300 µA; ICC 9/15 mA; IBAT 25.6/32.0 mA",
+  "I2C timing 3.3.5.1, p. 17: tcycle ≥ 2.5 µs; I2C slave address 0111100b, 0111101b with D/C# (pin 15) at VDD: 3.3.5.2, p. 18",
+  "power-up/-down sequence and note 13: 4.2, p. 19",
+  "pin names, footprint and class: EasyEDA library data of C2890596 via edakit part import, 2026-10-31",
+  "LCSC product data C2890596 (2026-10-31): 817 pcs at LCSC (JLCPCB assembly stock 0 the same day); RoHS certificate"
+ ],
+ "compliance": {
+  "rohs": true,
+  "source": "LCSC product data C2890596, 2026-10-31 (isRohsCert, ROHS)"
+ },
+ "verified": {
+  "by": "Claude (datasheet check, library draft)",
+  "date": "2026-10-31",
+  "datasheet": "Wisevision N096-2864KSWEG01-H30 OEL display module product specification Ver. A (2019-04-26, doc. SAS1-09046-A)",
+  "datasheet_sha256": "8a842d48f346b28ae3f8c82b4a2a97590e3846e681651b5c0cc5877d3370410d",
+  "checked": [
+   "30 pins (1.5) = EasyEDA symbol pin numbers and names; footprint: 30 pads in one row at 0.7 mm pitch",
+   "VDD abs. max. 4 V, operating 1.65–3.3 V; VBAT abs. max. 5 V; VCC abs. max. 16 V; VIH 0.8 VDD, VIL 0.2 VDD; −40 … +85 °C",
+   "I2C address 0x3C, +1 with D/C# (pin 15) high; SDA on D1 (pin 19) tied to D2",
+   "2026-10-31: configs i2c and spi4 from the Wisevision specification Ver. A, 1.5 (BS0–BS2 table: I2C 0/1/0, 4-wire SPI 0/0/0; D0 SCL/SCLK, D1 SDIN or SDA with D2; R/W#, E/RD# and unused data pins to VSS) – the I2C address only in i2c"
+  ],
+  "open": [
+   "VBAT and VCC ranges depend on whether the internal DC/DC is used: only their absolute maxima are pin limits, the operating ranges are hints; VCC is typed passive because it is a supply input in one mode and the DC/DC's output in the other",
+   "charge-pump capacitors between C1P–C1N and C2P–C2N: needs has no form for a capacitor between two pins",
+   "no input voltage limit relative to VDD is given (vin_rel_max_v stays out); the SPI and parallel timing and the interface frequency depend on the mode (no single f_max_hz)",
+   "D0–D2 carry no sda/scl roles because their function depends on BS0–BS2; the address names its bus pin (on: 19); REQ.missing's I2C pull-ups follow from nets named SDA/SCL",
+   {
+    "text": "pin 1 of the FPC against pad 1 of the footprint OLED_0.96-30P-P0.70-12864 and the panel's orientation",
+    "when": "order"
+   },
+   "the SSD1306 controller's own data sheet (Solomon Systech) was not read – this entry holds the panel's data sheet only",
+   "no behaviour model: the supply currents are not simulated"
+  ]
+ },
+ "configs": {
+  "i2c": {
+   "about": "I2C: BS0/BS1/BS2 = 0/1/0; D0 is SCL, D1 and D2 tied together as SDA; D/C# is SA0 (Wisevision N096-2864KSWEG01-H30 specification Ver. A, 1.5 Interface Pin Function)",
+   "pins": {
+    "16": {
+     "needs": [
+      {
+       "what": "to_ground",
+       "source": "Wisevision N096-2864KSWEG01-H30 specification Ver. A, 1.5 Interface Pin Function: R/W# 'must be connected to VSS' when serial or I2C mode is selected"
+      }
+     ]
+    },
+    "17": {
+     "needs": [
+      {
+       "what": "to_ground",
+       "source": "Wisevision N096-2864KSWEG01-H30 specification Ver. A, 1.5 Interface Pin Function: E/RD# 'must be connected to VSS' when serial or I2C mode is selected"
+      }
+     ]
+    },
+    "21": {
+     "needs": [
+      {
+       "what": "to_ground",
+       "source": "Wisevision N096-2864KSWEG01-H30 specification Ver. A, 1.5 Interface Pin Function: 'Unused pins must be connected to VSS except for D2 in serial mode'"
+      }
+     ]
+    },
+    "22": {
+     "needs": [
+      {
+       "what": "to_ground",
+       "source": "Wisevision N096-2864KSWEG01-H30 specification Ver. A, 1.5 Interface Pin Function: 'Unused pins must be connected to VSS except for D2 in serial mode'"
+      }
+     ]
+    },
+    "23": {
+     "needs": [
+      {
+       "what": "to_ground",
+       "source": "Wisevision N096-2864KSWEG01-H30 specification Ver. A, 1.5 Interface Pin Function: 'Unused pins must be connected to VSS except for D2 in serial mode'"
+      }
+     ]
+    },
+    "24": {
+     "needs": [
+      {
+       "what": "to_ground",
+       "source": "Wisevision N096-2864KSWEG01-H30 specification Ver. A, 1.5 Interface Pin Function: 'Unused pins must be connected to VSS except for D2 in serial mode'"
+      }
+     ]
+    },
+    "25": {
+     "needs": [
+      {
+       "what": "to_ground",
+       "source": "Wisevision N096-2864KSWEG01-H30 specification Ver. A, 1.5 Interface Pin Function: 'Unused pins must be connected to VSS except for D2 in serial mode'"
+      }
+     ]
+    },
+    "10": {
+     "strap": "low"
+    },
+    "11": {
+     "strap": "high"
+    },
+    "12": {
+     "strap": "low"
+    },
+    "13": {
+     "strap": "low",
+     "hint": "CS#: 'The chip is enabled for MCU communication only when CS# is pulled low' (1.5) – I2C has no chip select, so it is held low"
+    },
+    "18": {
+     "role": "scl"
+    },
+    "19": {
+     "role": "sda"
+    },
+    "20": {
+     "role": "sda"
+    }
+   }
+  },
+  "spi4": {
+   "about": "4-wire SPI: BS0/BS1/BS2 = 0/0/0; D0 is SCLK, D1 SDIN, D/C# selects data or command; D2 not to VSS (Wisevision N096-2864KSWEG01-H30 specification Ver. A, 1.5 Interface Pin Function)",
+   "pins": {
+    "16": {
+     "needs": [
+      {
+       "what": "to_ground",
+       "source": "Wisevision N096-2864KSWEG01-H30 specification Ver. A, 1.5 Interface Pin Function: R/W# 'must be connected to VSS' when serial or I2C mode is selected"
+      }
+     ]
+    },
+    "17": {
+     "needs": [
+      {
+       "what": "to_ground",
+       "source": "Wisevision N096-2864KSWEG01-H30 specification Ver. A, 1.5 Interface Pin Function: E/RD# 'must be connected to VSS' when serial or I2C mode is selected"
+      }
+     ]
+    },
+    "21": {
+     "needs": [
+      {
+       "what": "to_ground",
+       "source": "Wisevision N096-2864KSWEG01-H30 specification Ver. A, 1.5 Interface Pin Function: 'Unused pins must be connected to VSS except for D2 in serial mode'"
+      }
+     ]
+    },
+    "22": {
+     "needs": [
+      {
+       "what": "to_ground",
+       "source": "Wisevision N096-2864KSWEG01-H30 specification Ver. A, 1.5 Interface Pin Function: 'Unused pins must be connected to VSS except for D2 in serial mode'"
+      }
+     ]
+    },
+    "23": {
+     "needs": [
+      {
+       "what": "to_ground",
+       "source": "Wisevision N096-2864KSWEG01-H30 specification Ver. A, 1.5 Interface Pin Function: 'Unused pins must be connected to VSS except for D2 in serial mode'"
+      }
+     ]
+    },
+    "24": {
+     "needs": [
+      {
+       "what": "to_ground",
+       "source": "Wisevision N096-2864KSWEG01-H30 specification Ver. A, 1.5 Interface Pin Function: 'Unused pins must be connected to VSS except for D2 in serial mode'"
+      }
+     ]
+    },
+    "25": {
+     "needs": [
+      {
+       "what": "to_ground",
+       "source": "Wisevision N096-2864KSWEG01-H30 specification Ver. A, 1.5 Interface Pin Function: 'Unused pins must be connected to VSS except for D2 in serial mode'"
+      }
+     ]
+    },
+    "10": {
+     "strap": "low"
+    },
+    "11": {
+     "strap": "low"
+    },
+    "12": {
+     "strap": "low"
+    },
+    "18": {
+     "role": "sck"
+    },
+    "19": {
+     "role": "sdi"
+    }
+   },
+   "address": null
+  }
+ }
+}

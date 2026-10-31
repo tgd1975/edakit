@@ -404,7 +404,7 @@
       "role": "vbus"
     },
     "41": {
-      "name": "SWDIO",
+      "name": "SWCLK",
       "type": "bidirectional",
       "role": "gpio",
       "v_max_v": 3.63
@@ -414,7 +414,7 @@
       "type": "ground"
     },
     "43": {
-      "name": "SWCLK",
+      "name": "SWDIO",
       "type": "bidirectional",
       "role": "gpio",
       "v_max_v": 3.63

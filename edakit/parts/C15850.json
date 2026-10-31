@@ -1,0 +1,61 @@
+{
+ "lcsc": "C15850",
+ "mpn": "CL21A106KAYNNNE",
+ "manufacturer": "SAMSUNG(三星)",
+ "kind": "capacitor",
+ "package": "0805",
+ "footprint": "C0805",
+ "jlc_class": "Basic Part",
+ "datasheet": {
+  "url": "https://datasheet.lcsc.com/datasheet/pdf/02336ea48ea44ca18c72517dd3cb7b47.pdf?productCode=C15850",
+  "pinout_page": null
+ },
+ "pins": {
+  "1": {
+   "name": "1",
+   "type": "passive",
+   "role": "1"
+  },
+  "2": {
+   "name": "2",
+   "type": "passive",
+   "role": "2"
+  }
+ },
+ "values": {
+  "value_f": 1e-05,
+  "dielectric": "X5R",
+  "tolerance": 0.1
+ },
+ "limits": {
+  "v_max_v": 25,
+  "t_min_c": -55,
+  "t_max_c": 85
+ },
+ "compliance": {
+  "rohs": true,
+  "source": "Samsung Electro-Mechanics MLCC catalogue (November 2015) p. 2: all MLCCs produced in accordance with EU RoHS and REACH; LCSC product data C15850 (2026-10-31): isEnvironment true"
+ },
+ "sources": [
+  "Samsung Electro-Mechanics multilayer ceramic capacitor catalogue (November 2015, 84 pages), via LCSC https://datasheet.lcsc.com/datasheet/pdf/02336ea48ea44ca18c72517dd3cb7b47.pdf?productCode=C15850, read 2026-10-31 – Samsung's document; the catalogue does not print this part number, it gives the part numbering system",
+  "part numbering system p. 4: CL 21 A 106 K A Y N N N E = MLCC, 21 = 0805 (2012), A = X5R, 106 = 10 × 10^6 pF = 10 µF, K = ±10 %, A = 25 V, Y = thickness 1.25 mm, N = Ni / Cu / Ni barrier / Sn 100 %, N = normal product, N = control code, E = embossed tape, 7-inch reel",
+  "dielectric X5R p. 5: −55 … 85 °C, capacitance change ±15 % – t_min_c -55, t_max_c 85",
+  "v_max_v 25: rated voltage code A = 25 V",
+  "pins: EasyEDA symbol of C15850 (edakit part import 2026-10-31): 1, 2; footprint C0805; LCSC product data C15850 (2026-10-31): Samsung CL21A106KAYNNNE, 10 µF, X5R, ±10 %, 25 V, 1 517 540 pcs; JLCPCB catalogue: Basic Part, 8 352 898 pcs"
+ ],
+ "notes": "10 µF X5R 25 V 0805: supply bypass at chargers and regulators (blocks lipo-charger, ldo-3v3). X5R loses capacitance under DC bias – the effective value at 5 V is well below 10 µF. Library draft.",
+ "verified": {
+  "by": "Claude (datasheet check, library draft)",
+  "date": "2026-10-31",
+  "datasheet": "Samsung Electro-Mechanics MLCC catalogue (November 2015)",
+  "datasheet_sha256": "96baebe4bd0ce363e87be28b5b003f511f1502e084a6fc4f02333ded56c808f6",
+  "checked": [
+   "part number CL21A106KAYNNNE against the part numbering system p. 4: 0805, X5R, 10 µF, ±10 %, 25 V, 1.25 mm, Ni/Cu/Ni/Sn",
+   "X5R: −55 … 85 °C, ±15 % (p. 5)"
+  ],
+  "open": [
+   "the catalogue gives no DC bias curve for this part: the capacitance left at 5 V (and so whether a 4.7 µF minimum of a charger is met under bias) is not known from it – Samsung's part page has the curve, not read",
+   "a catalogue of 2015 – a newer Samsung specification of the single part not compared"
+  ]
+ }
+}

@@ -1,0 +1,304 @@
+{
+ "lcsc": "C81582",
+ "mpn": "DRV8825PWPR",
+ "manufacturer": "Texas Instruments",
+ "kind": "ic",
+ "package": "HTSSOP-28 (PWP, PowerPAD)",
+ "footprint": "HTSSOP-28_L9.7-W4.4-P0.65-LS6.4-BL-EP",
+ "jlc_class": "Extended Part",
+ "datasheet": {
+  "url": "https://www.ti.com/lit/ds/symlink/drv8825.pdf",
+  "pinout_page": 3
+ },
+ "pins": {
+  "1": {
+   "name": "CP1",
+   "type": "passive",
+   "hint": "charge pump flying capacitor: 0.01 µF rated 50 V (layout: rated for VM) between CP1 and CP2, close to the pins",
+   "needs": [
+    {
+     "what": "capacitor",
+     "to": "CP2",
+     "c_min_f": 1e-08,
+     "v_min_v": 50,
+     "source": "TI SLVSA73F (revised July 2014), pin functions: CP1 'Connect a 0.01-μF 50-V capacitor between CP1 and CP2', VCP 'Connect a 0.1-μF 16-V ceramic capacitor and a 1-MΩ resistor to VM'; 10.1 layout: the same, VCP to VMA"
+    }
+   ]
+  },
+  "2": {
+   "name": "CP2",
+   "type": "passive",
+   "hint": "charge pump flying capacitor: 0.01 µF rated 50 V (layout: rated for VM) between CP1 and CP2, close to the pins"
+  },
+  "3": {
+   "name": "VCP",
+   "type": "passive",
+   "hint": "high-side gate drive: a 0.1 µF ceramic capacitor rated 16 V and a 1 MΩ resistor from VCP to VM (VMA), not to GND",
+   "needs": [
+    {
+     "what": "capacitor",
+     "to": "VMA",
+     "c_min_f": 1e-07,
+     "v_min_v": 16,
+     "source": "TI SLVSA73F (revised July 2014), pin functions: CP1 'Connect a 0.01-μF 50-V capacitor between CP1 and CP2', VCP 'Connect a 0.1-μF 16-V ceramic capacitor and a 1-MΩ resistor to VM'; 10.1 layout: the same, VCP to VMA",
+     "why": "the 1 MΩ resistor VCP–VMA the datasheet asks for as well has no need of its kind yet"
+    }
+   ]
+  },
+  "4": {
+   "name": "VMA",
+   "type": "power_in",
+   "v_max_v": 47,
+   "hint": "motor supply 8.2 … 45 V; VMA and VMB on the same supply; supply ramp rate ≤ 1 V/µs (absolute maximum)",
+   "needs": [
+    {
+     "what": "capacitor",
+     "c_min_f": 1e-07,
+     "source": "TI SLVSA73F pin functions p. 3 and 10 power supply recommendations: a 0.1 µF ceramic capacitor rated for VM on each of VMA and VMB, as close as possible, plus bulk capacitance sized by the application (10.1)"
+    }
+   ]
+  },
+  "5": {
+   "name": "AOUT1",
+   "type": "output",
+   "drive": "bridge",
+   "short_proof": true,
+   "hint": "bridge output (N-channel FETs): Z when nENBL is high, in sleep and reset (pin functions); overcurrent protection on every FET for a short to ground, to supply and across the winding – the device then stays off until nRESET or a VM cycle (8.3.7.1)"
+  },
+  "6": {
+   "name": "ISENA",
+   "type": "passive",
+   "v_max_v": 0.8,
+   "hint": "bridge ground: to the current-sense resistor (ICHOP = VREF / (5 × R)); absolute maximum ±0.8 V (±1 V for < 25 ns)"
+  },
+  "7": {
+   "name": "AOUT2",
+   "type": "output",
+   "drive": "bridge",
+   "short_proof": true,
+   "hint": "bridge output (N-channel FETs): Z when nENBL is high, in sleep and reset (pin functions); overcurrent protection on every FET for a short to ground, to supply and across the winding – the device then stays off until nRESET or a VM cycle (8.3.7.1)"
+  },
+  "8": {
+   "name": "BOUT2",
+   "type": "output",
+   "drive": "bridge",
+   "short_proof": true,
+   "hint": "bridge output (N-channel FETs): Z when nENBL is high, in sleep and reset (pin functions); overcurrent protection on every FET for a short to ground, to supply and across the winding – the device then stays off until nRESET or a VM cycle (8.3.7.1)"
+  },
+  "9": {
+   "name": "ISENB",
+   "type": "passive",
+   "v_max_v": 0.8,
+   "hint": "bridge ground: to the current-sense resistor (ICHOP = VREF / (5 × R)); absolute maximum ±0.8 V (±1 V for < 25 ns)"
+  },
+  "10": {
+   "name": "BOUT1",
+   "type": "output",
+   "drive": "bridge",
+   "short_proof": true,
+   "hint": "bridge output (N-channel FETs): Z when nENBL is high, in sleep and reset (pin functions); overcurrent protection on every FET for a short to ground, to supply and across the winding – the device then stays off until nRESET or a VM cycle (8.3.7.1)"
+  },
+  "11": {
+   "name": "VMB",
+   "type": "power_in",
+   "v_max_v": 47,
+   "hint": "motor supply 8.2 … 45 V; VMA and VMB on the same supply; supply ramp rate ≤ 1 V/µs (absolute maximum)",
+   "needs": [
+    {
+     "what": "capacitor",
+     "c_min_f": 1e-07,
+     "source": "TI SLVSA73F pin functions p. 3 and 10 power supply recommendations: a 0.1 µF ceramic capacitor rated for VM on each of VMA and VMB, as close as possible, plus bulk capacitance sized by the application (10.1)"
+    }
+   ]
+  },
+  "12": {
+   "name": "AVREF",
+   "type": "analog",
+   "v_max_v": 4,
+   "v_op_min_v": 0,
+   "v_op_max_v": 3.5,
+   "hint": "current set reference: ICHOP = VREF / (5 × RISENSE) (8.3.2); recommended 1 … 3.5 V, operational from 0 V with degraded accuracy; may be tied to V3P3OUT"
+  },
+  "13": {
+   "name": "BVREF",
+   "type": "analog",
+   "v_max_v": 4,
+   "v_op_min_v": 0,
+   "v_op_max_v": 3.5,
+   "hint": "current set reference: ICHOP = VREF / (5 × RISENSE) (8.3.2); recommended 1 … 3.5 V, operational from 0 V with degraded accuracy; may be tied to V3P3OUT"
+  },
+  "14": {
+   "name": "GND",
+   "type": "ground",
+   "role": "gnd"
+  },
+  "15": {
+   "name": "V3P3OUT",
+   "type": "power_output",
+   "hint": "3.3 V regulator output (3.2 … 3.4 V), load 1 mA max (recommended operating conditions) – enough for AVREF/BVREF dividers",
+   "needs": [
+    {
+     "what": "capacitor",
+     "c_min_f": 4.7e-07,
+     "source": "TI SLVSA73F pin functions p. 3: bypass to GND with a 0.47 µF 6.3 V ceramic capacitor (11.1: as close to the pin as possible)"
+    }
+   ]
+  },
+  "16": {
+   "name": "nRESET",
+   "type": "input",
+   "v_max_v": 7,
+   "pull": "down",
+   "pull_ohm": 100000,
+   "hint": "active-low reset: initialises the indexer and disables the outputs; internal pull-down – left open the outputs stay off"
+  },
+  "17": {
+   "name": "nSLEEP",
+   "type": "input",
+   "v_max_v": 7,
+   "pull": "down",
+   "pull_ohm": 100000,
+   "hint": "logic high enables the device, low = sleep; internal pull-down – left open it sleeps; 1.7 ms max until STEP is accepted after wake-up (7.6)"
+  },
+  "18": {
+   "name": "nFAULT",
+   "type": "output",
+   "drive": "open_drain",
+   "hint": "open drain, low on overtemperature or overcurrent; VOL ≤ 0.5 V at 5 mA"
+  },
+  "19": {
+   "name": "DECAY",
+   "type": "input",
+   "v_max_v": 7,
+   "vih_v": 2,
+   "vil_v": 0.8,
+   "float_ok": true,
+   "hint": "low = slow, open = mixed, high = fast decay; internal 130 kΩ pull-up to 3.3 V and 80 kΩ pull-down (8.3.3)"
+  },
+  "20": {
+   "name": "DIR",
+   "type": "input",
+   "v_max_v": 7,
+   "pull": "down",
+   "pull_ohm": 100000
+  },
+  "21": {
+   "name": "NENBL",
+   "type": "input",
+   "v_max_v": 7,
+   "pull": "down",
+   "pull_ohm": 100000,
+   "hint": "nENBL: high disables outputs and indexer, low enables; internal pull-down – enabled when open"
+  },
+  "22": {
+   "name": "STEP",
+   "type": "input",
+   "v_max_v": 7,
+   "pull": "down",
+   "pull_ohm": 100000,
+   "hint": "rising edge = one step; up to 250 kHz, high and low ≥ 1.9 µs, MODE/DIR set-up and hold 650 ns (7.6)"
+  },
+  "23": {
+   "name": "NC",
+   "type": "no_connect",
+   "hint": "leave unconnected (pin functions)"
+  },
+  "24": {
+   "name": "MODE0",
+   "type": "input",
+   "v_max_v": 7,
+   "pull": "down",
+   "pull_ohm": 100000
+  },
+  "25": {
+   "name": "MODE1",
+   "type": "input",
+   "v_max_v": 7,
+   "pull": "down",
+   "pull_ohm": 100000
+  },
+  "26": {
+   "name": "MODE2",
+   "type": "input",
+   "v_max_v": 7,
+   "pull": "down",
+   "pull_ohm": 100000
+  },
+  "27": {
+   "name": "nHOME",
+   "type": "output",
+   "drive": "open_drain",
+   "hint": "open drain, low at the home state of the step table"
+  },
+  "28": {
+   "name": "GND",
+   "type": "ground",
+   "role": "gnd"
+  },
+  "29": {
+   "name": "PPAD",
+   "type": "ground",
+   "role": "gnd",
+   "hint": "the PowerPAD under the package: soldered to GND (TI SLVSA73F, pin functions and layout)"
+  }
+ },
+ "values": {
+  "behavior": "none",
+  "vih_v": 2.2,
+  "vil_v": 0.7,
+  "idd_max_a": 0.008,
+  "r_out_ohm": 0.32
+ },
+ "limits": {
+  "vdd_max_v": 47,
+  "vdd_op_min_v": 8.2,
+  "vdd_op_max_v": 45,
+  "i_out_max_a": 2.5,
+  "tj_max_c": 150,
+  "rth_ja_k_per_w": 31.6,
+  "t_min_c": -40,
+  "t_max_c": 85
+ },
+ "sources": [
+  "TI DRV8825 Stepper Motor Controller IC, SLVSA73F (April 2010, revised July 2014), https://www.ti.com/lit/ds/symlink/drv8825.pdf, read 2026-10-31",
+  "pins: p. 3–4 pin functions (numbers 1 … 28; the pin configuration drawing is an image) = EasyEDA symbol of C81582 (edakit part import 2026-10-31; nENBL is named NENBL there); the symbol has no pin for the PowerPAD, the footprint has it as pad 29",
+  "absolute maximum 7.1 p. 4: VMx -0.3 … 47 V (vdd_max_v, VM v_max_v), ramp ≤ 1 V/µs, digital pins -0.5 … 7 V (input v_max_v), xVREF -0.3 … 4 V (AVREF/BVREF v_max_v), ISENSEx -0.8 … 0.8 V (±1 V < 25 ns), continuous output current 2.5 A (i_out_max_a; 'power dissipation and thermal limits must be observed'), TJ -40 … 150 °C",
+  "recommended 7.3 p. 4: VMx 8.2 … 45 V (vdd_op_min_v, vdd_op_max_v), VREF 1 … 3.5 V ('operational at VREF between 0 to 1 V, but accuracy is degraded' – AVREF/BVREF v_op 0 … 3.5 V), V3P3OUT load 0 … 1 mA",
+  "rth_ja_k_per_w 31.6: 7.4 thermal information, PWP (JEDEC high-K board, simulated); t_min_c -40, t_max_c 85: package option addendum, DRV8825PWPR",
+  "electrical 7.5 p. 6: IVM 8 mA max at 24 V (idd_max_a), VIL ≤ 0.7 V, VIH ≥ 2.2 V (vih_v, vil_v; VIH max 5.25 V), RPD 100 kΩ typ, DECAY VIL 0.8 / VIH 2 V with 130 kΩ pull-up and 80 kΩ pull-down, nFAULT/nHOME open drain VOL 0.5 V at 5 mA, RDS(on) HS and LS 0.2 Ω typ at 25 °C, 0.25 typ / 0.32 Ω max at 85 °C (r_out_ohm 0.32), IOCP ≥ 3 A, V3P3 3.2 … 3.4 V",
+  "capacitors: pin functions p. 3, 10 power supply recommendations and 11.1 layout: 0.1 µF on each VM pin plus bulk, 0.01 µF CP1–CP2, 0.1 µF 16 V plus 1 MΩ VCP–VMA, 0.47 µF 6.3 V on V3P3OUT",
+  "LCSC product data C81582 (2026-10-31): TI DRV8825PWPR, HTSSOP-28-EP, 11 842 pcs; JLCPCB catalogue 2026-10-31: Extended Part, 12 700 pcs"
+ ],
+ "notes": "Bipolar stepper driver with STEP/DIR indexer up to 1/32 step, VM 8.2–45 V, 2.5 A per output at 24 V and 25 °C with heat sinking; logic runs from an internal regulator (V3P3OUT), inputs take 2.2 V high. nRESET, nSLEEP and nENBL have internal pull-downs: open nRESET or nSLEEP keeps the outputs off. Mostly bought as a carrier board (Pololu DRV8825 and StepStick-format clones) – this entry is the IC. No behaviour model for a bridge driver: behavior none. Library draft.",
+ "verified": {
+  "by": "Claude (datasheet check, library draft)",
+  "date": "2026-10-31",
+  "datasheet": "TI SLVSA73F (revised July 2014)",
+  "datasheet_sha256": "5b4dccc2497334e10574ffa5a55518c8d59b0ed35758f5e8f099b84bbfbb407b",
+  "checked": [
+   "pin functions pp. 3–4 = EasyEDA symbol of C81582 (1 CP1 … 28 GND, NENBL = nENBL)",
+   "absolute maximum p. 4: VM 47 V, digital pins 7 V, xVREF 4 V, ISENSE ±0.8 V, IOUT 2.5 A continuous, TJ 150 °C",
+   "recommended p. 4: VM 8.2 … 45 V, VREF 1 … 3.5 V, V3P3OUT ≤ 1 mA; RθJA 31.6 K/W",
+   "electrical p. 6: VIL 0.7 / VIH 2.2 V, pull-downs 100 kΩ, DECAY levels and pulls, RDS(on), IVM 8 mA, open-drain nFAULT/nHOME",
+   "capacitors p. 3, 10, 11.1: 0.1 µF per VM pin, 0.01 µF CP1–CP2, 0.1 µF + 1 MΩ VCP–VM, 0.47 µF V3P3OUT",
+   "OCP 8.3.7.1: shorts to ground, supply and across the winding",
+   "2026-10-31: pin 29 PPAD (the PowerPAD, to GND) added from TI SLVSA73F; symbol_differs – the EasyEDA symbol has no pin for it (STRUCT.entry/declared)",
+   "2026-10-31: bridge outputs drive = bridge – the H-bridge outputs the datasheet of this draft describes (source above): driven high or low while enabled, off in sleep or coast; LEVELS counts them as defining their net (schema-gaps A2)",
+   "2026-10-31: CP1–CP2 0.01 µF 50 V, VCP–VMA 0.1 µF 16 V (SLVSA73F pin functions, read now); the 1 MΩ VCP–VMA not expressible"
+  ],
+  "open": [
+   "the PowerPAD (footprint pad 29) has no pin in the EasyEDA symbol, so the graph cannot hold it on ground; the datasheet's thermal data assume it soldered to a ground plane",
+   "CP1–CP2 and VCP–VM capacitors are not to ground – needs.capacitor cannot express them, pin hints only",
+   "two VM capacitors 'one on each pin': REQ.missing sums the capacitance on the net and cannot see where each sits",
+   "clamping of the outputs: the datasheet describes N-channel FET bridges with synchronous decay and shows no external diodes, but names no body-diode rating – no field in the schema anyway; REQ.missing (flyback) asks for a diode across a motor on an output pin – here a false finding",
+   "drive tristate makes a motor net driven only by these outputs an LVL.undefined/open_drain warning – no pin type fits a bridge output",
+   "supply ramp rate ≤ 1 V/µs and V3P3OUT's 1 mA load limit have no field (pin hints)",
+   "r_out_ohm is one number; the datasheet gives a maximum only at TJ = 85 °C",
+   "i_out_max_a 2.5 A needs heat sinking (24 V, 25 °C) – the thermal limit is LIM.t's through RθJA"
+  ]
+ },
+ "symbol_differs": {
+  "28": "the library symbol numbers its exposed-pad pin EP 28 as well as GND – TI SLVSA73F: the PowerPAD is a pad of its own, 29 of the HTSSOP-28 footprint",
+  "29": "TI SLVSA73F: the PowerPAD (pad 29 of the HTSSOP-28 footprint) must be soldered to GND – the library symbol has no pin for it, a schematic drawn from it leaves the pad unconnected"
+ }
+}

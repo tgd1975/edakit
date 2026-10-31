@@ -42,22 +42,48 @@ FN_LINES = {"pwm": (), "adc": (), "spi": ("sck", "tx", "rx", "cs"), "i2c": ("sda
             "i2s": ("bclk", "ws", "sd"), "can": ("tx", "rx"), "onewire": (), "usb": ("dp", "dn")}
 FN_NAMES = [k + (f".{line}" if line else "") for k, lines in FN_LINES.items() for line in lines or [""]]   # net fn
 SUPPLY_R_MAX = 100                                   # a resistor up to this passes a supply (shunt, filter)
-SWITCHERS = ("buck", "boost")                        # behaviour models of switching regulators (hot loop, REQ.missing)
+SWITCHERS = ("buck", "boost", "buck_boost")          # behaviour models of switching regulators (hot loop, REQ.missing)
 PIN_FUNCTION = re.compile(r"([a-z][a-z0-9]*?)(\d+)(?:\.([a-z]+))?")   # "spi0.sck", "i2c1.sda", "pwm1.a", "adc0"
 KINDS_OF_TYPE = {"microcontroller": ("ic", "module"), "regulator": ("ic", "module"),   # STRUCT.identity: graph type -> parts
                  "transistor": ("npn", "pnp", "nmos", "pmos"), "led": ("led", "led_rgb"),   # entry kinds; any other
-                 "switch": ("switch", "dip_switch"), "audio": ("buzzer", "speaker")}       # type: the same word
+                 "switch": ("switch", "dip_switch"), "audio": ("buzzer", "speaker"),       # type: the same word
+                 "ic": ("ic", "esd_array")}
 KINDS_OF_PREFIX = {"R": ("resistor", "potentiometer"), "C": ("capacitor",), "L": ("inductor",),
-                   "D": ("diode", "led", "led_rgb"), "Q": ("npn", "pnp", "nmos", "pmos"), "U": ("ic", "module"),
+                   "D": ("diode", "led", "led_rgb", "esd_array"), "Q": ("npn", "pnp", "nmos", "pmos"),
+                   "U": ("ic", "module", "esd_array"),
                    "J": ("connector",), "SW": ("switch", "button", "dip_switch"), "F": ("fuse",),
                    "BT": ("battery_holder",), "BZ": ("buzzer",), "K": ("relay", "solenoid"), "TP": ("connector",),
                    "M": ("motor",), "LS": ("speaker",), "SP": ("speaker",), "HE": ("heater",),
-                   "OK": ("optocoupler",)}
+                   "OK": ("optocoupler",), "Y": ("crystal",)}
 VALUE_PARAMS = {"value_ohm": ("Ω", "resistance"), "value_f": ("F", "capacitance"), "value_h": ("H", "inductance")}
 VALUE_TOL = 0.01      # graph value vs the entry's value parameter
 MULTIPLIERS = {"p": 1e-12, "n": 1e-9, "u": 1e-6, "µ": 1e-6, "μ": 1e-6, "m": 1e-3, "k": 1e3, "K": 1e3, "M": 1e6,
                "G": 1e9, "R": 1, "Ω": 1}
 QUANTITY = re.compile(r"\s*(\d+)(?:[.,](\d+))?\s*([pnuµμmkKMG]|[RΩ])?(\d+)?\s*(Ω|[oO]hms?|F|H)?(?=$|[\s,;/()])")
+
+
+RELAY_SET = re.compile(r"^(common|no|nc)(_\d+)?$")    # a relay's contact roles: set 1 bare, set n with _n
+
+
+def relay_sets(part):
+    """{set: {"common": [pins], "no": [pins], "nc": [pins]}} of a relay entry – set "" the first, "_2" the second …"""
+    out = {}
+    for num, p in ((part or {}).get("pins") or {}).items():
+        m = RELAY_SET.match(str(p.get("role") or ""))
+        if m:
+            out.setdefault(m.group(2) or "", {}).setdefault(m.group(1), []).append(num)
+    return out
+
+
+def source_outputs(spec):
+    """[(name, plus pin, ratio)] of a sim.json source: one output (plus, the supply's voltage) or, with "outputs",
+    several against the shared minus – each at its v_ratio times the supply's voltage (−1 for a negative rail)."""
+    if not isinstance(spec, dict):
+        return []
+    if isinstance(spec.get("outputs"), dict):
+        return [(name, str(o.get("plus")), o.get("v_ratio", 1.0)) for name, o in spec["outputs"].items()
+                if isinstance(o, dict) and o.get("plus") is not None]
+    return [("", str(spec["plus"]), 1.0)] if spec.get("plus") is not None else []
 
 
 def v_range(net):
@@ -87,6 +113,28 @@ def resistors_to(d, net, targets):
         if net in (a, b) and (other := b if a == net else a) in targets:
             out.append((des, resistor_value(d, des), other))
     return out
+
+
+def feedback_vout(d, des):
+    """(vout, R1, R2) of an adjustable regulator set by its divider (maker-coverage FT-5), or None: values vref_v and a
+    pin with the role adj (the reference between the output and ADJ – LM317, AMS1117: VOUT = VREF × (1 + R2/R1)) or fb
+    (the reference from FB to ground – most bucks and boosts: VOUT = VREF × (1 + R1/R2)); R1 from the output (role vout)
+    to that pin, R2 from it to ground, resistors in parallel added up. The adjust pin's current (IADJ × R2) is left out,
+    as the datasheets do."""
+    part = d.part(des) or {}
+    vref = values(part).get("vref_v")
+    role = next((r for r in ("adj", "fb") if d.net_of(des, r)), None)
+    out, mid = d.net_of(des, "vout"), d.net_of(des, role) if role else None
+    if not is_number(vref) or not out or not mid:
+        return None
+
+    def parallel(rs):
+        rs = [r for _, r, _ in rs if is_number(r) and r > 0]
+        return 1 / sum(1 / r for r in rs) if rs else None
+    r1, r2 = parallel(resistors_to(d, mid, {out})), parallel(resistors_to(d, mid, {d.ground}))
+    if r1 is None or r2 is None:
+        return None
+    return (vref * (1 + r2 / r1) if role == "adj" else vref * (1 + r1 / r2)), r1, r2
 
 
 def resistor_like(d):
@@ -162,8 +210,8 @@ def supply_inputs(d, sim=None):
             continue
         out |= {d.pin_net.get(f"{des}.{n}") for n in take}
     for des, src in ((sim or {}).get("sources") or {}).items():
-        if des in d.comps and isinstance(src, dict) and "plus" in src:
-            out.add(d.pin_net.get(f"{des}.{src['plus']}"))
+        if des in d.comps:
+            out |= {d.pin_net.get(f"{des}.{plus}") for _, plus, _ in source_outputs(src)}
     return out - {None}
 
 

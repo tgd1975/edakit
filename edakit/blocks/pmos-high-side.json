@@ -1,0 +1,200 @@
+{
+ "name": "pmos-high-side",
+ "title": "High-side P-MOSFET switch with an NPN level shift",
+ "about": "An AO3401A switches a supply to a load; an S8050 pulls its gate to ground when the GPIO is high, 10 kΩ pull the gate back to the source when it is low. The GPIO never sees the switched supply, so a 3.3 V pin switches 5 V – or up to about 10 V, where the MOSFET's VGS limit of ±12 V ends it. High level on the GPIO = load on.",
+ "ports": {
+  "in": "the driving signal (GPIO): high = on",
+  "vplus": "the supply to be switched, 4.5 to about 10 V",
+  "out": "the switched supply to the load",
+  "gnd": "ground"
+ },
+ "components": [
+  {
+   "designator": "Q1",
+   "type": "transistor",
+   "label": "{as}: high-side switch (AO3401A)",
+   "part": "AO3401A",
+   "lcsc": "C15127",
+   "pins": {
+    "1": "G",
+    "2": "S",
+    "3": "D"
+   }
+  },
+  {
+   "designator": "Q2",
+   "type": "transistor",
+   "label": "{as}: gate driver (S8050)",
+   "part": "S8050 J3Y",
+   "lcsc": "C2146",
+   "pins": {
+    "1": "B",
+    "2": "E",
+    "3": "C"
+   }
+  },
+  {
+   "designator": "R1",
+   "type": "resistor",
+   "label": "{as}: gate pull-up 10 k",
+   "part": "0805W8F1002T5E",
+   "lcsc": "C17414",
+   "value": "10k",
+   "pins": {
+    "1": "1",
+    "2": "2"
+   },
+   "notes": "Gate to source: off while Q2 is off – also while the firmware is not running."
+  },
+  {
+   "designator": "R2",
+   "type": "resistor",
+   "label": "{as}: base resistor 10 k",
+   "part": "0805W8F1002T5E",
+   "lcsc": "C17414",
+   "value": "10k",
+   "pins": {
+    "1": "1",
+    "2": "2"
+   }
+  },
+  {
+   "designator": "R3",
+   "type": "resistor",
+   "label": "{as}: base-emitter resistor 10 k",
+   "part": "0805W8F1002T5E",
+   "lcsc": "C17414",
+   "value": "10k",
+   "pins": {
+    "1": "1",
+    "2": "2"
+   },
+   "notes": "Holds Q2 off while the GPIO floats (LVL.undefined)."
+  },
+  {
+   "designator": "D1",
+   "type": "diode",
+   "label": "{as}: flyback diode",
+   "part": "SS14",
+   "lcsc": "C2480",
+   "pins": {
+    "1": "K",
+    "2": "A"
+   },
+   "notes": "From ground to out, cathode at out: carries a coil's current when Q1 turns off. For a resistive load it may go."
+  }
+ ],
+ "nets": [
+  {
+   "name": "in",
+   "pins": [
+    "R2.1"
+   ]
+  },
+  {
+   "name": "base",
+   "pins": [
+    "Q2.1",
+    "R2.2",
+    "R3.1"
+   ],
+   "v": [
+    0,
+    0.9
+   ]
+  },
+  {
+   "name": "gate",
+   "pins": [
+    "Q1.1",
+    "R1.2",
+    "Q2.3"
+   ],
+   "v": "@vplus",
+   "notes": "At vplus while off, near ground while on."
+  },
+  {
+   "name": "vplus",
+   "pins": [
+    "Q1.2",
+    "R1.1"
+   ]
+  },
+  {
+   "name": "out",
+   "pins": [
+    "Q1.3",
+    "D1.1"
+   ],
+   "v": "@vplus"
+  },
+  {
+   "name": "gnd",
+   "pins": [
+    "Q2.2",
+    "R3.2",
+    "D1.2"
+   ]
+  }
+ ],
+ "covers": [
+  "LVL.undefined",
+  "LIM.range",
+  "LIM.v"
+ ],
+ "notes": [
+  "The load goes between out and gnd. D1 (SS14, 1 A) carries a coil's current when Q1 turns off; for a resistive load it may go.",
+  "Why the NPN: a P-MOSFET on 5 V whose gate a 3.3 V output drives directly sees VGS ≈ −1.7 V while 'off' – beyond its threshold of −0.5 … −1.3 V (AO3401A, library C15127), half on (LIM.range/gate, maker-coverage PWR 30). Q2 pulls the gate to within some 10 mV of ground (14 mV in the example's simulation): VGS ≈ −vplus, −4.36 V at the example's lowest supply, where RDS(on) ≤ 60 mΩ (−4.5 V) to 85 mΩ (−2.5 V).",
+  "vplus up to about 10 V: the gate sees nearly the whole supply and the AO3401A takes ±12 V (AOS Rev 3.1). For 12 V or more a resistor from Q2's collector to the gate, as large as R1, halves VGS – then vplus must stay above 5 V for the −2.5 V the entry specifies; S8050 VCEO 25 V.",
+  "Base drive: with VBE ≈ 0.7 V (assumption; 0.69 V in the example's simulation) (3.3 − 0.7 V) / 10 kΩ minus the 70 µA R3 takes = 0.19 mA against a collector current of vplus / 10 kΩ (0.5 mA at 5 V, 1 mA at 10 V): forced gain 2.6–5, far below the S8050's hFE ≥ 200 (library C2146) – saturated, also from 1.8 V logic (0.04 mA).",
+  "Switching is slow: R1 charges the AO3401A's 7 nC (Qg at −4.5 V, AOS) with at most 0.5 mA at 5 V – roughly 15 µs or more to turn off (estimate). On/off and PWM up to a few hundred hertz; faster needs a smaller R1 (more current while on) or a gate driver. Q2 and R1 draw vplus / 10 kΩ while the load is on.",
+  "Current: AO3401A 3.2 A at 70 °C (entry), 60 mΩ at −4.5 V; edakit sim checks current and power (LIM). The body diode conducts from out to vplus: a supply on out feeds vplus back.",
+  "sim.json: the driving net under the MCU's outputs, a load with it high and one with it low. An off-board load can be an external current on D1 (plus \"1\", minus \"2\": from out to ground) – the test does so with 0.2 A.",
+  "D1 is optional: for a coil it takes the flyback current; for a resistive load `--without D1` leaves it out (out then needs its load in the graph)."
+ ],
+ "test": {
+  "connect": {
+   "in": "SIG",
+   "vplus": "+5V"
+  },
+  "sim": {
+   "mcu": {
+    "U1": {
+     "outputs": [
+      "LED_SDI",
+      "LED_CLK",
+      "LED_LE",
+      "LED_OE",
+      "SIG"
+     ],
+     "pullups": [
+      "BTN"
+     ],
+     "pullup_ohm": 50000
+    }
+   },
+   "loads": {
+    "t_on": {
+     "about": "block test: the switch on (SIG high) with 0.2 A from out to ground (an external current on the flyback diode D10), LEDs off",
+     "gpio": {
+      "LED_OE": 1,
+      "SIG": 1
+     },
+     "leds_on": [],
+     "external": {
+      "D10": {
+       "plus": "1",
+       "minus": "2",
+       "i_a": 0.2
+      }
+     }
+    }
+   }
+  }
+ },
+ "optional": {
+  "parts": [
+   "D1"
+  ]
+ }
+}

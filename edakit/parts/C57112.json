@@ -1,0 +1,56 @@
+{
+ "lcsc": "C57112",
+ "mpn": "0603B103K500NT",
+ "manufacturer": "FH(风华)",
+ "kind": "capacitor",
+ "package": "0603",
+ "footprint": "C0603",
+ "jlc_class": "Basic Part",
+ "datasheet": {
+  "url": "https://datasheet.lcsc.com/datasheet/pdf/09fe2daf22580a99fa7fea93ccb20fb7.pdf?productCode=C57112",
+  "pinout_page": null
+ },
+ "pins": {
+  "1": {
+   "name": "1",
+   "type": "passive",
+   "role": "1"
+  },
+  "2": {
+   "name": "2",
+   "type": "passive",
+   "role": "2"
+  }
+ },
+ "values": {
+  "value_f": 1e-08,
+  "dielectric": "X7R",
+  "tolerance": 0.1
+ },
+ "limits": {
+  "v_max_v": 50,
+  "t_min_c": -55,
+  "t_max_c": 125
+ },
+ "sources": [
+  "Fenghua (FH) PRODUCT SPECIFICATION General Series Multi-layer Ceramic Capacitors 1005～1812 TYPE, revision history A0001 … A0005 (latest entries 2025), 27 numbered pages – LCSC product data of C57112, https://datasheet.lcsc.com/datasheet/pdf/09fe2daf22580a99fa7fea93ccb20fb7.pdf?productCode=C57112, read 2026-10-31",
+  "0603B103K500NT by the ordering code p. 2: 0603 (1.60 × 0.80 mm), B = X7R, 103 = 10 nF, K = ±10 %, 500 = 50 V, N = nickel barrier termination, T = 7-inch tape",
+  "capacitance range p. 7: 0603 X7R 10 nF offered at 6.3 … 50 V, thickness code DA (0.80 ± 0.10 mm)",
+  "t_min_c -55, t_max_c 125: p. 3 temperature characteristics, X7R ±15 % over -55 … 125 °C",
+  "LCSC/JLCPCB catalogue 2026-10-31: Basic Part, 5 590 437 pcs"
+ ],
+ "notes": "10 nF/50 V X7R 0603. The charge-pump capacitor from VCP to VM of a DRV8833 (block dc-motor-drv8833). Library draft.",
+ "verified": {
+  "by": "Claude (datasheet check, library draft)",
+  "date": "2026-10-31",
+  "datasheet": "FH General Series MLCC 1005～1812, rev. A0005",
+  "datasheet_sha256": "705023d3be0454148a96fc2715d249a32d8ff442e70b64d1116d3490ed1d8136",
+  "checked": [
+   "ordering code: 0603, X7R, 10 nF, ±10 %, 50 V",
+   "0603 X7R 10 nF at 50 V in the capacitance table (p. 7); X7R -55 … 125 °C ±15 %"
+  ],
+  "open": [
+   "the specification is a series document and does not print 0603B103K500NT itself"
+  ]
+ }
+}

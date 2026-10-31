@@ -1,0 +1,163 @@
+{
+ "name": "nmos-switch",
+ "title": "Low-side logic-level N-MOSFET switch with gate resistor, pull-down and flyback diode",
+ "about": "An AO3400A switches a load to ground: specified from VGS 2.5 V (48 mΩ), so a 3.3 V GPIO turns it fully on. 100 Ω in series with the gate, 10 kΩ from gate to source so that it stays off while the firmware is not running, and an SS14 across the load for coils. For loads beyond what npn-switch carries (about 100 mA): LED strips, a heater, a solenoid, a motor, up to about 2.5 A.",
+ "ports": {
+  "in": "the driving signal (GPIO, 3.3 V or 5 V)",
+  "load": "the low side of the load (strip, coil, heater, motor)",
+  "vplus": "the supply of the load (its high side) – up to about 20 V",
+  "gnd": "ground: the source and the load current's return"
+ },
+ "components": [
+  {
+   "designator": "Q1",
+   "type": "transistor",
+   "label": "{as}: low-side switch (AO3400A)",
+   "part": "AO3400A",
+   "lcsc": "C20917",
+   "pins": {
+    "1": "G",
+    "2": "S",
+    "3": "D"
+   }
+  },
+  {
+   "designator": "R1",
+   "type": "resistor",
+   "label": "{as}: gate resistor 100",
+   "part": "0805W8F1000T5E",
+   "lcsc": "C17408",
+   "value": "100",
+   "pins": {
+    "1": "1",
+    "2": "2"
+   },
+   "notes": "In series with the gate, close to it (HINT.gate: 10–100 Ω)."
+  },
+  {
+   "designator": "R2",
+   "type": "resistor",
+   "label": "{as}: gate pull-down 10 k",
+   "part": "0805W8F1002T5E",
+   "lcsc": "C17414",
+   "value": "10k",
+   "pins": {
+    "1": "1",
+    "2": "2"
+   },
+   "notes": "Gate to source: off while the GPIO floats (LVL.undefined)."
+  },
+  {
+   "designator": "D1",
+   "type": "diode",
+   "label": "{as}: flyback diode",
+   "part": "SS14",
+   "lcsc": "C2480",
+   "pins": {
+    "1": "K",
+    "2": "A"
+   },
+   "notes": "Across the load, cathode at vplus: for coils (relay, solenoid, motor). For an LED strip or a heater it may go."
+  }
+ ],
+ "nets": [
+  {
+   "name": "in",
+   "pins": [
+    "R1.1"
+   ]
+  },
+  {
+   "name": "gate",
+   "pins": [
+    "Q1.1",
+    "R1.2",
+    "R2.1"
+   ],
+   "v": "@in"
+  },
+  {
+   "name": "load",
+   "pins": [
+    "Q1.3",
+    "D1.2"
+   ],
+   "v": "@vplus"
+  },
+  {
+   "name": "vplus",
+   "pins": [
+    "D1.1"
+   ]
+  },
+  {
+   "name": "gnd",
+   "pins": [
+    "Q1.2",
+    "R2.2"
+   ]
+  }
+ ],
+ "covers": [
+  "LVL.undefined",
+  "LIM.range",
+  "REQ.missing",
+  "HINT.gate",
+  "HINT.inductive"
+ ],
+ "notes": [
+  "The load goes between vplus and load: add it to the graph with its pins on these two nets. With a series resistor in front of a coil, vplus is the coil's own plus terminal, so that the diode sits directly across the coil.",
+  "Gate drive: AO3400A VGS(th) 0.65–1.45 V, RDS(on) ≤ 48 mΩ at VGS 2.5 V and ≤ 32 mΩ at 4.5 V (AOS Rev 3.1, library C20917). From 3.3 V the 100 Ω / 10 kΩ divider leaves 99 % of the GPIO's level at the gate (3.26 V in the example's simulation); edakit sim holds VGS to the 2.5 V the entry specifies (LIM.range/gate). Not for 1.8 V logic.",
+  "Current: at 48 mΩ × 1.43 hot (the data sheet's rise from 26.5 to 38 mΩ between 25 and 125 °C at VGS 10 V, applied at 2.5 V – assumption) = 69 mΩ and the entry's 0.9 W halved by the example's derating, about 2.5 A continuously; junction 40 °C + 0.45 W × 125 K/W = 96 °C. The 125 K/W need the data sheet's 1 in² of 2 oz copper (HINT.thermal_copper). edakit sim shows current, power and temperature (LIM.i, LIM.p, LIM.t).",
+  "100 Ω gate resistor: the upper end of HINT.gate's 10–100 Ω against ringing of the gate loop; it also limits the GPIO's peak current into the gate. Ciss 630 pF, Qg 6 nC typ. at VGS 4.5 V (AOS): 100 Ω × 630 pF = 63 ns, the switching with the Miller charge some hundred nanoseconds (estimate) – PWM up to tens of kilohertz.",
+  "D1 (SS14): 1 A, 40 V – a coil current above 1 A needs a larger Schottky (SS34, C8678). vplus up to about 20 V: SS14 40 V, AO3400A VDS 30 V, both with the 1.5 × the example derates by.",
+  "A load at the end of a cable: D1 on the board across the connector's load pins (HINT.inductive).",
+  "sim.json: the driving net under the MCU's outputs, a load with it high and one with it low. An off-board load can be an external current on D1 (plus \"1\", minus \"2\": between vplus and load) – the test does so with 0.2 A.",
+  "D1 is optional: for a coil or motor it takes the flyback current; for a resistive load or LEDs `--without D1` leaves it out."
+ ],
+ "test": {
+  "connect": {
+   "in": "SIG",
+   "vplus": "+5V"
+  },
+  "sim": {
+   "mcu": {
+    "U1": {
+     "outputs": [
+      "LED_SDI",
+      "LED_CLK",
+      "LED_LE",
+      "LED_OE",
+      "SIG"
+     ],
+     "pullups": [
+      "BTN"
+     ],
+     "pullup_ohm": 50000
+    }
+   },
+   "loads": {
+    "t_on": {
+     "about": "block test: the switch on with 0.2 A between vplus and load (an external current on the flyback diode D10), LEDs off",
+     "gpio": {
+      "LED_OE": 1,
+      "SIG": 1
+     },
+     "leds_on": [],
+     "external": {
+      "D10": {
+       "plus": "1",
+       "minus": "2",
+       "i_a": 0.2
+      }
+     }
+    }
+   }
+  }
+ },
+ "optional": {
+  "parts": [
+   "D1"
+  ]
+ }
+}

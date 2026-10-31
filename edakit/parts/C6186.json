@@ -1,0 +1,102 @@
+{
+ "lcsc": "C6186",
+ "mpn": "AMS1117-3.3",
+ "manufacturer": "Advanced Monolithic Systems",
+ "kind": "ic",
+ "package": "SOT-223",
+ "footprint": "SOT-223-3_L6.5-W3.4-P2.30-LS7.0-BR",
+ "jlc_class": "Basic Part",
+ "datasheet": {
+  "url": "https://datasheet.lcsc.com/datasheet/pdf/e6935943fc6b1bbf350a1a0f3e90dc4a.pdf?productCode=C6186",
+  "pinout_page": 1
+ },
+ "pins": {
+  "1": {
+   "name": "GND",
+   "type": "ground",
+   "role": "gnd",
+   "hint": "ground/adjust pin – ground on the fixed AMS1117-3.3 (p. 1)"
+  },
+  "2": {
+   "name": "VOUT",
+   "type": "power_output",
+   "role": "vout",
+   "needs": [
+    {
+     "what": "capacitor",
+     "c_min_f": 2.2e-05,
+     "source": "Advanced Monolithic Systems AMS1117 data sheet (DS1117, no revision printed; PDF of 2009-08-27), p. 4 'Stability': the output capacitor is part of the frequency compensation; 22 µF solid tantalum on the output ensures stability for all operating conditions – entered as the minimum (smaller values are allowed without an ADJ bypass, no value given)"
+    }
+   ]
+  },
+  "3": {
+   "name": "VIN",
+   "type": "power_in",
+   "role": "vin",
+   "v_max_v": 15
+  },
+  "4": {
+   "name": "VOUT",
+   "type": "power_output",
+   "role": "vout",
+   "hint": "the tab: output, the same node as pin 2 (p. 1 'tab is output')"
+  }
+ },
+ "values": {
+  "behavior": "ldo",
+  "vout_v": 3.3,
+  "dropout_v": 1.3,
+  "iq_a": 0.011
+ },
+ "limits": {
+  "vdd_max_v": 15,
+  "i_out_max_a": 0.8,
+  "tj_max_c": 125,
+  "t_min_c": -40,
+  "rth_ja_k_per_w": 90
+ },
+ "hints": [
+  "dropout 1.1 V typ, 1.3 V max at 0.8 A, higher above 0.8 A (p. 3, note 4) – from a 5 V rail the output stays at 3.3 V only while VIN − VOUT covers it",
+  "output capacitor is part of the loop compensation: 22 µF solid tantalum is stable in all conditions (p. 4); no ESR window and no statement on ceramic capacitors",
+  "thermal shutdown above 165 °C (p. 4); θJA 46 … > 90 K/W depending on the copper area at the tab (p. 2, table 1 p. 5)"
+ ],
+ "compliance": {
+  "rohs": true,
+  "radio": "none",
+  "source": "AMS1117 data sheet p. 1: 'RoHs Compliant'; LCSC product data C6186 (2026-10-31): RoHS certificate listed (isRohsCert, ROHS)"
+ },
+ "sources": [
+  "Advanced Monolithic Systems AMS1117 data sheet (DS1117, no revision printed; PDF of 2009-08-27), via LCSC https://datasheet.lcsc.com/datasheet/pdf/e6935943fc6b1bbf350a1a0f3e90dc4a.pdf?productCode=C6186, read 2026-10-31; the manufacturer's site advanced-monolithic.com did not resolve",
+  "pins: p. 1 'pin connections', SOT-223 top view 1 ground/adjust, 2 VOUT, 3 VIN, tab is output – the EasyEDA symbol of C6186 (edakit part import 2026-10-31): 1 GND, 2 VOUT, 3 VIN, 4 VOUT",
+  "vdd_max_v 15 and VIN v_max_v 15: p. 2 absolute maximum ratings, input voltage 15 V",
+  "tj_max_c 125, t_min_c -40: p. 2 operating junction temperature range -40 … 125 °C (control section and power transistor); p. 5 'maximum junction temperature must not exceed 125 °C'",
+  "rth_ja_k_per_w 90: p. 2 SOT-223 θJA 90 °C/W with package soldered to copper, 46 to > 90 °C/W depending on mounting and copper area; table 1 p. 5: 55 … 80 °C/W; θJC 15 °C/W (p. 3)",
+  "vout_v 3.3: p. 2 AMS1117-3.3 output voltage 3.251 / 3.300 / 3.349 V at VIN 4.8 V, 3.201 … 3.399 V over the full temperature range",
+  "dropout_v 1.3: p. 3 dropout voltage at IOUT 0.8 A, typ 1.1 V, max 1.3 V (note 4: higher above 0.8 A) – the maximum entered, the ldo model takes one value",
+  "iq_a 0.011: p. 3 quiescent current of the fixed versions at VIN − VOUT = 1.5 V, typ 5 mA, max 11 mA – the maximum entered",
+  "i_out_max_a 0.8: p. 1 'output current of 1 A'; p. 3 current limit 0.9 / 1.1 / 1.5 A (min / typ / max) at VIN − VOUT = 1.5 V; dropout, line and load regulation are specified up to 0.8 A – 0.8 A entered, the load the specification covers",
+  "p. 3 note 2: line and load regulation guaranteed up to 1.2 W dissipation in SOT-223; power dissipation 'internally limited' (p. 2) – no p_max_w entered",
+  "LCSC product data C6186 (2026-10-31): Advanced Monolithic Systems AMS1117-3.3, 1 292 700 pcs; JLCPCB catalogue (edakit part search, 2026-10-31): Basic Part, 1 780 024 pcs"
+ ],
+ "notes": "Fixed 3.3 V LDO, 1 A class, behaviour model ldo (pins vin, vout, gnd). Library draft, group power.",
+ "verified": {
+  "by": "Claude (datasheet check, library draft)",
+  "date": "2026-10-31",
+  "datasheet": "Advanced Monolithic Systems AMS1117 data sheet (DS1117, no revision printed; PDF of 2009-08-27)",
+  "datasheet_sha256": "189a2651878a87d590b768eaa9b44217a3fdf460352ce6ecaff127221282a3f0",
+  "checked": [
+   "SOT-223 pinout p. 1 (1 GND/ADJ, 2 VOUT, 3 VIN, tab VOUT) = EasyEDA symbol of C6186 (1 GND, 2 VOUT, 3 VIN, 4 VOUT)",
+   "absolute maximum p. 2: input voltage 15 V, junction -40 … 125 °C, θJA SOT-223 90 °C/W",
+   "electrical characteristics p. 2–3: VOUT 3.3 V (3.201 … 3.399 V), dropout 1.1 / 1.3 V at 0.8 A, quiescent 5 / 11 mA, current limit 0.9 / 1.1 / 1.5 A",
+   "application hints p. 4: 22 µF solid tantalum output capacitor for stability in all conditions; thermal shutdown 165 °C"
+  ],
+  "open": [
+   "no revision number in the document; the manufacturer's site did not resolve – the LCSC copy (PDF of 2009-08-27) was read",
+   "no operating input range and no undervoltage lockout: vin_min_v left out, so edakit's coverage lists the AMS1117 under LIM.range ('no vin_min_v'); the regulation limit is VOUT + dropout, which the ldo model already applies",
+   "output capacitor: 22 µF solid tantalum is the only value; no ESR window, no statement on ceramic capacitors",
+   "no input capacitor in the data sheet (the default decoupling of a power_in pin still asks for one)",
+   "minimum load 5 / 10 mA is specified for the adjustable AMS1117 only; none for the -3.3",
+   "LCSC's RoHS certificate for C6186 carries a file name of another company (Mysentech) – the certificate itself was not read"
+  ]
+ }
+}

@@ -1,0 +1,137 @@
+{
+ "lcsc": "C60583",
+ "mpn": "AT24C32D-SSHM-T",
+ "manufacturer": "MICROCHIP(美国微芯)",
+ "kind": "ic",
+ "package": "SOIC-8 150 mil (Atmel 8S1)",
+ "footprint": "SOIC-8_L5.0-W4.0-P1.27-LS6.0-BL",
+ "jlc_class": "Extended Part",
+ "datasheet": {
+  "url": "https://datasheet.lcsc.com/datasheet/pdf/6de020398ba6445484b537e53e124b8b.pdf?productCode=C60583",
+  "pinout_page": 1
+ },
+ "address": {
+  "base": 80,
+  "pins": {
+   "1": 1,
+   "2": 2,
+   "3": 4
+  }
+ },
+ "pins": {
+  "1": {
+   "name": "A0",
+   "type": "input",
+   "pull": "down",
+   "float_ok": true,
+   "v_max_v": 7.0,
+   "hint": "device address input; left floating it is biased low internally if its capacitive coupling to the VCC plane is < 3 pF, above that Atmel recommends connecting it to GND"
+  },
+  "2": {
+   "name": "A1",
+   "type": "input",
+   "pull": "down",
+   "float_ok": true,
+   "v_max_v": 7.0,
+   "hint": "device address input; left floating it is biased low internally if its capacitive coupling to the VCC plane is < 3 pF, above that Atmel recommends connecting it to GND"
+  },
+  "3": {
+   "name": "A2",
+   "type": "input",
+   "pull": "down",
+   "float_ok": true,
+   "v_max_v": 7.0,
+   "hint": "device address input; left floating it is biased low internally if its capacitive coupling to the VCC plane is < 3 pF, above that Atmel recommends connecting it to GND"
+  },
+  "4": {
+   "name": "GND",
+   "type": "ground"
+  },
+  "5": {
+   "name": "SDA",
+   "type": "bidirectional",
+   "role": "sda",
+   "drive": "open_drain",
+   "v_max_v": 7.0
+  },
+  "6": {
+   "name": "SCL",
+   "type": "input",
+   "role": "scl",
+   "v_max_v": 7.0
+  },
+  "7": {
+   "name": "WP",
+   "type": "input",
+   "pull": "down",
+   "float_ok": true,
+   "v_max_v": 7.0,
+   "hint": "write protect: GND = writes allowed, VCC = all writes inhibited; floating it is pulled low internally if its coupling to the VCC plane is < 3 pF, above that connect it to GND"
+  },
+  "8": {
+   "name": "VCC",
+   "type": "power_in",
+   "role": "vdd",
+   "v_max_v": 6.25
+  }
+ },
+ "values": {
+  "vih_ratio": 0.7,
+  "vil_ratio": 0.3,
+  "idd_max_a": 0.003,
+  "behavior": "logic",
+  "icc_a": 0.003
+ },
+ "limits": {
+  "vdd_max_v": 6.25,
+  "vdd_op_min_v": 1.7,
+  "vdd_op_max_v": 5.5,
+  "vin_rel_max_v": 0.5,
+  "i_out_max_a": 0.005,
+  "t_min_c": -40,
+  "t_max_c": 85
+ },
+ "hints": [
+  "SCL up to 400 kHz at 1.7 V and 1 MHz at 5.0 V (Table 3-3)",
+  "self-timed write cycle tWR max 5 ms; 32-byte pages",
+  "SDA is open-drain and needs an external pull-up"
+ ],
+ "sources": [
+  "pin numbers and names: EasyEDA library data of C60583 (edakit part import, 2026-10-31); checked against Atmel AT24C32D/64D 2-Wire Serial EEPROM 32K (4096 x 8) / 64K (8192 x 8), 8717B–SEEPR–6/10, p. 1 Table 0-1 (8-lead SOIC)",
+  "Atmel AT24C32D/64D 2-Wire Serial EEPROM 32K (4096 x 8) / 64K (8192 x 8), 8717B–SEEPR–6/10, p. 2 Absolute Maximum Ratings: voltage on any pin -1.0 to +7.0 V, maximum operating voltage 6.25 V (taken as vdd_max_v and as VCC's v_max_v), DC output current 5.0 mA (i_out_max_a), operating temperature -55 to +125 °C",
+  "Atmel AT24C32D/64D 2-Wire Serial EEPROM 32K (4096 x 8) / 64K (8192 x 8), 8717B–SEEPR–6/10, p. 3 Pin Description: SDA open-drain; A2–A0 and WP biased low when floating (< 3 pF coupling), no resistor value given",
+  "Atmel AT24C32D/64D 2-Wire Serial EEPROM 32K (4096 x 8) / 64K (8192 x 8), 8717B–SEEPR–6/10, p. 4 Table 3-2 DC Characteristics (TAI -40 to +85 °C): VCC 1.7–5.5 V; ICC1 read max 1.0 mA, ICC2 write max 3.0 mA at 5.0 V (idd_max_a); VIL max 0.3 × VCC, VIH min 0.7 × VCC, VIH max VCC + 0.5 V (vin_rel_max_v; Note 1: VIL min and VIH max are reference only and not tested); VOL 0.4 V at 2.1 mA (3.0 V)",
+  "Atmel AT24C32D/64D 2-Wire Serial EEPROM 32K (4096 x 8) / 64K (8192 x 8), 8717B–SEEPR–6/10, p. 5 Table 3-3 AC Characteristics: fSCL max 400 kHz (1.7 V) / 1000 kHz (5.0 V), tWR 5 ms",
+  "Atmel AT24C32D/64D 2-Wire Serial EEPROM 32K (4096 x 8) / 64K (8192 x 8), 8717B–SEEPR–6/10, p. 9 section 5 and p. 10 Figure 7-1: device address 1010 A2 A1 A0 → 0x50 + A0 × 1 + A1 × 2 + A2 × 4",
+  "Atmel AT24C32D/64D 2-Wire Serial EEPROM 32K (4096 x 8) / 64K (8192 x 8), 8717B–SEEPR–6/10, p. 12 and p. 17 Ordering Code Detail: 'H' = industrial temperature range -40 °C to +85 °C (t_min_c, t_max_c), 'M' = 1.7–5.5 V, SS = JEDEC SOIC",
+  "Atmel AT24C32D/64D 8717B–SEEPR–6/10, Table 3-2 DC Characteristics: ICC2 supply current, WRITE at 400 kHz, VCC 5.0 V, max 3.0 mA (ICC1 READ max 1.0 mA) – the write current taken, the larger (icc_a, behaviour logic)"
+ ],
+ "notes": "Library draft of the EEPROM on the common DS3231 breakout module (the RTC: library draft C9866). The chip actually fitted on a given module (Atmel/Microchip AT24C32, an older revision, or a second source) and the module's address-pin wiring are not checked here; this entry describes the AT24C32D.",
+ "verified": {
+  "by": "Claude (datasheet check, library draft)",
+  "date": "2026-10-31",
+  "datasheet": "Atmel AT24C32D/64D 8717B–SEEPR–6/10",
+  "datasheet_sha256": "76d3077e3392f9ed03462b562ccc9671a846d01d011e59a27a5547603b719a2f",
+  "checked": [
+   "pinout and pin names = datasheet Table 0-1 (8-lead SOIC) = EasyEDA symbol",
+   "abs. max any pin -1.0…7.0 V, max operating voltage 6.25 V, DC output current 5 mA",
+   "VCC 1.7–5.5 V; VIH 0.7 × VCC, VIL 0.3 × VCC, VIH max VCC + 0.5 V",
+   "supply current max 3.0 mA (write, 5 V)",
+   "I2C address 0x50 + A0/A1/A2; address pins and WP biased low when floating",
+   "ordering code AT24C32D-SSHM-T listed (SOIC 8S1, 1.7–5.5 V, industrial)",
+   "2026-10-31: behaviour logic with icc_a 3 mA – the simulation draws it at the supply pin; Atmel AT24C32D/64D 8717B–SEEPR–6/10, Table 3-2 DC Characteristics: ICC2 supply current, WRITE at 400 kHz, VCC 5.0 V, max 3.0 mA (ICC1 READ max 1.0 mA) – the write current taken, the larger"
+  ],
+  "open": [
+   "the datasheet read is Atmel's of 2010 (LCSC copy); a newer Microchip revision may exist – microchip.com refused automated download",
+   "the revision history names documents 5298A/5298B while every page footer reads 8717B – which number is the document's own is unclear",
+   "no decoupling capacitor value in the datasheet: the catalog's default (a capacitor per supply pin) applies",
+   "no thermal resistance or junction temperature in the datasheet",
+   "package drawing 8S1 not compared with the footprint; body height not entered",
+   {
+    "text": "pin 1 of the SOIC-8 at the footprint's pin-1 mark",
+    "when": "order"
+   },
+   "RoHS/REACH not entered (ordering code: 'Lead-free/Halogen-free', NiPdAu lead finish)"
+  ]
+ }
+}
