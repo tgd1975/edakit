@@ -81,12 +81,14 @@ def run(ctx):
 def charge_currents(d, sim=None):
     """LIM.i/charge: a linear charger's programmed current – values prog_v of its entry over the resistor from its PROG
     pin (role prog) to ground: MCP73831 1000 V / R_PROG, TP4056 1100 V or 1200 V by maker – within the charger's own
-    i_out_max_a and within the cell's i_charge_max_a (sim.json cells) where a battery holder of supplies.cells sits on
-    the charger's battery pin (role bat)."""
+    i_out_max_a and within the cell's i_charge_max_a (sim.json cells) where a battery holder with a cell state in any
+    supply scenario sits on the charger's battery pin (role bat)."""
     from ..circuit import resistors_to
     out = []
     cells = (sim or {}).get("cells") or {}
-    holders = ((sim or {}).get("supplies") or {}).get("cells") or {}
+    # every holder with a cell state in any supply scenario – not only one named "cells"
+    holders = sorted({(h, state) for supply in ((sim or {}).get("supplies") or {}).values() if isinstance(supply, dict)
+                      for h, state in supply.items() if isinstance(state, str) and state in cells})
     for des in sorted(d.comps, key=natural_key):
         part = d.part(des) or {}
         k = (part.get("values") or {}).get("prog_v")
@@ -102,7 +104,7 @@ def charge_currents(d, sim=None):
         if is_number(most := (part.get("limits") or {}).get("i_out_max_a")):
             bounds.append((most, f"i_out_max_a of {d.entry_key(des)}"))
         bat = d.net_of(des, "bat")
-        for h, state in sorted(holders.items()):
+        for h, state in holders:
             if bat and bat in {d.pin_net.get(f"{h}.{n}") for n in ((d.part(h) or {}).get("pins") or {})}:
                 if is_number(lim := (cells.get(state) or {}).get("i_charge_max_a")):
                     bounds.append((lim, f"i_charge_max_a of cells.{state} in sim.json ({h})"))

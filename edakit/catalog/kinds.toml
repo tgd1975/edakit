@@ -26,9 +26,10 @@ k_per_w = "K/W"
 ratio = "1"
 
 [enums]
-behavior = ["ldo", "buck", "boost", "mcu", "cc_sink", "opamp", "logic", "current", "pd_sink", "pass_gate", "photomos",
-            "matrix_driver", "none"]   # matrix_driver: multiplexes LEDs between its segment and digit pins – no DC model
-regulator = ["ldo", "buck", "boost", "none"]
+behavior = ["ldo", "buck", "boost", "buck_boost", "mcu", "cc_sink", "opamp", "logic", "current", "bridge", "charger",
+            "protection", "pd_sink", "pass_gate", "photomos", "matrix_driver", "none"]
+            # matrix_driver: multiplexes LEDs between its segment and digit pins – no DC model
+regulator = ["ldo", "buck", "boost", "buck_boost", "none"]
 color = ["red", "green", "blue", "yellow", "orange", "white", "warm_white", "amber", "uv", "ir", "rgb"]
 dielectric = ["C0G", "NP0", "X5R", "X7R", "X7S", "X6S", "Y5V", "electrolytic", "polymer", "tantalum", "film"]
 
@@ -113,12 +114,12 @@ limits = ["vce_max_v", "veb_max_v", "ic_max_a"]
 values = ["hfe_min", "hfe_max", "vce_sat_v"]
 
 [kinds.nmos]
-roles = ["drain", "gate", "source"]
+roles = ["drain", "gate", "source", "drain_2", "gate_2", "source_2"]   # _2: the second channel of a dual part
 limits = ["vds_max_v", "vgs_max_v", "id_max_a", "is_body_max_a"]
 values = ["vgs_th_v", "rds_on_max_ohm", "vsd_v_at_1a"]
 
 [kinds.pmos]
-roles = ["drain", "gate", "source"]
+roles = ["drain", "gate", "source", "drain_2", "gate_2", "source_2"]   # _2: the second channel of a dual part
 limits = ["vds_max_v", "vgs_max_v", "id_max_a", "is_body_max_a"]
 values = ["vgs_th_v", "rds_on_max_ohm", "vsd_v_at_1a"]
 
@@ -165,10 +166,12 @@ limits = ["vdd_max_v", "vdd_op_min_v", "vdd_op_max_v", "vin_min_v", "vin_max_v",
 values = ["behavior", "vout_v", "dropout_v", "iq_a", "efficiency", "idd_max_a", "iout_gain", "iout_accuracy",
           "vout_knee_v", "vrext_v", "vih_v", "vil_v", "vih_ratio", "vil_ratio", "first_bit_to", "vout_swing_v",
           "vicm_v", "r_out_ohm", "comparator", "gain_min_ratio", "f_clock_hz", "vref_v", "i_load_min_a", "prog_v", "icc_a",
-          "i_a", "vdd_shunt_v", "i_shunt_max_a", "pd_request_v", "r_on_ohm", "vgs_th_v"]
-                                             # icc_a: behaviour logic, i_a: behaviour current (sim/netlist.py);
-                                             # vdd_shunt_v, i_shunt_max_a, pd_request_v: behaviour pd_sink;
-                                             # r_on_ohm, vgs_th_v: behaviour pass_gate
+          "i_a",                             # icc_a: behaviour logic, i_a: behaviour current (sim/netlist.py)
+          "vdd_shunt_v", "i_shunt_max_a", "pd_request_v",   # behaviour pd_sink
+          "r_on_ohm", "vgs_th_v",            # behaviour pass_gate (r_on_ohm also charger)
+          "r_on_high_ohm", "r_on_low_ohm",   # behaviour bridge: a bridge output's high and low side
+          "v_headroom_v", "uvlo_v", "v_pre_v", "i_pre_ratio", "i_term_ratio",   # behaviour charger
+          "v_ovp_v", "v_ovp_release_v", "v_uvp_v", "v_uvp_release_v", "v_ocp_v", "v_scp_v"]   # behaviour protection
 
 [kinds.module]
 roles = ["*"]

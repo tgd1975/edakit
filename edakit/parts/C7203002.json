@@ -432,7 +432,7 @@
  },
  "values": {
   "behavior": "mcu",
-  "regulator": "buck",
+  "regulator": "buck_boost",
   "vout_v": 3.3,
   "v_io_v": 3.3,
   "vih_v": 2.0,
@@ -480,15 +480,16 @@
    "GPIO26–28: IOVDD + about 300 mV, leak when unpowered",
    "RP2040: VIH 2 V / VIL 0.8 V at 3.3 V, total IO current 50 mA sourced and sunk, abs. max pin voltage",
    "functions of GPIO0–28 from the FUNCSEL values of io_bank0.h; PWM slice (n >> 1) & 7, channel a/b",
-   "–20 … 85 °C incl. self-heating, 70 °C recommended ambient"
+   "–20 … 85 °C incl. self-heating, 70 °C recommended ambient",
+   "2026-10-31: regulator buck_boost (schema-gaps E6) – Pico datasheet section 4.4: 'VSYS ... feeds the RT6150 buck-boost SMPS, which generates a fixed 3.3 V output' from 1.8 V to 5.5 V"
   ],
   "open": [
    "core current (i_core_a): the datasheet gives only typical VBUS currents of example programs, no maximum – the simulation's default applies",
-   "SMPS efficiency: no figure read – the simulation's default 0.85 applies; buck-boost not in the regulator enum (schema gap)",
    "gpio_i_max_a is the highest specified drive setting, not an absolute maximum",
    "gpio_r_out_ohm: not given (VOL 0.5 V at the drive setting's current only)",
    "RoHS/REACH: not stated in the board datasheet",
-   "SWCLK/SWDIO pull: on-chip pull-up at reset (chip pin table), resistance not given separately"
+   "SWCLK/SWDIO pull: on-chip pull-up at reset (chip pin table), resistance not given separately",
+   "SMPS efficiency: no figure in the datasheet – the simulation's default 0.85 applies"
   ]
  }
 }

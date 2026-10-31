@@ -19,7 +19,8 @@
    "vil_v": 0.5,
    "pull": "down",
    "pull_ohm": 500000,
-   "hint": "nSLEEP low = sleep, H-bridges off, logic reset; internal 500 kΩ pull-down and a 6.5 V Zener clamp – tied to VM above 6.5 V only through 20–75 kΩ (≤ 250 µA into the pin); up to 1 ms until the bridges run after wake-up (datasheet 7.3.4)"
+   "hint": "nSLEEP low = sleep, H-bridges off, logic reset; internal 500 kΩ pull-down and a 6.5 V Zener clamp – tied to VM above 6.5 V only through 20–75 kΩ (≤ 250 µA into the pin); up to 1 ms until the bridges run after wake-up (datasheet 7.3.4)",
+   "role": "en"
   },
   "2": {
    "name": "AOUT1",
@@ -27,13 +28,15 @@
    "drive": "bridge",
    "short_proof": true,
    "hint": "bridge output: H, L or Z (coast, sleep) by the truth table 7.3.2; overcurrent protection covers a short to ground, to supply and across the winding (7.3.5.1)",
-   "clamp": "internal"
+   "clamp": "internal",
+   "role": "out1_a"
   },
   "3": {
    "name": "AISEN",
    "type": "passive",
    "v_max_v": 0.5,
-   "hint": "bridge A ground: to a current-sense resistor (ICHOP = 0.2 V / R) or to GND if current control is not needed; absolute maximum 0.5 V"
+   "hint": "bridge A ground: to a current-sense resistor (ICHOP = 0.2 V / R) or to GND if current control is not needed; absolute maximum 0.5 V",
+   "role": "sense_a"
   },
   "4": {
    "name": "AOUT2",
@@ -41,7 +44,8 @@
    "drive": "bridge",
    "short_proof": true,
    "hint": "bridge output: H, L or Z (coast, sleep) by the truth table 7.3.2; overcurrent protection covers a short to ground, to supply and across the winding (7.3.5.1)",
-   "clamp": "internal"
+   "clamp": "internal",
+   "role": "out2_a"
   },
   "5": {
    "name": "BOUT2",
@@ -49,13 +53,15 @@
    "drive": "bridge",
    "short_proof": true,
    "hint": "bridge output: H, L or Z (coast, sleep) by the truth table 7.3.2; overcurrent protection covers a short to ground, to supply and across the winding (7.3.5.1)",
-   "clamp": "internal"
+   "clamp": "internal",
+   "role": "out2_b"
   },
   "6": {
    "name": "BISEN",
    "type": "passive",
    "v_max_v": 0.5,
-   "hint": "bridge B ground: to a current-sense resistor (ICHOP = 0.2 V / R) or to GND if current control is not needed; absolute maximum 0.5 V"
+   "hint": "bridge B ground: to a current-sense resistor (ICHOP = 0.2 V / R) or to GND if current control is not needed; absolute maximum 0.5 V",
+   "role": "sense_b"
   },
   "7": {
    "name": "BOUT1",
@@ -63,7 +69,8 @@
    "drive": "bridge",
    "short_proof": true,
    "hint": "bridge output: H, L or Z (coast, sleep) by the truth table 7.3.2; overcurrent protection covers a short to ground, to supply and across the winding (7.3.5.1)",
-   "clamp": "internal"
+   "clamp": "internal",
+   "role": "out1_b"
   },
   "8": {
    "name": "nFault",
@@ -76,14 +83,16 @@
    "type": "input",
    "v_max_v": 7,
    "pull": "down",
-   "pull_ohm": 150000
+   "pull_ohm": 150000,
+   "role": "in1_b"
   },
   "10": {
    "name": "BIN2",
    "type": "input",
    "v_max_v": 7,
    "pull": "down",
-   "pull_ohm": 150000
+   "pull_ohm": 150000,
+   "role": "in2_b"
   },
   "11": {
    "name": "VCP",
@@ -109,7 +118,8 @@
      "c_min_f": 1e-05,
      "source": "TI SLVSAR1E, pin functions p. 3 and layout 10.1: VM bypassed to GND with a low-ESR ceramic capacitor, 10 µF minimum, rated for VM, close to the pin; bulk capacitance in addition sized by the system (9.1)"
     }
-   ]
+   ],
+   "role": "vm"
   },
   "13": {
    "name": "GND",
@@ -132,14 +142,16 @@
    "type": "input",
    "v_max_v": 7,
    "pull": "down",
-   "pull_ohm": 150000
+   "pull_ohm": 150000,
+   "role": "in2_a"
   },
   "16": {
    "name": "AIN1",
    "type": "input",
    "v_max_v": 7,
    "pull": "down",
-   "pull_ohm": 150000
+   "pull_ohm": 150000,
+   "role": "in1_a"
   },
   "17": {
    "name": "GND",
@@ -149,11 +161,13 @@
   }
  },
  "values": {
-  "behavior": "none",
+  "behavior": "bridge",
   "vih_v": 2,
   "vil_v": 0.7,
   "idd_max_a": 0.003,
-  "r_out_ohm": 0.35
+  "r_out_ohm": 0.35,
+  "r_on_high_ohm": 0.325,
+  "r_on_low_ohm": 0.275
  },
  "limits": {
   "vdd_max_v": 11.8,
@@ -195,7 +209,8 @@
    "outputs: Z in coast and sleep (truth table 7.3.2) – drive tristate; OCP on every FET for shorts to ground, supply and across the winding (7.3.5.1) – short_proof",
    "2026-10-31: outputs clamp = internal – SLVSAR1E: the bridge's body diodes clamp the winding (as read for the library draft)",
    "2026-10-31: bridge outputs drive = bridge – the H-bridge outputs the datasheet of this draft describes (source above): driven high or low while enabled, off in sleep or coast; LEVELS counts them as defining their net (schema-gaps A2)",
-   "2026-10-31: VCP needs a capacitor to VM, 0.01 µF rated 16 V (SLVSAR1E 10.1, read now)"
+   "2026-10-31: VCP needs a capacitor to VM, 0.01 µF rated 16 V (SLVSAR1E 10.1, read now)",
+   "2026-10-31: behaviour bridge (schema-gaps E2) – SLVSAR1E Table 1 H-bridge logic: xIN1 xIN2 0 0 coast (Z), 0 1 reverse, 1 0 forward, 1 1 brake (both low); nSLEEP high runs (pin functions p. 3); r_on_high_ohm 0.325 and r_on_low_ohm 0.275 – HS and LS FET on resistance max at VM 5 V, IO 500 mA, TJ 85 °C (6.5; at VM 2.7 V 0.35 and 0.30); the low sides return through AISEN/BISEN; roles en, in1_x, in2_x, out1_x, out2_x, sense_x, vm"
   ],
   "open": [
    "VCP needs 0.01 µF to VM, not to ground – needs.capacitor knows only a capacitor to ground, so it is a pin hint only",

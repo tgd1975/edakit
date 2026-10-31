@@ -17,7 +17,8 @@
    "drive": "bridge",
    "v_max_v": 15,
    "hint": "bridge output, on two pins – join both; H, L or OFF (high impedance) in stop and standby (H-SW control function p. 4); internal regenerative diodes to VM and PGND (VF 1.1 V max at 1 A); no overcurrent protection in the datasheet (thermal shutdown and low-voltage detection only)",
-   "clamp": "internal"
+   "clamp": "internal",
+   "role": "out1_a"
   },
   "2": {
    "name": "AO1",
@@ -25,7 +26,8 @@
    "drive": "bridge",
    "v_max_v": 15,
    "hint": "bridge output, on two pins – join both; H, L or OFF (high impedance) in stop and standby (H-SW control function p. 4); internal regenerative diodes to VM and PGND (VF 1.1 V max at 1 A); no overcurrent protection in the datasheet (thermal shutdown and low-voltage detection only)",
-   "clamp": "internal"
+   "clamp": "internal",
+   "role": "out1_a"
   },
   "3": {
    "name": "PGND1",
@@ -43,7 +45,8 @@
    "drive": "bridge",
    "v_max_v": 15,
    "hint": "bridge output, on two pins – join both; H, L or OFF (high impedance) in stop and standby (H-SW control function p. 4); internal regenerative diodes to VM and PGND (VF 1.1 V max at 1 A); no overcurrent protection in the datasheet (thermal shutdown and low-voltage detection only)",
-   "clamp": "internal"
+   "clamp": "internal",
+   "role": "out2_a"
   },
   "6": {
    "name": "AO2",
@@ -51,7 +54,8 @@
    "drive": "bridge",
    "v_max_v": 15,
    "hint": "bridge output, on two pins – join both; H, L or OFF (high impedance) in stop and standby (H-SW control function p. 4); internal regenerative diodes to VM and PGND (VF 1.1 V max at 1 A); no overcurrent protection in the datasheet (thermal shutdown and low-voltage detection only)",
-   "clamp": "internal"
+   "clamp": "internal",
+   "role": "out2_a"
   },
   "7": {
    "name": "BO2",
@@ -59,7 +63,8 @@
    "drive": "bridge",
    "v_max_v": 15,
    "hint": "bridge output, on two pins – join both; H, L or OFF (high impedance) in stop and standby (H-SW control function p. 4); internal regenerative diodes to VM and PGND (VF 1.1 V max at 1 A); no overcurrent protection in the datasheet (thermal shutdown and low-voltage detection only)",
-   "clamp": "internal"
+   "clamp": "internal",
+   "role": "out2_b"
   },
   "8": {
    "name": "BO2",
@@ -67,7 +72,8 @@
    "drive": "bridge",
    "v_max_v": 15,
    "hint": "bridge output, on two pins – join both; H, L or OFF (high impedance) in stop and standby (H-SW control function p. 4); internal regenerative diodes to VM and PGND (VF 1.1 V max at 1 A); no overcurrent protection in the datasheet (thermal shutdown and low-voltage detection only)",
-   "clamp": "internal"
+   "clamp": "internal",
+   "role": "out2_b"
   },
   "9": {
    "name": "PGND2",
@@ -85,7 +91,8 @@
    "drive": "bridge",
    "v_max_v": 15,
    "hint": "bridge output, on two pins – join both; H, L or OFF (high impedance) in stop and standby (H-SW control function p. 4); internal regenerative diodes to VM and PGND (VF 1.1 V max at 1 A); no overcurrent protection in the datasheet (thermal shutdown and low-voltage detection only)",
-   "clamp": "internal"
+   "clamp": "internal",
+   "role": "out1_b"
   },
   "12": {
    "name": "BO1",
@@ -93,21 +100,24 @@
    "drive": "bridge",
    "v_max_v": 15,
    "hint": "bridge output, on two pins – join both; H, L or OFF (high impedance) in stop and standby (H-SW control function p. 4); internal regenerative diodes to VM and PGND (VF 1.1 V max at 1 A); no overcurrent protection in the datasheet (thermal shutdown and low-voltage detection only)",
-   "clamp": "internal"
+   "clamp": "internal",
+   "role": "out1_b"
   },
   "13": {
    "name": "VM2",
    "type": "power_in",
    "v_max_v": 15,
    "v_op_min_v": 2.5,
-   "v_op_max_v": 13.5
+   "v_op_max_v": 13.5,
+   "role": "vm"
   },
   "14": {
    "name": "VM3",
    "type": "power_in",
    "v_max_v": 15,
    "v_op_min_v": 2.5,
-   "v_op_max_v": 13.5
+   "v_op_max_v": 13.5,
+   "role": "vm"
   },
   "15": {
    "name": "PWMB",
@@ -115,21 +125,24 @@
    "v_max_v": 6,
    "pull": "down",
    "pull_ohm": 200000,
-   "hint": "PWM input, switching frequency 100 kHz max (operating range p. 3)"
+   "hint": "PWM input, switching frequency 100 kHz max (operating range p. 3)",
+   "role": "pwm_b"
   },
   "16": {
    "name": "BIN2",
    "type": "input",
    "v_max_v": 6,
    "pull": "down",
-   "pull_ohm": 200000
+   "pull_ohm": 200000,
+   "role": "in2_b"
   },
   "17": {
    "name": "BIN1",
    "type": "input",
    "v_max_v": 6,
    "pull": "down",
-   "pull_ohm": 200000
+   "pull_ohm": 200000,
+   "role": "in1_b"
   },
   "18": {
    "name": "GND",
@@ -142,7 +155,8 @@
    "v_max_v": 6,
    "pull": "down",
    "pull_ohm": 200000,
-   "hint": "L = standby, all outputs off (high impedance); internal 200 kΩ pull-down – left open the driver stays in standby"
+   "hint": "L = standby, all outputs off (high impedance); internal 200 kΩ pull-down – left open the driver stays in standby",
+   "role": "en"
   },
   "20": {
    "name": "VCC",
@@ -162,14 +176,16 @@
    "type": "input",
    "v_max_v": 6,
    "pull": "down",
-   "pull_ohm": 200000
+   "pull_ohm": 200000,
+   "role": "in1_a"
   },
   "22": {
    "name": "AIN2",
    "type": "input",
    "v_max_v": 6,
    "pull": "down",
-   "pull_ohm": 200000
+   "pull_ohm": 200000,
+   "role": "in2_a"
   },
   "23": {
    "name": "PWMA",
@@ -177,7 +193,8 @@
    "v_max_v": 6,
    "pull": "down",
    "pull_ohm": 200000,
-   "hint": "PWM input, switching frequency 100 kHz max (operating range p. 3)"
+   "hint": "PWM input, switching frequency 100 kHz max (operating range p. 3)",
+   "role": "pwm_a"
   },
   "24": {
    "name": "VM1",
@@ -191,14 +208,17 @@
      "c_min_f": 1e-05,
      "source": "Toshiba TB6612FNG datasheet (2026-05-13) p. 7, typical application diagram: C1 10 µF and C2 0.1 µF at VM, as close as possible to the IC (reference circuit; VM2 and VM3 on the same supply)"
     }
-   ]
+   ],
+   "role": "vm"
   }
  },
  "values": {
-  "behavior": "none",
+  "behavior": "bridge",
   "vih_ratio": 0.7,
   "vil_ratio": 0.3,
-  "idd_max_a": 0.0022
+  "idd_max_a": 0.0022,
+  "r_on_high_ohm": 0.35,
+  "r_on_low_ohm": 0.35
  },
  "limits": {
   "vdd_max_v": 6,
@@ -237,7 +257,8 @@
    "electrical p. 5: VIH Vcc × 0.7, VIL Vcc × 0.3, ICC 1.8 / 2.2 mA max, Vsat(U+L), regenerative diode VF 1.1 V max",
    "θj-a 160 °C/W IC only (p. 6); capacitors 10 µF + 0.1 µF at VM and Vcc (p. 7)",
    "2026-10-31: outputs clamp = internal – the Toshiba datasheet names internal regenerative diodes (as read for the library draft)",
-   "2026-10-31: bridge outputs drive = bridge – the H-bridge outputs the datasheet of this draft describes (source above): driven high or low while enabled, off in sleep or coast; LEVELS counts them as defining their net (schema-gaps A2)"
+   "2026-10-31: bridge outputs drive = bridge – the H-bridge outputs the datasheet of this draft describes (source above): driven high or low while enabled, off in sleep or coast; LEVELS counts them as defining their net (schema-gaps A2)",
+   "2026-10-31: behaviour bridge (schema-gaps E2) – H-SW control function p. 4: IN1 IN2 H H short brake, L H CCW (PWM H) or short brake (PWM L), H L CW or short brake, L L stop (Z), STBY L standby (Z); r_on_high_ohm and r_on_low_ohm 0.35 each – Vsat(U+L) 0.7 V max at IO 1 A, VCC = VM = 5 V (0.21 V at 0.3 A), split evenly between the high and the low side: the datasheet gives only their sum (an assumption); roles en, in1_x, in2_x, pwm_x, out1_x, out2_x, vm"
   ],
   "open": [
    "tj_max_c: the datasheet states no maximum junction temperature (thermal shutdown 175 °C typ, design target; Tstg 150 °C)",

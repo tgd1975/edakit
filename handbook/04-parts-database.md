@@ -99,7 +99,7 @@ in `sources` – any RP2350 module takes the same list per GPIO. On the RP2040 a
 | `buzzer` | `v_max_v` | `coil_ohm` |
 | `relay` | `v_coil_max_v`, `i_max_a`, `v_max_v` | `coil_ohm`, `v_operate_v`, `v_release_v`, `r_contact_ohm` |
 | `connector` | `v_max_v`, `i_max_a` | `pitch_mm`, `r_contact_ohm`, `r_source_ohm`, `usb_c` |
-| `ic` | `vdd_max_v`, `vdd_op_min_v`, `vdd_op_max_v`, `vin_min_v`, `vin_max_v`, `vout_max_v`, `i_out_max_a`, `vin_rel_max_v`, `i_supply_pin_max_a`, `f_max_hz` | `behavior`, `vout_v`, `dropout_v`, `iq_a`, `efficiency`, `idd_max_a`, `iout_gain`, `iout_accuracy`, `vout_knee_v`, `vrext_v`, `vih_v`, `vil_v`, `vih_ratio`, `vil_ratio`, `first_bit_to`, `vout_swing_v`, `vicm_v`, `r_out_ohm`, `comparator`, `gain_min_ratio`, `f_clock_hz`, `vref_v`, `i_load_min_a`, `prog_v`, `icc_a`, `i_a`, `vdd_shunt_v`, `i_shunt_max_a`, `pd_request_v`, `r_on_ohm`, `vgs_th_v` |
+| `ic` | `vdd_max_v`, `vdd_op_min_v`, `vdd_op_max_v`, `vin_min_v`, `vin_max_v`, `vout_max_v`, `i_out_max_a`, `vin_rel_max_v`, `i_supply_pin_max_a`, `f_max_hz` | `behavior`, `vout_v`, `dropout_v`, `iq_a`, `efficiency`, `idd_max_a`, `iout_gain`, `iout_accuracy`, `vout_knee_v`, `vrext_v`, `vih_v`, `vil_v`, `vih_ratio`, `vil_ratio`, `first_bit_to`, `vout_swing_v`, `vicm_v`, `r_out_ohm`, `comparator`, `gain_min_ratio`, `f_clock_hz`, `vref_v`, `i_load_min_a`, `prog_v`, `icc_a`, `i_a`, `vdd_shunt_v`, `i_shunt_max_a`, `pd_request_v`, `r_on_ohm`, `vgs_th_v`, `r_on_high_ohm`, `r_on_low_ohm`, `v_headroom_v`, `uvlo_v`, `v_pre_v`, `i_pre_ratio`, `i_term_ratio`, `v_ovp_v`, `v_ovp_release_v`, `v_uvp_v`, `v_uvp_release_v`, `v_ocp_v`, `v_scp_v` |
 | `module` | `vdd_op_min_v`, `vdd_op_max_v`, `vin_min_v`, `vin_max_v`, `vsys_min_v`, `vsys_max_v`, `i_out_max_a`, `gpio_v_max_v`, `gpio_i_max_a`, `gpio_i_total_max_a`, `f_max_hz` | `behavior`, `regulator`, `v_io_v`, `vout_v`, `dropout_v`, `efficiency`, `i_core_a`, `i_core_min_a`, `gpio_r_out_ohm`, `iq_a`, `vih_v`, `vil_v`, `vih_ratio`, `vil_ratio`, `usb_c`, `f_clock_hz` |
 | `motor` | `v_max_v`, `i_max_a` | `coil_ohm` |
 | `solenoid` | `v_max_v`, `i_max_a` | `coil_ohm` |
@@ -108,7 +108,7 @@ in `sources` – any RP2350 module takes the same list per GPIO. On the RP2040 a
 | `optocoupler` | `if_max_a`, `vr_max_v`, `vce_max_v`, `ic_max_a`, `v_load_max_v`, `i_load_max_a` | `vf_v`, `vf_at_a`, `ctr_min_ratio`, `behavior`, `r_on_ohm`, `if_on_a`, `if_off_a`, `i_leak_a` |
 | `esd_array` | `vrwm_max_v` | `vbr_min_v`, `vf_v`, `vf_at_a`, `c_io_f` |
 
-Per pin: `v_max_v`, `v_op_min_v`, `v_op_max_v`, `vih_v`, `vil_v`, `vih_ratio`, `vil_ratio`, `pull_ohm`; and `name`, `type`, `role`, `strap`, `pull`, `hint`, `functions`, `out_edge`, `t_pd_ns`, `needs`, `drive`, `float_ok`, `adc`, `z_in_ohm`, `short_proof`, `clamp`, `windows`, `biased`. Every name ends in its unit: `_v` V, `_a` A, `_w` W, `_ohm` Ω, `_f` F, `_h` H, `_c` °C, `_hz` Hz, `_dbm` dBm, `_dbi` dBi, `_mm` mm, `_n` N, `_s` s, `_ns` ns, `_k_per_w` K/W, `_ratio` 1. Words: `behavior` ldo, buck, boost, mcu, cc_sink, opamp, logic, current, pd_sink, pass_gate, photomos, matrix_driver, none; `regulator` ldo, buck, boost, none; `color` red, green, blue, yellow, orange, white, warm_white, amber, uv, ir, rgb; `dielectric` C0G, NP0, X5R, X7R, X7S, X6S, Y5V, electrolytic, polymer, tantalum, film.
+Per pin: `v_max_v`, `v_op_min_v`, `v_op_max_v`, `vih_v`, `vil_v`, `vih_ratio`, `vil_ratio`, `pull_ohm`; and `name`, `type`, `role`, `strap`, `pull`, `hint`, `functions`, `out_edge`, `t_pd_ns`, `needs`, `drive`, `float_ok`, `adc`, `z_in_ohm`, `short_proof`, `clamp`, `windows`, `biased`. Every name ends in its unit: `_v` V, `_a` A, `_w` W, `_ohm` Ω, `_f` F, `_h` H, `_c` °C, `_hz` Hz, `_dbm` dBm, `_dbi` dBi, `_mm` mm, `_n` N, `_s` s, `_ns` ns, `_k_per_w` K/W, `_ratio` 1. Words: `behavior` ldo, buck, boost, buck_boost, mcu, cc_sink, opamp, logic, current, bridge, charger, protection, pd_sink, pass_gate, photomos, matrix_driver, none; `regulator` ldo, buck, boost, buck_boost, none; `color` red, green, blue, yellow, orange, white, warm_white, amber, uv, ir, rgb; `dielectric` C0G, NP0, X5R, X7R, X7S, X6S, Y5V, electrolytic, polymer, tantalum, film.
 <!-- edakit:end -->
 
 A limit named `<quantity>_max_<unit>` or `<quantity>_min_<unit>` is held to the quantity of that name at the part
@@ -149,7 +149,21 @@ entry's before the default of the pin type. What the names do not say:
 - a linear Li-ion charger: `prog_v`, the constant of its charge-current equation (I = `prog_v` / R_PROG – MCP73831
   1000 V, TP4056 1100 V or 1200 V by maker, read from the datasheet of that maker), its pins `prog` and `bat`, and
   `i_out_max_a`: LIM.i/charge holds the current the PROG resistor programs to the charger and to the cell's
-  `i_charge_max_a` (sim.json cells) on its battery pin.
+  `i_charge_max_a` – of the cell state a battery holder on its battery pin has in any supply scenario of sim.json.
+  With `behavior: "charger"` the simulation charges (5.1): `vout_v` the float voltage, `i_pre_ratio` and `v_pre_v`
+  the precondition current (a ratio of the programmed one) below its threshold, `i_term_ratio` the termination
+  current, `r_on_ohm` the pass element, `v_headroom_v` the least vin − bat it charges at, `uvlo_v` its start voltage,
+  `iq_a` its supply current while charging.
+- a bridge driver (`behavior: "bridge"`, DRV8833, TB6612): `r_on_high_ohm` and `r_on_low_ohm`, the on resistance of
+  its high and low side (a datasheet that gives only their sum – the TB6612's Vsat(U+L) – split evenly, and say so in
+  `verified`), and the pin roles `in1_x`, `in2_x`, `out1_x`, `out2_x`, `pwm_x`, `sense_x` per channel `x`, `vm`, `en`,
+  `vcc`.
+- a cell protection IC (`behavior: "protection"`, DW01A): `v_ovp_v`, `v_ovp_release_v`, `v_uvp_v`,
+  `v_uvp_release_v` (overcharge and overdischarge detection and release), `v_ocp_v` and `v_scp_v` (overcurrent and
+  short at VM), `r_out_ohm` (the outputs' resistance), and the pin roles `vdd`, `gnd`, `od`, `oc`, `vm`; its dual
+  MOSFET the roles `gate_2`, `source_2` (and `drain_2`) of the second channel.
+- a module's on-board regulator `values.regulator`: `ldo`, `buck`, `boost`, `buck_boost` (the Pico's RT6150) or
+  `none`.
 - an adjustable regulator: `vref_v` and the pin role `adj` or `fb`, with `i_load_min_a` where it needs a minimum load
   (chapter 5.2).
 - any IC with logic inputs: the thresholds of the recommended operating conditions, `vih_v` | `vih_ratio` and

@@ -42,7 +42,7 @@ FN_LINES = {"pwm": (), "adc": (), "spi": ("sck", "tx", "rx", "cs"), "i2c": ("sda
             "i2s": ("bclk", "ws", "sd"), "can": ("tx", "rx"), "onewire": (), "usb": ("dp", "dn")}
 FN_NAMES = [k + (f".{line}" if line else "") for k, lines in FN_LINES.items() for line in lines or [""]]   # net fn
 SUPPLY_R_MAX = 100                                   # a resistor up to this passes a supply (shunt, filter)
-SWITCHERS = ("buck", "boost")                        # behaviour models of switching regulators (hot loop, REQ.missing)
+SWITCHERS = ("buck", "boost", "buck_boost")          # behaviour models of switching regulators (hot loop, REQ.missing)
 PIN_FUNCTION = re.compile(r"([a-z][a-z0-9]*?)(\d+)(?:\.([a-z]+))?")   # "spi0.sck", "i2c1.sda", "pwm1.a", "adc0"
 KINDS_OF_TYPE = {"microcontroller": ("ic", "module"), "regulator": ("ic", "module"),   # STRUCT.identity: graph type -> parts
                  "transistor": ("npn", "pnp", "nmos", "pmos"), "led": ("led", "led_rgb"),   # entry kinds; any other

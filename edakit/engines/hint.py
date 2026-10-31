@@ -133,7 +133,7 @@ def _transistors_at_connectors(design, cfg, sim):
 
 def _switching_regulators(design, cfg, sim):
     regs = [d for d in design.comps_of_kind("ic", "module")
-            if values(design.part(d)).get("behavior") in ("buck", "boost")]
+            if values(design.part(d)).get("behavior") in ("buck", "boost", "buck_boost")]
     return regs + design.comps_of_kind("inductor")
 
 

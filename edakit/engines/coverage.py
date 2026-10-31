@@ -34,7 +34,8 @@ LIMITS_OF = {
     "relay": [("LIM.i", ("i_max_a",), "its contact current")],
 }
 DISSIPATES = ("resistor", "diode", "led", "led_rgb", "npn", "pnp", "nmos", "pmos")
-OWN_RANGE = {"ldo": ("vin_min_v",), "buck": ("vin_min_v",), "boost": ("vin_min_v",), "mcu": ("vin_min_v", "vsys_min_v"),
+OWN_RANGE = {"ldo": ("vin_min_v",), "buck": ("vin_min_v",), "boost": ("vin_min_v",), "buck_boost": ("vin_min_v",),
+             "mcu": ("vin_min_v", "vsys_min_v"),
              "current": ("vin_min_v", "vin_max_v")}
 
 
