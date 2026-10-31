@@ -11,22 +11,22 @@ FT-4 = { status = "open", missing = "the charger model needs the TP4056's and MC
 FT-5 = { status = "open", missing = "adjustable regulators: vref and minimum load per part – datasheets" }
 FT-6 = { status = "built", where = "kinds motor, solenoid, speaker, heater, optocoupler (catalog/kinds.toml, sim/netlist.py)", step = 6 }
 FT-7 = { status = "open", missing = "the ES1 limits of IEC 62368-1 are tagged to verify; mains is open decision 3" }
-FT-8 = { status = "open", missing = "generated fault scenarios (reversed supply as a DC scenario, a wire shorted, one supply off)" }
+FT-8 = { status = "built", where = "sim.json fault_scenarios: reversed, shorted, off (sim/run.py fault_scenarios); the parts' limits as warnings", step = 6 }
 FT-9 = { status = "open", missing = "DC bias of ceramics needs the capacitance curves – datasheets" }
-FT-10 = { status = "open", missing = "analog constants in the firmware contract" }
+FT-10 = { status = "built", where = "edakit firmware: analog (channel, divider, pull) per ADC input; drift by --check", step = 6 }
 FT-11 = { status = "built", where = "loads: expect (engines/sim.py function) – LIM.i, LIM.v", step = 6 }
 FT-12 = { status = "open", missing = "AC analysis – open decision 5" }
 FT-13 = { status = "open", missing = "LED strip model" }
 FT-14 = { status = "open", missing = "constant-current LED buck – datasheets" }
 FT-15 = { status = "built", where = "fn i2s.*, can.*, onewire, usb.* (circuit.FN_LINES); REQ.function", step = 6 }
-FT-16 = { status = "open", missing = "bus parameters in the firmware contract" }
+FT-16 = { status = "partial", where = "edakit firmware: devices.i2c with the addresses the pins decide; buses", missing = "SPI mode and maximum clock per device, the bus speed the pull-ups allow – parts facts from datasheets, the bus capacitance", step = 6 }
 FT-17 = { status = "open", missing = "corners of hFE, leakage, IDSS – datasheets" }
 FT-18 = { status = "open", missing = "source models for the audio band – needs FT-12" }
 FT-19 = { status = "built", where = "engines/coverage.py; edakit check --coverage; the protocol's section 2", step = 6 }
 FT-20 = { status = "built", where = "edakit/domains/, [project] domains, edakit domains", step = 3 }
 FT-21 = { status = "partial", where = "tests/reference.py: a reference circuit per domain, with seeded faults", missing = "the published open designs (DevKitC, Tube Screamer, QMK keyboard …) – their schematics could not be read", step = 7 }
 FT-22 = { status = "built", where = "edakit rules: code, severity, title", step = 1 }
-FT-23 = { status = "open", missing = "edakit graph show <designator or net>" }
+FT-23 = { status = "built", where = "edakit graph show NAME (edakit/graph_show.py)", step = 6 }
 FT-24 = { status = "built", where = "evals/ for claude plugin eval; baseline in evals/README.md", step = 8 }
 
 [checks]
@@ -34,18 +34,18 @@ CK-1 = { status = "built", where = "LVL.undefined/nc (ICs; a module brings its o
 CK-2 = { status = "built", where = "pin drive open_drain | tristate; LVL.undefined/open_drain; LVL.contention", step = 6 }
 CK-3 = { status = "partial", where = "entry address; REQ.forbidden/address", missing = "the pull-up's upper bound from the bus capacitance (needs c_pf_per_m)", step = 6 }
 CK-4 = { status = "built", where = "LIM.range/gate from vgs_th_v and the rds_on_max_ohm table", step = 6 }
-CK-5 = { status = "partial", where = "limits vin_rel_max_v; LIM.v/inject", missing = "the injection current and the scenarios with one supply off (FT-8)", step = 6 }
+CK-5 = { status = "partial", where = "limits vin_rel_max_v; LIM.v/inject – also with one supply off (fault_scenarios off)", missing = "the injection current (i_inject_max_a) – datasheets", step = 6 }
 CK-6 = { status = "built", where = "pin adc; LIM.range/adc, REQ.value/adc", step = 6 }
 CK-7 = { status = "built", where = "polarized capacitors: LIM.v/polarized (G and E), PATH.reverse/polarized", step = 6 }
 CK-8 = { status = "built", where = "roles out_p, out_n; REQ.forbidden/btl (domains audio, guitar)", step = 6 }
 CK-9 = { status = "open", missing = "spacing of hazardous voltage – open decision 3, the IEC 60664-1 tables not read here" }
 CK-10 = { status = "open", missing = "isolation and mains input – open decision 3" }
-CK-11 = { status = "open", missing = "antenna keep-out on the board geometry (GEO)" }
+CK-11 = { status = "partial", where = "entry antenna.keepout_mm; GEO.keepout on the Gerber copper (fab.check_keepout); the coverage report names radios without it", missing = "the antenna at or over the board edge (the module maker's distance) – datasheets", step = 6 }
 CK-12 = { status = "built", where = "roles dp_a, dp_b, dn_a, dn_b; REQ.missing/usb_data (domain usb)", step = 6 }
 CK-13 = { status = "built", where = "pin needs; REQ.missing/pin, REQ.value/pin, REQ.forbidden/pin", step = 6 }
 CK-14 = { status = "partial", where = "a regulator's capacitors as pin needs", missing = "DC bias and the ESR window", step = 6 }
 CK-15 = { status = "partial", where = "REQ.missing flyback for motors and solenoids", missing = "clamp diodes at a bridge driver without internal ones (L298)", step = 6 }
-CK-16 = { status = "partial", where = "REQ.missing/leave on nets through a cable (domain cables)", missing = "off-board connectors without a cable in the graph", step = 6 }
+CK-16 = { status = "built", where = "REQ.missing/leave on nets through a cable and on connectors marked off_board (domain cables)", step = 6 }
 CK-17 = { status = "open", missing = "RS-485 and CAN termination – the standards' numbers not read here" }
 CK-18 = { status = "built", where = "cells i_max_a; LIM.i/cell", step = 6 }
 CK-19 = { status = "built", where = "net matrix row | col; REQ.missing/matrix, REQ.forbidden/matrix", step = 6 }
@@ -59,8 +59,8 @@ CK-26 = { status = "built", where = "REQ.function/uart", step = 6 }
 CK-27 = { status = "built", where = "net instrument, load_min_ohm, pin z_in_ohm; REQ.value/instrument", step = 6 }
 CK-28 = { status = "partial", where = "values gain_min_ratio; REQ.value/gain", missing = "the external compensation a part requires", step = 6 }
 CK-29 = { status = "built", where = "REQ.missing/balance", step = 6 }
-CK-30 = { status = "open", missing = "no DC where signals are switched – a signal path the graph does not mark yet" }
-CK-31 = { status = "open", missing = "nets kept apart on the board (layout.apart, GEO)" }
+CK-30 = { status = "partial", where = "net signal; REQ.value/switch in the simulation (engines/sim.py switch_dc)", missing = "a contact rated for signal currents (min_load of the entry) – datasheets", step = 6 }
+CK-31 = { status = "built", where = "layout.apart; GEO.spacing/apart on the Gerber copper (fab.check_apart, gerber.Copper.distance)", step = 6 }
 
 [hints]
 HT-1 = { status = "built", where = "HINT.cable_line (domain cables)", step = 6 }
@@ -69,14 +69,14 @@ HT-3 = { status = "open", missing = "the 10 µF at attach is tagged extracted" }
 HT-4 = { status = "built", where = "HINT.boost_enable (domain power)", step = 6 }
 HT-5 = { status = "open", missing = "a charger's power path – no charger kind or behaviour yet (FT-4)" }
 HT-6 = { status = "built", where = "HINT.input_polarity (domain power)", step = 6 }
-HT-7 = { status = "open", missing = "a jack carrying a supply – no role for jack contacts yet" }
+HT-7 = { status = "built", where = "HINT.jack_supply (core; connector roles tip, ring, sleeve, tip_switch, ring_switch, sleeve_switch)", step = 6 }
 HT-8 = { status = "built", where = "HINT.audio_ground (domain audio)", step = 6 }
 HT-9 = { status = "built", where = "HINT.flicker (core)", step = 6 }
 HT-10 = { status = "built", where = "HINT.heater (domain motors)", step = 6 }
 HT-11 = { status = "built", where = "HINT.thermal_copper (domain power)", step = 6 }
 HT-12 = { status = "built", where = "HINT.motor_supply (domain motors)", step = 6 }
 HT-13 = { status = "built", where = "HINT.class_d (domain audio)", step = 6 }
-HT-14 = { status = "open", missing = "relay contacts switching off-board loads" }
+HT-14 = { status = "built", where = "HINT.relay_load (core)", step = 6 }
 HT-15 = { status = "built", where = "HINT.jack_battery (domain guitar)", step = 6 }
 HT-16 = { status = "built", where = "HINT.audio_switching (domains audio, guitar)", step = 6 }
 HT-17 = { status = "built", where = "HINT.signal_ceramic (domains audio, guitar)", step = 6 }
@@ -114,6 +114,6 @@ audio = { status = "open", parts = ["MAX98357A", "PAM8403", "INMP441"] }
 [review]
 electrical-audio = { status = "built", where = "edakit/domains/audio.toml [review]" }
 electrical-cables = { status = "built", where = "edakit/domains/cables.toml [review]" }
-pcb-rf = { status = "open", missing = "antenna areas – a pcb question of the radio domain" }
+pcb-rf = { status = "built", where = "edakit/domains/radio.toml [review] pcb (antenna areas, GEO.keepout)" }
 pcb-hazardous = { status = "open", missing = "spacing between domains – with mains (open decision 3)" }
-pcb-thermal-pads = { status = "open", missing = "copper and vias under exposed pads" }
+pcb-thermal-pads = { status = "built", where = "edakit/domains/core.toml [review] pcb (copper and vias under exposed pads)" }

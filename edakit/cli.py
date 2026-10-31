@@ -3,6 +3,7 @@
     edakit check                     stages P/G: rule checks on the graph (offline, < 1 s)
     edakit rules [CODE ...]          the engines and the codes of the catalog
     edakit explain CODE ...          rule, why, fix and sources of a code (LIM.v, REQ.missing …)
+    edakit graph show NAME           one part or net: what the graph and its parts entry say, the findings on it
     edakit block list|show|add       building blocks with checked parts into the graph
     edakit part import LCSC [--update]   symbol pins and footprint of an LCSC number from the library – no EasyEDA
     edakit part lint [KEY ...]       every parts entry held to the schema of its kind (catalog/kinds.toml)
@@ -85,6 +86,12 @@ def build_parser():
 
     p = sub.add_parser("explain", help="rule, why, fix and sources of a code")
     p.add_argument("ids", nargs="+", help="codes, e.g. LIM.v REQ.missing (an old ID such as LIM.v names its codes)")
+
+    p = sub.add_parser("graph", help="what the graph says about one part or net, and the findings on it")
+    p.add_argument("action", choices=["show"])
+    p.add_argument("name", help="a designator (U1) or a net name (LED_CLK)")
+    p.add_argument("--json", help="write the view and its findings as JSON")
+    _common(p)
 
     p = sub.add_parser("domains", help="the domains of the project: on, off, suggested; the reviewers' questions")
     p.add_argument("--review", choices=["electrical", "regulatory", "pcb"], help="the questions of the enabled domains "
@@ -354,6 +361,9 @@ def _main(argv=None):
     if args.command == "convert":
         from . import convert
         return convert.main(cfg, args)
+    if args.command == "graph":
+        from . import graph_show
+        return graph_show.main(cfg, args)
     if args.command == "domains":
         from . import profile
         return profile.main(cfg, args)

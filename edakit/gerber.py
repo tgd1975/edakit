@@ -368,6 +368,31 @@ class Copper(Raster):
         sub = self.lab[k][max(0, int(cy) - rr):int(cy) + rr + 1, max(0, int(cx) - rr):int(cx) + rr + 1]
         return set(np.unique(sub)) - {0}
 
+    def net_mask(self, k, net):
+        """The copper of a net on layer k (T or B) as a boolean raster; None when the net has none there."""
+        import numpy as np
+        roots = set(self.groups.get(net, {}))
+        labels = [lab for lab in np.unique(self.lab[k]) if lab and self.find((k, lab)) in roots]
+        return np.isin(self.lab[k], labels) if labels else None
+
+    def distance(self, a, b):
+        """(gap mm, x, y, layer) – the narrowest gap between the copper of nets a and b on one layer, measured edge to
+        edge on the raster (to RES), at the point of b's copper nearest to a's; None when they share no layer."""
+        import numpy as np
+        from scipy import ndimage
+        best = None
+        for k in "TB":
+            ma, mb = self.net_mask(k, a), self.net_mask(k, b)
+            if ma is None or mb is None:
+                continue
+            dist = ndimage.distance_transform_edt(~ma)
+            where = np.where(mb, dist, np.inf)
+            row, col = np.unravel_index(np.argmin(where), where.shape)
+            gap = max(0.0, (where[row, col] - 1) * RES)
+            if best is None or gap < best[0]:
+                best = (gap, *self.mm(col, row), {"T": "TOP", "B": "BOTTOM"}[k])
+        return best
+
     def net_groups(self, net):
         """Pad groups of a net, largest first; more than one = the net is open in the copper."""
         return sorted((sorted(p) for p in self.groups.get(net, {}).values()), key=len, reverse=True)

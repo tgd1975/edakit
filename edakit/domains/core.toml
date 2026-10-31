@@ -23,7 +23,7 @@ microcontroller = ["compliance.radio"]
 
 [hints]
 apply = ["HINT.datasheet", "HINT.bulk", "HINT.gate", "HINT.debounce", "HINT.inductive", "HINT.switcher", "HINT.lithium", "HINT.esd",
-         "HINT.two_supplies", "HINT.readback", "HINT.flicker"]
+         "HINT.two_supplies", "HINT.readback", "HINT.flicker", "HINT.jack_supply", "HINT.relay_load"]
 
 [review]
 electrical = [
@@ -41,6 +41,10 @@ regulatory = [
   "Supply: mains voltage on the board (low voltage directive), a power supply that comes with the product (its own conformity), USB power.",
   "A product that is sold: product safety and EMC, the EU declaration of conformity, the technical file, the CE marking, the manufacturer's name and address, the registrations (electrical equipment, packaging, batteries), and rules for connected products from the date they apply.",
   "Children: if the notes say children use it, whether it is a toy.",
+]
+
+pcb = [
+  "Exposed pads: under every part with a thermal or exposed pad – regulators, drivers, QFN packages – the copper the datasheet's thermal figure assumes, the vias into an inner or the other layer (count, drill, tented or filled against solder wicking), and the paste aperture that keeps the part from floating; LIM.t rests on rth_ja_k_per_w, a figure for the datasheet's copper (HINT.thermal_copper).",
 ]
 
 [fixtures]                           # reference circuits, after the integration of maker-coverage (decided)

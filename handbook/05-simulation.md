@@ -122,7 +122,23 @@ own name instead, and an extra scenario with the same supply and load takes that
 way to keep a combination a procedure excludes ("unplug J1 while flashing") as `"info": true`. Without the key nothing
 is generated. A load with
 `"matrix": false` runs only where an extra scenario names it – fault cases such as a stalled servo, whose result you
-want to see and record as a decision, but which must not block every commit. `ambient_c` is the ambient of the
+want to see and record as a decision, but which must not block every commit.
+
+Fault cases edakit can make itself come from `fault_scenarios` (maker-coverage FT-8), opt-in:
+
+```json
+"fault_scenarios": {"reversed": true, "shorted": true, "off": true, "supply": "usb-nom", "load": "idle"}
+```
+
+`reversed`: every source of `sources` the graph marks `"source": "reversible"` at its voltage reversed – beyond PATH.reverse's
+topology, what a shunt diode or a swapped ribbon really does; `shorted`: every signal wire of a cable shorted to ground at
+its far end (0.01 Ω at the far connector's pin); `off`: every source of a supply with several left out while the others stay
+on – an input above its own unpowered supply (LIM.v/inject). They run on the first supply and the first load unless
+`supply` and `load` name others, as scenarios named `fault J1 reversed/idle`, `fault REMOTE shorted at J20/idle`,
+`fault BT20 off/idle`. Only the parts' limits are judged there (LIM.v, LIM.i, LIM.p, LIM.t, LIM.backfeed): a board without
+its supply reaches none of the states its load expects, and its nets leave their declared ranges by design of the fault –
+those rows are information. A finding is a warning at most, and the scenario's status `warn`: what a fault does is a
+question for the designer, not a release blocker by itself. `ambient_c` is the ambient of the
 scenarios (LIM derates the fuses' hold current to it); `ambient_min_c`, optional, the lowest one – LIM.i holds a fuse's
 hold current there against the connectors it protects (without it: the datasheet's `i_hold_a`). Battery projects add
 `"cells": {"fresh": {"v": 1.6, "r": 0.15}, "empty": {"v": 1.0, "r": 0.4}}` and supplies like `{"BT1": "fresh"}`.

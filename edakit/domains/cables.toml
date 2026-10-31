@@ -5,7 +5,7 @@
 [domain]
 name = "cables"
 about = "cables between boards and to the world: wire resistance and inductance, signal lines on leads, pins at their ends"
-suggested_by = { cables = true }
+suggested_by = { cables = true }   # cables in the graph, or a connector marked off_board
 
 [switch]
 on = ["REQ.missing:leave"]

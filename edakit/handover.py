@@ -8,6 +8,8 @@ designer or derived from it. The PCB designer works from it and does not change 
     edge   [parts]                    fixed at the board edge: within edge_mm of the outline (plan, default 1 mm)
     near   {part: host or [hosts]}    fixed within near_mm of the host (plan, default 6 mm)
     loops  [{a, b, max_mm, what}]     short current loop between two pads of one net, checked on the routed board (GEO.loop)
+    apart  [{a, b, min_mm, what}]     two nets whose copper keeps at least min_mm apart on every layer – a high-gain stage's
+                                      input and output, a switch node and a high-impedance input (GEO.spacing/apart)
     notes  [text]                     what no program checks – for the PCB designer and the layout review (M-5)
 Derived without a line in the graph: every IC (kind "ic") with a supply pin is fixed with a capacitor of its own from
 that supply to ground within near_mm – a module brings its own decoupling. An IC's accept {"SYNC.plan:handover": reason} lifts it.
@@ -24,7 +26,7 @@ from dataclasses import dataclass
 from .design import Design, natural_key
 from .findings import accept_reason
 
-KEYS = ("fixed", "edge", "near", "loops", "notes")
+KEYS = ("fixed", "edge", "near", "loops", "apart", "notes")
 
 
 @dataclass
@@ -67,6 +69,13 @@ def problems(design):
             out.append(f"layout.loops: {a} and {b} are not on one net of one board")
         if not isinstance(lp.get("max_mm"), (int, float)) or lp["max_mm"] <= 0:
             out.append(f"layout.loops: {a}-{b} needs max_mm above 0")
+    for ap in lay.get("apart", []):
+        a, b = (ap.get("a", ""), ap.get("b", "")) if isinstance(ap, dict) else ("", "")
+        out += [f"layout.apart: no net {n} in the graph" for n in (a, b) if n not in design.nets]
+        if a and a == b:
+            out.append(f"layout.apart: {a} and {b} are one net")
+        if not isinstance(ap, dict) or not isinstance(ap.get("min_mm"), (int, float)) or ap["min_mm"] <= 0:
+            out.append(f"layout.apart: {a}-{b} needs min_mm above 0")
     return out
 
 
