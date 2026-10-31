@@ -1,6 +1,6 @@
 #!/usr/bin/env bash
-# Builds the EasyEDA bridge extension (.eext) of easyeda-mcp-pro with a deeper return depth for easyeda_api_call and a
-# vector schematic PDF export.
+# Builds the EasyEDA bridge extension (.eext) of easyeda-mcp-pro with a deeper return depth for easyeda_api_call, a
+# vector schematic PDF export and the ODB++ export for the tool easyeda_export_odb (odb-tool-patch.mjs).
 #
 # The original extension cuts every API answer after 5 levels ("[MaxDepth]"). DRC details (PCB_Drc.check(…, true))
 # and the rule configuration are unreadable that way. Neither the server nor the extension has a setting for it; the
@@ -43,11 +43,20 @@ if [ "$COUNT" != "1" ]; then
   exit 1
 fi
 sed -i 's/async function exportPdf(params) {/&\n      if (params.what === "schematic") return normalizeBinaryResult2(await callFirst2(["SCH_ManufactureData.getExportDocumentFile"], void 0, "PDF"), "schematic.pdf");/' "$BUNDLE"
+# ODB++ for a maker that assembles from it (edakit handbook 8.4, SYNC.odb): the server's tool easyeda_export_odb calls
+# board.exportGerbers with format "odb" – answer it with PCB_ManufactureData.getOpenDatabaseDoublePlusFile(fileName,
+# unit, otherData) (BETA in EasyEDA Pro's API), marked format "odb" so that the tool can tell it from a Gerber ZIP.
+COUNT="$(grep -c 'async function exportGerbers(params) {' "$BUNDLE" || true)"
+if [ "$COUNT" != "1" ]; then
+  echo "Expected 1 place 'async function exportGerbers(params) {' in dist/index.js, found: $COUNT." >&2
+  exit 1
+fi
+sed -i 's/async function exportGerbers(params) {/&\n      if (params.format === "odb") return { ...(await normalizeBinaryResult2(await callFirst2(["PCB_ManufactureData.getOpenDatabaseDoublePlusFile"], params.fileName, params.unit, params.otherData), "odb.zip")), format: "odb" };/' "$BUNDLE"
 node --check "$BUNDLE" || { echo "dist/index.js does not parse after the patch." >&2; exit 1; }
 
 # Recognisable in the extension manager. Same UUID and version: EasyEDA does not take a new import over an installed
 # copy, so uninstall the old extension first.
-NAME="MCP Pro Bridge (depth $DEPTH, schematic PDF)"
+NAME="MCP Pro Bridge (depth $DEPTH, schematic PDF, ODB++)"
 sed -i "s/\"displayName\": \"MCP Pro Bridge\"/\"displayName\": \"$NAME\"/" "$WORK/x/extension.json"
 grep -q "$NAME" "$WORK/x/extension.json" || { echo "displayName not found in extension.json." >&2; exit 1; }
 

@@ -8,8 +8,11 @@ through the plated holes and groups the pads by connected copper. Target: one gr
 Gerber knows no nets, and FlyingProbeTesting.json renames some (a net CHAIN1_D23_A came out as NET_3). So only the
 positions and sizes come from the export; the net of each pad comes from the graph ("D23_1" -> D23.1 -> net).
 
-Only what EasyEDA Pro writes is supported: apertures C/R/O plus the RoundRect macro on the mask layers, G01/G02/G03
-(G75), D01/D02/D03, regions G36/G37, no LPC.
+Supported is what EasyEDA Pro writes – apertures C/R/O plus the RoundRect macro on the mask layers, G01/G02/G03
+(G75), D01/D02/D03, regions G36/G37, no LPC – and what KiCad writes (the KiCad tool chain, handbook 16): the same, plus
+polygon apertures (P) and aperture macros of the primitives circle, outline, polygon, vector line and centre line
+(KiCad's RoundRect, RotRect, Outline, FreePoly). A flash of a KiCad macro or polygon becomes a region of its outline;
+X2 attributes are skipped.
 """
 
 from __future__ import annotations
@@ -36,14 +39,25 @@ def missing(folder, *keys):
 
 def parse_gerber(path):
     """-> [("draw", ((kind, a, b), points)), ("flash", ((kind, a, b), x, y)), ("region", [contours])] in mm.
-    RoundRect becomes its enclosing rectangle ("RR", width, height)."""
+    EasyEDA's RoundRect becomes its enclosing rectangle ("RR", width, height); in a file KiCad wrote, a flash of a macro
+    or polygon aperture becomes the region of its outline (kind "M")."""
     t = Path(path).read_text()
     div = 10 ** int(re.search(r"%FSLAX\d(\d)Y\d\d\*%", t).group(1))
     aps = {int(m.group(1)): (m.group(2), float(m.group(3)), float(m.group(4) or m.group(3)))
            for m in re.finditer(r"%ADD(\d+)([CRO]),([\d.]+)(?:X([\d.]+))?.*?\*%", t)}
-    for m in re.finditer(r"%ADD(\d+)RoundRect,([^*]+)\*%", t):
-        r, *c = (float(v) for v in m.group(2).split("X"))
-        aps[int(m.group(1))] = ("RR", 2 * max(abs(v) for v in c[0::2]) + r, 2 * max(abs(v) for v in c[1::2]) + r)
+    kicad = "KiCad" in t[:2000] or "Kicad" in t[:2000]
+    if kicad:                  # KiCad: macros evaluated from their definitions, polygon apertures
+        macros = {m.group(1): m.group(2) for m in re.finditer(r"%AM([A-Za-z_][\w.]*)\*(.*?)%", t, re.S)}
+        for m in re.finditer(r"%ADD(\d+)([A-Za-z_][\w.]*),?([^*]*)\*%", t):
+            name, args = m.group(2), [float(v) for v in m.group(3).split("X") if v]
+            if name == "P":
+                aps[int(m.group(1))] = ("M", regular_polygon(*args))
+            elif name in macros:
+                aps[int(m.group(1))] = ("M", macro_outline(macros[name], args))
+    else:
+        for m in re.finditer(r"%ADD(\d+)RoundRect,([^*]+)\*%", t):
+            r, *c = (float(v) for v in m.group(2).split("X"))
+            aps[int(m.group(1))] = ("RR", 2 * max(abs(v) for v in c[0::2]) + r, 2 * max(abs(v) for v in c[1::2]) + r)
     ops, x, y, mode, ap, region = [], 0.0, 0.0, 1, None, None
     for line in t.splitlines():
         line = line.strip()
@@ -84,10 +98,73 @@ def parse_gerber(path):
                 ops.append(("draw", (aps[ap], pts)))
         elif d == 2 and region is not None:
             region.append([(nx, ny)])
+        elif d == 3 and aps[ap][0] == "M":    # a KiCad macro or polygon: its outline as a region
+            ops.append(("region", [[(nx + px, ny + py) for px, py in ring] for ring in aps[ap][1]]))
         elif d == 3:
             ops.append(("flash", (aps[ap], nx, ny)))
         x, y = nx, ny
     return ops
+
+
+def regular_polygon(diameter, vertices=3, rotation=0.0, *_):
+    """The outline of a polygon aperture P (outer diameter, vertices, rotation): [ring]."""
+    n = max(3, int(vertices))
+    return [[(diameter / 2 * math.cos(math.radians(rotation + 360 * k / n)),
+              diameter / 2 * math.sin(math.radians(rotation + 360 * k / n))) for k in range(n)]]
+
+
+def macro_value(expr, var):
+    """An expression of a macro: numbers, $n, + - x (times) / and brackets."""
+    expr = re.sub(r"\$(\d+)", lambda m: repr(var.get(int(m.group(1)), 0.0)), expr.strip())
+    expr = expr.replace("x", "*").replace("X", "*")
+    if not re.fullmatch(r"[\d.+\-*/() eE]*", expr):
+        raise ValueError(f"macro expression {expr!r}")
+    return float(eval(expr, {"__builtins__": {}}, {})) if expr.strip() else 0.0   # noqa: S307 – digits and + - * / only
+
+
+def macro_outline(body, args):
+    """The outline of an aperture macro with these arguments, as [ring] relative to the flash: the primitives circle (1),
+    outline (4), polygon (5), vector line (20) and centre line (21) united, exposure off cut away."""
+    from shapely import affinity
+    from shapely.geometry import LineString, Point, Polygon
+    from shapely.ops import unary_union
+    var = {k + 1: v for k, v in enumerate(args)}
+    shape = Polygon()
+    for stmt in (s.strip() for s in body.replace("\n", "").split("*")):
+        if not stmt or stmt.startswith("0"):
+            continue
+        if stmt.startswith("$") and "=" in stmt:
+            k, expr = stmt[1:].split("=", 1)
+            var[int(k)] = macro_value(expr, var)
+            continue
+        code, *vals = stmt.split(",")
+        v = [macro_value(e, var) for e in vals]
+        code = int(code)
+        if code == 1:                                    # circle: exposure, diameter, x, y[, rotation]
+            g = Point(v[2], v[3]).buffer(v[1] / 2, 16)
+            rot = v[4] if len(v) > 4 else 0
+        elif code == 4:                                  # outline: exposure, n, x0, y0, …, xn, yn, rotation
+            n = int(v[1])
+            g = Polygon(list(zip(v[2:4 + 2 * n:2], v[3:4 + 2 * n:2]))).buffer(0)
+            rot = v[4 + 2 * n] if len(v) > 4 + 2 * n else 0
+        elif code == 5:                                  # polygon: exposure, vertices, x, y, diameter, rotation
+            ring = regular_polygon(v[4], v[1])[0]
+            g = Polygon([(v[2] + px, v[3] + py) for px, py in ring])
+            rot = v[5] if len(v) > 5 else 0
+        elif code == 20:                                 # vector line: exposure, width, x1, y1, x2, y2, rotation
+            g = LineString([(v[2], v[3]), (v[4], v[5])]).buffer(v[1] / 2, cap_style="flat")
+            rot = v[6] if len(v) > 6 else 0
+        elif code == 21:                                 # centre line: exposure, width, height, x, y, rotation
+            g = Polygon([(v[3] - v[1] / 2, v[4] - v[2] / 2), (v[3] + v[1] / 2, v[4] - v[2] / 2),
+                         (v[3] + v[1] / 2, v[4] + v[2] / 2), (v[3] - v[1] / 2, v[4] + v[2] / 2)])
+            rot = v[5] if len(v) > 5 else 0
+        else:
+            raise ValueError(f"aperture macro primitive {code} not supported")
+        if rot:
+            g = affinity.rotate(g, rot, origin=(0, 0))
+        shape = unary_union([shape, g]) if v[0] else shape.difference(g)
+    parts = list(getattr(shape, "geoms", [shape]))
+    return [list(p.exterior.coords)[:-1] for p in parts if not p.is_empty]
 
 
 def arc(x0, y0, x1, y1, i, j, cw):

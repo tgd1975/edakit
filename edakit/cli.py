@@ -15,6 +15,8 @@
     edakit stock [--refresh]         what JLCPCB says about the assembled parts, as a dated snapshot (check PARTS.stock)
     edakit cost [--json F]           the order for `quantity` boards from BOM, board and the dated fee table
     edakit order [--out DIR]         the assembler's BOM, a cart per other supplier, the hand-assembly list (PARTS.supplier)
+    edakit cart fields|prepare|check|actual   the order at the maker: its form from [order], the job of the skill
+                                     cart, ORDER.form to ORDER.review on what it brought back, the real cost (never orders, never pays)
     edakit sim                       stage E: ngspice operating points of all scenarios (offline, seconds)
     edakit docs [--write]            values quoted in documents and schematic notes: DOCS.quote for stale ones, --write fills in
     edakit firmware [--check]        the board's firmware contract as JSON from the graph; --check: drift (opt-in)
@@ -46,7 +48,7 @@
                                      questions of the enabled domains for the electrical, regulatory or pcb review
 
 Exit codes everywhere: 0 = ok, 2 = findings, 1 = error. `edakit lock`, `edakit run` of an easyeda script: 3 = another
-session holds EasyEDA.
+session holds EasyEDA. `edakit cart check`: 3 = ORDER.form to ORDER.finish passed, the regulatory review of the order (ORDER.review) is open.
 `route all|drc` and `silk apply|check`: 3 = the DRC's only item is "Import Changes" and schematic = PCB – EasyEDA
 waits for the import acknowledgement (Design → Import Changes once).
 """
@@ -148,6 +150,15 @@ def build_parser():
     p.add_argument("--out", help="folder for the files (default: <artifacts>/order)")
     _common(p)
 
+    p = sub.add_parser("cart", help="the order at the maker: the form's fields, the job of the skill cart, its check, "
+                                    "the real cost – up to the maker's cart, never further")
+    p.add_argument("action", choices=["fields", "prepare", "check", "actual"])
+    p.add_argument("--board", help="the board (needed with several made boards)")
+    p.add_argument("--maker", help="a maker of [cart] makers (default: [cart] maker, jlcpcb without [cart])")
+    p.add_argument("--cart", action="store_true", help="check: the cart line after the cart button (cart.json)")
+    p.add_argument("--from", dest="source", help="actual: a saved order page or invoice instead of the order history")
+    _common(p)
+
     p = sub.add_parser("sim", help="simulation (stage E)")
     p.add_argument("--json", help="write every single check as JSON")
     p.add_argument("--keep", help="keep netlists and ngspice output in this directory")
@@ -210,6 +221,8 @@ def build_parser():
                                                         "[place] (default: show only)")
     p.add_argument("--ref", help="dump: only these designators, comma-separated")
     p.add_argument("--only", help="place: only these designators, comma-separated")
+    p.add_argument("--rest", action="store_true", help="place: every other part of the board without a row, or with "
+                                                       "an auto row, as well – by airline length")
     p.add_argument("--verify-all", action="store_true", help="apply: compare the pads of every part with the plan")
     _no_scripts(p)
     _common(p)
@@ -238,7 +251,8 @@ def build_parser():
     _common(p)
 
     p = sub.add_parser("gate", help="release gate: all stages, test protocol, manufacturing files")
-    p.add_argument("--easyeda", action="store_true", help="also run S, L and F (EasyEDA with the bridge)")
+    p.add_argument("--easyeda", "--eda", dest="easyeda", action="store_true",
+                   help="also run S, L and F (EasyEDA with the bridge, or KiCad with kicad-cli: [project] toolchain)")
     _no_scripts(p)
     _common(p)
 
@@ -349,6 +363,9 @@ def _main(argv=None):
     if args.command == "order":
         from . import order
         return order.main(cfg, args)
+    if args.command == "cart":
+        from . import cart
+        return cart.main(cfg, args)
     if args.command == "sim":
         from .sim import run
         try:

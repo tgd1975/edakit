@@ -31,6 +31,12 @@ if [ ! -f "$ENTRY" ]; then
   npm install --prefix "$RUNTIME_DIR" --no-save --no-audit --no-fund "easyeda-mcp-pro@$EASYEDA_MCP_VERSION" >&2
 fi
 
+# ODB++ for a maker that assembles from it (edakit handbook 8.4, SYNC.odb): the tool easyeda_export_odb, patched into the
+# installed server – once; a patched server is left as it is. Its messages go to stderr.
+HERE="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+node "$HERE/odb-tool-patch.mjs" "$RUNTIME_DIR/node_modules/easyeda-mcp-pro/dist/tools/L1_export.js" >&2 ||
+  echo "easyeda_export_odb not patched in – the server runs without the ODB++ export" >&2
+
 # Profile "full": schematic/PCB write tools plus the controlled easyeda_api_call (writes need confirmWrite=true).
 export TOOL_PROFILE="${TOOL_PROFILE:-full}"
 # Ordering hard off – orders are placed by a human in the browser.

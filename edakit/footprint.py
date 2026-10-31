@@ -761,6 +761,11 @@ def build(cfg, key, board=None, write=False, mcp=None):
     on = carrier(cfg, d, key, b)
     if not write:
         return key, entry, on, [], None
+    from .toolchain import is_kicad
+    if is_kicad(cfg):        # KiCad: the board's library is written from the data, and the PCB's footprints with it
+        from .toolchain.kicad import board as kicad_board
+        kicad_board.write_parts(cfg, b, d)
+        return key, entry, on, [], None
     own = mcp is None
     mcp = mcp or eda.connect(cfg)
     try:
@@ -811,6 +816,11 @@ def main_build(cfg, args):
               "claim)")
         return 0
     print(f"{head} – built")
+    from .toolchain import is_kicad
+    if is_kicad(cfg):
+        print(f"  the board's library and the footprints of {', '.join(on)} in the KiCad PCB are written from the "
+              "data – edakit pcb dump, then edakit check holds them to it (SYNC.footprint)")
+        return 0
     for text in diffs:
         print(f"  read back: {text}", file=sys.stderr)
     if said:

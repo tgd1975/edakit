@@ -270,7 +270,7 @@ def candidates_section():
 
 def old_ids_section():
     def key(old):
-        return "PGESLFH".index(old[0]), int(old[2:])
+        return "PGESLFHB".index(old[0]), int(old[2:])
     rows = "".join(f'<tr><td>{escape(o)}</td><td>{code_links(new)}</td></tr>'
                    for o, new in sorted(catalog.old_map().items(), key=lambda x: key(x[0])))
     return ('<section id="before"><h2>Check IDs of before</h2><p>The IDs per stage before the restructuring and the '

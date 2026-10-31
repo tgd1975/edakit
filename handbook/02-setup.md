@@ -26,6 +26,10 @@ extension API. edakit uses the same server.
 4. **ngspice** (stage E): `sudo apt install ngspice` (or your package manager).
    **pdftotext** (optional, poppler-utils): `edakit part fetch` checks with it whether a datasheet has a text layer
    and names its part number (4.3).
+With `toolchain = "kicad"` (chapter 16) steps 1 and 2 and sections 2.4 to 2.6 are not needed; instead **KiCad 10**
+from KiCad's PPA: `sudo add-apt-repository ppa:kicad/kicad-10.0-releases && sudo apt install kicad` – `edakit doctor`
+asks kicad-cli for its version (16.2).
+
 5. **Freerouting**: nothing to do on Linux x64 – `edakit route` downloads the pinned release (with its own Java)
    to `~/.local/share/freerouting/` and checks its SHA-256. Elsewhere: download `freerouting-2.4.1.jar`, install
    Java 21+, set `FREEROUTING_JAR`. (Java 17 is too old for Freerouting 2.x.)
@@ -74,6 +78,11 @@ or from a clone `uv run --project /path/to/edakit edakit <command>`.
 | `ARTIFACT_DIR` | `$PWD/build/easyeda-mcp` | exports land in the project, not in the home directory |
 | `BRIDGE_TIMEOUT_MS` | `120000` | DRC and pour fills of a large board take longer than the default 15 s |
 
+After the install `mcp-server.sh` adds the tool `easyeda_export_odb` to the installed server, once
+(`odb-tool-patch.mjs`, idempotent): the ODB++ export for a maker that assembles from it (AISLER, 8.4, SYNC.odb). It calls
+the bridge method `board.exportGerbers` with `format: "odb"`, so the server's method registry stays as it is; the
+patched extension (2.5) answers it. Upstream: issue and pull request drafts in `upstream/` (#5).
+
 **Pinned, not npx:** the tool set and the extension must match, and npx does not pass SIGTERM on – an orphaned server
 then blocks the bridge port. Update deliberately: raise `EASYEDA_MCP_VERSION`, rebuild the patched extension (2.5),
 re-import it, restart EasyEDA.
@@ -90,9 +99,12 @@ schematic as PDF. Build the patched one:
 bash <plugin or clone>/edakit/easyeda/bridge-extension-patch.sh      # -> ./easyeda-bridge-extension.eext
 ```
 
-The script takes the extension from the pinned server, raises the depth to 12, adds the schematic PDF path, checks the
-bundle still parses, and renames it "MCP Pro Bridge (depth 12, schematic PDF)". If the extension changed upstream it
-stops instead of patching blindly.
+The script takes the extension from the pinned server, raises the depth to 12, adds the schematic PDF path and the
+ODB++ export (`PCB_ManufactureData.getOpenDatabaseDoublePlusFile`, marked so that `easyeda_export_odb` tells it from a
+Gerber ZIP), checks the bundle still parses, and renames it "MCP Pro Bridge (depth 12, schematic PDF, ODB++)". If the
+extension changed upstream it stops instead of patching blindly. `edakit doctor` names whether the server has
+`easyeda_export_odb` – a warning only with a maker that takes ODB++; an extension without the handler shows in SYNC.odb
+("Bridge did not return an ODB++ archive").
 
 Import in EasyEDA: *Settings → Extensions → Extension Manager → Import*. It asks for the permission "External
 Interactions" itself. Then the menu **MCP Bridge** appears; choose **Enable Auto-Connect**.

@@ -1,6 +1,6 @@
 ---
 name: release
-description: Release a hardware state for manufacturing with the edakit release gate – all stages (P parts, G graph, E simulation, project checks, S schematic, L board, F manufacturing files), sign-offs bound to hashes, manifest, test protocol, order checklist for JLCPCB. Use before an order, for "release", "gate", "test protocol", "manufacturing files", "Gerber", "BOM".
+description: Release a hardware state for manufacturing with the edakit release gate – all stages (P parts, G graph, E simulation, project checks, S schematic, L board, F manufacturing files), sign-offs bound to hashes, manifest, test protocol, the order checklist – the skill cart puts the released board into the maker's cart. Use before an order, for "release", "gate", "test protocol", "manufacturing files", "Gerber", "BOM".
 ---
 
 # Release for manufacturing
@@ -19,7 +19,8 @@ Concept: `${CLAUDE_PLUGIN_ROOT}/handbook/08-release-gate.md`.
    without entries skips this. A footprint geometry that still lies among the artifacts (a note of `edakit check` and
    in section 6 of the protocol) is moved first, as the note says, and committed: the move changes the layout hash
    once, and a sign-off with scope `layout` recorded before it would lapse (handbook 8.2).
-2. **With EasyEDA** (start skill, claim EasyEDA, reference schematic checked): `edakit gate --easyeda 2>&1 | cat` in the
+2. **With EasyEDA** (start skill, claim EasyEDA, reference schematic checked) – or on KiCad (`toolchain = "kicad"`,
+   handbook 16: no start skill, no claim, `--eda` is the same flag): `edakit gate --easyeda 2>&1 | cat` in the
    background (minutes). Adds S, L and F per board: read the PCB, save and reload, DRC, export Gerber and pick-and-place,
    BOM from the graph, JLCPCB stock, copper connectivity from the Gerber files, holes against leads, outline, tooling
    holes, polarity sheet; then the project's checks with `at = "after F"`, on this run's manufacturing files. Files in
@@ -67,9 +68,14 @@ Concept: `${CLAUDE_PLUGIN_ROOT}/handbook/08-release-gate.md`.
    not be uploaded after all (a review found something): `edakit release withdraw <run> --reason "…"` – then there is
    no current release until the next RELEASED run.
 
-## Order (done by the user)
+## Order (up to the cart; ordering and paying are the user's)
 
-The MCP server cannot order on purpose. Checklist for the user:
+The released board goes into the maker's cart with the skill cart (`/edakit:cart`): `edakit cart prepare` from the
+current release, the form filled and read back with Claude in Chrome, `edakit cart check` (ORDER.form to ORDER.review) with the
+regulatory review of the order, then the maker's cart button – nothing ordered or paid (handbook 8.4). Without Claude
+in Chrome the skill prints the job as a checklist and `edakit cart check` checks what the user filled in. The MCP
+server cannot order on purpose. The checklist below is what the skill and its checks cover, and what stays the
+user's:
 
 - [ ] `edakit release verify <the files about to be uploaded>` says every file is of the current release (exit 0) –
       per made board `gerber_<b>.zip`, `bom_<b>.csv`, `cpl_<b>.csv` (a bought board, `bought = true`, has none)

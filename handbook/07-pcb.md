@@ -295,6 +295,45 @@ with its host and pin – `C1: no free spot within near_mm 6 of U2 (pin 16, 3V3)
 the geometry as `pcb plan` does: the dump of `pcb dump`, and for a part not yet in the PCB the library footprint
 `edakit part import` cached (4.2).
 
+**Every other part (`--rest`).** `edakit pcb place --rest` places every part of the board that has no row in
+`[place]`, or a row with `auto = true` – not only the parts with a host. It works offline, from the board file, the
+geometry and the graph, without EasyEDA. The parts with a host come first, as above. Then the part with the most pins
+on nets of placed parts goes next, ground left out; a tie goes by designator. A part that names a placed part as its
+host follows that part at once. An IC takes a spot only where its decoupling capacitor finds one next to it, and a
+capacitor that may decouple an IC waits until the IC stands. The spots lie on the plan grid inside the outline, on a
+side that is assembled (`[release] assembly sides`, top first; without the key both), at 0, 90, 180 or 270°. A spot
+counts only where the plan check reports nothing new, as for the parts next to a host: overlaps, holes, tooling holes,
+keep-outs, THT pins of the other side, the outline, `edge_mm`, mated plugs, `uniform`. Of these spots the part takes
+the one where its pads add the least airline length: the minimum spanning tree of each net over its pads, the nets of
+the graph, ground left out. Side, rotation, y and x break ties. The board is searched on a 0.5 mm grid first, then on
+the 0.1 mm grid around the best spots.
+
+An improvement pass follows. Each part placed by airline length moves to a spot where the airline length is shorter,
+and each pair of them swaps rows where that shortens it – only where the plan check stays clean. A part that another
+part was placed next to stays. The pass repeats until nothing changes, four times at most. No random numbers are
+used: the same files give the same rows, and a second run changes nothing.
+
+```text
+$ edakit pcb place --rest
+  R1 = { x = 62.8, y = 21.9, rot = 90, side = "top", auto = true }   # next to U2: pad 1 1.3 mm from U2.15 (REXT)
+  R2 = { x = 59.7, y = 18.9, rot = 270, side = "top", auto = true }   # by airline length: adds 0.0 mm on 3V3, LED_OE
+  D1 = { x = 20.9, y = 28.6, rot = 90, side = "top", auto = true }   # by airline length: adds 3.4 mm on +5V, VIN
+  J1 = { x = 19.9, y = 34.2, rot = 180, side = "top", auto = true }   # by airline length: adds 3.4 mm on VIN
+  improvement: no move or swap shortens the airline length (without GND) of 538.7 mm
+  1 part next to its host, 3 by airline length – --write puts them into [place]
+```
+
+R2 adds nothing: its pads lie on the way from U1 to U2 on both its nets. The comment gives what a part adds to the
+airline length of the finished plan, and the nets it shares with other parts. `--write` and `--only` work as above,
+and an `auto` row without a host is placed anew as well. A part the circuit wants fixed (`layout.fixed`) gets a row
+too, with the note `layout.fixed: check the spot, then drop auto = true`: whatever someone presses or looks at is the
+PCB designer's choice, and only a row without `auto` stays where it is. A part without a spot is named with the first
+new finding of its best spot, or with its box when no spot is free –
+`SW1: no free spot on the top side – its box (60.0 x 30.0 mm) fits nowhere clear of the placed parts, the holes and
+the outline` – and the command exits 2. The airline length is the only score so far; where routing shows that a plan
+walls nets in (`edakit route diagnose`, 7.5), that may become a second one. `edakit pcb autolayout` (below) stays
+until this placer has placed a real board that routed and passed the gate.
+
 **The auto-layout's positions.** `edakit pcb autolayout` lets EasyEDA place the parts `pcb apply` left unlocked –
 every part without a row – and waits until positions, rotations and sides stay the same for two readings. Then it
 writes a row for every part of the board without one, where EasyEDA put it, as a new line at the end of `[place]`
@@ -741,7 +780,10 @@ Good to know:
   lines yourself.
 - JLCPCB prints its order number somewhere unless you place the placeholder `JLCJLCJLCJLC` and choose
   "specify a location" when ordering: a `[[silk.texts]]` entry of at least 0.8 mm and `mark = "specify"` in `[order]`
-  of the board file – FILES.order checks that both are there (8.4).
+  of the board file – FILES.order checks that both are there (8.4). JLCPCB's help article reports the order number gone since
+  May 2026: FILES.order warns about the placeholder until ordering step 0 has seen the form, and a 2D barcode or a serial
+  number (`barcode`, `serial_number`) take its place. PCBWay's placeholder is `WayWayWay`; another maker's on the
+  board is printed as text, and FILES.order finds it.
 - The print colour follows the solder mask: JLCPCB prints white, on a white mask black. Artwork drawn for one colour
   says so with `silkscreen` next to `mask` in `[order]`; FILES.order fails a pair JLCPCB does not print (8.4).
 - Run `silk apply` again after every auto-layout and routing – spots depend on parts and vias.

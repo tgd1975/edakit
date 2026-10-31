@@ -1,0 +1,262 @@
+# JLCPCB – the maker's profile for edakit's order form (handbook 8.4). Data, no code, no defaults of the board: the
+# board is edakit's keys of [order] (handbook 10.2), the same for every maker; this file gives each key the words of
+# JLCPCB's form, and holds the form's limits, the files, the class of the assembly, the cart button.
+#
+# recorded = false: the labels and words below are those of edakit's reference orders (order.md of 2026-10-24 and
+# 2026-10-25) and of JLCPCB's capabilities page, not yet read off the form field by field – ordering step 0 does that
+# and sets recorded to its date. Until then a label or word may differ from the page; the skill cart then stops on the
+# field, and ORDER.form names it.
+
+name = "JLCPCB"
+recorded = false
+start = "https://cart.jlcpcb.com/quote"
+seat = "CN"                       # outside the EU: for purpose "sale" the owner imports the boards (handbook 15.2)
+currency = "USD"
+catalogue = "jlcpcb"              # PARTS.stock and edakit stock ask JLCPCB's assembly catalogue
+fees = "jlcpcb"                   # edakit/fees/jlcpcb.json, the fee table of edakit cost
+files = ["gerber", "bom", "cpl"]  # gerber_<b>.zip, bom_<b>.csv, cpl_<b>.csv
+classes = ["economic", "standard"]
+dnp = "omit"                      # a part not to place is left out of BOM and CPL (SYNC.bom, SYNC.cpl)
+cart = "Save to Cart"
+never = ["Order", "Buy", "Checkout", "Pay", "Place Order", "Submit Order", "Secure Checkout"]
+ignore = {}                       # fields of the page edakit does not set, each with its reason – ordering step 0
+excludes = []                     # combinations of values the form refuses, each a table of keys – ordering step 0
+
+[bom]
+columns = ["Comment", "Designator", "Footprint", "LCSC Part #"]
+match = "lcsc"                    # JLCPCB matches the BOM by LCSC number
+
+[cpl]
+columns = ["Designator", "Mid X", "Mid Y", "Layer", "Rotation"]
+unit = "mm"
+rotation = "as SYNC.cpl writes it: EasyEDA's rotation of the part, compared with the PCB"
+
+[rules]                           # what FILES.order holds the board to
+thicknesses_mm = [0.4, 0.6, 0.8, 1.0, 1.2, 1.6, 2.0]   # "PCB Thickness" (capabilities page, read 2026-10-28)
+thicknesses_for = "FR-4, 2 layers"
+remark_max = 200                  # characters of the remark field, ASCII
+placeholder = "JLCJLCJLCJLC"      # JLCPCB prints the order number here with "Order Number (Specify Position)"
+placeholder_min_mm = 0.8          # least height of the placeholder JLCPCB recognises (#40)
+# The owner's decision of 2026-10-30: FILES.order warns about the placeholder until ordering step 0 has seen the form – then
+# this line goes, or the placeholder (and with it mark specify) leaves the profile.
+placeholder_gone = """\
+  JLCPCB's help article (last updated 2026-05-22) reports the order number gone since May 2026 and asks not to add \
+  JLCJLCJLCJLC – it may be printed as text"""
+silkscreen_on = { white = "black", other = "white" }   # the print colour JLCPCB puts on a mask colour
+tooling_min = { economic = 2 }    # fewer and JLCPCB drills its own ("Added by JLCPCB")
+class_of_sides = { one = "economic", two = "standard" }   # without [release] assembly.pcba
+
+
+# The fields in the order of the form. words: edakit's value -> the form's word; a key without words shows its value
+# (unit after a number). A field the maker does not have is `false`: it is left out of the job.
+
+[fields.material]
+section = "PCB"
+label = "Base Material"
+words = { "FR-4" = "FR-4" }
+
+[fields.layers]
+section = "PCB"
+label = "Layers"
+
+[fields.size_mm]
+section = "PCB"
+label = "Dimensions"
+
+[fields.quantity]
+section = "PCB"
+label = "PCB Qty"
+
+[fields.delivery]
+section = "PCB"
+label = "Delivery Format"
+words = { single = "Single PCB", panel_by_customer = "Panel by Customer", panel_by_maker = "Panel by JLCPCB" }
+
+[fields.thickness_mm]
+section = "PCB"
+label = "PCB Thickness"
+unit = " mm"
+
+[fields.mask]
+section = "PCB"
+label = "PCB Color"
+
+[fields.mask.words]
+green = "Green"
+purple = "Purple"
+red = "Red"
+yellow = "Yellow"
+blue = "Blue"
+white = "White"
+black = "Black"
+
+[fields.silkscreen]
+section = "PCB"
+label = "Silkscreen"
+words = { white = "White", black = "Black" }
+
+[fields.finish]
+section = "PCB"
+label = "Surface Finish"
+words = { "HASL(with lead)" = "HASL(with lead)", "LeadFree HASL" = "LeadFree HASL", "ENIG" = "ENIG" }
+
+[fields.tg]
+section = "PCB"
+label = "Material Type"
+words = { "TG135" = "FR4-Standard TG 135-140" }
+
+[fields.copper_oz]
+section = "PCB"
+label = "Outer Copper Weight"
+unit = " oz"
+values = [1, 2]
+
+[fields.inner_copper_oz]
+section = "PCB"
+label = "Inner Copper Weight"
+unit = " oz"
+values = [0.5, 1, 2]
+
+[fields.vias]
+section = "PCB"
+label = "Via Covering"
+words = { tented = "Tented", untented = "Untented", plugged = "Plugged", epoxy_filled = "Epoxy Filled & Capped" }
+
+[fields.outline_tolerance]
+section = "PCB"
+label = "Board Outline Tolerance"
+words = { regular = "±0.2mm(Regular)", precision = "±0.1mm(Precision)" }
+
+[fields.gold_fingers]
+section = "PCB"
+label = "Gold Fingers"
+words = { false = "No", true = "Yes" }
+
+[fields.castellated]
+section = "PCB"
+label = "Castellated Holes"
+words = { false = "No", true = "Yes" }
+
+[fields.edge_plating]
+section = "PCB"
+label = "Edge Plating"
+words = { false = "No", true = "Yes" }
+
+# Reported, not yet seen on the form: JLCPCB's help article "How to remove order number from your PCB" (last updated
+# 2026-05-22; read in search summaries on 2026-10-30) says the order number is not available since May 2026 and asks
+# not to add JLCJLCJLCJLC – a 2D barcode (QR or Data Matrix) or a serial number instead, printed where there is room.
+# Ordering step 0 checks the form; until then these words stay as the reference orders had them, and FILES.order warns about
+# the placeholder (rules.placeholder_gone).
+[fields.mark]
+section = "PCB"
+label = "Mark on PCB"
+
+[fields.mark.words]
+default = "Order Number (JLCPCB places it)"
+specify = "Order Number (Specify Position)"
+remove = "Remove Mark"
+
+[fields.barcode]                   # labels and words of the help article of 2026-05-22 – ordering step 0
+section = "PCB"
+label = "2D Barcode"
+
+[fields.barcode.words]
+none = "No"
+qr = "QR Code"
+datamatrix = "Data Matrix"
+
+[fields.serial_number]
+section = "PCB"
+label = "Serial Number"
+words = { false = "No", true = "Yes" }
+
+[fields.electrical_test]
+section = "PCB"
+label = "Electrical Test"
+words = { flying_probe = "Flying Probe Fully Test" }
+
+[fields.quality]
+section = "PCB"
+label = "Appearance Quality"
+words = { ipc2 = "IPC Class 2 Standard" }
+
+[fields.confirm_production_file]
+section = "PCB"
+label = "Confirm Production file"
+words = { false = "No", true = "Yes" }
+
+[fields.paper_between]
+section = "PCB"
+label = "Paper between PCBs"
+words = { false = "No", true = "Yes" }
+
+[fields.packaging]
+section = "PCB"
+label = "Package Box"
+words = { standard = "With JLCPCB logo" }
+
+[fields.remark]
+section = "PCB"
+label = "Remark"
+
+[fields.pcba]
+section = "PCBA"
+label = "PCBA Type"
+words = { economic = "Economic", standard = "Standard" }
+
+[fields.sides]
+section = "PCBA"
+label = "Assembly Side"
+words = { top = "Top Side", bottom = "Bottom Side", both = "Both Sides" }
+
+[fields.pcba_quantity]
+section = "PCBA"
+label = "PCBA Qty"
+
+[fields.tooling]
+section = "PCBA"
+label = "Tooling holes"
+words = { customer = "Added by Customer", maker = "Added by JLCPCB" }
+
+[fields.confirm_placement]
+section = "PCBA"
+label = "Confirm Parts Placement"
+words = { true = "Yes", false = "No" }
+
+[fields.photo_confirmation]
+section = "PCBA"
+label = "Photo Confirmation"
+words = { false = "No", true = "Yes" }
+
+[fields.bake]
+section = "PCBA"
+label = "Bake Components"
+words = { false = "No", true = "Yes" }
+
+[fields.depanel]
+section = "PCBA"
+label = "Depanel boards before delivery"
+words = { false = "No", true = "Yes" }
+
+[fields.conformal_coating]
+section = "PCBA"
+label = "Conformal Coating"
+words = { false = "No", true = "Yes" }
+
+[fields.function_test]
+section = "PCBA"
+label = "Function Test"
+words = { false = "No", true = "Yes" }
+
+[fields.pcba_packaging]
+section = "PCBA"
+label = "Packaging"
+words = { antistatic_bag = "Antistatic bag" }
+
+[fields.ship_to]
+section = "Shipping"
+label = "Ship to"
+
+[fields.shipping]
+section = "Shipping"
+label = "Shipping Method"

@@ -193,7 +193,7 @@ def test_no_check_id_of_before_is_left_in_the_code():
     from pathlib import Path
     root = Path(__file__).resolve().parents[1] / "edakit"
     left = {str(p.relative_to(root)): ids for p in root.rglob("*.py") if p.name != "convert.py"
-            if (ids := set(re.findall(r'"([PGESLFH]-\d+)"', p.read_text(encoding="utf-8"))))}
+            if (ids := set(re.findall(r'"([PGESLFHB]-\d+)"', p.read_text(encoding="utf-8"))))}
     assert left == {}
 
 

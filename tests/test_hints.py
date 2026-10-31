@@ -232,3 +232,13 @@ def test_h8_simulation_sources_and_fuses(project):
     sim["sources"]["U1"] = {"plus": "40", "minus": "38", "r_ohm": 0.3, "i_max_a": 0.5}
     sim_file.write_text(json.dumps(sim))
     assert h8(project) == ["+5V (J1, U1 unblocked)", "VBUS_U1 (J1, U1 unblocked)"]
+
+
+def test_the_order_checks_are_in_the_catalog():
+    """ORDER.form to ORDER.review (edakit cart check, handbook 8.4) are the codes of the engine ORDER, titled as cart
+    names them, each replacing its check ID of before (B-1 to B-7)."""
+    from edakit import cart, catalog
+    assert set(cart.CHECKS) == {c for c in catalog.codes() if c.startswith("ORDER.")}
+    assert all(catalog.code(c)["title"] == cart.CHECKS[c] for c in cart.CHECKS)
+    assert sorted(catalog.old_map()[f"B-{i}"][0] for i in range(1, 8)) == sorted(cart.CHECKS)
+

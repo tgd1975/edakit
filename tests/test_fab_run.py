@@ -12,7 +12,7 @@ only where a test puts [routing] drc_rules into the board file. pcb.json has eve
 designator visible (GEO.silk). It also has the
 footprint geometry of `edakit pcb dump`, the net currents of `edakit sim` – 0.5 A on all three nets, which puts
 them in class POWER (0.6 mm), with an IPC-2221 width of 0.20 mm – and the board as `edakit route read` saw it (pads
-with their shapes, for GEO.spacing and GEO.spacing), written from pcb.json when the export is written. J1 is through-hole and the
+with their shapes, for GEO.spacing), written from pcb.json when the export is written. J1 is through-hole and the
 example orders Economic assembly (SMD only), so J1 is not in its BOM: it is soldered by hand.
 
 A new check of stage L or F gets its fault here: one more entry in FAULTS.
@@ -587,6 +587,9 @@ def c2_without_row(ex, project):
     board_file(project, "C2 = { x = 20,", "# C2 = { x = 20,")
 
 
+GONE = ("FILES.order", "warn", "reports the order number gone since May 2026")   # JLCPCB's placeholder (2026-10-30)
+
+
 def thickness(mm, order=None):
     """[order] in the board file (as ordered) on a board of thickness_mm = mm."""
     def fault(ex, project):
@@ -803,23 +806,23 @@ FAULTS = [
      [("FILES.set", "fail", "top: copper in the opening at (2.5, 17.5)"), ("GEO.pour", "warn", "TOP: 1 piece without pad")]),
     # FILES.order (#40) – only with [order] in the board file
     ("a remark longer than 200 characters", lambda ex, p: ordered(ex, p, {"remark": "x" * 201}),
-     [("FILES.order", "fail", "201 characters")]),
+     [GONE, ("FILES.order", "fail", "201 characters")]),
     ("a remark that is not ASCII", lambda ex, p: ordered(ex, p, {"remark": "Tabs only where copper is ≥ 1 mm away"}),
-     [("FILES.order", "fail", "not ASCII: ≥")]),
+     [GONE, ("FILES.order", "fail", "not ASCII: ≥")]),
     ("mark specify without the placeholder", lambda ex, p: ordered(ex, p, placeholder=False),
-     [("FILES.order", "fail", "no JLCJLCJLCJLC on a silkscreen layer")]),
+     [GONE, ("FILES.order", "fail", "no JLCJLCJLCJLC on a silkscreen layer")]),
     ("the placeholder too small", lambda ex, p: ordered(ex, p, h_mm=0.6),   # below GEO.silk's 1.0 mm for edakit's texts too
-     [("FILES.order", "fail", "JLCJLCJLCJLC 0.60 mm high"), ("GEO.silk", "warn", "'JLCJLCJLCJLC' = 0.6 mm")]),
+     [GONE, ("FILES.order", "fail", "JLCJLCJLCJLC 0.60 mm high"), ("GEO.silk", "warn", "'JLCJLCJLCJLC' = 0.6 mm")]),
     ("the placeholder kept with mark default", lambda ex, p: ordered(ex, p, {"mark": "default"}),
-     [("FILES.order", "warn", 'JLCJLCJLCJLC at (18.0, 3.0) on the top silkscreen, but mark = "default"')]),
+     [GONE, ("FILES.order", "warn", 'JLCJLCJLCJLC at (18.0, 3.0) on the top silkscreen, but mark = "default"')]),
     ("Economic without tooling holes", no_tooling,
-     [("FILES.order", "warn", "no tooling holes ([tooling]) – JLCPCB adds its own")]),
+     [GONE, ("FILES.order", "warn", "no tooling holes ([tooling]) – JLCPCB adds its own")]),
     ("copper in a tab zone", edge_track,       # the track touches no pad: loose copper for GEO.pour too
-     [("FILES.order", "fail", "copper 0.45 mm from the edge at (0.0, "), ("GEO.pour", "warn", "TOP: 1 piece without pad")]),
+     [GONE, ("FILES.order", "fail", "copper 0.45 mm from the edge at (0.0, "), ("GEO.pour", "warn", "TOP: 1 piece without pad")]),
     ("a board thickness JLCPCB does not make", thickness(1.57),         # 62 mil: JLCPCB's form has 1.6 mm
-     [("FILES.order", "fail", "1.57 mm (thickness_mm) – not a thickness of JLCPCB's form")]),
+     [GONE, ("FILES.order", "fail", "1.57 mm (thickness_mm) – not a thickness of JLCPCB's form")]),
     ("white print on a white mask", lambda ex, p: ordered(ex, p, {"mask": "white", "silkscreen": "white"}),
-     [("FILES.order", "fail", 'silkscreen = "white" on a white mask – JLCPCB prints black on it')]),
+     [GONE, ("FILES.order", "fail", 'silkscreen = "white" on a white mask – JLCPCB prints black on it')]),
 ]
 
 
@@ -1010,21 +1013,24 @@ def test_the_order_form_of_the_clean_export(project):
     """#40: with [order] FILES.order passes, and order.md holds every field of the order form – the class and side from
     [release] assembly, the tooling holes, the mark at the placeholder, the remark, bake, the free outline stretches."""
     rows = run(project, ordered)
-    assert findings(rows) == []
+    assert findings(rows) == [("FILES.order", "warn")]       # JLCPCB reports its order number gone (decided 2026-10-30)
     f6 = [r for r in rows if r["id"] == "FILES.order"]
-    assert {r["result"] for r in f6} == {"pass", "info"}
+    assert {r["result"] for r in f6} == {"pass", "info", "warn"}
+    assert any(r["result"] == "warn" and "reports the order number gone since May 2026" in r["actual"] for r in f6)
     assert len(REMARK) <= 200 and any(r["actual"] == f"{len(REMARK)} characters, ASCII" for r in f6)
     assert {(r["check"], r["actual"]) for r in f6} >= {
         ("board thickness JLCPCB makes (FR-4, 2 layers)", "1.6 mm (thickness_mm)"),       # JLCPCB's defaults
         ("silkscreen colour JLCPCB prints on the solder mask", "white on a green mask")}
     sheet = (project.root / "build" / "fab" / "main" / "order.md").read_text()
-    assert "| PCB Qty | 5 |\n| PCB Thickness | 1.6 mm |\n| PCB Color | Green |\n| Silkscreen | White |\n" \
-           "| Surface Finish | LeadFree HASL |" in sheet                            # in the order of JLCPCB's form
-    for text in ("| Layers | 2 |", "| Dimensions | 30.00 x 20.00 mm (Gerber outline) |", "| PCB Qty | 5 |",
-                 "| Surface Finish | LeadFree HASL |",
-                 "| Mark on PCB | Order Number (Specify Position) – JLCJLCJLCJLC at (18.0, 3.0) on the top silkscreen |",
-                 REMARK, "| PCBA Type | Economic ([release] assembly.sides top: one side) |",
-                 "| Assembly Side | Top Side |", "| PCBA Qty | 5 |", "| Tooling holes | Added by Customer (2 x Ø 1.152 mm) |",
+    assert "| PCB Thickness | 1.6 mm | edakit |\n| PCB Color | Green | edakit |\n| Silkscreen | White | edakit |\n" \
+           "| Surface Finish | LeadFree HASL | edakit |" in sheet                   # in the order of JLCPCB's form
+    for text in ("| Layers | 2 | Gerber files |", "| Dimensions | 30.00 x 20.00 mm | Gerber outline |",
+                 "| PCB Qty | 5 | [project] quantity |", "| Surface Finish | LeadFree HASL |",
+                 "| Mark on PCB | Order Number (Specify Position) – JLCJLCJLCJLC at (18.0, 3.0) on the top silkscreen "
+                 "| board file |",
+                 REMARK, "| PCBA Type | Economic | [release] assembly.sides top: one side |",
+                 "| Assembly Side | Top Side |", "| PCBA Qty | 5 | quantity |",
+                 "| Tooling holes | Added by Customer – 2 x Ø 1.152 mm | [tooling] |",
                  "| Bake Components | check the BOM tool – no stock snapshot (edakit stock) |",
                  "| BOM / CPL | bom_main.csv (2 lines) / cpl_main.csv |", "| Gerber | gerber_main.zip |",
                  "(30.0, 0.0) → (30.0, 20.0), 20.0 mm", "| J1 | C131337 B2B-PH-K-S(LF)(SN) | lcsc | C131337 |"):
@@ -1049,16 +1055,17 @@ def test_the_order_form_bakes_an_msl5_part(project):
         (p.root / "hardware" / "stock.json").write_text(json.dumps({"date": "2026-10-27", "parts": rows}))
     run(project, snapshot)
     sheet = (project.root / "build" / "fab" / "main" / "order.md").read_text()
-    assert "| Bake Components | Yes – D1 C8678 MSL 5 (stock snapshot 2026-10-27) |" in sheet
+    assert "| Bake Components | Yes – D1 C8678 MSL 5 | stock snapshot 2026-10-27 |" in sheet
 
 
 def test_the_order_form_names_thickness_and_colours(project):
     """Step 1.7: order.md takes the board thickness from thickness_mm and the colours from [order] mask and
     silkscreen; FILES.order passes a thickness of JLCPCB's form and the print JLCPCB puts on the mask."""
     rows = run(project, thickness(1.0, {"mask": "black"}))
-    assert findings(rows) == []
+    assert findings(rows) == [("FILES.order", "warn")]         # the placeholder: JLCPCB's order number reported gone
     sheet = (project.root / "build" / "fab" / "main" / "order.md").read_text()
-    assert "| PCB Thickness | 1 mm |\n| PCB Color | Black |\n| Silkscreen | White |\n" in sheet
+    assert "| PCB Thickness | 1 mm | board file |\n| PCB Color | Black | board file |\n| Silkscreen | White | edakit |\n" \
+        in sheet
     f6 = {r["check"]: (r["result"], r["actual"]) for r in rows if r["id"] == "FILES.order"}
     assert f6["board thickness JLCPCB makes (FR-4, 2 layers)"] == ("pass", "1 mm (thickness_mm)")
     assert f6["silkscreen colour JLCPCB prints on the solder mask"] == ("pass", "white on a black mask")
@@ -1067,9 +1074,9 @@ def test_the_order_form_names_thickness_and_colours(project):
 def test_the_order_form_of_a_white_mask(project):
     """Step 1.7: on a white mask JLCPCB prints black – the silkscreen without a key of its own."""
     rows = run(project, lambda ex, p: ordered(ex, p, {"mask": "white"}))
-    assert findings(rows) == []
+    assert findings(rows) == [("FILES.order", "warn")]         # the placeholder: JLCPCB's order number reported gone
     sheet = (project.root / "build" / "fab" / "main" / "order.md").read_text()
-    assert "| PCB Color | White |\n| Silkscreen | Black |\n" in sheet
+    assert "| PCB Color | White | board file |\n| Silkscreen | Black | edakit |\n" in sheet
     assert ("pass", "black on a white mask") in {(r["result"], r["actual"]) for r in rows if r["id"] == "FILES.order"}
 
 
@@ -1083,7 +1090,7 @@ def test_the_order_form_of_a_bare_board(project):
         assert 'sides = ["top"]' in f.read_text()
         f.write_text(f.read_text().replace('sides = ["top"]', "sides = []"))
     rows = run(project, bare)
-    assert findings(rows) == []
+    assert findings(rows) == [("FILES.order", "warn")]         # the placeholder: JLCPCB's order number reported gone
     sheet = (project.root / "build" / "fab" / "main" / "order.md").read_text()
     assert "## PCB Assembly\n\nNone – no part of this board is assembled (PCB only)." in sheet
 

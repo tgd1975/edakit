@@ -51,6 +51,7 @@ from . import eda, gerber, pcb
 from .config import BOTTOM, MIL_PER_MM, TOP
 from .design import natural_key
 from .eda import api, ensure_pcb_focus
+from .toolchain import is_kicad
 
 SIDE = {"top": TOP, "bottom": BOTTOM}
 MULTI_LAYER = 12  # EasyEDA layer of through-hole pads
@@ -638,6 +639,16 @@ def main(cfg, args):
     board = cfg.board(args.board, made=True)
     if args.action == "preview":
         return preview(cfg, board)
+    if is_kicad(cfg):                 # the KiCad project: the same placement, written into the file (handbook 16)
+        from .toolchain.kicad import silk as kicad_silk
+        from .toolchain.kicad.board import BoardError
+        from .toolchain.kicad.cli import CliError
+        try:
+            step = eda.Steps(APPLY_STEPS - 1) if args.action == "apply" else None
+            return kicad_silk.apply(cfg, board, step, args.verbose) if args.action == "apply" else \
+                kicad_silk.check(cfg, board, verbose=args.verbose)
+        except (BoardError, CliError) as e:
+            return eda.die(str(e))
     step = eda.Steps(APPLY_STEPS) if args.action == "apply" else None
     if step:
         step("bridge and PCB")

@@ -25,6 +25,7 @@ from pathlib import Path
 
 from . import eda, lock
 from .eda import MCP_SERVER
+from .toolchain import is_kicad
 
 PROC = Path("/proc")
 DEFAULT_TIMEOUT_MS = 15000  # easyeda-mcp-pro 1.4.0 without BRIDGE_TIMEOUT_MS (src/config/env.ts:68)
@@ -153,6 +154,40 @@ def bridge_part(cfg, line, verbose=False):
             mcp.close()
 
 
+def kicad_line(line):
+    """kicad-cli on the PATH (or KICAD_CLI) and its major version: KiCad 10, from KiCad's PPA for Ubuntu."""
+    from .toolchain.kicad import cli
+    try:
+        version = cli.version()
+    except cli.CliError as e:
+        line("FAIL", "kicad-cli: missing", f"{e}")
+        return
+    major = version.split(".")[0]
+    line("OK" if major == str(cli.MAJOR) else "WARN", f"KiCad {version} (kicad-cli: {cli.binary()})",
+         "" if major == str(cli.MAJOR) else f"edakit writes and reads for KiCad {cli.MAJOR}: sudo add-apt-repository "
+         f"ppa:kicad/kicad-{cli.MAJOR}.0-releases && sudo apt install kicad (handbook 2)")
+
+
+ODB_TOOL = "name: 'easyeda_export_odb'"     # the tool odb-tool-patch.mjs adds to the server (handbook 2.5)
+
+
+def odb_line(cfg, runtime, installed):
+    """(level, text, hint) for the ODB++ export: the tool in the installed server – needed only with a maker of
+    [cart] makers that takes ODB++ (AISLER, SYNC.odb); the bridge's handler is in the extension bridge-extension-patch.sh
+    builds, and SYNC.odb names an extension without it."""
+    from .release import fab
+    need = cfg is not None and bool(fab.odb_takers(cfg))
+    tools = Path(runtime) / "node_modules/easyeda-mcp-pro/dist/tools/L1_export.js"
+    has = installed and tools.exists() and ODB_TOOL in tools.read_text(encoding="utf-8", errors="replace")
+    if has:
+        return "OK", "ODB++ export: easyeda_export_odb in the server; the bridge needs the extension with ODB++ " \
+                     "(bridge-extension-patch.sh)", ""
+    return ("WARN" if need else "INFO", "ODB++ export: easyeda_export_odb not in the server"
+            + (" – a maker of [cart] makers takes ODB++ (SYNC.odb)" if need else ""),
+            "mcp-server.sh patches it in on its next start (odb-tool-patch.mjs); then build and import the bridge "
+            "extension with ODB++ (bash edakit/easyeda/bridge-extension-patch.sh, handbook 2.5)" if need else "")
+
+
 def main(cfg, args):
     bad = 0
 
@@ -165,39 +200,45 @@ def main(cfg, args):
          "" if cfg else error.replace("\n", "\n         ") if error and "no edakit.toml found" not in error
          else "create one (/edakit:new-project, handbook/10-reference.md)")
     line("OK" if sys.version_info >= (3, 11) else "FAIL", f"Python {sys.version.split()[0]}")
-    code, out = run("node", "-v")
-    major = re.match(r"v(\d+)", out or "")
-    line("OK" if major and major.group(1) == "24" else "FAIL", f"Node {out or 'missing'}",
-         "" if major and major.group(1) == "24" else "easyeda-mcp-pro 1.4.0 needs Node 24.x (nvm install 24)")
-    version = re.search(r'EASYEDA_MCP_VERSION:-([\d.]+)', MCP_SERVER.read_text()).group(1)
-    runtime = os.environ.get("EASYEDA_MCP_RUNTIME_DIR") or os.path.expanduser(f"~/.easyeda-mcp-pro/runtime/{version}")
-    installed = os.path.exists(os.path.join(runtime, "node_modules/easyeda-mcp-pro/dist/index.js"))
-    line("OK" if installed else "WARN", f"easyeda-mcp-pro {version} in {runtime}",
-         "" if installed else "installs itself on the first start of mcp-server.sh")
-    code, ps = run("ps", "-eo", "pid,args")
-    easyeda = [p for p in ps.splitlines() if "easyeda-pro" in p and "grep" not in p]
-    line("OK" if easyeda else "WARN", f"EasyEDA Pro running: {'yes' if easyeda else 'no'}",
-         "" if easyeda else "start it (handbook/02-setup.md, unthrottled launcher)")
-    if easyeda:
-        throttled = not any("disable-background-timer-throttling" in p for p in easyeda)
-        line("WARN" if throttled else "OK", "EasyEDA unthrottled" if not throttled else "EasyEDA runs THROTTLED",
-             "save, quit and start it with --disable-background-timer-throttling --disable-renderer-backgrounding "
-             "--disable-backgrounding-occluded-windows (handbook/02-setup.md)" if throttled else "")
-    servers = [p for p in ps.splitlines() if "easyeda-mcp-pro" in p and "node" in p]
-    line("OK" if len(servers) <= 3 else "WARN", f"{len(servers)} easyeda-mcp-pro server process(es)",
-         "orphans keep port 49620: pgrep -af easyeda-mcp-pro, end the stale ones" if len(servers) > 3 else "")
-    if PROC.is_dir():
-        pids = [int(p.split()[0]) for p in servers if p.split()[0].isdigit()]
-        line(*timeout_line({pid: read_environ(pid) for pid in pids}))
+    kc = cfg is not None and is_kicad(cfg)
+    if kc:                            # the KiCad tool chain: kicad-cli instead of Node, server, bridge and EasyEDA
+        easyeda = []
+        kicad_line(line)
     else:
-        line("INFO", "BRIDGE_TIMEOUT_MS not compared: no /proc on this system")
-    code, ss = run("ss", "-ltnp")
-    port = [x for x in ss.splitlines() if ":49620" in x]
-    line("OK" if port else "WARN", f"bridge port 49620: {'listening' if port else 'not listening'}",
-         "" if port else "normal while no server runs; the first easyeda tool call starts one")
-    if os.environ.get("ELECTRON_RUN_AS_NODE"):
-        line("WARN", "ELECTRON_RUN_AS_NODE is set in this shell",
-             "EasyEDA started from here behaves like Node ('bad option: --no-sandbox'): env -u ELECTRON_RUN_AS_NODE …")
+        code, out = run("node", "-v")
+        major = re.match(r"v(\d+)", out or "")
+        line("OK" if major and major.group(1) == "24" else "FAIL", f"Node {out or 'missing'}",
+             "" if major and major.group(1) == "24" else "easyeda-mcp-pro 1.4.0 needs Node 24.x (nvm install 24)")
+        version = re.search(r'EASYEDA_MCP_VERSION:-([\d.]+)', MCP_SERVER.read_text()).group(1)
+        runtime = os.environ.get("EASYEDA_MCP_RUNTIME_DIR") or os.path.expanduser(f"~/.easyeda-mcp-pro/runtime/{version}")
+        installed = os.path.exists(os.path.join(runtime, "node_modules/easyeda-mcp-pro/dist/index.js"))
+        line("OK" if installed else "WARN", f"easyeda-mcp-pro {version} in {runtime}",
+             "" if installed else "installs itself on the first start of mcp-server.sh")
+        line(*odb_line(cfg, runtime, installed))
+        code, ps = run("ps", "-eo", "pid,args")
+        easyeda = [p for p in ps.splitlines() if "easyeda-pro" in p and "grep" not in p]
+        line("OK" if easyeda else "WARN", f"EasyEDA Pro running: {'yes' if easyeda else 'no'}",
+             "" if easyeda else "start it (handbook/02-setup.md, unthrottled launcher)")
+        if easyeda:
+            throttled = not any("disable-background-timer-throttling" in p for p in easyeda)
+            line("WARN" if throttled else "OK", "EasyEDA unthrottled" if not throttled else "EasyEDA runs THROTTLED",
+                 "save, quit and start it with --disable-background-timer-throttling --disable-renderer-backgrounding "
+                 "--disable-backgrounding-occluded-windows (handbook/02-setup.md)" if throttled else "")
+        servers = [p for p in ps.splitlines() if "easyeda-mcp-pro" in p and "node" in p]
+        line("OK" if len(servers) <= 3 else "WARN", f"{len(servers)} easyeda-mcp-pro server process(es)",
+             "orphans keep port 49620: pgrep -af easyeda-mcp-pro, end the stale ones" if len(servers) > 3 else "")
+        if PROC.is_dir():
+            pids = [int(p.split()[0]) for p in servers if p.split()[0].isdigit()]
+            line(*timeout_line({pid: read_environ(pid) for pid in pids}))
+        else:
+            line("INFO", "BRIDGE_TIMEOUT_MS not compared: no /proc on this system")
+        code, ss = run("ss", "-ltnp")
+        port = [x for x in ss.splitlines() if ":49620" in x]
+        line("OK" if port else "WARN", f"bridge port 49620: {'listening' if port else 'not listening'}",
+             "" if port else "normal while no server runs; the first easyeda tool call starts one")
+        if os.environ.get("ELECTRON_RUN_AS_NODE"):
+            line("WARN", "ELECTRON_RUN_AS_NODE is set in this shell",
+                 "EasyEDA started from here behaves like Node ('bad option: --no-sandbox'): env -u ELECTRON_RUN_AS_NODE …")
     line("OK" if shutil.which("ngspice") else "FAIL", f"ngspice: {shutil.which('ngspice') or 'missing'}",
          "" if shutil.which("ngspice") else "sudo apt install ngspice (stage E)")
     pdftotext = shutil.which("pdftotext")
@@ -209,7 +250,7 @@ def main(cfg, args):
     line("OK" if fr else "WARN", f"Freerouting: {fr or 'not yet downloaded'}",
          "" if fr else "`edakit route route` downloads the pinned release on Linux x64; elsewhere set FREEROUTING_JAR")
     line("OK" if shutil.which("uv") else "WARN", f"uv: {shutil.which('uv') or 'missing'}")
-    if not getattr(args, "offline", False):
+    if not getattr(args, "offline", False) and not kc:
         if easyeda:
             bridge_part(cfg, line, getattr(args, "verbose", False))
         else:

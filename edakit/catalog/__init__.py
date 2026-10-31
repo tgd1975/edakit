@@ -25,7 +25,7 @@ SEVERITIES = ("error", "warning", "note", "pending")
 STAGES = "PGESLF"
 TAGS = ("r", "x", "v")
 CODE = re.compile(r"([A-Z]+)\.([a-z][a-z0-9_]*)")
-OLD_ID = re.compile(r"[PGESLFH]-\d+")
+OLD_ID = re.compile(r"[PGESLFHB]-\d+")
 
 
 @lru_cache(maxsize=1)

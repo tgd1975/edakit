@@ -257,6 +257,13 @@ reference circuits drawn and their seeded faults, the candidates' state: `docs/c
 `docs/catalog/circuits/*.svg`, written by `docs/catalog/build.py`; `tests/test_catalog_page.py` fails while they differ
 from the catalog.
 
+Merged with main on 2026-10-31, before the merge into main (the owner's decision): main had brought the KiCad tool chain
+and ordering at the maker meanwhile, its new checks written as check IDs. They became codes: P-12 → `PARTS.fact/mpn`;
+F-6, now per maker → `FILES.order`; F-7 → `SYNC.odb` (the ODB++ against the released files, beside SYNC.bom and
+SYNC.cpl); B-1 to B-7 → a 13th engine `ORDER` (`ORDER.form`, `.parts`, `.quote`, `.read`, `.files`, `.finish`,
+`.review` – the order at the maker against the release). A finding for a maker of `[cart] makers` that is not the
+planned one is a warning of grade `other_maker`; `ORDER.finish` is graded by purpose in the domain core.
+
 ### When maker-coverage's candidates are built
 
 After the cut (step 5), not before – decided by the owner. Three reasons:

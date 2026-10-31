@@ -57,7 +57,7 @@ def kinds_section():
 def replaced_section():
     """The check IDs of before the restructuring and the codes that replace them."""
     def key(old):
-        return "PGESLFH".index(old[0]), int(old[2:])
+        return "PGESLFHB".index(old[0]), int(old[2:])
     out = ["| before | now |", "|---|---|"]
     out += [f"| {old} | {', '.join(f'`{c}`' for c in new)} |" for old, new in sorted(old_map().items(),
                                                                                          key=lambda x: key(x[0]))]

@@ -13,8 +13,11 @@ Result: <reports>/<YYYYMMDD-hhmmss>/
                            and the rule, reason and fix of every code that failed or warned (the catalog)
     graph_checks.json, sim.json, schematic_<board>.json   raw results
     fab/<board>/           Gerber ZIP, BOM and CPL in JLCPCB format plus raw data (stages L, F)
-    fab/manifest.json      SHA-256 of every file to upload, the hashes of the checked state, the decision, and
-                           whether the run is the current release (status: released, superseded, withdrawn)
+    fab/manifest.json      SHA-256 of every file to upload – the files of every maker of [cart] makers –, the
+                           hashes of the checked state, the decision, and whether the run is the current release
+                           (status: released, superseded, withdrawn)
+    makers.json            per maker of [cart] makers its role (planned or other) and the findings of its checks
+                           (PARTS.stock, FILES.order, PARTS.fact/mpn, SYNC.odb) – edakit cart prepare stops for another maker with one
 
 RELEASED only if
   - every stage ran and no check failed,
@@ -53,6 +56,7 @@ One current release: a RELEASED run supersedes every earlier released run of the
 from __future__ import annotations
 
 import argparse
+import dataclasses
 import datetime as dt
 import getpass
 import hashlib
@@ -69,6 +73,7 @@ from pathlib import Path
 
 from .. import catalog, docs, eda, requirements
 from ..design import Design
+from ..toolchain import is_kicad
 
 STAGES = [
     ("P", "Parts", "parts database complete, graph pins = parts database, parts verified, parts orderable"),
@@ -96,7 +101,8 @@ REQUIRED = {   # manual checks every release needs, also when an older sign-off 
                     "manufacturing files of a gate run – the agent pcb-reviewer. No finding 'block' open, every "
                     "'important' finding fixed or rejected by the owner"},
 }
-UPLOAD = ["gerber_{b}.zip", "bom_{b}.csv", "cpl_{b}.csv"]
+UPLOAD = ["gerber_{b}.zip", "bom_{b}.csv", "cpl_{b}.csv"]   # JLCPCB's; with [cart] the files of every maker (upload)
+MAKERS = "makers.json"   # per maker of [cart] makers: its role in the run and its findings (edakit cart prepare)
 WHEN = ("order", "acceptance")   # verified.open {text, when}: the phase whose manual checks answer the point
 RESULT = {"pass": "passed", "fail": "FAILED", "warn": "warning", "info": "information", "advisory": "advisory",
           "waived": "waived", "pending": "open"}
@@ -207,6 +213,15 @@ def header(cfg):
     design = Design.from_config(cfg)
     mcp = re.search(r"EASYEDA_MCP_VERSION:-([\d.]+)",
                     (Path(__file__).resolve().parents[1] / "easyeda" / "mcp-server.sh").read_text())
+    tools = {"python": platform.python_version(), "edakit": __version__,
+             "ngspice": (re.findall(r"ngspice-[\d.]+", sh(cfg.root, "ngspice", "-v")) or ["ngspice ?"])[0],
+             "easyeda-mcp-pro": mcp.group(1) if mcp else "?"}
+    if is_kicad(cfg):                 # the tool chain the stages S, L and F ran with (handbook 16)
+        from ..toolchain.kicad import cli
+        try:
+            tools["kicad"] = cli.version()
+        except cli.CliError:
+            tools["kicad"] = "?"
     return {
         "graph_sha256": hashlib.sha256(cfg.graph.read_bytes()).hexdigest(),
         "state_sha256": state_hash(cfg),
@@ -216,9 +231,7 @@ def header(cfg):
         "git_dirty": bool(sh(cfg.root, "git", "status", "--porcelain")),
         "time": dt.datetime.now().astimezone().isoformat(timespec="seconds"),
         "tester": sh(cfg.root, "git", "config", "user.name") or getpass.getuser(),
-        "tools": {"python": platform.python_version(), "edakit": __version__,
-                  "ngspice": (re.findall(r"ngspice-[\d.]+", sh(cfg.root, "ngspice", "-v")) or ["ngspice ?"])[0],
-                  "easyeda-mcp-pro": mcp.group(1) if mcp else "?"},
+        "tools": tools,
     }
 
 
@@ -392,14 +405,18 @@ def stage_graph(cfg, design):
 def executed(prof, cfg):
     """The codes of stages P and G a run checks, each counted once as passed where it has no finding: those of the
     engines on the graph and of the checks beyond it that the profile has on – the footprint data's only where an
-    entry has footprint data, the requirements file's only with [project] requirements; no hint, no suggestion note."""
+    entry has footprint data, the requirements file's only with [project] requirements, PARTS.stock only with a
+    maker of [cart] makers that orders from JLCPCB's catalogue; no hint, no suggestion note."""
     from ..findings import Finding
     from ..checks import has_footprint_data
     graph = ("STRUCT.", "LIM.", "LVL.", "REQ.", "PATH.", "PARTS.")
     beyond = ["SYNC.source", "GEO.hole", "GEO.formed"]
     beyond += ["SYNC.footprint"] if has_footprint_data(cfg) else []
     beyond += ["DOCS.ref", "DOCS.need", "DOCS.evidence", "DOCS.draft"] if cfg.requirements else []
+    from .. import makers
     skip = {"STRUCT.domain"} | (set() if has_footprint_data(cfg) else {"PARTS.footprint"})
+    if not makers.with_catalogue(cfg, "jlcpcb"):
+        skip.add("PARTS.stock")       # no maker of [cart] makers orders from JLCPCB's catalogue: it does not run
     return [c for c in catalog.codes() if (c.startswith(graph) or c in beyond) and c not in skip
             and prof.on(Finding(c, "G", "", ""))]
 
@@ -455,11 +472,14 @@ def bought_row(stage, sid, board):
 
 def stage_schematic(cfg, outdir):
     from .. import schematic
+    from ..toolchain import is_kicad
     rows = []
     for board in cfg.boards.values():
         if board.bought:
             rows.append(bought_row("S", "SYNC.schematic", board))
             continue
+        if is_kicad(cfg):              # the schematic is the KiCad project's (handbook 16): name it by its file
+            board = dataclasses.replace(board, template=f"{board.name}.kicad_sch")
         out = outdir / f"schematic_{board.name}.json"
         args = argparse.Namespace(board=board.name, schematic=None, no_pins=False, json=str(out), verbose=False, wait=90)
         code = schematic.check(cfg, args)
@@ -478,6 +498,29 @@ def stage_schematic(cfg, outdir):
     return rows
 
 
+def upload(cfg, board):
+    """The files of a board every maker of [cart] makers takes, in the order of the makers – JLCPCB's three without
+    [cart]."""
+    from .. import makers
+    return list(dict.fromkeys(name for m in makers.all_of(cfg) for name in m.upload(board)))
+
+
+def maker_findings(cfg, rows):
+    """{maker: {name, role, findings}} of a run: the rows a check that holds the board to that maker failed, warned or
+    left open (PARTS.stock, FILES.order, PARTS.fact/mpn, SYNC.odb – the row names its maker, or its text starts with it)."""
+    from .. import makers
+    out = {}
+    for key in makers.listed(cfg):
+        m = makers.get(cfg, key)
+        tag = f"{m.name} (not the planned maker): "
+        hits = [r for r in rows if r["result"] in ("fail", "warn", "pending") and (
+            r.get("maker") == key or str(r.get("check", "")).startswith(tag) or str(r.get("actual", "")).startswith(tag))]
+        out[key] = {"name": m.name, "role": "planned" if key == makers.planned(cfg) else "other",
+                    "findings": [{k: r.get(k, "") for k in ("stage", "id", "item", "check", "actual", "expected",
+                                                            "result")} for r in hits]}
+    return out
+
+
 def stage_fab(cfg, outdir, step=None):
     from . import fab
     rows = []
@@ -494,9 +537,12 @@ def stage_fab(cfg, outdir, step=None):
         except (SystemExit, Exception) as e:  # one board failing must not hide the others
             rows.append({"stage": "L", "id": "L", "item": board.name, "check": f"fab stage not runnable: {e}",
                          "result": "fail"})
-        lost = [p.format(b=board.name) for p in UPLOAD if not (d / board.name / p.format(b=board.name)).exists()]
-        rows.append({"stage": "F", "id": "FILES.manifest", "item": board.name, "check": "manufacturing files of this run complete "
-                     "(Gerber ZIP, BOM, CPL), checksums in the manifest", "actual": ", ".join(lost) or "complete",
+        files = upload(cfg, board.name)
+        lost = [f for f in files if not (d / board.name / f).exists()]
+        what = "(Gerber ZIP, BOM, CPL)" if files == [p.format(b=board.name) for p in UPLOAD] else \
+            f"of [cart] makers ({', '.join(files)})"
+        rows.append({"stage": "F", "id": "FILES.manifest", "item": board.name, "check": f"manufacturing files of this run complete "
+                     f"{what}, checksums in the manifest", "actual": ", ".join(lost) or "complete",
                      "expected": "complete", "result": "fail" if lost else "pass"})
     return rows
 
@@ -541,8 +587,8 @@ def write_manifest(cfg, outdir, head, decision):
     fab = outdir / "fab"
     files = {}
     for b in cfg.made():
-        for pattern in UPLOAD:
-            f = fab / b / pattern.format(b=b)
+        for name in upload(cfg, b):
+            f = fab / b / name
             if f.exists():
                 files[str(f.relative_to(outdir))] = hashlib.sha256(f.read_bytes()).hexdigest()
     manifest = {"released": decision == "RELEASED", "decision": decision, "time": head["time"],
@@ -728,6 +774,11 @@ def main_release(cfg, args):
                      f", graph sha256 {str(data.get('graph_sha256'))[:12]}"))
             for rel, sha in data.get("files", {}).items():
                 print(f"  {rel}  {sha}")
+            from .. import cart
+            for board, maker, number, est, quote, actual, cur in cart.totals_of(cfg, run):
+                fmt = lambda v: "–" if v is None else f"{v:.2f}"  # noqa: E731
+                print(f"  order {number} at {maker}, board {board}: estimate {fmt(est)}, quote {fmt(quote)}, actual "
+                      f"{fmt(actual)} {cur}".rstrip())
             return 0
         if args.action == "withdraw":
             if len(args.items) != 1 or not args.reason:
@@ -764,8 +815,10 @@ def write_protocol(cfg, outdir, head, rows, sim, signoff, notes, decision, reaso
     L = [f"# Test protocol – release check {cfg.project}\n", "| | |\n|---|---|",
          f"| Date | {head['time']} |", f"| Run by | {head['tester']} |",
          f"| Object | `{cfg.relative(cfg.graph)}` v{head['graph_version']} ({head['graph_date']}), boards "
-         f"{', '.join(cfg.made())} in EasyEDA project {cfg.project}"
-         f"{'; bought, not made: ' + bought if bought else ''} |",
+         f"{', '.join(cfg.made())} in "
+         + (f"KiCad projects {cfg.relative(cfg.artifacts / 'kicad')}/<board>" if is_kicad(cfg) else
+            f"EasyEDA project {cfg.project}")
+         + f"{'; bought, not made: ' + bought if bought else ''} |",
          f"| SHA-256 graph | `{head['graph_sha256']}` |",
          f"| SHA-256 circuit | `{head['state_sha256']}` (graph, parts database, simulation config"
          f"{', requirements' if cfg.requirements else ''}) |",
@@ -776,7 +829,8 @@ def write_protocol(cfg, outdir, head, rows, sim, signoff, notes, decision, reaso
            if head.get("fab_sha256") else []),
          f"| Git | `{head['git_commit']}`{' + uncommitted changes' if head['git_dirty'] else ''} |",
          f"| Tools | Python {head['tools']['python']}, edakit {head['tools']['edakit']}, {head['tools']['ngspice']}, "
-         f"easyeda-mcp-pro {head['tools']['easyeda-mcp-pro']} |",
+         + (f"KiCad {head['tools'].get('kicad', '?')} (kicad-cli) |" if "kicad" in head["tools"] else
+          f"easyeda-mcp-pro {head['tools']['easyeda-mcp-pro']} |"),
          f"| **Result** | **{decision}** |\n"]
     if reasons:
         L += ["Reasons:\n", *[f"- {r}" for r in reasons], ""]
@@ -960,6 +1014,8 @@ def main(cfg, args):
     decision, reasons = decide(rows, sim["checks"], signoff, stages_run, stages, reqs)
     if args.easyeda:
         files = write_manifest(cfg, outdir, head, decision)
+        (outdir / MAKERS).write_text(json.dumps(maker_findings(cfg, rows), indent=1, ensure_ascii=False) + "\n",
+                                     encoding="utf-8")
     write_protocol(cfg, outdir, head, rows, sim, signoff, notes, decision, reasons, stages_run, stages, files, reqs,
                    project_checks)
     print(f"\n{decision}")

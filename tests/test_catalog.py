@@ -18,9 +18,10 @@ def test_catalog_lint_is_clean():
 
 
 def test_every_check_and_hint_of_before_has_a_code():
-    """The 66 checks and 9 hints of before the restructuring (G-7 was retired) each name the codes that replace them."""
-    old = {f"{s}-{n}" for s, last in (("P", 11), ("G", 25), ("E", 5), ("H", 9)) for n in range(1, last + 1)}
-    old |= {"S-2"} | {f"L-{n}" for n in range(1, 21) if n != 6} | {f"F-{n}" for n in range(1, 7)}
+    """The 66 checks and 9 hints of before the restructuring (G-7 was retired), and the ten that came with ordering at
+    the maker on main meanwhile (P-12, F-7, B-1 to B-7), each name the codes that replace them."""
+    old = {f"{s}-{n}" for s, last in (("P", 12), ("G", 25), ("E", 5), ("H", 9), ("B", 7)) for n in range(1, last + 1)}
+    old |= {"S-2"} | {f"L-{n}" for n in range(1, 21) if n != 6} | {f"F-{n}" for n in range(1, 8)}
     assert old - {"G-7"} == set(catalog.old_map())
 
 

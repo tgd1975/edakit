@@ -315,7 +315,7 @@ def manual_checks(cfg):
     return list(dict.fromkeys(ids + list(required(cfg)))), cfg.relative(cfg.signoff)
 
 
-OLD_ID = re.compile(r"[PGESLFH]-\d+")
+OLD_ID = re.compile(r"[PGESLFHB]-\d+")
 
 
 def old_codes(old):

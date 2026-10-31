@@ -39,6 +39,8 @@ profile says: `${CLAUDE_PLUGIN_ROOT}/skills/part-search/distributors/<name>.md` 
 
 - An LCSC part: `edakit part import <LCSC>` writes the start – identification, footprint, the symbol's pin numbers
   and names – and caches the library's symbol and footprint (STRUCT.entry then compares the graph with the symbol).
+- `mpn` and `manufacturer` in every entry: with a maker that matches parts by manufacturer part number (Eurocircuits
+  in `[cart] makers`) PARTS.fact/mpn requires both for every assembled part – from the datasheet or the distributor's page.
 - `hardware/parts/<LCSC>.json` – from another distributor `hardware/parts/<manufacturer part number>.json` with
   `mpn` set and `order` for the order numbers (`{"rs": "223-0562"}`, with a minimum or pack size
   `{"rs": {"code": "223-0562", "moq": 10, "step": 10}}`); the graph names it in `part`. A part bought

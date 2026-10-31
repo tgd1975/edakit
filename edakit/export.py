@@ -10,6 +10,8 @@ Per board (board schematic and PCB):
     bom_<board>.csv         parts of the schematic, grouped by LCSC number
     cpl_<board>.xlsx        pick and place (EasyEDA delivers xlsx even when csv is asked for)
     nets_<board>.txt        netlist of the schematic, one net per line
+    odb_<board>.zip         with a maker of [cart] makers that takes ODB++ (AISLER): EasyEDA's ODB++ export – needs the
+                            patched server and bridge (easyeda_export_odb, handbook 2.5)
 plus <project>.eprj2: a consistent copy of the project file (SQLite backup, state of the last save).
 
 Orders are NOT placed with these files but with the checked ones of the release gate (`edakit gate --easyeda`).
@@ -129,6 +131,10 @@ def export_board(cfg, mcp, board, out, step=None):
                                                     drillFormat="millimeter", productionReview={"mode": "off"})))
     rows.append((f"cpl_{board.name}.xlsx", export(mcp, "easyeda_export_pick_place", out / f"cpl_{board.name}.xlsx",
                                                   format="csv")))
+    from .release import fab
+    if fab.odb_takers(cfg):     # a maker of [cart] makers that takes ODB++ (AISLER) – the patched server (2.5)
+        rows.append((f"odb_{board.name}.zip", export(mcp, "easyeda_export_odb", out / f"odb_{board.name}.zip",
+                                                     unit="mm")))
     for name, kb in rows:
         print(f"  {name:<40} {f'{kb:.0f} kB' if kb is not None else 'missing'}")
     return sum(kb is None for _, kb in rows)
@@ -153,6 +159,10 @@ def copy_project(mcp, out):
 
 
 def main(cfg, args):
+    from .toolchain import is_kicad
+    if is_kicad(cfg):                 # the KiCad project: kicad-cli's exports and a copy of the project (handbook 16)
+        from .toolchain.kicad import commands
+        return commands.export_main(cfg, args)
     out = cfg.artifact("export", ".keep").parent
     boards = [cfg.board(args.board, made=True)] if args.board else list(cfg.made().values())
     step = eda.Steps(1 + 2 * len(boards) + (0 if args.board else 1))

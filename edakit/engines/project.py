@@ -13,7 +13,7 @@ from __future__ import annotations
 
 import re
 
-from ..findings import Finding
+from ..findings import Finding, accept_reason
 
 # code -> {class of a report: grade}; class: error, warning, pending, note, draft
 GRADES = {
@@ -29,6 +29,16 @@ GRADES = {
     "SYNC.scripts": {"warning": "margin", "note": "unchecked"},
 }
 PLACE = re.compile(r"^([A-Za-z][\w.+-]*?)(?:[:\s(]|$)")
+
+
+def other_maker(rec, sub, name):
+    """sub's findings (a Recorder) for a maker of [cart] makers that is not the planned one, into rec: errors, pending
+    and warnings become warnings of grade other_maker, notes stay notes – each named with the maker."""
+    for f in sub.findings:
+        f.text = f"{f.text} – {name}, not the planned maker"
+        if f.data.get("class") != "note":
+            f.grade, f.data["class"] = "other_maker", "warning"
+        rec.findings.append(f)
 
 
 class Recorder:
@@ -74,6 +84,30 @@ class Recorder:
         return [f.code for f in self.findings]
 
 
+def check_mpn(design, rec, cfg):
+    """PARTS.fact/mpn: with a maker of [cart] makers that matches parts by manufacturer part number (bom.match = "mpn"
+    in its profile – Eurocircuits), every assembled part's entry names its mpn and its manufacturer – an error for the
+    planned maker, a warning for another one (grade other_maker). Found when the part is chosen, not at the release."""
+    from .. import makers, stock
+    takers = [m for m in makers.all_of(cfg) if m.matches_by == "mpn"]
+    if not takers:
+        return
+    planned = takers[0].key == makers.planned(cfg)
+    for lcsc, refs in stock.assembled(design).items():
+        entry = design.parts.get(lcsc) or {}
+        lost = [k for k in ("mpn", "manufacturer") if not str(entry.get(k) or "").strip()]
+        if not lost:
+            continue
+        msg = (f"{stock.refs_text(refs)} {lcsc}: the parts entry has no {' and no '.join(lost)} – "
+               f"{', '.join(m.name for m in takers)} matches the BOM by manufacturer part number")
+        if planned:
+            reason = next((r for d in refs if (r := accept_reason(design.comps[d], "PARTS.fact", grade="mpn"))),
+                          "")
+            rec.add("error", "PARTS.fact", msg, reason, grade="mpn")
+        else:
+            rec.add("warning", "PARTS.fact", f"{msg} – {takers[0].name}, not the planned maker", grade="other_maker")
+
+
 def run(design, cfg):
     """The findings of the checks beyond the graph, for a project (cfg)."""
     from .. import checks, footprint, order, part, requirements, scripts, stock
@@ -89,6 +123,7 @@ def run(design, cfg):
         footprint.check(design, rec, cfg)
     stock.check(design, rec, cfg)
     order.check(design, rec, cfg)
+    check_mpn(design, rec, cfg)
     checks.check_signoff(design, rec)
     if cfg.requirements:
         requirements.check(rec, cfg)

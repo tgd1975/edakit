@@ -65,6 +65,7 @@ from __future__ import annotations
 import datetime
 import hashlib
 import json
+import math
 import os
 import re
 import shutil
@@ -522,6 +523,10 @@ def footprint_geometry(ds, footprint):
         pad = {"x": round((float(f[2]) - hx) * UNIT_MIL, 2), "y": round((hy - float(f[3])) * UNIT_MIL, 2), "net": "",
                "tht": r > 0, "shape": f[1], "w": round(float(f[4]) * UNIT_MIL, 2), "h": round(float(f[5]) * UNIT_MIL, 2),
                "rot": round(-float(f[11] or 0) % 360, 2), "layer": PAD_LAYERS.get(f[6], f[6])}
+        if f[1] == "POLYGON" and f[10].strip():      # a polygon pad: its corners, relative to the pad (KiCad: custom)
+            v = [float(t) for t in f[10].split()]
+            pad["points"] = [[round((x - float(f[2])) * UNIT_MIL, 2), round((float(f[3]) - y) * UNIT_MIL, 2)]
+                             for x, y in zip(v[0::2], v[1::2])]
         if r > 0:
             w = 2 * r / MIL_PER_MM
             pad["hole"] = [round(w, 3), round(max(w, float(f[13] or 0) * UNIT_MIL / MIL_PER_MM), 3)]
@@ -535,13 +540,67 @@ def footprint_geometry(ds, footprint):
         half = [max(p["w"], p["h"]) / 2 for _, p in pads] or [0]
         box = [min(p["x"] - h for (_, p), h in zip(pads, half)), min(p["y"] - h for (_, p), h in zip(pads, half)),
                max(p["x"] + h for (_, p), h in zip(pads, half)), max(p["y"] + h for (_, p), h in zip(pads, half))]
-    geo = {"footprint": footprint, "bbox": [round(v, 2) for v in box], "pads": {}}
+    geo = {"footprint": footprint, "bbox": [round(v, 2) for v in box], "pads": {}, "silk": footprint_silk(ds, hx, hy)}
     for n, p in pads:
         geo["pads"].setdefault(n, p)
     nums = [n for n, _ in pads]
     if dup := sorted({n for n in nums if nums.count(n) > 1}, key=natural_key):   # shell legs: all of them here
         geo["pads_same_number"] = {n: [p for m, p in pads if m == n] for n in dup}
     return geo
+
+
+SILK_LAYERS = {"3": "TOP", "4": "BOTTOM"}   # EasyEDA Standard: top and bottom silkscreen
+
+
+def footprint_silk(ds, hx, hy):
+    """The silkscreen of the library footprint – what the KiCad tool chain draws with the pads (handbook 16), polarity
+    marks included: [{layer, points [[x, y], …], width, fill}] in mil, y up, relative to the origin. Lines (TRACK),
+    circles, arcs, filled regions and the strokes of texts other than the designator and the name."""
+    out = []
+
+    def add(layer, polylines, width, fill=False):
+        for pts in polylines:
+            if len(pts) >= 2:
+                out.append({"layer": SILK_LAYERS[layer], "points": [[round((x - hx) * UNIT_MIL, 2),
+                                                                     round((hy - y) * UNIT_MIL, 2)] for x, y in pts],
+                            "width": round(width * UNIT_MIL, 2), "fill": fill})
+    for s in ds.get("shape") or []:
+        f = s.split("~")
+        try:
+            if f[0] == "TRACK" and f[2] in SILK_LAYERS:
+                v = [float(t) for t in f[4].split()]
+                add(f[2], [list(zip(v[0::2], v[1::2]))], float(f[1]))
+            elif f[0] == "CIRCLE" and f[5] in SILK_LAYERS:
+                cx, cy, r = float(f[1]), float(f[2]), float(f[3])
+                add(f[5], [[(cx + r * math.cos(2 * math.pi * k / 24), cy + r * math.sin(2 * math.pi * k / 24))
+                            for k in range(25)]], float(f[4]))
+            elif f[0] == "ARC" and f[2] in SILK_LAYERS:
+                add(f[2], svg_polylines(f[4]), float(f[1]))
+            elif f[0] == "SOLIDREGION" and f[1] in SILK_LAYERS:
+                add(f[1], svg_polylines(f[3]), 0, fill=True)
+            elif f[0] == "TEXT" and f[7] in SILK_LAYERS and f[1] not in ("P", "N") and len(f) > 11:
+                add(f[7], svg_polylines(f[11]), float(f[4]))
+        except (IndexError, ValueError):
+            continue              # a shape the library writes otherwise: left out, the gate's GEO.mark and GEO.silk see the print
+    return out
+
+
+def svg_polylines(d):
+    """An SVG path (EasyEDA's canvas units) -> polylines, arcs and curves as points 1/8 of their length apart."""
+    from svgelements import Close, Line, Move, Path
+    lines = []
+    for seg in Path(d):
+        if isinstance(seg, Move):
+            lines.append([(seg.end.x, seg.end.y)])
+        elif isinstance(seg, (Line, Close)):
+            if not lines:
+                lines.append([(seg.start.x, seg.start.y)])
+            lines[-1].append((seg.end.x, seg.end.y))
+        elif seg.start is not None:
+            if not lines:
+                lines.append([(seg.start.x, seg.start.y)])
+            lines[-1] += [(q.x, q.y) for q in (seg.point(k / 8) for k in range(1, 9))]
+    return [ln for ln in lines if len(ln) >= 2]
 
 
 def library_file(cfg, lcsc):

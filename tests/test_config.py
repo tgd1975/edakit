@@ -302,13 +302,15 @@ def test_order_keys(tmp_path):
     (tmp_path / "edakit.toml").write_text('[project]\nname = "t"\n[boards.main]\n')
     (tmp_path / "hardware" / "boards").mkdir(parents=True)
     (tmp_path / "hardware" / "boards" / "main.toml").write_text("[order]\n")
-    assert load(tmp_path / "edakit.toml").board().order == {
+    first = ("finish", "mark", "remark", "tab_zones", "tab_copper_mm", "mask", "silkscreen")   # the keys of #40, 1.7
+    seven = lambda o: {k: o[k] for k in first}  # noqa: E731
+    assert seven(load(tmp_path / "edakit.toml").board().order) == {
         "finish": "LeadFree HASL", "mark": "default", "remark": "", "tab_zones": [], "tab_copper_mm": 1.0,
         "mask": "green", "silkscreen": "white"}
     (tmp_path / "hardware" / "boards" / "main.toml").write_text(
         '[order]\nfinish = "ENIG"\nmark = "specify"\nremark = "No V-cut."\ntab_copper_mm = 0.5\n'
         'tab_zones = [{ from = [0, 0], to = [0, 20] }]\nmask = "black"\nsilkscreen = "white"\n')
-    assert load(tmp_path / "edakit.toml").board().order == {
+    assert seven(load(tmp_path / "edakit.toml").board().order) == {
         "finish": "ENIG", "mark": "specify", "remark": "No V-cut.", "tab_zones": [((0.0, 0.0), (0.0, 20.0))],
         "tab_copper_mm": 0.5, "mask": "black", "silkscreen": "white"}
     for order, msg in (({"marks": "specify"}, r"order: unknown key 'marks' \(known: finish, mark, remark"),

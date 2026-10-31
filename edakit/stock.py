@@ -15,7 +15,9 @@ the part page jlcpcb.com/partdetail/<C…> (`fetch_part_page` → `from_part_pag
 "Standard Only", MSL, X-ray, machine or hand soldering). Without --refresh only the parts that are missing, unread or
 older than [project] stock_max_age_days are asked again.
 
-  PARTS.stock  every assembled part (an LCSC number, not bom: false) is in the snapshot and listed, in stock for `quantity`
+  PARTS.stock  for a maker of [cart] makers that orders from JLCPCB's catalogue (catalogue = "jlcpcb" in its profile; a
+       finding fails for the planned maker and warns for another one; without such a maker it does not run, a note):
+       every assembled part (an LCSC number, not bom: false) is in the snapshot and listed, in stock for `quantity`
        boards – under Standard PCBA with the assembler's attrition, max(n + attrition, min_qty) – named as its parts
        entry names it (MPN, case and blanks ignored), and not "Standard Only" on an Economic order (fail). MSL >= 5
        (bake), stock below need x (1 + stock_margin_pct / 100) and another class than the entry's jlc_class warn. A
@@ -183,17 +185,38 @@ def age_days(row, today=None):
 # --- PARTS.stock ------------------------------------------------------------------------------------------------------------
 
 def check(design, rep, cfg):
-    """PARTS.stock on the snapshot, offline."""
+    """PARTS.stock on the snapshot, offline – for the maker of [cart] makers that orders from JLCPCB's catalogue: as the
+    planned maker its findings fail, as another maker they warn (grade other_maker); without such a maker it does not
+    run, and the note says so (no snapshot is needed)."""
+    from . import makers
     lines = assembled(design)
     if not lines:
         return
+    users = makers.with_catalogue(cfg, "jlcpcb")
+    if not users:
+        names = ", ".join(makers.get(cfg, k).name for k in makers.listed(cfg))
+        rep.notes.append(("PARTS.stock", f"not run: no maker of [cart] makers orders from JLCPCB's parts catalogue – "
+                                         f"{names} matches the parts at the order (ORDER.parts); no stock snapshot needed"))
+        return
+    if users[0] == makers.planned(cfg):
+        check_at(design, rep, cfg, users[0])
+        return
+    from .engines.project import Recorder, other_maker
+    sub = Recorder(rep.stage)
+    check_at(design, sub, cfg, users[0])
+    other_maker(rep, sub, makers.get(cfg, users[0]).name)
+
+
+def check_at(design, rep, cfg, maker):
+    """PARTS.stock for one maker that orders from JLCPCB's catalogue."""
+    lines = assembled(design)
     snap = load(cfg)
     where = cfg.relative(cfg.stock) if cfg.stock else "hardware/stock.json"
     if snap is None:
         rep.notes.append(("PARTS.stock", f"no stock snapshot ({where}) – edakit stock asks JLCPCB about the {len(lines)} "
                                  "assembled parts"))
         return
-    pcba, why = cfg.pcba()
+    pcba, why = cfg.pcba(maker)
     old = []
     for lcsc, refs in lines.items():
         who = f"{refs_text(refs)} {lcsc}"
@@ -263,6 +286,12 @@ def main_lcsc(numbers):
 
 
 def main(cfg, args):
+    from . import makers
+    if not makers.with_catalogue(cfg, "jlcpcb"):
+        print("edakit stock: no maker of [cart] makers orders from JLCPCB's parts catalogue – "
+              f"{', '.join(makers.listed(cfg))} match the parts at the order (ORDER.parts); no snapshot needed",
+              file=sys.stderr)
+        return 1
     design = Design.from_config(cfg)
     lines = assembled(design, cfg.board(args.board).name if args.board else None)
     snap = load(cfg) or {"parts": {}}
@@ -273,7 +302,7 @@ def main(cfg, args):
         print(f"[{i}/{len(todo)}] {lcsc} …", flush=True)
         rows[lcsc] = read_part(lcsc)
     snap = write(cfg, snap)
-    pcba, why = cfg.pcba()
+    pcba, why = cfg.pcba(makers.with_catalogue(cfg, "jlcpcb")[0])
     print(f"{cfg.relative(cfg.stock)}: {len(todo)} of {len(lines)} assembled parts asked, {pcba} PCBA ({why}), "
           f"{cfg.quantity} boards")
     for lcsc, refs in lines.items():

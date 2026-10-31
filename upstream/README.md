@@ -11,6 +11,7 @@ here is removed and the pinned version in `edakit/easyeda/mcp-server.sh` is rais
 | 2 | `easyeda_export_pdf` with `what: "schematic"` calls the PCB export | `bridge-extension-patch.sh` | [issue draft](issue-2-schematic-pdf.md), branch `fix/schematic-pdf-export` |
 | 3 | `easyeda_api_call` results cut after 5 levels (`[MaxDepth]`) | `bridge-extension-patch.sh` (depth 12) | [issue draft](issue-3-api-call-depth.md), branch `feat/api-call-max-depth` |
 | 4 | `DMT_Project.createProject` returns null in the local desktop client | project created by hand | [issue draft](issue-4-create-project.md) |
+| 5 | No ODB++ export (`PCB_ManufactureData.getOpenDatabaseDoublePlusFile`) – AISLER assembles from ODB++ | `odb-tool-patch.mjs` (the tool, patched in by `mcp-server.sh`) and `bridge-extension-patch.sh` (the handler) | [issue draft](issue-5-odb-export.md), [PR draft](pr-4-odb-export.md) – branch not built yet |
 
 The issue drafts follow the repository's issue forms field by field; the PR drafts ([1](pr-1-stale-sweep.md), [2](pr-2-schematic-pdf.md), [3](pr-3-api-call-depth.md)) follow its pull request template.
 
