@@ -1,0 +1,18 @@
+# Differential buses on cables – REQ.missing, REQ.forbidden and REQ.value with the grades termination and failsafe
+# (maker-coverage CK-17). The bus pins are the transceivers' roles rs485_a, rs485_b (RS-485) and canh, canl (CAN).
+
+[table]
+about = "termination and idle bias of RS-485 and CAN buses"
+source = "TI application reports SLLA272D and SLOA101B"
+tag = "r"
+
+[rs485]
+termination_ohm = 120       # the cable's Z0, one resistor at each cable end
+idle_min_v = 0.2            # a receiver detects a differential input down to 200 mV; failsafe bias adds the noise
+source = "TI SLLA272D, The RS-485 Design Guide (February 2008, revised May 2021), 6 Bus Termination and Stub Length: 'the cable trunk is commonly terminated with 120-Ω resistors, one at each cable end'; 7 Failsafe: 'VAB = 200 mV + VNoise', and 4 Signal Levels: 'standard conform receivers detect a differential input down to 200 mV' – https://www.ti.com/lit/pdf/slla272"
+tag = "r"
+
+[can]
+termination_ohm = 120
+source = "TI SLOA101B, Introduction to the Controller Area Network (CAN) (August 2002, revised May 2016), 6: 'terminated at both ends with 120-Ω resistors, which match the characteristic impedance of the line' – https://www.ti.com/lit/pdf/sloa101"
+tag = "r"
