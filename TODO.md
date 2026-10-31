@@ -125,12 +125,10 @@ The rest starts on the owner's word, one step per branch:
 
 ## The documentation for its readers ([documentation.md](docs/concepts/new/documentation.md))
 
-Decided on 2026-10-31; nothing built. Each step starts on the owner's word, one per branch, under the concept's rules
-for what the automation reads – sources, data and code untouched; a text that is generated or used elsewhere stays;
-unsure, ask:
+Decided on 2026-10-31; D.1 (the style guide, the glossary and their tests) built the same day. Each step starts on the
+owner's word, one per branch, under the concept's rules for what the automation reads – sources, data and code
+untouched; a text that is generated or used elsewhere stays; unsure, ask:
 
-- [ ] **D.1** `docs/style.md` and `docs/glossary.md`; `docs/organisation.md` points at the style guide;
-      `tests/test_style.py` for the countable rules and `tests/test_references.py` for the 415 references and paths.
 - [ ] **D.2** The entry layer: the README as the start page of one screen, `docs/quickstart.md` with its test,
       `docs/how-it-works.md` with the pipeline drawing and a transcript; `test_plugin.py` pointed at the page that
       lists skills and agents.

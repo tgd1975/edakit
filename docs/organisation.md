@@ -21,7 +21,7 @@ The working rules for sessions in this repository are in [CLAUDE.md](../CLAUDE.m
 |---|---|---|
 | [README.md](../README.md) | Documentation | The start page – also of the site |
 | [handbook/](../handbook/README.md) | Documentation | The handbook, chapters 1 to 17 |
-| [docs/](.) | Documentation | Documentation beside the handbook – today [brand/](brand/README.md) (logo, colours, type) and this page – all of `docs/` except `concepts/`, `catalog/` and `pages.py` |
+| [docs/](.) | Documentation | Documentation beside the handbook – today [brand/](brand/README.md) (logo, colours, type), the [style guide](style.md), the [glossary](glossary.md) and this page – all of `docs/` except `concepts/`, `catalog/` and `pages.py` |
 | [examples/coin-cell-led/](../examples/coin-cell-led/README.md) | Documentation | The project of the walkthrough (handbook 17): its README and `docs/decisions.md` are documentation, its `edakit.toml` and `hardware/` project data the tests hold to the chapter |
 | [docs/concepts/](concepts/) | Source | Concepts – documents with a short life: `new/` what is open, `done/` what is settled and built, `discarded/` what the owner rejected; how a concept moves is in CLAUDE.md |
 | [docs/catalog/](catalog/build.py) | Generated | The catalog as one page (`index.html`, `circuits/*.svg`), written by `docs/catalog/build.py` from the catalog – never edited by hand |
@@ -61,6 +61,6 @@ on the site makes it readable there, not documentation: concepts, skills, agents
   `edakit/domains/*.toml` read like documentation – in the handbook's generated sections, in `edakit explain`, on the
   catalog page – but they are data. A review of the documentation never changes them, not even when asked during the
   review: it reports them, and a correction is a piece of work of its own.
-- **Style:** English as written so far, plain declarative sentences, no superlatives, an en dash ` – ` for an aside,
-  prose wrapped at 120 characters. A correct sentence stays as it is.
+- **Style:** the [style guide](style.md) – registers, words, what a page starts with, what `tests/test_style.py`
+  counts – and the words of the [glossary](glossary.md). A correct sentence stays as it is.
 - **Not legal advice:** regulatory content says once that it is support, not legal advice (CLAUDE.md).
