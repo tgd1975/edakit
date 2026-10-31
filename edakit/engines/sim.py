@@ -351,6 +351,20 @@ def function(s, load, low=None, plugin=None):
                 i_on = -res_low.get(src["branch"], 0.0)
             s.q(des, "i", None, "A", "", des, what, lo=i_on, entry=False,
                 lims=[Limit(min=src["i_min_a"], source=f"i_min_a of sources.{des} in sim.json")])
+    for key, lim in sorted((load.get("expect") or {}).items()):     # what the project expects in this load
+        if key in meta["sources"]:
+            s.q(key, "i", -res.get(meta["sources"][key]["branch"], 0.0), "A", "", key, "current from the supply "
+                "(expected in this load)", code="LIM.i", entry=False,
+                lims=[Limit(max=lim.get("i_max_a"), min=lim.get("i_min_a"), source="expect of the load in sim.json")])
+        elif key in d.nets:
+            g = v(res, netlist.node(netlist.local_ground(d, key), d.ground))
+            x = max(v(res, n) for n in netlist.net_nodes(d, key)) - g
+            s.q(key, "v_expect", x, "V", "", None, "net voltage (expected in this load)", lo=x, code="LIM.v",
+                entry=False, lims=[Limit(max=lim.get("max_v"), min=lim.get("min_v"),
+                                         source="expect of the load in sim.json")])
+        else:
+            s.check("SIM.config", key, "expect of the load", f"{key} is neither a source nor a net",
+                    "a source of sources (i_max_a, i_min_a) or a net (min_v, max_v)", False)
     for des, src in meta["sources"].items():
         lim = s.sim.get("sources", {}).get(des, {}).get("i_back_max_a", crit["blocking_max_a"])
         s.q(des, "i", max(res.get(src["branch"], 0.0), 0.0), "A", "", des, "current into the supply (fed backwards)",

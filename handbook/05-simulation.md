@@ -188,6 +188,9 @@ On the example, J1 dropping to 0 V in 10 µs leaves +5V at 2.99 V after 0.3 ms w
 holds; its gap comes from the MOSFETs' thresholds and body diodes, and the capacitors bridge it or not. Without
 `transients` nothing runs.
 
+`expect` in a load holds what the project expects there, as in a transient run: per source `i_max_a`, `i_min_a` – a sleep
+current budget, the evidence for a battery-life requirement (LIM.i) –, per net `min_v`, `max_v` (LIM.v).
+
 `leds_on` lists the LEDs that light in a load – the designator, or `D10_RED` for one colour of an RGB LED, `"all"` for
 every one; the others are expected dark. LEDs on the output of a constant-current sink go by the channel instead (5.3).
 As soon as an LED is on no driver output, every load needs `leds_on`, `[]` when none lights (SIM.driver).

@@ -51,7 +51,7 @@ Example: [the Christmas bell's graph](https://github.com/tgd1975/automatic_chris
 | `notes` | free text; cite decision numbers here |
 | net `v` | `[min, max]` voltage over **all** intended operating states (all supply variants, reversed supply, unloaded) |
 | net `bus` | `"i2c"` marks SDA and SCL nets whose pins do not say so (MCU pins called GP4): REQ.missing checks them |
-| net `fn` | the function the net needs from its MCU pin: `pwm`, `adc`, `spi.sck`, `spi.tx`, `spi.rx`, `spi.cs`, `i2c.sda`, `i2c.scl`, `uart.tx`, `uart.rx` – REQ.function holds it to the pin's `functions` (4.1); without `fn` the pin is a plain GPIO (bit-banged, PIO) |
+| net `fn` | the function the net needs from its MCU pin: `pwm`, `adc`, `spi.sck`, `spi.tx`, `spi.rx`, `spi.cs`, `i2c.sda`, `i2c.scl`, `uart.tx`, `uart.rx`, `i2s.bclk`, `i2s.ws`, `i2s.sd`, `can.tx`, `can.rx`, `onewire`, `usb.dp`, `usb.dn` – REQ.function holds it to the pin's `functions` (4.1); without `fn` the pin is a plain GPIO (bit-banged, PIO) |
 | net `fn_bus` | a name the nets of one bus share (`"LED"` on SDI and CLK): REQ.function wants them on one peripheral instance (`spi0`, not `spi0` and `spi1`) |
 | net `instrument`, `load_min_ohm` | an instrument comes in on the net – `"pickup"` or `"piezo"` – and the least load it wants (`1e6` for 1 MΩ, from the instrument's data): REQ.value/instrument holds the resistors and the inputs' `z_in_ohm` on it in parallel to it; the net suggests the domain guitar |
 | net `matrix` | `"row"` or `"col"` of a key matrix: every key reaches the other side through a diode, all diodes the same way (REQ.missing/matrix, REQ.forbidden/matrix) |

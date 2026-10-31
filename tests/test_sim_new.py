@@ -113,3 +113,24 @@ def test_the_adc_window(project):
     adc_divider(project, window=(0.15, 1.5))            # VSENSE at half of 3V3: 1.65 V, above 1.5 V
     bad = rows(simulate(project), "U1.31", "VSENSE inside the ADC's window", failed=True)
     assert bad and {r["id"] for r in bad} == {"LIM.range"} and bad[0]["expected"] == "0.15 … 1.5 V"
+
+
+# --- FT-11: what a load expects ------------------------------------------------------------------------------------------
+def test_a_load_expects_a_current_budget_and_a_level(project):
+    """idle expects J1 to deliver at most 20 mA (a sleep budget, a value for the test) and 3V3 at 3.2 V or more."""
+    sim = sim_config(project)
+    sim["loads"]["idle"]["expect"] = {"J1": {"i_max_a": 0.02}, "3V3": {"min_v": 3.2}}
+    out = simulate(project, sim)
+    budget = rows(out, "J1", "current from the supply (expected in this load)")
+    level = rows(out, "3V3", "net voltage (expected in this load)")
+    assert budget and {r["result"] for r in budget} == {"fail"} and {r["id"] for r in budget} == {"LIM.i"}
+    assert level and {r["result"] for r in level} == {"pass"}
+    sim["loads"]["idle"]["expect"] = {"NOPE": {"min_v": 1}}
+    bad = rows(simulate(project, sim), "NOPE", "expect of the load")
+    assert bad and bad[0]["id"] == "SIM.config"
+
+
+def test_new_net_functions():
+    from edakit.circuit import FN_NAMES, fn_match
+    assert {"i2s.bclk", "i2s.ws", "i2s.sd", "can.tx", "can.rx", "onewire", "usb.dp", "usb.dn"} <= set(FN_NAMES)
+    assert fn_match("i2s.bclk", "i2s0.bclk") == ("0", "bclk") and fn_match("usb.dp", "usb0.dp") == ("0", "dp")

@@ -38,7 +38,8 @@ USB = table("usb")["cc"]
 USB_RD, USB_RD_TOL = USB["rd_ohm"], USB["rd_tol"]                   # USB Type-C sink termination Rd
 USB_C_CC = tuple(USB["termination"])   # values.usb_c.cc: how a module or breakout terminates its CC lines
 COILS = {"relay": ("coil_plus", "coil_minus"), "buzzer": ("plus", "minus")}   # inductive kinds: their coil roles
-FN_LINES = {"pwm": (), "adc": (), "spi": ("sck", "tx", "rx", "cs"), "i2c": ("sda", "scl"), "uart": ("tx", "rx")}
+FN_LINES = {"pwm": (), "adc": (), "spi": ("sck", "tx", "rx", "cs"), "i2c": ("sda", "scl"), "uart": ("tx", "rx"),
+            "i2s": ("bclk", "ws", "sd"), "can": ("tx", "rx"), "onewire": (), "usb": ("dp", "dn")}
 FN_NAMES = [k + (f".{line}" if line else "") for k, lines in FN_LINES.items() for line in lines or [""]]   # net fn
 SUPPLY_R_MAX = 100                                   # a resistor up to this passes a supply (shunt, filter)
 SWITCHERS = ("buck", "boost")                        # behaviour models of switching regulators (hot loop, REQ.missing)
