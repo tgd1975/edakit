@@ -71,6 +71,7 @@
  "sources": [
   "Torex XC6206 Series data sheet ETR0305_004b, via LCSC https://datasheet.lcsc.com/datasheet/pdf/221c990eb3a74b8a8233f22168ce0d59.pdf?productCode=C5446, read 2026-10-31; product.torexsemi.com refused the connection (proxy), so the current revision was not compared",
   "pins: p. 2 pin configuration and pin assignment, SOT-23: 1 VSS, 2 VOUT, 3 VIN (VIN alone on the top side of the top view); the cached footprint has pads 1 and 2 on one side, pad 3 alone; the EasyEDA symbol of C5446 (edakit part import 2026-10-31) names 1 GND, 2 Vin, 3 Vout – names kept as in the symbol, roles and types from the data sheet (handbook 4.1, 4.4)",
+  "for comparison: UMW's XC6206 data sheet (C347376, March 2025, via LCSC, read 2026-10-31) numbers the SOT-23 pins 1 GND, 2 Input (the single pin on its side), 3 Output – the EasyEDA symbol of C5446 carries that naming, while its footprint has pad 3, not pad 2, as the single pad; on the Torex part the single pin is VIN = pin 3",
   "vdd_max_v 7.0, VIN v_max_v 7.0: p. 3 absolute maximum input voltage; p_max_w 0.25: p. 3 power dissipation SOT-23 250 mW; t_min_c -40, t_max_c 85: p. 3 operating ambient temperature",
   "vdd_op_min_v 1.8, vdd_op_max_v 6.0, vin_min_v 1.8: p. 4 input voltage 1.8 … 6.0 V",
   "vout_v 3.3: P332 = 3.3 V, accuracy code 2 = ±2 % (p. 2 ordering information); table E-1 p. 5: 3.234 … 3.366 V at IOUT 30 mA",
@@ -92,7 +93,7 @@
    "typical application p. 1: CIN 1.0 µF and CL 1.0 µF ceramic"
   ],
   "open": [
-   "the EasyEDA symbol of C5446 names pad 2 'Vin' and pad 3 'Vout', the Torex data sheet gives pad 2 VOUT and pad 3 VIN – a second source (another revision, the marking of a delivered part) would settle it before the symbol is trusted",
+   "the EasyEDA symbol of C5446 names pad 2 'Vin' and pad 3 'Vout' (UMW's pin numbering, where the single pin is 2), the Torex data sheet gives pad 2 VOUT and pad 3 VIN (the single pin) – a board wired by the symbol's names would feed the regulator backwards; the owner may want to confirm with a current Torex revision or a delivered part before the symbol is used",
    "ETR0305_004b is an older revision; the current Torex revision could not be fetched",
    "input and output capacitors: only the typical application's 1.0 µF ceramic; no minimum and no ESR window, so the needs carry no window",
    "no θJA and no junction temperature limit in the data sheet (only Pd 250 mW for SOT-23): no LIM.t item",
