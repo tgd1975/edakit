@@ -339,3 +339,12 @@ Taken by the owner on 2026-10-31 – maker-coverage's open decisions 3 to 5, thr
    SIM.response (grades gain, corner) switched on by audio and guitar, SIM.config/off where neither is on; the audio
    and guitar reference circuits expect their RC corners and fail with the capacitor a decade off.
 
+Taken by the owner on 2026-10-31, through a form, after the library and the blocks:
+
+10. **Schema extension** (docs/concepts/new/schema-gaps.md): all of it that the form offered – the wrong judgements
+    (A, I1, I7), the limits, currents and needs (B, C, D), the supply currents of the library drafts (E1), and the
+    models and modes (E2–E6, F, I2–I6). Built in parallel worktrees, merged on this branch.
+11. **EasyEDA symbols that differ from their datasheets:** checked and reported – STRUCT.entry compares the cached symbol
+    with the entry beyond the names, and `upstream/` holds the report the owner sends to LCSC/EasyEDA.
+12. **Merge into main** after the schema extension, not before.
+
