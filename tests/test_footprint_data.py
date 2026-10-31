@@ -613,7 +613,7 @@ def test_dump_measures_shapes_only_for_parts_with_data(project, monkeypatch):
 
 
 def test_measure_reads_shape_size_rotation_and_layer(monkeypatch):
-    pins = [{"padNumber": "1", "x": 1039.37, "y": 2000, "net": "VIN", "hole": ["ROUND", 35.433], "metallization": True,
+    pins = [{"padNumber": "1", "x": 1039.37, "y": 2000, "net": "VIN", "hole": ["ROUND", 3.5433], "metallization": True,
              "pad": ["RECT", 47.24, 66.93, 0], "rotation": 90, "layer": 12},
             {"padNumber": "2", "x": 960.63, "y": 2000, "net": "GND", "hole": None, "pad": ["OVAL", 47.24, 66.93],
              "rotation": 0, "layer": 1}]
