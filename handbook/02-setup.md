@@ -167,7 +167,8 @@ to confirm. The project's files stay where they lie and edakit.toml names them; 
 with their edakit counterpart and what they do beyond it – keeping or deleting each is your decision, the setup
 deletes none.
 
-Then open the EasyEDA project once (edakit remembers its UUID and reopens it after an EasyEDA restart) and follow
+Then create the EasyEDA project by hand (File → New → Project, named as `[project] name`); edakit finds it in
+EasyEDA's project folder, remembers its UUID and reopens it after an EasyEDA restart (9.2). Then follow
 chapters 6–8. Daily: start EasyEDA → open the project → work.
 
 ## 2.8 Licences of the parts you combine

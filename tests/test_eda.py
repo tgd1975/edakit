@@ -28,6 +28,8 @@ class FakeEasyEDA:
             if self.opens:
                 self.open_name = a[0].removeprefix("uuid-")
             return {"ok": True, "result": True}
+        if path == "DMT_Board.getAllBoardsInfo":
+            return {"ok": True, "result": [{"name": "Board1"}]}
         raise AssertionError(path)
 
 
@@ -224,3 +226,92 @@ def test_a_page_that_never_holds_the_focus_stops_the_read(cfg):
     mcp = FakeTabs(switch={2: "tpl1", 3: "tpl1", 4: "tpl1"}, unsaved=True)
     with pytest.raises(eda.MCPError, match="page lay2: another tab became active while it was read, 3 times"):
         fab.board_bom(mcp, cfg.board())
+
+
+# --- found in the live runs of 2026-10-31 ----------------------------------------------------------------------------
+
+def eprj2(path, uuid, name):
+    """A local EasyEDA project file as far as edakit reads it: the table projects (sqlite)."""
+    import sqlite3
+    c = sqlite3.connect(path)
+    c.execute("create table projects (uuid text, name text)")
+    c.execute("insert into projects values (?, ?)", (uuid, name))
+    c.commit()
+    c.close()
+
+
+def test_a_project_never_opened_is_found_in_easyedas_project_folder(cfg, tmp_path, monkeypatch):
+    """EasyEDA does not list local projects; its config.json names the folders (APP_PROJECT_DIR), and each project
+    file holds its UUID – so edakit opens a project made by hand without asking for it to be opened once."""
+    home = tmp_path / "EasyEDA-Pro"
+    (home / "projects").mkdir(parents=True)
+    (home / "config.json").write_text(json.dumps({"APP_PROJECT_DIR": [str(home / "projects")]}))
+    eprj2(home / "projects" / f"{cfg.project}.eprj2", f"uuid-{cfg.project}", cfg.project)
+    eprj2(home / "projects" / "other.eprj2", "uuid-other", "other")
+    monkeypatch.setenv("EDAKIT_EASYEDA_HOME", str(home))
+    assert eda.local_project_uuid(cfg.project) == f"uuid-{cfg.project}"
+    mcp = FakeEasyEDA("other")
+    assert eda.open_project(mcp, cfg) == f"uuid-{cfg.project}"
+    assert json.loads(cfg.artifact("easyeda_project.json").read_text())["uuid"] == f"uuid-{cfg.project}"
+
+
+def test_no_project_file_leaves_the_message_as_it_was(cfg, tmp_path, monkeypatch):
+    monkeypatch.setenv("EDAKIT_EASYEDA_HOME", str(tmp_path / "nothing"))
+    assert eda.local_project_uuid(cfg.project) is None
+    with pytest.raises(eda.MCPError, match="open it in EasyEDA once"):
+        eda.open_project(FakeEasyEDA("other"), cfg)
+
+
+class SlowDocs(FakeEasyEDA):
+    """Right after openProject EasyEDA lists no board for a few calls (the live run: ensure_board saw none)."""
+
+    def __init__(self, *a, empty=3, **k):
+        super().__init__(*a, **k)
+        self.empty = empty
+
+    def call(self, tool, timeout=130, **args):
+        if args["path"] == "DMT_Board.getAllBoardsInfo":
+            self.calls.append(args["path"])
+            self.empty -= 1
+            return {"ok": True, "result": [] if self.empty >= 0 else [{"name": "Board1"}]}
+        return super().call(tool, timeout, **args)
+
+
+def test_open_project_waits_for_the_documents(cfg):
+    cfg.artifact("easyeda_project.json").write_text(json.dumps({"name": cfg.project, "uuid": f"uuid-{cfg.project}"}))
+    mcp = SlowDocs("other", empty=3)
+    eda.open_project(mcp, cfg)
+    assert mcp.calls.count("DMT_Board.getAllBoardsInfo") == 4      # three empty answers, then the board
+
+
+class PanelRename:
+    """modifySchematicName that renames the project's panel instead – what the live run left in edakit-probe-fp
+    ("Panel1" named generated_esp32)."""
+
+    def __init__(self):
+        self.panel, self.renamed_back = "Panel1", None
+
+    def call(self, tool, timeout=130, **args):
+        if tool == "easyeda_schematic_sheet_info":
+            return {"sheet": {"parentSchematicUuid": "s1"}}
+        path, a = args["path"], args["args"]
+        if path == "DMT_Schematic.getAllSchematicsInfo":
+            return {"ok": True, "result": [{"uuid": "s1"}]}
+        if path == "DMT_Schematic.getSchematicInfo":
+            return {"ok": True, "result": {"name": "Schematic2"}}
+        if path == "DMT_Project.getCurrentProjectInfo":
+            return {"ok": True, "result": {"data": [{"itemType": "Panel", "uuid": "p1", "name": self.panel}]}}
+        if path == "DMT_Schematic.modifySchematicName":
+            self.panel = a[1]
+            return {"ok": True, "result": True}
+        if path == "DMT_Panel.modifyPanelName":
+            self.panel, self.renamed_back = a[1], a[1]
+            return {"ok": True, "result": True}
+        raise AssertionError(path)
+
+
+def test_a_rename_that_reaches_the_panel_is_undone_and_reported(cfg):
+    mcp = PanelRename()
+    with pytest.raises(eda.MCPError, match="renamed the panel 'Panel1' instead"):
+        eda.rename_schematic(mcp, "s1", "generated_esp32")
+    assert mcp.renamed_back == "Panel1"

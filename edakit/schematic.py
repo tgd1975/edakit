@@ -21,6 +21,7 @@ Never wire anything by hand: change the graph, run create, check and layout agai
 from __future__ import annotations
 
 import json
+import time
 
 from . import eda
 from .design import Design, natural_key
@@ -71,7 +72,12 @@ def prepare_schematic(mcp, name):
         api(mcp, "DMT_Schematic.deleteSchematic", sch["uuid"])
         print(f"  deleted the existing schematic '{name}'")
     uuid = api(mcp, "DMT_Schematic.createSchematic")
-    sch = next(s for s in api(mcp, "DMT_Schematic.getAllSchematicsInfo") if s["uuid"] == uuid)
+    for _ in range(15):      # right after openProject the new schematic is listed only after a moment (2026-10-31)
+        if sch := next((s for s in api(mcp, "DMT_Schematic.getAllSchematicsInfo") or [] if s["uuid"] == uuid), None):
+            break
+        time.sleep(1)
+    else:
+        raise MCPError(f"schematic {uuid} created but not listed – check EasyEDA")
     eda.focus_page(mcp, uuid, sch["page"][0]["uuid"], timeout=30)
     eda.rename_schematic(mcp, uuid, name)  # only now: right after createSchematic renaming reports true and does nothing
     print(f"  schematic '{name}' created")
@@ -172,11 +178,12 @@ def place(mcp, comps, devices, positions):
     return placed
 
 
-def pin_differences(symbol, graph, labels=("symbol", "graph")):
+def pin_differences(symbol, graph, labels=("symbol", "graph"), skip=()):
     """symbol, graph: {pin number: name}. Numbers on one side only, and names that differ (case and blanks ignored) –
     a graph that assumed another pinout shows up as a name, long before the board does."""
     norm = lambda s: "".join(str(s).split()).upper()  # noqa: E731
     a, b = labels
+    symbol, graph = ({n: v for n, v in d.items() if n not in skip} for d in (symbol, graph))
     out = []
     if set(symbol) != set(graph):
         out.append(f"{a} only {sorted(set(symbol) - set(graph))}, {b} only {sorted(set(graph) - set(symbol))}")
@@ -185,15 +192,18 @@ def pin_differences(symbol, graph, labels=("symbol", "graph")):
     return out
 
 
-def check_symbol_pins(mcp, comps, placed):
-    """One symbol per part number is enough to read; every designator is compared, the graph may differ per part."""
+def check_symbol_pins(mcp, comps, placed, differs=None):
+    """One symbol per part number is enough to read; every designator is compared, the graph may differ per part.
+    differs: {designator: pins} the parts entry declares as differing from the library symbol (symbol_differs, 4.1) –
+    left out, as edakit check leaves them out."""
+    differs = differs or {}
     problems, symbol_pins = 0, {}
     for d, p in placed.items():
         key = comps[d].get("lcsc") or d
         if key not in symbol_pins:
             pins = mcp.call("easyeda_schematic_component_pins", primitiveId=p["id"]).get("pins", [])
             symbol_pins[key] = {str(pin["pinNumber"]): pin.get("pinName", "") for pin in pins}
-        diffs = pin_differences(symbol_pins[key], comps[d]["pins"])
+        diffs = pin_differences(symbol_pins[key], comps[d]["pins"], skip=differs.get(d, ()))
         if diffs:
             problems += 1
             print(f"  ! {d}: " + "; ".join(diffs))
@@ -310,7 +320,8 @@ def create(cfg, args):
         placed = place(mcp, comps, devices, positions)
         cfg.artifact(f"schematic_map_{name}.json").write_text(json.dumps(placed, indent=2) + "\n", encoding="utf-8")
         phase("check symbol pins")
-        pin_problems = check_symbol_pins(mcp, comps, placed)
+        differs = {d: set((design.parts.get(design.entry_key(d)) or {}).get("symbol_differs") or {}) for d in comps}
+        pin_problems = check_symbol_pins(mcp, comps, placed, differs)
         stub = cfg.schematic.get("stub", 10)
         phase("connect nets")
         failures = connect(mcp, nets, placed, stub)

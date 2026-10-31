@@ -232,6 +232,8 @@ def open_project(mcp, cfg, create=False):
             if pi and pi.get("friendlyName") == cfg.project:
                 uuid = u
                 break
+    if not uuid:
+        uuid = local_project_uuid(cfg.project)
     if not uuid and create:
         # The desktop client in local mode refuses it ("请求参数path错误", the path parameter) and returns null.
         uuid = api(mcp, "DMT_Project.createProject", cfg.project)
@@ -250,9 +252,53 @@ def open_project(mcp, cfg, create=False):
         info = api(mcp, "DMT_Project.getCurrentProjectInfo")
         if info and info.get("friendlyName") == cfg.project:
             memo.write_text(json.dumps({"name": cfg.project, "uuid": uuid}))
+            wait_for_documents(mcp)
             return uuid
         time.sleep(2)
     raise MCPError(f"project {cfg.project} did not open (open is '{(info or {}).get('friendlyName')}')")
+
+
+def wait_for_documents(mcp, wait_s=20):
+    """Right after openProject EasyEDA lists no board for a few seconds – ensure_board then found none, and a schematic
+    just created was not listed yet (the live runs of 2026-10-31). Wait until a board is listed, at most wait_s."""
+    for _ in range(wait_s):
+        if api(mcp, "DMT_Board.getAllBoardsInfo"):
+            return True
+        time.sleep(1)
+    return False
+
+
+def easyeda_homes():
+    """EasyEDA Pro's folder of the local client (config.json, projects/): EDAKIT_EASYEDA_HOME, else EasyEDA-Pro in the
+    documents folder."""
+    if home := os.environ.get("EDAKIT_EASYEDA_HOME"):
+        return [Path(home)]
+    return [Path.home() / d / "EasyEDA-Pro" for d in ("Dokumente", "Documents")]
+
+
+def local_project_uuid(name):
+    """The UUID of a local project by its name, from EasyEDA's own files: config.json names the project folders
+    (APP_PROJECT_DIR), each <project>.eprj2 is an SQLite file with the table projects (uuid, name) – read only. None
+    when no file has it. EasyEDA's API lists no local project (getAllProjectsUuid is empty)."""
+    import sqlite3
+    for home in easyeda_homes():
+        try:
+            dirs = json.loads((home / "config.json").read_text(encoding="utf-8")).get("APP_PROJECT_DIR") or []
+        except (OSError, ValueError):
+            continue
+        for d in dirs:
+            for f in sorted(Path(d).glob("*.eprj2")):
+                try:
+                    con = sqlite3.connect(f"file:{f}?mode=ro", uri=True)
+                    try:
+                        rows = con.execute("select uuid, name from projects").fetchall()
+                    finally:
+                        con.close()
+                except sqlite3.Error:
+                    continue
+                if found := next((u for u, n in rows if n == name), None):
+                    return found
+    return None
 
 
 def connect(cfg, verbose=False, wait=90, artifact_dir=None):
@@ -368,16 +414,29 @@ def batch_write(mcp, ops, chunk=40):
     return ids
 
 
+def panel_names(mcp):
+    """{uuid: name} of the project's panels (getCurrentProjectInfo) – a rename meant for a schematic once reached the
+    panel (2026-10-31)."""
+    info = api(mcp, "DMT_Project.getCurrentProjectInfo") or {}
+    return {d["uuid"]: d.get("name") for d in info.get("data") or [] if d.get("itemType") == "Panel"}
+
+
 def rename_schematic(mcp, uuid, name):
     """Rename with checks. modifySchematicName renames the ACTIVE schematic, not the one passed by UUID (EasyEDA Pro
     3.2.206), and right after createSchematic it reports true without effect. So: check that `uuid` is active before
     every attempt, compare all names afterwards, never delete anything on a mismatch."""
-    before = all_schematic_names(mcp)
+    before, panels = all_schematic_names(mcp), panel_names(mcp)
     for attempt in range(10):
         sheet = mcp.call("easyeda_schematic_sheet_info")
         if sheet.get("not_available") or sheet["sheet"].get("parentSchematicUuid") != uuid:
             raise MCPError(f"{uuid} is not active before renaming – nothing renamed")
         api(mcp, "DMT_Schematic.modifySchematicName", uuid, name)
+        if moved := {p: old for p, old in panels.items() if panel_names(mcp).get(p) != old}:
+            for p, old in moved.items():
+                api(mcp, "DMT_Panel.modifyPanelName", p, old)
+            raise MCPError(f"modifySchematicName renamed the panel '{', '.join(moved.values())}' instead of schematic "
+                           f"{uuid} – renamed back, nothing deleted; restart EasyEDA if renames keep failing "
+                           "(handbook 9.4)")
         after = all_schematic_names(mcp)
         wrong = {u: n for u, n in after.items() if u != uuid and n != before.get(u)}
         if wrong:

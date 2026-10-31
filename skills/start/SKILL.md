@@ -29,7 +29,8 @@ bridge, no claim. `edakit doctor 2>&1 | cat` shows the line for kicad-cli (KiCad
    stale ones (tell other sessions first). The user reconnects with `/mcp` → easyeda; Claude cannot do that itself.
 5. **Project open:** `easyeda_api_call` `DMT_Project.getCurrentProjectInfo` (`confirmWrite: true`, also for reads).
    Focus `tab_page1` = start page, every `DMT_*` returns null. edakit reopens the project by the UUID it remembered
-   (`<artifacts>/easyeda_project.json`); the very first time the user opens it once.
+   (`<artifacts>/easyeda_project.json`); one never opened it finds in EasyEDA's project folder (handbook 9.2), so a
+   project made by hand needs no first opening.
 6. **Claim EasyEDA** before a series of runs: `edakit lock claim --note "<what>"`, afterwards `edakit lock release`
    (also after an abort). The plugin hook claims automatically on the first EasyEDA MCP tool and refuses tools while
    another session holds it; edakit commands do the same. Library lookups (`easyeda_schematic_search_device`,

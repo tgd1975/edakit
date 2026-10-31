@@ -109,7 +109,7 @@ def test_schematic_create(project, monkeypatch, capsys, save):
         monkeypatch.setattr(schematic, name, lambda *a, **k: None)
     monkeypatch.setattr(schematic, "resolve_devices", lambda cfg, mcp, comps, refresh: {})
     monkeypatch.setattr(schematic, "place", lambda mcp, comps, devices, positions: {d: {} for d in comps})
-    monkeypatch.setattr(schematic, "check_symbol_pins", lambda mcp, comps, placed: 0)
+    monkeypatch.setattr(schematic, "check_symbol_pins", lambda mcp, comps, placed, differs=None: 0)
     monkeypatch.setattr(schematic, "connect", lambda mcp, nets, placed, stub: 0)
     monkeypatch.setattr(schematic, "repair", lambda mcp, nets, placed, stub: 0)
     monkeypatch.setitem(schematic.FOCUS, "page", "page")                        # prepare_schematic sets it
