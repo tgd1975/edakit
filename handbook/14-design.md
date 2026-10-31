@@ -108,8 +108,10 @@ of the basic kinds, parts, files, documents. `usb` switches on the USB-C termina
 and the bands of parts that transmit, `audio` bridge-tied outputs and the hints of hum and switching noise, `guitar`
 the instrument input's load and the pedal's supply, `motors` the hints of motor supplies and heaters, `power` those of
 cells, converters and polarity, `cables` the lines on a lead. Each is suggested by what the graph has: a USB-C
-receptacle, a part that transmits, a speaker, an instrument net, a motor, a battery holder, a cable. `mains` is not
-there yet: edakit says nothing about spacing for hazardous voltage (maker-coverage, open decision 3). A domain file sets severities (also per purpose: `[severity.sale]`), switches codes or
+receptacle, a part that transmits, a speaker, an instrument net, a motor, a battery holder, a cable; `mains` by a
+net above the ES1 limits, which LIM.hazardous recognises – spacing and isolation stay unchecked (rules-at-scale.md,
+decision 7). The interview of a new project asks for no domain: there is no graph yet, and the graph decides
+(skill new-project). A domain file sets severities (also per purpose: `[severity.sale]`), switches codes or
 topics on, names the facts a kind must give (a missing one is `PARTS.fact`), the hints that apply and the questions
 the reviewers ask. A project names its domains in edakit.toml:
 

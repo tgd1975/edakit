@@ -76,6 +76,12 @@ title block, each board's name and `title`, each variant's name, the board's siz
 of a budget, the market and notes of the purpose, the documents with values, the distributors besides LCSC
 (`[project] distributors`).
 
+**Domains are no question of the interview.** There is no graph yet, and the graph decides: `edakit check` switches
+on every domain a part or net suggests once it is in the graph – a battery holder `power`, a USB-C receptacle `usb`, a
+cable `cables`, an instrument net `guitar`, a speaker `audio`, a hazardous net `mains` (handbook 14.2) –, and
+`edakit domains` shows them. Write no `[project] domains` at the setup; the key is for a project that wants a domain
+off which the graph suggests, and each one it leaves out is a note STRUCT.domain.
+
 A question the user cannot answer yet stays open with its default, and the report names it. The answers are a
 decision of the project: one numbered entry in its decision log (skill decision-round, section 3) – "D-1: set up for
 edakit: one board main, JLCPCB Economic on top, Eurocircuits to compare, 5 sets, a gift in the EU, no budget".
