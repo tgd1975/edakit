@@ -1,6 +1,6 @@
 ---
 name: release
-description: Release a hardware state for manufacturing with the edakit release gate – all stages (P parts, G graph, E simulation, project checks, S schematic, L board, F manufacturing files), sign-offs bound to hashes, manifest, test protocol, the order checklist – the skill cart puts the released board into the maker's cart. Use before an order, for "release", "gate", "test protocol", "manufacturing files", "Gerber", "BOM".
+description: Release a hardware state for manufacturing with the edakit release gate – all stages (P parts, G graph, E simulation, project checks, S schematic, L board, F manufacturing files), sign-offs bound to hashes, manifest, test protocol, the order files published as a GitHub release (edakit release publish), the order checklist – the skill cart puts the released board into the maker's cart. Use before an order, for "release", "gate", "test protocol", "manufacturing files", "Gerber", "BOM", "publish the release".
 ---
 
 # Release for manufacturing
@@ -63,10 +63,24 @@ Concept: `${CLAUDE_PLUGIN_ROOT}/handbook/08-release-gate.md`.
    what changed, and the review looks at that. Not OK → fix the cause and check again. What changes looks or operation
    is the user's call (decision-round skill).
 6. **RELEASED:** `fab/manifest.json` says `"released": true`, and the run is the current release – the gate marked
-   every earlier released run as superseded (`edakit release current` shows it). Archive the folder in git
-   (`git add -f`) together with the superseded manifests through the project's git workflow. A released run that must
-   not be uploaded after all (a review found something): `edakit release withdraw <run> --reason "…"` – then there is
-   no current release until the next RELEASED run.
+   every earlier released run as superseded (`edakit release current` shows it). The run is build output: it stays in
+   `<reports>/`, which git ignores, and nothing of it is committed – what is ordered is published in step 7 (handbook
+   8.3). Only with `[release] archive = "git"` in edakit.toml: archive the folder in git together with the superseded
+   manifests through the project's git workflow – `edakit release current` names a released run git does not track
+   yet ("not in git yet: git add -f …"). A released run that must not be uploaded after all (a review found
+   something): `edakit release withdraw <run> --reason "…"` – then there is no current release until the next
+   RELEASED run.
+7. **Publish what is ordered** (handbook 8.3), once every board of the project – and of every variant below it – has
+   its current release: `edakit release publish --dry-run 2>&1 | cat` stages the files in `build/publish/<tag>/` and
+   writes the notes (`notes.md`: per board the gate run, its git state, the fab hash, changed or unchanged since the
+   previous release, with `[release] publish.decisions` the decisions since then, the purpose). Show the user the
+   notes; on their OK `edakit release publish 2>&1 | cat` makes the GitHub release `<YYYY-MM-DD>` – a pre-release on
+   HEAD, as public as the repository. It needs `gh`, logged in, and refuses with exit 1 while the working tree has
+   uncommitted changes or HEAD is not pushed – the tag must name the state the files were made from: commit and push
+   through the project's git workflow first. Exit 2: `release verify` refused a file or a project has no current
+   release – nothing was staged or uploaded; fix the cause (a new gate run, the variant's release), do not leave the
+   board out. `--draft` is a test only the account sees, no tag and no guards: delete it afterwards with
+   `gh release delete <tag> --yes`. Firmware is not published.
 
 ## Order (up to the cart; ordering and paying are the user's)
 
@@ -77,8 +91,10 @@ in Chrome the skill prints the job as a checklist and `edakit cart check` checks
 server cannot order on purpose. The checklist below is what the skill and its checks cover, and what stays the
 user's:
 
-- [ ] `edakit release verify <the files about to be uploaded>` says every file is of the current release (exit 0) –
-      per made board `gerber_<b>.zip`, `bom_<b>.csv`, `cpl_<b>.csv` (a bought board, `bought = true`, has none)
+- [ ] Upload from `build/publish/<tag>/`, the staging of step 7 – per made board `gerber_<b>.zip`, `bom_<b>.csv`,
+      `cpl_<b>.csv` (a bought board, `bought = true`, has none): publish verified each against its project's current
+      release, and `sha256sum -c SHA256SUMS` there shows that none changed since. Files from anywhere else:
+      `edakit release verify <the files about to be uploaded>` says every file is of the current release (exit 0)
 - [ ] Assembly type matches `[release] assembly` (Economic: one side, SMD; two SMD sides or a "Standard Only" part
       need Standard PCBA – `assembly.pcba`, PARTS.stock); bake set when PARTS.stock warns about MSL ≥ 5
 - [ ] The form as `fab/<b>/order.md` of the released run says (with `[order]` in the board file; FILES.order checked it):
@@ -99,4 +115,5 @@ After delivery: acceptance test of every board (M-4), with the datasheet points 
 under "after delivery, per board" (`verified.open` with `when`), the project's checks of phase acceptance there (each
 with its command), the project agents of phase acceptance (`- [ ] M-8 … – the project agent kamera`: start it in its
 own session, its OK signs the line, `done_by` = the agent) and, with `[project] requirements`, the acceptance steps of
-the requirements (`- [ ] R-4: …`); M-4's note names the requirements it tested.
+the requirements (`- [ ] R-4: …`); M-4's note names the requirements it tested. Once a board of a published release
+passed it: `edakit release publish --built <tag> 2>&1 | cat` – the release is no longer a pre-release.

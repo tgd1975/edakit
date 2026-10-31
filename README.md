@@ -104,6 +104,7 @@ edakit silk apply               # designators where there is room, silkscreen ch
 edakit gate --easyeda           # release gate: protocol, manifest, files for JLCPCB
 edakit fab diff RUN_A RUN_B     # where the manufacturing files of two gate runs differ – raster, drills, BOM, CPL
 edakit release current|withdraw|verify   # the one run that may be uploaded; verify the files right before upload
+edakit release publish          # the order files of every board's current release as a GitHub release (gh)
 edakit cart fields              # every field of the maker's order form from [order], with where it comes from
 edakit cart prepare|check       # the job of the skill cart from the release; ORDER.form to ORDER.review on what it brought back
 edakit cart actual              # the real cost of the order: against estimate and quote, into the fee table
