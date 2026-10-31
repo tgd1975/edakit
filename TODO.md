@@ -127,12 +127,12 @@ Built and merged into main on 2026-10-30, tested offline and in CI against KiCad
 
 ## The schematic with every connection drawn through ([wired-schematic.md](docs/concepts/new/wired-schematic.md))
 
-Decided on 2026-10-31; W.1 (the frame of the SVG optional), W.5 (the board's print per pin) and W.2 (the wired
-style) built and merged the same day. The rest starts on the owner's word, one step per branch:
+Decided on 2026-10-31; W.1 (the frame of the SVG optional), W.5 (the board's print per pin), W.2 (the wired style)
+and W.4 (new-project asks for the style, the surveyor reports it) built and merged the same day. The rest starts on
+the owner's word, one step per branch:
 
 - [ ] **W.3** placement for wires: the module in the middle, channels as wide as the wires that must pass; the
       prototype's table as the test.
-- [ ] **W.4** new-project asks for the style and writes the key; project-surveyor reports it.
 
 ## The documentation for its readers ([documentation.md](docs/concepts/new/documentation.md))
 

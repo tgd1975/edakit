@@ -27,7 +27,8 @@ documents that hold requirements, nothing more.
   places and their keys: `${CLAUDE_PLUGIN_ROOT}/handbook/10-reference.md` (10.1 edakit.toml, 10.2 the board file,
   10.6 the files), `08-release-gate.md` (8.2 sign-offs and hashes, 8.6 project scripts and agents – the kinds, the
   names of edakit's data, the rules an entry must keep), `04-parts-database.md` (4.1 the fields, 4.5 bought and hand-wired boards),
-  `03-hardware-graph.md` (3.1 the graph, 3.5 the firmware contract), `06-schematic.md` (6.6 quoted values). edakit's
+  `03-hardware-graph.md` (3.1 the graph, 3.5 the firmware contract), `06-schematic.md` (6.5 the drawing and its
+  style, 6.6 quoted values), `10-reference.md` 10.3 (the schematic file). edakit's
   skills and agents, the counterparts of the project's own: `${CLAUDE_PLUGIN_ROOT}/skills/*/SKILL.md`,
   `${CLAUDE_PLUGIN_ROOT}/agents/*.md`.
 - **Prefer what the project already does** (working agreement 22): a file stays where it lies and edakit.toml names
@@ -97,12 +98,14 @@ One numbered list per place, in this order:
    server goes, because the plugin brings the pinned one and two would run. A hook or a README that tells to bypass a
    failing check is a finding.
 9. **The interview's answers** – per topic of the setup's interview, the answer the repository gives, with where:
-   board (a PCB, or a development board with wiring), boards (made, bought on a cable), variants, assembly (who
-   solders, which sides), order (quantity, finish, colours, thickness), money (budget, currency), purpose (private,
-   gift or sale, and where), requirements (only where they stand), firmware (follows the graph's pins?), documents
-   (quote values?), own tools (the entries of lists 3 and 4). "Not found" where the repository is silent. Where you
-   name the purpose, say what it means for the regulatory review M-6 – how deep it goes – and that the review is
-   support, not legal advice: nothing in it is legally guaranteed, and it claims no correctness.
+   board (a PCB, or a development board with wiring), boards (made, bought on a cable), drawing (labels, wires
+   through or mixed – a wiring diagram in Fritzing or by hand says wires, a schematic of net labels says labels; per
+   board, `style` of the schematic file, handbook 10.3), variants, assembly (who solders, which sides), order
+   (quantity, finish, colours, thickness), money (budget, currency), purpose (private, gift or sale, and where),
+   requirements (only where they stand), firmware (follows the graph's pins?), documents (quote values?), own tools
+   (the entries of lists 3 and 4). "Not found" where the repository is silent. Where you name the purpose, say what
+   it means for the regulatory review M-6 – how deep it goes – and that the review is support, not legal advice:
+   nothing in it is legally guaranteed, and it claims no correctness.
 10. **Requirements** – the documents that state what the circuit must do, for the prompt of the agent
     requirements-engineer: path and the section. No candidates – they are its job.
 
