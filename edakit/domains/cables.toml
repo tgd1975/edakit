@@ -1,0 +1,25 @@
+# The domain cables: boards joined by wires, lines that leave the board – the drop on a wire, what a long lead does to
+# a signal, a pin a short or a discharge at the far end reaches (concept rules-at-scale.md, section 5; maker-coverage
+# FT-2, CK-16, HT-1).
+
+[domain]
+name = "cables"
+about = "cables between boards and to the world: wire resistance and inductance, signal lines on leads, pins at their ends"
+suggested_by = { cables = true }
+
+[switch]
+on = ["REQ.missing:leave"]
+
+[severity]
+
+[hints]
+apply = ["HINT.cable_line"]
+
+[review]
+electrical = [
+  "Each cable: its length and gauge (length_m, awg or mm2 – the drop and the inductance the simulation sees), what is on it, and what a short or a discharge at its far end reaches (REQ.missing/leave).",
+  "Plugged while powered: the inrush and the LC spike of a supply lead – a transient run with the plug-in and the cable's l_nh_per_m shows it.",
+]
+
+[fixtures]
+clean = []

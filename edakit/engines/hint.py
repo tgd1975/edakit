@@ -270,21 +270,74 @@ def _battery_on_a_board_with_jacks(design, cfg, sim):
     return list(design.comps_of_kind("battery_holder")) if _instrument_inputs(design, cfg, sim) else []
 
 
+def _pwm_leds(design, cfg, sim):
+    """Nets with pwm_hz that light LEDs: an LED on the net, one resistor away, or behind a transistor it switches."""
+    found = []
+    for name, net in design.nets.items():
+        if net.get("pwm_hz") is None:
+            continue
+        near = {name} | _resistor_neighbours(design, name)
+        for q in design.comps_of_kind("npn", "pnp", "nmos", "pmos"):
+            if design.net_of(q, "base") in near or design.net_of(q, "gate") in near:
+                near |= {design.net_of(q, "collector"), design.net_of(q, "drain")} - {None}
+        near |= {x for n in list(near) for x in _resistor_neighbours(design, n)}
+        if any(_part_kind(design, r.split(".", 1)[0]) in ("led", "led_rgb") for n in near if n in design.nets
+               for r in design.nets[n]["pins"]):
+            found.append(name)
+    return found
+
+
+def _boost_enable_on_gpio(design, cfg, sim):
+    """A boost converter whose enable (role en) an MCU pin drives."""
+    return [des for des in design.comps if values(design.part(des)).get("behavior") == "boost"
+            and (net := design.net_of(des, "en")) and _mcu_pins(design, net)]
+
+
+def _unmarked_power_inputs(design, cfg, sim):
+    """Battery holders and supply connectors the graph does not mark as reversible – nothing checks their polarity."""
+    marked = reversible(design)
+    return [des for des in design.comps_of_kind("battery_holder", "connector") if des not in marked and (
+        _part_kind(design, des) == "battery_holder"
+        or "vbus" in {p.get("role") for p in design.part(des)["pins"].values()})]
+
+
+def _rated_by_copper(design, cfg, sim):
+    """Parts whose temperature rests on rth_ja_k_per_w – a figure for the datasheet's copper."""
+    return [des for des in design.comps if "rth_ja_k_per_w" in ((design.part(des) or {}).get("limits") or {})]
+
+
+def _cable_lines(design, cfg, sim):
+    """Signal nets that run through a cable: not ground, not a supply."""
+    quiet = {design.ground} | {name for name, net in design.nets.items()
+                               if any(design.pin_info(r).get("type") in ("power_in", "power_output", "ground")
+                                      for r in net["pins"])}
+    found = set()
+    for c in design.graph.get("cables", []):
+        for a in c.get("pins", {}):
+            net = design.pin_net.get(f"{c['from']}.{a}")
+            if net and net not in quiet:
+                found.add(net)
+    return sorted(found)
+
+
 MATCHERS = {"power_input": _power_inputs, "connector_signal": _connector_signals,
             "transistor_at_connector": _transistors_at_connectors, "switching_regulator": _switching_regulators,
             "two_supplies": _two_supplies, "read_back": _read_backs, "btl_output": _btl_outputs,
             "switching_near_audio": _switching_near_audio, "ceramic_in_signal_path": _ceramics_in_signal_path,
             "instrument_input": _instrument_inputs, "battery_with_jacks": _battery_on_a_board_with_jacks,
-            "pedal_power_input": _pedal_power_inputs}
+            "pedal_power_input": _pedal_power_inputs, "pwm_leds": _pwm_leds, "boost_enable": _boost_enable_on_gpio,
+            "unmarked_power_input": _unmarked_power_inputs, "rated_by_copper": _rated_by_copper,
+            "cable_line": _cable_lines}
 
 
 
-def matching(design, cfg=None, sim=None):
-    """{code: [places]} of every hint whose `when` fits the graph."""
+def matching(design, cfg=None, sim=None, applied=None):
+    """{code: [places]} of every hint whose `when` fits the graph – of those `applied` names (a profile's hints)
+    where given."""
     out = {}
     for name, e in catalog.codes().items():
         w = e.get("when")
-        if not w:
+        if not w or (applied is not None and name not in applied):
             continue
         hits = list(design.comps_of_kind(*w.get("kinds", [])))
         if "match" in w:
@@ -312,6 +365,7 @@ def part_notes(design):
 def run(ctx):
     found = [Finding(code, "G", place, catalog.title(code), on=(("component", place),) if place in ctx.design.comps
                      else ())
-             for code, places in matching(ctx.design, ctx.cfg, ctx.sim).items() for place in places]
+             for code, places in matching(ctx.design, ctx.cfg, ctx.sim, ctx.profile.hints if ctx.profile else None
+                                          ).items() for place in places]
     return found + [Finding("HINT.datasheet", "P", place, note, "the parts entry") for place, note in
                     part_notes(ctx.design)]

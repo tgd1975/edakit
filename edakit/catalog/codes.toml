@@ -220,7 +220,7 @@ rule = "Every current stays within its limit: through resistors, fuses (below th
 why = "A part above its current heats and wears; a connector rated below a fuse's hold current carries an overload the fuse never stops. A supply above its limit drops out or switches off."
 fix = "A part with a higher rating, a fuse with a lower hold current, a driver between an MCU and its load, or less load. A trip current above a rating accepted on purpose: accept LIM.i/margin on the fuse with the reason."
 severity = "error"
-grades = { margin = "warning" }
+grades = { margin = "warning", cell = "warning", supply_pin = "warning" }
 details = [
   "fuse against what it protects: the hold current of every fuse (`i_hold_a`; at the lowest ambient `ambient_min_c` of sim.json from `i_hold_vs_temp`) is at most the `i_max_a` of every connector, switch and cable its current flows through – its own nets and on through fuses and switches; a trip current (`i_trip_a`) above it is a warning – finds e.g.: a 1.5-A polyfuse in front of a connector rated 1.25 A, an overload that heats the contacts instead of tripping the fuse",
 ]
@@ -268,7 +268,7 @@ rule = "Every part with an operating range – vdd_op_min_v … vdd_op_max_v, a 
 why = "A circuit can stay within every rating and still not work: a regulator without headroom at the low end of the USB voltage, a 5 V-only IC behind a 3.3 V rail, a reset whenever the supply changes, an LM358 at 5 V whose output cannot rise above about 3.5 V or whose inputs leave their common-mode range."
 fix = "Supply the part from a rail inside its range, choose a part whose range fits the rail, or bridge the gap (bulk capacitance, a path that conducts before the other lets go). For an op-amp: bias the stage inside its ranges, a rail-to-rail part, or a higher supply."
 severity = "error"
-grades = { opamp = "warning", gate = "warning", adc = "warning" }
+grades = { opamp = "warning", gate = "warning", adc = "warning", clock = "warning" }
 replaces = ["E-3", "E-5"]
 sources = [
   "edakit handbook 5.3",
@@ -412,11 +412,11 @@ sources = [
 
 [codes."REQ.missing"]
 title = "what a part requires is there"
-rule = "What a part requires on its pins is in the graph: a capacitor to ground per supply pin (power_in), a pull-up per I2C line, a diode across a switched coil (cathode at its plus), Rd on each CC pin of a USB-C receptacle without controller, a layout.loops entry on each net of a hot loop (hot_loop), and what a pin's parts entry says it needs (needs: a capacitor to ground, a pull-up or pull-down, a series resistor, ground) – grade pin."
+rule = "What a part requires on its pins is in the graph: a capacitor to ground per supply pin (power_in), a pull-up per I2C line, a diode across a switched coil (cathode at its plus), Rd on each CC pin of a USB-C receptacle without controller, a layout.loops entry on each net of a hot loop (hot_loop), and what a pin's parts entry says it needs (needs: a capacitor to ground, a pull-up or pull-down, a series resistor, ground) – grade pin. Warnings while new: D+ and D− of a USB-C receptacle joined across both rows (usb_data), a series resistance on a signal net that runs through a cable (leave), a diode per key of a matrix (matrix), balancing resistors across capacitors in series (balance)."
 why = "Each requirement is a datasheet's or a standard's: an IC draws its current in pulses, open-drain lines never go high alone, a coil's turn-off spike breaks the switch, a USB-C source gives no power without Rd, a long hot loop rings and radiates."
 fix = "Add the part next to the pin (blocks: i2c-pullups, usb-c-sink), or write the loop into layout.loops."
 severity = "error"
-grades = { pin = "warning", balance = "warning" }
+grades = { pin = "warning", balance = "warning", usb_data = "warning", leave = "warning", matrix = "warning" }
 details = [
   "decoupling: per net at least one capacitor to ground per IC supply pin (`power_in`) – finds e.g.: the missing 100 nF",
   "I2C pull-ups: every I2C line has a pull-up to a supply between (V − 0.4 V) / 3 mA and 10 kΩ, parallel ones added up; a line is I2C by the net's `bus`, an SDA/SCL net name, a pin role `sda`/`scl` or a pin name with SDA/SCL (a role decides over the name); pins with `pull`/`pull_ohm` count (modules) – finds e.g.: a bus without pull-ups, 47 kΩ, a module's pull-ups plus your own below 1 kΩ",
@@ -450,11 +450,11 @@ sources = [
 
 [codes."REQ.forbidden"]
 title = "what must stay apart is apart"
-rule = "What a part forbids does not happen: CC1 and CC2 of a USB-C receptacle on one net (one resistor for both), a pin whose entry says never_to_ground on ground (grade pin), two devices on one bus at one address (grade address: base and address pins of the entries), a bridge-tied output (roles out_p, out_n) on ground, on another part's net or on another channel's (grade btl)."
+rule = "What a part forbids does not happen: CC1 and CC2 of a USB-C receptacle on one net (one resistor for both), a pin whose entry says never_to_ground on ground (grade pin), two devices on one bus at one address (grade address: base and address pins of the entries), a bridge-tied output (roles out_p, out_n) on ground, on another part's net or on another channel's (grade btl), the diodes of a key matrix pointing both ways (grade matrix)."
 why = "With CC1 and CC2 on one resistor an electronically marked cable reads as a fault and the source gives no power."
 fix = "One resistor per CC pin."
 severity = "error"
-grades = { pin = "warning", address = "warning", btl = "warning" }
+grades = { pin = "warning", address = "warning", btl = "warning", matrix = "warning" }
 replaces = ["G-14"]
 sources = [
   "Richtek AN064, USB Type-C/PD Brief Introduction and Analysis (2021): a sink asserts Rd on the CC pins – https://www.richtek.com/~/media/AN%20PDF/AN064_EN.pdf",
@@ -1386,5 +1386,60 @@ severity = "note"
 when = { match = "instrument_input" }
 sources = [
   "docs/concepts/new/maker-coverage.md, appendix GTI 7 and GTI 27 (tagged extracted)",
+]
+
+[codes."HINT.flicker"]
+title = "LED flicker from PWM"
+rule = "A net with pwm_hz lights LEDs: consider whether its frequency flickers."
+why = "Dimmed by PWM, an LED flickers at the PWM frequency; at a few hundred hertz people see it in motion and cameras record it as bands – Arduino's analogWrite runs at about 490 Hz (maker-coverage LED 18)."
+fix = "A PWM frequency high enough for the use – IEEE 1789 relates frequency and modulation depth to the risk –, or a constant-current driver dimmed by its current."
+severity = "note"
+when = { match = "pwm_leds" }
+sources = [
+  "docs/concepts/new/maker-coverage.md, appendix LED 18 (Arduino analogWrite reference, read in full; IEEE 1789-2015, tagged extracted)",
+]
+
+[codes."HINT.boost_enable"]
+title = "a boost converter switched off by its enable"
+rule = "A boost converter whose enable an MCU drives: consider what its output does with EN low."
+why = "Without a load disconnect a boost converter's inductor and diode still connect its input to its output: with EN low the output sits one diode below the input instead of at 0 V (maker-coverage PWR 15)."
+fix = "A converter with load disconnect, or a switch in its output path, where the load must be off."
+severity = "note"
+when = { match = "boost_enable" }
+sources = [
+  "docs/concepts/new/maker-coverage.md, appendix PWR 15 (MT3608, tagged extracted)",
+]
+
+[codes."HINT.input_polarity"]
+title = "a power input without a polarity check"
+rule = "A battery holder or supply connector the graph does not mark as reversible: consider whether it can be plugged the wrong way round."
+why = "There is no polarity standard for many plugs: JST-PH battery packs differ between vendors, barrel jacks are centre-positive or – after Boss – centre-negative; PATH.reverse checks only a source marked reversible (maker-coverage PWR 7, PWR 32)."
+fix = "Give it \"source\": \"reversible\" so that PATH.reverse checks what a reversed source reaches, or a keyed connector whose polarity cannot be swapped."
+severity = "note"
+when = { match = "unmarked_power_input" }
+sources = [
+  "docs/concepts/new/maker-coverage.md, appendix PWR 7 and PWR 32 (tagged extracted)",
+]
+
+[codes."HINT.thermal_copper"]
+title = "thermal resistance needs its copper"
+rule = "A part whose temperature rests on rth_ja_k_per_w: consider whether the layout gives the copper that figure assumes."
+why = "Rth(j-a) is measured on the datasheet's test board – often a large copper area; on a small pad the part runs hotter than LIM.t computes (maker-coverage MOT 11, PWR 3, PWR 12)."
+fix = "The copper and vias of the datasheet's layout under the part, named in the hand-over (layout.notes); or a figure for the board's copper."
+severity = "note"
+when = { match = "rated_by_copper" }
+sources = [
+  "docs/concepts/new/maker-coverage.md, appendix PWR 3, PWR 12, MOT 11 (tagged to verify)",
+]
+
+[codes."HINT.cable_line"]
+title = "a signal line on a cable"
+rule = "A signal net runs through a cable: consider what the cable's length and the world at its end do to it."
+why = "A long lead picks up interference and has capacitance: an input needs a stronger pull and filtering, an output's edges ring, a clock or data line needs its return beside it (maker-coverage MOT 31, AUD 28–30, LED 4)."
+fix = "Inputs: a pull-up of 10 kΩ or less, an RC with a Schmitt-trigger input, a TVS; outputs: a series resistor at the source; data and clocks: a return wire beside each signal, twisted pairs."
+severity = "note"
+when = { match = "cable_line" }
+sources = [
+  "docs/concepts/new/maker-coverage.md, appendix MOT 31 (Marlin and Voron documentation, read in full)",
 ]
 

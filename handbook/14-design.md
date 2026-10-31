@@ -104,8 +104,12 @@ circuit hash and renews M-1. Warnings for the release are accepted in the sign-o
 Pending findings cannot be accepted.
 
 **Domains.** A profile of rules per area of electronics. `core` is always on: structure, artifacts, limits and levels
-of the basic kinds, parts, files, documents. `usb` switches on the USB-C termination, `radio` the e.i.r.p. and the
-bands of parts that transmit. A domain file sets severities (also per purpose: `[severity.sale]`), switches codes or
+of the basic kinds, parts, files, documents. `usb` switches on the USB-C termination and its data in both orientations, `radio` the e.i.r.p.
+and the bands of parts that transmit, `audio` bridge-tied outputs and the hints of hum and switching noise, `guitar`
+the instrument input's load and the pedal's supply, `motors` the hints of motor supplies and heaters, `power` those of
+cells, converters and polarity, `cables` the lines on a lead. Each is suggested by what the graph has: a USB-C
+receptacle, a part that transmits, a speaker, an instrument net, a motor, a battery holder, a cable. `mains` is not
+there yet: edakit says nothing about spacing for hazardous voltage (maker-coverage, open decision 3). A domain file sets severities (also per purpose: `[severity.sale]`), switches codes or
 topics on, names the facts a kind must give (a missing one is `PARTS.fact`), the hints that apply and the questions
 the reviewers ask. A project names its domains in edakit.toml:
 
@@ -193,6 +197,21 @@ An instrument board with a supply input: consider the other pedals and amplifier
 
 **`HINT.string_ground`** – the player on the amplifier's ground (note)  
 An instrument input: consider what ties the player to ground.
+
+**`HINT.flicker`** – LED flicker from PWM (note)  
+A net with pwm_hz lights LEDs: consider whether its frequency flickers.
+
+**`HINT.boost_enable`** – a boost converter switched off by its enable (note)  
+A boost converter whose enable an MCU drives: consider what its output does with EN low.
+
+**`HINT.input_polarity`** – a power input without a polarity check (note)  
+A battery holder or supply connector the graph does not mark as reversible: consider whether it can be plugged the wrong way round.
+
+**`HINT.thermal_copper`** – thermal resistance needs its copper (note)  
+A part whose temperature rests on rth_ja_k_per_w: consider whether the layout gives the copper that figure assumes.
+
+**`HINT.cable_line`** – a signal line on a cable (note)  
+A signal net runs through a cable: consider what the cable's length and the world at its end do to it.
 <!-- edakit:end -->
 
 The designer handles each one and writes down how, in the graph:

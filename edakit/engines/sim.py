@@ -361,6 +361,10 @@ def function(s, load, low=None, plugin=None):
         s.q(name, "i", max(res.get(cell["branch"], 0.0), 0.0), "A", "", None, "current into the cell (charging)",
             code="LIM.backfeed", entry=False,
             lims=[Limit(max=lim, source=f"i_charge_max_a of cells.{cell['state']} in sim.json")])
+        if (most := s.sim["cells"][cell["state"]].get("i_max_a")) is not None:
+            s.q(name, "i", max(-res.get(cell["branch"], 0.0), 0.0), "A", "", None, "current from the cell", code="LIM.i",
+                entry=False, grade="cell",
+                lims=[Limit(max=most, source=f"i_max_a of cells.{cell['state']} in sim.json")])
     for des, reg in meta["regs"].items():
         r = limits(s.n.part(des))
         vin = v(res, reg["vin"]) - v(res, reg["gnd"])
@@ -429,6 +433,8 @@ def function(s, load, low=None, plugin=None):
     opamps(s)
     input_injection(s)
     adc_windows(s)
+    supply_pin_currents(s)
+    clocks(s)
     logic_levels(s)
     leds(s, load)
     for des in s.sim.get("expect_blocking", []):
@@ -531,6 +537,44 @@ def adc_windows(s):
             x = at_pin(d, res, ref, ground_pin(d, des, s.n.part(des) or {}))
             s.q(ref, "v_adc", x, "V", "", des, f"{name} inside the ADC's window", lo=x, code="LIM.range", entry=False,
                 grade="adc", lims=[Limit(min=window[0], max=window[1], source=f"adc.range_v of {ref}")])
+
+
+def supply_pin_currents(s):
+    """LIM.i/supply_pin: what a constant-current driver's outputs sink together, plus its own supply current, through
+    its ground pin – within limits i_supply_pin_max_a."""
+    res = s.res
+    for des, t in sorted((s.meta.get("cc") or {}).items()):
+        most = limits(s.n.part(des)).get("i_supply_pin_max_a")
+        if most is None:
+            continue
+        total = sum(max(res.get(ch["ammeter"], 0.0), 0.0) for ch in t["channels"].values())
+        total += t["values"].get("idd_max_a", 0.0) if t.get("vdd") else 0.0
+        s.q(des, "i_pin", total, "A", "", des, "current through its supply pins (all outputs together)", code="LIM.i",
+            entry=False, grade="supply_pin",
+            lims=[Limit(max=most, source=f"i_supply_pin_max_a of {s.n.entry_key(des)}")])
+
+
+def clocks(s):
+    """LIM.range/clock: an MCU's clock (values f_clock_hz) within the highest clock its supply allows (limits f_max_hz
+    by supply voltage, {"2.7": 10e6, "4.5": 20e6}, linear in between) – an ATmega328P at 16 MHz needs more than
+    3.3 V."""
+    res = s.res
+    for des, m in sorted(s.meta.get("mcu", {}).items()):
+        f, curve = m["values"].get("f_clock_hz"), m["limits"].get("f_max_hz")
+        if f is None or not isinstance(curve, dict) or not curve:
+            continue
+        node = m.get("io_rail") or m.get("vout") or m.get("vin")
+        x = v(res, node)
+        pts = sorted((float(volts), hz) for volts, hz in curve.items())
+        if x <= pts[0][0]:
+            fmax = pts[0][1] if x >= pts[0][0] - 1e-9 else 0.0
+        elif x >= pts[-1][0]:
+            fmax = pts[-1][1]
+        else:
+            fmax = next(f0 + (f1 - f0) * (x - v0) / (v1 - v0) for (v0, f0), (v1, f1) in zip(pts, pts[1:]) if v0 <= x <= v1)
+        s.check("LIM.range", des, "clock within what its supply allows", f"{f / 1e6:.4g} MHz at {x:.3g} V",
+                f"≤ {fmax / 1e6:.4g} MHz (f_max_hz of {s.n.entry_key(des)})", f <= fmax * (1 + 1e-9), grade="clock",
+                on=(("component", des),))
 
 
 def opamps(s):

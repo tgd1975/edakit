@@ -2,11 +2,11 @@
 
 [domain]
 name = "usb"
-about = "USB-C receptacles and modules or breakouts with one: CC termination"
-suggested_by = { roles = ["cc1", "cc2"], values = ["usb_c"] }   # a pin role or a value of a part in the graph
+about = "USB-C receptacles and modules or breakouts with one: CC termination, data in both orientations"
+suggested_by = { roles = ["cc1", "cc2", "dp_a", "dp_b", "dn_a", "dn_b"], values = ["usb_c"] }   # a pin role or a value
 
 [switch]                             # the findings this domain switches on (code, or code:topic)
-on = ["REQ.missing:cc", "REQ.value:cc", "REQ.forbidden:cc", "PARTS.schema:cc"]
+on = ["REQ.missing:cc", "REQ.value:cc", "REQ.forbidden:cc", "PARTS.schema:cc", "REQ.missing:usb_data"]
 
 [severity]
 

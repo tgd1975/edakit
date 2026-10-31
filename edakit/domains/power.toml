@@ -1,0 +1,23 @@
+# The domain power: batteries, cells and their chargers, converters switched by the firmware – polarity, cell
+# current, what a converter does when it is off, the copper a part's temperature rests on (concept rules-at-scale.md,
+# section 5; maker-coverage cluster PWR).
+
+[domain]
+name = "power"
+about = "batteries, cells, chargers and converters: polarity of the inputs, cell current, enable, thermal copper"
+suggested_by = { kinds = ["battery_holder"] }
+
+[severity]
+
+[hints]
+apply = ["HINT.input_polarity", "HINT.boost_enable", "HINT.thermal_copper"]
+
+[review]
+electrical = [
+  "Cells: the current each cell delivers in every state against its continuous and pulse limits (sim.json cells i_max_a, LIM.i/cell); a radio pulse from a coin cell as a load step in a transient run.",
+  "Charging: what feeds the load while a charger charges – a charger whose battery terminal feeds the load never ends its charge; the charge current against the cell's limit (LIM.backfeed holds i_charge_max_a).",
+  "Polarity: every plug that can go in the wrong way round marked reversible, so that PATH.reverse sees it (HINT.input_polarity).",
+]
+
+[fixtures]
+clean = []

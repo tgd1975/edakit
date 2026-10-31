@@ -33,7 +33,7 @@ def run(ctx):
     d = ctx.joined
     return (decoupling(d) + i2c(d) + flyback(d) + usb_c(d) + functions(d) + hot_loops(ctx.design) + pin_needs(d)
             + balancing(d) + addresses(d) + uart_lines(d) + adc_sources(d) + btl_outputs(d) + instrument_loads(d)
-            + stable_gains(d))
+            + stable_gains(d) + usb_data(d) + leaving_lines(d) + matrix(d))
 
 
 def decoupling(d):
@@ -585,4 +585,82 @@ def stable_gains(d):
                 out.append(Finding("REQ.value", "G", des, f"{who}: closed-loop gain {gain:.3g} – the part is stable from "
                                    f"{least:g}", f"gain_min_ratio of {d.entry_key(des)}",
                                    "more gain, or a part stable at unity gain", grade="gain", on=(("component", des),)))
+    return out
+
+
+def usb_data(d):
+    """REQ.missing/usb_data: a USB-C receptacle whose D+ or D− is used joins both rows – A6 with B6 (roles dp_a, dp_b),
+    A7 with B7 (dn_a, dn_b) – or a plug turned round has no data."""
+    out = []
+    for des in sorted(d.comps_of_kind("connector")):
+        nets = {r: d.net_of(des, r) for r in ("dp_a", "dp_b", "dn_a", "dn_b")}
+        if not any(nets.values()):
+            continue
+        for a, b, what in (("dp_a", "dp_b", "D+"), ("dn_a", "dn_b", "D−")):
+            if nets[a] != nets[b]:
+                out.append(Finding("REQ.missing", "G", des, f"{des}: {what} of both rows not joined ({a} on "
+                                   f"{nets[a] or 'nothing'}, {b} on {nets[b] or 'nothing'}) – turned round, the plug has "
+                                   "no data", "USB Type-C Cable and Connector Specification (USB-IF)",
+                                   "join A6 with B6 and A7 with B7", grade="usb_data", topic="usb_data",
+                                   on=(("component", des),)))
+    return out
+
+
+def leaving_lines(d):
+    """REQ.missing/leave: a signal net that runs through a cable reaches an IC or module pin with no resistor in
+    between – a short on the wire or a discharge at its end hits the pin. A pin with short_proof, and I2C lines
+    (needs.toml [i2c]), are left alone."""
+    quiet = {d.ground} | supply_nets(d)
+    out = []
+    for c in d.graph.get("cables", []):
+        for a in c.get("pins", {}):
+            net = d.pin_net.get(f"{c['from']}.{a}")
+            if not net or net in quiet or d.nets[net].get("bus") == "i2c" or i2c_name(net):
+                continue
+            hit = [r for r in d.nets[net]["pins"] if (d.part(r.partition(".")[0]) or {}).get("kind") in ("ic", "module")
+                   and d.pin_info(r).get("type") in ("input", "output", "bidirectional", "analog")
+                   and not d.pin_info(r).get("short_proof") and not i2c_line(d.pin_info(r))]
+            if hit:
+                out.append(Finding("REQ.missing", "G", net, f"{net}: runs through cable {c['name']} straight to "
+                                   f"{', '.join(hit)} – no series resistance on the board", "maker-coverage CK-16",
+                                   "a series resistor (100 Ω–1 kΩ) at the pin, a TVS at the connector", grade="leave",
+                                   topic="leave", on=(("net", net),)))
+    return out
+
+
+def matrix(d):
+    """REQ.missing/matrix, REQ.forbidden/matrix: in a key matrix (nets with matrix row or col) every switch reaches
+    the other side through a diode, and all diodes point the same way."""
+    side = {name: net.get("matrix") for name, net in d.nets.items() if net.get("matrix") in ("row", "col")}
+    if not side:
+        return []
+    out, ways = [], defaultdict(list)
+    for des in sorted(d.comps_of_kind("button", "switch")):
+        nets = {d.pin_net.get(f"{des}.{p}") for p in d.part(des)["pins"]} - {None}
+        on = [n for n in nets if n in side]
+        if not on:
+            continue
+        other = (nets - set(on)) or set()
+        if len({side[n] for n in on}) > 1:
+            out.append(Finding("REQ.missing", "G", des, f"{des}: joins a row and a column without a diode – keys pressed "
+                               "together ghost", "QMK how_a_matrix_works (maker-coverage CK-19)", "a diode per key",
+                               grade="matrix", on=(("component", des),)))
+            continue
+        found = None
+        for dio in d.comps_of_kind("diode"):
+            a, k = d.net_of(dio, "anode"), d.net_of(dio, "cathode")
+            for here, there, at in ((a, k, "cathode"), (k, a, "anode")):
+                if here in other and there in side and side[there] != side[on[0]]:
+                    found = (dio, side[there] if at == "cathode" else side[on[0]])
+        if found is None:
+            out.append(Finding("REQ.missing", "G", des, f"{des}: no diode to the {'col' if side[on[0]] == 'row' else 'row'}"
+                               " side – keys pressed together ghost", "QMK how_a_matrix_works (maker-coverage CK-19)",
+                               "a diode per key", grade="matrix", on=(("component", des),)))
+        else:
+            ways[found[1]].append(des)        # the side the cathodes face: row for col2row
+    if len(ways) > 1:
+        text = "; ".join(f"cathodes to the {w}s: {', '.join(keys)}" for w, keys in sorted(ways.items()))
+        out.append(Finding("REQ.forbidden", "G", "matrix", f"matrix: the diodes point both ways – {text}",
+                           "QMK config_options DIODE_DIRECTION (maker-coverage CK-19)",
+                           "all diodes the same way, as the firmware's diode direction says", grade="matrix"))
     return out

@@ -12,8 +12,10 @@ from edakit.release import gate
 
 
 def matching(project):
+    """The hints of the example as its profile applies them."""
     cfg = project.config()
-    return hint.matching(Design.from_config(cfg), cfg, engines.load_sim(cfg))
+    d = Design.from_config(cfg)
+    return hint.matching(d, cfg, engines.load_sim(cfg), engines.profile(d, cfg).hints)
 
 
 def open_hints(project):

@@ -38,7 +38,7 @@ the supply over time and LIM.v judges them. Switching spikes and fast edges are 
 - No supply is fed backwards: where two supplies meet and nothing blocks the way, the higher one feeds the lower one –
   into a PC's USB port through a module whose 5 V pin is its VBUS, into primary cells. LIM.backfeed holds the current into
   every source (against its direction) to `i_back_max_a` of the source, and the current into every cell of a battery
-  holder to `i_charge_max_a` of its cell state (`"cells": {"nimh": {"v": 1.3, "r": 0.05, "i_charge_max_a": 0.1}}` for a
+  holder to `i_charge_max_a` of its cell state, and with `i_max_a` what a cell delivers (LIM.i/cell, a coin cell's few mA) (`"cells": {"nimh": {"v": 1.3, "r": 0.05, "i_charge_max_a": 0.1}}` for a
   pack its charger charges on purpose); both are `criteria.blocking_max_a` (1 mA) unless set.
 - Every net is one node – a track is 0 Ω – unless sim.json `copper` names it (5.2): then each of its pins gets a node
   of its own, with the routed tracks and vias as resistors in between, and every check sees the voltage at the pin.
