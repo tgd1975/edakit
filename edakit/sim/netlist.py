@@ -95,6 +95,7 @@ UVLO_V = 0.2        # undervoltage lockout: a regulator's output falls to 0 over
 DEAD_RAIL_V = 0.5   # a constant-current load falls to 0 below this voltage across it
 I_CORE_A = 0.03     # an MCU's core current without values i_core_a
 A_OL = 1e4          # an op-amp's open-loop gain in the model: a follower within 0.3 mV; 1e5 does not converge everywhere
+SUBSTRATE_DIODE = "D_SUBSTRATE"   # an IC's junction from its ground to its supply (behaviour logic)
 KNEE_V = 0.01       # the smooth min/max of the op-amp's limits: within 10 mV of a limit it bends, linear below
 OPAMP_ROLE = re.compile(r"^(in_p|in_n|out)(_[a-z0-9]+)?$")
 
@@ -839,7 +840,8 @@ class Netlist:
 
     def ic_logic(self, des, part):
         """A logic part – a sensor, a transceiver, a USB-UART: its supply current icc_a – a number at its supply pin
-        (supply_pins), or {pin name: A} per supply pin – to its ground pin, and every output in its state
+        (supply_pins), or {pin name: A} per supply pin – to its ground pin, the substrate diode from that ground to
+        each supply pin (a silicon junction, 1 Ω in series), and every output in its state
         (logic_states): low through r_out_ohm (50 Ω) to ground; high through it to its supply – the pin its `ref`
         names, else the supply pin –, which delivers what the output sources (ammeter in meta["logic"]); off not at
         all."""
@@ -852,6 +854,10 @@ class Netlist:
         for num, a in draw.items():
             if num in connected:
                 self.current_load(f"{des}_{num}", self.pn(f"{des}.{num}"), gnd, a)
+        for num in supply_pins(pins):        # the substrate diode from ground to each supply: a supply driven below
+            if num in connected:             # ground (cells upside down) is clamped by it, as on the bench
+                self.add(f"D_{des}_SUB{num} {gnd} {self.pn(f'{des}.{num}')} {SUBSTRATE_DIODE}")
+                self.models[SUBSTRATE_DIODE] = f".model {SUBSTRATE_DIODE} D(IS=1e-14 N=1 RS=1)"
         r_out = p.get("r_out_ohm", 50)
         rails = [n for n in supply_pins(pins) if n in connected]
         out = self.meta.setdefault("logic", {})[des] = {}
