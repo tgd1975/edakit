@@ -332,7 +332,7 @@ def value_problem(text, part, key, what):
 AWG_D0_MM, AWG_BASE = 0.127, 92     # the gauge's definition (ASTM B258): d(n) = 0.127 mm × 92^((36 − n) / 39)
 CABLE_OHM = 0.05                    # a wire without r_ohm_per_wire or length and gauge
 CABLE_KEYS = {"name", "from", "to", "pins", "r_ohm_per_wire", "length_m", "awg", "mm2", "l_nh_per_m", "i_max_a",
-              "notes", "about"}
+              "at_m", "notes", "about"}    # at_m: where along an LED strip its wires land (sim/strip.py)
 
 
 def wire_mm2(cable):
@@ -369,7 +369,7 @@ def cable_problems(cable):
     out = []
     for k in sorted(set(cable) - CABLE_KEYS):
         out.append(f"unknown key '{k}' (known: {', '.join(sorted(CABLE_KEYS - {'name', 'from', 'to', 'pins'}))})")
-    for k in ("r_ohm_per_wire", "length_m", "mm2", "l_nh_per_m", "i_max_a"):
+    for k in ("r_ohm_per_wire", "length_m", "mm2", "l_nh_per_m", "i_max_a", "at_m"):
         if k in cable and not (is_number(cable[k]) and cable[k] >= 0):
             out.append(f"{k} must be a number ≥ 0, not {cable[k]!r}")
     if "awg" in cable and not (is_number(cable["awg"]) and 0 <= cable["awg"] <= 40):
@@ -386,3 +386,38 @@ def cable_problems(cable):
     if "l_nh_per_m" in cable and "length_m" not in cable:
         out.append("l_nh_per_m needs the cable's length_m")
     return out
+
+
+# --- LED strips (maker-coverage FT-13) -------------------------------------------------------------------------------
+STRIP_KEYS = {"length_m", "pixels", "notes"}
+
+
+def strip_problems(comp):
+    """What is wrong with the `strip` table of an LED strip component (kind led_strip): its length, as length_m or as
+    pixels."""
+    s = comp.get("strip")
+    if not isinstance(s, dict):
+        return ["strip: the length of the strip – {\"length_m\": …} or {\"pixels\": …}"]
+    out = [f"strip: unknown key '{k}' (known: {', '.join(sorted(STRIP_KEYS))})" for k in sorted(set(s) - STRIP_KEYS)]
+    if len([k for k in ("length_m", "pixels") if k in s]) != 1:
+        out.append("strip: length_m or pixels, one of the two")
+    if "length_m" in s and not (is_number(s["length_m"]) and s["length_m"] > 0):
+        out.append(f"strip.length_m must be a number > 0, not {s['length_m']!r}")
+    if "pixels" in s and not (isinstance(s["pixels"], int) and not isinstance(s["pixels"], bool) and s["pixels"] > 0):
+        out.append(f"strip.pixels must be a whole number > 0, not {s['pixels']!r}")
+    return out
+
+
+def strip_pixels(comp, part):
+    """(pixels, length in m) of an LED strip component: strip.pixels, or strip.length_m × the entry's pixels_per_m
+    rounded to whole pixels; the length is what the pixels take, pixels / pixels_per_m. ValueError with the reason
+    where the component or the entry lacks what it takes."""
+    des = comp.get("designator", "?")
+    if problems := strip_problems(comp):
+        raise ValueError(f"{des}: {problems[0]}")
+    ppm = values(part).get("pixels_per_m")
+    if not (is_number(ppm) and ppm > 0):
+        raise ValueError(f"{des}: its parts entry gives no pixels_per_m – the pixels of the strip per metre")
+    s = comp["strip"]
+    n = s["pixels"] if "pixels" in s else max(1, round(s["length_m"] * ppm))
+    return n, n / ppm

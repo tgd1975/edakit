@@ -24,6 +24,8 @@ s = "s"
 ns = "ns"
 k_per_w = "K/W"
 ratio = "1"
+ohm_per_m = "Ω/m"
+per_m = "1/m"
 
 [enums]
 behavior = ["ldo", "buck", "boost", "buck_boost", "mcu", "cc_sink", "opamp", "logic", "current", "bridge", "charger",
@@ -226,3 +228,13 @@ values = ["vf_v", "vf_at_a", "ctr_min_ratio", "behavior", "r_on_ohm", "if_on_a",
 roles = ["io1", "io2", "io3", "io4", "io5", "io6", "io7", "io8", "vbus", "gnd"]
 limits = ["vrwm_max_v"]                      # the rail's stand-off: the voltage the transil holds without conducting
 values = ["vbr_min_v", "vf_v", "vf_at_a", "c_io_f"]
+
+[kinds.led_strip]                            # an addressable LED strip cut to length (maker-coverage FT-13): its pixels
+                                             # in a row between a +V and a GND rail; vdd, gnd, din at the start, vdd_end,
+                                             # gnd_end, dout at the far end (cin, cout: a clocked strip's clock); the
+                                             # component gives its length (strip.length_m or strip.pixels)
+roles = ["vdd", "gnd", "din", "cin", "vdd_end", "gnd_end", "dout", "cout"]
+limits = ["vdd_op_min_v", "vdd_op_max_v"]     # the pixel IC's supply range: LIM.range/strip holds every pixel to it
+values = ["pixels_per_m", "i_pixel_a", "i_idle_a", "r_vdd_ohm_per_m", "r_gnd_ohm_per_m"]
+                                             # i_pixel_a: one pixel at full white (every channel on), i_idle_a: all dark;
+                                             # r_…_ohm_per_m: the copper of each rail per metre of strip

@@ -32,6 +32,7 @@ LIMITS_OF = {
     "button": [("LIM.i", ("i_max_a", "i_contact_max_a", "i_switch_max_a"), "its contact current")],
     "connector": [("LIM.i", ("i_max_a", "i_contact_max_a"), "its contact current")],
     "relay": [("LIM.i", ("i_max_a", "i_contact_max_a", "i_switch_max_a"), "its contact current")],
+    "led_strip": [("LIM.range", ("vdd_op_min_v", "vdd_op_max_v"), "the supply of its pixels")],
 }
 DISSIPATES = ("resistor", "diode", "led", "led_rgb", "npn", "pnp", "nmos", "pmos")
 OWN_RANGE = {"ldo": ("vin_min_v",), "buck": ("vin_min_v",), "boost": ("vin_min_v",), "buck_boost": ("vin_min_v",),

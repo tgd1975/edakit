@@ -54,6 +54,32 @@ the supply over time and LIM.v judges them. Switching spikes and fast edges are 
 - Off-board loads (a servo, a motor, a strip at a connector): the load's `external`, e.g.
   `{"J1": {"plus": "2", "minus": "1", "i_a": 0.3}}` – a constant current between the two pins; it counts for the
   connector's contact current and for the track widths.
+- An addressable LED strip (parts kind `led_strip`, maker-coverage FT-13) is a ladder instead of one current: its
+  pixels in a row between a +V rail and a GND rail of `r_vdd_ohm_per_m` and `r_gnd_ohm_per_m`, every pixel a constant
+  current between the two – `i_idle_a`, plus the load's share of full white (`strips`, 5.2) of the rest up to
+  `i_pixel_a`. The component gives the length, `"strip": {"length_m": 5}` (3.1); up to 50 pixels each is a section of
+  its own, a longer strip is 50 sections of equal pixel counts, each section's current at the mean place of its pixels.
+  The pins with the roles `vdd` and `gnd` feed the rails at the start, `vdd_end` and `gnd_end` at the far end. A cable
+  to the strip gives each of its pins a node of its own with the wire's resistance in between, so that every feed
+  carries its own current; a cable with `at_m` lands its wires on the rails at that place instead – an injection
+  point. A strip on a board of its own (`bought = true`, 4.5) is reached through its cables only: a pin no wire lands
+  on is an open end of its rail. A strip plugged into the output of another (chained: `vdd_end`, `gnd_end`, `dout` of
+  the first on nets of their own with `vdd`, `gnd`, `din` of the second) is fed through the first one's rails – in the
+  simulation, and in stage G, where its +V rail passes a supply on (PATH.unfed) and its ground rail joins ground
+  (PATH.ground; `catalog/paths.toml`).
+
+  LIM.range/strip (a warning while new) holds the supply of every pixel, measured between its two rails, to the entry's
+  `vdd_op_min_v` … `vdd_op_max_v`; the row names the lowest and the highest pixel ("0.0125 V (pixels 295–300, 4.95 m) …
+  4.823 V (pixels 1–6, 0.05 m)"), rows of information the first and the last pixel and the current of every feed. The
+  connector at the board's end of a wire carries that feed (LIM.i on its contacts, as for every cable), a cable's
+  `i_max_a` holds its wires, and a strip pin's own `i_max_a` – the rating of the strip's lead or connector – the feed
+  at that pin (both LIM.i/strip). On Pololu's WS2812B strip at 60 LEDs/m (`edakit/parts/Pololu_2549.json`:
+  50 mA per pixel, 0.2 Ω/m per rail): one metre fed at one end drops 0.59 V to its last pixel – Pololu measured 0.6 V
+  at 3.0 A; 5 m fed at one end leave the far pixels without supply, fed at both ends the middle sits at 1.24 V, and a
+  third feed at 2.5 m lifts every pixel to 4.04 V or more – through a wire that carries 7.5 A. Two limits of the model:
+  a share below 1 is an average, while a pixel's PWM pulses draw the full current – the drop of full white is what a
+  pulse sees; and the model's pixels keep their current down to 0.5 V, while a WS2812B draws less as its supply falls
+  (Pololu: the far end turns redder and draws less) – the drop it gives is an upper bound.
 - ICs and modules are replaced by **behaviour models** (`values.behavior` in the parts entry):
 
 | Model | Roles | Parameters | Behaviour |
@@ -265,6 +291,10 @@ with 100 nF instead of 1 µF 15.9 Hz – SIM.response; the audio input's R20 / C
 
 `expect` in a load holds what the project expects there, as in a transient run: per source `i_max_a`, `i_min_a` – a sleep
 current budget, the evidence for a battery-life requirement (LIM.i) –, per net `min_v`, `max_v` (LIM.v).
+
+`strips` gives each LED strip of a load the share of full white its pixels show – `{"DS1": 1}` every pixel at full
+white, `0.25` a quarter of it on average; a strip the load does not list is dark (its `i_idle_a`). A name that is no
+LED strip, or a share outside 0 … 1, is SIM.config.
 
 `leds_on` lists the LEDs that light in a load – the designator, or `D10_RED` for one colour of an RGB LED, `"all"` for
 every one; the others are expected dark. LEDs on the output of a constant-current sink go by the channel instead (5.3).

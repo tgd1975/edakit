@@ -19,7 +19,7 @@ from .. import catalog
 from ..catalog import table
 from ..circuit import is_number, limits, polarized, relay_sets, values
 from ..findings import Finding
-from ..sim import netlist
+from ..sim import netlist, strip
 from .limits import CODE, compare
 from .quantities import SIM_EPS_V, Limit, Quantity, part_limits
 
@@ -503,6 +503,7 @@ def function(s, load, low=None, plugin=None):
     clocks(s)
     logic_levels(s)
     leds(s, load)
+    strip.judge(s, load)          # LED strips: every pixel's supply, every feed (sim/strip.py)
     for des in s.sim.get("expect_blocking", []):
         i = res.get(f"@d_{des.lower()}[id]", 0.0)
         s.check("SIM.state", des, "diode blocks", abs(i), f"≤ {crit['blocking_max_a'] * 1e3:.0f} mA",
@@ -534,6 +535,8 @@ def operating_range(s):
     d, res = s.d, s.res
     for des in sorted(s.n.comps):
         part = s.n.part(des) or {}
+        if part.get("kind") == strip.KIND:
+            continue              # every pixel along it, not its pins: strip.judge
         r = limits(part)
         ranges = {n: (r.get("vdd_op_min_v"), r.get("vdd_op_max_v")) for n in supply_pins(part)}
         ranges.update({n: (i.get("v_op_min_v"), i.get("v_op_max_v")) for n, i in (part.get("pins") or {}).items()
@@ -607,6 +610,8 @@ def thevenin(s, des, ref):
     resistors to their far ends in parallel; None where anything else is on the net or a resistor has no value."""
     d, res = s.d, s.res
     net = d.pin_net.get(ref)
+    if net not in d.nets:         # a node of its own behind a cable wire (a strip's pin): not known here
+        return None
     nodes = set(netlist.net_nodes(d, net))
     conductance, current = 0.0, 0.0
     for other in d.nets[net]["pins"]:
@@ -734,6 +739,8 @@ def pin_current(s, des, ref):
     the net is a resistor, a capacitor, an LED or a diode; None otherwise."""
     d, res = s.d, s.res
     net = d.pin_net.get(ref)
+    if net not in d.nets:         # a node of its own behind a cable wire (a strip's pin): not known here
+        return None
     nodes = set(netlist.net_nodes(d, net))
     total = 0.0
     for other in d.nets[net]["pins"]:

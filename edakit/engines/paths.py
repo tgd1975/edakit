@@ -142,8 +142,11 @@ def supply(d, sim=None):
     out = [Finding("STRUCT.ref", "G", "grounds", f"grounds: no net {n} in the graph") for n in named
            if n not in alias]
     joins = defaultdict(set)
-    for des in d.comps_of_kind(*data()["ground"]["joins"]):
-        nets = {d.pin_net.get(f"{des}.{p}") for p in d.part(des)["pins"]} - {None}
+    by_roles = data()["ground"].get("joins_roles") or {}
+    for des in d.comps_of_kind(*data()["ground"]["joins"], *by_roles):
+        k = d.part(des)["kind"]
+        nets = ({d.net_of(des, r) for r in by_roles[k]} if k in by_roles
+                else {d.pin_net.get(f"{des}.{p}") for p in d.part(des)["pins"]}) - {None}
         for n in nets:
             joins[n] |= nets - {n}
     grounds = reach({d.ground} | {alias[n] for n in named if n in alias}, joins)
