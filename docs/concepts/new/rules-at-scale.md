@@ -247,6 +247,16 @@ Steps 1 to 4 change no finding on any board; the parity test says so. Step 5 is 
 | 7 | built | `tests/reference.py`: a reference circuit per domain added to `led-bar`, clean under its domains, with seeded faults that raise exactly their codes (`tests/test_reference.py`); edakit's own circuits, values chosen for the test – the published open designs of FT-21 join them once their schematics can be read. `edakit mutate` lists what no code catches (led-bar: 24 of 45 mistakes caught without the simulation, 43 with it; R-EXT ×100 stays unseen). The reference circuits found three faults in edakit: a pull to a divider's middle counted as none (LVL.undefined), a floating sub-net let ngspice fall back to a wrong operating point (rshunt), a net without pins crashed the simulation. |
 | 8 | built | `evals/`: six cases for `claude plugin eval` on the reference circuits – find a seeded fault (four), name what went unchecked, add an LED. Baseline 2026-10-31, one run per case: Sonnet 5.5 five of six, Opus 5.5 six of six (`evals/README.md`); the runs led to four fixes in edakit (uv cache, sim artifacts, the path in the hook, the flyback wording). |
 
+State of the candidates after step 8 (`maker-coverage-status.toml`, one entry per candidate): of 92 numbered candidates
+39 built, 8 in part, 45 open – features 9/2/13, checks 16/6/9, hints 14/0/5, blocks 0/0/18 –, the library of 49 parts
+and 3 of 5 reviewer topics open. What is open needs datasheets or standards this environment could not reach, or waits
+for open decisions 3 (mains), 4 (parts library) and 5 (AC analysis).
+
+The catalog as one page – every code with rule, why, fix and sources, the domains, the tables, the parts schema, the
+reference circuits drawn and their seeded faults, the candidates' state: `docs/catalog/index.html` and
+`docs/catalog/circuits/*.svg`, written by `docs/catalog/build.py`; `tests/test_catalog_page.py` fails while they differ
+from the catalog.
+
 ### When maker-coverage's candidates are built
 
 After the cut (step 5), not before – decided by the owner. Three reasons:

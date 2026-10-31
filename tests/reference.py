@@ -102,6 +102,26 @@ def resistor(p, key, ohm):
     p.save_part(key, r)
 
 
+def block(p, title, start, notes, board_title, near=None):
+    """The circuit's own block in the drawing (hardware/schematic.toml, a third row) and the board's title; near: the
+    capacitors drawn at a part."""
+    f = p.root / "hardware" / "schematic.toml"
+    t = f.read_text()
+    if near:
+        t = t.replace('near = { C1 = "U2", C2 = "U1" }',
+                      'near = { C1 = "U2", C2 = "U1", ' + ", ".join(f'{c} = "{x}"' for c, x in near.items()) + " }")
+    starts = ", ".join(json.dumps(s) for s in start)
+    last = '  [ [ { title = "LED Driver", start = ["U2"] } ], [ { title = "Notes" } ] ],\n]'
+    row = '  [ [ { title = %s, start = [%s] } ] ],\n' % (json.dumps(title), starts)
+    t = t.replace(last, last[:-1] + row + "]")
+    keep = 'Notes = ["Nets with the same name are connected (labels and power flags)."]'
+    said = "%s = [%s]\n" % (json.dumps(title), ", ".join(json.dumps(n, ensure_ascii=False) for n in notes))
+    t = t.replace(keep, said + keep)
+    f.write_text(t)
+    toml = p.root / "edakit.toml"
+    toml.write_text(toml.read_text().replace('title = "LED bar"', 'title = %s' % json.dumps(board_title), 1))
+
+
 def drive(p, net, *, idle=0, all_on=1):
     """U1 drives `net` as an output: low in idle, high with all on (sim.json)."""
     s = p.sim()
@@ -139,6 +159,8 @@ def motors(p):
     wire(g, "MOTOR_EN", "R20.1", "U1.11", v=(0, 3.4))
     p.save_graph(g)
     drive(p, "MOTOR_EN")
+    block(p, "Motor", ["Q20"], ["M1 (33 Ω) switched low-side by Q20 from GP8", "D20 SS14: flyback diode across the winding"],
+          "Reference: motors")
 
 
 AMP = {"lcsc": "C9100002", "mpn": "mono class-D amplifier (reference circuit)", "kind": "ic",
@@ -177,6 +199,8 @@ def audio(p):
     wire(g, "AUDIO_PWM", "R20.1", "U1.11", v=(0, 3.4), fn="pwm", pwm_hz=40000)
     p.save_graph(g)
     drive(p, "AUDIO_PWM")
+    block(p, "Amplifier", ["U20"], ["U20 class-D amplifier, bridge-tied to the speaker LS20", "R20: input from GP8 (PWM)"],
+          "Reference: audio", near={"C20": "U20"})
 
 
 OPAMP = {"lcsc": "C9100004", "mpn": "single op-amp, rail to rail out (reference circuit)", "kind": "ic",
@@ -212,6 +236,9 @@ def guitar(p):
     wire(g, "GTR_IN", "J20.1", "R20.1", "U20.3", instrument="pickup", load_min_ohm=1e6)
     wire(g, "GTR_OUT", "U20.1", "U20.2")
     p.save_graph(g)
+    block(p, "Instrument Buffer", ["U20"], ["J20: the instrument (pickup) in, R20 2.2 MΩ bias to VREF",
+                                             "R21/R22 + C20: VREF at half the supply; U20 a follower"],
+          "Reference: guitar", near={"C21": "U20"})
 
 
 HOLDER = {"lcsc": "C9100006", "mpn": "3 × AA holder (reference circuit)", "kind": "battery_holder",
@@ -236,6 +263,8 @@ def power(p):
     s["cells"] = {"fresh": {"v": 4.8, "r": 0.45, "i_max_a": 0.5}}
     s["supplies"]["cells"] = {"BT20": "fresh"}
     p.save_sim(s)
+    block(p, "Battery", ["BT20"], ["BT20: three AA cells, D20 SS14 onto +5V", "neither USB nor the cells feed the other"],
+          "Reference: power")
 
 
 def cables(p):
@@ -261,6 +290,8 @@ def cables(p):
     g["graph"]["cables"].append({"name": "W20", "from": "J21", "to": "J20", "pins": {"1": "1", "2": "2"},
                                  "length_m": 1, "awg": 26})
     p.save_graph(g)
+    block(p, "Remote Button", ["J20"], ["W20: 1 m of AWG 26 to the remote board (J21, SW20)",
+                                        "R20 1 kΩ in series at GP8, R21 10 kΩ pull-up"], "Reference: cables")
 
 
 RECEPTACLE = {"lcsc": "C9100007", "mpn": "USB-C receptacle, USB 2.0 (reference circuit)", "kind": "connector",
@@ -295,6 +326,8 @@ def usb(p):
     wire(g, "USB_DP", "R22.2", "U1.11", v=(0, 3.6))
     wire(g, "USB_DN", "R23.2", "U1.12", v=(0, 3.6))
     p.save_graph(g)
+    block(p, "USB-C", ["J20"], ["R20/R21 5.1 kΩ: Rd on CC1 and CC2", "D+ and D− of both rows joined, 27 Ω to GP8/GP9"],
+          "Reference: usb")
 
 
 def keyboard(p):
@@ -321,6 +354,8 @@ def keyboard(p):
     for load in s["loads"].values():
         load.setdefault("gpio", {}).update(ROW0=0, ROW1=0)
     p.save_sim(s)
+    block(p, "Key Matrix", ["SW20"], ["SW20–SW23: rows GP8/GP9, columns GP10/GP11",
+                                     "a diode per key, cathodes to the rows (col2row)"], "Reference: keyboard")
 
 
 REFERENCES = {"motors": motors, "audio": audio, "guitar": guitar, "power": power, "cables": cables, "usb": usb,
