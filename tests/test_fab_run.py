@@ -100,7 +100,7 @@ def cut(project):
 
 
 class Layer(list):
-    """Gerber items in mm: ("flash", (kind, a, b), x, y) and ("draw", width, points, tag)."""
+    """Gerber items in mm: ("flash", (kind, a, b), x, y), ("draw", width, points, tag) and ("region", points, tag)."""
 
     def text(self):
         aps, body = {}, []
@@ -111,6 +111,10 @@ class Layer(list):
         for item in self:
             if item[0] == "flash":
                 body += [f"D{code(item[1])}*", f"X{um(item[2])}Y{um(item[3])}D03*"]
+            elif item[0] == "region":
+                pts = item[1] + item[1][:1]
+                body += ["G36*", f"X{um(pts[0][0])}Y{um(pts[0][1])}D02*"]
+                body += [f"X{um(x)}Y{um(y)}D01*" for x, y in pts[1:]] + ["G37*"]
             else:
                 _, w, pts, _ = item
                 body += [f"D{code(('C', w, w))}*", f"X{um(pts[0][0])}Y{um(pts[0][1])}D02*"]
@@ -474,6 +478,17 @@ def via(ex, x, y, pad=0.6096, hole=0.3048):
         ex.gerber[layer].append(("flash", ("C", pad, pad), x, y))
 
 
+POUR = [(5, 13), (12, 13), (12, 18.5), (5, 18.5)]   # a GND pour on both layers, on the GND track along y = 13.5
+
+
+def via_in_pour(ex, pad=0.6096):
+    """A GND via at (8, 16) inside a pour of its own net on both layers – the pour a region, as EasyEDA writes it
+    (walkthrough gaps B1)."""
+    for layer in ("top", "bottom"):
+        ex.gerber[layer].append(("region", POUR, "GND"))
+    via(ex, 8, 16, pad=pad)
+
+
 def plus_at(x, y, text=True):
     """The "+" of the export moved to (x, y): drawn in the top silkscreen as two crossing strokes, the way a footprint
     draws it, and as a PCB text unless text is False (a footprint's own print)."""
@@ -730,8 +745,10 @@ FAULTS = [
      [("GEO.ring", "fail", "J1.1: 0.125 mm on TOP and BOTTOM (hole Ø 1.00 mm); J1.2: 0.125 mm on TOP and BOTTOM")]),
     ("a pad ring below JLCPCB's capability value", j1_pads(1.38),
      [("GEO.ring", "warn", "pad 1, 2: 0.190 mm on TOP and BOTTOM (hole Ø 1.00 mm)")]),
-    ("a via ring below 0.05 mm", lambda ex, p: via(ex, 8, 13.5, pad=0.38),     # on TOP the GND track is its ring
-     [("GEO.ring", "fail", "via at (8.00, 13.50): 0.037 mm on BOTTOM (hole Ø 0.30 mm)")]),
+    ("a via ring below 0.05 mm", lambda ex, p: via(ex, 8, 13.5, pad=0.38),     # the GND track over it is no ring
+     [("GEO.ring", "fail", "via at (8.00, 13.50): 0.037 mm on TOP and BOTTOM (hole Ø 0.30 mm)")]),
+    ("a via ring below 0.05 mm inside a pour of its own net", lambda ex, p: via_in_pour(ex, pad=0.38),
+     [("GEO.ring", "fail", "via at (8.00, 16.00): 0.037 mm on TOP and BOTTOM (hole Ø 0.30 mm)")]),
     ("two vias closer than 0.2 mm", lambda ex, p: (via(ex, 8, 13.5), via(ex, 8.45, 13.5)),
      [("GEO.spacing", "fail", "via at (8.00, 13.50) – via at (8.45, 13.50): 0.145 mm apart, below 0.20 mm")]),
     ("a via closer than 0.45 mm to a component hole", lambda ex, p: via(ex, 3, 12.05),     # J1 is soldered by hand
@@ -910,6 +927,15 @@ def test_rings_and_hole_spacing_of_the_clean_export(project):
     rows = [(r["result"], r["actual"]) for r in run(project)
             if r["id"] == "GEO.ring" or (r["id"] == "GEO.spacing" and "hole-to-hole" in r["check"])]
     assert rows == [("pass", "2 holes (narrowest ring 0.200 mm, J1.1), 0 vias"), ("pass", "closest 1.000 mm (J1.1 – J1.2)")]
+
+
+def test_a_via_inside_a_pour_keeps_its_own_ring(project):
+    """Walkthrough gaps B1: the example's vias (0.61 mm on 0.305 mm) sat in its GND pours and GEO.ring reported
+    "narrowest ring 1.000 mm" – the pour, measured up to 1 mm. The via's ring is its own pad's, inside a pour too."""
+    rows = run(project, lambda ex, p: via_in_pour(ex))
+    assert findings(rows) == []
+    ring = next(r for r in rows if r["id"] == "GEO.ring")
+    assert ring["actual"] == "2 holes (narrowest ring 0.200 mm, J1.1), 1 vias (narrowest ring 0.152 mm)"
 
 
 def test_a_waived_annular_ring_is_listed_with_its_reason(project):

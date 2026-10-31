@@ -53,8 +53,9 @@ assembly preview at JLCPCB.
   GEO.pour copper per layer from the Gerber files: share of the board area and largest copper-free circle (info); a
        circle above [copper] max_bare_mm on a poured layer, a share below [copper] min_cover, a copper piece without
        pad, via or plated hole: warn
-  GEO.ring every plated hole keeps JLCPCB's annular ring (component hole 0.18 mm, warn below 0.20 mm; via 0.05 mm) and
-       every two plated holes JLCPCB's hole-to-hole spacing, edge to edge (0.45 mm with a component hole, 0.2 mm vias)
+  GEO.ring every plated hole keeps JLCPCB's annular ring (component hole 0.18 mm, warn below 0.20 mm; via 0.05 mm, on
+       the via's own pad, a pour around it not counted) and every two plated holes JLCPCB's hole-to-hole spacing, edge
+       to edge (0.45 mm with a component hole, 0.2 mm vias)
   GEO.silk silkscreen from the Gerber files: edakit's own print on a solder-mask opening (fail), other print there per part,
        print beyond the outline, a part of the designators side without a visible designator or group label (not in
        [silk] unlabelled), a text height edakit prints below 1.0 mm (warn)
@@ -1026,13 +1027,40 @@ def ring_mm(parts, hole):
     return None if piece is None else piece.boundary.distance(axis) - half
 
 
+VIA_AT_MM = 0.01             # a flash this close to a via's centre is the via's own pad (drill files in µm, Gerber in nm)
+
+
+def flashes(ops):
+    """The flashed pads of a layer's Gerber operations: [(x, y, area)] – a pad as EasyEDA and KiCad write it, also a via's;
+    a pour is a region, a track a draw."""
+    from .. import gerber as g
+    return [(dat[1], dat[2], g.shape([(kind, dat)], 64)) for kind, dat in ops if kind == "flash"]
+
+
+def via_ring_mm(pads, hole):
+    """The annular ring of a via's own pad on one layer: from the hole's edge to the edge of the flashes at the via's
+    centre (mm, at most RING_REACH_MM) – a pour or a track around the via does not count, it would hide a pad too
+    small for its hole (walkthrough gaps B1). None when no flash sits at the via's centre. pads: flashes() of the
+    layer."""
+    from shapely.geometry import Point
+    from shapely.ops import unary_union
+    x, y = hole[0], hole[1]
+    own = [a for px, py, a in pads if abs(px - x) <= VIA_AT_MM and abs(py - y) <= VIA_AT_MM and not a.is_empty]
+    if not own:
+        return None
+    return min(unary_union(own).boundary.distance(Point(x, y)) - hole[4] / 2, RING_REACH_MM)
+
+
 def check_rings(board, design, d, rows):
     """GEO.ring: every plated hole keeps JLCPCB's annular ring on TOP and BOTTOM (2 layers, 1 oz: a component hole 0.18 mm,
     warning below 0.20 mm; a via 0.05 mm, via Ø >= hole + 0.1 mm), and every two plated holes – also two of one part –
     keep JLCPCB's hole-to-hole spacing, edge to edge (0.45 mm when a component hole is one of them, 0.2 mm between two
     vias). Vias are the holes of the via drill file (EasyEDA writes them into the PTH file as well); the other plated
-    holes are named by the through-hole pad of pcb.json at their place. The ring is the copper around the hole in the
-    Gerber files, whatever it belongs to. accept {"GEO.ring": …} (or "GEO.spacing:holes") on a part or net of the graph lists them as accepted."""
+    holes are named by the through-hole pad of pcb.json at their place. A component hole's ring is the copper around
+    the hole in the Gerber files, whatever it belongs to; a via's is its own pad's, the flash at its centre
+    (via_ring_mm) – a pour of its own net around it measured up to RING_REACH_MM and hid a pad too small for its hole
+    (walkthrough gaps B1) –, and the copper around the hole only where a layer flashes no pad there. accept
+    {"GEO.ring": …} (or "GEO.spacing:holes") on a part or net of the graph lists them as accepted."""
     g = d / "gerber"
     if lost := gerber.missing(g, "top", "bottom", "pth"):
         rows.add("L", "GEO.ring", board.name, "Gerber and drill files for the annular rings", False,
@@ -1068,12 +1096,19 @@ def check_rings(board, design, d, rows):
     def size(h):
         return f"Ø {h[4]:.2f} mm" if h[:2] == h[2:4] else \
             f"{h[4]:.2f} x {h[4] + math.hypot(h[2] - h[0], h[3] - h[1]):.2f} mm"
-    copper = {name: [(a.bounds, a) for a in (gerber.shape([op], 64) for op in gerber.parse_gerber(g / gerber.FILES[k]))
-                      if not a.is_empty] for name, k in (("TOP", "top"), ("BOTTOM", "bottom"))}
+    ops = {name: gerber.parse_gerber(g / gerber.FILES[k]) for name, k in (("TOP", "top"), ("BOTTOM", "bottom"))}
+    copper = {name: [(a.bounds, a) for a in (gerber.shape([op], 64) for op in layer) if not a.is_empty]
+              for name, layer in ops.items()}
+    flashed = {name: flashes(layer) for name, layer in ops.items()}
     narrow, low, waived, narrowest = [], defaultdict(lambda: defaultdict(list)), [], {}   # narrowest: via? -> ring
+
+    def ring(layer, h, is_via):
+        """A via's own pad where the layer flashes one at its centre, else the copper around the hole."""
+        own = via_ring_mm(flashed[layer], h) if is_via else None
+        return ring_mm(copper[layer], h) if own is None else own
     for item in holes:
         h, name, part, _, is_via = item
-        rings = {layer: ring_mm(parts, h) for layer, parts in copper.items()}
+        rings = {layer: ring(layer, h, is_via) for layer in copper}
         none = [layer for layer, r in rings.items() if r is None]
         least = min((r for r in rings.values() if r is not None), default=None)
         where = " and ".join(layer for layer, r in rings.items() if r is not None and abs(r - least) < RING_TOL_MM)
