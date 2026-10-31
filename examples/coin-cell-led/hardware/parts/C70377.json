@@ -22,18 +22,23 @@
    "role": "minus"
   }
  },
- "values": {
-  "cells": 1
- },
+ "values": {},
  "limits": {},
  "body": {
-  "h_mm": 5.5
+  "h_mm": 5.5,
+  "box": [
+   -11.05,
+   -10.0,
+   11.05,
+   10.0
+  ]
  },
  "spice": {},
  "sources": [
   "mpn, manufacturer, footprint, jlc_class, pin numbers and names: EasyEDA library data of C70377, https://easyeda.com/api/products/C70377/components?version=6.4.19.5, read 2026-10-29 (edakit part import)",
   "Q&J drawing QJ.BS-6 (2011-02-14): positive pin and negative pin, both SMD tabs; PCB layout (top view) '+' at the right pad, '-' at the left one; height 5.5 mm",
-  "library footprint BAT-TH_CR2032-BS-6-1: pad 1 at +14.4 mm, pad 2 at -14.4 mm; its document layer draws '+' beside pad 1 and '-' beside pad 2 – pad 1 is plus, as in the drawing"
+  "library footprint BAT-TH_CR2032-BS-6-1: pad 1 at +14.4 mm, pad 2 at -14.4 mm; its document layer draws '+' beside pad 1 and '-' beside pad 2 – pad 1 is plus, as in the drawing",
+  "Q&J drawing QJ.BS-6 (2011-02-14), top view: the housing 22.1 ± 0.15 mm long (D) and 16 ± 0.2 mm wide (A), the cell Ø 20 ± 0.15 mm (C) concentric with it, the PCB layout symmetric (26 and 32 mm across the pads) – body.box [-11.05, -10, 11.05, 10] mm about the footprint's origin, nominal: the cell stands 1.85 mm out of the footprint's box (±8.15 mm, pcb dump) on both long sides"
  ],
  "verified": {
   "by": "Claude (skill part-search)",
@@ -42,7 +47,8 @@
   "datasheet_sha256": "760a7d67242a4548921d0d92e6f948c3aba7af8ed522d9fdf43bfe59c597a88f",
   "checked": [
    "pin 1 plus, pin 2 minus: the drawing's PCB layout and the document layer of the library footprint agree",
-   "two SMD tabs, no hole: JLCPCB places it on the top side (Economic)"
+   "two SMD tabs, no hole: JLCPCB places it on the top side (Economic)",
+   "body.box from the drawing's top view: housing 22.1 mm long, cell Ø 20 mm concentric (2026-10-31)"
   ],
   "open": [
    {

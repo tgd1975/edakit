@@ -69,12 +69,14 @@ Built and decided on 2026-10-31; what is left runs live.
 - [ ] **The example at its next `edakit gate --easyeda`:** a new fab hash – C4 puts `mark = "remove"` into order.json
       of a `[looks]` board –, so M-5 once more; on the way look at A4 (`route all` on the round board without
       Freerouting's "geometry is degenerate"), B1 (protocol L: the vias' ring 0.15 mm, not 1.000), A5 (BT1's "+" on
-      the polarity sheet) and B7 (the BOM from the board's schematic with the other tabs closed).
+      the polarity sheet), B3 (GEO.silk grade body on BT1's cell) and B7 (the BOM from the board's schematic with the
+      other tabs closed).
 - [ ] **Tell the bell's session and pytree-27 after the merge into main:** findings name pins by name or role
       ("U2.VDD (16)" for "U2.16 (VDD)") – a sign-off pattern on the old text stops matching; C4 changes the fab hash of
       a board with `[looks]` and `[order]` and no `mark`; FILES.order warns about `[tooling]` on an Economic board that
       nothing tells the maker about; LIM.p rows for LEDs change the simulation's counts; an accepted simulation
-      finding counts as waived in the gate.
+      finding counts as waived in the gate, an unaccepted simulation warning as a warning – it wants an accept in the
+      sign-off file where it failed before.
 
 ## The graph as TOML ([circuit-language-plan.md](docs/concepts/done/circuit-language-plan.md))
 

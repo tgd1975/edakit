@@ -73,7 +73,7 @@ Built on the branch `ccr-f80e23dc-ak6668` on 2026-10-31, test first, the suite g
 | A5 | built: a tile of the polarity sheet takes in the signs GEO.mark pairs with the part; GEO.mark and the sheet share the pairing | `release/polarity.py`, `release/fab.py`, handbook 8 |
 | B1 | real, built: a via is measured on its own pad (the flash at its centre); a pour or a track no longer hides a thin ring. Whether EasyEDA flashes its vias as assumed: at the next gate run with stage F | `release/fab.py`, GEO.ring |
 | B2 | open: the hole unit of `footprint build` needs the live run of step 3.6 | `TODO.md` |
-| B3 | real, built: `body.box` in a parts entry, GEO.silk grade `body` (warning), `silk apply` keeps labels beside a body. BT1's entry has no `body.box` yet – the holder drawing QJ.BS-6 was not readable here | `pcb.py`, `silk.py`, `release/fab.py`, handbook 4.1, 7.7, 8.1 |
+| B3 | real, built: `body.box` in a parts entry, GEO.silk grade `body` (warning), `silk apply` keeps labels beside a body. BT1's entry has it since, on the owner's word: [-11.05, -10, 11.05, 10] mm from the drawing QJ.BS-6 (housing 22.1 mm, cell Ø 20 mm concentric), also as the library draft `edakit/parts/C70377.json` | `pcb.py`, `silk.py`, `release/fab.py`, handbook 4.1, 7.7, 8.1 |
 | B4 | real, built: FILES.order grade `tooling` (warning) – `[tooling]` on an Economic board and nothing that tells the maker | `release/order_sheet.py`, handbook 8.4 |
 | B5 | real, built as decided | `route.py` `hand_joints`, handbook 7.5, 17.11 |
 | B6 | open: what JLCPCB's form shows, read at the next order | `TODO.md` ("JLCPCB's order number") |
@@ -86,7 +86,8 @@ Built on the branch `ccr-f80e23dc-ak6668` on 2026-10-31, test first, the suite g
 
 The example's circuit hash moved twice on the way – the stale accept of HINT.debounce removed in an earlier merge,
 C1's limit and accept –, and the agents electrical-reviewer and regulatory-reviewer signed M-1 and M-6 again for state
-`a2a6ed92…`. Seen and not built: an unaccepted warning of the simulation still counts as failed in the gate rather than
-as a warning to accept in the sign-off file; a `[looks]` board without `[order]` or `[cart]` tells the maker nothing
+`a2a6ed92…`, and once more for `e34902df…` after BT1's `body.box`. Built afterwards on the owner's word: the gate judges
+a simulation finding by its severity – a warning reads warn, for the sign-off file to accept, instead of failing.
+Seen and not built: a `[looks]` board without `[order]` or `[cart]` tells the maker nothing
 about the mark (B4's counterpart); `silk apply` never run on a machine leaves GEO.silk unable to tell edakit's print.
 

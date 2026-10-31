@@ -449,14 +449,15 @@ hash (8.2):
 
 ```json
 {"id": "M-1", "phase": "export", "scope": "circuit", "done_by": "agent electrical-reviewer (own session)",
- "date": "2026-10-31", "note": "M-1: OK for state a2a6ed922953…; requirements met: R-2. …"}
+ "date": "2026-10-31", "note": "M-1: OK for state e34902df3e31…; requirements met: R-2. …"}
 ```
 
 The note names R-2, and that is R-2's passing evidence in the gate (8.7). Any later change to graph, parts, simulation
 config or requirements changes the hash, and M-1 and M-6 no longer count. That happened once more the same day: the
 accept of HINT.debounce left the graph – edakit no longer reports the hint without an MCU reading the button – and the
 cell's current limit came in (17.6, D-7). Both agents looked again, M-1 checked the new accept's reason against the
-cell's data sheet, and both signed for the new hash.
+cell's data sheet, and both signed for the new hash – and once more after BT1's entry got the outline of holder and
+cell from its drawing (`body.box`, for the silkscreen check of 17.11).
 
 ## 17.10 The gate without EasyEDA
 
@@ -605,8 +606,8 @@ as follows (chapters 6 and 7). Each command ran in less than half a minute:
 
 5. The agent pcb-reviewer reviews the round, in a session of its own, on the manufacturing files of a gate run
    (17.12). Nothing blocked; it had four notes:
-   - BT1's designator lay under the cell – GEO.silk did not see it then; with a `body.box` in BT1's entry it would
-     (grade body, 8.1);
+   - BT1's designator lay under the cell – GEO.silk did not see it then; since then BT1's entry has a `body.box`
+     from the holder's drawing, and GEO.silk would (grade body, 8.1);
    - the board label sat 8 mm left of the axis;
    - without `[order]` no file said that the tooling holes are the customer's – JLCPCB might drill its own on the face
      people see (FILES.order warns about that now, grade tooling);
