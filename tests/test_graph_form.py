@@ -12,7 +12,7 @@ from test_graph_toml import to_toml
 from test_pin_words import named
 
 import reference
-from edakit import cli, scripts
+from edakit import cli, scripts, toml_edit
 from edakit.design import load_graph
 from edakit.graph_form import PIN_REFERENCE
 from edakit.release import gate
@@ -246,6 +246,19 @@ def test_convert_every_field(project, capsys):
     assert "pins" not in data["components"]["TP2"]
     assert data["layout"]["loops"][0] == {"a": "C1.1", "b": "U2.VDD", "max_mm": 8, "what": "the TLC's supply"}
     assert data["locks"]["pins"]["U2.SDO"] == "LED_SDI"
+
+
+def test_convert_writes_its_values_as_block_add_does(project, capsys):
+    """One TOML value writer (toml_edit.literal) for convert and block add: every line of the converted graph within
+    the width, but for a text that cannot be broken – one word of 200 letters, a text that starts with blanks."""
+    every_field(project)
+    converted(project, capsys)
+    text = (project.root / "hardware" / "graph.toml").read_text(encoding="utf-8")
+    assert [ln.strip()[:24] for ln in text.splitlines() if len(ln) > toml_edit.WIDTH] == [
+        'notes = "  two blanks fi', '"' + "x" * 23]
+    data = tomllib.loads(text)
+    for k, v in [("description", data["description"]), ("notes", data["components"]["U1"]["notes"])]:
+        assert text.count(toml_edit.line(k, v)) == 1           # the same literal block add would write
 
 
 def written_by(entry_pins, refs, anywhere=True, kind="ic"):

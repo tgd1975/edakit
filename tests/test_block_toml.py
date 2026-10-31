@@ -365,6 +365,14 @@ def test_a_value_is_written_as_a_toml_literal_that_reads_back(v):
     assert all(len(ln) <= toml_edit.WIDTH for ln in text.splitlines()) or isinstance(v, str) and " " not in v
 
 
+def test_a_long_text_is_wrapped_unless_it_starts_with_a_blank():
+    """An escaped line break or tab at the start is no blank in the text, which the line-ending backslash would eat."""
+    for v in ["\nafter a line break " + "word " * 30, "\tafter a tab " + "word " * 30]:
+        assert toml_edit.line("k", v).startswith('k = """\\\n') and tomllib.loads(toml_edit.line("k", v))["k"] == v
+    v = " a blank first " + "word " * 30
+    assert toml_edit.line("k", v) == f"k = {toml_edit.quoted(v)}"
+
+
 def test_null_has_no_toml_literal():
     with pytest.raises(toml_edit.TomlEditError, match="TOML has no null"):
         toml_edit.line("k", None)
