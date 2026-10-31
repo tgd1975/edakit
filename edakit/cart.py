@@ -236,7 +236,7 @@ def prepare(cfg, args):
                   m.data.get("start"), "cart": m.data.get("cart"),
                   "never": list({w.casefold(): w for w in reversed([*NEVER, *m.data.get("never", [])])}.values())[::-1],
                   "ignore": m.data.get("ignore", {}), "unshown": m.data.get("unshown", []),
-                  "upload": m.data.get("upload", "before_cart"),
+                  "upload": m.data.get("upload", "before_cart"), "matching": m.data.get("matching", "page"),
                   "seat": m.seat, "currency": m.currency,
                   "role": "planned" if m.key == makers.planned(cfg) else "other"},
         "quantity": o["quantity"] if o else cfg.quantity, "pcba_quantity": o["pcba_quantity"] if o else cfg.quantity,
@@ -351,8 +351,12 @@ def b1(job, quote):
 
 
 def b2(job, quote):
-    """Parts = release: the maker's lines are the job's BOM – same part numbers, same designators, none marked."""
+    """Parts = release: the maker's lines are the job's BOM – same part numbers, same designators, none marked. A maker
+    that matches the BOM only in its review after the cart (matching = "review", PCBWay) shows no lines before it."""
     want = {p["part"]: designators(p["designators"]) for p in job["bom"]}
+    if job["maker"].get("matching") == "review" and not quote.get("parts"):
+        return [], (f"{len(want)} lines – {job['maker']['name']} matches the BOM in its review after the cart; the "
+                    "parts it buys show on the order page (edakit cart actual)")
     got = {p.get("part", ""): designators(p.get("designators", [])) for p in quote.get("parts", [])}
     bad = [f"{k} {','.join(v)}: not in the maker's matching" for k, v in want.items() if k not in got]
     bad += [f"{k} {','.join(v)}: in the maker's matching, not in the BOM of the release" for k, v in got.items()

@@ -22,6 +22,7 @@ classes = ["turnkey", "partial_turnkey", "kitted"]   # "3 flexible options": Tur
 dnp = "omit"                           # a part not to place is left out of BOM and CPL
 cart = "Save to Cart"
 upload = "after_cart"                  # Gerber, BOM and centroid go up in the cart's upload (OrderUploadNew)
+matching = "review"                    # no part matching on the page: PCBWay's engineers match the BOM in their review
 never = ["Order", "Buy", "Checkout", "Proceed to checkout", "Pay", "Pay Now", "Submit Order", "Place Order",
          "Confirm Order", "Submit the File Now", "Agree"]
 excludes = []
@@ -53,6 +54,7 @@ excludes = []
 "Detailed information of assembly" = "blank"
 "Add PO No." = "the owner's purchase order, if any"
 "Special Notes" = "a declaration in the owner's name (Agree): the skill stops and asks"
+"Tick means you accept we might change \"HASL\" to \"ENIG\" at our discretion without extra charge." = "left unticked: the finish is the job's"
 
 [bom]
 columns = ["Designator", "Quantity", "Manufacturer", "MPN", "Comment"]   # taken; PCBWay asks designators, quantity, package, part number
