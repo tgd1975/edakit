@@ -102,6 +102,30 @@ def test_the_exports_are_what_the_checks_read(project):
     assert len(cu.pins) == sum(len(c["pads"]) for c in data["components"])
 
 
+def test_kicad_odb_is_read_and_equals_the_runs_files(project):
+    """kicad-cli's ODB++ for a maker that takes it (AISLER): edakit's reader takes it, and SYNC.odb finds it equal to
+    the Gerber, drill, BOM and CPL files of the same run – layers, holes, profile, parts and nets."""
+    from edakit import odb
+    from edakit.release import fab
+    cfg = kicad_project(project)
+    f = project.root / "edakit.toml"
+    f.write_text(f.read_text() + '\n[cart]\nmaker = "aisler"\n')
+    cfg = project.config()
+    board = cfg.board()
+    kb.write_parts(cfg, board)
+    ks.write(cfg, board)
+    out = project.root / "build" / "fab"
+    d = out / "main"
+    d.mkdir(parents=True)
+    kfab.collect(cfg, board, d, verbose=True)
+    assert not (d / fab.ODB_ERROR).exists(), (d / fab.ODB_ERROR).read_text()
+    assert {c.designator for c in odb.read(d / "odb_main.zip").components} >= set(Design.from_config(cfg).board_comps("main"))
+    (d / "jlc_parts.json").write_text("{}")
+    rows = [r for r in fab.run(cfg, board, out, offline=True) if r["id"] == "SYNC.odb"]
+    bad = [(r["result"], r["check"], r["actual"]) for r in rows if r["result"] not in ("pass", "info")]
+    assert rows and not bad, bad
+
+
 def test_kicad_puts_every_pad_where_edakit_reads_it_also_on_the_bottom(project):
     """The frames (handbook 16.3): a part turned and one mirrored onto the bottom – KiCad's own Gerber copper lies at
     every pad edakit reads from the file, on the pad's side, and its position file turns the parts on the bottom as

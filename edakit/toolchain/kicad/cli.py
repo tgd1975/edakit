@@ -8,6 +8,7 @@
     gerbers(pcb, out)            pcb export gerbers: copper, mask, paste, silkscreen, outline
     drill(pcb, out)              pcb export drill: Excellon in mm, plated and not plated apart, slots as G85
     pos(pcb, out)                pcb export pos: CSV in mm, both sides
+    odb(pcb, out)                pcb export odb: ODB++ as a zip in mm, for a maker that takes it (AISLER, SYNC.odb)
     pdf_schematic, pdf_pcb, render   documentation and the pictures of the layout review
 
 The flags are those of KiCad 10's command-line reference; every call is printed with -v. KICAD_CLI (environment)
@@ -166,6 +167,15 @@ def pos(pcb, out, verbose=False):
     return [{"ref": r.get("Ref", ""), "val": r.get("Val", ""), "package": r.get("Package", ""),
              "x": float(r.get("PosX", 0)), "y": float(r.get("PosY", 0)), "rot": float(r.get("Rot", 0)),
              "side": (r.get("Side") or "top").lower()} for r in rows]
+
+
+def odb(pcb, out, verbose=False):
+    """The board as ODB++ – layers, drill hits, profile, parts and nets – in one zip, mm (SYNC.odb reads it). Four
+    decimals (0.1 µm, KiCad's most): with its default of two a pad at 62.825 mm lies at 62.82, and SYNC.odb's raster
+    and its holes (1 µm) see the step."""
+    run("pcb", "export", "odb", "--output", out, "--units", "mm", "--precision", 4, "--compression", "zip", pcb,
+        verbose=verbose)
+    return Path(out)
 
 
 def pdf_schematic(sch, out, verbose=False):

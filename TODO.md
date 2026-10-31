@@ -35,9 +35,6 @@ run against a maker's page or EasyEDA yet.
 - [ ] **5.8:** Eurocircuits live, up to the basket.
 - [ ] **5.10:** AISLER live, up to the cart (after step 0b).
 - [ ] **5.12:** PCBWay live, up to "Save to Cart".
-- [ ] **ODB++ on the KiCad tool chain:** edakit exports ODB++ only through EasyEDA (`easyeda_export_odb`); a project
-      with `toolchain = "kicad"` and AISLER among its makers gets F-7's "not exported" – `kicad-cli pcb export odb`
-      would give it from KiCad's own board (found when ordering met the KiCad tool chain on main).
 
 ### Needs the makers
 

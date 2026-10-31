@@ -296,7 +296,7 @@ def tooling_footprint(board, k, x, y):
             ["property", "Reference", f"TH{k}", ["at", 0, 0, 0], ["layer", "F.SilkS"], ["hide", True],
              ["uuid", uid(*key, "Reference")], *library.font(1.0, 0.15)],
             hidden_prop("Value", "tooling hole", "F.Fab", key), hidden_prop("edakit", TOOLING, "F.Fab", key),
-            ["attr", Sym("board_only"), Sym("exclude_from_pos_files"), Sym("exclude_from_bom")],
+            ["attr", Sym("board_only"), Sym("exclude_from_pos_files"), Sym("exclude_from_bom"), Sym("dnp")],
             ["pad", "", Sym("np_thru_hole"), Sym("circle"), ["at", 0, 0], ["size", board.tooling_d, board.tooling_d],
              ["drill", board.tooling_d], ["layers", "*.Cu", "*.Mask"], ["solder_mask_margin", board.tooling_mask],
              ["uuid", uid(*key, "pad")]]]

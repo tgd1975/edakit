@@ -11,7 +11,8 @@ What is read (ODB++ v7/v8, the parts of the format a board export uses):
                                         A arc, S surface (OB/OS/OC/OE, SE), T text (skipped); polarity P/N, orient
                                         0–7 and 8/9 with an angle; UNITS=MM or INCH (U MM)
     steps/<step>/layers/comp_+_top|comp_+_bot/components   CMP records (package, x, y, rotation, mirror, designator,
-                                        part name), PRP properties, TOP pins with their net numbers
+                                        part name, attributes such as .no_pop), PRP properties, TOP pins with their
+                                        net numbers
     steps/<step>/eda/data               NET records: the net names the pins' numbers refer to
 
 Standard symbols: r (round), s (square), rect (with xr/xc corners as a rectangle), oval, di (diamond, as a
@@ -61,6 +62,7 @@ class Component:
     package: str = ""
     part: str = ""
     props: dict = field(default_factory=dict)
+    attrs: dict = field(default_factory=dict)      # {".no_pop": True, ".comp_mount_type": "0"} – name: value or True
     pins: list = field(default_factory=list)       # [(pin name, x, y, net name or "")]
 
 
@@ -259,17 +261,22 @@ def outline(text, units_default="INCH"):
 def components(text, side, nets, units_default="INCH"):
     units = units_of(text, units_default)
     f = INCH if units == "INCH" else 1.0
-    out = []
+    out, names = [], {}
     for raw in text.splitlines():
         line = raw.split("#", 1)[0].strip()
-        body = line.split(";", 1)[0]
+        body, _, attrs = line.partition(";")
         tok = body.split()
         if not tok:
             continue
-        if tok[0] == "CMP" and len(tok) >= 7:
+        if m := re.match(r"@(\d+)\s+(\S+)", line):
+            names[m.group(1)] = m.group(2)
+        elif tok[0] == "CMP" and len(tok) >= 7:
             out.append(Component(designator=tok[6], side=side, x=float(tok[2]) * f, y=float(tok[3]) * f,
                                  rot=float(tok[4]), mirror=tok[5].upper() == "M", package=tok[1],
                                  part=tok[7] if len(tok) > 7 else ""))
+            for a in filter(None, (a.strip() for a in attrs.split(","))):
+                n, eq, v = a.partition("=")
+                out[-1].attrs[names.get(n, n)] = v if eq else True
         elif tok[0] == "PRP" and out and len(tok) >= 3:
             out[-1].props[tok[1]] = " ".join(tok[2:]).strip("'\"")
         elif tok[0] == "TOP" and out and len(tok) >= 7:

@@ -130,10 +130,11 @@ def drc_report(found, say=say):
 
 def export_main(cfg, args):
     """edakit export on a KiCad project: per board the schematic and PCB as PDF, the Gerber ZIP and the CPL as the gate
-    makes them, the netlist and BOM of the schematic, and the KiCad project as kicad_<board>.zip – as the EasyEDA side
-    keeps a copy of its project file. Not for ordering: the gate's files are."""
+    makes them, the netlist and BOM of the schematic, ODB++ with a maker that takes it, and the KiCad project as
+    kicad_<board>.zip – as the EasyEDA side keeps a copy of its project file. Not for ordering: the gate's files are."""
     import shutil
     import zipfile
+    from ...release import fab
     from . import fab as kfab
     out = cfg.artifact("export", ".keep").parent
     boards = [cfg.board(args.board, made=True)] if args.board else list(cfg.made().values())
@@ -165,6 +166,8 @@ def export_main(cfg, args):
             kfab.write_cpl(cli.pos(p["pcb"], raw / "pos.csv", args.verbose), kb.pcb_json(cfg, board),
                            d / f"cpl_{board.name}.csv")
             rows.append(d / f"cpl_{board.name}.csv")
+            if fab.odb_takers(cfg):       # a maker of [cart] makers that takes ODB++ (AISLER)
+                rows.append(cli.odb(p["pcb"], d / f"odb_{board.name}.zip", args.verbose))
         except (cli.CliError, kb.BoardError) as e:
             print(f"  ! {e}")
             missing += 1

@@ -229,6 +229,13 @@ elif args[:3] == ["sch", "export", "netlist"]:
         f'(node (ref "{{q.split(".")[0]}}") (pin "{{q.split(".")[1]}}"))' for q in pins) + ")"
         for k, (n, pins) in enumerate(design.board_nets(board).items(), 1))
     out.write_text(f"(export (version \\"E\\") (components {{comps}}) (nets {{nets}}))")
+elif args[:3] == ["pcb", "export", "odb"]:
+    import os, zipfile
+    if os.environ.get("FAKE_ODB_FAIL"):
+        print("ODB++ export failed", file=sys.stderr)
+        sys.exit(1)
+    with zipfile.ZipFile(out, "w") as z:
+        z.writestr("main/matrix/matrix", "")
 elif args[:3] in (["sch", "export", "pdf"], ["pcb", "export", "pdf"]):
     out.write_bytes(b"%PDF-1.4 fake")
 else:
@@ -289,6 +296,49 @@ def test_fab_collects_the_files_of_stages_l_and_f_from_kicad(project, fake_cli):
     assert f3["result"] == "pass", f3
 
 
+def with_cart(project, cart):
+    f = project.root / "edakit.toml"
+    f.write_text(f.read_text() + "\n" + cart + "\n")
+    return project.config()
+
+
+def test_fab_exports_odb_from_kicad_for_a_maker_that_takes_it(project, fake_cli, monkeypatch):
+    """A KiCad project with AISLER among its makers gets odb_<board>.zip from kicad-cli pcb export odb – SYNC.odb then
+    checks it as it checks EasyEDA's; a failed export leaves its reason for SYNC.odb, no such maker no ODB++."""
+    kicad_project(project)
+    cfg = with_cart(project, '[cart]\nmaker = "aisler"')
+    board = cfg.board()
+    kb.write_parts(cfg, board)
+    d = project.root / "build" / "fab" / "main"
+    d.mkdir(parents=True)
+    kfab.collect(cfg, board, d)
+    with zipfile.ZipFile(d / "odb_main.zip") as z:
+        assert "main/matrix/matrix" in z.namelist()
+    assert not (d / fab.ODB_ERROR).exists()
+    monkeypatch.setenv("FAKE_ODB_FAIL", "1")
+    kfab.collect(cfg, board, d)
+    assert not (d / "odb_main.zip").exists()
+    assert (d / fab.ODB_ERROR).read_text().startswith("kicad-cli pcb export odb: exit 1 – ODB++ export failed")
+    rows = fab.Rows()
+    from edakit.design import Design
+    fab.check_odb(cfg, board, Design.from_config(cfg), d, rows)
+    assert [(r["result"], r["actual"]) for r in rows] == [
+        ("fail", "odb_main.zip: kicad-cli pcb export odb: exit 1 – ODB++ export failed")]
+
+
+def test_no_odb_from_kicad_without_a_maker_that_takes_it(project, fake_cli, monkeypatch):
+    kicad_project(project)
+    cfg = with_cart(project, '[cart]\nmaker = "jlcpcb"')
+    board = cfg.board()
+    kb.write_parts(cfg, board)
+    d = project.root / "build" / "fab" / "main"
+    d.mkdir(parents=True)
+    (d / "odb_main.zip").write_bytes(b"stale")
+    monkeypatch.setenv("FAKE_ODB_FAIL", "1")             # not called: the fake would leave odb_error.txt
+    kfab.collect(cfg, board, d)
+    assert not (d / "odb_main.zip").exists() and not (d / fab.ODB_ERROR).exists()
+
+
 def run_cli(project, *args):
     from edakit import cli as edakit_cli
     return edakit_cli.main([*args, "--config", str(project.root / "edakit.toml")])
@@ -334,6 +384,15 @@ def test_export_on_kicad_keeps_a_copy_of_the_project(project, fake_cli):
         assert (d / name).exists(), name
     with zipfile.ZipFile(d / "kicad_main.zip") as z:
         assert "main/main.kicad_pcb" in z.namelist() and "main/main.kicad_sch" in z.namelist()
+    assert not (d / "odb_main.zip").exists()                     # no maker of [cart] makers takes ODB++
+
+
+def test_export_on_kicad_writes_odb_for_a_maker_that_takes_it(project, fake_cli):
+    kicad_project(project)
+    with_cart(project, '[cart]\nmakers = ["jlcpcb", "aisler"]')
+    assert run_cli(project, "pcb", "apply", "--no-scripts") == 0
+    assert run_cli(project, "export") == 0
+    assert (project.root / "build" / "edakit" / "export" / "main" / "odb_main.zip").exists()
 
 
 def test_doctor_asks_kicad_cli_and_not_the_bridge(project, fake_cli, capsys):

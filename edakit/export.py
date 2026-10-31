@@ -11,7 +11,7 @@ Per board (board schematic and PCB):
     cpl_<board>.xlsx        pick and place (EasyEDA delivers xlsx even when csv is asked for)
     nets_<board>.txt        netlist of the schematic, one net per line
     odb_<board>.zip         with a maker of [cart] makers that takes ODB++ (AISLER): EasyEDA's ODB++ export – needs the
-                            patched server and bridge (easyeda_export_odb, handbook 2.5)
+                            patched server and bridge (easyeda_export_odb, handbook 2.5); on KiCad kicad-cli's
 plus <project>.eprj2: a consistent copy of the project file (SQLite backup, state of the last save).
 
 Orders are NOT placed with these files but with the checked ones of the release gate (`edakit gate --easyeda`).
