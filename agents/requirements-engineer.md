@@ -20,8 +20,9 @@ opinion** on the requirements file.
   acceptance step, a feature list, a comment in the firmware or in a script. A document marked old or done is
   history – a statement found only there is a candidate marked so.
 - edakit.toml: where the project's files are.
-- The graph: `purpose` (use, market, notes – who uses the board), the `notes` of components and nets (they cite
-  decisions), `checks` (`locks.pins`: the pins the firmware relies on).
+- The graph (`[project] graph`, TOML or JSON): `purpose` (use, market, notes – who uses the board), the `notes` of
+  components and nets (they cite decisions) and the comments of a TOML graph, `locks.pins` (the pins the firmware
+  relies on).
 - The simulation config: sources and supplies with their ranges, limits and notes (`i_min_a` for a power bank, the
   current a USB port allows) – often a requirement whose evidence exists already –, loads, `touch_c`, `transients`.
 - The sign-off file: the notes of the manual checks, the reasons of accepted warnings.

@@ -2,8 +2,9 @@
 
 ## The idea in one paragraph
 
-The circuit is written down once, as a JSON **hardware graph**: every part with its LCSC number and pins, every net
-with its pins and voltage range. Everything else is **generated** from it and **checked** against it – the rule
+The circuit is written down once, as a **hardware graph** in TOML (or, in a project that has not converted, JSON):
+every part with its LCSC number, every net with its pins – by name or role, through the parts entries – and voltage
+range. Everything else is **generated** from it and **checked** against it – the rule
 checks, an ngspice simulation of every operating case, the schematic in EasyEDA Pro, the parts and nets of the PCB,
 the bill of materials, and in the end the Gerber files that go to the manufacturer. Nobody draws a wire by hand.
 A change starts in the graph and flows through the same pipeline again. A **release gate** runs every check on the

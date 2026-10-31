@@ -81,13 +81,16 @@ the local client; a system part's copy can.
 
 ## 5. Into the graph
 
-The component: `"part": "<name>"` (or the carrier's `lcsc`), `"bom": false`, the pins as in the entry, and an
-`easyeda_device` – the carrier, or a symbol with these pin names and a footprint from the user's EasyEDA library.
-Then `edakit check` (STRUCT.entry, SYNC.source, PARTS.footprint, PARTS.verified) and `edakit sim`, and `edakit part build <name>` shows what the copy will be.
-The layout round (skill pcb-round) builds it: `edakit schematic create` places the carrier, `edakit part build <name>
---write` (under the claim) rebuilds its copy from the data, `edakit pcb parts --write` and `edakit pcb dump` bring it
-into the PCB, and `edakit check` holds it to the data (SYNC.footprint). A part on a cable is not on the host's PCB: its connector
-gets the current as an `external` load instead (handbook 5.1) and needs no footprint.
+The component, in the file `[project] graph` names (a `[components.<designator>]` table in `hardware/graph.toml`,
+handbook 3.1): `part = "<name>"` (or the carrier's `lcsc`), `bom = false`, no `pins` – the entry gives them –, and an
+`easyeda_device` – the carrier, or a symbol with these pin names and a footprint from the user's EasyEDA library. Its
+nets name its pins by name or role as the entry has them (`U5.VIN`, `U5.SDA`); `edakit graph json --write` writes the
+resolved `hardware/graph.json` generated beside a TOML graph, with the numbers. Then `edakit check` (STRUCT.entry,
+SYNC.source, PARTS.footprint, PARTS.verified) and `edakit sim`, and `edakit part build <name>` shows what the copy
+will be. The layout round (skill pcb-round) builds it: `edakit schematic create` places the carrier, `edakit part
+build <name> --write` (under the claim) rebuilds its copy from the data, `edakit pcb parts --write` and `edakit pcb
+dump` bring it into the PCB, and `edakit check` holds it to the data (SYNC.footprint). A part on a cable is not on the
+host's PCB: its connector gets the current as an `external` load instead (handbook 5.1) and needs no footprint.
 
 ## 6. Record
 

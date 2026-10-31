@@ -11,7 +11,9 @@ manufacturer. What is not text yet is listed under [Status and limits](#status-a
 The documentation as a site – handbook, rule catalog with the reference circuits, concepts, skills, agents:
 <https://tgd1975.github.io/edakit/>.
 
-You describe the circuit once – parts by LCSC number, pins, nets with voltage ranges – in a JSON *hardware graph*.
+You describe the circuit once – parts by LCSC number, nets with voltage ranges, pins by name or role (`U1.GP6`,
+`D2.anode`) resolved through the parts entries – in a *hardware graph* written as TOML, with comments where the
+reasons are; edakit generates the resolved JSON beside it, so that a diff shows every connection as pin numbers.
 edakit checks it with rules, simulates every operating case with ngspice, generates the schematic in EasyEDA Pro,
 brings parts and nets into the PCB without dialogs, places the fixed parts from a plan, routes with Freerouting,
 pours, prints the silkscreen, and releases the Gerber, BOM and pick-and-place files for JLCPCB only after a gate has
@@ -81,6 +83,8 @@ edakit part diff C17179532 C49284748   # before a swap: how the new footprint li
 edakit part fetch C2297         # the datasheet PDF, kept with the project and checked to be of that part
 edakit part search "RGB LED 5mm common cathode"   # JLCPCB's catalogue: number, class, stock – no EasyEDA
 edakit check                    # the engines on the graph (P, G) – < 1 s, findings by code, explained
+edakit graph json --write       # the resolved graph.json beside the TOML graph: pin numbers; --check reports drift
+edakit graph convert            # a project with a JSON graph moves to hardware/graph.toml once, its sign-offs kept
 edakit domains                  # the domains of rules on for the project (core, usb, radio) and the suggested ones
 edakit stock                    # what JLCPCB says about the assembled parts, dated – check PARTS.stock reads it
 edakit cost                     # the order for `quantity` boards: class, fees, parts, drivers, budget
@@ -199,6 +203,11 @@ Where it stands:
   - the position of single designators.
 
   Creating the EasyEDA project and one *Import Changes* stay two clicks by hand until the API allows them.
+- The circuit as TOML with pins by name or role ([handbook 3.1](handbook/03-hardware-graph.md#31-format),
+  [concept](docs/concepts/done/circuit-language.md)): built and tested on the example and the reference circuits,
+  converted in scratch copies; no real project has converted yet – the Christmas bell keeps its JSON graph until it
+  does, and a JSON graph keeps working and hashing as before. A circuit language of edakit's own is deferred
+  ([circuit-dsl](docs/concepts/new/circuit-dsl.md)).
 - The KiCad tool chain ([handbook 16](handbook/16-kicad.md)) is tested against a kicad-cli the tests fake and, in CI,
   against KiCad 10's container; no board has gone through it to a release yet (16.8 lists what the first run checks).
 - Grown on one real project (EasyEDA Pro 3.2.206, easyeda-mcp-pro 1.4.0, Linux), made generic, then taken through a

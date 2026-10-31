@@ -240,10 +240,13 @@ A part whose temperature rests on rth_ja_k_per_w: consider whether the layout gi
 A signal net runs through a cable: consider what the cable's length and the world at its end do to it.
 <!-- edakit:end -->
 
-The designer handles each one and writes down how, in the graph:
+The designer handles each one and writes down how, in the graph (a JSON graph has the same keys,
+`"accept": {"HINT.bulk": "…"}`, 3.1):
 
-```json
-"accept": {"HINT.bulk": "C1 1000 µF next to J1 (D-8)", "HINT.debounce": "firmware debounces 20 ms"}
+```toml
+[accept]
+"HINT.bulk" = "C1 1000 µF next to J1 (D-8)"
+"HINT.debounce" = "firmware debounces 20 ms"
 ```
 
 `edakit check` then lists it as accepted, with the reason, and the reviewer checks whether the reason holds.
@@ -362,7 +365,8 @@ existing entry must have the same pins. A JSON graph keeps its indentation. A TO
 comments and arrangement: each new part and net is a table after the last of its kind, a pin on an existing net goes at
 the end of its `pins` array as the array is written – inline, or on a line of its own –, the block's `accept` becomes
 keys of the table (`accept."LIM.v" = "…"`), and a part's pin map is left out where its parts entry gives it; what would
-not read back as the graph a JSON file would get is not written. The block's notes say what is left to decide: the LED
+not read back as the graph a JSON file would get is not written. `edakit graph json --write` follows, as after every
+change of a TOML graph (3.1). The block's notes say what is left to decide: the LED
 current, the entries in sim.json, `"source": "reversible"` on the connector.
 
 A block may carry keys of the graph and say what can go:

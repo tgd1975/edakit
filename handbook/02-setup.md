@@ -149,7 +149,11 @@ purpose, the requirements, firmware that follows the graph, documents that quote
 and agents.
 Each answer sets its keys; the skill proposes every file and key with its reason and writes only after your OK. In
 Claude Code the interview is a form with options – up to four questions at a time, your own words for the rest –,
-elsewhere one decision round in text. The purpose – private, a gift or for sale – decides how deep the regulatory
+elsewhere one decision round in text. The graph it writes is `hardware/graph.toml`, with the resolved
+`hardware/graph.json` generated beside it (3.1), and the pre-commit hook it writes runs on every commit that touches
+`hardware/`: `edakit check`, `edakit sim` and `edakit graph json --check` – which fails when the generated file no
+longer matches the TOML (`edakit graph json --write` brings it along) –, with `[firmware]` also `edakit firmware
+--check`, with `[docs]` `edakit docs`. The purpose – private, a gift or for sale – decides how deep the regulatory
 review M-6 goes (chapter 15); the review is support, not legal advice: nothing in it is legally guaranteed, and it
 claims no correctness.
 

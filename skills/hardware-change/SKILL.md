@@ -26,8 +26,16 @@ This is the circuit designer's side. EasyEDA – schematic and PCB – is the PC
 
 ## 1. Graph
 
-Component: `designator`, `lcsc`, `board`, `type`, `pins` (number → name exactly as in the parts entry), `nc`, `value`,
-`bom: false` for hand-soldered parts. Net: `name`, `pins` (`R1.2`), voltage range `v` over all operating states.
+The file `[project] graph` names: `hardware/graph.toml`, or `hardware/graph.json` in a project that has not converted
+(handbook 3.1). Component: in TOML a `[components.<designator>]` table with `lcsc`, `board`, `type`, `value`, `nc`,
+`bom = false` for hand-soldered parts, and no `pins` – the parts entry gives numbers and names; a pin map only where the
+graph's differs, number → name exactly as in the entry. Net: a `[nets.<name>]` table, its `pins` by name or role
+(`U1.GP6`, `D2.anode`, `R1.2` where the word says no more than the number), voltage range `v` over all operating states.
+A JSON graph has the same keys, `"bom": false` and a `"pins"` list in each net. A comment (`#`) says what a reader needs
+beside the wiring; the decision stays in `notes` and the decision log. After the change `edakit graph json --write`
+keeps the resolved `hardware/graph.json` beside a TOML graph – generated, committed with it, never edited; `edakit
+graph json 2>&1 | cat` shows the pin numbers the words stand for, and the diff of the generated file shows a
+connection a parts entry moved (a role corrected) although the TOML did not change.
 A new LCSC number without parts entry → part-search skill first. A part that replaces another one in the same
 place: `edakit part diff OLD NEW 2>&1 | cat` before the graph changes (handbook 7.3) – it gives the pad map by position,
 the roles that move, the holes and the graph change; take the map from it, not from the datasheet drawings. A board
@@ -88,12 +96,13 @@ schematic and the PCB (`schematic create/layout`, `pcb parts/nets`) and checks t
 - Every change of graph, parts database, simulation config or – with `[project] requirements` – the requirements file
   changes the circuit hash: sign-offs with scope 'circuit' (e.g. M-1) no longer count and must be redone for the new
   state – by the agent, not the user. Keys in
-  `[release] hash_ignore` (notes, sources, verified, …) are the exception: they are not in the hash. Never carry a
-  hash forward by hand.
+  `[release] hash_ignore` (notes, sources, verified, …) are the exception: they are not in the hash; nor does a
+  comment, a blank line or a table moved in a TOML graph change it. Never carry a hash forward by hand.
 - A part swapped (another LCSC number): accepted warnings that name it in `parts` lapse – the protocol lists them;
   the user judges them again.
 
 ## 5. Finish
 
-Commit graph, parts, generated files and docs together (the project's git workflow). Report: what changed, which checks
+Commit graph, parts, generated files – the resolved `graph.json` beside a TOML graph among them; the pre-commit hook
+runs `edakit graph json --check` – and docs together (the project's git workflow). Report: what changed, which checks
 are green, what the hand-over asks of the layout, what the PCB designer has to bring into EasyEDA.

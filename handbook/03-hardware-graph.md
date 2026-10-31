@@ -1,10 +1,96 @@
 # 3 The hardware graph
 
-The graph is a pin-level netlist in JSON. It is the **only** place where parts, values and connections are decided.
-Example: [the Christmas bell's graph](https://github.com/tgd1975/automatic_christmas_bell/blob/main/hardware/graph.json); the snippets below come from the
-[test project](../tests/fixtures/led-bar/hardware/graph.json).
+The graph is a pin-level netlist. It is the **only** place where parts, values and connections are decided. It is
+written as TOML, `hardware/graph.toml`, with pins by name or role and comments where a reader needs the reason, or as
+JSON, `hardware/graph.json` – the form every project had until October 2026, kept until the project converts;
+`[project] graph` in edakit.toml names the file (10.1), and both forms read to the same graph. Example: [the Christmas
+bell's graph](https://github.com/tgd1975/automatic_christmas_bell/blob/main/hardware/graph.json) (JSON); the snippets
+below come from the [test project](../tests/fixtures/led-bar/hardware/graph.json), in TOML as `edakit graph convert`
+writes it, shortened.
 
 ## 3.1 Format
+
+```toml
+# The hardware graph (handbook 3.1): components, nets and cables keyed by designator and name, pins by name
+# or role through the parts entries. edakit graph json writes the resolved graph beside it (graph.json).
+name = "led-bar"
+version = "1.0"
+date = "2026-10-25"
+description = """\
+  Example for edakit: a Raspberry Pi Pico 2 drives eight LEDs through a TLC5916 constant-current sink; 5 V input \
+  with reverse-polarity diode, one push button."""
+
+[purpose]
+use = "private"
+market = "EU"
+notes = "An example board for edakit, built for testing, not sold or given away."
+
+[components.J1]
+type = "connector"
+label = "5 V input (JST PH, top entry)"
+part = "B2B-PH-K-S(LF)(SN)"
+lcsc = "C131337"
+bom = false
+source = "reversible"
+
+[components.U2]
+type = "ic"
+label = "TLC5916 8-channel constant-current LED driver"
+part = "TLC5916IDR"
+lcsc = "C90107"
+nc = ["SDO"]
+notes = "I_OUT = 15 x 1.26 V / R1 = 9.45 mA per output."
+
+[components.R2]
+type = "resistor"
+label = "OE pull-up 10 k: LEDs off until the firmware runs"
+part = "0805W8F1002T5E"
+lcsc = "C17414"
+value = "10k"
+
+[nets."+5V"]
+pins = ["D1.cathode", "U1.VSYS", "C2.1", "D2.anode", "D3.anode", "D4.anode", "D5.anode", "D6.anode", "D7.anode",
+        "D8.anode", "D9.anode"]
+v = [0, 5.5]
+notes = "Behind D1: module VSYS and all LED anodes."
+
+[nets.GND]
+pins = ["J1.2", "U2.GND", "R1.2", "C1.2", "C2.2", "SW1.C", "U1.GND", "U1.AGND"]
+v = [0, 0]
+
+# GP2 and GP3 shift into the driver on SPI0 (the pins locked below)
+[nets.LED_CLK]
+pins = ["U1.GP2", "U2.CLK"]
+v = [0, 3.4]
+fn = "spi.sck"
+fn_bus = "LED"
+accept."LVL.undefined" = """\
+  Floating until the firmware runs, but harmless: R2 holds OE high, so no output can switch on."""
+
+[cables.W1]          # a cable to a second board: J2 there, J1 here
+from = "J2"
+to = "J1"
+pins = {1 = "1", 2 = "2"}
+r_ohm_per_wire = 0.065
+
+[locks.pins]
+"U1.GP2" = "LED_CLK"
+"U1.GP3" = "LED_SDI"
+```
+
+Components, nets and cables are tables keyed by designator and name – `[components.U2]`, `[nets."+5V"]`, the name in
+quotes where it has more than letters, digits, `_` and `-` –, read in the order of the file. Every other key is the
+JSON's, a map as a table of its own (`[purpose]`, `[layout]`, `[locks.pins]`), inline (`pins = {1 = "1", 2 = "2"}`) or
+as dotted keys (`accept."LVL.undefined" = "…"`). A component states no `pins`: its parts entry gives numbers and names,
+and a pin map is written only where the graph's differs (the `pins` row below). Nets, `nc`, locks, loop ends and
+cables name pins by name or role (below). `#` starts a comment – the reason a reader needs beside the wiring; a long
+text runs over several lines as `"""\`, where a line-ending backslash joins the next line with the blank before it. A
+key or table twice is an error with its line, TOML has no null, and a net is one table with all its pins: `[nets.GND]`
+once – an array of tables, `[[nets]]`, is refused. A graph without component or net tables has none yet (a new
+project's, 2.7).
+
+The same graph in JSON – a project that has not converted, and the `hardware/graph.json` edakit generates beside a
+TOML graph (below), there with pin numbers and every component's pin map:
 
 ```json
 {"graph": {
@@ -31,9 +117,11 @@ Example: [the Christmas bell's graph](https://github.com/tgd1975/automatic_chris
 }}
 ```
 
+The fields are the same in both forms; the table writes them as the JSON does (`bom: false` is `bom = false` in TOML):
+
 | Field | Meaning |
 |---|---|
-| `designator` | as on schematic, PCB and silkscreen |
+| `designator` | as on schematic, PCB and silkscreen; in TOML the key of the component's table |
 | `type` | rough class for the generated template layout and the schematic blocks: `microcontroller`, `module`, `ic`, `transistor`, `connector`, `regulator`, `diode`, `led`, `resistor`, `capacitor`, `inductor`, `button`, `switch`, `potentiometer`, `audio`, `testpoint`, `battery_holder`, `fuse` |
 | `lcsc` | the LCSC number – identifies symbol, footprint, parts entry and the BOM line |
 | `part` | the manufacturer part number; without `lcsc` it names the parts entry (its `mpn`) – a part bought elsewhere (chapter 4); with `lcsc` it must name the entry's `mpn` too (STRUCT.identity) |
@@ -68,6 +156,7 @@ Example: [the Christmas bell's graph](https://github.com/tgd1975/automatic_chris
 | `ground` | name of the ground net (default `GND`) – the checks, the simulation and the schematic's flags use it; STRUCT.ref checks that the net exists |
 | `grounds` | further nets that are ground on purpose, `["AGND"]` – an analog ground joined at one point, an isolated side: their `ground` pins pass PATH.unfed (default: none) |
 | `locks` | what the firmware relies on: `pins` (`{"U1.4": "LED_SDI"}` – pins on their nets, STRUCT.lock), `doc_pin_table` (`{component, file, prefix, regex}` – a pin table in the documentation, STRUCT.lock); part of the circuit hash, STRUCT.ref checks the names |
+| `conventions` | how the graph is written, for whoever reads it: `pin_reference`, `v`, `accept` in the example – free text no check reads (3.2) |
 
 **A pin by number, name or role.** Wherever the graph names a pin – the `pins` of a net, `nc`, `locks.pins`, the ends
 of `layout.loops`, the `pins` of a cable – it may write the symbol's pin number (`U1.9`), the pin's name (`U1.GP6`,
@@ -84,28 +173,52 @@ with a blank (the Pico's TP1, "GND (USB)"), a word that says no more than the nu
 `pin3`) and a name several pins share give the number. A name that misleads stays the symbol's – the Nano whose symbol
 labels pin 14 PB4 although D11 is PB3 on the chip is written `U1.PB4` with a note –; there is no alias per pin.
 
-**The graph as TOML, and the JSON generated from it.** `[project] graph` may name a `.toml` file with the same keys,
-components, nets and cables as tables keyed by designator and name (10.1). `edakit graph json` prints the resolved
-graph – `{"graph": …}` with pin numbers wherever a pin is named and every component's pin map –, and with `--write`
-keeps it beside the TOML as `hardware/graph.json`, committed with it: a rewire through a parts entry, a role
-corrected, changes no line of the TOML but shows there as pin numbers. `--check` finds a generated file that no
-longer matches (exit 2) – a line for the pre-commit hook. The generated file is derived: the circuit hash and the
-scripts' data name `graph` take the TOML, and project scripts that read the graph as JSON keep reading it.
-`edakit graph convert` moves a JSON project once – `hardware/graph.toml` with pins by name or role and the entries'
-pin maps left out, `[project] graph`, the resolved `graph.json` in place of the source –, and when the files were the
-signed ones the sign-offs of scope `circuit` keep counting (10.5).
+**The JSON generated beside a TOML graph.** `edakit graph json` prints the resolved graph – `{"graph": …}` as a JSON
+graph has it, pin numbers wherever a pin is named, every component's pin map (its entry's where the graph has none),
+the lists in the order of the file. `edakit graph json --write` keeps it beside the TOML as `hardware/graph.json`,
+committed with it: a rewire through a parts entry – a role corrected, `D2.anode` now on pad 2 – changes no line of the
+TOML but shows in the generated file as pin numbers, in the diff the review M-1 reads. So two files change with every
+edit of the circuit, as with the firmware contract (3.5): the TOML, then `edakit graph json --write`; the pre-commit
+hook runs `edakit graph json --check`, which exits 2 with what differs, keyed by designator and net, when the committed
+file no longer matches (3.4). The generated file is derived and never edited – `--write` refuses to write over a JSON
+graph, which is the source itself: the circuit hash (8.2) and the scripts' data name `graph` (8.6) take the TOML, and
+project scripts and tools that read the graph as JSON read the generated file as before.
+
+**Moving a project to TOML.** `edakit graph convert` translates a JSON graph once; `--dry-run` prints the TOML and
+what would change. It writes `hardware/graph.toml` – components, nets and cables keyed in the order of the JSON, pins by
+the word rule above (a name several pins share, `U1.GND`, where all of them stand in the net), the pin maps left out
+where they equal the entries', long text over several lines, the convention `pin_reference` rewritten (3.2) –, sets
+`[project] graph` in edakit.toml with its comment kept, and writes the resolved `hardware/graph.json` in place of the
+source. A graph with null, a name twice or a pin that names none is refused with what to fix in the JSON (`edakit
+check` names them too), and nothing is written unless the TOML reads back to the same graph. It writes no comment but
+the two lines at the top: the reasons in `notes` stay there, and comments come by hand. The circuit hash changes once
+(8.2) –
+when the files were the signed ones, the sign-offs of scope `circuit` keep counting: the new hash goes into the
+sign-off file, both into `rehashed`. Two things follow the new hash once, by hand: with `[firmware]` the contract's
+`state_sha256` (convert says so; `edakit firmware` and commit the contract, else its `--check` in the hook fails), and
+the project scripts that read `graph` (8.6) show as outdated until `edakit run <name>` runs them or `edakit scripts
+stamp <name>` records them as they are – what they read did not change, only its hash.
 
 ## 3.2 Conventions that save trouble
 
-- **Pin numbers come from the EasyEDA symbol**, not from the datasheet. They usually agree; for LEDs and diodes they
-  often do not (anode = 1 for one LED, = 2 for another of the same shape). `edakit part import C2297` reads them
-  from the library without EasyEDA (4.2) and keeps the symbol, so STRUCT.entry compares the graph with it; inside EasyEDA,
+- **Pins by role or name, numbers from the EasyEDA symbol.** Write a pin as the datasheet and the firmware know it –
+  the role where the part has one (`D2.anode`, `Q1.gate`), the name on an IC or a module (`U1.GP6`) –, not as a number
+  looked up, which is where wrong pins and reversed LEDs come from. The parts entry says which number a word stands for,
+  and the numbers are the EasyEDA symbol's, not the datasheet's. They usually agree; for LEDs and diodes they often do
+  not (anode = 1 for one LED, = 2 for another of the same shape). `edakit part import C2297` reads them from the
+  library without EasyEDA (4.2) and keeps the symbol, so STRUCT.entry compares the pins with it; inside EasyEDA,
   `edakit schematic create --only U3` and `easyeda_schematic_component_pins` show the placed symbol. Write the roles
   into the parts entry. Code that needs "the cathode" asks for the role, never for the pin name.
+- **The graph says how it names pins.** `conventions.pin_reference` tells a reader how to read `U1.GP6`: in a graph by
+  names and roles `"'<designator>.<pin>' with the pin's name or role, else its symbol number – the parts entry says
+  which pin that is"` – the text `edakit graph convert` writes –, in a graph by numbers `"'<designator>.<pin>' with
+  the pin numbers of the EasyEDA/LCSC symbol"`. No check reads it; it keeps the graph readable without this handbook.
 - **Net names are stable identifiers** used by firmware, simulation config and docs. Rename deliberately.
 - **Voltage ranges are worst case.** `v` is what LIM.v compares with the pin limits and what the simulation checks every
   scenario against. Think about the unloaded supply, the reversed supply, a programming cable plugged in at the same time.
-- **Decisions in the graph.** "Why 2 k?" – `notes: "D-9: I_OUT = 9.45 mA"`. The decision log has the reasoning.
+- **Decisions in the graph.** "Why 2 k?" – `notes = "D-9: I_OUT = 9.45 mA"`. The decision log has the reasoning. A
+  `#` comment in a TOML graph says what a reader needs beside the wiring ("LED 1 of the bar"); no check reads it and
+  the circuit hash leaves it out (8.2), so a decision or a statement for a review goes into `notes` or `purpose.notes`.
 - **One part, one LCSC number.** A footprint variant is a different part.
 
 ## 3.3 Rule checks (stages P and G)
@@ -341,13 +454,16 @@ polarity check before the codes; it was retired.
 
 ## 3.4 Working rules
 
-1. Change the graph, never the schematic or the PCB. The hardware-change skill walks through the rest.
+1. Change the graph – the file `[project] graph` names, beside a TOML graph never the generated `graph.json` –, never
+   the schematic or the PCB. The hardware-change skill walks through the rest.
 2. Every new LCSC number gets its parts entry first (part-search skill). A new function starts from a building block
    where one fits (`edakit block`, chapter 14.5).
-3. `edakit check` and `edakit sim` before every commit that touches `hardware/` – the pre-commit hook does it.
+3. `edakit check` and `edakit sim` before every commit that touches `hardware/` – the pre-commit hook does it, with a
+   TOML graph also `edakit graph json --check` (3.1).
 4. A finding is fixed or accepted with a reason. Never edit a check to make a finding go away.
 5. Generated files (firmware pin tables, the circuit description's parts list) are regenerated from the graph, never
-   edited, and committed together with the graph change – the firmware contract with `edakit firmware` (3.5).
+   edited, and committed together with the graph change – the resolved `hardware/graph.json` beside a TOML graph with
+   `edakit graph json --write` (3.1), the firmware contract with `edakit firmware` (3.5).
 
 ## 3.5 The firmware contract
 

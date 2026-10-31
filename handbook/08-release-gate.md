@@ -289,9 +289,17 @@ changed as well, nothing is rehashed and the sign-offs of scope `circuit` are do
 as the graph and hashed as canonical JSON with the components sorted by designator, the nets and cables by name and
 the pins of a net sorted, the keys of `hash_ignore` left out as from a JSON graph, `purpose` whole. A comment, a blank
 line, a table or a pin moved change nothing; a pin, a value or `purpose.notes` changed voids M-1 and M-6 – a
-regulatory statement belongs in `purpose.notes`, not in a comment. `graph_sha256` in the protocol's header names the
-file's bytes, comments included. A file that is no valid TOML is hashed as bytes, and `edakit check` names its line.
-The requirements files are TOML too and stay bytes.
+regulatory statement belongs in `purpose.notes`, not in a comment. The pin words count as written, not resolved:
+`U1.GP6` and `U1.9` for the same pin are two texts and two hashes, and a rewire through a parts entry – a role
+corrected, so that `D2.anode` names another pad – changes the hash through the entry, which the hash covers already.
+`graph_sha256` in the protocol's header names the file's bytes, comments included. A file that is no valid TOML is
+hashed as bytes, and `edakit check` names its line. The requirements files are TOML too and stay bytes. The
+`hardware/graph.json` generated beside a TOML graph (3.1) is in no hash: it is derived from the TOML and the parts
+entries, both in the circuit hash, and `edakit graph json --check` holds it to them. A JSON graph keeps its hash as
+before. Converting a project (`edakit graph convert`, 3.1) changes the circuit hash once while the circuit stays: when
+the sign-off file's `state_sha256` is the hash of the files before, the sign-offs of scope `circuit` keep counting –
+the new hash goes into the file, both into `rehashed` with `by` "edakit graph convert" –; when the circuit changed as
+well, nothing is carried over.
 
 The sign-off file (`[project] signoff`, [example](https://github.com/tgd1975/automatic_christmas_bell/blob/main/hardware/signoff.json)) holds manual checks and
 accepted warnings. Each counts only if the hash of its scope (`circuit`, `layout`, `fab`) equals the current one. The
@@ -733,7 +741,7 @@ are:** their `cmd` runs as written,
 
 | Name | What | Made by | Hash of |
 |---|---|---|---|
-| `graph`, `parts`, `sim` | graph, parts database, simulation scenarios | by hand, `edakit block`, `edakit part` | the files as the circuit hash reads them – graph and parts without the keys of `hash_ignore` (8.2) |
+| `graph`, `parts`, `sim` | graph (the file `[project] graph` names – a TOML graph, not the `graph.json` generated beside it), parts database, simulation scenarios | by hand, `edakit block`, `edakit part` | the files as the circuit hash reads them – graph and parts without the keys of `hash_ignore`, a TOML graph as its data (8.2) |
 | `board:<b>` | the board file | by hand, `edakit pcb place --write`, `input` scripts | the board file |
 | `project-library:<b>` | the project library in EasyEDA, which `pcb parts` takes the parts from | `edakit schematic create`, `easyeda` scripts, `edakit part build` (own footprints as data, 4.5) | – (in EasyEDA only) |
 | `footprints:<b>` | footprint geometry with pads, as `pcb dump` measures it in the PCB: `<b>.geometry.json` beside the board file – one not moved yet in `<artifacts>/pcb_geometry_<b>.json` (7.4) | `edakit pcb dump` | the file it is read from |

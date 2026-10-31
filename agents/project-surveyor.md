@@ -55,10 +55,11 @@ documents that hold requirements, nothing more.
 One numbered list per place, in this order:
 
 1. **Hardware data** – what goes into the graph (components, nets, cables, `purpose`, `checks`, the hand-over
-   `layout`), the parts database, the simulation config, the schematic file, the board file
-   `hardware/boards/<b>.toml` (outline, holes, `[place]`, routing, pours, silkscreen, `[looks]`, `[order]`), the
-   sign-off file – kept as it is and named in edakit.toml, converted into edakit's format, or written by a project
-   script –, and what stays as it is. What edakit needs and the project lacks – no `purpose` in the graph, no
+   `layout`), the parts database, the simulation config, the schematic file, the board file `hardware/boards/<b>.toml`
+   (outline, holes, `[place]`, routing, pours, silkscreen, `[looks]`, `[order]`), the sign-off file – kept as it is
+   and named in edakit.toml, converted into edakit's format (the circuit as `hardware/graph.toml`, pins by name or
+   role, handbook 3.1; a graph in edakit's JSON form kept, or moved with `edakit graph convert`), or written by a
+   project script –, and what stays as it is. What edakit needs and the project lacks – no `purpose` in the graph, no
    `compliance` in the parts entries, a sign-off the gate requires – is a candidate too.
 2. **EasyEDA project and released runs** – `[project] name` and `company`, one `[boards.<b>]` per board with its
    documents (`template`, `schematic`, `pcb`; only what differs from edakit's defaults), `bought = true` for a bought
@@ -91,9 +92,10 @@ One numbered list per place, in this order:
    and where else decisions are recorded. Proposed: the log keeps its place and its numbers; the skill decision-round
    appends to it.
 8. **Guard rails** – the pre-commit hook, CI, the Claude Code settings, MCP servers: what runs today and what it
-   becomes – `edakit check` and `edakit sim`, `edakit firmware --check` with `[firmware]`, `edakit docs` with
-   `[docs]`; the plugin in `.claude/settings.json`; the project's own EasyEDA server goes, because the plugin brings
-   the pinned one and two would run. A hook or a README that tells to bypass a failing check is a finding.
+   becomes – `edakit check` and `edakit sim`, `edakit graph json --check` with a TOML graph, `edakit firmware --check`
+   with `[firmware]`, `edakit docs` with `[docs]`; the plugin in `.claude/settings.json`; the project's own EasyEDA
+   server goes, because the plugin brings the pinned one and two would run. A hook or a README that tells to bypass a
+   failing check is a finding.
 9. **The interview's answers** – per topic of the setup's interview, the answer the repository gives, with where:
    board (a PCB, or a development board with wiring), boards (made, bought on a cable), variants, assembly (who
    solders, which sides), order (quantity, finish, colours, thickness), money (budget, currency), purpose (private,
