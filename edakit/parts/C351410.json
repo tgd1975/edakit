@@ -1,0 +1,118 @@
+{
+ "lcsc": "C351410",
+ "mpn": "DW01A",
+ "manufacturer": "PUOLOP",
+ "kind": "ic",
+ "package": "SOT-23-6",
+ "footprint": "SOT-23-6_L2.9-W1.6-P0.95-LS2.8-BL",
+ "jlc_class": "Extended Part",
+ "datasheet": {
+  "url": "https://datasheet.lcsc.com/datasheet/pdf/0d2b2b5e8d1207bf276387cb4ff3a495.pdf?productCode=C351410",
+  "pinout_page": 2
+ },
+ "pins": {
+  "1": {
+   "name": "OD",
+   "type": "output",
+   "role": "od",
+   "hint": "gate of the discharge MOSFET: high ≥ VCC − 0.4 V at 10 µA, low ≤ 0.5 V (p. 4); absolute maximum VSS − 0.3 … VCC + 0.3 V (p. 3)"
+  },
+  "2": {
+   "name": "VM",
+   "type": "analog",
+   "role": "vm",
+   "hint": "current sense and charger detection: to BATT− (the pack's minus behind the MOSFETs) through R2, 1 kΩ in the typical application (p. 2–3); absolute maximum VCC − 24 … VCC + 0.3 V (named CS in that table)"
+  },
+  "3": {
+   "name": "OC",
+   "type": "output",
+   "role": "oc",
+   "hint": "gate of the charge MOSFET: high ≥ VCC − 0.1 V at 10 µA (p. 4); absolute maximum VCC − 24 … VCC + 0.3 V (p. 3)"
+  },
+  "4": {
+   "name": "TD",
+   "type": "input",
+   "role": "td",
+   "hint": "test pin that shortens the delay times (p. 2)",
+   "needs": [
+    {
+     "what": "to_ground",
+     "source": "PUOLOP DW01A data sheet Rev B (2016-04-12), p. 3 typical application circuit: TD tied to GND (the cell's minus); p. 2 'test pin for reduce delay time'"
+    }
+   ]
+  },
+  "5": {
+   "name": "VCC",
+   "type": "power_in",
+   "role": "vdd",
+   "v_max_v": 10,
+   "hint": "supply through a resistor from the cell's plus (p. 2)",
+   "needs": [
+    {
+     "what": "capacitor",
+     "source": "PUOLOP DW01A data sheet Rev B (2016-04-12), p. 3 typical application circuit: C1 0.1 µF from VCC to GND – no window stated"
+    },
+    {
+     "what": "pull_up",
+     "source": "PUOLOP DW01A data sheet Rev B (2016-04-12), p. 2 pin VCC 'power supply, through a resistor (R1)'; p. 3 typical application: R1 100 Ω from BATT+ – no window stated"
+    }
+   ]
+  },
+  "6": {
+   "name": "GND",
+   "type": "ground",
+   "role": "gnd",
+   "hint": "to the cell's minus terminal (p. 3 typical application)"
+  }
+ },
+ "values": {
+  "behavior": "none",
+  "iq_a": 6e-06
+ },
+ "limits": {
+  "vdd_max_v": 10,
+  "t_min_c": -40,
+  "t_max_c": 85
+ },
+ "hints": [
+  "thresholds (p. 4): overcharge 4.25 … 4.35 V, release 4.05 … 4.15 V; overdischarge 2.40 … 2.60 V, release 2.80 … 3.00 V; overcurrent at VM 130 … 170 mV, short circuit 0.82 … 1.75 V; 0 V battery charging from a charger voltage of 1.2 V",
+  "delays (p. 4): overcharge 110 / 200 ms, overdischarge 55 / 200 ms, overcurrent 7 / 20 ms, short circuit 400 / 600 µs (typ / max)",
+  "drives the gates of two N-MOSFETs in the cell's minus lead: OD the discharge MOSFET, OC the charge MOSFET (p. 3)"
+ ],
+ "compliance": {
+  "rohs": true,
+  "radio": "none",
+  "source": "LCSC product data C351410 (2026-10-31): RoHS certificate listed (isRohsCert, ROHS); the data sheet states nothing"
+ },
+ "sources": [
+  "PUOLOP DW01A data sheet Rev B (2016-04-12), via LCSC https://datasheet.lcsc.com/datasheet/pdf/0d2b2b5e8d1207bf276387cb4ff3a495.pdf?productCode=C351410, read 2026-10-31 – PUOLOP's document (logo on every page)",
+  "pins: p. 2 pin configuration SOT-23-6 top view, 1 OD, 2 VM, 3 OC, 4 TD, 5 VCC, 6 GND – EasyEDA symbol of C351410 (edakit part import 2026-10-31): the same",
+  "vdd_max_v 10 and VCC v_max_v 10: p. 3 absolute maximum input voltage between VDD and VSS, printed '0.3 to 10' V; t_min_c -40, t_max_c 85: p. 3 operating temperature range (storage -40 … 125 °C)",
+  "iq_a 6e-06: p. 4 supply current at VCC 3.6 V, typ 3.0 µA, max 6.0 µA – the maximum entered; power-down current at VCC 1.8 V ≤ 4 µA",
+  "thresholds and delays: p. 2 product name list and p. 4 electrical characteristics (VOC 4.25 / 4.30 / 4.35 V, VOCR 4.05 / 4.10 / 4.15 V, VOD 2.40 / 2.50 / 2.60 V, VODR 2.80 / 2.90 / 3.00 V, VEDI 130 / 150 / 170 mV, Vshort 0.82 / 1.36 / 1.75 V, TOC 110 / 200 ms, TOD 55 / 200 ms, TEDI 7 / 20 ms, Tshort 400 / 600 µs)",
+  "choice of the maker (2026-10-31): Fortune Semiconductor's original DW01A-G (C61503) has 0 pcs at LCSC and JLCPCB; PUOLOP's DW01A has 99 380 pcs at LCSC and 99 381 at JLCPCB (Extended Part), the most stocked DW01A",
+  "Fortune Semiconductor DW01x data sheet Rev. 1.7 (May 2014, via LCSC C61503), read 2026-10-31 for comparison only: DW01A-G overdischarge 2.40 / 3.00 V and other delays – a DW01A of another maker is not interchangeable without its own data sheet"
+ ],
+ "notes": "Protection IC for one Li-ion/Li-Po cell, drives two N-MOSFETs in the minus lead (e.g. FS8205A). No behaviour model fits: behaviour none – the simulation does not drive OD and OC. Library draft, group power.",
+ "verified": {
+  "by": "Claude (datasheet check, library draft)",
+  "date": "2026-10-31",
+  "datasheet": "PUOLOP DW01A data sheet Rev B (2016-04-12)",
+  "datasheet_sha256": "37348f602e5e5d50fd60ea868b05e5c552bd965b0a94fcf937800f9b49d4c1b1",
+  "checked": [
+   "SOT-23-6 pinout p. 2 = EasyEDA symbol of C351410 (1 OD, 2 VM, 3 OC, 4 TD, 5 VCC, 6 GND)",
+   "absolute maximum p. 3: VDD 10 V, OC and CS (VM) VDD − 24 … VDD + 0.3 V, OD VSS − 0.3 … VDD + 0.3 V, -40 … 85 °C",
+   "electrical characteristics p. 4: ICC 3 / 6 µA, protection and release voltages, delays, output levels",
+   "typical application p. 3: R1 100 Ω, C1 0.1 µF, R2 1 kΩ, TD to GND"
+  ],
+  "open": [
+   "the absolute maximum of VDD is printed '0.3 to 10' V – the minus sign of the lower bound is missing; the upper bound 10 V entered",
+   "no recommended operating supply range and no θJA in the data sheet",
+   "overcharge, overdischarge and overcurrent thresholds and the delay times have no fields in the schema – kept in hints and sources",
+   "OD, OC and VM absolute maxima are relative to VCC (VCC − 24 V … VCC + 0.3 V) – no field",
+   "R1, C1, R2 only as typical values (100 Ω, 0.1 µF, 1 kΩ): the needs carry no window; the need for R2 at VM is not entered – whether BATT− is the graph's ground or not decides between a pull-down and a series resistor",
+   "TD to ground comes from the typical application only; the data sheet does not say what TD high does beyond 'reduce delay time'",
+   "the cell's minus (GND, TD) must be a ground net of the graph (grounds) for the ground checks, when BATT− is the board's ground"
+  ]
+ }
+}
