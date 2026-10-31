@@ -112,6 +112,8 @@ def build_parser():
     p.add_argument("name", nargs="?", help="block name (edakit block list)")
     p.add_argument("--as", dest="instance", help="add: name of this instance, used for its nets and labels")
     p.add_argument("--connect", action="extend", nargs="+", metavar="PORT=NET", help="add: join ports to nets")
+    p.add_argument("--without", action="extend", nargs="+", metavar="DES", help="add: leave out these optional parts "
+                                                                                "of the block")
     p.add_argument("--board", help="add: board of the new parts (needed with several boards)")
     p.add_argument("--file", help="a block from this JSON file instead of the library")
     p.add_argument("--dry-run", action="store_true", help="add: show what would change, write nothing")

@@ -40,7 +40,7 @@ pin = ["name", "type", "role", "strap", "pull", "hint", "functions", "out_edge",
        "biased",                # biased: an input the part holds at its own DC level (LVL.undefined/analog)
        "ref", "rel_ref"]        # ref, rel_ref: the supply pin a relative limit and the threshold ratios refer to
 entry = ["needs", "address", "antenna", "library", "symbol_differs", "matrix",
-         "supply_order", "i_group_max_a"]   # needs switches a default of catalog/needs.toml off
+         "supply_order", "i_group_max_a", "configs", "config_default"]   # needs switches a default of catalog/needs.toml off
                                 # ({"decoupling": false}); address: a bus address (REQ.forbidden/address); antenna:
                                 # {keepout_mm = [x0, y0, x1, y1]} – the area around the antenna that stays free of
                                 # copper, in the footprint's frame at rotation 0 on top (GEO.keepout); library: the
@@ -49,7 +49,10 @@ entry = ["needs", "address", "antenna", "library", "symbol_differs", "matrix",
                                 # (STRUCT.entry/declared); matrix: the fn kinds a GPIO matrix routes to any GPIO pin
                                 # (REQ.function), ["uart", "i2c", "pwm"]; supply_order: [[lower pin, higher pin], …] –
                                 # one supply never above another (VLOGIC ≤ VDD); i_group_max_a: {group: {pins =
-                                # [numbers], max = A, dir = "sourced" | "sunk"}} – a sum of pin currents
+                                # [numbers], max = A, dir = "sourced" | "sunk"}} – a sum of pin currents; configs: the configurations a part
+                                # runs in, {name: {about, pins, limits, values, needs, address}} over the entry, a
+                                # component's config names one (handbook 4.1); config_default: the one a component
+                                # without config gets
 
 [common]
 limits = ["p_max_w", "rth_ja_k_per_w", "tj_max_c", "t_max_c", "t_min_c"]
@@ -133,20 +136,22 @@ roles = ["drain", "gate", "source", "drain_2", "gate_2", "source_2"]   # _2: the
 limits = ["vds_max_v", "vgs_max_v", "id_max_a", "is_body_max_a"]
 values = ["vgs_th_v", "rds_on_max_ohm", "vsd_v_at_1a"]
 
-[kinds.switch]
+[kinds.switch]           # i_contact_max_a: what a closed contact carries; i_switch_max_a: what it breaks when it
+                        # opens (a datasheet's switching or electrical-life rating); min_load_a: the least current a
+                        # closed contact needs to close reliably (gold contacts of a relay: "minimum applicable load")
 roles = ["common", "throw_a", "throw_b", "a", "b"]
-limits = ["v_max_v", "i_max_a"]
-values = ["r_on_ohm", "force_n"]
+limits = ["v_max_v", "i_max_a", "i_contact_max_a", "i_switch_max_a"]
+values = ["r_on_ohm", "force_n", "min_load_a"]
 
 [kinds.dip_switch]
 roles = ["*"]
-limits = ["v_max_v", "i_max_a"]
-values = ["r_on_ohm"]
+limits = ["v_max_v", "i_max_a", "i_contact_max_a", "i_switch_max_a"]
+values = ["r_on_ohm", "min_load_a"]
 
 [kinds.button]
 roles = ["a", "b"]
-limits = ["v_max_v", "i_max_a"]
-values = ["r_on_ohm", "force_n"]
+limits = ["v_max_v", "i_max_a", "i_contact_max_a", "i_switch_max_a"]
+values = ["r_on_ohm", "force_n", "min_load_a"]
 
 [kinds.battery_holder]
 roles = ["*"]
@@ -161,12 +166,12 @@ values = ["coil_ohm"]
 [kinds.relay]                                # a second contact set (DPDT): common_2, no_2, nc_2 – each set switched
 roles = ["coil_plus", "coil_minus", "common", "no", "nc", "common_2", "no_2", "nc_2", "common_3", "no_3", "nc_3",
          "common_4", "no_4", "nc_4"]
-limits = ["v_coil_max_v", "i_max_a", "v_max_v"]
-values = ["coil_ohm", "v_operate_v", "v_release_v", "r_contact_ohm"]
+limits = ["v_coil_max_v", "i_max_a", "v_max_v", "i_contact_max_a", "i_switch_max_a"]
+values = ["coil_ohm", "v_operate_v", "v_release_v", "r_contact_ohm", "min_load_a"]
 
 [kinds.connector]
 roles = ["*"]          # a jack's contacts: tip, ring, sleeve, tip_switch, ring_switch, sleeve_switch
-limits = ["v_max_v", "i_max_a"]
+limits = ["v_max_v", "i_max_a", "i_contact_max_a"]     # i_contact_max_a: the current rating per contact
 values = ["pitch_mm", "r_contact_ohm", "r_source_ohm", "usb_c"]
 
 [kinds.ic]

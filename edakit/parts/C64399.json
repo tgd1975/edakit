@@ -56,7 +56,8 @@
   "coil_ohm": 178,
   "v_operate_v": 3.75,
   "v_release_v": 0.5,
-  "r_contact_ohm": 0.1
+  "r_contact_ohm": 0.1,
+  "min_load_a": 1e-05
  },
  "limits": {
   "v_coil_max_v": 10,
@@ -95,7 +96,8 @@
    "contacts: 2C, AgNi + Au plated, 100 mΩ, 1 A 30 VDC, min. load 10 mV 10 µA",
    "wiring diagram (bottom view): 1/8 coil, 3-2-4 and 6-7-5 common-NC-NO",
    "operate/release 3 ms max; −40 … 85 °C",
-   "2026-10-31 (schema W5, read again): wiring diagram, single side stable, bottom view (p. 5): set 1 – common 3, closed to 2 (nc) and open to 4 (no) when not energised; set 2 – common 6, closed to 7 (nc), open to 5 (no) – roles common_2, nc_2, no_2, each set switched in the simulation"
+   "2026-10-31 (schema W5, read again): wiring diagram, single side stable, bottom view (p. 5): set 1 – common 3, closed to 2 (nc) and open to 4 (no) when not energised; set 2 – common 6, closed to 7 (nc), open to 5 (no) – roles common_2, nc_2, no_2, each set switched in the simulation",
+   "min_load_a 1e-05: contact data 'Min. applicable load 10mV 10µA', note 2 'a reference value' – read 2026-10-31 (schema field min_load_a, REQ.value/min_load)"
   ],
   "open": [
    "a guitar signal into a high-impedance input carries about 1 µA – below the 10 µA minimum applicable load (a reference value); Hongfa offers a (825) version for tiny loads",

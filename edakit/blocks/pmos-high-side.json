@@ -149,7 +149,8 @@
   "Base drive: with VBE ≈ 0.7 V (assumption; 0.69 V in the example's simulation) (3.3 − 0.7 V) / 10 kΩ minus the 70 µA R3 takes = 0.19 mA against a collector current of vplus / 10 kΩ (0.5 mA at 5 V, 1 mA at 10 V): forced gain 2.6–5, far below the S8050's hFE ≥ 200 (library C2146) – saturated, also from 1.8 V logic (0.04 mA).",
   "Switching is slow: R1 charges the AO3401A's 7 nC (Qg at −4.5 V, AOS) with at most 0.5 mA at 5 V – roughly 15 µs or more to turn off (estimate). On/off and PWM up to a few hundred hertz; faster needs a smaller R1 (more current while on) or a gate driver. Q2 and R1 draw vplus / 10 kΩ while the load is on.",
   "Current: AO3401A 3.2 A at 70 °C (entry), 60 mΩ at −4.5 V; edakit sim checks current and power (LIM). The body diode conducts from out to vplus: a supply on out feeds vplus back.",
-  "sim.json: the driving net under the MCU's outputs, a load with it high and one with it low. An off-board load can be an external current on D1 (plus \"1\", minus \"2\": from out to ground) – the test does so with 0.2 A."
+  "sim.json: the driving net under the MCU's outputs, a load with it high and one with it low. An off-board load can be an external current on D1 (plus \"1\", minus \"2\": from out to ground) – the test does so with 0.2 A.",
+  "D1 is optional: for a coil it takes the flyback current; for a resistive load `--without D1` leaves it out (out then needs its load in the graph)."
  ],
  "test": {
   "connect": {
@@ -190,5 +191,10 @@
     }
    }
   }
+ },
+ "optional": {
+  "parts": [
+   "D1"
+  ]
  }
 }

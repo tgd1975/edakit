@@ -46,7 +46,14 @@
    "drive": "open_drain",
    "hint": "multi-functional alert, open-drain: pull it up to the VS voltage (8.2.1.2)",
    "v_rel_max_v": null,
-   "i_max_a": 0.01
+   "i_max_a": 0.01,
+   "needs": [
+    {
+     "what": "pull_up",
+     "when": "connected",
+     "source": "TI INA226 SBOS547C (revised August 2026), 8.2.1.2: 'The alert pin must to be pulled up to the VVS pin voltage via the pull-up resistors'; 6: Alert is an open-drain output"
+    }
+   ]
   },
   "4": {
    "name": "SDA",
@@ -144,7 +151,8 @@
    "I2C address 0x40 + A0 (1) + A1 (4) for GND/VS",
    "Alert open-drain; 0.1 µF supply bypass (typical value)",
    "2026-10-31: address pins with four states (low, high, sda, scl) – TI SBOS547C (revised August 2026), Table 6-2 Address Pins and Target Addresses: A1, A0 each on GND, VS, SDA or SCL give 1000000 to 1001111 – A0 adds 0/1/2/3, A1 0/4/8/12 (schema-gaps A4)",
-   "2026-10-31, pin limits (schema-gaps A6, B1–B3, C1–C4): TI SBOS547C 5.1: VSDA GND − 0.3 V to 6 V regardless of VS (v_rel_max_v null), VSCL GND − 0.3 V to VS + 0.3 V (the entry's vin_rel_max_v), input current into any pin 5 mA (i_inject_max_a on SCL, A0, A1), open-drain digital output current 10 mA (SDA and Alert i_max_a); the table names no voltage limit of Alert against VS (v_rel_max_v null)"
+   "2026-10-31, pin limits (schema-gaps A6, B1–B3, C1–C4): TI SBOS547C 5.1: VSDA GND − 0.3 V to 6 V regardless of VS (v_rel_max_v null), VSCL GND − 0.3 V to VS + 0.3 V (the entry's vin_rel_max_v), input current into any pin 5 mA (i_inject_max_a on SCL, A0, A1), open-drain digital output current 10 mA (SDA and Alert i_max_a); the table names no voltage limit of Alert against VS (v_rel_max_v null)",
+   "2026-10-31: Alert needs a pull-up where it is connected (SBOS547C 8.2.1.2) – an unused Alert in nc needs none"
   ],
   "open": [
    "address pins tied to SDA or SCL cannot be expressed in the entry's address model",

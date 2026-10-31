@@ -226,7 +226,8 @@
   "edakit counts a termination only as a resistor directly across A–B or split; the 120 Ω behind SW1 is not seen, so REQ.missing/termination reports the bus unterminated – accept it on the A net with the reason (\"SW1 switches 120 Ω at this end\"). REQ.value/failsafe needs a termination across the pair to compute the idle voltage; without one it assumes the full supply.",
   "DE and RE# joined: the node cannot hear its own transmission; for that, give RE# its own pin (and a pull-down) instead of the shared net.",
   "Bus pins: the MAX3485 limits a shorted driver to ±250 mA and shuts down thermally (C18148 hints) – no series resistors on A/B. Where the bus connector is marked off_board, REQ.missing/leave asks for them anyway: the C18148 entry has no short_proof on A and B. For long or outdoor cables a TVS across A/B to ground (SM712 class) is worth a look; it is not in the block.",
-  "sim.json: the DI net under the MCU's outputs (idle high), the RO net under its inputs; a load with \"dip_closed\": {\"SW<n>\": [1]} simulates the termination switched on. The MAX3485 has no behaviour model: its supply and driver currents are not simulated."
+  "sim.json: the DI net under the MCU's outputs (idle high), the RO net under its inputs; a load with \"dip_closed\": {\"SW<n>\": [1]} simulates the termination switched on. The MAX3485 has no behaviour model: its supply and driver currents are not simulated.",
+  "R4 and R5, the idle bias, belong to one node of a bus: on every other node `--without R4 R5` leaves them out."
  ],
  "test": {
   "connect": {
@@ -277,5 +278,11 @@
     }
    }
   }
+ },
+ "optional": {
+  "parts": [
+   "R4",
+   "R5"
+  ]
  }
 }

@@ -24,7 +24,8 @@ def run(ctx):
     d, cfg = ctx.design, ctx.cfg
     boards = set(cfg.boards) if cfg else set()
     bought = boards - set(cfg.made()) if cfg else set()
-    return structure(d, boards, bought) + refs(d) + locks(d, ctx.root) + entries(d, cfg) + identity(d)
+    return (structure(d, boards, bought) + refs(d) + locks(d, ctx.root) + entries(d, cfg) + configs_named(d)
+            + identity(d))
 
 
 def structure(d, boards, bought=()):
@@ -224,6 +225,21 @@ def entries(d, cfg=None):
             if part["pins"].get(str(pin), {}).get("type") == "power_in":
                 out.append(Finding("STRUCT.entry", "P", f"{des}.{pin}", f"{des}.{pin} ({part['pins'][str(pin)]['name']}) "
                                    "is a supply pin but marked nc", on=on))
+    return out
+
+
+def configs_named(d):
+    """STRUCT.entry: a component's `config` is one of its parts entry's `configs` (handbook 4.1) – a config the entry
+    does not know would leave the component on the entry's own values without anyone noticing."""
+    out = []
+    for des, c in sorted(d.comps.items(), key=lambda x: natural_key(x[0])):
+        key = d.entry_key(des)
+        if not c.get("config") or key is None:
+            continue
+        known = sorted(d.parts[key].get("configs") or {})
+        if c["config"] not in known:
+            out.append(Finding("STRUCT.entry", "P", des, f"{des}: config {c['config']!r} – parts entry {key} knows "
+                               + (", ".join(known) if known else "no configs"), on=(("component", des),)))
     return out
 
 

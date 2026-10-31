@@ -148,8 +148,7 @@
   "VCC 4.5–5.5 V (SCLS378P 5.3): a 5 V rail behind a Schottky diode from USB sinks below 4.5 V under load – edakit sim reports it as LIM.range. The example's +5V does so (4.44 V at USB 4.75 V with all LEDs on), which is why this block's test does not simulate there.",
   "330 Ω: design choice inside the window the sources name – the SK6812 data sheet asks for about 500 Ω at the chain's input for short runs (library entry C5378720), maker-coverage LED 4 names 300–500 Ω (Adafruit, not read here). Lower than 220 Ω lets a short of dout exceed the buffer's 25 mA (5.5 V / 25 mA). With 150 pF of cable and input (assumption) the RC is 50 ns, against T0H ≥ 220 ns (C2874885).",
   "1000 µF / 16 V: design choice, the upper end of the 500–1000 µF the maker sources name for a strip (maker-coverage LED 6, not read here); it holds the strip's current steps and damps the ringing when the supply is plugged in (HINT.bulk). 16 V is ≥ 1.5 × 5.5 V. Put it at the strip's supply connector; with long strips one more at the far end. Each pixel's own decoupling capacitor belongs to the strip (SK6812: one at every LED, library entry C5378720).",
-  "OE# is tied to GND. To release the data line while the MCU boots or to share it, put OE# on a GPIO with a pull-up to VCC (SCLS378P 7.1); R3 then holds the strip's DIN low.",
-  "The net <instance>_DATA carries an accept of LVL.undefined/open_drain: the parts entry marks Y as 3-state and the check cannot see that OE# is tied low, nor that R1 and R3 hold the net. Remove R3 and the reason no longer holds.",
+  "OE# is tied to GND. To release the data line while the MCU boots or to share it, put OE# on a GPIO with a pull-up to VCC (SCLS378P 7.1); R3 then holds the strip's DIN low – it is optional: with OE# tied to GND the buffer never lets go of the line, and `--without R3` leaves it out (an unconnected dout then goes into R1's nc).",
   "On a strapping pin the pull-down R2 must agree with the boot level (LVL.boot).",
   "sim.json: the data net under the MCU's outputs, and a load with it high, so that LVL.threshold compares the MCU's high level with the buffer's 2.0 V. The behaviour model of the buffer holds Y low – the simulation does not pass the data through."
  ],
@@ -158,7 +157,29 @@
    "in": "SIG",
    "vcc": "+5V"
   },
-  "sim": false,
-  "why": "the example's +5V is USB behind an SS34 and sinks to 4.44 V with all LEDs on at USB 4.75 V – below the 74AHCT1G125's 4.5 V minimum (SCLS378P 5.3); edakit sim rightly reports LIM.range there. A strip has its own 5 V supply; with the example's supplies at 5.0 and 5.25 V the block passes."
+  "why": "the example's +5V is USB behind its SS34 and sinks to 4.44 V with all LEDs on at USB 4.75 V – a rail of the example, not of the block: the test leaves out the supply case usb-min (VCC 4.5–5.5 V, SCLS378P 5.3); R3 left out – OE# is tied to GND, dout stays open in the example",
+  "without": [
+   "R3"
+  ],
+  "remove_supplies": [
+   "usb-min"
+  ],
+  "sim": {
+   "mcu": {
+    "U1": {
+     "outputs": [
+      "SIG"
+     ]
+    }
+   }
+  }
+ },
+ "optional": {
+  "parts": [
+   "R3"
+  ],
+  "ports": [
+   "dout"
+  ]
  }
 }

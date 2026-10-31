@@ -28,10 +28,10 @@ LIMITS_OF = {
     "pmos": [("LIM.v", ("vds_max_v",), "VDS"), ("LIM.v", ("vgs_max_v",), "VGS"),
              ("LIM.i", ("id_max_a",), "its drain current")],
     "fuse": [("LIM.i", ("i_hold_a",), "what it lets pass")],
-    "switch": [("LIM.i", ("i_max_a",), "its contact current")],
-    "button": [("LIM.i", ("i_max_a",), "its contact current")],
-    "connector": [("LIM.i", ("i_max_a",), "its contact current")],
-    "relay": [("LIM.i", ("i_max_a",), "its contact current")],
+    "switch": [("LIM.i", ("i_max_a", "i_contact_max_a", "i_switch_max_a"), "its contact current")],
+    "button": [("LIM.i", ("i_max_a", "i_contact_max_a", "i_switch_max_a"), "its contact current")],
+    "connector": [("LIM.i", ("i_max_a", "i_contact_max_a"), "its contact current")],
+    "relay": [("LIM.i", ("i_max_a", "i_contact_max_a", "i_switch_max_a"), "its contact current")],
 }
 DISSIPATES = ("resistor", "diode", "led", "led_rgb", "npn", "pnp", "nmos", "pmos")
 OWN_RANGE = {"ldo": ("vin_min_v",), "buck": ("vin_min_v",), "boost": ("vin_min_v",), "buck_boost": ("vin_min_v",),

@@ -24,7 +24,7 @@
  },
  "limits": {
   "v_max_v": 24,
-  "i_max_a": 0.025,
+  "i_switch_max_a": 0.025,
   "t_min_c": -40,
   "t_max_c": 85
  },
@@ -33,7 +33,7 @@
  ],
  "sources": [
   "Kingtek DSHP series pitch 1.27 mm, drawing DSHP01TSGER, rev A, 03/20/12 (one sheet), LCSC's copy for C126848 https://datasheet.lcsc.com/datasheet/pdf/c022ae4a38af0e803e6cd8f2dcdc997e.pdf?productCode=C126848, read 2026-10-31",
-  "notes 1: operating force 1000 gf max; operating −40 … +85 °C; electrical life 1000 cycles 25 mA 24 V DC (v_max_v 24, i_max_a 0.025 – the only current the drawing names); mechanical life 3000 cycles; contacts gold flash",
+  "notes 1: operating force 1000 gf max; operating −40 … +85 °C; electrical life 1000 cycles 25 mA 24 V DC (v_max_v 24; i_switch_max_a 0.025 – a switching rating, the only current the drawing names); mechanical life 3000 cycles; contacts gold flash",
   "part number key: DSHP XX T S G E R – the last letter is the packing (T tube, R reel): DSHP01TSGET is the drawing's DSHP01TSGER in tubes",
   "recommended PCB layout: two pads, 6.35 mm inside, 8.89 mm outside (7.62 mm centre to centre) – the EasyEDA footprint's pads at ±3.81 mm",
   "mpn, footprint, jlc_class, pin numbers and names: EasyEDA library data of C126848 via edakit part import, read 2026-10-31 (manufacturer there 'YE'; the JLCPCB catalogue and the drawing's title block name DongGuan Kingtek Industrial)",
@@ -47,10 +47,11 @@
   "checked": [
    "one position, two terminals (schematic on the drawing)",
    "25 mA / 24 V DC electrical life, −40 … +85 °C",
-   "pad spacing 7.62 mm = the recommended layout"
+   "pad spacing 7.62 mm = the recommended layout",
+   "i_switch_max_a 0.025: notes 1 '4>Electricalife Life:1000cycles 25mA 24VDC' – a rating for switching; no carrying (non-switching) current on the drawing – reread 2026-10-31"
   ],
   "open": [
-   "no contact resistance and no carrying current in the drawing: r_on_ohm missing (the simulation takes 0.1 Ω), i_max_a is the switching-life rating",
+   "no contact resistance and no carrying current in the drawing: r_on_ohm missing (the simulation takes 0.1 Ω), i_contact_max_a missing – the 25 mA is the switching rating (i_switch_max_a)",
    "which terminal is A1 is not marked on the drawing – irrelevant for a single switch"
   ]
  }

@@ -29,8 +29,9 @@ OLD_CONNECT = {
 
 def block_tests():
     """{block: its "test" table} – a block file may say where it goes in the example ("connect"), what its simulation
-    needs ("sim": sim.json keys merged in; "sim": false with "why" when the example cannot simulate it) and which nets
-    it adds beyond SIG and SIG2 ("nets": {name: [min, max]})."""
+    needs ("sim": sim.json keys merged in at every depth; "remove_supplies": supply cases of the example it leaves out,
+    with "why"; "sim": false with "why" when the example cannot simulate it), which nets it adds beyond SIG and SIG2
+    ("nets": {name: [min, max]}) and which optional parts it leaves out ("without")."""
     out = {}
     for name in block.library():
         t = block.load(name).get("test") or {}
@@ -55,13 +56,22 @@ def signals(project, names=("SIG", "SIG2"), extra=None):
 
 
 def place(project, name):
-    """The block in the example as its test says: signals, extra nets, block.add."""
+    """The block in the example as its test says: signals, extra nets, the optional parts it leaves out (`without`),
+    block.add."""
     t = TESTS[name]
     signals(project, set(t["connect"].values()))
     connect = dict(t["connect"])
     if t.get("nets"):                 # a net the example lacks becomes the block's own port net of that name
         connect = {port: net for port, net in connect.items() if net not in t["nets"]}
-    return block.add(project.config(), name, "T", connect)
+    return block.add(project.config(), name, "T", connect, without=t.get("without", ()))
+
+
+def merged(base, more):
+    """sim.json keys of a block's test merged into the example's – tables at every depth, a list or value replaced."""
+    out = dict(base)
+    for key, value in more.items():
+        out[key] = merged(base[key], value) if isinstance(value, dict) and isinstance(base.get(key), dict) else value
+    return out
 
 
 def errors(project):
@@ -72,7 +82,7 @@ def errors(project):
 def test_every_block_is_in_this_test():
     """Every block says where it goes in the example – here or in its own "test" table."""
     assert set(block.library()) == set(CONNECT)
-    assert all("why" in t for t in TESTS.values() if t.get("sim") is False)
+    assert all("why" in t for t in TESTS.values() if t.get("sim") is False or t.get("remove_supplies"))
 
 
 @pytest.mark.parametrize("name", sorted(CONNECT))
@@ -190,8 +200,9 @@ def test_block_in_the_example_passes_the_simulation(project, name):
         pytest.skip(TESTS[name]["why"])
     _, comps, *_ = place(project, name)
     sim = json.loads((project.root / "hardware" / "sim.json").read_text())
-    for key, value in (TESTS[name].get("sim") or {}).items():          # the block's own sim.json keys
-        sim[key] = {**sim.get(key, {}), **value} if isinstance(value, dict) else value
+    sim = merged(sim, TESTS[name].get("sim") or {})                     # the block's own sim.json keys
+    for scenario in TESTS[name].get("remove_supplies", []):             # a supply case the block cannot meet
+        sim["supplies"].pop(scenario)
     leds = [c["designator"] for c in comps if c["type"] == "led"]
     if leds:   # as the block's notes ask: the signal is an MCU output, a load lights the LED (SIM.state), the others say
         sim["mcu"]["U1"]["outputs"].append("SIG")             # that it is dark (SIM.driver)

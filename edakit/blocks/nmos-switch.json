@@ -112,7 +112,8 @@
   "100 Ω gate resistor: the upper end of HINT.gate's 10–100 Ω against ringing of the gate loop; it also limits the GPIO's peak current into the gate. Ciss 630 pF, Qg 6 nC typ. at VGS 4.5 V (AOS): 100 Ω × 630 pF = 63 ns, the switching with the Miller charge some hundred nanoseconds (estimate) – PWM up to tens of kilohertz.",
   "D1 (SS14): 1 A, 40 V – a coil current above 1 A needs a larger Schottky (SS34, C8678). vplus up to about 20 V: SS14 40 V, AO3400A VDS 30 V, both with the 1.5 × the example derates by.",
   "A load at the end of a cable: D1 on the board across the connector's load pins (HINT.inductive).",
-  "sim.json: the driving net under the MCU's outputs, a load with it high and one with it low. An off-board load can be an external current on D1 (plus \"1\", minus \"2\": between vplus and load) – the test does so with 0.2 A."
+  "sim.json: the driving net under the MCU's outputs, a load with it high and one with it low. An off-board load can be an external current on D1 (plus \"1\", minus \"2\": between vplus and load) – the test does so with 0.2 A.",
+  "D1 is optional: for a coil or motor it takes the flyback current; for a resistive load or LEDs `--without D1` leaves it out."
  ],
  "test": {
   "connect": {
@@ -153,5 +154,10 @@
     }
    }
   }
+ },
+ "optional": {
+  "parts": [
+   "D1"
+  ]
  }
 }

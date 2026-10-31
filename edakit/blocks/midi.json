@@ -162,7 +162,8 @@
     0,
     5.5
    ],
-   "notes": "The sender's current loop – isolated from this board's ground; the range is the loop's own (a 5 V sender)."
+   "notes": "The sender's current loop – isolated from this board's ground (net key isolated, on in4, led_a and in5): the range is the loop's own (a 5 V sender), the simulation does not hold it to this board's ground.",
+   "isolated": true
   },
   {
    "name": "led_a",
@@ -174,7 +175,8 @@
    "v": [
     0,
     5.5
-   ]
+   ],
+   "isolated": true
   },
   {
    "name": "in5",
@@ -186,7 +188,8 @@
    "v": [
     0,
     5.5
-   ]
+   ],
+   "isolated": true
   },
   {
    "name": "rx",
@@ -269,7 +272,9 @@
    "vio": "3V3",
    "v5": "+5V"
   },
-  "sim": false,
-  "why": "The example's +5V sits behind the SS34 of its reverse-polarity protection: at USB minimum (4.75 V) with all LEDs on it falls to 4.44 V, below the 4.5 V from which the 6N138's characteristics hold (Lite-On DS70-2009-0001, p. 6) – edakit sim fails LIM.range on the optocoupler for the example's rail; every other check of the simulation passes. VIN, in front of the diode, would hold 4.5 V, but a reversed plug reaches it (PATH.reverse)."
+  "why": "the example's +5V is USB behind its SS34 and sinks to 4.44 V with all LEDs on at USB 4.75 V – a rail of the example, not of the block: the test leaves out the supply case usb-min – below the 4.5 V from which the 6N138's characteristics hold (Lite-On DS70-2009-0001, p. 6)",
+  "remove_supplies": [
+   "usb-min"
+  ]
  }
 }
