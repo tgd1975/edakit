@@ -19,7 +19,8 @@
    "name": "TXD",
    "type": "output",
    "v_max_v": 6.5,
-   "hint": "serial data output, high when idle (p. 5)"
+   "hint": "serial data output, high when idle (p. 5)",
+   "state": "high"
   },
   "3": {
    "name": "RXD",
@@ -83,13 +84,14 @@
   "8": {
    "name": "XO",
    "type": "output",
-   "hint": "crystal oscillator output (p. 3)",
+   "hint": "crystal oscillator output (p. 3); an oscillator's output has no logic level: the simulation leaves it to the crystal",
    "needs": [
     {
      "what": "capacitor",
      "source": "WCH CH340 Datasheet (CH340DS1), English version 3C, p. 10 (7.1: capacitor from XO to GND for the 12 MHz crystal: 33 pF with a quartz crystal, the maker's value (usually 47 pF) with a ceramic resonator; halve the XI capacitor for a crystal that starts badly (p. 10))"
     }
-   ]
+   ],
+   "state": "off"
   },
   "9": {
    "name": "CTS#",
@@ -157,7 +159,9 @@
   "idd_max_a": 0.02,
   "vih_v": 2.3,
   "vil_v": 0.8,
-  "f_clock_hz": 12000000.0
+  "f_clock_hz": 12000000.0,
+  "behavior": "logic",
+  "icc_a": 0.02
  },
  "limits": {
   "vdd_max_v": 6.0,
@@ -187,7 +191,9 @@
   "mpn, manufacturer, footprint, jlc_class, pin numbers and names: EasyEDA library data of C14267 via edakit part import, read 2026-10-31",
   "CH340G specifics: XI pin 7 and XO pin 8 with an external 12 MHz crystal and oscillation capacitors (p. 3; 5.1, p. 5); FCLK 11.98 / 12.00 / 12.02 MHz (6.4, p. 9; values.f_clock_hz 12 MHz); 33 pF quartz, about 47 pF ceramic resonator, half the XI capacitor for a crystal that starts badly (7.1, p. 10); 3.3 V mode VCC 2.9–3.6 V for CH340G/T/R (6.3, p. 8–9); TA −40 … 85 °C (6.1, p. 8); ISLP 0.09 / 0.2 mA at 5 V",
   "XI typed analog, not input as in the pin table: it is the crystal oscillator's input, biased inside, and a crystal net has no driver LVL could see – assumption",
-  "stock: LCSC 50 325 pcs, JLCPCB assembly 52 570 pcs (2026-10-31)"
+  "stock: LCSC 50 325 pcs, JLCPCB assembly 52 570 pcs (2026-10-31)",
+  "WCH CH340 Datasheet (CH340DS1), English version 3C, p. 8 6.2: ICC 7 mA typ., 20 mA max. at 5 V; p. 9 6.3: 4 mA typ., 12 mA max. at 3.3 V (CH340G/C/N/K/E/X/T/R) – icc_a = 20 mA, 12 mA in config 3v3 (behaviour logic); p. 5 5.1: 'When the serial port output is idle, the TXD of the CH340G/C/N/E/X/B/T chip is high level' – TXD state high",
+  "WCH CH340 Datasheet (CH340DS1), English version 3C, p. 5 5.1: the 12 MHz crystal between XI and XO, kept oscillating by CH340's built-in inverter – XO state off: no logic level"
  ],
  "compliance": {
   "rohs": true,
@@ -207,7 +213,8 @@
    "0.1 µF at VCC and at V3 (p. 3, p. 5, p. 10); UD± without series resistors (p. 2–3)",
    "same values in the Chinese edition 3D that LCSC serves for C14267 (p. 2–3, p. 5–6)",
    "2026-10-31: XI–XO crystal 11.98–12.02 MHz, UD± without a series resistor (CH340 Datasheet 3C, read now)",
-   "2026-10-31: configs 5v and 3v3 from CH340DS1 3C, 5.1 and tables 6.2/6.3 (VCC 4.0–5.3 V; 2.9–3.6 V for CH340G/T/R; VIH 2.3/1.9 V, VIL 0.9/0.8 V, ICC max 20/12 mA)"
+   "2026-10-31: configs 5v and 3v3 from CH340DS1 3C, 5.1 and tables 6.2/6.3 (VCC 4.0–5.3 V; 2.9–3.6 V for CH340G/T/R; VIH 2.3/1.9 V, VIL 0.9/0.8 V, ICC max 20/12 mA)",
+   "2026-10-31: behaviour logic with icc_a 20 mA (5v) and 12 mA (3v3) from CH340DS1 3C, 6.2 and 6.3 (ICC max, read now); TXD state high (5.1: high when idle)"
   ],
   "open": [
    "the crystal between XI and XO is no pin-needs form (there is no 'crystal' requirement and no crystal kind); only the two capacitors to ground are entered, without a value window",
@@ -218,7 +225,7 @@
    "the I/O limit VIO ≤ VCC + 0.5 V applies to outputs too; LIM.v/inject (vin_rel_max_v) reads inputs only",
    "built-in pull resistors are given as currents (IUP, IDN): R232 pull 'down' without pull_ohm",
    "English 3C and Chinese 3D: which edition is current was not checked (WCH's site could not be read)",
-   "no behaviour model: the supply current is not drawn in the simulation"
+   "the MODEM outputs (DTR#, RTS#) rest low in the simulation (behaviour logic's default for a push-pull output): the host application sets them (5.1) – a component's states gives another level"
   ]
  },
  "configs": {
@@ -231,7 +238,8 @@
    "values": {
     "vih_v": 2.3,
     "vil_v": 0.9,
-    "idd_max_a": 0.02
+    "idd_max_a": 0.02,
+    "icc_a": 0.02
    },
    "pins": {
     "4": {
@@ -255,7 +263,8 @@
    "values": {
     "vih_v": 1.9,
     "vil_v": 0.8,
-    "idd_max_a": 0.012
+    "idd_max_a": 0.012,
+    "icc_a": 0.012
    },
    "pins": {
     "4": {

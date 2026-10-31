@@ -150,7 +150,9 @@
  },
  "values": {
   "vih_ratio": 0.7,
-  "vil_ratio": 0.3
+  "vil_ratio": 0.3,
+  "behavior": "logic",
+  "icc_a": 0.0001
  },
  "limits": {
   "vdd_max_v": 7,
@@ -182,7 +184,8 @@
   "port behaviour (quasi-bidirectional, 100 µA current source, accelerator): 8.1 and Fig 7, p. 6–7; INT open-drain: sections 1 and 2, p. 1",
   "i_supply_pin_max_a = ISS (ground supply current) 100 mA of Table 7",
   "pin names, footprint and class: EasyEDA library data of C7605 via edakit part import, 2026-10-31",
-  "compliance: LCSC product data C7605 (2026-10-31): RoHS certificate (ROHS3); stock 17 361 pcs at LCSC"
+  "compliance: LCSC product data C7605 (2026-10-31): RoHS certificate (ROHS3); stock 17 361 pcs at LCSC",
+  "NXP PCF8574; PCF8574A product data sheet Rev. 5 (27 May 2013), p. 16 Table 9: IDD supply current 40 µA typ., 100 µA max. (operating mode, VDD = 6 V, no load, fSCL = 100 kHz) – icc_a = 100 µA (behaviour logic); INT, an open-drain output, rests released"
  ],
  "compliance": {
   "rohs": true,
@@ -198,13 +201,14 @@
    "address base 0x20, A0/A1/A2 add 1/2/4 (Table 4)",
    "VDD abs. max 7 V; operating 2.5–6.0 V; VI ≤ VDD + 0.5 V; ISS 100 mA; Ptot 400 mW; Tj 125 °C; Rth(j-a) 115 °C/W (SO16); Tamb −40 … +85 °C",
    "VIH 0.7 VDD, VIL 0.3 VDD for SCL/SDA, ports and address inputs; fSCL max 100 kHz",
-   "2026-10-31, pin limits (schema-gaps A6, B1–B3, C1–C4): NXP PCF8574/PCF8574A Rev. 5: Table 7 limiting values, VI VSS − 0.5 V to VDD + 0.5 V (v_min_v −0.5; the entry's vin_rel_max_v 0.5 holds the ports, SDA and INT too), IO output current 25 mA (P0–P7 i_max_a); Table 9, I/Os P0–P7 IIHL(max) maximum allowed input current 400 µA at VI ≥ VDD or VI ≤ VSS (i_inject_max_a)"
+   "2026-10-31, pin limits (schema-gaps A6, B1–B3, C1–C4): NXP PCF8574/PCF8574A Rev. 5: Table 7 limiting values, VI VSS − 0.5 V to VDD + 0.5 V (v_min_v −0.5; the entry's vin_rel_max_v 0.5 holds the ports, SDA and INT too), IO output current 25 mA (P0–P7 i_max_a); Table 9, I/Os P0–P7 IIHL(max) maximum allowed input current 400 µA at VI ≥ VDD or VI ≤ VSS (i_inject_max_a)",
+   "2026-10-31: behaviour logic with icc_a 100 µA from Rev. 5, Table 9 (IDD max, read now)"
   ],
   "open": [
    "II 20 mA (input current) and 100 mW per output of Table 7 have no field; IO 25 mA and IIHL(max) 400 µA are entered (i_max_a, i_inject_max_a on P0–P7)",
    "the port pull-up is a 30–300 µA current source, not a resistor: pull 'up' without pull_ohm",
    "no supply capacitor named in the data sheet; the default decoupling requirement stays on",
-   "no behaviour model: supply current (IDD ≤ 100 µA at 100 kHz, Table 9) and port sink currents are not simulated"
+   "the ports' quasi-bidirectional high – a 30–300 µA current source to VDD (Table 9, IOH) – and their sink currents are not simulated: the ports rest off in behaviour logic"
   ]
  }
 }

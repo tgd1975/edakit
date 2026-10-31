@@ -111,9 +111,10 @@
      "source": "InvenSense MPU-6000 and MPU-6050 Product Specification, PS-MPU-6000A-00 Revision 3.4 (08/19/2013), p. 22 section 7.3 Bill of Materials for External Components: C1 regulator filter, ceramic X7R 0.1 µF ±10 %, 2 V"
     }
    ],
-   "hint": "regulator filter capacitor connection only",
+   "hint": "regulator filter capacitor connection only; no logic output: the simulation leaves it to its capacitor",
    "v_rel_max_v": null,
-   "v_min_v": -0.5
+   "v_min_v": -0.5,
+   "state": "off"
   },
   "11": {
    "name": "FSYNC",
@@ -165,9 +166,10 @@
      "v_min_v": 50
     }
    ],
-   "hint": "charge pump capacitor connection: 2.2 nF X7R rated 50 V (BOM 7.3); CPOUT abs. max 30 V",
+   "hint": "charge pump capacitor connection: 2.2 nF X7R rated 50 V (BOM 7.3); CPOUT abs. max 30 V; no logic output: the simulation leaves it to its capacitor",
    "v_rel_max_v": null,
-   "v_min_v": -0.5
+   "v_min_v": -0.5,
+   "state": "off"
   },
   "21": {
    "name": "RESV",
@@ -204,7 +206,12 @@
  },
  "values": {
   "vih_ratio": 0.7,
-  "vil_ratio": 0.3
+  "vil_ratio": 0.3,
+  "behavior": "logic",
+  "icc_a": {
+   "VDD": 0.0039,
+   "VLOGIC": 0.0001
+  }
  },
  "limits": {
   "vdd_max_v": 6.0,
@@ -231,7 +238,9 @@
   "InvenSense MPU-6000 and MPU-6050 Product Specification, PS-MPU-6000A-00 Revision 3.4 (08/19/2013), p. 33 section 9.2: slave address b110100X, LSB from AD0; SDA and SCL typically need pull-ups to VDD",
   "InvenSense MPU-6000 and MPU-6050 Product Specification, PS-MPU-6000A-00 Revision 3.4 (08/19/2013), p. 38 section 10.2: SDA, SCL, AD0, CLKIN, INT and AUX_DA/AUX_CL at VLOGIC levels (AUX_VDDIO = 0, its power-on value)",
   "InvenSense MPU-6000 and MPU-6050 Product Specification, PS-MPU-6000A-00 Revision 3.4 (08/19/2013), p. 43 sections 11.4.2/11.4.3: exposed die pad not soldered, no electrical connection; no traces or vias under the package",
-  "lifecycle: LCSC product data of C24112 read 2026-10-31 says productCycle 'normal', 3367 in stock; a web search (2026-10-31) found DigiKey listing the MPU-6050 as obsolete – TDK's own product and EOL pages were not reachable (404); the datasheet says nothing about it"
+  "lifecycle: LCSC product data of C24112 read 2026-10-31 says productCycle 'normal', 3367 in stock; a web search (2026-10-31) found DigiKey listing the MPU-6050 as obsolete – TDK's own product and EOL pages were not reachable (404); the datasheet says nothing about it",
+  "InvenSense MPU-6000 and MPU-6050 Product Specification, PS-MPU-6000A-00 Revision 3.4 (08/19/2013), p. 14 section 6.3: VDD normal operating current 3.9 mA typ. (gyroscope + accelerometer + DMP), VLOGIC normal operating current 100 µA typ. – no maximum given: icc_a {VDD 3.9 mA, VLOGIC 100 µA}, the typical values (behaviour logic)",
+  "InvenSense MPU-6000 and MPU-6050 Product Specification, PS-MPU-6000A-00 Revision 3.4 (08/19/2013), p. 21 section 7.1: REGOUT 'Regulator filter capacitor connection', CPOUT 'Charge pump capacitor connection' – state off: no logic level, the simulation leaves them to their capacitors"
  ],
  "notes": "End of life: TDK InvenSense's status for the MPU-6050 could not be confirmed from TDK (pages not found, 2026-10-31); DigiKey lists it as obsolete, LCSC as normal with stock. Check availability before designing it in.",
  "verified": {
@@ -248,7 +257,8 @@
    "external capacitors C1–C4 from the bill of materials 7.3",
    "2026-10-31: CPOUT capacitor rated at least 50 V (PS-MPU-6000A-00 Rev 3.4, 7.3 Bill of Materials: C3 X7R 2.2 nF ±10 % 50 V, read now)",
    "2026-10-31, pin limits (schema-gaps A6, B1–B3, C1–C4): PS-MPU-6000A-00 Rev 3.4: 6.3 'VLOGIC must be ≤VDD at all times' (supply_order); 6.4 digital inputs (SDA, AD0, SCL, FSYNC, CLKIN) VIH 0.7·VLOGIC, VIL 0.3·VLOGIC (ref VLOGIC); 6.5 primary and auxiliary I2C I/O (auxiliary at AUX_VDDIO = 0) VIH up to VLOGIC + 0.5 V, stricter than 6.9 (SCL, SDA, AUX_DA, AUX_CL: v_rel_max_v 0.5 against VLOGIC); 6.9 absolute maximum: VLOGIC, CLKIN, AUX_DA, AD0, FSYNC, INT, SCL, SDA −0.5 V to VDD + 0.5 V (rel_ref VDD where the thresholds refer to VLOGIC; v_min_v −0.5), REGOUT −0.5 to 2 V and CPOUT −0.5 to 30 V absolute (v_rel_max_v null)",
-   "2026-10-31, the limit of SCL, SDA, AUX_DA, AUX_CL (rules-at-scale.md, decision 13): held to VLOGIC + 0.5 V, the upper end of VIH in 6.5, not to the absolute VDD + 0.5 V of 6.9 – VLOGIC ≤ VDD at all times (6.3, supply_order), so every pin above VDD + 0.5 V is above VLOGIC + 0.5 V too, and between the two the datasheet promises no function; a warning (LIM.v/inject) either way"
+   "2026-10-31, the limit of SCL, SDA, AUX_DA, AUX_CL (rules-at-scale.md, decision 13): held to VLOGIC + 0.5 V, the upper end of VIH in 6.5, not to the absolute VDD + 0.5 V of 6.9 – VLOGIC ≤ VDD at all times (6.3, supply_order), so every pin above VDD + 0.5 V is above VLOGIC + 0.5 V too, and between the two the datasheet promises no function; a warning (LIM.v/inject) either way",
+   "2026-10-31: behaviour logic with icc_a 3.9 mA at VDD and 100 µA at VLOGIC from PS-MPU-6000A-00 Rev 3.4, 6.3 (typical, read now); REGOUT and CPOUT state off (7.1: the regulator's and the charge pump's capacitor pins)"
   ],
   "open": [
    "maximum supply current: the datasheet gives only typical values (3.9 mA gyro + accel + DMP) – idd_max_a left out",
@@ -265,7 +275,9 @@
    "end-of-life status not confirmed from TDK (see notes)",
    "no thermal resistance or junction temperature in the datasheet",
    "RoHS/REACH not entered",
-   "with AUX_VDDIO = 1 the auxiliary bus refers to VDD (7.11): AUX_DA and AUX_CL stay held to VLOGIC + 0.5 V (the power-on value AUX_VDDIO = 0) – a project that sets the bit accepts the finding with its reason"
+   "with AUX_VDDIO = 1 the auxiliary bus refers to VDD (7.11): AUX_DA and AUX_CL stay held to VLOGIC + 0.5 V (the power-on value AUX_VDDIO = 0) – a project that sets the bit accepts the finding with its reason",
+   "icc_a: typical values – the datasheet gives no maximum supply current",
+   "INT rests low in the simulation (behaviour logic's default for a push-pull output): its level and whether it is push-pull or open drain are register settings (7.1: 'totem pole or open-drain')"
   ]
  },
  "supply_order": [

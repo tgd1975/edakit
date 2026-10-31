@@ -21,6 +21,7 @@ from .findings import Finding
 BOUND = re.compile(r"(.+)_(max|min)_([a-z_]+)$")
 OLD_KEYS = ("ratings", "params")
 DRIVES = ("open_drain", "tristate", "bridge")   # pin drive: lets go of its net, or a half-bridge (LEVELS)
+STATES = ("high", "low", "off")   # pin state: where behaviour logic holds an output (sim/netlist.py logic_states)
 
 
 @lru_cache(maxsize=1)
@@ -116,6 +117,11 @@ def problems(entry):
             out.append(f"matrix: a list of fn kinds ({', '.join(FN_LINES)}) the GPIO matrix routes to any GPIO, not "
                        f"{entry['matrix']!r}")
     out += supply_order_problems(entry) + group_problems(entry)
+    icc = (entry.get("values") or {}).get("icc_a")
+    if isinstance(icc, dict):               # a current per supply pin, by the pin's name
+        supplies = {p.get("name") for p in (entry.get("pins") or {}).values() if p.get("type") == "power_in"}
+        out += [f"values.icc_a: {name!r} – not the name of a supply pin (power_in) of the part" for name in icc
+                if name not in supplies]
     roles = (k["kinds"][kind]).get("roles", [])
     pin_names = allowed(kind, "pin") | set(k["free"]["pin"])
     for num, pin in (entry.get("pins") or {}).items():
@@ -140,6 +146,13 @@ def problems(entry):
             out.append(f"{at}.pull: {pin['pull']!r} – up or down")
         if pin.get("drive") not in (None, *DRIVES):
             out.append(f"{at}.drive: {pin['drive']!r} – one of {', '.join(DRIVES)}")
+        if "state" in pin:
+            if pin["state"] not in STATES:
+                out.append(f"{at}.state: {pin['state']!r} – high, low or off")
+            elif pin.get("type") not in ("output", "bidirectional"):
+                out.append(f"{at}.state: on an output or bidirectional pin only")
+            elif pin["state"] == "high" and pin.get("drive") == "open_drain":
+                out.append(f"{at}.state: an open-drain output cannot drive high – low or off")
         if pin.get("biased") not in (None, True, False):
             out.append(f"{at}.biased: {pin['biased']!r} – true or false")
         if pin.get("clamp") not in (None, "internal", "none"):

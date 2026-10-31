@@ -79,7 +79,9 @@
  "values": {
   "idd_max_a": 0.0015,
   "vih_v": 2.1,
-  "vil_v": 0.8
+  "vil_v": 0.8,
+  "behavior": "logic",
+  "icc_a": 0.0015
  },
  "limits": {
   "vdd_max_v": 4.0,
@@ -112,7 +114,8 @@
   "applications information, p. 11: 0.1 µF bypass at VCC; 10 nF across T+/T−",
   "ordering information, p. 12: MAX31855KASA+T = K type, 8 SO, tape and reel; '+' lead(Pb)-free/RoHS-compliant",
   "mpn, manufacturer, footprint, jlc_class, pin numbers and names: EasyEDA library data of C52028 via edakit part import, read 2026-10-31",
-  "stock: LCSC 478 pcs, JLCPCB assembly 478 pcs (2026-10-31)"
+  "stock: LCSC 478 pcs, JLCPCB assembly 478 pcs (2026-10-31)",
+  "Maxim MAX31855 data sheet 19-5793, Rev 5 (1/15), p. 2 DC characteristics: ICC 900 µA typ., 1500 µA max. – icc_a = 1.5 mA (behaviour logic); SO, a tri-state output, rests released"
  ],
  "compliance": {
   "rohs": true,
@@ -129,13 +132,13 @@
    "VCC 3.0–3.6 V, VIL 0.8 V, VIH 2.1 V, ICC ≤ 1.5 mA (p. 2)",
    "fSCL ≤ 5 MHz; SO disabled after CS rises (p. 4)",
    "T− not to GND (p. 7); 0.1 µF bypass, 10 nF across T+/T− (p. 11)",
-   "2026-10-31: T+–T− differential capacitor (19-5793 Rev 5, Noise Considerations, read now)"
+   "2026-10-31: T+–T− differential capacitor (19-5793 Rev 5, Noise Considerations, read now)",
+   "2026-10-31: behaviour logic with icc_a 1.5 mA from 19-5793 Rev 5, p. 2 (ICC max, read now)"
   ],
   "open": [
    "the 10 nF capacitor across T+ and T−: pin needs know a capacitor to ground only, not one between two pins",
    "analog.com was not reachable: whether ADI has a revision newer than Rev 5 (1/15) was not checked",
    "VIH's upper bound VCC + 0.3 V and the negative bounds (−0.3 V) have no pin field",
-   "no behaviour model: the supply current (≤ 1.5 mA) is not drawn in the simulation",
    "VCC bypass: 0.1 µF is the named value, read as a minimum"
   ]
  }

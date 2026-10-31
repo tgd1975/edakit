@@ -29,7 +29,15 @@
    "hint": "I²C: connect CSB directly to VDDIO (required); a low level on CSB switches to SPI and disables I²C until the next power-on reset; internal pull-up 70–190 kΩ to VDDIO",
    "ref": "VDDIO",
    "v_rel_max_v": 0.3,
-   "v_min_v": -0.3
+   "v_min_v": -0.3,
+   "needs": [
+    {
+     "what": "tie",
+     "to": "VDDIO",
+     "when": "i2c",
+     "source": "Bosch Sensortec BME280 Data sheet, BST-BME280-DS001-24, document revision 1.24 (February 2024), p. 32 6.1: 'If CSB is connected to VDDIO, the I²C interface is active'; p. 39 Figure 17 note: 'A direct connection between CSB and VDDIO is required'"
+    }
+   ]
   },
   "3": {
    "name": "SDI",
@@ -94,7 +102,9 @@
  "values": {
   "vih_ratio": 0.8,
   "vil_ratio": 0.2,
-  "idd_max_a": 0.000714
+  "idd_max_a": 0.000714,
+  "behavior": "logic",
+  "icc_a": 0.000714
  },
  "limits": {
   "vdd_max_v": 4.25,
@@ -118,7 +128,9 @@
   "Bosch Sensortec BME280 Data sheet, BST-BME280-DS001-24, document revision 1.24 (February 2024), p. 14 section 3.2: no interface pin high while VDDIO is off; VDDIO without VDD keeps the pins high-Z",
   "Bosch Sensortec BME280 Data sheet, BST-BME280-DS001-24, document revision 1.24 (February 2024), p. 32–33 sections 6.1/6.2: CSB to VDDIO selects I²C; SDA/SCL not pure open-drain, ESD diodes to VDDIO and GND; address 111011x – SDO to GND 0x76, to VDDIO 0x77, SDO must not float; SDI open drain with pull-up to VDDIO",
   "Bosch Sensortec BME280 Data sheet, BST-BME280-DS001-24, document revision 1.24 (February 2024), p. 35 section 6.4.1: VIL max 20 % VDDIO, VIH min 80 % VDDIO; internal CSB pull-up 70/120/190 kΩ (pull_ohm = typ)",
-  "Bosch Sensortec BME280 Data sheet, BST-BME280-DS001-24, document revision 1.24 (February 2024), p. 39 Figure 17: C1 (VDD), C2 (VDDIO) 100 nF recommended; pull-ups typically 4.7 kΩ; CSB direct to VDDIO"
+  "Bosch Sensortec BME280 Data sheet, BST-BME280-DS001-24, document revision 1.24 (February 2024), p. 39 Figure 17: C1 (VDD), C2 (VDDIO) 100 nF recommended; pull-ups typically 4.7 kΩ; CSB direct to VDDIO",
+  "Bosch Sensortec BME280 Data sheet, BST-BME280-DS001-24, document revision 1.24 (February 2024), p. 8 Table 1: IDDP, the current during pressure measurement, 714 µA ('Max value at -40 °C', printed in the Typ column), IDDH 340 µA, IDDT 350 µA – icc_a = 714 µA at VDD (role vdd), the highest of the three, read as the maximum its condition names (behaviour logic); no separate VDDIO current is given",
+  "Bosch Sensortec BME280 Data sheet, BST-BME280-DS001-24, document revision 1.24 (February 2024), p. 32 6.1: 'If CSB is connected to VDDIO, the I²C interface is active. If CSB is pulled down, the SPI interface is activated'; p. 32–33 6.2: SDI bi-directional open drain to GND, 'The SDO pin cannot be left floating'; p. 34 6.3: SPI 4-wire and 3-wire, 'SDO: serial data output; hi-Z in 3-wire mode', SDO tri-state after the transfer (Figure 11); p. 38 Table 35, Connect to: SPI 4W CSB, SDI, SCK, SDO; SPI 3W CSB, SDI/SDO, SCK, SDO DNC; I²C CSB to VDDIO, SDI SDA, SCK SCL, SDO GND for the default address; p. 39 Figure 17 note: 'A direct connection between CSB and VDDIO is required'; p. 40–41 Figures 18 and 19 (4-wire and 3-wire SPI)"
  ],
  "verified": {
   "by": "Claude (datasheet check, library draft)",
@@ -132,7 +144,8 @@
    "VDD 1.71–3.6 V, VDDIO 1.2–3.6 V; VIH 0.8 × VDDIO, VIL 0.2 × VDDIO",
    "I²C address 0x76/0x77 by SDO",
    "100 nF on VDD and VDDIO",
-   "2026-10-31, pin limits (schema-gaps A6, B1–B3, C1–C4): BST-BME280-DS001-24 rev 1.24: Table 5, voltage at any interface pin −0.3 V to VDDIO + 0.3 V (CSB, SDI, SCK, SDO: ref VDDIO, v_rel_max_v 0.3, v_min_v −0.3); Table 32, Vil_si 20 % and Vih_si 80 % of VDDIO (the entry's ratios, now of VDDIO); 'there are no limitations on slope and sequence of raising the VDD and VDDIO levels' – no supply_order"
+   "2026-10-31, pin limits (schema-gaps A6, B1–B3, C1–C4): BST-BME280-DS001-24 rev 1.24: Table 5, voltage at any interface pin −0.3 V to VDDIO + 0.3 V (CSB, SDI, SCK, SDO: ref VDDIO, v_rel_max_v 0.3, v_min_v −0.3); Table 32, Vil_si 20 % and Vih_si 80 % of VDDIO (the entry's ratios, now of VDDIO); 'there are no limitations on slope and sequence of raising the VDD and VDDIO levels' – no supply_order",
+   "2026-10-31: behaviour logic with icc_a 714 µA at VDD from BST-BME280-DS001-24 rev 1.24, Table 1 (IDDP, read now); configs i2c (config_default), spi4 and spi3 from 6.1–6.3, Table 35 and Figures 17–19 (read now): CSB tied to VDDIO and SDO not floating only in i2c, the I²C address and the roles sda/scl only in i2c, SDO a tri-state output in spi4 and not connected in spi3"
   ],
   "open": [
    "measurement currents are printed in the Typ column with the condition 'Max value at …' – whether 714 µA is a guaranteed maximum is not clear",
@@ -143,7 +156,60 @@
     "when": "order"
    },
    "no thermal resistance or junction temperature in the datasheet",
-   "RoHS/REACH not entered (datasheet 7.12: RoHS 2011/65/EU incl. 2015/863, halogen-free)"
+   "RoHS/REACH not entered (datasheet 7.12: RoHS 2011/65/EU incl. 2015/863, halogen-free)",
+   "icc_a: Table 1 prints the measurement currents in the Typ column with the condition 'Max value at …' – whether 714 µA is a guaranteed maximum is not clear (as idd_max_a)",
+   "spi3: SDO typed no_connect (Table 35: DNC) – no check reports a no_connect pin on a net"
   ]
- }
+ },
+ "configs": {
+  "i2c": {
+   "about": "I²C: CSB connected directly to VDDIO selects it; SDI is SDA (open drain), SCK is SCL, SDO sets the address LSB – GND 0x76, VDDIO 0x77 – and must not float (Bosch Sensortec BME280 Data sheet, BST-BME280-DS001-24, document revision 1.24 (February 2024), 6.1, 6.2, Table 35, Figure 17)",
+   "pins": {
+    "5": {
+     "float_ok": false
+    }
+   }
+  },
+  "spi4": {
+   "about": "4-wire SPI: CSB the chip select (active low, internal pull-up), SDI the data input, SDO the data output, tri-state while CSB is high, SCK the clock (Bosch Sensortec BME280 Data sheet, BST-BME280-DS001-24, document revision 1.24 (February 2024), 6.3, Table 35, Figure 18)",
+   "pins": {
+    "3": {
+     "type": "input",
+     "role": null,
+     "drive": null,
+     "hint": "SPI 4-wire: serial data input (Table 35)"
+    },
+    "4": {
+     "role": null,
+     "hint": "SPI: serial clock input (Table 35)"
+    },
+    "5": {
+     "type": "output",
+     "drive": "tristate",
+     "hint": "SPI 4-wire: serial data output, tri-state while CSB is high (6.3, Figure 11)"
+    }
+   },
+   "address": null
+  },
+  "spi3": {
+   "about": "3-wire SPI (register spi3w_en = 1): CSB the chip select, SDI the data input and output, SCK the clock, SDO not connected – hi-Z in 3-wire mode (Bosch Sensortec BME280 Data sheet, BST-BME280-DS001-24, document revision 1.24 (February 2024), 6.3, Table 35, Figure 19)",
+   "pins": {
+    "3": {
+     "role": null,
+     "drive": "tristate",
+     "hint": "SPI 3-wire: serial data input and output (Table 35)"
+    },
+    "4": {
+     "role": null,
+     "hint": "SPI: serial clock input (Table 35)"
+    },
+    "5": {
+     "type": "no_connect",
+     "hint": "SPI 3-wire: do not connect (Table 35); hi-Z in 3-wire mode (6.3)"
+    }
+   },
+   "address": null
+  }
+ },
+ "config_default": "i2c"
 }
