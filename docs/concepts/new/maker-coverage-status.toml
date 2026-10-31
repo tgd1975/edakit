@@ -45,7 +45,7 @@ CK-12 = { status = "built", where = "roles dp_a, dp_b, dn_a, dn_b; REQ.missing/u
 CK-13 = { status = "built", where = "pin needs; REQ.missing/pin, REQ.value/pin, REQ.forbidden/pin", step = 6 }
 CK-14 = { status = "partial", where = "a regulator's capacitors as pin needs", missing = "DC bias and the ESR window", step = 6 }
 CK-15 = { status = "partial", where = "REQ.missing flyback for motors and solenoids", missing = "clamp diodes at a bridge driver without internal ones (L298)", step = 6 }
-CK-16 = { status = "partial", where = "REQ.missing/leave on nets through a cable (domain cables)", missing = "off-board connectors without a cable in the graph", step = 6 }
+CK-16 = { status = "built", where = "REQ.missing/leave on nets through a cable and on connectors marked off_board (domain cables)", step = 6 }
 CK-17 = { status = "open", missing = "RS-485 and CAN termination – the standards' numbers not read here" }
 CK-18 = { status = "built", where = "cells i_max_a; LIM.i/cell", step = 6 }
 CK-19 = { status = "built", where = "net matrix row | col; REQ.missing/matrix, REQ.forbidden/matrix", step = 6 }

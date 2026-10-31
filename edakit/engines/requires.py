@@ -608,25 +608,39 @@ def usb_data(d):
     return out
 
 
-def leaving_lines(d):
-    """REQ.missing/leave: a signal net that runs through a cable reaches an IC or module pin with no resistor in
-    between – a short on the wire or a discharge at its end hits the pin. A pin with short_proof, and I2C lines
-    (needs.toml [i2c]), are left alone."""
-    quiet = {d.ground} | supply_nets(d)
-    out = []
+def leaving(d):
+    """[(net, how it leaves)] of the nets that leave the board: through a cable of the graph, or on a connector the
+    graph marks off_board (its wires go to the world, not to another board of the project) – each net once."""
+    out = {}
     for c in d.graph.get("cables", []):
         for a in c.get("pins", {}):
-            net = d.pin_net.get(f"{c['from']}.{a}")
-            if not net or net in quiet or d.nets[net].get("bus") == "i2c" or i2c_name(net):
-                continue
-            hit = [r for r in d.nets[net]["pins"] if (d.part(r.partition(".")[0]) or {}).get("kind") in ("ic", "module")
-                   and d.pin_info(r).get("type") in ("input", "output", "bidirectional", "analog")
-                   and not d.pin_info(r).get("short_proof") and not i2c_line(d.pin_info(r))]
-            if hit:
-                out.append(Finding("REQ.missing", "G", net, f"{net}: runs through cable {c['name']} straight to "
-                                   f"{', '.join(hit)} – no series resistance on the board", "maker-coverage CK-16",
-                                   "a series resistor (100 Ω–1 kΩ) at the pin, a TVS at the connector", grade="leave",
-                                   topic="leave", on=(("net", net),)))
+            if net := d.pin_net.get(f"{c['from']}.{a}"):
+                out.setdefault(net, f"through cable {c['name']}")
+    for des, comp in sorted(d.comps.items()):
+        if comp.get("off_board"):
+            for num in comp.get("pins", {}):
+                if net := d.pin_net.get(f"{des}.{num}"):
+                    out.setdefault(net, f"to the off-board connector {des}")
+    return list(out.items())
+
+
+def leaving_lines(d):
+    """REQ.missing/leave: a signal net that leaves the board – through a cable, or on a connector marked off_board –
+    reaches an IC or module pin with no resistor in between: a short on the wire or a discharge at its end hits the
+    pin. A pin with short_proof, and I2C lines (needs.toml [i2c]), are left alone."""
+    quiet = {d.ground} | supply_nets(d)
+    out = []
+    for net, how in leaving(d):
+        if net in quiet or d.nets[net].get("bus") == "i2c" or i2c_name(net):
+            continue
+        hit = [r for r in d.nets[net]["pins"] if (d.part(r.partition(".")[0]) or {}).get("kind") in ("ic", "module")
+               and d.pin_info(r).get("type") in ("input", "output", "bidirectional", "analog")
+               and not d.pin_info(r).get("short_proof") and not i2c_line(d.pin_info(r))]
+        if hit:
+            out.append(Finding("REQ.missing", "G", net, f"{net}: runs {how} straight to {', '.join(hit)} – no series "
+                               "resistance on the board", "maker-coverage CK-16",
+                               "a series resistor (100 Ω–1 kΩ) at the pin, a TVS at the connector", grade="leave",
+                               topic="leave", on=(("net", net),)))
     return out
 
 
