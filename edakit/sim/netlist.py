@@ -39,7 +39,19 @@ ICs and modules are replaced by behaviour models, chosen by values.behavior in t
             draw nothing. vicm_v [above vee, from vcc] is the input common-mode range LIM.range holds (engines/sim.py)
   logic     icc_a at the supply pin, outputs low through 50 ohm
   current   constant i_a at the supply pin
+  buck_boost  as buck and boost (the Pico's RT6150): an ideal output whether the input is above or below it
+  bridge    bridge driver (DRV8833, TB6612): roles in1_x, in2_x, out1_x, out2_x, (pwm_x, sense_x) per channel, vm, en,
+            (vcc); the outputs follow IN1/IN2 (forward, reverse, brake, coast), PWM low brakes, en low turns all off –
+            each output a high side 1/r_on_high_ohm to vm and a low side 1/r_on_low_ohm to its return, measured
+  charger   linear Li-ion charger (TP4056, MCP73831): roles vin, bat, prog; constant current prog_v / R_PROG
+            (i_pre_ratio of it below v_pre_v), constant voltage vout_v, limited by r_on_ohm and v_headroom_v, off below
+            uvlo_v or without a PROG resistor; the current measured
+  protection  one-cell protection IC (DW01A): roles vdd, gnd, od, oc, vm; OD high above v_uvp_v and below v_ocp_v at
+            VM, OC high below v_ovp_v (else at VM), behind r_out_ohm
   none      nothing (e.g. a module that is not powered in this design)
+
+A MOSFET whose entry has the roles gate_2 and source_2 (a dual MOSFET, FS8205A) is two transistors with the same
+model, the second's drain on drain_2 or the shared drain.
 
 Constant-current loads – i_core_a, idd_max_a, icc_a, i_a, an external load – fall to 0 below DEAD_RAIL_V across them, so
 that a rail nothing feeds stays at 0 V instead of being pulled below ground; above it they are constant. In a transient
@@ -324,6 +336,10 @@ class Netlist:
         elif kind in ("pmos", "nmos"):
             dr, g, s = (self.rn(des, x) for x in ("drain", "gate", "source"))
             self.add(f"M_{des} {dr} {g} {s} {s} {self.model(des, part)}", des, kind, (dr, g, s))
+            g2, s2 = self.rn(des, "gate_2"), self.rn(des, "source_2")
+            if g2 and s2:        # a dual MOSFET (FS8205A): the second channel, its drain shared unless drain_2
+                d2 = self.rn(des, "drain_2") or dr
+                self.add(f"M_{des}_2 {d2} {g2} {s2} {s2} {self.model(des, part)}", des, kind, (d2, g2, s2))
         elif kind == "led":
             self.led(des, part)
         elif kind == "led_rgb":   # the roles say the layout: a common anode, or a common cathode
@@ -405,8 +421,9 @@ class Netlist:
             behavior = p.get("behavior", "none")
             fn = self.plugin_models.get(behavior) or getattr(self, f"ic_{behavior}", None)
             if fn is None:
-                raise ValueError(f"{des}: unknown behaviour model '{behavior}' (built in: ldo, buck, boost, mcu, cc_sink,"
-                                 " opamp, logic, current, none; or a plugin model)")
+                raise ValueError(f"{des}: unknown behaviour model '{behavior}' (built in: ldo, buck, boost, buck_boost, "
+                                 "mcu, cc_sink, opamp, logic, current, bridge, charger, protection, none; or a plugin "
+                                 "model)")
             fn(self, des, part) if behavior in self.plugin_models else fn(des, part)
 
     # --- behaviour models -----------------------------------------------------------------------------------------
@@ -582,6 +599,140 @@ class Netlist:
     def ic_none(self, des, part):
         pass
 
+    # --- bridge drivers, chargers, cell protection (schema-gaps E2–E4) ----------------------------------------------
+    def level(self, des, part, role, supply=None):
+        """A logic input's level as an expression from 0 (low) to 1 (high), smooth between its VIL and VIH – the pin's
+        own vih_v/vil_v, else the part's, else the part's vih_ratio/vil_ratio of `supply` (a node) – or None when the
+        role's pin is not connected. The step is an eighth of VIH − VIL wide: an input at its rail leaves a residue
+        of about 1e-9, an output switched off by it no conductance worth a current (a quarter left 5e-5 of
+        1/r_on – a milliampere through a stopped motor)."""
+        ref = self.role_pins(des).get(role)
+        if ref is None:
+            return None
+        pin, p = part["pins"][ref.split(".", 1)[1]], values(part)
+        vih, vil = pin.get("vih_v", p.get("vih_v")), pin.get("vil_v", p.get("vil_v"))
+        if vih is None or vil is None:
+            hi, lo = p.get("vih_ratio", 0.7), p.get("vil_ratio", 0.3)
+            vs = f"V({supply})" if supply else "3.3"
+            mid, w = f"({(hi + lo) / 2:g}*{vs})", f"max({(hi - lo) / 8:g}*{vs}, 0.01)"
+        else:
+            mid, w = f"{(vih + vil) / 2:g}", f"{max((vih - vil) / 8, 0.01):g}"
+        return f"(0.5*(1+tanh((V({self.pn(ref)})-{mid})/{w})))"
+
+    def ic_bridge(self, des, part):
+        """Bridge driver (DRV8833, TB6612): per channel the roles in1_x, in2_x, out1_x, out2_x, optional pwm_x and
+        sense_x (the low side's return, DRV8833 xISEN – else gnd); vm the bridge supply, en the enable (DRV8833 nSLEEP,
+        TB6612 STBY – high runs), vcc a logic supply. The outputs follow the common truth table of both datasheets:
+        IN1 IN2 = 1 0 forward (OUT1 high, OUT2 low), 0 1 reverse, 1 1 brake (both low), 0 0 coast (both off); PWM low
+        brakes a driven channel; en low turns every output off. A high side is a conductance 1/r_on_high_ohm to vm, a
+        low side 1/r_on_low_ohm to its return, each scaled by the smooth input levels; idd_max_a at vcc (else vm)."""
+        p, tag = values(part), des.lower()
+        vm, gnd = self.rn(des, "vm"), self._gnd_of(des)
+        vcc = self.rn(des, "vcc")
+        if vm is None:
+            return
+        r_hi, r_lo = p.get("r_on_high_ohm", p.get("r_out_ohm", 1.0)), p.get("r_on_low_ohm", p.get("r_out_ohm", 1.0))
+        en = self.level(des, part, "en", vcc or vm) or "1"
+        chans = {}
+        for role in self.role_pins(des):
+            m = re.match(r"^(in1|in2|out1|out2|pwm|sense)_([a-z0-9]+)$", role)
+            if m:
+                chans.setdefault(m.group(2), set()).add(m.group(1))
+        outs = {}
+        for ch in sorted(chans):
+            a = self.level(des, part, f"in1_{ch}", vcc or vm)
+            b = self.level(des, part, f"in2_{ch}", vcc or vm)
+            if a is None or b is None:
+                continue
+            pwm = self.level(des, part, f"pwm_{ch}", vcc or vm) or "1"
+            ret = self.rn(des, f"sense_{ch}") or gnd
+            drive = {"1": (f"{en}*{a}*(1-{b})*{pwm}", f"{en}*({b}+{a}*(1-{b})*(1-{pwm}))"),
+                     "2": (f"{en}*{b}*(1-{a})*{pwm}", f"{en}*({a}+{b}*(1-{a})*(1-{pwm}))")}
+            for k, (hi, lo) in drive.items():
+                o = self.rn(des, f"out{k}_{ch}")
+                if o is None:
+                    continue
+                x = f"x_{tag}_{ch}{k}"
+                self.add(f"B_{des}_H{ch}{k} {vm} {x}h I = {hi}*V({vm},{x}h)/{r_hi}")
+                self.add(f"V_{des}_AH{ch}{k} {x}h {o} 0")
+                self.add(f"B_{des}_L{ch}{k} {o} {x}l I = {lo}*V({o},{x}l)/{r_lo}")
+                self.add(f"V_{des}_AL{ch}{k} {x}l {ret} 0")
+                outs[f"out{k}_{ch}"] = {"node": o, "vm": vm, "ret": ret,
+                                        "high": f"v_{tag}_ah{ch}{k}#branch", "low": f"v_{tag}_al{ch}{k}#branch"}
+        if p.get("idd_max_a"):
+            self.current_load(f"{des}_IDD", vcc or vm, gnd, p["idd_max_a"])
+        self.meta.setdefault("bridges", {})[des] = {"vm": vm, "gnd": gnd, "vcc": vcc, "outputs": outs, "values": p}
+
+    def ic_charger(self, des, part):
+        """Linear Li-ion charger (TP4056, MCP73831): roles vin, bat, prog, gnd. Constant current prog_v / R_PROG (the
+        resistors from PROG to ground, in parallel) – i_pre_ratio of it below v_pre_v (precondition) –, constant voltage
+        at vout_v (the float voltage): the current falls to 0 as the cell reaches it, held by a stiffness of
+        CHARGER_CV_OHM. The pass element limits the current to (V(vin) − V(bat) − v_headroom_v) / r_on_ohm; below
+        uvlo_v at vin, and without a PROG resistor, it does not charge. iq_a from vin. Termination (i_term_ratio) is a
+        state of the charge cycle, not of an operating point: the model charges while the cell is below the float
+        voltage."""
+        from ..circuit import resistors_to
+        p, tag = values(part), des.lower()
+        vin, bat, gnd = self.rn(des, "vin"), self.rn(des, "bat"), self._gnd_of(des)
+        prog_net = self.d.net_of(des, "prog")
+        if vin is None or bat is None:
+            return
+        rs = [r for _, r, _ in resistors_to(self.d, prog_net, {self.d.ground}) if r and r > 0] if prog_net else []
+        r_prog = 1 / sum(1 / r for r in rs) if rs else None
+        i_set = p["prog_v"] / r_prog if r_prog and p.get("prog_v") else 0.0
+        pre, v_pre = p.get("i_pre_ratio", 1.0), p.get("v_pre_v", 0.0)
+        cc = f"{i_set:.6g}*({pre:g}+{1 - pre:g}*0.5*(1+tanh((V({bat},{gnd})-{v_pre:g})/0.01)))"
+        cv = f"({p.get('vout_v', 4.2):g}-V({bat},{gnd}))/{CHARGER_CV_OHM}"
+        head = smooth(max, f"V({vin},{bat})-{p.get('v_headroom_v', 0.0):g}", "0", 0.01)   # smooth: Newton converges
+        drop = f"({head})/{p.get('r_on_ohm', 0.5):g}"
+        on = f"0.5*(1+tanh((V({vin},{gnd})-{p.get('uvlo_v', 0.0):g})/0.02))"
+        i_expr = f"{on}*{smooth(max, smooth(min, smooth(min, cc, cv, 1e-3), drop, 1e-3), '0', 1e-4)}"
+        self.add(f"B_{des}_CH {vin} x_{tag}_bat I = {i_expr}")
+        self.add(f"V_{des}_AM x_{tag}_bat {bat} 0")
+        if p.get("iq_a"):
+            self.current_load(f"{des}_IQ", vin, gnd, p["iq_a"])
+        self.meta.setdefault("chargers", {})[des] = {"vin": vin, "bat": bat, "gnd": gnd, "i_set": i_set,
+                                                     "r_prog": r_prog, "ammeter": f"v_{tag}_am#branch", "values": p}
+
+    def ic_protection(self, des, part):
+        """One-cell protection IC (DW01A): roles vdd (the cell through its resistor), gnd (the cell's minus), od
+        (discharge MOSFET's gate), oc (charge MOSFET's gate), vm (current sense, the pack's minus through a resistor).
+        OD high – at vdd – while the cell is above v_uvp_v (overdischarge) and VM below v_ocp_v (overcurrent), else at
+        gnd; OC high while the cell is below v_ovp_v (overcharge), else at VM (the datasheet's timing: OC low follows
+        VM). Above v_ovp_v the overcurrent comparison is off and OD stays high, as in the timing diagram (Rev B p. 5:
+        OD at VCC through the overcharge state, the cell discharges through the charge MOSFET's body diode) – the
+        charger pulls the pack's minus above the cell's there. The release voltages (v_uvp_release_v,
+        v_ovp_release_v) and the delays need the history an operating point does not have: the model is the state of a
+        cell coming from the normal range. Within a few 10 mV of a threshold the comparator's 20 mV step and the
+        circuit can form a loop the operating point may not converge in. Each output behind r_out_ohm."""
+        p, tag = values(part), des.lower()
+        vdd, gnd = self.rn(des, "vdd"), self._gnd_of(des)
+        if vdd is None:
+            return
+        vm = self.rn(des, "vm") or gnd
+        cell = f"V({vdd},{gnd})"
+
+        def step(x):
+            return f"0.5*(1+tanh(({x})/0.02))"
+        uvp, ocp, ovp = p.get("v_uvp_v", 0.0), p.get("v_ocp_v", 1e3), p.get("v_ovp_v", 1e3)
+        oc_on = step(f"{ovp:g}-{cell}")
+        od_on = f"{step(f'{cell}-{uvp:g}')}*(1-{step(f'V({vm},{gnd})-{ocp:g}')}*{oc_on})"
+        r = p.get("r_out_ohm", 1e3)
+        for role, level, low in (("od", od_on, gnd), ("oc", oc_on, vm)):
+            o = self.rn(des, role)
+            if o is None:
+                continue
+            self.add(f"B_{des}_{role.upper()} x_{tag}_{role} 0 V = V({low})+{level}*(V({vdd})-V({low}))")
+            self.add(f"R_{des}_{role.upper()} x_{tag}_{role} {o} {r:g}")
+        if p.get("iq_a"):
+            self.current_load(f"{des}_IQ", vdd, gnd, p["iq_a"])
+        self.meta.setdefault("protections", {})[des] = {"vdd": vdd, "gnd": gnd, "vm": vm, "values": p}
+
+    def ic_buck_boost(self, des, part):
+        """Buck-boost regulator (the Raspberry Pi Pico's RT6150): as buck and boost – an ideal output at vout_v whether
+        the input is above or below it, input power = output power / efficiency."""
+        self.ic_buck(des, part, "buck_boost")
+
     # --- build ----------------------------------------------------------------------------------------------------
     def build(self, tran=None):
         for des in sorted(self.d.comps):
@@ -647,6 +798,7 @@ class Netlist:
 
 
 FAULT_SHORT_OHM = 0.01      # a short of a generated fault scenario
+CHARGER_CV_OHM = 0.01       # how stiffly the charger model holds the float voltage – a model constant, no datasheet value
 
 
 def build(design, cfg, scenario, plugin_models=None, tran=None):

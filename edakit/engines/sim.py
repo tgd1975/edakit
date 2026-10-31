@@ -459,6 +459,8 @@ def function(s, load, low=None, plugin=None):
                                 source=f"vin_min_v … vin_max_v of {s.n.entry_key(des)}")])
     operating_range(s)
     opamps(s)
+    bridges(s)
+    chargers(s)
     input_injection(s)
     adc_windows(s)
     switch_dc(s)
@@ -673,6 +675,47 @@ def clocks(s):
         s.check("LIM.range", des, "clock within what its supply allows", f"{f / 1e6:.4g} MHz at {x:.3g} V",
                 f"≤ {fmax / 1e6:.4g} MHz (f_max_hz of {s.n.entry_key(des)})", f <= fmax * (1 + 1e-9), grade="clock",
                 on=(("component", des),))
+
+
+def bridges(s):
+    """A bridge driver (behaviour bridge): every output's current within i_out_max_a (LIM.i), the heat of its high
+    and low sides – I² × r_on – and its supply current against the junction limit (LIM.t, with rth_ja_k_per_w)."""
+    res = s.res
+    for des, br in sorted((s.meta.get("bridges") or {}).items()):
+        part = s.n.part(des)
+        r, key = limits(part), s.n.entry_key(des)
+        heat = 0.0
+        for role, o in sorted(br["outputs"].items()):
+            hi, lo = res.get(o["high"], 0.0), res.get(o["low"], 0.0)
+            vo = v(res, o["node"])
+            heat += abs((v(res, o["vm"]) - vo) * hi) + abs((vo - v(res, o["ret"])) * lo)
+            if "i_out_max_a" in r:
+                s.q(f"{des} {role}", "i_out", max(abs(hi), abs(lo)), "A", "", des, f"output {role} current", entry=False,
+                    lims=[Limit(max=r["i_out_max_a"], source=f"i_out_max_a of {key}")])
+        supply = br["vcc"] or br["vm"]
+        heat += (v(res, supply) - v(res, br["gnd"])) * br["values"].get("idd_max_a", 0.0)
+        if "rth_ja_k_per_w" in r:
+            junction(s, des, heat, r, f"junction temperature at {s.amb} °C: {heat:.3g} W in the bridges × "
+                                      f"{r['rth_ja_k_per_w']:g} K/W")
+
+
+def chargers(s):
+    """A linear charger (behaviour charger): the current it charges with within its i_out_max_a (LIM.i/charge – the
+    programmed current, prog_v / R_PROG, is held statically by engines/limits.py), and its heat, (V(vin) − V(bat)) ×
+    I plus the quiescent current, against the junction limit (LIM.t, with rth_ja_k_per_w)."""
+    res = s.res
+    for des, ch in sorted((s.meta.get("chargers") or {}).items()):
+        part = s.n.part(des)
+        r, key = limits(part), s.n.entry_key(des)
+        i = max(res.get(ch["ammeter"], 0.0), 0.0)
+        vin, bat, gnd = (v(res, ch[k]) for k in ("vin", "bat", "gnd"))
+        what = f"charge current (programmed {ch['i_set'] * 1e3:.3g} mA)" if ch["i_set"] else "charge current – no PROG resistor"
+        s.q(des, "i_charge", i, "A", "", des, what, code="LIM.i", grade="charge", entry=False, report=True,
+            lims=[Limit(max=r["i_out_max_a"], source=f"i_out_max_a of {key}")] if "i_out_max_a" in r else [])
+        heat = (vin - bat) * i + (vin - gnd) * ch["values"].get("iq_a", 0.0)
+        if "rth_ja_k_per_w" in r:
+            junction(s, des, heat, r, f"junction temperature at {s.amb} °C: {heat:.3g} W – (VIN − VBAT) × I + VIN × "
+                                      f"IQ – × {r['rth_ja_k_per_w']:g} K/W")
 
 
 def opamps(s):

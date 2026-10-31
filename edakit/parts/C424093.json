@@ -65,9 +65,16 @@
   }
  },
  "values": {
-  "behavior": "none",
+  "behavior": "charger",
   "vout_v": 4.2,
-  "prog_v": 1000
+  "prog_v": 1000,
+  "i_pre_ratio": 0.1,
+  "v_pre_v": 2.793,
+  "i_term_ratio": 0.075,
+  "r_on_ohm": 0.35,
+  "v_headroom_v": 0.2,
+  "uvlo_v": 3.6,
+  "iq_a": 0.0015
  },
  "limits": {
   "vdd_max_v": 7.0,
@@ -76,7 +83,8 @@
   "tj_max_c": 125,
   "t_min_c": -40,
   "t_max_c": 85,
-  "rth_ja_k_per_w": 230
+  "rth_ja_k_per_w": 230,
+  "i_out_max_a": 0.5
  },
  "hints": [
   "charge current IREG = 1000 V / RPROG (2 kΩ → about 500 mA, 10 kΩ → 100 mA); option AC: preconditioning at 10 % below 66.5 % of VREG, termination at 7.5 % of IREG, recharge below 96.5 % of VREG (p. 3–4, 26)",
@@ -112,7 +120,8 @@
    "DC characteristics p. 3–5: VREG 4.20 V ±0.75 %, IREG = 1000 V / RPROG, RPROG 2 … 67 kΩ, STAT currents and levels, θJA 230 °C/W, TJ -40 … 125 °C",
    "capacitors: minimum 4.7 µF at VDD (3.1) and at VBAT (3.2, 6.1.1.4)",
    "options AC: 10 % / 66.5 % / 7.5 % / 96.5 % (p. 26)",
-   "2026-10-31: prog_v 1000 V – I_REG = 1000 V / R_PROG, Microchip DS20001984H section 5.1.2 (as read for the library draft and for FT-4)"
+   "2026-10-31: prog_v 1000 V – I_REG = 1000 V / R_PROG, Microchip DS20001984H section 5.1.2 (as read for the library draft and for FT-4)",
+   "2026-10-31: behaviour charger (schema-gaps E3) – DS20001984H: options AC of the -2 variant (Product Identification System): IPREG/IREG 10 % (i_pre_ratio), VPTH/VREG 66.5 % of 4.20 V = 2.793 V (v_pre_v), ITERM/IREG 7.5 % (i_term_ratio); RDSON 350 mΩ typ at VDD 3.75 V, TJ 105 °C (r_on_ohm); VPDEXIT VBAT + 200 mV max (v_headroom_v); VSTART 3.6 V max (uvlo_v); ISS 1500 µA max while charging (iq_a); i_out_max_a 0.5 – 'Programmable Charge Current: 15 mA to 500 mA' (p. 1)"
   ],
   "open": [
    "VBAT has no absolute maximum of its own: 'all inputs and outputs -0.3 … VDD + 0.3 V' would forbid a cell on VBAT with VDD absent, which the data sheet itself specifies (reverse leakage with VDD floating) – not entered",

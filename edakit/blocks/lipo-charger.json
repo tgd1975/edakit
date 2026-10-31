@@ -332,7 +332,7 @@
   "PATH.unfed"
  ],
  "notes": [
-  "Charge current: R1 sets it, LIM.i/charge holds 1000 V / R1 to i_charge_max_a of the cell state – sim.json: the cell's holder under the supply scenario named \"cells\" with a state such as \"lipo\": {\"v\": 3.7, \"r\": 0.1, \"i_charge_max_a\": 0.5} (the check looks there). Microchip: preferred 1C, 2C absolute maximum (DS20001984H 6.1.1.1).",
+  "Charge current: R1 sets it, LIM.i/charge holds 1000 V / R1 to i_charge_max_a of the cell state – sim.json: the cell's holder with a cell state in any supply scenario, a state such as \"lipo\": {\"v\": 3.7, \"r\": 0.1, \"i_charge_max_a\": 0.5} (the check looks there). Microchip: preferred 1C, 2C absolute maximum (DS20001984H 6.1.1.1).",
   "Protection: the DW01A's thresholds (overdischarge 2.40–2.60 V) are those of PUOLOP's DW01A (C351410, data sheet Rev B p. 4); another maker's DW01A differs. Cells sold with their own protection board need none here – then U2, Q1, R2, R3, C3 can go and cell_n joins gnd; a bare cell (an unprotected 18650) needs them.",
   "A holder that takes a cell either way round (\"source\": \"reversible\", every battery_holder) feeds the charger's VBAT and the DW01A backwards: nothing here blocks it (PATH.reverse) – a keyed connector, or a holder with polarity marking and an accept with that reason.",
   "STAT (U1 pin 1) is in nc. It is low while charging, high – driven to VDD, 5 V – when the charge completes, high impedance without USB or cell: not straight onto a 3.3 V GPIO. An LED with a series resistor from vbus to STAT lights while charging (STAT sinks up to 25 mA); for an MCU a divider or a transistor. Take pin 1 out of nc and wire it.",
@@ -364,6 +364,6 @@
    ]
   },
   "sim": false,
-  "why": "The example has no USB input that suits a charger: VIN is the reversible J1 (PATH.reverse would rightly flag the charger in front of D1), and +5V lies behind D1 (SS34) – at usb-min with all LEDs on it is 4.44 V, below the MCP73831-2's 4.5 V operating minimum (VREG + 0.3 V, DS20001984H 3.1), LIM.range. Placed there by hand, every other check of edakit sim passes; the block's own composition with usb-c-sink, a cell and ldo-3v3 was simulated outside the example."
+  "why": "The example has no USB input that suits a charger: VIN is the reversible J1 (PATH.reverse would rightly flag the charger in front of D1), and +5V lies behind D1 (SS34) – at usb-min with all LEDs on it is 4.44 V, below the MCP73831-2's 4.5 V operating minimum (VREG + 0.3 V, DS20001984H 3.1), LIM.range. Placed there by hand, every other check of edakit sim passes; the block's own composition with usb-c-sink, a cell and ldo-3v3 was simulated outside the example. The charger, the DW01A and both channels of the FS8205A have behaviour models (charger, protection, the roles gate_2/source_2): tests/test_sim_models.py simulates this cell path – 1000 V / R1 into the cell, both MOSFETs on, the cell cut off below 2.50 V and its charge above 4.30 V. What stays: the example's rails, and a cell the block test cannot add."
  }
 }

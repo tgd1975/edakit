@@ -66,8 +66,15 @@
   }
  },
  "values": {
-  "behavior": "none",
-  "iq_a": 6e-06
+  "behavior": "protection",
+  "iq_a": 6e-06,
+  "v_ovp_v": 4.3,
+  "v_ovp_release_v": 4.1,
+  "v_uvp_v": 2.5,
+  "v_uvp_release_v": 2.9,
+  "v_ocp_v": 0.15,
+  "v_scp_v": 1.36,
+  "r_out_ohm": 20000
  },
  "limits": {
   "vdd_max_v": 10,
@@ -103,7 +110,8 @@
    "SOT-23-6 pinout p. 2 = EasyEDA symbol of C351410 (1 OD, 2 VM, 3 OC, 4 TD, 5 VCC, 6 GND)",
    "absolute maximum p. 3: VDD 10 V, OC and CS (VM) VDD − 24 … VDD + 0.3 V, OD VSS − 0.3 … VDD + 0.3 V, -40 … 85 °C",
    "electrical characteristics p. 4: ICC 3 / 6 µA, protection and release voltages, delays, output levels",
-   "typical application p. 3: R1 100 Ω, C1 0.1 µF, R2 1 kΩ, TD to GND"
+   "typical application p. 3: R1 100 Ω, C1 0.1 µF, R2 1 kΩ, TD to GND",
+   "2026-10-31: behaviour protection (schema-gaps E4) – Rev B p. 2 and 4: overcharge protection 4.30 V (v_ovp_v), release 4.10 V, overdischarge protection 2.50 V (v_uvp_v), release 2.90 V, overcurrent 150 mV at VM (v_ocp_v), short 1.36 V (v_scp_v); r_out_ohm 20 kΩ from OD output H VCC − 0.2 V typ at 10 µA (OC: VCC − 0.02 V, 2 kΩ – the model takes the larger); the timing diagrams p. 5–7: OD low at GND, OC low at VM"
   ],
   "open": [
    "the absolute maximum of VDD is printed '0.3 to 10' V – the minus sign of the lower bound is missing; the upper bound 10 V entered",

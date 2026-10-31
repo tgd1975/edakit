@@ -291,7 +291,7 @@
   "The outputs carry clamp internal – the body diodes take the winding current in fast decay (7.3.2): REQ.missing asks for no flyback diode, and a single diode across a winding driven both ways would short the bridge.",
   "edakit check warns LVL.undefined/open_drain on the motor nets (the outputs are tristate): Z in coast or sleep, where the motor is meant to run free – a bridge output, no logic line. HINT.motor_supply appears once a motor (kind motor) is in the graph.",
   "Unused inputs to ground (coast) – edakit wants two pins on every net (STRUCT.net), as the block's test does with AIN2, BIN1 and BIN2. The two bridges may be paralleled for one motor of up to 3 A RMS (datasheet 8.2, figure 7): AIN1 with BIN1, AIN2 with BIN2, AOUT1 with BOUT1, AOUT2 with BOUT2.",
-  "sim.json: the driving nets under the MCU's outputs. The DRV8833 has no behaviour model (behavior none) – edakit sim checks the nets, the pull resistors and the capacitors' voltages, not the motor current: the stall current V / R_winding against the overcurrent trip, the 3 A of the connectors and the bulk capacitor's ripple rating (93 mA rms at 120 Hz; the ceramic C1 is meant to carry the PWM ripple) are the review's."
+  "sim.json: the driving nets under the MCU's outputs, a motor at J1 as an `external` load of its running current. The DRV8833's behaviour model (bridge) drives the outputs by the truth table, each side through its on resistance (0.325 Ω high, 0.275 Ω low, max at 5 V and 85 °C): edakit sim checks each output's current against 1.5 A and the junction temperature, not the stall current V / R_winding against the overcurrent trip, nor the bulk capacitor's ripple rating (93 mA rms at 120 Hz; the ceramic C1 is meant to carry the PWM ripple) – a motor is a constant current in the operating point, its stall and PWM are the review's."
  ],
  "test": {
   "connect": {
@@ -322,13 +322,20 @@
    },
    "loads": {
     "t_run": {
-     "about": "the driver awake (nSLEEP high), bridge A forward",
+     "about": "the driver awake (nSLEEP high), bridge A forward into a motor at J2 drawing 0.2 A (1 → 2) – within the example's 0.5 A USB source",
      "gpio": {
       "LED_OE": 1,
       "SIG": 1,
       "SIG2": 1
      },
-     "leds_on": []
+     "leds_on": [],
+     "external": {
+      "J2": {
+       "plus": "1",
+       "minus": "2",
+       "i_a": 0.2
+      }
+     }
     }
    }
   }

@@ -26,12 +26,14 @@
   "3": {
    "name": "S2",
    "type": "passive",
-   "hint": "source of MOSFET 2 – no role: kind nmos knows one channel, MOSFET 2 is neither simulated nor held to its limits"
+   "hint": "source of MOSFET 2 – no role: kind nmos knows one channel, MOSFET 2 is neither simulated nor held to its limits",
+   "role": "source_2"
   },
   "4": {
    "name": "G2",
    "type": "passive",
-   "hint": "gate of MOSFET 2 – no role (see S2)"
+   "hint": "gate of MOSFET 2 – no role (see S2)",
+   "role": "gate_2"
   },
   "5": {
    "name": "D1/D2",
@@ -96,7 +98,8 @@
    "package drawing p. 1: pin-1 dot at S1; S1, D1/D2, S2 on one side, G1, D1/D2, G2 opposite – matches the EasyEDA symbol of C2830320 with counter-clockwise numbering",
    "absolute maximum p. 1: VDS 20 V, VGS ±10 V, ID 6 / 4.8 A (TC 25 / 70 °C), PD 1.5 W, TJ -55 … 150 °C; RθJA typ 83 °C/W",
    "electrical characteristics p. 2: VGS(th) 0.5 / 0.7 / 1.2 V; RDS(on) max 25 mΩ at 4.5 V and 31.5 mΩ at 2.5 V (3 A); VSD ≤ 1.2 V at 6 A",
-   "circuit diagram p. 1: two N-MOSFETs with body diodes, drains joined"
+   "circuit diagram p. 1: two N-MOSFETs with body diodes, drains joined",
+   "2026-10-31: the second channel (schema-gaps E4): S2 (pin 3) and G2 (pin 4) with the roles source_2 and gate_2 on the shared drain – the simulation now builds both MOSFETs with the same model"
   ],
   "open": [
    "pin numbers are not printed in the data sheet – taken from the EasyEDA symbol, consistent with the pin-1 dot of the drawing",
