@@ -119,6 +119,7 @@ more = true                            # OSP, hard gold, silver, tin, ENEPIG …
 section = "PCB"
 label = "Finished copper"
 words = { 1 = "1 oz Cu", 2 = "2 oz Cu" }
+more = true                            # bare board, 3 … 13 oz
 
 [fields.vias]
 section = "PCB"

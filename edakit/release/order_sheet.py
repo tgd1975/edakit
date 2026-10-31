@@ -20,10 +20,12 @@ and check FILES.order (order settings = board, per maker). Both when the board h
        every field's value is one the maker's form offers (its profile's fields), no combination its profile excludes;
        the remark fits the form (JLCPCB: at most 200 characters, ASCII); thickness_mm is a thickness of the form; the
        silkscreen colour is the one the maker prints on the mask colour; mark = "specify" needs the maker's placeholder
-       (JLCPCB: JLCJLCJLCJLC, PCBWay: WayWayWay) on a silkscreen layer of pcb.json, at least its least height in
-       [[silk.texts]] (height not in [[silk.texts]]: warn); the placeholder with another mark warns, and so do the
-       placeholder and mark = "specify" while the profile reports the order number gone (JLCPCB); another maker's
-       placeholder on the silkscreen is a finding – this maker prints the letters as they are; an assembly class with fewer tooling holes than the profile's
+       (PCBWay: WayWayWay) on a silkscreen layer of pcb.json, at least its least height in [[silk.texts]] (height not
+       in [[silk.texts]]: warn); the placeholder with another mark warns, and so do the placeholder and mark =
+       "specify" while the profile reports the order number gone; another maker's placeholder on the silkscreen is a
+       finding – this maker prints the letters as they are; a former placeholder (JLCPCB's JLCJLCJLCJLC, its order
+       number gone since May 2026, seen on the form by ordering step 0) warns at every maker; an assembly class with
+       fewer tooling holes than the profile's
        tooling_min warns (JLCPCB: Economic, 2 – it adds its own); a provisional profile is named as information.
        Independent of the maker: layers and size_mm, where set, are those of the Gerber files; panel_by_customer fails
        – the run's Gerber is one board; pcba_quantity is at most quantity, and another number than [project] quantity
@@ -250,6 +252,9 @@ def form(cfg, design, board, d, maker, o=None, bom=None, found=None):
     for key in dict.fromkeys(keys):
         if not maker.has(key) or (key in PCBA_KEYS and not bom) or (key == "inner_copper_oz" and (layers or 2) <= 2):
             continue
+        when = (maker.field(key) or {}).get("when") or {}    # a field of a dialog behind another option
+        if any(o.get(k) not in (v if isinstance(v, list) else [v]) for k, v in when.items()):
+            continue
         raw, source, note = values.get(key) or (o.get(key), src(key), "")
         if key == "mark" and o["mark"] == "specify" and found and rules.get("placeholder"):
             note = f"{rules['placeholder']} at {pt(found[0][1])} on the {found[0][0]} silkscreen"
@@ -351,6 +356,14 @@ def check_mark(c, o, data):
                                                     f"{m.name} has no order-number placeholder"), False,
               f"{text} at {pt(found[0][1])} on the {found[0][0]} silkscreen – {m.name} prints it as it is; a "
               f"release that carries it is a release for {owner}", "no placeholder of another maker")
+    # a maker's placeholder from before its order number went: no maker replaces it any more, not even that one
+    for text, owner in makers.placeholders(c.cfg, "former_placeholder").items():
+        if text == holder or not (found := foreign(board, data, text)):
+            continue
+        c.add(f"no {text} on the silkscreen – {owner} no longer prints its order number there", False,
+              f"{text} at {pt(found[0][1])} on the {found[0][0]} silkscreen – {m.name} prints it as it is; take it "
+              f'off (mark = "remove", or a barcode = "qr" or "datamatrix" for traceability)', "no former placeholder",
+              "warn")
     if not holder:
         return
     gone = m.rules.get("placeholder_gone")    # the maker reports its order number gone: the letters may be printed

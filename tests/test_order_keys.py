@@ -123,8 +123,6 @@ def test_order_json_says_remove_on_a_board_people_look_at(project):
     d = project.root / "build" / "fab" / "main"
     assert json.loads((d / "order.json").read_text())["mark"] == "remove"
     assert "| Mark on PCB | Remove Mark | [looks] |" in sheet(project)
-    assert ("pass", "order-number mark = placeholder JLCJLCJLCJLC on the silkscreen", 'mark = "remove": Remove Mark') \
-        in f6(rows)
     assert fh.exported(project, looked_at)[1] != plain
 
 
@@ -163,15 +161,12 @@ def test_every_key_that_changes_the_board_is_known():
 
 def test_the_project_order_gives_every_board_an_order_json(project):
     def project_wide(ex, p):
-        fr.ordered(ex, p)                   # the placeholder, and [order] in the board file – which goes again
-        f = p.root / "hardware" / "boards" / "main.toml"
-        head, _, rest = f.read_text().partition("\n[order]\n")
-        f.write_text(head + rest[rest.index("\n[[silk.texts]]"):])
-        toml(p, '[order]\nmark = "specify"\nmask = "black"')
+        fr.unordered(ex, p)                 # no [order] in the board file: edakit.toml's holds for every board
+        toml(p, '[order]\nmark = "remove"\nmask = "black"')
     rows = run(project, project_wide)
-    assert fr.findings(rows) == [("FILES.order", "warn")]       # the placeholder: JLCPCB's order number reported gone
+    assert fr.findings(rows) == []
     settings = json.loads((project.root / "build" / "fab" / "main" / "order.json").read_text())
-    assert (settings["mask"], settings["mark"]) == ("black", "specify")
+    assert (settings["mask"], settings["mark"]) == ("black", "remove")
     assert "| PCB Color | Black | edakit.toml |" in sheet(project)
 
 
@@ -197,7 +192,7 @@ def test_cart_without_order_writes_the_form_but_no_order_json(project):
     d = project.root / "build" / "fab" / "main"
     assert not (d / "order.json").exists() and (d / "order.md").exists()
     assert "| Ship to | DE | [cart] ship_to |\n| Shipping Method | DHL Express | [cart] shipping |" in sheet(project)
-    assert ("info", "order form of this run", "order.md: JLCPCB, Economic PCBA, mark Order Number (JLCPCB places it), "
+    assert ("info", "order form of this run", "order.md: JLCPCB, Economic PCBA, mark Remove Mark, "
             "tooling Added by Customer") in f6(rows)
 
 
@@ -262,7 +257,10 @@ def test_the_shipped_profiles_are_valid():
     assert jlc.silkscreen_on("white") == "black" and jlc.silkscreen_on("blue") == "white"
     assert jlc.word("mask", "green") == "Green" and jlc.word("gold_fingers", False) == "No"
     assert jlc.word("thickness_mm", 1.6) == "1.6 mm" and jlc.word("size_mm", [30, 20]) == "30.00 x 20.00 mm"
-    assert jlc.offers("finish", "ENIG") and jlc.offers("finish", "OSP") is False
+    assert jlc.offers("finish", "ENIG") and jlc.offers("finish", "OSP") is None       # OSP is offered, not edakit's
+    assert jlc.word("mark", "default") == jlc.word("mark", "remove") == "Remove Mark"  # no order number since May 2026
+    assert jlc.offers("mark", "specify") is False and "placeholder" not in jlc.rules
+    assert jlc.rules["former_placeholder"] == "JLCJLCJLCJLC" and jlc.recorded == "2026-10-31"
     euro = makers.load("eurocircuits")                                         # recorded by ordering step 0
     assert euro.offers("finish", "LeadFree HASL") and euro.offers("finish", "ENIG") is None   # more = true: not read
     assert euro.offers("thickness_mm", 1.55) and euro.offers("thickness_mm", 1.6) is None
@@ -324,29 +322,25 @@ def test_a_second_maker_warns_where_the_first_fails(project):
             "1.57 mm (thickness_mm) – not a thickness of JLCPCB's form") in f6(rows)
 
 
-def test_the_placeholder_is_jlcpcbs(project):
-    """JLCJLCJLCJLC on the silkscreen is JLCPCB's placeholder: a maker without one prints the letters – a finding for
-    that maker, a warning while it is the second one."""
-    def both(planned):
-        def fault(ex, p):
-            fr.ordered(ex, p)
-            toml(p, f'[cart]\nmaker = "{planned}"\nmakers = ["jlcpcb", "eurocircuits"]')
-        return fault
-    rows = run(project, both("jlcpcb"))
-    text = ("no JLCJLCJLCJLC on the silkscreen – Eurocircuits has no order-number placeholder", "JLCJLCJLCJLC at "
-            "(18.0, 3.0) on the top silkscreen – Eurocircuits prints it as it is; a release that carries it is a "
-            "release for JLCPCB")
-    assert ("warn", *text) in f6(rows)
-    # and JLCPCB's own, reported gone, and mark = "specify", which Eurocircuits does not offer
-    assert fr.findings(rows) == [("FILES.order", "warn")] * 3
-    rows = run(project, both("eurocircuits"))
-    assert ("fail", *text) in f6(rows)
+def test_the_former_placeholder_is_text_everywhere(project):
+    """JLCJLCJLCJLC on the silkscreen was JLCPCB's placeholder until its order number went (ordering step 0,
+    2026-10-31): every maker prints the letters now, JLCPCB too – a warning at each."""
+    def both(ex, p):
+        fr.ordered(ex, p, placeholder=True)
+        toml(p, '[cart]\nmaker = "jlcpcb"\nmakers = ["jlcpcb", "eurocircuits"]')
+    rows = run(project, both)
+    got = [(r, c, a) for r, c, a in f6(rows) if "JLCJLCJLCJLC" in c]
+    assert got == [("warn", "no JLCJLCJLCJLC on the silkscreen – JLCPCB no longer prints its order number there",
+                    f"JLCJLCJLCJLC at (18.0, 3.0) on the top silkscreen – {m} prints it as it is; take it off "
+                    '(mark = "remove", or a barcode = "qr" or "datamatrix" for traceability)')
+                   for m in ("JLCPCB", "Eurocircuits")]
+    assert fr.findings(rows) == [("FILES.order", "warn")] * 2
 
 
 def test_a_value_the_form_does_not_offer(project):
-    rows = run(project, lambda ex, p: fr.ordered(ex, p, {"finish": "OSP"}))
-    assert ("fail", "Surface Finish: a value JLCPCB's form offers", "finish = 'OSP' (board file) – JLCPCB offers "
-            "'HASL(with lead)', 'LeadFree HASL', 'ENIG'") in f6(rows)
+    rows = run(project, lambda ex, p: fr.ordered(ex, p, {"copper_oz": 3}))
+    assert ("fail", "Outer Copper Weight: a value JLCPCB's form offers", "copper_oz = 3 (board file) – JLCPCB offers "
+            "1, 2, 2.5, 3.5, 4.5") in f6(rows)
 
 
 def test_a_provisional_profile_is_named(project):
@@ -379,7 +373,7 @@ def test_keys_only_to_check_and_the_quantities(project, order, expected):
 
 def test_layers_and_size_that_agree_pass(project):
     rows = run(project, lambda ex, p: fr.ordered(ex, p, {"layers": 2, "size_mm": [30.05, 20]}))
-    assert fr.findings(rows) == [("FILES.order", "warn")]       # the placeholder: JLCPCB's order number reported gone
+    assert fr.findings(rows) == []
 
 
 # --- edakit cart fields ----------------------------------------------------------------------------------------------
@@ -392,7 +386,7 @@ def test_cart_fields_prints_the_form(project, monkeypatch, capsys):
     f.write_text(f.read_text() + '\n[order]\nmask = "black"\n')
     assert cli.main(["cart", "fields"]) == 0
     out = capsys.readouterr().out
-    assert "board main at JLCPCB (the planned maker; profile provisional)" in out
+    assert "board main at JLCPCB (the planned maker; profile recorded 2026-10-31)" in out
     assert "  PCB Color                 Black                       board file   mask = 'black'\n" in out
     assert "  Layers                    –                           no gate run yet" in out
     assert cli.main(["cart", "fields", "--maker", "aisler"]) == 1
@@ -535,11 +529,11 @@ def test_pcbway_has_a_placeholder_of_its_own(project):
     assert (m.matches_by, m.rules["placeholder"], m.seat, m.data["cart"]) == ("mpn", "WayWayWay", "CN", "Save to Cart")
 
     def at_pcbway(ex, p):
-        fr.ordered(ex, p)                                   # mark = "specify", JLCJLCJLCJLC on the top silkscreen
+        fr.ordered(ex, p, {"mark": "specify"}, placeholder=True)   # JLCJLCJLCJLC on the top silkscreen
         toml(p, '[cart]\nmaker = "pcbway"')
     rows = run(project, at_pcbway)
     got = {(r, c) for r, c, _ in f6(rows)}
-    assert ("fail", "no JLCJLCJLCJLC on the silkscreen – PCBWay's placeholder is WayWayWay") in got  # printed as text
+    assert ("warn", "no JLCJLCJLCJLC on the silkscreen – JLCPCB no longer prints its order number there") in got
     assert ("fail", "order-number mark = placeholder WayWayWay on the silkscreen") in got
     assert (project.root / "build" / "fab" / "main" / "bom_main_mpn.csv").exists()
 
@@ -549,23 +543,24 @@ def test_pcbways_placeholder_is_text_to_jlcpcb(project):
         fr.ordered(ex, p, {"mark": "default"}, placeholder=False)
         ex.pcb["strings"].append({"Text": "WayWayWay", "X": 18 * fr.MIL, "Y": 3 * fr.MIL, "Layer": 3})
     rows = run(project, wayway)
-    assert ("fail", "no WayWayWay on the silkscreen – JLCPCB's placeholder is JLCJLCJLCJLC",
+    assert ("fail", "no WayWayWay on the silkscreen – JLCPCB has no order-number placeholder",
             "WayWayWay at (18.0, 3.0) on the top silkscreen – JLCPCB prints it as it is; a release that carries it is "
             "a release for PCBWay") in f6(rows)
 
 
-def test_jlcpcbs_placeholder_warns_and_the_barcode_is_a_key(project):
-    """The owner's decision of 2026-10-30: JLCPCB reports its order number gone since May 2026 – FILES.order warns about the
-    placeholder, as long as the profile says so (rules.placeholder_gone); without the placeholder, mark = "remove" and
-    a QR code nothing warns. The barcode and the serial number change the board: order.json has them where set."""
-    rows = run(project, lambda ex, p: fr.ordered(ex, p))
-    warn = [a for r, c, a in f6(rows) if r == "warn"]
-    assert len(warn) == 1 and warn[0].startswith("JLCJLCJLCJLC at (18.0, 3.0) on the top silkscreen – JLCPCB's help "
-                                                 "article (last updated 2026-05-22) reports the order number gone")
-    rows = run(project, lambda ex, p: fr.ordered(ex, p, {"mark": "remove", "barcode": "qr", "serial_number": True},
-                                                  placeholder=False))
+def test_jlcpcbs_mark_and_barcode(project):
+    """Ordering step 0 (2026-10-31): JLCPCB's "Mark on PCB" offers "Remove Mark" and "2D barcode (Serial Number)"
+    only – mark = "specify" is refused; a barcode shows its dialog's "Printing", and a serial number without a barcode
+    ("Number Only") is a combination edakit's keys do not name. The barcode and the serial number change the board:
+    order.json has them where set."""
+    rows = run(project, lambda ex, p: fr.ordered(ex, p, {"mark": "specify"}))
+    assert ("fail", "Mark on PCB: a value JLCPCB's form offers") in {(r, c) for r, c, _ in f6(rows)}
+    rows = run(project, lambda ex, p: fr.ordered(ex, p, {"barcode": "qr", "serial_number": True}))
     assert fr.findings(rows) == []
     settings = json.loads((project.root / "build" / "fab" / "main" / "order.json").read_text())
     assert (settings["barcode"], settings["serial_number"]) == ("qr", True)
-    assert "| 2D Barcode | QR Code | board file |\n| Serial Number | Yes | board file |" in sheet(project)
-
+    text = sheet(project)
+    assert "| Mark on PCB | 2D barcode (Serial Number) | board file |" in text and "Remove Mark" not in text
+    assert "| Printing | 2D barcode & Number | board file |" in text
+    rows = run(project, lambda ex, p: fr.ordered(ex, p, {"serial_number": True}))
+    assert ("fail", "no combination JLCPCB's form refuses") in {(r, c) for r, c, _ in f6(rows)}

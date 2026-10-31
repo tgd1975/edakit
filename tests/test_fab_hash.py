@@ -156,8 +156,7 @@ def exported(project, fault=None):
 
 
 def ordered(**order):
-    """[order] in the board file as test_fab_run orders it (mark = "specify", the placeholder, a remark), changed by
-    order."""
+    """[order] in the board file as test_fab_run orders it (mark = "remove", a remark), changed by order."""
     return lambda ex, p: fr.ordered(ex, p, order)
 
 
@@ -183,15 +182,15 @@ def test_a_stale_order_file_leaves_with_the_order(project):
 
 
 @pytest.mark.parametrize("fault", [ordered(mask="black"), ordered(mask="white"), ordered(finish="ENIG"),
-                                   ordered(mark="remove"), fr.thickness(1.0)],
-                         ids=["mask black", "mask white", "finish ENIG", "mark remove", "1.0 mm"])
+                                   ordered(mark="default"), fr.thickness(1.0)],
+                         ids=["mask black", "mask white", "finish ENIG", "mark default", "1.0 mm"])
 def test_an_order_setting_that_changes_the_board_changes_the_fab_hash(project, fault):
     """Thickness as ordered, the colours of mask and silkscreen, finish and mark change what JLCPCB makes: they are
     in the fab hash – with every Gerber layer, drill hit and BOM and CPL row the same."""
     d, green = exported(project, ordered())
     settings = json.loads((d / "order.json").read_text())
     assert settings == {"thickness_mm": 1.6, "mask": "green", "silkscreen": "white", "finish": "LeadFree HASL",
-                        "mark": "specify"}
+                        "mark": "remove"}
     files = {k: v for k, v in layers(d).items() if k != "order.json"}
     d, other = exported(project, fault)
     assert other != green and {k: v for k, v in layers(d).items() if k != "order.json"} == files
