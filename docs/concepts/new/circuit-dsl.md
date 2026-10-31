@@ -5,13 +5,13 @@ Status 2026-10-31: concept, asked for by the owner after the review of
 whether a fitting language exists already, what a language of edakit's own would have to be able to do to be worth
 building, on which basis – SysML v2, KerML, an existing circuit language, or something else –, and when it would
 bring value. Nothing is decided; the decisions at the end are open, the recommended answer first. The sources say
-what was read and from where. Reviewed the same day against main at `bd227e3` and corrected: the examples in today's form of
-the graph (`accept`, `locks`), the numbers of the bell and led-bar re-measured, what exists already named as existing,
-and the questions the review found open – where assertions run, what `block add --set` writes, the names of internal
-nets, four projects and one hook – put where they belong: the requirements, the bell's model, the toolchain, the open
-decisions. Against the yardstick: a language changes nothing about what is text – its source and its resolved graph
-are text in the repository –; what it changes is where repetition, parameters and variants are written once instead
-of many times.
+what was read and from where. Reviewed the same day against main at `bd227e3` and corrected: the examples in
+today's form of the graph (`accept`, `locks`), the numbers of the bell and led-bar re-measured, what exists already
+named as existing, and the questions the review found open – where assertions run, what `block add --set` writes,
+the names of internal nets, four projects and one hook – put where they belong: the requirements, the bell's model,
+the toolchain, the open decisions. Against the yardstick: a language changes nothing about what is text – its source
+and its resolved graph are text in the repository –; what it changes is where repetition, parameters and variants
+are written once instead of many times.
 
 ## The short answer
 
