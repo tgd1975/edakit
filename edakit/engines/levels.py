@@ -67,7 +67,7 @@ def held_nets(d):
 def undefined_inputs(d):
     """LVL.undefined: an input with neither a driver nor a pull – a resistor or a pin's own pull (pull up or down in
     its parts entry) –, or driven only by pins that float at reset."""
-    held = held_nets(d)
+    held = held_nets(d) | supply_nets(d) | {d.ground}      # an input tied to a rail is defined by it
     out = []
     for name, net in d.nets.items():
         infos = [d.pin_info(r) for r in net["pins"]]
@@ -181,22 +181,39 @@ def open_inputs(d):
     return out
 
 
+ENABLE_LOW = {"oe_n", "en_n", "re_n"}    # an enable pin active low: tied to ground, its outputs drive
+ENABLE_HIGH = {"oe", "en", "de"}         # active high: tied to a supply
+
+
+def enabled(d, ref):
+    """A tri-state output whose part ties every enable pin to its active level (OE# to ground, OE or DE to a
+    supply): it drives its net while the firmware is not running. A part without enable pins: False."""
+    des = ref.split(".", 1)[0]
+    pins = (d.part(des) or {}).get("pins") or {}
+    enables = [(p.get("role"), d.pin_net.get(f"{des}.{n}")) for n, p in pins.items()
+               if p.get("role") in ENABLE_LOW | ENABLE_HIGH]
+    supplies = supply_nets(d)
+    return bool(enables) and all((net == d.ground) if role in ENABLE_LOW else (net in supplies)
+                                 for role, net in enables)
+
+
 def released_nets(d):
     """LVL.undefined/open_drain: a net whose only drivers are open-drain or tri-state outputs and that nothing pulls up
     – released, it floats. An I2C line is REQ.missing's (needs.toml [i2c])."""
     from ..circuit import i2c_name
     from .requires import i2c_line
-    rails = {name for name, net in d.nets.items() if any(pin_defines(d.pin_info(r)) for r in net["pins"])}
-    held = rails | supply_nets(d) | {d.ground}
+    held = held_nets(d)                  # a resistor path to a defined net – through a divider or a series chain too
     out = []
     for name, net in d.nets.items():
         infos = [d.pin_info(r) for r in net["pins"]]
         open_ = [r for r, i in zip(net["pins"], infos) if releases(i)]
         if not open_ or any(pin_defines(i) for i in infos) or any(i.get("pull") == "up" for i in infos):
             continue
+        if all(enabled(d, r) for r in open_):
+            continue                     # tri-state outputs whose enable is tied active drive their net at reset
         if net.get("bus") == "i2c" or any(map(i2c_name, net.get("joined") or [name])) or any(map(i2c_line, infos)):
             continue
-        if resistors_to(d, name, held - {name}):
+        if name in held:
             continue
         roles = {i.get("role") for i in infos}
         fix = ("a pull-down to ground – the B line of an RS-485 bias pair (REQ.value/failsafe)" if roles & {"rs485_b"}
