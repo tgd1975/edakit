@@ -906,6 +906,16 @@ sources = [
   "edakit handbook 8.1 (L-9, L-13)",
 ]
 
+[codes."GEO.keepout"]
+title = "keep-out areas free of copper"
+rule = "Where a part's entry gives an antenna keep-out (antenna.keepout_mm, in the footprint's frame), the board has no copper inside it on either layer – tracks, pours, pads and vias of any net – placed where the part sits; for a module plugged over a carrier the carrier's copper counts. A warning while new."
+why = "Copper under or next to a module's printed antenna detunes it and shields it: range drops, and a design that passed every electrical check needs a new board. The area is the module maker's, so it belongs into the parts entry; the board's copper is in the Gerber files (maker-coverage CK-11; the bell's ESP32 variant had the carrier's copper under the module's antenna)."
+fix = "Move the copper out of the area – pours with a keep-out region, tracks around it –, or the part so that its antenna lies over the board edge; take the area from the module's datasheet into antenna.keepout_mm."
+severity = "warning"
+sources = [
+  "docs/concepts/new/maker-coverage.md, CK-11 (appendix MCU 6; the owner's bell, ESP32 variant)",
+]
+
 [codes."GEO.hole"]
 title = "hole fits the lead"
 rule = "Every plated hole takes its lead at nominal size (lead in the entry) – on the footprint geometry before the layout, on the drill file in the gate; less than 0.05 mm play in the worst case, or a plated slot narrower than 0.5 mm, is a margin."

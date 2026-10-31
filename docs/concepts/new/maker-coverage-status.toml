@@ -40,7 +40,7 @@ CK-7 = { status = "built", where = "polarized capacitors: LIM.v/polarized (G and
 CK-8 = { status = "built", where = "roles out_p, out_n; REQ.forbidden/btl (domains audio, guitar)", step = 6 }
 CK-9 = { status = "open", missing = "spacing of hazardous voltage – open decision 3, the IEC 60664-1 tables not read here" }
 CK-10 = { status = "open", missing = "isolation and mains input – open decision 3" }
-CK-11 = { status = "open", missing = "antenna keep-out on the board geometry (GEO)" }
+CK-11 = { status = "partial", where = "entry antenna.keepout_mm; GEO.keepout on the Gerber copper (fab.check_keepout); the coverage report names radios without it", missing = "the antenna at or over the board edge (the module maker's distance) – datasheets", step = 6 }
 CK-12 = { status = "built", where = "roles dp_a, dp_b, dn_a, dn_b; REQ.missing/usb_data (domain usb)", step = 6 }
 CK-13 = { status = "built", where = "pin needs; REQ.missing/pin, REQ.value/pin, REQ.forbidden/pin", step = 6 }
 CK-14 = { status = "partial", where = "a regulator's capacitors as pin needs", missing = "DC bias and the ESR window", step = 6 }

@@ -99,6 +99,11 @@ def problems(entry):
         return ["the form of before (ratings, params, vmax …) – edakit convert converts it"]
     for section in ("limits", "values"):
         out += field_problems(kind, section, entry.get(section), section)
+    if "antenna" in entry:
+        box = (entry["antenna"] or {}).get("keepout_mm") if isinstance(entry["antenna"], dict) else None
+        if not (isinstance(box, list) and len(box) == 4 and all(is_number(x) for x in box)
+                and box[0] < box[2] and box[1] < box[3]):
+            out.append("antenna.keepout_mm: [x0, y0, x1, y1] in mm with x0 < x1 and y0 < y1 (the footprint's frame)")
     roles = (k["kinds"][kind]).get("roles", [])
     pin_names = allowed(kind, "pin") | set(k["free"]["pin"])
     for num, pin in (entry.get("pins") or {}).items():
