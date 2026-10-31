@@ -184,8 +184,36 @@ section = "PCBA"
 label = "Conformal coating"
 words = { false = "No", true = "Yes" }
 
+[fields.castellated]
+section = "PCB"
+label = "Half-cut/Castellated holes"   # a checkbox under Customized Services and Advanced Options
+words = { false = "No", true = "Yes" }
+
+[fields.edge_plating]
+section = "PCB"
+label = "Edge plating"                 # a checkbox under Customized Services and Advanced Options
+words = { false = "No", true = "Yes" }
+
+[fields.paper_between]
+section = "PCB"
+label = "Paper between PCBs"           # a checkbox under Customized Services and Advanced Options
+words = { false = "No", true = "Yes" }
+
+[fields.ship_to]                       # the country of the shipping estimate; the address is the owner's at checkout
+section = "Shipping"
+label = "Ship to"
+checkout = true
+
+[fields.shipping]
+section = "Shipping"
+label = "Shipping"
+checkout = true
+
 # No such field on PCBWay's form: the keys are left out of its job.
 [fields]
+outline_tolerance = false
+barcode = false
+electrical_test = false
 confirm_placement = false
 photo_confirmation = false
 bake = false

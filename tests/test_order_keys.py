@@ -351,7 +351,7 @@ def test_a_provisional_profile_is_named(project):
         toml(p, '[cart]\nmakers = ["jlcpcb", "eurocircuits"]\nprofiles = { eurocircuits = "eurocircuits.toml" }')
     rows = run(project, euro)
     infos = [a for r, c, a in f6(rows) if r == "info" and c == "Eurocircuits's profile"]
-    assert infos and "values not known for" in infos[0]
+    assert infos and infos[0].startswith("provisional (recorded = false)")
 
 
 @pytest.mark.parametrize("order, expected", [

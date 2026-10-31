@@ -200,14 +200,17 @@ def sides_of(cfg):
     return None if not sides else "both" if len(sides) > 1 else sides[0]
 
 
-def item(maker, key, raw, source, note="", read=False):
+def item(maker, key, raw, source, note="", read=False, checkout=False):
     """One field of a maker's form: its key, section, label, the maker's word for raw, edakit's value, where it comes
-    from, a note; read: edakit has no value – the skill reads what the page shows and sets nothing."""
+    from, a note; read: edakit has no value – the skill reads what the page shows and sets nothing; checkout: the form
+    asks it at checkout, which the skill never opens – the owner's there, not read back before the cart."""
     default = "PCBA" if key in PCBA_KEYS else "Shipping" if key in SHIP_KEYS else "PCB"
     out = {"key": key, "section": maker.section(key, default), "label": maker.label(key),
            "value": maker.word(key, raw) if raw is not None else "–", "raw": raw, "from": source, "note": note}
-    if read or raw is None:
+    if read or raw is None or checkout:
         out["read"] = True
+    if checkout:
+        out["checkout"] = True
     return out
 
 
@@ -264,7 +267,7 @@ def form(cfg, design, board, d, maker, o=None, bom=None, found=None):
             p = o["panel"]
             note = f"panel {p['x']} x {p['y']}, rails {p['rails_mm']:g} mm"
         at_checkout = bool((maker.field(key) or {}).get("checkout"))    # asked at checkout: not read back before the cart
-        out.append(item(maker, key, raw, source, note, read=(key == "bake" and raw is None) or at_checkout))
+        out.append(item(maker, key, raw, source, note, read=key == "bake" and raw is None, checkout=at_checkout))
     return out
 
 

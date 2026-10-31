@@ -148,3 +148,42 @@ words = { none = "No" }
 section = "PCB"
 label = "Specific marking"
 words = { false = "No" }
+
+# No such field on Eurocircuits' configurator (as read on 2026-10-31): the keys are left out of its job. The assembly
+# class, the sides and the tooling follow from the data Eurocircuits analyses; the tg and the copper are its standard
+# (in ignore above); shipping is chosen at checkout.
+[fields]
+tg = false
+copper_oz = false
+inner_copper_oz = false
+vias = false
+outline_tolerance = false
+gold_fingers = false
+castellated = false
+edge_plating = false
+quality = false
+confirm_production_file = false
+paper_between = false
+packaging = false
+remark = false
+pcba = false
+sides = false
+pcba_quantity = false
+tooling = false
+confirm_placement = false
+photo_confirmation = false
+bake = false
+depanel = false
+conformal_coating = false
+function_test = false
+pcba_packaging = false
+
+[fields.ship_to]
+section = "Shipping"
+label = "Ship to"
+checkout = true
+
+[fields.shipping]
+section = "Shipping"
+label = "Shipping"
+checkout = true

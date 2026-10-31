@@ -267,8 +267,10 @@ def show_job(cfg, job, out):
         if f["section"] != section:
             section = f["section"]
             print(f"  {section}")
-        print(f"    {f['label']}: " + ("read, set nothing" + (f" ({f['note']})" if f.get("note") else "")
-                                       if f.get("read") else f["value"] + (f"  ({f['note']})" if f.get("note") else "")))
+        shown = f["value"] + (f"  ({f['note']})" if f.get("note") else "")
+        print(f"    {f['label']}: " + (f"{shown} – at checkout, the owner's" if f.get("checkout") else
+                                       "read, set nothing" + (f" ({f['note']})" if f.get("note") else "")
+                                       if f.get("read") else shown))
     print(f"  parts    {len(job['bom'])} lines by {job['match']}: "
           + "; ".join(f"{p['part']} {','.join(p['designators'])}" for p in job["bom"][:8])
           + (" …" if len(job["bom"]) > 8 else ""))
