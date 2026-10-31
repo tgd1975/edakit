@@ -1637,6 +1637,61 @@ sources = [
   "catalog/tables/usb.toml [attach]",
 ]
 
+[codes."HINT.power_path"]
+title = "a load on the charging cell"
+rule = "A charger (behaviour charger) whose battery pin feeds a load – an IC's supply pin, an LED, a motor – with nothing between that the input switches off: consider a power path. The graph shows one as a MOSFET whose gate the charger's input holds (AN1149's P-MOSFET), or as a diode onto a rail the input feeds as well; a charger with a system output of its own keeps the load off its battery pin. The cell's protection IC and a divider into an input are no load."
+why = "A linear charger ends its charge once the current into the cell falls below a fraction of the programmed current – TP4056 1/10, MCP73831-2AC 7.5 %. A load on the cell draws through the charger too: the charger measures cell and load together, and while the load takes more than the termination current the charge never ends and the cell is held at the float voltage; cell and load also share the programmed current (Microchip AN1149, p. 5). No run shows it – the simulation has no end of charge (HINT.charge_termination)."
+fix = "Feed the load from the input while it is there and from the cell only without it: a Schottky from the input to the system rail and a P-MOSFET from the cell to the rail whose gate the input holds, with a pull-down (AN1149 fig. 5–7, block lipo-charger), or a charger with a power-path output. Or a charger without automatic termination, or a load the firmware switches off while charging – accept the hint naming it."
+severity = "note"
+when = { match = "loaded_cell" }        # the cell's net reaches an IC supply pin, an LED … without a power path
+sources = [
+  "Microchip AN1149, Designing A Li-Ion Battery Charger and Load Sharing System With Microchip's Stand-Alone Li-Ion Battery Charge Management Controller, DS01149C (2008), p. 5 'Connecting the system load to the battery': (1) the charge may never end – termination is based on the ratio of charge current to the preset constant current, and a system drawing from the battery keeps the charge current from meeting it; (2) the total system current is limited by the charge current; (3) a switch that turns the system off before charging; note: chargers without automatic termination (MCP73811/2) for a load on the cell; fig. 5–7 p. 5–6: a P-channel MOSFET from the cell to the system load whose gate is high while VIN is present, RPULL 100 kΩ to ground, a Schottky D1 from the input to the load – https://ww1.microchip.com/downloads/en/AppNotes/01149c.pdf",
+  "NanJing Top Power ASIC Corp. TP4056 REV_2.4, p. 2: terminates the charge cycle when the charge current drops to 1/10 of the programmed value after reaching the float voltage; p. 9: once terminated, all loads on the BAT pin must be supplied by the battery – https://datasheet.lcsc.com/datasheet/pdf/d328ee101cbb1f3719611cd61db479c2.pdf?productCode=C16581",
+  "Microchip MCP73831/2 DS20001984H (June 2020), p. 4 and p. 26: charge termination at ITERM/IREG 7.5 % (5.6–9.4 %) for option AC – https://ww1.microchip.com/downloads/en/DeviceDoc/MCP73831-Family-Data-Sheet-DS20001984H.pdf",
+  "docs/concepts/new/maker-coverage.md, HT-5 and appendix PWR 2",
+]
+
+[codes."HINT.charge_termination"]
+title = "a charger's end of charge is not simulated"
+rule = "A linear charger (behaviour charger): consider the end of its charge cycle – the termination, the recharge and the status outputs that follow them; the simulation charges while the cell is below the float voltage and never terminates."
+why = "A charger ends the charge in its constant-voltage phase once the current has stayed below a fraction of the programmed current for a filter time – TP4056 1/10 (ITERM 120–140 mA at RPROG 1.1 kΩ, 0.8–4 ms), MCP73831-2AC 7.5 % (5.6–9.4 %, 0.4–3.2 ms) –, latches it off, and starts again once the cell has fallen below a recharge threshold (TP4056 100–200 mV below the float voltage, about 4.05 V; MCP73831-2AC 96.5 % of VREG). The TP4056 does not terminate while it trickle-charges or while its thermal regulation limits the current. An operating point has no history: the simulation's charger leaves the termination out (handbook 5.1), so no run shows the end of charge, the recharge, or what CHRG, STDBY and STAT do then (rules-at-scale.md, decision 17)."
+fix = "Read the end of the charge cycle in the charger's datasheet – the termination fraction, its filter time, the recharge threshold – and check what follows from it on the board: what the status outputs do at the end of charge and what reads them, whether anything on the cell keeps the current above the threshold (HINT.power_path), a full charge on the first board. Accept the hint with how it is handled."
+severity = "note"
+when = { match = "charger" }            # every part whose entry names the behaviour charger
+sources = [
+  "NanJing Top Power ASIC Corp. TP4056 REV_2.4, p. 2: terminates when the charge current drops to 1/10 of the programmed value after reaching the final float voltage; p. 5: ITERM 60/70/80 mA at RPROG 2.2 kΩ and 120/130/140 mA at 1.1 kΩ, tTERM 0.8/1.8/4 ms, ΔVRECHRG 100/150/200 mV, tRECHARGE 0.8/1.8/4 ms (min/typ/max); p. 9: termination when PROG stays below 100 mV for the filter time, the charge current latched off, C/10 termination disabled in trickle charging and thermal limiting, a new cycle below the 4.05 V recharge threshold – https://datasheet.lcsc.com/datasheet/pdf/d328ee101cbb1f3719611cd61db479c2.pdf?productCode=C16581",
+  "Microchip MCP73831/2 DS20001984H (June 2020), p. 4: ITERM/IREG 5.6/7.5/9.4 %, VRTH/VREG 94/96.5/99 %; p. 5: tTERM 0.4/1.3/3.2 ms; 4.7 and 4.8 p. 14: terminated in constant-voltage mode when the average charge current falls below the factory-set percentage, latched off (Charge Complete), a new cycle below the recharge threshold; p. 26: option AC – ITERM/IREG 7.5 %, VRTH/VREG 96.5 % – https://ww1.microchip.com/downloads/en/DeviceDoc/MCP73831-Family-Data-Sheet-DS20001984H.pdf",
+  "edakit handbook 5.1, behaviour charger (sim/netlist.py ic_charger): termination belongs to the charge cycle, not to an operating point",
+  "docs/concepts/new/rules-at-scale.md, decision 17 (2026-10-31): behaviour over time gets no state model; a hint names the risk where the part is used",
+]
+
+[codes."HINT.protection_timing"]
+title = "a cell protection's release and delays are not simulated"
+rule = "A cell protection IC (behaviour protection): consider its release voltages and its detection delays – the simulation switches the cell off and on at the detection thresholds, the moment the cell crosses them."
+why = "A protection IC cuts the cell off only after a delay, and lets it go again at other voltages or events. PUOLOP's DW01A opens the discharge MOSFET 55 ms typ., 200 ms max. after the cell falls below 2.40–2.60 V and releases it above 2.80–3.00 V; it opens the charge MOSFET 110/200 ms after 4.25–4.35 V and releases below 4.05–4.15 V; an overcurrent trips 7/20 ms after 130–170 mV across the MOSFETs, a short 400/600 µs after 0.82–1.75 V. Its timing diagrams show the discharge coming back when a charger is connected after an overdischarge and when the load is removed after an overcurrent, the charge when a load is connected after an overcharge. An operating point has no history: the simulation's protection is a cell coming from the normal range (handbook 5.1), and a transient run switches at a threshold without delay – a load step shorter than the delay cuts the cell off there and not on the board, and no run shows the board staying off until its release (rules-at-scale.md, decision 17)."
+fix = "Hold the board's load steps – a motor start, a radio burst, capacitors charging – against the overcurrent threshold and its delay, and the cell's voltage under load against the overdischarge threshold; decide how the board starts again after a cut-off. Accept the hint with how it is handled."
+severity = "note"
+when = { match = "cell_protection" }    # every part whose entry names the behaviour protection
+sources = [
+  "PUOLOP DW01A data sheet Rev B (2016-04-12), p. 4: VOC 4.25/4.30/4.35 V, VOCR 4.05/4.10/4.15 V, VOD 2.40/2.50/2.60 V, VODR 2.80/2.90/3.00 V, VEDI 130/150/170 mV, Vshort 0.82/1.36/1.75 V (min/typ/max); TOC 110/200 ms, TOD 55/200 ms, TEDI 7/20 ms, Tshort 400/600 µs (typ/max); p. 5–7 timing diagrams 1–3, read from the graphs: after an overcharge OC returns to VCC when a load is connected, after an overdischarge OD returns when a charger is connected, after an overcurrent or a short OD returns when the load is removed – https://datasheet.lcsc.com/datasheet/pdf/0d2b2b5e8d1207bf276387cb4ff3a495.pdf?productCode=C351410",
+  "edakit handbook 5.1, behaviour protection (sim/netlist.py ic_protection): no hysteresis, no delays – the state of a cell coming from the normal range",
+  "docs/concepts/new/rules-at-scale.md, decision 17 (2026-10-31): behaviour over time gets no state model; a hint names the risk where the part is used",
+]
+
+[codes."HINT.pd_negotiation"]
+title = "a USB PD sink's negotiation is not simulated"
+rule = "A USB PD sink (behaviour pd_sink): consider the board at 5 V before the negotiation and at the requested voltage after it, and what PG and the CC lines do – the simulation takes VBUS at the voltage a scenario's source gives."
+why = "At attach a Type-C source puts vSafe5V on VBUS and only then starts the USB PD communication, carried on the CC wire (USB Type-C R2.0, 4.5.2.2.9.1, 4.6.2.4): the voltage the sink's configuration requests (REQ.value/pd_request) follows once source and sink have agreed, and only from a source that offers it – the CH224 manual does not say what the CH224K does when the source does not. The CH224K signals power good on PG, active low and open drain, and talks to the source on CC1 and CC2 itself, in its reference schematic straight to the receptacle (manual V2.1, table 4-2, 6.2). The simulation's pd_sink is the VDD shunt alone (handbook 5.1): no negotiation, no PG, no CC (rules-at-scale.md, decision 17)."
+fix = "Run the parts on VBUS at both voltages – a scenario with the source at 5 V and one at the requested voltage –, switch on by PG (or in firmware) what needs the requested voltage, and say what the board does when a source does not offer it; the CC lines from the receptacle to the PD sink as its reference schematic draws them. Accept the hint with how it is handled."
+severity = "note"
+when = { match = "pd_sink" }            # every part whose entry names the behaviour pd_sink
+sources = [
+  "WCH CH224 手册1 (CH224 data sheet, manual 1), V2.1 (PDF of 2025-01-23), table 4-2 p. 3: CH224K CC1, CC2 'Type-C CC 信号线' (the Type-C CC lines), PG 'OD, 默认 Power Good 指示，低电平有效' (open drain, by default the Power Good indication, active low); 6.2 p. 9 CH224K reference schematic: CC1 and CC2 straight to the receptacle, PG left open; the manual gives no timing for PG and does not say what happens when the source does not offer the requested voltage – https://datasheet.lcsc.com/datasheet/pdf/4f12eebccb4eda2c0038806df0155265.pdf?productCode=C970725",
+  "USB Type-C Cable and Connector Specification Release 2.0 (August 2019), 4.5.2.2.9.1 p. 177: a source supplies VBUS within tVBUS ON of entering Attached.SRC and does not initiate USB PD communications until VBUS reaches vSafe5V; 4.6.2.4 p. 220: USB PD communication is Bi-phase Mark Coded on the CC wire, VBUS operationally stable before it starts – https://www.usb.org/sites/default/files/USB%20Type-C%20Spec%20R2.0%20-%20August%202019.pdf",
+  "edakit handbook 5.1, behaviour pd_sink (sim/netlist.py ic_pd_sink): the VDD shunt; the requested voltage is REQ.value/pd_request's, the charger the project's source",
+  "docs/concepts/new/rules-at-scale.md, decision 17 (2026-10-31): behaviour over time gets no state model; a hint names the risk where the part is used",
+]
+
 [codes."HINT.input_polarity"]
 title = "a power input without a polarity check"
 rule = "A supply connector the graph does not mark as reversible: consider whether it can be plugged the wrong way round. Not a battery holder – PATH.reverse checks every one as a source that may be reversed."

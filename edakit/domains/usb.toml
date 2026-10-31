@@ -11,7 +11,7 @@ on = ["REQ.missing:cc", "REQ.value:cc", "REQ.forbidden:cc", "PARTS.schema:cc", "
 [severity]
 
 [hints]
-apply = ["HINT.usb_budget", "HINT.usb_inrush"]
+apply = ["HINT.usb_budget", "HINT.usb_inrush", "HINT.pd_negotiation"]
 
 [review]
 electrical = [

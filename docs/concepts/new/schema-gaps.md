@@ -127,8 +127,8 @@ Built in seven worktrees (W1–W7) and merged; each item with a test that is red
 | D1, D2, D4, D5 | built | `needs.capacitor.to`, `needs.crystal` and kind `crystal`, `needs.capacitor.v_min_v`, a capacitor window on the parts layout.near places (W3) |
 | D3 | in part | `needs.tie`, `no_pull`, `no_series`, `float_ok = false` built; the BME280's CSB and SDO, which hold only in I2C mode, wait for an entry with `configs` (F1 exists now) |
 | E1 | in part | `logic` with `icc_a` on AT24C32D, INA219, DS18B20; the model holds every output low, so parts with outputs wait for a `logic` that lets released outputs go |
-| E2, E3, E4, E6 | built | behaviours `bridge`, `charger`, `protection`, `buck_boost`; roles `gate_2`/`source_2`/`drain_2` for a dual MOSFET (W4) – not modelled: a charger's termination, the DW01A's hysteresis and delays |
-| E5 | in part | behaviour `pd_sink` with REQ.value/pd_request (W5) – PG, the CC lines and the negotiation not modelled |
+| E2, E3, E4, E6 | built | behaviours `bridge`, `charger`, `protection`, `buck_boost`; roles `gate_2`/`source_2`/`drain_2` for a dual MOSFET (W4) – not modelled: a charger's termination, the DW01A's hysteresis and delays; by decision 17 no state model – HINT.charge_termination and HINT.protection_timing name them where the part is used, `edakit check --coverage` lists the part as not simulated, HINT.power_path a load on the charging cell (R1) |
+| E5 | built | behaviour `pd_sink` with REQ.value/pd_request (W5) – PG, the CC lines and the negotiation not modelled: no state model by decision 17, HINT.pd_negotiation names them where the part is used, `edakit check --coverage` lists the part as not simulated (R1) |
 | F1–F3 | built | entry `configs`, `config_default`, a component's `config`, needs with `when` (W6) |
 | I1, I7 | built | LIM.v against a part's own ground pin; LIM.v/polarized leaves signal coupling to stage E (W1) |
 | I2–I4 | built | sim.json source with `outputs`, relay roles per contact set, behaviours `photomos`, `pass_gate`, kind `esd_array` (W5) |

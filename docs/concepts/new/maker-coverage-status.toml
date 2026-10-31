@@ -7,7 +7,7 @@
 FT-1 = { status = "built", where = "transients: steps (sim/run.py, sim/netlist.py amps); LIM.range finds the brown-out", step = 6 }
 FT-2 = { status = "partial", where = "cables: length_m, awg | mm2, l_nh_per_m (circuit.wire_ohm, wire_h)", missing = "i_max_a from the gauge (no read ampacity table), c_pf_per_m, a board without a PCB instead of bought", step = 6 }
 FT-3 = { status = "built", where = "behaviour opamp (sim/netlist.py); LIM.range/opamp", step = 6 }
-FT-4 = { status = "partial", where = "behaviour charger (prog_v/R_PROG, precondition, float voltage, UVLO, dissipation) – TP4056, MCP73831; LIM.i/charge on any scenario with a cell", missing = "the termination current – a state of the charge cycle an operating point cannot show", step = 6 }
+FT-4 = { status = "partial", where = "behaviour charger (prog_v/R_PROG, precondition, float voltage, UVLO, dissipation) – TP4056, MCP73831; LIM.i/charge on any scenario with a cell", missing = "the termination current – a state of the charge cycle an operating point cannot show; no state model by decision 17: HINT.charge_termination names it where a charger is used, edakit check --coverage lists the charger as not simulated (SIM.state)", step = 6 }
 FT-5 = { status = "partial", where = "values vref_v, i_load_min_a, roles adj and fb (circuit.feedback_vout); the simulation regulates to the divider; REQ.missing/feedback, REQ.value/feedback, LIM.range/min_load; AMS1117 datasheet as the example", missing = "a boost converter's output with EN low (VIN − VD): HINT.boost_enable names it, no model", step = 6 }
 FT-6 = { status = "built", where = "kinds motor, solenoid, speaker, heater, optocoupler (catalog/kinds.toml, sim/netlist.py)", step = 6 }
 FT-7 = { status = "out", where = "rules-at-scale.md, decision 7 (2026-10-31): hazardous voltage recognised by LIM.hazardous, not checked" }
@@ -22,7 +22,7 @@ FT-15 = { status = "built", where = "fn i2s.*, can.*, onewire, usb.* (circuit.FN
 FT-16 = { status = "partial", where = "edakit firmware: devices.i2c with the addresses the pins decide; buses", missing = "SPI mode and maximum clock per device, the bus speed the pull-ups allow – parts facts from datasheets, the bus capacitance", step = 6 }
 FT-17 = { status = "open", missing = "corners of hFE, leakage, IDSS – datasheets" }
 FT-18 = { status = "partial", where = "ac source: {r_ohm, l_h, c_f} – R and L in series, C across (a pickup); source_ohm (a microphone)", missing = "the numbers of real pickups and microphones – no manufacturer's specification was reachable; the project gives its own", step = 6 }
-FT-19 = { status = "built", where = "engines/coverage.py; edakit check --coverage; the protocol's section 2", step = 6 }
+FT-19 = { status = "built", where = "engines/coverage.py; edakit check --coverage; the protocol's section 2; chargers, cell protections and USB PD sinks as not simulated over time (SIM.state, decision 17)", step = 6 }
 FT-20 = { status = "built", where = "edakit/domains/, [project] domains, edakit domains", step = 3 }
 FT-21 = { status = "partial", where = "tests/reference.py: a reference circuit per domain, with seeded faults; tests/open_designs/: Espressif's ESP32-DevKitC V4 and SparkFun's Logic Level Converter, transcribed from their published schematics, every finding judged (findings.toml, tests/test_open_designs.py)", missing = "a guitar circuit (the Tube Screamer: electrosmash.com did not answer) and a key matrix (a QMK keyboard: its schematics sit in GitHub repositories outside this session's scope)", step = 7 }
 FT-22 = { status = "built", where = "edakit rules: code, severity, title", step = 1 }
@@ -67,7 +67,7 @@ HT-1 = { status = "built", where = "HINT.cable_line (domain cables)", step = 6 }
 HT-2 = { status = "built", where = "HINT.usb_budget (domain usb); tables/usb.toml [budget], [typec_current] read from the USB 2.0 and Type-C specifications", step = 6 }
 HT-3 = { status = "built", where = "HINT.usb_inrush (domain usb); tables/usb.toml [attach] read from USB 2.0, 7.2.4.1", step = 6 }
 HT-4 = { status = "built", where = "HINT.boost_enable (domain power)", step = 6 }
-HT-5 = { status = "open", missing = "a charger's power path – not built yet; the behaviour charger it needs exists since FT-4" }
+HT-5 = { status = "built", where = "HINT.power_path (domain power; engines/hint.py cell_loads): a charger's battery net reaching an IC supply pin, an LED … without a power path – a MOSFET whose gate the input holds, or a diode onto a rail the input feeds; Microchip AN1149 (DS01149C) read", step = 6 }
 HT-6 = { status = "built", where = "HINT.input_polarity (domain power)", step = 6 }
 HT-7 = { status = "built", where = "HINT.jack_supply (core; connector roles tip, ring, sleeve, tip_switch, ring_switch, sleeve_switch)", step = 6 }
 HT-8 = { status = "built", where = "HINT.audio_ground (domain audio)", step = 6 }

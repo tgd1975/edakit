@@ -318,6 +318,7 @@
  ],
  "covers": [
   "LIM.i/charge",
+  "HINT.power_path",
   "HINT.lithium",
   "HINT.two_supplies",
   "REQ.missing",

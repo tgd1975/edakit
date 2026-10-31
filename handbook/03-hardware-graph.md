@@ -289,7 +289,11 @@ without its operating range or an op-amp without `vicm_v`. `edakit check` names 
 (`not checked for lack of data: LIM.t 11 parts, LVL.threshold 1 part – edakit check --coverage`), `--coverage` lists
 them per code with the designators and the field that is missing, and the gate protocol lists them in its section 2.
 A gap is no finding – nothing was found, since nobody looked; it closes when the entry gets the value from its
-datasheet.
+datasheet. The same list names what the simulation does not model over time (5.1): a charger, a cell's protection, a
+USB PD sink – its end of charge, its release voltages and delays, its negotiation – as `not simulated` under SIM.state,
+with the hint that names the risk; the one line ends with them (`…; not simulated over time: U3 (charger), U4
+(protection) – edakit check --coverage`). These gaps stay: decision 17 of rules-at-scale.md gives such behaviour no
+state model.
 
 Polarity (is the LED the right way round?) is not a graph rule but a simulation result: a reversed LED shows up in
 stage E as "LED reversed" or as a dark LED (chapter 5), and SIM.driver makes sure no LED escapes it. G-7 was the graph's
