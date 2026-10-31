@@ -117,7 +117,14 @@ and a redefinition mean, and for nothing else here.
    format, with pin numbers and the full pin maps, in a stable order; no input but the files, no output but the
    graph. `edakit graph json --write` writes it, `--check` in the pre-commit hook reports drift, as decided for the
    TOML form. A project's committed resolved graph pins its circuit against a change of edakit's block library: the
-   library may move, the check says so, the user decides.
+   library may move, the check says so, the user decides. Two readers, two forms: the model reads and edits the
+   source, which is short because definitions, loops and variants expand only when compiled; the code – engines,
+   simulation, hash, scripts – reads the resolved graph, which stays as large as today's JSON. Reviewers read both,
+   the source for the intent and the diff of the resolved graph for the exact pins. Performance is not the reason:
+   `edakit check` takes under a second on the reference project's 65 KB, and compiling a bell takes milliseconds. The
+   reasons are that the engines do not change, that the hash and the sign-offs bind to a flat, deterministic form, that
+   a rewire through a parts entry or a library change shows as pin numbers in a diff, that project scripts keep reading
+   JSON, and that a fresh clone needs no compiler.
 9. **Designators explicit.** A usage names the designators of its parts; the tool that writes a usage (`block add`)
    allocates them once, as it does today. Nothing is renumbered by the compiler.
 10. **Errors with file and line, a formatter, a grammar for highlighting.** Preconditions, not costs: the sketch's
