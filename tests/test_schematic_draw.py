@@ -1,16 +1,19 @@
 """The schematic drawn without EasyEDA: a symbol for every kind of part, the layout of `schematic layout`, a check."""
 
 import argparse
+import shutil
 import xml.etree.ElementTree as ET
+from pathlib import Path
 
 import pytest
 
-from edakit import eda, schematic_draw
+from edakit import config, eda, schematic_draw
 from edakit.design import Design
 from edakit.schematic_draw import symbol
-from edakit.schematic_layout import Drawing
+from edakit.schematic_layout import Drawing, check_geometry, crossings
 
 SVG = "{http://www.w3.org/2000/svg}"
+OPEN_DESIGNS = Path(__file__).parent / "open_designs"
 
 # roles as in handbook 4.1, pin number -> role
 SYMBOLS = {
@@ -55,9 +58,9 @@ class OnePart:
         return self._part
 
 
-def draw(cfg, tmp_path, no_frame=False, name="schematic.svg"):
+def draw(cfg, tmp_path, no_frame=False, name="schematic.svg", board=None):
     out = tmp_path / name
-    args = argparse.Namespace(board=None, out=str(out), force=False, no_frame=no_frame)
+    args = argparse.Namespace(board=board, out=str(out), force=False, no_frame=no_frame)
     return schematic_draw.main(cfg, args), out
 
 
@@ -187,3 +190,107 @@ def test_a_pin_without_wire_or_flag_is_reported():
     sheet.wires.append(("A", [(-20, 0, -40, 0)]))
     geo = {"R1": {"pins": {"1": [-20, 0, 180], "2": [20, 0, 0]}}}
     assert schematic_draw.loose_pins(sheet, geo, {"R1.1": "A", "R1.2": "B"}) == ["R1.2 (B) ends in nothing"]
+
+
+def with_style(project, style):
+    schematic = project.root / "hardware" / "schematic.toml"
+    schematic.write_text(f"style = {style}\n" + schematic.read_text())
+
+
+def svg_parts(out):
+    root = ET.parse(out).getroot()
+    texts = {t.text for t in root.iter(f"{SVG}text")}
+    colours = {e.get("stroke") for e in root.iter(f"{SVG}polyline")}
+    return texts, colours
+
+
+def test_wired_style_draws_every_connection_through(project, tmp_path, capsys):
+    """style = "wires": no net names, no flags – every net a wire of its own colour, ground black, supplies red;
+    the module with every pin; the output line counts crossings and wire, the title block names the style."""
+    code, labelled = draw(project.config(), tmp_path, name="labels.svg")
+    assert code == 0, capsys.readouterr().out
+    capsys.readouterr()
+    with_style(project, '"wires"')
+    code, out = draw(project.config(), tmp_path)
+    printed = capsys.readouterr().out
+    assert code == 0, printed
+    assert "drawn (wires through): 17 parts" in printed and " crossings, " in printed and " m of wire" in printed
+    texts, colours = svg_parts(out)
+    nets = {n["name"] for n in project.graph()["graph"]["nets"]} - {"GND"}   # GND: the name of the Pico's pins too
+    assert not nets & texts                                  # no labels, no flags
+    assert {"LED_CLK", "GND", "+5V"} <= svg_parts(labelled)[0]
+    assert {schematic_draw.GROUND_COLOUR, schematic_draw.SUPPLY_COLOURS[0]} <= colours and len(colours) > 6
+    assert {"GP19", "SWDIO"} <= texts                         # the Pico's open pins are drawn too
+    assert any("wires through" in t for t in texts if t)
+    assert "Power Input" not in texts                         # no block titles: the gaps are the channels
+    code, again = draw(project.config(), tmp_path, name="again.svg")
+    assert again.read_text() == out.read_text()               # the same drawing every time
+
+
+def test_mixed_style_keeps_labels_for_buses(project, tmp_path, capsys):
+    """style = "mixed": a net with nothing but modules, ICs and connectors on it keeps its labelled stubs."""
+    with_style(project, '"mixed"')
+    code, out = draw(project.config(), tmp_path)
+    printed = capsys.readouterr().out
+    assert code == 0, printed
+    assert "3 nets named" in printed
+    texts, _ = svg_parts(out)
+    assert {"LED_CLK", "LED_SDI", "LED_LE"} <= texts and not {"+5V", "3V3", "BTN"} & texts
+
+
+def test_style_by_board_and_the_hand_wired_board_is_drawn(tmp_path, capsys):
+    """A hand-wired board is drawn – with --board; without it the only made board, as before."""
+    project = tmp_path / "boost"
+    shutil.copytree(OPEN_DESIGNS / "guitarml-classic-boost", project, ignore=shutil.ignore_patterns("build"))
+    (project / "hardware" / "schematic.toml").write_text('style = {wiring = "wires"}\n')
+    cfg = config.load(project / "edakit.toml")
+    code, out = draw(cfg, tmp_path, name="wiring.svg", board="wiring")
+    printed = capsys.readouterr().out
+    assert code == 0 and "drawn (wires through): 4 parts" in printed, printed
+    code, out = draw(cfg, tmp_path, name="main.svg")
+    printed = capsys.readouterr().out
+    assert code == 0 and "drawn: " in printed and "drawn (" not in printed, printed   # main: labels
+
+
+def segs(*wires):
+    sheet = Drawing()
+    sheet.wires = [(net, [s]) for net, s in wires]
+    return sheet
+
+
+def test_geometry_tells_a_crossing_from_a_t():
+    """Two nets crossing inside both wires: a crossing, no short. An end on the other wire – a T, a bend, a junction
+    or a pin tip there – is one; so is a net crossing itself without a dot."""
+    cross = segs(("A", (0, 0, 40, 0)), ("B", (20, -20, 20, 20)))
+    assert check_geometry(cross, {}, {}) == [] and crossings(cross) == [(20, 0, "A", "B")]
+    tee = segs(("A", (0, 0, 40, 0)), ("B", (20, 0, 20, 20)))
+    assert check_geometry(tee, {}, {}) and not crossings(tee)
+    bend = segs(("A", (0, 0, 20, 0)), ("A", (20, 0, 20, 20)), ("B", (0, 10, 40, 10)), ("B", (20, -20, 20, 40)))
+    assert any("touches" in p for p in check_geometry(bend, {}, {}))   # B runs through A's bend
+    junction = segs(("A", (0, 0, 40, 0)), ("A", (20, 0, 20, 20)), ("B", (20, -20, 20, -1)))
+    assert check_geometry(junction, {}, {}) == []
+    junction.wires.append(("B", [(20, -1, 20, 30)]))                    # B goes straight through A's junction
+    assert any("touches" in p for p in check_geometry(junction, {}, {}))
+    tip = segs(("B", (0, 0, 40, 0)))
+    tip.comps.append(("R1", 20, 10, 0))
+    assert check_geometry(tip, {"R1": {"pins": {"1": [0, -10, 270]}}}, {"R1.1": "A"})  # across A's pin tip
+    itself = segs(("A", (0, 0, 40, 0)), ("A", (20, -20, 20, 20)))
+    assert check_geometry(itself, {}, {}) == ["wire A crosses itself at (20, 0) without a junction"]
+
+
+def test_router_joins_around_a_part_and_crosses_only_inside_wires():
+    """Two pins of net A on either side of a part, net B's wire across the way: the path goes around the body, crosses
+    B in the open and never along it."""
+    sheet = Drawing()
+    sheet.comps.append(("R1", 0, 0, 0))
+    sheet.wires = [("B", [(-60, -40, -60, 40)])]
+    sheet.add_box((-100, -60, 100, 60))
+    sym = schematic_draw.Symbol()
+    sym.pins = {"1": [-20, 0, 180], "2": [20, 0, 0]}
+    sym.body = [-10, -8, 10, 8]
+    sheet.wires.append(("A", [(-20, 0, -80, 0)]))
+    sheet.wires.append(("A", [(20, 0, 40, 0)]))
+    got = schematic_draw.wire_through(sheet, {"R1": sym}, {"R1.1": "A", "R1.2": "A"}, {})
+    assert not got["unjoined"]
+    geo = {"R1": {"pins": sym.pins}}
+    assert check_geometry(sheet, geo, {"R1.1": "A", "R1.2": "A"}) == []

@@ -91,6 +91,15 @@ def test_layout_commands_refuse_it_with_one_line(project, monkeypatch, capsys, a
     assert capsys.readouterr().err == REFUSED
 
 
+def test_schematic_draw_draws_it(project, monkeypatch, capsys):
+    """Its drawing is its build document (concept wired-schematic, decision 4) – a bought board stays refused."""
+    panel(project)
+    capsys.readouterr()
+    assert cli_run(project, monkeypatch, "schematic", "draw", "--board", "panel") == 0
+    assert "drawn: " in capsys.readouterr().out
+    assert (project.root / "build" / "edakit" / "schematic_panel.svg").exists()
+
+
 def test_the_gate_leaves_it_out_of_s_and_l(project, monkeypatch):
     from edakit import schematic
     panel(project)

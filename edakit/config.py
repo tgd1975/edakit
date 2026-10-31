@@ -59,7 +59,8 @@ BOARD_FILE_KEYS = ("revision", "view", "outline", "holes", "tooling", "place", "
                    "on_headers", "header_keep_mm", "silk_overlap_mm", "park", "routing", "pours", "pour_regions",
                    "pour_min_piece_mm2", "pour_inset_mm", "silk", "loops", "net_classes", "copper", "order", "uniform",
                    "looks", "thickness_mm")
-SCHEMATIC_KEYS = ("stub", "layout", "frame")
+SCHEMATIC_KEYS = ("stub", "layout", "frame", "style")
+SCHEMATIC_STYLES = ("labels", "wires", "mixed")   # style: the drawing of `schematic draw` (schematic_draw)
 RELEASE_KEYS = ("layout_files", "state_files", "hash_ignore", "assembly", "stages", "archive", "publish")
 PCBA = ("economic", "standard")  # [release] assembly.pcba: JLCPCB's classes – another maker's: its profile's classes
 ARCHIVE = ("none", "git")        # [release] archive: gate runs are build output (none) – or a released one is committed
@@ -685,6 +686,20 @@ def _read(path):
         raise ConfigError(f"{path}: {e}") from None
 
 
+def _style(file, style, boards):
+    """style of the schematic file: one of SCHEMATIC_STYLES, or a table of them by board."""
+    if style is None:
+        return []
+    words = ", ".join(SCHEMATIC_STYLES)
+    if isinstance(style, str):
+        return [] if style in SCHEMATIC_STYLES else [f"{file}: style = {style!r} – one of {words}"]
+    if not isinstance(style, dict):
+        return [f"{file}: style is a word ({words}) or a table of them by board"]
+    return [f"{file}: style.{name}: no such board in [boards]" if name not in boards else
+            f"{file}: style.{name} = {value!r} – one of {words}" for name, value in style.items()
+            if name not in boards or value not in SCHEMATIC_STYLES]
+
+
 def _unknown(where, table, known, moved=()):
     return [f"{where}: unknown key '{k}' (known: {', '.join(known)})" for k in table if k not in known + tuple(moved)]
 
@@ -976,6 +991,7 @@ def load(path=None) -> Config:
     schematic_file = rel("schematic", "hardware/schematic.toml")
     schematic = _read(schematic_file) if schematic_file.exists() else {}
     problems += _unknown(p.get("schematic", "hardware/schematic.toml"), schematic, SCHEMATIC_KEYS)
+    problems += _style(p.get("schematic", "hardware/schematic.toml"), schematic.get("style"), raw.get("boards", {}))
     if moved:
         problems = moved + problems + [
             f"{path.name} is the table of contents now: board, schematic and checks have files of their own "

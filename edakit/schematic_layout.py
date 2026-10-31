@@ -10,7 +10,8 @@ of the page, moves and rotates the parts and wires everything again (what was ad
   - Every child is rotated so that its connecting pin points at the parent pin; children of one pin are stacked,
     branches of one side are spread without overlaps and without crossings.
   - Nets inside a block: one branched wire with the net name. Nets to other blocks: a labelled stub (same name =
-    connected). Power nets: ground and power flags.
+    connected). Power nets: ground and power flags. The nets of `wired` (the wired styles of `schematic draw`) get a
+    lead of one grid cell instead of the stub and no flag; schematic_draw routes them.
   - Page: the smallest landscape standard size that holds the content plus the title block.
 
 Before writing, the plan is checked for shorts (wires of different nets touching, foreign pins, crossings with four
@@ -45,6 +46,7 @@ MARGIN = 10       # margin around a part body (designator/value)
 TREE_GAP = 80     # between trees inside a block
 BLOCK_GAP = 60
 ROW_GAP = 60
+WIRE_LEAD = 10    # a pin of a wired net without a child: a lead of one grid cell, where the router starts
 FRAME_PAD = 20
 TITLE_H = 30
 TITLE_SIZE = 16
@@ -164,6 +166,9 @@ class Layout:
         self.kids = defaultdict(list)   # (part, pin) -> [(child, connecting pin)]
         self.blocks = []
         self.warnings = []
+        self.wired = set()     # nets drawn through (schematic_draw's wired styles): leads instead of stubs, no flags
+        self.block_gap, self.row_gap = BLOCK_GAP, ROW_GAP
+        self.frames = True     # blocks in a dashed frame with title and notes
         self._build_trees()
 
     def pins_of(self, d):
@@ -216,7 +221,7 @@ class Layout:
         """A branch starts at a pin tip (0, 0) and grows towards +x."""
         kids = self.kids.get((d, p), [])
         items = []
-        if net in self.power:
+        if net in self.power and net not in self.wired:
             flag = Drawing()
             flag.flags.append((net, 0, 0, 0))
             flag.add_box(self.flag_box(net))
@@ -225,7 +230,7 @@ class Layout:
             items.append(self.node(k, kp))
         if not items:
             label = Drawing()
-            length = max(30, snap_up(6 * len(net) + 10))
+            length = WIRE_LEAD if net in self.wired else max(30, snap_up(6 * len(net) + 10))
             label.wire(net, [(0, 0), (length, 0)])
             label.add_box((0, -4, length, 4))
             return label
@@ -356,6 +361,8 @@ class Layout:
             else:
                 blk.place(t, 0, snap_up(x - t.box[0]), -snap_up(t.box[3]))
                 x = blk.box[2] + TREE_GAP
+        if not self.frames:
+            return blk
         b = blk.box or (0, 0, 0, 0)
         lines = self.notes.get(title, [])
         note_w = max((len(ln) for ln in lines), default=0) * NOTE_SIZE * self.note_char_w
@@ -381,14 +388,16 @@ class Layout:
                 y, right = top, x
                 for title, roots in col:
                     blk = self.block(title, roots)
+                    if blk.box is None:
+                        continue       # a block of notes alone, without its frame: nothing to place
                     dx, dy = snap_up(x - blk.box[0]), snap_up(y - blk.box[3])
                     sheet.place(blk, 0, dx, dy)
-                    y = blk.box[1] + dy - BLOCK_GAP
+                    y = blk.box[1] + dy - self.block_gap
                     right = max(right, blk.box[2] + dx)
                 if col:
-                    x = right + BLOCK_GAP
+                    x = right + self.block_gap
             if sheet.box:
-                top = sheet.box[1] - ROW_GAP
+                top = sheet.box[1] - self.row_gap
         w = sheet.box[2] - sheet.box[0] + 2 * SHEET_MARGIN
         h = sheet.box[3] - sheet.box[1] + 2 * SHEET_MARGIN
         for name, pw, ph in PAGE_FORMATS:  # smallest standard size that holds content and a free title block
@@ -448,8 +457,28 @@ def collinear_overlap(a, b):
     return False
 
 
+def crossing(a, b):
+    """The point where a horizontal and a vertical segment cross inside both – neither ends there –, or None."""
+    if (a[1] == a[3]) == (b[1] == b[3]):
+        return None
+    hz, vt = (a, b) if a[1] == a[3] else (b, a)
+    x, y = vt[0], hz[1]
+    inside = min(hz[0], hz[2]) < x < max(hz[0], hz[2]) and min(vt[1], vt[3]) < y < max(vt[1], vt[3])
+    return (x, y) if inside else None
+
+
+def crossings(sheet):
+    """[(x, y, net, other)]: two nets' wires crossing inside both – no dot, no connection; the wired drawing of
+    schematic_draw lives on them, the labelled one has none."""
+    segs = [(net, s) for net, ss in sheet.wires for s in ss]
+    return [(*pt, na, nb) for i, (na, a) in enumerate(segs) for nb, b in segs[i + 1:]
+            if na != nb and (pt := crossing(a, b))]
+
+
 def check_geometry(sheet, geo, pin_net):
-    """Shorts in the plan: wires of different nets touching or overlapping, wires on foreign pins, 4-way crossings."""
+    """Shorts in the plan: wires of different nets touching or overlapping – an end on another net's wire is a T, and
+    a T is a short; a crossing inside both wires is none –, wires on foreign pins, 4-way crossings, and a net crossing
+    itself without a junction (the reader takes it for two nets)."""
     problems = []
     segs = [(net, s) for net, ss in sheet.wires for s in ss]
     points = []
@@ -461,6 +490,8 @@ def check_geometry(sheet, geo, pin_net):
     for i, (na, a) in enumerate(segs):
         for nb, b in segs[i + 1:]:
             if na == nb:
+                if (at := crossing(a, b)):
+                    problems.append(f"wire {na} crosses itself at {at} without a junction")
                 continue
             if collinear_overlap(a, b) or any(on_segment(x, y, b) for x, y in (a[:2], a[2:])) \
                     or any(on_segment(x, y, a) for x, y in (b[:2], b[2:])):

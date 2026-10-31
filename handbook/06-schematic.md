@@ -13,8 +13,9 @@ schematic); `layout` then syncs the parts in place instead of copying.
 Without EasyEDA, `edakit schematic draw` draws the schematic as an SVG from the graph and the parts database alone
 (6.5) – for a project without a PCB, for the documentation, for a look at a design before EasyEDA is involved.
 
-A bought board on a cable (`bought = true`) or a hand-wired one (`wired = true`, 4.5) has no schematic: `--board`
-of such a board is refused with one line, and without `--board` the one made board is taken.
+A bought board on a cable (`bought = true`) or a hand-wired one (`wired = true`, 4.5) has no schematic in EasyEDA:
+`--board` of such a board is refused with one line, and without `--board` the one made board is taken. `schematic
+draw --board` draws a hand-wired board (6.5) – the drawing is its build document; a bought one stays refused.
 
 ## 6.1 Generate the template
 
@@ -153,6 +154,44 @@ border and the title block – for a drawing embedded in a document –; the pag
 
 A project without a PCB – a development board and hand wiring – never needs EasyEDA: checks, simulation and this
 drawing work from the graph alone. For a PCB, EasyEDA's board schematic stays the one that counts; the PCB hangs on it.
+
+### Wired through
+
+`style` in the schematic file (10.3) chooses the drawing per board: `"labels"`, the drawing above and the default;
+`"wires"`, every connection a wire from pin to pin, as the maker scene draws it (Fritzing's schematic view);
+`"mixed"`, wires with labels for the buses. A board takes the style its project interview chose: labels for a board
+of any size, wires through for a maker-size circuit or a hand-wired board, mixed for a module with headers.
+
+```toml
+style = "wires"                          # every board; or by board: style = {main = "labels", panel = "wires"}
+```
+
+Wired through, the arrangement stays the one above, with four changes: a pin without a part on it gets a lead of one
+grid cell instead of a labelled stub and no flag; the blocks stand twice as far apart, without frames, titles and
+notes – the gaps are the channels; a module shows every pin as the board does, the open ones grey; a button's pins
+joined inside it show once per side. Then a router on the schematic grid joins every net: the cheapest path from
+piece to piece – a step costs 1, a bend 4, crossing another net 12, running beside one 1, each of the two cells in
+front of another net's open lead 12, so that the lead keeps its way out –, never through a part or along its outline,
+never along another net's wire or through its ends, bends, junctions and pin tips; the ground along a rail below the
+drawing and the supplies along rails above when at least two pieces join there. Every net gets a colour – ground
+black, the supplies red and orange, the rest from ten colours, so that nets that cross or run side by side differ. A
+dot marks every junction; two wires crossing without a dot are not connected. A net the router cannot join, or one
+with a single pin on the board (it goes on elsewhere), is named at its pieces as in the labelled drawing.
+
+`"mixed"` keeps the labelled stubs for the nets that are nothing but pass-throughs and buses – only modules, ICs and
+connectors on them, or six pins or more (a key matrix, a shared line) – and wires the rest. The output line counts
+crossings and wire; the title block names the style:
+
+```text
+drawn (wires through): 19 parts, 19 wires, 6 crossings, 1.4 m of wire, 201 x 187 mm
+```
+
+How far it goes is the structure, not the number of parts: the bell (19 parts) has 6 crossings, the LED bar 13, the
+TS/Rat pedal with 86 parts 51; a module whose headers mirror its pins (the ESP32 DevKitC: 373) or a key matrix is a
+mesh – mixed brings the DevKitC to 33, a matrix stays one. A second for the bell, half a minute for a keyboard half.
+The check then tells a crossing – two nets' wires meeting inside both – from a T, which is a short, and refuses a
+crossing at a junction, a bend or a pin tip and a net crossing itself without a dot. The style reaches the SVG only:
+EasyEDA's board schematic and the KiCad schematic keep their labels (concept wired-schematic, decision 1).
 
 ## 6.6 Values quoted from the design data (DOCS.quote)
 
