@@ -58,8 +58,16 @@ def sha_of(path):
 
 
 def norm(text):
-    """For comparing what a page shows with the job: case and blanks ignored."""
-    return re.sub(r"\s+", "", str(text)).casefold()
+    """For comparing what a page shows with the job: case and blanks ignored, a number's trailing zeros too (JLCPCB
+    shows "60 x 28 mm" for edakit's "60.00 x 28.00 mm")."""
+    t = re.sub(r"\s+", "", str(text)).casefold()
+    return re.sub(r"(\d)\.(?!\d)", r"\1", re.sub(r"(\d\.\d*?)0+(?!\d)", r"\1", t))
+
+
+def kind_of(name):
+    """The kind of an upload file by its name (makers.UPLOAD): gerber, bom, bom_mpn, cpl, odb."""
+    n = str(name)
+    return "bom_mpn" if n.startswith("bom_") and n.endswith("_mpn.csv") else n.split("_", 1)[0]
 
 
 def folder(cfg, run, board, maker):
@@ -227,7 +235,8 @@ def prepare(cfg, args):
         "maker": {"key": m.key, "name": m.name, "profile": str(m.path), "recorded": m.recorded, "start":
                   m.data.get("start"), "cart": m.data.get("cart"),
                   "never": list({w.casefold(): w for w in reversed([*NEVER, *m.data.get("never", [])])}.values())[::-1],
-                  "ignore": m.data.get("ignore", {}), "seat": m.seat, "currency": m.currency,
+                  "ignore": m.data.get("ignore", {}), "unshown": m.data.get("unshown", []),
+                  "seat": m.seat, "currency": m.currency,
                   "role": "planned" if m.key == makers.planned(cfg) else "other"},
         "quantity": o["quantity"] if o else cfg.quantity, "pcba_quantity": o["pcba_quantity"] if o else cfg.quantity,
         "files": [{"name": n, "path": str((d / n).resolve()), "size": (d / n).stat().st_size, "sha256": sha_of(d / n)}
@@ -416,16 +425,19 @@ def b5(cfg, job, quote):
         rel = f"fab/{job['board']}/{f['name']}"
         if files and files.get(rel) != now:
             bad.append(f"{f['name']}: not the file of the manifest")
-    shown = {norm(f.get("name", "")): f for f in quote.get("files", [])}
+    stem = lambda n: norm(Path(str(n)).stem if Path(str(n)).suffix else n)   # noqa: E731 – gerber_main = gerber_main.zip
+    shown = {stem(f.get("name", "")): f for f in quote.get("files", [])}
+    unshown = set(job["maker"].get("unshown", []))           # kinds of upload the maker's page names nowhere
     for f in job["files"]:
-        q = shown.get(norm(f["name"]))
+        q = shown.get(stem(f["name"]))
         if q is None:
-            bad.append(f"{f['name']}: not among the uploads the page shows")
+            if kind_of(f["name"]) not in unshown:
+                bad.append(f"{f['name']}: not among the uploads the page shows")
         elif q.get("size") and not size_fits(q["size"], f["size"]):
             bad.append(f"{f['name']}: the page shows {q['size']}, the file has {f['size']} bytes")
-    names = {norm(f["name"]) for f in job["files"]}
+    names = {stem(f["name"]) for f in job["files"]}
     bad += [f"{f.get('name')}: uploaded, but no file of the job" for f in quote.get("files", [])
-            if norm(f.get("name", "")) not in names]
+            if stem(f.get("name", "")) not in names]
     return bad, f"{len(job['files'])} files, SHA-256 of the job and the manifest"
 
 

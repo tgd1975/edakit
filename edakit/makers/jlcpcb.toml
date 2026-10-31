@@ -23,6 +23,7 @@ currency = "USD"
 catalogue = "jlcpcb"              # PARTS.stock and edakit stock ask JLCPCB's assembly catalogue
 fees = "jlcpcb"                   # edakit/fees/jlcpcb.json, the fee table of edakit cost
 files = ["gerber", "bom", "cpl"]  # gerber_<b>.zip, bom_<b>.csv, cpl_<b>.csv
+unshown = ["bom", "cpl"]          # the pages name the Gerber upload only, as the project (gerber_main); BOM and CPL nowhere
 classes = ["economic", "standard"]
 dnp = "omit"                      # a part not to place is left out of BOM and CPL (SYNC.bom, SYNC.cpl)
 cart = "Save to Cart"
@@ -280,9 +281,11 @@ section = "PCBA"
 label = "Packaging"
 words = { antistatic_bag = "Antistatic bubble film" }
 
-[fields.ship_to]
+[fields.ship_to]                  # the account's address at checkout, which the skill never opens: in order.md, not read back
 section = "Shipping"
 label = "Ship to"
+checkout = true
+
 
 [fields.shipping]
 section = "Shipping"

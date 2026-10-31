@@ -263,7 +263,8 @@ def form(cfg, design, board, d, maker, o=None, bom=None, found=None):
         if key == "delivery" and o.get("panel"):
             p = o["panel"]
             note = f"panel {p['x']} x {p['y']}, rails {p['rails_mm']:g} mm"
-        out.append(item(maker, key, raw, source, note, read=key == "bake" and raw is None))
+        at_checkout = bool((maker.field(key) or {}).get("checkout"))    # asked at checkout: not read back before the cart
+        out.append(item(maker, key, raw, source, note, read=(key == "bake" and raw is None) or at_checkout))
     return out
 
 

@@ -7,12 +7,14 @@ maker takes and refuses:
 
     name, recorded     the maker's name; the date ordering step 0 recorded the form, false while it is provisional
     start, cart, never the page the skill cart opens, the one button it may press, buttons it must not touch
-    files              what is uploaded: gerber, bom, bom_mpn, cpl, odb
+    files              what is uploaded: gerber, bom, bom_mpn, cpl, odb; unshown: the uploads the maker's pages name
+                       nowhere (ORDER.files holds them by their hash only)
     bom, cpl           the columns, and the key the maker matches parts by (bom.match: lcsc or mpn)
     fields             per key: section, label, words (edakit's value -> the form's word), unit, values, more (the
                        form offers more than the profile lists: another value is not checked), when ({key = [values]}:
                        the form shows the field only while those keys have one of those values – a dialog behind an
-                       option); false: the maker has no such field, and the key is left out of its job
+                       option), checkout (the form asks it at checkout only: in order.md, not read back before the
+                       cart); false: the maker has no such field, and the key is left out of its job
     excludes, ignore   combinations the form refuses; fields of the page edakit does not set, each with its reason
     classes            the assembly classes – the values of [release] assembly.pcba
     rules              the form's limits FILES.order checks: thicknesses_mm (and what they are for), remark_max, placeholder,
@@ -42,8 +44,8 @@ FILES = ("gerber", "bom", "bom_mpn", "cpl", "odb")   # what a maker takes: profi
 UPLOAD = {"gerber": "gerber_{b}.zip", "bom": "bom_{b}.csv", "bom_mpn": "bom_{b}_mpn.csv", "cpl": "cpl_{b}.csv",
           "odb": "odb_{b}.zip"}
 PROFILE_KEYS = ("name", "recorded", "start", "seat", "currency", "catalogue", "fees", "files", "classes", "dnp",
-                "cart", "never", "ignore", "excludes", "bom", "cpl", "rules", "fields", "about", "sources")
-FIELD_KEYS = ("section", "label", "words", "unit", "values", "more", "when")
+                "cart", "never", "ignore", "excludes", "bom", "cpl", "rules", "fields", "about", "sources", "unshown")
+FIELD_KEYS = ("section", "label", "words", "unit", "values", "more", "when", "checkout")
 RULE_KEYS = ("thicknesses_mm", "thicknesses_for", "remark_max", "placeholder", "placeholder_min_mm", "placeholder_gone",
              "former_placeholder",
              "silkscreen_on", "tooling_min", "class_of_sides")
@@ -213,11 +215,11 @@ def problems(key, data):
     for k in ("name", "start", "seat", "currency", "catalogue", "fees", "dnp", "cart"):
         if k in data and not isinstance(data[k], str):
             out.append(f"maker {key}: {k} must be a string")
-    for k in ("files", "classes", "never"):
+    for k in ("files", "classes", "never", "unshown"):
         if k in data and not (isinstance(data[k], list) and all(isinstance(v, str) for v in data[k])):
             out.append(f"maker {key}: {k} must be a list of strings")
-    out += [f"maker {key}: files: unknown file '{f}' (known: {', '.join(FILES)})" for f in data.get("files", [])
-            if f not in FILES]
+    out += [f"maker {key}: {k}: unknown file '{f}' (known: {', '.join(FILES)})" for k in ("files", "unshown")
+            for f in data.get(k, []) if f not in FILES]
     if "recorded" in data and data["recorded"] is not False and not isinstance(data["recorded"], str):
         out.append(f"maker {key}: recorded must be the date ordering step 0 recorded the form, or false")
     out += [f"maker {key}: rules: unknown key '{k}' (known: {', '.join(RULE_KEYS)})" for k in data.get("rules") or {}
