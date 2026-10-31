@@ -597,6 +597,7 @@ def check_polarity_marks(cfg, board, design, d, data, want, on_pcb, rows):
 
 
 SILK_SPOT_MM2 = 0.0005    # GEO.silk: smaller pieces of print on an opening or beyond the outline are rounding
+BODY_ROUNDING_MM = 0.05   # GEO.silk/body: a body.box from the drawing and a footprint box from the library differ by this
 SILK_LIMIT_MM2 = 0.001    # GEO.silk: from this much on, a side or a part has print where it is not printed
 SILK_PART_MM = 3.0        # GEO.silk: print on an opening further than this from every pad belongs to no part
 
@@ -691,8 +692,9 @@ def silk_print(cfg, board, data, g, rows):
 def silk_bodies(cfg, board, design, data, g, rows):
     """GEO.silk/body: a part whose parts entry gives a body larger than its footprint (body.box – a coin cell standing
     out of its holder) covers the print under it. Where the body, placed where pcb.json has the part, reaches beyond
-    the footprint's box (the geometry of `pcb dump`), print on the part's side – a designator, a text – is hidden once
-    the part is in: a warning per part. Inside the footprint box lies the footprint's own print, which the Gerber
+    the footprint's box (the geometry of `pcb dump`, widened by BODY_ROUNDING_MM), print on the part's side – a
+    designator, a text – is hidden once the part is in: a warning per part. Inside the footprint box lies the
+    footprint's own print, which the Gerber
     file cannot tell from a designator: as before, not looked at. No row without body.box; a part without footprint
     geometry is listed as not checked."""
     from shapely.geometry import Polygon
@@ -717,7 +719,7 @@ def silk_bodies(cfg, board, design, data, g, rows):
         name, key = ("BOTTOM" if layer == BOTTOM else "TOP"), silk.GERBER_KEYS[layer][1]
         if key not in printed:
             printed[key] = gerber.shape(gerber.parse_gerber(g / gerber.FILES[key]))
-        footprint = Polygon(keepout_polygon(c, [v * MM for v in geo[ref]["bbox"]]))
+        footprint = Polygon(keepout_polygon(c, [v * MM for v in geo[ref]["bbox"]])).buffer(BODY_ROUNDING_MM)
         spots = silk_spots(printed[key].intersection(bodies[ref].difference(footprint)))
         area = sum(p.area for p in spots)
         if area > SILK_LIMIT_MM2:
