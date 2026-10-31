@@ -312,6 +312,16 @@ def test_signoff_evidence_is_signed_for_this_state_and_names_the_requirement(tmp
     assert results[0].state == state
 
 
+def test_signoff_evidence_bound_to_a_fab_hash_this_run_lacks(tmp_path):
+    """A run without stage F (walkthrough-gaps A3): M-5 signed for a fab hash is no passing evidence here – the
+    requirement says which hash it is bound to, not "not signed"."""
+    m5 = {"id": "M-5", "phase": "export", "scope": "fab", "done_by": None, "date": "2026-10-31",
+          "unchecked": {"fab_sha256": "f958da9ad4f85a2e", "by": "agent pcb-reviewer"}}
+    results, _ = evaluate(tmp_path, requirement("must", ("signoff", "M-5")), manual=[m5])
+    assert results[0].items[0][2:] == ("fail", "signed for fab f958da9ad4f8… by agent pcb-reviewer (2026-10-31) – "
+                                               "checked by stage F, which did not run (section 6)")
+
+
 def test_signoff_evidence_of_a_later_phase_does_not_block(tmp_path):
     manual = [{"id": "M-2", "phase": "order", "scope": "fab", "done_by": None}]
     results, signoff = evaluate(tmp_path, requirement("must", ("signoff", "M-2")), manual=manual)

@@ -43,6 +43,9 @@ def test_simulation_gives_the_quoted_currents(example):
     reverse = [c["actual"] for c in out["checks"] if c["scenario"] == "reversed/pressed"
                and c["check"] == "reverse voltage"]
     assert reverse == ["3.2 V"]                                                # D-3: D1 blocks
+    power = {c["scenario"]: c for c in out["checks"] if c["id"] == "LIM.p" and c["item"] == "D1"}
+    assert len(power) == 9 and {c["expected"] for c in power.values()} == {"≤ 0.0325 W (50% of 0.065 W)"}
+    assert float(power["fresh/pressed/vf-min"]["actual"].split()[0]) == pytest.approx(14.75e-3, rel=0.01)
 
 
 @needs_ngspice

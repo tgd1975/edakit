@@ -203,8 +203,8 @@ def symbol_structure(cfg, symbol, entry):
 
 
 def entries(d, cfg=None):
-    """STRUCT.entry: an entry for every part, its pins = the graph's (and = the library symbol where cached – names
-    and numbers; grade symbol: a number the symbol gives twice, a pad of its footprint without a pin), no supply pin in
+    """STRUCT.entry: an entry for every part, its pins = the graph's – a mismatch names the side the cached symbol
+    agrees with (odd_one_out) – (and = the library symbol where cached – names and numbers; grade symbol: a number the symbol gives twice, a pad of its footprint without a pin), no supply pin in
     nc. Pins the entry's symbol_differs names follow the datasheet on purpose: left out of the comparison with the
     symbol and named in a note (grade declared)."""
     from .. import part as parts
@@ -245,7 +245,7 @@ def entries(d, cfg=None):
             only_g = {k: v for k, v in c["pins"].items() if want.get(k) != v}
             only_p = {k: v for k, v in want.items() if c["pins"].get(k) != v}
             out.append(Finding("STRUCT.entry", "P", des, f"{des}: pins differ from parts entry {d.entry_key(des)}: graph "
-                               f"{only_g} vs parts {only_p}"))
+                               f"{only_g} vs parts {only_p}" + odd_one_out(symbol, c["pins"], want, declared)))
         for pin in c.get("nc", []):
             if part["pins"].get(str(pin), {}).get("type") == "power_in":
                 out.append(Finding("STRUCT.entry", "P", f"{des}.{pin}", f"{des}.{pin} ({part['pins'][str(pin)]['name']}) "
@@ -253,6 +253,23 @@ def entries(d, cfg=None):
         if part.get("kind") == "led_strip":       # its length (sim/strip.py)
             out += [Finding("STRUCT.entry", "P", des, f"{des}: {p}", grade="strip", on=on) for p in strip_problems(c)]
     return out
+
+
+def odd_one_out(symbol, graph, entry, declared):
+    """Which side of a pin mismatch between graph and entry the cached library symbol agrees with – the case the fix of
+    STRUCT.entry names: the entry (the graph has another part's pins: the part number, or names and nets, to change)
+    or the graph (the entry to be checked against the datasheet). '' without a symbol, or where it agrees with both or
+    neither; the pins of symbol_differs are left out, as in the comparison with the symbol."""
+    from ..schematic import pin_differences
+    if not symbol:
+        return ""
+    mine = {n: v for n, v in symbol["pins"].items() if n not in declared}
+    agree = [not pin_differences(mine, {n: v for n, v in side.items() if n not in declared}) for side in (entry, graph)]
+    if agree == [True, False]:
+        return " – the library symbol agrees with the entry: the graph has the pins of another part"
+    if agree == [False, True]:
+        return " – the library symbol agrees with the graph: the entry's pins to be checked against the datasheet"
+    return ""
 
 
 def configs_named(d):

@@ -231,7 +231,7 @@ used/pressed/vf-max                fail      2.500V   2.500V   2.500V
 used/released/vf-min               ok        2.500V   0.000V   0.000V
 used/released/vf-max               ok        2.500V   0.000V   0.000V
 
-84 comparisons: fail 2, pass 82
+92 comparisons: fail 2, pass 90
 
 SIM.state – the circuit does what the scenario expects: 2 error
   E  [used/pressed/vf-min] D1: LED on: 0.0003974 A, expected ≥ 1 mA
@@ -261,12 +261,16 @@ the graph is caught at once:
 STRUCT.entry – graph pins = parts entry: 2 error
   P  D1: pins differ from the library symbol of C84256 (build/edakit/library/C84256.json): pin 1: symbol '-', graph
      'A'; pin 2: symbol '+', graph 'K'
-  P  D1: pins differ from parts entry C84256: graph {'1': 'A', '2': 'K'} vs parts {'1': '-', '2': '+'}
+  P  D1: pins differ from parts entry C84256: graph {'1': 'A', '2': 'K'} vs parts {'1': '-', '2': '+'} – the library
+     symbol agrees with the entry: the graph has the pins of another part
 ```
 
-With the pins and nets swapped, the 150 Ω of the block stay: the simulation gives 1.22 mA from a used cell into the
-LED at its highest forward voltage, 10.7 mA from a fresh cell at its lowest – LIM.i allows 20 mA, 80 % of its 25 mA. The
-computation is in R1's `notes`, the reason in D-2.
+The fix of STRUCT.entry has its advice per case, under the words the finding starts with; for "pins differ from parts
+entry" it is either the part number of the part whose pins the graph has, or – to keep the red LED – its pin names
+and the nets on its pins swapped to the entry's. With the pins and nets swapped, the 150 Ω of the block stay: the simulation gives 1.22 mA from a used cell into the
+LED at its highest forward voltage, 10.7 mA from a fresh cell at its lowest – LIM.i allows 20 mA, 80 % of its 25 mA, and
+LIM.p holds the 14.75 mW it then dissipates (Vf × If) to 32.5 mW, half its 65 mW. The computation is in R1's `notes`,
+the reason in D-2.
 
 **A cell upside down (PATH.reverse, D-3).** The holder takes the cell either way round, and PATH.reverse wants a
 blocking part behind it. A Schottky diode in series costs about 0.3 V – just the margin R-1 needs from a used cell; a P-MOSFET costs two
@@ -285,7 +289,7 @@ button pressed. Its first run failed – the nets were declared from 0 V, and a 
 ```text
 reversed/pressed                   fail     -3.200V  -3.200V  -3.200V
 
-95 comparisons: fail 3, pass 92
+104 comparisons: fail 3, pass 101
 
 LIM.declared – net inside its declared range: 3 error
   E  [reversed/pressed] VBAT: net voltage inside the declared range: -3.2 V, expected 0 … 3.3 V   (v of net VBAT …)
@@ -304,7 +308,7 @@ reviewer checks the reason:
 }
 ```
 
-Now: 0 errors, 3 accepted; 95 simulation comparisons pass.
+Now: 0 errors, 3 accepted; 104 simulation comparisons pass.
 
 ## 17.7 Stock and cost
 
@@ -450,7 +454,7 @@ requirements: 1 passed, 1 open after the export (section 11 of the protocol)
 ```text
 | P Parts | parts database complete, graph pins = parts database, parts verified, … | 7 | 0 | 0 | 0 | 0 | passed |
 | G Graph | structure, pin locks, voltage domains, inputs, drivers, decoupling, … | 35 | 0 | 0 | 4 | 0 | passed |
-| E Simulation | ngspice operating points of all scenarios, stress of every part, … | 95 | 0 | 0 | 0 | 0 | passed |
+| E Simulation | ngspice operating points of all scenarios, stress of every part, … | 104 | 0 | 0 | 0 | 0 | passed |
 ```
 
 In P and G every code without a finding counts once as passed – the codes the domains `core` and `power` switch on –,
@@ -616,6 +620,9 @@ requirements: 1 passed, 1 open after the export (section 11 of the protocol)
 | L Board | PCB = graph and plan, copper from the Gerber files, DRC, footprints, track widths, holes | 34 | 0 | 0 | 0 | 0 | passed |
 | F Manufacturing | BOM from the graph = EasyEDA, JLCPCB stock, pick and place, Gerber set, outline, manifest | 18 | 0 | 0 | 0 | 0 | passed |
 ```
+
+The offline `edakit gate` cannot compute the fab hash without stage F: from now on it says "M-5 signed for fab
+f958da9ad4f8… – checked by stage F" instead of naming M-5 open (8.2).
 
 The run's folder holds what goes to JLCPCB – `fab/main/gerber_main.zip`, `bom_main.csv`, `cpl_main.csv`, the form's
 fields in `order.md` – and `fab/polarity_main.png` for M-2. A gate run is build output (`[release] archive`, default

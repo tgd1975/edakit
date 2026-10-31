@@ -49,6 +49,20 @@ def test_overloaded_resistor(project):
     assert any(c["id"] == "LIM.p" and c["item"] == "R1" for c in failing(simulate(project)))
 
 
+def test_led_power(project):
+    """LIM.p of an LED: vf × if at its operating point against the derated p_max_w of its entry – a row where it is
+    within, a finding where it is above although its current stays within if_max_a (walkthrough-gaps A1)."""
+    rows = [c for c in simulate(project)["checks"] if c["id"] == "LIM.p" and c["item"] == "D2"]
+    assert rows and all(c["result"] == "pass" and c["check"] == "power dissipation" for c in rows)
+    assert {c["expected"] for c in rows} == {"≤ 0.05 W (50% of 0.1 W)"}    # C2297: p_max_w 0.1, derated as R1's
+    part = project.part("C2297")
+    part["limits"]["p_max_w"] = 0.04          # 9.45 mA at 2.6–3.1 V: 25–29 mW above 50 % of 40 mW
+    project.save_part("C2297", part)
+    bad = failing(simulate(project))
+    assert any(c["id"] == "LIM.p" and c["item"] == "D2" for c in bad)
+    assert not any(c["id"] == "LIM.i" and c["item"] == "D2" for c in bad)     # its current within if_max_a
+
+
 def test_net_range_too_narrow(project):
     g = project.graph()
     project.net(g, "+5V")["v"] = [0, 4.0]
@@ -250,7 +264,7 @@ def test_rgb_led_with_a_common_anode(project):
     rgb_led(project)
     out = simulate(project)
     assert not failing(out) and all(s["status"] == "ok" for s in out["scenarios"])
-    assert len(out["checks"]) == 738                              # as many as the example with D7–D9
+    assert len(out["checks"]) == 834 - 36            # the example with D7–D9, less their LIM.p: RGB has no p_max_w
     for color, net in (("RED", "LED5"), ("GREEN", "LED6"), ("BLUE", "LED7")):
         mine = [c for c in out["checks"] if c["item"] == f"D10_{color}"]
         on = [c for c in mine if c["check"] == f"LED current ({net})"]
@@ -259,6 +273,20 @@ def test_rgb_led_with_a_common_anode(project):
         assert len([c for c in mine if c["id"] in ("LIM.i", "LIM.v")]) == 24    # forward current, reverse voltage
     j1 = next(s for s in out["scenarios"] if s["name"] == "usb-min/all_on/vf-max")["sources"]["J1"]
     assert j1 == pytest.approx(0.114, abs=0.002)
+
+
+def test_rgb_led_power_per_colour(project):
+    """LIM.p of an RGB LED: each colour against its own colour's p_max_w – a colour whose limits give none has no row
+    (a test value, not the part's)."""
+    rgb_led(project)
+    part = project.part(RGB["lcsc"])
+    part["limits"]["red"]["p_max_w"] = 0.01      # 9.45 mA at 1.8–2.4 V: 17–23 mW above 50 % of 10 mW
+    project.save_part(RGB["lcsc"], part)
+    out = simulate(project)
+    power = [c for c in out["checks"] if c["id"] == "LIM.p" and c["item"].startswith("D10")]
+    assert {c["item"] for c in power} == {"D10_RED"}
+    assert {c["expected"] for c in power} == {"≤ 0.005 W (50% of 0.01 W)"}
+    assert any(c["result"] == "fail" for c in power)
 
 
 def test_rgb_led_with_a_common_anode_by_leds_on(project):
@@ -327,7 +355,7 @@ def test_leds_behind_balancing_resistors_count_on_their_output(project):
     balanced(project)
     out = simulate(project)
     assert not failing(out) and all(s["status"] == "ok" for s in out["scenarios"])
-    assert len(out["checks"]) == 828                              # 810 before: no SIM.state for D9, D10, LED7 in all_on
+    assert len(out["checks"]) == 936                              # 918 before: no SIM.state for D9, D10, LED7 in all_on
     for led in ("D9", "D10"):
         mine = [c for c in out["checks"] if c["item"] == led and c["id"] == "SIM.state"]
         on = [c for c in mine if c["check"] == "LED current (LED7)"]
@@ -378,7 +406,7 @@ def test_driver_sdo_is_driven_low(project):
     read_back(project)
     out = simulate(project)
     assert not failing(out) and all(s["status"] == "ok" for s in out["scenarios"])
-    assert len(out["checks"]) == 750                              # the example's 738 + LED_SDO's range in 12 scenarios
+    assert len(out["checks"]) == 846                              # the example's 834 + LED_SDO's range in 12 scenarios
     sdo = [c for c in out["checks"] if c["item"] == "LED_SDO"]
     assert len(sdo) == 12 and all(c["actual"] == "0 V" for c in sdo)
     sim = json.loads((project.root / "hardware" / "sim.json").read_text())

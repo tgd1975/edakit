@@ -57,7 +57,7 @@ def test_constant_current_load_on_a_dead_rail(project):
 
 def test_models_unchanged_above_their_minimums(project):
     out = simulate(project)
-    assert not failing(out) and len(out["checks"]) == 738 and len(out["scenarios"]) == 12
+    assert not failing(out) and len(out["checks"]) == 834 and len(out["scenarios"]) == 12
     low = next(s for s in out["scenarios"] if s["name"] == "usb-min/all_on/vf-max")
     assert round(low["nets"]["+5V"], 3) == 4.443 and round(low["nets"]["3V3"], 3) == 3.3
     assert not e5(out)                                                  # without transients nothing runs

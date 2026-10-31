@@ -340,10 +340,13 @@ def stress(s):
                 info = meta["leds"].get(el["name"], {})
                 label, color = el["name"][2:].upper(), info.get("color") or ""
                 rr = r.get(color, r) if color else r
-                if kind == "led" and "if_max_a" in rr:
-                    s.q(label, "if", cur, "A", kind, des, "forward current", color=color)
-                    s.q(label, "vr", max(k - a, 0), "V", kind, des, "reverse voltage", color=color)
-                elif kind == "diode" and "if_max_a" in r:
+                if kind == "led":
+                    if "if_max_a" in rr:
+                        s.q(label, "if", cur, "A", kind, des, "forward current", color=color)
+                        s.q(label, "vr", max(k - a, 0), "V", kind, des, "reverse voltage", color=color)
+                    if "p_max_w" in rr:      # vf × if at the operating point, its series resistance included
+                        s.q(label, "p", abs((a - k) * cur), "W", kind, des, "power dissipation", color=color)
+                elif "if_max_a" in r:
                     s.q(des, "if", cur, "A", kind, des, "forward current")
                     s.q(des, "vr", max(k - a, 0), "V", kind, des, "reverse voltage")
             elif kind in ("npn", "pnp") and "ic_max_a" in r:
