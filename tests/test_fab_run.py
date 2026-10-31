@@ -510,6 +510,16 @@ def via_at_joint(ex, project):
     ex.line("GND", 1, [(1.6, 9), (1.6, 6)])
 
 
+TAB_VIA = (10.8, 7.5)        # 0.35 mm (copper to copper) below D1.2 (VIN), an SMD pad 2.5 x 1.7 mm at (10.8, 9)
+
+
+def via_at_smd_tab(ex, project):
+    """D1 soldered by hand (bom: false, walkthrough gaps B5) and a via without a track 0.35 mm below its SMD pad D1.2 –
+    D1 sits on TOP, so TOP is the side of its joints."""
+    graph(project, lambda g: project.comp(g, "D1").update(bom=False))
+    via(ex, *TAB_VIA)
+
+
 def track_at_joint(ex, project):
     """A GND track on BOTTOM from J1.2 that passes 0.20 mm below J1.1 (VIN), J1's solder side – tracks do not count
     for GEO.spacing. It starts on J1.2, so GEO.pour sees no loose copper."""
@@ -750,6 +760,9 @@ FAULTS = [
        "hand_solder_keep_mm 0.5")]),
     ("a via without a track next to a hand-soldered joint", lambda ex, p: via(ex, 1.6, 9),
      [("GEO.spacing", "fail", "J1.1 (VIN) – via (no track, net unknown) at (1.60, 9.00): 0.40 mm")]),
+    ("a via next to a hand-soldered SMD tab", via_at_smd_tab,
+     [("GEO.spacing", "fail", "D1.2 (VIN) – via (no track, net unknown) at (10.80, 7.50): 0.35 mm apart on TOP, the side "
+       "D1 sits on, below hand_solder_keep_mm 0.5")]),
     # GEO.silk (#81) – only with [looks] in the board file
     ("a designator shown on the visible side", visible_designator,
      [("GEO.silk", "fail", "TOP (visible): C2 shows its designator – [silk] designators is bottom")]),

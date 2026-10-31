@@ -58,9 +58,10 @@ assembly preview at JLCPCB.
   GEO.silk silkscreen from the Gerber files: edakit's own print on a solder-mask opening (fail), other print there per part,
        print beyond the outline, a part of the designators side without a visible designator or group label (not in
        [silk] unlabelled), a text height edakit prints below 1.0 mm (warn)
-  GEO.spacing with [routing] hand_solder_keep_mm: on the solder side of every through-hole pad of a hand-soldered part
-       (bom: false), vias and pads of other nets at least that far away; pads as GEO.spacing, vias from the via drill file
-       (net: the tracks of pcb.json that end on them)
+  GEO.spacing with [routing] hand_solder_keep_mm: on the solder side of every pad of a hand-soldered part (bom: false) –
+       a through-hole pad's the side its part does not sit on, an SMD pad's its own –, vias and pads of other nets at
+       least that far away; pads as GEO.spacing, vias from the via drill file (net: the tracks of pcb.json that end on
+       them)
   GEO.silk with [looks]: on the visible side every PCB text of the silkscreen is one the board file puts there (the board
        label on its side, the [[silk.texts]] of the side, with [silk] designators on it the designators and group
        labels), and no part on it shows its designator while [silk] designators names the other side (waive GEO.silk on
@@ -886,8 +887,9 @@ def pcb_vias(d, lines, diameter_mil):
 
 
 def check_hand_joints(cfg, board, design, d, rows):
-    """GEO.spacing with [routing] hand_solder_keep_mm: on the solder side of every through-hole pad of a hand-soldered part
-    (bom: false), no via or pad of another net closer than the keep – the pads as `route read` saw them (as GEO.spacing), the
+    """GEO.spacing with [routing] hand_solder_keep_mm: on the solder side of every pad of a hand-soldered part (bom: false) –
+    a through-hole pad's the side its part does not sit on, an SMD pad's its own (route.hand_joints) –, no via or pad of
+    another net closer than the keep – the pads as `route read` saw them (as GEO.spacing), the
     vias from the via drill file with the net of the tracks of pcb.json that end on them. Tracks do not count. A pair
     waived in the graph (waive GEO.spacing on the joint's part or net, or on the other part or net) is listed with its reason.
     Off (0): no row."""

@@ -152,7 +152,8 @@ recreated: delete them, `edakit pcb parts --write`, `edakit pcb dump`, then the 
 - Freerouting cannot move a pad: pads of different parts on different nets closer than `clearance_mil` (GEO.spacing), or
   SMD pads on an assembled side closer than the paste gap (GEO.spacing, `[release] assembly` `paste_gap_mm`, 0.4 mm), stop
   `route all` at its check, without retries – move or turn one of the two parts in `place`. So do pads of other nets
-  closer than `[routing] hand_solder_keep_mm` to a joint soldered by hand (`bom: false`) on its solder side (GEO.spacing);
+  closer than `[routing] hand_solder_keep_mm` to a joint soldered by hand (`bom: false`) on its solder side – an SMD pad's
+  the side its part sits on (GEO.spacing);
   vias are kept away there by the DSN (handbook 7.5).
 - Freerouting is deterministic but order-dependent: `route all` retries with reshuffled DSNs when nets stay open. Before
   relaxing rules or moving parts, `edakit route diagnose 2>&1 | cat` says per open connection why: unreachable (what

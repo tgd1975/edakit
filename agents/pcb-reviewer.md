@@ -41,8 +41,8 @@ boards of the project in the current repository. You **change nothing**, neither
    to JLCPCB's table – judge what it accepted), drills and slots (plated slots >= 0.5 mm), copper to edge, assembly side
    per part, THT pins under parts of the other side, polarity marks in the silkscreen (GEO.mark), silkscreen on pads and
    beyond the outline and the designators (GEO.silk reads them from the Gerber files), tooling holes for Economic PCBA,
-   DRC; vias and foreign pads next to joints soldered by hand on their solder side (GEO.spacing with
-   `[routing] hand_solder_keep_mm` – without the key, note them).
+   DRC; vias and foreign pads next to joints soldered by hand on their solder side, an SMD tab's on its own side
+   (GEO.spacing with `[routing] hand_solder_keep_mm` – without the key, note them).
    **Copper per layer** from the Gerber files: the share of the board each layer covers, the largest bare area where
    a pour should be (on a board that is seen it reads as a failed pour), floating copper – an island connected to no
    pad. GEO.pour tests the same in the gate; after a round, read the round's export yourself.

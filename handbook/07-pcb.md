@@ -515,10 +515,12 @@ the pads of the last `route read` (GEO.spacing, 8.1).
 
 **Hand-soldered joints (GEO.spacing)** with `hand_solder_keep_mm` (0, off, by default): a joint soldered by hand gets an iron
 and wire solder, not a stencil print of fixed volume, and a tented via or a foreign pad a few tenths of a millimetre
-away can take a bridge that only shows at assembly. The joints are the through-hole pads of every part with `bom: false`
-in the graph (8.4), each on its solder side – the copper layer its part does not sit on. On that side no via and no pad
-of another net comes closer than the keep, copper to copper; a pad without a net is a net of its own, the part's own
-pads are not compared, and tracks do not count – they run under the solder mask, between the pins of a 2.54 mm part too.
+away can take a bridge that only shows at assembly. The joints are the pads of every part with `bom: false` in the
+graph (8.4), each on its solder side – for a through-hole pad the copper layer its part does not sit on, for an SMD pad
+its own layer, the side the part sits on: a tab soldered with an iron, such as a coin cell holder's, bridges to a via as
+a through-hole joint does. On that side no via and no pad of another net comes closer than the keep, copper to copper;
+a pad without a net is a net of its own, the part's own pads are not compared, and tracks do not count – they run under
+the solder mask, between the pins of a 2.54 mm part too.
 Pads too close stop `route all` like GEO.spacing (Freerouting cannot move them); a via gets the reshuffled attempts. `route
 dsn` keeps vias away from the start: around every joint a via keep-out on its solder side, the pad grown by the keep
 (Specctra `via_keepout`, which Freerouting reads) – it keeps out vias of the joint's own net as well, which reaches the
@@ -529,6 +531,9 @@ the other part or net, accepts a pair:
 hand-soldered joints (GEO.spacing): 2 on their solder side, 1 vias of other nets closer than hand_solder_keep_mm 0.5
     J1.1 (VIN) – via GND at (84.00, 9.70): 0.30 mm apart on BOTTOM, the solder side of J1, below hand_solder_keep_mm 0.5
 ```
+
+At an SMD joint the line names the part's own side: `D1.2 (VIN) – via GND at (77.20, 13.45): 0.30 mm apart on TOP,
+the side D1 sits on, below hand_solder_keep_mm 0.5`.
 
 In the reference project the layout reviews found a via 0.25 mm from an LED joint, a via 0.26 mm between two
 potentiometer pins and a resistor pad 0.37 mm from an LED joint, each after every check had passed; 0.5 mm finds all

@@ -1124,6 +1124,49 @@ def test_hand_solder_keep_on_the_solder_side_only():
     assert gaps(data, vias=[(None, mm(84, 11 - JOINT_TO_VIA), 24)])[1][:3] == ("J1.1", "via", None)  # net unknown
 
 
+# a hand-soldered SMD tab (walkthrough gaps B5): D1 of the input stage soldered by hand (bom: false) – its SMD pads on TOP,
+# the side it sits on, are its joints. A GND via 0.30 mm (copper to copper) below D1.2 (VIN)
+TAB_TO_VIA = 0.85 + 0.30 + 24 / MIL / 2       # D1.2's half height + 0.30 mm + the via's radius, from D1.2's centre
+
+
+def test_hand_solder_keep_on_the_side_of_an_smd_part():
+    """The SMD pads of a hand-soldered part are joints too, on the side the part sits on (its pads' layer): a via within
+    the keep fails there; an SMD pad of another net within the keep counts on that side and not on the other; an SMD
+    part that is assembled (not in `hand`) is not looked at."""
+    def gaps(data, vias=(), hand=("D1",)):
+        return [(g["joint"], g["kind"], g["other"], g["layer"], round(g["mil"] / MIL, 2))
+                for g in route.joint_gaps(data, 0.5 * MIL, set(hand), vias)]
+    via = [("GND", mm(77.2, 12 + TAB_TO_VIA), 24)]
+    data = json.loads(json.dumps(STAGE))
+    assert [(p["ref"], p["num"], layer) for p, layer in route.hand_joints(data, {"D1"})] == [
+        ("D1", "1", "TOP"), ("D1", "2", "TOP")]
+    assert gaps(data, via) == [("D1.2", "via", "GND", "TOP", 0.3)]                     # before: not looked at
+    assert gaps(data, via, hand=("J1",)) == []                                         # D1 assembled: no joint
+    data["pads"].append(stage_pad("R2", "1", "BTN", 77.2, 12 + 0.85 + 0.2 + 0.5, 1.0, 1.0) | {"layer": 2})
+    assert gaps(data) == []                                                            # BOTTOM: not D1's side
+    data["pads"][-1]["layer"] = 1
+    assert gaps(data) == [("D1.2", "pad", "R2.1", "TOP", 0.2)]                         # TOP: where D1 is soldered
+    data["components"][1]["layer"] = 2                                                 # D1 on BOTTOM, its pads there
+    for p in data["pads"][2:4]:
+        p["layer"] = 2
+    assert gaps(data, via)[0] == ("D1.2", "via", "GND", "BOTTOM", 0.3)
+
+
+def test_route_check_finds_a_via_next_to_a_hand_soldered_smd_tab(project, capsys):
+    routed_stage(project, routing=KEEP)
+    with_via(project, at=(77.2, 12 + TAB_TO_VIA))
+    assert route_cmd(project, "check", capsys)[0] == 0                                 # D1 assembled: as before
+    g = project.graph()
+    project.comp(g, "D1")["bom"] = False
+    project.save_graph(g)
+    code, out = route_cmd(project, "check", capsys)
+    assert code == 2
+    assert "hand-soldered joints (GEO.spacing): 4 on their solder side, 0 pads of other nets closer than " \
+           "hand_solder_keep_mm 0.5" in out
+    assert "D1.2 (VIN) – via GND at (77.20, 13.45): 0.30 mm apart on TOP, the side D1 sits on, below " \
+           "hand_solder_keep_mm 0.5" in out
+
+
 def test_dsn_keeps_vias_away_from_hand_soldered_joints(project, tmp_path):
     cfg = routed_stage(project)
     data = json.loads((project.root / "build" / "edakit" / "route" / "main_board.json").read_text())
@@ -1142,3 +1185,7 @@ def test_dsn_keeps_vias_away_from_hand_soldered_joints(project, tmp_path):
         v = [float(x) for x in pts.split()]
         reach = [math.dist(mm(*centre), p) / MIL for p in zip(v[0::2], v[1::2])]
         assert min(reach) >= 0.7 + 0.5 - 1e-3 and max(reach) < 0.7 + 0.5 + 0.02            # the pad grown by the keep
+    rules.hand = {"J1", "D1"}                                                          # D1: SMD, soldered by hand
+    route.write_dsn(rules, data, tmp_path / "smd.dsn")
+    found = re.findall(r'\(via_keepout "(J\d_\w+)" \(polygon (\w+) 0 ', (tmp_path / "smd.dsn").read_text())
+    assert found == [("J0_BOTTOM", "BOTTOM"), ("J1_BOTTOM", "BOTTOM"), ("J2_TOP", "TOP"), ("J3_TOP", "TOP")]
