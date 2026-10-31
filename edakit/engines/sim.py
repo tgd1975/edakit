@@ -666,7 +666,8 @@ def input_injection(s):
     none, a pin rated above its supply) against the pin its `ref` names, else the part's vin_rel_max_v for its inputs,
     bidirectional pins and outputs against its supply. Where the pin gives i_inject_max_a and only resistors feed it,
     the current its clamp diode takes – (V_open − V_ref − v_rel) / R_source – is held to that instead: the clamp
-    conducts, the part is powered through its pin or latches up."""
+    conducts, the part is powered through its pin or latches up. A pin on a net no element of the netlist reaches has
+    no voltage (nan) and is not judged, as LIM.range does."""
     d, res = s.d, s.res
     for des in sorted(s.n.comps):
         part = s.n.part(des) or {}
@@ -688,6 +689,8 @@ def input_injection(s):
             if vref is None or math.isnan(vref):
                 continue
             x = at_pin(d, res, ref, ground) - vref
+            if math.isnan(x):
+                continue          # a net no element of the netlist reaches (QSPI lines between two ICs): no reading
             name = info.get("name", num)
             inject = info.get("i_inject_max_a")
             src = thevenin(s, des, ref) if is_number(inject) and x > rel else None

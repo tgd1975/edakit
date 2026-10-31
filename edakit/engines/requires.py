@@ -15,8 +15,8 @@ from functools import lru_cache
 
 from ..catalog import HERE
 from ..circuit import (CLASS_2, FN_NAMES, I2C_R_MAX, I2C_SINK_A, I2C_VOL, USB_C_CC, USB_RD, USB_RD_TOL, capacitance,
-                       cc_lines, esr_ends, fn_match, hz_text, i2c_name, is_number, limits, ohm, resistors_to, si,
-                       supply_nets, v_range, valid_hz, values, volts_across)
+                       cc_lines, esr_ends, fn_match, hz_text, i2c_name, is_number, limits, ohm, resistor_like,
+                       resistors_to, si, supply_nets, v_range, valid_hz, values, volts_across)
 from ..findings import Finding
 
 
@@ -491,6 +491,14 @@ def other_pin(pins, to):
     return next((num for num, p in pins.items() if (p or {}).get("name") == to), None)
 
 
+def crystal_pins(part):
+    """The two pins of a crystal's quartz: those with the roles 1 and 2 – a crystal of four pads has two more on its
+    lid, for ground (Epson FA-238V: #1 and #3 the crystal, #2 and #4 GND) –, else the pins that are not ground."""
+    pins = (part or {}).get("pins") or {}
+    by_role = [num for role in ("1", "2") for num, p in pins.items() if (p or {}).get("role") == role]
+    return by_role if len(by_role) == 2 else [num for num, p in pins.items() if (p or {}).get("type") != "ground"]
+
+
 def near_parts(d, des):
     """The parts layout.near places next to `des`, and those it places `des` next to."""
     near = (d.graph.get("layout") or {}).get("near") or {}
@@ -516,9 +524,24 @@ def pin_needs(d, gaps=None):
     between = capacitors_between(d)
     crystals = defaultdict(list)        # frozenset of two nets -> [(crystal, f_hz)]
     for des in d.comps_of_kind("crystal"):
-        a, b = (d.pin_net.get(f"{des}.{p}") for p in d.part(des)["pins"])
+        ends = crystal_pins(d.part(des))
+        a, b = (d.pin_net.get(f"{des}.{p}") for p in ends) if len(ends) == 2 else (None, None)
         if a and b and a != b:
             crystals[frozenset((a, b))].append((des, values(d.part(des)).get("f_hz")))
+    damped = defaultdict(set)           # net -> the nets a series resistor joins it to (an oscillator's damping one)
+    for _, a, b in resistor_like(d):
+        if a and b and a != b and not {a, b} & (supplies | grounds):
+            damped[a].add(b)
+            damped[b].add(a)
+
+    def crystals_between(net, to_net):
+        """The crystals between the two nets – or behind a series resistor at either, the damping resistor at an
+        oscillator's output (the RP2040's XOUT, its datasheet 2.16)."""
+        return [c for x in {net} | damped[net] for y in {to_net} | damped[to_net] if x != y
+                for c in crystals.get(frozenset((x, y)), [])]
+
+    def caps_to(net, others):
+        return [c for o in others for c in between.get(frozenset((net, o)), [])]
     out, seen = [], set()
     for des in sorted(d.comps):
         part = d.part(des) or {}
@@ -582,7 +605,7 @@ def pin_needs(d, gaps=None):
                     finding("REQ.missing", f"not connected – needs a {what.replace('_', ' ')}{window}")
                     continue
                 if what == "crystal":
-                    found = crystals.get(frozenset((net, to_net)), []) if to_net else []
+                    found = crystals_between(net, to_net) if to_net else []
                     if not found:
                         finding("REQ.missing", f"needs a crystal{window} to {to_name} ({to_net or 'no net'}) – none "
                                                f"between {net} and it")

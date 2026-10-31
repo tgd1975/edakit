@@ -1,0 +1,59 @@
+{
+ "mpn": "PZ254V-11-04P",
+ "manufacturer": "XFCN",
+ "kind": "connector",
+ "package": "1 × 4, 2.54 mm, THT",
+ "footprint": "OLED",
+ "datasheet": {
+  "url": "https://datasheet.lcsc.com/datasheet/pdf/83ce6ce320ccf8e54bacbe37886d78bb.pdf",
+  "pinout_page": 1
+ },
+ "pins": {
+  "1": {
+   "name": "Pin_1",
+   "type": "passive",
+   "role": "pin1"
+  },
+  "2": {
+   "name": "Pin_2",
+   "type": "passive",
+   "role": "pin2"
+  },
+  "3": {
+   "name": "Pin_3",
+   "type": "passive",
+   "role": "pin3"
+  },
+  "4": {
+   "name": "Pin_4",
+   "type": "passive",
+   "role": "pin4"
+  }
+ },
+ "values": {
+  "pitch_mm": 2.54,
+  "r_contact_ohm": 0.02
+ },
+ "limits": {
+  "i_max_a": 3.0,
+  "t_min_c": -40,
+  "t_max_c": 105
+ },
+ "sources": [
+  "XFCN PZ254V-11-XX 2.54 mm pin header drawing, Rev. A1 (2024-05-24), a series drawing (02–40 positions), LCSC's copy (product C22465879) https://datasheet.lcsc.com/datasheet/pdf/83ce6ce320ccf8e54bacbe37886d78bb.pdf, read 2026-10-31",
+  "specifications: current rating 3 A; temperature range −40 … +105 °C; contact resistance 20 mΩ max; 04 = 4 positions",
+  "stand-in: the schematic's J3 is Conn_01x04 on the footprint kbd_local:OLED, kept out of the BOM – where the builder solders an OLED module; a 4-pin header of this series stands in, its LCSC number not looked up (LCSC's search refused the request); pin names Pin_1 … Pin_4 as the KiCad symbol"
+ ],
+ "verified": {
+  "by": "Claude (datasheet check, open-design transcription)",
+  "date": "2026-10-31",
+  "datasheet": "XFCN PZ254V-11-XX 2.54 mm pin header drawing, Rev. A1 (2024-05-24), a series drawing (02–40 positions)",
+  "datasheet_sha256": "6464d481d1e898c0f0369b23edbc393a22d7afafdbf3777763d536d85d538623",
+  "checked": [
+   "series ratings"
+  ],
+  "open": [
+   "a stand-in: the OLED module's own pins are what the builder fits"
+  ]
+ }
+}

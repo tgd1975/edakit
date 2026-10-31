@@ -1,0 +1,46 @@
+{
+ "lcsc": "C25905",
+ "mpn": "0402WGF5101TCE",
+ "manufacturer": "UNI-ROYAL",
+ "kind": "resistor",
+ "package": "0402",
+ "footprint": "R_0402_1005Metric",
+ "datasheet": {
+  "url": "https://datasheet.lcsc.com/datasheet/pdf/0a975aaa49b7c97f38a963127be4a823.pdf"
+ },
+ "pins": {
+  "1": {
+   "name": "1",
+   "type": "passive",
+   "role": "1"
+  },
+  "2": {
+   "name": "2",
+   "type": "passive",
+   "role": "2"
+  }
+ },
+ "values": {
+  "value_ohm": 5100.0,
+  "tolerance": 0.01
+ },
+ "limits": {
+  "p_max_w": 0.0625,
+  "v_max_v": 50
+ },
+ "sources": [
+  "UNI-ROYAL Thick Film Chip Resistors data sheet V.3 (2019-02-12), LCSC's copy https://datasheet.lcsc.com/datasheet/pdf/0a975aaa49b7c97f38a963127be4a823.pdf, read 2026-10-31",
+  "2 part numbering: 0402, WG = 1/16 W, F = ±1 %, four digits of the value; 6 table: 0402 1/16 W at 70 °C; 7 table: 0402 max. working voltage 50 V, −55 … 155 °C"
+ ],
+ "verified": {
+  "by": "Claude (datasheet check, open-design transcription)",
+  "date": "2026-10-31",
+  "datasheet": "UNI-ROYAL Thick Film Chip Resistors data sheet V.3 (2019-02-12)",
+  "datasheet_sha256": "11cd644d5d8a34a6d12775afb80bf58d8fc11f0c3b700dbd0f7a59942ceaa5ef",
+  "checked": [
+   "value, power and tolerance from the part number",
+   "series ratings"
+  ],
+  "open": []
+ }
+}

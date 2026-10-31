@@ -1,0 +1,98 @@
+{
+ "lcsc": "C138714",
+ "mpn": "TPD4E05U06DQAR",
+ "manufacturer": "Texas Instruments",
+ "kind": "esd_array",
+ "package": "USON-10 2.5 × 1.0 mm",
+ "footprint": "USON-10_2.5x1.0mm_P0.5mm",
+ "datasheet": {
+  "url": "https://datasheet.lcsc.com/datasheet/pdf/86fce5e377410b6c2d1b0526f306f55e.pdf",
+  "pinout_page": 4
+ },
+ "pins": {
+  "1": {
+   "name": "D1+",
+   "type": "passive",
+   "role": "io1"
+  },
+  "2": {
+   "name": "D1-",
+   "type": "passive",
+   "role": "io2"
+  },
+  "3": {
+   "name": "GND",
+   "type": "ground",
+   "role": "gnd"
+  },
+  "4": {
+   "name": "D2+",
+   "type": "passive",
+   "role": "io3"
+  },
+  "5": {
+   "name": "D2-",
+   "type": "passive",
+   "role": "io4"
+  },
+  "6": {
+   "name": "NC",
+   "type": "no_connect",
+   "hint": "not connected inside; for straight-through routing, may float or be grounded (pin functions)"
+  },
+  "7": {
+   "name": "NC",
+   "type": "no_connect",
+   "hint": "not connected inside; for straight-through routing, may float or be grounded (pin functions)"
+  },
+  "8": {
+   "name": "GND",
+   "type": "ground",
+   "role": "gnd"
+  },
+  "9": {
+   "name": "NC",
+   "type": "no_connect",
+   "hint": "not connected inside; for straight-through routing, may float or be grounded (pin functions)"
+  },
+  "10": {
+   "name": "NC",
+   "type": "no_connect",
+   "hint": "not connected inside; for straight-through routing, may float or be grounded (pin functions)"
+  }
+ },
+ "values": {
+  "vbr_min_v": 6.5,
+  "c_io_f": [
+   null,
+   5e-13,
+   null
+  ]
+ },
+ "limits": {
+  "vrwm_max_v": 5.5,
+  "t_min_c": -40,
+  "t_max_c": 125
+ },
+ "sources": [
+  "TI TPD1E05U06/TPD4E05U06/TPD6E05U06 datasheet SLVSBO7L (December 2012, revised January 2017), LCSC's copy https://datasheet.lcsc.com/datasheet/pdf/86fce5e377410b6c2d1b0526f306f55e.pdf, read 2026-10-31",
+  "5 pin functions TPD4E05U06 DQA: 1 D1+, 2 D1−, 4 D2+, 5 D2− ESD protected channels; 3, 8 GND; 6, 7, 9, 10 NC ('Used for optional straight-through routing. Can be left floating or grounded')",
+  "6.4: VIO 0 … 5.5 V, TA −40 … 125 °C; 6.6: VRWM 5.5 V (IIO < 10 µA), VBR 6.5–8.5 V at 1 mA, leakage 10 nA max at 2.5 V, line capacitance 0.5 pF typ",
+  "no rail pin: each channel has its own diodes to ground – the model has only the diode from ground (esd_array without vbus)",
+  "pin names as the Corne's KiCad symbol Power_Protection:TPD4EUSB30 (same pinout; the BOM and the value name TPD4E05U06DQAR)"
+ ],
+ "verified": {
+  "by": "Claude (datasheet check, open-design transcription)",
+  "date": "2026-10-31",
+  "datasheet": "TI TPD1E05U06/TPD4E05U06/TPD6E05U06 datasheet SLVSBO7L (December 2012, revised January 2017)",
+  "datasheet_sha256": "79ffd12013f7a048ec71ede5ecb41030591e3bfabbe1623ea4c345de4061f5e3",
+  "checked": [
+   "pin functions DQA",
+   "recommended operating conditions",
+   "VRWM, VBR, capacitance"
+  ],
+  "open": [
+   "vf_v of the ground diode not given (only TLP clamp voltages) – the model's default"
+  ]
+ }
+}

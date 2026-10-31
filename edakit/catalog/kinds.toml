@@ -100,7 +100,8 @@ values = ["value_f", "dielectric", "polarized", "tolerance",
                                              # gives none) – held to a regulator's ESR window (CK-14)
 
 [kinds.crystal]
-roles = ["1", "2"]                           # a two-pin quartz crystal or resonator without capacitors of its own
+roles = ["1", "2"]                           # a two-pin quartz crystal or resonator without capacitors of its own;
+                                             # a crystal of four pads: the quartz on roles 1 and 2, the lid pads ground
 limits = []
 values = ["f_hz", "c_load_f"]                # its frequency; the load capacitance it is specified for
 
@@ -207,11 +208,14 @@ roles = ["*"]
 limits = ["vdd_max_v", "vdd_op_min_v", "vdd_op_max_v", "vin_min_v", "vin_max_v", "vout_max_v", "i_out_max_a",
           "vin_rel_max_v", "i_supply_pin_max_a", "f_max_hz",
           "r_sense_min_ohm",                 # behaviour cc_led_driver: the least sense resistor (PT4115 0.082 Ω)
-          "f_sck_max_hz", "f_scl_max_hz"]    # the highest clock of its SPI (SCK) and I2C (SCL) interface
+          "f_sck_max_hz", "f_scl_max_hz",    # the highest clock of its SPI (SCK) and I2C (SCL) interface
+          "gpio_i_max_a", "gpio_i_total_max_a"]  # behaviour mcu on a bare microcontroller (the RP2040), as a module's
 values = ["behavior", "vout_v", "dropout_v", "iq_a", "efficiency", "idd_max_a", "iout_gain", "iout_accuracy",
           "vout_knee_v", "vrext_v", "vih_v", "vil_v", "vih_ratio", "vil_ratio", "first_bit_to", "vout_swing_v",
           "vicm_v", "r_out_ohm", "comparator", "gain_min_ratio", "f_clock_hz", "vref_v", "i_load_min_a", "prog_v", "icc_a",
           "i_a",                             # icc_a: behaviour logic, i_a: behaviour current (sim/netlist.py)
+          "i_core_a", "i_core_min_a", "gpio_r_out_ohm", "regulator",   # behaviour mcu on a bare microcontroller,
+                                             # as a module's: its core current and on-chip regulator (RP2040's VREG)
           "vdd_shunt_v", "i_shunt_max_a", "pd_request_v",   # behaviour pd_sink
           "r_on_ohm", "vgs_th_v",            # behaviour pass_gate (r_on_ohm also charger)
           "r_on_high_ohm", "r_on_low_ohm",   # behaviour bridge: a bridge output's high and low side

@@ -684,7 +684,7 @@ def render(sheet, size, syms, power, ground, title_lines):
         for (x, y, anchor), (_, text, size_) in zip(places, s.labels):
             if text:
                 g.text(*T(x, y), text, size_, anchor, r, COLOR["text"])
-        for p in s.nc:
+        for p in sorted(s.nc, key=natural_key):    # a set: sorted, or the SVG changes with the hash seed
             x, y = T(*s.pins[p][:2])
             g.line([(x - 3, y - 3), (x + 3, y + 3)], COLOR["part"])
             g.line([(x - 3, y + 3), (x + 3, y - 3)], COLOR["part"])
