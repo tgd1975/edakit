@@ -12,7 +12,7 @@ from __future__ import annotations
 from dataclasses import dataclass, field
 
 from ..catalog import table
-from ..circuit import ACTIVE_TYPES, hold_current, limits, polarized, series_nets, v_range
+from ..circuit import ACTIVE_TYPES, hold_current, limits, polarized, series_nets, v_range, values
 
 UNITS = {"V": "v", "A": "a", "W": "w", "°C": "c", "dBm": "dbm"}
 FACTOR = table("derating")["G"]["factor"]          # stage G: value × factor ≤ limit
@@ -105,8 +105,9 @@ TERMINALS = {"collector-emitter": ("collector", "emitter"), "drain-source": ("dr
 
 
 def part_voltages(d):
-    """The voltages every part sees from the declared ranges of its nets: across a capacitor, reverse across a diode,
-    VCE, VDS and VGS, and on a passive part the highest voltage of any of its nets."""
+    """The voltages every part sees from the declared ranges of its nets: across a capacitor, reverse across a diode –
+    a TVS (values tvs) against its working voltage without the derating factor –, VCE, VDS and VGS, and on a passive
+    part the highest voltage of any of its nets."""
     out = []
 
     def rng(net):
@@ -128,6 +129,11 @@ def part_voltages(d):
             elif what == "reverse":
                 a, k = d.net_of(des, "anode"), d.net_of(des, "cathode")
                 v, how = rng(k)[1] - rng(a)[0], f"{des}: reverse from {k} to {a}"
+                if values(part).get("tvs"):    # a TVS: vr_max_v is its working voltage VRWM, no margin on top
+                    out.append(Quantity(des, name, v, kind="tvs", entry=key, how=how, on=on,
+                                        say=lambda v, lim, f, des=des: f"{des}: reverse up to {v:.1f} V, working "
+                                                                       f"voltage VRWM {lim:g} V"))
+                    continue
                 say = (lambda v, lim, f, des=des: f"{des}: reverse up to {v:.1f} V, VRRM {lim:g} V")
             else:
                 x, y = TERMINALS[what]

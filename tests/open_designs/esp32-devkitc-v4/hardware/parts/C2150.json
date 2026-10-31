@@ -1,0 +1,64 @@
+{
+ "lcsc": "C2150",
+ "mpn": "SS8050(RANGE:200-350)",
+ "manufacturer": "CJ(江苏长电/长晶)",
+ "footprint": "SOT-23-3_L2.9-W1.3-P1.90-LS2.4-BR",
+ "jlc_class": "Basic Part",
+ "kind": "npn",
+ "pins": {
+  "1": {
+   "name": "B",
+   "type": "passive",
+   "role": "base"
+  },
+  "2": {
+   "name": "E",
+   "type": "passive",
+   "role": "emitter"
+  },
+  "3": {
+   "name": "C",
+   "type": "passive",
+   "role": "collector"
+  }
+ },
+ "sources": [
+  "SS8050 datasheet Rev. 2.1 (Jiangsu Changjing Electronics, CJ), www.jscj-elec.com",
+  "Maximum ratings: VCEO 25 V, VEBO 5 V, IC 1.5 A, PC 300 mW, RθJA 417 °C/W, TJ 150 °C",
+  "hFE(1) at VCE 1 V, IC 100 mA: rank H 200 … 350 (the part number's RANGE:200-350); VCE(sat) 0.5 V at 800 mA"
+ ],
+ "verified": {
+  "by": "Claude (datasheet check, open-design transcription)",
+  "date": "2026-10-31",
+  "datasheet": "SS8050 CJ Rev. 2.1",
+  "checked": [
+   "ratings",
+   "hFE rank",
+   "VCE(sat)"
+  ],
+  "open": [
+   "the schematic names SS8050-G (another maker's part number); CJ's SS8050 is the nearest LCSC part"
+  ]
+ },
+ "package": "SOT-23",
+ "datasheet": {
+  "url": "https://datasheet.lcsc.com/datasheet/pdf/4ff606b799fb417839f247d7874b1994.pdf"
+ },
+ "values": {
+  "hfe_min": 200,
+  "hfe_max": 350,
+  "vce_sat_v": 0.5
+ },
+ "limits": {
+  "vce_max_v": 25,
+  "veb_max_v": 5,
+  "ic_max_a": 1.5,
+  "p_max_w": 0.3,
+  "rth_ja_k_per_w": 417,
+  "tj_max_c": 150
+ },
+ "spice": {
+  "model": ".model SS8050 NPN(IS=5f BF=275 VAF=100 IKF=1 ISE=10f NE=1.6 BR=5 RB=10 RC=0.3 RE=0.1 CJE=12p CJC=6p)",
+  "source": "BF 275, the middle of rank H (200 … 350); the other Gummel-Poon parameters those of edakit's S8050 entry (C2146), assumed – the auto-program circuit switches at a few mA"
+ }
+}

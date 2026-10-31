@@ -1,0 +1,15 @@
+# SparkFun Logic Level Converter – Bi-Directional, transcribed from its published schematic for edakit's tests
+# (maker-coverage FT-21). Source and licence: README.md. Not a project to order: no layout, no EasyEDA documents.
+
+[project]
+name = "sparkfun-logic-level-converter"
+company = "SparkFun design (CC BY-SA 3.0), transcribed for edakit"
+quantity = 5
+graph = "hardware/graph.json"
+parts = "hardware/parts"
+sim = "hardware/sim.json"
+artifacts = "build/edakit"
+reports = "build/release"
+
+[boards.main]
+title = "Logic Level Converter"

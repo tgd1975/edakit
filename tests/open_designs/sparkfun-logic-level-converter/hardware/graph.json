@@ -1,0 +1,344 @@
+{
+ "graph": {
+  "name": "sparkfun-logic-level-converter",
+  "version": "1.0",
+  "date": "2026-10-31",
+  "description": "SparkFun Logic Level Converter – Bi-Directional as published: four channels of a BSS138 with its gate on LV, 10 kΩ pull-ups to LV on the source and to HV on the drain. Transcribed for edakit's tests.",
+  "purpose": {
+   "use": "sale",
+   "market": "EU",
+   "notes": "SparkFun sells the board; the transcription is a test of edakit, not a product."
+  },
+  "conventions": {
+   "pin_reference": "'<designator>.<pin>' with the pin numbers of the EasyEDA/LCSC symbol",
+   "v": "per net: [min, max] in V – LV at 3.3 V, HV at 5 V, the hookup guide's example",
+   "source": "Logic_Level_Bidirectional schematic (SparkFun Electronics, design Patrick Alberts, Rev V01, 2013-09-26, CC BY-SA 3.0), https://cdn.sparkfun.com/datasheets/BreakoutBoards/Logic_Level_Bidirectional.pdf"
+  },
+  "cables": [],
+  "layout": {},
+  "locks": {},
+  "components": [
+   {
+    "designator": "JP1",
+    "type": "connector",
+    "label": "low-voltage side: LV1, LV2, LV, GND, LV3, LV4",
+    "part": "PZ254V-11-06P",
+    "lcsc": "C492405",
+    "pins": {
+     "1": "1",
+     "2": "2",
+     "3": "3",
+     "4": "4",
+     "5": "5",
+     "6": "6"
+    },
+    "nc": []
+   },
+   {
+    "designator": "JP2",
+    "type": "connector",
+    "label": "high-voltage side: HV1, HV2, HV, GND, HV3, HV4",
+    "part": "PZ254V-11-06P",
+    "lcsc": "C492405",
+    "pins": {
+     "1": "1",
+     "2": "2",
+     "3": "3",
+     "4": "4",
+     "5": "5",
+     "6": "6"
+    },
+    "nc": []
+   },
+   {
+    "designator": "Q1",
+    "type": "transistor",
+    "label": "channel 1: level shift",
+    "part": "BSS138",
+    "lcsc": "C52895",
+    "pins": {
+     "1": "G",
+     "2": "S",
+     "3": "D"
+    },
+    "nc": []
+   },
+   {
+    "designator": "R3",
+    "type": "resistor",
+    "label": "channel 1: LV1 pull-up 10 kΩ",
+    "part": "0805W8F1002T5E",
+    "lcsc": "C17414",
+    "pins": {
+     "1": "1",
+     "2": "2"
+    },
+    "nc": []
+   },
+   {
+    "designator": "R4",
+    "type": "resistor",
+    "label": "channel 1: HV1 pull-up 10 kΩ",
+    "part": "0805W8F1002T5E",
+    "lcsc": "C17414",
+    "pins": {
+     "1": "1",
+     "2": "2"
+    },
+    "nc": []
+   },
+   {
+    "designator": "Q3",
+    "type": "transistor",
+    "label": "channel 2: level shift",
+    "part": "BSS138",
+    "lcsc": "C52895",
+    "pins": {
+     "1": "G",
+     "2": "S",
+     "3": "D"
+    },
+    "nc": []
+   },
+   {
+    "designator": "R2",
+    "type": "resistor",
+    "label": "channel 2: LV2 pull-up 10 kΩ",
+    "part": "0805W8F1002T5E",
+    "lcsc": "C17414",
+    "pins": {
+     "1": "1",
+     "2": "2"
+    },
+    "nc": []
+   },
+   {
+    "designator": "R10",
+    "type": "resistor",
+    "label": "channel 2: HV2 pull-up 10 kΩ",
+    "part": "0805W8F1002T5E",
+    "lcsc": "C17414",
+    "pins": {
+     "1": "1",
+     "2": "2"
+    },
+    "nc": []
+   },
+   {
+    "designator": "Q4",
+    "type": "transistor",
+    "label": "channel 3: level shift",
+    "part": "BSS138",
+    "lcsc": "C52895",
+    "pins": {
+     "1": "G",
+     "2": "S",
+     "3": "D"
+    },
+    "nc": []
+   },
+   {
+    "designator": "R1",
+    "type": "resistor",
+    "label": "channel 3: LV3 pull-up 10 kΩ",
+    "part": "0805W8F1002T5E",
+    "lcsc": "C17414",
+    "pins": {
+     "1": "1",
+     "2": "2"
+    },
+    "nc": []
+   },
+   {
+    "designator": "R5",
+    "type": "resistor",
+    "label": "channel 3: HV3 pull-up 10 kΩ",
+    "part": "0805W8F1002T5E",
+    "lcsc": "C17414",
+    "pins": {
+     "1": "1",
+     "2": "2"
+    },
+    "nc": []
+   },
+   {
+    "designator": "Q2",
+    "type": "transistor",
+    "label": "channel 4: level shift",
+    "part": "BSS138",
+    "lcsc": "C52895",
+    "pins": {
+     "1": "G",
+     "2": "S",
+     "3": "D"
+    },
+    "nc": []
+   },
+   {
+    "designator": "R6",
+    "type": "resistor",
+    "label": "channel 4: LV4 pull-up 10 kΩ",
+    "part": "0805W8F1002T5E",
+    "lcsc": "C17414",
+    "pins": {
+     "1": "1",
+     "2": "2"
+    },
+    "nc": []
+   },
+   {
+    "designator": "R7",
+    "type": "resistor",
+    "label": "channel 4: HV4 pull-up 10 kΩ",
+    "part": "0805W8F1002T5E",
+    "lcsc": "C17414",
+    "pins": {
+     "1": "1",
+     "2": "2"
+    },
+    "nc": []
+   }
+  ],
+  "nets": [
+   {
+    "name": "LV",
+    "pins": [
+     "JP1.4",
+     "Q1.1",
+     "R3.1",
+     "Q3.1",
+     "R2.1",
+     "Q4.1",
+     "R1.1",
+     "Q2.1",
+     "R6.1"
+    ],
+    "v": [
+     0,
+     3.4
+    ]
+   },
+   {
+    "name": "HV",
+    "pins": [
+     "JP2.3",
+     "R4.1",
+     "R10.1",
+     "R5.1",
+     "R7.1"
+    ],
+    "v": [
+     0,
+     5.25
+    ]
+   },
+   {
+    "name": "GND",
+    "pins": [
+     "JP1.3",
+     "JP2.4"
+    ],
+    "v": [
+     0,
+     0
+    ]
+   },
+   {
+    "name": "LV1",
+    "pins": [
+     "Q1.2",
+     "R3.2",
+     "JP1.6"
+    ],
+    "v": [
+     0,
+     3.4
+    ]
+   },
+   {
+    "name": "HV1",
+    "pins": [
+     "Q1.3",
+     "R4.2",
+     "JP2.1"
+    ],
+    "v": [
+     0,
+     5.25
+    ]
+   },
+   {
+    "name": "LV2",
+    "pins": [
+     "Q3.2",
+     "R2.2",
+     "JP1.5"
+    ],
+    "v": [
+     0,
+     3.4
+    ]
+   },
+   {
+    "name": "HV2",
+    "pins": [
+     "Q3.3",
+     "R10.2",
+     "JP2.2"
+    ],
+    "v": [
+     0,
+     5.25
+    ]
+   },
+   {
+    "name": "LV3",
+    "pins": [
+     "Q4.2",
+     "R1.2",
+     "JP1.2"
+    ],
+    "v": [
+     0,
+     3.4
+    ]
+   },
+   {
+    "name": "HV3",
+    "pins": [
+     "Q4.3",
+     "R5.2",
+     "JP2.5"
+    ],
+    "v": [
+     0,
+     5.25
+    ]
+   },
+   {
+    "name": "LV4",
+    "pins": [
+     "Q2.2",
+     "R6.2",
+     "JP1.1"
+    ],
+    "v": [
+     0,
+     3.4
+    ]
+   },
+   {
+    "name": "HV4",
+    "pins": [
+     "Q2.3",
+     "R7.2",
+     "JP2.6"
+    ],
+    "v": [
+     0,
+     5.25
+    ]
+   }
+  ]
+ }
+}

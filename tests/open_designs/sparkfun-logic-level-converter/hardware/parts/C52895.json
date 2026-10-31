@@ -1,0 +1,72 @@
+{
+ "lcsc": "C52895",
+ "mpn": "BSS138",
+ "manufacturer": "onsemi(安森美)",
+ "footprint": "SOT-23-3_L2.9-W1.6-P1.90-LS2.8-BR",
+ "jlc_class": "Extended Part",
+ "kind": "nmos",
+ "pins": {
+  "1": {
+   "name": "G",
+   "type": "passive",
+   "role": "gate"
+  },
+  "2": {
+   "name": "S",
+   "type": "passive",
+   "role": "source"
+  },
+  "3": {
+   "name": "D",
+   "type": "passive",
+   "role": "drain"
+  }
+ },
+ "sources": [
+  "pin names from the EasyEDA symbol (1 G, 2 S, 3 D)",
+  "BSS138 N-Channel Logic Level Enhancement Mode Field Effect Transistor, Fairchild Semiconductor, BSS138 Rev C(W) (2005) – the datasheet SparkFun links, https://cdn.sparkfun.com/datasheets/BreakoutBoards/BSS138.pdf",
+  "Absolute maximum ratings: VDSS 50 V, VGSS ±20 V, ID 0.22 A, PD 0.36 W, RθJA 350 °C/W, TJ −55 … 150 °C",
+  "Electrical characteristics: VGS(th) 0.8 / 1.3 / 1.5 V at 1 mA; RDS(on) 0.7 / 3.5 Ω at VGS 10 V, 1.0 / 6.0 Ω at 4.5 V (ID 0.22 A)"
+ ],
+ "verified": {
+  "by": "Claude (datasheet check, open-design transcription)",
+  "date": "2026-10-31",
+  "datasheet": "BSS138 Rev C(W), Fairchild",
+  "checked": [
+   "ratings",
+   "threshold",
+   "RDS(on) at 4.5 V and 10 V"
+  ],
+  "open": [
+   "RDS(on) at the 3.3 V gate drive of this board is not stated (only 4.5 V and 10 V)",
+   "SparkFun names the BSS138 of Fairchild, now onsemi; onsemi's C52895 stands in"
+  ]
+ },
+ "package": "SOT-23",
+ "datasheet": {
+  "url": "https://cdn.sparkfun.com/datasheets/BreakoutBoards/BSS138.pdf"
+ },
+ "values": {
+  "vgs_th_v": [
+   0.8,
+   1.3,
+   1.5
+  ],
+  "rds_on_max_ohm": {
+   "4.5": 6.0,
+   "10": 3.5
+  }
+ },
+ "limits": {
+  "vds_max_v": 50,
+  "vgs_max_v": 20,
+  "id_max_a": 0.22,
+  "p_max_w": 0.36,
+  "rth_ja_k_per_w": 350,
+  "tj_max_c": 150
+ },
+ "spice": {
+  "model": ".model BSS138 NMOS(LEVEL=1 VTO=1.3 KP=0.66 RD=0.53 IS=1e-12)",
+  "source": "VTO the typical VGS(th) 1.3 V; KP and RD fitted to the typical RDS(on) – 1.0 Ω at VGS 4.5 V, 0.7 Ω at 10 V: R = RD + 1/(KP·(VGS − VTO)) gives KP 0.66 A/V², RD 0.53 Ω"
+ }
+}
