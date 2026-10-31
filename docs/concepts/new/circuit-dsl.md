@@ -315,38 +315,74 @@ means, and the option of an export `edakit graph sysml` for whoever models the s
 
 ### KerML underneath
 
-The owner would find KerML a fitting foundation (2026-10-31). It is, in the way SysML v2 is built on it: SysML v2 is
-KerML plus libraries plus a surface syntax – `part def` is a KerML structure specializing the library's `Part`,
-`part` a feature, `connection` a connector. edakit's notation can be defined the same way: every construct an element
-of an electrical KerML library, the notation the surface syntax over it.
+The owner's rule (2026-10-31): take over every concept of SysML v2 that fits; where one does not, do not bend it, go
+one level down to KerML; never take the surface syntax of either. KerML is the kernel SysML v2 is built on – SysML v2
+is KerML plus libraries plus a surface syntax: `part def` is a KerML structure specializing the Systems Library's
+`Part`, `part` a feature, `connection` a connector. So the layers are: edakit's notation on top; edakit's electrical
+library, defined in SysML v2's terms where they fit – `part def Resistor`, `port def Pin`, `connection def Net`,
+attributes with the ISQ and SI units, `requirement` for R- and M- numbers, `variation` for the bell's configurations,
+`constraint` for assertions, metadata for `accept`, locks and decisions –; and KerML's `struct`, `feature`,
+`connector`, `inv` directly where SysML v2's definitions would bring a meaning that does not fit. So far none was
+found: a net as an n-ary `connection` and a pin as a `port` without flows need no bending, and the occurrence
+semantics SysML v2 carries along does no harm. The practical consequence of staying in SysML v2's terms: an exported
+model is a SysML v2 model, and SysML tools draw it as parts, ports and connections and follow its requirements; a
+model on raw KerML structures they do not. The owner would find KerML the fitting foundation; it is, in this way.
 
-| Notation | KerML |
+| Notation | KerML, or SysML v2's library on it |
 | --- | --- |
-| `def led (color = green, i = …) ports in gnd` | `struct Led :> Block` with `feature in : Pin`, `feature gnd : Pin`, the parameters features with defaults |
-| `use led step1 (…) in = LED_G1 …` | `feature step1 : Led`, its port a member of the net's connector |
+| `def led (color = green, i = …) ports in gnd` | `struct Led :> Block` – or `part def Led :> Block` – with `feature in : Pin`, `feature gnd : Pin`, the parameters features with defaults |
+| `use led step1 (…) in = LED_G1 …` | `feature step1 : Led` (`part step1 : Led`), its port an end of the net's connector |
 | `part R4 resistor lcsc C17630 value 330Ω` | `feature R4 : Resistor` with attribute features `lcsc`, `value`, `board` … |
-| `net GND 0 V U1.GND C1.minus …` | `connector GND : Net (U1.GND, C1.minus, …)` with features `v`, `fn`, `accept` – n-ary |
-| `param vlogic = 0..5.5 V` | `feature vlogic : VoltageRange default …` |
+| `net GND 0 V U1.GND C1.minus …` | `connector GND : Net (U1.GND, C1.minus, …)` – n-ary, with features `v`, `fn`, `accept`; in SysML v2 a `connection` |
+| `param vlogic = 0..5.5 V` | `feature vlogic : VoltageRange default …`; the unit from `SI`, the quantity from `ISQ` |
 | `for n in 0..7 …` | multiplicity, `feature D : LED[8]`, indexed features |
-| `assert … within …` | `inv { … }`, an invariant |
-| `variant esp32 of smd …` | a structure specializing the base, its features redefined with `:>>` |
+| `assert … within …` | `inv { … }`; in SysML v2 `assert constraint` |
+| `variant esp32 of smd …` | a structure specializing the base, its features redefined with `:>>`; in SysML v2 `variation` and `variant` |
 | `alias U1 led1 = PD6` | a feature `led1` of the module's usage bound to its pin feature |
-| `satisfies R-3`, `decision D-8`, `accept` | metadata; `satisfy` and `verify` themselves are SysML v2's, a level up |
-| units, ranges, tolerances | datatypes of the electrical library; in an export the ISQ and SI libraries of SysML v2 |
+| `satisfies R-3`, `decision D-8`, `accept` | `satisfy` and `verify` from SysML v2's Requirements library; `accept` and decisions as metadata |
+| units, ranges, tolerances | SysML v2's Quantities and Units: `ISQElectromagnetism` has voltage and capacitance, `ISQBase` the electric current, `SI` the units |
 
-What that gives: the meaning of redefinition, of inheritance down a variant chain, of multiplicity and of an
-invariant comes from a standard instead of being invented; the export `edakit graph kerml` (and `sysml`, where
-requirements, variation and units want SysML v2's libraries) is a mapping, not a translation; a standard parser –
-Syster, the pilot implementation – can check the exported model, a conformance test the compiler's tests can run
-once such a parser is usable from Python; and the handbook's vocabulary is the standard's. What it does not give: the
-electrical domain – net, pin, role, LCSC number, board, order – which is edakit's library on KerML as on any other
-kernel; and nothing at run time, since the engines read the resolved graph.
+**What the standard provides, verified in the OMG's release repository** (the specification's own text was not
+reachable from this session; the sources say what was read):
+
+- The textual grammar: classifiers `classifier`, `class`, `struct`, `datatype`, `assoc`, `assoc struct`,
+  `behavior`, `function`; features with typing `:`, values `=` and `:=`, `default`; `:>` for specialization of
+  types and subsetting of features, `:>>` for redefinition; multiplicity `[n]` and `[lo..hi]`, `ordered`,
+  `nonunique`; connectors binary (`connector c : T from a to b`) and n-ary (`connector c : T (a, b, c)`), `binding`
+  and `succession` binary; invariants `inv`; expressions with `if … ? … else …`, arithmetic, comparisons, `and`,
+  `or`, `not`, `implies`, no `in`; `metadata` and `@`, prefix metadata `#`; `doc` and `comment`; `alias … for …`;
+  `public`, `private`, `protected`; `import X::*`; `standard library package`.
+- The libraries: the Kernel Semantic Library (Base, Links, Objects, Occurrences, Metaobjects, Performances, …),
+  the Kernel Function Library and the Kernel Data Type Library for KerML; the Systems Library of SysML v2 (Parts,
+  Ports, Connections, Interfaces, Items, Attributes, Constraints, Calculations, Requirements, Cases,
+  VerificationCases, Metadata, …); the Domain Libraries (Quantities and Units with ISQ, SI and
+  ISQElectromagnetism, Metadata, Geometry, Analysis, Cause and Effect, Requirement Derivation). KerML itself has
+  nothing on units, requirements or variation; those are SysML v2's.
+- **The mechanism for a domain language**: semantic metadata. `SemanticMetadata` in `Metaobjects.kerml` "requires
+  its single annotatedType to directly or indirectly specialize a baseType that models the semantics for the
+  annotatedType"; a `metadata def Net :> SemanticMetadata { :>> baseType = … }` gives a user-defined keyword `#net`,
+  and every element marked with it specializes the base type. This is how the OMG intends a domain such as circuits
+  to sit on KerML or SysML v2 without changing either; the Systems Modeling Community names as its purpose to
+  "provide support for building other modeling languages and domain-specific extensions based on KerML and/or
+  SysML", and Seidewitz describes SysML v2 itself as such an extension of the kernel, with users defining
+  domain-specific languages the same way.
+- **What exists for electronics**: the quantities and units, nothing structural – no library of components, pins
+  or nets, and none of the 22 example models is electrical. Circuits were a worked example in SysML v1's SysPhS,
+  the extension for physical interaction and signal-flow simulation (version 1.1, 2021, an electric circuit in its
+  Annex A, translated to Modelica and Simscape); a successor for SysML v2 was not found.
+
+What that gives edakit: the meaning of redefinition, of inheritance down a variant chain, of multiplicity and of an
+invariant from a standard instead of an invention; the export `edakit graph kerml` and `edakit graph sysml` as a
+mapping, not a translation; a standard parser – Syster, the pilot implementation – as a conformance test once one is
+usable from Python; and the handbook's vocabulary. What it does not give: the electrical domain – net, pin, role,
+LCSC number, board, order – which is edakit's library in any case; and nothing at run time, since the engines read
+the resolved graph. Open until the specification's text is read: its own words on scope and conformance.
 
 Why KerML's own textual notation is not the source: it is more abstract than SysML v2's – `struct`, `feature`,
 `connector` for `part def`, `part`, `connection` – at the same length, two to three times the notation of the
 sketch; models have seen even less of it than of SysML v2, and the owner's measure is Sonnet; and a conforming KerML
-reader with name resolution and implied relationships is many times the sketch's parser. The LED step in KerML, as far
-as the grammar goes:
+reader with name resolution and implied relationships is many times the sketch's parser. The LED step in KerML, with
+the grammar's forms:
 
 ```text
 package Bell {
@@ -435,7 +471,8 @@ file where it does not reach them.
 
 Each a real choice, the recommended answer first, with its trade-off; none is due before the triggers above hold.
 
-1. **The basis.** The owner leans to KerML (2026-10-31).
+1. **The basis.** The owner's rule of 2026-10-31: SysML v2's concepts where they fit, KerML underneath where they do
+   not, the surface syntax of neither.
    - *A notation of edakit's own, defined over KerML as SysML v2 is, with `.ato`'s ergonomics, compiled to the
      resolved graph and exported to KerML and SysML v2* (recommended): a standard's meaning for every construct and
      a conformance test, a small notation tools can edit; a parser, a library and a chapter to build, a syntax to
@@ -515,6 +552,18 @@ Read on 2026-10-31 from this session:
   [SYNTAX.md](https://github.com/szymontex/codeyourpcb/blob/main/docs/SYNTAX.md). tscircuit:
   [tsci export](https://docs.tscircuit.com/command-line/tsci-export). Not reachable: circuit-synth's documentation,
   JITX's site, the PHDL paper at OSTI.
+- KerML, from the OMG's release repository on GitHub (www.omg.org was not reachable from this session, so the
+  specification's own text was not read): the
+  [KerML textual grammar](https://github.com/Systems-Modeling/SysML-v2-Release/blob/master/bnf/KerML-textual-bnf.kebnf),
+  [Metaobjects.kerml](https://github.com/Systems-Modeling/SysML-v2-Release/blob/master/sysml.library/Kernel%20Libraries/Kernel%20Semantic%20Library/Metaobjects.kerml)
+  (`SemanticMetadata`), the [Kernel Libraries](https://github.com/Systems-Modeling/SysML-v2-Release/tree/master/sysml.library/Kernel%20Libraries),
+  the [Systems Library](https://github.com/Systems-Modeling/SysML-v2-Release/tree/master/sysml.library/Systems%20Library),
+  the [Domain Libraries](https://github.com/Systems-Modeling/SysML-v2-Release/tree/master/sysml.library/Domain%20Libraries)
+  with [ISQElectromagnetism.sysml](https://github.com/Systems-Modeling/SysML-v2-Release/blob/master/sysml.library/Domain%20Libraries/Quantities%20and%20Units/ISQElectromagnetism.sysml),
+  the [KerML examples](https://github.com/Systems-Modeling/SysML-v2-Release/tree/master/kerml/src/examples); the
+  README's statement of the Systems Modeling Community's purpose; Seidewitz,
+  [On a Metasemantic Protocol for Modeling Language Extension](https://www.scitepress.org/Papers/2020/91816/91816.pdf)
+  (2020); the OMG's [SysPhS 1.1](https://www.omg.org/spec/SysPhS/1.1) as named by the search results, not read.
 - SysML v2: [the release repository](https://github.com/Systems-Modeling/SysML-v2-Release) with the
   [textual grammar](https://github.com/Systems-Modeling/SysML-v2-Release/blob/master/bnf/SysML-textual-bnf.kebnf),
   the [variability
@@ -524,7 +573,8 @@ A](https://github.com/Systems-Modeling/SysML-v2-Release/blob/master/sysml/src/ex
   (`satisfy … by`, `verify`, `60 [kg]`); the OMG's
   [adoption announcement](https://www.omg.org/news/releases/pr2025/07-21-25.htm);
   [Syster](https://github.com/jade-codes/syster); the [resource list](https://github.com/daltskin/SysML-v2-Resources)
-  naming Syside Automator and the ANTLR grammars. Not reachable: the OMG specification pages.
+  naming Syside Automator and the ANTLR grammars. Not reachable: the OMG specification pages, also after the owner allowed them – the
+  session's network rules are fixed when it starts.
 - The Christmas bell at `059162a`, read-only: `docs/decisions.md` (D-11 to D-17), `variants/README.md`, the four
   `edakit.toml`, `hardware/graph.json`, `sim.json` and `signoff.json` of main and the variants, `src/firmware`,
   `variants/esp32/firmware`; the prototype's round trip run on all four configurations.
