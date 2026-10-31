@@ -1,0 +1,80 @@
+# What edakit check and edakit sim find on the published Corne Cherry v3 (left half), and how each finding is judged
+# (the words as in esp32-devkitc-v4/findings.toml): real (a point of the design), lacks (a fact the transcription or
+# the datasheets lack), criterion (edakit's own yardstick, not the design's), known gap (edakit judges it wrong, not
+# fixed yet – with the reason). The key matrix raises nothing: a diode per key, all cathodes at the rows; the scan and
+# ghost loads read the columns as the firmware expects. The load rgb_lit lights every LED white.
+
+[[check]]
+code = "LVL.undefined"
+place = "LED"
+judged = "real"
+why = "The LED chain's data input hangs on TX0/D3 alone: the ATmega32U4's port pins are tri-stated while it resets (datasheet 10.2.1), so LED3's DIN floats until the firmware drives it – no resistor holds it."
+
+[[check]]
+code = "REQ.missing"
+place = "VCC"
+judged = "real"
+why = "The 27 LEDs on VCC have no capacitor at all – the board has none. The SK6812MINI-E datasheet calls a decoupling capacitor at every LED essential (section 14); the WS2812B-V5/W's says it needs none."
+
+[[check]]
+code = "REQ.missing"
+place = "SCL"
+judged = "lacks"
+why = "The board has no I2C pull-ups; they would have to come from the OLED module the builder plugs into J2, which the schematic does not contain."
+
+[[check]]
+code = "REQ.missing"
+place = "SDA"
+judged = "lacks"
+why = "As SCL: a pull-up on SDA can only come from the OLED module, which the schematic does not contain."
+
+[[check]]
+code = "PARTS.supplier"
+place = "J2"
+judged = "lacks"
+why = "J2 is the OLED socket, not named in the build guide by part number; the 4-pin header that stands in has no LCSC number here – LCSC's search refused the request."
+
+[[check]]
+code = "PARTS.verified"
+grade = "device"
+place = "J1"
+judged = "lacks"
+why = "The stand-in for the MJ-4PP-9, SparkFun's 4UCON 20153, has no LCSC number and no EasyEDA device."
+
+[[check]]
+code = "PARTS.verified"
+grade = "device"
+place = "J2"
+judged = "lacks"
+why = "As PARTS.supplier: the stand-in header of the OLED socket names neither an LCSC part nor an EasyEDA device."
+
+[[check]]
+code = "PARTS.verified"
+grade = "device"
+place = "U1"
+judged = "criterion"
+why = "The Pro Micro is a bought board, ordered from SparkFun (DEV-12640): edakit asks every part for an LCSC number or an EasyEDA device to place it; this design is KiCad, its footprint kbd:ProMicro_v3."
+
+[[check]]
+code = "REQ.missing"
+grade = "leave"
+place = "data"
+judged = "real"
+why = "The split link runs from RX1/D2 straight to the TRRS jack's tip – no series resistor, no ESD protection – on a cable plugged and unplugged next to the ring that carries VCC."
+
+[[sim]]
+code = "LIM.i"
+place = "U1"
+judged = "real"
+why = "With every LED lit the half draws 0.93 A from the Pro Micro's USB, beyond the 0.5 A of a USB 2.0 port and of the module's PTC ('VCC: 5V at 500mA') – before the right half, which it also feeds through the jack. The firmware's brightness limit has to keep it below."
+
+[[sim]]
+code = "LIM.range"
+place = "U1"
+judged = "real"
+why = "With every LED lit at the lowest USB voltage, VCC sags to 4.47 V behind the cable, below the 4.5 V the ATmega32U4 needs for its 16 MHz."
+
+[[fixed]]
+what = "A pressed key of the matrix whose row is not scanned – SW1 and SW2 in the ghost load, their diodes blocking on purpose – judged as a contact starved of its minimum load, 0 µA against the socket's 10 µA (REQ.value/min_load)."
+[[fixed]]
+what = "The rows not scanned could not be released: every output of the mcu config was driven in every load, so a ghost through a released row could not be simulated. A load's gpio level null now leaves the output on its pull-up."

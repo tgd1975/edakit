@@ -1,0 +1,270 @@
+{
+ "about": "This half has the USB cable of its Pro Micro, whose VCC feeds the half (and the right half through the TRRS jack, not simulated). Values with 'note' are assumptions.",
+ "ambient_c": 25,
+ "sources": {
+  "U1": {
+   "plus": "21",
+   "minus": "23",
+   "r_ohm": 0.3,
+   "i_max_a": 0.5,
+   "note": "USB 2.0 port and cable with the Pro Micro's PTC: 0.3 Ω source resistance (assumed, as edakit's example – the PTC's resistance is not given); 0.5 A, the USB 2.0 port and the module's '5V at 500mA'"
+  }
+ },
+ "supplies": {
+  "usb-min": {
+   "U1": 4.75
+  },
+  "usb-nom": {
+   "U1": 5.0
+  },
+  "usb-max": {
+   "U1": 5.25
+  }
+ },
+ "loads": {
+  "idle": {
+   "about": "firmware runs, no row selected, keys released, the LEDs dark",
+   "gpio": {
+    "row0": null,
+    "row1": null,
+    "row2": null,
+    "row3": null
+   },
+   "leds_on": []
+  },
+  "scan_row0_sw1": {
+   "about": "row0 selected (driven low), SW1 pressed: col0 low through D1, the other columns high",
+   "gpio": {
+    "row0": 0,
+    "row1": null,
+    "row2": null,
+    "row3": null
+   },
+   "leds_on": [],
+   "buttons": [
+    "SW1"
+   ],
+   "expect": {
+    "col0": {
+     "max_v": 0.85
+    },
+    "col1": {
+     "min_v": 1.95
+    }
+   },
+   "note": "the thresholds: the ATmega32U4's VIL and VIH (table 29-1) over the USB range"
+  },
+  "ghost_row1": {
+   "about": "SW1, SW2 and SW7 pressed – three corners of a rectangle – while row1 is scanned: only col0 may read low; without the diodes col1 would follow through SW2, SW1 and SW7 (a ghost)",
+   "gpio": {
+    "row0": null,
+    "row1": 0,
+    "row2": null,
+    "row3": null
+   },
+   "leds_on": [],
+   "buttons": [
+    "SW1",
+    "SW2",
+    "SW7"
+   ],
+   "expect": {
+    "col0": {
+     "max_v": 0.85
+    },
+    "col1": {
+     "min_v": 1.95
+    }
+   }
+  },
+  "rgb_lit": {
+   "about": "every LED lit white: the SK6812MINI-E at the 70 % grey level their datasheet allows for three colours (3 × 14.5 mA × 0.7), the WS2812B at their 12 mA working current per colour",
+   "gpio": {
+    "row0": null,
+    "row1": null,
+    "row2": null,
+    "row3": null
+   },
+   "leds_on": [],
+   "external": {
+    "LED7": {
+     "plus": "1",
+     "minus": "3",
+     "i_a": 0.03045
+    },
+    "LED8": {
+     "plus": "1",
+     "minus": "3",
+     "i_a": 0.03045
+    },
+    "LED9": {
+     "plus": "1",
+     "minus": "3",
+     "i_a": 0.03045
+    },
+    "LED10": {
+     "plus": "1",
+     "minus": "3",
+     "i_a": 0.03045
+    },
+    "LED11": {
+     "plus": "1",
+     "minus": "3",
+     "i_a": 0.03045
+    },
+    "LED12": {
+     "plus": "1",
+     "minus": "3",
+     "i_a": 0.03045
+    },
+    "LED13": {
+     "plus": "1",
+     "minus": "3",
+     "i_a": 0.03045
+    },
+    "LED14": {
+     "plus": "1",
+     "minus": "3",
+     "i_a": 0.03045
+    },
+    "LED15": {
+     "plus": "1",
+     "minus": "3",
+     "i_a": 0.03045
+    },
+    "LED16": {
+     "plus": "1",
+     "minus": "3",
+     "i_a": 0.03045
+    },
+    "LED17": {
+     "plus": "1",
+     "minus": "3",
+     "i_a": 0.03045
+    },
+    "LED18": {
+     "plus": "1",
+     "minus": "3",
+     "i_a": 0.03045
+    },
+    "LED19": {
+     "plus": "1",
+     "minus": "3",
+     "i_a": 0.03045
+    },
+    "LED20": {
+     "plus": "1",
+     "minus": "3",
+     "i_a": 0.03045
+    },
+    "LED21": {
+     "plus": "1",
+     "minus": "3",
+     "i_a": 0.03045
+    },
+    "LED22": {
+     "plus": "1",
+     "minus": "3",
+     "i_a": 0.03045
+    },
+    "LED23": {
+     "plus": "1",
+     "minus": "3",
+     "i_a": 0.03045
+    },
+    "LED24": {
+     "plus": "1",
+     "minus": "3",
+     "i_a": 0.03045
+    },
+    "LED25": {
+     "plus": "1",
+     "minus": "3",
+     "i_a": 0.03045
+    },
+    "LED26": {
+     "plus": "1",
+     "minus": "3",
+     "i_a": 0.03045
+    },
+    "LED27": {
+     "plus": "1",
+     "minus": "3",
+     "i_a": 0.03045
+    },
+    "LED1": {
+     "plus": "1",
+     "minus": "3",
+     "i_a": 0.036
+    },
+    "LED2": {
+     "plus": "1",
+     "minus": "3",
+     "i_a": 0.036
+    },
+    "LED3": {
+     "plus": "1",
+     "minus": "3",
+     "i_a": 0.036
+    },
+    "LED4": {
+     "plus": "1",
+     "minus": "3",
+     "i_a": 0.036
+    },
+    "LED5": {
+     "plus": "1",
+     "minus": "3",
+     "i_a": 0.036
+    },
+    "LED6": {
+     "plus": "1",
+     "minus": "3",
+     "i_a": 0.036
+    }
+   },
+   "note": "the firmware decides the brightness"
+  }
+ },
+ "corners": [
+  "min",
+  "max"
+ ],
+ "mcu": {
+  "U1": {
+   "outputs": [
+    "row0",
+    "row1",
+    "row2",
+    "row3"
+   ],
+   "pullups": [
+    "row0",
+    "row1",
+    "row2",
+    "row3",
+    "col0",
+    "col1",
+    "col2",
+    "col3",
+    "col4",
+    "col5"
+   ],
+   "pullup_ohm": 50000,
+   "inputs": [
+    "col0",
+    "col1",
+    "col2",
+    "col3",
+    "col4",
+    "col5"
+   ],
+   "note": "QMK col2row: the scanned row an output low, the rows not scanned released (gpio null) and the columns inputs, each on the internal pull-up (RPU 20–50 kΩ, table 29-1: the weakest)"
+  }
+ },
+ "report": [
+  "VCC",
+  "col0",
+  "col1"
+ ]
+}

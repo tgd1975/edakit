@@ -1,0 +1,16 @@
+# The Corne Cherry keyboard v3, left half (foostan/crkbd at b473521), transcribed from its published KiCad schematic
+# for edakit's tests (maker-coverage FT-21: the key matrix). Source, licence and what was transcribed: README.md. Not a
+# project to order: no layout, no EasyEDA documents.
+
+[project]
+name = "corne-cherry-v3-left"
+company = "foostan design (MIT), transcribed for edakit"
+quantity = 5
+graph = "hardware/graph.json"
+parts = "hardware/parts"
+sim = "hardware/sim.json"
+artifacts = "build/edakit"
+reports = "build/release"
+
+[boards.main]
+title = "Corne v3 left half"

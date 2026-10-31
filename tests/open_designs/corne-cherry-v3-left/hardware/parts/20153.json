@@ -1,0 +1,66 @@
+{
+ "mpn": "20153",
+ "manufacturer": "4UCON",
+ "kind": "connector",
+ "package": "3.5 mm 4-pole jack, SMD",
+ "footprint": "MJ-4PP-9_1side",
+ "order": {
+  "sparkfun": "PRT-12639"
+ },
+ "datasheet": {
+  "url": "https://cdn.sparkfun.com/datasheets/Prototyping/20153.pdf",
+  "pinout_page": 1
+ },
+ "pins": {
+  "A": {
+   "name": "~",
+   "type": "passive",
+   "role": "sleeve"
+  },
+  "B": {
+   "name": "~",
+   "type": "passive",
+   "role": "tip"
+  },
+  "C": {
+   "name": "~",
+   "type": "passive",
+   "role": "ring"
+  },
+  "D": {
+   "name": "~",
+   "type": "passive",
+   "role": "ring_2"
+  }
+ },
+ "values": {
+  "r_contact_ohm": 0.05
+ },
+ "limits": {
+  "i_max_a": 0.5,
+  "v_max_v": 30,
+  "t_min_c": -20,
+  "t_max_c": 70
+ },
+ "sources": [
+  "4UCON drawing 20153 (3.5 mm TRRS jack, SMD), file no. 439, revision A3 (2013-03-30), via SparkFun PRT-12639, https://cdn.sparkfun.com/datasheets/Prototyping/20153.pdf (linked from https://www.sparkfun.com/audio-jack-3-5mm-trrs-smd.html), read 2026-10-31 (read from the drawing image)",
+  "specification: rating DC 30 V 0.5 A; contact resistance 50 mΩ max; operation temperature −20 … +70 °C; life 5000 cycles; schematic: 1 earth spring (sleeve), 2 tip spring, 3 and 4 ring springs",
+  "stand-in: the schematic's J1 is kbd:MJ-4PP-9 ('4-pin (audio) jack receptable … compatible with PJ320A') without a datasheet; this 4-pole jack of SparkFun stands in. Pins A–D as the KiCad symbol; their contacts read from the symbol's drawing, drawn as KiCad's audio jacks: A the sleeve (the body), B the tip, C and D the rings"
+ ],
+ "verified": {
+  "by": "Claude (datasheet check, open-design transcription)",
+  "date": "2026-10-31",
+  "datasheet": "4UCON drawing 20153 (3.5 mm TRRS jack, SMD), file no. 439, revision A3 (2013-03-30), via SparkFun PRT-12639",
+  "datasheet_sha256": "92870d05d571916890866d15566df75ecf8bc27b97fb1747528612d3784871ed",
+  "checked": [
+   "rating",
+   "contact resistance",
+   "temperature range",
+   "contacts"
+  ],
+  "open": [
+   "a stand-in: the MJ-4PP-9's own ratings are not published with the design",
+   "which contact each symbol pin of the MJ-4PP-9 takes is read from the symbol's drawing, not from a drawing of the part"
+  ]
+ }
+}
