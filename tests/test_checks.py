@@ -675,7 +675,7 @@ def test_g15_unknown_fn_and_pwm_hz(project):
     assert g15(run(project)) == [
         "LED_OE: pwm_hz must be a frequency in Hz or [min, max], not 'fast'",
         "LED_SDI: unknown fn 'spi.mosi' (known: pwm, adc, spi.sck, spi.tx, spi.rx, spi.cs, i2c.sda, i2c.scl, uart.tx, "
-        "uart.rx)"]
+        "uart.rx, i2s.bclk, i2s.ws, i2s.sd, can.tx, can.rx, onewire, usb.dp, usb.dn)"]
 
 
 def test_g15_sees_through_0_ohm_bridges(project):
