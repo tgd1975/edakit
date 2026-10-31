@@ -264,6 +264,22 @@ SYNC.cpl); B-1 to B-7 → a 13th engine `ORDER` (`ORDER.form`, `.parts`, `.quote
 `.review` – the order at the maker against the release). A finding for a maker of `[cart] makers` that is not the
 planned one is a warning of grade `other_maker`; `ORDER.finish` is graded by purpose in the domain core.
 
+The gaps of decisions 16–18, built on 2026-10-31 in eight worktrees (R1–R8) and merged: HINT.power_path for a load on
+the charging cell (HT-5) and, by decision 17, HINT.charge_termination, HINT.protection_timing and HINT.pd_negotiation
+with the coverage report's "not simulated over time" (R1); an addressable LED strip as a ladder of both rails, with
+injection points (FT-13, kind `led_strip`, R2); the constant-current LED buck (FT-14, behaviour `cc_led_driver`,
+PT4115 and AL8860) and a boost converter with EN low passing VIN − VD (FT-5, R3); the spread of transistor
+parameters as corners of the simulation, opt-in by `spread` in sim.json, and JFETs (FT-17, R4); the DC bias of
+ceramic capacitors, read from the makers' graphs, and the ESR window of a regulator's output capacitor (FT-9, CK-14,
+R5); the BME280's interfaces as configs and a `logic` model whose outputs are released or in a declared state (D3,
+E1 in part, R6); bus parameters in the firmware contract and LIM.range/clock, the antenna at the board edge,
+external compensation, injection currents (FT-16, CK-3, CK-11, CK-28, CK-5, R7); two Corne keyboard halves as open
+designs – v4 with the keys wired directly, v3 with its key matrix of 21 keys and diodes: the matrix rules pass
+the published design and find the faults seeded into it (FT-21, R8). The transcriptions found seven faults of
+edakit, each fixed test first. State: of 92 numbered candidates 84 built, 4 in part (FT-2 ampacity by gauge, FT-4
+termination, FT-18 pickups, FT-21 the Tube Screamer), 4 out; 113 library entries, all drafts until the owner signs
+them.
+
 ### When maker-coverage's candidates are built
 
 After the cut (step 5), not before – decided by the owner. Three reasons:
