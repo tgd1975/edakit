@@ -26,7 +26,8 @@ k_per_w = "K/W"
 ratio = "1"
 
 [enums]
-behavior = ["ldo", "buck", "boost", "mcu", "cc_sink", "opamp", "logic", "current", "none"]
+behavior = ["ldo", "buck", "boost", "mcu", "cc_sink", "opamp", "logic", "current", "pd_sink", "pass_gate", "photomos",
+            "none"]
 regulator = ["ldo", "buck", "boost", "none"]
 color = ["red", "green", "blue", "yellow", "orange", "white", "warm_white", "amber", "uv", "ir", "rgb"]
 dielectric = ["C0G", "NP0", "X5R", "X7R", "X7S", "X6S", "Y5V", "electrolytic", "polymer", "tantalum", "film"]
@@ -136,8 +137,9 @@ roles = ["plus", "minus"]
 limits = ["v_max_v"]
 values = ["coil_ohm"]
 
-[kinds.relay]
-roles = ["coil_plus", "coil_minus", "common", "no", "nc"]
+[kinds.relay]                                # a second contact set (DPDT): common_2, no_2, nc_2 – each set switched
+roles = ["coil_plus", "coil_minus", "common", "no", "nc", "common_2", "no_2", "nc_2", "common_3", "no_3", "nc_3",
+         "common_4", "no_4", "nc_4"]
 limits = ["v_coil_max_v", "i_max_a", "v_max_v"]
 values = ["coil_ohm", "v_operate_v", "v_release_v", "r_contact_ohm"]
 
@@ -153,7 +155,10 @@ limits = ["vdd_max_v", "vdd_op_min_v", "vdd_op_max_v", "vin_min_v", "vin_max_v",
 values = ["behavior", "vout_v", "dropout_v", "iq_a", "efficiency", "idd_max_a", "iout_gain", "iout_accuracy",
           "vout_knee_v", "vrext_v", "vih_v", "vil_v", "vih_ratio", "vil_ratio", "first_bit_to", "vout_swing_v",
           "vicm_v", "r_out_ohm", "comparator", "gain_min_ratio", "f_clock_hz", "vref_v", "i_load_min_a", "prog_v", "icc_a",
-          "i_a"]                             # icc_a: behaviour logic, i_a: behaviour current (sim/netlist.py)
+          "i_a", "vdd_shunt_v", "i_shunt_max_a", "pd_request_v", "r_on_ohm", "vgs_th_v"]
+                                             # icc_a: behaviour logic, i_a: behaviour current (sim/netlist.py);
+                                             # vdd_shunt_v, i_shunt_max_a, pd_request_v: behaviour pd_sink;
+                                             # r_on_ohm, vgs_th_v: behaviour pass_gate
 
 [kinds.module]
 roles = ["*"]
@@ -182,8 +187,14 @@ roles = []
 limits = ["v_max_v"]
 values = ["value_ohm"]
 
-[kinds.optocoupler]
-roles = ["anode", "cathode", "collector", "emitter"]
-limits = ["if_max_a", "vr_max_v", "vce_max_v", "ic_max_a"]
-values = ["vf_v", "vf_at_a", "ctr_min_ratio"]
+[kinds.optocoupler]                          # a transistor output (collector, emitter), or behaviour photomos: a resistance
+                                             # both ways between load_a and load_b while the LED carries if_on_a
+roles = ["anode", "cathode", "collector", "emitter", "load_a", "load_b"]
+limits = ["if_max_a", "vr_max_v", "vce_max_v", "ic_max_a", "v_load_max_v", "i_load_max_a"]
+values = ["vf_v", "vf_at_a", "ctr_min_ratio", "behavior", "r_on_ohm", "if_on_a", "if_off_a", "i_leak_a"]
 
+[kinds.esd_array]                            # a multi-line ESD protection IC (USBLC6-2): steering diodes from each
+                                             # protected line to its rail and from ground, a transil from rail to ground
+roles = ["io1", "io2", "io3", "io4", "io5", "io6", "io7", "io8", "vbus", "gnd"]
+limits = ["vrwm_max_v"]                      # the rail's stand-off: the voltage the transil holds without conducting
+values = ["vbr_min_v", "vf_v", "vf_at_a", "c_io_f"]

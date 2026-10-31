@@ -10,7 +10,7 @@ from __future__ import annotations
 from collections import Counter, defaultdict
 
 from .. import catalog
-from ..circuit import values
+from ..circuit import RELAY_SET, source_outputs, values
 from ..design import natural_key
 from ..findings import Finding
 
@@ -48,10 +48,14 @@ def _resistor_neighbours(design, net):
 
 
 def _protected(design, net):
-    """A net an ESD device guards: a pin of a part whose entry says it is one (values tvs – a TVS diode or an ESD
-    array) on the net or one resistor away."""
-    return any(values(design.part(r.split(".", 1)[0]) or {}).get("tvs")
-               for n in {net} | _resistor_neighbours(design, net) for r in design.nets[n]["pins"])
+    """A net an ESD device guards: a pin of a part whose entry says it is one (values tvs – a TVS diode –, or an io pin
+    of a part of kind esd_array) on the net or one resistor away."""
+    def guards(ref):
+        part = design.part(ref.split(".", 1)[0]) or {}
+        if part.get("kind") == "esd_array":   # an ESD array guards the lines on its io pins
+            return str((part.get("pins") or {}).get(ref.split(".", 1)[1], {}).get("role") or "").startswith("io")
+        return bool(values(part).get("tvs"))
+    return any(guards(r) for n in {net} | _resistor_neighbours(design, net) for r in design.nets[n]["pins"])
 
 
 def _connector_signals(design, cfg, sim):
@@ -153,8 +157,7 @@ def _supply_starts(design, cfg, sim):
             take = list(pins)
         if part.get("kind") == "module":
             take += [n for n, p in pins.items() if p.get("type") == "power_output" and roles[n] == "vbus"]
-        if isinstance(sources.get(des), dict) and "plus" in sources[des]:
-            take.append(str(sources[des]["plus"]))
+        take += [plus for _, plus, _ in source_outputs(sources.get(des))]
         nets = {design.pin_net.get(f"{des}.{n}") for n in take} - {None, design.ground}
         if nets:
             out[des] = nets
@@ -387,7 +390,7 @@ def _relays_switching_off_board(design, cfg, sim):
                 for num in design.part(d)["pins"]}
     leaving -= {None, design.ground}
     return [des for des in design.comps_of_kind("relay")
-            if any(p.get("role") in ("common", "no", "nc") and design.pin_net.get(f"{des}.{num}") in leaving
+            if any(RELAY_SET.match(str(p.get("role") or "")) and design.pin_net.get(f"{des}.{num}") in leaving
                    for num, p in design.part(des)["pins"].items())]
 
 

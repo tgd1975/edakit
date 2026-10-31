@@ -271,7 +271,7 @@
   "R4, R5 2.2 MΩ and R6 100 kΩ: every contact at 0 V DC in every state, so switching does not click (REQ.value/switch). R6 discharges the effect's output capacitor. The guitar sees R4 (2.2 MΩ) in bypass and R4 ∥ R5 (1.1 MΩ) with the effect on – each time in parallel with the amplifier or the effect's input. The effect's input and output must be DC-free (coupling capacitors, as in block instrument-buffer).",
   "OK1's output capacitance (up to about 220 pF at 0 V, typical) loads out in bypass like a short cable.",
   "K1's minimum applicable load, 10 mV 10 µA, is a reference value; a guitar into 1 MΩ carries about 1 µA – Hongfa's (825) version is for tiny loads.",
-  "The simulation switches K1's first contact set only (the relay kind has one set of roles): with the relay on, in reaches fx_in only on the board – an AC run from in to out shows nothing then; run it from fx_in or fx_out to out instead, and from in to out in bypass. OK1's MOSFET output has no model (the optocoupler kind's output is a transistor) – it is open there. R4 and R5 give set 2's nets their level in the simulation as on the board.",
+  "The simulation switches both contact sets of K1 (roles common_2, no_2, nc_2) and models OK1's PhotoMOS output as a resistance both ways (behaviour photomos: 0.7 Ω at most while its LED carries 3 mA or more) – an AC run from in to out follows the relay in both states. R4 and R5 give set 2's nets their level in the simulation as on the board.",
   "sim.json: ctl and mute under the MCU's outputs; a load with ctl high and \"relays_on\": [<K>], a load with mute high – REQ.value/switch holds every contact on signal nets at one DC level in each."
  ],
  "test": {

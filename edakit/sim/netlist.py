@@ -58,7 +58,7 @@ from __future__ import annotations
 import math
 import re
 
-from ..circuit import limits, values, wire_h, wire_ohm
+from ..circuit import limits, relay_sets, values, wire_h, wire_ohm
 
 VT = 0.02585
 LED_N = 2.0
@@ -87,6 +87,13 @@ def smooth(fn, a, b, w=KNEE_V):
     """min or max of two ngspice expressions, smooth over w: (a + b ∓ sqrt((a − b)² + w²)) / 2."""
     sign = "-" if fn is min else "+"
     return f"(({a})+({b}){sign}sqrt((({a})-({b}))**2+{w * w:g}))/2"
+
+
+def scaled(value, factor):
+    """A supply's value times factor: a voltage, or [t, V] points with each V scaled."""
+    if isinstance(value, (int, float)):
+        return value * factor
+    return [[t, x * factor] for t, x in value]
 
 
 def pwl(points):
@@ -273,15 +280,29 @@ class Netlist:
                                            "cathode_net": roles.get(cathode_role)}
 
     def source(self, des, spec, value):
-        """Supply at a connector: voltage source behind a source resistance (cable, power supply)."""
-        plus = self.pn(f"{des}.{spec['plus']}")
+        """Supply at a connector: voltage source behind a source resistance (cable, power supply). With "outputs"
+        several rails against the shared minus (a ±12 V header): each its own source at v_ratio times the supply's
+        voltage, oriented so that a rail below the minus (v_ratio < 0) supplies with the same sign of current."""
+        from ..circuit import source_outputs
         minus = self.pn(f"{des}.{spec['minus']}")
-        x = f"x_{des.lower()}_src"
-        self.add(f"V_{des}_SRC {x} {minus} {pwl(value)}")
-        r = spec.get("r_ohm", 0.1)
-        self.add(f"R_{des}_SRC {x} {plus} {r}", des, "source", (x, plus), r)
-        self.meta["sources"][des] = {"branch": f"v_{des}_src#branch".lower(), "i_max_a": spec.get("i_max_a"),
-                                     "i_min_a": spec.get("i_min_a"), "nodes": [plus, minus]}
+        for name, plus_pin, ratio in source_outputs(spec):
+            out = (spec.get("outputs") or {}).get(name) or {}
+            plus = self.pn(f"{des}.{plus_pin}")
+            tag = f"{des}_{name}" if name else des
+            x = f"x_{tag.lower()}_src"
+            v = pwl(scaled(value, abs(ratio)))
+            if ratio >= 0:
+                self.add(f"V_{tag}_SRC {x} {minus} {v}")
+            else:                                   # the rail sits below the minus: + at the minus, - at the rail
+                self.add(f"V_{tag}_SRC {minus} {x} {v}")
+            r = out.get("r_ohm", spec.get("r_ohm", 0.1))
+            self.add(f"R_{tag}_SRC {x} {plus} {r}", des, "source", (x, plus), r)
+            key = f"{des}:{name}" if name else des
+            self.meta["sources"][key] = {"branch": f"v_{tag}_src#branch".lower(),
+                                         "i_max_a": out.get("i_max_a", spec.get("i_max_a")),
+                                         "i_min_a": out.get("i_min_a", spec.get("i_min_a")),
+                                         "i_back_max_a": out.get("i_back_max_a", spec.get("i_back_max_a")),
+                                         "nodes": [plus, minus] if ratio >= 0 else [minus, plus], "des": des}
 
     def external(self, des, spec):
         """Off-board load at a connector: constant current from pin 'plus' to pin 'minus'."""
@@ -364,15 +385,18 @@ class Netlist:
                 if c and e:          # the transistor passes at least ctr_min times the LED current, as VCE allows
                     self.add(f"B_{des}_CE {c} {e} I = {p.get('ctr_min_ratio', 0.5)}*max(i(V_{des}_LA), 0)"
                              f"*min(1, max(V({c},{e}), 0)/0.2)", des, "opto_out", (c, e))
+                if p.get("behavior") == "photomos":
+                    self.photomos(des, part)
         elif kind == "relay":
             a, b = self.rn(des, "coil_plus"), self.rn(des, "coil_minus")
             if a and b and a != b:
                 self.add(f"R_{des}_COIL {a} {b} {p['coil_ohm']}", des, "relay_coil", (a, b), p["coil_ohm"])
             on = des in self.load.get("relays_on", [])
-            c, t = self.rn(des, "common"), self.rn(des, "no" if on else "nc")
-            if c and t and c != t:
-                self.add(f"R_{des}_K {c} {t} {p.get('r_contact_ohm', 0.05)}", des, "switch", (c, t),
-                         p.get("r_contact_ohm", 0.05))
+            for sset in sorted(relay_sets(part)):    # every contact set: "" the first, "_2" the second (DPDT) …
+                c, t = self.rn(des, "common" + sset), self.rn(des, ("no" if on else "nc") + sset)
+                if c and t and c != t:
+                    self.add(f"R_{des}_K{sset.lstrip('_')} {c} {t} {p.get('r_contact_ohm', 0.05)}", des, "switch",
+                             (c, t), p.get("r_contact_ohm", 0.05))
             self.meta["relays"][des] = {"on": on, "coil": (a, b)}
         elif kind == "switch":
             if des in self.load.get("open", []):
@@ -401,12 +425,14 @@ class Netlist:
             w, ea, eb = (self.rn(des, x, True) for x in ("wiper", "end_a", "end_b"))
             self.add(f"R_{des}_a {ea} {w} {ra:.6g}", des, "pot", (ea, w), ra)
             self.add(f"R_{des}_b {w} {eb} {rb:.6g}", des, "pot", (w, eb), rb)
+        elif kind == "esd_array":
+            self.esd_array(des, part)
         elif kind in ("ic", "module"):
             behavior = p.get("behavior", "none")
             fn = self.plugin_models.get(behavior) or getattr(self, f"ic_{behavior}", None)
             if fn is None:
                 raise ValueError(f"{des}: unknown behaviour model '{behavior}' (built in: ldo, buck, boost, mcu, cc_sink,"
-                                 " opamp, logic, current, none; or a plugin model)")
+                                 " opamp, logic, current, pd_sink, pass_gate, none; or a plugin model)")
             fn(self, des, part) if behavior in self.plugin_models else fn(des, part)
 
     # --- behaviour models -----------------------------------------------------------------------------------------
@@ -582,6 +608,95 @@ class Netlist:
     def ic_none(self, des, part):
         pass
 
+    # --- W5: a USB PD sink, a pass-gate translator, a photo-MOS output, an ESD array ------------------------------
+    def ic_pd_sink(self, des, part):
+        """A USB PD sink (CH224K): its VDD a shunt regulator – it holds VDD at vdd_shunt_v by sinking current, up to
+        i_shunt_max_a, from the series resistor the board feeds it through; beyond that VDD rises. The voltage it
+        requests from the charger by its configuration pins (values pd_request_v) is REQ.value/pd_request's, stage G;
+        the charger itself is the project's source of sources (sim.json)."""
+        p = values(part)
+        vdd, gnd = self.rn(des, "vdd"), self._gnd_of(des)
+        vset = p.get("vdd_shunt_v")
+        vset = vset[1] if isinstance(vset, list) and len(vset) > 1 and vset[1] is not None else vset
+        if vdd is None or vset is None:
+            return
+        tag = des.lower()
+        i_max = p.get("i_shunt_max_a", 0.03)
+        self.add(f"V_{des}_SH {vdd} x_{tag}_sh 0")
+        self.add(f"B_{des}_SH x_{tag}_sh {gnd} I = min({i_max}, max(V(x_{tag}_sh,{gnd})-{vset}, 0)/{PD_SHUNT_OHM})",
+                 des, "pd_shunt", (vdd, gnd))
+        self.meta.setdefault("pd_sinks", {})[des] = {"ammeter": f"v_{tag}_sh#branch", "vdd": vdd, "gnd": gnd,
+                                                     "vset": vset, "i_max_a": i_max}
+
+    def ic_pass_gate(self, des, part):
+        """A pass-gate translator (PCA9306 class): per channel a switch between a<n> and b<n> through r_on_ohm that
+        conducts while the lower side sits below the reference vref1 – the gate of the pass transistor follows
+        vref1 by vgs_th_v, so a side pulled low passes, two released sides stay apart at their own pull-ups – and
+        only while en is above vref1. Values r_on_ohm, vgs_th_v (a number); roles vref1, en, a1/b1, a2/b2 …"""
+        p = values(part)
+        rp = self.role_pins(des)
+        ref, en = self.pn(rp.get("vref1")), self.pn(rp.get("en"))
+        if ref is None:
+            return
+        r_on = p.get("r_on_ohm", 5.0)
+        r_on = max(x for x in r_on if x is not None) if isinstance(r_on, list) else r_on
+        enable = f"min(1, max(V({en})-V({ref}), 0)/{PASS_GATE_KNEE_V})" if en else "1"
+        for role, ref_a in sorted(rp.items()):
+            if not role.startswith("a") or not role[1:].isdigit() or f"b{role[1:]}" not in rp:
+                continue
+            a, b = self.pn(ref_a), self.pn(rp[f"b{role[1:]}"])
+            low = smooth(min, f"V({a})", f"V({b})")
+            on = f"min(1, max(V({ref})-{low}, 0)/{PASS_GATE_KNEE_V})"
+            self.add(f"B_{des}_{role.upper()} {a} {b} I = (V({a})-V({b}))/{r_on}*{on}*{enable}", des, "pass_gate",
+                     (a, b))
+
+    def photomos(self, des, part):
+        """A photo-MOS output (AQY212): between load_a and load_b a resistance both ways – r_on_ohm (its maximum) while
+        the LED carries if_on_a or more, the off-state leakage i_leak_a at v_load_max_v below if_off_a, linear in
+        between. The LED is the optocoupler's (its ammeter V_<des>_LA)."""
+        p, r = values(part), limits(part)
+        a, b = self.rn(des, "load_a"), self.rn(des, "load_b")
+        if not a or not b or a == b:
+            return
+        r_on = p.get("r_on_ohm", 1.0)
+        r_on = max(x for x in r_on if x is not None) if isinstance(r_on, list) else r_on
+        i_on, i_off = p.get("if_on_a", 0.005), p.get("if_off_a", 0.0)
+        g_off = p.get("i_leak_a", 0.0) / r.get("v_load_max_v", 1.0) if p.get("i_leak_a") else 1e-12
+        lit = f"min(1, max(i(V_{des}_LA)-{i_off}, 0)/{max(i_on - i_off, 1e-9)})"
+        x = f"x_{des.lower()}_ld"
+        self.add(f"V_{des}_LD {a} {x} 0")
+        self.add(f"B_{des}_LOAD {x} {b} I = (V({x})-V({b}))*({g_off} + {lit}/{r_on})", des, "photomos", (a, b))
+        self.meta.setdefault("photomos", {})[des] = {"led": f"v_{des.lower()}_la#branch", "nodes": (a, b),
+                                                     "ammeter": f"v_{des.lower()}_ld#branch", "r_on": r_on,
+                                                     "if_on_a": i_on, "if_off_a": i_off}
+
+    def esd_array(self, des, part):
+        """An ESD array (USBLC6-2): from each protected line (roles io<n>) a steering diode to the rail (vbus) and one
+        from ground, and from the rail a transil to ground breaking down at vbr_min_v – in normal operation they carry
+        nothing; a line beyond its rail or below ground does."""
+        p = values(part)
+        rail, gnd = self.rn(des, "vbus"), self._gnd_of(des)
+        vf, at = p.get("vf_v", 1.0), p.get("vf_at_a", 0.01)
+        model = f"ESD_{part.get('lcsc', des)}"
+        n, rs = 1.5, 1.0                  # a silicon steering diode: no reverse breakdown in its working range
+        i_s = at / (math.exp((vf - at * rs) / (n * VT)) - 1)
+        self.models[model] = f".model {model} D(IS={i_s:.4e} N={n} RS={rs} BV=100)"
+        done = set()
+        for role, ref in sorted(self.role_pins(des).items()):
+            if not role.startswith("io"):
+                continue
+            io = self.pn(ref)
+            if io in done:
+                continue
+            done.add(io)
+            if rail:
+                self.add(f"D_{des}_{role}H {io} {rail} {model}", des, "esd_diode", (io, rail))
+            self.add(f"D_{des}_{role}L {gnd} {io} {model}", des, "esd_diode", (gnd, io))
+        if rail and p.get("vbr_min_v"):
+            zener = f"ESDZ_{part.get('lcsc', des)}"
+            self.models[zener] = f".model {zener} D(IS=1e-12 N=1 BV={p['vbr_min_v']} IBV=1e-3 RS=0.5)"
+            self.add(f"D_{des}_Z {gnd} {rail} {zener}", des, "esd_diode", (gnd, rail))
+
     # --- build ----------------------------------------------------------------------------------------------------
     def build(self, tran=None):
         for des in sorted(self.d.comps):
@@ -647,6 +762,8 @@ class Netlist:
 
 
 FAULT_SHORT_OHM = 0.01      # a short of a generated fault scenario
+PD_SHUNT_OHM = 0.1          # the dynamic resistance of a PD sink's VDD shunt in the model: within 3 mV at 30 mA
+PASS_GATE_KNEE_V = 0.1      # a pass gate turns on over this much below its reference
 
 
 def build(design, cfg, scenario, plugin_models=None, tran=None):

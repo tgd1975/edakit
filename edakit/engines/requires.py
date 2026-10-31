@@ -34,7 +34,7 @@ def run(ctx):
     return (decoupling(d) + i2c(d) + flyback(d) + usb_c(d) + functions(d) + hot_loops(ctx.design) + pin_needs(d)
             + balancing(d) + addresses(d) + uart_lines(d) + adc_sources(d) + btl_outputs(d) + instrument_loads(d)
             + stable_gains(d) + usb_data(d) + leaving_lines(d) + matrix(d) + bus_terminations(d) + bridge_clamps(d)
-            + feedback_dividers(d))
+            + feedback_dividers(d) + pd_requests(d))
 
 
 def decoupling(d):
@@ -896,3 +896,58 @@ def lowest_on(d, net, who=()):
         mins += [p["v_op_min_v"] for n, p in (part.get("pins") or {}).items()
                  if p.get("type") == "power_in" and d.pin_net.get(f"{des}.{n}") == net and is_number(p.get("v_op_min_v"))]
     return min(mins) if mins else v[1]
+
+
+PD_CFG_ROLES = ("cfg1", "cfg2", "cfg3")
+
+
+def pd_levels(d, des):
+    """The level each configuration pin of a PD sink sets – "0" on ground, "1" on a supply net or one resistor from
+    one, "?" otherwise (an MCU pin the firmware sets, a pin that floats: both levels possible)."""
+    supplies, out = supply_nets(d), []
+    for role in PD_CFG_ROLES:
+        net = d.net_of(des, role)
+        if net is None:
+            out.append("?")
+        elif net == d.ground:
+            out.append("0")
+        elif net in supplies or resistors_to(d, net, supplies - {net}):
+            out.append("1")
+        elif resistors_to(d, net, {d.ground}):
+            out.append("0")
+        else:
+            out.append("?")
+    return "".join(out)
+
+
+def pd_requests(d):
+    """REQ.value/pd_request (decision of 2026-10-31, schema W5): a USB PD sink (behaviour pd_sink) requests the
+    voltage its configuration pins select (values pd_request_v: a table of CFG1 CFG2 CFG3 levels, "x" for either, to
+    volts – CH224K table 6.2); every voltage the levels on the board can select lies within the declared range of the
+    VBUS net its sense pin (role vbus_sense) reaches through its series resistor – else the parts on VBUS are judged
+    against a range the charger will exceed."""
+    out = []
+    for des in sorted(d.comps):
+        part = d.part(des) or {}
+        p = values(part)
+        table = p.get("pd_request_v")
+        if p.get("behavior") != "pd_sink" or not isinstance(table, dict):
+            continue
+        levels = pd_levels(d, des)
+        chosen = sorted({v for pattern, v in table.items()
+                         if len(pattern) == len(levels) and all(a in ("x", b) or b == "?" for a, b in zip(pattern, levels))})
+        sense = d.net_of(des, "vbus_sense")
+        if not chosen or sense is None:
+            continue
+        vbus = {other for _, _, other in resistors_to(d, sense, set(d.nets) - {sense})} or {sense}
+        for net in sorted(vbus):
+            top = v_range(d.nets[net])[1]
+            if max(chosen) > top + 1e-9:
+                out.append(Finding("REQ.value", "G", des, f"{des}: requests up to {max(chosen):g} V by its CFG pins "
+                                   f"(CFG1 CFG2 CFG3 = {levels}, ? either level; it may select "
+                                   f"{', '.join(f'{x:g}' for x in chosen)} V) – {net} is declared up to {top:g} V",
+                                   f"pd_request_v of {d.entry_key(des)}", "declare the VBUS net over every voltage the "
+                                   "pins can request (and rate its parts for it), or fix the CFG pins to the voltage meant",
+                                   grade="pd_request", on=(("component", des),)))
+    return out
+

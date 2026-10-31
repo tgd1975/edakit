@@ -23,25 +23,36 @@
   },
   "3": {
    "name": "3",
-   "type": "passive"
+   "type": "passive",
+   "role": "load_a"
   },
   "4": {
    "name": "4",
-   "type": "passive"
+   "type": "passive",
+   "role": "load_b"
   }
  },
  "values": {
   "vf_v": 1.14,
-  "vf_at_a": 0.005
+  "vf_at_a": 0.005,
+  "behavior": "photomos",
+  "r_on_ohm": [
+   null,
+   0.34,
+   0.7
+  ],
+  "if_on_a": 0.003,
+  "if_off_a": 0.0003,
+  "i_leak_a": 1e-06
  },
  "limits": {
   "if_max_a": 0.05,
   "vr_max_v": 5,
-  "vce_max_v": 60,
-  "ic_max_a": 1.0,
   "p_max_w": 0.45,
   "t_min_c": -40,
-  "t_max_c": 85
+  "t_max_c": 85,
+  "v_load_max_v": 60,
+  "i_load_max_a": 1.0
  },
  "hints": [
   "MOSFET output (1 Form A, AC/DC) between pins 3 and 4: Ron 0.34 typ / 0.7 Ω max at IF 5 mA; LED current 5 … 30 mA recommended, operate current 1.1 mA typ / 3 mA max",
@@ -72,11 +83,10 @@
   "checked": [
    "absolute maximum p. 1: IF 50 mA, VR 5 V, VL 60 V, IL 1.0 A, PT 450 mW, −40 … 85 °C",
    "p. 2: IFon 3 mA max, VF 1.14 V at 5 mA, Ron 0.7 Ω max, Ton 5 ms / Toff 0.5 ms max, recommended IF 5 … 30 mA",
-   "schematic p. 4: 1 anode, 2 cathode, 3/4 output"
+   "schematic p. 4: 1 anode, 2 cathode, 3/4 output",
+   "2026-10-31 (schema W5, read again): Panasonic ASCTB133E 202103, AQY212GS column – LED operate current IFon max 3 mA and LED turn-off current IFoff min 0.3 mA at IL 100 mA (values if_on_a, if_off_a); on resistance Ron typ 0.34 Ω, max 0.7 Ω at IF 5 mA, IL max (r_on_ohm); off-state leakage max 1 µA at VL max (i_leak_a); load voltage 60 V peak AC, continuous load current 1.0 A (limits v_load_max_v, i_load_max_a); output terminals 3 and 4 (figure 2 'measured portion: between terminals 3 and 4') – roles load_a, load_b"
   ],
   "open": [
-   "the kind optocoupler models a transistor output (ctr_min_ratio × IF from collector to emitter); a PhotoMOS output is a resistance in both directions – no such model, so the output pins carry no role and the simulation leaves the output open",
-   "vce_max_v and ic_max_a stand for the output's load voltage and load current; no check reads them without the roles",
    "the output capacitance (figure 12) is a typical curve only",
    "MSL 3: reflow within the floor life or bake",
    {

@@ -23,11 +23,17 @@ the supply over time and LIM.v judges them. Switching spikes and fast edges are 
   output or by the load's `leds_on`, where the designator turns on all three colours and `D10_RED` one.
 - Switches, buttons, DIP switches are closed or open as the scenario's load says (`buttons`, `open`, `dip_closed`).
   A relay is its coil (`coil_ohm`) plus a contact from `common` to `no` when the load lists it in `relays_on`, else to
-  `nc`.
+  `nc` – every contact set of it: a DPDT relay's second set carries the roles `common_2`, `no_2`, `nc_2` and switches
+  with the first (REQ.value/switch judges each set apart).
 - Supplies: connectors listed under `sources` (a voltage source behind a source resistance), battery holders with a
   cell state (`cells`). A module that brings its own supply (an Arduino Nano on USB) is a source as well: `plus` is
   its 5V pin, the voltage is USB minus its on-board diode – or USB itself on a module without that diode;
-  `combine_sources` (5.2) puts it into scenarios with the other sources.
+  `combine_sources` (5.2) puts it into scenarios with the other sources. A connector that brings several rails – a
+  Eurorack header's ±12 V – is one source with `outputs` instead of `plus`: each rail its pin and its `v_ratio` of the
+  supply's voltage against the shared `minus`, `-1` for a rail below it, e.g. `"J2": {"minus": "3", "outputs": {"p12":
+  {"plus": "9", "v_ratio": 1}, "n12": {"plus": "1", "v_ratio": -1}}}` with the supply `"J2": 12`; each rail is a source
+  of its own in the results (`J2:p12`, `J2:n12`), with its `r_ohm`, `i_max_a` and `i_back_max_a` (the source's where the
+  rail gives none), and a current drawn from the negative rail counts as supplied, not fed back.
 - `i_min_a` on a source: the least current the supply needs to stay on – USB power banks switch off below
   50–100 mA after a few seconds. LIM.i checks every scenario against it, at the least current the board draws. An MCU
   whose current swings – an ESP32 draws 240 mA while it transmits Wi-Fi and 20–68 mA with its radio off (Espressif
@@ -63,7 +69,17 @@ the regulator at least that much (LIM.range/min_load – the AMS1117 needs 10 mA
 | `opamp` | `vcc`, `vee` (or `gnd`), per channel `in_p`, `in_n`, `out` – with a suffix for several (`in_p_a`, `out_a`, `in_p_b` …) | `vout_swing_v`, `vicm_v`, `iq_a`, `r_out_ohm`, `comparator` | op-amp: the output follows the inputs with an open-loop gain of 10⁴, limited to the rails plus `vout_swing_v` – `[above vee, from vcc]`, e.g. `[0.02, -1.5]` for an output that stops 1.5 V below the supply (none: rail to rail) –, behind `r_out_ohm` (50 Ω); `iq_a` from vcc to vee; the output's own current comes from ground in the model, so a source's current misses it. LIM.range/opamp (a warning) holds every input to the common-mode range `vicm_v` (same form: `[0, -1.5]` from vee to 1.5 V below vcc) and every output to its linear range – an output at its limit while the inputs stand apart has saturated; `comparator: true` is meant to |
 | `logic` | supply pins (`power_in`), outputs | `icc_a` | supply current, outputs low |
 | `current` | supply pins | `i_a` | constant supply current; with `limits` `vin_min_v`/`vin_max_v` (an own board, 4.5) LIM.range checks the voltage at its supply pins against them |
+| `pd_sink` | `vdd`, `gnd`, `cfg1` … `cfg3`, `vbus_sense` | `vdd_shunt_v`, `i_shunt_max_a`, `pd_request_v` | a USB PD sink (CH224K): VDD a shunt regulator at `vdd_shunt_v` that sinks up to `i_shunt_max_a` from the series resistor the board feeds it through – at the limit VDD rises with the supply (LIM.i "VDD shunt current", LIM.declared on the VDD net); the voltage the CFG levels request (`pd_request_v`: `{"1xx": 5, "000": 9, …}`, CFG1 CFG2 CFG3, `x` for either) is REQ.value/pd_request's, stage G – the charger is the project's source at the voltage it delivers |
+| `pass_gate` | `vref1`, `en`, per channel `a1`/`b1`, `a2`/`b2` … | `r_on_ohm`, `vgs_th_v` | a pass-gate translator (PCA9306 class): each channel a switch of `r_on_ohm` between its sides that conducts while the lower side sits below `vref1` and `en` is above it – a side pulled low passes the low, released sides stay at their own pull-ups |
 | `none` | – | – | nothing |
+
+Two parts that are no IC have models of their own. An optocoupler with `behavior: "photomos"` (a PhotoMOS, AQY212)
+switches between its roles `load_a` and `load_b` a resistance both ways – `r_on_ohm` (its maximum) while its LED carries
+`if_on_a` or more, the leakage `i_leak_a` at `v_load_max_v` below `if_off_a`, linear in between; LIM.range/photomos (a
+warning) holds the LED current to one side or the other, and LIM.i, LIM.v the load current and voltage to
+`i_load_max_a`, `v_load_max_v`. An ESD array (kind `esd_array`, USBLC6-2) has steering diodes from each protected line
+(`io1`, `io2` …) to its rail (`vbus`) and from ground, from `vf_v` at `vf_at_a`, and a transil from the rail to ground
+breaking down at `vbr_min_v`: in normal operation they carry nothing.
 
 Two model rules hold for every scenario and matter in transient runs. A regulator whose ratings give `vin_min_v` – an
 `ldo`, `buck` or `boost`, and the `mcu` model's on-board regulator with `vin_min_v` or `vsys_min_v` – locks out below it:

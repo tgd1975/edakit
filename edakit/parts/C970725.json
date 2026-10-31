@@ -102,7 +102,20 @@
   }
  },
  "values": {
-  "behavior": "none"
+  "behavior": "pd_sink",
+  "vdd_shunt_v": [
+   3.24,
+   3.3,
+   3.36
+  ],
+  "i_shunt_max_a": 0.03,
+  "pd_request_v": {
+   "1xx": 5,
+   "000": 9,
+   "001": 12,
+   "011": 15,
+   "010": 20
+  }
  },
  "limits": {
   "p_max_w": 0.4,
@@ -136,17 +149,18 @@
    "ESSOP10 pinout p. 2 and table 4-2 p. 3 = EasyEDA symbol of C970725 (1 VDD … 10 PG, 11 GND = exposed pad)",
    "absolute maximum 8.1.3 p. 13 and electrical parameters 8.2.3 p. 14 of the CH224K",
    "reference schematic 6.2 p. 9: 1 kΩ VBUS → VDD, 1 µF at VDD, 10 kΩ VBUS → pin 8, I/O-level table 5–20 V",
-   "differences CH224A / CH224K 7.1 p. 11"
+   "differences CH224A / CH224K 7.1 p. 11",
+   "2026-10-31 (schema W5, read again): VDD shunt regulator VLDOK 3.24 / 3.3 / 3.36 V, sinking ILDO 0 … 30 mA (8.2.3 p. 14) – values vdd_shunt_v, i_shunt_max_a, behaviour pd_sink; the CH224K's request by I/O levels (reference 6.2 p. 9): CFG1 = 1 → 5 V; CFG1 = 0 with CFG2 CFG3 = 00 → 9 V, 01 → 12 V, 11 → 15 V, 10 → 20 V – values pd_request_v (table 5-2 p. 5 is the CH224Q/A's, with other voltages)"
   ],
   "open": [
    "not in stock at LCSC or JLCPCB (2026-10-31); WCH recommends the CH224A – it would need its own entry (other ratings and configuration values)",
-   "VDD is a shunt regulator fed through a resistor: no behaviour model for it – with behaviour none the simulation puts VBUS on VDD and LIM.v would report the 3.6 V limit (schema gap)",
    "pin 8 (VBUS sense) is rated 13.5 V, the reference requests up to 20 V through 10 kΩ; the data sheet says nothing about an internal clamp – the simulation without a model shows VBUS at the pin",
    "the absolute-maximum table gives VDD as 3.0 … 3.6 V (a minimum of 3.0 V in an absolute-maximum table)",
    "DP, DM, CFG2, CFG3 absolute maxima are relative to VDD (VDD + 0.5 V); PG has no absolute maximum for the CH224K",
    "no input thresholds for CFG1–CFG3, no supply current and no θJA or junction limit for the CH224K",
    "single-resistor configuration values of the CH224K are not in version 2.1 (table 5-1 is for CH224Q/CH224A, and 7.3 says the values differ)",
-   "the series resistors at VDD and pin 8 are entered as pull_up (a resistor to the VBUS supply net) without a window; the sink limit 30 mA bounds the VDD resistor from below for the highest VBUS"
+   "the series resistors at VDD and pin 8 are entered as pull_up (a resistor to the VBUS supply net) without a window; the sink limit 30 mA bounds the VDD resistor from below for the highest VBUS",
+   "behaviour pd_sink models the VDD shunt only; PG, the CC lines and the request on the CC wire are not simulated – the charger is the project's source in sim.json at the voltage it delivers"
   ]
  }
 }

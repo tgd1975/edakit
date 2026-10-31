@@ -46,9 +46,11 @@ SWITCHERS = ("buck", "boost")                        # behaviour models of switc
 PIN_FUNCTION = re.compile(r"([a-z][a-z0-9]*?)(\d+)(?:\.([a-z]+))?")   # "spi0.sck", "i2c1.sda", "pwm1.a", "adc0"
 KINDS_OF_TYPE = {"microcontroller": ("ic", "module"), "regulator": ("ic", "module"),   # STRUCT.identity: graph type -> parts
                  "transistor": ("npn", "pnp", "nmos", "pmos"), "led": ("led", "led_rgb"),   # entry kinds; any other
-                 "switch": ("switch", "dip_switch"), "audio": ("buzzer", "speaker")}       # type: the same word
+                 "switch": ("switch", "dip_switch"), "audio": ("buzzer", "speaker"),       # type: the same word
+                 "ic": ("ic", "esd_array")}
 KINDS_OF_PREFIX = {"R": ("resistor", "potentiometer"), "C": ("capacitor",), "L": ("inductor",),
-                   "D": ("diode", "led", "led_rgb"), "Q": ("npn", "pnp", "nmos", "pmos"), "U": ("ic", "module"),
+                   "D": ("diode", "led", "led_rgb", "esd_array"), "Q": ("npn", "pnp", "nmos", "pmos"),
+                   "U": ("ic", "module", "esd_array"),
                    "J": ("connector",), "SW": ("switch", "button", "dip_switch"), "F": ("fuse",),
                    "BT": ("battery_holder",), "BZ": ("buzzer",), "K": ("relay", "solenoid"), "TP": ("connector",),
                    "M": ("motor",), "LS": ("speaker",), "SP": ("speaker",), "HE": ("heater",),
@@ -58,6 +60,30 @@ VALUE_TOL = 0.01      # graph value vs the entry's value parameter
 MULTIPLIERS = {"p": 1e-12, "n": 1e-9, "u": 1e-6, "µ": 1e-6, "μ": 1e-6, "m": 1e-3, "k": 1e3, "K": 1e3, "M": 1e6,
                "G": 1e9, "R": 1, "Ω": 1}
 QUANTITY = re.compile(r"\s*(\d+)(?:[.,](\d+))?\s*([pnuµμmkKMG]|[RΩ])?(\d+)?\s*(Ω|[oO]hms?|F|H)?(?=$|[\s,;/()])")
+
+
+RELAY_SET = re.compile(r"^(common|no|nc)(_\d+)?$")    # a relay's contact roles: set 1 bare, set n with _n
+
+
+def relay_sets(part):
+    """{set: {"common": [pins], "no": [pins], "nc": [pins]}} of a relay entry – set "" the first, "_2" the second …"""
+    out = {}
+    for num, p in ((part or {}).get("pins") or {}).items():
+        m = RELAY_SET.match(str(p.get("role") or ""))
+        if m:
+            out.setdefault(m.group(2) or "", {}).setdefault(m.group(1), []).append(num)
+    return out
+
+
+def source_outputs(spec):
+    """[(name, plus pin, ratio)] of a sim.json source: one output (plus, the supply's voltage) or, with "outputs",
+    several against the shared minus – each at its v_ratio times the supply's voltage (−1 for a negative rail)."""
+    if not isinstance(spec, dict):
+        return []
+    if isinstance(spec.get("outputs"), dict):
+        return [(name, str(o.get("plus")), o.get("v_ratio", 1.0)) for name, o in spec["outputs"].items()
+                if isinstance(o, dict) and o.get("plus") is not None]
+    return [("", str(spec["plus"]), 1.0)] if spec.get("plus") is not None else []
 
 
 def v_range(net):
@@ -184,8 +210,8 @@ def supply_inputs(d, sim=None):
             continue
         out |= {d.pin_net.get(f"{des}.{n}") for n in take}
     for des, src in ((sim or {}).get("sources") or {}).items():
-        if des in d.comps and isinstance(src, dict) and "plus" in src:
-            out.add(d.pin_net.get(f"{des}.{src['plus']}"))
+        if des in d.comps:
+            out |= {d.pin_net.get(f"{des}.{plus}") for _, plus, _ in source_outputs(src)}
     return out - {None}
 
 

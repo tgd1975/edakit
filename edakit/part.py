@@ -248,6 +248,9 @@ def datasheet(cfg, connectors, name=None):
         raise PartError(f"{cfg.relative(cfg.sim_config)} missing – the datasheet needs the board's simulation")
     sim = json.loads(cfg.sim_config.read_text(encoding="utf-8"))
     des, src = supply_of(sim, connectors)
+    if "outputs" in src:
+        raise PartError(f"{des}: a source with several outputs (sources.{des}.outputs) – a datasheet describes one "
+                        "supply, its plus and its minus")
     plus, minus = d.pin_net.get(f"{des}.{src['plus']}"), d.pin_net.get(f"{des}.{src['minus']}")
     nets = [n for _, _, n in pins if n]
     rows = simulate(cfg, d, sim, [plus, minus, *nets])
