@@ -66,13 +66,9 @@ run against a maker's page or EasyEDA yet.
 
 ## Live runs of design as text (2.1–2.4, 3.6 of the [implementation plan](docs/concepts/new/implementation-plan.md))
 
-Ran on 2026-10-31 in throwaway projects; the results are under each live run of the plan. Left from them:
+Ran on 2026-10-31 in throwaway projects, the footprint checked by the owner in EasyEDA, the throwaway projects and
+the probe's Custom Config removed; the results are under each live run of the plan. Left from them:
 
-- [ ] **The owner's look at the footprint in EasyEDA:** in edakit-probe-fp the project library's footprint
-      HDR-TH_24P-P2.54-V-F-R2-C12-S2.54-2 – 2 × 12 pads, rows 22.86 mm apart, square pads 1 and 13, the outline, the USB
-      box, the texts "USB" and "T-Display", the slot MH in the middle standing upright (1.0 × 2.0 mm pad); then the three
-      throwaway projects edakit-probe-* deleted by hand, and afterwards "自定义配置" (Custom Config) deleted from the rule
-      configurations with `PCB_Drc.deleteRuleConfiguration` (a session under the claim).
 - [ ] **2.2, the mode `"write"` of `[routing] drc_rules`:** `route all` writes the rule set before its DRC
       (`eda.write_drc_rules`, saved, reloaded, read back); handbook 7.5 and 9.4 say that the PCB stays on the client's
       Custom Config afterwards.
@@ -88,7 +84,9 @@ Ran on 2026-10-31 in throwaway projects; the results are under each live run of 
 - [ ] **Found on the way:** `schematic create` and `ensure_board` wait for the documents after `openProject` (as
       `open_pcb` does); `schematic create` honours `symbol_differs` of the entry in its pin check; led-bar's
       `[place]` without overlapping LEDs and with U1 out of the hole's keep-out; `open_project` finds a project never
-      opened through `~/Dokumente/EasyEDA-Pro/projects/<name>.eprj2` (table projects).
+      opened through `~/Dokumente/EasyEDA-Pro/projects/<name>.eprj2` (table projects). In edakit-probe-fp the project's "Panel1" came out
+      named `generated_esp32` – a rename meant for the schematic reached the panel, likely the cause of the renames that
+      then failed; `rename_schematic` checks the panels' names too.
 
 ## Walkthrough gaps ([walkthrough-gaps.md](docs/concepts/done/walkthrough-gaps.md))
 
