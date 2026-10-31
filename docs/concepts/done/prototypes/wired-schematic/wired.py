@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 """Prototype: the schematic with every connection drawn through – no net labels, no power flags – the way Fritzing's
-schematic view and the drawings of the maker scene do it (docs/concepts/new/wired-schematic.md).
+schematic view and the drawings of the maker scene do it (docs/concepts/done/wired-schematic.md).
 
     uv run --project <edakit> python wired.py <project dir> [--board B] [--out FILE] [--names] [--gap N]
 
@@ -33,7 +33,7 @@ from collections import defaultdict
 from pathlib import Path
 
 HERE = Path(__file__).resolve().parent
-ROOT = HERE.parents[4]   # docs/concepts/new/prototypes/wired-schematic -> edakit
+ROOT = HERE.parents[4]   # docs/concepts/done/prototypes/wired-schematic -> edakit
 sys.path.insert(0, str(ROOT))
 
 from edakit import config, schematic_layout as sl   # noqa: E402

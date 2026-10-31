@@ -1,7 +1,7 @@
 # The schematic with every connection drawn through
 
-Status 2026-10-31: decided (the table at the end, in a decision round the same day); the build of W.2 to W.5 starts
-when the owner asks for it, one step per branch. Asked for by the owner – "a different way of drawing the schematics:
+Status 2026-10-31: decided (the table at the end, in a decision round the same day) and built – W.1 to W.5 merged
+into main the same day, the concept done. Asked for by the owner – "a different way of drawing the schematics:
 today we have these excerpts with named nets, which is what people who do this often use; the maker scene, for
 smaller circuits, prefers a drawing as Fritzing draws it; it will reach its limits soon, let us see how far we get".
 Written against main at `6139c4c`, the jukebox of anTONIEa at `63aa3b7` and the Christmas bell at `021f2ae`, with a
@@ -12,8 +12,8 @@ the graph as TOML), the drawing code unchanged, the measures the same. Built so 
 optional, which the owner asked for on the side – merged into main the same day; W.5, the board's print per pin
 (`print` in the parts entry, `PD2 (D2)` in the drawing), the same day; W.2, the wired style, merged into main the
 same day on the owner's word; W.4, the interview's question on the drawing (new-project writes `style`,
-project-surveyor reports it), built the same day; W.3, placement for wires, on the branch `wired-w3` after W.2 (the
-measures of each build below the table of what to build).
+project-surveyor reports it), built the same day; W.3, placement for wires, after W.2 – merged into main the same day on
+the owner's word (the measures of each build below the table of what to build).
 
 ## The short answer
 
@@ -69,7 +69,7 @@ a notes block on 254 x 272 mm):
 
 The first three rows are what the owner calls the Fritzing style. The fourth is a data question of its own (the
 parts entry has no print name per pin; decision 6 of
-[circuit-language.md](../done/circuit-language.md) kept aliases out of the graph's form – the drawing is another
+[circuit-language.md](circuit-language.md) kept aliases out of the graph's form – the drawing is another
 matter). The last row is the one edakit must keep: a drawing nobody draws by hand.
 
 ## Where it would be used
