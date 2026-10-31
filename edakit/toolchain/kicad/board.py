@@ -395,7 +395,10 @@ def write_project(cfg, board, design):
                       "min_via_annular_width": 0.05, "min_copper_edge_clearance": want["edge"],
                       "min_hole_clearance": 0.25, "min_hole_to_hole": 0.2, "min_silk_clearance": 0,
                       "min_text_height": 0.6, "min_text_thickness": 0.08, "allow_blind_buried_vias": False,
-                      "allow_microvias": False},
+                      "allow_microvias": False,
+                      # a pad a track leaves room for one thermal spoke only is connected (GEO.copper checks it on the
+                      # Gerber files): Freerouting knows no spokes, EasyEDA's DRC asks for none (handbook 18)
+                      "min_resolved_spokes": 1},
             "track_widths": [0.0], "via_dimensions": [{"diameter": 0.0, "drill": 0.0}]}},
         "erc": {"rule_severities": ERC_SEVERITIES},
         "meta": {"filename": p["pro"].name, "version": 1},

@@ -261,11 +261,19 @@ def overlap_finding(board, geo, place, boxes, pins, a, b):
     return []
 
 
+def hand_fitted(cfg, board):
+    """The parts of the board the assembler leaves out (bom = false): fitted by hand after the assembly."""
+    from .design import Design
+    design = Design.from_config(cfg)
+    return {d for d, c in design.comps.items() if c.get("bom") is False and c.get("board", board.name) == board.name}
+
+
 def check_plan(cfg, board, geo, place, boxes, tht):
     from shapely.geometry import Point, box
     problems = []
     outline = outline_polygon(board)
     refs = [r for r in place if r in boxes]
+    by_hand = hand_fitted(cfg, board)
     pins = header_pins(board, geo, place)
     problems += [f"{r}: in on_headers, but its footprint has no through-hole pins – its overlaps count as usual"
                  for r, p in pins.items() if not p]
@@ -279,6 +287,8 @@ def check_plan(cfg, board, geo, place, boxes, tht):
             if box(*boxes[a]).intersects(Point(h["x"], h["y"]).buffer(h["keep"])):
                 problems.append(f"{a}: inside the keep-out of the hole ({h['x']:g}, {h['y']:g})")
         for tx, ty in board.tooling:
+            if a in by_hand:
+                continue      # fitted by hand after the assembly: not there while the tooling holes hold the board
             if box(*boxes[a]).intersects(Point(tx, ty).buffer(board.tooling_keep)):
                 problems.append(f"{a}: inside the keep-out of the tooling hole ({tx:g}, {ty:g})")
     for h in board.holes:

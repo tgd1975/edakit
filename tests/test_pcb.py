@@ -205,6 +205,16 @@ def test_plan_findings_at_the_outline_the_holes_and_the_other_side(project):
         "C2 (bottom): 2 THT pins of the other side underneath"]
 
 
+def test_a_part_fitted_by_hand_may_cover_a_tooling_hole(project):
+    """The 555 blinker of handbook 18: BT1 (bom = false) on the bottom over a tooling hole – the holder is fitted after
+    the assembly, while the tooling holes hold the board. J1 of the example is soldered by hand too."""
+    assert project.comp(project.graph(), "J1")["bom"] is False
+    geo = {"J1": HEADER_GEO["J1"], "C1": footprint(3.7, 1.9, CHIP)}
+    assert plan_check(project, {"J1": (60, 20), "C1": (30, 20)}, geo, tooling=[(60, 20), (5, 35)]) == []
+    assert plan_check(project, {"J1": (60, 20), "C1": (30, 20)}, geo, tooling=[(30, 20), (5, 35)]) == [
+        "C1: inside the keep-out of the tooling hole (30, 20)"]
+
+
 def test_one_tooling_hole_is_not_enough(project):
     assert plan_check(project, {"R1": (20, 20)}, {"R1": footprint(3.7, 1.9, CHIP)}, tooling=[(50, 20)]) == [
         "JLCPCB wants 2-3 tooling holes in opposite corners, not one"]

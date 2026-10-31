@@ -288,6 +288,7 @@ def test_the_project_file_carries_the_rules_of_the_board_file(project):
     assert classes["POWER"]["track_width"] == pytest.approx(18 / config.MIL_PER_MM)
     assert {"netclass": "POWER", "pattern": "+5V"} in pro["net_settings"]["netclass_patterns"]
     assert pro["board"]["design_settings"]["rule_severities"]["lib_footprint_mismatch"] == "ignore"
+    assert pro["board"]["design_settings"]["rules"]["min_resolved_spokes"] == 1   # handbook 18: Freerouting knows no spokes
 
 
 # --- the schematic ----------------------------------------------------------------------------------------------------
