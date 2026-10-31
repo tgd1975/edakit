@@ -1,6 +1,6 @@
 {
   "about": "Sign-offs for the release gate (edakit gate). Each one counts only for the hash of its scope: 'circuit' = state_sha256 (graph, parts database, simulation config, requirements), 'layout' = layout_sha256 (board files with their artwork, footprint geometry), 'fab' = fab_sha256 (what the manufacturer builds from: Gerber layers rasterised, drill hits, BOM and CPL rows – in the protocol header of a gate run with stage F). When something there changes, it no longer counts – copy the new hash from the protocol header after the check was repeated. phase: 'export' blocks the release, 'order' and 'acceptance' come after the export. An accepted warning with scope 'decision' counts regardless of the hash and refers to a numbered decision in the docs. Parts are signed in their parts entry (field 'verified').",
-  "state_sha256": null,
+  "state_sha256": "b85dd8d8a978fd3160d7efee4d7919456fe41bec9903f0b0d2a3c3d6407937f3",
   "layout_sha256": null,
   "fab_sha256": null,
   "manual": [
@@ -9,18 +9,18 @@
       "phase": "export",
       "scope": "circuit",
       "text": "Critical parts (U1, Q1, BT1, D1) checked a second time against the datasheet, independently – the agent electrical-reviewer in its own session",
-      "done_by": null,
-      "date": null,
-      "note": null
+      "done_by": "agent electrical-reviewer (own session)",
+      "date": "2026-10-31",
+      "note": "M-1: OK for state b85dd8d8a978fd3160d7efee4d7919456fe41bec9903f0b0d2a3c3d6407937f3; requirements met: R-1, R-3, R-4. Electrical review (agent electrical-reviewer, own session, 2026-10-31), critical parts against the signed datasheets, re-checked after D-9: U1 LMC555CMX/NOPB – TI SNAS558M, sha256 3ac8d41ac202…: SOIC-8 pinout p. 3 = graph, footprint and polarity sheet (pad 1 at the dot, counter-clockwise), DIS open drain in phase with OUT, RESET at V+, CV bypassed, supply 1.5–15 V, IS ≤ 250 µA, DIS 15/50/150 Ω (150 Ω = VDIS max at 1.5 V; 15 Ω the 5 V typical, assumption consistent with overdrive scaling); Q1 AO3415A – AOS Rev. 3.0, 9340fe239500…: G1/S2/D3, body diode D→S, drain to SW1, source to VDD, gate via R3 to ground – on from VGS −1.8 V, blocks reversed cells; model KP 25: 52 mΩ at −1.8 V, 41 mΩ at −2.5 V; BT1 Keystone 2468 – M65 p. 28, c49789d14ad0…: '−' upper, '+' lower at the terminal end as drawn = pad 1 '−' GND, pad 2 '+' VBAT, correct mirrored on B.Cu, top silk '+'/'−' beside the right pads; D1 APTD2012LSURCK – Kingbright DSAO7910 V.5A, bbaee561298d…: pad 1 cathode at the polarity mark, VF 1.5/1.75/2.1 V at 2 mA, IF 30 mA, VR 5 V. Topology: 50 % astable from OUT; D-5 47.9–72.3/min, the count at acceptance decides the blink rate. Evidence: lit current from the cells ≤ 7.57 mA in the rows (7.8 mA with the p. 3 IV curve) against 8 mA; D1 ≥ 0.519 mA at 2.2 V in the rows – with the p. 3 curve 0.45 mA at DIS 150 Ω and ≥ 0.50 mA at DIS ≤ 100 Ω, which a part at 2.2 V meets by the overdrive scaling behind the 15 Ω end; SW1 off ≤ 13 nA (≥ 250 MΩ). No finding blocks."
     },
     {
       "id": "M-6",
       "phase": "export",
       "scope": "circuit",
       "text": "Regulatory review: circuit and parts against EU law for the purpose in the graph – the agent regulatory-reviewer in its own session. No finding 'block' open. Support, not legal advice: no claim to correctness, nothing legally guaranteed",
-      "done_by": null,
-      "date": null,
-      "note": null
+      "done_by": "agent regulatory-reviewer (own session)",
+      "date": "2026-10-31",
+      "note": "M-6: OK for state b85dd8d8a978fd3160d7efee4d7919456fe41bec9903f0b0d2a3c3d6407937f3 and purpose private. Checked by the agent regulatory-reviewer on 2026-10-31, again after D-9 (R-4 at 8 mA, the spread of U1's discharge pin, Q1's model; purpose, market and parts unchanged): purpose private, EU, built for oneself, no children; no radio, no mains, no power supply, no cable; two alkaline AAA cells in a holder, replaceable without tools, nothing charges them, cells put in upside down blocked by Q1; at most 7.6 mA from 3.2 V, about 12 mW at most in any part, nothing hot. CE, RoHS, REACH Art. 33, WEEE and battery registration and GPSR do not apply to own use, so the four parts without a RoHS entry (R3, C1, BT1, SW1) are open data, not a finding. Notes, none blocking: (1) EMC in substance (EMVG §§ 4, 6) judged met; the board is not inherently benign because U1 is an active part; (2) spent cells and the discarded board go to separate collection (BattDG § 6(1), ElektroG § 10(1)); (3) the published example covers only the owner's own use; a reader who gives it away or sells it needs their own review, which goes into chapter 18. No requirement names M-6. Support, not legal advice: no claim to correctness, nothing legally guaranteed."
     },
     {
       "id": "M-5",

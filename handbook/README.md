@@ -21,6 +21,7 @@ How we work, what the tools do, and why they do it that way – including everyt
 | 15 | [Regulatory review](15-regulatory.md) | a board is sold or given away, or it transmits – support, not legal advice |
 | 16 | [KiCad as the tool chain](16-kicad.md) | a project draws its boards in KiCad instead of EasyEDA (`toolchain = "kicad"`) |
 | 17 | [Walkthrough: a coin cell, a button, an LED](17-walkthrough.md) | you want to see every step once, on the smallest board |
+| 18 | [Walkthrough 2: a 555 blinker on KiCad](18-walkthrough-kicad.md) | you draw in KiCad, run a board from cells behind a power switch, or want an IC through every step |
 
 **Reading paths**
 
@@ -29,4 +30,5 @@ How we work, what the tools do, and why they do it that way – including everyt
 - *New circuit:* 14 → 3 → 4 → 5.
 - *Something broke:* 12 → 9.
 - *Adapting to your board:* 10 → 3 → 7.
-- *KiCad instead of EasyEDA:* 2 → 16 – its table 16.4 says what each command does there.
+- *KiCad instead of EasyEDA:* 1 → 2 → 16 → 18 – table 16.4 says what each command does there, chapter 18 shows a
+  board through it.

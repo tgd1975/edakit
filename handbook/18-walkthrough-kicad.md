@@ -15,8 +15,9 @@ What this chapter shows that 17 does not:
    computed in the decision log and counted on the finished board.
 5. **The graph as TOML from the start** (3.1).
 
-The outputs are from real runs on 31 October 2026, on a machine with KiCad 10.0.6, ngspice 47 and Freerouting 2.4.1,
-shortened where a `…` stands. As in chapter 17, every gap the run found was closed in edakit on its way (18.13).
+**State 2026-10-31:** the outputs are from real runs on a machine with KiCad 10.0.6, ngspice 47 and Freerouting
+2.4.1, shortened where a `…` stands. As in chapter 17, every gap the run found was closed in edakit on its way
+(18.13).
 
 ## 18.1 The steps at a glance
 
@@ -204,7 +205,9 @@ discharge pin's load. All three were fixed before going on (18.13); what stayed 
 **The LED at the end voltage (SIM.state, D-3).** At 2.0 V and its highest forward voltage (2.6 V at 20 mA) D1 gets
 8 µA. No red LED reaches 1 mA there by its datasheet with a series resistor: at the end voltage it has 0.1–0.2 V of
 headroom, from fresh cells 1.5 V, and the current a resistor gives scales with it – ten times as much, where R-4 allowed
-five. You chose a low-current LED and a new number for R-1: D1 is a Kingbright APTD2012LSURCK, specified at 2 mA
+five.
+
+You chose a low-current LED and a new number for R-1: D1 is a Kingbright APTD2012LSURCK, specified at 2 mA
 (VF 1.5–2.1 V, 60–150 mcd), at 0.5 mA brighter on axis than the first LED at 1 mA, in a narrower beam; R-1 asks for at
 least 0.5 mA down to 1.1 V per cell, 2.2 V for the pair. `sim.json` follows: the cell state `used` at 2.2 V,
 `criteria.led_on_min_a` 0.0005. R2 became 200 Ω – 220 Ω gave 0.498 mA.
@@ -226,10 +229,14 @@ Its first run showed VDD at −0.84 V – behind a blocking Q1 the net hung on 1
 now (18.13), and VDD sits at −0.15 V, D1 dark, 4 pA from the cells.
 
 **The blink rate (D-5).** No check, a computation: with the thresholds at 1/3 and 2/3 of VDD each half period is
-ln 2 · R1 · C2, independent of the supply, so T = 1.386 · R1 · C2. The spread is the work: R1 ±1 %, C2 ±10 % (X7R; its
+ln 2 · R1 · C2, independent of the supply, so T = 1.386 · R1 · C2.
+
+The spread is the work: R1 ±1 %, C2 ±10 % (X7R; its
 DC bias at 3.2 V on a 50 V part below 1 %), and U1's thresholds – the datasheet gives the monostable's timing accuracy
 at 1.5 V (0.9–1.25 ms for 1.1 ms), an upper threshold between 0.593 and 0.713 of VDD. Worst case T between 0.798 and
-1.204 times the nominal. With 680 kΩ (no loading fee) that is 53 to 80 flashes a minute; you chose 750 kΩ (a loading
+1.204 times the nominal.
+
+With 680 kΩ (no loading fee) that is 53 to 80 flashes a minute; you chose 750 kΩ (a loading
 fee of about 3 USD per order): 57.7 nominal, 47.9 to 72.3 – both edges of R-2's window touched. The count at the
 acceptance stays the evidence. The first period after switch-on is longer, 0.82 s dark instead of 0.52 s: C2 starts
 at 0 V.
@@ -301,9 +308,10 @@ The two reviews ran side by side, each in a context of its own.
   discharge pin was simulated at 150 Ω – the datasheet's maximum at 1.5 V. At 3.2 V the pin is far stronger (the
   typical part at 5 V: 15 Ω), and a real board draws 6 to 8 mA while D1 is lit. A logic part's `r_out_ohm` takes a
   range now, [min, typ, max] at the spread corner (5.1), and `sim.json` runs `"spread": ["min", "max"]`: 7.6 mA from
-  fresh cells. R-1 and 5 mA cannot both hold with a series resistor; you set R-4 to 8 mA (D-9). Eight notes – among
-  them the hand-over's note on C2, which named the wrong pin, and AAA-sized Li-ion cells (10440, 3.7 V each), which
-  fit the holder and would overload Q1, R2 and D1: "2x AAA 1.5 V" is printed on the board now.
+  fresh cells. R-1 and 5 mA cannot both hold with a series resistor; you set R-4 to 8 mA (D-9).
+- **electrical-reviewer, its notes.** Eight, none blocking – among them the hand-over's note on C2, which named the
+  wrong pin, and AAA-sized Li-ion cells (10440, 3.7 V each), which fit the holder and would overload Q1, R2 and D1:
+  "2x AAA 1.5 V" is printed on the board now.
 - **regulatory-reviewer – M-6.** For the purpose `private`: nothing of placing on the market applies, nothing
   transmits, the electromagnetic requirements are met in substance (an active part, so not "inherently benign"),
   spent cells and the board go to separate collection. Its result is support, not legal advice: it claims no
