@@ -206,9 +206,16 @@ def enabled(d, ref):
                                  for role, net in enables)
 
 
+def sinks_led(d, ref):
+    """An LED's cathode: on a net of open-drain outputs it is their load, not a line anything reads."""
+    part = d.part(ref.partition(".")[0]) or {}
+    return part.get("kind") in ("led", "led_rgb") and str(d.pin_info(ref).get("role") or "").startswith("cathode")
+
+
 def released_nets(d):
     """LVL.undefined/open_drain: a net whose only drivers are open-drain or tri-state outputs and that nothing pulls up
-    – released, it floats. An I2C line is REQ.missing's (needs.toml [i2c])."""
+    – released, it floats. An I2C line is REQ.missing's (needs.toml [i2c]); a net that holds nothing but the outputs
+    and LED cathodes is the outputs' load – an LED from the supply into a 555's discharge pin."""
     from ..circuit import i2c_name
     from .requires import i2c_line
     held = held_nets(d)                  # a resistor path to a defined net – through a divider or a series chain too
@@ -224,6 +231,9 @@ def released_nets(d):
             continue
         if name in held:
             continue
+        others = [r for r in net["pins"] if r not in open_]
+        if others and all(sinks_led(d, r) for r in others):
+            continue                     # the outputs sink LEDs: released, the LEDs are dark and nothing reads the net
         roles = {i.get("role") for i in infos}
         fix = ("a pull-down to ground – the B line of an RS-485 bias pair (REQ.value/failsafe)" if roles & {"rs485_b"}
                else "a pull-up to the bus supply – the A line of an RS-485 bias pair (REQ.value/failsafe)"
