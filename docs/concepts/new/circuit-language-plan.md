@@ -93,9 +93,9 @@ and long strings as multi-line strings, the order of the file the order of the J
 entry says which pin that is"); sets `[project] graph = "hardware/graph.toml"`; writes the resolved
 `hardware/graph.json` in place of the source (L.5). When the files were the signed ones, the sign-offs of scope
 `circuit` keep counting: the new hash goes into the sign-off file and `rehashed`, as `carry_signoffs` in
-`edakit/convert.py` does. `--dry-run` prints what would change. Tests – the touchstone of the sketch moves here: led-bar
-and the reference circuits of `tests/reference.py` converted in a scratch copy, `edakit graph json` equals the
-original canonically, and the converted project passes `edakit check` with the same findings. Size M.
+`edakit/convert.py` does. `--dry-run` prints what would change. Tests – the touchstone of the sketch moves here:
+led-bar and the reference circuits of `tests/reference.py` converted in a scratch copy, `edakit graph json` equals
+the original canonically, and the converted project passes `edakit check` with the same findings. Size M.
 
 **L.7 `block add` on a TOML graph.** `block.py` reads through `load_graph` and writes a JSON source as today; a TOML
 source with a line editor that keeps comments and arrangement – a new `[components.<des>]` after the last component
