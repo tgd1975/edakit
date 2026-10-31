@@ -155,7 +155,7 @@ def straps(d):
                     forces.append(("high" if level == "supply" else level, r))
             forces += [("low", r) for r, _, _ in resistors_to(d, net, {d.ground})]
             forces += [("high", r) for r, _, _ in resistors_to(d, net, supplies)]
-            what, on = f"{ref} ({info['name']}) must be {want} at reset", (("net", net),)
+            what, on = f"{d.pin_text(ref)} must be {want} at reset", (("net", net),)
             src = f"strap of pin {num} of {d.entry_key(des)}"
             driven = [by for lvl, by in forces if lvl == "driven"]
             wrong = [by for lvl, by in forces if lvl not in (want, "driven")]
@@ -183,7 +183,7 @@ def open_inputs(d):
         for num in comp.get("nc") or []:
             info = (part.get("pins") or {}).get(str(num)) or {}
             if must_not_float(info) and not info.get("pull") and not info.get("float_ok"):
-                out.append(Finding("LVL.undefined", "G", f"{des}.{num}", f"{des}.{num} ({info.get('name', num)}): an input "
+                out.append(Finding("LVL.undefined", "G", f"{des}.{num}", f"{d.pin_text(f'{des}.{num}')}: an input "
                                    "left open (nc) – it floats", f"pin {num} of {d.entry_key(des)}",
                                    "tie it to its inactive level, or float_ok on the pin where the datasheet allows it",
                                    grade="nc", on=(("component", des),)))

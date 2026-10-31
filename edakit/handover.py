@@ -60,13 +60,15 @@ def problems(design):
         if part in design.comps:
             out += [f"layout.near: {part} and {h} are on different boards" for h in hosts(value)
                     if h in design.comps and board_of(design, h) != board_of(design, part)]
+    unknown = {ref for where, ref, _ in getattr(design, "unresolved", ()) if where == "layout.loops"}   # STRUCT.pin's
     for lp in lay.get("loops", []):
         a, b = lp.get("a", ""), lp.get("b", "")
-        lost = [r for r in (a, b) if r not in design.pin_net]
+        missing = [r for r in (a, b) if r not in design.pin_net]
+        lost = [design.pin_text(r) for r in missing if r not in unknown]
         if lost:
             out.append(f"layout.loops: {', '.join(lost)} is no connected pin of the graph")
-        elif design.pin_net[a] != design.pin_net[b] or board_of(design, a) != board_of(design, b):
-            out.append(f"layout.loops: {a} and {b} are not on one net of one board")
+        elif not missing and (design.pin_net[a] != design.pin_net[b] or board_of(design, a) != board_of(design, b)):
+            out.append(f"layout.loops: {design.pin_text(a)} and {design.pin_text(b)} are not on one net of one board")
         if not isinstance(lp.get("max_mm"), (int, float)) or lp["max_mm"] <= 0:
             out.append(f"layout.loops: {a}-{b} needs max_mm above 0")
     for ap in lay.get("apart", []):

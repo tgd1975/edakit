@@ -37,8 +37,8 @@ Example: [the Christmas bell's graph](https://github.com/tgd1975/automatic_chris
 | `type` | rough class for the generated template layout and the schematic blocks: `microcontroller`, `module`, `ic`, `transistor`, `connector`, `regulator`, `diode`, `led`, `resistor`, `capacitor`, `inductor`, `button`, `switch`, `potentiometer`, `audio`, `testpoint`, `battery_holder`, `fuse` |
 | `lcsc` | the LCSC number – identifies symbol, footprint, parts entry and the BOM line |
 | `part` | the manufacturer part number; without `lcsc` it names the parts entry (its `mpn`) – a part bought elsewhere (chapter 4); with `lcsc` it must name the entry's `mpn` too (STRUCT.identity) |
-| `pins` | pin number → pin name, **with the pin numbers of the EasyEDA/LCSC symbol of exactly this part**. The names must equal the parts entry (STRUCT.entry). |
-| `nc` | pins deliberately unconnected; every pin is in exactly one net or in `nc` |
+| `pins` | pin number → pin name, **with the pin numbers of the EasyEDA/LCSC symbol of exactly this part**; optional – without it the component takes its parts entry's numbers and names. Where it is written, the names must equal the parts entry (STRUCT.entry). A part without an entry and without `pins` takes the numbers its nets and `nc` use, and STRUCT.entry reports the missing entry |
+| `nc` | pins deliberately unconnected, by number, name or role (below); every pin is in exactly one net or in `nc` |
 | `board` | which board the part is on (a key of `[boards]` in edakit.toml); may be omitted with one board. On a bought board (`bought = true`) or a hand-wired one (`wired = true`, 4.5) every part has `bom: false` (STRUCT.board) |
 | `value` | shown in the BOM ("10k", "100nF"); STRUCT.identity holds it to the entry's `value_ohm`, `value_f` or `value_h` |
 | `bom: false` | the part is placed on the PCB but not in the BOM for assembly (hand-soldered, bought separately); `edakit order` puts it into the cart of its supplier (8.4) |
@@ -68,6 +68,21 @@ Example: [the Christmas bell's graph](https://github.com/tgd1975/automatic_chris
 | `ground` | name of the ground net (default `GND`) – the checks, the simulation and the schematic's flags use it; STRUCT.ref checks that the net exists |
 | `grounds` | further nets that are ground on purpose, `["AGND"]` – an analog ground joined at one point, an isolated side: their `ground` pins pass PATH.unfed (default: none) |
 | `locks` | what the firmware relies on: `pins` (`{"U1.4": "LED_SDI"}` – pins on their nets, STRUCT.lock), `doc_pin_table` (`{component, file, prefix, regex}` – a pin table in the documentation, STRUCT.lock); part of the circuit hash, STRUCT.ref checks the names |
+
+**A pin by number, name or role.** Wherever the graph names a pin – the `pins` of a net, `nc`, `locks.pins`, the ends
+of `layout.loops`, the `pins` of a cable – it may write the symbol's pin number (`U1.9`), the pin's name (`U1.GP6`,
+the names of the pin map) or its role in the parts entry (`D2.anode`; the role of the config the part runs in, 4.1).
+edakit reads a word as the pin number first, then the name of one pin, then the role of one pin, then a name or role
+several pins share, which stands for all of them: `U1.GND` is every GND pin of the Pico, wherever they stand in the
+net, `SW1.a` both pins of a button's side. Where one pin is meant – a loop end, a cable's wire – a word that names
+several is STRUCT.pin, and so is a word that names no pin of its part, with the net or the place it stands in; the
+rest is checked all the same. The checks, the simulation, the schematic, the hand-over and the firmware contract read
+the numbers the words stand for. A finding names a pin by the same rule the other way: the first of its name and role
+that names only this pin – the name first on an IC or a module, whose names are the datasheet's, the role first
+elsewhere (`D2.anode (1)`, a symbol's name may mislead) –, with the number in brackets where the two differ; a name
+with a blank (the Pico's TP1, "GND (USB)"), a word that says no more than the number (`R4.1`, a connector's role
+`pin3`) and a name several pins share give the number. A name that misleads stays the symbol's – the Nano whose symbol
+labels pin 14 PB4 although D11 is PB3 on the chip is written `U1.PB4` with a note –; there is no alias per pin.
 
 ## 3.2 Conventions that save trouble
 
@@ -101,7 +116,7 @@ Every designator and every net name occurs once in the graph.
 - structure: unique designators and nets, every pin in exactly one net or `nc`, nets with ≥ 2 pins, a voltage range per net, a known board per part, `bom: false` on a bought or hand-wired board, nets across boards only through a cable; the names in `layout` and `locks`, the `ground` net, `purpose.use` – finds e.g.: a forgotten pin, a typo in a pin reference
 
 **`STRUCT.pin`** – every pin in one net or nc (error; replaces G-1)  
-Every pin of a part is in exactly one net or listed in the part's nc, a net names only pins the part has, and a pin in nc is in no net.
+Every pin of a part is in exactly one net or listed in the part's nc, a net names only pins the part has, and a pin in nc is in no net. A pin is written by its number, its name or its role – read in that order, a name or role several pins share standing for all of them (handbook 3.1) –; a word that names no pin of its part, in a net, nc, locks.pins, layout.loops or a cable, is reported where it stands, and so is a word that names several pins where one is meant (a loop end, a cable's wire).
 
 **`STRUCT.net`** – nets well-formed (error; replaces G-1)  
 Every net has at least two pins and a voltage range v = [min, max]; a net that spans boards does so through a cable, and the two pins of a cable wire are on one net.
@@ -123,8 +138,8 @@ Every pin in locks.pins is on its net, and a pin table in a document (locks.doc_
 Every domain the graph suggests (edakit/domains, suggested_by) is named in [project] domains, when the project names its domains.
 
 **`STRUCT.entry`** – graph pins = parts entry (error, symbol: error, declared: note, strip: warning; replaces P-1)  
-Every part with an LCSC number or a part number has a parts entry, its pins (number and name) equal the entry's, no supply pin is in nc, a component's config names one of its entry's configs and its states name output or bidirectional pins of the entry, each high, low or off (high not on an open-drain output), and – with the library symbol cached by edakit part import – the pins equal that symbol (case and blanks ignored); the symbol gives no number to two pins and has a pin for every pad of its footprint (grade symbol). Pins the entry's symbol_differs names follow the datasheet against the symbol on purpose: left out of the comparison and named in a note with the reason (grade declared). An LED strip (kind led_strip) gives its length, strip.length_m or strip.pixels (grade strip).
-- graph pins (number and name) = parts entry; an entry exists for every LCSC number; no supply pin marked `nc`; with the library's symbol cached by `edakit part import`, graph pins = that symbol (case and blanks ignored, as SYNC.schematic; `accept` on the component) – not where the entry's footprint data builds the copy's symbol as a box (`"symbol": "box"`, 4.5): the carrier's library symbol is not the copy's; the cached symbol giving one number to two pins or no pin to a pad of its footprint is grade `symbol`; pins the entry names in `symbol_differs` (`{"<pin>": "reason from the datasheet"}`) are left out of the comparison and named in a note (grade `declared`) – finds e.g.: a wrong part number, pins shifted by one, an LED whose pin 1 is the cathode, a library symbol that numbers a data input like the ground pin
+Every part with an LCSC number or a part number has a parts entry, its pins (number and name) equal the entry's where the component states them – without `pins` it takes the entry's, and only the comparison with the library symbol is left; without an entry as well, the numbers its nets and nc use, so that the rest is checked –, no supply pin is in nc, a component's config names one of its entry's configs and its states name output or bidirectional pins of the entry, each high, low or off (high not on an open-drain output), and – with the library symbol cached by edakit part import – the pins equal that symbol (case and blanks ignored); the symbol gives no number to two pins and has a pin for every pad of its footprint (grade symbol). Pins the entry's symbol_differs names follow the datasheet against the symbol on purpose: left out of the comparison and named in a note with the reason (grade declared). An LED strip (kind led_strip) gives its length, strip.length_m or strip.pixels (grade strip).
+- graph pins (number and name) = parts entry where the component states `pins` (without them it takes the entry's map, 3.1); an entry exists for every LCSC number; no supply pin marked `nc`; with the library's symbol cached by `edakit part import`, graph pins = that symbol (case and blanks ignored, as SYNC.schematic; `accept` on the component) – not where the entry's footprint data builds the copy's symbol as a box (`"symbol": "box"`, 4.5): the carrier's library symbol is not the copy's; the cached symbol giving one number to two pins or no pin to a pad of its footprint is grade `symbol`; pins the entry names in `symbol_differs` (`{"<pin>": "reason from the datasheet"}`) are left out of the comparison and named in a note (grade `declared`) – finds e.g.: a wrong part number, pins shifted by one, an LED whose pin 1 is the cathode, a library symbol that numbers a data input like the ground pin
 
 **`STRUCT.identity`** – graph and entry name the same part (error; replaces P-6)  
 A component names the part of its entry: the entry's lcsc is its file name, the component's lcsc is no C99… user-library number (unless bom: false), its part names the entry's mpn, its value reads as the entry's value within 1 %, its type fits the entry's kind.

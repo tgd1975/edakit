@@ -53,16 +53,16 @@ def structure(d, boards, unmade=None):
             if des not in d.comps:
                 add("STRUCT.pin", ref, f"net {net['name']}: unknown component {des}")
             elif pin not in d.comps[des]["pins"]:
-                add("STRUCT.pin", ref, f"net {net['name']}: {des} has no pin {pin}")
+                add("STRUCT.pin", ref, f"net {net['name']}: {ref} names no pin of {des}")
             used[ref] += 1
     for des, c in d.comps.items():
         nc = {str(p) for p in c.get("nc", [])}
         for pin in c["pins"]:
             ref = f"{des}.{pin}"
             if pin in nc and used[ref]:
-                add("STRUCT.pin", ref, f"{ref} is marked nc but used in net {d.pin_net[ref]}")
+                add("STRUCT.pin", ref, f"{d.pin_text(ref)} is marked nc but used in net {d.pin_net[ref]}")
             elif pin not in nc and used[ref] == 0:
-                add("STRUCT.pin", ref, f"{ref} ({c['pins'][pin]}) is neither connected nor nc")
+                add("STRUCT.pin", ref, f"{d.pin_text(ref)} is neither connected nor nc")
         for p in sorted(nc - set(c["pins"])):
             add("STRUCT.pin", f"{des}.{p}", f"{des}.{p} in nc but not a pin")
         if boards and c.get("board") not in boards:
@@ -72,7 +72,11 @@ def structure(d, boards, unmade=None):
             add("STRUCT.board", des, f"{des}: on the {what} board {c['board']} – {NOBODY[what]}: bom: false")
     for ref, n in used.items():
         if n > 1:
-            add("STRUCT.pin", ref, f"{ref} used in {n} nets")
+            add("STRUCT.pin", ref, f"{d.pin_text(ref)} used in {n} nets")
+    unknown = set()
+    for where, ref, why in getattr(d, "unresolved", ()):      # a pin word of locks.pins, layout.loops or a cable
+        add("STRUCT.pin", ref, f"{where}: {why}")
+        unknown.add(ref)
     for net in g["nets"]:
         v = net.get("v")
         if not (isinstance(v, list) and len(v) == 2 and v[0] <= v[1]):
@@ -88,8 +92,9 @@ def structure(d, boards, unmade=None):
         for a, b in cab["pins"].items():
             ref_a, ref_b = f"{cab['from']}.{a}", f"{cab['to']}.{b}"
             cable_pins |= {ref_a, ref_b}
-            if d.pin_net.get(ref_a) != d.pin_net.get(ref_b):
-                add("STRUCT.net", f"cable {cab['name']}", f"cable {cab['name']}: {ref_a} and {ref_b} are on different nets")
+            if d.pin_net.get(ref_a) != d.pin_net.get(ref_b) and not {ref_a, ref_b} & unknown:
+                add("STRUCT.net", f"cable {cab['name']}", f"cable {cab['name']}: {d.pin_text(ref_a)} and "
+                                                          f"{d.pin_text(ref_b)} are on different nets")
     for net in g["nets"]:
         on = {d.comps[r.partition(".")[0]].get("board") for r in net["pins"] if r.partition(".")[0] in d.comps}
         if len(on) > 1 and not cable_pins & set(net["pins"]):
@@ -150,9 +155,10 @@ def locks(d, root):
 
     def add(place, text):
         out.append(Finding("STRUCT.lock", "G", place, text))
+    unknown = {ref for _, ref, _ in getattr(d, "unresolved", ())}     # STRUCT.pin's
     for ref, net in (lk.get("pins") or {}).items():
-        if d.pin_net.get(ref) != net:
-            add(ref, f"{ref} expected on net {net}, found {d.pin_net.get(ref)}")
+        if d.pin_net.get(ref) != net and ref not in unknown:
+            add(ref, f"{d.pin_text(ref)} expected on net {net}, found {d.pin_net.get(ref)}")
     table = lk.get("doc_pin_table")
     if not table or table.get("component") not in d.comps:
         return out
@@ -241,15 +247,15 @@ def entries(d, cfg=None):
                                                                             else f"with mpn {c['part']}")))
             continue
         want = {k: v["name"] for k, v in part["pins"].items()}
-        if c["pins"] != want:
+        if des not in d.entry_maps and c["pins"] != want:        # a map taken from the entry has nothing to compare
             only_g = {k: v for k, v in c["pins"].items() if want.get(k) != v}
             only_p = {k: v for k, v in want.items() if c["pins"].get(k) != v}
             out.append(Finding("STRUCT.entry", "P", des, f"{des}: pins differ from parts entry {d.entry_key(des)}: graph "
                                f"{only_g} vs parts {only_p}"))
         for pin in c.get("nc", []):
             if part["pins"].get(str(pin), {}).get("type") == "power_in":
-                out.append(Finding("STRUCT.entry", "P", f"{des}.{pin}", f"{des}.{pin} ({part['pins'][str(pin)]['name']}) "
-                                   "is a supply pin but marked nc", on=on))
+                out.append(Finding("STRUCT.entry", "P", f"{des}.{pin}", f"{d.pin_text(f'{des}.{pin}')} is a supply pin "
+                                   "but marked nc", on=on))
         if part.get("kind") == "led_strip":       # its length (sim/strip.py)
             out += [Finding("STRUCT.entry", "P", des, f"{des}: {p}", grade="strip", on=on) for p in strip_problems(c)]
     return out

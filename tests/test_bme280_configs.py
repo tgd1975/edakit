@@ -36,7 +36,7 @@ def test_in_i2c_csb_is_tied_to_vddio(project):
     """CSB on a pin of its own fails in I²C (Figure 17: 'A direct connection between CSB and VDDIO is required');
     on VDDIO's net it passes."""
     place(project, KEY, "U9", {**SUPPLY, "2": "CS9", "5": "GND"})
-    assert csb(project) == ["U9.2 (CSB): must be tied to U9.6 (VDDIO) (3V3), is on CS9"]
+    assert csb(project) == ["U9.CSB (2): must be tied to U9.VDDIO (6) (3V3), is on CS9"]
     place(project, KEY, "U8", {**SUPPLY, "2": "3V3", "5": "GND"})
     assert [t for _, t in findings(project, "REQ.missing", "U8") if "CSB" in t] == []
 
@@ -52,7 +52,7 @@ def test_in_i2c_sdo_must_not_float(project):
     """'The SDO pin cannot be left floating; if left floating, the I²C address will be undefined' (6.2) – in nc it is
     LVL.undefined/nc in I²C; in 4-wire SPI SDO is an output and in 3-wire SPI not connected, nc is right there."""
     place(project, KEY, "U9", {**SUPPLY, "2": "3V3"})
-    assert sdo(project) == ["nc U9.5 (SDO): an input left open (nc) – it floats"]
+    assert sdo(project) == ["nc U9.SDO (5): an input left open (nc) – it floats"]
     for des, config in (("U8", "spi4"), ("U7", "spi3")):
         place(project, KEY, des, {**SUPPLY, "2": f"CS{des}"}, config=config)
         assert sdo(project, des) == [], config

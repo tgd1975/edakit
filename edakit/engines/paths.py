@@ -156,7 +156,7 @@ def supply(d, sim=None):
             ref, net = f"{des}.{num}", d.pin_net.get(f"{des}.{num}")
             if net is None:
                 continue
-            what, on = f"{ref} ({info.get('name', num)}) on {net}", (("net", net),)
+            what, on = f"{d.pin_text(ref)} on {net}", (("net", net),)
             if info.get("type") == "ground" and net not in grounds:
                 out.append(Finding("PATH.ground", "G", ref, f"{what}, not on {d.ground}", on=on))
             elif info.get("type") == "power_in" and net in grounds:

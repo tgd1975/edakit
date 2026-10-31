@@ -124,7 +124,7 @@ def pin_voltages(d):
             if net.get("isolated") and des in d.comps and not own_reference(d, des):
                 continue
             info = d.pin_info(ref)
-            pin = f"{ref} ({info.get('name', num)})"
+            pin = d.pin_text(ref)
             entry = d.entry_key(des) if des in d.comps else None
             g = own_ground(d, des) if des in d.comps else None
             plo, phi, how = lo, hi, f"{name} {lo:g}…{hi:g} V at {pin}"

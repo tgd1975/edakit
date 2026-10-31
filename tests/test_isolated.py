@@ -37,10 +37,10 @@ def on_a(d):
 
 
 def test_a_pin_on_an_isolated_net_is_held_to_it_only_against_its_own_side():
-    assert on_a(design(isolated=False, gnd1="board")) == ["LOOP up to 24 V, but U1.1 (A) allows 5.5 V"]
+    assert on_a(design(isolated=False, gnd1="board")) == ["LOOP up to 24 V, but U1.A (1) allows 5.5 V"]
     assert on_a(design(isolated=True, gnd1="board")) == []          # an optocoupler's LED: no reference on the loop
     # with its ground pin on the loop the part is measured against that ground – its own reference (schema-gaps I1)
-    assert on_a(design(isolated=True, gnd1="loop")) == ["LOOP up to 24 V against LOOP_GND, but U1.1 (A) allows 5.5 V"]
+    assert on_a(design(isolated=True, gnd1="loop")) == ["LOOP up to 24 V against LOOP_GND, but U1.A (1) allows 5.5 V"]
 
 
 @pytest.mark.skipif(not shutil.which("ngspice"), reason="ngspice not installed")

@@ -595,8 +595,8 @@ def test_g15_spi_roles_swapped(project):
     g["graph"]["locks"]["pins"].update({"U1.4": "LED_SDI", "U1.5": "LED_CLK"})
     project.save_graph(g)
     assert g15(run(project)) == [
-        "LED_CLK: needs spi.sck, but U1.5 (GP3) has spi0.tx, uart0.rts, i2c1.scl, pwm1.b, uart0.rx",
-        "LED_SDI: needs spi.tx, but U1.4 (GP2) has spi0.sck, uart0.cts, i2c1.sda, pwm1.a, uart0.tx"]
+        "LED_CLK: needs spi.sck, but U1.GP3 (5) has spi0.tx, uart0.rts, i2c1.scl, pwm1.b, uart0.rx",
+        "LED_SDI: needs spi.tx, but U1.GP2 (4) has spi0.sck, uart0.cts, i2c1.sda, pwm1.a, uart0.tx"]
     for name in ("LED_SDI", "LED_CLK"):
         project.net(g, name)["accept"]["REQ.function"] = "bit-banged, no SPI peripheral"
     project.save_graph(g)
@@ -665,7 +665,7 @@ def test_g15_adc_only_on_adc_pins(project):
     project.net(g, "3V3")["pins"].append("R10.2")
     project.comp(g, "U1")["nc"].append("31")
     project.save_graph(g)
-    assert g15(run(project)) == ["SENSE: needs adc, but U1.10 (GP7) has spi0.tx, uart1.rts, i2c1.scl, pwm3.b, "
+    assert g15(run(project)) == ["SENSE: needs adc, but U1.GP7 (10) has spi0.tx, uart1.rts, i2c1.scl, pwm3.b, "
                                  "uart1.rx"]
     project.net(g, "SENSE")["pins"][0] = "U1.31"      # GP26_ADC0
     project.comp(g, "U1")["nc"] = [p for p in project.comp(g, "U1")["nc"] if p != "31"] + ["10"]
@@ -680,7 +680,7 @@ def test_g15_used_pin_has_no_free_function(project):
     project.net(g, "LED_OE")["pins"].remove("U1.7")
     project.comp(g, "U1")["nc"].append("7")
     project.save_graph(g)
-    assert g15(run(project)) == ["LED_OE: needs pwm, but U1.TP5 (GPIO25/LED) has no free function"]
+    assert g15(run(project)) == ["LED_OE: needs pwm, but U1.GPIO25/LED (TP5) has no free function"]
 
 
 def test_g15_pin_without_functions_is_a_note(project):
@@ -712,7 +712,7 @@ def test_g15_sees_through_0_ohm_bridges(project):
     sdi_b = project.net(g, "LED_SDI_B")
     sdi_b["fn"] = project.net(g, "LED_SDI").pop("fn")
     project.save_graph(g)
-    assert "LED_SDI: needs spi.tx, but U1.4 (GP2) has spi0.sck, uart0.cts, i2c1.sda, pwm1.a, uart0.tx" \
+    assert "LED_SDI: needs spi.tx, but U1.GP2 (4) has spi0.sck, uart0.cts, i2c1.sda, pwm1.a, uart0.tx" \
         in g15(run(project))
 
 
@@ -735,14 +735,14 @@ def test_g16_supply_rail_split_by_a_typo(project):
     move(project, g, ["U2.16", "C1.1"], "3.3V")       # 3.3V instead of 3V3: REQ.missing is content, the capacitor came along
     project.save_graph(g)
     rep = run(project)
-    assert g16(rep) == ["U2.16 (VDD) on 3.3V: nothing supplies this net"] and "REQ.missing" not in ids(rep)
+    assert g16(rep) == ["U2.VDD (16) on 3.3V: nothing supplies this net"] and "REQ.missing" not in ids(rep)
 
 
 def test_g16_ground_pin_on_a_net_of_its_own(project):
     g = project.graph()
     move(project, g, ["U2.1", "R1.2"], "GND_U2", v=(0, 0))
     project.save_graph(g)
-    assert g16(run(project)) == ["U2.1 (GND) on GND_U2, not on GND"]
+    assert g16(run(project)) == ["U2.GND (1) on GND_U2, not on GND"]
     g["graph"]["grounds"] = ["GND_U2"]                 # a ground that is separate on purpose
     project.save_graph(g)
     assert g16(run(project)) == []
@@ -776,14 +776,14 @@ def test_g16_supply_and_signal_pins_swapped(project):
     project.net(g, "3V3")["pins"][project.net(g, "3V3")["pins"].index("U2.16")] = "U2.3"
     project.net(g, "LED_CLK")["pins"][project.net(g, "LED_CLK")["pins"].index("U2.3")] = "U2.16"
     project.save_graph(g)
-    assert g16(run(project)) == ["U2.16 (VDD) on LED_CLK: nothing supplies this net"]
+    assert g16(run(project)) == ["U2.VDD (16) on LED_CLK: nothing supplies this net"]
 
 
 def test_g16_supply_pin_on_ground(project):
     g = project.graph()
     move(project, g, ["U2.16"], "GND")
     project.save_graph(g)
-    assert g16(run(project)) == ["U2.16 (VDD) on GND: a supply pin on ground"]
+    assert g16(run(project)) == ["U2.VDD (16) on GND: a supply pin on ground"]
 
 
 @pytest.mark.parametrize("value_ohm,found", [(100, False), (150, True)])
@@ -796,7 +796,7 @@ def test_g16_supply_through_a_resistor_up_to_100_ohm(project, value_ohm, found):
     project.net(g, "3V3")["pins"].append("R20.1")
     project.net(g, "3V3_U2")["pins"].append("R20.2")
     project.save_graph(g)
-    assert g16(run(project)) == (["U2.16 (VDD) on 3V3_U2: nothing supplies this net"] if found else [])
+    assert g16(run(project)) == (["U2.VDD (16) on 3V3_U2: nothing supplies this net"] if found else [])
     project.net(g, "3V3_U2")["accept"] = {"PATH.unfed": "U2 runs from 3V3 through R20 on purpose"}
     project.save_graph(g)
     assert g16(run(project)) == []
@@ -807,7 +807,7 @@ def test_g16_supply_only_through_a_diode_in_forward_direction(project):
     project.net(g, "VIN")["pins"][project.net(g, "VIN")["pins"].index("D1.2")] = "D1.1"   # D1 reversed: blocks VIN
     project.net(g, "+5V")["pins"][project.net(g, "+5V")["pins"].index("D1.1")] = "D1.2"
     project.save_graph(g)
-    assert g16(run(project)) == ["U1.39 (VSYS) on +5V: nothing supplies this net"]
+    assert g16(run(project)) == ["U1.VSYS (39) on +5V: nothing supplies this net"]
 
 
 # --- LIM.i fuse against what it protects (rule proposal #45) ---------------------------------------------------------
@@ -933,8 +933,8 @@ def g18(rep):
 def test_g18_boost_without_its_loop_in_layout_loops(project):
     boost(project)
     rep = run(project)
-    assert g18(rep) == (["U3 (boost): no layout.loops entry on BOOST_SW (U3.1 SW)",
-                         "U3 (boost): no layout.loops entry on GND (U3.2 GND)",
+    assert g18(rep) == (["U3 (boost): no layout.loops entry on BOOST_SW (U3.SW (1))",
+                         "U3 (boost): no layout.loops entry on GND (U3.GND (2))",
                          "U3 (boost): no layout.loops entry on VOUT (behind D10)"], [])
     assert set(ids(rep)) == {"REQ.missing"}
 
@@ -956,7 +956,7 @@ def test_g18_waive_on_the_part_or_on_the_net(project):
     project.save_graph(g)
     rep = run(project)
     assert g18(rep) == ([], []) and [m for c, m, _ in rep.waived if c == "REQ.missing"] == \
-        ["U3 (boost): no layout.loops entry on GND (U3.2 GND)"]
+        ["U3 (boost): no layout.loops entry on GND (U3.GND (2))"]
     g["graph"]["layout"]["loops"] = []
     project.comp(g, "U3")["accept"] = {"REQ.missing": "a module's layout, not ours"}
     project.save_graph(g)
@@ -973,4 +973,4 @@ def test_g18_buck_or_boost_without_hot_loop_is_a_warning(project):
 def test_g18_hot_loop_role_the_part_does_not_have(project):
     boost(project, {**BOOST, "hot_loop": ["vin", "switch", "gnd"]}, loops=BOOST_LOOPS)
     assert g18(run(project))[0] == ["U3: hot_loop of C9000010 names 'switch', no pin role of the part",
-                                    "U3 (boost): no layout.loops entry on +5V (U3.5 IN)"]
+                                    "U3 (boost): no layout.loops entry on +5V (U3.IN (5))"]
