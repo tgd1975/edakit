@@ -527,9 +527,15 @@ spacing. Whether edakit then measures safety distances – a statement other peo
    or built directly with add-rule and add-feature.
 3. Whether edakit takes boards with mains or high voltage (FT-7, CK-9, CK-10), or only says that it does not check them
    (CK-22).
+   **Decided 2026-10-31:** recognised, not checked – a domain `mains`, CK-22 as an error a project may accept; FT-7,
+   CK-9, CK-10, CK-24 stay out (rules-at-scale.md, decision 7).
 4. Whether a library of checked entries for popular parts (PF) belongs into edakit – who signs them, and how a project
    takes one over (today: `edakit/blocks/parts/`, copied by `edakit block add`).
+   **Decided 2026-10-31:** in edakit (`edakit/parts/`), taken over as a copy that names its library version; the owner
+   signs every entry (rules-at-scale.md, decision 8).
 5. Whether AC analysis (FT-12) fits edakit's DC-first approach at all.
+   **Decided 2026-10-31:** yes, opt-in where sim.json names an expectation, domains audio and guitar, warnings first
+   (rules-at-scale.md, decision 9).
 6. The network policy: the vendor hosts the sources need (ti.com, st.com, espressif.com, microchip.com, analog.com,
    nxp.com, pololu.com, adafruit.com, onsemi.com, diodes.com, vishay.com, infineon.com, allegromicro.com, midi.org,
    usb.org) are allowed in the environment, or the sources are read on a machine that reaches them.

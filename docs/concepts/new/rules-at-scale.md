@@ -314,3 +314,20 @@ Settled in step 1 (2026-10-30), after the go, as proposed: the relation vocabula
 `params` become `limits` and `values`, every name with its unit (`vrrm` → `vr_max_v`, a pin's `vmax` → `v_max_v`) –
 `edakit/convert.py` holds the table, `edakit convert --write` converts a project once at the cut. Still open: the
 mutation sweep in CI or on demand (step 7; proposed: on demand).
+
+Taken by the owner on 2026-10-31 – maker-coverage's open decisions 3 to 5, through a form, each as proposed:
+
+7. **Mains and hazardous voltage** (maker-coverage decision 3): edakit recognises them and does not check them. A
+   domain `mains` finds a net above the ES1 limit of IEC 62368-1 – the value read from a source, not from memory – and
+   says that edakit checks neither spacing nor isolation there (CK-22); an **error** that a project may accept with
+   its reason in the sign-off file ("power supply bought, only safety extra-low voltage on the board"). No creepage or
+   clearance is measured: edakit makes no safety statement others could rely on. FT-7, CK-9, CK-10 and CK-24 stay out.
+8. **Library of checked parts entries** (decision 4): in edakit, `edakit/parts/` – the entries `edakit/blocks/parts/`
+   holds today move there, the blocks use the same ones. A project takes an entry over with `edakit part add <part>`
+   as a **copy** into its parts folder, which names the library entry and its version; `edakit check` notes when the
+   library holds a newer version, and the project takes it over on purpose. An entry is written from its datasheet
+   (source with revision) and counts only once the **owner** has signed it (`verified`); until then it is a draft.
+9. **AC analysis** (decision 5): opt-in – ngspice `.ac` (and `.noise`) only where `sim.json` names an expectation
+   (gain at a frequency, the −3 dB corners), in the domains audio and guitar; without an expectation nothing runs. Its
+   codes start as **warnings**, like every new code of step 6. FT-18 (source models in the audio band) builds on it.
+
