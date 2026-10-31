@@ -12,9 +12,13 @@ review found open – where assertions run, what `block add --set` writes, the n
 and one hook – answered where they belong, and the list of decisions that closed the concept folded into the text on
 the owner's word. On the owner's questions the same day: a project's source over several files with one namespace
 (item 9), the requirements on SysML v2's model as well ("The basis"), and a language server with a VS Code
-extension as stage 4. Against the yardstick: a language changes nothing about what is text – its source and its
-resolved graph are text in the repository –; what it changes is where repetition, parameters and variants are
-written once instead of many times.
+extension as stage 4; on the owner's word after the review's second reading, the waiting period of trigger 4 taken
+out, the SysML v2 tools on GitHub – the pilot's installers, Eclipse SysON, Sensmetry's Syside, Syster's `systree`
+– named in "What exists", "The basis" and stage 3, and derived values by named rules of edakit's in place of
+assertions evaluated from the graph: `asserts` dropped, `derivations` as the one key the language adds, DEF over
+the records only (item 4, the owner's ack of the review's recommendation). Against the yardstick: a language changes
+nothing about what is text – its source and its resolved graph are text in the repository –; what it changes is
+where repetition, parameters and variants are written once instead of many times.
 
 ## The short answer
 
@@ -30,7 +34,7 @@ proprietary, dormant or one person's experiment.
 What is worth taking: SysML v2's concepts where they fit and KerML, the kernel under them, where they do not, as the
 foundation the language is defined on – the way SysML v2 itself is defined on KerML –, so that every construct has a
 standard's meaning and an export to SysML v2 and KerML is mechanical; `.ato`'s ergonomics as the model for the
-syntax – units with tolerances, `assert … within`, arrays, chains –; and edakit's own resolved graph (decision 4
+syntax – units with tolerances, derived values, arrays, chains –; and edakit's own resolved graph (decision 4
 of circuit-language.md) as the compile target, so that every check, the hash and the reviews keep reading what
 they read today.
 
@@ -49,10 +53,12 @@ edakit's projects that is four things.
 2. **Repetition.** Eight LEDs on `OUT0` … `OUT7` are one statement with an index, not eight parts, eight nets and
    eight pins in `+5V`. In led-bar the eight LEDs and their eight nets are 244 lines of `hardware/graph.json`
    (`tests/fixtures/led-bar`), the pins in `+5V` not counted; in the tree 30 LEDs on three drivers.
-3. **Parameters, derived values and constraints.** A block's values are fixed today – 150 Ω in `led`, "another
-   current: another value of the same series" in its notes. With a parameter the definition says what the value
-   depends on, `(in.v.max − D.vf) / i`, and an assertion holds the part that was chosen to it. The derivation becomes
-   text that a reviewer reads, instead of a number Claude computed in its head and a check verified afterwards.
+3. **Parameters and derived values.** A block's values are fixed today – 150 Ω in `led`, "another current: another
+   value of the same series" in its notes. With a parameter the definition says what the value is derived from –
+   a rule of edakit's, `series_resistor` with the current as its input, that knows its corners, units and series –
+   and the derivation record in the resolved graph holds the part that was chosen to it. The derivation becomes
+   data that a reviewer reads, instead of a number Claude computed in its head; the check of the real current stays
+   with the simulation and LIM.i, which do it today at both corners.
 4. **Variants as differences.** The bell's four configurations differ in parts and texts; a variant that names the
    main file and redefines what differs is a few lines. With the resolved graph as the hashed artifact (below), a
    change of the main file voids a variant's sign-offs only when it changes the variant's resolved circuit – the
@@ -83,7 +89,7 @@ Read from this session on 2026-10-31; the sources at the end say what was reacha
 | JITX | commercial language | bundles, design rules, constraint-driven routing | proprietary | not reachable from here |
 | codeyourpcb | a DSL of its own | `component`, `net VCC [width 0.5mm] { J1.1; U1.8 }`, `module` and `use Divider as SENSE { IN = VIN }`, imports, DRC, Gerber | no parameters; "the DSL and file format may change between versions"; no parts data model | MIT or Apache 2.0; October 2026, one author |
 | PHDL | an HDL for boards (Brigham Young University, a DOE paper) | design, device, instance, net, arrays, attributes, hierarchy | dormant since about 2014, Java; the paper was not reachable from here | historical |
-| SysML v2 with KerML | OMG standard, textual notation | `part def` and `part`, `port def`, n-ary `connection : Net connect (a.p, b.p, c.p)`, redefinition `:>>`, `variation` with `variant` and a selection by redefinition, `requirement`, `satisfy … by …`, `verify`, `constraint def`, `calc def`, units `60 [kg]` | no electrical semantics: no net, pin, part data, board, order; verbose; open tooling: the pilot implementation in Java and Xtext, Syster in Rust (MIT, alpha, no release), ANTLR grammars; models have seen little of it | 2.0 adopted by the OMG in 2025, KerML 1.0 with it, an editorial update for ISO in March 2026 |
+| SysML v2 with KerML | OMG standard, textual notation | `part def` and `part`, `port def`, n-ary `connection : Net connect (a.p, b.p, c.p)`, redefinition `:>>`, `variation` with `variant` and a selection by redefinition, `requirement`, `satisfy … by …`, `verify`, `constraint def`, `calc def`, units `60 [kg]` | no electrical semantics: no net, pin, part data, board, order; verbose; open tooling: the pilot implementation in Java and Xtext (Eclipse plugins and a Jupyter kernel, installers in the release repository), Eclipse SysON (EPL 2.0, a web tool on Sirius Web with textual import and export), Syster in Rust (MIT, alpha; its Python wrapper `systree` 0.4.4a0 on PyPI, February 2026), Sensmetry's Syside (the editor free, the Python library `syside` proprietary, 1.0.0b1 in October 2026; its open-source language server retired), ANTLR grammars; models have seen little of it | 2.0 adopted by the OMG in 2025, KerML 1.0 with it, an editorial update for ISO in March 2026 |
 | Modelica | equation-based modeling language | `connect`, `replaceable` and `redeclare`, arrays, units, OpenModelica | behavior, not manufacturing data; a simulator of its own beside ngspice | mature |
 | structural Verilog, VHDL | hardware description languages | modules, parameters and generics, generate, named ports; models know them | digital semantics; no units, no attributes; nets as wires | mature |
 | SPICE | netlist | subcircuits, `.param`, units as suffixes; models know it | positional pins – the first finding of the sketch; no attributes | mature |
@@ -95,7 +101,7 @@ boards, cables with their resistance, the hand-over to the layout; and a part is
 and sources, not what a picker found. In every language above these would be attributes bolted on, and the language's
 own semantics – a picker, implicit nets, a React tree, equations – would stand in the way or be dead weight. The two
 things worth taking are a model and a style: SysML v2's definitions, usages, redefinition and variation for the
-semantics; `.ato`'s units, tolerances, assertions and arrays for the syntax.
+semantics; `.ato`'s units, tolerances, derived values and arrays for the syntax.
 
 **KerML** is the kernel SysML v2 is built on – classifiers, features, types, expressions, specialization,
 redefinition, multiplicity. What it is to edakit – the foundation the notation is defined on, by the owner's rule –
@@ -146,19 +152,28 @@ ergonomics, copies no text and no grammar.
    board files name nets (the bell's model below).
 3. **Repetition.** `for n in 0..7` over parts and nets with `{n}` in names and pin words – ranges and index
    arithmetic, nothing more.
-4. **Parameters with units, expressions and assertions.** Quantities as edakit reads them already (`330Ω`, `4k7`,
-   `100nF`, `0..5.5 V`; `QUANTITY` in circuit.py, `v_range`), with tolerances and ranges (`10 mA ± 20 %`,
-   `2 mA .. 15 mA`); arithmetic on them with the units checked. `assert <expression> within <range>` is compiled,
-   not evaluated: the compiler resolves the names – `in.v.max` to the net the port is bound to, `D.vf_min_v` to the
-   component and its entry's field, as the entries name it, no second vocabulary – and writes the assertion into the
-   resolved graph as data, a key `asserts` with expression, range, the source line and the text; a new engine, DEF,
-   evaluates it in `edakit check` against the graph and the entries, with the severity the profile gives it: a failed
-   assertion `DEF.assert`, an unbound port `DEF.port`, a parameter outside its range `DEF.param`. So the compiler
-   stays a function from files to graph, the engines keep reading the graph only, and `asserts` is the one key the
-   language adds to the graph. A net may take its range from a port, `v @in`, as the block JSON writes `"v": "@in"`
-   today. No part picking: the designer chooses the part; STRUCT.identity holds the component to its entry, the
-   assertion holds the entry's value to the derivation. Without expressions the language would be smaller, and the
-   derivation would stay in Claude's head – the third of the four values above.
+4. **Parameters with units and derived values.** Quantities as edakit reads them already (`330Ω`, `4k7`, `100nF`,
+   `0..5.5 V`; `QUANTITY` in circuit.py, `v_range`), with ranges and tolerances (`10 mA ± 20 %`, `2 mA .. 15 mA`),
+   as the inputs of a derivation. A definition says what a value is derived from by naming a rule of edakit's,
+   `derive R.value series_resistor(i)`: `series_resistor`, `divider`, `pullup`, `rc` and their kin are functions in
+   edakit that know their inputs – the net's range on the port, the entry's fields as the entries name them, the
+   parameter –, their corners, their units and the series the value comes from; a new formula is a rule proposal
+   (add-rule), not a line in a project. The compiler evaluates the rule with the entries – it reads them for the
+   pin numbers already – and writes a derivation record into the resolved graph as data: the rule, its inputs with
+   their sources, the derived value, the series value chosen and the source line; `derivations` is the one key the
+   language adds to the graph. The engine DEF reads the records only: `DEF.derive` where a part's value is not the
+   value its record derives, the way STRUCT.identity holds a component to its entry. The check of the real current
+   stays where it is: the simulation runs the corners of `sim.json`, SIM.state judges on and off by `led_on_min_a`,
+   LIM.i holds the current to `if_max_a` – with the pin's drop and the LED's series resistance, which a one-line
+   formula does not know. An unbound port and a parameter outside its range are the compiler's errors, with file
+   and line. A net may take its range from a port, `v @in`, as the block JSON writes `"v": "@in"` today. Free
+   expressions in the notation, `(in.v.max - D.vf_min_v) / i` evaluated by the compiler into the same record, come
+   only when a project needs a formula no rule has – then with interval arithmetic and the corner semantics
+   defined first. Assertions evaluated by an engine from text in the graph were set aside on 2026-10-31: they would
+   carry code into the graph, duplicate SIM.state and LIM.i with a cruder model, and need corners, tolerances and
+   interval arithmetic the data does not have – no resistor entry has a tolerance, a net's `v` spans its off state.
+   No part picking: the designer chooses the part; the record says why. Without derivations the language would be
+   smaller, and the derivation would stay in Claude's head – the third of the four values above.
 5. **Variants as differences.** A variant file names its base – the main file or another variant, a chain resolved
    in order, the path relative to the project's `edakit.toml` as every path in it – and redefines parts, nets,
    parameters and texts by designator and name, takes pins off a net and sets attributes back; everything else is
@@ -174,17 +189,17 @@ ergonomics, copies no text and no grammar.
    schema never needs a syntax decision. What has to stand still is the shape of the graph – components, nets,
    cables, layout, locks, accept, purpose –, not its keys.
 8. **Determinism and a resolved graph.** The compiler is a function from the sources to the resolved graph of today's
-   format plus `asserts` (item 4), with pin numbers and the full pin maps, in a stable order; no input but the files,
-   no output but the graph. `edakit graph json --write` writes it, `--check` in the pre-commit hook reports drift, as
-   decided for the TOML form. A project's committed resolved graph pins its circuit against a change of edakit's
-   block library: the library may move, the check says so, the user decides. Two readers, two forms: the model reads
-   and edits the source, which is short because definitions, loops and variants expand only when compiled; the code
-   – engines, simulation, hash, scripts – reads the resolved graph, which stays as large as today's JSON. Reviewers
-   read both, the source for the intent and the diff of the resolved graph for the exact pins. Performance is not
-   the reason: `edakit check` takes under a second on the reference project's 65 KB, and compiling a bell takes
-   milliseconds. The reasons are that the engines do not change, that the hash and the sign-offs bind to a flat,
-   deterministic form, that a rewire through a parts entry or a library change shows as pin numbers in a diff, that
-   project scripts keep reading JSON, and that a fresh clone needs no compiler.
+   format plus `derivations` (item 4), with pin numbers and the full pin maps, in a stable order; no input but the
+   files, no output but the graph. `edakit graph json --write` writes it, `--check` in the pre-commit hook reports
+   drift, as decided for the TOML form. A project's committed resolved graph pins its circuit against a change of
+   edakit's block library: the library may move, the check says so, the user decides. Two readers, two forms: the
+   model reads and edits the source, which is short because definitions, loops and variants expand only when
+   compiled; the code – engines, simulation, hash, scripts – reads the resolved graph, which stays as large as
+   today's JSON. Reviewers read both, the source for the intent and the diff of the resolved graph for the exact
+   pins. Performance is not the reason: `edakit check` takes under a second on the reference project's 65 KB, and
+   compiling a bell takes milliseconds. The reasons are that the engines do not change, that the hash and the
+   sign-offs bind to a flat, deterministic form, that a rewire through a parts entry or a library change shows as
+   pin numbers in a diff, that project scripts keep reading JSON, and that a fresh clone needs no compiler.
 9. **Several files, one namespace.** A project's source may be one file or several: the main file includes the
    others – `include leds.circuit`, the path relative to `edakit.toml` as every path in it –, a variant names its
    base, definitions come from the project's files first and then from edakit's library, and requirements may sit in
@@ -202,21 +217,21 @@ ergonomics, copies no text and no grammar.
 
 Not in it: behavior (SPICE models stay in the parts entries), layout (stays in the board files; a definition may carry
 layout intent for its instance – `near`, loops – as the hand-over does), part picking, conditionals, loops beyond
-ranges, any I/O.
+ranges, free expressions until a project needs a formula no rule has (item 4), any I/O.
 
 ## How it could look
 
-The sketch's statements, extended by definitions, usages, repetition, assertions and variants. The bell's LED step as
+The sketch's statements, extended by definitions, usages, repetition, derivations and variants. The bell's LED step as
 a definition, with the current as a parameter:
 
 ```text
-def led (color = green, i = 2 mA .. 15 mA) ports in gnd
+def led (color = green, i = 10 mA) ports in gnd
   part R resistor
   part D led value color
   net in     R.1
   net anode  R.2 D.anode    v @in                     # takes the range of the net on port in
   net gnd    D.cathode
-  assert (in.v.max - D.vf_min_v) / R.value within i   "the current at the top of the input's range"
+  derive R.value series_resistor(i)                   # edakit's rule: the range on in, D's vf, the series value
   covers LIM.v LIM.i LVL.threshold SIM.state …        # the block's eleven codes
 ```
 
@@ -408,7 +423,7 @@ for n in 8..9
   part R{n} resistor "100 Ω 2512 1 W" lcsc C35218 value 100Ω "Base load for USB power banks (R8 ∥ R9 = 50 Ω)"
     notes "Keeps a power bank from switching off: the circuit alone draws 35–75 mA (D-8)."
 
-def led (color = green, i = 2 mA .. 15 mA) ports in gnd  # as above; or edakit's block, once it has parameters
+def led (color = green, i = 10 mA) ports in gnd          # as above; or edakit's block, once it has parameters
   …
 
 use led step1 (color = green)  in = LED_G1 gnd = GND anode = LED_G1_A     # anode = …: today's net name kept
@@ -517,10 +532,11 @@ The semantics of SysML v2 map onto edakit's needs above the netlist and not onto
 
 So: the model yes, the notation no. The notation is two to three times the text for a 19-part circuit, every
 connection in the examples is binary and a net would be a construction of edakit's own, the electrical layer and the
-manufacturing data would be attributes without meaning to any SysML tool, the open parsers are a Java pilot
-implementation and an alpha in Rust, and models have seen little SysML v2. What the model gives: a vocabulary that is
-a standard's – definition, usage, redefinition, variation, satisfy, verify –, clean rules for what a redefinition
-means, and the option of an export `edakit graph sysml` for whoever models the system around the board in SysML v2.
+manufacturing data would be attributes without meaning to any SysML tool, the free readers are the Java pilot
+implementation, Eclipse SysON and an alpha in Rust while the Python library is proprietary, and models have seen
+little SysML v2. What the model gives: a vocabulary that is a standard's – definition, usage, redefinition,
+variation, satisfy, verify –, clean rules for what a redefinition means, and the option of an export
+`edakit graph sysml` for whoever models the system around the board in SysML v2.
 
 ### KerML underneath
 
@@ -530,8 +546,8 @@ is KerML plus libraries plus a surface syntax: `part def` is a KerML structure s
 `Part`, `part` a feature, `connection` a connector. So the layers are: edakit's notation on top; edakit's electrical
 library, defined in SysML v2's terms where they fit – `part def Resistor`, `port def Pin`, `connection def Net`,
 attributes with the ISQ and SI units, `requirement` for R- and M- numbers, `variation` for the bell's configurations,
-`constraint` for assertions, metadata for `accept`, locks and decisions –; and KerML's `struct`, `feature`,
-`connector`, `inv` directly where SysML v2's definitions would bring a meaning that does not fit. So far none was
+`calc` for derivations, metadata for `accept`, locks and decisions –; and KerML's `struct`, `feature`,
+`connector`, `function` directly where SysML v2's definitions would bring a meaning that does not fit. So far none was
 found: a net as an n-ary `connection` and a pin as a `port` without flows need no bending, and the occurrence
 semantics SysML v2 carries along does no harm. The practical consequence of staying in SysML v2's terms: an exported
 model is a SysML v2 model, and SysML tools draw it as parts, ports and connections and follow its requirements; a
@@ -545,7 +561,7 @@ model on raw KerML structures they do not. The owner would find KerML the fittin
 | `net GND 0 V U1.GND C1.minus …` | `connector GND : Net (U1.GND, C1.minus, …)` – n-ary, with features `v`, `fn`, `accept`; in SysML v2 a `connection` |
 | `param vlogic = 0..5.5 V` | `feature vlogic : VoltageRange default …`; the unit from `SI`, the quantity from `ISQ` |
 | `for n in 0..7 …` | multiplicity, `feature D : LED[8]`, indexed features |
-| `assert … within …` | `inv { … }`; in SysML v2 `assert constraint` |
+| `derive R.value series_resistor(i)` | a feature value bound to the invocation of a `function` of edakit's library; in SysML v2 a `calc` |
 | `variant esp32 of smd …` | a structure specializing the base, its features redefined with `:>>`; in SysML v2 `variation` and `variant` |
 | `alias U1 led1 = PD6` | a feature `led1` of the module's usage bound to its pin feature |
 | `satisfies R-3`, `decision D-8`, `accept` | `satisfy` and `verify` from SysML v2's Requirements library; `accept` and decisions as metadata |
@@ -606,10 +622,12 @@ syntax, with the JSON interchange as its export, is what the specification itsel
 
 What that gives edakit: the meaning of redefinition, of inheritance down a variant chain, of multiplicity and of an
 invariant from a standard instead of an invention; the export `edakit graph kerml` and `edakit graph sysml` as a
-mapping, not a translation; a standard parser – Syster, the pilot implementation – as a conformance test once one is
-usable from Python; and the handbook's vocabulary. What it does not give: the electrical domain – net, pin, role,
-LCSC number, board, order – which is edakit's library in any case; and nothing at run time, since the engines read
-the resolved graph.
+mapping, not a translation; a conformance test with a standard reader – the pilot implementation as a subprocess
+with a JDK, Syster's `systree` once it leaves alpha, Syside Automator where a proprietary library is acceptable –
+and the schema of clause 10 for the JSON export, checked from Python without a parser; a tool that imports the
+export and draws it, Eclipse SysON; and the handbook's vocabulary. What it does not give: the electrical domain –
+net, pin, role, LCSC number, board, order – which is edakit's library in any case and exists for SysML v2 nowhere
+else; and nothing at run time, since the engines read the resolved graph.
 
 Why KerML's own textual notation is not the source: it is more abstract than SysML v2's – `struct`, `feature`,
 `connector` for `part def`, `part`, `connection` – at the same length, two to three times the notation of the
@@ -621,11 +639,11 @@ the grammar's forms:
 package Bell {
     import Electrical::*;                       // edakit's library: Block, Pin, Net, Resistor, LED
     struct LedStep :> Block {
-        feature color : LedColor default green;  feature i : CurrentRange;
+        feature color : LedColor default green;  feature i : CurrentValue;
         feature in : Pin;  feature gnd : Pin;
-        feature R : Resistor;  feature D : LED;
+        feature D : LED;
+        feature R : Resistor { :>> value = seriesResistor(in.v, D.vf, i); }   // a function of edakit's library
         connector : Net (in, R.p1);  connector anode : Net (R.p2, D.anode);  connector : Net (D.cathode, gnd);
-        inv { (in.v.max - D.vf_min_v) / R.value <= i.max }
     }
     feature step1 : LedStep { :>> color = green;  feature :>> R { :>> designator = "R4"; :>> lcsc = "C17630"; } }
     connector : Net (u1.PD6, step1.in);
@@ -662,7 +680,7 @@ the notation edakit's, as for the circuit:
 need N-1 "The countdown is visible across the room." who owner
 requirement R-3 from N-1 must "Every countdown LED carries 2 to 15 mA while its step is on."
   subject led                                       # every usage of led; one requirement usage per subject
-  require (in.v.max - D.vf_min_v) / R.value within 2 mA .. 15 mA
+  require D.i within 2 mA .. 15 mA                  # the current through D, as the simulation measures it
   verify rows "LIM.i *"  verify rows "SIM.state *"
 requirement R-7 from D-8 should "A USB power bank stays on: the circuit draws at least 100 mA."
   subject +5V
@@ -670,20 +688,21 @@ requirement R-7 from D-8 should "A USB power bank stays on: the circuit draws at
 ```
 
 What that changes against today: a requirement names its subject, so DOCS.ref resolves one more kind of reference
-and `graph show` lists the requirements on a net or part; a requirement with a `require` is an assertion with a
-subject – compiled into `asserts` like a definition's, evaluated by DEF –, so a requirement whose sentence is a
-quantity with a limit is checked by the engine directly, and one that is not by the gate's rows as today;
-`satisfies R-3` on a usage (the fifth value above) is `satisfy` from the other end; the derivation from a need to a
-requirement is a relation with a standard's name instead of a list. What stays edakit's: the codes as evidence, the
-sign-offs with their hash, the acceptance test on the built board, draft and accepted, the file covering the circuit
-only. The form: the same notation, in `hardware/requirements.circuit` or in the circuit's files, compiled to the
-resolved requirements that `edakit req`, the DOCS codes and the gate read today – TOML stays the flat form here too
-–, and exported with `edakit graph sysml` as requirement usages with `satisfy` and `verify`, so that a SysML tool
+and `graph show` lists the requirements on a net or part; a requirement with a `require` states its condition as
+SysML v2 does and is checked by what its `verify` names – the simulation's criteria, the bell's `led_on_min_a` in
+`sim.json`, the entries' limits through LIM.i, a sign-off –, not by an evaluator of the notation's own (item 4); the
+compiler checks that a `require` has its `verify`, as DOCS.evidence does today; `satisfies R-3` on a usage (the
+fifth value above) is `satisfy` from the other end; the derivation from a need to a requirement is a relation with
+a standard's name instead of a list. What stays edakit's: the codes as evidence, the sign-offs with their hash, the
+acceptance test on the built board, draft and accepted, the file covering the circuit only. The form: the same
+notation, in `hardware/requirements.circuit` or in the circuit's files, compiled to the resolved requirements that
+`edakit req`, the DOCS codes and the gate read today – TOML stays the flat form here too –, and exported with
+`edakit graph sysml` as requirement usages with `satisfy` and `verify`, so that a SysML tool
 shows which part satisfies which requirement and how it is verified. Regulatory requirements stay what the gate
 protocol says of them: support, not legal advice.
 
-`.ato` is the right model for the syntax – units with tolerances, assertions, arrays, chains – and the wrong basis:
-adopting the syntax without the compiler is a reimplementation of a syntax that was itself rewritten in 2026,
+`.ato` is the right model for the syntax – units with tolerances, derived values, arrays, chains – and the wrong
+basis: adopting the syntax without the compiler is a reimplementation of a syntax that was itself rewritten in 2026,
 adopting the compiler binds edakit to a picker-centric, KiCad-only tool chain on Python 3.14 whose documentation and
 workspace have moved into a browser editor behind a sign-in. A notation modeled on it, not compatible with it.
 
@@ -696,7 +715,7 @@ Systems Library where its terms fit, part, port, connection, attribute, requirem
 KerML's kernel where they do not; every construct an element of an electrical library on that basis –, with `.ato`'s
 ergonomics, compiled to the resolved graph and exportable to SysML v2 and KerML; TOML with names stays the flat form.
 The sketch's reader is the measure – 231 lines of `translate.py`, the whole prototype with writer, TOML and round
-trip 819 –: definitions, usages, `for`, expressions, assertions and variants are each a construct of the reader's
+trip 819 –: definitions, usages, `for`, derivations and variants are each a construct of the reader's
 size, and the compiler to the resolved graph is the sketch's writer. What has to be built is the section "The
 toolchain" below.
 
@@ -713,9 +732,9 @@ Not before, and not without, these:
    above); the tree's move to edakit (30 LEDs on three drivers) and the pedal's second module would be two more.
 4. **The shape of the graph stands still.** The cut `4982d35` of 2026-10-31 changed shapes – `waive` to `accept`,
    `hints` to HINT codes, `checks.pin_locks` to `locks.pins` –, and the same day added keys: `config`, `states`,
-   `strip`, `isolated`, `clock_hz`, `accept` by place. The clock starts there: two months in which the graph gains
-   keys only, and the shape – components, nets, cables, layout, locks, accept, purpose – stands. The language itself
-   adds one key, `asserts` (item 4 above).
+   `strip`, `isolated`, `clock_hz`, `accept` by place. Since the cut the graph gains keys only; whether the shape –
+   components, nets, cables, layout, locks, accept, purpose – still stands is judged when the decision is due, with
+   no waiting period (the owner, 2026-10-31). The language itself adds one key, `derivations` (item 4 above).
 5. **Evidence.** `evals/add-led`, a repetition task and a variant task on the reference circuits, in TOML and in the
    language, three runs each with Sonnet (maker-coverage FT-24): the language at least as reliably edited.
 6. **A budget of size L** for the first stage, and the readiness to maintain a construct, not a key, per change.
@@ -728,28 +747,33 @@ which is TOML with names, `block add` with parameters as flags and `graph show` 
 The stages, each useful on its own:
 
 - **Stage 1: edakit's block library in the language.** The 26 blocks as definitions with parameters, compiled to
-  the block JSON `block add` reads today; `block add --set i=10mA` passes a parameter: the definition's assertion
-  is checked against the block's part, and where it fails the command prints the derived value and the nearest value
-  of the series and asks – it never writes a value no entry has, the designer chooses. Projects change nothing; the
-  compiler, the expressions and the assertions are built and tested on edakit's own data. Size L. A project first
-  would show the value earlier and build the compiler on one project's needs.
+  the block JSON `block add` reads today; `block add --set i=10mA` passes a parameter: the block's derivation runs
+  with the entries, the command prints the derived value and the nearest value of the series and asks – it never
+  writes a value no entry has, the designer chooses – and writes the record into the graph. Projects change
+  nothing; the compiler, the quantities and the derivation rules are built and tested on edakit's own data. Size L.
+  A project first would show the value earlier and build the compiler on one project's needs.
 - **Stage 2: projects.** `hardware/graph.circuit` beside or instead of `graph.toml`, with `use`, `for`, variants and
-  assertions; `edakit graph json` compiles either; `edakit graph show` (built 2026-10-31, FT-23) reads the resolved
+  derivations; `edakit graph json` compiles either; `edakit graph show` (built 2026-10-31, FT-23) reads the resolved
   graph as it reads `graph.json` today and changes nothing. The bell and the tree as the first users, each at the
   user's request. Size M to L.
 - **Stage 3: the exports.** `edakit graph sysml`, the model SysML tools draw and whose requirements and variants
   they follow, and `edakit graph kerml`, the kernel view as the interchange JSON of clause 10.4 – both a mapping,
-  since the notation is defined on the libraries –, and the conformance test with a standard parser once one is
-  usable from Python; the requirements go with it, as requirement usages with `satisfy` and `verify`. Never
-  exporting would save the mapping and give up the interoperability and the conformance test; the standard's
-  notation as the source is weighed in "The basis".
+  since the notation is defined on the libraries –; the electrical library on SysML v2 that the mapping targets,
+  `Pin`, `Net`, `Resistor`, `LED`, `Block`, a requirement def with binding and status, metadata for `accept`, locks
+  and decisions, written once and the one artifact of the export others could import; the conformance test as an
+  optional job – the pilot implementation's reader as a subprocess with a JDK, or `systree` once it leaves alpha –
+  and the schema check of the JSON export in Python; the acceptance test an import into Eclipse SysON, done by hand
+  and documented. The requirements go with it, as requirement usages with `satisfy` and `verify`. Not built: a
+  SysML v2 reader of edakit's own – that is the pilot's, Syster's and Sensmetry's work. Never exporting would save
+  the mapping and give up the interoperability and the conformance test; the standard's notation as the source is
+  weighed in "The basis".
 - **Stage 4: a language server and a VS Code extension.** For the human in the editor: the reader's errors as they
   are typed, go to definition – a pin word to its entry, a usage to its definition, a net to its pins –, hover with
   the entry's limits and the net's range, completion of pin words, designators and codes, all over the reader and
   resolver the CLI uses; the extension brings the grammar of stage 1, the server's client, the formatter on save,
   `graph json --write` and `--check` as tasks, `graph show` for the element under the cursor, and the findings of
   `edakit check` at the statements they come from, through a source map the compiler writes beside the resolved
-  graph – a net's LIM.v at its `net` line, an assertion's DEF.assert at its `assert`. The model needs none of it –
+  graph – a net's LIM.v at its `net` line, a derivation's DEF.derive at its `derive`. The model needs none of it –
   it edits through the CLI and `graph show` –, so it comes last. Size M for the server, M for the extension.
 
 The value, estimated on the owner's projects: the bell's main file from 59 statements in the sketch's language (the
@@ -766,25 +790,27 @@ plans: S a day, M a few days, L a week or more.
 
 | Piece | What it does | Exists today | Size | Stage |
 | --- | --- | --- | --- | --- |
-| Reader | the statements with their lines – `graph`, `part`, `net`, `cable`, `layout`, `accept`, `description`, `purpose`, `include`, `param`, `def`, `use`, `for`, `assert`, `variant`, `alias`, `need`, `requirement`, `satisfy`, `verify` –, every error with file and line, shapes checked before any check runs | the prototype's `Reader`, 231 lines, for the sketch's statements in the old form | M | 1 |
-| Resolver and compiler | names resolved across files – `include`d files, a variant chain in order, definitions from the project's files and then edakit's library, requirements files – into one namespace per project; usages and loops expanded, redefinitions applied, pin words to numbers through the entries (L.1, L.2), `asserts` and the resolved requirements written, a stable order: a function from files to the resolved graph | the prototype's writer to JSON; L.5's `edakit graph json` for TOML, once built | L | 1 for definitions, 2 for projects |
-| Expressions | quantities with units, ranges and tolerances, arithmetic with the units checked, the comparisons of `assert` | `QUANTITY` and `MULTIPLIERS` in circuit.py for `330Ω`, `4k7`, `100nF`; `v_range` for nets; `UNITS` in engines/quantities.py | M | 1 |
-| Engine DEF | `DEF.assert`, `DEF.port`, `DEF.param` from the graph's `asserts`, with the catalog's severities and the domains' grades | the engines' frame, the catalog's code table | S to M | 1 |
+| Reader | the statements with their lines – `graph`, `part`, `net`, `cable`, `layout`, `accept`, `description`, `purpose`, `include`, `param`, `def`, `use`, `for`, `derive`, `variant`, `alias`, `need`, `requirement`, `satisfy`, `verify` –, every error with file and line, shapes checked before any check runs | the prototype's `Reader`, 231 lines, for the sketch's statements in the old form | M | 1 |
+| Resolver and compiler | names resolved across files – `include`d files, a variant chain in order, definitions from the project's files and then edakit's library, requirements files – into one namespace per project; usages and loops expanded, redefinitions applied, pin words to numbers through the entries (L.1, L.2), the derivation records and the resolved requirements written, a stable order: a function from files to the resolved graph | the prototype's writer to JSON; L.5's `edakit graph json` for TOML, once built | L | 1 for definitions, 2 for projects |
+| Quantities and derivation rules | quantities with units, ranges and tolerances as the inputs; `series_resistor`, `divider`, `pullup`, `rc` … as functions with their corners, units and series, evaluated by the compiler into the records; free expressions with the units checked only when a project needs them (item 4) | `QUANTITY` and `MULTIPLIERS` in circuit.py for `330Ω`, `4k7`, `100nF`; `v_range` for nets; `UNITS` in engines/quantities.py; the simulation's LED model and LIM.i know the corners | M | 1 |
+| Engine DEF | `DEF.derive` from the graph's `derivations`: a part's value against its record's derived value and series, numbers only, with the catalog's severities and the domains' grades | the engines' frame, the catalog's code table, STRUCT.identity as the pattern | S | 1 |
 | `edakit graph json` for `.circuit` | `--write` the resolved graph, `--check` the drift, per project; the pre-commit hook of L.5 runs it | `edakit graph show`; `edakit firmware --check` as the pattern; the bell has no hook today | S on L.5 | 2 |
 | `edakit graph fmt` | the canonical layout, comments kept, so that a diff shows data | the prototype's writer, which lays out but keeps no comments | S to M | 1 |
 | `edakit graph convert --to circuit` | a JSON or TOML graph as flat statements – no usages: those come from `block add` or by hand | the prototype's writer | S | 2 |
 | `block add` on the language | writes a usage with its bindings and designators, `--set` for parameters, `--without` for optional parts | `block add` on JSON, `plan()` in block.py, `--without` | M | 1 for `--set`, 2 for usages |
-| The library as definitions | the 26 blocks with parameters and assertions, compiled to the block JSON of today | `edakit/blocks/*.json` | M | 1 |
+| The library as definitions | the 26 blocks with parameters and derivations, compiled to the block JSON of today | `edakit/blocks/*.json` | M | 1 |
 | Editor grammar | a TextMate grammar for VS Code and a Pygments lexer for the documentation site; GitHub highlights no language of one's own, a `.gitattributes` mapping lends another language's colours at best | – | S | 1 |
 | Tests and evals | reader and compiler tests; golden files source → resolved graph for the bell's four files and led-bar; the round trip compile → convert → compile; determinism, two runs identical; `evals/add-led`, a repetition task and a variant task in the language, three runs each with Sonnet (FT-24) | `evals/add-led` in JSON; the prototype's round trip | M | 1 and 2 |
 | Handbook, reference, skills | a chapter on the language, the reference of statements, the skills circuit-design and hardware-change that write it, the README | the chapters of the TOML form (L.8), once written | M | 1 and 2 |
-| Exports | `edakit graph sysml` and `edakit graph kerml` from the resolved graph, the source's definitions and the requirements, the conformance test with a standard parser | – | M | 3 |
+| Exports | `edakit graph sysml` and `edakit graph kerml` from the resolved graph, the source's definitions and the requirements; the electrical library on SysML v2 they target; the schema check of the JSON export; the conformance test with the pilot's reader as an optional job | – ; the pilot implementation (Java, installers in the release repository), Eclipse SysON for the import, `systree` in alpha, `syside` proprietary | M | 3 |
 | Language server | diagnostics as typed, go to definition, hover, completion, over the reader and resolver | – ; `pygls` as the frame in Python | M | 4 |
 | VS Code extension | the grammar, the server's client, format on save, `graph json --write` and `--check` as tasks, `graph show` for the element under the cursor, the findings of `edakit check` at their statements through the compiler's source map | – ; the source map is a small addition to the compiler | M | 4 |
 
-Not built: a debugger for expressions, part picking, any I/O from the language, clients for editors other than VS
-Code – the grammar and the server serve any editor, the client is written once. Stage 1 is the reader, the compiler
-for definitions, the expressions, DEF, the formatter, the grammar, the library, the chapter and the tests: size L, as
+Not built: free expressions before a project needs them (item 4), part picking, any I/O from the language, a SysML
+v2 reader of edakit's own – the pilot's, Syster's and Sensmetry's work –, clients for editors other than VS Code –
+the grammar and the server serve any editor, the client is written once. Stage 1 is the reader, the compiler for
+definitions, the quantities and the derivation rules, DEF, the formatter, the grammar, the library, the chapter and
+the tests: size L, as
 said. Stage 2 adds the project constructs – `use`, `for`, variants, `alias`, `param`, `include`, the requirements
 statements –, `graph json` and the hook for `.circuit`, the converter, `block add` writing usages, the skills and the
 evals: M to L. Stage 3 the exports: M. Stage 4 the language server and the extension: M and M.
@@ -794,9 +820,9 @@ evals: M to L. Stage 3 the exports: M. Stage 4 the language server and the exten
 - **A second front-end.** TOML and the language both end in the resolved graph; every tool that writes the graph
   writes both or writes the resolved graph only. Cut: `block add` writes a usage in the language and a table in
   TOML; everything else reads the resolved graph. A project has one source form, named by `[project] graph`.
-- **A program in disguise.** Expressions, `for` and variants are where a notation turns into a language nobody can
-  review. Guardrails: no conditionals, no loops but ranges, no I/O, expressions only on quantities, and the resolved
-  graph as what the reviewers and the diff read.
+- **A program in disguise.** Derivations, `for` and variants are where a notation turns into a language nobody can
+  review. Guardrails: named rules instead of free expressions (item 4), no conditionals, no loops but ranges, no
+  I/O, and the resolved graph as what the reviewers and the diff read.
 - **The library binds projects.** A definition in edakit changes, the resolved graphs of the projects that use it
   change – visible through `--check` in each project, never silently. A project may pin a definition by copying it
   into its own file.
@@ -805,8 +831,9 @@ evals: M to L. Stage 3 the exports: M. Stage 4 the language server and the exten
   (the bell's model above).
 - **Models.** A notation nobody has seen is learned from the handbook; the evals decide whether that holds for Sonnet.
   The fallback is Python.
-- **Size.** Stage 1 is size L: parser, compiler, expressions with units, assertions, the engine DEF, a formatter, a
-  grammar, handbook chapter and tests. Stage 2 adds `use`, `for`, variants, the project commands and the skills.
+- **Size.** Stage 1 is size L: parser, compiler, quantities with units, the derivation rules, the engine DEF, a
+  formatter, a grammar, handbook chapter and tests. Stage 2 adds `use`, `for`, variants, the project commands and
+  the skills.
 - **The regulatory review** reads the resolved graph's `purpose` as today; nothing of it moves into a definition. It
   stays support, not legal advice.
 
@@ -858,8 +885,18 @@ example](https://github.com/Systems-Modeling/SysML-v2-Release/blob/master/sysml/
 A](https://github.com/Systems-Modeling/SysML-v2-Release/blob/master/sysml/src/examples/Vehicle%20Example/SysML%20v2%20Spec%20Annex%20A%20SimpleVehicleModel.sysml)
   (`satisfy … by`, `verify`, `60 [kg]`); the OMG's
   [adoption announcement](https://www.omg.org/news/releases/pr2025/07-21-25.htm);
-  [Syster](https://github.com/jade-codes/syster); the [resource list](https://github.com/daltskin/SysML-v2-Resources)
-  naming Syside Automator and the ANTLR grammars; on 2026-10-31 also the library files
+  [Syster](https://github.com/jade-codes/syster) and its Python wrapper on
+  [PyPI, `systree`](https://pypi.org/pypi/systree/json) (0.4.4a0, February 2026, MIT); the
+  [resource list](https://github.com/daltskin/SysML-v2-Resources) naming Syside Automator and the ANTLR grammars;
+  on the owner's question the same day the tools on GitHub: the
+  [release repository's README](https://github.com/Systems-Modeling/SysML-v2-Release) (the installers of the pilot
+  implementation, Eclipse plugins and a Jupyter kernel; the pilot's own README was not reachable),
+  [Eclipse SysON](https://github.com/eclipse-syson/syson) (README, EPL 2.0) and its
+  [changelog](https://github.com/eclipse-syson/syson/blob/main/CHANGELOG.adoc) (textual import and export),
+  Sensmetry's [sysml-2ls README](https://github.com/sensmetry/sysml-2ls) (the retired language server, the Syside
+  suite: Editor free, Modeler and Automator commercial), [PyPI, `syside`](https://pypi.org/pypi/syside/json)
+  (1.0.0b1, October 2026, proprietary); Sensmetry's announcement of the licence change was not reachable through
+  the proxy; on 2026-10-31 also the library files
   [Requirements.sysml](https://github.com/Systems-Modeling/SysML-v2-Release/blob/master/sysml.library/Systems%20Library/Requirements.sysml)
   (`RequirementCheck` with `subject`, `actors`, `stakeholders`),
   [VerificationCases.sysml](https://github.com/Systems-Modeling/SysML-v2-Release/blob/master/sysml.library/Systems%20Library/VerificationCases.sysml)
