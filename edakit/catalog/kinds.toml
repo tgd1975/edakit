@@ -178,7 +178,7 @@ values = ["r_on_ohm", "force_n", "min_load_a"]
 [kinds.dip_switch]
 roles = ["*"]
 limits = ["v_max_v", "i_max_a", "i_contact_max_a", "i_switch_max_a"]
-values = ["r_on_ohm", "min_load_a"]
+values = ["r_on_ohm", "min_load_a", "positions"]   # positions: how many switches (a1/b1 …), a count – default 8
 
 [kinds.button]
 roles = ["a", "b"]

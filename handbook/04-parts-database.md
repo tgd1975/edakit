@@ -63,7 +63,7 @@ in `sources` – any RP2350 module takes the same list per GPIO. On the RP2040 a
 | njfet, pjfet | `drain`, `gate`, `source` |
 | switch | `common`, `throw_a`, `throw_b`; a switch of several poles (a 3PDT footswitch) `common_2`, `throw_a_2`, `throw_b_2`, `common_3` … – every pole follows the one actuator in the simulation |
 | button | `a`, `b` (pins connected inside share a role) |
-| dip_switch | `a1`…`aN`, `b1`…`bN` |
+| dip_switch | `a1`…`aN`, `b1`…`bN` – N is `values.positions` (default 8): the simulation closes switch 1 … N |
 | potentiometer | `end_a`, `wiper`, `end_b` |
 | battery_holder | `plus`, `minus` (several cells: `plus_a`, `minus_a`, …) |
 | buzzer | `plus`, `minus` |
@@ -99,7 +99,7 @@ in `sources` – any RP2350 module takes the same list per GPIO. On the RP2040 a
 | `nmos` | `vds_max_v`, `vgs_max_v`, `id_max_a`, `is_body_max_a` | `vgs_th_v`, `rds_on_max_ohm`, `vsd_v_at_1a` |
 | `pmos` | `vds_max_v`, `vgs_max_v`, `id_max_a`, `is_body_max_a` | `vgs_th_v`, `rds_on_max_ohm`, `vsd_v_at_1a` |
 | `switch` | `v_max_v`, `i_max_a`, `i_contact_max_a`, `i_switch_max_a` | `r_on_ohm`, `force_n`, `min_load_a` |
-| `dip_switch` | `v_max_v`, `i_max_a`, `i_contact_max_a`, `i_switch_max_a` | `r_on_ohm`, `min_load_a` |
+| `dip_switch` | `v_max_v`, `i_max_a`, `i_contact_max_a`, `i_switch_max_a` | `r_on_ohm`, `min_load_a`, `positions` |
 | `button` | `v_max_v`, `i_max_a`, `i_contact_max_a`, `i_switch_max_a` | `r_on_ohm`, `force_n`, `min_load_a` |
 | `battery_holder` | `i_max_a`, `v_max_v` | `r_contact_ohm` |
 | `buzzer` | `v_max_v` | `coil_ohm` |

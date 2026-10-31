@@ -131,6 +131,9 @@ def problems(entry):
     if modes is not None and not (isinstance(modes, list) and modes and len(set(modes)) == len(modes)
                                   and all(isinstance(m, int) and not isinstance(m, bool) and 0 <= m <= 3 for m in modes)):
         out.append(f"values.spi_modes: a list of the SPI modes 0–3 (CPOL × 2 + CPHA) the part runs in, not {modes!r}")
+    pos = (entry.get("values") or {}).get("positions")
+    if pos is not None and not (isinstance(pos, int) and not isinstance(pos, bool) and pos >= 1):
+        out.append(f"values.positions: the number of switches of the DIP switch, a whole number ≥ 1, not {pos!r}")
     sd = entry.get("symbol_differs")
     if sd is not None and not (isinstance(sd, dict) and sd and all(isinstance(v, str) and v.strip()
                                                                    for v in sd.values())):
