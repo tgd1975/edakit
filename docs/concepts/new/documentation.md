@@ -1,17 +1,18 @@
 # The documentation: who reads it, how it is organised, how it is written
 
-Status 2026-10-31: decided – the eight decisions and what Claude decided itself accepted by the owner the same day, in a
-decision round in Claude Code's form (the table at the end); nothing built; each step D.1 to D.7 starts on the owner's
-word, one per branch, listed in `TODO.md`. Written against main at `8fba5f2`. Asked for by the owner: the pages are
-comprehensive but confusing, so unreadable – a concept for how the documentation should look, be organised and be
-written, who its readers are, the language and its style, what is missing for it to be understood, everything needed so
-that others use edakit. With one condition the owner set while it was written: everything `docs/organisation.md` does
-not list as documentation – skills, agents, CLAUDE.md, the catalog's and the domains' texts, the manifests, the concepts
-– is data the automation reads; a change there may break something elsewhere or shift a meaning, so this concept leaves
-it alone and says where documentation itself is read by the automation; and a rule for every change: when unsure, ask –
-or check whether the text is generated or used elsewhere, which says to leave it as it is. The findings come from the
-site built from main (`docs/pages.py`, MkDocs), the Markdown measured – words, sentence lengths, headings,
-cross-references, the words that go unexplained – and the code and tests that read the documentation.
+Status 2026-10-31: decided – the eight decisions and what Claude decided itself accepted by the owner the same day, and
+a ninth added by the owner the same evening (the circuit alone as a station), in a decision round in Claude Code's form
+(the table at the end); nothing built; each step D.1 to D.7 starts on the owner's word, one per branch, listed in
+`TODO.md`. Written against main at `8fba5f2`. Asked for by the owner: the pages are comprehensive but confusing, so
+unreadable – a concept for how the documentation should look, be organised and be written, who its readers are, the
+language and its style, what is missing for it to be understood, everything needed so that others use edakit. With one
+condition the owner set while it was written: everything `docs/organisation.md` does not list as documentation – skills,
+agents, CLAUDE.md, the catalog's and the domains' texts, the manifests, the concepts – is data the automation reads; a
+change there may break something elsewhere or shift a meaning, so this concept leaves it alone and says where
+documentation itself is read by the automation; and a rule for every change: when unsure, ask – or check whether the
+text is generated or used elsewhere, which says to leave it as it is. The findings come from the site built from main
+(`docs/pages.py`, MkDocs), the Markdown measured – words, sentence lengths, headings, cross-references, the words that
+go unexplained – and the code and tests that read the documentation.
 
 ## The short answer
 
@@ -27,16 +28,16 @@ reference material named from 415 places in the code, the skills and the agents.
 
 Proposed: three layers over the one source that exists. An **entry layer** written anew and short – a start page of one
 screen, a quickstart to the first finding in fifteen minutes without EasyEDA, one page on how it works, a glossary –;
-the **guides**, which are the handbook's chapters, kept under their numbers and file names but grouped by reader in the
-navigation and trimmed in place – subheadings, shorter sentences, the generated code lists replaced by a table and a
-link, the history and the private projects moved out, a status line where something is offline only – with the rule that
-a statement the automation points at is shortened at most, never moved or changed; and the **reference**, generated
-where the code knows it: the commands from the command line's own help, the catalog as one page per engine instead of
-1.6 MB in one file. The sources – concepts, skills, agents, evals – stay readable on the site, but at its end under
-"Inside edakit", with an index that says what a concept is and in which state each one is, and their texts untouched.
-One style guide, `docs/style.md`, says how every layer is written and what it does not apply to, and a test holds what
-can be counted. The files, chapter numbers and section numbers stay: 415 places name them, the SessionStart hook reads
-section 11.4, and six tests hold the pages to the code.
+the **guides**, which are the handbook's chapters, kept under their numbers and file names but grouped by reader and by
+station – the circuit, the board – in the navigation and trimmed in place – subheadings, shorter sentences, the
+generated code lists replaced by a table and a link, the history and the private projects moved out, a status line where
+something is offline only – with the rule that a statement the automation points at is shortened at most, never moved or
+changed; and the **reference**, generated where the code knows it: the commands from the command line's own help, the
+catalog as one page per engine instead of 1.6 MB in one file. The sources – concepts, skills, agents, evals – stay
+readable on the site, but at its end under "Inside edakit", with an index that says what a concept is and in which state
+each one is, and their texts untouched. One style guide, `docs/style.md`, says how every layer is written and what it
+does not apply to, and a test holds what can be counted. The files, chapter numbers and section numbers stay: 415 places
+name them, the SessionStart hook reads section 11.4, and six tests hold the pages to the code.
 
 Everything this concept adds is text in the repository; what it moves into text is what exists today only in the owner's
 head: who the readers are and how the documentation is written.
@@ -46,7 +47,7 @@ head: who the readers are and how the documentation is written.
 | Reader | Comes with | Wants to know | Finds today |
 | --- | --- | --- | --- |
 | The newcomer – has seen the name, has five minutes | a browser | what it is, whether it is for them, what it needs, what it costs, how to try it | a README of 2,300 words whose second sentence uses "sign-off" and whose third paragraph "hardware graph"; the requirements spread over the README, 2.2 and 16.2; the cost nowhere; the first run in chapter 17, 713 lines |
-| The maker – wants a board | Claude Code, EasyEDA Pro or KiCad, an idea, little EDA routine | set up, describe a circuit, run the checks, read a finding, reach a board and an order; what Claude does, what they decide | chapters 2 to 8, 11, 12 and 16 – 5,000 lines; the handbook's reading path "first time" is 1 → 2 → 17 → the bell → 3 → 6 → 7 → 8, about 50,000 words before the first graph of their own |
+| The maker – wants a circuit, or a board | Claude Code, an idea, little EDA routine; EasyEDA Pro or KiCad only for a board | set up, describe a circuit, run the checks, read a finding, draw the schematic – a result on its own: a hand-wired build, a perfboard, a drawing for a document – and, from there or not at all, a board and an order; what Claude does, what they decide | chapters 2 to 8, 11, 12 and 16 – 5,000 lines; the handbook's reading path "first time" is 1 → 2 → 17 → the bell → 3 → 6 → 7 → 8, about 50,000 words before the first graph of their own; that the circuit alone is a result is one sentence in chapter 1, 6.5 inside the EasyEDA chapter and 4.5 inside the parts chapter |
 | The engineer – wants to add a rule | electronics, maybe no Claude Code | what a rule is made of, how a check, hint, block or part fact is added and tested, how it is proposed | 14.2 to 14.4 inside the maker's chapter, the skill add-rule in `.claude/skills/` (not on the site), the skill propose-rule, `docs/organisation.md` (not on the site) |
 | The developer – works on edakit | Python, git | how the repository is organised, the rules of a session, the concepts and their state, the tests, the site | `docs/organisation.md`, CLAUDE.md (neither on the site), 22 concept pages in path order, the READMEs under `tests/` |
 | Claude in a session | the plugin | the chapter a skill names, section 11.4, the catalog | served: 415 references "handbook N.N" and chapter paths, `edakit explain` – the constraint on every change below |
@@ -81,6 +82,11 @@ Measured on main at `8fba5f2`, the site built locally (`python3 docs/pages.py`, 
   the person the reader is. Dates of October 2026 appear 47 times in the handbook, 17 in chapter 8 alone; chapter 9
   opens with "Everything here was found the hard way … between 19 and 26 October 2026". The history and the reference
   are one text.
+- **The circuit alone is a footnote.** A project without a PCB needs no EasyEDA and no KiCad: checks, simulation, the
+  schematic drawn as SVG (`edakit schematic draw`), hand-wired boards (`wired = true`) that the gate carries through
+  stages P, G and E and leaves out of S, L and F. That is a product of its own – for a hand-wired build, a perfboard, a
+  drawing for a document, or before anyone decides on a PCB – and the site says so in one sentence of chapter 1, in
+  section 6.5 of the EasyEDA chapter and in 4.5 of the parts chapter.
 - **No glossary.** Sign-off (143 mentions), M-1 to M-6 (201), stage, hand-over, claim, domain, engine, code, hint,
   block, gate run, release: each is explained where it is introduced, and a reader who arrives at chapter 8 by search
   has not been there.
@@ -149,34 +155,37 @@ The rules this concept holds to, for every step below:
 | Layer | For | Pages | Written |
 | --- | --- | --- | --- |
 | Entry | the newcomer, then everyone once | the start page, the quickstart, how it works, the glossary | anew, short, in the entry register of the style guide |
-| Guides | the maker, the engineer, the developer | the handbook's chapters, grouped by reader; two reader pages added | in place: trimmed, not rewritten |
+| Guides | the maker – the circuit, then the board –, the engineer, the developer | the handbook's chapters, grouped by reader and by station; two reader pages added | in place: trimmed, not rewritten |
 | Reference | everyone who looks something up | the project files and keys, the commands, the EasyEDA API, the catalog, the check IDs of before | generated where the code knows it, in entries, not tables of paragraphs |
 
 The sources stay on the site, at its end, as "Inside edakit", untouched.
 
 ### The entry layer
 
-- **Start** (`README.md`, the site's index): one screen. One sentence what edakit is; three lines for whom – the maker,
-  the engineer, the developer – each with its link; what it needs (Claude Code; EasyEDA Pro desktop or KiCad 10; uv,
-  ngspice; tested on Linux, Windows and macOS untested; a JLCPCB account for stock and ordering); what it is not (no
-  editor of its own, two copper layers, DC operating points and a few transient runs); install in three lines; "try it
-  in two minutes" – `uvx --from git+https://github.com/tgd1975/edakit edakit check` in `examples/coin-cell-led`, which
-  takes 0.2 s and shows an accepted finding with its reason –; then the quickstart, the guides, the reference. The
-  command block moves to the reference, the repository map to `docs/organisation.md`, "Status and limits" to "How it
-  works". The test that wants every skill and agent in the README (`test_plugin.py`) is pointed at the page that lists
-  them – the test changes with the page, on the same branch.
+- **Start** (`README.md`, the site's index): one screen. One sentence what edakit is; three lines for whom – the maker
+  (a circuit, or a board from it), the engineer, the developer – each with its link; what it needs (Claude Code; EasyEDA
+  Pro desktop or KiCad 10; uv, ngspice; tested on Linux, Windows and macOS untested; a JLCPCB account for stock and
+  ordering); what it is not (no editor of its own, two copper layers, DC operating points and a few transient runs);
+  install in three lines; "try it in two minutes" – `uvx --from git+https://github.com/tgd1975/edakit edakit check` in
+  `examples/coin-cell-led`, which takes 0.2 s and shows an accepted finding with its reason –; then the quickstart, the
+  guides, the reference. The command block moves to the reference, the repository map to `docs/organisation.md`, "Status
+  and limits" to "How it works". The test that wants every skill and agent in the README (`test_plugin.py`) is pointed
+  at the page that lists them – the test changes with the page, on the same branch.
 - **Quickstart** (`docs/quickstart.md`): the first project to the first finding and the first drawn schematic, in about
   fifteen minutes, without EasyEDA – install the plugin, a project from the example or from `/edakit:new-project`, a
   graph of four parts, `edakit check`, one finding read with `edakit explain`, `edakit sim`, `edakit schematic draw`,
-  and where the EasyEDA or KiCad part begins (chapter 17 takes it from there). Every output from a real run, held by a
-  test like chapter 17's (`tests/test_walkthrough.py`).
+  and where the EasyEDA or KiCad part begins (chapter 17 takes it from there). The quickstart is the circuit station and
+  says so at its end: this is a result on its own; for a board, go on to "The board". Every output from a real run, held
+  by a test like chapter 17's (`tests/test_walkthrough.py`).
 - **How it works** (`docs/how-it-works.md`, two screens): the pipeline as a drawing in the brand's colours instead of
-  the ASCII line; the ten words – graph, parts entry, stage, code, finding, sign-off, gate run, release, domain, block,
-  hand-over –, one paragraph each; what Claude does and what the person decides, the decision round shown once as a
-  shortened transcript; what is text and what still exists only in EasyEDA – the README's "Status and limits", kept
-  current as it is today.
+  the ASCII line, with the cut between the two stations – the circuit: graph, checks, simulation, drawing, hand-over;
+  the board: schematic, PCB, files, order –; the ten words – graph, parts entry, stage, code, finding, sign-off, gate
+  run, release, domain, block, hand-over –, one paragraph each; what Claude does and what the person decides, the
+  decision round shown once as a shortened transcript; what is text and what still exists only in EasyEDA – the README's
+  "Status and limits", kept current as it is today.
 - **Glossary** (`docs/glossary.md`): every term in one or two sentences, with the chapter that treats it, in the words
-  the skills and the catalog use. The first use on an entry page links to it.
+  the skills and the catalog use – the two stations and the hand-wired board among them. The first use on an entry page
+  links to it.
 
 ### The guides, by reader
 
@@ -184,14 +193,18 @@ The navigation, two levels, groups named after what the reader does:
 
 | Group | Pages (the files as they are) |
 | --- | --- |
-| Use it | The approach (1), Setup (2), Working with Claude (11), Hardware graph (3), Parts (4), Simulation (5), Schematic (6), PCB (7), Release gate (8), KiCad (16), Regulatory review (15), Troubleshooting (12), Walkthrough (17), Lessons learned (13) |
-| Extend the rules | Designing a circuit (14), *Adding a rule* (new: from 14.4, the skill add-rule and `docs/organisation.md` – the catalog's files, a code's fields, the negative test, the generated sections, the run against the reference circuits, the proposal from a project), Propose a rule, Propose a feature (the skills' pages) |
+| The circuit | The approach (1), Setup (2), Working with Claude (11), Designing a circuit (14), Hardware graph (3), Parts (4), Simulation (5), Regulatory review (15) – the station ends with the drawn schematic (6.5, linked from the group's index) and the hand-over (`edakit handover`, 14.1): a result on its own, or the board's input |
+| The board | Schematic (6), PCB (7), Release gate (8), KiCad (16), Walkthrough (17), Troubleshooting (12), Lessons learned (13) |
+| Extend the rules | *Adding a rule* (new: from 14.4, the skill add-rule and `docs/organisation.md` – the catalog's files, a code's fields, the negative test, the generated sections, the run against the reference circuits, the proposal from a project), Propose a rule, Propose a feature (the skills' pages) |
 | Develop edakit | *Working on edakit* (new: `docs/organisation.md` on the site, extended by the concepts' lifecycle, the tests, the evals, how the site is built; CLAUDE.md beside it as a source page), Brand |
 | Reference | Project files and keys (10.1–10.4, 10.6), Commands (10.5), EasyEDA API (9), Rule catalog (one page per engine, the domains, the tables, the reference circuits, the open designs), Check IDs of before (10.7) |
 | Inside edakit | Concepts – an index, then new, done, discarded, each with one line of state –, Skills, Agents, Evals |
 
-Chapters 9 and 10 move to the reference without changing their files: the navigation lists a file where the reader
-looks, the file stays where the code looks.
+Chapters 9 and 10 move to the reference, chapter 14 to the circuit – 14.1 roles, 14.3 hints and 14.5 building blocks are
+the circuit designer's; 14.2 and 14.4 feed "Adding a rule" – without changing their files: the navigation lists a file
+where the reader looks, the file stays where the code looks. Section 6.5, the drawing without EasyEDA, stays in chapter
+6 (the rules above) and is linked from the circuit's index; `handbook/README.md` becomes that index, with the two
+stations and its "read it when" column.
 
 What changes inside a chapter (step D.5), one chapter per branch, the documentation review after each, under the rules
 above – every sentence checked first for being generated or used elsewhere, and the owner asked where that leaves a
@@ -394,6 +407,7 @@ recommendation.
 | 6 | The README | one screen: what, for whom, needs, not, install, try it, next; the command block to the reference, the repository map to organisation.md, "Status and limits" to "How it works"; `test_plugin.py` follows | as today, with a shorter head | accepted |
 | 7 | The command reference | entries: the synopsis generated from the parser and held by a test, reads, writes and exit codes hand-written beneath; the help texts changed only in `cli.py` through a branch | the table as today; fully generated (loses reads and writes) | accepted |
 | 8 | "What changed" from the merge commits on the site | not built until a reader asks: the commit messages are written for the owner | built with D.3 | accepted |
+| 9 | The circuit alone as a station (the owner's addition: "we can also make only a circuit SVG – maybe that is the maker anyway") | two groups, "The circuit" and "The board", instead of "Use it"; chapter 14 to the circuit; the quickstart is the station and says so; the pipeline drawing shows the cut | one group with the station on its index page only; a sentence in the maker's row only | accepted |
 
 Decided by Claude and confirmed by the owner on 2026-10-31: MkDocs Material stays; chapter files and numbers stay;
 sources, data and code untouched, with the rules of the section "What the automation reads"; `tests/test_references.py`;
