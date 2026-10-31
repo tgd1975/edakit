@@ -16,6 +16,9 @@ from ..circuit import ACTIVE_TYPES, hold_current, limits, polarized, series_nets
 
 UNITS = {"V": "v", "A": "a", "W": "w", "°C": "c", "dBm": "dbm"}
 FACTOR = table("derating")["G"]["factor"]          # stage G: value × factor ≤ limit
+SIM_EPS_V = 1e-6                 # stage E: a voltage within 1 µV of its limit is at it – ngspice leaves 1e-18 V of noise
+NEGATIVE_SUPPLY_ROLES = {"vee", "v_minus", "vneg"}   # a negative rail's supply pin: held to its own range, not to
+                                                     # the floor of an active signal pin
 PIN_MIN_V = table("derating")["pin"]["v_min_v"]     # an active pin below this conducts through its protection
 
 
@@ -68,12 +71,14 @@ def part_limits(design, q):
         table_, where = limits(part), q.entry
     hi, lo = table_.get(f"{q.name}_max_{suffix}"), table_.get(f"{q.name}_min_{suffix}")
     factor = FACTOR.get(q.kind, 1.0) if q.stage == "G" and not q.pin else 1.0
+    eps = SIM_EPS_V if q.stage == "E" and q.unit == "V" else 0.0     # ngspice's noise against a limit of 0 V
     if isinstance(hi, (int, float)):
-        out.append(Limit(max=hi, factor=factor, derate=q.derate, source=f"{q.name}_max_{suffix} of {where}"))
+        out.append(Limit(max=hi, factor=factor, derate=q.derate, eps=eps, source=f"{q.name}_max_{suffix} of {where}"))
     if isinstance(lo, (int, float)):
-        out.append(Limit(min=lo, source=f"{q.name}_min_{suffix} of {where}"))
-    if q.pin and q.name == "v" and q.pin_type in ACTIVE_TYPES:
-        out.append(Limit(min=PIN_MIN_V, source="an active pin: derating.toml [pin] v_min_v"))
+        out.append(Limit(min=lo, eps=eps, source=f"{q.name}_min_{suffix} of {where}"))
+    negative_supply = q.pin and q.pin_type == "power_in" and table_.get("role") in NEGATIVE_SUPPLY_ROLES
+    if q.pin and q.name == "v" and q.pin_type in ACTIVE_TYPES and not negative_supply:
+        out.append(Limit(min=PIN_MIN_V, eps=eps, source="an active pin: derating.toml [pin] v_min_v"))
     return out
 
 

@@ -197,7 +197,7 @@ sources = [
 
 [codes."LIM.v"]
 title = "voltage within its limit"
-rule = "Every voltage a part sees stays within the limit of its entry: across a capacitor, reverse across a polarized capacitor (vr_max_v, grade polarized), an input above its own part's supply (vin_rel_max_v, grade inject), reverse across a diode or LED, VCE, VEB, VDS, VGS, on a pin (v_max_v; an active pin not below −0.3 V), on a fuse, switch, resistor or connector, and every limit a transient run sets on a net. Stage G takes the declared net ranges times the derating factor (1.5 on capacitors and semiconductors), stage E the simulated value against the derated limit."
+rule = "Every voltage a part sees stays within the limit of its entry: across a capacitor, reverse across a polarized capacitor (vr_max_v, grade polarized), an input above its own part's supply (vin_rel_max_v, grade inject), reverse across a diode or LED, VCE, VEB, VDS, VGS, on a pin (v_max_v; an active pin not below −0.3 V, a negative rail's supply pin – role vee – excepted), on a fuse, switch, resistor or connector, and every limit a transient run sets on a net. Stage G takes the declared net ranges times the derating factor (1.5 on capacitors and semiconductors), stage E the simulated value against the derated limit."
 why = "A part at its absolute maximum is at the edge of failure; ceramic capacitors lose capacitance and lifetime near their rated voltage, an input beyond its supply conducts through its protection diodes. The margin covers what a DC view does not see."
 fix = "A part with a higher rating, level shifting at a pin, or a correct (less pessimistic) net range v."
 severity = "error"
@@ -281,7 +281,7 @@ sources = [
 
 [codes."LIM.range"]
 title = "supplied inside the operating range"
-rule = "Every part with an operating range – vdd_op_min_v … vdd_op_max_v, a pin's v_op, vin_min_v of a regulator, module or MCU, a relay's must-operate and must-release voltage, a driver output's knee – is supplied inside it in every scenario, measured at its own ground pin, and an MCU's supply never falls below its minimum again once it has reached it (transient runs). An op-amp's inputs stay inside its common-mode range (vicm_v) and its outputs inside their swing (vout_swing_v) unless it is a comparator – grade opamp. A MOSFET switch is off or on at a VGS its RDS(on) is specified at, not in between (rds_on_max_ohm as a table of VGS, vgs_th_v) – grade gate. An ADC pin's voltage stays inside the converter's window (adc.range_v) – grade adc. A regulator that needs a minimum load to regulate (i_load_min_a – LM317, AMS1117) is loaded at least that much – grade min_load."
+rule = "Every part with an operating range – vdd_op_min_v … vdd_op_max_v, a pin's v_op, vin_min_v of a regulator, module or MCU, a relay's must-operate and must-release voltage, a driver output's knee – is supplied inside it in every scenario, measured at its own ground pin, and an MCU's supply never falls below its minimum again once it has reached it (transient runs). An op-amp's inputs stay inside its common-mode range (vicm_v) and its outputs inside their swing (vout_swing_v) unless it is a comparator – grade opamp. A MOSFET switch is off or on at a VGS its RDS(on) is specified at, not in between (rds_on_max_ohm as a table of VGS, vgs_th_v), the drive taken in the device's sense – VSG for a P-MOSFET, a gate driven the other way is off – grade gate. An ADC pin's voltage stays inside the converter's window (adc.range_v) – grade adc. A regulator that needs a minimum load to regulate (i_load_min_a – LM317, AMS1117) is loaded at least that much – grade min_load."
 why = "A circuit can stay within every rating and still not work: a regulator without headroom at the low end of the USB voltage, a 5 V-only IC behind a 3.3 V rail, a reset whenever the supply changes, an LM358 at 5 V whose output cannot rise above about 3.5 V or whose inputs leave their common-mode range."
 fix = "Supply the part from a rail inside its range, choose a part whose range fits the rail, or bridge the gap (bulk capacitance, a path that conducts before the other lets go). For an op-amp: bias the stage inside its ranges, a rail-to-rail part, or a higher supply."
 severity = "error"
@@ -361,7 +361,7 @@ sources = [
 
 [codes."LVL.undefined"]
 title = "input defined while the firmware is not running"
-rule = "Every input has a driver or a pull resistor, an input that only MCU pins drive has a pull, a bipolar transistor has a base-emitter resistor and a MOSFET a resistor from its gate to its source or a rail. Graded as warnings while new: an input pin of an IC left in nc (nc), a net only open-drain or tri-state outputs drive without a pull-up (open_drain), an analog node only capacitors reach (analog)."
+rule = "Every input has a driver or a pull resistor, an input that only MCU pins drive has a pull, a bipolar transistor has a base-emitter resistor and a MOSFET a resistor from its gate to its source or a rail. Graded as warnings while new: an input pin of an IC left in nc (nc), a net only open-drain or tri-state outputs drive – unless their enable pins are tied active – and that no resistor path holds (open_drain), an analog node only capacitors reach (analog)."
 why = "A floating CMOS input reads random values and can rest where both input transistors conduct. An MCU pin is an input until the firmware configures it, so an enable line it drives floats at every reset."
 fix = "A pull resistor to the inactive level (10–100 kΩ); a base-emitter or gate-source resistor next to the transistor. Harmless on purpose: accept on the net with the reason."
 severity = "error"
@@ -430,7 +430,7 @@ sources = [
 
 [codes."REQ.missing"]
 title = "what a part requires is there"
-rule = "What a part requires on its pins is in the graph: a capacitor to ground per supply pin (power_in), a pull-up per I2C line, a diode across a switched coil (cathode at its plus), Rd on each CC pin of a USB-C receptacle without controller, a layout.loops entry on each net of a hot loop (hot_loop), and what a pin's parts entry says it needs (needs: a capacitor to ground, a pull-up or pull-down, a series resistor, ground) – grade pin. Warnings while new: D+ and D− of a USB-C receptacle joined across both rows (usb_data), a series resistance on a signal net that leaves the board – through a cable, or on a connector the graph marks off_board (leave), a diode per key of a matrix (matrix), balancing resistors across capacitors in series (balance), a termination at each end of an RS-485 or CAN bus – the transceivers' pins with the roles rs485_a/rs485_b or canh/canl (termination), diodes to the supply and from ground at an output without clamp diodes of its own (pin clamp = \"none\", the L298's bridges) that drives a winding or a connector (clamp), the divider of an adjustable regulator (values vref_v, a pin adj or fb – feedback)."
+rule = "What a part requires on its pins is in the graph: a capacitor to ground – or to a net of the graph's grounds – per supply pin (power_in), a pull-up per I2C line, a diode across a switched coil (cathode at its plus), Rd on each CC pin of a USB-C receptacle without controller, a layout.loops entry on each net of a hot loop (hot_loop), and what a pin's parts entry says it needs (needs: a capacitor to ground, a pull-up or pull-down, a series resistor, ground) – grade pin. Warnings while new: D+ and D− of a USB-C receptacle joined across both rows (usb_data), a series resistance on a signal net that leaves the board – through a cable, or on a connector the graph marks off_board (leave), a diode per key of a matrix (matrix), balancing resistors across capacitors in series (balance), a termination at each end of an RS-485 or CAN bus – the transceivers' pins with the roles rs485_a/rs485_b or canh/canl; one behind a switch or jumper counts closed (termination), diodes to the supply and from ground at an output without clamp diodes of its own (pin clamp = \"none\", the L298's bridges) that drives a winding or a connector (clamp), the divider of an adjustable regulator (values vref_v, a pin adj or fb – feedback)."
 why = "Each requirement is a datasheet's or a standard's: an IC draws its current in pulses, open-drain lines never go high alone, a coil's turn-off spike breaks the switch, a USB-C source gives no power without Rd, a long hot loop rings and radiates."
 fix = "Add the part next to the pin (blocks: i2c-pullups, usb-c-sink), or write the loop into layout.loops."
 severity = "error"
@@ -457,7 +457,7 @@ sources = [
 
 [codes."REQ.value"]
 title = "what a part requires is in range"
-rule = "A required part has its value inside the range: an I2C pull-up (in parallel with the pins' own pulls) between (V − 0.4 V) / 3 mA and 10 kΩ, Rd 5.1 kΩ ± 10 % on a CC pin, what a pin needs inside the window its entry gives (grade pin), the source resistance an ADC pin sees (adc.r_source_max_ohm, unless a hold capacitor; grade adc), the load on an instrument input (net load_min_ohm; grade instrument), an op-amp's closed-loop gain against its minimum stable gain (gain_min_ratio; grade gain), a termination of an RS-485 or CAN bus of the cable's 120 Ω (grade termination), the idle voltage an RS-485 bias pair sets across the terminations at least 200 mV (grade failsafe), a configuration pin that reads its setting by voltage window (pin windows, with the pin's own pull in the operating point) inside one window, not between two (grade window, stage E), the output an adjustable regulator's divider sets within the output net's declared range – VOUT = VREF × (1 + R2/R1) with ADJ, × (1 + R1/R2) with FB (grade feedback), and in the simulation the DC across a switch, relay contact or pot whose sides are both in a signal path (nets with signal or instrument) within 10 mV in every scenario (grade switch)."
+rule = "A required part has its value inside the range: an I2C pull-up (in parallel with the pins' own pulls) between (V − 0.4 V) / 3 mA and 10 kΩ, Rd 5.1 kΩ ± 10 % on a CC pin, what a pin needs inside the window its entry gives (grade pin), the source resistance an ADC pin sees (adc.r_source_max_ohm, unless a hold capacitor; grade adc), the DC load on an instrument input – a resistor in series into capacitors and high-impedance pins no load (net load_min_ohm; grade instrument), an op-amp's closed-loop gain against its minimum stable gain (gain_min_ratio; grade gain), a termination of an RS-485 or CAN bus of the cable's 120 Ω (grade termination), the idle voltage an RS-485 bias pair sets across the terminations at least 200 mV at the supply's lowest voltage, the far end's termination assumed where the graph holds one end (grade failsafe), a configuration pin that reads its setting by voltage window (pin windows, with the pin's own pull in the operating point) inside one window, not between two (grade window, stage E), the output an adjustable regulator's divider sets within the output net's declared range – VOUT = VREF × (1 + R2/R1) with ADJ, × (1 + R1/R2) with FB (grade feedback), and in the simulation the DC across a switch, relay contact or pot whose sides are both in a signal path (nets with signal or instrument) within 10 mV in every scenario (grade switch)."
 why = "A weak I2C pull-up makes the edges too slow, a strong one cannot be pulled low; a CC resistor outside its window reads as another device."
 fix = "4.7 kΩ for 100 kHz, 2.2 kΩ for 400 kHz on I2C; 5.1 kΩ per CC pin."
 severity = "error"
@@ -506,7 +506,7 @@ sources = [
 
 [codes."PATH.reverse"]
 title = "reverse polarity blocked"
-rule = "What a reversed source (a battery holder, a source marked reversible) reaches through fuses, switches and connectors is only capacitors without polarity, holders, the anode of a blocking diode or the drain of a PMOS whose source and gate are outside; a polarized capacitor it reaches is reverse biased (grade polarized)."
+rule = "What a reversed source (a battery holder, a source marked reversible) reaches through fuses, switches and connectors is only capacitors without polarity, holders, the anode of a blocking diode – on a negative rail (the protected net declared at or below 0 V) its cathode – or the drain of a PMOS whose source and gate are outside; a polarized capacitor it reaches is reverse biased (grade polarized)."
 why = "A battery inserted the wrong way drives the supply negative; every IC on that rail conducts through its substrate diodes and dies within milliseconds."
 fix = "A Schottky diode in series, or a PMOS in the supply path with its gate to ground (block reverse-pmos)."
 severity = "error"
@@ -521,7 +521,7 @@ sources = [
 
 [codes."PATH.unfed"]
 title = "every supply pin reached by a supply"
-rule = "Every supply pin (power_in) is on a net a supply reaches – a power output, a battery holder, a connector with a vbus pin or marked as a source, a simulation source – directly or through fuses, switches, connectors, inductors, MOSFETs, resistors up to 100 Ω and diodes in forward direction."
+rule = "Every supply pin (power_in) is on a net a supply reaches – a power output, a battery holder, a connector with a vbus pin or marked as a source, a simulation source – directly or through fuses, switches, connectors, inductors, MOSFETs, resistors up to 100 Ω and diodes in forward direction – on a negative rail from cathode to anode."
 why = "A rail split by a typo in a net name kills every board and passes every other check."
 fix = "Put the pin on its rail; usually a typo in a net name or two pins swapped."
 severity = "error"
@@ -1363,7 +1363,7 @@ rule = "MOSFET gate resistor: consider it where it applies."
 why = "The gate capacitance and the inductance of the drive loop form a resonant circuit; a fast edge makes it ring, which can exceed VGS max and radiate. A GPIO that switches a small MOSFET slowly rarely needs anything."
 fix = "10–100 Ω in series with the gate, close to the gate, when the driver is fast or far from the gate; keep the gate-source resistor (LVL.undefined)."
 severity = "note"
-when = { kinds = ["nmos", "pmos"] }
+when = { match = "driven_gate" }        # a MOSFET whose gate a signal drives – not one on a rail (a level shifter)
 replaces = ["H-2"]
 sources = [
   "TI SLUA618A, Fundamentals of MOSFET and IGBT Gate Driver Circuits (2018), 2.8 Effects of parasitic components – https://www.ti.com/lit/ml/slua618a/slua618a.pdf",
@@ -1375,7 +1375,7 @@ rule = "Debounce buttons and switches: consider it where it applies."
 why = "Mechanical contacts bounce: Ganssle measured about 1.6 ms on average and up to 6 ms, one switch 157 ms. A counter or an interrupt sees several presses."
 fix = "Debounce in firmware: sample every 5–10 ms and accept a level after it was stable several times. An RC filter with a Schmitt-trigger input only where firmware cannot, for example a wake-up from sleep."
 severity = "note"
-when = { kinds = ["button", "switch", "dip_switch"] }
+when = { match = "read_switch" }        # a button or switch an MCU pin reads – not a DIP switch nobody reads
 replaces = ["H-3"]
 sources = [
   "Jack Ganssle, A Guide to Debouncing – http://www.ganssle.com/debouncing.htm",
@@ -1411,7 +1411,7 @@ rule = "Lithium cells need protection: consider it where it applies."
 why = "Li-ion and LiPo cells must not be over-discharged (below about 2 V per cell), overcharged or short-circuited, and protection circuits are mandatory for Li-ion packs. Alkaline and NiMH cells tolerate all of this far better."
 fix = "For lithium cells: protected cells or a protection IC between holder and circuit; a cut-off in the firmware is not enough while the MCU is off. For alkaline or NiMH cells nothing is needed."
 severity = "note"
-when = { kinds = ["battery_holder"] }
+when = { match = "unprotected_cell" }   # a holder whose cell no protection IC guards (od/oc driving a MOSFET in its minus)
 replaces = ["H-6"]
 sources = [
   "Battery University BU-304, Why are Protection Circuits Needed? – https://batteryuniversity.com/article/bu-304-why-are-protection-circuits-needed",

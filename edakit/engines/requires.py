@@ -38,13 +38,17 @@ def run(ctx):
 
 
 def decoupling(d):
-    """REQ.missing: per supply pin on a net a capacitor from that net to ground."""
+    """REQ.missing: per supply pin on a net a capacitor from that net to ground – the graph's ground or a net of its
+    grounds (a part referenced to its own ground: a cell protection IC on the cell's minus)."""
     n = needs()["decoupling"]
     gnd, caps = d.ground, Counter()
+    grounds = {gnd} | set(d.graph.get("grounds") or [])
     for des in d.comps_of_kind("capacitor"):
         a, b = d.pin_net.get(f"{des}.1"), d.pin_net.get(f"{des}.2")
-        if gnd in (a, b):
-            caps[b if a == gnd else a] += 1
+        if a in grounds and b not in grounds:
+            caps[b] += 1
+        elif b in grounds and a not in grounds:
+            caps[a] += 1
     out = []
     for name, net in d.nets.items():
         supply = [r for r in net["pins"] if d.pin_info(r).get("type") == n["pin_type"]
@@ -611,23 +615,45 @@ def btl_outputs(d):
 
 def instrument_loads(d):
     """REQ.value/instrument: an instrument input (a net with instrument and load_min_ohm) loaded by less than it
-    allows – the resistors from it and the inputs on it (pin z_in_ohm) in parallel."""
+    allows – its DC load: the resistors from it and the inputs on it (pin z_in_ohm) in parallel, a resistor in series
+    to a net that reaches only capacitors and high-impedance pins (an RF filter's 10 kΩ into its 100 pF) no load, one
+    to a net with a further path (a bias divider) with that path's resistance added."""
     out = []
     for name, net in sorted(d.nets.items()):
         least = net.get("load_min_ohm")
         if not net.get("instrument") or not is_number(least):
             continue
-        rs = [x for _, x, _ in resistors_to(d, name, set(d.nets) - {name})]
-        rs += [d.pin_info(r)["z_in_ohm"] for r in net["pins"] if is_number(d.pin_info(r).get("z_in_ohm"))]
-        if not rs or not all(is_number(x) and x > 0 for x in rs):
+        load = dc_load(d, name)
+        if load is None or load == float("inf"):
             continue
-        load = 1 / sum(1 / x for x in rs)
         if load < least:
             out.append(Finding("REQ.value", "G", name, f"{name}: the {net['instrument']} sees {ohm(load)} – it wants at "
                                f"least {ohm(least)}", f"load_min_ohm of net {name}",
                                "a buffer with a high input impedance first (block instrument-buffer, maker-coverage "
                                "BL-16), larger bias resistors", grade="instrument", on=(("net", name),)))
     return out
+
+
+def dc_load(d, net, seen=frozenset()):
+    """The DC resistance from `net` to a fixed level – ground, a supply, a net a pin drives –, capacitors open: every
+    resistor to a fixed net in parallel with every resistor on to a net that has a DC path itself (its resistance
+    added), and the inputs' z_in_ohm. inf without a DC path; None where a resistor has no value."""
+    from .levels import pin_defines
+    fixed = {d.ground} | supply_nets(d) | {n for n, x in d.nets.items()
+                                          if any(pin_defines(d.pin_info(r)) for r in x["pins"])}
+    branches = [d.pin_info(r)["z_in_ohm"] for r in d.nets[net]["pins"] if is_number(d.pin_info(r).get("z_in_ohm"))]
+    for _, r, other in resistors_to(d, net, set(d.nets) - {net} - set(seen)):
+        if not is_number(r) or r <= 0:
+            return None
+        if other in fixed:
+            branches.append(r)
+            continue
+        onward = dc_load(d, other, seen | {net})
+        if onward is None:
+            return None
+        if onward != float("inf"):
+            branches.append(r + onward)
+    return 1 / sum(1 / x for x in branches) if branches else float("inf")
 
 
 def stable_gains(d):
@@ -786,11 +812,16 @@ def bus_terminations(d):
     for (kind, na, nb), who in sorted(buses(d).items()):
         want, src = t[kind]["termination_ohm"], f"catalog/tables/buses.toml [{kind}]"
         place, on = f"{na}/{nb}", (("net", na), ("net", nb))
-        terms = [(des, r) for des, r, _ in resistors_to(d, na, {nb})]
-        via_a = {other: (des, r) for des, r, other in resistors_to(d, na, set(d.nets) - {nb, gnd} - supplies)}
-        for des_b, r_b, mid in resistors_to(d, nb, set(via_a)):
-            des_a, r_a = via_a[mid]
-            terms.append((f"{des_a}+{des_b}", (r_a + r_b) if is_number(r_a) and is_number(r_b) else None))
+        # a termination behind a switch or jumper (a switchable one) counts closed: the switch's nets are its ends
+        ends_a, ends_b = closed(d, na), closed(d, nb)
+        terms = [(des, r) for x in ends_a for des, r, _ in resistors_to(d, x, ends_b)]
+        via_a = {other: (des, r) for x in ends_a
+                 for des, r, other in resistors_to(d, x, set(d.nets) - ends_a - ends_b - {gnd} - supplies)}
+        for x in ends_b:
+            for des_b, r_b, mid in resistors_to(d, x, set(via_a)):
+                des_a, r_a = via_a[mid]
+                terms.append((f"{des_a}+{des_b}", (r_a + r_b) if is_number(r_a) and is_number(r_b) else None))
+        terms = list(dict.fromkeys(terms))
         bus = f"{'RS-485' if kind == 'rs485' else 'CAN'} bus {place} ({', '.join(sorted(who))})"
         if len(terms) < 2:
             out.append(Finding("REQ.missing", "G", place, f"{bus}: {len(terms)} termination(s) in the graph, a bus has one "
@@ -808,29 +839,60 @@ def bus_terminations(d):
                                    f"impedance is {want:g} Ω", src, f"{want:g} Ω", grade="termination", on=on))
         if kind == "rs485":
             out += failsafe_bias(d, bus, place, on, na, nb, [r for des, r in terms if "+" not in des and is_number(r)],
-                                 t["rs485"]["idle_min_v"], src)
+                                 t["rs485"]["idle_min_v"], src, want, who)
     return out
 
 
-def failsafe_bias(d, bus, place, on, na, nb, direct, need_v, src):
-    """REQ.value/failsafe: the idle voltage a bias pair (A to a supply, B to ground) sets across the terminations."""
+SWITCH_KINDS = ("switch", "dip_switch", "jumper")
+
+
+def closed(d, net):
+    """The net and every net a switch or jumper joins it to when closed."""
+    out = {net}
+    for des in d.comps_of_kind(*SWITCH_KINDS):
+        nets = {d.pin_net.get(f"{des}.{n}") for n in (d.part(des) or {}).get("pins") or {}} - {None}
+        if net in nets:
+            out |= nets - {d.ground}
+    return out
+
+
+def failsafe_bias(d, bus, place, on, na, nb, direct, need_v, src, want=120.0, who=()):
+    """REQ.value/failsafe: the idle voltage a bias pair (A to a supply, B to ground) sets across the terminations – at
+    the supply's lowest voltage while it is on, with the far end's termination assumed where the graph holds one end
+    only."""
     supplies = supply_nets(d)
     ups = [(des, r, other) for des, r, other in resistors_to(d, na, supplies) if is_number(r)]
     downs = [(des, r) for des, r, _ in resistors_to(d, nb, {d.ground}) if is_number(r)]
     if not ups or not downs:
         return []
-    # the supply's lowest declared voltage while it is on: the range's floor, or its top where the range starts at 0 V
-    # (a rail that is off as well) – then the margin at the rail's lower tolerance is not seen
-    lo = min((lambda v: v[0] if v[0] > 0 else v[1])(v_range(d.nets[other])) for _, _, other in ups)
+    lo = min(lowest_on(d, other, who) for _, _, other in ups)
     r_up, r_down = min(r for _, r, _ in ups), min(r for _, r in downs)
-    if direct:
-        req = 1 / sum(1 / r for r in direct)
-        vab = lo * req / (r_up + r_down + req)
-    else:
-        vab = lo
+    assumed = len(direct) < 2                      # one end in the graph: the other end's termination is assumed
+    loads = list(direct) + ([want] * (2 - len(direct)) if assumed else [])
+    req = 1 / sum(1 / r for r in loads)
+    vab = lo * req / (r_up + r_down + req)
     if vab >= need_v:
         return []
+    far = f", the far end's {want:g} Ω assumed" if assumed and direct else (
+        f", both ends' {want:g} Ω assumed" if assumed else "")
     return [Finding("REQ.value", "G", place, f"{bus}: idle bias {ups[0][0]}/{downs[0][0]} holds {vab * 1e3:.0f} mV "
-                    f"across the pair at {lo:g} V with the terminations, below the {need_v * 1e3:.0f} mV a receiver "
-                    "detects", src, "smaller bias resistors (SLLA272: VAB = 200 mV + the noise), or transceivers with "
-                    "built-in failsafe and no bias", grade="failsafe", on=on)]
+                    f"across the pair at {lo:g} V with the terminations{far}, below the {need_v * 1e3:.0f} mV a "
+                    "receiver detects", src, "smaller bias resistors (SLLA272: VAB = 200 mV + the noise), or "
+                    "transceivers with built-in failsafe and no bias", grade="failsafe", on=on)]
+
+
+def lowest_on(d, net, who=()):
+    """The lowest voltage a supply net has while it is on: the floor of its declared range where that is above 0 V;
+    where the range starts at 0 V (a rail that is off as well), the lowest supply the transceivers on the bus operate
+    at (vdd_op_min_v, or a supply pin's v_op_min_v); without either, the top of the range."""
+    v = v_range(d.nets[net])
+    if v[0] > 0:
+        return v[0]
+    mins = []
+    for des in who:
+        part = d.part(des) or {}
+        lim = (part.get("limits") or {}).get("vdd_op_min_v")
+        mins += [lim] if is_number(lim) else []
+        mins += [p["v_op_min_v"] for n, p in (part.get("pins") or {}).items()
+                 if p.get("type") == "power_in" and d.pin_net.get(f"{des}.{n}") == net and is_number(p.get("v_op_min_v"))]
+    return min(mins) if mins else v[1]

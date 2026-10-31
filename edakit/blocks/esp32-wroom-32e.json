@@ -342,10 +342,7 @@
     "U2.3"
    ],
    "v": "@3v3",
-   "fn": "uart.tx",
-   "accept": {
-    "LVL.undefined": "Not floating: the ESP32's U0TXD has its weak pull-up during and after reset (ESP32 Series Datasheet v5.3, table IO_MUX, pin 41: 'oe=0, ie=1, wpu') and the ROM bootloader drives it as U0TXD from boot on (U0TXD printing, table 3-4); the C701341 entry does not hold this pull."
-   }
+   "fn": "uart.tx"
   },
   {
    "name": "rxd",

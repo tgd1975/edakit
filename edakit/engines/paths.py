@@ -25,6 +25,13 @@ def kind(d, des):
     return (d.part(des) or {}).get("kind")
 
 
+def negative(d, net):
+    """A negative rail: the net's declared range lies at or below 0 V and reaches below it (−12 V of a Eurorack
+    module, a op-amp's V−)."""
+    v = (d.nets.get(net) or {}).get("v") if net else None
+    return isinstance(v, list) and len(v) == 2 and all(isinstance(x, (int, float)) for x in v) and max(v) <= 0 < -min(v)
+
+
 def reversible(d):
     """Components the graph marks as a source that may be reversed ("source": "reversible")."""
     return [des for des, c in d.comps.items() if c.get("source") == "reversible"]
@@ -69,6 +76,7 @@ def reverse(d, design):
                 continue
             role = d.pin_info(ref).get("role")
             if any(b["kind"] == k and b["role"] == role and all(d.net_of(des, o) not in side for o in b["outside"])
+                   and (b.get("rail") != "negative" or all(negative(d, d.net_of(des, o)) for o in b["outside"]))
                    for b in t["blocks"]):
                 continue
             out.append(Finding("PATH.reverse", "G", ref, f"{ref} on {net}: a reversed source reaches this pin without a "
@@ -113,7 +121,7 @@ def steps(d):
         if k in t["forward"]:
             a, b = (d.net_of(des, r) for r in t["forward"][k])
             if a and b:
-                nxt[a].add(b)
+                nxt[b if negative(d, a) else a].add(a if negative(d, a) else b)   # a negative rail feeds anode-ward
             continue
         if k in t["passes_roles"]:
             nets = {d.net_of(des, r) for r in t["passes_roles"][k]}

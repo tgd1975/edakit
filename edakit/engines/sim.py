@@ -528,9 +528,12 @@ def gate_drive(s, des, part, nodes):
     vth = min(given)                    # a datasheet without a typical value: [min, null, max]
     spec = min(abs(float(vgs)) for vgs in table)
     _, g, src = (v(s.res, x) for x in nodes)
-    vgs = abs(g - src)
-    half = vth < vgs < spec
-    s.check("LIM.range", des, "gate drive off or specified on", f"|VGS| {vgs:.3g} V" + (" – half on" if half else ""),
+    # the drive in the device's own sense: VGS for an N-MOSFET, VSG for a P-MOSFET – a gate driven the other way
+    # (a PMOS gate above its source) holds it off however large the magnitude
+    drive = (src - g) if part.get("kind") == "pmos" else (g - src)
+    half = vth < drive < spec
+    name = "VSG" if part.get("kind") == "pmos" else "VGS"
+    s.check("LIM.range", des, "gate drive off or specified on", f"{name} {drive:.3g} V" + (" – half on" if half else ""),
             f"≤ {vth:g} V (VGS(th)) or ≥ {spec:g} V (RDS(on) specified)", not half,
             source=f"vgs_th_v, rds_on_max_ohm of {s.n.entry_key(des)}", grade="gate", on=(("component", des),))
 

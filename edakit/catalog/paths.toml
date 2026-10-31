@@ -12,6 +12,8 @@ passes = ["fuse", "switch", "connector"]     # hand a reversed source on unchang
 tolerates = ["battery_holder", "capacitor"]  # take a reversed voltage without harm
 blocks = [
   { kind = "diode", role = "anode", outside = ["cathode"] },          # the cathode on the protected side
+  { kind = "diode", role = "cathode", outside = ["anode"], rail = "negative" },   # a negative rail: the anode on the
+                                                                      # protected side – reversed, + reaches the cathode
   { kind = "pmos", role = "drain", outside = ["source", "gate"] },    # body diode blocks, VGS <= 0
 ]
 
@@ -19,7 +21,8 @@ blocks = [
 inputs = { battery_holder = "plus", connector = "vbus" }   # pin roles where a supply comes in (role prefix)
 passes = ["fuse", "switch", "connector", "inductor"]       # every pin to every pin
 passes_roles = { nmos = ["drain", "source"], pmos = ["drain", "source"] }
-forward = { diode = ["anode", "cathode"] }                 # from the first role to the second only
+forward = { diode = ["anode", "cathode"] }                 # from the first role to the second only – on a negative
+                                                           # rail (the anode's net declared at or below 0 V) the other way
 resistor_max_ohm = 100                                     # a shunt or a filter resistor passes a supply
 
 [ground]                                     # PATH.ground

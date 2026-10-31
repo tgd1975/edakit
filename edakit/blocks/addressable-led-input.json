@@ -105,10 +105,7 @@
     "R1.1"
    ],
    "v": "@vcc",
-   "notes": "Buffer output, in front of the series resistor.",
-   "accept": {
-    "LVL.undefined/open_drain": "Y drives whenever OE# is low, and the block ties OE# to GND; released (OE# on a GPIO) the net is held low through R1 and the line pull-down R3 (330 Ω + 10 kΩ to GND) – the check looks one resistor deep and the parts entry marks Y as 3-state (block addressable-led-input)."
-   }
+   "notes": "Buffer output, in front of the series resistor."
   },
   {
    "name": "dout",

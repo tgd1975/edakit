@@ -50,7 +50,9 @@
    "hint": "I/O1 (D+ out), the same line as pin 1"
   }
  },
- "values": {},
+ "values": {
+  "tvs": true
+ },
  "limits": {
   "tj_max_c": 125,
   "t_min_c": -40
@@ -84,7 +86,8 @@
    "pinout figure 1 (top view) against the EasyEDA symbol: 1 I/O1, 2 GND, 3 I/O2, 4 I/O2, 5 VBUS, 6 I/O1",
    "table 1: Tj –40 … +125 °C; IEC 61000-4-2 15 kV air, 8 kV contact (level 4, features)",
    "table 2: IRM ≤ 150 nA at 5.25 V, VBR ≥ 6 V, VF ≤ 1.1 V at 10 mA, VCL ≤ 12 V at 1 A, capacitance 3.5 pF max",
-   "figure 18: flow-through layout (1→6, 3→4) and 100 nF at VBUS"
+   "figure 18: flow-through layout (1→6, 3→4) and 100 nF at VBUS",
+   "2026-10-31: values.tvs – a TVS/ESD array (ST USBLC6-2, Doc ID 11265 Rev 5: 'very low capacitance ESD protection'), held to its working voltage, not a rectifier's margin; HINT.esd sees the lines it guards"
   ],
   "open": [
    "st.com did not answer (connection closed) – Rev 5 from LCSC's copy; a later ST revision not checked",
