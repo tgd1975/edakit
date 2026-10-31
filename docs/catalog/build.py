@@ -315,7 +315,8 @@ def candidates_section():
     for sec, label in labels.items():
         c = Counter(e["status"] for e in s[sec].values())
         tiles.append(f'<div class="tile"><span class="big">{c["built"]}</span><span class="of">of {len(s[sec])}</span>'
-                     f'<span class="lbl">{label}</span><span class="sub">{c["partial"]} partial · {c["open"]} open</span>'
+                     f'<span class="lbl">{label}</span><span class="sub">{c["partial"]} partial · {c["open"]} open'
+                     + (f' · {c["out"]} out' if c["out"] else "") + '</span>'
                      "</div>")
         rows = "".join(f'<tr><td><code>{escape(k)}</code></td><td>{chip(e["status"])}</td>'
                        f'<td>{md(e.get("where", ""))}</td><td>{md(e.get("missing", ""))}</td></tr>'
@@ -402,7 +403,7 @@ td.num, th.num { text-align: right; font-variant-numeric: tabular-nums; }
   border: 1px solid currentColor; white-space: nowrap; }
 .chip.error { color: var(--err); } .chip.warning { color: var(--warn); } .chip.pending { color: var(--pend); }
 .chip.note { color: var(--note); } .chip.built { color: var(--ok); } .chip.partial { color: var(--warn); }
-.chip.open { color: var(--muted); }
+.chip.open { color: var(--muted); } .chip.out { color: var(--muted); text-decoration: line-through; }
 .engine > h3 { border-bottom: 1px solid var(--line); padding-bottom: 0.3rem; }
 article.code { background: var(--surface); border: 1px solid var(--line); border-left: 3px solid var(--accent);
   border-radius: 4px; padding: 0.8rem 1rem; margin: 0.7rem 0; }

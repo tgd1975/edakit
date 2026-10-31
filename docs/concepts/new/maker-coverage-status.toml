@@ -10,7 +10,7 @@ FT-3 = { status = "built", where = "behaviour opamp (sim/netlist.py); LIM.range/
 FT-4 = { status = "partial", where = "values prog_v, roles prog and bat; LIM.i/charge against the charger's i_out_max_a and the cell's i_charge_max_a (MCP73831 DS20001984H, TP4056 REV_2.4)", missing = "the CC/CV behaviour in the simulation, the charger's dissipation (5 V into 3 V at 1 A) and the termination current", step = 6 }
 FT-5 = { status = "partial", where = "values vref_v, i_load_min_a, roles adj and fb (circuit.feedback_vout); the simulation regulates to the divider; REQ.missing/feedback, REQ.value/feedback, LIM.range/min_load; AMS1117 datasheet as the example", missing = "a boost converter's output with EN low (VIN − VD): HINT.boost_enable names it, no model", step = 6 }
 FT-6 = { status = "built", where = "kinds motor, solenoid, speaker, heater, optocoupler (catalog/kinds.toml, sim/netlist.py)", step = 6 }
-FT-7 = { status = "open", missing = "the ES1 limits of IEC 62368-1 are tagged to verify; mains is open decision 3" }
+FT-7 = { status = "out", where = "rules-at-scale.md, decision 7 (2026-10-31): hazardous voltage recognised by LIM.hazardous, not checked" }
 FT-8 = { status = "built", where = "sim.json fault_scenarios: reversed, shorted, off (sim/run.py fault_scenarios); the parts' limits as warnings", step = 6 }
 FT-9 = { status = "open", missing = "DC bias of ceramics needs the capacitance curves – datasheets" }
 FT-10 = { status = "built", where = "edakit firmware: analog (channel, divider, pull) per ADC input; drift by --check", step = 6 }
@@ -38,8 +38,8 @@ CK-5 = { status = "partial", where = "limits vin_rel_max_v; LIM.v/inject – als
 CK-6 = { status = "built", where = "pin adc; LIM.range/adc, REQ.value/adc", step = 6 }
 CK-7 = { status = "built", where = "polarized capacitors: LIM.v/polarized (G and E), PATH.reverse/polarized", step = 6 }
 CK-8 = { status = "built", where = "roles out_p, out_n; REQ.forbidden/btl (domains audio, guitar)", step = 6 }
-CK-9 = { status = "open", missing = "spacing of hazardous voltage – open decision 3, the IEC 60664-1 tables not read here" }
-CK-10 = { status = "open", missing = "isolation and mains input – open decision 3" }
+CK-9 = { status = "out", where = "rules-at-scale.md, decision 7 (2026-10-31): hazardous voltage recognised by LIM.hazardous, not checked" }
+CK-10 = { status = "out", where = "rules-at-scale.md, decision 7 (2026-10-31): hazardous voltage recognised by LIM.hazardous, not checked" }
 CK-11 = { status = "partial", where = "entry antenna.keepout_mm; GEO.keepout on the Gerber copper (fab.check_keepout); the coverage report names radios without it", missing = "the antenna at or over the board edge (the module maker's distance) – datasheets", step = 6 }
 CK-12 = { status = "built", where = "roles dp_a, dp_b, dn_a, dn_b; REQ.missing/usb_data (domain usb)", step = 6 }
 CK-13 = { status = "built", where = "pin needs; REQ.missing/pin, REQ.value/pin, REQ.forbidden/pin", step = 6 }
@@ -51,9 +51,9 @@ CK-18 = { status = "built", where = "cells i_max_a; LIM.i/cell", step = 6 }
 CK-19 = { status = "built", where = "net matrix row | col; REQ.missing/matrix, REQ.forbidden/matrix", step = 6 }
 CK-20 = { status = "built", where = "pin windows (with pull and pull_ohm in the netlist); REQ.value/window in stage E; example the MAX98357A SD_MODE (datasheet 19-6779 Rev 11)", step = 6 }
 CK-21 = { status = "built", where = "limits i_supply_pin_max_a; LIM.i/supply_pin (constant-current drivers)", step = 6 }
-CK-22 = { status = "open", missing = "the ES1 limits – tagged to verify" }
+CK-22 = { status = "built", where = "LIM.hazardous (core, always on) – a net beyond the ES1 limit (60 V DC, TI SLUP421), an error to accept on the net; the domain mains with the reviewers' questions", missing = "the AC limit (rms and peak) – no reachable source; an AC net is judged by its peak against the DC limit", step = 6 }
 CK-23 = { status = "built", where = "values f_clock_hz, limits f_max_hz; LIM.range/clock", step = 6 }
-CK-24 = { status = "open", missing = "capacitor banks above the hazardous limit – open decision 3" }
+CK-24 = { status = "out", where = "rules-at-scale.md, decision 7 (2026-10-31): hazardous voltage recognised by LIM.hazardous, not checked" }
 CK-25 = { status = "built", where = "LVL.undefined/analog", step = 6 }
 CK-26 = { status = "built", where = "REQ.function/uart", step = 6 }
 CK-27 = { status = "built", where = "net instrument, load_min_ohm, pin z_in_ohm; REQ.value/instrument", step = 6 }
