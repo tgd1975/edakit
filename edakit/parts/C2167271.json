@@ -1,0 +1,122 @@
+{
+ "lcsc": "C2167271",
+ "mpn": "C0805C106K4PACTU",
+ "manufacturer": "KEMET",
+ "kind": "capacitor",
+ "package": "0805",
+ "footprint": "C0805",
+ "jlc_class": "Extended Part",
+ "datasheet": {
+  "url": "https://search.kemet.com/download/specsheet/C0805C106K4PACTU",
+  "pinout_page": null
+ },
+ "pins": {
+  "1": {
+   "name": "1",
+   "type": "passive",
+   "role": "1"
+  },
+  "2": {
+   "name": "2",
+   "type": "passive",
+   "role": "2"
+  }
+ },
+ "values": {
+  "value_f": 1e-05,
+  "dielectric": "X5R",
+  "tolerance": 0.1,
+  "dc_bias": [
+   [
+    0,
+    1.0
+   ],
+   [
+    1,
+    0.98
+   ],
+   [
+    2,
+    0.93
+   ],
+   [
+    3,
+    0.85
+   ],
+   [
+    3.5,
+    0.8
+   ],
+   [
+    4,
+    0.7
+   ],
+   [
+    5,
+    0.56
+   ],
+   [
+    6,
+    0.46
+   ],
+   [
+    8,
+    0.35
+   ],
+   [
+    10,
+    0.28
+   ],
+   [
+    12,
+    0.23
+   ],
+   [
+    14,
+    0.2
+   ],
+   [
+    15.5,
+    0.18
+   ]
+  ],
+  "esr_ohm": [
+   null,
+   0.011,
+   null
+  ]
+ },
+ "limits": {
+  "v_max_v": 16,
+  "t_min_c": -55,
+  "t_max_c": 85
+ },
+ "compliance": {
+  "rohs": true,
+  "source": "KEMET part sheet C0805C106K4PACTU (generated 2026-10-31) p. 1: RoHS Yes; LCSC product data C2167271 (2026-10-31): isEnvironment true, RoHS certificate ROHS3"
+ },
+ "sources": [
+  "KEMET part sheet C0805C106K4PACTU (YAGEO group), generated 2026-10-31, 4 pages, https://search.kemet.com/download/specsheet/C0805C106K4PACTU, read 2026-10-31 – the maker's sheet of this part; p. 2 'Simulations' is KEMET's K-SIM: 'These are simulations. This is not a specification!' – the typical response of the part type (p. 4)",
+  "p. 1 Specifications: capacitance 10 µF (1 kHz, 1.0 Vrms), tolerance 10 %, voltage DC 16 VDC, temperature range −55 … +85 °C, X5R; case 0805 – value_f, tolerance, v_max_v, t_min_c, t_max_c",
+  "dc_bias: p. 2, graph 'Capacitance Change vs. DC Voltage Bias' (0 … 16 VDC), read from the graph ±10 %: 1 V −2 %, 2 V −7 %, 3 V −15 %, 3.5 V −20 %, 4 V −30 %, 5 V −44 %, 6 V −54 %, 8 V −65 %, 10 V −72 %, 12 V −77 %, 14 V −80 %, 15.5 V (the curve's end) −82 % – the ratios entered are 1 plus the change",
+  "esr_ohm: p. 2, graph 'Impedance and ESR', ESR at 100 kHz about 11 mΩ, read from the graph ±10 % – typical (the middle of [min, typ, max]); minimum about 7 mΩ near 1–2 MHz",
+  "KEMET Surface Mount Multilayer Ceramic Chip Capacitors, X5R Dielectric, 4 – 50 VDC (Commercial Grade), C1006_X5R_SMD (10/3/2024), 21 pages, LCSC's copy https://datasheet.lcsc.com/datasheet/pdf/890c045451eef605eb01c80c280f1899.pdf?productCode=C2167271, read 2026-10-31 – ordering information p. 1: C 0805 C 106 K 4 P A C TU = ceramic, 0805, standard, 10 µF, ±10 %, 4 = 16 V, P = X5R, A = N/A, C = 100 % matte Sn, TU = 7\" reel unmarked",
+  "LCSC product data C2167271 (wmsc.lcsc.com, 2026-10-31): KEMET C0805C106K4PACTU, 10 µF, X5R, ±10 %, 16 V, 0805; JLCPCB catalogue (edakit part search, 2026-10-31): C2167271, Extended, 2 002 pcs"
+ ],
+ "notes": "10 µF X5R 16 V 0805 with the maker's DC-bias curve (FT-9): the capacitance left at the DC across it counts where a minimum is judged and in the transient. Library draft.",
+ "verified": {
+  "by": "Claude (datasheet check, library draft)",
+  "date": "2026-10-31",
+  "datasheet": "KEMET part sheet C0805C106K4PACTU, generated 2026-10-31 (search.kemet.com)",
+  "datasheet_sha256": "26abb5b4f2a37c8acc737e5a50136da0d9333fc136cd6f906abc10444040f5b4",
+  "checked": [
+   "p. 1: 10 µF, 10 %, 16 VDC, X5R, −55 … +85 °C, case 0805",
+   "p. 2: DC-bias and ESR curves read from the graphs at the points entered",
+   "ordering code against the catalogue C1006_X5R_SMD p. 1: C 0805 C 106 K 4 P A C TU = ceramic, 0805, standard, 10 µF, ±10 %, 4 = 16 V, P = X5R, A = N/A, C = 100 % matte Sn, TU = 7\" reel unmarked"
+  ],
+  "open": [
+   "pins and footprint C0805 as the library's other 0805 capacitors – the EasyEDA symbol of C2167271 was not read (easyeda.com refused the request, 403)",
+   "the curves are KEMET's simulation of the typical part, not a specification: no spread between parts"
+  ]
+ }
+}

@@ -85,6 +85,19 @@ def field_problems(kind, section, table, where):
     return out
 
 
+RATIO_MAX = 1.5       # a dc_bias ratio above it is a percentage or a capacitance, not a share
+
+
+def dc_bias_ok(curve):
+    """A capacitor's values.dc_bias: [[V, ratio], …] with at least two points, volts from 0 strictly rising, ratios in
+    (0, RATIO_MAX] (maker-coverage FT-9)."""
+    if not (isinstance(curve, list) and len(curve) >= 2 and all(
+            isinstance(p, list) and len(p) == 2 and all(is_number(x) for x in p) for p in curve)):
+        return False
+    volts = [p[0] for p in curve]
+    return volts[0] >= 0 and all(a < b for a, b in zip(volts, volts[1:])) and all(0 < p[1] <= RATIO_MAX for p in curve)
+
+
 def _near(name, names):
     stem = name.split("_")[0]
     near = sorted(n for n in names if n.split("_")[0] == stem)
@@ -101,6 +114,10 @@ def problems(entry):
         return ["the form of before (ratings, params, vmax …) – edakit convert converts it"]
     for section in ("limits", "values"):
         out += field_problems(kind, section, entry.get(section), section)
+    curve = (entry.get("values") or {}).get("dc_bias")
+    if curve is not None and not dc_bias_ok(curve):
+        out.append("values.dc_bias: [[V, ratio], …] – the maker's curve as the share of the capacitance left, at least "
+                   f"two points, the volts rising from 0, each ratio above 0 and at most {RATIO_MAX:g}, not {curve!r}")
     if "antenna" in entry:
         box = (entry["antenna"] or {}).get("keepout_mm") if isinstance(entry["antenna"], dict) else None
         if not (isinstance(box, list) and len(box) == 4 and all(is_number(x) for x in box)

@@ -117,6 +117,12 @@ def coverage(design, prof=None):
                         if i.get("type") == "input" and f"{des}.{n}" in design.pin_net and not _thresholds(part, i)]
                 if bare:
                     found[("LVL.threshold", key, f"inputs without thresholds (vih, vil): {', '.join(bare)}")].append(des)
+    from .requires import pin_needs
+    lacking = []                   # a pin's capacitor need: a class-2 ceramic without dc_bias, a capacitor without esr_ohm
+    pin_needs(design.joined(), lacking)
+    for des, missing in dict.fromkeys(lacking):
+        if des not in found[("REQ.value", design.entry_key(des), missing)]:
+            found[("REQ.value", design.entry_key(des), missing)].append(des)
     out = []
     for (code, key, missing), dess in found.items():
         if prof is None or prof.on(Finding(code, "G", "", "")):

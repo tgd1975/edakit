@@ -84,7 +84,11 @@ values = ["value_ohm", "tolerance"]
 [kinds.capacitor]
 roles = ["plus", "minus", "1", "2"]          # a capacitor without polarity: its pin numbers
 limits = ["v_max_v", "vr_max_v", "i_ripple_a"]
-values = ["value_f", "dielectric", "polarized", "tolerance"]
+values = ["value_f", "dielectric", "polarized", "tolerance",
+          "dc_bias",                         # [[V, ratio], …]: the share of its capacitance left at a DC across it,
+                                             # the maker's curve (FT-9) – volts rising from 0, ratios above 0
+          "esr_ohm"]                         # the ESR at 100 kHz, one number or [min, typ, max] (null where the maker
+                                             # gives none) – held to a regulator's ESR window (CK-14)
 
 [kinds.crystal]
 roles = ["1", "2"]                           # a two-pin quartz crystal or resonator without capacitors of its own

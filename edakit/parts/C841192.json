@@ -54,7 +54,8 @@
     {
      "what": "capacitor",
      "c_min_f": 1e-06,
-     "source": "Richtek RT9080 data sheet DS9080-05 (June 2017), Operation p. 3 and Application Information p. 11: minimum output capacitance for stability 1 µF effective after temperature and voltage coefficient, ESR ≥ 1 mΩ; typical application p. 6"
+     "source": "Richtek RT9080 data sheet DS9080-05 (June 2017), Operation p. 3 and Application Information p. 11: minimum output capacitance for stability 1 µF effective after temperature and voltage coefficient, ESR ≥ 1 mΩ; typical application p. 6",
+     "esr_min_ohm": 0.001
     }
    ]
   }

@@ -15,7 +15,11 @@ the supply over time and LIM.v judges them. Switching spikes and fast edges are 
 
 - Resistors, capacitors, inductors (with DCR), fuses, diodes, LEDs (model from Vf at a test current), BJTs, MOSFETs
   come from the graph 1:1, values and SPICE models from the parts database. A 0 Ω bridge (`value_ohm: 0`) is its
-  `r_max_ohm`, 50 mΩ without one – ngspice finds no operating point with 0 Ω.
+  `r_max_ohm`, 50 mΩ without one – ngspice finds no operating point with 0 Ω. A capacitor with a DC-bias curve
+  (`values.dc_bias`, 4.1) is the capacitance left at the highest DC the declared ranges of its two nets put across
+  it – a KEMET 4.7 µF 6.3 V 0603 X5R on a 0 … 5.5 V rail is 1.86 µF: the least capacitance it has in operation, the
+  one a transient load step or an AC run around the operating point sees. The scenario's own voltage is not used, and
+  the charge from 0 V at power-up meets more capacitance than that. Without a curve the nominal value.
 - A dual MOSFET in one package (FS8205A: two N-channels on a shared drain) gives its second channel the roles
   `gate_2` and `source_2` (and `drain_2` when the drains are apart): the netlist builds both transistors, `M_Q7` and
   `M_Q7_2`, with the same model.

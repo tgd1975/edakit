@@ -2,7 +2,9 @@
 (.tran) whose sources follow piecewise-linear curves ([t, V] points, PWL).
 
 Passive parts, diodes, LEDs, transistors and MOSFETs come from the graph 1:1, their values and SPICE models from the
-parts database; a 0 Ω bridge (value_ohm 0) is its maximum resistance r_max_ohm, 50 mΩ without one. An RGB LED is
+parts database; a 0 Ω bridge (value_ohm 0) is its maximum resistance r_max_ohm, 50 mΩ without one; a capacitor with
+a DC-bias curve (values dc_bias) is the capacitance left at the highest DC its nets' declared ranges put across it
+(maker-coverage FT-9) – the operating point a transient or an AC run starts from, not the charge from 0 V. An RGB LED is
 three LEDs with the values and limits of their colour, common cathode (roles anode_<color>, cathode) or common anode
 (anode, cathode_<color>) as its roles say. An LED whose parts entry lacks one of these roles is left out of the
 netlist and listed in meta["leds_left_out"] (SIM.driver); one with a pin in nc is an unused LED and simply left out.
@@ -73,7 +75,7 @@ from __future__ import annotations
 import math
 import re
 
-from ..circuit import limits, relay_sets, values, wire_h, wire_ohm
+from ..circuit import capacitance, limits, relay_sets, values, volts_across, wire_h, wire_ohm
 
 VT = 0.02585
 LED_N = 2.0
@@ -383,8 +385,11 @@ class Netlist:
         kind, p = part["kind"], values(part)
         if kind == "resistor":   # a 0 Ω bridge: ngspice finds no operating point with 0 Ω
             self.two_pole(des, "R", p["value_ohm"] or p.get("r_max_ohm") or BRIDGE_OHM, "resistor")
-        elif kind == "capacitor":
-            self.two_pole(des, "C", p["value_f"], "capacitor")
+        elif kind == "capacitor":       # at the DC across it (dc_bias); a net split by a cable: its declared range
+            nets = [self.d.pin_net.get(f"{des}.{n}") for n in ("1", "2")]
+            nets = [n if n in self.d.nets or not n else n.rsplit("__", 1)[0] for n in nets]
+            c = capacitance(part, volts_across(self.d, *nets)) if all(nets) else None
+            self.two_pole(des, "C", c if c is not None else p["value_f"], "capacitor")
         elif kind == "fuse":
             self.two_pole(des, "R", p.get("r_max_ohm", 0.1), "fuse")
         elif kind == "inductor":
