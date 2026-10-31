@@ -38,7 +38,8 @@ values = ["polarized", "tolerance", "iout_accuracy", "iout_gain", "hfe_min", "hf
           "i_hold_vs_temp", "first_bit_to", "v_io_v", "comparator", "tvs"]
 pin = ["name", "type", "role", "strap", "pull", "hint", "functions", "out_edge", "t_pd_ns", "needs", "drive", "float_ok", "adc", "z_in_ohm", "short_proof", "clamp", "windows",
        "biased",                # biased: an input the part holds at its own DC level (LVL.undefined/analog)
-       "ref", "rel_ref"]        # ref, rel_ref: the supply pin a relative limit and the threshold ratios refer to
+       "ref", "rel_ref",        # ref, rel_ref: the supply pin a relative limit and the threshold ratios refer to
+       "state"]                 # state: high, low or off – where behaviour logic holds an output (sim/netlist.py)
 entry = ["needs", "address", "antenna", "library", "symbol_differs", "matrix",
          "supply_order", "i_group_max_a", "configs", "config_default"]   # needs switches a default of catalog/needs.toml off
                                 # ({"decoupling": false}); address: a bus address (REQ.forbidden/address); antenna:

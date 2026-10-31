@@ -25,7 +25,7 @@ def run(ctx):
     boards = set(cfg.boards) if cfg else set()
     bought = boards - set(cfg.made()) if cfg else set()
     return (structure(d, boards, bought) + refs(d) + locks(d, ctx.root) + entries(d, cfg) + configs_named(d)
-            + identity(d))
+            + states_named(d) + identity(d))
 
 
 def structure(d, boards, bought=()):
@@ -240,6 +240,35 @@ def configs_named(d):
         if c["config"] not in known:
             out.append(Finding("STRUCT.entry", "P", des, f"{des}: config {c['config']!r} – parts entry {key} knows "
                                + (", ".join(known) if known else "no configs"), on=(("component", des),)))
+    return out
+
+
+def states_named(d):
+    """STRUCT.entry: a component's `states` – where behaviour logic holds its outputs in the simulation (handbook
+    3.1) – name output or bidirectional pins of its entry, by number or name, each with high, low or off; an
+    open-drain output cannot drive high. A state that names nothing would leave the pin at its default unnoticed."""
+    from ..schema import STATES
+    out = []
+    for des, c in sorted(d.comps.items(), key=lambda x: natural_key(x[0])):
+        given, part = c.get("states"), d.part(des)
+        if given is None or part is None:
+            continue
+        on = (("component", des),)
+        if not isinstance(given, dict):
+            out.append(Finding("STRUCT.entry", "P", des, f"{des}: states {given!r} – {{pin: high | low | off}}", on=on))
+            continue
+        pins = part.get("pins") or {}
+        for key, word in given.items():
+            num = key if key in pins else next((n for n, p in pins.items() if p.get("name") == key), None)
+            info = pins.get(num) or {}
+            text = (f"states {key} – parts entry {d.entry_key(des)} has no such pin" if num is None else
+                    f"states {key} {word!r} – high, low or off" if word not in STATES else
+                    f"states {key} – pin {num} ({info.get('name', num)}) is no output"
+                    if info.get("type") not in ("output", "bidirectional") else
+                    f"states {key} 'high' – an open-drain output cannot drive high (low or off)"
+                    if word == "high" and info.get("drive") == "open_drain" else None)
+            if text:
+                out.append(Finding("STRUCT.entry", "P", des, f"{des}: {text}", on=on))
     return out
 
 

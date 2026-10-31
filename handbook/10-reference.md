@@ -54,7 +54,8 @@ board, the schematic or the checks (the earlier one-file form) is refused with a
 The name of the ground net is in the graph (`ground`, default `GND`), with the circuit it belongs to; nets that are
 ground on purpose besides it (an analog ground) in `grounds` (3.1, PATH.unfed) – `edakit block add` adds those of a
 block (its `graph.grounds`, the lipo-charger's cell minus, 14.5). The configuration a part runs in is in the graph too:
-a component's `config` names one of its entry's `configs` (3.1, 4.1).
+a component's `config` names one of its entry's `configs` (3.1, 4.1), and its `states` where the simulation holds
+the outputs of a part with behaviour `logic` (3.1, 5.1).
 
 ### [boards.&lt;name&gt;]
 

@@ -37,7 +37,10 @@ ICs and modules are replaced by behaviour models, chosen by values.behavior in t
             iq_a from vcc to vee. The output's own current comes from ground, not from vcc – drawn from the rail it kept
             the operating point from converging –, so a source's current misses what op-amp outputs source. The inputs
             draw nothing. vicm_v [above vee, from vcc] is the input common-mode range LIM.range holds (engines/sim.py)
-  logic     icc_a at the supply pin, outputs low through 50 ohm
+  logic     icc_a at the supply pin (a number; or {pin name: A} per supply pin); every output in its state – the
+            component's "states", else the pin's "state", else released for an open-drain output, released for a
+            tri-state one unless its enable pins are tied active, low for a push-pull one: low through r_out_ohm
+            (50 ohm) to ground, high through it to its supply (which delivers what it sources), off not at all
   current   constant i_a at the supply pin
   buck_boost  as buck and boost (the Pico's RT6150): an ideal output whether the input is above or below it
   bridge    bridge driver (DRV8833, TB6612): roles in1_x, in2_x, out1_x, out2_x, (pwm_x, sense_x) per channel, vm, en,
@@ -154,6 +157,48 @@ def led_roles(part):
 def out_role(role):
     """A driver output: the role out, or out0 … outN where the order of the outputs matters (edakit firmware)."""
     return bool(role) and (role == "out" or (role.startswith("out") and role[3:].isdigit()))
+
+
+SUPPLY_ROLES = ("vdd", "vcc")
+
+
+def supply_pins(pins):
+    """The supply pins of a part (its pins): the power_in pins with the role vdd or vcc, else every power_in pin – as
+    engines/sim.py reads the part's supply."""
+    power = [n for n, i in pins.items() if i.get("type") == "power_in"]
+    return [n for n in power if pins[n].get("role") in SUPPLY_ROLES] or power
+
+
+def pin_of(pins, key):
+    """The number of the pin `key` names – its number, else the first pin of that name – or None."""
+    if key is None:
+        return None
+    key = str(key)
+    return key if key in pins else next((n for n, i in pins.items() if i.get("name") == key), None)
+
+
+def logic_states(design, des, part):
+    """{pin number: "high" | "low" | "off"} – where behaviour logic holds each connected output and bidirectional pin
+    of `des`: the component's `states` (by pin number or name) over the pin's `state` in its entry; without either an
+    open-drain output is off (released), a tri-state output off unless its part ties every enable pin active
+    (engines/levels.py enabled) and then low, a push-pull output low, a bidirectional pin off. A word that is none of
+    the three, or high on an open-drain output, is STRUCT.entry's or PARTS.schema's and left out here."""
+    from ..engines.levels import enabled
+    from ..schema import STATES
+    pins = part["pins"]
+    given = {pin_of(pins, k): v for k, v in ((design.comps.get(des) or {}).get("states") or {}).items()}
+    out = {}
+    for num, info in pins.items():
+        ref, drive = f"{des}.{num}", info.get("drive")
+        if info.get("type") not in ("output", "bidirectional") or not design.pin_net.get(ref):
+            continue
+        state = next((s for s in (given.get(num), info.get("state")) if s in STATES
+                      and not (s == "high" and drive == "open_drain")), None)
+        if state is None:
+            state = ("off" if info["type"] == "bidirectional" or drive == "open_drain"
+                     else ("low" if enabled(design, ref) else "off") if drive == "tristate" else "low")
+        out[num] = state
+    return out
 
 
 def split_boards(design):
@@ -607,14 +652,37 @@ class Netlist:
         self.meta.setdefault("opamps", {})[des] = {"vcc": vcc, "vee": vee, "channels": chans, "values": p}
 
     def ic_logic(self, des, part):
-        for num, info in part["pins"].items():
-            net = self.d.pin_net.get(f"{des}.{num}")
-            if not net:
+        """A logic part – a sensor, a transceiver, a USB-UART: its supply current icc_a – a number at its supply pin
+        (supply_pins), or {pin name: A} per supply pin – to its ground pin, and every output in its state
+        (logic_states): low through r_out_ohm (50 Ω) to ground; high through it to its supply – the pin its `ref`
+        names, else the supply pin –, which delivers what the output sources (ammeter in meta["logic"]); off not at
+        all."""
+        p, pins = values(part), part["pins"]
+        connected = {n for n in pins if self.d.pin_net.get(f"{des}.{n}")}
+        gnd = next((self.pn(f"{des}.{n}") for n, i in pins.items() if i.get("type") == "ground" and n in connected), "0")
+        icc = p.get("icc_a", 0.001)
+        draw = {pin_of(pins, name): a for name, a in icc.items()} if isinstance(icc, dict) \
+            else dict.fromkeys(supply_pins(pins), icc)
+        for num, a in draw.items():
+            if num in connected:
+                self.current_load(f"{des}_{num}", self.pn(f"{des}.{num}"), gnd, a)
+        r_out = p.get("r_out_ohm", 50)
+        rails = [n for n in supply_pins(pins) if n in connected]
+        out = self.meta.setdefault("logic", {})[des] = {}
+        for num, state in logic_states(self.d, des, part).items():
+            o = self.pn(f"{des}.{num}")
+            sup = pin_of(pins, pins[num].get("ref")) or (rails[0] if rails else None)
+            if state == "low":
+                self.add(f"R_{des}_{num} {o} {gnd} {r_out}")
+            elif state == "high" and sup in connected:
+                x, s = f"x_{des.lower()}_{num}", self.pn(f"{des}.{sup}")
+                self.add(f"B_{des}_{num} {x}s {gnd} V = V({s},{gnd})")
+                self.add(f"V_{des}_{num}_AM {x}s {x} 0")
+                self.add(f"R_{des}_{num} {x} {o} {r_out}")
+                self.add(f"B_{des}_{num}_SUP {s} {gnd} I = max(i(V_{des}_{num}_AM), 0)")   # sourced from its supply
+                out[num] = {"state": state, "node": o, "ammeter": f"v_{des}_{num}_am#branch".lower()}
                 continue
-            if info["type"] == "power_in":
-                self.current_load(f"{des}_{num}", self.pn(f"{des}.{num}"), "0", values(part).get("icc_a", 0.001))
-            elif info["type"] == "output":
-                self.add(f"R_{des}_{num} {self.pn(f'{des}.{num}')} 0 50")
+            out[num] = {"state": "off" if state == "high" else state, "node": o}
 
     def ic_current(self, des, part):
         for num, info in part["pins"].items():

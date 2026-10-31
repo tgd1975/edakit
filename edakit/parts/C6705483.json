@@ -21,7 +21,8 @@
   "2": {
    "name": "BASE",
    "type": "output",
-   "hint": "regulator control output to the base of an external PNP (S8550 in Fig. 1); NC when the regulator is not used"
+   "hint": "regulator control output to the base of an external PNP (S8550 in Fig. 1); NC when the regulator is not used; no logic output: the simulation does not model the regulator it drives",
+   "state": "off"
   },
   "3": {
    "name": "AVDD",
@@ -47,7 +48,7 @@
   "6": {
    "name": "VBG",
    "type": "output",
-   "hint": "reference bypass output, 1.25 V typ; 0.1 µF to AGND with the regulator (Fig. 1), not needed without it",
+   "hint": "reference bypass output, 1.25 V typ; 0.1 µF to AGND with the regulator (Fig. 1), not needed without it; no logic output: the simulation leaves it to its capacitor",
    "needs": [
     {
      "what": "capacitor",
@@ -55,7 +56,8 @@
      "when": "regulator",
      "source": "Avia HX711 datasheet V2.0 (LCSC copy, sha256 84834c42…), Fig. 1 (0.1 µF at VBG) and Power Supply Options: without the regulator 'The external 0.1uF bypass capacitor … at the VBG output pin is then not needed'"
     }
-   ]
+   ],
+   "state": "off"
   },
   "7": {
    "name": "INNA",
@@ -85,7 +87,8 @@
   "12": {
    "name": "DOUT",
    "type": "output",
-   "hint": "serial data output; high = no data ready, low = data ready"
+   "hint": "serial data output; high = no data ready, low = data ready",
+   "state": "high"
   },
   "13": {
    "name": "XO",
@@ -113,7 +116,12 @@
   "vicm_v": [
    1.2,
    1.3
-  ]
+  ],
+  "behavior": "logic",
+  "icc_a": {
+   "VSUP": 0.0014,
+   "DVDD": 0.0001
+  }
  },
  "limits": {
   "vdd_op_min_v": 2.6,
@@ -136,7 +144,8 @@
   "Avia Semiconductor HX711 24-Bit Analog-to-Digital Converter (ADC) for Weigh Scales, V2.0, p. 4: Power Supply Options (DVDD = MCU supply; VAVDD = VBG × (R1 + R2) / R2, ≥ 100 mV below VSUP; without regulator VSUP to AVDD or DVDD, VFB to ground, BASE NC, no VBG capacitor); Clock Source Options (XI to ground = on-chip oscillator; external clock through 20 pF)",
   "Avia Semiconductor HX711 24-Bit Analog-to-Digital Converter (ADC) for Weigh Scales, V2.0, p. 5 Fig. 2 timing table: T3 PD_SCK high 0.2–50 µs, T4 low ≥ 0.2 µs; power down after > 60 µs high",
   "Avia Semiconductor HX711 24-Bit Analog-to-Digital Converter (ADC) for Weigh Scales, V2.0, p. 6 Fig. 4 reference PCB schematic: C1 10 µF (VSUP/DVDD), C2 10 µF (AVDD), C3 0.1 µF (VBG), C4 0.1 µF and R3/R4 100 Ω at channel A",
-  "the V2.0 document is LCSC's file listed under C43656 (HX711 in tubes); LCSC's file under C6705483 (reel) is the older 2009 issue without a version mark"
+  "the V2.0 document is LCSC's file listed under C43656 (HX711 in tubes); LCSC's file under C6705483 (reel) is the older 2009 issue without a version mark",
+  "Avia Semiconductor HX711 24-Bit Analog-to-Digital Converter (ADC) for Weigh Scales, V2.0, p. 3 Table 2: analog supply current (including regulator) 1400 µA, digital supply current 100 µA in normal operation, typical values – no maximum given: icc_a {VSUP 1.4 mA, DVDD 0.1 mA} with the regulator (its current comes from VSUP), {AVDD 1.4 mA, DVDD 0.1 mA} in config no_regulator (behaviour logic); p. 4 Serial Interface: 'When output data is not ready for retrieval, digital output pin DOUT is high' – DOUT state high"
  ],
  "verified": {
   "by": "Claude (datasheet check, library draft)",
@@ -148,12 +157,12 @@
    "supply ranges DVDD/AVDD 2.6–5.5 V, VSUP 2.7–5.5 V (Table 1)",
    "input common-mode range, VBG 1.25 V, clock 1–20 MHz",
    "regulator, clock and power-down pin use from pages 4–5",
-   "2026-10-31: configs regulator and no_regulator from HX711 V2.0, Power Supply Options and Fig. 1: VBG's 0.1 µF only with the regulator, VFB on ground without it"
+   "2026-10-31: configs regulator and no_regulator from HX711 V2.0, Power Supply Options and Fig. 1: VBG's 0.1 µF only with the regulator, VFB on ground without it",
+   "2026-10-31: behaviour logic with icc_a from Table 2 (typical, read now): 1.4 mA analog at VSUP (at AVDD without the regulator), 0.1 mA at DVDD; DOUT state high (p. 4: high while no data is ready); BASE and VBG state off"
   ],
   "open": [
    "no absolute maximum ratings in the datasheet: vdd_max_v and pin v_max_v not entered",
    "no logic input thresholds (VIH/VIL) and no output levels for PD_SCK, DOUT, RATE, XI",
-   "no maximum supply current (typ 1.4 mA analog incl. regulator, 0.1 mA digital) – idd_max_a left out",
    "VSUP minimum: Table 1 says 2.7 V, Table 2 says 2.6 V – the pin takes 2.7 V",
    "whether DOUT is push-pull is not stated (treated as a plain output)",
    "the decoupling of VSUP, DVDD and AVDD is only shown in the reference design (10 µF), not specified: the catalog's default applies, the values are in hints",
@@ -162,7 +171,9 @@
     "text": "pin 1 of the SOP-16 at the footprint's pin-1 mark",
     "when": "order"
    },
-   "RoHS/REACH not entered"
+   "RoHS/REACH not entered",
+   "icc_a: typical values – the datasheet gives no maximum supply current",
+   "the regulator is not modelled: BASE rests off, so with the regulator AVDD has no supply in the simulation – the analog current is drawn at VSUP instead"
   ]
  },
  "configs": {
@@ -170,7 +181,13 @@
    "about": "the on-chip analog supply regulator with an external transistor: AVDD = VBG × (R1 + R2)/R2, at least 100 mV below VSUP; 0.1 µF at VBG (Avia HX711 datasheet V2.0 (LCSC copy, sha256 84834c42…), Fig. 1 and Power Supply Options)"
   },
   "no_regulator": {
-   "about": "no regulator: VSUP to AVDD or DVDD, whichever is higher; VFB on ground, BASE not connected, no capacitor at VBG (Avia HX711 datasheet V2.0 (LCSC copy, sha256 84834c42…), Power Supply Options)"
+   "about": "no regulator: VSUP to AVDD or DVDD, whichever is higher; VFB on ground, BASE not connected, no capacitor at VBG (Avia HX711 datasheet V2.0 (LCSC copy, sha256 84834c42…), Power Supply Options)",
+   "values": {
+    "icc_a": {
+     "AVDD": 0.0014,
+     "DVDD": 0.0001
+    }
+   }
   }
  }
 }
