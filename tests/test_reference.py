@@ -1,5 +1,5 @@
 """The reference circuits per domain (tests/reference.py): each passes clean under its domains – no error, warning or
-pending finding in edakit check, no failing row in the simulation –, and each seeded fault raises exactly its codes
+pending finding in edakit check, no row of the simulation that fails or warns –, and each seeded fault raises exactly its codes
 and no other (concept rules-at-scale.md, section 7: the seeded-fault suite per domain and the overlap test)."""
 
 import shutil
@@ -27,7 +27,7 @@ def codes(p):
     found = {(f.code, f.place) for f in engines.run(d, cfg).findings if f.severity in ("error", "warning", "pending")
              and not f.accepted}
     out = simrun.run_all(Design.from_config(cfg), p.sim())
-    found |= {(r["id"], r["item"]) for r in out["checks"] if r["result"] == "fail"}
+    found |= {(r["id"], r["item"]) for r in out["checks"] if r["result"] in ("fail", "warn")}   # warn: a warning
     return found
 
 

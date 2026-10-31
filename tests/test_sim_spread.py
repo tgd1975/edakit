@@ -206,7 +206,8 @@ def test_an_ac_run_is_judged_in_each_corner(project):
     """With the domain guitar on (the gate an instrument input), an AC run that names no scenario of its own
     linearises around the first DC scenario of each spread corner (usb-min/idle/vf-min): the booster's gain from its
     gate to its drain, gm × R50 / (1 + gm × R51), is about 10 dB in the corner min; in the corner max the drain sits at
-    1.3 V, the JFET leaves its saturation region and the gain falls below 5 dB – SIM.response there only."""
+    1.3 V, the JFET leaves its saturation region and the gain falls below 5 dB – SIM.response there only (a warning:
+    its row reads warn)."""
     jfet_booster(project)
     g = project.graph()
     project.net(g, "JG")["instrument"] = True
@@ -217,8 +218,9 @@ def test_an_ac_run_is_judged_in_each_corner(project):
     assert set(out["ac"]) == {"boost spread-min", "boost spread-max"}
     rows = [r for r in out["checks"] if r["id"] == "SIM.response"]
     assert {r["scenario"] for r in rows} == {"ac boost spread-min", "ac boost spread-max"}
-    assert {r["scenario"] for r in rows if r["result"] == "fail"} == {"ac boost spread-max"}
-    assert all(float(r["actual"].split()[0]) < 5 for r in rows if r["result"] == "fail")
+    assert {r["scenario"] for r in rows if r["result"] == "warn"} == {"ac boost spread-max"}
+    assert all(float(r["actual"].split()[0]) < 5 for r in rows if r["result"] == "warn")
+    assert {r["result"] for r in rows} == {"pass", "warn"}
     assert out["ac"]["boost spread-max"]["scenario"].endswith("/spread-max")
 
 
@@ -336,7 +338,7 @@ def test_a_jfet_is_held_to_its_limits(project):
     out = simulate(project, expecting(project, "JD", (0, 5), corners=("max",)))
     q = {c["check"] for c in out["checks"] if c["item"] == "Q50"}
     assert {"|VDG|", "gate reverse voltage |VGS|", "forward gate current", "power dissipation"} <= q
-    assert not [c for c in out["checks"] if c["item"] == "Q50" and c["result"] == "fail"]
+    assert not [c for c in out["checks"] if c["item"] == "Q50" and c["result"] in ("fail", "warn")]
     assert out["net_currents"]["JD"]["i_max_a"] > 1e-4
     part = json.loads((project.root / "hardware" / "parts" / "C891687.json").read_text())
     part["values"] = {}

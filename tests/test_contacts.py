@@ -53,9 +53,9 @@ def rows(out, item, how):
 
 @pytest.mark.ngspice
 def test_a_closed_contact_is_held_to_what_it_may_break(project):
-    sim = load_on(project, 33)                                          # 100 mA through a 25 mA switching rating
+    sim = load_on(project, 33)                     # 100 mA through a 25 mA switching rating: LIM.i/switching, warn
     over = rows(simulate(project, sim), "SW9", "current it breaks when it opens")
-    assert over and {c["result"] for c in over} == {"fail"} and {c["id"] for c in over} == {"LIM.i"}
+    assert over and {c["result"] for c in over} == {"warn"} and {c["id"] for c in over} == {"LIM.i"}
     assert "of 25 mA" in over[0]["expected"]                          # derated as every current
     resistor(project, "R-TEST", 1000)                                   # 3.3 mA
     fine = rows(simulate(project, sim), "SW9", "current it breaks when it opens")
@@ -75,13 +75,14 @@ def test_the_switching_rating_is_a_warning(project):
 
 @pytest.mark.ngspice
 def test_a_closed_contact_below_its_minimum_load(project):
-    """SW9 from 3V3 through 10 kΩ back to 3V3: no current – below the 10 µA a test entry asks for; to GND 330 µA."""
+    """SW9 from 3V3 through 10 kΩ back to 3V3: no current – below the 10 µA a test entry asks for (REQ.value/min_load,
+    a warning: warn); to GND 330 µA."""
     sim = load_on(project, 10000, b_to="3V3")
     entry = json.loads((project.root / "hardware" / "parts" / "C126848.json").read_text())
     entry.setdefault("values", {})["min_load_a"] = 1e-05
     project.save_part("C126848", entry)
     low = rows(simulate(project, sim), "SW9", "current through a closed contact of SW9")
-    assert low and {c["result"] for c in low} == {"fail"} and {c["id"] for c in low} == {"REQ.value"}
+    assert low and {c["result"] for c in low} == {"warn"} and {c["id"] for c in low} == {"REQ.value"}
     assert low[0]["expected"] == "≥ 10 µA"
     move_r9(project, "GND")
     ok = rows(simulate(project, sim), "SW9", "current through a closed contact of SW9")
@@ -149,5 +150,5 @@ def test_a_contact_in_a_signal_path_is_rated_for_signal_currents(project):
         out = simulate(project)
         assert not rows(out, "SW8", "current through a closed contact")
         return {c["result"] for c in rows(out, "SW8", "minimum load of SW8's contacts in the signal path")}
-    assert rated(1e-3) == {"fail"}
+    assert rated(1e-3) == {"warn"}                                     # REQ.value, a warning
     assert rated(1e-5) == {"pass"}

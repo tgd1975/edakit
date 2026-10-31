@@ -74,7 +74,7 @@ def test_what_edakit_sim_finds_is_what_is_judged(name, tmp_path):
     from edakit.sim import run as simrun
     cfg = copy(name, tmp_path)
     out = simrun.run_all(Design.from_config(cfg), engines.load_sim(cfg))
-    failed = {(r["id"], r["item"]) for r in out["checks"] if r["result"] == "fail"}
+    failed = {(r["id"], r["item"]) for r in out["checks"] if r["result"] in ("fail", "warn")}   # a warning reads warn
     assert failed == {(f["code"], f["place"]) for f in judged(name).get("sim", [])}
 
 
@@ -260,11 +260,11 @@ def sim_rows(d, cfg, loads=None):
 @pytest.mark.skipif(not shutil.which("ngspice"), reason="ngspice not installed")
 def test_the_combo_s_c19_is_reversed_and_turned_round_it_passes(tmp_path):
     """C19, the TS's output electrolytic: its plus (pad 1 of CP_Radial) at ts_out, 0 V through R27, its minus at Q2's
-    emitter through R26 – 3 V reverse in every state. Turned round, LIM.v/polarized is quiet."""
+    emitter through R26 – 3 V reverse in every state (LIM.v/polarized, a warning: warn). Turned round, it is quiet."""
     d, cfg = changed(COMBO, tmp_path / "as", lambda g: None)
     out = sim_rows(d, cfg, ["bypass"])
     rev = [r for r in out["checks"] if r["item"] == "C19" and r["check"] == "reverse voltage"]
-    assert rev and {r["result"] for r in rev} == {"fail"}
+    assert rev and {r["result"] for r in rev} == {"warn"}
     assert all(2.9 < float(r["actual"].split()[0]) < 3.5 for r in rev)
 
     def turn(g):

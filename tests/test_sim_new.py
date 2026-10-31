@@ -18,7 +18,9 @@ def sim_config(project):
 
 
 def rows(out, item, check, failed=False):
-    return [c for c in out["checks"] if c["item"] == item and c["check"] == check and (not failed or c["result"] == "fail")]
+    """The rows of item and check; failed: only those that flag it – fail, or warn for a warning (these are)."""
+    return [c for c in out["checks"] if c["item"] == item and c["check"] == check
+            and (not failed or c["result"] in ("fail", "warn"))]
 
 
 # --- CK-4 --------------------------------------------------------------------------------------------------------------
@@ -56,7 +58,7 @@ def test_a_p_mosfet_a_3v3_output_cannot_switch_off(project):
 # --- CK-5 --------------------------------------------------------------------------------------------------------------
 def test_an_input_above_its_supply(project):
     """U2 (TLC5916) on 3V3, its inputs from the MCU at up to 3.3 V: inside vin_rel_max_v 0.3 V; a limit of −0.1 V – as
-    if the part allowed no input at its supply, a value for the test – makes the high inputs fail."""
+    if the part allowed no input at its supply, a value for the test – flags the high inputs."""
     part = project.part("C90107")
     part["limits"]["vin_rel_max_v"] = 0.3
     project.save_part("C90107", part)

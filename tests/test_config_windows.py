@@ -55,7 +55,7 @@ def test_634k_from_3v3_selects_the_mix(project):
 def test_a_pull_up_between_two_windows(project):
     amplifier(project, 390e3)                  # 3.3 V × 100 k / 490 k ≈ 0.67 V: above mix, below right
     out = simulate(project)
-    assert {r["result"] for r in window_rows(out)} == {"fail"}
+    assert {r["result"] for r in window_rows(out)} == {"warn"}           # REQ.value/window is a warning
     found = [f for f in out["findings"] if f["place"] == "U9.4"]
     assert found and {(f["code"], f["grade"]) for f in found} == {("REQ.value", "window")}
 

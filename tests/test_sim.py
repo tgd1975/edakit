@@ -19,7 +19,8 @@ def simulate(project, sim=None):
 
 
 def failing(out):
-    return [c for c in out["checks"] if c["result"] == "fail"]
+    """The rows the simulation flags: failed, or warn where the finding is a warning (sim/run.py judge_rows)."""
+    return [c for c in out["checks"] if c["result"] in ("fail", "warn")]
 
 
 def test_example_passes(project):

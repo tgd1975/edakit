@@ -42,7 +42,7 @@ def test_turned_round_it_is_reverse_biased_in_the_graph(project):
 def test_turned_round_it_is_reverse_biased_in_the_simulation(project):
     electrolytic(project, plus="2")
     bad = [c for c in simulate(project)["checks"] if c["item"] == "C2" and c["check"] == "reverse voltage"
-           and c["result"] == "fail"]
+           and c["result"] == "warn"]                                    # LIM.v/polarized, a warning
     assert bad and all(c["id"] == "LIM.v" for c in bad)
 
 

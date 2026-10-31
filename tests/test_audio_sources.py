@@ -155,11 +155,12 @@ def at(c, f):
 
 
 @ngspice
-@pytest.mark.parametrize("pot_ohm, result", [(250e3, "fail"), (500e3, "pass")])
+@pytest.mark.parametrize("pot_ohm, result", [(250e3, "warn"), (500e3, "pass")])
 def test_a_named_pickup_resonates_with_its_load(pot_ohm, result):
     """Seymour Duncan's DC resistance, the project's inductance and capacitance, into a volume pot of 250 or 500 kΩ
     and a 1 MΩ input: the resonance where the coil's formula puts it, as high as R ∥ load lets it – 9.9 dB with
-    500 kΩ, 6.7 dB with 250 kΩ, so an expectation of 8 dB at the resonance holds with the one only (SIM.response)."""
+    500 kΩ, 6.7 dB with 250 kΩ, so an expectation of 8 dB at the resonance holds with the one only (SIM.response, a
+    warning: the other row reads warn)."""
     with tempfile.TemporaryDirectory() as t:
         p = with_guitar_board(guitar(t, 1e6), pot_ohm)
         load = 1 / (1 / pot_ohm + 1 / 1e6)
@@ -188,7 +189,7 @@ def test_a_pickup_row_without_inductance_stops_the_simulation():
 @ngspice
 def test_a_cable_shifts_the_resonance_down():
     """W30's capacitance, c_pf_per_m × length_m = 300 pF, joins the pickup's own: the resonance falls by
-    √(C / (C + C_cable)), and an expectation met without the cable is missed with it (SIM.response)."""
+    √(C / (C + C_cable)), and an expectation met without the cable is missed with it (SIM.response, warn)."""
     with tempfile.TemporaryDirectory() as t:
         found = {}
         for name, cable in (("bare", None), ("cable", {"c_pf_per_m": 100})):
@@ -199,7 +200,7 @@ def test_a_cable_shifts_the_resonance_down():
         ratio = peak(cabled)[0] / peak(bare)[0]
         assert abs(ratio - math.sqrt(C_F / (C_F + 300e-12))) < 0.03
         assert abs(peak(cabled)[0] - f0(L_H, C_F + 300e-12)) / f0(L_H, C_F + 300e-12) < 0.1
-        assert b["result"] == "pass" and k["result"] == "fail"
+        assert b["result"] == "pass" and k["result"] == "warn"
 
 
 def test_a_cable_without_a_wire_on_ground_or_capacitance_adds_none():
@@ -223,7 +224,7 @@ def test_a_cable_without_a_wire_on_ground_or_capacitance_adds_none():
 @pytest.mark.parametrize("input_ohm, ok", [(None, True), (100e3, False)])
 def test_a_piezo_into_a_low_input_impedance_loses_its_bass(input_ohm, ok):
     """Murata's 7BB-20-6L0, 10 nF, behind its capacitance: into 2.2 MΩ the corner is 7.2 Hz, into 100 kΩ 159 Hz –
-    the expectation of a corner below 20 Hz fails there (SIM.response, corner)."""
+    the expectation of a corner below 20 Hz is missed there (SIM.response, corner: warn)."""
     with tempfile.TemporaryDirectory() as t:
         p = guitar(t, input_ohm)
         r = input_ohm or 2.2e6
@@ -231,7 +232,7 @@ def test_a_piezo_into_a_low_input_impedance_loses_its_bass(input_ohm, ok):
         low, _, _ = ac.corners(c["freq_hz"], c["gain_db"])
         if input_ohm:
             assert abs(low - 1 / (2 * math.pi * r * 10e-9)) / low < 0.05
-        assert row["result"] == ("pass" if ok else "fail") and "lower −3 dB corner" in row["check"]
+        assert row["result"] == ("pass" if ok else "warn") and "lower −3 dB corner" in row["check"]
 
 
 @ngspice

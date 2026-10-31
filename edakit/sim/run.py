@@ -581,26 +581,28 @@ def run_all(design, sim, keep=None, plugin=None, routing=None):
                     out["ac"][tag] = curve
     rep = engines.report(found, prof, new.graph, notes=False)
     out["findings"] = [f.to_dict() for f in rep.findings]
-    waive_rows(out, rep.findings)
+    judge_rows(out, rep.findings)
     return out
 
 
-def waive_rows(out, findings):
-    """The row of a failed comparison whose finding the graph accepts – on its part, its net or the graph, with the
-    reason – is waived, as the gate counts an accepted finding of stages P and G; a scenario whose failures are all
-    accepted is ok. A row is its finding's by code, scenario, place and the check its text starts with."""
+def judge_rows(out, findings):
+    """The row of a failed comparison takes its finding's verdict, once the profile and the graph's accepts are applied
+    – as the gate judges a finding of stages P and G: accepted on its part, its net or the graph, it is waived with the
+    reason; a warning is warn, for the sign-off file to accept; a note is info; an error stays fail. A scenario's status
+    follows its rows. A row is its finding's by code, scenario, place and the check its text starts with."""
     pool = defaultdict(list)
     for f in findings:
-        if f.accepted and f.severity != "pending":
-            pool[(f.code, f.scenario, f.place)].append(f)
-    if not pool:
-        return
+        pool[(f.code, f.scenario, f.place)].append(f)
     for r in out["checks"]:
         fs = pool.get((r["id"], r.get("scenario", ""), r.get("item", ""))) if r["result"] == "fail" else None
         f = next((f for f in fs or () if f.text.startswith(str(r.get("check", "")))), None)
-        if f is not None:
-            fs.remove(f)
+        if f is None:
+            continue
+        fs.remove(f)
+        if f.accepted and f.severity != "pending":
             r["result"], r["reason"] = "waived", f.accepted
+        elif f.severity in ("warning", "note"):
+            r["result"] = {"warning": "warn", "note": "info"}[f.severity]
     by_scenario = defaultdict(set)
     for r in out["checks"]:
         by_scenario[r.get("scenario")].add(r["result"])

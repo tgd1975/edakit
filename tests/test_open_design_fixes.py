@@ -266,7 +266,7 @@ def test_a_matrix_key_whose_row_is_not_scanned_carries_no_minimum_load(project):
     assert all(c["result"] == "pass" for c in rows)
     sim["mcu"]["U1"]["pullup_ohm"] = 1e6                                     # 2.7 µA through the key: too little
     rows = [c for c in simulate(project, sim)["checks"] if c["item"] == "SW20" and "closed contact" in c["check"]]
-    assert rows and all(c["result"] == "fail" for c in rows)
+    assert rows and all(c["result"] == "warn" for c in rows)                 # REQ.value/min_load, a warning
 
 
 @pytest.mark.skipif(not shutil.which("ngspice"), reason="ngspice not installed")
@@ -369,8 +369,8 @@ def test_the_poles_of_a_switch_in_signal_paths_are_judged_apart(project):
     project.net(g, "3V3")["pins"].append("R40.2")
     project.save_graph(g)
     rows = [c for c in simulate(project)["checks"] if c["item"] == "SW20" and c["check"].startswith("DC across")]
-    assert {c["result"] for c in rows} == {"pass", "fail"}
-    failed = [c["check"] for c in rows if c["result"] == "fail"]
+    assert {c["result"] for c in rows} == {"pass", "warn"}                 # REQ.value/switch, a warning
+    failed = [c["check"] for c in rows if c["result"] == "warn"]
     assert failed[0].startswith("DC across SW20 in the signal path (SIG_A2")
 
 
@@ -528,5 +528,5 @@ def test_a_contact_on_a_net_that_crosses_a_cable_is_still_in_the_signal_path():
         next(n for n in g["graph"]["nets"] if n["name"] == "REMOTE")["signal"] = True
         p.save_graph(g)
         rows = [c for c in simulate(p)["checks"] if c["item"] == "SW20" and c["check"].startswith("DC across")]
-        assert rows and {c["result"] for c in rows} == {"fail"}             # before: no rows – never judged
+        assert rows and {c["result"] for c in rows} == {"warn"}             # before: no rows – never judged
         assert "REMOTE 3.3 V" in rows[0]["check"] and "SIG_R 0 V" in rows[0]["check"]

@@ -210,7 +210,7 @@ def test_block_in_the_example_passes_the_simulation(project, name):
             load.setdefault("leds_on", [])
         sim["loads"]["t_on"] = {"gpio": {"LED_OE": 1, "SIG": 1}, "leds_on": leds}
     out = simrun.run_all(Design.from_config(project.config()), sim)
-    assert [c for c in out["checks"] if c["result"] == "fail"] == []
+    assert [c for c in out["checks"] if c["result"] in ("fail", "warn")] == []       # warn: a warning's row
     assert not leds or [c for c in out["checks"] if c["check"] == "LED on" and leds[0] in c["item"]]
 
 
@@ -252,11 +252,12 @@ def test_power_or_pmos_feeds_no_supply_backwards(project):
     higher (fresh lithium cells at 5.4 V against USB at 4.75 V)."""
     sim = two_supplies(project)
     out = simrun.run_all(Design.from_config(project.config()), sim)
-    bad = [c for c in out["checks"] if c["result"] == "fail"]
+    bad = [c for c in out["checks"] if c["result"] in ("fail", "warn")]
     # the one gap the block's notes name: cells above USB leave |VGS| between the worst-case threshold and the
-    # specified on-state – LIM.range/gate, a warning, and only there
+    # specified on-state – LIM.range/gate, a warning (its rows read warn), and only there
     assert {(c["id"], c["item"], c["scenario"].split("/")[0]) for c in bad} == {("LIM.range", "Q1", "bat-high"),
                                                                                ("LIM.range", "Q2", "bat-high")}
+    assert {c["result"] for c in bad} == {"warn"}
     rows = {r["name"]: r["sources"] for r in out["scenarios"]}
     assert all(i > -1e-3 for sources in rows.values() for i in sources.values()), rows
     assert all(sources["J1"] < 1e-3 for name, sources in rows.items() if name.startswith(("bat-high", "usb-high")))
@@ -275,5 +276,6 @@ def test_a_threshold_without_typical_value_holds_the_gate_all_the_same(project):
     entry["values"]["vgs_th_v"] = [lo, None, hi]
     project.save_part(key, entry)
     out = simrun.run_all(Design.from_config(project.config()), sim)
-    bad = {(c["id"], c["item"], c["scenario"].split("/")[0]) for c in out["checks"] if c["result"] == "fail"}
-    assert bad == {("LIM.range", "Q1", "bat-high"), ("LIM.range", "Q2", "bat-high")}
+    bad = {(c["id"], c["item"], c["scenario"].split("/")[0], c["result"]) for c in out["checks"]
+           if c["result"] in ("fail", "warn")}
+    assert bad == {("LIM.range", "Q1", "bat-high", "warn"), ("LIM.range", "Q2", "bat-high", "warn")}

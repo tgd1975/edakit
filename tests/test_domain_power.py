@@ -27,24 +27,25 @@ def rows(out, item, check):
 @ngspice
 def test_the_drivers_ground_pin_carries_all_outputs(project):
     """U2's eight channels at about 9.5 mA each and its own supply current through its pins – a limit of 50 mA (a
-    value for the test) fails with all on."""
+    value for the test) is exceeded with all on: LIM.i/supply_pin, a warning, reads warn."""
     part = project.part("C90107")
     part["limits"]["i_supply_pin_max_a"] = 0.05
     project.save_part("C90107", part)
     r = rows(simulate(project), "U2", "current through its supply pins (all outputs together)")
-    assert {c["result"] for c in r if "/all_on/" in c["scenario"]} == {"fail"}
+    assert {c["result"] for c in r if "/all_on/" in c["scenario"]} == {"warn"}
     assert {c["result"] for c in r if "/idle/" in c["scenario"]} == {"pass"}
 
 
 @ngspice
 def test_the_clock_against_the_supply(project):
-    """U1 at 3.3 V (its on-board regulator): a clock of 200 MHz above the 150 MHz a table of the test allows there."""
+    """U1 at 3.3 V (its on-board regulator): a clock of 200 MHz above the 150 MHz a table of the test allows there
+    (LIM.range/clock, a warning: warn)."""
     part = project.part("C41407547")
     part["values"]["f_clock_hz"] = 200e6
     part["limits"]["f_max_hz"] = {"1.8": 100e6, "3.0": 150e6}
     project.save_part("C41407547", part)
     r = rows(simulate(project), "U1", "clock within what its supply allows")
-    assert r and {c["result"] for c in r} == {"fail"} and r[0]["actual"].startswith("200 MHz at 3.3")
+    assert r and {c["result"] for c in r} == {"warn"} and r[0]["actual"].startswith("200 MHz at 3.3")
     part["values"]["f_clock_hz"] = 150e6
     project.save_part("C41407547", part)
     assert {c["result"] for c in rows(simulate(project), "U1", "clock within what its supply allows")} == {"pass"}
@@ -146,7 +147,7 @@ def test_pwm_on_leds_and_the_power_domain(project):
 @ngspice
 def test_a_cell_above_its_current(project):
     """The cells of test_sim_supply on +5V alone: everything runs from them – above an i_max_a of 50 mA (a value for
-    the test) with all LEDs on; the holder suggests the domain power, but not its polarity hint – PATH.reverse checks
+    the test) with all LEDs on (LIM.i/cell, a warning: warn); the holder suggests the domain power, but not its polarity hint – PATH.reverse checks
     every holder by its kind."""
     from test_sim_supply import cells_on_the_rail
     sim = cells_on_the_rail(project)
@@ -154,7 +155,7 @@ def test_a_cell_above_its_current(project):
     out = simulate(project, sim)
     cell = [c for c in out["checks"] if c["item"] == "BT1" and c["check"] == "current from the cell"
             and c["scenario"].startswith("cells/")]
-    assert {c["result"] for c in cell if "/all_on/" in c["scenario"]} == {"fail"}
+    assert {c["result"] for c in cell if "/all_on/" in c["scenario"]} == {"warn"}
     assert {c["id"] for c in cell} == {"LIM.i"}
     assert "power" in profile.suggested(Design.from_config(project.config()))
     assert "BT1" not in [f.place for f in found(project, "HINT.input_polarity")]
