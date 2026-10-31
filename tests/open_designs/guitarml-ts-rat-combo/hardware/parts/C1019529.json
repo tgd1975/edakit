@@ -1,0 +1,52 @@
+{
+ "lcsc": "C1019529",
+ "mpn": "ESK475M016AC3AA",
+ "manufacturer": "KEMET",
+ "kind": "capacitor",
+ "package": "radial aluminium electrolytic, D5 mm, 2.5 mm lead spacing",
+ "datasheet": {
+  "url": "https://datasheet.lcsc.com/datasheet/pdf/912111109de1da044d091fe7b6fe8722.pdf?productCode=C1019529"
+ },
+ "pins": {
+  "1": {
+   "name": "+",
+   "type": "passive",
+   "role": "plus"
+  },
+  "2": {
+   "name": "-",
+   "type": "passive",
+   "role": "minus"
+  }
+ },
+ "values": {
+  "value_f": 4.7e-06,
+  "dielectric": "electrolytic",
+  "polarized": true,
+  "tolerance": 0.2
+ },
+ "limits": {
+  "v_max_v": 16,
+  "vr_max_v": 0,
+  "t_min_c": -40,
+  "t_max_c": 85
+ },
+ "sources": [
+  "KEMET ESK radial aluminum electrolytic capacitors, +85 °C, A4004_ESK (11/17/2020), LCSC's copy for C1019529 https://datasheet.lcsc.com/datasheet/pdf/912111109de1da044d091fe7b6fe8722.pdf?productCode=C1019529, read 2026-10-31",
+  "part number system (p. 1): ESK, capacitance code (two figures, the zeros) in pF, M = ±20 %, rated voltage 016 = 16 VDC, A standard, size code, AA bulk; performance characteristics: 6.3 – 100 VDC, ±20 % at 120 Hz, operating temperature −40 … +85 °C",
+  "vr_max_v 0: no reverse voltage is rated – 'Verify the correct polarization of the capacitor on the board' (installing); pin 1 the plus: the designs' footprint Capacitor_THT:CP_Radial_D5.0mm_P2.50mm, pad 1 the square pad with the '+', the hatched half of the silkscreen at pad 2",
+  "JLCPCB catalogue 2026-10-31 (edakit part search): C1019529 ESK475M016AC3AA, Extended Part"
+ ],
+ "verified": {
+  "by": "Claude (datasheet check, open-design transcription)",
+  "date": "2026-10-31",
+  "datasheet": "KEMET ESK radial aluminum electrolytic capacitors, +85 °C, A4004_ESK (11/17/2020)",
+  "datasheet_sha256": "d1cc9186005605124cb53aa2110430fab4e9368dd3bb1ec8dc4422460b7aec2e",
+  "checked": [
+   "value, voltage and tolerance from the part number",
+   "performance characteristics",
+   "polarization"
+  ],
+  "open": []
+ }
+}

@@ -1,0 +1,71 @@
+{
+ "lcsc": "C96325",
+ "mpn": "1N914",
+ "manufacturer": "onsemi",
+ "kind": "diode",
+ "package": "DO-35 (DO-204AH)",
+ "datasheet": {
+  "url": "https://www.onsemi.com/pdf/datasheet/1n914-d.pdf",
+  "pinout_page": 1,
+  "title": "1N91x, 1N4x48, FDLL914, FDLL4x48 – Small Signal Diode",
+  "revision": "1N914/D Rev. 6 (September 2024)"
+ },
+ "pins": {
+  "1": {
+   "name": "K",
+   "type": "passive",
+   "role": "cathode"
+  },
+  "2": {
+   "name": "A",
+   "type": "passive",
+   "role": "anode"
+  }
+ },
+ "values": {
+  "vf_v": 1.0,
+  "vf_at_a": 0.01,
+  "ir_a": 2.5e-08,
+  "ir_at_v": 20
+ },
+ "limits": {
+  "vr_max_v": 100,
+  "if_max_a": 0.3,
+  "ifsm_max_a": 1.0,
+  "p_max_w": 0.5,
+  "rth_ja_k_per_w": 300,
+  "tj_max_c": 175,
+  "t_min_c": -55
+ },
+ "spice": {
+  "model": ".model D1N914 D(IS=5.2n N=1.97 RS=0.65 BV=100 IBV=100u CJO=4p)"
+ },
+ "compliance": {
+  "rohs": true,
+  "source": "onsemi 1N914/D Rev. 6, p. 1: Pb-free device (ordering information)"
+ },
+ "sources": [
+  "onsemi 1N91x, 1N4x48, FDLL914, FDLL4x48 Small Signal Diode, 1N914/D Rev. 6 (September 2024), from onsemi https://www.onsemi.com/pdf/datasheet/1n914-d.pdf, read 2026-10-31; LCSC C96325 is onsemi 1N914, DO-35 (JLCPCB catalogue 2026-10-31 (edakit part search): Extended Part, no stock; LCSC's copy of the data sheet is the older Fairchild Rev. 2.8)",
+  "pins 1 = cathode, 2 = anode: the KiCad symbol Diode:1N914 of the designs (1 K, 2 A); the data sheet marks the cathode by the band (p. 1, colour band marking)",
+  "vr_max_v 100: p. 2 maximum repetitive reverse voltage VRRM; if_max_a 0.3: DC forward current IF (IO 200 mA average rectified, 400 mA recurrent peak); ifsm_max_a 1.0: non-repetitive surge at 1.0 s (4.0 A at 1 ms); tj_max_c 175, t_min_c −55: operating junction temperature",
+  "p_max_w 0.5 and rth_ja_k_per_w 300: p. 2 thermal characteristics PD, RθJA",
+  "vf_v 1.0 at vf_at_a 0.01: p. 2 VF maximum of the 1N914 at IF = 10 mA; ir_a 25 nA at 20 V: p. 2 IR maximum (printed 0.025 with the micro sign of the PDF's font; 50 at 150 °C – µA, as Figure 2's nA scale shows)",
+  "spice: assumption – IS, N, RS fitted by Claude to the typical curves, no manufacturer model read: Figure 4 (VF 500 mV at 0.1 mA, 620 mV at 1 mA, 735 mV at 10 mA, read from the graph) gives N 1.97 and IS 5.2 nA; Figure 5 (0.92 V at 100 mA, 1.45 V at 800 mA, read from the graph) RS 0.65 Ω; BV 100 V at 100 µA (p. 2 breakdown voltage); CJO 4 pF (p. 2 total capacitance maximum of the 914)"
+ ],
+ "notes": "Small-signal silicon diode, DO-35: the clipping diodes of the Tubescreamer and the Rat. Library draft.",
+ "verified": {
+  "by": "Claude (datasheet check, library draft)",
+  "date": "2026-10-31",
+  "datasheet": "onsemi 1N914/D Rev. 6 (September 2024)",
+  "datasheet_sha256": "07bb416babd5fdcd86c6ecf628315812edc97adfaafe3fd5e894cd6f7aa8469a",
+  "checked": [
+   "p. 2: VRRM 100 V, IO 200 mA, IF 300 mA, IFSM 1.0 A (1 s), TJ −55 … 175 °C, PD 500 mW, RθJA 300 °C/W",
+   "p. 2: VF ≤ 1.0 V at 10 mA (914), IR ≤ 25 nA at 20 V, CT ≤ 4 pF (914)",
+   "p. 3: Figures 4 and 5, typical forward voltage"
+  ],
+  "open": [
+   "SPICE model fitted by Claude to the typical curves, not a manufacturer model",
+   "no lead entry: the DO-35 outline was not read"
+  ]
+ }
+}

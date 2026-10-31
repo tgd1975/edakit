@@ -1,0 +1,58 @@
+{
+ "lcsc": "C330739",
+ "mpn": "TJ-L5FYTGHRMFCLFLC2R-A5",
+ "manufacturer": "TOGIALED",
+ "kind": "led",
+ "package": "5 mm through-hole LED, red diffused",
+ "datasheet": {
+  "url": "https://datasheet.lcsc.com/datasheet/pdf/c9d2ce891e0e58d6782ee20d61b03165.pdf?productCode=C330739",
+  "pinout_page": 2
+ },
+ "pins": {
+  "1": {
+   "name": "A",
+   "type": "passive",
+   "role": "anode"
+  },
+  "2": {
+   "name": "K",
+   "type": "passive",
+   "role": "cathode"
+  }
+ },
+ "values": {
+  "color": "red",
+  "vf_typ_v": 2.1,
+  "vf_min_v": 1.7,
+  "vf_max_v": 2.5,
+  "vf_at_a": 0.02,
+  "rs_ohm": 10
+ },
+ "limits": {
+  "if_max_a": 0.02,
+  "vr_max_v": 5,
+  "p_max_w": 0.072,
+  "t_min_c": -20,
+  "t_max_c": 80
+ },
+ "sources": [
+  "TOGIALED (Tongjia) TJ-L5FYTGHRMFCLFLC2R-A5 5 mm red LED, specification for approval, LCSC's copy for C330739 https://datasheet.lcsc.com/datasheet/pdf/c9d2ce891e0e58d6782ee20d61b03165.pdf?productCode=C330739, read 2026-10-31",
+  "absolute maximum ratings: Pd 72 mW, IF 20 mA, VR 5 V, operating −20 … +80 °C; electro-optical characteristics at 20 mA: VF 1.7 … 2.5 V (no typical given – vf_typ_v 2.1, the middle, is an assumption), red diffused, AlGaInP, λp 630 nm",
+  "rs_ohm 10: assumption, edakit's default series resistance of the LED model",
+  "JLCPCB catalogue 2026-10-31 (edakit part search): C330739, Extended Part, 15 871 pcs",
+  "stand-in: the designs name a '5mm LED (color of choice)' (Classic Boost parts list) and draw it on a two-pin header (Device:LED, PinHeader_1x02) or not at all (the combo's LEDs hang on the footswitch pads); this red 5 mm LED stands in"
+ ],
+ "verified": {
+  "by": "Claude (datasheet check, open-design transcription)",
+  "date": "2026-10-31",
+  "datasheet": "TOGIALED (Tongjia) TJ-L5FYTGHRMFCLFLC2R-A5 5 mm red LED, specification for approval",
+  "datasheet_sha256": "9c2509cc84ce5a3e80ca7babd4adafd7563d0c071edec5128dbd14006ce8fc47",
+  "checked": [
+   "absolute maximum ratings",
+   "VF range at 20 mA"
+  ],
+  "open": [
+   "no typical forward voltage in the data sheet"
+  ]
+ }
+}

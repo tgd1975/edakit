@@ -1,0 +1,48 @@
+{
+ "lcsc": "C1620239",
+ "mpn": "C315C300J1G5TA",
+ "manufacturer": "KEMET",
+ "kind": "capacitor",
+ "package": "leaded MLCC (Goldmax C315), 2.54 mm lead spacing",
+ "datasheet": {
+  "url": "https://datasheet.lcsc.com/datasheet/pdf/5dff878e7e7c8851804fecbd80bd0b0d.pdf?productCode=C1620408"
+ },
+ "pins": {
+  "1": {
+   "name": "1",
+   "type": "passive",
+   "role": "1"
+  },
+  "2": {
+   "name": "2",
+   "type": "passive",
+   "role": "2"
+  }
+ },
+ "values": {
+  "value_f": 3e-11,
+  "dielectric": "C0G",
+  "tolerance": 0.05
+ },
+ "limits": {
+  "v_max_v": 100,
+  "t_min_c": -55,
+  "t_max_c": 125
+ },
+ "sources": [
+  "KEMET Goldmax 300 series C0G leaded MLCC, C1049_GOLDMAX_C0G (9/29/2020), LCSC's copy for C1620408 https://datasheet.lcsc.com/datasheet/pdf/5dff878e7e7c8851804fecbd80bd0b0d.pdf?productCode=C1620408, read 2026-10-31",
+  "ordering information: C315, C = standard, two figures and the zeros of the capacitance in pF, J = ±5 %, voltage code 1 = 100 VDC, G = C0G, 5 = multilayer, TA; operating temperature −55 … +125 °C",
+  "JLCPCB catalogue 2026-10-31 (edakit part search): C1620239 C315C300J1G5TA, Extended Part"
+ ],
+ "verified": {
+  "by": "Claude (datasheet check, open-design transcription)",
+  "date": "2026-10-31",
+  "datasheet": "KEMET Goldmax 300 series C0G leaded MLCC, C1049_GOLDMAX_C0G (9/29/2020)",
+  "datasheet_sha256": "d490754010a5b2a8cea95eebde49671c98676e774ea7fd74cfedafcdb46d63f5",
+  "checked": [
+   "value, voltage and tolerance from the part number",
+   "C0G, temperature range"
+  ],
+  "open": []
+ }
+}

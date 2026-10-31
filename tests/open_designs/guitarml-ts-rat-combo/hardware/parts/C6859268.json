@@ -1,0 +1,86 @@
+{
+ "lcsc": "C6859268",
+ "mpn": "FS57003PLT2B2M2QE",
+ "manufacturer": "E-Switch",
+ "kind": "switch",
+ "package": "3PDT alternate-action pushbutton (footswitch), PCB pins",
+ "datasheet": {
+  "url": "https://datasheet.lcsc.com/datasheet/pdf/a62749f9229fcc13ab62da99737b420b.pdf?productCode=C6859268",
+  "pinout_page": 4
+ },
+ "pins": {
+  "1": {
+   "name": "1",
+   "type": "passive",
+   "role": "throw_a"
+  },
+  "2": {
+   "name": "2",
+   "type": "passive",
+   "role": "common"
+  },
+  "3": {
+   "name": "3",
+   "type": "passive",
+   "role": "throw_b"
+  },
+  "4": {
+   "name": "4",
+   "type": "passive",
+   "role": "throw_a_2"
+  },
+  "5": {
+   "name": "5",
+   "type": "passive",
+   "role": "common_2"
+  },
+  "6": {
+   "name": "6",
+   "type": "passive",
+   "role": "throw_b_2"
+  },
+  "7": {
+   "name": "7",
+   "type": "passive",
+   "role": "throw_a_3"
+  },
+  "8": {
+   "name": "8",
+   "type": "passive",
+   "role": "common_3"
+  },
+  "9": {
+   "name": "9",
+   "type": "passive",
+   "role": "throw_b_3"
+  }
+ },
+ "values": {
+  "r_on_ohm": 0.05
+ },
+ "limits": {
+  "v_max_v": 9,
+  "i_contact_max_a": 1.0,
+  "t_min_c": -10,
+  "t_max_c": 70
+ },
+ "sources": [
+  "E-Switch FS5700 Series pushbutton switch, rev. 4.2.2018, LCSC's copy for C6859268 https://datasheet.lcsc.com/datasheet/pdf/a62749f9229fcc13ab62da99737b420b.pdf?productCode=C6859268, read 2026-10-31 (e-switch.com is not reachable from here)",
+  "p. 1 specifications: contact rating 1 A @ 9 VDC (v_max_v 9, i_contact_max_a 1.0), contact resistance 50 mΩ initial (r_on_ohm), operating temperature −10 … 70 °C, 3 pole alternate action; part number configurator: FS5700, 3P, L = alternate action, T2, B2, M2 = PCB pins, Q = silver, E = epoxy",
+  "p. 4 (triple pole): 3PDT schematic – commons 2, 5, 8 against 1/3, 4/6, 7/9, drawn on 1, 4, 7 (throw_a); PCB layout the 3 × 3 grid, commons in the middle row – as the designs' footprint FS57003PLT2B2M2QE:SW_FS57003PLT2B2M2QE (pads 2, 5, 8 at y = 0)",
+  "JLCPCB catalogue 2026-10-31 (edakit part search): C6859268 FS57003PLT2B2M2QE, Extended Part, no stock"
+ ],
+ "verified": {
+  "by": "Claude (datasheet check, open-design transcription)",
+  "date": "2026-10-31",
+  "datasheet": "E-Switch FS5700 Series pushbutton switch, rev. 4.2.2018",
+  "datasheet_sha256": "456ebb7773f3b1daad5e6311984e6763486c35ae068f7401ef4990b710ea4cca",
+  "checked": [
+   "contact rating, resistance, temperature range",
+   "3PDT schematic and PCB layout (p. 4)"
+  ],
+  "open": [
+   "which throw is 'on' depends on how the footswitch is wired – throw_a is the side the schematic draws"
+  ]
+ }
+}

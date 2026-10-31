@@ -1,0 +1,78 @@
+{
+ "lcsc": "C23895",
+ "mpn": "2SC1815(RANGE:200-400)",
+ "manufacturer": "JSCJ (Jiangsu Changjiang Electronics Technology)",
+ "kind": "npn",
+ "package": "TO-92",
+ "jlc_class": "Extended Part",
+ "datasheet": {
+  "url": "https://datasheet.lcsc.com/datasheet/pdf/d08962a70643408a86b9913fad8cc4c1.pdf?productCode=C23895",
+  "pinout_page": 1,
+  "title": "2SC1815 – TO-92 Plastic-Encapsulate Transistors",
+  "revision": "A, Nov 2012"
+ },
+ "pins": {
+  "1": {
+   "name": "E",
+   "type": "passive",
+   "role": "emitter"
+  },
+  "2": {
+   "name": "C",
+   "type": "passive",
+   "role": "collector"
+  },
+  "3": {
+   "name": "B",
+   "type": "passive",
+   "role": "base"
+  }
+ },
+ "values": {
+  "hfe_min": 200,
+  "hfe_max": 400,
+  "vce_sat_v": 0.25,
+  "icbo_a": {
+   "25": 1e-07
+  }
+ },
+ "limits": {
+  "vce_max_v": 50,
+  "veb_max_v": 5,
+  "ic_max_a": 0.15,
+  "p_max_w": 0.4,
+  "rth_ja_k_per_w": 312,
+  "tj_max_c": 150,
+  "t_min_c": -55
+ },
+ "spice": {
+  "model": ".model Q2SC1815 NPN(IS=26f BF=283 IKF=0.2)"
+ },
+ "sources": [
+  "Jiangsu Changjiang Electronics Technology (JSCJ) 2SC1815 TO-92 transistor (NPN), revision A (November 2012), LCSC's copy for C23895 https://datasheet.lcsc.com/datasheet/pdf/d08962a70643408a86b9913fad8cc4c1.pdf?productCode=C23895, read 2026-10-31. The type is Toshiba's; Toshiba's own data sheet was not reachable – its product page (toshiba.semicon-storage.com …/detail.2SC1815.html) loads its documents by script, and /info/docget.jsp and /info/lookup.jsp answer 404 for 2SC1815 –, so JSCJ's 2SC1815 of the GR rank stands in",
+  "pins 1 emitter, 2 collector, 3 base: p. 1 TO-92 (1.EMITTER 2.COLLECTOR 3.BASE) – as the KiCad symbol Transistor_BJT:2SC1815 of the designs (1 E, 2 C, 3 B)",
+  "vce_max_v 50, veb_max_v 5, ic_max_a 0.15, p_max_w 0.4, rth_ja_k_per_w 312, tj_max_c 150, t_min_c −55: p. 1 maximum ratings (VCBO 60 V has no field)",
+  "hfe_min 200, hfe_max 400: p. 1 hFE classification, rank GR 200–400 – C23895 is sold as 'RANGE:200-400'; the type's whole range is 70–700 at VCE 6 V, IC 2 mA (ranks O 70–140, Y 120–240, GR 200–400, BL 350–700), the schematic names no rank",
+  "vce_sat_v 0.25: p. 1 VCE(sat) maximum at IC = 100 mA, IB = 10 mA",
+  "icbo_a 100 nA at 25 °C: p. 1 ICBO maximum at VCB = 60 V – no temperature curve, the one value as it is",
+  "spice: assumption – Gummel-Poon fitted by Claude: BF 283, the geometric mean of the GR rank (the typical hFE graph of p. 2 shows about 170 at 25 °C, a part of no stated rank); IS 26 fA from the IC–VBE curve of p. 2 at 25 °C (about 0.63 V at 1 mA, read from the graph); IKF 0.2 A so that the gain falls towards the hFE graph's 100 at 150 mA"
+ ],
+ "notes": "General-purpose NPN in TO-92 (Toshiba's type, here JSCJ's GR rank): the input and output emitter followers of the Tubescreamer. Its hFE spread is a corner of the simulation (sim.json spread, maker-coverage FT-17). Library draft.",
+ "verified": {
+  "by": "Claude (datasheet check, library draft)",
+  "date": "2026-10-31",
+  "datasheet": "JSCJ 2SC1815, rev. A (Nov 2012)",
+  "datasheet_sha256": "b825a6767a250b26c2c846f0c4c6d998b968c2c0d4fb57fc1da6efd08096c31a",
+  "checked": [
+   "p. 1: 1 E, 2 C, 3 B (TO-92)",
+   "p. 1: VCBO 60 V, VCEO 50 V, VEBO 5 V, IC 150 mA, PC 400 mW, RθJA 312 °C/W, TJ 150 °C",
+   "p. 1: hFE 70–700, ranks O/Y/GR/BL; ICBO ≤ 0.1 µA (60 V); VCE(sat) ≤ 0.25 V",
+   "p. 2: typical hFE and IC–VBE curves"
+  ],
+  "open": [
+   "a second source: Toshiba's own 2SC1815 data sheet not reachable",
+   "the rank (GR) is the stand-in's; the designs name none – a part of rank O or Y biases the followers lower",
+   "SPICE model fitted by Claude, not a manufacturer model"
+  ]
+ }
+}

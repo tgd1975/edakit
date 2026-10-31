@@ -60,7 +60,7 @@ in `sources` – any RP2350 module takes the same list per GPIO. On the RP2040 a
 | npn, pnp | `collector`, `base`, `emitter` |
 | pmos, nmos | `drain`, `gate`, `source` |
 | njfet, pjfet | `drain`, `gate`, `source` |
-| switch | `common`, `throw_a`, `throw_b` |
+| switch | `common`, `throw_a`, `throw_b`; a switch of several poles (a 3PDT footswitch) `common_2`, `throw_a_2`, `throw_b_2`, `common_3` … – every pole follows the one actuator in the simulation |
 | button | `a`, `b` (pins connected inside share a role) |
 | dip_switch | `a1`…`aN`, `b1`…`bN` |
 | potentiometer | `end_a`, `wiper`, `end_b` |
@@ -142,7 +142,8 @@ entry's before the default of the pin type. What the names do not say:
   One that needs an external compensation capacitor gets it as a pin need to another pin (`{"what": "capacitor",
   "to": "COMP/BAL", "c_min_f": 22e-12}`) – where it needs it only below a gain, in a config with the lower
   `gain_min_ratio` (`when`): the NE5534 is stable from 3, in its config `compensated` from 1 with CC ≥ 22 pF, and
-  REQ.value/gain names that config in its fix.
+  REQ.value/gain names that config in its fix; the LM301A (C22505) always needs its 30 pF from COMPENSATION to
+  BALANCE/COMPENSATION. In the library beside them the TL072CP (C7236), unity-gain stable.
 - a part on an SPI or I2C bus: `values.spi_modes` (the modes 0–3 its interface runs in, CPOL × 2 + CPHA, from the
   timing diagram), `limits.f_sck_max_hz` and `limits.f_scl_max_hz` (its highest SCK and SCL – for I2C the mode it
   runs without a high-speed master code), and on its SDA and SCL pins `c_in_f` (their input capacitance) – the
@@ -190,7 +191,8 @@ entry's before the default of the pin type. What the names do not say:
   reverse voltage against the source), `ig_max_a` (the forward gate current), `id_max_a`. The model in `spice` is the
   typical part (`.model MMBFJ201 NJF(VTO=-0.77 BETA=0.98m LAMBDA=0.016)`); the corners set BF, VTO, KP and BETA from
   these fields. In the library: 2N3904 (C124482), MMBFJ201 (C891687, the J201 in SOT-23), BS170 (C111691), 2N7000
-  (C232838), and the spreads the other transistors' entries already gave. A germanium part (AC128) has no datasheet
+  (C232838), the pedals' 2SC1815 (C23895, JSCJ's rank GR, hFE 200 … 400) and 2N5458 (onsemi, IDSS 2 … 9 mA,
+  VGS(off) −1 … −7 V), and the spreads the other transistors' entries already gave. A germanium part (AC128) has no datasheet
   edakit could read: a project enters its own measured spread, with its source.
 - shift registers and LED drivers `first_bit_to`: the output the first shifted bit ends on, e.g. `"out7"`, from the
   datasheet's timing diagram – copied into the firmware contract (3.5).

@@ -1,0 +1,617 @@
+{
+ "graph": {
+  "name": "guitarml-classic-boost",
+  "version": "1.0",
+  "date": "2026-10-31",
+  "description": "The GuitarML Classic Boost v2 (GuitarML/GuitarPedalPCBs at e2fa7e1, ClassicBoost_1590a/ClassicBoost_v2.kicad_sch, MIT, Keith Bloemer) as published: one 2N5088 common-emitter stage (430 kΩ / 43 kΩ base divider, 10 kΩ collector, 390 Ω emitter), a 100 kΩ volume, an LED, 9 V through a 1N5817; the jacks, the DC jack and the 3PDT bypass footswitch hang on pads – here on the hand-wired board 'wiring'. Transcribed for edakit's tests.",
+  "purpose": {
+   "use": "private",
+   "market": "EU",
+   "notes": "GuitarML publishes the boards for builders who order and build them for themselves. The transcription is a test of edakit, not a product."
+  },
+  "conventions": {
+   "pin_reference": "'<designator>.<pin>' with the pin numbers of the parts entries – the KiCad symbols' where they agree; the 2N5458's custom symbol (1 G, 2 S, 3 D) and Device:LED (1 K, 2 A) turned into the entries' (2N5458: 1 D, 2 S, 3 G; LED: 1 A, 2 K)",
+   "v": "per net: [min, max] in V over the intended operating states – 9 V from the DC jack; nets behind a coupling capacitor at ground with ±4.5 V of signal",
+   "board": "main: the GuitarML PCB; wiring: the parts wired to its pads by hand (bought = true until edakit has a key for a hand-wired board)",
+   "source": "GuitarML/GuitarPedalPCBs at e2fa7e1, ClassicBoost_1590a/ClassicBoost_v2.kicad_sch (checked against ClassicBoost_v2.kicad_pcb), https://github.com/GuitarML/GuitarPedalPCBs"
+  },
+  "cables": [
+   {
+    "name": "W1",
+    "from": "9v1",
+    "to": "J1",
+    "pins": {
+     "1": "2"
+    },
+    "about": "9 V from the DC jack's barrel contact"
+   },
+   {
+    "name": "W2",
+    "from": "Gnd1",
+    "to": "J1",
+    "pins": {
+     "1": "1"
+    },
+    "about": "ground from the DC jack's centre pin (centre negative)"
+   },
+   {
+    "name": "W3",
+    "from": "InG1",
+    "to": "J2",
+    "pins": {
+     "1": "S"
+    },
+    "about": "input jack sleeve"
+   },
+   {
+    "name": "W4",
+    "from": "OutG1",
+    "to": "J3",
+    "pins": {
+     "1": "S"
+    },
+    "about": "output jack sleeve"
+   },
+   {
+    "name": "W5",
+    "from": "In1",
+    "to": "SW2",
+    "pins": {
+     "1": "1"
+    },
+    "about": "footswitch pole 1 on: into the boost"
+   },
+   {
+    "name": "W6",
+    "from": "Out1",
+    "to": "SW2",
+    "pins": {
+     "1": "4"
+    },
+    "about": "footswitch pole 2 on: out of the boost"
+   },
+   {
+    "name": "W7",
+    "from": "SW1",
+    "to": "SW2",
+    "pins": {
+     "1": "8"
+    },
+    "about": "footswitch pole 3 common: VCC"
+   },
+   {
+    "name": "W8",
+    "from": "swGnd1",
+    "to": "SW2",
+    "pins": {
+     "1": "7"
+    },
+    "about": "footswitch pole 3 on: VCC to the LED resistor"
+   }
+  ],
+  "layout": {},
+  "locks": {},
+  "components": [
+   {
+    "designator": "D1",
+    "type": "diode",
+    "label": "reverse-polarity diode in the 9 V feed",
+    "board": "main",
+    "lcsc": "C232461",
+    "part": "1N5817RLG",
+    "value": "1N5817",
+    "pins": {
+     "1": "K",
+     "2": "A"
+    },
+    "nc": []
+   },
+   {
+    "designator": "C1",
+    "type": "capacitor",
+    "label": "input coupling",
+    "board": "main",
+    "lcsc": "C600429",
+    "part": "R82DC3100DQ50J",
+    "value": "0.1uF",
+    "pins": {
+     "1": "1",
+     "2": "2"
+    },
+    "nc": []
+   },
+   {
+    "designator": "R1",
+    "type": "resistor",
+    "label": "base bias from VCC",
+    "board": "main",
+    "lcsc": "C714638",
+    "part": "RI40-1/4W-430KΩ±5%T",
+    "value": "430k",
+    "pins": {
+     "1": "1",
+     "2": "2"
+    },
+    "nc": []
+   },
+   {
+    "designator": "R2",
+    "type": "resistor",
+    "label": "base bias to ground",
+    "board": "main",
+    "lcsc": "C58641",
+    "part": "MFR0W4F4302A50",
+    "value": "43k",
+    "pins": {
+     "1": "1",
+     "2": "2"
+    },
+    "nc": []
+   },
+   {
+    "designator": "Q2",
+    "type": "transistor",
+    "label": "the boost's common-emitter stage",
+    "board": "main",
+    "lcsc": "C3201780",
+    "part": "2N5088BU",
+    "value": "2N5088",
+    "pins": {
+     "1": "E",
+     "2": "B",
+     "3": "C"
+    },
+    "nc": []
+   },
+   {
+    "designator": "R3",
+    "type": "resistor",
+    "label": "collector resistor",
+    "board": "main",
+    "lcsc": "C57436",
+    "part": "MFR0W4F1002A50",
+    "value": "10k",
+    "pins": {
+     "1": "1",
+     "2": "2"
+    },
+    "nc": []
+   },
+   {
+    "designator": "R4",
+    "type": "resistor",
+    "label": "emitter resistor (unbypassed)",
+    "board": "main",
+    "lcsc": "C58646",
+    "part": "MFR0W4F3900A50",
+    "value": "390",
+    "pins": {
+     "1": "1",
+     "2": "2"
+    },
+    "nc": []
+   },
+   {
+    "designator": "C2",
+    "type": "capacitor",
+    "label": "output coupling",
+    "board": "main",
+    "lcsc": "C600429",
+    "part": "R82DC3100DQ50J",
+    "value": "0.1uF",
+    "pins": {
+     "1": "1",
+     "2": "2"
+    },
+    "nc": []
+   },
+   {
+    "designator": "POT1",
+    "type": "potentiometer",
+    "label": "volume (100K, the parts list's A100K)",
+    "board": "main",
+    "part": "P160KN-0QC15A100K",
+    "value": "100k",
+    "pins": {
+     "1": "1",
+     "2": "2",
+     "3": "3"
+    },
+    "nc": []
+   },
+   {
+    "designator": "LED1",
+    "type": "led",
+    "label": "on LED, on a two-pin header of the board",
+    "board": "main",
+    "lcsc": "C330739",
+    "part": "TJ-L5FYTGHRMFCLFLC2R-A5",
+    "pins": {
+     "1": "A",
+     "2": "K"
+    },
+    "nc": []
+   },
+   {
+    "designator": "R5",
+    "type": "resistor",
+    "label": "LED resistor",
+    "board": "main",
+    "lcsc": "C57204",
+    "part": "MFR0W4F4701A50",
+    "value": "4.7k",
+    "pins": {
+     "1": "1",
+     "2": "2"
+    },
+    "nc": []
+   },
+   {
+    "designator": "9v1",
+    "type": "connector",
+    "label": "9 V in (board reference 9v)",
+    "board": "main",
+    "part": "TestPoint_THTPad_D2.0mm_Drill1.0mm",
+    "pins": {
+     "1": "Pin_1"
+    },
+    "bom": false,
+    "nc": []
+   },
+   {
+    "designator": "Gnd1",
+    "type": "connector",
+    "label": "ground of the DC jack (board reference Gnd)",
+    "board": "main",
+    "part": "TestPoint_THTPad_D2.0mm_Drill1.0mm",
+    "pins": {
+     "1": "Pin_1"
+    },
+    "bom": false,
+    "nc": []
+   },
+   {
+    "designator": "In1",
+    "type": "connector",
+    "label": "into the boost (from the footswitch) (board reference In)",
+    "board": "main",
+    "part": "TestPoint_THTPad_D2.0mm_Drill1.0mm",
+    "pins": {
+     "1": "Pin_1"
+    },
+    "bom": false,
+    "nc": []
+   },
+   {
+    "designator": "InG1",
+    "type": "connector",
+    "label": "input jack sleeve (board reference InG)",
+    "board": "main",
+    "part": "TestPoint_THTPad_D2.0mm_Drill1.0mm",
+    "pins": {
+     "1": "Pin_1"
+    },
+    "bom": false,
+    "nc": []
+   },
+   {
+    "designator": "Out1",
+    "type": "connector",
+    "label": "out of the boost (to the footswitch) (board reference O)",
+    "board": "main",
+    "part": "TestPoint_THTPad_D2.0mm_Drill1.0mm",
+    "pins": {
+     "1": "Pin_1"
+    },
+    "bom": false,
+    "nc": []
+   },
+   {
+    "designator": "OutG1",
+    "type": "connector",
+    "label": "output jack sleeve (board reference OG)",
+    "board": "main",
+    "part": "TestPoint_THTPad_D2.0mm_Drill1.0mm",
+    "pins": {
+     "1": "Pin_1"
+    },
+    "bom": false,
+    "nc": []
+   },
+   {
+    "designator": "SW1",
+    "type": "connector",
+    "label": "VCC to the footswitch's LED pole (board reference SW)",
+    "board": "main",
+    "part": "TestPoint_THTPad_D2.0mm_Drill1.0mm",
+    "pins": {
+     "1": "Pin_1"
+    },
+    "bom": false,
+    "nc": []
+   },
+   {
+    "designator": "swGnd1",
+    "type": "connector",
+    "label": "LED resistor from the footswitch (board reference SwG)",
+    "board": "main",
+    "part": "TestPoint_THTPad_D2.0mm_Drill1.0mm",
+    "pins": {
+     "1": "Pin_1"
+    },
+    "bom": false,
+    "nc": []
+   },
+   {
+    "designator": "J1",
+    "type": "connector",
+    "label": "DC jack, centre negative (stand-in PJ-102AH)",
+    "board": "wiring",
+    "lcsc": "C3096093",
+    "part": "PJ-102AH",
+    "pins": {
+     "1": "1",
+     "2": "2",
+     "3": "3"
+    },
+    "bom": false,
+    "nc": [
+     "3"
+    ]
+   },
+   {
+    "designator": "J2",
+    "type": "connector",
+    "label": "input jack, mono (stand-in Neutrik NMJ6HCD2)",
+    "board": "wiring",
+    "lcsc": "C368502",
+    "part": "NMJ6HCD2",
+    "pins": {
+     "T": "T",
+     "R": "R",
+     "S": "S",
+     "TN": "TN",
+     "RN": "RN",
+     "SN": "SN"
+    },
+    "bom": false,
+    "nc": [
+     "R",
+     "RN",
+     "SN",
+     "TN"
+    ]
+   },
+   {
+    "designator": "J3",
+    "type": "connector",
+    "label": "output jack, mono (stand-in Neutrik NMJ6HCD2)",
+    "board": "wiring",
+    "lcsc": "C368502",
+    "part": "NMJ6HCD2",
+    "pins": {
+     "T": "T",
+     "R": "R",
+     "S": "S",
+     "TN": "TN",
+     "RN": "RN",
+     "SN": "SN"
+    },
+    "bom": false,
+    "nc": [
+     "R",
+     "RN",
+     "SN",
+     "TN"
+    ]
+   },
+   {
+    "designator": "SW2",
+    "type": "switch",
+    "label": "footswitch, 3PDT: on (throw a) or bypass",
+    "board": "wiring",
+    "lcsc": "C6859268",
+    "part": "FS57003PLT2B2M2QE",
+    "pins": {
+     "1": "1",
+     "2": "2",
+     "3": "3",
+     "4": "4",
+     "5": "5",
+     "6": "6",
+     "7": "7",
+     "8": "8",
+     "9": "9"
+    },
+    "bom": false,
+    "nc": [
+     "9"
+    ]
+   }
+  ],
+  "nets": [
+   {
+    "name": "GND",
+    "pins": [
+     "Gnd1.1",
+     "InG1.1",
+     "LED1.2",
+     "OutG1.1",
+     "POT1.1",
+     "R2.1",
+     "R4.1",
+     "J1.1",
+     "J2.S",
+     "J3.S"
+    ],
+    "v": [
+     0,
+     0
+    ]
+   },
+   {
+    "name": "+9V_IN",
+    "pins": [
+     "9v1.1",
+     "D1.2",
+     "J1.2"
+    ],
+    "v": [
+     0,
+     9.0
+    ]
+   },
+   {
+    "name": "VCC",
+    "pins": [
+     "D1.1",
+     "R1.2",
+     "R3.2",
+     "SW1.1",
+     "SW2.8"
+    ],
+    "v": [
+     8.5,
+     9.0
+    ]
+   },
+   {
+    "name": "IN_B",
+    "pins": [
+     "C1.1",
+     "In1.1",
+     "SW2.1"
+    ],
+    "v": [
+     -4.5,
+     4.5
+    ],
+    "signal": true
+   },
+   {
+    "name": "BASE",
+    "pins": [
+     "C1.2",
+     "Q2.2",
+     "R1.1",
+     "R2.2"
+    ],
+    "v": [
+     0,
+     2.0
+    ],
+    "signal": true
+   },
+   {
+    "name": "COL",
+    "pins": [
+     "C2.1",
+     "Q2.3",
+     "R3.1"
+    ],
+    "v": [
+     0,
+     9.0
+    ],
+    "signal": true
+   },
+   {
+    "name": "C2B",
+    "pins": [
+     "C2.2",
+     "POT1.3"
+    ],
+    "v": [
+     -4.5,
+     4.5
+    ],
+    "signal": true
+   },
+   {
+    "name": "OUT_B",
+    "pins": [
+     "Out1.1",
+     "POT1.2",
+     "SW2.4"
+    ],
+    "v": [
+     -4.5,
+     4.5
+    ],
+    "signal": true
+   },
+   {
+    "name": "EMIT",
+    "pins": [
+     "Q2.1",
+     "R4.2"
+    ],
+    "v": [
+     0,
+     1.5
+    ],
+    "signal": true
+   },
+   {
+    "name": "LED_A",
+    "pins": [
+     "LED1.1",
+     "R5.1"
+    ],
+    "v": [
+     0,
+     9.0
+    ]
+   },
+   {
+    "name": "LED_R",
+    "pins": [
+     "R5.2",
+     "swGnd1.1",
+     "SW2.7"
+    ],
+    "v": [
+     0,
+     9.0
+    ]
+   },
+   {
+    "name": "JACK_IN",
+    "pins": [
+     "J2.T",
+     "SW2.2"
+    ],
+    "v": [
+     -4.5,
+     4.5
+    ],
+    "instrument": "pickup",
+    "load_min_ohm": 1000000.0
+   },
+   {
+    "name": "JACK_OUT",
+    "pins": [
+     "J3.T",
+     "SW2.5"
+    ],
+    "v": [
+     -4.5,
+     4.5
+    ],
+    "signal": true
+   },
+   {
+    "name": "BYPASS",
+    "pins": [
+     "SW2.3",
+     "SW2.6"
+    ],
+    "v": [
+     -4.5,
+     4.5
+    ],
+    "signal": true
+   }
+  ]
+ }
+}

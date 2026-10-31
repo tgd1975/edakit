@@ -1,0 +1,78 @@
+{
+ "about": "9 V at the DC jack J1 (centre negative); the footswitch on (throw a: the boost and its LED) or in bypass (throw b). The volume at half. Values with 'note' are assumptions.",
+ "ambient_c": 25,
+ "sources": {
+  "J1": {
+   "plus": "2",
+   "minus": "1",
+   "r_ohm": 1.0,
+   "note": "a 9 V pedal supply, centre negative, behind its plug and lead: 1 Ω source resistance (assumed)"
+  }
+ },
+ "supplies": {
+  "9v": {
+   "J1": 9.0
+  }
+ },
+ "loads": {
+  "on": {
+   "about": "the boost on",
+   "gpio": {},
+   "leds_on": [
+    "LED1"
+   ],
+   "throw": {
+    "SW2": "throw_a"
+   }
+  },
+  "bypass": {
+   "about": "the footswitch in bypass: input jack to output jack",
+   "gpio": {},
+   "leds_on": [],
+   "throw": {
+    "SW2": "throw_b"
+   }
+  }
+ },
+ "corners": [
+  "min",
+  "max"
+ ],
+ "spread": [
+  "min",
+  "typ",
+  "max"
+ ],
+ "ac": {
+  "boost": {
+   "about": "from the boost's input pad In to the collector, a pickup in front (information: no source states the gain the design intends; the bounds are the test's – an unbypassed emitter gives about R3 / R4 = 10 kΩ / 390 Ω, 28 dB, less the emitter's own resistance at its 0.5 mA and the volume's load on the collector)",
+   "scenario": "9v/on/vf-min",
+   "input": "IN_B",
+   "output": "COL",
+   "source": {
+    "r_ohm": 6000,
+    "l_h": 2.5,
+    "c_f": 2e-10,
+    "note": "the test's values for a single-coil pickup with its cable, not a product's (FT-18 brings the makers' figures)"
+   },
+   "expect": {
+    "gain_db": [
+     {
+      "at_hz": 1000,
+      "min": 24,
+      "max": 28.2
+     }
+    ]
+   },
+   "from_hz": 10,
+   "to_hz": 100000,
+   "info": true
+  }
+ },
+ "report": [
+  "VCC",
+  "BASE",
+  "EMIT",
+  "COL"
+ ]
+}
