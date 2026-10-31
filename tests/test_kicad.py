@@ -509,6 +509,17 @@ def test_the_library_silkscreen_of_easyeda_standard_is_cached_in_mil_y_up():
     assert all(s["layer"] == "TOP" for s in silk) and len(silk) == 6     # copper (layer 1) and the designator out
 
 
+def test_an_arc_of_the_library_print_is_drawn_in_pieces_of_at_most_five_degrees():
+    """An LED's body is one arc of about 250°: in eight pieces it printed as an octagon (live test, LT-5)."""
+    import math
+    from edakit.part import footprint_silk
+    ds = {"shape": ["ARC~1~3~~M 4010,3000 A 10,10 0 1 0 4000,2990~~gge7~0"]}      # 270°, radius 10 units (100 mil)
+    pts = footprint_silk(ds, 4000, 3000)[0]["points"]
+    steps = [math.dist(a, b) for a, b in zip(pts, pts[1:])]
+    assert len(pts) >= 270 / 5 + 1
+    assert max(steps) <= 2 * 100 * math.sin(math.radians(2.5)) + 0.05     # the chord of 5° on 100 mil
+
+
 @pytest.mark.parametrize("form", ['(net "GND")', '(net_name "GND")', '(net 7) (net_name "GND")'])
 def test_a_zone_keeps_its_net_however_the_file_names_it(project, form):
     cfg = kicad_project(project)
