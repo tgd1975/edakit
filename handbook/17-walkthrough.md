@@ -551,10 +551,10 @@ as follows (chapters 6 and 7). Each command ran in less than half a minute:
    ```
 
 3. `edakit route all`: Freerouting routes, the ground pours, DRC. The area outside the circle goes to Freerouting as
-   66 keep-out strips:
+   50 keep-out strips:
 
    ```text
-   [ 0.0 min] DSN: 4 nets with >= 2 pins, 12 pads, 5 padstacks, 2 hole keep-outs, 66 edge strips, 0 keep-out pieces, …
+   [ 0.0 min] DSN: 4 nets with >= 2 pins, 12 pads, 5 padstacks, 2 hole keep-outs, 50 edge strips, 0 keep-out pieces, …
    [ 0.2 min] check: 4 nets routed, 16 track pieces, 2 vias; open: 0
    [ 0.2 min] track widths (GEO.width offline): 4 nets, 0 below IPC-2221 for 1.5 x the simulated current, 0 below the …
    [ 0.4 min] step 8/8: drc

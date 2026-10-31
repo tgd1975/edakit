@@ -645,6 +645,42 @@ def test_edge_strips_reach_the_promised_depth_in_every_inner_corner(l_board):
     assert shallow == {}    # before: 163 of 179, 77 short of even 0.392 mm, the least 0.3835 mm at 33°
 
 
+# a round board like the example of handbook 17: Ø 44 mm in 48 chords, read back from EasyEDA in mil with three
+# decimals. The rounding moves mirrored corners apart by up to 1e-4 mil in y; the strips, cut at every corner's height,
+# came out as 66, 16 of them slices 4e-6 to 7e-5 mil high – polygons of no height on the DSN's grid of 0.01 mil
+# (Freerouting: "Keepout zone 'R5_TOP' … was skipped because its geometry is degenerate")
+
+ROUND = "[outline]\nrect = [44, 44]\ncorner_radius = 22\narc_steps = 12\n"
+
+
+def dsn_polygons(text):
+    """{name: [(x, y)]} of the polygon keep-outs of a DSN, in 1/100 mil as Freerouting reads them."""
+    out = {}
+    for name, nums in re.findall(r'\(keepout "([^"]+)" \(polygon \S+ 0 ([-\d. ]+)\)\)', text):
+        v = [round(float(n) * 100) for n in nums.split()]
+        out[name] = list(zip(v[0::2], v[1::2]))
+    return out
+
+
+def test_edge_strips_of_a_round_board_have_area_on_the_dsn_grid(tmp_path):
+    from shapely.geometry import Polygon
+    from edakit import pcb
+    rules, data = outline_board(tmp_path, ROUND)
+    board = rules.board
+    data["outlines"] = [route.polyline_points(pcb.outline_arg([board.eda_point(*p) for p in board.outline])["$polygon"])]
+    route.write_dsn(rules, data, tmp_path / "t.dsn")
+    strips = {n: p for n, p in dsn_polygons((tmp_path / "t.dsn").read_text()).items() if n.startswith("R")}
+    outer = Polygon(data["outlines"][0])
+    frame, pieces = route.outside_strips(rules, outer)
+    assert len(strips) == 2 * len(pieces) > 0
+    assert [n for n, p in strips.items() if Polygon(p).area == 0] == []    # before: R5, R6, R13, … – 16 on each layer
+    # the edge clearance still kept everywhere: the strips cover what they covered before, the slivers only gone
+    inner = outer.buffer(-rules.edge_um / 25.4, join_style="round", quad_segs=route.EDGE_ARC_SEGMENTS)
+    band = frame.difference(inner)
+    assert band.area - unary_union(pieces).area < 0.1                      # the slivers: 0.09 mil² together
+    assert band.difference(unary_union(pieces).buffer(0.005)).area < 1e-9  # covered to half a step of the grid
+
+
 # --- pads of different parts keep the clearance (GEO.spacing, #12): R1 and R2 with pads of 0.8 x 0.9 mm in a row at y = 10;
 # R1.2 (N2) and R2.1 (N3) 0.09 mm apart, R1's own pads 0.05 mm apart
 

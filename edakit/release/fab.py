@@ -531,6 +531,24 @@ def polarity_signs(cfg, board, d, data):
     return signs, lost
 
 
+def polar_parts(design, want, on_pcb):
+    """GEO.mark: the parts of the graph (want) in the PCB (on_pcb) with a pin whose role has a sign (role_sign)."""
+    return {r for r in want if r in on_pcb and any(role_sign(p.get("role")) for p in
+                                                  (design.parts.get(want[r].get("lcsc") or "", {}).get("pins") or {}).values())}
+
+
+def mark_pads(design, want, on_pcb, polar, signs):
+    """GEO.mark: the pad each sign of the silkscreen (polarity_signs) stands at – the nearest pad on the sign's side, of
+    the parts in polar, whose pin role has a sign. -> [(ref, pad of pcb.json) or None per sign]; None: no such pad on
+    that side."""
+    out = []
+    for _, x, y, layer, _ in signs:
+        pads = [(ref, p) for ref in sorted(polar) for p in on_pcb[ref]["pads"]
+                if p["Layer"] in (SILK[layer], MULTI) and role_sign(pin_role(design, want[ref], p["PadNumber"]))]
+        out.append(min(pads, key=lambda rp: math.hypot(rp[1]["X"] * MM - x, rp[1]["Y"] * MM - y)) if pads else None)
+    return out
+
+
 def check_polarity_marks(cfg, board, design, d, data, want, on_pcb, rows):
     """GEO.mark: every sign of the silkscreen (polarity_signs) is compared with the nearest pad on its side whose pin role
     has a sign (role_sign); a sign at a pad of the other sign fails. `accept: {"GEO.mark": "…"}` on the nearest part lists
@@ -539,18 +557,15 @@ def check_polarity_marks(cfg, board, design, d, data, want, on_pcb, rows):
     if lost:
         rows.add("L", "GEO.mark", board.name, "silk Gerber files for the drawn signs", False,
                  f"{', '.join(lost)} missing (Gerber export)", "present")
-    polar = {r for r in want if r in on_pcb and any(role_sign(p.get("role")) for p in
-                                                   (design.parts.get(want[r].get("lcsc") or "", {}).get("pins") or {}).values())}
+    polar = polar_parts(design, want, on_pcb)
     if not signs or not polar:
         return
     wrong, waived = [], []
-    for sign, x, y, layer, _ in signs:
-        pads = [(ref, p) for ref in polar for p in on_pcb[ref]["pads"]
-                if p["Layer"] in (SILK[layer], MULTI) and role_sign(pin_role(design, want[ref], p["PadNumber"]))]
-        if not pads:
+    for (sign, x, y, _, _), at in zip(signs, mark_pads(design, want, on_pcb, polar, signs)):
+        if not at:
             wrong.append(f"'{sign}' at ({x:.1f}, {y:.1f}) mm: no polarised pad on this side")
             continue
-        ref, p = min(pads, key=lambda rp: math.hypot(rp[1]["X"] * MM - x, rp[1]["Y"] * MM - y))
+        ref, p = at
         role = pin_role(design, want[ref], p["PadNumber"])
         if role_sign(role) != sign:
             text = f"'{sign}' at ({x:.1f}, {y:.1f}) mm: nearest pad {ref}.{p['PadNumber']} is {role}"

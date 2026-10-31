@@ -470,10 +470,13 @@ that drifts from it.
   the board: 0.3957 mm with 0.4 mm, 4.3 µm short of the arc. Mitred joins reached d / sin(θ/2) into the board there –
   0.57 mm at a 90° corner, 1.3 mm at a 36° notch with 0.4 mm. Tracks that kept the clearance were reported, and
   Freerouting lost that room in every notch.
-  `route check` and the fanout vias use the same strips. Every strip is kept, however small: at a sharp notch tip the
-  cuts leave slices under 1 mil², and without them the keep-out reached only 0.3 mm into the board there. Freerouting
-  skips a strip thinner than its 0.01 mil resolution with a warning ("Keepout zone … was skipped because its geometry
-  is degenerate"); that is harmless, and `route check` still tests against it.
+  `route check` and the fanout vias use the same strips. Every strip Freerouting can read is kept, however small: at a
+  sharp notch tip the cuts leave slices under 1 mil², and without them the keep-out reached only 0.3 mm into the board
+  there. Only a strip with no area on the DSN's grid of 0.01 mil is left out – Freerouting skipped it with "Keepout
+  zone … was skipped because its geometry is degenerate". On the round board of chapter 17, read back from EasyEDA,
+  mirrored corners lie up to 1e-4 mil apart in height; the cuts at both left 16 slices of 4e-6 to 7e-5 mil among 66
+  strips. The seam such a slice leaves is thinner than the grid, no copper passes it, and the 50 strips left cover the
+  same band.
 - `autoroute_settings` after the keep-outs: no parts read at all. A `plane` placed before the keep-outs: no
   connections read. Order matters.
 - Fanout is on by default and puts a via at every SMD pad: `--router.fanout.enabled=false`. It does not connect an

@@ -27,6 +27,7 @@ import openpyxl
 import pytest
 
 from edakit import cli, drc_rules, gerber
+from edakit.design import Design
 from edakit.release import fab
 
 MIL = 1000 / 25.4
@@ -942,6 +943,41 @@ def test_a_waived_sign_is_listed_with_its_reason(project):
     w = next(r for r in rows if r["result"] == "waived")
     assert w["reason"] == "test: the library's print, the roles are right"
     assert "'+' at (15.2, 10.9) mm: nearest pad D1.1 is cathode" in w["check"]
+
+
+def sheet_silk(project):
+    """The pixels of the polarity sheet in the silkscreen's colour, below the tiles' heads: [(x, y)]. The export's only
+    print is the "+", so they are its strokes."""
+    from PIL import Image
+
+    from edakit.release import polarity
+    img = Image.open(project.root / "build" / "fab" / "polarity_main.png").convert("RGB")
+    w, h = img.size
+    px = img.load()
+    return [(x, y) for x in range(w) for y in range(h) if y % polarity.TILE >= polarity.HEAD and px[x, y] == polarity.SILK]
+
+
+def test_the_polarity_sheet_shows_a_sign_beyond_the_pads(project):
+    """FILES.sheet: D1's "+" 5.5 mm above its anode – beyond the 3 mm the tile showed around the pads and the room its
+    scale left, as the walkthrough's "+" beyond BT1's tab. The tile takes in the signs GEO.mark gives the part."""
+    from edakit.release import polarity
+    sign = (10.8, 14.5)
+    rows = run(project, plus_at(*sign))
+    assert findings(rows) == []                                      # the "+" is still D1.2's, the anode
+    silk = sheet_silk(project)
+    assert silk                                                      # before: none – the "+" was cut off
+    xs, ys = [x for x, _ in silk], [y for _, y in silk]
+    assert abs((max(xs) - min(xs)) - (max(ys) - min(ys))) <= 2      # the whole "+", both strokes as long
+    cfg = project.config()
+    board, d = cfg.board(), project.root / "build" / "fab" / "main"
+    data = json.loads((d / "pcb.json").read_text())
+    marks = polarity.part_marks(cfg, board, Design.from_config(cfg), d, data)
+    assert {r: [tuple(round(v, 3) for v in m) for m in ms] for r, ms in marks.items()} == {"D1": [sign]}
+    d1 = next(c for c in data["components"] if c["designator"] == "D1")
+    x0, x1, y0, y1 = polarity.frame(d1["pads"], marks["D1"])
+    reach = fab.TEXT_REACH_MM                                        # how far a sign's strokes lie from its anchor
+    assert x0 + reach <= sign[0] <= x1 - reach and y0 + reach <= sign[1] <= y1 - reach
+    assert polarity.frame(d1["pads"]) == pytest.approx((7.8, 18.2, 6.0, 12.0))   # without a sign: the pads, as before
 
 
 def test_plus_signs_in_a_silkscreen_file(tmp_path):

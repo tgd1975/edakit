@@ -142,7 +142,7 @@ edakit's print lies on no solder-mask opening and inside the outline, every part
 - with `[looks]` (7.5): every PCB text on the silkscreen of the visible side (pcb.json `strings`) is one the board file puts there – the board label when its side (`board_label_side`, default the `designators` side) is the visible one, the text of a `[[silk.texts]]` entry of that side, and, when `[silk] designators` is that side, a designator of the board or a key of `[silk] groups`; while `[silk] designators` names the other side, no part on the visible side shows its designator (read with the PCB, as GEO.silk). One fail per text or part, with side, text and position: `BOTTOM (visible): D31 shows its designator – [silk] designators is top`, `TOP (visible): text 'TEST' at (15.0, 3.0) mm is neither the board label nor a [[silk.texts]] entry of this side`. The footprints' own print is no PCB text (GEO.mark, GEO.silk), artwork is fills; a "+" placed by hand as a text goes into `[[silk.texts]]`, where GEO.mark still reads it. `waive: {"GEO.silk": "…"}` on a part lists its designator as waived – why it exists: a part placed again after `silk apply` (a footprint change) came back with its designator on the LED side, whose rule was designators off and the version line as the only text; every check passed and the layout review rated it "block"
 
 **`FILES.sheet`** – polarity sheet (error; replaces P-2)  
-Every board gets a polarity sheet drawn from the Gerber data: each polarised part with copper, silkscreen, pad numbers, pin roles and nets.
+Every board gets a polarity sheet drawn from the Gerber data: each polarised part with copper, silkscreen, pad numbers, pin roles and nets, and the signs GEO.mark pairs with it, also beyond the footprint.
 
 **`FILES.manifest`** – files of one run (error; replaces F-4)  
 Gerber ZIP, BOM and pick-and-place file come from the same gate run, with their SHA-256 in fab/manifest.json.
@@ -164,7 +164,8 @@ GEO.silk on the side's print. In the reference
 project the layout review measured the LED side by hand at every round; the row has the numbers in the protocol.
 
 Plus FILES.sheet: a **polarity sheet** per board – every polarised part drawn from the Gerber data with copper, silkscreen,
-pad numbers, pin roles and nets, bottom parts mirrored as seen from below. It is what the second check compares with
+pad numbers, pin roles and nets, bottom parts mirrored as seen from below. A tile shows the part's pads and the signs
+GEO.mark pairs with the part, 3 mm around, also a "+" beyond the footprint. It is what the second check compares with
 the datasheet drawings, and what you compare with JLCPCB's assembly preview.
 
 **Seen red.** No EasyEDA run is needed to test stages L and F. `tests/test_fab_run.py` cuts the example down to its
