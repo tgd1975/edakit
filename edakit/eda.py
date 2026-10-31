@@ -631,9 +631,9 @@ def write_drc_rules(mcp, want):
     """Make the DRC rule set of the active PCB the board file's (want = drc_rules.wanted(board)): the net classes
     first, then the rule configuration, then the net rules – each call stops on an answer that is not true – and return
     the differences read back right after ([] = written). The editor takes either overwrite without a check and answers
-    true whenever the PCB tab counts as active (handbook 9.4), so only the read-back says what came of it. NOT RUN
-    against EasyEDA yet: the live probe of step 2.2 decides whether edakit writes the rule set this way. Before
-    reporting anything written, the caller saves, reloads (reload_pcb) and reads back once more – working agreement 16."""
+    true whenever the PCB tab counts as active (handbook 9.4), so only the read-back says what came of it. Live on
+    2026-10-31 (step 2.2): written so, the rule set read back equal, also after a reload. Before reporting anything
+    written, the caller saves, reloads (reload_pcb) and reads back once more – working agreement 16 (route.write_rules)."""
     from . import drc_rules
 
     def call(method, *args):

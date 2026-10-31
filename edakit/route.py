@@ -63,7 +63,7 @@ from pathlib import Path
 from shapely.geometry import LineString, Point, Polygon, box
 from shapely.ops import unary_union
 
-from . import eda, pcb
+from . import drc_rules, eda, pcb
 from .config import MIL_PER_MM, PASTE_GAP_MM, POUR_CLEARANCE_MM, POUR_MIN_WIDTH_MM
 from .design import natural_key
 from .eda import api, ensure_pcb_focus
@@ -2158,6 +2158,22 @@ def pours(cfg, board, rules, mcp, data=None, routes=None, stitch_file=None, regi
         say(f"pour {st.get('Net')} {LAYERS.get(st['Layer'], st['Layer'])}: {len(fills)} filled areas")
 
 
+def write_rules(board, mcp, say=print):
+    """[routing] drc_rules = "write": the board file's rule set into EasyEDA's DRC before route all's DRC
+    (eda.write_drc_rules), the PCB saved and reloaded, read back once more (working agreement 16). Returns the
+    differences left – [] when the DRC will run with the board file's rules. Live on 2026-10-31 (step 2.2): the PCB's
+    configuration is named the client's "Custom Config" afterwards, and stays so."""
+    want = drc_rules.wanted(board)
+    eda.activate_pcb(mcp)
+    eda.write_drc_rules(mcp, want)
+    eda.reload_pcb(mcp)
+    eda.activate_pcb(mcp)
+    problems = drc_rules.differences(want, eda.read_drc_rules(mcp))
+    if not problems:
+        say(f"DRC rule set written from the board file: {drc_rules.summary(want)}")
+    return problems
+
+
 def main(cfg, args):
     board = cfg.board(args.board, made=True)
     rules = Rules(board, args.clearance)
@@ -2276,6 +2292,13 @@ def main(cfg, args):
                 pours(cfg, board, rules, mcp, data, routes, P["stitch"], regions)
             elif step == "reload" and kc:
                 say("nothing to reload: the KiCad PCB is a file")
+            elif step == "reload" and drc_rules.mode(board) == "write":
+                if problems := write_rules(board, mcp, say=say):
+                    print("  the DRC rule set did not hold after the reload – the DRC would run with other rules:")
+                    for line in problems:
+                        print(f"    {line}", flush=True)
+                    return 2
+                say("PCB saved and reloaded")
             elif step == "reload":
                 eda.reload_pcb(mcp)
                 say("PCB saved and reloaded")

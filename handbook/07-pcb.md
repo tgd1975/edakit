@@ -457,9 +457,17 @@ Equal means within 1 µm – in every rule a net of the PCB uses, the default on
 The row lists each difference with both numbers, e.g. `clearance Track–Track: EasyEDA 0.102 mm (Safe Spacing
 'copperThickness1oz'), the board file 0.165 mm (clearance_mil 6.5)` – the reference project's DRC ran with that. Set
 what it names in EasyEDA (Design → Design Rule: Safe Spacing, Track, Via Size, the net classes), or change
-`[routing]`. The name in the row is the one EasyEDA reports, the template the rules came from – a write through the
-API keeps it (9.4), so the name alone says nothing about the values. Without the key nothing is read and GEO.drc is as
-it was. edakit does not write the rule set yet: the API takes it (9.4), the live probe of step 2.2 has not run.
+`[routing]`. The name in the row is the one EasyEDA reports – the template the rules came from, or the client's
+"Custom Config" once anything was written (9.4) –, so the name alone says nothing about the values. Without the key
+nothing is read and GEO.drc is as it was.
+
+With `drc_rules = "write"`, `route all` writes the board file's rule set into EasyEDA before its DRC – the net classes
+of `classes`, the clearance and edge cells of Safe Spacing, the least width of every class, the least via –, saves and
+reloads the PCB, reads it back and stops with exit 2 if anything differs; nothing else of EasyEDA's rules changes.
+Then the DRC runs with the rules the board was routed with, and the gate checks them as with `"check"` – it writes
+nothing. The rules are the PCB's own: another PCB of the project keeps its rules. After the first write EasyEDA calls
+the PCB's configuration "Custom Config" ("自定义配置") and lists that name among the named configurations of every
+project; the API cannot put a PCB back on a named one (Design → Design Rule can).
 
 **Widths from the simulation.** `widths = "classes"` (the default) writes the widths of `classes` and `signal_mil` into
 the DSN as they are. With `widths = "sim"`, `route dsn`, `route`, `check`, `diagnose` and `all` read

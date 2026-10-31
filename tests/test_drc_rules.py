@@ -87,11 +87,12 @@ points = [[80, 25], [75, 25]]
     assert want["why"]["POWER"] == "width_mil 18, fixed wire VIN 12 mil"
 
 
-def test_the_key_takes_check_only(project):
+def test_the_key_takes_check_and_write(project):
     assert drc_rules.mode(board_of(project)) is None                    # no key, no change
     assert drc_rules.mode(board_of(project, '[routing]\ndrc_rules = "check"\n')) == "check"
-    with pytest.raises(ConfigError, match='routing.drc_rules must be "check".*not \'write\''):
-        drc_rules.mode(board_of(project, '[routing]\ndrc_rules = "write"\n'))
+    assert drc_rules.mode(board_of(project, '[routing]\ndrc_rules = "write"\n')) == "write"
+    with pytest.raises(ConfigError, match='routing.drc_rules must be "check" or "write".*not \'apply\''):
+        drc_rules.mode(board_of(project, '[routing]\ndrc_rules = "apply"\n'))
 
 
 # --- the recorded rule set against the example -----------------------------------------------------------------------
@@ -328,3 +329,31 @@ def test_reading_through_the_original_bridge_is_cut_off():
     have["configuration"] = None                       # no configuration in the answer
     with pytest.raises(eda.MCPError, match="no DRC rule configuration"):
         eda.read_drc_rules(FakeDrc(have))
+
+
+# --- route all with drc_rules = "write" ------------------------------------------------------------------------------
+
+def test_route_writes_the_rule_set_and_reads_it_back_after_the_reload(project, monkeypatch):
+    """route all's reload step with "write": the board file's rule set written, the PCB saved and reloaded (agreement
+    16), read back – nothing left to differ. The live probe of step 2.2 (2026-10-31) showed EasyEDA keeps it so."""
+    from edakit import route
+    board = board_of(project, None)
+    fake, steps = FakeDrc(recorded()), []
+    monkeypatch.setattr(eda, "activate_pcb", lambda mcp: steps.append("activate"))
+    monkeypatch.setattr(eda, "reload_pcb", lambda mcp: steps.append("reload"))
+    lines = []
+    assert route.write_rules(board, fake, say=lines.append) == []
+    assert steps == ["activate", "reload", "activate"]
+    assert drc_rules.differences(drc_rules.wanted(board), fake.have) == []
+    assert lines == ["DRC rule set written from the board file: " + drc_rules.summary(drc_rules.wanted(board))]
+
+
+def test_route_names_what_did_not_hold(project, monkeypatch):
+    """A rule set that reads back otherwise after the reload: each difference, so route all stops before its DRC."""
+    from edakit import route
+    board = board_of(project, None)
+    fake = FakeDrc(recorded())
+    monkeypatch.setattr(eda, "activate_pcb", lambda mcp: None)
+    monkeypatch.setattr(eda, "reload_pcb", lambda mcp: fake.have.update(recorded()))   # EasyEDA forgot it
+    problems = route.write_rules(board, fake, say=lambda line: None)
+    assert problems and problems == drc_rules.differences(drc_rules.wanted(board), recorded())

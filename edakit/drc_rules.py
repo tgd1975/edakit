@@ -3,10 +3,11 @@ holds differs (design-as-text decision 6, step 2.2 of the implementation plan).
 
 GEO.drc asks for a DRC without findings – with the rules EasyEDA holds, set in its GUI (Design → Design Rule), which no
 file shows. With `[routing] drc_rules = "check"` in the board file, stage L reads the rule set the DRC ran with
-(eda.read_drc_rules, into drc_rules.json of the run) and GEO.drc compares it with the board file. Nothing here talks to
-EasyEDA: eda.read_drc_rules and eda.write_drc_rules are the thin calls around these functions. Writing has not run
-against EasyEDA yet – the live probe of step 2.2 decides whether edakit writes the rule set or only checks it
-(handbook 9.4).
+(eda.read_drc_rules, into drc_rules.json of the run) and GEO.drc compares it with the board file; with "write"
+`route all` first writes it (route.write_rules), and the gate checks as with "check". Nothing here talks to EasyEDA:
+eda.read_drc_rules and eda.write_drc_rules are the thin calls around these functions. The live probe of step 2.2
+(2026-10-31, handbook 9.4) found what is written kept after save and reload, the PCB's own, and used by the DRC at
+once; the PCB's configuration is named the client's "Custom Config" from then on.
 
 What the board file asks (route.Rules reads the same keys for the DSN; mil there, mm here):
     clearance   clearance_mil: track to track, pad and via, via to pad and via, of different nets – the cells of
@@ -44,7 +45,7 @@ from collections import defaultdict
 
 from .config import MIL_PER_MM, ConfigError
 
-MODES = ("check",)       # [routing] drc_rules; "write" waits for the live probe of step 2.2
+MODES = ("check", "write")  # [routing] drc_rules; "write": route all writes the rule set first (live probe 2.2)
 TOL_MM = 0.001           # EasyEDA keeps mm with float noise (0.15200122 for 0.152 mm): equal within 1 µm
 MM_PER_UNIT = {"mm": 1.0, "mil": 0.0254, "inch": 25.4}
 LAYERS = ("1", "2")      # the copper layers a class rule edakit writes has entries for (TOP, BOTTOM)
@@ -55,11 +56,11 @@ SHOWN_NETS = 6           # a message names this many nets of a group, then "…"
 
 
 def mode(board):
-    """[routing] drc_rules of the board file: None without the key (GEO.drc as before), or "check"."""
+    """[routing] drc_rules of the board file: None without the key (GEO.drc as before), "check" or "write"."""
     m = board.routing.get("drc_rules")
     if m is not None and m not in MODES:
-        raise ConfigError(f"board {board.name}: routing.drc_rules must be \"check\" (GEO.drc: the rule set EasyEDA's DRC "
-                          f"ran with = [routing]), not {m!r} – writing it waits for the live probe (handbook 9.4)")
+        raise ConfigError(f"board {board.name}: routing.drc_rules must be \"check\" or \"write\" (GEO.drc: the rule set "
+                          f"EasyEDA's DRC ran with = [routing]; \"write\": route all writes it first), not {m!r}")
     return m
 
 

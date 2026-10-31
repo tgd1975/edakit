@@ -250,7 +250,8 @@ every class at least the IPC-2221 width of its nets' simulated currents, a net o
 pads of other nets at least this far, in mm, from the pads of `bom: false` parts on their solder side – a through-hole
 pad's the side its part does not sit on, an SMD pad's its own; `route dsn` writes via keep-outs around them, 7.5),
 `drc_rules` (none: GEO.drc as before; `"check"`: the gate reads the rule set of EasyEDA's DRC with the DRC and GEO.drc
-holds it to these rules – clearance, edge clearance, track widths, via, classes, 7.5), `[[routing.keepouts]]` ({layer,
+holds it to these rules – clearance, edge clearance, track widths, via, classes, 7.5; `"write"`: `route all` writes
+that rule set into EasyEDA before its DRC, reads it back after a reload, and the gate checks it as with `"check"`), `[[routing.keepouts]]` ({layer,
 what = "wire"|"all", rect | polygon, windows, window_mm}), `[[routing.fixed_wires]]` ({net, layer, width_mil, points}).
 
 `[copper]`: `max_bare_mm` (5: the largest copper-free circle inside the pour outline of a layer that `[[pours]]` pours;
