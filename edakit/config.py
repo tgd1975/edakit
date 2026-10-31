@@ -59,7 +59,7 @@ BOARD_FILE_KEYS = ("revision", "view", "outline", "holes", "tooling", "place", "
                    "on_headers", "header_keep_mm", "silk_overlap_mm", "park", "routing", "pours", "pour_regions",
                    "pour_min_piece_mm2", "pour_inset_mm", "silk", "loops", "net_classes", "copper", "order", "uniform",
                    "looks", "thickness_mm")
-SCHEMATIC_KEYS = ("stub", "layout")
+SCHEMATIC_KEYS = ("stub", "layout", "frame")
 RELEASE_KEYS = ("layout_files", "state_files", "hash_ignore", "assembly", "stages", "archive", "publish")
 PCBA = ("economic", "standard")  # [release] assembly.pcba: JLCPCB's classes – another maker's: its profile's classes
 ARCHIVE = ("none", "git")        # [release] archive: gate runs are build output (none) – or a released one is committed

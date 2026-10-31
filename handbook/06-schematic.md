@@ -143,7 +143,8 @@ to bottom, top and bottom from left to right; connected pins not listed go to th
 Before the file is written, the drawing is checked like a plan for EasyEDA – no wire touches another net or a foreign
 pin – and every connected pin must end in a wire or a flag of its own net; otherwise nothing is written (exit 2,
 `--force` writes anyway). The page is as big as the drawing plus the title block and to scale: one unit is 10 mil,
-designators are 1.8 mm high.
+designators are 1.8 mm high. `--no-frame`, or `frame = false` in the schematic file (10.3), leaves out the sheet
+border and the title block – for a drawing embedded in a document –; the page is then the drawing and its margin.
 
 A project without a PCB – a development board and hand wiring – never needs EasyEDA: checks, simulation and this
 drawing work from the graph alone. For a PCB, EasyEDA's board schematic stays the one that counts; the PCB hangs on it.

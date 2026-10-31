@@ -227,6 +227,8 @@ def build_parser():
     p.add_argument("--reread", action="store_true", help="layout: read the symbol geometry again")
     p.add_argument("--force", action="store_true", help="layout, draw: write despite geometry conflicts")
     p.add_argument("--out", help="draw: the SVG file (default: <artifacts>/schematic_<board>.svg)")
+    p.add_argument("--no-frame", action="store_true", help="draw: no sheet border and no title block in the SVG "
+                                                           "(frame = false in the schematic file does the same)")
     p.add_argument("--no-pins", action="store_true", help="check: skip the per-part pin check")
     p.add_argument("--refresh-devices", action="store_true", help="create: search every LCSC number again")
     p.add_argument("--create-project", action="store_true", help="create the EasyEDA project if it is not open")

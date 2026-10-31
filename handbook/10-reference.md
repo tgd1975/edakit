@@ -305,7 +305,8 @@ assembly class and side (`[release] assembly`, the class one of the maker's `cla
 
 ## 10.3 The schematic file
 
-`hardware/schematic.toml`: `stub` (10): stub length of the template. `[layout]`: `rows` (rows → columns → blocks
+`hardware/schematic.toml`: `stub` (10): stub length of the template. `frame` (true): `false` draws the SVG of
+`schematic draw` without the sheet border and the title block (6.5). `[layout]`: `rows` (rows → columns → blocks
 `{title, start}`), `power_flags` ({NET = "Ground"|"Power"}), `near` ({CAP = "PART"}), `stacked` (blocks whose trees
 stand one below the other), `[layout.notes]` ({block title = [lines]}), `[layout.pin_table]` (`component`, `block`,
 `prefix`, `notes` {NET = "function"}). A note may quote the design data: `{graph:R1.value}`,
@@ -409,7 +410,7 @@ scripts that write what they read first, when those are outdated or never ran, a
 | `edakit schematic check [--schematic] [--no-pins] [--json F]` | ✓ read | graph, schematic | – |
 | `edakit schematic copy [--source] [--target] [--save]` | ✓ | schematic | copy |
 | `edakit schematic layout [--dry-run] [--reread] [--force] [--save]` | ✓ / – | graph, schematic, cached geometry | board schematic, `layout_preview_<name>.svg`; `--save` only when the netlist equals the graph (6.1) |
-| `edakit schematic draw [--board] [--out F] [--force]` | – | graph, parts, the schematic file if there; for a `{sim:…}` note the saved simulation result | `schematic_<board>.svg` (or F) |
+| `edakit schematic draw [--board] [--out F] [--force] [--no-frame]` | – | graph, parts, the schematic file if there; for a `{sim:…}` note the saved simulation result | `schematic_<board>.svg` (or F) |
 | `edakit pcb dump [--ref]` | ✓ | PCB; the parts entries (which have footprint data) | `hardware/boards/<board>.geometry.json`, beside the board file and versioned (parts end at 0°/TOP; through-hole pads with `hole` [w, l] mm and `plated`; the pads of a part whose entry has footprint data with `shape`, `w`, `h`, `rot`, `layer`); a `<artifacts>/pcb_geometry_<board>.json` from before is moved there (7.4) |
 | `edakit pcb plan` | – | plan, geometry (the dump; for parts not in it the footprint data of their entry, else the library footprints of `part import`), net currents, graph (`layout`, SYNC.plan), parts entries (`body`, `lead` `length_mm`, `mate`) | `pcb_plan_<board>.png/.json`, `pcb_netclasses_<board>.json`, `mech_<board>.json` (7.4) |
 | `edakit pcb place [--rest] [--write] [--only C1,R1]` | – | plan, geometry as `pcb plan` reads it, graph (`layout.near`, decoupling of SYNC.plan), `[near]`; with `--rest` also the graph's nets and `[release] assembly` sides | with `--write`: rows with `auto = true` at the end of `[place]` – with `--rest` for every part of the board without a row, or with an `auto` row: by airline length, then moves and swaps while it falls (7.4) |

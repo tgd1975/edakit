@@ -564,13 +564,15 @@ class DrawLayout(Layout):
         return 0, -4, flag_reach(net, self.power.get(net), self.ground), 4
 
 
-def fit(sheet):
-    """The drawing on a page of its own size: a margin all round, the title block below."""
+def fit(sheet, frame=True):
+    """The drawing on a page of its own size: a margin all round, the title block below – without the frame only
+    the margin."""
     b = sheet.box
     out = Drawing()
-    out.place(sheet, 0, round(PAGE_MARGIN - b[0]), round(TITLE_BLOCK[1] + PAGE_MARGIN - b[1]))
-    w = max(b[2] - b[0], TITLE_BLOCK[0]) + 2 * PAGE_MARGIN
-    h = b[3] - b[1] + 2 * PAGE_MARGIN + TITLE_BLOCK[1]
+    below = TITLE_BLOCK[1] if frame else 0
+    out.place(sheet, 0, round(PAGE_MARGIN - b[0]), round(below + PAGE_MARGIN - b[1]))
+    w = max(b[2] - b[0], TITLE_BLOCK[0] if frame else 0) + 2 * PAGE_MARGIN
+    h = b[3] - b[1] + 2 * PAGE_MARGIN + below
     return out, (math.ceil(w), math.ceil(h))
 
 
@@ -623,14 +625,15 @@ def net_labels(sheet, power, tips):
     return out
 
 
-def render(sheet, size, syms, power, ground, title_lines):
+def render(sheet, size, syms, power, ground, title_lines, frame=True):
     w, h = size
     g = Svg(w, h)
-    g.line([(10, 10), (w - 10, 10), (w - 10, h - 10), (10, h - 10), (10, 10)], COLOR["frame"], 1.5)
-    tx, tw, th = w - TITLE_BLOCK[0], TITLE_BLOCK[0] - 10, TITLE_BLOCK[1] - 10
-    g.line([(tx, 10), (tx + tw, 10), (tx + tw, 10 + th), (tx, 10 + th), (tx, 10)], COLOR["frame"], 1.5)
-    for i, (text, size_, bold) in enumerate(title_lines):
-        g.text(tx + 12, 10 + th - 22 - 18 * i - (6 if i else 0), text, size_, bold=bold)
+    if frame:
+        g.line([(10, 10), (w - 10, 10), (w - 10, h - 10), (10, h - 10), (10, 10)], COLOR["frame"], 1.5)
+        tx, tw, th = w - TITLE_BLOCK[0], TITLE_BLOCK[0] - 10, TITLE_BLOCK[1] - 10
+        g.line([(tx, 10), (tx + tw, 10), (tx + tw, 10 + th), (tx, 10 + th), (tx, 10)], COLOR["frame"], 1.5)
+        for i, (text, size_, bold) in enumerate(title_lines):
+            g.text(tx + 12, 10 + th - 22 - 18 * i - (6 if i else 0), text, size_, bold=bold)
     for _, (x0, y0, x1, y1) in sheet.frames:
         g.line([(x0, y0), (x1, y0), (x1, y1), (x0, y1), (x0, y0)], COLOR["frame"], 1, "6 4")
     for x, y, content, size_, bold, align in sheet.texts:
@@ -691,9 +694,10 @@ def render(sheet, size, syms, power, ground, title_lines):
     return g.done()
 
 
-def drawing(cfg, board, drawn_by="edakit schematic draw"):
+def drawing(cfg, board, drawn_by="edakit schematic draw", frame=True):
     """The board's sheet as this drawing lays it out – for the SVG here and the KiCad schematic (toolchain/kicad):
-    {"design", "sheet", "size", "syms", "power", "problems"}, or None when the board has no parts in the graph."""
+    {"design", "sheet", "size", "syms", "power", "problems"}, or None when the board has no parts in the graph.
+    frame: the page holds the sheet border and the title block (the KiCad schematic always does)."""
     design = Design.from_config(cfg)
     comps = design.board_comps(board.name)
     if not comps:
@@ -715,7 +719,7 @@ def drawing(cfg, board, drawn_by="edakit schematic draw"):
     graph_nets = {n["name"]: n["pins"] for n in design.graph["nets"]}
     lay = DrawLayout(comps, graph_nets, geo, lc["rows"], notes, lc["power"], lc["near"], lc["stacked"], CHAR_W)
     lay.ground = design.ground
-    sheet, size = fit(lay.build()[0])
+    sheet, size = fit(lay.build()[0], frame)
     for warning in lay.warnings:
         print(f"  ! {warning}")
     problems = [p for s in syms.values() for p in s.problems] + check_geometry(sheet, geo, lay.pin_net) \
@@ -725,7 +729,8 @@ def drawing(cfg, board, drawn_by="edakit schematic draw"):
 
 def main(cfg, args):
     board = cfg.board(args.board, made=True)
-    drawn = drawing(cfg, board)
+    frame = cfg.schematic.get("frame", True) is not False and not getattr(args, "no_frame", False)
+    drawn = drawing(cfg, board, frame=frame)
     if drawn is None:
         print(f"edakit: board {board.name} has no parts in the graph", file=sys.stderr)
         return 1
@@ -743,6 +748,6 @@ def main(cfg, args):
     title_lines = [(board.title, 16, True), (f"{cfg.project} · board {board.name}", 8, False),
                    (f"graph v{design.version}" + (f" ({date})" if date else "") + f" · {mm}", 8, False),
                    ("drawn by edakit schematic draw – change the graph, not this drawing", 7, False)]
-    out.write_text(render(sheet, size, syms, drawn["power"], design.ground, title_lines), encoding="utf-8")
+    out.write_text(render(sheet, size, syms, drawn["power"], design.ground, title_lines, frame), encoding="utf-8")
     print(f"  -> {out}")
     return 2 if problems else 0

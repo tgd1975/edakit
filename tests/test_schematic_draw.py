@@ -55,9 +55,10 @@ class OnePart:
         return self._part
 
 
-def draw(cfg, tmp_path):
-    out = tmp_path / "schematic.svg"
-    return schematic_draw.main(cfg, argparse.Namespace(board=None, out=str(out), force=False)), out
+def draw(cfg, tmp_path, no_frame=False, name="schematic.svg"):
+    out = tmp_path / name
+    args = argparse.Namespace(board=None, out=str(out), force=False, no_frame=no_frame)
+    return schematic_draw.main(cfg, args), out
 
 
 def without_layout(project):
@@ -79,6 +80,26 @@ def test_example_is_drawn(project, tmp_path, capsys):
     texts = {t.text for t in ET.parse(out).getroot().iter(f"{SVG}text")}
     assert {c["designator"] for c in project.graph()["graph"]["components"]} <= texts
     assert {"Power Input", "MCU", "LED Driver", "GP2  LED_CLK  out, SPI SCK"} <= texts   # blocks and pin table
+
+
+def test_frame_is_optional(project, tmp_path, capsys):
+    """--no-frame, or frame = false in the schematic file: no sheet border, no title block, the page only as big as
+    the drawing and its margin – for a drawing embedded in a document."""
+    code, framed = draw(project.config(), tmp_path, name="framed.svg")
+    assert code == 0, capsys.readouterr().out
+    code, out = draw(project.config(), tmp_path, no_frame=True)
+    assert code == 0, capsys.readouterr().out
+    framed_svg, plain_svg = ET.parse(framed).getroot(), ET.parse(out).getroot()
+    texts = {t.text for t in plain_svg.iter(f"{SVG}text")}
+    assert "LED bar" in {t.text for t in framed_svg.iter(f"{SVG}text")} and "LED bar" not in texts
+    assert {c["designator"] for c in project.graph()["graph"]["components"]} <= texts
+    assert len(list(plain_svg.iter(f"{SVG}polyline"))) == len(list(framed_svg.iter(f"{SVG}polyline"))) - 2
+    height = lambda svg: float(svg.get("height").rstrip("m"))   # noqa: E731
+    assert height(plain_svg) < height(framed_svg)
+    schematic = project.root / "hardware" / "schematic.toml"
+    schematic.write_text("frame = false\n" + schematic.read_text())
+    code, by_key = draw(project.config(), tmp_path, name="by_key.svg")
+    assert code == 0 and by_key.read_text() == out.read_text()
 
 
 def test_without_layout_config_every_part_finds_a_block(project, tmp_path, capsys):
