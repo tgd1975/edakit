@@ -7,9 +7,13 @@ only where sim.json names an expectation, only with the domain audio or guitar o
         "scenario": "usb-nom/idle/vf-min",          the operating point it linearises around; default the first
         "input": "AUDIO_PWM",                        the net driven with 1 V AC (through 1 F: its DC stays its own)
         "output": "AUDIO_IN",                        the net measured, against its board's ground
-        "source_ohm": 0,                             the AC source's own resistance (a microphone's output)
-        "source": {"r_ohm", "l_h", "c_f"},           or a source model (FT-18): R and L in series, C across –
-                                                     a magnetic pickup's coil; the project's values, with their source
+        "source_ohm": 0,                             the AC source's own resistance
+        "source": {...},                             or a source model of the audio band (FT-18), one of:
+          {"pickup": ROW, "r_ohm", "l_h", "c_f"}       a magnetic pickup: R and L in series, C across (its coil)
+          {"piezo": ROW, "c_series_f"}                 a piezo disc: 1 V behind its capacitance
+          {"microphone": ROW, "rl_ohm"}                an electret capsule: its FET a current source of 1 V / RL
+        ROW a row of catalog/tables/audio_sources.toml – the maker's values –, or the numbers themselves; a value the
+        row states is not given again, one it lacks is the project's (a pickup's l_h, decision 20)
         "expect": {
           "gain_db": [{"at_hz": 1000, "min": -0.5, "max": 0.5}],
           "low_hz": {"max": 20},                     the lower −3 dB corner, below the passband's peak
@@ -20,24 +24,33 @@ only where sim.json names an expectation, only with the domain audio or guitar o
     }
 
 The gain is 20·log10 |V(output) / V(source)|, the source being 1 V AC behind source_ohm – with a source resistance the
-gain includes what the input's load does to it. A corner is where the gain falls 3.01 dB below its largest value in
-the sweep, found by interpolation in log f; a corner outside the sweep is reported as beyond it. Each expectation is a
-row; a missed one is SIM.response (gain or corner), a warning while new. The op-amp model has no gain-bandwidth: an
-upper corner comes from the passive parts only.
+gain includes what the input's load does to it; for a microphone 0 dB is the capsule's output into its data sheet's
+load resistor alone, the project's RL in the graph. A cable with c_pf_per_m and length_m puts its capacitance between
+each wire and its wire on ground (an instrument cable on a pickup). A corner is where the gain falls 3.01 dB below its
+largest value in the sweep, found by interpolation in log f; a corner outside the sweep is reported as beyond it. Each
+expectation is a row; a missed one is SIM.response (gain or corner), a warning while new. The op-amp model has no
+gain-bandwidth: an upper corner comes from the passive parts only.
 """
 
 from __future__ import annotations
 
+import difflib
 import math
 import re
 
+from .. import catalog
 from ..engines import sim as esim
 from ..findings import Finding
-from . import netlist
+from . import netlist, strip
 
 RUN_KEYS = {"scenario", "input", "output", "source_ohm", "source", "expect", "from_hz", "to_hz", "points", "about",
             "note"}
-SOURCE_KEYS = {"r_ohm", "l_h", "c_f", "about", "note"}
+TABLE = "audio_sources"                     # catalog/tables/audio_sources.toml: the makers' values, a row per model
+MODELS = {"pickup": ("r_ohm", "l_h", "c_f"), "piezo": ("c_series_f",), "microphone": ("rl_ohm",)}
+FROM_ROW = {"pickup": {"r_ohm": "r_ohm", "l_h": "l_h", "c_f": "c_f"}, "piezo": {"c_f": "c_series_f"},
+            "microphone": {"rl_ohm": "rl_ohm"}}          # a row's key -> the model's key
+POSITIVE = {"c_series_f", "rl_ohm"}                     # a series capacitance and a load resistor of 0 are no model
+SOURCE_KEYS = {*MODELS, *(k for keys in MODELS.values() for k in keys), "about", "note"}
 EXPECT_KEYS = {"gain_db", "low_hz", "high_hz"}
 DB3 = 20 * math.log10(math.sqrt(2))         # 3.0103 dB: half the power
 SERIES_F = 1.0                              # the capacitor that keeps the input net's DC its own
@@ -80,14 +93,14 @@ def runs(design, sim, names):
                           f"{', '.join(names[:6])}{' …' if len(names) > 6 else ''})")
         if not number(r.get("source_ohm", 0)) or r.get("source_ohm", 0) < 0:
             raise ACError(f"{at}: source_ohm, the source's own resistance in Ω (≥ 0), expected")
-        if "source" in r:
-            m = r["source"]
-            if "source_ohm" in r:
-                raise ACError(f"{at}: source_ohm or source, not both")
-            if (not isinstance(m, dict) or set(m) - SOURCE_KEYS or not set(m) & {"r_ohm", "l_h", "c_f"}
-                    or not all(number(m[k]) and m[k] >= 0 for k in ("r_ohm", "l_h", "c_f") if k in m)):
-                raise ACError(f"{at}: source – {{r_ohm, l_h, c_f}}, numbers ≥ 0 (R and L in series, C across), not "
-                              f"{m!r}")
+        if "source" in r and "source_ohm" in r:
+            raise ACError(f"{at}: source_ohm or source, not both")
+        m = model(r, at)
+        if m["kind"] == "microphone" and not biased(design, r["input"]):
+            raise ACError(f"{at}: microphone{' ' + repr(m['row']) if 'row' in m else ''} on {r['input']} – no "
+                          f"resistor leads from {r['input']} to a supply, ground or a driven net: the capsule's FET "
+                          f"needs its load resistor (RL {m['rl_ohm']:g} Ω in the data sheet's measurement circuit), a "
+                          "resistor of the graph")
         e = r.get("expect")
         if not isinstance(e, dict) or not e or set(e) - EXPECT_KEYS:
             raise ACError(f"{at}: expect with gain_db, low_hz and/or high_hz expected – without an expectation "
@@ -111,6 +124,70 @@ def runs(design, sim, names):
     return out
 
 
+def rows(kind):
+    """{name: row} of a kind of catalog/tables/audio_sources.toml – pickup, piezo, microphone."""
+    return catalog.table(TABLE).get(kind) or {}
+
+
+def model(run, at="ac"):
+    """The source model of a run, checked -> {"kind", "row" (a named row), and the model's values}: kind "resistance"
+    (source_ohm, or none), "pickup" (r_ohm, l_h, c_f), "piezo" (c_series_f) or "microphone" (rl_ohm). A named row
+    gives what its maker states; the project adds what the row lacks and does not give again what it states."""
+    if "source" not in run:
+        return {"kind": "resistance", "r_ohm": run.get("source_ohm", 0)}
+    m = run["source"]
+    shapes = ("a pickup ({pickup: ROW} and/or r_ohm, l_h, c_f – R and L in series, C across), a piezo ({piezo: ROW} "
+              "or c_series_f) or a microphone ({microphone: ROW} or rl_ohm)")
+    kinds = [k for k, keys in MODELS.items() if isinstance(m, dict) and set(m) & {k, *keys}]
+    if not isinstance(m, dict) or set(m) - SOURCE_KEYS or len(kinds) != 1:
+        raise ACError(f"{at}: source – one model: {shapes}, not {m!r}")
+    kind = kinds[0]
+    out = {"kind": kind}
+    own = {k: m[k] for k in MODELS[kind] if k in m}
+    for k, v in own.items():
+        if not number(v) or v < 0 or (k in POSITIVE and v == 0):
+            raise ACError(f"{at}: source {k} – a number {'above' if k in POSITIVE else '≥'} 0, not {v!r}")
+    if kind in m:
+        name, table = m[kind], rows(kind)
+        if not isinstance(name, str) or name not in table:
+            near = difflib.get_close_matches(str(name), list(table), n=3, cutoff=0.6)
+            raise ACError(f"{at}: {kind} {name!r} is no row of catalog/tables/{TABLE}.toml – "
+                          + (f"meant {' or '.join(map(repr, near))}?" if near else
+                             f"its {kind} rows: {'; '.join(table)}"))
+        row = table[name]
+        stated = {FROM_ROW[kind][k]: row[k] for k in FROM_ROW[kind] if k in row}
+        if both := sorted(set(stated) & set(own)):
+            values = ", ".join(f"{stated[k]:g}" for k in both)
+            raise ACError(f"{at}: {', '.join(both)} – the row {name!r} states it ({values}): name the row or give your "
+                          "own numbers, not both")
+        out.update(row=name, **stated)
+        if kind == "pickup" and "l_h" not in stated and "l_h" not in own:
+            peak = (f" and a resonant peak of {row['f_peak_hz'] / 1000:g} kHz without the load it was measured with"
+                    if number(row.get("f_peak_hz")) else "")
+            raise ACError(f"{at}: pickup {name!r} – its maker states a DC resistance of {row['r_ohm'] / 1000:g} kΩ"
+                          f"{peak}, no inductance; the model needs one: give l_h in source, the project's own – "
+                          "measured or published, its source in note (decision 20). edakit derives none from a peak "
+                          "whose load is unknown")
+    out.update(own)
+    return out
+
+
+def biased(design, net):
+    """Whether a chain of resistors leads from `net` to a fixed level – ground, a supply, a net a pin drives."""
+    from ..circuit import resistors_to, supply_nets
+    from ..engines.levels import pin_defines
+    fixed = {design.ground} | supply_nets(design) | {n for n, x in design.nets.items()
+                                                      if any(pin_defines(design.pin_info(r)) for r in x["pins"])}
+    seen, todo = {net}, [net]
+    while todo:
+        for _, _, other in resistors_to(design, todo.pop(), set(design.nets) - seen):
+            if other in fixed:
+                return True
+            seen.add(other)
+            todo.append(other)
+    return False
+
+
 def sweep(r):
     """(from_hz, to_hz): as given, else a decade beyond the expectation's frequencies on each side."""
     e = r.get("expect") or {}
@@ -126,7 +203,7 @@ def netlist_text(design, sim, sc, run, models, data_file):
     inp = netlist.net_nodes(design, run["input"])[0]
     out = netlist.net_nodes(design, run["output"])[0]
     gnd = netlist.node(netlist.local_ground(design, run["output"]), design.ground)
-    source = "".join(f"{line}\n" for line in source_lines(run, inp))
+    source = "".join(f"{line}\n" for line in source_lines(model(run), inp) + cable_lines(design))
     f0, f1 = sweep(run)
     vector = f"mag(v({out}))" if gnd == "0" else f"mag(v({out})-v({gnd}))"
     control = (f".control\nac dec {run.get('points', 20)} {f0:.6g} {f1:.6g}\nset wr_singlescale\nset wr_vecnames\n"
@@ -138,11 +215,15 @@ def netlist_text(design, sim, sc, run, models, data_file):
     return text, meta
 
 
-def source_lines(run, inp):
-    """The AC source: 1 V behind source_ohm, or behind the model of `source` – R and L in series, C across its output
-    to ground (a magnetic pickup: coil resistance, inductance, winding and cable capacitance) –, coupled onto the input
-    net through SERIES_F."""
-    m = run.get("source") or {"r_ohm": run.get("source_ohm", 0)}
+def source_lines(m, inp):
+    """The AC source of the model m (model()) on the input node: a piezo 1 V behind its capacitance; a microphone a
+    current of 1 V / RL into the node (the capsule's FET – its RL is a resistor of the graph), no DC; else 1 V behind
+    R, and L in series with C across its output to ground (a magnetic pickup: coil resistance, inductance, winding
+    capacitance), coupled onto the input net through SERIES_F."""
+    if m["kind"] == "piezo":
+        return ["V_AC_IN x_ac_src 0 DC 0 AC 1", f"C_AC_SRC x_ac_src {inp} {m['c_series_f']:.6g}"]
+    if m["kind"] == "microphone":
+        return [f"I_AC_IN 0 {inp} DC 0 AC {1 / m['rl_ohm']:.6g}"]
     lines, at = ["V_AC_IN x_ac_src 0 DC 0 AC 1"], "x_ac_src"
     lines.append(f"R_AC_IN {at} x_ac_r {max(m.get('r_ohm', 0), 1e-3):.6g}")
     at = "x_ac_r"
@@ -153,6 +234,26 @@ def source_lines(run, inp):
         lines.append(f"C_AC_SRC {at} 0 {m['c_f']:.6g}")
     lines.append(f"C_AC_IN {at} {inp} {SERIES_F:g}")
     return lines
+
+
+def cable_lines(design):
+    """Each cable's capacitance, c_pf_per_m × length_m, from every wire to the cable's wire on ground, at the cable's
+    `from` end (netlist.split_boards done) – what an AC run's source sees of it, an instrument cable on a pickup. A
+    cable without a wire on ground adds none; cables to an LED strip are its feeds."""
+    out = []
+    for cable in design.graph.get("cables", []):
+        c_pf, length = cable.get("c_pf_per_m"), cable.get("length_m")
+        if not (number(c_pf) and number(length) and c_pf * length > 0) or strip.feeds(design, cable):
+            continue
+        src, dst, pins = cable["from"], cable["to"], cable["pins"]
+        gnd = next((a for a, b in pins.items() if design.pin_net.get(f"{dst}.{b}") == design.ground), None)
+        if gnd is None:
+            continue
+        g = netlist.pin_node(design, f"{src}.{gnd}")
+        name = re.sub(r"\W", "_", str(cable["name"]))
+        out += [f"C_CBL_{name}_{re.sub(r'[^0-9A-Za-z]', '_', a)} {netlist.pin_node(design, f'{src}.{a}')} {g} "
+                f"{c_pf * 1e-12 * length:.6g}" for a in pins if a != gnd]
+    return out
 
 
 def interpolate(freqs, gains, f):
@@ -236,7 +337,7 @@ def run_one(design, new, sim, name, run, sc, ngspice_tran, keep=None, models=Non
     rows, found = s.finish()
     row["status"] = "ok" if all(r["result"] != "fail" for r in rows) else "fail"
     return row, rows, found, {"input": run["input"], "output": run["output"], "scenario": sc["name"],
-                              "freq_hz": freqs, "gain_db": gains}
+                              "source": model(run), "freq_hz": freqs, "gain_db": gains}
 
 
 def off_note(runs_):

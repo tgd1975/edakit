@@ -46,7 +46,7 @@ What edakit knows about circuits is data in one catalog; the code reads it. Five
 | engines and codes | `edakit/catalog/codes.toml` | twelve engines, each deciding one kind of relation, and their codes: title, rule, why, what to do, severity and grades, sources, the check IDs of before it replaces |
 | parts schema | `edakit/catalog/kinds.toml` | per kind the limits and values an entry may give, every name with its unit (4.1); `edakit part lint` holds the entries to it |
 | defaults | `edakit/catalog/needs.toml`, `levels.toml`, `paths.toml` | what a pin or part of a kind requires unless its entry says otherwise (decoupling per `power_in`, a pull-up per I2C line, a diode per coil, Rd per CC pin), the levels at reset, the parts a supply passes through |
-| tables | `edakit/catalog/tables/` | the numbers with their source: EU radio bands, USB, I2C, derating, JLCPCB's capabilities, IPC-2221 |
+| tables | `edakit/catalog/tables/` | the numbers with their source: EU radio bands, USB, I2C, derating, JLCPCB's capabilities, IPC-2221, the audio band's source models (pickups, piezo discs, electret capsules as their makers state them) |
 | domains | `edakit/domains/` | which codes are on and how severe, the facts a kind must give, the hints, the reviewers' questions |
 
 **Engines.** Each decides one kind of relation, on the graph, the parts, the simulation, the plan or the files:

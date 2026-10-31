@@ -817,16 +817,16 @@ One row per pitfall: the pitfall with its numbers, what edakit does about it tod
 
 | # | Pitfall | edakit today | Candidate | Source |
 | --- | --- | --- | --- | --- |
-| 1 | pickup loaded by a low input impedance: LM386 50 kΩ, Daisy Seed 13.6–30 kΩ, SGTL5000 about 29 kΩ, passive DI 140–290 kΩ | no | CK-27, BL-16, FT-18 | x |
-| 2 | cable 66–164 pF/m; an op-amp buffer oscillates into the cable without a series resistor (about 100 Ω) | no | CK-16, FT-2, FT-18 | x |
+| 1 | pickup loaded by a low input impedance: LM386 50 kΩ, Daisy Seed 13.6–30 kΩ, SGTL5000 about 29 kΩ, passive DI 140–290 kΩ | covered: REQ.value/instrument holds the DC load to the net's load_min_ohm; an AC run with a pickup – its maker's DC resistance by row of catalog/tables/audio_sources.toml, the project's inductance – shows the resonance the load leaves (SIM.response) | CK-27, BL-16, FT-18 | x; Seymour Duncan, DiMarzio, Mojotone product pages (r) |
+| 2 | cable 66–164 pF/m; an op-amp buffer oscillates into the cable without a series resistor (about 100 Ω) | partly: a cable's c_pf_per_m × length_m loads the source in an AC run; the oscillation into the cable: no (no gain-bandwidth in the op-amp model) | CK-16, FT-2, FT-18 | x |
 | 3 | pot load and taper: 500k ∥ 500k ∥ 1 MΩ = 200 kΩ; "A" is log in the US and linear in Europe; 25k for EMG | no | PF, FT-12 | x |
-| 4 | treble loss with the volume turned down (about R/4 = 125 kΩ: 2.1 kHz with 600 pF); treble-bleed values | no | FT-12, FT-18 | x |
+| 4 | treble loss with the volume turned down (about R/4 = 125 kΩ: 2.1 kHz with 600 pF); treble-bleed values | partly: an AC run with the pickup, the pot at its position in the load and the cable's capacitance holds the treble against an expectation; treble-bleed values: no rule | FT-12, FT-18 | x |
 | 5 | humbucker colour codes, phase and coil split | no – judgement | FT-18 | x |
 | 6 | cavity shielding not grounded; copper tape shorting the jack | partly: L-15 finds floating copper on a board | – | x |
 | 7 | the string ground ties the player to the amplifier's ground; an RC in it needs a Y-class capacitor | no | HT-19 | x |
 | 8 | battery switched through the output jack's ring; EMG about 80 µA per pickup | no | HT-15, FT-11 | x |
 | 9 | headroom at 9 V against 18 V: TL072 about 1.5 V from each rail | no model | FT-3 | x |
-| 10 | piezo needs 10–20 MΩ and more; a charge amplifier needs its feedback resistor | no | CK-27, CK-25 | x; piezopro (r) |
+| 10 | piezo needs 10–20 MΩ and more; a charge amplifier needs its feedback resistor | partly: a piezo disc behind its capacitance (Murata 7BB, by row) in an AC run shows the bass the input's resistance leaves (SIM.response, corner) | CK-27, CK-25, FT-18 | x; piezopro (r); Murata 7BB data sheets (r) |
 | 11 | op-amp bias current through a bias resistor of megohms: NE5532 200–800 nA × 10 MΩ = 2–8 V offset | no model | FT-3 | x |
 | 12 | passive DI: the input impedance is the preamp's input × n² (12:1 gives 216–288 kΩ) | no | FT-12, FT-18 | x |
 | 13 | 48 V phantom power reaching the circuit through 6.81 kΩ, 10 mA; hot-plug surges to −25…−30 V | partly: G-8 when the net's range holds 48 V | FT-8, CK-13 | x |

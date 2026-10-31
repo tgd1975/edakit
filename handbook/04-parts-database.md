@@ -262,6 +262,18 @@ library entry has changed since (grade `newer`) – `edakit part add <key> --upd
 on purpose and names what changed – and a copy of an unsigned entry (grade `draft`). (Decided 2026-10-31,
 rules-at-scale.md decision 8.)
 
+**Sources of the audio band are no entries.** A guitar's pickup, a piezo disc on an instrument, an electret capsule
+on a jack drive an AC run from outside the graph or beside it; their numbers are rows of
+`edakit/catalog/tables/audio_sources.toml` that sim.json's `ac` names (`"source": {"pickup": "Seymour Duncan SH-1
+'59 Model neck", "l_h": …}` – chapter 5.2). Each row holds only what its maker states, read from the maker's page or
+data sheet with the date: a pickup's DC resistance (Seymour Duncan, DiMarzio, Mojotone) and, where given, its resonant
+peak; a piezo disc's capacitance at 1 kHz with its tolerance, resonance and resonant impedance (Murata 7BB, via
+LCSC); a capsule's output impedance, the load resistor of its measurement circuit, sensitivity, operating voltage and
+current (CUI, INGHAi, via LCSC). No maker reachable states a pickup's inductance: the project gives its own, measured
+or published (decision 20). A new row is a table row like every other – `source` and `tag = "r"`, catalog lint holds
+it. A capsule's load resistor and coupling capacitor are parts of the graph; the capsule itself has no kind of its own
+in the parts schema, so its supply current is not in the operating point.
+
 ## 4.2 Finding parts
 
 The agent **part-selector** searches in its own context – datasheets and distributor pages do not fill the design
