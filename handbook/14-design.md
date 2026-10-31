@@ -358,8 +358,12 @@ edakit block add led --as STATUS --connect in=LED_STATUS
 What `add` does: designators get the next free numbers (`R1` of the block becomes `R7`), internal nets get the
 instance's name (`STATUS_ANODE`), each port joins the net given with `--connect` – or a new net, if the block knows its
 voltage range – and `gnd` joins the project's ground. Missing parts entries are copied from the block library; an
-existing entry must have the same pins. The graph file keeps its indentation. The block's notes say what is left to
-decide: the LED current, the entries in sim.json, `"source": "reversible"` on the connector.
+existing entry must have the same pins. A JSON graph keeps its indentation. A TOML graph (`graph` in 10.1) keeps its
+comments and arrangement: each new part and net is a table after the last of its kind, a pin on an existing net goes at
+the end of its `pins` array as the array is written – inline, or on a line of its own –, the block's `accept` becomes
+keys of the table (`accept."LIM.v" = "…"`), and a part's pin map is left out where its parts entry gives it; what would
+not read back as the graph a JSON file would get is not written. The block's notes say what is left to decide: the LED
+current, the entries in sim.json, `"source": "reversible"` on the connector.
 
 A block may carry keys of the graph and say what can go:
 
