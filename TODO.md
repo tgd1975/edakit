@@ -74,24 +74,14 @@ run against a maker's page or EasyEDA yet.
 Ran on 2026-10-31 in throwaway projects, the footprint checked by the owner in EasyEDA, the throwaway projects and
 the probe's Custom Config removed; the results are under each live run of the plan. Left from them:
 
-- [ ] **2.2, the mode `"write"` of `[routing] drc_rules`:** `route all` writes the rule set before its DRC
-      (`eda.write_drc_rules`, saved, reloaded, read back); handbook 7.5 and 9.4 say that the PCB stays on the client's
-      Custom Config afterwards.
-- [ ] **3.6, the way back into the PCB:** `part build --write` names `schematic create`, `schematic layout`, then
-      delete the part in the PCB, `pcb parts --write`, `pcb dump`; `pcb parts` turns "Cannot convert undefined or null
-      to object" from `PCB_PrimitiveComponent.create` into that advice.
-- [ ] **The bell's T-Display on the data path** (the bell's repository, at the owner's request; its session first):
+- [ ] **The bell's T-Display on the data path** (the bell's repository, its session – the owner hands it the prompt):
       the dry run's footprint data without `"symbol"`, `tdisplay_device.py symbol` stays an easyeda script; the esp32
-      variant's hashes change once (M-1 anew).
-- [ ] **M-6 not voided by a footprint** (the owner's decision of 2026-10-31): footprint data counts for M-1 (polarity,
-      datasheet) but not in the hash M-6 is bound to – a footprint has no regulatory content; the bell's and pytree's
-      sessions are told first, since M-6's hash changes once.
-- [ ] **Found on the way:** `schematic create` and `ensure_board` wait for the documents after `openProject` (as
-      `open_pcb` does); `schematic create` honours `symbol_differs` of the entry in its pin check; led-bar's
-      `[place]` without overlapping LEDs and with U1 out of the hole's keep-out; `open_project` finds a project never
-      opened through `~/Dokumente/EasyEDA-Pro/projects/<name>.eprj2` (table projects). In edakit-probe-fp the project's "Panel1" came out
-      named `generated_esp32` – a rename meant for the schematic reached the panel, likely the cause of the renames that
-      then failed; `rename_schematic` checks the panels' names too.
+      variant's circuit and layout hashes change once (M-1 anew, M-6 stays on the electrical hash).
+
+Built on 2026-10-31 from them: `[routing] drc_rules = "write"`; M-6 on the electrical hash; the way back into the PCB
+after `part build`; the waits after `openProject`, `symbol_differs` in `schematic create`, the panel guard of
+`rename_schematic`, projects found in EasyEDA's folder. led-bar's `[place]` stays as it is: its LED row and U1 are the
+data of tests (`test_pcb`), not a board to order.
 
 ## Walkthrough gaps ([walkthrough-gaps.md](docs/concepts/done/walkthrough-gaps.md))
 

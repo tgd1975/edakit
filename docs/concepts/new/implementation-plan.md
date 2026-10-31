@@ -1,8 +1,8 @@
 # Implementation plan: requirements, design as text, project scripts
 
 Status 2026-10-31: plan; phase 1 (1.1 to 1.8), 3.1 to 3.5, 3.7 and the follow-ups below are done; 2.1 to 2.4 and
-3.6 are built and ran live on 2026-10-31 (results under each live run; open from them: 2.2's mode "write", the
-bell's T-Display on the data path); 4.3 is written, reviewed and decided – the
+3.6 are built and ran live on 2026-10-31 (results under each live run; built from them the same day: 2.2's mode
+"write", M-6 on the electrical hash, the way back after `part build`; open: the bell's T-Display on the data path); 4.3 is written, reviewed and decided – the
 language deferred, TOML with names the form, its plan [circuit-language-plan.md](../done/circuit-language-plan.md)
 built on 2026-10-31 up to L.8, L.9 the bell's. It builds
 three concepts after the user took their decisions on 2026-10-28 (e5caf42, 301fd90):
@@ -42,7 +42,7 @@ starts when the user asks for it.
 | 1.7 | `[order]`: mask and print colour, thickness from `thickness_mm` | design-as-text, smaller findings | S | no | – | done (80c750e) |
 | 1.8 | The footprint geometry in the repository | project-scripts block 5, decision 5 | S | no | – | done (d63a81a) |
 | 2.1 | Positions of the auto-layout as text, one-time takeover, every part in the plan | design-as-text gap 1, decisions 3, 4 | M | yes | – | built offline (5d8a5df), live run passed 2026-10-31 |
-| 2.2 | Rule set of EasyEDA's DRC | design-as-text decision 6 | S–M | yes | – | built offline (a71567f), live probe 2026-10-31: writing holds – mode "write" open |
+| 2.2 | Rule set of EasyEDA's DRC | design-as-text decision 6 | S–M | yes | – | built offline (a71567f), live probe 2026-10-31: writing holds; mode "write" built the same day |
 | 2.3 | Positions of single designators in `[silk]` | design-as-text, smaller findings | S | yes | – | built offline (112de3a), live run passed 2026-10-31 |
 | 2.4 | Outdated inputs run first; `edakit run` | project-scripts block 4, decision 7 | M | yes | 1.4 | built (47ae793), live check passed 2026-10-31 |
 | 3.1 | Checks in the gate: `at`, phase `acceptance`; then `verify = script` | project-scripts block 6 | M | no | 1.2, 1.6 | done (9e63afd) |
@@ -319,9 +319,8 @@ with the patched bridge 1.4.0):
   `eda.write_drc_rules` with led-bar's `[routing]` → `[]`, after reload `differences` → `[]`, DRC D finds the 18-mil
   class and the 0.165 mm clearance. 7: restored to the restore point value for value, classes deleted – but no API
   call puts a PCB back on a named configuration (`PCB_Drc` has none), and `deleteRuleConfiguration("自定义配置")`
-  answers true while a PCB uses it and the entry stays. By the plan's rule edakit may write the rule set: a value
-  `"write"` of `drc_rules` is the next step; it leaves the PCB on the user's own configuration, and a project that
-  writes once stays on it.
+  answers true while a PCB uses it and the entry stays. By the plan's rule edakit writes the rule set: `drc_rules = "write"`, built the
+  same day (handbook 7.5); it leaves the PCB on the client's Custom Config, and a project that writes once stays on it.
 - **2.3 passed.** 1: R1's designator at (59, 20), rot 90, centred and standing, "fixed: R1", the rest clear of it.
   2: 180 upside down, 270 standing the other way, 45 slanted. 3: `side = "bottom"` gives one free text R1 on the bottom
   silk, read right from below; R1's own designator hidden; a second `silk apply` replaces it. 4: a row on R1's pad:
