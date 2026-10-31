@@ -1,0 +1,207 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="354.8mm" height="283.0mm" viewBox="0 0 1397 1114" font-family="DejaVu Sans, Arial, Helvetica, sans-serif" stroke-linecap="round" stroke-linejoin="round">
+<rect width="1397" height="1114" fill="#ffffff"/>
+<polyline points="10,1104 1387,1104 1387,10 10,10 10,1104" fill="none" stroke="#888888" stroke-width="1.5"/>
+<polyline points="997,1104 1387,1104 1387,984 997,984 997,1104" fill="none" stroke="#888888" stroke-width="1.5"/>
+<text x="1009" y="1006" dy="0.35em" font-size="16" text-anchor="start" fill="#000000" font-weight="bold" xml:space="preserve">Classic Boost v2</text>
+<text x="1009" y="1030" dy="0.35em" font-size="8" text-anchor="start" fill="#000000" xml:space="preserve">guitarml-classic-boost · board main</text>
+<text x="1009" y="1048" dy="0.35em" font-size="8" text-anchor="start" fill="#000000" xml:space="preserve">graph v1.0 (2026-10-31) · 355 x 283 mm</text>
+<text x="1009" y="1066" dy="0.35em" font-size="7" text-anchor="start" fill="#000000" xml:space="preserve">drawn by wired.py, a prototype of edakit&#x27;s concept wired-schematic – change the graph, not this drawing</text>
+<polyline points="206,120 216,120" fill="none" stroke="#1f5fbf" stroke-width="1.4"/>
+<polyline points="216,120 256,120" fill="none" stroke="#1f5fbf" stroke-width="1.4"/>
+<polyline points="296,120 306,120" fill="none" stroke="#1f5fbf" stroke-width="1.4"/>
+<polyline points="306,120 326,120" fill="none" stroke="#1f5fbf" stroke-width="1.4"/>
+<polyline points="366,120 376,120" fill="none" stroke="#1f5fbf" stroke-width="1.4"/>
+<polyline points="376,120 396,120" fill="none" stroke="#1f5fbf" stroke-width="1.4"/>
+<polyline points="436,120 446,120" fill="none" stroke="#1f5fbf" stroke-width="1.4"/>
+<polyline points="376,190 396,190" fill="none" stroke="#1f5fbf" stroke-width="1.4"/>
+<polyline points="426,210 426,220" fill="none" stroke="#1f5fbf" stroke-width="1.4"/>
+<polyline points="426,220 426,240" fill="none" stroke="#1f5fbf" stroke-width="1.4"/>
+<polyline points="426,280 426,290" fill="none" stroke="#202020" stroke-width="1.4"/>
+<polyline points="426,170 426,160" fill="none" stroke="#1f5fbf" stroke-width="1.4"/>
+<polyline points="376,320 396,320" fill="none" stroke="#1f5fbf" stroke-width="1.4"/>
+<polyline points="436,320 446,320" fill="none" stroke="#202020" stroke-width="1.4"/>
+<polyline points="376,320 376,190" fill="none" stroke="#1f5fbf" stroke-width="1.4"/>
+<polyline points="376,190 376,120" fill="none" stroke="#1f5fbf" stroke-width="1.4"/>
+<polyline points="306,380 326,380" fill="none" stroke="#1f5fbf" stroke-width="1.4"/>
+<polyline points="366,380 376,380" fill="none" stroke="#1f5fbf" stroke-width="1.4"/>
+<polyline points="376,380 396,380" fill="none" stroke="#1f5fbf" stroke-width="1.4"/>
+<polyline points="436,380 446,380" fill="none" stroke="#1f5fbf" stroke-width="1.4"/>
+<polyline points="446,380 496,380" fill="none" stroke="#1f5fbf" stroke-width="1.4"/>
+<polyline points="536,380 546,380" fill="none" stroke="#202020" stroke-width="1.4"/>
+<polyline points="516,360 516,350" fill="none" stroke="#1f5fbf" stroke-width="1.4"/>
+<polyline points="306,380 306,120" fill="none" stroke="#1f5fbf" stroke-width="1.4"/>
+<polyline points="856,120 866,120" fill="none" stroke="#202020" stroke-width="1.4"/>
+<polyline points="1296,120 1306,120" fill="none" stroke="#1f5fbf" stroke-width="1.4"/>
+<polyline points="206,620 216,620" fill="none" stroke="#202020" stroke-width="1.4"/>
+<polyline points="596,620 606,620" fill="none" stroke="#1f5fbf" stroke-width="1.4"/>
+<polyline points="976,620 986,620" fill="none" stroke="#202020" stroke-width="1.4"/>
+<polyline points="206,860 216,860" fill="none" stroke="#1f5fbf" stroke-width="1.4"/>
+<polyline points="756,860 766,860" fill="none" stroke="#1f5fbf" stroke-width="1.4"/>
+<polyline points="766,860 786,860" fill="none" stroke="#1f5fbf" stroke-width="1.4"/>
+<polyline points="826,860 836,860" fill="none" stroke="#1f5fbf" stroke-width="1.4"/>
+<polyline points="836,860 856,860" fill="none" stroke="#1f5fbf" stroke-width="1.4"/>
+<polyline points="896,860 906,860" fill="none" stroke="#202020" stroke-width="1.4"/>
+<polyline points="226,940 986,940" fill="none" stroke="#202020" stroke-width="1.4"/>
+<polyline points="426,290 446,290" fill="none" stroke="#202020" stroke-width="1.4"/>
+<polyline points="446,290 446,320" fill="none" stroke="#202020" stroke-width="1.4"/>
+<polyline points="546,380 546,320" fill="none" stroke="#202020" stroke-width="1.4"/>
+<polyline points="546,320 446,320" fill="none" stroke="#202020" stroke-width="1.4"/>
+<polyline points="866,120 866,320" fill="none" stroke="#202020" stroke-width="1.4"/>
+<polyline points="866,320 546,320" fill="none" stroke="#202020" stroke-width="1.4"/>
+<polyline points="216,620 226,620" fill="none" stroke="#202020" stroke-width="1.4"/>
+<polyline points="226,620 226,940" fill="none" stroke="#202020" stroke-width="1.4"/>
+<polyline points="986,620 986,940" fill="none" stroke="#202020" stroke-width="1.4"/>
+<polyline points="906,860 986,860" fill="none" stroke="#202020" stroke-width="1.4"/>
+<polyline points="866,320 986,320" fill="none" stroke="#202020" stroke-width="1.4"/>
+<polyline points="986,320 986,620" fill="none" stroke="#202020" stroke-width="1.4"/>
+<polyline points="426,160 406,160" fill="none" stroke="#1f5fbf" stroke-width="1.4"/>
+<polyline points="406,160 406,370" fill="none" stroke="#1f5fbf" stroke-width="1.4"/>
+<polyline points="406,370 386,370" fill="none" stroke="#1f5fbf" stroke-width="1.4"/>
+<polyline points="386,370 386,380" fill="none" stroke="#1f5fbf" stroke-width="1.4"/>
+<polyline points="516,350 526,350" fill="none" stroke="#1f5fbf" stroke-width="1.4"/>
+<polyline points="526,350 526,600" fill="none" stroke="#1f5fbf" stroke-width="1.4"/>
+<polyline points="526,600 606,600" fill="none" stroke="#1f5fbf" stroke-width="1.4"/>
+<polyline points="606,600 606,620" fill="none" stroke="#1f5fbf" stroke-width="1.4"/>
+<polyline points="216,860 306,860" fill="none" stroke="#1f5fbf" stroke-width="1.4"/>
+<polyline points="306,860 306,380" fill="none" stroke="#1f5fbf" stroke-width="1.4"/>
+<polyline points="446,120 446,100" fill="none" stroke="#1f5fbf" stroke-width="1.4"/>
+<polyline points="446,100 1306,100" fill="none" stroke="#1f5fbf" stroke-width="1.4"/>
+<polyline points="1306,100 1306,120" fill="none" stroke="#1f5fbf" stroke-width="1.4"/>
+<circle cx="306" cy="120" r="2.4" fill="#1f5fbf" stroke="#1f5fbf" stroke-width="1.2"/>
+<circle cx="306" cy="380" r="2.4" fill="#1f5fbf" stroke="#1f5fbf" stroke-width="1.2"/>
+<circle cx="376" cy="120" r="2.4" fill="#1f5fbf" stroke="#1f5fbf" stroke-width="1.2"/>
+<circle cx="376" cy="190" r="2.4" fill="#1f5fbf" stroke="#1f5fbf" stroke-width="1.2"/>
+<circle cx="446" cy="320" r="2.4" fill="#202020" stroke="#202020" stroke-width="1.2"/>
+<circle cx="986" cy="620" r="2.4" fill="#202020" stroke="#202020" stroke-width="1.2"/>
+<circle cx="546" cy="320" r="2.4" fill="#202020" stroke="#202020" stroke-width="1.2"/>
+<circle cx="866" cy="320" r="2.4" fill="#202020" stroke="#202020" stroke-width="1.2"/>
+<circle cx="986" cy="860" r="2.4" fill="#202020" stroke="#202020" stroke-width="1.2"/>
+<circle cx="386" cy="380" r="2.4" fill="#1f5fbf" stroke="#1f5fbf" stroke-width="1.2"/>
+<polyline points="206,120 196,120" fill="none" stroke="#8b1a1a" stroke-width="1.2"/>
+<polygon points="156,130 196,130 196,110 156,110" fill="#ffffff" stroke="#8b1a1a" stroke-width="1.2"/>
+<text x="193.5" y="120" dy="0.35em" font-size="6" text-anchor="end" fill="#000000" xml:space="preserve">Pin_1</text>
+<text x="197.5" y="117" dy="0.35em" font-size="5" text-anchor="start" fill="#555555" xml:space="preserve">1</text>
+<text x="196" y="104" dy="0.35em" font-size="7" text-anchor="end" fill="#000000" xml:space="preserve">9v1</text>
+<text x="196" y="136" dy="0.35em" font-size="6" text-anchor="end" fill="#000000" xml:space="preserve">TestPoint_THTPad_D2.0mm_Drill1.0mm</text>
+<polyline points="256,120 266,120" fill="none" stroke="#8b1a1a" stroke-width="1.2"/>
+<polyline points="296,120 286,120" fill="none" stroke="#8b1a1a" stroke-width="1.2"/>
+<polyline points="266,120 271,120" fill="none" stroke="#8b1a1a" stroke-width="1.2"/>
+<polyline points="281,120 286,120" fill="none" stroke="#8b1a1a" stroke-width="1.2"/>
+<polygon points="271,126 271,114 281,120" fill="#ffffff" stroke="#8b1a1a" stroke-width="1.2"/>
+<polyline points="281,126 281,114" fill="none" stroke="#8b1a1a" stroke-width="1.2"/>
+<text x="276" y="107" dy="0.35em" font-size="7" text-anchor="middle" fill="#000000" xml:space="preserve">D1</text>
+<text x="276" y="133" dy="0.35em" font-size="6" text-anchor="middle" fill="#000000" xml:space="preserve">1N5817</text>
+<polyline points="366,120 356,120" fill="none" stroke="#8b1a1a" stroke-width="1.2"/>
+<polyline points="326,120 336,120" fill="none" stroke="#8b1a1a" stroke-width="1.2"/>
+<polygon points="356,116 336,116 336,124 356,124" fill="#ffffff" stroke="#8b1a1a" stroke-width="1.2"/>
+<text x="346" y="109" dy="0.35em" font-size="7" text-anchor="middle" fill="#000000" xml:space="preserve">R1</text>
+<text x="346" y="131" dy="0.35em" font-size="6" text-anchor="middle" fill="#000000" xml:space="preserve">430k</text>
+<polyline points="436,120 426,120" fill="none" stroke="#8b1a1a" stroke-width="1.2"/>
+<polyline points="396,120 406,120" fill="none" stroke="#8b1a1a" stroke-width="1.2"/>
+<polyline points="426,120 418.5,120" fill="none" stroke="#8b1a1a" stroke-width="1.2"/>
+<polyline points="413.5,120 406,120" fill="none" stroke="#8b1a1a" stroke-width="1.2"/>
+<polyline points="418.5,113 418.5,127" fill="none" stroke="#8b1a1a" stroke-width="2.4"/>
+<polyline points="413.5,113 413.5,127" fill="none" stroke="#8b1a1a" stroke-width="2.4"/>
+<text x="416" y="106" dy="0.35em" font-size="7" text-anchor="middle" fill="#000000" xml:space="preserve">C1</text>
+<text x="416" y="134" dy="0.35em" font-size="6" text-anchor="middle" fill="#000000" xml:space="preserve">0.1uF</text>
+<polyline points="396,190 413,190" fill="none" stroke="#8b1a1a" stroke-width="1.2"/>
+<polyline points="413,197 413,183" fill="none" stroke="#8b1a1a" stroke-width="2.4"/>
+<polyline points="426,170 426,180" fill="none" stroke="#8b1a1a" stroke-width="1.2"/>
+<polyline points="413,187 426,180" fill="none" stroke="#8b1a1a" stroke-width="1.2"/>
+<polyline points="426,210 426,200" fill="none" stroke="#8b1a1a" stroke-width="1.2"/>
+<polyline points="413,193 426,200" fill="none" stroke="#8b1a1a" stroke-width="1.2"/>
+<polygon points="426,200 422.79,199.63 423.93,197.52" fill="#8b1a1a" stroke="#8b1a1a" stroke-width="1.2"/>
+<text x="401" y="187" dy="0.35em" font-size="5" text-anchor="middle" fill="#555555" xml:space="preserve">2</text>
+<text x="429" y="175" dy="0.35em" font-size="5" text-anchor="start" fill="#555555" xml:space="preserve">3</text>
+<text x="429" y="205" dy="0.35em" font-size="5" text-anchor="start" fill="#555555" xml:space="preserve">1</text>
+<text x="430" y="186" dy="0.35em" font-size="7" text-anchor="start" fill="#000000" xml:space="preserve">Q2</text>
+<text x="430" y="195" dy="0.35em" font-size="6" text-anchor="start" fill="#000000" xml:space="preserve">2N5088</text>
+<polyline points="426,280 426,270" fill="none" stroke="#8b1a1a" stroke-width="1.2"/>
+<polyline points="426,240 426,250" fill="none" stroke="#8b1a1a" stroke-width="1.2"/>
+<polygon points="430,270 430,250 422,250 422,270" fill="#ffffff" stroke="#8b1a1a" stroke-width="1.2"/>
+<text x="415" y="260" dy="0.35em" font-size="7" text-anchor="middle" fill="#000000" transform="rotate(-90 415 260)" xml:space="preserve">R4</text>
+<text x="437" y="260" dy="0.35em" font-size="6" text-anchor="middle" fill="#000000" transform="rotate(-90 437 260)" xml:space="preserve">390</text>
+<polyline points="436,320 426,320" fill="none" stroke="#8b1a1a" stroke-width="1.2"/>
+<polyline points="396,320 406,320" fill="none" stroke="#8b1a1a" stroke-width="1.2"/>
+<polygon points="426,316 406,316 406,324 426,324" fill="#ffffff" stroke="#8b1a1a" stroke-width="1.2"/>
+<text x="416" y="309" dy="0.35em" font-size="7" text-anchor="middle" fill="#000000" xml:space="preserve">R2</text>
+<text x="416" y="331" dy="0.35em" font-size="6" text-anchor="middle" fill="#000000" xml:space="preserve">43k</text>
+<polyline points="366,380 356,380" fill="none" stroke="#8b1a1a" stroke-width="1.2"/>
+<polyline points="326,380 336,380" fill="none" stroke="#8b1a1a" stroke-width="1.2"/>
+<polygon points="356,376 336,376 336,384 356,384" fill="#ffffff" stroke="#8b1a1a" stroke-width="1.2"/>
+<text x="346" y="369" dy="0.35em" font-size="7" text-anchor="middle" fill="#000000" xml:space="preserve">R3</text>
+<text x="346" y="391" dy="0.35em" font-size="6" text-anchor="middle" fill="#000000" xml:space="preserve">10k</text>
+<polyline points="396,380 406,380" fill="none" stroke="#8b1a1a" stroke-width="1.2"/>
+<polyline points="436,380 426,380" fill="none" stroke="#8b1a1a" stroke-width="1.2"/>
+<polyline points="406,380 413.5,380" fill="none" stroke="#8b1a1a" stroke-width="1.2"/>
+<polyline points="418.5,380 426,380" fill="none" stroke="#8b1a1a" stroke-width="1.2"/>
+<polyline points="413.5,387 413.5,373" fill="none" stroke="#8b1a1a" stroke-width="2.4"/>
+<polyline points="418.5,387 418.5,373" fill="none" stroke="#8b1a1a" stroke-width="2.4"/>
+<text x="416" y="366" dy="0.35em" font-size="7" text-anchor="middle" fill="#000000" xml:space="preserve">C2</text>
+<text x="416" y="394" dy="0.35em" font-size="6" text-anchor="middle" fill="#000000" xml:space="preserve">0.1uF</text>
+<polyline points="536,380 526,380" fill="none" stroke="#8b1a1a" stroke-width="1.2"/>
+<polyline points="496,380 506,380" fill="none" stroke="#8b1a1a" stroke-width="1.2"/>
+<polygon points="526,376 506,376 506,384 526,384" fill="#ffffff" stroke="#8b1a1a" stroke-width="1.2"/>
+<polyline points="516,360 516,372" fill="none" stroke="#8b1a1a" stroke-width="1.2"/>
+<polygon points="516,376 514.4,372 517.6,372" fill="#8b1a1a" stroke="#8b1a1a" stroke-width="1.2"/>
+<text x="512" y="367" dy="0.35em" font-size="7" text-anchor="end" fill="#000000" xml:space="preserve">POT1</text>
+<text x="516" y="391" dy="0.35em" font-size="6" text-anchor="middle" fill="#000000" xml:space="preserve">100k</text>
+<polyline points="856,120 846,120" fill="none" stroke="#8b1a1a" stroke-width="1.2"/>
+<polygon points="806,130 846,130 846,110 806,110" fill="#ffffff" stroke="#8b1a1a" stroke-width="1.2"/>
+<text x="843.5" y="120" dy="0.35em" font-size="6" text-anchor="end" fill="#000000" xml:space="preserve">Pin_1</text>
+<text x="847.5" y="117" dy="0.35em" font-size="5" text-anchor="start" fill="#555555" xml:space="preserve">1</text>
+<text x="846" y="104" dy="0.35em" font-size="7" text-anchor="end" fill="#000000" xml:space="preserve">Gnd1</text>
+<text x="846" y="136" dy="0.35em" font-size="6" text-anchor="end" fill="#000000" xml:space="preserve">TestPoint_THTPad_D2.0mm_Drill1.0mm</text>
+<polyline points="1296,120 1286,120" fill="none" stroke="#8b1a1a" stroke-width="1.2"/>
+<polygon points="1246,130 1286,130 1286,110 1246,110" fill="#ffffff" stroke="#8b1a1a" stroke-width="1.2"/>
+<text x="1283.5" y="120" dy="0.35em" font-size="6" text-anchor="end" fill="#000000" xml:space="preserve">Pin_1</text>
+<text x="1287.5" y="117" dy="0.35em" font-size="5" text-anchor="start" fill="#555555" xml:space="preserve">1</text>
+<text x="1286" y="104" dy="0.35em" font-size="7" text-anchor="end" fill="#000000" xml:space="preserve">In1</text>
+<text x="1286" y="136" dy="0.35em" font-size="6" text-anchor="end" fill="#000000" xml:space="preserve">TestPoint_THTPad_D2.0mm_Drill1.0mm</text>
+<polyline points="206,620 196,620" fill="none" stroke="#8b1a1a" stroke-width="1.2"/>
+<polygon points="156,630 196,630 196,610 156,610" fill="#ffffff" stroke="#8b1a1a" stroke-width="1.2"/>
+<text x="193.5" y="620" dy="0.35em" font-size="6" text-anchor="end" fill="#000000" xml:space="preserve">Pin_1</text>
+<text x="197.5" y="617" dy="0.35em" font-size="5" text-anchor="start" fill="#555555" xml:space="preserve">1</text>
+<text x="196" y="604" dy="0.35em" font-size="7" text-anchor="end" fill="#000000" xml:space="preserve">InG1</text>
+<text x="196" y="636" dy="0.35em" font-size="6" text-anchor="end" fill="#000000" xml:space="preserve">TestPoint_THTPad_D2.0mm_Drill1.0mm</text>
+<polyline points="596,620 586,620" fill="none" stroke="#8b1a1a" stroke-width="1.2"/>
+<polygon points="546,630 586,630 586,610 546,610" fill="#ffffff" stroke="#8b1a1a" stroke-width="1.2"/>
+<text x="583.5" y="620" dy="0.35em" font-size="6" text-anchor="end" fill="#000000" xml:space="preserve">Pin_1</text>
+<text x="587.5" y="617" dy="0.35em" font-size="5" text-anchor="start" fill="#555555" xml:space="preserve">1</text>
+<text x="586" y="604" dy="0.35em" font-size="7" text-anchor="end" fill="#000000" xml:space="preserve">Out1</text>
+<text x="586" y="636" dy="0.35em" font-size="6" text-anchor="end" fill="#000000" xml:space="preserve">TestPoint_THTPad_D2.0mm_Drill1.0mm</text>
+<polyline points="976,620 966,620" fill="none" stroke="#8b1a1a" stroke-width="1.2"/>
+<polygon points="926,630 966,630 966,610 926,610" fill="#ffffff" stroke="#8b1a1a" stroke-width="1.2"/>
+<text x="963.5" y="620" dy="0.35em" font-size="6" text-anchor="end" fill="#000000" xml:space="preserve">Pin_1</text>
+<text x="967.5" y="617" dy="0.35em" font-size="5" text-anchor="start" fill="#555555" xml:space="preserve">1</text>
+<text x="966" y="604" dy="0.35em" font-size="7" text-anchor="end" fill="#000000" xml:space="preserve">OutG1</text>
+<text x="966" y="636" dy="0.35em" font-size="6" text-anchor="end" fill="#000000" xml:space="preserve">TestPoint_THTPad_D2.0mm_Drill1.0mm</text>
+<polyline points="206,860 196,860" fill="none" stroke="#8b1a1a" stroke-width="1.2"/>
+<polygon points="156,870 196,870 196,850 156,850" fill="#ffffff" stroke="#8b1a1a" stroke-width="1.2"/>
+<text x="193.5" y="860" dy="0.35em" font-size="6" text-anchor="end" fill="#000000" xml:space="preserve">Pin_1</text>
+<text x="197.5" y="857" dy="0.35em" font-size="5" text-anchor="start" fill="#555555" xml:space="preserve">1</text>
+<text x="196" y="844" dy="0.35em" font-size="7" text-anchor="end" fill="#000000" xml:space="preserve">SW1</text>
+<text x="196" y="876" dy="0.35em" font-size="6" text-anchor="end" fill="#000000" xml:space="preserve">TestPoint_THTPad_D2.0mm_Drill1.0mm</text>
+<polyline points="756,860 746,860" fill="none" stroke="#8b1a1a" stroke-width="1.2"/>
+<polygon points="706,870 746,870 746,850 706,850" fill="#ffffff" stroke="#8b1a1a" stroke-width="1.2"/>
+<text x="743.5" y="860" dy="0.35em" font-size="6" text-anchor="end" fill="#000000" xml:space="preserve">Pin_1</text>
+<text x="747.5" y="857" dy="0.35em" font-size="5" text-anchor="start" fill="#555555" xml:space="preserve">1</text>
+<text x="746" y="844" dy="0.35em" font-size="7" text-anchor="end" fill="#000000" xml:space="preserve">swGnd1</text>
+<text x="746" y="876" dy="0.35em" font-size="6" text-anchor="end" fill="#000000" xml:space="preserve">TestPoint_THTPad_D2.0mm_Drill1.0mm</text>
+<polyline points="826,860 816,860" fill="none" stroke="#8b1a1a" stroke-width="1.2"/>
+<polyline points="786,860 796,860" fill="none" stroke="#8b1a1a" stroke-width="1.2"/>
+<polygon points="816,856 796,856 796,864 816,864" fill="#ffffff" stroke="#8b1a1a" stroke-width="1.2"/>
+<text x="806" y="849" dy="0.35em" font-size="7" text-anchor="middle" fill="#000000" xml:space="preserve">R5</text>
+<text x="806" y="871" dy="0.35em" font-size="6" text-anchor="middle" fill="#000000" xml:space="preserve">4.7k</text>
+<polyline points="856,860 866,860" fill="none" stroke="#8b1a1a" stroke-width="1.2"/>
+<polyline points="896,860 886,860" fill="none" stroke="#8b1a1a" stroke-width="1.2"/>
+<polyline points="866,860 871,860" fill="none" stroke="#8b1a1a" stroke-width="1.2"/>
+<polyline points="881,860 886,860" fill="none" stroke="#8b1a1a" stroke-width="1.2"/>
+<polygon points="871,866 871,854 881,860" fill="#ffffff" stroke="#8b1a1a" stroke-width="1.2"/>
+<polyline points="881,866 881,854" fill="none" stroke="#8b1a1a" stroke-width="1.2"/>
+<polyline points="874,853 878,849" fill="none" stroke="#8b1a1a" stroke-width="1.2"/>
+<polygon points="879,848 877.94,850.47 876.53,849.06" fill="#8b1a1a" stroke="#8b1a1a" stroke-width="1.2"/>
+<polyline points="879,853 883,849" fill="none" stroke="#8b1a1a" stroke-width="1.2"/>
+<polygon points="884,848 882.94,850.47 881.53,849.06" fill="#8b1a1a" stroke="#8b1a1a" stroke-width="1.2"/>
+<text x="876" y="841" dy="0.35em" font-size="7" text-anchor="middle" fill="#000000" xml:space="preserve">LED1</text>
+</svg>
