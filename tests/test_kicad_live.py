@@ -1,5 +1,7 @@
 """The KiCad tool chain against a real kicad-cli (KiCad 10): KiCad reads what edakit writes, and its exports are what
-the gate's checks read (handbook 16.8). Skipped without kicad-cli; the CI job kicad runs them in KiCad's container."""
+the gate's checks read (handbook 16.8). Skipped without kicad-cli, and with a kicad-cli of another major version than
+cli.MAJOR (read once per session) – KiCad 9 fails some of them, which says nothing about edakit. The CI job kicad runs
+them in KiCad's container with EDAKIT_KICAD_LIVE=required: there a missing kicad-cli or another major fails."""
 
 import os
 import shutil
@@ -14,13 +16,35 @@ from edakit.toolchain.kicad import cli
 from edakit.toolchain.kicad import fab as kfab
 from edakit.toolchain.kicad import schematic as ks
 
+REQUIRED = os.environ.get("EDAKIT_KICAD_LIVE") == "required"      # the CI job kicad: run, never skip
+
 pytestmark = [pytest.mark.kicad,
-              pytest.mark.skipif(not (os.environ.get("KICAD_CLI") or shutil.which("kicad-cli")),
+              pytest.mark.skipif(not (REQUIRED or os.environ.get("KICAD_CLI") or shutil.which("kicad-cli")),
                                  reason="kicad-cli not installed")]
 
 
-def test_kicad_cli_is_kicad_10():
-    assert cli.version().split(".")[0] == str(cli.MAJOR)
+def skip_reason(version, required=REQUIRED):
+    """Why the tests do not run against a kicad-cli of this version: None for KiCad cli.MAJOR (or when they are
+    required), else the reason."""
+    if required or cli.major(version) == cli.MAJOR:
+        return None
+    return (f"kicad-cli is KiCad {version} – edakit writes for and is tested with KiCad {cli.MAJOR} (cli.MAJOR); the "
+            f"CI job kicad runs these tests in KiCad {cli.MAJOR}'s container")
+
+
+@pytest.fixture(scope="session")
+def kicad_version():
+    return cli.version()
+
+
+@pytest.fixture(autouse=True)
+def kicad_of_the_major(kicad_version):
+    if why := skip_reason(kicad_version):
+        pytest.skip(why)
+
+
+def test_kicad_cli_is_kicad_10(kicad_version):
+    assert cli.major(kicad_version) == cli.MAJOR
 
 
 def test_kicad_reads_the_schematic_and_its_netlist_is_the_graph(project):
