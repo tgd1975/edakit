@@ -258,6 +258,22 @@ per polarised part: copper, silkscreen, pad numbers, roles, nets) is what makes 
 gate finds it on its own: it reads the "+" the footprint draws in the silk Gerber and fails when the nearest pad with a
 polarity role is a cathode (8.1).
 
+Library symbols are not always right either – and a schematic is drawn from the symbol, whatever the parts entry
+says. Writing the parts library (4.1) from the datasheets on 2026-10-31 turned up six whose EasyEDA symbol differs
+from the manufacturer's datasheet: the WS2812B-V5/W (C2874885) numbers DIN 3 like VSS, so a schematic puts the data
+input on ground and leaves pad 4 open; the XC6206P332MR-G (C5446) names pin 2 Vin and pin 3 Vout, Torex the other way
+round – the regulator fed backwards; the DRV8825PWPR (C81582) numbers its exposed pad 28 like GND and has no pin for
+pad 29, the PowerPAD; the Raspberry Pi Pico 2 (C41407547) numbers the test pads TP2–TP6 like pins 2–6 and swaps SWCLK
+and SWDIO; the 6N138S-TA1-L (C22451885) names the LED's anode "2" and its cathode "NC"; the AQY212GS (C719745) has
+three pins for four pads. `edakit part import` caches the symbol with the numbers it gives twice, and STRUCT.entry
+compares it: names and numbers with the graph's pins as before, and – grade `symbol`, an error – a number given to
+two pins, a pad of the footprint without a pin, a pin without a pad. Where the parts entry follows the datasheet on
+purpose, `symbol_differs` names each such pin with the reason read from the datasheet
+(`{"4": "DIN is pin 4 – Worldsemi WS2812B-V5/W V6.1, pin table"}`): the pin is left out of the comparison and a note
+(grade `declared`) tells the project that a schematic drawn from that symbol wires it otherwise – check that
+schematic against the datasheet pin by pin, or take another part number whose symbol is right. The six are written
+up for EasyEDA and LCSC in `upstream/issue-6-easyeda-symbols.md`.
+
 ## 4.5 Own parts
 
 Some parts nobody sells: a board of your own plugged onto the main board, a part from the bin that is no longer made,

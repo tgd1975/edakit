@@ -90,7 +90,8 @@
    "SOT-23 pin assignment p. 2: 1 VSS, 2 VOUT, 3 VIN – against the EasyEDA symbol of C5446 (1 GND, 2 Vin, 3 Vout): names of pins 2 and 3 disagree, roles set from the data sheet",
    "absolute maximum p. 3: VIN 7.0 V, VOUT VSS − 0.3 … VIN + 0.3 V, Pd SOT-23 250 mW, Topr -40 … 85 °C",
    "electrical characteristics p. 4–5: VIN 1.8 … 6.0 V, IDD 1.0 / 3.0 µA, VOUT 3.234 … 3.366 V, IOUTMAX ≥ 200 mA, dropout 250 / 680 mV at 100 mA",
-   "typical application p. 1: CIN 1.0 µF and CL 1.0 µF ceramic"
+   "typical application p. 1: CIN 1.0 µF and CL 1.0 µF ceramic",
+   "2026-10-31: symbol_differs – the EasyEDA symbol swaps Vin and Vout against Torex's pin assignment (STRUCT.entry/declared)"
   ],
   "open": [
    "the EasyEDA symbol of C5446 names pad 2 'Vin' and pad 3 'Vout' (UMW's pin numbering, where the single pin is 2), the Torex data sheet gives pad 2 VOUT and pad 3 VIN (the single pin) – a board wired by the symbol's names would feed the regulator backwards; the owner may want to confirm with a current Torex revision or a delivered part before the symbol is used",
@@ -99,5 +100,9 @@
    "no θJA and no junction temperature limit in the data sheet (only Pd 250 mW for SOT-23): no LIM.t item",
    "dropout_v is one number (680 mV max at 100 mA); at 30 mA the maximum is 350 mV"
   ]
+ },
+ "symbol_differs": {
+  "2": "Torex ETR0305_004b, SOT-23 pin assignment: pin 2 is VOUT – the library symbol names it Vin (the entry keeps the symbol's name, its role and type follow the data sheet)",
+  "3": "Torex ETR0305_004b, SOT-23 pin assignment: pin 3 is VIN – the library symbol names it Vout; a schematic drawn by the symbol's names feeds the regulator backwards"
  }
 }
