@@ -505,11 +505,17 @@ none yet. The sources, in this order:
 1. `--url URL`
 2. the entry's `datasheet.url`
 3. for an LCSC number, `pdfUrl` of LCSC's product data (`https://wmsc.lcsc.com/ftps/wm/product/detail?productCode=…`)
-4. `dataManualUrl` of exactly that number in JLCPCB's catalogue (the endpoint of PARTS.stock)
+4. `dataManualUrl` of exactly that number in JLCPCB's catalogue (the endpoint of PARTS.stock) – where that is LCSC's datasheet
+   page (`www.lcsc.com/datasheet/lcsc_datasheet_<name>.pdf`), the file behind it
+   (`wmsc.lcsc.com/wmsc/upload/file/pdf/v2/lcsc/<name>.pdf`): the page is a page of the shop since 2026, the file
+   sends the browser on to the PDF
 
-An HTML page is searched once for a link to a PDF (the viewer of an `item.szlcsc.com` page, the download of a JLCPCB
-part page). Only a complete PDF counts – it starts with `%PDF` and has its `%%EOF` in the last 64 kB (some tools
-append metadata after it). A refused request, an HTML page, a download that broke off or an expired signed link is
+A page is followed once, to the part's PDF: where it sends the browser by script or meta refresh (LCSC's file), else
+its embedded viewer (the `iframe` of an `item.szlcsc.com` page), else a link whose address or words name the part –
+its `mpn` or LCSC number – or say datasheet (the download of a JLCPCB part page). Its other PDF links are named, not
+followed: the shop page links nothing but the certificates in its footer, and the first of them was once kept as the
+datasheet of a battery holder (chapter 17). Only a complete PDF counts – it starts with `%PDF` and has its `%%EOF` in
+the last 64 kB (some tools append metadata after it). A refused request, an HTML page, a download that broke off or an expired signed link is
 reported with its reason, and an earlier copy stays as it is ("kept the copy of 2026-10-27", exit 2).
 
 The copy goes to `<datasheets>/<key>.pdf` (`[project] datasheets`, default `<artifacts>/datasheets`: not versioned; a

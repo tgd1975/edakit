@@ -46,6 +46,15 @@ def test_rect_outline_with_radius():
     assert all(math.dist(p, q) > 0 for p, q in zip(pts, pts[1:]))
 
 
+def test_round_outline():
+    """A radius of half the side makes a circle (handbook 17): the arcs meet without a point twice – a segment of
+    length 0 in the outline EasyEDA gets."""
+    pts = _outline({"rect": [44, 44], "corner_radius": 22, "arc_steps": 12}, "b")
+    assert len(pts) == len(set(pts)) == 48
+    assert all(math.dist(p, (22, 22)) == pytest.approx(22, abs=1e-3) for p in pts)
+    assert all(math.dist(p, q) > 0 for p, q in zip(pts, pts[1:] + pts[:1]))
+
+
 def test_outline_needs_shape():
     with pytest.raises(ConfigError):
         _outline({"circle": 5}, "b")

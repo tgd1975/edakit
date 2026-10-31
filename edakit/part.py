@@ -78,7 +78,7 @@ from pathlib import Path
 
 from . import circuit, config
 from .config import MIL_PER_MM
-from .design import Design, natural_key
+from .design import Design, load_parts, natural_key
 
 WHAT = ("pcb", "bin", "handmade")   # own.what: a board of an edakit project, a part from the bin, made by hand
 SIGNALS = ("output", "bidirectional", "current_sink", "input", "analog")   # strongest first
@@ -756,10 +756,15 @@ def main_import(cfg, args):
 # --- the datasheet of a part (part fetch) ----------------------------------------------------------------------------
 
 LCSC_PRODUCT = "https://wmsc.lcsc.com/ftps/wm/product/detail?productCode={lcsc}"   # LCSC's product data: pdfUrl
+LCSC_PAGE = re.compile(r"https?://(?:www\.)?lcsc\.com/datasheet/lcsc_datasheet_([^/?#]+\.pdf)", re.I)
+LCSC_FILE = "https://wmsc.lcsc.com/wmsc/upload/file/pdf/v2/lcsc/{name}"   # the file behind LCSC's datasheet page
+REDIRECT = re.compile(r"""(?:location(?:\.href)?\s*=|location\.replace\s*\()\s*["']([^"']+)["']"""
+                      r"""|http-equiv\s*=\s*["']?refresh["']?[^>]*?url\s*=\s*([^"'>\s]+)""", re.I)
 BROWSER = "Mozilla/5.0 (compatible; edakit)"     # datasheet hosts answer a browser, some refuse anything else
 SCAN_CHARS = 20       # fewer characters (blanks not counted) per page than this: no text layer, a scan
 EOF_TAIL = 64 * 1024  # a complete PDF has its %%EOF this close to its end (some tools append metadata after it)
-PDF_LINK = re.compile(r"""(?:href|src)\s*=\s*["']([^"']+?\.pdf(?:[?#][^"']*)?)["']""", re.I)
+PDF_URL = re.compile(r"[^?#]*\.pdf(?:[?#].*)?$", re.I)
+VIEWERS = {"iframe": "src", "embed": "src", "object": "data"}   # an embedded viewer: the element and its address
 
 
 def today():
@@ -788,22 +793,71 @@ def datasheet_files(cfg, key):
 
 
 def is_html(data):
+    """A page – also the bare script with which LCSC's datasheet file sends the browser on to the PDF."""
     head = data[:1024].lstrip().lower()
-    return head.startswith((b"<!doctype", b"<html", b"<?xml")) or b"<html" in head
+    return head.startswith((b"<!doctype", b"<html", b"<?xml", b"<head", b"<script", b"<meta")) or b"<html" in head
 
 
-def pdf_link(data, base):
-    """The first link to a PDF in an href or src of an HTML page (an embedded viewer comes first), absolute, without
-    its #fragment."""
-    import html
+def page_pdfs(data):
+    """The PDF addresses of an HTML page in their order: [(kind, address, words)] – kind 'redirect' for a page that
+    sends the browser on by script or meta refresh, 'viewer' for the src of an iframe or embed and the data of an
+    object, 'link' for an a href; words: a link's text, title and aria-label."""
+    from html.parser import HTMLParser
+
+    class Links(HTMLParser):
+        def __init__(self):
+            super().__init__(convert_charrefs=True)
+            self.found, self.open = [], None
+
+        def handle_starttag(self, tag, attrs):
+            a = {k: v or "" for k, v in attrs}
+            if tag in VIEWERS and PDF_URL.match(a.get(VIEWERS[tag], "").strip()):
+                self.found.append(["viewer", a[VIEWERS[tag]].strip(), ""])
+            elif tag == "a" and PDF_URL.match(a.get("href", "").strip()):
+                self.open = ["link", a["href"].strip(), " ".join((a.get("title", ""), a.get("aria-label", "")))]
+                self.found.append(self.open)
+
+        def handle_data(self, text):
+            if self.open:
+                self.open[2] += " " + text
+
+        def handle_endtag(self, tag):
+            if tag == "a":
+                self.open = None
+
+    text = data.decode("utf-8", "replace")
+    p = Links()
+    p.feed(text)
+    redirects = [("redirect", (m.group(1) or m.group(2)).strip(), "") for m in REDIRECT.finditer(text)
+                 if PDF_URL.match((m.group(1) or m.group(2)).strip())]
+    return redirects + [tuple(f) for f in p.found]
+
+
+def pdf_link(data, base, names=()):
+    """(link, others) of an HTML page: the link to the part's PDF, absolute and without its #fragment – where the page
+    sends the browser by script or meta refresh, else the first viewer, else the first link whose address or words
+    name the part (one of `names`: its mpn, its LCSC number) or say datasheet –, and the file names of the page's
+    other PDF links. Those are no datasheet: LCSC's datasheet address answers with a page of the shop whose only PDFs
+    are the certificates in its footer, and the first of them was once kept as the datasheet of a battery holder
+    (handbook 17)."""
     import urllib.parse
-    m = PDF_LINK.search(data.decode("utf-8", "replace"))
-    return urllib.parse.urldefrag(urllib.parse.urljoin(base, html.unescape(m.group(1))))[0] if m else None
+    found = [(kind, urllib.parse.urldefrag(urllib.parse.urljoin(base, url))[0], words)
+             for kind, url, words in page_pdfs(data)]
+    marks = [n.lower() for n in names if n] + ["datasheet", "data sheet"]
+
+    def names_part(url, words):
+        where = urllib.parse.unquote(url).lower()
+        return any(n in where for n in marks[:-2]) or any(m in " ".join(words.lower().split()) for m in marks)
+    link = next((u for k, u, _ in found if k == "redirect"), None) or \
+        next((u for k, u, _ in found if k == "viewer"), None) or \
+        next((u for k, u, w in found if names_part(u, w)), None)
+    others = [urllib.parse.unquote(u.rsplit("/", 1)[-1].split("?")[0]) for _, u, _ in found if u != link]
+    return link, list(dict.fromkeys(others))
 
 
-def get_pdf(url, follow=True):
-    """(bytes, url) of a complete PDF at the URL; an HTML page is searched once for a link to one. Anything else
-    raises PartError with what came back."""
+def get_pdf(url, follow=True, names=()):
+    """(bytes, url) of a complete PDF at the URL; an HTML page is searched once for a link to the part's PDF
+    (pdf_link, `names`: the part's mpn and LCSC number). Anything else raises PartError with what came back."""
     import http.client
     try:
         data = _download(url)
@@ -820,7 +874,10 @@ def get_pdf(url, follow=True):
         raise PartError(f"not a PDF ({len(data)} bytes, starting {data[:12]!r})")
     if not follow:
         raise PartError(f"an HTML page ({len(data)} bytes)")
-    link = pdf_link(data, url)
+    link, others = pdf_link(data, url, names)
+    if not link and others:
+        raise PartError(f"an HTML page ({len(data)} bytes) whose PDF links neither name the part nor say datasheet: "
+                        + ", ".join(others[:5]) + (f" and {len(others) - 5} more" if len(others) > 5 else ""))
     if not link:
         raise PartError(f"an HTML page ({len(data)} bytes) without a link to a PDF")
     try:
@@ -844,7 +901,8 @@ def lcsc_pdf_url(lcsc):
 
 
 def jlc_manual_url(lcsc):
-    """dataManualUrl of exactly that number in JLCPCB's catalogue."""
+    """dataManualUrl of exactly that number in JLCPCB's catalogue – LCSC's datasheet page there taken as the file
+    behind it (lcsc_file): the page is a page of the shop since 2026, the file sends on to the PDF."""
     try:
         hit = next((c for c in catalogue_search(lcsc) if c.get("componentCode") == lcsc), None)
     except Exception as e:  # network, changed API
@@ -853,7 +911,15 @@ def jlc_manual_url(lcsc):
         raise PartError("not listed")
     if not hit.get("dataManualUrl"):
         raise PartError("no dataManualUrl")
-    return hit["dataManualUrl"]
+    return lcsc_file(hit["dataManualUrl"])
+
+
+def lcsc_file(url):
+    """The file behind LCSC's datasheet page of a part (www.lcsc.com/datasheet/lcsc_datasheet_<name>.pdf, JLCPCB's
+    dataManualUrl): wmsc.lcsc.com/…/<name>.pdf, which sends the browser on to the PDF by script (tried 2026-10-29 on
+    C70377, C318884, C17471, C2297). Any other URL as it is."""
+    m = LCSC_PAGE.match(url)
+    return LCSC_FILE.format(name=m.group(1)) if m else url
 
 
 def short(url):
@@ -907,9 +973,9 @@ def fetch(cfg, key, url=None):
     complete PDF; anything else leaves the kept copy as it is. The record: url (the source's address), pdf_url (the
     link a page led to, if it did), source, sha256, fetched, bytes, pages, text (a text layer; None without
     pdftotext), names_mpn ('yes', 'no', the longer variant named; None unchecked). The parts entry is never touched
-    – a change there would lapse its sign-offs (handbook 4.3)."""
-    d = Design.from_config(cfg)
-    entry = d.parts.get(key)
+    – a change there would lapse its sign-offs (handbook 4.3). It reads the parts database only: a datasheet is
+    fetched before the part is in the graph, also before there is a graph."""
+    entry = load_parts(cfg.parts).get(key)
     if entry is None:
         raise PartError(f"no parts entry {key} in {cfg.relative(cfg.parts)} – edakit part import {key} for an LCSC "
                         "number")
@@ -924,7 +990,7 @@ def fetch(cfg, key, url=None):
     for name, where in sources:
         try:
             where = where() if callable(where) else where
-            data, got = get_pdf(where)
+            data, got = get_pdf(where, names=(mpn, entry.get("lcsc") or key))
         except PartError as e:
             out["tried"].append((name, where if isinstance(where, str) else "", str(e)))
             continue
@@ -972,7 +1038,7 @@ def main_fetch(cfg, args):
     if args.all and args.url:
         raise PartError("--url names the datasheet of one part, not of --all")
     if args.all:
-        keys = sorted(Design.from_config(cfg).parts)
+        keys = sorted(load_parts(cfg.parts))
     elif args.source:
         keys = [args.source]
     else:

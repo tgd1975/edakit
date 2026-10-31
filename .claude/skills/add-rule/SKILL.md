@@ -49,7 +49,8 @@ instead of findings.
    or a person accepts on its own is a topic (`REQ.missing:cc`), not a code; a sub-case with its own severity is a
    grade (`LIM.i/margin`).
 2. **Catalog entry** in `codes.toml`: `title` (the words next to the code), `rule` (one sentence), `why`, `fix`,
-   `severity` – a new code starts as `warning`; it becomes `error` by a later change –, `grades` if it has sub-cases,
+   `severity` – a new code starts as `warning`; it becomes `error` by a later change; a regulatory one as section 5
+   says –, `grades` if it has sub-cases,
    `sources`: every source opened and read; for a lesson of a project the handbook section or the project's decision.
    Optional `details`: lines the handbook shows under the rule. `catalog.lint()` fails until the entry is complete.
 3. **Engine:** the graph engines in `edakit/engines/` (STRUCT `struct.py`, LIM `limits.py` with its producers in
@@ -85,6 +86,12 @@ must give – a missing one is `PARTS.fact`), `[hints] apply`, `[review]` (quest
 `regulatory`, `pcb`; a question names the codes that cover part of its class). A new domain gets `[domain]` with
 `name`, `about` and `suggested_by` (kinds, roles, values or radio). `tests/test_domains.py` holds the files to the
 catalog; `edakit domains --review electrical` shows the questions.
+
+**A regulatory topic is graded by the purpose** (handbook 15.4). What the firmware or a data entry can settle – the
+channels, the transmit power, a missing compliance fact – is a `note` (a grade of the code, as `LIM.band/firmware`)
+and a `warning` under `[severity.sale]` of its domain; an `error` only where the hardware cannot be made to comply, a
+part made for another region's band. Not stricter because the law is: the law stays in chapter 15, only edakit's
+grading follows its job.
 
 ## 6. A block
 

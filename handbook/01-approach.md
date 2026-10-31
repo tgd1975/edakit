@@ -99,3 +99,6 @@ what is checked by judgement and by whom, and an acceptance test after delivery 
 | [12 Troubleshooting](12-troubleshooting.md) | symptom → cause → fix |
 | [13 Lessons learned](13-lessons-learned.md) | what cost time, what we would do again |
 | [14 Designing a circuit](14-design.md) | designer and reviewer, the catalog – engines, codes, data, domains –, hints, building blocks, from a finding to a rule |
+| [15 Regulatory review](15-regulatory.md) | the purpose, the EU rules, the review M-6 – support, not legal advice |
+| [16 KiCad as the tool chain](16-kicad.md) | a project that draws its boards in KiCad instead of EasyEDA |
+| [17 Walkthrough](17-walkthrough.md) | a coin cell, a button and an LED, from the idea to the delivered boards |

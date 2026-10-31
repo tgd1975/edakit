@@ -29,7 +29,7 @@ def polarized(part):
 
 ACTIVE_TYPES = {"input", "output", "bidirectional", "power_in", "power_output", "analog", "current_sink"}
 BOOT_DRIVERS = {"output", "power_output", "ground"}   # define their net while the firmware is not running
-PASS_THROUGH = ("fuse", "switch", "connector")        # pass a reversed source on unchanged
+PASS_THROUGH = ("fuse", "switch", "button", "connector")   # pass a reversed source on unchanged
 REVERSE_OK = ("battery_holder", "capacitor") + PASS_THROUGH
 PURPOSES = ("private", "gift", "sale")                 # purpose.use of the graph: built for oneself, given away, sold
 I2C = table("i2c")["pullup"]
@@ -216,8 +216,9 @@ def supply_inputs(d, sim=None):
 
 
 def supply_paths(d):
-    """{net: nets a supply reaches from it through one part}: fuses, switches, connectors and inductors (every pin),
-    MOSFETs (drain and source), resistors up to SUPPLY_R_MAX both ways, diodes from anode to cathode."""
+    """{net: nets a supply reaches from it through one part}: fuses, switches, push buttons, connectors and
+    inductors (every pin), MOSFETs (drain and source), resistors up to SUPPLY_R_MAX both ways, diodes from anode to
+    cathode."""
     nxt = defaultdict(set)
     for des in d.comps:
         part = d.part(des) or {}

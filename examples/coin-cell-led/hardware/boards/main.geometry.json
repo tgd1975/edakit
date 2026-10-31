@@ -1,0 +1,114 @@
+{
+ "BT1": {
+  "primitiveId": "a57081c78a232b3e",
+  "footprint": "BAT-TH_CR2032-BS-6-1",
+  "device": "CR2032-BS-6-1",
+  "bbox": [
+   -649.02,
+   -321.06,
+   649.02,
+   321.06
+  ],
+  "pads": {
+   "1": {
+    "x": 566.3,
+    "y": -0.05,
+    "net": "VBAT",
+    "tht": false
+   },
+   "2": {
+    "x": -566.3,
+    "y": -0.05,
+    "net": "GND",
+    "tht": false
+   }
+  }
+ },
+ "D1": {
+  "primitiveId": "769573cc2faf5dbf",
+  "footprint": "LED0805-RD",
+  "device": "NCD0805R1_C84256",
+  "bbox": [
+   -87.68,
+   -42.4,
+   82.95,
+   42.79
+  ],
+  "pads": {
+   "2": {
+    "x": 43.34,
+    "y": 0.05,
+    "net": "LED_ANODE",
+    "tht": false
+   },
+   "1": {
+    "x": -43.36,
+    "y": 0.05,
+    "net": "GND",
+    "tht": false
+   }
+  }
+ },
+ "R1": {
+  "primitiveId": "dba95de3ba8fe3d9",
+  "footprint": "R0805",
+  "device": "0805W8F1500T5E",
+  "bbox": [
+   -72.34,
+   -39.11,
+   72.34,
+   39.11
+  ],
+  "pads": {
+   "2": {
+    "x": 39.38,
+    "y": -0.05,
+    "net": "LED_ANODE",
+    "tht": false
+   },
+   "1": {
+    "x": -39.32,
+    "y": -0.05,
+    "net": "LED_SW",
+    "tht": false
+   }
+  }
+ },
+ "SW1": {
+  "primitiveId": "27973fb598e55a86",
+  "footprint": "SW-SMD_4P-L5.1-W5.1-P3.70-LS6.5-TL_H1.5",
+  "device": "TS-1187A-B-A-B",
+  "bbox": [
+   -137.79,
+   -105.4,
+   137.8,
+   105.4
+  ],
+  "pads": {
+   "1": {
+    "x": -118.08,
+    "y": 73.85,
+    "net": "VBAT",
+    "tht": false
+   },
+   "2": {
+    "x": 118.12,
+    "y": 73.85,
+    "net": "",
+    "tht": false
+   },
+   "3": {
+    "x": -118.08,
+    "y": -73.85,
+    "net": "LED_SW",
+    "tht": false
+   },
+   "4": {
+    "x": 118.12,
+    "y": -73.85,
+    "net": "",
+    "tht": false
+   }
+  }
+ }
+}

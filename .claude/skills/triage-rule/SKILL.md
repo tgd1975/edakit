@@ -45,6 +45,7 @@ In this order; the first question that fails decides.
 | **Do the sources hold?** Open and read every source; the rule and its numbers must be in it | the source says otherwise: **Rejected**. Missing, unreachable, or it does not cover the numbers: **Question** |
 | **General?** It holds for other projects with these parts or this pattern, not only for the origin's choices | **Rejected**: it belongs into that project – its parts entry, its CLAUDE.md, its decision log |
 | **Which engine, which data?** A fact where a number of a part, a default or a table row is what was missing – the engine then finds it with no new code. A relation where an engine decides it from graph, parts database, simulation, plan or Gerber files without guessing | a fact that was proposed as a relation: go on as a fact and say so. Needs judgement: go on as a hint and say so. Neither: **Rejected** |
+| **Graded by the purpose?** A regulatory rule: what the firmware or a data entry can settle is a note, a warning for a board that is sold, an error only where the hardware cannot comply (handbook 15.4, section 5 of add-rule) | a stricter grade proposed: go on with the grading of 15.4 and say so |
 | **Clear enough to build?** What fires, at which numbers, which code and severity, what an `accept` accepts | **Question**, with the concrete alternatives |
 
 Rejected only with a reason a person can check: the code, the datasheet section, the counter-example. In doubt

@@ -16,9 +16,9 @@
    "lcsc": "C318884",
    "pins": {
     "1": "A",
-    "2": "B (internal to A)",
+    "2": "B",
     "3": "C",
-    "4": "D (internal to C)"
+    "4": "D"
    },
    "nc": [
     "2",

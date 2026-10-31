@@ -1,0 +1,78 @@
+{
+  "about": "Scenarios for `edakit sim`: two cell states x button pressed or released x the LED's forward-voltage corners.",
+  "ambient_c": 25,
+  "cells": {
+    "fresh": {
+      "v": 3.2,
+      "r": 20,
+      "note": "off-load voltage of a fresh CR2032 at least 3.20 V (CR2032 specification, Farnell 1728774); internal resistance at most 20 Ohm fresh (Rayovac CR2032 S6600072 Issue E, 1 kHz, 10 mA pulse)"
+    },
+    "used": {
+      "v": 2.5,
+      "r": 40,
+      "note": "Rayovac rates the capacity down to 2.5 V (220 mAh at 15 kOhm); 40 Ohm assumed – the internal resistance rises as the cell empties, no datasheet gives it"
+    },
+    "reversed": {
+      "v": -3.2,
+      "r": 20,
+      "note": "a fresh cell put in upside down – the holder takes it that way"
+    }
+  },
+  "supplies": {
+    "fresh": {
+      "BT1": "fresh"
+    },
+    "used": {
+      "BT1": "used"
+    }
+  },
+  "loads": {
+    "pressed": {
+      "about": "SW1 held down",
+      "buttons": [
+        "SW1"
+      ],
+      "leds_on": [
+        "D1"
+      ]
+    },
+    "released": {
+      "about": "nobody presses",
+      "leds_on": []
+    },
+    "pressed_reversed": {
+      "about": "SW1 held down with the cell upside down: D1 must stay dark",
+      "buttons": [
+        "SW1"
+      ],
+      "leds_on": [],
+      "matrix": false
+    }
+  },
+  "corners": [
+    "min",
+    "max"
+  ],
+  "derating": {
+    "p": 0.5,
+    "i": 0.8,
+    "v_cap": 0.67,
+    "v_diode": 0.67,
+    "v_bjt": 0.67
+  },
+  "report": [
+    "VBAT",
+    "LED_SW",
+    "LED_ANODE"
+  ],
+  "extra_scenarios": [
+    {
+      "name": "reversed/pressed",
+      "supply": {
+        "BT1": "reversed"
+      },
+      "load": "pressed_reversed",
+      "corner": "max"
+    }
+  ]
+}

@@ -217,7 +217,7 @@ A USB receptacle that powers the board: consider what the port gives – 100 mA 
 A USB receptacle whose VBUS net carries more than 10 µF directly (the capacitors' value_f): consider a soft start or less capacitance ahead of it – USB 2.0 allows a device 10 µF at attach; HINT.bulk asks for a bulk capacitor at the same input, and the two meet here.
 
 **`HINT.input_polarity`** – a power input without a polarity check (note)  
-A battery holder or supply connector the graph does not mark as reversible: consider whether it can be plugged the wrong way round.
+A supply connector the graph does not mark as reversible: consider whether it can be plugged the wrong way round. Not a battery holder – PATH.reverse checks every one as a source that may be reversed.
 
 **`HINT.thermal_copper`** – thermal resistance needs its copper (note)  
 A part whose temperature rests on rth_ja_k_per_w: consider whether the layout gives the copper that figure assumes.

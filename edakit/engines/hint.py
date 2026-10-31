@@ -343,11 +343,11 @@ def _boost_enable_on_gpio(design, cfg, sim):
 
 
 def _unmarked_power_inputs(design, cfg, sim):
-    """Battery holders and supply connectors the graph does not mark as reversible – nothing checks their polarity."""
+    """Supply connectors the graph does not mark as reversible – nothing checks their polarity. Not battery holders:
+    PATH.reverse starts from every one of them by its kind (catalog/paths.toml [reverse] sources)."""
     marked = reversible(design)
-    return [des for des in design.comps_of_kind("battery_holder", "connector") if des not in marked and (
-        _part_kind(design, des) == "battery_holder"
-        or "vbus" in {p.get("role") for p in design.part(des)["pins"].values()})]
+    return [des for des in design.comps_of_kind("connector") if des not in marked
+            and "vbus" in {p.get("role") for p in design.part(des)["pins"].values()}]
 
 
 def _rated_by_copper(design, cfg, sim):

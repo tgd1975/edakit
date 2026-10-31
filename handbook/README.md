@@ -20,10 +20,11 @@ How we work, what the tools do, and why they do it that way – including everyt
 | 14 | [Designing a circuit](14-design.md) | you design a circuit, want to know what a check or hint means, or use building blocks |
 | 15 | [Regulatory review](15-regulatory.md) | a board is sold or given away, or it transmits – support, not legal advice |
 | 16 | [KiCad as the tool chain](16-kicad.md) | a project draws its boards in KiCad instead of EasyEDA (`toolchain = "kicad"`) |
+| 17 | [Walkthrough: a coin cell, a button, an LED](17-walkthrough.md) | you want to see every step once, on the smallest board |
 
 **Reading paths**
 
-- *First time:* 1 → 2 → the example project ([Christmas bell](https://github.com/tgd1975/automatic_christmas_bell)) → 3 → 6 → 7 → 8.
+- *First time:* 1 → 2 → 17 → the example project ([Christmas bell](https://github.com/tgd1975/automatic_christmas_bell)) → 3 → 6 → 7 → 8.
 - *New circuit:* 14 → 3 → 4 → 5.
 - *Something broke:* 12 → 9.
 - *Adapting to your board:* 10 → 3 → 7.

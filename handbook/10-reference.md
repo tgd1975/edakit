@@ -76,7 +76,13 @@ of the graph and the parts entries, e.g. `["notes", "sources", "description", "v
 check and no review reads; empty: the bytes are hashed, 8.2), `assembly` ({`sides` (both), `smd_only`, `paste_gap_mm`
 (0.4: SMD pads of different parts on an assembled side, GEO.spacing), `pcba` (`"economic"` or `"standard"`: the assembler's
 class of the order, PARTS.stock; default from `sides` – one side Economic, two Standard)}), `[[stages]]` ({`id`, `name`, `cmd`,
-`advisory`, `timeout`, `about`}: project checks of phase export before S, 8.1).
+`advisory`, `timeout`, `about`}: project checks of phase export before S, 8.1),
+`archive` (`"none"`: gate runs are build output, nothing of them is committed – what is ordered is published with
+`edakit release publish`; `"git"`: a released run is committed, `edakit release current` names one git does not track
+yet, 8.3), `publish` ({`variants` (`true`: the variants below the project too – folders with an edakit.toml of their
+own), `decisions` (the decision log, e.g. `"docs/decisions.md"`: the release notes list the decisions `## D-…` since
+the previous release; without it none)} – `edakit release publish` of this project reads them, a variant's own are
+not read, 8.3).
 
 ### [cost]
 
@@ -410,9 +416,11 @@ scripts that write what they read first, when those are outdated or never ran, a
 | `edakit silk preview` | – | board file, the last Gerber export (`gerber_<board>/`) | `silk_preview_<board>_<side>.png`: artwork, texts and the fixed designators of `[silk.place]` (exit 2 when one is in the way, 7.7) |
 | `edakit export [--board]` | ✓ read | schematic, PCB, project file | `<artifacts>/export/`; with a maker that takes ODB++ also `odb_<board>.zip` (`easyeda_export_odb`, 2.5) |
 | `edakit gate [--easyeda \| --eda]` | – / ✓ | everything; with `[project] requirements` the requirements files (8.7 – a file missing or not valid: exit 1 before a run) | `<reports>/<run>/`, with `stage_<id>.txt` the output of each project check that ran (8.1); a RELEASED run supersedes the earlier ones in their `fab/manifest.json` (8.3) |
-| `edakit release current` | – | the manifests under `reports`; the real cost of its orders (`cart/<maker>/actual.json`) | – (with an order's real cost: estimate, quote and actual beside the release) |
+| `edakit release current` | – | the manifests under `reports`; the real cost of its orders (`cart/<maker>/actual.json`); with `[release] archive = "git"` what git tracks of the run | – (with an order's real cost: estimate, quote and actual beside the release; with `archive = "git"` and a run git does not track yet "not in git yet: git add -f …") |
 | `edakit release withdraw RUN --reason TEXT` | – | the run's manifest | its `fab/manifest.json`: `status`, `withdrawn` {reason, by, date} |
 | `edakit release verify FILE…\|DIR…` | – | the files (a folder: its `.zip` and `.csv` files), the manifests | – |
+| `edakit release publish [--draft] [--dry-run] [--tag T]` | – (gh, git) | git (a clean tree, HEAD on its remote branch – not with `--draft`); per project and variant below it the current release, its upload files (`release verify`), polarity sheet, manifest and order form; the graph's purpose; with `[release] publish.decisions` the decision log at HEAD and at the previous release's tag; through `gh` the repository's tags and the previous release's `SHA256SUMS` and manifests | `build/publish/<tag>/`: the files, `SHA256SUMS`, `notes.md`; the GitHub release `<tag>` (default today, `-2` … when the remote has it) as a pre-release on HEAD – `--draft` a draft without tag, `--dry-run` nothing uploaded. Exit 2: a file refused or a project without a current release, nothing staged (8.3) |
+| `edakit release publish --built TAG` | – (gh) | – | the release TAG no longer a pre-release: a board of it has been built and works (M-4) |
 | `edakit fab --board B --out DIR [--offline]` | ✓ / – | PCB, exports, `route/<board>_board.json` (GEO.spacing), `silk_strings_<board>.json` and `silk_footprints_<board>/` (GEO.silk), the stock snapshot (`order.md`), with `[routing] drc_rules` the rule set of EasyEDA's DRC (GEO.drc) | `DIR/<board>/`, with `[order]` or `[cart]` also `order.md`, with `[order]` `order.json` (the settings in the fab hash), with `[routing] drc_rules` also `drc_rules.json`; with a maker of `[cart] makers` that matches by MPN `bom_<board>_mpn.csv`, with one that takes ODB++ `odb_<board>.zip` (SYNC.odb) |
 | `edakit fab diff RUN_A RUN_B [--board B]` | – | `fab/<board>/` of two gate runs: Gerber layers, drill files, BOM, CPL, the order settings (`order.json`) | – |
 | `edakit lock [status\|claim\|release\|yield CHAT\|hook] [--note]` | – | – (hook: tool name and, for `easyeda_api_call`, its `path`; library lookups of `READ_ONLY_TOOLS`/`READ_ONLY_API` pass without a claim, 11.2) | `~/.local/state/edakit/easyeda-lock.json` |
@@ -451,9 +459,13 @@ build/edakit/               artifacts (not versioned): caches, previews, routing
                             library/ and footprints/: the library's symbols and footprints (edakit part import);
                             datasheets/: the datasheets edakit part fetch keeps (unless [project] datasheets names
                             another folder); scripts/: the output of each project script's last run (edakit run)
-build/release/<run>/        gate runs (archive the released ones; fab/manifest.json says which one is current);
+build/release/<run>/        gate runs – build output, not versioned (with [release] archive = "git" the released
+                            ones are committed); fab/manifest.json says which one is current;
                             fab/<board>/cart/<maker>/ the files of an order: job, quote, page texts, screenshots,
                             regulatory review, check, cart line, real cost (edakit cart, 8.4)
+build/publish/<tag>/        what edakit release publish published: per board the upload files, polarity_<board>.png,
+                            manifest_<board>.json, order_<board>.md; SHA256SUMS, notes.md – the folder to upload to
+                            the maker from (not versioned; the GitHub release keeps it, 8.3)
 ```
 
 ## 10.7 Check IDs of before

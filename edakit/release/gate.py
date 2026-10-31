@@ -51,6 +51,12 @@ One current release: a RELEASED run supersedes every earlier released run of the
     edakit release current             the current release: run, time, git, graph version, files with SHA-256
     edakit release withdraw RUN --reason TEXT   the run is withdrawn – then there is no current release
     edakit release verify FILE…|DIR    the files about to be uploaded = the files of the current release?
+    edakit release publish             what is ordered as a GitHub release (publish.py)
+
+Gate runs are build output: they stay in <reports>, which git ignores, and nothing of them is committed – what is
+ordered is published with the order (edakit release publish). [release] archive = "git" is the opt-in for a project
+that commits its released runs: `release current` then names a released run git does not track yet, and the protocol
+names the setting in its header.
 """
 
 from __future__ import annotations
@@ -720,6 +726,24 @@ def withdraw(cfg, run, reason, by=None):
     return supersede(cfg, run)
 
 
+def archive(cfg):
+    """[release] archive: "none" – gate runs are build output, nothing of them is committed – or "git"."""
+    return cfg.release.get("archive", "none")
+
+
+def untracked(cfg, run):
+    """With [release] archive = "git": the run's folder, relative to the project, while git tracks none of its files –
+    None when it does, with archive "none", or outside a git repository."""
+    if archive(cfg) != "git":
+        return None
+    d = cfg.reports / run
+    try:
+        p = subprocess.run(["git", "ls-files", "--", str(d)], cwd=cfg.root, capture_output=True, text=True, timeout=30)
+    except (OSError, subprocess.TimeoutExpired):
+        return None
+    return cfg.relative(d) if p.returncode == 0 and not p.stdout.strip() else None
+
+
 def upload_files(paths):
     """The files to check: each FILE, and every .zip and .csv file in and below each DIR."""
     files = []
@@ -774,6 +798,8 @@ def main_release(cfg, args):
                      f", graph sha256 {str(data.get('graph_sha256'))[:12]}"))
             for rel, sha in data.get("files", {}).items():
                 print(f"  {rel}  {sha}")
+            if folder := untracked(cfg, run):     # [release] archive = "git": the released run goes into git
+                print(f"  not in git yet: git add -f {folder} – with the superseded manifests")
             from .. import cart
             for board, maker, number, est, quote, actual, cur in cart.totals_of(cfg, run):
                 fmt = lambda v: "–" if v is None else f"{v:.2f}"  # noqa: E731
@@ -828,6 +854,10 @@ def write_protocol(cfg, outdir, head, rows, sim, signoff, notes, decision, reaso
             f"BOM and CPL rows, with [order] the order settings – {head['fab_method']}) |"]
            if head.get("fab_sha256") else []),
          f"| Git | `{head['git_commit']}`{' + uncommitted changes' if head['git_dirty'] else ''} |",
+         "| Archive | " + ("`git` ([release] archive): a released run is committed – `git add -f "
+                           f"{cfg.relative(outdir)}` with the superseded manifests (8.3) |" if archive(cfg) == "git" else
+                           "`none` ([release] archive): the run is build output, not committed – what is ordered is "
+                           "published with the order, `edakit release publish` (8.3) |"),
          f"| Tools | Python {head['tools']['python']}, edakit {head['tools']['edakit']}, {head['tools']['ngspice']}, "
          + (f"KiCad {head['tools'].get('kicad', '?')} (kicad-cli) |" if "kicad" in head["tools"] else
           f"easyeda-mcp-pro {head['tools']['easyeda-mcp-pro']} |"),

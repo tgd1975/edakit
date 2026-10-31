@@ -57,8 +57,10 @@ BOARD_FILE_KEYS = ("revision", "view", "outline", "holes", "tooling", "place", "
                    "pour_min_piece_mm2", "pour_inset_mm", "silk", "loops", "net_classes", "copper", "order", "uniform",
                    "looks", "thickness_mm")
 SCHEMATIC_KEYS = ("stub", "layout")
-RELEASE_KEYS = ("layout_files", "state_files", "hash_ignore", "assembly", "stages")
+RELEASE_KEYS = ("layout_files", "state_files", "hash_ignore", "assembly", "stages", "archive", "publish")
 PCBA = ("economic", "standard")  # [release] assembly.pcba: JLCPCB's classes – another maker's: its profile's classes
+ARCHIVE = ("none", "git")        # [release] archive: gate runs are build output (none) – or a released one is committed
+PUBLISH_KEYS = ("variants", "decisions")   # [release] publish: what edakit release publish takes (release/publish.py)
 COST_KEYS = ("fees", "budget", "currency", "rates", "shipping", "coupon", "vat_pct", "pcb_price")   # [cost]
 EXTRA_KEYS = ("item", "supplier", "code", "per_set", "spare", "moq", "step", "unit_price", "currency")   # [[extra]]
 STOCK_MAX_AGE_DAYS = 14          # [project] stock_max_age_days: an older stock snapshot is pending (PARTS.stock)
@@ -318,7 +320,11 @@ def _outline(spec, name):
                                (x0 + r, y0 + r, 180)):
                 for k in range(steps + 1):
                     a = math.radians(a0 + 90 * k / steps)
-                    pts.append((round(cx + r * math.cos(a), 4), round(cy + r * math.sin(a), 4)))
+                    pt = (round(cx + r * math.cos(a), 4), round(cy + r * math.sin(a), 4))
+                    if not pts or pt != pts[-1]:      # a radius of half the side: the arcs meet, a circle
+                        pts.append(pt)
+            if pts[-1] == pts[0]:
+                pts.pop()
     else:
         raise ConfigError(f"board {name}: outline needs 'polygon' or 'rect'")
     if len(pts) < 3:
@@ -721,6 +727,24 @@ def _release_values(release, maker=None):
     return []
 
 
+def _publish_values(release):
+    """[release] archive: "none" or "git"; [release] publish: a table of variants (true or false) and decisions (the
+    path of the decision log)."""
+    out = []
+    if release.get("archive", "none") not in ARCHIVE:
+        out.append('[release] archive must be "none" (gate runs are build output, the default) or "git" (a released '
+                   f'run is committed), not {release["archive"]!r}')
+    pub = release.get("publish", {})
+    if not isinstance(pub, dict):
+        return out + ['[release] publish must be a table, e.g. { variants = true, decisions = "docs/decisions.md" }']
+    out += _unknown("[release] publish", pub, PUBLISH_KEYS)
+    if not isinstance(pub.get("variants", True), bool):
+        out.append("[release] publish.variants: true or false")
+    if "decisions" in pub and not (isinstance(pub["decisions"], str) and pub["decisions"].strip()):
+        out.append('[release] publish.decisions: the path of the decision log, e.g. "docs/decisions.md"')
+    return out
+
+
 def _cost_values(cost):
     if cost is None:
         return []
@@ -935,6 +959,7 @@ def load(path=None) -> Config:
         except makers.MakerError as e:
             problems.append(f"[cart] makers: {e}")
     problems += _project_values(p) + _release_values(raw.get("release", {}), profiles.get(cart.get("maker")))
+    problems += _publish_values(raw.get("release", {}))
     problems += _cost_values(raw.get("cost")) + _extras(raw.get("extra"))
     if problems:
         raise ConfigError(f"{path}:\n  " + "\n  ".join(problems))

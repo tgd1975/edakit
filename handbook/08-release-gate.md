@@ -392,13 +392,27 @@ the simulation's information is in section 7, that of the other stages in sectio
 Result folder `<reports>/<YYYYMMDD-hhmmss>/`: `protocol.md`, `graph_checks.json`, `sim.json`, `schematic_<board>.json`,
 `fab/<board>/` (Gerber ZIP, BOM, CPL, raw data, with `[order]` the order form `order.md` and the order settings
 `order.json`), `fab/polarity_<board>.png`,
-`fab/manifest.json`. Archive a released folder in git (`git add -f`) – it is the record of what was ordered.
+`fab/manifest.json`.
+
+**Gate runs are build output.** A run stays in `<reports>` (`build/release`, which git ignores – the `.gitignore` of
+new-project leaves out `build/`), and nothing of it is committed: a released run of the reference project was
+160 files and about 5 MB – unpacked Gerber files beside the ZIP, the simulation's raw values, raster pictures – that
+nobody reads in a diff. What a release rests on is in the repository already: the sign-offs with the hashes they are
+bound to, M-5 on the fab hash. While the board in EasyEDA stays untouched, the gate exports the same files again – the
+same fab hash; after the order the maker keeps the files for a re-order; and should the EasyEDA state be lost, the
+board is made again from the graph and the board file – routed anew, so M-5 anew. What is ordered is published with
+the order instead (`edakit release publish`, below). A project that wants its released runs in git sets `[release]
+archive = "git"` (default `"none"`, 10.1): a released folder is then committed (`git add -f`) with the superseded
+manifests, `edakit release current` names a released run git does not track yet ("not in git yet: git add -f
+build/release/<run>"), and the protocol names the setting in its header – as it names `none`. Folders a project
+archived before stay as they are: nothing is deleted, and `release current`, `withdraw` and `verify` read them as
+before.
 
 **One current release.** A project has at most one run that may be uploaded. When the gate decides RELEASED, it
 marks every earlier manifest under `[project] reports` that says `"released": true` as superseded by the new run:
 `"released": false`, `"status": "superseded"`, `"superseded_by": "<run>"`; `decision` keeps what the gate decided.
-The archived folders change – commit them together with the new run. A released run that must not be uploaded after
-all (a review found something, the files were wrong) is withdrawn:
+With `archive = "git"` the archived folders change – commit them together with the new run. A released run that must
+not be uploaded after all (a review found something, the files were wrong) is withdrawn:
 
 ```bash
 edakit release current                                  # the run, its time, git commit, graph version, files + SHA-256
@@ -417,6 +431,46 @@ SHA-256 of each with the manifests: a file of the current release passes; a file
 run and its status ("from run 20261025-205344 (superseded by 20261025-232212)"); a file of no run is unknown – an
 edited CSV, a renamed export. Exit 0 when every file is of the current release, 2 otherwise, 1 for a file that is not
 there.
+
+**Publishing what is ordered.** `edakit release publish` puts the files of an order on GitHub as a release, with
+notes edakit writes – once every board of the project, and of every variant below it, has its current release:
+
+```bash
+edakit release publish --dry-run          # staging and notes in build/publish/<tag>/, nothing uploaded
+edakit release publish                    # the release <YYYY-MM-DD>, a pre-release on HEAD
+edakit release publish --built 2026-10-31 # a board of that release has been built and works (M-4, 8.5)
+```
+
+1. **Guards** (not with `--draft`): the working tree is clean and HEAD is on its remote branch – the tag must name the
+   state the files were made from.
+2. **Per project** – the project and every variant below it, a folder with an edakit.toml of its own (10.4;
+   `[release] publish.variants = false`: the project alone): its current release as `release current` has it, and
+   `release verify` on the upload files of every made board – `gerber_<b>.zip`, `bom_<b>.csv`, `cpl_<b>.csv`, with
+   `[cart] makers` the files of every maker. A file refused, or a project without a current release: exit 2, nothing
+   staged, `gh` not called.
+3. **Staging** in `build/publish/<tag>/`: those files, `polarity_<b>.png`, the run's manifest as `manifest_<b>.json`,
+   the order form as `order_<b>.md` where the run has one (`[order]`, `[cart]`), and `SHA256SUMS` over all of them –
+   the folder to upload to the maker from; publish names it at the end. `notes.md` beside them is the release's text.
+4. **The notes**, written by edakit: the commit; per board the gate run, the git state of its manifest, the fab hash,
+   and whether the board changed since the previous release – by its fab layers in both manifests, what the maker
+   builds from (the Gerber ZIP's own bytes change with every export, the fab hash does not), and where a manifest has
+   none by the SHA-256 of the upload files in both `SHA256SUMS`; the decisions since the previous release – the
+   headings `## D-…` of the decision log at HEAD that it lacked at that tag (`[release] publish.decisions`, without it
+   none); the purpose from the graph, with the note that the regulatory review M-6 is support, not legal advice; how
+   to order. Every link is absolute, into the commit – relative links do not work in release notes.
+5. `gh release create <YYYY-MM-DD> --prerelease --target <HEAD>` with the staged files; a tag the remote has already
+   gets `-2`, `-3`. The previous release is the newest one publish made (its title "Manufacturing files …"), drafts
+   left out.
+6. Once a board of this state has been built and works – the acceptance M-4 (8.5) is the natural moment –, `--built
+   <tag>` drops the pre-release mark: `gh release edit <tag> --prerelease=false`.
+
+`--draft` makes a draft only the account sees – no tag, no guards –, a test to delete afterwards (`gh release delete
+<tag> --yes`); `--tag T` another tag than the date; `--dry-run` stages, writes the notes and uploads nothing. Exit 0,
+2 (verify refused a file, a project has no current release), 1 (an error: a guard, git, gh). It needs the GitHub CLI
+`gh`, logged in (`gh auth login`); the repository is the one `gh` sees from the project, and the release is as public
+as the repository. Without `gh` or its login one sentence says so. Firmware is not published. The reference project
+built this as a script of its own first and published its four boards – the main board and the variants smd, tht
+and esp32, twelve order files – as a draft with it.
 
 ## 8.4 Ordering at the manufacturer (up to the cart; the owner orders and pays)
 
@@ -621,7 +675,8 @@ checks of phase `acceptance` (8.1), each with its command, and the sign-offs of 
 ```
 
 M-4 works through it and names the requirements it tested in its note; signed, it lets their acceptance steps pass,
-and the requirements whose evidence is such a check (8.7). The list "after uploading to the manufacturer, before
+and the requirements whose evidence is such a check (8.7). A board of a published release that passed it drops the
+release's pre-release mark: `edakit release publish --built <tag>` (8.3). The list "after uploading to the manufacturer, before
 paying" works the same way for M-2: the datasheet points with `when = "order"` and the checks of phase `order`.
 
 ## 8.6 Project scripts and agents

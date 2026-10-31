@@ -434,8 +434,7 @@ def _bypass_to_ground_level(p):
     """A bypass switch SW21 (the example's button part) from GTR_IN, at VREF, to an output BYPASS held at 0 V by
     10 kΩ – both sides in the signal path."""
     g = p.graph()
-    add(g, "SW21", "button", "C318884", {"1": "A", "2": "B (internal to A)", "3": "C", "4": "D (internal to C)"},
-        nc=["2", "4"])
+    add(g, "SW21", "button", "C318884", BUTTON_PINS, nc=["2", "4"])
     add(g, "R23", "resistor", "C17414", {"1": "1", "2": "2"}, value="10k")
     wire(g, "GTR_IN", "SW21.1", signal=True)
     wire(g, "BYPASS", "SW21.3", "R23.1", signal=True)

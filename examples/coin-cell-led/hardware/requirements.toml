@@ -1,0 +1,35 @@
+# What the circuit must do (handbook 3.6, 10.4): drafted with the skill requirements, accepted by the owner.
+
+[[need]]
+id = "N-1"
+text = "Press the button and the LED lights; let go and it is dark."
+who = "whoever presses it"
+source = "the idea of the example (handbook 17)"
+status = "accepted"
+
+[[need]]
+id = "N-2"
+text = "A coin cell lasts for years when nobody presses the button."
+who = "whoever changes the cell"
+source = "the idea of the example (handbook 17)"
+status = "accepted"
+
+[[requirement]]
+id = "R-1"
+text = "While SW1 is pressed, D1 carries at least 1 mA – from a fresh CR2032 down to one used to 2.5 V."
+source = "N-1; Rayovac rates the CR2032's capacity down to 2.5 V (sim.json, cell 'used')"
+from = ["N-1"]
+binding = "must"
+verify = [{ rows = "SIM.state * D1 LED on" },
+          { accept = "press SW1 with a fresh cell: D1 lights; let go: D1 is dark" }]
+status = "accepted"
+
+[[requirement]]
+id = "R-2"
+text = "With SW1 released, D1 is dark and the board draws at most 1 µA from the cell."
+source = "N-2; 1 µA is 8.8 mAh a year, 4 % of 220 mAh – with the cell's self-discharge of about 1 % a year it lasts about 20 years unused"
+from = ["N-2"]
+binding = "must"
+verify = [{ rows = "SIM.state * D1 LED dark" },
+          { signoff = "M-1" }]
+status = "accepted"
