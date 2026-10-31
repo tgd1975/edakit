@@ -45,11 +45,13 @@ SWITCHERS = ("buck", "boost")                        # behaviour models of switc
 PIN_FUNCTION = re.compile(r"([a-z][a-z0-9]*?)(\d+)(?:\.([a-z]+))?")   # "spi0.sck", "i2c1.sda", "pwm1.a", "adc0"
 KINDS_OF_TYPE = {"microcontroller": ("ic", "module"), "regulator": ("ic", "module"),   # STRUCT.identity: graph type -> parts
                  "transistor": ("npn", "pnp", "nmos", "pmos"), "led": ("led", "led_rgb"),   # entry kinds; any other
-                 "switch": ("switch", "dip_switch"), "audio": ("buzzer",)}                  # type: the same word
+                 "switch": ("switch", "dip_switch"), "audio": ("buzzer", "speaker")}       # type: the same word
 KINDS_OF_PREFIX = {"R": ("resistor", "potentiometer"), "C": ("capacitor",), "L": ("inductor",),
                    "D": ("diode", "led", "led_rgb"), "Q": ("npn", "pnp", "nmos", "pmos"), "U": ("ic", "module"),
                    "J": ("connector",), "SW": ("switch", "button", "dip_switch"), "F": ("fuse",),
-                   "BT": ("battery_holder",), "BZ": ("buzzer",), "K": ("relay",), "TP": ("connector",)}
+                   "BT": ("battery_holder",), "BZ": ("buzzer",), "K": ("relay", "solenoid"), "TP": ("connector",),
+                   "M": ("motor",), "LS": ("speaker",), "SP": ("speaker",), "HE": ("heater",),
+                   "OK": ("optocoupler",)}
 VALUE_PARAMS = {"value_ohm": ("Ω", "resistance"), "value_f": ("F", "capacitance"), "value_h": ("H", "inductance")}
 VALUE_TOL = 0.01      # graph value vs the entry's value parameter
 MULTIPLIERS = {"p": 1e-12, "n": 1e-9, "u": 1e-6, "µ": 1e-6, "μ": 1e-6, "m": 1e-3, "k": 1e3, "K": 1e3, "M": 1e6,

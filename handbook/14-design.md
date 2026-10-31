@@ -166,6 +166,12 @@ Two supplies on one net: consider it where it applies.
 
 **`HINT.readback`** – read-back of a serial output (note; replaces H-9)  
 Read-back of a serial output: consider it where it applies.
+
+**`HINT.motor_supply`** – motor supply: bulk capacitor and returned energy (note)  
+A motor on the board: consider the bulk capacitor at its driver's motor supply and where its returned energy goes.
+
+**`HINT.heater`** – a heater needs a second interruption (note)  
+A heater on the board: consider a second, independent way to switch it off.
 <!-- edakit:end -->
 
 The designer handles each one and writes down how, in the graph:

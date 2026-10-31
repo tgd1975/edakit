@@ -20,7 +20,7 @@ source = "NXP UM10204 Rev. 7.0 (2021), 7.1"
 tag = "r"
 
 [flyback]             # REQ.missing: a diode across a coil a transistor or an output switches, cathode at its plus
-coils = { relay = ["coil_plus", "coil_minus"], buzzer = ["plus", "minus"] }
+coils = { relay = ["coil_plus", "coil_minus"], buzzer = ["plus", "minus"], motor = ["plus", "minus"], solenoid = ["plus", "minus"] }
 coil_if = { buzzer = "coil_ohm" }   # a buzzer is a coil only with this value (a piezo buzzer has none)
 source = "TE Connectivity, The Application of Relay Coil Suppression with DC Relays"
 tag = "r"

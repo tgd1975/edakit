@@ -157,3 +157,29 @@ limits = ["vdd_op_min_v", "vdd_op_max_v", "vin_min_v", "vin_max_v", "vsys_min_v"
           "gpio_v_max_v", "gpio_i_max_a", "gpio_i_total_max_a"]
 values = ["behavior", "regulator", "v_io_v", "vout_v", "dropout_v", "efficiency", "i_core_a", "i_core_min_a",
           "gpio_r_out_ohm", "iq_a", "vih_v", "vil_v", "vih_ratio", "vil_ratio", "usb_c"]
+
+[kinds.motor]                                # a DC motor on the board's terminals: its winding
+roles = ["plus", "minus"]
+limits = ["v_max_v", "i_max_a"]
+values = ["coil_ohm"]
+
+[kinds.solenoid]
+roles = ["plus", "minus"]
+limits = ["v_max_v", "i_max_a"]
+values = ["coil_ohm"]
+
+[kinds.speaker]
+roles = ["plus", "minus"]
+limits = ["v_max_v"]
+values = ["impedance_ohm"]
+
+[kinds.heater]                               # a heater cartridge, a heated bed, a resistance wire
+roles = []
+limits = ["v_max_v"]
+values = ["value_ohm"]
+
+[kinds.optocoupler]
+roles = ["anode", "cathode", "collector", "emitter"]
+limits = ["if_max_a", "vr_max_v", "vce_max_v", "ic_max_a"]
+values = ["vf_v", "vf_at_a", "ctr_min_ratio"]
+

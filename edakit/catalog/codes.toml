@@ -1288,3 +1288,26 @@ sources = [
   "TI SLVS695D (TLC591x, June 2007, revised January 2015), pin functions: CLK \"Clock input for data shift on rising edge\"; 7.7 Switching Characteristics (VDD 3 V): tPLH4 and tPHL4 CLK to SDO 12/20/30 ns (min/typ/max)",
   "Wikipedia, Serial Peripheral Interface, section Mode numbers (read 2026-10-26): mode 0 (CPOL 0, CPHA 0) shifts data out on the falling SCLK and samples on the rising SCLK; mode 1 shifts on the rising and samples on the falling SCLK",
 ]
+
+[codes."HINT.motor_supply"]
+title = "motor supply: bulk capacitor and returned energy"
+rule = "A motor on the board: consider the bulk capacitor at its driver's motor supply and where its returned energy goes."
+why = "A motor draws its start current from the supply in pulses and gives energy back when it brakes or its driver switches off. Without a bulk capacitor at the driver the supply rings and dips; behind a series diode the returned energy has nowhere to go and lifts the motor supply above the driver's rating (maker-coverage MOT 5, MOT 9)."
+fix = "A bulk electrolytic at each driver's motor supply pin, sized from the driver's datasheet; no series diode in front of the motor supply, or a clamp (TVS, a braking resistor) behind it. Run the start and the stall as load steps in a transient run (edakit handbook 5.2)."
+severity = "note"
+when = { kinds = ["motor", "solenoid"] }
+sources = [
+  "docs/concepts/new/maker-coverage.md, appendix MOT 5 (TI DRV8833 datasheet, tagged to verify) and MOT 9 (Pololu A4988 product page, tagged extracted)",
+]
+
+[codes."HINT.heater"]
+title = "a heater needs a second interruption"
+rule = "A heater on the board: consider a second, independent way to switch it off."
+why = "The MOSFET or solid-state relay that switches a heater fails closed often enough; then the firmware can no longer stop it, and a heated bed or a cartridge runs away (maker-coverage MOT 30)."
+fix = "A thermal fuse at the heater, a relay or the supply's enable that a watchdog or the firmware's thermal protection drops, independent of the switching transistor."
+severity = "note"
+when = { kinds = ["heater"] }
+sources = [
+  "docs/concepts/new/maker-coverage.md, appendix MOT 30: Marlin Configuration.h (thermal protection), Klipper Config_Reference, Voron documentation – read in full in the maker-coverage research",
+]
+

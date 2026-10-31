@@ -344,6 +344,24 @@ class Netlist:
         elif kind == "buzzer":
             a, b = self.rn(des, "plus", True), self.rn(des, "minus", True)
             self.add(f"R_{des} {a} {b} {p['coil_ohm']}", des, "buzzer", (a, b), p["coil_ohm"])
+        elif kind in ("motor", "solenoid", "speaker"):   # the winding's DC resistance; a motor at stall
+            a, b = self.rn(des, "plus"), self.rn(des, "minus")
+            ohm = p.get("impedance_ohm" if kind == "speaker" else "coil_ohm")
+            if a and b and a != b and ohm:
+                self.add(f"R_{des} {a} {b} {ohm}", des, kind, (a, b), ohm)
+        elif kind == "heater":
+            self.two_pole(des, "R", p["value_ohm"], "heater")
+        elif kind == "optocoupler":
+            a, k = self.rn(des, "anode"), self.rn(des, "cathode")
+            c, e = self.rn(des, "collector"), self.rn(des, "emitter")
+            if a and k:
+                model = f"LED_{part.get('lcsc', des)}_opto"
+                self.models[model] = led_model(model, p.get("vf_v", 1.2), p.get("vf_at_a", 0.01), 10)
+                self.add(f"V_{des}_LA {a} x_{des.lower()}_a 0")
+                self.add(f"D_{des} x_{des.lower()}_a {k} {model}", des, "opto_led", (f"x_{des.lower()}_a", k))
+                if c and e:          # the transistor passes at least ctr_min times the LED current, as VCE allows
+                    self.add(f"B_{des}_CE {c} {e} I = {p.get('ctr_min_ratio', 0.5)}*max(i(V_{des}_LA), 0)"
+                             f"*min(1, max(V({c},{e}), 0)/0.2)", des, "opto_out", (c, e))
         elif kind == "relay":
             a, b = self.rn(des, "coil_plus"), self.rn(des, "coil_minus")
             if a and b and a != b:

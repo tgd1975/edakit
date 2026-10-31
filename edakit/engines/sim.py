@@ -236,8 +236,16 @@ def stress(s):
             if "value" in el and kind != "capacitor":
                 a, b = (v(res, x) for x in nodes[:2])
                 i = (a - b) / el["value"]
-            if kind in ("resistor", "pot"):
+            if kind in ("resistor", "pot", "heater", "speaker"):
                 s.q(des, "p", i * i * el["value"], "W", kind, des, "power dissipation")
+                if kind in ("heater", "speaker"):
+                    s.q(des, "v", abs(a - b), "V", kind, des, "voltage across it")
+            elif kind in ("motor", "solenoid"):
+                s.q(des, "i", abs(i), "A", kind, des, "winding current (at standstill)")
+                s.q(des, "v", abs(a - b), "V", kind, des, "voltage across it")
+            elif kind == "opto_led":     # through its ammeter: the diode's own current is not printed
+                cur = res.get(f"v_{des.lower()}_la#branch", float("nan"))
+                s.q(des, "if", cur, "A", "led", des, "LED forward current")
             elif kind == "fuse" and "i_hold_a" in r:
                 hold = r["i_hold_a"]
                 for (t0, h0), (t1, h1) in zip(values(part).get("i_hold_vs_temp") or [],

@@ -1,0 +1,22 @@
+# The domain motors: motors, solenoids and heaters on the board – their windings and loads, the energy they return,
+# what keeps a heater from running away (concept rules-at-scale.md, section 5; maker-coverage clusters MOT).
+
+[domain]
+name = "motors"
+about = "motors, solenoids and heaters: start and stall current, returned energy, a second interruption for a heater"
+suggested_by = { kinds = ["motor", "solenoid", "heater"] }
+
+[severity]
+
+[hints]
+apply = ["HINT.motor_supply", "HINT.heater"]
+
+[review]
+electrical = [
+  "Start and stall: the current V / R of each winding against its driver, its supply and the wiring, and the dip it leaves on the MCU's supply. A transient run with the start as a load step (steps) shows the brown-out (LIM.range); ask for the cases no run covers – several motors starting at once, a stalled axis.",
+  "Returned energy: where does a braking motor or a switched-off coil put its energy – a clamp, the bulk capacitor, the supply? Behind a series diode the motor supply rises (HINT.motor_supply).",
+  "A heater: its power at the upper end of the supply (V² / R), the switch's dissipation at that current, and the second, independent interruption (HINT.heater).",
+]
+
+[fixtures]
+clean = []
