@@ -22,22 +22,14 @@ run against a maker's page or EasyEDA yet.
 
 ### Needs the owner's computer – a session attached to it, Claude in Chrome, the makers' accounts
 
-- [ ] **Step 0 (5.0), the profiles:** the four makers' pages were read on 2026-10-31 with Claude in Chrome in the
-      owner's accounts, nothing ordered – upload of a local file, read back, screenshots to a file work everywhere; the
-      placement preview opens again from the cart at JLCPCB ("Product Details → Part Placement") and Eurocircuits
-      ("Assembly Visualizer → CPL Editor"), PCBWay shows none (its engineers review the files); no maker's terms say
-      anything on automated use. Notes and JLCPCB's quote text in `tests/fixtures/makers/<maker>/` on branch
-      `makers-step0` (pushed; worktree `../edakit-step0`, session edakit-c9). The profiles of PCBWay, Eurocircuits and
-      AISLER are recorded there, with tests (a field's `more = true` for lists read only in part). Left: JLCPCB's
-      profile with the order number (below; the test helper `ordered()` of 58 tests orders with the placeholder), the
-      consents the skill must stop at (JLCPCB's pre-checked assembly terms, PCBWay's "Agree" on export control,
-      Eurocircuits' Terms of Sales), the merge on the owner's OK; no past order exists in the new accounts, so no
-      order page as test data.
-- [ ] **JLCPCB's order number – gone:** "Mark on PCB" offers only "Remove Mark" (preselected) and "2D barcode (Serial
-      Number)" with its own dialog (2D barcode Only | Number Only | both; QR | Data Matrix; 5/8/10 mm; position). Left:
-      the placeholder and `mark = "specify"` leave `edakit/makers/jlcpcb.toml`, F-6 still names a `JLCJLCJLCJLC` left on
-      a silkscreen (the bell), the barcode words. Not checked: Economic PCBA on a round board with two customer tooling
-      holes and no rails (walkthrough-gaps B6).
+- [ ] **Step 0 (5.0) and the live runs – the merge of branch `makers-step0`, on the owner's OK:** the four profiles
+      recorded from the forms (2026-10-31), JLCPCB's order number gone (`former_placeholder`, `mark = "specify"`
+      refused; the bell needs `mark = "remove"` or a barcode before its next order), the skill cart stopping at every
+      consent in the owner's name, and what the live runs found fixed in `edakit cart` (numbers, uploads a page does
+      not show or takes after the cart, matching in the maker's review, checkout fields, a cart line named by size).
+      Evidence in `tests/fixtures/makers/` (LIVE.md); full suite green. Open with it: whether JLCPCB's required customs
+      "Product Description" becomes a key of `[order]`; B6 (Economic on a round board with two customer tooling holes)
+      not checked.
 - [x] **PCBWay:** the files go up after "Save to Cart" (Gerber, BOM, centroid in Altium's mil format, assembly
       drawings; "Submit the File Now" starts the review); the assembly price shows online but without components until
       the review; one `bom_<b>_mpn.csv` serves PCBWay and Eurocircuits – both took it.
@@ -50,10 +42,13 @@ run against a maker's page or EasyEDA yet.
       clockwise). No component layers: KiCad as the converter for AISLER, or no AISLER. Seen on 2026-10-31: AISLER
       takes kicad-cli's ODB++ of led-bar with every part, offers edakit's properties as BOM columns ("edakit", "lcsc",
       MPN), leaves the tooling holes out; D1 (SS34) needed a part by hand, the LEDs were matched by value only.
-- [ ] **5.7:** the skill cart live at JLCPCB, up to the cart.
-- [ ] **5.8:** Eurocircuits live, up to the basket.
-- [ ] **5.10:** AISLER live, up to the cart (after step 0b).
-- [ ] **5.12:** PCBWay live, up to "Save to Cart".
+- [x] **5.7, 5.12:** the skill cart live at JLCPCB and PCBWay (2026-11-01, the 555 blinker, a copy of the example):
+      every check passed, into the cart, order record written, nothing ordered.
+- [ ] **5.8:** Eurocircuits live – stopped, as it must, at "Board thickness": 1.6 mm is not among Eurocircuits'
+      thicknesses (1.55 is its standard). Again with a board of a thickness it makes, or the owner's word on 1.55.
+- [ ] **5.10:** AISLER live – the release's SYNC.odb warns: kicad-cli's ODB++ of the blinker differs from its Gerber
+      files on the bottom silkscreen (1.06 mm² at 27.27, 1.57) and the top copper (0.05 mm² at 40.96, 17.53); find why,
+      then the run.
 
 ### Needs the makers
 
