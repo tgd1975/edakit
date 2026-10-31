@@ -1523,8 +1523,8 @@ sources = [
 
 [codes."HINT.input_polarity"]
 title = "a power input without a polarity check"
-rule = "A battery holder or supply connector the graph does not mark as reversible: consider whether it can be plugged the wrong way round."
-why = "There is no polarity standard for many plugs: JST-PH battery packs differ between vendors, barrel jacks are centre-positive or – after Boss – centre-negative; PATH.reverse checks only a source marked reversible (maker-coverage PWR 7, PWR 32)."
+rule = "A supply connector the graph does not mark as reversible: consider whether it can be plugged the wrong way round. Not a battery holder – PATH.reverse checks every one as a source that may be reversed."
+why = "There is no polarity standard for many plugs: JST-PH battery packs differ between vendors, barrel jacks are centre-positive or – after Boss – centre-negative; PATH.reverse checks a connector only when it is marked reversible (maker-coverage PWR 7, PWR 32)."
 fix = "Give it \"source\": \"reversible\" so that PATH.reverse checks what a reversed source reaches, or a keyed connector whose polarity cannot be swapped."
 severity = "note"
 when = { match = "unmarked_power_input" }

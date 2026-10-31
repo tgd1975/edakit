@@ -146,7 +146,8 @@ def test_pwm_on_leds_and_the_power_domain(project):
 @ngspice
 def test_a_cell_above_its_current(project):
     """The cells of test_sim_supply on +5V alone: everything runs from them – above an i_max_a of 50 mA (a value for
-    the test) with all LEDs on; the holder suggests the domain power and its polarity hint."""
+    the test) with all LEDs on; the holder suggests the domain power, but not its polarity hint – PATH.reverse checks
+    every holder by its kind."""
     from test_sim_supply import cells_on_the_rail
     sim = cells_on_the_rail(project)
     sim["cells"]["fresh"]["i_max_a"] = 0.05
@@ -156,4 +157,20 @@ def test_a_cell_above_its_current(project):
     assert {c["result"] for c in cell if "/all_on/" in c["scenario"]} == {"fail"}
     assert {c["id"] for c in cell} == {"LIM.i"}
     assert "power" in profile.suggested(Design.from_config(project.config()))
-    assert "BT1" in [f.place for f in found(project, "HINT.input_polarity")]
+    assert "BT1" not in [f.place for f in found(project, "HINT.input_polarity")]
+
+
+def test_a_plug_whose_polarity_nobody_checks(project):
+    """HT-6: a supply connector the graph does not mark as reversible gets the polarity hint; marked, PATH.reverse
+    checks it and the hint is quiet. A battery holder never gets it – the walkthrough of handbook 17 had to accept it
+    for a CR2032 that PATH.reverse had already checked."""
+    toml = project.root / "edakit.toml"
+    toml.write_text(toml.read_text().replace("[project]", '[project]\ndomains = ["power"]', 1))
+    part = project.part("C131337")                       # the JST PH input, pin 1 its supply
+    part["pins"]["1"]["role"] = "vbus"
+    project.save_part("C131337", part)
+    assert "J1" not in [f.place for f in found(project, "HINT.input_polarity")]
+    g = project.graph()
+    del project.comp(g, "J1")["source"]
+    project.save_graph(g)
+    assert "J1" in [f.place for f in found(project, "HINT.input_polarity")]
