@@ -13,7 +13,8 @@ from collections import Counter, defaultdict
 from pathlib import Path
 
 from .. import handover
-from ..circuit import KINDS_OF_PREFIX, KINDS_OF_TYPE, PURPOSES, cable_problems, core_mpn, read_value, value_problem
+from ..circuit import (KINDS_OF_PREFIX, KINDS_OF_TYPE, PURPOSES, cable_problems, core_mpn, read_value, strip_problems,
+                       value_problem)
 from ..design import natural_key
 from ..findings import Finding
 
@@ -75,6 +76,10 @@ def structure(d, boards, bought=()):
     for cab in g.get("cables", []):
         for problem in cable_problems(cab):
             add("STRUCT.net", f"cable {cab.get('name')}", f"cable {cab.get('name')}: {problem}")
+        if "at_m" in cab and not any((d.part(x) or {}).get("kind") == "led_strip" for x in (cab.get("from"), cab.get("to"))
+                                     if x in d.comps):
+            add("STRUCT.net", f"cable {cab.get('name')}", f"cable {cab.get('name')}: at_m – the place along an LED strip "
+                                                          "its wires land, but neither end is an LED strip")
         for a, b in cab["pins"].items():
             ref_a, ref_b = f"{cab['from']}.{a}", f"{cab['to']}.{b}"
             cable_pins |= {ref_a, ref_b}
@@ -225,6 +230,8 @@ def entries(d, cfg=None):
             if part["pins"].get(str(pin), {}).get("type") == "power_in":
                 out.append(Finding("STRUCT.entry", "P", f"{des}.{pin}", f"{des}.{pin} ({part['pins'][str(pin)]['name']}) "
                                    "is a supply pin but marked nc", on=on))
+        if part.get("kind") == "led_strip":       # its length (sim/strip.py)
+            out += [Finding("STRUCT.entry", "P", des, f"{des}: {p}", grade="strip", on=on) for p in strip_problems(c)]
     return out
 
 

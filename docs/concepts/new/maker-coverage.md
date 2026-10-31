@@ -583,9 +583,9 @@ One row per pitfall: the pitfall with its numbers, what edakit does about it tod
 | 4 | no series resistor on the data line (Adafruit: 300–500 Ω); unbuffered runs beyond 1–2 m | no | BL-1, HT-1 | Adafruit NeoPixel best practices (x) |
 | 5 | data high while the strip is unpowered: DIN abs. max VDD + 0.5 V, current through the clamp, first pixel dies | no | CK-5, FT-8 | WS2812B V1.0 (x); Adafruit (x) |
 | 6 | no bulk capacitor at the strip (500–1000 µF), no 100 nF per LED | covered: H-1, G-6 | BL-1 | Adafruit (x); WS2812B application circuit (x) |
-| 7 | current budget: up to 60 mA per pixel at white, 300 pixels = 18 A | covered where modelled: E-3 source `i_max_a`, `current` model | FT-13 | Adafruit powering guide (x) |
+| 7 | current budget: up to 60 mA per pixel at white, 300 pixels = 18 A | covered: a strip (kind `led_strip`) draws `i_pixel_a` per pixel at the load's share of full white – against the source's `i_max_a`, each feed against its connector and cable (LIM.i, LIM.i/strip) | FT-13 | Adafruit powering guide (x) |
 | 8 | LEDs fed through the MCU board's regulator or USB (NCP1117 dissipation, 500 mA USB, ESP32 brown-outs) | covered: E-3 module LDO, source limit; the burst: no | FT-1 | Arduino and ESP32 forums (x) |
-| 9 | voltage drop along the strip: 5 m at 60 LEDs/m, 2.5 V at the far end; blue fails below about 3.3 V | partly: `external` load at a connector | FT-13 | QuinLED injection guide (x); Hackaday (x) |
+| 9 | voltage drop along the strip: 5 m at 60 LEDs/m, 2.5 V at the far end; blue fails below about 3.3 V | covered: LIM.range/strip on the ladder of the strip's rails, fed at its ends and along it (cable `at_m`); the rail resistance from the strip's seller or the project (PARTS.fact) | FT-13 | QuinLED injection guide (x); Hackaday (x); Pololu WS2812B strips, measured drops (r) |
 | 10 | wire gauge of feeds: 22 AWG ≈ 53 mΩ/m, 2 m at 3.6 A drops 0.76 V | partly: `cables` `r_ohm_per_wire` | FT-2 | QuinLED (x); WLED wiring (x) |
 | 11 | no fuse between a 300 W supply and thin wiring | covered: G-17 for a modelled cable; a missing fuse: no | FT-2 | QuinLED fuses (x); Hackaday (x) |
 | 12 | data reference: shared ground missing or thin (5 A through 1 m 22 AWG lifts 0.26 V) | covered: per-board ground with the cable's resistance, E-3 levels to the part's own ground | FT-2 | Adafruit (x) |

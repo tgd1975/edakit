@@ -14,7 +14,8 @@ Switches, buttons and DIP switches are closed or open as the scenario's load say
 (coil_ohm between the roles coil_plus and coil_minus) plus a contact from common to no when the load lists it in
 "relays_on", else to nc. Supplies are connectors listed under "sources" in the simulation config, or battery holders
 with a cell state – one voltage source per cell, listed in meta["cells"] (LIM.backfeed: no charge current). Off-board loads
-(a servo, a motor at a connector) are constant currents between two pins, listed under the load's "external".
+(a servo, a motor at a connector) are constant currents between two pins, listed under the load's "external". An LED
+strip (kind led_strip) is a ladder of its rails and pixels, and a cable to it gives its pins nodes of their own (strip.py).
 
 ICs and modules are replaced by behaviour models, chosen by values.behavior in the parts database:
 
@@ -83,6 +84,7 @@ import math
 import re
 
 from ..circuit import capacitance, limits, relay_sets, values, volts_across, wire_h, wire_ohm
+from . import strip
 
 VT = 0.02585
 LED_N = 2.0
@@ -218,6 +220,8 @@ def split_boards(design):
     design.cable_elements = []
     board = {d: c.get("board") for d, c in design.comps.items()}
     for cable in design.graph.get("cables", []):
+        if strip.feeds(design, cable):        # a cable to an LED strip: each wire its own node there (strip.py)
+            continue
         src, dst = cable["from"], cable["to"]
         side = board[src]
         for p_src, p_dst in cable["pins"].items():
@@ -231,6 +235,7 @@ def split_boards(design):
             design.cable_elements.append({"name": f"R_{cable['name']}_{p_src}", "des": dst, "a": alt, "b": net,
                                           "pa": f"{src}.{p_src}", "pb": f"{dst}.{p_dst}",
                                           "r": wire_ohm(cable), "l": wire_h(cable)})
+    strip.split_feeds(design)
 
 
 def local_ground(design, net):
@@ -522,6 +527,8 @@ class Netlist:
             self.add(f"R_{des}_b {w} {eb} {rb:.6g}", des, "pot", (w, eb), rb)
         elif kind == "esd_array":
             self.esd_array(des, part)
+        elif kind == "led_strip":       # its rails and pixels as a ladder (strip.py)
+            strip.build(self, des, part)
         elif kind in ("ic", "module"):
             behavior = p.get("behavior", "none")
             fn = self.plugin_models.get(behavior) or getattr(self, f"ic_{behavior}", None)
