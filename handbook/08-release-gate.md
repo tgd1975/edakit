@@ -285,8 +285,10 @@ changed as well, nothing is rehashed and the sign-offs of scope `circuit` are do
 
 The sign-off file (`[project] signoff`, [example](https://github.com/tgd1975/automatic_christmas_bell/blob/main/hardware/signoff.json)) holds manual checks and
 accepted warnings. Each counts only if the hash of its scope (`circuit`, `layout`, `fab`) equals the current one. The
-fab hash is known only after stage F: in a run without it (the offline gate) sign-offs with scope `fab` are listed as
-not checked and do not count.
+fab hash is known only after stage F: in a run without it (the offline gate) sign-offs with scope `fab` do not count.
+One that is signed is not open either – the gate names the fab hash of the sign-off file it is bound to, which stage F
+checks: "M-5 signed for fab f958da9ad4f8… – checked by stage F (section 6)" among the reasons, and the same in its line
+of section 6. A sign-off that is not signed, not in the file, or signed without a `fab_sha256` stays open.
 
 ```json
 {

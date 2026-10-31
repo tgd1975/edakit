@@ -621,6 +621,9 @@ requirements: 1 passed, 1 open after the export (section 11 of the protocol)
 | F Manufacturing | BOM from the graph = EasyEDA, JLCPCB stock, pick and place, Gerber set, outline, manifest | 18 | 0 | 0 | 0 | 0 | passed |
 ```
 
+The offline `edakit gate` cannot compute the fab hash without stage F: from now on it says "M-5 signed for fab
+f958da9ad4f8… – checked by stage F" instead of naming M-5 open (8.2).
+
 The run's folder holds what goes to JLCPCB – `fab/main/gerber_main.zip`, `bom_main.csv`, `cpl_main.csv`, the form's
 fields in `order.md` – and `fab/polarity_main.png` for M-2. A gate run is build output (`[release] archive`, default
 `"none"`, 8.3): a new run makes the files again from the repository, and the sign-offs say which hashes they must

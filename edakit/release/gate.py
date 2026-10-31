@@ -32,9 +32,10 @@ RELEASED only if
     further layout_files of [release], the footprint geometry, the footprint data of the parts entries – footprint.py,
     only where an entry has it) or 'fab' (what the manufacturer builds from: the
     Gerber layers rasterised, the drill hits, BOM and CPL rows, with [order] the order settings that change the board
-    as made – known after stage F, fab.fab_layers). An accepted warning with scope 'decision' counts regardless of the
-    hash and refers to a numbered decision in the docs; one that names its parts ({designator: LCSC}) counts only
-    while they are the same parts.
+    as made – known after stage F, fab.fab_layers; a run without stage F counts no sign-off of scope 'fab' and names
+    the fab hash a signed one is bound to: stage F checks it, it is not open). An accepted warning with scope
+    'decision' counts regardless of the hash and refers to a numbered decision in the docs; one that names its parts
+    ({designator: LCSC}) counts only while they are the same parts.
   - with [project] requirements (requirements.py): every requirement 'must' has passing evidence in this run, and
     every 'should' without it is accepted like a warning – section 11 of the protocol lists them all, section 6 the
     acceptance steps. A draft binds nothing yet: it never blocks and needs no acceptance, the findings about it are
@@ -286,7 +287,9 @@ def load_signoff(cfg, head, write=False):
     """Sign-offs and accepted warnings that count for the current hash of their scope. A required manual check the
     file does not list is added as open – also the sign-off of a project agent ([agents.<name>], required): it counts
     only signed by its agent (held). When only [release] hash_ignore changed, the circuit sign-offs keep counting and
-    the old and new hash go into `rehashed` – into the file only with write (the gate)."""
+    the old and new hash go into `rehashed` – into the file only with write (the gate). Without stage F (no fab_sha256
+    in head) a signed manual check of scope 'fab' does not count either, but is not open: `unchecked` holds the file's
+    fab_sha256 it is bound to and who signed it, for decide and the protocol."""
     from .. import scripts
     path = cfg.signoff
     missing = not path.exists()          # no file: nothing is signed, and every required check is open
@@ -302,19 +305,28 @@ def load_signoff(cfg, head, write=False):
             save_manifest(path, s, indent=2)
             print(f"  {notes[-1]}")
     used = {x.get("scope", "circuit") for x in [*s.get("manual", []), *s.get("accept", [])]}
+    bound = s.get("fab_sha256") if head.get("fab_sha256") is None else None   # signed for a hash this run lacks
     for scope, key in SCOPE_KEY.items():
         if scope == "fab" and head.get(key) is None:   # known only after stage F
             valid[scope] = False
             if scope in used:
-                notes.append(f"{path.name}: sign-offs with scope 'fab' are not checked in a run without stage F "
+                notes.append(f"{path.name}: sign-offs with scope 'fab' are bound to fab {bound[:12]}… – a hash only "
+                             "stage F computes: this run cannot check them, stage F does" if bound else
+                             f"{path.name}: sign-offs with scope 'fab' are not checked in a run without stage F "
                              "(no fab_sha256) and do not count")
             continue
         valid[scope] = s.get(key) == head.get(key)
         if not (missing or valid[scope]) and (scope != "fab" or scope in used or key in s):
             notes.append(f"{path.name}: sign-offs with scope '{scope}' belong to another state ({key}) and do not count")
-    manual = [m if valid.get(m.get("scope", "circuit")) else {**m, "done_by": None} for m in s.get("manual", [])]
     team = scripts.agents(cfg)          # [agents.<name>]: what the project's agents sign, held to them
-    manual = [held(m, team.signers.get(m.get("id")), path.name, notes) for m in manual]
+    manual = []
+    for m in s.get("manual", []):
+        unchecked = bound and m.get("scope", "circuit") == "fab" and m.get("done_by")
+        m = held(m if valid.get(m.get("scope", "circuit")) or unchecked else {**m, "done_by": None},
+                 team.signers.get(m.get("id")), path.name, notes)
+        if unchecked and m.get("done_by"):  # it does not count here, and is not open: stage F holds it to its hash
+            m = {**m, "done_by": None, "unchecked": {"fab_sha256": bound, "by": m["done_by"]}}
+        manual.append(m)
     for sid, m in required(cfg, team).items():
         if sid not in {x.get("id") for x in manual}:
             agent = team.signers.get(sid)
@@ -576,10 +588,14 @@ def decide(rows, sim_checks, signoff, stages_run, stages, reqs=()):
     pend = sum(r["result"] == "pending" for r in rows)
     if pend:
         reasons.append(f"{pend} open sign-off(s) (section 5)")
-    open_manual = [m for m in signoff.get("manual", []) if m.get("phase", "export") == "export" and not m.get("done_by")]
+    export = [m for m in signoff.get("manual", []) if m.get("phase", "export") == "export" and not m.get("done_by")]
+    open_manual = [m for m in export if not m.get("unchecked")]
     if open_manual:
         reasons.append(f"{len(open_manual)} manual check(s) before the export open: "
                        + ", ".join(m["id"] for m in open_manual) + " (section 6)")
+    if unchecked := [m for m in export if m.get("unchecked")]:     # without stage F: signed for a fab hash
+        reasons.append(f"{', '.join(m['id'] for m in unchecked)} signed for fab "
+                       f"{unchecked[0]['unchecked']['fab_sha256'][:12]}… – checked by stage F (section 6)")
     missing = [f"{sid} ({name})" for sid, name, _ in stages if sid not in stages_run]
     if missing:
         reasons.append("stages not run: " + ", ".join(missing))
@@ -656,7 +672,7 @@ def signer(m):
     """Who signs an open manual check that a project agent signs, for its line in section 6 – nothing when its text
     names the agent already."""
     from .. import scripts
-    if not m.get("agent") or m.get("done_by") or scripts.names_agent(m.get("text"), m["agent"]):
+    if not m.get("agent") or m.get("done_by") or m.get("unchecked") or scripts.names_agent(m.get("text"), m["agent"]):
         return ""
     return f" – the project agent {m['agent']} signs it" + (f", in place of {m['replaces']}" if m.get("replaces") else "")
 
@@ -937,6 +953,8 @@ def write_protocol(cfg, outdir, head, rows, sim, signoff, notes, decision, reaso
             L.append(f"**{title}**\n")
             for m in items:
                 by = (f" – {m['done_by']}, {m.get('date')}" + (f": {m['note']}" if m.get("note") else "")) if m.get("done_by") else ""
+                if u := m.get("unchecked"):     # a run without stage F: the fab hash it is bound to is unknown here
+                    by = f" – signed for fab {u['fab_sha256'][:12]}… by {u['by']}, {m.get('date')}: checked by stage F"
                 L.append(f"- [{'x' if m.get('done_by') else ' '}] {m['id']} {m['text']}{signer(m)}{by}")
             L += answered
             L.append("")

@@ -447,7 +447,10 @@ def _signoff(sid, rid, signoff):
         return "fail", f"no manual check {sid} in the sign-off file"
     phase = m.get("phase", "export")
     by = f"signed by {m.get('done_by')} ({m.get('date')})"
-    if not m.get("done_by"):
+    if u := m.get("unchecked"):      # a run without stage F: signed for a fab hash only stage F computes
+        what = (f"signed for fab {u['fab_sha256'][:12]}… by {u['by']} ({m.get('date')}) – checked by stage F, which did "
+                "not run")
+    elif not m.get("done_by"):
         what = "not signed for this state" if phase == "export" else "not signed yet"
     elif names(m.get("note"), rid):
         return "pass", f"{by}, its note names {rid}"
