@@ -22,23 +22,32 @@ run against a maker's page or EasyEDA yet.
 
 ### Needs the owner's computer – a session attached to it, Claude in Chrome, the makers' accounts
 
-- [ ] **Step 0 (5.0), per maker – JLCPCB, PCBWay, Eurocircuits, AISLER –, nothing ordered:** can Claude in Chrome put
-      a local file into the upload fields; do the fields read back as text; can it save screenshots to a file; can the
-      placement preview be opened again from the cart (M-2)? Record each form in its profile – labels, words, values,
-      `ignore`, CPL format, cart button – and set `recorded` to the date. Keep the page texts of one quote and one past
-      order as test data; read the terms on automated use, for the record.
-- [ ] **JLCPCB's order number:** gone since May 2026, as its help article of 2026-05-22 reports? Then the placeholder
-      and `mark = "specify"` leave `edakit/makers/jlcpcb.toml`; otherwise `rules.placeholder_gone` goes. The form's
-      words for `barcode` and `serial_number`. With it, whether Economic PCBA takes a round board on two customer
-      tooling holes without rails (walkthrough-gaps B6).
-- [ ] **PCBWay:** its BOM template – one `bom_<b>_mpn.csv` for PCBWay and Eurocircuits, or one file per maker; when the
-      assembly price comes (BOM quotation by hand); whether the files go up after "Save to Cart".
-- [ ] **Eurocircuits, AISLER:** the cart or basket button – none is recorded, so the skill stops before the cart.
+- [ ] **Step 0 (5.0), the profiles:** the four makers' pages were read on 2026-10-31 with Claude in Chrome in the
+      owner's accounts, nothing ordered – upload of a local file, read back, screenshots to a file work everywhere; the
+      placement preview opens again from the cart at JLCPCB ("Product Details → Part Placement") and Eurocircuits
+      ("Assembly Visualizer → CPL Editor"), PCBWay shows none (its engineers review the files); no maker's terms say
+      anything on automated use. Notes and JLCPCB's quote text in `tests/fixtures/makers/<maker>/` on branch
+      `makers-step0` (worktree `../edakit-step0`, session edakit-c9). Left: the profiles from the notes – labels, words,
+      `ignore`, CPL, cart button, `recorded` – with tests, and the consents the skill must stop at (JLCPCB's
+      pre-checked assembly terms, PCBWay's "Agree" on export control, Eurocircuits' Terms of Sales); no past order
+      exists in the new accounts, so no order page as test data.
+- [ ] **JLCPCB's order number – gone:** "Mark on PCB" offers only "Remove Mark" (preselected) and "2D barcode (Serial
+      Number)" with its own dialog (2D barcode Only | Number Only | both; QR | Data Matrix; 5/8/10 mm; position). Left:
+      the placeholder and `mark = "specify"` leave `edakit/makers/jlcpcb.toml`, F-6 still names a `JLCJLCJLCJLC` left on
+      a silkscreen (the bell), the barcode words. Not checked: Economic PCBA on a round board with two customer tooling
+      holes and no rails (walkthrough-gaps B6).
+- [x] **PCBWay:** the files go up after "Save to Cart" (Gerber, BOM, centroid in Altium's mil format, assembly
+      drawings; "Submit the File Now" starts the review); the assembly price shows online but without components until
+      the review; one `bom_<b>_mpn.csv` serves PCBWay and Eurocircuits – both took it.
+- [x] **Eurocircuits, AISLER, the cart:** Eurocircuits "Add to basket" on its Summary page; AISLER has no cart – the
+      skill stops before "Continue to Checkout".
 - [ ] **Step 0b (5.0), under the EasyEDA claim, on a throwaway board:** build and import the bridge extension with
       ODB++ (`bash edakit/easyeda/bridge-extension-patch.sh`; `mcp-server.sh` patches the server itself), export with
       `easyeda_export_odb` and by hand (File > Export > ODB++) and compare: component layers with packages, pins and
       part numbers; the parts kept out of EasyEDA's BOM left out or not; the rotation sense (F-7 assumes ODB++'s
-      clockwise). No component layers: decide KiCad 9 as the converter for AISLER, or no AISLER.
+      clockwise). No component layers: KiCad as the converter for AISLER, or no AISLER. Seen on 2026-10-31: AISLER
+      takes kicad-cli's ODB++ of led-bar with every part, offers edakit's properties as BOM columns ("edakit", "lcsc",
+      MPN), leaves the tooling holes out; D1 (SS34) needed a part by hand, the LEDs were matched by value only.
 - [ ] **5.7:** the skill cart live at JLCPCB, up to the cart.
 - [ ] **5.8:** Eurocircuits live, up to the basket.
 - [ ] **5.10:** AISLER live, up to the cart (after step 0b).
