@@ -751,10 +751,18 @@ def logic_levels(s):
                         f"≥ {vih:.2f} V", high >= vih, "V", f"vih of {who.split()[0]}")
 
 
+def multiplexed(d, anode_net, cathode_net):
+    """The part that scans an LED – behaviour matrix_driver (MAX7219) with pins on both its nets –, or None."""
+    on = [{r.partition(".")[0] for r in (d.nets.get(n) or {}).get("pins", [])} for n in (anode_net, cathode_net)]
+    return next((des for des in sorted(on[0] & on[1])
+                 if values(d.part(des) or {}).get("behavior") == "matrix_driver"), None)
+
+
 def leds(s, load):
     """SIM.state of the LEDs: each LED of a driver channel at its share of the set current, parallel LEDs sharing it,
     an LED on or dark as the load says, none reversed; SIM.driver: an LED with no state to check; the driver's headroom
-    and junction temperature."""
+    and junction temperature. An LED a multiplexing driver scans (matrix_driver) has no DC state: a row of
+    information."""
     res, meta, crit, d = s.res, s.meta, s.crit, s.d
     joined = d.joined_nets()
     chan_of = {}
@@ -780,6 +788,11 @@ def leds(s, load):
     for name, info in meta["leds"].items():
         i = res.get(f"@{name}[id]", float("nan"))
         label = name[2:].upper()
+        if mux := multiplexed(d, info["anode_net"], info["cathode_net"]):
+            s.rows.append({"id": "SIM.driver", "scenario": s.name, "item": label, "check": "LED multiplexed",
+                           "actual": f"between {info['anode_net']} and {info['cathode_net']}, scanned by {mux} "
+                                     "(matrix_driver)", "expected": "no DC state to judge", "result": "info"})
+            continue
         cathode, anode = (joined.get(info[k], info[k]) for k in ("cathode_net", "anode_net"))
         hit = led_on_output(chan_of, behind, anode, cathode)
         if hit and hit[1] == "cathode":

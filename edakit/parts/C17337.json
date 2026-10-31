@@ -66,7 +66,8 @@
    "name": "INL",
    "type": "analog",
    "role": "in_l",
-   "z_in_ohm": 18000
+   "z_in_ohm": 18000,
+   "biased": true
   },
   "8": {
    "name": "VREF",
@@ -89,7 +90,8 @@
    "name": "INR",
    "type": "analog",
    "role": "in_r",
-   "z_in_ohm": 18000
+   "z_in_ohm": 18000,
+   "biased": true
   },
   "11": {
    "name": "GND",
@@ -191,7 +193,8 @@
    "SHDN and MUTE: VIH 1.5 V min, VIL 0.4 V max at 5 V; internal pull-ups, may float",
    "decoupling 1 µF ceramic at VDD and ≥ 20 µF near the amplifier (p. 8); VREF bypass to GND (p. 2, 8)",
    "outputs bridge-tied per channel, short-circuit protected output-to-output and to GND (p. 8)",
-   "package SO-16, A max 1.75 mm (p. 10)"
+   "package SO-16, A max 1.75 mm (p. 10)",
+   "2026-10-31: INL/INR biased = true – Diodes DS36439 Rev. 2-3, Application Information, Input Capacitor (CI): the input coupling capacitor charges to its quiescent DC voltage, nominally 1/2 VDD, from the internal circuit via the feedback (schema-gaps A3)"
   ],
   "open": [
    "the manufacturer marks the PAM8403 'not recommended for new design – use PAM8406' (p. 1)",

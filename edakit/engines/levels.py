@@ -2,7 +2,7 @@
 level at reset (concept rules-at-scale.md, section 1: level = (input, state) -> high, low, driven, undefined).
 
 What a pin does to its net at reset comes from its type (catalog/levels.toml [reset]) – an output with drive
-open_drain or tristate defines nothing, it lets go –; what holds a net otherwise is a resistor to a net something
+open_drain or tristate defines nothing, it lets go; drive bridge (a motor driver's half-bridge) defines it –; what holds a net otherwise is a resistor to a net something
 defines. A transistor's control pin (base, gate) needs a resistor to the roles the table
 names. Stage E's levels – an input between its thresholds, an output that does not reach them – are in sim.py.
 """
@@ -32,7 +32,8 @@ def defines(t):
 
 
 def releases(info):
-    """An output that lets go of its net: drive open_drain or tristate."""
+    """An output that lets go of its net: drive open_drain or tristate. A bridge output (drive bridge – a motor
+    driver's half-bridge) defines its net while the part is enabled, as a push-pull output does."""
     return info.get("drive") in ("open_drain", "tristate")
 
 
@@ -226,12 +227,15 @@ def released_nets(d):
 
 def analog_nodes(d):
     """LVL.undefined/analog: a net with an analog pin that only capacitors reach – no resistor, no driver, no supply:
-    it has no DC level, picks up hum, and a switch on it pops."""
+    it has no DC level, picks up hum, and a switch on it pops. A pin the part biases itself (biased = true – an
+    amplifier input held at half its supply inside) gives the net its level."""
     resistive = {x for _, a, b in resistor_like(d) for x in (a, b)}
     out = []
     for name, net in d.nets.items():
         infos = [(r, d.pin_info(r)) for r in net["pins"]]
         if name in resistive or not any(i.get("type") == "analog" for _, i in infos):
+            continue
+        if any(i.get("biased") is True for _, i in infos):
             continue
         others = [r for r, i in infos if i.get("type") not in ("analog", "input")]
         if all((d.part(r.partition(".")[0]) or {}).get("kind") == "capacitor" for r in others):

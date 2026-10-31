@@ -242,10 +242,40 @@ def usb_c(d):
     return out
 
 
+MATRIX_INPUT_LINES = ("rx",)       # what an input-only GPIO takes through a matrix
+
+
+def controller(d, des):
+    """A microcontroller or module – the parts whose pin functions a net's fn is held to; a peripheral's own pin
+    functions (an amplifier's I2S inputs) would hide an MCU pin that cannot do it (schema-gaps A5)."""
+    part = d.part(des) or {}
+    return (part.get("kind") == "module" or values(part).get("behavior") == "mcu"
+            or (d.comps.get(des) or {}).get("type") in ("microcontroller", "module"))
+
+
+def matrix_kinds(d, des):
+    """The fn kinds the part's GPIO matrix routes to any GPIO pin (entry matrix: ["uart", "i2c", "pwm"])."""
+    m = (d.part(des) or {}).get("matrix")
+    return set(m) if isinstance(m, list) else set()
+
+
+def matrix_hit(d, ref, fn):
+    """('m', None) where the part's GPIO matrix routes fn to this GPIO (a pin whose entry lists functions) – an output
+    to a pin that can drive, an input line (rx) to an input-only pin too."""
+    kind, _, line = fn.partition(".")
+    info = d.pin_info(ref)
+    if kind not in matrix_kinds(d, ref.partition(".")[0]) or not isinstance(info.get("functions"), list):
+        return None
+    if info.get("type") in ("bidirectional", "output") or (info.get("type") == "input" and line in MATRIX_INPUT_LINES):
+        return "m", None
+    return None
+
+
 def functions(d):
-    """REQ.function: the pin of a net with fn has that function, the nets of one fn_bus one peripheral instance per
-    part, PWM nets of one slice one fixed pwm_hz and a channel each. A pin without functions: PARTS.fact/functions; a
-    net's fn or pwm_hz of the wrong form: STRUCT.net."""
+    """REQ.function: the pin of a net with fn has that function – among the pins of microcontrollers and modules, or
+    through their GPIO matrix (entry matrix) –, the nets of one fn_bus one peripheral instance per part, PWM nets of one
+    slice one fixed pwm_hz and a channel each (a matrix routes any channel to any pin: no fixed slice). A pin without
+    functions: PARTS.fact/functions; a net's fn or pwm_hz of the wrong form: STRUCT.net."""
     out, hits = [], {}
     for name, net in sorted(d.nets.items()):
         fn, on = net.get("fn"), (("net", name),)
@@ -257,12 +287,15 @@ def functions(d):
         if fn not in FN_NAMES:
             out.append(Finding("STRUCT.net", "G", name, f"{name}: unknown fn {fn!r} (known: {', '.join(FN_NAMES)})", on=on))
             continue
-        known = [(r, d.pin_info(r)) for r in net["pins"] if isinstance(d.pin_info(r).get("functions"), list)]
+        known = [(r, d.pin_info(r)) for r in net["pins"]
+                 if isinstance(d.pin_info(r).get("functions"), list) and controller(d, r.partition(".")[0])]
         if not known:
-            out.append(Finding("PARTS.fact", "G", name, f"{name}: needs {fn}, but no pin on it has functions in its parts "
-                               "entry – not checked", grade="functions", on=on))
+            out.append(Finding("PARTS.fact", "G", name, f"{name}: needs {fn}, but no pin of a microcontroller or module "
+                               "on it has functions in its parts entry – not checked", grade="functions", on=on))
             continue
         hits[name] = [(r, *m) for r, info in known for f in info["functions"] if (m := fn_match(fn, f))]
+        hits[name] += [(r, *m) for r, _ in known
+                       if not any(h[0] == r for h in hits[name]) and (m := matrix_hit(d, r, fn))]
         if not hits[name]:
             has = "; ".join(f"{r} ({info['name']}) has " + (", ".join(info["functions"]) or "no free function")
                             for r, info in known)
@@ -274,6 +307,8 @@ def functions(d):
             for ref, inst, _ in pins:
                 buses[(bus, d.nets[name]["fn"].partition(".")[0], ref.partition(".")[0])].setdefault(name, {})[inst] = ref
     for (bus, kind, des), nets in sorted(buses.items()):
+        if kind in matrix_kinds(d, des):
+            continue                     # the matrix routes one instance to whichever pins the nets sit on
         if len(nets) > 1 and not set.intersection(*map(set, nets.values())):
             where = ", ".join(f"{n} on " + "/".join(f"{kind}{i}" for i in sorted(inst)) + " ("
                               + ", ".join(inst[i] for i in sorted(inst)) + ")" for n, inst in sorted(nets.items()))
@@ -283,7 +318,8 @@ def functions(d):
     for name, pins in hits.items():
         if d.nets[name]["fn"] == "pwm":
             for ref, inst, channel in pins:
-                slices[(ref.partition(".")[0], inst)].append((name, channel, ref))
+                if inst != "m":          # a matrix routes any channel to any pin: no fixed slice to share
+                    slices[(ref.partition(".")[0], inst)].append((name, channel, ref))
     for (des, inst), users in sorted(slices.items()):
         for i, (a, ch_a, ref_a) in enumerate(users):
             for b, ch_b, ref_b in users[i + 1:]:
@@ -470,10 +506,15 @@ def pin_level(d, ref, info, supplies, grounds):
     return {"up": "high", "down": "low"}.get(info.get("pull"))
 
 
+ADDRESS_STATES = ("low", "high", "sda", "scl")   # what an address pin can be tied to
+
+
 def addresses(d):
     """REQ.forbidden/address: two devices on one bus at the same address. An entry's address gives its base, the pins
-    that add to it when high ({pin: value}) and further addresses it answers to (also); the bus is the net of its pin
-    `on`, by default the pin with the role sda. A pin whose level the graph does not decide leaves the device out."""
+    that add to it when high ({pin: value}) – or, for a pin with four states, what each adds ({pin: {low, high, sda,
+    scl}} – INA219: tied to GND, VS, SDA or SCL) – and further addresses it answers to (also); the bus is the net of
+    its pin `on`, by default the pin with the role sda. A pin whose level the graph does not decide leaves the device
+    out."""
     buses, out = bus_devices(d)
     for bus, devs in sorted(buses.items()):
         by = defaultdict(list)
@@ -501,24 +542,36 @@ def bus_devices(d):
         if a is None:
             continue
         key, pins = d.entry_key(des), part.get("pins") or {}
+
+        def state_map(v):
+            return isinstance(v, int) or (isinstance(v, dict) and v and set(v) <= set(ADDRESS_STATES)
+                                          and all(isinstance(x, int) for x in v.values()))
         if not (isinstance(a, dict) and isinstance(a.get("base"), int) and isinstance(a.get("pins", {}), dict)
-                and all(str(p) in pins and isinstance(v, int) for p, v in a.get("pins", {}).items())
+                and all(str(p) in pins and state_map(v) for p, v in a.get("pins", {}).items())
                 and all(isinstance(x, int) for x in a.get("also", []))):
-            out.append(Finding("PARTS.schema", "P", key, f"{key}: address must be {{base, pins: {{pin: value}}, also: "
-                               f"[…], on: pin}} with integers, not {a!r}", grade="address"))
+            out.append(Finding("PARTS.schema", "P", key, f"{key}: address must be {{base, pins: {{pin: value when high, "
+                               f"or {{low, high, sda, scl: value}}}}, also: […], on: pin}} with integers, not {a!r}",
+                               grade="address"))
             continue
         on = a.get("on") or next((n for n, i in pins.items() if i.get("role") == "sda"), None)
         bus = d.pin_net.get(f"{des}.{on}") if on else None
         if bus is None:
             continue
+        scl = next((d.pin_net.get(f"{des}.{n}") for n, i in pins.items() if i.get("role") == "scl"), None)
         value, how = a["base"], []
         for num, add in sorted(a.get("pins", {}).items()):
-            level = pin_level(d, f"{des}.{num}", pins[str(num)], supplies, grounds)
-            if level is None:
+            net = d.pin_net.get(f"{des}.{num}")
+            # a pin with four states (INA219: GND, VS, SDA, SCL) reads the bus lines as states of their own
+            state = ("sda" if net is not None and net == bus else "scl" if net is not None and net == scl
+                     else pin_level(d, f"{des}.{num}", pins[str(num)], supplies, grounds))
+            if isinstance(add, int):
+                state = "high" if state in ("sda", "scl") else state      # a two-state pin: the bus lines idle high
+                add = {"low": 0, "high": add}
+            if state is None or state not in add:
                 value = None
                 break
-            value += add if level == "high" else 0
-            how.append(f"{pins[str(num)].get('name', num)} {level}")
+            value += add[state]
+            how.append(f"{pins[str(num)].get('name', num)} {state}")
         if value is None:
             continue
         for x in [value, *a.get("also", [])]:

@@ -198,7 +198,7 @@ sources = [
 
 [codes."LIM.v"]
 title = "voltage within its limit"
-rule = "Every voltage a part sees stays within the limit of its entry: across a capacitor, reverse across a polarized capacitor (vr_max_v, grade polarized), an input above its own part's supply (vin_rel_max_v, grade inject), reverse across a diode or LED, VCE, VEB, VDS, VGS, on a pin (v_max_v; an active pin not below −0.3 V, a negative rail's supply pin – role vee – excepted), on a fuse, switch, resistor or connector, and every limit a transient run sets on a net. Stage G takes the declared net ranges times the derating factor (1.5 on capacitors and semiconductors), stage E the simulated value against the derated limit."
+rule = "Every voltage a part sees stays within the limit of its entry: across a capacitor, reverse across a polarized capacitor (vr_max_v, grade polarized), an input above its own part's supply (vin_rel_max_v, grade inject), reverse across a diode or LED, VCE, VEB, VDS, VGS, on a pin (v_max_v; an active pin not below −0.3 V, a negative rail's supply pin – role vee – excepted; against the part's own ground pin where that is not the board's ground), on a fuse, switch, resistor or connector, and every limit a transient run sets on a net. Stage G takes the declared net ranges times the derating factor (1.5 on capacitors and semiconductors) – not the reverse voltage of a coupling capacitor in a signal path (a side on a net marked signal or instrument), whose range extremes never coincide –, stage E the simulated value against the derated limit."
 why = "A part at its absolute maximum is at the edge of failure; ceramic capacitors lose capacitance and lifetime near their rated voltage, an input beyond its supply conducts through its protection diodes. The margin covers what a DC view does not see."
 fix = "A part with a higher rating, level shifting at a pin, or a correct (less pessimistic) net range v."
 severity = "error"
@@ -362,7 +362,7 @@ sources = [
 
 [codes."LVL.undefined"]
 title = "input defined while the firmware is not running"
-rule = "Every input has a driver or a pull resistor, an input that only MCU pins drive has a pull, a bipolar transistor has a base-emitter resistor and a MOSFET a resistor from its gate to its source or a rail. Graded as warnings while new: an input pin of an IC left in nc (nc), a net only open-drain or tri-state outputs drive – unless their enable pins are tied active – and that no resistor path holds (open_drain), an analog node only capacitors reach (analog)."
+rule = "Every input has a driver or a pull resistor, an input that only MCU pins drive has a pull, a bipolar transistor has a base-emitter resistor and a MOSFET a resistor from its gate to its source or a rail. Graded as warnings while new: an input pin of an IC left in nc (nc), a net only open-drain or tri-state outputs drive – unless their enable pins are tied active – and that no resistor path holds (open_drain; a bridge output, drive bridge, defines its net), an analog node only capacitors reach (analog; a pin the part biases itself, biased = true, gives it its level)."
 why = "A floating CMOS input reads random values and can rest where both input transistors conduct. An MCU pin is an input until the firmware configures it, so an enable line it drives floats at every reset."
 fix = "A pull resistor to the inactive level (10–100 kΩ); a base-emitter or gate-source resistor next to the transistor. Harmless on purpose: accept on the net with the reason."
 severity = "error"
@@ -476,7 +476,7 @@ sources = [
 
 [codes."REQ.forbidden"]
 title = "what must stay apart is apart"
-rule = "What a part forbids does not happen: CC1 and CC2 of a USB-C receptacle on one net (one resistor for both), a pin whose entry says never_to_ground on ground (grade pin), two devices on one bus at one address (grade address: base and address pins of the entries), a bridge-tied output (roles out_p, out_n) on ground, on another part's net or on another channel's (grade btl), the diodes of a key matrix pointing both ways (grade matrix), more than two terminations on an RS-485 or CAN bus (grade termination)."
+rule = "What a part forbids does not happen: CC1 and CC2 of a USB-C receptacle on one net (one resistor for both), a pin whose entry says never_to_ground on ground (grade pin), two devices on one bus at one address (grade address: base and address pins of the entries – a pin with four states, tied to low, high, SDA or SCL, adds what its entry gives for each), a bridge-tied output (roles out_p, out_n) on ground, on another part's net or on another channel's (grade btl), the diodes of a key matrix pointing both ways (grade matrix), more than two terminations on an RS-485 or CAN bus (grade termination)."
 why = "With CC1 and CC2 on one resistor an electronically marked cable reads as a fault and the source gives no power."
 fix = "One resistor per CC pin."
 severity = "error"
@@ -490,7 +490,7 @@ sources = [
 
 [codes."REQ.function"]
 title = "pin functions"
-rule = "A net's fn (pwm, adc, spi.sck, i2c.sda, uart.tx, …) is on a pin whose entry lists it in functions, the nets of one fn_bus use one peripheral instance, and PWM nets of one slice have one fixed pwm_hz and a channel each. A UART line crosses: on uart.tx another part receives, on uart.rx another part transmits (grade uart)."
+rule = "A net's fn (pwm, adc, spi.sck, i2c.sda, uart.tx, …) is on a pin of a microcontroller or module whose entry lists it in functions – or that its GPIO matrix serves (entry matrix: the fn kinds routed to any GPIO; an output to a pin that drives, an input line also to an input-only pin) –, the nets of one fn_bus use one peripheral instance (not asked of a matrix), and PWM nets of one slice have one fixed pwm_hz and a channel each. A peripheral's own pin functions do not answer for the MCU. A UART line crosses: on uart.tx another part receives, on uart.rx another part transmits (grade uart)."
 why = "On most MCUs a peripheral reaches only some pins, and pins share hardware: two neighbouring RP2040 GPIOs share one PWM slice and with it one frequency."
 fix = "Move the net to a pin that has the function, or give the nets of a slice one frequency. Bit-banged on purpose: leave fn out."
 severity = "error"
@@ -589,7 +589,7 @@ sources = [
 
 [codes."SIM.driver"]
 title = "every LED has a known driver"
-rule = "Every LED – each colour of an RGB LED – has a state the simulation checks in every scenario: its cathode on a driver output (directly, behind 0 Ω bridges or a balancing resistor), or the load lists it in leds_on."
+rule = "Every LED – each colour of an RGB LED – has a state the simulation checks in every scenario: its cathode on a driver output (directly, behind 0 Ω bridges or a balancing resistor), or the load lists it in leds_on. An LED a multiplexing driver scans (behaviour matrix_driver, pins on both its nets) has no DC state: a row of information."
 why = "Only an LED with an expected state is checked; without one a reversed LED passes without a word."
 fix = "Give every load leds_on, or put the LED's cathode on a driver output; an LED left out needs its roles."
 severity = "error"

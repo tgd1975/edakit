@@ -26,7 +26,8 @@ k_per_w = "K/W"
 ratio = "1"
 
 [enums]
-behavior = ["ldo", "buck", "boost", "mcu", "cc_sink", "opamp", "logic", "current", "none"]
+behavior = ["ldo", "buck", "boost", "mcu", "cc_sink", "opamp", "logic", "current", "none",
+            "matrix_driver"]   # matrix_driver: multiplexes LEDs between its segment and digit pins – no DC model
 regulator = ["ldo", "buck", "boost", "none"]
 color = ["red", "green", "blue", "yellow", "orange", "white", "warm_white", "amber", "uv", "ir", "rgb"]
 dielectric = ["C0G", "NP0", "X5R", "X7R", "X7S", "X6S", "Y5V", "electrolytic", "polymer", "tantalum", "film"]
@@ -34,14 +35,17 @@ dielectric = ["C0G", "NP0", "X5R", "X7R", "X7S", "X6S", "Y5V", "electrolytic", "
 [free]
 values = ["polarized", "tolerance", "iout_accuracy", "iout_gain", "hfe_min", "hfe_max", "efficiency", "usb_c",
           "i_hold_vs_temp", "first_bit_to", "v_io_v", "comparator", "tvs"]
-pin = ["name", "type", "role", "strap", "pull", "hint", "functions", "out_edge", "t_pd_ns", "needs", "drive", "float_ok", "adc", "z_in_ohm", "short_proof", "clamp", "windows"]
-entry = ["needs", "address", "antenna", "library", "symbol_differs"]   # needs switches a default of catalog/needs.toml off
+pin = ["name", "type", "role", "strap", "pull", "hint", "functions", "out_edge", "t_pd_ns", "needs", "drive", "float_ok", "adc", "z_in_ohm", "short_proof", "clamp", "windows",
+       "biased"]                # biased: an input the part holds at its own DC level (LVL.undefined/analog)
+entry = ["needs", "address", "antenna", "library", "symbol_differs",
+         "matrix"]              # needs switches a default of catalog/needs.toml off
                                 # ({"decoupling": false}); address: a bus address (REQ.forbidden/address); antenna:
                                 # {keepout_mm = [x0, y0, x1, y1]} – the area around the antenna that stays free of
                                 # copper, in the footprint's frame at rotation 0 on top (GEO.keepout); library: the
                                 # version of edakit/parts/ a copy was taken from (PARTS.library); symbol_differs:
                                 # {pin: reason} – pins where the entry follows the datasheet, not the library symbol
-                                # (STRUCT.entry/declared)
+                                # (STRUCT.entry/declared); matrix: the fn kinds a GPIO matrix routes to any GPIO pin
+                                # (REQ.function), ["uart", "i2c", "pwm"]
 
 [common]
 limits = ["p_max_w", "rth_ja_k_per_w", "tj_max_c", "t_max_c", "t_min_c"]

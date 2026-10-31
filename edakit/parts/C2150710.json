@@ -14,7 +14,7 @@
   "1": {
    "name": "OB2",
    "type": "output",
-   "drive": "tristate",
+   "drive": "bridge",
    "short_proof": true,
    "hint": "motor coil output (N-channel FET bridge): floating while ENN is high (2.2); short to GND and short to VS detection switches the bridge off (15.2 – 'cannot protect … for all possible short events')"
   },
@@ -144,7 +144,7 @@
   "21": {
    "name": "OA2",
    "type": "output",
-   "drive": "tristate",
+   "drive": "bridge",
    "short_proof": true,
    "hint": "motor coil output (N-channel FET bridge): floating while ENN is high (2.2); short to GND and short to VS detection switches the bridge off (15.2 – 'cannot protect … for all possible short events')"
   },
@@ -171,7 +171,7 @@
   "24": {
    "name": "OA1",
    "type": "output",
-   "drive": "tristate",
+   "drive": "bridge",
    "short_proof": true,
    "hint": "motor coil output (N-channel FET bridge): floating while ENN is high (2.2); short to GND and short to VS detection switches the bridge off (15.2 – 'cannot protect … for all possible short events')"
   },
@@ -183,7 +183,7 @@
   "26": {
    "name": "OB1",
    "type": "output",
-   "drive": "tristate",
+   "drive": "bridge",
    "short_proof": true,
    "hint": "motor coil output (N-channel FET bridge): floating while ENN is high (2.2); short to GND and short to VS detection switches the bridge off (15.2 – 'cannot protect … for all possible short events')"
   },
@@ -253,7 +253,8 @@
    "absolute maximum (19): VS 32 V with inductive load, 33 V max, VCC_IO 5.5 V, VI ≤ VCC_IO + 0.5 V, VREF 6 V, 5VOUT 25 mA / 0.5 W, IOx 3 A, TJ 150 °C",
    "operational range (20.1): TJ -40 … 125 °C, VS 5.5 … 29 V, VCC_IO 3.00 … 5.25 V, IRMS 1.4 A, peak 2.8 A",
    "DC characteristics (20.2): RDSON 0.21 Ω max, input levels 0.3 / 0.7 × VVIO, pull resistors, IS 10 mA, 5VOUT",
-   "RTMJA 30 K/W (20.3); UART address by MS1 bit 0, MS2 bit 1 (4); capacitors (2.2, 3.1, 21.3)"
+   "RTMJA 30 K/W (20.3); UART address by MS1 bit 0, MS2 bit 1 (4); capacitors (2.2, 3.1, 21.3)",
+   "2026-10-31: bridge outputs drive = bridge – the H-bridge outputs the datasheet of this draft describes (source above): driven high or low while enabled, off in sleep or coast; LEVELS counts them as defining their net (schema-gaps A2)"
   ],
   "open": [
    "read the LCSC copy of Rev. 1.03 (2019); ADI's current Rev. 1.09 could not be fetched – differences not checked",

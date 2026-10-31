@@ -24,7 +24,7 @@
   "2": {
    "name": "AOUT1",
    "type": "output",
-   "drive": "tristate",
+   "drive": "bridge",
    "short_proof": true,
    "hint": "bridge output: H, L or Z (coast, sleep) by the truth table 7.3.2; overcurrent protection covers a short to ground, to supply and across the winding (7.3.5.1)",
    "clamp": "internal"
@@ -38,7 +38,7 @@
   "4": {
    "name": "AOUT2",
    "type": "output",
-   "drive": "tristate",
+   "drive": "bridge",
    "short_proof": true,
    "hint": "bridge output: H, L or Z (coast, sleep) by the truth table 7.3.2; overcurrent protection covers a short to ground, to supply and across the winding (7.3.5.1)",
    "clamp": "internal"
@@ -46,7 +46,7 @@
   "5": {
    "name": "BOUT2",
    "type": "output",
-   "drive": "tristate",
+   "drive": "bridge",
    "short_proof": true,
    "hint": "bridge output: H, L or Z (coast, sleep) by the truth table 7.3.2; overcurrent protection covers a short to ground, to supply and across the winding (7.3.5.1)",
    "clamp": "internal"
@@ -60,7 +60,7 @@
   "7": {
    "name": "BOUT1",
    "type": "output",
-   "drive": "tristate",
+   "drive": "bridge",
    "short_proof": true,
    "hint": "bridge output: H, L or Z (coast, sleep) by the truth table 7.3.2; overcurrent protection covers a short to ground, to supply and across the winding (7.3.5.1)",
    "clamp": "internal"
@@ -184,7 +184,8 @@
    "capacitors: VM 10 µF min to GND, VINT 2.2 µF 6.3 V to GND, VCP 0.01 µF 16 V to VM (p. 3, 10.1)",
    "outputs recirculate through the body diodes in fast decay (7.3.2) – no clamp diodes needed",
    "outputs: Z in coast and sleep (truth table 7.3.2) – drive tristate; OCP on every FET for shorts to ground, supply and across the winding (7.3.5.1) – short_proof",
-   "2026-10-31: outputs clamp = internal – SLVSAR1E: the bridge's body diodes clamp the winding (as read for the library draft)"
+   "2026-10-31: outputs clamp = internal – SLVSAR1E: the bridge's body diodes clamp the winding (as read for the library draft)",
+   "2026-10-31: bridge outputs drive = bridge – the H-bridge outputs the datasheet of this draft describes (source above): driven high or low while enabled, off in sleep or coast; LEVELS counts them as defining their net (schema-gaps A2)"
   ],
   "open": [
    "VCP needs 0.01 µF to VM, not to ground – needs.capacitor knows only a capacitor to ground, so it is a pin hint only",
