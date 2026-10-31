@@ -32,7 +32,7 @@ def switched_off(d, des, need):
 def run(ctx):
     d = ctx.joined
     return (decoupling(d) + i2c(d) + flyback(d) + usb_c(d) + functions(d) + hot_loops(ctx.design) + pin_needs(d)
-            + balancing(d) + addresses(d) + uart_lines(d))
+            + balancing(d) + addresses(d) + uart_lines(d) + adc_sources(d))
 
 
 def decoupling(d):
@@ -466,4 +466,35 @@ def uart_lines(d):
                     else f"{name}: {mine[0]} receives (uart.rx), but nothing on it transmits – {have}")
             out.append(Finding("REQ.function", "G", name, text, "fn of the net, pin types of the entries",
                                "cross the lines: TX to RX, RX to TX", grade="uart", on=(("net", name),)))
+    return out
+
+
+def adc_sources(d):
+    """REQ.value/adc: the source resistance an ADC pin sees – the resistors on its net in parallel – within what its
+    entry allows (pin adc.r_source_max_ohm), unless a hold capacitor of at least adc.c_hold_min_f sits at the pin."""
+    grounds = {d.ground} | set(d.graph.get("grounds") or [])
+    out = []
+    for name, net in sorted(d.nets.items()):
+        if net.get("fn") != "adc":
+            continue
+        for ref in net["pins"]:
+            adc = d.pin_info(ref).get("adc")
+            if not isinstance(adc, dict) or not is_number(adc.get("r_source_max_ohm")):
+                continue
+            rs = [x for _, x, _ in resistors_to(d, name, set(d.nets) - {name})]
+            if not rs or not all(is_number(x) and x > 0 for x in rs):
+                continue
+            r_src = 1 / sum(1 / x for x in rs)
+            hold = 0.0
+            for c in d.comps_of_kind("capacitor"):
+                ends = [d.pin_net.get(f"{c}.{p}") for p in d.part(c)["pins"]]
+                if name in ends and any(e in grounds for e in ends):
+                    hold += values(d.part(c)).get("value_f") or 0
+            if r_src > adc["r_source_max_ohm"] and not (is_number(adc.get("c_hold_min_f")) and hold >= adc["c_hold_min_f"]):
+                held = f", or a hold capacitor of {si(adc['c_hold_min_f'], 'F')} at the pin" if is_number(
+                    adc.get("c_hold_min_f")) else ""
+                out.append(Finding("REQ.value", "G", ref, f"{ref} ({name}): source resistance {ohm(r_src)} – the ADC "
+                                   f"allows {ohm(adc['r_source_max_ohm'])}{held}", f"adc of pin {ref}",
+                                   "a smaller divider, a buffer, or the hold capacitor", grade="adc",
+                                   on=(("net", name),)))
     return out

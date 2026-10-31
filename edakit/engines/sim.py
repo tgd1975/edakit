@@ -290,6 +290,8 @@ def stress(s):
                 s.q(des, "vds", abs(d_ - src), "V", kind, des, "|VDS|")
                 s.q(des, "vgs", abs(g - src), "V", kind, des, "|VGS|")
                 s.q(des, "p", abs((d_ - src) * cur), "W", kind, des, "power dissipation")
+            if kind in ("pmos", "nmos"):
+                gate_drive(s, des, part, nodes)
         heat = [w for el in els if (w := dissipation(el, res)) is not None]
         if "rth_ja_k_per_w" in r and heat:
             junction(s, des, sum(heat), r)
@@ -417,6 +419,8 @@ def function(s, load, low=None, plugin=None):
                                 source=f"vin_min_v … vin_max_v of {s.n.entry_key(des)}")])
     operating_range(s)
     opamps(s)
+    input_injection(s)
+    adc_windows(s)
     logic_levels(s)
     leds(s, load)
     for des in s.sim.get("expect_blocking", []):
@@ -462,6 +466,63 @@ def operating_range(s):
             s.q(des, "v_op", x, "V", "", des, f"supply voltage at {part['pins'][num].get('name', num)} inside its "
                                               "operating range", lo=x, code="LIM.range", entry=False,
                 lims=[Limit(max=hi, min=lo, source=f"operating range of {s.n.entry_key(des)}")])
+
+
+def gate_drive(s, des, part, nodes):
+    """LIM.range/gate: a MOSFET switch is off (|VGS| below the smallest |vgs_th_v|) or on at a VGS its entry specifies
+    RDS(on) at (rds_on_max_ohm as a table {VGS: Ω}) – in between it is half on: hot, or a load that never switches
+    off."""
+    p = values(part)
+    table, th = p.get("rds_on_max_ohm"), p.get("vgs_th_v")
+    if not isinstance(table, dict) or not table or th is None:
+        return
+    vth = min(abs(x) for x in th) if isinstance(th, list) else abs(th)
+    spec = min(abs(float(vgs)) for vgs in table)
+    _, g, src = (v(s.res, x) for x in nodes)
+    vgs = abs(g - src)
+    half = vth < vgs < spec
+    s.check("LIM.range", des, "gate drive off or specified on", f"|VGS| {vgs:.3g} V" + (" – half on" if half else ""),
+            f"≤ {vth:g} V (VGS(th)) or ≥ {spec:g} V (RDS(on) specified)", not half,
+            source=f"vgs_th_v, rds_on_max_ohm of {s.n.entry_key(des)}", grade="gate", on=(("component", des),))
+
+
+def input_injection(s):
+    """LIM.v/inject: no input above its own part's supply by more than the entry allows (limits vin_rel_max_v) – the
+    clamp diode conducts, the part is powered through its input or latches up."""
+    d, res = s.d, s.res
+    for des in sorted(s.n.comps):
+        part = s.n.part(des) or {}
+        rel = limits(part).get("vin_rel_max_v")
+        pins = [n for n in supply_pins(part) if f"{des}.{n}" in d.pin_net]
+        if rel is None or not pins:
+            continue
+        ground = ground_pin(d, des, part)
+        vdd = at_pin(d, res, f"{des}.{pins[0]}", ground)
+        for num, info in (part.get("pins") or {}).items():
+            if info.get("type") != "input" or f"{des}.{num}" not in d.pin_net:
+                continue
+            x = at_pin(d, res, f"{des}.{num}", ground) - vdd
+            s.q(f"{des}.{num}", "vin_rel", x, "V", "", des, f"input {info.get('name', num)} above its supply",
+                code="LIM.v", entry=False, grade="inject",
+                lims=[Limit(max=rel, source=f"vin_rel_max_v of {s.n.entry_key(des)}")])
+
+
+def adc_windows(s):
+    """LIM.range/adc: the voltage at a pin of a net with fn adc inside the window its entry gives the converter
+    (pin adc.range_v)."""
+    d, res = s.d, s.res
+    for name, net in sorted(d.nets.items()):
+        if net.get("fn") != "adc":
+            continue
+        for ref in net["pins"]:
+            info = d.pin_info(ref)
+            window = (info.get("adc") or {}).get("range_v") if isinstance(info.get("adc"), dict) else None
+            if not window:
+                continue
+            des = ref.partition(".")[0]
+            x = at_pin(d, res, ref, ground_pin(d, des, s.n.part(des) or {}))
+            s.q(ref, "v_adc", x, "V", "", des, f"{name} inside the ADC's window", lo=x, code="LIM.range", entry=False,
+                grade="adc", lims=[Limit(min=window[0], max=window[1], source=f"adc.range_v of {ref}")])
 
 
 def opamps(s):
