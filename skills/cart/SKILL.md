@@ -43,6 +43,10 @@ on the page, a mail to the owner) is taken out of `[cart] makers` by the owner.
 - **A provisional profile** (`recorded` null in the job): the labels and words come from edakit's reference orders,
   not from the form. A field whose label or word you do not find exactly: stop with the field's name – the owner
   corrects the profile (ordering step 0), and the job is prepared again.
+- **A consent is the owner's.** A box or button that agrees to terms or declares something in the owner's name – JLCPCB's
+  pre-checked "I agree to the Terms and Conditions of JLCPCB assembly Service", PCBWay's "Agree" in "Special Notes"
+  (export control), Eurocircuits' "Accept the Eurocircuits Terms of Sales" – is never ticked, unticked or pressed by
+  you: stop, name it with its text, and go on only when the owner has given it in the browser or told you in the chat.
 
 ## Steps
 
@@ -69,8 +73,9 @@ on the page, a mail to the owner) is taken out of `[cart] makers` by the owner.
    opened again from the cart, stop here: the owner does M-2 on the preview and says whether to go on.
 10. **Cart.** Only when ORDER.form to ORDER.review passed: press the job's `cart` button – that one, nothing else –, read the cart
     line back (what it names, quantity, price, currency) into `cart.json`, run `edakit cart check --cart 2>&1 | cat`
-    (it writes the order record `hardware/orders/…`), and stop. A job without a `cart` button (a provisional profile
-    of a maker step 0 has not recorded): stop before the cart and say so. Tell the owner the result, and that M-2 at
+    (it writes the order record `hardware/orders/…`), and stop. A job without a `cart` button (AISLER, which has no
+    cart: the saved project is the state, "Continue to Checkout" is the owner's; or a provisional profile): stop
+    before it and say so. Tell the owner the result, and that M-2 at
     the maker, ordering and paying are theirs.
 
 Rules: one field at a time, read back after each; a field you cannot find, or a value the form does not offer, stops

@@ -380,7 +380,7 @@ What the order form will say is data already: every field of JLCPCB's form has a
 `edakit cart fields` prints the field, the maker's word and where the value comes from (8.4):
 
 ```text
-board main at JLCPCB (the planned maker; profile provisional) – no gate run yet: layers and size not known
+board main at JLCPCB (the planned maker; profile recorded 2026-10-31) – no gate run yet: layers and size not known
 PCB
   Base Material             FR-4                        edakit       material = 'FR-4'
   …

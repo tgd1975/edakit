@@ -125,8 +125,11 @@ every check runs as before.
 A maker's profile holds no defaults of the board: its form's labels and words for edakit's keys (`fields`), the
 values it offers, its limits (`rules`: thicknesses, remark, placeholder, tooling holes per class), the files it takes,
 its assembly `classes`, whose parts catalogue PARTS.stock asks (`catalogue`), the one cart button the skill cart may
-press and the ones it must not touch, its seat and currency, its fee table. `recorded = false` marks a profile whose
-words are not yet read off the form (ordering step 0); FILES.order names it as information. No credentials anywhere: the
+press and the ones it must not touch, its seat and currency, its fee table. `recorded` is the day ordering step 0 read
+the form; `false` marks a profile whose words are not yet read off it, and FILES.order names it as information. A field
+with `more = true` lists only some of the form's values (a "More Options" not read): another value is not checked; a
+field with `when` shows only while another key has one of the values it names (a dialog behind an option). No
+credentials anywhere: the
 owner is logged in in their browser, edakit never sees an account.
 
 ### [[extra]]
@@ -285,7 +288,7 @@ where its value differs from the default; so a project that sets none of them ke
 | `vias` | `"tented"` | `"untented"`, `"plugged"`, `"epoxy_filled"` | ✓ |
 | `outline_tolerance` | `"regular"` | `"precision"` | ✓ |
 | `gold_fingers`, `castellated`, `edge_plating` | `false` | true or false | ✓ |
-| `mark` | `"default"`; on a board with `[looks]` `"remove"` | `"specify"`: at the maker's placeholder (JLCPCB: `JLCJLCJLCJLC`, PCBWay: `WayWayWay`), `"remove"` – the maker's order number; JLCPCB reports its own gone since May 2026, and FILES.order warns about the placeholder | ✓ |
+| `mark` | `"default"`; on a board with `[looks]` `"remove"` | `"specify"`: at the maker's placeholder (PCBWay: `WayWayWay`), `"remove"` – the maker's order number; JLCPCB prints none since May 2026 ("Remove Mark" for both `"default"` and `"remove"`, `"specify"` refused), and its former `JLCJLCJLCJLC` on a silkscreen warns | ✓ |
 | `barcode`, `serial_number` | `"none"`, `false` | `"qr"`, `"datamatrix"`; true or false – for traceability, printed by the maker where there is room (JLCPCB since May 2026) | ✓ |
 | `electrical_test`, `quality` | `"flying_probe"`, `"ipc2"` | the maker's words | – |
 | `confirm_production_file`, `paper_between` | `false` | true or false | – |
