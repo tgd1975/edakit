@@ -1,0 +1,178 @@
+# Source models of the audio band (maker-coverage FT-18, rules-at-scale.md decision 20) – what an AC run's `source`
+# names in sim.json instead of numbers (sim/ac.py): a passive pickup, a piezo disc, an electret capsule. Each row holds
+# only what its maker states, read from the maker's page or datasheet, with the date it was read.
+#
+# What the makers publish (read 2026-10-31):
+# - Seymour Duncan: DC resistance on the product pages ("DCR … the total resistance of the copper wire wound around a
+#   coil form"), DC resistance and resonant peak in the archived Pickup Comparison Chart – the load the peak was
+#   measured with is not stated, so no inductance is derived from it.
+# - DiMarzio: DC resistance ("Resistance", measured "at normal room temperature with an ohmmeter" – FAQ, which also
+#   says DiMarzio uses it to verify that a pickup is wound to its specification, not as a measure of tone or output),
+#   an output in mV relative to its other pickups, an EQ chart.
+# - Mojotone: DC resistance ("7.4K") and relative output and EQ numbers; the FAQ says the Quiet Coils match "the
+#   resonant peak frequency and inductance of original single-coils" without giving either.
+# No maker reachable states a pickup's inductance or capacitance: a named pickup needs the project's l_h (decision 20).
+# Fender and EVH answer 403 and are not read.
+
+[table]
+about = "pickups (DC resistance, resonant peak where stated), piezo discs (capacitance) and electret capsules (output impedance, measurement load) as the makers state them – the source models of sim.json ac"
+source = "the makers' product pages and datasheets, as noted per row, read 2026-10-31"
+tag = "r"
+
+# --- passive pickups: R and L in series, C across (the coil). r_ohm the DC resistance, f_peak_hz the resonant peak
+# where the maker states it (its load unstated: informative, no inductance derived from it).
+
+[pickup."Seymour Duncan SH-1 '59 Model neck"]
+r_ohm = 7430
+f_peak_hz = 6800
+source = "Seymour Duncan, Pickup Comparison Chart (blog post of 2013-04-21, last updated 2020-02-07, 'the archived version'), Humbuckers & Trembuckers, SH-1 59 Model: DC resistance neck 7.43 k, resonant peak neck 6.8 kHz – https://www.seymourduncan.com/blog/latest-updates/pickup-comparison-chart, read 2026-10-31; the product page lists DCR per variant (Neck: 7.60k) without a resonant peak"
+tag = "r"
+
+[pickup."Seymour Duncan SH-1 '59 Model bridge"]
+r_ohm = 8130
+f_peak_hz = 6000
+source = "Seymour Duncan, Pickup Comparison Chart (archived, last updated 2020-02-07), SH-1 59 Model: DC resistance bridge 8.13 k, resonant peak bridge 6 kHz – https://www.seymourduncan.com/blog/latest-updates/pickup-comparison-chart, read 2026-10-31; the product page lists Bridge: 8.2k"
+tag = "r"
+
+[pickup."Seymour Duncan SH-2 Jazz Model neck"]
+r_ohm = 7720
+f_peak_hz = 8000
+source = "Seymour Duncan, Pickup Comparison Chart (archived, last updated 2020-02-07), SH-2 Jazz Model: DC resistance neck 7.72 k, resonant peak neck 8 kHz – https://www.seymourduncan.com/blog/latest-updates/pickup-comparison-chart, read 2026-10-31"
+tag = "r"
+
+[pickup."Seymour Duncan SH-4 JB Model bridge"]
+r_ohm = 16400
+f_peak_hz = 5500
+source = "Seymour Duncan, Pickup Comparison Chart (archived, last updated 2020-02-07), SH-4 JB Model: DC resistance bridge 16.4 k, resonant peak bridge 5.5 kHz – https://www.seymourduncan.com/blog/latest-updates/pickup-comparison-chart, read 2026-10-31; the product page lists Bridge 16.6k"
+tag = "r"
+
+[pickup."Seymour Duncan SH-55 Seth Lover neck"]
+r_ohm = 7200
+f_peak_hz = 8140
+source = "Seymour Duncan, Pickup Comparison Chart (archived, last updated 2020-02-07), SH-55 Seth Lover Model: DC resistance neck 7.2 k, resonant peak neck 8.14 kHz – https://www.seymourduncan.com/blog/latest-updates/pickup-comparison-chart, read 2026-10-31"
+tag = "r"
+
+[pickup."Seymour Duncan SH-55 Seth Lover bridge"]
+r_ohm = 8100
+f_peak_hz = 5900
+source = "Seymour Duncan, Pickup Comparison Chart (archived, last updated 2020-02-07), SH-55 Seth Lover Model: DC resistance bridge 8.1 k, resonant peak bridge 5.9 kHz – https://www.seymourduncan.com/blog/latest-updates/pickup-comparison-chart, read 2026-10-31"
+tag = "r"
+
+[pickup."Seymour Duncan SSL-1 Vintage Staggered"]
+r_ohm = 6500
+f_peak_hz = 10000
+source = "Seymour Duncan, Pickup Comparison Chart (archived, last updated 2020-02-07), Strat True Single Coils, SSL-1 Vintage Staggered: DC resistance 6.5 k, resonant peak 10 kHz – https://www.seymourduncan.com/blog/latest-updates/pickup-comparison-chart, read 2026-10-31"
+tag = "r"
+
+[pickup."DiMarzio DP100 Super Distortion"]
+r_ohm = 13680
+source = "DiMarzio, Super Distortion (SKU DP100CR), product page: Resistance 13.68 Kohm – https://www.dimarzio.com/pickups/high-power/super-distortion, read 2026-10-31"
+tag = "r"
+
+[pickup."DiMarzio DP103 PAF 36th Anniversary Neck"]
+r_ohm = 7310
+source = "DiMarzio, PAF 36th Anniversary Neck (SKU DP103CR), product page: Resistance 7.31 Kohm – https://www.dimarzio.com/pickups/vintage-paf-output/paf-36th-anniversary-neck, read 2026-10-31"
+tag = "r"
+
+[pickup."DiMarzio DP223 PAF 36th Anniversary Bridge"]
+r_ohm = 8600
+source = "DiMarzio, PAF 36th Anniversary Bridge (SKU DP223BK), product page: Resistance 8.60 Kohm – https://www.dimarzio.com/pickups/vintage-paf-output/paf-36th-anniversary-bridge, read 2026-10-31"
+tag = "r"
+
+[pickup."DiMarzio DP175 True Velvet Neck"]
+r_ohm = 6210
+source = "DiMarzio, True Velvet Neck (SKU DP175BK), product page: Resistance 6.21 Kohm – https://www.dimarzio.com/pickups/standard-strat/true-velvet-neck, read 2026-10-31"
+tag = "r"
+
+[pickup."Mojotone '59 Clone humbucker neck"]
+r_ohm = 7400
+source = "Mojotone, '59 Clone Vintage P.A.F. style Humbucker Pickup, product page, Specs: Neck 7.4K – https://mojotone.com/products/mojotone-59-clone-vintage-p-a-f-style-humbucker-pickup, read 2026-10-31"
+tag = "r"
+
+[pickup."Mojotone '59 Clone humbucker bridge"]
+r_ohm = 8200
+source = "Mojotone, '59 Clone Vintage P.A.F. style Humbucker Pickup, product page, Specs: Bridge 8.2K – https://mojotone.com/products/mojotone-59-clone-vintage-p-a-f-style-humbucker-pickup, read 2026-10-31"
+tag = "r"
+
+[pickup."Mojotone '58 Quiet Coil Strat neck and middle"]
+r_ohm = 5900
+source = "Mojotone, '58 Quiet Coil Noiseless Strat Pickup, product page, Specs: Neck & Middle 5.9K – https://mojotone.com/products/58-quiet-coil-strat-r-pickup, read 2026-10-31"
+tag = "r"
+
+[pickup."Mojotone '58 Quiet Coil Strat bridge"]
+r_ohm = 11600
+source = "Mojotone, '58 Quiet Coil Noiseless Strat Pickup, product page, Specs: Bridge 11.6K – https://mojotone.com/products/58-quiet-coil-strat-r-pickup, read 2026-10-31"
+tag = "r"
+
+# --- piezo discs: a voltage source behind the disc's capacitance. c_f at 1 kHz with its tolerance; the resonance and
+# its impedance R1 as the data sheet gives them (the model does not use them: they lie above the band the capacitance
+# decides).
+
+[piezo."Murata 7BB-12-9"]
+c_f = 8e-9
+c_tol_ratio = 0.3
+f_res_hz = 9000
+f_res_tol_hz = 1000
+r_res_ohm = 1000
+lcsc = "C3812435"
+source = "Murata, Product Search Data Sheet 7BB-12-9 (last updated 03/18/2022), Specifications: Resonance Frequency 9.0kHz ±1.0kHz, Resonant Impedance (R1) 1000Ω, Capacitance 8nF ±30% [1kHz], plate 12 mm – via LCSC C3812435 (https://wmsc.lcsc.com/wmsc/upload/file/pdf/v2/lcsc/2308111423_Murata-Electronics-7BB-12-9_C3812435.pdf), read 2026-10-31"
+tag = "r"
+
+[piezo."Murata 7BB-20-6L0"]
+c_f = 10e-9
+c_tol_ratio = 0.3
+f_res_hz = 6300
+f_res_tol_hz = 600
+r_res_ohm = 1000
+lcsc = "C3812354"
+source = "Murata, Product Search Data Sheet 7BB-20-6L0 (last updated 03/18/2022), Specifications: Resonance Frequency 6.3kHz ±0.6kHz, Resonant Impedance (R1) 1000Ω, Capacitance 10nF ±30% [1kHz], plate 20 mm, with lead wire – via LCSC C3812354 (https://wmsc.lcsc.com/wmsc/upload/file/pdf/v2/lcsc/2308111423_Murata-Electronics-7BB-20-6L0_C3812354.pdf), read 2026-10-31"
+tag = "r"
+
+[piezo."Murata 7BB-27-4L0"]
+c_f = 20e-9
+c_tol_ratio = 0.3
+f_res_hz = 4600
+f_res_tol_hz = 500
+r_res_ohm = 300
+lcsc = "C3812333"
+source = "Murata, Product Search Data Sheet 7BB-27-4L0 (last updated 03/18/2022), Specifications: Resonance Frequency 4.6kHz ±0.5kHz, Resonant Impedance (R1) 300Ω, Capacitance 20nF ±30% [1kHz], plate 27 mm, with lead wire – via LCSC C3812333 (https://wmsc.lcsc.com/wmsc/upload/file/pdf/v2/lcsc/2308111422_Murata-Electronics-7BB-27-4L0_C3812333.pdf), read 2026-10-31"
+tag = "r"
+
+# --- electret capsules: the capsule's FET is a current source; its load resistor RL (rl_ohm, the data sheet's
+# measurement circuit) is the project's part in the graph. z_out_ohm the output impedance as the data sheet gives it
+# (that of the capsule with RL), sensitivity_db in dB re 1 V/Pa at 1 kHz, v_op_v the standard operating voltage,
+# i_max_a the current consumption at most.
+
+[microphone."CUI CMA-4544PF-W"]
+rl_ohm = 2200
+z_out_ohm = 2200
+sensitivity_db = -44
+sensitivity_tol_db = 2
+v_op_v = 3
+v_max_v = 10
+i_max_a = 0.0005
+lcsc = "C3273770"
+source = "CUI Devices, CMA-4544PF-W data sheet (date 08/05/2022), p. 1 Specifications: sensitivity −46/−44/−42 dB (f = 1 kHz, 1 Pa, 0 dB = 1 V/1 Pa), operating voltage typ 3, max 10 Vdc, output impedance 2.2 KΩ, current consumption max 0.5 mA (Vs = 3.0 Vdc, RL = 2.2 KΩ); Measurement circuit RL = 2.2 KΩ, C = 1 µF – via LCSC C3273770 (https://datasheet.lcsc.com/datasheet/pdf/fd981bcd47575ad0c107e2f435ac6445.pdf), read 2026-10-31"
+tag = "r"
+
+[microphone."INGHAi GMI9767P-42DB"]
+rl_ohm = 2200
+z_out_ohm = 2200
+sensitivity_db = -42
+sensitivity_tol_db = 3
+v_op_v = 4.5
+v_max_v = 10
+i_max_a = 0.0005
+lcsc = "C234018"
+source = "Dongguan Inghai Electronics, specification for approval GMI9767P-42DB, edition V1.2 (2019-12-27), B. Specification (test condition RL = 2.2KΩ, VS = 4.5V): sensitivity −42±3 dB at 1 kHz (the table writes 0dB = 1V/ubar, the note under it says the sensitivity is given in Pa as the IEC recommends – the description line reads −42dB), standard operating voltage 4.5 V, output impedance ≤ 2.2 KΩ, max operating voltage 10 V, max current consumption ≤ 0.5 mA; E. Measurement circuit RL = 2.2KΩ (external resistor) – via LCSC C234018 (https://datasheet.lcsc.com/datasheet/pdf/4fcfde76b62ab9a9803b1e786efdb91f.pdf), read 2026-10-31"
+tag = "r"
+
+[microphone."INGHAi GMI4015P-2C-42db"]
+rl_ohm = 2200
+z_out_ohm = 2200
+v_op_v = 2.0
+v_max_v = 10
+i_max_a = 0.0005
+lcsc = "C233292"
+source = "LCSC's product sheet GMI4015P-2C (立创商城, no revision or date; images, read from them): p. 2 table – sensitivity −34 ~ −44 ±3 dB for the series (0 dB = 1 V/Pa; the variant's −42 dB is in its part number only, so not entered), standard operating voltage 2.0 V, output impedance ≤ 2.2 KΩ, max operating voltage 10 V, max current consumption ≤ 0.5 mA; p. 1 measurement circuit RL = 2.2K – https://datasheet.lcsc.com/datasheet/pdf/a5e7e595b6c59fa60dc7b09d19ffece8.pdf, read 2026-10-31"
+tag = "r"
