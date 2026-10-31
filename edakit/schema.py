@@ -116,6 +116,8 @@ def problems(entry):
             out.append(f"{at}.strap: {pin['strap']!r} – high or low")
         if pin.get("pull") not in (None, "up", "down"):
             out.append(f"{at}.pull: {pin['pull']!r} – up or down")
+        if pin.get("clamp") not in (None, "internal", "none"):
+            out.append(f"{at}.clamp: {pin['clamp']!r} – internal or none (clamp diodes of the output's own)")
         lo, hi = pin.get("v_op_min_v"), pin.get("v_op_max_v")
         if is_number(lo) and is_number(hi) and lo > hi:
             out.append(f"{at}: v_op_min_v {lo} above v_op_max_v {hi}")

@@ -33,7 +33,7 @@ def run(ctx):
     d = ctx.joined
     return (decoupling(d) + i2c(d) + flyback(d) + usb_c(d) + functions(d) + hot_loops(ctx.design) + pin_needs(d)
             + balancing(d) + addresses(d) + uart_lines(d) + adc_sources(d) + btl_outputs(d) + instrument_loads(d)
-            + stable_gains(d) + usb_data(d) + leaving_lines(d) + matrix(d) + bus_terminations(d))
+            + stable_gains(d) + usb_data(d) + leaving_lines(d) + matrix(d) + bus_terminations(d) + bridge_clamps(d))
 
 
 def decoupling(d):
@@ -116,6 +116,37 @@ def flyback(d):
             out.append(Finding("REQ.missing", "G", des, f"{des}: {word} switched by {', '.join(switches)} without a diode "
                                f"across it (cathode at {plus}, anode at {minus})", n["source"],
                                "a diode directly across the coil", on=(("component", des),)))
+    return out
+
+
+def bridge_clamps(d):
+    """REQ.missing/clamp (maker-coverage CK-15): an output whose entry says it has no clamp diodes of its own (pin field
+    clamp = "none" – the L298's bridges) and that drives a winding or a connector has a diode from the output to a supply
+    (cathode at the supply) and one from ground (anode at ground): the winding's current has a path when the bridge
+    turns off."""
+    n = needs()["flyback"]
+    supplies, gnd, out = supply_nets(d), d.ground, []
+    windings = set(d.comps_of_kind(*n["coils"])) | set(d.comps_of_kind("connector"))
+    diodes = [(x, d.net_of(x, "anode"), d.net_of(x, "cathode")) for x in d.comps_of_kind("diode")]
+    for des in sorted(d.comps):
+        for num, pin in ((d.part(des) or {}).get("pins") or {}).items():
+            net = d.pin_net.get(f"{des}.{num}")
+            if pin.get("clamp") != "none" or not net:
+                continue
+            loads = sorted({r.partition(".")[0] for r in d.nets[net]["pins"]} & windings)
+            if not loads:
+                continue
+            up = any(a == net and c in supplies for _, a, c in diodes)
+            down = any(c == net and a == gnd for _, a, c in diodes)
+            if up and down:
+                continue
+            lost = " and ".join(w for w, ok in ((f"one from {net} to the supply (cathode at the supply)", up),
+                                                (f"one from {gnd} to {net} (anode at {gnd})", down)) if not ok)
+            out.append(Finding("REQ.missing", "G", f"{des}.{num}", f"{des}.{num} ({pin.get('name', num)}) drives "
+                               f"{', '.join(loads)} and has no clamp diodes of its own (clamp = none) – missing: {lost}",
+                               "ST L298 datasheet (January 2000), 3 Applications: an external bridge of diodes is required "
+                               "when inductive loads are driven", "fast diodes (trr ≤ 200 ns, Schottky preferred) from "
+                               "each output to the supply and from ground", grade="clamp", on=(("component", des),)))
     return out
 
 
