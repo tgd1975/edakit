@@ -8,7 +8,9 @@ block library's checked entries and test entries whose values are chosen for the
 well-known open designs of FT-21 (an ESP32 DevKitC, a Tube Screamer, a QMK keyboard …) replace or join them once their
 schematics can be read.
 
-    python tests/reference.py DIR      write every reference circuit as a project under DIR (for the evals)
+    python tests/reference.py DIR                  write every reference circuit as a project under DIR/<name>
+    python tests/reference.py DIR NAME [FAULT]     write one into DIR – led-bar the example as it is –, with FAULT
+                                                   (its words in FAULTS) built in: the evals' scaffold (evals/)
 """
 
 from __future__ import annotations
@@ -32,7 +34,7 @@ class Project:
 
     @classmethod
     def copy_of_example(cls, dst):
-        shutil.copytree(EXAMPLE, dst, ignore=shutil.ignore_patterns("build"))
+        shutil.copytree(EXAMPLE, dst, ignore=shutil.ignore_patterns("build"), dirs_exist_ok=True)
         return cls(dst)
 
     def config(self):
@@ -431,6 +433,19 @@ def write_all(dst):
     return sorted(REFERENCES)
 
 
+def write_one(dst, name, fault=None):
+    """One reference circuit – or the example, name led-bar – as a project in dst, with a fault of FAULTS built in."""
+    p = Project.copy_of_example(dst)
+    if name != "led-bar":
+        REFERENCES[name](p)
+    if fault:
+        next(change for what, change, _ in FAULTS[name] if what == fault)(p)
+    return p
+
+
 if __name__ == "__main__":
     sys.path.insert(0, str(ROOT))
-    print("\n".join(write_all(sys.argv[1])))
+    if len(sys.argv) > 2:
+        write_one(Path(sys.argv[1]), sys.argv[2], sys.argv[3] if len(sys.argv) > 3 else None)
+    else:
+        print("\n".join(write_all(sys.argv[1])))
