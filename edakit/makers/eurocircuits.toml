@@ -78,8 +78,10 @@ columns = ["Designator", "Mid X", "Mid Y", "Layer", "Rotation"]   # taken as JLC
 unit = "mm"
 rotation = "as SYNC.cpl writes it; the Assembly Editor showed the 0805 at 0° along X, as JLCPCB's preview"
 
-# The form's limits: no order-number placeholder; the thicknesses behind "More Options" not read.
+# The form's limits: no order-number placeholder.
 [rules]
+thicknesses_mm = [0.2, 0.36, 0.5, 0.8, 1.0, 1.2, 1.55, 2.0, 2.4, 3.2]
+thicknesses_for = "FR-4 Improved"
 
 [fields.layers]
 section = "PCB"
@@ -103,12 +105,11 @@ section = "PCB"
 label = "Base material"
 words = { "FR-4" = "FR-4 Improved" }
 
-[fields.thickness_mm]
+[fields.thickness_mm]                  # "More Options" read in live run 5.8 (2026-11-01): no 1.6 mm – 1.55 is the standard
 section = "PCB"
 label = "Board thickness"
 unit = " mm"
-values = [1.0, 1.55, 2.4]
-more = true                            # "More Options" not read
+values = [0.2, 0.36, 0.5, 0.8, 1.0, 1.2, 1.55, 2.0, 2.4, 3.2]
 
 [fields.mask]
 section = "PCB"

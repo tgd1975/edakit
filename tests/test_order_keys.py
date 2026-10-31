@@ -263,7 +263,7 @@ def test_the_shipped_profiles_are_valid():
     assert jlc.rules["former_placeholder"] == "JLCJLCJLCJLC" and jlc.recorded == "2026-10-31"
     euro = makers.load("eurocircuits")                                         # recorded by ordering step 0
     assert euro.offers("finish", "LeadFree HASL") and euro.offers("finish", "ENIG") is None   # more = true: not read
-    assert euro.offers("thickness_mm", 1.55) and euro.offers("thickness_mm", 1.6) is None
+    assert euro.offers("thickness_mm", 1.55) and euro.offers("thickness_mm", 1.6) is False   # live run 5.8
     assert euro.offers("mark", "specify") is False and makers.load("aisler").offers("finish", "OSP") is False
     assert not makers.load("aisler").has("mark") and euro.data["cart"] == "Add to basket"
     way = makers.load("pcbway")
@@ -334,7 +334,7 @@ def test_the_former_placeholder_is_text_everywhere(project):
                     f"JLCJLCJLCJLC at (18.0, 3.0) on the top silkscreen – {m} prints it as it is; take it off "
                     '(mark = "remove", or a barcode = "qr" or "datamatrix" for traceability)')
                    for m in ("JLCPCB", "Eurocircuits")]
-    assert fr.findings(rows) == [("FILES.order", "warn")] * 2
+    assert fr.findings(rows) == [("FILES.order", "warn")] * 3   # and 1.6 mm, which Eurocircuits does not make
 
 
 def test_a_value_the_form_does_not_offer(project):
