@@ -1,0 +1,214 @@
+{
+ "name": "battery-sense",
+ "title": "Battery voltage measurement: divider switched by a P-MOSFET, hold capacitor at the ADC",
+ "about": "A 1:2 divider (10 kΩ + 10 kΩ) reads the battery at an ADC pin, but only while a GPIO asks for it: Q2 (AO3400A) pulls the gate of the high-side Q1 (AO3401A) low, Q1 connects the divider to the battery; otherwise R1 holds Q1 off and the divider draws nothing – a permanent 100 k + 100 k divider would draw 21 µA from a 4.2 V cell all the time. 100 nF at the ADC pin, as Espressif asks for at ADC inputs, hold the voltage while the converter samples. Switching the divider's low side instead would pull the ADC pin up to the full battery voltage while off.",
+ "ports": {
+  "bat": "the voltage to measure: the cell's plus (lipo-charger's cell) or another supply up to 5.5 V",
+  "en": "the GPIO that switches the measurement on (high = measure)",
+  "adc": "to the ADC pin: half the battery voltage while en is high, 0 V otherwise",
+  "gnd": "ground"
+ },
+ "components": [
+  {
+   "designator": "Q1",
+   "type": "transistor",
+   "label": "{as}: divider switch, high side",
+   "part": "AO3401A",
+   "lcsc": "C15127",
+   "pins": {
+    "1": "G",
+    "2": "S",
+    "3": "D"
+   },
+   "notes": "Source at bat, drain at the divider. Off, its body diode would conduct only from the divider back to bat – the divider never rises above bat."
+  },
+  {
+   "designator": "R1",
+   "type": "resistor",
+   "label": "{as}: Q1 gate to bat 100 k",
+   "part": "0805W8F1003T5E",
+   "lcsc": "C149504",
+   "value": "100k",
+   "pins": {
+    "1": "1",
+    "2": "2"
+   },
+   "notes": "Holds Q1 off. While measuring it draws bat / 100 kΩ (42 µA at 4.2 V)."
+  },
+  {
+   "designator": "Q2",
+   "type": "transistor",
+   "label": "{as}: level shift for Q1",
+   "part": "AO3400A",
+   "lcsc": "C20917",
+   "pins": {
+    "1": "G",
+    "2": "S",
+    "3": "D"
+   },
+   "notes": "A 3.3 V GPIO cannot switch Q1 off directly: on a 4.2 V cell its gate would sit at −0.9 V, inside the AO3401A's threshold range (−0.5 … −1.3 V). Q2 pulls the gate to ground instead."
+  },
+  {
+   "designator": "R2",
+   "type": "resistor",
+   "label": "{as}: en pull-down 100 k",
+   "part": "0805W8F1003T5E",
+   "lcsc": "C149504",
+   "value": "100k",
+   "pins": {
+    "1": "1",
+    "2": "2"
+   },
+   "notes": "Keeps Q2 and with it the divider off while the GPIO floats (reset, deep sleep without hold); 33 µA from the GPIO while measuring."
+  },
+  {
+   "designator": "R3",
+   "type": "resistor",
+   "label": "{as}: divider top 10 k",
+   "part": "0805W8F1002T5E",
+   "lcsc": "C17414",
+   "value": "10k",
+   "pins": {
+    "1": "1",
+    "2": "2"
+   }
+  },
+  {
+   "designator": "R4",
+   "type": "resistor",
+   "label": "{as}: divider bottom 10 k",
+   "part": "0805W8F1002T5E",
+   "lcsc": "C17414",
+   "value": "10k",
+   "pins": {
+    "1": "1",
+    "2": "2"
+   }
+  },
+  {
+   "designator": "C1",
+   "type": "capacitor",
+   "label": "{as}: hold capacitor 100 nF at the ADC",
+   "part": "CC0805KRX7R9BB104",
+   "lcsc": "C49678",
+   "value": "100nF",
+   "pins": {
+    "1": "1",
+    "2": "2"
+   },
+   "notes": "Espressif's schematic checklist: a 0.1 µF filter capacitor between an ADC pin and ground. With the divider's 5 kΩ: τ = 0.5 ms – read about 5 ms (10 τ) after en goes high."
+  }
+ ],
+ "nets": [
+  {
+   "name": "bat",
+   "pins": [
+    "Q1.2",
+    "R1.1"
+   ]
+  },
+  {
+   "name": "gate",
+   "pins": [
+    "Q1.1",
+    "R1.2",
+    "Q2.3"
+   ],
+   "v": "@bat"
+  },
+  {
+   "name": "top",
+   "pins": [
+    "Q1.3",
+    "R3.1"
+   ],
+   "v": "@bat",
+   "notes": "Top of the divider: bat while measuring, 0 V otherwise."
+  },
+  {
+   "name": "adc",
+   "pins": [
+    "R3.2",
+    "R4.1",
+    "C1.1"
+   ],
+   "v": [
+    0,
+    2.75
+   ],
+   "fn": "adc",
+   "notes": "Half of bat: 2.1 V for a full Li-ion cell (4.2 V), 2.75 V for 5.5 V."
+  },
+  {
+   "name": "en",
+   "pins": [
+    "Q2.1",
+    "R2.1"
+   ]
+  },
+  {
+   "name": "gnd",
+   "pins": [
+    "Q2.2",
+    "R2.2",
+    "R4.2",
+    "C1.2"
+   ]
+  }
+ ],
+ "covers": [
+  "REQ.value/adc",
+  "LIM.range/adc",
+  "REQ.function",
+  "LIM.range/gate",
+  "LVL.undefined"
+ ],
+ "notes": [
+  "Divider 1:2 (R3 = R4 = 10 kΩ, ±1 %): a Li-ion cell of 3.0–4.2 V gives 1.5–2.1 V, inside the ESP32's window at 11/12 dB attenuation (150–2450 mV, ESP-IDF v4.4 ADC documentation) and the 3.3 V of an RP2040/RP2350. Above 4.9 V on bat the ESP32 window is left (LIM.range/adc warns where the MCU's entry gives adc.range_v); for 2S packs or 12 V another ratio – keep the adc net's v in step.",
+  "Source resistance at the ADC pin: R3 ∥ R4 = 5 kΩ – within the 10 kΩ the Arduino Nano's entry (A000005, ATmega328P) allows even without the hold capacitor (REQ.value/adc). A larger divider (100 k + 100 k: 50 kΩ) draws less while measuring but needs the hold capacitor and ten times the settling time; switched, the current hardly matters.",
+  "The adc net carries fn adc: REQ.function wants an ADC-capable pin on it, LIM.range/adc holds it to the pin's window. On the ESP32 take an ADC1 pin: ADC2 is shared with Wi-Fi, its reads block while Wi-Fi runs (ESP-IDF v4.4 ADC documentation).",
+  "Reading: en high, wait about 5 ms (C1 through 5 kΩ, τ 0.5 ms), read, en low. Per reading about 0.2 mA through the divider and 42 µA through R1 for those milliseconds; off, nothing flows but the leakage of Q1 and Q2.",
+  "bat above 5 V: Q2 pulls Q1's gate to ground while measuring, so |VGS| = bat – the AO3401A allows ±12 V, edakit's derating 67 % of it (8 V). Above that a zener from gate to source, and in any case another divider ratio with the adc net's v in step.",
+  "sim.json: the en net under the MCU's outputs and a load that sets it high (gpio) – the scenario shows the voltage at the ADC; in the others en is low and the divider dark."
+ ],
+ "test": {
+  "connect": {
+   "bat": "+5V",
+   "en": "SIG",
+   "adc": "VBAT_ADC"
+  },
+  "nets": {
+   "VBAT_ADC": [
+    0,
+    2.75
+   ]
+  },
+  "sim": {
+   "mcu": {
+    "U1": {
+     "outputs": [
+      "LED_SDI",
+      "LED_CLK",
+      "LED_LE",
+      "LED_OE",
+      "SIG"
+     ],
+     "pullups": [
+      "BTN"
+     ],
+     "pullup_ohm": 50000
+    }
+   },
+   "loads": {
+    "measure": {
+     "about": "firmware reads the battery: SIG high, LEDs off",
+     "gpio": {
+      "LED_OE": 1,
+      "SIG": 1
+     },
+     "leds_on": []
+    }
+   }
+  }
+ }
+}

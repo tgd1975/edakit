@@ -1,0 +1,369 @@
+{
+ "name": "lipo-charger",
+ "title": "Li-ion charger with cell protection and load sharing: MCP73831, DW01A + FS8205A, P-MOSFET and Schottky",
+ "about": "One Li-ion/LiPo cell charged from USB 5 V by an MCP73831 at 100 mA (R1 10 kΩ), guarded by a DW01A with an FS8205A dual N-MOSFET in the cell's minus lead (overcharge, overdischarge, overcurrent, short circuit), and load sharing after Microchip AN1149: while USB is present the system rail runs from USB through D1 and Q2 is off, so the charger sees the cell alone and terminates; without USB R4 pulls Q2's gate low and the cell feeds the rail through Q2 (85 mΩ max at −2.5 V) instead of a diode drop. Why the MCP73831 rather than the TP4056: its data sheet gives what the checks need (4.7 µF minimum at VDD and VBAT, the PROG window 2–67 kΩ, θJA), its 500 mA ceiling caps the classic mistake of charging a small cell at 1 A, and it fits SOT-23-5; the TP4056 is the choice where a cell must not be charged cold or hot (its TEMP input for an NTC) or needs up to 1 A.",
+ "ports": {
+  "vbus": "USB 5 V, e.g. usb-c-sink's vbus behind its fuse: feeds the charger and, through D1, the system rail",
+  "sys": "the system rail: USB minus D1 while USB is present, else the cell through Q2 – into a 3.3 V regulator (block ldo-3v3)",
+  "cell": "the cell's plus terminal (holder or connector pin +)",
+  "cell_n": "the cell's minus terminal – not ground: Q1 sits between it and gnd",
+  "gnd": "ground: the pack's minus behind Q1, the board's ground"
+ },
+ "components": [
+  {
+   "designator": "U1",
+   "type": "ic",
+   "label": "{as}: Li-ion charger 4.2 V",
+   "part": "MCP73831T-2ACI/OT",
+   "lcsc": "C424093",
+   "pins": {
+    "1": "STAT",
+    "2": "VSS",
+    "3": "VBAT",
+    "4": "VDD",
+    "5": "PROG"
+   },
+   "notes": "Option 2AC: 4.20 V ±0.75 %, preconditioning below 66.5 % of VREG, termination at 7.5 % of IREG, recharge below 96.5 % (DS20001984H p. 3, 26). STAT (pin 1) is left open: it drives high to VDD (5 V) when the charge completes – see the notes before wiring it.",
+   "nc": [
+    "1"
+   ]
+  },
+  {
+   "designator": "R1",
+   "type": "resistor",
+   "label": "{as}: PROG 10 k = 100 mA charge current",
+   "part": "0805W8F1002T5E",
+   "lcsc": "C17414",
+   "value": "10k",
+   "pins": {
+    "1": "1",
+    "2": "2"
+   },
+   "notes": "IREG = 1000 V / RPROG = 100 mA (90 / 100 / 110 mA at 10 kΩ, DS20001984H p. 3). Chosen for small cells: 1C of a 100 mAh cell, within USB 2.0's 500 mA together with the load, and (5.5 V − 2.7 V) × 110 mA = 0.31 W in the SOT-23-5. For a larger cell: 5.1 kΩ (C27834) 196 mA, 4.7 kΩ (C17673) 213 mA, 2 kΩ 500 mA – at most 1C of the cell (Microchip: preferred 1C)."
+  },
+  {
+   "designator": "C1",
+   "type": "capacitor",
+   "label": "{as}: 10 µF at the charger input",
+   "part": "CL21A106KAYNNNE",
+   "lcsc": "C15850",
+   "value": "10uF",
+   "pins": {
+    "1": "1",
+    "2": "2"
+   },
+   "notes": "VDD needs at least 4.7 µF (DS20001984H 3.1); 10 µF because X5R loses part of it at 5 V; not more – USB 2.0 §7.2.4.1 allows 10 µF at attach (maker-coverage HT-3)."
+  },
+  {
+   "designator": "C2",
+   "type": "capacitor",
+   "label": "{as}: 10 µF at the charger output",
+   "part": "CL21A106KAYNNNE",
+   "lcsc": "C15850",
+   "value": "10uF",
+   "pins": {
+    "1": "1",
+    "2": "2"
+   },
+   "notes": "VBAT needs at least 4.7 µF for loop stability without a cell (DS20001984H 3.2, 6.1.1.4)."
+  },
+  {
+   "designator": "U2",
+   "type": "ic",
+   "label": "{as}: cell protection",
+   "part": "DW01A",
+   "lcsc": "C351410",
+   "pins": {
+    "1": "OD",
+    "2": "VM",
+    "3": "OC",
+    "4": "TD",
+    "5": "VCC",
+    "6": "GND"
+   },
+   "notes": "PUOLOP DW01A: overcharge 4.25–4.35 V, overdischarge 2.40–2.60 V, overcurrent 130–170 mV across Q1, short circuit 0.82–1.75 V (data sheet Rev B p. 4). Its GND and TD are on the cell's minus, as in the typical application (p. 3)."
+  },
+  {
+   "designator": "R2",
+   "type": "resistor",
+   "label": "{as}: DW01A supply filter 100 R",
+   "part": "0805W8F1000T5E",
+   "lcsc": "C17408",
+   "value": "100",
+   "pins": {
+    "1": "1",
+    "2": "2"
+   },
+   "notes": "R1 of the typical application (DW01A Rev B p. 3): 100 Ω with C3 filters VCC against the cell's voltage steps."
+  },
+  {
+   "designator": "C3",
+   "type": "capacitor",
+   "label": "{as}: DW01A supply 100 nF",
+   "part": "CC0805KRX7R9BB104",
+   "lcsc": "C49678",
+   "value": "100nF",
+   "pins": {
+    "1": "1",
+    "2": "2"
+   },
+   "notes": "C1 of the typical application (DW01A Rev B p. 3), from VCC to the cell's minus."
+  },
+  {
+   "designator": "R3",
+   "type": "resistor",
+   "label": "{as}: DW01A VM 1 k",
+   "part": "0805W8F1001T5E",
+   "lcsc": "C17513",
+   "value": "1k",
+   "pins": {
+    "1": "1",
+    "2": "2"
+   },
+   "notes": "R2 of the typical application (DW01A Rev B p. 3): VM senses the pack's minus (gnd) through 1 kΩ."
+  },
+  {
+   "designator": "Q1",
+   "type": "transistor",
+   "label": "{as}: protection MOSFETs (discharge S1/G1, charge S2/G2)",
+   "part": "FS8205A",
+   "lcsc": "C2830320",
+   "pins": {
+    "1": "S1",
+    "2": "D1/D2",
+    "3": "S2",
+    "4": "G2",
+    "5": "D1/D2",
+    "6": "G1"
+   },
+   "notes": "MOSFET 1 (S1 at the cell's minus, G1 from OD) breaks the discharge, MOSFET 2 (S2 at gnd, G2 from OC) the charge; drains joined inside. At 25 mΩ max per MOSFET (VGS 4.5 V, FS8205A entry) the DW01A's overcurrent threshold of 130–170 mV across both trips at 2.6–3.4 A, higher at typical RDS(on) – well above the 600 mA of ldo-3v3."
+  },
+  {
+   "designator": "D1",
+   "type": "diode",
+   "label": "{as}: USB to system rail",
+   "part": "SS14",
+   "lcsc": "C2480",
+   "pins": {
+    "1": "K",
+    "2": "A"
+   },
+   "notes": "AN1149: a Schottky rated above the system load. SS14: 1 A, above the 600 mA of ldo-3v3; its smaller leakage (0.3 mA max at 40 V against the SS34's 0.5 mA) flows from the cell into R4 while on battery. For loads above about 0.8 A on sys an SS34 (C8678)."
+  },
+  {
+   "designator": "Q2",
+   "type": "transistor",
+   "label": "{as}: load sharing PMOS, cell to system rail",
+   "part": "AO3401A",
+   "lcsc": "C15127",
+   "pins": {
+    "1": "G",
+    "2": "S",
+    "3": "D"
+   },
+   "notes": "Drain at the cell, source at sys, gate at vbus (AN1149 fig. 5–7). With USB the gate is above the source by D1's drop: off. Its body diode points from the cell to sys and conducts only once sys falls about half a volt below the cell – at USB 4.75 V and 0.38 A sys is still 4.2 V (simulated with usb-c-sink), level with a full cell (VREG ≤ 4.232 V). Without USB VGS = −Vcell: on, 85 mΩ max at −2.5 V."
+  },
+  {
+   "designator": "R4",
+   "type": "resistor",
+   "label": "{as}: Q2 gate to ground 10 k",
+   "part": "0805W8F1002T5E",
+   "lcsc": "C17414",
+   "value": "10k",
+   "pins": {
+    "1": "1",
+    "2": "2"
+   },
+   "notes": "Pulls vbus and Q2's gate to ground without USB. AN1149 suggests 100 kΩ (50 µA at 5 V); 10 kΩ (0.5 mA from USB) discharges C1 ten times faster after unplugging (τ = 0.1 s instead of 1 s) – until vbus falls below sys − |VGS(th)|, the cell feeds sys through Q2's body diode (VSD 0.7 V at 1 A, AO3401A entry)."
+  }
+ ],
+ "nets": [
+  {
+   "name": "vbus",
+   "pins": [
+    "U1.4",
+    "C1.1",
+    "D1.2",
+    "Q2.1",
+    "R4.1"
+   ],
+   "v": [
+    0,
+    5.5
+   ]
+  },
+  {
+   "name": "sys",
+   "pins": [
+    "D1.1",
+    "Q2.2"
+   ],
+   "v": [
+    0,
+    5.5
+   ]
+  },
+  {
+   "name": "cell",
+   "pins": [
+    "U1.3",
+    "C2.1",
+    "R2.1",
+    "Q2.3"
+   ],
+   "v": [
+    0,
+    4.35
+   ],
+   "notes": "The cell's plus: 4.20 V ±0.75 % at the end of a charge, at most 4.35 V where the DW01A cuts the charge off."
+  },
+  {
+   "name": "cell_n",
+   "pins": [
+    "U2.6",
+    "U2.4",
+    "C3.2",
+    "Q1.1"
+   ],
+   "v": [
+    -0.2,
+    0.1
+   ],
+   "notes": "The cell's minus, the DW01A's ground. In operation within millivolts of gnd: below it by I × 2 RDS(on) while the cell discharges (at most the DW01A's 170 mV overcurrent threshold), above it while charging. With Q1 open after an overdischarge or a short it floats down to −Vcell against gnd – a protective state, not in this range; the DW01A sees none of it, its pins are referenced to this net.",
+   "accept": {
+    "PATH.ground": "The DW01A is referenced to the cell's minus by design (DW01A data sheet Rev B p. 3, typical application): its GND sits in front of the protection MOSFETs, not on the board's ground. A project may put this net into the graph's grounds instead.",
+    "REQ.missing/pin": "TD goes to the DW01A's own ground, the cell's minus, as in the typical application (DW01A data sheet Rev B p. 3) – not to the board's ground behind the protection MOSFETs."
+   }
+  },
+  {
+   "name": "vcc_dw",
+   "pins": [
+    "U2.5",
+    "R2.2",
+    "C3.1"
+   ],
+   "v": [
+    0,
+    4.35
+   ],
+   "accept": {
+    "REQ.missing": "C3 bypasses VCC to the DW01A's own ground, the cell's minus (DW01A data sheet Rev B p. 3, typical application: C1 0.1 µF from VCC to the cell's minus); a capacitor to the board's ground would sit across the protection MOSFETs."
+   }
+  },
+  {
+   "name": "od",
+   "pins": [
+    "U2.1",
+    "Q1.6"
+   ],
+   "v": [
+    -0.2,
+    4.35
+   ],
+   "notes": "Gate of the discharge MOSFET: VCC (on) or the cell's minus (off)."
+  },
+  {
+   "name": "oc",
+   "pins": [
+    "U2.3",
+    "Q1.4"
+   ],
+   "v": [
+    -0.2,
+    4.35
+   ],
+   "notes": "Gate of the charge MOSFET: VCC (on) or VM (off)."
+  },
+  {
+   "name": "vm",
+   "pins": [
+    "U2.2",
+    "R3.1"
+   ],
+   "v": [
+    -0.2,
+    0.2
+   ],
+   "notes": "VM: the pack's minus (gnd) through R3; the DW01A measures it against the cell's minus."
+  },
+  {
+   "name": "mid",
+   "pins": [
+    "Q1.2",
+    "Q1.5"
+   ],
+   "v": [
+    -0.2,
+    0.1
+   ],
+   "notes": "The joined drains of the FS8205A."
+  },
+  {
+   "name": "prog",
+   "pins": [
+    "U1.5",
+    "R1.1"
+   ],
+   "v": [
+    0,
+    5.5
+   ],
+   "notes": "PROG: the data sheet gives no voltage, only the bound VDD + 0.3 V."
+  },
+  {
+   "name": "gnd",
+   "pins": [
+    "U1.2",
+    "R1.2",
+    "C1.2",
+    "C2.2",
+    "R3.2",
+    "Q1.3",
+    "R4.2"
+   ]
+  }
+ ],
+ "covers": [
+  "LIM.i/charge",
+  "HINT.lithium",
+  "HINT.two_supplies",
+  "REQ.missing",
+  "REQ.value",
+  "PATH.unfed"
+ ],
+ "notes": [
+  "Charge current: R1 sets it, LIM.i/charge holds 1000 V / R1 to i_charge_max_a of the cell state – sim.json: the cell's holder under the supply scenario named \"cells\" with a state such as \"lipo\": {\"v\": 3.7, \"r\": 0.1, \"i_charge_max_a\": 0.5} (the check looks there). Microchip: preferred 1C, 2C absolute maximum (DS20001984H 6.1.1.1).",
+  "Protection: the DW01A's thresholds (overdischarge 2.40–2.60 V) are those of PUOLOP's DW01A (C351410, data sheet Rev B p. 4); another maker's DW01A differs. Cells sold with their own protection board need none here – then U2, Q1, R2, R3, C3 can go and cell_n joins gnd; a bare cell (an unprotected 18650) needs them.",
+  "A holder that takes a cell either way round (\"source\": \"reversible\", every battery_holder) feeds the charger's VBAT and the DW01A backwards: nothing here blocks it (PATH.reverse) – a keyed connector, or a holder with polarity marking and an accept with that reason.",
+  "STAT (U1 pin 1) is in nc. It is low while charging, high – driven to VDD, 5 V – when the charge completes, high impedance without USB or cell: not straight onto a 3.3 V GPIO. An LED with a series resistor from vbus to STAT lights while charging (STAT sinks up to 25 mA); for an MCU a divider or a transistor. Take pin 1 out of nc and wire it.",
+  "Input overvoltage: Microchip asks for a transient suppressor from the input to ground at a hot-pluggable input (DS20001984H 6.1.1.2); VDD is 7 V absolute maximum. Not part of this block – a TVS at the USB connector.",
+  "Heat: the charger dissipates (VDD − VBAT) × IREG, worst (5.5 V − 2.7 V) × IREG – 0.31 W at 110 mA, 1.54 W at 550 mA, where thermal regulation lowers the current (DS20001984H 6.1.1.3). No temperature input: the MCP73831 charges at any temperature – keep the cell inside its charging range by placement, or take the TP4056 (C16581) with an NTC on TEMP.",
+  "Simulation: the MCP73831 and the DW01A have no behaviour model (behavior none) – edakit sim neither charges the cell nor drives Q1's gates; the FS8205A entry models MOSFET 1 only, so the cell's path through MOSFET 2 is open in the simulation and a battery scenario sees no cell. The load sharing (D1, Q2, R4) is simulated.",
+  "HINT.two_supplies notes the two paths onto sys (and onto the cell): D1 keeps sys from feeding USB; Q2's body diode points from the cell to sys and conducts only once sys falls about half a volt below the cell – the cell then helps carry the load, it is never charged that way. The charger feeds the cell on purpose. Record it in the project with an accept on those nets.",
+  "Net ranges: the cell's minus and the DW01A's outputs carry the ranges of normal operation, referred to gnd. When the DW01A opens Q1 (overdischarge, overcurrent, short) the cell's minus drops to −Vcell against gnd; edakit judges the DW01A's pins against gnd, so the full range would read as −4.35 V at TD, OD, OC – against the DW01A's own ground they stay within 0 … VCC."
+ ],
+ "test": {
+  "connect": {
+   "vbus": "+5V",
+   "sys": "SYS",
+   "cell": "BAT",
+   "cell_n": "BAT_N"
+  },
+  "nets": {
+   "SYS": [
+    0,
+    5.5
+   ],
+   "BAT": [
+    0,
+    4.35
+   ],
+   "BAT_N": [
+    -0.2,
+    0.1
+   ]
+  },
+  "sim": false,
+  "why": "The example has no USB input that suits a charger: VIN is the reversible J1 (PATH.reverse would rightly flag the charger in front of D1), and +5V lies behind D1 (SS34) – at usb-min with all LEDs on it is 4.44 V, below the MCP73831-2's 4.5 V operating minimum (VREG + 0.3 V, DS20001984H 3.1), LIM.range. Placed there by hand, every other check of edakit sim passes; the block's own composition with usb-c-sink, a cell and ldo-3v3 was simulated outside the example."
+ }
+}
