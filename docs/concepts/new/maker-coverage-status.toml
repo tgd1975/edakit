@@ -26,7 +26,7 @@ FT-19 = { status = "built", where = "engines/coverage.py; edakit check --coverag
 FT-20 = { status = "built", where = "edakit/domains/, [project] domains, edakit domains", step = 3 }
 FT-21 = { status = "partial", where = "tests/reference.py: a reference circuit per domain, with seeded faults", missing = "the published open designs (DevKitC, Tube Screamer, QMK keyboard …) – their schematics could not be read", step = 7 }
 FT-22 = { status = "built", where = "edakit rules: code, severity, title", step = 1 }
-FT-23 = { status = "open", missing = "edakit graph show <designator or net>" }
+FT-23 = { status = "built", where = "edakit graph show NAME (edakit/graph_show.py)", step = 6 }
 FT-24 = { status = "built", where = "evals/ for claude plugin eval; baseline in evals/README.md", step = 8 }
 
 [checks]
