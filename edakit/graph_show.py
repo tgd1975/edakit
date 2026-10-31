@@ -113,6 +113,9 @@ def show(cfg, name):
 
 
 def main(cfg, args):
+    if not args.name:
+        print("edakit graph show: a designator or a net name is needed (edakit graph show U1)", file=sys.stderr)
+        return 1
     try:
         view, found = show(cfg, args.name)
     except KeyError:

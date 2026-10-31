@@ -245,23 +245,25 @@ class Design:
         roled = [n for n in pins if roles.get(n) == word]
         return next((hits for hits in (named, roled) if len(hits) == 1), named or roled)
 
-    def word(self, des, num):
-        """The word for one pin: the first of its name and role that reads back as exactly this pin – the name first
-        on an IC or a module (their names are the datasheet's), the role first elsewhere (anode, cathode: a symbol's
-        name may mislead) –, else its number. A name with a blank, a word that says no more than a number (1, pin3)
-        or one that is another pin's number is not written."""
+    def words(self, des, num):
+        """The words a pin may be written by, in the order a writer tries them: its name first on an IC or a module
+        (their names are the datasheet's), its role first elsewhere (anode, cathode: a symbol's name may mislead). A
+        name with a blank, a word that says no more than a number (1, pin3) or one that is another pin's number is
+        none. Each may name this pin alone or a group of pins sharing it (resolve)."""
         num = str(num)
         pins = (self.comps.get(des) or {}).get("pins")
         if not isinstance(pins, dict) or num not in pins:
-            return num
+            return []
         key = self.entry_key(des)
         kind = self.parts[key].get("kind") if key else None
         name, role = pins.get(num), self._roles(des).get(num)
-        for w in ((name, role) if kind in ("ic", "module") else (role, name)):
-            if (isinstance(w, str) and WORD.fullmatch(w) and not PLAIN.fullmatch(w) and w not in pins
-                    and self.resolve(des, w) == [num]):
-                return w
-        return num
+        return [w for w in ((name, role) if kind in ("ic", "module") else (role, name))
+                if isinstance(w, str) and WORD.fullmatch(w) and not PLAIN.fullmatch(w) and w not in pins]
+
+    def word(self, des, num):
+        """The word for one pin: the first of its words that reads back as exactly this pin, else its number."""
+        num = str(num)
+        return next((w for w in self.words(des, num) if self.resolve(des, w) == [num]), num)
 
     def pin_text(self, ref):
         """A pin as a finding names it: "U1.PD6 (9)" – its word, with the number in brackets where they differ."""
