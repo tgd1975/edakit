@@ -249,12 +249,33 @@ def parallel_contacts(s, des, node):
     return max(1, sum(1 for num in (s.n.part(des) or {}).get("pins") or {} if s.d.pin_net.get(f"{des}.{num}") in nets))
 
 
+def matrix_key_blocked(s, des):
+    """A key of a key matrix (a net of it with matrix row or col) whose diode does not conduct in this scenario: its
+    row is not scanned, the diode blocks it on purpose – no reading through the contact, so no minimum load to hold.
+    The key's diode: the one on its net that is not a row or column, as REQ.missing/matrix finds it."""
+    d = s.d
+    nets = {d.pin_net.get(f"{des}.{p}") for p in (s.n.part(des) or {}).get("pins") or {}} - {None}
+    side = {n for n in nets if (d.nets.get(n) or {}).get("matrix") in ("row", "col")}
+    if not side:
+        return False
+    for dio in d.comps_of_kind("diode"):
+        a, k = d.net_of(dio, "anode"), d.net_of(dio, "cathode")
+        if {a, k} & (nets - side) and {a, k} & set(d.nets) - nets:
+            anode, cathode = (next(f"{dio}.{n}" for n, p in d.part(dio)["pins"].items() if p.get("role") == r)
+                              for r in ("anode", "cathode"))
+            return at_pin(d, s.res, anode) - at_pin(d, s.res, cathode) < MATRIX_DIODE_ON_V
+    return False
+
+
+MATRIX_DIODE_ON_V = 0.05  # a key diode with less forward voltage blocks: a silicon one carries < 1 nA, a Schottky ~1 µA
+
+
 def min_load(s, des, part, i):
     """REQ.value/min_load: a closed contact carries at least the minimum load of its entry (values min_load_a) – below
     it a contact may not close reliably: no current breaks the film on it. A contact in a signal path carries no DC by
     design (grade switch): there its entry's rating is judged instead (switch_dc)."""
     least = values(part).get("min_load_a")
-    if least is None or des in signal_path_contacts(s):
+    if least is None or des in signal_path_contacts(s) or matrix_key_blocked(s, des):
         return
     s.check("REQ.value", des, f"current through a closed contact of {des}", i * 1e6, f"≥ {least * 1e6:g} µA",
             i >= least, "µA", f"min_load_a of {s.n.entry_key(des)}", grade="min_load", on=(("component", des),))

@@ -30,7 +30,8 @@ ICs and modules are replaced by behaviour models, chosen by values.behavior in t
   mcu       roles vin|vsys|vdd (supply), optional vout|3v3 (on-board regulator: values regulator = "buck"|"ldo",
             output vout_v, default v_io), the core's current i_core_a – an upper bound; i_core_min_a, the least
             current, only in the operating point of the minimum load (scenario "least_current", run.least_current) –,
-            gpio pins: outputs from the load's "gpio" levels as source + gpio_r_out_ohm,
+            gpio pins: outputs from the load's "gpio" levels as source + gpio_r_out_ohm (null: released in that
+            load, an input on its pull-up – a key matrix's rows not scanned),
             high level v_io_v in V or "vin" (follows the supply pin, e.g. a 5 V AVR), pull-ups from the config; the
             config's "inputs" are checked for a defined logic level (values vih_v|vih_ratio, vil_v|vil_ratio); an
             output on a pin of type "input" (input-only) is not driven and reported; every output's current is measured
@@ -735,6 +736,8 @@ class Netlist:
             pins = [i for n, i in part["pins"].items() if self.d.pin_net.get(f"{des}.{n}") == net]
             if pins and not any(i.get("type") in ("output", "bidirectional") for i in pins):
                 cannot_drive.append((net, "/".join(i["name"] for i in pins)))  # an input-only pin
+            elif net in gpio and net in self.load.get("gpio", {}) and self.load["gpio"][net] is None:
+                continue          # released in this load: an input (a matrix row not scanned), its pull-up holds it
             elif net in gpio:
                 ammeters[net] = f"v_{des}_{net}_am#branch".lower()
                 x = f"x_{des.lower()}_{net.lower()}"

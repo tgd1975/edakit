@@ -7,7 +7,9 @@ pads – its two ground pads on the lid – stopped edakit check, a crystal behi
 oscillator's output (the RP2040's XOUT) was taken as missing, a bare microcontroller (kind ic, behaviour mcu) could
 not state the core current and on-chip regulator the model reads, and a pin on a net no simulated element reaches was
 judged as nan against its relative limit. (Its fifth – no-connect crosses drawn in the order of a set – is held by
-tests/test_catalog_page.py.) Parts here are test entries, not datasheets."""
+tests/test_catalog_page.py.) The Corne v3's key matrix added two: a pressed key whose row is not scanned was judged
+starved of its minimum load, and a row could not be released while another is scanned. Parts here are test entries,
+not datasheets."""
 
 import json
 import shutil
@@ -219,3 +221,62 @@ def test_a_relative_pin_limit_on_a_net_nothing_simulated_reaches_is_not_judged(p
     out = simulate(project)
     assert [c for c in out["checks"] if c["item"] == "U2.14" and "above" in c["check"]] == []  # before: nan V, failed
     assert [c for c in out["checks"] if c["item"] == "U2.13" and "above its supply" in c["check"]]
+
+
+# --- the Corne v3 (corne-cherry-v3-left): a key matrix ----------------------------------------------------------------
+KEY = {"lcsc": "C9000507", "mpn": "test key socket", "kind": "button", "verified": {"by": "test"},
+       "pins": {"1": {"name": "1", "type": "passive", "role": "a"}, "2": {"name": "2", "type": "passive", "role": "b"}},
+       "values": {"r_on_ohm": 0.1, "min_load_a": 1e-5}}
+
+
+def matrix_key(project):
+    """A key of a key matrix on the example's Pico: SW20 from COL (GP8, read with the pull-up) to K20, its diode D20
+    (1N4148W) from K20 to ROW (GP7, the firmware's scan output) – cathode to the row, as the Corne's."""
+    project.save_part("C9000507", KEY)
+    project.use_library_part("C81598")
+    g = project.graph()
+    project.free_pins(g, "U1.10", "U1.11")
+    g["graph"]["components"] += [
+        {"designator": "SW20", "type": "button", "lcsc": "C9000507", "pins": {"1": "1", "2": "2"}},
+        {"designator": "D20", "type": "diode", "lcsc": "C81598", "pins": {"1": "K", "2": "A"}}]
+    g["graph"]["nets"] += [{"name": "ROW", "pins": ["U1.10", "D20.1"], "v": [0, 3.4], "matrix": "row"},
+                           {"name": "COL", "pins": ["U1.11", "SW20.1"], "v": [0, 3.4], "matrix": "col"},
+                           {"name": "K20", "pins": ["SW20.2", "D20.2"], "v": [0, 3.4]}]
+    project.save_graph(g)
+    sim = json.loads((project.root / "hardware" / "sim.json").read_text())
+    sim["mcu"]["U1"]["outputs"].append("ROW")
+    sim["mcu"]["U1"]["pullups"].append("COL")
+    sim["loads"] = {"scanned": {"gpio": {"LED_OE": 1, "ROW": 0}, "leds_on": [], "buttons": ["SW20"]},
+                    "not_scanned": {"gpio": {"LED_OE": 1, "ROW": 1}, "leds_on": [], "buttons": ["SW20"]}}
+    return sim
+
+
+@pytest.mark.skipif(not shutil.which("ngspice"), reason="ngspice not installed")
+def test_a_matrix_key_whose_row_is_not_scanned_carries_no_minimum_load(project):
+    """A pressed key of a key matrix carries current only while its row is scanned; in the other rows its diode
+    blocks it – the point of the diode, not a contact starved of its wetting current (REQ.value/min_load). Scanned,
+    its current is held to the socket's minimum load as before."""
+    from test_sim import simulate
+    sim = matrix_key(project)
+    rows = [c for c in simulate(project, sim)["checks"] if c["item"] == "SW20" and "closed contact" in c["check"]]
+    assert rows and all("/scanned/" in c["scenario"] for c in rows)        # before: 0 µA failed where not scanned
+    assert all(c["result"] == "pass" for c in rows)
+    sim["mcu"]["U1"]["pullup_ohm"] = 1e6                                     # 2.7 µA through the key: too little
+    rows = [c for c in simulate(project, sim)["checks"] if c["item"] == "SW20" and "closed contact" in c["check"]]
+    assert rows and all(c["result"] == "fail" for c in rows)
+
+
+@pytest.mark.skipif(not shutil.which("ngspice"), reason="ngspice not installed")
+def test_an_output_a_load_releases_is_held_by_its_pull_up(project):
+    """QMK scans a matrix by driving one row low and releasing the others – inputs with the pull-up, not outputs high
+    (a ghost runs through a released row, not through a driven one). A load's gpio level null releases an output of
+    the mcu config: undriven, its pull-up holds the net. Before, null drove it low."""
+    from test_sim import simulate
+    sim = matrix_key(project)
+    sim["mcu"]["U1"]["pullups"].append("ROW")
+    sim["loads"] = {"released": {"gpio": {"LED_OE": 1, "ROW": None}, "leds_on": [], "buttons": []},
+                    "low": {"gpio": {"LED_OE": 1, "ROW": 0}, "leds_on": [], "buttons": []}}
+    out = simulate(project, sim)
+    level = {c["scenario"].split("/")[1]: float(c["actual"].split()[0]) for c in out["checks"]
+             if c["item"] == "ROW" and c["id"] == "LIM.declared"}
+    assert level["released"] > 3.0 and level["low"] < 0.1                 # before: released read 0 V, driven low
