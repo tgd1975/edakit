@@ -5,7 +5,7 @@ Status 2026-10-30: the owner gave the go; built on this branch step by step (sec
 It answers the owner's concern that the rule catalog does not scale – electrically (are the rules consistent, free of
 contradiction, correct?) and in use (many rules, most of them irrelevant to a given project, too much context for the
 model, which must work with Sonnet). It builds on [maker-coverage.md](maker-coverage.md) (what is missing) and is
-compatible with [circuit-language.md](../new/circuit-language.md) (the graph's form). Decided by the owner: no regard
+compatible with [circuit-language.md](circuit-language.md) (the graph's form). Decided by the owner: no regard
 for what exists today – IDs, file formats and keys may change; the owner's projects are converted once. Numbers are
 measured at edakit `bf7450a` unless marked as estimates.
 

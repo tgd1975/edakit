@@ -1,7 +1,7 @@
 # The Christmas bell, main configuration, as TOML with pin names – the prototype of edakit's step 4.3.
 # It translates to the bell's hardware/graph.json without a difference:
 #   python3 translate.py json bell.toml --parts <bell>/hardware/parts
-# The rules: docs/concepts/new/circuit-language.md.
+# The rules: docs/concepts/done/circuit-language.md.
 #
 # Today's graph, written as TOML: components and nets are tables keyed by designator and net name, and a pin goes
 # by role or name. The parts entries in hardware/parts/ say which pin that is: LED5.anode is pin 1 of the green LED,

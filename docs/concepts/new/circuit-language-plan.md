@@ -1,10 +1,10 @@
 # Implementation plan: pins by name or role, the graph as TOML
 
-Status 2026-10-31: plan for the decisions of [circuit-language.md](circuit-language.md) (its table of 2026-10-31);
-nothing built yet. Each step starts when the user asks for it. The ground rules of
+Status 2026-10-31: plan for the decisions of [circuit-language.md](../done/circuit-language.md) (its table of
+2026-10-31); nothing built yet. Each step starts when the user asks for it. The ground rules of
 [implementation-plan.md](implementation-plan.md) hold: one step, one branch, built with add-feature – a failing test
-first, then the interface, the code, the handbook, `pytest` and `ruff` –; no key, no change; hashes named; the bell
-told before a step changes its gate result or hashes.
+first, then the interface, the code, the handbook, `pytest` and `ruff` –; no key, no change; hashes named; the bell told
+before a step changes its gate result or hashes.
 
 ## What is built
 
@@ -13,8 +13,8 @@ graph as TOML with names, `hardware/graph.toml`, named by `[project] graph`; the
 canonical JSON, sorted; `edakit graph json` and the resolved `hardware/graph.json` generated beside the form and
 checked in the pre-commit hook; `edakit graph convert` for a project that moves; `block add` on a TOML graph; the
 handbook and the skills. The language of the sketch stays deferred; its prototypes in
-[prototypes/circuit-language](prototypes/circuit-language/) stay the record of the sketch at `75d5c32`, and the round
-trip they ran moves into the tests of L.6.
+[prototypes/circuit-language](../done/prototypes/circuit-language/) stay the record of the sketch at `75d5c32`, and the
+round trip they ran moves into the tests of L.6.
 
 ## Overview
 

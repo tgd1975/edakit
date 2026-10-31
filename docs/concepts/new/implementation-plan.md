@@ -390,9 +390,9 @@ the README), the file, only for the circuit. M-1 and M-6 open again, as decision
 **4.3 Bell: language sketch.** The whole bell written down twice, as a language of its own and as TOML with pin
 names; then the user chooses (decision 8). Building the language would be a step of its own, size L.
 
-Written in [circuit-language.md](circuit-language.md), with the prototype in
-[prototypes/circuit-language](prototypes/circuit-language/): `bell.circuit` and `bell.toml` by hand, and a translator
-that takes all four configurations of the bell, led-bar and a graph with every field there and back without a
+Written in [circuit-language.md](../done/circuit-language.md), with the prototype in
+[prototypes/circuit-language](../done/prototypes/circuit-language/): `bell.circuit` and `bell.toml` by hand, and a
+translator that takes all four configurations of the bell, led-bar and a graph with every field there and back without a
 difference. The recommendation is the language; six decisions are open.
 
 Reviewed on 2026-10-31 (the concept's section "Review 2026-10-31"): the owner deferred the language – it would need

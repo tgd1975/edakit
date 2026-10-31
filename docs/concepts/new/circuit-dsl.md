@@ -1,13 +1,13 @@
 # A language of its own for the circuit: what it would have to be, on which basis, and when
 
-Status 2026-10-31: concept, asked for by the owner after the review of [circuit-language.md](circuit-language.md)
-deferred the language of that sketch. It answers four questions: whether a fitting language exists already, what a
-language of edakit's own would have to be able to do to be worth building, on which basis – SysML v2, KerML, an
-existing circuit language, or something else –, and when it would bring value. Nothing is decided; the decisions at
-the end are open, the recommended answer first. The survey was made from this session, in which several sites were
-not reachable; the sources say what was read and what was not. Against the yardstick: a language changes nothing
-about what is text – its source and its resolved graph are text in the repository –; what it changes is where
-repetition, parameters and variants are written once instead of many times.
+Status 2026-10-31: concept, asked for by the owner after the review of
+[circuit-language.md](../done/circuit-language.md) deferred the language of that sketch. It answers four questions:
+whether a fitting language exists already, what a language of edakit's own would have to be able to do to be worth
+building, on which basis – SysML v2, KerML, an existing circuit language, or something else –, and when it would bring
+value. Nothing is decided; the decisions at the end are open, the recommended answer first. The survey was made from
+this session, in which several sites were not reachable; the sources say what was read and what was not. Against the
+yardstick: a language changes nothing about what is text – its source and its resolved graph are text in the repository
+–; what it changes is where repetition, parameters and variants are written once instead of many times.
 
 ## The short answer
 
@@ -615,5 +615,5 @@ A](https://github.com/Systems-Modeling/SysML-v2-Release/blob/master/sysml/src/ex
   `variants/esp32/firmware`; the prototype's round trip run on all four configurations.
 - edakit: handbook 14.5 (the blocks), `edakit/blocks/*.json`, `tests/reference.py`,
   [maker-coverage.md](../done/maker-coverage.md) (the owner's projects, FT-23, FT-24, the stability of the model),
-  [circuit-language.md](circuit-language.md) (the sketch, its review and decisions) and
+  [circuit-language.md](../done/circuit-language.md) (the sketch, its review and decisions) and
   [circuit-language-plan.md](circuit-language-plan.md).

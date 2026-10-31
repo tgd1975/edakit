@@ -236,7 +236,7 @@ stays.
 Decided: first write the whole Christmas bell down both ways, as a language and as TOML with names, then choose which
 to build (decision 8).
 
-The sketch is [circuit-language.md](../new/circuit-language.md): the bell both ways, a translator that takes all four
+The sketch is [circuit-language.md](circuit-language.md): the bell both ways, a translator that takes all four
 configurations there and back without a difference, what each form costs, and the decisions to take. Reviewed on
 2026-10-31: the gains are independent of a language of its own and are built in any case – pins by name or role, the
 pin map from the parts entry, the hash rule, `edakit graph json` –; the language is deferred until it offers what a

@@ -1,7 +1,7 @@
 # The Christmas bell, main configuration, as a language of its own – the prototype of edakit's step 4.3.
 # It translates to the bell's hardware/graph.json without a difference:
 #   python3 translate.py json bell.circuit --parts <bell>/hardware/parts
-# The language and its rules: docs/concepts/new/circuit-language.md.
+# The language and its rules: docs/concepts/done/circuit-language.md.
 #
 # A pin is written by role or name; the parts entries in hardware/parts/ say which pin that is. LED5.anode is pin 1
 # of the green LED, which its symbol calls "C"; U1.PD6 is pin 9 of the Nano. A net is a line with its voltage range
