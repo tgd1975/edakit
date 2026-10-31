@@ -1,0 +1,96 @@
+{
+ "name": "servo-connector",
+ "title": "Hobby servo connector with bulk capacitor",
+ "about": "A 3-pin 2.54 mm header for a hobby servo – pin 1 signal, pin 2 +5 V, pin 3 GND – and 1000 µF across +5 V and GND at the connector, which supplies the servo's start and stall current peaks close to the servo instead of through the board's supply path.",
+ "ports": {
+  "sig": "the servo's control signal (a PWM-capable GPIO)",
+  "vservo": "the servo's supply, typically 5 V (4.8–6 V servos)",
+  "gnd": "ground"
+ },
+ "components": [
+  {
+   "designator": "J1",
+   "type": "connector",
+   "label": "{as}: servo (1 signal, 2 +, 3 GND)",
+   "part": "PZ254V-11-03P",
+   "lcsc": "C2937625",
+   "pins": {
+    "1": "1",
+    "2": "2",
+    "3": "3"
+   },
+   "notes": "Pin 1 = signal, pin 2 = + (the middle), pin 3 = GND. Through-hole, hand-soldered at JLCPCB."
+  },
+  {
+   "designator": "C1",
+   "type": "capacitor",
+   "label": "{as}: 1000 µF at the servo connector",
+   "part": "RVT1C102M1010",
+   "lcsc": "C3359",
+   "value": "1000uF",
+   "pins": {
+    "1": "1",
+    "2": "2"
+   },
+   "notes": "Electrolytic, pin 1 = plus. Directly beside J1."
+  }
+ ],
+ "nets": [
+  {
+   "name": "sig",
+   "pins": [
+    "J1.1"
+   ]
+  },
+  {
+   "name": "vservo",
+   "pins": [
+    "J1.2",
+    "C1.1"
+   ]
+  },
+  {
+   "name": "gnd",
+   "pins": [
+    "J1.3",
+    "C1.2"
+   ]
+  }
+ ],
+ "covers": [
+  "HINT.bulk",
+  "LIM.i",
+  "LIM.v"
+ ],
+ "notes": [
+  "Pin order: assumption – the usual order of hobby-servo leads (signal, + in the middle, ground) was not read in a servo data sheet here; check the servo's. With + in the middle a plug turned round swaps only signal and ground.",
+  "The servo's current: give the load in sim.json as an external current on J1 (plus \"2\", minus \"3\") – its running current, and its stall current as a fault case (\"matrix\": false); maker-coverage MOT 16 names 2.5 A for an MG996R at stall (not read here). J1 carries 3 A (XFCN drawing): LIM.i holds it.",
+  "1000 µF / 16 V: design choice; the servo data sheets name no capacitor. 1 mF gives a 1 A, 1 ms current peak a sag of 1 V before the supply path takes over (ΔV = I·t / C, ESR not given). Rated ≥ 1.5 × 6 V. Ripple current 347 mA at 120 Hz (C3359): a servo's 50 Hz current pulses can exceed it – a larger or second capacitor for big servos.",
+  "Supply: a servo on the MCU's rail resets it when it starts or stalls (maker-coverage MOT 16, FT-1) – give vservo its own regulator or supply, joined at ground. USB alone gives 500 mA (HINT.usb_budget).",
+  "The signal: a GPIO directly; on a long cable a series resistor at the MCU protects the pin (HINT.cable_line). Whether a 3.3 V signal is enough for a 5 V servo, its data sheet says – none was read here."
+ ],
+ "test": {
+  "connect": {
+   "sig": "SIG",
+   "vservo": "+5V"
+  },
+  "sim": {
+   "loads": {
+    "t_servo": {
+     "about": "block test: a servo holding its position, 0.2 A at J2 (2 → 3), LEDs off – within the example's 0.5 A USB source",
+     "gpio": {
+      "LED_OE": 1
+     },
+     "leds_on": [],
+     "external": {
+      "J2": {
+       "plus": "2",
+       "minus": "3",
+       "i_a": 0.2
+      }
+     }
+    }
+   }
+  }
+ }
+}

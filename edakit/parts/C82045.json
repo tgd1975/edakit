@@ -1,0 +1,86 @@
+{
+ "lcsc": "C82045",
+ "mpn": "BSS138LT1G",
+ "manufacturer": "onsemi(安森美)",
+ "kind": "nmos",
+ "package": "SOT-23 (case 318, style 21)",
+ "footprint": "SOT-23-3_L2.9-W1.6-P1.90-LS2.8-BR",
+ "jlc_class": "Extended Part",
+ "datasheet": {
+  "url": "https://www.onsemi.com/download/data-sheet/pdf/bss138lt1-d.pdf",
+  "pinout_page": 1,
+  "title": "BSS138L, BVSS138L – MOSFET – Power, N-Channel, SOT-23, 200 mA, 50 V",
+  "revision": "BSS138LT1/D Rev. 15 (September 2026)"
+ },
+ "pins": {
+  "1": {
+   "name": "G",
+   "type": "passive",
+   "role": "gate"
+  },
+  "2": {
+   "name": "S",
+   "type": "passive",
+   "role": "source"
+  },
+  "3": {
+   "name": "D",
+   "type": "passive",
+   "role": "drain"
+  }
+ },
+ "values": {
+  "vgs_th_v": [
+   0.85,
+   null,
+   1.5
+  ],
+  "rds_on_max_ohm": {
+   "2.75": 10.0,
+   "5": 3.5
+  }
+ },
+ "limits": {
+  "vds_max_v": 50,
+  "vgs_max_v": 20,
+  "id_max_a": 0.2,
+  "p_max_w": 0.225,
+  "rth_ja_k_per_w": 556,
+  "tj_max_c": 150,
+  "t_min_c": -55
+ },
+ "spice": {
+  "model": ".model BSS138L NMOS(LEVEL=1 VTO=1.5 KP=0.082 IS=2.6e-13)"
+ },
+ "sources": [
+  "onsemi BSS138L, BVSS138L datasheet, BSS138LT1/D Rev. 15, September 2026 (www.onsemi.com/download/data-sheet/pdf/bss138lt1-d.pdf, read 2026-10-31; LCSC's copy is an older 5-page edition, sha256 9299f11ba9d3…, not used)",
+  "p. 1 maximum ratings (TA = 25 °C): VDSS 50 V, VGS ±20 V, ID 200 mA continuous, IDM 800 mA (tp ≤ 10 ms), PD 225 mW, TJ/Tstg –55 … 150 °C, RθJA 556 °C/W",
+  "p. 2 electrical characteristics: V(BR)DSS ≥ 50 V; IDSS ≤ 0.1 µA (25 V) / 0.5 µA (50 V); IGSS ±0.1 µA; VGS(th) 0.85 … 1.5 V at ID 1 mA (no typical value); rDS(on) 5.6 Ω typ / 10 Ω max at VGS 2.75 V, ID < 200 mA, TA –40 … +85 °C, 3.5 Ω max at VGS 5.0 V, 200 mA; Ciss 40/50 pF, Coss 12/25 pF, Crss 3.5/5 pF typ/max; td(on), td(off) ≤ 20 ns",
+  "p. 3–4 typical curves: figure 1 output characteristics, figure 8 RDS(on) about 3.3 Ω at VGS 2.75 V and 25 °C, figure 11 body diode about 0.63 V at 10 mA (25 °C)",
+  "package p. 6: SOT-23 style 21 – pin 1 gate, 2 source, 3 drain; = EasyEDA symbol of C82045 (1 G, 2 S, 3 D), edakit part import 2026-10-31",
+  "spice: assumption – level 1 fitted by Claude, no manufacturer model read: VTO = VGS(th) max 1.5 V and KP 0.082 A/V² so that RDS(on) stays within the maxima (9.8 Ω at 2.75 V, 3.5 Ω at 5 V) – a worst-case switch, its saturation current far below the typical curves; IS 2.6e-13 A from the body diode, 10 mA at 0.63 V (figure 11)",
+  "JLCPCB catalogue 2026-10-31: Extended Part, 570 816 pcs; LCSC product data 2026-10-31: 570 810 pcs, RoHS"
+ ],
+ "compliance": {
+  "rohs": true,
+  "source": "onsemi BSS138LT1/D Rev. 15, p. 1 features ('Pb-Free, Halogen Free/BFR Free and are RoHS Compliant'), read 2026-10-31"
+ },
+ "notes": "Small-signal N-MOSFET with its on-resistance specified from VGS 2.75 V – the pass transistor of the bidirectional I2C level shifter (block i2c-level-shift).",
+ "verified": {
+  "by": "Claude (datasheet check, library draft)",
+  "date": "2026-10-31",
+  "datasheet": "onsemi BSS138LT1/D Rev. 15 (September 2026)",
+  "datasheet_sha256": "f70c28d66066503468d8d46dabe5a7cf1e97c93ee386c9be6d465872d793ebfe",
+  "checked": [
+   "SOT-23 style 21: 1 gate, 2 source, 3 drain = EasyEDA symbol",
+   "maximum ratings: VDSS 50 V, VGS ±20 V, ID 200 mA, PD 225 mW, RθJA 556 °C/W, TJ –55 … 150 °C",
+   "VGS(th) 0.85 … 1.5 V at 1 mA; RDS(on) ≤ 10 Ω at 2.75 V (–40 … +85 °C), ≤ 3.5 Ω at 5 V",
+   "capacitances Ciss ≤ 50 pF, Coss ≤ 25 pF, Crss ≤ 5 pF"
+  ],
+  "open": [
+   "SPICE model is a worst-case level-1 fit by Claude, not a manufacturer model",
+   "no body-diode rating (IS, VSD at 1 A) in this datasheet: is_body_max_a and vsd_v_at_1a not entered",
+   "pin numbers are not printed on the drawing beyond style 21 – the footprint's pad 3 alone is the drain"
+  ]
+ }
+}

@@ -1,0 +1,61 @@
+{
+ "lcsc": "C149504",
+ "mpn": "0805W8F1003T5E",
+ "manufacturer": "UNI-ROYAL(厚声)",
+ "kind": "resistor",
+ "package": "0805",
+ "footprint": "R0805",
+ "jlc_class": "Basic Part",
+ "datasheet": {
+  "url": "https://datasheet.lcsc.com/datasheet/pdf/0a975aaa49b7c97f38a963127be4a823.pdf?productCode=C149504",
+  "pinout_page": null
+ },
+ "pins": {
+  "1": {
+   "name": "1",
+   "type": "passive",
+   "role": "1"
+  },
+  "2": {
+   "name": "2",
+   "type": "passive",
+   "role": "2"
+  }
+ },
+ "values": {
+  "value_ohm": 100000.0,
+  "tolerance": 0.01
+ },
+ "limits": {
+  "p_max_w": 0.125,
+  "v_max_v": 150,
+  "t_min_c": -55,
+  "t_max_c": 155
+ },
+ "spice": {},
+ "compliance": {
+  "rohs": true,
+  "source": "UNI-ROYAL thick film chip resistors V.3 p. 2: order code ending E = lead-free; LCSC product data C149504 (2026-10-31): isEnvironment true"
+ },
+ "sources": [
+  "UNI-ROYAL 'Thick Film Chip Resistors – Data Sheet', 01005 … 2512 series, V.3 (Feb. 12, 2019), LCSC's copy https://datasheet.lcsc.com/datasheet/pdf/0a975aaa49b7c97f38a963127be4a823.pdf?productCode=C149504, read 2026-10-31 – one document for the series (the same file as for C17408), it does not print the order code",
+  "order code (ordering procedure, p. 2): 0805 W8 F 1003 T 5 E = size 0805, W8 = 1/8 W, F = ±1 %, 1003 = 100 × 10^3 Ω = 100 kΩ, T = tape and reel, 5 = 5000 pcs, E = lead-free",
+  "p_max_w 0.125: p. 4 power rating at 70 °C, 0805 1/8 W (1 Ω … 10 MΩ at ±1 %); v_max_v 150: p. 5 ratings, 0805 maximum working voltage 150 V (overload 300 V); t_min_c -55, t_max_c 155: p. 5 operating temperature −55 … 155 °C",
+  "mpn, manufacturer, footprint R0805, jlc_class, pin numbers and names 1, 2: EasyEDA library data of C149504 via edakit part import, read 2026-10-31",
+  "LCSC product data C149504 (2026-10-31): UNI-ROYAL 0805W8F1003T5E, 100 kΩ, ±1 %, 125 mW, 150 V, ±100 ppm/°C, 1 265 900 pcs; JLCPCB catalogue (edakit part search, 2026-10-31): Basic Part, 3 096 418 pcs – the Basic one of the three listings of this order code (C17407 'SMT only' and C5189448 have 0 pcs)"
+ ],
+ "notes": "100 kΩ ±1 % 1/8 W 0805: pull-ups and pull-downs that cost little current (blocks ldo-3v3, battery-sense). Library draft, sibling of C17414 and C17408.",
+ "verified": {
+  "by": "Claude (datasheet check, library draft)",
+  "date": "2026-10-31",
+  "datasheet": "UNI-ROYAL Thick Film Chip Resistors V.3 (2019-02-12)",
+  "datasheet_sha256": "11cd644d5d8a34a6d12775afb80bf58d8fc11f0c3b700dbd0f7a59942ceaa5ef",
+  "checked": [
+   "order code 0805W8F1003T5E against the ordering procedure p. 2: 0805, 1/8 W, ±1 %, 100 kΩ, lead-free",
+   "p. 4: 0805 1/8 W at 70 °C, 1 Ω … 10 MΩ at ±1 %; p. 5: 0805 maximum working voltage 150 V, −55 … 155 °C"
+  ],
+  "open": [
+   "power rating 1/8 W holds up to 70 °C ambient; the derating above 70 °C is a curve, not entered"
+  ]
+ }
+}

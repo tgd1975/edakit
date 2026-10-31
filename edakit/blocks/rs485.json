@@ -1,0 +1,281 @@
+{
+ "name": "rs485",
+ "title": "RS-485 at 3.3 V: MAX3485 with switchable termination, idle bias and DE pull-down",
+ "about": "Half-duplex RS-485 transceiver for a 3.3 V MCU: MAX3485 with DE and RE# joined and pulled down, so the driver stays off and the receiver on while the firmware starts; 120 Ω termination behind a DIP switch, on at the two nodes at the cable ends; idle (failsafe) bias of 270 Ω from A to 3.3 V and from B to ground, so an idle terminated bus reads 1, not noise; pull-ups on RO and DI keep the UART lines at idle while they are released (maker-coverage BL-10, CK-17).",
+ "ports": {
+  "a": "bus line A (non-inverting) – to the connector",
+  "b": "bus line B (inverting) – to the connector",
+  "ro": "receiver output – to the MCU's UART RX",
+  "di": "driver input – from the MCU's UART TX",
+  "de": "direction: DE and RE# joined – high transmits, low receives; low until the firmware drives it",
+  "vcc": "the transceiver's 3.3 V supply (MAX3485: 3.0–3.6 V)",
+  "gnd": "ground – also the ground wire that runs with the pair"
+ },
+ "components": [
+  {
+   "designator": "U1",
+   "type": "ic",
+   "label": "{as}: RS-485 transceiver MAX3485",
+   "part": "MAX3485ESA+T",
+   "lcsc": "C18148",
+   "pins": {
+    "1": "RO",
+    "2": "RE#",
+    "3": "DE",
+    "4": "DI",
+    "5": "GND",
+    "6": "A",
+    "7": "B",
+    "8": "VCC"
+   }
+  },
+  {
+   "designator": "C1",
+   "type": "capacitor",
+   "label": "{as}: 100 nF at VCC",
+   "part": "CC0805KRX7R9BB104",
+   "lcsc": "C49678",
+   "value": "100nF",
+   "pins": {
+    "1": "1",
+    "2": "2"
+   }
+  },
+  {
+   "designator": "R1",
+   "type": "resistor",
+   "label": "{as}: DE/RE# pull-down 10 k",
+   "part": "0805W8F1002T5E",
+   "lcsc": "C17414",
+   "value": "10k",
+   "pins": {
+    "1": "1",
+    "2": "2"
+   },
+   "notes": "Driver off, receiver on from power-up until the firmware drives the pin: the MAX3485 has no internal pull on DE."
+  },
+  {
+   "designator": "R2",
+   "type": "resistor",
+   "label": "{as}: RO pull-up 10 k",
+   "part": "0805W8F1002T5E",
+   "lcsc": "C17414",
+   "value": "10k",
+   "pins": {
+    "1": "1",
+    "2": "2"
+   },
+   "notes": "RO is high impedance while RE# is high (transmitting): RX stays at idle instead of floating."
+  },
+  {
+   "designator": "R3",
+   "type": "resistor",
+   "label": "{as}: DI pull-up 10 k",
+   "part": "0805W8F1002T5E",
+   "lcsc": "C17414",
+   "value": "10k",
+   "pins": {
+    "1": "1",
+    "2": "2"
+   },
+   "notes": "TX floats until the firmware sets up the UART; held at idle, a driver enabled early sends no start bit."
+  },
+  {
+   "designator": "R4",
+   "type": "resistor",
+   "label": "{as}: idle bias A to 3.3 V, 270",
+   "part": "0805W8F2700T5E",
+   "lcsc": "C17590",
+   "value": "270",
+   "pins": {
+    "1": "1",
+    "2": "2"
+   }
+  },
+  {
+   "designator": "R5",
+   "type": "resistor",
+   "label": "{as}: idle bias B to ground, 270",
+   "part": "0805W8F2700T5E",
+   "lcsc": "C17590",
+   "value": "270",
+   "pins": {
+    "1": "1",
+    "2": "2"
+   }
+  },
+  {
+   "designator": "R6",
+   "type": "resistor",
+   "label": "{as}: termination 120",
+   "part": "0805W8F1200T5E",
+   "lcsc": "C17437",
+   "value": "120",
+   "pins": {
+    "1": "1",
+    "2": "2"
+   }
+  },
+  {
+   "designator": "SW1",
+   "type": "switch",
+   "label": "{as}: termination on/off",
+   "part": "DSHP01TSGET",
+   "lcsc": "C126848",
+   "pins": {
+    "1": "A1",
+    "2": "B1"
+   },
+   "notes": "On at the two nodes at the ends of the cable, off at every node in between."
+  }
+ ],
+ "nets": [
+  {
+   "name": "a",
+   "pins": [
+    "U1.6",
+    "R4.2",
+    "R6.1"
+   ],
+   "v": [
+    0,
+    5.5
+   ],
+   "notes": "0–5.5 V: a 5 V transceiver may drive the same bus; RS-485's common-mode range (−7 … +12 V) is not declared."
+  },
+  {
+   "name": "b",
+   "pins": [
+    "U1.7",
+    "R5.1",
+    "SW1.2"
+   ],
+   "v": [
+    0,
+    5.5
+   ]
+  },
+  {
+   "name": "term",
+   "pins": [
+    "R6.2",
+    "SW1.1"
+   ],
+   "v": [
+    0,
+    5.5
+   ],
+   "notes": "Between the termination resistor and its switch."
+  },
+  {
+   "name": "ro",
+   "pins": [
+    "U1.1",
+    "R2.2"
+   ],
+   "v": "@vcc"
+  },
+  {
+   "name": "di",
+   "pins": [
+    "U1.4",
+    "R3.2"
+   ],
+   "v": "@vcc"
+  },
+  {
+   "name": "de",
+   "pins": [
+    "U1.2",
+    "U1.3",
+    "R1.1"
+   ],
+   "v": "@vcc"
+  },
+  {
+   "name": "vcc",
+   "pins": [
+    "U1.8",
+    "C1.1",
+    "R2.1",
+    "R3.1",
+    "R4.1"
+   ]
+  },
+  {
+   "name": "gnd",
+   "pins": [
+    "U1.5",
+    "C1.2",
+    "R1.2",
+    "R5.2"
+   ]
+  }
+ ],
+ "covers": [
+  "REQ.missing/termination",
+  "REQ.value/termination",
+  "REQ.value/failsafe",
+  "LVL.undefined/open_drain",
+  "LVL.undefined"
+ ],
+ "notes": [
+  "Idle bias 270 Ω: TI SLLA272D, equation 2, RB = VBUS_min / (VAB × (1/375 Ω + 4/Z0)), gives 333 Ω for VBUS_min 3.0 V (the MAX3485's lowest VCC), VAB 0.25 V (200 mV receiver threshold + 50 mV noise, as TI's example) and Z0 120 Ω. The exact divider with both terminations (60 Ω) and 32 unit loads (375 Ω) holds only 218 mV with 330 Ω; 270 Ω holds 262 mV – the design choice here. The idle bus then draws about 5.5 mA from 3.3 V.",
+  "One bias pair per bus: the bias adds 540 Ω across the pair, with both terminations 54 Ω – the load at which the MAX3485 guarantees VOD ≥ 1.5 V (data sheet, DC characteristics). On the other nodes of the bus leave R4 and R5 out (remove them from the graph).",
+  "Termination: SW1 on at the two nodes at the cable ends, off elsewhere (SLLA272D section 6: 120 Ω, one at each cable end; MAX3485 Figure 21). SW1 is rated 25 mA at 24 V DC (switching life): a lone driver with 2.5–3 V across 120 Ω comes close to it. Where the node is always at an end, a fixed 120 Ω (no switch) is the simpler choice.",
+  "edakit counts a termination only as a resistor directly across A–B or split; the 120 Ω behind SW1 is not seen, so REQ.missing/termination reports the bus unterminated – accept it on the A net with the reason (\"SW1 switches 120 Ω at this end\"). REQ.value/failsafe needs a termination across the pair to compute the idle voltage; without one it assumes the full supply.",
+  "DE and RE# joined: the node cannot hear its own transmission; for that, give RE# its own pin (and a pull-down) instead of the shared net.",
+  "Bus pins: the MAX3485 limits a shorted driver to ±250 mA and shuts down thermally (C18148 hints) – no series resistors on A/B. Where the bus connector is marked off_board, REQ.missing/leave asks for them anyway: the C18148 entry has no short_proof on A and B. For long or outdoor cables a TVS across A/B to ground (SM712 class) is worth a look; it is not in the block.",
+  "sim.json: the DI net under the MCU's outputs (idle high), the RO net under its inputs; a load with \"dip_closed\": {\"SW<n>\": [1]} simulates the termination switched on. The MAX3485 has no behaviour model: its supply and driver currents are not simulated."
+ ],
+ "test": {
+  "connect": {
+   "di": "SIG",
+   "ro": "SIG2",
+   "vcc": "3V3"
+  },
+  "sim": {
+   "mcu": {
+    "U1": {
+     "outputs": [
+      "LED_SDI",
+      "LED_CLK",
+      "LED_LE",
+      "LED_OE",
+      "SIG"
+     ],
+     "inputs": [
+      "SIG2"
+     ],
+     "pullups": [
+      "BTN"
+     ],
+     "pullup_ohm": 50000
+    }
+   },
+   "loads": {
+    "t_idle": {
+     "about": "UART idle (TX high), termination off",
+     "gpio": {
+      "LED_OE": 1,
+      "SIG": 1
+     },
+     "leds_on": []
+    },
+    "t_term": {
+     "about": "UART idle, termination switched on (SW2 is the block's SW1 in the example)",
+     "gpio": {
+      "LED_OE": 1,
+      "SIG": 1
+     },
+     "dip_closed": {
+      "SW2": [
+       1
+      ]
+     },
+     "leds_on": []
+    }
+   }
+  }
+ }
+}

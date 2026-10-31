@@ -1,0 +1,180 @@
+{
+ "name": "eurorack-power",
+ "title": "Eurorack power entry: keyed 10-pin header, series Schottky per rail, 10 µF per rail",
+ "about": "The ±12 V of a Eurorack bus through a shrouded 2 × 5 box header (the key lets a keyed IDC socket seat one way only), an SS14 Schottky in series with each rail – a reversed ribbon swaps +12 V and −12 V, and both diodes block – and a 10 µF electrolytic per rail behind its diode. Pin 1 (red stripe) and 2 carry −12 V, 3–8 ground, 9 and 10 +12 V: the 10-pin subset of the Doepfer A-100 bus.",
+ "ports": {
+  "p12": "the protected +12 V rail of the module",
+  "n12": "the protected −12 V rail of the module",
+  "gnd": "ground"
+ },
+ "components": [
+  {
+   "designator": "J1",
+   "type": "connector",
+   "label": "{as}: Eurorack power 10-pin (pin 1 = red stripe = −12 V)",
+   "part": "BH254V-10P",
+   "lcsc": "C492442",
+   "source": "reversible",
+   "pins": {
+    "1": "1",
+    "2": "2",
+    "3": "3",
+    "4": "4",
+    "5": "5",
+    "6": "6",
+    "7": "7",
+    "8": "8",
+    "9": "9",
+    "10": "10"
+   },
+   "notes": "Pins 1/2 −12 V (red stripe), 3–8 GND, 9/10 +12 V. Print '−12V' or 'red stripe' beside pin 1 on the silkscreen."
+  },
+  {
+   "designator": "D1",
+   "type": "diode",
+   "label": "{as}: +12 V series Schottky",
+   "part": "SS14",
+   "lcsc": "C2480",
+   "pins": {
+    "1": "K",
+    "2": "A"
+   },
+   "notes": "Anode at the header: a reversed ribbon puts −12 V there and D1 blocks. 40 V VRRM; edakit holds the 25.2 V between the nets' ranges (header −12.6 V, rail +12.6 V) × 1.5 = 37.8 V to it. 1 A; up to 0.55 V drop at 1 A."
+  },
+  {
+   "designator": "D2",
+   "type": "diode",
+   "label": "{as}: −12 V series Schottky",
+   "part": "SS14",
+   "lcsc": "C2480",
+   "pins": {
+    "1": "K",
+    "2": "A"
+   },
+   "notes": "Cathode at the header: the rail's current flows from the module to the bus; a reversed ribbon puts +12 V there and D2 blocks."
+  },
+  {
+   "designator": "C1",
+   "type": "capacitor",
+   "label": "{as}: +12 V rail 10 µF",
+   "part": "RVT10UF35V67RV0176",
+   "lcsc": "C2895284",
+   "value": "10uF",
+   "pins": {
+    "1": "1",
+    "2": "2"
+   },
+   "notes": "Plus (pin 1) at +12 V. 35 V: room above 12.6 V × 1.5 = 18.9 V for plug-in transients on the ribbon."
+  },
+  {
+   "designator": "C2",
+   "type": "capacitor",
+   "label": "{as}: −12 V rail 10 µF",
+   "part": "RVT10UF35V67RV0176",
+   "lcsc": "C2895284",
+   "value": "10uF",
+   "pins": {
+    "1": "1",
+    "2": "2"
+   },
+   "notes": "Plus (pin 1) at ground, minus at −12 V."
+  }
+ ],
+ "nets": [
+  {
+   "name": "p12_bus",
+   "pins": [
+    "J1.9",
+    "J1.10",
+    "D1.2"
+   ],
+   "v": [
+    -12.6,
+    12.6
+   ],
+   "notes": "+12 V at the header; −12 V with a reversed ribbon."
+  },
+  {
+   "name": "n12_bus",
+   "pins": [
+    "J1.1",
+    "J1.2",
+    "D2.1"
+   ],
+   "v": [
+    -12.6,
+    12.6
+   ],
+   "notes": "−12 V at the header (red stripe); +12 V with a reversed ribbon.",
+   "accept": {
+    "PATH.reverse": "The −12 V series Schottky blocks here: on the negative rail its cathode faces the header, and a reversed ribbon puts +12 V on that cathode – reverse bias, no current. catalog/paths.toml [reverse] knows a blocking diode only with its anode toward the source (a positive rail)."
+   }
+  },
+  {
+   "name": "p12",
+   "pins": [
+    "D1.1",
+    "C1.1"
+   ],
+   "v": [
+    0,
+    12.6
+   ]
+  },
+  {
+   "name": "n12",
+   "pins": [
+    "D2.2",
+    "C2.2"
+   ],
+   "v": [
+    -12.6,
+    0
+   ]
+  },
+  {
+   "name": "gnd",
+   "pins": [
+    "J1.3",
+    "J1.4",
+    "J1.5",
+    "J1.6",
+    "J1.7",
+    "J1.8",
+    "C1.2",
+    "C2.1"
+   ]
+  }
+ ],
+ "covers": [
+  "PATH.reverse",
+  "LIM.v"
+ ],
+ "notes": [
+  "Pinout from the Doepfer A-100 bus as the open designs DIYSynthMNL/EuroBusboard (README, 10-pin IDC) and hed0rah/partinfo (eurorack-power.json, after Noise Engineering's diagram) give it – doepfer.de was not reachable from here; check it against the A-100 bus specification before an order.",
+  "Rail ranges ±12.6 V: ±5 % as an assumption for a regulated Eurorack supply, not from the A-100 specification – set the nets to the case's power supply. The header nets span both polarities (a reversed ribbon).",
+  "The keyed header protects only with a keyed IDC socket on a cable crimped the same way at both ends; the diodes stay for unshrouded bus boards and cables made the wrong way round. The modules' +12 V and −12 V lose the diode's drop (up to 0.55 V at 1 A).",
+  "Not covered: a 16-pin bus cable plugged one row offset onto a 16-pin header puts +12 V or +5 V on the module's ground pins – the diodes cannot stop that; the 2 × 5 shroud keeps a 16-pin socket out. For +5 V from the bus (16-pin, pins 11/12) the 2 × 8 header with a third diode.",
+  "Graph: J1 carries \"source\": \"reversible\" – PATH.reverse checks that a reversed ribbon reaches only the diodes. It reports D2's cathode on n12_bus: paths.toml knows a blocking diode only with its anode at the source (a positive rail); on the negative rail the cathode faces the header and blocks the reversed +12 V – the block accepts that finding on n12_bus. Nothing else belongs on the header side of D1 and D2.",
+  "10 µF per rail (maker-coverage BL-15, a design choice – not from the A-100 specification) behind the diode, so that a reversed ribbon never reverse-biases the electrolytic; 100 nF at each IC's supply pins (REQ.missing). Optional: 10 Ω or a ferrite per rail ahead of the capacitor, an RC filter against what other modules put on the bus (the pattern hed0rah/partinfo's eurorack-power-protection describes).",
+  "sim.json: J1 as a source per rail is not possible – a source has one plus and one minus; edakit sim runs the block with both rails unfed."
+ ],
+ "test": {
+  "connect": {
+   "p12": "+12V",
+   "n12": "-12V"
+  },
+  "nets": {
+   "+12V": [
+    0,
+    12.6
+   ],
+   "-12V": [
+    -12.6,
+    0
+   ]
+  },
+  "sim": false,
+  "why": "The example has no ±12 V, and a source of sim.json has one plus and one minus: J1 cannot feed both rails. A rail left unfed floats, and edakit sim holds the 1e-18 V of SPICE noise across its electrolytic against vr_max_v 0 (KNSCHA: no reverse voltage) – LIM.v fails on noise, not on the block."
+ }
+}

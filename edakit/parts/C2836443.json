@@ -1,0 +1,70 @@
+{
+ "lcsc": "C2836443",
+ "mpn": "RVT100UF25V67RV0011",
+ "manufacturer": "KNSCHA(科尼盛)",
+ "kind": "capacitor",
+ "package": "SMD V-chip aluminium electrolytic D6.3 × L7.7 mm",
+ "footprint": "CAP-SMD_BD6.3-L6.6-W6.6-LS7.2-FD",
+ "jlc_class": "Extended Part",
+ "datasheet": {
+  "url": "https://datasheet.lcsc.com/datasheet/pdf/be0e8c33fb17733b95a022b1b3f4c87c.pdf?productCode=C2836443",
+  "pinout_page": null
+ },
+ "pins": {
+  "1": {
+   "name": "1",
+   "type": "passive",
+   "role": "plus"
+  },
+  "2": {
+   "name": "2",
+   "type": "passive",
+   "role": "minus"
+  }
+ },
+ "values": {
+  "value_f": 0.0001,
+  "dielectric": "electrolytic",
+  "polarized": true,
+  "tolerance": 0.2
+ },
+ "limits": {
+  "v_max_v": 25,
+  "vr_max_v": 0,
+  "i_ripple_a": 0.093,
+  "t_min_c": -55,
+  "t_max_c": 105
+ },
+ "compliance": {
+  "rohs": true,
+  "source": "KNSCHA specification RVT100UF25V67RV0011 (2026.4.16), 3 'R0HS 2011/65/EU'"
+ },
+ "sources": [
+  "KNSCHA Specification For Approval RVT100UF25V67RV0011, SMD E/C 100 µF/25 V 6.3*7.7 mm RVT 2000H, dated 2026.4.16, 13 pages – LCSC product data of C2836443, https://datasheet.lcsc.com/datasheet/pdf/be0e8c33fb17733b95a022b1b3f4c87c.pdf?productCode=C2836443, read 2026-10-31",
+  "value_f 1e-4, tolerance 0.2, v_max_v 25: part table – WV 25 V, 100 µF, ±20 % (120 Hz, 20 °C), DF 0.18, LC ≤ 25 µA (2 min), D × L 6.3 × 7.7 mm, P 2.1 mm",
+  "i_ripple_a 0.093: part table 'Allowable ripple current (mA rms) at 105C, 120Hz' ≤ 93; ESR at 100 kHz not given ('/')",
+  "t_min_c -55, t_max_c 105: 4 specification 1, operating temperature range -55 ~ +105 °C; endurance 2000 h at 105 °C with rated voltage; surge voltage 32 V (25 V series)",
+  "vr_max_v 0: 13 application guideline 4) 'Aluminum electrolytic capacitors are polar. Make sure that no reverse voltage or AC voltage is applied to the capacitors.'",
+  "pins: EasyEDA symbol and footprint of C2836443 (edakit part import 2026-10-31): pad 1 under the chamfered corners with the '+' print = plus (the base is chamfered on the positive side, drawing 7 '正极'), pad 2 = minus; recommended land 6.3: X 1.6, Y 3.5, a 2.1 mm",
+  "LCSC/JLCPCB catalogue 2026-10-31: Extended Part, 75 948 pcs"
+ ],
+ "notes": "100 µF/25 V aluminium electrolytic, V-chip 6.3 × 7.7 mm, 105 °C. Bulk capacitor at a motor driver's VM (block dc-motor-drv8833). Polar: no reverse voltage. Library draft.",
+ "verified": {
+  "by": "Claude (datasheet check, library draft)",
+  "date": "2026-10-31",
+  "datasheet": "KNSCHA Specification For Approval RVT100UF25V67RV0011 (2026.4.16)",
+  "datasheet_sha256": "823307542bd6a66a3d002d51238999f38b14bd231365f510781ab3460d73d4b5",
+  "checked": [
+   "part table: 100 µF ±20 %, 25 V, DF 0.18, LC 25 µA, 6.3 × 7.7 mm, ripple 93 mA rms at 105 °C / 120 Hz",
+   "operating temperature -55 … +105 °C; surge voltage 32 V; no reverse or AC voltage (guideline 4)",
+   "polarity: drawing 7 marks the positive side ('正极') at the chamfered base corners; footprint pad 1 under the chamfer and '+' print"
+  ],
+  "open": [
+   "ESR not given – the ripple rating at 120 Hz only; a PWM-driven motor's ripple current at the bulk capacitor is not checked by edakit",
+   {
+    "text": "the dark polarity band (minus) of the part against the footprint's '+' and chamfer",
+    "when": "order"
+   }
+  ]
+ }
+}

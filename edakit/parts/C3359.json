@@ -1,0 +1,79 @@
+{
+ "lcsc": "C3359",
+ "mpn": "RVT1C102M1010",
+ "manufacturer": "HONOR(荣誉)",
+ "kind": "capacitor",
+ "package": "SMD aluminium electrolytic, D10 × L10.2 mm (case 1010)",
+ "footprint": "CAP-SMD_BD10.0-L10.3-W10.3-FD",
+ "jlc_class": "Extended Part",
+ "datasheet": {
+  "url": "https://datasheet.lcsc.com/datasheet/pdf/4ec4cfc2b89f173d2532ed891957b1a7.pdf?productCode=C3359",
+  "pinout_page": 2
+ },
+ "pins": {
+  "1": {
+   "name": "1",
+   "type": "passive",
+   "role": "plus"
+  },
+  "2": {
+   "name": "2",
+   "type": "passive",
+   "role": "minus"
+  }
+ },
+ "values": {
+  "value_f": 0.001,
+  "dielectric": "electrolytic",
+  "polarized": true,
+  "tolerance": 0.2
+ },
+ "limits": {
+  "v_max_v": 16,
+  "i_ripple_a": 0.347,
+  "t_min_c": -55,
+  "t_max_c": 105
+ },
+ "body": {
+  "h_mm": 10.7
+ },
+ "spice": {},
+ "hints": [
+  "rated ripple current 347 mA at 105 °C and 120 Hz (p. 3); multiplier 0.70 at 50 Hz, 1.17 at 300 Hz, 1.36 at 1 kHz, 1.50 at ≥ 10 kHz (p. 3)",
+  "leakage current ≤ 0.01·C·V or 3 µA after 2 minutes – 160 µA at 1000 µF and 16 V (p. 1)",
+  "tan δ ≤ 0.20 at 16 V, 20 °C, 120 Hz (p. 1); life 2000 h at 105 °C with rated voltage and ripple (p. 1)",
+  "the data sheet names neither an ESR nor a permitted reverse voltage"
+ ],
+ "sources": [
+  "HONORCAP Chip Type Aluminum Electrolytic Capacitors, RVT series data sheet (5 pages, scanned, no revision or date printed), LCSC's copy https://datasheet.lcsc.com/datasheet/pdf/4ec4cfc2b89f173d2532ed891957b1a7.pdf?productCode=C3359, read 2026-10-31 as images",
+  "part number (p. 4): RVT = series, 1C = 16 V, 102 = 1000 µF, M = ±20 %, 1010 = case 10 × 10.2 mm",
+  "specifications (p. 1): category temperature −55…+105 °C; rated voltage range 4–100 V DC; tolerance ±20 % (120 Hz, 20 °C); leakage I = 0.01CV or 3 µA after 2 minutes; tan δ 0.20 at 16 V; load life 2000 h at 105 °C",
+  "standard sizes (p. 3): 1000 µF / 16 V in 10 × 10.2 mm, rated ripple current 347 mA (105 °C, 120 Hz)",
+  "dimensions (p. 2, Fig. 1): D 10 ± 0.5, L 10.2 ± 0.5 mm (body h_mm 10.7: L at its maximum), A 11.1, B and C 10.3, E 4.5 mm",
+  "pin 1 = plus, pin 2 = minus: the EasyEDA footprint CAP-SMD_BD10.0-L10.3-W10.3-FD prints a '+' beside pad 1 and a '−' beside pad 2 and chamfers its outline at pad 1 (edakit part import 2026-10-31) – assumption, see open",
+  "mpn, manufacturer, footprint, jlc_class, pin numbers and names: EasyEDA library data of C3359 via edakit part import, read 2026-10-31",
+  "stock: JLCPCB 40 018 pcs, Extended Part, MSL 1 (edakit stock --lcsc, 2026-10-31)"
+ ],
+ "notes": "1000 µF / 16 V SMD electrolytic: the bulk capacitor at an LED strip's or a servo's supply (blocks addressable-led-input, servo-connector). Library draft.",
+ "verified": {
+  "by": "Claude (datasheet check, library draft)",
+  "date": "2026-10-31",
+  "datasheet": "HONORCAP RVT series (no revision printed)",
+  "datasheet_sha256": "285ae57abc097a56fae89388feef643b79f8d7c2901d6457de4bc00a5f91ce1b",
+  "checked": [
+   "RVT1C102M1010: RVT series, 16 V, 1000 µF, ±20 %, 10 × 10.2 mm (p. 4)",
+   "1000 µF / 16 V: case 10 × 10.2, 347 mA ripple at 105 °C / 120 Hz (p. 3)",
+   "−55…+105 °C, leakage 0.01CV, tan δ 0.20 (p. 1)"
+  ],
+  "open": [
+   {
+    "text": "polarity: the data sheet's terminal drawing (p. 2, Fig. 1) marks a positive and a negative terminal, but its view does not tie them to the chamfered corners of the base plate; pad 1 = plus follows the EasyEDA footprint's print – check the part's stripe and base plate against the footprint at the assembly preview",
+    "when": "order"
+   },
+   "no reverse-voltage limit in the data sheet: vr_max_v left out (LIM.v cannot hold a reversed electrolytic)",
+   "no ESR or impedance at 100 kHz in the data sheet",
+   "the data sheet carries no revision or date",
+   "RoHS: not stated in the data sheet – compliance left out"
+  ]
+ }
+}

@@ -1,0 +1,125 @@
+{
+ "lcsc": "C571211",
+ "mpn": "6N138-L",
+ "manufacturer": "LITEON(光宝)",
+ "kind": "optocoupler",
+ "package": "DIP-8 (2.54 mm pitch, 7.62 mm row spacing)",
+ "footprint": "DIP-8_L9.7-W6.4-P2.54-LS7.6-BL",
+ "jlc_class": "Extended Part",
+ "datasheet": {
+  "url": "https://datasheet.lcsc.com/datasheet/pdf/64f78b458a97d177d4c717e6ac089ff5.pdf?productCode=C571211",
+  "pinout_page": 1
+ },
+ "pins": {
+  "1": {
+   "name": "NC",
+   "type": "no_connect"
+  },
+  "2": {
+   "name": "ANODE",
+   "type": "passive",
+   "role": "anode",
+   "hint": "LED anode; average forward current 20 mA max, reverse voltage 5 V max (p. 5) – a reverse diode across the LED where the input can be reversed"
+  },
+  "3": {
+   "name": "CATHODE",
+   "type": "passive",
+   "role": "cathode"
+  },
+  "4": {
+   "name": "NC",
+   "type": "no_connect"
+  },
+  "5": {
+   "name": "GND",
+   "type": "ground",
+   "role": "emitter"
+  },
+  "6": {
+   "name": "VO",
+   "type": "output",
+   "role": "collector",
+   "drive": "open_drain",
+   "v_max_v": 7,
+   "hint": "open collector of the Darlington output: low while the LED conducts, released (high through the pull-up) while it is dark (truth table, p. 1); VO max 7 V for the 6N138 (p. 5); CTR ≥ 300 % at IF 1.6 mA, VO 0.4 V, VCC 4.5 V (p. 6)"
+  },
+  "7": {
+   "name": "VB",
+   "type": "passive",
+   "hint": "base of the output stage; every datasheet figure has pin 7 open (note 4, p. 8) – a resistor from pin 7 to pin 5 trades gain for a shorter turn-off"
+  },
+  "8": {
+   "name": "VCC",
+   "type": "power_in",
+   "v_max_v": 7,
+   "v_op_min_v": 4.5,
+   "v_op_max_v": 5.5,
+   "hint": "supply of the photodetector; characteristics specified for 4.5 V ≤ VCC ≤ 5.5 V (p. 6); 0.1 µF from pin 8 to pin 5 'must be connected' (p. 1)"
+  }
+ },
+ "values": {
+  "vf_v": 1.1,
+  "vf_at_a": 0.0016,
+  "ctr_min_ratio": 3.0
+ },
+ "limits": {
+  "if_max_a": 0.02,
+  "vr_max_v": 5,
+  "vce_max_v": 7,
+  "ic_max_a": 0.05,
+  "t_min_c": -40,
+  "t_max_c": 85
+ },
+ "lead": {
+  "*": {
+   "shape": "rect",
+   "a_mm": 0.5,
+   "b_mm": 0.26,
+   "tol_mm": 0.1,
+   "hole_rec_mm": null,
+   "length_mm": 3.3,
+   "source": "Lite-On DS70-2009-0001 Rev A, 2.1 6N138-L package dimensions (p. 2): lead 0.5 ± 0.1 mm wide, 0.26 mm thick, 3.3 ± 0.5 mm below the seating plane; no recommended hole given"
+  }
+ },
+ "hints": [
+  "6N138 of the 6N138/6N139 pair: VCC and VO max 7 V (p. 5); the 6N139 takes 18 V",
+  "characteristics hold for VCC 4.5–5.5 V and −40 … +85 °C (p. 6) – on a 3.3 V board the detector still wants 5 V; VO can be pulled up to the 3.3 V logic supply (open collector)",
+  "speed: tPLH ≤ 35 µs, typ. 10 µs at IF 1.6 mA, RL 2.2 kΩ (p. 7) – longer than half a 31.25 kbit/s MIDI bit at the limit; more LED current and a smaller pull-up shorten it",
+  "the SMD version 6N138S-TA1-L (C22451885) is in the same datasheet; its EasyEDA symbol names pin 2 '2' and pin 3 'NC'"
+ ],
+ "sources": [
+  "Lite-On 6N138-L/6N139-L series photocoupler data sheet, Spec No. DS70-2009-0001, Revision A, effective 04/12/2016 (BNS-OD-FC002/A4), LCSC's copy for C571211 https://datasheet.lcsc.com/datasheet/pdf/64f78b458a97d177d4c717e6ac089ff5.pdf?productCode=C571211, read 2026-10-31",
+  "functional diagram and pinout, p. 1: 1 NC, 2 anode, 3 cathode, 4 NC, 5 GND, 6 VO, 7 VB, 8 VCC; '0.1 µF bypass capacitor must be connected between pin 8 and pin 5'",
+  "absolute maximum ratings, p. 5: IF 20 mA average, VR 5 V, PI 35 mW, IO 50 mA, VO 7 V (6N138), PO 100 mW, VCC 7 V (6N138), Topr −40 … +85 °C",
+  "electrical characteristics, p. 6: VF typ. 1.1 V, max. 1.7 V at IF 1.6 mA; CTR 300 % min (1600 typ.) at IF 1.6 mA, VO 0.4 V, VCC 4.5 V (ctr_min_ratio 3.0); VOL ≤ 0.4 V at IF 1.6 mA, IO 4.8 mA; IOH ≤ 250 µA at VO = VCC = 7 V; 'specified over recommended temperature (TA = −40 … +85 °C, 4.5 V ≤ VCC ≤ 5.5 V)' (v_op_min_v, v_op_max_v of pin 8)",
+  "switching, p. 7: 6N138 tPHL typ. 1.6 µs, max. 10 µs; tPLH typ. 10 µs, max. 35 µs at IF 1.6 mA, RL 2.2 kΩ; pin 7 open (note 4, p. 8)",
+  "the output transistor's VO maximum entered as vce_max_v (7 V) and its output collector current as ic_max_a (50 mA)",
+  "cross-check, not the part's own datasheet: Broadcom/Avago 6N138 AV02-1359EN (March 4, 2015), LCSC copy for C17508946 – recommended VCC 4.5–18 V for the family, VCC 7 V max for the 6N138, note 4 'a resistor between pin 5 and 7 will decrease gain and delay time; significant reduction in overall gain below 47 kΩ', note 6 'RCC = 220 Ω' in series with VCC where dV/dt may exceed 50 kV/µs",
+  "mpn, manufacturer, footprint, jlc_class, pin numbers and names: EasyEDA library data of C571211 via edakit part import, read 2026-10-31",
+  "stock: JLCPCB catalogue 308 pcs (2026-10-31)"
+ ],
+ "verified": {
+  "by": "Claude (datasheet check, library draft)",
+  "date": "2026-10-31",
+  "datasheet": "Lite-On 6N138-L/6N139-L series, DS70-2009-0001 Rev A (04/12/2016)",
+  "datasheet_sha256": "17ed96c3bbf949596e9df8de74df024aae53389005240aca081b43340b5d7bf4",
+  "checked": [
+   "pinout (p. 1) = the EasyEDA symbol: 1 NC, 2 ANODE, 3 CATHODE, 4 NC, 5 GND, 6 VO, 7 VB, 8 VCC",
+   "abs. max IF 20 mA, VR 5 V, IO 50 mA, VO and VCC 7 V (6N138), −40 … +85 °C (p. 5)",
+   "VF 1.1 V typ. / 1.7 V max. at 1.6 mA; CTR ≥ 300 % at 1.6 mA; VCC 4.5–5.5 V (p. 6)",
+   "tPLH typ. 10 µs, max. 35 µs at 1.6 mA, 2.2 kΩ (p. 7)",
+   "lead 0.5 × 0.26 mm (p. 2) against the footprint's 1.0 mm holes",
+   "footprint DIP-8: 2.54 mm pitch, rows 7.62 mm apart, pad 1 square"
+  ],
+  "open": [
+   "no recommended operating LED current range in the Lite-On sheet (Broadcom's 6N138: 0.5–12 mA); the CTR is guaranteed at 1.6 mA only",
+   "VO is open collector – the schema has drive open_drain for it; the photodiode/first-stage split (VCC, VB) has no model: the simulation passes ctr_min × IF from VO to GND and ignores VCC",
+   "propagation delays at the operating point of a MIDI input (IF about 5 mA, a 1 kΩ pull-up to 3.3 V) are not in the data sheet – measure the RX edge on the board",
+   "no thermal resistance in the data sheet: LIM.t has no item for it",
+   {
+    "text": "pin 1 mark of the package against the footprint's square pad",
+    "when": "order"
+   }
+  ]
+ }
+}

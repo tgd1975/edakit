@@ -1,0 +1,127 @@
+{
+ "lcsc": "C841192",
+ "mpn": "RT9080-33GJ5",
+ "manufacturer": "RICHTEK(立锜)",
+ "kind": "ic",
+ "package": "TSOT-23-5",
+ "footprint": "TSOT-23-5_L2.9-W1.6-P0.95-LS2.8-BL",
+ "jlc_class": "Extended Part",
+ "datasheet": {
+  "url": "https://datasheet.lcsc.com/datasheet/pdf/2701e0c3a2b84b9965f7a61f2c14e970.pdf?productCode=C841192",
+  "pinout_page": 2
+ },
+ "pins": {
+  "1": {
+   "name": "VIN",
+   "type": "power_in",
+   "role": "vin",
+   "v_max_v": 6.5,
+   "hint": "recommended input 1.2 … 5.5 V (p. 4); 600 mA only with VIN ≥ 2.3 V (p. 1); for 3.3 V out at 600 mA VIN ≥ 3.3 V + 0.53 V (dropout max, p. 4)",
+   "needs": [
+    {
+     "what": "capacitor",
+     "c_min_f": 1e-06,
+     "source": "Richtek RT9080 data sheet DS9080-05 (June 2017), Application Information p. 11: 'Use a 1 µF or larger input capacitor and place it close to the IC's VIN and GND pins'; typical application p. 6: CIN 1 µF"
+    }
+   ]
+  },
+  "2": {
+   "name": "GND",
+   "type": "ground",
+   "role": "gnd"
+  },
+  "3": {
+   "name": "EN",
+   "type": "input",
+   "role": "en",
+   "v_max_v": 6.5,
+   "vih_v": 0.9,
+   "vil_v": 0.4,
+   "hint": "enable, CMOS input: high = on; 'cannot be left floating', 'may be directly tied to VIN to keep the part on' (p. 11); VIH ≥ 0.9 V, VIL ≤ 0.4 V at VIN 5 V, ≤ 0.1 µA (p. 5); disabled: 0.1 / 0.5 µA, output discharged through 80 Ω (p. 4–5)"
+  },
+  "4": {
+   "name": "NC",
+   "type": "no_connect",
+   "hint": "RT9080 (without SNS): no internal connection (p. 2)"
+  },
+  "5": {
+   "name": "VOUT",
+   "type": "power_output",
+   "role": "vout",
+   "v_max_v": 6.5,
+   "hint": "VOUT to VIN −6.5 … 0.3 V (absolute maximum, p. 4): VOUT must not rise more than 0.3 V above VIN – a rail fed from elsewhere while VIN is low drives the P-MOSFET's body diode",
+   "needs": [
+    {
+     "what": "capacitor",
+     "c_min_f": 1e-06,
+     "source": "Richtek RT9080 data sheet DS9080-05 (June 2017), Operation p. 3 and Application Information p. 11: minimum output capacitance for stability 1 µF effective after temperature and voltage coefficient, ESR ≥ 1 mΩ; typical application p. 6"
+    }
+   ]
+  }
+ },
+ "values": {
+  "behavior": "ldo",
+  "vout_v": 3.3,
+  "dropout_v": 0.53,
+  "iq_a": 4e-06
+ },
+ "limits": {
+  "vdd_max_v": 6.5,
+  "vdd_op_min_v": 1.2,
+  "vdd_op_max_v": 5.5,
+  "vin_min_v": 1.2,
+  "i_out_max_a": 0.6,
+  "p_max_w": 0.43,
+  "tj_max_c": 125,
+  "t_min_c": -40,
+  "t_max_c": 85,
+  "rth_ja_k_per_w": 230.6
+ },
+ "hints": [
+  "linear regulator: P = (VIN − 3.3 V) × IOUT; θJA 230.6 °C/W (JEDEC 51-7 four-layer board) gives 0.43 W at 25 °C ambient and TJ 125 °C (p. 4, 12) – from 5 V that is about 250 mA continuous at 25 °C, less when warmer; current pulses (radio bursts) average out over the package's thermal time",
+  "current limit ≥ 610 mA (typ 1.1 A), fold-back to about 0.6 A when the output is pulled down; short-circuit proof; thermal shutdown at 150 °C (typ) with 20 °C hysteresis, only above 80 mA output (p. 3, 5, 12)",
+  "output accuracy ±2 % at 1 mA, load regulation ≤ 1 % from 1 to 600 mA, line regulation ≤ 0.35 % (1.8 … 5.5 V) (p. 4–5)",
+  "dropout at 600 mA for VOUT ≥ 3 V: 0.31 V typ, 0.53 V max (p. 4)"
+ ],
+ "compliance": {
+  "rohs": true,
+  "radio": "none",
+  "source": "Richtek RT9080 data sheet DS9080-05 p. 1: 'Richtek products are RoHS compliant'; LCSC product data C841192 (2026-10-31): isEnvironment true"
+ },
+ "sources": [
+  "Richtek RT9080 data sheet DS9080-05 (June 2017), via LCSC https://datasheet.lcsc.com/datasheet/pdf/2701e0c3a2b84b9965f7a61f2c14e970.pdf?productCode=C841192, read 2026-10-31 – Richtek's document (logo, DS number and www.richtek.com on every page); www.richtek.com refused the connection through the proxy (HTTP 403 at the tunnel), so a newer revision was not compared",
+  "pins: p. 2 pin configuration TSOT-23-5 top view and functional pin description: 1 VIN, 2 GND, 3 EN, 4 NC (SNS on the RT9080N), 5 VOUT – EasyEDA symbol of C841192 (edakit part import 2026-10-31): 1 VIN, 2 GND, 3 EN, 4 NC, 5 VOUT, the same; its footprint has pads 1–3 on one side and 5 opposite pad 1, as the top view",
+  "part number: RT9080-33GJ5 = RT9080 without SNS pin, 3.3 V, G = green, J5 = TSOT-23-5 (ordering information p. 1)",
+  "vdd_max_v 6.5 and v_max_v 6.5 on VIN, EN, VOUT: p. 4 absolute maximum VIN, VOUT, SNS, EN to GND −0.3 … 6.5 V; VOUT to VIN −6.5 … 0.3 V",
+  "vdd_op_min_v 1.2, vdd_op_max_v 5.5, vin_min_v 1.2: p. 4 recommended input voltage 1.2 … 5.5 V",
+  "i_out_max_a 0.6: p. 1 '600 mA (VIN ≥ 2.3 V) output current'; p. 4 dropout specified at ILOAD 600 mA",
+  "dropout_v 0.53: p. 4 dropout at ILOAD 600 mA, 3 V ≤ VOUT: typ 0.31 V, max 0.53 V – the maximum entered, the ldo model takes one value",
+  "iq_a 4e-06: p. 4 VCC consumption current at no load, typ 2 µA, max 4 µA – the maximum entered",
+  "vout_v 3.3: ordering code 33; p. 4 DC output accuracy ±2 % at 1 mA (3.234 … 3.366 V)",
+  "p_max_w 0.43, rth_ja_k_per_w 230.6: p. 4 power dissipation TSOT-23-5 0.43 W at TA 25 °C, θJA 230.6 °C/W (note 2: JEDEC 51-7 high-K four-layer board), θJC 21.8 °C/W; p. 12 PD(MAX) = (125 °C − 25 °C) / 230.6 °C/W = 0.43 W",
+  "tj_max_c 125, t_min_c -40, t_max_c 85: p. 4 recommended junction temperature −40 … 125 °C and ambient −40 … 85 °C (absolute maximum junction 150 °C); p. 12 uses TJ(MAX) 125 °C",
+  "EN vih_v 0.9, vil_v 0.4: p. 5 enable input logic-high ≥ 0.9 V, logic-low ≤ 0.4 V at VIN 5 V",
+  "LDO choice for the library (2026-10-31, edakit part search, edakit stock, LCSC product data): RT9080-33GJ5 by Richtek – 600 mA with 2 µA quiescent current (LCSC parameters: 600 mA, Iq 2 µA, 5.5 V), the lowest quiescent current of the candidates at ≥ 500 mA; JLCPCB 36 160 pcs, LCSC 33 870. Compared by their LCSC parameters (their data sheets not read): AP2112K-3.3TRG1 C51118 (Diodes, 600 mA, Iq 55 µA, 6 V; JLCPCB 9 539, LCSC 3 905 pcs), XC6220B331MR-G C86534 (Torex, 1 A, Iq 8 µA, 6 V; JLCPCB 18 894 pcs – torexsemi.com refused the connection for the XC6206 entry), TLV75533PDBVR C404027 (TI, 500 mA, Iq 25 µA, 5.5 V; JLCPCB 103 461 pcs), RT9013-33GB C47773 (Richtek, 500 mA, Iq 25 µA, 5.5 V; JLCPCB 357 115 pcs), ME6211C33M5G-N C82942 (Microne, 500 mA, Iq 60 µA, 6 V; JLCPCB 532, LCSC 0 pcs)"
+ ],
+ "notes": "Low-quiescent 3.3 V LDO (2 µA typ), 600 mA, input 1.2–5.5 V, EN input, TSOT-23-5. Behaviour model ldo (pins vin, vout, gnd). For an ESP32's ≥ 500 mA supply (block ldo-3v3). Library draft, group power.",
+ "verified": {
+  "by": "Claude (datasheet check, library draft)",
+  "date": "2026-10-31",
+  "datasheet": "Richtek RT9080 data sheet DS9080-05 (June 2017)",
+  "datasheet_sha256": "8c24934075d288b7e4fb5e77c9d2ec781c35c8acbcf659f46951b83c6738965b",
+  "checked": [
+   "TSOT-23-5 pin configuration and functional pin description p. 2 = EasyEDA symbol of C841192 (1 VIN, 2 GND, 3 EN, 4 NC, 5 VOUT); footprint pads 1–3 in a row, 5 opposite 1 – as the top view",
+   "absolute maximum p. 4: VIN, VOUT, EN −0.3 … 6.5 V, VOUT − VIN ≤ 0.3 V, PD 0.43 W (TSOT-23-5, 25 °C), θJA 230.6 °C/W, TJ 150 °C",
+   "recommended operating conditions p. 4: VIN 1.2 … 5.5 V, TJ −40 … 125 °C, TA −40 … 85 °C",
+   "electrical characteristics p. 4–5: ±2 %, dropout 0.31 / 0.53 V at 600 mA (VOUT ≥ 3 V), IQ 2 / 4 µA, shutdown 0.1 / 0.5 µA, current limit ≥ 610 mA, EN VIH 0.9 V / VIL 0.4 V",
+   "capacitors p. 3, 6, 11: CIN ≥ 1 µF; COUT ≥ 1 µF effective, ESR ≥ 1 mΩ, ceramic or tantalum"
+  ],
+  "open": [
+   "DS9080-05 of June 2017 is the revision LCSC links; richtek.com could not be reached (proxy), a newer revision was not compared",
+   "the EN thresholds are given at VIN 5 V only; the typical curve p. 8 shows about 0.6–0.7 V over 1–5.5 V",
+   "θJA 230.6 °C/W holds for a JEDEC four-layer board; on a two-layer maker board the junction runs hotter – no figure in the data sheet",
+   "dropout_v is one number (0.53 V max at 600 mA); at lower currents the dropout is smaller (curve p. 8), the model overstates it there",
+   "pin 4 NC entered as no_connect: the RT9080 (not RT9080N) has no internal connection there"
+  ]
+ }
+}

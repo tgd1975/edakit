@@ -1,0 +1,107 @@
+{
+ "lcsc": "C7484",
+ "mpn": "SN74AHCT1G125DBVR",
+ "manufacturer": "TI(德州仪器)",
+ "kind": "ic",
+ "package": "SOT-23-5 (TI DBV)",
+ "footprint": "SOT-23-5_L3.0-W1.7-P0.95-LS2.8-BR",
+ "jlc_class": "Extended Part",
+ "datasheet": {
+  "url": "https://www.ti.com/lit/ds/symlink/sn74ahct1g125.pdf",
+  "pinout_page": 3
+ },
+ "pins": {
+  "1": {
+   "name": "OE#",
+   "type": "input",
+   "role": "oe_n",
+   "v_max_v": 7,
+   "hint": "output enable, active low (Table 7-1): low – Y follows A; high – Y high impedance. Must not float (5.3 note 1); tied to GND the output always drives, TI asks for a pull-up to VCC where Y must stay high impedance during power-up (7.1)"
+  },
+  "2": {
+   "name": "A",
+   "type": "input",
+   "role": "a",
+   "v_max_v": 7,
+   "hint": "data input with TTL thresholds (VIH 2.0 V, VIL 0.8 V at VCC 4.5–5.5 V, 5.3); takes up to 5.5 V at any valid VCC (8.2.2) – a 3.3 V output drives it, the up-translation of Figure 8-1"
+  },
+  "3": {
+   "name": "GND",
+   "type": "ground",
+   "role": "gnd"
+  },
+  "4": {
+   "name": "Y",
+   "type": "output",
+   "role": "y",
+   "v_max_v": 6.0,
+   "drive": "tristate",
+   "hint": "3-state output: high impedance while OE is high (Table 7-1); ±8 mA recommended (5.3), ±25 mA absolute maximum (5.1); VOH ≥ 3.8 V at −8 mA and ≥ 4.4 V at −50 µA (VCC 4.5 V, −40…125 °C, 5.5); must not be pulled above VCC (8.2.2)"
+  },
+  "5": {
+   "name": "VCC",
+   "type": "power_in",
+   "role": "vcc",
+   "v_max_v": 7
+  }
+ },
+ "values": {
+  "behavior": "logic",
+  "icc_a": 0.0015,
+  "vih_v": 2.0,
+  "vil_v": 0.8
+ },
+ "limits": {
+  "vdd_max_v": 7,
+  "vdd_op_min_v": 4.5,
+  "vdd_op_max_v": 5.5,
+  "tj_max_c": 150,
+  "rth_ja_k_per_w": 278,
+  "t_min_c": -40,
+  "t_max_c": 125
+ },
+ "hints": [
+  "5 V part: VCC 4.5–5.5 V (5.3) – fed from a 5 V rail that can sag below 4.5 V (USB behind a diode) it leaves its specified range",
+  "single supply: a 0.1 µF bypass capacitor as close to VCC as possible (8.3)",
+  "input transition rate ≤ 20 ns/V (5.3); tPLH/tPHL ≤ 7 ns at 15 pF and ≤ 9.5 ns at 50 pF over −40…125 °C (5.6)",
+  "continuous current through VCC or GND ±50 mA (5.1)",
+  "icc_a 1.5 mA: ΔICC with one input at a TTL level (3.4 V, VCC 5.5 V, 5.5) – the supply current while a 3.3 V output holds A high; with A at 0 V or VCC ICC ≤ 10 µA"
+ ],
+ "sources": [
+  "TI SN74AHCT1G125 data sheet SCLS378P (August 1997, revised March 2024), https://www.ti.com/lit/ds/symlink/sn74ahct1g125.pdf, read 2026-10-31 (edakit part fetch; package option addendum dated 23-Oct-2026)",
+  "pin functions: Table 4-1, p. 3 – 1 OE, 2 A, 3 GND, 4 Y, 5 VCC (DBV, SOT-23-5)",
+  "absolute maximum ratings 5.1, p. 4: VCC −0.5…7 V; VI −0.5…7 V; VO −0.5 V…VCC + 0.5 V; IIK −20 mA; IOK ±20 mA; IO ±25 mA; ±50 mA through VCC or GND; TJ 150 °C",
+  "pin v_max_v 6.0 on Y: VCC + 0.5 V at the highest recommended VCC 5.5 V (computed from 5.1 and 5.3) – assumption: the limit follows the actual VCC, which the schema cannot express",
+  "recommended operating conditions 5.3, p. 4: VCC 4.5–5.5 V; VIH ≥ 2 V; VIL ≤ 0.8 V; VI 0–5.5 V; VO 0…VCC; IOH −8 mA, IOL 8 mA; Δt/Δv ≤ 20 ns/V; TA −40…125 °C",
+  "thermal information 5.4, p. 5: DBV RθJA 278 °C/W (Rev P; Rev O gave 231.3)",
+  "electrical characteristics 5.5, p. 5: VOH, VOL; II ±1 µA; IOZ ±2.5 µA; ICC ≤ 10 µA; ΔICC ≤ 1.5 mA per input at 3.4 V (VCC 5.5 V); Ci ≤ 10 pF",
+  "function table 7-1 and overview 7.1, p. 8; application 8.1–8.2 and power supply 8.3, p. 9–10",
+  "mpn, manufacturer, footprint, jlc_class, pin numbers and names: EasyEDA library data of C7484 via edakit part import, read 2026-10-31 (pins 1 OE#, 2 A, 3 GND, 4 Y, 5 VCC; footprint pads 1–3 on one side with the pin-1 dot at pad 1, 4–5 on the other)",
+  "stock: JLCPCB 43 493 pcs, Extended Part, MSL 1 (edakit stock --lcsc, 2026-10-31)"
+ ],
+ "compliance": {
+  "rohs": true,
+  "source": "TI package option addendum of SCLS378P (23-Oct-2026), p. 13: SN74AHCT1G125DBVR RoHS 'Yes', MSL Level-1-260C-UNLIM"
+ },
+ "notes": "Single 3-state buffer with TTL inputs at 5 V: the 3.3 V → 5 V level shift in front of addressable LEDs (block addressable-led-input, maker-coverage BL-1). Library draft.",
+ "verified": {
+  "by": "Claude (datasheet check, library draft)",
+  "date": "2026-10-31",
+  "datasheet": "TI SCLS378P (revised March 2024)",
+  "datasheet_sha256": "564b239f73ff629f960832fa7e1c64f6a651eea28f64115ecefcdb7af22ca416",
+  "checked": [
+   "Table 4-1 (p. 3) = the EasyEDA symbol: 1 OE (OE# there), 2 A, 3 GND, 4 Y, 5 VCC",
+   "absolute maximum (p. 4): VCC and VI 7 V, VO VCC + 0.5 V, IO ±25 mA, ±50 mA through VCC/GND, TJ 150 °C",
+   "recommended (p. 4): VCC 4.5–5.5 V, VIH 2 V, VIL 0.8 V, IOH/IOL ±8 mA, TA −40…125 °C",
+   "RθJA DBV 278 °C/W (p. 5, Rev P)",
+   "ICC 10 µA, ΔICC 1.5 mA at 3.4 V input (p. 5)",
+   "OE active low, Y high impedance with OE high (Table 7-1, p. 8); 0.1 µF bypass (8.3, p. 10)"
+  ],
+  "open": [
+   "the pin-out figure of p. 3 is a drawing without a text layer – the pin numbers are from Table 4-1 and the EasyEDA symbol; the footprint's pin-1 dot against the part's marking at the assembly preview",
+   "drive tristate on Y: in a circuit with OE tied to GND the output never lets go, but LVL.undefined/open_drain cannot see that and warns about the net Y drives",
+   "Y's v_max_v 6.0 V holds for VCC 5.5 V only (VCC + 0.5 V) – no schema field for a limit relative to the part's own supply on an output",
+   "the behaviour model 'logic' holds Y low; the simulation does not pass A through to Y"
+  ]
+ }
+}

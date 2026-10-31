@@ -1,0 +1,56 @@
+{
+ "lcsc": "C23630",
+ "mpn": "CL10A225KO8NNNC",
+ "manufacturer": "SAMSUNG(三星)",
+ "kind": "capacitor",
+ "package": "0603",
+ "footprint": "C0603",
+ "jlc_class": "Basic Part",
+ "datasheet": {
+  "url": "https://datasheet.lcsc.com/datasheet/pdf/02336ea48ea44ca18c72517dd3cb7b47.pdf?productCode=C23630",
+  "pinout_page": null
+ },
+ "pins": {
+  "1": {
+   "name": "1",
+   "type": "passive",
+   "role": "1"
+  },
+  "2": {
+   "name": "2",
+   "type": "passive",
+   "role": "2"
+  }
+ },
+ "values": {
+  "value_f": 2.2e-06,
+  "dielectric": "X5R",
+  "tolerance": 0.1
+ },
+ "limits": {
+  "v_max_v": 16,
+  "t_min_c": -55,
+  "t_max_c": 85
+ },
+ "sources": [
+  "Samsung Electro-Mechanics MLCC catalogue, November 2015, 84 pages – LCSC product data of C23630, https://datasheet.lcsc.com/datasheet/pdf/02336ea48ea44ca18c72517dd3cb7b47.pdf?productCode=C23630, read 2026-10-31",
+  "CL10A225KO8NNNC by the part numbering system p. 4: CL, 10 = 0603 (1608), A = X5R, 225 = 2.2 µF, K = ±10 %, O = 16 V, 8 = 0.80 mm, N = Ni/Cu/Ni barrier/Sn, N = normal, N, C = packaging",
+  "product lineup X5R (0603): CL10A225KO8NNN 2.2 µF, 16 V, ±10 %, thickness max. 0.90 mm",
+  "t_min_c -55, t_max_c 85: X5R -55 … 85 °C, ±15 % (dielectric table)",
+  "LCSC/JLCPCB catalogue 2026-10-31: Basic Part, 2 831 379 pcs"
+ ],
+ "notes": "2.2 µF/16 V X5R 0603. The VINT capacitor of a DRV8833 (block dc-motor-drv8833). Library draft.",
+ "verified": {
+  "by": "Claude (datasheet check, library draft)",
+  "date": "2026-10-31",
+  "datasheet": "Samsung MLCC catalogue (November 2015)",
+  "datasheet_sha256": "96baebe4bd0ce363e87be28b5b003f511f1502e084a6fc4f02333ded56c808f6",
+  "checked": [
+   "part numbering: 0603, X5R, 2.2 µF, ±10 %, 16 V, 0.80 mm",
+   "product lineup X5R 0603: CL10A225KO8NNN, 2.2 µF, 16 V, 10 %, 0.90 mm max."
+  ],
+  "open": [
+   "DC bias: the catalogue gives no curve for this part – at a few volts an X5R 0603 keeps less than its 2.2 µF"
+  ]
+ }
+}

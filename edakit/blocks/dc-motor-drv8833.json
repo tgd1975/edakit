@@ -1,0 +1,336 @@
+{
+ "name": "dc-motor-drv8833",
+ "title": "DC motor driver DRV8833: two motors (or one stepper) with its VM, VCP and VINT capacitors",
+ "about": "A TI DRV8833 (HTSSOP-16 with PowerPAD) drives two brushed DC motors from VM 2.7–10.8 V, up to 1.5 A RMS and 2 A peak per bridge (datasheet SLVSAR1E at VM 5 V, 25 °C), each on a JST XH connector. As the datasheet asks: a 10 µF-class ceramic at VM, 10 nF from VCP to VM, 2.2 µF at VINT; a 100 µF electrolytic as the motor supply's local bulk capacitor. A 10 kΩ pull-down holds nSLEEP low – bridges off, inputs ignored – until the firmware drives it high; nFAULT has its pull-up. The bridge outputs clamp the windings with their own body diodes (clamp internal): no flyback diodes. Sense pins to ground: no current chopping, the overcurrent protection stays.",
+ "ports": {
+  "vm": "the motor supply, 2.7–10.8 V (11.8 V absolute maximum)",
+  "vcc": "the logic supply of the MCU (3.3 V or 5 V) – nFAULT's pull-up",
+  "sleep": "nSLEEP from an MCU output: high = run, low = sleep (bridges off)",
+  "ain1": "bridge A input 1 (MCU output, PWM)",
+  "ain2": "bridge A input 2 (MCU output, PWM)",
+  "bin1": "bridge B input 1 (MCU output, PWM)",
+  "bin2": "bridge B input 2 (MCU output, PWM)",
+  "fault": "nFAULT to an MCU input: low on overcurrent, overtemperature or undervoltage",
+  "gnd": "ground"
+ },
+ "components": [
+  {
+   "designator": "U1",
+   "type": "ic",
+   "label": "{as}: dual H-bridge DRV8833",
+   "part": "DRV8833PWPR",
+   "lcsc": "C50506",
+   "pins": {
+    "1": "nSleep",
+    "2": "AOUT1",
+    "3": "AISEN",
+    "4": "AOUT2",
+    "5": "BOUT2",
+    "6": "BISEN",
+    "7": "BOUT1",
+    "8": "nFault",
+    "9": "BIN1",
+    "10": "BIN2",
+    "11": "VCP",
+    "12": "VM",
+    "13": "GND",
+    "14": "VINT",
+    "15": "AIN2",
+    "16": "AIN1",
+    "17": "GND"
+   },
+   "notes": "PowerPAD (pin 17) and GND (13) to ground; thermal vias from the pad to a ground plane (datasheet 10.1.1)."
+  },
+  {
+   "designator": "C1",
+   "type": "capacitor",
+   "label": "{as}: VM ceramic 22 µF",
+   "part": "CL21A226MAQNNNE",
+   "lcsc": "C45783",
+   "value": "22uF",
+   "pins": {
+    "1": "1",
+    "2": "2"
+   },
+   "notes": "Datasheet (pin functions, 10.1): a low-ESR ceramic of 10 µF minimum, rated for VM, close to the VM pin. 22 µF because an X5R keeps only part of its value under DC bias; 25 V for VM up to 10.8 V (edakit's margin × 1.5: 16.2 V)."
+  },
+  {
+   "designator": "C2",
+   "type": "capacitor",
+   "label": "{as}: VM bulk 100 µF electrolytic",
+   "part": "RVT100UF25V67RV0011",
+   "lcsc": "C2836443",
+   "value": "100uF",
+   "pins": {
+    "1": "1",
+    "2": "2"
+   },
+   "notes": "Local bulk capacitance (datasheet 9.1: the size is left to system-level testing; figure 7 shows a polarized 10 µF at VM). 100 µF is a design choice for the start and stall pulses of small motors; 25 V above VM, as 9.1 asks for the energy a motor returns."
+  },
+  {
+   "designator": "C3",
+   "type": "capacitor",
+   "label": "{as}: charge pump 10 nF VCP to VM",
+   "part": "0603B103K500NT",
+   "lcsc": "C57112",
+   "value": "10nF",
+   "pins": {
+    "1": "1",
+    "2": "2"
+   },
+   "notes": "Datasheet (pin functions, 10.1): 0.01 µF X7R rated 16 V minimum from VCP to VM, not to ground; this one 50 V."
+  },
+  {
+   "designator": "C4",
+   "type": "capacitor",
+   "label": "{as}: VINT 2.2 µF",
+   "part": "CL10A225KO8NNNC",
+   "lcsc": "C23630",
+   "value": "2.2uF",
+   "pins": {
+    "1": "1",
+    "2": "2"
+   },
+   "notes": "Datasheet (pin functions, 10.1): 2.2 µF ceramic rated 6.3 V from VINT to ground; this one 16 V."
+  },
+  {
+   "designator": "R1",
+   "type": "resistor",
+   "label": "{as}: nSLEEP pull-down 10 k",
+   "part": "0805W8F1002T5E",
+   "lcsc": "C17414",
+   "value": "10k",
+   "pins": {
+    "1": "1",
+    "2": "2"
+   },
+   "notes": "Holds nSLEEP low while the MCU pin floats (reset, boot): bridges off, charge pump stopped, inputs ignored (datasheet 7.3.4). Firmer than the internal 500 kΩ; an output at 3.3 V drives 0.33 mA into it."
+  },
+  {
+   "designator": "R2",
+   "type": "resistor",
+   "label": "{as}: nFAULT pull-up 10 k",
+   "part": "0805W8F1002T5E",
+   "lcsc": "C17414",
+   "value": "10k",
+   "pins": {
+    "1": "1",
+    "2": "2"
+   },
+   "notes": "nFAULT is open drain, VOL ≤ 0.5 V at 5 mA (datasheet 6.5); 10 kΩ from 3.3 V or 5 V draws well below that."
+  },
+  {
+   "designator": "J1",
+   "type": "connector",
+   "label": "{as}: motor A (JST XH, 1 = AOUT1)",
+   "part": "B2B-XH-A(LF)(SN)",
+   "lcsc": "C158012",
+   "pins": {
+    "1": "1",
+    "2": "2"
+   },
+   "notes": "JST XH, 3 A with AWG 22 wire: above the bridge's 2 A peak. Another family than the JST PH supply input (block power-input-jst), so that a supply plug does not fit."
+  },
+  {
+   "designator": "J2",
+   "type": "connector",
+   "label": "{as}: motor B (JST XH, 1 = BOUT1)",
+   "part": "B2B-XH-A(LF)(SN)",
+   "lcsc": "C158012",
+   "pins": {
+    "1": "1",
+    "2": "2"
+   }
+  }
+ ],
+ "nets": [
+  {
+   "name": "vm",
+   "pins": [
+    "U1.12",
+    "C1.1",
+    "C2.1",
+    "C3.1"
+   ],
+   "v": [
+    0,
+    10.8
+   ]
+  },
+  {
+   "name": "vcc",
+   "pins": [
+    "R2.2"
+   ]
+  },
+  {
+   "name": "sleep",
+   "pins": [
+    "U1.1",
+    "R1.1"
+   ],
+   "v": "@vcc"
+  },
+  {
+   "name": "ain1",
+   "pins": [
+    "U1.16"
+   ],
+   "v": "@vcc"
+  },
+  {
+   "name": "ain2",
+   "pins": [
+    "U1.15"
+   ],
+   "v": "@vcc"
+  },
+  {
+   "name": "bin1",
+   "pins": [
+    "U1.9"
+   ],
+   "v": "@vcc"
+  },
+  {
+   "name": "bin2",
+   "pins": [
+    "U1.10"
+   ],
+   "v": "@vcc"
+  },
+  {
+   "name": "fault",
+   "pins": [
+    "U1.8",
+    "R2.1"
+   ],
+   "v": "@vcc"
+  },
+  {
+   "name": "vcp",
+   "pins": [
+    "U1.11",
+    "C3.2"
+   ],
+   "v": [
+    0,
+    17.1
+   ],
+   "notes": "Charge pump above VM; the datasheet gives no VCP voltage – 10.8 V (VM max) + 6.3 V (the rating asked of the VINT capacitor) as an assumed upper bound."
+  },
+  {
+   "name": "vint",
+   "pins": [
+    "U1.14",
+    "C4.1"
+   ],
+   "v": [
+    0,
+    6.3
+   ],
+   "notes": "Internal supply; the datasheet gives no voltage – 6.3 V, the rating it asks of the VINT capacitor, as the upper bound."
+  },
+  {
+   "name": "aout1",
+   "pins": [
+    "U1.2",
+    "J1.1"
+   ],
+   "v": "@vm"
+  },
+  {
+   "name": "aout2",
+   "pins": [
+    "U1.4",
+    "J1.2"
+   ],
+   "v": "@vm"
+  },
+  {
+   "name": "bout1",
+   "pins": [
+    "U1.7",
+    "J2.1"
+   ],
+   "v": "@vm"
+  },
+  {
+   "name": "bout2",
+   "pins": [
+    "U1.5",
+    "J2.2"
+   ],
+   "v": "@vm"
+  },
+  {
+   "name": "gnd",
+   "pins": [
+    "U1.13",
+    "U1.17",
+    "U1.3",
+    "U1.6",
+    "C1.2",
+    "C2.2",
+    "C4.2",
+    "R1.2"
+   ]
+  }
+ ],
+ "covers": [
+  "REQ.missing",
+  "LVL.undefined",
+  "LIM.v",
+  "HINT.motor_supply"
+ ],
+ "notes": [
+  "VM 2.7–10.8 V (recommended operating conditions; 11.8 V absolute maximum – a full 3-cell LiPo is above it). The motor supply needs no reverse-polarity diode in series: behind one the energy a braking motor returns lifts VM (HINT.motor_supply); protect the input with a P-MOSFET (block reverse-pmos) or a clamp behind the diode.",
+  "Bridge logic (datasheet table 1): xIN1 = xIN2 = 0 coast (outputs Z), 1/0 forward, 0/1 reverse, 1/1 brake. PWM on one input with the other low = fast decay, with the other high = slow decay (table 2). VIH 2 V, VIL 0.7 V, inputs up to 5.75 V: 3.3 V and 5 V logic drive them; nSLEEP needs 2.5 V. Up to 1 ms after nSLEEP goes high before the bridges switch (tWAKE).",
+  "While the firmware starts: R1 keeps the driver asleep, and the bridge inputs have internal 150 kΩ pull-downs (coast). Where the firmware never needs sleep, nSLEEP may go to VM through 20–75 kΩ instead of R1 and the MCU pin (datasheet 7.3.4: the pin clamps at 6.5 V, at most 250 µA into it).",
+  "AISEN and BISEN go to ground: no current chopping (7.3.3). To limit start and stall current, a sense resistor per bridge, R = 0.2 V / ICHOP (VTRIP 160–240 mV), rated for I²R. The overcurrent protection (IOCP 2–3.3 A, retry after 1.35 ms) works without them.",
+  "The outputs carry clamp internal – the body diodes take the winding current in fast decay (7.3.2): REQ.missing asks for no flyback diode, and a single diode across a winding driven both ways would short the bridge.",
+  "edakit check warns LVL.undefined/open_drain on the motor nets (the outputs are tristate): Z in coast or sleep, where the motor is meant to run free – a bridge output, no logic line. HINT.motor_supply appears once a motor (kind motor) is in the graph.",
+  "Unused inputs to ground (coast) – edakit wants two pins on every net (STRUCT.net), as the block's test does with AIN2, BIN1 and BIN2. The two bridges may be paralleled for one motor of up to 3 A RMS (datasheet 8.2, figure 7): AIN1 with BIN1, AIN2 with BIN2, AOUT1 with BOUT1, AOUT2 with BOUT2.",
+  "sim.json: the driving nets under the MCU's outputs. The DRV8833 has no behaviour model (behavior none) – edakit sim checks the nets, the pull resistors and the capacitors' voltages, not the motor current: the stall current V / R_winding against the overcurrent trip, the 3 A of the connectors and the bulk capacitor's ripple rating (93 mA rms at 120 Hz; the ceramic C1 is meant to carry the PWM ripple) are the review's."
+ ],
+ "test": {
+  "connect": {
+   "vm": "+5V",
+   "vcc": "3V3",
+   "sleep": "SIG",
+   "ain1": "SIG2",
+   "ain2": "GND",
+   "bin1": "GND",
+   "bin2": "GND"
+  },
+  "sim": {
+   "mcu": {
+    "U1": {
+     "outputs": [
+      "LED_SDI",
+      "LED_CLK",
+      "LED_LE",
+      "LED_OE",
+      "SIG",
+      "SIG2"
+     ],
+     "pullups": [
+      "BTN"
+     ],
+     "pullup_ohm": 50000
+    }
+   },
+   "loads": {
+    "t_run": {
+     "about": "the driver awake (nSLEEP high), bridge A forward",
+     "gpio": {
+      "LED_OE": 1,
+      "SIG": 1,
+      "SIG2": 1
+     },
+     "leds_on": []
+    }
+   }
+  }
+ }
+}
