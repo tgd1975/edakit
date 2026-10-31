@@ -1,0 +1,397 @@
+{
+ "lcsc": "C503587",
+ "mpn": "ESP32-WROOM-32",
+ "manufacturer": "Espressif Systems",
+ "footprint": "WIFIM-SMD_39P-L25.5-W18.0-P1.27",
+ "jlc_class": "Extended Part",
+ "kind": "module",
+ "pins": {
+  "1": {
+   "name": "GND",
+   "type": "ground"
+  },
+  "2": {
+   "name": "VDD33",
+   "type": "power_in",
+   "role": "vdd",
+   "v_max_v": 3.6,
+   "v_op_min_v": 3.0,
+   "v_op_max_v": 3.6
+  },
+  "3": {
+   "name": "EN",
+   "type": "input",
+   "v_max_v": 3.6,
+   "vih_ratio": 0.75,
+   "vil_v": 0.6,
+   "needs": [
+    {
+     "what": "pull_up",
+     "r_min_ohm": 10000,
+     "r_max_ohm": 10000,
+     "source": "ESP32-WROOM-32 datasheet v3.8, 8 Peripheral Schematics: RC delay at EN, 'usually R = 10 kΩ and C = 1 µF'"
+    },
+    {
+     "what": "capacitor",
+     "c_min_f": 1e-06,
+     "source": "ESP32-WROOM-32 datasheet v3.8, 8 Peripheral Schematics: RC delay at EN, 'usually R = 10 kΩ and C = 1 µF'"
+    }
+   ]
+  },
+  "4": {
+   "name": "SENSOR_VP",
+   "type": "input",
+   "role": "gpio",
+   "v_max_v": 3.6,
+   "functions": [
+    "adc1"
+   ],
+   "hint": "input only (GPIO34-39): no output, no internal pull resistor"
+  },
+  "5": {
+   "name": "SENSOR_VN",
+   "type": "input",
+   "role": "gpio",
+   "v_max_v": 3.6,
+   "functions": [
+    "adc1"
+   ],
+   "hint": "input only (GPIO34-39): no output, no internal pull resistor"
+  },
+  "6": {
+   "name": "IO34",
+   "type": "input",
+   "role": "gpio",
+   "v_max_v": 3.6,
+   "functions": [
+    "adc1"
+   ],
+   "hint": "input only (GPIO34-39): no output, no internal pull resistor"
+  },
+  "7": {
+   "name": "IO35",
+   "type": "input",
+   "role": "gpio",
+   "v_max_v": 3.6,
+   "functions": [
+    "adc1"
+   ],
+   "hint": "input only (GPIO34-39): no output, no internal pull resistor"
+  },
+  "8": {
+   "name": "IO32",
+   "type": "bidirectional",
+   "role": "gpio",
+   "v_max_v": 3.6,
+   "functions": [
+    "adc1"
+   ]
+  },
+  "9": {
+   "name": "IO33",
+   "type": "bidirectional",
+   "role": "gpio",
+   "v_max_v": 3.6,
+   "functions": [
+    "adc1"
+   ]
+  },
+  "10": {
+   "name": "IO25",
+   "type": "bidirectional",
+   "role": "gpio",
+   "v_max_v": 3.6,
+   "functions": [
+    "adc2",
+    "dac1"
+   ]
+  },
+  "11": {
+   "name": "IO26",
+   "type": "bidirectional",
+   "role": "gpio",
+   "v_max_v": 3.6,
+   "functions": [
+    "adc2",
+    "dac2"
+   ]
+  },
+  "12": {
+   "name": "IO27",
+   "type": "bidirectional",
+   "role": "gpio",
+   "v_max_v": 3.6,
+   "functions": [
+    "adc2"
+   ]
+  },
+  "13": {
+   "name": "IO14",
+   "type": "bidirectional",
+   "role": "gpio",
+   "v_max_v": 3.6,
+   "functions": [
+    "adc2"
+   ]
+  },
+  "14": {
+   "name": "IO12",
+   "type": "bidirectional",
+   "role": "gpio",
+   "v_max_v": 3.6,
+   "functions": [
+    "adc2"
+   ],
+   "strap": "low",
+   "pull": "down",
+   "pull_ohm": 45000,
+   "hint": "MTDI: kept low at power-up (flash voltage strap)"
+  },
+  "15": {
+   "name": "GND",
+   "type": "ground"
+  },
+  "16": {
+   "name": "IO13",
+   "type": "bidirectional",
+   "role": "gpio",
+   "v_max_v": 3.6,
+   "functions": [
+    "adc2"
+   ]
+  },
+  "17": {
+   "name": "SD2",
+   "type": "bidirectional",
+   "role": "gpio",
+   "v_max_v": 3.6,
+   "functions": [],
+   "hint": "connected to the module's SPI flash: not free for other use"
+  },
+  "18": {
+   "name": "SD3",
+   "type": "bidirectional",
+   "role": "gpio",
+   "v_max_v": 3.6,
+   "functions": [],
+   "hint": "connected to the module's SPI flash: not free for other use"
+  },
+  "19": {
+   "name": "CMD",
+   "type": "bidirectional",
+   "role": "gpio",
+   "v_max_v": 3.6,
+   "functions": [],
+   "hint": "connected to the module's SPI flash: not free for other use"
+  },
+  "20": {
+   "name": "CLK",
+   "type": "bidirectional",
+   "role": "gpio",
+   "v_max_v": 3.6,
+   "functions": [],
+   "hint": "connected to the module's SPI flash: not free for other use"
+  },
+  "21": {
+   "name": "SD0",
+   "type": "bidirectional",
+   "role": "gpio",
+   "v_max_v": 3.6,
+   "functions": [],
+   "hint": "connected to the module's SPI flash: not free for other use"
+  },
+  "22": {
+   "name": "SD1",
+   "type": "bidirectional",
+   "role": "gpio",
+   "v_max_v": 3.6,
+   "functions": [],
+   "hint": "connected to the module's SPI flash: not free for other use"
+  },
+  "23": {
+   "name": "IO15",
+   "type": "bidirectional",
+   "role": "gpio",
+   "v_max_v": 3.6,
+   "functions": [
+    "adc2"
+   ],
+   "pull": "up",
+   "pull_ohm": 45000
+  },
+  "24": {
+   "name": "IO2",
+   "type": "bidirectional",
+   "role": "gpio",
+   "v_max_v": 3.6,
+   "functions": [
+    "adc2"
+   ],
+   "pull": "down",
+   "pull_ohm": 45000
+  },
+  "25": {
+   "name": "IO0",
+   "type": "bidirectional",
+   "role": "gpio",
+   "v_max_v": 3.6,
+   "functions": [
+    "adc2"
+   ],
+   "strap": "high",
+   "pull": "up",
+   "pull_ohm": 45000
+  },
+  "26": {
+   "name": "IO4",
+   "type": "bidirectional",
+   "role": "gpio",
+   "v_max_v": 3.6,
+   "functions": [
+    "adc2"
+   ]
+  },
+  "27": {
+   "name": "IO16",
+   "type": "bidirectional",
+   "role": "gpio",
+   "v_max_v": 3.6
+  },
+  "28": {
+   "name": "IO17",
+   "type": "bidirectional",
+   "role": "gpio",
+   "v_max_v": 3.6
+  },
+  "29": {
+   "name": "IO5",
+   "type": "bidirectional",
+   "role": "gpio",
+   "v_max_v": 3.6,
+   "pull": "up",
+   "pull_ohm": 45000
+  },
+  "30": {
+   "name": "IO18",
+   "type": "bidirectional",
+   "role": "gpio",
+   "v_max_v": 3.6
+  },
+  "31": {
+   "name": "IO19",
+   "type": "bidirectional",
+   "role": "gpio",
+   "v_max_v": 3.6
+  },
+  "32": {
+   "name": "NC",
+   "type": "no_connect"
+  },
+  "33": {
+   "name": "IO21",
+   "type": "bidirectional",
+   "role": "gpio",
+   "v_max_v": 3.6
+  },
+  "34": {
+   "name": "RXD0",
+   "type": "bidirectional",
+   "role": "gpio",
+   "v_max_v": 3.6,
+   "functions": [
+    "uart0.rx"
+   ]
+  },
+  "35": {
+   "name": "TXD0",
+   "type": "bidirectional",
+   "role": "gpio",
+   "v_max_v": 3.6,
+   "functions": [
+    "uart0.tx"
+   ]
+  },
+  "36": {
+   "name": "IO22",
+   "type": "bidirectional",
+   "role": "gpio",
+   "v_max_v": 3.6
+  },
+  "37": {
+   "name": "IO23",
+   "type": "bidirectional",
+   "role": "gpio",
+   "v_max_v": 3.6
+  },
+  "38": {
+   "name": "GND",
+   "type": "ground"
+  },
+  "39": {
+   "name": "GND",
+   "type": "ground"
+  }
+ },
+ "sources": [
+  "pin names from the EasyEDA symbol",
+  "ESP32-WROOM-32 Datasheet v3.8 (Espressif) – https://www.espressif.com/sites/default/files/documentation/esp32-wroom-32_datasheet_en.pdf",
+  "Table 12 Absolute Maximum Ratings: VDD33 –0.3 … 3.6 V; Table 13: VDD33 3.0 / 3.3 / 3.6 V, current delivered by the external supply ≥ 0.5 A, –40 … 85 °C",
+  "Table 14 DC Characteristics: VIH 0.75 × VDD … VDD + 0.3, VIL –0.3 … 0.25 × VDD, VIL_nRST 0.6 V, RPU and RPD 45 kΩ",
+  "Table 3 Default Configuration of Strapping Pins: GPIO0 pull-up, GPIO2 pull-down, MTDI (IO12) pull-down, MTDO (IO15) pull-up, GPIO5 pull-up; 8 Peripheral Schematics: 'MTDI should be kept at a low electric level when powering up the module'",
+  "i_core_a 0.5 A: the current the datasheet asks the supply to deliver (Table 13), taken as the upper bound of the module's draw"
+ ],
+ "verified": {
+  "by": "Claude (datasheet check, open-design transcription)",
+  "date": "2026-10-31",
+  "datasheet": "ESP32-WROOM-32 Datasheet v3.8",
+  "checked": [
+   "VDD33 range and absolute maximum",
+   "input thresholds",
+   "strapping pins and their pulls",
+   "EN RC delay 10 kΩ / 1 µF",
+   "Wi-Fi band and TX power"
+  ],
+  "open": [
+   "the PCB antenna's gain is not stated – LIM.eirp cannot compute the e.i.r.p.",
+   "the module's current per mode is in the ESP32 Series Datasheet, not read here: 0.5 A is the supply requirement",
+   "Bluetooth bands not in the module datasheet",
+   "the module is NRND (not recommended for new designs) per its datasheet"
+  ]
+ },
+ "package": "SMD module 25.5 × 18 mm",
+ "datasheet": {
+  "url": "https://www.espressif.com/sites/default/files/documentation/esp32-wroom-32_datasheet_en.pdf"
+ },
+ "values": {
+  "behavior": "mcu",
+  "v_io_v": 3.3,
+  "i_core_a": 0.5,
+  "vih_ratio": 0.75,
+  "vil_ratio": 0.25
+ },
+ "limits": {
+  "vdd_op_min_v": 3.0,
+  "vdd_op_max_v": 3.6,
+  "gpio_v_max_v": 3.6,
+  "t_min_c": -40,
+  "t_max_c": 85
+ },
+ "compliance": {
+  "radio": [
+   {
+    "bands_mhz": [
+     [
+      2412,
+      2484
+     ]
+    ],
+    "max_dbm": 19.5,
+    "source": "ESP32-WROOM-32 datasheet v3.8, Table 16 (2412 ~ 2484 MHz, IEEE 802.11b/g/n), Table 17 (802.11b 19.5 dBm typical, measured at the antenna port)"
+   },
+   {
+    "max_dbm": 9,
+    "source": "ESP32-WROOM-32 datasheet v3.8, Table 23 (Bluetooth LE: RF power control range –12 … +9 dBm); the Bluetooth bands are not stated in the module datasheet"
+   }
+  ]
+ }
+}

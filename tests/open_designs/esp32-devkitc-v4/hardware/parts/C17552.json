@@ -1,0 +1,46 @@
+{
+ "lcsc": "C17552",
+ "mpn": "0805W8F2212T5E",
+ "manufacturer": "UNI-ROYAL(厚声)",
+ "kind": "resistor",
+ "package": "0805",
+ "footprint": "R0805",
+ "jlc_class": "Extended Part",
+ "pins": {
+  "1": {
+   "name": "1",
+   "type": "passive",
+   "role": "1"
+  },
+  "2": {
+   "name": "2",
+   "type": "passive",
+   "role": "2"
+  }
+ },
+ "values": {
+  "value_ohm": 22100.0,
+  "tolerance": 0.01
+ },
+ "limits": {
+  "p_max_w": 0.125,
+  "v_max_v": 150
+ },
+ "spice": {},
+ "sources": [
+  "pin names from the EasyEDA symbol",
+  "UNI-ROYAL Thick Film Chip Resistors V.3 (2019-02-12), table 7: 0805 max. working voltage 150 V; the order code 0805W8F…: W8 = 1/8 W, F = ±1 %"
+ ],
+ "verified": {
+  "by": "Claude (datasheet check, open-design transcription)",
+  "date": "2026-10-31",
+  "datasheet": "UNI-ROYAL Thick Film Chip Resistors V.3",
+  "checked": [
+   "series ratings",
+   "value from the order code"
+  ],
+  "open": [
+   "the schematic gives 5 %; this 1 % part of the same series stands in"
+  ]
+ }
+}

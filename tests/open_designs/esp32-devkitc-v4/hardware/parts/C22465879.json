@@ -1,0 +1,132 @@
+{
+ "lcsc": "C22465879",
+ "mpn": "PZ254V-11-19P",
+ "manufacturer": "XFCN(兴飞)",
+ "footprint": "HDR-TH_19P-P2.54-V-M",
+ "jlc_class": "Extended Part",
+ "kind": "connector",
+ "pins": {
+  "1": {
+   "name": "1",
+   "type": "passive",
+   "role": "1"
+  },
+  "2": {
+   "name": "2",
+   "type": "passive",
+   "role": "2"
+  },
+  "3": {
+   "name": "3",
+   "type": "passive",
+   "role": "3"
+  },
+  "4": {
+   "name": "4",
+   "type": "passive",
+   "role": "4"
+  },
+  "5": {
+   "name": "5",
+   "type": "passive",
+   "role": "5"
+  },
+  "6": {
+   "name": "6",
+   "type": "passive",
+   "role": "6"
+  },
+  "7": {
+   "name": "7",
+   "type": "passive",
+   "role": "7"
+  },
+  "8": {
+   "name": "8",
+   "type": "passive",
+   "role": "8"
+  },
+  "9": {
+   "name": "9",
+   "type": "passive",
+   "role": "9"
+  },
+  "10": {
+   "name": "10",
+   "type": "passive",
+   "role": "10"
+  },
+  "11": {
+   "name": "11",
+   "type": "passive",
+   "role": "11"
+  },
+  "12": {
+   "name": "12",
+   "type": "passive",
+   "role": "12"
+  },
+  "13": {
+   "name": "13",
+   "type": "passive",
+   "role": "13"
+  },
+  "14": {
+   "name": "14",
+   "type": "passive",
+   "role": "14"
+  },
+  "15": {
+   "name": "15",
+   "type": "passive",
+   "role": "15"
+  },
+  "16": {
+   "name": "16",
+   "type": "passive",
+   "role": "16"
+  },
+  "17": {
+   "name": "17",
+   "type": "passive",
+   "role": "17"
+  },
+  "18": {
+   "name": "18",
+   "type": "passive",
+   "role": "18"
+  },
+  "19": {
+   "name": "19",
+   "type": "passive",
+   "role": "19"
+  }
+ },
+ "sources": [
+  "PZ254V-11-19P drawing (XFCN)",
+  "1. current rating 3 A; 4. withstanding voltage 500 V AC; 5. contact resistance 20 mΩ max"
+ ],
+ "verified": {
+  "by": "Claude (datasheet check, open-design transcription)",
+  "date": "2026-10-31",
+  "datasheet": "XFCN PZ254V-11 drawing",
+  "checked": [
+   "current",
+   "contact resistance"
+  ],
+  "open": [
+   "no rated voltage stated; the schematic names CON19X1_2P54 without a maker"
+  ]
+ },
+ "package": "1 × 19, 2.54 mm, THT",
+ "datasheet": {
+  "url": "https://datasheet.lcsc.com/datasheet/pdf/83ce6ce320ccf8e54bacbe37886d78bb.pdf"
+ },
+ "values": {
+  "pitch_mm": 2.54,
+  "r_contact_ohm": 0.02
+ },
+ "limits": {
+  "i_max_a": 3.0
+ }
+}

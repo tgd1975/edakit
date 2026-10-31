@@ -1,0 +1,54 @@
+{
+ "lcsc": "C84256",
+ "mpn": "NCD0805R1",
+ "manufacturer": "国星光电",
+ "footprint": "LED0805-RD",
+ "jlc_class": "Basic Part",
+ "kind": "led",
+ "pins": {
+  "1": {
+   "name": "-",
+   "type": "passive",
+   "role": "cathode"
+  },
+  "2": {
+   "name": "+",
+   "type": "passive",
+   "role": "anode"
+  }
+ },
+ "sources": [
+  "NCD0805R1 datasheet (Foshan NationStar), form FGH/BD-0053.01-21B",
+  "Absolute maximum ratings: IF 25 mA, IFP 50 mA, VR 5 V, PD 65 mW",
+  "Electro-optical characteristics: VF 1.5 / 2.0 / 2.6 V, dominant wavelength 615 … 630 nm at 20 mA"
+ ],
+ "verified": {
+  "by": "Claude (datasheet check, open-design transcription)",
+  "date": "2026-10-31",
+  "datasheet": "NCD0805R1 (NationStar)",
+  "checked": [
+   "ratings",
+   "forward voltage"
+  ],
+  "open": [
+   "the schematic names only 'RED LED'; NCD0805R1 stands in for it",
+   "the VF row carries no condition of its own; the table's condition is IF = 20 mA"
+  ]
+ },
+ "package": "0805",
+ "datasheet": {
+  "url": "LCSC datasheet of C84256 (NationStar NCD0805R1)"
+ },
+ "values": {
+  "color": "red",
+  "vf_min_v": 1.5,
+  "vf_typ_v": 2.0,
+  "vf_max_v": 2.6,
+  "vf_at_a": 0.02
+ },
+ "limits": {
+  "if_max_a": 0.025,
+  "vr_max_v": 5,
+  "p_max_w": 0.065
+ }
+}

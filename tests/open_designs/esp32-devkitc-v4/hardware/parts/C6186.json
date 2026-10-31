@@ -1,0 +1,69 @@
+{
+ "lcsc": "C6186",
+ "mpn": "AMS1117-3.3",
+ "manufacturer": "Advanced Monolithic Systems",
+ "footprint": "SOT-223-3_L6.5-W3.4-P2.30-LS7.0-BR",
+ "jlc_class": "Basic Part",
+ "kind": "ic",
+ "pins": {
+  "1": {
+   "name": "GND",
+   "type": "ground",
+   "role": "gnd"
+  },
+  "2": {
+   "name": "VOUT",
+   "type": "power_output",
+   "role": "vout"
+  },
+  "3": {
+   "name": "VIN",
+   "type": "power_in",
+   "role": "vin",
+   "v_max_v": 15
+  },
+  "4": {
+   "name": "VOUT",
+   "type": "power_output",
+   "role": "vout"
+  }
+ },
+ "sources": [
+  "pin names from the EasyEDA symbol",
+  "AMS1117 datasheet (Advanced Monolithic Systems), LCSC copy https://datasheet.lcsc.com/datasheet/pdf/e6935943fc6b1bbf350a1a0f3e90dc4a.pdf",
+  "Absolute maximum ratings: input voltage 15 V; '1A low dropout voltage regulator'",
+  "Electrical characteristics: dropout 1.1 V typ / 1.3 V max at 0.8 A, current limit 900 … 1500 mA, quiescent current 5 mA typ / 11 mA max",
+  "Stability: '22µF solid tantalum on the output will ensure stability for all operating conditions … Without bypassing the adjustment terminal smaller capacitors can be used'"
+ ],
+ "verified": {
+  "by": "Claude (datasheet check, open-design transcription)",
+  "date": "2026-10-31",
+  "datasheet": "AMS1117 datasheet (AMS)",
+  "checked": [
+   "input voltage",
+   "dropout",
+   "quiescent current",
+   "output current"
+  ],
+  "open": [
+   "no output capacitor ESR window – the datasheet asks for 22 µF tantalum, the DevKitC fits a 22 µF ceramic",
+   "thermal resistance junction-ambient not stated (junction-case 15 °C/W): LIM.t cannot judge the regulator",
+   "operating junction range not read: tj_max_c 125 is the datasheet's thermal-regulation statement and is an assumption"
+  ]
+ },
+ "package": "SOT-223",
+ "datasheet": {
+  "url": "https://datasheet.lcsc.com/datasheet/pdf/e6935943fc6b1bbf350a1a0f3e90dc4a.pdf"
+ },
+ "values": {
+  "behavior": "ldo",
+  "vout_v": 3.3,
+  "dropout_v": 1.1,
+  "iq_a": 0.005
+ },
+ "limits": {
+  "vin_max_v": 15,
+  "i_out_max_a": 1.0,
+  "tj_max_c": 125
+ }
+}

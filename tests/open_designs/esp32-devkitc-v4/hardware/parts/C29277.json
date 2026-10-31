@@ -1,0 +1,44 @@
+{
+ "lcsc": "C29277",
+ "mpn": "CL21A226MPQNNNE",
+ "manufacturer": "SAMSUNG(三星)",
+ "footprint": "C0805",
+ "jlc_class": "Extended Part",
+ "kind": "capacitor",
+ "pins": {
+  "1": {
+   "name": "1",
+   "type": "passive",
+   "role": "1"
+  },
+  "2": {
+   "name": "2",
+   "type": "passive",
+   "role": "2"
+  }
+ },
+ "sources": [
+  "pin names from the EasyEDA symbol",
+  "Samsung Electro-Mechanics MLCC catalogue (LCSC copy of C29277), Part Numbering: 4th code A = X5R, 6. rated voltage code P = 10 V, Q = 6.3 V; capacitance and tolerance codes"
+ ],
+ "verified": {
+  "by": "Claude (datasheet check, open-design transcription)",
+  "date": "2026-10-31",
+  "datasheet": "Samsung MLCC catalogue, part numbering",
+  "checked": [
+   "dielectric, value, tolerance and rated voltage from the part number"
+  ],
+  "open": [
+   "DC-bias derating of the capacitance not read (CK-14)"
+  ]
+ },
+ "package": "0805",
+ "values": {
+  "value_f": 2.2e-05,
+  "dielectric": "X5R",
+  "tolerance": 0.2
+ },
+ "limits": {
+  "v_max_v": 10
+ }
+}

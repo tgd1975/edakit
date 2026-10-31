@@ -149,7 +149,8 @@ limits = ["vdd_max_v", "vdd_op_min_v", "vdd_op_max_v", "vin_min_v", "vin_max_v",
           "vin_rel_max_v", "i_supply_pin_max_a", "f_max_hz"]
 values = ["behavior", "vout_v", "dropout_v", "iq_a", "efficiency", "idd_max_a", "iout_gain", "iout_accuracy",
           "vout_knee_v", "vrext_v", "vih_v", "vil_v", "vih_ratio", "vil_ratio", "first_bit_to", "vout_swing_v",
-          "vicm_v", "r_out_ohm", "comparator", "gain_min_ratio", "f_clock_hz"]
+          "vicm_v", "r_out_ohm", "comparator", "gain_min_ratio", "f_clock_hz", "icc_a", "i_a"]
+                                             # icc_a: behaviour logic, i_a: behaviour current (sim/netlist.py)
 
 [kinds.module]
 roles = ["*"]
