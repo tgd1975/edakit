@@ -4,9 +4,16 @@ Status 2026-10-31: proposal, not decided. While writing the 51 library drafts in
 (rules-at-scale.md, decision 8), seven agents reported facts the parts schema (`edakit/catalog/kinds.toml`) has no
 field for, and places where edakit's checks judge a correct circuit wrongly. They are grouped here, with how many of
 the seven groups (modules, LEDs and displays, power, switching, sensors, buses, audio) met each, and a proposal per
-theme. Fixed already on the way: a threshold `[min, null, max]` that crashed the gate check, the flyback finding on
-drivers that clamp their windings themselves (pin `clamp`), the fix text for an unbiased RS-485 B line, the supply
-current fields `icc_a` and `i_a`.
+theme. The six block agents that built BL-1 to BL-18 on these entries added theirs (section I).
+
+Fixed already on the way: a threshold `[min, null, max]` that crashed the gate check, the flyback finding on drivers
+that clamp their windings themselves (pin `clamp`), the fix text for an unbiased RS-485 B line, the supply current
+fields `icc_a` and `i_a`; and twelve false alarms the block agents met (tests/test_false_alarms.py): a negative rail's
+series diode (PATH.reverse, PATH.unfed), simulation noise against a limit of 0, a V− supply pin against the −0.3 V
+floor, a tristate output with its enable tied active and a net held through a resistor chain (LVL.undefined), a
+termination behind a switch and the failsafe bias at the supply's minimum, an input tied to a rail, decoupling to a
+net of `grounds`, a P-MOSFET's gate drive in its own sense, HINT.esd, HINT.gate, HINT.debounce, HINT.cable_line and
+HINT.lithium where they did not fit, the load on an instrument input through a series resistor.
 
 ## A. Findings that are wrong – first
 
@@ -88,9 +95,23 @@ cached symbol. A project that draws its schematic from these symbols gets a wron
 - Raspberry Pi Pico 2 (C41407547): pins 2–6 named TP2–TP6, 41 and 43 swapped. The example project carried the swap
   of 41 and 43 as well; it is corrected (41 SWCLK, 43 SWDIO).
 
+## I. From the blocks
+
+| # | Gap | Met by | Proposal |
+|---|---|---|---|
+| I1 | LIM.v judges a part's pins against GND, not against the part's own ground pin (DW01A on the cell's minus) | power blocks | `pin_voltages` takes each part's ground net, as stage E's `at_pin` does |
+| I2 | a sim.json source has one plus and one minus – a ±12 V header cannot feed both rails | Eurorack | a source with several outputs `{plus: [pins], minus}` |
+| I3 | a relay with two contact sets (DPDT) – the simulation switches the first only | guitar | roles per set (`common_2`, `no_2`, `nc_2`) |
+| I4 | a photo-MOS (a resistance both ways when lit), an optocoupler's detector supply, a pass-gate translator (PCA9306), a multi-diode ESD array | guitar, interfaces, MCU/USB | behaviours `photomos`, `pass_gate`; the ESD array as a kind with its lines |
+| I5 | a net isolated from board ground (a MIDI in loop) | interfaces | a net key `isolated = true` that the ground checks skip |
+| I6 | a relay contact's minimum switching load (gold contacts), a DIP switch's switching against carrying current, a connector's current per contact | guitar, interfaces, MCU/USB | contact fields `min_load_a`, `i_switch_max_a`, `i_contact_max_a` |
+| I7 | LIM.v/polarized in stage G pairs the top of one net's range with the bottom of the other's across a coupling electrolytic – states that never coincide | guitar | judged on the operating points of stage E only, or a grade the domain audio lowers |
+| I8 | a block cannot set graph keys (`grounds`), mark a part or port optional, or remove a supply in its test | all blocks | block keys `graph`, `optional`; the test's `sim` merged deeply |
+| I9 | an accept on a net cannot name one designator or place – a port net's accept covers the project's rail | MCU/USB, Eurorack | accept keys `code place` on a net, as on the graph |
+
 ## Order proposed
 
-A first – each is a finding that is wrong today. Then B1, C1 and D1, which several groups met and which make checks
-of existing codes hold on more pins. E1 is a pass over the drafts with fields that exist. E2 to E6, F and G when a
+A first – each is a finding that is wrong today –, with I1 and I7. Then B1, C1 and D1, which several groups met and
+which make checks of existing codes hold on more pins. E1 is a pass over the drafts with fields that exist. E2 to E6, F and G when a
 project needs them. H goes to the owner: whether edakit should check a cached symbol against its entry beyond the pin
 names (STRUCT.entry), and whether the four symbols are reported to EasyEDA/LCSC.
