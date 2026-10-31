@@ -174,6 +174,16 @@ def part_voltages(d):
                 say = (lambda v, lim, f, des=des, label=label: f"{des}: |{label}| up to {v:.1f} V, "
                        + (f"VCEO {lim:g} V" if label == "VCE" else f"rated {lim:g} V"))
             out.append(Quantity(des, name, v, kind=kind, entry=key, how=how, on=on, say=say))
+        if kind == "esd_array":           # the rail (or, without one, every protected line) against VRWM, no margin
+            rail = d.net_of(des, "vbus")
+            lines = [rail] if rail else [d.net_of(des, r) for r in {p.get("role") for p in part["pins"].values()}
+                                         if str(r or "").startswith("io")]
+            for net in [n for n in lines if n]:
+                out.append(Quantity(des, "vrwm", max(abs(x) for x in rng(net)), kind="tvs", entry=key,
+                                    on=on + (("net", net),),
+                                    how=f"{des}: {net}",
+                                    say=lambda v, lim, f, des=des, net=net: f"{des}: {net} up to {v:.2f} V, stand-off "
+                                                                            f"voltage VRWM {lim:g} V"))
         if (polarized(part) and (plus := d.net_of(des, "plus")) and (minus := d.net_of(des, "minus"))
                 and not coupling(d, plus, minus)):
             out.append(Quantity(des, "vr", rng(minus)[1] - rng(plus)[0], kind=kind, entry=key, grade="polarized",

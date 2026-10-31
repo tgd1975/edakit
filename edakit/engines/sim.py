@@ -17,7 +17,7 @@ from collections import defaultdict
 
 from .. import catalog
 from ..catalog import table
-from ..circuit import limits, polarized, values
+from ..circuit import limits, polarized, relay_sets, values
 from ..findings import Finding
 from ..sim import netlist
 from .limits import CODE, compare
@@ -376,7 +376,8 @@ def function(s, load, low=None, plugin=None):
             s.check("SIM.config", key, "expect of the load", f"{key} is neither a source nor a net",
                     "a source of sources (i_max_a, i_min_a) or a net (min_v, max_v)", False)
     for des, src in meta["sources"].items():
-        lim = s.sim.get("sources", {}).get(des, {}).get("i_back_max_a", crit["blocking_max_a"])
+        lim = src.get("i_back_max_a")
+        lim = crit["blocking_max_a"] if lim is None else lim
         s.q(des, "i", max(res.get(src["branch"], 0.0), 0.0), "A", "", des, "current into the supply (fed backwards)",
             code="LIM.backfeed", entry=False,
             lims=[Limit(max=lim, source=f"i_back_max_a of sources.{des} (default the criteria's blocking_max_a)")])
@@ -462,6 +463,8 @@ def function(s, load, low=None, plugin=None):
     input_injection(s)
     adc_windows(s)
     switch_dc(s)
+    photomos_states(s)
+    pd_shunts(s)
     config_windows(s)
     supply_pin_currents(s)
     clocks(s)
@@ -563,6 +566,36 @@ SWITCH_DC_MAX_V = 0.01     # edakit's choice for "within a few mV" (maker-covera
 CONTACT_KINDS = ("switch", "button", "dip_switch", "relay", "potentiometer")
 
 
+def photomos_states(s):
+    """A photo-MOS output (behaviour photomos): its LED current either at if_on_a or more – guaranteed on – or at
+    if_off_a or less – guaranteed off; in between the datasheet promises neither (LIM.range/photomos). The load
+    current and the voltage across the output against i_load_max_a and v_load_max_v of its entry."""
+    res = s.res
+    for des, m in sorted((s.meta.get("photomos") or {}).items()):
+        i_led = res.get(m["led"], float("nan"))
+        a, b = (v(res, x) for x in m["nodes"])
+        i_load = abs(res.get(m["ammeter"], 0.0))
+        s.q(des, "i_load", i_load, "A", "photomos", des, "load current through the photo-MOS output")
+        s.q(des, "v_load", abs(a - b), "V", "photomos", des, "voltage across the photo-MOS output")
+        if i_led != i_led:
+            continue
+        state = "on" if i_led >= m["if_on_a"] else "off" if i_led <= m["if_off_a"] else "neither"
+        s.check("LIM.range", des, f"LED current of {des} guarantees a state (on ≥ {m['if_on_a'] * 1e3:g} mA, off ≤ "
+                f"{m['if_off_a'] * 1e3:g} mA)", i_led * 1e3, f"on or off, not between – {state}", state != "neither",
+                "mA", f"if_on_a, if_off_a of {s.n.entry_key(des)}", grade="photomos", on=(("component", des),))
+
+
+def pd_shunts(s):
+    """A USB PD sink's VDD shunt (behaviour pd_sink): the current it sinks within i_shunt_max_a – at the limit it can
+    hold VDD no longer and VDD rises with the supply (the series resistor too small for the highest request)."""
+    res = s.res
+    for des, m in sorted((s.meta.get("pd_sinks") or {}).items()):
+        i = res.get(m["ammeter"], 0.0)
+        vdd = v(res, m["vdd"]) - v(res, m["gnd"])
+        s.q(des, "i_shunt", i, "A", "", des, f"VDD shunt current (VDD {vdd:.3g} V)", code="LIM.i", entry=False,
+            lims=[Limit(max=m["i_max_a"] * 0.999, source=f"i_shunt_max_a of {s.n.entry_key(des)}")])
+
+
 def switch_dc(s):
     """REQ.value/switch: the contacts of a switch, button, relay or pot whose sides are both in a signal path (nets
     with signal or instrument) sit at one DC level in the scenario – a step across them is the pop when it switches
@@ -576,23 +609,26 @@ def switch_dc(s):
         kind = part.get("kind")
         if kind not in CONTACT_KINDS:
             continue
-        on = {}
-        for num, info in (part.get("pins") or {}).items():
-            if kind == "relay" and info.get("role") not in ("common", "no", "nc"):
+        if kind == "relay":           # each contact set apart: a DPDT's two sets sit in two signal paths
+            groups = [sorted(n for nums in roles.values() for n in nums) for roles in relay_sets(part).values()]
+        else:
+            groups = [list((part.get("pins") or {}))]
+        for group in groups:
+            on = {}
+            for num in group:
+                net = d.pin_net.get(f"{des}.{num}")
+                if net in signal:
+                    on.setdefault(net, num)
+            if len(on) < 2:
                 continue
-            net = d.pin_net.get(f"{des}.{num}")
-            if net in signal:
-                on.setdefault(net, num)
-        if len(on) < 2:
-            continue
-        xs = {net: at_pin(d, res, f"{des}.{num}") for net, num in on.items()}
-        if any(x != x for x in xs.values()):
-            continue
-        lo, hi = min(xs, key=xs.get), max(xs, key=xs.get)
-        dv = xs[hi] - xs[lo]
-        s.check("REQ.value", des, f"DC across {des} in the signal path ({lo} {xs[lo]:.3g} V, {hi} {xs[hi]:.3g} V)",
-                dv * 1e3, f"≤ {SWITCH_DC_MAX_V * 1e3:g} mV", dv <= SWITCH_DC_MAX_V, "mV", "maker-coverage CK-30",
-                grade="switch", on=(("component", des),))
+            xs = {net: at_pin(d, res, f"{des}.{num}") for net, num in on.items()}
+            if any(x != x for x in xs.values()):
+                continue
+            lo, hi = min(xs, key=xs.get), max(xs, key=xs.get)
+            dv = xs[hi] - xs[lo]
+            s.check("REQ.value", des, f"DC across {des} in the signal path ({lo} {xs[lo]:.3g} V, {hi} {xs[hi]:.3g} V)",
+                    dv * 1e3, f"≤ {SWITCH_DC_MAX_V * 1e3:g} mV", dv <= SWITCH_DC_MAX_V, "mV", "maker-coverage CK-30",
+                    grade="switch", on=(("component", des),))
 
 
 def adc_windows(s):

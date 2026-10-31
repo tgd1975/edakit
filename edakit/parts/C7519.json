@@ -2,7 +2,7 @@
  "lcsc": "C7519",
  "mpn": "USBLC6-2SC6",
  "manufacturer": "ST(意法半导体)",
- "kind": "ic",
+ "kind": "esd_array",
  "package": "SOT23-6L",
  "footprint": "SOT-23-6_L2.9-W1.6-P0.95-LS2.8-BL",
  "jlc_class": "Extended Part",
@@ -40,7 +40,6 @@
    "name": "5",
    "type": "power_in",
    "role": "vbus",
-   "v_max_v": 5.25,
    "hint": "VBUS: the rail of the steering diodes and the cathode of the transil to GND (VBR ≥ 6 V at 1 mA); 100 nF to GND at the pin (figure 18, CBUS)"
   },
   "6": {
@@ -51,11 +50,19 @@
   }
  },
  "values": {
-  "tvs": true
+  "vbr_min_v": 6,
+  "vf_v": 1.1,
+  "vf_at_a": 0.01,
+  "c_io_f": [
+   null,
+   2.5e-12,
+   3.5e-12
+  ]
  },
  "limits": {
   "tj_max_c": 125,
-  "t_min_c": -40
+  "t_min_c": -40,
+  "vrwm_max_v": 5.25
  },
  "hints": [
   "place it as close as possible to the connector, with short tracks from the data lines to the I/O pins, from VBUS to pin 5 and from pin 2 to the ground plane – parasitic inductance adds L·dI/dt to the clamping voltage (2.2, 2.3, 'Important' on p. 6)",
@@ -87,14 +94,15 @@
    "table 1: Tj –40 … +125 °C; IEC 61000-4-2 15 kV air, 8 kV contact (level 4, features)",
    "table 2: IRM ≤ 150 nA at 5.25 V, VBR ≥ 6 V, VF ≤ 1.1 V at 10 mA, VCL ≤ 12 V at 1 A, capacitance 3.5 pF max",
    "figure 18: flow-through layout (1→6, 3→4) and 100 nF at VBUS",
-   "2026-10-31: values.tvs – a TVS/ESD array (ST USBLC6-2, Doc ID 11265 Rev 5: 'very low capacitance ESD protection'), held to its working voltage, not a rectifier's margin; HINT.esd sees the lines it guards"
+   "2026-10-31: values.tvs – a TVS/ESD array (ST USBLC6-2, Doc ID 11265 Rev 5: 'very low capacitance ESD protection'), held to its working voltage, not a rectifier's margin; HINT.esd sees the lines it guards",
+   "2026-10-31 (schema W5, read again): ST Doc ID 11265 Rev 5, table 2 – IRM 150 nA max at VRM 5.25 V (the stand-off, limits vrwm_max_v, held on the VBUS rail without margin); VBR min 6 V between VBUS and GND at 1 mA (vbr_min_v); VF max 1.1 V at 10 mA (vf_v, vf_at_a); Ci/o-GND typ 2.5 pF, max 3.5 pF at 1.65 V (c_io_f) – kind esd_array: its io pins guard their lines (HINT.esd), the simulation has steering diodes from VF and a transil at VBR"
   ],
   "open": [
    "st.com did not answer (connection closed) – Rev 5 from LCSC's copy; a later ST revision not checked",
    "v_max_v 5.25 V on VBUS is VRM, the leakage test voltage, read as stand-off voltage (assumption); between 5.25 V and VBR 6 V the leakage is unspecified – USB-C vSafe5V reaches 5.5 V",
-   "ST's PSpice model (figure 16/17: Dlow, Dhigh, Dzener) not entered – the schema has no model for a multi-diode IC, the simulation leaves the part out",
    "I/O pins have no voltage limit in the datasheet (clamped to VBUS + VF and GND − VF): no v_max_v",
-   "no thermal resistance and no power rating in the datasheet"
+   "no thermal resistance and no power rating in the datasheet",
+   "the simulation's steering diodes and transil are edakit's from VF and VBR, not ST's PSpice model (figure 16/17)"
   ]
  }
 }

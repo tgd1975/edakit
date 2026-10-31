@@ -95,6 +95,29 @@ def ngspice_tran(text, data_file, keep=None, name="run"):
     return [r[0] for r in rows], [list(c) for c in zip(*(r[1:] for r in rows))]
 
 
+def check_sources(design, sim):
+    """The sources of sim.json: a plus and a minus pin of their connector, or "outputs" – several rails against the
+    shared minus, each {plus, v_ratio (default 1; −1 for a rail below the minus), r_ohm, i_max_a}."""
+    for des, spec in (sim.get("sources") or {}).items():
+        at = f"sources.{des}"
+        if not isinstance(spec, dict) or spec.get("minus") is None:
+            raise SimError(f"{at}: a table with plus and minus (pin numbers of {des}) expected, not {spec!r}")
+        if "outputs" in spec:
+            outs = spec["outputs"]
+            if "plus" in spec or not isinstance(outs, dict) or not outs:
+                raise SimError(f"{at}: outputs – a table of rails {{name: {{plus, v_ratio}}}} instead of plus, "
+                               f"not {outs!r}")
+            for name, o in outs.items():
+                if not isinstance(o, dict) or o.get("plus") is None:
+                    raise SimError(f"{at}.outputs.{name}: plus, the pin of the rail, expected, not {o!r}")
+                ratio = o.get("v_ratio", 1.0)
+                if not number(ratio) or ratio == 0:
+                    raise SimError(f"{at}.outputs.{name}: v_ratio – a number other than 0 (the rail's voltage over "
+                                   f"the supply's), not {ratio!r}")
+        elif spec.get("plus") is None:
+            raise SimError(f"{at}: plus (the pin of the supply) or outputs (several rails) expected")
+
+
 def touch_limits(design, sim):
     """touch_c of the simulation config: {board: °C}, every key a board of the project."""
     touch_c = sim.get("touch_c", {})
@@ -417,6 +440,7 @@ def run_all(design, sim, keep=None, plugin=None, routing=None):
     "net_currents"}"""
     from . import ac
     models = getattr(plugin, "MODELS", {}) if plugin else {}
+    check_sources(design, sim)
     touch_limits(design, sim)
     runs = transient_runs(design, sim)
     dc = list(scenarios(sim))

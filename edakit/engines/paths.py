@@ -12,7 +12,7 @@ from collections import defaultdict
 from functools import lru_cache
 
 from ..catalog import HERE
-from ..circuit import polarized, reach, resistor_value
+from ..circuit import polarized, reach, resistor_value, source_outputs
 from ..findings import Finding
 
 
@@ -106,8 +106,8 @@ def inputs(d, sim=None):
             continue
         out |= {d.pin_net.get(f"{des}.{n}") for n in take}
     for des, src in ((sim or {}).get("sources") or {}).items():
-        if des in d.comps and isinstance(src, dict) and "plus" in src:
-            out.add(d.pin_net.get(f"{des}.{src['plus']}"))
+        if des in d.comps:
+            out |= {d.pin_net.get(f"{des}.{plus}") for _, plus, _ in source_outputs(src)}
     return out - {None}
 
 
