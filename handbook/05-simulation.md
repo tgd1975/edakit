@@ -94,6 +94,12 @@ locks out below it: its output and its input current fall to 0 over the 0.2 V be
 0 V instead of being pulled below ground. Above these voltages both are what the table says; a DC result with every
 input above its minimum is the same as without them.
 
+What a part does over time has no state model (rules-at-scale.md, decision 17): a charger's end of charge and its
+recharge, a cell protection's release voltages and delays, a USB PD sink's negotiation with PG and the CC lines. Where
+such a part is used a hint names the risk – HINT.charge_termination and HINT.protection_timing (domain power),
+HINT.pd_negotiation (domain usb), HINT.power_path for a load on the charging cell –, and `edakit check --coverage` lists
+the part as not simulated (SIM.state, 3.3).
+
 A project adds its own models in a plugin file (`sim_plugin = "hardware/sim_plugin.py"` in `[project]`; among the
 project's scripts it is the kind `sim`, 8.6):
 
