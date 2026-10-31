@@ -401,4 +401,9 @@ Taken by the owner on 2026-10-31 through a form – the candidates still in part
     environment; where a maker gives no inductance the project gives its own (measured or published).
 21. **FT-21, a guitar circuit:** a pedal with an open licence and a KiCad schematic from a public repository, read only
     like the Corne, instead of the Tube Screamer drawings of electrosmash.com.
+22. **FT-2, a wire's current rating:** from the datasheet of the wire itself (`i_max_a` on the cable), no table by
+    gauge – the only case that would pass unseen is a wire that heats while its voltage drop and its connectors pass
+    (12–24 V at amperes, short thin leads, a thin wire in a contact rated for a thicker one); every cable that carries
+    current in the simulation without `i_max_a` is reported with its loss per metre. A hand-wired board gets a key of
+    its own instead of `bought`.
 
