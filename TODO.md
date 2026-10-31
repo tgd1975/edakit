@@ -5,6 +5,14 @@ Open work that needs the owner's computer, a maker or the owner's word. The stat
 name; this list is what is left to do of them, in the order it can be done. Tick an item off with the commit that
 does it.
 
+**Taking an item.** Several sessions work on edakit at once. Before a session starts an item, it lists the others
+(`ListAgents`, `git worktree list`), asks each running edakit session which item it holds, and takes one that nobody
+holds and whose files no open branch touches – the concepts' tables name each step's files. An item that waits for
+another (W.4 after W.2) is agreed with the session holding that one and merged after it. Each item gets a worktree of
+its own beside the main clone, named for it (`../edakit-w4`, branch `wired-w4`), so `git worktree list` shows who
+holds what; the main clone belongs to whoever has it checked out, and its uncommitted changes are not anyone else's
+to touch.
+
 ## Ordering at the manufacturer (phase 5, [ordering.md](docs/concepts/done/ordering.md))
 
 Built offline and tested on recorded data on 2026-10-30, merged into main the same day: the order form as keys, the
