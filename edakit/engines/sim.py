@@ -17,7 +17,7 @@ from collections import defaultdict
 
 from .. import catalog
 from ..catalog import table
-from ..circuit import limits, values
+from ..circuit import limits, polarized, values
 from ..findings import Finding
 from ..sim import netlist
 from .limits import CODE, compare
@@ -259,6 +259,10 @@ def stress(s):
             elif kind == "capacitor":
                 a, b = (v(res, x) for x in nodes)
                 s.q(des, "v", abs(a - b), "V", kind, des, "DC voltage")
+                if polarized(part):
+                    roles = [p.get("role") for p in part["pins"].values()]
+                    plus, minus = (a, b) if roles[:1] != ["minus"] and roles[1:2] != ["plus"] else (b, a)
+                    s.q(des, "vr", max(minus - plus, 0), "V", kind, des, "reverse voltage", grade="polarized")
             elif kind in ("led", "diode"):
                 a, k = (v(res, x) for x in nodes)
                 cur = res.get(f"@{el['name']}[id]", float("nan"))

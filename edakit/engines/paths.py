@@ -12,7 +12,7 @@ from collections import defaultdict
 from functools import lru_cache
 
 from ..catalog import HERE
-from ..circuit import reach, resistor_value
+from ..circuit import polarized, reach, resistor_value
 from ..findings import Finding
 
 
@@ -57,7 +57,15 @@ def reverse(d, design):
         for ref in d.nets[net]["pins"]:
             des = ref.split(".", 1)[0]
             k = kind(d, des)
-            if k is None or k in t["tolerates"] or k in t["passes"]:
+            if k is None or k in t["passes"]:
+                continue
+            if polarized(d.part(des)):
+                out.append(Finding("PATH.reverse", "G", ref, f"{ref} on {net}: a reversed source reaches the polarized "
+                                   f"capacitor {des} – it is reverse biased", "catalog/paths.toml [reverse]",
+                                   "a series Schottky diode or a PMOS ahead of it, or a capacitor without polarity",
+                                   grade="polarized", on=(("net", net), ("component", des))))
+                continue
+            if k in t["tolerates"]:
                 continue
             role = d.pin_info(ref).get("role")
             if any(b["kind"] == k and b["role"] == role and all(d.net_of(des, o) not in side for o in b["outside"])

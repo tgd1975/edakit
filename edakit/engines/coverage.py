@@ -10,7 +10,7 @@ from __future__ import annotations
 from collections import defaultdict
 from dataclasses import dataclass
 
-from ..circuit import limits, values
+from ..circuit import limits, polarized, values
 from ..findings import Finding
 
 # per kind: (code, the limits of which at least one must be given, what it guards)
@@ -64,6 +64,8 @@ def coverage(design, prof=None):
         for code, names, what in LIMITS_OF.get(kind, []):
             if not any(n in r for n in names):
                 found[(code, key, f"no {' or '.join(names)} – {what} is not held to a limit")].append(des)
+        if polarized(part) and "vr_max_v" not in r:
+            found[("LIM.v", key, "no vr_max_v – its reverse voltage is not held to a limit")].append(des)
         if kind in DISSIPATES and "rth_ja_k_per_w" not in r:
             found[("LIM.t", key, "no rth_ja_k_per_w – no junction temperature")].append(des)
         if kind in ("ic", "module"):

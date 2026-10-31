@@ -21,6 +21,12 @@ def limits(part):
     return (part or {}).get("limits") or {}
 
 
+def polarized(part):
+    """A capacitor with a plus and a minus: values polarized, or a pin with the role plus."""
+    return (part or {}).get("kind") == "capacitor" and (values(part).get("polarized") is True or any(
+        p.get("role") == "plus" for p in ((part or {}).get("pins") or {}).values()))
+
+
 ACTIVE_TYPES = {"input", "output", "bidirectional", "power_in", "power_output", "analog", "current_sink"}
 BOOT_DRIVERS = {"output", "power_output", "ground"}   # define their net while the firmware is not running
 PASS_THROUGH = ("fuse", "switch", "connector")        # pass a reversed source on unchanged

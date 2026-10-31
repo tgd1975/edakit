@@ -59,7 +59,7 @@ values = ["value_ohm", "tolerance"]
 
 [kinds.capacitor]
 roles = ["plus", "minus", "1", "2"]          # a capacitor without polarity: its pin numbers
-limits = ["v_max_v", "i_ripple_a"]
+limits = ["v_max_v", "vr_max_v", "i_ripple_a"]
 values = ["value_f", "dielectric", "polarized", "tolerance"]
 
 [kinds.inductor]

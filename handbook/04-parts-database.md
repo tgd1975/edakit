@@ -74,7 +74,7 @@ in `sources` – any RP2350 module takes the same list per GPIO. On the RP2040 a
 | every kind | `p_max_w`, `rth_ja_k_per_w`, `tj_max_c`, `t_max_c`, `t_min_c` | – |
 | `resistor` | `v_max_v` | `value_ohm`, `r_max_ohm`, `tolerance` |
 | `potentiometer` | `v_max_v` | `value_ohm`, `tolerance` |
-| `capacitor` | `v_max_v`, `i_ripple_a` | `value_f`, `dielectric`, `polarized`, `tolerance` |
+| `capacitor` | `v_max_v`, `vr_max_v`, `i_ripple_a` | `value_f`, `dielectric`, `polarized`, `tolerance` |
 | `inductor` | `i_max_a`, `i_sat_a` | `value_h`, `dcr_ohm` |
 | `fuse` | `v_max_v`, `i_max_a`, `i_hold_a`, `i_trip_a` | `r_min_ohm`, `r_max_ohm`, `i_hold_vs_temp` |
 | `diode` | `vr_max_v`, `if_max_a`, `ifsm_max_a` | `vf_v`, `vf_at_a`, `ir_a`, `ir_at_v` |
@@ -115,6 +115,7 @@ entry's before the default of the pin type. What the names do not say:
 - any part that dissipates – resistor, diode, LED, BJT, MOSFET – `rth_ja_k_per_w` (junction to ambient) and
   `tj_max_c`: LIM.t holds ambient + P × Rth(j-a) to the junction limit and, on a board people touch, to `touch_c`
   (5.3); without `rth_ja_k_per_w` the part gets no temperature item.
+- a polarized capacitor (an electrolytic, a tantalum): `values.polarized: true` and the pin roles `plus` and `minus`; `vr_max_v` the reverse voltage the series allows – LIM.v holds it in the declared ranges and the simulation, and PATH.reverse reports one a reversed source reaches (both grade `polarized`, warnings).
 - resistor `value_ohm` `0` is a bridge that joins its nets (3.3); `r_max_ohm` its maximum resistance from the
   datasheet, simulated instead of 0 Ω (50 mΩ without it).
 - LED `vf_typ_v`, `vf_min_v`, `vf_max_v`, `vf_at_a`, `rs_ohm` – an RGB LED one set per colour under `red`, `green`,

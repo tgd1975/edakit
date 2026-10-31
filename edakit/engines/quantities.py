@@ -12,7 +12,7 @@ from __future__ import annotations
 from dataclasses import dataclass, field
 
 from ..catalog import table
-from ..circuit import ACTIVE_TYPES, hold_current, limits, series_nets, v_range
+from ..circuit import ACTIVE_TYPES, hold_current, limits, polarized, series_nets, v_range
 
 UNITS = {"V": "v", "A": "a", "W": "w", "°C": "c", "dBm": "dbm"}
 FACTOR = table("derating")["G"]["factor"]          # stage G: value × factor ≤ limit
@@ -136,6 +136,10 @@ def part_voltages(d):
                 say = (lambda v, lim, f, des=des, label=label: f"{des}: |{label}| up to {v:.1f} V, "
                        + (f"VCEO {lim:g} V" if label == "VCE" else f"rated {lim:g} V"))
             out.append(Quantity(des, name, v, kind=kind, entry=key, how=how, on=on, say=say))
+        if polarized(part) and (plus := d.net_of(des, "plus")) and (minus := d.net_of(des, "minus")):
+            out.append(Quantity(des, "vr", rng(minus)[1] - rng(plus)[0], kind=kind, entry=key, grade="polarized",
+                                how=f"{des}: reverse from {minus} to {plus}", on=on,
+                                say=lambda v, lim, f, des=des: f"{des}: reverse up to {v:.1f} V, allowed {lim:g} V"))
         if kind in PASSIVE:
             v = max((abs(x) for n in nets if n for x in rng(n)), default=0)
             out.append(Quantity(des, "v", v, kind=kind, entry=key, how=f"{des}: its nets up to", on=on,

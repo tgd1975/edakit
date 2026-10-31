@@ -126,8 +126,8 @@ A component names the part of its entry: the entry's lcsc is its file name, the 
 **`STRUCT.prefix`** – designator prefix fits the kind (warning; replaces P-6)  
 The designator's letters fit the kind of its entry (R resistor, C capacitor, D diode or LED, Q transistor, U IC or module, J connector, SW switch, F fuse, BT battery holder, BZ buzzer, K relay, TP test point).
 
-**`LIM.v`** – voltage within its limit (error; replaces G-3, G-8, E-2, E-5)  
-Every voltage a part sees stays within the limit of its entry: across a capacitor, reverse across a diode or LED, VCE, VEB, VDS, VGS, on a pin (v_max_v; an active pin not below −0.3 V), on a fuse, switch, resistor or connector, and every limit a transient run sets on a net. Stage G takes the declared net ranges times the derating factor (1.5 on capacitors and semiconductors), stage E the simulated value against the derated limit.
+**`LIM.v`** – voltage within its limit (error, polarized: warning; replaces G-3, G-8, E-2, E-5)  
+Every voltage a part sees stays within the limit of its entry: across a capacitor, reverse across a polarized capacitor (vr_max_v, grade polarized), reverse across a diode or LED, VCE, VEB, VDS, VGS, on a pin (v_max_v; an active pin not below −0.3 V), on a fuse, switch, resistor or connector, and every limit a transient run sets on a net. Stage G takes the declared net ranges times the derating factor (1.5 on capacitors and semiconductors), stage E the simulated value against the derated limit.
 - voltage domains: every net's range within `v_max_v` of every pin on it – finds e.g.: a 5-V signal on a 3.3-V GPIO
 - voltage ratings with margin: capacitors (×1.5), diodes VRRM (×1.5), BJT VCEO, MOSFET VDS/VGS (×1.5), fuses, switches, connectors – finds e.g.: a 6.3-V capacitor on a 5-V rail
 - stress of every part against its ratings with derating: resistor power ≤ 50 %, currents ≤ 80 %, capacitor/diode/transistor voltages ≤ 67 %, LED forward current and reverse voltage, fuse hold current at ambient, connector, switch and relay contact current, relay coil voltage, the current of every MCU output (`gpio_i_max_a`) and of all outputs together, sourced and sunk (`gpio_i_total_max_a`) – each pin may be fine and the sum beyond the package; the junction temperature of every part with `rth_ja_k_per_w` against its `tj_max_c`, and on a board of `touch_c` against the touch limit (5.3)
@@ -196,8 +196,8 @@ What a part forbids does not happen: CC1 and CC2 of a USB-C receptacle on one ne
 A net's fn (pwm, adc, spi.sck, i2c.sda, uart.tx, …) is on a pin whose entry lists it in functions, the nets of one fn_bus use one peripheral instance, and PWM nets of one slice have one fixed pwm_hz and a channel each. A UART line crosses: on uart.tx another part receives, on uart.rx another part transmits (grade uart).
 - pin functions: a net with `fn` is on a pin whose parts entry lists that function (`functions`), the nets of one `fn_bus` on one peripheral instance, two PWM nets of one slice with the same fixed `pwm_hz` and a channel each; a net with `fn` on pins without `functions` is a note – finds e.g.: SPI data on the clock pin, an analog input without ADC, a buzzer on the PWM slice of an LED
 
-**`PATH.reverse`** – reverse polarity blocked (error; replaces G-10)  
-What a reversed source (a battery holder, a source marked reversible) reaches through fuses, switches and connectors is only capacitors, holders, the anode of a blocking diode or the drain of a PMOS whose source and gate are outside.
+**`PATH.reverse`** – reverse polarity blocked (error, polarized: warning; replaces G-10)  
+What a reversed source (a battery holder, a source marked reversible) reaches through fuses, switches and connectors is only capacitors without polarity, holders, the anode of a blocking diode or the drain of a PMOS whose source and gate are outside; a polarized capacitor it reaches is reverse biased (grade polarized).
 - reverse polarity from the topology: what a reversed source (battery holders, `"source": "reversible"` on the component) reaches through fuses, switches and connectors may only be a capacitor, the anode of a diode whose cathode is outside, or the drain of a PMOS whose source and gate are outside – finds e.g.: the protection diode bypassed, an IC directly on the battery
 
 **`PATH.unfed`** – every supply pin reached by a supply (error; replaces G-16)  
