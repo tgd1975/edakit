@@ -1,4 +1,4 @@
-"""Ordering steps 2 and 3 (docs/concepts/new/ordering.md): every field of a maker's form as a key of [order] with
+"""Ordering steps 2 and 3 (docs/concepts/done/ordering.md): every field of a maker's form as a key of [order] with
 edakit's default – [order] of edakit.toml under [order] of the board file –, order.json with the keys that change the
 board where they differ from the default, the maker's profile ([cart], edakit/makers/<maker>.toml) and FILES.order per maker:
 a finding fails for [cart] maker and warns for every other maker."""

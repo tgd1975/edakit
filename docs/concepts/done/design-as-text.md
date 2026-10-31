@@ -1,8 +1,8 @@
 # Circuit design as text
 
 Status 2026-10-28: being built; all decisions are taken (table at the end), and the state of each step is in
-[implementation-plan.md](implementation-plan.md). The findings come from reading edakit at `a8b6011` (with PRs #78
-and #79) and the repositories of the reference project and the Christmas bell.
+[implementation-plan.md](../new/implementation-plan.md). The findings come from reading edakit at `a8b6011` (with PRs
+#78 and #79) and the repositories of the reference project and the Christmas bell.
 
 ## Goal
 
@@ -236,13 +236,13 @@ stays.
 Decided: first write the whole Christmas bell down both ways, as a language and as TOML with names, then choose which
 to build (decision 8).
 
-The sketch is [circuit-language.md](circuit-language.md): the bell both ways, a translator that takes all four
+The sketch is [circuit-language.md](../new/circuit-language.md): the bell both ways, a translator that takes all four
 configurations there and back without a difference, what each form costs, and the decisions to take. Reviewed on
 2026-10-31: the gains are independent of a language of its own and are built in any case – pins by name or role, the
 pin map from the parts entry, the hash rule, `edakit graph json` –; the language is deferred until it offers what a
 format cannot, which its section "Review 2026-10-31" spells out. Decided the same day: TOML with names as the form,
 `hardware/graph.toml`, with the resolved `graph.json` generated beside it (its decisions 1–7); what both forms share
-has a plan of its own, [circuit-language-plan.md](circuit-language-plan.md).
+has a plan of its own, [circuit-language-plan.md](../new/circuit-language-plan.md).
 
 ## Order
 

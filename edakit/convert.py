@@ -1,4 +1,4 @@
-"""The conversion to the data model of the restructuring (concept docs/concepts/new/rules-at-scale.md, sections 3
+"""The conversion to the data model of the restructuring (concept docs/concepts/done/rules-at-scale.md, sections 3
 and 4): parts entries, graph and sign-off file of before into the form the engines read: `edakit convert --write` converts
 a project once; a design of before does not load (design.old_form).
 

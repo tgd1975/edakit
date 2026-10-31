@@ -1,4 +1,4 @@
-"""The engines (concept docs/concepts/new/rules-at-scale.md, section 2): few engines, much data. An engine decides one
+"""The engines (concept docs/concepts/done/rules-at-scale.md, section 2): few engines, much data. An engine decides one
 kind of thing and knows no MOSFET and no LED; what makes a part what it is – which quantities it yields, which limits
 its entry declares, what it requires on its pins – is data: the parts entry, catalog/needs.toml, catalog/levels.toml,
 catalog/paths.toml and the tables.

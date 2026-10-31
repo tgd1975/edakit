@@ -1,6 +1,6 @@
 # Project setup
 
-Status 2026-10-29: built as step 3.7 of the [implementation plan](implementation-plan.md) (92db89f): the skill
+Status 2026-10-29: built as step 3.7 of the [implementation plan](../new/implementation-plan.md) (92db89f): the skill
 `new-project` with its two ways and the agent `project-surveyor`; the trial on the reference project's move is step
 4.4. All six decisions are taken (table at the end). The findings come from edakit at
 `f04dee5` and the repositories of the reference project and the Christmas bell.
@@ -113,7 +113,7 @@ with contradictions between the project's documents and with what it could not r
 ## Trial
 
 - **New:** a project like `led-bar`, set up from scratch. No value of the example stays unasked.
-- **Moving:** the reference project's move, step 4.4 of the [implementation plan](implementation-plan.md): the
+- **Moving:** the reference project's move, step 4.4 of the [implementation plan](../new/implementation-plan.md): the
   takeover of its positions (2.1), its scripts (the dry run of step 3.7 found ten entries and one conditional), two
   agents with `replaces`, its requirements file and its twelve skills mapped.
 

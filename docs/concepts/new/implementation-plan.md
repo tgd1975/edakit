@@ -3,13 +3,14 @@
 Status 2026-10-31: plan; phase 1 (1.1 to 1.8), 3.1 to 3.5, 3.7 and the follow-ups below are done; 2.1 to 2.4 and the
 offline part of 3.6 are built and wait for their live run in EasyEDA; 4.3 is written, reviewed and decided – the
 language deferred, TOML with names the form, its plan [circuit-language-plan.md](circuit-language-plan.md). It builds
-the three concepts of this folder after the user took their decisions on 2026-10-28 (e5caf42, 301fd90):
-[requirements.md](requirements.md), [design-as-text.md](design-as-text.md) and [project-scripts.md](project-scripts.md).
-Phase 5 builds a fourth, [ordering.md](ordering.md) – ordering at the manufacturer, decided on 2026-10-30 –; on the
-user's word ("Implementiere das Konzept") its offline steps were built the same day on one branch: 5.1 to 5.6, 5.8 and
-5.9 done, 5.7 and the offline part of 5.10 written; PCBWay was planned in afterwards (5.12); merged into main on
-2026-10-30, after the KiCad tool chain. Open are the probes 5.0, the live runs of 5.7, 5.8, 5.10 and 5.12, and 5.11 –
-the list of what is left: [TODO.md](../../../TODO.md). Each other step starts when the user asks for it.
+three concepts after the user took their decisions on 2026-10-28 (e5caf42, 301fd90):
+[requirements.md](../done/requirements.md), [design-as-text.md](../done/design-as-text.md) and
+[project-scripts.md](../done/project-scripts.md). Phase 5 builds a fourth, [ordering.md](../done/ordering.md) – ordering
+at the manufacturer, decided on 2026-10-30 –; on the user's word ("Implementiere das Konzept") its offline steps were
+built the same day on one branch: 5.1 to 5.6, 5.8 and 5.9 done, 5.7 and the offline part of 5.10 written; PCBWay was
+planned in afterwards (5.12); merged into main on 2026-10-30, after the KiCad tool chain. Open are the probes 5.0, the
+live runs of 5.7, 5.8, 5.10 and 5.12, and 5.11 – the list of what is left: [TODO.md](../../../TODO.md). Each other step
+starts when the user asks for it.
 
 ## Ground rules
 
@@ -154,7 +155,7 @@ in EasyEDA. Each later step removes its line. Documentation only, so it may go t
 resolves them together with edakit's fixed steps and reports R1–R9 in `edakit check`. `[[release.stages]]` and
 `sim_plugin` count as the kinds `check` and `sim`, and the old keys keep working. Tests: one fault per rule, as the
 concept's prototype did with 28 copies. The prototype is kept in
-[prototypes/project-scripts](prototypes/project-scripts/); its README names what the decisions changed since.
+[prototypes/project-scripts](../done/prototypes/project-scripts/); its README names what the decisions changed since.
 Its rules and cases become `tests/test_scripts.py`.
 
 **1.3 Data names.** `graph`, `parts`, `sim`, `board:<b>`, `footprints:<b>`, `routing:<b>`, `mech:<b>`, `gerber:<b>`,
@@ -261,8 +262,8 @@ first (`edakit lock claim --note "live runs"`), with EasyEDA unthrottled and the
 release it at the end. 2.2's probe is written out above.
 
 **2.1 Positions as text** (`pcb autolayout` writes `auto = true` rows, `pcb takeover` takes a placed board, L-20).
-Since 2026-10-30 edakit's own placer is to replace the auto-layout ([kicad-toolchain.md](kicad-toolchain.md), T.1, the
-user's decision): run 2 matters only while `pcb autolayout` exists; 1, 3 and 4 – the takeover and L-20 – stay.
+Since 2026-10-30 edakit's own placer is to replace the auto-layout ([kicad-toolchain.md](../done/kicad-toolchain.md),
+T.1, the user's decision): run 2 matters only while `pcb autolayout` exists; 1, 3 and 4 – the takeover and L-20 – stay.
 
 1. On a scratch copy of the bell with all `[place]` rows deleted: `edakit pcb takeover` in main and in
    `variants/esp32`, `smd` and `tht` shows 19 rows per board, without `auto`, each equal to the real board file's
@@ -411,11 +412,11 @@ its requirements file.
 
 ## Phase 5: ordering at the manufacturer
 
-Each at the user's request. The concept is [ordering.md](ordering.md); its "Order of work" says what each step builds,
-and its "Decisions" what the user decided on 2026-10-30: Claude fills the maker's form in the owner's browser and stops
-at the cart – never orders, never pays –; the regulatory reviewer looks at every order; JLCPCB, PCBWay, Eurocircuits or
-AISLER, asked when the project is set up; ODB++ from EasyEDA Pro; real cost into the project's fee table. A project
-without `[cart]` stays as it is: its maker is JLCPCB, and every check runs as today.
+Each at the user's request. The concept is [ordering.md](../done/ordering.md); its "Order of work" says what each step
+builds, and its "Decisions" what the user decided on 2026-10-30: Claude fills the maker's form in the owner's browser
+and stops at the cart – never orders, never pays –; the regulatory reviewer looks at every order; JLCPCB, PCBWay,
+Eurocircuits or AISLER, asked when the project is set up; ODB++ from EasyEDA Pro; real cost into the project's fee
+table. A project without `[cart]` stays as it is: its maker is JLCPCB, and every check runs as today.
 
 **5.0 Probes.** The makers' pages in the owner's Chrome (file upload, read back, screenshots, the placement preview
 from the cart, labels and values for the profiles, test data) and the ODB++ export of a throwaway board under the

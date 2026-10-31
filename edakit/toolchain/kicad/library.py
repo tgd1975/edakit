@@ -1,6 +1,6 @@
 """The board's footprints for KiCad, from the parts database (handbook 16.3).
 
-Where the pads come from (decision 3 of docs/concepts/new/kicad-toolchain.md): the entry's footprint_data (handbook
+Where the pads come from (decision 3 of docs/concepts/done/kicad-toolchain.md): the entry's footprint_data (handbook
 4.5), else the geometry `edakit part import` caches from the LCSC data – EasyEDA's footprint, the one JLCPCB's
 assembly works from, so origin and rotation of the CPL need no correction. A part whose footprint is not cached yet is
 read from the library first, into the cache only (as part import does; the entry is not touched).

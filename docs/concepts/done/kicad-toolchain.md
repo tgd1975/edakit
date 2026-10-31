@@ -378,8 +378,8 @@ Out:
 
 The KiCad work ran on a branch of its own (decision 6), without waiting for the live runs of 2.1 to 2.4 and 3.6, and
 went to main on 2026-10-30. Each step is built with add-feature, test first, as in
-[implementation-plan.md](implementation-plan.md). Each step leaves a project without `toolchain = "kicad"` as it is:
-T.1 changes nothing until `--rest` is given.
+[implementation-plan.md](../new/implementation-plan.md). Each step leaves a project without `toolchain = "kicad"` as it
+is: T.1 changes nothing until `--rest` is given.
 
 | Step | What | Size | Needs | Waits for | State |
 | --- | --- | --- | --- | --- | --- |
@@ -454,8 +454,9 @@ test footprints (handbook 16.8). Each on a scratch copy; the bell's repository d
   - Skill [new-project](../../../skills/new-project/SKILL.md) (`.gitignore`).
 - Handbook [1](../../../handbook/01-approach.md), [7](../../../handbook/07-pcb.md),
   [8](../../../handbook/08-release-gate.md), [9](../../../handbook/09-easyeda-api.md).
-- Concepts [design-as-text.md](design-as-text.md) (gaps 1–3, decision 4), [parallel-easyeda.md](parallel-easyeda.md),
-  [implementation-plan.md](implementation-plan.md) (2.1 and its live run).
+- Concepts [design-as-text.md](design-as-text.md) (gaps 1–3, decision 4),
+  [parallel-easyeda.md](../new/parallel-easyeda.md), [implementation-plan.md](../new/implementation-plan.md) (2.1 and
+  its live run).
 - KiCad:
   - 10.0, released in March 2026, with the Ubuntu PPA and its install steps:
     [kicad.org/download/ubuntu](https://www.kicad.org/download/ubuntu/).

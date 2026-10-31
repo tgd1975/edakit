@@ -1,5 +1,5 @@
 """Profiles: the domains a project switches on and what follows from them (concept
-docs/concepts/new/rules-at-scale.md, section 5).
+docs/concepts/done/rules-at-scale.md, section 5).
 
     edakit domains [--review electrical|regulatory|pcb]
 

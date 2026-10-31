@@ -1,4 +1,4 @@
-"""Ordering step 10 (docs/concepts/new/ordering.md): EasyEDA's ODB++ export for a maker that takes it (AISLER),
+"""Ordering step 10 (docs/concepts/done/ordering.md): EasyEDA's ODB++ export for a maker that takes it (AISLER),
 read by edakit/odb.py and held by SYNC.odb to the run's Gerber, drill, BOM and CPL files and to the graph. No real export
 of EasyEDA is at hand yet (ordering step 0b): the ODB++ here is written by the test from the export of
 test_fab_run – the same copper, mask and silkscreen, drill hits, outline, parts and nets –, so that SYNC.odb passes on it,

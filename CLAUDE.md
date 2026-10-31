@@ -7,13 +7,13 @@ too.
 ## The yardstick
 
 Circuit design as code: everything needed to create, edit and change a circuit is text in the project's repository,
-and every step can be done by an LLM (`docs/concepts/new/design-as-text.md`). EasyEDA Pro as a desktop program with
+and every step can be done by an LLM (`docs/concepts/done/design-as-text.md`). EasyEDA Pro as a desktop program with
 its MCP bridge is fine, and the clicks left will go in time; headless builds and CI are not the goal and no argument
 for a feature. When weighing a feature or a concept, say whether it leaves something that exists only in EasyEDA or
 only in someone's head.
 
 A requirements file covers the circuit only; what firmware and mechanics must do stays in the projects' own documents
-(`docs/concepts/new/requirements.md`, decision 3).
+(`docs/concepts/done/requirements.md`, decision 3).
 
 ## Concepts and branches
 

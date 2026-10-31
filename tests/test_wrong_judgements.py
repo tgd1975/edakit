@@ -1,4 +1,4 @@
-"""Where edakit judged a correct circuit wrongly (docs/concepts/new/schema-gaps.md, A1–A5, A7, I1, I7) – each with the
+"""Where edakit judged a correct circuit wrongly (docs/concepts/done/schema-gaps.md, A1–A5, A7, I1, I7) – each with the
 circuit that was judged wrong and the one where the finding is right and stays."""
 
 import copy

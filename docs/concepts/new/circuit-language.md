@@ -1,20 +1,19 @@
 # The circuit as a language, or as TOML with names
 
 Status 2026-10-31: sketch of step 4.3 of the [implementation plan](implementation-plan.md), for decision 8 of
-[design-as-text.md](design-as-text.md), written on 2026-10-29 against edakit at `75d5c32` and the bell at `f56b463`,
-reviewed on 2026-10-31 against main at `075574e`. The owner's conclusion from the review is in the section
-[Review 2026-10-31](#review-2026-10-31): what is worth building is independent of a language of its own and is built
-in any case; the language is deferred until it offers what a format cannot. The decisions at the end were taken the
-same day: TOML with names as the form, the pin map from the parts entry, the hash over the form's canonical data, a
-resolved `graph.json` generated beside the form, four complete variants, the symbol's names and the roles, no net in
-fragments; what both forms share has a plan of its own, [circuit-language-plan.md](circuit-language-plan.md). Since
-the sketch, the cut of rules at scale (`4982d35`) has changed the graph's keys and the codes; the examples below and
-the prototype still use the old ones, and the review lists what to bring along. The Christmas bell's main
-configuration is written down both ways in
-[prototypes/circuit-language](prototypes/circuit-language/): as a language,
+[design-as-text.md](../done/design-as-text.md), written on 2026-10-29 against edakit at `75d5c32` and the bell at
+`f56b463`, reviewed on 2026-10-31 against main at `075574e`. The owner's conclusion from the review is in the section
+[Review 2026-10-31](#review-2026-10-31): what is worth building is independent of a language of its own and is built in
+any case; the language is deferred until it offers what a format cannot. The decisions at the end were taken the same
+day: TOML with names as the form, the pin map from the parts entry, the hash over the form's canonical data, a resolved
+`graph.json` generated beside the form, four complete variants, the symbol's names and the roles, no net in fragments;
+what both forms share has a plan of its own, [circuit-language-plan.md](circuit-language-plan.md). Since the sketch, the
+cut of rules at scale (`4982d35`) has changed the graph's keys and the codes; the examples below and the prototype still
+use the old ones, and the review lists what to bring along. The Christmas bell's main configuration is written down both
+ways in [prototypes/circuit-language](prototypes/circuit-language/): as a language,
 [bell.circuit](prototypes/circuit-language/bell.circuit), and as TOML with pin names,
-[bell.toml](prototypes/circuit-language/bell.toml). The translator `translate.py` takes all four configurations
-there and back without a difference, at the state of `75d5c32`.
+[bell.toml](prototypes/circuit-language/bell.toml). The translator `translate.py` takes all four configurations there
+and back without a difference, at the state of `75d5c32`.
 
 ## Goal
 

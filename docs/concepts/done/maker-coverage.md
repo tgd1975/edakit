@@ -475,8 +475,8 @@ condensing rules moves knowledge into parts entries, which an agent fills from d
   checked library entries (PF) for common parts, so that less is taken from datasheets by the model.
 - **L5 Short texts:** one task per skill, numbered steps, short sentences (under 25 words as a target, h); the handbook
   read by section, not by chapter; the circuit in the compact form of
-  [circuit-language.md](circuit-language.md) – half the JSON's bytes for the bell – and slices of the graph by query
-  (FT-23) instead of 65 KB read whole.
+  [circuit-language.md](../new/circuit-language.md) – half the JSON's bytes for the bell – and slices of the graph by
+  query (FT-23) instead of 65 KB read whole.
 - **L6 Measured with Sonnet (FT-24).** The reference circuits (FT-21) are also the test bench: typical tasks – add an
   LED, swap a part, find a seeded fault, review a board – run with Sonnet and with Opus. A run passes when the checks
   end green, the right commands were used and no finding was invented; every change to skills, prompts and the catalog

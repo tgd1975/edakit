@@ -1,7 +1,7 @@
 # 16 KiCad as the tool chain
 
 A project draws its boards in EasyEDA Pro or in KiCad – one key in edakit.toml decides
-([concept](../docs/concepts/new/kicad-toolchain.md)). The graph, the parts database, the simulation, the board file
+([concept](../docs/concepts/done/kicad-toolchain.md)). The graph, the parts database, the simulation, the board file
 with its plan, the routing with Freerouting and every check of the gate are the same for both. Only the EDA project is
 the tool chain's: an EasyEDA project driven through the bridge, or KiCad files that edakit writes and kicad-cli reads.
 

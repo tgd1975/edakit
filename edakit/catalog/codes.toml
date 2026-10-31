@@ -151,7 +151,7 @@ fix = "Add the domain to [project] domains, or accept STRUCT.domain <domain> wit
 severity = "note"
 replaces = []
 sources = [
-  "Concept docs/concepts/new/rules-at-scale.md, section 5: suggested domains",
+  "Concept docs/concepts/done/rules-at-scale.md, section 5: suggested domains",
 ]
 
 [codes."STRUCT.entry"]
@@ -311,7 +311,7 @@ sources = [
   "ngspice User's Manual, independent sources: PWL(T1 V1 T2 V2 …) holds V1 before T1; .tran starts from the DC operating point unless uic is given",
   "Raspberry Pi Pico 2 datasheet: VSYS 1.8–5.5 V – the vsys_min of the example's Pico 2 entry (tests/fixtures/led-bar/hardware/parts/C41407547.json)",
   "NXP UM10204 Rev. 7.0, I2C-bus specification and user manual (1 October 2021), 7.1 Pull-up resistor sizing (p. 50: the bus capacitance is the total capacitance of wire, connections and pins; T = t2 − t1 = 0.8473 × RC between 0.3 VDD and 0.7 VDD) and table 11 (p. 44: fSCL 100 / 400 / 1000 kHz, tr max 1000 / 300 / 120 ns, Cb max 400 / 400 / 550 pF for Standard-mode, Fast-mode, Fast-mode Plus) – https://www.nxp.com/docs/en/user-guide/UM10204.pdf, read 2026-10-31 (grade clock on I2C, catalog tables/i2c.toml)",
-  "docs/concepts/new/maker-coverage.md, FT-16 (bus parameters in the firmware contract) and MCU 16 (pull-ups too weak for the bus)",
+  "docs/concepts/done/maker-coverage.md, FT-16 (bus parameters in the firmware contract) and MCU 16 (pull-ups too weak for the bus)",
 ]
 
 [codes."LIM.declared"]
@@ -486,7 +486,7 @@ replaces = ["G-11", "G-14"]
 sources = [
   "China Resources Powtech PT4115 data sheet PT4115_DS Rev EN_2.9, p. 3 mean current sense threshold A type 95 / 98 / 101 mV, p. 4 continuous SW current 1.2 A, p. 11 'IOUT = 0.1 / Rs (Rs ≥ 0.082Ω)', p. 12–13 on-time equation TON = L × ΔI / (VIN − VLED − Iavg × (Rs + rL + Rsw)), Rsw 0.6 Ω nominal, ΔI internally 0.3 × Iavg – LCSC's copy for C84512, https://datasheet.lcsc.com/datasheet/pdf/710aeebb569349bc814ba1f6ba8cbef1.pdf (grade cc)",
   "WCH CH224 手册1 version 2.1: CH224K reference 6.2 p. 9 – CFG1 1 → 5 V; CFG1 0 with CFG2 CFG3 00 → 9 V, 01 → 12 V, 11 → 15 V, 10 → 20 V – the pd_request grade",
-  "docs/concepts/new/maker-coverage.md, CK-30 (appendix GTP 31, 37; GTI 31; AUD 13) – no DC where signals are switched; the 10 mV is edakit's choice for its \"within a few mV\"",
+  "docs/concepts/done/maker-coverage.md, CK-30 (appendix GTP 31, 37; GTI 31; AUD 13) – no DC where signals are switched; the 10 mV is edakit's choice for its \"within a few mV\"",
   "Hongfa HFD4 data sheet, 2024 Rev. 1.00, contact data: 'Min. applicable load 10mV 10µA', note 2: 'Min. applicable load is reference value' (grade min_load, and the 10 µA a contact in a signal path may need at most; LCSC's copy for C64399)",
   "NXP UM10204 Rev. 7.0, I2C-bus specification and user manual (2021), 7.1 Pull-up resistor sizing and table 10 – https://www.nxp.com/docs/en/user-guide/UM10204.pdf",
   "USB Type-C Cable and Connector Specification (USB-IF): sink termination Rd = 5.1 kΩ",
@@ -696,7 +696,7 @@ replaces = ["L-4", "L-10", "P-10"]
 sources = [
   "edakit handbook 4.1",
   "edakit handbook 4.4",
-  "edakit concept 'Circuit design as code' (docs/concepts/new/design-as-text.md), gap 2, proposal 3 ('a check holds the copy to the data: pins and pads in EasyEDA equal the parts entry'), and the implementation plan, step 3.6 and 'Hashes and gate results' ('a new check: the copy equals the data')",
+  "edakit concept 'Circuit design as code' (docs/concepts/done/design-as-text.md), gap 2, proposal 3 ('a check holds the copy to the data: pins and pads in EasyEDA equal the parts entry'), and the implementation plan, step 3.6 and 'Hashes and gate results' ('a new check: the copy equals the data')",
   "edakit handbook 9.4 ('Footprints in the project': placed parts keep their embedded copy until deleted and recreated); the reference project's hardware/easyeda/led_footprints.py, bohrungen: changed pads of the placed part are dropped on saving, D31 stayed at 0.70 mm (2026-10-25)",
   "0.02 mm: L-7's tolerance for a placed part against its plan (release/fab.py check_pcb); the Christmas bell's variants/esp32/hardware/boards/esp32.geometry.json has the T-Display's pads 0.05 mil (0.0013 mm) from where variants/esp32/hardware/lib/tdisplay_device.py created them, and handbook 7.4 has the library and EasyEDA Pro agreeing on the pads within 0.1 mil. 0.01 mm for holes and sizes: pcb dump keeps holes to 0.001 mm and pads to 0.01 mil – the step's choice, no standard was opened",
   "The Christmas bell's variants/esp32/hardware/lib/tdisplay_device.py: its check reopens the rebuilt copy and compares pins and pad positions with what it built",
@@ -718,7 +718,7 @@ sources = [
   "edakit handbook 7",
   "Analog Devices MT-101, Decoupling Techniques (Rev. 0, 2009) – https://www.analog.com/media/en/training-seminars/tutorials/MT-101.pdf",
   "edakit handbook 7.4 and 14.1",
-  "edakit concept 'Circuit design as code' (docs/concepts/new/design-as-text.md), gap 1 and decisions 3 and 4 of 2026-10-28: the positions of the auto-layout into [place] with auto = true, the check an error in the gate, a board placed before takes over its positions once",
+  "edakit concept 'Circuit design as code' (docs/concepts/done/design-as-text.md), gap 1 and decisions 3 and 4 of 2026-10-28: the positions of the auto-layout into [place] with auto = true, the check an error in the gate, a board placed before takes over its positions once",
   "edakit handbook 7.4 (the placement plan) and 8.1 (stage L)",
 ]
 
@@ -762,7 +762,7 @@ sources = [
   "ODB++ Format Specification v8.1 (Siemens): matrix, features (L, P, A, S with OB/OS/OC/OE), standard symbols, components (CMP, TOP), eda/data (NET); rotation of components clockwise",
   "EasyEDA Pro: File > Export > ODB++ (ODB++ v8.0) – https://prodocs.easyeda.com/en/pcb/export-odb-plus-plus; extension API PCB_ManufactureData.getOpenDatabaseDoublePlusFile (BETA)",
   "AISLER: assembly from ODB++ or native design files, not from Gerber – https://community.aisler.net/t/introducing-odb-support/2459 (search result of 2026-10-30)",
-  "Ordering at the manufacturer (docs/concepts/new/ordering.md, decided 2026-10-30): ODB++ from EasyEDA Pro, checked by SYNC.odb; the rotation convention and the part numbers in EasyEDA's export are confirmed by ordering step 0b",
+  "Ordering at the manufacturer (docs/concepts/done/ordering.md, decided 2026-10-30): ODB++ from EasyEDA Pro, checked by SYNC.odb; the rotation convention and the part numbers in EasyEDA's export are confirmed by ordering step 0b",
 ]
 
 [codes."SYNC.source"]
@@ -933,7 +933,7 @@ details = [
 ]
 replaces = ["L-13", "L-14", "L-16", "L-18"]
 sources = [
-  "docs/concepts/new/maker-coverage.md, CK-31 (appendix GTP 10, 22, 23, 25, 33; GTI 16, 26, 29; MCU 6, 7) – nets kept apart, the distance from the circuit designer",
+  "docs/concepts/done/maker-coverage.md, CK-31 (appendix GTP 10, 22, 23, 25, 33; GTI 16, 26, 29; MCU 6, 7) – nets kept apart, the distance from the circuit designer",
   "JLCPCB PCB Manufacturing Capabilities, minimum clearances: SMD pad to pad clearance (different nets) 0.15 mm (read 2026-10-26) – https://jlcpcb.com/capabilities/pcb-capabilities",
   "JLCPCB, Terms and Conditions of JLCPCB Assembly Service (updated 2026-09-09), 2.2: placement and gap of the components after IPC-7351B medium or low density, components with very small gap avoided – https://jlcpcb.com/help/article/61-Terms-and-Conditions-of-JLCPCB-Assembly-Service",
   "edakit handbook 7.5 and 8.1",
@@ -982,7 +982,7 @@ details = [
   "the antenna at the edge (grade edge): the antenna area of `antenna.keepout_mm`, placed where pcb.json has the part, measured against the outer outline of the Gerber outline file with shapely – at or over it passes, inside it the distance to the outside is held to `antenna.edge_mm` (0.05 mm for the outline's rounding); a closed path inside the board (a hole, a cut-out) does not count as the edge, because Espressif asks for the module at the board's edge, not in the middle with a clearance hollowed out on all four sides. Espressif's modules: 1 mm for the ESP32 and ESP32-S3 modules (figures 25 and 26 of their hardware design guidelines, 'Max 1' between the antenna and the board's edge), 0 for the ESP32-C3 modules (figure 21 shows no distance; the text asks for the antenna outside the base board). The clearance of at least 15 mm beside an antenna in a cut-out and inside the housing is not checked – the pcb reviewer asks for it (domain radio) – finds e.g.: a WROOM module placed in the middle of a carrier, its antenna over the carrier's material",
 ]
 sources = [
-  "docs/concepts/new/maker-coverage.md, CK-11 (appendix MCU 6; the owner's bell, ESP32 variant)",
+  "docs/concepts/done/maker-coverage.md, CK-11 (appendix MCU 6; the owner's bell, ESP32 variant)",
   "Espressif, ESP32 Hardware Design Guidelines, release master (26 October 2026), 1.4.8 General Principles of PCB Layout for Modules (Positioning a Module on a Base Board), p. 27–29: 'place the module's on-board PCB antenna outside the base board, and the feed point of the antenna close to the edge of the base board'; if it cannot extend beyond the board edge, the feed point as close to the edge as possible and the base board cut off on both sides of the antenna and below it; 'the module should not be placed in the center of the board with clearance created by hollowing out on all four sides'; a clearance of at least 15 mm in all directions inside the housing; figure 25 (read from the graph): the antenna area 6.19 mm deep at the board's corner, the board's edge at most 1 mm beyond its outer side and at most 2 mm beyond the module's side, the board cut away at least 15 mm beside the antenna – https://docs.espressif.com/projects/esp-hardware-design-guidelines/en/latest/esp32/esp-hardware-design-guidelines-en-master-esp32.pdf, read 2026-10-31",
   "Espressif, ESP32-S3 Hardware Design Guidelines, release master (26 October 2026), 1.4.7 General Principles of PCB Layout for Modules, p. 29–31, figure 26 (read from the graph): as the ESP32's, the antenna area 6 mm deep, 'Max 1' and 'Max 2', 'Min15' – read 2026-10-31",
   "Espressif, ESP32-C3 Hardware Design Guidelines, release master (26 October 2026), 1.4.7 General Principles of PCB Layout for Modules, p. 21–23, figure 21 (read from the graph): the antenna area 6 mm deep in a cut-out of the board's edge, at least 15 mm clear to both sides and above it, no distance to the edge given – read 2026-10-31",
@@ -1087,7 +1087,7 @@ sources = [
   "JLCPCB PCB Manufacturing Capabilities (read 2026-10-28): solder mask colours Green, Purple, Red, Yellow, Blue, White, Black; FR-4 thicknesses 0.4/0.6/0.8/1.0/1.2/1.6/2.0 mm, 2.5 mm and above for 12+ layers only – https://jlcpcb.com/capabilities/pcb-capabilities",
   "JLCPCB online quote (read 2026-10-28), PCB Color and Silkscreen: 'For most colors, the silkscreen is printed white. Only for white solder mask, the silkscreen is printed black.' – https://cart.jlcpcb.com/quote",
   "Reference project (pytree): the cart of 2026-10-24 with PCB Thickness 1.6mm, PCB Color Green, Silkscreen White (the form's defaults), and its silkscreen concept: with a white mask (an open question for the snow tree) JLCPCB prints black, so the artwork had to look right in black too",
-  "Ordering at the manufacturer (docs/concepts/new/ordering.md, decided 2026-10-30): every field of the form as a key with edakit's default, the maker's profile, checks per maker; edakit/makers/jlcpcb.toml (provisional until ordering step 0)",
+  "Ordering at the manufacturer (docs/concepts/done/ordering.md, decided 2026-10-30): every field of the form as a key with edakit's default, the maker's profile, checks per maker; edakit/makers/jlcpcb.toml (provisional until ordering step 0)",
   "JLCPCB, \"How to remove order number from your PCB\" (last updated 2026-05-22; read in search summaries on 2026-10-30): the order number not available since May 2026, JLCJLCJLCJLC not to be added, a 2D barcode or a serial number instead – https://jlcpcb.com/help/article/how-to-mark-on-pcb; the owner's decision of 2026-10-30: FILES.order warns until ordering step 0 has seen the form",
 ]
 
@@ -1148,8 +1148,8 @@ grades = { lead = "pending", functions = "note", hot_loop = "warning", radio = "
 details = [
   "manufacturer part number (4.1): with a maker of `[cart] makers` that matches parts by manufacturer part number (Eurocircuits) every assembled part's entry names its `mpn` and its `manufacturer` – an error for the planned maker, a warning for another one – finds e.g.: a part the maker cannot match, found at its BOM upload",
   "radio stated: every part of graph type `module` or `microcontroller` has `compliance.radio` in its parts entry – its bands and power (4.1), or `\"none\"` when it does not transmit; missing is graded by `purpose.use` (8.1): a warning for a board that is sold (`\"sale\"`), information for one built for oneself or given away, or without a purpose – `accept` on one of its components –, other parts need it only if they transmit; a `radio` of another shape is an error. The entry is in the circuit hash: the statement renews M-1 and M-6 (8.2) – finds e.g.: an Arduino Nano whose entry says nothing about a radio – found by the regulatory review from the part's name; a plug-in board with an ESP32 its name does not show",
-  "Eurocircuits, BOM requirements (MPN and designators required): https://www.eurocircuits.com/?p=9450 – search result of 2026-10-30, the page not reachable from the session (docs/concepts/new/ordering.md)",
-  "Ordering at the manufacturer (docs/concepts/new/ordering.md, decided 2026-10-30): BOM with MPN and PARTS.fact/mpn, in stage P",
+  "Eurocircuits, BOM requirements (MPN and designators required): https://www.eurocircuits.com/?p=9450 – search result of 2026-10-30, the page not reachable from the session (docs/concepts/done/ordering.md)",
+  "Ordering at the manufacturer (docs/concepts/done/ordering.md, decided 2026-10-30): BOM with MPN and PARTS.fact/mpn, in stage P",
 ]
 replaces = ["P-7", "G-15", "G-18", "P-11", "P-12"]
 sources = [
@@ -1162,8 +1162,8 @@ sources = [
   "Lesson of the reference project (pytree D-41, 2026-10-23): in the released run 20261023-000107 the MT3608 boost's diode cathode (D33) reached its output capacitor C13 over 61 mm of copper across the board; DRC, the gate and the electrical review passed it, the layout review (M-5) found it; the fix listed four pad pairs (L1.2–U6.1 ≤ 6 mm, U6.1–D33.2 ≤ 5 mm, D33.1–C13.1 ≤ 5 mm, C13.2–U6.2 ≤ 8 mm), the 61-mm segment on V_LED, a net without a pin of U6",
   "edakit handbook 4.1 (field compliance) and 15.3 (what the review needs)",
   "Lesson of the Christmas bell (tgd1975/automatic_christmas_bell, D-18 from the M-6 reviews of D-16): on the boards main, smd and tht U1 is an Arduino Nano without a transmitter, no parts entry said so, and the M-6 reviews of 2026-10-26 established it from the part's identity; on esp32 the T-Display's compliance.radio was added by hand during the review",
-  "Eurocircuits, BOM requirements (MPN and designators required): https://www.eurocircuits.com/?p=9450 – search result of 2026-10-30, the page not reachable from the session (docs/concepts/new/ordering.md)",
-  "Ordering at the manufacturer (docs/concepts/new/ordering.md, decided 2026-10-30): BOM with MPN and PARTS.fact/mpn, in stage P",
+  "Eurocircuits, BOM requirements (MPN and designators required): https://www.eurocircuits.com/?p=9450 – search result of 2026-10-30, the page not reachable from the session (docs/concepts/done/ordering.md)",
+  "Ordering at the manufacturer (docs/concepts/done/ordering.md, decided 2026-10-30): BOM with MPN and PARTS.fact/mpn, in stage P",
 ]
 
 [codes."PARTS.schema"]
@@ -1201,7 +1201,7 @@ details = [
 ]
 replaces = ["P-9"]
 sources = [
-  "edakit concept 'Circuit design as code' (docs/concepts/new/design-as-text.md), gap 2, proposals 1 and 3, and decision 5 of 2026-10-28: the footprint as data in the parts entry – origin, pads in the form part import caches them, outline and print; a pad without a pin in the entry is a finding, and so is the reverse",
+  "edakit concept 'Circuit design as code' (docs/concepts/done/design-as-text.md), gap 2, proposals 1 and 3, and decision 5 of 2026-10-28: the footprint as data in the parts entry – origin, pads in the form part import caches them, outline and print; a pad without a pin in the entry is a finding, and so is the reverse",
   "edakit handbook 4.4 (the reference project's LED footprint printed '+' next to pad 1, the cathode) and 8.1 (L-8: a sign of the silkscreen against the role of the nearest polarised pad, release/fab.py check_polarity_marks)",
   "EasyEDA Pro extension API types 0.3.50 (resources/app/assets/pro-api/0.3.50.ab46409c/api-types.d.ts, read 2026-10-29): pad shapes ELLIPSE, OVAL, RECT, NGON and POLYGON (EPCB_PrimitivePadShapeType), pad layers TOP, BOTTOM and MULTI (TPCB_LayersOfPad), holes ROUND [diameter] and SLOT [diameter, length] (TPCB_PrimitivePadHole)",
 ]
@@ -1215,7 +1215,7 @@ severity = "error"
 replaces = ["B-1"]
 sources = [
   "edakit handbook 8.4 (the reference order: 'Remove Mark', the remark)",
-  "Ordering at the manufacturer (docs/concepts/new/ordering.md, decided 2026-10-30): edakit prepares the order, Claude fills the maker's form in the owner's browser (skill cart), edakit checks what it brings back; up to the maker's cart button, never further",
+  "Ordering at the manufacturer (docs/concepts/done/ordering.md, decided 2026-10-30): edakit prepares the order, Claude fills the maker's form in the owner's browser (skill cart), edakit checks what it brings back; up to the maker's cart button, never further",
 ]
 
 [codes."ORDER.parts"]
@@ -1226,7 +1226,7 @@ fix = "A part the maker cannot place: another part in the graph (part-search), a
 severity = "error"
 replaces = ["B-2"]
 sources = [
-  "Ordering at the manufacturer (docs/concepts/new/ordering.md, decided 2026-10-30): edakit prepares the order, Claude fills the maker's form in the owner's browser (skill cart), edakit checks what it brings back; up to the maker's cart button, never further",
+  "Ordering at the manufacturer (docs/concepts/done/ordering.md, decided 2026-10-30): edakit prepares the order, Claude fills the maker's form in the owner's browser (skill cart), edakit checks what it brings back; up to the maker's cart button, never further",
   "edakit handbook 8.4 and 15.4 (M-6 reviews the parts of the release)",
 ]
 
@@ -1239,7 +1239,7 @@ severity = "warning"
 replaces = ["B-3"]
 sources = [
   "edakit handbook 8.4 (the estimate within about 1 $ of the cart of 2026-10-25)",
-  "Ordering at the manufacturer (docs/concepts/new/ordering.md, decided 2026-10-30): edakit prepares the order, Claude fills the maker's form in the owner's browser (skill cart), edakit checks what it brings back; up to the maker's cart button, never further",
+  "Ordering at the manufacturer (docs/concepts/done/ordering.md, decided 2026-10-30): edakit prepares the order, Claude fills the maker's form in the owner's browser (skill cart), edakit checks what it brings back; up to the maker's cart button, never further",
 ]
 
 [codes."ORDER.read"]
@@ -1250,7 +1250,7 @@ fix = "Read the page again and write what it shows; keep the page text whole (fo
 severity = "error"
 replaces = ["B-4"]
 sources = [
-  "Ordering at the manufacturer (docs/concepts/new/ordering.md, decided 2026-10-30): edakit prepares the order, Claude fills the maker's form in the owner's browser (skill cart), edakit checks what it brings back; up to the maker's cart button, never further",
+  "Ordering at the manufacturer (docs/concepts/done/ordering.md, decided 2026-10-30): edakit prepares the order, Claude fills the maker's form in the owner's browser (skill cart), edakit checks what it brings back; up to the maker's cart button, never further",
 ]
 
 [codes."ORDER.files"]
@@ -1262,7 +1262,7 @@ severity = "error"
 replaces = ["B-5"]
 sources = [
   "edakit handbook 8.4 (release verify before the upload)",
-  "Ordering at the manufacturer (docs/concepts/new/ordering.md, decided 2026-10-30): edakit prepares the order, Claude fills the maker's form in the owner's browser (skill cart), edakit checks what it brings back; up to the maker's cart button, never further",
+  "Ordering at the manufacturer (docs/concepts/done/ordering.md, decided 2026-10-30): edakit prepares the order, Claude fills the maker's form in the owner's browser (skill cart), edakit checks what it brings back; up to the maker's cart button, never further",
 ]
 
 [codes."ORDER.finish"]
@@ -1275,7 +1275,7 @@ replaces = ["B-6"]
 sources = [
   "edakit handbook 15.1 and 15.2 (RoHS, REACH Art. 33, graded by purpose)",
   "Directive 2011/65/EU (RoHS 2) Annex II: lead 0.1 % by weight in homogeneous materials",
-  "Ordering at the manufacturer (docs/concepts/new/ordering.md, decided 2026-10-30): edakit prepares the order, Claude fills the maker's form in the owner's browser (skill cart), edakit checks what it brings back; up to the maker's cart button, never further",
+  "Ordering at the manufacturer (docs/concepts/done/ordering.md, decided 2026-10-30): edakit prepares the order, Claude fills the maker's form in the owner's browser (skill cart), edakit checks what it brings back; up to the maker's cart button, never further",
 ]
 
 [codes."ORDER.review"]
@@ -1288,7 +1288,7 @@ grades = { open = "pending" }
 replaces = ["B-7"]
 sources = [
   "edakit handbook 15.4 (M-6) and the agent regulatory-reviewer, section 'At the order'",
-  "Ordering at the manufacturer (docs/concepts/new/ordering.md, decided 2026-10-30): edakit prepares the order, Claude fills the maker's form in the owner's browser (skill cart), edakit checks what it brings back; up to the maker's cart button, never further",
+  "Ordering at the manufacturer (docs/concepts/done/ordering.md, decided 2026-10-30): edakit prepares the order, Claude fills the maker's form in the owner's browser (skill cart), edakit checks what it brings back; up to the maker's cart button, never further",
 ]
 
 [codes."DOCS.quote"]
@@ -1303,7 +1303,7 @@ details = [
 replaces = ["G-19"]
 sources = [
   "edakit handbook 6.6 and 3.6",
-  "Concept docs/concepts/new/requirements.md, 'Scope': the documents quote a requirement by its ID in a value block (step 3.5)",
+  "Concept docs/concepts/done/requirements.md, 'Scope': the documents quote a requirement by its ID in a value block (step 3.5)",
 ]
 
 [codes."DOCS.ref"]
@@ -1319,7 +1319,7 @@ details = [
 replaces = ["G-20"]
 sources = [
   "edakit handbook 3.6, 8.7 and 10.4",
-  "Concept docs/concepts/new/requirements.md, 'Traceability and the gate' and its decisions of 2026-10-28",
+  "Concept docs/concepts/done/requirements.md, 'Traceability and the gate' and its decisions of 2026-10-28",
   "The user's decision of 2026-10-28, after step 1.6: a draft never blocks – errors and blocking start with status = \"accepted\"",
 ]
 
@@ -1336,7 +1336,7 @@ details = [
 replaces = ["G-21"]
 sources = [
   "edakit handbook 3.6 and 10.4",
-  "Concept docs/concepts/new/requirements.md, 'Traceability and the gate': every need leads to requirements",
+  "Concept docs/concepts/done/requirements.md, 'Traceability and the gate': every need leads to requirements",
 ]
 
 [codes."DOCS.evidence"]
@@ -1352,7 +1352,7 @@ details = [
 replaces = ["G-22"]
 sources = [
   "edakit handbook 3.6, 8.7 and 10.4",
-  "Concept docs/concepts/new/requirements.md, 'Traceability and the gate': every requirement ends in evidence",
+  "Concept docs/concepts/done/requirements.md, 'Traceability and the gate': every requirement ends in evidence",
   "The user's decision of 2026-10-28, after step 1.6: a draft never blocks – errors and blocking start with status = \"accepted\"",
 ]
 
@@ -1369,7 +1369,7 @@ details = [
 replaces = ["G-23"]
 sources = [
   "edakit handbook 3.6, 8.7 and 11.4 (working agreement 4: only real decisions go to the user)",
-  "Concept docs/concepts/new/requirements.md, 'Proposal: the requirements file': the agent drafts, the user approves",
+  "Concept docs/concepts/done/requirements.md, 'Proposal: the requirements file': the agent drafts, the user approves",
   "The user's decision of 2026-10-28, after step 1.6: a draft never blocks – errors and blocking start with status = \"accepted\"",
 ]
 
@@ -1505,7 +1505,7 @@ fix = "A bulk electrolytic at each driver's motor supply pin, sized from the dri
 severity = "note"
 when = { kinds = ["motor", "solenoid"] }
 sources = [
-  "docs/concepts/new/maker-coverage.md, appendix MOT 5 (TI DRV8833 datasheet, tagged to verify) and MOT 9 (Pololu A4988 product page, tagged extracted)",
+  "docs/concepts/done/maker-coverage.md, appendix MOT 5 (TI DRV8833 datasheet, tagged to verify) and MOT 9 (Pololu A4988 product page, tagged extracted)",
 ]
 
 [codes."HINT.heater"]
@@ -1516,7 +1516,7 @@ fix = "A thermal fuse at the heater, a relay or the supply's enable that a watch
 severity = "note"
 when = { kinds = ["heater"] }
 sources = [
-  "docs/concepts/new/maker-coverage.md, appendix MOT 30: Marlin Configuration.h (thermal protection), Klipper Config_Reference, Voron documentation – read in full in the maker-coverage research",
+  "docs/concepts/done/maker-coverage.md, appendix MOT 30: Marlin Configuration.h (thermal protection), Klipper Config_Reference, Voron documentation – read in full in the maker-coverage research",
 ]
 
 [codes."HINT.audio_ground"]
@@ -1527,7 +1527,7 @@ fix = "One return point for the audio path; the amplifier's supply filtered from
 severity = "note"
 when = { kinds = ["speaker"] }
 sources = [
-  "docs/concepts/new/maker-coverage.md, appendix AUD 6 (ESP-IDF ADC documentation, read in full) and AUD 8 (OpenEnergyMonitor documentation, read in full)",
+  "docs/concepts/done/maker-coverage.md, appendix AUD 6 (ESP-IDF ADC documentation, read in full) and AUD 8 (OpenEnergyMonitor documentation, read in full)",
 ]
 
 [codes."HINT.class_d"]
@@ -1538,7 +1538,7 @@ fix = "A ferrite or an LC filter at the outputs above the lead length the amplif
 severity = "note"
 when = { match = "btl_output" }
 sources = [
-  "docs/concepts/new/maker-coverage.md, appendix AUD 1 (PAM8403 and Adafruit MAX98357A, tagged to verify)",
+  "docs/concepts/done/maker-coverage.md, appendix AUD 1 (PAM8403 and Adafruit MAX98357A, tagged to verify)",
 ]
 
 [codes."HINT.audio_switching"]
@@ -1549,7 +1549,7 @@ fix = "Switching above 20 kHz or filtered from the audio rail; a separate return
 severity = "note"
 when = { match = "switching_near_audio" }
 sources = [
-  "docs/concepts/new/maker-coverage.md, appendix GTP 17 (ElectroSmash CE-2 analysis and Bontempo, read in full) and AUD 12 (TC1044S, LT1054, tagged to verify)",
+  "docs/concepts/done/maker-coverage.md, appendix GTP 17 (ElectroSmash CE-2 analysis and Bontempo, read in full) and AUD 12 (TC1044S, LT1054, tagged to verify)",
 ]
 
 [codes."HINT.signal_ceramic"]
@@ -1560,7 +1560,7 @@ fix = "C0G or film in the signal path; class-2 ceramics for decoupling only."
 severity = "note"
 when = { match = "ceramic_in_signal_path" }
 sources = [
-  "docs/concepts/new/maker-coverage.md, appendix GTI 36 (PJRC Audio library, read in full)",
+  "docs/concepts/done/maker-coverage.md, appendix GTI 36 (PJRC Audio library, read in full)",
 ]
 
 [codes."HINT.jack_battery"]
@@ -1571,7 +1571,7 @@ fix = "The battery's minus through the jack's ring contact as the circuit expect
 severity = "note"
 when = { match = "battery_with_jacks" }
 sources = [
-  "docs/concepts/new/maker-coverage.md, appendix GTP 32 (ElectroSmash analyses, read in full)",
+  "docs/concepts/done/maker-coverage.md, appendix GTP 32 (ElectroSmash analyses, read in full)",
 ]
 
 [codes."HINT.pedal_supply"]
@@ -1582,7 +1582,7 @@ fix = "A centre-negative 9 V input with reverse protection in the plus leg; say 
 severity = "note"
 when = { match = "pedal_power_input" }
 sources = [
-  "docs/concepts/new/maker-coverage.md, appendix GTP 2 (ElectroSmash germanium fuzz and Rangemaster) and GTP 35 (ElectroSmash CE-2), read in full",
+  "docs/concepts/done/maker-coverage.md, appendix GTP 2 (ElectroSmash germanium fuzz and Rangemaster) and GTP 35 (ElectroSmash CE-2), read in full",
 ]
 
 [codes."HINT.string_ground"]
@@ -1593,7 +1593,7 @@ fix = "No capacitor from mains to chassis on the instrument's side; a resistor o
 severity = "note"
 when = { match = "instrument_input" }
 sources = [
-  "docs/concepts/new/maker-coverage.md, appendix GTI 7 and GTI 27 (tagged extracted)",
+  "docs/concepts/done/maker-coverage.md, appendix GTI 7 and GTI 27 (tagged extracted)",
 ]
 
 [codes."HINT.jack_supply"]
@@ -1604,7 +1604,7 @@ fix = "A series resistor or a PTC between the supply and the jack, a switch cont
 severity = "note"
 when = { match = "jack_supply" }
 sources = [
-  "docs/concepts/new/maker-coverage.md, HT-7 (QMK on TRRS links between the halves of a split keyboard; asp_pro's expression pedal on a TRS jack)",
+  "docs/concepts/done/maker-coverage.md, HT-7 (QMK on TRRS links between the halves of a split keyboard; asp_pro's expression pedal on a TRS jack)",
 ]
 
 [codes."HINT.relay_load"]
@@ -1615,7 +1615,7 @@ fix = "The load's inrush and its kind against the relay's ratings for that kind 
 severity = "note"
 when = { match = "relay_off_board" }
 sources = [
-  "docs/concepts/new/maker-coverage.md, HT-14 (appendix AUD 20)",
+  "docs/concepts/done/maker-coverage.md, HT-14 (appendix AUD 20)",
 ]
 
 [codes."HINT.flicker"]
@@ -1626,7 +1626,7 @@ fix = "A PWM frequency high enough for the use – IEEE 1789 relates frequency a
 severity = "note"
 when = { match = "pwm_leds" }
 sources = [
-  "docs/concepts/new/maker-coverage.md, appendix LED 18 (Arduino analogWrite reference, read in full; IEEE 1789-2015, tagged extracted)",
+  "docs/concepts/done/maker-coverage.md, appendix LED 18 (Arduino analogWrite reference, read in full; IEEE 1789-2015, tagged extracted)",
 ]
 
 [codes."HINT.boost_enable"]
@@ -1637,7 +1637,7 @@ fix = "A converter with load disconnect, or a switch in its output path, where t
 severity = "note"
 when = { match = "boost_enable" }
 sources = [
-  "docs/concepts/new/maker-coverage.md, appendix PWR 15 (MT3608, tagged extracted)",
+  "docs/concepts/done/maker-coverage.md, appendix PWR 15 (MT3608, tagged extracted)",
   "TI SLVA191A (Load Disconnect for the TPS6510x, May 2004, revised February 2017), abstract: 'Many boost converters have an external rectifier diode. The input voltage … is connected to the output voltage when the device is disabled' – https://www.ti.com/lit/an/slva191/slva191.pdf",
   "Xi'an Aerosemi MT3608 data sheet Rev1.1, p. 1 fig. 1 and p. 5 fig. 2: inductor and diode outside the IC, the only switch from SW to GND; p. 2 EN 'a low input turns it off' – LCSC's copy for C84817",
 ]
@@ -1678,7 +1678,7 @@ sources = [
   "Microchip AN1149, Designing A Li-Ion Battery Charger and Load Sharing System With Microchip's Stand-Alone Li-Ion Battery Charge Management Controller, DS01149C (2008), p. 5 'Connecting the system load to the battery': (1) the charge may never end – termination is based on the ratio of charge current to the preset constant current, and a system drawing from the battery keeps the charge current from meeting it; (2) the total system current is limited by the charge current; (3) a switch that turns the system off before charging; note: chargers without automatic termination (MCP73811/2) for a load on the cell; fig. 5–7 p. 5–6: a P-channel MOSFET from the cell to the system load whose gate is high while VIN is present, RPULL 100 kΩ to ground, a Schottky D1 from the input to the load – https://ww1.microchip.com/downloads/en/AppNotes/01149c.pdf",
   "NanJing Top Power ASIC Corp. TP4056 REV_2.4, p. 2: terminates the charge cycle when the charge current drops to 1/10 of the programmed value after reaching the float voltage; p. 9: once terminated, all loads on the BAT pin must be supplied by the battery – https://datasheet.lcsc.com/datasheet/pdf/d328ee101cbb1f3719611cd61db479c2.pdf?productCode=C16581",
   "Microchip MCP73831/2 DS20001984H (June 2020), p. 4 and p. 26: charge termination at ITERM/IREG 7.5 % (5.6–9.4 %) for option AC – https://ww1.microchip.com/downloads/en/DeviceDoc/MCP73831-Family-Data-Sheet-DS20001984H.pdf",
-  "docs/concepts/new/maker-coverage.md, HT-5 and appendix PWR 2",
+  "docs/concepts/done/maker-coverage.md, HT-5 and appendix PWR 2",
 ]
 
 [codes."HINT.charge_termination"]
@@ -1692,7 +1692,7 @@ sources = [
   "NanJing Top Power ASIC Corp. TP4056 REV_2.4, p. 2: terminates when the charge current drops to 1/10 of the programmed value after reaching the final float voltage; p. 5: ITERM 60/70/80 mA at RPROG 2.2 kΩ and 120/130/140 mA at 1.1 kΩ, tTERM 0.8/1.8/4 ms, ΔVRECHRG 100/150/200 mV, tRECHARGE 0.8/1.8/4 ms (min/typ/max); p. 9: termination when PROG stays below 100 mV for the filter time, the charge current latched off, C/10 termination disabled in trickle charging and thermal limiting, a new cycle below the 4.05 V recharge threshold – https://datasheet.lcsc.com/datasheet/pdf/d328ee101cbb1f3719611cd61db479c2.pdf?productCode=C16581",
   "Microchip MCP73831/2 DS20001984H (June 2020), p. 4: ITERM/IREG 5.6/7.5/9.4 %, VRTH/VREG 94/96.5/99 %; p. 5: tTERM 0.4/1.3/3.2 ms; 4.7 and 4.8 p. 14: terminated in constant-voltage mode when the average charge current falls below the factory-set percentage, latched off (Charge Complete), a new cycle below the recharge threshold; p. 26: option AC – ITERM/IREG 7.5 %, VRTH/VREG 96.5 % – https://ww1.microchip.com/downloads/en/DeviceDoc/MCP73831-Family-Data-Sheet-DS20001984H.pdf",
   "edakit handbook 5.1, behaviour charger (sim/netlist.py ic_charger): termination belongs to the charge cycle, not to an operating point",
-  "docs/concepts/new/rules-at-scale.md, decision 17 (2026-10-31): behaviour over time gets no state model; a hint names the risk where the part is used",
+  "docs/concepts/done/rules-at-scale.md, decision 17 (2026-10-31): behaviour over time gets no state model; a hint names the risk where the part is used",
 ]
 
 [codes."HINT.protection_timing"]
@@ -1705,7 +1705,7 @@ when = { match = "cell_protection" }    # every part whose entry names the behav
 sources = [
   "PUOLOP DW01A data sheet Rev B (2016-04-12), p. 4: VOC 4.25/4.30/4.35 V, VOCR 4.05/4.10/4.15 V, VOD 2.40/2.50/2.60 V, VODR 2.80/2.90/3.00 V, VEDI 130/150/170 mV, Vshort 0.82/1.36/1.75 V (min/typ/max); TOC 110/200 ms, TOD 55/200 ms, TEDI 7/20 ms, Tshort 400/600 µs (typ/max); p. 5–7 timing diagrams 1–3, read from the graphs: after an overcharge OC returns to VCC when a load is connected, after an overdischarge OD returns when a charger is connected, after an overcurrent or a short OD returns when the load is removed – https://datasheet.lcsc.com/datasheet/pdf/0d2b2b5e8d1207bf276387cb4ff3a495.pdf?productCode=C351410",
   "edakit handbook 5.1, behaviour protection (sim/netlist.py ic_protection): no hysteresis, no delays – the state of a cell coming from the normal range",
-  "docs/concepts/new/rules-at-scale.md, decision 17 (2026-10-31): behaviour over time gets no state model; a hint names the risk where the part is used",
+  "docs/concepts/done/rules-at-scale.md, decision 17 (2026-10-31): behaviour over time gets no state model; a hint names the risk where the part is used",
 ]
 
 [codes."HINT.pd_negotiation"]
@@ -1719,7 +1719,7 @@ sources = [
   "WCH CH224 手册1 (CH224 data sheet, manual 1), V2.1 (PDF of 2025-01-23), table 4-2 p. 3: CH224K CC1, CC2 'Type-C CC 信号线' (the Type-C CC lines), PG 'OD, 默认 Power Good 指示，低电平有效' (open drain, by default the Power Good indication, active low); 6.2 p. 9 CH224K reference schematic: CC1 and CC2 straight to the receptacle, PG left open; the manual gives no timing for PG and does not say what happens when the source does not offer the requested voltage – https://datasheet.lcsc.com/datasheet/pdf/4f12eebccb4eda2c0038806df0155265.pdf?productCode=C970725",
   "USB Type-C Cable and Connector Specification Release 2.0 (August 2019), 4.5.2.2.9.1 p. 177: a source supplies VBUS within tVBUS ON of entering Attached.SRC and does not initiate USB PD communications until VBUS reaches vSafe5V; 4.6.2.4 p. 220: USB PD communication is Bi-phase Mark Coded on the CC wire, VBUS operationally stable before it starts – https://www.usb.org/sites/default/files/USB%20Type-C%20Spec%20R2.0%20-%20August%202019.pdf",
   "edakit handbook 5.1, behaviour pd_sink (sim/netlist.py ic_pd_sink): the VDD shunt; the requested voltage is REQ.value/pd_request's, the charger the project's source",
-  "docs/concepts/new/rules-at-scale.md, decision 17 (2026-10-31): behaviour over time gets no state model; a hint names the risk where the part is used",
+  "docs/concepts/done/rules-at-scale.md, decision 17 (2026-10-31): behaviour over time gets no state model; a hint names the risk where the part is used",
 ]
 
 [codes."HINT.input_polarity"]
@@ -1730,7 +1730,7 @@ fix = "Give it \"source\": \"reversible\" so that PATH.reverse checks what a rev
 severity = "note"
 when = { match = "unmarked_power_input" }
 sources = [
-  "docs/concepts/new/maker-coverage.md, appendix PWR 7 and PWR 32 (tagged extracted)",
+  "docs/concepts/done/maker-coverage.md, appendix PWR 7 and PWR 32 (tagged extracted)",
 ]
 
 [codes."HINT.thermal_copper"]
@@ -1741,7 +1741,7 @@ fix = "The copper and vias of the datasheet's layout under the part, named in th
 severity = "note"
 when = { match = "rated_by_copper" }
 sources = [
-  "docs/concepts/new/maker-coverage.md, appendix PWR 3, PWR 12, MOT 11 (tagged to verify)",
+  "docs/concepts/done/maker-coverage.md, appendix PWR 3, PWR 12, MOT 11 (tagged to verify)",
 ]
 
 [codes."HINT.cable_line"]
@@ -1752,6 +1752,6 @@ fix = "Inputs: a pull-up of 10 kΩ or less, an RC with a Schmitt-trigger input, 
 severity = "note"
 when = { match = "cable_line" }
 sources = [
-  "docs/concepts/new/maker-coverage.md, appendix MOT 31 (Marlin and Voron documentation, read in full)",
+  "docs/concepts/done/maker-coverage.md, appendix MOT 31 (Marlin and Voron documentation, read in full)",
 ]
 

@@ -1,4 +1,4 @@
-"""The catalog – the single source of what edakit checks (concept docs/concepts/new/rules-at-scale.md, section 6).
+"""The catalog – the single source of what edakit checks (concept docs/concepts/done/rules-at-scale.md, section 6).
 
     codes.toml        every code ENGINE.relation: title, rule, why, fix, sources, severity, grades, the old IDs
     tables/*.toml     numbers from standards and manufacturers, each row with its source and tag (r read, x extracted,

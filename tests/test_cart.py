@@ -1,4 +1,4 @@
-"""Ordering step 4 (docs/concepts/new/ordering.md): `edakit cart prepare` writes the job of the skill cart from the
+"""Ordering step 4 (docs/concepts/done/ordering.md): `edakit cart prepare` writes the job of the skill cart from the
 current release, `edakit cart check` holds what the skill brought back – quote.json and the page text – to the job,
 the release and the page (ORDER.form to ORDER.review), `--cart` checks the cart line and writes the order record. On recorded data:
 the example's export of test_fab_run, released, and a quote and page text as the skill would write them."""

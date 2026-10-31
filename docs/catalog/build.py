@@ -6,7 +6,7 @@ before.
     .venv/bin/python docs/catalog/build.py          writes docs/catalog/index.html and docs/catalog/circuits/*.svg
 
 Everything comes from the catalog (edakit/catalog, edakit/domains), tests/reference.py, tests/open_designs/ and
-docs/concepts/new/maker-coverage-status.toml; tests/test_catalog_page.py fails while the files here differ.
+docs/concepts/done/maker-coverage-status.toml; tests/test_catalog_page.py fails while the files here differ.
 """
 
 from __future__ import annotations
@@ -29,7 +29,7 @@ from edakit import catalog, profile  # noqa: E402
 from edakit.schema import kinds  # noqa: E402
 
 OUT = Path(__file__).resolve().parent
-STATUS = ROOT / "docs" / "concepts" / "new" / "maker-coverage-status.toml"
+STATUS = ROOT / "docs" / "concepts" / "done" / "maker-coverage-status.toml"
 OPEN = ROOT / "tests" / "open_designs"
 CIRCUITS = ["led-bar", "motors", "audio", "guitar", "power", "cables", "usb", "keyboard"]
 
@@ -337,7 +337,7 @@ def candidates_section():
     groups.append('<h3>Part facts – the parts library</h3><div class="scroll"><table class="cand"><thead><tr><th>Group</th>'
                   f'<th>Status</th><th>Entries</th><th>Missing</th></tr></thead><tbody>{rows}</tbody></table></div>')
     return ('<section id="candidates"><h2>maker-coverage candidates</h2><p>The candidates of '
-            '<code>docs/concepts/new/maker-coverage.md</code> and what became of them '
+            '<code>docs/concepts/done/maker-coverage.md</code> and what became of them '
             '(<code>maker-coverage-status.toml</code>). Open where a datasheet or standard could not be read, or where '
             'the change was not a contained one.</p><div class="tiles">' + "".join(tiles) + "</div>" + "".join(groups) + "</section>")
 

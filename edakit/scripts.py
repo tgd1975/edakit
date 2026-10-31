@@ -56,7 +56,7 @@ result is the gate's protocol. After an easyeda script ran through edakit run, t
 project-library:<b> – and what is from before it: the parts in the PCB with their geometry, and the routing, until
 edakit pcb dump and edakit route all made them again; a warning until then (open_changes).
 
-The entries resolve when (docs/concepts/new/project-scripts.md, "Checking the TOML", its rules 1 to 9; 10 and 11 are
+The entries resolve when (docs/concepts/done/project-scripts.md, "Checking the TOML", its rules 1 to 9; 10 and 11 are
 about agents, see agents):
   1  kind is input, derive, easyeda or check, the fields of the kind are there, and no field of another kind
   2  every data name is edakit's, with a made board of [boards]; firmware only with [firmware]
@@ -1490,7 +1490,7 @@ def _agent_file(cfg, file):
 
 def agents(cfg) -> Agents:
     """The project's agents ([agents.<name>] of cfg): what keeps their entries from resolving, what they sign, and who
-    reviews at each hook point. The rules (docs/concepts/new/project-scripts.md, "Checking the TOML"):
+    reviews at each hook point. The rules (docs/concepts/done/project-scripts.md, "Checking the TOML"):
       10  file – it exists and is the agent of this name (name in its front matter) –, about, signs and phase export or
           acceptance; with an ID of its own also scope (circuit, layout, fab); with edakit's review neither scope – the
           sign-off file gives it its scope – nor phase acceptance; not the name of an edakit agent

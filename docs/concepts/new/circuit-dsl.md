@@ -614,6 +614,6 @@ A](https://github.com/Systems-Modeling/SysML-v2-Release/blob/master/sysml/src/ex
   `edakit.toml`, `hardware/graph.json`, `sim.json` and `signoff.json` of main and the variants, `src/firmware`,
   `variants/esp32/firmware`; the prototype's round trip run on all four configurations.
 - edakit: handbook 14.5 (the blocks), `edakit/blocks/*.json`, `tests/reference.py`,
-  [maker-coverage.md](maker-coverage.md) (the owner's projects, FT-23, FT-24, the stability of the model),
+  [maker-coverage.md](../done/maker-coverage.md) (the owner's projects, FT-23, FT-24, the stability of the model),
   [circuit-language.md](circuit-language.md) (the sketch, its review and decisions) and
   [circuit-language-plan.md](circuit-language-plan.md).

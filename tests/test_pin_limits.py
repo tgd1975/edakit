@@ -1,8 +1,8 @@
-"""Pin limits of the schema extension (docs/concepts/new/schema-gaps.md, A6, B1–B3, C1–C4): a pin's own relative limit
+"""Pin limits of the schema extension (docs/concepts/done/schema-gaps.md, A6, B1–B3, C1–C4): a pin's own relative limit
 against the supply it names (v_rel_max_v, ref), threshold ratios of that supply, the order of two supplies
-(supply_order), a limit only while powered (v_max_powered_v), a pin's and a group's current (i_max_a, i_group_max_a),
-a pin's own negative limit (v_min_v), the current into a clamp (i_inject_max_a), what an output may drive
-(r_load_min_ohm, c_load_max_f). Each with the circuit the limit catches and the one it lets pass."""
+(supply_order), a limit only while powered (v_max_powered_v), a pin's and a group's current (i_max_a, i_group_max_a), a
+pin's own negative limit (v_min_v), the current into a clamp (i_inject_max_a), what an output may drive (r_load_min_ohm,
+c_load_max_f). Each with the circuit the limit catches and the one it lets pass."""
 
 import json
 import shutil
