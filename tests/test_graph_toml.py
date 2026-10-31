@@ -203,19 +203,18 @@ def test_edakit_check_names_the_line_of_a_broken_toml_graph(project, capsys):
     assert f"{cfg.graph}: Cannot declare ('components', 'R1') twice (at line" in err
 
 
-def test_block_add_on_a_toml_graph_waits_for_its_step(project, capsys):
-    """block add reads a TOML graph and shows what it would add; writing one waits for step L.7."""
+def test_block_add_dry_run_on_a_toml_graph_writes_nothing(project, capsys):
+    """block add reads a TOML graph and shows what it would add; with --dry-run nothing is written (the writing:
+    tests/test_block_toml.py, step L.7)."""
     cfg = to_toml(project)
     before = cfg.graph.read_text(encoding="utf-8")
     _, comps, *_ = block.add(cfg, "led", "STATUS", {"in": "BTN"}, dry_run=True)
     assert [c["designator"] for c in comps] == ["R3", "D10"]
-    with pytest.raises(block.BlockError, match="block add on a TOML graph: step L.7"):
-        block.add(cfg, "led", "STATUS", {"in": "BTN"})
+    assert cli.main(["block", "add", "led", "--as", "STATUS", "--connect", "in=BTN", "--dry-run",
+                     "--config", str(project.root / "edakit.toml")]) == 0
+    assert "would add block led as STATUS:" in capsys.readouterr().out
     assert cfg.graph.read_text(encoding="utf-8") == before
     assert not (project.root / "hardware" / "parts" / "C17471.json").exists()      # no parts entry copied either
-    assert cli.main(["block", "add", "led", "--as", "STATUS", "--connect", "in=BTN",
-                     "--config", str(project.root / "edakit.toml")]) == 1
-    assert "block add on a TOML graph: step L.7" in capsys.readouterr().out
 
 
 def test_convert_has_nothing_to_do_on_a_toml_graph(project, capsys):
