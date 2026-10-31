@@ -1,0 +1,174 @@
+{
+ "lcsc": "C19922",
+ "mpn": "L298N",
+ "manufacturer": "STMicroelectronics",
+ "kind": "ic",
+ "package": "Multiwatt15 V",
+ "footprint": "MULTIWATT-15_L19.6-W5.0-P1.27-L",
+ "jlc_class": "Extended Part",
+ "datasheet": {
+  "url": "https://datasheet.lcsc.com/datasheet/pdf/c23fc6a8cabb45a298a1d3a512b515a9.pdf?productCode=C19922",
+  "pinout_page": 2
+ },
+ "pins": {
+  "1": {
+   "name": "Sense A",
+   "type": "passive",
+   "v_max_v": 2.3,
+   "hint": "emitters of the bridge's lower transistors: sense resistor (not wire-wound) to ground, grounded near the negative pole of VS and the GND pin, or straight to ground; absolute maximum -1 … 2.3 V, steady state ≥ -0.5 V"
+  },
+  "2": {
+   "name": "OUT 1",
+   "type": "output",
+   "drive": "tristate",
+   "hint": "bridge output (bipolar): no internal clamp diodes – an external bridge of fast diodes (trr ≤ 200 ns, VF as low as possible; Schottky preferred) to VS and to GND is required with inductive loads (application information 3); off with its Enable low (free running stop); total drop up to 3.2 V at 1 A, 4.9 V at 2 A"
+  },
+  "3": {
+   "name": "OUT 2",
+   "type": "output",
+   "drive": "tristate",
+   "hint": "bridge output (bipolar): no internal clamp diodes – an external bridge of fast diodes (trr ≤ 200 ns, VF as low as possible; Schottky preferred) to VS and to GND is required with inductive loads (application information 3); off with its Enable low (free running stop); total drop up to 3.2 V at 1 A, 4.9 V at 2 A"
+  },
+  "4": {
+   "name": "VS",
+   "type": "power_in",
+   "v_max_v": 50,
+   "v_op_max_v": 46,
+   "hint": "power stage supply; operating range VIH + 2.5 V … 46 V (electrical characteristics p. 3)",
+   "needs": [
+    {
+     "what": "capacitor",
+     "c_min_f": 1e-07,
+     "source": "ST L298 (January 2000) p. 3 pin functions: 'a non-inductive 100 nF capacitor must be connected between this pin and ground'; application information 2: as near as possible to the GND pin, a second smaller one near the L298 when the supply's large capacitor is far away"
+    }
+   ]
+  },
+  "5": {
+   "name": "Input 1",
+   "type": "input",
+   "v_max_v": 7
+  },
+  "6": {
+   "name": "Enable A",
+   "type": "input",
+   "v_max_v": 7,
+   "hint": "TTL enable, low disables the bridge; drive it low before VS is switched on and before it is switched off (application information 2)"
+  },
+  "7": {
+   "name": "Input 2",
+   "type": "input",
+   "v_max_v": 7
+  },
+  "8": {
+   "name": "GND",
+   "type": "ground",
+   "role": "gnd",
+   "hint": "the tab is connected to pin 8"
+  },
+  "9": {
+   "name": "VSS",
+   "type": "power_in",
+   "role": "vdd",
+   "v_max_v": 7,
+   "hint": "logic supply (named VSS by ST)",
+   "needs": [
+    {
+     "what": "capacitor",
+     "c_min_f": 1e-07,
+     "source": "ST L298 (January 2000) p. 3 pin functions: 'a 100 nF capacitor must be connected between this pin and ground'; application information 2: non-inductive, as near as possible to the GND pin"
+    }
+   ]
+  },
+  "10": {
+   "name": "Input 3",
+   "type": "input",
+   "v_max_v": 7
+  },
+  "11": {
+   "name": "Enable B",
+   "type": "input",
+   "v_max_v": 7,
+   "hint": "TTL enable, low disables the bridge; drive it low before VS is switched on and before it is switched off (application information 2)"
+  },
+  "12": {
+   "name": "Input 4",
+   "type": "input",
+   "v_max_v": 7
+  },
+  "13": {
+   "name": "Out3",
+   "type": "output",
+   "drive": "tristate",
+   "hint": "bridge output (bipolar): no internal clamp diodes – an external bridge of fast diodes (trr ≤ 200 ns, VF as low as possible; Schottky preferred) to VS and to GND is required with inductive loads (application information 3); off with its Enable low (free running stop); total drop up to 3.2 V at 1 A, 4.9 V at 2 A"
+  },
+  "14": {
+   "name": "Out4",
+   "type": "output",
+   "drive": "tristate",
+   "hint": "bridge output (bipolar): no internal clamp diodes – an external bridge of fast diodes (trr ≤ 200 ns, VF as low as possible; Schottky preferred) to VS and to GND is required with inductive loads (application information 3); off with its Enable low (free running stop); total drop up to 3.2 V at 1 A, 4.9 V at 2 A"
+  },
+  "15": {
+   "name": "Sense B",
+   "type": "passive",
+   "v_max_v": 2.3,
+   "hint": "emitters of the bridge's lower transistors: sense resistor (not wire-wound) to ground, grounded near the negative pole of VS and the GND pin, or straight to ground; absolute maximum -1 … 2.3 V, steady state ≥ -0.5 V"
+  }
+ },
+ "values": {
+  "behavior": "none",
+  "vih_v": 2.3,
+  "vil_v": 1.5,
+  "idd_max_a": 0.036
+ },
+ "limits": {
+  "vdd_max_v": 7,
+  "vdd_op_min_v": 4.5,
+  "vdd_op_max_v": 7,
+  "i_out_max_a": 2,
+  "tj_max_c": 130,
+  "rth_ja_k_per_w": 35
+ },
+ "lead": {
+  "*": {
+   "shape": "rect",
+   "a_mm": 0.55,
+   "b_mm": 0.75,
+   "tol_mm": null,
+   "source": "ST L298 (January 2000) p. 10, Multiwatt15 V outline: E (lead thickness) 0.49–0.55 mm, F (lead width) 0.66–0.75 mm – the maximum values; rows staggered M 4.55 / M1 5.08 mm typ, pitch G 1.27 mm; no hole recommendation"
+  }
+ },
+ "sources": [
+  "STMicroelectronics L298 Dual Full-Bridge Driver (January 2000, 13 pages, no revision number printed), copy hosted by LCSC: https://datasheet.lcsc.com/datasheet/pdf/c23fc6a8cabb45a298a1d3a512b515a9.pdf?productCode=C19922, read 2026-10-31; the manufacturer's URL https://www.st.com/resource/en/datasheet/l298.pdf broke off the connection to an automated request (HTTP/2 stream error, empty reply)",
+  "pins: p. 2 pin connections Multiwatt15 (top view) and p. 3 pin functions = EasyEDA symbol of C19922 (edakit part import 2026-10-31); tab connected to pin 8",
+  "absolute maximum p. 2: VS 50 V (VS v_max_v), VSS 7 V (vdd_max_v, VSS v_max_v), VI and Ven -0.3 … 7 V (input v_max_v), IO per channel 3 A non-repetitive (100 µs), 2.5 A repetitive (80 % on, 10 ms), 2 A DC (i_out_max_a), Vsens -1 … 2.3 V (sense v_max_v), Ptot 25 W at Tcase 75 °C, junction operating temperature -25 … 130 °C (tj_max_c 130), storage and junction -40 … 150 °C",
+  "rth_ja_k_per_w 35: p. 2 thermal data, Multiwatt15 Rth j-amb max (Rth j-case 3 °C/W)",
+  "electrical characteristics p. 3 (VS = 42 V, VSS = 5 V, Tj = 25 °C): VS operative VIH + 2.5 … 46 V (VS v_op_max_v), VSS 4.5 / 5 / 7 V (vdd_op_min_v, vdd_op_max_v – VSS carries the role vdd), ViL and Ven = L ≤ 1.5 V, ViH and Ven = H ≥ 2.3 V (vih_v, vil_v), ISS max 36 mA at Ven = H, Vi = L (idd_max_a; IS from VS up to 70 mA), VCEsat(H) 1.7 V and VCEsat(L) 1.6 V max at 1 A, total drop 3.2 V max at 1 A and 4.9 V max at 2 A",
+  "clamp diodes: p. 7 application information 3 – 'an external bridge of diodes are required when inductive loads are driven and when the inputs of the IC are chopped; Schottky diodes would be preferred'; figure 6 D1–D4 fast recovery, trr ≤ 200 ns; figure 8 D1–D8 2 A fast diodes, trr ≤ 200 ns, VF ≤ 1.2 V at 2 A",
+  "capacitors: p. 3 pin functions VS and VSS, 100 nF each to ground; p. 7 application information 2",
+  "LCSC product data C19922 (2026-10-31): ST L298N, MultiwAtt-15, 19 pcs; JLCPCB catalogue 2026-10-31: Extended Part, 34 pcs"
+ ],
+ "notes": "Bipolar dual full bridge, VS up to 46 V, 2 A DC per channel, logic VSS 4.5–7 V. No internal clamp diodes: every output of a bridge that drives a motor, solenoid or relay needs a fast diode to VS and one to GND (four per bridge) – maker-coverage CK-15. Drop up to 3.2 V at 1 A, 1.8–3.2 W per bridge (maker-coverage MOT 1). For higher current outputs may be paralleled, channel 1 with 4 and 2 with 3 (figure 7). Mostly bought as the red 'L298N module' (with diodes, 78M05 regulator and screw terminals) – this entry is the IC; such a module is a part of its own (kind module, from its seller's schematic). No behaviour model for a bridge driver: behavior none. Library draft.",
+ "verified": {
+  "by": "Claude (datasheet check, library draft)",
+  "date": "2026-10-31",
+  "datasheet": "ST L298 (January 2000)",
+  "datasheet_sha256": "54419a0a0fde6f6042f63c8f205f27c2bd59280bcb3bf739dc3978585e579886",
+  "checked": [
+   "Multiwatt15 pin connections p. 2 = EasyEDA symbol of C19922 (1 Sense A, 2 OUT 1, 3 OUT 2, 4 VS, 5 Input 1, 6 Enable A, 7 Input 2, 8 GND, 9 VSS, 10 Input 3, 11 Enable B, 12 Input 4, 13 Out3, 14 Out4, 15 Sense B)",
+   "absolute maximum p. 2: VS 50 V, VSS 7 V, VI/Ven -0.3 … 7 V, IO 3 / 2.5 / 2 A, Vsens -1 … 2.3 V, Top -25 … 130 °C, Tj 150 °C; Rth j-amb 35 °C/W",
+   "electrical p. 3: VS up to 46 V, VSS 4.5 … 7 V, ViL 1.5 V, ViH 2.3 V, ISS 36 mA max, saturation voltages",
+   "no internal clamp diodes – external diode bridge required with inductive loads (p. 7)",
+   "100 nF at VS and at VSS to ground (p. 3)",
+   "p. 10 lead cross-section 0.49–0.55 × 0.66–0.75 mm against the footprint's 1.3 mm holes (diagonal 0.93 mm at maximum); footprint rows 5.08 mm apart = M1 typ"
+  ],
+  "open": [
+   "the missing internal clamp diodes have no field in the schema (maker-coverage CK-15 names 'clamp: none'); REQ.missing (flyback) asks for one diode across a motor – for a bridge the datasheet's four diodes to VS and GND are what is needed, and a single diode across a winding driven both ways would short the bridge",
+   "VS minimum is 'VIH + 2.5 V' – depends on the input high level the circuit applies; v_op_min_v left out (pin hint)",
+   "the output's saturation voltage (total drop 3.2 V at 1 A, 4.9 V at 2 A) has no field – r_out_ohm does not describe a bipolar output (maker-coverage FT-6)",
+   "p_max_w: Ptot 25 W only at Tcase 75 °C (on a heat sink); without one LIM.t holds it through Rth j-amb 35 °C/W",
+   "drive tristate makes a motor net driven only by these outputs an LVL.undefined/open_drain warning – no pin type fits a bridge output",
+   "ViH max is VSS while VI abs max is 7 V regardless of VSS – whether an input may sit above VSS is not stated; vin_rel_max_v left out",
+   "datasheet read from LCSC's copy of the January 2000 edition – ST's current revision could not be fetched"
+  ]
+ }
+}

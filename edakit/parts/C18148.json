@@ -1,0 +1,128 @@
+{
+ "lcsc": "C18148",
+ "mpn": "MAX3485ESA+T",
+ "manufacturer": "ADI(亚德诺)/MAXIM(美信)",
+ "kind": "ic",
+ "package": "SO-8",
+ "footprint": "SOIC-8_L4.9-W3.9-P1.27-LS6.0-BL",
+ "jlc_class": "Extended Part",
+ "datasheet": {
+  "url": "https://datasheet.lcsc.com/datasheet/pdf/39d9414d5b9c0203b54858e576e7c7e7.pdf?productCode=C1545222",
+  "pinout_page": 7
+ },
+ "pins": {
+  "1": {
+   "name": "RO",
+   "type": "output",
+   "v_max_v": 7.3,
+   "drive": "tristate",
+   "hint": "receiver output, high impedance while RE is high (p. 7); high when A − B ≥ 200 mV, low when ≤ −200 mV, high with both inputs open (p. 12); VOH ≥ VCC − 0.4 V at 1.5 mA"
+  },
+  "2": {
+   "name": "RE#",
+   "type": "input",
+   "v_max_v": 7,
+   "hint": "receiver output enable, active low; RE high with DE low enters shutdown (p. 7)"
+  },
+  "3": {
+   "name": "DE",
+   "type": "input",
+   "v_max_v": 7,
+   "hint": "driver output enable, active high (p. 7); no internal pull is stated – a floating DE at reset leaves the bus undefined"
+  },
+  "4": {
+   "name": "DI",
+   "type": "input",
+   "v_max_v": 7,
+   "hint": "driver input (p. 7)"
+  },
+  "5": {
+   "name": "GND",
+   "type": "ground"
+  },
+  "6": {
+   "name": "A",
+   "type": "bidirectional",
+   "role": "a",
+   "v_max_v": 12.5,
+   "drive": "tristate",
+   "z_in_ohm": 12000.0,
+   "hint": "non-inverting receiver input and driver output; bus pin: absolute maximum −7.5 V … +12.5 V; receiver specified for −7 V ≤ VCM ≤ 12 V; input resistance ≥ 12 kΩ (32 transceivers per bus); driver high impedance while DE is low"
+  },
+  "7": {
+   "name": "B",
+   "type": "bidirectional",
+   "role": "b",
+   "v_max_v": 12.5,
+   "drive": "tristate",
+   "z_in_ohm": 12000.0,
+   "hint": "inverting receiver input and driver output; bus pin: absolute maximum −7.5 V … +12.5 V; receiver specified for −7 V ≤ VCM ≤ 12 V; input resistance ≥ 12 kΩ (32 transceivers per bus); driver high impedance while DE is low"
+  },
+  "8": {
+   "name": "VCC",
+   "type": "power_in",
+   "role": "vcc",
+   "v_max_v": 7
+  }
+ },
+ "values": {
+  "idd_max_a": 0.0022,
+  "vih_v": 2.0,
+  "vil_v": 0.8
+ },
+ "limits": {
+  "vdd_max_v": 7,
+  "vdd_op_min_v": 3.0,
+  "vdd_op_max_v": 3.6,
+  "p_max_w": 0.471,
+  "tj_max_c": 160,
+  "t_min_c": -40,
+  "t_max_c": 85
+ },
+ "hints": [
+  "3.3 V part: VCC 3.0–3.6 V (p. 7); the logic inputs DE, RE, DI take up to 7 V ('interoperable with +5V logic', p. 1–2), RO swings to VCC; the MAX485 is the 5 V counterpart with the same pinout",
+  "RS-485 bus: terminate the line at both ends in its characteristic impedance and keep stubs short (Figures 21–22 show 120 Ω at each end); the data sheet names no fail-safe bias for an idle terminated bus – its receiver fail-safe covers open inputs only (p. 14)",
+  "half duplex, up to 10 Mbps, drivers not slew-rate limited (p. 1); RE high and DE low for at least 300 ns enters shutdown, 2 nA typ. (p. 3, p. 5, p. 12)",
+  "driver short-circuit current up to ±250 mA at −7 V / 12 V; thermal shutdown releases the driver outputs (p. 3, p. 14)",
+  "idd_max_a 2.2 mA is the no-load supply current with DE high (p. 3); a driver into a terminated bus draws its load current on top"
+ ],
+ "sources": [
+  "Maxim MAX3483/MAX3485/MAX3486/MAX3488/MAX3490/MAX3491 data sheet 19-0333, Rev 1 (5/19), LCSC's copy for C1545222 (MAX3485ESA+, the same part without tape and reel) https://datasheet.lcsc.com/datasheet/pdf/39d9414d5b9c0203b54858e576e7c7e7.pdf?productCode=C1545222, read 2026-10-31; LCSC's copy for C18148 is Rev 0 (12/94), which lacks the junction temperature",
+  "pin description, p. 7; pin configuration (TOP VIEW), p. 8",
+  "absolute maximum ratings, p. 2: VCC 7 V; RE, DE −0.3 … 7 V; DI −0.3 … 7 V; A, B −7.5 … +12.5 V (driver output and receiver input); RO −0.3 V … VCC + 0.3 V; 8-pin SO 471 mW at TA +70 °C (derate 5.88 mW/°C); MAX34__E__ −40 … +85 °C; junction temperature +160 °C",
+  "pin v_max_v 7.3 on RO: VCC + 0.3 V at the absolute maximum VCC 7 V (computed from p. 2)",
+  "supply range: pin description, p. 7 ('Positive Supply: 3.0V ≤ VCC ≤ 3.6V'); DC characteristics at VCC 3.3 V ±0.3 V",
+  "DC characteristics, p. 2–3: VIH ≥ 2.0 V and VIL ≤ 0.8 V on DE, DI, RE; receiver threshold ±0.2 V for −7 V ≤ VCM ≤ 12 V; RIN ≥ 12 kΩ (z_in_ohm); RO VOH ≥ VCC − 0.4 V at −1.5 mA, VOL ≤ 0.4 V at 2.5 mA; ICC 1.1 mA typ. / 2.2 mA max. with DE = VCC, 0.95 / 1.9 mA with DE = 0 V (no load)",
+  "function tables and applications, p. 12; termination, p. 14",
+  "the selection table of Rev 1 (p. 1) lists the MAX3485 without driver/receiver enable and the MAX3488/MAX3490 as half duplex – it contradicts the pin description (p. 7), the function tables (p. 12) and Rev 0; the entry follows the pin description",
+  "mpn, manufacturer, footprint, jlc_class, pin numbers and names: EasyEDA library data of C18148 via edakit part import, read 2026-10-31",
+  "stock: LCSC 28 918 pcs, JLCPCB assembly 28 918 pcs (2026-10-31)"
+ ],
+ "compliance": {
+  "rohs": true,
+  "source": "LCSC product data C18148 (RoHS certificate), 2026-10-31; the data sheet (p. 2) says only that '+' in the package code indicates RoHS status"
+ },
+ "verified": {
+  "by": "Claude (datasheet check, library draft)",
+  "date": "2026-10-31",
+  "datasheet": "Maxim MAX3483/MAX3485/MAX3486/MAX3488/MAX3490/MAX3491 data sheet 19-0333, Rev 1 (5/19)",
+  "datasheet_sha256": "c66e1349dba066721a0113c9f3c225e636e322bba5b28f3fcaa728c7a5ee40cb",
+  "checked": [
+   "pinout (p. 7–8) = the EasyEDA symbol: 1 RO, 2 RE (RE# there), 3 DE, 4 DI, 5 GND, 6 A, 7 B, 8 VCC",
+   "abs. max VCC 7 V, logic inputs 7 V, A/B −7.5 … +12.5 V, RO VCC + 0.3 V, TJ 160 °C, 471 mW at 70 °C (p. 2)",
+   "VCC 3.0–3.6 V (p. 7); VIH 2.0 V, VIL 0.8 V; RIN ≥ 12 kΩ; ICC ≤ 2.2 mA (p. 2–3)",
+   "RO and driver outputs high impedance when disabled (p. 7, p. 12); 10 Mbps (p. 1)",
+   "termination at both ends, short stubs (p. 14)"
+  ],
+  "open": [
+   "termination (120 Ω at both ends), the bus load (12 kΩ, 32 transceivers), the data rate (10 Mbps) and the receiver threshold (±200 mV): no schema field – in hints and sources, for CK-17",
+   "the negative bus limit (−7.5 V) and the common-mode range (−7 … +12 V) have no pin field; only v_max_v 12.5 is entered",
+   "the 8-pin SO θJA is not in Rev 1 (its package section lists the 14-pin SOIC only)",
+   "no supply capacitor named in the data sheet; the default decoupling requirement stays on",
+   "Rev 1's selection table contradicts its pin description for the MAX3485 (enable pins) – see sources",
+   "analog.com was not reachable: whether ADI has a revision newer than Rev 1 (5/19) was not checked",
+   "no behaviour model: supply and driver currents are not simulated",
+   "drive tristate on A and B makes an RS-485 bus without bias resistors LVL.undefined/open_drain – the owner decides whether that warning is wanted (it is the fail-safe-bias question of CK-17)"
+  ]
+ }
+}

@@ -1,0 +1,134 @@
+{
+ "lcsc": "C52028",
+ "mpn": "MAX31855KASA+T",
+ "manufacturer": "ADI(亚德诺)/MAXIM(美信)",
+ "kind": "ic",
+ "package": "SO-8 (package code S8+4, outline 21-0041)",
+ "footprint": "SO-8_L4.9-W3.9-P1.27-LS5.9-BL",
+ "jlc_class": "Extended Part",
+ "datasheet": {
+  "url": "https://datasheet.lcsc.com/datasheet/pdf/0a9fee41a11c44f871f8f97f9b7633ff.pdf?productCode=C52028",
+  "pinout_page": 7
+ },
+ "pins": {
+  "1": {
+   "name": "GND",
+   "type": "ground"
+  },
+  "2": {
+   "name": "T-",
+   "type": "analog",
+   "v_max_v": 4.3,
+   "hint": "thermocouple input; do not connect to GND (p. 7) – the part references T− internally and detects shorts to GND or VCC",
+   "needs": [
+    {
+     "what": "never_to_ground",
+     "source": "Maxim MAX31855 data sheet 19-5793, Rev 5 (1/15), p. 7, pin description: 'T-: Thermocouple Input. Do not connect to GND.'"
+    }
+   ]
+  },
+  "3": {
+   "name": "T+",
+   "type": "analog",
+   "v_max_v": 4.3,
+   "hint": "thermocouple input; a 10 nF ceramic capacitor across T+ and T− is strongly recommended (p. 11)"
+  },
+  "4": {
+   "name": "VCC",
+   "type": "power_in",
+   "role": "vcc",
+   "v_max_v": 4.0,
+   "needs": [
+    {
+     "what": "capacitor",
+     "c_min_f": 1e-07,
+     "source": "Maxim MAX31855 data sheet 19-5793, Rev 5 (1/15), p. 11 (Noise Considerations: 0.1 µF ceramic bypass close to VCC) and p. 1 (Typical Application Circuit) – 0.1 µF read as the minimum: assumption"
+    }
+   ]
+  },
+  "5": {
+   "name": "SCK",
+   "type": "input",
+   "v_max_v": 4.3
+  },
+  "6": {
+   "name": "CS#",
+   "type": "input",
+   "v_max_v": 4.3
+  },
+  "7": {
+   "name": "SO",
+   "type": "output",
+   "v_max_v": 4.3,
+   "drive": "tristate",
+   "hint": "released while CS is high (CS rise to output disable tTR ≤ 40 ns, p. 4)"
+  },
+  "8": {
+   "name": "DNC",
+   "type": "no_connect",
+   "hint": "do not connect (p. 7)"
+  }
+ },
+ "values": {
+  "idd_max_a": 0.0015,
+  "vih_v": 2.1,
+  "vil_v": 0.8
+ },
+ "limits": {
+  "vdd_max_v": 4.0,
+  "vdd_op_min_v": 3.0,
+  "vdd_op_max_v": 3.6,
+  "vin_rel_max_v": 0.3,
+  "f_max_hz": 5000000.0,
+  "p_max_w": 0.4706,
+  "tj_max_c": 150,
+  "rth_ja_k_per_w": 170,
+  "t_min_c": -40,
+  "t_max_c": 125
+ },
+ "hints": [
+  "3.3 V part: VCC 3.0–3.6 V, absolute maximum 4.0 V, every other pin at most VCC + 0.3 V – a 5 V microcontroller's SCK and CS damage it without level shifting (p. 2)",
+  "T− must never be on GND (p. 7); the MAX6675 is the opposite – its T− must be grounded",
+  "a 10 nF ceramic differential capacitor across T+ and T− is strongly recommended (p. 11, added in Rev 2)",
+  "K-type version (MAX31855K): ±2 °C from −200 °C to +700 °C at TA −20 … +85 °C (p. 3); cold-junction error ±2 °C (−20 … +85 °C) – keep heat sources away from the part, it measures the cold junction at its own die (p. 9, p. 11)",
+  "first valid conversion 200 ms after VCC has risen (tCONV_PU, p. 4); conversion 70 ms typ., 100 ms max."
+ ],
+ "sources": [
+  "Maxim MAX31855 data sheet 19-5793, Rev 5 (1/15), LCSC's copy https://datasheet.lcsc.com/datasheet/pdf/0a9fee41a11c44f871f8f97f9b7633ff.pdf?productCode=C52028, read 2026-10-31 (analog.com could not be reached from here; a newer ADI revision was not checked)",
+  "pin configuration and description, p. 7",
+  "absolute maximum ratings, p. 2: VCC −0.3 … +4.0 V, all other pins −0.3 V … VCC + 0.3 V, 470.6 mW at TA +70 °C (SO, derate 5.9 mW/°C), operating −40 … +125 °C, TJ +150 °C, ESD ±2 kV HBM",
+  "pin v_max_v 4.3 on the signal and thermocouple pins: VCC + 0.3 V at the absolute maximum VCC 4.0 V (computed from p. 2); the bound to the actual supply is vin_rel_max_v 0.3",
+  "package thermal characteristics, p. 2 note 1: θJA 170 °C/W, θJC 40 °C/W (JESD51-7, four-layer board)",
+  "recommended operating conditions, p. 2: VCC 3.0 / 3.3 / 3.6 V, VIL ≤ 0.8 V, VIH ≥ 2.1 V",
+  "DC characteristics, p. 2: ICC 900 µA typ., 1500 µA max.; VOH VCC − 0.4 V and VOL 0.4 V at 1.6 mA; thermocouple input bias current ±100 nA",
+  "serial interface timing, p. 4: fSCL ≤ 5 MHz (f_max_hz), CS rise to output disable tTR ≤ 40 ns – SO released (drive tristate)",
+  "applications information, p. 11: 0.1 µF bypass at VCC; 10 nF across T+/T−",
+  "ordering information, p. 12: MAX31855KASA+T = K type, 8 SO, tape and reel; '+' lead(Pb)-free/RoHS-compliant",
+  "mpn, manufacturer, footprint, jlc_class, pin numbers and names: EasyEDA library data of C52028 via edakit part import, read 2026-10-31",
+  "stock: LCSC 478 pcs, JLCPCB assembly 478 pcs (2026-10-31)"
+ ],
+ "compliance": {
+  "rohs": true,
+  "source": "Maxim MAX31855 data sheet 19-5793, Rev 5 (1/15), p. 12 ('+Denotes a lead(Pb)-free/RoHS-compliant package'); LCSC product data C52028 (RoHS), 2026-10-31"
+ },
+ "verified": {
+  "by": "Claude (datasheet check, library draft)",
+  "date": "2026-10-31",
+  "datasheet": "Maxim MAX31855 data sheet 19-5793, Rev 5 (1/15)",
+  "datasheet_sha256": "0da8c21e66d26950f16b5dee20d09e9aff3b017d5d34156808deccd0ad6567ec",
+  "checked": [
+   "pinout (p. 7) = the EasyEDA symbol: 1 GND, 2 T−, 3 T+, 4 VCC, 5 SCK, 6 CS (CS# there), 7 SO, 8 DNC",
+   "abs. max VCC 4.0 V, other pins VCC + 0.3 V, TJ 150 °C, 470.6 mW at 70 °C; θJA 170 °C/W (p. 2)",
+   "VCC 3.0–3.6 V, VIL 0.8 V, VIH 2.1 V, ICC ≤ 1.5 mA (p. 2)",
+   "fSCL ≤ 5 MHz; SO disabled after CS rises (p. 4)",
+   "T− not to GND (p. 7); 0.1 µF bypass, 10 nF across T+/T− (p. 11)"
+  ],
+  "open": [
+   "the 10 nF capacitor across T+ and T−: pin needs know a capacitor to ground only, not one between two pins",
+   "analog.com was not reachable: whether ADI has a revision newer than Rev 5 (1/15) was not checked",
+   "VIH's upper bound VCC + 0.3 V and the negative bounds (−0.3 V) have no pin field",
+   "no behaviour model: the supply current (≤ 1.5 mA) is not drawn in the simulation",
+   "VCC bypass: 0.1 µF is the named value, read as a minimum"
+  ]
+ }
+}

@@ -58,7 +58,7 @@
   "electrical characteristics (TA 25 °C, VDD 5 V), p. 3: VIH 0.63 VDD … VDD + 0.7 V, VIL −0.3 … 0.7 V on DIN, II ±1 µA",
   "switching characteristics, p. 3: DIN→DOUT transmission delay ≤ 300 ns (CL 15 pF, RL 10 kΩ), CI ≤ 15 pF",
   "LED characteristics, p. 3: quiescent current 0.6 mA (centre value), LED data at 12 mA working current",
-  "pin names, footprint and class: EasyEDA library data of C2874885 via edakit part import, 2026-10-31 – its symbol has pins 1 VDD, 2 DOUT, 3 VSS only",
+  "pin names, footprint and class: EasyEDA library data of C2874885 via edakit part import, 2026-10-31 – its symbol numbers DIN as pin 3 (label 4), import sees 1 VDD, 2 DOUT, 3 VSS; DIN = pin 4 from the data sheet",
   "LCSC product data C2874885 (2026-10-31): 5 195 pcs; no RoHS certificate stated"
  ],
  "verified": {
@@ -71,7 +71,7 @@
    "VDD +3.7 … +5.3 V; VI ≤ VDD + 0.7 V; VIH 0.63 VDD, VIL 0.7 V; Topt −40 … +65 °C"
   ],
   "open": [
-   "the EasyEDA symbol of C2874885 has three pins (1 VDD, 2 DOUT, 3 VSS): DIN, pin 4 – pad 4 of the footprint – is missing, so STRUCT.entry and SYNC.schematic will report it until the symbol is fixed or replaced",
+   "EasyEDA symbol of C2874885 (raw data read 2026-10-31): the DIN pin carries the pin number 3 – the same as VSS – while its label shows 4, so edakit part import sees only 1 VDD, 2 DOUT, 3 VSS and a netlist from that symbol would put DIN on pad 3 (VSS); pad 4 of the footprint stays unconnected – fix or replace the symbol before use",
    "supply range only under 'Absolute Maximum Ratings' (+3.7 … +5.3 V); no recommended operating range given",
    {
     "text": "corner / polarity mark of the footprint's silkscreen against the part's marking",

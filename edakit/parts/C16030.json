@@ -1,0 +1,130 @@
+{
+ "lcsc": "C16030",
+ "mpn": "MAX6675ISA+T",
+ "manufacturer": "ADI(亚德诺)/MAXIM(美信)",
+ "kind": "ic",
+ "package": "SO-8 (package code S8+2, outline 21-0041)",
+ "footprint": "SOIC-8_L5.0-W4.0-P1.27-LS6.0-BL",
+ "jlc_class": "Extended Part",
+ "datasheet": {
+  "url": "https://datasheet.lcsc.com/datasheet/pdf/1e53328622b14a139b92559201dd98e3.pdf?productCode=C16030",
+  "pinout_page": 1
+ },
+ "pins": {
+  "1": {
+   "name": "GND",
+   "type": "ground"
+  },
+  "2": {
+   "name": "T-",
+   "type": "analog",
+   "v_max_v": 6.3,
+   "hint": "alumel lead of the type-K thermocouple; connect to ground externally, as close to the GND pin as possible – the open-thermocouple detection needs it (p. 4, p. 5)",
+   "needs": [
+    {
+     "what": "to_ground",
+     "source": "Maxim MAX6675 data sheet 19-2235, Rev 2 (4/14), p. 4 (pin description: 'Should be connected to ground externally') and p. 5 (Open Thermocouple: 'T- must be grounded')"
+    }
+   ]
+  },
+  "3": {
+   "name": "T+",
+   "type": "analog",
+   "v_max_v": 6.3,
+   "z_in_ohm": 60000.0,
+   "hint": "chromel lead of the type-K thermocouple"
+  },
+  "4": {
+   "name": "VCC",
+   "type": "power_in",
+   "role": "vcc",
+   "v_max_v": 6,
+   "needs": [
+    {
+     "what": "capacitor",
+     "c_min_f": 1e-07,
+     "source": "Maxim MAX6675 data sheet 19-2235, Rev 2 (4/14), p. 4 (pin description: 'Bypass with a 0.1µF capacitor to GND') and p. 5 (Noise Considerations) – 0.1 µF read as the minimum: assumption"
+    }
+   ]
+  },
+  "5": {
+   "name": "SCK",
+   "type": "input",
+   "v_max_v": 6.3
+  },
+  "6": {
+   "name": "CS#",
+   "type": "input",
+   "v_max_v": 6.3,
+   "hint": "CS low stops a running conversion; CS high starts a new one (p. 5)"
+  },
+  "7": {
+   "name": "SO",
+   "type": "output",
+   "v_max_v": 6.3,
+   "drive": "tristate",
+   "hint": "released while CS is high (CS rise to output disable tTR ≤ 100 ns, p. 3); bit D0 is three-state (p. 5)"
+  },
+  "8": {
+   "name": "N.C.",
+   "type": "no_connect",
+   "hint": "no connection (p. 4)"
+  }
+ },
+ "values": {
+  "idd_max_a": 0.0015,
+  "vih_ratio": 0.7,
+  "vil_ratio": 0.3
+ },
+ "limits": {
+  "vdd_max_v": 6,
+  "vdd_op_min_v": 3.0,
+  "vdd_op_max_v": 5.5,
+  "vin_rel_max_v": 0.3,
+  "f_max_hz": 4300000.0,
+  "p_max_w": 0.471,
+  "tj_max_c": 150,
+  "t_min_c": -20,
+  "t_max_c": 85
+ },
+ "hints": [
+  "T− must be grounded (p. 4, p. 5); the MAX31855 is the opposite – its T− must never be on GND",
+  "type K only, 0 … +1023.75 °C, 12 bit, 0.25 °C; cold junction (the board at the part) only −20 … +85 °C (p. 1, p. 4); keep heat sources away from the part (p. 4)",
+  "VCC 3.0–5.5 V: runs from 3.3 V or 5 V (p. 2); conversion time 0.17 s typ., 0.22 s max. – reading more often than that returns the old value (CS low stops the conversion, p. 5)"
+ ],
+ "sources": [
+  "Maxim MAX6675 data sheet 19-2235, Rev 2 (4/14), LCSC's copy https://datasheet.lcsc.com/datasheet/pdf/1e53328622b14a139b92559201dd98e3.pdf?productCode=C16030, read 2026-10-31 (analog.com could not be reached from here; a newer ADI revision was not checked)",
+  "pin configuration, p. 1; pin description, p. 4",
+  "absolute maximum ratings, p. 2: VCC −0.3 … +6 V; SO, SCK, CS, T−, T+ −0.3 V … VCC + 0.3 V; SO current 50 mA; 471 mW at TA +70 °C (8-pin SO, derate 5.88 mW/°C); operating −20 … +85 °C; TJ +150 °C; ESD ±2000 V HBM",
+  "pin v_max_v 6.3 on the signal and thermocouple pins: VCC + 0.3 V at the absolute maximum VCC 6 V (computed from p. 2); the bound to the actual supply is vin_rel_max_v 0.3",
+  "electrical characteristics, p. 2: VCC 3.0–5.5 V, ICC 0.7 mA typ., 1.5 mA max., VIL ≤ 0.3 × VCC, VIH ≥ 0.7 × VCC, thermocouple input impedance 60 kΩ typ. (z_in_ohm on T+), conversion 0.17 s typ. / 0.22 s max.",
+  "p. 3: VOH VCC − 0.4 V, VOL 0.4 V at 1.6 mA; fSCL ≤ 4.3 MHz (f_max_hz); CSB rise to output disable ≤ 100 ns – SO released (drive tristate)",
+  "applications information, p. 5: T− grounded for open-thermocouple detection; 0.1 µF bypass",
+  "mpn, manufacturer, footprint, jlc_class, pin numbers and names: EasyEDA library data of C16030 via edakit part import, read 2026-10-31",
+  "stock: LCSC 18 942 pcs, JLCPCB assembly 21 572 pcs (2026-10-31)"
+ ],
+ "compliance": {
+  "rohs": true,
+  "source": "LCSC product data C16030 (RoHS certificate), 2026-10-31; the data sheet (p. 7) says only that '+' in the package code indicates RoHS status"
+ },
+ "verified": {
+  "by": "Claude (datasheet check, library draft)",
+  "date": "2026-10-31",
+  "datasheet": "Maxim MAX6675 data sheet 19-2235, Rev 2 (4/14)",
+  "datasheet_sha256": "a207b522bfcff5da0a85677b5b16b9d9dfc71d255801a2e31bcf7a30ea05539b",
+  "checked": [
+   "pinout (p. 1, p. 4) = the EasyEDA symbol: 1 GND, 2 T−, 3 T+, 4 VCC, 5 SCK, 6 CS (CS# there), 7 SO, 8 N.C.",
+   "abs. max VCC 6 V, pins VCC + 0.3 V, SO 50 mA, TJ 150 °C, 471 mW at 70 °C, TA −20 … +85 °C (p. 2)",
+   "VCC 3.0–5.5 V, ICC ≤ 1.5 mA, VIL 0.3 VCC, VIH 0.7 VCC (p. 2); fSCL ≤ 4.3 MHz (p. 3)",
+   "T− to ground (p. 4, p. 5); 0.1 µF bypass (p. 4)"
+  ],
+  "open": [
+   "the data sheet gives no θJA: the derating of 5.88 mW/°C would correspond to 170 °C/W, not entered",
+   "the data sheet text does not print the ordering code MAX6675ISA+T (ordering table: MAX6675ISA, −20 … +85 °C, 8 SO); package and pinout compared instead",
+   "SO current 50 mA (absolute maximum): no per-pin current field",
+   "analog.com was not reachable: whether ADI has a revision newer than Rev 2 (4/14) was not checked",
+   "no behaviour model: the supply current (≤ 1.5 mA) is not drawn in the simulation",
+   "VCC bypass: 0.1 µF is the named value, read as a minimum"
+  ]
+ }
+}
