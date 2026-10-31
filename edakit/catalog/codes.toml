@@ -263,10 +263,11 @@ sources = [
 
 [codes."LIM.range"]
 title = "supplied inside the operating range"
-rule = "Every part with an operating range – vdd_op_min_v … vdd_op_max_v, a pin's v_op, vin_min_v of a regulator, module or MCU, a relay's must-operate and must-release voltage, a driver output's knee – is supplied inside it in every scenario, measured at its own ground pin, and an MCU's supply never falls below its minimum again once it has reached it (transient runs)."
-why = "A circuit can stay within every rating and still not work: a regulator without headroom at the low end of the USB voltage, a 5 V-only IC behind a 3.3 V rail, a reset whenever the supply changes."
-fix = "Supply the part from a rail inside its range, choose a part whose range fits the rail, or bridge the gap (bulk capacitance, a path that conducts before the other lets go)."
+rule = "Every part with an operating range – vdd_op_min_v … vdd_op_max_v, a pin's v_op, vin_min_v of a regulator, module or MCU, a relay's must-operate and must-release voltage, a driver output's knee – is supplied inside it in every scenario, measured at its own ground pin, and an MCU's supply never falls below its minimum again once it has reached it (transient runs). An op-amp's inputs stay inside its common-mode range (vicm_v) and its outputs inside their swing (vout_swing_v) unless it is a comparator – grade opamp."
+why = "A circuit can stay within every rating and still not work: a regulator without headroom at the low end of the USB voltage, a 5 V-only IC behind a 3.3 V rail, a reset whenever the supply changes, an LM358 at 5 V whose output cannot rise above about 3.5 V or whose inputs leave their common-mode range."
+fix = "Supply the part from a rail inside its range, choose a part whose range fits the rail, or bridge the gap (bulk capacitance, a path that conducts before the other lets go). For an op-amp: bias the stage inside its ranges, a rail-to-rail part, or a higher supply."
 severity = "error"
+grades = { opamp = "warning" }
 replaces = ["E-3", "E-5"]
 sources = [
   "edakit handbook 5.3",

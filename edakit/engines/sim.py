@@ -50,24 +50,24 @@ class Scene:
         self.qs, self.rows, self.found = [], [], []
 
     def q(self, place, name, value, unit, kind="", des=None, how="", lo=None, code="", lims=(), color="",
-          entry=True, report=False):
+          entry=True, report=False, grade=""):
         """A quantity; its limits from the entry of `des` (by name, derated by kind) unless `entry` is False; with
         `report` a row of information where it has no limit."""
         key = self.n.entry_key(des) if des and entry and des in self.n.comps else None
         dim = DIM.get(name) or DERATE.get(name, {}).get(kind)
         q = Quantity(place, name, value, unit=unit, stage="E", lo=lo, how=how or name, kind=kind, entry=key,
-                     scenario=self.name, code=code, on=(("component", des),) if des in self.n.comps else (),
+                     scenario=self.name, code=code, grade=grade, on=(("component", des),) if des in self.n.comps else (),
                      limits=list(lims), color=color, derate=self.der.get(dim, 1.0) if dim else 1.0)
         q.report = report
         self.qs.append(q)
 
-    def check(self, code, place, what, actual, expected, ok, unit="", source=""):
+    def check(self, code, place, what, actual, expected, ok, unit="", source="", grade="", on=()):
         """A state the scenario expects: a row, and where it is not reached a finding."""
         self.rows.append({"id": code, "scenario": self.name, "item": place, "check": what,
                           "actual": fmt(actual, unit), "expected": expected, "result": "pass" if ok else "fail"})
         if not ok:
             self.found.append(Finding(code, "E", place, f"{what}: {fmt(actual, unit)}, expected {expected}", source,
-                                      scenario=self.name))
+                                      scenario=self.name, grade=grade, on=on))
 
     def plugin_add(self, cid, item, what, actual, expected, ok, severity=None, unit=""):
         """The `add` a project's simulation plugin calls: its rows are SIM.state unless it names a code."""
@@ -102,7 +102,8 @@ class Scene:
                                  "expected": expected, "result": "pass" if ok else "fail"})
                     if not ok:
                         found.append(Finding(code, "E", q.place, f"{q.how}: {actual}, expected {expected}", lim.source,
-                                             scenario=self.name, on=q.on, data={"value": [lo, hi], "unit": q.unit}))
+                                             scenario=self.name, on=q.on, grade=q.grade,
+                                             data={"value": [lo, hi], "unit": q.unit}))
                     continue
                 for ok, what, allowed, value, bound in sides:
                     if len(sides) == 1:
@@ -111,7 +112,7 @@ class Scene:
                                      "result": "pass" if ok else "fail"})
                     if not ok:
                         found.append(Finding(code, "E", q.place, f"{what}, allowed {allowed}", lim.source,
-                                             scenario=self.name, on=q.on,
+                                             scenario=self.name, on=q.on, grade=q.grade,
                                              data={"value": value, "limit": bound, "unit": q.unit}))
         rows += self.rows
         found += self.found
@@ -411,6 +412,7 @@ def function(s, load, low=None, plugin=None):
                     lims=[Limit(max=r.get("vin_max_v"), min=r.get("vin_min_v"),
                                 source=f"vin_min_v … vin_max_v of {s.n.entry_key(des)}")])
     operating_range(s)
+    opamps(s)
     logic_levels(s)
     leds(s, load)
     for des in s.sim.get("expect_blocking", []):
@@ -456,6 +458,36 @@ def operating_range(s):
             s.q(des, "v_op", x, "V", "", des, f"supply voltage at {part['pins'][num].get('name', num)} inside its "
                                               "operating range", lo=x, code="LIM.range", entry=False,
                 lims=[Limit(max=hi, min=lo, source=f"operating range of {s.n.entry_key(des)}")])
+
+
+def opamps(s):
+    """LIM.range/opamp: every input of an op-amp (behaviour opamp) inside its common-mode range – vicm_v [above vee,
+    from vcc] –, and every output inside its swing: an output held at the limit of vout_swing_v while its inputs stand
+    apart has left the linear range (a comparator, values comparator: true, is meant to)."""
+    res = s.res
+    for des, oa in sorted((s.meta.get("opamps") or {}).items()):
+        p, key = oa["values"], s.n.entry_key(des)
+        vcc, vee = v(res, oa["vcc"]), v(res, oa["vee"])
+        for ch, n in sorted(oa["channels"].items()):
+            if p.get("vicm_v"):
+                lo_off, hi_off = p["vicm_v"][:2]
+                for k in ("in_p", "in_n"):
+                    x = v(res, n[k])
+                    s.q(des, "vicm", x, "V", "", des, f"input {k}{'_' + ch if ch else ''} inside the common-mode range",
+                        lo=x, code="LIM.range", entry=False, grade="opamp",
+                        lims=[Limit(min=round(vee + lo_off, 6), max=round(vcc + hi_off, 6),
+                                    source=f"vicm_v of {key}, from the rails {vee:.3g} V and {vcc:.3g} V")])
+            if p.get("comparator"):
+                continue
+            lo, hi = (p.get("vout_swing_v") or [0, 0])[:2]
+            low, high = vee + lo, vcc + hi
+            target = netlist.A_OL * (v(res, n["in_p"]) - v(res, n["in_n"]))
+            out = v(res, n["out"])
+            clipped = target > high + 1e-3 or target < low - 1e-3
+            s.check("LIM.range", des, f"output {'out_' + ch if ch else 'out'} linear, inside its swing",
+                    f"{out:.4g} V – held at the limit, inputs {abs(target) / netlist.A_OL * 1e3:.3g} mV apart"
+                    if clipped else f"{out:.4g} V", f"{low:.4g} … {high:.4g} V (vout_swing_v of {key})", not clipped,
+                    grade="opamp", on=(("component", des),))
 
 
 def logic_levels(s):

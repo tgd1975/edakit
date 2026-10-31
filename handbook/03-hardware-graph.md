@@ -143,8 +143,8 @@ Every part's dissipation stays within the derated p_max_w of its entry.
 **`LIM.t`** – temperature within its limit (error; replaces E-2, E-3)  
 Every part whose entry gives rth_ja_k_per_w stays at or below its junction limit (its tj_max_c, at most the criteria's) at the ambient of sim.json, and on a board people touch (touch_c) at or below the touch limit.
 
-**`LIM.range`** – supplied inside the operating range (error; replaces E-3, E-5)  
-Every part with an operating range – vdd_op_min_v … vdd_op_max_v, a pin's v_op, vin_min_v of a regulator, module or MCU, a relay's must-operate and must-release voltage, a driver output's knee – is supplied inside it in every scenario, measured at its own ground pin, and an MCU's supply never falls below its minimum again once it has reached it (transient runs).
+**`LIM.range`** – supplied inside the operating range (error, opamp: warning; replaces E-3, E-5)  
+Every part with an operating range – vdd_op_min_v … vdd_op_max_v, a pin's v_op, vin_min_v of a regulator, module or MCU, a relay's must-operate and must-release voltage, a driver output's knee – is supplied inside it in every scenario, measured at its own ground pin, and an MCU's supply never falls below its minimum again once it has reached it (transient runs). An op-amp's inputs stay inside its common-mode range (vicm_v) and its outputs inside their swing (vout_swing_v) unless it is a comparator – grade opamp.
 
 **`LIM.declared`** – net inside its declared range (error; replaces E-3)  
 Every net's simulated voltage lies inside its declared range v (± the criteria's net_range_tol_v).

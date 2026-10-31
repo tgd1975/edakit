@@ -31,6 +31,12 @@ ICs and modules are replaced by behaviour models, chosen by values.behavior in t
   cc_sink   constant-current LED driver (TLC5916, STP08CP05 …): roles rext, out (or out0 … outN), vdd, oe_n; R-EXT held at vrext_v,
             each enabled output sinks iout_gain x I(R-EXT) with a soft knee; pins of type output (the serial data
             output SDO of a daisy chain) low through 50 ohm, as in logic
+  opamp     roles vcc, vee (or gnd; none: ground), per channel in_p, in_n, out – with a suffix for several channels
+            (in_p_a, in_n_a, out_a, in_p_b …): the output follows A_OL x (V(in_p) - V(in_n)), limited (smooth over
+            KNEE_V) to the rails plus vout_swing_v [above vee, from vcc] (none: rail to rail), behind r_out_ohm;
+            iq_a from vcc to vee. The output's own current comes from ground, not from vcc – drawn from the rail it kept
+            the operating point from converging –, so a source's current misses what op-amp outputs source. The inputs
+            draw nothing. vicm_v [above vee, from vcc] is the input common-mode range LIM.range holds (engines/sim.py)
   logic     icc_a at the supply pin, outputs low through 50 ohm
   current   constant i_a at the supply pin
   none      nothing (e.g. a module that is not powered in this design)
@@ -60,6 +66,9 @@ BRIDGE_OHM = 0.05   # a 0 Ω bridge without r_max_ohm: the usual maximum of thic
 UVLO_V = 0.2        # undervoltage lockout: a regulator's output falls to 0 over this much below its vin_min
 DEAD_RAIL_V = 0.5   # a constant-current load falls to 0 below this voltage across it
 I_CORE_A = 0.03     # an MCU's core current without values i_core_a
+A_OL = 1e4          # an op-amp's open-loop gain in the model: a follower within 0.3 mV; 1e5 does not converge everywhere
+KNEE_V = 0.01       # the smooth min/max of the op-amp's limits: within 10 mV of a limit it bends, linear below
+OPAMP_ROLE = re.compile(r"^(in_p|in_n|out)(_[a-z0-9]+)?$")
 
 
 def core_current(des, p, least=False):
@@ -72,6 +81,12 @@ def core_current(des, p, least=False):
     if not all(isinstance(x, (int, float)) and not isinstance(x, bool) for x in (low, high)) or not 0 <= low <= high:
         raise ValueError(f"{des}: i_core_min_a {low!r} – the least current, a number from 0 to i_core_a ({high} A)")
     return low if least else high
+
+
+def smooth(fn, a, b, w=KNEE_V):
+    """min or max of two ngspice expressions, smooth over w: (a + b ∓ sqrt((a − b)² + w²)) / 2."""
+    sign = "-" if fn is min else "+"
+    return f"(({a})+({b}){sign}sqrt((({a})-({b}))**2+{w * w:g}))/2"
 
 
 def pwl(points):
@@ -371,7 +386,7 @@ class Netlist:
             fn = self.plugin_models.get(behavior) or getattr(self, f"ic_{behavior}", None)
             if fn is None:
                 raise ValueError(f"{des}: unknown behaviour model '{behavior}' (built in: ldo, buck, boost, mcu, cc_sink,"
-                                 " logic, current, none; or a plugin model)")
+                                 " opamp, logic, current, none; or a plugin model)")
             fn(self, des, part) if behavior in self.plugin_models else fn(des, part)
 
     # --- behaviour models -----------------------------------------------------------------------------------------
@@ -491,6 +506,34 @@ class Netlist:
                 self.add(f"R_{des}_{num} {self.pn(f'{des}.{num}')} 0 50")
         self.meta["cc"][des] = {"rext_src": f"v_{des.lower()}_rext#branch", "vdd": vdd, "channels": chans,
                                 "values": p, "limits": limits(part)}
+
+    def ic_opamp(self, des, part):
+        p = values(part)
+        vcc = self.rn(des, "vcc", True)
+        vee = self.rn(des, "vee") or self.rn(des, "gnd") or "0"
+        lo, hi = (p.get("vout_swing_v") or [0, 0])[:2]
+        chans = {}
+        for role, ref in self.role_pins(des).items():
+            m = OPAMP_ROLE.match(role)
+            if m:
+                chans.setdefault((m.group(2) or "")[1:], {})[m.group(1)] = self.pn(ref)
+        tag = des.lower()
+        for ch, n in sorted(chans.items()):
+            if not {"in_p", "in_n", "out"} <= set(n):
+                raise ValueError(f"{des}: channel {ch or '–'} needs the roles in_p, in_n and out")
+            x = f"x_{tag}_{ch or 'o'}"
+            ideal = f"{A_OL}*(V({n['in_p']})-V({n['in_n']}))"
+            top = smooth(min, ideal, f"V({vcc})+{hi}")       # a hard min/max does not converge
+            self.add(f"B_{des}_O{ch} {x}s 0 V = {smooth(max, top, f'V({vee})+{lo}')}")
+            self.add(f"V_{des}_A{ch} {x}s {x} 0")
+            self.add(f"R_{des}_R{ch} {x} {n['out']} {p.get('r_out_ohm', 50)}", des, "opamp_out", (x, n["out"]),
+                     p.get("r_out_ohm", 50))
+            for k in ("in_p", "in_n"):
+                self.add(f"R_{des}_{k}{ch} {n[k]} 0 1e12")
+            chans[ch] = {**n, "ammeter": f"v_{tag}_a{ch}#branch".lower()}
+        if p.get("iq_a"):
+            self.current_load(f"{des}_IQ", vcc, vee, p["iq_a"])
+        self.meta.setdefault("opamps", {})[des] = {"vcc": vcc, "vee": vee, "channels": chans, "values": p}
 
     def ic_logic(self, des, part):
         for num, info in part["pins"].items():
