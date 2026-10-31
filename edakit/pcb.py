@@ -1658,14 +1658,19 @@ def write_back(cfg, board, comps, auto, write=True):
 
 # --- EasyEDA ------------------------------------------------------------------------------------------------------
 
+HOLE_UNIT_MIL = 10   # getAllPinsByPrimitiveId: "hole" in 10 mil, x, y and "pad" in mil (a 1.1 mm hole is 4.331)
+
+
 def pad_hole(p):
-    """{"hole": [w, l] mm, "plated"} of a pin whose hole the API gives in mil – ["ROUND", d] or ["SLOT", d, length]
-    (a length below the diameter follows it) – or {} for an SMD pad."""
+    """{"hole": [w, l] mm, "plated"} of a pin whose hole getAllPinsByPrimitiveId gives in 10 mil – ["ROUND", d] or
+    ["SLOT", d, length] (a length below the diameter follows it) – or {} for an SMD pad. Its state's "Hole", which
+    route and the fab check read, is in mil; this field is not (EasyEDA Pro 3.2.206: a 1.1 mm hole as 4.331, a 1.3 mm
+    one as 5.1182 – read as mil, every hole of a dump was ten times too small)."""
     h = p.get("hole")
     if not h:
         return {}
-    w = h[1] / MIL_PER_MM
-    length = max(w, (h[2] if len(h) > 2 else h[1]) / MIL_PER_MM)
+    w = h[1] * HOLE_UNIT_MIL / MIL_PER_MM
+    length = max(w, (h[2] if len(h) > 2 else h[1]) * HOLE_UNIT_MIL / MIL_PER_MM)
     return {"hole": [round(w, 3), round(length, 3)], "plated": bool(p.get("metallization", True))}
 
 

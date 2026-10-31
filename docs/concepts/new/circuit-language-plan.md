@@ -137,6 +137,6 @@ would have needed; from L.3 on it is the TOML form.
 
 ## Not in this plan
 
-The language itself (deferred, the concept's review says what it would need); a net in fragments (decision 7); an
-alias per pin (6); variants as differences (5); converting the reference circuits of the tests and the evals to TOML
-– only where a test needs it.
+The language itself (deferred; what it would need, on which basis and when: [circuit-dsl.md](circuit-dsl.md)); a
+net in fragments (decision 7); an alias per pin (6); variants as differences (5); converting the reference circuits
+of the tests and the evals to TOML – only where a test needs it.
