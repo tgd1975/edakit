@@ -548,6 +548,9 @@ with a nicer syntax, so it is a second format for the same data. It would be wor
    editors, a formatter, line-exact errors, one reader every tool uses and one writer for everything that writes the
    graph.
 
+Thought further on the owner's request in [circuit-dsl.md](circuit-dsl.md): whether a fitting language exists
+already, what one of edakit's own would have to be able to do, on which basis, and when.
+
 ## Decisions
 
 Taken on 2026-10-31 in a decision round after the review. "Accepted" is the owner's yes to the recommendation;
