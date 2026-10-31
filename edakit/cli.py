@@ -35,7 +35,8 @@
                                      and gate run the outdated input scripts they read first (--no-scripts: none)
     edakit handover                  what the circuit hands over to the layout: state, sign-offs, layout requirements
     edakit schematic create|check|copy|layout
-    edakit schematic draw            the schematic as SVG from graph and parts database – no EasyEDA (offline)
+    edakit schematic draw            the schematic as SVG from graph and parts database – no EasyEDA (offline);
+                                     labels, or wired through by style in the schematic file
     edakit pcb dump|plan|place|parts|nets|apply|tooling|pour|autolayout|takeover
     edakit route all|read|dsn|route|check|apply|verify|pours|reload|drc|save
     edakit route diagnose [--net N]  why each open connection is open: walled in, blocked, or a free way (offline)

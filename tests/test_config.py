@@ -592,3 +592,22 @@ def test_wired_key(tmp_path):
     with pytest.raises(ConfigError, match=r"hardware/boards/panel.toml: a hand-wired board \(wired = true in "
                                           r"\[boards.panel\]\) has no board file"):
         load(toml)
+
+
+def test_schematic_style_is_a_word_or_a_table_by_board(tmp_path):
+    """style of the schematic file: labels, wires or mixed – for every board, or by board; labels without it."""
+    (tmp_path / "edakit.toml").write_text('[project]\nname = "t"\n[boards.main]\n[boards.panel]\nwired = true\n')
+    schematic = tmp_path / "hardware" / "schematic.toml"
+    schematic.parent.mkdir(parents=True)
+    schematic.write_text('style = "wires"\n')
+    assert load(tmp_path / "edakit.toml").schematic["style"] == "wires"
+    schematic.write_text('style = {panel = "wires", main = "mixed"}\n')
+    assert load(tmp_path / "edakit.toml").schematic["style"] == {"panel": "wires", "main": "mixed"}
+    schematic.write_text('style = {pannel = "wires", main = "fritzing"}\n')
+    with pytest.raises(ConfigError) as e:
+        load(tmp_path / "edakit.toml")
+    assert "hardware/schematic.toml: style.pannel: no such board in [boards]" in str(e.value)
+    assert "hardware/schematic.toml: style.main = 'fritzing' – one of labels, wires, mixed" in str(e.value)
+    schematic.write_text('style = "wire"\n')
+    with pytest.raises(ConfigError, match="style = 'wire' – one of labels, wires, mixed"):
+        load(tmp_path / "edakit.toml")

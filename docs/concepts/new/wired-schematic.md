@@ -10,7 +10,8 @@ prototype that draws every project at hand this way and measures what it costs
 `b15a3ac` – L.1 to L.8 of circuit-language-plan built since (pins by name or role, the pin map from the parts entry,
 the graph as TOML), the drawing code unchanged, the measures the same. Built so far: W.1, the frame of the SVG
 optional, which the owner asked for on the side – merged into main the same day; W.5, the board's print per pin
-(`print` in the parts entry, `PD2 (D2)` in the drawing), the same day.
+(`print` in the parts entry, `PD2 (D2)` in the drawing), the same day; W.2, the wired style, on the branch `wired-w2`
+the same day (the measures of the build below the table of what to build).
 
 ## The short answer
 
@@ -175,8 +176,20 @@ skill asks –, labels without the key; the interview of new-project asks for it
 | W.5 | **Pin names as the board prints them.** A key per pin of a module's parts entry – `"print": "D2"` – that the drawing writes beside the symbol's name, nowhere else; the Nano's and the Pico's entries get them from their pinout pages; `edakit part lint` holds the key to the schema. | `catalog/kinds.toml`, `schematic_draw.box`, the entries, handbook 4.1 | 50 lines plus the data |
 
 Order: W.1 is done; W.2 and W.3 together give the owner the drawing, W.4 follows them; W.5 is independent and small.
-Not built, by decision: the style in EasyEDA's board schematic and the KiCad schematic (1), a breadboard or
-perfboard view (5), an export to Fritzing (6).
+
+**W.2 as built** (2026-10-31). `style` in the schematic file, one word or a table by board; the leads, the frames,
+titles and notes left out and the doubled gaps in `schematic_layout.Layout` behind its set `wired`; the router in
+`schematic_draw` on flat arrays, joining a piece in the middle of a jog trimmed back so that no lead hangs loose; a
+net it cannot join, or one with a single pin on the board, named at its pieces; `schematic draw --board` draws a
+hand-wired board, a bought one stays refused. Measured with the build, every board without a conflict (crossings
+wires through / mixed, seconds wires through): the bell 4 / 2, 1.0 s; the LED bar 13 / 8, 1 s; the logic level
+converter 16 / 11; the boost pedal 1, its hand-wired board 1; the ESP32 DevKitC 300 / 32, 9 s (4 nets it cannot join,
+named); the Corne v3 236 / 165, 17 s; the Corne 230 / 77, 36 s; the TS/Rat pedal 43 / 46, 14 s. The pages are smaller
+than the labelled ones (the bell 206 x 195 mm against 254 x 272). Left for W.3: a rail stays only where two pieces of
+its net end on it, and the router joins the smallest piece to the nearest first – the TS/Rat pedal keeps all three
+rails, the DevKitC three of four, the bell, the LED bar and the level converter run their ground as wires between the
+parts; the blocks' notes and the pin table are not drawn wired through. Not built, by decision: the style in
+EasyEDA's board schematic and the KiCad schematic (1), a breadboard or perfboard view (5), an export to Fritzing (6).
 
 ## Costs and risks
 

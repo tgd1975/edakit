@@ -22,12 +22,30 @@ drawing is checked like a plan for EasyEDA – no wire touches another net or a 
 must end in a wire or flag of its own net; --force writes anyway. The page is as big as the drawing plus the title
 block.
 
+`style` in the schematic file chooses the drawing per board (labels without the key):
+
+  - "labels": the above – labelled stubs between the blocks, flags for ground and the supplies;
+  - "wires": every connection a wire from pin to pin, as the maker scene draws it (Fritzing's schematic view): a pin
+    without a child gets a lead of one grid cell, no flag; the blocks stand twice as far apart, without frames, titles
+    and notes – the gaps are the channels; a module shows every pin, the unused ones grey. A router on the grid
+    (10 units a cell) joins every net – ground along a rail below the drawing, the supplies along rails above, the rest
+    by the cheapest path (a step 1, a bend 4, crossing another net 12, running beside one 1; never through a part,
+    along another net's wire or through its ends, bends, junctions or pin tips) – and every net gets a colour, ground
+    black, supplies red, neighbours different where ten colours allow it. A net the router cannot join is named at
+    its pieces, as in the labelled drawing;
+  - "mixed": as "wires", but a net stays a labelled stub when nothing but modules, ICs and connectors hang on it (a
+    pin passed through to a header, a bus line) or when it has BUS_PINS pins or more (a key matrix, a shared line).
+
+The check then tells a crossing – two nets' wires meeting inside both, no dot – from a T, which is a short, and
+refuses a crossing at a junction, a bend or a pin tip, a junction of four branches and a net crossing itself.
+
 Units as in schematic_layout: 10 mil (EasyEDA's schematic unit), y up, grid 10. The SVG is to scale: its width and
 height are given in millimetres.
 """
 
 from __future__ import annotations
 
+import heapq
 import math
 import sys
 import textwrap
@@ -39,8 +57,8 @@ from . import engines
 from .engines.hint import MATCHERS
 from .circuit import supply_nets
 from .design import Design, natural_key
-from .schematic_layout import (TITLE_BLOCK, Drawing, Layout, block_notes, box_union, check_geometry, layout_config,
-                               merge_wires, on_segment, rot)
+from .schematic_layout import (GRID, TITLE_BLOCK, Drawing, Layout, block_notes, box_union, check_geometry,
+                               crossings, layout_config, merge_wires, on_segment, rot)
 
 MM = 0.254          # one unit (10 mil) in millimetres
 PAGE_MARGIN = 40
@@ -54,6 +72,16 @@ COLOR = {"part": "#8b1a1a", "wire": "#16801a", "net": "#1f3a9f", "pin": "#555555
 TWO_TERMINAL = ("resistor", "capacitor", "inductor", "fuse", "diode", "led", "buzzer", "battery_holder", "button")
 TRANSISTORS = ("npn", "pnp", "nmos", "pmos")
 SEED_ORDER = {"module": 1, "ic": 2, "connector": 3, "relay": 4, "battery_holder": 5}   # power inputs come first
+STYLES = {"labels": "", "wires": "wires through", "mixed": "mixed: wires, labels for buses"}   # -> title block
+WIRE_GAP = 120      # between the blocks of a wired drawing: the gaps are the channels (labels: BLOCK_GAP 60)
+BUS_PINS = 6        # the mixed style: a signal net with this many pins or more keeps its labelled stubs
+STEP, TURN, CROSS, BESIDE = 1, 4, 12, 1   # the router's costs: a step, a bend, crossing another net, beside one
+RAIL_OFF, RAIL_GAP = 3, 2                 # cells between the drawing and the first rail, between two rails
+PALETTE = ["#1f5fbf", "#2a8f3a", "#8a3fb0", "#b0652a", "#0f8f8f", "#c42f7a", "#7a7a1f", "#4f6f9f", "#9f3f3f",
+           "#3f8f6f"]
+GROUND_COLOUR = "#202020"
+SUPPLY_COLOURS = ["#d42020", "#e07a10", "#b8a000", "#d4207a"]
+H, V, X = 1, 2, 3   # how a net takes a cell: running across, running up, or an end, bend, junction or pin tip
 
 
 def text_w(text, size):
@@ -88,6 +116,7 @@ class Symbol:
         self.labels = []     # designator and value: ((x, y, anchor), text, size) – they swap places when the part
                              # is turned by 180° or 270°, so the designator stays above (or left of) it
         self.nc = set()      # pins drawn with a no-connect cross
+        self.unused = set()  # pins drawn grey: open pins of a module that shows every pin (the wired styles)
         self.body = None     # the box the layout keeps free; pins stick out of it by up to 10
         self.problems = []   # connected pins the symbol has no place for
 
@@ -367,7 +396,8 @@ def box(sides, names, designator, value, prints=None):
     return s, (x, top_y, anchor), (x, low_y, anchor), (x0, y0, x1, y1)
 
 
-def symbol(design, d):
+def symbol(design, d, every_pin=False):
+    """every_pin: a module shows every pin, as on the board, the open ones grey (the wired styles)."""
     comp = design.comps[d]
     part = design.part(d) or {}
     info = part.get("pins") or {}
@@ -389,10 +419,12 @@ def symbol(design, d):
         built = spdt(pins, role)
     elif kind == "potentiometer":
         built = potentiometer(pins, role)
+    every_pin = every_pin and kind == "module"
     if built is None:
         small = value or part_name
         prints = {p: str(info[p]["print"]) for p in pins if (info.get(p) or {}).get("print")}
-        built = box(box_sides(kind, pins, role, connected, part.get("symbol")), comp["pins"], d, small, prints)
+        shown = set(pins) if every_pin else connected
+        built = box(box_sides(kind, pins, role, shown, part.get("symbol")), comp["pins"], d, small, prints)
     s, dpos, vpos, drawn = built
     labels = [(d, DESIGNATOR), (small, VALUE)]
     core = drawn
@@ -405,7 +437,8 @@ def symbol(design, d):
         core = (core[0], min(core[1] + LABEL_TRIM, drawn[1]), core[2], max(core[3] - LABEL_TRIM, drawn[3]))
     s.labels = [(place, text, size) for place, (text, size) in zip((dpos, vpos), labels)]
     s.body = list(core)
-    s.nc = {p for p in s.pins if p not in connected}
+    s.nc = set() if every_pin else {p for p in s.pins if p not in connected}
+    s.unused = {p for p in s.pins if p not in connected} if every_pin else set()
     missing = sorted(connected - set(s.pins), key=pin_key)
     if missing:
         s.problems.append(f"{d}: pins {', '.join(missing)} are connected but not on the symbol (parts entry 'symbol')")
@@ -491,6 +524,307 @@ def loose_pins(sheet, geo, pin_net):
             px, py = rot(lx, ly, r)
             if net and net not in ends.get(pt(px + x, py + y), ()):
                 out.append(f"{d}.{p} ({net}) ends in nothing")
+    return out
+
+
+# --- the wired styles: a router on the grid ------------------------------------------------------------------------
+
+def board_style(cfg, board):
+    """The style of the board's drawing: `style` of the schematic file – one word, or a table by board –, labels
+    without it."""
+    style = cfg.schematic.get("style", "labels")
+    return style.get(board.name, "labels") if isinstance(style, dict) else style
+
+
+def labelled_nets(design, comps, power):
+    """The mixed style: the signal nets that keep their labelled stubs – nothing but modules, ICs and connectors on
+    them, or BUS_PINS pins or more."""
+    out = set()
+    for net, entry in design.nets.items():
+        pins = [p for p in entry["pins"] if p.split(".", 1)[0] in comps]
+        if len(pins) < 2 or net in power:
+            continue
+        kinds = {(design.part(p.split(".", 1)[0]) or {}).get("kind") for p in pins}
+        if kinds <= {"module", "ic", "connector"} or len(pins) >= BUS_PINS:
+            out.add(net)
+    return out
+
+
+class Router:
+    """The grid of a wired drawing, one cell per 10 units, kept in flat arrays: cell i = (y - y0) * w + (x - x0)."""
+
+    def __init__(self, x0, y0, x1, y1):
+        self.x0, self.y0, self.w = x0, y0, x1 - x0 + 1
+        n = self.w * (y1 - y0 + 1)
+        self.blocked = bytearray(n)   # inside a part, or the tip of an open pin
+        self.tip = bytearray(n)       # the tip of a connected pin: a path starts and ends at its lead, not there
+        self.occ = [None] * n         # {net: H | V | X}
+        self.deg = [None] * n         # {net: branches meeting in the cell}
+        self.unjoined = set()         # nets with a piece the router gave up on
+
+    def cell(self, x, y):
+        return (round(y / GRID) - self.y0) * self.w + round(x / GRID) - self.x0
+
+    def xy(self, i):
+        y, x = divmod(i, self.w)
+        return (x + self.x0) * GRID, (y + self.y0) * GRID
+
+    def cells(self, seg):
+        """The cells of a segment (x1, y1, x2, y2), in order."""
+        a, b = self.cell(*seg[:2]), self.cell(*seg[2:])
+        step = (1 if b > a else -1) * (1 if seg[1] == seg[3] else self.w)
+        return list(range(a, b + step, step)) if a != b else [a]
+
+    def others(self, i, net):
+        return [h for n, h in (self.occ[i] or {}).items() if n != net]
+
+    def mark(self, net, run, log=None):
+        """A run of cells of one net; an end or a bend takes the whole cell. log: [(cell, occ, deg) before]."""
+        last = len(run) - 1
+        for k, c in enumerate(run):
+            if log is not None:
+                log.append((c, dict(self.occ[c] or {}), dict(self.deg[c] or {})))
+            if 0 < k < last:
+                a, b = run[k - 1], run[k + 1]
+                how = H if abs(b - a) == 2 else V if abs(b - a) == 2 * self.w else X
+            else:
+                how = X
+            occ = self.occ[c] = self.occ[c] or {}
+            occ[net] = X if occ.get(net, how) != how else how
+            deg = self.deg[c] = self.deg[c] or {}
+            deg[net] = deg.get(net, 0) + (2 if 0 < k < last else 1 if last else 0)
+
+    def undo(self, log):
+        for c, occ, deg in reversed(log):
+            self.occ[c], self.deg[c] = occ or None, deg or None
+
+    def free(self, net, i):
+        """A cell a path may start or end at: no pin tip, no other net, fewer than three branches of its own."""
+        return not self.tip[i] and not self.others(i, net) and (self.deg[i] or {}).get(net, 0) < 3
+
+    def route(self, net, sources, targets):
+        """The cheapest path from a source cell to a target cell (A*), or None."""
+        w, n = self.w, len(self.occ)
+        txs = [t % w for t in targets]
+        tys = [t // w for t in targets]
+        bx0, bx1, by0, by1 = min(txs), max(txs), min(tys), max(tys)
+
+        def guess(i):
+            y, x = divmod(i, w)
+            return STEP * (max(0, bx0 - x, x - bx1) + max(0, by0 - y, y - by1))
+        heap, dist, prev, k = [], {}, {}, 0   # key: cell * 5 + the direction it was entered in (4: a source)
+        for c in sources:
+            dist[c * 5 + 4] = 0
+            heap.append((guess(c), k, 0, c, 4))
+            k += 1
+        heapq.heapify(heap)
+        steps = ((1, H), (w, V), (-1, H), (-w, V))
+        while heap:
+            _, _, cost, c, d = heapq.heappop(heap)
+            if dist.get(c * 5 + d, math.inf) < cost:
+                continue
+            if d < 4 and c in targets:
+                path, key = [c], c * 5 + d
+                while key in prev:
+                    key = prev[key]
+                    path.append(key // 5)
+                return path[::-1]
+            x = c % w
+            for nd, (delta, how) in enumerate(steps):
+                nc = c + delta
+                if not 0 <= nc < n or (how == H and abs(nc % w - x) != 1) or self.blocked[nc]:
+                    continue
+                own = (self.occ[nc] or {}).get(net)
+                if own and nc not in targets:
+                    continue                  # along the net's own wire: nothing to gain
+                step = STEP + (TURN if d < 4 and nd != d else 0)
+                others = self.others(nc, net)
+                if others:
+                    if nc in targets or any(h in (X, how) for h in others):
+                        continue              # an end, a bend, a junction, a pin tip, or along another wire
+                    step += CROSS
+                for side in ((w, -w) if how == H else (1, -1)):
+                    if 0 <= nc + side < n and how in self.others(nc + side, net):
+                        step += BESIDE
+                        break
+                key = nc * 5 + nd
+                if cost + step < dist.get(key, math.inf):
+                    dist[key] = cost + step
+                    prev[key] = c * 5 + d
+                    k += 1
+                    heapq.heappush(heap, (cost + step + guess(nc), k, cost + step, nc, nd))
+        return None
+
+    def connect(self, net, runs, log=None):
+        """Join the pieces of a net, the smallest first; returns the new paths (lists of cells)."""
+        parent = {}
+
+        def find(c):
+            while parent.setdefault(c, c) != c:
+                parent[c] = parent[parent[c]]
+                c = parent[c]
+            return c
+        for run in runs:
+            find(run[0])
+            for a, b in zip(run, run[1:]):
+                parent[find(a)] = find(b)
+        groups = defaultdict(list)
+        for c in parent:
+            groups[find(c)].append(c)
+        pieces, new = sorted(groups.values(), key=len), []
+        while len(pieces) > 1:
+            first, rest = pieces[0], pieces[1:]
+            src = [c for c in first if self.free(net, c)] or [c for c in first if not self.others(c, net)] or first
+            targets = {c for p in rest for c in p if self.free(net, c)}
+            path = self.route(net, src, targets) if targets else None
+            if path is None:
+                self.unjoined.add(net)
+                pieces = rest              # given up; the rest still joins
+                continue
+            self.mark(net, path, log)
+            new.append(path)
+            hit = next(k for k, p in enumerate(rest) if path[-1] in p)
+            rest[hit] = rest[hit] + first + path
+            pieces = sorted(rest, key=len)
+        return new
+
+
+def wire_through(sheet, syms, pin_net, power, labelled=frozenset()):
+    """Route every net of the sheet but the labelled ones: rails for the power nets, paths for the rest – added to the
+    sheet's wires. Returns {"colour": net -> colour, "named": the nets drawn with their names – the labelled ones
+    and those the router could not join –, "unjoined": the latter}."""
+    b = sheet.box
+    count = Counter(pin_net.values())
+    grounds = sorted(n for n in power if power[n] == "Ground")
+    supplies = sorted((n for n in power if power[n] != "Ground"), key=lambda n: (-count[n], n))
+    bx0, by0, bx1, by1 = (math.floor(b[0] / GRID), math.floor(b[1] / GRID), math.ceil(b[2] / GRID),
+                          math.ceil(b[3] / GRID))
+    rt = Router(bx0 - RAIL_OFF - 2, by0 - RAIL_OFF - RAIL_GAP * max(len(grounds), 1) - 2,
+                bx1 + RAIL_OFF + 2, by1 + RAIL_OFF + RAIL_GAP * max(len(supplies), 1) + 2)
+    runs, tips = defaultdict(list), set()
+    for d, cx, cy, r in sheet.comps:
+        s = syms[d]
+        b0 = [v for q in (rot(s.body[0], s.body[1], r), rot(s.body[2], s.body[3], r)) for v in q]
+        x0, x1 = min(b0[0], b0[2]) + cx, max(b0[0], b0[2]) + cx
+        y0, y1 = min(b0[1], b0[3]) + cy, max(b0[1], b0[3]) + cy
+        for y in range(math.ceil((y0 + 1) / GRID), math.floor((y1 - 1) / GRID) + 1):
+            for x in range(math.ceil((x0 + 1) / GRID), math.floor((x1 - 1) / GRID) + 1):
+                rt.blocked[rt.cell(x * GRID, y * GRID)] = 1
+        for p, (lx, ly, _) in s.pins.items():
+            px, py = rot(lx, ly, r)
+            c, net = rt.cell(px + cx, py + cy), pin_net.get(f"{d}.{p}")
+            if net:
+                rt.tip[c] = 1
+                tips.add(pt(px + cx, py + cy))
+                rt.mark(net, [c])
+                runs[net].append([c])
+            else:
+                rt.blocked[c] = 1
+    for net, segs in sheet.wires:
+        for seg in segs:
+            run = rt.cells(seg)
+            rt.mark(net, run)
+            runs[net].append(run)
+    rail_y = {net: by0 - RAIL_OFF - RAIL_GAP * k for k, net in enumerate(grounds)}
+    rail_y |= {net: by1 + RAIL_OFF + RAIL_GAP * k for k, net in enumerate(supplies)}
+    order = grounds + supplies + sorted((n for n in runs if n not in power and n not in labelled),
+                                        key=lambda n: (span(rt, runs[n]), n))
+    paths = defaultdict(list)
+    for net in order:
+        if not runs.get(net):
+            continue                 # a power net of another board
+        if net not in rail_y:
+            paths[net] = rt.connect(net, runs[net])
+            continue
+        xs = [c % rt.w for run in runs[net] for c in run]
+        y = rail_y[net] - rt.y0
+        rail = [y * rt.w + x for x in range(min(xs) - 1, max(xs) + 2)]
+        log, unjoined, on_rail = [], set(rt.unjoined), set(rail)
+        rt.mark(net, rail, log)
+        new = rt.connect(net, runs[net] + [rail], log)
+        on = sorted({c % rt.w for path in new for c in (path[0], path[-1]) if c in on_rail})
+        if len(on) < 2:              # a rail that gathers fewer than two drops: taken away, the net joined without it
+            rt.undo(log)
+            rt.unjoined = unjoined
+            paths[net] = rt.connect(net, runs[net])
+            continue
+        for c in rail:               # the rail trimmed to what hangs on it
+            if not on[0] <= c % rt.w <= on[-1]:
+                rt.occ[c].pop(net, None)
+                rt.deg[c].pop(net, None)
+        paths[net] = [[y * rt.w + on[0], y * rt.w + on[-1]]] + new
+    for net, found in paths.items():
+        for path in found:
+            corners = [path[0]] + [b for a, b, c in zip(path, path[1:], path[2:]) if b - a != c - b] + [path[-1]]
+            sheet.wire(net, [rt.xy(c) for c in corners])
+    named = set(labelled) | rt.unjoined | {net for net in runs if count[net] == 1}   # one pin here: it goes elsewhere
+    trim(sheet, set(runs) - named, tips)
+    return {"colour": colours(rt, set(runs), power), "named": named, "unjoined": rt.unjoined}
+
+
+def trim(sheet, nets, tips):
+    """Cut back the wire ends of these nets that lead nowhere – a lead whose piece the router joined further in –
+    to the last point another piece of the net or a pin tip uses."""
+    by_net = defaultdict(list)
+    for net, segs in sheet.wires:
+        by_net[net] += [(pt(*s[:2]), pt(*s[2:])) for s in segs]
+    for net in sorted(nets & set(by_net)):
+        segs, changed = by_net[net], True
+        while changed:
+            changed = False
+            ends = Counter(e for seg in segs for e in seg)
+            for k, (a, b) in enumerate(segs):
+                for far, near in ((b, a), (a, b)):
+                    if ends[far] > 1 or far in tips or any(far not in o and on_segment(*far, (*o[0], *o[1]))
+                                                           for o in segs):
+                        continue
+                    used = [e for e in ends if e != far and on_segment(*e, (*a, *b))]
+                    stop = min(used, key=lambda e: abs(e[0] - far[0]) + abs(e[1] - far[1]), default=near)
+                    segs[k] = None if stop == near else (near, stop)
+                    changed = True
+                    break
+                if changed:
+                    break
+            segs[:] = [seg for seg in segs if seg]
+        sheet.wires = [w for w in sheet.wires if w[0] != net] + [(net, [(*a, *b) for a, b in segs])]
+
+
+def span(rt, runs):
+    xs = [c % rt.w for run in runs for c in run]
+    ys = [c // rt.w for run in runs for c in run]
+    return max(xs) - min(xs) + max(ys) - min(ys)
+
+
+def colours(rt, nets, power):
+    """A colour per net: ground black, the supplies red and on, the rest from PALETTE – a net that crosses or runs
+    beside another gets another colour where ten allow it."""
+    near, n = defaultdict(set), len(rt.occ)
+    for i, occ in enumerate(rt.occ):
+        if not occ:
+            continue
+        if len(occ) > 1:
+            for a in occ:
+                near[a] |= set(occ) - {a}
+        for net, how in occ.items():
+            if how == X:
+                continue
+            side = i + (rt.w if how == H else 1)
+            for other, oh in ((rt.occ[side] or {}) if side < n else {}).items():
+                if other != net and oh == how:
+                    near[net].add(other)
+                    near[other].add(net)
+    out, k, use = {}, 0, Counter()
+    for net in sorted(n for n in nets if n in power):
+        if power[net] == "Ground":
+            out[net] = GROUND_COLOUR
+        else:
+            out[net] = SUPPLY_COLOURS[min(k, len(SUPPLY_COLOURS) - 1)]
+            k += 1
+    for net in sorted((n for n in nets if n not in power), key=lambda n: (-len(near[n]), n)):
+        taken = {out[o] for o in near[net] if o in out}
+        free = [c for c in PALETTE if c not in taken] or sorted(PALETTE, key=lambda c: use[c])
+        out[net] = free[0]
+        use[free[0]] += 1
     return out
 
 
@@ -630,8 +964,10 @@ def net_labels(sheet, power, tips):
     return out
 
 
-def render(sheet, size, syms, power, ground, title_lines, frame=True):
+def render(sheet, size, syms, power, ground, title_lines, frame=True, wires=None):
+    """wires: what wire_through returned (the wired styles) – a colour per net, names only for the named nets."""
     w, h = size
+    colour = (wires or {}).get("colour", {})
     g = Svg(w, h)
     if frame:
         g.line([(10, 10), (w - 10, 10), (w - 10, h - 10), (10, h - 10), (10, 10)], COLOR["frame"], 1.5)
@@ -649,16 +985,26 @@ def render(sheet, size, syms, power, ground, title_lines, frame=True):
     tips = set()
     for d, cx, cy, r in sheet.comps:
         for p, (lx, ly, _) in syms[d].pins.items():
-            if p not in syms[d].nc:
+            if p not in syms[d].nc and p not in syms[d].unused:
                 px, py = rot(lx, ly, r)
                 tips.add(pt(px + cx, py + cy))
-    for _, segs in sheet.wires:
+    for net, segs in sheet.wires:
         for s in segs:
-            g.line([s[:2], s[2:]], COLOR["wire"])
-    for x, y in junctions(sheet, tips):
-        g.circle(x, y, 2.2, COLOR["wire"], fill=True)
-    for x, y, net, anchor, angle in net_labels(sheet, power, tips):
-        g.text(x, y, net, NET, anchor, angle, COLOR["net"])
+            g.line([s[:2], s[2:]], colour.get(net, COLOR["wire"]), 1.4 if wires else 1.2)
+    named = sheet
+    if wires:
+        named = Drawing()
+        named.wires = [(net, segs) for net, segs in sheet.wires if net in wires["named"]]
+        for net, segs in merge_wires(sheet.wires):   # a dot in the colour of its net
+            one = Drawing()
+            one.wires = [(net, segs)]
+            for x, y in junctions(one, tips):
+                g.circle(x, y, 2.4, colour.get(net, COLOR["wire"]), fill=True)
+    else:
+        for x, y in junctions(sheet, tips):
+            g.circle(x, y, 2.2, COLOR["wire"], fill=True)
+    for x, y, net, anchor, angle in net_labels(named, {} if wires else power, tips):
+        g.text(x, y, net, NET, anchor, angle, colour.get(net, COLOR["net"]))
     for net, x, y, fd in sheet.flags:
         dx, dy = rot(1, 0, fd)
         px, py = -dy, dx
@@ -677,9 +1023,11 @@ def render(sheet, size, syms, power, ground, title_lines, frame=True):
         def T(x, y, r=r, cx=cx, cy=cy):
             x, y = rot(x, y, r)
             return x + cx, y + cy
+        grey = {pt(*s.pins[p][:2]) for p in s.unused}
         for sh in s.shapes:
             if sh[0] in ("line", "thick"):
-                g.line([T(*q) for q in sh[1]], COLOR["part"], 2.4 if sh[0] == "thick" else 1.2)
+                pale = len(sh[1]) == 2 and pt(*sh[1][0]) in grey   # the line of an open pin
+                g.line([T(*q) for q in sh[1]], "#aaaaaa" if pale else COLOR["part"], 2.4 if sh[0] == "thick" else 1.2)
             elif sh[0] == "poly":
                 g.poly([T(*q) for q in sh[1]], COLOR["part"], sh[2])
             else:
@@ -699,15 +1047,17 @@ def render(sheet, size, syms, power, ground, title_lines, frame=True):
     return g.done()
 
 
-def drawing(cfg, board, drawn_by="edakit schematic draw", frame=True):
+def drawing(cfg, board, drawn_by="edakit schematic draw", frame=True, style="labels"):
     """The board's sheet as this drawing lays it out – for the SVG here and the KiCad schematic (toolchain/kicad):
-    {"design", "sheet", "size", "syms", "power", "problems"}, or None when the board has no parts in the graph.
-    frame: the page holds the sheet border and the title block (the KiCad schematic always does)."""
+    {"design", "sheet", "size", "syms", "power", "problems", "wires"}, or None when the board has no parts in the
+    graph. frame: the page holds the sheet border and the title block (the KiCad schematic always does). style:
+    "labels", or "wires" and "mixed" for the SVG alone – "wires" is then what wire_through returned."""
     design = Design.from_config(cfg)
     comps = design.board_comps(board.name)
     if not comps:
         return None
-    syms = {d: symbol(design, d) for d in comps}
+    wired = style != "labels"
+    syms = {d: symbol(design, d, every_pin=wired) for d in comps}
     geo = {d: {"type": comps[d].get("type"), "pins": s.pins, "body": s.body} for d, s in syms.items()}
     lc = layout_config(cfg, design)
     if not cfg.schematic.get("layout", {}).get("power_flags"):
@@ -724,18 +1074,31 @@ def drawing(cfg, board, drawn_by="edakit schematic draw", frame=True):
     graph_nets = {n["name"]: n["pins"] for n in design.graph["nets"]}
     lay = DrawLayout(comps, graph_nets, geo, lc["rows"], notes, lc["power"], lc["near"], lc["stacked"], CHAR_W)
     lay.ground = design.ground
-    sheet, size = fit(lay.build()[0], frame)
+    labelled = labelled_nets(design, comps, lc["power"]) if style == "mixed" else set()
+    if wired:
+        lay.wired = set(lay.nets) - labelled
+        lay.block_gap = lay.row_gap = WIRE_GAP
+        lay.frames = False
+    sheet = lay.build()[0]
+    wires = wire_through(sheet, syms, lay.pin_net, lc["power"], labelled) if wired else None
+    sheet, size = fit(sheet, frame)
     for warning in lay.warnings:
         print(f"  ! {warning}")
     problems = [p for s in syms.values() for p in s.problems] + check_geometry(sheet, geo, lay.pin_net) \
         + loose_pins(sheet, geo, lay.pin_net)
-    return {"design": design, "sheet": sheet, "size": size, "syms": syms, "power": lc["power"], "problems": problems}
+    return {"design": design, "sheet": sheet, "size": size, "syms": syms, "power": lc["power"], "problems": problems,
+            "wires": wires}
 
 
 def main(cfg, args):
-    board = cfg.board(args.board, made=True)
+    # a hand-wired board is drawn too – its drawing is its build document; a bought one is not ours to draw; without
+    # --board the only made board
+    board = cfg.board(args.board, made=args.board is None and bool(cfg.made()))
+    if board.bought:
+        cfg.board(board.name, made=True)     # refused with the layout commands' line
     frame = cfg.schematic.get("frame", True) is not False and not getattr(args, "no_frame", False)
-    drawn = drawing(cfg, board, frame=frame)
+    style = board_style(cfg, board)
+    drawn = drawing(cfg, board, frame=frame, style=style)
     if drawn is None:
         print(f"edakit: board {board.name} has no parts in the graph", file=sys.stderr)
         return 1
@@ -743,7 +1106,17 @@ def main(cfg, args):
     for prob in problems:
         print(f"  ! {prob}")
     mm = f"{size[0] * MM:.0f} x {size[1] * MM:.0f} mm"
-    print(f"drawn: {len(sheet.comps)} parts, {len(merge_wires(sheet.wires))} wires, {len(sheet.flags)} flags, {mm}")
+    wires = drawn["wires"]
+    if wires is None:
+        print(f"drawn: {len(sheet.comps)} parts, {len(merge_wires(sheet.wires))} wires, {len(sheet.flags)} flags, {mm}")
+    else:
+        for net in sorted(wires["unjoined"], key=natural_key):
+            print(f"  ! {net}: the router could not join every piece – named at each of them")
+        metres = sum(abs(s[2] - s[0]) + abs(s[3] - s[1]) for _, segs in sheet.wires for s in segs) * MM / 1000
+        n, k = len(crossings(sheet)), len(wires["named"])
+        named = f", {k} net{'s' if k > 1 else ''} named" if k else ""
+        print(f"drawn ({STYLES[style]}): {len(sheet.comps)} parts, {len(merge_wires(sheet.wires))} wires, "
+              f"{n} crossing{'' if n == 1 else 's'}, {metres:.1f} m of wire{named}, {mm}")
     if problems and not args.force:
         print(f"{len(problems)} conflicts – nothing written (--force writes anyway)")
         return 2
@@ -751,8 +1124,10 @@ def main(cfg, args):
     out.parent.mkdir(parents=True, exist_ok=True)
     date = design.graph.get("date", "")
     title_lines = [(board.title, 16, True), (f"{cfg.project} · board {board.name}", 8, False),
-                   (f"graph v{design.version}" + (f" ({date})" if date else "") + f" · {mm}", 8, False),
+                   (f"graph v{design.version}" + (f" ({date})" if date else "") + f" · {mm}"
+                    + (f" · {STYLES[style]}" if wires else ""), 8, False),
                    ("drawn by edakit schematic draw – change the graph, not this drawing", 7, False)]
-    out.write_text(render(sheet, size, syms, drawn["power"], design.ground, title_lines, frame), encoding="utf-8")
+    out.write_text(render(sheet, size, syms, drawn["power"], design.ground, title_lines, frame, wires),
+                   encoding="utf-8")
     print(f"  -> {out}")
     return 2 if problems else 0

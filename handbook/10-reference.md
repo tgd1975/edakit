@@ -305,7 +305,10 @@ assembly class and side (`[release] assembly`, the class one of the maker's `cla
 ## 10.3 The schematic file
 
 `hardware/schematic.toml`: `stub` (10): stub length of the template. `frame` (true): `false` draws the SVG of
-`schematic draw` without the sheet border and the title block (6.5). `[layout]`: `rows` (rows → columns → blocks
+`schematic draw` without the sheet border and the title block (6.5). `style` ("labels"): the drawing of `schematic
+draw` – `"labels"` (stubs and flags), `"wires"` (every connection a wire, routed and coloured) or `"mixed"` (wires,
+labels for buses) –, one word for every board or a table by board, `{main = "labels", panel = "wires"}`; the SVG only
+(6.5). `[layout]`: `rows` (rows → columns → blocks
 `{title, start}`), `power_flags` ({NET = "Ground"|"Power"}), `near` ({CAP = "PART"}), `stacked` (blocks whose trees
 stand one below the other), `[layout.notes]` ({block title = [lines]}), `[layout.pin_table]` (`component`, `block`,
 `prefix`, `notes` {NET = "function"}). A note may quote the design data: `{graph:R1.value}`,
