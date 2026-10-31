@@ -21,7 +21,8 @@ run against a maker's page or EasyEDA yet.
       order as test data; read the terms on automated use, for the record.
 - [ ] **JLCPCB's order number:** gone since May 2026, as its help article of 2026-05-22 reports? Then the placeholder
       and `mark = "specify"` leave `edakit/makers/jlcpcb.toml`; otherwise `rules.placeholder_gone` goes. The form's
-      words for `barcode` and `serial_number`.
+      words for `barcode` and `serial_number`. With it, whether Economic PCBA takes a round board on two customer
+      tooling holes without rails (walkthrough-gaps B6).
 - [ ] **PCBWay:** its BOM template – one `bom_<b>_mpn.csv` for PCBWay and Eurocircuits, or one file per maker; when the
       assembly price comes (BOM quotation by hand); whether the files go up after "Save to Cart".
 - [ ] **Eurocircuits, AISLER:** the cart or basket button – none is recorded, so the skill stops before the cart.
@@ -57,6 +58,23 @@ run against a maker's page or EasyEDA yet.
 - [ ] Tell the bell's session and pytree-27: F-6 now warns about JLCPCB's placeholder `JLCJLCJLCJLC` on a board – a
       new warning in their gate, to accept or to remove with the placeholder (`mark = "remove"`, a `barcode`).
 - [ ] The shared tree follows main; the plugin follows (skills, agents and code changed).
+
+## Walkthrough gaps ([walkthrough-gaps.md](docs/concepts/done/walkthrough-gaps.md))
+
+Built and decided on 2026-10-31; what is left runs live.
+
+- [ ] **B2, with step 3.6 under the EasyEDA claim:** build a footprint with a 1.0 mm hole, read it back three ways
+      (state `Hole`, `getAllPinsByPrimitiveId`, Gerber drill) – does `PCB_PrimitivePad.create` take holes in mil, as
+      `pad_args` writes them, or in 10 mil?
+- [ ] **The example at its next `edakit gate --easyeda`:** a new fab hash – C4 puts `mark = "remove"` into order.json
+      of a `[looks]` board –, so M-5 once more; on the way look at A4 (`route all` on the round board without
+      Freerouting's "geometry is degenerate"), B1 (protocol L: the vias' ring 0.15 mm, not 1.000), A5 (BT1's "+" on
+      the polarity sheet) and B7 (the BOM from the board's schematic with the other tabs closed).
+- [ ] **Tell the bell's session and pytree-27 after the merge into main:** findings name pins by name or role
+      ("U2.VDD (16)" for "U2.16 (VDD)") – a sign-off pattern on the old text stops matching; C4 changes the fab hash of
+      a board with `[looks]` and `[order]` and no `mark`; FILES.order warns about `[tooling]` on an Economic board that
+      nothing tells the maker about; LIM.p rows for LEDs change the simulation's counts; an accepted simulation
+      finding counts as waived in the gate.
 
 ## KiCad tool chain ([kicad-toolchain.md](docs/concepts/done/kicad-toolchain.md))
 

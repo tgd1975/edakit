@@ -956,7 +956,7 @@ sources = [
   "AllPCB, Pad-to-Pad Spacing Demystified: A Practical Guide for PCB Manufacturability (read 2026-10-27; a secondary source): 'A minimum spacing of 0.3 mm (12 mils) between pads and vias is recommended' against solder wicking; through-hole pads 'around 1 mm (40 mils), due to the nature of wave soldering'; the soldering method, hand soldering among them, impacts spacing requirements, without a number – https://www.allpcb.com/allelectrohub/pad-to-pad-spacing-demystified-a-practical-guide-for-pcb-manufacturability",
   "Freerouting 2.4.1 release (the version edakit pins): its Specctra reader app/freerouting/io/specctra/parser/Structure knows the keep-out type via_keepout (VIA_KEEPOUT, viaKeepoutList)",
   "edakit handbook 7.5, 8.1 and 8.4 (Economic PCBA: through-hole parts you solder yourself get bom: false)",
-  "edakit handbook 17.11, the layout review of the walkthrough, note 4: hand_solder_keep_mm checked nothing at BT1, whose two SMD tabs are soldered by hand (bom: false); docs/concepts/new/walkthrough-gaps.md B5 – SMD pads of a bom: false part get the same keep on the side the part sits on (decided by the main session 2026-10-31, to be confirmed by the owner)",
+  "edakit handbook 17.11, the layout review of the walkthrough, note 4: hand_solder_keep_mm checked nothing at BT1, whose two SMD tabs are soldered by hand (bom: false); docs/concepts/done/walkthrough-gaps.md B5 – SMD pads of a bom: false part get the same keep on the side the part sits on (decided by the main session 2026-10-31, to be confirmed by the owner)",
 ]
 
 [codes."GEO.ring"]
@@ -975,7 +975,7 @@ sources = [
   "JLCPCB PCB Manufacturing Capabilities (read 2026-10-26), Drilling: Via Hole-to-Hole Spacing 0.2 mm, Pad Hole-to-Hole Spacing 0.45 mm (the page says neither edge nor centre; read edge to edge, the stricter reading); via diameter 0.1 mm (0.15 mm preferred) larger than the via hole; hole size tolerance +0.13/-0.08 mm – https://jlcpcb.com/capabilities/pcb-capabilities",
   "The reference project, release run 20261025-232212: D31 (XINGLIGHT XL-B504RGBC, 1.25 mm pitch) with holes of 0.80 mm and pads of 1.06 mm – ring 0.130 mm, holes 0.449 mm apart; its decision D-40 and layout review M-5 (\"D31 Restring 0,13 mm\", at the fab's limit, accepted), 2026-10-25",
   "edakit handbook 8.1 (L-9, L-13)",
-  "docs/concepts/new/walkthrough-gaps.md B1, the walkthrough of handbook 17 on examples/coin-cell-led: protocol L reported \"narrowest ring 1.000 mm\" for its vias, routed at edakit's default `[routing] via = [24, 12]` mil (0.61 mm on a 0.305 mm hole, a ring of 0.15 mm) inside its GND pours",
+  "docs/concepts/done/walkthrough-gaps.md B1, the walkthrough of handbook 17 on examples/coin-cell-led: protocol L reported \"narrowest ring 1.000 mm\" for its vias, routed at edakit's default `[routing] via = [24, 12]` mil (0.61 mm on a 0.305 mm hole, a ring of 0.15 mm) inside its GND pours",
 ]
 
 [codes."GEO.keepout"]
@@ -1036,7 +1036,7 @@ sources = [
   "The reference project, hardware/easyeda/KONZEPT_bestueckungsdruck.md, section 'Baum-PCB, LED-Seite (Schaufenster)': the designators of the LED side all hidden (S-3), the version line in the hill zone; hardware/easyeda/baum_druck.py, module docstring: LED side (BOTTOM) artwork as fills and the version line as text, designators off, the footprints' polarity marks stay",
   "The reference project's gate runs 20261027-211238 and 20261027-214622: Gerber_BottomSilkscreenLayer.GBO of the first holds the glyphs 'D31' at x 1.26…3.03, y 163.37…164.17 mm (0.686 mm², not in the second); pcb.json of both has the version line 'pytree · Baum · Rev 2 · 2026' as the only PCB text of the bottom silkscreen – the 'D31' was the part's designator",
   "edakit handbook 7.5 (the visible side, [looks]), 7.7 (silkscreen: hide, [[silk.texts]], the board label) and 8.1 (L-17)",
-  "edakit handbook 17.11, the layout review of the walkthrough on examples/coin-cell-led, note 1: BT1's designator lay under the cell, fixed in the example by [silk] place; the handover note there: the cell (Ø 20 mm) stands 2 mm out of BT1 (16 mm wide) on both long sides; docs/concepts/new/walkthrough-gaps.md B3",
+  "edakit handbook 17.11, the layout review of the walkthrough on examples/coin-cell-led, note 1: BT1's designator lay under the cell, fixed in the example by [silk] place; the handover note there: the cell (Ø 20 mm) stands 2 mm out of BT1 (16 mm wide) on both long sides; docs/concepts/done/walkthrough-gaps.md B3",
 ]
 
 [codes."FILES.sheet"]
