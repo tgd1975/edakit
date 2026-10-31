@@ -11,9 +11,11 @@ those. Where the supply itself changes – plug, unplug, a switch-over between t
 side of the gap or the other; transient runs (5.2) follow the supply over time and LIM.v judges them. Switching
 spikes and fast edges are measured on the delivered board (acceptance test): the behaviour models know no switching.
 
-A finding of the simulation is accepted as every other is, with `accept` and the reason on its part or net, or on
-the graph keyed by "code place" (3.4): `edakit sim` prints it as accepted, and the comparison's row reads `waived`
-– the gate counts it so and lists it in section 4 of the protocol, as it does an accepted finding of stages P and G.
+A comparison that does not hold reads as its finding is judged, as a finding of stages P and G does: `fail` for an
+error, `warn` for a warning – a new code or grade starts as one – which the sign-off file accepts or the gate
+stops at (8.3), `info` for a note. A finding of the simulation is accepted as every other is, with `accept` and
+the reason on its part or net, or on the graph keyed by "code place" (3.4): `edakit sim` prints it as accepted,
+its row reads `waived`, and the gate lists it in section 4 of the protocol. A scenario's status follows its rows.
 
 ## 5.1 How the netlist is built
 

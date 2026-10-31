@@ -408,6 +408,12 @@ reasons. Exit 0 / 2. Every project check of phase `export` is a stage (8.1): it 
 `--easyeda` – and pass, unless it is advisory; a check of phase `order` or `acceptance` does not hold up the release, it
 is a line of section 6.
 
+A finding is judged by its severity in every stage alike, the simulation's comparisons too: an error fails, a warning
+waits for its acceptance in the sign-off file (section 3 of the protocol), a note is information, and a finding
+accepted in the graph is waived with its reason (section 4). Since 2026-10-31 a comparison of stage E whose finding
+is a warning no longer fails the gate; before, every comparison that did not hold failed it, whatever its finding's
+severity (walkthrough-gaps.md).
+
 The protocol names every check with its words next to the ID ("GEO.hole (hole fits the lead)"), and its section 10, "The
 rules behind the findings", gives rule, reason, fix and sources of every check that failed or warned – from the rule
 catalog (chapter 14.2), so that the protocol can be read without this handbook. With `[project] requirements` a

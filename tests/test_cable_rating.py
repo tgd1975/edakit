@@ -68,12 +68,12 @@ def test_a_measured_resistance_may_come_with_its_length():
 @ngspice
 def test_a_wire_above_the_cables_rating_is_lim_i(project):
     """W1 rated 0.1 A per wire: each of its two wires carries 114.7 mA at full load – above 80 % of 0.1 A; a warning
-    while new."""
+    while new, so its rows read warn."""
     cable(project, length_m=1, awg=26, i_max_a=0.1)
     out = simulate(project)
     rows = [r for r in out["checks"] if r["item"] == "cable W1" and r["id"] == "LIM.i" and r["result"] != "info"]
-    assert {r["result"] for r in rows} == {"pass", "fail"}
-    over = [r for r in rows if r["result"] == "fail"]
+    assert {r["result"] for r in rows} == {"pass", "warn"}
+    over = [r for r in rows if r["result"] == "warn"]
     assert {r["check"] for r in over} == {"current through wire W1_8", "current through wire W1_1"}
     assert {r["expected"] for r in over} == {"≤ 80 mA (80% of 100 mA)"}
     found = [f for f in out["findings"] if f["code"] == "LIM.i" and f["place"] == "cable W1"]

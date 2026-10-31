@@ -143,10 +143,10 @@ def test_one_metre_fed_at_one_end_drops_what_pololu_measured(project):
 @needs_ngspice
 def test_five_metres_fed_at_one_end_fail_at_the_far_end(project):
     """300 pixels, 15 A at full white: the far end gets nothing like the 3.5 V a WS2812B needs (Pololu feeds at most
-    180 LEDs from one point)."""
+    180 LEDs from one point). LIM.range/strip is a warning: the row reads warn."""
     out = simulate(project, strip(project, 5))
     row = pixel_range(out)
-    assert row["result"] == "fail" and row["expected"] == "3.5 … 5.3 V"
+    assert row["result"] == "warn" and row["expected"] == "3.5 … 5.3 V"
     assert "pixels 295–300, 4.95 m" in row["actual"].split("…")[0]
     (f,) = strip_findings(out)
     assert f["place"] == "DS1" and f["severity"] == "warning"

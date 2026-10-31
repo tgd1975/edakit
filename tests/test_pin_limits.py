@@ -19,8 +19,9 @@ needs_ngspice = pytest.mark.skipif(not shutil.which("ngspice"), reason="ngspice 
 
 
 def sim_rows(out, item, what=None, failed=False):
+    """The rows of item (whose check holds what); failed: only those that flag it – fail, or warn for a warning."""
     return [c for c in out["checks"] if c["item"] == item and (what is None or what in c["check"])
-            and (not failed or c["result"] == "fail")]
+            and (not failed or c["result"] in ("fail", "warn"))]
 
 
 def g_findings(project, code, grade=None):
@@ -49,7 +50,7 @@ def test_the_schema_knows_the_new_pin_fields():
 @needs_ngspice
 def test_a_pin_held_against_the_supply_its_ref_names(project):
     """U2's OE (TLC5916) at the MCU's 3.3 V: against its own supply (VDD, 3V3) within 0.3 V; named against GND – a
-    reference for the test – it is 3.3 V above it and fails."""
+    reference for the test – it is 3.3 V above it and is flagged (LIM.v/inject, a warning: warn)."""
     part = project.part("C90107")
     part["pins"]["13"]["v_rel_max_v"] = 0.3
     project.save_part("C90107", part)
@@ -68,7 +69,7 @@ def test_a_pin_held_against_the_supply_its_ref_names(project):
 @needs_ngspice
 def test_a_null_relative_limit_exempts_a_pin_and_outputs_are_held_too(project):
     """The part's vin_rel_max_v holds inputs, bidirectional pins and outputs; a pin rated above its supply says
-    v_rel_max_v null. With a limit of −0.1 V (for the test) U2's OE – high at its supply – fails, its SDO output is held
+    v_rel_max_v null. With a limit of −0.1 V (for the test) U2's OE – high at its supply – is flagged, its SDO output is held
     as well; with v_rel_max_v null on OE it is not checked."""
     sdo_net(project)
     part = project.part("C90107")
@@ -237,8 +238,8 @@ def test_a_pin_with_its_own_negative_limit_is_not_held_to_the_floor(project):
 @needs_ngspice
 def test_an_input_above_its_supply_through_a_resistor_is_held_to_its_injection_current(project):
     """U2's OE(ED2) pulled to +5V through 10 kΩ (the fixture's R2 moved there): 1.6 V above U2's 3.3 V supply. With
-    v_rel_max_v 0.3 V alone it fails; with i_inject_max_a 400 µA the clamp takes (5 − 3.3 − 0.3) V / 10 kΩ ≈ 0.14 mA – it
-    passes, and with 50 µA it fails."""
+    v_rel_max_v 0.3 V alone it is flagged (LIM.v/inject, a warning: warn); with i_inject_max_a 400 µA the clamp takes
+    (5 − 3.3 − 0.3) V / 10 kΩ ≈ 0.14 mA – it passes, and with 50 µA it is flagged."""
     g = project.graph()
     oe = project.net(g, "LED_OE")
     pull = next(r for r in oe["pins"] if r.startswith("R"))
@@ -288,10 +289,10 @@ def pcf8574_port_pulled_to_5v(project, ohm, lcsc):
 def test_a_library_port_pulled_above_its_supply_through_too_small_a_resistor(project):
     """maker-coverage CK-5 with a library entry: the PCF8574's P0 (NXP Rev. 5, Table 9: IIHL(max) 400 µA through the
     protection diode; VDD + 0.5 V) on a 3.3 V part pulled to 5 V through 1 kΩ – its clamp takes (5 − 3.3 − 0.5) V / 1 kΩ
-    = 1.2 mA, LIM.v/inject fails."""
+    = 1.2 mA, LIM.v/inject – a warning – reads warn."""
     pcf8574_port_pulled_to_5v(project, "1k", "C17513")
     rows = sim_rows(simulate(project), "U9.4", "current into the clamp")
-    assert rows and all(r["result"] == "fail" and r["id"] == "LIM.v" for r in rows)
+    assert rows and all(r["result"] == "warn" and r["id"] == "LIM.v" for r in rows)
     assert "through 1000 Ω" in rows[0]["check"]
 
 

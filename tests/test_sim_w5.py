@@ -149,7 +149,7 @@ def test_a_lit_photomos_closes_with_its_on_resistance(project):
 def test_an_led_current_between_off_and_on_guarantees_neither(project):
     sim = photomos(project, 2.2e3)                   # ≈ 1 mA: above IFoff 0.3 mA, below IFon 3 mA
     out = simulate(project, sim)
-    bad = [r for r in rows(out, "OK9", "guarantees a state") if r["result"] == "fail"]
+    bad = [r for r in rows(out, "OK9", "guarantees a state") if r["result"] == "warn"]    # LIM.range/photomos: warn
     assert bad and "neither" in bad[0]["expected"]
     assert {f["grade"] for f in out["findings"] if f["code"] == "LIM.range" and f["place"] == "OK9"} == {"photomos"}
 

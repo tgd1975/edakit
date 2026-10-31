@@ -45,7 +45,8 @@ def follower(project, top_ohm=10e3, bottom_ohm=10e3, part=None):
 
 
 def opamp_rows(out, failed=False):
-    return [c for c in out["checks"] if c["item"] == "U9" and (not failed or c["result"] == "fail")]
+    """U9's rows; failed: only those that flag it – fail, or warn for a warning (LIM.range/opamp is one)."""
+    return [c for c in out["checks"] if c["item"] == "U9" and (not failed or c["result"] in ("fail", "warn"))]
 
 
 def test_a_follower_inside_its_ranges_passes(project):

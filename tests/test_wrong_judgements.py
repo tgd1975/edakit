@@ -232,4 +232,5 @@ def test_leds_a_matrix_driver_scans_have_no_dc_state(project, behavior, multiple
         assert d9 and all(c["result"] == "info" and c["check"] == "LED multiplexed" for c in d9)
     else:
         assert any(c["id"] == "SIM.driver" and c["result"] == "fail" for c in d9)
-    assert not [c for c in out["checks"] if c["item"] == "D9" and c["result"] == "fail" and not c["id"].startswith("SIM.")]
+    assert not [c for c in out["checks"] if c["item"] == "D9" and c["result"] in ("fail", "warn")
+                and not c["id"].startswith("SIM.")]

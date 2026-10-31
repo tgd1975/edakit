@@ -30,7 +30,7 @@ def rows(out):
 def test_a_dc_step_across_a_switch_in_a_signal_path(project):
     switched_signal(project, "GND")
     found = rows(simulate(project))
-    assert found and {c["result"] for c in found} == {"fail"}
+    assert found and {c["result"] for c in found} == {"warn"}           # REQ.value/switch, a warning
     assert found[0]["check"].startswith("DC across SW8 in the signal path (SIG_B 0 V, SIG_A 3.3 V)")
     assert found[0]["expected"] == "≤ 10 mV"
 
