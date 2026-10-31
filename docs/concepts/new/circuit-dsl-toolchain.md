@@ -41,10 +41,10 @@ it reuses. Sizes as in the plans: S a day, M a few days, L a week or more, in a 
   VS Code's documentation as read, not as remembered).
 - **Evals** are written as cases; they run with `claude plugin eval` only where the harness is at hand and the
   owner's budget allows (`evals/README.md`); otherwise the report says "written, not run".
-- **The closing report:** one line per step – commit, tests added, what changed in led-bar's report (nothing, or
-  what) –, the decisions of the session, what the owner has to do (merge, run the evals, the SysON import by hand,
-  the bell's conversion in its repository), and the closing question of the decision-round skill for what the
-  session decided itself.
+-  **The closing report:** one line per step – commit, tests added, what changed in led-bar's report (nothing,
+  or what) –, the decisions of the session, what the owner has to do (merge, run the evals, the bell's
+  conversion in its repository), and the closing question of the decision-round skill for what the session
+  decided itself.
 
 ## What is built
 
@@ -83,7 +83,7 @@ lsp` on pygls and `editors/vscode/`.
 | T.20 | `Electrical.sysml` and the conformance test with a standard reader | M | T.7 | 3 |
 | T.21 | `edakit graph sysml` | M | T.15, T.20 | 3 |
 | T.22 | `edakit graph kerml` and the JSON serialization of clause 10.4 | M | T.21 | 3 |
-| T.23 | The requirements export; the SysON import documented; the optional CI job | S–M | T.22 | 3 |
+| T.23 | The requirements export; the optional CI job | S | T.22 | 3 |
 | T.24 | The source map written on request; a finding located in the source | S | T.4 | 4 |
 | T.25 | The language server, `edakit lsp` | M | T.24 | 4 |
 | T.26 | The VS Code extension | M | T.9, T.25 | 4 |
@@ -507,16 +507,15 @@ redefinitions, specializations – as elements of their own), `edakit/lang/cli.p
 `systree.import_file` where its reader takes the format (marker), else the structural check only, recorded in the
 decisions. Done when: the tests pass.
 
-**T.23 The requirements export; the SysON import documented; the optional CI job.** Files: `edakit/lang/export/sysml.py`
-(requirement usages with `doc`, `binding`, `status`, `subject`, `require constraint` with the condition as `doc`,
-`verify` as strings, `satisfy … by …` from the graph's `satisfies`, the need-to-requirement derivation with the
-Requirement Derivation library's `#derivation` metadata), `handbook/18-circuit-language.md` (the exports: files,
-the mapping in short, the conformance test, the import into Eclipse SysON step by step as its README and changelog
-describe the textual import – documented, marked "not run here" unless the session can run SysON),
-`.github/workflows/tests.yml` (a job `sysml` with `continue-on-error: true`: `pip install systree`, `pytest -m
-sysml`; Rust is on GitHub's Ubuntu runners), `README.md` (the exports in "What is in here"). Tests: the requirement
-export of language 11's requirements, structural and with the marker. Done when: the handbook describes the exports
-and the job runs on a push.
+**T.23 The requirements export; the optional CI job.** Files: `edakit/lang/export/sysml.py` (requirement usages
+with `doc`, `binding`, `status`, `subject`, `require constraint` with the condition as `doc`, `verify` as
+strings, `satisfy … by …` from the graph's `satisfies`, the need-to-requirement derivation with the Requirement
+Derivation library's `#derivation` metadata), `handbook/18-circuit-language.md` (the exports: files, the mapping
+in short, the conformance test; no import procedure of a graphical tool – language 12, item 18),
+`.github/workflows/tests.yml` (a job `sysml` with `continue-on-error: true`: `pip install systree`,
+`pytest -m sysml`; Rust is on GitHub's Ubuntu runners), `README.md` (the exports in "What is in here"). Tests:
+the requirement export of language 11's requirements, structural and with the marker. Done when: the handbook
+describes the exports and the job runs on a push.
 
 ### Stage 4: the editor
 
@@ -638,5 +637,4 @@ SysML v2 in the export.
   `skills/decision-round/SKILL.md`, handbook 3, 8.2, 10, 11.4, 14.5.
 - Syster's `systree` on [PyPI](https://pypi.org/pypi/systree/json) (the API, the CLI installed from crates.io on
   first use); [pygls](https://pypi.org/project/pygls/) as the language-server frame, named in circuit-dsl.md; the
-  release repository of SysML v2 for the installers of the pilot implementation; Eclipse SysON's README and changelog
-  for the textual import.
+  release repository of SysML v2 for the installers of the pilot implementation.

@@ -773,15 +773,16 @@ textual notation and the JSON serialization of clause 10.4 of KerML, an array of
 definitions, usages, parameters and requirements are the source's –; a JSON or TOML project exports as flat parts and
 nets. The requirements export with the circuit.
 
-**Conformance.** The test of stage 3 reads the library and an exported project with a standard reader and expects
-no error: `systree.analyze(path).error_count == 0` (Syster's Python wrapper, `pip install systree`, which installs
-`syster-cli` from crates.io on first use and so needs a Rust toolchain; alpha, MIT) for the textual files, and
-`systree.import_file` for the JSON where its reader takes the clause-10 format – else a structural check of
-edakit's own: every `@id` unique, every reference resolving, every `@type` a metaclass of the language. The pilot
-implementation's reader joins as a second reader when its headless invocation can be verified from the installers'
-documentation in the release repository (`install/`); if it cannot, it stays out, and the plan says so. Eclipse
-SysON imports the textual export by hand; the procedure is documented in the handbook, with what SysON shows. The
-test is an optional job of the CI: it needs Rust and the network, and its failure does not block edakit's tests.
+**Conformance.** The test of stage 3 reads the library and an exported project with a standard reader and
+expects no error: `systree.analyze(path).error_count == 0` (Syster's Python wrapper, `pip install systree`,
+which installs `syster-cli` from crates.io on first use and so needs a Rust toolchain; alpha, MIT) for the
+textual files, and `systree.import_file` for the JSON where its reader takes the clause-10 format – else a
+structural check of edakit's own: every `@id` unique, every reference resolving, every `@type` a metaclass of
+the language. The pilot implementation's reader joins as a second reader when its headless invocation can be
+verified from the installers' documentation in the release repository (`install/`); if it cannot, it stays out,
+and the plan says so. No acceptance test by a graphical tool: whoever imports the export into a SysML tool of
+their own does so for their purpose, not as edakit's test (the owner, 2026-10-31). The test is an optional job
+of the CI: it needs Rust and the network, and its failure does not block edakit's tests.
 
 ## 11. Examples
 
@@ -945,6 +946,9 @@ and language projects alike), the other sixteen acked as written:
     without a generated file is not touched.
 17.  A pin word that names no pin is a compile error of the language where the TOML form leaves it to STRUCT.pin
     – the compiler has the file and the line, while a loaded graph must still be checked.
+18.  No acceptance test by a graphical SysML tool: the conformance test with a standard reader is the export's
+    check; Eclipse SysON, a web application, stays a fact of the tool landscape and nothing more (the owner,
+    2026-10-31, on the closing question).
 
 ## Sources
 

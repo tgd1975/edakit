@@ -17,13 +17,14 @@ review's second reading, the waiting period of trigger 4 taken out, the SysML v2
 installers, Eclipse SysON, Sensmetry's Syside, Syster's `systree` – named in "What exists", "The basis" and
 stage 3, and derived values by named rules of edakit's in place of assertions evaluated from the graph:
 `asserts` dropped, `derivations` as the one key the language adds, DEF over the records only (item 4, the
-owner's ack of the review's recommendation). The detail concepts of the same day:
-[circuit-dsl-language.md](circuit-dsl-language.md) – the notation, its meaning and its definition on SysML v2
-and KerML, statement by statement – and [circuit-dsl-toolchain.md](circuit-dsl-toolchain.md) – the
-implementation plan of the toolchain, written for one session that builds all four stages without a question.
-Against the yardstick: a language changes nothing about what is text – its source and its resolved graph are
-text in the repository –; what it changes is where repetition, parameters and variants are written once instead
-of many times.
+owner's ack of the review's recommendation). SysON taken out of the acceptance test on the owner's word the same
+day: the conformance test with a standard reader is the export's check, a graphical import is the user's tool.
+The detail concepts of the same day: [circuit-dsl-language.md](circuit-dsl-language.md) – the notation, its
+meaning and its definition on SysML v2 and KerML, statement by statement – and
+[circuit-dsl-toolchain.md](circuit-dsl-toolchain.md) – the implementation plan of the toolchain, written for one
+session that builds all four stages without a question. Against the yardstick: a language changes nothing about
+what is text – its source and its resolved graph are text in the repository –; what it changes is where
+repetition, parameters and variants are written once instead of many times.
 
 ## The short answer
 
@@ -626,14 +627,15 @@ syntax, with the JSON interchange as its export, is what the specification itsel
   platform-independent SysML library of simulation elements", translations to Modelica and Simulink/Simscape, an
   electric circuit as Annex A.2); a successor for SysML v2 was not found.
 
-What that gives edakit: the meaning of redefinition, of inheritance down a variant chain, of multiplicity and of an
-invariant from a standard instead of an invention; the export `edakit graph kerml` and `edakit graph sysml` as a
-mapping, not a translation; a conformance test with a standard reader – the pilot implementation as a subprocess
-with a JDK, Syster's `systree` once it leaves alpha, Syside Automator where a proprietary library is acceptable –
-and the schema of clause 10 for the JSON export, checked from Python without a parser; a tool that imports the
-export and draws it, Eclipse SysON; and the handbook's vocabulary. What it does not give: the electrical domain –
-net, pin, role, LCSC number, board, order – which is edakit's library in any case and exists for SysML v2 nowhere
-else; and nothing at run time, since the engines read the resolved graph.
+What that gives edakit: the meaning of redefinition, of inheritance down a variant chain, of multiplicity and of
+an invariant from a standard instead of an invention; the export `edakit graph kerml` and `edakit graph sysml`
+as a mapping, not a translation; a conformance test with a standard reader – the pilot implementation as a
+subprocess with a JDK, Syster's `systree` once it leaves alpha, Syside Automator where a proprietary library is
+acceptable – and the schema of clause 10 for the JSON export, checked from Python without a parser; and the
+handbook's vocabulary. Whoever models the system around the board imports the export into a SysML tool of their
+own; that is the export's purpose, not a test of edakit's (the owner, 2026-10-31). What it does not give: the
+electrical domain – net, pin, role, LCSC number, board, order – which is edakit's library in any case and exists
+for SysML v2 nowhere else; and nothing at run time, since the engines read the resolved graph.
 
 Why KerML's own textual notation is not the source: it is more abstract than SysML v2's – `struct`, `feature`,
 `connector` for `part def`, `part`, `connection` – at the same length, two to three times the notation of the
@@ -729,10 +731,9 @@ toolchain" below.
 
 Not before, and not without, these:
 
-1. **The TOML form is built** ([circuit-language-plan.md](../done/circuit-language-plan.md), L.1 to L.9; L.1 to L.8 built on
-   2026-10-31, L.9 the bell's): pins by name or
-   role, the resolved `graph.json` beside the form, `--check` in the hook. The language compiles to the same
-   artifact; without it, it has no target.
+1.  **The TOML form is built** ([circuit-language-plan.md](../done/circuit-language-plan.md), L.1 to L.9; L.1 to
+   L.8 built on 2026-10-31, L.9 the bell's): pins by name or role, the resolved `graph.json` beside the form,
+   `--check` in the hook. The language compiles to the same artifact; without it, it has no target.
 2. **Blocks want parameters.** Measured in the projects: three or more blocks whose values a project changes – the
    LED current, a pull-up, a divider – and the notes "another value of the same series" in the graph.
 3. **A project with repetition or variants is at hand.** The bell's four configurations are one today (the section
@@ -763,17 +764,18 @@ The stages, each useful on its own:
   derivations; `edakit graph json` compiles either; `edakit graph show` (built 2026-10-31, FT-23) reads the resolved
   graph as it reads `graph.json` today and changes nothing. The bell and the tree as the first users, each at the
   user's request. Size M to L.
-- **Stage 3: the exports.** `edakit graph sysml`, the model SysML tools draw and whose requirements and variants
-  they follow, and `edakit graph kerml`, the kernel view as the interchange JSON of clause 10.4 – both a mapping,
-  since the notation is defined on the libraries –; the electrical library on SysML v2 that the mapping targets,
-  `Pin`, `Net`, `Resistor`, `LED`, `Block`, a requirement def with binding and status, metadata for `accept`, locks
-  and decisions, written once and the one artifact of the export others could import; the conformance test as an
-  optional job – the pilot implementation's reader as a subprocess with a JDK, or `systree` once it leaves alpha –
-  and the schema check of the JSON export in Python; the acceptance test an import into Eclipse SysON, done by hand
-  and documented. The requirements go with it, as requirement usages with `satisfy` and `verify`. Not built: a
-  SysML v2 reader of edakit's own – that is the pilot's, Syster's and Sensmetry's work. Never exporting would save
-  the mapping and give up the interoperability and the conformance test; the standard's notation as the source is
-  weighed in "The basis".
+-  **Stage 3: the exports.** `edakit graph sysml`, the model SysML tools draw and whose requirements and
+  variants they follow, and `edakit graph kerml`, the kernel view as the interchange JSON of clause 10.4 – both
+  a mapping, since the notation is defined on the libraries –; the electrical library on SysML v2 that the
+  mapping targets, `Pin`, `Net`, `Resistor`, `LED`, `Block`, a requirement def with binding and status, metadata
+  for `accept`, locks and decisions, written once and the one artifact of the export others could import; the
+  conformance test as an optional job – the pilot implementation's reader as a subprocess with a JDK, or
+  `systree` once it leaves alpha – and the schema check of the JSON export in Python; no acceptance test by a
+  graphical tool – a SysML tool that imports the export is the user's, not edakit's (the owner, 2026-10-31). The
+  requirements go with it, as requirement usages with `satisfy` and `verify`. Not built: a SysML v2 reader of
+  edakit's own – that is the pilot's, Syster's and Sensmetry's work. Never exporting would save the mapping and
+  give up the interoperability and the conformance test; the standard's notation as the source is weighed in
+  "The basis".
 - **Stage 4: a language server and a VS Code extension.** For the human in the editor: the reader's errors as they
   are typed, go to definition – a pin word to its entry, a usage to its definition, a net to its pins –, hover with
   the entry's limits and the net's range, completion of pin words, designators and codes, all over the reader and
@@ -810,7 +812,7 @@ are [circuit-dsl-toolchain.md](circuit-dsl-toolchain.md).
 | Editor grammar | a TextMate grammar for VS Code and a Pygments lexer for the documentation site; GitHub highlights no language of one's own, a `.gitattributes` mapping lends another language's colours at best | – | S | 1 |
 | Tests and evals | reader and compiler tests; golden files source → resolved graph for the bell's four files and led-bar; the round trip compile → convert → compile; determinism, two runs identical; `evals/add-led`, a repetition task and a variant task in the language, three runs each with Sonnet (FT-24) | `evals/add-led` in JSON; the prototype's round trip | M | 1 and 2 |
 | Handbook, reference, skills | a chapter on the language, the reference of statements, the skills circuit-design and hardware-change that write it, the README | the chapters of the TOML form (L.8), once written | M | 1 and 2 |
-| Exports | `edakit graph sysml` and `edakit graph kerml` from the resolved graph, the source's definitions and the requirements; the electrical library on SysML v2 they target; the schema check of the JSON export; the conformance test with the pilot's reader as an optional job | – ; the pilot implementation (Java, installers in the release repository), Eclipse SysON for the import, `systree` in alpha, `syside` proprietary | M | 3 |
+| Exports | `edakit graph sysml` and `edakit graph kerml` from the resolved graph, the source's definitions and the requirements; the electrical library on SysML v2 they target; the schema check of the JSON export; the conformance test with the pilot's reader as an optional job | – ; the pilot implementation (Java, installers in the release repository), `systree` in alpha, `syside` proprietary | M | 3 |
 | Language server | diagnostics as typed, go to definition, hover, completion, over the reader and resolver | – ; `pygls` as the frame in Python | M | 4 |
 | VS Code extension | the grammar, the server's client, format on save, `graph json --write` and `--check` as tasks, `graph show` for the element under the cursor, the findings of `edakit check` at their statements through the compiler's source map | – ; the source map is a small addition to the compiler | M | 4 |
 
