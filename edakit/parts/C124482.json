@@ -1,0 +1,92 @@
+{
+ "lcsc": "C124482",
+ "mpn": "2N3904BU",
+ "manufacturer": "onsemi(安森美)",
+ "kind": "npn",
+ "package": "TO-92-3 (case 135AN)",
+ "footprint": "TO-92-3_L5.1-W4.1-P1.27-L",
+ "jlc_class": "Extended Part",
+ "datasheet": {
+  "url": "https://www.onsemi.com/download/data-sheet/pdf/2n3904-d.pdf",
+  "pinout_page": 1,
+  "title": "2N3904 – NPN General-Purpose Amplifier",
+  "revision": "2N3904/D Rev. 3 (October 2024)"
+ },
+ "pins": {
+  "1": {
+   "name": "E",
+   "type": "passive",
+   "role": "emitter"
+  },
+  "2": {
+   "name": "B",
+   "type": "passive",
+   "role": "base"
+  },
+  "3": {
+   "name": "C",
+   "type": "passive",
+   "role": "collector"
+  }
+ },
+ "values": {
+  "hfe_min": 70,
+  "hfe_max": 300,
+  "vce_sat_v": 0.2,
+  "icbo_a": {
+   "25": 5e-08,
+   "125": 1.57e-05
+  }
+ },
+ "limits": {
+  "vce_max_v": 40,
+  "veb_max_v": 6.0,
+  "ic_max_a": 0.2,
+  "p_max_w": 0.625,
+  "rth_ja_k_per_w": 200,
+  "tj_max_c": 150,
+  "t_min_c": -55
+ },
+ "spice": {
+  "model": ".model 2N3904 NPN(IS=6f BF=230 IKF=0.23)"
+ },
+ "lead": {
+  "*": {
+   "shape": "rect",
+   "a_mm": 0.52,
+   "b_mm": 0.56,
+   "tol_mm": null,
+   "length_mm": 13.2,
+   "source": "onsemi 2N3904/D Rev. 3, p. 7, TO-92 3 case 135AN: lead width 0.36–0.56 mm, thickness 0.30–0.52 mm – the maximum values; lead length 13.20–15.62 mm (the minimum entered); pitch 1.27 mm; no hole recommendation"
+  }
+ },
+ "sources": [
+  "onsemi 2N3904 – NPN General-Purpose Amplifier, 2N3904/D Rev. 3 (October 2024), https://www.onsemi.com/download/data-sheet/pdf/2n3904-d.pdf, read 2026-10-31 – the data sheet that lists 2N3904BU (p. 6 ordering information: TO-92-3 LF, bulk bag); onsemi 2N3903, 2N3904 2N3903/D Rev. 9 (August 2021), https://www.onsemi.com/pdf/datasheet/2n3903-d.pdf, read the same day, gives the same ratings and the same hFE table for the 2N3904 (its order codes are 2N3904G, 2N3904RLRAG …, not 2N3904BU)",
+  "vce_max_v 40, veb_max_v 6.0, ic_max_a 0.2, tj_max_c 150, t_min_c -55: p. 1 maximum ratings (VCEO, VEBO, IC continuous, TJ/TSTG); VCBO 60 V has no field",
+  "p_max_w 0.625 and rth_ja_k_per_w 200: p. 1 thermal characteristics, PD at TA = 25 °C (derate 5.0 mW/°C) and RθJA max (RθJC 83.3 K/W)",
+  "hfe_min 70: p. 2 DC current gain at IC = 1.0 mA, VCE = 1.0 V – the lowest minimum between 1 and 10 mA, where bias stages run (40 at 0.1 mA, 100 at 10 mA, 60 at 50 mA, 30 at 100 mA); hfe_max 300: at IC = 10 mA, the only maximum the table gives – the spread corners take both as BF (sim/spread.py): at 10 mA the corner min is pessimistic, at 1 mA the corner max",
+  "vce_sat_v 0.2: p. 2 VCE(sat) max at IC = 10 mA, IB = 1.0 mA (0.3 V at 50 mA, 5 mA)",
+  "icbo_a – assumption: 50 nA at 25 °C is ICEX, the collector cut-off current at VCE = 30 V, VEB = 3 V (p. 2 maximum; the base reverse-biased, so the collector current is the collector-base junction's leakage – the data sheet gives no ICBO maximum); 15.7 µA at 125 °C is that maximum rising as the typical ICBO of Fig. 5 (VCB = 30 V) does: 0.24 nA at 25 °C, 1.0 nA at 50 °C, 75 nA at 125 °C, read from the graph – ×313 over 100 °C, doubling about every 12 °C. The spread corner max puts it from collector to base at sim.json ambient_c",
+  "spice: assumption – Gummel-Poon fitted by Claude to the typical curves, no manufacturer model read: BF 230 from Fig. 1 (typical pulsed hFE at 25 °C, VCE = 5 V: 232 at 0.1 mA, 230 at 1 mA, 224 at 10 mA, about 160 at 100 mA, read from the graph); IKF 0.23 A so that the gain falls to 160 at 100 mA (ngspice: 221 at 10 mA); IS 6 fA from Fig. 4 (VBE(on) at VCE = 5 V, 25 °C: 0.608 V at 0.1 mA, 0.668 V at 1 mA, 0.727 V at 10 mA, read from the graph – 60 mV per decade, NF 1); no Early voltage (VAF) and no ISE – the data sheet gives no output characteristic, and Fig. 1 is flat below 10 mA; no temperature dependence of the gain (Fig. 1: 140 at −40 °C, 380 at 125 °C)",
+  "pins 1 = emitter, 2 = base, 3 = collector: p. 1 marking diagram (1: Emitter, 2: Base, 3: Collector); EasyEDA symbol of C124482 1 E, 2 B, 3 C (edakit part import 2026-10-31)",
+  "LCSC/JLCPCB catalogue 2026-10-31 (edakit part search): onsemi 2N3904BU, TO-92, Extended Part, 37 274 pcs"
+ ],
+ "notes": "General-purpose small-signal NPN in TO-92: bias stages of boosts and fuzzes, switches up to 100 mA. Its hFE spread (70 … 300) and leakage are corners of the simulation (sim.json spread, maker-coverage FT-17). Library draft.",
+ "verified": {
+  "by": "Claude (datasheet check, library draft)",
+  "date": "2026-10-31",
+  "datasheet": "onsemi 2N3904/D Rev. 3 (October 2024)",
+  "datasheet_sha256": "aa4803e723bcd6bb29a2e14b3493d6763d38656f7335f7dd07aeef2a72feb74d",
+  "checked": [
+   "p. 1 marking diagram: 1 emitter, 2 base, 3 collector = EasyEDA symbol of C124482",
+   "p. 1: VCEO 40 V, VCBO 60 V, VEBO 6.0 V, IC 200 mA, TJ −55 … 150 °C, PD 625 mW, RθJA 200 K/W",
+   "p. 2: ICEX, IBL ≤ 50 nA (VCE 30 V, VEB 3 V); hFE ≥ 40 / 70 / 100–300 / 60 / 30 at 0.1 / 1 / 10 / 50 / 100 mA; VCE(sat) ≤ 0.2 V (10 mA, 1 mA)",
+   "p. 7 case 135AN: leads 0.36–0.56 × 0.30–0.52 mm at 1.27 mm pitch against the footprint's 0.7 mm holes"
+  ],
+  "open": [
+   "SPICE model is a fit by Claude to the typical curves, not a manufacturer model",
+   "icbo_a combines the maximum ICEX at 25 °C with the slope of the typical ICBO curve – the data sheet guarantees no leakage above 25 °C",
+   "hfe_min and hfe_max come from two collector currents (1 mA and 10 mA)"
+  ]
+ }
+}

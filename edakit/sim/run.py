@@ -2,7 +2,8 @@
 
     edakit sim [--json FILE] [--keep DIR]
 
-Scenarios = supplies x loads x LED forward-voltage corners from the simulation config (edakit.toml [project] sim),
+Scenarios = supplies x loads x LED forward-voltage corners x the spread corners of the transistors ("spread",
+sim/spread.py – without the key only typ) from the simulation config (edakit.toml [project] sim),
 plus "extra_scenarios" listed there. "combine_sources" adds supplies for every combination of the sources it names:
 each alone at both ends of its range, all together with one high and the others low (generated_supplies).
 "ac" adds AC runs around an operating point – only where it names an expectation, only with the domain audio or guitar on
@@ -39,7 +40,7 @@ from pathlib import Path
 from .. import engines
 from ..engines import sim as esim
 from ..findings import Finding, format_findings
-from . import copper, netlist
+from . import copper, netlist, spread
 
 
 
@@ -184,6 +185,9 @@ def net_currents(design, res, meta):
                 put([el["nodes"][1]], ib)
             elif el["kind"] in ("pmos", "nmos"):
                 put([el["nodes"][0], el["nodes"][2]], res.get(f"@{el['name']}[id]", 0.0))
+            elif el["kind"] in ("njfet", "pjfet"):
+                put([el["nodes"][0], el["nodes"][2]], res.get(f"@{el['name']}[id]", 0.0))
+                put([el["nodes"][1]], res.get(f"@{el['name']}[ig]", 0.0))
     for s in meta["sources"].values():  # the supply current returns through ground: the trunk of the GND net
         put(s["nodes"], -res.get(s["branch"], 0.0))
     for t in meta["cc"].values():
@@ -237,7 +241,10 @@ def generated_supplies(sim):
 
 
 def scenarios(sim):
+    """supplies × loads × LED corners × spread corners (sim/spread.py; without `spread` only typ, the names as before),
+    then the extra scenarios with their own corner and spread."""
     corners = sim.get("corners", ["typ"])
+    spreads = spread.matrix(sim)
     generated = generated_supplies(sim)
     taken = {(supply_settings(sim, s["supply"]), s["load"]) for s in sim.get("extra_scenarios", [])}
     for supply_name, supply in {**sim.get("supplies", {}), **generated}.items():
@@ -247,12 +254,14 @@ def scenarios(sim):
             if supply_name in generated and (supply_settings(sim, supply), load_name) in taken:
                 continue                     # an extra scenario took the combination over (info: excluded by procedure)
             for corner in corners:
-                yield {"name": f"{supply_name}/{load_name}/vf-{corner}", "supply_name": supply_name, "supply": supply,
-                       "load_name": load_name, "load": load, "corner": corner}
+                for sp in spreads:
+                    yield {"name": f"{supply_name}/{load_name}/vf-{corner}" + ("" if sp == "typ" else f"/spread-{sp}"),
+                           "supply_name": supply_name, "supply": supply, "load_name": load_name, "load": load,
+                           "corner": corner, "spread": sp}
     for s in sim.get("extra_scenarios", []):
         yield {"name": s["name"], "supply_name": s.get("supply_name", "extra"), "supply": s["supply"],
                "load_name": s["load"], "load": sim["loads"][s["load"]], "corner": s.get("corner", "typ"),
-               "info": s.get("info", False)}
+               "spread": s.get("spread", "typ"), "info": s.get("info", False)}
 
 
 FAULT_KEYS = ("reversed", "shorted", "off", "supply", "load")
@@ -302,7 +311,7 @@ def fault_scenarios(design, sim):
     return out
 
 
-RUN_KEYS = {"supply", "load", "corner", "stop_s", "step_s", "steps", "expect", "info", "about", "note"}
+RUN_KEYS = {"supply", "load", "corner", "spread", "stop_s", "step_s", "steps", "expect", "info", "about", "note"}
 
 
 def number(x):
@@ -388,7 +397,7 @@ def transient(design, new, sim, name, run, keep=None, models=None):
     nets = [n for n in dict.fromkeys([*sim.get("report", []), *(k for k in expect if k not in sources)])]
     grounds = {n: netlist.local_ground(design, n) for n in nets}
     sc = {"name": name, "supply": run["supply"], "load": sim["loads"][run["load"]], "corner": corner,
-          "steps": run.get("steps") or {}}
+          "steps": run.get("steps") or {}, "spread": run.get("spread", "typ")}
     tran = {"step_s": run.get("step_s", run["stop_s"] / 1000), "stop_s": run["stop_s"],
             "nets": [*nets, *grounds.values()], "file": re.sub(r"[^\w.-]", "_", name) + ".dat"}
     s = esim.Scene(design, new, sim, {}, {}, name, run.get("info", False))
@@ -447,6 +456,21 @@ def least_current(design, sim, sc, meta, models=None, keep=None):
         raise SimError(f"at the least current ({', '.join(cores)} at i_core_min_a): {e}") from None
 
 
+def ac_scenarios(dc, name, run):
+    """[(name, DC scenario)] an AC run linearises around: the scenario it names; without one the first DC scenario –
+    with spread corners the first of each corner (the same supply, load and LED corner), the run named
+    '<name> spread-<corner>' there: the gain of a stage moves with its transistors as its bias does."""
+    if run.get("scenario"):
+        return [(name, next(sc for sc in dc if sc["name"] == run["scenario"]))]
+    first = {}
+    for sc in dc:
+        if isinstance(sc.get("spread", "typ"), str):
+            first.setdefault(sc.get("spread", "typ"), sc)
+    if set(first) <= {"typ"}:
+        return [(name, dc[0])]
+    return [(name if x == "typ" else f"{name} spread-{x}", sc) for x, sc in first.items()]
+
+
 def run_all(design, sim, keep=None, plugin=None, routing=None):
     """All scenarios and transient runs; `sim` is the parsed simulation config (tests pass modified copies), `routing`
     the routed boards for sim.json copper (copper.load_routing). -> {"scenarios", "checks" (rows), "findings",
@@ -456,6 +480,10 @@ def run_all(design, sim, keep=None, plugin=None, routing=None):
     check_sources(design, sim)
     touch_limits(design, sim)
     runs = transient_runs(design, sim)
+    try:
+        spread.check(design, sim)
+    except spread.SpreadError as e:
+        raise SimError(str(e)) from None
     dc = list(scenarios(sim))
     try:
         ac_runs = ac.runs(design, sim, [sc["name"] for sc in dc])
@@ -471,8 +499,14 @@ def run_all(design, sim, keep=None, plugin=None, routing=None):
         out["checks"].append({"id": "SIM.copper", "scenario": "copper", "item": net, "check": "copper not annotated",
                               "actual": why, "expected": "the routed copper of the net", "result": "info"})
         found.append(Finding("SIM.copper", "E", net, f"copper not annotated: {why}"))
+    if any(sc["spread"] != "typ" for sc in dc) and (bare := spread.without(design)):
+        out["checks"].append({"id": "SIM.config", "scenario": "spread", "item": "spread",
+                              "check": "transistors without a spread in their entry – the same model in every corner",
+                              "actual": "; ".join(f"{des}: {why}" for des, why in bare.items()),
+                              "expected": "the spread of each transistor's datasheet", "result": "info"})
     for sc in [*dc, *fault_scenarios(design, sim)]:
-        row = {"name": sc["name"], "supply": sc["supply_name"], "load": sc["load_name"], "corner": sc["corner"]}
+        row = {"name": sc["name"], "supply": sc["supply_name"], "load": sc["load_name"], "corner": sc["corner"],
+               **({"spread": sc["spread"]} if sc.get("spread", "typ") != "typ" else {})}
         s = esim.Scene(design, new, sim, {}, {}, sc["name"], sc.get("info", False))
         s.fault = sc.get("fault", False)
         try:
@@ -513,15 +547,14 @@ def run_all(design, sim, keep=None, plugin=None, routing=None):
         found.append(ac.off_note(ac_runs))       # opt-in: only with the domain audio or guitar on (decision 9)
     elif ac_runs:
         out["ac"] = {}
-        by_name = {sc["name"]: sc for sc in dc}
         for name, run in ac_runs.items():        # AC runs: around a DC operating point, their expectations only
-            sc = by_name.get(run.get("scenario")) or dc[0]
-            row, rows, fs, curve = ac.run_one(design, new, sim, name, run, sc, ngspice_tran, keep, models)
-            out["checks"] += rows
-            found += fs
-            out["scenarios"].append(row)
-            if curve:
-                out["ac"][name] = curve
+            for tag, sc in ac_scenarios(dc, name, run):
+                row, rows, fs, curve = ac.run_one(design, new, sim, tag, run, sc, ngspice_tran, keep, models)
+                out["checks"] += rows
+                found += fs
+                out["scenarios"].append(row)
+                if curve:
+                    out["ac"][tag] = curve
     rep = engines.report(found, prof, new.graph, notes=False)
     out["findings"] = [f.to_dict() for f in rep.findings]
     return out

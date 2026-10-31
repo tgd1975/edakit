@@ -27,13 +27,15 @@ LIMITS_OF = {
              ("LIM.i", ("id_max_a",), "its drain current")],
     "pmos": [("LIM.v", ("vds_max_v",), "VDS"), ("LIM.v", ("vgs_max_v",), "VGS"),
              ("LIM.i", ("id_max_a",), "its drain current")],
+    "njfet": [("LIM.v", ("vdg_max_v", "vds_max_v"), "its drain voltage")],
+    "pjfet": [("LIM.v", ("vdg_max_v", "vds_max_v"), "its drain voltage")],
     "fuse": [("LIM.i", ("i_hold_a",), "what it lets pass")],
     "switch": [("LIM.i", ("i_max_a", "i_contact_max_a", "i_switch_max_a"), "its contact current")],
     "button": [("LIM.i", ("i_max_a", "i_contact_max_a", "i_switch_max_a"), "its contact current")],
     "connector": [("LIM.i", ("i_max_a", "i_contact_max_a"), "its contact current")],
     "relay": [("LIM.i", ("i_max_a", "i_contact_max_a", "i_switch_max_a"), "its contact current")],
 }
-DISSIPATES = ("resistor", "diode", "led", "led_rgb", "npn", "pnp", "nmos", "pmos")
+DISSIPATES = ("resistor", "diode", "led", "led_rgb", "npn", "pnp", "nmos", "pmos", "njfet", "pjfet")
 OWN_RANGE = {"ldo": ("vin_min_v",), "buck": ("vin_min_v",), "boost": ("vin_min_v",), "buck_boost": ("vin_min_v",),
              "mcu": ("vin_min_v", "vsys_min_v"),
              "current": ("vin_min_v", "vin_max_v")}

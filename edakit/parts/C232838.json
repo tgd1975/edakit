@@ -1,0 +1,91 @@
+{
+ "lcsc": "C232838",
+ "mpn": "2N7000",
+ "manufacturer": "onsemi(安森美)",
+ "kind": "nmos",
+ "package": "TO-92 (case 29, style 22)",
+ "footprint": "TO-92-3_L4.9-W3.7-P1.27-L",
+ "jlc_class": "Extended Part",
+ "datasheet": {
+  "url": "https://www.onsemi.com/download/data-sheet/pdf/2n7000-d.pdf",
+  "pinout_page": 1,
+  "title": "2N7000G – Small Signal MOSFET, 200 mAmps, 60 Volts, N-Channel TO-92",
+  "revision": "2N7000/D Rev. 8 (April 2011)"
+ },
+ "pins": {
+  "1": {
+   "name": "S",
+   "type": "passive",
+   "role": "source"
+  },
+  "2": {
+   "name": "G",
+   "type": "passive",
+   "role": "gate"
+  },
+  "3": {
+   "name": "D",
+   "type": "passive",
+   "role": "drain"
+  }
+ },
+ "values": {
+  "vgs_th_v": [
+   0.8,
+   null,
+   3.0
+  ],
+  "rds_on_max_ohm": {
+   "4.5": 6.0,
+   "10": 5.0
+  }
+ },
+ "limits": {
+  "vds_max_v": 60,
+  "vgs_max_v": 20,
+  "id_max_a": 0.2,
+  "p_max_w": 0.35,
+  "rth_ja_k_per_w": 357,
+  "tj_max_c": 150,
+  "t_min_c": -55
+ },
+ "spice": {
+  "model": ".model 2N7000 NMOS(LEVEL=1 VTO=3.0 KP=0.131)"
+ },
+ "lead": {
+  "*": {
+   "shape": "rect",
+   "a_mm": 0.5,
+   "b_mm": 0.533,
+   "tol_mm": null,
+   "source": "onsemi 2N7000/D Rev. 8, p. 4, TO-92 case 29-11: lead width D 0.407–0.533 mm, thickness J 0.39–0.50 mm – the maximum values; no hole recommendation"
+  }
+ },
+ "sources": [
+  "onsemi 2N7000G – Small Signal MOSFET, 2N7000/D Rev. 8 (April 2011), https://www.onsemi.com/download/data-sheet/pdf/2n7000-d.pdf, read 2026-10-31 (https://www.onsemi.com/pdf/datasheet/2n7000-d.pdf answered with the technical-documentation page); the data sheet names 2N7000G (Pb-free), the part LCSC lists as onsemi 2N7000",
+  "vds_max_v 60, vgs_max_v ±20 (continuous; ±40 V non-repetitive, tp ≤ 50 µs), id_max_a 0.2 (continuous; 0.5 A pulsed), tj_max_c 150, t_min_c -55: p. 1 maximum ratings",
+  "p_max_w 0.35: p. 1 total power dissipation, stated at TC = 25 °C (derate 2.8 mW/°C); rth_ja_k_per_w 357: p. 1 thermal characteristics, RθJA max",
+  "vgs_th_v 0.8 … 3.0 V (VDS = VGS, ID = 1.0 mA; no typical value – null) and rds_on_max_ohm 6.0 Ω at VGS 4.5 V, ID 75 mA and 5.0 Ω at VGS 10 V, ID 0.5 A: p. 2 on characteristics (VDS(on) ≤ 0.45 V and ≤ 2.5 V; Id(on) ≥ 75 mA at VGS 4.5 V, VDS 10 V)",
+  "spice: assumption – level 1 fitted by Claude, no manufacturer model read: VTO = VGS(th) max 3.0 V (no typical given; the worst case for switching on), KP 0.131 A/V² so that RDS(on) is 6.0 Ω at VGS 4.5 V and 75 mA (VDS(on) 0.45 V); at 10 V and 0.5 A the model gives 1.14 Ω (≤ 5.0 Ω) and 0.147 A of Id(on) at 4.5 V (≥ 75 mA); the spread corner min moves VTO to 0.8 V with KP so that the 6.0 Ω at 4.5 V hold (sim/spread.py)",
+  "pins 1 = source, 2 = gate, 3 = drain: p. 1 marking diagram and pin assignment; EasyEDA symbol of C232838 1 S, 2 G, 3 D (edakit part import 2026-10-31) – the reverse of the BS170 (D-G-S, C111691), maker-coverage GTP 13",
+  "LCSC/JLCPCB catalogue 2026-10-31 (edakit part search): onsemi 2N7000, TO-92-3L, Extended Part, 1 558 pcs"
+ ],
+ "notes": "Small-signal N-MOSFET in TO-92, source-gate-drain (the BS170 is drain-gate-source). VGS(th) 0.8 … 3.0 V: from a 3.3 V gate it is half on at the high end of the spread – LIM.range/gate, and the spread corners of the simulation (sim.json spread, maker-coverage FT-17). The gate has no protection diode. Library draft.",
+ "verified": {
+  "by": "Claude (datasheet check, library draft)",
+  "date": "2026-10-31",
+  "datasheet": "onsemi 2N7000/D Rev. 8 (April 2011)",
+  "datasheet_sha256": "b9cfecc7be11b19ac817e3160d6c862494f28cae0bdc3e826ab83ab15749c228",
+  "checked": [
+   "p. 1 pin assignment: 1 source, 2 gate, 3 drain = EasyEDA symbol of C232838",
+   "p. 1: VDSS 60 V, VDGR 60 V, VGS ±20 V (±40 V pulsed), ID 200 mA (500 mA pulsed), PD 350 mW, TJ −55 … 150 °C, RθJA 357 K/W",
+   "p. 2: VGS(th) 0.8 … 3.0 V at 1 mA; rDS(on) ≤ 6.0 Ω at 4.5 V, 75 mA and ≤ 5.0 Ω at 10 V, 0.5 A; IDSS ≤ 1 µA at 48 V",
+   "p. 4 case 29-11: leads 0.407–0.533 × 0.39–0.50 mm at 1.27 mm pitch against the footprint's 0.7 mm holes"
+  ],
+  "open": [
+   "SPICE model is a level-1 fit by Claude at the threshold's maximum, not a manufacturer model",
+   "vgs_th_v has no typical value (null in the middle)",
+   "the data sheet is of 2011 and names the 2N7000G; LCSC lists the part as onsemi 2N7000"
+  ]
+ }
+}

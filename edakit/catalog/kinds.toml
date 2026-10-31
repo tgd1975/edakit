@@ -116,15 +116,29 @@ limits = ["vr_max_v", "if_max_a"]
 values = ["vf_typ_v", "vf_min_v", "vf_max_v", "vf_at_a", "rs_ohm"]
 per_color = ["red", "green", "blue"]       # limits and values may be given per colour
 
-[kinds.npn]
+[kinds.npn]                                  # hfe_min, hfe_max: the corners of the simulation's spread (sim/spread.py);
+                                             # icbo_a: the collector-base leakage, {"°C": A} – its maximum by temperature
 roles = ["collector", "base", "emitter"]
 limits = ["vce_max_v", "veb_max_v", "ic_max_a"]
-values = ["hfe_min", "hfe_max", "vce_sat_v"]
+values = ["hfe_min", "hfe_max", "vce_sat_v", "icbo_a"]
 
 [kinds.pnp]
 roles = ["collector", "base", "emitter"]
 limits = ["vce_max_v", "veb_max_v", "ic_max_a"]
-values = ["hfe_min", "hfe_max", "vce_sat_v"]
+values = ["hfe_min", "hfe_max", "vce_sat_v", "icbo_a"]
+
+[kinds.njfet]                                # a junction FET: idss_a and vgs_off_v as [min, typ, max] – VGS(off)
+                                             # negative for the n-channel, positive for the p-channel; the spread's
+                                             # corners pair their ends. vgs_max_v: the gate's reverse voltage against
+                                             # the source, ig_max_a: its forward current (IGF)
+roles = ["drain", "gate", "source"]
+limits = ["vds_max_v", "vdg_max_v", "vgs_max_v", "ig_max_a", "id_max_a"]
+values = ["idss_a", "vgs_off_v"]
+
+[kinds.pjfet]
+roles = ["drain", "gate", "source"]
+limits = ["vds_max_v", "vdg_max_v", "vgs_max_v", "ig_max_a", "id_max_a"]
+values = ["idss_a", "vgs_off_v"]
 
 [kinds.nmos]
 roles = ["drain", "gate", "source", "drain_2", "gate_2", "source_2"]   # _2: the second channel of a dual part

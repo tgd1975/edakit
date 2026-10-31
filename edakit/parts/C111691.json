@@ -1,0 +1,87 @@
+{
+ "lcsc": "C111691",
+ "mpn": "BS170",
+ "manufacturer": "onsemi(安森美)",
+ "kind": "nmos",
+ "package": "TO-92 (TO-226, case 29, style 30)",
+ "footprint": "TO-92-3_L4.9-W3.7-P1.27-L",
+ "jlc_class": "Extended Part",
+ "datasheet": {
+  "url": "https://www.onsemi.com/download/data-sheet/pdf/bs170-d.pdf",
+  "pinout_page": 1,
+  "title": "BS170 – Small Signal MOSFET, 500 mA, 60 Volts, N-Channel TO-92",
+  "revision": "BS170/D Rev. 7 (November 2017)"
+ },
+ "pins": {
+  "1": {
+   "name": "D",
+   "type": "passive",
+   "role": "drain"
+  },
+  "2": {
+   "name": "G",
+   "type": "passive",
+   "role": "gate"
+  },
+  "3": {
+   "name": "S",
+   "type": "passive",
+   "role": "source"
+  }
+ },
+ "values": {
+  "vgs_th_v": [
+   0.8,
+   2.0,
+   3.0
+  ],
+  "rds_on_max_ohm": {
+   "10": 5.0
+  }
+ },
+ "limits": {
+  "vds_max_v": 60,
+  "vgs_max_v": 20,
+  "id_max_a": 0.5,
+  "p_max_w": 0.35,
+  "tj_max_c": 150,
+  "t_min_c": -55
+ },
+ "spice": {
+  "model": ".model BS170 NMOS(LEVEL=1 VTO=2.0 KP=0.0267)"
+ },
+ "lead": {
+  "*": {
+   "shape": "rect",
+   "a_mm": 0.5,
+   "b_mm": 0.533,
+   "tol_mm": null,
+   "source": "TO-92 case 29-11 (98ASB42022B), the outline of onsemi 2N7000/D Rev. 8, p. 4 and 2N3903/D Rev. 9, p. 7 – the BS170 data sheet names case 29, style 30, without printing it: lead width D 0.407–0.533 mm, thickness J 0.39–0.50 mm (straight lead, bulk pack) – the maximum values; no hole recommendation"
+  }
+ },
+ "sources": [
+  "onsemi BS170 – Small Signal MOSFET, BS170/D Rev. 7 (November 2017), https://www.onsemi.com/download/data-sheet/pdf/bs170-d.pdf, read 2026-10-31 (https://www.onsemi.com/pdf/datasheet/bs170-d.pdf answered with the technical-documentation page)",
+  "vds_max_v 60, vgs_max_v ±20 (continuous; ±40 V non-repetitive, tp ≤ 50 µs), id_max_a 0.5, p_max_w 0.35 (TA = 25 °C), tj_max_c 150, t_min_c -55: p. 1 maximum ratings; the data sheet gives no thermal resistance – LIM.t has no junction temperature for it",
+  "vgs_th_v 0.8 / 2.0 / 3.0 V (VDS = VGS, ID = 1.0 mA) and rds_on_max_ohm 5.0 Ω at VGS 10 V, ID 200 mA (typ 1.8 Ω), the only gate voltage it is specified at: p. 2 on characteristics",
+  "spice: assumption – level 1 fitted by Claude, no manufacturer model read: VTO = VGS(th) typ 2.0 V, KP 0.0267 A/V² so that RDS(on) is 5.0 Ω at VGS 10 V and ID 200 mA (VDS 1.0 V); the spread corners move VTO to 0.8 and 3.0 V with KP so that the 5.0 Ω hold (sim/spread.py)",
+  "pins 1 = drain, 2 = gate, 3 = source: p. 1 marking diagram and pin assignment; EasyEDA symbol of C111691 1 D, 2 G, 3 S (edakit part import 2026-10-31) – the reverse of the 2N7000 (S-G-D, C232838), maker-coverage GTP 13",
+  "LCSC/JLCPCB catalogue 2026-10-31 (edakit part search): onsemi BS170, TO-92, Extended Part, 4 638 pcs"
+ ],
+ "notes": "Small-signal N-MOSFET in TO-92, drain-gate-source (the 2N7000 is source-gate-drain). VGS(th) spreads from 0.8 to 3.0 V and RDS(on) is specified at 10 V only: from a 3.3 V or 5 V gate it is half on in the corner of the highest threshold – LIM.range/gate, and the spread corners of the simulation (sim.json spread, maker-coverage FT-17). The gate has no protection diode. Library draft.",
+ "verified": {
+  "by": "Claude (datasheet check, library draft)",
+  "date": "2026-10-31",
+  "datasheet": "onsemi BS170/D Rev. 7 (November 2017)",
+  "datasheet_sha256": "773e872dd24ac351180221fee2317fc99c1d490aa81407eb483d0cd0ca2eab29",
+  "checked": [
+   "p. 1 pin assignment: 1 drain, 2 gate, 3 source = EasyEDA symbol of C111691",
+   "p. 1: VDS 60 V, VGS ±20 V (±40 V pulsed), ID 0.5 A, PD 350 mW, TJ −55 … 150 °C",
+   "p. 2: VGS(th) 0.8 / 2.0 / 3.0 V at 1 mA; rDS(on) 1.8 typ / 5.0 max Ω at 10 V, 200 mA; ID(off) ≤ 0.5 µA at 25 V; Ciss ≤ 60 pF"
+  ],
+  "open": [
+   "SPICE model is a one-point level-1 fit by Claude, not a manufacturer model",
+   "no thermal resistance in the data sheet (rth_ja_k_per_w not entered)",
+   "lead dimensions from the case 29-11 outline of two other onsemi TO-92 data sheets – the BS170 data sheet names the case without printing it"
+  ]
+ }
+}

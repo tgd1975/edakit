@@ -14,7 +14,7 @@ Examples: [the Christmas bell's parts](https://github.com/tgd1975/automatic_chri
 |---|---|
 | `lcsc`, `mpn`, `manufacturer` | identification; `lcsc` equals the file name, `mpn` is what a component names in `part` – STRUCT.identity compares them, with the `kind` and the value parameters; with a maker that matches by MPN (Eurocircuits, `[cart]`) `mpn` and `manufacturer` are required for every assembled part (PARTS.fact/mpn) and go into `bom_<board>_mpn.csv` |
 | `order` | where a part bought separately is ordered, supplier → order code: `{"rs": "223-0562", "farnell": "…"}`; a value may be `{code, moq, step}` with the supplier's minimum and pack size, `{"lcsc": {"moq": 20, "step": 20}}` (the LCSC code defaults to `lcsc`). The first supplier is the default of `edakit order`; PARTS.supplier warns about a `bom: false` part with neither an LCSC number nor `order` – a `C99…` library number counts as none, LCSC does not sell it |
-| `kind` | `resistor`, `capacitor`, `inductor`, `fuse`, `diode`, `led`, `led_rgb`, `npn`, `pnp`, `pmos`, `nmos`, `switch`, `dip_switch`, `button`, `potentiometer`, `battery_holder`, `buzzer`, `relay`, `connector`, `ic`, `module`, `motor`, `solenoid`, `speaker`, `heater`, `optocoupler`, `esd_array` |
+| `kind` | `resistor`, `capacitor`, `inductor`, `fuse`, `diode`, `led`, `led_rgb`, `npn`, `pnp`, `pmos`, `nmos`, `njfet`, `pjfet`, `switch`, `dip_switch`, `button`, `potentiometer`, `battery_holder`, `buzzer`, `relay`, `connector`, `ic`, `module`, `motor`, `solenoid`, `speaker`, `heater`, `optocoupler`, `esd_array` |
 | `package`, `footprint` | the footprint name must equal the EasyEDA footprint (SYNC.footprint compares it with the PCB) |
 | `footprint_data` | optional: the footprint as data – origin, pads, outline and print in mm –, from which `edakit part build` builds the project's copy and to which SYNC.footprint holds it; an own footprint as text (4.5) |
 | `jlc_class` | Basic / Extended Part; PARTS.stock warn when JLCPCB's catalogue lists another class |
@@ -59,6 +59,7 @@ in `sources` – any RP2350 module takes the same list per GPIO. On the RP2040 a
 | led_rgb | common cathode: `anode_red`, `anode_green`, `anode_blue`, `cathode`; common anode: `anode`, `cathode_red`, `cathode_green`, `cathode_blue` – a pin with the role `anode` makes it a common anode |
 | npn, pnp | `collector`, `base`, `emitter` |
 | pmos, nmos | `drain`, `gate`, `source` |
+| njfet, pjfet | `drain`, `gate`, `source` |
 | switch | `common`, `throw_a`, `throw_b` |
 | button | `a`, `b` (pins connected inside share a role) |
 | dip_switch | `a1`…`aN`, `b1`…`bN` |
@@ -89,8 +90,10 @@ in `sources` – any RP2350 module takes the same list per GPIO. On the RP2040 a
 | `diode` | `vr_max_v`, `if_max_a`, `ifsm_max_a` | `vf_v`, `vf_at_a`, `ir_a`, `ir_at_v` |
 | `led` | `vr_max_v`, `if_max_a` | `color`, `vf_typ_v`, `vf_min_v`, `vf_max_v`, `vf_at_a`, `rs_ohm` |
 | `led_rgb` | `vr_max_v`, `if_max_a` | `vf_typ_v`, `vf_min_v`, `vf_max_v`, `vf_at_a`, `rs_ohm` |
-| `npn` | `vce_max_v`, `veb_max_v`, `ic_max_a` | `hfe_min`, `hfe_max`, `vce_sat_v` |
-| `pnp` | `vce_max_v`, `veb_max_v`, `ic_max_a` | `hfe_min`, `hfe_max`, `vce_sat_v` |
+| `npn` | `vce_max_v`, `veb_max_v`, `ic_max_a` | `hfe_min`, `hfe_max`, `vce_sat_v`, `icbo_a` |
+| `pnp` | `vce_max_v`, `veb_max_v`, `ic_max_a` | `hfe_min`, `hfe_max`, `vce_sat_v`, `icbo_a` |
+| `njfet` | `vds_max_v`, `vdg_max_v`, `vgs_max_v`, `ig_max_a`, `id_max_a` | `idss_a`, `vgs_off_v` |
+| `pjfet` | `vds_max_v`, `vdg_max_v`, `vgs_max_v`, `ig_max_a`, `id_max_a` | `idss_a`, `vgs_off_v` |
 | `nmos` | `vds_max_v`, `vgs_max_v`, `id_max_a`, `is_body_max_a` | `vgs_th_v`, `rds_on_max_ohm`, `vsd_v_at_1a` |
 | `pmos` | `vds_max_v`, `vgs_max_v`, `id_max_a`, `is_body_max_a` | `vgs_th_v`, `rds_on_max_ohm`, `vsd_v_at_1a` |
 | `switch` | `v_max_v`, `i_max_a`, `i_contact_max_a`, `i_switch_max_a` | `r_on_ohm`, `force_n`, `min_load_a` |
@@ -127,7 +130,7 @@ entry's before the default of the pin type. What the names do not say:
   conditions, not the absolute maximum – LIM.range holds every supply pin to it; a supply pin with another range has
   its own `v_op_min_v` / `v_op_max_v`. Own boards (behaviour `current`) `vin_min_v`, `vin_max_v` – the voltage at the
   connector over the board's own simulation (4.5).
-- any part that dissipates – resistor, diode, LED, BJT, MOSFET – `rth_ja_k_per_w` (junction to ambient) and
+- any part that dissipates – resistor, diode, LED, BJT, MOSFET, JFET – `rth_ja_k_per_w` (junction to ambient) and
   `tj_max_c`: LIM.t holds ambient + P × Rth(j-a) to the junction limit and, on a board people touch, to `touch_c`
   (5.3); without `rth_ja_k_per_w` the part gets no temperature item.
 - a MOSFET used as a switch: `vgs_th_v` (`[min, typ, max]`) and `rds_on_max_ohm` as a table `{"-2.5": 0.085, "-4.5": 0.06}` (VGS → Ω) – LIM.range/gate reports one whose |VGS| lies between its threshold and the lowest VGS its RDS(on) is specified at: a P-MOSFET on 5 V that a 3.3 V output cannot switch off, an IRF520 at 3.3 V.
@@ -142,6 +145,18 @@ entry's before the default of the pin type. What the names do not say:
   datasheet, simulated instead of 0 Ω (50 mΩ without it).
 - LED `vf_typ_v`, `vf_min_v`, `vf_max_v`, `vf_at_a`, `rs_ohm` – an RGB LED one set per colour under `red`, `green`,
   `blue`, limits too.
+- the spread of a transistor, the corners of the simulation's `spread` (5.2, maker-coverage FT-17): a BJT's
+  `hfe_min`, `hfe_max` – the DC gain's minimum and maximum from the datasheet's table, at the collector currents its
+  stages run at (the 2N3904: 70 at 1 mA, 300 at 10 mA) – and `icbo_a`, the collector-base leakage by temperature,
+  `{"°C": A}`: the datasheet's maximum, at more temperatures where it gives them (or, as the 2N3904's, the maximum at
+  25 °C rising as the typical curve does – say so in `sources`); a MOSFET's `vgs_th_v` `[min, typ, max]`; a JFET's
+  (kind `njfet`, `pjfet`) `idss_a` and `vgs_off_v` as `[min, typ, max]`, VGS(off) negative for an n-channel part,
+  `null` where the datasheet gives no typical value, and its limits `vds_max_v`, `vdg_max_v`, `vgs_max_v` (the gate's
+  reverse voltage against the source), `ig_max_a` (the forward gate current), `id_max_a`. The model in `spice` is the
+  typical part (`.model MMBFJ201 NJF(VTO=-0.77 BETA=0.98m LAMBDA=0.016)`); the corners set BF, VTO, KP and BETA from
+  these fields. In the library: 2N3904 (C124482), MMBFJ201 (C891687, the J201 in SOT-23), BS170 (C111691), 2N7000
+  (C232838), and the spreads the other transistors' entries already gave. A germanium part (AC128) has no datasheet
+  edakit could read: a project enters its own measured spread, with its source.
 - shift registers and LED drivers `first_bit_to`: the output the first shifted bit ends on, e.g. `"out7"`, from the
   datasheet's timing diagram – copied into the firmware contract (3.5).
 - buzzer `coil_ohm`: a magnetic buzzer, a coil for REQ.missing (flyback diode); relay `v_operate_v`, `v_release_v`

@@ -1,8 +1,10 @@
 """Graph + parts database -> ngspice netlist for one operating point (.op) of one scenario, or for one transient run
 (.tran) whose sources follow piecewise-linear curves ([t, V] points, PWL).
 
-Passive parts, diodes, LEDs, transistors and MOSFETs come from the graph 1:1, their values and SPICE models from the
-parts database; a 0 Ω bridge (value_ohm 0) is its maximum resistance r_max_ohm, 50 mΩ without one. An RGB LED is
+Passive parts, diodes, LEDs, transistors, MOSFETs and JFETs come from the graph 1:1, their values and SPICE models from
+the parts database – a transistor's model in the scenario's spread corner (spread.py: hFE, VGS(th), IDSS with VGS(off),
+a BJT's leakage in the corner max); a 0 Ω bridge (value_ohm 0) is its maximum resistance r_max_ohm, 50 mΩ without one.
+An RGB LED is
 three LEDs with the values and limits of their colour, common cathode (roles anode_<color>, cathode) or common anode
 (anode, cathode_<color>) as its roles say. An LED whose parts entry lacks one of these roles is left out of the
 netlist and listed in meta["leds_left_out"] (SIM.driver); one with a pin in nc is an unused LED and simply left out.
@@ -261,9 +263,27 @@ class Netlist:
         return self.load.get("gpio", {}).get(net, default)
 
     def model(self, des, part):
-        name = part["spice"]["model"].split()[1]
-        self.models[name] = part["spice"]["model"]
+        """The part's SPICE model by name; a transistor's in the scenario's spread corner (spread.py)."""
+        from . import spread
+        corner = spread.corner_of(self.sc, des)
+        if corner == "typ" or part.get("kind") not in spread.TRANSISTORS:
+            name, text = part["spice"]["model"].split()[1], part["spice"]["model"]
+        else:
+            name, text = spread.corner_model(part, des, corner)
+        self.models[name] = text
         return name
+
+    def leak(self, des, part, c, b):
+        """A BJT's collector-base leakage in the spread corner max (spread.leakage): a current from the collector
+        into the base at the scenario's ambient_c."""
+        from . import spread
+        if spread.corner_of(self.sc, des) != "max" or not c or not b:
+            return
+        i = spread.leakage(part, self.cfg.get("ambient_c", 25))
+        if i > 0:
+            a, z = (c, b) if part["kind"] == "npn" else (b, c)
+            self.add(f"I_{des}_LEAK {a} {z} DC {i:.6g}")
+            self.meta.setdefault("leakage", {})[des] = i
 
     # --- passive and discrete -------------------------------------------------------------------------------------
     def two_pole(self, des, prefix, value, kind, pins=("1", "2")):
@@ -354,6 +374,10 @@ class Netlist:
         elif kind in ("npn", "pnp"):
             c, b, e = (self.rn(des, x) for x in ("collector", "base", "emitter"))
             self.add(f"Q_{des} {c} {b} {e} {self.model(des, part)}", des, kind, (c, b, e))
+            self.leak(des, part, c, b)
+        elif kind in ("njfet", "pjfet"):
+            dr, g, s = (self.rn(des, x) for x in ("drain", "gate", "source"))
+            self.add(f"J_{des} {dr} {g} {s} {self.model(des, part)}", des, kind, (dr, g, s))
         elif kind in ("pmos", "nmos"):
             dr, g, s = (self.rn(des, x) for x in ("drain", "gate", "source"))
             self.add(f"M_{des} {dr} {g} {s} {s} {self.model(des, part)}", des, kind, (dr, g, s))
@@ -878,6 +902,8 @@ class Netlist:
                     prints.append(f"print @{el['name']}[ic] @{el['name']}[ib]")
                 elif el["kind"] in ("pmos", "nmos"):
                     prints.append(f"print @{el['name']}[id]")
+                elif el["kind"] in ("njfet", "pjfet"):
+                    prints.append(f"print @{el['name']}[id] @{el['name']}[ig]")
         body = "\n".join(self.lines)
         models = "\n".join(self.models.values())
         control = "op\n" + "\n".join(prints) if tran is None else self.tran_control(tran)
