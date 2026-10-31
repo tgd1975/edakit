@@ -294,3 +294,30 @@ def test_router_joins_around_a_part_and_crosses_only_inside_wires():
     assert not got["unjoined"]
     geo = {"R1": {"pins": sym.pins}}
     assert check_geometry(sheet, geo, {"R1.1": "A", "R1.2": "A"}) == []
+
+
+def block(box, bodies=()):
+    blk = Drawing()
+    blk.add_box(box)
+    blk.bodies = list(bodies) or [box]
+    return blk
+
+
+def test_wired_blocks_stand_around_the_module_their_pins_facing_it():
+    """The module's pin A points left: the block on A goes to its left, its pin level with the module's and facing it
+    – turned round when it faces away –, a channel left free between them; a block without a wire to the others
+    goes where the drawing grows least, not in a row of its own."""
+    hub = block((0, 0, 40, 100))
+    facing = block((0, 0, 40, 40))
+    got = schematic_draw.around([hub, facing], [{"A": [(0, 50, 180)]}, {"A": [(40, 20, 0)]}], [True, False], set())
+    assert got[0] == (0, 0, 0)
+    r, dx, dy = got[1]
+    assert r == 0 and 20 + dy == 50 and 40 + dx < 0       # level with A, left of the module, not turned
+    away = block((0, 0, 40, 40))
+    r, dx, dy = schematic_draw.around([hub, away], [{"A": [(0, 50, 180)]}, {"A": [(0, 20, 180)]}], [True, False],
+                                      set())[1]
+    tip = schematic_draw.moved(0, 20, r, dx, dy)
+    assert r == 180 and tip[1] == 50 and tip[0] < 0        # turned: its pin now faces the module
+    alone = block((0, 0, 200, 20))
+    r, dx, dy = schematic_draw.around([hub, alone], [{"A": [(0, 50, 180)]}, {}], [True, False], set())[1]
+    assert dy + 20 <= 0 or dy >= 100                        # above or below the module: a wide block grows least so

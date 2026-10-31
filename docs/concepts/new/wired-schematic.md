@@ -11,8 +11,9 @@ prototype that draws every project at hand this way and measures what it costs
 the graph as TOML), the drawing code unchanged, the measures the same. Built so far: W.1, the frame of the SVG
 optional, which the owner asked for on the side – merged into main the same day; W.5, the board's print per pin
 (`print` in the parts entry, `PD2 (D2)` in the drawing), the same day; W.2, the wired style, merged into main the
-same day on the owner's word (the measures of the build below the table of what to build); W.4, the interview's
-question on the drawing (new-project writes `style`, project-surveyor reports it), built the same day.
+same day on the owner's word; W.4, the interview's question on the drawing (new-project writes `style`,
+project-surveyor reports it), built the same day; W.3, placement for wires, on the branch `wired-w3` after W.2 (the
+measures of each build below the table of what to build).
 
 ## The short answer
 
@@ -194,6 +195,24 @@ cross because of where the blocks stand –; a rail stays only where two pieces 
 joins the smallest piece to the nearest first – the TS/Rat pedal keeps all three rails, the DevKitC three of four,
 the bell, the LED bar and the level converter run their ground as wires between the parts; the blocks' notes and the
 pin table are not drawn wired through.
+
+**W.3 as built** (2026-10-31). `around` in `schematic_draw`: the blocks of the rows – or one per module, IC and
+connector – no longer in rows but around the hub, the block with the module or else the one with the most nets to the
+others; each next block, the one with the most nets to those placed, tried on all four sides, as it is and turned by
+180°, its pins of the shared signal nets level with theirs and moved out of the placed ones' way by the least
+distance – a channel of four cells and one more per shared net; of the eight the one whose wires cost least in the
+router's own costs, drawn from a cell out of each of its pins to a cell out of the nearest of theirs, straight with
+one bend: a step, a crossing of a placed or of its own wire, and the way round a part's body or along its outline
+there and back with two bends – a capacitor a jog, a module a long way. A power net pulls a fifth – it goes to its
+rail –; a block with no wire to the placed ones goes where the drawing grows least. Measured against W.2 at `27a6bd1`
+on every board at hand (crossings wires through / mixed, wire through): the bell 6 / 3 → 4 / 2, 1.4 → 1.2 m, its
+servo line from PB0 straight down to J1 below the Nano; the logic level converter 12 / 9 → 11 / 7; the boost pedal
+3 / 3 → 2 / 2, 1.2 → 0.5 m; the TS/Rat pedal 51 / 63 → 36 / 39, 14.6 → 6.9 m; the Corne 226 / 90 → 218 / 74, 28.0 →
+19.3 m; the ESP32 DevKitC 373 / 33 → 183 / 30, 12.0 → 8.7 m; the hand-wired boards the same. Every board has less
+wire, every page but the DevKitC's wired one (4 % more) is smaller in area. Worse: the LED bar wired through 13 → 18
+(mixed 8 → 7) – the TLC5916's inputs come in another order than the Pico's pins, which no placement mends –, the
+Corne v3 mixed 142 → 171 (wired through 237 → 196), and the DevKitC leaves 5 nets unjoined instead of 1 (named, as
+before). A block turned by 180° keeps its texts upright.
 
 ## Costs and risks
 

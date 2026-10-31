@@ -26,8 +26,9 @@ block.
 
   - "labels": the above – labelled stubs between the blocks, flags for ground and the supplies;
   - "wires": every connection a wire from pin to pin, as the maker scene draws it (Fritzing's schematic view): a pin
-    without a child gets a lead of one grid cell, no flag; the blocks stand twice as far apart, without frames, titles
-    and notes – the gaps are the channels; a module shows every pin, the unused ones grey. A router on the grid
+    without a child gets a lead of one grid cell, no flag; the blocks lose frames, titles and notes and stand around
+    the module instead of in rows (around: each on the side and the way round where its wires come out shortest, a
+    channel as wide as they are left free); a module shows every pin, the unused ones grey. A router on the grid
     (10 units a cell) joins every net – ground along a rail below the drawing, the supplies along rails above, the rest
     by the cheapest path (a step 1, a bend 4, crossing another net 12, running beside one 1; never through a part,
     along another net's wire or through its ends, bends, junctions or pin tips) – and every net gets a colour, ground
@@ -57,8 +58,8 @@ from . import engines
 from .engines.hint import MATCHERS
 from .circuit import supply_nets
 from .design import Design, natural_key
-from .schematic_layout import (GRID, TITLE_BLOCK, Drawing, Layout, block_notes, box_union, check_geometry,
-                               crossings, layout_config, merge_wires, on_segment, rot)
+from .schematic_layout import (GRID, TITLE_BLOCK, Drawing, Layout, block_notes, box_move, box_rot, box_union,
+                               check_geometry, crossings, layout_config, merge_wires, on_segment, rot)
 
 MM = 0.254          # one unit (10 mil) in millimetres
 PAGE_MARGIN = 40
@@ -73,7 +74,6 @@ TWO_TERMINAL = ("resistor", "capacitor", "inductor", "fuse", "diode", "led", "bu
 TRANSISTORS = ("npn", "pnp", "nmos", "pmos")
 SEED_ORDER = {"module": 1, "ic": 2, "connector": 3, "relay": 4, "battery_holder": 5}   # power inputs come first
 STYLES = {"labels": "", "wires": "wires through", "mixed": "mixed: wires, labels for buses"}   # -> title block
-WIRE_GAP = 120      # between the blocks of a wired drawing: the gaps are the channels (labels: BLOCK_GAP 60)
 BUS_PINS = 6        # the mixed style: a signal net with this many pins or more keeps its labelled stubs
 STEP, TURN, CROSS, BESIDE = 1, 4, 12, 1   # the router's costs: a step, a bend, crossing another net, beside one
 AHEAD, FRONT = 2, 12                      # the AHEAD cells in front of an open lead end cost other nets FRONT
@@ -82,6 +82,7 @@ PALETTE = ["#1f5fbf", "#2a8f3a", "#8a3fb0", "#b0652a", "#0f8f8f", "#c42f7a", "#7
            "#3f8f6f"]
 GROUND_COLOUR = "#202020"
 SUPPLY_COLOURS = ["#d42020", "#e07a10", "#b8a000", "#d4207a"]
+CHANNEL_CELLS, POWER_PULL = 4, 0.2      # placement for wires: a channel's cells beside its wires, a power net's pull
 H, V, X = 1, 2, 3   # how a net takes a cell: running across, running up, or an end, bend, junction or pin tip
 
 
@@ -918,9 +919,203 @@ def flag_reach(net, kind, ground):
 class DrawLayout(Layout):
     """The layout with this drawing's flags: 8 high, so flags at neighbouring pins (10 apart) need no jog."""
     ground = "GND"
+    around = False   # the wired styles: the blocks around the hub instead of in rows
 
     def flag_box(self, net):
         return 0, -4, flag_reach(net, self.power.get(net), self.ground), 4
+
+    def build(self):
+        """The wired styles (self.around): the blocks around the hub by the nets they share, not in rows."""
+        if not self.around:
+            return super().build()
+        blocks = [b for row in self.blocks for col in row for title, roots in col
+                  if (b := self.block(title, roots)).box is not None]
+        for b in blocks:
+            b.bodies = [box_move(box_rot(self.geo[d]["body"], r), x, y) for d, x, y, r in b.comps]
+        sheet = Drawing()
+        for blk, (r, dx, dy) in zip(blocks, around(blocks, [self.block_tips(b) for b in blocks],
+                                                 [self.has_module(b) for b in blocks], set(self.power))):
+            sheet.place(blk, r, dx, dy)
+        return sheet, None
+
+    def block_tips(self, blk):
+        """{net: [(x, y, direction)]} – the pin tips of the block's nets that are drawn as wires, the power nets too."""
+        tips = defaultdict(list)
+        for d, x, y, r in blk.comps:
+            for p, (lx, ly, dirn) in self.geo[d]["pins"].items():
+                net = self.pin_net.get(f"{d}.{p}")
+                if net in self.wired:
+                    px, py = rot(lx, ly, r)
+                    tips[net].append((px + x, py + y, (dirn + r) % 360))
+        return tips
+
+    def has_module(self, blk):
+        return any(self.geo[d].get("type") in ("microcontroller", "module") for d, *_ in blk.comps)
+
+
+def around(blocks, tips, hubs, power):
+    """W.3: where each block goes, as (rotation, dx, dy). The hub – the block with the module, else the one with the
+    most nets to the others – in the middle; then, the block with the most nets to those placed first: on each side
+    of them, as it is and turned round, its pins of the shared nets level with theirs and moved out of their way by
+    the least distance, a channel as wide as the wires it brings – and of those eight the one whose wires, drawn
+    straight with one bend, are shortest, cross the fewest wires and have the least way round parts; a block without a
+    wire to them where the drawing grows least. A power net counts a fifth: it goes to its rail. tips: per block
+    {net: [(x, y, pin direction)]}."""
+    n = len(blocks)
+    if not n:
+        return []
+
+    def pull(net):
+        return POWER_PULL if net in power else 1
+
+    links = [[sum(pull(net) for net in tips[i].keys() & tips[j].keys()) if i != j else 0 for j in range(n)]
+             for i in range(n)]
+    hub = max(range(n), key=lambda i: (hubs[i], sum(links[i]), -i))
+    pos = {hub: (0, 0, 0)}
+    placed = [blocks[hub].box]
+    segs = [seg for _, ss in blocks[hub].wires for seg in ss]
+    bodies = list(blocks[hub].bodies)
+    while len(pos) < n:
+        i = max((i for i in range(n) if i not in pos), key=lambda i: (sum(links[i][j] for j in pos), -i))
+        blk = blocks[i]
+        pairs, w = [], 0.0       # (pull, our tips, their tips) of every shared net, theirs where they are
+        for j, (rj, dx, dy) in pos.items():
+            for net in tips[i].keys() & tips[j].keys():
+                pairs.append((pull(net), tips[i][net], [(*moved(x, y, rj, dx, dy), (d + rj) % 360)
+                                                         for x, y, d in tips[j][net]]))
+                w += pull(net)
+        level = [p for p in pairs if p[0] == 1] or pairs   # the pins to line up: the signal nets, if any
+        lw = sum(k for k, _, _ in level)
+        if w:
+            tx = sum(k * sum(t[0] for t in th) / len(th) for k, _, th in level) / lw
+            ty = sum(k * sum(t[1] for t in th) / len(th) for k, _, th in level) / lw
+        else:       # nothing in common with the placed ones: as near the middle as there is room
+            tx, ty = (placed[0][0] + placed[0][2]) / 2, (placed[0][1] + placed[0][3]) / 2
+        gap = GRID * (CHANNEL_CELLS + math.ceil(w))
+        whole = boxes_union(placed)
+        best, low = None, None
+        for r in (0, 180):
+            b = box_rot(blk.box, r)
+            if w:
+                ox = sum(k * sum(rot(t[0], t[1], r)[0] for t in ou) / len(ou) for k, ou, _ in level) / lw
+                oy = sum(k * sum(rot(t[0], t[1], r)[1] for t in ou) / len(ou) for k, ou, _ in level) / lw
+            else:
+                ox, oy = (b[0] + b[2]) / 2, (b[1] + b[3]) / 2
+            for normal in ((-1, 0), (1, 0), (0, 1), (0, -1)):
+                if normal[1] == 0:   # left or right: our pins level with theirs
+                    dx = tx - (b[0] if normal[0] > 0 else b[2]) + normal[0] * gap
+                    dy = ty - oy
+                else:                # above or below
+                    dx = tx - ox
+                    dy = ty - (b[1] if normal[1] > 0 else b[3]) + normal[1] * gap
+                dx, dy = clear_of(b, placed, round(dx / GRID) * GRID, round(dy / GRID) * GRID, normal, gap)
+                if w:
+                    cost = estimate(pairs, (r, dx, dy), blk, segs, bodies)
+                else:        # no wire to the placed ones: where the drawing grows least
+                    grown = boxes_union([whole, box_move(b, dx, dy)])
+                    cost = grown[2] - grown[0] + grown[3] - grown[1]
+                if low is None or cost < low:
+                    best, low = (r, dx, dy), cost
+        r, dx, dy = best
+        pos[i] = best
+        placed.append(box_move(box_rot(blk.box, r), dx, dy))
+        segs += [(*moved(s[0], s[1], r, dx, dy), *moved(s[2], s[3], r, dx, dy)) for _, ss in blk.wires for s in ss]
+        bodies += [box_move(box_rot(bb, r), dx, dy) for bb in blk.bodies]
+    return [pos[i] for i in range(n)]
+
+
+def boxes_union(boxes):
+    out = None
+    for b in boxes:
+        out = box_union(out, b)
+    return out
+
+
+def moved(x, y, r, dx, dy):
+    x, y = rot(x, y, r)
+    return x + dx, y + dy
+
+
+def estimate(pairs, at, blk, segs, bodies):
+    """What a block's wires to the placed ones would cost at (r, dx, dy): each from one of our pins to the nearest of
+    theirs, a cell out from either tip, straight with one bend – the cheaper of the two –, in the router's costs: a step per cell,
+    a crossing of a placed or of our own wire, and the way round a part's body it would pass through."""
+    r, dx, dy = at
+    own = [(*moved(s[0], s[1], r, dx, dy), *moved(s[2], s[3], r, dx, dy)) for _, ss in blk.wires for s in ss]
+    ours_b = [box_move(box_rot(bb, r), dx, dy) for bb in blk.bodies]
+    lines, total = segs + own, 0.0
+    for k, ou, th in pairs:
+        for t in ou:
+            ax, ay = out_of(*moved(t[0], t[1], r, dx, dy), t[2] + r)
+            bx, by = out_of(*min(th, key=lambda t: abs(t[0] - ax) + abs(t[1] - ay)))
+            best = None
+            for mid in ((bx, ay), (ax, by)):
+                path = [(ax, ay, *mid), (*mid, bx, by)]
+                c = sum(abs(p[2] - p[0]) + abs(p[3] - p[1]) for p in path) / GRID * STEP
+                c += CROSS * sum(cuts(p, q) for p in path for q in lines)
+                c += sum(around_body(p, bb) for p in path for bb in bodies + ours_b)
+                best = c if best is None else min(best, c)
+            total += k * best / len(ou)
+    return total
+
+
+def out_of(x, y, dirn):
+    """A cell out from a pin's tip the way it points: where a wire leaves it – the tips themselves are no way."""
+    dx, dy = rot(GRID, 0, dirn % 360)
+    return x + round(dx), y + round(dy)
+
+
+def cuts(p, q):
+    """Whether two axis-parallel segments cross inside both."""
+    if (p[1] == p[3]) == (q[1] == q[3]):
+        return False
+    h, v = (p, q) if p[1] == p[3] else (q, p)
+    return (min(h[0], h[2]) < v[0] < max(h[0], h[2])) and (min(v[1], v[3]) < h[1] < max(v[1], v[3]))
+
+
+def around_body(p, bb):
+    """What an axis-parallel segment through a part's body costs more than straight: the way round it on the nearer
+    side, there and back, and two bends – a capacitor's width is a jog, a module's length a long way."""
+    x0, x1, y0, y1 = min(p[0], p[2]), max(p[0], p[2]), min(p[1], p[3]), max(p[1], p[3])
+    if (x0, y0) == (x1, y1) or not (x0 <= bb[2] and bb[0] <= x1 and y0 <= bb[3] and bb[1] <= y1):
+        return 0             # along the outline counts as through: the router keeps off it too
+    side = min(y0 - bb[1], bb[3] - y0) if y0 == y1 else min(x0 - bb[0], bb[2] - x0)
+    return 2 * (side + GRID) / GRID * STEP + 2 * TURN
+
+
+def clear_of(b, placed, dx, dy, normal, gap):
+    """The offset nearest (dx, dy) at which box b keeps gap from every placed box – a step inwards, against normal,
+    counting three times."""
+    def cost(ox, oy):
+        mx, my = ox - dx, oy - dy
+        along = mx * normal[0] + my * normal[1]
+        return abs(mx) + abs(my) + (2 * -along if along < 0 else 0)
+
+    def hit(ox, oy):
+        m = box_move(b, ox, oy)
+        return next((p for p in placed if m[0] < p[2] + gap and p[0] < m[2] + gap and m[1] < p[3] + gap
+                     and p[1] < m[3] + gap), None)
+
+    heap, seen = [(0, dx, dy)], set()
+    while heap:
+        c, ox, oy = heapq.heappop(heap)
+        if (ox, oy) in seen:
+            continue
+        seen.add((ox, oy))
+        p = hit(ox, oy)
+        if p is None:
+            return ox, oy
+        if len(seen) > 400:
+            break
+        m = box_move(b, ox, oy)
+        for nx, ny in ((ox + p[2] + gap - m[0], oy), (ox - (m[2] + gap - p[0]), oy),
+                       (ox, oy + p[3] + gap - m[1]), (ox, oy - (m[3] + gap - p[1]))):
+            nx, ny = math.ceil(nx / GRID) * GRID if nx > ox else math.floor(nx / GRID) * GRID, \
+                math.ceil(ny / GRID) * GRID if ny > oy else math.floor(ny / GRID) * GRID
+            heapq.heappush(heap, (cost(nx, ny), nx, ny))
+    # nothing near: below everything
+    low = min(p[1] for p in placed)
+    return dx, low - gap - b[3]
 
 
 def fit(sheet, frame=True):
@@ -1097,8 +1292,8 @@ def drawing(cfg, board, drawn_by="edakit schematic draw", frame=True, style="lab
     labelled = labelled_nets(design, comps, lc["power"]) if style == "mixed" else set()
     if wired:
         lay.wired = set(lay.nets) - labelled
-        lay.block_gap = lay.row_gap = WIRE_GAP
         lay.frames = False
+        lay.around = True
     sheet = lay.build()[0]
     wires = wire_through(sheet, syms, lay.pin_net, lc["power"], labelled) if wired else None
     sheet, size = fit(sheet, frame)

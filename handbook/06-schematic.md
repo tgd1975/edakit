@@ -166,10 +166,14 @@ of any size, wires through for a maker-size circuit or a hand-wired board, mixed
 style = "wires"                          # every board; or by board: style = {main = "labels", panel = "wires"}
 ```
 
-Wired through, the arrangement stays the one above, with four changes: a pin without a part on it gets a lead of one
-grid cell instead of a labelled stub and no flag; the blocks stand twice as far apart, without frames, titles and
-notes – the gaps are the channels; a module shows every pin as the board does, the open ones grey; a button's pins
-joined inside it show once per side. Then a router on the schematic grid joins every net: the cheapest path from
+Wired through, the blocks are the ones above, with four changes: a pin without a part on it gets a lead of one grid
+cell instead of a labelled stub and no flag; no frames, titles and notes; a module shows every pin as the board does,
+the open ones grey; a button's pins joined inside it show once per side. They are not set in rows but around the
+module – or the block with the most nets to the others –: each next block, the one with the most nets to those
+placed, on the side and the way round (as it is or turned by 180°) where its wires to them come out shortest, with
+the fewest crossings and through no part, its pins level with theirs; a channel as wide as the wires it brings stays
+free around it. A block without a wire to the others goes where the drawing grows least. The rows of the schematic
+file still say which parts form a block. Then a router on the schematic grid joins every net: the cheapest path from
 piece to piece – a step costs 1, a bend 4, crossing another net 12, running beside one 1, each of the two cells in
 front of another net's open lead 12, so that the lead keeps its way out –, never through a part or along its outline,
 never along another net's wire or through its ends, bends, junctions and pin tips; the ground along a rail below the
@@ -183,12 +187,13 @@ connectors on them, or six pins or more (a key matrix, a shared line) – and wi
 crossings and wire; the title block names the style:
 
 ```text
-drawn (wires through): 19 parts, 19 wires, 6 crossings, 1.4 m of wire, 201 x 187 mm
+drawn (wires through): 19 parts, 19 wires, 4 crossings, 1.2 m of wire, 122 x 220 mm
 ```
 
-How far it goes is the structure, not the number of parts: the bell (19 parts) has 6 crossings, the LED bar 13, the
-TS/Rat pedal with 86 parts 51; a module whose headers mirror its pins (the ESP32 DevKitC: 373) or a key matrix is a
-mesh – mixed brings the DevKitC to 33, a matrix stays one. A second for the bell, half a minute for a keyboard half.
+How far it goes is the structure, not the number of parts: the bell (19 parts) has 4 crossings, the LED bar 18, the
+TS/Rat pedal with 86 parts 36; a module whose headers mirror its pins (the ESP32 DevKitC: 183) or a key matrix is a
+mesh – mixed brings the DevKitC to 30, a matrix stays one. A second for the bell, a quarter of a minute for a
+keyboard half.
 The check then tells a crossing – two nets' wires meeting inside both – from a T, which is a short, and refuses a
 crossing at a junction, a bend or a pin tip and a net crossing itself without a dot. The style reaches the SVG only:
 EasyEDA's board schematic and the KiCad schematic keep their labels (concept wired-schematic, decision 1).
