@@ -12,7 +12,7 @@
 <text x="50" y="76.4" dy="0" font-size="8" text-anchor="start" fill="#000000" xml:space="preserve">Q1 blocks cells put in upside down (D-4)</text>
 <text x="630" y="62" dy="0" font-size="16" text-anchor="start" fill="#000000" font-weight="bold" xml:space="preserve">CMOS 555 blinker</text>
 <text x="630" y="76.4" dy="0" font-size="8" text-anchor="start" fill="#000000" xml:space="preserve">f = 1 / (2 ln 2 · R1 · C2) = 0.96 Hz, 50 % lit (D-5)</text>
-<text x="630" y="84.4" dy="0" font-size="8" text-anchor="start" fill="#000000" xml:space="preserve">D1 carries 519 µA at 2.2 V, 4.64 mA from fresh cells</text>
+<text x="630" y="84.4" dy="0" font-size="8" text-anchor="start" fill="#000000" xml:space="preserve">D1 carries 519 µA at 2.2 V, 7.32 mA from fresh cells</text>
 <polyline points="320,160 310,160" fill="none" stroke="#16801a" stroke-width="1.2"/>
 <polyline points="310,160 140,160" fill="none" stroke="#16801a" stroke-width="1.2"/>
 <polyline points="140,170 150,170" fill="none" stroke="#16801a" stroke-width="1.2"/>

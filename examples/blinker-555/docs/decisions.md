@@ -8,7 +8,7 @@ One board `main`, drawn in KiCad 10 (`toolchain = "kicad"`), the graph as TOML f
 assembly of the SMD parts on the top side, the 2×AAA holder and the slide switch through-hole and soldered by hand
 (`bom = false`), the holder on the bottom. 5 sets, edakit's defaults for the order, no budget. Built for oneself in the
 EU (`purpose.use` "private"). No firmware, no documents that quote values, no scripts or agents of the project's own.
-The requirements now, with the skill requirements. From the concept `docs/concepts/new/walkthrough-kicad-555.md`,
+The requirements now, with the skill requirements. From the concept `docs/concepts/done/walkthrough-kicad-555.md`,
 decisions 1, 2, 5 and 6.
 
 ## D-2 What it must do (2026-10-31)
