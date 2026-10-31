@@ -70,21 +70,29 @@ def part_limits(design, q):
     else:
         table_, where = limits(part), q.entry
     hi, lo = table_.get(f"{q.name}_max_{suffix}"), table_.get(f"{q.name}_min_{suffix}")
+    hi_name = f"{q.name}_max_{suffix}"
+    if q.pin and q.name == "v" and isinstance(table_.get("v_max_powered_v"), (int, float)):
+        if q.grade == "powered":       # the unpowered limit alone: the quantity pin_voltages adds for it
+            return [Limit(max=hi, source=f"v_max_v of {where}, unpowered")] if isinstance(hi, (int, float)) else []
+        hi, hi_name = table_["v_max_powered_v"], "v_max_powered_v"
     factor = FACTOR.get(q.kind, 1.0) if q.stage == "G" and not q.pin else 1.0
     eps = SIM_EPS_V if q.stage == "E" and q.unit == "V" else 0.0     # ngspice's noise against a limit of 0 V
     if isinstance(hi, (int, float)):
-        out.append(Limit(max=hi, factor=factor, derate=q.derate, eps=eps, source=f"{q.name}_max_{suffix} of {where}"))
+        out.append(Limit(max=hi, factor=factor, derate=q.derate, eps=eps, source=f"{hi_name} of {where}"))
     if isinstance(lo, (int, float)):
         out.append(Limit(min=lo, eps=eps, source=f"{q.name}_min_{suffix} of {where}"))
     negative_supply = q.pin and q.pin_type == "power_in" and table_.get("role") in NEGATIVE_SUPPLY_ROLES
-    if q.pin and q.name == "v" and q.pin_type in ACTIVE_TYPES and not negative_supply:
+    own_floor = q.pin and isinstance(table_.get("v_min_v"), (int, float))     # the pin's own lower limit holds
+    if q.pin and q.name == "v" and q.pin_type in ACTIVE_TYPES and not negative_supply and not own_floor:
         out.append(Limit(min=PIN_MIN_V, eps=eps, source="an active pin: derating.toml [pin] v_min_v"))
     return out
 
 
 # --- producers of stage G: the declared ranges -----------------------------------------------------------------------
 def pin_voltages(d):
-    """The voltage at every pin: the declared range of its net."""
+    """The voltage at every pin: the declared range of its net – against the pin's v_max_powered_v where it has one,
+    and a second quantity of grade powered against its v_max_v: the range is declared, whether the part is powered
+    then is the simulation's to say."""
     out = []
     for name, net in d.nets.items():
         lo, hi = v_range(net)
@@ -92,11 +100,18 @@ def pin_voltages(d):
             des, _, num = ref.partition(".")
             info = d.pin_info(ref)
             pin = f"{ref} ({info.get('name', num)})"
-            out.append(Quantity(ref, "v", hi, lo=lo, entry=d.entry_key(des) if des in d.comps else None, pin=num,
+            entry = d.entry_key(des) if des in d.comps else None
+            out.append(Quantity(ref, "v", hi, lo=lo, entry=entry, pin=num,
                                 pin_type=info.get("type", ""), how=f"{name} {lo:g}…{hi:g} V at {pin}", on=(("net", name),),
                                 say=lambda v, lim, f, name=name, pin=pin: (
                                     f"{name} up to {v:g} V, but {pin} allows {lim:g} V" if v > 0 or lim > 0
                                     else f"{name} down to {v:g} V at {pin}")))
+            if isinstance(info.get("v_max_powered_v"), (int, float)):
+                out.append(Quantity(ref, "v", hi, entry=entry, pin=num, pin_type=info.get("type", ""), grade="powered",
+                                    how=f"{name} up to {hi:g} V at {pin}", on=(("net", name),),
+                                    say=lambda v, lim, f, name=name, pin=pin, des=des: (
+                                        f"{name} up to {v:g} V at {pin} – {lim:g} V while {des} is unpowered, more "
+                                        "only while it is powered (the simulation checks each scenario)")))
     return out
 
 

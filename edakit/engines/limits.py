@@ -18,7 +18,7 @@ import math
 
 from ..design import natural_key
 from ..findings import Finding
-from ..circuit import is_number
+from ..circuit import is_number, v_range
 from ..radio import (EIRP_BANDS, EU_BANDS, NOT_LEGAL_ADVICE, RADIO_KEYS, band_names, bands_in_use, eirp, mhz_ranges,
                      overlaps, radios, stated_use, within)
 from .quantities import fuse_currents, part_limits, part_voltages, pin_voltages
@@ -73,8 +73,37 @@ def judge_all(design, quantities):
 def run(ctx):
     found = judge_all(ctx.design, pin_voltages(ctx.design) + part_voltages(ctx.design))
     found += judge_all(ctx.joined, fuse_currents(ctx.joined, ctx.sim))
-    return (found + hazardous(ctx.design) + charge_currents(ctx.design, ctx.sim) + radio_power(ctx.design)
-            + radio_bands(ctx.design))
+    return (found + hazardous(ctx.design) + supply_order(ctx.design) + charge_currents(ctx.design, ctx.sim)
+            + radio_power(ctx.design) + radio_bands(ctx.design))
+
+
+# --- supply order ------------------------------------------------------------------------------------------------------
+def order_pairs(part):
+    """[(lower pin number, higher pin number, lower name, higher name)] of a part's supply_order (pin names)."""
+    by_name = {}
+    for num, info in (part.get("pins") or {}).items():
+        by_name.setdefault(info.get("name"), num)
+    return [(by_name[a], by_name[b], a, b) for a, b in (part.get("supply_order") or [])
+            if a in by_name and b in by_name]
+
+
+def supply_order(d):
+    """LIM.v/order (schema-gaps B2): a supply the entry says never rises above another (supply_order – VLOGIC ≤ VDD of
+    the MPU-6050) is not declared higher than it; each scenario of stage E holds it at its operating point."""
+    out = []
+    for des in sorted(d.comps, key=natural_key):
+        part = d.part(des) or {}
+        for lo_pin, hi_pin, lo_name, hi_name in order_pairs(part):
+            a, b = d.pin_net.get(f"{des}.{lo_pin}"), d.pin_net.get(f"{des}.{hi_pin}")
+            if not a or not b or a == b:
+                continue
+            va, vb = v_range(d.nets[a])[1], v_range(d.nets[b])[1]
+            if va > vb + 1e-9:
+                out.append(Finding("LIM.v", "G", des, f"{des}: {lo_name} on {a} up to {va:g} V, above {hi_name} on {b} "
+                                   f"(up to {vb:g} V) – the entry wants {lo_name} ≤ {hi_name}",
+                                   f"supply_order of {d.entry_key(des)}", grade="order", on=(("component", des),),
+                                   data={"value": va, "limit": vb, "unit": "V"}))
+    return out
 
 
 # --- linear chargers (maker-coverage FT-4) ----------------------------------------------------------------------------

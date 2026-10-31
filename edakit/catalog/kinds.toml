@@ -34,17 +34,25 @@ dielectric = ["C0G", "NP0", "X5R", "X7R", "X7S", "X6S", "Y5V", "electrolytic", "
 [free]
 values = ["polarized", "tolerance", "iout_accuracy", "iout_gain", "hfe_min", "hfe_max", "efficiency", "usb_c",
           "i_hold_vs_temp", "first_bit_to", "v_io_v", "comparator", "tvs"]
-pin = ["name", "type", "role", "strap", "pull", "hint", "functions", "out_edge", "t_pd_ns", "needs", "drive", "float_ok", "adc", "z_in_ohm", "short_proof", "clamp", "windows"]
-entry = ["needs", "address", "antenna", "library"]   # needs switches a default of catalog/needs.toml off
+pin = ["name", "type", "role", "strap", "pull", "hint", "functions", "out_edge", "t_pd_ns", "needs", "drive", "float_ok", "adc", "z_in_ohm", "short_proof", "clamp", "windows", "ref"]
+entry = ["needs", "address", "antenna", "library", "supply_order", "i_group_max_a"]   # needs switches a default of catalog/needs.toml off
                                 # ({"decoupling": false}); address: a bus address (REQ.forbidden/address); antenna:
                                 # {keepout_mm = [x0, y0, x1, y1]} – the area around the antenna that stays free of
                                 # copper, in the footprint's frame at rotation 0 on top (GEO.keepout); library: the
-                                # version of edakit/parts/ a copy was taken from (PARTS.library)
+                                # version of edakit/parts/ a copy was taken from (PARTS.library); supply_order:
+                                # [[lower pin, higher pin], …] – one supply never above another (VLOGIC ≤ VDD);
+                                # i_group_max_a: {group: {pins = [numbers], max = A}} – a sum of pin currents
 
 [common]
 limits = ["p_max_w", "rth_ja_k_per_w", "tj_max_c", "t_max_c", "t_min_c"]
 values = []
-pin = ["v_max_v", "v_op_min_v", "v_op_max_v", "vih_v", "vil_v", "vih_ratio", "vil_ratio", "pull_ohm"]
+pin = ["v_max_v", "v_op_min_v", "v_op_max_v", "vih_v", "vil_v", "vih_ratio", "vil_ratio", "pull_ohm",
+       "v_min_v", "v_rel_max_v", "v_max_powered_v", "i_max_a", "i_inject_max_a", "r_load_min_ohm", "c_load_max_f"]
+# v_min_v: the pin's own lower limit (an RS-485 line, −7.5 V) – in place of the floor of an active pin; v_rel_max_v:
+# how far the pin may rise above its reference supply (the pin named in ref, else the part's supply) – null: none,
+# a pin rated above its supply; v_max_powered_v: the limit while the part is powered (v_max_v: unpowered); i_max_a:
+# the pin's own current; i_inject_max_a: the current its protection diodes take; r_load_min_ohm, c_load_max_f: what an
+# output may drive
 
 [pin_types]
 types = ["passive", "input", "output", "bidirectional", "power_in", "power_output", "ground", "analog",

@@ -104,6 +104,7 @@ def problems(entry):
         if not (isinstance(box, list) and len(box) == 4 and all(is_number(x) for x in box)
                 and box[0] < box[2] and box[1] < box[3]):
             out.append("antenna.keepout_mm: [x0, y0, x1, y1] in mm with x0 < x1 and y0 < y1 (the footprint's frame)")
+    out += supply_order_problems(entry) + group_problems(entry)
     roles = (k["kinds"][kind]).get("roles", [])
     pin_names = allowed(kind, "pin") | set(k["free"]["pin"])
     for num, pin in (entry.get("pins") or {}).items():
@@ -115,8 +116,12 @@ def problems(entry):
         for name, v in pin.items():
             if name not in pin_names:
                 out.append(f"{at}.{name}: not a pin field")
-            elif unit_of(name) and not numeric(v):
+            elif unit_of(name) and not numeric(v) and not (name == "v_rel_max_v" and v is None):
                 out.append(f"{at}.{name}: {v!r} is no number")
+        names = {p.get("name") for p in (entry.get("pins") or {}).values()}
+        if "ref" in pin and pin["ref"] not in names:
+            out.append(f"{at}.ref: {pin['ref']!r} – the name of a pin of this part (the supply its relative limits and "
+                       "threshold ratios refer to)")
         if pin.get("strap") not in (None, "high", "low"):
             out.append(f"{at}.strap: {pin['strap']!r} – high or low")
         if pin.get("pull") not in (None, "up", "down"):
@@ -133,6 +138,34 @@ def problems(entry):
         lo, hi = pin.get("v_op_min_v"), pin.get("v_op_max_v")
         if is_number(lo) and is_number(hi) and lo > hi:
             out.append(f"{at}: v_op_min_v {lo} above v_op_max_v {hi}")
+    return out
+
+
+def supply_order_problems(entry):
+    """supply_order: [[lower, higher], …] – pairs of pin names of the part."""
+    order = entry.get("supply_order")
+    if order is None:
+        return []
+    names = {p.get("name") for p in (entry.get("pins") or {}).values()}
+    if not (isinstance(order, list) and order and all(isinstance(x, list) and len(x) == 2 for x in order)):
+        return ["supply_order: [[lower pin, higher pin], …] – pin names, the first never above the second"]
+    return [f"supply_order: {n!r} – no pin of this part has that name" for pair in order for n in pair if n not in names]
+
+
+def group_problems(entry):
+    """i_group_max_a: {group: {pins: [pin numbers], max: A}}."""
+    groups = entry.get("i_group_max_a")
+    if groups is None:
+        return []
+    pins = set((entry.get("pins") or {}))
+    if not isinstance(groups, dict) or not groups:
+        return ["i_group_max_a: {group: {pins = [numbers], max = A}} – the most current a group of pins carries"]
+    out = []
+    for name, g in groups.items():
+        if not (isinstance(g, dict) and isinstance(g.get("pins"), list) and g["pins"] and is_number(g.get("max"))):
+            out.append(f"i_group_max_a.{name}: {{pins = [numbers], max = A}}")
+            continue
+        out += [f"i_group_max_a.{name}: pin {n!r} – not a pin of this part" for n in g["pins"] if str(n) not in pins]
     return out
 
 
