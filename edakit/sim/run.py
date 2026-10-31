@@ -471,10 +471,28 @@ def ac_scenarios(dc, name, run):
     return [(name if x == "typ" else f"{name} spread-{x}", sc) for x, sc in first.items()]
 
 
+def unrated_cables(design, currents):
+    """A row of information per cable without i_max_a that carries current (maker-coverage FT-2, rules-at-scale.md
+    decision 22): its highest current over the scenarios and the loss per metre of wire it causes – no limit to judge
+    it by; edakit check --coverage names the same cables."""
+    from ..engines.coverage import CARRIES_A, cable_loss
+    rows = []
+    for c in design.graph.get("cables") or []:
+        e = currents.get(c.get("name"))
+        if e is None or e["i_a"] < CARRIES_A or number(c.get("i_max_a")):
+            continue
+        amount, basis = cable_loss(c, e["i_a"])
+        rows.append({"id": "LIM.i", "scenario": e["scenario"], "item": f"cable {c['name']}",
+                     "check": f"highest current through a wire, no i_max_a (wire {e['wire']} – {amount}, {basis})",
+                     "actual": f"{e['i_a']:.4g} A", "expected": "information", "result": "info"})
+    return rows
+
+
 def run_all(design, sim, keep=None, plugin=None, routing=None):
     """All scenarios and transient runs; `sim` is the parsed simulation config (tests pass modified copies), `routing`
     the routed boards for sim.json copper (copper.load_routing). -> {"scenarios", "checks" (rows), "findings",
-    "net_currents"}"""
+    "net_currents", "cable_currents" ({cable: {i_a, wire, scenario}}: the highest current through a wire of each cable
+    over the DC scenarios, the generated faults left out)}"""
     from . import ac
     models = getattr(plugin, "MODELS", {}) if plugin else {}
     check_sources(design, sim)
@@ -489,7 +507,7 @@ def run_all(design, sim, keep=None, plugin=None, routing=None):
         ac_runs = ac.runs(design, sim, [sc["name"] for sc in dc])
     except ac.ACError as e:
         raise SimError(str(e)) from None
-    out = {"scenarios": [], "checks": [], "net_currents": {}}
+    out = {"scenarios": [], "checks": [], "net_currents": {}, "cable_currents": {}}
     new, found = design, []
     try:
         cu = copper.annotate(design, sim, routing)
@@ -532,11 +550,17 @@ def run_all(design, sim, keep=None, plugin=None, routing=None):
             e = out["net_currents"].setdefault(net, {"i_max_a": 0.0, "scenario": ""})
             if i > e["i_max_a"]:
                 e.update(i_max_a=i, scenario=sc["name"])
+        if not sc.get("fault"):      # a generated fault's short is no operating current of a wire
+            for name, (i, wire) in esim.cable_currents(design, res, meta).items():
+                e = out["cable_currents"].setdefault(name, {"i_a": i, "wire": wire, "scenario": sc["name"]})
+                if i > e["i_a"]:
+                    e.update(i_a=i, wire=wire, scenario=sc["name"])
         results = {r["result"] for r in rows}
         row["status"] = "fail" if "fail" in results else "warn" if "warn" in results else "ok"
         out["checks"] += rows
         found += fs
         out["scenarios"].append(row)
+    out["checks"] += unrated_cables(design, out["cable_currents"])
     for name, run in runs.items():   # transient runs: their limits, no stress, not in the net currents
         row, rows, fs = transient(design, new, sim, name, run, keep, models)
         out["checks"] += rows
@@ -586,18 +610,24 @@ def save_result(cfg, sim, out):
     return path
 
 
+def saved_result(cfg, sim=None):
+    """The result the last run saved, when its inputs are unchanged – else None; runs nothing (edakit check --coverage
+    takes the cables' currents from it)."""
+    try:
+        sim = sim if sim is not None else load_sim_config(cfg)[0]
+        data = json.loads((cfg.artifacts / "sim" / "result.json").read_text(encoding="utf-8"))
+        same = isinstance(data, dict) and data.get("inputs_sha256") == inputs_sha256(cfg, sim)
+    except (OSError, ValueError, SimError):
+        return None
+    return data if same else None
+
+
 def current_result(cfg):
     """The simulation result of the current state: the one saved by the last run when its inputs are unchanged, else a
     new run (saved in turn) – for values quoted from the simulation (edakit docs, DOCS.quote)."""
     sim, _ = load_sim_config(cfg)
-    path = cfg.artifacts / "sim" / "result.json"
-    if path.exists():
-        try:
-            data = json.loads(path.read_text(encoding="utf-8"))
-        except json.JSONDecodeError:
-            data = {}
-        if data.get("inputs_sha256") == inputs_sha256(cfg, sim):
-            return data
+    if (data := saved_result(cfg, sim)) is not None:
+        return data
     from ..design import Design
     plugin = load_plugin(cfg.sim_plugin) if cfg.sim_plugin else None
     routing = copper.load_routing(cfg) if sim.get("copper") else None

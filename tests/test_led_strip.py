@@ -26,8 +26,8 @@ def strip(project, length, ends=(0,), wires=None, share=1.0, volts=5.0, **comp):
     """The example with a 5 V supply J5 for the LEDs (net VLED) and the strip DS1 of `length` metres. `ends` – 0 the
     start, 1 the far end – are joined to VLED and GND directly; `wires` instead feeds through cables from JST XH
     connectors J10, J11 … on the board: per cable its place along the strip ("start", "end" or metres), its
-    length_m, awg and i_max_a (optional); the strip then sits on a board of its own, strip (bought – nobody makes it).
-    The load all_on lights the strip at `share` of full white. -> the simulation config."""
+    length_m, awg and i_max_a (optional); the strip then sits on a board of its own, strip (wired = true: no PCB,
+    nobody makes it). The load all_on lights the strip at `share` of full white. -> the simulation config."""
     project.use_library_part(KEY)
     g = project.graph()
     graph = g["graph"]
@@ -42,7 +42,7 @@ def strip(project, length, ends=(0,), wires=None, share=1.0, volts=5.0, **comp):
     if wires is not None:
         toml = project.root / "edakit.toml"
         if "[boards.strip]" not in toml.read_text():
-            toml.write_text(toml.read_text() + '\n[boards.strip]\ntitle = "LED strip"\nbought = true\n')
+            toml.write_text(toml.read_text() + '\n[boards.strip]\ntitle = "LED strip"\nwired = true\n')
         for c in graph["components"]:
             c["board"] = "main"
         ds["board"] = "strip"

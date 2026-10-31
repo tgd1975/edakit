@@ -24,13 +24,17 @@ LOCK_KEYS = ("pins", "doc_pin_table")
 def run(ctx):
     d, cfg = ctx.design, ctx.cfg
     boards = set(cfg.boards) if cfg else set()
-    bought = boards - set(cfg.made()) if cfg else set()
-    return (structure(d, boards, bought) + refs(d) + locks(d, ctx.root) + entries(d, cfg) + configs_named(d)
-            + states_named(d) + identity(d))
+    unmade = {name: b.unmade for name, b in cfg.boards.items() if b.unmade} if cfg else {}
+    return (structure(d, boards, unmade) + bought_panels(d, cfg) + refs(d) + locks(d, ctx.root) + entries(d, cfg)
+            + configs_named(d) + states_named(d) + identity(d))
 
 
-def structure(d, boards, bought=()):
-    g, out = d.graph, []
+NOBODY = {"bought": "nobody assembles it", "hand-wired": "wired by hand, no assembler"}
+
+
+def structure(d, boards, unmade=None):
+    """unmade: {board: "bought" | "hand-wired"} – the boards nobody draws or assembles, whose parts have bom: false."""
+    g, out, unmade = d.graph, [], unmade or {}
 
     def add(code, place, text, on=()):
         out.append(Finding(code, "G", place, text, on=on))
@@ -63,8 +67,9 @@ def structure(d, boards, bought=()):
             add("STRUCT.pin", f"{des}.{p}", f"{des}.{p} in nc but not a pin")
         if boards and c.get("board") not in boards:
             add("STRUCT.board", des, f"{des}: 'board' must be one of {sorted(boards)} (edakit.toml [boards])")
-        if c.get("board") in bought and c.get("bom") is not False:
-            add("STRUCT.board", des, f"{des}: on the bought board {c['board']} – nobody assembles it: bom: false")
+        if c.get("board") in unmade and c.get("bom") is not False:
+            what = unmade[c["board"]]
+            add("STRUCT.board", des, f"{des}: on the {what} board {c['board']} – {NOBODY[what]}: bom: false")
     for ref, n in used.items():
         if n > 1:
             add("STRUCT.pin", ref, f"{ref} used in {n} nets")
@@ -94,6 +99,21 @@ def structure(d, boards, bought=()):
     if "purpose" in g and (g["purpose"] or {}).get("use") not in PURPOSES:
         add("STRUCT.purpose", "purpose.use", f"purpose.use must be one of {', '.join(PURPOSES)} – the regulatory review "
                                              "(M-6) starts there")
+    return out
+
+
+def bought_panels(d, cfg):
+    """STRUCT.board/wired (a note): a bought board none of whose parts is a module – parts wired by hand rather than
+    one purchased assembly, which wired = true says (maker-coverage FT-2, rules-at-scale.md decision 22). bought = true
+    keeps working for it; the note only names the key."""
+    out = []
+    for name, b in (cfg.boards.items() if cfg else ()):
+        mine = [des for des, c in d.comps.items() if c.get("board") == name]
+        if b.bought and mine and not any(d.comps[des].get("type") == "module" or (d.part(des) or {}).get("kind")
+                                         == "module" for des in mine):
+            out.append(Finding("STRUCT.board", "G", f"[boards.{name}]", f"[boards.{name}]: bought = true, but no part "
+                               "on it is a bought module – a board of parts wired by hand says so with wired = true "
+                               "(handbook 4.5)", grade="wired"))
     return out
 
 

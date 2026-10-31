@@ -60,6 +60,14 @@ the supply over time and LIM.v judges them. Switching spikes and fast edges are 
   pack its charger charges on purpose); both are `criteria.blocking_max_a` (1 mA) unless set.
 - Every net is one node – a track is 0 Ω – unless sim.json `copper` names it (5.2): then each of its pins gets a node
   of its own, with the routed tracks and vias as resistors in between, and every check sees the voltage at the pin.
+- A cable between boards (3.1): a net through it gets a node of its own on the from side (`VIN__usb`), each wire a
+  resistor – `r_ohm_per_wire`, or the copper of `length_m` and the gauge – and with `l_nh_per_m` an inductance in
+  series. ngspice gives each wire's current; with the cable's `i_max_a` (the rating per wire of its own datasheet)
+  every wire is held to it, derated as every current (LIM.i/cable, a warning while new). Without it, a cable that carries current gets
+  one row of information over the scenarios – the highest current through a wire, which wire, the loss per metre of
+  wire I² × R (`highest current through a wire, no i_max_a (wire 1 – I² × R: 1.756 mW per metre of wire, AWG 26 copper
+  at 20 °C)`) – and `edakit check --coverage` names it (3.3); the generated fault scenarios are left out of the highest
+  current, a short is no operating current. edakit derives no rating from the gauge (rules-at-scale.md, decision 22).
 - Off-board loads (a servo, a motor, a strip at a connector): the load's `external`, e.g.
   `{"J1": {"plus": "2", "minus": "1", "i_a": 0.3}}` – a constant current between the two pins; it counts for the
   connector's contact current and for the track widths.
@@ -71,7 +79,7 @@ the supply over time and LIM.v judges them. Switching spikes and fast edges are 
   The pins with the roles `vdd` and `gnd` feed the rails at the start, `vdd_end` and `gnd_end` at the far end. A cable
   to the strip gives each of its pins a node of its own with the wire's resistance in between, so that every feed
   carries its own current; a cable with `at_m` lands its wires on the rails at that place instead – an injection
-  point. A strip on a board of its own (`bought = true`, 4.5) is reached through its cables only: a pin no wire lands
+  point. A strip on a board of its own (`wired = true`, 4.5) is reached through its cables only: a pin no wire lands
   on is an open end of its rail. A strip plugged into the output of another (chained: `vdd_end`, `gnd_end`, `dout` of
   the first on nets of their own with `vdd`, `gnd`, `din` of the second) is fed through the first one's rails – in the
   simulation, and in stage G, where its +V rail passes a supply on (PATH.unfed) and its ground rail joins ground

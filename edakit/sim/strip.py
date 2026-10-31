@@ -71,8 +71,8 @@ def split_feeds(design):
             if design.comps[strip].get("board") != design.comps[other.split(".", 1)[0]].get("board"):
                 apart.add((strip, nets[a]))
             wire = {"name": f"R_{cable['name']}_{p_src}", "des": other.split(".", 1)[0], "pa": other, "pb": mine,
-                    "r": max(wire_ohm(cable), R_MIN), "l": wire_h(cable), "cable": cable["name"], "strip": strip,
-                    "i_max_a": cable.get("i_max_a")}
+                    "r": max(wire_ohm(cable), R_MIN), "l": wire_h(cable), "cable": cable["name"], "wire": p_src,
+                    "strip": strip, "i_max_a": cable.get("i_max_a")}
             if cable.get("at_m") is not None:      # an injection point along the strip
                 design.strip_taps.setdefault(strip, []).append({**wire, "at_m": cable["at_m"]})
                 continue

@@ -444,12 +444,32 @@ bought = true                # no template, schematic, pcb or file: there is not
 Its parts are components with `"board": "usb"` and `"bom": false` – the breakout with the eyes it brings out, and what
 you solder onto it, such as the two 5.1 kΩ from CC1 and CC2 to GND; STRUCT wants `bom: false` on every one, nobody
 assembles them. A cable joins it to your connector (`cables`, 3.1) with the resistance of its wires. The checks and the
-simulation see it like any board: REQ.missing:cc the CC eyes, LIM.i the cable's rating, and sim.json's source sits at the
-breakout's connector, with the cable in the path (5.1). Nobody draws it: the gate's stages S and L/F leave it out with
-an information row each, the manifest, the `fab` hash, the layout hash and so the layout review M-5 cover the made
-boards (8.1, 8.2), and the commands that make or read a layout refuse it with one line (`--board usb`) or skip it.
+simulation see it like any board: REQ.missing:cc the CC eyes, LIM.i the cable's rating (its `i_max_a`, from the wire's
+own datasheet), and sim.json's source sits at the breakout's connector, with the cable in the path (5.1). Nobody draws
+it: the gate's stages S and L/F leave it out with an information row each, the manifest, the `fab` hash, the layout
+hash and so the layout review M-5 cover the made boards (8.1, 8.2), and the commands that make or read a layout refuse
+it with one line (`--board usb`) or skip it.
 `edakit order` writes no BOM for it and puts its parts into the carts and under its board, marked bought, in
 `hand_assembly.md`; `edakit cost` prices no PCB and no assembly for it (8.4).
+
+A hand-wired board – parts with no PCB of their own, wired by hand: a front panel's LEDs, footswitches, jacks and
+pots, a strip on a cable – has a key of its own:
+
+```toml
+[boards.panel]               # LEDs, footswitches and jacks in the lid, soldered to the wires of W2
+title = "Front panel"
+wired = true                 # hand-wired, no PCB of its own: no template, schematic, pcb or file (10.1)
+```
+
+edakit treats it as a bought board where that applies: in the graph, the checks and the simulation like any board –
+its parts with `"board": "panel"` and `"bom": false` (STRUCT.board), the cables with their wires' resistance and
+rating –, made by nobody: stages S and L/F, the manifest, the hashes, the layout commands, the assembler's BOM and the
+PCB cost leave it out. What differs is what it is. A bought board is one purchased assembly – a module with its own
+parts entry and supplier, perhaps with a few parts soldered onto it. A hand-wired board's parts are the project's own:
+each in the carts from its supplier (`edakit order`, PARTS.supplier for one without), listed under its board in
+`hand_assembly.md` as "hand-wired, no PCB". `bought = true` on a front panel works as it did; STRUCT.board gives a
+note when no part of a bought board is a module (kind or type `module`) and names `wired = true` – changing the key
+is the project's decision, `edakit convert` does not do it. One board has one of the two keys, not both.
 
 **Without an edakit project** – a perfboard, an older board, a part from the bin, something made by hand – the user is
 the datasheet. The skill `own-part` asks for pins, supply range and current once, has what nobody knows measured, and

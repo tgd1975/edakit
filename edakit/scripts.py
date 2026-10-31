@@ -36,8 +36,8 @@ Names of edakit's data in reads and writes: graph, parts, sim (written by hand, 
 (the board file), project-library:<b> (EasyEDA's project library: schematic create, easyeda scripts, part build –
 recorded like an easyeda script's change, record_library_change), footprints:<b>
 (<b>.geometry.json: pcb dump), mech:<b> (pcb plan), routing:<b> (route), gerber:<b> and release (the gate),
-firmware (edakit firmware, with [firmware]); <b> is a made board – a bought one has none of them. Anything else is a
-path relative to edakit.toml: a folder holds the files in it, and an edakit file named by its path is its data
+firmware (edakit firmware, with [firmware]); <b> is a made board – a bought or hand-wired one has none. Anything else
+is a path relative to edakit.toml: a folder holds the files in it, and an edakit file named by its path is its data
 (hardware/boards/<b>.toml is board:<b>, route/<b>.ses routing:<b>, a gate run's fab/<b>/ gerber:<b>). Each name has a
 hash of what edakit has of it offline (data_hash) – the project library, which is in EasyEDA only, the last change
 edakit run saw an easyeda script make, none before.
@@ -170,7 +170,7 @@ class _Names:
         from .pcb import geometry_home, unmoved_geometry
         self.cfg = cfg
         own = {cfg.graph: ("graph", None), cfg.sim_config: ("sim", None)}
-        for b, board in cfg.made().items():        # a bought board has no layout: none of a board's data
+        for b, board in cfg.made().items():        # a bought or hand-wired board has no layout: none of its data
             own[cfg.resolve(board.file)] = ("board", b)
             own[geometry_home(cfg, board)] = ("footprints", b)        # beside the board file, where pcb dump writes
             if old := unmoved_geometry(cfg, board):                   # the one from before, read until it is moved
@@ -201,9 +201,9 @@ class _Names:
                 return (kind, None), f"{kind} is data of a board: {kind}:<b>"
             if board not in self.cfg.boards:
                 return (kind, board), f"no board {board} in [boards] ({', '.join(self.cfg.boards)})"
-            if self.cfg.boards[board].bought:
-                return (kind, board), (f"{board} is a bought board (bought = true): edakit makes none of its data – "
-                                       f"<name>:<b> names a made board ({', '.join(self.cfg.made()) or 'none'})")
+            if (b := self.cfg.boards[board]).unmade:
+                return (kind, board), (f"{board} is a {b.unmade} board ({b.unmade_key}): edakit makes none of its data "
+                                       f"– <name>:<b> names a made board ({', '.join(self.cfg.made()) or 'none'})")
             return (kind, board), None
         if m and m[2] is not None:
             return None, ("no data name of edakit (graph, parts, sim, release, firmware; board, project-library, "

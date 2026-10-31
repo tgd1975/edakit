@@ -31,9 +31,10 @@ Before each stage – each project check, and with `--easyeda` each board of sta
 | F – Manufacturing | BOM, stock, pick and place, Gerber set, order settings per maker; with a maker that takes ODB++ the ODB++ against the released files | SYNC.bom, PARTS.stock, SYNC.cpl, SYNC.odb, FILES |
 | *project checks after F* | e.g. a check of this run's Gerber files | `[scripts.<name>]` with `at = "after F"` – see below |
 
-A bought board on a cable (`bought = true`, 4.5) is in stages P, G and E like any board. Stages S and L/F leave it out
-with one information row each (`SYNC.schematic` and `SYNC.pcb`: "bought board – no schematic, PCB or manufacturing files"); FILES.manifest, the
-manifest and the protocol header ("bought, not made: usb") count the made boards only.
+A bought board on a cable (`bought = true`) or a hand-wired one (`wired = true`, 4.5) is in stages P, G and E like
+any board. Stages S and L/F leave it out with one information row each (`SYNC.schematic` and `SYNC.pcb`: "bought
+board – no schematic, PCB or manufacturing files", "hand-wired board – …"); FILES.manifest, the manifest and the
+protocol header ("bought, not made: usb; hand-wired, not made: panel") count the made boards only.
 
 **The radio checks** LIM.eirp, LIM.band (stage G) and PARTS.fact (stage P) grade by the graph's `purpose.use` (chapter 15): what
 the firmware or a parts entry can settle – a band or a power the firmware has to keep, a radio nobody stated – is a
@@ -65,7 +66,7 @@ Every part on the board has the footprint its entry names, every pad sits where 
 Fixed parts sit where the plan says (±0.02 mm, rotation, side), the plan has no findings of its own, every part of a made board has a row in it, and it keeps what the circuit hands over (layout.fixed, edge, near, a capacitor next to every supply pin).
 - fixed parts in the PCB = plan (± 0.02 mm, rotation, side); the plan itself without findings – why it exists: a part moved by hand or by the auto-layout
 - the plan keeps the circuit's hand-over: `layout.fixed`, `.edge`, `.near` of the graph, a decoupling capacitor of its own next to every IC (7.4) – why it exists: the auto-layout put a decoupling capacitor 24 mm from its IC; what the circuit designer knew got lost on the way to the layout
-- every part the graph puts on the board has a row in `[place]` of the board file – by hand, from `pcb place`, or written back by `pcb autolayout` with `auto = true` (7.4); a part on a bought board (4.5) is on no made board and needs none. The board file decides it alone; the row names the parts without one: `D1, R2: no row in hardware/boards/main.toml [place] (2 of 17 parts)` – why it exists: what EasyEDA's auto-layout placed was in no file: the layout hash did not cover it, SYNC.plan held it to nothing, the direction check, the mated plugs and the mechanical model did not see it, and after a dump the next auto-layout could put it elsewhere – `pcb autolayout` writes its positions back, `pcb takeover --write` takes a board placed before
+- every part the graph puts on the board has a row in `[place]` of the board file – by hand, from `pcb place`, or written back by `pcb autolayout` with `auto = true` (7.4); a part on a bought or hand-wired board (4.5) is on no made board and needs none. The board file decides it alone; the row names the parts without one: `D1, R2: no row in hardware/boards/main.toml [place] (2 of 17 parts)` – why it exists: what EasyEDA's auto-layout placed was in no file: the layout hash did not cover it, SYNC.plan held it to nothing, the direction check, the mated plugs and the mechanical model did not see it, and after a dump the next auto-layout could put it elsewhere – `pcb autolayout` writes its positions back, `pcb takeover --write` takes a board placed before
 
 **`SYNC.bom`** – BOM = graph (error; replaces F-1)  
 The BOM generated from the graph equals EasyEDA's BOM per designator, and every LCSC number is in the parts database; parts with bom: false are left out on purpose.
@@ -231,7 +232,7 @@ Every run records two hashes in the protocol header, and a run with stage F a th
   changed requirement voids M-1 and M-6, as a new purpose does: the reviews read the requirements
 - **layout** (`layout_sha256`): the board files with the artwork they place (`[[silk.art]]`) and the footprint
   geometry beside them (`<board>.geometry.json`, 7.4), and `[release] layout_files` – of the made boards; a bought
-  board has none. Where a parts entry has footprint data (4.5), the data of every entry a part of a made board uses
+  or hand-wired board has none. Where a parts entry has footprint data (4.5), the data of every entry a part of a made board uses
   as well, after the files, as canonical JSON without the keys of `[release] hash_ignore`: a changed pad voids the
   sign-offs of scope `layout` as a changed geometry does. A project without footprint data keeps its hash; one with
   it has "footprint data" among what the protocol header says the hash covers. The circuit hash covers the data
@@ -510,6 +511,7 @@ BOM tool ("LCSC Part Number, Quantity, Comment"), the others "Code, Quantity, It
 an EasyEDA library entry that LCSC does not sell: no cart line. PARTS.supplier warns about a part bought separately that names no
 supplier – also one that has only such a number. A bought board (`bought = true`, 4.5) gets no BOM: its parts are in
 the carts and in `hand_assembly.md` under the board, marked bought; `edakit cost` prices no PCB and no assembly for it.
+A hand-wired board (`wired = true`) the same way, marked "hand-wired, no PCB".
 
 **The order form as data.** Every question a maker's form asks has an answer in the project – a key of `[order]` with
 edakit's default (10.2) – and the form is filled from the keys, never from what the page happens to preselect. edakit's
@@ -707,8 +709,8 @@ are:** their `cmd` runs as written,
 `[scripts]` entry of kind `check`.
 
 `[[release.stages]]` (8.1) take part as checks of phase export before S. The names of edakit's data in `reads` and
-`writes`, each with a hash of what edakit has of it offline – `<b>` is a made board; a bought one (4.5) has none of
-this data:
+`writes`, each with a hash of what edakit has of it offline – `<b>` is a made board; a bought or hand-wired one
+(4.5) has none of this data:
 
 | Name | What | Made by | Hash of |
 |---|---|---|---|

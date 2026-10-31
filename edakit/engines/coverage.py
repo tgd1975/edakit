@@ -8,6 +8,13 @@ The same list names what the simulation does not model over time (rules-at-scale
 behaviour is a charger, a cell's protection or a USB PD sink has states an operating point cannot show – the end of
 charge, the release voltages and delays, the negotiation. Each is a gap of SIM.state, "not simulated", with the hint
 that names the risk where the part is used.
+
+And it names every cable without a current rating (maker-coverage FT-2; rules-at-scale.md, decision 22): a wire's
+rating comes from the wire's own datasheet, `i_max_a` on the cable, and edakit derives none from the gauge. A cable
+that carries current in the simulation without it is a gap of LIM.i, with its highest current and the loss per metre
+of wire it causes – I² × R of the wire, a number and no verdict: the case nothing else sees is a wire that heats while
+its voltage drop and its connectors pass. The currents come from the simulation edakit sim saved for this state (the
+gate's own run); without one the cable is named with its current not known.
 """
 
 from __future__ import annotations
@@ -15,8 +22,12 @@ from __future__ import annotations
 from collections import defaultdict
 from dataclasses import dataclass
 
-from ..circuit import limits, polarized, values
+from ..circuit import is_number, limits, polarized, si, values, wire_mm2, wire_ohm_per_m
 from ..findings import Finding
+
+# a wire with less current carries only the solver's leakage – gmin 1e-12 S and rshunt 1e12 Ω give picoamperes per
+# node: numerical zero, no judgement of the wire
+CARRIES_A = 1e-9
 
 # per kind: (code, the limits of which at least one must be given, what it guards)
 LIMITS_OF = {
@@ -69,7 +80,8 @@ class Gap:
     code: str
     place: str        # the designators, "C1, C3"
     missing: str      # "no v_max_v – its voltage"
-    kind: str = "data"   # "data": a value the entry lacks; else the behaviour whose states over time are not simulated
+    kind: str = "data"   # "data": a value the entry lacks; "cable": a cable without i_max_a; else the behaviour whose
+                         # states over time are not simulated
 
     def line(self):
         return f"{self.code}: {self.place} – {self.missing}"
@@ -79,9 +91,50 @@ def _thresholds(part, info):
     return all(any(f"{k}_{x}" in src for src in (info, values(part)) for x in ("v", "ratio")) for k in ("vil", "vih"))
 
 
-def coverage(design, prof=None):
+def cable_loss(cable, i):
+    """(amount, basis) of the heat a wire of the cable takes at the current i: I² × R per metre where its resistance
+    per metre is known (circuit.wire_ohm_per_m), else in the whole wire of r_ohm_per_wire."""
+    per_m, r = wire_ohm_per_m(cable), cable.get("r_ohm_per_wire")
+    if per_m is not None:
+        gauge = f"AWG {cable['awg']:g}" if is_number(cable.get("awg")) else f"{wire_mm2(cable):g} mm²"
+        basis = (f"r_ohm_per_wire {r:g} Ω over length_m {cable['length_m']:g}" if is_number(r)
+                 else f"{gauge} copper at 20 °C")
+        return f"I² × R: {si(i * i * per_m, 'W')} per metre of wire", basis
+    if is_number(r):
+        return f"I² × R: {si(i * i * r, 'W')} in the wire", f"r_ohm_per_wire {r:g} Ω, no length_m for the loss per metre"
+    return "the loss per metre is not known", "no length_m with awg, mm2 or r_ohm_per_wire"
+
+
+NOT_HELD = "it is not held to the wire's rating"
+
+
+def cable_gaps(design, sim=None):
+    """LIM.i on the cables without i_max_a: each that carries current in the simulation result `sim` (its
+    cable_currents), with its highest current and the loss per metre; without a result each such cable, its current
+    not known."""
+    known = (sim or {}).get("cable_currents")
+    out = []
+    for c in design.graph.get("cables") or []:
+        if is_number(c.get("i_max_a")):
+            continue
+        place, e = f"cable {c.get('name', '')}", (known or {}).get(c.get("name"))
+        if known is None:
+            out.append(Gap("LIM.i", place, "no i_max_a – its current is not known without a simulation of this state "
+                                           f"(edakit sim) – {NOT_HELD}", "cable"))
+        elif e is None:
+            out.append(Gap("LIM.i", place, f"no i_max_a – no scenario of the simulation gave its current – {NOT_HELD}",
+                           "cable"))
+        elif e["i_a"] >= CARRIES_A:
+            amount, basis = cable_loss(c, e["i_a"])
+            out.append(Gap("LIM.i", place, f"no i_max_a – up to {si(e['i_a'], 'A')} (wire {e['wire']}, {e['scenario']}),"
+                                           f" {amount} ({basis}) – its current is not held to the wire's rating",
+                           "cable"))
+    return out
+
+
+def coverage(design, prof=None, sim=None):
     """The gaps of the design, by code: [Gap], the designators of one parts entry together; only codes the profile has
-    on."""
+    on. `sim`: the simulation result of this state (sim/run.py), for the cables' currents."""
     found = defaultdict(list)      # (code, entry key, missing) -> designators
     over_time = {}                 # (code, entry key, missing) -> the behaviour not simulated over time
     for des, comp in sorted(design.comps.items()):
@@ -134,18 +187,21 @@ def coverage(design, prof=None):
         if prof is None or prof.on(Finding(code, "G", "", "")):
             out.append(Gap(code, ", ".join(dess), f"{missing} ({key})",
                            over_time.get((code, key, missing), "data")))
+    out += [g for g in cable_gaps(design, sim) if prof is None or prof.on(Finding(g.code, "G", "", ""))]
     return sorted(out, key=lambda g: (g.code, g.place))
 
 
 def summary(gaps):
     """The one line of `edakit check`: per code the number of places, then the parts not simulated over time by their
-    behaviour – or None without gaps."""
+    behaviour, then the cables without a rating – or None without gaps."""
     if not gaps:
         return None
-    per, timed = defaultdict(int), defaultdict(list)
+    per, timed, cables = defaultdict(int), defaultdict(list), []
     for g in gaps:
         if g.kind == "data":
             per[g.code] += len(g.place.split(", "))
+        elif g.kind == "cable":
+            cables.append(g.place.removeprefix("cable "))
         else:
             timed[g.kind] += g.place.split(", ")
     parts = []
@@ -155,4 +211,6 @@ def summary(gaps):
     if timed:
         parts.append("not simulated over time: " + ", ".join(f"{', '.join(des)} ({behaviour})"
                                                              for behaviour, des in sorted(timed.items())))
+    if cables:
+        parts.append(f"cables without i_max_a: {', '.join(cables)}")
     return "; ".join(parts) + " – edakit check --coverage"

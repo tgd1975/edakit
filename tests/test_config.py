@@ -558,3 +558,37 @@ def test_agents_entries(tmp_path):
     (tmp_path / "edakit.toml").write_text('[project]\nname = "t"\n[boards.main]\n[agents]\nsigns = "M-7"\n')
     with pytest.raises(ConfigError, match=r"\[agents\] signs: a table \[agents.signs\]"):
         load(tmp_path / "edakit.toml")
+
+
+def test_wired_key(tmp_path):
+    """FT-2, decision 22: [boards.<name>] wired = true – a hand-wired board, no PCB of its own: like a bought one no
+    EasyEDA documents and no board file; not both keys on one board."""
+    toml = tmp_path / "edakit.toml"
+    toml.write_text('[project]\nname = "t"\n[boards.main]\n')
+    assert load(toml).board().wired is False                              # no key: the board is made, as before
+    toml.write_text('[project]\nname = "t"\n[boards.main]\n[boards.panel]\nwired = true\n')
+    cfg = load(toml)
+    assert cfg.boards["panel"].wired and list(cfg.made()) == ["main"] and cfg.board(made=True).name == "main"
+    with pytest.raises(ConfigError, match=r"^board panel is hand-wired \(wired = true in edakit.toml \[boards.panel\]\)"):
+        cfg.board("panel", made=True)
+    for key in ("template", "schematic", "pcb", "file"):
+        toml.write_text(f'[project]\nname = "t"\n[boards.main]\n[boards.panel]\nwired = true\n{key} = "panel"\n')
+        with pytest.raises(ConfigError, match=rf"\[boards.panel\] {key}: a hand-wired board is not drawn – no "
+                                              "schematic, PCB or board file"):
+            load(toml)
+    toml.write_text('[project]\nname = "t"\n[boards.main]\n[boards.panel]\nwired = 1\n')
+    with pytest.raises(ConfigError, match=r"\[boards.panel\] wired: true or false"):
+        load(toml)
+    toml.write_text('[project]\nname = "t"\n[boards.main]\n[boards.panel]\nwired = true\nbought = true\n')
+    with pytest.raises(ConfigError, match=r"\[boards.panel\] bought or wired, not both – a bought assembly or "
+                                          "parts wired by hand"):
+        load(toml)
+    toml.write_text('[project]\nname = "t"\n[boards.panel]\nwired = true\n')
+    with pytest.raises(ConfigError, match=r"^every board of edakit.toml is bought or hand-wired – there is no layout"):
+        load(toml).board(made=True)
+    toml.write_text('[project]\nname = "t"\n[boards.main]\n[boards.panel]\nwired = true\n')
+    (tmp_path / "hardware" / "boards").mkdir(parents=True)
+    (tmp_path / "hardware" / "boards" / "panel.toml").write_text("[order]\n")
+    with pytest.raises(ConfigError, match=r"hardware/boards/panel.toml: a hand-wired board \(wired = true in "
+                                          r"\[boards.panel\]\) has no board file"):
+        load(toml)

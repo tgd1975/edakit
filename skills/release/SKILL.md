@@ -92,8 +92,9 @@ server cannot order on purpose. The checklist below is what the skill and its ch
 user's:
 
 - [ ] Upload from `build/publish/<tag>/`, the staging of step 7 – per made board `gerber_<b>.zip`, `bom_<b>.csv`,
-      `cpl_<b>.csv` (a bought board, `bought = true`, has none): publish verified each against its project's current
-      release, and `sha256sum -c SHA256SUMS` there shows that none changed since. Files from anywhere else:
+      `cpl_<b>.csv` (a bought or hand-wired board, `bought = true` or `wired = true`, has none): publish verified each
+      against its project's current release, and `sha256sum -c SHA256SUMS` there shows that none changed since. Files
+      from anywhere else:
       `edakit release verify <the files about to be uploaded>` says every file is of the current release (exit 0)
 - [ ] Assembly type matches `[release] assembly` (Economic: one side, SMD; two SMD sides or a "Standard Only" part
       need Standard PCBA – `assembly.pcba`, PARTS.stock); bake set when PARTS.stock warns about MSL ≥ 5
@@ -108,7 +109,7 @@ user's:
 - [ ] The cart against `edakit cost` – class, fees and parts; a difference of more than a few dollars has a reason
       (a thickness, colour or finish `edakit cost` names as not in the price is one)
 - [ ] Parts that do not come from JLCPCB (hand-soldered, cables, enclosure, a bought board and what is soldered onto
-      it) ordered in the same go: `edakit order`
+      it, the parts of a hand-wired board) ordered in the same go: `edakit order`
       writes a cart per supplier and `hand_assembly.md` for all sets, with spares and minimum quantities
 
 After delivery: acceptance test of every board (M-4), with the datasheet points section 6 of the protocol lists

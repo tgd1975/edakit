@@ -3,7 +3,8 @@ and check PARTS.supplier (every bought part has a supplier).
 
     edakit order [--out DIR]          default <artifacts>/order/
 
-    bom_<board>.csv        the assembler's BOM, the file SYNC.bom writes – none for a bought board (bought = true)
+    bom_<board>.csv        the assembler's BOM, the file SYNC.bom writes – none for a bought board (bought = true) or a
+                           hand-wired one (wired = true)
     cart_<supplier>.csv    LCSC in its BOM tool's columns "LCSC Part Number,Quantity,Comment"; any other supplier
                            "Code,Quantity,Item,Designators"
     hand_assembly.md       per board the parts fitted by hand (designator, part, side, supplier), and the items off the
@@ -140,6 +141,9 @@ def write_cart(path, supplier, lines):
                 w.writerow([g["code"], g["qty"], g["item"], " ".join(g["designators"])])
 
 
+HEADING = {"bought": " – bought, nobody assembles it", "hand-wired": " – hand-wired, no PCB"}
+
+
 def hand_assembly(cfg, design, lost):
     L = [f"# Hand assembly – {cfg.project}, {cfg.quantity} sets\n",
          "Fitted by hand on every board after the assembled boards have arrived; the parts come from the carts in this "
@@ -147,7 +151,7 @@ def hand_assembly(cfg, design, lost):
     hand = set(bought_by_hand(design))
     for b in cfg.boards.values():
         mine = sorted((d for d in hand if design.comps[d].get("board") == b.name), key=natural_key)
-        L.append(f"## Board {b.name} ({b.title}){' – bought, nobody assembles it' if b.bought else ''}\n")
+        L.append(f"## Board {b.name} ({b.title}){HEADING.get(b.unmade, '')}\n")
         if not mine:
             L.append("Nothing by hand.\n")
             continue
@@ -197,7 +201,7 @@ def main(cfg, args):
     for old in out.glob("cart_*.csv"):     # a supplier no line names any more leaves no cart behind
         old.unlink()
     for b in cfg.boards.values():
-        if b.bought:              # nobody assembles it: no BOM; its parts are in the carts and hand_assembly.md
+        if b.unmade:              # nobody assembles it: no BOM; its parts are in the carts and hand_assembly.md
             (out / f"bom_{b.name}.csv").unlink(missing_ok=True)
             continue
         bom = fab.bom_rows(design, b)

@@ -302,12 +302,12 @@ def power(p):
 
 
 def cables(p):
-    """A button SW20 on a bought remote board, wired by cable W20 (1 m of AWG 26) from J21 to J20 on main; on main
+    """A button SW20 on a hand-wired remote board, wired by cable W20 (1 m of AWG 26) from J21 to J20 on main; on main
     the line reaches GP8 through 1 kΩ, with 10 kΩ to 3V3."""
     for key in ("C17513", "C17414"):
         p.use_library_part(key)
     toml = p.root / "edakit.toml"
-    toml.write_text(toml.read_text() + '\n[boards.remote]\ntitle = "Remote button"\nbought = true\n')
+    toml.write_text(toml.read_text() + '\n[boards.remote]\ntitle = "Remote button"\nwired = true\n')
     g = p.graph()
     for c in g["graph"]["components"]:
         c.setdefault("board", "main")

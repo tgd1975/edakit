@@ -235,8 +235,16 @@ def split_boards(design):
                     design.pin_net[ref] = alt
             design.cable_elements.append({"name": f"R_{cable['name']}_{p_src}", "des": dst, "a": alt, "b": net,
                                           "pa": f"{src}.{p_src}", "pb": f"{dst}.{p_dst}",
-                                          "r": wire_ohm(cable), "l": wire_h(cable)})
+                                          "r": wire_ohm(cable), "l": wire_h(cable), "cable": cable["name"],
+                                          "wire": p_src, "i_max_a": cable.get("i_max_a")})
     strip.split_feeds(design)
+
+
+def cable_wires(design, meta):
+    """Every wire of a cable in the netlist: the cables between boards and to an LED strip (design.cable_elements) and
+    the wires that land along a strip (its taps) – each a dict with its resistor's name, its cable, its two ends."""
+    return ([w for w in getattr(design, "cable_elements", None) or []]
+            + [t for m in (meta.get("strips") or {}).values() for t in m["taps"]])
 
 
 def local_ground(design, net):
@@ -1118,6 +1126,8 @@ class Netlist:
                     prints.append(f"print @{el['name']}[id]")
                 elif el["kind"] in ("njfet", "pjfet"):
                     prints.append(f"print @{el['name']}[id] @{el['name']}[ig]")
+        wires = [w["name"] for w in cable_wires(self.d, self.meta)]   # a wire's own current: exact, not from two nodes
+        prints += [f"print {' '.join(f'@{w}[i]' for w in wires[k:k + 8])}" for k in range(0, len(wires), 8)]
         body = "\n".join(self.lines)
         models = "\n".join(self.models.values())
         control = "op\n" + "\n".join(prints) if tran is None else self.tran_control(tran)
