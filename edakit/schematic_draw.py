@@ -76,6 +76,7 @@ STYLES = {"labels": "", "wires": "wires through", "mixed": "mixed: wires, labels
 WIRE_GAP = 120      # between the blocks of a wired drawing: the gaps are the channels (labels: BLOCK_GAP 60)
 BUS_PINS = 6        # the mixed style: a signal net with this many pins or more keeps its labelled stubs
 STEP, TURN, CROSS, BESIDE = 1, 4, 12, 1   # the router's costs: a step, a bend, crossing another net, beside one
+AHEAD, FRONT = 2, 12                      # the AHEAD cells in front of an open lead end cost other nets FRONT
 RAIL_OFF, RAIL_GAP = 3, 2                 # cells between the drawing and the first rail, between two rails
 PALETTE = ["#1f5fbf", "#2a8f3a", "#8a3fb0", "#b0652a", "#0f8f8f", "#c42f7a", "#7a7a1f", "#4f6f9f", "#9f3f3f",
            "#3f8f6f"]
@@ -396,8 +397,9 @@ def box(sides, names, designator, value, prints=None):
     return s, (x, top_y, anchor), (x, low_y, anchor), (x0, y0, x1, y1)
 
 
-def symbol(design, d, every_pin=False):
-    """every_pin: a module shows every pin, as on the board, the open ones grey (the wired styles)."""
+def symbol(design, d, wired=False):
+    """wired: the symbol of the wired styles – a module shows every pin, as on the board, the open ones grey; a side
+    of a two-terminal part whose pins are all on one net (a button's pairs) shows one of them."""
     comp = design.comps[d]
     part = design.part(d) or {}
     info = part.get("pins") or {}
@@ -410,16 +412,21 @@ def symbol(design, d, every_pin=False):
     value, part_name = str(comp.get("value") or ""), str(comp.get("part") or "")
     small = short(value) or (part_name if len(part_name) <= 12 else "")   # no cut-off part numbers at small symbols
     built = None
+    merged = set()   # connected pins left off: their side's first pin stands for them
     if kind in TWO_TERMINAL and (sides := terminals(kind, pins, role)):
         polar = kind == "capacitor" and any(r.startswith("plus") for r in role.values())
-        built = two_terminal(kind, *sides, connected, polar)
+        for side in sides if wired else ():
+            on = [p for p in side if p in connected]
+            if len({net_of[p] for p in on}) == 1:
+                merged |= set(on[1:])
+        built = two_terminal(kind, *sides, connected - merged, polar)
     elif kind in TRANSISTORS:
         built = transistor(kind, pins, role)
     elif kind == "switch":
         built = spdt(pins, role)
     elif kind == "potentiometer":
         built = potentiometer(pins, role)
-    every_pin = every_pin and kind == "module"
+    every_pin = wired and kind == "module"
     if built is None:
         small = value or part_name
         prints = {p: str(info[p]["print"]) for p in pins if (info.get(p) or {}).get("print")}
@@ -439,7 +446,7 @@ def symbol(design, d, every_pin=False):
     s.body = list(core)
     s.nc = set() if every_pin else {p for p in s.pins if p not in connected}
     s.unused = {p for p in s.pins if p not in connected} if every_pin else set()
-    missing = sorted(connected - set(s.pins), key=pin_key)
+    missing = sorted(connected - merged - set(s.pins), key=pin_key)
     if missing:
         s.problems.append(f"{d}: pins {', '.join(missing)} are connected but not on the symbol (parts entry 'symbol')")
     listed = [str(p) for side in (part.get("symbol") or {}).values() for p in side]
@@ -557,6 +564,7 @@ class Router:
         self.x0, self.y0, self.w = x0, y0, x1 - x0 + 1
         n = self.w * (y1 - y0 + 1)
         self.blocked = bytearray(n)   # inside a part, or the tip of an open pin
+        self.front = [None] * n       # the net whose open lead end this cell lies in front of: its way out
         self.tip = bytearray(n)       # the tip of a connected pin: a path starts and ends at its lead, not there
         self.occ = [None] * n         # {net: H | V | X}
         self.deg = [None] * n         # {net: branches meeting in the cell}
@@ -643,6 +651,8 @@ class Router:
                     if nc in targets or any(h in (X, how) for h in others):
                         continue              # an end, a bend, a junction, a pin tip, or along another wire
                     step += CROSS
+                if self.front[nc] not in (None, net):
+                    step += FRONT             # in front of another net's lead: it would have to cross here later
                 for side in ((w, -w) if how == H else (1, -1)):
                     if 0 <= nc + side < n and how in self.others(nc + side, net):
                         step += BESIDE
@@ -707,9 +717,10 @@ def wire_through(sheet, syms, pin_net, power, labelled=frozenset()):
         b0 = [v for q in (rot(s.body[0], s.body[1], r), rot(s.body[2], s.body[3], r)) for v in q]
         x0, x1 = min(b0[0], b0[2]) + cx, max(b0[0], b0[2]) + cx
         y0, y1 = min(b0[1], b0[3]) + cy, max(b0[1], b0[3]) + cy
-        for y in range(math.ceil((y0 + 1) / GRID), math.floor((y1 - 1) / GRID) + 1):
-            for x in range(math.ceil((x0 + 1) / GRID), math.floor((x1 - 1) / GRID) + 1):
+        for y in range(math.ceil(y0 / GRID), math.floor(y1 / GRID) + 1):   # the outline too: no wire along it
+            for x in range(math.ceil(x0 / GRID), math.floor(x1 / GRID) + 1):
                 rt.blocked[rt.cell(x * GRID, y * GRID)] = 1
+
         for p, (lx, ly, _) in s.pins.items():
             px, py = rot(lx, ly, r)
             c, net = rt.cell(px + cx, py + cy), pin_net.get(f"{d}.{p}")
@@ -725,6 +736,15 @@ def wire_through(sheet, syms, pin_net, power, labelled=frozenset()):
             run = rt.cells(seg)
             rt.mark(net, run)
             runs[net].append(run)
+    for net, found in runs.items():   # keep the way out of every open lead end
+        for run in found:
+            for end, prev in ((run[-1], run[-2]), (run[0], run[1])) if len(run) > 1 else ():
+                if rt.tip[end] or rt.deg[end].get(net) != 1:
+                    continue
+                for k in range(1, AHEAD + 1):
+                    c = end + k * (end - prev)
+                    if 0 <= c < len(rt.front) and rt.front[c] is None:
+                        rt.front[c] = net
     rail_y = {net: by0 - RAIL_OFF - RAIL_GAP * k for k, net in enumerate(grounds)}
     rail_y |= {net: by1 + RAIL_OFF + RAIL_GAP * k for k, net in enumerate(supplies)}
     order = grounds + supplies + sorted((n for n in runs if n not in power and n not in labelled),
@@ -1057,7 +1077,7 @@ def drawing(cfg, board, drawn_by="edakit schematic draw", frame=True, style="lab
     if not comps:
         return None
     wired = style != "labels"
-    syms = {d: symbol(design, d, every_pin=wired) for d in comps}
+    syms = {d: symbol(design, d, wired=wired) for d in comps}
     geo = {d: {"type": comps[d].get("type"), "pins": s.pins, "body": s.body} for d, s in syms.items()}
     lc = layout_config(cfg, design)
     if not cfg.schematic.get("layout", {}).get("power_flags"):
