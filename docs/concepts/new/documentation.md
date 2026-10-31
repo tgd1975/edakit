@@ -1,8 +1,8 @@
 # The documentation: who reads it, how it is organised, how it is written
 
-Status 2026-10-31: decided – the eight decisions and what Claude decided itself accepted by the owner the same day, in
-a decision round in Claude Code's form (the table at the end); nothing built; each step D.1 to D.7 starts on the
-owner's word, one per branch, listed in `TODO.md`. Written against main at `8fba5f2`. Asked for by the owner: the pages are
+Status 2026-10-31: decided – the eight decisions and what Claude decided itself accepted by the owner the same day, in a
+decision round in Claude Code's form (the table at the end); nothing built; each step D.1 to D.7 starts on the owner's
+word, one per branch, listed in `TODO.md`. Written against main at `8fba5f2`. Asked for by the owner: the pages are
 comprehensive but confusing, so unreadable – a concept for how the documentation should look, be organised and be
 written, who its readers are, the language and its style, what is missing for it to be understood, everything needed so
 that others use edakit. With one condition the owner set while it was written: everything `docs/organisation.md` does
@@ -395,11 +395,11 @@ recommendation.
 | 7 | The command reference | entries: the synopsis generated from the parser and held by a test, reads, writes and exit codes hand-written beneath; the help texts changed only in `cli.py` through a branch | the table as today; fully generated (loses reads and writes) | accepted |
 | 8 | "What changed" from the merge commits on the site | not built until a reader asks: the commit messages are written for the owner | built with D.3 | accepted |
 
-Decided by Claude and confirmed by the owner on 2026-10-31: MkDocs Material stays; chapter files and numbers stay; sources, data and code
-untouched, with the rules of the section "What the automation reads"; `tests/test_references.py`; a glossary in the
-sources' words; the style guide with its test; the navigation two levels deep; prototype READMEs off the navigation;
-CLAUDE.md on the site as a source page; `organisation.md` and the brand page on the site; the quickstart offline and
-held by a test; the first reader as an eval case; the pipeline drawing in the brand's colours; the paths
+Decided by Claude and confirmed by the owner on 2026-10-31: MkDocs Material stays; chapter files and numbers stay;
+sources, data and code untouched, with the rules of the section "What the automation reads"; `tests/test_references.py`;
+a glossary in the sources' words; the style guide with its test; the navigation two levels deep; prototype READMEs off
+the navigation; CLAUDE.md on the site as a source page; `organisation.md` and the brand page on the site; the quickstart
+offline and held by a test; the first reader as an eval case; the pipeline drawing in the brand's colours; the paths
 `docs/style.md`, `docs/glossary.md`, `docs/quickstart.md`, `docs/how-it-works.md`.
 
 ## Sources
