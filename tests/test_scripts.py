@@ -1,5 +1,5 @@
 """Project scripts resolve into one order with edakit's steps (handbook 8.6): the entries of the concept green, every
-rule of the concept (docs/concepts/new/project-scripts.md, "Checking the TOML") seen red once – one fault per copy of
+rule of the concept (docs/concepts/done/project-scripts.md, "Checking the TOML") seen red once – one fault per copy of
 the reference project's entries in the example, and the fault finds exactly its rule. Each name of edakit's data has a
 hash of what edakit has of it, absent while the data does not exist."""
 

@@ -6,7 +6,7 @@
 
 Everything that reads only edakit's own files is shared: graph, parts, simulation, plan, placement, DSN, Freerouting,
 the checks of the gate. A command that reads or writes the EDA project asks is_kicad(cfg) and takes the KiCad side; the
-EasyEDA side stays where it is (docs/concepts/new/kicad-toolchain.md, decision 6). A step without a counterpart says
+EasyEDA side stays where it is (docs/concepts/done/kicad-toolchain.md, decision 6). A step without a counterpart says
 so with only_easyeda.
 """
 

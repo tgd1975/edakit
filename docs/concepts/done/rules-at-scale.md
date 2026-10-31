@@ -5,8 +5,8 @@ Status 2026-10-30: the owner gave the go; built on this branch step by step (sec
 It answers the owner's concern that the rule catalog does not scale – electrically (are the rules consistent, free of
 contradiction, correct?) and in use (many rules, most of them irrelevant to a given project, too much context for the
 model, which must work with Sonnet). It builds on [maker-coverage.md](maker-coverage.md) (what is missing) and is
-compatible with [circuit-language.md](circuit-language.md) (the graph's form). Decided by the owner: no regard for
-what exists today – IDs, file formats and keys may change; the owner's projects are converted once. Numbers are
+compatible with [circuit-language.md](circuit-language.md) (the graph's form). Decided by the owner: no regard
+for what exists today – IDs, file formats and keys may change; the owner's projects are converted once. Numbers are
 measured at edakit `bf7450a` unless marked as estimates.
 
 ## The problem
@@ -367,7 +367,7 @@ Taken by the owner on 2026-10-31 – maker-coverage's open decisions 3 to 5, thr
 
 Taken by the owner on 2026-10-31, through a form, after the library and the blocks:
 
-10. **Schema extension** (docs/concepts/new/schema-gaps.md): all of it that the form offered – the wrong judgements
+10. **Schema extension** (docs/concepts/done/schema-gaps.md): all of it that the form offered – the wrong judgements
     (A, I1, I7), the limits, currents and needs (B, C, D), the supply currents of the library drafts (E1), and the
     models and modes (E2–E6, F, I2–I6). Built in parallel worktrees, merged on this branch.
 11. **EasyEDA symbols that differ from their datasheets:** checked and reported – STRUCT.entry compares the cached symbol

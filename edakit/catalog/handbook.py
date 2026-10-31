@@ -1,5 +1,5 @@
-"""The handbook's tables, generated from the catalog (concept docs/concepts/new/rules-at-scale.md, section 6): the codes
-of each stage, the parts schema, the check IDs of before with the codes that replace them.
+"""The handbook's tables, generated from the catalog (concept docs/concepts/done/rules-at-scale.md, section 6): the
+codes of each stage, the parts schema, the check IDs of before with the codes that replace them.
 
     python -m edakit.catalog.handbook [--write]
 

@@ -1,7 +1,7 @@
 # Evals of the edakit plugin
 
 Typical tasks on the reference circuits (`tests/reference.py`), run by `claude plugin eval` with a model of choice –
-concept `docs/concepts/new/rules-at-scale.md`, section 8, and maker-coverage FT-24: edakit must work with Sonnet, not
+concept `docs/concepts/done/rules-at-scale.md`, section 8, and maker-coverage FT-24: edakit must work with Sonnet, not
 only with the largest model.
 
 | Case | Task | Graded by |

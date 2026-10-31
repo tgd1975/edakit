@@ -1,10 +1,11 @@
 # TODO
 
 Open work that needs the owner's computer, a maker or the owner's word. The state of every step is in
-[docs/concepts/new/implementation-plan.md](docs/concepts/new/implementation-plan.md); this list is what is left to do
-of it, in the order it can be done. Tick an item off with the commit that does it.
+[docs/concepts/new/implementation-plan.md](docs/concepts/new/implementation-plan.md) and in the concepts the sections
+name; this list is what is left to do of them, in the order it can be done. Tick an item off with the commit that
+does it.
 
-## Ordering at the manufacturer (phase 5, [ordering.md](docs/concepts/new/ordering.md))
+## Ordering at the manufacturer (phase 5, [ordering.md](docs/concepts/done/ordering.md))
 
 Built offline and tested on recorded data on 2026-10-30, merged into main the same day: the order form as keys, the
 makers' profiles (JLCPCB, PCBWay, Eurocircuits, AISLER), the checks per maker, `edakit cart fields|prepare|check|
@@ -56,3 +57,11 @@ run against a maker's page or EasyEDA yet.
 - [ ] Tell the bell's session and pytree-27: F-6 now warns about JLCPCB's placeholder `JLCJLCJLCJLC` on a board – a
       new warning in their gate, to accept or to remove with the placeholder (`mark = "remove"`, a `barcode`).
 - [ ] The shared tree follows main; the plugin follows (skills, agents and code changed).
+
+## KiCad tool chain ([kicad-toolchain.md](docs/concepts/done/kicad-toolchain.md))
+
+Built and merged into main on 2026-10-30, tested offline and in CI against KiCad 10 on the led-bar example.
+
+- [ ] **The live test with the owner** (the concept's section "Live test", steps 1 to 7): KiCad 10 from the PPA,
+      the example as a KiCad project, PCB, routing, gate, the placer T.1 on both tool chains, a scratch copy of the
+      bell's main board; with it the recorded KiCad export of T.6 and the probe of T.7.

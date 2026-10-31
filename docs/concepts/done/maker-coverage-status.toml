@@ -1,4 +1,4 @@
-# What became of maker-coverage's candidates (docs/concepts/new/maker-coverage.md, section Candidates) – one entry per
+# What became of maker-coverage's candidates (docs/concepts/done/maker-coverage.md, section Candidates) – one entry per
 # candidate: status built, partial or open; where it lives (codes with their grade, files, commands); what is missing or
 # why it is open. The catalog page (docs/catalog/build.py) shows it; rules-at-scale.md's build log sums it up.
 # "datasheets" as a reason: the numbers come from datasheets or standards this environment could not reach.

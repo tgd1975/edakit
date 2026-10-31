@@ -1,8 +1,8 @@
-"""What a pin needs, the rest of it (docs/concepts/new/schema-gaps.md D1–D5): a capacitor between two pins of the part
-(a charge pump), a crystal with its frequency window, a pin tied to another pin, no pull resistor, no series resistor,
-a required capacitor's voltage rating, a capacitor window judged on the local decoupling (layout.near); and a
-bidirectional pin that must not float (float_ok = false). Each with the circuit that lacks it and the one that has it
-– values for the tests, not from a datasheet."""
+"""What a pin needs, the rest of it (docs/concepts/done/schema-gaps.md D1–D5): a capacitor between two pins of the part
+(a charge pump), a crystal with its frequency window, a pin tied to another pin, no pull resistor, no series resistor, a
+required capacitor's voltage rating, a capacitor window judged on the local decoupling (layout.near); and a
+bidirectional pin that must not float (float_ok = false). Each with the circuit that lacks it and the one that has it –
+values for the tests, not from a datasheet."""
 
 import copy
 

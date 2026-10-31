@@ -205,7 +205,7 @@ def to_circuit(data, parts):
     g = data.get("graph", data)
     pins = setup(g, parts)
     out = ["# The hardware graph as a language (.circuit), written by translate.py: pins by role or name through the",
-           "# parts entries, nets with their voltage range. Rules: docs/concepts/new/circuit-language.md"]
+           "# parts entries, nets with their voltage range. Rules: docs/concepts/done/circuit-language.md"]
     done = {"components", "nets"} | {k for k in ("name", "version", "date", "description") if isinstance(g.get(k), str)}
     out.append(" ".join(["graph", word(g["name"]) if "name" in done else "-"]
                         + [f"{k} {word(g[k])}" for k in ("version", "date") if k in done]))
@@ -707,7 +707,7 @@ def to_toml(data, parts):
     g = data.get("graph", data)
     pins = setup(g, parts)
     out = ["# The hardware graph as TOML, written by translate.py: today's graph with pins by role or name through the",
-           "# parts entries; components, nets and cables keyed. Rules: docs/concepts/new/circuit-language.md"]
+           "# parts entries; components, nets and cables keyed. Rules: docs/concepts/done/circuit-language.md"]
     tables = [k for k, v in g.items() if (isinstance(v, dict) or k in ("components", "nets", "cables")) and v]
     out += [tline(k, v) for k, v in g.items() if k not in tables]
     for key in tables:

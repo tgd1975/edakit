@@ -1,10 +1,10 @@
 # Project scripts and agents
 
-Status 2026-10-29: being built; the state of each step is in [implementation-plan.md](implementation-plan.md). It was
-checked against edakit `a8b6011` (with PRs #78 and #79); edakit had built pieces it builds on: the firmware contract
+Status 2026-10-29: being built; the state of each step is in [implementation-plan.md](../new/implementation-plan.md). It
+was checked against edakit `a8b6011` (with PRs #78 and #79); edakit had built pieces it builds on: the firmware contract
 (#70), a stamp on the simulation result, the fab hash (#65) and the mechanical model (#62). Decisions 1–8, 12 and 13
-were taken on 2026-10-28, 9 by #70. The rules that resolve a project's entries into a DAG were tried with a prototype
-on the reference project and the Christmas bell ([prototypes/project-scripts](prototypes/project-scripts/)).
+were taken on 2026-10-28, 9 by #70. The rules that resolve a project's entries into a DAG were tried with a prototype on
+the reference project and the Christmas bell ([prototypes/project-scripts](prototypes/project-scripts/)).
 
 ## Why
 
@@ -620,7 +620,7 @@ edakit's data.
 ## What would change in edakit
 
 Eight building blocks; the order is also the order to build them in, and
-[implementation-plan.md](implementation-plan.md) has the state of each.
+[implementation-plan.md](../new/implementation-plan.md) has the state of each.
 
 1. **Read the entries:** read `[scripts.*]` in `config.py` and check that they resolve into a DAG with edakit's steps
    (Checking the TOML). `[[release.stages]]` and `sim_plugin` become the kinds `check` and `sim`; the old keys keep

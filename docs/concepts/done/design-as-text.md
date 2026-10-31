@@ -1,8 +1,8 @@
 # Circuit design as text
 
 Status 2026-10-28: being built; all decisions are taken (table at the end), and the state of each step is in
-[implementation-plan.md](implementation-plan.md). The findings come from reading edakit at `a8b6011` (with PRs #78
-and #79) and the repositories of the reference project and the Christmas bell.
+[implementation-plan.md](../new/implementation-plan.md). The findings come from reading edakit at `a8b6011` (with PRs
+#78 and #79) and the repositories of the reference project and the Christmas bell.
 
 ## Goal
 
@@ -242,7 +242,8 @@ configurations there and back without a difference, what each form costs, and th
 pin map from the parts entry, the hash rule, `edakit graph json` –; the language is deferred until it offers what a
 format cannot, which its section "Review 2026-10-31" spells out. Decided the same day: TOML with names as the form,
 `hardware/graph.toml`, with the resolved `graph.json` generated beside it (its decisions 1–7); what both forms share
-has a plan of its own, [circuit-language-plan.md](circuit-language-plan.md).
+has a plan of its own, [circuit-language-plan.md](../new/circuit-language-plan.md); the language itself is thought further in
+[circuit-dsl.md](../new/circuit-dsl.md): what it would have to be, on which basis, when, and with what toolchain.
 
 ## Order
 

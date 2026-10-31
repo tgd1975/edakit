@@ -1,8 +1,8 @@
 """Project agents (handbook 8.6): [agents.<name>] of edakit.toml. An agent signs a sign-off of its own, or takes over one
 of edakit's reviews with replaces (decision 10). The reference project's elektrotechniker and pcb-pruefer and an agent
-with a sign-off of its own green; every rule of the concept about agents (docs/concepts/new/project-scripts.md, "Checking
-the TOML": R7, R9, R10, R11) seen red once – one fault per copy, as the concept's prototype did
-(docs/concepts/new/prototypes/project-scripts/test_agents.py). The gate requires their sign-offs, each held to its
+with a sign-off of its own green; every rule of the concept about agents (docs/concepts/done/project-scripts.md,
+"Checking the TOML": R7, R9, R10, R11) seen red once – one fault per copy, as the concept's prototype did
+(docs/concepts/done/prototypes/project-scripts/test_agents.py). The gate requires their sign-offs, each held to its
 agent; the skills learn from edakit scripts who reviews at each hook point."""
 
 import argparse

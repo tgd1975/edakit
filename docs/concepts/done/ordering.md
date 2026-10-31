@@ -653,8 +653,8 @@ this has no `[cart]`: its maker is JLCPCB, its checks run as today, and `edakit 
 
 ## Order of work
 
-Each step is built as the steps of the [implementation plan](implementation-plan.md) are – its phase 5 lists them –:
-a branch, a failing test first, the interface, the code, the handbook (8.1 for stage K, 8.4 for ordering, 10 for the
+Each step is built as the steps of the [implementation plan](../new/implementation-plan.md) are – its phase 5 lists them
+–: a branch, a failing test first, the interface, the code, the handbook (8.1 for stage K, 8.4 for ordering, 10 for the
 keys and commands), `pytest` and `ruff`. Every new check – P-12, F-7, B-1 to B-7 and what F-6 and P-4 gain – gets its
 entry in the rule catalog and a negative test (skill add-rule); every command and key is built with add-feature.
 

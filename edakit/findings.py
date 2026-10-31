@@ -1,5 +1,5 @@
 """Findings – what every engine reports, and the only interface to people and to the model (concept
-docs/concepts/new/rules-at-scale.md, section 3).
+docs/concepts/done/rules-at-scale.md, section 3).
 
 A finding carries its code (ENGINE.relation), the stage it was found in (P G E S L F), the place (a part, a pin, a
 net, a board), what was found – the value against what it was held to –, the source of that limit, and the fix. Its

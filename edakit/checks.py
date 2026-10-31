@@ -1,5 +1,5 @@
 """Stages P and G: what edakit check checks, offline, in well under a second (concept
-docs/concepts/new/rules-at-scale.md).
+docs/concepts/done/rules-at-scale.md).
 
     edakit check [--release] [--json FILE]
 

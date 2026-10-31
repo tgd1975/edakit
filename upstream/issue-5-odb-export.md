@@ -47,6 +47,6 @@ proposal for upstream.
 ### Additional Context
 
 ```markdown
-Found while adding AISLER as a maker in edakit (https://github.com/tgd1975/edakit, docs/concepts/new/ordering.md),
+Found while adding AISLER as a maker in edakit (https://github.com/tgd1975/edakit, docs/concepts/done/ordering.md),
 where a check holds the ODB++ to the released Gerber, drill and pick-and-place files. Not yet tried against EasyEDA:
 whether the export holds the component layers (packages, pins, part numbers) and its rotation convention are open.

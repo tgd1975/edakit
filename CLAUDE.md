@@ -7,19 +7,23 @@ too.
 ## The yardstick
 
 Circuit design as code: everything needed to create, edit and change a circuit is text in the project's repository,
-and every step can be done by an LLM (`docs/concepts/new/design-as-text.md`). EasyEDA Pro as a desktop program with
+and every step can be done by an LLM (`docs/concepts/done/design-as-text.md`). EasyEDA Pro as a desktop program with
 its MCP bridge is fine, and the clicks left will go in time; headless builds and CI are not the goal and no argument
 for a feature. When weighing a feature or a concept, say whether it leaves something that exists only in EasyEDA or
 only in someone's head.
 
 A requirements file covers the circuit only; what firmware and mechanics must do stays in the projects' own documents
-(`docs/concepts/new/requirements.md`, decision 3).
+(`docs/concepts/done/requirements.md`, decision 3).
 
 ## Concepts and branches
 
 - **A concept goes on main.** A concept the owner asks for goes into `docs/concepts/new/` next to the others, not onto
   a branch of its own – the owner follows the repository on GitHub, and a branch is not "in the repository". A concept
   written against an older main is checked against the current one first.
+- **A concept moves on once it is settled.** Decided and built in edakit – what is left being live runs, probes at a
+  maker or a project taking it over, each kept in `TODO.md` or the implementation plan –, it moves to
+  `docs/concepts/done/`; one the owner rejects moves to `docs/concepts/discarded/`, with the decision in its status
+  line. `docs/concepts/new/` holds only what is open, and every link and path that names a moved file follows it.
 - **Everything else goes through a branch**, and onto main only with the owner's OK.
 - **No branch is left lying around.** When a piece of work is done, list the unmerged branches – local, origin,
   worktrees, and the clones of other sessions, read only. Merge what is finished, rebased and with the tests green, or

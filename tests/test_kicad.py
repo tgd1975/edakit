@@ -1,5 +1,5 @@
 """The KiCad tool chain (toolchain = "kicad", handbook 16): the key, the S-expressions, the board's library and PCB
-as files – written from the plan, read back into what the shared checks read (docs/concepts/new/kicad-toolchain.md,
+as files – written from the plan, read back into what the shared checks read (docs/concepts/done/kicad-toolchain.md,
 steps T.2 to T.7). Nothing here needs KiCad: kicad-cli is faked where a step calls it."""
 
 import json
