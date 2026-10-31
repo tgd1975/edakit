@@ -1,0 +1,586 @@
+{
+ "made": "2026-11-01T00:16:04+01:00",
+ "run": "20261101-000246",
+ "fab_sha256": "ff5b1567b9162ccd4b3b6a51ec6a115fd482cc39feba8625241a86f29f8763f1",
+ "state_sha256": "b85dd8d8a978fd3160d7efee4d7919456fe41bec9903f0b0d2a3c3d6407937f3",
+ "layout_sha256": "6701738364d59b296932fb0e9bbbfd1b830158157966d7633ab666b78cea1bbc",
+ "purpose": {
+  "use": "private",
+  "market": "EU",
+  "notes": "The example of the edakit handbook, chapter 18: built for oneself."
+ },
+ "board": "main",
+ "title": "555 blinker",
+ "project": "blinker-555",
+ "maker": {
+  "key": "jlcpcb",
+  "name": "JLCPCB",
+  "profile": "/home/tobias/Dokumente/Projekte/edakit-step0/edakit/makers/jlcpcb.toml",
+  "recorded": "2026-10-31",
+  "start": "https://cart.jlcpcb.com/quote",
+  "cart": "Save to Cart",
+  "never": [
+   "Order",
+   "Buy",
+   "Checkout",
+   "Pay",
+   "Place order",
+   "Submit order",
+   "Secure Checkout"
+  ],
+  "ignore": {
+   "Product Type": "Industrial/Consumer electronics, JLCPCB's default",
+   "Deburring/Edge rounding": "JLCPCB's default (Yes, $0.10)",
+   "Different Design": "one design per board",
+   "Via Plating Method": "Not Specified, JLCPCB's default",
+   "Min via hole size/diameter": "JLCPCB's default (0.3mm/(0.4/0.45mm)); edakit's routing keeps to it",
+   "Blind Slots": "not used",
+   "UL Marking": "not used",
+   "Humidity Indicator Card": "not used",
+   "4-Wire Kelvin Test": "not used",
+   "Silkscreen Technology": "Ink-jet Printing Silkscreen, JLCPCB's default",
+   "Inspection Report": "not used",
+   "PCB Build Time": "the owner's choice (the cheapest is preselected)",
+   "Edge Rails/Fiducials": "Standard PCBA's label of the tooling holes: the skill sets it as tooling",
+   "Stencil Storage": "not used",
+   "Fixture Storage": "not used",
+   "Parts Selection": "By Customer (Self-Service): edakit's BOM names the parts",
+   "Board Cleaning": "not used",
+   "Special stencil": "not used",
+   "Solder Paste": "JLCPCB's default (High temp.)",
+   "Flying Probe Test": "the assembled board's test: not used",
+   "Nitrogen reflow soldering": "JLCPCB's default",
+   "Assembly remark": "not used",
+   "I agree to the Terms and Conditions of JLCPCB assembly Service": "pre-checked by JLCPCB; a consent the owner gives",
+   "Product Description": "the customs category with its HS code, required on Quote & Order: the owner's, asked at the order",
+   "Remark": "Quote & Order's remark: not used"
+  },
+  "unshown": [
+   "bom",
+   "cpl"
+  ],
+  "seat": "CN",
+  "currency": "USD",
+  "role": "planned"
+ },
+ "quantity": 5,
+ "pcba_quantity": 5,
+ "files": [
+  {
+   "name": "gerber_main.zip",
+   "path": "/tmp/claude-1000/-home-tobias-Dokumente-Projekte-edakit/797aadb4-7ef0-466c-9354-d5c9eb7a5ab8/scratchpad/live/blinker-555/build/release/20261101-000246/fab/main/gerber_main.zip",
+   "size": 29366,
+   "sha256": "c60aa04487f4b09c31652b1724d42bc19e0820e0f5a754f2e5876a8c5140530f"
+  },
+  {
+   "name": "bom_main.csv",
+   "path": "/tmp/claude-1000/-home-tobias-Dokumente-Projekte-edakit/797aadb4-7ef0-466c-9354-d5c9eb7a5ab8/scratchpad/live/blinker-555/build/release/20261101-000246/fab/main/bom_main.csv",
+   "size": 336,
+   "sha256": "8894f811474cdf8aa004d483cae3b8cd2c1ed09a4e13e649c83f7a83228fcf15"
+  },
+  {
+   "name": "cpl_main.csv",
+   "path": "/tmp/claude-1000/-home-tobias-Dokumente-Projekte-edakit/797aadb4-7ef0-466c-9354-d5c9eb7a5ab8/scratchpad/live/blinker-555/build/release/20261101-000246/fab/main/cpl_main.csv",
+   "size": 344,
+   "sha256": "a760dc0b0b08c23b03b1f8fd8df5529b4d702fea53f6f1f05ca4b9e4dcd6a8c9"
+  }
+ ],
+ "fields": [
+  {
+   "key": "material",
+   "section": "PCB",
+   "label": "Base Material",
+   "value": "FR-4",
+   "raw": "FR-4",
+   "from": "edakit",
+   "note": ""
+  },
+  {
+   "key": "layers",
+   "section": "PCB",
+   "label": "Layers",
+   "value": "2",
+   "raw": 2,
+   "from": "Gerber files",
+   "note": ""
+  },
+  {
+   "key": "size_mm",
+   "section": "PCB",
+   "label": "Dimensions",
+   "value": "60.00 x 28.00 mm",
+   "raw": [
+    60.0,
+    28.0
+   ],
+   "from": "Gerber outline",
+   "note": ""
+  },
+  {
+   "key": "quantity",
+   "section": "PCB",
+   "label": "PCB Qty",
+   "value": "5",
+   "raw": 5,
+   "from": "[project] quantity",
+   "note": ""
+  },
+  {
+   "key": "delivery",
+   "section": "PCB",
+   "label": "Delivery Format",
+   "value": "Single PCB",
+   "raw": "single",
+   "from": "edakit",
+   "note": ""
+  },
+  {
+   "key": "thickness_mm",
+   "section": "PCB",
+   "label": "PCB Thickness",
+   "value": "1.6 mm",
+   "raw": 1.6,
+   "from": "edakit",
+   "note": ""
+  },
+  {
+   "key": "mask",
+   "section": "PCB",
+   "label": "PCB Color",
+   "value": "Green",
+   "raw": "green",
+   "from": "edakit",
+   "note": ""
+  },
+  {
+   "key": "silkscreen",
+   "section": "PCB",
+   "label": "Silkscreen",
+   "value": "White",
+   "raw": "white",
+   "from": "edakit",
+   "note": ""
+  },
+  {
+   "key": "finish",
+   "section": "PCB",
+   "label": "Surface Finish",
+   "value": "LeadFree HASL",
+   "raw": "LeadFree HASL",
+   "from": "edakit",
+   "note": ""
+  },
+  {
+   "key": "tg",
+   "section": "PCB",
+   "label": "Material Type",
+   "value": "FR4 TG135",
+   "raw": "TG135",
+   "from": "edakit",
+   "note": ""
+  },
+  {
+   "key": "copper_oz",
+   "section": "PCB",
+   "label": "Outer Copper Weight",
+   "value": "1 oz",
+   "raw": 1,
+   "from": "edakit",
+   "note": ""
+  },
+  {
+   "key": "vias",
+   "section": "PCB",
+   "label": "Via Covering",
+   "value": "Tented",
+   "raw": "tented",
+   "from": "edakit",
+   "note": ""
+  },
+  {
+   "key": "outline_tolerance",
+   "section": "PCB",
+   "label": "Board Outline Tolerance",
+   "value": "±0.2mm(Regular)",
+   "raw": "regular",
+   "from": "edakit",
+   "note": ""
+  },
+  {
+   "key": "gold_fingers",
+   "section": "PCB",
+   "label": "Gold Fingers",
+   "value": "No",
+   "raw": false,
+   "from": "edakit",
+   "note": ""
+  },
+  {
+   "key": "castellated",
+   "section": "PCB",
+   "label": "Castellated Holes",
+   "value": "No",
+   "raw": false,
+   "from": "edakit",
+   "note": ""
+  },
+  {
+   "key": "edge_plating",
+   "section": "PCB",
+   "label": "Edge Plating",
+   "value": "No",
+   "raw": false,
+   "from": "edakit",
+   "note": ""
+  },
+  {
+   "key": "mark",
+   "section": "PCB",
+   "label": "Mark on PCB",
+   "value": "Remove Mark",
+   "raw": "remove",
+   "from": "[looks]",
+   "note": ""
+  },
+  {
+   "key": "electrical_test",
+   "section": "PCB",
+   "label": "Electrical Test",
+   "value": "Flying Probe Fully Test",
+   "raw": "flying_probe",
+   "from": "edakit",
+   "note": ""
+  },
+  {
+   "key": "quality",
+   "section": "PCB",
+   "label": "Appearance Quality",
+   "value": "IPC Class 2 Standard",
+   "raw": "ipc2",
+   "from": "edakit",
+   "note": ""
+  },
+  {
+   "key": "confirm_production_file",
+   "section": "PCB",
+   "label": "Confirm Production file",
+   "value": "No",
+   "raw": false,
+   "from": "edakit",
+   "note": ""
+  },
+  {
+   "key": "paper_between",
+   "section": "PCB",
+   "label": "Paper between PCBs",
+   "value": "No",
+   "raw": false,
+   "from": "edakit",
+   "note": ""
+  },
+  {
+   "key": "packaging",
+   "section": "PCB",
+   "label": "Package Box",
+   "value": "With JLCPCB logo",
+   "raw": "standard",
+   "from": "edakit",
+   "note": ""
+  },
+  {
+   "key": "remark",
+   "section": "PCB",
+   "label": "PCB Remark",
+   "value": "2 tooling holes added by customer.",
+   "raw": "2 tooling holes added by customer.",
+   "from": "board file",
+   "note": "34 characters"
+  },
+  {
+   "key": "pcba",
+   "section": "PCBA",
+   "label": "PCBA Type",
+   "value": "Economic",
+   "raw": "economic",
+   "from": "[release] assembly.sides top: one side",
+   "note": ""
+  },
+  {
+   "key": "sides",
+   "section": "PCBA",
+   "label": "Assembly Side",
+   "value": "Top Side",
+   "raw": "top",
+   "from": "[release] assembly.sides",
+   "note": ""
+  },
+  {
+   "key": "pcba_quantity",
+   "section": "PCBA",
+   "label": "PCBA Qty",
+   "value": "5",
+   "raw": 5,
+   "from": "quantity",
+   "note": ""
+  },
+  {
+   "key": "tooling",
+   "section": "PCBA",
+   "label": "Tooling holes",
+   "value": "Added by Customer",
+   "raw": "customer",
+   "from": "[tooling]",
+   "note": "2 x Ø 1.152 mm"
+  },
+  {
+   "key": "confirm_placement",
+   "section": "PCBA",
+   "label": "Confirm Parts Placement",
+   "value": "Yes",
+   "raw": true,
+   "from": "edakit",
+   "note": ""
+  },
+  {
+   "key": "photo_confirmation",
+   "section": "PCBA",
+   "label": "Photo Confirmation",
+   "value": "No",
+   "raw": false,
+   "from": "edakit",
+   "note": ""
+  },
+  {
+   "key": "bake",
+   "section": "PCBA",
+   "label": "Bake Components",
+   "value": "No",
+   "raw": false,
+   "from": "stock snapshot 2026-10-31",
+   "note": "no part with MSL >= 5"
+  },
+  {
+   "key": "depanel",
+   "section": "PCBA",
+   "label": "Depanel boards & edge rail before delivery",
+   "value": "No",
+   "raw": false,
+   "from": "edakit",
+   "note": ""
+  },
+  {
+   "key": "conformal_coating",
+   "section": "PCBA",
+   "label": "Conformal Coating (cleaning included)",
+   "value": "No",
+   "raw": false,
+   "from": "edakit",
+   "note": ""
+  },
+  {
+   "key": "function_test",
+   "section": "PCBA",
+   "label": "Function test",
+   "value": "No",
+   "raw": false,
+   "from": "edakit",
+   "note": ""
+  },
+  {
+   "key": "pcba_packaging",
+   "section": "PCBA",
+   "label": "Packaging",
+   "value": "Antistatic bubble film",
+   "raw": "antistatic_bag",
+   "from": "edakit",
+   "note": ""
+  },
+  {
+   "key": "ship_to",
+   "section": "Shipping",
+   "label": "Ship to",
+   "value": "AT",
+   "raw": "AT",
+   "from": "[cart] ship_to",
+   "note": "",
+   "read": true
+  },
+  {
+   "key": "shipping",
+   "section": "Shipping",
+   "label": "Shipping Method",
+   "value": "DHL Express",
+   "raw": "DHL Express",
+   "from": "[cart] shipping",
+   "note": ""
+  }
+ ],
+ "bom": [
+  {
+   "part": "C49678",
+   "designators": [
+    "C1"
+   ],
+   "comment": "100nF"
+  },
+  {
+   "part": "C28323",
+   "designators": [
+    "C2",
+    "C4"
+   ],
+   "comment": "1uF"
+  },
+  {
+   "part": "C1710",
+   "designators": [
+    "C3"
+   ],
+   "comment": "10nF"
+  },
+  {
+   "part": "C5366382",
+   "designators": [
+    "D1"
+   ],
+   "comment": "red"
+  },
+  {
+   "part": "C133233",
+   "designators": [
+    "Q1"
+   ],
+   "comment": "AO3415A"
+  },
+  {
+   "part": "C17817",
+   "designators": [
+    "R1"
+   ],
+   "comment": "750k"
+  },
+  {
+   "part": "C17540",
+   "designators": [
+    "R2"
+   ],
+   "comment": "200"
+  },
+  {
+   "part": "C17414",
+   "designators": [
+    "R3"
+   ],
+   "comment": "10k"
+  },
+  {
+   "part": "C90760",
+   "designators": [
+    "U1"
+   ],
+   "comment": "LMC555CMX/NOPB"
+  }
+ ],
+ "match": "lcsc",
+ "bom_file": "bom_main.csv",
+ "dnp": [],
+ "estimate": {
+  "currency": "USD",
+  "class": "economic",
+  "pcb": 10.7,
+  "pcb_how": "at most the price of the smallest size in the fee table, 110 × 100 mm – [cost] pcb_price",
+  "pcb_size_mm": [
+   60.0,
+   28.0
+  ],
+  "not_in_price": {},
+  "fees": [
+   {
+    "key": "setup",
+    "item": "setup, Economic",
+    "amount": 8.18,
+    "count": 1
+   },
+   {
+    "key": "stencil",
+    "item": "stencil, Economic",
+    "amount": 1.53,
+    "count": 1
+   },
+   {
+    "key": "loading C17817",
+    "item": "loading fee C17817",
+    "amount": 3.07,
+    "count": 1
+   },
+   {
+    "key": "loading C90760",
+    "item": "loading fee C90760",
+    "amount": 3.07,
+    "count": 1
+   },
+   {
+    "key": "loading C133233",
+    "item": "loading fee C133233",
+    "amount": 3.07,
+    "count": 1
+   },
+   {
+    "key": "loading C5366382",
+    "item": "loading fee C5366382",
+    "amount": 3.07,
+    "count": 1
+   },
+   {
+    "key": "smt joints",
+    "item": "SMT joints, 27 x 5",
+    "amount": 0.216,
+    "count": 135
+   }
+  ],
+  "fees_total": 22.21,
+  "parts_total": 3.7,
+  "unpriced": 0,
+  "total": 36.61,
+  "fee_table": "2026-10-27",
+  "budget": null,
+  "budget_currency": "USD",
+  "rate": 1.0
+ },
+ "estimate_why": "",
+ "compliance": {
+  "C1710": {
+   "rohs": true,
+   "source": "LCSC product data C1710 (RoHS), read 2026-10-31"
+  },
+  "C17414": null,
+  "C17540": {
+   "rohs": true,
+   "source": "LCSC product data C17540 (RoHS), read 2026-10-31"
+  },
+  "C17817": {
+   "rohs": true,
+   "source": "LCSC product data C17817 (RoHS), read 2026-10-31"
+  },
+  "C28323": {
+   "rohs": true,
+   "source": "Samsung MLCC catalogue November 2015, p. 2 ('all our MLCCs are produced in accordance with EU ROHS and REACH Directive'); LCSC product data C28323 (isEnvironment), read 2026-10-31"
+  },
+  "C49678": null,
+  "C90760": {
+   "rohs": true,
+   "source": "TI SNAS558M package option addendum, p. 19: LMC555CMX/NOPB 'Green (RoHS & no Sb/Br)'"
+  },
+  "C133233": {
+   "rohs": true,
+   "source": "LCSC product data C133233 (RoHS), read 2026-10-31"
+  },
+  "C5366382": {
+   "rohs": true,
+   "source": "Kingbright DSAO7910 Rev V.5A p. 1: 'RoHS compliant', 'Halogen-free'"
+  }
+ },
+ "ship_to": "AT",
+ "shipping": "DHL Express",
+ "tolerance": 0.1
+}

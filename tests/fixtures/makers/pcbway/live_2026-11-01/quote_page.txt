@@ -1,0 +1,47 @@
+=== www.pcbway.com/orderonline.aspx – the form, filled and read back (2026-11-01) ===
+Board type : Single pieces
+Different design in panel : 1
+* Size (single): 60 x 28 mm
+* Quantity (single): 5 pcs
+Layers: 2 Layers
+Material: FR-4
+FR4-TG: TG 130-140
+Thickness: 1.6
+Min track/spacing: 6/6mil
+Min hole size: 0.3mm ↑
+Solder mask: Green
+Silkscreen: White
+UV printing Multi-color: None
+Edge connector: No
+Surface finish: HASL lead free – Tick means you accept we might change "HASL" to "ENIG" at our discretion without extra charge. (unticked)
+Via process: Tenting vias
+Finished copper: 1 oz Cu
+Remove product No.: Yes (extra+$ 1.5)
+Customized Services and Advanced Options: Peelable soldermask None | Hole copper thickness Standard(20um) | UL marking None | Date code None | Package box With PCBWay logo | Add serial numbers None
+Half-cut/Castellated holes No | Edge plating No | Impedance control No | Halogen-free No | Custom stackup No | Carbon ink No | All vias filled with resin and capped No | Via in pad No | Press-fit holes No | Countersink/Counterbore No | Z-axis milling No | Black FR4 (black core) No | Embedded copper PCB No | Cavity PCB No | Semi-Flex PCB No | Whole/Partially hybrid PCB No | Back drill PCB No | Leadless partially plated hard gold No | Paper between PCBs No
+Other special request: 2 tooling holes added by customer.
+SMD-Stencil: No
+Assembly Service: The PCBs above need assembly (ticked)
+3 flexible options: Turnkey
+Board type : Single pieces
+Assembly side(s): Top side
+* Quantity: 5 pcs
+* Pay attention: Contains sensitive components/parts No; Do you accept alternatives/substitutes made in China? No
+Function test: No
+Firmware loading: No
+Other Parameters: Number of Unique Parts, Number of SMD Parts, Number of BGA/QFP Parts, Number of Through-Hole Parts – blank
+Customized Services and Advanced Options (assembly): Depanel the boards to delivery No | Conformal coating No | Press-fit assembly No | Box build assembly No | Cable wire harness assembly No | Package box Neutral box | Flying Probe Testing No | Number of X-ray test blank
+Detailed information of assembly: blank
+
+=== Pricing And Build Time ===
+PCB Price: 24hours 5 $6.50
+Assembly Service Price: 5.8/pcs 5 $29 | 1.4/pcs 20 $29 | 1.8/pcs 50 $88 | 1.2/pcs 200 $243.43
+Final price is subject to our review.
+Shipping Cost: $28.95 UNITED STATES OF AMERICA, DHL 2-4 business days, wt:0.53kg
+PCB Cost: $6.50
+Assembly Service Cost: $91.29 $29.00
+Shipping: $28.95
+Order discount: $-28.95
+Total: $35.50
+Notice: Customs duties and VAT are not included!
+Save to Cart

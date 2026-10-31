@@ -1,0 +1,215 @@
+{
+ "maker": "pcbway",
+ "read": "2026-11-01T00:45:00+01:00",
+ "fields": [
+  {
+   "label": "Board type",
+   "value": "Single pieces"
+  },
+  {
+   "label": "Different design in panel",
+   "value": "1"
+  },
+  {
+   "label": "Size (single)",
+   "value": "60 x 28 mm"
+  },
+  {
+   "label": "Quantity (single)",
+   "value": "5"
+  },
+  {
+   "label": "Layers",
+   "value": "2"
+  },
+  {
+   "label": "Material",
+   "value": "FR-4"
+  },
+  {
+   "label": "FR4-TG",
+   "value": "TG 130-140"
+  },
+  {
+   "label": "Thickness",
+   "value": "1.6"
+  },
+  {
+   "label": "Min track/spacing",
+   "value": "6/6mil"
+  },
+  {
+   "label": "Min hole size",
+   "value": "0.3mm ↑"
+  },
+  {
+   "label": "Solder mask",
+   "value": "Green"
+  },
+  {
+   "label": "Silkscreen",
+   "value": "White"
+  },
+  {
+   "label": "UV printing Multi-color",
+   "value": "None"
+  },
+  {
+   "label": "Edge connector",
+   "value": "No"
+  },
+  {
+   "label": "Surface finish",
+   "value": "HASL lead free"
+  },
+  {
+   "label": "Tick means you accept we might change \"HASL\" to \"ENIG\" at our discretion without extra charge.",
+   "value": "unticked"
+  },
+  {
+   "label": "Via process",
+   "value": "Tenting vias"
+  },
+  {
+   "label": "Finished copper",
+   "value": "1 oz Cu"
+  },
+  {
+   "label": "Remove product No.",
+   "value": "Yes (extra+$ 1.5)"
+  },
+  {
+   "label": "Peelable soldermask",
+   "value": "None"
+  },
+  {
+   "label": "Hole copper thickness",
+   "value": "Standard(20um)"
+  },
+  {
+   "label": "UL marking",
+   "value": "None"
+  },
+  {
+   "label": "Date code",
+   "value": "None"
+  },
+  {
+   "label": "Package box",
+   "value": "With PCBWay logo"
+  },
+  {
+   "label": "Add serial numbers",
+   "value": "None"
+  },
+  {
+   "label": "Half-cut/Castellated holes",
+   "value": "No"
+  },
+  {
+   "label": "Edge plating",
+   "value": "No"
+  },
+  {
+   "label": "Paper between PCBs",
+   "value": "No"
+  },
+  {
+   "label": "Other special request",
+   "value": "2 tooling holes added by customer."
+  },
+  {
+   "label": "SMD-Stencil",
+   "value": "No"
+  },
+  {
+   "label": "3 flexible options",
+   "value": "Turnkey"
+  },
+  {
+   "label": "Assembly side(s)",
+   "value": "Top side"
+  },
+  {
+   "label": "Quantity",
+   "value": "5"
+  },
+  {
+   "label": "Contains sensitive components/parts",
+   "value": "No"
+  },
+  {
+   "label": "Do you accept alternatives/substitutes made in China?",
+   "value": "No"
+  },
+  {
+   "label": "Function test",
+   "value": "No"
+  },
+  {
+   "label": "Firmware loading",
+   "value": "No"
+  },
+  {
+   "label": "Depanel the boards to delivery",
+   "value": "No"
+  },
+  {
+   "label": "Conformal coating",
+   "value": "No"
+  },
+  {
+   "label": "Press-fit assembly",
+   "value": "No"
+  },
+  {
+   "label": "Box build assembly",
+   "value": "No"
+  },
+  {
+   "label": "Cable wire harness assembly",
+   "value": "No"
+  },
+  {
+   "label": "Flying Probe Testing",
+   "value": "No"
+  }
+ ],
+ "files": [],
+ "parts": [],
+ "dnp": [],
+ "prices": [
+  {
+   "label": "PCB Cost",
+   "amount": 6.5,
+   "kind": "pcb"
+  },
+  {
+   "label": "Assembly Service Cost",
+   "amount": 29.0,
+   "kind": "fee"
+  },
+  {
+   "label": "Shipping",
+   "amount": 28.95,
+   "kind": "shipping"
+  },
+  {
+   "label": "Order discount",
+   "amount": -28.95,
+   "kind": "coupon"
+  },
+  {
+   "label": "Total",
+   "amount": 35.5,
+   "kind": "total"
+  }
+ ],
+ "currency": "USD",
+ "lead_time": "24hours",
+ "notes": [
+  "Final price is subject to our review: the components come with PCBWay's review of the files after the cart",
+  "the shipping estimate is for UNITED STATES OF AMERICA: the owner's address at checkout",
+  "no part matching before the cart: PCBWay's engineers match the BOM in the review"
+ ]
+}

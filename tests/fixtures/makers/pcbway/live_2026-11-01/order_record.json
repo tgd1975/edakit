@@ -1,0 +1,76 @@
+{
+ "date": "2026-11-01",
+ "run": "20261101-000246",
+ "fab_sha256": "ff5b1567b9162ccd4b3b6a51ec6a115fd482cc39feba8625241a86f29f8763f1",
+ "state_sha256": "b85dd8d8a978fd3160d7efee4d7919456fe41bec9903f0b0d2a3c3d6407937f3",
+ "board": "main",
+ "maker": "pcbway",
+ "quantity": 5,
+ "pcba_quantity": 5,
+ "job_sha256": "879b8dfbeb6c7cbf65a012069775c61d9d72d3ce26ab69e11c0fcdaa97acd4e3",
+ "quote_sha256": "a9f0cf79336d30bc34316bfec6b5765b67036cac9c8871ea12c7f67117fe0f52",
+ "regulatory": {
+  "verdict": "Order: OK",
+  "findings": [
+   {
+    "n": 1,
+    "grade": "note"
+   },
+   {
+    "n": 2,
+    "grade": "note"
+   },
+   {
+    "n": 3,
+    "grade": "note"
+   },
+   {
+    "n": 4,
+    "grade": "note"
+   },
+   {
+    "n": 5,
+    "grade": "note"
+   },
+   {
+    "n": 6,
+    "grade": "note"
+   },
+   {
+    "n": 7,
+    "grade": "note"
+   },
+   {
+    "n": 8,
+    "grade": "note"
+   }
+  ]
+ },
+ "quote": {
+  "currency": "USD",
+  "board": 35.5
+ },
+ "estimate": null,
+ "cart": {
+  "name": "2 Layers Size 60x28mm 1.6mm",
+  "quantity": 5,
+  "price": 35.5,
+  "currency": "USD",
+  "files": [
+   {
+    "name": "gerber_main.zip",
+    "size": "29 kb"
+   },
+   {
+    "name": "bom_main_mpn.csv",
+    "size": "433 b"
+   },
+   {
+    "name": "cpl_main.csv",
+    "size": "344 b"
+   }
+  ]
+ },
+ "order_number": null,
+ "actual": null
+}

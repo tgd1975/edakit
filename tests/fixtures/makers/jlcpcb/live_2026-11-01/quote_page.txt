@@ -1,0 +1,106 @@
+=== cart.jlcpcb.com/quote – the form, filled and read back (2026-11-01) ===
+Detected 2 layer board of 28x60mm(1.102x2.362 inches).
+Base Material FR-4
+Layers 2
+Dimensions 60 x 28 mm
+PCB Qty 5
+Product Type Industrial/Consumer electronics
+Deburring/Edge rounding Yes
+Different Design 1
+Delivery Format Single PCB
+PCB Thickness 1.6mm
+PCB Color Green
+Silkscreen White
+Material Type FR4 TG135
+Surface Finish LeadFree HASL
+Outer Copper Weight 1 oz
+Via Covering Tented
+Via Plating Method Not Specified
+Min via hole size/diameter 0.3mm/(0.4/0.45mm)
+Board Outline Tolerance ±0.2mm(Regular)
+Confirm Production file No
+Mark on PCB Remove Mark
+Electrical Test Flying Probe Fully Test
+Gold Fingers No
+Castellated Holes No
+Edge Plating No
+Blind Slots No
+UL Marking No
+Humidity Indicator Card No
+4-Wire Kelvin Test No
+Paper between PCBs No
+Appearance Quality IPC Class 2 Standard
+Silkscreen Technology Ink-jet Printing Silkscreen
+Package Box With JLCPCB logo
+Inspection Report No
+PCB Remark 2 tooling holes added by customer. (34/200)
+PCB Assembly on
+PCBA Type Economic
+Assembly Side Top Side
+PCBA Qty 5
+Tooling holes Added by Customer
+Confirm Parts Placement Yes – dialog "Confirm Parts Placement: To avoid production delays, please confirm within 72 hours. Otherwise, your order will be automatically confirmed and put into production directly." – "Do not confirm automatically" ticked on the owner's word, Confirm
+Stencil Storage No
+Fixture Storage No
+Parts Selection By Customer (Self-Service)
+Bake Components No
+Photo Confirmation No
+Board Cleaning No
+Conformal Coating (cleaning included) No
+Packaging Antistatic bubble film
+Special stencil No
+Depanel boards & edge rail before delivery No
+Solder Paste High temp.
+Flying Probe Test No
+Nitrogen reflow soldering Yes (for Economic)
+Function test No
+Assembly remark No
+I agree to the Terms and Conditions of JLCPCB assembly Service – pre-checked by JLCPCB, left on the owner's word
+Charge Details: Special Offer $4.00, Via Covering $0.00, Surface Finish $1.10, Deburring/Edge rounding $0.10
+PCB Build Time: 2 days $0.00 | 24 hours $7.60 | 24 hours PCBA Only $0.00
+Calculated Price $5.20 Web Price, $3.20 Desktop Price
+Shipping Estimate $23.44 DHL Express 2-4 business days, Weight 0.15kg
+
+=== Bill of Materials – after "Process BOM & CPL" ===
+Top Side Total 9 parts detected 9 Parts confirmed
+Top Designator | Comment | Footprint | Matched Part Detail | Qty | Source | Lib Type | Total Cost
+C1 | 100nF | C0805 | CC0805KRX7R9BB104 C49678 | 5 | JLCPCB | Basic | $0.1030
+C2,C4 | 1uF | C0805 | CL21B105KBFNNNE C28323 | 10 | JLCPCB | Basic | $0.4220
+C3 | 10nF | C0805 | CL21B103KBANNNC C1710 | 5 | JLCPCB | Basic | $0.0445
+D1 | red | LED-SMD_L2.0-W1.3_APTD2012SF4C | APTD2012LSURCK C5366382 | 5 | JLCPCB | Extended | $1.1040
+Q1 | AO3415A | SOT-23-3_L2.9-W1.6-P1.90-LS2.8-BR | AO3415A C133233 | 9 | JLCPCB | Extended | $0.9234
+R1 | 750k | R0805 | 0805W8F7503T5E C17817 | 20 | JLCPCB | Extended | $0.0580
+R2 | 200 | R0805 | 0805W8F2000T5E C17540 | 5 | JLCPCB | Basic | $0.0340
+R3 | 10k | R0805 | 0805W8F1002T5E C17414 | 5 | JLCPCB | Basic | $0.0170
+U1 | LMC555CMX/NOPB | SOIC-8_L4.9-W3.9-P1.27-LS6.0-BL | LMC555CMX/NOPB C90760 | 5 | JLCPCB | Extended | $1.4440
+
+=== Component Placements ===
+Top: C1 C49678 100nF C0805 | C2,C4 C28323 1uF C0805 | C3 C1710 10nF C0805 | D1 C5366382 red LED-SM… | Q1 C133233 AO3415A SOT-23-… | R1 C17817 750k R0805 | R2 C17540 200 R0805 | R3 C17414 10k R0805 | U1 C90760 LMC555… SOIC-8_…
+Bottom: greyed, no parts
+"* The preview for reference only. Check final part placement at DFM Analysis in Order History in 4-6 hours after placing the order."
+
+=== Quote & Order ===
+gerber_main
+Charge Details
+PCB Price $5.10
+Via Covering: $0.00
+Special Offer: $4.00
+Surface Finish: $1.10
+Confirm Production file: $0.00
+Economic PCBA Price $27.96
+Setup Fee: $8.24
+Stencil: $1.55
+Panel: $0.00
+Large Size: $0.00
+Components(9 items): $4.15
+Extended components fee: $12.36
+SMT Assembly $0.30
+Confirm Parts Placement: $0.45
+Nitrogen reflow soldering: $0.91
+Build Time: PCB: 24 hours $0.00 Assembly: 1 - 2 days $0.00
+Total Price: $33.06
+Weight 272.06g
+Product Description Reserch\Education\DIY\Entertainment / DIY  - HS Code 902300 (the owner's choice)
+Remark
+SAVE TO CART
+By placing your order, you agree to the Terms and Conditions of JLCPCB assembly Service.
