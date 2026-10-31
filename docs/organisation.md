@@ -56,7 +56,11 @@ on the site makes it readable there, not documentation: concepts, skills, agents
   A new document in `docs/` is documentation unless it is listed here as something else.
 - **Reads:** everything else, the code above all: a claim that can be checked is checked against it. What is wrong in
   a source, in data or in a generated section goes to the owner as a finding with its path and line – a generated
-  section is fixed in its source, on the owner's word.
+  section is fixed in its source, through the skill add-rule or add-feature, on the owner's word.
+- **Catalog texts are data.** The rule, why, fix and details of `edakit/catalog/*.toml` and the texts of
+  `edakit/domains/*.toml` read like documentation – in the handbook's generated sections, in `edakit explain`, on the
+  catalog page – but they are data. A review of the documentation never changes them, not even when asked during the
+  review: it reports them, and a correction is a piece of work of its own.
 - **Style:** English as written so far, plain declarative sentences, no superlatives, an en dash ` – ` for an aside,
   prose wrapped at 120 characters. A correct sentence stays as it is.
 - **Not legal advice:** regulatory content says once that it is support, not legal advice (CLAUDE.md).
