@@ -25,7 +25,58 @@
  "values": {
   "value_f": 1e-07,
   "dielectric": "X7R",
-  "tolerance": 0.1
+  "tolerance": 0.1,
+  "dc_bias": [
+   [
+    0,
+    1.0
+   ],
+   [
+    5,
+    1.0
+   ],
+   [
+    10,
+    0.99
+   ],
+   [
+    15,
+    0.96
+   ],
+   [
+    20,
+    0.91
+   ],
+   [
+    25,
+    0.86
+   ],
+   [
+    30,
+    0.8
+   ],
+   [
+    35,
+    0.73
+   ],
+   [
+    40,
+    0.66
+   ],
+   [
+    45,
+    0.59
+   ],
+   [
+    49.5,
+    0.54
+   ]
+  ],
+  "esr_ohm": [
+   null,
+   0.21,
+   null
+  ]
  },
  "limits": {
   "v_max_v": 50,
@@ -36,7 +87,10 @@
   "YAGEO Surface-Mount Ceramic Multilayer Capacitors, General Purpose & High Cap., X7R 6.3 V to 250 V, Product Specification V.26 (November 19, 2024), LCSC's copy for C49678 https://datasheet.lcsc.com/datasheet/pdf/23ccee80ee542e7cf156a772bb589942.pdf?productCode=C49678, read 2026-10-31",
   "ordering code, p. 1: CC 0805 K R X7R 9 BB 104 = size 0805, K ±10 %, R paper reel 7\", X7R, 9 = 50 V, 104 = 100 nF",
   "capacitance range table 4 (sizes from 0805): 100 nF at 50 V in thickness class EA (0.85 mm); operating temperature −55 … +125 °C",
-  "pin names and footprint as the example project's entry of the same part (tests/fixtures/led-bar/hardware/parts/C49678.json, from the EasyEDA symbol)"
+  "pin names and footprint as the example project's entry of the same part (tests/fixtures/led-bar/hardware/parts/C49678.json, from the EasyEDA symbol)",
+  "YAGEO part sheet CC0805KRX7R9BB104 (KEMET's site, YAGEO group), generated 2026-10-31, 4 pages, https://search.kemet.com/download/specsheet/CC0805KRX7R9BB104, read 2026-10-31 – p. 1: 0.1 µF, 10 %, 50 VDC, X7R, −55 … +125 °C, 0805; p. 2 'Simulations' (Y-SIM, the typical part, not a specification)",
+  "dc_bias: p. 2, graph 'Capacitance Change vs. DC Voltage Bias' (0 … 50 VDC), read from the graph ±10 %: 5 V 0 %, 10 V −1 %, 15 V −4 %, 20 V −9 %, 25 V −14 %, 30 V −20 %, 35 V −27 %, 40 V −34 %, 45 V −41 %, 49.5 V −46 % – the ratios entered are 1 plus the change",
+  "esr_ohm: p. 2, graph 'Impedance and ESR', ESR at 100 kHz about 0.21 Ω, read from the graph ±10 % – typical"
  ],
  "verified": {
   "by": "Claude (datasheet check, library draft)",
@@ -45,10 +99,11 @@
   "datasheet_sha256": "61a606825ab314ea318cfb5362848a62fdffb851efa9818d642e9a541c56a648",
   "checked": [
    "CC0805KRX7R9BB104: 0805, ±10 %, X7R, 50 V, 100 nF (ordering code p. 1)",
-   "100 nF / 50 V offered in 0805 (table 4); −55 … +125 °C"
+   "100 nF / 50 V offered in 0805 (table 4); −55 … +125 °C",
+   "YAGEO part sheet (generated 2026-10-31) p. 1–2: 0.1 µF, 50 VDC, X7R; DC-bias and ESR curves read at the points entered"
   ],
   "open": [
-   "X7R loses capacitance with DC bias; the data sheet's curve was not read – irrelevant for decoupling at 3.3–5 V"
+   "the DC-bias and ESR curves are YAGEO's simulation of the typical part (Y-SIM), not a specification: no spread between parts"
   ]
  }
 }

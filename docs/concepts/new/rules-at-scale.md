@@ -264,6 +264,22 @@ SYNC.cpl); B-1 to B-7 → a 13th engine `ORDER` (`ORDER.form`, `.parts`, `.quote
 `.review` – the order at the maker against the release). A finding for a maker of `[cart] makers` that is not the
 planned one is a warning of grade `other_maker`; `ORDER.finish` is graded by purpose in the domain core.
 
+The gaps of decisions 16–18, built on 2026-10-31 in eight worktrees (R1–R8) and merged: HINT.power_path for a load on
+the charging cell (HT-5) and, by decision 17, HINT.charge_termination, HINT.protection_timing and HINT.pd_negotiation
+with the coverage report's "not simulated over time" (R1); an addressable LED strip as a ladder of both rails, with
+injection points (FT-13, kind `led_strip`, R2); the constant-current LED buck (FT-14, behaviour `cc_led_driver`,
+PT4115 and AL8860) and a boost converter with EN low passing VIN − VD (FT-5, R3); the spread of transistor
+parameters as corners of the simulation, opt-in by `spread` in sim.json, and JFETs (FT-17, R4); the DC bias of
+ceramic capacitors, read from the makers' graphs, and the ESR window of a regulator's output capacitor (FT-9, CK-14,
+R5); the BME280's interfaces as configs and a `logic` model whose outputs are released or in a declared state (D3,
+E1 in part, R6); bus parameters in the firmware contract and LIM.range/clock, the antenna at the board edge,
+external compensation, injection currents (FT-16, CK-3, CK-11, CK-28, CK-5, R7); two Corne keyboard halves as open
+designs – v4 with the keys wired directly, v3 with its key matrix of 21 keys and diodes: the matrix rules pass
+the published design and find the faults seeded into it (FT-21, R8). The transcriptions found seven faults of
+edakit, each fixed test first. State: of 92 numbered candidates 84 built, 4 in part (FT-2 ampacity by gauge, FT-4
+termination, FT-18 pickups, FT-21 the Tube Screamer), 4 out; 113 library entries, all drafts until the owner signs
+them.
+
 ### When maker-coverage's candidates are built
 
 After the cut (step 5), not before – decided by the owner. Three reasons:
@@ -347,4 +363,31 @@ Taken by the owner on 2026-10-31, through a form, after the library and the bloc
 11. **EasyEDA symbols that differ from their datasheets:** checked and reported – STRUCT.entry compares the cached symbol
     with the entry beyond the names, and `upstream/` holds the report the owner sends to LCSC/EasyEDA.
 12. **Merge into main** after the schema extension, not before.
+
+Left to Claude by the owner on 2026-10-31 ("du entscheidest") – the three questions the schema extension left open:
+
+13. **MPU-6050, SCL, SDA, AUX_DA, AUX_CL:** held to VLOGIC + 0.5 V, the upper end of VIH (PS-MPU-6000A-00 Rev 3.4,
+    6.5), not to the absolute VDD + 0.5 V of 6.9. VLOGIC ≤ VDD at all times (6.3, `supply_order`), so the stricter
+    limit catches every pin the absolute one would, and between the two the datasheet promises no function; the grade
+    is the same (LIM.v/inject, a warning). With AUX_VDDIO = 1 the auxiliary bus refers to VDD – a project that sets
+    the bit accepts the finding.
+14. **The 10 µA a contact in a signal path may need at most** (REQ.value/min_load) stays, sourced now to a datasheet:
+    the minimum applicable load of a relay made for signals, Hongfa HFD4 – 10 µA at 10 mV, a reference value. The
+    forums of maker-coverage CK-30 are no longer its source. A warning, as before.
+15. **INA226 Alert:** held to VS + 0.3 V like SCL (the entry's `vin_rel_max_v`, LIM.v/inject, a warning). SBOS547C
+    has no absolute-maximum row for Alert; its leakage is specified up to VS (5.5) and 8.2.1.2 says the pin "must"
+    be pulled up to VS. The stricter reading, because a warning can be accepted and a missed limit cannot be seen.
+
+Confirmed by the owner on 2026-10-31 through a form (13–15 to main together with the build), and taken there, each as
+proposed – what became of the gaps the build left (maker-coverage-status.toml, schema-gaps.md):
+
+16. **The gaps that can be built now** are built, in parallel worktrees as W1–W7, each test first and every value
+    from a source with its revision: HT-5, FT-13, FT-14, FT-17, FT-9 with the rest of CK-14, the rest of FT-5, D3, E1,
+    CK-5, CK-11, CK-28, FT-16. Theme G of schema-gaps.md is not part of it.
+17. **What needs behaviour over time** – a charger's termination at C/10, the DW01A's hysteresis and delays, USB-PD's
+    negotiation with PG and the CC lines – gets no state model: a hint names the risk where the part is used, and the
+    coverage report lists it as not simulated. A load on the cell while it charges is HT-5's.
+18. **Sources that cannot be reached** stay open with their reason in the status – the Tube Screamer (electrosmash),
+    the MIDI specification, Eurorack, pickups, an ampacity table by gauge, ES1's AC limit. The key matrix of FT-21
+    comes from a public keyboard repository with a KiCad schematic, attached to the session read only.
 

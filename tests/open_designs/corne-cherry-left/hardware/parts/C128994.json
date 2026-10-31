@@ -1,0 +1,57 @@
+{
+ "lcsc": "C128994",
+ "mpn": "PJ-399B-6A",
+ "manufacturer": "Korean Hroparts Elec",
+ "kind": "connector",
+ "package": "3.5 mm TRS jack, SMD",
+ "footprint": "PJ-398A-5A_PJ-399B-6A",
+ "datasheet": {
+  "url": "https://datasheet.lcsc.com/datasheet/pdf/bd032b888e950c1db30e5676b04f0257.pdf",
+  "pinout_page": 1
+ },
+ "pins": {
+  "S": {
+   "name": "~",
+   "type": "passive",
+   "role": "sleeve"
+  },
+  "T": {
+   "name": "~",
+   "type": "passive",
+   "role": "tip"
+  },
+  "R": {
+   "name": "~",
+   "type": "passive",
+   "role": "ring"
+  }
+ },
+ "values": {
+  "r_contact_ohm": 0.1
+ },
+ "limits": {
+  "i_max_a": 0.5,
+  "v_max_v": 30,
+  "t_min_c": -20,
+  "t_max_c": 70
+ },
+ "sources": [
+  "Korean Hroparts (HRO) PJ-399B phone jack drawing, Rev. A (drawn 2013-11-11), 1 sheet, LCSC's copy https://datasheet.lcsc.com/datasheet/pdf/bd032b888e950c1db30e5676b04f0257.pdf, read 2026-10-31 (read from the drawing image)",
+  "rating 0.5 A 30 V DC; contact resistance 100 mΩ max; operating temperature −20 … 70 °C; operating force 3–20 N; life 5000 cycles",
+  "pins S, T, R and their names (~) as the Corne's KiCad symbol Connector_Audio:AudioJack3 on the footprint PJ-398A-5A_PJ-399B-6A; the drawing numbers six terminals"
+ ],
+ "verified": {
+  "by": "Claude (datasheet check, open-design transcription)",
+  "date": "2026-10-31",
+  "datasheet": "Korean Hroparts (HRO) PJ-399B phone jack drawing, Rev. A (drawn 2013-11-11), 1 sheet",
+  "datasheet_sha256": "522cdb6b1e9ef13e713a3367f67041000ecd6716f61ce56844fed7f8aa0824c5",
+  "checked": [
+   "rating",
+   "contact resistance",
+   "temperature range"
+  ],
+  "open": [
+   "which of the drawing's six terminals the footprint's S, T, R pads take was not traced"
+  ]
+ }
+}

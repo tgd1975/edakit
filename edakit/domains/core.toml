@@ -21,6 +21,10 @@ about = "what every board needs: structure, artifacts, limits and levels of the 
 module = ["compliance.radio"]        # its bands and power, or "none" – the regulatory review (M-6) reads it
 microcontroller = ["compliance.radio"]
 
+[facts.kind]                         # required per parts kind
+led_strip = ["values.pixels_per_m", "values.i_pixel_a", "values.r_vdd_ohm_per_m", "values.r_gnd_ohm_per_m"]
+                                     # what the strip's ladder needs (sim/strip.py) – the simulation does not guess them
+
 [hints]
 apply = ["HINT.datasheet", "HINT.bulk", "HINT.gate", "HINT.debounce", "HINT.inductive", "HINT.switcher", "HINT.lithium", "HINT.esd",
          "HINT.two_supplies", "HINT.readback", "HINT.flicker", "HINT.jack_supply", "HINT.relay_load"]

@@ -2,12 +2,23 @@
 a TVS judged by its working voltage without the rectifier's margin, the two VOUT pins of a regulator counted as two
 drivers, an input's built-in pull-up ignored, a transistor base driven through its resistor by an output that is
 defined at reset taken as floating. (The fifth – nets no simulated element touches judged as nan – is held by
-tests/test_open_designs.py on the DevKitC's header nets.) Parts here are test entries, not datasheets."""
+tests/test_open_designs.py on the DevKitC's header nets.) The Corne's left half added four: a crystal with four
+pads – its two ground pads on the lid – stopped edakit check, a crystal behind the damping resistor at the
+oscillator's output (the RP2040's XOUT) was taken as missing, a bare microcontroller (kind ic, behaviour mcu) could
+not state the core current and on-chip regulator the model reads, and a pin on a net no simulated element reaches was
+judged as nan against its relative limit. (Its fifth – no-connect crosses drawn in the order of a set – is held by
+tests/test_catalog_page.py.) The Corne v3's key matrix added two: a pressed key whose row is not scanned was judged
+starved of its minimum load, and a row could not be released while another is scanned. Parts here are test entries,
+not datasheets."""
 
 import json
+import shutil
 
-from edakit import engines
+import pytest
+
+from edakit import engines, schema
 from edakit.design import Design
+from edakit.engines.requires import pin_needs
 
 TVS = {"lcsc": "C9000501", "mpn": "test TVS 5 V", "kind": "diode", "verified": {"by": "test"},
        "pins": {"1": {"name": "K", "type": "passive", "role": "cathode"},
@@ -114,3 +125,158 @@ def test_a_base_driven_through_its_resistor_by_a_defined_output(project):
     project.save_graph(g)
     assert [t for t in findings(project, "LVL.undefined") if t.startswith("Q20")] == [
         "Q20: no base-emitter resistor – state undefined while the firmware is not running"]
+
+
+# --- the Corne (corne-cherry-left): crystals and a bare microcontroller ---------------------------------------------
+OSC = {"lcsc": "C9000503", "mpn": "test oscillator IC", "kind": "ic", "verified": {"by": "test"},
+       "pins": {"1": {"name": "VDD", "type": "power_in"}, "2": {"name": "GND", "type": "ground"},
+                "3": {"name": "XIN", "type": "passive",
+                      "needs": [{"what": "crystal", "to": "XOUT", "f_min_hz": 12e6, "f_max_hz": 12e6}]},
+                "4": {"name": "XOUT", "type": "passive"}},
+       "needs": {"decoupling": False}}
+
+
+def crystal(pads=2, hz=12e6):
+    """A test crystal of two pads, or of four: #1 and #3 the crystal, #2 and #4 ground on the lid (Epson FA-238V)."""
+    pins = ({"1": {"name": "1", "type": "passive", "role": "1"}, "2": {"name": "2", "type": "passive", "role": "2"}}
+            if pads == 2 else
+            {"1": {"name": "1", "type": "passive", "role": "1"}, "2": {"name": "2", "type": "ground"},
+             "3": {"name": "3", "type": "passive", "role": "2"}, "4": {"name": "4", "type": "ground"}})
+    return {"lcsc": "C9000504", "mpn": f"test crystal {pads} pads", "kind": "crystal", "pins": pins,
+            "values": {"f_hz": hz}}
+
+
+def oscillator(xtal, damping=None, pull_up=False):
+    """U1 with XIN and XOUT; Y1 between XIN and XOUT – or, with damping (Ω), between XIN and X2 with R1 from XOUT to
+    X2 (the Corne's R3 at the RP2040's XOUT), or with pull_up R1 from the supply to X2; Y1's ground pads on GND."""
+    parts = {"C9000503": OSC, "C9000504": xtal}
+    comps = [{"designator": "U1", "type": "ic", "lcsc": "C9000503", "board": "main",
+              "pins": {n: p["name"] for n, p in OSC["pins"].items()}},
+             {"designator": "Y1", "type": "crystal", "lcsc": "C9000504", "board": "main",
+              "pins": {n: p["name"] for n, p in xtal["pins"].items()}}]
+    four = len(xtal["pins"]) == 4
+    nets = {"3V3": ["U1.1"], "GND": ["U1.2"], "XIN": ["U1.3", "Y1.1"], "XOUT": ["U1.4"], "X2": []}
+    nets["X2" if damping else "XOUT"].append("Y1.3" if four else "Y1.2")
+    if four:
+        nets["GND"] += ["Y1.2", "Y1.4"]
+    if damping:
+        parts["C9000505"] = {"lcsc": "C9000505", "mpn": "test resistor", "kind": "resistor",
+                             "pins": {"1": {"name": "1", "type": "passive"}, "2": {"name": "2", "type": "passive"}},
+                             "values": {"value_ohm": damping}}
+        comps.append({"designator": "R1", "type": "resistor", "lcsc": "C9000505", "board": "main",
+                      "pins": {"1": "1", "2": "2"}})
+        nets["3V3" if pull_up else "XOUT"].append("R1.1")
+        nets["X2"].append("R1.2")
+    graph = {"name": "t", "version": "1", "ground": "GND", "components": comps,
+             "nets": [{"name": n, "pins": p, "v": [0, 3.4]} for n, p in nets.items() if p]}
+    return Design.from_data(graph, parts)
+
+
+def crystal_needs(d):
+    return [(f.code, f.text) for f in pin_needs(d)]
+
+
+def test_a_crystal_with_two_ground_pads_is_found_between_its_crystal_pins():
+    assert crystal_needs(oscillator(crystal(2))) == []
+    assert crystal_needs(oscillator(crystal(4))) == []          # before: edakit check stopped (four pins unpacked)
+    assert crystal_needs(oscillator(crystal(4, 8e6))) == [
+        ("REQ.value", "U1.3 (XIN): needs a crystal of 12 MHz … 12 MHz to U1.4 (XOUT) – Y1: 8 MHz")]
+
+
+def test_a_crystal_behind_the_damping_resistor_at_xout_counts():
+    assert crystal_needs(oscillator(crystal(4), damping=1000)) == []   # before: REQ.missing, none between XIN and XOUT
+    assert crystal_needs(oscillator(crystal(4, 8e6), damping=1000)) == [
+        ("REQ.value", "U1.3 (XIN): needs a crystal of 12 MHz … 12 MHz to U1.4 (XOUT) – Y1: 8 MHz")]
+
+
+def test_a_crystal_behind_a_resistor_from_a_rail_does_not_count():
+    assert [code for code, _ in crystal_needs(oscillator(crystal(2), damping=1000, pull_up=True))] == ["REQ.missing"]
+
+
+def test_a_bare_microcontroller_states_its_core_current_and_regulator():
+    mcu = {"lcsc": "C9000506", "mpn": "test MCU", "kind": "ic", "verified": {"by": "test"},
+           "pins": {"1": {"name": "IOVDD", "type": "power_in", "role": "vdd"}, "2": {"name": "GND", "type": "ground"},
+                    "3": {"name": "VREG_IN", "type": "power_in", "role": "vin"},
+                    "4": {"name": "VREG_VOUT", "type": "power_output", "role": "vout"}},
+           "values": {"behavior": "mcu", "v_io_v": 3.3, "i_core_a": 0.054, "i_core_min_a": 0.01, "gpio_r_out_ohm": 40,
+                      "regulator": "ldo", "vout_v": 1.1},
+           "limits": {"gpio_i_max_a": 0.012, "gpio_i_total_max_a": 0.05}}
+    assert schema.problems(mcu) == []                       # before: not values or limits of kind ic
+
+
+@pytest.mark.skipif(not shutil.which("ngspice"), reason="ngspice not installed")
+def test_a_relative_pin_limit_on_a_net_nothing_simulated_reaches_is_not_judged(project):
+    """U2's pin 14 (TLC5916, nc in the example; an input for the test) on a net with only a spare MCU pin – as a
+    flash's QSPI lines or a header's SWD – that no element of the netlist reaches: its voltage is nan, no reading
+    against vin_rel_max_v (LIM.v/inject). U2's OE, on a net the simulation drives, is still held."""
+    from test_sim import simulate
+    part = project.part("C90107")
+    part["limits"]["vin_rel_max_v"] = 0.3
+    part["pins"]["14"]["type"] = "input"                  # the model drives an output low: an input floats
+    project.save_part("C90107", part)
+    g = project.graph()
+    project.free_pins(g, "U2.14", "U1.10")
+    g["graph"]["nets"].append({"name": "SPARE", "pins": ["U2.14", "U1.10"], "v": [0, 3.4]})
+    project.save_graph(g)
+    out = simulate(project)
+    assert [c for c in out["checks"] if c["item"] == "U2.14" and "above" in c["check"]] == []  # before: nan V, failed
+    assert [c for c in out["checks"] if c["item"] == "U2.13" and "above its supply" in c["check"]]
+
+
+# --- the Corne v3 (corne-cherry-v3-left): a key matrix ----------------------------------------------------------------
+KEY = {"lcsc": "C9000507", "mpn": "test key socket", "kind": "button", "verified": {"by": "test"},
+       "pins": {"1": {"name": "1", "type": "passive", "role": "a"}, "2": {"name": "2", "type": "passive", "role": "b"}},
+       "values": {"r_on_ohm": 0.1, "min_load_a": 1e-5}}
+
+
+def matrix_key(project):
+    """A key of a key matrix on the example's Pico: SW20 from COL (GP8, read with the pull-up) to K20, its diode D20
+    (1N4148W) from K20 to ROW (GP7, the firmware's scan output) – cathode to the row, as the Corne's."""
+    project.save_part("C9000507", KEY)
+    project.use_library_part("C81598")
+    g = project.graph()
+    project.free_pins(g, "U1.10", "U1.11")
+    g["graph"]["components"] += [
+        {"designator": "SW20", "type": "button", "lcsc": "C9000507", "pins": {"1": "1", "2": "2"}},
+        {"designator": "D20", "type": "diode", "lcsc": "C81598", "pins": {"1": "K", "2": "A"}}]
+    g["graph"]["nets"] += [{"name": "ROW", "pins": ["U1.10", "D20.1"], "v": [0, 3.4], "matrix": "row"},
+                           {"name": "COL", "pins": ["U1.11", "SW20.1"], "v": [0, 3.4], "matrix": "col"},
+                           {"name": "K20", "pins": ["SW20.2", "D20.2"], "v": [0, 3.4]}]
+    project.save_graph(g)
+    sim = json.loads((project.root / "hardware" / "sim.json").read_text())
+    sim["mcu"]["U1"]["outputs"].append("ROW")
+    sim["mcu"]["U1"]["pullups"].append("COL")
+    sim["loads"] = {"scanned": {"gpio": {"LED_OE": 1, "ROW": 0}, "leds_on": [], "buttons": ["SW20"]},
+                    "not_scanned": {"gpio": {"LED_OE": 1, "ROW": 1}, "leds_on": [], "buttons": ["SW20"]}}
+    return sim
+
+
+@pytest.mark.skipif(not shutil.which("ngspice"), reason="ngspice not installed")
+def test_a_matrix_key_whose_row_is_not_scanned_carries_no_minimum_load(project):
+    """A pressed key of a key matrix carries current only while its row is scanned; in the other rows its diode
+    blocks it – the point of the diode, not a contact starved of its wetting current (REQ.value/min_load). Scanned,
+    its current is held to the socket's minimum load as before."""
+    from test_sim import simulate
+    sim = matrix_key(project)
+    rows = [c for c in simulate(project, sim)["checks"] if c["item"] == "SW20" and "closed contact" in c["check"]]
+    assert rows and all("/scanned/" in c["scenario"] for c in rows)        # before: 0 µA failed where not scanned
+    assert all(c["result"] == "pass" for c in rows)
+    sim["mcu"]["U1"]["pullup_ohm"] = 1e6                                     # 2.7 µA through the key: too little
+    rows = [c for c in simulate(project, sim)["checks"] if c["item"] == "SW20" and "closed contact" in c["check"]]
+    assert rows and all(c["result"] == "fail" for c in rows)
+
+
+@pytest.mark.skipif(not shutil.which("ngspice"), reason="ngspice not installed")
+def test_an_output_a_load_releases_is_held_by_its_pull_up(project):
+    """QMK scans a matrix by driving one row low and releasing the others – inputs with the pull-up, not outputs high
+    (a ghost runs through a released row, not through a driven one). A load's gpio level null releases an output of
+    the mcu config: undriven, its pull-up holds the net. Before, null drove it low."""
+    from test_sim import simulate
+    sim = matrix_key(project)
+    sim["mcu"]["U1"]["pullups"].append("ROW")
+    sim["loads"] = {"released": {"gpio": {"LED_OE": 1, "ROW": None}, "leds_on": [], "buttons": []},
+                    "low": {"gpio": {"LED_OE": 1, "ROW": 0}, "leds_on": [], "buttons": []}}
+    out = simulate(project, sim)
+    level = {c["scenario"].split("/")[1]: float(c["actual"].split()[0]) for c in out["checks"]
+             if c["item"] == "ROW" and c["id"] == "LIM.declared"}
+    assert level["released"] > 3.0 and level["low"] < 0.1                 # before: released read 0 V, driven low

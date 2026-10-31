@@ -10,12 +10,13 @@ a pull, a series resistor, ground or never ground) – and the pin functions a n
 from __future__ import annotations
 
 import tomllib
-from collections import Counter, defaultdict
+from collections import Counter, defaultdict, namedtuple
 from functools import lru_cache
 
 from ..catalog import HERE
-from ..circuit import (FN_NAMES, I2C_R_MAX, I2C_SINK_A, I2C_VOL, USB_C_CC, USB_RD, USB_RD_TOL, cc_lines, fn_match,
-                       hz_text, i2c_name, is_number, ohm, resistors_to, si, supply_nets, v_range, valid_hz, values)
+from ..circuit import (CLASS_2, FN_NAMES, I2C_R_MAX, I2C_SINK_A, I2C_VOL, USB_C_CC, USB_RD, USB_RD_TOL, capacitance,
+                       cc_lines, esr_ends, fn_match, hz_text, i2c_name, is_number, limits, ohm, resistor_like,
+                       resistors_to, si, supply_nets, v_range, valid_hz, values, volts_across)
 from ..findings import Finding
 
 
@@ -133,14 +134,14 @@ def feedback_dividers(d):
     """REQ.missing/feedback, REQ.value/feedback (maker-coverage FT-5): an adjustable regulator (values vref_v, a pin
     with the role adj or fb) has its divider – R1 from the output to that pin, R2 from it to ground –, and the output it
     sets stays within the output net's declared range."""
-    from ..circuit import feedback_vout
+    from ..circuit import feedback_vout, regulator_output
     out = []
     for des in sorted(d.comps):
         part = d.part(des) or {}
         role = next((r for r in ("adj", "fb") if d.net_of(des, r)), None)
         if not is_number(values(part).get("vref_v")) or not role:
             continue
-        net, on = d.net_of(des, "vout"), (("component", des),)
+        net, on = regulator_output(d, des), (("component", des),)
         fb = feedback_vout(d, des)
         if fb is None:
             out.append(Finding("REQ.missing", "G", des, f"{des}: an adjustable regulator ({role.upper()}) without its "
@@ -282,6 +283,9 @@ def functions(d):
         if not valid_hz(net.get("pwm_hz")):
             out.append(Finding("STRUCT.net", "G", name, f"{name}: pwm_hz must be a frequency in Hz or [min, max], not "
                                f"{net['pwm_hz']!r}", on=on))
+        if net.get("clock_hz") is not None and not (is_number(net["clock_hz"]) and net["clock_hz"] > 0):
+            out.append(Finding("STRUCT.net", "G", name, f"{name}: clock_hz must be the bus clock in Hz, not "
+                               f"{net['clock_hz']!r}", on=on))
         if not fn:
             continue
         if fn not in FN_NAMES:
@@ -384,6 +388,75 @@ def hot_loops(d):
 
 
 
+ESR_KEYS = ("esr_min_ohm", "esr_max_ohm")     # a capacitor need's ESR window (CK-14)
+Cap = namedtuple("Cap", "des nominal rating left volts esr")
+# a capacitor between two nets: value_f, v_max_v, the capacitance left at the DC across it (dc_bias), that DC by the
+# nets' declared ranges (None where one has none), (lowest, highest) ESR or None
+
+
+def capacitors_between(d):
+    """frozenset of two nets -> [Cap] of the capacitors between them."""
+    between = defaultdict(list)
+    for des in d.comps_of_kind("capacitor"):
+        part = d.part(des)
+        a, b = (d.pin_net.get(f"{des}.{p}") for p in part["pins"])
+        if a and b and a != b:
+            volts = volts_across(d, a, b)
+            between[frozenset((a, b))].append(Cap(des, values(part).get("value_f"), limits(part).get("v_max_v"),
+                                                  capacitance(part, volts), volts, esr_ends(part)))
+    return between
+
+
+def needed_capacitors(d, des, pins, net, need, between, grounds):
+    """([Cap], where) – the capacitors a pin's capacitor need counts: to the pin `to` names or to ground; of these the
+    ones layout.near places next to the part where it names any (the local decoupling)."""
+    to = other_pin(pins, need["to"]) if "to" in need else None
+    if to:
+        to_net = d.pin_net.get(f"{des}.{to}")
+        found = list(between.get(frozenset((net, to_net)), [])) if to_net and to_net != net else []
+        there = f"to {des}.{to} ({pins[to].get('name', to)}) ({to_net or 'no net'})"
+    else:
+        found = [c for g in sorted(grounds - {net}) for c in between.get(frozenset((net, g)), [])]
+        there = f"to {d.ground}"
+    local = near_parts(d, des)
+    if any(c.des in local for c in found):          # the decoupling next to the part, not the net's sum
+        found = [c for c in found if c.des in local]
+        there += " next to the part (layout.near)"
+    return found, there
+
+
+def esr_text(ends):
+    return ohm(ends[0]) if ends[0] == ends[1] else f"{ohm(ends[0])} … {ohm(ends[1])}"
+
+
+def esr_window(need, caps, c_min, window, there, net, finding, gaps, ref):
+    """REQ.value/esr: a capacitor need's ESR window (esr_min_ohm, esr_max_ohm – a regulator's output capacitor, CK-14)
+    holds when the capacitors inside it by their esr_ohm add up to the need's minimum after DC bias, or one is inside
+    it where the need gives no minimum. Not judged – a gap of the coverage report – while a capacitor without esr_ohm
+    could close it; no finding either where every capacitor is inside and only the capacitance falls short
+    (REQ.value/pin or /bias says so)."""
+    lo, hi = (need.get(k) for k in ESR_KEYS)
+    if lo is None and hi is None:
+        return
+
+    def inside(c):
+        return c.esr is not None and (lo is None or c.esr[0] >= lo) and (hi is None or c.esr[1] <= hi)
+    fit = [c for c in caps if inside(c)]
+    ok = sum(c.left for c in fit if is_number(c.left))
+    if (ok >= c_min if c_min is not None else fit) or all(inside(c) for c in caps):
+        return
+    unknown = [c for c in caps if c.esr is None]
+    if unknown:
+        if gaps is not None:
+            gaps += [(c.des, f"no esr_ohm – the ESR window of {ref} is not judged") for c in unknown]
+        return
+    span = f"{ohm(lo)} … {ohm(hi)}" if lo is not None and hi is not None else \
+        f"at least {ohm(lo)}" if lo is not None else f"at most {ohm(hi)}"
+    finding("REQ.value", f"needs a capacitor{window} with an ESR of {span} {there} – "
+                         + ", ".join(f"{c.des} {esr_text(c.esr)}" for c in caps) + f" on {net}: "
+                         + (f"{si(ok, 'F')} in the window" if fit else "none in the window"), grade="esr")
+
+
 def pin_needs_problems(need, pins=None):
     """What is wrong with one entry of a pin's needs: a known `what`, its window and v_min_v as numbers, min ≤ max;
     `to` naming another pin of the part (by number or name, where the part's pins are given), and given where the
@@ -395,9 +468,12 @@ def pin_needs_problems(need, pins=None):
     window, extra = n["windows"].get(what, []), n.get("keys", {}).get(what, [])
     out = [f"needs {what}: unknown key '{k}'" for k in sorted(set(need) - {"what", "source", "why", *window, *extra})]
     lo, hi = (need.get(k) for k in window) if window else (None, None)
-    out += [f"needs {what}: {k} must be a number" for k in [*window, "v_min_v"] if k in need and not is_number(need[k])]
+    out += [f"needs {what}: {k} must be a number" for k in [*window, "v_min_v", *ESR_KEYS]
+            if k in need and not is_number(need[k])]
     if is_number(lo) and is_number(hi) and lo > hi:
         out.append(f"needs {what}: {window[0]} above {window[1]}")
+    if all(is_number(need.get(k)) for k in ESR_KEYS) and need[ESR_KEYS[0]] > need[ESR_KEYS[1]]:
+        out.append(f"needs {what}: {ESR_KEYS[0]} above {ESR_KEYS[1]}")
     if what in n.get("needs_to", []) and "to" not in need:
         out.append(f"needs {what}: to – the other pin of the part – is missing")
     if "to" in need and pins is not None and other_pin(pins, need["to"]) is None:
@@ -415,6 +491,14 @@ def other_pin(pins, to):
     return next((num for num, p in pins.items() if (p or {}).get("name") == to), None)
 
 
+def crystal_pins(part):
+    """The two pins of a crystal's quartz: those with the roles 1 and 2 – a crystal of four pads has two more on its
+    lid, for ground (Epson FA-238V: #1 and #3 the crystal, #2 and #4 GND) –, else the pins that are not ground."""
+    pins = (part or {}).get("pins") or {}
+    by_role = [num for role in ("1", "2") for num, p in pins.items() if (p or {}).get("role") == role]
+    return by_role if len(by_role) == 2 else [num for num, p in pins.items() if (p or {}).get("type") != "ground"]
+
+
 def near_parts(d, des):
     """The parts layout.near places next to `des`, and those it places `des` next to."""
     near = (d.graph.get("layout") or {}).get("near") or {}
@@ -424,27 +508,37 @@ def near_parts(d, des):
     return {k for k, v in near.items() if des in hosts(v)} | set(hosts(near.get(des)))
 
 
-def pin_needs(d):
+def pin_needs(d, gaps=None):
     """REQ.missing/pin, REQ.value/pin, REQ.forbidden/pin: what a pin's parts entry says it needs – a capacitor to
     ground or to another of its pins (to), rated at least v_min_v, a pull-up to a supply or a pull-down to ground, a
     series resistor, each in its window; a crystal to another of its pins in its frequency window; to be tied to
     another of its pins; to be on ground, or never on it; no pull resistor, no series resistor. A capacitor window is
     judged on the capacitors layout.near places next to the part where it names any on the net – the local
-    decoupling –, else on the net's sum. A needs entry of the wrong form: PARTS.schema."""
+    decoupling –, else on the net's sum. A minimum the nominal values meet but the capacitance left at the DC across
+    them (values dc_bias) does not: REQ.value/bias; an ESR window (esr_min_ohm, esr_max_ohm) the capacitors' esr_ohm
+    do not fill: REQ.value/esr (maker-coverage FT-9, CK-14). A needs entry of the wrong form: PARTS.schema. `gaps`, a
+    list, collects (capacitor, what is missing) where data was lacking – for the coverage report."""
     n = needs()["pin"]
     grounds = {d.ground} | set(d.graph.get("grounds") or [])
     supplies = supply_nets(d) - grounds
-    between = defaultdict(list)         # frozenset of two nets -> [(capacitor, value, rating)]
-    for des in d.comps_of_kind("capacitor"):
-        a, b = (d.pin_net.get(f"{des}.{p}") for p in d.part(des)["pins"])
-        if a and b and a != b:
-            part = d.part(des)
-            between[frozenset((a, b))].append((des, values(part).get("value_f"), (part.get("limits") or {}).get("v_max_v")))
+    between = capacitors_between(d)
     crystals = defaultdict(list)        # frozenset of two nets -> [(crystal, f_hz)]
     for des in d.comps_of_kind("crystal"):
-        a, b = (d.pin_net.get(f"{des}.{p}") for p in d.part(des)["pins"])
+        ends = crystal_pins(d.part(des))
+        a, b = (d.pin_net.get(f"{des}.{p}") for p in ends) if len(ends) == 2 else (None, None)
         if a and b and a != b:
             crystals[frozenset((a, b))].append((des, values(d.part(des)).get("f_hz")))
+    damped = defaultdict(set)           # net -> the nets a series resistor joins it to (an oscillator's damping one)
+    for _, a, b in resistor_like(d):
+        if a and b and a != b and not {a, b} & (supplies | grounds):
+            damped[a].add(b)
+            damped[b].add(a)
+
+    def crystals_between(net, to_net):
+        """The crystals between the two nets – or behind a series resistor at either, the damping resistor at an
+        oscillator's output (the RP2040's XOUT, its datasheet 2.16)."""
+        return [c for x in {net} | damped[net] for y in {to_net} | damped[to_net] if x != y
+                for c in crystals.get(frozenset((x, y)), [])]
 
     def caps_to(net, others):
         return [c for o in others for c in between.get(frozenset((net, o)), [])]
@@ -475,8 +569,8 @@ def pin_needs(d):
                 to_name = f"{des}.{to} ({pins[to].get('name', to)})" if to else ""
                 to_net = d.pin_net.get(f"{des}.{to}") if to else None
 
-                def finding(code, text):
-                    out.append(Finding(code, "G", who, f"{who}: {text}", src, grade="pin", on=on))
+                def finding(code, text, grade="pin"):
+                    out.append(Finding(code, "G", who, f"{who}: {text}", src, grade=grade, on=on))
                 if what == "to_ground":
                     if net not in grounds:
                         finding("REQ.missing", f"must be on ground ({d.ground}), is on {net or 'no net'}")
@@ -511,7 +605,7 @@ def pin_needs(d):
                     finding("REQ.missing", f"not connected – needs a {what.replace('_', ' ')}{window}")
                     continue
                 if what == "crystal":
-                    found = crystals.get(frozenset((net, to_net)), []) if to_net else []
+                    found = crystals_between(net, to_net) if to_net else []
                     if not found:
                         finding("REQ.missing", f"needs a crystal{window} to {to_name} ({to_net or 'no net'}) – none "
                                                f"between {net} and it")
@@ -521,21 +615,12 @@ def pin_needs(d):
                                              + ", ".join(f"{c}: {si(f, 'Hz')}" for c, f in found if is_number(f)))
                     continue
                 if what == "capacitor":
-                    if to:
-                        found = caps_to(net, [to_net]) if to_net and to_net != net else []
-                        there = f"to {to_name} ({to_net or 'no net'})"
-                    else:
-                        found = caps_to(net, grounds - {net})
-                        there = f"to {d.ground}"
-                    local = near_parts(d, des)
-                    if any(c in local for c, _, _ in found):          # the decoupling next to the part, not the net's sum
-                        found = [x for x in found if x[0] in local]
-                        there += " next to the part (layout.near)"
-                    low = [(c, v) for c, _, v in found if is_number(v) and "v_min_v" in need and v < need["v_min_v"]]
+                    caps, there = needed_capacitors(d, des, pins, net, need, between, grounds)
+                    low = [c for c in caps if is_number(c.rating) and "v_min_v" in need and c.rating < need["v_min_v"]]
                     if low:
                         finding("REQ.value", f"needs a capacitor rated at least {si(need['v_min_v'], 'V')} {there} – "
-                                             + ", ".join(f"{c} {si(v, 'V')}" for c, v in low))
-                    found = [(c, x) for c, x, _ in found]
+                                             + ", ".join(f"{c.des} {si(c.rating, 'V')}" for c in low))
+                    found = [(c.des, c.nominal) for c in caps]
                     total = sum(x for _, x in found if is_number(x)) if all(is_number(x) for _, x in found) else None
                     names = ", ".join(c for c, _ in found)
                 elif what in ("pull_up", "pull_down"):
@@ -553,6 +638,20 @@ def pin_needs(d):
                 elif total is not None and ((lo is not None and total < lo) or (hi is not None and total > hi)):
                     finding("REQ.value", f"needs a {what.replace('_', ' ')}{window} {there} – {names} on {net}: "
                                          f"{si(total, unit)}")
+                elif what == "capacitor" and total is not None and lo is not None:
+                    left = sum(c.left for c in caps)
+                    if left < lo:
+                        finding("REQ.value", f"needs a capacitor{window} {there} – {names} on {net}: {si(total, 'F')}, "
+                                             f"after DC bias {si(left, 'F')} ("
+                                             + ", ".join(f"{c.des} at {si(c.volts, 'V')}" for c in caps
+                                                         if c.left != c.nominal) + ")", grade="bias")
+                if what == "capacitor" and found:
+                    esr_window(need, caps, lo, window, there, net, finding, gaps, ref)
+                    if gaps is not None and lo is not None:
+                        gaps += [(c.des, f"no dc_bias – {values(d.part(c.des))['dielectric']}, counted with its nominal "
+                                         "capacitance where a minimum is judged") for c in caps
+                                 if values(d.part(c.des)).get("dielectric") in CLASS_2
+                                 and not values(d.part(c.des)).get("dc_bias")]
             seen.add((key, num))
     return out
 
@@ -688,7 +787,8 @@ def uart_lines(d):
 
 def adc_sources(d):
     """REQ.value/adc: the source resistance an ADC pin sees – the resistors on its net in parallel – within what its
-    entry allows (pin adc.r_source_max_ohm), unless a hold capacitor of at least adc.c_hold_min_f sits at the pin."""
+    entry allows (pin adc.r_source_max_ohm), unless a hold capacitor of at least adc.c_hold_min_f sits at the pin – the
+    capacitance left at the DC across it (values dc_bias, FT-9)."""
     grounds = {d.ground} | set(d.graph.get("grounds") or [])
     out = []
     for name, net in sorted(d.nets.items()):
@@ -702,14 +802,18 @@ def adc_sources(d):
             if not rs or not all(is_number(x) and x > 0 for x in rs):
                 continue
             r_src = 1 / sum(1 / x for x in rs)
-            hold = 0.0
+            hold, biased = 0.0, []       # the hold capacitance left at the DC across it (dc_bias, FT-9)
             for c in d.comps_of_kind("capacitor"):
                 ends = [d.pin_net.get(f"{c}.{p}") for p in d.part(c)["pins"]]
-                if name in ends and any(e in grounds for e in ends):
-                    hold += values(d.part(c)).get("value_f") or 0
+                if len(ends) == 2 and name in ends and any(e in grounds for e in ends):
+                    left = capacitance(d.part(c), volts_across(d, *ends)) or 0
+                    hold += left
+                    if left != (values(d.part(c)).get("value_f") or 0):
+                        biased.append(f"{c}: {si(left, 'F')}")
             if r_src > adc["r_source_max_ohm"] and not (is_number(adc.get("c_hold_min_f")) and hold >= adc["c_hold_min_f"]):
                 held = f", or a hold capacitor of {si(adc['c_hold_min_f'], 'F')} at the pin" if is_number(
                     adc.get("c_hold_min_f")) else ""
+                held += f" ({', '.join(biased)} after DC bias)" if held and biased else ""
                 out.append(Finding("REQ.value", "G", ref, f"{ref} ({name}): source resistance {ohm(r_src)} – the ADC "
                                    f"allows {ohm(adc['r_source_max_ohm'])}{held}", f"adc of pin {ref}",
                                    "a smaller divider, a buffer, or the hold capacitor", grade="adc",
@@ -852,9 +956,15 @@ def stable_gains(d):
                 gain = 1 + (1 / sum(1 / x for x in rf)) / (1 / sum(1 / x for x in rg))
             if gain < least:
                 who = f"{des}{' channel ' + ch if ch else ''}"
+                # a config of the entry with a lower minimum: the part's external compensation (maker-coverage CK-28)
+                comp = sorted((x, name) for name, c in ((d.parts.get(d.entry_key(des)) or {}).get("configs") or {}).items()
+                              if is_number(x := ((c or {}).get("values") or {}).get("gain_min_ratio")) and x <= gain)
+                fix = "more gain, or a part stable at unity gain" + (
+                    f", or its config {comp[0][1]!r} – stable from {comp[0][0]:g} with what that config's pins need"
+                    if comp else "")
                 out.append(Finding("REQ.value", "G", des, f"{who}: closed-loop gain {gain:.3g} – the part is stable from "
-                                   f"{least:g}", f"gain_min_ratio of {d.entry_key(des)}",
-                                   "more gain, or a part stable at unity gain", grade="gain", on=(("component", des),)))
+                                   f"{least:g}", f"gain_min_ratio of {d.entry_key(des)}", fix, grade="gain",
+                                   on=(("component", des),)))
     return out
 
 

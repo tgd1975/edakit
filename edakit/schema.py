@@ -21,6 +21,7 @@ from .findings import Finding
 BOUND = re.compile(r"(.+)_(max|min)_([a-z_]+)$")
 OLD_KEYS = ("ratings", "params")
 DRIVES = ("open_drain", "tristate", "bridge")   # pin drive: lets go of its net, or a half-bridge (LEVELS)
+STATES = ("high", "low", "off")   # pin state: where behaviour logic holds an output (sim/netlist.py logic_states)
 
 
 @lru_cache(maxsize=1)
@@ -84,6 +85,19 @@ def field_problems(kind, section, table, where):
     return out
 
 
+RATIO_MAX = 1.5       # a dc_bias ratio above it is a percentage or a capacitance, not a share
+
+
+def dc_bias_ok(curve):
+    """A capacitor's values.dc_bias: [[V, ratio], …] with at least two points, volts from 0 strictly rising, ratios in
+    (0, RATIO_MAX] (maker-coverage FT-9)."""
+    if not (isinstance(curve, list) and len(curve) >= 2 and all(
+            isinstance(p, list) and len(p) == 2 and all(is_number(x) for x in p) for p in curve)):
+        return False
+    volts = [p[0] for p in curve]
+    return volts[0] >= 0 and all(a < b for a, b in zip(volts, volts[1:])) and all(0 < p[1] <= RATIO_MAX for p in curve)
+
+
 def _near(name, names):
     stem = name.split("_")[0]
     near = sorted(n for n in names if n.split("_")[0] == stem)
@@ -100,11 +114,23 @@ def problems(entry):
         return ["the form of before (ratings, params, vmax …) – edakit convert converts it"]
     for section in ("limits", "values"):
         out += field_problems(kind, section, entry.get(section), section)
+    curve = (entry.get("values") or {}).get("dc_bias")
+    if curve is not None and not dc_bias_ok(curve):
+        out.append("values.dc_bias: [[V, ratio], …] – the maker's curve as the share of the capacitance left, at least "
+                   f"two points, the volts rising from 0, each ratio above 0 and at most {RATIO_MAX:g}, not {curve!r}")
     if "antenna" in entry:
         box = (entry["antenna"] or {}).get("keepout_mm") if isinstance(entry["antenna"], dict) else None
         if not (isinstance(box, list) and len(box) == 4 and all(is_number(x) for x in box)
                 and box[0] < box[2] and box[1] < box[3]):
             out.append("antenna.keepout_mm: [x0, y0, x1, y1] in mm with x0 < x1 and y0 < y1 (the footprint's frame)")
+        edge = entry["antenna"].get("edge_mm", 0) if isinstance(entry["antenna"], dict) else 0
+        if not (is_number(edge) and edge >= 0):
+            out.append("antenna.edge_mm: a distance in mm ≥ 0 – how far inside the board's outer edge the antenna area "
+                       "may lie at most (the module maker's layout guide)")
+    modes = (entry.get("values") or {}).get("spi_modes")
+    if modes is not None and not (isinstance(modes, list) and modes and len(set(modes)) == len(modes)
+                                  and all(isinstance(m, int) and not isinstance(m, bool) and 0 <= m <= 3 for m in modes)):
+        out.append(f"values.spi_modes: a list of the SPI modes 0–3 (CPOL × 2 + CPHA) the part runs in, not {modes!r}")
     sd = entry.get("symbol_differs")
     if sd is not None and not (isinstance(sd, dict) and sd and all(isinstance(v, str) and v.strip()
                                                                    for v in sd.values())):
@@ -116,6 +142,11 @@ def problems(entry):
             out.append(f"matrix: a list of fn kinds ({', '.join(FN_LINES)}) the GPIO matrix routes to any GPIO, not "
                        f"{entry['matrix']!r}")
     out += supply_order_problems(entry) + group_problems(entry)
+    icc = (entry.get("values") or {}).get("icc_a")
+    if isinstance(icc, dict):               # a current per supply pin, by the pin's name
+        supplies = {p.get("name") for p in (entry.get("pins") or {}).values() if p.get("type") == "power_in"}
+        out += [f"values.icc_a: {name!r} – not the name of a supply pin (power_in) of the part" for name in icc
+                if name not in supplies]
     roles = (k["kinds"][kind]).get("roles", [])
     pin_names = allowed(kind, "pin") | set(k["free"]["pin"])
     for num, pin in (entry.get("pins") or {}).items():
@@ -140,6 +171,13 @@ def problems(entry):
             out.append(f"{at}.pull: {pin['pull']!r} – up or down")
         if pin.get("drive") not in (None, *DRIVES):
             out.append(f"{at}.drive: {pin['drive']!r} – one of {', '.join(DRIVES)}")
+        if "state" in pin:
+            if pin["state"] not in STATES:
+                out.append(f"{at}.state: {pin['state']!r} – high, low or off")
+            elif pin.get("type") not in ("output", "bidirectional"):
+                out.append(f"{at}.state: on an output or bidirectional pin only")
+            elif pin["state"] == "high" and pin.get("drive") == "open_drain":
+                out.append(f"{at}.state: an open-drain output cannot drive high – low or off")
         if pin.get("biased") not in (None, True, False):
             out.append(f"{at}.biased: {pin['biased']!r} – true or false")
         if pin.get("clamp") not in (None, "internal", "none"):

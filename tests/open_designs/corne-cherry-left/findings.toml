@@ -1,0 +1,246 @@
+# What edakit check and edakit sim find on the published Corne keyboard v4 (left half, corne-cherry hotswap), and how
+# each finding is judged (the words as in esp32-devkitc-v4/findings.toml): real (a point of the design), lacks (a fact
+# the transcription or the datasheets lack), criterion (edakit's own yardstick, not the design's), known gap (edakit
+# judges it wrong, not fixed yet – with the reason). The load rgb_70 lights every LED white at the 70 % grey level the
+# SK6812MINI-E datasheet allows: what the firmware's brightness limit has to keep away.
+
+[[check]]
+code = "LIM.v"
+place = "C6"
+judged = "criterion"
+why = "The 10 µF / 6.3 V X5R on +5V sees up to 5.25 V – inside its rating, but not with edakit's margin of 1.5 for ceramic capacitors; at 5 V an X5R of 6.3 V keeps only part of its capacitance (DC bias, not read)."
+
+[[check]]
+code = "REQ.missing"
+place = "LED_VDD"
+judged = "real"
+why = "The 23 SK6812MINI-E have no decoupling capacitor at all; their datasheet calls one at every LED essential (section 14). The chain's supply is one diode below +5V with nothing to buffer the PWM current of 23 LEDs."
+
+[[check]]
+code = "REQ.missing"
+place = "RE1A_SDA"
+judged = "lacks"
+why = "The board has no I2C pull-ups; they would have to come from the OLED module the builder plugs into J3, which is not part of the published schematic – whether it brings them depends on the module."
+
+[[check]]
+code = "REQ.missing"
+place = "REB_SCL"
+judged = "lacks"
+why = "As RE1A_SDA: a pull-up on SCL can only come from the OLED module, which the schematic does not contain."
+
+[[check]]
+code = "PARTS.supplier"
+place = "J3"
+judged = "lacks"
+why = "J3 is the OLED position, not in the BOM; the 4-pin header that stands in for it has no LCSC number here – LCSC's search refused the request."
+
+[[check]]
+code = "PARTS.verified"
+grade = "device"
+place = "J3"
+judged = "lacks"
+why = "As PARTS.supplier: the stand-in header for the OLED position names neither an LCSC part nor an EasyEDA device."
+
+[[check]]
+code = "REQ.missing"
+grade = "leave"
+place = "TX"
+judged = "real"
+why = "The split link runs from GPIO12 straight to the TRS jack's ring – no series resistor, no ESD protection – on a cable that is plugged and unplugged, next to the tip that carries +5V (HINT.jack_supply): a plug pushed in while powered slides the tip's 5 V past the ring contact."
+
+[[sim]]
+code = "LIM.i"
+place = "J1"
+judged = "real"
+why = "With every LED lit at the allowed 70 %, the half draws 0.79 A, beyond the 0.5 A a USB 2.0 port gives – before the right half, which this half also feeds through the jack. The firmware's brightness limit has to keep it below."
+
+[[sim]]
+code = "LIM.i"
+place = "ZD1"
+judged = "real"
+why = "The RB521S30's 200 mA DC rating (160 mA with edakit's derating) carries the whole board: 0.79 A with the LEDs lit, and the right half's current comes on top."
+
+[[sim]]
+code = "LIM.t"
+place = "ZD1"
+judged = "real"
+why = "At 0.79 A the Schottky dissipates far beyond its 200 mW (RθJA 635 °C/W): the LEDs lit at the allowed brightness would destroy it."
+
+[[sim]]
+code = "LIM.t"
+place = "D1"
+judged = "real"
+why = "The 1N4148WT carries the 23 LEDs: 1.31 W at the allowed brightness against 200 mW (RθJA 500 °C/W). Its datasheet gives no continuous current at all, only 300 mA repetitive peak."
+
+[[sim]]
+code = "SIM.state"
+place = "U2"
+judged = "real"
+why = "With the LEDs lit, +5V sags behind the Schottky and the NCP1117LP (dropout about 1.1 V) falls to 2.7–3.2 V."
+
+[[sim]]
+code = "LIM.range"
+place = "U1"
+judged = "real"
+why = "With the LEDs lit at USB nominal or minimum, 3V3 sags below the 3.135 V USB_VDD needs."
+
+[[sim]]
+code = "LIM.range"
+place = "U4"
+judged = "real"
+why = "With the LEDs lit at the lowest USB voltage, 3V3 falls to 2.69 V, below the flash's 2.7 V."
+
+[[sim]]
+code = "LIM.v"
+place = "C6"
+judged = "criterion"
+why = "+5V reaches 4.3–4.9 V against edakit's 67 % derating of the capacitor's 6.3 V (4.22 V) – inside the rating, outside edakit's margin."
+
+[[sim]]
+code = "LIM.range"
+place = "LED1"
+judged = "real"
+why = "One diode (1N4148WT) below +5V – the trick that lifts the RP2040's 3.3 V data above the LEDs' VIH of 0.65 VDD, and the data level passes – the LEDs' VDD is 3.68 V at USB nominal and 3.43 V at the minimum, below the SK6812MINI-E's 3.7 V; with the LEDs lit lower still."
+
+[[sim]]
+code = "LIM.range"
+place = "LED2"
+judged = "real"
+why = "One diode (1N4148WT) below +5V – the trick that lifts the RP2040's 3.3 V data above the LEDs' VIH of 0.65 VDD, and the data level passes – the LEDs' VDD is 3.68 V at USB nominal and 3.43 V at the minimum, below the SK6812MINI-E's 3.7 V; with the LEDs lit lower still."
+
+[[sim]]
+code = "LIM.range"
+place = "LED3"
+judged = "real"
+why = "One diode (1N4148WT) below +5V – the trick that lifts the RP2040's 3.3 V data above the LEDs' VIH of 0.65 VDD, and the data level passes – the LEDs' VDD is 3.68 V at USB nominal and 3.43 V at the minimum, below the SK6812MINI-E's 3.7 V; with the LEDs lit lower still."
+
+[[sim]]
+code = "LIM.range"
+place = "LED4"
+judged = "real"
+why = "One diode (1N4148WT) below +5V – the trick that lifts the RP2040's 3.3 V data above the LEDs' VIH of 0.65 VDD, and the data level passes – the LEDs' VDD is 3.68 V at USB nominal and 3.43 V at the minimum, below the SK6812MINI-E's 3.7 V; with the LEDs lit lower still."
+
+[[sim]]
+code = "LIM.range"
+place = "LED5"
+judged = "real"
+why = "One diode (1N4148WT) below +5V – the trick that lifts the RP2040's 3.3 V data above the LEDs' VIH of 0.65 VDD, and the data level passes – the LEDs' VDD is 3.68 V at USB nominal and 3.43 V at the minimum, below the SK6812MINI-E's 3.7 V; with the LEDs lit lower still."
+
+[[sim]]
+code = "LIM.range"
+place = "LED6"
+judged = "real"
+why = "One diode (1N4148WT) below +5V – the trick that lifts the RP2040's 3.3 V data above the LEDs' VIH of 0.65 VDD, and the data level passes – the LEDs' VDD is 3.68 V at USB nominal and 3.43 V at the minimum, below the SK6812MINI-E's 3.7 V; with the LEDs lit lower still."
+
+[[sim]]
+code = "LIM.range"
+place = "LED7"
+judged = "real"
+why = "One diode (1N4148WT) below +5V – the trick that lifts the RP2040's 3.3 V data above the LEDs' VIH of 0.65 VDD, and the data level passes – the LEDs' VDD is 3.68 V at USB nominal and 3.43 V at the minimum, below the SK6812MINI-E's 3.7 V; with the LEDs lit lower still."
+
+[[sim]]
+code = "LIM.range"
+place = "LED8"
+judged = "real"
+why = "One diode (1N4148WT) below +5V – the trick that lifts the RP2040's 3.3 V data above the LEDs' VIH of 0.65 VDD, and the data level passes – the LEDs' VDD is 3.68 V at USB nominal and 3.43 V at the minimum, below the SK6812MINI-E's 3.7 V; with the LEDs lit lower still."
+
+[[sim]]
+code = "LIM.range"
+place = "LED9"
+judged = "real"
+why = "One diode (1N4148WT) below +5V – the trick that lifts the RP2040's 3.3 V data above the LEDs' VIH of 0.65 VDD, and the data level passes – the LEDs' VDD is 3.68 V at USB nominal and 3.43 V at the minimum, below the SK6812MINI-E's 3.7 V; with the LEDs lit lower still."
+
+[[sim]]
+code = "LIM.range"
+place = "LED10"
+judged = "real"
+why = "One diode (1N4148WT) below +5V – the trick that lifts the RP2040's 3.3 V data above the LEDs' VIH of 0.65 VDD, and the data level passes – the LEDs' VDD is 3.68 V at USB nominal and 3.43 V at the minimum, below the SK6812MINI-E's 3.7 V; with the LEDs lit lower still."
+
+[[sim]]
+code = "LIM.range"
+place = "LED11"
+judged = "real"
+why = "One diode (1N4148WT) below +5V – the trick that lifts the RP2040's 3.3 V data above the LEDs' VIH of 0.65 VDD, and the data level passes – the LEDs' VDD is 3.68 V at USB nominal and 3.43 V at the minimum, below the SK6812MINI-E's 3.7 V; with the LEDs lit lower still."
+
+[[sim]]
+code = "LIM.range"
+place = "LED12"
+judged = "real"
+why = "One diode (1N4148WT) below +5V – the trick that lifts the RP2040's 3.3 V data above the LEDs' VIH of 0.65 VDD, and the data level passes – the LEDs' VDD is 3.68 V at USB nominal and 3.43 V at the minimum, below the SK6812MINI-E's 3.7 V; with the LEDs lit lower still."
+
+[[sim]]
+code = "LIM.range"
+place = "LED13"
+judged = "real"
+why = "One diode (1N4148WT) below +5V – the trick that lifts the RP2040's 3.3 V data above the LEDs' VIH of 0.65 VDD, and the data level passes – the LEDs' VDD is 3.68 V at USB nominal and 3.43 V at the minimum, below the SK6812MINI-E's 3.7 V; with the LEDs lit lower still."
+
+[[sim]]
+code = "LIM.range"
+place = "LED14"
+judged = "real"
+why = "One diode (1N4148WT) below +5V – the trick that lifts the RP2040's 3.3 V data above the LEDs' VIH of 0.65 VDD, and the data level passes – the LEDs' VDD is 3.68 V at USB nominal and 3.43 V at the minimum, below the SK6812MINI-E's 3.7 V; with the LEDs lit lower still."
+
+[[sim]]
+code = "LIM.range"
+place = "LED15"
+judged = "real"
+why = "One diode (1N4148WT) below +5V – the trick that lifts the RP2040's 3.3 V data above the LEDs' VIH of 0.65 VDD, and the data level passes – the LEDs' VDD is 3.68 V at USB nominal and 3.43 V at the minimum, below the SK6812MINI-E's 3.7 V; with the LEDs lit lower still."
+
+[[sim]]
+code = "LIM.range"
+place = "LED16"
+judged = "real"
+why = "One diode (1N4148WT) below +5V – the trick that lifts the RP2040's 3.3 V data above the LEDs' VIH of 0.65 VDD, and the data level passes – the LEDs' VDD is 3.68 V at USB nominal and 3.43 V at the minimum, below the SK6812MINI-E's 3.7 V; with the LEDs lit lower still."
+
+[[sim]]
+code = "LIM.range"
+place = "LED17"
+judged = "real"
+why = "One diode (1N4148WT) below +5V – the trick that lifts the RP2040's 3.3 V data above the LEDs' VIH of 0.65 VDD, and the data level passes – the LEDs' VDD is 3.68 V at USB nominal and 3.43 V at the minimum, below the SK6812MINI-E's 3.7 V; with the LEDs lit lower still."
+
+[[sim]]
+code = "LIM.range"
+place = "LED18"
+judged = "real"
+why = "One diode (1N4148WT) below +5V – the trick that lifts the RP2040's 3.3 V data above the LEDs' VIH of 0.65 VDD, and the data level passes – the LEDs' VDD is 3.68 V at USB nominal and 3.43 V at the minimum, below the SK6812MINI-E's 3.7 V; with the LEDs lit lower still."
+
+[[sim]]
+code = "LIM.range"
+place = "LED19"
+judged = "real"
+why = "One diode (1N4148WT) below +5V – the trick that lifts the RP2040's 3.3 V data above the LEDs' VIH of 0.65 VDD, and the data level passes – the LEDs' VDD is 3.68 V at USB nominal and 3.43 V at the minimum, below the SK6812MINI-E's 3.7 V; with the LEDs lit lower still."
+
+[[sim]]
+code = "LIM.range"
+place = "LED20"
+judged = "real"
+why = "One diode (1N4148WT) below +5V – the trick that lifts the RP2040's 3.3 V data above the LEDs' VIH of 0.65 VDD, and the data level passes – the LEDs' VDD is 3.68 V at USB nominal and 3.43 V at the minimum, below the SK6812MINI-E's 3.7 V; with the LEDs lit lower still."
+
+[[sim]]
+code = "LIM.range"
+place = "LED21"
+judged = "real"
+why = "One diode (1N4148WT) below +5V – the trick that lifts the RP2040's 3.3 V data above the LEDs' VIH of 0.65 VDD, and the data level passes – the LEDs' VDD is 3.68 V at USB nominal and 3.43 V at the minimum, below the SK6812MINI-E's 3.7 V; with the LEDs lit lower still."
+
+[[sim]]
+code = "LIM.range"
+place = "EXLED1"
+judged = "real"
+why = "One diode (1N4148WT) below +5V – the trick that lifts the RP2040's 3.3 V data above the LEDs' VIH of 0.65 VDD, and the data level passes – the LEDs' VDD is 3.68 V at USB nominal and 3.43 V at the minimum, below the SK6812MINI-E's 3.7 V; with the LEDs lit lower still."
+
+[[sim]]
+code = "LIM.range"
+place = "EXLED2"
+judged = "real"
+why = "One diode (1N4148WT) below +5V – the trick that lifts the RP2040's 3.3 V data above the LEDs' VIH of 0.65 VDD, and the data level passes – the LEDs' VDD is 3.68 V at USB nominal and 3.43 V at the minimum, below the SK6812MINI-E's 3.7 V; with the LEDs lit lower still."
+
+[[fixed]]
+what = "A crystal with four pads – two ground pads on its lid, the Epson FA-238V at Y1 – stopped edakit check (REQ, pin needs)."
+[[fixed]]
+what = "The 12 MHz crystal behind the 1 kΩ damping resistor at the RP2040's XOUT (its datasheet, 2.16, names the damping resistor) taken as missing (REQ.missing)."
+[[fixed]]
+what = "A bare microcontroller (kind ic, behaviour mcu) could not state the core current and on-chip regulator the model reads (PARTS.schema)."
+[[fixed]]
+what = "Pins on nets no simulated element reaches – the QSPI lines, SWD, the split link – judged as nan against their relative limit (LIM.v/inject, 288 rows)."
+[[fixed]]
+what = "The drawing put its no-connect crosses in the order of a set: with two on J1 (SBU1, SBU2) the catalog's SVG changed from run to run."

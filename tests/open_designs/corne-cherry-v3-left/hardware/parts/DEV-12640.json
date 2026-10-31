@@ -1,0 +1,284 @@
+{
+ "mpn": "DEV-12640",
+ "manufacturer": "SparkFun Electronics",
+ "kind": "module",
+ "package": "plug-in board 33 × 18 mm, 2 × 12 pins at 2.54 mm (15.24 mm apart), micro-USB",
+ "footprint": "ProMicro_v3",
+ "order": {
+  "sparkfun": "DEV-12640"
+ },
+ "datasheet": {
+  "url": "https://cdn.sparkfun.com/assets/f/d/8/0/d/ProMicro16MHzv2.pdf",
+  "pinout_page": 1,
+  "schematic": "https://cdn.sparkfun.com/assets/a/2/1/f/2/SparkFun_Pro_Micro_v13a.zip"
+ },
+ "pins": {
+  "1": {
+   "name": "TX0/D3",
+   "type": "bidirectional",
+   "role": "gpio",
+   "v_max_v": 5.5,
+   "functions": [
+    "uart1.tx"
+   ],
+   "hint": "ATmega32U4 PD3; internal pull-up 20–50 kΩ when the firmware enables it"
+  },
+  "2": {
+   "name": "RX1/D2",
+   "type": "bidirectional",
+   "role": "gpio",
+   "v_max_v": 5.5,
+   "functions": [
+    "uart1.rx"
+   ],
+   "hint": "ATmega32U4 PD2; internal pull-up 20–50 kΩ when the firmware enables it"
+  },
+  "3": {
+   "name": "GND",
+   "type": "ground"
+  },
+  "4": {
+   "name": "GND",
+   "type": "ground"
+  },
+  "5": {
+   "name": "2/D1/SDA",
+   "type": "bidirectional",
+   "role": "gpio",
+   "v_max_v": 5.5,
+   "functions": [
+    "i2c0.sda"
+   ],
+   "hint": "ATmega32U4 PD1; internal pull-up 20–50 kΩ when the firmware enables it"
+  },
+  "6": {
+   "name": "3/D0/SCL",
+   "type": "bidirectional",
+   "role": "gpio",
+   "v_max_v": 5.5,
+   "functions": [
+    "i2c0.scl",
+    "pwm0.b"
+   ],
+   "hint": "ATmega32U4 PD0; internal pull-up 20–50 kΩ when the firmware enables it"
+  },
+  "7": {
+   "name": "4/D4",
+   "type": "bidirectional",
+   "role": "gpio",
+   "v_max_v": 5.5,
+   "functions": [
+    "adc8"
+   ],
+   "hint": "ATmega32U4 PD4; internal pull-up 20–50 kΩ when the firmware enables it"
+  },
+  "8": {
+   "name": "5/C6",
+   "type": "bidirectional",
+   "role": "gpio",
+   "v_max_v": 5.5,
+   "functions": [
+    "pwm3.a"
+   ],
+   "hint": "ATmega32U4 PC6; internal pull-up 20–50 kΩ when the firmware enables it"
+  },
+  "9": {
+   "name": "6/D7",
+   "type": "bidirectional",
+   "role": "gpio",
+   "v_max_v": 5.5,
+   "functions": [
+    "pwm4.d",
+    "adc10"
+   ],
+   "hint": "ATmega32U4 PD7; internal pull-up 20–50 kΩ when the firmware enables it"
+  },
+  "10": {
+   "name": "7/E6",
+   "type": "bidirectional",
+   "role": "gpio",
+   "v_max_v": 5.5,
+   "functions": [],
+   "hint": "ATmega32U4 PE6; internal pull-up 20–50 kΩ when the firmware enables it"
+  },
+  "11": {
+   "name": "8/B4",
+   "type": "bidirectional",
+   "role": "gpio",
+   "v_max_v": 5.5,
+   "functions": [
+    "adc11"
+   ],
+   "hint": "ATmega32U4 PB4; internal pull-up 20–50 kΩ when the firmware enables it"
+  },
+  "12": {
+   "name": "9/B5",
+   "type": "bidirectional",
+   "role": "gpio",
+   "v_max_v": 5.5,
+   "functions": [
+    "pwm1.a",
+    "adc12"
+   ],
+   "hint": "ATmega32U4 PB5; internal pull-up 20–50 kΩ when the firmware enables it"
+  },
+  "13": {
+   "name": "B6/10",
+   "type": "bidirectional",
+   "role": "gpio",
+   "v_max_v": 5.5,
+   "functions": [
+    "pwm1.b",
+    "adc13"
+   ],
+   "hint": "ATmega32U4 PB6; internal pull-up 20–50 kΩ when the firmware enables it"
+  },
+  "14": {
+   "name": "B2/16",
+   "type": "bidirectional",
+   "role": "gpio",
+   "v_max_v": 5.5,
+   "functions": [
+    "spi0.tx"
+   ],
+   "hint": "ATmega32U4 PB2; internal pull-up 20–50 kΩ when the firmware enables it"
+  },
+  "15": {
+   "name": "B3/14",
+   "type": "bidirectional",
+   "role": "gpio",
+   "v_max_v": 5.5,
+   "functions": [
+    "spi0.rx"
+   ],
+   "hint": "ATmega32U4 PB3; internal pull-up 20–50 kΩ when the firmware enables it"
+  },
+  "16": {
+   "name": "B1/15",
+   "type": "bidirectional",
+   "role": "gpio",
+   "v_max_v": 5.5,
+   "functions": [
+    "spi0.sck"
+   ],
+   "hint": "ATmega32U4 PB1; internal pull-up 20–50 kΩ when the firmware enables it"
+  },
+  "17": {
+   "name": "F7/A0",
+   "type": "bidirectional",
+   "role": "gpio",
+   "v_max_v": 5.5,
+   "functions": [
+    "adc7"
+   ],
+   "hint": "ATmega32U4 PF7; internal pull-up 20–50 kΩ when the firmware enables it"
+  },
+  "18": {
+   "name": "F6/A1",
+   "type": "bidirectional",
+   "role": "gpio",
+   "v_max_v": 5.5,
+   "functions": [
+    "adc6"
+   ],
+   "hint": "ATmega32U4 PF6; internal pull-up 20–50 kΩ when the firmware enables it"
+  },
+  "19": {
+   "name": "F5/A2",
+   "type": "bidirectional",
+   "role": "gpio",
+   "v_max_v": 5.5,
+   "functions": [
+    "adc5"
+   ],
+   "hint": "ATmega32U4 PF5; internal pull-up 20–50 kΩ when the firmware enables it"
+  },
+  "20": {
+   "name": "F4/A3",
+   "type": "bidirectional",
+   "role": "gpio",
+   "v_max_v": 5.5,
+   "functions": [
+    "adc4"
+   ],
+   "hint": "ATmega32U4 PF4; internal pull-up 20–50 kΩ when the firmware enables it"
+  },
+  "21": {
+   "name": "VCC",
+   "type": "power_output",
+   "role": "vdd",
+   "v_op_min_v": 4.5,
+   "v_op_max_v": 5.5,
+   "hint": "the 5 V version: USB VBUS through the 500 mA PTC and the closed jumper SJ1 ('Connects VCC to USB (bypasses regulator)') – VCC follows USB and may supply other devices (graphical datasheet, schematic, hookup guide)"
+  },
+  "22": {
+   "name": "RST",
+   "type": "input",
+   "v_max_v": 5.5,
+   "pull": "up",
+   "pull_ohm": 10000,
+   "hint": "reset, low active, 10 kΩ to VCC on the board (hookup guide; schematic R2)"
+  },
+  "23": {
+   "name": "GND",
+   "type": "ground"
+  },
+  "24": {
+   "name": "RAW",
+   "type": "power_output",
+   "v_max_v": 12,
+   "hint": "about 4.8 V from USB through a Schottky while USB powers the board – an output then; else the unregulated input into the MIC5219 (hookup guide: up to 12 V; graphical datasheet: RAW 6–16 V)"
+  }
+ },
+ "values": {
+  "behavior": "mcu",
+  "v_io_v": "vin",
+  "vih_v": 1.95,
+  "vil_v": 0.85,
+  "i_core_a": 0.062,
+  "f_clock_hz": 16000000.0
+ },
+ "limits": {
+  "vdd_op_min_v": 4.5,
+  "vdd_op_max_v": 5.5,
+  "gpio_v_max_v": 5.5,
+  "gpio_i_max_a": 0.04,
+  "gpio_i_total_max_a": 0.2,
+  "t_min_c": -40,
+  "t_max_c": 85
+ },
+ "compliance": {
+  "radio": "none",
+  "source": "SparkFun Pro Micro (DEV-12640) 16MHz/5V graphical datasheet ProMicro16MHzv2.pdf and SparkFun Pro Micro v13a Eagle design files (SparkFun_Pro_Micro_v13a.zip, .sch): ATmega32U4 with USB, a regulator, a 16 MHz crystal and LEDs – no transmitter; read 2026-10-31"
+ },
+ "hints": [
+  "VCC 5 V at 500 mA (graphical datasheet): everything the keyboard half feeds from VCC – LEDs, OLED, the other half through the TRRS jack – passes the module's 500 mA PTC from USB",
+  "ATmega32U4: at most 40 mA per pin, 200 mA through VCC and GND; each port group's IOH and IOL sums at most 100 mA (datasheet 29.1, table 29-1 notes 3 and 4)"
+ ],
+ "sources": [
+  "SparkFun Pro Micro (DEV-12640) 16MHz/5V graphical datasheet ProMicro16MHzv2.pdf, https://cdn.sparkfun.com/assets/f/d/8/0/d/ProMicro16MHzv2.pdf (linked from https://www.sparkfun.com/pro-micro-5v-16mhz.html), read 2026-10-31: pinout TXO PD3, RXI PD2, 2 PD1 SDA, 3 PD0 SCL, 4 PD4, 5 PC6, 6 PD7, 7 PE6, 8 PB4, 9 PB5, 10 PB6, 16 PB2 MOSI, 14 PB3 MISO, 15 PB1 SCK, A0–A3 PF7–PF4, RAW, GND, RST, VCC; power: RAW 6–16 V, VCC 5 V at 500 mA, absolute maximum VCC 6 V, maximum current for the chip 200 mA, per pin 40 mA (20 mA recommended); the jumper 'Connects VCC to USB (bypasses regulator)'",
+  "SparkFun Pro Micro v13a Eagle design files (SparkFun_Pro_Micro_v13a.zip, .sch), https://cdn.sparkfun.com/assets/a/2/1/f/2/SparkFun_Pro_Micro_v13a.zip, read 2026-10-31 as XML: USB VBUS → F1 (PTC SMD 500mA) → SJ1 ('Closed for 5V Board') → VCC; F1 → D2 (diode) → RAW → U2 MIC5219 → VCC; R2 10 kΩ RESET to VCC; LED1 (red) with R11 1 kΩ on VCC; RX/TX LEDs with 330 Ω; C10 1 µF and C13 10 µF on VCC, C19 10 µF on RAW; Y1 16 MHz with 22 pF; R5/R7 22 Ω in D+/D−",
+  "SparkFun 'Pro Micro & Fio V3 Hookup Guide', section Hardware Overview, Power Pins, https://learn.sparkfun.com/tutorials/pro-micro--fio-v3-hookup-guide/all, read 2026-10-31: RAW about 4.8 V from USB, up to 12 V applied; VCC 5 V on the 5V/16MHz version, usable as an output to supply other devices; RST pulled high by 10 kΩ, active low",
+  "Microchip (Atmel) ATmega16U4/32U4 datasheet Atmel-7766J-USB-ATmega16U4/32U4-Datasheet_04/2016, https://ww1.microchip.com/downloads/en/DeviceDoc/Atmel-7766-8-bit-AVR-ATmega16U4-32U4_Datasheet.pdf, read 2026-10-31: features – 2.7–5.5 V, 16 MHz at 4.5 V, −40 … +85 °C (vdd_op_min_v and VCC's v_op_min_v 4.5: the board runs at 16 MHz); 29.1 – pins −0.5 V … VCC + 0.5 V (v_max_v 5.5 at VCC 5 V), 6.0 V maximum operating voltage, 40 mA per I/O pin, 200 mA through VCC and GND pins; table 29-1 – VIL ≤ 0.2 VCC − 0.1 V, VIH ≥ 0.2 VCC + 0.9 V (vil_v 0.85 and vih_v 1.95: their values at 4.75 and 5.25 V, the stricter ends of the USB range), VOH ≥ 4.2 V at −10 mA and VOL ≤ 0.7 V at 10 mA (VCC 5 V), RPU 20–50 kΩ, ICC 27 mA max active at 16 MHz and 5 V; tables 10-3, 10-6, 10-8, 10-11, 10-13 – the pins' alternate functions (TXD1/RXD1, SDA/SCL, MOSI/MISO/SCK, OC outputs, ADC channels)",
+  "pin numbers and names: the KiCad symbol kbd:ProMicro as the Corne v3 schematic places it (1–24, the header pins counted down one side and up the other)",
+  "i_core_a 0.062 A: the ATmega32U4's 27 mA (ICC max, 16 MHz, 5 V) plus the board's LEDs at their upper bound – the power LED at most 5 V / 1 kΩ, the RX and TX LEDs at most 5 V / 330 Ω each – an upper bound"
+ ],
+ "notes": "Bought board without an LCSC number, keyed by SparkFun's part number (handbook 4: a part bought from another distributor) – plugged on headers, bom: false.",
+ "verified": {
+  "by": "Claude (datasheet check, open-design transcription)",
+  "date": "2026-10-31",
+  "datasheet": "SparkFun Pro Micro (DEV-12640) 16MHz/5V graphical datasheet ProMicro16MHzv2.pdf; SparkFun Pro Micro v13a Eagle design files (SparkFun_Pro_Micro_v13a.zip, .sch); Microchip (Atmel) ATmega16U4/32U4 datasheet Atmel-7766J-USB-ATmega16U4/32U4-Datasheet_04/2016",
+  "datasheet_sha256": "d87d7caecc495b4b361672ea35f780706b05261a641228237a3fe6330e11960e",
+  "checked": [
+   "header pins against the graphical datasheet and the KiCad symbol's names",
+   "power path USB → PTC → SJ1 → VCC on the 5 V board; RAW through D2 and the MIC5219",
+   "ATmega32U4 limits, thresholds, pull-ups, supply current, alternate functions"
+  ],
+  "open": [
+   "the PTC (F1, '500mA') is not named in the schematic: its resistance and trip current were not read",
+   "the Eagle device of the ATmega32U4 labels PB0 and PB3 the other way round than the graphical datasheet (the net MISO on PB0(SS), the RX LED on PB3) – the graphical datasheet and the Corne's symbol (B3/14) are followed",
+   "RAW: 'up to 12V' (hookup guide) against 'RAW: 6V-16V' (graphical datasheet) – the lower taken; typed power_output, as it is while USB powers the board (hookup guide) – a board fed through RAW needs it as an input",
+   "the board's own temperature range is not stated: the ATmega32U4's −40 … +85 °C"
+  ]
+ }
+}

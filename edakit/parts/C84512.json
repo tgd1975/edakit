@@ -1,0 +1,140 @@
+{
+ "lcsc": "C84512",
+ "mpn": "PT4115B89E",
+ "manufacturer": "China Resources Powtech (Shanghai)",
+ "kind": "ic",
+ "package": "SOT-89-5",
+ "jlc_class": "Extended Part",
+ "datasheet": {
+  "url": "https://datasheet.lcsc.com/datasheet/pdf/710aeebb569349bc814ba1f6ba8cbef1.pdf?productCode=C84512",
+  "pinout_page": 2
+ },
+ "pins": {
+  "1": {
+   "name": "SW",
+   "type": "passive",
+   "role": "sw",
+   "v_max_v": 45,
+   "hint": "switch output, the drain of the internal N-channel MOSFET: to the inductor and the Schottky diode's anode (the diode's cathode to VIN); a fast switching node – keep its tracks short (p. 2, 11, 14)"
+  },
+  "2": {
+   "name": "GND",
+   "type": "ground",
+   "role": "gnd",
+   "hint": "signal and power ground, directly to the ground plane (p. 2, 14)"
+  },
+  "3": {
+   "name": "DIM",
+   "type": "input",
+   "role": "dim",
+   "v_max_v": 6,
+   "vih_v": 2.5,
+   "vil_v": 0.3,
+   "pull": "up",
+   "pull_ohm": 200000,
+   "pull_v": 5,
+   "hint": "on/off and dimming: below 0.3 V off (standby 95 µA), at least 2.5 V and below 5 V full current; DC 0.5 … 2.5 V dims (IOUT = 0.1 V × VDIM / (2.5 V × RS)), PWM 100 Hz … 20 kHz; internal 200 kΩ to an internal 5 V – floating is on; a capacitor to GND adds about 0.8 ms/nF soft start (p. 3, 5, 11, 12)"
+  },
+  "4": {
+   "name": "CSN",
+   "type": "analog",
+   "role": "sense",
+   "v_rel_max_v": 0.3,
+   "hint": "current sense input: RS from VIN to CSN sets the LED current, IOUT = 0.1 V / RS (RS ≥ 0.082 Ω); absolute maximum +0.3 … −6.0 V with respect to VIN; connect VIN and CSN directly to the two ends of RS, no other current in those tracks (p. 2, 11, 14)"
+  },
+  "5": {
+   "name": "VIN",
+   "type": "power_in",
+   "role": "vin",
+   "v_max_v": 45,
+   "hint": "input supply, bypassed locally: a low-ESR X7R or X5R capacitor close to the pin, at least 4.7 µF if the DC source is close, more than 100 µF behind a rectifier; no Y5V (p. 2, 12)",
+   "needs": [
+    {
+     "what": "capacitor",
+     "c_min_f": 4.7e-06,
+     "source": "China Resources Powtech PT4115 data sheet PT4115_DS Rev EN_2.9, p. 12 capacitor selection: 'A minimum value of 4.7uF is acceptable if the DC input source is close to the device'; for a rectified AC input more than 100 µF"
+    }
+   ]
+  }
+ },
+ "values": {
+  "behavior": "cc_led_driver",
+  "vsense_v": [
+   0.095,
+   0.098,
+   0.101
+  ],
+  "r_on_ohm": 0.6,
+  "ripple_ratio": 0.3,
+  "uvlo_v": 5.1
+ },
+ "limits": {
+  "vdd_max_v": 45,
+  "vdd_op_min_v": 6,
+  "vdd_op_max_v": 30,
+  "i_out_max_a": 1.2,
+  "r_sense_min_ohm": 0.082,
+  "p_max_w": 1.5,
+  "rth_ja_k_per_w": 45,
+  "tj_max_c": 150,
+  "t_min_c": -40,
+  "t_max_c": 85
+ },
+ "hot_loop": [
+  "vin",
+  "sw",
+  "gnd"
+ ],
+ "hints": [
+  "LED current IOUT = 0.1 V / RS, valid for RS ≥ 0.082 Ω (1.2 A); the mean sense threshold of the A type (PT4115B89E) is 95 / 98 / 101 mV, of the B type (PT4115B89E-B) 99 / 102 / 105 mV (p. 1, 3, 11)",
+  "the input must stay above the LED string: the switch's on time is L × ΔI / (VIN − VLED − Iavg × (RS + rL + RSW)), RSW 0.6 Ω nominal (p. 12–13)",
+  "inductor 27 … 100 µH recommended; by load current: above 1 A 27–47 µH, 0.8–1 A 33–82 µH, 0.4–0.8 A 47–100 µH, up to 0.4 A 68–220 µH, saturation current 1.3–1.5 times the load current (p. 12)",
+  "Schottky diode with a peak current rating above the coil's peak current and a continuous rating above the load current; mind its leakage above 85 °C (p. 13)",
+  "power dissipation is highest at the lowest supply voltage; thermal shutdown at 160 °C, recovery at 140 °C (p. 4, 13, 14)"
+ ],
+ "compliance": {
+  "rohs": true,
+  "radio": "none",
+  "source": "PT4115 data sheet PT4115_DS Rev EN_2.9, p. 1 features: 'RoHS compliant'; LCSC product data C84512 (2026-10-31) lists no RoHS certificate (isRohsCert null)"
+ },
+ "sources": [
+  "China Resources Powtech (Shanghai) PT4115 '30V, 1.2A Step-down High Brightness LED Driver with 5000:1 Dimming', PT4115_DS Rev EN_2.9, via LCSC https://datasheet.lcsc.com/datasheet/pdf/710aeebb569349bc814ba1f6ba8cbef1.pdf?productCode=C84512, read 2026-10-31 – the manufacturer's document (WWW.CRPOWTECH.COM in every footer)",
+  "the address handed over for the task, https://www.lcsc.com/datasheet/lcsc_datasheet_1810010411_PowTech-PT4115B89E_C10506.pdf, answered with LCSC's home page, the file behind it with a redirect to the product page of C10506, and LCSC's product data for C10506 is empty (2026-10-31); LCSC's product data lists the PT4115B89E as C84512 with the address above as its pdfUrl",
+  "pins: p. 2 SOT89-5 pin assignment 1 SW, 2 GND, 3 DIM, 4 CSN, 5 VIN, exposed pad internally connected to GND – EasyEDA's library data could not be compared: easyeda.com answered 403 to the component request (2026-10-31)",
+  "vdd_max_v 45, VIN and SW v_max_v 45, DIM v_max_v 6, CSN +0.3 … −6.0 V with respect to VIN (v_rel_max_v 0.3): p. 2 absolute maximum ratings",
+  "p_max_w 1.5, rth_ja_k_per_w 45 (SOT89-5; ESOP8 40), tj_max_c 150: p. 2 absolute maximum ratings – PDMAX 1.5 W, θJA 45 °C/W, operating junction −40 … 150 °C",
+  "vdd_op_min_v 6, vdd_op_max_v 30, t_min_c −40, t_max_c 85: p. 3 recommended operating range – VIN 6 ~ 30 V, operating temperature −40 … +85 °C",
+  "vsense_v [0.095, 0.098, 0.101]: p. 3 electrical characteristics (VIN 12 V, 25 °C), mean current sense threshold VIN − VCSN, A type 95 / 98 / 101 mV; the ordering information p. 1 names PT4115B89E the A type",
+  "uvlo_v 5.1: p. 3 VUVLO 5.1 V typ, VIN falling, hysteresis 500 mV rising; p. 13 the drive turns off below the threshold",
+  "DIM vih_v 2.5, vil_v 0.3, pull_ohm 200000, pull_v 5: p. 3 VDIM_H ≥ 2.5 V, VDIM_L ≤ 0.3 V, RDIM 200 kΩ typ pull-up to the internal supply, VDIM 5 V typ with DIM floating; p. 11 full current for 2.5 V ≤ VDIM ≤ 5 V",
+  "i_out_max_a 1.2: p. 4 ISWmean continuous SW current max 1.2 A; p. 1 'up to 1.2A output current' (absolute maximum ISW 1.5 A, p. 2)",
+  "r_on_ohm 0.6: p. 4 RSW 0.6 Ω typ at VIN 12 V, 0.4 Ω at 24 V; p. 13 'RSW is the switch resistance (Ω) {=0.6Ω nominal}' in the on-time equation",
+  "r_sense_min_ohm 0.082: p. 11 'IOUT = 0.1 / Rs (Rs ≥ 0.082Ω)'",
+  "ripple_ratio 0.3: p. 13 'ΔI is the coil peak-peak ripple current (A) {Internally set to 0.3 x Iavg}'; p. 3 sense threshold hysteresis ±15 %",
+  "hot_loop vin, sw, gnd: p. 14 layout considerations – the coil and the input decoupling capacitor as close to the pins as possible, SW tracks short, the ground pin directly on the ground plane, the Schottky diode's cathode current not in the track between RS and VIN",
+  "LCSC product data C84512 (2026-10-31): PowTech(CR-PowTech(Shanghai)) PT4115B89E, SOT-89-5, 33 480 pcs; JLCPCB catalogue (edakit part search, 2026-10-31): Extended Part, 33 481 pcs"
+ ],
+ "notes": "Hysteretic step-down LED driver with high-side current sense, A type: RS from VIN to CSN, the LED string from CSN through the inductor to SW, a Schottky diode from SW back to VIN (typical application, p. 1). Behaviour cc_led_driver (maker-coverage FT-14). No footprint name: the EasyEDA library could not be reached. Library draft, group LED.",
+ "verified": {
+  "by": "Claude (datasheet check, library draft)",
+  "date": "2026-10-31",
+  "datasheet": "China Resources Powtech (Shanghai) PT4115 data sheet PT4115_DS Rev EN_2.9",
+  "datasheet_sha256": "24a8e87d81cf2d2df091fb4b753afc21f0726fa942b265a2a0457cb6504f3a55",
+  "checked": [
+   "SOT89-5 pin assignment and pin descriptions p. 2: 1 SW, 2 GND, 3 DIM, 4 CSN, 5 VIN, exposed pad to GND",
+   "absolute maximum ratings p. 2: VIN, SW 45 V, DIM 6 V, CSN +0.3 … −6.0 V to VIN, ISW 1.5 A, 1.5 W, θJA 45 °C/W (SOT89-5), TJ −40 … 150 °C",
+   "recommended operating range p. 3: VIN 6 … 30 V, −40 … +85 °C",
+   "electrical characteristics p. 3–4: VUVLO 5.1 V, VCSN A type 95 / 98 / 101 mV, hysteresis ±15 %, IOFF 95 µA, DIM thresholds, RDIM 200 kΩ, VDIM 5 V, RSW 0.6 / 0.4 Ω, ISWmean 1.2 A, TSD 160 °C",
+   "application notes p. 11–13: IOUT = 0.1 / RS with RS ≥ 0.082 Ω, DIM dimming, inductor table, input capacitor, on- and off-time equations with RSW 0.6 Ω nominal and ΔI 0.3 × Iavg"
+  ],
+  "open": [
+   "the exposed pad has no pin number here: the SOT89-5 drawing p. 2 numbers only 1 … 5, and EasyEDA's footprint (which may number the pad) could not be read – no footprint name, no pad entry",
+   "no supply current while switching: the table gives only IOFF 95 µA typ with the output off – no iq_a",
+   "no maximum duty cycle: the duty-cycle graphs p. 8–9 reach above 90 % without a stated limit – no duty_max_ratio, the headroom check uses the on-time equation at 100 %",
+   "the inductor table p. 12 (inductance by load current) has no field; ripple_ratio gives the peak current the inductor's i_sat_a is held to",
+   "the derating graph p. 13 ('Max. Power Dissipation', 25 mm² PCB, 1 oz copper, still air) – read from the graph: 1.5 W up to about 40 °C, falling to about 0.1 W at 120 °C – has no field; rth_ja_k_per_w is the table's 45 °C/W",
+   "UVLO: the table p. 3 gives 5.1 V for VIN falling with 500 mV hysteresis rising, the text p. 13 says the drive turns off below 'VUVLO-0.5V' – uvlo_v holds the table's 5.1 V",
+   "B type (PT4115B89E-B, 99 / 102 / 105 mV) is another LCSC number (C15425) – not this entry"
+  ]
+ }
+}

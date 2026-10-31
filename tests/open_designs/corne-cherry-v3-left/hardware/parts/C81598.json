@@ -1,0 +1,70 @@
+{
+ "lcsc": "C81598",
+ "mpn": "1N4148W",
+ "manufacturer": "ST(先科)",
+ "kind": "diode",
+ "package": "SOD-123",
+ "footprint": "D3_SMD_v2",
+ "jlc_class": "Basic Part",
+ "datasheet": {
+  "url": "https://datasheet.lcsc.com/datasheet/pdf/8abd7fc00ebe41ffb03ad1383c10753b.pdf?productCode=C81598",
+  "pinout_page": 1
+ },
+ "pins": {
+  "1": {
+   "name": "K",
+   "type": "passive",
+   "role": "cathode"
+  },
+  "2": {
+   "name": "A",
+   "type": "passive",
+   "role": "anode"
+  }
+ },
+ "values": {
+  "vf_v": 0.855,
+  "vf_at_a": 0.01,
+  "ir_a": 2.5e-08,
+  "ir_at_v": 20
+ },
+ "limits": {
+  "vr_max_v": 75,
+  "if_max_a": 0.15,
+  "ifsm_max_a": 0.5,
+  "p_max_w": 0.4,
+  "rth_ja_k_per_w": 312,
+  "tj_max_c": 150
+ },
+ "spice": {
+  "model": ".model D1N4148W D(IS=7.8n N=2.35 RS=0.94 BV=75 IBV=1u CJO=2p TT=4n)",
+  "source": "IS, N and RS fitted to the maximum VF of the data sheet (0.715 V at 1 mA, 0.855 V at 10 mA, 1.0 V at 50 mA; the fit gives 1.16 V at 150 mA against 1.25 V max); BV at V(BR)R min 75 V; CJO the 2 pF maximum; TT from trr 4 ns max (assumption: TT ≈ trr)"
+ },
+ "sources": [
+  "Semtech Electronics 1N4148W Silicon Epitaxial Planar Switching Diode data sheet, Rev 05, dated 20/09/2016, LCSC's copy for C81598 https://datasheet.lcsc.com/datasheet/pdf/8abd7fc00ebe41ffb03ad1383c10753b.pdf?productCode=C81598, read 2026-10-31",
+  "pinning, p. 1: pin 1 cathode, pin 2 anode; SOD-123, marking W1",
+  "absolute maximum ratings: VRM 100 V, VR 75 V (vr_max_v), IF(AV) 150 mA (if_max_a), IFSM 0.5 A at 1 s, 1 A at 1 ms, 4 A at 1 µs (ifsm_max_a: the 1 s value), Ptot 400 mW, RθJA 312 °C/W, TJ 150 °C, storage −65 … +150 °C",
+  "characteristics at 25 °C: V(BR)R ≥ 75 V at 1 µA; VF ≤ 0.715 V at 1 mA, ≤ 0.855 V at 10 mA (vf_v, vf_at_a – a maximum, the sheet gives no typical), ≤ 1 V at 50 mA, ≤ 1.25 V at 150 mA; IR ≤ 1 µA at 75 V, ≤ 25 nA at 20 V (ir_a, ir_at_v); CT ≤ 2 pF; trr ≤ 4 ns",
+  "mpn, manufacturer, footprint, jlc_class, pin numbers and names: EasyEDA library data of C81598 via edakit part import, read 2026-10-31",
+  "stock: JLCPCB catalogue 3 781 217 pcs (2026-10-31)",
+  "stand-in: the v3 build guide asks for 42 diodes, 'SMD Only (SOD-123 Package)', without a part number – this SOD-123 1N4148W of edakit's library stands in (copied unchanged but for this line and the footprint)"
+ ],
+ "verified": {
+  "by": "Claude (datasheet check, library draft)",
+  "date": "2026-10-31",
+  "datasheet": "Semtech Electronics 1N4148W, Rev 05 (20/09/2016)",
+  "datasheet_sha256": "54de8e4089bb8221cf6cf191ee3acc2bdb20c9933cf59e7b5de3ef4ee291ce3f",
+  "checked": [
+   "pinning (p. 1) = the EasyEDA symbol: 1 K, 2 A",
+   "VR 75 V, IF(AV) 150 mA, IFSM 0.5/1/4 A, Ptot 400 mW, RθJA 312 °C/W, TJ 150 °C",
+   "VF max at 1/10/50/150 mA, IR max at 20 V and 75 V, CT 2 pF, trr 4 ns"
+  ],
+  "open": [
+   "the footprint is named SOD-123F, the data sheet's outline SOD-123 – compare the pad pattern with the body (2.7 × 1.6 mm)",
+   {
+    "text": "band (cathode) at pad 1 of the footprint",
+    "when": "order"
+   }
+  ]
+ }
+}

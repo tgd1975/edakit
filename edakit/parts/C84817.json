@@ -60,7 +60,9 @@
   }
  },
  "values": {
-  "behavior": "none",
+  "behavior": "boost",
+  "vref_v": 0.6,
+  "efficiency": 0.85,
   "iq_a": 0.0002
  },
  "limits": {
@@ -95,10 +97,13 @@
   "p. 2 absolute maximum: VIN and EN -0.3 … 26 V (vdd_max_v, IN and EN v_max_v), FB -0.3 … 6 V, SW -0.3 … 30 V, power dissipation 0.6 W, θJA 250 °C/W, θJC 130 °C/W, junction temperature 160 °C, operating temperature -40 … 85 °C",
   "p. 3 electrical characteristics: operating input voltage 2 … 24 V (vdd_op_min_v, vdd_op_max_v, vin_min_v); UVLO ≤ 1.98 V, hysteresis 100 mV; shutdown current 0.1 / 1 µA; quiescent current PFM (no switching) 100 / 200 µA, PWM (switching) 1.6 / 2.2 mA; 1.2 MHz; maximum duty cycle ≥ 90 %; EN high ≥ 1.5 V, low ≤ 0.4 V; FB 0.588 / 0.6 / 0.612 V; SW on resistance 80 / 150 mΩ; switch current limit 4 A; thermal shutdown 155 °C",
   "iq_a 0.0002: the PFM quiescent current without switching, max 200 µA – the switching current (PWM, 2.2 mA max) is part of the losses an efficiency would cover",
+  "vref_v 0.6: p. 3 FB voltage 0.588 / 0.6 / 0.612 V; p. 6 'The internal reference VREF is 0.6V (Typical)', VOUT = VREF × (1 + R1/R2)",
+  "efficiency 0.85: read from the graph p. 4 'Efficiency vs. Load Current' – the lowest point of the curves drawn, about 85 % at VIN 3 V, VOUT 5 V and 1 A (VOUT 18 V: about 90 % and above)",
+  "behaviour boost without a vout pin (maker-coverage FT-5): p. 1 fig. 1 and p. 5 fig. 2 – the inductor from VIN to SW and the diode from SW to VOUT are outside the IC, the only switch M1 lies from SW to GND, nothing in the path from VIN to VOUT; with EN low (p. 2 'a low input turns it off') the input reaches the output through the inductor and the diode, VIN − VD – the simulation takes the output behind the diode on SW and switches the converter off by EN",
   "hot_loop vin, sw, gnd: p. 6 layout consideration and fig. 3 – the red trace VIN–CIN–GND 'as short as possible', SW node small, input and output capacitors close to the IC; REQ.missing adds the output net behind the diode on SW",
   "LCSC product data C84817 (2026-10-31): XI'AN Aerosemi Tech MT3608, 62 749 pcs; JLCPCB catalogue (edakit part search, 2026-10-31): Extended Part, 64 553 pcs"
  ],
- "notes": "Asynchronous boost converter, adjustable by a feedback divider. The boost model needs a vout pin, which the MT3608 does not have (its output is behind the external diode) – behaviour none until adjustable regulators are modelled (FT-5); hot_loop is given, so REQ.missing still asks for the layout loops. Library draft, group power.",
+ "notes": "Asynchronous boost converter, adjustable by a feedback divider. Behaviour boost (maker-coverage FT-5): the output is the net behind the Schottky diode on SW, set by the divider and VREF 0.6 V; EN low switches the converter off and the simulation shows what the inductor and the diode pass from the input. Library draft, group power.",
  "verified": {
   "by": "Claude (datasheet check, library draft)",
   "date": "2026-10-31",
@@ -108,12 +113,14 @@
    "SOT-23-6 pinout p. 2 = EasyEDA symbol of C84817 (1 SW, 2 GND, 3 FB, 4 EN, 5 IN, 6 NC)",
    "absolute maximum p. 2: VIN, EN 26 V, FB 6 V, SW 30 V, 0.6 W, θJA 250 °C/W, TJ 160 °C, -40 … 85 °C",
    "electrical characteristics p. 3: VIN 2 … 24 V, UVLO, quiescent currents, EN thresholds, VFB 0.6 V ±2 %, 1.2 MHz, 4 A limit",
-   "applications p. 6: VOUT = VREF (1 + R1/R2), 22 µF input and output ceramic, 4.7 … 22 µH, layout rules and fig. 3"
+   "applications p. 6: VOUT = VREF (1 + R1/R2), 22 µF input and output ceramic, 4.7 … 22 µH, layout rules and fig. 3",
+   "2026-10-31, behaviour boost (FT-5): VREF 0.6 V p. 3 and 6 (vref_v), efficiency read from the graph p. 4 (85 %), EN p. 2 ('a low input turns it off', thresholds p. 3), the inductor and diode outside the IC with M1 from SW to GND, fig. 1 p. 1 and fig. 2 p. 5"
   ],
   "open": [
-   "adjustable output: no vout_v and behaviour none – the boost model needs a vout pin and a fixed vout_v (FT-5: output from the divider and VFB 0.6 V)",
+   "efficiency is one number read from a graph (p. 4, the lowest curve point, 85 %); the curves rise with VIN and VOUT",
+   "with EN low the data sheet says only 'a low input turns it off' (p. 2); that the input reaches the output through the inductor and the diode follows from fig. 1 and fig. 2, not from a sentence of the data sheet",
+   "the shutdown current (0.1 / 1 µA, p. 3) is not in the model: with EN low the converter draws nothing",
    "the recommended 22 µF output capacitor sits on the net behind the diode, not on a pin of the MT3608 – no need entered for it",
-   "efficiency only as curves ('up to 93 %', p. 1, 4) – no efficiency entered",
    "'2A' in the title is not defined in the tables (switch current limit 4 A typ) – no i_out_max_a",
    "switching frequency (1.2 MHz), maximum duty cycle (≥ 90 %) and the UVLO threshold have no fields in the schema",
    "EN: no internal pull-up or pull-down stated",

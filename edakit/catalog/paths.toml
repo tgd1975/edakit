@@ -20,10 +20,12 @@ blocks = [
 [supply]                                     # PATH.unfed: what a supply reaches
 inputs = { battery_holder = "plus", connector = "vbus" }   # pin roles where a supply comes in (role prefix)
 passes = ["fuse", "switch", "button", "connector", "inductor"]       # every pin to every pin
-passes_roles = { nmos = ["drain", "source"], pmos = ["drain", "source"] }
+passes_roles = { nmos = ["drain", "source"], pmos = ["drain", "source"], led_strip = ["vdd", "vdd_end"] }
+                                                           # an LED strip: its +V rail from end to end (chained strips)
 forward = { diode = ["anode", "cathode"] }                 # from the first role to the second only – on a negative
                                                            # rail (the anode's net declared at or below 0 V) the other way
 resistor_max_ohm = 100                                     # a shunt or a filter resistor passes a supply
 
 [ground]                                     # PATH.ground
 joins = ["inductor"]                         # a net joined to ground through one is ground
+joins_roles = { led_strip = ["gnd", "gnd_end"] }   # … or through these pins of one: an LED strip's ground rail

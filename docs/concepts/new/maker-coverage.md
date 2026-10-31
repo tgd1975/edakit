@@ -583,9 +583,9 @@ One row per pitfall: the pitfall with its numbers, what edakit does about it tod
 | 4 | no series resistor on the data line (Adafruit: 300–500 Ω); unbuffered runs beyond 1–2 m | no | BL-1, HT-1 | Adafruit NeoPixel best practices (x) |
 | 5 | data high while the strip is unpowered: DIN abs. max VDD + 0.5 V, current through the clamp, first pixel dies | no | CK-5, FT-8 | WS2812B V1.0 (x); Adafruit (x) |
 | 6 | no bulk capacitor at the strip (500–1000 µF), no 100 nF per LED | covered: H-1, G-6 | BL-1 | Adafruit (x); WS2812B application circuit (x) |
-| 7 | current budget: up to 60 mA per pixel at white, 300 pixels = 18 A | covered where modelled: E-3 source `i_max_a`, `current` model | FT-13 | Adafruit powering guide (x) |
+| 7 | current budget: up to 60 mA per pixel at white, 300 pixels = 18 A | covered: a strip (kind `led_strip`) draws `i_pixel_a` per pixel at the load's share of full white – against the source's `i_max_a`, each feed against its connector and cable (LIM.i, LIM.i/strip) | FT-13 | Adafruit powering guide (x) |
 | 8 | LEDs fed through the MCU board's regulator or USB (NCP1117 dissipation, 500 mA USB, ESP32 brown-outs) | covered: E-3 module LDO, source limit; the burst: no | FT-1 | Arduino and ESP32 forums (x) |
-| 9 | voltage drop along the strip: 5 m at 60 LEDs/m, 2.5 V at the far end; blue fails below about 3.3 V | partly: `external` load at a connector | FT-13 | QuinLED injection guide (x); Hackaday (x) |
+| 9 | voltage drop along the strip: 5 m at 60 LEDs/m, 2.5 V at the far end; blue fails below about 3.3 V | covered: LIM.range/strip on the ladder of the strip's rails, fed at its ends and along it (cable `at_m`); the rail resistance from the strip's seller or the project (PARTS.fact) | FT-13 | QuinLED injection guide (x); Hackaday (x); Pololu WS2812B strips, measured drops (r) |
 | 10 | wire gauge of feeds: 22 AWG ≈ 53 mΩ/m, 2 m at 3.6 A drops 0.76 V | partly: `cables` `r_ohm_per_wire` | FT-2 | QuinLED (x); WLED wiring (x) |
 | 11 | no fuse between a 300 W supply and thin wiring | covered: G-17 for a modelled cable; a missing fuse: no | FT-2 | QuinLED fuses (x); Hackaday (x) |
 | 12 | data reference: shared ground missing or thin (5 A through 1 m 22 AWG lifts 0.26 V) | covered: per-board ground with the cable's resistance, E-3 levels to the part's own ground | FT-2 | Adafruit (x) |
@@ -595,7 +595,7 @@ One row per pitfall: the pitfall with its numbers, what edakit does about it tod
 | 16 | LED supply tracks too narrow (IPC-2221, 10 °C: 3 A ≈ 1.37 mm, 5 A ≈ 2.8 mm) | covered: L-5 | – | IPC-2221 formula |
 | 17 | strip MOSFET not logic-level: IRF520 and IRFZ44N specified at VGS 10 V; TIP120 drops about 2 V | partly: E-2 with the SPICE model, no threshold corner | CK-4, BL-2 | Adafruit RGB strips (x); datasheets (x) |
 | 18 | PWM flicker: IEEE 1789 – 100 % modulation needs ≥ 1250 Hz (low risk), ≥ 3 kHz (no effect); Arduino 490 Hz | no | HT-9 | US DOE summary; Finelite white paper (x) |
-| 19 | constant-current buck sized wrong (PT4115: I = 0.1 V / RS, RS ≥ 0.082 Ω; inductor table; VIN above ΣVf) | no model | FT-14 | PT4115, AL8860 datasheets (x) |
+| 19 | constant-current buck sized wrong (PT4115: I = 0.1 V / RS, RS ≥ 0.082 Ω; inductor table; VIN above ΣVf) | covered: behaviour cc_led_driver – LIM.i/cc (current, inductor saturation), REQ.value/cc (RS), LIM.range/cc (VIN above the string); the inductance table: no | FT-14 | PT4115 PT4115_DS Rev EN_2.9, AL8860 DS39014 Rev. 8 - 2 (r) |
 | 20 | power LED without heat sink: θ ≤ (Tj − Ta) / P | partly: E-2 `rth_ja_k_per_w` of the part alone | HT-11 | star LED datasheets (x) |
 | 21 | MAX7219 at 3.3 V logic: VIH 3.5 V; common-cathode displays only | with part facts: E-3 | PF | MAX7219 datasheet (x) |
 | 22 | MAX7219 RSET, about 1 W dissipation, 10 µF + 0.1 µF at the chip | partly: G-6 | PF | MAX7219 table 11 (x) |
@@ -668,7 +668,7 @@ One row per pitfall: the pitfall with its numbers, what edakit does about it tod
 | 12 | linear regulator headroom and heat: 7805 2 V dropout, 12 → 5 V at 0.5 A = 3.5 W | covered: `ldo` model, E-3 | – | L7805 (x) |
 | 13 | buck module at an unknown trimmer setting, no reverse protection | no | FT-5 | MP1584 (x); LM2596 (x) |
 | 14 | feedback divider (VREF 1.25, 1.23, 0.8, 0.6 V); LM317 needs 10 mA load | no | FT-5 | onsemi LM317 (x) |
-| 15 | non-synchronous boost passes VIN − about 0.3 V with EN low (MT3608) | no | HT-4, FT-5 | TI SLVA191 (x); EEVblog (x) |
+| 15 | non-synchronous boost passes VIN − about 0.3 V with EN low (MT3608) | covered: HINT.boost_enable; behaviour boost shows VIN − VD with EN low, the load's expect holds it | HT-4, FT-5 | TI SLVA191A (r); EEVblog (x) |
 | 16 | ceramic DC bias: 4.7 µF, 6.3 V, 0603 X5R at 5 V ≈ 0.33 µF | no | FT-9 | ADI tutorial 5527 (x); Nordic (x) |
 | 17 | battery divider: 100 k + 100 k draws 21 µA; MΩ dividers against the ATmega's 10 kΩ | no | CK-6, BL-6, FT-11 | ATmega328P §23.6.1 (x); ESP-IDF ADC (x) |
 | 18 | Wi-Fi bursts 240–335 mA against the supply's impedance: brown-out | partly: E-3 at `i_core_a` | FT-1, BL-7 | Espressif schematic checklist (x) |
@@ -775,24 +775,24 @@ One row per pitfall: the pitfall with its numbers, what edakit does about it tod
 
 | # | Pitfall | edakit today | Candidate | Source |
 | --- | --- | --- | --- | --- |
-| 1 | germanium Fuzz Face bias: the fixed parts need Q1 gain 70–80 and Q2 110–130; AC128 spans 45–165; leakage doubles every 10 °C | no – no transistor corners | FT-17, FT-11 | ElectroSmash Fuzz Face, germanium fuzz (r) |
+| 1 | germanium Fuzz Face bias: the fixed parts need Q1 gain 70–80 and Q2 110–130; AC128 spans 45–165; leakage doubles every 10 °C | with part facts: sim.json spread – hFE and leakage (icbo_a) as corners, the bias against a load's expect (FT-17, FT-11); no germanium datasheet could be read – a project enters its measured spread | FT-17, FT-11 | ElectroSmash Fuzz Face, germanium fuzz (r) |
 | 2 | PNP positive ground: the jack sleeves sit on +9 V and short a shared supply | no | HT-18 | ElectroSmash germanium fuzz, Rangemaster (r) |
 | 3 | Fuzz Face input 5.2–8.4 kΩ, output 15 kΩ (about 125 kΩ at mid volume: 2.1 kHz with 600 pF of cable) | no | CK-27, FT-18, FT-12 | ElectroSmash Fuzz Face (r) |
 | 4 | AM radio in high-gain transistor stages: the base–emitter junction rectifies; 100 pF base–collector, base stopper | no | HT-8 | ElectroSmash germanium fuzz (r); forums (x) |
-| 5 | Big Muff: 48.6 dB in two clipping stages, 470 pF Miller capacitors for stability, bias windows | no | FT-17, FT-11, CK-31 | ElectroSmash Big Muff (r) |
-| 6 | Tone Bender MKII self-biases through leakage; the bias target is disputed | no | FT-17 | forums (x) |
+| 5 | Big Muff: 48.6 dB in two clipping stages, 470 pF Miller capacitors for stability, bias windows | the bias windows with part facts: spread corners against expect (FT-17, FT-11); stability: no | FT-17, FT-11, CK-31 | ElectroSmash Big Muff (r) |
+| 6 | Tone Bender MKII self-biases through leakage; the bias target is disputed | with part facts: the leakage in the spread corner max (icbo_a, FT-17); the target is the project's expect | FT-17 | forums (x) |
 | 7 | op-amps at 9 V: TL07x swing 1.5–3 V short of each rail, common mode 3–4 V above V−; phase reversal | no model | FT-3 | ST TL07x (r); ElectroSmash Klon (r) |
 | 8 | clipping diodes against the swing: an LED (1.5–1.7 V) in a 9 V feedback loop; octave rectifiers need matched diodes | no | FT-3, FT-12 | ElectroSmash Tube Screamer, Klon, Big Muff (r) |
 | 9 | 4.5 V reference: loads ≥ 10 × the divider, 47–100 µF, 0.5 s settling thump | partly: G-6 | FT-11, BL-17 | ElectroSmash Klon, Tube Screamer (r) |
 | 10 | Klon charge pump +18/−9 V: 27 V across an op-amp; from 12 V about 36 V, the TL07x maximum | with part facts: E-3 `vdd_op_max` with a 12 V supply corner | PF, CK-31 | ElectroSmash Klon (r); ST TL07x (r) |
 | 11 | LM308 needs 30 pF across pins 1 and 8; slew rate 0.3 V/µs | no | CK-28 | ElectroSmash ProCo RAT (r) |
-| 12 | JFET spread (J201 IDSS 0.2–1.0 mA, VGS(off) −0.3…−1.5 V): drain between about 5.2 and 8.2 V with fixed resistors | no | FT-17 | ElectroSmash 1Wamp (r) |
-| 13 | BS170 is D-G-S, 2N7000 S-G-D; VGS(th) 0.8–3.0 V; gate unprotected | covered: P-1, L-10 for the pinout; the spread: no | FT-17 | forums (x); partinfo (r) |
+| 12 | JFET spread (J201 IDSS 0.2–1.0 mA, VGS(off) −0.3…−1.5 V): drain between about 5.2 and 8.2 V with fixed resistors | covered: IDSS with VGS(off) as spread corners, the drain against expect – MMBFJ201 (C891687), the J201 in SOT-23 (FT-17) | FT-17 | ElectroSmash 1Wamp (r) |
+| 13 | BS170 is D-G-S, 2N7000 S-G-D; VGS(th) 0.8–3.0 V; gate unprotected | covered: P-1, L-10 for the pinout; VGS(th) as spread corners, BS170 (C111691) and 2N7000 (C232838) in the library (FT-17) | FT-17 | forums (x); partinfo (r) |
 | 14 | input impedance against 1 MΩ (Tube Screamer 446k, RAT 494k, V847 wah 69.5k); input high-pass; series resistor against ESD | no | CK-27, BL-16, HT-8 | ElectroSmash analyses (r) |
 | 15 | output impedance and minimum load: PT2399 output wants > 100 kΩ, FV-1 ≥ 10 kΩ, PCM3060 ≥ 10 kΩ | no | CK-13 | ElectroSmash PT2399 (r); FV-1 datasheet (r) |
 | 16 | OTA compressors: CA3080 bias current ≤ 2 mA, differential input ≤ 5 V, about 100 mVpp linear range | no model | CK-13, FT-3 | CA3080 datasheet (r); ElectroSmash Dyna Comp (r) |
 | 17 | LFO and tap-tempo ticks through supply and ground (vactrol LED 20–40 mA; 1 kHz PWM into a PT2399) | no | HT-16, HT-8 | ElectroSmash CE-2 (r); Bontempo (r) |
-| 18 | phaser: 2N5952 VGS(off) −1.3…−3.5 V, matched FETs, trimmer range | no | FT-17 | ElectroSmash Phase 90 (r) |
+| 18 | phaser: 2N5952 VGS(off) −1.3…−3.5 V, matched FETs, trimmer range | with part facts: VGS(off) corners, matched FETs at one corner (FT-17); no 2N5952 datasheet reachable (onsemi: not found); the trimmer range: no | FT-17 | ElectroSmash Phase 90 (r) |
 | 19 | wah: V847 input 69.5 kΩ; the 500 mH inductor picks up the amplifier's transformer field | no | CK-27; reviewer question | ElectroSmash Crybaby (r) |
 | 20 | 5 V regulators for PT2399 (30 mA) and Belton (60–100 mA): 78L05 at about 200 °C/W; 78L05 OUT-GND-IN against 7805 IN-GND-OUT | covered: E-3 regulator temperature with `rth_ja_k_per_w`, P-1 and L-10 for the pinout | – | ElectroSmash PT2399 (r); forums (x) |
 | 21 | PT2399 pin 6 below 2 kΩ during the first 400 ms latches the chip | no | CK-13 | ElectroSmash PT2399 (r); DIYSynthMNL (r) |

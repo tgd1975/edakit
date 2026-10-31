@@ -427,6 +427,118 @@ def _usb_attach_capacitance(design, cfg=None, sim=None):
     return [des for des in _usb_ports(design) if vbus_capacitance(design, des)[1] > limit * (1 + 1e-9)]
 
 
+# --- a load on the charging cell (maker-coverage HT-5); behaviour over time (rules-at-scale.md, decision 17) ---------
+LOAD_KINDS = ("led", "led_rgb", "buzzer", "motor", "solenoid", "heater", "speaker")   # they draw at any of their pins
+
+
+def behaving(design, *behaviors):
+    """The designators whose parts entry names one of these behaviours (values behavior)."""
+    return [d for d in design.comps if values(design.part(d)).get("behavior") in behaviors]
+
+
+def _guards_a_cell(part):
+    """A cell's protection IC: behaviour protection, or the od/oc outputs HINT.lithium knows it by."""
+    return values(part).get("behavior") == "protection" or any(
+        p.get("role") in ("od", "oc") and p.get("type") == "output" for p in (part.get("pins") or {}).values())
+
+
+def _draws(design, ref):
+    """A pin through which its part draws from the net: any pin of an LED, buzzer, motor, solenoid, heater or speaker,
+    a relay's coil, the supply pin (power_in) of an IC or module that is neither a charger nor a cell's protection."""
+    part = design.part(ref.split(".", 1)[0]) or {}
+    kind, info = part.get("kind"), design.pin_info(ref)
+    if kind in LOAD_KINDS:
+        return True
+    if kind == "relay":
+        return str(info.get("role") or "").startswith("coil")
+    return (kind in ("ic", "module") and info.get("type") == "power_in"
+            and values(part).get("behavior") != "charger" and not _guards_a_cell(part))
+
+
+def _links(design):
+    """{net: [(next net, designator, kind)]} – what carries a supply's current on: a resistor, fuse, switch or inductor
+    either way, a MOSFET between drain and source either way (its channel or its body diode), a diode from anode to
+    cathode. A ground (the graph's ground and grounds) is no step."""
+    grounds = {design.ground} | set(design.graph.get("grounds") or [])
+    out = defaultdict(list)
+    for des in design.comps:
+        part = design.part(des) or {}
+        kind = part.get("kind")
+        if kind == "diode":
+            a, k = design.net_of(des, "anode"), design.net_of(des, "cathode")
+            if a and k and not {a, k} & grounds:
+                out[a].append((k, des, kind))
+            continue
+        if kind in ("nmos", "pmos"):
+            nets = {design.net_of(des, "drain"), design.net_of(des, "source")}
+        elif kind in ("resistor", "fuse", "switch", "inductor"):
+            nets = {design.pin_net.get(f"{des}.{p}") for p in part.get("pins") or {}}
+        else:
+            continue
+        nets -= {None} | grounds
+        for n in nets:
+            out[n] += [(m, des, kind) for m in sorted(nets - {n})]
+    return out
+
+
+def _reach(links, start, stop, passes):
+    """The nets reached from `start` over the links `passes(designator, kind, next net)` lets through, not into `stop`."""
+    seen, todo = {start}, [start]
+    while todo:
+        for m, des, kind in links.get(todo.pop(), ()):
+            if m not in seen and m not in stop and passes(des, kind, m):
+                seen.add(m)
+                todo.append(m)
+    return seen
+
+
+def cell_loads(design, des, links=None):
+    """What a charger's cell feeds while it charges: the pins that draw (an IC's supply pin, an LED …) on the nets its
+    battery pin (role bat) reaches – through resistors, fuses, switches, inductors, MOSFETs and diodes – without a power
+    path in between. A power path, as far as the graph shows it: a MOSFET whose gate the charger's input holds (on the
+    input's nets – vin and what a fuse, switch, inductor or MOSFET joins to it – or one resistor away: AN1149's P-MOSFET,
+    off while the input is there), or a diode onto a net the input also reaches (diode-ORing: the input holds the rail
+    above the cell). A charger with a system output of its own (a power-path charger) feeds the load there, off its
+    battery pin. The charger itself and the cell's protection IC draw no load. -> [pin refs]"""
+    links = links if links is not None else _links(design)
+    grounds = {design.ground} | set(design.graph.get("grounds") or [])
+    vin, bat = design.net_of(des, "vin"), design.net_of(des, "bat")
+    if bat is None:
+        return []
+    inputs = _reach(links, vin, grounds | {bat}, lambda d, kind, m: kind not in ("resistor", "diode")) if vin else set()
+    fed = _reach(links, vin, grounds | {bat}, lambda d, kind, m: kind != "resistor") if vin else set()
+
+    def held(q):
+        gate = design.net_of(q, "gate")
+        return gate is not None and (gate in inputs or bool(_resistor_neighbours(design, gate) & inputs))
+
+    def passes(q, kind, m):
+        if kind in ("nmos", "pmos") and held(q):
+            return False
+        return not (kind == "diode" and m in fed)
+    nets = _reach(links, bat, grounds | inputs, passes)
+    return sorted((r for n in nets for r in design.nets[n]["pins"] if r.split(".", 1)[0] != des and _draws(design, r)),
+                  key=natural_key)
+
+
+def _loaded_cells(design, cfg, sim):
+    """Chargers (behaviour charger) whose cell feeds a load without a power path (cell_loads)."""
+    links = _links(design)
+    return [des for des in behaving(design, "charger") if cell_loads(design, des, links)]
+
+
+def _chargers(design, cfg, sim):
+    return behaving(design, "charger")
+
+
+def _cell_protections(design, cfg, sim):
+    return behaving(design, "protection")
+
+
+def _pd_sinks(design, cfg, sim):
+    return behaving(design, "pd_sink")
+
+
 MATCHERS = {"power_input": _power_inputs, "connector_signal": _connector_signals,
             "transistor_at_connector": _transistors_at_connectors, "switching_regulator": _switching_regulators,
             "two_supplies": _two_supplies, "read_back": _read_backs, "btl_output": _btl_outputs,
@@ -437,7 +549,9 @@ MATCHERS = {"power_input": _power_inputs, "connector_signal": _connector_signals
             "cable_line": _cable_lines, "jack_supply": _jacks_with_supply,
             "relay_off_board": _relays_switching_off_board, "usb_port": _usb_ports,
             "usb_attach_capacitance": _usb_attach_capacitance, "driven_gate": _driven_gates,
-            "read_switch": _read_switches, "unprotected_cell": _unprotected_cells}
+            "read_switch": _read_switches, "unprotected_cell": _unprotected_cells,
+            "loaded_cell": _loaded_cells, "charger": _chargers, "cell_protection": _cell_protections,
+            "pd_sink": _pd_sinks}
 
 
 

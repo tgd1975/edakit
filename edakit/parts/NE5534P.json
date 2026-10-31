@@ -1,0 +1,148 @@
+{
+ "mpn": "NE5534P",
+ "manufacturer": "Texas Instruments",
+ "kind": "ic",
+ "package": "PDIP-8 (P); the same pinout in SOIC-8 (D: NE5534D, NE5534DR) and SO-8 (PS)",
+ "datasheet": {
+  "url": "https://www.ti.com/lit/ds/symlink/ne5534.pdf",
+  "pinout_page": 3,
+  "title": "NE5534x, SA5534x Low-Noise Operational Amplifiers",
+  "revision": "SLOS070D (July 1979, revised November 2014)"
+ },
+ "pins": {
+  "1": {
+   "name": "BALANCE",
+   "type": "passive",
+   "role": "balance"
+  },
+  "2": {
+   "name": "IN-",
+   "type": "input",
+   "role": "in_n",
+   "v_min_v": 0,
+   "i_inject_max_a": 0.01
+  },
+  "3": {
+   "name": "IN+",
+   "type": "input",
+   "role": "in_p",
+   "v_min_v": 0,
+   "i_inject_max_a": 0.01
+  },
+  "4": {
+   "name": "VCC-",
+   "type": "ground",
+   "role": "vee"
+  },
+  "5": {
+   "name": "COMP",
+   "type": "passive",
+   "role": "comp",
+   "needs": [
+    {
+     "what": "capacitor",
+     "to": "COMP/BAL",
+     "c_min_f": 2.2e-11,
+     "when": "compensated",
+     "source": "TI SLOS070D, 8.1: compensated internally for a gain equal to or greater than three, an external compensation capacitor between COMP and COMP/BAL; 7.5 and 7.6: the unity-gain characteristics (unity-gain bandwidth, rise time and overshoot at AVD = 1) are specified with CC = 22 pF"
+    }
+   ]
+  },
+  "6": {
+   "name": "OUT",
+   "type": "output",
+   "role": "out"
+  },
+  "7": {
+   "name": "VCC+",
+   "type": "power_in",
+   "role": "vcc",
+   "needs": [
+    {
+     "what": "capacitor",
+     "c_min_f": 1e-07,
+     "source": "TI SLOS070D, 10 Power Supply Recommendations: 0.1-µF bypass capacitors close to the power-supply pins"
+    }
+   ]
+  },
+  "8": {
+   "name": "COMP/BAL",
+   "type": "passive",
+   "role": "comp_bal"
+  }
+ },
+ "values": {
+  "behavior": "opamp",
+  "gain_min_ratio": 3,
+  "vicm_v": [
+   3,
+   -3
+  ],
+  "vout_swing_v": [
+   3,
+   -3
+  ],
+  "iq_a": 0.008
+ },
+ "limits": {
+  "vdd_max_v": 44,
+  "vdd_op_min_v": 10,
+  "vdd_op_max_v": 30,
+  "vin_rel_max_v": 0,
+  "tj_max_c": 150,
+  "t_min_c": 0,
+  "t_max_c": 70,
+  "rth_ja_k_per_w": 85
+ },
+ "configs": {
+  "compensated": {
+   "about": "a gain below 3 – unity gain, a follower: the external compensation capacitor CC between COMP (5) and COMP/BAL (8), 22 pF as the datasheet specifies the unity-gain characteristics with (SLOS070D 7.5, 7.6, 8.1)",
+   "values": {
+    "gain_min_ratio": 1
+   }
+  }
+ },
+ "hints": [
+  "compensated internally for a gain of 3 or more; below that – a follower, a buffer – CC between COMP (5) and COMP/BAL (8), 22 pF for unity gain (8.1, 7.5): give the component config \"compensated\" and the capacitor; TI's typical application 9.2 draws a voltage follower without CC, the description and the characteristics are followed here",
+  "inputs: protection diodes between them – more than about 0.6 V between IN+ and IN− draws excessive current unless a resistor limits it (7.1 note 4), input current at most ±10 mA",
+  "offset null: a potentiometer between BALANCE (1) and COMP/BAL (8) with its wiper to VCC+ (figure 10)"
+ ],
+ "compliance": {
+  "radio": "none",
+  "source": "TI SLOS070D: a low-noise operational amplifier, no transmitter – read 2026-10-31; RoHS and REACH not read (TI's material content pages were not opened)"
+ },
+ "sources": [
+  "TI NE5534x, SA5534x data sheet SLOS070D (July 1979, revised November 2014), from TI https://www.ti.com/lit/ds/symlink/ne5534.pdf, read 2026-10-31",
+  "pins: 6 Pin Configuration and Functions p. 3, D (SOIC), P (PDIP) or PS (SOP): 1 BALANCE, 2 IN−, 3 IN+, 4 VCC−, 5 COMP, 6 OUT, 7 VCC+, 8 COMP/BAL; BALANCE and COMP/BAL external frequency compensation and offset adjustment, COMP offset adjustment (pin functions table) – typed passive: they take the compensation capacitor and the offset potentiometer, no logic level",
+  "VCC− typed ground with the role vee (the op-amp model's negative rail): a single-supply design ties it to ground, a split supply decouples it as well (10)",
+  "gain_min_ratio 3: 3 Description and 8.1: 'compensated internally for a gain equal to or greater than three'; config compensated gain_min_ratio 1 and the need of CC ≥ 22 pF between COMP and COMP/BAL: 8.1 (external compensation capacitor between COMP and COMP/BAL), 7.5 (unity-gain bandwidth 10 MHz at CC = 22 pF, CL = 100 pF) and 7.6 (rise time 20 ns, overshoot 20 % at AVD = 1, CC = 22 pF, CL = 100 pF; 35 % at CC = 47 pF, CL = 500 pF)",
+  "vdd_max_v 44: 7.1 supply voltage VCC+ 0 … 22 V, VCC− −22 … 0 V, with respect to the midpoint (note 2); vdd_op_min_v 10, vdd_op_max_v 30: 7.3 recommended VCC+ 5 … 15 V, VCC− −5 … −15 V – both entered as the total supply",
+  "vin_rel_max_v 0 and v_min_v 0 on IN+ and IN− (against VCC−, the part's ground pin): 7.1 input voltage, either input, VCC− … VCC+; i_inject_max_a 0.01 on IN+ and IN−: 7.1 input current −10 … 10 mA",
+  "vicm_v [3, -3]: 7.5 common-mode input-voltage range ±12 V min at VCC± = ±15 V – 3 V from each rail; vout_swing_v [3, -3]: 7.5 maximum peak-to-peak output swing 24 V min at ±15 V, RL ≥ 600 Ω – ±12 V",
+  "iq_a 0.008: 7.5 total supply current 4 typ / 8 max mA at VO = 0, no load, 25 °C",
+  "tj_max_c 150: 7.1; t_min_c 0, t_max_c 70: 7.3 operating free-air temperature of the NE5534 (SA5534: −40 … 85 °C); rth_ja_k_per_w 85: 7.4 RθJA of the P package (D 97, PS 95 °C/W)",
+  "decoupling: 10 Power Supply Recommendations – 0.1-µF bypass capacitors close to the power-supply pins"
+ ],
+ "notes": "Low-noise bipolar op-amp (3.5 nV/√Hz), compensated internally for a gain of 3 or more – below that it needs the external compensation capacitor CC between COMP and COMP/BAL (maker-coverage CK-28: the external compensation a part requires, as a pin need of the config compensated). Library draft. The LM308 the candidate names (30 pF across pins 1 and 8) has no datasheet on ti.com any more (lit/ds/symlink/lm308.pdf and the product page answer 404, 2026-10-31).",
+ "verified": {
+  "by": "Claude (datasheet check, library draft)",
+  "date": "2026-10-31",
+  "datasheet": "TI NE5534x, SA5534x data sheet SLOS070D (revised November 2014)",
+  "datasheet_sha256": "8df0a04b9b16637a2516b7f694104b5b48b7bda38be44a10ebde99e8002f36f4",
+  "checked": [
+   "pinout p. 3: 1 BALANCE, 2 IN−, 3 IN+, 4 VCC−, 5 COMP, 6 OUT, 7 VCC+, 8 COMP/BAL (D, P, PS)",
+   "7.1: ±22 V supply, inputs VCC− … VCC+, input current ±10 mA, TJ 150 °C",
+   "7.3: ±5 … ±15 V, 0 … 70 °C (NE5534)",
+   "7.4: RθJA 85 °C/W (P)",
+   "7.5: VICR ±12 V min, VO(PP) 24 V min at ±15 V / 600 Ω, ICC 8 mA max, B1 10 MHz at CC = 22 pF",
+   "7.6, 8.1: internal compensation for a gain ≥ 3, unity-gain figures with CC = 22 pF"
+  ],
+  "open": [
+   "no LCSC number and no EasyEDA symbol: the LCSC search answered 403 (Access Denied) on 2026-10-31 – the entry is named by its MPN, the pin names follow the datasheet; take the LCSC number and compare the symbol before a project uses it",
+   "the compensation for gains between 1 and 3: the datasheet gives CC only at unity gain (22 pF) – the config asks for 22 pF whatever the gain below 3",
+   "input resistance ri 30 kΩ min is differential (7.5) – no z_in_ohm entered; the common-mode input impedance is not given",
+   "output swing and common-mode range are given at ±15 V only; the model takes 3 V from each rail at every supply",
+   "RoHS/REACH not read"
+  ]
+ }
+}

@@ -1,0 +1,93 @@
+{
+ "lcsc": "C2874885",
+ "mpn": "WS2812B-V5/W",
+ "manufacturer": "worldsemi",
+ "kind": "ic",
+ "package": "5050 (5.0 × 5.4 × 1.57 mm), 4 pads",
+ "footprint": "LED_WS2812B_PLCC4_5.0x5.0mm_P3.2mm",
+ "jlc_class": "Extended Part",
+ "datasheet": {
+  "url": "https://datasheet.lcsc.com/datasheet/pdf/3795cfb9d54f7ec8ecc0b043ede3c05a.pdf?productCode=C2874885",
+  "pinout_page": 2
+ },
+ "pins": {
+  "1": {
+   "name": "VDD",
+   "type": "power_in",
+   "role": "vdd"
+  },
+  "2": {
+   "name": "DOUT",
+   "type": "output",
+   "role": "sdo"
+  },
+  "3": {
+   "name": "VSS",
+   "type": "ground",
+   "role": "gnd"
+  },
+  "4": {
+   "name": "DIN",
+   "type": "input",
+   "role": "sdi"
+  }
+ },
+ "values": {
+  "vih_ratio": 0.63,
+  "vil_v": 0.7
+ },
+ "limits": {
+  "vdd_max_v": 5.3,
+  "vdd_op_min_v": 3.7,
+  "vdd_op_max_v": 5.3,
+  "vin_rel_max_v": 0.7,
+  "t_min_c": -40,
+  "t_max_c": 65
+ },
+ "hints": [
+  "data input DIN: VIH ≥ 0.63 × VDD (3.15 V at VDD 5 V), VIL ≤ 0.7 V (electrical characteristics, p. 3) – thresholds differ between WS2812B variants and data sheet revisions, so they hold for this part number only",
+  "single-wire NZR data, 800 kbit/s, GRB order MSB first: T0H 220–380 ns, T1H 580 ns–1 µs, T0L and T1L 580 ns–1 µs, reset (frame) low > 280 µs (p. 3–4)",
+  "the data sheet says the part needs no external components, capacitors included (features, p. 1; application circuit p. 4 without capacitors)",
+  "MSL 5a (24 h floor life): bake the reel at 70–75 °C for ≥ 24 h before reflow, solder within 24 h (p. 6–7)"
+ ],
+ "sources": [
+  "Worldsemi WS2812B-V5/W data sheet V6.1 (2022-09-08, modify record p. 8), via LCSC https://datasheet.lcsc.com/datasheet/pdf/3795cfb9d54f7ec8ecc0b043ede3c05a.pdf?productCode=C2874885, read 2026-10-31",
+  "pin configuration and pin function table, p. 2: 1 VDD, 2 DOUT, 3 VSS, 4 DIN (top view: 1 and 2 left, 4 and 3 right)",
+  "absolute maximum ratings, p. 2: VDD +3.7 … +5.3 V, VI −0.3 V … VDD + 0.7 V, Topt −40 … +65 °C, Tstg −40 … +85 °C",
+  "vdd_op_min_v 3.7, vdd_op_max_v 5.3: the only supply range of the data sheet, given under absolute maximum ratings – taken as operating range as well: assumption",
+  "electrical characteristics (TA 25 °C, VDD 5 V), p. 3: VIH 0.63 VDD … VDD + 0.7 V, VIL −0.3 … 0.7 V on DIN, II ±1 µA",
+  "switching characteristics, p. 3: DIN→DOUT transmission delay ≤ 300 ns (CL 15 pF, RL 10 kΩ), CI ≤ 15 pF",
+  "LED characteristics, p. 3: quiescent current 0.6 mA (centre value), LED data at 12 mA working current",
+  "pin names, footprint and class: EasyEDA library data of C2874885 via edakit part import, 2026-10-31 – its symbol numbers DIN as pin 3 (label 4), import sees 1 VDD, 2 DOUT, 3 VSS; DIN = pin 4 from the data sheet",
+  "LCSC product data C2874885 (2026-10-31): 5 195 pcs; no RoHS certificate stated",
+  "stand-in: the schematic names WS2812B (KiCad LED:WS2812B, pins 1 VDD, 2 DOUT, 3 VSS, 4 DIN as this entry) without a maker; the WS2812B-V5/W of edakit's library stands in (copied unchanged but for this line and the footprint)"
+ ],
+ "verified": {
+  "by": "Claude (datasheet check, library draft)",
+  "date": "2026-10-31",
+  "datasheet": "Worldsemi WS2812B-V5/W data sheet V6.1 (2022-09-08, modify record p. 8)",
+  "datasheet_sha256": "652e7bc44abd2d4ba24991a403f48bbc64593ea3af7fc92e153b215c50a511af",
+  "checked": [
+   "pinout p. 2 (1 VDD, 2 DOUT, 3 VSS, 4 DIN) against the EasyEDA footprint: pad 1 top left, 2 bottom left, 3 bottom right, 4 top right – the same arrangement as the data sheet's top view",
+   "VDD +3.7 … +5.3 V; VI ≤ VDD + 0.7 V; VIH 0.63 VDD, VIL 0.7 V; Topt −40 … +65 °C",
+   "2026-10-31: symbol_differs – the EasyEDA symbol numbers DIN 3 like VSS; the entry follows the data sheet's pin table (STRUCT.entry/declared)"
+  ],
+  "open": [
+   "EasyEDA symbol of C2874885 (raw data read 2026-10-31): the DIN pin carries the pin number 3 – the same as VSS – while its label shows 4, so edakit part import sees only 1 VDD, 2 DOUT, 3 VSS and a netlist from that symbol would put DIN on pad 3 (VSS); pad 4 of the footprint stays unconnected – fix or replace the symbol before use",
+   "supply range only under 'Absolute Maximum Ratings' (+3.7 … +5.3 V); no recommended operating range given",
+   {
+    "text": "corner / polarity mark of the footprint's silkscreen against the part's marking",
+    "when": "order"
+   },
+   "supply current: 0.6 mA quiescent (centre value) and 12 mA per colour as the LED test condition – no maximum; no behaviour model reads it (not simulated)",
+   "DIN→DOUT delay ≤ 300 ns: no field (t_pd_ns is for clocked serial outputs); storage −40 … +85 °C: no field",
+   "LED data (IV, λd at 12 mA): no field for kind ic",
+   "RoHS / REACH: neither the data sheet nor LCSC states them for this part",
+   "injection current (i_inject_max_a, maker-coverage CK-5): none in the datasheet – Worldsemi WS2812B-V5/W V6.1: the electrical table gives only the input leakage II ±1 µA at VI = VDD/VSS (read 2026-10-31); LIM.v/inject holds the pin's voltage alone"
+  ]
+ },
+ "symbol_differs": {
+  "3": "the library symbol numbers DIN 3 as well as VSS – Worldsemi WS2812B-V5/W data sheet V6.1, pin table: 3 VSS",
+  "4": "DIN is pin 4 (Worldsemi WS2812B-V5/W data sheet V6.1, pin table) – the library symbol has no pin 4, a schematic drawn from it puts DIN on VSS and leaves pad 4 open"
+ }
+}

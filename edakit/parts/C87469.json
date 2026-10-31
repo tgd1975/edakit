@@ -62,7 +62,8 @@
    "name": "SCL",
    "type": "input",
    "role": "scl",
-   "i_inject_max_a": 0.005
+   "i_inject_max_a": 0.005,
+   "c_in_f": 3e-12
   },
   "6": {
    "name": "SDA",
@@ -71,7 +72,8 @@
    "drive": "open_drain",
    "v_max_v": 6.0,
    "v_rel_max_v": null,
-   "i_max_a": 0.01
+   "i_max_a": 0.01,
+   "c_in_f": 3e-12
   },
   "7": {
    "name": "A0",
@@ -102,7 +104,8 @@
   "tj_max_c": 150,
   "rth_ja_k_per_w": 135.4,
   "t_min_c": -25,
-  "t_max_c": 85
+  "t_max_c": 85,
+  "f_scl_max_hz": 400000.0
  },
  "hints": [
   "never more than 26 V on the device (7.5 note 2); IN+ and IN– withstand 0–26 V whether VS is applied or not",
@@ -118,7 +121,8 @@
   "TI INA219 Zerø-Drift, Bidirectional Current/Power Monitor With I2C Interface, SBOS448G (August 2008, revised December 2015), p. 6 7.5 continued: SDA VOL max 0.4 V at 3 mA; operating supply range 3–5.5 V; quiescent current max 1 mA (idd_max_a); 7.6: fSCL 0.001–0.4 MHz fast mode, 0.001–2.56 MHz high-speed mode",
   "TI INA219 Zerø-Drift, Bidirectional Current/Power Monitor With I2C Interface, SBOS448G (August 2008, revised December 2015), p. 14 Table 1: slave address 1000000 (A1 = A0 = GND) … A0 = VS +1, A1 = VS +4; SDA/SCL states give the rest",
   "TI INA219 Zerø-Drift, Bidirectional Current/Power Monitor With I2C Interface, SBOS448G (August 2008, revised December 2015), p. 25 9.2 and p. 27 section 10: 0.1 µF ceramic bypass at VS",
-  "TI INA219 SBOS448G, 7.5 Electrical Characteristics: quiescent current max 1 mA (power-down 15 µA) (icc_a, behaviour logic)"
+  "TI INA219 SBOS448G, 7.5 Electrical Characteristics: quiescent current max 1 mA (power-down 15 µA) (icc_a, behaviour logic)",
+  "f_scl_max_hz 400 kHz: 7.6 bus timing diagram definitions, p. 6, SCL operating frequency, fast mode 0.001–0.4 MHz – the high-speed mode up to 2.56 MHz needs the HS master code and is not entered; c_in_f 3 pF on SCL and SDA: 7.5 electrical characteristics, p. 5, digital inputs, input capacitance 3 pF (typical, no maximum given) – TI INA219 SBOS448G, read 2026-10-31"
  ],
  "verified": {
   "by": "Claude (datasheet check, library draft)",
@@ -133,7 +137,8 @@
    "0.1 µF supply bypass",
    "2026-10-31: address pins with four states (low, high, sda, scl) – TI SBOS448G (revised December 2015), Table 1 INA219 Address Pins and Slave Addresses: A1, A0 each on GND, VS+, SDA or SCL give 1000000 to 1001111 – A0 adds 0/1/2/3, A1 0/4/8/12 (schema-gaps A4)",
    "2026-10-31: behaviour logic with icc_a 1 mA – the simulation draws it at the supply pin; TI INA219 SBOS448G, 7.5 Electrical Characteristics: quiescent current max 1 mA (power-down 15 µA)",
-   "2026-10-31, pin limits (schema-gaps A6, B1–B3, C1–C4): TI SBOS448G 7.1: SDA GND − 0.3 V to 6 V regardless of VS (v_rel_max_v null), SCL GND − 0.3 V to VS + 0.3 V (the entry's vin_rel_max_v), input current into any pin 5 mA (i_inject_max_a on SCL, A0, A1), open-drain digital output current 10 mA (SDA i_max_a)"
+   "2026-10-31, pin limits (schema-gaps A6, B1–B3, C1–C4): TI SBOS448G 7.1: SDA GND − 0.3 V to 6 V regardless of VS (v_rel_max_v null), SCL GND − 0.3 V to VS + 0.3 V (the entry's vin_rel_max_v), input current into any pin 5 mA (i_inject_max_a on SCL, A0, A1), open-drain digital output current 10 mA (SDA i_max_a)",
+   "2026-10-31: f(SCL) fast mode 0.4 MHz (HS 2.56 MHz not entered); input capacitance 3 pF typ (maker-coverage FT-16)"
   ],
   "open": [
    "address pins tied to SDA or SCL (0x42, 0x43, 0x48…) cannot be expressed in the entry's address model",

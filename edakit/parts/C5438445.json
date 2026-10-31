@@ -81,7 +81,9 @@
   }
  },
  "values": {
-  "idd_max_a": 0.0025
+  "idd_max_a": 0.0025,
+  "behavior": "logic",
+  "icc_a": 0.0025
  },
  "limits": {
   "vdd_max_v": 3.63,
@@ -116,7 +118,8 @@
   "p. 11: I2S slave, 24-bit two's complement, SD tri-stated outside its channel, 100 kΩ pull-down on SD; Figure 7: 0.1 µF at VDD",
   "p. 15 Power-Supply Decoupling; p. 17 land pattern (pads 0.40 × 0.60 mm, pitch 1.05 mm, 2.66 mm between rows, sound hole); p. 19 outline, height 0.88 / 0.98 / 1.05 mm (body h_mm = max)",
   "roles bclk, ws, sd as named by the net fn i2s.bclk, i2s.ws, i2s.sd (handbook 3, circuit.FN_LINES); no pin functions: functions is an MCU's pin mux – on this slave it would satisfy REQ.function on the net by itself",
-  "LCSC product data C5438445 (2026-10-31): 0 pcs, product cycle 'normal', no end-of-life note; JLCPCB (edakit stock, 2026-10-31): Extended Part, 0 pcs"
+  "LCSC product data C5438445 (2026-10-31): 0 pcs, product cycle 'normal', no end-of-life note; JLCPCB (edakit stock, 2026-10-31): Extended Part, 0 pcs",
+  "InvenSense INMP441 data sheet DS-INMP441-00 Revision 1.1 (05/21/2014), p. 4 Table 1: supply current normal mode at VDD = 3.3 V 2.2 mA typ., 2.5 mA max. – icc_a = 2.5 mA (behaviour logic); p. 11: 'The output data pin (SD) is tri-stated when it is not actively driving I²S output data' – SD rests released"
  ],
  "notes": "I2S MEMS microphone (slave), bottom port. Data sheet and LCSC do not say end of life; the data sheet says only that the 7-inch reel INMP441ACEZ-R7 is to be discontinued.",
  "verified": {
@@ -130,7 +133,8 @@
    "abs. max VDD 3.63 V, digital inputs VDD + 0.3 V or 3.63 V; supply 1.62-3.63 V; IS 2.5 mA max at 3.3 V",
    "VIH 0.7 × VDD, VIL 0.25 × VDD on SCK, WS, L/R; SCK up to 3.2 MHz",
    "SD tri-state with a 100 kΩ pull-down (Table 6, p. 11); VDD 0.1 µF X7R (p. 8, 15)",
-   "temperature −40 … +85 °C; height 1.05 mm max"
+   "temperature −40 … +85 °C; height 1.05 mm max",
+   "2026-10-31: behaviour logic with icc_a 2.5 mA from DS-INMP441-00 Rev 1.1, Table 1 (normal mode, 3.3 V, max; read now)"
   ],
   "open": [
    "end of life at TDK: neither the data sheet (Rev 1.1, 2014) nor LCSC says so; TDK's product page https://invensense.tdk.com/products/digital/inmp441/ answered 'Page Not Found' and its data sheet page loads the PDF only in a browser – the status was not read",
@@ -142,7 +146,7 @@
    "CHIPEN thresholds: not given (Table 2 names L/R, WS, SCK only)",
    "SD pull-down: 100 kΩ 'sufficient' – no window given, the need has no bounds",
    "acoustic data (sensitivity −26 dBFS, SNR 61 dBA, AOP 120 dB SPL), WS range 7.8-50 kHz, SCK minimum 0.5 MHz, start-up 2^18 SCK cycles: no entry fields",
-   "no behaviour model: the simulation draws no supply current from the microphone (idd_max_a is read only by the cc_sink model)"
+   "injection current (i_inject_max_a, maker-coverage CK-5): none in the datasheet – InvenSense DS-INMP441-00 Rev 1.1: absolute maximum ratings without a current into the pins (read 2026-10-31); LIM.v/inject holds the pin's voltage alone"
   ]
  }
 }

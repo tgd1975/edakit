@@ -1,0 +1,125 @@
+{
+ "lcsc": "C2848620",
+ "mpn": "TYPE-C-31-M-13C",
+ "manufacturer": "Korean Hroparts Elec",
+ "kind": "connector",
+ "package": "USB-C receptacle, 16 pins, SMD with THT shell",
+ "footprint": "TYPE-C-31-M-13C",
+ "datasheet": {
+  "url": "https://datasheet.lcsc.com/datasheet/pdf/395edbcd3d35a8808101b652e20114c8.pdf",
+  "pinout_page": 1
+ },
+ "pins": {
+  "A1": {
+   "name": "GND",
+   "type": "ground",
+   "role": "gnd"
+  },
+  "A4": {
+   "name": "VBUS",
+   "type": "passive",
+   "role": "vbus"
+  },
+  "A5": {
+   "name": "CC1",
+   "type": "passive",
+   "role": "cc1"
+  },
+  "A6": {
+   "name": "D+",
+   "type": "passive",
+   "role": "dp_a"
+  },
+  "A7": {
+   "name": "D-",
+   "type": "passive",
+   "role": "dn_a"
+  },
+  "A8": {
+   "name": "SBU1",
+   "type": "passive",
+   "role": "sbu1"
+  },
+  "A9": {
+   "name": "VBUS",
+   "type": "passive",
+   "role": "vbus"
+  },
+  "A12": {
+   "name": "GND",
+   "type": "ground",
+   "role": "gnd"
+  },
+  "B1": {
+   "name": "GND",
+   "type": "ground",
+   "role": "gnd"
+  },
+  "B4": {
+   "name": "VBUS",
+   "type": "passive",
+   "role": "vbus"
+  },
+  "B5": {
+   "name": "CC2",
+   "type": "passive",
+   "role": "cc2"
+  },
+  "B6": {
+   "name": "D+",
+   "type": "passive",
+   "role": "dp_b"
+  },
+  "B7": {
+   "name": "D-",
+   "type": "passive",
+   "role": "dn_b"
+  },
+  "B8": {
+   "name": "SBU2",
+   "type": "passive",
+   "role": "sbu2"
+  },
+  "B9": {
+   "name": "VBUS",
+   "type": "passive",
+   "role": "vbus"
+  },
+  "B12": {
+   "name": "GND",
+   "type": "ground",
+   "role": "gnd"
+  },
+  "S1": {
+   "name": "SHIELD",
+   "type": "mechanical",
+   "role": "shell"
+  }
+ },
+ "values": {},
+ "limits": {
+  "i_max_a": 5.0,
+  "v_max_v": 20,
+  "t_min_c": -30,
+  "t_max_c": 80
+ },
+ "sources": [
+  "Korean Hroparts (HRO) TYPE-C-31-M-13C drawing, Rev. A (2021-03-06), 1 sheet, LCSC's copy https://datasheet.lcsc.com/datasheet/pdf/395edbcd3d35a8808101b652e20114c8.pdf, read 2026-10-31 (read from the drawing image)",
+  "pin table: A1/A12/B1/B12 GND, A4/A9/B4/B9 VBUS, A5 CC1, B5 CC2, A6 DP1, A7 DN1, B6 DP2, B7 DN2, A8 SBU1, B8 SBU2; pin names as the Corne's KiCad symbol Connector:USB_C_Receptacle_USB2.0 (D+, D−, SHIELD for the shell, S1)",
+  "note 4: current rating 5 A, voltage rating 20 V; note 5: operating temperature −30 … +80 °C; contact resistance not stated"
+ ],
+ "verified": {
+  "by": "Claude (datasheet check, open-design transcription)",
+  "date": "2026-10-31",
+  "datasheet": "Korean Hroparts (HRO) TYPE-C-31-M-13C drawing, Rev. A (2021-03-06), 1 sheet",
+  "datasheet_sha256": "9f01f41fb0d0bc27f3b880ea4a26839718bef948b969004f4b87db4df0ae67a0",
+  "checked": [
+   "pin table",
+   "current and voltage rating",
+   "temperature range"
+  ],
+  "open": [
+   "no contact resistance given"
+  ]
+ }
+}

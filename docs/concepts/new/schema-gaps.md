@@ -125,10 +125,10 @@ Built in seven worktrees (W1–W7) and merged; each item with a test that is red
 | A1–A5, A7 | built | entry `matrix`, pin `drive = "bridge"`, pin `biased`, address pins `{low, high, sda, scl}`, REQ.function on MCU and module pins only, behaviour `matrix_driver` (W1) |
 | A6, B1–B3, C1–C4 | built | pin `ref`, `rel_ref`, `v_rel_max_v`, `v_max_powered_v`, `v_min_v`, `i_max_a`, `i_inject_max_a`, `r_load_min_ohm`, `c_load_max_f`; entry `supply_order`, `i_group_max_a`; grades LIM.v/powered, LIM.v/order, LIM.i/pin, REQ.value/load (W2) |
 | D1, D2, D4, D5 | built | `needs.capacitor.to`, `needs.crystal` and kind `crystal`, `needs.capacitor.v_min_v`, a capacitor window on the parts layout.near places (W3) |
-| D3 | in part | `needs.tie`, `no_pull`, `no_series`, `float_ok = false` built; the BME280's CSB and SDO, which hold only in I2C mode, wait for an entry with `configs` (F1 exists now) |
-| E1 | in part | `logic` with `icc_a` on AT24C32D, INA219, DS18B20; the model holds every output low, so parts with outputs wait for a `logic` that lets released outputs go |
-| E2, E3, E4, E6 | built | behaviours `bridge`, `charger`, `protection`, `buck_boost`; roles `gate_2`/`source_2`/`drain_2` for a dual MOSFET (W4) – not modelled: a charger's termination, the DW01A's hysteresis and delays |
-| E5 | in part | behaviour `pd_sink` with REQ.value/pd_request (W5) – PG, the CC lines and the negotiation not modelled |
+| D3 | built | `needs.tie`, `no_pull`, `no_series`, `float_ok = false`; the BME280 (C92489) with configs `i2c` (its default), `spi4` and `spi3` from Bosch's datasheet: CSB tied to VDDIO (a `tie` with `when`) and SDO not floating only in I²C, the address and the roles `sda`/`scl` only there, SDO a tri-state output in 4-wire SPI and not connected in 3-wire SPI (R6); no other library entry waits for configs of this kind |
+| E1 | in part | behaviour `logic`: an open-drain output released, a tri-state output released unless its part ties every enable pin active, a push-pull output low – or high, low or off as the pin's `state` or the component's `states` say, high from the pin's supply; `icc_a` at the supply pin or per supply pin by name; STRUCT.entry on `states` (R6). `logic` with `icc_a` from the datasheets on BME280, INA226, MPU-6050, DS3231, MAX6675, MAX31855, HX711, INMP441, MAX3485, MAX485, PCF8574, PCF8574A, CH340G, CH340C besides AT24C32D, INA219, DS18B20 – not: the ACS712 (allegromicro.com is not among the hosts this build could read, and its VIOUT is an analog output no state describes), the CP2102 (its `ldo` model carries its supply current), the amplifiers (PAM8403, MAX98357A), the smart LEDs (WS2812B, SK6812, SK9822) and the SSD1306 panel – not part of this pass, their outputs need more than a fixed state; internal pulls, an RS-485 driver's bus current, the HX711's regulator are not modelled |
+| E2, E3, E4, E6 | built | behaviours `bridge`, `charger`, `protection`, `buck_boost`; roles `gate_2`/`source_2`/`drain_2` for a dual MOSFET (W4) – not modelled: a charger's termination, the DW01A's hysteresis and delays; by decision 17 no state model – HINT.charge_termination and HINT.protection_timing name them where the part is used, `edakit check --coverage` lists the part as not simulated, HINT.power_path a load on the charging cell (R1) |
+| E5 | built | behaviour `pd_sink` with REQ.value/pd_request (W5) – PG, the CC lines and the negotiation not modelled: no state model by decision 17, HINT.pd_negotiation names them where the part is used, `edakit check --coverage` lists the part as not simulated (R1) |
 | F1–F3 | built | entry `configs`, `config_default`, a component's `config`, needs with `when` (W6) |
 | I1, I7 | built | LIM.v against a part's own ground pin; LIM.v/polarized leaves signal coupling to stage E (W1) |
 | I2–I4 | built | sim.json source with `outputs`, relay roles per contact set, behaviours `photomos`, `pass_gate`, kind `esd_array` (W5) |
@@ -136,6 +136,6 @@ Built in seven worktrees (W1–W7) and merged; each item with a test that is red
 | H | built | STRUCT.entry/symbol and `symbol_differs` (W7); the report `upstream/issue-6-easyeda-symbols.md`, not sent – the owner sends it |
 | G | open | not part of decision 10 |
 
-Left for the owner: the MPU-6050's SCL/SDA held to VLOGIC + 0.5 V (the VIH range, stricter than the absolute
-VDD + 0.5 V) – recorded as open in its entry; the 10 µA a contact in a signal path may need at most (maker-coverage
-CK-30, from forums, not a datasheet); whether the INA226's Alert may be pulled above VS (its datasheet does not say).
+Decided on the owner's behalf (rules-at-scale.md, decisions 13–15): the MPU-6050's SCL/SDA stay held to
+VLOGIC + 0.5 V; the 10 µA a contact in a signal path may need at most stays, sourced to the Hongfa HFD4's
+minimum applicable load; the INA226's Alert is held to VS + 0.3 V like SCL.

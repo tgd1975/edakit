@@ -1,0 +1,99 @@
+{
+ "lcsc": "C5126849",
+ "mpn": "C0603C475K9PACTU",
+ "manufacturer": "KEMET",
+ "kind": "capacitor",
+ "package": "0603",
+ "footprint": "C0603",
+ "jlc_class": "Extended Part",
+ "datasheet": {
+  "url": "https://search.kemet.com/download/specsheet/C0603C475K9PACTU",
+  "pinout_page": null
+ },
+ "pins": {
+  "1": {
+   "name": "1",
+   "type": "passive",
+   "role": "1"
+  },
+  "2": {
+   "name": "2",
+   "type": "passive",
+   "role": "2"
+  }
+ },
+ "values": {
+  "value_f": 4.7e-06,
+  "dielectric": "X5R",
+  "tolerance": 0.1,
+  "dc_bias": [
+   [
+    0,
+    1.0
+   ],
+   [
+    1,
+    0.97
+   ],
+   [
+    2,
+    0.89
+   ],
+   [
+    3,
+    0.72
+   ],
+   [
+    4,
+    0.54
+   ],
+   [
+    5,
+    0.43
+   ],
+   [
+    6.2,
+    0.35
+   ]
+  ],
+  "esr_ohm": [
+   null,
+   0.02,
+   null
+  ]
+ },
+ "limits": {
+  "v_max_v": 6.3,
+  "t_min_c": -55,
+  "t_max_c": 85
+ },
+ "compliance": {
+  "rohs": true,
+  "source": "KEMET part sheet C0603C475K9PACTU (generated 2026-10-31) p. 1: RoHS Yes; LCSC product data C5126849 (2026-10-31): isEnvironment true, RoHS certificate ROHS3"
+ },
+ "sources": [
+  "KEMET part sheet C0603C475K9PACTU (YAGEO group), generated 2026-10-31, 4 pages, https://search.kemet.com/download/specsheet/C0603C475K9PACTU, read 2026-10-31 – the maker's sheet of this part; p. 2 'Simulations' is KEMET's K-SIM: 'These are simulations. This is not a specification!' – the typical response of the part type (p. 4)",
+  "p. 1 Specifications: capacitance 4.7 µF (1 kHz, 1.0 Vrms), tolerance 10 %, voltage DC 6.3 VDC, temperature range −55 … +85 °C, X5R; case 0603 – value_f, tolerance, v_max_v, t_min_c, t_max_c",
+  "dc_bias: p. 2, graph 'Capacitance Change vs. DC Voltage Bias' (0 … 6.3 VDC), read from the graph ±10 %: 0 V 0 %, 1 V −3 %, 2 V −11 %, 3 V −28 %, 4 V −46 %, 5 V −57 %, 6.2 V (the curve's end) −65 % – the ratios entered are 1 plus the change",
+  "esr_ohm: p. 2, graph 'Impedance and ESR', ESR at 100 kHz about 20 mΩ, read from the graph ±10 % – typical (the middle of [min, typ, max]); minimum about 3 mΩ near 1.5 MHz",
+  "KEMET Surface Mount Multilayer Ceramic Chip Capacitors, X5R Dielectric, 4 – 50 VDC (Commercial Grade), C1006_X5R_SMD (10/3/2024), 21 pages, LCSC's copy https://datasheet.lcsc.com/datasheet/pdf/6e4f3d8082ed999c900dfeea84d88cb1.pdf?productCode=C5126849, read 2026-10-31 – ordering information p. 1: C 0603 C 475 K 9 P A C TU = ceramic, 0603, standard, 4.7 µF, ±10 %, 9 = 6.3 V, P = X5R, A = N/A, C = 100 % matte Sn, TU = 7\" reel unmarked",
+  "LCSC product data C5126849 (wmsc.lcsc.com, 2026-10-31): KEMET C0603C475K9PACTU, 4.7 µF, X5R, ±10 %, 6.3 V, 0603; JLCPCB catalogue (edakit part search, 2026-10-31): C5126849, Extended, 4 197 pcs"
+ ],
+ "notes": "4.7 µF X5R 6.3 V 0603 with the maker's DC-bias curve (FT-9): the capacitance left at the DC across it counts where a minimum is judged and in the transient. Library draft.",
+ "verified": {
+  "by": "Claude (datasheet check, library draft)",
+  "date": "2026-10-31",
+  "datasheet": "KEMET part sheet C0603C475K9PACTU, generated 2026-10-31 (search.kemet.com)",
+  "datasheet_sha256": "e078f67263bf5cc07f3eae14fd7f999ab78b2fb03ad2469c50993c611c95e318",
+  "checked": [
+   "p. 1: 4.7 µF, 10 %, 6.3 VDC, X5R, −55 … +85 °C, case 0603",
+   "p. 2: DC-bias and ESR curves read from the graphs at the points entered",
+   "ordering code against the catalogue C1006_X5R_SMD p. 1: C 0603 C 475 K 9 P A C TU = ceramic, 0603, standard, 4.7 µF, ±10 %, 9 = 6.3 V, P = X5R, A = N/A, C = 100 % matte Sn, TU = 7\" reel unmarked"
+  ],
+  "open": [
+   "pins and footprint C0603 as the library's other 0603 capacitors – the EasyEDA symbol of C5126849 was not read (easyeda.com refused the request, 403)",
+   "the curves are KEMET's simulation of the typical part, not a specification: no spread between parts",
+   "the example of maker-coverage FT-9 (4.7 µF, 6.3 V, 0603 X5R at 5 V: about 0.33 µF, after ADI tutorial 5527) does not hold for this part: KEMET's curve leaves 43 % at 5 V, about 2.0 µF"
+  ]
+ }
+}

@@ -208,7 +208,8 @@
    "VDD and PVDD capacitor minima come from 'typically 1.0 µF' and '20 µF or greater … recommended', not from a stated minimum",
    "NC (pin 9) is drawn to GND in the typical application circuit, 'No Connect' in the pin table",
    "no p_max_w (power dissipation) in the data sheet",
-   "no behaviour model: the simulation draws no supply current from the amplifier (iq_a is read by no model here)"
+   "no behaviour model: the simulation draws no supply current from the amplifier (iq_a is read by no model here)",
+   "injection current (i_inject_max_a, maker-coverage CK-5): none in the datasheet – Diodes PAM8403 DS36439: absolute maximum ratings without a current into the pins (read 2026-10-31); LIM.v/inject holds the pin's voltage alone"
   ]
  }
 }

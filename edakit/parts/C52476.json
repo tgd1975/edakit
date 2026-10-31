@@ -189,18 +189,22 @@
  "values": {
   "vih_v": 3.5,
   "vil_v": 0.8,
-  "behavior": "matrix_driver"
+  "behavior": "matrix_driver",
+  "spi_modes": [
+   0,
+   3
+  ]
  },
  "limits": {
   "vdd_max_v": 6,
   "vdd_op_min_v": 4.0,
   "vdd_op_max_v": 5.5,
-  "f_max_hz": 10000000,
   "p_max_w": 0.941,
   "rth_ja_k_per_w": 85,
   "tj_max_c": 150,
   "t_min_c": -40,
-  "t_max_c": 85
+  "t_max_c": 85,
+  "f_sck_max_hz": 10000000
  },
  "hints": [
   "logic inputs DIN, CLK, LOAD: VIH ≥ 3.5 V, VIL ≤ 0.8 V at V+ = 5 V ± 10 % (electrical characteristics, p. 3)",
@@ -219,7 +223,8 @@
   "Table 12, p. 11: θJA 85 °C/W (24 wide SO), TJ max. +150 °C",
   "p_max_w 0.941: the table's heading names TA = +85 °C while its derating starts above +70 °C; 941 mW equals (150 − 70) °C / 85 °C/W – the value at +70 °C",
   "pin names, footprint and class: EasyEDA library data of C52476 via edakit part import, 2026-10-31",
-  "LCSC product data C52476 (2026-10-31): 3 874 pcs; RoHS certificate (ROHS3)"
+  "LCSC product data C52476 (2026-10-31): 3 874 pcs; RoHS certificate (ROHS3)",
+  "f_sck_max_hz 10 MHz: timing characteristics tCP ≥ 100 ns, p. 3, and pin description of CLK, '10MHz maximum rate', p. 5; spi_modes [0, 3]: DIN 'is loaded into the internal 16-bit shift register on CLK's rising edge' (pin description, p. 5; serial-addressing modes: 'regardless of the state of LOAD') – the modes that sample on the rising edge, CPOL 0 with CPHA 0 and CPOL 1 with CPHA 1 – Maxim MAX7219/MAX7221 19-4452 Rev 4, read 2026-10-31"
  ],
  "compliance": {
   "rohs": true,
@@ -236,7 +241,8 @@
    "θJA 85 °C/W, TJ 150 °C, 941 mW (wide SO); −40 … +85 °C (E grade)",
    "10 µF + 0.1 µF at V+, both GND pins connected, RSET from ISET to V+ (Table 11)",
    "2026-10-31: behavior matrix_driver – Maxim 19-4452 Rev 4 (7/03): multiplex scan circuitry, segment and digit drivers, display scan rate 500-1300 Hz with 8 digits scanned; LEDs between its SEG and DIG pins have no DC state, the simulation leaves them out of SIM.state and SIM.driver (schema-gaps A7)",
-   "2026-10-31, pin limits (schema-gaps A6, B1–B3, C1–C4): Maxim 19-4452 Rev 4, absolute maximum ratings: DIG 0–DIG 7 sink current 500 mA, SEG A–G, DP source current 100 mA (i_max_a); DIN, CLK, LOAD, CS −0.3 V to 6 V regardless of V+ (v_rel_max_v null); all other pins −0.3 V to V+ + 0.3 V (v_rel_max_v 0.3)"
+   "2026-10-31, pin limits (schema-gaps A6, B1–B3, C1–C4): Maxim 19-4452 Rev 4, absolute maximum ratings: DIG 0–DIG 7 sink current 500 mA, SEG A–G, DP source current 100 mA (i_max_a); DIN, CLK, LOAD, CS −0.3 V to 6 V regardless of V+ (v_rel_max_v null); all other pins −0.3 V to V+ + 0.3 V (v_rel_max_v 0.3)",
+   "2026-10-31: CLK 10 MHz maximum (p. 3, 5) as f_sck_max_hz; data in on CLK's rising edge: SPI modes 0 and 3 (maker-coverage FT-16)"
   ],
   "open": [
    "revision: the LCSC copy is 19-4452 Rev 4 (7/03) with the Maxim Integrated footer; analog.com gave an empty reply, so whether a newer revision exists was not checked",

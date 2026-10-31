@@ -1,0 +1,47 @@
+{
+ "lcsc": "C1525",
+ "mpn": "CL05B104KO5NNNC",
+ "manufacturer": "Samsung Electro-Mechanics",
+ "kind": "capacitor",
+ "package": "0402",
+ "footprint": "C_0402_1005Metric",
+ "datasheet": {
+  "url": "https://datasheet.lcsc.com/datasheet/pdf/02336ea48ea44ca18c72517dd3cb7b47.pdf"
+ },
+ "pins": {
+  "1": {
+   "name": "1",
+   "type": "passive",
+   "role": "1"
+  },
+  "2": {
+   "name": "2",
+   "type": "passive",
+   "role": "2"
+  }
+ },
+ "values": {
+  "value_f": 1e-07,
+  "dielectric": "X7R",
+  "tolerance": 0.1
+ },
+ "limits": {
+  "v_max_v": 16
+ },
+ "sources": [
+  "Samsung Electro-Mechanics MLCC catalogue (LCSC's copy for C1525 and C52923), part numbering system and product lineup, https://datasheet.lcsc.com/datasheet/pdf/02336ea48ea44ca18c72517dd3cb7b47.pdf, read 2026-10-31",
+  "part numbering: CL, 05 = 0402, dielectric code (A X5R, B X7R), capacitance code, tolerance code (K ±10 %, M ±20 %), rated voltage code (Q 6.3 V, O 16 V, A 25 V); product lineup: CL05B104KO5NNN 100 nF 16 V 10 %, CL05A105KA5NQN 1 µF 25 V 10 %, CL05A106MQ5NUN 10 µF 6.3 V 20 %"
+ ],
+ "verified": {
+  "by": "Claude (datasheet check, open-design transcription)",
+  "date": "2026-10-31",
+  "datasheet": "Samsung Electro-Mechanics MLCC catalogue (LCSC's copy for C1525 and C52923), part numbering system and product lineup",
+  "datasheet_sha256": "96baebe4bd0ce363e87be28b5b003f511f1502e084a6fc4f02333ded56c808f6",
+  "checked": [
+   "value, dielectric, tolerance and rated voltage from the part number"
+  ],
+  "open": [
+   "DC-bias derating of the capacitance not read"
+  ]
+ }
+}

@@ -226,7 +226,8 @@
   "I2C timing 3.3.5.1, p. 17: tcycle ≥ 2.5 µs; I2C slave address 0111100b, 0111101b with D/C# (pin 15) at VDD: 3.3.5.2, p. 18",
   "power-up/-down sequence and note 13: 4.2, p. 19",
   "pin names, footprint and class: EasyEDA library data of C2890596 via edakit part import, 2026-10-31",
-  "LCSC product data C2890596 (2026-10-31): 817 pcs at LCSC (JLCPCB assembly stock 0 the same day); RoHS certificate"
+  "LCSC product data C2890596 (2026-10-31): 817 pcs at LCSC (JLCPCB assembly stock 0 the same day); RoHS certificate",
+  "configs i2c f_scl_max_hz 400 kHz: 3.3.5.1 I2C interface timing, tcycle ≥ 2.5 µs, p. 21; configs spi4 f_sck_max_hz 10 MHz: 3.3.3.1 serial interface timing (4-wire SPI), tcycle ≥ 100 ns, p. 17; spi_modes [0, 3]: the same page (read from the graph) – SDIN taken at SCLK's rising edge (the arrows of the lower figure), SCLK drawn high before the first bit in the upper figure and low in the lower one – Wisevision specification Ver. A, read 2026-10-31"
  ],
  "compliance": {
   "rohs": true,
@@ -241,12 +242,13 @@
    "30 pins (1.5) = EasyEDA symbol pin numbers and names; footprint: 30 pads in one row at 0.7 mm pitch",
    "VDD abs. max. 4 V, operating 1.65–3.3 V; VBAT abs. max. 5 V; VCC abs. max. 16 V; VIH 0.8 VDD, VIL 0.2 VDD; −40 … +85 °C",
    "I2C address 0x3C, +1 with D/C# (pin 15) high; SDA on D1 (pin 19) tied to D2",
-   "2026-10-31: configs i2c and spi4 from the Wisevision specification Ver. A, 1.5 (BS0–BS2 table: I2C 0/1/0, 4-wire SPI 0/0/0; D0 SCL/SCLK, D1 SDIN or SDA with D2; R/W#, E/RD# and unused data pins to VSS) – the I2C address only in i2c"
+   "2026-10-31: configs i2c and spi4 from the Wisevision specification Ver. A, 1.5 (BS0–BS2 table: I2C 0/1/0, 4-wire SPI 0/0/0; D0 SCL/SCLK, D1 SDIN or SDA with D2; R/W#, E/RD# and unused data pins to VSS) – the I2C address only in i2c",
+   "2026-10-31: I2C tcycle 2.5 µs (p. 21), 4-wire SPI tcycle 100 ns and the rising edge (p. 17) (maker-coverage FT-16)"
   ],
   "open": [
    "VBAT and VCC ranges depend on whether the internal DC/DC is used: only their absolute maxima are pin limits, the operating ranges are hints; VCC is typed passive because it is a supply input in one mode and the DC/DC's output in the other",
    "charge-pump capacitors between C1P–C1N and C2P–C2N: needs has no form for a capacitor between two pins",
-   "no input voltage limit relative to VDD is given (vin_rel_max_v stays out); the SPI and parallel timing and the interface frequency depend on the mode (no single f_max_hz)",
+   "no input voltage limit relative to VDD is given (vin_rel_max_v stays out); the SPI and parallel timing depend on the mode – the clocks are per config (f_scl_max_hz, f_sck_max_hz)",
    "D0–D2 carry no sda/scl roles because their function depends on BS0–BS2; the address names its bus pin (on: 19); REQ.missing's I2C pull-ups follow from nets named SDA/SCL",
    {
     "text": "pin 1 of the FPC against pad 1 of the footprint OLED_0.96-30P-P0.70-12864 and the panel's orientation",
@@ -338,6 +340,9 @@
     "20": {
      "role": "sda"
     }
+   },
+   "limits": {
+    "f_scl_max_hz": 400000.0
    }
   },
   "spi4": {
@@ -415,7 +420,16 @@
      "role": "sdi"
     }
    },
-   "address": null
+   "address": null,
+   "limits": {
+    "f_sck_max_hz": 10000000.0
+   },
+   "values": {
+    "spi_modes": [
+     0,
+     3
+    ]
+   }
   }
  }
 }

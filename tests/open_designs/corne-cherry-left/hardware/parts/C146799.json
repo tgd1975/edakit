@@ -1,0 +1,79 @@
+{
+ "lcsc": "C146799",
+ "mpn": "NCP1117LPST33T3G",
+ "manufacturer": "onsemi",
+ "kind": "ic",
+ "package": "SOT-223",
+ "footprint": "SOT-223-3_TabPin2",
+ "datasheet": {
+  "url": "https://datasheet.lcsc.com/datasheet/pdf/cba8161ca5138f1311bb5da5ef1442be.pdf",
+  "pinout_page": 2
+ },
+ "pins": {
+  "1": {
+   "name": "GND",
+   "type": "ground",
+   "role": "gnd",
+   "hint": "Adj (GND): ground on the fixed versions (table 1)"
+  },
+  "2": {
+   "name": "VO",
+   "type": "power_output",
+   "role": "vout",
+   "needs": [
+    {
+     "what": "capacitor",
+     "c_min_f": 1e-05,
+     "source": "onsemi NCP1117LP datasheet, Rev. 4 (December 2014), publication order number NCP1117LP/D, table 1: 'A minimum of 10 µF capacitor (20 mΩ ≤ ESR ≤ 20 Ω) must be connected from this pin to ground to insure stability'"
+    }
+   ],
+   "hint": "the tab is pin 2 (p. 1)"
+  },
+  "3": {
+   "name": "VI",
+   "type": "power_in",
+   "role": "vin",
+   "v_max_v": 18
+  }
+ },
+ "values": {
+  "behavior": "ldo",
+  "vout_v": 3.3,
+  "dropout_v": 1.13,
+  "iq_a": 0.0007
+ },
+ "limits": {
+  "vin_max_v": 18,
+  "i_out_max_a": 1.0,
+  "tj_max_c": 150,
+  "t_min_c": 0,
+  "t_max_c": 125,
+  "rth_ja_k_per_w": 108
+ },
+ "hints": [
+  "dropout 1.3 V typ, 1.4 V max at 1 A (table 3); about 1.13 V at 0.1 A (figure 11, typical) – from 5 V through a Schottky the output reaches 3.3 V only while VIN − VOUT covers it",
+  "operating ambient 0 … 125 °C (table 2) – no rating below 0 °C"
+ ],
+ "sources": [
+  "onsemi NCP1117LP datasheet, Rev. 4 (December 2014), publication order number NCP1117LP/D, LCSC's copy https://datasheet.lcsc.com/datasheet/pdf/cba8161ca5138f1311bb5da5ef1442be.pdf, read 2026-10-31",
+  "p. 1 and table 1: SOT-223 pin 1 Adjust/Ground, 2 Output, 3 Input, the tab on pin 2; pin names as the Corne's KiCad symbol Regulator_Linear:NCP1117-3.3_SOT223 (GND, VO, VI)",
+  "table 2: Vin −0.3 … 18 V; operating junction and ambient 0 … 125 °C; TJ(max) 150 °C; RθJA 108 °C/W (100 × 100 mm, 1 oz)",
+  "table 3: NCP1117-3.3 output 3.235 / 3.3 / 3.365 V at 4.8 V ≤ Vin ≤ 12 V, 10 mA; dropout 1.3 typ / 1.4 V max at 1 A; current limit ≥ 1.1 A; quiescent current fixed 550 µA typ, 700 µA max (iq_a)",
+  "figure 11: dropout vs. output current, typical at 25 °C – 1.13 V at 0.1 A, 1.2 V at 1 A (dropout_v 1.13: the board's current is far below 1 A; read from the graph)"
+ ],
+ "verified": {
+  "by": "Claude (datasheet check, open-design transcription)",
+  "date": "2026-10-31",
+  "datasheet": "onsemi NCP1117LP datasheet, Rev. 4 (December 2014), publication order number NCP1117LP/D",
+  "datasheet_sha256": "777902f4af1bc92e6970a1f3e4c3159ee6589f3afbd934448b23d195ec38d2a5",
+  "checked": [
+   "pinout",
+   "maximum ratings",
+   "output voltage, dropout, quiescent current",
+   "output capacitor"
+  ],
+  "open": [
+   "dropout_v is the typical value at 0.1 A read from figure 11; the guaranteed maximum is 1.4 V at 1 A only"
+  ]
+ }
+}

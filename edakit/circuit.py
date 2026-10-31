@@ -27,6 +27,62 @@ def polarized(part):
         p.get("role") == "plus" for p in ((part or {}).get("pins") or {}).values()))
 
 
+CLASS_2 = ("X5R", "X7R", "X7S", "X6S", "Y5V")      # ceramics whose capacitance falls with the DC across them (FT-9)
+
+
+def bias_ratio(part, volts):
+    """The share of its nominal capacitance a capacitor keeps at `volts` DC across it (either polarity): linear between
+    the points of values.dc_bias [[V, ratio], …] – the maker's curve –, the first point's ratio below it and the last
+    one's beyond it; 1 without a curve (maker-coverage FT-9)."""
+    curve = sorted(p for p in values(part).get("dc_bias") or [] if isinstance(p, list) and len(p) == 2)
+    if not curve or volts is None:
+        return 1.0
+    v = abs(volts)
+    if v <= curve[0][0]:
+        return curve[0][1]
+    for (v0, r0), (v1, r1) in zip(curve, curve[1:]):
+        if v0 <= v <= v1:
+            return r0 + (r1 - r0) * (v - v0) / (v1 - v0) if v1 > v0 else r1
+    return curve[-1][1]
+
+
+def capacitance(part, volts=0.0):
+    """value_f of a capacitor at `volts` DC across it – its nominal times bias_ratio –, None without value_f."""
+    c = values(part).get("value_f")
+    return c * bias_ratio(part, volts) if isinstance(c, (int, float)) and not isinstance(c, bool) else None
+
+
+def esr_ends(part):
+    """(lowest, highest) ESR of a capacitor's values.esr_ohm – one number, or [min, typ, max] with null where the maker
+    gives none: the lowest is the minimum, else the typical, else the maximum; the highest the other way round. None
+    without esr_ohm."""
+    esr = values(part).get("esr_ohm")
+    if isinstance(esr, (int, float)) and not isinstance(esr, bool):
+        return esr, esr
+    if isinstance(esr, list):
+        known = [x for x in esr if isinstance(x, (int, float)) and not isinstance(x, bool)]
+        if known:
+            return next(x for x in esr if x in known), next(x for x in reversed(esr) if x in known)
+    return None
+
+
+def net_volts(d, net):
+    """[min, max] of a net's declared range, [0, 0] for a ground without one, None where neither is known."""
+    v = (d.nets.get(net) or {}).get("v")
+    if isinstance(v, list) and len(v) == 2 and all(isinstance(x, (int, float)) for x in v) and v[0] <= v[1]:
+        return v
+    return [0, 0] if net == d.ground or net in (d.graph.get("grounds") or []) else None
+
+
+def volts_across(d, a, b):
+    """The highest DC between nets a and b by their declared ranges, None where one of them has none (FT-9: the bias
+    a capacitor between them sees at most)."""
+    ra, rb = net_volts(d, a), net_volts(d, b)
+    if ra is None or rb is None:
+        return None
+    return max(abs(ra[1] - rb[0]), abs(rb[1] - ra[0]))
+
+
 ACTIVE_TYPES = {"input", "output", "bidirectional", "power_in", "power_output", "analog", "current_sink"}
 BOOT_DRIVERS = {"output", "power_output", "ground"}   # define their net while the firmware is not running
 PASS_THROUGH = ("fuse", "switch", "button", "connector")   # pass a reversed source on unchanged
@@ -45,11 +101,11 @@ SUPPLY_R_MAX = 100                                   # a resistor up to this pas
 SWITCHERS = ("buck", "boost", "buck_boost")          # behaviour models of switching regulators (hot loop, REQ.missing)
 PIN_FUNCTION = re.compile(r"([a-z][a-z0-9]*?)(\d+)(?:\.([a-z]+))?")   # "spi0.sck", "i2c1.sda", "pwm1.a", "adc0"
 KINDS_OF_TYPE = {"microcontroller": ("ic", "module"), "regulator": ("ic", "module"),   # STRUCT.identity: graph type -> parts
-                 "transistor": ("npn", "pnp", "nmos", "pmos"), "led": ("led", "led_rgb"),   # entry kinds; any other
+                 "transistor": ("npn", "pnp", "nmos", "pmos", "njfet", "pjfet"), "led": ("led", "led_rgb"),   # entry kinds; any other
                  "switch": ("switch", "dip_switch"), "audio": ("buzzer", "speaker"),       # type: the same word
                  "ic": ("ic", "esd_array")}
 KINDS_OF_PREFIX = {"R": ("resistor", "potentiometer"), "C": ("capacitor",), "L": ("inductor",),
-                   "D": ("diode", "led", "led_rgb", "esd_array"), "Q": ("npn", "pnp", "nmos", "pmos"),
+                   "D": ("diode", "led", "led_rgb", "esd_array"), "Q": ("npn", "pnp", "nmos", "pmos", "njfet", "pjfet"),
                    "U": ("ic", "module", "esd_array"),
                    "J": ("connector",), "SW": ("switch", "button", "dip_switch"), "F": ("fuse",),
                    "BT": ("battery_holder",), "BZ": ("buzzer",), "K": ("relay", "solenoid"), "TP": ("connector",),
@@ -118,13 +174,13 @@ def resistors_to(d, net, targets):
 def feedback_vout(d, des):
     """(vout, R1, R2) of an adjustable regulator set by its divider (maker-coverage FT-5), or None: values vref_v and a
     pin with the role adj (the reference between the output and ADJ – LM317, AMS1117: VOUT = VREF × (1 + R2/R1)) or fb
-    (the reference from FB to ground – most bucks and boosts: VOUT = VREF × (1 + R1/R2)); R1 from the output (role vout)
-    to that pin, R2 from it to ground, resistors in parallel added up. The adjust pin's current (IADJ × R2) is left out,
-    as the datasheets do."""
+    (the reference from FB to ground – most bucks and boosts: VOUT = VREF × (1 + R1/R2)); R1 from the output (role vout;
+    a boost without one: the net behind the diode on its switch pin) to that pin, R2 from it to ground, resistors in
+    parallel added up. The adjust pin's current (IADJ × R2) is left out, as the datasheets do."""
     part = d.part(des) or {}
     vref = values(part).get("vref_v")
     role = next((r for r in ("adj", "fb") if d.net_of(des, r)), None)
-    out, mid = d.net_of(des, "vout"), d.net_of(des, role) if role else None
+    out, mid = regulator_output(d, des), d.net_of(des, role) if role else None
     if not is_number(vref) or not out or not mid:
         return None
 
@@ -135,6 +191,26 @@ def feedback_vout(d, des):
     if r1 is None or r2 is None:
         return None
     return (vref * (1 + r2 / r1) if role == "adj" else vref * (1 + r1 / r2)), r1, r2
+
+
+def switch_output(d, des):
+    """(net, diode) behind the rectifier on a boost converter's switch pin (role sw): the cathode's net of the one diode
+    whose anode is on it – the output of an asynchronous boost (MT3608), which is no pin of the IC (maker-coverage
+    FT-5); None where there is no such diode or more than one output."""
+    sw = d.net_of(des, "sw")
+    found = {(d.net_of(x, "cathode"), x) for x in d.comps_of_kind("diode") if sw and d.net_of(x, "anode") == sw}
+    nets = {net for net, _ in found if net and net != sw}
+    return min(found) if len(nets) == 1 and len(found) == 1 else None
+
+
+def regulator_output(d, des):
+    """A regulator's output net: its pin with the role vout, else – a boost converter without one – the net behind the
+    diode on its switch pin (switch_output)."""
+    out = d.net_of(des, "vout")
+    if out or values(d.part(des) or {}).get("behavior") != "boost":
+        return out
+    behind = switch_output(d, des)
+    return behind[0] if behind else None
 
 
 def resistor_like(d):
@@ -331,8 +407,8 @@ def value_problem(text, part, key, what):
 # --- cables ----------------------------------------------------------------------------------------------------------
 AWG_D0_MM, AWG_BASE = 0.127, 92     # the gauge's definition (ASTM B258): d(n) = 0.127 mm × 92^((36 − n) / 39)
 CABLE_OHM = 0.05                    # a wire without r_ohm_per_wire or length and gauge
-CABLE_KEYS = {"name", "from", "to", "pins", "r_ohm_per_wire", "length_m", "awg", "mm2", "l_nh_per_m", "i_max_a",
-              "notes", "about"}
+CABLE_KEYS = {"name", "from", "to", "pins", "r_ohm_per_wire", "length_m", "awg", "mm2", "l_nh_per_m", "c_pf_per_m",
+              "i_max_a", "at_m", "notes", "about"}    # at_m: where along an LED strip its wires land (sim/strip.py)
 
 
 def wire_mm2(cable):
@@ -369,7 +445,7 @@ def cable_problems(cable):
     out = []
     for k in sorted(set(cable) - CABLE_KEYS):
         out.append(f"unknown key '{k}' (known: {', '.join(sorted(CABLE_KEYS - {'name', 'from', 'to', 'pins'}))})")
-    for k in ("r_ohm_per_wire", "length_m", "mm2", "l_nh_per_m", "i_max_a"):
+    for k in ("r_ohm_per_wire", "length_m", "mm2", "l_nh_per_m", "c_pf_per_m", "i_max_a", "at_m"):
         if k in cable and not (is_number(cable[k]) and cable[k] >= 0):
             out.append(f"{k} must be a number ≥ 0, not {cable[k]!r}")
     if "awg" in cable and not (is_number(cable["awg"]) and 0 <= cable["awg"] <= 40):
@@ -383,6 +459,42 @@ def cable_problems(cable):
         out.append("length_m needs the wire's awg or mm2")
     elif gauge and "length_m" not in cable:
         out.append(f"{gauge[0]} needs the cable's length_m")
-    if "l_nh_per_m" in cable and "length_m" not in cable:
-        out.append("l_nh_per_m needs the cable's length_m")
+    for k in ("l_nh_per_m", "c_pf_per_m"):
+        if k in cable and "length_m" not in cable:
+            out.append(f"{k} needs the cable's length_m")
     return out
+
+
+# --- LED strips (maker-coverage FT-13) -------------------------------------------------------------------------------
+STRIP_KEYS = {"length_m", "pixels", "notes"}
+
+
+def strip_problems(comp):
+    """What is wrong with the `strip` table of an LED strip component (kind led_strip): its length, as length_m or as
+    pixels."""
+    s = comp.get("strip")
+    if not isinstance(s, dict):
+        return ["strip: the length of the strip – {\"length_m\": …} or {\"pixels\": …}"]
+    out = [f"strip: unknown key '{k}' (known: {', '.join(sorted(STRIP_KEYS))})" for k in sorted(set(s) - STRIP_KEYS)]
+    if len([k for k in ("length_m", "pixels") if k in s]) != 1:
+        out.append("strip: length_m or pixels, one of the two")
+    if "length_m" in s and not (is_number(s["length_m"]) and s["length_m"] > 0):
+        out.append(f"strip.length_m must be a number > 0, not {s['length_m']!r}")
+    if "pixels" in s and not (isinstance(s["pixels"], int) and not isinstance(s["pixels"], bool) and s["pixels"] > 0):
+        out.append(f"strip.pixels must be a whole number > 0, not {s['pixels']!r}")
+    return out
+
+
+def strip_pixels(comp, part):
+    """(pixels, length in m) of an LED strip component: strip.pixels, or strip.length_m × the entry's pixels_per_m
+    rounded to whole pixels; the length is what the pixels take, pixels / pixels_per_m. ValueError with the reason
+    where the component or the entry lacks what it takes."""
+    des = comp.get("designator", "?")
+    if problems := strip_problems(comp):
+        raise ValueError(f"{des}: {problems[0]}")
+    ppm = values(part).get("pixels_per_m")
+    if not (is_number(ppm) and ppm > 0):
+        raise ValueError(f"{des}: its parts entry gives no pixels_per_m – the pixels of the strip per metre")
+    s = comp["strip"]
+    n = s["pixels"] if "pixels" in s else max(1, round(s["length_m"] * ppm))
+    return n, n / ppm

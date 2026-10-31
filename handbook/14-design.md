@@ -216,6 +216,18 @@ A USB receptacle that powers the board: consider what the port gives – 100 mA 
 **`HINT.usb_inrush`** – more than 10 µF on USB VBUS (note)  
 A USB receptacle whose VBUS net carries more than 10 µF directly (the capacitors' value_f): consider a soft start or less capacitance ahead of it – USB 2.0 allows a device 10 µF at attach; HINT.bulk asks for a bulk capacitor at the same input, and the two meet here.
 
+**`HINT.power_path`** – a load on the charging cell (note)  
+A charger (behaviour charger) whose battery pin feeds a load – an IC's supply pin, an LED, a motor – with nothing between that the input switches off: consider a power path. The graph shows one as a MOSFET whose gate the charger's input holds (AN1149's P-MOSFET), or as a diode onto a rail the input feeds as well; a charger with a system output of its own keeps the load off its battery pin. The cell's protection IC and a divider into an input are no load.
+
+**`HINT.charge_termination`** – a charger's end of charge is not simulated (note)  
+A linear charger (behaviour charger): consider the end of its charge cycle – the termination, the recharge and the status outputs that follow them; the simulation charges while the cell is below the float voltage and never terminates.
+
+**`HINT.protection_timing`** – a cell protection's release and delays are not simulated (note)  
+A cell protection IC (behaviour protection): consider its release voltages and its detection delays – the simulation switches the cell off and on at the detection thresholds, the moment the cell crosses them.
+
+**`HINT.pd_negotiation`** – a USB PD sink's negotiation is not simulated (note)  
+A USB PD sink (behaviour pd_sink): consider the board at 5 V before the negotiation and at the requested voltage after it, and what PG and the CC lines do – the simulation takes VBUS at the voltage a scenario's source gives.
+
 **`HINT.input_polarity`** – a power input without a polarity check (note)  
 A supply connector the graph does not mark as reversible: consider whether it can be plugged the wrong way round. Not a battery holder – PATH.reverse checks every one as a source that may be reversed.
 

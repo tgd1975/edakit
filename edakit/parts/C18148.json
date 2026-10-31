@@ -78,7 +78,9 @@
  "values": {
   "idd_max_a": 0.0022,
   "vih_v": 2.0,
-  "vil_v": 0.8
+  "vil_v": 0.8,
+  "behavior": "logic",
+  "icc_a": 0.0022
  },
  "limits": {
   "vdd_max_v": 7,
@@ -106,7 +108,8 @@
   "function tables and applications, p. 12; termination, p. 14",
   "the selection table of Rev 1 (p. 1) lists the MAX3485 without driver/receiver enable and the MAX3488/MAX3490 as half duplex – it contradicts the pin description (p. 7), the function tables (p. 12) and Rev 0; the entry follows the pin description",
   "mpn, manufacturer, footprint, jlc_class, pin numbers and names: EasyEDA library data of C18148 via edakit part import, read 2026-10-31",
-  "stock: LCSC 28 918 pcs, JLCPCB assembly 28 918 pcs (2026-10-31)"
+  "stock: LCSC 28 918 pcs, JLCPCB assembly 28 918 pcs (2026-10-31)",
+  "Maxim MAX3483/MAX3485/MAX3486/MAX3488/MAX3490/MAX3491 data sheet 19-0333, Rev 1 (5/19), p. 3 DC characteristics: ICC no load 1.1 mA typ., 2.2 mA max. with DE = VCC (0.95 / 1.9 mA with DE = 0 V) – icc_a = 2.2 mA (behaviour logic); RO, a tri-state output, rests released"
  ],
  "compliance": {
   "rohs": true,
@@ -125,7 +128,8 @@
    "termination at both ends, short stubs (p. 14)",
    "2026-10-31: bus pins A/B with the roles rs485_a/rs485_b that REQ termination and failsafe read (CK-17)",
    "2026-10-31: A/B short_proof – the driver limits a short to ±250 mA and shuts down thermally (MAX3485 19-0333 Rev 1, as read by the block agent of BL-10)",
-   "2026-10-31, pin limits (schema-gaps A6, B1–B3, C1–C4): Maxim 19-0333 Rev 1, absolute maximum: driver output and receiver input voltage (A, B) −7.5 V to 12.5 V (v_min_v −7.5, v_rel_max_v null); control and driver inputs (RE, DE, DI) −0.3 V to 7 V regardless of VCC (null); receiver output RO −0.3 V to VCC + 0.3 V (v_rel_max_v 0.3)"
+   "2026-10-31, pin limits (schema-gaps A6, B1–B3, C1–C4): Maxim 19-0333 Rev 1, absolute maximum: driver output and receiver input voltage (A, B) −7.5 V to 12.5 V (v_min_v −7.5, v_rel_max_v null); control and driver inputs (RE, DE, DI) −0.3 V to 7 V regardless of VCC (null); receiver output RO −0.3 V to VCC + 0.3 V (v_rel_max_v 0.3)",
+   "2026-10-31: behaviour logic with icc_a 2.2 mA from 19-0333 Rev 1, p. 3 (ICC max with DE = VCC, read now)"
   ],
   "open": [
    "termination (120 Ω at both ends), the bus load (12 kΩ, 32 transceivers), the data rate (10 Mbps) and the receiver threshold (±200 mV): no schema field – in hints and sources, for CK-17",
@@ -134,8 +138,8 @@
    "no supply capacitor named in the data sheet; the default decoupling requirement stays on",
    "Rev 1's selection table contradicts its pin description for the MAX3485 (enable pins) – see sources",
    "analog.com was not reachable: whether ADI has a revision newer than Rev 1 (5/19) was not checked",
-   "no behaviour model: supply and driver currents are not simulated",
-   "drive tristate on A and B makes an RS-485 bus without bias resistors LVL.undefined/open_drain – the owner decides whether that warning is wanted (it is the fail-safe-bias question of CK-17)"
+   "drive tristate on A and B makes an RS-485 bus without bias resistors LVL.undefined/open_drain – the owner decides whether that warning is wanted (it is the fail-safe-bias question of CK-17)",
+   "the driver is not modelled: A and B rest off in behaviour logic, the bus current the driver delivers into the termination is not simulated"
   ]
  }
 }

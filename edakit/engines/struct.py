@@ -13,7 +13,8 @@ from collections import Counter, defaultdict
 from pathlib import Path
 
 from .. import handover
-from ..circuit import KINDS_OF_PREFIX, KINDS_OF_TYPE, PURPOSES, cable_problems, core_mpn, read_value, value_problem
+from ..circuit import (KINDS_OF_PREFIX, KINDS_OF_TYPE, PURPOSES, cable_problems, core_mpn, read_value, strip_problems,
+                       value_problem)
 from ..design import natural_key
 from ..findings import Finding
 
@@ -25,7 +26,7 @@ def run(ctx):
     boards = set(cfg.boards) if cfg else set()
     bought = boards - set(cfg.made()) if cfg else set()
     return (structure(d, boards, bought) + refs(d) + locks(d, ctx.root) + entries(d, cfg) + configs_named(d)
-            + identity(d))
+            + states_named(d) + identity(d))
 
 
 def structure(d, boards, bought=()):
@@ -75,6 +76,10 @@ def structure(d, boards, bought=()):
     for cab in g.get("cables", []):
         for problem in cable_problems(cab):
             add("STRUCT.net", f"cable {cab.get('name')}", f"cable {cab.get('name')}: {problem}")
+        if "at_m" in cab and not any((d.part(x) or {}).get("kind") == "led_strip" for x in (cab.get("from"), cab.get("to"))
+                                     if x in d.comps):
+            add("STRUCT.net", f"cable {cab.get('name')}", f"cable {cab.get('name')}: at_m – the place along an LED strip "
+                                                          "its wires land, but neither end is an LED strip")
         for a, b in cab["pins"].items():
             ref_a, ref_b = f"{cab['from']}.{a}", f"{cab['to']}.{b}"
             cable_pins |= {ref_a, ref_b}
@@ -225,6 +230,8 @@ def entries(d, cfg=None):
             if part["pins"].get(str(pin), {}).get("type") == "power_in":
                 out.append(Finding("STRUCT.entry", "P", f"{des}.{pin}", f"{des}.{pin} ({part['pins'][str(pin)]['name']}) "
                                    "is a supply pin but marked nc", on=on))
+        if part.get("kind") == "led_strip":       # its length (sim/strip.py)
+            out += [Finding("STRUCT.entry", "P", des, f"{des}: {p}", grade="strip", on=on) for p in strip_problems(c)]
     return out
 
 
@@ -240,6 +247,35 @@ def configs_named(d):
         if c["config"] not in known:
             out.append(Finding("STRUCT.entry", "P", des, f"{des}: config {c['config']!r} – parts entry {key} knows "
                                + (", ".join(known) if known else "no configs"), on=(("component", des),)))
+    return out
+
+
+def states_named(d):
+    """STRUCT.entry: a component's `states` – where behaviour logic holds its outputs in the simulation (handbook
+    3.1) – name output or bidirectional pins of its entry, by number or name, each with high, low or off; an
+    open-drain output cannot drive high. A state that names nothing would leave the pin at its default unnoticed."""
+    from ..schema import STATES
+    out = []
+    for des, c in sorted(d.comps.items(), key=lambda x: natural_key(x[0])):
+        given, part = c.get("states"), d.part(des)
+        if given is None or part is None:
+            continue
+        on = (("component", des),)
+        if not isinstance(given, dict):
+            out.append(Finding("STRUCT.entry", "P", des, f"{des}: states {given!r} – {{pin: high | low | off}}", on=on))
+            continue
+        pins = part.get("pins") or {}
+        for key, word in given.items():
+            num = key if key in pins else next((n for n, p in pins.items() if p.get("name") == key), None)
+            info = pins.get(num) or {}
+            text = (f"states {key} – parts entry {d.entry_key(des)} has no such pin" if num is None else
+                    f"states {key} {word!r} – high, low or off" if word not in STATES else
+                    f"states {key} – pin {num} ({info.get('name', num)}) is no output"
+                    if info.get("type") not in ("output", "bidirectional") else
+                    f"states {key} 'high' – an open-drain output cannot drive high (low or off)"
+                    if word == "high" and info.get("drive") == "open_drain" else None)
+            if text:
+                out.append(Finding("STRUCT.entry", "P", des, f"{des}: {text}", on=on))
     return out
 
 

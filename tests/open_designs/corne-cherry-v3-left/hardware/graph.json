@@ -1,0 +1,1804 @@
+{
+ "graph": {
+  "name": "corne-cherry-v3-left",
+  "version": "1.0",
+  "date": "2026-10-31",
+  "description": "The Corne Cherry v3 keyboard (foostan/crkbd at b473521), left half as published: a SparkFun Pro Micro 5V/16MHz on headers, 21 keys in hot-swap sockets in a 4 × 6 matrix with a diode per key (cathodes to the rows), 21 SK6812MINI-E per-key LEDs and 6 WS2812B underglow LEDs in one chain on VCC, a TRRS jack to the right half, an OLED socket, a reset button. Transcribed for edakit's tests.",
+  "purpose": {
+   "use": "private",
+   "market": "EU",
+   "notes": "An open keyboard that makers order and build for themselves. The transcription is a test of edakit, not a product."
+  },
+  "conventions": {
+   "pin_reference": "'<designator>.<pin>' with the pin numbers of the Corne v3's KiCad symbols (= its footprints' pads)",
+   "v": "per net: [min, max] in V over all intended operating states",
+   "source": "foostan/crkbd at b473521, corne-cherry/pcb/corne-cherry.kicad_sch (the half whose nets carry no _r), https://github.com/foostan/crkbd"
+  },
+  "cables": [],
+  "layout": {},
+  "locks": {},
+  "components": [
+   {
+    "designator": "D1",
+    "type": "diode",
+    "label": "diode of key 1",
+    "part": "1N4148W",
+    "lcsc": "C81598",
+    "pins": {
+     "1": "K",
+     "2": "A"
+    },
+    "nc": []
+   },
+   {
+    "designator": "D2",
+    "type": "diode",
+    "label": "diode of key 2",
+    "part": "1N4148W",
+    "lcsc": "C81598",
+    "pins": {
+     "1": "K",
+     "2": "A"
+    },
+    "nc": []
+   },
+   {
+    "designator": "D3",
+    "type": "diode",
+    "label": "diode of key 3",
+    "part": "1N4148W",
+    "lcsc": "C81598",
+    "pins": {
+     "1": "K",
+     "2": "A"
+    },
+    "nc": []
+   },
+   {
+    "designator": "D4",
+    "type": "diode",
+    "label": "diode of key 4",
+    "part": "1N4148W",
+    "lcsc": "C81598",
+    "pins": {
+     "1": "K",
+     "2": "A"
+    },
+    "nc": []
+   },
+   {
+    "designator": "D5",
+    "type": "diode",
+    "label": "diode of key 5",
+    "part": "1N4148W",
+    "lcsc": "C81598",
+    "pins": {
+     "1": "K",
+     "2": "A"
+    },
+    "nc": []
+   },
+   {
+    "designator": "D6",
+    "type": "diode",
+    "label": "diode of key 6",
+    "part": "1N4148W",
+    "lcsc": "C81598",
+    "pins": {
+     "1": "K",
+     "2": "A"
+    },
+    "nc": []
+   },
+   {
+    "designator": "D7",
+    "type": "diode",
+    "label": "diode of key 7",
+    "part": "1N4148W",
+    "lcsc": "C81598",
+    "pins": {
+     "1": "K",
+     "2": "A"
+    },
+    "nc": []
+   },
+   {
+    "designator": "D8",
+    "type": "diode",
+    "label": "diode of key 8",
+    "part": "1N4148W",
+    "lcsc": "C81598",
+    "pins": {
+     "1": "K",
+     "2": "A"
+    },
+    "nc": []
+   },
+   {
+    "designator": "D9",
+    "type": "diode",
+    "label": "diode of key 9",
+    "part": "1N4148W",
+    "lcsc": "C81598",
+    "pins": {
+     "1": "K",
+     "2": "A"
+    },
+    "nc": []
+   },
+   {
+    "designator": "D10",
+    "type": "diode",
+    "label": "diode of key 10",
+    "part": "1N4148W",
+    "lcsc": "C81598",
+    "pins": {
+     "1": "K",
+     "2": "A"
+    },
+    "nc": []
+   },
+   {
+    "designator": "D11",
+    "type": "diode",
+    "label": "diode of key 11",
+    "part": "1N4148W",
+    "lcsc": "C81598",
+    "pins": {
+     "1": "K",
+     "2": "A"
+    },
+    "nc": []
+   },
+   {
+    "designator": "D12",
+    "type": "diode",
+    "label": "diode of key 12",
+    "part": "1N4148W",
+    "lcsc": "C81598",
+    "pins": {
+     "1": "K",
+     "2": "A"
+    },
+    "nc": []
+   },
+   {
+    "designator": "D13",
+    "type": "diode",
+    "label": "diode of key 13",
+    "part": "1N4148W",
+    "lcsc": "C81598",
+    "pins": {
+     "1": "K",
+     "2": "A"
+    },
+    "nc": []
+   },
+   {
+    "designator": "D14",
+    "type": "diode",
+    "label": "diode of key 14",
+    "part": "1N4148W",
+    "lcsc": "C81598",
+    "pins": {
+     "1": "K",
+     "2": "A"
+    },
+    "nc": []
+   },
+   {
+    "designator": "D15",
+    "type": "diode",
+    "label": "diode of key 15",
+    "part": "1N4148W",
+    "lcsc": "C81598",
+    "pins": {
+     "1": "K",
+     "2": "A"
+    },
+    "nc": []
+   },
+   {
+    "designator": "D16",
+    "type": "diode",
+    "label": "diode of key 16",
+    "part": "1N4148W",
+    "lcsc": "C81598",
+    "pins": {
+     "1": "K",
+     "2": "A"
+    },
+    "nc": []
+   },
+   {
+    "designator": "D17",
+    "type": "diode",
+    "label": "diode of key 17",
+    "part": "1N4148W",
+    "lcsc": "C81598",
+    "pins": {
+     "1": "K",
+     "2": "A"
+    },
+    "nc": []
+   },
+   {
+    "designator": "D18",
+    "type": "diode",
+    "label": "diode of key 18",
+    "part": "1N4148W",
+    "lcsc": "C81598",
+    "pins": {
+     "1": "K",
+     "2": "A"
+    },
+    "nc": []
+   },
+   {
+    "designator": "D19",
+    "type": "diode",
+    "label": "diode of key 19",
+    "part": "1N4148W",
+    "lcsc": "C81598",
+    "pins": {
+     "1": "K",
+     "2": "A"
+    },
+    "nc": []
+   },
+   {
+    "designator": "D20",
+    "type": "diode",
+    "label": "diode of key 20",
+    "part": "1N4148W",
+    "lcsc": "C81598",
+    "pins": {
+     "1": "K",
+     "2": "A"
+    },
+    "nc": []
+   },
+   {
+    "designator": "D21",
+    "type": "diode",
+    "label": "diode of key 21",
+    "part": "1N4148W",
+    "lcsc": "C81598",
+    "pins": {
+     "1": "K",
+     "2": "A"
+    },
+    "nc": []
+   },
+   {
+    "designator": "J1",
+    "type": "connector",
+    "label": "TRRS jack to the other half (tip data, ring GND, ring 2 VCC)",
+    "part": "20153",
+    "pins": {
+     "A": "~",
+     "B": "~",
+     "C": "~",
+     "D": "~"
+    },
+    "nc": [
+     "A"
+    ],
+    "off_board": true,
+    "notes": "MJ-4PP-9 in the schematic: A (sleeve) open, B (tip) the serial link 'data', C (ring) GND, D (ring 2) VCC."
+   },
+   {
+    "designator": "J2",
+    "type": "connector",
+    "label": "OLED module socket (I2C, VCC)",
+    "part": "PZ254V-11-04P",
+    "pins": {
+     "1": "Pin_1",
+     "2": "Pin_2",
+     "3": "Pin_3",
+     "4": "Pin_4"
+    },
+    "nc": [],
+    "bom": false,
+    "notes": "Conn_01x04 'OLED': SDA, SCL, VCC, GND for an OLED module on a pin socket."
+   },
+   {
+    "designator": "LED1",
+    "type": "ic",
+    "label": "underglow LED LED1 (WS2812B)",
+    "part": "WS2812B-V5/W",
+    "lcsc": "C2874885",
+    "pins": {
+     "1": "VDD",
+     "2": "DOUT",
+     "3": "VSS",
+     "4": "DIN"
+    },
+    "nc": []
+   },
+   {
+    "designator": "LED2",
+    "type": "ic",
+    "label": "underglow LED LED2 (WS2812B)",
+    "part": "WS2812B-V5/W",
+    "lcsc": "C2874885",
+    "pins": {
+     "1": "VDD",
+     "2": "DOUT",
+     "3": "VSS",
+     "4": "DIN"
+    },
+    "nc": []
+   },
+   {
+    "designator": "LED3",
+    "type": "ic",
+    "label": "underglow LED LED3 (WS2812B)",
+    "part": "WS2812B-V5/W",
+    "lcsc": "C2874885",
+    "pins": {
+     "1": "VDD",
+     "2": "DOUT",
+     "3": "VSS",
+     "4": "DIN"
+    },
+    "nc": []
+   },
+   {
+    "designator": "LED4",
+    "type": "ic",
+    "label": "underglow LED LED4 (WS2812B)",
+    "part": "WS2812B-V5/W",
+    "lcsc": "C2874885",
+    "pins": {
+     "1": "VDD",
+     "2": "DOUT",
+     "3": "VSS",
+     "4": "DIN"
+    },
+    "nc": []
+   },
+   {
+    "designator": "LED5",
+    "type": "ic",
+    "label": "underglow LED LED5 (WS2812B)",
+    "part": "WS2812B-V5/W",
+    "lcsc": "C2874885",
+    "pins": {
+     "1": "VDD",
+     "2": "DOUT",
+     "3": "VSS",
+     "4": "DIN"
+    },
+    "nc": []
+   },
+   {
+    "designator": "LED6",
+    "type": "ic",
+    "label": "underglow LED LED6 (WS2812B)",
+    "part": "WS2812B-V5/W",
+    "lcsc": "C2874885",
+    "pins": {
+     "1": "VDD",
+     "2": "DOUT",
+     "3": "VSS",
+     "4": "DIN"
+    },
+    "nc": []
+   },
+   {
+    "designator": "LED7",
+    "type": "ic",
+    "label": "per-key LED LED7",
+    "part": "SK6812MINI-E",
+    "lcsc": "C5149201",
+    "pins": {
+     "1": "VDD",
+     "2": "DOUT",
+     "3": "VSS",
+     "4": "DIN"
+    },
+    "nc": []
+   },
+   {
+    "designator": "LED8",
+    "type": "ic",
+    "label": "per-key LED LED8",
+    "part": "SK6812MINI-E",
+    "lcsc": "C5149201",
+    "pins": {
+     "1": "VDD",
+     "2": "DOUT",
+     "3": "VSS",
+     "4": "DIN"
+    },
+    "nc": []
+   },
+   {
+    "designator": "LED9",
+    "type": "ic",
+    "label": "per-key LED LED9",
+    "part": "SK6812MINI-E",
+    "lcsc": "C5149201",
+    "pins": {
+     "1": "VDD",
+     "2": "DOUT",
+     "3": "VSS",
+     "4": "DIN"
+    },
+    "nc": []
+   },
+   {
+    "designator": "LED10",
+    "type": "ic",
+    "label": "per-key LED LED10",
+    "part": "SK6812MINI-E",
+    "lcsc": "C5149201",
+    "pins": {
+     "1": "VDD",
+     "2": "DOUT",
+     "3": "VSS",
+     "4": "DIN"
+    },
+    "nc": []
+   },
+   {
+    "designator": "LED11",
+    "type": "ic",
+    "label": "per-key LED LED11",
+    "part": "SK6812MINI-E",
+    "lcsc": "C5149201",
+    "pins": {
+     "1": "VDD",
+     "2": "DOUT",
+     "3": "VSS",
+     "4": "DIN"
+    },
+    "nc": []
+   },
+   {
+    "designator": "LED12",
+    "type": "ic",
+    "label": "per-key LED LED12",
+    "part": "SK6812MINI-E",
+    "lcsc": "C5149201",
+    "pins": {
+     "1": "VDD",
+     "2": "DOUT",
+     "3": "VSS",
+     "4": "DIN"
+    },
+    "nc": []
+   },
+   {
+    "designator": "LED13",
+    "type": "ic",
+    "label": "per-key LED LED13",
+    "part": "SK6812MINI-E",
+    "lcsc": "C5149201",
+    "pins": {
+     "1": "VDD",
+     "2": "DOUT",
+     "3": "VSS",
+     "4": "DIN"
+    },
+    "nc": []
+   },
+   {
+    "designator": "LED14",
+    "type": "ic",
+    "label": "per-key LED LED14",
+    "part": "SK6812MINI-E",
+    "lcsc": "C5149201",
+    "pins": {
+     "1": "VDD",
+     "2": "DOUT",
+     "3": "VSS",
+     "4": "DIN"
+    },
+    "nc": []
+   },
+   {
+    "designator": "LED15",
+    "type": "ic",
+    "label": "per-key LED LED15",
+    "part": "SK6812MINI-E",
+    "lcsc": "C5149201",
+    "pins": {
+     "1": "VDD",
+     "2": "DOUT",
+     "3": "VSS",
+     "4": "DIN"
+    },
+    "nc": []
+   },
+   {
+    "designator": "LED16",
+    "type": "ic",
+    "label": "per-key LED LED16",
+    "part": "SK6812MINI-E",
+    "lcsc": "C5149201",
+    "pins": {
+     "1": "VDD",
+     "2": "DOUT",
+     "3": "VSS",
+     "4": "DIN"
+    },
+    "nc": []
+   },
+   {
+    "designator": "LED17",
+    "type": "ic",
+    "label": "per-key LED LED17",
+    "part": "SK6812MINI-E",
+    "lcsc": "C5149201",
+    "pins": {
+     "1": "VDD",
+     "2": "DOUT",
+     "3": "VSS",
+     "4": "DIN"
+    },
+    "nc": []
+   },
+   {
+    "designator": "LED18",
+    "type": "ic",
+    "label": "per-key LED LED18",
+    "part": "SK6812MINI-E",
+    "lcsc": "C5149201",
+    "pins": {
+     "1": "VDD",
+     "2": "DOUT",
+     "3": "VSS",
+     "4": "DIN"
+    },
+    "nc": []
+   },
+   {
+    "designator": "LED19",
+    "type": "ic",
+    "label": "per-key LED LED19",
+    "part": "SK6812MINI-E",
+    "lcsc": "C5149201",
+    "pins": {
+     "1": "VDD",
+     "2": "DOUT",
+     "3": "VSS",
+     "4": "DIN"
+    },
+    "nc": [
+     "2"
+    ],
+    "notes": "Last LED of the chain: DOUT open."
+   },
+   {
+    "designator": "LED20",
+    "type": "ic",
+    "label": "per-key LED LED20",
+    "part": "SK6812MINI-E",
+    "lcsc": "C5149201",
+    "pins": {
+     "1": "VDD",
+     "2": "DOUT",
+     "3": "VSS",
+     "4": "DIN"
+    },
+    "nc": []
+   },
+   {
+    "designator": "LED21",
+    "type": "ic",
+    "label": "per-key LED LED21",
+    "part": "SK6812MINI-E",
+    "lcsc": "C5149201",
+    "pins": {
+     "1": "VDD",
+     "2": "DOUT",
+     "3": "VSS",
+     "4": "DIN"
+    },
+    "nc": []
+   },
+   {
+    "designator": "LED22",
+    "type": "ic",
+    "label": "per-key LED LED22",
+    "part": "SK6812MINI-E",
+    "lcsc": "C5149201",
+    "pins": {
+     "1": "VDD",
+     "2": "DOUT",
+     "3": "VSS",
+     "4": "DIN"
+    },
+    "nc": []
+   },
+   {
+    "designator": "LED23",
+    "type": "ic",
+    "label": "per-key LED LED23",
+    "part": "SK6812MINI-E",
+    "lcsc": "C5149201",
+    "pins": {
+     "1": "VDD",
+     "2": "DOUT",
+     "3": "VSS",
+     "4": "DIN"
+    },
+    "nc": []
+   },
+   {
+    "designator": "LED24",
+    "type": "ic",
+    "label": "per-key LED LED24",
+    "part": "SK6812MINI-E",
+    "lcsc": "C5149201",
+    "pins": {
+     "1": "VDD",
+     "2": "DOUT",
+     "3": "VSS",
+     "4": "DIN"
+    },
+    "nc": []
+   },
+   {
+    "designator": "LED25",
+    "type": "ic",
+    "label": "per-key LED LED25",
+    "part": "SK6812MINI-E",
+    "lcsc": "C5149201",
+    "pins": {
+     "1": "VDD",
+     "2": "DOUT",
+     "3": "VSS",
+     "4": "DIN"
+    },
+    "nc": []
+   },
+   {
+    "designator": "LED26",
+    "type": "ic",
+    "label": "per-key LED LED26",
+    "part": "SK6812MINI-E",
+    "lcsc": "C5149201",
+    "pins": {
+     "1": "VDD",
+     "2": "DOUT",
+     "3": "VSS",
+     "4": "DIN"
+    },
+    "nc": []
+   },
+   {
+    "designator": "LED27",
+    "type": "ic",
+    "label": "per-key LED LED27",
+    "part": "SK6812MINI-E",
+    "lcsc": "C5149201",
+    "pins": {
+     "1": "VDD",
+     "2": "DOUT",
+     "3": "VSS",
+     "4": "DIN"
+    },
+    "nc": []
+   },
+   {
+    "designator": "RSW1",
+    "type": "button",
+    "label": "reset button",
+    "part": "TS-1088R-02026",
+    "lcsc": "C455280",
+    "pins": {
+     "1": "1",
+     "2": "2"
+    },
+    "nc": []
+   },
+   {
+    "designator": "SW1",
+    "type": "button",
+    "label": "key 1 (hot-swap socket)",
+    "part": "CPG151101S11-16",
+    "lcsc": "C5156480",
+    "pins": {
+     "1": "1",
+     "2": "2"
+    },
+    "nc": []
+   },
+   {
+    "designator": "SW2",
+    "type": "button",
+    "label": "key 2 (hot-swap socket)",
+    "part": "CPG151101S11-16",
+    "lcsc": "C5156480",
+    "pins": {
+     "1": "1",
+     "2": "2"
+    },
+    "nc": []
+   },
+   {
+    "designator": "SW3",
+    "type": "button",
+    "label": "key 3 (hot-swap socket)",
+    "part": "CPG151101S11-16",
+    "lcsc": "C5156480",
+    "pins": {
+     "1": "1",
+     "2": "2"
+    },
+    "nc": []
+   },
+   {
+    "designator": "SW4",
+    "type": "button",
+    "label": "key 4 (hot-swap socket)",
+    "part": "CPG151101S11-16",
+    "lcsc": "C5156480",
+    "pins": {
+     "1": "1",
+     "2": "2"
+    },
+    "nc": []
+   },
+   {
+    "designator": "SW5",
+    "type": "button",
+    "label": "key 5 (hot-swap socket)",
+    "part": "CPG151101S11-16",
+    "lcsc": "C5156480",
+    "pins": {
+     "1": "1",
+     "2": "2"
+    },
+    "nc": []
+   },
+   {
+    "designator": "SW6",
+    "type": "button",
+    "label": "key 6 (hot-swap socket)",
+    "part": "CPG151101S11-16",
+    "lcsc": "C5156480",
+    "pins": {
+     "1": "1",
+     "2": "2"
+    },
+    "nc": []
+   },
+   {
+    "designator": "SW7",
+    "type": "button",
+    "label": "key 7 (hot-swap socket)",
+    "part": "CPG151101S11-16",
+    "lcsc": "C5156480",
+    "pins": {
+     "1": "1",
+     "2": "2"
+    },
+    "nc": []
+   },
+   {
+    "designator": "SW8",
+    "type": "button",
+    "label": "key 8 (hot-swap socket)",
+    "part": "CPG151101S11-16",
+    "lcsc": "C5156480",
+    "pins": {
+     "1": "1",
+     "2": "2"
+    },
+    "nc": []
+   },
+   {
+    "designator": "SW9",
+    "type": "button",
+    "label": "key 9 (hot-swap socket)",
+    "part": "CPG151101S11-16",
+    "lcsc": "C5156480",
+    "pins": {
+     "1": "1",
+     "2": "2"
+    },
+    "nc": []
+   },
+   {
+    "designator": "SW10",
+    "type": "button",
+    "label": "key 10 (hot-swap socket)",
+    "part": "CPG151101S11-16",
+    "lcsc": "C5156480",
+    "pins": {
+     "1": "1",
+     "2": "2"
+    },
+    "nc": []
+   },
+   {
+    "designator": "SW11",
+    "type": "button",
+    "label": "key 11 (hot-swap socket)",
+    "part": "CPG151101S11-16",
+    "lcsc": "C5156480",
+    "pins": {
+     "1": "1",
+     "2": "2"
+    },
+    "nc": []
+   },
+   {
+    "designator": "SW12",
+    "type": "button",
+    "label": "key 12 (hot-swap socket)",
+    "part": "CPG151101S11-16",
+    "lcsc": "C5156480",
+    "pins": {
+     "1": "1",
+     "2": "2"
+    },
+    "nc": []
+   },
+   {
+    "designator": "SW13",
+    "type": "button",
+    "label": "key 13 (hot-swap socket)",
+    "part": "CPG151101S11-16",
+    "lcsc": "C5156480",
+    "pins": {
+     "1": "1",
+     "2": "2"
+    },
+    "nc": []
+   },
+   {
+    "designator": "SW14",
+    "type": "button",
+    "label": "key 14 (hot-swap socket)",
+    "part": "CPG151101S11-16",
+    "lcsc": "C5156480",
+    "pins": {
+     "1": "1",
+     "2": "2"
+    },
+    "nc": []
+   },
+   {
+    "designator": "SW15",
+    "type": "button",
+    "label": "key 15 (hot-swap socket)",
+    "part": "CPG151101S11-16",
+    "lcsc": "C5156480",
+    "pins": {
+     "1": "1",
+     "2": "2"
+    },
+    "nc": []
+   },
+   {
+    "designator": "SW16",
+    "type": "button",
+    "label": "key 16 (hot-swap socket)",
+    "part": "CPG151101S11-16",
+    "lcsc": "C5156480",
+    "pins": {
+     "1": "1",
+     "2": "2"
+    },
+    "nc": []
+   },
+   {
+    "designator": "SW17",
+    "type": "button",
+    "label": "key 17 (hot-swap socket)",
+    "part": "CPG151101S11-16",
+    "lcsc": "C5156480",
+    "pins": {
+     "1": "1",
+     "2": "2"
+    },
+    "nc": []
+   },
+   {
+    "designator": "SW18",
+    "type": "button",
+    "label": "key 18 (hot-swap socket)",
+    "part": "CPG151101S11-16",
+    "lcsc": "C5156480",
+    "pins": {
+     "1": "1",
+     "2": "2"
+    },
+    "nc": []
+   },
+   {
+    "designator": "SW19",
+    "type": "button",
+    "label": "key 19 (hot-swap socket)",
+    "part": "CPG151101S11-16",
+    "lcsc": "C5156480",
+    "pins": {
+     "1": "1",
+     "2": "2"
+    },
+    "nc": []
+   },
+   {
+    "designator": "SW20",
+    "type": "button",
+    "label": "key 20 (hot-swap socket)",
+    "part": "CPG151101S11-16",
+    "lcsc": "C5156480",
+    "pins": {
+     "1": "1",
+     "2": "2"
+    },
+    "nc": []
+   },
+   {
+    "designator": "SW21",
+    "type": "button",
+    "label": "key 21 (hot-swap socket)",
+    "part": "CPG151101S11-16",
+    "lcsc": "C5156480",
+    "pins": {
+     "1": "1",
+     "2": "2"
+    },
+    "nc": []
+   },
+   {
+    "designator": "U1",
+    "type": "module",
+    "label": "Pro Micro 5V/16MHz (ATmega32U4)",
+    "part": "DEV-12640",
+    "pins": {
+     "1": "TX0/D3",
+     "2": "RX1/D2",
+     "3": "GND",
+     "4": "GND",
+     "5": "2/D1/SDA",
+     "6": "3/D0/SCL",
+     "7": "4/D4",
+     "8": "5/C6",
+     "9": "6/D7",
+     "10": "7/E6",
+     "11": "8/B4",
+     "12": "9/B5",
+     "13": "B6/10",
+     "14": "B2/16",
+     "15": "B3/14",
+     "16": "B1/15",
+     "17": "F7/A0",
+     "18": "F6/A1",
+     "19": "F5/A2",
+     "20": "F4/A3",
+     "21": "VCC",
+     "22": "RST",
+     "23": "GND",
+     "24": "RAW"
+    },
+    "nc": [
+     "11",
+     "12",
+     "13",
+     "14",
+     "24"
+    ],
+    "bom": false,
+    "notes": "Plugged on headers. Header pins 8/B4, 9/B5, B6/10, B2/16 and RAW are open on the Corne."
+   }
+  ],
+  "nets": [
+   {
+    "name": "GND",
+    "pins": [
+     "J1.C",
+     "J2.4",
+     "LED1.3",
+     "LED10.3",
+     "LED11.3",
+     "LED12.3",
+     "LED13.3",
+     "LED14.3",
+     "LED15.3",
+     "LED16.3",
+     "LED17.3",
+     "LED18.3",
+     "LED19.3",
+     "LED2.3",
+     "LED20.3",
+     "LED21.3",
+     "LED22.3",
+     "LED23.3",
+     "LED24.3",
+     "LED25.3",
+     "LED26.3",
+     "LED27.3",
+     "LED3.3",
+     "LED4.3",
+     "LED5.3",
+     "LED6.3",
+     "LED7.3",
+     "LED8.3",
+     "LED9.3",
+     "RSW1.2",
+     "U1.3",
+     "U1.4",
+     "U1.23"
+    ],
+    "v": [
+     0,
+     0
+    ]
+   },
+   {
+    "name": "VCC",
+    "pins": [
+     "J1.D",
+     "J2.3",
+     "LED1.1",
+     "LED10.1",
+     "LED11.1",
+     "LED12.1",
+     "LED13.1",
+     "LED14.1",
+     "LED15.1",
+     "LED16.1",
+     "LED17.1",
+     "LED18.1",
+     "LED19.1",
+     "LED2.1",
+     "LED20.1",
+     "LED21.1",
+     "LED22.1",
+     "LED23.1",
+     "LED24.1",
+     "LED25.1",
+     "LED26.1",
+     "LED27.1",
+     "LED3.1",
+     "LED4.1",
+     "LED5.1",
+     "LED6.1",
+     "LED7.1",
+     "LED8.1",
+     "LED9.1",
+     "U1.21"
+    ],
+    "v": [
+     0,
+     5.25
+    ]
+   },
+   {
+    "name": "D10_A",
+    "pins": [
+     "D10.2",
+     "SW10.2"
+    ],
+    "v": [
+     0,
+     5.25
+    ]
+   },
+   {
+    "name": "D11_A",
+    "pins": [
+     "D11.2",
+     "SW11.2"
+    ],
+    "v": [
+     0,
+     5.25
+    ]
+   },
+   {
+    "name": "D12_A",
+    "pins": [
+     "D12.2",
+     "SW12.2"
+    ],
+    "v": [
+     0,
+     5.25
+    ]
+   },
+   {
+    "name": "D13_A",
+    "pins": [
+     "D13.2",
+     "SW13.2"
+    ],
+    "v": [
+     0,
+     5.25
+    ]
+   },
+   {
+    "name": "D14_A",
+    "pins": [
+     "D14.2",
+     "SW14.2"
+    ],
+    "v": [
+     0,
+     5.25
+    ]
+   },
+   {
+    "name": "D15_A",
+    "pins": [
+     "D15.2",
+     "SW15.2"
+    ],
+    "v": [
+     0,
+     5.25
+    ]
+   },
+   {
+    "name": "D16_A",
+    "pins": [
+     "D16.2",
+     "SW16.2"
+    ],
+    "v": [
+     0,
+     5.25
+    ]
+   },
+   {
+    "name": "D17_A",
+    "pins": [
+     "D17.2",
+     "SW17.2"
+    ],
+    "v": [
+     0,
+     5.25
+    ]
+   },
+   {
+    "name": "D18_A",
+    "pins": [
+     "D18.2",
+     "SW18.2"
+    ],
+    "v": [
+     0,
+     5.25
+    ]
+   },
+   {
+    "name": "D19_A",
+    "pins": [
+     "D19.2",
+     "SW19.2"
+    ],
+    "v": [
+     0,
+     5.25
+    ]
+   },
+   {
+    "name": "D1_A",
+    "pins": [
+     "D1.2",
+     "SW1.2"
+    ],
+    "v": [
+     0,
+     5.25
+    ]
+   },
+   {
+    "name": "D20_A",
+    "pins": [
+     "D20.2",
+     "SW20.2"
+    ],
+    "v": [
+     0,
+     5.25
+    ]
+   },
+   {
+    "name": "D21_A",
+    "pins": [
+     "D21.2",
+     "SW21.2"
+    ],
+    "v": [
+     0,
+     5.25
+    ]
+   },
+   {
+    "name": "D2_A",
+    "pins": [
+     "D2.2",
+     "SW2.2"
+    ],
+    "v": [
+     0,
+     5.25
+    ]
+   },
+   {
+    "name": "D3_A",
+    "pins": [
+     "D3.2",
+     "SW3.2"
+    ],
+    "v": [
+     0,
+     5.25
+    ]
+   },
+   {
+    "name": "D4_A",
+    "pins": [
+     "D4.2",
+     "SW4.2"
+    ],
+    "v": [
+     0,
+     5.25
+    ]
+   },
+   {
+    "name": "D5_A",
+    "pins": [
+     "D5.2",
+     "SW5.2"
+    ],
+    "v": [
+     0,
+     5.25
+    ]
+   },
+   {
+    "name": "D6_A",
+    "pins": [
+     "D6.2",
+     "SW6.2"
+    ],
+    "v": [
+     0,
+     5.25
+    ]
+   },
+   {
+    "name": "D7_A",
+    "pins": [
+     "D7.2",
+     "SW7.2"
+    ],
+    "v": [
+     0,
+     5.25
+    ]
+   },
+   {
+    "name": "D8_A",
+    "pins": [
+     "D8.2",
+     "SW8.2"
+    ],
+    "v": [
+     0,
+     5.25
+    ]
+   },
+   {
+    "name": "D9_A",
+    "pins": [
+     "D9.2",
+     "SW9.2"
+    ],
+    "v": [
+     0,
+     5.25
+    ]
+   },
+   {
+    "name": "LED",
+    "pins": [
+     "LED3.4",
+     "U1.1"
+    ],
+    "v": [
+     0,
+     5.25
+    ],
+    "notes": "data into the LED chain: LED3 → LED2 → LED1 → LED4 → … → LED19"
+   },
+   {
+    "name": "LED10_DOUT",
+    "pins": [
+     "LED10.2",
+     "LED9.4"
+    ],
+    "v": [
+     0,
+     5.25
+    ]
+   },
+   {
+    "name": "LED11_DOUT",
+    "pins": [
+     "LED11.2",
+     "LED17.4"
+    ],
+    "v": [
+     0,
+     5.25
+    ]
+   },
+   {
+    "name": "LED12_DOUT",
+    "pins": [
+     "LED11.4",
+     "LED12.2"
+    ],
+    "v": [
+     0,
+     5.25
+    ]
+   },
+   {
+    "name": "LED13_DOUT",
+    "pins": [
+     "LED13.2",
+     "LED19.4"
+    ],
+    "v": [
+     0,
+     5.25
+    ]
+   },
+   {
+    "name": "LED14_DOUT",
+    "pins": [
+     "LED14.2",
+     "LED8.4"
+    ],
+    "v": [
+     0,
+     5.25
+    ]
+   },
+   {
+    "name": "LED15_DOUT",
+    "pins": [
+     "LED15.2",
+     "LED21.4"
+    ],
+    "v": [
+     0,
+     5.25
+    ]
+   },
+   {
+    "name": "LED16_DOUT",
+    "pins": [
+     "LED10.4",
+     "LED16.2"
+    ],
+    "v": [
+     0,
+     5.25
+    ]
+   },
+   {
+    "name": "LED17_DOUT",
+    "pins": [
+     "LED17.2",
+     "LED23.4"
+    ],
+    "v": [
+     0,
+     5.25
+    ]
+   },
+   {
+    "name": "LED18_DOUT",
+    "pins": [
+     "LED12.4",
+     "LED18.2"
+    ],
+    "v": [
+     0,
+     5.25
+    ]
+   },
+   {
+    "name": "LED1_DOUT",
+    "pins": [
+     "LED1.2",
+     "LED4.4"
+    ],
+    "v": [
+     0,
+     5.25
+    ]
+   },
+   {
+    "name": "LED20_DOUT",
+    "pins": [
+     "LED14.4",
+     "LED20.2"
+    ],
+    "v": [
+     0,
+     5.25
+    ]
+   },
+   {
+    "name": "LED21_DOUT",
+    "pins": [
+     "LED20.4",
+     "LED21.2"
+    ],
+    "v": [
+     0,
+     5.25
+    ]
+   },
+   {
+    "name": "LED22_DOUT",
+    "pins": [
+     "LED16.4",
+     "LED22.2"
+    ],
+    "v": [
+     0,
+     5.25
+    ]
+   },
+   {
+    "name": "LED23_DOUT",
+    "pins": [
+     "LED23.2",
+     "LED26.4"
+    ],
+    "v": [
+     0,
+     5.25
+    ]
+   },
+   {
+    "name": "LED24_DOUT",
+    "pins": [
+     "LED18.4",
+     "LED24.2"
+    ],
+    "v": [
+     0,
+     5.25
+    ]
+   },
+   {
+    "name": "LED25_DOUT",
+    "pins": [
+     "LED22.4",
+     "LED25.2"
+    ],
+    "v": [
+     0,
+     5.25
+    ]
+   },
+   {
+    "name": "LED26_DOUT",
+    "pins": [
+     "LED25.4",
+     "LED26.2"
+    ],
+    "v": [
+     0,
+     5.25
+    ]
+   },
+   {
+    "name": "LED27_DOUT",
+    "pins": [
+     "LED24.4",
+     "LED27.2"
+    ],
+    "v": [
+     0,
+     5.25
+    ]
+   },
+   {
+    "name": "LED2_DOUT",
+    "pins": [
+     "LED1.4",
+     "LED2.2"
+    ],
+    "v": [
+     0,
+     5.25
+    ]
+   },
+   {
+    "name": "LED3_DOUT",
+    "pins": [
+     "LED2.4",
+     "LED3.2"
+    ],
+    "v": [
+     0,
+     5.25
+    ]
+   },
+   {
+    "name": "LED4_DOUT",
+    "pins": [
+     "LED4.2",
+     "LED5.4"
+    ],
+    "v": [
+     0,
+     5.25
+    ]
+   },
+   {
+    "name": "LED5_DOUT",
+    "pins": [
+     "LED5.2",
+     "LED6.4"
+    ],
+    "v": [
+     0,
+     5.25
+    ]
+   },
+   {
+    "name": "LED6_DOUT",
+    "pins": [
+     "LED27.4",
+     "LED6.2"
+    ],
+    "v": [
+     0,
+     5.25
+    ]
+   },
+   {
+    "name": "LED7_DOUT",
+    "pins": [
+     "LED13.4",
+     "LED7.2"
+    ],
+    "v": [
+     0,
+     5.25
+    ]
+   },
+   {
+    "name": "LED8_DOUT",
+    "pins": [
+     "LED7.4",
+     "LED8.2"
+    ],
+    "v": [
+     0,
+     5.25
+    ]
+   },
+   {
+    "name": "LED9_DOUT",
+    "pins": [
+     "LED15.4",
+     "LED9.2"
+    ],
+    "v": [
+     0,
+     5.25
+    ]
+   },
+   {
+    "name": "SCL",
+    "pins": [
+     "J2.2",
+     "U1.6"
+    ],
+    "v": [
+     0,
+     5.25
+    ],
+    "fn": "i2c.scl"
+   },
+   {
+    "name": "SDA",
+    "pins": [
+     "J2.1",
+     "U1.5"
+    ],
+    "v": [
+     0,
+     5.25
+    ],
+    "fn": "i2c.sda"
+   },
+   {
+    "name": "col0",
+    "pins": [
+     "SW1.1",
+     "SW13.1",
+     "SW7.1",
+     "U1.20"
+    ],
+    "v": [
+     0,
+     5.25
+    ],
+    "matrix": "col"
+   },
+   {
+    "name": "col1",
+    "pins": [
+     "SW14.1",
+     "SW2.1",
+     "SW8.1",
+     "U1.19"
+    ],
+    "v": [
+     0,
+     5.25
+    ],
+    "matrix": "col"
+   },
+   {
+    "name": "col2",
+    "pins": [
+     "SW15.1",
+     "SW3.1",
+     "SW9.1",
+     "U1.18"
+    ],
+    "v": [
+     0,
+     5.25
+    ],
+    "matrix": "col"
+   },
+   {
+    "name": "col3",
+    "pins": [
+     "SW10.1",
+     "SW16.1",
+     "SW19.1",
+     "SW4.1",
+     "U1.17"
+    ],
+    "v": [
+     0,
+     5.25
+    ],
+    "matrix": "col"
+   },
+   {
+    "name": "col4",
+    "pins": [
+     "SW11.1",
+     "SW17.1",
+     "SW20.1",
+     "SW5.1",
+     "U1.16"
+    ],
+    "v": [
+     0,
+     5.25
+    ],
+    "matrix": "col"
+   },
+   {
+    "name": "col5",
+    "pins": [
+     "SW12.1",
+     "SW18.1",
+     "SW21.1",
+     "SW6.1",
+     "U1.15"
+    ],
+    "v": [
+     0,
+     5.25
+    ],
+    "matrix": "col"
+   },
+   {
+    "name": "data",
+    "pins": [
+     "J1.B",
+     "U1.2"
+    ],
+    "v": [
+     0,
+     5.25
+    ],
+    "notes": "single-wire serial link to the other half through the TRRS tip (QMK split, bit-banged)"
+   },
+   {
+    "name": "reset",
+    "pins": [
+     "RSW1.1",
+     "U1.22"
+    ],
+    "v": [
+     0,
+     5.25
+    ]
+   },
+   {
+    "name": "row0",
+    "pins": [
+     "D1.1",
+     "D2.1",
+     "D3.1",
+     "D4.1",
+     "D5.1",
+     "D6.1",
+     "U1.7"
+    ],
+    "v": [
+     0,
+     5.25
+    ],
+    "matrix": "row"
+   },
+   {
+    "name": "row1",
+    "pins": [
+     "D10.1",
+     "D11.1",
+     "D12.1",
+     "D7.1",
+     "D8.1",
+     "D9.1",
+     "U1.8"
+    ],
+    "v": [
+     0,
+     5.25
+    ],
+    "matrix": "row"
+   },
+   {
+    "name": "row2",
+    "pins": [
+     "D13.1",
+     "D14.1",
+     "D15.1",
+     "D16.1",
+     "D17.1",
+     "D18.1",
+     "U1.9"
+    ],
+    "v": [
+     0,
+     5.25
+    ],
+    "matrix": "row"
+   },
+   {
+    "name": "row3",
+    "pins": [
+     "D19.1",
+     "D20.1",
+     "D21.1",
+     "U1.10"
+    ],
+    "v": [
+     0,
+     5.25
+    ],
+    "matrix": "row"
+   }
+  ]
+ }
+}

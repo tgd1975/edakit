@@ -1,0 +1,132 @@
+{
+ "lcsc": "C125330",
+ "mpn": "AL8860WT-7",
+ "manufacturer": "Diodes Incorporated",
+ "kind": "ic",
+ "package": "TSOT-25",
+ "jlc_class": "Extended Part",
+ "datasheet": {
+  "url": "https://www.diodes.com/assets/Datasheets/AL8860.pdf",
+  "pinout_page": 1
+ },
+ "pins": {
+  "1": {
+   "name": "SW",
+   "type": "passive",
+   "role": "sw",
+   "v_max_v": 42,
+   "hint": "drain of the NDMOS switch: to the inductor and the freewheeling Schottky diode's anode (its cathode to VIN); open LEDs stop the oscillation and SW falls to GND (p. 2, 13)"
+  },
+  "2": {
+   "name": "GND",
+   "type": "ground",
+   "role": "gnd",
+   "hint": "ground (0 V) (p. 2)"
+  },
+  "3": {
+   "name": "CTRL",
+   "type": "input",
+   "role": "dim",
+   "v_max_v": 6,
+   "vih_v": 2.5,
+   "vil_v": 0.2,
+   "pull": "up",
+   "hint": "on/off and brightness: floating for normal operation; below 0.2 V off (shutdown 50 / 80 µA); DC 0.3 … 2.5 V adjusts 0 … 100 % of IOUT_NOM linearly, above 2.5 V clamped to 100 %; PWM from an open-collector or open-drain transistor or a 3.3 V logic output, below 500 Hz for 1 % … 100 %; a capacitor to GND adds about 1.5 ms/nF soft start (p. 2, 4, 11, 12)"
+  },
+  "4": {
+   "name": "SET",
+   "type": "analog",
+   "role": "sense",
+   "v_max_v": 42,
+   "hint": "RS from this pin to VIN sets the nominal average output current IOUT_NOM = 0.1 V / RS (p. 2, 11)"
+  },
+  "5": {
+   "name": "VIN",
+   "type": "power_in",
+   "role": "vin",
+   "v_max_v": 42,
+   "hint": "input 4.5 … 40 V; decouple to ground with 10 µF or more X7R ceramic close to the device (p. 2, 12)",
+   "needs": [
+    {
+     "what": "capacitor",
+     "c_min_f": 1e-05,
+     "source": "Diodes Incorporated AL8860 data sheet DS39014 Rev. 8 - 2 (April 2026), p. 2 pin descriptions: 'Decouple to ground with 10μF or higher X7R ceramic capacitor close to device'"
+    }
+   ]
+  }
+ },
+ "values": {
+  "behavior": "cc_led_driver",
+  "vsense_v": [
+   0.096,
+   0.1,
+   0.104
+  ],
+  "r_on_ohm": 0.3,
+  "duty_max_ratio": 0.98,
+  "ripple_ratio": 0.4,
+  "iq_a": 0.00055
+ },
+ "limits": {
+  "vdd_max_v": 42,
+  "vdd_op_min_v": 4.5,
+  "vdd_op_max_v": 40,
+  "i_out_max_a": 1.0,
+  "rth_ja_k_per_w": 147,
+  "tj_max_c": 125,
+  "t_min_c": -40,
+  "t_max_c": 85
+ },
+ "hot_loop": [
+  "vin",
+  "sw",
+  "gnd"
+ ],
+ "hints": [
+  "nominal average output current IOUT_NOM = 0.1 V / RS (0.1 Ω → 1 A, 0.13 Ω → 760 mA, 0.3 Ω → 333 mA); VSENSE 96 / 100 / 104 mV; TSOT25 up to 1 A continuous, the MSOP-8EP (AL8860MP-13) up to 1.5 A (p. 3, 4, 11)",
+  "the input must stay above the LED string: on time L × ΔI / (VIN − VLED − ILED × (RS + RL + RSW)), RSW 0.3 Ω nominal; maximum duty cycle 98 % typ, recommended 25 … 75 % (p. 4, 13)",
+  "inductor 33 … 100 µH, more at higher supply voltage; saturation current above the peak output current, continuous rating above the mean current; ripple ΔI internally 0.40 × ILED (p. 13)",
+  "freewheeling diode: a fast low-capacitance Schottky with a peak rating above the peak coil current and a continuous rating above the load current (p. 12)",
+  "overtemperature protection at 150 °C with 30 °C hysteresis; an LED chain shorted together keeps the regulated switch current (p. 4, 13)"
+ ],
+ "compliance": {
+  "rohs": true,
+  "radio": "none",
+  "source": "AL8860 data sheet DS39014 Rev. 8 - 2, p. 1 features: 'Totally Lead-Free & Fully RoHS Compliant (Notes 1 & 2)', halogen and antimony free; LCSC product data C125330 (2026-10-31): RoHS certificate listed (isRohsCert, ROHS3)"
+ },
+ "sources": [
+  "Diodes Incorporated AL8860 '40V 1.5A BUCK LED DRIVER', document number DS39014 Rev. 8 - 2, April 2026, https://www.diodes.com/assets/Datasheets/AL8860.pdf, read 2026-10-31",
+  "pins: p. 2 pin descriptions, TSOT25 1 SW, 2 GND, 3 CTRL, 4 SET, 5 VIN (MSOP-8EP: 5, 6 SW; 2, 3 GND; 4 CTRL; 1 SET; 8 VIN; 7 N/C; EP) – EasyEDA's library data could not be compared: easyeda.com answered 403 to the component request (2026-10-31)",
+  "vdd_max_v 42, VIN, SW and SET v_max_v 42, CTRL v_max_v 6, rth_ja_k_per_w 147 (TSOT25, note 5: 1\" x 1\" FR-4, 2 oz copper; MSOP-8EP 56): p. 3 absolute maximum ratings",
+  "vdd_op_min_v 4.5, vdd_op_max_v 40, i_out_max_a 1.0, tj_max_c 125, t_min_c −40, t_max_c 85: p. 3 recommended operating conditions – VIN 4.5 … 40 V, continuous output current TSOT25 1 A (MSOP-8EP 1.5 A), operating junction −40 … +125 °C (absolute maximum +150 °C), ambient −40 … +85 °C",
+  "vsense_v [0.096, 0.1, 0.104]: p. 4 mean current sense threshold voltage, measured on SET with respect to VIN, 96 / 100 / 104 mV; sense threshold hysteresis ±20 %",
+  "iq_a 0.00055: p. 4 quiescent current 0.55 mA typ, CTRL floating, VIN 16 V (no maximum given); shutdown 50 / 80 µA with CTRL grounded",
+  "duty_max_ratio 0.98: p. 4 DSW(MAX) max duty cycle 98 % typ; recommended duty cycle range 25 … 75 %",
+  "r_on_ohm 0.3: p. 13 'RSW is the switch resistance (0.3Ω nominal)' in the on-time equation; p. 4 RSW 0.2 Ω typ at ISW 100 mA",
+  "ripple_ratio 0.4: p. 13 'ΔI is the coil peak-peak ripple current (Internally set to 0.40 x ILED)'",
+  "CTRL vih_v 2.5, vil_v 0.2, pull up: p. 4 VEN(OFF) 0.2 V typ falling, VEN(ON) 0.25 V typ rising, CTRL range for analog dimming 0.3 … 2.5 V; p. 11 above 2.5 V the LED current is clamped to 100 %; p. 2 'Leave floating for normal operation' and 'Drive with PWM signal from open-collector or open-drain transistor' – an open drain only pulls low, so the pin is held high inside; no resistance stated",
+  "hot_loop vin, sw, gnd: p. 12–13 – the input capacitor as close as possible to the IC, the inductor as close as possible to the device with low-resistance connections to SW",
+  "LCSC product data C125330 (2026-10-31): DIODES AL8860WT-7, TSOT-25, 7 422 pcs; JLCPCB catalogue (edakit part search, 2026-10-31): Extended Part, 7 422 pcs"
+ ],
+ "notes": "Hysteretic step-down LED driver with high-side current sense, TSOT25 (1 A): RS from VIN to SET, the LEDs from SET through the inductor to SW, a Schottky diode from SW back to VIN (typical application, p. 2). Behaviour cc_led_driver (maker-coverage FT-14). No footprint name: the EasyEDA library could not be reached. Library draft, group LED.",
+ "verified": {
+  "by": "Claude (datasheet check, library draft)",
+  "date": "2026-10-31",
+  "datasheet": "Diodes Incorporated AL8860 data sheet DS39014 Rev. 8 - 2 (April 2026)",
+  "datasheet_sha256": "a0c8c9a6524a044bdfca8814fd6be82fa220eb2e72070467991cb4f72b5a65f0",
+  "checked": [
+   "pin descriptions p. 2: TSOT25 1 SW, 2 GND, 3 CTRL, 4 SET, 5 VIN",
+   "absolute maximum ratings p. 3: VIN, SW, SET 42 V, CTRL 6 V, TJ 150 °C, θJA TSOT25 147 °C/W",
+   "recommended operating conditions p. 3: VIN 4.5 … 40 V, IOUT TSOT25 1 A, TJ −40 … +125 °C, TA −40 … +85 °C",
+   "electrical characteristics p. 4: IQ 0.55 mA, ISHDN 50 / 80 µA, VSENSE 96 / 100 / 104 mV, hysteresis ±20 %, VEN(ON) 0.25 V, VEN(OFF) 0.2 V, RSW 0.2 Ω, DSW(MAX) 98 %, OTP 150 °C",
+   "application information p. 11–13: IOUT_NOM = 0.1 / RS and its table, analog and PWM dimming, soft start, capacitor, diode and inductor selection, on- and off-time equations with RSW 0.3 Ω nominal and ΔI 0.40 × ILED"
+  ],
+  "open": [
+   "absolute maximum note 4 (p. 3): 'if the voltage on SET pin is higher than 5V, the device will enter the test mode … kept below 5V for normal operation' – SET sits 0.1 V below VIN (4.5 … 40 V) in normal operation, so the 5 V is presumably meant against VIN; not entered",
+   "CTRL's internal pull-up has no resistance in the data sheet – pull up without pull_ohm; the simulation takes a CTRL pin with nothing but capacitors on it as floating, that is on",
+   "no minimum sense resistor stated: the 1 A of the TSOT25 (i_out_max_a) bounds it – no r_sense_min_ohm",
+   "iq_a is the typical 0.55 mA; no maximum given",
+   "the MSOP-8EP (AL8860MP-13, C500782; 1.5 A, θJA 56 °C/W) is another LCSC number – not this entry"
+  ]
+ }
+}

@@ -1,0 +1,45 @@
+{
+ "lcsc": "C1557",
+ "mpn": "0402CG270J500NT",
+ "manufacturer": "FH",
+ "kind": "capacitor",
+ "package": "0402",
+ "footprint": "C_0402_1005Metric",
+ "datasheet": {
+  "url": "https://datasheet.lcsc.com/datasheet/pdf/09fe2daf22580a99fa7fea93ccb20fb7.pdf"
+ },
+ "pins": {
+  "1": {
+   "name": "1",
+   "type": "passive",
+   "role": "1"
+  },
+  "2": {
+   "name": "2",
+   "type": "passive",
+   "role": "2"
+  }
+ },
+ "values": {
+  "value_f": 2.7e-11,
+  "dielectric": "C0G",
+  "tolerance": 0.05
+ },
+ "limits": {
+  "v_max_v": 50
+ },
+ "sources": [
+  "Fenghua (FH) general type MLCC specification (LCSC's copy for C1557), https://datasheet.lcsc.com/datasheet/pdf/09fe2daf22580a99fa7fea93ccb20fb7.pdf, read 2026-10-31",
+  "part numbering: 0402, CG = C0G, 270 = 27 pF, J = ±5 %, 500 = 50 V, N, T = tape; C0G 0 ± 30 ppm/°C, −55 … 125 °C"
+ ],
+ "verified": {
+  "by": "Claude (datasheet check, open-design transcription)",
+  "date": "2026-10-31",
+  "datasheet": "Fenghua (FH) general type MLCC specification (LCSC's copy for C1557)",
+  "datasheet_sha256": "705023d3be0454148a96fc2715d249a32d8ff442e70b64d1116d3490ed1d8136",
+  "checked": [
+   "value, dielectric, tolerance and rated voltage from the part number"
+  ],
+  "open": []
+ }
+}

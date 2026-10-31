@@ -19,16 +19,17 @@ from .. import catalog
 from ..catalog import table
 from ..circuit import is_number, limits, polarized, relay_sets, values
 from ..findings import Finding
-from ..sim import netlist
+from ..sim import netlist, strip
 from .limits import CODE, compare
 from .quantities import SIM_EPS_V, Limit, Quantity, part_limits
 
 DERATING = table("derating")["E"]
 # (netlist element kind, quantity) -> the derating of sim.json / derating.toml [E.derate] that applies to its limit
+FETS = {"nmos": "v_bjt", "pmos": "v_bjt", "njfet": "v_bjt", "pjfet": "v_bjt"}
 DERATE = {"v": {"capacitor": "v_cap"}, "vr": {"diode": "v_diode"}, "vce": {"npn": "v_bjt", "pnp": "v_bjt"},
-          "vds": {"nmos": "v_bjt", "pmos": "v_bjt"}, "vgs": {"nmos": "v_bjt", "pmos": "v_bjt"}}
-DIM = {"p": "p", "i": "i", "if": "i", "ic": "i", "id": "i", "gpio_i": "i", "gpio_i_total": "i", "i_contact": "i",
-       "i_switch": "i"}
+          "vds": FETS, "vgs": FETS, "vdg": FETS}
+DIM = {"p": "p", "i": "i", "if": "i", "ic": "i", "id": "i", "ig": "i", "gpio_i": "i", "gpio_i_total": "i",
+       "i_contact": "i", "i_switch": "i"}
 # what a generated fault scenario (FT-8) judges: the parts' limits – a board without its supply does not reach the
 # states its load expects, and its nets leave their declared ranges by design of the fault
 FAULT_CODES = ("LIM.v", "LIM.i", "LIM.p", "LIM.t", "LIM.backfeed")
@@ -181,6 +182,9 @@ def dissipation(el, res):
     if kind in ("pmos", "nmos"):   # @m[id] includes the body diode's current
         d_, _, s = (v(res, n) for n in nodes)
         return abs((d_ - s) * res.get(f"@{el['name']}[id]", 0.0))
+    if kind in ("njfet", "pjfet"):
+        d_, g, s = (v(res, n) for n in nodes)
+        return abs((d_ - s) * res.get(f"@{el['name']}[id]", 0.0)) + abs((g - s) * res.get(f"@{el['name']}[ig]", 0.0))
     if "value" in el:
         a, b = (v(res, n) for n in nodes[:2])
         return (a - b) ** 2 / el["value"]
@@ -245,12 +249,33 @@ def parallel_contacts(s, des, node):
     return max(1, sum(1 for num in (s.n.part(des) or {}).get("pins") or {} if s.d.pin_net.get(f"{des}.{num}") in nets))
 
 
+def matrix_key_blocked(s, des):
+    """A key of a key matrix (a net of it with matrix row or col) whose diode does not conduct in this scenario: its
+    row is not scanned, the diode blocks it on purpose – no reading through the contact, so no minimum load to hold.
+    The key's diode: the one on its net that is not a row or column, as REQ.missing/matrix finds it."""
+    d = s.d
+    nets = {d.pin_net.get(f"{des}.{p}") for p in (s.n.part(des) or {}).get("pins") or {}} - {None}
+    side = {n for n in nets if (d.nets.get(n) or {}).get("matrix") in ("row", "col")}
+    if not side:
+        return False
+    for dio in d.comps_of_kind("diode"):
+        a, k = d.net_of(dio, "anode"), d.net_of(dio, "cathode")
+        if {a, k} & (nets - side) and {a, k} & set(d.nets) - nets:
+            anode, cathode = (next(f"{dio}.{n}" for n, p in d.part(dio)["pins"].items() if p.get("role") == r)
+                              for r in ("anode", "cathode"))
+            return at_pin(d, s.res, anode) - at_pin(d, s.res, cathode) < MATRIX_DIODE_ON_V
+    return False
+
+
+MATRIX_DIODE_ON_V = 0.05  # a key diode with less forward voltage blocks: a silicon one carries < 1 nA, a Schottky ~1 µA
+
+
 def min_load(s, des, part, i):
     """REQ.value/min_load: a closed contact carries at least the minimum load of its entry (values min_load_a) – below
     it a contact may not close reliably: no current breaks the film on it. A contact in a signal path carries no DC by
     design (grade switch): there its entry's rating is judged instead (switch_dc)."""
     least = values(part).get("min_load_a")
-    if least is None or des in signal_path_contacts(s):
+    if least is None or des in signal_path_contacts(s) or matrix_key_blocked(s, des):
         return
     s.check("REQ.value", des, f"current through a closed contact of {des}", i * 1e6, f"≥ {least * 1e6:g} µA",
             i >= least, "µA", f"min_load_a of {s.n.entry_key(des)}", grade="min_load", on=(("component", des),))
@@ -336,9 +361,11 @@ def stress(s):
                 s.q(des, "vds", abs(d_ - src), "V", kind, des, "|VDS|")
                 s.q(des, "vgs", abs(g - src), "V", kind, des, "|VGS|")
                 s.q(des, "p", abs((d_ - src) * cur), "W", kind, des, "power dissipation")
+            elif kind in ("njfet", "pjfet"):
+                jfet(s, des, kind, el)
             if kind in ("pmos", "nmos"):
                 gate_drive(s, des, part, nodes)
-        heat = [w for el in els if (w := dissipation(el, res)) is not None]
+        heat =[w for el in els if (w := dissipation(el, res)) is not None]
         if "rth_ja_k_per_w" in r and heat:
             junction(s, des, sum(heat), r)
     for des, m in meta["mcu"].items():
@@ -350,6 +377,20 @@ def stress(s):
             for what, i in (("sourced", sum(x for x in cur.values() if x > 0)),
                             ("sunk", -sum(x for x in cur.values() if x < 0))):
                 s.q(des, "gpio_i_total", i, "A", "mcu", des, f"GPIO current {what} by all outputs together")
+
+
+def jfet(s, des, kind, el):
+    """A junction FET against its entry: |VDS|, |VDG|, the gate's reverse voltage against the source, its forward
+    current (a gate driven positive conducts like a diode), the drain current and the power."""
+    d_, g, src = (v(s.res, x) for x in el["nodes"])
+    cur, ig = abs(s.res.get(f"@{el['name']}[id]", 0.0)), s.res.get(f"@{el['name']}[ig]", 0.0)
+    sign = 1 if kind == "njfet" else -1          # the gate of an n-channel JFET is reverse-biased below its source
+    s.q(des, "id", cur, "A", kind, des, "drain current")
+    s.q(des, "vds", abs(d_ - src), "V", kind, des, "|VDS|")
+    s.q(des, "vdg", abs(d_ - g), "V", kind, des, "|VDG|")
+    s.q(des, "vgs", max(sign * (src - g), 0), "V", kind, des, "gate reverse voltage |VGS|")
+    s.q(des, "ig", max(ig, 0), "A", kind, des, "forward gate current")   # ngspice: + forward, for either channel
+    s.q(des, "p", abs((d_ - src) * cur) + abs((g - src) * ig), "W", kind, des, "power dissipation")
 
 
 def tj_limit(r, crit):
@@ -422,6 +463,9 @@ def function(s, load, low=None, plugin=None):
         r = limits(s.n.part(des))
         vin = v(res, reg["vin"]) - v(res, reg["gnd"])
         vout = v(res, reg["vout"]) - v(res, reg["gnd"])
+        if reg.get("enable") and v(res, reg["enable"]) < 0.5:      # maker-coverage FT-5: switched off by its enable
+            boost_off(s, des, reg, vin, vout)
+            continue
         s.check("SIM.state", des, f"output voltage ({reg['kind']})", vout, f"{reg['vset']} V ± {crit['rail_tol']:.0%}",
                 abs(vout - reg["vset"]) <= reg["vset"] * crit["rail_tol"], "V")
         if des in meta["mcu"]:
@@ -490,6 +534,7 @@ def function(s, load, low=None, plugin=None):
     opamps(s)
     bridges(s)
     chargers(s)
+    cc_led_drivers(s)
     input_injection(s)
     supply_order_e(s)
     powered_pins(s)
@@ -503,6 +548,7 @@ def function(s, load, low=None, plugin=None):
     clocks(s)
     logic_levels(s)
     leds(s, load)
+    strip.judge(s, load)          # LED strips: every pixel's supply, every feed (sim/strip.py)
     for des in s.sim.get("expect_blocking", []):
         i = res.get(f"@d_{des.lower()}[id]", 0.0)
         s.check("SIM.state", des, "diode blocks", abs(i), f"≤ {crit['blocking_max_a'] * 1e3:.0f} mA",
@@ -534,6 +580,8 @@ def operating_range(s):
     d, res = s.d, s.res
     for des in sorted(s.n.comps):
         part = s.n.part(des) or {}
+        if part.get("kind") == strip.KIND:
+            continue              # every pixel along it, not its pins: strip.judge
         r = limits(part)
         ranges = {n: (r.get("vdd_op_min_v"), r.get("vdd_op_max_v")) for n in supply_pins(part)}
         ranges.update({n: (i.get("v_op_min_v"), i.get("v_op_max_v")) for n, i in (part.get("pins") or {}).items()
@@ -607,6 +655,8 @@ def thevenin(s, des, ref):
     resistors to their far ends in parallel; None where anything else is on the net or a resistor has no value."""
     d, res = s.d, s.res
     net = d.pin_net.get(ref)
+    if net not in d.nets:         # a node of its own behind a cable wire (a strip's pin): not known here
+        return None
     nodes = set(netlist.net_nodes(d, net))
     conductance, current = 0.0, 0.0
     for other in d.nets[net]["pins"]:
@@ -637,7 +687,8 @@ def input_injection(s):
     none, a pin rated above its supply) against the pin its `ref` names, else the part's vin_rel_max_v for its inputs,
     bidirectional pins and outputs against its supply. Where the pin gives i_inject_max_a and only resistors feed it,
     the current its clamp diode takes – (V_open − V_ref − v_rel) / R_source – is held to that instead: the clamp
-    conducts, the part is powered through its pin or latches up."""
+    conducts, the part is powered through its pin or latches up. A pin on a net no element of the netlist reaches has
+    no voltage (nan) and is not judged, as LIM.range does."""
     d, res = s.d, s.res
     for des in sorted(s.n.comps):
         part = s.n.part(des) or {}
@@ -659,6 +710,8 @@ def input_injection(s):
             if vref is None or math.isnan(vref):
                 continue
             x = at_pin(d, res, ref, ground) - vref
+            if math.isnan(x):
+                continue          # a net no element of the netlist reaches (QSPI lines between two ICs): no reading
             name = info.get("name", num)
             inject = info.get("i_inject_max_a")
             src = thevenin(s, des, ref) if is_number(inject) and x > rel else None
@@ -734,6 +787,8 @@ def pin_current(s, des, ref):
     the net is a resistor, a capacitor, an LED or a diode; None otherwise."""
     d, res = s.d, s.res
     net = d.pin_net.get(ref)
+    if net not in d.nets:         # a node of its own behind a cable wire (a strip's pin): not known here
+        return None
     nodes = set(netlist.net_nodes(d, net))
     total = 0.0
     for other in d.nets[net]["pins"]:
@@ -810,7 +865,8 @@ def pin_currents(s):
 
 
 SWITCH_DC_MAX_V = 0.01     # edakit's choice for "within a few mV" (maker-coverage CK-30), not a datasheet figure
-SIGNAL_MIN_LOAD_A = 10e-6  # a contact rated for signal currents: "minimum load 10 µA" (maker-coverage CK-30, forums)
+SIGNAL_MIN_LOAD_A = 10e-6  # a contact rated for signal currents: a signal relay's minimum applicable load
+                           # (Hongfa HFD4: 10 µA at 10 mV) – rules-at-scale.md, decision 14
 CONTACT_KINDS = ("switch", "button", "dip_switch", "relay", "potentiometer")
 
 
@@ -887,7 +943,7 @@ def switch_dc(s):
         if least is not None:
             s.check("REQ.value", des, f"minimum load of {des}'s contacts in the signal path", least * 1e6,
                     f"≤ {SIGNAL_MIN_LOAD_A * 1e6:g} µA", least <= SIGNAL_MIN_LOAD_A, "µA",
-                    f"min_load_a of {s.n.entry_key(des)}; maker-coverage CK-30", grade="min_load",
+                    f"min_load_a of {s.n.entry_key(des)}; the line: Hongfa HFD4, 10 µA at 10 mV (decision 14)", grade="min_load",
                     on=(("component", des),))
         for on in groups:
             xs = {net: at_pin(d, res, f"{des}.{num}") for net, num in on.items()}
@@ -1022,6 +1078,75 @@ def chargers(s):
                                       f"IQ – × {r['rth_ja_k_per_w']:g} K/W")
 
 
+# --- a boost converter's enable, a constant-current LED buck (maker-coverage FT-5, FT-14) -----------------------------
+def boost_off(s, des, reg, vin, vout):
+    """A boost converter its enable switched off (switch_boost): its output is what the inductor and the diode behind
+    its switch pin pass from the input – a row of information instead of SIM.state; what hangs on the output is judged
+    at that level (the load's expect, LEDs on or dark, the parts' limits)."""
+    s.rows.append({"id": "SIM.state", "scenario": s.name, "item": des,
+                   "check": "output with EN low (converter off, no load disconnect)", "actual": f"{vout:.4g} V",
+                   "expected": f"the input {vin:.4g} V through the inductor and {reg['diode']} – information",
+                   "result": "info"})
+
+
+def cc_led_drivers(s):
+    """A constant-current step-down LED driver (behaviour cc_led_driver – PT4115, AL8860): the current R_S sets,
+    vsense_v [min … max] / R_S, within the driver's i_out_max_a (LIM.i/cc) and R_S at least r_sense_min_ohm
+    (REQ.value/cc); the input at least what the string needs – the voltage across R_S, the LEDs and the inductor, over
+    the maximum duty cycle, plus the set current through the switch's r_on_ohm: the on-time equation of both datasheets
+    (LIM.range/cc); each LED of the string at its share of the set current, or dark with dim low (SIM.state/cc); the
+    inductor of the string saturating above the peak current, the set current × (1 + ripple_ratio / 2) (LIM.i/cc).
+    The LEDs' own if_max_a and the inductor's i_max_a hold the simulated current (stress), the top of vsense_v."""
+    res, crit = s.res, s.crit
+    for des, cc in sorted((s.meta.get("cc_bucks") or {}).items()):
+        key, on, p = s.n.entry_key(des), (("component", des),), cc["values"]
+        r_s, vs = cc["r_s"], cc["vsense"]
+        if r_s is None or not vs:
+            s.check("SIM.state", des, "LED current set by R_S", "no resistor from VIN to the sense pin" if vs
+                    else "no vsense_v in the entry", "R_S from VIN to the sense pin, I = vsense_v / R_S", False,
+                    grade="cc", on=on)
+            continue
+        lo, hi = min(vs) / r_s, max(vs) / r_s
+        s.q(des, "i_out", hi, "A", "", des, f"LED current set by R_S {r_s:.4g} Ω ({min(vs) * 1e3:.4g} … "
+            f"{max(vs) * 1e3:.4g} mV / R_S, {lo * 1e3:.4g} … {hi * 1e3:.4g} mA)", lo=lo, code="LIM.i", grade="cc",
+            report=True)
+        if (least := cc["limits"].get("r_sense_min_ohm")) is not None:
+            s.q(des, "r_sense", None, "Ω", "", des, "sense resistor R_S", lo=r_s, code="REQ.value", grade="cc",
+                entry=False, lims=[Limit(min=least, source=f"r_sense_min_ohm of {key}")])
+        frac = min(max(v(res, cc["dim"]), 0.0), 1.0)
+        target = cc["i_set"] * frac
+        if frac > 1e-3:
+            g = v(res, cc["gnd"])
+            vin, sw = v(res, cc["vin"]) - g, v(res, cc["sw"]) - g
+            dmax, r_on = p.get("duty_max_ratio", 1.0), p.get("r_on_ohm", 0.0)
+            across = vin - sw
+            how = (f"input above the LED string: {across:.4g} V across R_S, the LEDs and the inductor"
+                   + (f" / {dmax:g} (maximum duty cycle)" if dmax != 1 else "") + f" + {target * 1e3:.4g} mA × "
+                   f"{r_on:g} Ω (switch)")
+            s.q(des, "vin_cc", None, "V", "", des, how, lo=vin, code="LIM.range", grade="cc", entry=False,
+                lims=[Limit(min=round(across / dmax + target * r_on, 6),
+                            source=f"vsense_v, r_on_ohm{', duty_max_ratio' if dmax != 1 else ''} of {key} – the "
+                                   "on-time equation of its datasheet")])
+        n, off_max = cc["parallel"], crit["led_off_max_a"]
+        for name in cc["leds"]:
+            label, cur = name[2:].upper(), res.get(f"@{name}[id]", float("nan"))
+            here = (("component", label),)
+            if frac > 1e-3:
+                share = target / n
+                s.check("SIM.state", label, f"LED current ({des} string)", cur, f"≥ {crit['led_on_min_ratio']:.0%} of "
+                        f"{share * 1e3:.2f} mA", cur >= crit["led_on_min_ratio"] * share, "A", grade="cc", on=here)
+            else:
+                s.check("SIM.state", label, "LED dark", cur, f"≤ {off_max * 1e6:.0f} µA", cur <= off_max, "A",
+                        grade="cc", on=here)
+        ripple = p.get("ripple_ratio")
+        for coil in cc["coils"] if ripple is not None and frac > 1e-3 else []:
+            sat = limits(s.n.part(coil)).get("i_sat_a")
+            if sat is not None:
+                s.q(coil, "i_peak", hi * frac * (1 + ripple / 2), "A", "inductor", coil,
+                    f"peak current: {hi * frac * 1e3:.4g} mA × (1 + {ripple:g} / 2), the ripple of {key}", code="LIM.i",
+                    grade="cc", entry=False, lims=[Limit(max=sat, source=f"i_sat_a of {s.n.entry_key(coil)}")])
+
+
 def opamps(s):
     """LIM.range/opamp: every input of an op-amp (behaviour opamp) inside its common-mode range – vicm_v [above vee,
     from vcc] –, and every output inside its swing: an output held at the limit of vout_swing_v while its inputs stand
@@ -1133,7 +1258,10 @@ def leds(s, load):
     leds_on = load.get("leds_on")
     groups = defaultdict(list)
     behind = behind_resistor(d, joined, chan_of)
+    strings = {name for cc in (meta.get("cc_bucks") or {}).values() for name in cc["leds"]}
     for name, info in meta["leds"].items():
+        if name in strings:
+            continue      # the string of a constant-current buck: cc_led_drivers judges it
         i = res.get(f"@{name}[id]", float("nan"))
         label = name[2:].upper()
         if mux := multiplexed(d, info["anode_net"], info["cathode_net"]):

@@ -173,20 +173,24 @@
    "role": "sda",
    "drive": "open_drain",
    "v_max_v": 6.0,
-   "hint": "open-drain; the pull-up voltage can be up to 5.5 V regardless of VCC"
+   "hint": "open-drain; the pull-up voltage can be up to 5.5 V regardless of VCC",
+   "c_in_f": 1e-11
   },
   "16": {
    "name": "SCL",
    "type": "input",
    "role": "scl",
    "v_max_v": 6.0,
-   "hint": "up to 5.5 V regardless of VCC"
+   "hint": "up to 5.5 V regardless of VCC",
+   "c_in_f": 1e-11
   }
  },
  "values": {
   "vih_ratio": 0.7,
   "vil_ratio": 0.3,
-  "idd_max_a": 0.00065
+  "idd_max_a": 0.00065,
+  "behavior": "logic",
+  "icc_a": 0.00065
  },
  "limits": {
   "vdd_max_v": 6.0,
@@ -195,7 +199,8 @@
   "tj_max_c": 125,
   "rth_ja_k_per_w": 73,
   "t_min_c": -40,
-  "t_max_c": 85
+  "t_max_c": 85,
+  "f_scl_max_hz": 400000.0
  },
  "hints": [
   "VCC above VPF (2.45–2.70 V) powers the part; below VPF and below VBAT it runs from VBAT (Table 1)",
@@ -211,7 +216,9 @@
   "Maxim Integrated DS3231 Extremely Accurate I2C-Integrated RTC/TCXO/Crystal, 19-5170 Rev 10 (3/15), p. 6 Note 6: RST internal 50 kΩ (nominal) pull-up to VCC",
   "Maxim Integrated DS3231 Extremely Accurate I2C-Integrated RTC/TCXO/Crystal, 19-5170 Rev 10 (3/15), p. 9 Pin Description: 32kHz, INT/SQW, SDA open-drain with external pull-up; INT/SQW, SDA and SCL up to 5.5 V regardless of VCC; VCC 0.1–1.0 µF; VBAT 0.1–1.0 µF only as primary source; N.C. pins to ground",
   "Maxim Integrated DS3231 Extremely Accurate I2C-Integrated RTC/TCXO/Crystal, 19-5170 Rev 10 (3/15), p. 16–17 Figures 3–5: slave address 1101000 (0x68), no address pins",
-  "decoupling default switched off for this entry (needs.decoupling false): VCC carries its own capacitor need from the pin description, VBAT as backup source needs none (p. 9)"
+  "decoupling default switched off for this entry (needs.decoupling false): VCC carries its own capacitor need from the pin description, VBAT as backup source needs none (p. 9)",
+  "Maxim Integrated DS3231 Extremely Accurate I2C-Integrated RTC/TCXO/Crystal, 19-5170 Rev 10 (3/15), p. 2 Electrical Characteristics: ICCA max 200 µA (3.63 V) / 300 µA (5.5 V) – the average including the temperature conversions (Note 5) –, ICCSCONV max 575 / 650 µA – icc_a = 650 µA at VCC, the most the part draws during a temperature conversion (behaviour logic); p. 3 (VCC = 0 V): IBATTC max 575 / 650 µA (3.63 / 5.5 V) – icc_a {VBAT 650 µA} in config vbat_primary",
+  "f_scl_max_hz 400 kHz: AC electrical characteristics, SCL clock frequency, fast mode 100–400 kHz, p. 4; c_in_f 10 pF on SDA and SCL: same table, capacitance for SDA, SCL CI/O 10 pF (typical) – Maxim DS3231 19-5170 Rev 10, read 2026-10-31"
  ],
  "notes": "Library draft of the RTC on the common DS3231 breakout module; that module also carries an AT24C32 EEPROM (library draft C60583). The module itself – its pull-ups, charging circuit and address jumpers – is not described by this entry.",
  "verified": {
@@ -228,7 +235,9 @@
    "I2C address 0x68 (1101000)",
    "VCC decoupling 0.1–1.0 µF; N.C. pins 5–12 to ground",
    "2026-10-31: RST no external pull-up; VCC decoupling window 0.1–1.0 µF with its upper bound (19-5170 Rev 10 pin description, read now)",
-   "2026-10-31: VBAT by config from DS3231 Rev 10, pin description: backup (default) needs no capacitor, vbat_primary 0.1–1.0 µF low-leakage, no_battery on ground"
+   "2026-10-31: VBAT by config from DS3231 Rev 10, pin description: backup (default) needs no capacitor, vbat_primary 0.1–1.0 µF low-leakage, no_battery on ground",
+   "2026-10-31: behaviour logic with icc_a 650 µA at VCC (ICCSCONV max at 5.5 V), in vbat_primary 650 µA at VBAT (IBATTC max), 19-5170 Rev 10, p. 2–3 (read now); 32kHz, INT/SQW and RST rest released (open drain)",
+   "2026-10-31: fSCL fast mode 400 kHz; CI/O 10 pF typ (AC electrical characteristics, p. 4) (maker-coverage FT-16)"
   ],
   "open": [
    "the copy read is LCSC's file listed under C722469 (DS3231SN#, same device, other packing); the manufacturer's own URL (analog.com) refused automated download",
@@ -238,7 +247,8 @@
     "text": "pin 1 of the SOIC-16 at the footprint's pin-1 mark",
     "when": "order"
    },
-   "RoHS/REACH: the datasheet says '#' parts are RoHS-compliant and may contain exempt lead; compliance not entered"
+   "RoHS/REACH: the datasheet says '#' parts are RoHS-compliant and may contain exempt lead; compliance not entered",
+   "RST's internal 50 kΩ pull-up is not part of the simulation model (behaviour logic leaves the pin off)"
   ]
  },
  "configs": {
@@ -246,7 +256,12 @@
    "about": "VBAT as the backup supply (a coin cell): no capacitor required (Maxim DS3231 19-5170 Rev 10 (3/15), pin description VBAT)"
   },
   "vbat_primary": {
-   "about": "VBAT as the primary power source: 0.1–1.0 µF low-leakage capacitor (Maxim DS3231 19-5170 Rev 10 (3/15), pin description VBAT)"
+   "about": "VBAT as the primary power source: 0.1–1.0 µF low-leakage capacitor (Maxim DS3231 19-5170 Rev 10 (3/15), pin description VBAT)",
+   "values": {
+    "icc_a": {
+     "VBAT": 0.00065
+    }
+   }
   },
   "no_battery": {
    "about": "VBAT not used: on ground (Maxim DS3231 19-5170 Rev 10 (3/15), pin description VBAT)",

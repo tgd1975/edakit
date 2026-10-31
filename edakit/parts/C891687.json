@@ -1,0 +1,81 @@
+{
+ "lcsc": "C891687",
+ "mpn": "MMBFJ201",
+ "manufacturer": "onsemi(安森美)",
+ "kind": "njfet",
+ "package": "SOT-23 (TO-236, case 318)",
+ "footprint": "SOT-23-3_L2.9-W1.3-P1.90-LS2.4-BR",
+ "jlc_class": "Extended Part",
+ "datasheet": {
+  "url": "https://www.onsemi.com/download/data-sheet/pdf/mmbfj202-d.pdf",
+  "pinout_page": 1,
+  "title": "MMBFJ201, MMBFJ202 – N-Channel General-Purpose Amplifier",
+  "revision": "MMBFJ202/D Rev. 5 (April 2026)"
+ },
+ "pins": {
+  "1": {
+   "name": "D",
+   "type": "passive",
+   "role": "drain"
+  },
+  "2": {
+   "name": "S",
+   "type": "passive",
+   "role": "source"
+  },
+  "3": {
+   "name": "G",
+   "type": "passive",
+   "role": "gate"
+  }
+ },
+ "values": {
+  "idss_a": [
+   0.0002,
+   null,
+   0.001
+  ],
+  "vgs_off_v": [
+   -0.3,
+   null,
+   -1.5
+  ]
+ },
+ "limits": {
+  "vdg_max_v": 40,
+  "vgs_max_v": 40,
+  "ig_max_a": 0.05,
+  "p_max_w": 0.35,
+  "rth_ja_k_per_w": 357,
+  "tj_max_c": 150,
+  "t_min_c": -55
+ },
+ "spice": {
+  "model": ".model MMBFJ201 NJF(VTO=-0.77 BETA=0.98m LAMBDA=0.016)"
+ },
+ "sources": [
+  "onsemi MMBFJ201, MMBFJ202 – N-Channel General-Purpose Amplifier, MMBFJ202/D Rev. 5 (April 2026), https://www.onsemi.com/download/data-sheet/pdf/mmbfj202-d.pdf, read 2026-10-31 (linked from onsemi's MMBFJ201 product page). The TO-92 J201 has no data sheet at onsemi any more: https://www.onsemi.com/pdf/datasheet/j201-d.pdf leads to the technical-documentation page with 'notFound=J201-D.PDF'; the MMBFJ201 is the J201 in SOT-23, with the J201's spread of maker-coverage GTP 12",
+  "vdg_max_v 40, vgs_max_v 40 (VGS −40 V: the gate reverse-biased against the source), ig_max_a 0.05 (IGF, forward gate current), tj_max_c 150, t_min_c -55: p. 1 absolute maximum ratings",
+  "p_max_w 0.35 and rth_ja_k_per_w 357: p. 1 thermal characteristics (PD at TA = 25 °C, derate 2.8 mW/°C; FR-4 board, note 3)",
+  "idss_a 0.2 … 1.0 mA (VDS = 20 V, VGS = 0, pulsed) and vgs_off_v −0.3 … −1.5 V (VDS = 20 V, ID = 10 nA): p. 2 electrical characteristics, MMBFJ201 – no typical values (null); the spread corners pair the ends (sim/spread.py)",
+  "spice: assumption – JFET level 1 fitted by Claude to the typical output characteristic, no manufacturer model read: Fig. 1 (MMBFJ201), ID at VDS = 4 V 0.465 / 0.336 / 0.233 / 0.145 / 0.075 mA at VGS −0.1 / −0.2 / −0.3 / −0.4 / −0.5 V, read from the graph – the square root of ID falls linearly with VGS, to zero at VTO −0.77 V, slope 1.02 √mA/V, BETA 0.98 mA/V² once LAMBDA is taken out; LAMBDA 0.016 /V from the rise of the −100 mV and −300 mV curves between 1 and 5 V (0.437 → 0.469 mA, 0.223 → 0.235 mA). Its IDSS of about 0.6 mA lies inside the table's 0.2 … 1.0 mA; Fig. 5 (VDS = 20 V) shows a device of about −0.7 V cut-off",
+  "pins 1 = drain, 2 = source, 3 = gate: p. 1 pin drawing of the SOT-23; EasyEDA symbol of C891687 1 D, 2 S, 3 G (edakit part import 2026-10-31)",
+  "LCSC/JLCPCB catalogue 2026-10-31 (edakit part search): onsemi MMBFJ201, SOT-23-3L, Extended Part, 11 937 pcs"
+ ],
+ "notes": "N-channel JFET for low-level audio stages – the J201 of the boosters and the fuzz input stages, in SOT-23. IDSS 0.2 … 1.0 mA and VGS(off) −0.3 … −1.5 V: a stage biased by fixed resistors moves its drain over volts between parts; the spread corners of the simulation (sim.json spread, maker-coverage FT-17) show it against the drain's expected window. Library draft.",
+ "verified": {
+  "by": "Claude (datasheet check, library draft)",
+  "date": "2026-10-31",
+  "datasheet": "onsemi MMBFJ202/D Rev. 5 (April 2026)",
+  "datasheet_sha256": "4063ad771f3cc2d49f7af5a94bce12afd3a6346c8dc8b81d40be08a5cf634882",
+  "checked": [
+   "p. 1 SOT-23: 1 drain, 2 source, 3 gate = EasyEDA symbol of C891687",
+   "p. 1: VDG 40 V, VGS −40 V, IGF 50 mA, TJ −55 … 150 °C, PD 350 mW, RθJA 357 K/W",
+   "p. 2: V(BR)GSS ≤ −40 V, IGSS ≤ 100 pA at −20 V; VGS(off) −0.3 … −1.5 V; IDSS 0.2 … 1.0 mA; yFS ≥ 500 µmhos"
+  ],
+  "open": [
+   "SPICE model is a fit by Claude to the typical curve of Fig. 1, not a manufacturer model",
+   "no drain-source voltage and no drain current rating in the data sheet: VDG and the power hold the drain"
+  ]
+ }
+}

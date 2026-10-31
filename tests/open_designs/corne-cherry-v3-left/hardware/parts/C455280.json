@@ -1,0 +1,49 @@
+{
+ "lcsc": "C455280",
+ "mpn": "TS-1088R-02026",
+ "manufacturer": "XUNPU",
+ "kind": "button",
+ "package": "SMD 3.9 × 3.0 mm, 2.0 mm high",
+ "footprint": "ResetSW_1side",
+ "datasheet": {
+  "url": "https://datasheet.lcsc.com/datasheet/pdf/d36ef8d43e89de62c59fa43456d00a3f.pdf",
+  "pinout_page": 1
+ },
+ "pins": {
+  "1": {
+   "name": "1",
+   "type": "passive",
+   "role": "a"
+  },
+  "2": {
+   "name": "2",
+   "type": "passive",
+   "role": "b"
+  }
+ },
+ "values": {
+  "r_on_ohm": 0.1,
+  "force_n": 2.55
+ },
+ "limits": {
+  "i_max_a": 0.05,
+  "v_max_v": 12
+ },
+ "sources": [
+  "XUNPU TS-1088R-XXXXX tact switch drawing, Rev. A, 1 sheet, LCSC's copy https://datasheet.lcsc.com/datasheet/pdf/d36ef8d43e89de62c59fa43456d00a3f.pdf, read 2026-10-31 (read from the drawing image)",
+  "rated 50 mA DC 12 V; contact resistance < 100 mΩ; operating force code 26 = 260 gf (2.55 N), ±50 gf; height code 020 = 2.0 mm; circuit diagram: one contact between 1 and 2",
+  "stand-in for the v3's reset switch, which the build guide names only 'Reset switch (tact switch)': the v4 BOM's 2-pin tact switch"
+ ],
+ "verified": {
+  "by": "Claude (datasheet check, open-design transcription)",
+  "date": "2026-10-31",
+  "datasheet": "XUNPU TS-1088R-XXXXX tact switch drawing, Rev. A, 1 sheet",
+  "datasheet_sha256": "fbcea844b292de8d0377a6b6023cca960ec9907c43e9849f1dad22680ab06383",
+  "checked": [
+   "rating",
+   "contact resistance",
+   "force and height codes"
+  ],
+  "open": []
+ }
+}

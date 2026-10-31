@@ -5,17 +5,18 @@
 [domain]
 name = "power"
 about = "batteries, cells, chargers and converters: polarity of the inputs, cell current, enable, thermal copper"
-suggested_by = { kinds = ["battery_holder"] }
+suggested_by = { kinds = ["battery_holder"], values = ["prog_v", "v_uvp_v"] }   # a holder, a charger, a cell's protection
 
 [severity]
 
 [hints]
-apply = ["HINT.input_polarity", "HINT.boost_enable", "HINT.thermal_copper"]
+apply = ["HINT.input_polarity", "HINT.boost_enable", "HINT.thermal_copper", "HINT.power_path",
+         "HINT.charge_termination", "HINT.protection_timing"]
 
 [review]
 electrical = [
   "Cells: the current each cell delivers in every state against its continuous and pulse limits (sim.json cells i_max_a, LIM.i/cell); a radio pulse from a coin cell as a load step in a transient run.",
-  "Charging: what feeds the load while a charger charges – a charger whose battery terminal feeds the load never ends its charge; the charge current against the cell's limit (LIM.backfeed holds i_charge_max_a).",
+  "Charging: what feeds the load while a charger charges – a charger whose battery terminal feeds the load never ends its charge (HINT.power_path names a load on the cell without a power path); the charge current against the cell's limit (LIM.backfeed holds i_charge_max_a); the end of charge and the protection IC's release and delays, which no run shows (HINT.charge_termination, HINT.protection_timing).",
   "Polarity: every plug that can go in the wrong way round marked reversible, so that PATH.reverse sees it (HINT.input_polarity).",
 ]
 

@@ -152,10 +152,12 @@ def pin_voltages(d):
 # kind -> [(quantity name, how to read it)]: the voltages a part's declared nets put on it
 ACROSS = {"capacitor": [("v", "across")], "diode": [("vr", "reverse")], "npn": [("vce", "collector-emitter")],
           "pnp": [("vce", "collector-emitter")], "nmos": [("vds", "drain-source"), ("vgs", "gate-source")],
-          "pmos": [("vds", "drain-source"), ("vgs", "gate-source")]}
+          "pmos": [("vds", "drain-source"), ("vgs", "gate-source")],
+          "njfet": [("vds", "drain-source"), ("vdg", "drain-gate"), ("vgs", "gate-source")],
+          "pjfet": [("vds", "drain-source"), ("vdg", "drain-gate"), ("vgs", "gate-source")]}
 PASSIVE = ("fuse", "switch", "dip_switch", "button", "potentiometer", "resistor", "buzzer", "connector")
 TERMINALS = {"collector-emitter": ("collector", "emitter"), "drain-source": ("drain", "source"),
-             "gate-source": ("gate", "source")}
+             "gate-source": ("gate", "source"), "drain-gate": ("drain", "gate")}
 
 
 def coupling(d, *nets):

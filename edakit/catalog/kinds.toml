@@ -24,26 +24,32 @@ s = "s"
 ns = "ns"
 k_per_w = "K/W"
 ratio = "1"
+ohm_per_m = "Ω/m"
+per_m = "1/m"
 
 [enums]
 behavior = ["ldo", "buck", "boost", "buck_boost", "mcu", "cc_sink", "opamp", "logic", "current", "bridge", "charger",
-            "protection", "pd_sink", "pass_gate", "photomos", "matrix_driver", "none"]
-            # matrix_driver: multiplexes LEDs between its segment and digit pins – no DC model
+            "protection", "pd_sink", "pass_gate", "photomos", "matrix_driver", "cc_led_driver", "none"]
+            # matrix_driver: multiplexes LEDs between its segment and digit pins – no DC model; cc_led_driver: a
+            # constant-current step-down LED driver with a sense resistor from its input (PT4115, AL8860)
 regulator = ["ldo", "buck", "boost", "buck_boost", "none"]
 color = ["red", "green", "blue", "yellow", "orange", "white", "warm_white", "amber", "uv", "ir", "rgb"]
 dielectric = ["C0G", "NP0", "X5R", "X7R", "X7S", "X6S", "Y5V", "electrolytic", "polymer", "tantalum", "film"]
 
 [free]
 values = ["polarized", "tolerance", "iout_accuracy", "iout_gain", "hfe_min", "hfe_max", "efficiency", "usb_c",
-          "i_hold_vs_temp", "first_bit_to", "v_io_v", "comparator", "tvs"]
+          "i_hold_vs_temp", "first_bit_to", "v_io_v", "comparator", "tvs",
+          "spi_modes"]          # spi_modes: the SPI modes (0–3: CPOL × 2 + CPHA) the part's serial interface runs in
 pin = ["name", "type", "role", "strap", "pull", "hint", "functions", "out_edge", "t_pd_ns", "needs", "drive", "float_ok", "adc", "z_in_ohm", "short_proof", "clamp", "windows",
        "biased",                # biased: an input the part holds at its own DC level (LVL.undefined/analog)
-       "ref", "rel_ref"]        # ref, rel_ref: the supply pin a relative limit and the threshold ratios refer to
+       "ref", "rel_ref",        # ref, rel_ref: the supply pin a relative limit and the threshold ratios refer to
+       "state"]                 # state: high, low or off – where behaviour logic holds an output (sim/netlist.py)
 entry = ["needs", "address", "antenna", "library", "symbol_differs", "matrix",
          "supply_order", "i_group_max_a", "configs", "config_default"]   # needs switches a default of catalog/needs.toml off
                                 # ({"decoupling": false}); address: a bus address (REQ.forbidden/address); antenna:
-                                # {keepout_mm = [x0, y0, x1, y1]} – the area around the antenna that stays free of
-                                # copper, in the footprint's frame at rotation 0 on top (GEO.keepout); library: the
+                                # {keepout_mm = [x0, y0, x1, y1], edge_mm} – the area around the antenna that stays
+                                # free of copper, in the footprint's frame at rotation 0 on top (GEO.keepout), and
+                                # how far inside the board's outer edge it may lie at most (GEO.keepout/edge); library: the
                                 # version of edakit/parts/ a copy was taken from (PARTS.library); symbol_differs:
                                 # {pin: reason} – pins where the entry follows the datasheet, not the library symbol
                                 # (STRUCT.entry/declared); matrix: the fn kinds a GPIO matrix routes to any GPIO pin
@@ -58,13 +64,17 @@ entry = ["needs", "address", "antenna", "library", "symbol_differs", "matrix",
 limits = ["p_max_w", "rth_ja_k_per_w", "tj_max_c", "t_max_c", "t_min_c"]
 values = []
 pin = ["v_max_v", "v_op_min_v", "v_op_max_v", "vih_v", "vil_v", "vih_ratio", "vil_ratio", "pull_ohm",
-       "v_min_v", "v_rel_max_v", "v_max_powered_v", "i_max_a", "i_inject_max_a", "r_load_min_ohm", "c_load_max_f"]
+       "v_min_v", "v_rel_max_v", "v_max_powered_v", "i_max_a", "i_inject_max_a", "r_load_min_ohm", "c_load_max_f",
+       "pull_v", "c_in_f"]
+# pull_v: the voltage a pin's own pull-up (pull, pull_ohm) pulls to where it is an internal supply, not a pin of the
+# part (PT4115 DIM: 200 kΩ to an internal 5 V) – the simulation then puts the pull into the operating point;
 # v_min_v: the pin's own lower limit (an RS-485 line, −7.5 V) – in place of the floor of an active pin; v_rel_max_v:
 # how far the pin may rise above its reference supply (the pin named in ref, else the part's supply) – null: none,
 # a pin rated above its supply; v_max_powered_v: the limit while the part is powered (v_max_v: unpowered); i_max_a:
 # the pin's own current; i_inject_max_a: the current its protection diodes take; r_load_min_ohm, c_load_max_f: what an
 # output may drive; ref names the supply pin a pin's v_rel_max_v and threshold ratios refer to, rel_ref the
-# relative limit's own where the datasheet refers it to another supply (MPU-6050: thresholds of VLOGIC, maximum VDD + 0.5 V)
+# relative limit's own where the datasheet refers it to another supply (MPU-6050: thresholds of VLOGIC, maximum VDD + 0.5 V);
+# c_in_f: the pin's input capacitance – on an I2C line part of the bus capacitance (the bus speed the pull-ups allow)
 
 [pin_types]
 types = ["passive", "input", "output", "bidirectional", "power_in", "power_output", "ground", "analog",
@@ -83,10 +93,15 @@ values = ["value_ohm", "tolerance"]
 [kinds.capacitor]
 roles = ["plus", "minus", "1", "2"]          # a capacitor without polarity: its pin numbers
 limits = ["v_max_v", "vr_max_v", "i_ripple_a"]
-values = ["value_f", "dielectric", "polarized", "tolerance"]
+values = ["value_f", "dielectric", "polarized", "tolerance",
+          "dc_bias",                         # [[V, ratio], …]: the share of its capacitance left at a DC across it,
+                                             # the maker's curve (FT-9) – volts rising from 0, ratios above 0
+          "esr_ohm"]                         # the ESR at 100 kHz, one number or [min, typ, max] (null where the maker
+                                             # gives none) – held to a regulator's ESR window (CK-14)
 
 [kinds.crystal]
-roles = ["1", "2"]                           # a two-pin quartz crystal or resonator without capacitors of its own
+roles = ["1", "2"]                           # a two-pin quartz crystal or resonator without capacitors of its own;
+                                             # a crystal of four pads: the quartz on roles 1 and 2, the lid pads ground
 limits = []
 values = ["f_hz", "c_load_f"]                # its frequency; the load capacitance it is specified for
 
@@ -116,15 +131,29 @@ limits = ["vr_max_v", "if_max_a"]
 values = ["vf_typ_v", "vf_min_v", "vf_max_v", "vf_at_a", "rs_ohm"]
 per_color = ["red", "green", "blue"]       # limits and values may be given per colour
 
-[kinds.npn]
+[kinds.npn]                                  # hfe_min, hfe_max: the corners of the simulation's spread (sim/spread.py);
+                                             # icbo_a: the collector-base leakage, {"°C": A} – its maximum by temperature
 roles = ["collector", "base", "emitter"]
 limits = ["vce_max_v", "veb_max_v", "ic_max_a"]
-values = ["hfe_min", "hfe_max", "vce_sat_v"]
+values = ["hfe_min", "hfe_max", "vce_sat_v", "icbo_a"]
 
 [kinds.pnp]
 roles = ["collector", "base", "emitter"]
 limits = ["vce_max_v", "veb_max_v", "ic_max_a"]
-values = ["hfe_min", "hfe_max", "vce_sat_v"]
+values = ["hfe_min", "hfe_max", "vce_sat_v", "icbo_a"]
+
+[kinds.njfet]                                # a junction FET: idss_a and vgs_off_v as [min, typ, max] – VGS(off)
+                                             # negative for the n-channel, positive for the p-channel; the spread's
+                                             # corners pair their ends. vgs_max_v: the gate's reverse voltage against
+                                             # the source, ig_max_a: its forward current (IGF)
+roles = ["drain", "gate", "source"]
+limits = ["vds_max_v", "vdg_max_v", "vgs_max_v", "ig_max_a", "id_max_a"]
+values = ["idss_a", "vgs_off_v"]
+
+[kinds.pjfet]
+roles = ["drain", "gate", "source"]
+limits = ["vds_max_v", "vdg_max_v", "vgs_max_v", "ig_max_a", "id_max_a"]
+values = ["idss_a", "vgs_off_v"]
 
 [kinds.nmos]
 roles = ["drain", "gate", "source", "drain_2", "gate_2", "source_2"]   # _2: the second channel of a dual part
@@ -177,21 +206,28 @@ values = ["pitch_mm", "r_contact_ohm", "r_source_ohm", "usb_c"]
 [kinds.ic]
 roles = ["*"]
 limits = ["vdd_max_v", "vdd_op_min_v", "vdd_op_max_v", "vin_min_v", "vin_max_v", "vout_max_v", "i_out_max_a",
-          "vin_rel_max_v", "i_supply_pin_max_a", "f_max_hz"]
+          "vin_rel_max_v", "i_supply_pin_max_a", "f_max_hz",
+          "r_sense_min_ohm",                 # behaviour cc_led_driver: the least sense resistor (PT4115 0.082 Ω)
+          "f_sck_max_hz", "f_scl_max_hz",    # the highest clock of its SPI (SCK) and I2C (SCL) interface
+          "gpio_i_max_a", "gpio_i_total_max_a"]  # behaviour mcu on a bare microcontroller (the RP2040), as a module's
 values = ["behavior", "vout_v", "dropout_v", "iq_a", "efficiency", "idd_max_a", "iout_gain", "iout_accuracy",
           "vout_knee_v", "vrext_v", "vih_v", "vil_v", "vih_ratio", "vil_ratio", "first_bit_to", "vout_swing_v",
           "vicm_v", "r_out_ohm", "comparator", "gain_min_ratio", "f_clock_hz", "vref_v", "i_load_min_a", "prog_v", "icc_a",
           "i_a",                             # icc_a: behaviour logic, i_a: behaviour current (sim/netlist.py)
+          "i_core_a", "i_core_min_a", "gpio_r_out_ohm", "regulator",   # behaviour mcu on a bare microcontroller,
+                                             # as a module's: its core current and on-chip regulator (RP2040's VREG)
           "vdd_shunt_v", "i_shunt_max_a", "pd_request_v",   # behaviour pd_sink
           "r_on_ohm", "vgs_th_v",            # behaviour pass_gate (r_on_ohm also charger)
           "r_on_high_ohm", "r_on_low_ohm",   # behaviour bridge: a bridge output's high and low side
           "v_headroom_v", "uvlo_v", "v_pre_v", "i_pre_ratio", "i_term_ratio",   # behaviour charger
-          "v_ovp_v", "v_ovp_release_v", "v_uvp_v", "v_uvp_release_v", "v_ocp_v", "v_scp_v"]   # behaviour protection
+          "v_ovp_v", "v_ovp_release_v", "v_uvp_v", "v_uvp_release_v", "v_ocp_v", "v_scp_v",   # behaviour protection
+          "vsense_v", "duty_max_ratio", "ripple_ratio"]   # behaviour cc_led_driver: the mean sense threshold
+          # [min, typ, max], the switch's maximum duty cycle, the inductor's peak-to-peak ripple over the mean current
 
 [kinds.module]
 roles = ["*"]
 limits = ["vdd_op_min_v", "vdd_op_max_v", "vin_min_v", "vin_max_v", "vsys_min_v", "vsys_max_v", "i_out_max_a",
-          "gpio_v_max_v", "gpio_i_max_a", "gpio_i_total_max_a", "f_max_hz"]
+          "gpio_v_max_v", "gpio_i_max_a", "gpio_i_total_max_a", "f_max_hz", "f_sck_max_hz", "f_scl_max_hz"]
 values = ["behavior", "regulator", "v_io_v", "vout_v", "dropout_v", "efficiency", "i_core_a", "i_core_min_a",
           "gpio_r_out_ohm", "iq_a", "vih_v", "vil_v", "vih_ratio", "vil_ratio", "usb_c", "f_clock_hz"]
 
@@ -226,3 +262,13 @@ values = ["vf_v", "vf_at_a", "ctr_min_ratio", "behavior", "r_on_ohm", "if_on_a",
 roles = ["io1", "io2", "io3", "io4", "io5", "io6", "io7", "io8", "vbus", "gnd"]
 limits = ["vrwm_max_v"]                      # the rail's stand-off: the voltage the transil holds without conducting
 values = ["vbr_min_v", "vf_v", "vf_at_a", "c_io_f"]
+
+[kinds.led_strip]                            # an addressable LED strip cut to length (maker-coverage FT-13): its pixels
+                                             # in a row between a +V and a GND rail; vdd, gnd, din at the start, vdd_end,
+                                             # gnd_end, dout at the far end (cin, cout: a clocked strip's clock); the
+                                             # component gives its length (strip.length_m or strip.pixels)
+roles = ["vdd", "gnd", "din", "cin", "vdd_end", "gnd_end", "dout", "cout"]
+limits = ["vdd_op_min_v", "vdd_op_max_v"]     # the pixel IC's supply range: LIM.range/strip holds every pixel to it
+values = ["pixels_per_m", "i_pixel_a", "i_idle_a", "r_vdd_ohm_per_m", "r_gnd_ohm_per_m"]
+                                             # i_pixel_a: one pixel at full white (every channel on), i_idle_a: all dark;
+                                             # r_…_ohm_per_m: the copper of each rail per metre of strip

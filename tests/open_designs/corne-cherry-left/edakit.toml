@@ -1,0 +1,16 @@
+# The Corne keyboard v4, left half (foostan/crkbd, corne-cherry hotswap), transcribed from its published KiCad
+# schematic for edakit's tests (maker-coverage FT-21). Source, licence and what was transcribed: README.md. Not a
+# project to order: no layout, no EasyEDA documents.
+
+[project]
+name = "corne-cherry-left"
+company = "foostan design (CC BY 4.0), transcribed for edakit"
+quantity = 5
+graph = "hardware/graph.json"
+parts = "hardware/parts"
+sim = "hardware/sim.json"
+artifacts = "build/edakit"
+reports = "build/release"
+
+[boards.main]
+title = "Corne left half"

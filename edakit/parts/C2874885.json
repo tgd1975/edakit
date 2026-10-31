@@ -81,7 +81,8 @@
    "supply current: 0.6 mA quiescent (centre value) and 12 mA per colour as the LED test condition – no maximum; no behaviour model reads it (not simulated)",
    "DIN→DOUT delay ≤ 300 ns: no field (t_pd_ns is for clocked serial outputs); storage −40 … +85 °C: no field",
    "LED data (IV, λd at 12 mA): no field for kind ic",
-   "RoHS / REACH: neither the data sheet nor LCSC states them for this part"
+   "RoHS / REACH: neither the data sheet nor LCSC states them for this part",
+   "injection current (i_inject_max_a, maker-coverage CK-5): none in the datasheet – Worldsemi WS2812B-V5/W V6.1: the electrical table gives only the input leakage II ±1 µA at VI = VDD/VSS (read 2026-10-31); LIM.v/inject holds the pin's voltage alone"
   ]
  },
  "symbol_differs": {

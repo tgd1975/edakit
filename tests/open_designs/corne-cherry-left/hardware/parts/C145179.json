@@ -1,0 +1,63 @@
+{
+ "lcsc": "C145179",
+ "mpn": "RB521S30T1G",
+ "manufacturer": "onsemi",
+ "kind": "diode",
+ "package": "SOD-523",
+ "footprint": "D_SOD-523",
+ "datasheet": {
+  "url": "https://datasheet.lcsc.com/datasheet/pdf/d31d1b726f174934a2c6f233dae4e14c.pdf",
+  "pinout_page": 1
+ },
+ "pins": {
+  "1": {
+   "name": "K",
+   "type": "passive",
+   "role": "cathode"
+  },
+  "2": {
+   "name": "A",
+   "type": "passive",
+   "role": "anode"
+  }
+ },
+ "values": {
+  "vf_v": 0.5,
+  "vf_at_a": 0.2,
+  "ir_a": 3e-05,
+  "ir_at_v": 10
+ },
+ "limits": {
+  "vr_max_v": 30,
+  "if_max_a": 0.2,
+  "ifsm_max_a": 1.0,
+  "p_max_w": 0.2,
+  "rth_ja_k_per_w": 635,
+  "tj_max_c": 125
+ },
+ "spice": {
+  "model": ".model RB521S30 D(IS=4.6e-7 N=1.0 RS=0.4 BV=30 IBV=1m)",
+  "source": "fitted to figure 1 at 25 °C (read from the graph): 0.20 V at 1 mA and 0.26 V at 10 mA give N 1.0 and IS 4.6e-7 A, 0.36 V at 100 mA gives RS 0.4 Ω; the fit gives 0.42 V at 200 mA against 0.50 V max (table); BV the VR rating"
+ },
+ "sources": [
+  "onsemi RB521S30T1G datasheet, Rev. 9 (November 2015), publication order number RB521S30T1/D, LCSC's copy https://datasheet.lcsc.com/datasheet/pdf/d31d1b726f174934a2c6f233dae4e14c.pdf, read 2026-10-31",
+  "p. 1: SOD-523, pin 1 cathode, pin 2 anode; maximum ratings VR 30 V, IF 200 mA DC, IFSM 1.0 A (60 Hz, 1 cycle); PD 200 mW (FR-5, minimum pad), RθJA 635 °C/W, TJ −55 … +125 °C",
+  "p. 2 electrical characteristics: IR ≤ 30 µA at VR 10 V, VF ≤ 0.50 V at IF 200 mA",
+  "pin names K, A as the Corne's KiCad symbol (Diode:ESD5Zxx with the value RB521S30T1G)"
+ ],
+ "verified": {
+  "by": "Claude (datasheet check, open-design transcription)",
+  "date": "2026-10-31",
+  "datasheet": "onsemi RB521S30T1G datasheet, Rev. 9 (November 2015), publication order number RB521S30T1/D",
+  "datasheet_sha256": "8503abb56aa0275951fa55b5886a96b4f653c3858a7385c09b7b4ee91170be0c",
+  "checked": [
+   "pinning",
+   "maximum ratings and thermal characteristics",
+   "VF and IR maxima",
+   "figure 1 forward characteristic"
+  ],
+  "open": [
+   "the symbol in the schematic is an ESD5Zxx TVS symbol; the BOM and the value name the RB521S30T1G Schottky"
+  ]
+ }
+}
