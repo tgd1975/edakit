@@ -1,0 +1,211 @@
+{
+ "lcsc": "C17337",
+ "mpn": "PAM8403DR-H",
+ "manufacturer": "DIODES(美台)",
+ "kind": "ic",
+ "package": "SOP-16 (SO-16, 3.9 mm body)",
+ "footprint": "SOIC-16_L9.9-W3.9-P1.27-LS6.0-BL",
+ "jlc_class": "Extended Part",
+ "datasheet": {
+  "url": "https://www.diodes.com/assets/Datasheets/PAM8403.pdf",
+  "pinout_page": 2
+ },
+ "pins": {
+  "1": {
+   "name": "+OUT_L",
+   "type": "output",
+   "role": "out_p_l",
+   "short_proof": true
+  },
+  "2": {
+   "name": "PGND",
+   "type": "ground"
+  },
+  "3": {
+   "name": "-OUT_L",
+   "type": "output",
+   "role": "out_n_l",
+   "short_proof": true
+  },
+  "4": {
+   "name": "PVDD",
+   "type": "power_in",
+   "role": "vdd",
+   "v_max_v": 6.0,
+   "needs": [
+    {
+     "what": "capacitor",
+     "c_min_f": 2e-05,
+     "source": "Diodes Incorporated PAM8403 data sheet DS36439 Rev. 2-3 (September 2020), p. 8 Power Supply Decoupling: a low-ESR ceramic, typically 1.0 µF, as close as possible to the VDD terminal, and 20 µF (ceramic) or greater near the amplifier; p. 1 typical application: 1 µF at each PVDD pin and 470 µF on PVDD"
+    }
+   ]
+  },
+  "5": {
+   "name": "MUTE",
+   "type": "input",
+   "pull": "up",
+   "float_ok": true,
+   "vih_v": 1.5,
+   "vil_v": 0.4,
+   "hint": "low mutes the outputs (no volume fade), high enables them; may float – internal pull-up (p. 7); IMUTE 3.5 mA typ"
+  },
+  "6": {
+   "name": "VDD",
+   "type": "power_in",
+   "role": "vdd",
+   "v_max_v": 6.0,
+   "needs": [
+    {
+     "what": "capacitor",
+     "c_min_f": 1e-06,
+     "source": "Diodes Incorporated PAM8403 data sheet DS36439 Rev. 2-3 (September 2020), p. 8 Power Supply Decoupling: a low-ESR ceramic, typically 1.0 µF, as close as possible to the VDD terminal; p. 1 typical application: 1 µF at VDD"
+    }
+   ]
+  },
+  "7": {
+   "name": "INL",
+   "type": "analog",
+   "role": "in_l",
+   "z_in_ohm": 18000
+  },
+  "8": {
+   "name": "VREF",
+   "type": "output",
+   "role": "vref",
+   "needs": [
+    {
+     "what": "capacitor",
+     "c_min_f": 1e-07,
+     "source": "Diodes Incorporated PAM8403 data sheet DS36439 Rev. 2-3 (September 2020), p. 2 pin 8: connect a bypass capacitor from VREF to GND; p. 1 typical application 0.1 µF; p. 8 CBYP 0.47-1.0 µF ceramic recommended for best THD and noise"
+    }
+   ],
+   "hint": "the most critical capacitor (p. 8): 0.47-1.0 µF ceramic recommended for THD and noise; a larger one reduces clicks and pops; it sets the start-up rate"
+  },
+  "9": {
+   "name": "NC",
+   "type": "no_connect"
+  },
+  "10": {
+   "name": "INR",
+   "type": "analog",
+   "role": "in_r",
+   "z_in_ohm": 18000
+  },
+  "11": {
+   "name": "GND",
+   "type": "ground"
+  },
+  "12": {
+   "name": "SHND",
+   "type": "input",
+   "pull": "up",
+   "float_ok": true,
+   "vih_v": 1.5,
+   "vil_v": 0.4,
+   "hint": "shutdown, active low: low turns the bias off (ISD < 1 µA); may float – internal pull-up (p. 7)"
+  },
+  "13": {
+   "name": "PVDD",
+   "type": "power_in",
+   "role": "vdd",
+   "v_max_v": 6.0,
+   "needs": [
+    {
+     "what": "capacitor",
+     "c_min_f": 2e-05,
+     "source": "Diodes Incorporated PAM8403 data sheet DS36439 Rev. 2-3 (September 2020), p. 8 Power Supply Decoupling: a low-ESR ceramic, typically 1.0 µF, as close as possible to the VDD terminal, and 20 µF (ceramic) or greater near the amplifier; p. 1 typical application: 1 µF at each PVDD pin and 470 µF on PVDD"
+    }
+   ]
+  },
+  "14": {
+   "name": "-OUT_R",
+   "type": "output",
+   "role": "out_n_r",
+   "short_proof": true
+  },
+  "15": {
+   "name": "PGND",
+   "type": "ground"
+  },
+  "16": {
+   "name": "+OUT_R",
+   "type": "output",
+   "role": "out_p_r",
+   "short_proof": true
+  }
+ },
+ "values": {
+  "iq_a": 0.016
+ },
+ "limits": {
+  "vdd_max_v": 6.0,
+  "vdd_op_min_v": 2.5,
+  "vdd_op_max_v": 5.5,
+  "vin_rel_max_v": 0.3,
+  "rth_ja_k_per_w": 110,
+  "tj_max_c": 150,
+  "t_min_c": -40,
+  "t_max_c": 85
+ },
+ "body": {
+  "h_mm": 1.75
+ },
+ "hints": [
+  "NOT RECOMMENDED FOR NEW DESIGN – the manufacturer names the PAM8406 instead (data sheet p. 1).",
+  "With LC output filters, connect the speaker before power-on, otherwise the device is easily damaged (p. 7, note 1).",
+  "Without LC filters, a ferrite bead in each speaker line against EMI (p. 7 note 2, p. 9 Figure 2).",
+  "Supply above 6.0 V damages it – four fresh alkaline cells are over 6.0 V (p. 7, note 3).",
+  "High gain (24 dB): an input large enough to clip the output can damage the device (p. 7, note 4)."
+ ],
+ "compliance": {
+  "rohs": true,
+  "radio": "none",
+  "source": "LCSC product data C17337 (2026-10-31): RoHS; Diodes Incorporated PAM8403 data sheet DS36439 Rev. 2-3 (September 2020), p. 1: Pb-free package"
+ },
+ "sources": [
+  "mpn, manufacturer, footprint, jlc_class, pin numbers and names: EasyEDA library data of C17337, https://easyeda.com/api/products/C17337/components?version=6.4.19.5, read 2026-10-31 (edakit part import)",
+  "Diodes Incorporated PAM8403 data sheet DS36439 Rev. 2-3 (September 2020), from https://www.diodes.com/assets/Datasheets/PAM8403.pdf – byte for byte LCSC's copy (sha256 9d853d04cace…, 11 pages, edakit part fetch 2026-10-31)",
+  "p. 2 Pin Descriptions: 1 +OUT_L, 2 PGND, 3 -OUT_L, 4 PVDD, 5 MUTE, 6 VDD, 7 INL, 8 VREF, 9 NC, 10 INR, 11 GND, 12 SHND (shutdown, active low), 13 PVDD, 14 -OUT_R, 15 PGND, 16 +OUT_R; p. 1 pin assignments SOP-16 top view",
+  "p. 3 Absolute Maximum Ratings: supply voltage 6.0 V; input voltage −0.3 V … VDD + 0.3 V (vin_rel_max_v); maximum junction temperature 150 °C; operation −40 … +85 °C",
+  "p. 3 Recommended Operating Conditions: supply voltage 2.5 … 5.5 V, −40 … +85 °C (LCSC's parameter table says 2.8 … 5.5 V – the data sheet is taken)",
+  "p. 3 Thermal Information: SOP-16 θJA 110 °C/W (max), θJC 23 °C/W",
+  "p. 4 Electrical Characteristics (TA = 25 °C, VDD = 5 V): quiescent current 16 mA typ at 5.0 V (10 mA at 3.6 V, 8 mA at 3.0 V), no maximum given – iq_a is the typical value; VIH 1.5 V min, VIL 0.4 V max for SHDN and MUTE at VDD = 5.0 V; gain 24 dB; fSW 260 kHz; output power 3.2 W into 4 Ω, 1.8 W into 8 Ω at 10 % THD+N, 5 V",
+  "p. 7 Maximum Gain: AVD = 20 log [2 × (RF/RI)], maximum RF 142 kΩ, minimum RI 18 kΩ – z_in_ohm 18 kΩ reads the minimum RI as the input resistance of the inverting first stage: assumption",
+  "p. 7 Mute and Shutdown Operation: MUTE and SHDN may float – internal pull-up (no value given)",
+  "p. 8 short-circuit protection on the outputs, output-to-output and output-to-GND – short_proof on the outputs",
+  "p. 1 Typical Applications Circuit (image): VDD 1 µF; PVDD 1 µF + 1 µF + 470 µF; VREF 0.1 µF; inputs 0.47 µF + Ri; NC (pin 9) drawn to GND",
+  "p. 10 Package Outline SO-16: A max 1.75 mm (body h_mm), D 9.80-10.00, E1 3.80-4.00, e 1.27 mm",
+  "roles out_p_l/out_n_l, out_p_r/out_n_r: out_p, out_n with a suffix per channel (engines/requires.py btl_outputs); VREF typed output – as analog its bypass capacitor alone would make LVL.undefined/analog (no DC path) and HINT.signal_ceramic report the circuit of p. 1",
+  "LCSC product data C17337 (2026-10-31): 3 567 pcs; JLCPCB (edakit stock, 2026-10-31): Extended Part, 3 567 pcs, MSL 3, Economic and Standard"
+ ],
+ "notes": "Stereo filterless class-D amplifier, two bridge-tied outputs. Marked not recommended for new design (PAM8406). No behaviour model fits an audio amplifier: without behavior the simulation draws no supply current from it.",
+ "verified": {
+  "by": "Claude (datasheet check, library draft)",
+  "date": "2026-10-31",
+  "datasheet": "Diodes Incorporated PAM8403 data sheet DS36439 Rev. 2-3 (September 2020)",
+  "datasheet_sha256": "9d853d04cace827e5349bd89cbf412292b855089669c7910cf0c062940c735b1",
+  "checked": [
+   "pinout (p. 1-2) = EasyEDA symbol names and pad numbers 1-16; footprint pads 1-8 along one side, 9-16 back along the other = SOP-16 top view",
+   "abs. max supply 6.0 V, inputs VDD + 0.3 V, TJ 150 °C; recommended supply 2.5-5.5 V; θJA 110 °C/W",
+   "IQ 16 / 10 / 8 mA typ at 5.0 / 3.6 / 3.0 V",
+   "SHDN and MUTE: VIH 1.5 V min, VIL 0.4 V max at 5 V; internal pull-ups, may float",
+   "decoupling 1 µF ceramic at VDD and ≥ 20 µF near the amplifier (p. 8); VREF bypass to GND (p. 2, 8)",
+   "outputs bridge-tied per channel, short-circuit protected output-to-output and to GND (p. 8)",
+   "package SO-16, A max 1.75 mm (p. 10)"
+  ],
+  "open": [
+   "the manufacturer marks the PAM8403 'not recommended for new design – use PAM8406' (p. 1)",
+   "mpn PAM8403DR-H: the data sheet's ordering information names only PAM8403DR (p. 9) – the -H suffix is not explained there (edakit part fetch: the text does not name PAM8403DR-H)",
+   "minimum load impedance: not stated – data at 4 Ω and 8 Ω only; no entry field for it",
+   "gain 24 dB and the gain formula with an external Ri: no entry field",
+   "VIH/VIL only at VDD = 5.0 V; the table's typical values (VIH 1.4 V, VIL 0.7 V) contradict min/max",
+   "internal pull-up of MUTE and SHDN: no value given (pull_ohm missing)",
+   "z_in_ohm 18 kΩ: read from the minimum RI of the gain paragraph – an interpretation, not a stated input impedance",
+   "VREF capacitor: the typical application (p. 1) shows 0.1 µF, the text (p. 8) recommends 0.47-1.0 µF – the need holds only the 0.1 µF",
+   "VDD and PVDD capacitor minima come from 'typically 1.0 µF' and '20 µF or greater … recommended', not from a stated minimum",
+   "NC (pin 9) is drawn to GND in the typical application circuit, 'No Connect' in the pin table",
+   "no p_max_w (power dissipation) in the data sheet",
+   "no behaviour model: the simulation draws no supply current from the amplifier (iq_a is read by no model here)"
+  ]
+ }
+}

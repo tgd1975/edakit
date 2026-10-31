@@ -1,0 +1,148 @@
+{
+ "lcsc": "C5438445",
+ "mpn": "INMP441",
+ "manufacturer": "TDK InvenSense(应美盛)",
+ "kind": "ic",
+ "package": "9-terminal LGA_CAV 4.72 x 3.76 x 1.00 mm, bottom port (LCSC: SMD-9)",
+ "footprint": "MIC-SMD_INMP441",
+ "jlc_class": "Extended Part",
+ "datasheet": {
+  "url": "https://datasheet.lcsc.com/datasheet/pdf/a17771dc75b7f85ee88420f1ff8504da.pdf?productCode=C5438445",
+  "pinout_page": 8
+ },
+ "pins": {
+  "1": {
+   "name": "SCK",
+   "type": "input",
+   "role": "bclk",
+   "v_max_v": 3.63,
+   "vih_ratio": 0.7,
+   "vil_ratio": 0.25,
+   "hint": "64 SCK cycles per WS frame (fSCK = 64 × fWS), SCK 0.5-3.2 MHz, WS 7.8-50 kHz (p. 5, 11); no active clocks while VDD is off – the ESD diodes conduct (p. 10)"
+  },
+  "2": {
+   "name": "SD",
+   "type": "output",
+   "role": "sd",
+   "drive": "tristate",
+   "needs": [
+    {
+     "what": "pull_down",
+     "source": "InvenSense INMP441 data sheet DS-INMP441-00 Revision 1.1 (05/21/2014), Table 6 p. 8 and p. 11: the SD trace should have a 100 kΩ pull-down resistor to discharge the line while all microphones have tri-stated their outputs ('a 100 kΩ resistor is sufficient')"
+    }
+   ]
+  },
+  "3": {
+   "name": "WS",
+   "type": "input",
+   "role": "ws",
+   "v_max_v": 3.63,
+   "vih_ratio": 0.7,
+   "vil_ratio": 0.25
+  },
+  "4": {
+   "name": "L/R",
+   "type": "input",
+   "v_max_v": 3.63,
+   "vih_ratio": 0.7,
+   "vil_ratio": 0.25,
+   "hint": "low: the microphone sends in the left channel, high: in the right (Table 6)"
+  },
+  "5": {
+   "name": "GND",
+   "type": "ground"
+  },
+  "6": {
+   "name": "GND",
+   "type": "ground"
+  },
+  "7": {
+   "name": "VDD",
+   "type": "power_in",
+   "role": "vdd",
+   "v_max_v": 3.63,
+   "needs": [
+    {
+     "what": "capacitor",
+     "c_min_f": 1e-07,
+     "source": "InvenSense INMP441 data sheet DS-INMP441-00 Revision 1.1 (05/21/2014), Table 6 p. 8: decouple VDD to pin 6 with 0.1 µF; p. 15: 0.1 µF ceramic X7R or better between pin 7 and ground strongly recommended, as close to pin 7 as possible"
+    }
+   ]
+  },
+  "8": {
+   "name": "CHIPEN",
+   "type": "input",
+   "v_max_v": 3.63,
+   "hint": "low (ground): power-down; high (VDD): enabled (Table 6); do not switch between standby and power-down directly (p. 10)"
+  },
+  "9": {
+   "name": "GND",
+   "type": "ground"
+  }
+ },
+ "values": {
+  "idd_max_a": 0.0025
+ },
+ "limits": {
+  "vdd_max_v": 3.63,
+  "vdd_op_min_v": 1.62,
+  "vdd_op_max_v": 3.63,
+  "vin_rel_max_v": 0.3,
+  "f_max_hz": 3200000.0,
+  "t_min_c": -40,
+  "t_max_c": 85
+ },
+ "body": {
+  "h_mm": 1.05
+ },
+ "hints": [
+  "Bottom port: the PCB needs a sound hole under the port – not smaller than 0.25 mm, 0.5-1 mm recommended – and no solder paste on it (p. 17).",
+  "No washing water on the port, no blow-off or ultrasonic cleaning; no vacuum pick-up on the bottom side (p. 18).",
+  "The 7-inch reel INMP441ACEZ-R7 is 'to be discontinued' (p. 1, 20); LCSC and JLCPCB list 0 pcs (2026-10-31)."
+ ],
+ "compliance": {
+  "rohs": true,
+  "radio": "none",
+  "source": "InvenSense INMP441 data sheet DS-INMP441-00 Revision 1.1 (05/21/2014), p. 1: RoHS/WEEE compliant, halide free; LCSC product data C5438445 (2026-10-31): RoHS"
+ },
+ "sources": [
+  "mpn, manufacturer, footprint, jlc_class, pin numbers and names: EasyEDA library data of C5438445, https://easyeda.com/api/products/C5438445/components?version=6.4.19.5, read 2026-10-31 (edakit part import)",
+  "InvenSense INMP441 data sheet DS-INMP441-00 Revision 1.1 (05/21/2014), read from LCSC's copy (sha256 ddcc8ac55f9f…, 21 pages, names INMP441, edakit part fetch 2026-10-31); TDK's download page https://invensense.tdk.com/en-us/download-resource/ds-inmp441-00-inmp441-datasheet renders its link in the browser only",
+  "Table 1 p. 4: supply voltage 1.62 … 3.63 V (the pin table says 1.8 V to 3.3 V); supply current normal mode 1.4 / 1.6 mA at 1.8 V, 2.2 / 2.5 mA at 3.3 V (typ / max) – idd_max_a is the 3.3 V maximum; standby 0.8 mA max; power-down 2 µA (1.8 V), 4.5 µA (3.3 V) max",
+  "Table 2 p. 5: VIH 0.7 × VDD min, VIL 0.25 × VDD max on L/R, WS, SCK (characterization, not production tested); no thresholds for CHIPEN",
+  "Table 3 p. 5: SCK 0.5 … 3.2 MHz, high/low ≥ 50 ns; WS 7.8 … 50 kHz",
+  "Table 4 p. 6: VDD −0.3 … +3.63 V; digital pin input voltage −0.3 V … VDD + 0.3 V or 3.63 V, whichever is less (vin_rel_max_v 0.3, pin v_max_v 3.63); biased temperature −40 … +85 °C",
+  "Figure 3 and Table 6 p. 8 (bottom view): 1 SCK, 2 SD (tri-state), 3 WS, 4 L/R, 5 GND (ring around the port), 6 GND, 7 VDD, 8 CHIPEN, 9 GND",
+  "p. 11: I2S slave, 24-bit two's complement, SD tri-stated outside its channel, 100 kΩ pull-down on SD; Figure 7: 0.1 µF at VDD",
+  "p. 15 Power-Supply Decoupling; p. 17 land pattern (pads 0.40 × 0.60 mm, pitch 1.05 mm, 2.66 mm between rows, sound hole); p. 19 outline, height 0.88 / 0.98 / 1.05 mm (body h_mm = max)",
+  "roles bclk, ws, sd as named by the net fn i2s.bclk, i2s.ws, i2s.sd (handbook 3, circuit.FN_LINES); no pin functions: functions is an MCU's pin mux – on this slave it would satisfy REQ.function on the net by itself",
+  "LCSC product data C5438445 (2026-10-31): 0 pcs, product cycle 'normal', no end-of-life note; JLCPCB (edakit stock, 2026-10-31): Extended Part, 0 pcs"
+ ],
+ "notes": "I2S MEMS microphone (slave), bottom port. Data sheet and LCSC do not say end of life; the data sheet says only that the 7-inch reel INMP441ACEZ-R7 is to be discontinued.",
+ "verified": {
+  "by": "Claude (datasheet check, library draft)",
+  "date": "2026-10-31",
+  "datasheet": "InvenSense INMP441 data sheet DS-INMP441-00 Revision 1.1 (05/21/2014)",
+  "datasheet_sha256": "ddcc8ac55f9ff15e93760b5d01814bccbef0cebbb3857e0fb3954b2b4973d150",
+  "checked": [
+   "pinout (Figure 3, Table 6) = EasyEDA symbol names and pad numbers; the footprint is the data sheet's top view turned 180°: 1-4 in one row, 6-9 in the other, the GND ring 5 between 4 and 6",
+   "land pattern: pads 0.40 × 0.60 mm, pitch 1.05 mm, rows 2.66 mm apart = footprint (15.75 × 23.62 mil, 41.34 mil, 104.72 mil)",
+   "abs. max VDD 3.63 V, digital inputs VDD + 0.3 V or 3.63 V; supply 1.62-3.63 V; IS 2.5 mA max at 3.3 V",
+   "VIH 0.7 × VDD, VIL 0.25 × VDD on SCK, WS, L/R; SCK up to 3.2 MHz",
+   "SD tri-state with a 100 kΩ pull-down (Table 6, p. 11); VDD 0.1 µF X7R (p. 8, 15)",
+   "temperature −40 … +85 °C; height 1.05 mm max"
+  ],
+  "open": [
+   "end of life at TDK: neither the data sheet (Rev 1.1, 2014) nor LCSC says so; TDK's product page https://invensense.tdk.com/products/digital/inmp441/ answered 'Page Not Found' and its data sheet page loads the PDF only in a browser – the status was not read",
+   "mpn INMP441: the orderable numbers are INMP441ACEZ-R0 (13-inch reel) and INMP441ACEZ-R7 (7-inch, to be discontinued); LCSC lists C5438445 without a suffix, 0 pcs on 2026-10-31",
+   {
+    "text": "sound hole: the EasyEDA footprint lists no drilled hole under the port – the PCB needs one (0.5-1 mm, ≥ 0.25 mm, p. 17)",
+    "when": "order"
+   },
+   "CHIPEN thresholds: not given (Table 2 names L/R, WS, SCK only)",
+   "SD pull-down: 100 kΩ 'sufficient' – no window given, the need has no bounds",
+   "acoustic data (sensitivity −26 dBFS, SNR 61 dBA, AOP 120 dB SPL), WS range 7.8-50 kHz, SCK minimum 0.5 MHz, start-up 2^18 SCK cycles: no entry fields",
+   "no behaviour model: the simulation draws no supply current from the microphone (idd_max_a is read only by the cc_sink model)"
+  ]
+ }
+}

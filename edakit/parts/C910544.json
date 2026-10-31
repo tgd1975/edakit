@@ -1,0 +1,203 @@
+{
+ "lcsc": "C910544",
+ "mpn": "MAX98357AETE+T",
+ "manufacturer": "ADI(亚德诺)/MAXIM(美信)",
+ "kind": "ic",
+ "package": "TQFN-16-EP(3x3), Maxim package code T1633+4",
+ "footprint": "TQFN-16_L3.0-W3.0-P0.50-BL-EP1.5",
+ "jlc_class": "Extended Part",
+ "datasheet": {
+  "url": "https://datasheet.lcsc.com/datasheet/pdf/9dd365a93d191d8d6f09766b0e3ea172.pdf?productCode=C910544",
+  "pinout_page": 15
+ },
+ "pins": {
+  "1": {
+   "name": "DIN",
+   "type": "input",
+   "role": "sd",
+   "v_max_v": 6,
+   "vih_v": 1.3,
+   "vil_v": 0.6
+  },
+  "2": {
+   "name": "GAIN_SLOT",
+   "type": "input",
+   "float_ok": true,
+   "hint": "gain in I2S/LJ mode (Table 8): 100 kΩ ±5 % to GND 15 dB, GND 12 dB, unconnected 9 dB, VDD 6 dB, 100 kΩ ±5 % to VDD 3 dB; in TDM mode it selects the slot with SD_MODE (Table 7), gain fixed at 12 dB; abs. max VDD + 0.3 V"
+  },
+  "3": {
+   "name": "GND",
+   "type": "ground"
+  },
+  "4": {
+   "name": "SD_MODE#",
+   "type": "input",
+   "pull": "down",
+   "pull_ohm": 100000,
+   "hint": "shutdown and channel select (Tables 5, 6): above B2 (1.245–1.5 V) left, between B1 and B2 right (pull-up through RSMALL = 94.0 × VDDIO − 100 kΩ), between B0 and B1 (L+R)/2 (RLARGE = 222.2 × VDDIO − 100 kΩ), below B0 (0.08–0.355 V) shutdown; abs. max VDD + 0.3 V – logic above VDD (VDD < 3.0 V, VDDIO 3.3 V) needs ~2 kΩ in series (p. 17)"
+  },
+  "5": {
+   "name": "N.C.",
+   "type": "no_connect"
+  },
+  "6": {
+   "name": "N.C.",
+   "type": "no_connect"
+  },
+  "7": {
+   "name": "VDD",
+   "type": "power_in",
+   "role": "vdd",
+   "v_max_v": 6,
+   "needs": [
+    {
+     "what": "capacitor",
+     "c_min_f": 1e-05,
+     "source": "Maxim Integrated MAX98357A/MAX98357B data sheet 19-6779 Rev 11 (5/18), p. 33 Power-Supply Input: bypass VDD with 0.1 µF and 10 µF to GND; some applications need only the 10 µF"
+    }
+   ]
+  },
+  "8": {
+   "name": "VDD",
+   "type": "power_in",
+   "role": "vdd",
+   "v_max_v": 6,
+   "needs": [
+    {
+     "what": "capacitor",
+     "c_min_f": 1e-05,
+     "source": "Maxim Integrated MAX98357A/MAX98357B data sheet 19-6779 Rev 11 (5/18), p. 33 Power-Supply Input: bypass VDD with 0.1 µF and 10 µF to GND; some applications need only the 10 µF"
+    }
+   ]
+  },
+  "9": {
+   "name": "OUTP",
+   "type": "output",
+   "role": "out_p",
+   "short_proof": true
+  },
+  "10": {
+   "name": "OUTN",
+   "type": "output",
+   "role": "out_n",
+   "short_proof": true
+  },
+  "11": {
+   "name": "GND",
+   "type": "ground"
+  },
+  "12": {
+   "name": "N.C.",
+   "type": "no_connect"
+  },
+  "13": {
+   "name": "N.C.",
+   "type": "no_connect"
+  },
+  "14": {
+   "name": "LRCLK",
+   "type": "input",
+   "role": "ws",
+   "v_max_v": 6,
+   "vih_v": 1.3,
+   "vil_v": 0.6,
+   "hint": "LRCLK only 8, 16, 32, 44.1, 48, 88.2 or 96 kHz (11.025, 12, 22.05, 24 kHz not supported); do not remove LRCLK while BCLK runs – large DC output voltage (p. 16, 19)"
+  },
+  "15": {
+   "name": "GND",
+   "type": "ground"
+  },
+  "16": {
+   "name": "BCLK",
+   "type": "input",
+   "role": "bclk",
+   "v_max_v": 6,
+   "vih_v": 1.3,
+   "vil_v": 0.6,
+   "hint": "BCLK must be 32, 48 or 64 × LRCLK (p. 6); stopping BCLK puts the part into standby (p. 16)"
+  },
+  "17": {
+   "name": "EP",
+   "type": "passive",
+   "needs": [
+    {
+     "what": "to_ground",
+     "source": "Maxim Integrated MAX98357A/MAX98357B data sheet 19-6779 Rev 11 (5/18), p. 15 Pin Description: the exposed pad is not internally connected; connect it to a solid ground plane for thermal dissipation"
+    }
+   ]
+  }
+ },
+ "values": {
+  "iq_a": 0.00335
+ },
+ "limits": {
+  "vdd_max_v": 6,
+  "vdd_op_min_v": 2.5,
+  "vdd_op_max_v": 5.5,
+  "i_out_max_a": 1.6,
+  "i_supply_pin_max_a": 1.6,
+  "f_max_hz": 25804000.0,
+  "p_max_w": 1.666,
+  "rth_ja_k_per_w": 48,
+  "tj_max_c": 150,
+  "t_min_c": -40,
+  "t_max_c": 85
+ },
+ "body": {
+  "h_mm": 0.8
+ },
+ "hints": [
+  "Filterless class-D output: use a speaker with a series inductance above 10 µH; parasitic capacitance on the output traces adds VDD × 300 kHz × C to the quiescent current (p. 33).",
+  "Wide, low-resistance output, supply and ground traces (p. 33); a bulk capacitor at the IC when VDD comes over long traces (p. 33).",
+  "No volume ramp-down when entering shutdown: ramp the digital data down before powering down (p. 28)."
+ ],
+ "compliance": {
+  "rohs": true,
+  "radio": "none",
+  "source": "Maxim Integrated MAX98357A/MAX98357B data sheet 19-6779 Rev 11 (5/18), p. 34 Ordering Information: '+' denotes a lead(Pb)-free/RoHS-compliant package; LCSC product data C910544 (2026-10-31): RoHS"
+ },
+ "sources": [
+  "mpn, manufacturer, footprint, jlc_class, pin numbers and names: EasyEDA library data of C910544, https://easyeda.com/api/products/C910544/components?version=6.4.19.5, read 2026-10-31 (edakit part import)",
+  "Maxim Integrated MAX98357A/MAX98357B data sheet 19-6779 Rev 11 (5/18), read from LCSC's copy (sha256 1509d795a016…, 38 pages, edakit part fetch 2026-10-31); the manufacturer's URL https://www.analog.com/media/en/technical-documentation/data-sheets/MAX98357A-MAX98357B.pdf could not be reached from here",
+  "p. 4 Absolute Maximum Ratings: VDD, LRCLK, BCLK, DIN to GND −0.3 … +6 V; all other pins −0.3 V … VDD + 0.3 V; continuous current in/out of VDD/GND/OUT_ ±1.6 A; continuous power TQFN 1666 mW at TA = +70 °C (derate 20.8 mW/°C above); TJ +150 °C; operating −40 … +85 °C",
+  "p. 4 Package Thermal Characteristics: TQFN θJA 48 °C/W, θJC 7 °C/W (JESD51-7, four-layer board)",
+  "p. 4 Electrical Characteristics: supply voltage range 2.5 … 5.5 V (guaranteed by PSRR test – the data sheet has no separate recommended operating conditions); quiescent current IDD 2.75 mA typ / 3.35 mA max at VDD = 5 V, TA = 25 °C (2.4 / 2.85 mA at 3.7 V) – iq_a is the 5 V maximum",
+  "p. 6-7 Electrical Characteristics: VIH 1.3 V min, VIL 0.6 V max (digital audio inputs); BCLK 0.2432 … 25.804 MHz (32, 48 or 64 × LRCLK); SD_MODE pull-down RPD 92 / 100 / 108 kΩ; SD_MODE trip points B0 0.08–0.355 V, B1 0.65–0.825 V, B2 1.245–1.5 V; gain comparator trip points as fractions of VDD",
+  "p. 5 Electrical Characteristics: gain 3 / 6 / 9 / 12 / 15 dB (±0.6 dB) by GAIN_SLOT; current limit 2.8 A typ; output power 3.2 W into 4 Ω + 33 µH, 1.8 W into 8 Ω + 68 µH at 10 % THD+N, VDD = 5 V; switching frequency 300 kHz",
+  "p. 15 Pin Configurations and Pin Description (TQFN, top view): 1 DIN, 2 GAIN_SLOT, 3/11/15 GND, 4 SD_MODE, 5/6/12/13 N.C., 7/8 VDD, 9 OUTP, 10 OUTN, 14 LRCLK, 16 BCLK, EP not internally connected",
+  "p. 16-17, 28 Detailed Description; Tables 5-8 (SD_MODE control, pull-up values, TDM slots, gain selection)",
+  "p. 4 Absolute Maximum Ratings: duration of OUT_ short circuit to GND or VDD continuous, OUTP short to OUTN continuous – short_proof on OUTP, OUTN",
+  "p. 37 Package Outline 21-0136 (16L 3x3): A 0.70 / 0.75 / 0.80 mm (body h_mm = max); T1633-4 exposed pad D2 = E2 0.95 / 1.10 / 1.25 mm",
+  "roles bclk, ws, sd on the I2S inputs as named by the net fn i2s.bclk, i2s.ws, i2s.sd (handbook 3, circuit.FN_LINES); no pin functions: functions is an MCU's pin mux – on this slave it would satisfy REQ.function on the net by itself",
+  "LCSC product data C910544 (2026-10-31): 31 764 pcs; JLCPCB (edakit stock, 2026-10-31): Extended Part, 32 372 pcs, MSL 1, Economic and Standard"
+ ],
+ "notes": "Mono I2S/TDM class-D amplifier, bridge-tied outputs OUTP/OUTN (roles out_p, out_n: REQ.forbidden/btl). No behaviour model fits an audio amplifier: without behavior the simulation draws no supply current from it.",
+ "verified": {
+  "by": "Claude (datasheet check, library draft)",
+  "date": "2026-10-31",
+  "datasheet": "Maxim Integrated MAX98357A/MAX98357B data sheet 19-6779 Rev 11 (5/18)",
+  "datasheet_sha256": "1509d795a016246625d8614df332b18ad85943c9c6cd1bf009291220d4b0d5c3",
+  "checked": [
+   "TQFN pinout (p. 15) = EasyEDA symbol names and pad numbers 1-16, EP = pad 17; footprint pads 1-4 bottom left to right, 5-8 right upwards, 9-12 top right to left, 13-16 left downwards = the data sheet's top view",
+   "abs. max VDD, LRCLK, BCLK, DIN 6 V; VDD/GND/OUT_ 1.6 A continuous; TJ 150 °C; TQFN 1666 mW at 70 °C; θJA 48 °C/W",
+   "supply range 2.5-5.5 V; IDD 2.75 / 3.35 mA (typ / max, 5 V, 25 °C)",
+   "VIH 1.3 V, VIL 0.6 V on DIN, BCLK, LRCLK; BCLK up to 25.804 MHz",
+   "SD_MODE: internal pull-down 92-108 kΩ, trip points B0-B2, channel selection Tables 5 and 6",
+   "GAIN_SLOT: five gains, unconnected = 9 dB (Table 8) – float_ok",
+   "VDD bypass 0.1 µF + 10 µF, or 10 µF alone (p. 33)",
+   "EP not internally connected, to the ground plane (p. 15)",
+   "OUTP/OUTN bridge-tied, filterless, short-circuit proof to GND, VDD and each other (p. 4, 28, 33)",
+   "package height A max 0.80 mm, exposed pad 0.95-1.25 mm (p. 37)"
+  ],
+  "open": [
+   "data sheet revision: LCSC's copy is Rev 11 (5/18); analog.com did not answer from here (HTTP/2 stream error, then an empty reply), so a newer revision was not checked",
+   "minimum load impedance: not stated – output power is specified into 4 Ω + 33 µH and 8 Ω + 68 µH, the curves run from 1 Ω (TOC 15-17); no entry field for it",
+   "speaker series inductance > 10 µH (p. 33) and the gain (3-15 dB, 12 dB in TDM): no entry fields",
+   "SD_MODE, GAIN_SLOT, OUTP, OUTN: abs. max VDD + 0.3 V, relative to VDD – no per-pin field; vin_rel_max_v would also hold BCLK, LRCLK, DIN, which may go to 6 V at any VDD, so it is left out",
+   "1.6 A 'in/out of VDD/GND/OUT_': per pin or per function is not stated (the TQFN has 2 VDD and 3 GND pins)",
+   "SD_MODE and GAIN_SLOT have comparator trip points, not VIH/VIL – no thresholds in the entry (LVL.threshold coverage gap)",
+   "exposed-pad land 1.50 mm square in the EasyEDA footprint against the package's exposed pad 0.95-1.25 mm; the land pattern 90-0031 is not in the data sheet",
+   "no behaviour model: the simulation draws no supply current from the amplifier (iq_a is read by no model here)"
+  ]
+ }
+}
