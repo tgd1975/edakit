@@ -322,6 +322,24 @@ edakit block add led --as STATUS --connect in=LED_STATUS
 | `power-or-pmos` | two supplies ORed onto one rail: USB through an SS34, cells or a second input through two AO3401A back-to-back that USB switches off – neither supply is fed backwards (HINT.two_supplies) |
 | `reverse-pmos` | AO3401A reverse-polarity protection with its gate resistor |
 | `usb-c-sink` | USB-C power input with 5.1 kΩ per CC pin and a polyfuse |
+| `addressable-led-input` | 74AHCT1G125 level shift from 3.3 V to a 5 V pixel's data input, 330 Ω series resistor, 1000 µF at the strip's supply (BL-1) |
+| `nmos-switch` | AO3400A low-side switch, specified at 2.5 V gate drive, with gate resistor, pull-down and a flyback diode (BL-2) |
+| `pmos-high-side` | AO3401A high-side switch with an S8050 level shift (BL-3) |
+| `lipo-charger` | MCP73831 charger, DW01A and FS8205A cell protection, load sharing after Microchip AN1149 (BL-4) |
+| `ldo-3v3` | RT9080 3.3 V LDO, 600 mA and 2 µA quiescent, for an ESP32 (BL-5) |
+| `battery-sense` | battery voltage through a 1:2 divider a P-MOSFET switches on, hold capacitor at the ADC (BL-6) |
+| `esp32-wroom-32e` | ESP32-WROOM-32E with EN 10 kΩ and 1 µF, BOOT button, the auto-program circuit and a CH340C (BL-7) |
+| `usb-c-data` | USB-C with USB 2.0 data (both rows joined), USBLC6-2SC6, 5.1 kΩ per CC pin, polyfuse (BL-8) |
+| `i2c-level-shift` | two BSS138 with pull-ups on both sides, 100 kHz (BL-9) |
+| `rs485` | MAX3485 at 3.3 V with switchable 120 Ω termination, idle bias and DE pull-down (BL-10) |
+| `midi` | MIDI in through a 6N138 and MIDI out for a 3.3 V MCU on 5-pin DIN (BL-11) |
+| `cable-input` | an input on a long lead: pull-up, series resistor and capacitor, TVS at the connector (BL-12) |
+| `servo-connector` | hobby servo header with a bulk capacitor (BL-13) |
+| `dc-motor-drv8833` | DRV8833 for two DC motors with its VM, VCP and VINT capacitors (BL-14) |
+| `eurorack-power` | keyed 10-pin Eurorack header, a series Schottky per rail, 10 µF per rail (BL-15) |
+| `instrument-buffer` | OPA991 follower with a 1.1 MΩ input, RF filter at the jack, 100 Ω output, an AC expectation (BL-16) |
+| `pedal-power` | 9 V centre-negative jack, Schottky, 100 Ω and 100 µF, a 4.5 V reference (BL-17) |
+| `relay-bypass` | true bypass with a gold-contact signal relay, transistor coil drive and a photo-MOS mute (BL-18) |
 
 What `add` does: designators get the next free numbers (`R1` of the block becomes `R7`), internal nets get the
 instance's name (`STATUS_ANODE`), each port joins the net given with `--connect` – or a new net, if the block knows its
@@ -330,7 +348,9 @@ existing entry must have the same pins. The graph file keeps its indentation. Th
 decide: the LED current, the entries in sim.json, `"source": "reversible"` on the connector.
 
 Every block passes `edakit check` and `edakit sim` and is drawn by `edakit schematic draw` once it is in the example
-project – a test makes sure of that. That
+project – a test makes sure of that; where in the example it goes, and what its simulation needs, stands in the block's
+own `test` table (`"sim": false` with the reason where the example's rails, not the block, keep it from simulating).
+Their parts come from the parts library and are drafts until the owner signs them (4.1). That
 makes a block a good start, not a sign-off: values, ratings and the review are still the project's. A project's own
 blocks are JSON files of the same form, added with `--file`.
 

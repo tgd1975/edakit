@@ -83,25 +83,25 @@ HT-17 = { status = "built", where = "HINT.signal_ceramic (domains audio, guitar)
 HT-18 = { status = "built", where = "HINT.pedal_supply (domain guitar)", step = 6 }
 HT-19 = { status = "built", where = "HINT.string_ground (domain guitar)", step = 6 }
 
-[blocks]                     # all open: a block needs checked parts entries – datasheets
-BL-1 = { status = "open", missing = "addressable LED input – datasheets" }
-BL-2 = { status = "open", missing = "logic-level N-MOSFET switch – datasheets" }
-BL-3 = { status = "open", missing = "high-side P-MOSFET switch with level shift – datasheets" }
-BL-4 = { status = "open", missing = "Li-ion charger with protection – datasheets" }
-BL-5 = { status = "open", missing = "3.3 V LDO for an ESP32 – datasheets" }
-BL-6 = { status = "open", missing = "battery voltage measurement – datasheets" }
-BL-7 = { status = "open", missing = "ESP32 module support – datasheets" }
-BL-8 = { status = "open", missing = "USB-C with data and ESD – datasheets" }
-BL-9 = { status = "open", missing = "I2C level shift – datasheets" }
-BL-10 = { status = "open", missing = "RS-485 at 3.3 V – datasheets" }
-BL-11 = { status = "open", missing = "MIDI in and out – datasheets" }
-BL-12 = { status = "open", missing = "cable input with RC and TVS – datasheets" }
-BL-13 = { status = "open", missing = "servo connector with bulk capacitor – datasheets" }
-BL-14 = { status = "open", missing = "DC motor driver – datasheets" }
-BL-15 = { status = "open", missing = "Eurorack power entry – datasheets" }
-BL-16 = { status = "open", missing = "instrument buffer – datasheets" }
-BL-17 = { status = "open", missing = "pedal power entry – datasheets" }
-BL-18 = { status = "open", missing = "relay bypass with mute – datasheets" }
+[blocks]                     # edakit/blocks/, built 2026-10-31 by six block agents on the library drafts
+BL-1 = { status = "built", where = "edakit/blocks/addressable-led-input.json", missing = "the owner's signatures of the parts entries; tested without the simulation – the example's +5V below the 74AHCT's minimum", step = 6 }
+BL-2 = { status = "built", where = "edakit/blocks/nmos-switch.json", missing = "the owner's signatures of the parts entries", step = 6 }
+BL-3 = { status = "built", where = "edakit/blocks/pmos-high-side.json", missing = "the owner's signatures of the parts entries", step = 6 }
+BL-4 = { status = "built", where = "edakit/blocks/lipo-charger.json", missing = "the owner's signatures of the parts entries; tested without the simulation – the example has no USB input that suits a charger", step = 6 }
+BL-5 = { status = "built", where = "edakit/blocks/ldo-3v3.json", missing = "the owner's signatures of the parts entries", step = 6 }
+BL-6 = { status = "built", where = "edakit/blocks/battery-sense.json", missing = "the owner's signatures of the parts entries", step = 6 }
+BL-7 = { status = "built", where = "edakit/blocks/esp32-wroom-32e.json", missing = "the owner's signatures of the parts entries; tested without the simulation – the example's 3V3 rail is 0.3 A", step = 6 }
+BL-8 = { status = "built", where = "edakit/blocks/usb-c-data.json", missing = "the owner's signatures of the parts entries", step = 6 }
+BL-9 = { status = "built", where = "edakit/blocks/i2c-level-shift.json", missing = "the owner's signatures of the parts entries", step = 6 }
+BL-10 = { status = "built", where = "edakit/blocks/rs485.json", missing = "the owner's signatures of the parts entries", step = 6 }
+BL-11 = { status = "built", where = "edakit/blocks/midi.json", missing = "the owner's signatures of the parts entries; tested without the simulation – the example's +5V below the 6N138's minimum; the MIDI specification (CA-033) not read – midi.org refused", step = 6 }
+BL-12 = { status = "built", where = "edakit/blocks/cable-input.json", missing = "the owner's signatures of the parts entries", step = 6 }
+BL-13 = { status = "built", where = "edakit/blocks/servo-connector.json", missing = "the owner's signatures of the parts entries", step = 6 }
+BL-14 = { status = "built", where = "edakit/blocks/dc-motor-drv8833.json", missing = "the owner's signatures of the parts entries", step = 6 }
+BL-15 = { status = "built", where = "edakit/blocks/eurorack-power.json", missing = "the owner's signatures of the parts entries; tested without the simulation – a sim source has one plus and one minus – no ±12 V; the Doepfer A-100 bus specification not read – doepfer.de unreachable", step = 6 }
+BL-16 = { status = "built", where = "edakit/blocks/instrument-buffer.json", missing = "the owner's signatures of the parts entries", step = 6 }
+BL-17 = { status = "built", where = "edakit/blocks/pedal-power.json", missing = "the owner's signatures of the parts entries", step = 6 }
+BL-18 = { status = "built", where = "edakit/blocks/relay-bypass.json", missing = "the owner's signatures of the parts entries; the second contact set of the DPDT relay is not simulated, the photo-MOS has no model", step = 6 }
 
 [part_facts]                 # library drafts in edakit/parts/ (decision 8), written from the datasheets on 2026-10-31 – each counts once the owner signs it
 modules = { status = "partial", parts = ["ESP32-WROOM-32", "ESP32-S3 module", "ESP32-C3 module", "NodeMCU-32S", "Wemos D1 mini", "Arduino Nano", "RP2040 boards", "RP2350 boards"], where = "C701341 (ESP32-WROOM-32E), C2913202 (ESP32-S3-WROOM-1), C41349510 (ESP32-C3-MINI-1-H4X), LOLIN_D1_MINI, A000005 (Arduino Nano), C7203002 (Pico), C41407547 (Pico 2)", missing = "the owner's signatures; NodeMCU-32S – its datasheet hosts refused" }
