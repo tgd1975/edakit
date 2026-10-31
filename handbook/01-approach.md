@@ -10,7 +10,7 @@ the bill of materials, and in the end the Gerber files that go to the manufactur
 A change starts in the graph and flows through the same pipeline again. A **release gate** runs every check on the
 files that will actually be uploaded and writes a test protocol; only a run that says RELEASED goes to JLCPCB.
 A project without a PCB needs no EasyEDA at all: checks, simulation and a drawn schematic (6.5) work from the graph
-alone.
+alone. A project can also draw its boards in KiCad 10 instead of EasyEDA; the rest stays the same (chapter 16).
 
 ```text
  parts database ──► hardware graph ──► schematic ──► PCB ──► manufacturing files ──► JLCPCB ──► acceptance
@@ -35,9 +35,9 @@ With the graph as the only source:
   reversed supply reaches only the anode of a blocking diode" are a few lines of Python over that file.
 - **Every artifact can be regenerated.** Schematic, PCB parts, nets, tracks, pours, silkscreen – all generated. That
   is what makes the EasyEDA side safe to automate: anything broken is deleted and rebuilt, without asking.
-- **Every hand-over has a comparison.** Graph ↔ schematic (SYNC.schematic), graph ↔ PCB pads (SYNC.pcb), plan ↔ PCB (SYNC.plan),
-  graph ↔ copper in the Gerber files (GEO.copper), graph ↔ BOM (SYNC.bom). An error has to slip past an independent comparison
-  to reach the manufacturer.
+- **Every hand-over has a comparison.** Graph ↔ schematic (SYNC.schematic), graph ↔ PCB pads (SYNC.pcb), plan ↔ PCB
+  (SYNC.plan), graph ↔ copper in the Gerber files (GEO.copper), graph ↔ BOM (SYNC.bom). An error has to slip past an
+  independent comparison to reach the manufacturer.
 - **Changes are cheap and complete.** Swapping a part is a line in the graph plus `create → layout → pcb parts →
   route → gate`. Nothing is forgotten in a corner of the schematic.
 
@@ -58,7 +58,7 @@ With the graph as the only source:
 6. **An independent agent's result is the sign-off.** Checks that need judgement – is this footprint's pin 1 really
    pin 1, is this layout manufacturable and usable – are done by a separate agent in its own session. If it says OK,
    it is signed; if not, the cause is fixed and it checks again. The human is asked for decisions, not for checklists.
-7. **Decisions are numbered.** D-12, SIM.driver: written down with reason, date and alternatives, cited where they apply. A
+7. **Decisions are numbered.** D-12: written down with reason, date and alternatives, cited where they apply. A
    later session (or a later you) knows why the 18-mil tracks are below the class width and that it was accepted.
 8. **Tooling over clicking.** When EasyEDA needs a click, first look for the API path (parts without the import dialog,
    pad nets directly, own DSN instead of the DSN export). A dialog that remains must be a plain OK.
@@ -87,13 +87,13 @@ what is checked by judgement and by whom, and an acceptance test after delivery 
 
 | Chapter | |
 |---|---|
-| [2 Setup](02-setup.md) | EasyEDA Pro, Node, the MCP server, the bridge patch, Claude Code plugin |
-| [3 Hardware graph](03-hardware-graph.md) | format, conventions, the rule checks |
-| [4 Parts database](04-parts-database.md) | one file per LCSC number, sourcing, sign-off |
+| [2 Setup](02-setup.md) | EasyEDA Pro, Node, the MCP server, the bridge patch, Claude Code plugin, a project |
+| [3 Hardware graph](03-hardware-graph.md) | format, conventions, the rule checks, the firmware contract, requirements |
+| [4 Parts database](04-parts-database.md) | one file per part, sourcing, sign-off, own parts, datasheets |
 | [5 Simulation](05-simulation.md) | ngspice from the graph, behaviour models, scenarios |
 | [6 Schematic](06-schematic.md) | generate, check, copy, lay out – or draw it without EasyEDA |
 | [7 PCB](07-pcb.md) | placement plan, parts without dialogs, Freerouting, pours, silkscreen |
-| [8 Release gate](08-release-gate.md) | stages, sign-offs, manifest, ordering at JLCPCB |
+| [8 Release gate](08-release-gate.md) | stages, sign-offs, manifest, ordering at the manufacturer, acceptance, project scripts and agents, requirements |
 | [9 EasyEDA API](09-easyeda-api.md) | how the API and the MCP server really behave |
 | [10 Reference](10-reference.md) | edakit.toml, the board and schematic files and every command |
 | [11 Working with Claude](11-working-with-claude.md) | plugin, skills, agents, parallel sessions, working agreements |

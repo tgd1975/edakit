@@ -25,14 +25,14 @@ extension API. edakit uses the same server.
 3. **uv** (runs edakit with its dependencies): <https://docs.astral.sh/uv/>.
 4. **ngspice** (stage E): `sudo apt install ngspice` (or your package manager).
    **pdftotext** (optional, poppler-utils): `edakit part fetch` checks with it whether a datasheet has a text layer
-   and names its part number (4.3).
-With `toolchain = "kicad"` (chapter 16) steps 1 and 2 and sections 2.4 to 2.6 are not needed; instead **KiCad 10**
-from KiCad's PPA: `sudo add-apt-repository ppa:kicad/kicad-10.0-releases && sudo apt install kicad` – `edakit doctor`
-asks kicad-cli for its version (16.2).
-
+   and names its part number (4.6).
 5. **Freerouting**: nothing to do on Linux x64 – `edakit route` downloads the pinned release (with its own Java)
    to `~/.local/share/freerouting/` and checks its SHA-256. Elsewhere: download `freerouting-2.4.1.jar`, install
    Java 21+, set `FREEROUTING_JAR`. (Java 17 is too old for Freerouting 2.x.)
+
+With `toolchain = "kicad"` (chapter 16) steps 1 and 2 and sections 2.4 to 2.6 are not needed; instead **KiCad 10**
+from KiCad's PPA: `sudo add-apt-repository ppa:kicad/kicad-10.0-releases && sudo apt install kicad` – `edakit doctor`
+asks kicad-cli for its version (16.2).
 
 ## 2.3 Claude Code: the plugin
 
@@ -79,9 +79,9 @@ or from a clone `uv run --project /path/to/edakit edakit <command>`.
 | `BRIDGE_TIMEOUT_MS` | `120000` | DRC and pour fills of a large board take longer than the default 15 s |
 
 After the install `mcp-server.sh` adds the tool `easyeda_export_odb` to the installed server, once
-(`odb-tool-patch.mjs`, idempotent): the ODB++ export for a maker that assembles from it (AISLER, 8.4, SYNC.odb). It calls
-the bridge method `board.exportGerbers` with `format: "odb"`, so the server's method registry stays as it is; the
-patched extension (2.5) answers it. Upstream: issue and pull request drafts in `upstream/` (#5).
+(`odb-tool-patch.mjs`, idempotent): the ODB++ export for a maker that assembles from it (AISLER, 8.4, SYNC.odb). It
+calls the bridge method `board.exportGerbers` with `format: "odb"`, so the server's method registry stays as it is;
+the patched extension (2.5) answers it. Upstream: issue and pull request drafts in `upstream/` (#5).
 
 **Pinned, not npx:** the tool set and the extension must match, and npx does not pass SIGTERM on – an orphaned server
 then blocks the bridge port. Update deliberately: raise `EASYEDA_MCP_VERSION`, rebuild the patched extension (2.5),
@@ -138,7 +138,7 @@ Node. Check: `edakit doctor` ("EasyEDA unthrottled").
 
 ```bash
 cd my-project
-/edakit:new-project my-board          # in Claude Code – or copy the example's files and adapt
+/edakit:new-project my-project        # in Claude Code – or copy the example's files and adapt
 edakit doctor                         # tool chain ready?
 edakit check && edakit sim            # offline, seconds
 ```
@@ -172,6 +172,6 @@ chapters 6–8. Daily: start EasyEDA → open the project → work.
 
 ## 2.8 Licences of the parts you combine
 
-edakit itself is MIT licensed ([LICENSE](../LICENSE)). It uses, without bundling them: **easyeda-mcp-pro** (PolyForm Noncommercial
-1.0.0 – fine for private projects; check its licence before commercial use), **EasyEDA Pro** (proprietary, free),
-**Freerouting** (GPL-3.0, downloaded at first use), **ngspice** (BSD).
+edakit itself is MIT licensed ([LICENSE](../LICENSE)). It uses, without bundling them: **easyeda-mcp-pro**
+(PolyForm Noncommercial 1.0.0 – fine for private projects; check its licence before commercial use), **EasyEDA Pro**
+(proprietary, free), **Freerouting** (GPL-3.0, downloaded at first use), **ngspice** (BSD).

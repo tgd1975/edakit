@@ -87,16 +87,17 @@ dead ends against the API, and loops that never ended. Each got a rule or a tool
 - 7 days from the first MCP call to a redesigned, routed board; first released manufacturing files after 5 days.
 - ~120 parts, 98 nets; routing ~1500 track pieces, ~220 vias, DRC 0.
 - Simulation: 41 scenarios, ~11 000 single checks in about 3 seconds.
-- Release gate: 7 stages, about 30 automatic checks in the board and manufacturing stages alone, 5 manual checks of which 2 are done by
-  agents before the export.
-- About 25 EasyEDA API behaviours that cost time to find out (chapter 9).
+- Release gate: 7 stages, about 30 automatic checks in the board and manufacturing stages alone, 5 manual checks of
+  which 2 are done by agents before the export.
+- About 60 EasyEDA API behaviours that cost time to find out (chapter 9).
 
 ## 13.6 The second project
 
-The first project after the extraction was much smaller: [the Christmas bell](https://github.com/tgd1975/automatic_christmas_bell), a carrier board for a
-plugged-in Arduino Nano with a servo, five LEDs and two buttons, taken over from a Fritzing drawing. The circuit itself was quick: graph, parts and simulation took
-under an hour. Most of the time went into what the bell exposed in edakit, which had to be built before the board
-could go through:
+The first project after the extraction was much smaller:
+[the Christmas bell](https://github.com/tgd1975/automatic_christmas_bell), a carrier board for a plugged-in Arduino
+Nano with a servo, five LEDs and two buttons, taken over from a Fritzing drawing. The circuit itself was quick: graph,
+parts and simulation took under an hour. Most of the time went into what the bell exposed in edakit, which had to be
+built before the board could go through:
 
 - **Off-board loads** in the simulation (`external`: the servo at its connector) and **fault cases** that do not block
   every commit (`"matrix": false`): a stalled servo draws more than the Nano's 500 mA polyfuse holds.

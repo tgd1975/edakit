@@ -439,7 +439,7 @@ def b6(job, quote):
         return "pass", f"{words[0] if words else 'no finish'}: no lead"
     level = {"sale": "fail", "gift": "warn"}.get(use, "info")
     return level, (f"{words[-1]}: lead in the product, purpose {use} – " + {
-        "sale": "RoHS: lead above 0.1 % is not allowed in what is placed on the market (handbook 15.1)",
+        "sale": "RoHS: lead above 0.1 % is not allowed in what is placed on the market (handbook 15.2)",
         "gift": "lead is a substance of very high concern: REACH Art. 33 asks to name it to a consumer who asks "
                 "(handbook 15.2)",
         "private": "for yourself: a note (handbook 15.1)"}[use if use in ("sale", "gift") else "private"])

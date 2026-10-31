@@ -54,8 +54,8 @@ assembly preview at JLCPCB.
        circle above [copper] max_bare_mm on a poured layer, a share below [copper] min_cover, a copper piece without
        pad, via or plated hole: warn
   GEO.ring every plated hole keeps JLCPCB's annular ring (component hole 0.18 mm, warn below 0.20 mm; via 0.05 mm, on
-       the via's own pad, a pour around it not counted) and every two plated holes JLCPCB's hole-to-hole spacing, edge
-       to edge (0.45 mm with a component hole, 0.2 mm vias)
+       the via's own pad, a pour around it not counted); in the same pass every two plated holes JLCPCB's hole-to-hole
+       spacing (0.45 / 0.2 mm), reported as GEO.spacing
   GEO.silk silkscreen from the Gerber files: edakit's own print on a solder-mask opening (fail), other print there per part,
        print beyond the outline, a part of the designators side without a visible designator or group label (not in
        [silk] unlabelled), a text height edakit prints below 1.0 mm, print under a body larger than its footprint
@@ -1123,7 +1123,7 @@ def check_rings(board, design, d, rows):
     """GEO.ring: every plated hole keeps JLCPCB's annular ring on TOP and BOTTOM (2 layers, 1 oz: a component hole 0.18 mm,
     warning below 0.20 mm; a via 0.05 mm, via Ø >= hole + 0.1 mm), and every two plated holes – also two of one part –
     keep JLCPCB's hole-to-hole spacing, edge to edge (0.45 mm when a component hole is one of them, 0.2 mm between two
-    vias). Vias are the holes of the via drill file (EasyEDA writes them into the PTH file as well); the other plated
+    vias), a row of GEO.spacing. Vias are the holes of the via drill file (EasyEDA writes them into the PTH file as well); the other plated
     holes are named by the through-hole pad of pcb.json at their place. A component hole's ring is the copper around
     the hole in the Gerber files, whatever it belongs to; a via's is its own pad's, the flash at its centre
     (via_ring_mm) – a pour of its own net around it measured up to RING_REACH_MM and hid a pad too small for its hole

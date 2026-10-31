@@ -7,10 +7,9 @@ Why DC operating points first: the expensive errors on a small board are static.
 brightness, a regulator without headroom at the low end of the USB voltage, an LED the wrong way round, a net that
 reaches a pin with more than it tolerates, a supply that cannot deliver the sum of all loads. A DC sweep over supply
 corners × load cases × LED tolerance corners – and the transistors' spread, where a stage's bias rests on it – finds
-those. Where the supply itself changes – plug, unplug, a
-switch-over between two sources – a DC scenario sits on one side of the gap or the other; transient runs (5.2) follow
-the supply over time and LIM.v judges them. Switching spikes and fast edges are measured on the delivered board
-(acceptance test): the behaviour models know no switching.
+those. Where the supply itself changes – plug, unplug, a switch-over between two sources – a DC scenario sits on one
+side of the gap or the other; transient runs (5.2) follow the supply over time and LIM.v judges them. Switching
+spikes and fast edges are measured on the delivered board (acceptance test): the behaviour models know no switching.
 
 A finding of the simulation is accepted as every other is, with `accept` and the reason on its part or net, or on
 the graph keyed by "code place" (3.4): `edakit sim` prints it as accepted, and the comparison's row reads `waived`
@@ -42,7 +41,8 @@ the graph keyed by "code place" (3.4): `edakit sim` prints it as accepted, and t
   several poles (`common_2`, `throw_a_2` … – a 3PDT footswitch's three; REQ.value/switch judges each pole apart).
   A relay is its coil (`coil_ohm`) plus a contact from `common` to `no` when the load lists it in `relays_on`, else to
   `nc` – every contact set of it: a DPDT relay's second set carries the roles `common_2`, `no_2`, `nc_2` and switches
-  with the first (REQ.value/switch judges each set apart).
+  with the first (REQ.value/switch judges each set apart). A potentiometer's wiper sits where the load's `pot` puts
+  it – `{"RV1": 0.25}`, the share of its value between `end_a` and `wiper`, default 0.5.
 - Supplies: connectors listed under `sources` (a voltage source behind a source resistance), battery holders with a
   cell state (`cells`). A module that brings its own supply (an Arduino Nano on USB) is a source as well: `plus` is
   its 5V pin, the voltage is USB minus its on-board diode – or USB itself on a module without that diode;
@@ -60,20 +60,21 @@ the graph keyed by "code place" (3.4): `edakit sim` prints it as accepted, and t
   `i_core_min_a` ("current keeps the supply on (least current: U1 40 mA)"); every other check keeps `i_core_a`.
   Without `i_core_min_a`, `i_core_a` counts for both, in one operating point as before.
 - No supply is fed backwards: where two supplies meet and nothing blocks the way, the higher one feeds the lower one –
-  into a PC's USB port through a module whose 5 V pin is its VBUS, into primary cells. LIM.backfeed holds the current into
-  every source (against its direction) to `i_back_max_a` of the source, and the current into every cell of a battery
-  holder to `i_charge_max_a` of its cell state, and with `i_max_a` what a cell delivers (LIM.i/cell, a coin cell's few mA – accepted on the holder like a finding
-  at any part, `accept: {"LIM.i/cell": …}`, the walkthrough's D-7) (`"cells": {"nimh": {"v": 1.3, "r": 0.05, "i_charge_max_a": 0.1}}` for a
-  pack its charger charges on purpose); both are `criteria.blocking_max_a` (1 mA) unless set.
+  into a PC's USB port through a module whose 5 V pin is its VBUS, into primary cells. LIM.backfeed holds the current
+  into every source (against its direction) to `i_back_max_a` of the source, and the current into every cell of a
+  battery holder to `i_charge_max_a` of its cell state, and with `i_max_a` what a cell delivers (LIM.i/cell, a coin
+  cell's few mA – accepted on the holder like a finding at any part, `accept: {"LIM.i/cell": …}`, the walkthrough's D-7)
+  (`"cells": {"nimh": {"v": 1.3, "r": 0.05, "i_charge_max_a": 0.1}}` for a pack its charger charges on purpose); both
+  are `criteria.blocking_max_a` (1 mA) unless set.
 - Every net is one node – a track is 0 Ω – unless sim.json `copper` names it (5.2): then each of its pins gets a node
   of its own, with the routed tracks and vias as resistors in between, and every check sees the voltage at the pin.
 - A cable between boards (3.1): a net through it gets a node of its own on the from side (`VIN__usb`), each wire a
   resistor – `r_ohm_per_wire`, or the copper of `length_m` and the gauge – and with `l_nh_per_m` an inductance in
   series; several wires of one net between the same two boards (a pedal's ground to the DC jack, each jack's sleeve
   and each footswitch, wired by hand from pads) are resistors in parallel between the same two nodes.
-  ngspice gives each wire's current; with the cable's `i_max_a` (the rating per wire of its own datasheet)
-  every wire is held to it, derated as every current (LIM.i/cable, a warning while new). Without it, a cable that carries current gets
-  one row of information over the scenarios – the highest current through a wire, which wire, the loss per metre of
+  ngspice gives each wire's current; with the cable's `i_max_a` (the rating per wire of its own datasheet) every wire
+  is held to it, derated as every current (LIM.i/cable, a warning while new). Without it, a cable that carries current
+  gets one row of information over the scenarios – the highest current through a wire, which wire, the loss per metre of
   wire I² × R (`highest current through a wire, no i_max_a (wire 1 – I² × R: 1.756 mW per metre of wire, AWG 26 copper
   at 20 °C)`) – and `edakit check --coverage` names it (3.3); the generated fault scenarios are left out of the highest
   current, a short is no operating current. edakit derives no rating from the gauge (rules-at-scale.md, decision 22).
@@ -114,7 +115,7 @@ the graph keyed by "code place" (3.4): `edakit sim` prints it as accepted, and t
 | `buck`, `boost`, `buck_boost` | `vin`, `vout`, (`fb`); a boost without `vout`: `sw`, (`en`) | `vout_v`, `efficiency`, `iq_a`; adjustable: `vref_v`, `i_load_min_a` | ideal output – the same whether the input is above or below it; input power = output power / efficiency. An asynchronous boost whose output is no pin of its own (MT3608) has it behind the diode on its `sw` pin, and `en` low switches it off (below) |
 | `mcu` | `vsys`/`vin`/`vdd`, optional `vout`/`3v3`, `gpio` | `v_io_v` (V, or `"vin"` when the I/O runs from the supply pin, as on a 5 V AVR), `i_core_a` (default 0.03 A; an upper bound), `i_core_min_a` (the least current, for the minimum load only – above; default `i_core_a`), `gpio_r_out_ohm`, `regulator` (`ldo`/`buck`/`boost`/`buck_boost`), `vout_v` (regulator output, default `v_io_v`), `efficiency`, `vih_v`/`vih_ratio`, `vil_v`/`vil_ratio` | on-board regulator feeding the core and external loads; GPIO outputs as sources with output resistance (levels from the load's `gpio`; `null` releases an output in that load – an input on its pull-up, as a key matrix's rows not scanned), pull-ups from the config; the config's `inputs` must sit at a defined logic level; the config's `io_rail` (a net or pin) is the rail of the GPIOs and pull-ups where it is not the regulator's output – a bare microcontroller (kind `ic`) whose on-chip regulator feeds only its core, the RP2040's 1.1 V |
 | `cc_sink` | `rext`, `out` (or `out0` … `outN`), `vdd`, `oe_n` | `vrext_v`, `iout_gain`, `vout_knee_v`, `idd_max_a` | constant-current LED driver (TLC5916, STP08CP05, …): R-EXT held at vrext, every enabled output sinks gain × I(R-EXT) with a soft knee; `oe_n` high = all off; pins of type `output` (SDO to the next driver's SDI or to an MCU input that reads the chain back) low through 50 Ω, as in `logic`; an unconnected SDO stays out of the netlist |
-| `opamp` | `vcc`, `vee` (or `gnd`), per channel `in_p`, `in_n`, `out` – with a suffix for several (`in_p_a`, `out_a`, `in_p_b` …) | `vout_swing_v`, `vicm_v`, `iq_a`, `r_out_ohm`, `comparator` | op-amp: the output follows the inputs with an open-loop gain of 10⁴, limited to the rails plus `vout_swing_v` – `[above vee, from vcc]`, e.g. `[0.02, -1.5]` for an output that stops 1.5 V below the supply (none: rail to rail) –, behind `r_out_ohm` (50 Ω); `iq_a` from vcc to vee; the output's own current comes from ground in the model, so a source's current misses it. LIM.range/opamp (a warning) holds every input to the common-mode range `vicm_v` (same form: `[0, -1.5]` from vee to 1.5 V below vcc) and every output to its linear range – an output at its limit while the inputs stand apart has saturated; `comparator: true` is meant to |
+| `opamp` | `vcc`, `vee` (or `gnd`), per channel `in_p`, `in_n`, `out` – with a suffix for several (`in_p_a`, `out_a`, `in_p_b` …) | `vout_swing_v`, `vicm_v`, `iq_a`, `r_out_ohm`, `comparator` | op-amp: the output follows the inputs with an open-loop gain of 10⁴, limited to the rails plus `vout_swing_v` – `[above vee, from vcc]`, e.g. `[0.02, -1.5]` for an output that stops 1.5 V below the supply (none: rail to rail) –, behind `r_out_ohm` (50 Ω); `iq_a` from vcc to vee; the output's own current comes from ground in the model, so a source's current misses it. LIM.range/opamp (a warning) holds every input to the common-mode range `vicm_v` (same form: `[0, -1.5]` from vee to 1.5 V below vcc) and every output to its linear range – an output at its limit while the inputs stand apart has saturated; with `comparator: true` the outputs are not checked – a comparator is meant to saturate |
 | `logic` | supply pins (`power_in`, the role `vdd` or `vcc` first), outputs | `icc_a` (a number, or `{pin name: A}` per supply pin), `r_out_ohm` (50 Ω), per pin `state` | a sensor, transceiver, USB-UART or EEPROM: its supply current at its supply pin, and every output in a defined state – the component's `states` (3.1), else the pin's `state`, else released for an open-drain output, released for a tri-state output unless its part ties every enable pin active (`oe_n`, `en_n`, `re_n` to ground, `oe`, `en`, `de` to a supply), low for a push-pull one. `high` drives the pin through `r_out_ohm` to its supply – the pin its `ref` names, else the supply pin – which then delivers what it sources; `low` through `r_out_ohm` to the part's ground; `off` not at all. A pull-up on a released open-drain output carries no current, one on an output held low carries V / R. Bidirectional pins rest off unless a state is given; internal pulls, an RS-485 driver and the PCF8574's current-source high are not modelled |
 | `current` | supply pins | `i_a` | constant supply current; with `limits` `vin_min_v`/`vin_max_v` (an own board, 4.5) LIM.range checks the voltage at its supply pins against them |
 | `bridge` | per channel `in1_x`, `in2_x`, `out1_x`, `out2_x`, optional `pwm_x` and `sense_x` (the low sides' return, else ground); `vm`, `en`, (`vcc`) | `r_on_high_ohm`, `r_on_low_ohm` (else `r_out_ohm`), `idd_max_a`, `vih_v`/`vih_ratio`, `vil_v`/`vil_ratio` | H-bridge driver (DRV8833, TB6612) by the truth table both datasheets share: IN1 IN2 = 1 0 OUT1 high and OUT2 low, 0 1 the other way, 1 1 brake (both low), 0 0 coast (both off); PWM low brakes a driven channel, `en` low (nSLEEP, STBY) turns every output off. A high side is 1/`r_on_high_ohm` to `vm`, a low side 1/`r_on_low_ohm` to its return, each behind an ammeter: LIM.i holds each output to `i_out_max_a`, LIM.t the dissipation I² × r_on plus `idd_max_a` with `rth_ja_k_per_w`. No body or regenerative diodes, no undervoltage lockout, no current limit |
@@ -137,16 +138,16 @@ the one diode on its `sw` pin, the divider's R1 runs from there. With its enable
 below – the converter stops: its output source lets go and it draws nothing, but the graph's inductor and diode still
 join the input to the output, so the output sits at VIN − VD at the load's current (TI SLVA191A: "The input voltage … is
 connected to the output voltage when the device is disabled"). The protocol shows that level as information ("output
-with EN low"), not as a regulator off its set voltage; what hangs on the output is judged at it – an `expect` of the load
-on the output net (`{"BOOST_OUT": {"max_v": 0.5}}`) fails, an LED meant to be dark lights. HINT.boost_enable names the
-pattern in the check. A boost with its own `vout` pin – a module, a synchronous part with its body diode – keeps its
+with EN low"), not as a regulator off its set voltage; what hangs on the output is judged at it – an `expect` of the
+load on the output net (`{"BOOST_OUT": {"max_v": 0.5}}`) fails, an LED meant to be dark lights. HINT.boost_enable names
+the pattern in the check. A boost with its own `vout` pin – a module, a synchronous part with its body diode – keeps its
 output at `vout_v` whatever its enable does: what passes through such a part switched off is not in its entry.
 
 A constant-current LED buck (`cc_led_driver`: the PT4115, the AL8860) regulates the mean voltage across its sense
 resistor: R_S – the resistors from the `vin` net to the `sense` net, in parallel – sets I = `vsense_v` / R_S, and the
-model runs at the top of `vsense_v`, the upper bound every check uses (the PT4115's A type 95 / 98 / 101 mV: 0.13 Ω gives
-731 … 777 mA). Its switch pulls that current into `sw` as long as it can – at most (V(sw) − (1 − `duty_max_ratio`) ×
-V(vin)) / (`duty_max_ratio` × `r_on_ohm`), the switch on for its maximum duty cycle –; of it the share D = 1 −
+model runs at the top of `vsense_v`, the upper bound every check uses (the PT4115's A type 95 / 98 / 101 mV: 0.13 Ω
+gives 731 … 777 mA). Its switch pulls that current into `sw` as long as it can – at most (V(sw) − (1 − `duty_max_ratio`)
+× V(vin)) / (`duty_max_ratio` × `r_on_ohm`), the switch on for its maximum duty cycle –; of it the share D = 1 −
 V(sw) / V(vin) goes to ground and the rest back to `vin`, the freewheeling diode's: the input current of an ideal buck,
 the switch's and the diode's losses left out. `dim` scales the current – off at the pin's VIL and below, full at VIH and
 above, linear in between (the datasheets' DC dimming differs in detail); a pin's own pull-up to an internal supply
@@ -156,13 +157,13 @@ and inductors from the `sense` net to the `sw` net – is judged here, not by it
 of the set current or more, dark while dim is low (SIM.state/cc). The checks, all warnings so far:
 
 - LIM.i/cc: the set current, `vsense_v` (max) / R_S, within the driver's `i_out_max_a` (the PT4115's 1.2 A, the AL8860's
-  1 A in TSOT25); the inductor of the string saturating above the peak current, the set current × (1 + `ripple_ratio`
-  / 2) (the PT4115 sets the ripple to 0.3 × I, the AL8860 to 0.4 × I), within its `i_sat_a`
+  1 A in TSOT25); the peak current in the string's inductor, the set current × (1 + `ripple_ratio` / 2) (the PT4115
+  sets the ripple to 0.3 × I, the AL8860 to 0.4 × I), within its `i_sat_a`
 - REQ.value/cc: R_S at least `r_sense_min_ohm` (the PT4115's 0.082 Ω)
 - LIM.range/cc: the input at least what the string needs – the voltage across R_S, the LEDs and the inductor over
   `duty_max_ratio` (the AL8860's 98 %; 1 where the datasheet gives none), plus the set current through `r_on_ohm`: the
-  on-time equation both datasheets give, TON = L × ΔI / (VIN − VLED − I × (RS + RL + RSW)) – finds e.g.: three white
-  LEDs on 10 V
+  on-time equation both datasheets give, TON = L × ΔI / (VIN − VLED − I × (RS + RL + RSW)). Three white LEDs on 10 V
+  fail it.
 
 The LEDs' own `if_max_a` and the inductor's `i_max_a` hold the simulated current (LIM.i, 5.3). Not in the model: the
 switching itself (ripple, frequency), the switch's and the diode's losses and the driver's temperature, the inductance
@@ -178,10 +179,10 @@ breaking down at `vbr_min_v`: in normal operation they carry nothing.
 
 Two model rules hold for every scenario and matter in transient runs. A regulator whose ratings give `vin_min_v` – an
 `ldo`, `buck`, `boost` or `buck_boost`, and the `mcu` model's on-board regulator with `vin_min_v` or `vsys_min_v` –
-locks out below it: its output and its input current fall to 0 over the 0.2 V below `vin_min_v`. A constant-current load – `i_core_a`,
-`idd_max_a`, `icc_a`, `i_a`, an `external` load – falls to 0 below 0.5 V across it, so a rail nothing feeds stays at
-0 V instead of being pulled below ground. Above these voltages both are what the table says; a DC result with every
-input above its minimum is the same as without them.
+locks out below it: its output and its input current fall to 0 over the 0.2 V below `vin_min_v`. A constant-current load
+– `i_core_a`, `idd_max_a`, `icc_a`, `i_a`, an `external` load – falls to 0 below 0.5 V across it, so a rail nothing
+feeds stays at 0 V instead of being pulled below ground. Above these voltages both are what the table says; a DC result
+with every input above its minimum is the same as without them.
 
 What a part does over time has no state model (rules-at-scale.md, decision 17): a charger's end of charge and its
 recharge, a cell protection's release voltages and delays, a USB PD sink's negotiation with PG and the CC lines. Where
@@ -285,11 +286,11 @@ a source of `sources`, two cell states of `cells` for a battery holder.
 It generates supplies named after what they set: each source alone at both ends (`J1 4.75`, `J1 5.25`, …, `BT1 fresh`)
 and, with more than one, all of them together, each one high in turn and the others low (`J1 5.25 + U1 4.75 + BT1
 empty`, `U1 5.25 + J1 4.75 + BT1 empty`, `BT1 fresh + J1 4.75 + U1 4.75`) – where one supply feeds the others
-hardest (LIM.backfeed: no supply fed backwards). They run with every load and corner like a supply of `supplies`; `edakit sim`
-prints them once. A hand-written case is not run twice: a supply of `supplies` with the same settings runs under its
-own name instead, and an extra scenario with the same supply and load takes that load's case out of the matrix – the
-way to keep a combination a procedure excludes ("unplug J1 while flashing") as `"info": true`. Without the key nothing
-is generated. A load with
+hardest (LIM.backfeed: no supply fed backwards). They run with every load and corner like a supply of `supplies`;
+`edakit sim` prints them once. A hand-written case is not run twice: a supply of `supplies` with the same settings runs
+under its own name instead, and an extra scenario with the same supply and load takes that load's case out of the matrix
+– the way to keep a combination a procedure excludes ("unplug J1 while flashing") as `"info": true`. Without the key
+nothing is generated. A load with
 `"matrix": false` runs only where an extra scenario names it – fault cases such as a stalled servo, whose result you
 want to see and record as a decision, but which must not block every commit.
 
@@ -299,18 +300,19 @@ Fault cases edakit can make itself come from `fault_scenarios` (maker-coverage F
 "fault_scenarios": {"reversed": true, "shorted": true, "off": true, "supply": "usb-nom", "load": "idle"}
 ```
 
-`reversed`: every source of `sources` the graph marks `"source": "reversible"` at its voltage reversed – beyond PATH.reverse's
-topology, what a shunt diode or a swapped ribbon really does; `shorted`: every signal wire of a cable shorted to ground at
-its far end (0.01 Ω at the far connector's pin); `off`: every source of a supply with several left out while the others stay
-on – an input above its own unpowered supply (LIM.v/inject). They run on the first supply and the first load unless
-`supply` and `load` name others, as scenarios named `fault J1 reversed/idle`, `fault REMOTE shorted at J20/idle`,
-`fault BT20 off/idle`. Only the parts' limits are judged there (LIM.v, LIM.i, LIM.p, LIM.t, LIM.backfeed): a board without
-its supply reaches none of the states its load expects, and its nets leave their declared ranges by design of the fault –
-those rows are information. A finding is a warning at most, and the scenario's status `warn`: what a fault does is a
-question for the designer, not a release blocker by itself. `ambient_c` is the ambient of the
-scenarios (LIM derates the fuses' hold current to it); `ambient_min_c`, optional, the lowest one – LIM.i holds a fuse's
-hold current there against the connectors it protects (without it: the datasheet's `i_hold_a`). Battery projects add
-`"cells": {"fresh": {"v": 1.6, "r": 0.15}, "empty": {"v": 1.0, "r": 0.4}}` and supplies like `{"BT1": "fresh"}`.
+`reversed`: every source of `sources` the graph marks `"source": "reversible"` at its voltage reversed – beyond
+PATH.reverse's topology, what a shunt diode or a swapped ribbon really does; `shorted`: every signal wire of a cable
+shorted to ground at its far end (0.01 Ω at the far connector's pin); `off`: every source of a supply with several left
+out while the others stay on – an input above its own unpowered supply (LIM.v/inject). They run on the first supply and
+the first load unless `supply` and `load` name others, as scenarios named `fault J1 reversed/idle`,
+`fault REMOTE shorted at J20/idle`, `fault BT20 off/idle`. Only the parts' limits are judged there (LIM.v, LIM.i, LIM.p,
+LIM.t, LIM.backfeed): a board without its supply reaches none of the states its load expects, and its nets leave their
+declared ranges by design of the fault – those rows are information. A finding is a warning at most, and the scenario's
+status `warn`: what a fault does is a question for the designer, not a release blocker by itself. `ambient_c` is the
+ambient of the scenarios (LIM derates the fuses' hold current to it); `ambient_min_c`, optional, the lowest one – LIM.i
+holds a fuse's hold current there against the connectors it protects (without it: the datasheet's `i_hold_a`). Battery
+projects add `"cells": {"fresh": {"v": 1.6, "r": 0.15}, "empty": {"v": 1.0, "r": 0.4}}` and supplies like
+`{"BT1": "fresh"}`.
 
 A board people reach – picked up, held, pressed – gets its touch limit: `"touch_c": {"main": 48}`, a map from each such
 board to the temperature in °C its parts may reach (LIM.t, 5.3). The number comes from the standard the product follows,
@@ -331,9 +333,9 @@ join where a track or a via ends on them; on a layer where the board file pours 
 as ideal. Each pin gets its own node, and every check reads its pin: the MCU's supply, a regulator's input, a
 driver's headroom, an operating range. A net's range `v` holds for its lowest and highest pin ("4.365 V (D9.1) …
 4.442 V (D1.1)"), the `report` shows the lowest. The ground net stays the reference and cannot be listed. A listed
-net that cannot be annotated stays one node, and SIM.converge notes why: the board has no routing yet, a pin has no pad in the
-board json, or a pin is not connected by the routed tracks, vias or pours (`edakit route check`). On the example, a
-+5V track of 200 mm × 0.15 mm (0.655 Ω) from D1 to the loads drops the far LED anode from 4.442 V to 4.365 V. A range
+net that cannot be annotated stays one node, and SIM.copper notes why: the board has no routing yet, a pin has no pad
+in the board json, or a pin is not connected by the routed tracks, vias or pours (`edakit route check`). On the example,
+a +5V track of 200 mm × 0.15 mm (0.655 Ω) from D1 to the loads drops the far LED anode from 4.442 V to 4.365 V. A range
 `v: [4.45, 5.5]` passes without `copper` and fails with it. The routing is an artifact of `edakit route`, so run
 `edakit sim` again after every routing run; the gate does that in stage E. Without `copper`, every net is one node as
 before.
@@ -357,21 +359,21 @@ last value held) and each battery holder a cell state of `cells`; what it leaves
 (default `stop_s` / 1000). ngspice starts from the operating point with every source at its first point – 0 V on every
 net for a plug-in, the DC state for an unplug – and runs `.tran`. `expect` holds limits per net (`min_v`, `max_v`, the
 lowest and highest voltage during the run) and per source (`i_max_a`, the peak current it delivers); every MCU whose
-ratings give `vin_min_v` (or `vsys_min_v`) is held to it as well, from the moment its supply pin first reaches it – a plug
-run passes once the MCU has started and never browns out, an unplug fails as soon as the rail falls below it (LIM.range;
-the limits of `expect` are LIM.v on a net and LIM.i on a source).
+ratings give `vin_min_v` (or `vsys_min_v`) is held to it as well, from the moment its supply pin first reaches it – a
+plug run passes once the MCU has started and never browns out, an unplug fails as soon as the rail falls below it
+(LIM.range; the limits of `expect` are LIM.v on a net and LIM.i on a source).
 `steps` lets loads change during the run, as `[t, A]` points (seconds rising from 0, amperes ≥ 0; linear in
 between, the first value held before the first point and the last after the last): an external load of the run's load
 (a servo starting or stalling, a motor's start current), an MCU's core current (a Wi-Fi burst, a radio pulse), a part
 of behaviour `current`. Without `steps` they are the constants of the operating points. A load step is how the brown-out
 "it resets when the motor starts" shows: the source resistance and the wires take the rail down, and the MCU's minimum
-(LIM.range) fails while the step lasts. `"info": true` turns failures into information. Each run gets its row in the scenario table with the lowest and highest
-voltage of the `report` nets and the peak current of each source; a run adds no stress items and no net currents.
-On the example, J1 dropping to 0 V in 10 µs leaves +5V at 2.99 V after 0.3 ms with C2 = 22 µF and at 1.59 V with
-1 µF, where the Pico 2 locks out; the plug-in takes 0.22 A from J1 while C2 charges. A switch-over between two sources
-– two P-MOSFETs back to back next to a USB diode – is a run with both in `supply`, the one ramping while the other
-holds; its gap comes from the MOSFETs' thresholds and body diodes, and the capacitors bridge it or not. Without
-`transients` nothing runs.
+(LIM.range) fails while the step lasts. `"info": true` turns failures into information. Each run gets its row in the
+scenario table with the lowest and highest voltage of the `report` nets and the peak current of each source; a run adds
+no stress items and no net currents. On the example, J1 dropping to 0 V in 10 µs leaves +5V at 2.99 V after 0.3 ms with
+C2 = 22 µF and at 1.59 V with 1 µF, where the Pico 2 locks out; the plug-in takes 0.22 A from J1 while C2 charges. A
+switch-over between two sources – two P-MOSFETs back to back next to a USB diode – is a run with both in `supply`, the
+one ramping while the other holds; its gap comes from the MOSFETs' thresholds and body diodes, and the capacitors bridge
+it or not. Without `transients` nothing runs.
 
 **AC runs.** `ac` names small-signal runs around an operating point – only where it names an expectation, and only
 with the domain audio or guitar on (decision 9 of rules-at-scale.md; without either, a note SIM.config/off says that
@@ -430,14 +432,15 @@ in the scenario table and its curve in result.json (`ac`, with the source model 
 `"info": true` makes the run's rows information, as a transient run's: a missed expectation is a row marked info
 and no finding – the response a project computes from its schematic where no source states what the design intends
 (the GuitarML pedals of tests/open_designs/: the TS's mid hump from 1/(2π·4.7 kΩ·47 nF), the boost's gain from
-R3/R4). The op-amp model has no gain-bandwidth: an upper corner comes from the passive parts only. On the reference circuits: the
-guitar buffer's output coupling C22 / R24 gives 1.59 Hz, with 100 nF instead of 1 µF 15.9 Hz – SIM.response; the
-audio input's R20 / C21 low-pass 15.9 kHz, with 100 nF 1.6 kHz. With a pickup (`tests/test_audio_sources.py`: Seymour
-Duncan's SH-1 neck, 7.43 kΩ, and 2.5 H and 500 pF chosen for the test) into a 500 kΩ volume pot and a 1 MΩ input the
-resonance at 4.5 kHz rises 9.9 dB, into 250 kΩ 6.7 dB – the simulation agrees with the coil's formula within 0.1 dB.
+R3/R4). The op-amp model has no gain-bandwidth: an upper corner comes from the passive parts only. On the reference
+circuits: the guitar buffer's output coupling C22 / R24 gives 1.59 Hz, with 100 nF instead of 1 µF 15.9 Hz –
+SIM.response; the audio input's R20 / C21 low-pass 15.9 kHz, with 100 nF 1.6 kHz. With a pickup
+(`tests/test_audio_sources.py`: Seymour Duncan's SH-1 neck, 7.43 kΩ, and 2.5 H and 500 pF chosen for the test) into a
+500 kΩ volume pot and a 1 MΩ input the resonance at 4.5 kHz rises 9.9 dB, into 250 kΩ 6.7 dB – the simulation agrees
+with the coil's formula within 0.1 dB.
 
-`expect` in a load holds what the project expects there, as in a transient run: per source `i_max_a`, `i_min_a` – a sleep
-current budget, the evidence for a battery-life requirement (LIM.i) –, per net `min_v`, `max_v` (LIM.v).
+`expect` in a load holds what the project expects there, as in a transient run: per source `i_max_a`, `i_min_a` – a
+sleep current budget, the evidence for a battery-life requirement (LIM.i) –, per net `min_v`, `max_v` (LIM.v).
 
 `strips` gives each LED strip of a load the share of full white its pixels show – `{"DS1": 1}` every pixel at full
 white, `0.25` a quarter of it on average; a strip the load does not list is dark (its `i_idle_a`). A name that is no
@@ -460,11 +463,11 @@ The simulation config names existing parts, nets and boards, and every value has
 
 **`SIM.converge`** – every scenario converges (error; replaces E-1)  
 The operating point of every scenario converges, every transient run reaches its end.
-- the operating point converges, a transient run runs to its end; a net of `copper` that stays one node is noted (info) with the reason
+- the operating point converges, a transient run runs to its end
 
 **`SIM.state`** – the circuit does what the scenario expects (error, cc: warning; replaces E-3)  
-In every scenario the circuit reaches the state its load expects: LEDs on or dark, each LED of a driver channel at its share of the set current and parallel LEDs sharing it, a regulator's output at its set voltage, a blocking diode blocking, the board drawing at least a supply's minimum load, an LED the right way round, each LED in the string of a constant-current LED driver at its share of the set current or dark while the driver's dim pin is low (grade cc), and what the project plugin checks. A boost converter its enable switches off has no set voltage to reach: its output – what its inductor and diode pass from the input – is a row of information, and what hangs on it is judged at that level.
-- function: current from every source (≤ `i_max_a`; ≥ `i_min_a` with every MCU at its `i_core_min_a` – 5.1), no source and no cell fed backwards (≤ `i_back_max_a`, `i_charge_max_a`, 1 mA by default), regulator outputs within tolerance, input above `vin_min_v`, LDO junction temperature – an MCU module's own LDO too, with the core current it carries (5.3) – against the same limit as LIM.t's, MCU supply voltage and load on its regulator, MCU inputs at a defined level (≤ VIL or ≥ VIH – a 3.3 V signal into a 5 V AVR is the classic case), every part with an operating supply range inside it, every input pin with thresholds at a defined level and the high level of every MCU output reaching the VIH of the inputs on its net (5.3), MCU outputs only on pins that can drive (an output on an input-only pin is reported and not driven), LED driver output headroom and junction temperature, every LED on or dark as the load says (driver channels: ≥ 80 % of its share of the set current, also for an LED behind 0 Ω bridges or one resistor; parallel LEDs share within a ratio – 5.3), relays pull in (`v_operate_v`) and release (`v_release_v`) as the load says, an own board supplied inside the range it was simulated for (`vin_min_v` … `vin_max_v`, 4.5), diodes that must block (`expect_blocking`), every net inside its declared range `v` (a net of `copper`: its lowest and highest pin), plus the plugin's checks
+In every scenario the circuit reaches the state its load expects: LEDs on or dark, each LED of a driver channel at its share of the set current and parallel LEDs sharing it, a regulator's output at its set voltage, a blocking diode blocking, an LED the right way round, each LED in the string of a constant-current LED driver at its share of the set current or dark while the driver's dim pin is low (grade cc), and what the project plugin checks. A boost converter its enable switches off has no set voltage to reach: its output – what its inductor and diode pass from the input – is a row of information, and what hangs on it is judged at that level.
+- function: regulator outputs at their set voltage within tolerance (`rail_tol`, 3 % by default) – a boost converter its enable switched off a row of information –, every LED on or dark as the load's `leds_on` says, an LED on a driver channel at ≥ 80 % of its share of the set current – also behind 0 Ω bridges or one resistor –, dark while its channel is off, parallel LEDs on a channel sharing within a ratio (min/mean), no LED with its anode at a driver output (reversed), a constant-current LED driver with its R_S and `vsense_v` and each LED of its string at its share of the set current or dark while dim is low (grade cc), diodes that must block (`expect_blocking`, ≤ 1 mA by default), plus the plugin's checks that name no code of their own (5.3). The scenario's other function checks report under their own codes: the current from every source and cell, a supply's minimum load (`i_min_a`) and the load on an MCU module's regulator LIM.i, back-feed LIM.backfeed, a regulator's input and minimum load, MCU supply voltage, operating supply ranges, relays pulling in and releasing and LED driver headroom LIM.range, junction temperatures LIM.t, input levels and the high level of MCU outputs LVL.threshold, outputs on input-only pins LVL.direction, the declared net ranges LIM.declared, a load's expected net voltage LIM.v
 
 **`SIM.driver`** – every LED has a known driver (error; replaces E-4)  
 Every LED – each colour of an RGB LED – has a state the simulation checks in every scenario: its cathode on a driver output (directly, behind 0 Ω bridges or a balancing resistor), or the load lists it in leds_on. An LED a multiplexing driver scans (behaviour matrix_driver, pins on both its nets) has no DC state: a row of information.
@@ -474,7 +477,7 @@ Every LED – each colour of an RGB LED – has a state the simulation checks in
 Every expectation of an AC run of the simulation config (ac) holds: the gain from its input to its output at the frequencies named (grade gain), and the lower and upper −3 dB corners within their ranges (grade corner). The gain is 20·log10 |V(output) / V(source)| for 1 V AC behind the run's source_ohm or its source model – a pickup (R and L in series, C across), a piezo disc (behind its capacitance), an electret capsule (a current of 1 V / RL into its load resistor), named by a row of catalog/tables/audio_sources.toml with the maker's values or given as numbers –, a cable's capacitance per metre between its wires and its wire on ground, linearised around a DC scenario; a corner is where the gain falls 3.01 dB below its largest value in the sweep. Runs only where sim.json names an expectation, only with the domain audio or guitar on.
 
 **`SIM.copper`** – copper annotated (note; replaces E-1)  
-A net listed for copper is simulated with its routed copper; where it is not, it stays one ideal node.
+A net listed for copper is simulated with its routed copper; where it is not, it stays one ideal node, noted with the reason.
 <!-- edakit:end -->
 
 **Power.** What a part dissipates at the operating point of every scenario is held to the `p_max_w` of its entry,
@@ -489,13 +492,13 @@ without `p_max_w` gets no LIM.p row; a diode's power counts into its junction te
 at 40 °C ambient. Every part whose entry gives `rth_ja_k_per_w` gets its junction temperature in every scenario,
 `ambient_c` + P × Rth(j-a), with P the power of all its elements – a resistor's I²R, a diode's or LED's VF × IF, a
 transistor's VCE × IC + VBE × IB, a MOSFET's VDS × ID, its body diode included (ngspice counts it in the drain
-current), a JFET's VDS × ID + VGS × IG. It is held to the part's `tj_max_c`, at most the criteria's `tj_max_c` (default 125 °C) – the limit of the
-LDO and LED driver items of LIM.t as well ("junction temperature at 40 °C: 0.0751 W × 125 K/W"). An MCU module's own
-LDO (`regulator: "ldo"`) gets its LIM.t item once the module's `limits` give `rth_ja_k_per_w` – the θJA of the
-regulator on the module, from the regulator's datasheet, like `tj_max_c` there – with all the current it carries:
-P = (vin − vout) × (the load at the module's 3V3 pin + its `i_core_a`) – the model's regulator feeds the core, so
-for a module whose core runs from its supply pin instead (an AVR at 5 V, `v_io_v: "vin"`) it is an upper bound. The
-LILYGO T-Display's AP2112K-3.3 (184 K/W in SOT25) feeding an ESP32 that transmits Wi-Fi turns 0.5 W into heat at
+current), a JFET's VDS × ID + VGS × IG. It is held to the part's `tj_max_c`, at most the criteria's `tj_max_c` (default
+125 °C) – the limit of the LDO and LED driver items of LIM.t as well ("junction temperature at 40 °C: 0.0751 W × 125
+K/W"). An MCU module's own LDO (`regulator: "ldo"`) gets its LIM.t item once the module's `limits` give `rth_ja_k_per_w`
+– the θJA of the regulator on the module, from the regulator's datasheet, like `tj_max_c` there – with all the current
+it carries: P = (vin − vout) × (the load at the module's 3V3 pin + its `i_core_a`) – the model's regulator feeds the
+core, so for a module whose core runs from its supply pin instead (an AVR at 5 V, `v_io_v: "vin"`) it is an upper bound.
+The LILYGO T-Display's AP2112K-3.3 (184 K/W in SOT25) feeding an ESP32 that transmits Wi-Fi turns 0.5 W into heat at
 4.83 V in, 122 °C at 30 °C ambient ("junction temperature of the on-board regulator at 30 °C: 0.5 W × 184 K/W"). A
 buck, on a module or not, gets no item, and neither does a module whose 3V3 pin is on no net – the model has no
 regulator then. On a board of `touch_c` the same temperature – the upper bound of the part's surface – is held to the
@@ -505,36 +508,37 @@ hand.
 
 **Operating range and logic levels.** A part whose entry gives its operating supply range – `limits` `vdd_op_min_v` /
 `vdd_op_max_v` for its supply pins (the `power_in` pins with the role `vdd` or `vcc`, else all of them), or
-`v_op_min_v` / `v_op_max_v` on a pin – is supplied inside it in every scenario, measured from the pin to the part's own ground pin. An input
-pin (type `input`) of a part with thresholds – `vih_v` | `vih_ratio` and `vil_v` | `vil_ratio` on the pin, else in the
-part's `values`; a ratio is taken of the voltage at the part's supply pin – sits at ≤ VIL or ≥ VIH ("input level
-undefined at OE(ED2)"). A DC scenario drives most outputs low, so the high level of every MCU output on the input's
-net (behind 0 Ω bridges too) is held against VIH as well, whatever the load drives: `v_io_v`, or the supply pin's
-voltage with `"vin"` ("output high level reaches VIH of U2 SDI"). These are the recommended operating conditions of
-the datasheet, not its absolute maxima (LIM.v): a 5 V-only LED driver behind a 3.3 V MCU stays inside every absolute
+`v_op_min_v` / `v_op_max_v` on a pin – is supplied inside it in every scenario, measured from the pin to the part's own
+ground pin. An input pin (type `input`) of a part with thresholds – `vih_v` | `vih_ratio` and `vil_v` | `vil_ratio` on
+the pin, else in the part's `values`; a ratio is taken of the voltage at the part's supply pin – sits at ≤ VIL or ≥ VIH
+("input level undefined at OE(ED2)"). A DC scenario drives most outputs low, so the high level of every MCU output on
+the input's net (behind 0 Ω bridges too) is held against VIH as well, whatever the load drives: `v_io_v`, or the supply
+pin's voltage with `"vin"` ("output high level reaches VIH of U2 SDI"). These are the recommended operating conditions
+of the datasheet, not its absolute maxima (LIM.v): a 5 V-only LED driver behind a 3.3 V MCU stays inside every absolute
 maximum and does not work. A part entry without them gets no item; an MCU's own inputs go by the config's `inputs`.
 
 A reversed LED on a driver output fails as "LED reversed"; a reversed LED elsewhere stays dark where it should light.
-That is the polarity check of the graph – for an LED with an expected state. SIM.driver makes sure every LED has one: an LED
-on no driver output in a load without `leds_on` would be skipped, and so would an LED whose parts entry the netlist
-cannot read, with neither polarity nor current checked. Both fail SIM.driver instead. An LED with a pin in nc (the unused
-colour of an RGB LED) is not simulated and needs nothing.
+That is the polarity check of the graph – for an LED with an expected state. SIM.driver makes sure every LED has one: an
+LED on no driver output in a load without `leds_on` would be skipped, and so would an LED whose parts entry the netlist
+cannot read, with neither polarity nor current checked. Both fail SIM.driver instead. An LED with a pin in nc (the
+unused colour of an RGB LED) is not simulated and needs nothing.
 
 An LED counts on the output of a constant-current sink when its cathode is on that output – directly, behind 0 Ω
 bridges, or behind one resistor that joins its cathode net to this output and no other: a series resistor that takes
 voltage off the driver, or several LEDs in parallel on one channel, each with its balancing resistor. The LEDs on one
-output form a group, and the load's `leds_on` does not apply to them: with the channel on, each carries at least
-`led_on_min_ratio` (default 0.8) × set current / number of LEDs in the group ("LED current (LED7)"), and min/mean of
-the group reaches `chain_min_ratio` (default 0.7; both under `criteria`); with the channel off, each is dark. A cathode
-net that reaches two outputs through resistors, and the ground net, count on no output – such an LED goes by
-`leds_on`.
+output form a group, and the load's `leds_on` does not apply to them; the load's `cc_on` names the outputs of each
+driver that are on – `{"U2": "all"}` or a list of output nets or pin names – while its `oe_n` is low. With the
+channel on, each LED carries at least `led_on_min_ratio` (default 0.8) × set current / number of LEDs in the group
+("LED current (LED7)"), and min/mean of the group reaches `chain_min_ratio` (default 0.7; both under `criteria`); with
+the channel off, each is dark. A cathode net that reaches two outputs through resistors, and the ground net, count on
+no output – such an LED goes by `leds_on`.
 
 ## 5.4 Track widths from the simulation
 
 `edakit sim` writes the largest current of a single part per net to `<artifacts>/sim/net_currents.json` (the supply
 current also on both supply nets, ground included). `edakit pcb plan` derives net classes from it (IPC-2221 outer layer,
-1 oz, 10 K rise, × 1.5) with practical minimum widths from `[net_classes]` of the board file; the gate check GEO.width fails a
-track below the IPC width and warns below the class width. `edakit route check` measures the same on the routing
+1 oz, 10 K rise, × 1.5) with practical minimum widths from `[net_classes]` of the board file; the gate check GEO.width
+fails a track below the IPC width and warns below the class width. `edakit route check` measures the same on the routing
 before anything is written to EasyEDA, and with `[routing] widths = "sim"` the router gets those IPC widths itself
 (7.5). The voltage drop GEO.width shows is an upper bound, as information; the drop itself the simulation computes once
 the board is routed and `copper` names the net (5.2).

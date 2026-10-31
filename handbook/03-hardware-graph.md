@@ -121,8 +121,10 @@ The fields are the same in both forms; the table writes them as the JSON does (`
 
 | Field | Meaning |
 |---|---|
+| `name`, `version`, `date`, `description` | the graph's name and state – the gate run, the firmware contract (3.5) and an own part's datasheet (4.5) cite `version` and `date` |
 | `designator` | as on schematic, PCB and silkscreen; in TOML the key of the component's table |
-| `type` | rough class for the generated template layout and the schematic blocks: `microcontroller`, `module`, `ic`, `transistor`, `connector`, `regulator`, `diode`, `led`, `resistor`, `capacitor`, `inductor`, `button`, `switch`, `potentiometer`, `audio`, `testpoint`, `battery_holder`, `fuse` |
+| `type` | rough class for the generated template layout and the schematic blocks: `microcontroller`, `module`, `ic`, `transistor`, `connector`, `regulator`, `diode`, `led`, `resistor`, `capacitor`, `inductor`, `button`, `switch`, `potentiometer`, `audio`, `testpoint`, `battery_holder`, `fuse`; any other type is the parts entry's `kind` itself (`relay`, `motor`, `crystal` …) – STRUCT.identity holds the type to the kind |
+| `label` | what the part does on the board, in a few words; `edakit schematic draw` titles its blocks with it, `edakit graph show` prints it |
 | `lcsc` | the LCSC number – identifies symbol, footprint, parts entry and the BOM line |
 | `part` | the manufacturer part number; without `lcsc` it names the parts entry (its `mpn`) – a part bought elsewhere (chapter 4); with `lcsc` it must name the entry's `mpn` too (STRUCT.identity) |
 | `pins` | pin number → pin name, **with the pin numbers of the EasyEDA/LCSC symbol of exactly this part**; optional – without it the component takes its parts entry's numbers and names. Where it is written, the names must equal the parts entry (STRUCT.entry). A part without an entry and without `pins` takes the numbers its nets and `nc` use, and STRUCT.entry reports the missing entry |
@@ -146,6 +148,7 @@ The fields are the same in both forms; the table writes them as the JSON does (`
 | net `fn_bus` | a name the nets of one bus share (`"LED"` on SDI and CLK): REQ.function wants them on one peripheral instance (`spi0`, not `spi0` and `spi1`) |
 | net `instrument`, `load_min_ohm` | an instrument comes in on the net – `"pickup"` or `"piezo"` – and the least load it wants (`1e6` for 1 MΩ, from the instrument's data): REQ.value/instrument holds the resistors and the inputs' `z_in_ohm` on it in parallel to it; the net suggests the domain guitar |
 | net `signal` | `true`: the net is part of an analog signal path (audio, an effect, a measurement): in the simulation a switch, relay contact or pot whose sides are both on such nets – or on an `instrument` net – keeps them at one DC level, within 10 mV in every scenario (REQ.value/switch) |
+| net `isolated` | `true` on a net of a loop of its own – a MIDI-in loop, the far side of an optocoupler: its range `v` is that loop's, not against the board's ground; LIM.v holds a pin there to it only where its part has a ground pin on an isolated net too, and the simulation does not compare the net with its range (LIM.declared) |
 | net `matrix` | `"row"` or `"col"` of a key matrix: every key reaches the other side through a diode, all diodes the same way (REQ.missing/matrix, REQ.forbidden/matrix) |
 | net `pwm_hz` | the PWM frequency of a net with `fn: "pwm"` – a number, or `[min, max]` for one that changes (a buzzer playing notes): two PWM nets on one slice need the same fixed frequency (REQ.function) |
 | net `clock_hz` | the clock a bus runs at, on its clock line – `fn: "spi.sck"` or an I2C SCL line: at most the highest clock of every device on it (limits `f_sck_max_hz`, `f_scl_max_hz`) and, on I2C, the speed its pull-ups allow with the bus capacitance known (LIM.range/clock); the firmware contract carries it (3.5, `bus_speed`) |
@@ -215,7 +218,8 @@ stamp <name>` records them as they are – what they read did not change, only i
   the pin numbers of the EasyEDA/LCSC symbol"`. No check reads it; it keeps the graph readable without this handbook.
 - **Net names are stable identifiers** used by firmware, simulation config and docs. Rename deliberately.
 - **Voltage ranges are worst case.** `v` is what LIM.v compares with the pin limits and what the simulation checks every
-  scenario against. Think about the unloaded supply, the reversed supply, a programming cable plugged in at the same time.
+  scenario against. Think about the unloaded supply, the reversed supply, a programming cable plugged in at the same
+  time.
 - **Decisions in the graph.** "Why 2 k?" – `notes = "D-9: I_OUT = 9.45 mA"`. The decision log has the reasoning. A
   `#` comment in a TOML graph says what a reader needs beside the wiring ("LED 1 of the bar"); no check reads it and
   the circuit hash leaves it out (8.2), so a decision or a statement for a review goes into `notes` or `purpose.notes`.
@@ -267,10 +271,10 @@ Every part with an LCSC number or a part number has a parts entry, its pins (num
 
 **`STRUCT.identity`** – graph and entry name the same part (error; replaces P-6)  
 A component names the part of its entry: the entry's lcsc is its file name, the component's lcsc is no C99… user-library number (unless bom: false), its part names the entry's mpn, its value reads as the entry's value within 1 %, its type fits the entry's kind.
-- part identity: the component and its parts entry name the same part – the entry's `lcsc` is its file name; the component's `lcsc` is no `C99…` user-library number (unless `bom: false`); its `part` names the entry's `mpn` (remarks in parentheses or after `;` left out, case ignored, a manufacturer before it allowed; a `part` that starts with a value, "330 Ω 0805", is compared as that value); its `value` reads as the entry's `value_ohm` / `value_f` / `value_h` within 1 % ("4k7", "100nF", "2R2"); its `type` fits the entry's `kind` (microcontroller, regulator: ic or module; transistor: npn, pnp, nmos, pmos, njfet, pjfet; led: led, led_rgb; switch: switch, dip_switch; audio: buzzer; otherwise the same word); `accept` on the component. A designator prefix against the kind (R, C, L, D, Q, U, J, SW, F, BT, BZ, K, TP) is a warning – finds e.g.: C25789 written for a 74HC165 (a 464 kΩ resistor), R2 "1k" on a 10 kΩ entry, an LED that came in as U1
+- part identity: the component and its parts entry name the same part – the entry's `lcsc` is its file name; the component's `lcsc` is no `C99…` user-library number (unless `bom: false`); its `part` names the entry's `mpn` (remarks in parentheses or after `;` left out, case ignored, a manufacturer before it allowed; a `part` that starts with a value, "330 Ω 0805", is compared as that value); its `value` reads as the entry's `value_ohm` / `value_f` / `value_h` within 1 % ("4k7", "100nF", "2R2"); its `type` fits the entry's `kind` (microcontroller, regulator: ic or module; transistor: npn, pnp, nmos, pmos, njfet, pjfet; led: led, led_rgb; switch: switch, dip_switch; audio: buzzer, speaker; ic: ic, esd_array; otherwise the same word); `accept` on the component. A designator prefix against the kind (R, C, L, D, Q, U, J, SW, F, BT, BZ, K, TP, M, LS, SP, HE, OK, Y) is a warning (STRUCT.prefix) – finds e.g.: C25789 written for a 74HC165 (a 464 kΩ resistor), R2 "1k" on a 10 kΩ entry, an LED that came in as U1
 
 **`STRUCT.prefix`** – designator prefix fits the kind (warning; replaces P-6)  
-The designator's letters fit the kind of its entry (R resistor, C capacitor, D diode or LED, Q transistor, U IC or module, J connector, SW switch, F fuse, BT battery holder, BZ buzzer, K relay, TP test point).
+The designator's letters fit the kind of its entry (R resistor or potentiometer, C capacitor, L inductor, D diode, LED or ESD array, Q transistor, U IC, module or ESD array, J connector, SW switch, button or DIP switch, F fuse, BT battery holder, BZ buzzer, K relay or solenoid, TP test point – a connector –, M motor, LS or SP speaker, HE heater, OK optocoupler, Y crystal); other letters are not judged.
 
 **`LIM.v`** – voltage within its limit (error, polarized: warning, inject: warning, powered: warning, order: warning; replaces G-3, G-8, E-2, E-5)  
 Every voltage a part sees stays within the limit of its entry: across a capacitor, reverse across a polarized capacitor (vr_max_v, grade polarized), a pin above the supply it refers to – the pin's v_rel_max_v against the pin its ref names (null: none, a pin rated above its supply), else the part's vin_rel_max_v for its inputs, bidirectional pins and outputs against its supply; where the pin gives i_inject_max_a and only resistors feed it, the current its clamp takes against that (grade inject) –, reverse across a diode or LED – a TVS (values tvs) against its working voltage, and the rail of an ESD array (kind esd_array) against its stand-off vrwm_max_v, both without the derating factor –, VCE, VEB, VDS, VGS, on a pin (v_max_v; v_max_powered_v while the part is powered, v_max_v unpowered: grade powered; the pin's v_min_v, else an active pin not below −0.3 V, a negative rail's supply pin – role vee – excepted; against the part's own ground pin where that is not the board's ground), one supply not above another the entry orders (supply_order, grade order), on a fuse, switch, resistor or connector, and every limit a transient run sets on a net. Stage G takes the declared net ranges times the derating factor (1.5 on capacitors and semiconductors) – not the reverse voltage of a coupling capacitor in a signal path (a side on a net marked signal or instrument), whose range extremes never coincide, and across a capacitor with both sides on such nets the larger difference of the ranges' like ends (top against top, bottom against bottom: its sides carry the same signal) –, stage E the simulated value against the derated limit. A net marked isolated (a MIDI-in loop, the far side of an optocoupler) has a range of its own loop: a pin there is held to it only where its part has a ground pin on an isolated net too.
@@ -470,8 +474,8 @@ polarity check before the codes; it was retired.
 Opt-in: with `[firmware]` in edakit.toml (10.1), `edakit firmware` writes what the firmware must know about the board
 as neutral JSON (default `hardware/firmware.json`), and `edakit firmware --check` exits 2 when the committed file no
 longer matches – for the pre-commit hook, next to `edakit check` and `edakit sim`. Without the table nothing changes.
-It runs the other way round from STRUCT.lock: there the firmware is the reference and `locks.pins` hold the graph to it; here
-the graph is the reference and the firmware follows. A project may use both.
+It runs the other way round from STRUCT.lock: there the firmware is the reference and `locks.pins` hold the graph to it;
+here the graph is the reference and the firmware follows. A project may use both.
 
 | Key | Content |
 |---|---|
@@ -531,9 +535,9 @@ edakit req N-1    # the requirements a need leads to, with their evidence
 
 `edakit req` shows the evidence as written; checks and gate do the rest, only in a project with the key:
 
-- **`edakit check`** (3.3) – and the gate's stage G – checks the file: every reference resolves (DOCS.ref), every accepted
-  need has a requirement (DOCS.need), every requirement has evidence (DOCS.evidence), and a draft warns until the user decides
-  (DOCS.draft).
+- **`edakit check`** (3.3) – and the gate's stage G – checks the file: every reference resolves (DOCS.ref), every
+  accepted need has a requirement (DOCS.need), every requirement has evidence (DOCS.evidence), and a draft warns until
+  the user decides (DOCS.draft).
 - **A draft never blocks.** Every finding about a draft is a warning – a reference that does not resolve yet, no
   evidence yet –, so an unfinished file passes `edakit check` and the pre-commit hook; in the gate the findings are
   information. Errors and blocking start once the user has set `status = "accepted"`.
@@ -547,9 +551,9 @@ edakit req N-1    # the requirements a need leads to, with their evidence
   (3.5).
 - **Documents quote it** by ID instead of copying the sentence: a value block
   `<!--edakit req:R-1-->…<!--/edakit-->` in a file of `[docs] files` (6.6). `edakit docs --write` fills in the
-  entry's text; DOCS.quote – `edakit docs` and the gate's stage G – reports a quote that differs from the file, an ID that
-  is not in it and an entry that is dropped, which no longer holds. A quote that went stale is DOCS.quote whatever the
-  entry's status, a draft's too: `edakit docs --write` brings it along.
+  entry's text; DOCS.quote – `edakit docs` and the gate's stage G – reports a quote that differs from the file, an ID
+  that is not in it and an entry that is dropped, which no longer holds. A quote that went stale is DOCS.quote whatever
+  the entry's status, a draft's too: `edakit docs --write` brings it along.
 - A file the key names that is missing or not valid stops `edakit req`, `edakit check` and the gate alike.
 
 A variant – a project of its own in a folder below the main project – reads the main project's file and its own; an

@@ -1,4 +1,4 @@
-# Handbook: from a hardware graph to a manufactured PCB with EasyEDA Pro and Claude Code
+# Handbook: from a hardware graph to a manufactured PCB with EasyEDA Pro or KiCad and Claude Code
 
 How we work, what the tools do, and why they do it that way – including everything that cost time to find out.
 
@@ -24,7 +24,9 @@ How we work, what the tools do, and why they do it that way – including everyt
 
 **Reading paths**
 
-- *First time:* 1 → 2 → 17 → the example project ([Christmas bell](https://github.com/tgd1975/automatic_christmas_bell)) → 3 → 6 → 7 → 8.
+- *First time:* 1 → 2 → 17 → the example project
+  ([Christmas bell](https://github.com/tgd1975/automatic_christmas_bell)) → 3 → 6 → 7 → 8.
 - *New circuit:* 14 → 3 → 4 → 5.
 - *Something broke:* 12 → 9.
 - *Adapting to your board:* 10 → 3 → 7.
+- *KiCad instead of EasyEDA:* 2 → 16 – its table 16.4 says what each command does there.
