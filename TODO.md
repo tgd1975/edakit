@@ -118,3 +118,24 @@ owner's word, one step per branch:
       prototype's table as the test.
 - [ ] **W.4** new-project asks for the style and writes the key; project-surveyor reports it.
 - [ ] **W.5** `print` per pin in the parts entry, drawn beside the symbol's name; the Nano's and the Pico's entries.
+
+## The documentation for its readers ([documentation.md](docs/concepts/new/documentation.md))
+
+Decided on 2026-10-31; nothing built. Each step starts on the owner's word, one per branch, under the concept's rules
+for what the automation reads – sources, data and code untouched; a text that is generated or used elsewhere stays;
+unsure, ask:
+
+- [ ] **D.1** `docs/style.md` and `docs/glossary.md`; `docs/organisation.md` points at the style guide;
+      `tests/test_style.py` for the countable rules and `tests/test_references.py` for the 415 references and paths.
+- [ ] **D.2** The entry layer: the README as the start page of one screen, `docs/quickstart.md` with its test,
+      `docs/how-it-works.md` with the pipeline drawing and a transcript; `test_plugin.py` pointed at the page that
+      lists skills and agents.
+- [ ] **D.3** The site: the navigation as data, by reader, short titles; `organisation.md` and the brand page on it;
+      "Inside edakit" with its index and the source line; the footer and feedback lines; prototypes off the navigation.
+- [ ] **D.4** The reference: 10.5 as entries with the generated synopsis; the catalog page split; the chapters'
+      generated lists as the short kind.
+- [ ] **D.5** The chapters in place, worst first – 8, 3, 5, 7, 4, 10, then the rest –, the review for meaning after
+      each; chapter 13 takes the history.
+- [ ] **D.6** The reader pages "Adding a rule" and "Working on edakit".
+- [ ] **D.7** The "is it for me" numbers from the evals; the findings on sources (the plugin's descriptions say "JSON
+      hardware graph") to the owner.

@@ -1,6 +1,8 @@
 # The documentation: who reads it, how it is organised, how it is written
 
-Status 2026-10-31: proposal, nothing built; written against main at `8fba5f2`. Asked for by the owner: the pages are
+Status 2026-10-31: decided – the eight decisions and what Claude decided itself accepted by the owner the same day, in
+a decision round in Claude Code's form (the table at the end); nothing built; each step D.1 to D.7 starts on the
+owner's word, one per branch, listed in `TODO.md`. Written against main at `8fba5f2`. Asked for by the owner: the pages are
 comprehensive but confusing, so unreadable – a concept for how the documentation should look, be organised and be
 written, who its readers are, the language and its style, what is missing for it to be understood, everything needed so
 that others use edakit. With one condition the owner set while it was written: everything `docs/organisation.md` does
@@ -379,20 +381,21 @@ through a navigation that tells them where they are, with the chapters still as 
 
 ## Decisions
 
-Open, for the owner, in a decision round; the recommendation first.
+Taken by the owner on 2026-10-31, in a decision round in Claude Code's form; "accepted" is the owner's yes to the
+recommendation.
 
 | # | Question | Recommendation | Alternatives | Decision |
 | --- | --- | --- | --- | --- |
-| 1 | The structure | C: the entry layer, the navigation by reader, the chapters trimmed in place under the rules for what the automation reads, the reference generated; files and numbers stay | A: a new structure with new files; B: the entry layer only | open |
-| 2 | The sources on the site | kept, as the last group "Inside edakit" with an index and a source line added by the site, the texts untouched | off the site, links to GitHub; as today | open |
-| 3 | The spelling | British as written; "catalog" edakit's own name, "catalogue" JLCPCB's; the exceptions in documentation unified, sources as they are | American | open |
-| 4 | The voice | "you" for the reader, "Claude" for the session; "the user" and "the owner" leave the reader pages' own sentences, quoted sources keep their words | as today | open |
-| 5 | The history and the private projects | dates and the story leave the guides for chapter 13; "the reference project" described there once and named nowhere else; the example and the open designs are the examples; dates the automation relies on stay | stays inline, as today | open |
-| 6 | The README | one screen: what, for whom, needs, not, install, try it, next; the command block to the reference, the repository map to organisation.md, "Status and limits" to "How it works"; `test_plugin.py` follows | as today, with a shorter head | open |
-| 7 | The command reference | entries: the synopsis generated from the parser and held by a test, reads, writes and exit codes hand-written beneath; the help texts changed only in `cli.py` through a branch | the table as today; fully generated (loses reads and writes) | open |
-| 8 | "What changed" from the merge commits on the site | not built until a reader asks: the commit messages are written for the owner | built with D.3 | open |
+| 1 | The structure | C: the entry layer, the navigation by reader, the chapters trimmed in place under the rules for what the automation reads, the reference generated; files and numbers stay | A: a new structure with new files; B: the entry layer only | accepted |
+| 2 | The sources on the site | kept, as the last group "Inside edakit" with an index and a source line added by the site, the texts untouched | off the site, links to GitHub; as today | accepted |
+| 3 | The spelling | British as written; "catalog" edakit's own name, "catalogue" JLCPCB's; the exceptions in documentation unified, sources as they are | American | accepted |
+| 4 | The voice | "you" for the reader, "Claude" for the session; "the user" and "the owner" leave the reader pages' own sentences, quoted sources keep their words | as today | accepted |
+| 5 | The history and the private projects | dates and the story leave the guides for chapter 13; "the reference project" described there once and named nowhere else; the example and the open designs are the examples; dates the automation relies on stay | stays inline, as today | accepted |
+| 6 | The README | one screen: what, for whom, needs, not, install, try it, next; the command block to the reference, the repository map to organisation.md, "Status and limits" to "How it works"; `test_plugin.py` follows | as today, with a shorter head | accepted |
+| 7 | The command reference | entries: the synopsis generated from the parser and held by a test, reads, writes and exit codes hand-written beneath; the help texts changed only in `cli.py` through a branch | the table as today; fully generated (loses reads and writes) | accepted |
+| 8 | "What changed" from the merge commits on the site | not built until a reader asks: the commit messages are written for the owner | built with D.3 | accepted |
 
-Decided by Claude, to be confirmed: MkDocs Material stays; chapter files and numbers stay; sources, data and code
+Decided by Claude and confirmed by the owner on 2026-10-31: MkDocs Material stays; chapter files and numbers stay; sources, data and code
 untouched, with the rules of the section "What the automation reads"; `tests/test_references.py`; a glossary in the
 sources' words; the style guide with its test; the navigation two levels deep; prototype READMEs off the navigation;
 CLAUDE.md on the site as a source page; `organisation.md` and the brand page on the site; the quickstart offline and
