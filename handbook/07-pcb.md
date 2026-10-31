@@ -566,7 +566,9 @@ BOTTOM (visible): 0.18 m of track, 2 vias
 
 The lengths are those of the routing preview's titles. A warning changes no exit code: the routing is not wrong, the
 look is not what the board file asked for. Stage L of the gate gives the same row from the PCB itself (8.1), and GEO.silk
-holds the side's print to the board file (7.7). Without `[looks]` nothing is printed.
+holds the side's print to the board file (7.7). Without `[looks]` nothing is printed. A board with `[looks]` is
+ordered without the maker's order number (`mark = "remove"`, edakit's default there, 10.2) unless `[order]` says
+otherwise.
 Preview: `<artifacts>/route/<board>_routing.png`, open connections dashed yellow. Nothing is written to EasyEDA until
 the check passes.
 

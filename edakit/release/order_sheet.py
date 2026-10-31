@@ -5,7 +5,8 @@ and check FILES.order (order settings = board, per maker). Both when the board h
 
     DIR/<board>/order.md   every field of the planned maker's form ([cart] maker, JLCPCB without it), in the order of
                            its form, with its value in the maker's words and where it comes from: edakit's default,
-                           [order] of edakit.toml or of the board file, the Gerber files, [project] quantity,
+                           [looks] (mark "remove" on a board people look at, config.LOOKS_MARK), [order] of
+                           edakit.toml or of the board file, the Gerber files, [project] quantity,
                            [release] assembly, [tooling], the stock snapshot, [cart]; the remark; the upload files; the
                            tab zones and the outline stretches free of copper; what is bought separately (edakit order)
     DIR/<board>/order.json the order settings that change the board as made (settings): thickness_mm, mask,
@@ -64,7 +65,7 @@ PCBA_KEYS = FORM[FORM.index("pcba"):FORM.index("ship_to")]
 SHIP_KEYS = ("ship_to", "shipping")
 DERIVED = ("layers", "size_mm", "pcba", "sides", "tooling", "bake", "ship_to", "shipping")   # not values to offer
 FREE = ("quantity", "pcba_quantity", "remark")   # values of the owner's choosing: a form lists none to offer
-FROM = {"board": "board file", "project": "edakit.toml"}
+FROM = {"board": "board file", "project": "edakit.toml", "looks": "[looks]"}   # where a key of the order was set
 
 
 def pt(p):
@@ -155,18 +156,27 @@ def order_of(cfg, board):
         return board.order
     if not makers.of(cfg).get("given"):
         return None
-    o = order_defaults()
-    o.update(silkscreen=silkscreen_on(o["mask"]), quantity=cfg.quantity, pcba_quantity=cfg.quantity, _from={})
+    return defaults_of(cfg, board)
+
+
+def defaults_of(cfg, board):
+    """edakit's defaults as the order of a board without [order]: the print on the mask, [project] quantity, and on a
+    board with [looks] mark = LOOKS_MARK ("_from" names it)."""
+    looks = board.looks is not None
+    o = order_defaults(looks)
+    o.update(silkscreen=silkscreen_on(o["mask"]), quantity=cfg.quantity, pcba_quantity=cfg.quantity,
+             _from={"mark": "looks"} if looks else {})
     return o
 
 
 def settings(board):
     """The order settings that change the board as made – the thickness as ordered (thickness_mm), the colours of
-    solder mask and silkscreen, the surface finish, the order-number mark – and every other key that changes it
-    (config.ORDER, made) whose value differs from edakit's default; None without [order]."""
+    solder mask and silkscreen, the surface finish, the order-number mark (on a board with [looks] "remove" unless
+    [order] says otherwise) – and every other key that changes it (config.ORDER, made) whose value differs from
+    edakit's default; None without [order]."""
     if board.order is None:
         return None
-    o, base = board.order, order_defaults()
+    o, base = board.order, order_defaults(board.looks is not None)
     out = {"thickness_mm": board.thickness_mm, **{k: o[k] for k in FIVE[1:]}}
     out.update({k: o[k] for k in SETTING_KEYS[len(FIVE):] if o.get(k) != base[k]})
     return out
@@ -208,8 +218,7 @@ def form(cfg, design, board, d, maker, o=None, bom=None, found=None):
     from .fab import bom_rows
     o = o if o is not None else order_of(cfg, board)
     if o is None:
-        o = order_defaults()
-        o.update(silkscreen=silkscreen_on(o["mask"]), quantity=cfg.quantity, pcba_quantity=cfg.quantity, _from={})
+        o = defaults_of(cfg, board)
     bom = bom if bom is not None else bom_rows(design, board)
     if found is None:
         data = json.loads((d / "pcb.json").read_text()) if (d / "pcb.json").exists() else {}

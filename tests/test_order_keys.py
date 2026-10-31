@@ -90,6 +90,57 @@ def test_the_project_order_and_the_board_order(tmp_path):
         load(t)
 
 
+LOOKS = {"visible": "top"}
+
+
+def test_a_board_people_look_at_is_ordered_without_the_order_number():
+    """The owner's decision of 2026-10-31 (walkthrough-gaps C4): on a board with [looks] edakit's default of mark is
+    "remove" – decided in the files, so it is in the fab hash before the gate and M-5, not chosen at the form. A mark
+    given in [order] – of the board file or of edakit.toml – wins; a board without [looks] keeps "default"."""
+    o = _board("b", {}, {"looks": LOOKS, "order": {}}).order
+    assert (o["mark"], o["_from"]) == ("remove", {"mark": "looks"})
+    o = _board("b", {}, {"looks": LOOKS, "order": {"mark": "default"}}).order
+    assert (o["mark"], o["_from"]) == ("default", {"mark": "board"})
+    o = _board("b", {}, {"looks": LOOKS}, project={"mark": "specify"}).order
+    assert (o["mark"], o["_from"]) == ("specify", {"mark": "project"})
+    assert _board("b", {}, {"order": {}}).order["mark"] == "default"
+    assert _board("b", {}, {"looks": LOOKS}).order is None          # no [order]: no order of its own, as before
+
+
+def looked_at(ex, p):
+    """[looks] on the export's board, whose [order] gives a remark and no mark (and the "+" as the board file's text on
+    the visible side, for GEO.silk)."""
+    fr.visible(p)
+
+
+def test_order_json_says_remove_on_a_board_people_look_at(project):
+    """order.json has the mark whenever the board has [order]: on a [looks] board without a mark of its own "remove", so
+    the fab hash is that of a board made without the order number – another one than the same files with "default"."""
+    d, plain = fh.exported(project)
+    assert json.loads((d / "order.json").read_text())["mark"] == "default"
+    rows = run(project, looked_at)
+    assert fr.findings(rows) == []
+    d = project.root / "build" / "fab" / "main"
+    assert json.loads((d / "order.json").read_text())["mark"] == "remove"
+    assert "| Mark on PCB | Remove Mark | [looks] |" in sheet(project)
+    assert ("pass", "order-number mark = placeholder JLCJLCJLCJLC on the silkscreen", 'mark = "remove": Remove Mark') \
+        in f6(rows)
+    assert fh.exported(project, looked_at)[1] != plain
+
+
+def test_cart_alone_on_a_board_people_look_at(project):
+    """[cart] without [order] on a [looks] board: order.md has "Remove Mark" – and still no order.json (the fab hash of
+    a board without [order] stays the files')."""
+    def cart(ex, p):
+        fr.unordered(ex, p)
+        looked_at(ex, p)
+        toml(p, '[cart]\nmaker = "jlcpcb"')
+    rows = run(project, cart)
+    assert fr.findings(rows) == []
+    assert not (project.root / "build" / "fab" / "main" / "order.json").exists()
+    assert "| Mark on PCB | Remove Mark | [looks] |" in sheet(project)
+
+
 def test_order_json_holds_a_new_key_only_where_it_differs(project):
     """order.json keeps the five settings it has; a key that changes the board joins it only with another value than
     edakit's default – a default set on purpose leaves the fab hash as it is, 2 oz copper changes it."""

@@ -522,7 +522,7 @@ board; the later wins. Which maker builds the board is `[cart]` (10.1): JLCPCB w
 (`edakit/makers/<maker>.toml`) only translates – a value into the form's word – and holds the form's limits; `edakit
 cart fields` prints every field with the maker's word and where its value comes from. The form fields that depend on the
 board are among the keys: `finish`, `mark` (`"default"` – JLCPCB prints its number anywhere, `"specify"` – at the
-placeholder, `"remove"`), `remark`, the tab zones (`tab_zones`, stretches of the outline in plan mm, with
+placeholder, `"remove"`, edakit's default on a board with `[looks]`), `remark`, the tab zones (`tab_zones`, stretches of the outline in plan mm, with
 `tab_copper_mm`) and the colours: `mask` (JLCPCB's "PCB Color": green, purple, red, yellow, blue, white or black) and
 `silkscreen`. The thickness is the board file's `thickness_mm`, the value the mechanical model takes (7.4). Without
 these keys edakit's defaults hold: 1.6 mm, green, white print. JLCPCB prints white on every mask but white, and black on
@@ -535,8 +535,8 @@ settings that change the board as made – thickness, colours, finish and mark, 
 other keys marked so in 10.2 where they differ from edakit's default – are in the fab hash as well (8.2), so the layout
 review M-5 of scope `fab` lapses with them too, while a new remark or tab zone leaves it standing. Every gate run then
 writes `fab/<board>/order.md` next to the upload files – every field of the planned maker's form in the order of its
-form, with the maker's word and where it comes from (edakit, edakit.toml, board file, the Gerber files, `[project]
-quantity`, `[release] assembly`, `[tooling]`, the stock snapshot, `[cart]`): layers, size, quantity, thickness, the
+form, with the maker's word and where it comes from (edakit, `[looks]`, edakit.toml, board file, the Gerber files,
+`[project] quantity`, `[release] assembly`, `[tooling]`, the stock snapshot, `[cart]`): layers, size, quantity, thickness, the
 colours of mask and silkscreen, finish, the mark at the placeholder, the remark; PCBA type and side, tooling holes
 "Added by Customer" when the board has `[tooling]`, bake "Yes" when the stock snapshot gives a BOM part MSL ≥ 5; the
 upload files; the tab zones with their nearest copper and every outline stretch with no copper within `tab_copper_mm`
@@ -628,7 +628,10 @@ The MCP server cannot order. Lessons from the reference order:
 - **Order number:** "specify a location" when a placeholder is printed (`mark = "specify"`; the reference cart still
   said "Remove Mark") – JLCPCB reports the order number gone since May 2026 (FILES.order warns about the placeholder): for
   traceability a 2D barcode or a serial number (`barcode`, `serial_number` in `[order]`), placed by JLCPCB where there
-  is room.
+  is room. A board with `[looks]` is ordered with "Remove Mark" unless `[order]` gives `mark`: the choice changes the
+  fab hash, so it is made in the files before the gate run and M-5, not at the form, where it would void M-5 (the
+  owner's decision of 2026-10-31). Without `[order]` the board has no order.json and the mark is in no hash – give the
+  board an `[order]` table.
 - **Remarks** (max. 200 characters, FILES.order): where panel tabs may and may not go, no V-cut on visible edges. The
   reference remark was written by hand and wrong three times: tabs where a track ran 0.45 mm from the edge, then 202
   characters, then a "1.17 mm free" that a new pour 0.55 mm from the edge made false.
