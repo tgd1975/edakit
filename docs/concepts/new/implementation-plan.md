@@ -52,7 +52,7 @@ starts when the user asks for it.
 | 3.7 | Project setup: `new-project` with two ways, agent `project-surveyor` | project-setup, decisions 1–6 | M | no | 3.2, 3.4 | done (92db89f) |
 | 4.1 | Bell: requirements file | requirements order 5, decision 9 | M | no | 3.4, the bell's order | open |
 | 4.2 | Bell: entries for `kunst` and `tdisplay` | project-scripts example | S | no | 2.4 | open |
-| 4.3 | Bell: the circuit as a language and as TOML with names, then the choice | design-as-text decision 8 | M | no | – | written (3f2b9e3, 7bbf3ce); reviewed and decided 2026-10-31: the language deferred, TOML with names the form; what both forms share has a plan of its own, circuit-language-plan.md |
+| 4.3 | Bell: the circuit as a language and as TOML with names, then the choice | design-as-text decision 8 | M | no | – | written (3f2b9e3, 7bbf3ce); reviewed and decided 2026-10-31: the language deferred, TOML with names the form; what both forms share has a plan of its own, circuit-language-plan.md; the language thought further in circuit-dsl.md |
 | 4.4 | Tree: its positions, scripts, agents and requirements | all three | M | yes | the tree's move, 2.1, 3.7 | open |
 | 4.5 | The requirements file becomes required | requirements decision 5 | S | no | 4.1, 4.4 | open |
 | 5.0 | Probes: the makers' pages in the owner's browser, EasyEDA's ODB++ | ordering steps 0, 0b | – | yes (0b) | the owner's Chrome | open |
@@ -400,7 +400,8 @@ abstraction, a schema that stands still and evidence from the evals to be worth 
 concept's table: TOML with names as the form, the pin map from the parts entry, the hash over the canonical data of
 the form, a resolved `graph.json` generated beside it, four complete variants, the symbol's names and the roles, no
 net in fragments. What both forms share has a plan of its own:
-[circuit-language-plan.md](circuit-language-plan.md).
+[circuit-language-plan.md](circuit-language-plan.md). The language itself is thought further in
+[circuit-dsl.md](circuit-dsl.md) – what it would have to be, on which basis, when, and what toolchain it needs.
 
 **4.4 The tree moves.** When the reference project moves to edakit after its order (EK-1 of its concept): the
 takeover of its positions (2.1), seven of its eight scripts – `review` only reads the release (decision 8) – with

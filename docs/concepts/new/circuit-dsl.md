@@ -3,11 +3,15 @@
 Status 2026-10-31: concept, asked for by the owner after the review of
 [circuit-language.md](../done/circuit-language.md) deferred the language of that sketch. It answers four questions:
 whether a fitting language exists already, what a language of edakit's own would have to be able to do to be worth
-building, on which basis – SysML v2, KerML, an existing circuit language, or something else –, and when it would bring
-value. Nothing is decided; the decisions at the end are open, the recommended answer first. The survey was made from
-this session, in which several sites were not reachable; the sources say what was read and what was not. Against the
-yardstick: a language changes nothing about what is text – its source and its resolved graph are text in the repository
-–; what it changes is where repetition, parameters and variants are written once instead of many times.
+building, on which basis – SysML v2, KerML, an existing circuit language, or something else –, and when it would
+bring value. Nothing is decided; the decisions at the end are open, the recommended answer first. The sources say
+what was read and from where. Reviewed the same day against main at `bd227e3` and corrected: the examples in today's form of
+the graph (`accept`, `locks`), the numbers of the bell and led-bar re-measured, what exists already named as existing,
+and the questions the review found open – where assertions run, what `block add --set` writes, the names of internal
+nets, four projects and one hook – put where they belong: the requirements, the bell's model, the toolchain, the open
+decisions. Against the yardstick: a language changes nothing about what is text – its source and its resolved graph
+are text in the repository –; what it changes is where repetition, parameters and variants are written once instead
+of many times.
 
 ## The short answer
 
@@ -20,11 +24,12 @@ units –, but no electrical semantics at all, a verbose notation and open tooli
 (SKiDL, PCBDL, faebryk, circuit-synth) make the circuit a program, which edakit's tools cannot edit. The rest is
 proprietary, dormant or one person's experiment.
 
-What is worth taking: KerML, the kernel under SysML v2, as the foundation the language is defined on – the way SysML
-v2 itself is defined on it –, so that every construct has a standard's meaning and an export to KerML and SysML v2 is
-mechanical; `.ato`'s ergonomics as the model for the syntax – units with tolerances, `assert … within`, arrays,
-chains –; and edakit's own resolved graph (decision 4 of circuit-language.md) as the compile target, so that every
-check, the hash and the reviews keep reading what they read today.
+What is worth taking: SysML v2's concepts where they fit and KerML, the kernel under them, where they do not, as the
+foundation the language is defined on – the way SysML v2 itself is defined on KerML –, so that every construct has a
+standard's meaning and an export to SysML v2 and KerML is mechanical; `.ato`'s ergonomics as the model for the
+syntax – units with tolerances, `assert … within`, arrays, chains –; and edakit's own resolved graph (decision 4
+of circuit-language.md) as the compile target, so that every check, the hash and the reviews keep reading what
+they read today.
 
 ## Where the value would come from
 
@@ -39,7 +44,8 @@ edakit's projects that is four things.
    and notes –, only that `block add` copies them into the graph. A language keeps the definition and writes the
    usage: one line per LED step instead of two parts and three nets.
 2. **Repetition.** Eight LEDs on `OUT0` … `OUT7` are one statement with an index, not eight parts, eight nets and
-   eight pins in `+5V`. In led-bar that is about 150 lines of JSON; in the tree 30 LEDs on three drivers.
+   eight pins in `+5V`. In led-bar the eight LEDs and their eight nets are 244 lines of `hardware/graph.json`
+   (`tests/fixtures/led-bar`), the pins in `+5V` not counted; in the tree 30 LEDs on three drivers.
 3. **Parameters, derived values and constraints.** A block's values are fixed today – 150 Ω in `led`, "another
    current: another value of the same series" in its notes. With a parameter the definition says what the value
    depends on, `(in.v.max − D.vf) / i`, and an assertion holds the part that was chosen to it. The derivation becomes
@@ -50,7 +56,9 @@ edakit's projects that is four things.
    objection of circuit-language.md against `use` falls away.
 
 A fifth, smaller: a usage can name the requirement it satisfies and the decision it follows, `satisfies R-3`,
-`decision D-8`, resolvable by DOCS.ref instead of free text in `notes`.
+`decision D-8`, as attributes instead of free text in `notes`. DOCS.ref resolves N-, R- and M- numbers today and
+leaves decisions unresolved by design; for `decision` it would learn the decisions file, which `[release]
+publish.decisions` names already.
 
 What a flat form keeps: everything else. TOML with names (decided 2026-10-31) is the flat, explicit form; a language is
 the composed, parametric one. Both end in the same resolved graph, so a project can start flat and move when its
@@ -62,7 +70,7 @@ Read from this session on 2026-10-31; the sources at the end say what was reacha
 
 | Language | Kind | What it has that edakit would want | What it lacks or what binds it | State |
 | --- | --- | --- | --- | --- |
-| atopile `.ato` | declarative language with its compiler, a browser workspace since 2026 | verified in the source of 0.15.9: `module`, `component` and `interface` definitions with `from` inheritance; `import X` and `from "file.ato" import X`; `new T`, `new T[n]`, templates `<arg=…>`; `pin 1` and `signal name`; `~` connects, `~>` and `<~` chain through bridges; `->` retypes; quantities with units, ranges `1V to 2V`, tolerances `+/- 5%`; arithmetic; `assert … within`, `is`, `<`, `<=`; `for x in …:` and traits behind `#pragma experiment`; docstrings; a part is a generated `component` with traits (`is_atomic_part`, `has_part_picked::by_supplier<supplier_partno="C25819">`, `has_designator_prefix`); interfaces `ElectricPower` (voltage, max_current as solved parameters), `I2C` (address), `SPI`, `UART`, `USB2_0`, `USB_C`, `I2S`, `CAN`, `JTAG`, `SWD`; an ERC (shorted interfaces, power sources shorted, undefined voltage, incompatible interfaces) and design checks such as unique I2C addresses; an equation solver (`ResistorVoltageDivider` with `v_in`, `v_out`, `current`) that picks parts | nets have no attributes – a net is what `~` joins, its name a trait or taken from the KiCad PCB; voltages live on `ElectricPower` interfaces, not on nets; no variants, only `builds:` in `ato.yaml` with another entry module each; designators are assigned at build and kept by reading the existing KiCad PCB (`keep_designators`), not in the source or a lock file; `if`, `param`, `test`, `require`, `check`, `ensure` are reserved words without grammar yet; parts come from a picker, not from an entry with roles, limits and sources; KiCad only; no simulation; Python 3.14 only, a native Zig core, an ANTLR parser; the compiler is the language | MIT: the repository (last tag February 2026, 0.14.1004) and the PyPI releases up to 0.15.9 (September 2026) with source distributions, whose `docs/` holds only telemetry notes – the user docs were on docs.atopile.io. The 0.16 line is not on PyPI: in October 2026 the docs site says the docs "live in the editor now" and the workspace "runs that editor right in your browser" at app.atopile.io behind a sign-in, as is packages.atopile.io; 0.15.9's CLI fetches a migration message from "the pre-0.16 compatibility service"; the blog names 0.16.15 with agentic layout and routing. The open line ends at 0.15.9 as far as is visible, the current product is hosted; its documentation is copyrighted like any text, while a language's syntax and ideas are not what copyright protects – edakit takes the ergonomics, copies no text and no grammar |
+| atopile `.ato` | declarative language with its compiler, a browser workspace since 2026 | read in the source of 0.15.9 (the subsection below): `module`, `component` and `interface` with inheritance, imports, `new T[n]` and templates, pins and signals, `~` and bridge chains, quantities with units, ranges and tolerances, `assert … within`, `for` behind a pragma, an ERC and design checks, interfaces whose parameters a solver fills, a picker | nets without attributes, no variants, designators from the KiCad PCB, parts from a picker, KiCad only, no simulation, Python 3.14 with a Zig core and an ANTLR parser; the compiler is the language | MIT up to 0.15.9 (September 2026) with source distributions; the 0.16 line is hosted, its docs and workspace in a browser editor behind a sign-in |
 | faebryk | Python library, atopile's former core | modules as classes, interfaces, `connect`, parameters by `merge`, a picker | a program, not data; a C++ core; Python 3.12 only | archived December 2024, merged into atopile |
 | SKiDL | Python library | parts, nets, hierarchical subcircuits, ERC, netlists for KiCad 5–10 and SPICE; models know Python | a program; no units, no constraints beyond ERC, no net attributes; KiCad symbols as the part model | 3.0.0 in October 2026; one maintainer since 2016 |
 | PCBDL | Python library (Google) | parts and nets with `<<`, a schematic as SVG | no hierarchy, no ERC, an Allegro netlist | Apache 2.0; archived January 2023 |
@@ -86,8 +94,38 @@ things worth taking are a model and a style: SysML v2's definitions, usages, red
 semantics; `.ato`'s units, tolerances, assertions and arrays for the syntax.
 
 **KerML** is the kernel SysML v2 is built on – classifiers, features, types, expressions, specialization,
-redefinition, multiplicity –; nobody writes it directly. It is useful as the reference for what a definition, a usage
-and a redefinition mean, and for nothing else here.
+redefinition, multiplicity. What it is to edakit – the foundation the notation is defined on, by the owner's rule –
+is the section "KerML underneath" below.
+
+### atopile, read from 0.15.9
+
+The source distribution of 0.15.9 on PyPI (September 2026, MIT; read, not run) holds the grammar, the library and
+the examples; its `docs/` folder holds telemetry notes only, the user documentation was on docs.atopile.io. The
+language: `module`, `component` and `interface` definitions with `from` for inheritance; `import X` and `from
+"file.ato" import X`; `new T`, `new T[n]` and templates `<arg=…>`; `pin 1` and `signal name`; `~` connects, `~>` and
+`<~` chain through bridges, `->` retypes; quantities with units, ranges `1V to 2V`, tolerances `+/- 5%`, arithmetic;
+`assert … within`, `is`, `<`, `<=`; `for x in …:` and traits behind `#pragma experiment`; docstrings. A part is a
+generated `component` with traits – `is_atomic_part`, `has_part_picked::by_supplier<supplier_partno="C25819">`,
+`has_designator_prefix`. Interfaces carry the parameters a solver fills: `ElectricPower` with `voltage` and
+`max_current`, `I2C` with its address, `SPI`, `UART`, `USB2_0`, `USB_C`, `I2S`, `CAN`, `JTAG`, `SWD`. An ERC finds
+shorted interfaces, shorted power sources, undefined voltages and incompatible interfaces; design checks such as
+unique I2C addresses come on top; an equation solver (`ResistorVoltageDivider` with `v_in`, `v_out`, `current`)
+derives values, and the picker chooses parts to them.
+
+Where its model differs from edakit's: a net has no attributes – a net is what `~` joins, its name a trait or taken
+from the KiCad PCB –, and voltages live on `ElectricPower` interfaces, not on nets; there are no variants, only
+`builds:` in `ato.yaml` with another entry module each; designators are assigned at build and kept by reading the
+existing KiCad PCB (`keep_designators`), not in the source or a lock file; parts come from the picker, not from an
+entry with roles, limits and sources; `if`, `param`, `test`, `require`, `check` and `ensure` are reserved words
+without grammar yet; KiCad only, no simulation.
+
+Its state: the repository's last tag is 0.14.1004 (February 2026), PyPI has releases up to 0.15.9 with source
+distributions, MIT. The 0.16 line is not on PyPI: the docs site says the docs "live in the editor now", the workspace
+"runs that editor right in your browser" at app.atopile.io behind a sign-in, as is packages.atopile.io; 0.15.9's CLI
+fetches a migration message from "the pre-0.16 compatibility service"; the blog names 0.16.15 with agentic layout and
+routing. So the open line ends at 0.15.9 as far as is visible, and the current product is hosted. Its documentation
+is copyrighted like any text; a language's syntax and ideas are not what copyright protects – edakit takes the
+ergonomics, copies no text and no grammar.
 
 ## What it would have to be able to do
 
@@ -96,16 +134,25 @@ and a redefinition mean, and for nothing else here.
    usage names the definition, binds its ports to nets, sets parameters, and names the designators and parts entries
    of the internal parts, so that the BOM and the board see what they see today.
 2. **Pins by name or role, nets first-class.** As decided for the shared part: `U1.PD6`, `LED5.anode`, a net with
-   its attributes, n-ary. Internal nets of a usage are named `<instance>_<net>` as `block add` names them, unless the
-   usage names them.
+   its attributes, n-ary. Where an entry's name and role of a pin disagree – the bell's `C2895549` names pin 1 `C`
+   with the role anode –, the word rule of L.1 decides, the language inherits it. Internal nets of a usage are named
+   as `block add` names them, `<INSTANCE>_<NET>` in capitals and a port `gnd` on the ground, unless the usage names
+   them; the bell's `LED_G1_A` keeps its name only when its usage says so, and `sim.json`, `schematic.toml` and the
+   board files name nets (the bell's model below).
 3. **Repetition.** `for n in 0..7` over parts and nets with `{n}` in names and pin words – ranges and index
    arithmetic, nothing more.
 4. **Parameters with units, expressions and assertions.** Quantities as edakit reads them already (`330Ω`, `4k7`,
-   `100nF`, `0..5.5 V`), with tolerances and ranges (`10 mA ± 20 %`, `2 mA .. 15 mA`); arithmetic on them with the
-   units checked; `assert <expression> within <range>` evaluated when the graph is compiled. A failed assertion is a
-   finding of a new engine, `DEF.assert`, with the severity the profile gives it; an unbound port `DEF.port`, a
-   parameter outside its range `DEF.param`. No part picking: the designer chooses the part, the assertion and
-   STRUCT.identity hold it to the derived value.
+   `100nF`, `0..5.5 V`; `QUANTITY` in circuit.py, `v_range`), with tolerances and ranges (`10 mA ± 20 %`,
+   `2 mA .. 15 mA`); arithmetic on them with the units checked. `assert <expression> within <range>` is compiled,
+   not evaluated: the compiler resolves the names – `in.v.max` to the net the port is bound to, `D.vf_min_v` to the
+   component and its entry's field, as the entries name it, no second vocabulary – and writes the assertion into the
+   resolved graph as data, a key `asserts` with expression, range, the source line and the text; a new engine, DEF,
+   evaluates it in `edakit check` against the graph and the entries, with the severity the profile gives it: a failed
+   assertion `DEF.assert`, an unbound port `DEF.port`, a parameter outside its range `DEF.param`. So the compiler
+   stays a function from files to graph, the engines keep reading the graph only, and `asserts` is the one key the
+   language adds to the graph. A net may take its range from a port, `v @in`, as the block JSON writes `"v": "@in"`
+   today. No part picking: the designer chooses the part; STRUCT.identity holds the component to its entry, the
+   assertion holds the entry's value to the derivation.
 5. **Variants as differences.** A variant file names its base – the main file or another variant – and redefines
    parts, nets, parameters and texts by designator and name, takes pins off a net and sets attributes back;
    everything else is inherited. Its resolved graph is complete and is what the hash and the sign-offs bind to. What
@@ -146,10 +193,10 @@ def led (color = green, i = 2 mA .. 15 mA) ports in gnd
   part R resistor
   part D led value color
   net in     R.1
-  net anode  R.2 D.anode    v @in
+  net anode  R.2 D.anode    v @in                     # takes the range of the net on port in
   net gnd    D.cathode
-  assert (in.v.max - D.vf.min) / R.value within i     "the current at the top of the input's range"
-  covers LIM.v LIM.i LVL.threshold SIM.state
+  assert (in.v.max - D.vf_min_v) / R.value within i   "the current at the top of the input's range"
+  covers LIM.v LIM.i LVL.threshold SIM.state …        # the block's eleven codes
 ```
 
 Five usages in the bell, with the designators and parts the board has today:
@@ -163,8 +210,11 @@ use led step3 (color = yellow) in = LED_Y1 gnd = GND   R = R2 lcsc C17630 value 
 net LED_G1 0..5.5 V U1.PD6 (locked)      # the driving nets stay nets of the project, with their ranges
 ```
 
-Repetition, led-bar's eight LEDs on the driver's outputs – today 8 parts, 8 nets and 8 pins in `+5V`, about 150
-lines of JSON:
+In a usage the words after `R = R4` belong to R until the next binding, `D =`; a usage that sets more than a part's
+entry and value puts each part on an indented line of its own, as the bell's model below does.
+
+Repetition, led-bar's eight LEDs on the driver's outputs – today 8 parts, 8 nets and 8 pins in `+5V`, 244 lines of
+JSON for the parts and their nets:
 
 ```text
 for n in 0..7
@@ -176,10 +226,10 @@ for n in 0..7
 A variant, the bell's SMD configuration – today a complete graph of its own:
 
 ```text
-variant smd of ../../hardware/graph.circuit
-  use led step1 D = LED5 lcsc C2286 part KT-0805G     # the 0805 LED, anode on pin 1; everything else inherited
+variant smd of ../../hardware/graph.circuit           # paths relative to the project's edakit.toml, as in it
+  use led step1 D = LED5 KT-0805G lcsc C2297          # the 0805 LED, anode on pin 1; everything else inherited
   …
-  set description "… the SMD configuration"
+  description "… the SMD configuration"
 ```
 
 The same step in SysML v2's textual notation, with an electrical library of edakit's own (`Pin`, `Net`, `Resistor`,
@@ -220,21 +270,23 @@ The owner's requirement: the language must cover the bell's variants. The bell h
 D-11 to D-15 of its `docs/decisions.md`): main, smd, tht and esp32, each an edakit project of its own with its own
 `edakit.toml`, graph, parts folder, simulation config, board file, schematic arrangement and sign-off file, one
 EasyEDA board each. Measured at the bell's `059162a`, pins compared by name or role; the round trip of the sketch
-holds for all four in both forms:
+holds for all four in both forms. The bell is still in the form of before the cut `4982d35` – `hints`, `waive`,
+`checks.pin_locks` –; the measurements are of its data, the examples here are written in today's form, `accept` with
+the HINT codes, `accept`, `locks.pins`:
 
 | | smd | tht | esp32 |
 | --- | --- | --- | --- |
-| parts replaced: another entry, other texts, `bom` | 7: LED1–LED5, C1, J1 | 11: R1–R9, S1, S2 | 13: the seven of smd, LED4 and LED5 yellow-green, R1–R5 at 100 Ω, and U1 – the T-Display for the Nano: 24 pins instead of 30, other names, another `nc`, no waiver |
-| nets | the same | the same | `+3V3` added; S1.a and S2.a move from `+5V` to it; 8 nets get another U1 pin (`PD6` to `IO27` …); 11 nets' `v` go from `0..5.5 V` to `0..3.4 V`; 4 notes |
+| parts replaced: another entry, other texts, `bom` | 7: LED1–LED5, C1, J1 | 11: R1–R9, S1, S2 | 13: the seven of smd, LED4 and LED5 yellow-green, R1–R5 at 100 Ω, and U1 – the T-Display for the Nano: 24 pins instead of 30, other names, another `nc`, no `waive` |
+| nets | the same | the same | `+3V3` added; S1.a and S2.a move from `+5V` to it; 8 nets get another U1 pin (`PD6` to `IO27` …); 13 nets' `v` go from `0..5.5 V` to `0..3.4 V`, the five anode nets among them; 4 notes change, `+3V3` brings one |
 | locks | the same | the same | all 8, keyed by other pins |
-| texts | `description`, `purpose.notes`, 3 hints | the same | the same, and the notes of U1, R8 and R9 |
+| texts | `description`, `purpose.notes`, 3 hints – HINT.bulk, HINT.debounce, HINT.esd in today's form | the same | the same, and the notes of U1, R8 and R9 |
 | parts entries of its own | 5 | 4 | 7 |
 | statements of the sketch's language that differ from main's 59 | 25 of 69 | 21 of 64 | 70 of 83 |
 | beside the graph | board, schematic | board, schematic | board, schematic, `sim.json` (the source's pins and voltages), the firmware `variants/esp32/firmware`, the library script `hardware/lib/tdisplay_device.py` |
 
-A variant file that redefines parts and texts covers smd and tht: five statements for smd's parts (three colours of
-LED, C1, J1), four for tht's (R1–R5, R6–R7, R8–R9, S1–S2 with `for`), the texts, the hints – about ten lines each. The
-esp32 variant shows what else the language needs:
+A variant file that redefines parts and texts covers smd and tht: seven statements for smd's parts (five LEDs, C1,
+J1), four for tht's (R1–R5, R6–R7, R8–R9, S1–S2 with `for`), the texts, the three accepted hints – about a
+dozen lines each, written out in the model below. The esp32 variant shows what else the language needs:
 
 1. **Module pins by function.** Eight nets and eight locks change only because the T-Display's pins have other
    names than the Nano's. An alias map on the module in the project's source – `alias U1 led1 = PD6 led2 = PD5 …
@@ -244,7 +296,7 @@ esp32 variant shows what else the language needs:
    in the parts entry for the TOML form; this one lives in the project's source and describes the project's use of
    the module, not the module.
 2. **A parameter for the logic level.** `param vlogic = 0..5.5 V` in main and `net LED_G1 vlogic U1.led1 R4.1`;
-   the esp32 variant sets `vlogic = 0..3.4 V` once instead of in eleven nets.
+   the esp32 variant sets `vlogic = 0..3.4 V` once instead of in thirteen nets.
 3. **Pins taken off a net.** `net +5V without S1.a S2.a` beside `net +3V3 vlogic U1.3V3 S1.a S2.a`: a variant
    removes as well as adds. An attribute goes back to its default the same way: `bom yes` on the LEDs the assembly
    places, where main has `no-bom`.
@@ -252,10 +304,12 @@ esp32 variant shows what else the language needs:
 5. **A variant of a variant.** D-13 says "like the variant SMD, with the T-Display": `variant esp32 of
    ../smd/hardware/graph.circuit`, a chain resolved in order.
 6. **Parts folders.** D-15 keeps every variant's parts folder complete, because the hash covers the whole folder
-   and a part added for one board would void the others' sign-offs. With inheritance the lookup goes variant first,
-   then main, as the requirements file is read today, and the circuit hash covers the entries the resolved graph
-   uses, not the folder: a part added for one board reaches no other board's hash, and a copy per variant is a
-   choice, not a need.
+   (`state_hash` in release/gate.py takes every entry) and a part added for one board would void the others'
+   sign-offs. With inheritance `[project] parts` becomes a list of folders and the lookup goes variant first, then
+   main – a list as `[project] requirements` is one today, with a difference: the requirements files are a union in
+   which a name twice is an error, the parts lookup gives the variant's entry precedence –, and the circuit hash
+   covers the entries the resolved graph uses, not the folder: a part added for one board reaches no other board's
+   hash, and a copy per variant is a choice, not a need.
 7. **What stays per variant project:** `edakit.toml`, the board file, `schematic.toml`, `sim.json`, the sign-off
    file, the firmware. The language replaces the graph only.
 
@@ -280,13 +334,143 @@ variant esp32 of ../smd/hardware/graph.circuit
   net BTN_RESET  notes "Pressed = 3.3 V at IO37 (input only), else R6 pulls to GND (D-13)."
   description "…"
   purpose notes "… The T-Display's ESP32 uses Wi-Fi (2.4 GHz, channels 1-13) … Bluetooth stays off."
-  hint H-1 "C1 1000 µF / 16 V electrolytic on +5V, next to J1 (it buffers the module's 5V pin)"
-  hint H-3 "to be debounced in the ESP32 firmware like buttons.ino (50 ms); the firmware port is open (D-13)"
+  accept HINT.bulk "C1 1000 µF / 16 V electrolytic on +5V, next to J1 (it buffers the module's 5V pin)"
+  accept HINT.debounce "in the ESP32 firmware like buttons.ino (50 ms); the firmware port is open (D-13)"
 ```
 
 About twenty lines against 70 changed statements today, and the locks untouched. Everything a variant does is a
 redefinition of something the base names – a part, a net, a parameter, a text –, which is SysML v2's `:>>` with a
 syntax of the sketch's kind; nothing in it is a conditional.
+
+## The bell's variants, modeled
+
+How the four configurations would be written, a sketch on the bell at `059162a` in today's form of the graph. Five
+source files replace four graphs; the four resolved graphs stay, generated:
+
+```text
+hardware/graph.circuit                   main: the Nano with its alias map, the LED step, five usages, the nets
+hardware/graph.json                      resolved – edakit graph json --write –, committed, checked by the hook
+variants/smd/hardware/graph.circuit      variant smd of ../../hardware/graph.circuit, about a dozen lines
+variants/tht/hardware/graph.circuit      variant tht of ../../hardware/graph.circuit, about a dozen lines
+variants/esp32/hardware/graph.circuit    variant esp32 of ../smd/hardware/graph.circuit, about twenty lines
+variants/*/hardware/graph.json           resolved per variant, generated, committed, checked
+```
+
+The main file: the statements of the prototype's `bell.circuit` with this concept's constructs – a parameter for the
+logic level, the module's alias map, the LED step as a definition, five usages that keep today's designators and net
+names –, the parts' labels and notes shortened:
+
+```text
+graph christmas-bell version 0.3 date 2026-10-25
+description "Automatic Christmas bell: an Arduino Nano counts down on five LEDs, then a servo swings a real bell. …"
+purpose private market EU
+  notes "… built and used by the owner – not sold or given away (D-16). …"
+param vlogic = 0..5.5 V                                  # the logic level; the esp32 variant sets 0..3.4 V
+
+part U1 module "Arduino Nano V3" lcsc C9900187880 no-bom "Arduino Nano 3 (plugged in)"
+  nc TXD RXD RESET PD7 PB1 PB2 PB5 3V3 AREF PC0 PC1 PC2 PC3 PC4 PC5 ADC6 ADC7 PC6 VIN
+  alias led1 = PD6 led2 = PD5 led3 = PD2 led4 = PD3 led5 = PD4    # the firmware's D6 D5 D2 D3 D4
+  alias servo = PB0 btn_start = PB4 btn_reset = PB3              # D8 D11 D12 by the entry's names – the symbol's
+                                                                 # swapped labels of pins 14 and 15 included
+  accept STRUCT.entry "VIN stays free: the Nano runs from its USB socket"
+  notes "Plugs into two 1x15 female headers, pitch 2.54 mm … its labels of pins 14/15 are swapped …"
+part J1 connector PZ254V-11-03P lcsc C2937625 no-bom "Servo (GND, +5 V, signal)"
+part C1 capacitor "1000uF 16V" lcsc C439782 no-bom "Buffer capacitor for the servo"
+part S1 button K2-1102SP-C4SC-04 lcsc C127509 "Start button"
+part S2 button K2-1102SP-C4SC-04 lcsc C127509 "Reset button"
+part R7 resistor "4.7 kΩ 0805" lcsc C17673 value 4.7kΩ "Pull-down, start button"
+part R6 resistor "4.7 kΩ 0805" lcsc C17673 value 4.7kΩ "Pull-down, reset button"
+for n in 8..9
+  part R{n} resistor "100 Ω 2512 1 W" lcsc C35218 value 100Ω "Base load for USB power banks (R8 ∥ R9 = 50 Ω)"
+    notes "Keeps a power bank from switching off: the circuit alone draws 35–75 mA (D-8)."
+
+def led (color = green, i = 2 mA .. 15 mA) ports in gnd  # as above; or edakit's block, once it has parameters
+  …
+
+use led step1 (color = green)  in = LED_G1 gnd = GND anode = LED_G1_A     # anode = …: today's net name kept
+  R = R4   "330 Ω 0805" lcsc C17630 value 330Ω "Series resistor LED5"
+  D = LED5 XL-504UGD lcsc C2895549 no-bom "5 mm LED, green, countdown step 1"
+use led step2 (color = green)  in = LED_G2 gnd = GND anode = LED_G2_A
+  R = R3   "330 Ω 0805" lcsc C17630 value 330Ω "Series resistor LED4"
+  D = LED4 XL-504UGD lcsc C2895549 no-bom "5 mm LED, green, countdown step 2"
+use led step3 (color = yellow) in = LED_Y1 gnd = GND anode = LED_Y1_A
+  R = R2 …   D = LED3 XL-504UYD lcsc C2895495 …
+use led step4 (color = yellow) in = LED_Y2 gnd = GND anode = LED_Y2_A
+  R = R1 …   D = LED2 XL-504UYD lcsc C2895495 …
+use led step5 (color = red)    in = LED_R  gnd = GND anode = LED_R_A
+  R = R5 …   D = LED1 XL-504SURD lcsc C2895493 …
+
+net +5V       0..5.5 V  U1.5V C1.plus J1.2 S1.a S2.a R8.1 R9.1
+  notes "5V pin of the Nano: USB minus its Schottky diode; supplies the servo and the buttons."
+net GND       0 V       U1.GND C1.minus J1.1 R6.2 R7.2 R8.2 R9.2    # the steps' gnd ports are on it already
+net SERVO     vlogic    U1.servo (locked) J1.3
+net BTN_START vlogic    U1.btn_start (locked) S1.b R7.1
+  notes "Pressed = 5 V at D11, else R7 pulls to GND (D-4)."
+net BTN_RESET vlogic    U1.btn_reset (locked) S2.b R6.1
+  notes "Pressed = 5 V at D12, else R6 pulls to GND (D-4)."
+net LED_G1    vlogic    U1.led1 (locked)                 # the step's port in is on it through the usage
+net LED_G2    vlogic    U1.led2 (locked)
+net LED_Y1    vlogic    U1.led3 (locked)
+net LED_Y2    vlogic    U1.led4 (locked)
+net LED_R     vlogic    U1.led5 (locked)
+```
+
+About 50 lines against 59 statements today: the bell has little repetition, and a usage with explicit designators,
+entries and labels is two to three lines. What the bell gains is below, in the variants. The smd variant, D-11:
+
+```text
+variant smd of ../../hardware/graph.circuit             # relative to the project's edakit.toml, as its paths are
+  description "… the SMD configuration"
+  purpose notes "…"
+  part J1 connector "HX PZ2.54-1x3P TP-YQ" lcsc C41417360 bom yes     # placed by the assembly: bom back to yes
+  part C1 capacitor "RVT1C102M1010 1000uF 16V SMD" lcsc C3359 bom yes
+  use led step1 D = LED5 KT-0805G lcsc C2297 bom yes "0805 LED, green, countdown step 1"
+  use led step2 D = LED4 KT-0805G lcsc C2297 bom yes "0805 LED, green, countdown step 2"
+  use led step3 D = LED3 KT-0805Y lcsc C2296 bom yes "0805 LED, yellow, countdown step 3"
+  use led step4 D = LED2 KT-0805Y lcsc C2296 bom yes "0805 LED, yellow, countdown step 4"
+  use led step5 D = LED1 KT-0805R lcsc C2295 bom yes "0805 LED, red, countdown step 5"
+  accept HINT.bulk "C1 1000 µF / 16 V electrolytic on +5V, next to J1 (it buffers the Nano's 5V pin)"
+  accept HINT.debounce "debounced in firmware: src/firmware/buttons.ino, 50 ms (DEBOUNCE_DELAY)"
+  accept HINT.esd "J1 is the servo's own cable inside the bell's frame, plugged once; no TVS – like the main board"
+```
+
+The tht variant, D-12 – a variant redefines by designator, so the resistors inside the usages are five lines of one
+`for`, whichever step holds them:
+
+```text
+variant tht of ../../hardware/graph.circuit
+  description "… the THT configuration"
+  purpose notes "…"
+  for n in 1..5
+    part R{n} resistor "330 Ω 1/4 W metal film, THT" lcsc C58608 value 330Ω no-bom
+  for n in 6..7
+    part R{n} resistor "4.7 kΩ 1/4 W metal film, THT" lcsc C57204 value 4.7kΩ no-bom
+  for n in 8..9
+    part R{n} resistor "100 Ω 1 W metal film, THT" lcsc C119469 value 100Ω no-bom
+  for n in 1..2
+    part S{n} button K2-1102DP-C4SW-04 lcsc C110153 no-bom
+  accept HINT.bulk "…"  accept HINT.debounce "…"  accept HINT.esd "…"
+```
+
+The esp32 variant is the example above, on smd as its base: the parameter, the module with its `nc` and alias map,
+two LEDs, five resistors, two nets changed and one added, the notes and texts, two hints.
+
+**What the compiler makes of it.** Each project's `edakit graph json --write` reads its source, follows the chain –
+esp32 reads smd reads main –, applies the redefinitions in order, expands the usages and loops, resolves the alias
+map and the pin words through the entries and writes the resolved graph in today's format. The test of stage 2: the
+four resolved graphs equal the bell's four graphs of `059162a` converted to today's form (`edakit convert`), pins
+by number, nets by name – which holds only because the usages bind `anode = LED_G1_A`; without the binding the nets
+would be `STEP1_ANODE`, and `sim.json`, `schematic.toml` and the board files name nets.
+
+**Four projects, one repository, one hook.** Each project keeps its `edakit.toml`; `[project] graph` names the
+`.circuit` file and `[project] parts` the folders, the variant's first, then main's. A change of the main file
+changes the three variants' resolved graphs wherever they inherit it, so the bell needs one step that runs `graph
+json --write` in all four projects – a `graphs` target in its Makefile – and the pre-commit hook of L.5 runs
+`--check` in all four; the bell has no hook today. The diff of each resolved graph shows what the change reached; a
+variant's circuit hash, and with it M-1 and M-6, move only where that diff is not empty.
+
+**What stays per project:** the board file, `schematic.toml`, `sim.json`, `signoff.json`, the firmware; all of
+them name parts by designator and nets by name, which is why the usages name both.
 
 ## The basis
 
@@ -343,19 +527,19 @@ model on raw KerML structures they do not. The owner would find KerML the fittin
 | `satisfies R-3`, `decision D-8`, `accept` | `satisfy` and `verify` from SysML v2's Requirements library; `accept` and decisions as metadata |
 | units, ranges, tolerances | SysML v2's Quantities and Units: `ISQElectromagnetism` has voltage and capacitance, `ISQBase` the electric current, `SI` the units |
 
-**What the standard says about languages built on it** – KerML 1.0, formal/26-03-01, published September 2025,
-its Scope clause: "the full KerML language can be considered to be simply a syntactic extension of the core, which is
-semantically extended using library models. By intent, this approach can also be used to build on KerML to create
-more specific modeling languages. Application specific modeling languages can be built on KerML by extending the
-KerML abstract syntax, specializing its semantics, with concrete syntaxes similar to or entirely different from
-KerML's." And: "KerML can provide the kernel for a family of syntactically diverse but semantically integrated
-modeling languages." Clause 10 repeats it for interchange: "KerML is intended to be used as the basis for building
-other modeling languages", and a KerML-based language names a file extension for its own textual notation, while
-"it shall always be possible to use JSON format as a model interchange file format" (10.2, 10.4). Conformance
-(Clause 2) comes in four kinds – abstract syntax, concrete syntax, semantic, model interchange –, and "every
-conformant KerML modeling tool shall demonstrate at least Abstract Syntax Conformance and Model Interchange
-Conformance"; the concrete syntax is optional. So a notation of edakit's own over KerML's abstract syntax, with the
-JSON interchange as its export, is what the specification itself describes, not a bending of it.
+**What the standard says about languages built on it** – KerML 1.0, adopted September 2025, the formal document
+formal/2026-03-01 of March 2026, its Scope clause: "the full KerML language can be considered to be simply a
+syntactic extension of the core, which is semantically extended using library models. By intent, this approach can
+also be used to build on KerML to create more specific modeling languages. Application specific modeling languages
+can be built on KerML by extending the KerML abstract syntax, specializing its semantics, with concrete syntaxes
+similar to or entirely different from KerML's." And: "KerML can provide the kernel for a family of syntactically
+diverse but semantically integrated modeling languages." Clause 10 repeats it for interchange: "KerML is intended to
+be used as the basis for building other modeling languages", and a KerML-based language names a file extension for
+its own textual notation, while "it shall always be possible to use JSON format as a model interchange file format"
+(10.2, 10.4). Conformance (Clause 2) comes in four kinds – abstract syntax, concrete syntax, semantic, model
+interchange –, and "every conformant KerML modeling tool shall demonstrate at least Abstract Syntax Conformance and
+Model Interchange Conformance"; the concrete syntax is optional. So a notation of edakit's own over KerML's abstract
+syntax, with the JSON interchange as its export, is what the specification itself describes, not a bending of it.
 
 **What the standard provides, verified in the specification and the OMG's release repository:**
 
@@ -364,8 +548,9 @@ JSON interchange as its export, is what the specification itself describes, not 
   specialization of types and subsetting of features, `:>>` for redefinition; multiplicity `[n]` and `[lo..hi]`,
   `ordered`, `nonunique`; connectors binary (`connector c : T from a to b`) and n-ary (`connector c : T (a, b, c)`,
   the ends matched in order to the association's ends, 7.4.6.2), `binding` and `succession` binary; invariants
-  `inv { … }`, `inv false` for a negated one (7.4.8.5); expressions with `if … ? … else …`, arithmetic, comparisons,
-  `and`, `or`, `not`, `implies`, no `in`; `metadata` and `@`, prefix metadata `#`; `doc` and `comment`; `alias … for
+  `inv { … }`, `inv false` for a negated one (7.4.8.5); expressions with `if … ? … else …`, arithmetic,
+  comparisons, `and`, `or`, `not`, `implies`, no `in`; `metadata` and `@`, prefix metadata `#`; `doc` and `comment`;
+  `alias … for
   …`; `public`, `private`, `protected`; `import X::*`; `standard library package`.
 - The meaning of a redefinition (7.3.4.5): it "requires the values of the redefining feature and the redefined
   feature to be the same on each instance", so "any restrictions on the values of the redefining feature relative to
@@ -416,7 +601,7 @@ package Bell {
         feature in : Pin;  feature gnd : Pin;
         feature R : Resistor;  feature D : LED;
         connector : Net (in, R.p1);  connector anode : Net (R.p2, D.anode);  connector : Net (D.cathode, gnd);
-        inv { (in.v.max - D.vf.min) / R.value <= i.max }
+        inv { (in.v.max - D.vf_min_v) / R.value <= i.max }
     }
     feature step1 : LedStep { :>> color = green;  feature :>> R { :>> designator = "R4"; :>> lcsc = "C17630"; } }
     connector : Net (u1.PD6, step1.in);
@@ -432,11 +617,14 @@ Python is the fallback, not the basis: if the evals show that a model edits the 
 restricted Python API with the resolved graph as the artifact is the way with the least syntax. The price is that only
 a model can edit the source.
 
-The recommendation: a notation of edakit's own, small, declarative, defined over KerML – every construct an element of
-an electrical library on the kernel –, with `.ato`'s ergonomics, compiled to the resolved graph and exportable to KerML
-and SysML v2; TOML with names stays the flat form. The sketch's parser (242 lines) is the measure: definitions,
-usages, `for`, expressions, assertions and variants are each a construct of that size, and the compiler to the
-resolved graph is the sketch's writer.
+The recommendation: a notation of edakit's own, small, declarative, defined by the owner's rule – on SysML v2's
+Systems Library where its terms fit, part, port, connection, attribute, requirement, variation, constraint; on
+KerML's kernel where they do not; every construct an element of an electrical library on that basis –, with `.ato`'s
+ergonomics, compiled to the resolved graph and exportable to SysML v2 and KerML; TOML with names stays the flat form.
+The sketch's reader is the measure – 231 lines of `translate.py`, the whole prototype with writer, TOML and round
+trip 819 –: definitions, usages, `for`, expressions, assertions and variants are each a construct of the reader's
+size, and the compiler to the resolved graph is the sketch's writer. What has to be built is the section "The
+toolchain" below.
 
 ## When it brings value
 
@@ -449,8 +637,11 @@ Not before, and not without, these:
    LED current, a pull-up, a divider – and the notes "another value of the same series" in the graph.
 3. **A project with repetition or variants is at hand.** The bell's four configurations are one today (the section
    above); the tree's move to edakit (30 LEDs on three drivers) and the pedal's second module would be two more.
-4. **The shape of the graph stands still.** Since `75d5c32` the graph gained keys, not shapes; the shape – components,
-   nets, cables, layout, locks, accept, purpose – has stood since the cut. Two months without a change of shape.
+4. **The shape of the graph stands still.** The cut `4982d35` of 2026-10-31 changed shapes – `waive` to `accept`,
+   `hints` to HINT codes, `checks.pin_locks` to `locks.pins` –, and the same day added keys: `config`, `states`,
+   `strip`, `isolated`, `clock_hz`, `accept` by place. The clock starts there: two months in which the graph gains
+   keys only, and the shape – components, nets, cables, layout, locks, accept, purpose – stands. The language itself
+   adds one key, `asserts` (item 4 above).
 5. **Evidence.** `evals/add-led`, a repetition task and a variant task on the reference circuits, in TOML and in the
    language, three runs each with Sonnet (maker-coverage FT-24): the language at least as reliably edited.
 6. **A budget of size L** for the first stage, and the readiness to maintain a construct, not a key, per change.
@@ -458,20 +649,53 @@ Not before, and not without, these:
 The stages, each useful on its own:
 
 - **Stage 1: edakit's block library in the language.** The 26 blocks as definitions with parameters, compiled to
-  the block JSON `block add` reads today; `block add --set i=10mA` passes a parameter. Projects change nothing; the
+  the block JSON `block add` reads today; `block add --set i=10mA` passes a parameter: the definition's assertion
+  is checked against the block's part, and where it fails the command prints the derived value and the nearest value
+  of the series and asks – it never writes a value no entry has, the designer chooses. Projects change nothing; the
   compiler, the expressions and the assertions are built and tested on edakit's own data. Size L.
 - **Stage 2: projects.** `hardware/graph.circuit` beside or instead of `graph.toml`, with `use`, `for`, variants and
-  assertions; `edakit graph json` compiles either; `graph show` reads a slice of the resolved graph (FT-23). The bell
-  and the tree as the first users, each at the user's request. Size M to L.
-- **Stage 3: the KerML export** and, where requirements, variation and units want its libraries, the SysML v2
-  export – a mapping, since the notation is defined over KerML –, and the conformance test with a standard parser
-  once one is usable from Python.
+  assertions; `edakit graph json` compiles either; `edakit graph show` (built 2026-10-31, FT-23) reads the resolved
+  graph as it reads `graph.json` today and changes nothing. The bell and the tree as the first users, each at the
+  user's request. Size M to L.
+- **Stage 3: the exports.** `edakit graph sysml`, the model SysML tools draw and whose requirements and variants
+  they follow, and `edakit graph kerml`, the kernel view as the interchange JSON of clause 10.4 – both a mapping,
+  since the notation is defined on the libraries –, and the conformance test with a standard parser once one is
+  usable from Python.
 
-The value, estimated on the owner's projects: the bell from 72 lines of content in the sketch's language to about 30;
-led-bar's eight LEDs from about 150 lines of JSON to three; the tree's 65 KB graph, which no session should read
-whole, to a size a session can read; the bell's four configurations to one main file and three variant files of about
-ten, ten and twenty lines against 69, 64 and 83 statements today, with sign-offs that survive a change of the main
-file where it does not reach them.
+The value, estimated on the owner's projects: the bell's main file from 59 statements in the sketch's language (the
+translator's output; the hand-written `bell.circuit` has 72 lines of content) to about 50 – the bell has little
+repetition, its gain is the variants –; led-bar's eight LEDs from 244 lines of JSON to four; the graph of the tree
+(pytree, the reference project, 65 KB), which no session should read whole, to a size a session can read; the bell's
+four configurations to one main file and three variant files of about a dozen, a dozen and twenty lines against 69,
+64 and 83 statements today, with sign-offs that survive a change of the main file where it does not reach them.
+
+## The toolchain
+
+What the language needs beside edakit as it is, with what exists today and the stage that builds it. Sizes as in the
+plans: S a day, M a few days, L a week or more.
+
+| Piece | What it does | Exists today | Size | Stage |
+| --- | --- | --- | --- | --- |
+| Reader | the statements with their lines – `graph`, `part`, `net`, `cable`, `layout`, `accept`, `description`, `purpose`, `param`, `def`, `use`, `for`, `assert`, `variant`, `alias` –, every error with file and line, shapes checked before any check runs | the prototype's `Reader`, 231 lines, for the sketch's statements in the old form | M | 1 |
+| Resolver and compiler | names resolved across files – a variant chain in order, definitions from edakit's library and the project –, usages and loops expanded, redefinitions applied, pin words to numbers through the entries (L.1, L.2), `asserts` written, a stable order: a function from files to the resolved graph | the prototype's writer to JSON; L.5's `edakit graph json` for TOML, once built | L | 1 for definitions, 2 for projects |
+| Expressions | quantities with units, ranges and tolerances, arithmetic with the units checked, the comparisons of `assert` | `QUANTITY` and `MULTIPLIERS` in circuit.py for `330Ω`, `4k7`, `100nF`; `v_range` for nets; `UNITS` in engines/quantities.py | M | 1 |
+| Engine DEF | `DEF.assert`, `DEF.port`, `DEF.param` from the graph's `asserts`, with the catalog's severities and the domains' grades | the engines' frame, the catalog's code table | S to M | 1 |
+| `edakit graph json` for `.circuit` | `--write` the resolved graph, `--check` the drift, per project; the pre-commit hook of L.5 runs it | `edakit graph show`; `edakit firmware --check` as the pattern; the bell has no hook today | S on L.5 | 2 |
+| `edakit graph fmt` | the canonical layout, comments kept, so that a diff shows data | the prototype's writer, which lays out but keeps no comments | S to M | 1 |
+| `edakit graph convert --to circuit` | a JSON or TOML graph as flat statements – no usages: those come from `block add` or by hand | the prototype's writer | S | 2 |
+| `block add` on the language | writes a usage with its bindings and designators, `--set` for parameters, `--without` for optional parts | `block add` on JSON, `plan()` in block.py, `--without` | M | 1 for `--set`, 2 for usages |
+| The library as definitions | the 26 blocks with parameters and assertions, compiled to the block JSON of today | `edakit/blocks/*.json` | M | 1 |
+| Editor grammar | a TextMate grammar for VS Code and a Pygments lexer for the documentation site; GitHub highlights no language of one's own, a `.gitattributes` mapping lends another language's colours at best | – | S | 1 |
+| Tests and evals | reader and compiler tests; golden files source → resolved graph for the bell's four files and led-bar; the round trip compile → convert → compile; determinism, two runs identical; `evals/add-led`, a repetition task and a variant task in the language, three runs each with Sonnet (FT-24) | `evals/add-led` in JSON; the prototype's round trip | M | 1 and 2 |
+| Handbook, reference, skills | a chapter on the language, the reference of statements, the skills circuit-design and hardware-change that write it, the README | the chapters of the TOML form (L.8), once written | M | 1 and 2 |
+| Exports | `edakit graph sysml` and `edakit graph kerml` from the resolved graph and the source's definitions, the conformance test with a standard parser | – | M | 3 |
+
+Not built: a language server – the model edits through the CLI's errors and `graph show`, a human through the
+formatter –, an editor extension beyond the grammar, a debugger for expressions, part picking, any I/O from the
+language. Stage 1 is the reader, the compiler for definitions, the expressions, DEF, the formatter, the grammar, the
+library, the chapter and the tests: size L, as said. Stage 2 adds the project constructs – `use`, `for`, variants,
+`alias`, `param` –, `graph json` and the hook for `.circuit`, the converter, `block add` writing usages, the skills
+and the evals: M to L. Stage 3 the exports: M.
 
 ## Costs and risks
 
@@ -484,6 +708,9 @@ file where it does not reach them.
 - **The library binds projects.** A definition in edakit changes, the resolved graphs of the projects that use it
   change – visible through `--check` in each project, never silently. A project may pin a definition by copying it
   into its own file.
+- **A base reaches its variants.** A change of the bell's main file changes three resolved graphs in three projects;
+  without one step that regenerates and one hook that checks all four, a variant's committed graph drifts unnoticed
+  (the bell's model above).
 - **Models.** A notation nobody has seen is learned from the handbook; the evals decide whether that holds for Sonnet.
   The fallback is Python.
 - **Size.** Stage 1 is size L: parser, compiler, expressions with units, assertions, the engine DEF, a formatter, a
@@ -497,15 +724,15 @@ Each a real choice, the recommended answer first, with its trade-off; none is du
 
 1. **The basis.** The owner's rule of 2026-10-31: SysML v2's concepts where they fit, KerML underneath where they do
    not, the surface syntax of neither.
-   - *A notation of edakit's own, defined over KerML as SysML v2 is, with `.ato`'s ergonomics, compiled to the
-     resolved graph and exported to KerML and SysML v2* (recommended): a standard's meaning for every construct and
-     a conformance test, a small notation tools can edit; a parser, a library and a chapter to build, a syntax to
-     learn.
+   - *A notation of edakit's own, defined on SysML v2's library where it fits and on KerML's kernel where it does
+     not, with `.ato`'s ergonomics, compiled to the resolved graph and exported to SysML v2 and KerML* (recommended):
+     a standard's meaning for every construct and a conformance test, a small notation tools can edit; a parser, a
+     library and a chapter to build, a syntax to learn.
    - *KerML's textual notation as the source, with an electrical library*: no notation of edakit's own; `struct`,
-     `feature` and `connector` at two to three times the text, a notation models have barely seen, a conforming
-     reader many times the sketch's parser.
-   - *SysML v2's textual notation with an electrical library*: a standard, requirements and variants built in; two to
-     three times the text, no electrical semantics, alpha tooling, a notation models barely know.
+     `feature` and `connector` at SysML v2's length, a notation models have barely seen, a conforming reader many
+     times the sketch's.
+   - *SysML v2's textual notation with an electrical library*: a standard, requirements and variants built in;
+     verbose, no electrical semantics, alpha tooling, a notation models barely know.
    - *A subset compatible with `.ato`*: some familiarity and an editor extension for free; edakit's nets, entries and
      keys are not `.ato`, so the files would not be valid `.ato` anyway, and the compatibility binds to a moving target.
    - *A restricted Python API*: no syntax to invent, the form models write best; a program as the source that only a
@@ -528,7 +755,7 @@ Each a real choice, the recommended answer first, with its trade-off; none is du
      variant, sign-offs that survive what does not reach them; a resolution across files.
    - *Complete files, as today*: nothing new; four times every change.
 6. **The export.**
-   - *KerML's JSON interchange (clause 10.4) and its textual notation, SysML v2 where its libraries are needed, as
+   - *The SysML v2 export as the model tools read, the KerML interchange JSON (clause 10.4) as the kernel view, as
      stage 3, with the conformance test* (recommended): the standard gets a role without binding the source, and
      the export is what the specification asks of a KerML-based language; a mapping to maintain.
    - *Never*: nothing to maintain; no interoperability, no conformance test.
@@ -537,7 +764,7 @@ Each a real choice, the recommended answer first, with its trade-off; none is du
    - *When the triggers hold, stage 1 first* (recommended): the value is measured before the cost is paid.
    - *A prototype now, on the bell and led-bar, as the sketch was*: a decision on evidence sooner; a prototype that
      waits for the TOML form to have a target.
-   - *Not at all*: TOML with names, `block add` with parameters as flags, `graph show` for slices.
+   - *Not at all*: TOML with names, `block add` with parameters as flags, `graph show`, which exists, for slices.
 8. **Module pins by function** (from the bell's esp32 variant).
    - *An alias map on the module in the project's source, replaced by a variant* (recommended): nets and locks say
      `U1.led1` and stand across variants; the map is the firmware's; one construct more.
@@ -547,17 +774,21 @@ Each a real choice, the recommended answer first, with its trade-off; none is du
      keeps its meaning, since the map and the nets are separate statements.
    - *Keyed by the pin, rewritten per variant*: as today.
 10. **Parts folders of variants.**
-    - *Lookup variant first, then the base; the hash over the entries the resolved graph uses* (recommended): a part
-      added for one board reaches no other board's hash – D-15's reason for separate folders –, and copies become a
-      choice.
+    - *Lookup variant first, then the base, `[project] parts` a list of folders; the hash over the entries the
+      resolved graph uses* (recommended): a part added for one board reaches no other board's hash – D-15's reason
+      for separate folders –, and copies become a choice; a precedence the requirements list does not have today.
     - *A complete folder per variant, as D-15 has it*: nothing changes; every variant carries copies of every entry.
 
-Decided by Claude, for confirmation when the round comes: the compile target is the resolved graph of today's format;
-attributes pass through; nets stay first-class and n-ary; `for` only over ranges, with `{n}` in names; no
-conditionals and no I/O; the engine for what a definition asserts is DEF; a formatter and a grammar for highlighting
-are deliverables of stage 1, not later; the language is optional per project, named by `[project] graph`; a variant
-may have a variant as its base, resolved in order; a variant redefines, removes from and adds to what its base
-names, and never names anything else.
+Decided by Claude, for confirmation when the round comes: the compile target is the resolved graph of today's format
+plus one key, `asserts`, which the compiler fills and the engine DEF evaluates in `edakit check`; attributes pass
+through; nets stay first-class and n-ary; `for` only over ranges, with `{n}` in names; no conditionals and no I/O;
+in a usage `inner = outer` binds a port to a net, an internal part to a designator and an internal net to a name,
+and the attributes after a part's binding belong to it until the next binding; an internal net without a binding is
+named `<INSTANCE>_<NET>`; `block add --set` checks and proposes, it never writes a value no entry has; a formatter
+and an editor grammar are deliverables of stage 1, not later; the language is optional per project, named by
+`[project] graph`; a variant may have a variant as its base, resolved in order; a variant redefines, removes from
+and adds to what its base names, and never names anything else; paths in a variant are relative to the project's
+`edakit.toml`, as every path in it.
 
 ## Sources
 
@@ -613,7 +844,10 @@ A](https://github.com/Systems-Modeling/SysML-v2-Release/blob/master/sysml/src/ex
 - The Christmas bell at `059162a`, read-only: `docs/decisions.md` (D-11 to D-17), `variants/README.md`, the four
   `edakit.toml`, `hardware/graph.json`, `sim.json` and `signoff.json` of main and the variants, `src/firmware`,
   `variants/esp32/firmware`; the prototype's round trip run on all four configurations.
-- edakit: handbook 14.5 (the blocks), `edakit/blocks/*.json`, `tests/reference.py`,
+- edakit at `bd227e3`: handbook 3, 4 and 14.5 (the blocks), `edakit/blocks/*.json`, `block.py`, `circuit.py`
+  (`QUANTITY`), `engines/quantities.py`, `release/gate.py` (`state_hash`), `config.py` (`[project] requirements`),
+  `catalog/codes.toml` (DOCS.ref, the HINT codes), `tests/fixtures/led-bar`, `tests/reference.py`, `evals/`, the
+  prototype [translate.py and bell.circuit](../done/prototypes/circuit-language/),
   [maker-coverage.md](../done/maker-coverage.md) (the owner's projects, FT-23, FT-24, the stability of the model),
   [circuit-language.md](../done/circuit-language.md) (the sketch, its review and decisions) and
   [circuit-language-plan.md](circuit-language-plan.md).
