@@ -219,3 +219,19 @@ def test_power_or_pmos_feeds_no_supply_backwards(project):
     assert all(i > -1e-3 for sources in rows.values() for i in sources.values()), rows
     assert all(sources["J1"] < 1e-3 for name, sources in rows.items() if name.startswith(("bat-high", "usb-high")))
     assert all(sources["J1"] > 0.01 for name, sources in rows.items() if name.startswith("bat/all_on"))
+
+
+@pytest.mark.skipif(not shutil.which("ngspice"), reason="ngspice not installed")
+def test_a_threshold_without_typical_value_holds_the_gate_all_the_same(project):
+    """vgs_th_v as [min, null, max] – a datasheet that gives no typical value (IRLZ44N, IRF520N) – is held by its
+    smallest given value; the null crashed the gate check before."""
+    sim = two_supplies(project)
+    d = Design.from_config(project.config())
+    key = d.entry_key("Q1")
+    entry = project.part(key)
+    lo, _, hi = entry["values"]["vgs_th_v"]
+    entry["values"]["vgs_th_v"] = [lo, None, hi]
+    project.save_part(key, entry)
+    out = simrun.run_all(Design.from_config(project.config()), sim)
+    bad = {(c["id"], c["item"], c["scenario"].split("/")[0]) for c in out["checks"] if c["result"] == "fail"}
+    assert bad == {("LIM.range", "Q1", "bat-high"), ("LIM.range", "Q2", "bat-high")}

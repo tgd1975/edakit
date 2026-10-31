@@ -515,7 +515,10 @@ def gate_drive(s, des, part, nodes):
     table, th = p.get("rds_on_max_ohm"), p.get("vgs_th_v")
     if not isinstance(table, dict) or not table or th is None:
         return
-    vth = min(abs(x) for x in th) if isinstance(th, list) else abs(th)
+    given = [abs(x) for x in (th if isinstance(th, list) else [th]) if isinstance(x, (int, float))]
+    if not given:                       # [min, typ, max] with nothing but null: no threshold to hold the gate to
+        return
+    vth = min(given)                    # a datasheet without a typical value: [min, null, max]
     spec = min(abs(float(vgs)) for vgs in table)
     _, g, src = (v(s.res, x) for x in nodes)
     vgs = abs(g - src)
