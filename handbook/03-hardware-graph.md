@@ -189,11 +189,11 @@ What a part requires on its pins is in the graph: a capacitor to ground per supp
 **`REQ.value`** – what a part requires is in range (error, pin: warning; replaces G-11, G-14)  
 A required part has its value inside the range: an I2C pull-up (in parallel with the pins' own pulls) between (V − 0.4 V) / 3 mA and 10 kΩ, Rd 5.1 kΩ ± 10 % on a CC pin, what a pin needs inside the window its entry gives (grade pin).
 
-**`REQ.forbidden`** – what must stay apart is apart (error, pin: warning; replaces G-14)  
-What a part forbids does not happen: CC1 and CC2 of a USB-C receptacle on one net (one resistor for both), a pin whose entry says never_to_ground on ground (grade pin).
+**`REQ.forbidden`** – what must stay apart is apart (error, pin: warning, address: warning; replaces G-14)  
+What a part forbids does not happen: CC1 and CC2 of a USB-C receptacle on one net (one resistor for both), a pin whose entry says never_to_ground on ground (grade pin), two devices on one bus at one address (grade address: base and address pins of the entries).
 
-**`REQ.function`** – pin functions (error; replaces G-15)  
-A net's fn (pwm, adc, spi.sck, i2c.sda, uart.tx, …) is on a pin whose entry lists it in functions, the nets of one fn_bus use one peripheral instance, and PWM nets of one slice have one fixed pwm_hz and a channel each.
+**`REQ.function`** – pin functions (error, uart: warning; replaces G-15)  
+A net's fn (pwm, adc, spi.sck, i2c.sda, uart.tx, …) is on a pin whose entry lists it in functions, the nets of one fn_bus use one peripheral instance, and PWM nets of one slice have one fixed pwm_hz and a channel each. A UART line crosses: on uart.tx another part receives, on uart.rx another part transmits (grade uart).
 - pin functions: a net with `fn` is on a pin whose parts entry lists that function (`functions`), the nets of one `fn_bus` on one peripheral instance, two PWM nets of one slice with the same fixed `pwm_hz` and a channel each; a net with `fn` on pins without `functions` is a note – finds e.g.: SPI data on the clock pin, an analog input without ADC, a buzzer on the PWM slice of an LED
 
 **`PATH.reverse`** – reverse polarity blocked (error; replaces G-10)  

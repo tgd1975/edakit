@@ -449,11 +449,11 @@ sources = [
 
 [codes."REQ.forbidden"]
 title = "what must stay apart is apart"
-rule = "What a part forbids does not happen: CC1 and CC2 of a USB-C receptacle on one net (one resistor for both), a pin whose entry says never_to_ground on ground (grade pin)."
+rule = "What a part forbids does not happen: CC1 and CC2 of a USB-C receptacle on one net (one resistor for both), a pin whose entry says never_to_ground on ground (grade pin), two devices on one bus at one address (grade address: base and address pins of the entries)."
 why = "With CC1 and CC2 on one resistor an electronically marked cable reads as a fault and the source gives no power."
 fix = "One resistor per CC pin."
 severity = "error"
-grades = { pin = "warning" }
+grades = { pin = "warning", address = "warning" }
 replaces = ["G-14"]
 sources = [
   "Richtek AN064, USB Type-C/PD Brief Introduction and Analysis (2021): a sink asserts Rd on the CC pins – https://www.richtek.com/~/media/AN%20PDF/AN064_EN.pdf",
@@ -462,10 +462,11 @@ sources = [
 
 [codes."REQ.function"]
 title = "pin functions"
-rule = "A net's fn (pwm, adc, spi.sck, i2c.sda, uart.tx, …) is on a pin whose entry lists it in functions, the nets of one fn_bus use one peripheral instance, and PWM nets of one slice have one fixed pwm_hz and a channel each."
+rule = "A net's fn (pwm, adc, spi.sck, i2c.sda, uart.tx, …) is on a pin whose entry lists it in functions, the nets of one fn_bus use one peripheral instance, and PWM nets of one slice have one fixed pwm_hz and a channel each. A UART line crosses: on uart.tx another part receives, on uart.rx another part transmits (grade uart)."
 why = "On most MCUs a peripheral reaches only some pins, and pins share hardware: two neighbouring RP2040 GPIOs share one PWM slice and with it one frequency."
 fix = "Move the net to a pin that has the function, or give the nets of a slice one frequency. Bit-banged on purpose: leave fn out."
 severity = "error"
+grades = { uart = "warning" }
 details = [
   "pin functions: a net with `fn` is on a pin whose parts entry lists that function (`functions`), the nets of one `fn_bus` on one peripheral instance, two PWM nets of one slice with the same fixed `pwm_hz` and a channel each; a net with `fn` on pins without `functions` is a note – finds e.g.: SPI data on the clock pin, an analog input without ADC, a buzzer on the PWM slice of an LED",
 ]

@@ -113,3 +113,69 @@ def test_capacitors_in_series_without_balancing(project):
     project.save_graph(g)
     assert findings(project, "REQ.missing", "balance") == [
         "MID: only capacitors touch it (C8, C9) – in series their voltage divides by leakage"]
+
+
+# --- CK-3 --------------------------------------------------------------------------------------------------------------
+def sensor_on_bus(project, g, des, ad0):
+    """`des`: an I2C device at 0x68 + AD0 (a test part shaped like an MPU-6050 – not its datasheet), its SDA on SDA,
+    SCL on SCL, AD0 on `ad0` (a net name)."""
+    part = {"lcsc": "C9000402", "mpn": "test imu", "kind": "ic", "verified": {"by": "test"}, "needs": {"decoupling": False},
+            "address": {"base": 0x68, "pins": {"3": 1}},
+            "pins": {"1": {"name": "SDA", "type": "bidirectional", "role": "sda", "drive": "open_drain"},
+                     "2": {"name": "SCL", "type": "input", "role": "scl"}, "3": {"name": "AD0", "type": "input"},
+                     "4": {"name": "GND", "type": "ground"}, "5": {"name": "VDD", "type": "power_in"}}}
+    project.save_part("C9000402", part)
+    g["graph"]["components"].append({"designator": des, "type": "ic", "lcsc": "C9000402",
+                                     "pins": {n: i["name"] for n, i in part["pins"].items()}})
+    for pin, net in (("1", "SDA"), ("2", "SCL"), ("3", ad0), ("4", "GND"), ("5", "3V3")):
+        existing = [n for n in g["graph"]["nets"] if n["name"] == net]
+        if existing:
+            existing[0]["pins"].append(f"{des}.{pin}")
+        else:
+            g["graph"]["nets"].append({"name": net, "pins": [f"{des}.{pin}"], "v": [0, 3.4]})
+
+
+def test_two_devices_at_one_address(project):
+    g = project.graph()
+    sensor_on_bus(project, g, "U8", "GND")
+    sensor_on_bus(project, g, "U9", "GND")
+    project.save_graph(g)
+    assert findings(project, "REQ.forbidden", "address") == ["bus SDA: U8 (AD0 low), U9 (AD0 low) all answer to 0x68"]
+    project.net(g, "GND")["pins"].remove("U9.3")
+    project.net(g, "3V3")["pins"].append("U9.3")                    # U9 at 0x69
+    project.save_graph(g)
+    assert findings(project, "REQ.forbidden", "address") == []
+
+
+def test_an_address_of_the_wrong_form(project):
+    g = project.graph()
+    sensor_on_bus(project, g, "U8", "GND")
+    project.save_graph(g)
+    part = project.part("C9000402")
+    part["address"] = {"base": "0x68"}
+    project.save_part("C9000402", part)
+    assert any("address must be {base, pins" in t for t in findings(project, "PARTS.schema"))
+
+
+# --- CK-26 -------------------------------------------------------------------------------------------------------------
+def test_a_uart_line_that_does_not_cross(project):
+    """U1's GP0 transmits (fn uart.tx, its functions list uart0.tx); on the net a module's TX – an output –, nothing
+    that receives."""
+    part = {"lcsc": "C9000403", "mpn": "test gps", "kind": "ic", "verified": {"by": "test"}, "needs": {"decoupling": False},
+            "pins": {"1": {"name": "TX", "type": "output"}, "2": {"name": "RX", "type": "input"},
+                     "3": {"name": "GND", "type": "ground"}, "4": {"name": "VCC", "type": "power_in"}}}
+    project.save_part("C9000403", part)
+    g = project.graph()
+    project.free_pins(g, "U1.1")
+    g["graph"]["components"].append({"designator": "U8", "type": "ic", "lcsc": "C9000403",
+                                     "pins": {n: i["name"] for n, i in part["pins"].items()}, "nc": ["2"]})
+    g["graph"]["nets"].append({"name": "GPS_TX", "pins": ["U1.1", "U8.1"], "v": [0, 3.4], "fn": "uart.tx"})
+    project.net(g, "GND")["pins"].append("U8.3")
+    project.net(g, "3V3")["pins"].append("U8.4")
+    project.save_graph(g)
+    assert findings(project, "REQ.function", "uart") == [
+        "GPS_TX: U1.1 transmits (uart.tx), but nothing on it receives – U8.1 (output)"]
+    project.net(g, "GPS_TX")["pins"][1] = "U8.2"                     # crossed: GP0 to the module's RX
+    project.comp(g, "U8")["nc"] = ["1"]
+    project.save_graph(g)
+    assert findings(project, "REQ.function", "uart") == []

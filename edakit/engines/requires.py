@@ -32,7 +32,7 @@ def switched_off(d, des, need):
 def run(ctx):
     d = ctx.joined
     return (decoupling(d) + i2c(d) + flyback(d) + usb_c(d) + functions(d) + hot_loops(ctx.design) + pin_needs(d)
-            + balancing(d))
+            + balancing(d) + addresses(d) + uart_lines(d))
 
 
 def decoupling(d):
@@ -375,4 +375,95 @@ def balancing(d):
             out.append(Finding("REQ.missing", "G", name, f"{name}: only capacitors touch it ({', '.join(sorted(dess))}) – "
                                "in series their voltage divides by leakage", "edakit handbook 3.3",
                                "a balancing resistor across each capacitor", grade="balance", on=(("net", name),)))
+    return out
+
+
+def pin_level(d, ref, info, supplies, grounds):
+    """'high', 'low' or None: what holds a pin – its net a supply or ground, a resistor to one, its own pull."""
+    net = d.pin_net.get(ref)
+    if net in grounds:
+        return "low"
+    if net in supplies:
+        return "high"
+    if net is not None:
+        up, down = resistors_to(d, net, supplies), resistors_to(d, net, grounds)
+        if up and not down:
+            return "high"
+        if down and not up:
+            return "low"
+        if up or down:
+            return None
+    return {"up": "high", "down": "low"}.get(info.get("pull"))
+
+
+def addresses(d):
+    """REQ.forbidden/address: two devices on one bus at the same address. An entry's address gives its base, the pins
+    that add to it when high ({pin: value}) and further addresses it answers to (also); the bus is the net of its pin
+    `on`, by default the pin with the role sda. A pin whose level the graph does not decide leaves the device out."""
+    grounds = {d.ground} | set(d.graph.get("grounds") or [])
+    supplies = supply_nets(d) - grounds
+    buses = defaultdict(list)            # net -> [(address, des, how)]
+    out = []
+    for des in sorted(d.comps):
+        part = d.part(des) or {}
+        a = part.get("address")
+        if a is None:
+            continue
+        key, pins = d.entry_key(des), part.get("pins") or {}
+        if not (isinstance(a, dict) and isinstance(a.get("base"), int) and isinstance(a.get("pins", {}), dict)
+                and all(str(p) in pins and isinstance(v, int) for p, v in a.get("pins", {}).items())
+                and all(isinstance(x, int) for x in a.get("also", []))):
+            out.append(Finding("PARTS.schema", "P", key, f"{key}: address must be {{base, pins: {{pin: value}}, also: "
+                               f"[…], on: pin}} with integers, not {a!r}", grade="address"))
+            continue
+        on = a.get("on") or next((n for n, i in pins.items() if i.get("role") == "sda"), None)
+        bus = d.pin_net.get(f"{des}.{on}") if on else None
+        if bus is None:
+            continue
+        value, how = a["base"], []
+        for num, add in sorted(a.get("pins", {}).items()):
+            level = pin_level(d, f"{des}.{num}", pins[str(num)], supplies, grounds)
+            if level is None:
+                value = None
+                break
+            value += add if level == "high" else 0
+            how.append(f"{pins[str(num)].get('name', num)} {level}")
+        if value is None:
+            continue
+        for x in [value, *a.get("also", [])]:
+            buses[bus].append((x, des, ", ".join(how) if x == value else "fixed"))
+    for bus, devs in sorted(buses.items()):
+        by = defaultdict(list)
+        for x, des, how in devs:
+            by[x].append((des, how))
+        for x, users in sorted(by.items()):
+            if len({des for des, _ in users}) > 1:
+                who = ", ".join(f"{des} ({how})" if how else des for des, how in users)
+                out.append(Finding("REQ.forbidden", "G", f"bus {bus}", f"bus {bus}: {who} all answer to 0x{x:02X}",
+                                   "address of the parts entries", "another address by its pins, another part, or a "
+                                   "second bus", grade="address", on=tuple(("component", des) for des, _ in users)))
+    return out
+
+
+def uart_lines(d):
+    """REQ.function/uart: a UART line crosses – on a net whose fn is uart.tx the MCU transmits and another part
+    receives (an input), on uart.rx another part transmits (an output). A net with a passive pin (a connector, a
+    cable) goes off the board and is left alone."""
+    out = []
+    for name, net in sorted(d.nets.items()):
+        fn = net.get("fn")
+        if fn not in ("uart.tx", "uart.rx"):
+            continue
+        infos = [(r, d.pin_info(r)) for r in net["pins"]]
+        mine = [r for r, i in infos if any(fn_match(fn, f) for f in i.get("functions") or [])]
+        others = [(r, i) for r, i in infos if r not in mine]
+        if not mine or any(i.get("type") in (None, "passive") for _, i in others):
+            continue
+        want = "input" if fn == "uart.tx" else "output"
+        if not any(i.get("type") in (want, "bidirectional") for _, i in others):
+            have = ", ".join(f"{r} ({i.get('type')})" for r, i in others) or "nothing else"
+            text = (f"{name}: {mine[0]} transmits (uart.tx), but nothing on it receives – {have}" if fn == "uart.tx"
+                    else f"{name}: {mine[0]} receives (uart.rx), but nothing on it transmits – {have}")
+            out.append(Finding("REQ.function", "G", name, text, "fn of the net, pin types of the entries",
+                               "cross the lines: TX to RX, RX to TX", grade="uart", on=(("net", name),)))
     return out
