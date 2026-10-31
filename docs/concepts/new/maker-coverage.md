@@ -775,24 +775,24 @@ One row per pitfall: the pitfall with its numbers, what edakit does about it tod
 
 | # | Pitfall | edakit today | Candidate | Source |
 | --- | --- | --- | --- | --- |
-| 1 | germanium Fuzz Face bias: the fixed parts need Q1 gain 70–80 and Q2 110–130; AC128 spans 45–165; leakage doubles every 10 °C | no – no transistor corners | FT-17, FT-11 | ElectroSmash Fuzz Face, germanium fuzz (r) |
+| 1 | germanium Fuzz Face bias: the fixed parts need Q1 gain 70–80 and Q2 110–130; AC128 spans 45–165; leakage doubles every 10 °C | with part facts: sim.json spread – hFE and leakage (icbo_a) as corners, the bias against a load's expect (FT-17, FT-11); no germanium datasheet could be read – a project enters its measured spread | FT-17, FT-11 | ElectroSmash Fuzz Face, germanium fuzz (r) |
 | 2 | PNP positive ground: the jack sleeves sit on +9 V and short a shared supply | no | HT-18 | ElectroSmash germanium fuzz, Rangemaster (r) |
 | 3 | Fuzz Face input 5.2–8.4 kΩ, output 15 kΩ (about 125 kΩ at mid volume: 2.1 kHz with 600 pF of cable) | no | CK-27, FT-18, FT-12 | ElectroSmash Fuzz Face (r) |
 | 4 | AM radio in high-gain transistor stages: the base–emitter junction rectifies; 100 pF base–collector, base stopper | no | HT-8 | ElectroSmash germanium fuzz (r); forums (x) |
-| 5 | Big Muff: 48.6 dB in two clipping stages, 470 pF Miller capacitors for stability, bias windows | no | FT-17, FT-11, CK-31 | ElectroSmash Big Muff (r) |
-| 6 | Tone Bender MKII self-biases through leakage; the bias target is disputed | no | FT-17 | forums (x) |
+| 5 | Big Muff: 48.6 dB in two clipping stages, 470 pF Miller capacitors for stability, bias windows | the bias windows with part facts: spread corners against expect (FT-17, FT-11); stability: no | FT-17, FT-11, CK-31 | ElectroSmash Big Muff (r) |
+| 6 | Tone Bender MKII self-biases through leakage; the bias target is disputed | with part facts: the leakage in the spread corner max (icbo_a, FT-17); the target is the project's expect | FT-17 | forums (x) |
 | 7 | op-amps at 9 V: TL07x swing 1.5–3 V short of each rail, common mode 3–4 V above V−; phase reversal | no model | FT-3 | ST TL07x (r); ElectroSmash Klon (r) |
 | 8 | clipping diodes against the swing: an LED (1.5–1.7 V) in a 9 V feedback loop; octave rectifiers need matched diodes | no | FT-3, FT-12 | ElectroSmash Tube Screamer, Klon, Big Muff (r) |
 | 9 | 4.5 V reference: loads ≥ 10 × the divider, 47–100 µF, 0.5 s settling thump | partly: G-6 | FT-11, BL-17 | ElectroSmash Klon, Tube Screamer (r) |
 | 10 | Klon charge pump +18/−9 V: 27 V across an op-amp; from 12 V about 36 V, the TL07x maximum | with part facts: E-3 `vdd_op_max` with a 12 V supply corner | PF, CK-31 | ElectroSmash Klon (r); ST TL07x (r) |
 | 11 | LM308 needs 30 pF across pins 1 and 8; slew rate 0.3 V/µs | no | CK-28 | ElectroSmash ProCo RAT (r) |
-| 12 | JFET spread (J201 IDSS 0.2–1.0 mA, VGS(off) −0.3…−1.5 V): drain between about 5.2 and 8.2 V with fixed resistors | no | FT-17 | ElectroSmash 1Wamp (r) |
-| 13 | BS170 is D-G-S, 2N7000 S-G-D; VGS(th) 0.8–3.0 V; gate unprotected | covered: P-1, L-10 for the pinout; the spread: no | FT-17 | forums (x); partinfo (r) |
+| 12 | JFET spread (J201 IDSS 0.2–1.0 mA, VGS(off) −0.3…−1.5 V): drain between about 5.2 and 8.2 V with fixed resistors | covered: IDSS with VGS(off) as spread corners, the drain against expect – MMBFJ201 (C891687), the J201 in SOT-23 (FT-17) | FT-17 | ElectroSmash 1Wamp (r) |
+| 13 | BS170 is D-G-S, 2N7000 S-G-D; VGS(th) 0.8–3.0 V; gate unprotected | covered: P-1, L-10 for the pinout; VGS(th) as spread corners, BS170 (C111691) and 2N7000 (C232838) in the library (FT-17) | FT-17 | forums (x); partinfo (r) |
 | 14 | input impedance against 1 MΩ (Tube Screamer 446k, RAT 494k, V847 wah 69.5k); input high-pass; series resistor against ESD | no | CK-27, BL-16, HT-8 | ElectroSmash analyses (r) |
 | 15 | output impedance and minimum load: PT2399 output wants > 100 kΩ, FV-1 ≥ 10 kΩ, PCM3060 ≥ 10 kΩ | no | CK-13 | ElectroSmash PT2399 (r); FV-1 datasheet (r) |
 | 16 | OTA compressors: CA3080 bias current ≤ 2 mA, differential input ≤ 5 V, about 100 mVpp linear range | no model | CK-13, FT-3 | CA3080 datasheet (r); ElectroSmash Dyna Comp (r) |
 | 17 | LFO and tap-tempo ticks through supply and ground (vactrol LED 20–40 mA; 1 kHz PWM into a PT2399) | no | HT-16, HT-8 | ElectroSmash CE-2 (r); Bontempo (r) |
-| 18 | phaser: 2N5952 VGS(off) −1.3…−3.5 V, matched FETs, trimmer range | no | FT-17 | ElectroSmash Phase 90 (r) |
+| 18 | phaser: 2N5952 VGS(off) −1.3…−3.5 V, matched FETs, trimmer range | with part facts: VGS(off) corners, matched FETs at one corner (FT-17); no 2N5952 datasheet reachable (onsemi: not found); the trimmer range: no | FT-17 | ElectroSmash Phase 90 (r) |
 | 19 | wah: V847 input 69.5 kΩ; the 500 mH inductor picks up the amplifier's transformer field | no | CK-27; reviewer question | ElectroSmash Crybaby (r) |
 | 20 | 5 V regulators for PT2399 (30 mA) and Belton (60–100 mA): 78L05 at about 200 °C/W; 78L05 OUT-GND-IN against 7805 IN-GND-OUT | covered: E-3 regulator temperature with `rth_ja_k_per_w`, P-1 and L-10 for the pinout | – | ElectroSmash PT2399 (r); forums (x) |
 | 21 | PT2399 pin 6 below 2 kΩ during the first 400 ms latches the chip | no | CK-13 | ElectroSmash PT2399 (r); DIYSynthMNL (r) |

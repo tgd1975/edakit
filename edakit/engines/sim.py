@@ -25,10 +25,11 @@ from .quantities import SIM_EPS_V, Limit, Quantity, part_limits
 
 DERATING = table("derating")["E"]
 # (netlist element kind, quantity) -> the derating of sim.json / derating.toml [E.derate] that applies to its limit
+FETS = {"nmos": "v_bjt", "pmos": "v_bjt", "njfet": "v_bjt", "pjfet": "v_bjt"}
 DERATE = {"v": {"capacitor": "v_cap"}, "vr": {"diode": "v_diode"}, "vce": {"npn": "v_bjt", "pnp": "v_bjt"},
-          "vds": {"nmos": "v_bjt", "pmos": "v_bjt"}, "vgs": {"nmos": "v_bjt", "pmos": "v_bjt"}}
-DIM = {"p": "p", "i": "i", "if": "i", "ic": "i", "id": "i", "gpio_i": "i", "gpio_i_total": "i", "i_contact": "i",
-       "i_switch": "i"}
+          "vds": FETS, "vgs": FETS, "vdg": FETS}
+DIM = {"p": "p", "i": "i", "if": "i", "ic": "i", "id": "i", "ig": "i", "gpio_i": "i", "gpio_i_total": "i",
+       "i_contact": "i", "i_switch": "i"}
 # what a generated fault scenario (FT-8) judges: the parts' limits – a board without its supply does not reach the
 # states its load expects, and its nets leave their declared ranges by design of the fault
 FAULT_CODES = ("LIM.v", "LIM.i", "LIM.p", "LIM.t", "LIM.backfeed")
@@ -181,6 +182,9 @@ def dissipation(el, res):
     if kind in ("pmos", "nmos"):   # @m[id] includes the body diode's current
         d_, _, s = (v(res, n) for n in nodes)
         return abs((d_ - s) * res.get(f"@{el['name']}[id]", 0.0))
+    if kind in ("njfet", "pjfet"):
+        d_, g, s = (v(res, n) for n in nodes)
+        return abs((d_ - s) * res.get(f"@{el['name']}[id]", 0.0)) + abs((g - s) * res.get(f"@{el['name']}[ig]", 0.0))
     if "value" in el:
         a, b = (v(res, n) for n in nodes[:2])
         return (a - b) ** 2 / el["value"]
@@ -336,9 +340,11 @@ def stress(s):
                 s.q(des, "vds", abs(d_ - src), "V", kind, des, "|VDS|")
                 s.q(des, "vgs", abs(g - src), "V", kind, des, "|VGS|")
                 s.q(des, "p", abs((d_ - src) * cur), "W", kind, des, "power dissipation")
+            elif kind in ("njfet", "pjfet"):
+                jfet(s, des, kind, el)
             if kind in ("pmos", "nmos"):
                 gate_drive(s, des, part, nodes)
-        heat = [w for el in els if (w := dissipation(el, res)) is not None]
+        heat =[w for el in els if (w := dissipation(el, res)) is not None]
         if "rth_ja_k_per_w" in r and heat:
             junction(s, des, sum(heat), r)
     for des, m in meta["mcu"].items():
@@ -350,6 +356,20 @@ def stress(s):
             for what, i in (("sourced", sum(x for x in cur.values() if x > 0)),
                             ("sunk", -sum(x for x in cur.values() if x < 0))):
                 s.q(des, "gpio_i_total", i, "A", "mcu", des, f"GPIO current {what} by all outputs together")
+
+
+def jfet(s, des, kind, el):
+    """A junction FET against its entry: |VDS|, |VDG|, the gate's reverse voltage against the source, its forward
+    current (a gate driven positive conducts like a diode), the drain current and the power."""
+    d_, g, src = (v(s.res, x) for x in el["nodes"])
+    cur, ig = abs(s.res.get(f"@{el['name']}[id]", 0.0)), s.res.get(f"@{el['name']}[ig]", 0.0)
+    sign = 1 if kind == "njfet" else -1          # the gate of an n-channel JFET is reverse-biased below its source
+    s.q(des, "id", cur, "A", kind, des, "drain current")
+    s.q(des, "vds", abs(d_ - src), "V", kind, des, "|VDS|")
+    s.q(des, "vdg", abs(d_ - g), "V", kind, des, "|VDG|")
+    s.q(des, "vgs", max(sign * (src - g), 0), "V", kind, des, "gate reverse voltage |VGS|")
+    s.q(des, "ig", max(ig, 0), "A", kind, des, "forward gate current")   # ngspice: + forward, for either channel
+    s.q(des, "p", abs((d_ - src) * cur) + abs((g - src) * ig), "W", kind, des, "power dissipation")
 
 
 def tj_limit(r, crit):

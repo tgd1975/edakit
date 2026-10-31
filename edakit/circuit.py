@@ -101,11 +101,11 @@ SUPPLY_R_MAX = 100                                   # a resistor up to this pas
 SWITCHERS = ("buck", "boost", "buck_boost")          # behaviour models of switching regulators (hot loop, REQ.missing)
 PIN_FUNCTION = re.compile(r"([a-z][a-z0-9]*?)(\d+)(?:\.([a-z]+))?")   # "spi0.sck", "i2c1.sda", "pwm1.a", "adc0"
 KINDS_OF_TYPE = {"microcontroller": ("ic", "module"), "regulator": ("ic", "module"),   # STRUCT.identity: graph type -> parts
-                 "transistor": ("npn", "pnp", "nmos", "pmos"), "led": ("led", "led_rgb"),   # entry kinds; any other
+                 "transistor": ("npn", "pnp", "nmos", "pmos", "njfet", "pjfet"), "led": ("led", "led_rgb"),   # entry kinds; any other
                  "switch": ("switch", "dip_switch"), "audio": ("buzzer", "speaker"),       # type: the same word
                  "ic": ("ic", "esd_array")}
 KINDS_OF_PREFIX = {"R": ("resistor", "potentiometer"), "C": ("capacitor",), "L": ("inductor",),
-                   "D": ("diode", "led", "led_rgb", "esd_array"), "Q": ("npn", "pnp", "nmos", "pmos"),
+                   "D": ("diode", "led", "led_rgb", "esd_array"), "Q": ("npn", "pnp", "nmos", "pmos", "njfet", "pjfet"),
                    "U": ("ic", "module", "esd_array"),
                    "J": ("connector",), "SW": ("switch", "button", "dip_switch"), "F": ("fuse",),
                    "BT": ("battery_holder",), "BZ": ("buzzer",), "K": ("relay", "solenoid"), "TP": ("connector",),

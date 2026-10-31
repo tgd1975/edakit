@@ -14,6 +14,8 @@ npn = 1.5
 pnp = 1.5
 nmos = 1.5
 pmos = 1.5
+njfet = 1.5
+pjfet = 1.5
 
 [E.derate]          # value ≤ derate × limit
 p = 0.5

@@ -14,8 +14,8 @@ from PIL import Image, ImageDraw, ImageFont
 
 from .. import gerber
 
-POLAR = ("led", "led_rgb", "diode", "battery_holder", "buzzer", "connector", "npn", "pnp", "pmos", "nmos", "ic",
-         "module", "switch", "dip_switch")
+POLAR = ("led", "led_rgb", "diode", "battery_holder", "buzzer", "connector", "npn", "pnp", "pmos", "nmos", "njfet",
+         "pjfet", "ic", "module", "switch", "dip_switch")
 MM = 0.0254
 TILE, HEAD, COLS = 420, 46, 4
 BG, PAD, COPPER, SILK = (18, 58, 32), (236, 170, 70), (120, 85, 40), (245, 245, 245)

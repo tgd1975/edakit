@@ -6,7 +6,8 @@ part against its ratings and the circuit against its function – in seconds, on
 Why DC operating points first: the expensive errors on a small board are static. A resistor that cooks at full
 brightness, a regulator without headroom at the low end of the USB voltage, an LED the wrong way round, a net that
 reaches a pin with more than it tolerates, a supply that cannot deliver the sum of all loads. A DC sweep over supply
-corners × load cases × LED tolerance corners finds those. Where the supply itself changes – plug, unplug, a
+corners × load cases × LED tolerance corners – and the transistors' spread, where a stage's bias rests on it – finds
+those. Where the supply itself changes – plug, unplug, a
 switch-over between two sources – a DC scenario sits on one side of the gap or the other; transient runs (5.2) follow
 the supply over time and LIM.v judges them. Switching spikes and fast edges are measured on the delivered board
 (acceptance test): the behaviour models know no switching.
@@ -14,8 +15,12 @@ the supply over time and LIM.v judges them. Switching spikes and fast edges are 
 ## 5.1 How the netlist is built
 
 - Resistors, capacitors, inductors (with DCR), fuses, diodes, LEDs (model from Vf at a test current), BJTs, MOSFETs
-  come from the graph 1:1, values and SPICE models from the parts database. A 0 Ω bridge (`value_ohm: 0`) is its
-  `r_max_ohm`, 50 mΩ without one – ngspice finds no operating point with 0 Ω. A capacitor with a DC-bias curve
+  and JFETs (kinds `njfet`, `pjfet`: `J_Q50 drain gate source`) come from the graph 1:1, values and SPICE models from
+  the parts database – a transistor's model as its entry gives it, or in a spread corner (5.2) at the end of its
+  spread. A JFET is held to its entry in every scenario like the other transistors: |VDS| (`vds_max_v`), |VDG|
+  (`vdg_max_v`), the gate's reverse voltage against the source (`vgs_max_v`), its forward gate current (`ig_max_a` – a
+  gate driven above its source conducts), the drain current (`id_max_a`), the power. A 0 Ω bridge (`value_ohm: 0`) is
+  its `r_max_ohm`, 50 mΩ without one – ngspice finds no operating point with 0 Ω. A capacitor with a DC-bias curve
   (`values.dc_bias`, 4.1) is the capacitance left at the highest DC the declared ranges of its two nets put across
   it – a KEMET 4.7 µF 6.3 V 0603 X5R on a 0 … 5.5 V rail is 1.86 µF: the least capacitance it has in operation, the
   one a transient load step or an AC run around the operating point sees. The scenario's own voltage is not used, and
@@ -178,8 +183,53 @@ module with a servo: [Christmas bell](https://github.com/tgd1975/automatic_chris
 }
 ```
 
-Scenarios = supplies × loads × corners (LED forward voltage at min/max), plus `extra_scenarios` (e.g. "programming
-cable plugged in, external supply off"; `"info": true` turns failures into information).
+Scenarios = supplies × loads × corners (LED forward voltage at min/max) × spread (the transistors' corners, below),
+plus `extra_scenarios` (e.g. "programming cable plugged in, external supply off"; `"info": true` turns failures into
+information).
+
+**The spread of the transistors** (maker-coverage FT-17). The bias of a discrete stage – a booster, a fuzz, a phaser,
+a MOSFET driven from a 3.3 V output – rests on parameters that spread from part to part more than any resistor:
+
+```json
+"spread": ["min", "max"]
+```
+
+runs every scenario of the matrix once per corner, each transistor whose entry gives a spread at that end of it
+(4.1), named `usb-nom/idle/vf-min/spread-min`; `typ` is the model as the entry gives it, and without the key every
+scenario is `typ` under the name it had before. What a corner sets, per kind (`edakit/sim/spread.py`):
+
+| kind | from the entry | in the corner |
+|---|---|---|
+| `npn`, `pnp` | `hfe_min`, `hfe_max`; `icbo_a` | BF = hFE of the corner; in `max` also the collector-base leakage at `ambient_c` as a current from the collector into the base |
+| `nmos`, `pmos` | `vgs_th_v` [min, typ, max] | VTO at the smaller (`min`) or larger (`max`) magnitude; KP so that RDS(on) at the lowest gate voltage of `rds_on_max_ohm` stays what the entry's model gives – the datasheet's maximum holds for every part |
+| `njfet`, `pjfet` | `idss_a`, `vgs_off_v` [min, typ, max] | VTO = −\|VGS(off)\| and BETA = IDSS / VTO² at the same end: the least IDSS with the smallest \|VGS(off)\| |
+
+`min` puts every parameter at the low end of its magnitude, `max` at the high end, all transistors of the board at the
+same end – as all LEDs share a corner: the parts of one batch, and the extremes of a stage whose bias moves one way
+with each transistor. A JFET's two ranges are the ends of one spread: the MMBFJ201's crossed ends (0.2 mA with
+−1.5 V, 1.0 mA with −0.3 V) would need a BETA of 0.09 and 11 mA/V², a decade from the typical device's 0.98 mA/V²
+(its Fig. 1), the paired ones stay within a factor of 2.3 (0.44 and 2.2 mA/V²). A BJT's leakage follows the points
+of `icbo_a` (`{"25": 5e-8, "125": 1.57e-5}`, A by °C – the 2N3904's), log-linear between them and along the nearest
+two beyond; it counts in `max` only, with the highest hFE, where both raise the collector current. Where two
+transistors pull a stage in opposite directions – the Fuzz Face's Q1 and Q2 – an extra scenario sets each part's
+corner itself, every other part `typ`:
+
+```json
+"extra_scenarios": [{"name": "Q1 low, Q2 high", "supply": {"J1": 9}, "load": "idle",
+                     "spread": {"Q1": "min", "Q2": "max"}}]
+```
+
+A transient run takes `spread` the same way (a corner, or a map per transistor). Every check runs in each corner: the
+parts' limits (LIM), the states, and a load's `expect` on a net – the window a stage's bias must stay in. An AC run
+that names no `scenario` of its own runs once per spread corner, around the first DC scenario of each, as
+`<run> spread-min` and `<run> spread-max`: the gain moves with the bias. A transistor whose entry has no spread of its
+kind keeps its model in every corner, and one row of information (SIM.config, item `spread`) names it. On the
+example's +5V (4.75 … 5.25 V at J1), an MMBFJ201 booster with 6.8 kΩ at the drain, 1 kΩ at the source and its gate on
+1 MΩ to ground has its drain at 2.7 … 3.2 V as the typical part, 3.8 … 4.3 V in `min` and 1.3 … 1.8 V in `max`; a window
+of 1.2 … 3.6 V fails in `min` only, and the AC gain falls below 5 dB in `max` at the lowest supply, where the JFET
+leaves its saturation region. The same JFET with its gate on a 1 V divider and 10 kΩ at the source holds 2.7 …
+3.9 V, and a 2N3904 whose base current comes through 1 MΩ from +5V has its collector at 3.9 … 4.3 V at hFE 70 against
+1.9 … 2.1 V at 300 – a divider with an emitter resistor holds it.
 
 A board with several sources – a supply connector and a module that brings its own USB, USB and cells – gets the
 combinations from `combine_sources` instead of by hand: a map from each source to its range, `[low, high]` in volts for
@@ -299,7 +349,8 @@ source's own resistance (a microphone's output; default none), or behind `source
 FT-18): `{"r_ohm", "l_h", "c_f"}`, R and L in series with C across – a magnetic pickup's coil resistance, inductance and
 winding plus cable capacitance, the project's values with their source in `note`; edakit has no pickup's numbers of its
 own. `output` is the net measured against its board's
-ground; `scenario` the DC scenario linearised around (default the first). ngspice runs `.ac dec` from `from_hz` to
+ground; `scenario` the DC scenario linearised around (default the first – with `spread`, the first of each corner).
+ngspice runs `.ac dec` from `from_hz` to
 `to_hz` with `points` per decade (default: a decade beyond the expectation's frequencies on each side, 20 per decade).
 The gain is 20·log10 |V(output) / V(source)| – with a source resistance it includes what the input's load does to the
 source –; a corner is where the gain falls 3.01 dB below its largest value in the sweep, interpolated in log f, and a
@@ -351,7 +402,7 @@ A net listed for copper is simulated with its routed copper; where it is not, it
 at 40 °C ambient. Every part whose entry gives `rth_ja_k_per_w` gets its junction temperature in every scenario,
 `ambient_c` + P × Rth(j-a), with P the power of all its elements – a resistor's I²R, a diode's or LED's VF × IF, a
 transistor's VCE × IC + VBE × IB, a MOSFET's VDS × ID, its body diode included (ngspice counts it in the drain
-current). It is held to the part's `tj_max_c`, at most the criteria's `tj_max_c` (default 125 °C) – the limit of the
+current), a JFET's VDS × ID + VGS × IG. It is held to the part's `tj_max_c`, at most the criteria's `tj_max_c` (default 125 °C) – the limit of the
 LDO and LED driver items of LIM.t as well ("junction temperature at 40 °C: 0.0751 W × 125 K/W"). An MCU module's own
 LDO (`regulator: "ldo"`) gets its LIM.t item once the module's `limits` give `rth_ja_k_per_w` – the θJA of the
 regulator on the module, from the regulator's datasheet, like `tj_max_c` there – with all the current it carries:
