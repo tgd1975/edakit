@@ -427,6 +427,23 @@ def test_a_new_kicad_project_places_before_its_first_apply(project, monkeypatch)
     assert asked == [("U2", True)] and set(geo) == {"U2", "R1"} and geo["U2"]["source"] == "library"
 
 
+def test_a_parts_box_takes_its_outline_with_the_stroke(project):
+    """The box silk apply keeps designators off holds the silkscreen lines with their stroke, as EasyEDA's bounding
+    box does: without it every spot of the bell's J1 lay half a stroke on its own outline (live test, LT-6)."""
+    cfg = kicad_project(project)
+    board = cfg.board()
+    path, _ = kb.write_parts(cfg, board)
+    pcb = kb.Pcb.load(path)
+    ref, fp = next((r, f) for r, f in kb.parts(pcb) if r == "C1")
+    lines = [d for d in fp if isinstance(d, list) and d and d[0] == "fp_line"
+             and str(sexp.value(d, "layer", "")).endswith(".SilkS")]
+    assert lines
+    width = sexp.floats(sexp.first(lines[0], "stroke"), "width")[0]
+    x0, y0, _, _ = kb.footprint_at(fp)
+    top = max(-(y0 + y) for d in lines for y in (sexp.floats(d, "start")[1], sexp.floats(d, "end")[1]))
+    assert kb.part_boxes(cfg, board, pcb)[ref][3] >= top + width / 2 - 1e-6
+
+
 def schematic_root(project):
     from edakit.toolchain.kicad import schematic as ks
     cfg = kicad_project(project)

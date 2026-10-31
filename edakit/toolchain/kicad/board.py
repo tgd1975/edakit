@@ -793,16 +793,21 @@ def rules_differences(cfg, board):
 
 def part_boxes(cfg, board, pcb=None):
     """{ref: (x0, y0, x1, y1)} in EasyEDA's frame (mm, y up): what a part covers on the board – its fabrication and
-    silkscreen lines and its pads, as EasyEDA's bounding box of a part (silk apply keeps the designators off them)."""
+    silkscreen lines and polygons with their stroke, and its pads, as EasyEDA's bounding box of a part (silk apply
+    keeps the designators off them). Without the stroke a designator's spot lay on the part's own outline, by half its
+    width – every spot of the bell's J1 was refused (live test, LT-6)."""
     pcb = pcb or load(cfg, board)
     out = {}
     for ref, fp in parts(pcb):
         x0, y0, angle, _ = footprint_at(fp)
         pts = []
         for d in fp:
-            if isinstance(d, list) and d and d[0] == "fp_line" and \
+            if isinstance(d, list) and d and d[0] in ("fp_line", "fp_poly") and \
                     str(value(d, "layer", "")).endswith((".Fab", ".SilkS")):
-                pts += [floats(d, "start"), floats(d, "end")]
+                ends = [floats(d, "start"), floats(d, "end")] if d[0] == "fp_line" else \
+                    [[float(q[1]), float(q[2])] for q in find(first(d, "pts") or [], "xy")]
+                r = (floats(first(d, "stroke") or [], "width") or [0])[0] / 2
+                pts += [[x + dx, y + dy] for x, y in ends for dx in (-r, r) for dy in (-r, r)]
         for pad in find(fp, "pad"):
             (ax, ay), r = floats(pad, "at")[:2], max(floats(pad, "size") or [0]) / 2
             pts += [[ax - r, ay - r], [ax + r, ay + r], [ax - r, ay + r], [ax + r, ay - r]]
