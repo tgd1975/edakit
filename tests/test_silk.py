@@ -236,6 +236,25 @@ def test_the_board_label_keeps_clear_of_a_fixed_designator(silk_run):
     assert b.distance(silk.label_box(6, 1.5, 0, *silk.label_size("R1", 1.0))) > 0.3   # before: at (6.2, 1.1), under it
 
 
+R1_BODY = box(8, 8, 12, 12)            # a body over R1's footprint box (9, 9.5, 11, 10.5), from body.box of its entry
+
+
+def test_a_body_larger_than_its_footprint_keeps_the_designator_off(silk_run, monkeypatch, capsys):
+    """Walkthrough gaps B3: BT1's designator went right above its footprint box, under the coin cell. With a body
+    larger than the footprint (body.box), the label goes beside the body; a fixed one under it is a finding."""
+    monkeypatch.setattr(silk, "part_bodies", lambda cfg, comps: {"R1": R1_BODY} if "R1" in comps else {})
+    x, y, rot = moved(silk_run('designators = "top"\n'))["ac1"]            # before: above R1, at (10, 11.5)
+    label = silk.label_box(x, y, rot, *silk.label_size("R1", 1.0))
+    assert not label.intersects(R1_BODY) and label.distance(R1_BODY) == pytest.approx(0.25, abs=0.01)
+    capsys.readouterr()
+    silk_run('designators = "top"\n[silk.place]\nR1 = { x = 10, y = 11.5 }\n', code=2)
+    assert "  ! R1: fixed designator under the body of R1 (top) – " in capsys.readouterr().out
+    monkeypatch.setattr(silk, "part_bodies", lambda cfg, comps: {})       # no body.box: as before, under the body
+    x, y, rot = moved(silk_run('designators = "top"\n'))["ac1"]
+    label = silk.label_box(x, y, rot, *silk.label_size("R1", 1.0))
+    assert label.intersects(R1_BODY) and label.distance(box(*COMPS["c1"][2])) == pytest.approx(0.25, abs=0.01)
+
+
 def test_a_fixed_designator_on_its_part_s_side_moves_that_part_s_own(silk_run):
     """R2 sits on the bottom, whose designators silk apply hides; side = "bottom" shows R2's own one there."""
     calls = silk_run('designators = "top"\nhide = ["bottom"]\n[silk.place]\nR2 = { x = 20, y = 5, side = "bottom" }\n')

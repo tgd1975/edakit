@@ -777,6 +777,19 @@ def test_a_plug_turns_and_mirrors_with_its_part():
     assert pcb.mate_shape(board, config.Placement(10, 5, 0, "top"), {**mate, "exit": "+z"})[2:] == (None, None)
 
 
+def test_a_body_larger_than_its_footprint_in_the_parts_entry():
+    """body.box (walkthrough gaps B3): the body seen from above in footprint mm, beside h_mm or alone; a wrong one is
+    named, as a wrong mate.box."""
+    assert pcb.part_mech({"body": {"h_mm": 5.5, "box": [-10, -10, 10, 10]}}) == (
+        {"h_mm": 5.5, "box": [-10.0, -10.0, 10.0, 10.0]}, [])
+    assert pcb.part_mech({"body": {"box": [-10, -10, 10, 10]}}) == ({"box": [-10.0, -10.0, 10.0, 10.0]}, [])
+    assert pcb.part_mech({"body": {"box": [10, -10, -10, 10]}})[1] == [
+        "body.box must be [x0, y0, x1, y1] in footprint mm with x0 < x1 and y0 < y1"]
+    assert pcb.part_mech({"body": {}})[1] == ["body.h_mm must be a height in mm, 0 or more"]          # as before
+    assert pcb.part_mech({"body": {"h_mm": "5", "box": [-1, -1, 1, 1]}})[1] == [
+        "body.h_mm must be a height in mm, 0 or more"]
+
+
 def test_two_mated_plugs_side_by_side(project):
     f = with_mate(project, {"box": [-4, -7.5, 4, -5.5], "exit": "-y"})          # 8 mm wide plugs, J1's y = 8 … 16
     g = project.graph()

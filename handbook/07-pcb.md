@@ -706,6 +706,16 @@ left, then vertical, then at the corners; not on pads, footprint print, parts or
 last resort; test points first) or at its fixed spot (`[silk.place]`, below), then exports again and checks that no own
 silkscreen lies on a solder-mask opening (JLCPCB cuts it off there) – target 0 mm² – and runs the DRC. Pictures per side
 in `<artifacts>/silk_<board>_<side>.png`.
+
+**A body larger than its footprint.** A part's box is its footprint, but a coin cell stands out of its holder. A
+designator placed beside such a footprint lies under the body once the part is in. Where the
+parts entry gives the body seen from above (`body.box`, 4.1), `silk apply` takes it as part of the part's box on its
+side: the designator goes beside the body, and no other label or the board label goes under it. A fixed designator
+(below) under a body is a finding – `R1: fixed designator under the body of R1 (top) – 2.36 mm² of its box, hidden
+once the part is in (body.box of its parts entry)`. The gate warns about any print under the body beyond the footprint
+box (GEO.silk, grade body, 8.1). The example's BT1 has no `body.box` (its entry gives the height only); the walkthrough
+fixed its designator with `[silk.place]` (17.11).
+
 The export stays in `<artifacts>/gerber_<board>/` (`edakit silk check` writes it again without placing anything): the
 copper of every layer as EasyEDA filled it, which the layout review at the end of the round reads (skill pcb-round) –
 the routing picture shows the pours edakit computed, not what EasyEDA made of them.

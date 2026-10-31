@@ -58,7 +58,8 @@ assembly preview at JLCPCB.
        to edge (0.45 mm with a component hole, 0.2 mm vias)
   GEO.silk silkscreen from the Gerber files: edakit's own print on a solder-mask opening (fail), other print there per part,
        print beyond the outline, a part of the designators side without a visible designator or group label (not in
-       [silk] unlabelled), a text height edakit prints below 1.0 mm (warn)
+       [silk] unlabelled), a text height edakit prints below 1.0 mm, print under a body larger than its footprint
+       (body.box of the parts entry) beyond the footprint's box (warn)
   GEO.spacing with [routing] hand_solder_keep_mm: on the solder side of every pad of a hand-soldered part (bom: false) –
        a through-hole pad's the side its part does not sit on, an SMD pad's its own –, vias and pads of other nets at
        least that far away; pads as GEO.spacing, vias from the via drill file (net: the tracks of pcb.json that end on
@@ -584,6 +585,7 @@ def check_silk(cfg, board, design, d, rows):
                  f"{', '.join(lost)} missing (Gerber export)", "present")
     else:
         silk_print(cfg, board, data, d / "gerber", rows)
+        silk_bodies(cfg, board, design, data, d / "gerber", rows)
     silk_designators(board, design, data, rows)
     silk_heights(cfg, board, rows)
 
@@ -659,6 +661,48 @@ def silk_print(cfg, board, data, g, rows):
             rows.add("L", "GEO.silk", board.name, f"{name}: silkscreen inside the board outline", area <= SILK_LIMIT_MM2,
                      f"{name}: " + (spots_text(out, around="around ").replace(" in ", " beyond it in ", 1) if out
                                     else "0.000 mm² beyond it"), "0 mm²", None if area <= SILK_LIMIT_MM2 else "warn")
+
+
+def silk_bodies(cfg, board, design, data, g, rows):
+    """GEO.silk/body: a part whose parts entry gives a body larger than its footprint (body.box – a coin cell standing
+    out of its holder) covers the print under it. Where the body, placed where pcb.json has the part, reaches beyond
+    the footprint's box (the geometry of `pcb dump`), print on the part's side – a designator, a text – is hidden once
+    the part is in: a warning per part. Inside the footprint box lies the footprint's own print, which the Gerber
+    file cannot tell from a designator: as before, not looked at. No row without body.box; a part without footprint
+    geometry is listed as not checked."""
+    from shapely.geometry import Polygon
+
+    from .. import pcb as pcbmod
+    from .. import silk
+    want = design.board_comps(board.name)
+    on_pcb = {c["designator"]: c for c in data["components"] if c.get("designator") in want}
+    bodies = silk.body_shapes(design, on_pcb)
+    if not bodies:
+        return
+    geo_file = pcbmod.geometry_file(cfg, board)
+    geo = json.loads(geo_file.read_text()) if geo_file.exists() else {}
+    printed, clear = {}, []
+    for ref in sorted(bodies, key=natural_key):
+        c = on_pcb[ref]
+        if ref not in geo:
+            rows.add("L", "GEO.silk", board.name, f"{ref}: print under its body", True,
+                     f"not checked: no footprint geometry of {ref} in {geo_file.name} (edakit pcb dump)", "0 mm²", "info")
+            continue
+        layer = BOTTOM if str(c.get("layer")) in (str(BOTTOM), "BOTTOM") else TOP
+        name, key = ("BOTTOM" if layer == BOTTOM else "TOP"), silk.GERBER_KEYS[layer][1]
+        if key not in printed:
+            printed[key] = gerber.shape(gerber.parse_gerber(g / gerber.FILES[key]))
+        footprint = Polygon(keepout_polygon(c, [v * MM for v in geo[ref]["bbox"]]))
+        spots = silk_spots(printed[key].intersection(bodies[ref].difference(footprint)))
+        area = sum(p.area for p in spots)
+        if area > SILK_LIMIT_MM2:
+            rows.add("L", "GEO.silk", board.name, f"{ref}: print under its body beyond its footprint (body.box of its "
+                     "parts entry) – hidden once the part is in", False, f"{name}: {spots_text(spots)}", "0 mm²", "warn")
+        else:
+            clear.append(f"{ref}: {name}: {area:.3f} mm²")
+    if clear:
+        rows.add("L", "GEO.silk", board.name, "print under bodies larger than their footprint (body.box of the parts "
+                 "entry)", True, "; ".join(clear), "0 mm²")
 
 
 def silk_designators(board, design, data, rows):

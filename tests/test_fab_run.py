@@ -510,6 +510,19 @@ def silk_line(*pts):
 ACROSS_C2 = ((18, 9), (20, 9))     # across C2.1's mask opening (1.1 x 1.4 mm): 0.165 mm² of print on it
 
 
+BODY = [-2.5, -2.0, 2.5, 2.0]      # a body of 5 x 4 mm over C2's footprint box of 3.7 x 1.9 mm (walkthrough gaps B3)
+
+
+def c2_body(ex, project, *strokes):
+    """C2's parts entry with a body larger than its footprint (body.box, footprint mm) – the way a coin cell stands out
+    of its holder – and strokes of print (a designator, say) on the top silkscreen. C2 sits at (20, 9): its footprint
+    box reaches to y = 9.95, its body to y = 11."""
+    entry = project.part("C45783")
+    project.save_part("C45783", {**entry, "body": {"box": BODY}})
+    for pts in strokes:
+        silk_line(*pts)(ex, project)
+
+
 def own_print(ex, project):
     """`silk apply` ran – its memo, and the print it found before placing anything, saved – and then a line of its
     own print lies across C2.1: a part moved after it, say."""
@@ -768,6 +781,8 @@ FAULTS = [
      [("GEO.silk", "warn", "C2 on the top without a visible designator")]),
     ("the designators not read with the PCB", lambda ex, p: ex.pcb.pop("designators"),
      [("GEO.silk", "fail", "pcb.json without the designators")]),
+    ("print under a body larger than its footprint", lambda ex, p: c2_body(ex, p, [(19.5, 10.6), (20.5, 10.6)]),
+     [("GEO.silk", "warn", "TOP: 0.168 mm² in 1 spot: (20.0, 10.6) mm")]),
     ("a text height below the fab's minimum",
      lambda ex, p: board_file(p, 'edge_ok = ["J1"]', 'edge_ok = ["J1"]\n\n[silk]\nlabel_h_mm = 0.8'),
      [("GEO.silk", "warn", "label_h_mm = 0.8 mm")]),
@@ -1021,6 +1036,27 @@ def test_silk_apply_run_again_leaves_only_the_footprints_print(project):
     assert l17(rows)["TOP: edakit's own print (designators, texts, artwork of silk apply) off the solder-mask "
                      "openings"] == ("pass", "TOP: 0.000 mm²")
     assert l17(rows)["C2: silkscreen on its solder-mask openings – JLCPCB clips it there"][0] == "warn"
+
+
+BODY_CHECK = "print under bodies larger than their footprint (body.box of the parts entry)"
+
+
+def test_print_outside_a_body_or_inside_its_footprint_passes(project):
+    """Walkthrough gaps B3: print outside both body and footprint passes; inside the footprint box it passes as before –
+    the footprint's own print lies there (here a stroke between C2's pads). A part without body.box gets no row: the
+    clean export's GEO.silk rows are what they were (test_silkscreen_of_the_clean_export)."""
+    rows = run(project, lambda ex, p: c2_body(ex, p, [(19.5, 11.5), (20.5, 11.5)], [(20, 8.3), (20, 9.7)]))
+    assert findings(rows) == []
+    assert l17(rows)[BODY_CHECK] == ("pass", "C2: TOP: 0.000 mm²")
+
+
+def test_print_under_a_body_without_footprint_geometry_is_not_checked(project):
+    def no_geometry(ex, p):
+        c2_body(ex, p, [(19.5, 10.6), (20.5, 10.6)])
+        del ex.geo["C2"]
+    rows = run(project, no_geometry)
+    assert l17(rows)["C2: print under its body"] == (
+        "info", "not checked: no footprint geometry of C2 in main.geometry.json (edakit pcb dump)")
 
 
 def test_a_group_label_or_unlabelled_covers_a_part(project):
