@@ -1,0 +1,244 @@
+{
+ "lcsc": "C141517",
+ "mpn": "TB6612FNG(O,C,8,EL",
+ "manufacturer": "TOSHIBA",
+ "kind": "ic",
+ "package": "SSOP24-P-300-0.65A",
+ "footprint": "SSOP-24_L8.3-W5.6-P0.65-LS7.6-BL",
+ "jlc_class": "Extended Part",
+ "datasheet": {
+  "url": "https://toshiba.semicon-storage.com/info/TB6612FNG_datasheet_en_20141001.pdf?did=10660&prodName=TB6612FNG",
+  "pinout_page": 2
+ },
+ "pins": {
+  "1": {
+   "name": "AO1",
+   "type": "output",
+   "drive": "tristate",
+   "v_max_v": 15,
+   "hint": "bridge output, on two pins – join both; H, L or OFF (high impedance) in stop and standby (H-SW control function p. 4); internal regenerative diodes to VM and PGND (VF 1.1 V max at 1 A); no overcurrent protection in the datasheet (thermal shutdown and low-voltage detection only)"
+  },
+  "2": {
+   "name": "AO1",
+   "type": "output",
+   "drive": "tristate",
+   "v_max_v": 15,
+   "hint": "bridge output, on two pins – join both; H, L or OFF (high impedance) in stop and standby (H-SW control function p. 4); internal regenerative diodes to VM and PGND (VF 1.1 V max at 1 A); no overcurrent protection in the datasheet (thermal shutdown and low-voltage detection only)"
+  },
+  "3": {
+   "name": "PGND1",
+   "type": "ground",
+   "role": "gnd"
+  },
+  "4": {
+   "name": "PGND1",
+   "type": "ground",
+   "role": "gnd"
+  },
+  "5": {
+   "name": "AO2",
+   "type": "output",
+   "drive": "tristate",
+   "v_max_v": 15,
+   "hint": "bridge output, on two pins – join both; H, L or OFF (high impedance) in stop and standby (H-SW control function p. 4); internal regenerative diodes to VM and PGND (VF 1.1 V max at 1 A); no overcurrent protection in the datasheet (thermal shutdown and low-voltage detection only)"
+  },
+  "6": {
+   "name": "AO2",
+   "type": "output",
+   "drive": "tristate",
+   "v_max_v": 15,
+   "hint": "bridge output, on two pins – join both; H, L or OFF (high impedance) in stop and standby (H-SW control function p. 4); internal regenerative diodes to VM and PGND (VF 1.1 V max at 1 A); no overcurrent protection in the datasheet (thermal shutdown and low-voltage detection only)"
+  },
+  "7": {
+   "name": "BO2",
+   "type": "output",
+   "drive": "tristate",
+   "v_max_v": 15,
+   "hint": "bridge output, on two pins – join both; H, L or OFF (high impedance) in stop and standby (H-SW control function p. 4); internal regenerative diodes to VM and PGND (VF 1.1 V max at 1 A); no overcurrent protection in the datasheet (thermal shutdown and low-voltage detection only)"
+  },
+  "8": {
+   "name": "BO2",
+   "type": "output",
+   "drive": "tristate",
+   "v_max_v": 15,
+   "hint": "bridge output, on two pins – join both; H, L or OFF (high impedance) in stop and standby (H-SW control function p. 4); internal regenerative diodes to VM and PGND (VF 1.1 V max at 1 A); no overcurrent protection in the datasheet (thermal shutdown and low-voltage detection only)"
+  },
+  "9": {
+   "name": "PGND2",
+   "type": "ground",
+   "role": "gnd"
+  },
+  "10": {
+   "name": "PGND2",
+   "type": "ground",
+   "role": "gnd"
+  },
+  "11": {
+   "name": "BO1",
+   "type": "output",
+   "drive": "tristate",
+   "v_max_v": 15,
+   "hint": "bridge output, on two pins – join both; H, L or OFF (high impedance) in stop and standby (H-SW control function p. 4); internal regenerative diodes to VM and PGND (VF 1.1 V max at 1 A); no overcurrent protection in the datasheet (thermal shutdown and low-voltage detection only)"
+  },
+  "12": {
+   "name": "BO1",
+   "type": "output",
+   "drive": "tristate",
+   "v_max_v": 15,
+   "hint": "bridge output, on two pins – join both; H, L or OFF (high impedance) in stop and standby (H-SW control function p. 4); internal regenerative diodes to VM and PGND (VF 1.1 V max at 1 A); no overcurrent protection in the datasheet (thermal shutdown and low-voltage detection only)"
+  },
+  "13": {
+   "name": "VM2",
+   "type": "power_in",
+   "v_max_v": 15,
+   "v_op_min_v": 2.5,
+   "v_op_max_v": 13.5
+  },
+  "14": {
+   "name": "VM3",
+   "type": "power_in",
+   "v_max_v": 15,
+   "v_op_min_v": 2.5,
+   "v_op_max_v": 13.5
+  },
+  "15": {
+   "name": "PWMB",
+   "type": "input",
+   "v_max_v": 6,
+   "pull": "down",
+   "pull_ohm": 200000,
+   "hint": "PWM input, switching frequency 100 kHz max (operating range p. 3)"
+  },
+  "16": {
+   "name": "BIN2",
+   "type": "input",
+   "v_max_v": 6,
+   "pull": "down",
+   "pull_ohm": 200000
+  },
+  "17": {
+   "name": "BIN1",
+   "type": "input",
+   "v_max_v": 6,
+   "pull": "down",
+   "pull_ohm": 200000
+  },
+  "18": {
+   "name": "GND",
+   "type": "ground",
+   "role": "gnd"
+  },
+  "19": {
+   "name": "STBY",
+   "type": "input",
+   "v_max_v": 6,
+   "pull": "down",
+   "pull_ohm": 200000,
+   "hint": "L = standby, all outputs off (high impedance); internal 200 kΩ pull-down – left open the driver stays in standby"
+  },
+  "20": {
+   "name": "VCC",
+   "type": "power_in",
+   "role": "vcc",
+   "v_max_v": 6,
+   "needs": [
+    {
+     "what": "capacitor",
+     "c_min_f": 1e-05,
+     "source": "Toshiba TB6612FNG datasheet (2026-05-13) p. 7, typical application diagram: C3 10 µF and C4 0.1 µF at Vcc, as close as possible to the IC (reference circuit)"
+    }
+   ]
+  },
+  "21": {
+   "name": "AIN1",
+   "type": "input",
+   "v_max_v": 6,
+   "pull": "down",
+   "pull_ohm": 200000
+  },
+  "22": {
+   "name": "AIN2",
+   "type": "input",
+   "v_max_v": 6,
+   "pull": "down",
+   "pull_ohm": 200000
+  },
+  "23": {
+   "name": "PWMA",
+   "type": "input",
+   "v_max_v": 6,
+   "pull": "down",
+   "pull_ohm": 200000,
+   "hint": "PWM input, switching frequency 100 kHz max (operating range p. 3)"
+  },
+  "24": {
+   "name": "VM1",
+   "type": "power_in",
+   "v_max_v": 15,
+   "v_op_min_v": 2.5,
+   "v_op_max_v": 13.5,
+   "needs": [
+    {
+     "what": "capacitor",
+     "c_min_f": 1e-05,
+     "source": "Toshiba TB6612FNG datasheet (2026-05-13) p. 7, typical application diagram: C1 10 µF and C2 0.1 µF at VM, as close as possible to the IC (reference circuit; VM2 and VM3 on the same supply)"
+    }
+   ]
+  }
+ },
+ "values": {
+  "behavior": "none",
+  "vih_ratio": 0.7,
+  "vil_ratio": 0.3,
+  "idd_max_a": 0.0022
+ },
+ "limits": {
+  "vdd_max_v": 6,
+  "vdd_op_min_v": 2.7,
+  "vdd_op_max_v": 5.5,
+  "vout_max_v": 15,
+  "i_out_max_a": 1.0,
+  "p_max_w": 0.78,
+  "rth_ja_k_per_w": 160,
+  "t_min_c": -20,
+  "t_max_c": 85
+ },
+ "sources": [
+  "Toshiba TB6612FNG, Driver IC for Dual DC motor, datasheet dated 2026-05-13 (technical content as in the 2014-10-01 edition that LCSC hosts), https://toshiba.semicon-storage.com/info/TB6612FNG_datasheet_en_20141001.pdf?did=10660&prodName=TB6612FNG, read 2026-10-31",
+  "pins: p. 2 pin functions (1 … 24) = EasyEDA symbol of C141517 (edakit part import 2026-10-31); outputs, PGND and VM on several pins each",
+  "absolute maximum p. 3 (Ta = 25 °C): VM 15 V (VM pins v_max_v), VCC 6 V (vdd_max_v, VCC v_max_v), VIN -0.2 … 6 V (IN1, IN2, STBY, PWM: input v_max_v), VOUT 15 V (vout_max_v, output v_max_v), IOUT 1.2 A per channel (2 A for 20 ms at ≤ 20 % duty, 3.2 A for a 10 ms single pulse), PD 0.78 W IC only (0.89 W on 50 × 50 mm, 1.36 W on 76.2 × 114.3 mm PCB), Topr -20 … 85 °C (t_min_c, t_max_c), Tstg -55 … 150 °C",
+  "operating range p. 3 (Ta = -20 … 85 °C): VCC 2.7 … 5.5 V (vdd_op_min_v, vdd_op_max_v – VCC carries the role vcc), VM 2.5 … 13.5 V (VM pins v_op_min_v, v_op_max_v), IOUT 1.0 A at VM ≥ 4.5 V, 0.4 A at 2.5 V ≤ VM < 4.5 V (i_out_max_a 1.0), fPWM 100 kHz max",
+  "rth_ja_k_per_w 160: p. 6 PD–Ta curve, 'IC only θj-a = 160 °C/W' (target characteristics)",
+  "vih_ratio 0.7, vil_ratio 0.3: p. 5 control and standby input voltage VIH ≥ Vcc × 0.7 (max Vcc + 0.2), VIL ≤ Vcc × 0.3 (min -0.2 V); 200 kΩ internal pull-down on every input: p. 2 pin functions, p. 3 input equivalent circuit",
+  "idd_max_a 0.0022: p. 5 ICC max at STBY = Vcc = 5.5 V, VM = 5 V (1.8 mA at 3 V; standby ICC and IM 1 µA max)",
+  "outputs: p. 4 H-SW control function (stop and standby: OFF, high impedance); p. 5 Vsat(U+L) 0.7 V max at 1 A, 0.21 V max at 0.3 A (Vcc = VM = 5 V); regenerative diode VF(U), VF(L) 1.1 V max at IF = 1 A",
+  "capacitors: p. 7 typical application diagram – C1 10 µF + C2 0.1 µF at VM (4.5 … 13.5 V there), C3 10 µF + C4 0.1 µF at Vcc, 'as close as possible to the IC'",
+  "LCSC product data C141517 (2026-10-31): TOSHIBA TB6612FNG(O,C,8,EL, SSOP-24, 5 309 pcs; JLCPCB catalogue 2026-10-31: Extended Part, 5 833 pcs; C88224 is the same MPN under another LCSC number (SSOP-24-208mil, 3 391 pcs)"
+ ],
+ "notes": "Dual H-bridge for two DC motors, VCC 2.7–5.5 V logic, VM 2.5–13.5 V (15 V abs. max – a full 3S LiPo at 12.6 V is inside the operating range). Internal regenerative (clamp) diodes on every output, upper and lower – no external diodes. STBY and all inputs have 200 kΩ pull-downs: an open STBY keeps it in standby. No behaviour model for a bridge driver: behavior none. Usually bought as a breakout module (SparkFun ROB-14450, Adafruit 2448 and clones) – this entry is the IC. Library draft.",
+ "verified": {
+  "by": "Claude (datasheet check, library draft)",
+  "date": "2026-10-31",
+  "datasheet": "Toshiba TB6612FNG datasheet 2026-05-13",
+  "datasheet_sha256": "fdea3a0bdfc09d4f09639affac8a56395dc066662641ecab31e1df83e450b966",
+  "checked": [
+   "pin functions p. 2 = EasyEDA symbol of C141517 (1/2 AO1, 3/4 PGND1, 5/6 AO2, 7/8 BO2, 9/10 PGND2, 11/12 BO1, 13 VM2, 14 VM3, 15 PWMB, 16 BIN2, 17 BIN1, 18 GND, 19 STBY, 20 VCC, 21 AIN1, 22 AIN2, 23 PWMA, 24 VM1)",
+   "package p. 8 SSOP24-P-300-0.65A: body 7.8 ± 0.2 (8.3 max) × 5.6 ± 0.2 mm, lead span 7.6 ± 0.3 mm, pitch 0.65 – footprint SSOP-24_L8.3-W5.6-P0.65-LS7.6-BL",
+   "absolute maximum p. 3: VM 15 V, VCC 6 V, VIN -0.2 … 6 V, VOUT 15 V, IOUT 1.2 A / 2 A / 3.2 A, PD 0.78 / 0.89 / 1.36 W, Topr -20 … 85 °C",
+   "operating range p. 3: VCC 2.7 … 5.5 V, VM 2.5 … 13.5 V, IOUT 1.0 A (VM ≥ 4.5 V) / 0.4 A, fPWM 100 kHz",
+   "electrical p. 5: VIH Vcc × 0.7, VIL Vcc × 0.3, ICC 1.8 / 2.2 mA max, Vsat(U+L), regenerative diode VF 1.1 V max",
+   "θj-a 160 °C/W IC only (p. 6); capacitors 10 µF + 0.1 µF at VM and Vcc (p. 7)"
+  ],
+  "open": [
+   "tj_max_c: the datasheet states no maximum junction temperature (thermal shutdown 175 °C typ, design target; Tstg 150 °C)",
+   "the internal regenerative diodes have no field in the schema: REQ.missing (flyback) asks for a diode across a motor on an output pin – here a false finding",
+   "drive tristate makes a motor net driven only by these outputs an LVL.undefined/open_drain warning – no pin type fits a bridge output",
+   "r_out_ohm left out: the datasheet gives only the upper + lower saturation voltage (0.7 V max at 1 A), not one output's resistance",
+   "fPWM 100 kHz max has no field (f_max_hz is an MCU clock limit) – pin hint on PWMA/PWMB",
+   "VIH max is Vcc + 0.2 V while the absolute maximum VIN is 6 V regardless of Vcc – whether an input may sit above Vcc is not stated; vin_rel_max_v left out",
+   "the capacitors come from the typical application diagram, a reference circuit, not a requirement table",
+   "i_out_max_a 1.0 A holds at VM ≥ 4.5 V; 0.4 A below – one number in the entry",
+   "mpn 'TB6612FNG(O,C,8,EL' as LCSC and JLCPCB list it (closing parenthesis cut off); Toshiba's orderable name is not printed in the datasheet"
+  ]
+ }
+}

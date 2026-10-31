@@ -1,0 +1,209 @@
+{
+ "lcsc": "C52476",
+ "mpn": "MAX7219EWG+T",
+ "manufacturer": "ADI(亚德诺)/MAXIM(美信)",
+ "kind": "ic",
+ "package": "SOIC-24 wide (24 Wide SO)",
+ "footprint": "SOIC-24_L15.4-W7.5-P1.27-LS10.3-BL",
+ "jlc_class": "Extended Part",
+ "datasheet": {
+  "url": "https://datasheet.lcsc.com/datasheet/pdf/d081e19f593e65f467218d2b18c1949d.pdf?productCode=C52476",
+  "pinout_page": 1
+ },
+ "pins": {
+  "1": {
+   "name": "DIN",
+   "type": "input",
+   "role": "sdi",
+   "v_max_v": 6
+  },
+  "2": {
+   "name": "DIG0",
+   "type": "output"
+  },
+  "3": {
+   "name": "DIG4",
+   "type": "output"
+  },
+  "4": {
+   "name": "GND",
+   "type": "ground",
+   "role": "gnd",
+   "needs": [
+    {
+     "what": "to_ground",
+     "source": "Maxim MAX7219/MAX7221 data sheet 19-4452 Rev 4 (7/03), pin description p. 5 and p. 10: both GND pins must be connected"
+    }
+   ]
+  },
+  "5": {
+   "name": "DIG6",
+   "type": "output"
+  },
+  "6": {
+   "name": "DIG2",
+   "type": "output"
+  },
+  "7": {
+   "name": "DIG3",
+   "type": "output"
+  },
+  "8": {
+   "name": "DIG7",
+   "type": "output"
+  },
+  "9": {
+   "name": "GND",
+   "type": "ground",
+   "role": "gnd",
+   "needs": [
+    {
+     "what": "to_ground",
+     "source": "Maxim MAX7219/MAX7221 data sheet 19-4452 Rev 4 (7/03), pin description p. 5 and p. 10: both GND pins must be connected"
+    }
+   ]
+  },
+  "10": {
+   "name": "DIG5",
+   "type": "output"
+  },
+  "11": {
+   "name": "DIG1",
+   "type": "output"
+  },
+  "12": {
+   "name": "LOAD(CS#)",
+   "type": "input",
+   "v_max_v": 6,
+   "hint": "LOAD latches the last 16 bits on its rising edge – it must rise with or after the 16th rising CLK edge and before the next (p. 6)"
+  },
+  "13": {
+   "name": "CLK",
+   "type": "input",
+   "v_max_v": 6
+  },
+  "14": {
+   "name": "SEG A",
+   "type": "output"
+  },
+  "15": {
+   "name": "SEG F",
+   "type": "output"
+  },
+  "16": {
+   "name": "SEG B",
+   "type": "output"
+  },
+  "17": {
+   "name": "SEG G",
+   "type": "output"
+  },
+  "18": {
+   "name": "ISET",
+   "type": "analog",
+   "needs": [
+    {
+     "what": "pull_up",
+     "r_min_ohm": 9690,
+     "source": "Maxim MAX7219/MAX7221 data sheet 19-4452 Rev 4 (7/03), pin description p. 5: ISET to V+ through RSET; Table 11, p. 11: RSET for the maximum recommended 40 mA segment current is 9.69–12.2 kΩ (VLED 3.5–1.5 V)"
+    }
+   ],
+   "hint": "segment current ≈ 100 × the current in ISET (p. 10, Table 11); with external segment drivers use RSET = 47 kΩ"
+  },
+  "19": {
+   "name": "V+",
+   "type": "power_in",
+   "role": "vdd",
+   "needs": [
+    {
+     "what": "capacitor",
+     "c_min_f": 1e-05,
+     "source": "Maxim MAX7219/MAX7221 data sheet 19-4452 Rev 4 (7/03), Applications Information – Supply Bypassing and Wiring, p. 10: a 10 µF electrolytic and a 0.1 µF ceramic between V+ and GND, as close to the device as possible"
+    }
+   ]
+  },
+  "20": {
+   "name": "SEG C",
+   "type": "output"
+  },
+  "21": {
+   "name": "SEG E",
+   "type": "output"
+  },
+  "22": {
+   "name": "SEG DP",
+   "type": "output"
+  },
+  "23": {
+   "name": "SEG D",
+   "type": "output"
+  },
+  "24": {
+   "name": "DOUT",
+   "type": "output",
+   "role": "sdo",
+   "out_edge": "falling",
+   "t_pd_ns": [
+    null,
+    25
+   ]
+  }
+ },
+ "values": {
+  "vih_v": 3.5,
+  "vil_v": 0.8
+ },
+ "limits": {
+  "vdd_max_v": 6,
+  "vdd_op_min_v": 4.0,
+  "vdd_op_max_v": 5.5,
+  "f_max_hz": 10000000,
+  "p_max_w": 0.941,
+  "rth_ja_k_per_w": 85,
+  "tj_max_c": 150,
+  "t_min_c": -40,
+  "t_max_c": 85
+ },
+ "hints": [
+  "logic inputs DIN, CLK, LOAD: VIH ≥ 3.5 V, VIL ≤ 0.8 V at V+ = 5 V ± 10 % (electrical characteristics, p. 3)",
+  "drives common-cathode displays: DIG0–DIG7 sink the digit current (pulled to V+ when off), SEG A–G and DP source the segment current (pulled to GND when off) (pin description, p. 5)",
+  "maximum recommended segment current 40 mA; with the scan limit at 1, 2 or 3 digits at most 10, 20 or 30 mA (Table 9, p. 10)",
+  "dissipation PD = V+ × 8 mA + (V+ − VLED) × duty × ISEG × N (N segments, worst case 8); wide SO 941 mW, derated 11.8 mW/°C above +70 °C; θJA 85 °C/W, TJ max. 150 °C (p. 2, 11)",
+  "serial data: 16-bit packets, MSB (D15) first, shifted in on CLK's rising edge, out of DOUT on the falling edge 16.5 clock cycles later; daisy-chain DOUT to the next DIN with LOAD in common (p. 5–6, 10)",
+  "on power-up the display is blanked and in shutdown mode – program it before use (p. 7)"
+ ],
+ "sources": [
+  "Maxim MAX7219/MAX7221 data sheet 19-4452 Rev 4 (7/03), via LCSC https://datasheet.lcsc.com/datasheet/pdf/d081e19f593e65f467218d2b18c1949d.pdf?productCode=C52476, read 2026-10-31",
+  "pin configuration p. 1 and pin description p. 5",
+  "absolute maximum ratings, p. 2: V+ −0.3 … 6 V; DIN, CLK, LOAD, CS −0.3 … 6 V; all other pins −0.3 … V+ + 0.3 V; DIG0–DIG7 sink 500 mA; SEG A–G, DP source 100 mA; wide SO 941 mW (derate 11.8 mW/°C above +70 °C); MAX7219E_G −40 … +85 °C; storage −65 … +160 °C",
+  "electrical characteristics (V+ 5 V ± 10 %, RSET 9.53 kΩ), p. 2–3: operating V+ 4.0 … 5.5 V; I+ 8 mA max with RSET open, 330 mA typ. with all segments on at 40 mA; digit sink ≥ 320 mA (VOUT 0.65 V); segment source 30/40/45 mA; VIH ≥ 3.5 V, VIL ≤ 0.8 V; DOUT VOH ≥ V+ − 1 V at 1 mA, VOL ≤ 0.4 V at 1.6 mA",
+  "timing, p. 3: tCP ≥ 100 ns (CLK 10 MHz maximum, also pin description p. 5); tDO ≤ 25 ns (CLOAD 50 pF) – t_pd_ns [null, 25] after CLK's falling edge (p. 5–6)",
+  "Table 12, p. 11: θJA 85 °C/W (24 wide SO), TJ max. +150 °C",
+  "p_max_w 0.941: the table's heading names TA = +85 °C while its derating starts above +70 °C; 941 mW equals (150 − 70) °C / 85 °C/W – the value at +70 °C",
+  "pin names, footprint and class: EasyEDA library data of C52476 via edakit part import, 2026-10-31",
+  "LCSC product data C52476 (2026-10-31): 3 874 pcs; RoHS certificate (ROHS3)"
+ ],
+ "compliance": {
+  "rohs": true,
+  "source": "LCSC product data C52476, 2026-10-31 (isRohsCert, ROHS3)"
+ },
+ "verified": {
+  "by": "Claude (datasheet check, library draft)",
+  "date": "2026-10-31",
+  "datasheet": "Maxim MAX7219/MAX7221 data sheet 19-4452 Rev 4 (7/03)",
+  "datasheet_sha256": "f312632f10a271218b1eab7f06018e1bf2ac628d60bef275315295bdded14928",
+  "checked": [
+   "pinout (p. 1, 5) = EasyEDA symbol pin numbers and names; footprint pads 1–12 in one row, 13–24 back along the other",
+   "V+ abs. max. 6 V, operating 4.0–5.5 V; inputs −0.3 … 6 V; VIH 3.5 V, VIL 0.8 V; CLK 10 MHz; tDO 25 ns on CLK's falling edge",
+   "θJA 85 °C/W, TJ 150 °C, 941 mW (wide SO); −40 … +85 °C (E grade)",
+   "10 µF + 0.1 µF at V+, both GND pins connected, RSET from ISET to V+ (Table 11)"
+  ],
+  "open": [
+   "revision: the LCSC copy is 19-4452 Rev 4 (7/03) with the Maxim Integrated footer; analog.com gave an empty reply, so whether a newer revision exists was not checked",
+   "per-pin current limits (DIG 500 mA sink, SEG 100 mA source) and the limit of all other pins (−0.3 … V+ + 0.3 V): the schema has no per-pin current field and vin_rel_max_v is read on inputs only",
+   "no behaviour model: segment current sources (≈ 100 × I(ISET)), multiplexed digit sinks and the supply current are not simulated; LEDs between SEG and DIG pins have no driver output for SIM.driver",
+   "the 0.1 µF ceramic beside the 10 µF electrolytic is no separate requirement: the V+ need holds the total ≥ 10 µF",
+   "p_max_w 0.941 W: value at +70 °C (see sources), derating above it is not modelled"
+  ]
+ }
+}

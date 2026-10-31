@@ -1,0 +1,91 @@
+{
+ "lcsc": "C2598",
+ "mpn": "IRF520NPBF",
+ "manufacturer": "Infineon",
+ "kind": "nmos",
+ "package": "TO-220AB",
+ "footprint": "TO-220-3_L10.0-W4.5-P2.54-T",
+ "jlc_class": "Extended Part",
+ "datasheet": {
+  "url": "https://datasheet.lcsc.com/datasheet/pdf/399775acaa3a3a01b73d3408398d3cc5.pdf?productCode=C2598",
+  "pinout_page": 8
+ },
+ "pins": {
+  "1": {
+   "name": "G",
+   "type": "passive",
+   "role": "gate"
+  },
+  "2": {
+   "name": "D",
+   "type": "passive",
+   "role": "drain"
+  },
+  "3": {
+   "name": "S",
+   "type": "passive",
+   "role": "source"
+  }
+ },
+ "values": {
+  "vgs_th_v": [
+   2.0,
+   null,
+   4.0
+  ],
+  "rds_on_max_ohm": {
+   "10": 0.2
+  }
+ },
+ "limits": {
+  "vds_max_v": 100,
+  "vgs_max_v": 20,
+  "id_max_a": 6.8,
+  "is_body_max_a": 9.7,
+  "tj_max_c": 175,
+  "rth_ja_k_per_w": 62
+ },
+ "spice": {
+  "model": ".model IRF520N NMOS(LEVEL=1 VTO=4.0 KP=0.834)"
+ },
+ "lead": {
+  "*": {
+   "shape": "rect",
+   "a_mm": 0.55,
+   "b_mm": 0.93,
+   "tol_mm": null,
+   "source": "International Rectifier IRF520NPbF PD-94818 p. 8, TO-220AB package outline: lead width 0.69–0.93 mm (3X), thickness 0.46–0.55 mm (3X) – the maximum values; no hole recommendation"
+  }
+ },
+ "sources": [
+  "International Rectifier IRF520NPbF HEXFET Power MOSFET, PD-94818 (11/5/03), copy hosted by LCSC: https://datasheet.lcsc.com/datasheet/pdf/399775acaa3a3a01b73d3408398d3cc5.pdf?productCode=C2598, read 2026-10-31; the manufacturer's URL https://www.infineon.com/dgdl/irf520npbf.pdf?fileId=5546d462533600a4015355e33a4f1995 answered HTTP 202 without a body to an automated request",
+  "vds_max_v 100: p. 1 VDSS = 100 V, p. 2 V(BR)DSS min 100 V (the absolute maximum table lists no VDS)",
+  "vgs_max_v ±20, is_body_max_a 9.7 (IS continuous, body diode), tj_max_c 175 (TJ -55 to +175 °C): p. 1 absolute maximum ratings and p. 2 source-drain ratings",
+  "id_max_a 6.8: p. 1 ID at TC = 100 °C, VGS 10 V (9.7 A at TC = 25 °C) – the lower of the two; both are case-temperature ratings on a heat sink",
+  "rth_ja_k_per_w 62: p. 1 RθJA max (RθJC 3.1 K/W)",
+  "vgs_th_v 2.0 … 4.0 V (VDS = VGS, ID = 250 µA; no typical value given – null) and rds_on_max_ohm 0.20 Ω at VGS 10 V, ID 5.7 A – the only gate voltage the datasheet specifies RDS(on) at: p. 2 electrical characteristics",
+  "pins 1 = gate, 2 = drain, 3 = source, 4 (tab) = drain: p. 8 TO-220AB lead assignments (HEXFET); EasyEDA symbol of C2598 1 = G, 2 = D, 3 = S (edakit part import 2026-10-31); the footprint has no pad for the tab",
+  "spice: assumption – level 1 fitted by Claude, no manufacturer model read: VTO = VGS(th) max (no typical given; the worst case for switching on), KP so that RDS(on) is 0.20 Ω at VGS 10 V with RD = 0 (one data point: the split between channel and RD is not known); body diode IS left at the simulator default – the datasheet gives VSD only as 1.3 V max at 5.7 A",
+  "LCSC product data C2598 (2026-10-31): Infineon IRF520NPBF, TO-220AB, 181 pcs; JLCPCB catalogue 2026-10-31: Extended Part, 203 pcs"
+ ],
+ "notes": "Standard-level N-channel MOSFET (RDS(on) specified only at VGS 10 V) – the counter-example of maker-coverage CK-4: on the common 'IRF520 module' driven from a 5 V or 3.3 V GPIO it is half on or off; LIM.range/gate reports any |VGS| between 2.0 V and 10 V. The Vishay IRF520PBF (C2597, 0.27 Ω at 10 V) is the older part of the same name; this is the IR/Infineon IRF520N. Library draft.",
+ "verified": {
+  "by": "Claude (datasheet check, library draft)",
+  "date": "2026-10-31",
+  "datasheet": "International Rectifier IRF520NPbF PD-94818 (11/5/03)",
+  "datasheet_sha256": "cdaef074f92baeb32e57c840a18e821a057c516dfb8ab63be87464efe1b4026d",
+  "checked": [
+   "TO-220AB lead assignments p. 8: 1 gate, 2 drain, 3 source, 4 drain = EasyEDA symbol 1 G, 2 D, 3 S",
+   "p. 1: VDSS 100 V, VGS ±20 V, ID 9.7 A (TC 25 °C) / 6.8 A (TC 100 °C), IDM 38 A, PD 48 W (TC 25 °C), TJ -55 … 175 °C, RθJA 62 K/W",
+   "p. 2: RDS(on) max 0.20 Ω at VGS 10 V, ID 5.7 A; VGS(th) 2.0 … 4.0 V; IS 9.7 A, VSD 1.3 V max at 5.7 A",
+   "p. 8 lead cross-section 0.69–0.93 × 0.46–0.55 mm against the footprint's 1.3 mm holes (diagonal 1.08 mm at maximum)"
+  ],
+  "open": [
+   "p_max_w: the datasheet gives PD only at TC = 25 °C (48 W, on a heat sink, 0.32 W/°C) – without a heat sink LIM.t holds it through RθJA 62 K/W and TJ 175 °C",
+   "vsd_v_at_1a: the datasheet gives VSD only at IS = 5.7 A (1.3 V max)",
+   "vgs_th_v has no typical value (null in the middle)",
+   "SPICE model is a one-point level-1 fit by Claude, not the manufacturer's model (Infineon publishes models – not reachable for an automated request)",
+   "datasheet read from LCSC's copy – the manufacturer's current revision could not be fetched (HTTP 202 without a body)"
+  ]
+ }
+}

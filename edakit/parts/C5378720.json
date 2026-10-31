@@ -1,0 +1,84 @@
+{
+ "lcsc": "C5378720",
+ "mpn": "SK6812",
+ "manufacturer": "OPSCO(欧思科)",
+ "kind": "ic",
+ "package": "5.4 × 5.0 × 1.6 mm, 4 pads",
+ "footprint": "LED-SMD_4P-L5.4-W5.0_SK6812",
+ "jlc_class": "Extended Part",
+ "datasheet": {
+  "url": "https://datasheet.lcsc.com/datasheet/pdf/9f469126feffa69bd23486dc2acd2d83.pdf?productCode=C5378720",
+  "pinout_page": 5
+ },
+ "pins": {
+  "1": {
+   "name": "GND",
+   "type": "ground",
+   "role": "gnd"
+  },
+  "2": {
+   "name": "DIN",
+   "type": "input",
+   "role": "sdi"
+  },
+  "3": {
+   "name": "VDD",
+   "type": "power_in",
+   "role": "vdd"
+  },
+  "4": {
+   "name": "DOUT",
+   "type": "output",
+   "role": "sdo"
+  }
+ },
+ "values": {
+  "vih_ratio": 0.65,
+  "vil_ratio": 0.3
+ },
+ "limits": {
+  "vdd_max_v": 5.5,
+  "vdd_op_min_v": 3.7,
+  "vdd_op_max_v": 5.5,
+  "t_min_c": -40,
+  "t_max_c": 80
+ },
+ "hints": [
+  "pinout differs from the WS2812B: 1 GND, 2 DIN, 3 VDD, 4 DOUT (section 5, p. 5)",
+  "single-wire return-to-zero data, 800 kbit/s, GRB order MSB first: symbol period ≥ 1.2 µs, T0H 0.25–0.40 µs, T1H 0.65–1.00 µs, T0L ≥ 0.80 µs, T1L ≥ 0.20 µs, low time of a bit < 20 µs, reset low > 200 µs (sections 10, 13)",
+  "application circuit (section 14, p. 9): protective series resistors at the chain's signal input and output, R1/R2 about 500 Ω for short distances; a decoupling capacitor at every LED is called essential (value not given)",
+  "12 mA version: with all three colours lit, use at most 70 % grey level (section 1)",
+  "MSL 5a (section 1)"
+ ],
+ "sources": [
+  "OPSCO SK6812-012 product specification, document SK6812-012 Rev. B/1 (2025-08-11), via LCSC https://datasheet.lcsc.com/datasheet/pdf/9f469126feffa69bd23486dc2acd2d83.pdf?productCode=C5378720, read 2026-10-31 – LCSC sells it as SK6812; the data sheet names SK6812-012 (012: internal code, section 3)",
+  "mechanical dimensions and pins, section 4–5, p. 4–5: top view 3 VDD top left, 2 DIN top right, 1 GND bottom right, 4 DOUT bottom left",
+  "IC limit parameter (Ta 25 °C), section 7, p. 5: VDD +3.7 … +5.5 V, Topt −40 … +80 °C, Tstg −40 … +80 °C, ESD 2 kV HBM",
+  "IC electrical parameters (TA 25 °C), section 9, p. 6: VDD 3.7 / 5.0 / 5.5 V; VIH ≥ 0.65 VDD, VIL ≤ 0.3 VDD at VDD 5.0 V; output current 10 / 12 / 14.5 mA per colour (VDS 1 V); static IDD 0.6 mA typ. (VDD 4.5 V); PWM 1 kHz",
+  "pin names, footprint and class: EasyEDA library data of C5378720 via edakit part import, 2026-10-31",
+  "LCSC product data C5378720 (2026-10-31): 54 675 pcs; RoHS certificate"
+ ],
+ "compliance": {
+  "rohs": true,
+  "reach": "REACH-compliant per the data sheet (section 1); no SVHC list",
+  "source": "OPSCO SK6812-012 Rev. B/1, section 1, p. 3; LCSC product data C5378720, 2026-10-31"
+ },
+ "verified": {
+  "by": "Claude (datasheet check, library draft)",
+  "date": "2026-10-31",
+  "datasheet": "OPSCO SK6812-012 product specification, document SK6812-012 Rev. B/1 (2025-08-11)",
+  "datasheet_sha256": "b6cff3ef127c82600982e88fd6defecb0a4e8eade076a6dc76997707072f2c56",
+  "checked": [
+   "pins (section 5) = EasyEDA symbol: 1 GND, 2 DIN, 3 VDD, 4 DOUT; footprint pad 1 bottom right, 2 top right, 3 top left, 4 bottom left with the silkscreen corner mark at pad 1 – as the data sheet's top view with its cut corner at 1 GND",
+   "VDD 3.7–5.5 V (limit table and electrical parameters); VIH 0.65 VDD, VIL 0.3 VDD; Topt −40 … +80 °C"
+  ],
+  "open": [
+   "vdd_max_v 5.5: the limit table gives the supply only as the range +3.7 … +5.5 V, the same as the operating range",
+   "no input voltage limit (VI) given: vin_rel_max_v stays out",
+   "supply current: static 0.6 mA typ. and 10–14.5 mA per colour – no behaviour model reads it (not simulated)",
+   "series resistor and decoupling capacitor of section 14: recommended without values that would make a pin requirement (needs); listed as hints",
+   "operating temperature: data sheet −40 … +80 °C, LCSC lists −40 … +85 °C – the data sheet's range taken",
+   "LED data (wavelength, intensity): no field for kind ic"
+  ]
+ }
+}

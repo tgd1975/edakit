@@ -1,0 +1,180 @@
+{
+ "lcsc": "C7605",
+ "mpn": "PCF8574T/3,518",
+ "manufacturer": "NXP(恩智浦)",
+ "kind": "ic",
+ "package": "SO16 (SOT162-1, body 7.5 mm)",
+ "footprint": "SOIC-16_L10.3-W7.5-P1.27-LS10.3-BL",
+ "jlc_class": "Extended Part",
+ "datasheet": {
+  "url": "https://www.nxp.com/docs/en/data-sheet/PCF8574_PCF8574A.pdf",
+  "pinout_page": 4
+ },
+ "pins": {
+  "1": {
+   "name": "A0",
+   "type": "input",
+   "hint": "no internal pull-up: hold HIGH or LOW, directly or through a resistor (7.1)"
+  },
+  "2": {
+   "name": "A1",
+   "type": "input",
+   "hint": "no internal pull-up: hold HIGH or LOW, directly or through a resistor (7.1)"
+  },
+  "3": {
+   "name": "A2",
+   "type": "input",
+   "hint": "no internal pull-up: hold HIGH or LOW, directly or through a resistor (7.1)"
+  },
+  "4": {
+   "name": "P0",
+   "type": "bidirectional",
+   "drive": "open_drain",
+   "pull": "up",
+   "hint": "quasi-bidirectional: strong sink to VSS, weak 100 µA current source to VDD (IOH 30–300 µA) – write 1 before reading it as an input (8.1)"
+  },
+  "5": {
+   "name": "P1",
+   "type": "bidirectional",
+   "drive": "open_drain",
+   "pull": "up",
+   "hint": "quasi-bidirectional: strong sink to VSS, weak 100 µA current source to VDD (IOH 30–300 µA) – write 1 before reading it as an input (8.1)"
+  },
+  "6": {
+   "name": "P2",
+   "type": "bidirectional",
+   "drive": "open_drain",
+   "pull": "up",
+   "hint": "quasi-bidirectional: strong sink to VSS, weak 100 µA current source to VDD (IOH 30–300 µA) – write 1 before reading it as an input (8.1)"
+  },
+  "7": {
+   "name": "P3",
+   "type": "bidirectional",
+   "drive": "open_drain",
+   "pull": "up",
+   "hint": "quasi-bidirectional: strong sink to VSS, weak 100 µA current source to VDD (IOH 30–300 µA) – write 1 before reading it as an input (8.1)"
+  },
+  "8": {
+   "name": "VSS",
+   "type": "ground",
+   "role": "gnd"
+  },
+  "9": {
+   "name": "P4",
+   "type": "bidirectional",
+   "drive": "open_drain",
+   "pull": "up",
+   "hint": "quasi-bidirectional: strong sink to VSS, weak 100 µA current source to VDD (IOH 30–300 µA) – write 1 before reading it as an input (8.1)"
+  },
+  "10": {
+   "name": "P5",
+   "type": "bidirectional",
+   "drive": "open_drain",
+   "pull": "up",
+   "hint": "quasi-bidirectional: strong sink to VSS, weak 100 µA current source to VDD (IOH 30–300 µA) – write 1 before reading it as an input (8.1)"
+  },
+  "11": {
+   "name": "P6",
+   "type": "bidirectional",
+   "drive": "open_drain",
+   "pull": "up",
+   "hint": "quasi-bidirectional: strong sink to VSS, weak 100 µA current source to VDD (IOH 30–300 µA) – write 1 before reading it as an input (8.1)"
+  },
+  "12": {
+   "name": "P7",
+   "type": "bidirectional",
+   "drive": "open_drain",
+   "pull": "up",
+   "hint": "quasi-bidirectional: strong sink to VSS, weak 100 µA current source to VDD (IOH 30–300 µA) – write 1 before reading it as an input (8.1)"
+  },
+  "13": {
+   "name": "INT#",
+   "type": "output",
+   "drive": "open_drain",
+   "hint": "active-LOW open-drain interrupt output (1, 7) – needs a pull-up"
+  },
+  "14": {
+   "name": "SCL",
+   "type": "input",
+   "role": "scl"
+  },
+  "15": {
+   "name": "SDA",
+   "type": "bidirectional",
+   "role": "sda",
+   "drive": "open_drain"
+  },
+  "16": {
+   "name": "VDD",
+   "type": "power_in",
+   "role": "vdd"
+  }
+ },
+ "address": {
+  "base": 32,
+  "pins": {
+   "1": 1,
+   "2": 2,
+   "3": 4
+  }
+ },
+ "values": {
+  "vih_ratio": 0.7,
+  "vil_ratio": 0.3
+ },
+ "limits": {
+  "vdd_max_v": 7,
+  "vdd_op_min_v": 2.5,
+  "vdd_op_max_v": 6.0,
+  "vin_rel_max_v": 0.5,
+  "i_supply_pin_max_a": 0.1,
+  "f_max_hz": 100000,
+  "p_max_w": 0.4,
+  "tj_max_c": 125,
+  "rth_ja_k_per_w": 115,
+  "t_min_c": -40,
+  "t_max_c": 85
+ },
+ "hints": [
+  "PCF8574: 7-bit address 0x20–0x27 by A2…A0 (Table 4); the PCF8574A (0x38–0x3F) differs only in this fixed part, so eight of each share a bus (7.1.1)",
+  "Standard-mode I2C only: fSCL at most 100 kHz (Table 10)",
+  "P0–P7 sink at least 10 mA each at VOL 1 V, VDD 5 V (Table 9); 80 mA for the whole package is the recommended total (2, 10.3); a 0 written while something drives the port HIGH lets a large current flow into it (8.1)",
+  "power-on reset below VPOR (typ. 1.3 V, max. 2.4 V) sets every port HIGH with the 100 µA current source (Table 9 note 1)"
+ ],
+ "sources": [
+  "NXP PCF8574; PCF8574A product data sheet Rev. 5 (27 May 2013), https://www.nxp.com/docs/en/data-sheet/PCF8574_PCF8574A.pdf, read 2026-10-31",
+  "pinout: Fig 4 (SO16) and Table 3, p. 4; ordering: Table 1, p. 2 – PCF8574T/3 in SO16 SOT162-1",
+  "address: Fig 6 and Table 4, p. 5–6 – base 0x20 with A2 A1 A0 low, A0 adds 1, A1 2, A2 4",
+  "limits: Table 7 (absolute maximum), p. 15 – VDD −0.5 … +7 V, VI VSS − 0.5 … VDD + 0.5 V, IDD and ISS 100 mA, II 20 mA, IO 25 mA, Ptot 400 mW, 100 mW per output, Tj(max) 125 °C, Tamb −40 … +85 °C",
+  "thermal: Table 8, p. 15 – Rth(j-a) 115 °C/W typ. for SO16",
+  "operating range and thresholds: Table 9, p. 16 – VDD 2.5 … 6.0 V; VIL ≤ 0.3 VDD and VIH ≥ 0.7 VDD on SCL/SDA, P0–P7 and A0–A2",
+  "fSCL ≤ 100 kHz: Table 10, p. 17",
+  "port behaviour (quasi-bidirectional, 100 µA current source, accelerator): 8.1 and Fig 7, p. 6–7; INT open-drain: sections 1 and 2, p. 1",
+  "i_supply_pin_max_a = ISS (ground supply current) 100 mA of Table 7",
+  "pin names, footprint and class: EasyEDA library data of C7605 via edakit part import, 2026-10-31",
+  "compliance: LCSC product data C7605 (2026-10-31): RoHS certificate (ROHS3); stock 17 361 pcs at LCSC"
+ ],
+ "compliance": {
+  "rohs": true,
+  "source": "LCSC product data C7605, 2026-10-31 (isRohsCert, ROHS3)"
+ },
+ "verified": {
+  "by": "Claude (datasheet check, library draft)",
+  "date": "2026-10-31",
+  "datasheet": "NXP PCF8574; PCF8574A product data sheet Rev. 5 (27 May 2013)",
+  "datasheet_sha256": "15873fa13e8b9e3baeb924cc5ce845eabf0e1d2671a441feaaa3c4bb56e77013",
+  "checked": [
+   "SO16 pinout (Fig 4, Table 3) = the EasyEDA symbol's pin numbers and names (INT named INT# there); footprint pads 1–8 in one row, 9–16 back along the other (top view)",
+   "address base 0x20, A0/A1/A2 add 1/2/4 (Table 4)",
+   "VDD abs. max 7 V; operating 2.5–6.0 V; VI ≤ VDD + 0.5 V; ISS 100 mA; Ptot 400 mW; Tj 125 °C; Rth(j-a) 115 °C/W (SO16); Tamb −40 … +85 °C",
+   "VIH 0.7 VDD, VIL 0.3 VDD for SCL/SDA, ports and address inputs; fSCL max 100 kHz"
+  ],
+  "open": [
+   "per-pin current limits of Table 7 (IO 25 mA per port, II 20 mA, 100 mW per output) and IIHL(max) 400 µA through the protection diodes (Table 9): the schema has no per-pin current field",
+   "the port pull-up is a 30–300 µA current source, not a resistor: pull 'up' without pull_ohm",
+   "VI ≤ VDD + 0.5 V also applies to the bidirectional P0–P7 and SDA; LIM.v/inject (vin_rel_max_v) reads only pins of type input (A0–A2, SCL)",
+   "no supply capacitor named in the data sheet; the default decoupling requirement stays on",
+   "no behaviour model: supply current (IDD ≤ 100 µA at 100 kHz, Table 9) and port sink currents are not simulated"
+  ]
+ }
+}
