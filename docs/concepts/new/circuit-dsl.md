@@ -104,9 +104,10 @@ and a redefinition mean, and for nothing else here.
    finding of a new engine, `DEF.assert`, with the severity the profile gives it; an unbound port `DEF.port`, a
    parameter outside its range `DEF.param`. No part picking: the designer chooses the part, the assertion and
    STRUCT.identity hold it to the derived value.
-5. **Variants as differences.** A variant file names the main file and redefines parts, values and texts by
-   designator and name; everything else is inherited. Its resolved graph is complete and is what the hash and the
-   sign-offs bind to.
+5. **Variants as differences.** A variant file names its base – the main file or another variant – and redefines
+   parts, nets, parameters and texts by designator and name, takes pins off a net and sets attributes back;
+   everything else is inherited. Its resolved graph is complete and is what the hash and the sign-offs bind to. What
+   the bell's variants need of it is measured below.
 6. **References.** `satisfies R-3`, `decision D-8` as attributes DOCS.ref resolves.
 7. **Attributes pass through.** Every key of the graph's schema is written as `key value` on a part, a net or the
    graph and reaches the resolved graph unchanged. The language has syntax only for composition; a new key of the
@@ -204,6 +205,79 @@ for n in range(8):
 Shortest, and the form models write best; but a program, which only a model can edit – `block add`, a converter, a
 formatter and `graph show` need data they can read and write. That is the argument for a declarative notation.
 
+## The bell's variants as the test
+
+The owner's requirement: the language must cover the bell's variants. The bell has four configurations (decisions
+D-11 to D-15 of its `docs/decisions.md`): main, smd, tht and esp32, each an edakit project of its own with its own
+`edakit.toml`, graph, parts folder, simulation config, board file, schematic arrangement and sign-off file, one
+EasyEDA board each. Measured at the bell's `059162a`, pins compared by name or role; the round trip of the sketch
+holds for all four in both forms:
+
+| | smd | tht | esp32 |
+| --- | --- | --- | --- |
+| parts replaced: another entry, other texts, `bom` | 7: LED1–LED5, C1, J1 | 11: R1–R9, S1, S2 | 13: the seven of smd, LED4 and LED5 yellow-green, R1–R5 at 100 Ω, and U1 – the T-Display for the Nano: 24 pins instead of 30, other names, another `nc`, no waiver |
+| nets | the same | the same | `+3V3` added; S1.a and S2.a move from `+5V` to it; 8 nets get another U1 pin (`PD6` to `IO27` …); 11 nets' `v` go from `0..5.5 V` to `0..3.4 V`; 4 notes |
+| locks | the same | the same | all 8, keyed by other pins |
+| texts | `description`, `purpose.notes`, 3 hints | the same | the same, and the notes of U1, R8 and R9 |
+| parts entries of its own | 5 | 4 | 7 |
+| statements of the sketch's language that differ from main's 59 | 25 of 69 | 21 of 64 | 70 of 83 |
+| beside the graph | board, schematic | board, schematic | board, schematic, `sim.json` (the source's pins and voltages), the firmware `variants/esp32/firmware`, the library script `hardware/lib/tdisplay_device.py` |
+
+A variant file that redefines parts and texts covers smd and tht: five statements for smd's parts (three colours of
+LED, C1, J1), four for tht's (R1–R5, R6–R7, R8–R9, S1–S2 with `for`), the texts, the hints – about ten lines each. The
+esp32 variant shows what else the language needs:
+
+1. **Module pins by function.** Eight nets and eight locks change only because the T-Display's pins have other
+   names than the Nano's. An alias map on the module in the project's source – `alias U1 led1 = PD6 led2 = PD5 …
+   servo = PB0 btn_start = PB4 btn_reset = PB3` – lets the nets say `U1.led1`; the variant replaces the map and the
+   nets stand. The map is what the firmware relies on (`buttons.ino` names D6, D8, D11), and the locks keyed by the
+   alias, `lock U1.led1 LED_G1`, are the same in every variant. Decision 6 of circuit-language.md declined an alias
+   in the parts entry for the TOML form; this one lives in the project's source and describes the project's use of
+   the module, not the module.
+2. **A parameter for the logic level.** `param vlogic = 0..5.5 V` in main and `net LED_G1 vlogic U1.led1 R4.1`;
+   the esp32 variant sets `vlogic = 0..3.4 V` once instead of in eleven nets.
+3. **Pins taken off a net.** `net +5V without S1.a S2.a` beside `net +3V3 vlogic U1.3V3 S1.a S2.a`: a variant
+   removes as well as adds. An attribute goes back to its default the same way: `bom yes` on the LEDs the assembly
+   places, where main has `no-bom`.
+4. **A module swap as one statement**, with its entry from the variant's parts folder, its `nc` and its alias map.
+5. **A variant of a variant.** D-13 says "like the variant SMD, with the T-Display": `variant esp32 of
+   ../smd/hardware/graph.circuit`, a chain resolved in order.
+6. **Parts folders.** D-15 keeps every variant's parts folder complete, because the hash covers the whole folder
+   and a part added for one board would void the others' sign-offs. With inheritance the lookup goes variant first,
+   then main, as the requirements file is read today, and the circuit hash covers the entries the resolved graph
+   uses, not the folder: a part added for one board reaches no other board's hash, and a copy per variant is a
+   choice, not a need.
+7. **What stays per variant project:** `edakit.toml`, the board file, `schematic.toml`, `sim.json`, the sign-off
+   file, the firmware. The language replaces the graph only.
+
+The esp32 variant then, on smd as its base:
+
+```text
+variant esp32 of ../smd/hardware/graph.circuit
+  param vlogic = 0..3.4 V                     # 3.3 V logic: every net written with vlogic follows (D-13)
+  part U1 module "LILYGO TTGO T-Display V1.1" lcsc C18722937 no-bom "LILYGO T-Display V1.1 (plugged in)"
+    nc    …                                   # the module's unused pins
+    alias led1 = IO27 led2 = IO26 led3 = IO25 led4 = IO33 led5 = IO32 servo = IO13 btn_start = IO38 btn_reset = IO37
+    notes "Plugs into two 1x12 female headers …"
+  part LED5 led KT-0805YG lcsc C2292 "0805 LED, yellow-green, countdown step 1"   notes "D-14: …"
+  part LED4 led KT-0805YG lcsc C2292 "0805 LED, yellow-green, countdown step 2"   notes "D-14: …"
+  for n in 1..5
+    part R{n} resistor "100 Ω 0805" lcsc C17408 value 100Ω   notes "D-14: (3.3 V − 2.1 V) / (100 Ω + 30 Ω + 10 Ω) ≈ 8.6 mA"
+  net +3V3 vlogic U1.3V3 S1.a S2.a   notes "3V3 pin of the T-Display (AP2112K-3.3); switched to the inputs by the buttons (D-13)."
+  net +5V without S1.a S2.a          notes "5V pin of the T-Display: USB VBUS behind the module's 1N5819; …"
+  net SERVO      notes "IO13, 3.3 V PWM into the servo's signal input (D-13)."
+  net BTN_START  notes "Pressed = 3.3 V at IO38 (input only), else R7 pulls to GND (D-13)."
+  net BTN_RESET  notes "Pressed = 3.3 V at IO37 (input only), else R6 pulls to GND (D-13)."
+  description "…"
+  purpose notes "… The T-Display's ESP32 uses Wi-Fi (2.4 GHz, channels 1-13) … Bluetooth stays off."
+  hint H-1 "C1 1000 µF / 16 V electrolytic on +5V, next to J1 (it buffers the module's 5V pin)"
+  hint H-3 "to be debounced in the ESP32 firmware like buttons.ino (50 ms); the firmware port is open (D-13)"
+```
+
+About twenty lines against 70 changed statements today, and the locks untouched. Everything a variant does is a
+redefinition of something the base names – a part, a net, a parameter, a text –, which is SysML v2's `:>>` with a
+syntax of the sketch's kind; nothing in it is a conditional.
+
 ## The basis
 
 The semantics of SysML v2 map onto edakit's needs above the netlist and not onto the netlist itself:
@@ -253,8 +327,8 @@ Not before, and not without, these:
    artifact; without it, it has no target.
 2. **Blocks want parameters.** Measured in the projects: three or more blocks whose values a project changes – the
    LED current, a pull-up, a divider – and the notes "another value of the same series" in the graph.
-3. **A project with repetition or variants is at hand.** The tree's move to edakit (30 LEDs on three drivers), the
-   pedal's second module, the bell's four configurations.
+3. **A project with repetition or variants is at hand.** The bell's four configurations are one today (the section
+   above); the tree's move to edakit (30 LEDs on three drivers) and the pedal's second module would be two more.
 4. **The shape of the graph stands still.** Since `75d5c32` the graph gained keys, not shapes; the shape – components,
    nets, cables, layout, locks, accept, purpose – has stood since the cut. Two months without a change of shape.
 5. **Evidence.** `evals/add-led`, a repetition task and a variant task on the reference circuits, in TOML and in the
@@ -274,8 +348,9 @@ The stages, each useful on its own:
 
 The value, estimated on the owner's projects: the bell from 72 lines of content in the sketch's language to about 30;
 led-bar's eight LEDs from about 150 lines of JSON to three; the tree's 65 KB graph, which no session should read
-whole, to a size a session can read; the bell's four configurations to one main file and three variant files of a
-few lines each, with sign-offs that survive a change of the main file where it does not reach them.
+whole, to a size a session can read; the bell's four configurations to one main file and three variant files of about
+ten, ten and twenty lines against 69, 64 and 83 statements today, with sign-offs that survive a change of the main
+file where it does not reach them.
 
 ## Costs and risks
 
@@ -335,11 +410,26 @@ Each a real choice, the recommended answer first, with its trade-off; none is du
    - *A prototype now, on the bell and led-bar, as the sketch was*: a decision on evidence sooner; a prototype that
      waits for the TOML form to have a target.
    - *Not at all*: TOML with names, `block add` with parameters as flags, `graph show` for slices.
+8. **Module pins by function** (from the bell's esp32 variant).
+   - *An alias map on the module in the project's source, replaced by a variant* (recommended): nets and locks say
+     `U1.led1` and stand across variants; the map is the firmware's; one construct more.
+   - *Nets name the module's pins*: nothing new; a variant with another module rewrites every net and lock on it.
+9. **Locks in a variant.**
+   - *Keyed by the alias, inherited* (recommended): the same eight lines in every variant of the bell; the check
+     keeps its meaning, since the map and the nets are separate statements.
+   - *Keyed by the pin, rewritten per variant*: as today.
+10. **Parts folders of variants.**
+    - *Lookup variant first, then the base; the hash over the entries the resolved graph uses* (recommended): a part
+      added for one board reaches no other board's hash – D-15's reason for separate folders –, and copies become a
+      choice.
+    - *A complete folder per variant, as D-15 has it*: nothing changes; every variant carries copies of every entry.
 
 Decided by Claude, for confirmation when the round comes: the compile target is the resolved graph of today's format;
 attributes pass through; nets stay first-class and n-ary; `for` only over ranges, with `{n}` in names; no
 conditionals and no I/O; the engine for what a definition asserts is DEF; a formatter and a grammar for highlighting
-are deliverables of stage 1, not later; the language is optional per project, named by `[project] graph`.
+are deliverables of stage 1, not later; the language is optional per project, named by `[project] graph`; a variant
+may have a variant as its base, resolved in order; a variant redefines, removes from and adds to what its base
+names, and never names anything else.
 
 ## Sources
 
@@ -369,6 +459,9 @@ A](https://github.com/Systems-Modeling/SysML-v2-Release/blob/master/sysml/src/ex
   [adoption announcement](https://www.omg.org/news/releases/pr2025/07-21-25.htm);
   [Syster](https://github.com/jade-codes/syster); the [resource list](https://github.com/daltskin/SysML-v2-Resources)
   naming Syside Automator and the ANTLR grammars. Not reachable: the OMG specification pages.
+- The Christmas bell at `059162a`, read-only: `docs/decisions.md` (D-11 to D-17), `variants/README.md`, the four
+  `edakit.toml`, `hardware/graph.json`, `sim.json` and `signoff.json` of main and the variants, `src/firmware`,
+  `variants/esp32/firmware`; the prototype's round trip run on all four configurations.
 - edakit: handbook 14.5 (the blocks), `edakit/blocks/*.json`, `tests/reference.py`,
   [maker-coverage.md](maker-coverage.md) (the owner's projects, FT-23, FT-24, the stability of the model),
   [circuit-language.md](circuit-language.md) (the sketch, its review and decisions) and

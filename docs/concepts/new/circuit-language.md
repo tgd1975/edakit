@@ -425,8 +425,9 @@ bell converts last, in its repository.
 
 ## Review 2026-10-31
 
-Reviewed against main at `075574e`, with the prototype run on edakit's led-bar. The bell's four configurations were
-not run again: the bell's repository was not reachable from the session; a checkout with `BELL_ROOT` does it. The
+Reviewed against main at `075574e`, with the prototype run on edakit's led-bar; later the same day the bell's four
+configurations at its `059162a` as well – equal in both forms, and `bell.circuit` and `bell.toml` equal to the main
+graph, so the tables above stand. The
 owner's conclusion, in their words: the single ideas are worth it, and they are all independent of a language to be
 created; the language itself gives no visible gain today beyond the wish to have one. Two qualifications the owner
 took along: a path as a block is the one thing only a language does well, and the language's gain is small, not nil.
@@ -455,8 +456,8 @@ where a pin number is decided, from the graph to the parts entry – a matter of
   `set source "reversible"` and `set locks {…}` with pin numbers in place of `(locked)`.
 - The codes: P-1 is STRUCT.entry; G-1 is STRUCT.name, STRUCT.pin, STRUCT.net, STRUCT.board, STRUCT.ref and
   STRUCT.purpose; G-2 is STRUCT.lock, G-4 is LVL.undefined, S-2 is SYNC.schematic. M-1 and M-6 stay.
-- The bell was pushed after the cut; whether its graph is converted was not checked. The plan calls building the
-  language size L, this sketch two steps of size M.
+- The bell's graphs are not converted: at `059162a` they still carry `waive`, `checks` and `hints`. The plan calls
+  building the language size L, this sketch two steps of size M.
 
 ### Findings on the rules
 
