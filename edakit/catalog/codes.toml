@@ -342,10 +342,11 @@ sources = [
 
 [codes."LVL.undefined"]
 title = "input defined while the firmware is not running"
-rule = "Every input has a driver or a pull resistor, an input that only MCU pins drive has a pull, a bipolar transistor has a base-emitter resistor and a MOSFET a resistor from its gate to its source or a rail."
+rule = "Every input has a driver or a pull resistor, an input that only MCU pins drive has a pull, a bipolar transistor has a base-emitter resistor and a MOSFET a resistor from its gate to its source or a rail. Graded as warnings while new: an input pin of an IC left in nc (nc), a net only open-drain or tri-state outputs drive without a pull-up (open_drain), an analog node only capacitors reach (analog)."
 why = "A floating CMOS input reads random values and can rest where both input transistors conduct. An MCU pin is an input until the firmware configures it, so an enable line it drives floats at every reset."
 fix = "A pull resistor to the inactive level (10–100 kΩ); a base-emitter or gate-source resistor next to the transistor. Harmless on purpose: accept on the net with the reason."
 severity = "error"
+grades = { nc = "warning", open_drain = "warning", analog = "warning" }
 details = [
   "no floating input: an input needs a driver or a pull resistor; an input driven only by MCU pins needs a pull (floats until the firmware runs); every BJT needs a base-emitter resistor, every MOSFET a resistor from its gate to the source or a rail – finds e.g.: a floating OE or EN pin at power-up, a MOSFET half on while the MCU boots",
 ]
@@ -414,7 +415,7 @@ rule = "What a part requires on its pins is in the graph: a capacitor to ground 
 why = "Each requirement is a datasheet's or a standard's: an IC draws its current in pulses, open-drain lines never go high alone, a coil's turn-off spike breaks the switch, a USB-C source gives no power without Rd, a long hot loop rings and radiates."
 fix = "Add the part next to the pin (blocks: i2c-pullups, usb-c-sink), or write the loop into layout.loops."
 severity = "error"
-grades = { pin = "warning" }
+grades = { pin = "warning", balance = "warning" }
 details = [
   "decoupling: per net at least one capacitor to ground per IC supply pin (`power_in`) – finds e.g.: the missing 100 nF",
   "I2C pull-ups: every I2C line has a pull-up to a supply between (V − 0.4 V) / 3 mA and 10 kΩ, parallel ones added up; a line is I2C by the net's `bus`, an SDA/SCL net name, a pin role `sda`/`scl` or a pin name with SDA/SCL (a role decides over the name); pins with `pull`/`pull_ohm` count (modules) – finds e.g.: a bus without pull-ups, 47 kΩ, a module's pull-ups plus your own below 1 kΩ",

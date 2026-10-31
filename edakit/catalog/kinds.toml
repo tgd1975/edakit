@@ -34,7 +34,7 @@ dielectric = ["C0G", "NP0", "X5R", "X7R", "X7S", "X6S", "Y5V", "electrolytic", "
 [free]
 values = ["polarized", "tolerance", "iout_accuracy", "iout_gain", "hfe_min", "hfe_max", "efficiency", "usb_c",
           "i_hold_vs_temp", "first_bit_to", "v_io_v", "comparator"]
-pin = ["name", "type", "role", "strap", "pull", "hint", "functions", "out_edge", "t_pd_ns", "needs"]
+pin = ["name", "type", "role", "strap", "pull", "hint", "functions", "out_edge", "t_pd_ns", "needs", "drive", "float_ok"]
 entry = ["needs"]           # switches a default requirement of catalog/needs.toml off: {"decoupling": false}
 
 [common]

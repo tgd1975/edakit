@@ -31,7 +31,8 @@ def switched_off(d, des, need):
 
 def run(ctx):
     d = ctx.joined
-    return decoupling(d) + i2c(d) + flyback(d) + usb_c(d) + functions(d) + hot_loops(ctx.design) + pin_needs(d)
+    return (decoupling(d) + i2c(d) + flyback(d) + usb_c(d) + functions(d) + hot_loops(ctx.design) + pin_needs(d)
+            + balancing(d))
 
 
 def decoupling(d):
@@ -360,4 +361,18 @@ def pin_needs(d):
                     finding("REQ.value", f"needs a {what.replace('_', ' ')}{window} {there} – {names} on {net}: "
                                          f"{si(total, unit)}")
             seen.add((key, num))
+    return out
+
+
+def balancing(d):
+    """REQ.missing/balance: a net that only capacitors touch – capacitors in series, whose voltage divides by their
+    leakage unless a resistor across each one shares it (a supercapacitor stack, two electrolytics for a higher
+    voltage)."""
+    out = []
+    for name, net in d.nets.items():
+        dess = {r.partition(".")[0] for r in net["pins"]}
+        if len(net["pins"]) >= 2 and all((d.part(x) or {}).get("kind") == "capacitor" for x in dess):
+            out.append(Finding("REQ.missing", "G", name, f"{name}: only capacitors touch it ({', '.join(sorted(dess))}) – "
+                               "in series their voltage divides by leakage", "edakit handbook 3.3",
+                               "a balancing resistor across each capacitor", grade="balance", on=(("net", name),)))
     return out
