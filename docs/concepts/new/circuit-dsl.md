@@ -13,11 +13,12 @@ repetition, parameters and variants are written once instead of many times.
 
 No existing language fits as edakit's source. The ones that have the right shape are bound to their own compilers:
 atopile's `.ato` has modules, units with tolerances, assertions and arrays, but its nets are implicit, its parts come
-from a picker instead of a parts entry with roles and limits, it targets KiCad only, its language was rewritten in
-2026, and its documentation and workspace now live in a browser editor behind a sign-in. SysML v2 has the right semantics for the layer above the circuit – definitions and usages, redefinition,
-variation, requirements with satisfy and verify, units –, but no electrical semantics at all, a verbose notation and
-open tooling in its infancy. The Python libraries (SKiDL, PCBDL, faebryk, circuit-synth) make the circuit a program,
-which edakit's tools cannot edit. The rest is proprietary, dormant or one person's experiment.
+from a picker instead of a parts entry with roles and limits, it targets KiCad only, its language was rewritten in 2026,
+and its documentation and workspace now live in a browser editor behind a sign-in. SysML v2 has the right semantics for
+the layer above the circuit – definitions and usages, redefinition, variation, requirements with satisfy and verify,
+units –, but no electrical semantics at all, a verbose notation and open tooling in its infancy. The Python libraries
+(SKiDL, PCBDL, faebryk, circuit-synth) make the circuit a program, which edakit's tools cannot edit. The rest is
+proprietary, dormant or one person's experiment.
 
 What is worth taking: KerML, the kernel under SysML v2, as the foundation the language is defined on – the way SysML
 v2 itself is defined on it –, so that every construct has a standard's meaning and an export to KerML and SysML v2 is
@@ -603,8 +604,8 @@ A](https://github.com/Systems-Modeling/SysML-v2-Release/blob/master/sysml/src/ex
   (`satisfy … by`, `verify`, `60 [kg]`); the OMG's
   [adoption announcement](https://www.omg.org/news/releases/pr2025/07-21-25.htm);
   [Syster](https://github.com/jade-codes/syster); the [resource list](https://github.com/daltskin/SysML-v2-Resources)
-  naming Syside Automator and the ANTLR grammars. The OMG pages and atopile's site resolve through the session's proxy only; the
-  fetch tool of the background agents does not use it.
+  naming Syside Automator and the ANTLR grammars. The OMG pages and atopile's site resolve through the session's
+  proxy only; the fetch tool of the background agents does not use it.
 - The Christmas bell at `059162a`, read-only: `docs/decisions.md` (D-11 to D-17), `variants/README.md`, the four
   `edakit.toml`, `hardware/graph.json`, `sim.json` and `signoff.json` of main and the variants, `src/firmware`,
   `variants/esp32/firmware`; the prototype's round trip run on all four configurations.
