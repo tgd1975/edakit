@@ -50,8 +50,8 @@ quantity = 5                     # boards per order: the stock check (PARTS.stoc
 requirements = "hardware/requirements.toml"   # what the circuit must do (handbook 3.6)
 
 [boards.main]
-title = "Coin cell LED"          # EasyEDA documents and board file by default: generated_main, layout_main, PCB main,
-                                 # hardware/boards/main.toml
+title = "Coin cell LED"          # page name of the readable schematic; EasyEDA documents and board file by default:
+                                 # generated_main, layout_main, PCB main, hardware/boards/main.toml
 
 [release]
 assembly = { sides = ["top"], smd_only = true }   # Economic PCBA: one side, SMD only (SYNC.cpl)
@@ -82,8 +82,8 @@ status = "draft"
 ```
 
 R-2 asks that D1 is dark and the cell idle while nobody presses – without a number yet, which the review will find
-(17.9). Claude writes drafts, and every `edakit check`
-warns about them (DOCS.draft) until you set `status = "accepted"` – only you do. `edakit req R-1` shows the chain:
+(17.9). Claude writes drafts, and every `edakit check` warns about them (DOCS.draft) until you set
+`status = "accepted"` – only you do. `edakit req R-1` shows the chain:
 
 ```text
 R-1  requirement, must, accepted – hardware/requirements.toml
@@ -215,10 +215,10 @@ not checked for lack of data: LIM.t 2 parts – edakit check --coverage
 
 The first line says which rule sets are on: `core` always, and `power` because the graph has a battery holder
 (`[project] domains` fixes the list, 10.1). The two HINT notes are design hints – a bulk capacitor at a power input,
-protection of lithium cells –, patterns that need judgement rather than a number. The last line but one names what went unchecked for lack of data: `edakit check --coverage` says that the
-entries of D1 and R1 have no thermal resistance, so no junction temperature is computed (LIM.t); what they carry and
-dissipate is checked against their ratings all the same. `edakit sim` runs every scenario through ngspice
-(chapter 5):
+protection of lithium cells –, patterns that need judgement rather than a number. The last line but one names what
+went unchecked for lack of data: `edakit check --coverage` says that the entries of D1 and R1 have no thermal
+resistance, so no junction temperature is computed (LIM.t); what they carry and dissipate is checked against their
+ratings all the same. `edakit sim` runs every scenario through ngspice (chapter 5):
 
 ```text
 scenario                           status      VBAT   LED_SW LED_ANODE   supply current
@@ -245,8 +245,8 @@ dark" stands in – D1 is the only path.
 
 Nothing goes on before every finding is fixed or accepted with a reason (3.4). Each decision gets its number.
 
-**The block's LED stays dark on a used cell (SIM.state, D-2).** A green LED needs 2.6 to 3.1 V – as much as a used CR2032
-has left. A red one needs 1.5 to 2.6 V at 20 mA:
+**The block's LED stays dark on a used cell (SIM.state, D-2).** A green LED needs 2.6 to 3.1 V – as much as a used
+CR2032 has left. A red one needs 1.5 to 2.6 V at 20 mA:
 
 ```text
 $ edakit part search "LED red 0805" --basic
@@ -266,16 +266,16 @@ STRUCT.entry – graph pins = parts entry: 2 error
 ```
 
 The fix of STRUCT.entry has its advice per case, under the words the finding starts with; for "pins differ from parts
-entry" it is either the part number of the part whose pins the graph has, or – to keep the red LED – its pin names
-and the nets on its pins swapped to the entry's. With the pins and nets swapped, the 150 Ω of the block stay: the simulation gives 1.22 mA from a used cell into the
-LED at its highest forward voltage, 10.7 mA from a fresh cell at its lowest – LIM.i allows 20 mA, 80 % of its 25 mA, and
-LIM.p holds the 14.75 mW it then dissipates (Vf × If) to 32.5 mW, half its 65 mW. The computation is in R1's `notes`,
-the reason in D-2.
+entry" it is either the part number of the part whose pins the graph has, or – to keep the red LED – its pin names and
+the nets on its pins swapped to the entry's. With the pins and nets swapped, the 150 Ω of the block stay: the simulation
+gives 1.22 mA from a used cell into the LED at its highest forward voltage, 10.7 mA from a fresh cell at its lowest –
+LIM.i allows 20 mA, 80 % of its 25 mA, and LIM.p holds the 14.75 mW it then dissipates (Vf × If) to 32.5 mW, half its 65
+mW. The computation is in R1's `notes`, the reason in D-2.
 
 **A cell upside down (PATH.reverse, D-3).** The holder takes the cell either way round, and PATH.reverse wants a
-blocking part behind it. A Schottky diode in series costs about 0.3 V – just the margin R-1 needs from a used cell; a P-MOSFET costs two
-parts on a board without an IC. The LED blocks by itself, so the finding is accepted on the net, with the reason (in
-full in the graph):
+blocking part behind it. A Schottky diode in series costs about 0.3 V – just the margin R-1 needs from a used cell; a
+P-MOSFET costs two parts on a board without an IC. The LED blocks by itself, so the finding is accepted on the net,
+with the reason (in full in the graph):
 
 ```json
 {"name": "LED_SW", "pins": ["SW1.3", "R1.1"], "v": [-3.3, 3.3],
@@ -373,8 +373,8 @@ cart_lcsc.csv: 1 line, C70377 x 5
 hand_assembly.md: 1 part by hand, 0 items off the board
 ```
 
-The snapshot ages: after 14 days (`stock_max_age_days`) PARTS.stock is pending and holds up the release until `edakit stock`
-asks again.
+The snapshot ages: after 14 days (`stock_max_age_days`) PARTS.stock is pending and holds up the release until
+`edakit stock` asks again.
 
 What the order form will say is data already: every field of JLCPCB's form has a key with edakit's default, and
 `edakit cart fields` prints the field, the maker's word and where the value comes from (8.4):
@@ -397,7 +397,8 @@ PCBA
 ## 17.8 Drawing and hand-over
 
 `edakit schematic draw` draws the schematic from graph and parts alone, without EasyEDA. The note in the block quotes
-the simulation – `{sim:min SIM.state used/* D1 LED on}` in `hardware/schematic.toml` – and changes when R1 or D1 change (6.6):
+the simulation – `{sim:min SIM.state used/* D1 LED on}` in `hardware/schematic.toml` – and changes when R1 or D1 change
+(6.6):
 
 ![The schematic of coin-cell-led, drawn by edakit schematic draw](../examples/coin-cell-led/docs/schematic.svg)
 
@@ -480,11 +481,10 @@ requirements: 1 passed, 1 open after the export (section 11 of the protocol)
 ```
 
 In P and G every code without a finding counts once as passed – the codes the domains `core` and `power` switch on –,
-G's three accepted findings are PATH.reverse and the two hints, E's three the cell's current with SW1 held (D-7). R-2 passed on its rows and on M-1's note;
-R-1 has passed its rows too and waits for its acceptance step after
-delivery. Section 6 of the protocol already holds the lists for later: what M-2 looks at before paying – D1's
-cathode, from the `open` point of its parts entry – and what M-4 tests on the delivered boards, the holder's
-orientation among them.
+G's three accepted findings are PATH.reverse and the two hints, E's three the cell's current with SW1 held (D-7). R-2
+passed on its rows and on M-1's note; R-1 has passed its rows too and waits for its acceptance step after delivery.
+Section 6 of the protocol already holds the lists for later: what M-2 looks at before paying – D1's cathode, from the
+`open` point of its parts entry – and what M-4 tests on the delivered boards, the holder's orientation among them.
 
 ## 17.11 EasyEDA and the layout
 
@@ -507,7 +507,7 @@ revision = "1"
 [outline]                  # round, Ø 44 mm: a square whose corner radius is half its side
 rect = [44, 44]
 corner_radius = 22
-arc_steps = 12             # 48 chords, 45 µm off the circle
+arc_steps = 12             # 48 chords, 47 µm off the circle
 
 [tooling]                  # JLCPCB Economic PCBA: two non-plated holes, diagonally opposite
 holes = [[9, 36], [35, 8]]
@@ -612,12 +612,12 @@ as follows (chapters 6 and 7). Each command ran in less than half a minute:
      people see (FILES.order warns about that now, grade tooling);
    - `hand_solder_keep_mm` was not set.
 
-   You chose to move both texts above the cell, as it proposed – how the board looks is yours to decide. The
-   designer took the remark for JLCPCB and `[looks]` too. The fourth note it answered: the key covered through-hole
-   joints only then, and BT1 has SMD tabs – the reviewer withdrew it. Since then it covers the SMD tabs of a part
-   with `bom: false` too, on the side the part sits on (7.5): set, it would hold BT1's tabs. A second `silk apply`, a second gate run, a second
-   look: only the top silkscreen and the order settings had changed (`edakit fab diff`), and the reviewer signed M-5
-   for that run's files.
+   You chose to move both texts above the cell, as it proposed – how the board looks is yours to decide. The designer
+   took the remark for JLCPCB and `[looks]` too. The fourth note it answered: the key covered through-hole joints only
+   then, and BT1 has SMD tabs – the reviewer withdrew it. Since then it covers the SMD tabs of a part with `bom: false`
+   too, on the side the part sits on (7.5): set, it would hold BT1's tabs. A second `silk apply`, a second gate run, a
+   second look: only the top silkscreen and the order settings had changed (`edakit fab diff`), and the reviewer signed
+   M-5 for that run's files.
 
 ## 17.12 Release, order, acceptance
 
@@ -667,8 +667,9 @@ The order goes up to JLCPCB's cart, and no further – nothing in edakit orders 
    where the maker sits –, and ORDER.review waits for its `Order: OK`. It is support, not legal advice: it claims no
    correctness, and nothing in it is legally guaranteed.
 4. Then the skill presses the cart button and writes the order record `hardware/orders/…`. Ordering and paying are
-   yours, after M-2 in JLCPCB's assembly preview – the list in section 6 of the protocol: D1's cathode. The five holders come from `cart_lcsc.csv` at LCSC; once paid, `edakit cart actual` puts the real
-   prices beside the estimate and into the project's fee table.
+   yours, after M-2 in JLCPCB's assembly preview – the list in section 6 of the protocol: D1's cathode. The five
+   holders come from `cart_lcsc.csv` at LCSC; once paid, `edakit cart actual` puts the real prices beside the estimate
+   and into the project's fee table.
 
 When the boards arrive, BT1 is soldered by hand (`hand_assembly.md`), and M-4 works through the acceptance list of the
 protocol:
@@ -697,8 +698,8 @@ Like the Christmas bell (13.6), this board found gaps on its way, and each one w
   button passed neither, so PATH.reverse named SW1 itself and a supply behind a power button counted as unfed. A push
   button passes both now, as a switch does; the Christmas bell's results did not change.
 - **The push button of the block library** called pins 2 and 4 `B (internal to A)` and `D (internal to C)`, its
-  symbol `B` and `D`: STRUCT.entry failed as soon as `part import` had cached the symbol. The names follow the symbol now, and
-  the notes and roles say that the pins are connected inside.
+  symbol `B` and `D`: STRUCT.entry failed as soon as `part import` had cached the symbol. The names follow the symbol
+  now, and the notes and roles say that the pins are connected inside.
 - **A polarity hint for a holder PATH.reverse had checked.** HINT.input_polarity said that nothing checks the
   polarity of a battery holder not marked reversible – but PATH.reverse starts from every holder by its kind. The
   electrical reviewer found it in M-1; the hint names unmarked supply connectors only now (JST packs, barrel jacks).

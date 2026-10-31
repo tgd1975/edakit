@@ -9,6 +9,9 @@ edakit gate              # P, G, E and the project's checks before S – offline
 edakit gate --easyeda    # plus S, L, F and the project's checks after F – EasyEDA with the bridge, minutes
 ```
 
+On a KiCad project (`[project] toolchain = "kicad"`) `--easyeda` – or `--eda`, the same flag – runs S, L and F on the
+KiCad files with kicad-cli (16.6).
+
 Before each stage – each project check, and with `--easyeda` each board of stages L/F – the gate prints
 `[x.x min] step n/m: <stage>` (11.3).
 
@@ -32,21 +35,21 @@ Before each stage – each project check, and with `--easyeda` each board of sta
 | *project checks after F* | e.g. a check of this run's Gerber files | `[scripts.<name>]` with `at = "after F"` – see below |
 
 A bought board on a cable (`bought = true`) or a hand-wired one (`wired = true`, 4.5) is in stages P, G and E like
-any board. Stages S and L/F leave it out with one information row each (`SYNC.schematic` and `SYNC.pcb`: "bought
+any board. Stages S and L/F leave it out with one information row each (`SYNC.schematic` and `L`: "bought
 board – no schematic, PCB or manufacturing files", "hand-wired board – …"); FILES.manifest, the manifest and the
 protocol header ("bought, not made: usb; hand-wired, not made: panel") count the made boards only.
 
-**The radio checks** LIM.eirp, LIM.band (stage G) and PARTS.fact (stage P) grade by the graph's `purpose.use` (chapter 15): what
-the firmware or a parts entry can settle – a band or a power the firmware has to keep, a radio nobody stated – is a
-warning for a board that is sold (`"sale"`), accepted in the sign-off file (8.2) or accepted on the component, and
+**The radio checks** LIM.eirp, LIM.band (stage G) and PARTS.fact (stage P) grade by the graph's `purpose.use` (chapter
+15): what the firmware or a parts entry can settle – a band or a power the firmware has to keep, a radio nobody stated –
+is a warning for a board that is sold (`"sale"`), accepted in the sign-off file (8.2) or accepted on the component, and
 information for one built for oneself or given away, or without a purpose. They fail only on data that cannot be
 read and, LIM.band, on a part that can transmit in no EU band at all.
 
 **Stages S, L and F** (per board, `edakit fab`): the engines SYNC – every artifact equals the graph and the plan –,
 GEO – copper, holes, print, widths and distances on the plan and the Gerber files – and FILES – the manufacturing
 files complete and consistent. Their codes, generated from the catalog (`SYNC.schematic` runs in stage S, `SYNC.bom`,
-`SYNC.cpl`, `PARTS.stock` and FILES in F, the rest in L; `SYNC.source` and `SYNC.footprint` on footprint data already in
-stage P, `SYNC.scripts` and `SYNC.agents` in G):
+`SYNC.cpl`, `SYNC.odb`, `PARTS.stock` and FILES in F, the rest in L; `SYNC.source` and `SYNC.footprint` on footprint
+data already in stage P, `SYNC.scripts` and `SYNC.agents` in G):
 
 <!-- edakit:generated codes SYNC GEO FILES -->
 **`SYNC.schematic`** – schematic = graph (error; replaces S-2)  
@@ -107,7 +110,7 @@ Each pad pair listed in [[loops]] of the board file or in layout.loops of the gr
 
 **`GEO.mark`** – polarity marks (error, margin: warning; replaces L-8)  
 Every '+' or '-' in the silkscreen – a PCB text, or a '+' a footprint draws as two crossing strokes of 0.3–2 mm in the silk Gerber file – sits next to a pad of that sign: the nearest pad on its side whose pin role has a sign (anode…, plus…, vbus '+'; cathode…, minus… '-') has the same one.
-- every "+" and "−" of the silkscreen next to a pad of that sign: the PCB texts "+", "−", and the "+" a footprint draws as two crossing strokes in the **silk Gerber files** (each 0.3–2 mm, as long as the other, at right angles, middles within 0.1 mm). Each is compared with the nearest pad on its side whose role has a sign – `anode…`, `plus…`, `vbus` "+", `cathode…`, `minus…` "−". Strokes of a PCB text with a "+" are that text (a "+5V" is a label); a cross inside the box of a `[[silk.art]]` item is artwork. `waive: {"GEO.mark": "…"}` on the nearest part lists its sign as waived – why it exists: the footprint of a 5-mm LED printed "+" at the cathode: GEO.mark read only PCB texts and gave the cathode no sign, so nothing saw it; a review did, before five boards would have been assembled with the LED turned (4.4)
+- every "+" and "−" of the silkscreen next to a pad of that sign: the PCB texts "+", "−", and the "+" a footprint draws as two crossing strokes in the **silk Gerber files** (each 0.3–2 mm, as long as the other, at right angles, middles within 0.1 mm). Each is compared with the nearest pad on its side whose role has a sign – `anode…`, `plus…`, `vbus` "+", `cathode…`, `minus…` "−". Strokes of a PCB text with a "+" are that text (a "+5V" is a label); a cross inside the box of a `[[silk.art]]` item is artwork. `accept: {"GEO.mark": "…"}` on the nearest part accepts its sign, listed with the reason – why it exists: the footprint of a 5-mm LED printed "+" at the cathode: GEO.mark read only PCB texts and gave the cathode no sign, so nothing saw it; a review did, before five boards would have been assembled with the LED turned (4.4)
 
 **`GEO.formed`** – formed leads fit one way (error, margin: warning, unknown: note; replaces P-8)  
 A through-hole part whose plated holes the board's footprint (pcb dump) moves away from its library footprint – a hole more than 0.05 mm from the library's hole of the same number, the two footprints laid on each other by their numbers – and that has three or more plated holes is not laid onto itself by a turn of 90°, 180° or 270° about its holes, every hole within 0.25 mm of a hole, with a pin in the hole of a pin on another net of the graph. Pins on one net do not count, two holes and a part on its library pattern are not judged; without the library footprint of edakit part import it is a note.
@@ -118,14 +121,15 @@ Per copper layer the Gerber copper's share of the board area and its largest cop
 - copper per layer on GEO.copper's raster of the **Gerber files**, widened to the outline: the copper share of the board area (without mounting and NPTH holes) and the largest copper-free circle inside the pour outline (the outline `pcb pour` pours, 7.6) – information; on a layer the board file pours (`[[pours]]`, default GND on both) a circle above `[copper] max_bare_mm` (5 mm) warns, a share below `[copper] min_cover` warns, and on every layer a copper piece that touches no pad (FlyingProbeTesting.json), via or plated hole warns, with its area and place. Copper inside an NPTH or mounting hole is drilled away. One row per layer, so an accepted warning covers its layer – why it exists: EasyEDA drops every pour piece without a pad of its net: half the back of a released board stayed bare (47 % copper, a copper-free circle of Ø 9.7 mm) where ground had no pads, with DRC 0 and every check passed; it was seen by eye before the order
 
 **`GEO.spacing`** – pads and holes keep their distance (error, margin: warning, apart: warning; replaces L-13, L-14, L-16, L-18)  
-Every pad keeps the routing clearance from every pad of another part on another net, SMD pads on an assembled side the paste gap, hand-soldered joints their keep-out, and every two plated holes JLCPCB's hole-to-hole spacing. With layout.apart in the graph: the copper of each pair of nets keeps min_mm apart on every layer, measured on the Gerber files (grade apart, a warning while new).
-- pads of different parts on different nets at least the routing clearance (`clearance_mil`) apart on every copper layer both are on; a pad without a net counts as a net of its own, pads of one part are not compared. Measured as `route check` measures it (7.5), on the pads of `route read` (`<artifacts>/route/<board>_board.json`) – pcb.json has no pad shapes –, and only while every pad there sits where the PCB has it, on its layer and net; otherwise GEO.spacing fails and asks for `route read`. `waive: {"GEO.spacing": "…"}` on one of the two parts or nets lists the pair as waived – why it exists: two resistors stood with their pads 0.09 mm apart: the plan compares boxes, `route check` measured only tracks and vias, and only EasyEDA's DRC could have seen it, after the copper was written
-- on every side that is assembled (`[release] assembly` `sides`), SMD pads of different parts on different nets at least the paste gap (`paste_gap_mm`, 0.4 mm) apart, so that the stencil keeps a web between their prints; a pad without a net counts as a net of its own, pads of one part, through-hole pads and pads on a side that is not assembled are not compared. Measured on the pads of `route read` like GEO.spacing, and only while they are the PCB's. `waive: {"GEO.spacing": "…"}` on one of the two parts or nets lists the pair as waived – why it exists: the paste of a ground pad and a transistor base pad of neighbouring parts was 0.06 mm apart: above every copper rule, a bridge in reflow that the bare-board test cannot see; the layout review found it
-- with `[routing] hand_solder_keep_mm` (0 = off): on the solder side of every pad of a part with `bom: false` – for a through-hole pad the layer the part does not sit on, for an SMD pad its own layer, the side the part sits on – no via and no pad of another net closer than the keep, copper to copper; a pad without a net counts as a net of its own, the part's own pads are not compared, tracks do not count. Pads as `route read` saw them, like GEO.spacing; vias from the via drill file, with the net of the tracks of pcb.json that end on them – a via no track ends on counts as another net's ('via (no track, net unknown)'). `route check` measures the same before writing, and `route dsn` keeps vias away (7.5). `waive: {"GEO.spacing": "…"}` on the joint's part or net, or on the other part or net, lists the pair as waived – why it exists: the layout review found a via 0.25 mm from a hand-soldered LED joint – a bridge would have put 5 V without its resistor on an LED –, a via 0.26 mm between potentiometer pins and a resistor pad 0.37 mm from an LED joint; every check had passed; the SMD pads came in when the walkthrough's coin cell holder, soldered by hand on two SMD tabs, was not looked at – a tab soldered with an iron bridges to a via as a through-hole joint does
+Every pad keeps the routing clearance from every pad of another part on another net, SMD pads on an assembled side the paste gap, hand-soldered joints their keep-out, and every two plated holes, also two of one part, JLCPCB's hole-to-hole spacing edge to edge: 0.45 mm when a component hole is one of them, 0.2 mm between two vias. With layout.apart in the graph: the copper of each pair of nets keeps min_mm apart on every layer, measured on the Gerber files (grade apart, a warning while new).
+- pads of different parts on different nets at least the routing clearance (`clearance_mil`) apart on every copper layer both are on; a pad without a net counts as a net of its own, pads of one part are not compared. Measured as `route check` measures it (7.5), on the pads of `route read` (`<artifacts>/route/<board>_board.json`) – pcb.json has no pad shapes –, and only while every pad there sits where the PCB has it, on its layer and net; otherwise GEO.spacing fails and asks for `route read`. `accept: {"GEO.spacing": "…"}` (or `"GEO.spacing:clearance"`) on one of the two parts or nets accepts the pair, listed with the reason – why it exists: two resistors stood with their pads 0.09 mm apart: the plan compares boxes, `route check` measured only tracks and vias, and only EasyEDA's DRC could have seen it, after the copper was written
+- on every side that is assembled (`[release] assembly` `sides`), SMD pads of different parts on different nets at least the paste gap (`paste_gap_mm`, 0.4 mm) apart, so that the stencil keeps a web between their prints; a pad without a net counts as a net of its own, pads of one part, through-hole pads and pads on a side that is not assembled are not compared. Measured on the pads of `route read` like GEO.spacing, and only while they are the PCB's. `accept: {"GEO.spacing": "…"}` (or `"GEO.spacing:paste"`) on one of the two parts or nets accepts the pair, listed with the reason – why it exists: the paste of a ground pad and a transistor base pad of neighbouring parts was 0.06 mm apart: above every copper rule, a bridge in reflow that the bare-board test cannot see; the layout review found it
+- with `[routing] hand_solder_keep_mm` (0 = off): on the solder side of every pad of a part with `bom: false` – for a through-hole pad the layer the part does not sit on, for an SMD pad its own layer, the side the part sits on – no via and no pad of another net closer than the keep, copper to copper; a pad without a net counts as a net of its own, the part's own pads are not compared, tracks do not count. Pads as `route read` saw them, like GEO.spacing; vias from the via drill file, with the net of the tracks of pcb.json that end on them – a via no track ends on counts as another net's ('via (no track, net unknown)'). `route check` measures the same before writing, and `route dsn` keeps vias away (7.5). `accept: {"GEO.spacing": "…"}` (or `"GEO.spacing:joint"`) on the joint's part or net, or on the other part or net, accepts the pair, listed with the reason – why it exists: the layout review found a via 0.25 mm from a hand-soldered LED joint – a bridge would have put 5 V without its resistor on an LED –, a via 0.26 mm between potentiometer pins and a resistor pad 0.37 mm from an LED joint; every check had passed; the SMD pads came in when the walkthrough's coin cell holder, soldered by hand on two SMD tabs, was not looked at – a tab soldered with an iron bridges to a via as a through-hole joint does
+- every two plated holes, also two of one part, keep JLCPCB's hole-to-hole spacing edge to edge: 0.45 mm when a component hole is one of them, 0.2 mm between two vias – measured on the holes of the **drill files**, vias those of the via drill file, the other plated holes named by the through-hole pad of pcb.json at their place, as GEO.ring reads them; within 0.001 mm counts as kept. `accept: {"GEO.spacing": "…"}` (or `"GEO.spacing:holes"`) on a part or net of either hole accepts the pair, listed with the reason – why it exists: via pairs 0.47 mm apart were flagged by a review against a figure from memory, where the fab's table allows 0.2 mm
 
 **`GEO.ring`** – annular ring (error, margin: warning; replaces L-16)  
-Every plated hole keeps JLCPCB's annular ring on TOP and BOTTOM – a component hole 0.18 mm (2 layers, 1 oz; below 0.20 mm a warning), from the hole's edge to the nearest point without copper in the Gerber files, a via 0.05 mm (via Ø at least hole + 0.1 mm) on its own pad, a pour around it not counted; and every two plated holes, also two of one part, keep JLCPCB's hole-to-hole spacing edge to edge: 0.45 mm when a component hole is one of them, 0.2 mm between two vias.
-- every plated hole keeps JLCPCB's annular ring on TOP and BOTTOM (2 layers, 1 oz): a component hole 0.18 mm, below 0.20 mm a warning per part, a via 0.05 mm (via Ø ≥ hole + 0.1 mm) – measured in the **Gerber files**: a component hole from the hole's edge to the nearest point without copper, so a pad, a track or a pour around the hole counts alike; a via on its own pad, the flash at its centre as EasyEDA and KiCad write a via (a pour is a region, a track a draw), and on the copper around the hole only where a layer flashes no pad there – inside a pour of its own net the copper around the hole reached the measuring limit of 1 mm and hid a pad too small for its hole; and every two plated holes, also two of one part, keep JLCPCB's hole-to-hole spacing edge to edge: 0.45 mm when a component hole is one of them, 0.2 mm between two vias. Vias are the holes of the via drill file, the other plated holes are named by the through-hole pad of pcb.json at their place. Within 0.001 mm counts as kept (EasyEDA keeps mil and writes mm). `waive: {"GEO.ring": "…"}` on a part or net lists its holes as waived – why it exists: an RGB LED at 1.25 mm pitch had its holes widened for its legs (GEO.hole) to 0.80 mm with pads of 1.06 mm: a ring of 0.13 mm, below the fab's minimum of 0.18 mm, passed the gate; via pairs 0.47 mm apart were flagged by a review against a figure from memory, where the fab's table allows 0.2 mm
+Every plated hole keeps JLCPCB's annular ring on TOP and BOTTOM – a component hole 0.18 mm (2 layers, 1 oz; below 0.20 mm a warning), from the hole's edge to the nearest point without copper in the Gerber files, a via 0.05 mm (via Ø at least hole + 0.1 mm) on its own pad, a pour around it not counted. The hole-to-hole spacing is GEO.spacing's.
+- every plated hole keeps JLCPCB's annular ring on TOP and BOTTOM (2 layers, 1 oz): a component hole 0.18 mm, below 0.20 mm a warning per part, a via 0.05 mm (via Ø ≥ hole + 0.1 mm) – measured in the **Gerber files**: a component hole from the hole's edge to the nearest point without copper, so a pad, a track or a pour around the hole counts alike; a via on its own pad, the flash at its centre as EasyEDA and KiCad write a via (a pour is a region, a track a draw), and on the copper around the hole only where a layer flashes no pad there – inside a pour of its own net the copper around the hole reached the measuring limit of 1 mm and hid a pad too small for its hole. Vias are the holes of the via drill file, the other plated holes are named by the through-hole pad of pcb.json at their place. Within 0.001 mm counts as kept (EasyEDA keeps mil and writes mm). `accept: {"GEO.ring": "…"}` on a part or net accepts its holes, listed with the reason – why it exists: an RGB LED at 1.25 mm pitch had its holes widened for its legs (GEO.hole) to 0.80 mm with pads of 1.06 mm: a ring of 0.13 mm, below the fab's minimum of 0.18 mm, passed the gate
 
 **`GEO.keepout`** – keep-out areas free of copper (warning, edge: warning)  
 Where a part's entry gives an antenna keep-out (antenna.keepout_mm, in the footprint's frame), the board has no copper inside it on either layer – tracks, pours, pads and vias of any net – placed where the part sits; for a module plugged over a carrier the carrier's copper counts. Where the entry also gives how far inside the board's outer edge the antenna area may lie (antenna.edge_mm, the module maker's layout guide), the area lies at or over the outer outline of the Gerber files, at most that far inside it – a cut-out inside the board is no edge (grade edge). A warning while new.
@@ -140,7 +144,7 @@ Every plated hole takes its lead at nominal size (lead in the entry) – on the 
 edakit's print lies on no solder-mask opening and inside the outline, every part has a visible designator, the visible side carries only the texts the board file puts there, and no print lies under a body larger than its footprint (body.box of the parts entry) – grade body.
 - the silkscreen from the **Gerber files** (silk, mask, outline), per side. edakit's own print on a solder-mask opening fails: the designators, texts and artwork of `silk apply`, i.e. what is not in the print `silk apply` found before it placed anything (it keeps that in `<artifacts>/silk_footprints_<board>/`). Warnings: other print on an opening, one per part (the part of the nearest pad); print beyond the board outline, one per side; a part of the `designators` side without a visible designator (read with the PCB), group label (`[silk] groups`) or line in `[silk] unlabelled`; a text height edakit prints below 1.0 mm (`label_h_mm`, `board_label_h_mm`, `h_mm` of `[[silk.texts]]`). Spots below 0.0005 mm² are rounding; a side or part counts from 0.001 mm² – why it exists: designators lost after reroutes and a test point never labelled were found on pictures or in a review; the released board passed the gate with footprint print on the mask openings of 11 parts, which JLCPCB clips, and 3.3 mm² of print beyond its outline
 - under a body larger than its footprint (grade body, a warning while new): a part whose parts entry gives `body.box` (4.1, the body seen from above in footprint mm – a coin cell standing out of its holder) covers the print under it. The box is placed where pcb.json has the part; where it reaches beyond the footprint's box (the geometry of `pcb dump`), print on the part's side in the Gerber file – a designator, a text – warns, one row per part with its spots; inside the footprint box lies the footprint's own print, which the Gerber file cannot tell from a designator, and nothing there is looked at. A part without `body.box` gets no row, one without footprint geometry is listed as not checked. `silk apply` places designators beside the body and names a fixed designator ([silk] place) under one – why it exists: in the walkthrough (handbook 17.11) silk apply put BT1's designator right above the holder's footprint box, under the coin cell; the layout review found it, every check had passed
-- with `[looks]` (7.5): every PCB text on the silkscreen of the visible side (pcb.json `strings`) is one the board file puts there – the board label when its side (`board_label_side`, default the `designators` side) is the visible one, the text of a `[[silk.texts]]` entry of that side, and, when `[silk] designators` is that side, a designator of the board or a key of `[silk] groups`; while `[silk] designators` names the other side, no part on the visible side shows its designator (read with the PCB, as GEO.silk). One fail per text or part, with side, text and position: `BOTTOM (visible): D31 shows its designator – [silk] designators is top`, `TOP (visible): text 'TEST' at (15.0, 3.0) mm is neither the board label nor a [[silk.texts]] entry of this side`. The footprints' own print is no PCB text (GEO.mark, GEO.silk), artwork is fills; a "+" placed by hand as a text goes into `[[silk.texts]]`, where GEO.mark still reads it. `waive: {"GEO.silk": "…"}` on a part lists its designator as waived – why it exists: a part placed again after `silk apply` (a footprint change) came back with its designator on the LED side, whose rule was designators off and the version line as the only text; every check passed and the layout review rated it "block"
+- with `[looks]` (7.5): every PCB text on the silkscreen of the visible side (pcb.json `strings`) is one the board file puts there – the board label when its side (`board_label_side`, default the `designators` side) is the visible one, the text of a `[[silk.texts]]` entry of that side, and, when `[silk] designators` is that side, a designator of the board or a key of `[silk] groups`; while `[silk] designators` names the other side, no part on the visible side shows its designator (read with the PCB, as GEO.silk). One fail per text or part, with side, text and position: `BOTTOM (visible): D31 shows its designator – [silk] designators is top`, `TOP (visible): text 'TEST' at (15.0, 3.0) mm is neither the board label nor a [[silk.texts]] entry of this side`. The footprints' own print is no PCB text (GEO.mark, GEO.silk), artwork is fills; a "+" placed by hand as a text goes into `[[silk.texts]]`, where GEO.mark still reads it. `accept: {"GEO.silk": "…"}` (or `"GEO.silk:visible"`) on a part accepts its designator on the visible side, listed with the reason – why it exists: a part placed again after `silk apply` (a footprint change) came back with its designator on the LED side, whose rule was designators off and the version line as the only text; every check passed and the layout review rated it "block"
 
 **`FILES.sheet`** – polarity sheet (error; replaces P-2)  
 Every board gets a polarity sheet drawn from the Gerber data: each polarised part with copper, silkscreen, pad numbers, pin roles and nets, and the signs GEO.mark pairs with it, also beyond the footprint.
@@ -164,24 +168,23 @@ a warning per limit (`max_track_m`, `max_vias`) the side exceeds, accepted or fi
 GEO.silk on the side's print. In the reference
 project the layout review measured the LED side by hand at every round; the row has the numbers in the protocol.
 
-Plus FILES.sheet: a **polarity sheet** per board – every polarised part drawn from the Gerber data with copper, silkscreen,
-pad numbers, pin roles and nets, bottom parts mirrored as seen from below. A tile shows the part's pads and the signs
-GEO.mark pairs with the part, 3 mm around, also a "+" beyond the footprint. It is what the second check compares with
-the datasheet drawings, and what you compare with JLCPCB's assembly preview.
+Plus FILES.sheet: a **polarity sheet** per board – every polarised part drawn from the Gerber data with copper,
+silkscreen, pad numbers, pin roles and nets, bottom parts mirrored as seen from below. A tile shows the part's pads and
+the signs GEO.mark pairs with the part, 3 mm around, also a "+" beyond the footprint. It is what the second check
+compares with the datasheet drawings, and what you compare with JLCPCB's assembly preview.
 
 **Seen red.** No EasyEDA run is needed to test stages L and F. `tests/test_fab_run.py` cuts the example down to its
 input stage (J1, D1, C2 on a 30 × 20 mm board) and writes the export for it: the files `edakit fab` collects, the
-footprint geometry, the net currents and the board as `route read` saw it (pads with their shapes, for GEO.spacing and
-GEO.spacing).
+footprint geometry, the net currents and the board as `route read` saw it (pads with their shapes, for GEO.spacing).
 `edakit fab --offline` on that export passes every row. Then each entry of
 `FAULTS` builds one fault into a copy: a pad net, a part moved or turned, a short or an open net in the Gerber copper,
 a hole too small in the drill file, a changed LCSC number, a part missing from the pick-and-place file, a tooling
 hole missing from the NPTH file. The check that should find the fault fails (or warns) and names the part, net or
 file. Each test lists every row that fails or warns, so a check that also fires is noticed too. Most faults hit
 one check. A few hit two, because the fault touches both: a part turned by 90° (SYNC.plan, SYNC.cpl), a through-hole pad
-without its hole (GEO.hole, and GND open in GEO.copper), a copper dot in a tooling hole's opening (FILES.set, and a loose piece in
-GEO.pour), a plated slot 1.2 mm long in a round pad of 1.4 mm (GEO.hole, and its ring of 0.1 mm in GEO.ring). A new check of L or F
-gets its fault there.
+without its hole (GEO.hole, and GND open in GEO.copper), a copper dot in a tooling hole's opening (FILES.set, and a
+loose piece in GEO.pour), a plated slot 1.2 mm long in a round pad of 1.4 mm (GEO.hole, and its ring of 0.1 mm in
+GEO.ring). A new check of L or F gets its fault there.
 
 **Project checks.** A project holds up the release with checks of its own: a script registered in edakit.toml as
 `[scripts.<name>]` of kind `check` (8.6, 10.1), or the older `[[release.stages]]` – `{id = "K", name = "Mechanics",
@@ -234,18 +237,19 @@ Every run records two hashes in the protocol header, and a run with stage F a th
   changed requirement voids M-1 and M-6, as a new purpose does: the reviews read the requirements
 - **layout** (`layout_sha256`): the board files with the artwork they place (`[[silk.art]]`) and the footprint
   geometry beside them (`<board>.geometry.json`, 7.4), and `[release] layout_files` – of the made boards; a bought
-  or hand-wired board has none. Where a parts entry has footprint data (4.5), the data of every entry a part of a made board uses
-  as well, after the files, as canonical JSON without the keys of `[release] hash_ignore`: a changed pad voids the
-  sign-offs of scope `layout` as a changed geometry does. A project without footprint data keeps its hash; one with
-  it has "footprint data" among what the protocol header says the hash covers. The circuit hash covers the data
+  or hand-wired board has none. Where a parts entry has footprint data (4.5), the data of every entry a part of a made
+  board uses as well, after the files, as canonical JSON without the keys of `[release] hash_ignore`: a changed pad
+  voids the sign-offs of scope `layout` as a changed geometry does. A project without footprint data keeps its hash; one
+  with it has "footprint data" among what the protocol header says the hash covers. The circuit hash covers the data
   without more: it takes every parts file, byte for byte or (with `hash_ignore`) as canonical JSON – a changed pad
   voids M-1 too, which checks polarity at the footprint
 - **fab** (`fab_sha256`): what the manufacturer builds from, per made board – every Gerber layer of
   `fab/<board>/gerber/` rasterised at 0.02 mm as GEO.copper does, in the frame of the board outline (documentation and
   drill-drawing layers left out: nobody builds from them), the drill hits (both ends, diameter) rounded to 1 µm and
-  sorted, the rows of `bom_<b>.csv` and `cpl_<b>.csv` sorted; with `[order]` in the board file (8.4) also the order
-  settings that change the board as made – the thickness as ordered (`thickness_mm`), the colours of mask and
-  silkscreen, the finish and the order-number mark, which stage F writes to `fab/<board>/order.json`; with the method
+  sorted, the rows of `bom_<b>.csv` and `cpl_<b>.csv` sorted; with `[order]` (of the board file or of edakit.toml,
+  8.4) also the order settings that change the board as made – the thickness as ordered (`thickness_mm`), the colours
+  of mask and silkscreen, the finish and the order-number mark, and the other keys that change it where they differ
+  from edakit's default (10.2) –, which stage F writes to `fab/<board>/order.json`; with the method
   (`fab_method`, "raster 0.02 mm v1"), so that a new method shows. The manifest has it with the hash per board and
   file (`fab_layers`). The remark and the tab zones stay out: the remark is free text to JLCPCB, and the tab zones
   reach it only through the remark – neither changes the board as made. A board without `[order]` has no order
@@ -345,8 +349,8 @@ edakit fab diff 20261025-205344 20261025-224607 [--board B]   # run folder names
 ```
 
 per board and file `equal` or `changed`: for a Gerber layer the area added and removed and the largest changed spots
-(XOR of the two rasters, labelled as in GEO.copper) with their bounding box in Gerber coordinates, spots under 0.01 mm² only
-counted and summed; drill hits and BOM/CPL rows removed (−) and added (+); the order settings (`order.json`) one by
+(XOR of the two rasters, labelled as in GEO.copper) with their bounding box in Gerber coordinates, spots under 0.01 mm²
+only counted and summed; drill hits and BOM/CPL rows removed (−) and added (+); the order settings (`order.json`) one by
 one, `- mask = "green"` and `+ mask = "black"`. Exit 0 when everything is equal, 2 otherwise.
 
 `match` is an fnmatch pattern over "ID scenario item step" as section 3 of the protocol prints it – for a warning of
@@ -356,8 +360,8 @@ acceptance about particular parts names them in `parts` ({designator: LCSC numbe
 without one): it counts only while every one of them is still that part in the graph. After a swap section 3 of the
 protocol lists it as lapsed ("lapsed: D2 is now C2895549", "D2 is not in the graph") and the warning is not accepted
 until the owner judges it again and updates `parts`. Without `parts` an acceptance counts as before. **Only the
-owner accepts a warning** – it is a decision. **A manual check an agent can do is signed by the agent's result** (chapter 11): OK → signed with the agent
-as `done_by`; not OK → fix the cause, check again.
+owner accepts a warning** – it is a decision. **A manual check an agent can do is signed by the agent's result**
+(chapter 11): OK → signed with the agent as `done_by`; not OK → fix the cause, check again.
 
 **Open from the datasheets.** Section 6 of the protocol ends with a list per parts entry of the graph – its
 designators, the `open` points of its `verified` sign-off and its `sources` with the word "assumption" (4.1). A point
@@ -375,46 +379,50 @@ no key to switch them off.
 | M-6 | export | circuit | the regulatory review (chapter 15) – agent regulatory-reviewer; support, not legal advice |
 | M-5 | export | fab | the layout review on the manufacturing files of a gate run – agent pcb-reviewer |
 
-A sign-off file that lists one of them keeps its own phase, scope and text (an older M-5 with scope `layout` stays
-so). A project's agents (`[agents.<name>]`, 8.6) add to the list: a sign-off of its own of phase `export` – M-7 of the
-agent optik – is required the same way, in the phase and bound to the hash of the scope the agent's entry gives; with
-`replaces` edakit's review stays required and the project agent signs it. Such a sign-off counts only when its
-`done_by` names the agent. Not everything that can be ordered may be sold or even operated in the EU, and nothing else in the gate looks at
-that (M-6).
+Not everything that can be ordered may be sold or even operated in the EU, and nothing else in the gate looks at that
+(M-6).
+
+A sign-off file that lists one of the three keeps its own phase, scope and text (an older M-5 with scope `layout`
+stays so). A project's agents (`[agents.<name>]`, 8.6) add to the list: a sign-off of its own of phase `export` – M-7 of
+the agent optik – is required the same way, in the phase and bound to the hash of the scope the agent's entry gives;
+with `replaces` edakit's review stays required and the project agent signs it. Such a sign-off counts only when its
+`done_by` names the agent.
 
 The lesson behind M-5: the first released run of the reference project had passed every automatic check, and nobody
 had looked at the layout as a whole. The layout review agent then found a switching regulator loop routed across the
-whole board (now GEO.loop) and that the visible side was crowded with tracks. Since then the layout review is a condition
-of the release, not a tool you may use – in the gate's own list, so that a project whose sign-off file never had it
-is held to it too. It also ends every layout round that changed placement, routing or pours (skill pcb-round), on the
-round's Gerber export, so its findings come before the gate rather than after it: later in the same project a run was
-released with about 45 % of one side bare – EasyEDA had dropped pour islands without a pad, and gate, DRC and layout
+whole board (now GEO.loop) and that the visible side was crowded with tracks. Since then the layout review is a
+condition of the release, not a tool you may use – in the gate's own list, so that a project whose sign-off file never
+had it is held to it too. It also ends every layout round that changed placement, routing or pours (skill pcb-round), on
+the round's Gerber export, so its findings come before the gate rather than after it: later in the same project a run
+was released with about 45 % of one side bare – EasyEDA had dropped pour islands without a pad, and gate, DRC and layout
 review all passed it, because none of their inputs showed the copper as filled (now GEO.pour). Both reviewers give every
 finding its probability and its cost; a deviation without a realistic consequence is not a finding.
 
 ## 8.3 The decision
 
 RELEASED only if every stage ran, no check failed, every warning is accepted, every part is signed, every manual check
-of phase `export` is signed – a project agent's by that agent (8.6), all for the current hashes – and, with `[project] requirements`, every requirement
-`must` the user has accepted has passing evidence and every accepted `should` without it is accepted like a warning
-(8.7); a draft binds nothing yet. Otherwise NOT RELEASED with the reasons. Exit 0 / 2. Every project check of phase `export` is a stage (8.1): it has to run – one after F runs only
-with `--easyeda` – and pass, unless it is advisory; a check of phase `order` or `acceptance` does not hold up the
-release, it is a line of section 6.
+of phase `export` is signed – a project agent's by that agent (8.6), all for the current hashes – and, with
+`[project] requirements`, every requirement `must` the user has accepted has passing evidence and every accepted
+`should` without it is accepted like a warning (8.7); a draft binds nothing yet. Otherwise NOT RELEASED with the
+reasons. Exit 0 / 2. Every project check of phase `export` is a stage (8.1): it has to run – one after F runs only with
+`--easyeda` – and pass, unless it is advisory; a check of phase `order` or `acceptance` does not hold up the release, it
+is a line of section 6.
 
 The protocol names every check with its words next to the ID ("GEO.hole (hole fits the lead)"), and its section 10, "The
 rules behind the findings", gives rule, reason, fix and sources of every check that failed or warned – from the rule
 catalog (chapter 14.2), so that the protocol can be read without this handbook. With `[project] requirements` a
 section 11, "Requirements", follows it (8.7).
 
-Section 2 ends with the information of stages P and G – what `edakit check` prints as a note, such as GEO.hole before the
-first `pcb dump` or PARTS.stock without a stock snapshot – under "Information (does not block the release, needs no
+Section 2 ends with the information of stages P and G – what `edakit check` prints as a note, such as GEO.hole before
+the first `pcb dump` or PARTS.stock without a stock snapshot – under "Information (does not block the release, needs no
 acceptance)": one line per finding, with the check's words. It changes neither the decision nor section 1's counts;
 the simulation's information is in section 7, that of the other stages in section 8.
 
 Result folder `<reports>/<YYYYMMDD-hhmmss>/`: `protocol.md`, `graph_checks.json`, `sim.json`, `schematic_<board>.json`,
-`fab/<board>/` (Gerber ZIP, BOM, CPL, raw data, with `[order]` the order form `order.md` and the order settings
-`order.json`), `fab/polarity_<board>.png`,
-`fab/manifest.json`.
+`stage_<id>.txt` per project check (8.1), `fab/<board>/` (Gerber ZIP, BOM, CPL, raw data, with `[order]` or `[cart]`
+the order form `order.md`, with `[order]` the order settings `order.json`), `fab/polarity_<board>.png`,
+`fab/manifest.json` and `makers.json` – per maker of `[cart] makers` its role and the findings of its checks, which
+`edakit cart prepare` reads (8.4).
 
 **Gate runs are build output.** A run stays in `<reports>` (`build/release`, which git ignores – the `.gitignore` of
 new-project leaves out `build/`), and nothing of it is committed: a released run of the reference project was
@@ -528,10 +536,10 @@ component's `supplier`, else the first supplier of its entry's `order`, else LCS
 `[[extra]]`. Every cart line gets the spares (`[project] spare_pct`, `spare` on the component or item) and is rounded
 up to the supplier's minimum and pack size (`moq`, `step` in `order` or the item). The LCSC cart has the columns of its
 BOM tool ("LCSC Part Number, Quantity, Comment"), the others "Code, Quantity, Item, Designators". A `C99…` number is
-an EasyEDA library entry that LCSC does not sell: no cart line. PARTS.supplier warns about a part bought separately that names no
-supplier – also one that has only such a number. A bought board (`bought = true`, 4.5) gets no BOM: its parts are in
-the carts and in `hand_assembly.md` under the board, marked bought; `edakit cost` prices no PCB and no assembly for it.
-A hand-wired board (`wired = true`) the same way, marked "hand-wired, no PCB".
+an EasyEDA library entry that LCSC does not sell: no cart line. PARTS.supplier warns about a part bought separately that
+names no supplier – also one that has only such a number. A bought board (`bought = true`, 4.5) gets no BOM: its parts
+are in the carts and in `hand_assembly.md` under the board, marked bought; `edakit cost` prices no PCB and no assembly
+for it. A hand-wired board (`wired = true`) the same way, marked "hand-wired, no PCB".
 
 **The order form as data.** Every question a maker's form asks has an answer in the project – a key of `[order]` with
 edakit's default (10.2) – and the form is filled from the keys, never from what the page happens to preselect. edakit's
@@ -542,33 +550,39 @@ board; the later wins. Which maker builds the board is `[cart]` (10.1): JLCPCB w
 (`edakit/makers/<maker>.toml`) only translates – a value into the form's word – and holds the form's limits; `edakit
 cart fields` prints every field with the maker's word and where its value comes from. The form fields that depend on the
 board are among the keys: `finish`, `mark` (`"default"` – JLCPCB prints its number anywhere, `"specify"` – at the
-placeholder, `"remove"`, edakit's default on a board with `[looks]`), `remark`, the tab zones (`tab_zones`, stretches of the outline in plan mm, with
-`tab_copper_mm`) and the colours: `mask` (JLCPCB's "PCB Color": green, purple, red, yellow, blue, white or black) and
-`silkscreen`. The thickness is the board file's `thickness_mm`, the value the mechanical model takes (7.4). Without
-these keys edakit's defaults hold: 1.6 mm, green, white print. JLCPCB prints white on every mask but white, and black on
-white – `silkscreen` states the colour the artwork is drawn for, and FILES.order fails it on a mask that gets the other one, as
-it fails a thickness the form does not offer (FR-4, 2 layers: 0.4, 0.6, 0.8, 1.0, 1.2, 1.6 or 2.0 mm). Every colour
-other than green takes two more days at JLCPCB (its quote form, read 2026-10-28); `edakit cost` prices the fee table's
-board – green, 1.6 mm, lead-free HASL – and names the settings of `[order]` that differ from it as not in the price. The
-board file is in the layout hash, so a changed remark, colour or thickness voids the sign-offs of scope `layout`; the
-settings that change the board as made – thickness, colours, finish and mark, and copper weight, vias, material and the
-other keys marked so in 10.2 where they differ from edakit's default – are in the fab hash as well (8.2), so the layout
-review M-5 of scope `fab` lapses with them too, while a new remark or tab zone leaves it standing. Every gate run then
-writes `fab/<board>/order.md` next to the upload files – every field of the planned maker's form in the order of its
-form, with the maker's word and where it comes from (edakit, `[looks]`, edakit.toml, board file, the Gerber files,
-`[project] quantity`, `[release] assembly`, `[tooling]`, the stock snapshot, `[cart]`): layers, size, quantity, thickness, the
-colours of mask and silkscreen, finish, the mark at the placeholder, the remark; PCBA type and side, tooling holes
-"Added by Customer" when the board has `[tooling]`, bake "Yes" when the stock snapshot gives a BOM part MSL ≥ 5; the
-upload files; the tab zones with their nearest copper and every outline stretch with no copper within `tab_copper_mm`
-(Gerber coordinates, what the maker sees); the parts bought separately with their supplier (`edakit order`) – and, with
-`[order]`, `fab/<board>/order.json` with the settings the fab hash takes; FILES.order checks the settings against the files, for
-every maker of `[cart] makers`. Fill the form from order.md of the released run – with M-5 of scope `fab` its settings
-are the ones the review signed – and write tab zones only on stretches it lists as free.
+placeholder, `"remove"`, edakit's default on a board with `[looks]`), `remark`, the tab zones (`tab_zones`, stretches of
+the outline in plan mm, with `tab_copper_mm`) and the colours: `mask` (JLCPCB's "PCB Color": green, purple, red, yellow,
+blue, white or black) and `silkscreen`. The thickness is the board file's `thickness_mm`, the value the mechanical model
+takes (7.4). Without these keys edakit's defaults hold: 1.6 mm, green, white print. JLCPCB prints white on every mask
+but white, and black on white – `silkscreen` states the colour the artwork is drawn for, and FILES.order fails it on a
+mask that gets the other one, as it fails a thickness the form does not offer (FR-4, 2 layers: 0.4, 0.6, 0.8, 1.0, 1.2,
+1.6 or 2.0 mm). Every colour other than green takes two more days at JLCPCB (its quote form, read 2026-10-28); `edakit
+cost` prices the fee table's board – green, 1.6 mm, lead-free HASL – and names the settings of `[order]` that differ
+from it as not in the price. The board file is in the layout hash, so a changed remark, colour or thickness voids the
+sign-offs of scope `layout`; the settings that change the board as made – thickness, colours, finish and mark, and
+copper weight, vias, material and the other keys marked so in 10.2 where they differ from edakit's default – are in the
+fab hash as well (8.2), so the layout review M-5 of scope `fab` lapses with them too, while a new remark or tab zone
+leaves it standing. Every gate run then writes `fab/<board>/order.md` next to the upload files – every field of the
+planned maker's form in the order of its form, with the maker's word and where it comes from (edakit, `[looks]`,
+edakit.toml, board file, the Gerber files, `[project] quantity`, `[release] assembly`, `[tooling]`, the stock snapshot,
+`[cart]`): layers, size, quantity, thickness, the colours of mask and silkscreen, finish, the mark at the placeholder,
+the remark; PCBA type and side, tooling holes "Added by Customer" when the board has `[tooling]`, bake "Yes" when the
+stock snapshot gives a BOM part MSL ≥ 5; the upload files; the tab zones with their nearest copper and every outline
+stretch with no copper within `tab_copper_mm` (Gerber coordinates, what the maker sees); the parts bought separately
+with their supplier (`edakit order`) – and, with `[order]`, `fab/<board>/order.json` with the settings the fab hash
+takes; FILES.order checks the settings against the files, for every maker of `[cart] makers`. Fill the form from
+order.md of the released run – with M-5 of scope `fab` its settings are the ones the review signed – and write tab zones
+only on stretches it lists as free.
 
 **Up to the cart: `edakit cart` and the skill cart.** The form is filled from the release, not typed: edakit prepares
 the order and checks what comes back; Claude fills the maker's pages in the owner's browser (Claude in Chrome) and
 stops at the maker's cart button. Nothing orders or pays – no command, skill or API path does: the order, the payment
 and M-2 at the maker are the owner's (the user's decision of 2026-10-30).
+
+**State 2026-10-31:** built and tested offline on recorded data; nothing of it has run against a maker's page or
+EasyEDA yet. Ordering step 0 – each maker's form recorded in its profile –, the ODB++ export from EasyEDA and the first
+live runs of the skill cart are open (`TODO.md`). ODB++ comes from EasyEDA only: a KiCad project with AISLER among its
+makers gets SYNC.odb's "not exported".
 
 1. `edakit cart prepare [--board B] [--maker M]` takes the current release and stops unless the maker's upload files
    are the release's (`release verify`, the same function), the circuit and layout hash are the run's, the order
@@ -587,8 +601,8 @@ and M-2 at the maker are the owner's (the user's decision of 2026-10-30).
 3. `edakit cart check` holds that to the job, the release and the page text: the codes ORDER.form to ORDER.review of the
    engine ORDER, listed at the end of this section (`edakit explain ORDER.form`).
 
-   Exit 0: everything passed; 2: a finding – nothing goes into the cart; 3: ORDER.form to ORDER.finish passed and the review of the
-   order is next. `check.md` and `check.json` in the order's folder hold the result.
+   Exit 0: everything passed; 2: a finding – nothing goes into the cart; 3: ORDER.form to ORDER.finish passed and the
+   review of the order is next. `check.md` and `check.json` in the order's folder hold the result.
 4. Only then the skill presses the maker's cart button, reads the cart line back into `cart.json` and runs
    `edakit cart check --cart`: board and quantity of the job, the quote's price within the tolerance. It writes the
    order record `hardware/orders/<date>-<board>-<maker>.json` – versioned, outside every hash: run, hashes, board,
@@ -615,41 +629,42 @@ skill prints the job as a checklist, the owner fills the form and `quote.json`, 
 **Makers.** JLCPCB and PCBWay (China), Eurocircuits (Belgium) and AISLER (Netherlands) have a profile each in
 `edakit/makers/` (`[cart]`, 10.1); the form's labels and words of all four are provisional until ordering step 0 records
 them on the sites (`recorded = false`, named by FILES.order as information). PCBWay and Eurocircuits match the BOM by
-manufacturer part number: `bom_<board>_mpn.csv` and PARTS.fact/mpn. PCBWay's order-number placeholder is `WayWayWay`, JLCPCB's
-`JLCJLCJLCJLC`; each is text to every other maker, and FILES.order finds it there. At PCBWay engineers review the files before
-payment and the assembly price comes with its BOM quotation: the skill stops at "Save to Cart", submitting the order for
-the review is the owner's. JLCPCB's help article (last updated 2026-05-22) reports the order number gone since May
-2026, a 2D barcode or a serial number instead: FILES.order warns about `JLCJLCJLCJLC` on the board and about `mark =
-"specify"` until ordering step 0 has seen the form (the owner's decision of 2026-10-30), and `barcode` (`"qr"`,
-`"datamatrix"`) and `serial_number` are keys of `[order]` (10.2). AISLER
+manufacturer part number: `bom_<board>_mpn.csv` and PARTS.fact/mpn. PCBWay's order-number placeholder is `WayWayWay`,
+JLCPCB's `JLCJLCJLCJLC`; each is text to every other maker, and FILES.order finds it there. At PCBWay engineers review
+the files before payment and the assembly price comes with its BOM quotation: the skill stops at "Save to Cart",
+submitting the order for the review is the owner's. JLCPCB's help article (last updated 2026-05-22) reports the order
+number gone since May 2026, a 2D barcode or a serial number instead: FILES.order warns about `JLCJLCJLCJLC` on the board
+and about `mark = "specify"` until ordering step 0 has seen the form (the owner's decision of 2026-10-30), and `barcode`
+(`"qr"`, `"datamatrix"`) and `serial_number` are keys of `[order]` (10.2). AISLER
 assembles from ODB++: `odb_<board>.zip` from EasyEDA through the patched MCP server and bridge (2.4, 2.5), held to the
 released files by SYNC.odb. Inside the EU there is no import; for `sale` the owner stays the manufacturer of the product
-(15.1). PARTS.stock and `edakit stock` ask JLCPCB's catalogue only where JLCPCB is among the makers; another maker's stock
-is what its matching shows, checked by ORDER.parts.
+(15.1). PARTS.stock and `edakit stock` ask JLCPCB's catalogue only where JLCPCB is among the makers; another maker's
+stock is what its matching shows, checked by ORDER.parts.
 
 The MCP server cannot order. Lessons from the reference order:
 
 - Upload `gerber_<b>.zip`, `bom_<b>.csv`, `cpl_<b>.csv` of the current release only: `edakit release verify` on the
-  files you are about to upload, right before the upload – `edakit cart prepare` does it, and ORDER.files checks the files
-  again with what the page says it received.
+  files you are about to upload, right before the upload – `edakit cart prepare` does it, and ORDER.files checks the
+  files again with what the page says it received.
 - **Economic PCBA** assembles one side, SMD only; a second SMD side or certain parts (large battery holders, some
   modules – "Standard Only" on their JLCPCB part page) need Standard PCBA with a higher setup fee per side. Plan the
-  board so the cheap option works (through-hole parts you solder yourself get `bom: false`); PARTS.stock fails a "Standard
-  Only" part on an Economic order as soon as `edakit stock` has read it.
-- **Tooling holes:** with your own (chapter 7.2) choose "added by customer"; otherwise JLCPCB adds rails or holes.
-  FILES.order warns about an Economic order with fewer than two – in the reference project they were found only in the quote.
-  It also warns about a board with its own tooling holes on an Economic order when neither `[order]` nor `[cart]` is
-  there (grade `tooling`): then no order.md is written, nothing tells the maker the holes are the customer's, and the
-  form stays at "Added by JLCPCB". An `[order]` in the board file – a remark such as "2 tooling holes added by
-  customer", as the example coin-cell-led has it (17.11) – writes order.md with "Added by Customer".
+  board so the cheap option works (through-hole parts you solder yourself get `bom: false`); PARTS.stock fails a
+  "Standard Only" part on an Economic order as soon as `edakit stock` has read it.
+- **Tooling holes:** with your own (7.2) choose "added by customer"; otherwise JLCPCB adds rails or holes. FILES.order
+  warns about an Economic order with fewer than two – in the reference project they were found only in the quote. It
+  also warns about a board with its own tooling holes on an Economic order when neither `[order]` nor `[cart]` is there
+  (grade `tooling`): then no order.md is written, nothing tells the maker the holes are the customer's, and the form
+  stays at "Added by JLCPCB". An `[order]` in the board file – a remark such as "2 tooling holes added by customer", as
+  the example coin-cell-led has it (17.11) – writes order.md with "Added by Customer".
 - **Moisture-sensitive parts:** JLCPCB bakes MSL ≥ 5 parts for a fee and includes the 48 h in the lead time; its MSL
-  classification may differ from the manufacturer's datasheet – PARTS.stock warns with JLCPCB's value from the stock snapshot.
+  classification may differ from the manufacturer's datasheet – PARTS.stock warns with JLCPCB's value from the stock
+  snapshot.
 - **Tented vias** if a side is visible (open vias are holes and tin dots).
 - **Order number:** "specify a location" when a placeholder is printed (`mark = "specify"`; the reference cart still
-  said "Remove Mark") – JLCPCB reports the order number gone since May 2026 (FILES.order warns about the placeholder): for
-  traceability a 2D barcode or a serial number (`barcode`, `serial_number` in `[order]`), placed by JLCPCB where there
-  is room. A board with `[looks]` is ordered with "Remove Mark" unless `[order]` gives `mark`: the choice changes the
-  fab hash, so it is made in the files before the gate run and M-5, not at the form, where it would void M-5 (the
+  said "Remove Mark") – JLCPCB reports the order number gone since May 2026 (FILES.order warns about the placeholder):
+  for traceability a 2D barcode or a serial number (`barcode`, `serial_number` in `[order]`), placed by JLCPCB where
+  there is room. A board with `[looks]` is ordered with "Remove Mark" unless `[order]` gives `mark`: the choice changes
+  the fab hash, so it is made in the files before the gate run and M-5, not at the form, where it would void M-5 (the
   owner's decision of 2026-10-31). Without `[order]` the board has no order.json and the mark is in no hash – give the
   board an `[order]` table.
 - **Remarks** (max. 200 characters, FILES.order): where panel tabs may and may not go, no V-cut on visible edges. The
@@ -657,9 +672,9 @@ The MCP server cannot order. Lessons from the reference order:
   characters, then a "1.17 mm free" that a new pour 0.55 mm from the edge made false.
 - **M-2** in the assembly preview: rotation and polarity of every polarised part on both sides (compare with the
   polarity sheet), no part missing in the BOM tool, then pay.
-- If JLCPCB's DFM check reports something the layout review already accepted or a accept of the gate names (e.g. an
-  annular ring the fab confirmed, GEO.ring), it is in the checklist so nobody panics. GEO.ring holds rings and hole spacing to
-  JLCPCB's table, so a via pair 0.47 mm apart is no finding there.
+- If JLCPCB's DFM check reports something the layout review already accepted or an acceptance in the sign-off file names
+  (e.g. an annular ring the fab confirmed, GEO.ring), it is in the checklist so nobody panics. GEO.ring holds rings and
+  hole spacing to JLCPCB's table, so a via pair 0.47 mm apart is no finding there.
 
 The codes of the order at the maker – generated from the catalog, `edakit/catalog/codes.toml`:
 
@@ -706,8 +721,8 @@ checks of phase `acceptance` (8.1), each with its command, and the sign-offs of 
 
 M-4 works through it and names the requirements it tested in its note; signed, it lets their acceptance steps pass,
 and the requirements whose evidence is such a check (8.7). A board of a published release that passed it drops the
-release's pre-release mark: `edakit release publish --built <tag>` (8.3). The list "after uploading to the manufacturer, before
-paying" works the same way for M-2: the datasheet points with `when = "order"` and the checks of phase `order`.
+release's pre-release mark: `edakit release publish --built <tag>` (8.3). The list "after uploading to the manufacturer,
+before paying" works the same way for M-2: the datasheet points with `when = "order"` and the checks of phase `order`.
 
 ## 8.6 Project scripts and agents
 
@@ -1044,7 +1059,7 @@ requirement's evidence is evaluated against this run:
 
 | `verify` | passes when | otherwise |
 |---|---|---|
-| `rows` | at least one row of the protocol matches – a pattern over "ID scenario item check", matched as `accept` match (8.2), the rows of the simulation included – and none of them failed. An advisory finding of a project check did not pass; a warning, a accept or an open sign-off is no failure | no passing evidence; when no row matches because the pattern's stage did not run – S, L and F in the offline gate –, the protocol says so |
+| `rows` | at least one row of the protocol matches – a pattern over "ID scenario item check", matched as `accept` match (8.2), the rows of the simulation included – and none of them failed. An advisory finding of a project check did not pass; a warning, an acceptance or an open sign-off is no failure | no passing evidence; when no row matches because the pattern's stage did not run – S, L and F in the offline gate –, the protocol says so |
 | `signoff` | the manual check is signed for the current hash of its scope – only then does it count at all (8.2) – and its `note` names the requirement's ID, e.g. `"note": "OK for state 1a2d…; R-4: R2 holds LED_OE high until the firmware drives it"` (R-40 does not name R-4) | phase `export`: no passing evidence; a later phase (M-2, M-4): open after the export |
 | `accept` | M-4 is signed | open after delivery; the step is on the acceptance list of section 6 (8.5) |
 | `script` | the project's check (8.1) – a `[scripts]` name, the `id` of a `[[release.stages]]` – passed in this run: it ran, and no row of its stage failed; an advisory finding did not pass either. A check of phase `order` or `acceptance` counts like an `accept` step: M-2 or M-4 is signed | phase `export`: no passing evidence – also when the check did not run (one after F in the offline gate) or is not part of the run (entries that do not resolve: stage G says why); phase `order` or `acceptance`: open after the export, the check is a line of section 6 |
@@ -1063,8 +1078,8 @@ sign-off of phase `order` or `acceptance` that is still open, leaves the require
 
 **A draft binds nothing yet** (`status = "draft"`, or no `status`). It is evaluated like any requirement and listed in
 section 11 with its evidence, marked as a draft – `→ draft, not binding yet – no passing evidence` –, but it never
-blocks the release and needs no acceptance in the sign-off file, whatever its binding. What DOCS.ref to DOCS.draft find about it
-is information in stage G (`edakit check` warns about it, 3.6). Errors and blocking start once the user has set
+blocks the release and needs no acceptance in the sign-off file, whatever its binding. What DOCS.ref to DOCS.draft find
+about it is information in stage G (`edakit check` warns about it, 3.6). Errors and blocking start once the user has set
 `status = "accepted"`. A dropped requirement is listed, not evaluated.
 
 **Section 11 "Requirements"** of the protocol lists every requirement with binding and status, each piece of evidence

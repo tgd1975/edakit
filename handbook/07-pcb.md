@@ -7,6 +7,8 @@ repeated; every step checks itself.
 A bought board on a cable (`bought = true`) or a hand-wired one (`wired = true`, 4.5) has no PCB: `pcb`, `route`,
 `silk`, `fab` and `export` refuse it with one line when `--board` names it, and without `--board` take the one made
 board; `handover` and `export` over all boards leave it out.
+On a KiCad project (`[project] toolchain = "kicad"`, chapter 16) the commands are the same and work on KiCad's files;
+`pcb autolayout` is refused there, and `pcb place --rest` places the parts without a row (16.4).
 
 ```bash
 edakit handover              # what the circuit hands over: state, sign-offs, what the plan must keep (14.1)
@@ -78,8 +80,8 @@ with another map is reported – "symmetric: the numbers decide". The report:
 - the turn and shift that lay NEW over OLD, the residual per pad, whether the mirror image fits as well – or "mirror
   image only – not on the same side", or "no turn fits"
 - the map old → new by position, the roles of the two entries that change under it (`old 1 throw_a → new 3 throw_b`)
-- the pitch per row, the hole or slot per pad old → new, and with `lead` in NEW's entry GEO.hole's verdict (`hole_ok`) and
-  the 0.5 mm minimum for plated slots; the box w × h old → new
+- the pitch per row, the hole or slot per pad old → new, and with `lead` in NEW's entry GEO.hole's verdict (`hole_ok`)
+  and the 0.5 mm minimum for plated slots; the box w × h old → new
 - the graph change it implies for every component that uses OLD (`SW5: BAT_SW 1 → 3`)
 
 Exit 0 is a drop-in – same side, 0°, every pad keeps its number and role, holes fit (a shift is reported, the plan
@@ -88,7 +90,10 @@ moves the part); 2 is something to decide. It writes nothing but `--json F`. The
 1→3, 2→2, 3→1, 4→4, 5→5, pitch 4.70 → 4.80 mm, the 0.40 mm tab slots below 0.5 mm, `SW5: BAT_SW 1 → 3` – what took
 an hour with both datasheet drawings and was first described as a turn when it is a mirror image.
 
-The same matching of a board footprint against itself is GEO.formed (3.3): when the project's footprint moves holes away from the library's – leads formed for the board, a part fitted by hand – `edakit check` fails if a turn of 90°, 180° or 270° lays the formed holes onto themselves with a pin in another net's hole. Offset the leads so that none does: two in opposite directions, one only, or by different amounts.
+The same matching of a board footprint against itself is GEO.formed (3.3): when the project's footprint moves holes away
+from the library's – leads formed for the board, a part fitted by hand – `edakit check` fails if a turn of 90°, 180° or
+270° lays the formed holes onto themselves with a pin in another net's hole. Offset the leads so that none does: two in
+opposite directions, one only, or by different amounts.
 
 A new project comes with one empty default board (Board1 = Schematic1 + PCB1). The first `edakit schematic layout`
 renames it to the board of edakit.toml (board name, `schematic`, `pcb`) and fills the schematic from the graph; any
@@ -121,22 +126,23 @@ the footprint data of its parts entry (4.5), else from the library footprint `ed
 `pcb plan` names those parts ("footprint data of the parts entry", "library geometry") and takes their pad nets from
 the graph. The dump wins. The dump keeps the hole of every through-hole pad (`hole` [w, l] in
 mm, `plated`), and `pcb plan` runs GEO.hole on the plan's geometry: a hole that does not take its lead is a plan finding
-(`GEO.hole D31 (pads 1, 2, 3, 4, library geometry …): hole 0.70 mm for diagonal 0.71 mm …`), a tight hole or a missing `lead`
-is printed. A geometry file from before has no holes – dump again (it changes the layout hash once). Library and EasyEDA
-Pro agree on the pads within 0.1 mil (eleven footprints of the reference project; one switch 1 mil); the boxes differ by
-up to 0.3 mm, because EasyEDA Pro measures the silkscreen of the placed part. Without a dump and without a cached
-footprint a planned part stays a finding.
+(`GEO.hole D31 (pads 1, 2, 3, 4, library geometry …): hole 0.70 mm for diagonal 0.71 mm …`), a tight hole or a missing
+`lead` is printed. A geometry file from before has no holes – dump again (it changes the layout hash once). Library and
+EasyEDA Pro agree on the pads within 0.1 mil (eleven footprints of the reference project; one switch 1 mil); the boxes
+differ by up to 0.3 mm, because EasyEDA Pro measures the silkscreen of the placed part. Without a dump and without a
+cached footprint a planned part stays a finding – unless its parts entry has footprint data.
 
 The dump of a part whose parts entry has footprint data (4.5) gives every pad its shape, size, rotation and layer as
-well (`shape`, `w`, `h` in mil, `rot`, `layer`, the form of the library cache), so that SYNC.footprint holds the copy to the
-data; every other part is measured as before, and its lines in the file stay as they were.
+well (`shape`, `w`, `h` in mil, `rot`, `layer`, the form of the library cache), so that SYNC.footprint holds the copy to
+the data; every other part is measured as before, and its lines in the file stay as they were.
 
-The dump lies beside the board file, with its name: `hardware/boards/main.toml` has `hardware/boards/main.geometry.json`.
-It is versioned with the board file and in the layout hash (8.2), so CI and a fresh clone have it – GEO.hole and GEO.formed judge
-the project's footprints there too, and the layout hash is the same. Commit it with the board file. Until October 2026
-`pcb dump` wrote it among the artifacts, `<artifacts>/pcb_geometry_<board>.json`, which are not versioned. Such a file
-is still read – by the plan, the checks, stage L and the layout hash – until it is moved, and `edakit check` (a note to
-GEO.hole), `pcb plan` and the gate say how:
+The dump lies beside the board file, with its name: `hardware/boards/main.toml` has
+`hardware/boards/main.geometry.json`. It is versioned with the board file and in the layout hash (8.2), so CI and a
+fresh clone have it – GEO.hole and GEO.formed judge the project's footprints there too, and the layout hash is the same.
+Commit it with the board file. Until October 2026 `pcb dump` wrote it among the artifacts,
+`<artifacts>/pcb_geometry_<board>.json`, which are not versioned. Such a file is still read – by the plan, the checks,
+stage L and the layout hash – until it is moved, and `edakit check` (a note to GEO.hole), `pcb plan` and the gate say
+how:
 
 ```text
 NOTE    GEO.hole  build/edakit/pcb_geometry_main.json: footprint geometry of board main among the artifacts, which are not
@@ -170,10 +176,10 @@ change the graph.
 
 `edakit pcb plan` checks offline: overlaps per side (under a module on pin headers only its pins, SMD parts within a
 silkscreen tolerance: below), outline (0.3 mm margin; `edge_ok` for connectors), keep-outs of holes and tooling holes,
-THT pins of one side under parts of the other, `near` distances, the circuit's layout requirements (SYNC.plan), **polarised
-parts that point the same way** – by default LEDs side by side with their anode towards the same side (below) –,
-**mated plugs** clear of the other parts and out through the outline (below); it prints the airline length of the
-fixed parts (a number to compare placements) and writes `<artifacts>/pcb_plan_<board>.png` and the mechanical model
+THT pins of one side under parts of the other, `near` distances, the circuit's layout requirements (SYNC.plan),
+**polarised parts that point the same way** – by default LEDs side by side with their anode towards the same side
+(below) –, **mated plugs** clear of the other parts and out through the outline (below); it prints the airline length of
+the fixed parts (a number to compare placements) and writes `<artifacts>/pcb_plan_<board>.png` and the mechanical model
 `<artifacts>/mech_<board>.json`. Look at the picture before `apply`.
 
 **Polarised parts in one direction.** Whoever solders a bag of LEDs, diodes or buzzers by hand turns each one by its
@@ -223,7 +229,7 @@ are beyond the tolerance. For parts side by side that is the width of the strip 
 larger box lies as deep as its way out, so the tolerance does not hide it. If either part has through-hole pads, the
 tolerance does not apply. Under a module in `on_headers`, its pins decide (above). The default 0 keeps every overlap a
 finding. Keep the value within the silkscreen margin of the footprints in use: the pads themselves are not compared
-here, but by `route check` and the gate – the clearance (GEO.spacing) and, on an assembled side, the paste gap (GEO.spacing, 7.5).
+here, but by `route check` and the gate – the clearance and, on an assembled side, the paste gap (GEO.spacing, 7.5).
 
 ```toml
 silk_overlap_mm = 0.8        # in hardware/boards/<b>.toml, above the tables
@@ -274,12 +280,12 @@ stick out, what the enclosure needs – that is the project's, from these number
 
 **Parts next to their host.** `edakit pcb place` works out a spot, offline, for every part that `[place]` lacks but
 the circuit or the board file ties to a host: `layout.near` of the graph, `[near]` of the board file, and the
-decoupling of SYNC.plan – an IC without a capacitor of its own within `near_mm` gets the first free capacitor between its
-supply and ground that has no declared host of its own, matched one per IC as SYNC.plan matches them. Declared hosts come
-first (graph, then board file, each by designator), then the decoupling; each placed part is an obstacle for the next.
-The spot lies on the host's side, within `near_mm` of every host, at 0, 90, 180 or 270° on a 0.1 mm grid: the part's
-pad on a net it shares with the host (ground only when that is all they share) as close as possible to the host's pin
-on that net – for a decoupling capacitor its supply pad to the IC's supply pin, and within 0.1 mm of that the ground
+decoupling of SYNC.plan – an IC without a capacitor of its own within `near_mm` gets the first free capacitor between
+its supply and ground that has no declared host of its own, matched one per IC as SYNC.plan matches them. Declared hosts
+come first (graph, then board file, each by designator), then the decoupling; each placed part is an obstacle for the
+next. The spot lies on the host's side, within `near_mm` of every host, at 0, 90, 180 or 270° on a 0.1 mm grid: the
+part's pad on a net it shares with the host (ground only when that is all they share) as close as possible to the host's
+pin on that net – for a decoupling capacitor its supply pad to the IC's supply pin, and within 0.1 mm of that the ground
 pad nearest to the IC's ground pin. A spot counts only where the plan check (`check_plan` and SYNC.plan) reports nothing
 new: `silk_overlap_mm`, `on_headers` with `header_keep_mm`, outline, hole and tooling keep-outs, THT pins of the
 other side, `edge_mm` – as they are. Parts without a host stay with the auto-layout.
@@ -295,8 +301,8 @@ may move a row with `auto = true` (its part is placed anew; one that has no host
 by hand – delete `auto = true` to keep a spot. To every other command an `auto` row is a fixed, locked part like any
 other – the auto-layout writes such rows too (below). `--only C1,R1` places only those. A part without a spot is named
 with its host and pin – `C1: no free spot within near_mm 6 of U2 (pin 16, 3V3)` – and the command exits 2. It reads
-the geometry as `pcb plan` does: the dump of `pcb dump`, and for a part not yet in the PCB the library footprint
-`edakit part import` cached (4.2).
+the geometry as `pcb plan` does: the dump of `pcb dump`, and for a part not yet in the PCB the footprint data of its
+parts entry (4.5), else the library footprint `edakit part import` cached (4.2).
 
 **Every other part (`--rest`).** `edakit pcb place --rest` places every part of the board that has no row in
 `[place]`, or a row with `auto = true` – not only the parts with a host. It works offline, from the board file, the
@@ -371,8 +377,8 @@ edakit pcb takeover --write    # written into [place]
 
 Every part of the board without a row gets a fixed row (no `auto`) where EasyEDA has it, so that `pcb apply` locks it
 there and the tracks stay on its pads; a new auto-layout would move the parts off them. Rows the board file holds
-stay as they are – SYNC.plan compares them with the PCB. Run it before any `pcb dump`: the dump turns every part to 0° on
-TOP, and only the rows bring rotation and side back.
+stay as they are – SYNC.plan compares them with the PCB. Run it before any `pcb dump`: the dump turns every part to 0°
+on TOP, and only the rows bring rotation and side back.
 
 **Every part in the plan (SYNC.plan).** Stage L of the gate fails for every part the graph puts on the board that has no
 row in `[place]` – by hand, from `pcb place`, or written back by the auto-layout. Parts on a bought or hand-wired
@@ -433,8 +439,8 @@ pour_only = true                   # no tracks: the pour between the tracks conn
 
 Class widths must be at least the minimum of the matching EasyEDA net class rule, or the DRC complains.
 
-**EasyEDA's DRC rule set.** GEO.drc asks for a DRC without findings – with the rules EasyEDA holds, set in its GUI and in
-no file. With `drc_rules = "check"` in `[routing]`, the gate reads the rule set the DRC ran with and holds it to the
+**EasyEDA's DRC rule set.** GEO.drc asks for a DRC without findings – with the rules EasyEDA holds, set in its GUI and
+in no file. With `drc_rules = "check"` in `[routing]`, the gate reads the rule set the DRC ran with and holds it to the
 board file, in a third row of GEO.drc (8.1) that names it:
 
 - the clearance `clearance_mil` from track to track, pad and via, and from via to pad and via (EasyEDA's Safe Spacing);
@@ -450,17 +456,18 @@ The row lists each difference with both numbers, e.g. `clearance Track–Track: 
 'copperThickness1oz'), the board file 0.165 mm (clearance_mil 6.5)` – the reference project's DRC ran with that. Set
 what it names in EasyEDA (Design → Design Rule: Safe Spacing, Track, Via Size, the net classes), or change
 `[routing]`. The name in the row is the one EasyEDA reports, the template the rules came from – a write through the
-API keeps it (9.4), so the name alone says nothing about the values. Without the key nothing is read and GEO.drc is as it
-was. edakit does not write the rule set yet: the API takes it (9.4), the live probe of step 2.2 has not run.
+API keeps it (9.4), so the name alone says nothing about the values. Without the key nothing is read and GEO.drc is as
+it was. edakit does not write the rule set yet: the API takes it (9.4), the live probe of step 2.2 has not run.
 
 **Widths from the simulation.** `widths = "classes"` (the default) writes the widths of `classes` and `signal_mil` into
-the DSN as they are. With `widths = "sim"`, `route dsn`, `route` and `all` read `<artifacts>/sim/net_currents.json`
-(`edakit sim`) and give every net at least its IPC-2221 width for 1.5 × its simulated current – the width GEO.width of the
-gate asks for: a class is widened to the largest need of its nets, and a net outside the classes that needs more than
-`signal_mil` gets a class of its own, named after the net. Widths are rounded up to 0.1 mil; `route dsn` prints what it
-widened (`widths = "sim": class POWER: 18 -> 53.9 mil (+5V 2.00 A, VIN 2.00 A)`). Without the currents it stops. Fixed
-wires keep their `width_mil` – the check names them (below). One source of widths then: the simulation, not a table
-that drifts from it.
+the DSN as they are. With `widths = "sim"`, `route dsn`, `route`, `check`, `diagnose` and `all` read
+`<artifacts>/sim/net_currents.json` (`edakit sim`) and give every net at least its IPC-2221 width for 1.5 × its
+simulated current – the width GEO.width of the gate asks for: a class is widened to the largest need of its nets, and a
+net outside the classes that needs more than `signal_mil` gets a class of its own, named after the net. Widths are
+rounded up to 0.1 mil; `route dsn` prints what it widened
+(`widths = "sim": class POWER: 18 -> 53.9 mil (+5V 2.00 A, VIN 2.00 A)`). Without the currents it stops. Fixed wires
+keep their `width_mil` – the check names them (below). One source of widths then: the simulation, not a table that
+drifts from it.
 
 **Freerouting 2.4.1 pitfalls**, all handled in the DSN writer:
 
@@ -509,29 +516,29 @@ room for a fanout via to the V plane – …`. Freerouting's own score counts a 
 violation; edakit's check allows vias there, as `what = "wire"` says.
 
 **Check before writing:** pads of different parts on different nets at least the clearance apart on every layer
-both are on (GEO.spacing: pads of one part belong to the footprint; a pad without a net is a net of its own; `accept` GEO.spacing on a
-part or net accepts a pair), SMD pads of different parts on different nets at least the paste gap apart on every side
-that is assembled (GEO.spacing: `[release] assembly` – `sides`, `paste_gap_mm` 0.4 mm – so that the stencil keeps a web
-between the two prints; through-hole pads get no paste; `accept` GEO.spacing), every net connected through pads, tracks and
-vias (planes count, and the computed pour of a pour-only net, 7.6), every track and via at least the clearance from
-foreign copper, nothing in keep-outs (the edge strips above: `edge_clearance_um` from the outline, in inner corners
-too) – independent of Freerouting's own score. Freerouting cannot move a pad, so pads too close stop `route all` after
-one attempt, without the reshuffled ones: move or turn one of the two parts in the plan. The gate measures the same on
-the pads of the last `route read` (GEO.spacing, 8.1).
+both are on (GEO.spacing: pads of one part belong to the footprint; a pad without a net is a net of its own; `accept`
+GEO.spacing on a part or net accepts a pair), SMD pads of different parts on different nets at least the paste gap apart
+on every side that is assembled (GEO.spacing: `[release] assembly` – `sides`, `paste_gap_mm` 0.4 mm – so that the
+stencil keeps a web between the two prints; through-hole pads get no paste; `accept` GEO.spacing), every net connected
+through pads, tracks and vias (planes count, and the computed pour of a pour-only net, 7.6), every track and via at
+least the clearance from foreign copper, nothing in keep-outs (the edge strips above: `edge_clearance_um` from the
+outline, in inner corners too) – independent of Freerouting's own score. Freerouting cannot move a pad, so pads too
+close stop `route all` after one attempt, without the reshuffled ones: move or turn one of the two parts in the plan.
+The gate measures the same on the pads of the last `route read` (GEO.spacing, 8.1).
 
-**Hand-soldered joints (GEO.spacing)** with `hand_solder_keep_mm` (0, off, by default): a joint soldered by hand gets an iron
-and wire solder, not a stencil print of fixed volume, and a tented via or a foreign pad a few tenths of a millimetre
-away can take a bridge that only shows at assembly. The joints are the pads of every part with `bom: false` in the
-graph (8.4), each on its solder side – for a through-hole pad the copper layer its part does not sit on, for an SMD pad
-its own layer, the side the part sits on: a tab soldered with an iron, such as a coin cell holder's, bridges to a via as
-a through-hole joint does. On that side no via and no pad of another net comes closer than the keep, copper to copper;
-a pad without a net is a net of its own, the part's own pads are not compared, and tracks do not count – they run under
-the solder mask, between the pins of a 2.54 mm part too.
-Pads too close stop `route all` like GEO.spacing (Freerouting cannot move them); a via gets the reshuffled attempts. `route
-dsn` keeps vias away from the start: around every joint a via keep-out on its solder side, the pad grown by the keep
-(Specctra `via_keepout`, which Freerouting reads) – it keeps out vias of the joint's own net as well, which reaches the
-joint by track – and the fanout vias of a plane keep the same distance. `accept` GEO.spacing on the joint's part or net, or on
-the other part or net, accepts a pair:
+**Hand-soldered joints (GEO.spacing)** with `hand_solder_keep_mm` (0, off, by default): a joint soldered by hand gets an
+iron and wire solder, not a stencil print of fixed volume, and a tented via or a foreign pad a few tenths of a
+millimetre away can take a bridge that only shows at assembly. The joints are the pads of every part with `bom: false`
+in the graph (8.4), each on its solder side – for a through-hole pad the copper layer its part does not sit on, for an
+SMD pad its own layer, the side the part sits on: a tab soldered with an iron, such as a coin cell holder's, bridges to
+a via as a through-hole joint does. On that side no via and no pad of another net comes closer than the keep, copper to
+copper; a pad without a net is a net of its own, the part's own pads are not compared, and tracks do not count – they
+run under the solder mask, between the pins of a 2.54 mm part too. Pads too close stop `route all` like pads closer than
+the clearance (Freerouting cannot move them); a via gets the reshuffled attempts. `route dsn` keeps vias away from the
+start: around every joint a via keep-out on its solder side, the pad grown by the keep (Specctra `via_keepout`, which
+Freerouting reads) – it keeps out vias of the joint's own net as well, which reaches the joint by track – and the fanout
+vias of a plane keep the same distance. `accept` GEO.spacing on the joint's part or net, or on the other part or net,
+accepts a pair:
 
 ```text
 hand-soldered joints (GEO.spacing): 2 on their solder side, 1 vias of other nets closer than hand_solder_keep_mm 0.5
@@ -576,8 +583,8 @@ BOTTOM (visible): 0.18 m of track, 2 vias
 ```
 
 The lengths are those of the routing preview's titles. A warning changes no exit code: the routing is not wrong, the
-look is not what the board file asked for. Stage L of the gate gives the same row from the PCB itself (8.1), and GEO.silk
-holds the side's print to the board file (7.7). Without `[looks]` nothing is printed. A board with `[looks]` is
+look is not what the board file asked for. Stage L of the gate gives the same row from the PCB itself (8.1), and
+GEO.silk holds the side's print to the board file (7.7). Without `[looks]` nothing is printed. A board with `[looks]` is
 ordered without the maker's order number (`mark = "remove"`, edakit's default there, 10.2) unless `[order]` says
 otherwise.
 Preview: `<artifacts>/route/<board>_routing.png`, open connections dashed yellow. Nothing is written to EasyEDA until
@@ -629,23 +636,23 @@ and anything unplanned is deleted – old tracks have come back after a reload b
 
 **Import Changes.** After parts were placed in the schematic, EasyEDA's DRC reports "Netlist Error – Import
 Changes" until its import view has been opened once – also when schematic and PCB are equal. `route drc` (and
-`route all`, `silk apply`/`check`, the gate's GEO.drc) then compares them itself, as `pcb parts` and `pcb nets` do without
-`--write`, writes the result to `route/<board>_netlist_diff.json` and says which case it is: no difference → "EasyEDA
-waits for the import acknowledgement: open Design → Import Changes once, it shows no changes", exit **3** when that
-is the only item; differences → the parts and pads with `pcb parts --write` or `pcb nets --write`, exit 2. In the
+`route all`, `silk apply`/`check`, the gate's GEO.drc) then compares them itself, as `pcb parts` and `pcb nets` do
+without `--write`, writes the result to `route/<board>_netlist_diff.json` and says which case it is: no difference →
+"EasyEDA waits for the import acknowledgement: open Design → Import Changes once, it shows no changes", exit **3** when
+that is the only item; differences → the parts and pads with `pcb parts --write` or `pcb nets --write`, exit 2. In the
 reference project the item alone held the gate at GEO.drc in ten runs, once for 2¾ h while the first diagnosis was
 wrong.
 
 ## 7.6 Pours
 
 `[[pours]]` of the board file: net, layers, `plane` (with `fanout`, 7.5), `stitch`, `pour_only`. Filled with
-`easyeda_pcb_rebuild_copper` per net (status `readback-mismatch` is harmless for the fill). EasyEDA drops every piece of a
-pour that touches no pad of its net: where the pour net has no pad, that side stays bare – it looks the same as a pour
+`easyeda_pcb_rebuild_copper` per net (status `readback-mismatch` is harmless for the fill). EasyEDA drops every piece of
+a pour that touches no pad of its net: where the pour net has no pad, that side stays bare – it looks the same as a pour
 that was never filled. The gate measures it in the Gerber files (GEO.pour): a copper-free circle above `[copper]
-max_bare_mm` (5 mm) inside the pour outline of a poured layer warns, and so does a copper piece without pad, via or hole.
-Give such an area a net that reaches it – a second pour net with `pour_regions` below, or a pad or via of the pour net. With `stitch = "BOTTOM"` edakit fills
-once keeping islands, puts a via into every loose island on that side where it overlaps the pour of the other side
-(with clearance), then fills again without islands.
+max_bare_mm` (5 mm) inside the pour outline of a poured layer warns, and so does a copper piece without pad, via or
+hole. Give such an area a net that reaches it – a second pour net with `pour_regions` below, or a pad or via of the pour
+net. With `stitch = "BOTTOM"` edakit fills once keeping islands, puts a via into every loose island on that side where
+it overlaps the pour of the other side (with clearance), then fills again without islands.
 
 **Distance from the edge.** Every pour gets the board outline set in by `pour_inset_mm` from the top of the board file
 – without it by the tracks' `routing.edge_clearance_um` + 0.1 mm (0.5 mm with 400; EasyEDA itself keeps only about
@@ -703,8 +710,8 @@ A pour-only net on a shared layer is connected by what it claims, not by the who
 outlines dashed. A plane takes the whole layer, so with `pour_regions` it needs a layer of its own.
 
 Without `pour_regions`, the computed pour of a pour-only net assumes the layer to itself: when another net pours on
-the same layer, `route check` says so. The gate's GEO.copper (connectivity) and GEO.pour (bare areas, loose copper) on the Gerber
-copper have the last word either way.
+the same layer, `route check` says so. The gate's GEO.copper (connectivity) and GEO.pour (bare areas, loose copper) on
+the Gerber copper have the last word either way.
 
 ## 7.7 Silkscreen
 
@@ -757,8 +764,8 @@ on a pad (top) – 0.42 mm² of its box within 0.15 mm of a solder-mask opening`
 all the same. A row for a designator the board does not have is a finding too. `edakit silk preview` draws the fixed
 designators as blue boxes onto the last Gerber export and reports the same findings offline (exit 2), so a spot can be
 tuned without EasyEDA. In the gate a fixed designator is edakit's print like any other (GEO.silk). A part of the
-`designators` side whose name goes to the other side has none on its own side: GEO.silk warns unless `unlabelled` gives the
-reason. With `[looks]`, GEO.silk does not know `[silk.place]` yet: a fixed designator on the visible side while
+`designators` side whose name goes to the other side has none on its own side: GEO.silk warns unless `unlabelled` gives
+the reason. With `[looks]`, GEO.silk does not know `[silk.place]` yet: a fixed designator on the visible side while
 `designators` names the other side is a finding there – a part's own designator can be accepted on the part (`accept`
 GEO.silk), a free text not.
 
@@ -803,16 +810,16 @@ Good to know:
   lines yourself.
 - JLCPCB prints its order number somewhere unless you place the placeholder `JLCJLCJLCJLC` and choose
   "specify a location" when ordering: a `[[silk.texts]]` entry of at least 0.8 mm and `mark = "specify"` in `[order]`
-  of the board file – FILES.order checks that both are there (8.4). JLCPCB's help article reports the order number gone since
-  May 2026: FILES.order warns about the placeholder until ordering step 0 has seen the form, and a 2D barcode or a serial
-  number (`barcode`, `serial_number`) take its place. PCBWay's placeholder is `WayWayWay`; another maker's on the
+  of the board file – FILES.order checks that both are there (8.4). JLCPCB's help article reports the order number gone
+  since May 2026: FILES.order warns about the placeholder until ordering step 0 has seen the form, and a 2D barcode or a
+  serial number (`barcode`, `serial_number`) take its place. PCBWay's placeholder is `WayWayWay`; another maker's on the
   board is printed as text, and FILES.order finds it.
 - The print colour follows the solder mask: JLCPCB prints white, on a white mask black. Artwork drawn for one colour
   says so with `silkscreen` next to `mask` in `[order]`; FILES.order fails a pair JLCPCB does not print (8.4).
 - Run `silk apply` again after every auto-layout and routing – spots depend on parts and vias.
 
-**In the gate** (GEO.silk, 8.1) the silkscreen is checked as the fab gets it. `silk apply` keeps the silk files of its first
-export – the print it found before placing anything: footprints, and texts it did not make – in
+**In the gate** (GEO.silk, 8.1) the silkscreen is checked as the fab gets it. `silk apply` keeps the silk files of its
+first export – the print it found before placing anything: footprints, and texts it did not make – in
 `<artifacts>/silk_footprints_<board>/`; whatever else lies on a solder-mask opening is edakit's own print and fails
 (run `silk apply` again). The footprints' print on an opening, print beyond the outline, a text height below 1.0 mm and
 a part of the `designators` side without a visible designator are warnings. A part that is left without a designator on
@@ -824,8 +831,8 @@ designators = "top"
 unlabelled = { R21 = "no room between the star tracks" }
 ```
 
-With `[looks]` (7.5) the gate also holds the visible side to the board file (GEO.silk): its PCB texts are the board label of
-that side, the `[[silk.texts]]` of that side and – when `designators` is that side – the designators and group
+With `[looks]` (7.5) the gate also holds the visible side to the board file (GEO.silk): its PCB texts are the board
+label of that side, the `[[silk.texts]]` of that side and – when `designators` is that side – the designators and group
 labels; and while `designators` names the other side, no part on the visible side shows its designator. A part placed
 again after `silk apply` (a swap, a footprint rebuilt) comes back with its designator shown: run `silk apply` again.
 A text placed by hand that belongs there goes into `[[silk.texts]]`; a designator wanted there is accepted on the part.

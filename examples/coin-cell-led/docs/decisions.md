@@ -44,7 +44,7 @@ a tool or a screwed cover (M-6, note 1). Given away it would be a gift, sold a s
 
 ## D-6 A round board (2026-10-31)
 
-The owner wants it round. Ø 44 mm – `rect = [44, 44]` with `corner_radius = 22` in the board file, 48 chords, 45 µm
+The owner wants it round. Ø 44 mm – `rect = [44, 44]` with `corner_radius = 22` in the board file, 48 chords, 47 µm
 off the circle. The holder sits almost in the middle, the cell (Ø 20 mm) nearly concentric with the board, with 10 mm
 above it to lever it out; button, LED and resistor below. The two tooling holes of the Economic assembly are
 diagonally opposite. A layout decision: the circuit hash stays, and M-1 and M-6 keep counting.

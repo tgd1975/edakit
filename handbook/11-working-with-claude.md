@@ -29,7 +29,7 @@ agreements are as important as the scripts.
 | agent | `edakit:pcb-reviewer` | independent layout review (read-only EasyEDA tools); its result is the sign-off M-5 |
 | MCP | `easyeda` | easyeda-mcp-pro, pinned, safe defaults |
 | hook | PreToolUse on the easyeda tools | claims EasyEDA for the session, refuses when another session holds it |
-| hook | SessionStart | in an edakit project: the working agreements of 11.4 and the project's own scripts and agents (8.6), one line each, into the session's context |
+| hook | SessionStart | in an edakit project: the working agreements of 11.4 and the project's own scripts and agents (8.6), one line each, into the session's context; on KiCad a line on the tool chain, and the path of `bin/edakit` where `edakit` is not on the PATH |
 | bin | `edakit` | the command line on the Bash PATH |
 
 Skills trigger on their description; you can also call them by name. Put project-specific rules (what the user wants
@@ -96,7 +96,9 @@ finds the project's edakit.toml and adds one line per agreement – its number a
 section – with the path of this chapter. A new agreement needs nothing but its numbered item with a bold title here.
 Outside an edakit project the hook adds nothing. After the agreements it lists the project's own scripts and
 agents, one line each (below the list); `[project] agreements = false` in edakit.toml turns off the agreements,
-not that list.
+not that list. A project with `toolchain = "kicad"` gets one more line – no EasyEDA, no claim, no easyeda-operator,
+the commands run kicad-cli (chapter 16) –, and where `edakit` is not on the PATH a last line names the plugin's
+`bin/edakit`.
 
 1. **Everything in EasyEDA is generated, so it may be deleted.** Claude deletes tracks, pours, parts, schematics and
    regenerates them without asking for permission or proposing a backup.

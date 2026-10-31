@@ -1,7 +1,7 @@
 # 9 EasyEDA Pro API and MCP server: how they really behave
 
 Everything here was found the hard way, on EasyEDA Pro 3.2.206 (Linux) with easyeda-mcp-pro 1.4.0, between
-19 and 25 October 2026. edakit works around each point; this chapter explains why the code looks the way it does and
+19 and 26 October 2026. edakit works around each point; this chapter explains why the code looks the way it does and
 helps when you call the API directly.
 
 Calls go through the MCP tool `easyeda_api_call` with `path` (e.g. `PCB_PrimitiveLine.create`) and `args` (a list).
@@ -19,6 +19,7 @@ List the available methods with `easyeda_api_inventory` and a `filter`.
 | Schematic PDF | The bridge's PDF export always calls the first available function, `PCB_ManufactureData.getPdfFile`; for a schematic nothing comes back, although `SCH_ManufactureData.getExportDocumentFile(name, "PDF"|"SVG"|"PNG")` can do it. The patch adds that path for `scope: "schematic"`. |
 | BOM and netlist export | `easyeda_bom_export` writes no file and mixes all schematics of the project; the netlist export returns nothing. edakit writes both itself from the schematic primitives. |
 | Exports | Export tools write only into the server's `ARTIFACT_DIR`; edakit starts its server with the directory it wants. The pick-and-place export returns xlsx even when csv is asked for. |
+| ODB++ | The server has no ODB++ export. `odb-tool-patch.mjs` adds the tool `easyeda_export_odb` to the installed server (`mcp-server.sh` runs it after the install), and `bridge-extension-patch.sh` lets the bridge answer it with `PCB_ManufactureData.getOpenDatabaseDoublePlusFile` (BETA in EasyEDA Pro's API); a bridge without that handler answers with the Gerber ZIP, which the tool refuses. It serves a maker that assembles from ODB++ (8.4, SYNC.odb) and has not run live yet. |
 | Simulation tools | `easyeda_simulate_operating_point` / `_transient` know two diode models and no transistors – useless for a real circuit; edakit simulates with ngspice from the graph instead. |
 | Part search | `easyeda_schematic_search_device` is a full-text search: `C5613` also finds `C5613331` and `UC5613PWP`. Take only hits whose `supplierId` is exactly the LCSC number. It returns no stock and no price. |
 

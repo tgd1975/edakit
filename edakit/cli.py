@@ -4,12 +4,14 @@
     edakit rules [CODE ...]          the engines and the codes of the catalog
     edakit explain CODE ...          rule, why, fix and sources of a code (LIM.v, REQ.missing …)
     edakit graph show NAME           one part or net: what the graph and its parts entry say, the findings on it
+    edakit mutate [--sim]            mistakes built into a copy of the design one at a time: what no code catches
     edakit graph json [--write|--check]   the resolved graph with pin numbers; beside a TOML graph hardware/graph.json,
                                      --check: drift (pre-commit hook)
     edakit graph convert [--dry-run] a JSON graph moved to hardware/graph.toml once, its sign-offs carried over
     edakit block list|show|add       building blocks with checked parts into the graph
     edakit part import LCSC [--update]   symbol pins and footprint of an LCSC number from the library – no EasyEDA
     edakit part lint [KEY ...]       every parts entry held to the schema of its kind (catalog/kinds.toml)
+    edakit part add [KEY] [--update] | sign KEY --by NAME   entries of edakit's parts library: copied in, signed
     edakit part diff OLD NEW         how a new footprint maps onto the old one before a swap (offline)
     edakit part fetch KEY [--url U] | --all   a part's datasheet PDF, kept beside the project and checked to be of it
     edakit part search "KEYWORDS"    JLCPCB's parts catalogue: LCSC number, class, stock – no EasyEDA
@@ -37,7 +39,7 @@
     edakit pcb dump|plan|place|parts|nets|apply|tooling|pour|autolayout|takeover
     edakit route all|read|dsn|route|check|apply|verify|pours|reload|drc|save
     edakit route diagnose [--net N]  why each open connection is open: walled in, blocked, or a free way (offline)
-    edakit silk apply|check
+    edakit silk apply|check|preview
     edakit export                    PDFs, Gerber, BOM, CPL, netlist and a project copy to <artifacts>/export
     edakit gate [--easyeda]          release gate with test protocol and manufacturing files
     edakit release current|withdraw RUN --reason T|verify FILE…   the one current release, the files to upload
@@ -90,7 +92,7 @@ def build_parser():
                                           "the list")
 
     p = sub.add_parser("explain", help="rule, why, fix and sources of a code")
-    p.add_argument("ids", nargs="+", help="codes, e.g. LIM.v REQ.missing (an old ID such as LIM.v names its codes)")
+    p.add_argument("ids", nargs="+", help="codes, e.g. LIM.v REQ.missing (an old ID such as G-4 names its codes)")
 
     p = sub.add_parser("graph", help="what the graph says about one part or net; the resolved graph as JSON; a JSON "
                                      "graph moved to TOML")

@@ -13,7 +13,7 @@ in when they draw: `I_OUT = {sim:max SIM.state * D2 LED current*}`. Only braces 
 Sources:
     graph:<key>                       a key of the graph itself: graph:version, graph:date
     graph:<part|net|cable>.<key>      graph:R1.value, graph:+5V.v, graph:W1.r_ohm_per_wire (dotted further)
-    part:<parts entry>.<dotted path>  part:C90107.params.vrext_v – the unit follows the key (_v, _a, _ohm, _w, …)
+    part:<parts entry>.<dotted path>  part:C90107.values.vrext_v – the unit follows the key (_v, _a, _ohm, _w, …)
     sim:<max|min|one> <pattern>       the numeric actual of the simulation rows whose "ID scenario item check" matches
                                       the fnmatch pattern – the key the sign-off file's `match` uses; the result is the
                                       one `edakit sim` saved while its inputs are unchanged, else a new run

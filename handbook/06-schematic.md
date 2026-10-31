@@ -53,9 +53,9 @@ Read only (it activates the pages, though). Parts (missing, extra, duplicate, LC
 no foreign pins, no unknown nets), pin numbers **and names** and no-connect markers. About 10 s. A name that
 differs from the symbol (`D11/MOSI` in the graph, `D11` in the symbol) fails: the graph then assumed another
 pinout, and that is the error to catch here – or the library part disagrees with itself (an LED symbol naming pin 1
-`K` while its footprint prints `+` at pad 1). Names follow the symbol; the meaning sits in the roles. The gate runs it for every board
-(SYNC.schematic). Run it also at the start of every EasyEDA session and before every gate run: a template once had a pin on two
-nets without anyone having written to it; regenerating fixed it.
+`K` while its footprint prints `+` at pad 1). Names follow the symbol; the meaning sits in the roles. The gate runs it
+for every board (SYNC.schematic). Run it also at the start of every EasyEDA session and before every gate run: a
+template once had a pin on two nets without anyone having written to it; regenerating fixed it.
 
 ## 6.3 Copy and lay out
 
@@ -166,7 +166,7 @@ and edakit fills it in – a requirement's sentence the same way.
 |---|---|
 | `graph:<key>` | a key of the graph itself: `graph:version`, `graph:date` |
 | `graph:<part, net or cable>.<key>` | `graph:R1.value`, `graph:+5V.v` (a net's range, in V), further keys with dots |
-| `part:<parts entry>.<path>` | `part:C90107.params.vrext_v` – the unit follows the key's ending (`_v`, `_a`, `_ohm`, `_w`, `_f`, `_h`, `_hz`, `_c`, `_mm`, `_s`) |
+| `part:<parts entry>.<path>` | `part:C90107.values.vrext_v` – the unit follows the key's ending (`_v`, `_a`, `_ohm`, `_w`, `_f`, `_h`, `_hz`, `_c`, `_mm`, `_s`) |
 | `sim:max\|min\|one <pattern>` | the numeric actual of the simulation rows whose `ID scenario item check` matches the pattern – the key the sign-off file's `match` uses (8.2); `one` wants exactly one row |
 | `req:<ID>` | the `text` of a need or requirement of `[project] requirements` (3.6): `req:R-1`, `req:N-2` – on one line |
 
@@ -184,17 +184,17 @@ must do, they quote the requirements file (3.6) by ID instead of copying the sen
 
 The quote is the entry's `text`, a line break in it as a space – a block is one line. A draft is quoted as it
 stands; when its text changes, the quote is stale like any other. A dropped entry is not quoted: it no longer holds,
-and a document that quotes it reads as if it did – DOCS.quote names it with its reason; quote the entry that holds now, or
-drop the block. Its text stays in the requirements file, where `edakit req` shows it. Without `[project] requirements`
-a `req:` source is DOCS.quote that names the key; a requirements file that does not read, DOCS.quote with what is wrong in it.
-The requirements file is in the circuit hash (8.2), the documents are not: a changed requirement voids M-1 and M-6,
-`edakit docs --write` then brings the quotes along without voiding anything.
+and a document that quotes it reads as if it did – DOCS.quote names it with its reason; quote the entry that holds now,
+or drop the block. Its text stays in the requirements file, where `edakit req` shows it. Without
+`[project] requirements` a `req:` source is DOCS.quote that names the key; a requirements file that does not read,
+DOCS.quote with what is wrong in it. The requirements file is in the circuit hash (8.2), the documents are not: a
+changed requirement voids M-1 and M-6, `edakit docs --write` then brings the quotes along without voiding anything.
 
 ```bash
 edakit docs            # DOCS.quote for every block that differs from its source and every source that does not exist; exit 2
 edakit docs --write    # fill in the current values
 ```
 
-DOCS.quote also runs in the gate's stage G on the gate's own simulation, an error like STRUCT.lock for a pin table. Documents and
-the schematic file are in no hash (8.2): correcting a quoted number voids no sign-off. Put `edakit docs` into the
-pre-commit hook next to `edakit check` and `edakit sim`.
+DOCS.quote also runs in the gate's stage G on the gate's own simulation, an error like STRUCT.lock for a pin table.
+Documents and the schematic file are in no hash (8.2): correcting a quoted number voids no sign-off. Put `edakit docs`
+into the pre-commit hook next to `edakit check` and `edakit sim`.

@@ -20,7 +20,8 @@ and a via in the middle: a part inside a code block. The wordmark is "edakit", l
 | `edakit-favicon.svg` | 16–48 px: pad holes dropped, only the centre via |
 
 - Clear space: one via diameter on every side. Smallest mark: 24 px; below that the favicon.
-- Don't recolour the pads teal, rotate the mark, or put the colour mark on teal – use the app icon or a mono file there.
+- Don't recolour the pads teal, rotate the mark, or put the colour mark on teal – use the app icon or a mono file
+  there.
 
 ## Colours
 
@@ -32,6 +33,7 @@ catalog's CSS (`docs/catalog/build.py`) uses the same names as custom properties
 | --- | --- | --- | --- |
 | `accent` | #0e6c6a | #5cc4c0 | Links, focus rings, the logo's traces |
 | `copper` | #b8691f | #e0954f | The logo's pads – graphics only, not text |
+| `copper-on-accent` | #f2b36b | #f2b36b | The pads on a teal ground: app icon, favicon |
 | `ink` | #1d2626 | #e3eaea | Text |
 | `muted` | #5d6b6b | #97a6a6 | Secondary text |
 | `bg` / `surface` | #f4f6f6 / #ffffff | #111717 / #182020 | Page / cards, tables |

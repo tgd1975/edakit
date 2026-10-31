@@ -43,10 +43,10 @@ What edakit knows about circuits is data in one catalog; the code reads it. Five
 
 | Thing | Where | Holds |
 |---|---|---|
-| engines and codes | `edakit/catalog/codes.toml` | twelve engines, each deciding one kind of relation, and their codes: title, rule, why, what to do, severity and grades, sources, the check IDs of before it replaces |
+| engines and codes | `edakit/catalog/codes.toml` | thirteen engines, each deciding one kind of relation, and their codes: title, rule, why, what to do, severity and grades, sources, the check IDs of before it replaces |
 | parts schema | `edakit/catalog/kinds.toml` | per kind the limits and values an entry may give, every name with its unit (4.1); `edakit part lint` holds the entries to it |
 | defaults | `edakit/catalog/needs.toml`, `levels.toml`, `paths.toml` | what a pin or part of a kind requires unless its entry says otherwise (decoupling per `power_in`, a pull-up per I2C line, a diode per coil, Rd per CC pin), the levels at reset, the parts a supply passes through |
-| tables | `edakit/catalog/tables/` | the numbers with their source: EU radio bands, USB, I2C, derating, JLCPCB's capabilities, IPC-2221, the audio band's source models (pickups, piezo discs, electret capsules as their makers state them) |
+| tables | `edakit/catalog/tables/` | the numbers with their source: EU radio bands, USB, I2C, derating, JLCPCB's capabilities, IPC-2221, the audio band's source models (pickups, piezo discs, electret capsules as their makers state them), the termination and idle bias of RS-485 and CAN buses, the ES1 limit of IEC 62368-1 |
 | domains | `edakit/domains/` | which codes are on and how severe, the facts a kind must give, the hints, the reviewers' questions |
 
 **Engines.** Each decides one kind of relation, on the graph, the parts, the simulation, the plan or the files:
@@ -63,6 +63,7 @@ What edakit knows about circuits is data in one catalog; the code reads it. Five
 | GEO | copper, holes, print, widths and distances on plan and Gerber files |
 | FILES | manufacturing files and sheets complete and consistent |
 | PARTS | parts entries complete, well-formed, verified, orderable |
+| ORDER | the order at the maker is the release: form, parts, quote, files, finish, review (8.4) |
 | DOCS | documents and requirements quote the design |
 | HINT | patterns that need judgement, as notes |
 
@@ -91,10 +92,10 @@ edakit explain G-8           # a check ID of before: the codes that replace it (
 ```
 
 The catalog explains the findings: `edakit check` prints what to do for every code that failed below the findings, the
-gate protocol ends with "The rules behind the findings", and the handbook's lists of codes (3.3, 5.3, 8.1) and the
-parts schema (4.1) are generated from it – `python -m edakit.catalog.handbook --write`, and a test fails while they
-differ. Tests make sure that every code the engines can report has an entry and that the catalog passes its lint: every
-code with engine, title, rule, why and fix, every table row with its source.
+gate protocol ends with "The rules behind the findings", and the handbook's lists of codes (3.3, 5.3, 8.1, 8.4, 14.3)
+and the parts schema (4.1) are generated from it – `python -m edakit.catalog.handbook --write`, and a test fails while
+they differ. Tests make sure that every code the engines can report has an entry and that the catalog passes its lint:
+every code with engine, title, rule, why and fix, every table row with its source.
 
 **Accepting.** One mechanism for everything a person has seen and answered: `accept` with a reason, keyed by the
 code – `"accept": {"LVL.undefined": "floating until the firmware runs, harmless: OE is pulled high"}` on the net or the
@@ -104,16 +105,16 @@ circuit hash and renews M-1. Warnings for the release are accepted in the sign-o
 Pending findings cannot be accepted.
 
 **Domains.** A profile of rules per area of electronics. `core` is always on: structure, artifacts, limits and levels
-of the basic kinds, parts, files, documents. `usb` switches on the USB-C termination and its data in both orientations, `radio` the e.i.r.p.
-and the bands of parts that transmit, `audio` bridge-tied outputs and the hints of hum and switching noise, `guitar`
-the instrument input's load and the pedal's supply, `motors` the hints of motor supplies and heaters, `power` those of
-cells, converters and polarity, `cables` the lines on a lead. Each is suggested by what the graph has: a USB-C
-receptacle, a part that transmits, a speaker, an instrument net, a motor, a battery holder, a cable; `mains` by a
-net above the ES1 limits, which LIM.hazardous recognises – spacing and isolation stay unchecked (rules-at-scale.md,
-decision 7). The interview of a new project asks for no domain: there is no graph yet, and the graph decides
-(skill new-project). A domain file sets severities (also per purpose: `[severity.sale]`), switches codes or
-topics on, names the facts a kind must give (a missing one is `PARTS.fact`), the hints that apply and the questions
-the reviewers ask. A project names its domains in edakit.toml:
+of the basic kinds, parts, files, documents. `usb` switches on the USB-C termination and its data in both orientations,
+`radio` the e.i.r.p. and the bands of parts that transmit, `audio` bridge-tied outputs and the hints of hum and
+switching noise, `guitar` the instrument input's load and the pedal's supply, `motors` the hints of motor supplies and
+heaters, `power` those of cells, converters and polarity, `cables` the lines on a lead. Each is suggested by what the
+graph has: a USB-C receptacle, a part that transmits, a speaker, an instrument net, a motor, a battery holder, a cable;
+`mains` by a net above the ES1 limits, which LIM.hazardous recognises – spacing and isolation stay unchecked
+(rules-at-scale.md, decision 7). The interview of a new project asks for no domain: there is no graph yet, and the graph
+decides (skill new-project). A domain file sets severities (also per purpose: `[severity.sale]`), switches codes or
+topics on, names the facts a kind must give (a missing one is `PARTS.fact`), the hints that apply and the questions the
+reviewers ask. A project names its domains in edakit.toml:
 
 ```toml
 [project]
@@ -252,7 +253,7 @@ The designer handles each one and writes down how, in the graph (a JSON graph ha
 `edakit check` then lists it as accepted, with the reason, and the reviewer checks whether the reason holds.
 
 **Notes in the parts database** are hints that belong to one part: `"hints": [...]` for the part and `"hint"` per pin,
-from its datasheet – "ADC2: no analog reads while WiFi is on" on the ESP32's pins of ADC2, "keep BOOT0 low" on an
+from its datasheet – "ADC2: no analog reads while Wi-Fi is on" on the ESP32's pins of ADC2, "keep BOOT0 low" on an
 STM32. `edakit check` shows them as `HINT.datasheet` for the parts in the graph and their connected pins.
 
 ## 14.4 From a finding to a rule
@@ -265,11 +266,11 @@ domain setting. The loop is part of the workflow:
    bug, or a fact missing in a parts entry – or as a **candidate**: which engine and which data would find this kind
    of fault again – a fact (a limit, a default, a table row), a new relation, or a domain setting. Findings that need
    judgement are marked as such. The classes no code covers fully yet are the reviewers' questions in the domain files
-   (`[review]` in `edakit/domains/`, shown by `edakit domains`: several sources, back-feed and the switch-over gap, MCU
-   pin functions, supply range and input levels of the other ICs, read-back edges, junction and touch temperature, what
-   an off-board module brings), so every review asks them instead of finding them by chance; each question names the
-   codes that cover part of its class (REQ.function, LIM.backfeed, LIM.range, LVL.threshold, LIM.t, REQ.missing:cc,
-   HINT.two_supplies, HINT.readback).
+   (`[review]` in `edakit/domains/`, shown by `edakit domains`, among them several sources, back-feed and the
+   switch-over gap, MCU pin functions, supply range and input levels of the other ICs, read-back edges, junction and
+   touch temperature, what an off-board module brings), so every review asks them instead of finding them by chance;
+   each question names the codes that cover part of its class (REQ.function, LIM.backfeed, LIM.range, LVL.threshold,
+   LIM.t, REQ.missing:cc, HINT.two_supplies, HINT.readback).
 2. In the decision round the candidates are one item: make it edakit knowledge? The user decides. Nothing is filed
    anywhere by itself – whether a finding is knowledge worth keeping is a judgement, not something a program can tell.
 3. Yes: a decision in the project's decision log, written so that it can be built later without the conversation –
@@ -279,17 +280,17 @@ domain setting. The loop is part of the workflow:
    user before it goes out – the issue is public – and sealed with `edakit proposal seal`, whose last line is the
    SHA-256 of the text. The decision gets the issue (`edakit: #12`).
 5. **Triage.** The Action `proposals` of the edakit repository starts on every proposal of the repository owner
-   and on the owner's answers, and runs the skill `triage-rule` in a session of its own. Each run takes along every
-   proposal still without a result, one after another, so proposals filed at the same time are not lost when GitHub
-   cancels their waiting runs. Correctly made: `edakit proposal verify` – every section filled in, the checksum
-   matches; a body edited by hand fails on purpose. Does it make sense: new, the right kind, the sources hold,
-   general rather than one project's choice, which engine and which data – a fact before a new relation, a relation
-   only where a program decides it (else a hint) –, clear enough to build. The kinds: `fact` (a row of data: a part
-   fact, a default, a table row), `relation` (a new code, a hint too), `domain` (a severity, a required fact, a
-   reviewer's question), `block`, `retire`; a proposal sealed before the codes says `check`, `hint` or `part` and is
-   read as relation or fact. The result
-   is one of three, as a comment on the issue: **Accepted**, **Rejected** with a reason a person can check, or
-   **Question** with the alternatives – everything between accepted and rejected is a question.
+   and on the owner's answers, and runs the skill `triage-rule` in a session of its own (for a feature proposal
+   `triage-feature`, 11.6). Each run takes along every proposal still without a result, one after another, so
+   proposals filed at the same time are not lost when GitHub cancels their waiting runs. Correctly made:
+   `edakit proposal verify` – every section filled in, the checksum matches; a body edited by hand fails on purpose.
+   Does it make sense: new, the right kind, the sources hold, general rather than one project's choice, which engine
+   and which data – a fact before a new relation, a relation only where a program decides it (else a hint) –, clear
+   enough to build. The kinds: `fact` (a row of data: a part fact, a default, a table row), `relation` (a new code, a
+   hint too), `domain` (a severity, a required fact, a reviewer's question), `block`, `retire`; a proposal sealed
+   before the codes says `check`, `hint` or `part` and is read as relation or fact. The result is one of three, as a
+   comment on the issue: **Accepted**, **Rejected** with a reason a person can check, or **Question** with the
+   alternatives – everything between accepted and rejected is a question.
 6. **Build.** An accepted proposal is built with the skill `add-rule` (a skill of the repository, in
    `.claude/skills/`, not part of the plugin): a fact as a row with its source (a parts entry of the block library, a
    default, a table); a relation as a code in `codes.toml` (title, rule, why, fix, severity, sources) and its place in
@@ -311,11 +312,16 @@ Claude stopped* as `401 Invalid bearer token`; with a new one, `gh workflow run 
 waiting. From the Action only public projects can be cloned for the run against real projects; the pull request
 names what could not be run, and that is run by hand before merging.
 
-REQ.missing (flyback diode) and REQ.missing:cc (USB-C termination) are the reference project's buzzer stage and USB-C input turned into
-rules; REQ.missing (I2C pull-ups), LVL.boot (strapping pins) and the MCU output currents of LIM come from CircuitSmith's rule
-catalog (14.6).
+REQ.missing (flyback diode) and REQ.missing:cc (USB-C termination) are the reference project's buzzer stage and USB-C
+input turned into rules; REQ.missing (I2C pull-ups), LVL.boot (strapping pins) and the MCU output currents of LIM come
+from CircuitSmith's rule catalog (14.6).
 
-**What no code catches.** `edakit mutate` builds mistakes into a copy of the design one at a time and lists those no code reports. On the example, without the simulation 24 of 45 are caught; with `--sim` 43 – the two left are R-EXT and the OE pull-up a hundred times larger: the LEDs dim with R-EXT, and nothing says how bright they should be (a load's `expect` would). The list is for reading, not a list of faults; a class of mistakes it shows again and again is a candidate (14.4). The reference circuits per domain (`tests/reference.py`) carry the seeded faults each domain must catch with exactly its codes.
+**What no code catches.** `edakit mutate` builds mistakes into a copy of the design one at a time and lists those no
+code reports. On the tests' led-bar, without the simulation 24 of 45 are caught; with `--sim` 43 – the two left are
+R-EXT and the OE pull-up a hundred times larger: the LEDs dim with R-EXT, and nothing says how bright they should be (a
+load's `expect` would). The list is for reading, not a list of faults; a class of mistakes it shows again and again is
+a candidate. The reference circuits per domain (`tests/reference.py`) carry the seeded faults each domain must catch
+with exactly its codes.
 
 ## 14.5 Building blocks
 
@@ -375,21 +381,21 @@ A block may carry keys of the graph and say what can go:
   `CHG_CELL_N`) to the graph's `grounds` (3.1) – the lipo-charger's cell minus, the DW01A's own ground.
 - `optional` – `{"parts": ["R3"], "ports": ["dout"]}`: parts `--without R3` leaves out, and ports that may stay
   unconnected. A pin left alone on a net by a missing part goes into its component's `nc` when the net is an optional
-  port that `--connect` does not name (addressable-led-input without its second series resistor); a net left with no
+  port that `--connect` does not name (addressable-led-input without its line pull-down); a net left with no
   pin is not created. `--without` refuses a part that is not optional. The flyback diode of the nmos-, npn- and
   pmos-switches (no winding to drive) and the bias pair of rs485 (a bus biased elsewhere) are optional.
 - `accept` on a block's net or component may name a place – `{"LIM.v D1": "…"}` –; `add` renames the designator in
   the key as it renames the part (3.1).
 
 Every block passes `edakit check` and `edakit sim` and is drawn by `edakit schematic draw` once it is in the example
-project – a test makes sure of that; where in the example it goes, and what its simulation needs, stands in the block's
-own `test` table: `connect` (its ports in the example), `sim` (the block's own sim.json keys, merged deeply into the
-example's – an MCU's outputs, loads –, or `false` where the example's rails, not the block, keep it from simulating),
-`remove_supplies` (supply cases of the example the block cannot meet, the example's +5V behind its diode at USB
-minimum), `without` (optional parts the test leaves out); `sim: false` and `remove_supplies` need a `why`.
-Their parts come from the parts library and are drafts until the owner signs them (4.1). That
-makes a block a good start, not a sign-off: values, ratings and the review are still the project's. A project's own
-blocks are JSON files of the same form, added with `--file`.
+project of the tests, led-bar – a test makes sure of that; where in the example it goes, and what its simulation needs,
+stands in the block's own `test` table: `connect` (its ports in the example), `nets` (nets the example lacks, with
+their range), `sim` (the block's own sim.json keys, merged deeply into the example's – an MCU's outputs, loads –, or
+`false` where the example's rails, not the block, keep it from simulating), `remove_supplies` (supply cases of the
+example the block cannot meet, the example's +5V behind its diode at USB minimum), `without` (optional parts the test
+leaves out); `sim: false` and `remove_supplies` need a `why`. Their parts come from the parts library and are drafts
+until the owner signs them (4.1). That makes a block a good start, not a sign-off: values, ratings and the review are
+still the project's. A project's own blocks are JSON files of the same form, added with `--file`.
 
 ## 14.6 Where the ideas came from
 
