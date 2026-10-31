@@ -320,6 +320,39 @@ def _cable_lines(design, cfg, sim):
     return sorted(found)
 
 
+USB_ROLES = {"cc1", "cc2", "dp", "dn", "dp_a", "dp_b", "dn_a", "dn_b"}
+
+
+def _usb_ports(design, cfg=None, sim=None):
+    """USB receptacles of the board: a connector with a connected vbus pin and a CC or data pin of USB."""
+    out = []
+    for des in design.comps_of_kind("connector"):
+        pins = (design.part(des) or {}).get("pins") or {}
+        roles = {p.get("role") for p in pins.values()}
+        if roles & USB_ROLES and any(p.get("role") == "vbus" and design.pin_net.get(f"{des}.{num}")
+                                     for num, p in pins.items()):
+            out.append(des)
+    return out
+
+
+def vbus_capacitance(design, des):
+    """(net, farads) – the capacitance directly on a USB port's VBUS net, from the capacitors' value_f."""
+    pins = (design.part(des) or {}).get("pins") or {}
+    net = next((design.pin_net.get(f"{des}.{num}") for num, p in pins.items()
+                if p.get("role") == "vbus" and design.pin_net.get(f"{des}.{num}")), None)
+    total = 0.0
+    for c in design.comps_of_kind("capacitor"):
+        if net in {n for r, n in design.pin_net.items() if r.split(".", 1)[0] == c}:
+            total += values(design.part(c)).get("value_f") or 0
+    return net, total
+
+
+def _usb_attach_capacitance(design, cfg=None, sim=None):
+    """USB ports whose VBUS net carries more capacitance than a device may show at attach (tables/usb.toml)."""
+    limit = catalog.table("usb")["attach"]["c_max_f"]
+    return [des for des in _usb_ports(design) if vbus_capacitance(design, des)[1] > limit * (1 + 1e-9)]
+
+
 MATCHERS = {"power_input": _power_inputs, "connector_signal": _connector_signals,
             "transistor_at_connector": _transistors_at_connectors, "switching_regulator": _switching_regulators,
             "two_supplies": _two_supplies, "read_back": _read_backs, "btl_output": _btl_outputs,
@@ -327,7 +360,7 @@ MATCHERS = {"power_input": _power_inputs, "connector_signal": _connector_signals
             "instrument_input": _instrument_inputs, "battery_with_jacks": _battery_on_a_board_with_jacks,
             "pedal_power_input": _pedal_power_inputs, "pwm_leds": _pwm_leds, "boost_enable": _boost_enable_on_gpio,
             "unmarked_power_input": _unmarked_power_inputs, "rated_by_copper": _rated_by_copper,
-            "cable_line": _cable_lines}
+            "cable_line": _cable_lines, "usb_port": _usb_ports, "usb_attach_capacitance": _usb_attach_capacitance}
 
 
 

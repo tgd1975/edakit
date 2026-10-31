@@ -1544,6 +1544,31 @@ sources = [
   "docs/concepts/new/maker-coverage.md, appendix PWR 15 (MT3608, tagged extracted)",
 ]
 
+[codes."HINT.usb_budget"]
+title = "the current a USB port gives"
+rule = "A USB receptacle that powers the board: consider what the port gives – 100 mA before the device is configured, 500 mA after (USB 2.0), 900 mA on USB 3.2 single lane, 1.5 A or 3 A only where a Type-C source advertises it on CC and the board reads the advertisement."
+why = "A board that takes what its LEDs, motors or radio need from VBUS works at a phone charger and browns out or trips a laptop's port: the host gives five unit loads only after enumeration, and 1.5 A or 3 A only to a sink that reads the Rp advertisement on CC (maker-coverage PWR 25, LED 7, LED 8, MCU 35). Rd alone on CC says the board is a sink, not how much it may draw."
+fix = "Keep the board's draw within 500 mA (100 mA before configuration) – count it with edakit sim against the source's i_max_a –, or read the advertisement (a CC comparator or a PD controller) and limit the load to it, or supply the heavy load from its own input."
+severity = "note"
+when = { match = "usb_port" }
+sources = [
+  "Universal Serial Bus Specification Revision 2.0 (April 27, 2000), 7.2.1: a unit load is 100 mA, up to five unit loads after configuration – https://www.usb.org/document-library/usb-20-specification",
+  "USB Type-C Cable and Connector Specification Release 2.0 (August 2019), 2.3.4 and Table 2-1: Default (500 mA USB 2.0, 900 mA or 1,500 mA USB 3.2), USB Type-C Current @ 1.5 A and @ 3.0 A – https://www.usb.org/document-library/usb-type-cr-cable-and-connector-specification-release-20",
+  "catalog/tables/usb.toml [budget], [typec_current]",
+]
+
+[codes."HINT.usb_inrush"]
+title = "more than 10 µF on USB VBUS"
+rule = "A USB receptacle whose VBUS net carries more than 10 µF directly (the capacitors' value_f): consider a soft start or less capacitance ahead of it – USB 2.0 allows a device 10 µF at attach; HINT.bulk asks for a bulk capacitor at the same input, and the two meet here."
+why = "At attach the device's capacitance charges from the hub's VBUS; above 10 µF in parallel with 44 Ω the hub's VBUS droops more than 330 mV and the other ports' devices may reset (USB 2.0, 7.2.4.1). A bulk capacitor at a power input is good advice for a supply cable (HINT.bulk) and too much for a USB port."
+fix = "Keep at most 10 µF on VBUS and put the bulk capacitance behind a load switch with soft start (or a regulator that limits its inrush), or accept the hint with the inrush measured or the port known (a charger, not a hub)."
+severity = "note"
+when = { match = "usb_attach_capacitance" }
+sources = [
+  "Universal Serial Bus Specification Revision 2.0 (April 27, 2000), 7.2.4.1 Inrush Current Limiting: the maximum load at the downstream end of a cable is 10 µF in parallel with 44 Ω; hub VBUS droop at most 330 mV; more capacitance needs surge current limiting – https://www.usb.org/document-library/usb-20-specification",
+  "catalog/tables/usb.toml [attach]",
+]
+
 [codes."HINT.input_polarity"]
 title = "a power input without a polarity check"
 rule = "A battery holder or supply connector the graph does not mark as reversible: consider whether it can be plugged the wrong way round."
