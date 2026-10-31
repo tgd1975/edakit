@@ -35,11 +35,13 @@ dielectric = ["C0G", "NP0", "X5R", "X7R", "X7S", "X6S", "Y5V", "electrolytic", "
 values = ["polarized", "tolerance", "iout_accuracy", "iout_gain", "hfe_min", "hfe_max", "efficiency", "usb_c",
           "i_hold_vs_temp", "first_bit_to", "v_io_v", "comparator", "tvs"]
 pin = ["name", "type", "role", "strap", "pull", "hint", "functions", "out_edge", "t_pd_ns", "needs", "drive", "float_ok", "adc", "z_in_ohm", "short_proof", "clamp", "windows"]
-entry = ["needs", "address", "antenna", "library"]   # needs switches a default of catalog/needs.toml off
+entry = ["needs", "address", "antenna", "library", "symbol_differs"]   # needs switches a default of catalog/needs.toml off
                                 # ({"decoupling": false}); address: a bus address (REQ.forbidden/address); antenna:
                                 # {keepout_mm = [x0, y0, x1, y1]} – the area around the antenna that stays free of
                                 # copper, in the footprint's frame at rotation 0 on top (GEO.keepout); library: the
-                                # version of edakit/parts/ a copy was taken from (PARTS.library)
+                                # version of edakit/parts/ a copy was taken from (PARTS.library); symbol_differs:
+                                # {pin: reason} – pins where the entry follows the datasheet, not the library symbol
+                                # (STRUCT.entry/declared)
 
 [common]
 limits = ["p_max_w", "rth_ja_k_per_w", "tj_max_c", "t_max_c", "t_min_c"]

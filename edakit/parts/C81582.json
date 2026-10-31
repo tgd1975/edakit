@@ -215,6 +215,12 @@
    "name": "GND",
    "type": "ground",
    "role": "gnd"
+  },
+  "29": {
+   "name": "PPAD",
+   "type": "ground",
+   "role": "gnd",
+   "hint": "the PowerPAD under the package: soldered to GND (TI SLVSA73F, pin functions and layout)"
   }
  },
  "values": {
@@ -256,7 +262,8 @@
    "recommended p. 4: VM 8.2 … 45 V, VREF 1 … 3.5 V, V3P3OUT ≤ 1 mA; RθJA 31.6 K/W",
    "electrical p. 6: VIL 0.7 / VIH 2.2 V, pull-downs 100 kΩ, DECAY levels and pulls, RDS(on), IVM 8 mA, open-drain nFAULT/nHOME",
    "capacitors p. 3, 10, 11.1: 0.1 µF per VM pin, 0.01 µF CP1–CP2, 0.1 µF + 1 MΩ VCP–VM, 0.47 µF V3P3OUT",
-   "OCP 8.3.7.1: shorts to ground, supply and across the winding"
+   "OCP 8.3.7.1: shorts to ground, supply and across the winding",
+   "2026-10-31: pin 29 PPAD (the PowerPAD, to GND) added from TI SLVSA73F; symbol_differs – the EasyEDA symbol has no pin for it (STRUCT.entry/declared)"
   ],
   "open": [
    "the PowerPAD (footprint pad 29) has no pin in the EasyEDA symbol, so the graph cannot hold it on ground; the datasheet's thermal data assume it soldered to a ground plane",
@@ -268,5 +275,9 @@
    "r_out_ohm is one number; the datasheet gives a maximum only at TJ = 85 °C",
    "i_out_max_a 2.5 A needs heat sinking (24 V, 25 °C) – the thermal limit is LIM.t's through RθJA"
   ]
+ },
+ "symbol_differs": {
+  "28": "the library symbol numbers its exposed-pad pin EP 28 as well as GND – TI SLVSA73F: the PowerPAD is a pad of its own, 29 of the HTSSOP-28 footprint",
+  "29": "TI SLVSA73F: the PowerPAD (pad 29 of the HTSSOP-28 footprint) must be soldered to GND – the library symbol has no pin for it, a schematic drawn from it leaves the pad unconnected"
  }
 }

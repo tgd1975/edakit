@@ -554,7 +554,8 @@
    "GPIO26–28: IOVDD + about 300 mV, leak when unpowered",
    "RP2350: VIH 2 V / VIL 0.8 V at 3.3 V, total IO current 100 mA sourced and sunk, abs. max pin voltage",
    "functions of GPIO0–28 from the FUNCSEL values of io_bank0.h; PWM slice (n >> 1) & 7, channel a/b",
-   "–20 … 85 °C incl. self-heating, 70 °C recommended ambient"
+   "–20 … 85 °C incl. self-heating, 70 °C recommended ambient",
+   "2026-10-31: symbol_differs – the EasyEDA symbol numbers TP2–TP6 like pins 2–6 and swaps SWCLK/SWDIO; the entry follows the Pico 2 datasheet (STRUCT.entry/declared)"
   ],
   "open": [
    "core current (i_core_a): the datasheet gives only typical VBUS currents of example programs, no maximum – the simulation's default applies",
@@ -565,5 +566,19 @@
    "SWCLK/SWDIO pull: on-chip pull-up at reset (chip pin table), resistance not given separately",
    "TP7 (1V1, do not use) of the Pico 2 is not a pad of the SC0916 footprint"
   ]
+ },
+ "symbol_differs": {
+  "2": "the library symbol numbers the test point TP2 2 as well – Pico 2 Datasheet release 5, figure 2: pin 2 is GP1, TP2 a test pad of its own",
+  "3": "the library symbol numbers the test point TP3 3 as well – Pico 2 Datasheet release 5, figure 2: pin 3 is GND, TP3 a test pad of its own",
+  "4": "the library symbol numbers the test point TP4 4 as well – Pico 2 Datasheet release 5, figure 2: pin 4 is GP2, TP4 a test pad of its own",
+  "5": "the library symbol numbers the test point TP5 5 as well – Pico 2 Datasheet release 5, figure 2: pin 5 is GP3, TP5 a test pad of its own",
+  "6": "the library symbol numbers the test point TP6 6 as well – Pico 2 Datasheet release 5, figure 2: pin 6 is GP4, TP6 a test pad of its own",
+  "TP2": "the library symbol numbers this test pad 2, not TP2 – a schematic drawn from it joins it with pin 2",
+  "TP3": "the library symbol numbers this test pad 3, not TP3 – a schematic drawn from it joins it with pin 3",
+  "TP4": "the library symbol numbers this test pad 4, not TP4 – a schematic drawn from it joins it with pin 4",
+  "TP5": "the library symbol numbers this test pad 5, not TP5 – a schematic drawn from it joins it with pin 5",
+  "TP6": "the library symbol numbers this test pad 6, not TP6 – a schematic drawn from it joins it with pin 6",
+  "41": "Pico 2 Datasheet release 5, figure 2 and the footprint: 41 is SWCLK – the library symbol names it SWDIO",
+  "43": "Pico 2 Datasheet release 5, figure 2 and the footprint: 43 is SWDIO – the library symbol names it SWCLK"
  }
 }

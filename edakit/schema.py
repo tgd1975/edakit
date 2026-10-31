@@ -104,6 +104,11 @@ def problems(entry):
         if not (isinstance(box, list) and len(box) == 4 and all(is_number(x) for x in box)
                 and box[0] < box[2] and box[1] < box[3]):
             out.append("antenna.keepout_mm: [x0, y0, x1, y1] in mm with x0 < x1 and y0 < y1 (the footprint's frame)")
+    sd = entry.get("symbol_differs")
+    if sd is not None and not (isinstance(sd, dict) and sd and all(isinstance(v, str) and v.strip()
+                                                                   for v in sd.values())):
+        out.append("symbol_differs: {pin: reason} – each pin where the entry follows the datasheet, not the library "
+                   "symbol, with the reason read from the datasheet")
     roles = (k["kinds"][kind]).get("roles", [])
     pin_names = allowed(kind, "pin") | set(k["free"]["pin"])
     for num, pin in (entry.get("pins") or {}).items():

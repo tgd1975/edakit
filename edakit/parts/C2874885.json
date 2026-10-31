@@ -68,7 +68,8 @@
   "datasheet_sha256": "652e7bc44abd2d4ba24991a403f48bbc64593ea3af7fc92e153b215c50a511af",
   "checked": [
    "pinout p. 2 (1 VDD, 2 DOUT, 3 VSS, 4 DIN) against the EasyEDA footprint: pad 1 top left, 2 bottom left, 3 bottom right, 4 top right – the same arrangement as the data sheet's top view",
-   "VDD +3.7 … +5.3 V; VI ≤ VDD + 0.7 V; VIH 0.63 VDD, VIL 0.7 V; Topt −40 … +65 °C"
+   "VDD +3.7 … +5.3 V; VI ≤ VDD + 0.7 V; VIH 0.63 VDD, VIL 0.7 V; Topt −40 … +65 °C",
+   "2026-10-31: symbol_differs – the EasyEDA symbol numbers DIN 3 like VSS; the entry follows the data sheet's pin table (STRUCT.entry/declared)"
   ],
   "open": [
    "EasyEDA symbol of C2874885 (raw data read 2026-10-31): the DIN pin carries the pin number 3 – the same as VSS – while its label shows 4, so edakit part import sees only 1 VDD, 2 DOUT, 3 VSS and a netlist from that symbol would put DIN on pad 3 (VSS); pad 4 of the footprint stays unconnected – fix or replace the symbol before use",
@@ -82,5 +83,9 @@
    "LED data (IV, λd at 12 mA): no field for kind ic",
    "RoHS / REACH: neither the data sheet nor LCSC states them for this part"
   ]
+ },
+ "symbol_differs": {
+  "3": "the library symbol numbers DIN 3 as well as VSS – Worldsemi WS2812B-V5/W data sheet V6.1, pin table: 3 VSS",
+  "4": "DIN is pin 4 (Worldsemi WS2812B-V5/W data sheet V6.1, pin table) – the library symbol has no pin 4, a schematic drawn from it puts DIN on VSS and leaves pad 4 open"
  }
 }

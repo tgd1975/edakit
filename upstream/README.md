@@ -27,3 +27,11 @@ Status (2026-10-25): issue texts drafted, not posted. The three branches are com
 Order: post the issue, then push the branch and open the PR with "Fixes #<issue>". On the first substantial PR the
 maintainer asks once for the comment "I agree to the Contributor Permission v1 in CONTRIBUTOR-LICENSING.md" from the
 account that opened it.
+
+## The component library (EasyEDA / LCSC)
+
+Errors in the library data `edakit part import` reads go to EasyEDA's component library, not to easyeda-mcp-pro.
+
+| # | Topic | Local workaround | Report |
+|---|---|---|---|
+| 6 | Six symbols differ from their datasheets – a pin number given twice (WS2812B-V5/W, Pico 2, DRV8825), names swapped (XC6206, Pico 2's debug pins), a pad without a pin (DRV8825's PowerPAD, AQY212GS), the LED's pins of a 6N138 named "2" and "NC" | STRUCT.entry compares the cached symbol with the entry and the footprint; the library entries say where they follow the datasheet (`symbol_differs`, handbook 4.4) | [report draft](issue-6-easyeda-symbols.md) – not sent |

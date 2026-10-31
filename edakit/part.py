@@ -488,24 +488,45 @@ def parse_component(lcsc, res, source):
         raise PartError(f"{lcsc}: the library answered with {para['Supplier Part']}")
     pkg = res.get("packageDetail") or {}
     footprint = pkg.get("title") or para.get("package")
-    return {"lcsc": lcsc, "mpn": para.get("Manufacturer Part"), "manufacturer": para.get("Manufacturer"),
-            "footprint": footprint, "jlc_class": para.get("JLCPCB Part Class"), "pins": symbol_pins(res),
-            "geometry": footprint_geometry(pkg["dataStr"], footprint) if pkg.get("dataStr") else None,
-            "source": source}
+    out = {"lcsc": lcsc, "mpn": para.get("Manufacturer Part"), "manufacturer": para.get("Manufacturer"),
+           "footprint": footprint, "jlc_class": para.get("JLCPCB Part Class"), "pins": symbol_pins(res),
+           "geometry": footprint_geometry(pkg["dataStr"], footprint) if pkg.get("dataStr") else None,
+           "source": source}
+    if dup := duplicate_pins(res):
+        out["duplicate_pins"] = dup
+    return out
 
 
-def symbol_pins(res):
-    """{number: name} of the symbol's pins, all units. A pin: `P~show~type~number~x~y~…^^dot^^path^^name^^…`, the
-    name text the fifth field of its fourth segment."""
+def symbol_pin_list(res):
+    """[(number, name)] of the symbol's pins, all units, in the order the library lists them – a number twice where
+    the symbol numbers two pins alike. A pin: `P~show~type~number~x~y~…^^dot^^path^^name^^…`, the name text the fifth
+    field of its fourth segment."""
     shapes = list(res["dataStr"].get("shape") or [])
     for sub in res.get("subparts") or []:
         shapes += (sub.get("dataStr") or {}).get("shape") or []
-    pins = {}
+    out = []
     for s in shapes:
         if s.startswith("P~"):
             seg = [x.split("~") for x in s.split("^^")]
-            pins.setdefault(seg[0][3], seg[3][4] if len(seg) > 3 and len(seg[3]) > 4 else "")
+            out.append((seg[0][3], seg[3][4] if len(seg) > 3 and len(seg[3]) > 4 else ""))
+    return out
+
+
+def symbol_pins(res):
+    """{number: name} of the symbol's pins, all units – the first pin of a number the symbol uses twice."""
+    pins = {}
+    for num, name in symbol_pin_list(res):
+        pins.setdefault(num, name)
     return dict(sorted(pins.items(), key=lambda kv: natural_key(kv[0])))
+
+
+def duplicate_pins(res):
+    """{number: [names]} of the numbers the symbol gives to more than one pin – a schematic drawn from it joins those
+    pins on one pad (STRUCT.entry/symbol)."""
+    seen = {}
+    for num, name in symbol_pin_list(res):
+        seen.setdefault(num, []).append(name)
+    return {n: names for n, names in sorted(seen.items(), key=lambda kv: natural_key(kv[0])) if len(names) > 1}
 
 
 def footprint_geometry(ds, footprint):
@@ -639,7 +660,8 @@ def library_footprint(cfg, design, des):
 def write_cache(cfg, lib, today):
     read = {"source": lib["source"], "read": today}
     out = {"symbol": cfg.artifact("library", f"{lib['lcsc']}.json")}
-    out["symbol"].write_text(json.dumps({**{k: lib[k] for k in ("lcsc", *ENTRY_FIELDS, "pins")}, **read}, indent=1,
+    keep = ("lcsc", *ENTRY_FIELDS, "pins") + (("duplicate_pins",) if lib.get("duplicate_pins") else ())
+    out["symbol"].write_text(json.dumps({**{k: lib[k] for k in keep}, **read}, indent=1,
                                         ensure_ascii=False) + "\n", encoding="utf-8")
     if lib["geometry"]:
         out["footprint"] = cfg.artifact("footprints", file_name(lib["footprint"]))
