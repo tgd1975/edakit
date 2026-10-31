@@ -3,6 +3,8 @@ type: llm
 weight: 1
 ---
 
-The answer names only findings that edakit reported in this run (`edakit check`, `edakit sim` or `edakit explain`
-output in the trace), or states plainly that something is the agent's own judgement. It does not present a rule, a
-number or a check that edakit did not report as if edakit had found it.
+PASS unless the answer attributes to edakit something edakit did not output in this run – a finding, a code, a
+number or a rule that does not appear in the trace's `edakit check`, `edakit sim` or `edakit explain` output – or
+states something about the circuit that is wrong (for example calls a part what it is not). Explanations, the
+agent's own reasoning and suggested fixes are fine, also when they go beyond edakit's output, as long as they are not
+presented as edakit's findings.

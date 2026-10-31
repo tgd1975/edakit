@@ -49,7 +49,7 @@ def run(project):
 def test_a_switched_motor_needs_its_flyback_diode(project):
     motor_on_switch(project)
     found = [f.text for f in run(project) if f.code == "REQ.missing"]
-    assert "M1: coil switched by Q8 without a diode across it (cathode at +5V, anode at M_DRIVE)" in found
+    assert "M1: the motor's winding switched by Q8 without a diode across it (cathode at +5V, anode at M_DRIVE)" in found
 
 
 def test_the_motor_suggests_its_domain_and_its_hint(project):

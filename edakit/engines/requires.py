@@ -111,7 +111,9 @@ def flyback(d):
                      if d.pin_info(r).get("type") in ("output", "bidirectional")]
         if switches and not any(d.net_of(x, "cathode") == plus and d.net_of(x, "anode") == minus
                                 for x in d.comps_of_kind("diode")):
-            out.append(Finding("REQ.missing", "G", des, f"{des}: coil switched by {', '.join(switches)} without a diode "
+            word = {"motor": "the motor's winding", "solenoid": "the solenoid's winding"}.get(part["kind"],
+                                                                                         f"the {part['kind']}'s coil")
+            out.append(Finding("REQ.missing", "G", des, f"{des}: {word} switched by {', '.join(switches)} without a diode "
                                f"across it (cathode at {plus}, anode at {minus})", n["source"],
                                "a diode directly across the coil", on=(("component", des),)))
     return out
