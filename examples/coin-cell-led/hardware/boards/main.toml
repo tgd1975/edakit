@@ -4,25 +4,34 @@
 
 revision = "1"
 
-[outline]
-rect = [44, 34]
-corner_radius = 2
+[outline]                  # round, Ø 44 mm: a square whose corner radius is half its side
+rect = [44, 44]
+corner_radius = 22
+arc_steps = 12             # 48 chords, 45 µm off the circle
 
-[tooling]                  # JLCPCB Economic PCBA: non-plated holes in opposite corners
-holes = [[2.5, 2.5], [41.5, 31.5]]
+[tooling]                  # JLCPCB Economic PCBA: two non-plated holes, diagonally opposite
+holes = [[9, 36], [35, 8]]
 
 [place]                    # the hand-over's fixed parts BT1, SW1, D1 – and R1, so that every part has its row (SYNC.plan)
-BT1 = { x = 22, y = 10, rot = 0, side = "top" }   # the cell reaches 2 mm past its box: to the lower edge, 3 mm short of SW1
-SW1 = { x = 14, y = 26, rot = 0, side = "top" }
-D1  = { x = 28, y = 26, rot = 0, side = "top" }   # next to SW1: the LED shows the press
-R1  = { x = 28, y = 30, rot = 0, side = "top" }
+BT1 = { x = 22, y = 24, rot = 0, side = "top" }    # the cell (Ø 20 mm) almost concentric; 10 mm free above it to lever it out
+SW1 = { x = 28, y = 9, rot = 0, side = "top" }
+D1  = { x = 19, y = 9, rot = 0, side = "top" }     # next to SW1: the LED shows the press
+R1  = { x = 22, y = 5, rot = 180, side = "top" }   # R1.1 towards SW1, R1.2 towards D1's anode
 
 [silk]
 designators = "top"
+place = { BT1 = { x = 22, y = 35.6, rot = 0, side = "top" } }   # above the cell: under it the cell hides it
+board_label_region = [[11, 37.6], [33, 37.6], [33, 39.8], [11, 39.8]]   # centred above the designator
+
+[looks]
+visible = "top"            # the face people see: stage L holds its tracks and vias
+
+[order]
+remark = "Round board, no V-cut, no tabs. 2 tooling holes added by customer."
 
 [[silk.texts]]             # the footprint's own ⊕ lies under the holder's body; this "+" stays visible – GEO.mark holds it to BT1.1
 text = "+"
-x = 41
-y = 10
+x = 40.3
+y = 24
 h_mm = 1.5
 side = "top"

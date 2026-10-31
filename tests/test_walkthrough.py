@@ -26,8 +26,7 @@ def example(tmp_path):
 
 def test_check_has_the_accepts_and_nothing_else(example):
     rep = engines.run_all(Design.from_config(example), example)
-    assert rep.errors == [] and rep.warnings == []
-    assert [f.code for f in rep.notes] == ["GEO.hole"]         # not run: a fresh clone has no footprint geometry
+    assert rep.errors == [] and rep.warnings == [] and rep.notes == []
     assert sorted((f.code, f.place) for f in rep.accepted) == [
         ("HINT.bulk", "BT1"), ("HINT.debounce", "SW1"), ("HINT.lithium", "BT1"), ("PATH.reverse", "R1.1")]
     assert {f.code for f in rep.pending} <= {"PARTS.stock"}    # the stock snapshot of 2026-10-29 ages

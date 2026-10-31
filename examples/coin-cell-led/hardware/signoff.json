@@ -1,8 +1,8 @@
 {
   "about": "Sign-offs for the release gate (edakit gate). Each one counts only for the hash of its scope: 'circuit' = state_sha256 (graph, parts database, simulation config), 'layout' = layout_sha256 (board files with their artwork, footprint geometry), 'fab' = fab_sha256 (what the manufacturer builds from: Gerber layers rasterised, drill hits, BOM and CPL rows – in the protocol header of a gate run with stage F). When something there changes, it no longer counts – copy the new hash from the protocol header after the check was repeated. phase: 'export' blocks the release, 'order' and 'acceptance' come after the export. An accepted warning with scope 'decision' counts regardless of the hash and refers to a numbered decision in the docs. Parts are signed in their parts entry (field 'verified').",
   "state_sha256": "48984185a69adee868ed069ba33d9c7870eb842a27b12a052c0db96e2b57667f",
-  "layout_sha256": null,
-  "fab_sha256": null,
+  "layout_sha256": "1f529013a56fea12747977d89132f5f3822c9562158d49190e9769a74420b338",
+  "fab_sha256": "f958da9ad4f85a2eb6376122c5ec21203dbbc12730c1ca59184b383f90a61d70",
   "manual": [
     {
       "id": "M-1",
@@ -27,9 +27,9 @@
       "phase": "export",
       "scope": "fab",
       "text": "Layout reviewed independently (manufacturability, mechanics, operation, looks) on the manufacturing files of a gate run with this layout – e.g. by the agent pcb-reviewer. No finding 'block' open, every 'important' finding fixed or rejected by the owner",
-      "done_by": null,
-      "date": null,
-      "note": null
+      "done_by": "agent pcb-reviewer (own session)",
+      "date": "2026-10-31",
+      "note": "M-5: OK for fab f958da9ad4f85a2eb6376122c5ec21203dbbc12730c1ca59184b383f90a61d70; layout 1f529013a56fea12747977d89132f5f3822c9562158d49190e9769a74420b338. Manufacturing files of gate run 20261031-130109 against 20261031-115405: only the top silkscreen and the order settings changed. JLCPCB manufacturability including the round outline with two own tooling holes, copper 91/93 % without floating copper, the cell's overhang strips and 10 mm lever room free, BT1's tabs within reach of the iron, D1 visible beside SW1; the BT1 designator and the centred board label clear of the cell, the pads and the edge; order.md states the two tooling holes as 'Added by Customer'."
     },
     {
       "id": "M-2",

@@ -30,8 +30,8 @@ that reason.
 
 ## D-4 BT1 soldered by hand (2026-10-29)
 
-JLCPCB places the holder C70377 only under Standard PCBA ("Standard Only", PARTS.stock from `edakit stock`): 52.60 USD for
-5 boards instead of 20.65 USD with BT1 left out (`edakit cost`). Its two SMD tabs are easy to solder by hand
+JLCPCB places the holder C70377 only under Standard PCBA ("Standard Only", PARTS.stock from `edakit stock`): 52.60 USD
+for 5 boards instead of 20.65 USD with BT1 left out (`edakit cost`). Its two SMD tabs are easy to solder by hand
 (`bom: false`; `edakit order` puts five into the LCSC cart). The same BS-6 holder by Lian Xin (C22363833) is
 "Economic and Standard" on the same footprint – `edakit part diff C70377 C22363833` lays the pads on each other
 unchanged – but its drawing does not say which pad is plus.
@@ -41,3 +41,10 @@ unchanged – but its drawing does not say which pad is plus.
 Adults, at a desk; the board is kept out of the reach of small children. The holder keeps the CR2032 open and the cell
 comes out by hand – a swallowed lithium coin cell burns. For a child the board would be a toy, with a holder that needs
 a tool or a screwed cover (M-6, note 1). Given away it would be a gift, sold a sale: a new purpose and a new M-6.
+
+## D-6 A round board (2026-10-31)
+
+The owner wants it round. Ø 44 mm – `rect = [44, 44]` with `corner_radius = 22` in the board file, 48 chords, 45 µm
+off the circle. The holder sits almost in the middle, the cell (Ø 20 mm) nearly concentric with the board, with 10 mm
+above it to lever it out; button, LED and resistor below. The two tooling holes of the Economic assembly are
+diagonally opposite. A layout decision: the circuit hash stays, and M-1 and M-6 keep counting.

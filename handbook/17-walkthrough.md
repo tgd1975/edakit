@@ -5,8 +5,8 @@ from the idea to the delivered boards, in the order things happen. Each step say
 an agent in a session of its own, a command –, which file it writes, what is checked and what came out. The project is
 [examples/coin-cell-led](../examples/coin-cell-led/).
 
-The outputs are from real runs between 29 and 31 October 2026, shortened where a `…` stands. Everything in EasyEDA
-(17.11 on) has not run for this board yet and is described instead of shown.
+The outputs are from real runs between 29 and 31 October 2026, shortened where a `…` stands. What happens after the
+release – the order and the delivered boards (17.12) – is described instead of shown.
 
 A finding names its code: the engine that found it and the relation it checks – `PATH.reverse` is about the paths a
 reversed cell takes, `SIM.state` about what the simulation expects (chapter 14). `edakit explain <code>` gives the
@@ -338,6 +338,9 @@ what drives the cost:
   edge rails: the PCB is priced as 44 × 44 mm
 ```
 
+The size is that of the first plan, a rectangle; the round board of 17.11, Ø 44 mm, costs the same – 20.65 USD as
+Economic.
+
 Three ways out, as PARTS.stock says. The same BS-6 holder by Lian Xin (C22363833) is "Economic and Standard"
 (`edakit stock --lcsc C22363833`), and `edakit part diff C70377 C22363833` lays its pads on the old ones without a
 shift – but its drawing does not say which pad is plus. So BT1 is soldered by hand (D-4): `"bom": false` in the graph,
@@ -464,34 +467,49 @@ orientation among them.
 
 EasyEDA cannot create a project through its API: you create `coin-cell-led` once by hand (*File → New → Project*) and
 leave it open (6.1). A project with `toolchain = "kicad"` skips that: edakit writes the KiCad project itself, and the
-same steps run on KiCad's files (chapter 16). Then a session of its own takes the layout – `/edakit:pcb-round`, the PCB designer –, starting
-from `edakit handover`. It writes the board file: outline, JLCPCB's tooling holes, a row in `[place]` for every part
-(SYNC.plan) – here by hand, four parts; `edakit pcb place --rest` finds a spot for every part still without a row (7.4) –,
-and a "+" next to the holder – the footprint's own ⊕ lies under the holder's body:
+same steps run on KiCad's files (chapter 16). Then a session of its own takes the layout – `/edakit:pcb-round`, the PCB
+designer –, starting from `edakit handover`.
+
+You want the board round, "so that it gets more exciting". That is a wish for the layout: it changes the board file,
+not the circuit – the circuit hash stays, and M-1 and M-6 keep counting. A circle is a square whose corner radius is
+half its side (D-6). The board file holds the outline, JLCPCB's tooling holes, a row in `[place]` for every part
+(SYNC.plan) – here by hand, four parts; `edakit pcb place --rest` finds a spot for every part still without a row
+(7.4) –, a "+" next to the holder, because the footprint's own ⊕ lies under the holder's body, and – after the
+layout review, step 5 below – where BT1's designator and the board label go, which face people see, and a remark for
+JLCPCB's form:
 
 ```toml
 revision = "1"
 
-[outline]
-rect = [44, 34]
-corner_radius = 2
+[outline]                  # round, Ø 44 mm: a square whose corner radius is half its side
+rect = [44, 44]
+corner_radius = 22
+arc_steps = 12             # 48 chords, 45 µm off the circle
 
-[tooling]                  # JLCPCB Economic PCBA: non-plated holes in opposite corners
-holes = [[2.5, 2.5], [41.5, 31.5]]
+[tooling]                  # JLCPCB Economic PCBA: two non-plated holes, diagonally opposite
+holes = [[9, 36], [35, 8]]
 
 [place]                    # the hand-over's fixed parts BT1, SW1, D1 – and R1, so that every part has its row (SYNC.plan)
-BT1 = { x = 22, y = 10, rot = 0, side = "top" }   # the cell reaches 2 mm past its box: to the lower edge, 3 mm short of SW1
-SW1 = { x = 14, y = 26, rot = 0, side = "top" }
-D1  = { x = 28, y = 26, rot = 0, side = "top" }   # next to SW1: the LED shows the press
-R1  = { x = 28, y = 30, rot = 0, side = "top" }
+BT1 = { x = 22, y = 24, rot = 0, side = "top" }    # the cell (Ø 20 mm) almost concentric; 10 mm free above it to lever it out
+SW1 = { x = 28, y = 9, rot = 0, side = "top" }
+D1  = { x = 19, y = 9, rot = 0, side = "top" }     # next to SW1: the LED shows the press
+R1  = { x = 22, y = 5, rot = 180, side = "top" }   # R1.1 towards SW1, R1.2 towards D1's anode
 
 [silk]
 designators = "top"
+place = { BT1 = { x = 22, y = 35.6, rot = 0, side = "top" } }   # above the cell: under it the cell hides it
+board_label_region = [[11, 37.6], [33, 37.6], [33, 39.8], [11, 39.8]]   # centred above the designator
+
+[looks]
+visible = "top"            # the face people see: stage L holds its tracks and vias
+
+[order]
+remark = "Round board, no V-cut, no tabs. 2 tooling holes added by customer."
 
 [[silk.texts]]             # the footprint's own ⊕ lies under the holder's body; this "+" stays visible – GEO.mark holds it to BT1.1
 text = "+"
-x = 41
-y = 10
+x = 40.3
+y = 24
 h_mm = 1.5
 side = "top"
 ```
@@ -502,32 +520,111 @@ hand-over (SYNC.plan) – and draws it:
 ```text
 $ edakit pcb plan
   library geometry (edakit part import, not yet from the PCB): BT1, D1, R1, SW1
-  4 fixed parts, 0 for the auto-layout; airline length of the fixed parts (without GND): 0.05 m
+  4 fixed parts, 0 for the auto-layout; airline length of the fixed parts (without GND): 0.02 m
 ```
 
-![The placement plan of coin-cell-led: BT1 at the lower edge, SW1, D1 and R1 above it](../examples/coin-cell-led/docs/pcb_plan_main.png)
+![The placement plan of coin-cell-led: a round board, BT1 in the middle, D1, R1 and SW1 below it](../examples/coin-cell-led/docs/pcb_plan_main.png)
 
 In EasyEDA – after `/edakit:start`, which checks the bridge and claims EasyEDA for the session (11.2) – the round goes
-(chapters 6 and 7):
+as follows (chapters 6 and 7). Each command ran in less than half a minute:
 
 1. `edakit schematic create --save`, `edakit schematic layout --save`: the template and the readable schematic, each
-   saved only when its netlist equals the graph.
+   saved only when its netlist equals the graph:
+
+   ```text
+   [ 0.4 min] step 9/11: netlist against the graph
+     4/4 nets match the graph
+   [ 0.4 min] step 10/11: ERC
+     {"project_id": "current", "total_violations": 0, "error_count": 0, "warning_count": 0, "passed": true, …}
+   …
+   done: 4 placed, 0 skipped, 0 pin mismatches, 0 pin failures, 0 differing nets
+   ```
+
 2. `edakit pcb parts --write`: the four parts into the PCB, without the import dialog; `edakit pcb dump`: their
    footprints as placed, into `hardware/boards/main.geometry.json`; `edakit pcb apply`: outline, tooling holes, every
-   part where the plan puts it.
-3. `edakit route all`: Freerouting routes, the ground pour, DRC. When the DRC waits for *Design → Import Changes*,
-   that is your one click (7.3).
-4. `edakit silk apply`: designators where there is room, and the silkscreen checked on the Gerber files.
-5. The agent pcb-reviewer reviews the round on its Gerber export, in a session of its own.
+   part where the plan puts it:
+
+   ```text
+   [ 0.1 min] step 5/7: outline and holes
+     outline: 48 points, 0 holes
+   [ 0.1 min] step 6/7: tooling holes
+     2 tooling holes Ø 1.152 mm (NPTH), 0 old ones replaced
+   [ 0.1 min] step 7/7: pad check
+     pad check (4 parts): largest deviation 0.001 mm (BT1.2)
+   ```
+
+3. `edakit route all`: Freerouting routes, the ground pours, DRC. The area outside the circle goes to Freerouting as
+   66 keep-out strips:
+
+   ```text
+   [ 0.0 min] DSN: 4 nets with >= 2 pins, 12 pads, 5 padstacks, 2 hole keep-outs, 66 edge strips, 0 keep-out pieces, …
+   [ 0.2 min] check: 4 nets routed, 16 track pieces, 2 vias; open: 0
+   [ 0.2 min] track widths (GEO.width offline): 4 nets, 0 below IPC-2221 for 1.5 x the simulated current, 0 below the …
+   [ 0.4 min] step 8/8: drc
+   [ 0.4 min]   DRC: 1 findings – {('Netlist Error', 'Import Changes', None): 1}
+   [ 0.5 min]   EasyEDA waits for the import acknowledgement: open Design → Import Changes once, it shows no changes …
+   ```
+
+   The parts came into the PCB without EasyEDA's import, and its DRC waits until the import view has been opened
+   once. edakit has compared schematic and PCB beforehand – nothing differs –, so that is your one click (7.3):
+   *Design → Import Changes*, it shows no changes, OK. It comes last, after the silkscreen; then `edakit route drc`:
+   `DRC: 0 findings`.
+4. `edakit silk apply`: designators where there is room, the board label, and the silkscreen checked on the Gerber
+   files:
+
+   ```text
+     board label 'Coin cell LED rev 1' at (21.9, 38.2) mm
+     top: 4 of 4 designators placed, fixed: BT1; without room: –
+     top: silkscreen on mask openings 0.000 mm² (target 0), picture -> …/build/edakit/silk_main_top.png
+   ```
+
+   ![The top side of coin-cell-led from its Gerber files: the round board, label and BT1 above the holder, "+" beside pad 1, D1, R1 and SW1 below](../examples/coin-cell-led/docs/silk_main_top.png)
+
+5. The agent pcb-reviewer reviews the round, in a session of its own, on the manufacturing files of a gate run
+   (17.12). Nothing blocked; it had four notes:
+   - BT1's designator lay under the cell;
+   - the board label sat 8 mm left of the axis;
+   - without `[order]` no file said that the tooling holes are the customer's – JLCPCB might drill its own on the face
+     people see;
+   - `hand_solder_keep_mm` was not set.
+
+   You chose to move both texts above the cell, as it proposed – how the board looks is yours to decide. The
+   designer took the remark for JLCPCB and `[looks]` too. The fourth note it answered: the key covers through-hole
+   joints only, and BT1 has SMD tabs – the reviewer withdrew it. A second `silk apply`, a second gate run, a second
+   look: only the top silkscreen and the order settings had changed (`edakit fab diff`), and the reviewer signed M-5
+   for that run's files.
 
 ## 17.12 Release, order, acceptance
 
 `edakit gate --easyeda` runs every stage, the last ones on the files that go to JLCPCB: the schematic equals the graph
 (SYNC.schematic), the copper of the Gerber files connects what the graph connects (GEO.copper), the "+" lies next to
 BT1's plus pad (GEO.mark), the BOM leaves BT1 out (SYNC.bom), the pick-and-place file has every assembled part once
-(SYNC.cpl). The layout review
-M-5 is done by the agent pcb-reviewer on that run's files; the next run with the same files counts it, and only a run
-whose protocol says **RELEASED** may be uploaded (8.3).
+(SYNC.cpl), the order settings fit JLCPCB's form (FILES.order). The layout review M-5 is done by the agent
+pcb-reviewer on a run's files and bound to their fab hash; the next run with the same files counts it, and only a run
+whose protocol says **RELEASED** may be uploaded (8.3). Here it took three runs: the first passed every stage with M-5
+open, the second followed the review's notes, the third counted M-5:
+
+```text
+$ edakit gate --easyeda
+[ 0.0 min] step 1/4: P/G parts and graph
+[ 0.0 min] step 2/4: E simulation
+[ 0.0 min] step 3/4: S schematic against the graph
+[ 0.0 min] step 4/4: L/F board and manufacturing files: main
+RELEASED
+requirements: 1 passed, 1 open after the export (section 11 of the protocol)
+```
+
+```text
+| S Schematic | EasyEDA schematic = graph (parts, LCSC, nets, pins, no-connects) | 1 | 0 | 0 | 0 | 0 | passed |
+| L Board | PCB = graph and plan, copper from the Gerber files, DRC, footprints, track widths, holes | 34 | 0 | 0 | 0 | 0 | passed |
+| F Manufacturing | BOM from the graph = EasyEDA, JLCPCB stock, pick and place, Gerber set, outline, manifest | 18 | 0 | 0 | 0 | 0 | passed |
+```
+
+The run's folder holds what goes to JLCPCB – `fab/main/gerber_main.zip`, `bom_main.csv`, `cpl_main.csv`, the form's
+fields in `order.md` – and `fab/polarity_main.png` for M-2. A gate run is build output (`[release] archive`, default
+`"none"`, 8.3): a new run makes the files again from the repository, and the sign-offs say which hashes they must
+have. What is ordered, a project publishes with `edakit release publish` as a release on GitHub (8.3) – this example
+lives inside edakit's repository and does not.
 
 The order goes up to JLCPCB's cart, and no further – nothing in edakit orders or pays (8.4):
 
@@ -577,5 +674,10 @@ Like the Christmas bell (13.6), this board found gaps on its way, and each one w
 - **A polarity hint for a holder PATH.reverse had checked.** HINT.input_polarity said that nothing checks the
   polarity of a battery holder not marked reversible – but PATH.reverse starts from every holder by its kind. The
   electrical reviewer found it in M-1; the hint names unmarked supply connectors only now (JST packs, barrel jacks).
+- **A round board had four points twice.** A corner radius of half the side makes a circle, and each of its four arcs
+  began where the one before ended: four segments of length 0 in the outline EasyEDA and Freerouting got. The outline
+  drops a point equal to the one before now.
+- **The drawings of this chapter on the documentation site** linked to GitHub's page of the file, which is no image;
+  the site carries the images now.
 - `edakit order` said "1 parts by hand", and `edakit block add` still sent you to `edakit hints`, which had gone with
   the codes.
