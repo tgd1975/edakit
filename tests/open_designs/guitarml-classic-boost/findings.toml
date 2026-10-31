@@ -1,0 +1,75 @@
+# What edakit check and edakit sim find on the published GuitarML Classic Boost v2, and how each finding is judged (the words as in
+# esp32-devkitc-v4/findings.toml): real (a point of the design), lacks (a fact the transcription or the datasheets
+# lack), criterion (edakit's own yardstick, not the design's), known gap (edakit judges it wrong, not fixed yet – with
+# the reason). The domain guitar is on. The audio path's nets are marked signal, the input jack's tip instrument (a pickup, 1 MΩ: the test's figure); spread runs every DC scenario with the 2N5088's hFE at both ends. The simulation finds nothing: the stage sits at 0.36 mA with the collector at 5.0–5.6 V over the spread, the AC run (information) gives 24 dB at 1 kHz into the collector with a pickup in front.
+
+[[check]]
+code = "PARTS.verified"
+grade = "device"
+place = "9v1"
+judged = "criterion"
+why = "9v1 is a plated pad of the board for a wire (KiCad footprint TestPoint_THTPad_D2.0mm_Drill1.0mm, board reference 9v) – copper, nothing to buy or place: edakit asks every component for an LCSC part or an EasyEDA device."
+
+[[check]]
+code = "PARTS.verified"
+grade = "device"
+place = "Gnd1"
+judged = "criterion"
+why = "Gnd1 is a plated pad of the board for a wire (KiCad footprint TestPoint_THTPad_D2.0mm_Drill1.0mm, board reference Gnd) – copper, nothing to buy or place: edakit asks every component for an LCSC part or an EasyEDA device."
+
+[[check]]
+code = "PARTS.verified"
+grade = "device"
+place = "In1"
+judged = "criterion"
+why = "In1 is a plated pad of the board for a wire (KiCad footprint TestPoint_THTPad_D2.0mm_Drill1.0mm, board reference In) – copper, nothing to buy or place: edakit asks every component for an LCSC part or an EasyEDA device."
+
+[[check]]
+code = "PARTS.verified"
+grade = "device"
+place = "InG1"
+judged = "criterion"
+why = "InG1 is a plated pad of the board for a wire (KiCad footprint TestPoint_THTPad_D2.0mm_Drill1.0mm, board reference InG) – copper, nothing to buy or place: edakit asks every component for an LCSC part or an EasyEDA device."
+
+[[check]]
+code = "PARTS.verified"
+grade = "device"
+place = "Out1"
+judged = "criterion"
+why = "Out1 is a plated pad of the board for a wire (KiCad footprint TestPoint_THTPad_D2.0mm_Drill1.0mm, board reference O) – copper, nothing to buy or place: edakit asks every component for an LCSC part or an EasyEDA device."
+
+[[check]]
+code = "PARTS.verified"
+grade = "device"
+place = "OutG1"
+judged = "criterion"
+why = "OutG1 is a plated pad of the board for a wire (KiCad footprint TestPoint_THTPad_D2.0mm_Drill1.0mm, board reference OG) – copper, nothing to buy or place: edakit asks every component for an LCSC part or an EasyEDA device."
+
+[[check]]
+code = "PARTS.verified"
+grade = "device"
+place = "SW1"
+judged = "criterion"
+why = "SW1 is a plated pad of the board for a wire (KiCad footprint TestPoint_THTPad_D2.0mm_Drill1.0mm, board reference SW) – copper, nothing to buy or place: edakit asks every component for an LCSC part or an EasyEDA device."
+
+[[check]]
+code = "PARTS.verified"
+grade = "device"
+place = "swGnd1"
+judged = "criterion"
+why = "swGnd1 is a plated pad of the board for a wire (KiCad footprint TestPoint_THTPad_D2.0mm_Drill1.0mm, board reference SwG) – copper, nothing to buy or place: edakit asks every component for an LCSC part or an EasyEDA device."
+
+[[check]]
+code = "PARTS.verified"
+grade = "device"
+place = "POT1"
+judged = "lacks"
+why = "POT1, the volume (100K, the parts list's A100K): the TT Electronics P160 order code that stands in has no LCSC number in the catalogue, and a KiCad design names no EasyEDA device."
+
+[[check]]
+code = "STRUCT.prefix"
+place = "SW1"
+judged = "criterion"
+why = "SW1 is the schematic's own reference of a wire pad – VCC to the footswitch's LED pole (board label 'SW'); KiCad does not tie references to kinds, edakit reads SW as a switch."
+[[fixed]]
+what = "The 2N5088's base, held by 430 kΩ from VCC and 43 kΩ to ground with 390 Ω under the emitter, judged as floating while 'the firmware is not running' (LVL.undefined): the board has no IC, so no pin typed VCC or ground as a rail, and a resistor to ground did not count."

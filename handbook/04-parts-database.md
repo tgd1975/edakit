@@ -60,7 +60,7 @@ in `sources` – any RP2350 module takes the same list per GPIO. On the RP2040 a
 | npn, pnp | `collector`, `base`, `emitter` |
 | pmos, nmos | `drain`, `gate`, `source` |
 | njfet, pjfet | `drain`, `gate`, `source` |
-| switch | `common`, `throw_a`, `throw_b` |
+| switch | `common`, `throw_a`, `throw_b`; a switch of several poles (a 3PDT footswitch) `common_2`, `throw_a_2`, `throw_b_2`, `common_3` … – every pole follows the one actuator in the simulation |
 | button | `a`, `b` (pins connected inside share a role) |
 | dip_switch | `a1`…`aN`, `b1`…`bN` |
 | potentiometer | `end_a`, `wiper`, `end_b` |
@@ -142,7 +142,8 @@ entry's before the default of the pin type. What the names do not say:
   One that needs an external compensation capacitor gets it as a pin need to another pin (`{"what": "capacitor",
   "to": "COMP/BAL", "c_min_f": 22e-12}`) – where it needs it only below a gain, in a config with the lower
   `gain_min_ratio` (`when`): the NE5534 is stable from 3, in its config `compensated` from 1 with CC ≥ 22 pF, and
-  REQ.value/gain names that config in its fix.
+  REQ.value/gain names that config in its fix; the LM301A (C22505) always needs its 30 pF from COMPENSATION to
+  BALANCE/COMPENSATION. In the library beside them the TL072CP (C7236), unity-gain stable.
 - a part on an SPI or I2C bus: `values.spi_modes` (the modes 0–3 its interface runs in, CPOL × 2 + CPHA, from the
   timing diagram), `limits.f_sck_max_hz` and `limits.f_scl_max_hz` (its highest SCK and SCL – for I2C the mode it
   runs without a high-speed master code), and on its SDA and SCL pins `c_in_f` (their input capacitance) – the
@@ -190,7 +191,8 @@ entry's before the default of the pin type. What the names do not say:
   reverse voltage against the source), `ig_max_a` (the forward gate current), `id_max_a`. The model in `spice` is the
   typical part (`.model MMBFJ201 NJF(VTO=-0.77 BETA=0.98m LAMBDA=0.016)`); the corners set BF, VTO, KP and BETA from
   these fields. In the library: 2N3904 (C124482), MMBFJ201 (C891687, the J201 in SOT-23), BS170 (C111691), 2N7000
-  (C232838), and the spreads the other transistors' entries already gave. A germanium part (AC128) has no datasheet
+  (C232838), the pedals' 2SC1815 (C23895, JSCJ's rank GR, hFE 200 … 400) and 2N5458 (onsemi, IDSS 2 … 9 mA,
+  VGS(off) −1 … −7 V), and the spreads the other transistors' entries already gave. A germanium part (AC128) has no datasheet
   edakit could read: a project enters its own measured spread, with its source.
 - shift registers and LED drivers `first_bit_to`: the output the first shifted bit ends on, e.g. `"out7"`, from the
   datasheet's timing diagram – copied into the firmware contract (3.5).
@@ -261,6 +263,18 @@ from then on: checked like every entry, signed in the project like every entry. 
 library entry has changed since (grade `newer`) – `edakit part add <key> --update` takes the new version over the copy
 on purpose and names what changed – and a copy of an unsigned entry (grade `draft`). (Decided 2026-10-31,
 rules-at-scale.md decision 8.)
+
+**Sources of the audio band are no entries.** A guitar's pickup, a piezo disc on an instrument, an electret capsule
+on a jack drive an AC run from outside the graph or beside it; their numbers are rows of
+`edakit/catalog/tables/audio_sources.toml` that sim.json's `ac` names (`"source": {"pickup": "Seymour Duncan SH-1
+'59 Model neck", "l_h": …}` – chapter 5.2). Each row holds only what its maker states, read from the maker's page or
+data sheet with the date: a pickup's DC resistance (Seymour Duncan, DiMarzio, Mojotone) and, where given, its resonant
+peak; a piezo disc's capacitance at 1 kHz with its tolerance, resonance and resonant impedance (Murata 7BB, via
+LCSC); a capsule's output impedance, the load resistor of its measurement circuit, sensitivity, operating voltage and
+current (CUI, INGHAi, via LCSC). No maker reachable states a pickup's inductance: the project gives its own, measured
+or published (decision 20). A new row is a table row like every other – `source` and `tag = "r"`, catalog lint holds
+it. A capsule's load resistor and coupling capacitor are parts of the graph; the capsule itself has no kind of its own
+in the parts schema, so its supply current is not in the operating point.
 
 ## 4.2 Finding parts
 
@@ -444,12 +458,32 @@ bought = true                # no template, schematic, pcb or file: there is not
 Its parts are components with `"board": "usb"` and `"bom": false` – the breakout with the eyes it brings out, and what
 you solder onto it, such as the two 5.1 kΩ from CC1 and CC2 to GND; STRUCT wants `bom: false` on every one, nobody
 assembles them. A cable joins it to your connector (`cables`, 3.1) with the resistance of its wires. The checks and the
-simulation see it like any board: REQ.missing:cc the CC eyes, LIM.i the cable's rating, and sim.json's source sits at the
-breakout's connector, with the cable in the path (5.1). Nobody draws it: the gate's stages S and L/F leave it out with
-an information row each, the manifest, the `fab` hash, the layout hash and so the layout review M-5 cover the made
-boards (8.1, 8.2), and the commands that make or read a layout refuse it with one line (`--board usb`) or skip it.
+simulation see it like any board: REQ.missing:cc the CC eyes, LIM.i the cable's rating (its `i_max_a`, from the wire's
+own datasheet), and sim.json's source sits at the breakout's connector, with the cable in the path (5.1). Nobody draws
+it: the gate's stages S and L/F leave it out with an information row each, the manifest, the `fab` hash, the layout
+hash and so the layout review M-5 cover the made boards (8.1, 8.2), and the commands that make or read a layout refuse
+it with one line (`--board usb`) or skip it.
 `edakit order` writes no BOM for it and puts its parts into the carts and under its board, marked bought, in
 `hand_assembly.md`; `edakit cost` prices no PCB and no assembly for it (8.4).
+
+A hand-wired board – parts with no PCB of their own, wired by hand: a front panel's LEDs, footswitches, jacks and
+pots, a strip on a cable – has a key of its own:
+
+```toml
+[boards.panel]               # LEDs, footswitches and jacks in the lid, soldered to the wires of W2
+title = "Front panel"
+wired = true                 # hand-wired, no PCB of its own: no template, schematic, pcb or file (10.1)
+```
+
+edakit treats it as a bought board where that applies: in the graph, the checks and the simulation like any board –
+its parts with `"board": "panel"` and `"bom": false` (STRUCT.board), the cables with their wires' resistance and
+rating –, made by nobody: stages S and L/F, the manifest, the hashes, the layout commands, the assembler's BOM and the
+PCB cost leave it out. What differs is what it is. A bought board is one purchased assembly – a module with its own
+parts entry and supplier, perhaps with a few parts soldered onto it. A hand-wired board's parts are the project's own:
+each in the carts from its supplier (`edakit order`, PARTS.supplier for one without), listed under its board in
+`hand_assembly.md` as "hand-wired, no PCB". `bought = true` on a front panel works as it did; STRUCT.board gives a
+note when no part of a bought board is a module (kind or type `module`) and names `wired = true` – changing the key
+is the project's decision, `edakit convert` does not do it. One board has one of the two keys, not both.
 
 **Without an edakit project** – a perfboard, an older board, a part from the bin, something made by hand – the user is
 the datasheet. The skill `own-part` asks for pins, supply range and current once, has what nobody knows measured, and

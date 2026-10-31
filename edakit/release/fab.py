@@ -68,7 +68,7 @@ assembly preview at JLCPCB.
   GEO.keepout no copper on either layer inside the antenna keep-out of a part's entry (antenna.keepout_mm), and with
        antenna.edge_mm the antenna area at most that far inside the board's outer outline (warn)
   SYNC.plan every part the graph puts on the board has a row in [place] of the board file – fixed, from pcb place, or
-       written back by pcb autolayout (auto = true); a part on a bought board is on no made board and needs none
+       written back by pcb autolayout (auto = true); a part on a bought or hand-wired board is on no made board
   [looks] of the board file: the visible side's track length and the board's vias, an information row; above
        max_track_m or max_vias a warning (row ID "L": the stage's own, no check of the catalog)
   SYNC.bom  BOM from the graph = BOM of EasyEDA; every LCSC number in the parts database

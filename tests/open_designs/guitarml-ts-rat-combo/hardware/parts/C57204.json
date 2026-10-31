@@ -1,0 +1,47 @@
+{
+ "lcsc": "C57204",
+ "mpn": "MFR0W4F4701A50",
+ "manufacturer": "UNI-ROYAL",
+ "kind": "resistor",
+ "package": "axial, metal film 1/4 W, D2.2 × L6.5 mm",
+ "datasheet": {
+  "url": "https://datasheet.lcsc.com/datasheet/pdf/d64f229a8d7408b8f346128da3329b41.pdf?productCode=C57436"
+ },
+ "pins": {
+  "1": {
+   "name": "1",
+   "type": "passive",
+   "role": "1"
+  },
+  "2": {
+   "name": "2",
+   "type": "passive",
+   "role": "2"
+  }
+ },
+ "values": {
+  "value_ohm": 4700.0,
+  "tolerance": 0.01
+ },
+ "limits": {
+  "p_max_w": 0.25,
+  "v_max_v": 250,
+  "t_min_c": -55
+ },
+ "sources": [
+  "UNI-ROYAL (Uniohm) MFR series metal film fixed resistors, file JLC-01-008, edition 1 (2016-05-09), LCSC's copy for C57436 https://datasheet.lcsc.com/datasheet/pdf/d64f229a8d7408b8f346128da3329b41.pdf?productCode=C57436, read 2026-10-31",
+  "8 part number system: MFR, 0W4 = 1/4 W, F = ±1 %, four digits of the value (E-24: '0', two figures, the power of ten; J in the 11th place = 10⁻¹), A50 tape/box; 2.1 ratings: MF 1/4 W, max working voltage 250 V, ±1 % from 10 Ω to 1 MΩ; 5: rated power at −55 … 70 °C",
+  "JLCPCB catalogue 2026-10-31 (edakit part search): C57204 MFR0W4F4701A50, Extended Part"
+ ],
+ "verified": {
+  "by": "Claude (datasheet check, open-design transcription)",
+  "date": "2026-10-31",
+  "datasheet": "UNI-ROYAL (Uniohm) MFR series metal film fixed resistors, file JLC-01-008, edition 1 (2016-05-09)",
+  "datasheet_sha256": "a4c17c09acd8577cfa500444646d11501862b27ace1ee0f9aea16d72fac6c8b4",
+  "checked": [
+   "value, power and tolerance from the part number",
+   "series ratings (2.1, 5, 6)"
+  ],
+  "open": []
+ }
+}

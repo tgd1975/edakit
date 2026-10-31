@@ -318,7 +318,7 @@ def main(argv=None):
     from .config import ConfigError
     try:
         return _main(argv)
-    except ConfigError as e:     # a board refused while a command runs (unknown, or bought for a layout command)
+    except ConfigError as e:     # a board refused while a command runs (unknown, or bought or hand-wired for a layout command)
         print(f"edakit: {e}", file=sys.stderr)
         return 1
 

@@ -13,8 +13,8 @@ schematic); `layout` then syncs the parts in place instead of copying.
 Without EasyEDA, `edakit schematic draw` draws the schematic as an SVG from the graph and the parts database alone
 (6.5) – for a project without a PCB, for the documentation, for a look at a design before EasyEDA is involved.
 
-A bought board on a cable (`bought = true`, 4.5) has no schematic: `--board` of a bought board is refused with one
-line, and without `--board` the one made board is taken.
+A bought board on a cable (`bought = true`) or a hand-wired one (`wired = true`, 4.5) has no schematic: `--board`
+of such a board is refused with one line, and without `--board` the one made board is taken.
 
 ## 6.1 Generate the template
 

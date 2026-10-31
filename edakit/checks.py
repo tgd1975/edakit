@@ -237,7 +237,8 @@ def main(cfg, args):
     if rep.findings:
         print("\n".join(format_findings(rep.findings)))
     from .engines.coverage import coverage, summary
-    gaps = coverage(d, prof)
+    from .sim.run import saved_result
+    gaps = coverage(d, prof, saved_result(cfg))    # the cables' currents: the simulation saved for this state, if any
     if getattr(args, "coverage", False):
         print("Not checked for lack of data:" + ("".join(f"\n  {g.line()}" for g in gaps) if gaps else " nothing"))
     elif summary(gaps):

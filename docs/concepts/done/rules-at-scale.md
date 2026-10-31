@@ -280,6 +280,16 @@ edakit, each fixed test first. State: of 92 numbered candidates 84 built, 4 in p
 termination, FT-18 pickups, FT-21 the Tube Screamer), 4 out; 113 library entries, all drafts until the owner signs
 them.
 
+Decisions 19–22, built the same day: FT-4 counts as built (decision 19); FT-2 – LIM.i/cable holds every wire of a
+cable between boards to its `i_max_a`, which the simulation had not done before, a cable that carries current without
+one is reported with its loss per metre, and `[boards] wired = true` marks a hand-wired board (decision 22); FT-18 –
+the makers' values for 15 pickups (Seymour Duncan, DiMarzio, Mojotone: DC resistance and resonant peak, no maker
+states an inductance), 3 piezo discs (Murata) and 3 electret capsules in `catalog/tables/audio_sources.toml`, named by
+an AC run's source, and a cable's capacitance in AC runs (decision 20); FT-21 – GuitarML's Tubescreamer/Rat combo and
+Classic Boost (MIT) as open designs, which found a reversed electrolytic and an LM301A below its supply range in the
+combo and five faults of edakit, each fixed test first (decision 21). State: of 92 numbered candidates 88 built,
+none in part, 4 out; 118 library entries, all drafts until the owner signs them; six open designs.
+
 ### When maker-coverage's candidates are built
 
 After the cut (step 5), not before – decided by the owner. Three reasons:
@@ -390,4 +400,20 @@ proposed – what became of the gaps the build left (maker-coverage-status.toml,
 18. **Sources that cannot be reached** stay open with their reason in the status – the Tube Screamer (electrosmash),
     the MIDI specification, Eurorack, pickups, an ampacity table by gauge, ES1's AC limit. The key matrix of FT-21
     comes from a public keyboard repository with a KiCad schematic, attached to the session read only.
+
+Taken by the owner on 2026-10-31 through a form – the candidates still in part after the build:
+
+19. **FT-4, a charger's termination** counts as built: decision 17 stands – no state model; what keeps the charge from
+    terminating and can be seen on the board is checked (a load on the cell: HINT.power_path; the charge current
+    against the cell: LIM.i/charge), HINT.charge_termination names the rest and the coverage report lists the charger
+    as not simulated over time.
+20. **FT-18, pickups and microphones:** the makers' published values – the owner allows their hosts in the
+    environment; where a maker gives no inductance the project gives its own (measured or published).
+21. **FT-21, a guitar circuit:** a pedal with an open licence and a KiCad schematic from a public repository, read only
+    like the Corne, instead of the Tube Screamer drawings of electrosmash.com.
+22. **FT-2, a wire's current rating:** from the datasheet of the wire itself (`i_max_a` on the cable), no table by
+    gauge – the only case that would pass unseen is a wire that heats while its voltage drop and its connectors pass
+    (12–24 V at amperes, short thin leads, a thin wire in a contact rated for a thicker one); every cable that carries
+    current in the simulation without `i_max_a` is reported with its loss per metre. A hand-wired board gets a key of
+    its own instead of `bought`.
 

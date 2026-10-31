@@ -180,7 +180,7 @@ def state_hash(cfg, ignore=None):
 
 def layout_files(cfg):
     from ..pcb import geometry_file
-    made = cfg.made()     # a bought board has no layout: no board file, no artwork, no footprint geometry
+    made = cfg.made()     # a bought or hand-wired board has no layout: no board file, no artwork, no footprint geometry
     files = [cfg.resolve(b.file) for b in made.values()]
     # the artwork the board files place ([[silk.art]]), each SVG once however often it is placed
     files += dict.fromkeys(cfg.resolve(a["svg"]) for b in made.values() for a in b.silk.get("art", [])
@@ -470,10 +470,10 @@ def listed_checks(project_checks, phase):
             if c.phase == phase and phase in WHEN]
 
 
-def bought_row(stage, sid, board):
-    """The information row of a stage that leaves a bought board out."""
-    return {"stage": stage, "id": sid, "item": board.name, "check": "bought board – no schematic, PCB or manufacturing "
-            "files", "result": "info"}
+def unmade_row(stage, sid, board):
+    """The information row of a stage that leaves a bought or hand-wired board out."""
+    return {"stage": stage, "id": sid, "item": board.name, "check": f"{board.unmade} board – no schematic, PCB or "
+            "manufacturing files", "result": "info"}
 
 
 def stage_schematic(cfg, outdir):
@@ -481,8 +481,8 @@ def stage_schematic(cfg, outdir):
     from ..toolchain import is_kicad
     rows = []
     for board in cfg.boards.values():
-        if board.bought:
-            rows.append(bought_row("S", "SYNC.schematic", board))
+        if board.unmade:
+            rows.append(unmade_row("S", "SYNC.schematic", board))
             continue
         if is_kicad(cfg):              # the schematic is the KiCad project's (handbook 16): name it by its file
             board = dataclasses.replace(board, template=f"{board.name}.kicad_sch")
@@ -532,7 +532,7 @@ def stage_fab(cfg, outdir, step=None):
     rows = []
     d = outdir / "fab"
     d.mkdir(exist_ok=True)
-    rows += [bought_row("L", "L", b) for b in cfg.boards.values() if b.bought]
+    rows += [unmade_row("L", "L", b) for b in cfg.boards.values() if b.unmade]
     for board in cfg.made().values():
         if step:  # one step per board: with EasyEDA up to five minutes each
             step(f"L/F board and manufacturing files: {board.name}")
@@ -837,14 +837,15 @@ def write_protocol(cfg, outdir, head, rows, sim, signoff, notes, decision, reaso
         by_stage[r["stage"]][r["result"]] += 1
     for c in sim["checks"]:
         by_stage["E"][c["result"]] += 1
-    bought = ", ".join(name for name, b in cfg.boards.items() if b.bought)
+    unmade = "".join(f"; {what}, not made: {', '.join(n for n, b in cfg.boards.items() if b.unmade == what)}"
+                     for what in ("bought", "hand-wired") if any(b.unmade == what for b in cfg.boards.values()))
     L = [f"# Test protocol – release check {cfg.project}\n", "| | |\n|---|---|",
          f"| Date | {head['time']} |", f"| Run by | {head['tester']} |",
          f"| Object | `{cfg.relative(cfg.graph)}` v{head['graph_version']} ({head['graph_date']}), boards "
          f"{', '.join(cfg.made())} in "
          + (f"KiCad projects {cfg.relative(cfg.artifacts / 'kicad')}/<board>" if is_kicad(cfg) else
             f"EasyEDA project {cfg.project}")
-         + f"{'; bought, not made: ' + bought if bought else ''} |",
+         + f"{unmade} |",
          f"| SHA-256 graph | `{head['graph_sha256']}` |",
          f"| SHA-256 circuit | `{head['state_sha256']}` (graph, parts database, simulation config"
          f"{', requirements' if cfg.requirements else ''}) |",
@@ -895,7 +896,7 @@ def write_protocol(cfg, outdir, head, rows, sim, signoff, notes, decision, reaso
     infos = [r for r in rows if r["result"] == "info" and r["stage"] in ("P", "G")
              and r["id"] not in ("FILES.sheet", "cost")]
     from ..engines.coverage import coverage
-    gaps = coverage(Design.from_config(cfg), prof)
+    gaps = coverage(Design.from_config(cfg), prof, sim)     # the cables' currents from this run's simulation
     if gaps:
         L += ["Not checked for lack of data – no finding, nobody looked (`edakit check --coverage`):\n",
               *[f"- {g.line()}" for g in gaps], ""]

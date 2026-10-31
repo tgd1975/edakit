@@ -33,7 +33,9 @@ the supply over time and LIM.v judges them. Switching spikes and fast edges are 
   `anode` to `cathode_<color>` – the layout a constant-current sink or a low-side switch per colour needs. Each colour
   is checked as an LED of its own (`D10_RED`, `D10_GREEN`, `D10_BLUE`): LIM against its ratings, SIM.state on its driver
   output or by the load's `leds_on`, where the designator turns on all three colours and `D10_RED` one.
-- Switches, buttons, DIP switches are closed or open as the scenario's load says (`buttons`, `open`, `dip_closed`).
+- Switches, buttons, DIP switches are closed or open as the scenario's load says (`buttons`, `open`, `dip_closed`;
+  a changeover switch's `"throw": {"S1": "throw_b"}`, default `throw_a`): the throw moves every pole of a switch of
+  several poles (`common_2`, `throw_a_2` … – a 3PDT footswitch's three; REQ.value/switch judges each pole apart).
   A relay is its coil (`coil_ohm`) plus a contact from `common` to `no` when the load lists it in `relays_on`, else to
   `nc` – every contact set of it: a DPDT relay's second set carries the roles `common_2`, `no_2`, `nc_2` and switches
   with the first (REQ.value/switch judges each set apart).
@@ -60,6 +62,16 @@ the supply over time and LIM.v judges them. Switching spikes and fast edges are 
   pack its charger charges on purpose); both are `criteria.blocking_max_a` (1 mA) unless set.
 - Every net is one node – a track is 0 Ω – unless sim.json `copper` names it (5.2): then each of its pins gets a node
   of its own, with the routed tracks and vias as resistors in between, and every check sees the voltage at the pin.
+- A cable between boards (3.1): a net through it gets a node of its own on the from side (`VIN__usb`), each wire a
+  resistor – `r_ohm_per_wire`, or the copper of `length_m` and the gauge – and with `l_nh_per_m` an inductance in
+  series; several wires of one net between the same two boards (a pedal's ground to the DC jack, each jack's sleeve
+  and each footswitch, wired by hand from pads) are resistors in parallel between the same two nodes.
+  ngspice gives each wire's current; with the cable's `i_max_a` (the rating per wire of its own datasheet)
+  every wire is held to it, derated as every current (LIM.i/cable, a warning while new). Without it, a cable that carries current gets
+  one row of information over the scenarios – the highest current through a wire, which wire, the loss per metre of
+  wire I² × R (`highest current through a wire, no i_max_a (wire 1 – I² × R: 1.756 mW per metre of wire, AWG 26 copper
+  at 20 °C)`) – and `edakit check --coverage` names it (3.3); the generated fault scenarios are left out of the highest
+  current, a short is no operating current. edakit derives no rating from the gauge (rules-at-scale.md, decision 22).
 - Off-board loads (a servo, a motor, a strip at a connector): the load's `external`, e.g.
   `{"J1": {"plus": "2", "minus": "1", "i_a": 0.3}}` – a constant current between the two pins; it counts for the
   connector's contact current and for the track widths.
@@ -71,7 +83,7 @@ the supply over time and LIM.v judges them. Switching spikes and fast edges are 
   The pins with the roles `vdd` and `gnd` feed the rails at the start, `vdd_end` and `gnd_end` at the far end. A cable
   to the strip gives each of its pins a node of its own with the wire's resistance in between, so that every feed
   carries its own current; a cable with `at_m` lands its wires on the rails at that place instead – an injection
-  point. A strip on a board of its own (`bought = true`, 4.5) is reached through its cables only: a pin no wire lands
+  point. A strip on a board of its own (`wired = true`, 4.5) is reached through its cables only: a pin no wire lands
   on is an open end of its rail. A strip plugged into the output of another (chained: `vdd_end`, `gnd_end`, `dout` of
   the first on nets of their own with `vdd`, `gnd`, `din` of the second) is fed through the first one's rails – in the
   simulation, and in stage G, where its +V rail passes a supply on (PATH.unfed) and its ground rail joins ground
@@ -371,10 +383,37 @@ nothing ran):
 ```
 
 `input` is the net driven with 1 V AC – through 1 F, so its DC stays the operating point's – behind `source_ohm`, the
-source's own resistance (a microphone's output; default none), or behind `source`, a source model (maker-coverage
-FT-18): `{"r_ohm", "l_h", "c_f"}`, R and L in series with C across – a magnetic pickup's coil resistance, inductance and
-winding plus cable capacitance, the project's values with their source in `note`; edakit has no pickup's numbers of its
-own. `output` is the net measured against its board's
+source's own resistance (default none), or behind `source`, a source model of the audio band (maker-coverage FT-18,
+decision 20 of rules-at-scale.md), one of three:
+
+| `source` | Model | Values |
+|---|---|---|
+| `{"pickup": ROW, "l_h": 2.5}` or `{"r_ohm", "l_h", "c_f"}` | a magnetic pickup: R and L in series, C across its output | coil resistance, inductance, winding capacitance |
+| `{"piezo": ROW}` or `{"c_series_f"}` | a piezo disc: 1 V behind its capacitance | the disc's capacitance |
+| `{"microphone": ROW}` or `{"rl_ohm"}` | an electret capsule: its FET a current source of 1 V / RL into the input net, no DC | the load resistor of the data sheet's measurement circuit |
+
+ROW is a row of `edakit/catalog/tables/audio_sources.toml` – pickups of Seymour Duncan, DiMarzio and Mojotone,
+Murata's 7BB piezo discs, electret capsules of CUI and INGHAi –, each with what its maker states and the page or data
+sheet it was read from (the catalog page lists them). A value the row states is not
+given again – a project that measured its own pickup gives its numbers instead of the row –, one the row lacks is the
+project's. The makers reachable state a pickup's DC resistance, Seymour Duncan also its resonant peak, none its
+inductance or capacitance: a named pickup needs `l_h` from the project, measured or published, with its source in
+`note`; without it the run stops with the reason. edakit derives no inductance from a resonant peak whose load the
+maker does not state. `c_f` holds the winding's capacitance and whatever the project lumps with it; a cable of the graph
+brings its own (below). A piezo's corner with the input's resistance is 1 / (2π · R · C): Murata's 7BB-20-6L0, 10 nF,
+into 1 MΩ gives 16 Hz, into 100 kΩ 159 Hz; the low end of its ±30 % a project checks with `c_series_f` (7 nF) in
+place of the row. A microphone's
+0 dB is the capsule's output into its data sheet's RL alone: its RL is a resistor of the graph, from the input net to a
+supply (a run whose input has no resistor chain to a fixed level stops – the capsule's FET would have no bias), and an
+RL larger than the data sheet's gives more, a smaller less; sensitivity, operating voltage and current are in the row
+for the reader, the model does not use them.
+
+A cable of the graph with `c_pf_per_m` and `length_m` (3.1) puts c_pf_per_m × length_m from each of its wires to its
+wire on ground, at its `from` end – in AC runs only, a cable without a wire on ground adds none. An instrument cable
+from a guitar board to the pedal's jack lowers the pickup's resonance by √(C / (C + C_cable)): 3 m of 100 pF/m on
+500 pF moves 4.5 kHz to 3.6 kHz.
+
+`output` is the net measured against its board's
 ground; `scenario` the DC scenario linearised around (default the first – with `spread`, the first of each corner).
 ngspice runs `.ac dec` from `from_hz` to
 `to_hz` with `points` per decade (default: a decade beyond the expectation's frequencies on each side, 20 per decade).
@@ -382,10 +421,15 @@ The gain is 20·log10 |V(output) / V(source)| – with a source resistance it in
 source –; a corner is where the gain falls 3.01 dB below its largest value in the sweep, interpolated in log f, and a
 corner outside the sweep is reported as beyond it (below the sweep it meets a `max` the sweep reaches, never a `min`).
 Each expectation is a row, a missed one SIM.response (grade gain or corner), a warning while new; the run gets its row
-in the scenario table and its curve in result.json (`ac`). The op-amp model has no gain-bandwidth: an upper corner comes
-from the passive parts only. On the reference circuits: the guitar buffer's output coupling C22 / R24 gives 1.59 Hz,
-with 100 nF instead of 1 µF 15.9 Hz – SIM.response; the audio input's R20 / C21 low-pass 15.9 kHz, with 100 nF
-1.6 kHz.
+in the scenario table and its curve in result.json (`ac`, with the source model it ran: kind, row and values).
+`"info": true` makes the run's rows information, as a transient run's: a missed expectation is a row marked info
+and no finding – the response a project computes from its schematic where no source states what the design intends
+(the GuitarML pedals of tests/open_designs/: the TS's mid hump from 1/(2π·4.7 kΩ·47 nF), the boost's gain from
+R3/R4). The op-amp model has no gain-bandwidth: an upper corner comes from the passive parts only. On the reference circuits: the
+guitar buffer's output coupling C22 / R24 gives 1.59 Hz, with 100 nF instead of 1 µF 15.9 Hz – SIM.response; the
+audio input's R20 / C21 low-pass 15.9 kHz, with 100 nF 1.6 kHz. With a pickup (`tests/test_audio_sources.py`: Seymour
+Duncan's SH-1 neck, 7.43 kΩ, and 2.5 H and 500 pF chosen for the test) into a 500 kΩ volume pot and a 1 MΩ input the
+resonance at 4.5 kHz rises 9.9 dB, into 250 kΩ 6.7 dB – the simulation agrees with the coil's formula within 0.1 dB.
 
 `expect` in a load holds what the project expects there, as in a transient run: per source `i_max_a`, `i_min_a` – a sleep
 current budget, the evidence for a battery-life requirement (LIM.i) –, per net `min_v`, `max_v` (LIM.v).
@@ -422,7 +466,7 @@ Every LED – each colour of an RGB LED – has a state the simulation checks in
 - LED has a known driver: in every scenario every LED – each colour of an RGB LED – has a state SIM.state checks, its cathode on a driver output (directly, behind 0 Ω bridges or one resistor) or the load's `leds_on`; an LED with neither, or one the netlist left out because its parts entry lacks a role it reads (anode, cathode and their colours, 4.1), fails as "LED without a known driver"
 
 **`SIM.response`** – frequency response as expected (warning, gain: warning, corner: warning)  
-Every expectation of an AC run of the simulation config (ac) holds: the gain from its input to its output at the frequencies named (grade gain), and the lower and upper −3 dB corners within their ranges (grade corner). The gain is 20·log10 |V(output) / V(source)| for 1 V AC behind the run's source_ohm, linearised around a DC scenario; a corner is where the gain falls 3.01 dB below its largest value in the sweep. Runs only where sim.json names an expectation, only with the domain audio or guitar on.
+Every expectation of an AC run of the simulation config (ac) holds: the gain from its input to its output at the frequencies named (grade gain), and the lower and upper −3 dB corners within their ranges (grade corner). The gain is 20·log10 |V(output) / V(source)| for 1 V AC behind the run's source_ohm or its source model – a pickup (R and L in series, C across), a piezo disc (behind its capacitance), an electret capsule (a current of 1 V / RL into its load resistor), named by a row of catalog/tables/audio_sources.toml with the maker's values or given as numbers –, a cable's capacitance per metre between its wires and its wire on ground, linearised around a DC scenario; a corner is where the gain falls 3.01 dB below its largest value in the sweep. Runs only where sim.json names an expectation, only with the domain audio or guitar on.
 
 **`SIM.copper`** – copper annotated (note; replaces E-1)  
 A net listed for copper is simulated with its routed copper; where it is not, it stays one ideal node.

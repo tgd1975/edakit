@@ -1,0 +1,134 @@
+{
+ "lcsc": "C7236",
+ "mpn": "TL072CP",
+ "manufacturer": "Texas Instruments",
+ "kind": "ic",
+ "package": "PDIP-8 (P)",
+ "jlc_class": "Extended Part",
+ "datasheet": {
+  "url": "https://www.ti.com/lit/ds/symlink/tl072.pdf",
+  "pinout_page": 5,
+  "title": "TL07xx Low-Noise, FET-Input Operational Amplifiers",
+  "revision": "SLOS080W (September 1978, revised July 2025)"
+ },
+ "pins": {
+  "1": {
+   "name": "1OUT",
+   "type": "output",
+   "role": "out"
+  },
+  "2": {
+   "name": "1IN-",
+   "type": "input",
+   "role": "in_n",
+   "v_min_v": -0.5,
+   "i_inject_max_a": 0.01
+  },
+  "3": {
+   "name": "1IN+",
+   "type": "input",
+   "role": "in_p",
+   "v_min_v": -0.5,
+   "i_inject_max_a": 0.01
+  },
+  "4": {
+   "name": "VCC-",
+   "type": "ground",
+   "role": "vee"
+  },
+  "5": {
+   "name": "2IN+",
+   "type": "input",
+   "role": "in_p_b",
+   "v_min_v": -0.5,
+   "i_inject_max_a": 0.01
+  },
+  "6": {
+   "name": "2IN-",
+   "type": "input",
+   "role": "in_n_b",
+   "v_min_v": -0.5,
+   "i_inject_max_a": 0.01
+  },
+  "7": {
+   "name": "2OUT",
+   "type": "output",
+   "role": "out_b"
+  },
+  "8": {
+   "name": "VCC+",
+   "type": "power_in",
+   "role": "vcc",
+   "needs": [
+    {
+     "what": "capacitor",
+     "c_min_f": 1e-07,
+     "source": "TI SLOS080W, 8.3 Power Supply Recommendations: 0.1-µF bypass capacitors close to the power-supply pins; 8.4: a single bypass capacitor from VCC+ to ground for single-supply applications"
+    }
+   ]
+  }
+ },
+ "values": {
+  "behavior": "opamp",
+  "gain_min_ratio": 1,
+  "vicm_v": [
+   4,
+   -4
+  ],
+  "vout_swing_v": [
+   3,
+   -3
+  ],
+  "iq_a": 0.005
+ },
+ "limits": {
+  "vdd_max_v": 42,
+  "vdd_op_min_v": 4.5,
+  "vdd_op_max_v": 40,
+  "vin_rel_max_v": 0.5,
+  "tj_max_c": 150,
+  "t_min_c": 0,
+  "t_max_c": 70,
+  "rth_ja_k_per_w": 85
+ },
+ "hints": [
+  "on a single 9 V supply the TL072C's guaranteed common-mode range (5.8: ±11 V at ±15 V – 4 V from each rail) is 4 V wide less than the supply: a bias at half of 8.7 V leaves 0.35 V to either end – the input signal's peaks go beyond it",
+  "inputs are diode-clamped to both rails: limit the current of a signal more than 0.5 V beyond them to 10 mA (5.1 note 2)"
+ ],
+ "compliance": {
+  "radio": "none",
+  "source": "TI SLOS080W: an operational amplifier, no transmitter – read 2026-10-31; RoHS and REACH not read"
+ },
+ "sources": [
+  "TI TL07xx Low-Noise, FET-Input Operational Amplifiers, SLOS080W (September 1978, revised July 2025), from TI https://www.ti.com/lit/ds/symlink/tl072.pdf, read 2026-10-31; LCSC C7236 is TI TL072CP, PDIP-8 (JLCPCB catalogue 2026-10-31 (edakit part search): Extended Part, 5 535 pcs)",
+  "pins: 4 Pin Configuration and Functions, Figure 4-5 and Table 4-3 (TL072x D, DDF, JG, P, PS, PW): 1 1OUT, 2 1IN−, 3 1IN+, 4 VCC−, 5 2IN+, 6 2IN−, 7 2OUT, 8 VCC+; VCC− typed ground with the role vee (the op-amp model's negative rail): the pedals tie it to ground",
+  "vdd_max_v 42: 5.1 supply voltage (V+) − (V−) 0 … 42 V for all devices but the NS and PS packages and the TL07xM (36 V); vdd_op_min_v 4.5, vdd_op_max_v 40: 5.3 recommended supply voltage, all other devices (the NS, PS and M devices: 10 … 30 V)",
+  "vin_rel_max_v 0.5, v_min_v −0.5 and i_inject_max_a 0.01 on the inputs: 5.1 common-mode voltage (VCC−) − 0.5 … (VCC+) + 0.5 V and current −10 … 10 mA for all other devices; note 2: input pins diode-clamped to both rails",
+  "vicm_v [4, −4]: 5.8 (TL07xC) common-mode voltage VCM ±11 V minimum at VS = ±15 V (typical −12 … 15 V) – 4 V from each rail, the guaranteed range; 5.3 recommends inputs from (VCC−) + 4 V to (VCC+) + 0.1 V for all other devices – the lower end the same, the upper end taken from 5.8, the stricter",
+  "vout_swing_v [3, −3]: 5.8 maximum peak output voltage swing ±12 V minimum at VS = ±15 V, RL = 10 kΩ – 3 V from each rail",
+  "iq_a 0.005: 5.8 quiescent current per amplifier 2.5 mA maximum (1.4 typical) at VO = 0, no load – both channels",
+  "gain_min_ratio 1: 5.9 phase margin 56° at G = +1 (TL07xC, RL = 10 kΩ, CL = 20 pF) – unity-gain stable",
+  "t_min_c 0, t_max_c 70: 5.3 specified temperature of the TL07xC; tj_max_c 150: 5.1; rth_ja_k_per_w 85: 5.5 RθJA of the TL072x P (PDIP) package",
+  "decoupling: 8.3 – 0.1-µF bypass capacitors close to the power-supply pins"
+ ],
+ "notes": "Dual JFET-input op-amp in PDIP-8, the TS stage and tone control of the GuitarML Tubescreamer/Rat combo. Library draft.",
+ "verified": {
+  "by": "Claude (datasheet check, library draft)",
+  "date": "2026-10-31",
+  "datasheet": "TI SLOS080W (revised July 2025)",
+  "datasheet_sha256": "30a70a806642920df994222bc8e7d9b16b4e4cdbf228996dd21ee4bb2cdc863f",
+  "checked": [
+   "4: TL072x P pinout 1 1OUT, 2 1IN−, 3 1IN+, 4 VCC−, 5 2IN+, 6 2IN−, 7 2OUT, 8 VCC+",
+   "5.1: VS 0 … 42 V, inputs (VCC−) − 0.5 … (VCC+) + 0.5 V, ±10 mA, TJ 150 °C",
+   "5.3: VS 4.5 … 40 V, VI (VCC−) + 4 … (VCC+) + 0.1 V, TL07xC 0 … 70 °C",
+   "5.5: RθJA 85 °C/W (P)",
+   "5.8: VCM ±11 V min, VOM ±12 V min (10 kΩ), IQ 2.5 mA max per amplifier",
+   "5.9: phase margin 56° at G = +1"
+  ],
+  "open": [
+   "common-mode range and output swing are given at ±15 V only; the model takes the same distance from the rails at 9 V",
+   "the LCSC copy of C7236 is the older revision SLOS080L; this entry follows SLOS080W from ti.com",
+   "RoHS/REACH not read"
+  ]
+ }
+}

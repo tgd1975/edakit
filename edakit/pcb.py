@@ -1609,7 +1609,7 @@ def place_main(cfg, board, write=False, only=None, rest=False):
 
 def parts_without_row(board, design):
     """The parts the graph puts on the board that have no row in [place], by designator (SYNC.plan). A part on a bought
-    board – off the board, at the far end of a cable – is on no made board and needs none."""
+    or hand-wired board – off the board, at the far end of a cable – is on no made board and needs none."""
     return sorted((r for r in design.board_comps(board.name) if r not in board.place), key=natural_key)
 
 

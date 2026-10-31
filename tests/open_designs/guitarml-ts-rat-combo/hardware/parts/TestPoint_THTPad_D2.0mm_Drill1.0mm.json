@@ -1,0 +1,27 @@
+{
+ "mpn": "TestPoint_THTPad_D2.0mm_Drill1.0mm",
+ "kind": "connector",
+ "package": "plated through-hole pad Ø2.0 mm, drill 1.0 mm, on the board",
+ "own": {
+  "what": "handmade",
+  "notes": "a plated pad of the board for a wire (KiCad footprint TestPoint:TestPoint_THTPad_D2.0mm_Drill1.0mm, symbol Connector_Generic:Conn_01x01): copper, no part to buy"
+ },
+ "pins": {
+  "1": {
+   "name": "Pin_1",
+   "type": "passive"
+  }
+ },
+ "sources": [
+  "the designs' boards (jack_pedal.kicad_pcb, ClassicBoost_v2.kicad_pcb): footprint TestPoint:TestPoint_THTPad_D2.0mm_Drill1.0mm, pad Ø2.0 mm, drill 1.0 mm, read 2026-10-31"
+ ],
+ "verified": {
+  "by": "Claude (datasheet check, open-design transcription)",
+  "date": "2026-10-31",
+  "datasheet": "none – a pad of the board; the board file gives its size",
+  "checked": [
+   "pad size and drill"
+  ],
+  "open": []
+ }
+}

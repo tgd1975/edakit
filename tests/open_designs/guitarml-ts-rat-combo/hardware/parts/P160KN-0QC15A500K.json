@@ -1,0 +1,54 @@
+{
+ "mpn": "P160KN-0QC15A500K",
+ "manufacturer": "TT Electronics",
+ "kind": "potentiometer",
+ "package": "16 mm panel potentiometer, PC pins (P160KN)",
+ "datasheet": {
+  "url": "https://datasheet.lcsc.com/datasheet/pdf/01ead58744deb67a1c53d901897cbb62.pdf?productCode=C7255343",
+  "pinout_page": 3
+ },
+ "pins": {
+  "1": {
+   "name": "1",
+   "type": "passive",
+   "role": "end_a"
+  },
+  "2": {
+   "name": "2",
+   "type": "passive",
+   "role": "wiper"
+  },
+  "3": {
+   "name": "3",
+   "type": "passive",
+   "role": "end_b"
+  }
+ },
+ "values": {
+  "value_ohm": 500000.0,
+  "tolerance": 0.2
+ },
+ "limits": {
+  "p_max_w": 0.1,
+  "t_min_c": -20,
+  "t_max_c": 70
+ },
+ "sources": [
+  "TT Electronics (BI Technologies) P160 Series panel potentiometer, issue C (06/2021), LCSC's copy for C7255343 (P160KN-0QC15B100K) https://datasheet.lcsc.com/datasheet/pdf/01ead58744deb67a1c53d901897cbb62.pdf?productCode=C7255343, read 2026-10-31 (its tables are images, read from the pages)",
+  "p. 1 ordering scheme: P160, KN = side adjust with PC pins, 0 = no detent, Q-type shaft, C = full-CCW position, shaft length 15, taper A (A = audio), the total resistance; p. 3: standard values 100 Ω … 1 MΩ (20K, 100K, 500K among them)",
+  "p. 2: ±20 % resistance tolerance, power rated 0.2 W (B taper) and 0.1 W (others), operating temperature −20 … +70 °C; p. 3 circuit diagram: CCW end, S (the wiper), CW end – pins 1, 2, 3 as the designs' symbol Device:R_Potentiometer_US (2 the wiper)"
+ ],
+ "verified": {
+  "by": "Claude (datasheet check, open-design transcription)",
+  "date": "2026-10-31",
+  "datasheet": "TT Electronics (BI Technologies) P160 Series panel potentiometer, issue C (06/2021)",
+  "datasheet_sha256": "def84d54fae8a991957414ca3a7927b61d0550386abcb65a1a67ad4367f0f164",
+  "checked": [
+   "ordering scheme, standard values",
+   "electrical specifications"
+  ],
+  "open": [
+   "an order code built by the data sheet's scheme – no LCSC number found in the catalogue"
+  ]
+ }
+}

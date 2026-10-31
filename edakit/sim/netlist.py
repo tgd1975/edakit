@@ -10,9 +10,10 @@ put across it (maker-coverage FT-9) – the operating point a transient or an AC
 three LEDs with the values and limits of their colour, common cathode (roles anode_<color>, cathode) or common anode
 (anode, cathode_<color>) as its roles say. An LED whose parts entry lacks one of these roles is left out of the
 netlist and listed in meta["leds_left_out"] (SIM.driver); one with a pin in nc is an unused LED and simply left out.
-Switches, buttons and DIP switches are closed or open as the scenario's load says; a relay is its coil resistance
-(coil_ohm between the roles coil_plus and coil_minus) plus a contact from common to no when the load lists it in
-"relays_on", else to nc. Supplies are connectors listed under "sources" in the simulation config, or battery holders
+Switches, buttons and DIP switches are closed or open as the scenario's load says – a changeover switch's throw
+("throw": {des: "throw_a" | "throw_b"}) moves every pole of it (common_2, throw_a_2 …: a 3PDT); a relay is its coil
+resistance (coil_ohm between the roles coil_plus and coil_minus) plus a contact from common to no when the load lists
+it in "relays_on", else to nc. Supplies are connectors listed under "sources" in the simulation config, or battery holders
 with a cell state – one voltage source per cell, listed in meta["cells"] (LIM.backfeed: no charge current). Off-board loads
 (a servo, a motor at a connector) are constant currents between two pins, listed under the load's "external". An LED
 strip (kind led_strip) is a ladder of its rails and pixels, and a cable to it gives its pins nodes of their own (strip.py).
@@ -84,7 +85,7 @@ from __future__ import annotations
 import math
 import re
 
-from ..circuit import capacitance, limits, relay_sets, values, volts_across, wire_h, wire_ohm
+from ..circuit import capacitance, limits, relay_sets, switch_sets, values, volts_across, wire_h, wire_ohm
 from . import strip
 
 VT = 0.02585
@@ -226,17 +227,29 @@ def split_boards(design):
         src, dst = cable["from"], cable["to"]
         side = board[src]
         for p_src, p_dst in cable["pins"].items():
-            net = design.pin_net.get(f"{src}.{p_src}")
-            if net is None or net != design.pin_net.get(f"{dst}.{p_dst}"):
+            here, there = design.pin_net.get(f"{src}.{p_src}"), design.pin_net.get(f"{dst}.{p_dst}")
+            net = here if here in design.nets else (here or "").rsplit("__", 1)[0]
+            if here is None or there is None or net != (there if there in design.nets else there.rsplit("__", 1)[0]):
                 raise ValueError(f"cable {cable['name']}: {src}.{p_src} and {dst}.{p_dst} are not on the same net")
-            alt = f"{net}__{side}"
-            for ref in design.nets[net]["pins"]:
-                if board[ref.split(".", 1)[0]] == side:
-                    design.pin_net[ref] = alt
-            design.cable_elements.append({"name": f"R_{cable['name']}_{p_src}", "des": dst, "a": alt, "b": net,
+            if here == there:                 # the net's first wire: the source side's pins get a node of their own
+                here = f"{net}__{side}"
+                for ref in design.nets[net]["pins"]:
+                    if board[ref.split(".", 1)[0]] == side and design.pin_net[ref] == net:
+                        design.pin_net[ref] = here
+            # a further wire of a net split before (a pedal's ground to each jack and footswitch): between the same
+            # two nodes, in parallel
+            design.cable_elements.append({"name": f"R_{cable['name']}_{p_src}", "des": dst, "a": here, "b": there,
                                           "pa": f"{src}.{p_src}", "pb": f"{dst}.{p_dst}",
-                                          "r": wire_ohm(cable), "l": wire_h(cable)})
+                                          "r": wire_ohm(cable), "l": wire_h(cable), "cable": cable["name"],
+                                          "wire": p_src, "i_max_a": cable.get("i_max_a")})
     strip.split_feeds(design)
+
+
+def cable_wires(design, meta):
+    """Every wire of a cable in the netlist: the cables between boards and to an LED strip (design.cable_elements) and
+    the wires that land along a strip (its taps) – each a dict with its resistor's name, its cable, its two ends."""
+    return ([w for w in getattr(design, "cable_elements", None) or []]
+            + [t for m in (meta.get("strips") or {}).values() for t in m["taps"]])
 
 
 def local_ground(design, net):
@@ -502,10 +515,13 @@ class Netlist:
         elif kind == "switch":
             if des in self.load.get("open", []):
                 return
-            a = self.rn(des, "common")
-            b = self.rn(des, self.load.get("throw", {}).get(des, "throw_a")) or self.rn(des, "throw_b")
-            if a and b:
-                self.add(f"R_{des} {a} {b} {p.get('r_on_ohm', 0.05)}", des, "switch", (a, b), p.get("r_on_ohm", 0.05))
+            throw = self.load.get("throw", {}).get(des, "throw_a")
+            for pole in sorted(switch_sets(part)) or [""]:     # every pole: "" the first, "_2" the second (3PDT) …
+                a = self.rn(des, "common" + pole)
+                b = self.rn(des, throw + pole) or self.rn(des, "throw_b" + pole)
+                if a and b:
+                    self.add(f"R_{des}{pole.replace('_', '_P')} {a} {b} {p.get('r_on_ohm', 0.05)}", des, "switch",
+                             (a, b), p.get("r_on_ohm", 0.05))
         elif kind == "dip_switch":
             closed = self.load.get("dip_closed", {}).get(des, []) if isinstance(self.load.get("dip_closed"), dict) \
                 else self.load.get("dip_closed", [])
@@ -1118,6 +1134,8 @@ class Netlist:
                     prints.append(f"print @{el['name']}[id]")
                 elif el["kind"] in ("njfet", "pjfet"):
                     prints.append(f"print @{el['name']}[id] @{el['name']}[ig]")
+        wires = [w["name"] for w in cable_wires(self.d, self.meta)]   # a wire's own current: exact, not from two nodes
+        prints += [f"print {' '.join(f'@{w}[i]' for w in wires[k:k + 8])}" for k in range(0, len(wires), 8)]
         body = "\n".join(self.lines)
         models = "\n".join(self.models.values())
         control = "op\n" + "\n".join(prints) if tran is None else self.tran_control(tran)

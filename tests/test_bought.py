@@ -212,11 +212,10 @@ def test_wire_resistance_from_length_and_gauge():
     assert wire_ohm({"r_ohm_per_wire": 0.2}) == 0.2 and wire_ohm({}) == 0.05
     assert wire_h({"length_m": 2, "l_nh_per_m": 600}) == pytest.approx(1.2e-6)
     assert cable_problems({"name": "W1", "length_m": 2, "awg": 24, "l_nh_per_m": 600}) == []
-    assert cable_problems({"length_m": 2}) == ["length_m needs the wire's awg or mm2"]
+    assert cable_problems({"length_m": 2}) == ["length_m needs the wire's awg or mm2, or its r_ohm_per_wire"]
     assert cable_problems({"awg": 24}) == ["awg needs the cable's length_m"]
     assert cable_problems({"length_m": 1, "awg": 24, "mm2": 0.2}) == ["awg or mm2, not both"]
-    assert cable_problems({"r_ohm_per_wire": 0.1, "length_m": 1, "awg": 24}) == [
-        "r_ohm_per_wire or length_m with awg or mm2, not both"]
+    assert cable_problems({"r_ohm_per_wire": 0.1, "length_m": 1, "awg": 24}) == ["r_ohm_per_wire or awg | mm2, not both"]
     assert cable_problems({"awg": 50, "length_m": 1, "colour": "red"})[:2] == [
         "unknown key 'colour' (known: about, at_m, awg, c_pf_per_m, i_max_a, l_nh_per_m, length_m, mm2, notes, r_ohm_per_wire)",
         "awg must be a gauge from 0 to 40, not 50"]
@@ -227,7 +226,7 @@ def test_a_cable_without_its_gauge_is_a_finding(project):
     g["graph"]["cables"][0] = {**g["graph"]["cables"][0], "length_m": 2}
     g["graph"]["cables"][0].pop("r_ohm_per_wire")
     project.save_graph(g)
-    assert found(project, "STRUCT.net") == ["cable W1: length_m needs the wire's awg or mm2"]
+    assert found(project, "STRUCT.net") == ["cable W1: length_m needs the wire's awg or mm2, or its r_ohm_per_wire"]
 
 
 @pytest.mark.skipif(not shutil.which("ngspice"), reason="ngspice not installed")

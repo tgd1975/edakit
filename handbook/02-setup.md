@@ -144,8 +144,9 @@ edakit check && edakit sim            # offline, seconds
 ```
 
 The skill sets the project up from an interview, not from the example's defaults. It asks for the boards – one or
-several, a bought board on a cable (4.5), variants –, who assembles, the order, a budget, the purpose, the
-requirements, firmware that follows the graph, documents that quote values, and the project's own scripts and agents.
+several, a bought board on a cable or a hand-wired one (4.5), variants –, who assembles, the order, a budget, the
+purpose, the requirements, firmware that follows the graph, documents that quote values, and the project's own scripts
+and agents.
 Each answer sets its keys; the skill proposes every file and key with its reason and writes only after your OK. In
 Claude Code the interview is a form with options – up to four questions at a time, your own words for the rest –,
 elsewhere one decision round in text. The purpose – private, a gift or for sale – decides how deep the regulatory

@@ -1,0 +1,75 @@
+{
+ "lcsc": "C3096093",
+ "mpn": "PJ-102AH",
+ "manufacturer": "CUI Devices",
+ "kind": "connector",
+ "package": "DC power jack, through hole, right angle, 3 pins",
+ "footprint": "DC-IN-TH_PJ-102AH",
+ "jlc_class": "Extended Part",
+ "datasheet": {
+  "url": "https://datasheet.lcsc.com/datasheet/pdf/128f443e136c65f3e512b957e961a310.pdf?productCode=C3096093",
+  "pinout_page": 2
+ },
+ "pins": {
+  "1": {
+   "name": "1",
+   "type": "passive",
+   "role": "center",
+   "hint": "centre pin (2.0 mm): ground when wired centre negative"
+  },
+  "2": {
+   "name": "2",
+   "type": "passive",
+   "role": "barrel",
+   "hint": "barrel contact: plus when wired centre negative"
+  },
+  "3": {
+   "name": "3",
+   "type": "passive",
+   "role": "barrel_switch",
+   "hint": "switch lug: closed to pin 2 without a plug, open with a plug in – battery plus here, so that the adapter's plug cuts the battery off"
+  }
+ },
+ "values": {
+  "r_contact_ohm": 0.05
+ },
+ "limits": {
+  "v_max_v": 24,
+  "i_max_a": 5.0,
+  "t_min_c": -25,
+  "t_max_c": 85
+ },
+ "compliance": {
+  "rohs": true,
+  "source": "CUI PJ-102AH data sheet (10/30/2019), specifications p. 1: RoHS yes"
+ },
+ "sources": [
+  "CUI Devices PJ-102AH data sheet, date 10/30/2019 (revision 1.03, brand update), 3 pages – LCSC product data of C3096093, https://datasheet.lcsc.com/datasheet/pdf/128f443e136c65f3e512b957e961a310.pdf?productCode=C3096093, read 2026-10-31 (cuidevices.com not reachable from this environment)",
+  "v_max_v 24, i_max_a 5.0: p. 1 rated input voltage 24 Vdc, rated input current 5.0 A",
+  "r_contact_ohm 0.05: p. 1 contact resistance between terminal and mating plug 50 mΩ max (30 mΩ in a closed circuit), measured below 100 mA / 1 kHz",
+  "t_min_c -25, t_max_c 85: p. 1 operating temperature −25 … 85 °C; insulation 100 MΩ at 500 Vdc, withstand 500 Vac 1 min, life 5 000 cycles",
+  "pins: p. 2 schematic – 1 = centre pin, 2 = the spring on the plug's barrel, 3 = the switch contact that 2 rests on without a plug; PCB layout top view: slots 1.00 × 1.60 mm (3 places), pin 1 and 2 3.0 mm from pin 3; centre pin Ø2.0 mm, mating plug Ø5.5 mm, insertion depth 9.0 mm",
+  "EasyEDA symbol and footprint of C3096093 (edakit part import 2026-10-31): pins 1, 2, 3, footprint DC-IN-TH_PJ-102AH with 3 plated holes",
+  "JLCPCB catalogue (edakit stock --lcsc, 2026-10-31): Extended Part, 1 052 pcs, hand-soldered"
+ ],
+ "notes": "5.5 mm DC power jack, 2.0 mm centre pin, right angle, through hole, with a switch lug. The 9 V input of block pedal-power (centre negative: pin 1 ground, pin 2 plus). Library draft, group guitar.",
+ "verified": {
+  "by": "Claude (datasheet check, library draft)",
+  "date": "2026-10-31",
+  "datasheet": "CUI Devices PJ-102AH data sheet, 10/30/2019 (rev. 1.03)",
+  "datasheet_sha256": "f2b67516f2b7fc59a1583591578fb2d203c4774fffb7a26d62bd93406dcc6f30",
+  "checked": [
+   "p. 1: 24 Vdc, 5.0 A, contact resistance 50 mΩ, −25 … 85 °C, RoHS",
+   "p. 2: schematic 1 centre pin, 2 barrel contact, 3 switch; PCB layout slots and pitch; centre pin Ø2.0 mm"
+  ],
+  "open": [
+   "the centre pin is 2.0 mm: the plug of the supply in use must fit it (2.0 or 2.1 mm plugs) – check with the adapter",
+   "lead cross-section: the drawing gives the terminal width 1.00 mm and the 1.00 × 1.60 mm slots, not the thickness – no lead entry, GEO.hole stays pending",
+   {
+    "text": "pin 1 (centre) and pin 2 (barrel) at the footprint against the data sheet's PCB layout",
+    "when": "order"
+   },
+   "through hole: soldered by hand on an SMD-only assembly"
+  ]
+ }
+}

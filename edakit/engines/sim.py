@@ -17,7 +17,7 @@ from collections import defaultdict
 
 from .. import catalog
 from ..catalog import table
-from ..circuit import is_number, limits, polarized, relay_sets, values
+from ..circuit import is_number, limits, polarized, relay_sets, switch_sets, values
 from ..findings import Finding
 from ..sim import netlist, strip
 from .limits import CODE, compare
@@ -368,6 +368,7 @@ def stress(s):
         heat =[w for el in els if (w := dissipation(el, res)) is not None]
         if "rth_ja_k_per_w" in r and heat:
             junction(s, des, sum(heat), r)
+    cable_ratings(s)
     for des, m in meta["mcu"].items():
         r = limits(s.n.part(des))
         cur = {net: res.get(am, 0.0) for net, am in m.get("gpio_ammeters", {}).items()}
@@ -377,6 +378,40 @@ def stress(s):
             for what, i in (("sourced", sum(x for x in cur.values() if x > 0)),
                             ("sunk", -sum(x for x in cur.values() if x < 0))):
                 s.q(des, "gpio_i_total", i, "A", "mcu", des, f"GPIO current {what} by all outputs together")
+
+
+# --- cables: a wire's current against the cable's own rating (maker-coverage FT-2, rules-at-scale.md decision 22) -----
+def wire_current(d, res, w):
+    """The current through a wire of a cable (netlist.cable_wires): ngspice's own (@r_w1_8[i]), else from the voltages
+    at its two ends."""
+    i = res.get(f"@{w['name'].lower()}[i]")
+    if i is None:
+        far = w["node"] if "node" in w else netlist.pin_node(d, w["pb"])
+        i = (v(res, netlist.pin_node(d, w["pa"])) - v(res, far)) / w["r"]
+    return abs(i)
+
+
+def cable_ratings(s):
+    """LIM.i/cable: the current of every wire of a cable between boards within the cable's i_max_a – the rating per
+    wire of the cable's own datasheet, derated as every current; edakit derives none from the gauge. The wires of a
+    cable to an LED strip are the strip's (strip.judge, grade strip)."""
+    for w in getattr(s.d, "cable_elements", None) or []:
+        if w.get("strip") or not is_number(w.get("i_max_a")):
+            continue
+        s.q(f"cable {w['cable']}", "i", wire_current(s.d, s.res, w), "A", "", None,
+            f"current through wire {w['name'][2:]}", code="LIM.i", entry=False, grade="cable",
+            lims=[Limit(max=w["i_max_a"], derate=s.der.get("i", 1.0), source=f"i_max_a of cable {w['cable']}")])
+
+
+def cable_currents(d, res, meta):
+    """{cable: (current, wire)}: the highest current through a wire of each cable in one operating point – the wire
+    named by its pin at the cable's from end."""
+    out = {}
+    for w in netlist.cable_wires(d, meta):
+        i, wire = wire_current(d, res, w), w.get("wire") or w["name"].rsplit("_", 1)[-1]
+        if w["cable"] not in out or i > out[w["cable"]][0]:
+            out[w["cable"]] = (i, wire)
+    return out
 
 
 def jfet(s, des, kind, el):
@@ -902,7 +937,8 @@ def pd_shunts(s):
 
 def signal_path_contacts(s):
     """{designator: [{net: pin}, …]} of the switches, buttons, relays and pots whose contacts have both sides in a
-    signal path (nets with signal or instrument) – one group per contact set (a DPDT relay's two sets apart)."""
+    signal path (nets with signal or instrument) – one group per contact set (a DPDT relay's two sets apart, a 3PDT
+    switch's three poles)."""
     if getattr(s, "_signal_contacts", None) is not None:
         return s._signal_contacts
     d, out = s.d, {}
@@ -914,6 +950,8 @@ def signal_path_contacts(s):
             continue
         if kind == "relay":           # each contact set apart: a DPDT's two sets sit in two signal paths
             groups = [sorted(n for nums in roles.values() for n in nums) for roles in relay_sets(part).values()]
+        elif kind == "switch" and len(switch_sets(part)) > 1:     # each pole apart: a 3PDT's poles, three paths
+            groups = [sorted(n for nums in roles.values() for n in nums) for roles in switch_sets(part).values()]
         else:
             groups = [list((part.get("pins") or {}))]
         found = []
@@ -921,6 +959,8 @@ def signal_path_contacts(s):
             on = {}
             for num in group:
                 net = d.pin_net.get(f"{des}.{num}")
+                if net and net not in d.nets:      # a net a cable runs through: its node on this board, 'IN__main'
+                    net = net.rsplit("__", 1)[0]
                 if net in signal:
                     on.setdefault(net, num)
             if len(on) >= 2:

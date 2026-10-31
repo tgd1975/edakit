@@ -4,9 +4,9 @@ The PCB is generated in layers: parts and nets from the board schematic (without
 everything that matters (in the board file `hardware/boards/<name>.toml`, 10.2), EasyEDA's auto-layout for the rest –
 its positions go into the plan as well (7.4) –, **Freerouting** for the tracks, pours, silkscreen. Every step can be
 repeated; every step checks itself.
-A bought board on a cable (`bought = true`, 4.5) has no PCB: `pcb`, `route`, `silk`, `fab` and `export` refuse it
-with one line when `--board` names it, and without `--board` take the one made board; `handover` and `export` over
-all boards leave it out.
+A bought board on a cable (`bought = true`) or a hand-wired one (`wired = true`, 4.5) has no PCB: `pcb`, `route`,
+`silk`, `fab` and `export` refuse it with one line when `--board` names it, and without `--board` take the one made
+board; `handover` and `export` over all boards leave it out.
 
 ```bash
 edakit handover              # what the circuit hands over: state, sign-offs, what the plan must keep (14.1)
@@ -372,8 +372,8 @@ stay as they are – SYNC.plan compares them with the PCB. Run it before any `pc
 TOP, and only the rows bring rotation and side back.
 
 **Every part in the plan (SYNC.plan).** Stage L of the gate fails for every part the graph puts on the board that has no
-row in `[place]` – by hand, from `pcb place`, or written back by the auto-layout. Parts on a bought board (4.5) – off
-the made boards, at the far end of a cable – are on none of them and need no row.
+row in `[place]` – by hand, from `pcb place`, or written back by the auto-layout. Parts on a bought or hand-wired
+board (4.5) – off the made boards, at the far end of a cable – are on none of them and need no row.
 
 `edakit pcb dump` turns every part it measures to 0° on TOP to read its geometry and **leaves it there** – run `apply`
 afterwards: it puts every part with a row back; the auto-layout is needed again only for parts without one.

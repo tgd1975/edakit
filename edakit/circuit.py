@@ -131,6 +131,20 @@ def relay_sets(part):
     return out
 
 
+SWITCH_SET = re.compile(r"^(common|throw_a|throw_b)(_\d+)?$")    # a switch's poles: pole 1 bare, pole n with _n
+
+
+def switch_sets(part):
+    """{pole: {"common": [pins], "throw_a": [pins], "throw_b": [pins]}} of a changeover switch – pole "" the first,
+    "_2" the second (a 3PDT footswitch: "", "_2", "_3"); every pole follows the one actuator."""
+    out = {}
+    for num, p in ((part or {}).get("pins") or {}).items():
+        m = SWITCH_SET.match(str(p.get("role") or ""))
+        if m:
+            out.setdefault(m.group(2) or "", {}).setdefault(m.group(1), []).append(num)
+    return out
+
+
 def source_outputs(spec):
     """[(name, plus pin, ratio)] of a sim.json source: one output (plus, the supply's voltage) or, with "outputs",
     several against the shared minus – each at its v_ratio times the supply's voltage (−1 for a negative rail)."""
@@ -422,8 +436,8 @@ def wire_mm2(cable):
 
 
 def wire_ohm(cable):
-    """The resistance of one wire: r_ohm_per_wire, or copper of length_m and its gauge (copper.RHO_OHM_MM, 20 °C, as
-    the routed tracks), else CABLE_OHM."""
+    """The resistance of one wire: r_ohm_per_wire (measured or from the cable's data, with or without its length_m), or
+    copper of length_m and its gauge (copper.RHO_OHM_MM, 20 °C, as the routed tracks), else CABLE_OHM."""
     from .sim.copper import RHO_OHM_MM
     if is_number(cable.get("r_ohm_per_wire")):
         return cable["r_ohm_per_wire"]
@@ -431,6 +445,17 @@ def wire_ohm(cable):
     if mm2 and is_number(cable.get("length_m")):
         return RHO_OHM_MM * cable["length_m"] * 1000 / mm2
     return CABLE_OHM
+
+
+def wire_ohm_per_m(cable):
+    """The resistance of one wire per metre: the copper of its gauge (as wire_ohm), or r_ohm_per_wire over length_m;
+    None where the length is not known – the loss per metre of a cable without a rating (engines/coverage.py)."""
+    from .sim.copper import RHO_OHM_MM
+    length = cable.get("length_m")
+    if is_number(cable.get("r_ohm_per_wire")):
+        return cable["r_ohm_per_wire"] / length if is_number(length) and length > 0 else None
+    mm2 = wire_mm2(cable)
+    return RHO_OHM_MM * 1000 / mm2 if mm2 and is_number(length) else None
 
 
 def wire_h(cable):
@@ -453,10 +478,10 @@ def cable_problems(cable):
     gauge = [k for k in ("awg", "mm2") if k in cable]
     if len(gauge) > 1:
         out.append("awg or mm2, not both")
-    if "r_ohm_per_wire" in cable and ("length_m" in cable or gauge):
-        out.append("r_ohm_per_wire or length_m with awg or mm2, not both")
-    elif "length_m" in cable and not gauge:
-        out.append("length_m needs the wire's awg or mm2")
+    if "r_ohm_per_wire" in cable and gauge:
+        out.append("r_ohm_per_wire or awg | mm2, not both")
+    elif "length_m" in cable and not gauge and "r_ohm_per_wire" not in cable:
+        out.append("length_m needs the wire's awg or mm2, or its r_ohm_per_wire")
     elif gauge and "length_m" not in cable:
         out.append(f"{gauge[0]} needs the cable's length_m")
     for k in ("l_nh_per_m", "c_pf_per_m"):

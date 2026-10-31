@@ -1,0 +1,2253 @@
+{
+ "graph": {
+  "name": "guitarml-ts-rat-combo",
+  "version": "1.0",
+  "date": "2026-10-31",
+  "description": "The GuitarML Tubescreamer/Rat combo (GuitarML/GuitarPedalPCBs at e2fa7e1, TS_Rat_Combo_1590bb/jack_pedal.kicad_sch, MIT, Keith Bloemer) as published: a TS808-style stage (2SC1815 input follower, TL072 gain stage with two 1N914 in the feedback and its tone stage, 2SC1815 output follower) and a Rat-style stage (LM301A, 1N914 to ground, filter, 2N5458 source follower), a 3PDT order switch on the board, 9 V through a 1N5817; the jacks, the DC jack, the two bypass footswitches and their LEDs hang on pads – here on the hand-wired board 'wiring'. Transcribed for edakit's tests.",
+  "purpose": {
+   "use": "private",
+   "market": "EU",
+   "notes": "GuitarML publishes the boards for builders who order and build them for themselves. The transcription is a test of edakit, not a product."
+  },
+  "conventions": {
+   "pin_reference": "'<designator>.<pin>' with the pin numbers of the parts entries – the KiCad symbols' where they agree; the 2N5458's custom symbol (1 G, 2 S, 3 D) and Device:LED (1 K, 2 A) turned into the entries' (2N5458: 1 D, 2 S, 3 G; LED: 1 A, 2 K)",
+   "v": "per net: [min, max] in V over the intended operating states – 9 V from the DC jack; nets behind a coupling capacitor at ground with ±4.5 V of signal",
+   "board": "main: the GuitarML PCB; wiring: the parts wired to its pads by hand (bought = true until edakit has a key for a hand-wired board)",
+   "source": "GuitarML/GuitarPedalPCBs at e2fa7e1, TS_Rat_Combo_1590bb/jack_pedal.kicad_sch (checked against jack_pedal.kicad_pcb), https://github.com/GuitarML/GuitarPedalPCBs"
+  },
+  "cables": [
+   {
+    "name": "W1",
+    "from": "9v1",
+    "to": "J1",
+    "pins": {
+     "1": "2"
+    },
+    "about": "9 V from the DC jack's barrel contact"
+   },
+   {
+    "name": "W2",
+    "from": "InG1",
+    "to": "J1",
+    "pins": {
+     "1": "1"
+    },
+    "about": "ground from the DC jack's centre pin (centre negative)"
+   },
+   {
+    "name": "W3",
+    "from": "In1",
+    "to": "J2",
+    "pins": {
+     "1": "T"
+    },
+    "about": "input jack tip"
+   },
+   {
+    "name": "W4",
+    "from": "InG5",
+    "to": "J2",
+    "pins": {
+     "1": "S"
+    },
+    "about": "input jack sleeve"
+   },
+   {
+    "name": "W5",
+    "from": "Out1",
+    "to": "J3",
+    "pins": {
+     "1": "T"
+    },
+    "about": "output jack tip"
+   },
+   {
+    "name": "W6",
+    "from": "InG3",
+    "to": "J3",
+    "pins": {
+     "1": "S"
+    },
+    "about": "output jack sleeve"
+   },
+   {
+    "name": "W7",
+    "from": "ts_send1",
+    "to": "SW2",
+    "pins": {
+     "1": "2"
+    },
+    "about": "TS footswitch pole 1 common"
+   },
+   {
+    "name": "W8",
+    "from": "ts_in1",
+    "to": "SW2",
+    "pins": {
+     "1": "1"
+    },
+    "about": "TS footswitch pole 1 on"
+   },
+   {
+    "name": "W9",
+    "from": "ts_out1",
+    "to": "SW2",
+    "pins": {
+     "1": "4"
+    },
+    "about": "TS footswitch pole 2 on"
+   },
+   {
+    "name": "W10",
+    "from": "ts_rtn1",
+    "to": "SW2",
+    "pins": {
+     "1": "5"
+    },
+    "about": "TS footswitch pole 2 common"
+   },
+   {
+    "name": "W11",
+    "from": "SW_TS1",
+    "to": "D10",
+    "pins": {
+     "1": "1"
+    },
+    "about": "TS LED anode"
+   },
+   {
+    "name": "W12",
+    "from": "swGnd2",
+    "to": "SW2",
+    "pins": {
+     "1": "7"
+    },
+    "about": "TS footswitch pole 3 on: LED to ground"
+   },
+   {
+    "name": "W13",
+    "from": "Rat_send1",
+    "to": "SW3",
+    "pins": {
+     "1": "2"
+    },
+    "about": "Rat footswitch pole 1 common"
+   },
+   {
+    "name": "W14",
+    "from": "Rat_in1",
+    "to": "SW3",
+    "pins": {
+     "1": "1"
+    },
+    "about": "Rat footswitch pole 1 on"
+   },
+   {
+    "name": "W15",
+    "from": "Rat_out1",
+    "to": "SW3",
+    "pins": {
+     "1": "4"
+    },
+    "about": "Rat footswitch pole 2 on"
+   },
+   {
+    "name": "W16",
+    "from": "Rat_rtn1",
+    "to": "SW3",
+    "pins": {
+     "1": "5"
+    },
+    "about": "Rat footswitch pole 2 common"
+   },
+   {
+    "name": "W17",
+    "from": "SW_RAT1",
+    "to": "D11",
+    "pins": {
+     "1": "1"
+    },
+    "about": "Rat LED anode"
+   },
+   {
+    "name": "W18",
+    "from": "swGnd1",
+    "to": "SW3",
+    "pins": {
+     "1": "7"
+    },
+    "about": "Rat footswitch pole 3 on: LED to ground"
+   }
+  ],
+  "layout": {},
+  "locks": {},
+  "components": [
+   {
+    "designator": "D2",
+    "type": "diode",
+    "label": "reverse-polarity diode in the 9 V feed",
+    "board": "main",
+    "lcsc": "C232461",
+    "part": "1N5817RLG",
+    "value": "1N5817",
+    "pins": {
+     "1": "K",
+     "2": "A"
+    },
+    "nc": []
+   },
+   {
+    "designator": "C12",
+    "type": "capacitor",
+    "label": "VCC reservoir",
+    "board": "main",
+    "lcsc": "C1019598",
+    "part": "ESK476M025AC3AA",
+    "value": "47uF",
+    "pins": {
+     "1": "+",
+     "2": "-"
+    },
+    "nc": []
+   },
+   {
+    "designator": "C3",
+    "type": "capacitor",
+    "label": "VCC decoupling",
+    "board": "main",
+    "lcsc": "C600429",
+    "part": "R82DC3100DQ50J",
+    "value": "100nF",
+    "pins": {
+     "1": "1",
+     "2": "2"
+    },
+    "nc": []
+   },
+   {
+    "designator": "R7",
+    "type": "resistor",
+    "label": "VREF divider, upper",
+    "board": "main",
+    "lcsc": "C57436",
+    "part": "MFR0W4F1002A50",
+    "value": "10k",
+    "pins": {
+     "1": "1",
+     "2": "2"
+    },
+    "nc": []
+   },
+   {
+    "designator": "R8",
+    "type": "resistor",
+    "label": "VREF divider, lower",
+    "board": "main",
+    "lcsc": "C57436",
+    "part": "MFR0W4F1002A50",
+    "value": "10k",
+    "pins": {
+     "1": "1",
+     "2": "2"
+    },
+    "nc": []
+   },
+   {
+    "designator": "C4",
+    "type": "capacitor",
+    "label": "VREF filter",
+    "board": "main",
+    "lcsc": "C1019598",
+    "part": "ESK476M025AC3AA",
+    "value": "47uF",
+    "pins": {
+     "1": "+",
+     "2": "-"
+    },
+    "nc": []
+   },
+   {
+    "designator": "R6",
+    "type": "resistor",
+    "label": "TS LED resistor from the 9 V pad",
+    "board": "main",
+    "lcsc": "C57204",
+    "part": "MFR0W4F4701A50",
+    "value": "4.7k",
+    "pins": {
+     "1": "1",
+     "2": "2"
+    },
+    "nc": []
+   },
+   {
+    "designator": "R15",
+    "type": "resistor",
+    "label": "Rat LED resistor from the 9 V pad",
+    "board": "main",
+    "lcsc": "C57204",
+    "part": "MFR0W4F4701A50",
+    "value": "4.7k",
+    "pins": {
+     "1": "1",
+     "2": "2"
+    },
+    "nc": []
+   },
+   {
+    "designator": "R1",
+    "type": "resistor",
+    "label": "Rat input pull-down",
+    "board": "main",
+    "lcsc": "C58596",
+    "part": "MFR0W4F1004A50",
+    "value": "1M",
+    "pins": {
+     "1": "1",
+     "2": "2"
+    },
+    "nc": []
+   },
+   {
+    "designator": "C1",
+    "type": "capacitor",
+    "label": "Rat input coupling",
+    "board": "main",
+    "lcsc": "C600462",
+    "part": "R82EC2220AA50J",
+    "value": "22nF",
+    "pins": {
+     "1": "1",
+     "2": "2"
+    },
+    "nc": []
+   },
+   {
+    "designator": "R2",
+    "type": "resistor",
+    "label": "Rat input bias to VREF",
+    "board": "main",
+    "lcsc": "C58596",
+    "part": "MFR0W4F1004A50",
+    "value": "1M",
+    "pins": {
+     "1": "1",
+     "2": "2"
+    },
+    "nc": []
+   },
+   {
+    "designator": "R3",
+    "type": "resistor",
+    "label": "Rat input series",
+    "board": "main",
+    "lcsc": "C57435",
+    "part": "MFR0W4F1001A50",
+    "value": "1k",
+    "pins": {
+     "1": "1",
+     "2": "2"
+    },
+    "nc": []
+   },
+   {
+    "designator": "C2",
+    "type": "capacitor",
+    "label": "Rat input filter",
+    "board": "main",
+    "lcsc": "C600447",
+    "part": "R82EC1100AA50J",
+    "value": "1nF",
+    "pins": {
+     "1": "1",
+     "2": "2"
+    },
+    "nc": []
+   },
+   {
+    "designator": "U2",
+    "type": "ic",
+    "label": "Rat gain stage (LM301A)",
+    "board": "main",
+    "lcsc": "C22505",
+    "part": "LM301AN",
+    "value": "LM301",
+    "pins": {
+     "1": "BALANCE/COMPENSATION",
+     "2": "IN-",
+     "3": "IN+",
+     "4": "V-",
+     "5": "BALANCE",
+     "6": "OUTPUT",
+     "7": "V+",
+     "8": "COMPENSATION"
+    },
+    "nc": [
+     "5"
+    ]
+   },
+   {
+    "designator": "C9",
+    "type": "capacitor",
+    "label": "LM301A compensation, pins 8–1",
+    "board": "main",
+    "lcsc": "C1620239",
+    "part": "C315C300J1G5TA",
+    "value": "30pF",
+    "pins": {
+     "1": "1",
+     "2": "2"
+    },
+    "nc": []
+   },
+   {
+    "designator": "POT1",
+    "type": "potentiometer",
+    "label": "Rat distortion (A100K)",
+    "board": "main",
+    "part": "P160KN-0QC15A100K",
+    "value": "100k",
+    "pins": {
+     "1": "1",
+     "2": "2",
+     "3": "3"
+    },
+    "nc": []
+   },
+   {
+    "designator": "C6",
+    "type": "capacitor",
+    "label": "Rat feedback capacitor",
+    "board": "main",
+    "lcsc": "C1620408",
+    "part": "C315C101J1G5TA",
+    "value": "100pF",
+    "pins": {
+     "1": "1",
+     "2": "2"
+    },
+    "nc": []
+   },
+   {
+    "designator": "R4",
+    "type": "resistor",
+    "label": "Rat gain leg 1",
+    "board": "main",
+    "lcsc": "C58604",
+    "part": "MFR0W4F470JA50",
+    "value": "47",
+    "pins": {
+     "1": "1",
+     "2": "2"
+    },
+    "nc": []
+   },
+   {
+    "designator": "C7",
+    "type": "capacitor",
+    "label": "Rat gain leg 1 capacitor",
+    "board": "main",
+    "lcsc": "C1019595",
+    "part": "ESK225M050AC3AA",
+    "value": "2.2uF",
+    "pins": {
+     "1": "+",
+     "2": "-"
+    },
+    "nc": []
+   },
+   {
+    "designator": "R5",
+    "type": "resistor",
+    "label": "Rat gain leg 2",
+    "board": "main",
+    "lcsc": "C58635",
+    "part": "MFR0W4F5600A50",
+    "value": "560",
+    "pins": {
+     "1": "1",
+     "2": "2"
+    },
+    "nc": []
+   },
+   {
+    "designator": "C8",
+    "type": "capacitor",
+    "label": "Rat gain leg 2 capacitor",
+    "board": "main",
+    "lcsc": "C1019529",
+    "part": "ESK475M016AC3AA",
+    "value": "4.7uF",
+    "pins": {
+     "1": "+",
+     "2": "-"
+    },
+    "nc": []
+   },
+   {
+    "designator": "C10",
+    "type": "capacitor",
+    "label": "Rat output coupling",
+    "board": "main",
+    "lcsc": "C1019529",
+    "part": "ESK475M016AC3AA",
+    "value": "4.7uF",
+    "pins": {
+     "1": "+",
+     "2": "-"
+    },
+    "nc": []
+   },
+   {
+    "designator": "R11",
+    "type": "resistor",
+    "label": "Rat clipping series resistor",
+    "board": "main",
+    "lcsc": "C57435",
+    "part": "MFR0W4F1001A50",
+    "value": "1k",
+    "pins": {
+     "1": "1",
+     "2": "2"
+    },
+    "nc": []
+   },
+   {
+    "designator": "D1",
+    "type": "diode",
+    "label": "Rat clipping diode",
+    "board": "main",
+    "lcsc": "C96325",
+    "part": "1N914",
+    "value": "1N914",
+    "pins": {
+     "1": "K",
+     "2": "A"
+    },
+    "nc": []
+   },
+   {
+    "designator": "D3",
+    "type": "diode",
+    "label": "Rat clipping diode",
+    "board": "main",
+    "lcsc": "C96325",
+    "part": "1N914",
+    "value": "1N914",
+    "pins": {
+     "1": "K",
+     "2": "A"
+    },
+    "nc": []
+   },
+   {
+    "designator": "POT2",
+    "type": "potentiometer",
+    "label": "Rat filter (A100K)",
+    "board": "main",
+    "part": "P160KN-0QC15A100K",
+    "value": "100k",
+    "pins": {
+     "1": "1",
+     "2": "2",
+     "3": "3"
+    },
+    "nc": []
+   },
+   {
+    "designator": "R12",
+    "type": "resistor",
+    "label": "Rat filter resistor",
+    "board": "main",
+    "lcsc": "C58620",
+    "part": "MFR0W4F1501A50",
+    "value": "1.5k",
+    "pins": {
+     "1": "1",
+     "2": "2"
+    },
+    "nc": []
+   },
+   {
+    "designator": "C11",
+    "type": "capacitor",
+    "label": "Rat filter capacitor",
+    "board": "main",
+    "lcsc": "C600454",
+    "part": "R82EC1330AA50J",
+    "value": "3.3nF",
+    "pins": {
+     "1": "1",
+     "2": "2"
+    },
+    "nc": []
+   },
+   {
+    "designator": "C20",
+    "type": "capacitor",
+    "label": "Rat buffer coupling",
+    "board": "main",
+    "lcsc": "C600462",
+    "part": "R82EC2220AA50J",
+    "value": "22nF",
+    "pins": {
+     "1": "1",
+     "2": "2"
+    },
+    "nc": []
+   },
+   {
+    "designator": "R13",
+    "type": "resistor",
+    "label": "Rat buffer gate to ground",
+    "board": "main",
+    "lcsc": "C58596",
+    "part": "MFR0W4F1004A50",
+    "value": "1M",
+    "pins": {
+     "1": "1",
+     "2": "2"
+    },
+    "nc": []
+   },
+   {
+    "designator": "JN1",
+    "type": "transistor",
+    "label": "Rat output buffer, source follower",
+    "board": "main",
+    "part": "2N5458",
+    "value": "2N5458",
+    "pins": {
+     "1": "D",
+     "2": "S",
+     "3": "G"
+    },
+    "nc": []
+   },
+   {
+    "designator": "R14",
+    "type": "resistor",
+    "label": "Rat buffer source resistor",
+    "board": "main",
+    "lcsc": "C57436",
+    "part": "MFR0W4F1002A50",
+    "value": "10k",
+    "pins": {
+     "1": "1",
+     "2": "2"
+    },
+    "nc": []
+   },
+   {
+    "designator": "C21",
+    "type": "capacitor",
+    "label": "Rat output coupling to volume",
+    "board": "main",
+    "lcsc": "C600444",
+    "part": "R82DC4100AA60J",
+    "value": "1uF",
+    "pins": {
+     "1": "1",
+     "2": "2"
+    },
+    "nc": []
+   },
+   {
+    "designator": "POT3",
+    "type": "potentiometer",
+    "label": "Rat volume (A100K)",
+    "board": "main",
+    "part": "P160KN-0QC15A100K",
+    "value": "100k",
+    "pins": {
+     "1": "1",
+     "2": "2",
+     "3": "3"
+    },
+    "nc": []
+   },
+   {
+    "designator": "R9",
+    "type": "resistor",
+    "label": "TS input pull-down",
+    "board": "main",
+    "lcsc": "C714531",
+    "part": "RI40-1/4W-2.2MΩ±5%T",
+    "value": "2.2M",
+    "pins": {
+     "1": "1",
+     "2": "2"
+    },
+    "nc": []
+   },
+   {
+    "designator": "C5",
+    "type": "capacitor",
+    "label": "TS input coupling",
+    "board": "main",
+    "lcsc": "C600462",
+    "part": "R82EC2220AA50J",
+    "value": "22nF",
+    "pins": {
+     "1": "1",
+     "2": "2"
+    },
+    "nc": []
+   },
+   {
+    "designator": "R28",
+    "type": "resistor",
+    "label": "TS input series",
+    "board": "main",
+    "lcsc": "C57435",
+    "part": "MFR0W4F1001A50",
+    "value": "1k",
+    "pins": {
+     "1": "1",
+     "2": "2"
+    },
+    "nc": []
+   },
+   {
+    "designator": "R10",
+    "type": "resistor",
+    "label": "TS input bias to VREF",
+    "board": "main",
+    "lcsc": "C58638",
+    "part": "MFR0W4F5103A50",
+    "value": "510k",
+    "pins": {
+     "1": "1",
+     "2": "2"
+    },
+    "nc": []
+   },
+   {
+    "designator": "Q1",
+    "type": "transistor",
+    "label": "TS input buffer, emitter follower",
+    "board": "main",
+    "lcsc": "C23895",
+    "part": "2SC1815(RANGE:200-400)",
+    "value": "2SC1815",
+    "pins": {
+     "1": "E",
+     "2": "C",
+     "3": "B"
+    },
+    "nc": []
+   },
+   {
+    "designator": "R16",
+    "type": "resistor",
+    "label": "TS input buffer emitter resistor",
+    "board": "main",
+    "lcsc": "C57436",
+    "part": "MFR0W4F1002A50",
+    "value": "10k",
+    "pins": {
+     "1": "1",
+     "2": "2"
+    },
+    "nc": []
+   },
+   {
+    "designator": "C13",
+    "type": "capacitor",
+    "label": "TS coupling to the gain stage",
+    "board": "main",
+    "lcsc": "C600444",
+    "part": "R82DC4100AA60J",
+    "value": "1uF",
+    "pins": {
+     "1": "1",
+     "2": "2"
+    },
+    "nc": []
+   },
+   {
+    "designator": "R17",
+    "type": "resistor",
+    "label": "TS gain stage bias to VREF",
+    "board": "main",
+    "lcsc": "C57436",
+    "part": "MFR0W4F1002A50",
+    "value": "10k",
+    "pins": {
+     "1": "1",
+     "2": "2"
+    },
+    "nc": []
+   },
+   {
+    "designator": "U1",
+    "type": "ic",
+    "label": "TS gain stage (A) and tone stage (B), TL072",
+    "board": "main",
+    "lcsc": "C7236",
+    "part": "TL072CP",
+    "value": "TL072",
+    "pins": {
+     "1": "1OUT",
+     "2": "1IN-",
+     "3": "1IN+",
+     "4": "VCC-",
+     "5": "2IN+",
+     "6": "2IN-",
+     "7": "2OUT",
+     "8": "VCC+"
+    },
+    "nc": []
+   },
+   {
+    "designator": "C14",
+    "type": "capacitor",
+    "label": "TS feedback capacitor",
+    "board": "main",
+    "lcsc": "C1630306",
+    "part": "C315C510J3G5TA",
+    "value": "51pF",
+    "pins": {
+     "1": "1",
+     "2": "2"
+    },
+    "nc": []
+   },
+   {
+    "designator": "D8",
+    "type": "diode",
+    "label": "TS clipping diode in the feedback",
+    "board": "main",
+    "lcsc": "C96325",
+    "part": "1N914",
+    "value": "1N914",
+    "pins": {
+     "1": "K",
+     "2": "A"
+    },
+    "nc": []
+   },
+   {
+    "designator": "D9",
+    "type": "diode",
+    "label": "TS clipping diode in the feedback",
+    "board": "main",
+    "lcsc": "C96325",
+    "part": "1N914",
+    "value": "1N914",
+    "pins": {
+     "1": "K",
+     "2": "A"
+    },
+    "nc": []
+   },
+   {
+    "designator": "R18",
+    "type": "resistor",
+    "label": "TS feedback resistor",
+    "board": "main",
+    "lcsc": "C58601",
+    "part": "MFR0W4F5102A50",
+    "value": "51k",
+    "pins": {
+     "1": "1",
+     "2": "2"
+    },
+    "nc": []
+   },
+   {
+    "designator": "POT4",
+    "type": "potentiometer",
+    "label": "TS drive (A500K)",
+    "board": "main",
+    "part": "P160KN-0QC15A500K",
+    "value": "500k",
+    "pins": {
+     "1": "1",
+     "2": "2",
+     "3": "3"
+    },
+    "nc": []
+   },
+   {
+    "designator": "R29",
+    "type": "resistor",
+    "label": "TS gain leg resistor",
+    "board": "main",
+    "lcsc": "C57204",
+    "part": "MFR0W4F4701A50",
+    "value": "4.7k",
+    "pins": {
+     "1": "1",
+     "2": "2"
+    },
+    "nc": []
+   },
+   {
+    "designator": "C22",
+    "type": "capacitor",
+    "label": "TS gain leg capacitor",
+    "board": "main",
+    "lcsc": "C600466",
+    "part": "R82EC2470AA60J",
+    "value": "47nF",
+    "pins": {
+     "1": "1",
+     "2": "2"
+    },
+    "nc": []
+   },
+   {
+    "designator": "R19",
+    "type": "resistor",
+    "label": "TS tone stage input resistor",
+    "board": "main",
+    "lcsc": "C57435",
+    "part": "MFR0W4F1001A50",
+    "value": "1k",
+    "pins": {
+     "1": "1",
+     "2": "2"
+    },
+    "nc": []
+   },
+   {
+    "designator": "C15",
+    "type": "capacitor",
+    "label": "TS tone stage low-pass",
+    "board": "main",
+    "lcsc": "C600434",
+    "part": "R82DC3220DQ60J",
+    "value": "220nF",
+    "pins": {
+     "1": "1",
+     "2": "2"
+    },
+    "nc": []
+   },
+   {
+    "designator": "R20",
+    "type": "resistor",
+    "label": "TS tone stage bias to VREF",
+    "board": "main",
+    "lcsc": "C57436",
+    "part": "MFR0W4F1002A50",
+    "value": "10k",
+    "pins": {
+     "1": "1",
+     "2": "2"
+    },
+    "nc": []
+   },
+   {
+    "designator": "POT5",
+    "type": "potentiometer",
+    "label": "TS tone (W20K; stand-in B20K)",
+    "board": "main",
+    "part": "P160KN-0QC15B20K",
+    "value": "20k",
+    "pins": {
+     "1": "1",
+     "2": "2",
+     "3": "3"
+    },
+    "nc": []
+   },
+   {
+    "designator": "C16",
+    "type": "capacitor",
+    "label": "TS tone control capacitor",
+    "board": "main",
+    "lcsc": "C600434",
+    "part": "R82DC3220DQ60J",
+    "value": "220nF",
+    "pins": {
+     "1": "1",
+     "2": "2"
+    },
+    "nc": []
+   },
+   {
+    "designator": "R21",
+    "type": "resistor",
+    "label": "TS tone control resistor",
+    "board": "main",
+    "lcsc": "C57439",
+    "part": "MFR0W4F2200A50",
+    "value": "220",
+    "pins": {
+     "1": "1",
+     "2": "2"
+    },
+    "nc": []
+   },
+   {
+    "designator": "R22",
+    "type": "resistor",
+    "label": "TS tone stage feedback",
+    "board": "main",
+    "lcsc": "C57435",
+    "part": "MFR0W4F1001A50",
+    "value": "1k",
+    "pins": {
+     "1": "1",
+     "2": "2"
+    },
+    "nc": []
+   },
+   {
+    "designator": "C17",
+    "type": "capacitor",
+    "label": "TS output coupling to level",
+    "board": "main",
+    "lcsc": "C600444",
+    "part": "R82DC4100AA60J",
+    "value": "1uF",
+    "pins": {
+     "1": "1",
+     "2": "2"
+    },
+    "nc": []
+   },
+   {
+    "designator": "R23",
+    "type": "resistor",
+    "label": "TS level series resistor",
+    "board": "main",
+    "lcsc": "C57435",
+    "part": "MFR0W4F1001A50",
+    "value": "1k",
+    "pins": {
+     "1": "1",
+     "2": "2"
+    },
+    "nc": []
+   },
+   {
+    "designator": "POT6",
+    "type": "potentiometer",
+    "label": "TS level (B100K)",
+    "board": "main",
+    "lcsc": "C7255343",
+    "part": "P160KN-0QC15B100K",
+    "value": "100k",
+    "pins": {
+     "1": "1",
+     "2": "2",
+     "3": "3"
+    },
+    "nc": []
+   },
+   {
+    "designator": "C18",
+    "type": "capacitor",
+    "label": "TS output buffer coupling",
+    "board": "main",
+    "lcsc": "C600429",
+    "part": "R82DC3100DQ50J",
+    "value": "100nF",
+    "pins": {
+     "1": "1",
+     "2": "2"
+    },
+    "nc": []
+   },
+   {
+    "designator": "R24",
+    "type": "resistor",
+    "label": "TS output buffer bias to VREF",
+    "board": "main",
+    "lcsc": "C58638",
+    "part": "MFR0W4F5103A50",
+    "value": "510k",
+    "pins": {
+     "1": "1",
+     "2": "2"
+    },
+    "nc": []
+   },
+   {
+    "designator": "Q2",
+    "type": "transistor",
+    "label": "TS output buffer, emitter follower",
+    "board": "main",
+    "lcsc": "C23895",
+    "part": "2SC1815(RANGE:200-400)",
+    "value": "2SC1815",
+    "pins": {
+     "1": "E",
+     "2": "C",
+     "3": "B"
+    },
+    "nc": []
+   },
+   {
+    "designator": "R25",
+    "type": "resistor",
+    "label": "TS output buffer emitter resistor",
+    "board": "main",
+    "lcsc": "C57436",
+    "part": "MFR0W4F1002A50",
+    "value": "10k",
+    "pins": {
+     "1": "1",
+     "2": "2"
+    },
+    "nc": []
+   },
+   {
+    "designator": "R26",
+    "type": "resistor",
+    "label": "TS output series resistor",
+    "board": "main",
+    "lcsc": "C57438",
+    "part": "MFR0W4F1000A50",
+    "value": "100",
+    "pins": {
+     "1": "1",
+     "2": "2"
+    },
+    "nc": []
+   },
+   {
+    "designator": "C19",
+    "type": "capacitor",
+    "label": "TS output coupling (electrolytic, + at ts_out)",
+    "board": "main",
+    "lcsc": "C5113354",
+    "part": "ESK106M016AC3AA",
+    "value": "10uF",
+    "pins": {
+     "1": "+",
+     "2": "-"
+    },
+    "nc": []
+   },
+   {
+    "designator": "R27",
+    "type": "resistor",
+    "label": "TS output pull-down",
+    "board": "main",
+    "lcsc": "C57436",
+    "part": "MFR0W4F1002A50",
+    "value": "10k",
+    "pins": {
+     "1": "1",
+     "2": "2"
+    },
+    "nc": []
+   },
+   {
+    "designator": "S1",
+    "type": "switch",
+    "label": "order switch, 3PDT: TS first (throw a) or Rat first",
+    "board": "main",
+    "lcsc": "C6859268",
+    "part": "FS57003PLT2B2M2QE",
+    "pins": {
+     "1": "1",
+     "2": "2",
+     "3": "3",
+     "4": "4",
+     "5": "5",
+     "6": "6",
+     "7": "7",
+     "8": "8",
+     "9": "9"
+    },
+    "nc": []
+   },
+   {
+    "designator": "9v1",
+    "type": "connector",
+    "label": "9 V in (board reference 9v1)",
+    "board": "main",
+    "part": "TestPoint_THTPad_D2.0mm_Drill1.0mm",
+    "pins": {
+     "1": "Pin_1"
+    },
+    "bom": false,
+    "nc": []
+   },
+   {
+    "designator": "InG1",
+    "type": "connector",
+    "label": "ground of the DC jack (board reference InG1)",
+    "board": "main",
+    "part": "TestPoint_THTPad_D2.0mm_Drill1.0mm",
+    "pins": {
+     "1": "Pin_1"
+    },
+    "bom": false,
+    "nc": []
+   },
+   {
+    "designator": "In1",
+    "type": "connector",
+    "label": "input jack tip (board reference In)",
+    "board": "main",
+    "part": "TestPoint_THTPad_D2.0mm_Drill1.0mm",
+    "pins": {
+     "1": "Pin_1"
+    },
+    "bom": false,
+    "nc": []
+   },
+   {
+    "designator": "InG5",
+    "type": "connector",
+    "label": "input jack sleeve (board reference InG)",
+    "board": "main",
+    "part": "TestPoint_THTPad_D2.0mm_Drill1.0mm",
+    "pins": {
+     "1": "Pin_1"
+    },
+    "bom": false,
+    "nc": []
+   },
+   {
+    "designator": "Out1",
+    "type": "connector",
+    "label": "output jack tip (board reference Out)",
+    "board": "main",
+    "part": "TestPoint_THTPad_D2.0mm_Drill1.0mm",
+    "pins": {
+     "1": "Pin_1"
+    },
+    "bom": false,
+    "nc": []
+   },
+   {
+    "designator": "InG3",
+    "type": "connector",
+    "label": "output jack sleeve (board reference OutG)",
+    "board": "main",
+    "part": "TestPoint_THTPad_D2.0mm_Drill1.0mm",
+    "pins": {
+     "1": "Pin_1"
+    },
+    "bom": false,
+    "nc": []
+   },
+   {
+    "designator": "ts_send1",
+    "type": "connector",
+    "label": "TS footswitch: from the order switch (board reference ts_send)",
+    "board": "main",
+    "part": "TestPoint_THTPad_D2.0mm_Drill1.0mm",
+    "pins": {
+     "1": "Pin_1"
+    },
+    "bom": false,
+    "nc": []
+   },
+   {
+    "designator": "ts_in1",
+    "type": "connector",
+    "label": "TS footswitch: into the TS (board reference ts_in)",
+    "board": "main",
+    "part": "TestPoint_THTPad_D2.0mm_Drill1.0mm",
+    "pins": {
+     "1": "Pin_1"
+    },
+    "bom": false,
+    "nc": []
+   },
+   {
+    "designator": "ts_out1",
+    "type": "connector",
+    "label": "TS footswitch: out of the TS (board reference ts_out)",
+    "board": "main",
+    "part": "TestPoint_THTPad_D2.0mm_Drill1.0mm",
+    "pins": {
+     "1": "Pin_1"
+    },
+    "bom": false,
+    "nc": []
+   },
+   {
+    "designator": "ts_rtn1",
+    "type": "connector",
+    "label": "TS footswitch: back to the order switch (board reference ts_rtn)",
+    "board": "main",
+    "part": "TestPoint_THTPad_D2.0mm_Drill1.0mm",
+    "pins": {
+     "1": "Pin_1"
+    },
+    "bom": false,
+    "nc": []
+   },
+   {
+    "designator": "SW_TS1",
+    "type": "connector",
+    "label": "TS LED anode (board reference SW_TS)",
+    "board": "main",
+    "part": "TestPoint_THTPad_D2.0mm_Drill1.0mm",
+    "pins": {
+     "1": "Pin_1"
+    },
+    "bom": false,
+    "nc": []
+   },
+   {
+    "designator": "swGnd2",
+    "type": "connector",
+    "label": "TS footswitch LED ground (board reference swGnd)",
+    "board": "main",
+    "part": "TestPoint_THTPad_D2.0mm_Drill1.0mm",
+    "pins": {
+     "1": "Pin_1"
+    },
+    "bom": false,
+    "nc": []
+   },
+   {
+    "designator": "Rat_send1",
+    "type": "connector",
+    "label": "Rat footswitch: from the order switch (board reference Rat_send)",
+    "board": "main",
+    "part": "TestPoint_THTPad_D2.0mm_Drill1.0mm",
+    "pins": {
+     "1": "Pin_1"
+    },
+    "bom": false,
+    "nc": []
+   },
+   {
+    "designator": "Rat_in1",
+    "type": "connector",
+    "label": "Rat footswitch: into the Rat (board reference Rat_in)",
+    "board": "main",
+    "part": "TestPoint_THTPad_D2.0mm_Drill1.0mm",
+    "pins": {
+     "1": "Pin_1"
+    },
+    "bom": false,
+    "nc": []
+   },
+   {
+    "designator": "Rat_out1",
+    "type": "connector",
+    "label": "Rat footswitch: out of the Rat (board reference Rat_out)",
+    "board": "main",
+    "part": "TestPoint_THTPad_D2.0mm_Drill1.0mm",
+    "pins": {
+     "1": "Pin_1"
+    },
+    "bom": false,
+    "nc": []
+   },
+   {
+    "designator": "Rat_rtn1",
+    "type": "connector",
+    "label": "Rat footswitch: back to the order switch (board reference Rat_rtn)",
+    "board": "main",
+    "part": "TestPoint_THTPad_D2.0mm_Drill1.0mm",
+    "pins": {
+     "1": "Pin_1"
+    },
+    "bom": false,
+    "nc": []
+   },
+   {
+    "designator": "SW_RAT1",
+    "type": "connector",
+    "label": "Rat LED anode (board reference SW_RAT)",
+    "board": "main",
+    "part": "TestPoint_THTPad_D2.0mm_Drill1.0mm",
+    "pins": {
+     "1": "Pin_1"
+    },
+    "bom": false,
+    "nc": []
+   },
+   {
+    "designator": "swGnd1",
+    "type": "connector",
+    "label": "Rat footswitch LED ground (board reference swGnd)",
+    "board": "main",
+    "part": "TestPoint_THTPad_D2.0mm_Drill1.0mm",
+    "pins": {
+     "1": "Pin_1"
+    },
+    "bom": false,
+    "nc": []
+   },
+   {
+    "designator": "J1",
+    "type": "connector",
+    "label": "DC jack, centre negative (stand-in PJ-102AH)",
+    "board": "wiring",
+    "lcsc": "C3096093",
+    "part": "PJ-102AH",
+    "pins": {
+     "1": "1",
+     "2": "2",
+     "3": "3"
+    },
+    "bom": false,
+    "nc": [
+     "3"
+    ]
+   },
+   {
+    "designator": "J2",
+    "type": "connector",
+    "label": "input jack, mono (stand-in Neutrik NMJ6HCD2)",
+    "board": "wiring",
+    "lcsc": "C368502",
+    "part": "NMJ6HCD2",
+    "pins": {
+     "T": "T",
+     "R": "R",
+     "S": "S",
+     "TN": "TN",
+     "RN": "RN",
+     "SN": "SN"
+    },
+    "bom": false,
+    "nc": [
+     "R",
+     "RN",
+     "SN",
+     "TN"
+    ]
+   },
+   {
+    "designator": "J3",
+    "type": "connector",
+    "label": "output jack, mono (stand-in Neutrik NMJ6HCD2)",
+    "board": "wiring",
+    "lcsc": "C368502",
+    "part": "NMJ6HCD2",
+    "pins": {
+     "T": "T",
+     "R": "R",
+     "S": "S",
+     "TN": "TN",
+     "RN": "RN",
+     "SN": "SN"
+    },
+    "bom": false,
+    "nc": [
+     "R",
+     "RN",
+     "SN",
+     "TN"
+    ]
+   },
+   {
+    "designator": "SW2",
+    "type": "switch",
+    "label": "TS footswitch, 3PDT: on (throw a) or bypass",
+    "board": "wiring",
+    "lcsc": "C6859268",
+    "part": "FS57003PLT2B2M2QE",
+    "pins": {
+     "1": "1",
+     "2": "2",
+     "3": "3",
+     "4": "4",
+     "5": "5",
+     "6": "6",
+     "7": "7",
+     "8": "8",
+     "9": "9"
+    },
+    "bom": false,
+    "nc": [
+     "9"
+    ]
+   },
+   {
+    "designator": "SW3",
+    "type": "switch",
+    "label": "Rat footswitch, 3PDT: on (throw a) or bypass",
+    "board": "wiring",
+    "lcsc": "C6859268",
+    "part": "FS57003PLT2B2M2QE",
+    "pins": {
+     "1": "1",
+     "2": "2",
+     "3": "3",
+     "4": "4",
+     "5": "5",
+     "6": "6",
+     "7": "7",
+     "8": "8",
+     "9": "9"
+    },
+    "bom": false,
+    "nc": [
+     "9"
+    ]
+   },
+   {
+    "designator": "D10",
+    "type": "led",
+    "label": "TS on LED",
+    "board": "wiring",
+    "lcsc": "C330739",
+    "part": "TJ-L5FYTGHRMFCLFLC2R-A5",
+    "pins": {
+     "1": "A",
+     "2": "K"
+    },
+    "bom": false,
+    "nc": []
+   },
+   {
+    "designator": "D11",
+    "type": "led",
+    "label": "Rat on LED",
+    "board": "wiring",
+    "lcsc": "C330739",
+    "part": "TJ-L5FYTGHRMFCLFLC2R-A5",
+    "pins": {
+     "1": "A",
+     "2": "K"
+    },
+    "bom": false,
+    "nc": []
+   }
+  ],
+  "nets": [
+   {
+    "name": "GND",
+    "pins": [
+     "C11.2",
+     "C12.2",
+     "C15.1",
+     "C2.2",
+     "C3.2",
+     "C4.2",
+     "C7.2",
+     "C8.2",
+     "D1.2",
+     "D3.1",
+     "InG1.1",
+     "InG3.1",
+     "InG5.1",
+     "POT3.1",
+     "R1.1",
+     "R13.1",
+     "R14.1",
+     "R16.1",
+     "R21.1",
+     "R25.1",
+     "R27.1",
+     "R8.1",
+     "R9.1",
+     "U1.4",
+     "U2.4",
+     "swGnd1.1",
+     "swGnd2.1",
+     "J1.1",
+     "J2.S",
+     "J3.S",
+     "SW2.7",
+     "SW3.7"
+    ],
+    "v": [
+     0,
+     0
+    ]
+   },
+   {
+    "name": "+9V_IN",
+    "pins": [
+     "9v1.1",
+     "D2.2",
+     "R15.2",
+     "R6.2",
+     "J1.2"
+    ],
+    "v": [
+     0,
+     9.0
+    ]
+   },
+   {
+    "name": "VCC",
+    "pins": [
+     "C12.1",
+     "C3.1",
+     "D2.1",
+     "JN1.1",
+     "Q1.2",
+     "Q2.2",
+     "R7.2",
+     "U1.8",
+     "U2.7"
+    ],
+    "v": [
+     8.5,
+     9.0
+    ]
+   },
+   {
+    "name": "VREF",
+    "pins": [
+     "C4.1",
+     "POT6.1",
+     "R10.1",
+     "R17.1",
+     "R2.1",
+     "R20.1",
+     "R24.1",
+     "R29.1",
+     "R7.1",
+     "R8.2"
+    ],
+    "v": [
+     4.0,
+     4.5
+    ]
+   },
+   {
+    "name": "RAT_IN",
+    "pins": [
+     "C1.1",
+     "R1.2",
+     "Rat_in1.1",
+     "SW3.1"
+    ],
+    "v": [
+     -4.5,
+     4.5
+    ],
+    "signal": true
+   },
+   {
+    "name": "RAT_C1",
+    "pins": [
+     "C1.2",
+     "R2.2",
+     "R3.2"
+    ],
+    "v": [
+     0,
+     8.5
+    ],
+    "signal": true
+   },
+   {
+    "name": "RAT_INP",
+    "pins": [
+     "C2.1",
+     "R3.1",
+     "U2.3"
+    ],
+    "v": [
+     0,
+     8.5
+    ],
+    "signal": true
+   },
+   {
+    "name": "RAT_INN",
+    "pins": [
+     "C6.1",
+     "POT1.1",
+     "R4.2",
+     "R5.2",
+     "U2.2"
+    ],
+    "v": [
+     0,
+     8.5
+    ],
+    "signal": true
+   },
+   {
+    "name": "RAT_C7",
+    "pins": [
+     "C7.1",
+     "R4.1"
+    ],
+    "v": [
+     0,
+     8.5
+    ]
+   },
+   {
+    "name": "RAT_C8",
+    "pins": [
+     "C8.1",
+     "R5.1"
+    ],
+    "v": [
+     0,
+     8.5
+    ]
+   },
+   {
+    "name": "RAT_OUT1",
+    "pins": [
+     "C10.1",
+     "C6.2",
+     "POT1.2",
+     "POT1.3",
+     "U2.6"
+    ],
+    "v": [
+     0,
+     8.5
+    ],
+    "signal": true
+   },
+   {
+    "name": "RAT_C10",
+    "pins": [
+     "C10.2",
+     "R11.2"
+    ],
+    "v": [
+     -4.5,
+     4.5
+    ],
+    "signal": true
+   },
+   {
+    "name": "RAT_CLIP",
+    "pins": [
+     "D1.1",
+     "D3.2",
+     "POT2.1",
+     "R11.1"
+    ],
+    "v": [
+     -4.5,
+     4.5
+    ],
+    "signal": true
+   },
+   {
+    "name": "RAT_FILT",
+    "pins": [
+     "POT2.2",
+     "POT2.3",
+     "R12.2"
+    ],
+    "v": [
+     -4.5,
+     4.5
+    ],
+    "signal": true
+   },
+   {
+    "name": "RAT_TONE",
+    "pins": [
+     "C11.1",
+     "C20.1",
+     "R12.1"
+    ],
+    "v": [
+     -4.5,
+     4.5
+    ],
+    "signal": true
+   },
+   {
+    "name": "RAT_GATE",
+    "pins": [
+     "C20.2",
+     "JN1.3",
+     "R13.2"
+    ],
+    "v": [
+     -4.5,
+     4.5
+    ],
+    "signal": true
+   },
+   {
+    "name": "RAT_SRC",
+    "pins": [
+     "C21.1",
+     "JN1.2",
+     "R14.2"
+    ],
+    "v": [
+     0,
+     8.5
+    ],
+    "signal": true
+   },
+   {
+    "name": "RAT_VOL",
+    "pins": [
+     "C21.2",
+     "POT3.3"
+    ],
+    "v": [
+     -4.5,
+     4.5
+    ],
+    "signal": true
+   },
+   {
+    "name": "RAT_OUT",
+    "pins": [
+     "POT3.2",
+     "Rat_out1.1",
+     "SW3.4"
+    ],
+    "v": [
+     -4.5,
+     4.5
+    ],
+    "signal": true
+   },
+   {
+    "name": "RAT_COMP",
+    "pins": [
+     "C9.1",
+     "U2.8"
+    ],
+    "v": [
+     0,
+     8.5
+    ]
+   },
+   {
+    "name": "RAT_BAL",
+    "pins": [
+     "C9.2",
+     "U2.1"
+    ],
+    "v": [
+     0,
+     8.5
+    ]
+   },
+   {
+    "name": "TS_IN",
+    "pins": [
+     "C5.1",
+     "R9.2",
+     "ts_in1.1",
+     "SW2.1"
+    ],
+    "v": [
+     -4.5,
+     4.5
+    ],
+    "signal": true
+   },
+   {
+    "name": "TS_C5",
+    "pins": [
+     "C5.2",
+     "R28.2"
+    ],
+    "v": [
+     0,
+     8.5
+    ],
+    "signal": true
+   },
+   {
+    "name": "TS_B1",
+    "pins": [
+     "Q1.3",
+     "R10.2",
+     "R28.1"
+    ],
+    "v": [
+     0,
+     8.5
+    ],
+    "signal": true
+   },
+   {
+    "name": "TS_E1",
+    "pins": [
+     "C13.1",
+     "Q1.1",
+     "R16.2"
+    ],
+    "v": [
+     0,
+     8.5
+    ],
+    "signal": true
+   },
+   {
+    "name": "TS_INP",
+    "pins": [
+     "C13.2",
+     "R17.2",
+     "U1.3"
+    ],
+    "v": [
+     0,
+     8.5
+    ],
+    "signal": true
+   },
+   {
+    "name": "TS_INN",
+    "pins": [
+     "C14.1",
+     "C22.2",
+     "D8.1",
+     "D9.2",
+     "R18.2",
+     "U1.2"
+    ],
+    "v": [
+     0,
+     8.5
+    ],
+    "signal": true
+   },
+   {
+    "name": "TS_OUT1",
+    "pins": [
+     "C14.2",
+     "D8.2",
+     "D9.1",
+     "POT4.2",
+     "POT4.3",
+     "R19.2",
+     "U1.1"
+    ],
+    "v": [
+     0,
+     8.5
+    ],
+    "signal": true
+   },
+   {
+    "name": "TS_C22",
+    "pins": [
+     "C22.1",
+     "R29.2"
+    ],
+    "v": [
+     0,
+     8.5
+    ],
+    "signal": true
+   },
+   {
+    "name": "TS_DRIVE",
+    "pins": [
+     "POT4.1",
+     "R18.1"
+    ],
+    "v": [
+     0,
+     8.5
+    ],
+    "signal": true
+   },
+   {
+    "name": "TS_TONE_P",
+    "pins": [
+     "C15.2",
+     "POT5.1",
+     "R19.1",
+     "R20.2",
+     "U1.5"
+    ],
+    "v": [
+     0,
+     8.5
+    ],
+    "signal": true
+   },
+   {
+    "name": "TS_TONE_N",
+    "pins": [
+     "POT5.3",
+     "R22.1",
+     "U1.6"
+    ],
+    "v": [
+     0,
+     8.5
+    ],
+    "signal": true
+   },
+   {
+    "name": "TS_TONE_W",
+    "pins": [
+     "C16.2",
+     "POT5.2"
+    ],
+    "v": [
+     0,
+     8.5
+    ],
+    "signal": true
+   },
+   {
+    "name": "TS_C16",
+    "pins": [
+     "C16.1",
+     "R21.2"
+    ],
+    "v": [
+     -4.5,
+     4.5
+    ],
+    "signal": true
+   },
+   {
+    "name": "TS_OUT2",
+    "pins": [
+     "C17.2",
+     "R22.2",
+     "U1.7"
+    ],
+    "v": [
+     0,
+     8.5
+    ],
+    "signal": true
+   },
+   {
+    "name": "TS_C17",
+    "pins": [
+     "C17.1",
+     "R23.1"
+    ],
+    "v": [
+     0,
+     8.5
+    ],
+    "signal": true
+   },
+   {
+    "name": "TS_LEVEL",
+    "pins": [
+     "POT6.3",
+     "R23.2"
+    ],
+    "v": [
+     0,
+     8.5
+    ],
+    "signal": true
+   },
+   {
+    "name": "TS_C18",
+    "pins": [
+     "C18.2",
+     "POT6.2"
+    ],
+    "v": [
+     0,
+     8.5
+    ],
+    "signal": true
+   },
+   {
+    "name": "TS_B2",
+    "pins": [
+     "C18.1",
+     "Q2.3",
+     "R24.2"
+    ],
+    "v": [
+     0,
+     8.5
+    ],
+    "signal": true
+   },
+   {
+    "name": "TS_E2",
+    "pins": [
+     "Q2.1",
+     "R25.2",
+     "R26.2"
+    ],
+    "v": [
+     0,
+     8.5
+    ],
+    "signal": true
+   },
+   {
+    "name": "TS_C19",
+    "pins": [
+     "C19.2",
+     "R26.1"
+    ],
+    "v": [
+     0,
+     8.5
+    ],
+    "signal": true
+   },
+   {
+    "name": "TS_OUT",
+    "pins": [
+     "C19.1",
+     "R27.2",
+     "ts_out1.1",
+     "SW2.4"
+    ],
+    "v": [
+     -4.5,
+     4.5
+    ],
+    "signal": true
+   },
+   {
+    "name": "IN",
+    "pins": [
+     "In1.1",
+     "S1.1",
+     "S1.6",
+     "J2.T"
+    ],
+    "v": [
+     -4.5,
+     4.5
+    ],
+    "instrument": "pickup",
+    "load_min_ohm": 1000000.0
+   },
+   {
+    "name": "OUT",
+    "pins": [
+     "Out1.1",
+     "S1.8",
+     "J3.T"
+    ],
+    "v": [
+     -4.5,
+     4.5
+    ],
+    "signal": true
+   },
+   {
+    "name": "RAT_RTN",
+    "pins": [
+     "Rat_rtn1.1",
+     "S1.3",
+     "S1.7",
+     "SW3.5"
+    ],
+    "v": [
+     -4.5,
+     4.5
+    ],
+    "signal": true
+   },
+   {
+    "name": "RAT_SEND",
+    "pins": [
+     "Rat_send1.1",
+     "S1.5",
+     "SW3.2"
+    ],
+    "v": [
+     -4.5,
+     4.5
+    ],
+    "signal": true
+   },
+   {
+    "name": "TS_RTN",
+    "pins": [
+     "S1.4",
+     "S1.9",
+     "ts_rtn1.1",
+     "SW2.5"
+    ],
+    "v": [
+     -4.5,
+     4.5
+    ],
+    "signal": true
+   },
+   {
+    "name": "TS_SEND",
+    "pins": [
+     "S1.2",
+     "ts_send1.1",
+     "SW2.2"
+    ],
+    "v": [
+     -4.5,
+     4.5
+    ],
+    "signal": true
+   },
+   {
+    "name": "TS_BYPASS",
+    "pins": [
+     "SW2.3",
+     "SW2.6"
+    ],
+    "v": [
+     -4.5,
+     4.5
+    ],
+    "signal": true
+   },
+   {
+    "name": "RAT_BYPASS",
+    "pins": [
+     "SW3.3",
+     "SW3.6"
+    ],
+    "v": [
+     -4.5,
+     4.5
+    ],
+    "signal": true
+   },
+   {
+    "name": "TS_LED",
+    "pins": [
+     "R6.1",
+     "SW_TS1.1",
+     "D10.1"
+    ],
+    "v": [
+     0,
+     9.0
+    ]
+   },
+   {
+    "name": "RAT_LED",
+    "pins": [
+     "R15.1",
+     "SW_RAT1.1",
+     "D11.1"
+    ],
+    "v": [
+     0,
+     9.0
+    ]
+   },
+   {
+    "name": "TS_LED_K",
+    "pins": [
+     "D10.2",
+     "SW2.8"
+    ],
+    "v": [
+     0,
+     9.0
+    ]
+   },
+   {
+    "name": "RAT_LED_K",
+    "pins": [
+     "D11.2",
+     "SW3.8"
+    ],
+    "v": [
+     0,
+     9.0
+    ]
+   }
+  ]
+ }
+}

@@ -1,0 +1,21 @@
+# The Classic Boost (GuitarML/GuitarPedalPCBs at e2fa7e1, MIT), transcribed from its published KiCad schematic for edakit's
+# tests (maker-coverage FT-21: a guitar circuit, rules-at-scale.md decision 21). Source, licence and what was
+# transcribed: README.md. Not a project to order: no layout, no EasyEDA documents.
+
+[project]
+name = "guitarml-classic-boost"
+company = "GuitarML design (MIT), transcribed for edakit"
+quantity = 5
+graph = "hardware/graph.json"
+parts = "hardware/parts"
+sim = "hardware/sim.json"
+artifacts = "build/edakit"
+reports = "build/release"
+domains = ["guitar"]
+
+[boards.main]
+title = "Classic Boost v2"
+
+[boards.wiring]
+title = "Jacks, DC jack and footswitch"
+wired = true                 # wired by hand to the board's pads (rules-at-scale.md, decision 22)

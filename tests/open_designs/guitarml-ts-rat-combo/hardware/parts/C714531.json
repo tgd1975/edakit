@@ -1,0 +1,48 @@
+{
+ "lcsc": "C714531",
+ "mpn": "RI40-1/4W-2.2MΩ±5%T",
+ "manufacturer": "Huaxing Mechanical-Elec.",
+ "kind": "resistor",
+ "package": "axial, metal glaze 1/4 W, D2.4 × L6.5 mm",
+ "datasheet": {
+  "url": "https://datasheet.lcsc.com/datasheet/pdf/537d379fc45a2a78010a1f98c7488cf4.pdf?productCode=C714638"
+ },
+ "pins": {
+  "1": {
+   "name": "1",
+   "type": "passive",
+   "role": "1"
+  },
+  "2": {
+   "name": "2",
+   "type": "passive",
+   "role": "2"
+  }
+ },
+ "values": {
+  "value_ohm": 2200000.0,
+  "tolerance": 0.05
+ },
+ "limits": {
+  "p_max_w": 0.25,
+  "v_max_v": 1000,
+  "t_min_c": -55,
+  "t_max_c": 125
+ },
+ "sources": [
+  "Huaxing (Shenzhen Xinyuan Huaxing) RI metal glaze (high voltage) resistor specification (2020-07-20), LCSC's copy for C714638 https://datasheet.lcsc.com/datasheet/pdf/537d379fc45a2a78010a1f98c7488cf4.pdf?productCode=C714638, read 2026-10-31",
+  "1.2 type designation: RI, 1/4 W, the value, J = ±5 %; table 1: 1/4 W 0.25 W, rated voltage 1000 V; 1.4: operating ambient −55 … +125 °C",
+  "JLCPCB catalogue 2026-10-31 (edakit part search): C714531 RI40-1/4W-2.2MΩ±5%T, Extended Part – the MFR series of the other resistors ends at 1 MΩ (±1 %, its 2.1) and has no 430 kΩ in the catalogue"
+ ],
+ "verified": {
+  "by": "Claude (datasheet check, open-design transcription)",
+  "date": "2026-10-31",
+  "datasheet": "Huaxing (Shenzhen Xinyuan Huaxing) RI metal glaze (high voltage) resistor specification (2020-07-20)",
+  "datasheet_sha256": "a0b407eb8408213b6cc55db61e4fc7c813885d04ff89afd3c19cf2c913761779",
+  "checked": [
+   "value and tolerance from the part number",
+   "table 1 ratings"
+  ],
+  "open": []
+ }
+}

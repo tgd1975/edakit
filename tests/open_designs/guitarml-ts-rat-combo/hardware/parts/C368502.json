@@ -1,0 +1,61 @@
+{
+ "lcsc": "C368502",
+ "mpn": "NMJ6HCD2",
+ "manufacturer": "Neutrik",
+ "kind": "connector",
+ "package": "6.35 mm (1/4\") stereo jack with switching contacts, PCB mount, horizontal",
+ "datasheet": {
+  "url": "https://datasheet.lcsc.com/datasheet/pdf/114f13da9fb918e1c95e7e0fe9d49e5e.pdf?productCode=C368502",
+  "pinout_page": 1
+ },
+ "pins": {
+  "T": {
+   "name": "T",
+   "type": "passive",
+   "role": "tip"
+  },
+  "R": {
+   "name": "R",
+   "type": "passive",
+   "role": "ring"
+  },
+  "S": {
+   "name": "S",
+   "type": "passive",
+   "role": "sleeve"
+  },
+  "TN": {
+   "name": "TN",
+   "type": "passive",
+   "role": "tip_switch"
+  },
+  "RN": {
+   "name": "RN",
+   "type": "passive",
+   "role": "ring_switch"
+  },
+  "SN": {
+   "name": "SN",
+   "type": "passive",
+   "role": "sleeve_switch"
+  }
+ },
+ "sources": [
+  "Neutrik drawing ST-NMJ6HCD2 (created 20.02.2003, modified 23.02.2021, released 26.02.2021), LCSC's copy for C368502 https://datasheet.lcsc.com/datasheet/pdf/114f13da9fb918e1c95e7e0fe9d49e5e.pdf?productCode=C368502, read 2026-10-31 (read from the drawing; neutrik.com is not reachable from here)",
+  "PCB layout (component side): the contacts T, R, S and their normals TN, RN, SN – the pins of this entry; the drawing gives no electrical ratings",
+  "JLCPCB catalogue 2026-10-31 (edakit part search): C368502 NMJ6HCD2, Extended Part, 972 pcs",
+  "stand-in: the designs name a '1/4\" Mono Audio Jack' (Classic Boost parts list) wired to pads; this Neutrik jack stands in, used mono – tip and sleeve, the other contacts open"
+ ],
+ "verified": {
+  "by": "Claude (datasheet check, open-design transcription)",
+  "date": "2026-10-31",
+  "datasheet": "Neutrik drawing ST-NMJ6HCD2 (released 26.02.2021)",
+  "datasheet_sha256": "62f1b80b837a7a19131fdf6ebedde2b85044de4a461c0d83cca3de1b28d90423",
+  "checked": [
+   "contacts T, R, S, TN, RN, SN (PCB layout)"
+  ],
+  "open": [
+   "no electrical ratings on the drawing – current and voltage not judged"
+  ]
+ }
+}
