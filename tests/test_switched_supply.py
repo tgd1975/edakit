@@ -75,3 +75,29 @@ def test_a_logic_part_clamps_a_supply_below_its_ground():
     assert budget["on"]["result"] == "fail" and float(budget["on"]["actual"].split()[0]) > 1.0
     supply = rows(simulate(cell_v=-3.0), "U8", "supply voltage at VDD inside its operating range")
     assert supply["on"]["result"] == "fail"                      # −0.9 V or so: not switched off, reversed
+
+
+def test_an_output_resistance_spreads_with_the_corners():
+    """The LMC555's discharge pin of handbook 18: ≤ 150 mV at 1 mA with 1.5 V, about 15 Ω at 5 V – one r_out_ohm of
+    150 Ω held R-4's 5 mA budget on paper while a board at 3.2 V draws 7 mA (M-1). r_out_ohm [min, typ, max] takes the
+    spread corner: min with the most current, max with the least."""
+    chip = {**CHIP, "values": {"behavior": "logic", "icc_a": 0.0, "r_out_ohm": [15, 50, 150]},
+            "pins": {**CHIP["pins"], "3": {"name": "DIS", "type": "output", "drive": "open_drain"}}}
+    parts = {"H": HOLDER, "S": SWITCH, "U": chip, "R": LOAD}
+    comps = [{"designator": "BT8", "type": "battery_holder", "lcsc": "H", "pins": {"1": "+", "2": "-"}},
+             {"designator": "SW8", "type": "switch", "lcsc": "S", "pins": {"1": "1", "2": "2", "3": "3"}, "nc": ["3"]},
+             {"designator": "U8", "type": "ic", "lcsc": "U", "pins": {"1": "GND", "2": "VDD", "3": "DIS"},
+              "states": {"DIS": "low"}},
+             {"designator": "R8", "type": "resistor", "lcsc": "R", "value": "1k", "pins": {"1": "1", "2": "2"}}]
+    nets = [{"name": "VBAT", "pins": ["BT8.1", "SW8.2"], "v": [0, 3.3]},
+            {"name": "VDD", "pins": ["SW8.1", "U8.2", "R8.1"], "v": [0, 3.3]},
+            {"name": "SINK", "pins": ["R8.2", "U8.3"], "v": [0, 3.3]},
+            {"name": "GND", "pins": ["BT8.2", "U8.1"], "v": [0, 0]}]
+    d = Design.from_data({"name": "t", "version": "1", "ground": "GND", "components": comps, "nets": nets}, parts)
+    sim = {"cells": {"c": {"v": 3.0, "r": 0.001}}, "supplies": {"s": {"BT8": "c"}}, "spread": ["min", "typ", "max"],
+           "loads": {"on": {"leds_on": [], "expect": {"BT8": {"i_max_a": 1}}}}}
+    out = simrun.run_all(d, sim)
+    amps = {c["scenario"].rsplit("/", 1)[-1]: float(c["actual"].split()[0]) for c in out["checks"]
+            if c["item"] == "BT8" and c["check"] == "current from the cell (expected in this load)"}
+    assert amps == pytest.approx({"spread-min": 3.0 / 1015, "vf-typ": 3.0 / 1050, "spread-max": 3.0 / 1150},
+                                 rel=0.002)

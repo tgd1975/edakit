@@ -153,6 +153,22 @@ def net_nodes(design, net):
     return [node(net, design.ground)]
 
 
+def logic_r_out(r, scenario, des):
+    """A logic part's output resistance: a number, or [min, typ, max] taken at the scenario's spread corner (sim.json
+    spread) – the low end in min, the high end in max, typ (else the middle of the ends) otherwise."""
+    from . import spread
+    if not isinstance(r, list):
+        return r
+    lo, hi = spread.ends(r)
+    corner = spread.corner_of(scenario, des)
+    if corner == "min":
+        return lo
+    if corner == "max":
+        return hi
+    typ = r[1] if len(r) == 3 and isinstance(r[1], (int, float)) else None
+    return typ if typ is not None else (lo + hi) / 2
+
+
 def led_model(name, vf, i_test, rs):
     vd = vf - i_test * rs
     i_s = i_test / (math.exp(vd / (LED_N * VT)) - 1)
@@ -858,7 +874,7 @@ class Netlist:
             if num in connected:             # ground (cells upside down) is clamped by it, as on the bench
                 self.add(f"D_{des}_SUB{num} {gnd} {self.pn(f'{des}.{num}')} {SUBSTRATE_DIODE}")
                 self.models[SUBSTRATE_DIODE] = f".model {SUBSTRATE_DIODE} D(IS=1e-14 N=1 RS=1)"
-        r_out = p.get("r_out_ohm", 50)
+        r_out = logic_r_out(p.get("r_out_ohm", 50), self.sc, des)
         rails = [n for n in supply_pins(pins) if n in connected]
         out = self.meta.setdefault("logic", {})[des] = {}
         for num, state in logic_states(self.d, des, part).items():
