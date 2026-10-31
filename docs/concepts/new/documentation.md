@@ -2,11 +2,12 @@
 
 Status 2026-10-31: decided – the eight decisions and what Claude decided itself accepted by the owner the same day, and
 a ninth and a tenth added by the owner the same evening (the circuit alone as a station; condensing as a rule, with its
-measure), in a decision round in Claude Code's form (the table at the end); nothing built; each step D.1 to D.7 starts
-on the owner's word, one per branch, listed in `TODO.md`. Written against main at `8fba5f2`. Asked for by the owner: the
-pages are comprehensive but confusing, so unreadable – a concept for how the documentation should look, be organised and
-be written, who its readers are, the language and its style, what is missing for it to be understood, everything needed
-so that others use edakit. With one condition the owner set while it was written: everything `docs/organisation.md` does
+measure), in a decision round in Claude Code's form (the table at the end); D.1 built the same evening (`docs/style.md`,
+`docs/glossary.md`, `tests/test_style.py`, `tests/test_references.py`); each step D.2 to D.7 starts on the owner's word,
+one per branch, listed in `TODO.md`. Written against main at `8fba5f2`. Asked for by the owner: the pages are
+comprehensive but confusing, so unreadable – a concept for how the documentation should look, be organised and be
+written, who its readers are, the language and its style, what is missing for it to be understood, everything needed so
+that others use edakit. With one condition the owner set while it was written: everything `docs/organisation.md` does
 not list as documentation – skills, agents, CLAUDE.md, the catalog's and the domains' texts, the manifests, the concepts
 – is data the automation reads; a change there may break something elsewhere or shift a meaning, so this concept leaves
 it alone and says where documentation itself is read by the automation; and a rule for every change: when unsure, ask –
