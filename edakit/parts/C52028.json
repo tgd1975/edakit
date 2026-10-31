@@ -31,7 +31,14 @@
    "name": "T+",
    "type": "analog",
    "v_max_v": 4.3,
-   "hint": "thermocouple input; a 10 nF ceramic capacitor across T+ and T− is strongly recommended (p. 11)"
+   "hint": "thermocouple input; a 10 nF ceramic capacitor across T+ and T− is strongly recommended (p. 11)",
+   "needs": [
+    {
+     "what": "capacitor",
+     "to": "T-",
+     "source": "Maxim MAX31855 19-5793 Rev 5 (1/15), Noise Considerations: 'It is strongly recommended to add a 10nF ceramic surface-mount differential capacitor, placed across the T+ and T- pins' – a recommendation: its presence is checked, not its value"
+    }
+   ]
   },
   "4": {
    "name": "VCC",
@@ -121,7 +128,8 @@
    "abs. max VCC 4.0 V, other pins VCC + 0.3 V, TJ 150 °C, 470.6 mW at 70 °C; θJA 170 °C/W (p. 2)",
    "VCC 3.0–3.6 V, VIL 0.8 V, VIH 2.1 V, ICC ≤ 1.5 mA (p. 2)",
    "fSCL ≤ 5 MHz; SO disabled after CS rises (p. 4)",
-   "T− not to GND (p. 7); 0.1 µF bypass, 10 nF across T+/T− (p. 11)"
+   "T− not to GND (p. 7); 0.1 µF bypass, 10 nF across T+/T− (p. 11)",
+   "2026-10-31: T+–T− differential capacitor (19-5793 Rev 5, Noise Considerations, read now)"
   ],
   "open": [
    "the 10 nF capacitor across T+ and T−: pin needs know a capacitor to ground only, not one between two pins",

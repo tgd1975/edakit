@@ -348,33 +348,70 @@ def hot_loops(d):
 
 
 
-def pin_needs_problems(need):
-    """What is wrong with one entry of a pin's needs: a known `what`, its window as numbers, min ≤ max."""
+def pin_needs_problems(need, pins=None):
+    """What is wrong with one entry of a pin's needs: a known `what`, its window and v_min_v as numbers, min ≤ max;
+    `to` naming another pin of the part (by number or name, where the part's pins are given), and given where the
+    requirement always names one (crystal, tie); dir up or down."""
     n = needs()["pin"]
     if not isinstance(need, dict) or need.get("what") not in n["what"]:
         return [f"needs {need!r}: what must be one of {', '.join(n['what'])}"]
-    window = n["windows"].get(need["what"], [])
-    out = [f"needs {need['what']}: unknown key '{k}'" for k in sorted(set(need) - {"what", "source", "why", *window})]
+    what = need["what"]
+    window, extra = n["windows"].get(what, []), n.get("keys", {}).get(what, [])
+    out = [f"needs {what}: unknown key '{k}'" for k in sorted(set(need) - {"what", "source", "why", *window, *extra})]
     lo, hi = (need.get(k) for k in window) if window else (None, None)
-    out += [f"needs {need['what']}: {k} must be a number" for k in window if k in need and not is_number(need[k])]
+    out += [f"needs {what}: {k} must be a number" for k in [*window, "v_min_v"] if k in need and not is_number(need[k])]
     if is_number(lo) and is_number(hi) and lo > hi:
-        out.append(f"needs {need['what']}: {window[0]} above {window[1]}")
+        out.append(f"needs {what}: {window[0]} above {window[1]}")
+    if what in n.get("needs_to", []) and "to" not in need:
+        out.append(f"needs {what}: to – the other pin of the part – is missing")
+    if "to" in need and pins is not None and other_pin(pins, need["to"]) is None:
+        out.append(f"needs {what}: to {need['to']!r} names no pin of the part")
+    if "dir" in need and need["dir"] not in ("up", "down"):
+        out.append(f"needs {what}: dir must be up or down, not {need['dir']!r}")
     return out
+
+
+def other_pin(pins, to):
+    """The number of the pin `to` names – a pin number, else the first pin of that name – or None."""
+    to = str(to)
+    if to in pins:
+        return to
+    return next((num for num, p in pins.items() if (p or {}).get("name") == to), None)
+
+
+def near_parts(d, des):
+    """The parts layout.near places next to `des`, and those it places `des` next to."""
+    near = (d.graph.get("layout") or {}).get("near") or {}
+
+    def hosts(v):
+        return [v] if isinstance(v, str) else list(v or [])
+    return {k for k, v in near.items() if des in hosts(v)} | set(hosts(near.get(des)))
 
 
 def pin_needs(d):
     """REQ.missing/pin, REQ.value/pin, REQ.forbidden/pin: what a pin's parts entry says it needs – a capacitor to
-    ground, a pull-up to a supply or a pull-down to ground, a series resistor, each in its window; to be on ground, or
-    never on it. A needs entry of the wrong form: PARTS.schema."""
+    ground or to another of its pins (to), rated at least v_min_v, a pull-up to a supply or a pull-down to ground, a
+    series resistor, each in its window; a crystal to another of its pins in its frequency window; to be tied to
+    another of its pins; to be on ground, or never on it; no pull resistor, no series resistor. A capacitor window is
+    judged on the capacitors layout.near places next to the part where it names any on the net – the local
+    decoupling –, else on the net's sum. A needs entry of the wrong form: PARTS.schema."""
     n = needs()["pin"]
     grounds = {d.ground} | set(d.graph.get("grounds") or [])
     supplies = supply_nets(d) - grounds
-    caps = defaultdict(list)            # net -> [(capacitor, value)] of the capacitors to ground
+    between = defaultdict(list)         # frozenset of two nets -> [(capacitor, value, rating)]
     for des in d.comps_of_kind("capacitor"):
         a, b = (d.pin_net.get(f"{des}.{p}") for p in d.part(des)["pins"])
-        for here, there in ((a, b), (b, a)):
-            if there in grounds and here and here not in grounds:
-                caps[here].append((des, values(d.part(des)).get("value_f")))
+        if a and b and a != b:
+            part = d.part(des)
+            between[frozenset((a, b))].append((des, values(part).get("value_f"), (part.get("limits") or {}).get("v_max_v")))
+    crystals = defaultdict(list)        # frozenset of two nets -> [(crystal, f_hz)]
+    for des in d.comps_of_kind("crystal"):
+        a, b = (d.pin_net.get(f"{des}.{p}") for p in d.part(des)["pins"])
+        if a and b and a != b:
+            crystals[frozenset((a, b))].append((des, values(d.part(des)).get("f_hz")))
+
+    def caps_to(net, others):
+        return [c for o in others for c in between.get(frozenset((net, o)), [])]
     out, seen = [], set()
     for des in sorted(d.comps):
         part = d.part(des) or {}
@@ -389,14 +426,18 @@ def pin_needs(d):
                 continue
             ref, net = f"{des}.{num}", d.pin_net.get(f"{des}.{num}")
             who, on = f"{ref} ({info.get('name', num)})", (("component", des),) + ((("net", net),) if net else ())
+            pins = part.get("pins") or {}
             for need in pin_needs_list:
-                problems = pin_needs_problems(need)
+                problems = pin_needs_problems(need, pins)
                 if problems:
                     if (key, num) not in seen:
                         out += [Finding("PARTS.schema", "P", key, f"{key}: pin {num} {p}") for p in problems]
                     continue
                 what, src = need["what"], need.get("source") or n["source"]
                 lo, hi = (need.get(k) for k in n["windows"].get(what, ["", ""]))
+                to = other_pin(pins, need["to"]) if "to" in need else None
+                to_name = f"{des}.{to} ({pins[to].get('name', to)})" if to else ""
+                to_net = d.pin_net.get(f"{des}.{to}") if to else None
 
                 def finding(code, text):
                     out.append(Finding(code, "G", who, f"{who}: {text}", src, grade="pin", on=on))
@@ -408,17 +449,59 @@ def pin_needs(d):
                     if net in grounds:
                         finding("REQ.forbidden", f"must never be on ground, is on {net}")
                     continue
-                unit = "F" if what == "capacitor" else "Ω"
+                if what == "tie":
+                    if net is None or net != to_net:
+                        finding("REQ.missing", f"must be tied to {to_name} ({to_net or 'no net'}), is on {net or 'no net'}")
+                    continue
+                if what == "no_pull":
+                    dirs = [need["dir"]] if need.get("dir") else ["up", "down"]
+                    targets = (supplies if "up" in dirs else set()) | (grounds if "down" in dirs else set())
+                    pulls = [r for r, _, _ in resistors_to(d, net, targets - {net})] if net else []
+                    if pulls:
+                        finding("REQ.forbidden", f"must have no external pull{'-' + dirs[0] if len(dirs) == 1 else ''} "
+                                                 f"resistor – {', '.join(pulls)} on {net}")
+                    continue
+                if what == "no_series":
+                    series = [r for r, _, _ in resistors_to(d, net, set(d.nets) - supplies - grounds - {net})] \
+                        if net else []
+                    if series:
+                        finding("REQ.forbidden", f"must have no series resistor – {', '.join(series)} on {net}")
+                    continue
+                unit = {"capacitor": "F", "crystal": "Hz"}.get(what, "Ω")
                 window = (f" of {si(lo, unit)} … {si(hi, unit)}" if lo is not None and hi is not None else
                           f" of at least {si(lo, unit)}" if lo is not None else
                           f" of at most {si(hi, unit)}" if hi is not None else "")
                 if net is None:
                     finding("REQ.missing", f"not connected – needs a {what.replace('_', ' ')}{window}")
                     continue
+                if what == "crystal":
+                    found = crystals.get(frozenset((net, to_net)), []) if to_net else []
+                    if not found:
+                        finding("REQ.missing", f"needs a crystal{window} to {to_name} ({to_net or 'no net'}) – none "
+                                               f"between {net} and it")
+                    elif any(is_number(f) and ((lo is not None and f < lo) or (hi is not None and f > hi))
+                             for _, f in found):
+                        finding("REQ.value", f"needs a crystal{window} to {to_name} – "
+                                             + ", ".join(f"{c}: {si(f, 'Hz')}" for c, f in found if is_number(f)))
+                    continue
                 if what == "capacitor":
-                    found = caps.get(net, [])
+                    if to:
+                        found = caps_to(net, [to_net]) if to_net and to_net != net else []
+                        there = f"to {to_name} ({to_net or 'no net'})"
+                    else:
+                        found = caps_to(net, grounds - {net})
+                        there = f"to {d.ground}"
+                    local = near_parts(d, des)
+                    if any(c in local for c, _, _ in found):          # the decoupling next to the part, not the net's sum
+                        found = [x for x in found if x[0] in local]
+                        there += " next to the part (layout.near)"
+                    low = [(c, v) for c, _, v in found if is_number(v) and "v_min_v" in need and v < need["v_min_v"]]
+                    if low:
+                        finding("REQ.value", f"needs a capacitor rated at least {si(need['v_min_v'], 'V')} {there} – "
+                                             + ", ".join(f"{c} {si(v, 'V')}" for c, v in low))
+                    found = [(c, x) for c, x, _ in found]
                     total = sum(x for _, x in found if is_number(x)) if all(is_number(x) for _, x in found) else None
-                    names, there = ", ".join(c for c, _ in found), f"to {d.ground}"
+                    names = ", ".join(c for c, _ in found)
                 elif what in ("pull_up", "pull_down"):
                     targets = supplies if what == "pull_up" else grounds
                     found = [(r, x) for r, x, _ in resistors_to(d, net, targets)]

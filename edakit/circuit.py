@@ -52,7 +52,7 @@ KINDS_OF_PREFIX = {"R": ("resistor", "potentiometer"), "C": ("capacitor",), "L":
                    "J": ("connector",), "SW": ("switch", "button", "dip_switch"), "F": ("fuse",),
                    "BT": ("battery_holder",), "BZ": ("buzzer",), "K": ("relay", "solenoid"), "TP": ("connector",),
                    "M": ("motor",), "LS": ("speaker",), "SP": ("speaker",), "HE": ("heater",),
-                   "OK": ("optocoupler",)}
+                   "OK": ("optocoupler",), "Y": ("crystal",)}
 VALUE_PARAMS = {"value_ohm": ("Ω", "resistance"), "value_f": ("F", "capacitance"), "value_h": ("H", "inductance")}
 VALUE_TOL = 0.01      # graph value vs the entry's value parameter
 MULTIPLIERS = {"p": 1e-12, "n": 1e-9, "u": 1e-6, "µ": 1e-6, "μ": 1e-6, "m": 1e-3, "k": 1e3, "K": 1e3, "M": 1e6,

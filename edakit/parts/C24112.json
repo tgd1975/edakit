@@ -139,7 +139,8 @@
     {
      "what": "capacitor",
      "c_min_f": 2.2e-09,
-     "source": "InvenSense MPU-6000 and MPU-6050 Product Specification, PS-MPU-6000A-00 Revision 3.4 (08/19/2013), p. 22 section 7.3 Bill of Materials for External Components: C3 charge pump, ceramic X7R 2.2 nF ±10 %, 50 V"
+     "source": "InvenSense MPU-6000 and MPU-6050 Product Specification, PS-MPU-6000A-00 Revision 3.4 (08/19/2013), p. 22 section 7.3 Bill of Materials for External Components: C3 charge pump, ceramic X7R 2.2 nF ±10 %, 50 V",
+     "v_min_v": 50
     }
    ],
    "hint": "charge pump capacitor connection: 2.2 nF X7R rated 50 V (BOM 7.3); CPOUT abs. max 30 V"
@@ -214,7 +215,8 @@
    "abs. max VDD 6 V, REGOUT 2 V, CPOUT 30 V, inputs VDD + 0.5 V",
    "VDD 2.375–3.46 V, VLOGIC 1.71 V…VDD; VIH 0.7 × VLOGIC, VIL 0.3 × VLOGIC",
    "I2C address 0x68/0x69 by AD0",
-   "external capacitors C1–C4 from the bill of materials 7.3"
+   "external capacitors C1–C4 from the bill of materials 7.3",
+   "2026-10-31: CPOUT capacitor rated at least 50 V (PS-MPU-6000A-00 Rev 3.4, 7.3 Bill of Materials: C3 X7R 2.2 nF ±10 % 50 V, read now)"
   ],
   "open": [
    "maximum supply current: the datasheet gives only typical values (3.9 mA gyro + accel + DMP) – idd_max_a left out",

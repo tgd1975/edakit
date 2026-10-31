@@ -40,6 +40,12 @@ def pin_defines(info):
     return defines(info.get("type")) and not releases(info)
 
 
+def must_not_float(info):
+    """An input, or a bidirectional pin whose entry says float_ok = false (a pin the part reads at power-up, the
+    BME280's SDO choosing its address): its net needs a driver or a pull."""
+    return info.get("type") == "input" or (info.get("type") == "bidirectional" and info.get("float_ok") is False)
+
+
 def run(ctx):
     d = ctx.joined
     return (undefined_inputs(d) + control_pins(d) + contention(d) + straps(d) + open_inputs(d) + released_nets(d)
@@ -71,9 +77,10 @@ def undefined_inputs(d):
     out = []
     for name, net in d.nets.items():
         infos = [d.pin_info(r) for r in net["pins"]]
-        types = [i.get("type") for i in infos]
-        if "input" not in types or name in held:
+        if not any(must_not_float(i) for i in infos) or name in held:
             continue
+        # the pins that may drive it: not the bidirectional pins that must not float themselves
+        types = [i.get("type") for i in infos if not (i.get("type") == "bidirectional" and i.get("float_ok") is False)]
         if any(releases(i) for i in infos):
             continue              # outputs that let go: released_nets asks for the pull-up
         if any(i.get("pull") in ("up", "down") for i in infos):
@@ -173,7 +180,7 @@ def open_inputs(d):
             continue
         for num in comp.get("nc") or []:
             info = (part.get("pins") or {}).get(str(num)) or {}
-            if info.get("type") == "input" and not info.get("pull") and not info.get("float_ok"):
+            if must_not_float(info) and not info.get("pull") and not info.get("float_ok"):
                 out.append(Finding("LVL.undefined", "G", f"{des}.{num}", f"{des}.{num} ({info.get('name', num)}): an input "
                                    "left open (nc) – it floats", f"pin {num} of {d.entry_key(des)}",
                                    "tie it to its inactive level, or float_ok on the pin where the datasheet allows it",

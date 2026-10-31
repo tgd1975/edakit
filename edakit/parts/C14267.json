@@ -43,12 +43,24 @@
   "5": {
    "name": "UD+",
    "type": "bidirectional",
-   "hint": "USB D+: connect directly to the USB bus without a series resistor – the transceiver and the USB pull-up are inside (p. 2, p. 3, p. 5)"
+   "hint": "USB D+: connect directly to the USB bus without a series resistor – the transceiver and the USB pull-up are inside (p. 2, p. 3, p. 5)",
+   "needs": [
+    {
+     "what": "no_series",
+     "source": "WCH CH340 Datasheet version 3C, pin table: 'Connect directly to the D± data line of the USB bus without a series resistor'; 1.: 'it is recommended that the UD+ and UD- pins are not connected with additional resistors'"
+    }
+   ]
   },
   "6": {
    "name": "UD-",
    "type": "bidirectional",
-   "hint": "USB D−: connect directly to the USB bus without a series resistor – the transceiver and the USB pull-up are inside (p. 2, p. 3, p. 5)"
+   "hint": "USB D−: connect directly to the USB bus without a series resistor – the transceiver and the USB pull-up are inside (p. 2, p. 3, p. 5)",
+   "needs": [
+    {
+     "what": "no_series",
+     "source": "WCH CH340 Datasheet version 3C, pin table: 'Connect directly to the D± data line of the USB bus without a series resistor'; 1.: 'it is recommended that the UD+ and UD- pins are not connected with additional resistors'"
+    }
+   ]
   },
   "7": {
    "name": "XI",
@@ -58,6 +70,13 @@
     {
      "what": "capacitor",
      "source": "WCH CH340 Datasheet (CH340DS1), English version 3C, p. 10 (7.1: capacitor from XI to GND for the 12 MHz crystal: 33 pF with a quartz crystal, the maker's value (usually 47 pF) with a ceramic resonator; halve the XI capacitor for a crystal that starts badly (p. 10))"
+    },
+    {
+     "what": "crystal",
+     "to": "XO",
+     "f_min_hz": 11980000.0,
+     "f_max_hz": 12020000.0,
+     "source": "WCH CH340 Datasheet version 3C, pin table: XI 'requires an external 12MHz crystal'; 5.: 'connect a 12MHz crystal between the XI and XO pins'; DC characteristics FCLK 11.98 … 12.02 MHz"
     }
    ]
   },
@@ -186,7 +205,8 @@
    "abs. max VCC 6.0 V, VIO VCC + 0.5 V, TA −40 … 85 °C (p. 8)",
    "VCC 4.0–5.3 V (5 V mode) and 2.9–3.6 V (3.3 V mode); ICC ≤ 20 mA; VIH/VIL per supply (p. 8–9)",
    "0.1 µF at VCC and at V3 (p. 3, p. 5, p. 10); UD± without series resistors (p. 2–3)",
-   "same values in the Chinese edition 3D that LCSC serves for C14267 (p. 2–3, p. 5–6)"
+   "same values in the Chinese edition 3D that LCSC serves for C14267 (p. 2–3, p. 5–6)",
+   "2026-10-31: XI–XO crystal 11.98–12.02 MHz, UD± without a series resistor (CH340 Datasheet 3C, read now)"
   ],
   "open": [
    "the crystal between XI and XO is no pin-needs form (there is no 'crystal' requirement and no crystal kind); only the two capacitors to ground are entered, without a value window",
