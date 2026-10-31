@@ -6,6 +6,15 @@ edge_ok = ["SW1"]          # its knob reaches over the right edge
 rect = [60, 28]
 corner_radius = 2
 
+[tooling]                  # JLCPCB Economic PCBA: two non-plated holes of our own, else JLCPCB drills them where it likes (D-10)
+holes = [[57.0, 3.5], [3.0, 24.5]]   # the second under BT1's body: the holder is fitted after the assembly
+
+[looks]
+visible = "top"            # the face people see: stage L holds its tracks, vias and texts
+
+[order]
+remark = "2 tooling holes added by customer."
+
 [place]                    # the hand-over's fixed parts BT1, SW1, D1; the rest placed by edakit pcb place --rest, then moved by hand: the 555 group 5 mm left, clear of BT1's pins
 BT1 = { x = 50.9, y = 14, rot = 0, side = "bottom" }   # its body 0.7 … 53.8 mm under the board, the PC pins at the right end
 SW1 = { x = 57.8, y = 14, rot = 90, side = "top" }     # body flush with the right edge, the knob over it

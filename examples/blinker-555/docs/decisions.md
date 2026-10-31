@@ -115,3 +115,20 @@ numbers in the accepted reasons, Q1's model (KP 25: 52 mΩ at −1.8 V), D-5's w
 axis, in a narrower beam" for D1. On the top silkscreen '+' and '−' beside BT1's pins and "2x AAA 1.5 V" – AAA-sized
 Li-ion cells (10440, 3.7 V each) would put 8.4 V on Q1's gate (8 V) and overload R2 and D1 (M-1, note 8). Not
 changed: R-1's margin rests on D1's VF at 25 °C (±0.1 V tolerance, −1.9 mV/K – M-1, note 2).
+
+## D-10 The review M-5: own tooling holes, the face people see, the hand assembly (2026-10-31)
+
+The agent pcb-reviewer found nothing that blocks and nothing important; six notes. The owner chose tooling holes of
+our own – else JLCPCB drills its two Ø 1.15 mm holes where it likes, likely on the empty left of the visible top –
+with `[looks] visible = "top"` and the remark "2 tooling holes added by customer." for the order form: at (57.0, 3.5)
+beside R3 and at (3.0, 24.5) under BT1's body, which is fitted by hand after the assembly (`pcb plan` no longer holds a
+part with `bom = false` to a tooling hole's keep-out). Routed again: Freerouting left C3.2 and R3.2 room for one
+thermal spoke each, which KiCad's DRC counted as starved; the KiCad project edakit writes asks for one spoke now, as
+EasyEDA's DRC does not ask for any, and GEO.copper checks the connection on the Gerber files.
+
+For the hand assembly (`hand_assembly.md` and the acceptance): solder SW1 first, then BT1 – SW1's joints on the bottom
+sit 2.9 mm from the holder's end wall –, trim BT1's PC pins after soldering (12.7 mm long), and put a dab of hot glue
+or thin double-sided tape under the holder's free end: two pins at one end carry it. In revision 2: an NPTH for a
+screw or rivet through one of the holder's base holes (measured on a real holder), its pins in smaller holes, and
+"ON" beside SW1 once the first board shows which position is on. At M-2: D1's cathode is pad 1 at the chamfer of its
+outline (polarity_main.png), not the bar between the pads.
