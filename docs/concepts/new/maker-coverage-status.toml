@@ -11,7 +11,7 @@ FT-4 = { status = "open", missing = "the charger model needs the TP4056's and MC
 FT-5 = { status = "open", missing = "adjustable regulators: vref and minimum load per part – datasheets" }
 FT-6 = { status = "built", where = "kinds motor, solenoid, speaker, heater, optocoupler (catalog/kinds.toml, sim/netlist.py)", step = 6 }
 FT-7 = { status = "open", missing = "the ES1 limits of IEC 62368-1 are tagged to verify; mains is open decision 3" }
-FT-8 = { status = "open", missing = "generated fault scenarios (reversed supply as a DC scenario, a wire shorted, one supply off)" }
+FT-8 = { status = "built", where = "sim.json fault_scenarios: reversed, shorted, off (sim/run.py fault_scenarios); the parts' limits as warnings", step = 6 }
 FT-9 = { status = "open", missing = "DC bias of ceramics needs the capacitance curves – datasheets" }
 FT-10 = { status = "built", where = "edakit firmware: analog (channel, divider, pull) per ADC input; drift by --check", step = 6 }
 FT-11 = { status = "built", where = "loads: expect (engines/sim.py function) – LIM.i, LIM.v", step = 6 }
@@ -34,7 +34,7 @@ CK-1 = { status = "built", where = "LVL.undefined/nc (ICs; a module brings its o
 CK-2 = { status = "built", where = "pin drive open_drain | tristate; LVL.undefined/open_drain; LVL.contention", step = 6 }
 CK-3 = { status = "partial", where = "entry address; REQ.forbidden/address", missing = "the pull-up's upper bound from the bus capacitance (needs c_pf_per_m)", step = 6 }
 CK-4 = { status = "built", where = "LIM.range/gate from vgs_th_v and the rds_on_max_ohm table", step = 6 }
-CK-5 = { status = "partial", where = "limits vin_rel_max_v; LIM.v/inject", missing = "the injection current and the scenarios with one supply off (FT-8)", step = 6 }
+CK-5 = { status = "partial", where = "limits vin_rel_max_v; LIM.v/inject – also with one supply off (fault_scenarios off)", missing = "the injection current (i_inject_max_a) – datasheets", step = 6 }
 CK-6 = { status = "built", where = "pin adc; LIM.range/adc, REQ.value/adc", step = 6 }
 CK-7 = { status = "built", where = "polarized capacitors: LIM.v/polarized (G and E), PATH.reverse/polarized", step = 6 }
 CK-8 = { status = "built", where = "roles out_p, out_n; REQ.forbidden/btl (domains audio, guitar)", step = 6 }

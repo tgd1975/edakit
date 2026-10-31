@@ -28,6 +28,9 @@ DERATING = table("derating")["E"]
 DERATE = {"v": {"capacitor": "v_cap"}, "vr": {"diode": "v_diode"}, "vce": {"npn": "v_bjt", "pnp": "v_bjt"},
           "vds": {"nmos": "v_bjt", "pmos": "v_bjt"}, "vgs": {"nmos": "v_bjt", "pmos": "v_bjt"}}
 DIM = {"p": "p", "i": "i", "if": "i", "ic": "i", "id": "i", "gpio_i": "i", "gpio_i_total": "i"}
+# what a generated fault scenario (FT-8) judges: the parts' limits – a board without its supply does not reach the
+# states its load expects, and its nets leave their declared ranges by design of the fault
+FAULT_CODES = ("LIM.v", "LIM.i", "LIM.p", "LIM.t", "LIM.backfeed")
 SUPPLY_ROLES = ("vdd", "vcc")
 
 
@@ -122,6 +125,13 @@ class Scene:
                     r["result"] = "info"
             for f in found:
                 f.data["info"] = True
+        elif getattr(self, "fault", False):      # a generated fault scenario (FT-8): the parts' limits, warnings at most
+            for r in rows:
+                if r["result"] == "fail":
+                    r["result"] = "warn" if r["id"] in FAULT_CODES else "info"
+            found = [f for f in found if f.code in FAULT_CODES]
+            for f in found:
+                f.data["fault"] = True
         return rows, found
 
 

@@ -588,6 +588,8 @@ class Netlist:
                 self.add(f"{el['name']} {a} {b} {el['r']:.6g}", el["des"], "connector", (a, b), el["r"])
         for name, a, b, r in (getattr(self.d, "copper", None) or {}).get("elements", []):   # tracks and vias
             self.add(f"R_CU_{name} {a} {b} {r:.6g}")
+        for i, ref in enumerate(self.sc.get("short", [])):   # a generated fault: a pin shorted to ground (FT-8)
+            self.add(f"R_FAULT{i} {self.pn(ref)} 0 {FAULT_SHORT_OHM}")
         prints = ["print all"]
         for els in self.meta["elements"].values():
             for el in els:
@@ -617,6 +619,9 @@ class Netlist:
         if vectors:
             lines += ["set wr_singlescale", "set wr_vecnames", f"wrdata {tran['file']} " + " ".join(vectors)]
         return "\n".join(lines)
+
+
+FAULT_SHORT_OHM = 0.01      # a short of a generated fault scenario
 
 
 def build(design, cfg, scenario, plugin_models=None, tran=None):

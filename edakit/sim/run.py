@@ -5,7 +5,8 @@
 Scenarios = supplies x loads x LED forward-voltage corners from the simulation config (edakit.toml [project] sim),
 plus "extra_scenarios" listed there. "combine_sources" adds supplies for every combination of the sources it names:
 each alone at both ends of its range, all together with one high and the others low (generated_supplies).
-"transients" adds runs over time: the supplies follow [t, V] points (plug, unplug, a switch-over), loads may step
+"fault_scenarios" adds generated fault cases (a reversed source, a cable wire shorted at its far end, one source off),
+their findings warnings at most. "transients" adds runs over time: the supplies follow [t, V] points (plug, unplug, a switch-over), loads may step
 ([t, A] points under "steps": a servo starting, a Wi-Fi burst), ngspice .tran from the operating point at t = 0;
 without the key nothing runs.
 
@@ -217,6 +218,53 @@ def scenarios(sim):
                "info": s.get("info", False)}
 
 
+FAULT_KEYS = ("reversed", "shorted", "off", "supply", "load")
+
+
+def fault_scenarios(design, sim):
+    """The scenarios "fault_scenarios" generates (maker-coverage FT-8), opt-in – on the first supply and the first load
+    unless it names others: "reversed" a source the graph marks reversible at its voltage reversed, "shorted" each
+    signal wire of a cable shorted to ground at its far end, "off" each source of a supply with several left out while
+    the others stay on. Their findings are warnings at most (Report.resolve, data fault): what a fault does to the board
+    is a question for the designer, not a release blocker by itself."""
+    from ..circuit import supply_nets
+    spec = sim.get("fault_scenarios")
+    if not spec:
+        return []
+    if not isinstance(spec, dict) or set(spec) - set(FAULT_KEYS):
+        raise SimError(f"fault_scenarios: a table of {', '.join(FAULT_KEYS)}, not {spec!r}")
+    supplies, loads = sim.get("supplies", {}), sim.get("loads", {})
+    if not supplies or not loads:
+        return []
+    sname, lname = spec.get("supply") or next(iter(supplies)), spec.get("load") or next(iter(loads))
+    if sname not in supplies or lname not in loads:
+        raise SimError(f"fault_scenarios: no supply {sname} or no load {lname} in the simulation config")
+    supply, load, sources, cells = supplies[sname], loads[lname], sim.get("sources", {}), sim.get("cells", {})
+    base = {"load_name": lname, "load": load, "corner": "typ", "fault": True}
+    out = []
+    if spec.get("reversed"):
+        for des in sorted(d for d, c in design.comps.items() if c.get("source") == "reversible"):
+            x = supply.get(des)
+            if des in sources and isinstance(x, (int, float)) and x:
+                out.append({**base, "name": f"fault {des} reversed/{lname}", "supply_name": f"{sname}, {des} reversed",
+                            "supply": {**supply, des: -x}})
+    if spec.get("shorted"):
+        quiet = {design.ground} | supply_nets(design)
+        for c in design.graph.get("cables", []):
+            for a, b in c.get("pins", {}).items():
+                net = design.pin_net.get(f"{c['from']}.{a}")
+                if net and net not in quiet:
+                    out.append({**base, "name": f"fault {net} shorted at {c['to']}/{lname}", "supply_name": sname,
+                                "supply": supply, "short": [f"{c['to']}.{b}"]})
+    if spec.get("off"):
+        on = [d for d, x in supply.items() if d in sources or (isinstance(x, str) and x in cells)]
+        if len(on) > 1:
+            for des in on:
+                out.append({**base, "name": f"fault {des} off/{lname}", "supply_name": f"{sname}, {des} off",
+                            "supply": {k: x for k, x in supply.items() if k != des}})
+    return out
+
+
 RUN_KEYS = {"supply", "load", "corner", "stop_s", "step_s", "steps", "expect", "info", "about", "note"}
 
 
@@ -379,9 +427,10 @@ def run_all(design, sim, keep=None, plugin=None, routing=None):
         out["checks"].append({"id": "SIM.copper", "scenario": "copper", "item": net, "check": "copper not annotated",
                               "actual": why, "expected": "the routed copper of the net", "result": "info"})
         found.append(Finding("SIM.copper", "E", net, f"copper not annotated: {why}"))
-    for sc in scenarios(sim):
+    for sc in [*scenarios(sim), *fault_scenarios(design, sim)]:
         row = {"name": sc["name"], "supply": sc["supply_name"], "load": sc["load_name"], "corner": sc["corner"]}
         s = esim.Scene(design, new, sim, {}, {}, sc["name"], sc.get("info", False))
+        s.fault = sc.get("fault", False)
         try:
             text, meta = netlist.build(design, sim, sc, models)
             res = ngspice(text, keep, sc["name"])
@@ -405,7 +454,8 @@ def run_all(design, sim, keep=None, plugin=None, routing=None):
             e = out["net_currents"].setdefault(net, {"i_max_a": 0.0, "scenario": ""})
             if i > e["i_max_a"]:
                 e.update(i_max_a=i, scenario=sc["name"])
-        row["status"] = "ok" if all(r["result"] != "fail" for r in rows) else "fail"
+        results = {r["result"] for r in rows}
+        row["status"] = "fail" if "fail" in results else "warn" if "warn" in results else "ok"
         out["checks"] += rows
         found += fs
         out["scenarios"].append(row)
