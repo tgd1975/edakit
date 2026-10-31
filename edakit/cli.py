@@ -37,6 +37,8 @@
     edakit export                    PDFs, Gerber, BOM, CPL, netlist and a project copy to <artifacts>/export
     edakit gate [--easyeda]          release gate with test protocol and manufacturing files
     edakit release current|withdraw RUN --reason T|verify FILE…   the one current release, the files to upload
+    edakit release publish [--draft] [--dry-run] [--tag T] | --built T   the order files of every board's current
+                                     release as a GitHub release (gh); --built: a board of it works
     edakit fab --board B --out DIR   stages L/F for one board (the gate calls it)
     edakit fab diff RUN_A RUN_B      where the manufacturing files of two gate runs differ (raster, drill, BOM, CPL,
                                      the order settings of [order])
@@ -256,11 +258,19 @@ def build_parser():
     _no_scripts(p)
     _common(p)
 
-    p = sub.add_parser("release", help="the current release: show it, withdraw a run, check the files to upload")
-    p.add_argument("action", choices=["current", "withdraw", "verify"])
+    p = sub.add_parser("release", help="the current release: show it, withdraw a run, check the files to upload, "
+                                       "publish what is ordered")
+    p.add_argument("action", choices=["current", "withdraw", "verify", "publish"])
     p.add_argument("items", nargs="*", help="withdraw: the run (folder name under reports); verify: files or folders "
                                             "(their .zip and .csv files)")
     p.add_argument("--reason", help="withdraw: why the run must not be uploaded")
+    p.add_argument("--draft", action="store_true", help="publish: a draft release only the account sees – no tag, no "
+                                                        "guards; a test")
+    p.add_argument("--tag", help="publish: the tag (default: today, YYYY-MM-DD; -2, -3 when the remote has it)")
+    p.add_argument("--dry-run", action="store_true", help="publish: staging and notes in build/publish/<tag>/, nothing "
+                                                          "uploaded")
+    p.add_argument("--built", metavar="TAG", help="publish: a board of release TAG has been built and works – no "
+                                                  "longer a pre-release")
     _common(p)
 
     p = sub.add_parser("fab", help="stages L and F for one board; diff: where the manufacturing files of two runs "
@@ -409,6 +419,9 @@ def _main(argv=None):
     if args.command == "gate":
         from .release import gate
         return gate.main(cfg, args)
+    if args.command == "release" and args.action == "publish":
+        from .release import publish
+        return publish.main(cfg, args)
     if args.command == "release":
         from .release import gate
         return gate.main_release(cfg, args)
