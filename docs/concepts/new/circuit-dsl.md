@@ -1,24 +1,29 @@
 # A language of its own for the circuit: what it would have to be, on which basis, and when
 
 Status 2026-10-31: concept, asked for by the owner after the review of
-[circuit-language.md](../done/circuit-language.md) deferred the language of that sketch. It answers four questions:
-whether a fitting language exists already, what a language of edakit's own would have to be able to do to be worth
-building, on which basis – SysML v2, KerML, an existing circuit language, or something else –, and when it would
-bring value. It takes a position on each, with the alternative it sets aside where that matters; what remains the
-owner's is whether and when to build it, in "When it brings value". The sources say what was read and from where.
-Reviewed the same day against main at `bd227e3` and corrected: the examples in today's form of the graph (`accept`,
-`locks`), the numbers of the bell and led-bar re-measured, what exists already named as existing, the questions the
-review found open – where assertions run, what `block add --set` writes, the names of internal nets, four projects
-and one hook – answered where they belong, and the list of decisions that closed the concept folded into the text on
-the owner's word. On the owner's questions the same day: a project's source over several files with one namespace
-(item 9), the requirements on SysML v2's model as well ("The basis"), and a language server with a VS Code
-extension as stage 4; on the owner's word after the review's second reading, the waiting period of trigger 4 taken
-out, the SysML v2 tools on GitHub – the pilot's installers, Eclipse SysON, Sensmetry's Syside, Syster's `systree`
-– named in "What exists", "The basis" and stage 3, and derived values by named rules of edakit's in place of
-assertions evaluated from the graph: `asserts` dropped, `derivations` as the one key the language adds, DEF over
-the records only (item 4, the owner's ack of the review's recommendation). Against the yardstick: a language changes
-nothing about what is text – its source and its resolved graph are text in the repository –; what it changes is
-where repetition, parameters and variants are written once instead of many times.
+[circuit-language.md](../done/circuit-language.md) deferred the language of that sketch. It answers four
+questions: whether a fitting language exists already, what a language of edakit's own would have to be able to
+do to be worth building, on which basis – SysML v2, KerML, an existing circuit language, or something else –,
+and when it would bring value. It takes a position on each, with the alternative it sets aside where that
+matters; what remains the owner's is whether and when to build it, in "When it brings value". The sources say
+what was read and from where. Reviewed the same day against main at `bd227e3` and corrected: the examples in
+today's form of the graph (`accept`, `locks`), the numbers of the bell and led-bar re-measured, what exists
+already named as existing, the questions the review found open – where assertions run, what `block add --set`
+writes, the names of internal nets, four projects and one hook – answered where they belong, and the list of
+decisions that closed the concept folded into the text on the owner's word. On the owner's questions the same
+day: a project's source over several files with one namespace (item 9), the requirements on SysML v2's model as
+well ("The basis"), and a language server with a VS Code extension as stage 4; on the owner's word after the
+review's second reading, the waiting period of trigger 4 taken out, the SysML v2 tools on GitHub – the pilot's
+installers, Eclipse SysON, Sensmetry's Syside, Syster's `systree` – named in "What exists", "The basis" and
+stage 3, and derived values by named rules of edakit's in place of assertions evaluated from the graph:
+`asserts` dropped, `derivations` as the one key the language adds, DEF over the records only (item 4, the
+owner's ack of the review's recommendation). The detail concepts of the same day:
+[circuit-dsl-language.md](circuit-dsl-language.md) – the notation, its meaning and its definition on SysML v2
+and KerML, statement by statement – and [circuit-dsl-toolchain.md](circuit-dsl-toolchain.md) – the
+implementation plan of the toolchain, written for one session that builds all four stages without a question.
+Against the yardstick: a language changes nothing about what is text – its source and its resolved graph are
+text in the repository –; what it changes is where repetition, parameters and variants are written once instead
+of many times.
 
 ## The short answer
 
@@ -152,28 +157,29 @@ ergonomics, copies no text and no grammar.
    board files name nets (the bell's model below).
 3. **Repetition.** `for n in 0..7` over parts and nets with `{n}` in names and pin words – ranges and index
    arithmetic, nothing more.
-4. **Parameters with units and derived values.** Quantities as edakit reads them already (`330Ω`, `4k7`, `100nF`,
-   `0..5.5 V`; `QUANTITY` in circuit.py, `v_range`), with ranges and tolerances (`10 mA ± 20 %`, `2 mA .. 15 mA`),
-   as the inputs of a derivation. A definition says what a value is derived from by naming a rule of edakit's,
-   `derive R.value series_resistor(i)`: `series_resistor`, `divider`, `pullup`, `rc` and their kin are functions in
-   edakit that know their inputs – the net's range on the port, the entry's fields as the entries name them, the
-   parameter –, their corners, their units and the series the value comes from; a new formula is a rule proposal
-   (add-rule), not a line in a project. The compiler evaluates the rule with the entries – it reads them for the
-   pin numbers already – and writes a derivation record into the resolved graph as data: the rule, its inputs with
-   their sources, the derived value, the series value chosen and the source line; `derivations` is the one key the
-   language adds to the graph. The engine DEF reads the records only: `DEF.derive` where a part's value is not the
-   value its record derives, the way STRUCT.identity holds a component to its entry. The check of the real current
-   stays where it is: the simulation runs the corners of `sim.json`, SIM.state judges on and off by `led_on_min_a`,
-   LIM.i holds the current to `if_max_a` – with the pin's drop and the LED's series resistance, which a one-line
-   formula does not know. An unbound port and a parameter outside its range are the compiler's errors, with file
-   and line. A net may take its range from a port, `v @in`, as the block JSON writes `"v": "@in"` today. Free
-   expressions in the notation, `(in.v.max - D.vf_min_v) / i` evaluated by the compiler into the same record, come
-   only when a project needs a formula no rule has – then with interval arithmetic and the corner semantics
-   defined first. Assertions evaluated by an engine from text in the graph were set aside on 2026-10-31: they would
-   carry code into the graph, duplicate SIM.state and LIM.i with a cruder model, and need corners, tolerances and
-   interval arithmetic the data does not have – no resistor entry has a tolerance, a net's `v` spans its off state.
-   No part picking: the designer chooses the part; the record says why. Without derivations the language would be
-   smaller, and the derivation would stay in Claude's head – the third of the four values above.
+4.  **Parameters with units and derived values.** Quantities as edakit reads them already (`330Ω`, `4k7`,
+   `100nF`, `0..5.5 V`; `QUANTITY` in circuit.py, `v_range`), with ranges and tolerances (`10 mA ± 20 %`,
+   `2 mA .. 15 mA`), as the inputs of a derivation. A definition says what a value is derived from by naming a
+   rule of edakit's, `derive R.value series_resistor(i)`: `series_resistor`, `divider`, `pullup`, `rc` and their
+   kin are functions in edakit that know their inputs – the net's range on the port, the entry's fields as the
+   entries name them, the parameter –, their corners, their units and the series the value comes from; a new
+   formula is a rule proposal (add-rule), not a line in a project. The compiler evaluates the rule with the
+   entries – it reads them for the pin numbers already – and writes a derivation record into the resolved graph
+   as data: the rule, its inputs with their sources, the derived value, the series value chosen and the source
+   line; `derivations` is the one key the language adds to the graph. The engine DEF reads the records only:
+   `DEF.derive` where a part's value is not the value its record derives, the way STRUCT.identity holds a
+   component to its entry. The check of the real current stays where it is: the simulation runs the corners of
+   `sim.json`, SIM.state judges on and off by `led_on_min_a`, LIM.i holds the current to `if_max_a` – with the
+   pin's drop and the LED's series resistance, which a one-line formula does not know. An unbound port and a
+   parameter outside its range are the compiler's errors, with file and line. A net may take its range from a
+   port, `v @in`, as the block JSON writes `"v": "@in"` today. Free expressions in the notation,
+   `(in.v.max - D.vf_min_v) / i` evaluated by the compiler into the same record, come only when a project needs
+   a formula no rule has – then with interval arithmetic and the corner semantics defined first. Assertions
+   evaluated by an engine from text in the graph were set aside on 2026-10-31: they would carry code into the
+   graph, duplicate SIM.state and LIM.i with a cruder model, and need corners, tolerances and interval
+   arithmetic the data does not have – the entries' `tolerance` is read by no engine, a net's `v` spans its off
+   state. No part picking: the designer chooses the part; the record says why. Without derivations the language
+   would be smaller, and the derivation would stay in Claude's head – the third of the four values above.
 5. **Variants as differences.** A variant file names its base – the main file or another variant, a chain resolved
    in order, the path relative to the project's `edakit.toml` as every path in it – and redefines parts, nets,
    parameters and texts by designator and name, takes pins off a net and sets attributes back; everything else is
@@ -787,7 +793,8 @@ four configurations to one main file and three variant files of about a dozen, a
 ## The toolchain
 
 What the language needs beside edakit as it is, with what exists today and the stage that builds it. Sizes as in the
-plans: S a day, M a few days, L a week or more.
+plans: S a day, M a few days, L a week or more. The steps that build it – modules, commands, tests, their order –
+are [circuit-dsl-toolchain.md](circuit-dsl-toolchain.md).
 
 | Piece | What it does | Exists today | Size | Stage |
 | --- | --- | --- | --- | --- |
