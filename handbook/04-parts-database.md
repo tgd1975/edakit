@@ -452,7 +452,7 @@ A page is followed once, to the part's PDF: where it sends the browser by script
 its embedded viewer (the `iframe` of an `item.szlcsc.com` page), else a link whose address or words name the part –
 its `mpn` or LCSC number – or say datasheet (the download of a JLCPCB part page). Its other PDF links are named, not
 followed: the shop page links nothing but the certificates in its footer, and the first of them was once kept as the
-datasheet of a battery holder (chapter 16). Only a complete PDF counts – it starts with `%PDF` and has its `%%EOF` in
+datasheet of a battery holder (chapter 17). Only a complete PDF counts – it starts with `%PDF` and has its `%%EOF` in
 the last 64 kB (some tools append metadata after it). A refused request, an HTML page, a download that broke off or an expired signed link is
 reported with its reason, and an earlier copy stays as it is ("kept the copy of 2026-10-27", exit 2).
 

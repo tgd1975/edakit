@@ -1,0 +1,54 @@
+{
+ "lcsc": "C70377",
+ "mpn": "CR2032-BS-6-1",
+ "manufacturer": "QIJEY",
+ "kind": "battery_holder",
+ "package": "SMD, for one CR2032 cell",
+ "footprint": "BAT-TH_CR2032-BS-6-1",
+ "jlc_class": "Extended Part",
+ "datasheet": {
+  "url": null,
+  "pinout_page": 1
+ },
+ "pins": {
+  "1": {
+   "name": "1",
+   "type": "passive",
+   "role": "plus"
+  },
+  "2": {
+   "name": "2",
+   "type": "passive",
+   "role": "minus"
+  }
+ },
+ "values": {
+  "cells": 1
+ },
+ "limits": {},
+ "body": {
+  "h_mm": 5.5
+ },
+ "spice": {},
+ "sources": [
+  "mpn, manufacturer, footprint, jlc_class, pin numbers and names: EasyEDA library data of C70377, https://easyeda.com/api/products/C70377/components?version=6.4.19.5, read 2026-10-29 (edakit part import)",
+  "Q&J drawing QJ.BS-6 (2011-02-14): positive pin and negative pin, both SMD tabs; PCB layout (top view) '+' at the right pad, '-' at the left one; height 5.5 mm",
+  "library footprint BAT-TH_CR2032-BS-6-1: pad 1 at +14.4 mm, pad 2 at -14.4 mm; its document layer draws '+' beside pad 1 and '-' beside pad 2 – pad 1 is plus, as in the drawing"
+ ],
+ "verified": {
+  "by": "Claude (skill part-search)",
+  "date": "2026-10-29",
+  "datasheet": "Q&J QJ.BS-6 battery holder drawing, 2011-02-14",
+  "datasheet_sha256": "760a7d67242a4548921d0d92e6f948c3aba7af8ed522d9fdf43bfe59c597a88f",
+  "checked": [
+   "pin 1 plus, pin 2 minus: the drawing's PCB layout and the document layer of the library footprint agree",
+   "two SMD tabs, no hole: JLCPCB places it on the top side (Economic)"
+  ],
+  "open": [
+   {
+    "text": "soldered by hand: the holder's ⊕ end (its chamfered corner) on pad 1, at the silkscreen '+'",
+    "when": "acceptance"
+   }
+  ]
+ }
+}

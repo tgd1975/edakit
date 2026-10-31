@@ -144,7 +144,7 @@ LCSC_SHELL = (b'<!doctype html><html><head><title>LCSC Electronics</title></head
 def test_a_page_without_the_parts_pdf(project, web, capsys):
     """LCSC's datasheet address (JLCPCB's dataManualUrl) answers with a page of the shop (2026-10-29, curl), whose only
     PDFs are the certificates in its footer – the first of them was kept as the datasheet of a battery holder
-    (handbook 16). None is followed, nothing is kept."""
+    (handbook 17). None is followed, nothing is kept."""
     shop = "https://www.lcsc.com/datasheet/lcsc_datasheet_1811061923_Q-J-CR2032-BS-6-1_C70377.pdf"
     web[shop] = LCSC_SHELL
     assert run(project, "C2297", "--url", shop) == 1
@@ -287,7 +287,7 @@ def test_datasheets_key_keeps_them_in_the_repository(project, web):
 
 def test_before_the_graph(project, web, capsys):
     """A datasheet is read before the part goes into the graph – in a new project before there is a graph at all
-    (the walkthrough of handbook 16 fetched one there and got a traceback)."""
+    (the walkthrough of handbook 17 fetched one there and got a traceback)."""
     project.graph_file.unlink()
     web["https://example.com/sheet.pdf"] = SHEET
     assert run(project, "C2297", "--url", "https://example.com/sheet.pdf") == 0

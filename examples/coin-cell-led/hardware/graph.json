@@ -1,0 +1,140 @@
+{
+ "graph": {
+  "name": "coin-cell-led",
+  "version": "1.0",
+  "date": "2026-10-29",
+  "description": "Press the button, the LED lights: a CR2032 coin cell, a push button, a red LED and its series resistor.",
+  "purpose": {
+   "use": "private",
+   "market": "EU",
+   "notes": "The example of the edakit handbook, chapter 17: built for oneself, a desk gadget for adults, kept out of the reach of small children – the cell comes out by hand (D-5)."
+  },
+  "components": [
+   {
+    "designator": "BT1",
+    "type": "battery_holder",
+    "label": "CR2032 holder",
+    "part": "CR2032-BS-6-1",
+    "lcsc": "C70377",
+    "pins": {
+     "1": "1",
+     "2": "2"
+    },
+    "notes": "Pin 1 = plus, pin 2 = minus (datasheet QJ.BS-6). Soldered by hand: JLCPCB places C70377 only under Standard PCBA (D-4) – its ⊕ end (chamfered corner) on pad 1, at the silkscreen '+'.",
+    "bom": false
+   },
+   {
+    "designator": "SW1",
+    "type": "button",
+    "label": "Push button",
+    "part": "TS-1187A-B-A-B",
+    "lcsc": "C318884",
+    "pins": {
+     "1": "A",
+     "2": "B",
+     "3": "C",
+     "4": "D"
+    },
+    "nc": [
+     "2",
+     "4"
+    ],
+    "notes": "Pins 1/2 and 3/4 are connected inside."
+   },
+   {
+    "designator": "R1",
+    "type": "resistor",
+    "label": "LED series resistor",
+    "part": "0805W8F1500T5E",
+    "lcsc": "C17471",
+    "value": "150",
+    "pins": {
+     "1": "1",
+     "2": "2"
+    },
+    "notes": "R ≤ (2.5 V − 2.27 V) / 1 mA − 40 Ω ≈ 190 Ω for 1 mA from a used cell (2.5 V, 40 Ω) into D1 at its highest Vf; 150 Ω, the value of the block led: 1.2 mA there, 10.7 mA from a fresh cell into D1 at its lowest Vf (sim, D-2)"
+   },
+   {
+    "designator": "D1",
+    "type": "led",
+    "label": "LED (red 0805)",
+    "part": "NCD0805R1",
+    "lcsc": "C84256",
+    "value": "red",
+    "pins": {
+     "1": "-",
+     "2": "+"
+    },
+    "notes": "Red: Vf 1.5–2.6 V at 20 mA – the block's green LED (2.6–3.1 V) stays dark on a used cell (D-2)."
+   }
+  ],
+  "nets": [
+   {
+    "name": "VBAT",
+    "pins": [
+     "BT1.1",
+     "SW1.1"
+    ],
+    "v": [
+     -3.3,
+     3.3
+    ],
+    "notes": "the cell: 3.0 V nominal, 3.2 V and a little more fresh off load; negative with the cell upside down"
+   },
+   {
+    "name": "LED_SW",
+    "pins": [
+     "SW1.3",
+     "R1.1"
+    ],
+    "v": [
+     -3.3,
+     3.3
+    ],
+    "notes": "the cell's voltage while SW1 is pressed",
+    "accept": {
+     "PATH.reverse": "a cell upside down drives R1 and D1 backwards: D1 blocks, 3.2 V against its VR of 5 V – sim scenario reversed/pressed (LIM.v reverse voltage, SIM.state LED dark); no other part on the board (D-3)"
+    }
+   },
+   {
+    "name": "GND",
+    "pins": [
+     "BT1.2",
+     "D1.1"
+    ],
+    "v": [
+     0,
+     0
+    ]
+   },
+   {
+    "name": "LED_ANODE",
+    "pins": [
+     "R1.2",
+     "D1.2"
+    ],
+    "v": [
+     -3.3,
+     3.3
+    ]
+   }
+  ],
+  "cables": [],
+  "layout": {
+   "fixed": [
+    "BT1",
+    "SW1",
+    "D1"
+   ],
+   "notes": [
+    "the cell (Ø 20 mm) stands 2 mm out of BT1 (16 mm wide) on both long sides: keep them free, with room to lever the cell out",
+    "D1 next to SW1: the LED shows the press"
+   ]
+  },
+  "accept": {
+   "HINT.bulk": "no cable and no plug: the cell sits in BT1 on the board, the only load is D1 (at most 11 mA)",
+   "HINT.debounce": "no MCU reads SW1: D1 follows the contact, a bounce of a few milliseconds is not seen",
+   "HINT.lithium": "a CR2032 is a primary Li-MnO2 cell, not Li-ion: nothing on the board charges it (LIM.backfeed) and it is not recharged"
+  }
+ }
+}

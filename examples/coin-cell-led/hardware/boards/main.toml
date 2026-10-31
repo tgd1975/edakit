@@ -1,0 +1,28 @@
+# Board main of coin-cell-led: outline, tooling holes, placement plan, silkscreen (edakit handbook 10.2).
+# Written by the PCB designer from `edakit handover`; plan coordinates in mm, seen from the top. The layout hash
+# covers this file: a change voids the sign-offs of scope layout.
+
+revision = "1"
+
+[outline]
+rect = [44, 34]
+corner_radius = 2
+
+[tooling]                  # JLCPCB Economic PCBA: non-plated holes in opposite corners
+holes = [[2.5, 2.5], [41.5, 31.5]]
+
+[place]                    # the hand-over's fixed parts BT1, SW1, D1 – and R1, so that every part has its row (SYNC.plan)
+BT1 = { x = 22, y = 10, rot = 0, side = "top" }   # the cell reaches 2 mm past its box: to the lower edge, 3 mm short of SW1
+SW1 = { x = 14, y = 26, rot = 0, side = "top" }
+D1  = { x = 28, y = 26, rot = 0, side = "top" }   # next to SW1: the LED shows the press
+R1  = { x = 28, y = 30, rot = 0, side = "top" }
+
+[silk]
+designators = "top"
+
+[[silk.texts]]             # the footprint's own ⊕ lies under the holder's body; this "+" stays visible – GEO.mark holds it to BT1.1
+text = "+"
+x = 41
+y = 10
+h_mm = 1.5
+side = "top"

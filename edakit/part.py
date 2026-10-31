@@ -814,7 +814,7 @@ def pdf_link(data, base, names=()):
     name the part (one of `names`: its mpn, its LCSC number) or say datasheet –, and the file names of the page's
     other PDF links. Those are no datasheet: LCSC's datasheet address answers with a page of the shop whose only PDFs
     are the certificates in its footer, and the first of them was once kept as the datasheet of a battery holder
-    (handbook 16)."""
+    (handbook 17)."""
     import urllib.parse
     found = [(kind, urllib.parse.urldefrag(urllib.parse.urljoin(base, url))[0], words)
              for kind, url, words in page_pdfs(data)]
