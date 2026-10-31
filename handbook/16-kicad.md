@@ -5,9 +5,10 @@ A project draws its boards in EasyEDA Pro or in KiCad – one key in edakit.toml
 with its plan, the routing with Freerouting and every check of the gate are the same for both. Only the EDA project is
 the tool chain's: an EasyEDA project driven through the bridge, or KiCad files that edakit writes and kicad-cli reads.
 
-**State 2026-10-30:** built; tested offline against a kicad-cli the tests fake, and in CI against KiCad 10 (the job
-`kicad` of tests.yml, KiCad's container image, `tests/test_kicad_live.py`) on the led-bar example. No board has gone
-through it to a release yet; 16.8 says what is confirmed and what is open. On a machine with kicad-cli of another major
+**State 2026-10-31:** built; tested offline against a kicad-cli the tests fake, and in CI against KiCad 10 (the job
+`kicad` of tests.yml, KiCad's container image, `tests/test_kicad_live.py`) on the led-bar example. The first board
+released through it is the 555 blinker of chapter 18, with KiCad 10.0.6; 16.8 says what is confirmed and what is
+open. On a machine with kicad-cli of another major
 version (KiCad 9, say) the live tests are skipped with the reason – they hold KiCad 10's behaviour, and a red run there
 is no regression; the CI job sets `EDAKIT_KICAD_LIVE=required`, so a missing kicad-cli or another major fails there.
 
@@ -182,8 +183,14 @@ Confirmed by the CI job `kicad` on the led-bar example (KiCad 10.0, its containe
   hits, the profile, the parts with place, rotation (ODB++ clockwise) and side – parts at 270° among them – and the nets;
   the tooling holes carry `.no_pop` (kicad-cli 10.0.6, 2026-10-31; `test_kicad_odb_is_read_and_equals_the_runs_files`).
 
-Open – the first runs on a real project, the led-bar example as a KiCad project, then the Christmas bell (the steps
-are in the concept, "Live test"):
+Confirmed on a real project, the 555 blinker of chapter 18 (KiCad 10.0.6):
 
-- footprints from the real LCSC data (the tests use footprints of their own): silkscreen, polygon pads, slots;
-- the gate `--eda` end to end with the sign-offs, `export`.
+- footprints from the real LCSC data through `pcb apply`: through-hole pads, the plated slots of a switch's pegs, a
+  SOIC-8, oval and rectangular pads, the library's silkscreen – a holder's outline and its poles; a through-hole part
+  on the bottom, mirrored as EasyEDA mirrors it, its poles where the drawing has them;
+- a pin the schematic marks no-connect gets KiCad's net on its pad (16.3), and a pad one thermal spoke (16.5);
+- the gate `--eda` end to end with every sign-off up to RELEASED, and `export` with `kicad_main.zip`.
+
+Open – the led-bar example as a KiCad project looked at in KiCad, the placer on both tool chains, the Christmas bell
+(the steps are in the concept, "Live test"); polygon pads, which the blinker's footprints do not have; the square
+notch the pours leave around a tooling hole, EasyEDA's workaround, where KiCad could fill around it.

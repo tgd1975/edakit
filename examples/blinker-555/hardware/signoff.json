@@ -1,8 +1,8 @@
 {
   "about": "Sign-offs for the release gate (edakit gate). Each one counts only for the hash of its scope: 'circuit' = state_sha256 (graph, parts database, simulation config, requirements), 'layout' = layout_sha256 (board files with their artwork, footprint geometry), 'fab' = fab_sha256 (what the manufacturer builds from: Gerber layers rasterised, drill hits, BOM and CPL rows – in the protocol header of a gate run with stage F). When something there changes, it no longer counts – copy the new hash from the protocol header after the check was repeated. phase: 'export' blocks the release, 'order' and 'acceptance' come after the export. An accepted warning with scope 'decision' counts regardless of the hash and refers to a numbered decision in the docs. Parts are signed in their parts entry (field 'verified').",
   "state_sha256": "b85dd8d8a978fd3160d7efee4d7919456fe41bec9903f0b0d2a3c3d6407937f3",
-  "layout_sha256": null,
-  "fab_sha256": null,
+  "layout_sha256": "6701738364d59b296932fb0e9bbbfd1b830158157966d7633ab666b78cea1bbc",
+  "fab_sha256": "ff5b1567b9162ccd4b3b6a51ec6a115fd482cc39feba8625241a86f29f8763f1",
   "manual": [
     {
       "id": "M-1",
@@ -27,9 +27,9 @@
       "phase": "export",
       "scope": "fab",
       "text": "Layout reviewed independently (manufacturability, mechanics, operation, looks) on the manufacturing files of a gate run with this layout – e.g. by the agent pcb-reviewer. No finding 'block' open, every 'important' finding fixed or rejected by the owner",
-      "done_by": null,
-      "date": null,
-      "note": null
+      "done_by": "agent pcb-reviewer (own session)",
+      "date": "2026-10-31",
+      "note": "M-5: OK for fab ff5b1567b9162ccd4b3b6a51ec6a115fd482cc39feba8625241a86f29f8763f1; layout 6701738364d59b296932fb0e9bbbfd1b830158157966d7633ab666b78cea1bbc. Reviewed the Gerber, drill, BOM, CPL, order.md/order.json and polarity_main.png of gate run 20261031-215524 against run 20261031-213048 (edakit fab diff) by the agent pcb-reviewer, independently of the layout: JLCPCB DFM (clearances, holes, plated slots, rings, copper to edge, mask, paste on top only, silkscreen), Economic PCBA on top with 2 tooling holes added by the customer, order settings (green/white, LeadFree HASL, 1.6 mm, Remove Mark), BT1 polarity against the Keystone 2468 drawing, SW1 flush with the edge and its knob over it, room for the soldering iron, the cells' access, D1 visible. No block, no important; notes 1–6 of the first round in D-10; new note 7: a square copper-free notch of about 5 × 5 mm around each tooling hole on both layers (EasyEDA's pour workaround in the KiCad tool chain), cosmetic, accepted for this order."
     },
     {
       "id": "M-2",

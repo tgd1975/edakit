@@ -62,13 +62,7 @@ title = "555 blinker"
 assembly = { sides = ["top"], smd_only = true }   # Economic PCBA: one side, SMD only (SYNC.cpl)
 ```
 
-`edakit doctor` names KiCad instead of Node, server and bridge:
-
-```text
-OK    KiCad 10.0.6 (kicad-cli: /usr/bin/kicad-cli)
-OK    ngspice: /usr/bin/ngspice
-OK    Freerouting: /home/…/freerouting-2.4.1-linux-x64/bin/freerouting
-```
+`edakit doctor` names KiCad instead of Node, server and bridge: "OK    KiCad 10.0.6 (kicad-cli: /usr/bin/kicad-cli)".
 
 The purpose is `private`. It covers the owner's own use only: a reader who builds the board from this chapter and
 gives it away or sells it has another purpose and needs a review M-6 of their own (chapter 15). That review is
@@ -167,7 +161,7 @@ The cells in `sim.json` are two states of the holder, the switch one load each:
 ```
 
 `expect` on a battery holder is the current budget of R-3 and R-4 – the current from its cells in that load. The
-first `edakit check`:
+first `edakit check` and `edakit sim`:
 
 ```text
 PATH.reverse – reverse polarity blocked: 3 error
@@ -175,17 +169,7 @@ PATH.reverse – reverse polarity blocked: 3 error
 LVL.undefined – input defined while the firmware is not running: 1 warning
   G  LED_K: driven only by outputs that let go (U1.7) and nothing holds it – released, it floats
 …
-```
-
-and the first `edakit sim`:
-
-```text
-scenario                           status      VBAT      VDD    LED_A    LED_K   supply current
-fresh/on/vf-min                    fail      3.198V   3.198V   1.790V   0.541V
-…
-used/on/vf-max                     fail      1.999V   1.999V   1.996V   0.001V
-used/off/vf-min                    fail      2.000V   0.000V   0.000V  -0.000V
-
+$ edakit sim
 244 comparisons: fail 13, pass 231
 
 LIM.range – supplied inside the operating range: 4 error
@@ -253,9 +237,7 @@ cells), HINT.gate (Q1's gate never switches) and HINT.thermal_copper on U1, Q1 a
 ```text
 $ edakit stock
 hardware/stock.json: 9 of 9 assembled parts asked, economic PCBA ([release] assembly.sides top: one side), 5 boards
-  C17414      R3           0805W8F1002T5E, Basic Part, stock 52364269 / 5 needed, MSL –, Economic and Standard, …
   C90760      U1           LMC555CMX/NOPB, Extended Part, stock 18469 / 5 needed, MSL 1, Economic and Standard, …
-  C5366382    D1           APTD2012LSURCK, Extended Part, stock 2211 / 5 needed, MSL 3, Economic and Standard, …
   …
 ```
 
@@ -265,16 +247,13 @@ a Basic 10 nF in 0805 (C1710) took its place. With the board's size known:
 ```text
 board main, 60 × 28 mm: Economic PCBA ([release] assembly.sides top: one side)
   PCB                                                10.70  at most the price of the smallest size in the fee table, …
-  setup, Economic                                     8.18
-  stencil, Economic                                   1.53
+  …
   loading fee, 4 types                               12.28
   …
   board main                                         36.61 USD
 what drives the cost:
   R1 C17817 Extended Part – 3.07 loading fee
-  U1 C90760 Extended Part – 3.07 loading fee
-  Q1 C133233 Extended Part – 3.07 loading fee
-  D1 C5366382 Extended Part – 3.07 loading fee
+  …
 ```
 
 `edakit order` puts holder and switch into the LCSC cart and onto the hand-assembly list:
@@ -298,8 +277,7 @@ board main – the plan keeps this (SYNC.plan: edakit pcb plan, the gate)
 notes for the layout:
   - BT1 (Keystone 2468, 53.0 × 24.6 × 13 mm) on the bottom, the board about its size; its two PC pins are soldered on the top side
   - SW1 at the board's edge, its knob out over it; its terminals and pegs are soldered on the bottom – not under BT1's body
-  - D1 on top, where it is seen
-  - C1 and C4 close to U1's V+ (8); C2 close to U1's TRIG (2) and TH (6), its ground next to GND (1); C3 next to CV (5)
+  …
 ```
 
 The two reviews ran side by side, each in a context of its own.
@@ -317,12 +295,7 @@ The two reviews ran side by side, each in a context of its own.
   spent cells and the board go to separate collection. Its result is support, not legal advice: it claims no
   correctness, and nothing in it is legally guaranteed.
 
-Both looked again after D-9 and signed for the new circuit hash:
-
-```json
-{"id": "M-1", "phase": "export", "scope": "circuit", "done_by": "agent electrical-reviewer (own session)",
- "date": "2026-10-31", "note": "M-1: OK for state b85dd8d8a978…; requirements met: R-1, R-3. …"}
-```
+Both looked again after D-9 and signed for the new circuit hash, M-1 with "requirements met: R-1, R-3, R-4".
 
 ## 18.9 The gate without a tool chain
 
@@ -345,7 +318,6 @@ writes the schematic into `build/edakit/kicad/main/` and checks it at once with 
 
 ```text
 $ edakit schematic create
-  -> build/edakit/kicad/main/main.kicad_sch
 graph v0.1: 12 parts; schematic main.kicad_sch: 12 parts, 10 nets
 schematic = graph: yes
 ```
@@ -388,18 +360,12 @@ Freerouting, fills the ground pours with kicad-cli and runs KiCad's DRC with sch
 
 ```text
 $ edakit route all
-[ 0.0 min] DSN: 10 nets with >= 2 pins, 34 pads, 10 padstacks, 0 hole keep-outs, 28 edge strips, 0 keep-out pieces,
-           0 fixed wires, 7 via keep-outs at hand-soldered joints (GEO.spacing), clearance 6.5 mil -> …/route/main.dsn
+[ 0.0 min] DSN: 10 nets with >= 2 pins, 34 pads, …, 7 via keep-outs at hand-soldered joints (GEO.spacing), …
 …
 [ 0.2 min] check: 10 nets routed, 76 track pieces, 4 vias; open: 0
-[ 0.2 min] hand-soldered joints (GEO.spacing): 7 on their solder side, 0 vias of other nets closer than hand_solder_keep_mm 1
-[ 0.2 min] step 5/8: apply
-[ 0.2 min] written: 76 track pieces, 4 vias
-[ 0.2 min] step 6/8: pours
+…
 [ 0.3 min] pours: 2 zones written and filled by kicad-cli
-[ 0.3 min] step 7/8: reload
 [ 0.3 min] nothing to reload: the KiCad PCB is a file
-[ 0.3 min] step 8/8: drc
 [ 0.4 min]   DRC: no findings
 ```
 
@@ -415,10 +381,8 @@ BT1's pins and "2x AAA 1.5 V" (D-9) – and checks the print on kicad-cli's Gerb
 beside it and got a fixed spot below the LED (`[silk] place`):
 
 ```text
-  board label '555 blinker rev 1' at (10.2, 3.1) mm
   top: 11 of 11 designators placed, fixed: D1; without room: –
   top: silkscreen on mask openings 0.000 mm² (target 0), picture -> …/silk_main_top.png
-  bottom: silkscreen on mask openings 0.000 mm² (target 0), picture -> …/silk_main_bottom.png
   DRC: no findings
 ```
 
@@ -456,7 +420,47 @@ remark = "2 tooling holes added by customer."
 netlist and ERC, stage L on `pcb.json` read from the file and KiCad's DRC, stage F on kicad-cli's Gerber, drill and
 position files (16.6).
 
-RELEASE_OUTPUT
+It took five runs: the first warned about the knob's print and a rounding at BT1's body (18.13), the next ones waited
+for M-1 and M-6, then for M-5 on their files, and the review's tooling holes gave a new fab hash and M-5 once more.
+The last:
+
+```text
+$ edakit gate --eda
+…
+[ 0.0 min] step 4/4: L/F board and manufacturing files: main
+
+RELEASED
+requirements: 2 passed, 2 open after the export (section 11 of the protocol)
+```
+
+```text
+| S Schematic | EasyEDA schematic = graph (parts, LCSC, nets, pins, no-connects) | 1 | 0 | 0 | 0 | 0 | passed |
+| L Board | PCB = graph and plan, copper from the Gerber files, DRC, footprints, track widths, holes | 35 | 0 | 1 | 0 | 0 | passed with reservations |
+| F Manufacturing | BOM from the graph = EasyEDA, JLCPCB stock, pick and place, Gerber set, outline, manifest | 18 | 0 | 0 | 0 | 0 | passed |
+```
+
+L's warning is the knob's print beyond the outline, accepted with D-8. R-3 and R-4 passed on their rows; R-1 and R-2
+wait for the acceptance. The run's folder holds what goes to JLCPCB – `fab/main/gerber_main.zip`, `bom_main.csv`,
+`cpl_main.csv`, the form's fields in `order.md` ("Tooling holes: Added by Customer – 2 x Ø 1.152 mm", "Mark on PCB:
+Remove Mark") – and `fab/polarity_main.png` for M-2. `edakit export` writes the project's copy:
+
+```text
+$ edakit export
+[main] -> …/blinker-555/build/edakit/export/main
+  schematic_main.pdf                       106 kB
+  …
+  kicad_main.zip                           57 kB
+```
+
+`kicad_main.zip` keeps the KiCad project of the release, as an EasyEDA project keeps its `.eprj2` (16.3).
+
+**Order and acceptance.** Whether boards are ordered was left for later at the release: it is yours, as in chapter
+17, and this run's files are ready for `edakit cart prepare` (8.4). Ordered, M-2 looks at JLCPCB's assembly preview
+with `polarity_main.png` – U1's pin 1, Q1, D1's cathode at the chamfer of its outline.
+
+The hand assembly comes first: SW1, then BT1, its pins trimmed, a dab of glue under its free end (D-10). Then M-4 works
+through the protocol's acceptance list: BT1 the right way round, D1 blinking while SW1 is on and dark once it is off,
+and R-2's count – 48 to 72 flashes in 60 s from a lab supply at 3.2 V and at 2.0 V.
 
 ## 18.13 What this example changed in edakit
 
@@ -490,5 +494,7 @@ each was closed in edakit with its test:
 
 Open, noted for later: a sign-off note counts every mention of a requirement's ID as passing evidence, also
 "R-4 not met" (M-1, note 9) – the rule is documented (8.7) and tested, and changing it is a decision about edakit;
-messages of `route all` still say "nothing written to EasyEDA" on KiCad; `pcb plan` does not hold pads to
-`hand_solder_keep_mm`, `route check` does.
+messages of `route all` still say "nothing written to EasyEDA" on KiCad, and stage S of the protocol "EasyEDA
+schematic = graph"; `pcb plan` does not hold pads to `hand_solder_keep_mm`, `route check` does; the pours of the KiCad
+tool chain keep EasyEDA's square notch around a tooling hole, where KiCad could fill around it (M-5, note 7); the LED
+model fixes its ideality at 2, and a datasheet's IV curve gives D1 20–25 mV more at 0.5 mA than the model (M-1).
