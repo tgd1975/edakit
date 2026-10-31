@@ -236,6 +236,12 @@ def main(cfg, args):
           + ("" if cfg.domains is not None else " (suggested by the graph – edakit domains)"))
     if rep.findings:
         print("\n".join(format_findings(rep.findings)))
+    from .engines.coverage import coverage, summary
+    gaps = coverage(d, prof)
+    if getattr(args, "coverage", False):
+        print("Not checked for lack of data:" + ("".join(f"\n  {g.line()}" for g in gaps) if gaps else " nothing"))
+    elif summary(gaps):
+        print(summary(gaps))
     groups = d.bridge_groups()
     if groups:
         print("joined by 0 Ω bridges, checked as one net: " + "; ".join(

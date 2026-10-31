@@ -810,6 +810,11 @@ def write_protocol(cfg, outdir, head, rows, sim, signoff, notes, decision, reaso
     # the notes of stages P and G, as edakit check prints them – E lists its own in section 7, FILES.sheet and cost stand in 8
     infos = [r for r in rows if r["result"] == "info" and r["stage"] in ("P", "G")
              and r["id"] not in ("FILES.sheet", "cost")]
+    from ..engines.coverage import coverage
+    gaps = coverage(Design.from_config(cfg), prof)
+    if gaps:
+        L += ["Not checked for lack of data – no finding, nobody looked (`edakit check --coverage`):\n",
+              *[f"- {g.line()}" for g in gaps], ""]
     if infos:
         L += ["Information (does not block the release, needs no acceptance):\n",
               *[f"- {catalog.label(r['id'])}: " + (f"{r['item']}: " if r["item"] and not str(r["check"]).startswith(

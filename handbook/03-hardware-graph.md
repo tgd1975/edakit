@@ -268,6 +268,14 @@ or the component, keyed by its code (3.1) – shows `(accepted)` with the reason
 or lower a code's severity (14.2). Exit 1 on errors, with `--release` also on pending findings. The design hints
 (HINT, chapter 14.3) are notes and never block.
 
+**What went unchecked.** A code that needs a datasheet value skips a part without it: LIM.v a capacitor without
+`v_max_v`, LIM.t every part without `rth_ja_k_per_w`, LVL.threshold an input without `vih`/`vil`, LIM.range an IC
+without its operating range or an op-amp without `vicm_v`. `edakit check` names these gaps in one line above its last
+(`not checked for lack of data: LIM.t 11 parts, LVL.threshold 1 part – edakit check --coverage`), `--coverage` lists
+them per code with the designators and the field that is missing, and the gate protocol lists them in its section 2.
+A gap is no finding – nothing was found, since nobody looked; it closes when the entry gets the value from its
+datasheet.
+
 Polarity (is the LED the right way round?) is not a graph rule but a simulation result: a reversed LED shows up in
 stage E as "LED reversed" or as a dark LED (chapter 5), and SIM.driver makes sure no LED escapes it. G-7 was the graph's
 polarity check before the codes; it was retired.

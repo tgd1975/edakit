@@ -74,6 +74,7 @@ def build_parser():
     p = sub.add_parser("check", help="rule checks on the graph (stages P, G)")
     p.add_argument("--release", action="store_true", help="also fail on open sign-offs")
     p.add_argument("--json", help="write the findings as JSON")
+    p.add_argument("--coverage", action="store_true", help="list what went unchecked for lack of data, per code")
     _common(p)
 
     p = sub.add_parser("rules", help="the engines and codes of the catalog")
