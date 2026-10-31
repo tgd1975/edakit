@@ -83,10 +83,12 @@ def write(job, path, tgz=False):
     nets = sorted({pin[3] for c in job["components"] for pin in c["pins"]})
     files[f"{base}/eda/data"] = "UNITS=MM\n" + "".join(f"NET {n}\n" for n in nets)
     for side, layer in (("top", "comp_+_top"), ("bottom", "comp_+_bot")):
-        lines = ["UNITS=MM"]
+        lines = ["UNITS=MM", "@0 .comp_mount_type", "@1 .no_pop"]
         for i, c in enumerate(cp for cp in job["components"] if cp["side"] == side):
             lines += [f"# CMP {i}", f"CMP {i} {c['x']:.6f} {c['y']:.6f} {c['rot']:g} {'M' if side == 'bottom' else 'N'} "
-                                     f"{c['ref']} {c['part']}", f"PRP LCSC '{c['part']}'"]
+                                     f"{c['ref']} {c['part']}" + (f" ;{c['attrs']}" if c.get("attrs") else ""),
+                      f"PRP LCSC '{c['part']}'"]
+            lines += [f"PRP {k} '{v}'" for k, v in c.get("props", {}).items()]
             lines += [f"TOP {k} {x:.6f} {y:.6f} 0 N {nets.index(net)} 0 {num}"
                       for k, (num, x, y, net) in enumerate(c["pins"])]
         files[f"{base}/layers/{layer}/components"] = "\n".join(lines) + "\n"
@@ -186,6 +188,27 @@ def test_each_fault_of_f7(project, change, check, text):
     rows = run(project, change)
     bad = [(r, c, a) for r, c, a in f7(rows) if r == "fail"]
     assert len(bad) == 1 and bad[0][1].startswith(check) and text in bad[0][2], f7(rows)
+
+
+def tooling_hole(attrs):
+    """A tooling hole as KiCad's ODB++ has it: a footprint TH1 without part or pins, marked by edakit's property."""
+    return lambda j: j["components"].append({"ref": "TH1", "x": 3.5, "y": 3.5, "rot": 0, "side": "top", "part": "",
+                                             "pins": [], "props": {"edakit": "tooling"}, "attrs": attrs})
+
+
+def test_a_tooling_hole_of_kicad_passes_only_marked_not_to_place(project):
+    """KiCad has no free pads: the KiCad tool chain's tooling holes are footprints, and its ODB++ lists them as
+    components – a maker places none that carries .no_pop."""
+    assert f7(run(project, tooling_hole("0=0,1"))) == f7(run(project))
+    bad = [(c, a) for r, c, a in f7(run(project, tooling_hole("0=0"))) if r == "fail"]
+    assert bad == [("parts of the ODB++ = BOM and CPL (once each, place, rotation, side, part number)",
+                    "TH1: tooling hole without .no_pop in the ODB++ – AISLER would place it")]
+
+
+def test_the_reader_takes_the_attributes_of_a_component():
+    text = "UNITS=MM\n@0 .comp_mount_type\n@1 .no_pop\nCMP 0 1.0 2.0 0 N TH1 x ;0=0,1\nCMP 1 1.0 2.0 0 N R1 y ;0=1\n"
+    a, b = odb.components(text, "top", [])
+    assert a.attrs == {".comp_mount_type": "0", ".no_pop": True} and b.attrs == {".comp_mount_type": "1"}
 
 
 def test_a_second_maker_warns_and_an_export_that_failed_is_named(project):

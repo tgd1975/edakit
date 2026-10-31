@@ -111,6 +111,9 @@ edakit calls (`edakit/toolchain/kicad/cli.py`, `-v` prints every call):
   --no-protel-ext`, `pcb export drill --format excellon --excellon-units mm --excellon-separate-th
   --excellon-oval-format alternate --drill-origin absolute`, `pcb export pos --format csv --units mm --side both`,
   `pcb export pdf`, `pcb render`.
+- `pcb export odb --units mm --precision 4 --compression zip` – only with a maker of `[cart] makers` that takes ODB++
+  (AISLER). Four decimals, KiCad's most: with its default of two a pad at 62.825 mm is written at 62.82, and SYNC.odb
+  sees the step on copper, paste and mask.
 
 The DRC checks whose subject edakit checks itself are off in `<board>.kicad_pro`: footprints against the library
 (SYNC.footprint holds them to the parts database), courtyards (the plan), silkscreen overlaps and texts (GEO.silk on the
@@ -129,7 +132,12 @@ Stages P, G, E: unchanged. S, L, F read the same files, made from the KiCad proj
   KiCad's PTH file are split into component holes and vias by the drill's X2 function (`ViaDrill`), else by the vias of
   the PCB; `FlyingProbeTesting.json` is made from the pads of `pcb.json` – it stays out of the ZIP, which holds only
   the Gerber and drill files. SYNC.bom compares the BOM with the schematic's (`bom_kicad.json`), SYNC.cpl the CPL with
-  kicad-cli's position file (`cpl_kicad.csv`).
+  kicad-cli's position file (`cpl_kicad.csv`). With a maker that takes ODB++ (AISLER), `odb_<board>.zip` comes from
+  `pcb export odb` and SYNC.odb holds it to the run's files as it holds EasyEDA's; a failed export leaves kicad-cli's
+  message in `odb_error.txt`, which SYNC.odb names. KiCad has no free pads, so a tooling hole is a footprint `TH<n>`
+  (`board_only`, out of BOM and position file, `dnp`): its ODB++ lists it as a component with the attribute `.no_pop`,
+  and SYNC.odb lets it pass only so marked – a maker places no part that carries it. `edakit export` writes the same
+  file.
 
 The Gerber reader takes what KiCad writes: aperture macros (RoundRect, RotRect, Outline, FreePoly) and polygon
 apertures become regions of their outline, X2 attributes are skipped; EasyEDA's files are read as before. The fab hash
@@ -164,7 +172,10 @@ Confirmed by the CI job `kicad` on the led-bar example (KiCad 10.0, its containe
 - stages L and F of the gate on KiCad's export of the routed board: SYNC.pcb, GEO.copper (the copper of KiCad's Gerber
   files: every net connected, no short), GEO.drc, SYNC.footprint, SYNC.plan (every part with a row, every part where
   the plan puts it, measured by `pcb dump` from the file), GEO.hole, GEO.spacing, GEO.ring, GEO.pour, SYNC.bom, SYNC.cpl
-  and FILES.set pass – JLCPCB's stock (PARTS.stock) and the track widths from the simulation (GEO.width) left out.
+  and FILES.set pass – JLCPCB's stock (PARTS.stock) and the track widths from the simulation (GEO.width) left out;
+- the ODB++ of `pcb export odb` (16.5) against the files of the same run: SYNC.odb passes on every layer, the drill
+  hits, the profile, the parts with place, rotation (ODB++ clockwise) and side – parts at 270° among them – and the nets;
+  the tooling holes carry `.no_pop` (kicad-cli 10.0.6, 2026-10-31; `test_kicad_odb_is_read_and_equals_the_runs_files`).
 
 Open – the first runs on a real project, the led-bar example as a KiCad project, then the Christmas bell (the steps
 are in the concept, "Live test"):

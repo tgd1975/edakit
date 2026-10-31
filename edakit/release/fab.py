@@ -8,7 +8,8 @@ Result in DIR/<board>/:
     gerber/ and gerber_<board>.zip   Gerber and drill files as EasyEDA exports them (upload the ZIP)
     bom_<board>.csv                  BOM in JLCPCB format, generated from the graph
     odb_<board>.zip                  with a maker of [cart] makers that takes ODB++ (AISLER): EasyEDA's ODB++ export
-                                     (easyeda_export_odb), checked by SYNC.odb; odb_error.txt when the export failed
+                                     (easyeda_export_odb) or kicad-cli's (KiCad tool chain), checked by SYNC.odb;
+                                     odb_error.txt when the export failed
     bom_<board>_mpn.csv              with a maker of [cart] makers that matches by MPN (Eurocircuits): the same rows
                                      with manufacturer and MPN of the parts entries, in the maker's columns
     cpl_<board>.csv                  pick-and-place file in JLCPCB format (BOM parts only)
@@ -1782,7 +1783,14 @@ def check_odb_parts(cfg, board, design, d, job, m, add):
     comps = defaultdict(list)
     for c in job.components:
         comps[c.designator].append(c)
-    bad = [f"{ref}: {len(comps[ref])}x in the ODB++" for ref in sorted(bom, key=natural_key) if len(comps[ref]) != 1]
+    from ..toolchain.kicad.board import TOOLING  # KiCad has no free pads: a tooling hole is a footprint, marked .no_pop
+    tooling = sorted((ref for ref, cs in comps.items() if ref not in bom and all(c.props.get("edakit") == TOOLING
+                                                                                  for c in cs)), key=natural_key)
+    bad = [f"{ref}: tooling hole without .no_pop in the ODB++ – {m.name} would place it" for ref in tooling
+           if not all(c.attrs.get(".no_pop") for c in comps[ref])]
+    for ref in tooling:
+        del comps[ref]
+    bad += [f"{ref}: {len(comps[ref])}x in the ODB++" for ref in sorted(bom, key=natural_key) if len(comps[ref]) != 1]
     for ref in sorted(bom, key=natural_key):
         if len(comps[ref]) != 1 or ref not in cpl:
             continue

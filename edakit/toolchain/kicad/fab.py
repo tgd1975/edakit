@@ -11,6 +11,8 @@ and kicad-cli – the same files in the same form, so that every check of the ga
                              of the ZIP)
     cpl_kicad.csv            kicad-cli's position file in the columns of EasyEDA's CPL (SYNC.cpl)
     bom_kicad.json           the schematic's parts per LCSC number from kicad-cli's netlist, as EasyEDA's BOM (SYNC.bom)
+    odb_<board>.zip          with a maker of [cart] makers that takes ODB++ (AISLER): kicad-cli's ODB++ export
+                             (SYNC.odb); odb_error.txt when it failed
 """
 
 from __future__ import annotations
@@ -65,12 +67,30 @@ def collect(cfg, board, d, verbose=False):
         z.extractall(d / "gerber")
     (d / "gerber" / gerber.FILES["probe"]).write_text(json.dumps(probe(data)))
     write_cpl(cli.pos(p["pcb"], raw / "pos.csv", verbose), data, d / "cpl_kicad.csv")
+    odb(cfg, board, d, verbose)
     if p["sch"].exists():
         _, comps = cli.netlist(p["sch"], raw / "netlist.net", verbose)
     else:                                 # no schematic yet: the PCB's parts (SYNC.schematic says the schematic is missing)
         comps = {c["designator"]: {"LCSC": lcsc_of(cfg, board, c["designator"]), "value": c["deviceName"]}
                  for c in data["components"]}
     (d / "bom_kicad.json").write_text(json.dumps(bom(comps), indent=1, ensure_ascii=False))
+
+
+def odb(cfg, board, d, verbose=False):
+    """odb_<b>.zip from the KiCad PCB – only for a maker of [cart] makers that takes ODB++; a failed export leaves
+    odb_error.txt for SYNC.odb, as release/fab.export_odb does on EasyEDA."""
+    from ...release import fab as rfab
+    target = d / f"odb_{board.name}.zip"
+    target.unlink(missing_ok=True)
+    (d / rfab.ODB_ERROR).unlink(missing_ok=True)
+    if not rfab.odb_takers(cfg):
+        return None
+    try:
+        return cli.odb(kb.paths(cfg, board)["pcb"], target, verbose)
+    except cli.CliError as e:
+        target.unlink(missing_ok=True)
+        (d / rfab.ODB_ERROR).write_text(str(e))
+        return None
 
 
 def lcsc_of(cfg, board, ref):

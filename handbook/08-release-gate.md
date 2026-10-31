@@ -80,7 +80,7 @@ Every BOM part is in the pick-and-place file exactly once with the PCB's side an
 - pick and place: every BOM part exactly once, side and rotation = PCB; sides and SMD-only as `[release] assembly` says (Economic PCBA: one side, SMD only; two SMD sides need Standard PCBA)
 
 **`SYNC.odb`** – ODB++ = the released files (error, other_maker: warning; replaces F-7)  
-With a maker of [cart] makers that takes ODB++ (files = ["odb"] in its profile – AISLER): odb_<board>.zip, exported by EasyEDA through the patched tool easyeda_export_odb, holds to this run's files – every board layer (copper, solder mask, paste, silkscreen) rasterised as GEO.copper does and XOR'd with the Gerber layer of the same side: no spot above 0.01 mm², no layer in one and not in the other; the drill hits = the drill files (place to 1 µm, diameter, plated or not); the profile = the Gerber outline (0.05 mm); every BOM part exactly once at the place (0.01 mm), rotation (ODB++ clockwise, the CPL counter-clockwise) and side of the CPL, with the BOM's part number; a part with bom: false as the maker's profile says – left out (dnp = "omit"), else listed for the skill to mark; the nets of the pins as the graph's, compared as groups of pins. An export that failed or cannot be read fails. A failure for [cart] maker, a warning for another maker.
+With a maker of [cart] makers that takes ODB++ (files = ["odb"] in its profile – AISLER): odb_<board>.zip, exported by EasyEDA through the patched tool easyeda_export_odb or on the KiCad tool chain by kicad-cli pcb export odb, holds to this run's files – every board layer (copper, solder mask, paste, silkscreen) rasterised as GEO.copper does and XOR'd with the Gerber layer of the same side: no spot above 0.01 mm², no layer in one and not in the other; the drill hits = the drill files (place to 1 µm, diameter, plated or not); the profile = the Gerber outline (0.05 mm); every BOM part exactly once at the place (0.01 mm), rotation (ODB++ clockwise, the CPL counter-clockwise) and side of the CPL, with the BOM's part number; a part with bom: false as the maker's profile says – left out (dnp = "omit"), else listed for the skill to mark; a tooling hole of the KiCad tool chain (a footprint with property edakit = "tooling") only marked .no_pop; the nets of the pins as the graph's, compared as groups of pins. An export that failed or cannot be read fails. A failure for [cart] maker, a warning for another maker.
 
 **`SYNC.source`** – own part = its source (error, margin: warning, stale: pending, unchecked: note; replaces P-3)  
 A board copied from another edakit project (own.what pcb, edakit part own) is that project's current datasheet and was copied from a commit, every datasheet a project writes (hardware/datasheet/) is of its current state, and a board that is not released at the state of its datasheet is a warning.
@@ -586,8 +586,8 @@ and M-2 at the maker are the owner's (the user's decision of 2026-10-30).
 
 **State 2026-10-31:** built and tested offline on recorded data; nothing of it has run against a maker's page or
 EasyEDA yet. Ordering step 0 – each maker's form recorded in its profile –, the ODB++ export from EasyEDA and the first
-live runs of the skill cart are open (`TODO.md`). ODB++ comes from EasyEDA only: a KiCad project with AISLER among its
-makers gets SYNC.odb's "not exported".
+live runs of the skill cart are open (`TODO.md`). On the KiCad tool chain the ODB++ comes from `kicad-cli pcb export
+odb` (16.6).
 
 1. `edakit cart prepare [--board B] [--maker M]` takes the current release and stops unless the maker's upload files
    are the release's (`release verify`, the same function), the circuit and layout hash are the run's, the order
@@ -641,8 +641,8 @@ submitting the order for the review is the owner's. JLCPCB's help article (last 
 number gone since May 2026, a 2D barcode or a serial number instead: FILES.order warns about `JLCJLCJLCJLC` on the board
 and about `mark = "specify"` until ordering step 0 has seen the form (the owner's decision of 2026-10-30), and `barcode`
 (`"qr"`, `"datamatrix"`) and `serial_number` are keys of `[order]` (10.2). AISLER
-assembles from ODB++: `odb_<board>.zip` from EasyEDA through the patched MCP server and bridge (2.4, 2.5), held to the
-released files by SYNC.odb. Inside the EU there is no import; for `sale` the owner stays the manufacturer of the product
+assembles from ODB++: `odb_<board>.zip` from EasyEDA through the patched MCP server and bridge (2.4, 2.5), on the KiCad
+tool chain from kicad-cli (16.6), held to the released files by SYNC.odb. Inside the EU there is no import; for `sale` the owner stays the manufacturer of the product
 (15.1). PARTS.stock and `edakit stock` ask JLCPCB's catalogue only where JLCPCB is among the makers; another maker's
 stock is what its matching shows, checked by ORDER.parts.
 
