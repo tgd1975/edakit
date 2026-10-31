@@ -78,6 +78,7 @@ FANOUT_DIRECTIONS = 16     # fanout: a via is tried in this many directions arou
 FANOUT_STEP_MIL = 5        # the distance growing in these steps
 FANOUT_REACH_MIL = 60      # up to this much beyond the nearest spot
 EDGE_ARC_SEGMENTS = 8      # edge keep-out: chords per quarter circle around an inner corner (reach ≥ 0.989 d)
+DSN_STEPS_PER_MIL = 100    # (resolution mil 100): Freerouting reads every DSN coordinate in steps of 0.01 mil
 
 FR_VERSION = "2.4.1"
 FR_ZIP = f"https://github.com/freerouting/freerouting/releases/download/v{FR_VERSION}/freerouting-{FR_VERSION}-linux-x64.zip"
@@ -286,9 +287,19 @@ def _polygons(geom):
     return [p for g in getattr(geom, "geoms", []) for p in _polygons(g)]
 
 
+def flat_on_grid(poly):
+    """True for a polygon with no area left once its corners are rounded to the DSN's grid (DSN_STEPS_PER_MIL), as
+    Freerouting reads them: a slice thinner than 0.01 mil. Freerouting skips such a keep-out with "Keepout zone … was
+    skipped because its geometry is degenerate"."""
+    return Polygon([(round(x * DSN_STEPS_PER_MIL), round(y * DSN_STEPS_PER_MIL))
+                    for x, y in poly.exterior.coords]).area == 0
+
+
 def convex_pieces(geom, min_area=1.0):
     """Split a (possibly concave, multi-part) area into convex pieces: horizontal strips at every vertex, then
-    vertical cuts where a strip is still concave. Freerouting wants convex keep-outs."""
+    vertical cuts where a strip is still concave. Freerouting wants convex keep-outs. A piece under min_area (mil²)
+    is left out, and so is one with no area on the DSN's grid (flat_on_grid) – two vertices less than 0.01 mil apart
+    in height leave such a slice."""
     pieces = []
     for g in _parts(geom):
         if g.geom_type != "Polygon":
@@ -299,7 +310,7 @@ def convex_pieces(geom, min_area=1.0):
             if b - a < 1e-6:
                 continue
             for s in _parts(g.intersection(box(x0 - 1, a, x1 + 1, b))):
-                if s.geom_type != "Polygon" or s.area < min_area:
+                if s.geom_type != "Polygon" or s.area < min_area or flat_on_grid(s):
                     continue
                 if s.convex_hull.area - s.area < 0.5:
                     pieces.append(s)
@@ -307,7 +318,7 @@ def convex_pieces(geom, min_area=1.0):
                 xs = sorted({x for x, _ in s.exterior.coords})
                 for c, d in zip(xs, xs[1:]):
                     pieces += [u for u in _parts(s.intersection(box(c, a, d, b)))
-                               if u.geom_type == "Polygon" and u.area >= min_area]
+                               if u.geom_type == "Polygon" and u.area >= min_area and not flat_on_grid(u)]
     bad = [p for p in pieces if p.convex_hull.area - p.area > 0.5]
     if bad:
         raise SystemExit(f"{len(bad)} keep-out pieces are not convex – route.convex_pieces needs a look")
@@ -324,9 +335,12 @@ def outside_strips(rules, outer, margin=20.0):
     board – 0.3957 mm with 0.4 mm, 4.3 µm short of the arc. With 4 a chord spanned up to 33.75° (0.383 mm). Mitred
     joins reached d / sin(θ/2) into the board there – 0.57 mm at a 90° corner and 1.3 mm at a 36° notch with 0.4 mm.
     Outlines without inner corners get the same strips either way.
-    Every piece is kept, however small: the cuts at the arc's vertices leave slices under 1 mil² at a sharp notch tip,
-    and without them the keep-out reached 0.3 mm into the board there instead of the clearance. Freerouting skips a
-    piece thinner than its 0.01 mil resolution with a warning; `route check` keeps it."""
+    Every piece Freerouting can read is kept, however small: the cuts at the arc's vertices leave slices under 1 mil²
+    at a sharp notch tip, and without them the keep-out reached 0.3 mm into the board there instead of the clearance.
+    Only a slice with no area on the DSN's grid is left out (flat_on_grid): on a round board read back from EasyEDA,
+    mirrored corners lie up to 1e-4 mil apart in height, and the cuts at both left slices of 4e-6 to 7e-5 mil that
+    Freerouting skipped as degenerate. The seam such a slice leaves is thinner than 0.01 mil – no copper passes it –,
+    and `route check` tests the strips Freerouting was given."""
     inner = outer.buffer(-rules.edge_um / 25.4, join_style="round", quad_segs=EDGE_ARC_SEGMENTS)
     x0, y0, x1, y1 = outer.bounds
     frame = box(x0 - margin, y0 - margin, x1 + margin, y1 + margin)
@@ -578,7 +592,7 @@ def write_dsn(rules, data, out, variant=0):
          '  (parser (string_quote ") (space_in_quoted_tokens on) (host_cad "edakit") (host_version "1"))',
          # 1/100 mil: with 1/1000 mil Freerouting 2.4.1 computes wrongly (board ≈ 7 million units high: unreachable
          # pads, 19 phantom violations); with mil 100 it routed at once
-         "  (resolution mil 100)", "  (unit mil)", "  (structure"]
+         f"  (resolution mil {DSN_STEPS_PER_MIL})", "  (unit mil)", "  (structure"]
     for i, name in enumerate(("TOP", "BOTTOM")):
         L.append(f"    (layer {name} (type signal) (property (index {i})))")
     L.append("    (boundary (path pcb 0 " + " ".join(f"{f(x)} {f(y)}" for x, y in frame.exterior.coords) + "))")
