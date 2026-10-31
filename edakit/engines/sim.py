@@ -810,7 +810,8 @@ def pin_currents(s):
 
 
 SWITCH_DC_MAX_V = 0.01     # edakit's choice for "within a few mV" (maker-coverage CK-30), not a datasheet figure
-SIGNAL_MIN_LOAD_A = 10e-6  # a contact rated for signal currents: "minimum load 10 µA" (maker-coverage CK-30, forums)
+SIGNAL_MIN_LOAD_A = 10e-6  # a contact rated for signal currents: a signal relay's minimum applicable load
+                           # (Hongfa HFD4: 10 µA at 10 mV) – rules-at-scale.md, decision 14
 CONTACT_KINDS = ("switch", "button", "dip_switch", "relay", "potentiometer")
 
 
@@ -887,7 +888,7 @@ def switch_dc(s):
         if least is not None:
             s.check("REQ.value", des, f"minimum load of {des}'s contacts in the signal path", least * 1e6,
                     f"≤ {SIGNAL_MIN_LOAD_A * 1e6:g} µA", least <= SIGNAL_MIN_LOAD_A, "µA",
-                    f"min_load_a of {s.n.entry_key(des)}; maker-coverage CK-30", grade="min_load",
+                    f"min_load_a of {s.n.entry_key(des)}; the line: Hongfa HFD4, 10 µA at 10 mV (decision 14)", grade="min_load",
                     on=(("component", des),))
         for on in groups:
             xs = {net: at_pin(d, res, f"{des}.{num}") for net, num in on.items()}

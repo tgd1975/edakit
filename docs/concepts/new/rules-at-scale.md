@@ -348,3 +348,17 @@ Taken by the owner on 2026-10-31, through a form, after the library and the bloc
     with the entry beyond the names, and `upstream/` holds the report the owner sends to LCSC/EasyEDA.
 12. **Merge into main** after the schema extension, not before.
 
+Left to Claude by the owner on 2026-10-31 ("du entscheidest") – the three questions the schema extension left open:
+
+13. **MPU-6050, SCL, SDA, AUX_DA, AUX_CL:** held to VLOGIC + 0.5 V, the upper end of VIH (PS-MPU-6000A-00 Rev 3.4,
+    6.5), not to the absolute VDD + 0.5 V of 6.9. VLOGIC ≤ VDD at all times (6.3, `supply_order`), so the stricter
+    limit catches every pin the absolute one would, and between the two the datasheet promises no function; the grade
+    is the same (LIM.v/inject, a warning). With AUX_VDDIO = 1 the auxiliary bus refers to VDD – a project that sets
+    the bit accepts the finding.
+14. **The 10 µA a contact in a signal path may need at most** (REQ.value/min_load) stays, sourced now to a datasheet:
+    the minimum applicable load of a relay made for signals, Hongfa HFD4 – 10 µA at 10 mV, a reference value. The
+    forums of maker-coverage CK-30 are no longer its source. A warning, as before.
+15. **INA226 Alert:** held to VS + 0.3 V like SCL (the entry's `vin_rel_max_v`, LIM.v/inject, a warning). SBOS547C
+    has no absolute-maximum row for Alert; its leakage is specified up to VS (5.5) and 8.2.1.2 says the pin "must"
+    be pulled up to VS. The stricter reading, because a warning can be accepted and a missed limit cannot be seen.
+

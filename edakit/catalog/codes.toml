@@ -469,13 +469,13 @@ fix = "4.7 kΩ for 100 kHz, 2.2 kΩ for 400 kHz on I2C; 5.1 kΩ per CC pin."
 severity = "error"
 grades = { pin = "warning", adc = "warning", instrument = "warning", gain = "warning", termination = "warning", failsafe = "warning", window = "warning", feedback = "warning", switch = "warning", pd_request = "warning", load = "warning", min_load = "warning" }
 details = [
-  "minimum load: a contact needs a least current to close reliably – a film on the contact that no current breaks; a relay's datasheet calls it \"minimum applicable load\" (values `min_load_a`). The simulation compares the DC through every closed contact with it, except in a signal path: there a contact carries no DC by design (grade switch) and the signal a few µA, and its entry is held to at most 10 µA – the \"minimum load 10 µA\" maker-coverage CK-30 calls a contact rated for signal currents – finds e.g.: a relay with a 1 mA minimum load in a guitar's bypass, a gold DIP switch that closes onto a CMOS input with no pull and so carries no current",
+  "minimum load: a contact needs a least current to close reliably – a film on the contact that no current breaks; a relay's datasheet calls it \"minimum applicable load\" (values `min_load_a`). The simulation compares the DC through every closed contact with it, except in a signal path: there a contact carries no DC by design (grade switch) and the signal a few µA, and its entry is held to at most 10 µA – the minimum applicable load of a relay made for signals (Hongfa HFD4: 10 µA at 10 mV, a reference value), edakit's line for a contact rated for signal currents (rules-at-scale.md, decision 14) – finds e.g.: a relay with a 1 mA minimum load in a guitar's bypass, a gold DIP switch that closes onto a CMOS input with no pull and so carries no current",
 ]
 replaces = ["G-11", "G-14"]
 sources = [
   "WCH CH224 手册1 version 2.1: CH224K reference 6.2 p. 9 – CFG1 1 → 5 V; CFG1 0 with CFG2 CFG3 00 → 9 V, 01 → 12 V, 11 → 15 V, 10 → 20 V – the pd_request grade",
   "docs/concepts/new/maker-coverage.md, CK-30 (appendix GTP 31, 37; GTI 31; AUD 13) – no DC where signals are switched; the 10 mV is edakit's choice for its \"within a few mV\"",
-  "Hongfa HFD4 data sheet, 2024 Rev. 1.00, contact data: 'Min. applicable load 10mV 10µA', note 2: 'Min. applicable load is reference value' (grade min_load; LCSC's copy for C64399)",
+  "Hongfa HFD4 data sheet, 2024 Rev. 1.00, contact data: 'Min. applicable load 10mV 10µA', note 2: 'Min. applicable load is reference value' (grade min_load, and the 10 µA a contact in a signal path may need at most; LCSC's copy for C64399)",
   "NXP UM10204 Rev. 7.0, I2C-bus specification and user manual (2021), 7.1 Pull-up resistor sizing and table 10 – https://www.nxp.com/docs/en/user-guide/UM10204.pdf",
   "USB Type-C Cable and Connector Specification (USB-IF): sink termination Rd = 5.1 kΩ",
   "TI SLLA272D, The RS-485 Design Guide (revised May 2021), 6 and 7: 120 Ω at each cable end; idle-bus failsafe VAB = 200 mV + noise – https://www.ti.com/lit/pdf/slla272 (grades termination, failsafe)",

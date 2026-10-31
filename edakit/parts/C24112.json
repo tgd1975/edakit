@@ -247,7 +247,8 @@
    "I2C address 0x68/0x69 by AD0",
    "external capacitors C1–C4 from the bill of materials 7.3",
    "2026-10-31: CPOUT capacitor rated at least 50 V (PS-MPU-6000A-00 Rev 3.4, 7.3 Bill of Materials: C3 X7R 2.2 nF ±10 % 50 V, read now)",
-   "2026-10-31, pin limits (schema-gaps A6, B1–B3, C1–C4): PS-MPU-6000A-00 Rev 3.4: 6.3 'VLOGIC must be ≤VDD at all times' (supply_order); 6.4 digital inputs (SDA, AD0, SCL, FSYNC, CLKIN) VIH 0.7·VLOGIC, VIL 0.3·VLOGIC (ref VLOGIC); 6.5 primary and auxiliary I2C I/O (auxiliary at AUX_VDDIO = 0) VIH up to VLOGIC + 0.5 V, stricter than 6.9 (SCL, SDA, AUX_DA, AUX_CL: v_rel_max_v 0.5 against VLOGIC); 6.9 absolute maximum: VLOGIC, CLKIN, AUX_DA, AD0, FSYNC, INT, SCL, SDA −0.5 V to VDD + 0.5 V (rel_ref VDD where the thresholds refer to VLOGIC; v_min_v −0.5), REGOUT −0.5 to 2 V and CPOUT −0.5 to 30 V absolute (v_rel_max_v null)"
+   "2026-10-31, pin limits (schema-gaps A6, B1–B3, C1–C4): PS-MPU-6000A-00 Rev 3.4: 6.3 'VLOGIC must be ≤VDD at all times' (supply_order); 6.4 digital inputs (SDA, AD0, SCL, FSYNC, CLKIN) VIH 0.7·VLOGIC, VIL 0.3·VLOGIC (ref VLOGIC); 6.5 primary and auxiliary I2C I/O (auxiliary at AUX_VDDIO = 0) VIH up to VLOGIC + 0.5 V, stricter than 6.9 (SCL, SDA, AUX_DA, AUX_CL: v_rel_max_v 0.5 against VLOGIC); 6.9 absolute maximum: VLOGIC, CLKIN, AUX_DA, AD0, FSYNC, INT, SCL, SDA −0.5 V to VDD + 0.5 V (rel_ref VDD where the thresholds refer to VLOGIC; v_min_v −0.5), REGOUT −0.5 to 2 V and CPOUT −0.5 to 30 V absolute (v_rel_max_v null)",
+   "2026-10-31, the limit of SCL, SDA, AUX_DA, AUX_CL (rules-at-scale.md, decision 13): held to VLOGIC + 0.5 V, the upper end of VIH in 6.5, not to the absolute VDD + 0.5 V of 6.9 – VLOGIC ≤ VDD at all times (6.3, supply_order), so every pin above VDD + 0.5 V is above VLOGIC + 0.5 V too, and between the two the datasheet promises no function; a warning (LIM.v/inject) either way"
   ],
   "open": [
    "maximum supply current: the datasheet gives only typical values (3.9 mA gyro + accel + DMP) – idd_max_a left out",
@@ -264,7 +265,7 @@
    "end-of-life status not confirmed from TDK (see notes)",
    "no thermal resistance or junction temperature in the datasheet",
    "RoHS/REACH not entered",
-   "SCL, SDA, AUX_DA, AUX_CL are held to VLOGIC + 0.5 V, the upper end of VIH in 6.5, not to the absolute VDD + 0.5 V of 6.9; with AUX_VDDIO = 1 the auxiliary bus refers to VDD (7.11) – the owner decides which limit LIM.v should hold"
+   "with AUX_VDDIO = 1 the auxiliary bus refers to VDD (7.11): AUX_DA and AUX_CL stay held to VLOGIC + 0.5 V (the power-on value AUX_VDDIO = 0) – a project that sets the bit accepts the finding with its reason"
   ]
  },
  "supply_order": [

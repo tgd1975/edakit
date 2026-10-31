@@ -136,6 +136,6 @@ Built in seven worktrees (W1–W7) and merged; each item with a test that is red
 | H | built | STRUCT.entry/symbol and `symbol_differs` (W7); the report `upstream/issue-6-easyeda-symbols.md`, not sent – the owner sends it |
 | G | open | not part of decision 10 |
 
-Left for the owner: the MPU-6050's SCL/SDA held to VLOGIC + 0.5 V (the VIH range, stricter than the absolute
-VDD + 0.5 V) – recorded as open in its entry; the 10 µA a contact in a signal path may need at most (maker-coverage
-CK-30, from forums, not a datasheet); whether the INA226's Alert may be pulled above VS (its datasheet does not say).
+Decided on the owner's behalf (rules-at-scale.md, decisions 13–15): the MPU-6050's SCL/SDA stay held to
+VLOGIC + 0.5 V; the 10 µA a contact in a signal path may need at most stays, sourced to the Hongfa HFD4's
+minimum applicable load; the INA226's Alert is held to VS + 0.3 V like SCL.
