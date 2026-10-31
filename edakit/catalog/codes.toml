@@ -454,17 +454,18 @@ sources = [
 
 [codes."REQ.value"]
 title = "what a part requires is in range"
-rule = "A required part has its value inside the range: an I2C pull-up (in parallel with the pins' own pulls) between (V − 0.4 V) / 3 mA and 10 kΩ, Rd 5.1 kΩ ± 10 % on a CC pin, what a pin needs inside the window its entry gives (grade pin), the source resistance an ADC pin sees (adc.r_source_max_ohm, unless a hold capacitor; grade adc), the load on an instrument input (net load_min_ohm; grade instrument), an op-amp's closed-loop gain against its minimum stable gain (gain_min_ratio; grade gain), a termination of an RS-485 or CAN bus of the cable's 120 Ω (grade termination), the idle voltage an RS-485 bias pair sets across the terminations at least 200 mV (grade failsafe)."
+rule = "A required part has its value inside the range: an I2C pull-up (in parallel with the pins' own pulls) between (V − 0.4 V) / 3 mA and 10 kΩ, Rd 5.1 kΩ ± 10 % on a CC pin, what a pin needs inside the window its entry gives (grade pin), the source resistance an ADC pin sees (adc.r_source_max_ohm, unless a hold capacitor; grade adc), the load on an instrument input (net load_min_ohm; grade instrument), an op-amp's closed-loop gain against its minimum stable gain (gain_min_ratio; grade gain), a termination of an RS-485 or CAN bus of the cable's 120 Ω (grade termination), the idle voltage an RS-485 bias pair sets across the terminations at least 200 mV (grade failsafe), a configuration pin that reads its setting by voltage window (pin windows, with the pin's own pull in the operating point) inside one window, not between two (grade window, stage E)."
 why = "A weak I2C pull-up makes the edges too slow, a strong one cannot be pulled low; a CC resistor outside its window reads as another device."
 fix = "4.7 kΩ for 100 kHz, 2.2 kΩ for 400 kHz on I2C; 5.1 kΩ per CC pin."
 severity = "error"
-grades = { pin = "warning", adc = "warning", instrument = "warning", gain = "warning", termination = "warning", failsafe = "warning" }
+grades = { pin = "warning", adc = "warning", instrument = "warning", gain = "warning", termination = "warning", failsafe = "warning", window = "warning" }
 replaces = ["G-11", "G-14"]
 sources = [
   "NXP UM10204 Rev. 7.0, I2C-bus specification and user manual (2021), 7.1 Pull-up resistor sizing and table 10 – https://www.nxp.com/docs/en/user-guide/UM10204.pdf",
   "USB Type-C Cable and Connector Specification (USB-IF): sink termination Rd = 5.1 kΩ",
   "TI SLLA272D, The RS-485 Design Guide (revised May 2021), 6 and 7: 120 Ω at each cable end; idle-bus failsafe VAB = 200 mV + noise – https://www.ti.com/lit/pdf/slla272 (grades termination, failsafe)",
   "TI SLOA101B, Introduction to the Controller Area Network (CAN) (revised May 2016), 6: terminated at both ends with 120 Ω – https://www.ti.com/lit/pdf/sloa101 (grade termination)",
+  "Maxim MAX98357A/MAX98357B datasheet 19-6779 Rev 11 (5/18): SD_MODE comparator trip points B0 0.08/0.16/0.355 V, B1 0.65/0.77/0.825 V, B2 1.245/1.4/1.5 V, pull-down RPD 92/100/108 kΩ, Table 5 SD_MODE Control, Table 6 pull-up examples – read from LCSC's copy for C910544, https://datasheet.lcsc.com/datasheet/pdf/9dd365a93d191d8d6f09766b0e3ea172.pdf (grade window: the example of pin windows)",
 ]
 
 [codes."REQ.forbidden"]

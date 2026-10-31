@@ -49,7 +49,7 @@ CK-16 = { status = "partial", where = "REQ.missing/leave on nets through a cable
 CK-17 = { status = "built", where = "transceiver roles rs485_a/rs485_b, canh/canl; REQ.missing/termination, REQ.forbidden/termination, REQ.value/termination, REQ.value/failsafe; tables/buses.toml read from TI SLLA272D and SLOA101B", step = 6 }
 CK-18 = { status = "built", where = "cells i_max_a; LIM.i/cell", step = 6 }
 CK-19 = { status = "built", where = "net matrix row | col; REQ.missing/matrix, REQ.forbidden/matrix", step = 6 }
-CK-20 = { status = "open", missing = "configuration pins with voltage windows – datasheets" }
+CK-20 = { status = "built", where = "pin windows (with pull and pull_ohm in the netlist); REQ.value/window in stage E; example the MAX98357A SD_MODE (datasheet 19-6779 Rev 11)", step = 6 }
 CK-21 = { status = "built", where = "limits i_supply_pin_max_a; LIM.i/supply_pin (constant-current drivers)", step = 6 }
 CK-22 = { status = "open", missing = "the ES1 limits – tagged to verify" }
 CK-23 = { status = "built", where = "values f_clock_hz, limits f_max_hz; LIM.range/clock", step = 6 }
