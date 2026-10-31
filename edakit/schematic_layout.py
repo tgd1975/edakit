@@ -52,6 +52,7 @@ TITLE_H = 30
 TITLE_SIZE = 16
 NOTE_SIZE = 8
 NOTE_CHAR_W = 0.45  # character width ≈ 0.45 x font size (measured, EasyEDA default font)
+TITLE_CHAR_W = 0.7  # the room a block title gets per character, x its size (bold)
 SHEET_MARGIN = 80
 TITLE_MARGIN = 160
 # SCH_PrimitiveText.delete and .modify are not saved in EasyEDA Pro 3.2.206: the text is gone until the page is
@@ -368,7 +369,7 @@ class Layout:
         note_w = max((len(ln) for ln in lines), default=0) * NOTE_SIZE * self.note_char_w
         note_h = len(lines) * NOTE_SIZE + 2 * GAP if lines else 0
         x0 = b[0] - FRAME_PAD
-        x1 = max(b[2] + FRAME_PAD, x0 + len(title) * TITLE_SIZE * 0.7 + 20, x0 + 10 + note_w + 10)
+        x1 = max(b[2] + FRAME_PAD, x0 + len(title) * TITLE_SIZE * TITLE_CHAR_W + 20, x0 + 10 + note_w + 10)
         y1 = snap_up(b[3] + FRAME_PAD + note_h + TITLE_H)
         frame = (x0, b[1] - FRAME_PAD, snap_up(x1), y1)
         blk.frames.append((title, frame))

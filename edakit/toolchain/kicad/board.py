@@ -237,9 +237,10 @@ def symbol_uid(cfg, board, ref):
 
 
 def part_value(design, ref, fp):
-    """The value a part shows – the same in schematic and PCB (KiCad's schematic parity compares them)."""
+    """The value a part shows – the same in schematic and PCB (KiCad's schematic parity compares them): the value,
+    else the part's name in the graph, as the drawing shows them, else the entry's MPN."""
     comp, entry = design.comps.get(ref, {}), design.part(ref) or {}
-    return str(comp.get("value") or entry.get("mpn") or fp.name)
+    return str(comp.get("value") or comp.get("part") or entry.get("mpn") or fp.name)
 
 
 def net_names(design, board):
