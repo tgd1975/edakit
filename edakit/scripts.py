@@ -1080,7 +1080,8 @@ HOOKED = {   # the commands that run the outdated inputs they read first – wit
 REMADE = {("pcb", "dump"): "footprints", ("route", "all"): "routing"}   # what these steps make again for their board
 FROM_BEFORE = {   # what is from before a change of the project library until the step of REMADE made it again
     "footprints": "the parts in the PCB, which keep their old copy until deleted and recreated (edakit pcb parts "
-                  "--write, then edakit pcb dump)",
+                  "--write, then edakit pcb dump; after the first change of a copy edakit schematic create --save and "
+                  "schematic layout --save before)",
     "routing": "the routing (edakit route all)",
 }
 RUNNING = "EDAKIT_SCRIPT"   # set for a script edakit runs, to its name: a step inside it runs no script

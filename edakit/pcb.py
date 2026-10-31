@@ -2010,6 +2010,22 @@ def parts_diff(mcp, board):
     return found, sch_uuid, sch, pcb
 
 
+def create_component(mcp, project, ref, device, x, y):
+    """A part of the schematic into the PCB: its device from the project library, on TOP at (x, y) mil. EasyEDA
+    answered "Cannot convert undefined or null to object" for the project's copy of a carrier rebuilt by edakit part
+    build or an easyeda script (the live run of 3.6, 2026-10-31): the message names what brought it into the PCB then."""
+    try:
+        return api(mcp, "PCB_PrimitiveComponent.create", {"libraryUuid": project, "uuid": device["uuid"]}, TOP, x, y, 0,
+                   False)
+    except eda.MCPError as e:
+        if "Cannot convert undefined or null to object" not in str(e):
+            raise
+        raise SystemExit(f"{ref}: EasyEDA cannot place the project's copy of {device.get('name') or device['uuid']} "
+                         "(\"Cannot convert undefined or null to object\") – a copy rebuilt by edakit part build or an "
+                         "easyeda script: edakit schematic create --save, edakit schematic layout --save, then edakit "
+                         "pcb parts --write again; if it stays, edakit part build --write once more (handbook 9.4)") from None
+
+
 def sync_parts(cfg, board, mcp, write=False):
     """PCB parts = parts of the board schematic, without the "Import Changes" dialog (importChanges(uuid, true) opens
     it anyway). Schematic and PCB part are linked through the same UniqueId (ggeN). Missing parts are created (device
@@ -2052,9 +2068,7 @@ def sync_parts(cfg, board, mcp, write=False):
         if old:
             api(mcp, "PCB_PrimitiveComponent.delete", [old["PrimitiveId"]])  # its tracks stay
         x, y = to_mil(board.park[0] + 8 * (k % 6)), to_mil(board.park[1] - 8 * (k // 6))
-        res = api(mcp, "PCB_PrimitiveComponent.create", {"libraryUuid": project, "uuid": st["Component"]["uuid"]},
-                  TOP, x, y, 0, False)
-        new = eda.state(res or {})
+        new = eda.state(create_component(mcp, project, ref, st["Component"], x, y) or {})
         if not new.get("PrimitiveId"):
             raise SystemExit(f"{ref}: PCB_PrimitiveComponent.create returned nothing (device {st['Component']})")
         other = {**(new.get("OtherProperty") or {}), **(st.get("OtherProperty") or {}),

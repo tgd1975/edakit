@@ -41,7 +41,8 @@ PINS = ts.entry("pins", kind="derive", cmd=["python", "docs/pins.py"], about="Th
                 reads=["graph"], writes=["docs/pins.md"])
 HEAD = "project scripts before edakit {} (handbook 8.6):"
 CHANGE = ("project-library:main changed by lib ({when}) – from before it: the parts in the PCB, which keep their old copy "
-          "until deleted and recreated (edakit pcb parts --write, then edakit pcb dump); the routing (edakit route all)")
+          "until deleted and recreated (edakit pcb parts --write, then edakit pcb dump; after the first change of a copy "
+          "edakit schematic create --save and schematic layout --save before); the routing (edakit route all)")
 
 
 @pytest.fixture(autouse=True)

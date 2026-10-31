@@ -601,6 +601,16 @@ def poly(points, close=False):
     return {"$polygon": out}
 
 
+def way_back(on):
+    """What brings a rebuilt copy into the PCB (handbook 4.5): the placed parts keep their old copy. After the first
+    build of a copy the schematic's parts still carry the carrier, and EasyEDA could not place the copy until they
+    were placed anew (the bell's way; the live run of 3.6, 2026-10-31)."""
+    return (f"the parts in the PCB keep their old copy: delete {', '.join(on)} in the PCB, edakit pcb parts --write, "
+            "edakit pcb dump – after the first build of a copy: edakit schematic create --save and edakit schematic "
+            "layout --save before –, then edakit check holds the copy to the data (SYNC.footprint), and the round goes on "
+            "through route all (handbook 4.5)")
+
+
 def pad_args(n, pad, ox, oy):
     """The arguments of PCB_PrimitivePad.create for a pad of the data: layer, number, x, y (mil), rotation, shape,
     net, hole, hole offset x and y, hole rotation, metallization. A slot runs along the pad's longer side (hole
@@ -825,7 +835,5 @@ def main_build(cfg, args):
         print(f"  read back: {text}", file=sys.stderr)
     if said:
         print(f"  {said}")
-    print(f"  the parts in the PCB keep their old copy: delete {', '.join(on)} in the PCB, edakit pcb parts --write, "
-          "edakit pcb dump – then edakit check holds the copy to the data (SYNC.footprint), and the round goes on through "
-          "route all (handbook 4.5)")
+    print(f"  {way_back(on)}")
     return 2 if diffs else 0

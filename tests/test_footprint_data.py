@@ -720,3 +720,29 @@ def test_an_older_m6_stays_on_the_circuit_when_the_circuit_changed(project):
 def test_a_new_m6_is_required_with_scope_electrical():
     assert gate.REQUIRED["M-6"]["scope"] == "electrical" and gate.REQUIRED["M-1"]["scope"] == "circuit"
     assert gate.SCOPE_KEY["electrical"] == "electrical_sha256"
+
+# --- the way back into the PCB after a build (live run 3.6, 2026-10-31) ---------------------------------------------
+
+class Refusing:
+    """easyeda_api_call answering PCB_PrimitiveComponent.create as EasyEDA did for a rebuilt copy."""
+
+    def call(self, tool, timeout=130, **args):
+        assert args["path"] == "PCB_PrimitiveComponent.create"
+        return {"ok": False, "error": "Cannot convert undefined or null to object"}
+
+
+def test_pcb_parts_names_the_way_out_when_easyeda_cannot_place_a_rebuilt_copy():
+    with pytest.raises(SystemExit) as e:
+        pcb.create_component(Refusing(), "proj", "U1", {"uuid": "dev", "name": "2541FV-2x12P"}, 0, 0)
+    msg = str(e.value)
+    assert msg.startswith("U1: EasyEDA cannot place the project's copy of 2541FV-2x12P")
+    assert "edakit schematic create --save, edakit schematic layout --save, then edakit pcb parts --write again" in msg
+    assert "edakit part build" in msg and "handbook 9.4" in msg
+
+
+def test_part_build_names_the_schematic_for_the_first_build(project, monkeypatch, capsys):
+    """The build's advice: the parts of the PCB keep their old copy, and after the first build of a copy the schematic's
+    parts are placed anew before pcb parts (the bell's way, the live run of 3.6)."""
+    msg = footprint.way_back(["J1"])
+    assert "delete J1 in the PCB, edakit pcb parts --write, edakit pcb dump" in msg
+    assert "the first build of a copy: edakit schematic create --save and edakit schematic layout --save before" in msg

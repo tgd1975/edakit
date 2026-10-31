@@ -600,7 +600,11 @@ not the copy's.
    (8.6).
 4. **Into the PCB:** placed parts keep their old copy (9.4) – delete them in the PCB, `edakit pcb parts --write`,
    `edakit pcb dump` (it measures the pads of parts with footprint data with shape, size, rotation and layer), then
-   `edakit check`: SYNC.footprint holds the copy to the data. Then the round as usual, through `route all`.
+   `edakit check`: SYNC.footprint holds the copy to the data. Then the round as usual, through `route all`. After the
+   first build of a copy, `edakit schematic create --save` and `edakit schematic layout --save` come before
+   `pcb parts`: in the live run of 3.6 (2026-10-31) EasyEDA could not place the rebuilt copy ("Cannot convert
+   undefined or null to object") while the schematic's parts still carried the carrier – `pcb parts` names that way
+   when EasyEDA answers so.
 
 **Checks** (3.3), only in a project where a parts entry has `footprint_data` – every other project runs the checks it
 ran: **PARTS.footprint** the data is complete and consistent – every pad its place, shape and size, a through-hole pad

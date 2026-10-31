@@ -917,7 +917,7 @@ tell them outdated, and an input among them runs before its step (`silk apply`).
 `project-library:<b>` itself is outdated at once.
 
 ```text
-WARNING scripts  project-library:main changed by tdisplay (2026-10-28 23:46) – from before it: the parts in the PCB, which keep their old copy until deleted and recreated (edakit pcb parts --write, then edakit pcb dump); the routing (edakit route all)
+WARNING scripts  project-library:main changed by tdisplay (2026-10-28 23:46) – from before it: the parts in the PCB, which keep their old copy until deleted and recreated (edakit pcb parts --write, then edakit pcb dump; after the first change of a copy edakit schematic create --save and schematic layout --save before); the routing (edakit route all)
 ```
 
 `edakit scripts stamp` records no change: it records the run of a script run by hand, also long ago – a project that
