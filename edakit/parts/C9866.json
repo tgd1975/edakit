@@ -35,7 +35,8 @@
      "what": "capacitor",
      "c_min_f": 1e-07,
      "source": "Maxim Integrated DS3231 Extremely Accurate I2C-Integrated RTC/TCXO/Crystal, 19-5170 Rev 10 (3/15), p. 9 Pin Description: VCC 'should be decoupled using a 0.1µF to 1.0µF capacitor'",
-     "why": "the datasheet gives 0.1 µF to 1.0 µF; only the lower bound is entered because REQ.value sums every capacitor to ground on the net"
+     "why": "0.1 µF to 1.0 µF; judged on the capacitors layout.near places next to the part, else on the net's sum – on a rail with more capacitance place the decoupling next to the DS3231 in layout.near",
+     "c_max_f": 1e-06
     }
    ],
    "hint": "if VCC is not used, connect it to ground"
@@ -54,7 +55,14 @@
    "pull": "up",
    "pull_ohm": 50000,
    "v_max_v": 6.0,
-   "hint": "active-low open-drain reset output and debounced pushbutton input; internal 50 kΩ (nominal) pull-up to VCC – the datasheet says no external pull-up should be connected"
+   "hint": "active-low open-drain reset output and debounced pushbutton input; internal 50 kΩ (nominal) pull-up to VCC – the datasheet says no external pull-up should be connected",
+   "needs": [
+    {
+     "what": "no_pull",
+     "dir": "up",
+     "source": "Maxim DS3231 19-5170 Rev 10 (3/15), pin description RST: 'It has an internal 50kΩ nominal value pullup resistor to VCC. No external pullup resistors should be connected.'"
+    }
+   ]
   },
   "5": {
    "name": "NC",
@@ -205,7 +213,8 @@
    "supply current ICCA 300 µA, ICCSCONV 650 µA max at 5.5 V",
    "open-drain 32kHz, INT/SQW, SDA, RST; RST internal 50 kΩ pull-up",
    "I2C address 0x68 (1101000)",
-   "VCC decoupling 0.1–1.0 µF; N.C. pins 5–12 to ground"
+   "VCC decoupling 0.1–1.0 µF; N.C. pins 5–12 to ground",
+   "2026-10-31: RST no external pull-up; VCC decoupling window 0.1–1.0 µF with its upper bound (19-5170 Rev 10 pin description, read now)"
   ],
   "open": [
    "the copy read is LCSC's file listed under C722469 (DS3231SN#, same device, other packing); the manufacturer's own URL (analog.com) refused automated download",

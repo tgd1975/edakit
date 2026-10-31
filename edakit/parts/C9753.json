@@ -41,7 +41,9 @@
   }
  },
  "values": {
-  "idd_max_a": 0.0015
+  "idd_max_a": 0.0015,
+  "behavior": "logic",
+  "icc_a": 0.0015
  },
  "limits": {
   "vdd_max_v": 6.0,
@@ -61,7 +63,8 @@
   "Maxim Integrated DS18B20 Programmable Resolution 1-Wire Digital Thermometer, 19-7487 Rev 6 (7/19), p. 2 DC Electrical Characteristics (-55…+125 °C): VDD 3.0–5.5 V (local power); VIL -0.3…0.8 V; VIH min 2.2 V (local power) / 3.0 V (parasite), max the lower of 5.5 V or VDD + 0.3 V; sink current 4.0 mA min at 0.4 V; standby 1000 nA max; active current 1.5 mA max at VDD 5 V (idd_max_a)",
   "Maxim Integrated DS18B20 Programmable Resolution 1-Wire Digital Thermometer, 19-7487 Rev 6 (7/19), p. 5 Pin Description: VDD optional, grounded for parasite power; DQ open-drain 1-Wire pin",
   "Maxim Integrated DS18B20 Programmable Resolution 1-Wire Digital Thermometer, 19-7487 Rev 6 (7/19), p. 7 Powering the DS18B20: VDD to ground in parasite mode; up to 1.5 mA during conversions; parasite power not recommended above +100 °C",
-  "Maxim Integrated DS18B20 Programmable Resolution 1-Wire Digital Thermometer, 19-7487 Rev 6 (7/19), p. 10: DQ open drain; external pull-up of approximately 5 kΩ"
+  "Maxim Integrated DS18B20 Programmable Resolution 1-Wire Digital Thermometer, 19-7487 Rev 6 (7/19), p. 10: DQ open drain; external pull-up of approximately 5 kΩ",
+  "Maxim DS18B20 19-7487 Rev 6, DC Electrical Characteristics: active current IDD max 1.5 mA at VDD 5 V (Note 9: during conversions or EEPROM writes; standby max 1000 nA) (icc_a, behaviour logic)"
  ],
  "verified": {
   "by": "Claude (datasheet check, library draft)",
@@ -72,7 +75,8 @@
    "pinout = datasheet TO-92 bottom view (1 GND, 2 DQ, 3 VDD) = EasyEDA symbol and footprint pad numbers",
    "abs. max any pin -0.5…6.0 V; operating -55…125 °C",
    "VDD 3.0–5.5 V; VIL 0.8 V, VIH 2.2 V (local power); active current max 1.5 mA",
-   "DQ open-drain, external pull-up of about 5 kΩ"
+   "DQ open-drain, external pull-up of about 5 kΩ",
+   "2026-10-31: behaviour logic with icc_a 1.5 mA – the simulation draws it at the supply pin; Maxim DS18B20 19-7487 Rev 6, DC Electrical Characteristics: active current IDD max 1.5 mA at VDD 5 V (Note 9: during conversions or EEPROM writes; standby max 1000 nA)"
   ],
   "open": [
    "the TO-92 package drawing is not in the datasheet (Maxim refers to its package site): `lead` (lead cross-section) not entered – GEO.hole stays pending",

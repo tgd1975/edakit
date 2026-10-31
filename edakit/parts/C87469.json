@@ -84,7 +84,9 @@
  "values": {
   "vih_ratio": 0.7,
   "vil_ratio": 0.3,
-  "idd_max_a": 0.001
+  "idd_max_a": 0.001,
+  "behavior": "logic",
+  "icc_a": 0.001
  },
  "limits": {
   "vdd_max_v": 6.0,
@@ -110,7 +112,8 @@
   "TI INA219 Zerø-Drift, Bidirectional Current/Power Monitor With I2C Interface, SBOS448G (August 2008, revised December 2015), p. 5 7.5: IN– input bias 20 µA || 320 kΩ (z_in_ohm, typical); digital inputs VIH 0.7 × VS … 6 V, VIL -0.3 V … 0.3 × VS",
   "TI INA219 Zerø-Drift, Bidirectional Current/Power Monitor With I2C Interface, SBOS448G (August 2008, revised December 2015), p. 6 7.5 continued: SDA VOL max 0.4 V at 3 mA; operating supply range 3–5.5 V; quiescent current max 1 mA (idd_max_a); 7.6: fSCL 0.001–0.4 MHz fast mode, 0.001–2.56 MHz high-speed mode",
   "TI INA219 Zerø-Drift, Bidirectional Current/Power Monitor With I2C Interface, SBOS448G (August 2008, revised December 2015), p. 14 Table 1: slave address 1000000 (A1 = A0 = GND) … A0 = VS +1, A1 = VS +4; SDA/SCL states give the rest",
-  "TI INA219 Zerø-Drift, Bidirectional Current/Power Monitor With I2C Interface, SBOS448G (August 2008, revised December 2015), p. 25 9.2 and p. 27 section 10: 0.1 µF ceramic bypass at VS"
+  "TI INA219 Zerø-Drift, Bidirectional Current/Power Monitor With I2C Interface, SBOS448G (August 2008, revised December 2015), p. 25 9.2 and p. 27 section 10: 0.1 µF ceramic bypass at VS",
+  "TI INA219 SBOS448G, 7.5 Electrical Characteristics: quiescent current max 1 mA (power-down 15 µA) (icc_a, behaviour logic)"
  ],
  "verified": {
   "by": "Claude (datasheet check, library draft)",
@@ -123,7 +126,8 @@
    "VS 3–5.5 V; VIH 0.7 × VS, VIL 0.3 × VS; quiescent current max 1 mA",
    "I2C address 0x40 + A0 (1) + A1 (4) for GND/VS",
    "0.1 µF supply bypass",
-   "2026-10-31: address pins with four states (low, high, sda, scl) – TI SBOS448G (revised December 2015), Table 1 INA219 Address Pins and Slave Addresses: A1, A0 each on GND, VS+, SDA or SCL give 1000000 to 1001111 – A0 adds 0/1/2/3, A1 0/4/8/12 (schema-gaps A4)"
+   "2026-10-31: address pins with four states (low, high, sda, scl) – TI SBOS448G (revised December 2015), Table 1 INA219 Address Pins and Slave Addresses: A1, A0 each on GND, VS+, SDA or SCL give 1000000 to 1001111 – A0 adds 0/1/2/3, A1 0/4/8/12 (schema-gaps A4)",
+   "2026-10-31: behaviour logic with icc_a 1 mA – the simulation draws it at the supply pin; TI INA219 SBOS448G, 7.5 Electrical Characteristics: quiescent current max 1 mA (power-down 15 µA)"
   ],
   "open": [
    "address pins tied to SDA or SCL (0x42, 0x43, 0x48…) cannot be expressed in the entry's address model",

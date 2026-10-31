@@ -34,7 +34,15 @@
   "4": {
    "name": "CP1",
    "type": "passive",
-   "hint": "charge pump: a 0.1 µF ceramic capacitor between CP1 and CP2 (class 2 dielectric, ±15 % max)"
+   "hint": "charge pump: a 0.1 µF ceramic capacitor between CP1 and CP2 (class 2 dielectric, ±15 % max)",
+   "needs": [
+    {
+     "what": "capacitor",
+     "to": "CP2",
+     "c_min_f": 1e-07,
+     "source": "Allegro A4988-DS Rev. 8 (April 5, 2022), Functional Description, Charge Pump (CP1 and CP2): 'A 0.1 µF ceramic capacitor should be connected between CP1 and CP2. In addition, a 0.1 µF ceramic capacitor is required between VCP and VBB' – Class 2 dielectric ±15 %; no voltage rating given"
+    }
+   ]
   },
   "5": {
    "name": "CP2",
@@ -44,7 +52,15 @@
   "6": {
    "name": "VCP",
    "type": "passive",
-   "hint": "reservoir: a 0.1 µF ceramic capacitor between VCP and VBB, not to GND (class 2 dielectric, ±15 % max)"
+   "hint": "reservoir: a 0.1 µF ceramic capacitor between VCP and VBB, not to GND (class 2 dielectric, ±15 % max)",
+   "needs": [
+    {
+     "what": "capacitor",
+     "to": "VBB1",
+     "c_min_f": 1e-07,
+     "source": "Allegro A4988-DS Rev. 8 (April 5, 2022), Functional Description, Charge Pump (CP1 and CP2): 'A 0.1 µF ceramic capacitor should be connected between CP1 and CP2. In addition, a 0.1 µF ceramic capacitor is required between VCP and VBB' – Class 2 dielectric ±15 %; no voltage rating given"
+    }
+   ]
   },
   "7": {
    "name": "NC",
@@ -255,7 +271,8 @@
    "electrical p. 4: VBB 8 … 35 V, VDD 3 … 5.5 V, Rds(on) 430 mΩ max, VF 1.2 V, IDD 8 mA, VIN 0.7 / 0.3 × VDD, MSx pull-downs, VREF 0 … 4 V",
    "RθJA 32 K/W (p. 5); capacitors VREG 0.22 µF (must), CP 0.1 µF, VCP 0.1 µF to VBB (pp. 9–10, p. 1)",
    "protection p. 9: shorted load and short to ground",
-   "2026-10-31: bridge outputs drive = bridge – the H-bridge outputs the datasheet of this draft describes (source above): driven high or low while enabled, off in sleep or coast; LEVELS counts them as defining their net (schema-gaps A2)"
+   "2026-10-31: bridge outputs drive = bridge – the H-bridge outputs the datasheet of this draft describes (source above): driven high or low while enabled, off in sleep or coast; LEVELS counts them as defining their net (schema-gaps A2)",
+   "2026-10-31: CP1–CP2 0.1 µF and VCP–VBB 0.1 µF (A4988-DS Rev. 8, Charge Pump, read now)"
   ],
   "open": [
    "CP1–CP2 and VCP–VBB capacitors are not to ground – pin hints only",

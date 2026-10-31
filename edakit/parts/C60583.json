@@ -78,7 +78,9 @@
  "values": {
   "vih_ratio": 0.7,
   "vil_ratio": 0.3,
-  "idd_max_a": 0.003
+  "idd_max_a": 0.003,
+  "behavior": "logic",
+  "icc_a": 0.003
  },
  "limits": {
   "vdd_max_v": 6.25,
@@ -101,7 +103,8 @@
   "Atmel AT24C32D/64D 2-Wire Serial EEPROM 32K (4096 x 8) / 64K (8192 x 8), 8717B–SEEPR–6/10, p. 4 Table 3-2 DC Characteristics (TAI -40 to +85 °C): VCC 1.7–5.5 V; ICC1 read max 1.0 mA, ICC2 write max 3.0 mA at 5.0 V (idd_max_a); VIL max 0.3 × VCC, VIH min 0.7 × VCC, VIH max VCC + 0.5 V (vin_rel_max_v; Note 1: VIL min and VIH max are reference only and not tested); VOL 0.4 V at 2.1 mA (3.0 V)",
   "Atmel AT24C32D/64D 2-Wire Serial EEPROM 32K (4096 x 8) / 64K (8192 x 8), 8717B–SEEPR–6/10, p. 5 Table 3-3 AC Characteristics: fSCL max 400 kHz (1.7 V) / 1000 kHz (5.0 V), tWR 5 ms",
   "Atmel AT24C32D/64D 2-Wire Serial EEPROM 32K (4096 x 8) / 64K (8192 x 8), 8717B–SEEPR–6/10, p. 9 section 5 and p. 10 Figure 7-1: device address 1010 A2 A1 A0 → 0x50 + A0 × 1 + A1 × 2 + A2 × 4",
-  "Atmel AT24C32D/64D 2-Wire Serial EEPROM 32K (4096 x 8) / 64K (8192 x 8), 8717B–SEEPR–6/10, p. 12 and p. 17 Ordering Code Detail: 'H' = industrial temperature range -40 °C to +85 °C (t_min_c, t_max_c), 'M' = 1.7–5.5 V, SS = JEDEC SOIC"
+  "Atmel AT24C32D/64D 2-Wire Serial EEPROM 32K (4096 x 8) / 64K (8192 x 8), 8717B–SEEPR–6/10, p. 12 and p. 17 Ordering Code Detail: 'H' = industrial temperature range -40 °C to +85 °C (t_min_c, t_max_c), 'M' = 1.7–5.5 V, SS = JEDEC SOIC",
+  "Atmel AT24C32D/64D 8717B–SEEPR–6/10, Table 3-2 DC Characteristics: ICC2 supply current, WRITE at 400 kHz, VCC 5.0 V, max 3.0 mA (ICC1 READ max 1.0 mA) – the write current taken, the larger (icc_a, behaviour logic)"
  ],
  "notes": "Library draft of the EEPROM on the common DS3231 breakout module (the RTC: library draft C9866). The chip actually fitted on a given module (Atmel/Microchip AT24C32, an older revision, or a second source) and the module's address-pin wiring are not checked here; this entry describes the AT24C32D.",
  "verified": {
@@ -115,7 +118,8 @@
    "VCC 1.7–5.5 V; VIH 0.7 × VCC, VIL 0.3 × VCC, VIH max VCC + 0.5 V",
    "supply current max 3.0 mA (write, 5 V)",
    "I2C address 0x50 + A0/A1/A2; address pins and WP biased low when floating",
-   "ordering code AT24C32D-SSHM-T listed (SOIC 8S1, 1.7–5.5 V, industrial)"
+   "ordering code AT24C32D-SSHM-T listed (SOIC 8S1, 1.7–5.5 V, industrial)",
+   "2026-10-31: behaviour logic with icc_a 3 mA – the simulation draws it at the supply pin; Atmel AT24C32D/64D 8717B–SEEPR–6/10, Table 3-2 DC Characteristics: ICC2 supply current, WRITE at 400 kHz, VCC 5.0 V, max 3.0 mA (ICC1 READ max 1.0 mA) – the write current taken, the larger"
   ],
   "open": [
    "the datasheet read is Atmel's of 2010 (LCSC copy); a newer Microchip revision may exist – microchip.com refused automated download",

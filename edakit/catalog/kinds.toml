@@ -71,6 +71,11 @@ roles = ["plus", "minus", "1", "2"]          # a capacitor without polarity: its
 limits = ["v_max_v", "vr_max_v", "i_ripple_a"]
 values = ["value_f", "dielectric", "polarized", "tolerance"]
 
+[kinds.crystal]
+roles = ["1", "2"]                           # a two-pin quartz crystal or resonator without capacitors of its own
+limits = []
+values = ["f_hz", "c_load_f"]                # its frequency; the load capacitance it is specified for
+
 [kinds.inductor]
 roles = []
 limits = ["i_max_a", "i_sat_a"]

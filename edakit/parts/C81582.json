@@ -14,7 +14,16 @@
   "1": {
    "name": "CP1",
    "type": "passive",
-   "hint": "charge pump flying capacitor: 0.01 µF rated 50 V (layout: rated for VM) between CP1 and CP2, close to the pins"
+   "hint": "charge pump flying capacitor: 0.01 µF rated 50 V (layout: rated for VM) between CP1 and CP2, close to the pins",
+   "needs": [
+    {
+     "what": "capacitor",
+     "to": "CP2",
+     "c_min_f": 1e-08,
+     "v_min_v": 50,
+     "source": "TI SLVSA73F (revised July 2014), pin functions: CP1 'Connect a 0.01-μF 50-V capacitor between CP1 and CP2', VCP 'Connect a 0.1-μF 16-V ceramic capacitor and a 1-MΩ resistor to VM'; 10.1 layout: the same, VCP to VMA"
+    }
+   ]
   },
   "2": {
    "name": "CP2",
@@ -24,7 +33,17 @@
   "3": {
    "name": "VCP",
    "type": "passive",
-   "hint": "high-side gate drive: a 0.1 µF ceramic capacitor rated 16 V and a 1 MΩ resistor from VCP to VM (VMA), not to GND"
+   "hint": "high-side gate drive: a 0.1 µF ceramic capacitor rated 16 V and a 1 MΩ resistor from VCP to VM (VMA), not to GND",
+   "needs": [
+    {
+     "what": "capacitor",
+     "to": "VMA",
+     "c_min_f": 1e-07,
+     "v_min_v": 16,
+     "source": "TI SLVSA73F (revised July 2014), pin functions: CP1 'Connect a 0.01-μF 50-V capacitor between CP1 and CP2', VCP 'Connect a 0.1-μF 16-V ceramic capacitor and a 1-MΩ resistor to VM'; 10.1 layout: the same, VCP to VMA",
+     "why": "the 1 MΩ resistor VCP–VMA the datasheet asks for as well has no need of its kind yet"
+    }
+   ]
   },
   "4": {
    "name": "VMA",
@@ -264,7 +283,8 @@
    "capacitors p. 3, 10, 11.1: 0.1 µF per VM pin, 0.01 µF CP1–CP2, 0.1 µF + 1 MΩ VCP–VM, 0.47 µF V3P3OUT",
    "OCP 8.3.7.1: shorts to ground, supply and across the winding",
    "2026-10-31: pin 29 PPAD (the PowerPAD, to GND) added from TI SLVSA73F; symbol_differs – the EasyEDA symbol has no pin for it (STRUCT.entry/declared)",
-   "2026-10-31: bridge outputs drive = bridge – the H-bridge outputs the datasheet of this draft describes (source above): driven high or low while enabled, off in sleep or coast; LEVELS counts them as defining their net (schema-gaps A2)"
+   "2026-10-31: bridge outputs drive = bridge – the H-bridge outputs the datasheet of this draft describes (source above): driven high or low while enabled, off in sleep or coast; LEVELS counts them as defining their net (schema-gaps A2)",
+   "2026-10-31: CP1–CP2 0.01 µF 50 V, VCP–VMA 0.1 µF 16 V (SLVSA73F pin functions, read now); the 1 MΩ VCP–VMA not expressible"
   ],
   "open": [
    "the PowerPAD (footprint pad 29) has no pin in the EasyEDA symbol, so the graph cannot hold it on ground; the datasheet's thermal data assume it soldered to a ground plane",
