@@ -115,5 +115,5 @@ audio = { status = "partial", parts = ["MAX98357A", "PAM8403", "INMP441"], where
 electrical-audio = { status = "built", where = "edakit/domains/audio.toml [review]" }
 electrical-cables = { status = "built", where = "edakit/domains/cables.toml [review]" }
 pcb-rf = { status = "built", where = "edakit/domains/radio.toml [review] pcb (antenna areas, GEO.keepout)" }
-pcb-hazardous = { status = "open", missing = "spacing between domains – with mains (open decision 3)" }
+pcb-hazardous = { status = "out", where = "rules-at-scale.md, decision 7 (2026-10-31): hazardous voltage recognised by LIM.hazardous, no spacing checked" }
 pcb-thermal-pads = { status = "built", where = "edakit/domains/core.toml [review] pcb (copper and vias under exposed pads)" }
