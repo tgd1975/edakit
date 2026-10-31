@@ -168,9 +168,10 @@ def coupling(d, *nets):
 
 
 def part_voltages(d):
-    """The voltages every part sees from the declared ranges of its nets: across a capacitor, reverse across a diode –
-    a TVS (values tvs) against its working voltage without the derating factor –, VCE, VDS and VGS, and on a passive
-    part the highest voltage of any of its nets."""
+    """The voltages every part sees from the declared ranges of its nets: across a capacitor – a coupling capacitor,
+    both sides on nets marked signal or instrument, the larger difference of the ranges' like ends: its sides carry
+    the same signal –, reverse across a diode – a TVS (values tvs) against its working voltage without the derating
+    factor –, VCE, VDS and VGS, and on a passive part the highest voltage of any of its nets."""
     out = []
 
     def rng(net):
@@ -179,6 +180,11 @@ def part_voltages(d):
     def across(a, b):
         (alo, ahi), (blo, bhi) = rng(a), rng(b)
         return max(abs(ahi - blo), abs(bhi - alo))
+
+    def along(a, b):
+        """Both sides moving with one signal (a coupling capacitor): top against top, bottom against bottom."""
+        (alo, ahi), (blo, bhi) = rng(a), rng(b)
+        return max(abs(ahi - bhi), abs(alo - blo))
     for des in d.comps:
         part = d.part(des)
         if not part:
@@ -187,7 +193,9 @@ def part_voltages(d):
         nets = [d.pin_net.get(f"{des}.{p}") for p in part["pins"]]
         for name, what in ACROSS.get(kind, []):
             if what == "across":
-                v, how = across(*nets[:2]), f"{des}: across its pins"
+                both = kind == "capacitor" and all(coupling(d, n) for n in nets[:2])
+                v = (along if both else across)(*nets[:2])
+                how = f"{des}: across its pins"
                 say = (lambda v, lim, f, des=des: f"{des}: up to {v:.1f} V, rated {lim:g} V (needs ×{f:g})")
             elif what == "reverse":
                 a, k = d.net_of(des, "anode"), d.net_of(des, "cathode")

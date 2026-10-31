@@ -15,9 +15,11 @@ only where sim.json names an expectation, only with the domain audio or guitar o
           "low_hz": {"max": 20},                     the lower −3 dB corner, below the passband's peak
           "high_hz": {"min": 10000, "max": 25000}    the upper −3 dB corner
         },
-        "from_hz": 1, "to_hz": 1e6, "points": 20     the sweep (optional): per decade; default a decade beyond the
-      }                                              expectation's frequencies on each side
-    }
+        "from_hz": 1, "to_hz": 1e6, "points": 20,    the sweep (optional): per decade; default a decade beyond the
+                                                     expectation's frequencies on each side
+        "info": true                                 optional: the rows are information, a missed expectation is no
+      }                                              finding – the response a project computed where no source
+    }                                                states what the design intends (as a transient run's info)
 
 The gain is 20·log10 |V(output) / V(source)|, the source being 1 V AC behind source_ohm – with a source resistance the
 gain includes what the input's load does to it. A corner is where the gain falls 3.01 dB below its largest value in
@@ -35,8 +37,8 @@ from ..engines import sim as esim
 from ..findings import Finding
 from . import netlist
 
-RUN_KEYS = {"scenario", "input", "output", "source_ohm", "source", "expect", "from_hz", "to_hz", "points", "about",
-            "note"}
+RUN_KEYS = {"scenario", "input", "output", "source_ohm", "source", "expect", "from_hz", "to_hz", "points", "info",
+            "about", "note"}
 SOURCE_KEYS = {"r_ohm", "l_h", "c_f", "about", "note"}
 EXPECT_KEYS = {"gain_db", "low_hz", "high_hz"}
 DB3 = 20 * math.log10(math.sqrt(2))         # 3.0103 dB: half the power
@@ -78,6 +80,8 @@ def runs(design, sim, names):
         if "scenario" in r and r["scenario"] not in names:
             raise ACError(f"{at}: scenario {r['scenario']!r} is no scenario of the simulation (known: "
                           f"{', '.join(names[:6])}{' …' if len(names) > 6 else ''})")
+        if not isinstance(r.get("info", False), bool):
+            raise ACError(f"{at}: info – true (the rows are information) or false, not {r['info']!r}")
         if not number(r.get("source_ohm", 0)) or r.get("source_ohm", 0) < 0:
             raise ACError(f"{at}: source_ohm, the source's own resistance in Ω (≥ 0), expected")
         if "source" in r:
@@ -219,7 +223,7 @@ def run_one(design, new, sim, name, run, sc, ngspice_tran, keep=None, models=Non
     """One run of `ac` -> (row of the scenario table, rows, findings, curve)."""
     row = {"name": f"ac {name}", "supply": sc["supply_name"], "load": sc["load_name"], "corner": sc["corner"],
            "ac": True}
-    s = esim.Scene(design, new, sim, {}, {}, f"ac {name}", False)
+    s = esim.Scene(design, new, sim, {}, {}, f"ac {name}", run.get("info", False))
     data = re.sub(r"[^\w.-]", "_", f"ac_{name}") + ".dat"
     try:
         text, _ = netlist_text(design, sim, sc, run, models or {}, data)

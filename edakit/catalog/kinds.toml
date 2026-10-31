@@ -167,8 +167,11 @@ values = ["vgs_th_v", "rds_on_max_ohm", "vsd_v_at_1a"]
 
 [kinds.switch]           # i_contact_max_a: what a closed contact carries; i_switch_max_a: what it breaks when it
                         # opens (a datasheet's switching or electrical-life rating); min_load_a: the least current a
-                        # closed contact needs to close reliably (gold contacts of a relay: "minimum applicable load")
-roles = ["common", "throw_a", "throw_b", "a", "b"]
+                        # closed contact needs to close reliably (gold contacts of a relay: "minimum applicable load");
+                        # a switch of several poles (a 3PDT footswitch): common_2, throw_a_2, throw_b_2 … – every pole
+                        # follows the one actuator
+roles = ["common", "throw_a", "throw_b", "a", "b", "common_2", "throw_a_2", "throw_b_2", "common_3", "throw_a_3",
+         "throw_b_3", "common_4", "throw_a_4", "throw_b_4"]
 limits = ["v_max_v", "i_max_a", "i_contact_max_a", "i_switch_max_a"]
 values = ["r_on_ohm", "force_n", "min_load_a"]
 

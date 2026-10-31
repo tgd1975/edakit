@@ -8,8 +8,11 @@ oscillator's output (the RP2040's XOUT) was taken as missing, a bare microcontro
 not state the core current and on-chip regulator the model reads, and a pin on a net no simulated element reaches was
 judged as nan against its relative limit. (Its fifth – no-connect crosses drawn in the order of a set – is held by
 tests/test_catalog_page.py.) The Corne v3's key matrix added two: a pressed key whose row is not scanned was judged
-starved of its minimum load, and a row could not be released while another is scanned. Parts here are test entries,
-not datasheets."""
+starved of its minimum load, and a row could not be released while another is scanned. The GuitarML pedals added
+five: a switch of three poles could not be described (roles, simulation, REQ.value/switch), a base biased by
+resistors to ground or a divider node was taken as floating, a coupling capacitor's voltage was taken from extreme to
+extreme of its nets' ranges, a second wire of one net between two boards stopped the simulation, and contacts on nets
+that run through cables were never judged by REQ.value/switch. Parts here are test entries, not datasheets."""
 
 import json
 import shutil
@@ -280,3 +283,250 @@ def test_an_output_a_load_releases_is_held_by_its_pull_up(project):
     level = {c["scenario"].split("/")[1]: float(c["actual"].split()[0]) for c in out["checks"]
              if c["item"] == "ROW" and c["id"] == "LIM.declared"}
     assert level["released"] > 3.0 and level["low"] < 0.1                 # before: released read 0 V, driven low
+
+
+# --- the guitar pedals (guitarml-ts-rat-combo, guitarml-classic-boost): a switch of three poles -----------------------
+THREE_POLE = {"lcsc": "C9000508", "mpn": "test 3PDT footswitch", "kind": "switch", "verified": {"by": "test"},
+              "pins": {"1": {"name": "1", "type": "passive", "role": "throw_a"},
+                       "2": {"name": "2", "type": "passive", "role": "common"},
+                       "3": {"name": "3", "type": "passive", "role": "throw_b"},
+                       "4": {"name": "4", "type": "passive", "role": "throw_a_2"},
+                       "5": {"name": "5", "type": "passive", "role": "common_2"},
+                       "6": {"name": "6", "type": "passive", "role": "throw_b_2"},
+                       "7": {"name": "7", "type": "passive", "role": "throw_a_3"},
+                       "8": {"name": "8", "type": "passive", "role": "common_3"},
+                       "9": {"name": "9", "type": "passive", "role": "throw_b_3"}},
+              "limits": {"i_contact_max_a": 1.0}}
+
+
+def three_pole(project, commons, throws_a, pulls):
+    """SW20, a 3PDT footswitch (FS5700 lugs: commons 2, 5, 8, throws 1/3, 4/6, 7/9): each pole's common on its net of
+    `commons`, its throw a on its net of `throws_a`, the throws b open; every net of `pulls` 10 kΩ to its level
+    (3V3 or GND). Nets that are no existing net are new, marked signal."""
+    project.save_part("C9000508", THREE_POLE)
+    project.use_library_part("C17414")
+    g = project.graph()
+    g["graph"]["components"].append({"designator": "SW20", "type": "switch", "lcsc": "C9000508",
+                                     "pins": {n: n for n in THREE_POLE["pins"]}, "nc": ["3", "6", "9"]})
+    known = {n["name"] for n in g["graph"]["nets"]}
+    for pins, nets in (("258", commons), ("147", throws_a)):
+        for pin, net in zip(pins, nets):
+            if net in known:
+                project.net(g, net)["pins"].append(f"SW20.{pin}")
+            else:
+                g["graph"]["nets"].append({"name": net, "pins": [f"SW20.{pin}"], "v": [0, 3.4], "signal": True})
+                known.add(net)
+    for i, (net, level) in enumerate(pulls.items()):
+        g["graph"]["components"].append({"designator": f"R{30 + i}", "type": "resistor", "lcsc": "C17414",
+                                         "value": "10k", "pins": {"1": "1", "2": "2"}})
+        project.net(g, net)["pins"].append(f"R{30 + i}.1")
+        project.net(g, level)["pins"].append(f"R{30 + i}.2")
+    project.save_graph(g)
+
+
+def test_a_switch_of_three_poles_has_its_roles():
+    """A 3PDT – the footswitch of nearly every pedal – names each pole's common and throws with the pole's number,
+    as a DPDT relay's second set (common_2, no_2, nc_2). Before, the roles of poles 2 and 3 were unknown – and the
+    firmware export, which reads a switch through the side it closes against, found none for them."""
+    from edakit.firmware import far_side
+    assert schema.problems(THREE_POLE) == []
+    assert far_side(None, "SW20", "common_2") == ["throw_a_2", "throw_b_2"]       # before: []
+    assert far_side(None, "SW20", "throw_b_3") == ["common_3"]
+    assert far_side(None, "SW20", "common") == ["throw_a", "throw_b"]
+
+
+@pytest.mark.skipif(not shutil.which("ngspice"), reason="ngspice not installed")
+def test_every_pole_of_a_switch_follows_the_throw(project):
+    """The load's throw moves the actuator, and with it every pole: in throw_a each common joins its throw a. Before,
+    only the first pole was switched – the second and third were open whatever the load said."""
+    from test_sim import simulate
+    three_pole(project, ["3V3", "3V3", "3V3"], ["A1", "A2", "A3"], {"A1": "GND", "A2": "GND", "A3": "GND"})
+    sim = json.loads((project.root / "hardware" / "sim.json").read_text())
+    sim["report"] = ["A1", "A2", "A3"]
+    sim["loads"] = {"on": {"gpio": {"LED_OE": 1}, "leds_on": [], "throw": {"SW20": "throw_a"}},
+                    "off": {"gpio": {"LED_OE": 1}, "leds_on": [], "throw": {"SW20": "throw_b"}}}
+    out = simulate(project, sim)
+    level = {(s["name"].split("/")[1], n): v for s in out["scenarios"] if "nets" in s for n, v in s["nets"].items()}
+    assert all(level[("on", n)] > 3.0 for n in ("A1", "A2", "A3"))          # before: A2 and A3 at 0 V
+    assert all(level[("off", n)] < 0.1 for n in ("A1", "A2", "A3"))
+
+
+@pytest.mark.skipif(not shutil.which("ngspice"), reason="ngspice not installed")
+def test_the_poles_of_a_switch_in_signal_paths_are_judged_apart(project):
+    """REQ.value/switch holds the sides of one contact to one DC level – the pop when it moves. Two poles of a 3PDT
+    sit in different signal paths, one at the supply, one at ground: each pole at one level passes. Before, all nine
+    lugs counted as one contact and the step between the poles was taken for a pop."""
+    from test_sim import simulate
+    three_pole(project, ["SIG_C1", "SIG_C2", "GND"], ["SIG_A1", "SIG_A2", "GND"],
+               {"SIG_C1": "3V3", "SIG_A1": "3V3", "SIG_C2": "GND", "SIG_A2": "GND"})
+    rows = [c for c in simulate(project)["checks"] if c["item"] == "SW20" and c["check"].startswith("DC across")]
+    assert rows and {c["result"] for c in rows} == {"pass"}                 # before: 3.3 V across "SW20", failed
+    g = project.graph()                                     # pole 2's open throw b on a signal net at 3.3 V: a pop
+    project.comp(g, "SW20")["nc"].remove("6")
+    g["graph"]["components"].append({"designator": "R40", "type": "resistor", "lcsc": "C17414", "value": "10k",
+                                     "pins": {"1": "1", "2": "2"}})
+    g["graph"]["nets"].append({"name": "SIG_B2", "pins": ["SW20.6", "R40.1"], "v": [0, 3.4], "signal": True})
+    project.net(g, "3V3")["pins"].append("R40.2")
+    project.save_graph(g)
+    rows = [c for c in simulate(project)["checks"] if c["item"] == "SW20" and c["check"].startswith("DC across")]
+    assert {c["result"] for c in rows} == {"pass", "fail"}
+    failed = [c["check"] for c in rows if c["result"] == "fail"]
+    assert failed[0].startswith("DC across SW20 in the signal path (SIG_A2")
+
+
+# --- the guitar pedals: a transistor biased by resistors, a coupling capacitor, several wires of one net --------------
+NPN = {"lcsc": "C9000509", "mpn": "test NPN", "kind": "npn", "verified": {"by": "test"},
+       "pins": {"1": {"name": "E", "type": "passive", "role": "emitter"},
+                "2": {"name": "B", "type": "passive", "role": "base"},
+                "3": {"name": "C", "type": "passive", "role": "collector"}},
+       "limits": {"vce_max_v": 30}, "values": {"hfe_min": 300, "hfe_max": 900},
+       "spice": {"model": ".model QTEST NPN(IS=8f BF=600)"}}
+
+
+def boost_stage(bias_to, typed=True):
+    """A common-emitter stage as the Classic Boost's: Q1's base on BASE, R1 from BASE to `bias_to` – VCC (with R2 to
+    GND: the boost's divider), VREF (alone: the TS's followers on a divider node), or a net nothing holds –, nothing
+    with bias_to None; the emitter through R4 to GND, the collector through R3 to VCC. With `typed` U1, a supply IC,
+    types VCC and GND by its pins; without it – the boost has no IC – no pin says what VCC and GND are."""
+    res = {"lcsc": "C9000510", "mpn": "test resistor", "kind": "resistor",
+           "pins": {"1": {"name": "1", "type": "passive"}, "2": {"name": "2", "type": "passive"}},
+           "values": {"value_ohm": 10000}}
+    reg = {"lcsc": "C9000511", "mpn": "test supply", "kind": "ic", "needs": {"decoupling": False},
+           "pins": {"1": {"name": "OUT", "type": "power_output"}, "2": {"name": "GND", "type": "ground"}}}
+    comps = [{"designator": "Q1", "type": "transistor", "lcsc": "C9000509", "pins": {"1": "E", "2": "B", "3": "C"}}]
+    nets = {"VCC": [], "GND": [], "BASE": ["Q1.2"], "EMIT": ["Q1.1"], "COL": ["Q1.3"]}
+    if typed:
+        comps.append({"designator": "U1", "type": "ic", "lcsc": "C9000511", "pins": {"1": "OUT", "2": "GND"}})
+        nets["VCC"].append("U1.1")
+        nets["GND"].append("U1.2")
+
+    def r(des, a, b):
+        comps.append({"designator": des, "type": "resistor", "lcsc": "C9000510", "pins": {"1": "1", "2": "2"}})
+        nets.setdefault(a, []).append(f"{des}.1")
+        nets.setdefault(b, []).append(f"{des}.2")
+    r("R3", "COL", "VCC")
+    r("R4", "EMIT", "GND")
+    if bias_to == "VREF":                            # a divider node: R5/R6 from VCC to GND, as the TS's VREF
+        r("R5", "VCC", "VREF")
+        r("R6", "VREF", "GND")
+    if bias_to == "FLOAT":                           # a net only a capacitor reaches: nothing holds it
+        comps.append({"designator": "C1", "type": "capacitor", "lcsc": "C9000512", "pins": {"1": "1", "2": "2"}})
+        nets["FLOAT"] = ["C1.1"]
+        nets["GND"].append("C1.2")
+    if bias_to:
+        r("R1", "BASE", bias_to)
+    if bias_to == "VCC":
+        r("R2", "BASE", "GND")
+    cap = {"lcsc": "C9000512", "mpn": "test capacitor", "kind": "capacitor",
+           "pins": {"1": {"name": "1", "type": "passive"}, "2": {"name": "2", "type": "passive"}},
+           "values": {"value_f": 1e-7}}
+    graph = {"name": "t", "version": "1", "ground": "GND", "components": comps,
+             "nets": [{"name": n, "pins": p, "v": [0, 9]} for n, p in nets.items()]}
+    return Design.from_data(graph, {"C9000509": NPN, "C9000510": res, "C9000511": reg, "C9000512": cap})
+
+
+def base_findings(d):
+    from edakit.engines.levels import control_pins
+    return [f.text for f in control_pins(d)]
+
+
+def test_a_base_biased_by_resistors_to_the_rails_is_defined():
+    """The Classic Boost's 2N5088: 430 kΩ from VCC and 43 kΩ to ground hold its base, the emitter sits on 390 Ω. No
+    firmware, no resistor from base to emitter – and nothing undefined. Before: LVL.undefined, ground was no rail."""
+    assert base_findings(boost_stage("VCC", typed=False)) == []    # before: found – no pin typed GND or VCC
+    assert base_findings(boost_stage("VREF")) == []        # the TS's followers: 510 kΩ to a divider node; before: found
+    assert base_findings(boost_stage("FLOAT")) == [         # a resistor to a net nothing holds defines nothing
+        "Q1: no base-emitter resistor – state undefined while the firmware is not running"]
+    assert base_findings(boost_stage(None)) == [
+        "Q1: no base-emitter resistor – state undefined while the firmware is not running"]
+
+
+def coupling(minus_net, minus_v, plus_v=(0, 8.5), signal=True):
+    """C1 (16 V, polarized) from SIG_A (plus, `plus_v`) to `minus_net` (`minus_v`) – both nets signal if `signal`,
+    only SIG_A with signal "one"."""
+    cap = {"lcsc": "C9000513", "mpn": "test electrolytic", "kind": "capacitor",
+           "pins": {"1": {"name": "+", "type": "passive", "role": "plus"},
+                    "2": {"name": "-", "type": "passive", "role": "minus"}},
+           "values": {"value_f": 4.7e-6, "polarized": True}, "limits": {"v_max_v": 16, "vr_max_v": 0}}
+    res = {"lcsc": "C9000510", "mpn": "test resistor", "kind": "resistor",
+           "pins": {"1": {"name": "1", "type": "passive"}, "2": {"name": "2", "type": "passive"}},
+           "values": {"value_ohm": 10000}}
+    comps = [{"designator": "C1", "type": "capacitor", "lcsc": "C9000513", "pins": {"1": "+", "2": "-"}},
+             {"designator": "R1", "type": "resistor", "lcsc": "C9000510", "pins": {"1": "1", "2": "2"}},
+             {"designator": "R2", "type": "resistor", "lcsc": "C9000510", "pins": {"1": "1", "2": "2"}}]
+    nets = [{"name": "SIG_A", "pins": ["C1.1", "R1.1"], "v": list(plus_v)},
+            {"name": minus_net, "pins": ["C1.2", "R2.1"], "v": list(minus_v)},
+            {"name": "GND", "pins": ["R1.2", "R2.2"], "v": [0, 0]}]
+    if signal:
+        for n in nets[:1 if signal == "one" else 2]:
+            n["signal"] = True
+    return Design.from_data({"name": "t", "version": "1", "ground": "GND", "components": comps, "nets": nets},
+                            {"C9000513": cap, "C9000510": res})
+
+
+def cap_volts(d):
+    from edakit.engines import quantities
+    return {q.name: round(q.hi, 3) for q in quantities.part_voltages(d) if q.place == "C1"}
+
+
+def test_a_coupling_capacitor_carries_the_signal_on_both_sides():
+    """The Rat's C10 (4.7 µF, 16 V): its plus at the LM301A's output, biased at half the supply (declared 0 … 8.5 V),
+    its minus behind it at ground (±4.5 V of signal). The signal moves both sides together – the DC across it is the
+    difference of the two levels, 4.5 V at the extremes, not 8.5 V − (−4.5 V) = 13 V. Before: LIM.v, 13 V × 1.5 above
+    16 V. A side that is no signal net – a filter capacitor to ground, a supply – is taken from extreme to extreme."""
+    assert cap_volts(coupling("SIG_B", (-4.5, 4.5)))["v"] == 4.5                        # before: 13.0
+    assert cap_volts(coupling("SIG_B", (-4.5, 4.5), signal=False))["v"] == 13.0        # not a signal path
+    assert cap_volts(coupling("SIG_B", (-4.5, 4.5), signal="one"))["v"] == 13.0        # one side does not follow
+    assert cap_volts(coupling("SIG_B", (0, 0)))["v"] == 8.5                             # to a fixed level: as before
+
+
+@pytest.mark.skipif(not shutil.which("ngspice"), reason="ngspice not installed")
+def test_several_wires_of_one_net_between_two_boards():
+    """A pedal's ground reaches the hand-wired parts on several wires – the DC jack's, each jack's sleeve, the LED
+    pole of each footswitch – each a cable from a pad of the board. The reference circuit 'cables' (a remote button on
+    W20, its ground on pin 2) gets a second wire of GND, W21 from J22 to J23. Before: the simulation stopped – the
+    first cable had moved the board's GND pins onto a node of their own, the second found its two ends on different
+    nets. Now each wire is a resistor between the same two nodes, in parallel."""
+    import tempfile
+
+    from reference import add, wire, write_one
+    from test_sim import simulate
+    with tempfile.TemporaryDirectory() as t:
+        p = write_one(f"{t}/cables", "cables")
+        out = simulate(p)
+        assert not [c for c in out["checks"] if c["id"] == "SIM.converge" and c["result"] == "fail"]
+        g = p.graph()
+        add(g, "J22", "connector", "C131337", {"1": "1", "2": "2"}, bom=False, board="main", nc=["2"])
+        add(g, "J23", "connector", "C131337", {"1": "1", "2": "2"}, bom=False, board="remote", nc=["2"])
+        wire(g, "GND", "J22.1", "J23.1")
+        g["graph"]["cables"].append({"name": "W21", "from": "J22", "to": "J23", "pins": {"1": "1"},
+                                     "length_m": 1, "awg": 26})
+        p.save_graph(g)
+        out = simulate(p)
+        assert not [c for c in out["checks"] if c["id"] == "SIM.converge" and c["result"] == "fail"]   # before: failed
+        assert all(s.get("status") != "error" for s in out["scenarios"])
+
+
+@pytest.mark.skipif(not shutil.which("ngspice"), reason="ngspice not installed")
+def test_a_contact_on_a_net_that_crosses_a_cable_is_still_in_the_signal_path():
+    """The combo's order switch and footswitches sit on nets that run through cables to the pads (IN, TS_SEND …): the
+    simulation gives each net a node per board ('IN__main'), and REQ.value/switch looked those names up among the
+    signal nets – not found, the contacts were never judged. The reference 'cables': SW20 (the remote button, open)
+    between REMOTE (through W20, 10 kΩ to 3V3) and SIG_R (10 kΩ to GND), both marked signal – 3.3 V across it."""
+    import tempfile
+
+    from reference import add, wire, write_one
+    from test_sim import simulate
+    with tempfile.TemporaryDirectory() as t:
+        p = write_one(f"{t}/cables", "cables")
+        g = p.graph()
+        project_net = next(n for n in g["graph"]["nets"] if n["name"] == "GND")
+        project_net["pins"].remove("SW20.3")
+        add(g, "R22", "resistor", "C17414", {"1": "1", "2": "2"}, value="10k", board="remote", bom=False)
+        wire(g, "SIG_R", "SW20.3", "R22.1", v=(0, 3.4), signal=True)
+        wire(g, "GND", "R22.2")
+        next(n for n in g["graph"]["nets"] if n["name"] == "REMOTE")["signal"] = True
+        p.save_graph(g)
+        rows = [c for c in simulate(p)["checks"] if c["item"] == "SW20" and c["check"].startswith("DC across")]
+        assert rows and {c["result"] for c in rows} == {"fail"}             # before: no rows – never judged
+        assert "REMOTE 3.3 V" in rows[0]["check"] and "SIG_R 0 V" in rows[0]["check"]
