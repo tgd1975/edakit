@@ -4,14 +4,17 @@ Status 2026-10-31: concept, asked for by the owner after the review of
 [circuit-language.md](../done/circuit-language.md) deferred the language of that sketch. It answers four questions:
 whether a fitting language exists already, what a language of edakit's own would have to be able to do to be worth
 building, on which basis – SysML v2, KerML, an existing circuit language, or something else –, and when it would
-bring value. Nothing is decided; the decisions at the end are open, the recommended answer first. The sources say
-what was read and from where. Reviewed the same day against main at `bd227e3` and corrected: the examples in
-today's form of the graph (`accept`, `locks`), the numbers of the bell and led-bar re-measured, what exists already
-named as existing, and the questions the review found open – where assertions run, what `block add --set` writes,
-the names of internal nets, four projects and one hook – put where they belong: the requirements, the bell's model,
-the toolchain, the open decisions. Against the yardstick: a language changes nothing about what is text – its source
-and its resolved graph are text in the repository –; what it changes is where repetition, parameters and variants
-are written once instead of many times.
+bring value. It takes a position on each, with the alternative it sets aside where that matters; what remains the
+owner's is whether and when to build it, in "When it brings value". The sources say what was read and from where.
+Reviewed the same day against main at `bd227e3` and corrected: the examples in today's form of the graph (`accept`,
+`locks`), the numbers of the bell and led-bar re-measured, what exists already named as existing, the questions the
+review found open – where assertions run, what `block add --set` writes, the names of internal nets, four projects
+and one hook – answered where they belong, and the list of decisions that closed the concept folded into the text on
+the owner's word. On the owner's questions the same day: a project's source over several files with one namespace
+(item 9), the requirements on SysML v2's model as well ("The basis"), and a language server with a VS Code
+extension as stage 4. Against the yardstick: a language changes nothing about what is text – its source and its
+resolved graph are text in the repository –; what it changes is where repetition, parameters and variants are
+written once instead of many times.
 
 ## The short answer
 
@@ -58,7 +61,8 @@ edakit's projects that is four things.
 A fifth, smaller: a usage can name the requirement it satisfies and the decision it follows, `satisfies R-3`,
 `decision D-8`, as attributes instead of free text in `notes`. DOCS.ref resolves N-, R- and M- numbers today and
 leaves decisions unresolved by design; for `decision` it would learn the decisions file, which `[release]
-publish.decisions` names already.
+publish.decisions` names already. The requirements themselves follow the circuit onto SysML v2's model, in "The
+basis" below.
 
 What a flat form keeps: everything else. TOML with names (decided 2026-10-31) is the flat, explicit form; a language is
 the composed, parametric one. Both end in the same resolved graph, so a project can start flat and move when its
@@ -131,8 +135,9 @@ ergonomics, copies no text and no grammar.
 
 1. **Definitions and usages.** A definition has ports, parameters with defaults, internal parts and nets, `covers`,
    `optional` parts and notes – today's block JSON, written in the language. edakit's library and a project's own. A
-   usage names the definition, binds its ports to nets, sets parameters, and names the designators and parts entries
-   of the internal parts, so that the BOM and the board see what they see today.
+   usage names the definition, sets parameters and binds `inner = outer`: a port to a net, an internal part to a
+   designator with its parts entry and value, an internal net to a name, so that the BOM and the board see what they
+   see today; the attributes after a part's binding belong to it until the next binding.
 2. **Pins by name or role, nets first-class.** As decided for the shared part: `U1.PD6`, `LED5.anode`, a net with
    its attributes, n-ary. Where an entry's name and role of a pin disagree – the bell's `C2895549` names pin 1 `C`
    with the role anode –, the word rule of L.1 decides, the language inherits it. Internal nets of a usage are named
@@ -152,32 +157,48 @@ ergonomics, copies no text and no grammar.
    stays a function from files to graph, the engines keep reading the graph only, and `asserts` is the one key the
    language adds to the graph. A net may take its range from a port, `v @in`, as the block JSON writes `"v": "@in"`
    today. No part picking: the designer chooses the part; STRUCT.identity holds the component to its entry, the
-   assertion holds the entry's value to the derivation.
-5. **Variants as differences.** A variant file names its base – the main file or another variant – and redefines
-   parts, nets, parameters and texts by designator and name, takes pins off a net and sets attributes back;
-   everything else is inherited. Its resolved graph is complete and is what the hash and the sign-offs bind to. What
-   the bell's variants need of it is measured below.
-6. **References.** `satisfies R-3`, `decision D-8` as attributes DOCS.ref resolves.
+   assertion holds the entry's value to the derivation. Without expressions the language would be smaller, and the
+   derivation would stay in Claude's head – the third of the four values above.
+5. **Variants as differences.** A variant file names its base – the main file or another variant, a chain resolved
+   in order, the path relative to the project's `edakit.toml` as every path in it – and redefines parts, nets,
+   parameters and texts by designator and name, takes pins off a net and sets attributes back; everything else is
+   inherited, and a variant never names what its base does not. Its resolved graph is complete and is what the hash
+   and the sign-offs bind to, so a change of the base voids a variant's sign-offs only where it reaches the variant's
+   circuit. Complete files per variant, as today, would need nothing new and cost four times every change. What the
+   bell's variants need of it is measured below.
+6. **References.** `satisfies R-3`, `decision D-8` as attributes: DOCS.ref resolves requirement and sign-off numbers
+   today and would learn decisions (the fifth value above); the requirements themselves, written in the notation on
+   SysML v2's model, are the subsection "Requirements on the same basis".
 7. **Attributes pass through.** Every key of the graph's schema is written as `key value` on a part, a net or the
    graph and reaches the resolved graph unchanged. The language has syntax only for composition; a new key of the
    schema never needs a syntax decision. What has to stand still is the shape of the graph – components, nets,
    cables, layout, locks, accept, purpose –, not its keys.
 8. **Determinism and a resolved graph.** The compiler is a function from the sources to the resolved graph of today's
-   format, with pin numbers and the full pin maps, in a stable order; no input but the files, no output but the
-   graph. `edakit graph json --write` writes it, `--check` in the pre-commit hook reports drift, as decided for the
-   TOML form. A project's committed resolved graph pins its circuit against a change of edakit's block library: the
-   library may move, the check says so, the user decides. Two readers, two forms: the model reads and edits the
-   source, which is short because definitions, loops and variants expand only when compiled; the code – engines,
-   simulation, hash, scripts – reads the resolved graph, which stays as large as today's JSON. Reviewers read both,
-   the source for the intent and the diff of the resolved graph for the exact pins. Performance is not the reason:
-   `edakit check` takes under a second on the reference project's 65 KB, and compiling a bell takes milliseconds. The
-   reasons are that the engines do not change, that the hash and the sign-offs bind to a flat, deterministic form, that
-   a rewire through a parts entry or a library change shows as pin numbers in a diff, that project scripts keep reading
-   JSON, and that a fresh clone needs no compiler.
-9. **Designators explicit.** A usage names the designators of its parts; the tool that writes a usage (`block add`)
-   allocates them once, as it does today. Nothing is renumbered by the compiler.
-10. **Errors with file and line, a formatter, a grammar for highlighting.** Preconditions, not costs: the sketch's
-    parser found every error with its line; the rest is a day each.
+   format plus `asserts` (item 4), with pin numbers and the full pin maps, in a stable order; no input but the files,
+   no output but the graph. `edakit graph json --write` writes it, `--check` in the pre-commit hook reports drift, as
+   decided for the TOML form. A project's committed resolved graph pins its circuit against a change of edakit's
+   block library: the library may move, the check says so, the user decides. Two readers, two forms: the model reads
+   and edits the source, which is short because definitions, loops and variants expand only when compiled; the code
+   – engines, simulation, hash, scripts – reads the resolved graph, which stays as large as today's JSON. Reviewers
+   read both, the source for the intent and the diff of the resolved graph for the exact pins. Performance is not
+   the reason: `edakit check` takes under a second on the reference project's 65 KB, and compiling a bell takes
+   milliseconds. The reasons are that the engines do not change, that the hash and the sign-offs bind to a flat,
+   deterministic form, that a rewire through a parts entry or a library change shows as pin numbers in a diff, that
+   project scripts keep reading JSON, and that a fresh clone needs no compiler.
+9. **Several files, one namespace.** A project's source may be one file or several: the main file includes the
+   others – `include leds.circuit`, the path relative to `edakit.toml` as every path in it –, a variant names its
+   base, definitions come from the project's files first and then from edakit's library, and requirements may sit in
+   a file of their own and name the circuit's parts, nets and usages. The compiler reads the set as one model: one
+   namespace per project, a designator, a net, a definition or an ID named twice is an error with both files and
+   lines, every name resolved before anything is expanded. The variant chain is this already; the bell's model below
+   uses it, the tree would split its 30 LEDs from its supply.
+10. **Designators explicit.** A usage names the designators of its parts; the tool that writes a usage (`block add`)
+   allocates them once, as it does today. Nothing is renumbered by the compiler: one that allocated them would need
+   its previous output, and a fresh clone the committed one, for shorter usages – the BOM and the board want them
+   stable.
+11. **Errors with file and line, a formatter, a grammar for highlighting.** Preconditions, not costs: the sketch's
+    parser found every error with its line; the rest is a day each, and the formatter and the editor grammar are
+    deliverables of stage 1, not later (the toolchain below).
 
 Not in it: behavior (SPICE models stay in the parts entries), layout (stays in the board files; a definition may carry
 layout intent for its instance – `near`, loops – as the hand-over does), part picking, conditionals, loops beyond
@@ -294,7 +315,9 @@ dozen lines each, written out in the model below. The esp32 variant shows what e
    nets stand. The map is what the firmware relies on (`buttons.ino` names D6, D8, D11), and the locks keyed by the
    alias, `lock U1.led1 LED_G1`, are the same in every variant. Decision 6 of circuit-language.md declined an alias
    in the parts entry for the TOML form; this one lives in the project's source and describes the project's use of
-   the module, not the module.
+   the module, not the module. Without the map a variant with another module rewrites every net and lock on it, as
+   esp32 does today, 70 of 83 statements; locks keyed by the pin instead of the alias would differ in every variant
+   for the same meaning.
 2. **A parameter for the logic level.** `param vlogic = 0..5.5 V` in main and `net LED_G1 vlogic U1.led1 R4.1`;
    the esp32 variant sets `vlogic = 0..3.4 V` once instead of in thirteen nets.
 3. **Pins taken off a net.** `net +5V without S1.a S2.a` beside `net +3V3 vlogic U1.3V3 S1.a S2.a`: a variant
@@ -345,7 +368,8 @@ syntax of the sketch's kind; nothing in it is a conditional.
 ## The bell's variants, modeled
 
 How the four configurations would be written, a sketch on the bell at `059162a` in today's form of the graph. Five
-source files replace four graphs; the four resolved graphs stay, generated:
+source files replace four graphs – a larger project splits its main file further with `include`, item 9; the bell
+has no need –; the four resolved graphs stay, generated:
 
 ```text
 hardware/graph.circuit                   main: the Nano with its alias map, the LED step, five usages, the nets
@@ -485,8 +509,8 @@ The semantics of SysML v2 map onto edakit's needs above the netlist and not onto
 | a block: ports, parameters, parts, nets, `covers`, `optional` | `part def` with port usages and attributes as parameters |
 | a usage of a block | a `part` usage typed by the block's definition, its ports connected |
 | a variant project | `variation` and `variant`, the selection by redefinition `:>>` with `=` |
-| a need or requirement N-, R- | `requirement def` and usage, `satisfy … by …` |
-| a gate row, a sign-off M- | a verification case, `verify` |
+| a requirement R- | `requirement` usage with `subject` and `require constraint`, `satisfy … by …`; a need N- the `#original` of a `#derivation` (below) |
+| a gate row, a sign-off M- | a `verification case` whose objective `verify`s the requirement, its `verdict` |
 | a decision D- | documentation (`doc`); no relationship of the standard |
 | `accept`, the hash, the release | nothing |
 | a quantity with its unit | ISQ and SI, `10 [mA]` |
@@ -608,6 +632,56 @@ package Bell {
 }
 ```
 
+### Requirements on the same basis
+
+The owner's rule reaches the requirements: if the circuit takes SysML v2's model, so do the needs and requirements
+that `hardware/requirements.toml` holds today – `[[need]]` N- in someone's words, `[[requirement]]` R- as one
+testable sentence with `from` (needs, decisions, a standard, a sign-off), `binding` must, should or may, `verify` as
+rows of the gate protocol, a sign-off M-, a project script or an acceptance step, and a status draft, accepted or
+dropped; DOCS.ref, DOCS.need, DOCS.evidence and DOCS.draft check it, the gate evaluates the evidence, the circuit
+hash takes the file byte for byte ([requirements.md](../done/requirements.md); the file covers the circuit only, its
+decision 3). SysML v2 has the model for exactly this, in its Systems Library and one domain library:
+
+| edakit today | SysML v2 |
+| --- | --- |
+| `[[requirement]]` R-, one testable sentence | a `requirement` usage of a `requirement def`; the sentence its `doc` |
+| what it is about – implicit today: the circuit, or the places a `rows` pattern names | `subject` – the Systems Library's `RequirementCheck` has `subject subj : Anything[1]` –: a net, a part, a usage |
+| the condition – today the sentence, checked by the codes the pattern names | `require constraint { … }`, an expression over the subject's attributes; `assume constraint` for the operating condition |
+| `from = ["N-1"]`, a requirement that follows from a need | the Requirement Derivation library: a `#derivation` connection with the ends `#original` and `#derive` – `original`, `derive` and `derivation` are its semantic metadata |
+| `[[need]]` N-, `who` | a requirement at the top of a derivation chain, with the owner as `stakeholder` (`RequirementCheck` has `stakeholders : Part[0..*]`); a `concern` the requirements `frame` where a need is a wish without a check |
+| `from = ["D-8"]`, a standard | `doc` and metadata, as for the graph's decisions |
+| what satisfies it – nothing names it today | `satisfy requirement R3 by step1`: a usage, a part, a net of the circuit |
+| `verify = [{ rows = "LIM.v *" }]`, `{ signoff = "M-1" }`, `{ script = "…" }`, `{ accept = "…" }` | a `verification case` whose `objective` names `verify requirement R3` and whose `return verdict : VerdictKind` – pass, fail, inconclusive, error – is the engine's finding, the human's sign-off, the script's exit or the acceptance step |
+| `binding` must, should, may | an attribute of edakit's requirement def; SysML v2 has no binding of its own |
+| `status` draft, accepted, dropped | an attribute of edakit's requirement def, as the gate reads it |
+
+So the model is SysML v2's – requirement, subject, constraint, derivation, satisfy, verification case, verdict – and
+the notation edakit's, as for the circuit:
+
+```text
+need N-1 "The countdown is visible across the room." who owner
+requirement R-3 from N-1 must "Every countdown LED carries 2 to 15 mA while its step is on."
+  subject led                                       # every usage of led; one requirement usage per subject
+  require (in.v.max - D.vf_min_v) / R.value within 2 mA .. 15 mA
+  verify rows "LIM.i *"  verify rows "SIM.state *"
+requirement R-7 from D-8 should "A USB power bank stays on: the circuit draws at least 100 mA."
+  subject +5V
+  verify signoff M-1
+```
+
+What that changes against today: a requirement names its subject, so DOCS.ref resolves one more kind of reference
+and `graph show` lists the requirements on a net or part; a requirement with a `require` is an assertion with a
+subject – compiled into `asserts` like a definition's, evaluated by DEF –, so a requirement whose sentence is a
+quantity with a limit is checked by the engine directly, and one that is not by the gate's rows as today;
+`satisfies R-3` on a usage (the fifth value above) is `satisfy` from the other end; the derivation from a need to a
+requirement is a relation with a standard's name instead of a list. What stays edakit's: the codes as evidence, the
+sign-offs with their hash, the acceptance test on the built board, draft and accepted, the file covering the circuit
+only. The form: the same notation, in `hardware/requirements.circuit` or in the circuit's files, compiled to the
+resolved requirements that `edakit req`, the DOCS codes and the gate read today – TOML stays the flat form here too
+–, and exported with `edakit graph sysml` as requirement usages with `satisfy` and `verify`, so that a SysML tool
+shows which part satisfies which requirement and how it is verified. Regulatory requirements stay what the gate
+protocol says of them: support, not legal advice.
+
 `.ato` is the right model for the syntax – units with tolerances, assertions, arrays, chains – and the wrong basis:
 adopting the syntax without the compiler is a reimplementation of a syntax that was itself rewritten in 2026,
 adopting the compiler binds edakit to a picker-centric, KiCad-only tool chain on Python 3.14 whose documentation and
@@ -646,13 +720,19 @@ Not before, and not without, these:
    language, three runs each with Sonnet (maker-coverage FT-24): the language at least as reliably edited.
 6. **A budget of size L** for the first stage, and the readiness to maintain a construct, not a key, per change.
 
+Whether and when to build it is the owner's decision, due when the triggers hold; then stage 1 first, so that the
+value is measured before the cost is paid. The alternatives: a prototype now on the bell and led-bar, as the sketch
+was – a decision on evidence sooner, but a prototype that waits for the TOML form to have a target –; or not at all,
+which is TOML with names, `block add` with parameters as flags and `graph show` for slices.
+
 The stages, each useful on its own:
 
 - **Stage 1: edakit's block library in the language.** The 26 blocks as definitions with parameters, compiled to
   the block JSON `block add` reads today; `block add --set i=10mA` passes a parameter: the definition's assertion
   is checked against the block's part, and where it fails the command prints the derived value and the nearest value
   of the series and asks – it never writes a value no entry has, the designer chooses. Projects change nothing; the
-  compiler, the expressions and the assertions are built and tested on edakit's own data. Size L.
+  compiler, the expressions and the assertions are built and tested on edakit's own data. Size L. A project first
+  would show the value earlier and build the compiler on one project's needs.
 - **Stage 2: projects.** `hardware/graph.circuit` beside or instead of `graph.toml`, with `use`, `for`, variants and
   assertions; `edakit graph json` compiles either; `edakit graph show` (built 2026-10-31, FT-23) reads the resolved
   graph as it reads `graph.json` today and changes nothing. The bell and the tree as the first users, each at the
@@ -660,7 +740,17 @@ The stages, each useful on its own:
 - **Stage 3: the exports.** `edakit graph sysml`, the model SysML tools draw and whose requirements and variants
   they follow, and `edakit graph kerml`, the kernel view as the interchange JSON of clause 10.4 – both a mapping,
   since the notation is defined on the libraries –, and the conformance test with a standard parser once one is
-  usable from Python.
+  usable from Python; the requirements go with it, as requirement usages with `satisfy` and `verify`. Never
+  exporting would save the mapping and give up the interoperability and the conformance test; the standard's
+  notation as the source is weighed in "The basis".
+- **Stage 4: a language server and a VS Code extension.** For the human in the editor: the reader's errors as they
+  are typed, go to definition – a pin word to its entry, a usage to its definition, a net to its pins –, hover with
+  the entry's limits and the net's range, completion of pin words, designators and codes, all over the reader and
+  resolver the CLI uses; the extension brings the grammar of stage 1, the server's client, the formatter on save,
+  `graph json --write` and `--check` as tasks, `graph show` for the element under the cursor, and the findings of
+  `edakit check` at the statements they come from, through a source map the compiler writes beside the resolved
+  graph – a net's LIM.v at its `net` line, an assertion's DEF.assert at its `assert`. The model needs none of it –
+  it edits through the CLI and `graph show` –, so it comes last. Size M for the server, M for the extension.
 
 The value, estimated on the owner's projects: the bell's main file from 59 statements in the sketch's language (the
 translator's output; the hand-written `bell.circuit` has 72 lines of content) to about 50 – the bell has little
@@ -676,8 +766,8 @@ plans: S a day, M a few days, L a week or more.
 
 | Piece | What it does | Exists today | Size | Stage |
 | --- | --- | --- | --- | --- |
-| Reader | the statements with their lines – `graph`, `part`, `net`, `cable`, `layout`, `accept`, `description`, `purpose`, `param`, `def`, `use`, `for`, `assert`, `variant`, `alias` –, every error with file and line, shapes checked before any check runs | the prototype's `Reader`, 231 lines, for the sketch's statements in the old form | M | 1 |
-| Resolver and compiler | names resolved across files – a variant chain in order, definitions from edakit's library and the project –, usages and loops expanded, redefinitions applied, pin words to numbers through the entries (L.1, L.2), `asserts` written, a stable order: a function from files to the resolved graph | the prototype's writer to JSON; L.5's `edakit graph json` for TOML, once built | L | 1 for definitions, 2 for projects |
+| Reader | the statements with their lines – `graph`, `part`, `net`, `cable`, `layout`, `accept`, `description`, `purpose`, `include`, `param`, `def`, `use`, `for`, `assert`, `variant`, `alias`, `need`, `requirement`, `satisfy`, `verify` –, every error with file and line, shapes checked before any check runs | the prototype's `Reader`, 231 lines, for the sketch's statements in the old form | M | 1 |
+| Resolver and compiler | names resolved across files – `include`d files, a variant chain in order, definitions from the project's files and then edakit's library, requirements files – into one namespace per project; usages and loops expanded, redefinitions applied, pin words to numbers through the entries (L.1, L.2), `asserts` and the resolved requirements written, a stable order: a function from files to the resolved graph | the prototype's writer to JSON; L.5's `edakit graph json` for TOML, once built | L | 1 for definitions, 2 for projects |
 | Expressions | quantities with units, ranges and tolerances, arithmetic with the units checked, the comparisons of `assert` | `QUANTITY` and `MULTIPLIERS` in circuit.py for `330Ω`, `4k7`, `100nF`; `v_range` for nets; `UNITS` in engines/quantities.py | M | 1 |
 | Engine DEF | `DEF.assert`, `DEF.port`, `DEF.param` from the graph's `asserts`, with the catalog's severities and the domains' grades | the engines' frame, the catalog's code table | S to M | 1 |
 | `edakit graph json` for `.circuit` | `--write` the resolved graph, `--check` the drift, per project; the pre-commit hook of L.5 runs it | `edakit graph show`; `edakit firmware --check` as the pattern; the bell has no hook today | S on L.5 | 2 |
@@ -688,14 +778,16 @@ plans: S a day, M a few days, L a week or more.
 | Editor grammar | a TextMate grammar for VS Code and a Pygments lexer for the documentation site; GitHub highlights no language of one's own, a `.gitattributes` mapping lends another language's colours at best | – | S | 1 |
 | Tests and evals | reader and compiler tests; golden files source → resolved graph for the bell's four files and led-bar; the round trip compile → convert → compile; determinism, two runs identical; `evals/add-led`, a repetition task and a variant task in the language, three runs each with Sonnet (FT-24) | `evals/add-led` in JSON; the prototype's round trip | M | 1 and 2 |
 | Handbook, reference, skills | a chapter on the language, the reference of statements, the skills circuit-design and hardware-change that write it, the README | the chapters of the TOML form (L.8), once written | M | 1 and 2 |
-| Exports | `edakit graph sysml` and `edakit graph kerml` from the resolved graph and the source's definitions, the conformance test with a standard parser | – | M | 3 |
+| Exports | `edakit graph sysml` and `edakit graph kerml` from the resolved graph, the source's definitions and the requirements, the conformance test with a standard parser | – | M | 3 |
+| Language server | diagnostics as typed, go to definition, hover, completion, over the reader and resolver | – ; `pygls` as the frame in Python | M | 4 |
+| VS Code extension | the grammar, the server's client, format on save, `graph json --write` and `--check` as tasks, `graph show` for the element under the cursor, the findings of `edakit check` at their statements through the compiler's source map | – ; the source map is a small addition to the compiler | M | 4 |
 
-Not built: a language server – the model edits through the CLI's errors and `graph show`, a human through the
-formatter –, an editor extension beyond the grammar, a debugger for expressions, part picking, any I/O from the
-language. Stage 1 is the reader, the compiler for definitions, the expressions, DEF, the formatter, the grammar, the
-library, the chapter and the tests: size L, as said. Stage 2 adds the project constructs – `use`, `for`, variants,
-`alias`, `param` –, `graph json` and the hook for `.circuit`, the converter, `block add` writing usages, the skills
-and the evals: M to L. Stage 3 the exports: M.
+Not built: a debugger for expressions, part picking, any I/O from the language, clients for editors other than VS
+Code – the grammar and the server serve any editor, the client is written once. Stage 1 is the reader, the compiler
+for definitions, the expressions, DEF, the formatter, the grammar, the library, the chapter and the tests: size L, as
+said. Stage 2 adds the project constructs – `use`, `for`, variants, `alias`, `param`, `include`, the requirements
+statements –, `graph json` and the hook for `.circuit`, the converter, `block add` writing usages, the skills and the
+evals: M to L. Stage 3 the exports: M. Stage 4 the language server and the extension: M and M.
 
 ## Costs and risks
 
@@ -717,78 +809,6 @@ and the evals: M to L. Stage 3 the exports: M.
   grammar, handbook chapter and tests. Stage 2 adds `use`, `for`, variants, the project commands and the skills.
 - **The regulatory review** reads the resolved graph's `purpose` as today; nothing of it moves into a definition. It
   stays support, not legal advice.
-
-## Open decisions
-
-Each a real choice, the recommended answer first, with its trade-off; none is due before the triggers above hold.
-
-1. **The basis.** The owner's rule of 2026-10-31: SysML v2's concepts where they fit, KerML underneath where they do
-   not, the surface syntax of neither.
-   - *A notation of edakit's own, defined on SysML v2's library where it fits and on KerML's kernel where it does
-     not, with `.ato`'s ergonomics, compiled to the resolved graph and exported to SysML v2 and KerML* (recommended):
-     a standard's meaning for every construct and a conformance test, a small notation tools can edit; a parser, a
-     library and a chapter to build, a syntax to learn.
-   - *KerML's textual notation as the source, with an electrical library*: no notation of edakit's own; `struct`,
-     `feature` and `connector` at SysML v2's length, a notation models have barely seen, a conforming reader many
-     times the sketch's.
-   - *SysML v2's textual notation with an electrical library*: a standard, requirements and variants built in;
-     verbose, no electrical semantics, alpha tooling, a notation models barely know.
-   - *A subset compatible with `.ato`*: some familiarity and an editor extension for free; edakit's nets, entries and
-     keys are not `.ato`, so the files would not be valid `.ato` anyway, and the compatibility binds to a moving target.
-   - *A restricted Python API*: no syntax to invent, the form models write best; a program as the source that only a
-     model can edit.
-2. **The first use.**
-   - *edakit's block library, with parameters* (recommended): the compiler is built on edakit's own data, projects
-     change nothing, `block add` gains parameters.
-   - *A project first*: the value shows earlier; the compiler is built on one project's needs.
-3. **Designators.**
-   - *Explicit in the source, allocated by the tool that writes a usage* (recommended): deterministic, the BOM and the
-     board stable; a usage carries its designators.
-   - *Allocated by the compiler and kept in the resolved graph*: shorter usages; the compiler needs the previous
-     output, and a fresh clone needs the committed one.
-4. **Expressions.**
-   - *Arithmetic on quantities with units and ranges, `assert` as findings of DEF* (recommended): derivations become
-     text; an evaluator with units to build.
-   - *Values only, no expressions*: smaller; the derivation stays in Claude's head.
-5. **Variants.**
-   - *A variant file that redefines the main file, hashed as its resolved graph* (recommended): a few lines per
-     variant, sign-offs that survive what does not reach them; a resolution across files.
-   - *Complete files, as today*: nothing new; four times every change.
-6. **The export.**
-   - *The SysML v2 export as the model tools read, the KerML interchange JSON (clause 10.4) as the kernel view, as
-     stage 3, with the conformance test* (recommended): the standard gets a role without binding the source, and
-     the export is what the specification asks of a KerML-based language; a mapping to maintain.
-   - *Never*: nothing to maintain; no interoperability, no conformance test.
-   - *As the source*: decision 1, second or third option.
-7. **Building it at all.**
-   - *When the triggers hold, stage 1 first* (recommended): the value is measured before the cost is paid.
-   - *A prototype now, on the bell and led-bar, as the sketch was*: a decision on evidence sooner; a prototype that
-     waits for the TOML form to have a target.
-   - *Not at all*: TOML with names, `block add` with parameters as flags, `graph show`, which exists, for slices.
-8. **Module pins by function** (from the bell's esp32 variant).
-   - *An alias map on the module in the project's source, replaced by a variant* (recommended): nets and locks say
-     `U1.led1` and stand across variants; the map is the firmware's; one construct more.
-   - *Nets name the module's pins*: nothing new; a variant with another module rewrites every net and lock on it.
-9. **Locks in a variant.**
-   - *Keyed by the alias, inherited* (recommended): the same eight lines in every variant of the bell; the check
-     keeps its meaning, since the map and the nets are separate statements.
-   - *Keyed by the pin, rewritten per variant*: as today.
-10. **Parts folders of variants.**
-    - *Lookup variant first, then the base, `[project] parts` a list of folders; the hash over the entries the
-      resolved graph uses* (recommended): a part added for one board reaches no other board's hash – D-15's reason
-      for separate folders –, and copies become a choice; a precedence the requirements list does not have today.
-    - *A complete folder per variant, as D-15 has it*: nothing changes; every variant carries copies of every entry.
-
-Decided by Claude, for confirmation when the round comes: the compile target is the resolved graph of today's format
-plus one key, `asserts`, which the compiler fills and the engine DEF evaluates in `edakit check`; attributes pass
-through; nets stay first-class and n-ary; `for` only over ranges, with `{n}` in names; no conditionals and no I/O;
-in a usage `inner = outer` binds a port to a net, an internal part to a designator and an internal net to a name,
-and the attributes after a part's binding belong to it until the next binding; an internal net without a binding is
-named `<INSTANCE>_<NET>`; `block add --set` checks and proposes, it never writes a value no entry has; a formatter
-and an editor grammar are deliverables of stage 1, not later; the language is optional per project, named by
-`[project] graph`; a variant may have a variant as its base, resolved in order; a variant redefines, removes from
-and adds to what its base names, and never names anything else; paths in a variant are relative to the project's
-`edakit.toml`, as every path in it.
 
 ## Sources
 
@@ -839,8 +859,14 @@ A](https://github.com/Systems-Modeling/SysML-v2-Release/blob/master/sysml/src/ex
   (`satisfy … by`, `verify`, `60 [kg]`); the OMG's
   [adoption announcement](https://www.omg.org/news/releases/pr2025/07-21-25.htm);
   [Syster](https://github.com/jade-codes/syster); the [resource list](https://github.com/daltskin/SysML-v2-Resources)
-  naming Syside Automator and the ANTLR grammars. The OMG pages and atopile's site resolve through the session's
-  proxy only; the fetch tool of the background agents does not use it.
+  naming Syside Automator and the ANTLR grammars; on 2026-10-31 also the library files
+  [Requirements.sysml](https://github.com/Systems-Modeling/SysML-v2-Release/blob/master/sysml.library/Systems%20Library/Requirements.sysml)
+  (`RequirementCheck` with `subject`, `actors`, `stakeholders`),
+  [VerificationCases.sysml](https://github.com/Systems-Modeling/SysML-v2-Release/blob/master/sysml.library/Systems%20Library/VerificationCases.sysml)
+  (`verdict`, `VerdictKind`, `PassIf`) and
+  [RequirementDerivation.sysml](https://github.com/Systems-Modeling/SysML-v2-Release/blob/master/sysml.library/Domain%20Libraries/Requirement%20Derivation/RequirementDerivation.sysml)
+  (`original`, `derive`, `derivation` as semantic metadata). The OMG pages and atopile's site resolve through the
+  session's proxy only; the fetch tool of the background agents does not use it.
 - The Christmas bell at `059162a`, read-only: `docs/decisions.md` (D-11 to D-17), `variants/README.md`, the four
   `edakit.toml`, `hardware/graph.json`, `sim.json` and `signoff.json` of main and the variants, `src/firmware`,
   `variants/esp32/firmware`; the prototype's round trip run on all four configurations.
