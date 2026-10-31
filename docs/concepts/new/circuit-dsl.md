@@ -13,8 +13,8 @@ repetition, parameters and variants are written once instead of many times.
 
 No existing language fits as edakit's source. The ones that have the right shape are bound to their own compilers:
 atopile's `.ato` has modules, units with tolerances, assertions and arrays, but its nets are implicit, its parts come
-from a picker instead of a parts entry with roles and limits, it targets KiCad only, and its open future is
-uncertain. SysML v2 has the right semantics for the layer above the circuit – definitions and usages, redefinition,
+from a picker instead of a parts entry with roles and limits, it targets KiCad only, its language was rewritten in
+2026, and its documentation and workspace now live in a browser editor behind a sign-in. SysML v2 has the right semantics for the layer above the circuit – definitions and usages, redefinition,
 variation, requirements with satisfy and verify, units –, but no electrical semantics at all, a verbose notation and
 open tooling in its infancy. The Python libraries (SKiDL, PCBDL, faebryk, circuit-synth) make the circuit a program,
 which edakit's tools cannot edit. The rest is proprietary, dormant or one person's experiment.
@@ -61,7 +61,7 @@ Read from this session on 2026-10-31; the sources at the end say what was reacha
 
 | Language | Kind | What it has that edakit would want | What it lacks or what binds it | State |
 | --- | --- | --- | --- | --- |
-| atopile `.ato` | declarative language with its compiler | modules, `new`, arrays `new LED[2]`, units with tolerances `10kohm +/- 20%`, `assert … within`, `~` and `~>` chains, `for` (behind a pragma), `lcsc_id`, package constraints, parametric part picking, an ERC | nets are implicit in connections and carry no attributes (`v`, `fn`, `accept`); parts come from a picker, not from an entry with roles, limits and sources; KiCad only; no simulation; Python 3.14 only, a native Zig core since 0.14, an ANTLR parser; the compiler is the language | MIT. The public repository's last tag is from February 2026; 0.15.x is on PyPI by users' reports; a contributor wrote in August 2026 that native Windows support is replaced by app.atopile.io from 0.16 on; a third party quotes a CLI message that 0.15.8 is the last CLI release – not confirmed by atopile in what was reachable |
+| atopile `.ato` | declarative language with its compiler, a browser workspace since 2026 | modules, units with tolerances (`.resistance &= 330ohm +/- 5%`), chains (`.power.hv ~> .r ~> .led ~> .power.lv`), arrays, assertions, `for` (behind a pragma in 0.14), traits, `lcsc_id`, package constraints, parametric part picking, an ERC | nets are implicit in connections and carry no attributes (`v`, `fn`, `accept`); parts come from a picker, not from an entry with roles, limits and sources; KiCad only; no simulation; the language was rewritten for 0.14 ("the new graph language": `.name: Type { .field &= value }`, `@type`, `@trait`, `::` paths) and the site calls it pre-release, "the language and tools move fast"; Python 3.14 only, a native Zig core, an ANTLR parser; the compiler is the language | MIT for the repository, whose last tag is from February 2026 (0.14.1004). In October 2026 the docs site says the docs "live in the editor now" and the workspace "runs that editor right in your browser" at app.atopile.io, behind a sign-in, as is packages.atopile.io; the blog names 0.16.15 (October 2026) with agentic layout and routing. Whether the CLI stays released is not said in what was readable |
 | faebryk | Python library, atopile's former core | modules as classes, interfaces, `connect`, parameters by `merge`, a picker | a program, not data; a C++ core; Python 3.12 only | archived December 2024, merged into atopile |
 | SKiDL | Python library | parts, nets, hierarchical subcircuits, ERC, netlists for KiCad 5–10 and SPICE; models know Python | a program; no units, no constraints beyond ERC, no net attributes; KiCad symbols as the part model | 3.0.0 in October 2026; one maintainer since 2016 |
 | PCBDL | Python library (Google) | parts and nets with `<<`, a schematic as SVG | no hierarchy, no ERC, an Allegro netlist | Apache 2.0; archived January 2023 |
@@ -342,41 +342,64 @@ model on raw KerML structures they do not. The owner would find KerML the fittin
 | `satisfies R-3`, `decision D-8`, `accept` | `satisfy` and `verify` from SysML v2's Requirements library; `accept` and decisions as metadata |
 | units, ranges, tolerances | SysML v2's Quantities and Units: `ISQElectromagnetism` has voltage and capacitance, `ISQBase` the electric current, `SI` the units |
 
-**What the standard provides, verified in the OMG's release repository** (the specification's own text was not
-reachable from this session; the sources say what was read):
+**What the standard says about languages built on it** – KerML 1.0, formal/26-03-01, published September 2025,
+its Scope clause: "the full KerML language can be considered to be simply a syntactic extension of the core, which is
+semantically extended using library models. By intent, this approach can also be used to build on KerML to create
+more specific modeling languages. Application specific modeling languages can be built on KerML by extending the
+KerML abstract syntax, specializing its semantics, with concrete syntaxes similar to or entirely different from
+KerML's." And: "KerML can provide the kernel for a family of syntactically diverse but semantically integrated
+modeling languages." Clause 10 repeats it for interchange: "KerML is intended to be used as the basis for building
+other modeling languages", and a KerML-based language names a file extension for its own textual notation, while
+"it shall always be possible to use JSON format as a model interchange file format" (10.2, 10.4). Conformance
+(Clause 2) comes in four kinds – abstract syntax, concrete syntax, semantic, model interchange –, and "every
+conformant KerML modeling tool shall demonstrate at least Abstract Syntax Conformance and Model Interchange
+Conformance"; the concrete syntax is optional. So a notation of edakit's own over KerML's abstract syntax, with the
+JSON interchange as its export, is what the specification itself describes, not a bending of it.
+
+**What the standard provides, verified in the specification and the OMG's release repository:**
 
 - The textual grammar: classifiers `classifier`, `class`, `struct`, `datatype`, `assoc`, `assoc struct`,
-  `behavior`, `function`; features with typing `:`, values `=` and `:=`, `default`; `:>` for specialization of
-  types and subsetting of features, `:>>` for redefinition; multiplicity `[n]` and `[lo..hi]`, `ordered`,
-  `nonunique`; connectors binary (`connector c : T from a to b`) and n-ary (`connector c : T (a, b, c)`), `binding`
-  and `succession` binary; invariants `inv`; expressions with `if … ? … else …`, arithmetic, comparisons, `and`,
-  `or`, `not`, `implies`, no `in`; `metadata` and `@`, prefix metadata `#`; `doc` and `comment`; `alias … for …`;
-  `public`, `private`, `protected`; `import X::*`; `standard library package`.
-- The libraries: the Kernel Semantic Library (Base, Links, Objects, Occurrences, Metaobjects, Performances, …),
-  the Kernel Function Library and the Kernel Data Type Library for KerML; the Systems Library of SysML v2 (Parts,
+  `behavior`, `function`; features with typing `:`, values `=` (bound) and `:=` (initial), `default`; `:>` for
+  specialization of types and subsetting of features, `:>>` for redefinition; multiplicity `[n]` and `[lo..hi]`,
+  `ordered`, `nonunique`; connectors binary (`connector c : T from a to b`) and n-ary (`connector c : T (a, b, c)`,
+  the ends matched in order to the association's ends, 7.4.6.2), `binding` and `succession` binary; invariants
+  `inv { … }`, `inv false` for a negated one (7.4.8.5); expressions with `if … ? … else …`, arithmetic, comparisons,
+  `and`, `or`, `not`, `implies`, no `in`; `metadata` and `@`, prefix metadata `#`; `doc` and `comment`; `alias … for
+  …`; `public`, `private`, `protected`; `import X::*`; `standard library package`.
+- The meaning of a redefinition (7.3.4.5): it "requires the values of the redefining feature and the redefined
+  feature to be the same on each instance", so "any restrictions on the values of the redefining feature relative to
+  the redefined feature, such as typing or multiplicity, also apply to the values of the redefined feature, and vice
+  versa"; the redefined feature is "not inherited" but "replaced by the redefining feature". That is what a variant's
+  `part LED5 …` means. A `default` value (7.4.11) applies "when an instance of the featuring type is constructed, if
+  no other explicit values are given" – a block's parameter default.
+- The libraries (Clause 9): the Kernel Semantic Library – Base, Links, Occurrences, Objects, Performances,
+  Transfers, Clocks, Observation, Triggers, SpatialFrames, Metaobjects and the performance packages –, the Data
+  Type Library and the Function Library for KerML; the Systems Library of SysML v2 (Parts,
   Ports, Connections, Interfaces, Items, Attributes, Constraints, Calculations, Requirements, Cases,
   VerificationCases, Metadata, …); the Domain Libraries (Quantities and Units with ISQ, SI and
   ISQElectromagnetism, Metadata, Geometry, Analysis, Cause and Effect, Requirement Derivation). KerML itself has
   nothing on units, requirements or variation; those are SysML v2's.
-- **The mechanism for a domain language**: semantic metadata. `SemanticMetadata` in `Metaobjects.kerml` "requires
-  its single annotatedType to directly or indirectly specialize a baseType that models the semantics for the
-  annotatedType"; a `metadata def Net :> SemanticMetadata { :>> baseType = … }` gives a user-defined keyword `#net`,
-  and every element marked with it specializes the base type. This is how the OMG intends a domain such as circuits
-  to sit on KerML or SysML v2 without changing either; the Systems Modeling Community names as its purpose to
-  "provide support for building other modeling languages and domain-specific extensions based on KerML and/or
-  SysML", and Seidewitz describes SysML v2 itself as such an extension of the kernel, with users defining
-  domain-specific languages the same way.
+- **The mechanism for a domain inside SysML v2's syntax**: semantic metadata (7.4.13). A metaclass that
+  specializes `Metaobjects::SemanticMetadata` names a `baseType`, and "each type annotated by such semantic metadata
+  has an implicit specialization added" to it – a classifier subclassifies it, a feature subsets it. In SysML v2 that
+  is the user-defined keyword: `#net` before a declaration. It is the way to add a domain such as circuits to SysML
+  v2's own notation without changing the language; with a notation of edakit's own it is not needed, the library's
+  types are specialized directly. The Systems Modeling Community names as its purpose to "provide support for
+  building other modeling languages and domain-specific extensions based on KerML and/or SysML", and Seidewitz
+  describes SysML v2 itself as such an extension of the kernel, with users defining domain-specific languages the
+  same way.
 - **What exists for electronics**: the quantities and units, nothing structural – no library of components, pins
   or nets, and none of the 22 example models is electrical. Circuits were a worked example in SysML v1's SysPhS,
-  the extension for physical interaction and signal-flow simulation (version 1.1, 2021, an electric circuit in its
-  Annex A, translated to Modelica and Simscape); a successor for SysML v2 was not found.
+  the extension for physical interaction and signal-flow simulation (version 1.1, May 2021, formal/21-05-03; "a
+  platform-independent SysML library of simulation elements", translations to Modelica and Simulink/Simscape, an
+  electric circuit as Annex A.2); a successor for SysML v2 was not found.
 
 What that gives edakit: the meaning of redefinition, of inheritance down a variant chain, of multiplicity and of an
 invariant from a standard instead of an invention; the export `edakit graph kerml` and `edakit graph sysml` as a
 mapping, not a translation; a standard parser – Syster, the pilot implementation – as a conformance test once one is
 usable from Python; and the handbook's vocabulary. What it does not give: the electrical domain – net, pin, role,
 LCSC number, board, order – which is edakit's library in any case; and nothing at run time, since the engines read
-the resolved graph. Open until the specification's text is read: its own words on scope and conformance.
+the resolved graph.
 
 Why KerML's own textual notation is not the source: it is more abstract than SysML v2's – `struct`, `feature`,
 `connector` for `part def`, `part`, `connection` – at the same length, two to three times the notation of the
@@ -399,10 +422,10 @@ package Bell {
 }
 ```
 
-`.ato` is the right model for the syntax – units with tolerances, `assert … within`, arrays, chains, `lcsc_id` – and
-the wrong basis: adopting the syntax without the compiler is a reimplementation, adopting the compiler binds edakit
-to a picker-centric, KiCad-only tool chain on Python 3.14 whose open branch may be frozen. A notation modeled on it,
-not compatible with it.
+`.ato` is the right model for the syntax – units with tolerances, assertions, arrays, chains – and the wrong basis:
+adopting the syntax without the compiler is a reimplementation of a syntax that was itself rewritten in 2026,
+adopting the compiler binds edakit to a picker-centric, KiCad-only tool chain on Python 3.14 whose documentation and
+workspace have moved into a browser editor behind a sign-in. A notation modeled on it, not compatible with it.
 
 Python is the fallback, not the basis: if the evals show that a model edits the notation worse than a program, a
 restricted Python API with the resolved graph as the artifact is the way with the least syntax. The price is that only
@@ -504,8 +527,9 @@ Each a real choice, the recommended answer first, with its trade-off; none is du
      variant, sign-offs that survive what does not reach them; a resolution across files.
    - *Complete files, as today*: nothing new; four times every change.
 6. **The export.**
-   - *KerML, and SysML v2 where its libraries are needed, as stage 3, with the conformance test* (recommended): the
-     standard gets a role without binding the source; a mapping to maintain.
+   - *KerML's JSON interchange (clause 10.4) and its textual notation, SysML v2 where its libraries are needed, as
+     stage 3, with the conformance test* (recommended): the standard gets a role without binding the source, and
+     the export is what the specification asks of a KerML-based language; a mapping to maintain.
    - *Never*: nothing to maintain; no interoperability, no conformance test.
    - *As the source*: decision 1, second or third option.
 7. **Building it at all.**
@@ -544,16 +568,22 @@ Read on 2026-10-31 from this session:
   [discussions](https://github.com/atopile/atopile/discussions)); the issues
   [#1821](https://github.com/atopile/atopile/issues/1821) and [#1827](https://github.com/atopile/atopile/issues/1827)
   with the contributor's statement on app.atopile.io; the third-party issue
-  [Marwichmisi/NIA-PCB#3](https://github.com/Marwichmisi/NIA-PCB/issues/3) quoting the CLI message. Not reachable:
-  docs.atopile.io, atopile.io, PyPI (a challenge page).
+  [Marwichmisi/NIA-PCB#3](https://github.com/Marwichmisi/NIA-PCB/issues/3) quoting the CLI message;
+  [docs.atopile.io](https://docs.atopile.io) (the landing page with the new syntax and "the docs live in the editor
+  now") and the [blog feed](https://atopile.io/blog/feed.xml) (0.16.15), read through the session's proxy; the
+  language reference itself sits inside the editor behind the sign-in and was not read. PyPI answered with a challenge
+  page.
 - faebryk: [the repository](https://github.com/atopile/faebryk) (README, releases, `examples/minimal_led.py`).
 - SKiDL: [PyPI 3.0.0](https://pypi.org/project/skidl/3.0.0/). PCBDL: [the repository](https://github.com/google/pcbdl).
   codeyourpcb: [the repository](https://github.com/szymontex/codeyourpcb) and its
   [SYNTAX.md](https://github.com/szymontex/codeyourpcb/blob/main/docs/SYNTAX.md). tscircuit:
   [tsci export](https://docs.tscircuit.com/command-line/tsci-export). Not reachable: circuit-synth's documentation,
   JITX's site, the PHDL paper at OSTI.
-- KerML, from the OMG's release repository on GitHub (www.omg.org was not reachable from this session, so the
-  specification's own text was not read): the
+- KerML: [About KerML 1.0](https://www.omg.org/spec/KerML/1.0/About-KerML) and the
+  [specification](https://www.omg.org/spec/KerML/1.0/PDF) (formal/26-03-01; Clauses 1, 2, 6.1, 7.3.4.5, 7.4.4,
+  7.4.6, 7.4.8.5, 7.4.11, 7.4.13, 9, 10 read), [About SysML 2.0](https://www.omg.org/spec/SysML/2.0/About-SysML)
+  (formal/26-03-02 and 26-03-03) and [About SysPhS 1.1](https://www.omg.org/spec/SysPhS/1.1/About-SysPhS), read
+  through the session's proxy once the owner had allowed the host; from the OMG's release repository on GitHub the
   [KerML textual grammar](https://github.com/Systems-Modeling/SysML-v2-Release/blob/master/bnf/KerML-textual-bnf.kebnf),
   [Metaobjects.kerml](https://github.com/Systems-Modeling/SysML-v2-Release/blob/master/sysml.library/Kernel%20Libraries/Kernel%20Semantic%20Library/Metaobjects.kerml)
   (`SemanticMetadata`), the [Kernel Libraries](https://github.com/Systems-Modeling/SysML-v2-Release/tree/master/sysml.library/Kernel%20Libraries),
@@ -563,7 +593,7 @@ Read on 2026-10-31 from this session:
   the [KerML examples](https://github.com/Systems-Modeling/SysML-v2-Release/tree/master/kerml/src/examples); the
   README's statement of the Systems Modeling Community's purpose; Seidewitz,
   [On a Metasemantic Protocol for Modeling Language Extension](https://www.scitepress.org/Papers/2020/91816/91816.pdf)
-  (2020); the OMG's [SysPhS 1.1](https://www.omg.org/spec/SysPhS/1.1) as named by the search results, not read.
+  (2020).
 - SysML v2: [the release repository](https://github.com/Systems-Modeling/SysML-v2-Release) with the
   [textual grammar](https://github.com/Systems-Modeling/SysML-v2-Release/blob/master/bnf/SysML-textual-bnf.kebnf),
   the [variability
@@ -573,8 +603,8 @@ A](https://github.com/Systems-Modeling/SysML-v2-Release/blob/master/sysml/src/ex
   (`satisfy … by`, `verify`, `60 [kg]`); the OMG's
   [adoption announcement](https://www.omg.org/news/releases/pr2025/07-21-25.htm);
   [Syster](https://github.com/jade-codes/syster); the [resource list](https://github.com/daltskin/SysML-v2-Resources)
-  naming Syside Automator and the ANTLR grammars. Not reachable: the OMG specification pages, also after the owner allowed them – the
-  session's network rules are fixed when it starts.
+  naming Syside Automator and the ANTLR grammars. The OMG pages and atopile's site resolve through the session's proxy only; the
+  fetch tool of the background agents does not use it.
 - The Christmas bell at `059162a`, read-only: `docs/decisions.md` (D-11 to D-17), `variants/README.md`, the four
   `edakit.toml`, `hardware/graph.json`, `sim.json` and `signoff.json` of main and the variants, `src/firmware`,
   `variants/esp32/firmware`; the prototype's round trip run on all four configurations.
