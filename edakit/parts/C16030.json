@@ -76,18 +76,21 @@
   "vih_ratio": 0.7,
   "vil_ratio": 0.3,
   "behavior": "logic",
-  "icc_a": 0.0015
+  "icc_a": 0.0015,
+  "spi_modes": [
+   0
+  ]
  },
  "limits": {
   "vdd_max_v": 6,
   "vdd_op_min_v": 3.0,
   "vdd_op_max_v": 5.5,
   "vin_rel_max_v": 0.3,
-  "f_max_hz": 4300000.0,
   "p_max_w": 0.471,
   "tj_max_c": 150,
   "t_min_c": -20,
-  "t_max_c": 85
+  "t_max_c": 85,
+  "f_sck_max_hz": 4300000.0
  },
  "hints": [
   "T− must be grounded (p. 4, p. 5); the MAX31855 is the opposite – its T− must never be on GND",
@@ -104,7 +107,9 @@
   "applications information, p. 5: T− grounded for open-thermocouple detection; 0.1 µF bypass",
   "mpn, manufacturer, footprint, jlc_class, pin numbers and names: EasyEDA library data of C16030 via edakit part import, read 2026-10-31",
   "stock: LCSC 18 942 pcs, JLCPCB assembly 21 572 pcs (2026-10-31)",
-  "Maxim MAX6675 data sheet 19-2235, Rev 2 (4/14), p. 2 electrical characteristics: ICC 0.7 mA typ., 1.5 mA max. – icc_a = 1.5 mA (behaviour logic); SO, a tri-state output, rests released"
+  "Maxim MAX6675 data sheet 19-2235, Rev 2 (4/14), p. 2 electrical characteristics: ICC 0.7 mA typ., 1.5 mA max. – icc_a = 1.5 mA (behaviour logic); SO, a tri-state output, rests released",
+  "p. 3: VOH VCC − 0.4 V, VOL 0.4 V at 1.6 mA; fSCL ≤ 4.3 MHz (f_sck_max_hz); CSB rise to output disable ≤ 100 ns – SO released (drive tristate)",
+  "spi_modes [0]: figure 1b serial interface timing, p. 6 (read from the graph): SCK low while CS falls (tCSS: CS fall to SCK rise), D15 on SO tDV after CS falls, every further bit tDO after SCK falls – valid at the rising edge, CPOL 0, CPHA 0; with SCK idling high its first falling edge would shift D15 out unread – Maxim MAX6675 19-2235 Rev 2, read 2026-10-31"
  ],
  "compliance": {
   "rohs": true,
@@ -120,14 +125,17 @@
    "abs. max VCC 6 V, pins VCC + 0.3 V, SO 50 mA, TJ 150 °C, 471 mW at 70 °C, TA −20 … +85 °C (p. 2)",
    "VCC 3.0–5.5 V, ICC ≤ 1.5 mA, VIL 0.3 VCC, VIH 0.7 VCC (p. 2); fSCL ≤ 4.3 MHz (p. 3)",
    "T− to ground (p. 4, p. 5); 0.1 µF bypass (p. 4)",
-   "2026-10-31: behaviour logic with icc_a 1.5 mA from 19-2235 Rev 2, p. 2 (ICC max, read now)"
+   "2026-10-31: behaviour logic with icc_a 1.5 mA from 19-2235 Rev 2, p. 2 (ICC max, read now)",
+   "2026-10-31: fSCL 4.3 MHz (p. 3) as f_sck_max_hz; SPI mode 0 from figure 1b (maker-coverage FT-16)"
   ],
   "open": [
    "the data sheet gives no θJA: the derating of 5.88 mW/°C would correspond to 170 °C/W, not entered",
    "the data sheet text does not print the ordering code MAX6675ISA+T (ordering table: MAX6675ISA, −20 … +85 °C, 8 SO); package and pinout compared instead",
    "SO current 50 mA (absolute maximum): no per-pin current field",
    "analog.com was not reachable: whether ADI has a revision newer than Rev 2 (4/14) was not checked",
-   "VCC bypass: 0.1 µF is the named value, read as a minimum"
+   "VCC bypass: 0.1 µF is the named value, read as a minimum",
+   "no behaviour model: the supply current (≤ 1.5 mA) is not drawn in the simulation",
+   "injection current (i_inject_max_a, maker-coverage CK-5): none in the datasheet – Maxim MAX6675 19-2235 Rev 2: absolute maximum ratings without a current into the pins (read 2026-10-31); LIM.v/inject holds the pin's voltage alone"
   ]
  }
 }

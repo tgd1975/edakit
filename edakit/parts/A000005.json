@@ -397,7 +397,8 @@
    "core current (i_core_a): the ATmega328P table gives 9 mA max at 8 MHz/5 V only; FT232RL and LEDs add to it – the simulation's default applies",
    "3V3 output current (FT232RL 3V3OUT) not read",
    "MFFSMF050 polyfuse and SS1P3L diode ratings not read",
-   "the user manual's pinout tables 5.1/5.2 contradict the schematic (pin 1 '+3V3'/'5V USB Power', pin 12 twice) – the schematic is followed"
+   "the user manual's pinout tables 5.1/5.2 contradict the schematic (pin 1 '+3V3'/'5V USB Power', pin 12 twice) – the schematic is followed",
+   "injection current (i_inject_max_a, maker-coverage CK-5): none in the datasheet – Microchip DS40002061B (ATmega328P), 29.1/30.1: pins −0.5 V … VCC + 0.5 V and 40 mA DC per I/O pin – no current through the pins' protection (read 2026-10-31); LIM.v/inject holds the pin's voltage alone"
   ]
  },
  "i_group_max_a": {

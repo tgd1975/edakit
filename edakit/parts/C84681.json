@@ -203,7 +203,9 @@
    "lot-dependent behaviour (5 V tolerant I/O and −40 … 85 °C for lots starting with 4, OUT# as DTR#): not expressible per lot",
    "built-in pull resistors are given as currents (IUP, IDN), not as resistances: R232 pull 'down' without pull_ohm; RXD's controllable pulls not entered",
    "English 3C and Chinese 3D differ (lot-4 temperature row, baud error 1.2 % vs ±1.8 % at −25 … 75 °C); WCH's site could not be read to tell which is current",
-   "the MODEM outputs (DTR#, RTS#, OUT#) rest low in the simulation (behaviour logic's default for a push-pull output): the host application sets them (5.1) – a component's states gives another level"
+   "the MODEM outputs (DTR#, RTS#, OUT#) rest low in the simulation (behaviour logic's default for a push-pull output): the host application sets them (5.1) – a component's states gives another level",
+   "no behaviour model: the supply current is not drawn in the simulation",
+   "injection current (i_inject_max_a, maker-coverage CK-5): none in the datasheet – WCH CH340DS1 3C: input currents of the pins with pull-up or pull-down only; section 7 asks for an anti-backflow circuit where the MCU side is powered separately (read 2026-10-31); LIM.v/inject holds the pin's voltage alone"
   ]
  },
  "configs": {

@@ -138,7 +138,9 @@
    "the data sheet text does not print the ordering code with '+T'; the ordering table lists MAX485ESA",
    "analog.com was not reachable: whether ADI has a revision newer than Rev 9 (9/09) was not checked",
    "drive tristate on A and B makes an RS-485 bus without bias resistors LVL.undefined/open_drain – the owner decides whether that warning is wanted (it is the fail-safe-bias question of CK-17)",
-   "the driver is not modelled: A and B rest off in behaviour logic, the bus current the driver delivers into the termination is not simulated"
+   "the driver is not modelled: A and B rest off in behaviour logic, the bus current the driver delivers into the termination is not simulated",
+   "no behaviour model: supply and driver currents are not simulated",
+   "injection current (i_inject_max_a, maker-coverage CK-5): none in the datasheet – Maxim MAX485 19-0122 Rev 9: logic input current ±2 µA (leakage) only (read 2026-10-31); LIM.v/inject holds the pin's voltage alone"
   ]
  }
 }

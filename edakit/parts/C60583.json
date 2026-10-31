@@ -52,13 +52,15 @@
    "type": "bidirectional",
    "role": "sda",
    "drive": "open_drain",
-   "v_max_v": 7.0
+   "v_max_v": 7.0,
+   "c_in_f": 8e-12
   },
   "6": {
    "name": "SCL",
    "type": "input",
    "role": "scl",
-   "v_max_v": 7.0
+   "v_max_v": 7.0,
+   "c_in_f": 6e-12
   },
   "7": {
    "name": "WP",
@@ -89,7 +91,8 @@
   "vin_rel_max_v": 0.5,
   "i_out_max_a": 0.005,
   "t_min_c": -40,
-  "t_max_c": 85
+  "t_max_c": 85,
+  "f_scl_max_hz": 400000.0
  },
  "hints": [
   "SCL up to 400 kHz at 1.7 V and 1 MHz at 5.0 V (Table 3-3)",
@@ -104,7 +107,8 @@
   "Atmel AT24C32D/64D 2-Wire Serial EEPROM 32K (4096 x 8) / 64K (8192 x 8), 8717B–SEEPR–6/10, p. 5 Table 3-3 AC Characteristics: fSCL max 400 kHz (1.7 V) / 1000 kHz (5.0 V), tWR 5 ms",
   "Atmel AT24C32D/64D 2-Wire Serial EEPROM 32K (4096 x 8) / 64K (8192 x 8), 8717B–SEEPR–6/10, p. 9 section 5 and p. 10 Figure 7-1: device address 1010 A2 A1 A0 → 0x50 + A0 × 1 + A1 × 2 + A2 × 4",
   "Atmel AT24C32D/64D 2-Wire Serial EEPROM 32K (4096 x 8) / 64K (8192 x 8), 8717B–SEEPR–6/10, p. 12 and p. 17 Ordering Code Detail: 'H' = industrial temperature range -40 °C to +85 °C (t_min_c, t_max_c), 'M' = 1.7–5.5 V, SS = JEDEC SOIC",
-  "Atmel AT24C32D/64D 8717B–SEEPR–6/10, Table 3-2 DC Characteristics: ICC2 supply current, WRITE at 400 kHz, VCC 5.0 V, max 3.0 mA (ICC1 READ max 1.0 mA) – the write current taken, the larger (icc_a, behaviour logic)"
+  "Atmel AT24C32D/64D 8717B–SEEPR–6/10, Table 3-2 DC Characteristics: ICC2 supply current, WRITE at 400 kHz, VCC 5.0 V, max 3.0 mA (ICC1 READ max 1.0 mA) – the write current taken, the larger (icc_a, behaviour logic)",
+  "f_scl_max_hz 400 kHz: table 3-3 AC characteristics, fSCL max 400 kHz at 1.7 V and 1000 kHz at 5.0 V, p. 5 – the value that holds over the whole supply range; c_in_f: table 3-1 pin capacitance, CI/O (SDA) 8 pF, CIN (SCL) 6 pF max, p. 4 – Atmel AT24C32D/64D 8717B–SEEPR–6/10, read 2026-10-31"
  ],
  "notes": "Library draft of the EEPROM on the common DS3231 breakout module (the RTC: library draft C9866). The chip actually fitted on a given module (Atmel/Microchip AT24C32, an older revision, or a second source) and the module's address-pin wiring are not checked here; this entry describes the AT24C32D.",
  "verified": {
@@ -119,7 +123,8 @@
    "supply current max 3.0 mA (write, 5 V)",
    "I2C address 0x50 + A0/A1/A2; address pins and WP biased low when floating",
    "ordering code AT24C32D-SSHM-T listed (SOIC 8S1, 1.7–5.5 V, industrial)",
-   "2026-10-31: behaviour logic with icc_a 3 mA – the simulation draws it at the supply pin; Atmel AT24C32D/64D 8717B–SEEPR–6/10, Table 3-2 DC Characteristics: ICC2 supply current, WRITE at 400 kHz, VCC 5.0 V, max 3.0 mA (ICC1 READ max 1.0 mA) – the write current taken, the larger"
+   "2026-10-31: behaviour logic with icc_a 3 mA – the simulation draws it at the supply pin; Atmel AT24C32D/64D 8717B–SEEPR–6/10, Table 3-2 DC Characteristics: ICC2 supply current, WRITE at 400 kHz, VCC 5.0 V, max 3.0 mA (ICC1 READ max 1.0 mA) – the write current taken, the larger",
+   "2026-10-31: fSCL 400 kHz (1.7 V) / 1000 kHz (5.0 V), table 3-3; CI/O 8 pF, CIN 6 pF, table 3-1 (maker-coverage FT-16)"
   ],
   "open": [
    "the datasheet read is Atmel's of 2010 (LCSC copy); a newer Microchip revision may exist – microchip.com refused automated download",
@@ -131,7 +136,9 @@
     "text": "pin 1 of the SOIC-8 at the footprint's pin-1 mark",
     "when": "order"
    },
-   "RoHS/REACH not entered (ordering code: 'Lead-free/Halogen-free', NiPdAu lead finish)"
+   "RoHS/REACH not entered (ordering code: 'Lead-free/Halogen-free', NiPdAu lead finish)",
+   "fSCL 1 MHz at VCC 5.0 V (table 3-3): f_scl_max_hz holds one number – 400 kHz, the value of the whole supply range; a 5 V bus at 1 MHz accepts LIM.range/clock with it",
+   "injection current (i_inject_max_a, maker-coverage CK-5): none in the datasheet – Atmel AT24C32D 8717B: absolute maximum ratings without a current into the inputs (DC output current only) (read 2026-10-31); LIM.v/inject holds the pin's voltage alone"
   ]
  }
 }

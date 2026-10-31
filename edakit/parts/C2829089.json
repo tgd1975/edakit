@@ -52,9 +52,9 @@
  "limits": {
   "vdd_op_min_v": 4.0,
   "vdd_op_max_v": 5.3,
-  "f_max_hz": 15000000,
   "t_min_c": -40,
-  "t_max_c": 80
+  "t_max_c": 80,
+  "f_sck_max_hz": 15000000
  },
  "hints": [
   "two-wire (SPI-like) data: start frame 32 zero bits; per LED '111' + 5-bit brightness, then 8 bit blue, green, red, MSB first; end frame 32 one bits (section 10.1)",
@@ -68,7 +68,7 @@
   "mechanical dimensions and pin function, section 4–5, p. 4: 1 SDI, 2 CKI, 3 GND, 4 VDD, 5 CKO, 6 SDO; top view 4/5/6 on the left from the top, 3/2/1 on the right from the top",
   "IC limit parameter (Ta 25 °C), section 7, p. 5: Topt −40 … +80 °C, Tstg −40 … +80 °C, ESD 2 kV HBM; its VDD row reads −0.3 … VDD + 0.3 V",
   "IC electrical parameters (TA 25 °C), section 9, p. 6: VDD 4.0 / 5.0 / 5.3 V; VIH ≥ 0.75 VDD; VIL ≤ 0.3 VDD; output current 17 mA typ. (VDS 1 V); static IDD 1 mA typ.; PWM 27 kHz",
-  "f_max_hz: 'maximum serial input data frequency 15 MHz', overview, section 1, p. 3",
+  "f_sck_max_hz: 'maximum serial input data frequency 15 MHz', overview, section 1, p. 3",
   "out_edge of SDO: read from the drawn waveform 'PWM input-output signal relationship', section 10.4, p. 8 – SDO changes at the rising edge of CKI, CKO rises half a period later; no delay given",
   "pin names, footprint and class: EasyEDA library data of C2829089 via edakit part import, 2026-10-31 – the symbol names pin 4 VCC, the data sheet VDD",
   "LCSC product data C2829089 (2026-10-31): 24 980 pcs; RoHS certificate"
@@ -85,11 +85,12 @@
   "datasheet_sha256": "761272315c13578d8542cd49b23dfec2a046033ae86d23ab79a508162ef7fb9f",
   "checked": [
    "pins (section 5) = EasyEDA symbol (pin 4 named VCC there); footprint pads 1–3 down one side, 4–6 up the other – the data sheet's top view turned by 180°, not mirrored",
-   "VDD 4.0–5.3 V; VIH 0.75 VDD, VIL 0.3 VDD; Topt −40 … +80 °C; 15 MHz maximum serial input frequency"
+   "VDD 4.0–5.3 V; VIH 0.75 VDD, VIL 0.3 VDD; Topt −40 … +80 °C; 15 MHz maximum serial input frequency",
+   "2026-10-31: 'maximum serial input data frequency 15MHz' (overview, p. 3) as f_sck_max_hz – the clock of CKI (maker-coverage FT-16)"
   ],
   "open": [
    "absolute maximum supply voltage: the limit table's VDD row reads −0.3 … VDD + 0.3 V, which gives no number for VDD (and may be meant for the logic inputs) – neither vdd_max_v nor vin_rel_max_v taken",
-   "data rate: the overview gives 15 MHz maximum serial input frequency, the electrical table a transfer rate of 800 kbit/s typ. – f_max_hz from the overview",
+   "data rate: the overview gives 15 MHz maximum serial input frequency, the electrical table a transfer rate of 800 kbit/s typ. – f_sck_max_hz from the overview",
    "SDO/CKO delay after CKI: not given (t_pd_ns null); out_edge read from a drawn waveform only",
    "supply current: static IDD 1 mA typ. and 17 mA typ. per colour – no behaviour model reads it (not simulated)",
    "compatibility with APA102 data streams: the data sheet does not say",
@@ -97,7 +98,8 @@
     "text": "pin-1 corner of the footprint against the part's marking",
     "when": "order"
    },
-   "LED data (wavelength, intensity): no field for kind ic"
+   "LED data (wavelength, intensity): no field for kind ic",
+   "spi_modes: the edge of CKI that takes DI was not read from the timing figure – not entered"
   ]
  }
 }

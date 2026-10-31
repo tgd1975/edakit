@@ -407,8 +407,8 @@ def value_problem(text, part, key, what):
 # --- cables ----------------------------------------------------------------------------------------------------------
 AWG_D0_MM, AWG_BASE = 0.127, 92     # the gauge's definition (ASTM B258): d(n) = 0.127 mm × 92^((36 − n) / 39)
 CABLE_OHM = 0.05                    # a wire without r_ohm_per_wire or length and gauge
-CABLE_KEYS = {"name", "from", "to", "pins", "r_ohm_per_wire", "length_m", "awg", "mm2", "l_nh_per_m", "i_max_a",
-              "at_m", "notes", "about"}    # at_m: where along an LED strip its wires land (sim/strip.py)
+CABLE_KEYS = {"name", "from", "to", "pins", "r_ohm_per_wire", "length_m", "awg", "mm2", "l_nh_per_m", "c_pf_per_m",
+              "i_max_a", "at_m", "notes", "about"}    # at_m: where along an LED strip its wires land (sim/strip.py)
 
 
 def wire_mm2(cable):
@@ -445,7 +445,7 @@ def cable_problems(cable):
     out = []
     for k in sorted(set(cable) - CABLE_KEYS):
         out.append(f"unknown key '{k}' (known: {', '.join(sorted(CABLE_KEYS - {'name', 'from', 'to', 'pins'}))})")
-    for k in ("r_ohm_per_wire", "length_m", "mm2", "l_nh_per_m", "i_max_a", "at_m"):
+    for k in ("r_ohm_per_wire", "length_m", "mm2", "l_nh_per_m", "c_pf_per_m", "i_max_a", "at_m"):
         if k in cable and not (is_number(cable[k]) and cable[k] >= 0):
             out.append(f"{k} must be a number ≥ 0, not {cable[k]!r}")
     if "awg" in cable and not (is_number(cable["awg"]) and 0 <= cable["awg"] <= 40):
@@ -459,8 +459,9 @@ def cable_problems(cable):
         out.append("length_m needs the wire's awg or mm2")
     elif gauge and "length_m" not in cable:
         out.append(f"{gauge[0]} needs the cable's length_m")
-    if "l_nh_per_m" in cable and "length_m" not in cable:
-        out.append("l_nh_per_m needs the cable's length_m")
+    for k in ("l_nh_per_m", "c_pf_per_m"):
+        if k in cable and "length_m" not in cable:
+            out.append(f"{k} needs the cable's length_m")
     return out
 
 

@@ -25,13 +25,15 @@
    "name": "IN+",
    "type": "input",
    "role": "in_p",
-   "z_in_ohm": 6000000000000.0
+   "z_in_ohm": 6000000000000.0,
+   "i_inject_max_a": 0.01
   },
   "4": {
    "name": "IN-",
    "type": "input",
    "role": "in_n",
-   "z_in_ohm": 6000000000000.0
+   "z_in_ohm": 6000000000000.0,
+   "i_inject_max_a": 0.01
   },
   "5": {
    "name": "V+",
@@ -91,7 +93,8 @@
   "gain_min_ratio 1: 6.7 phase margin 60° at G = +1, RL = 10 kΩ; slew rate and settling specified at G = +1 – unity-gain stable",
   "rth_ja_k_per_w 185.7: 6.4 RθJA DBV (SOT-23-5) 185.7 °C/W; tj_max_c 150: 6.1 junction temperature 150 °C; t_min_c -40, t_max_c 125: 6.3 specified temperature −40 … 125 °C",
   "6.7: GBW 4.5 MHz, SR 21 V/µs, noise 10.8 nV/√Hz at 1 kHz, THD+N 0.00021 % (VS = 40 V, 3 VRMS, G = 1, 1 kHz), short-circuit current ±75 mA, capacitive load drive 1000 pF, open-loop output impedance 525 Ω at 1 MHz",
-  "JLCPCB catalogue (edakit stock --lcsc, 2026-10-31): Extended Part, 8 289 pcs, MSL 1"
+  "JLCPCB catalogue (edakit stock --lcsc, 2026-10-31): Extended Part, 8 289 pcs, MSL 1",
+  "i_inject_max_a 0.01 on IN+ and IN−: 6.1 absolute maximum ratings, signal input pins, current −10 … 10 mA, note 3: 'Input pins are diode-clamped to the power-supply rails. Input signals that may swing more than 0.5 V beyond the supply rails must be current limited to 10 mA or less', p. 9 – TI SBOS969F, read 2026-10-31"
  ],
  "notes": "40 V rail-to-rail input/output op-amp, CMOS input (±10 pA), unity-gain stable. Instrument buffer of block instrument-buffer: runs from a 3.3 or 5 V board and from a pedal's 9 V up to an 18 V outlet. Library draft, group guitar.",
  "verified": {
@@ -104,7 +107,8 @@
    "absolute maximum 6.1: supply 42 V, inputs (V−) − 0.5 … (V+) + 0.5 V, 10 mA, TJ 150 °C",
    "recommended 6.3: 2.7 … 40 V, −40 … 125 °C",
    "6.7: VCM (V−) − 0.1 … (V+) + 0.1 V, swing 55 mV max at 10 kΩ (40 V), IQ 685/750 µA max, ZICM 6 TΩ, phase margin 60° at G = +1",
-   "6.4: RθJA 185.7 °C/W (DBV-5)"
+   "6.4: RθJA 185.7 °C/W (DBV-5)",
+   "2026-10-31: input current ±10 mA through the clamps (6.1 note 3) as i_inject_max_a (maker-coverage CK-5)"
   ],
   "open": [
    "the output swing depends on load and supply (12 mV at 2.7 V / 10 kΩ … 250 mV at 40 V / 2 kΩ); the behaviour model takes one figure – the 10 kΩ maximum at 40 V",

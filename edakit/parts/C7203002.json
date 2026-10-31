@@ -489,7 +489,8 @@
    "gpio_r_out_ohm: not given (VOL 0.5 V at the drive setting's current only)",
    "RoHS/REACH: not stated in the board datasheet",
    "SWCLK/SWDIO pull: on-chip pull-up at reset (chip pin table), resistance not given separately",
-   "SMPS efficiency: no figure in the datasheet – the simulation's default 0.85 applies"
+   "SMPS efficiency: no figure in the datasheet – the simulation's default 0.85 applies",
+   "injection current (i_inject_max_a, maker-coverage CK-5): none in the datasheet – RP2040 datasheet (build 2025-02-20), 5.5.3: VPIN −0.5 V … IOVDD + 0.5 V, no current through the pins' protection (read 2026-10-31); LIM.v/inject holds the pin's voltage alone"
   ]
  }
 }

@@ -218,7 +218,7 @@ def test_wire_resistance_from_length_and_gauge():
     assert cable_problems({"r_ohm_per_wire": 0.1, "length_m": 1, "awg": 24}) == [
         "r_ohm_per_wire or length_m with awg or mm2, not both"]
     assert cable_problems({"awg": 50, "length_m": 1, "colour": "red"})[:2] == [
-        "unknown key 'colour' (known: about, at_m, awg, i_max_a, l_nh_per_m, length_m, mm2, notes, r_ohm_per_wire)",
+        "unknown key 'colour' (known: about, at_m, awg, c_pf_per_m, i_max_a, l_nh_per_m, length_m, mm2, notes, r_ohm_per_wire)",
         "awg must be a gauge from 0 to 40, not 50"]
 
 

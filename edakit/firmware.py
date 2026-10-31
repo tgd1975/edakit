@@ -11,8 +11,8 @@ contract into firmware source (a MicroPython module, a C header) is the project'
 What the contract holds (handbook 3.5):
     graph_version, graph_date, state_sha256   the circuit it was written from (state_sha256 = the gate's circuit hash)
     mcu        the MCU it describes ([firmware] mcu, default the one part with GPIO pins)
-    pins       {net: {pin, name, gpio, dir, pull, idle, active[, leds, fn, fn_bus, pwm_hz]}} – every connected pin of
-               the MCU with the role gpio; gpio is the first group of [firmware] gpio over the pin's name
+    pins       {net: {pin, name, gpio, dir, pull, idle, active[, leds, fn, fn_bus, pwm_hz, clock_hz]}} – every connected
+               pin of the MCU with the role gpio; gpio is the first group of [firmware] gpio over the pin's name
     pwm        {net: pwm_hz or null} of the nets with fn "pwm" (graph, REQ.function)
     inputs     buttons and switches on MCU pins with their active level; DIP switches bit by bit in the order of their
                roles a1 … aN / b1 … bN
@@ -21,8 +21,13 @@ What the contract holds (handbook 3.5):
                the converter channel (the pin's functions adc…, null without), the divider in front of it (the net one
                resistor from another net and one from ground: from, top_ohm, bottom_ohm, ratio), or a lone pull-up or
                pull-down (a thermistor's partner); values of the resistors' entries
-    devices    {"i2c": [{bus, address, part, how}]} – every device on an I2C line of the MCU whose entry gives its address
-               (REQ.forbidden/address), the address as its pins decide it, the bus named by its SDA net
+    devices    {"i2c": [{bus, address, part, how, f_max_hz}]} – every device on an I2C line of the MCU whose entry gives its
+               address (REQ.forbidden/address), the address as its pins decide it, the bus named by its SDA net, its
+               highest SCL (f_scl_max_hz); {"spi": [{bus, part, modes, f_max_hz}]} – every device on an SPI clock line
+               of the MCU (fn spi.sck), the bus named by its fn_bus, its modes (spi_modes) and highest SCK (f_sck_max_hz)
+    bus_speed  {bus: {kind, clock_hz, f_max_hz, by, modes | pull_ups}} – per SPI and I2C bus the clock its net sets
+               (net clock_hz), the highest clock its slowest device allows, the modes all its SPI devices share, the
+               speed an I2C bus's pull-ups allow (buses.py: UM10204, tr = 0.8473 · Rp · Cb)
     chains     from an MCU net through the roles sdi → sdo of shift registers and LED drivers: data net, parts in
                shift order, read-back net (the last sdo on an MCU pin), the MCU nets every part of it shares, and
                values.first_bit_to of its parts ("unknown" without it)
@@ -199,7 +204,7 @@ def pin_entry(board, ref, net, regex, leds):
         e["active"] = None if e["idle"] is None or e["dir"] != "out" else 1 - e["idle"]
     if leds.get(jnet):
         e["leds"] = leds[jnet]
-    for key in ("fn", "fn_bus", "pwm_hz"):
+    for key in ("fn", "fn_bus", "pwm_hz", "clock_hz"):
         if board.d.nets[net].get(key) is not None:
             e[key] = board.d.nets[net][key]
     return e
@@ -339,14 +344,61 @@ def analog(design, pins):
     return out
 
 
-def devices(design, buses):
-    """{"i2c": [...]} – the devices with an address on the MCU's I2C lines (the SDA nets of buses)."""
+def spi_buses(design, pins):
+    """{bus: SCK net} of the MCU's SPI clock lines (fn spi.sck): the bus named by the net's fn_bus, else by the net."""
+    return {e.get("fn_bus") or net: net for net, e in pins.items() if e.get("fn") == "spi.sck"}
+
+
+def i2c_buses(design, buses):
+    """{SDA net: SCL net or None} of the MCU's I2C lines (the bus named by its SDA net, as devices names it)."""
+    out = {}
+    for name, nets in buses.items():
+        sda = nets.get("sda") or nets.get("i2c.sda")
+        if sda and (name == "i2c" or name.startswith("i2c") or "i2c.sda" in nets):
+            out[sda] = nets.get("scl") or nets.get("i2c.scl")
+    return out
+
+
+def devices(design, buses, pins):
+    """{"i2c": [...], "spi": [...]} – the devices with an address on the MCU's I2C lines (the SDA nets of buses) with
+    the highest SCL their entry gives (f_scl_max_hz), and the devices on its SPI clock lines with the modes and the
+    highest SCK their entry gives (spi_modes, f_sck_max_hz) – null where an entry gives none."""
+    from . import buses as bus_facts
     from .engines.requires import bus_devices
-    sda = {nets.get("sda") for name, nets in buses.items() if name == "i2c" or name.startswith("i2c")} - {None}
+    sda = set(i2c_buses(design, buses))
     found, _ = bus_devices(design)
-    rows = [{"bus": bus, "address": f"0x{x:02X}", "part": des, "how": how}
+    rows = [{"bus": bus, "address": f"0x{x:02X}", "part": des, "how": how,
+             "f_max_hz": (design.part(des).get("limits") or {}).get("f_scl_max_hz")}
             for bus, devs in sorted(found.items()) if bus in sda for x, des, how in devs]
-    return {"i2c": sorted(rows, key=lambda r: (r["bus"], r["address"], natural_key(r["part"])))} if rows else {}
+    out = {"i2c": sorted(rows, key=lambda r: (r["bus"], r["address"], natural_key(r["part"])))} if rows else {}
+    spi = [{"bus": bus, **row} for bus, sck in sorted(spi_buses(design, pins).items())
+           for row in bus_facts.spi_devices(design, sck)]
+    if spi:
+        out["spi"] = spi
+    return out
+
+
+def bus_speed(design, buses, pins):
+    """{bus: …} – what limits the clock of each SPI and I2C bus of the MCU (maker-coverage FT-16): the clock its net
+    sets (clock_hz, null without), the slowest device's highest clock (f_max_hz, by), for SPI the modes every device
+    runs in (modes; [] where they share none), for I2C the speed the pull-ups allow with the bus capacitance (pull_ups:
+    UM10204, tr = 0.8473 · Rp · Cb, Cb what the pins' c_in_f and the cables' c_pf_per_m give – tracks not counted)."""
+    from . import buses as bus_facts
+    out = {}
+    for bus, sck in sorted(spi_buses(design, pins).items()):
+        rows = bus_facts.spi_devices(design, sck)
+        f, by = bus_facts.slowest(rows)
+        out[bus] = {"kind": "spi", "sck": sck, "clock_hz": design.nets[sck].get("clock_hz"), "f_max_hz": f, "by": by,
+                    "modes": bus_facts.common_modes(rows)}
+    for sda, scl in sorted(i2c_buses(design, buses).items()):
+        rows = bus_facts.i2c_devices(design, scl) if scl else []
+        f, by = bus_facts.slowest(rows)
+        pulls = bus_facts.i2c_speed(design, scl, sda) if scl else bus_facts.line_speed(design, sda)
+        if pulls["f_max_hz"] is not None and (f is None or pulls["f_max_hz"] < f):
+            f, by = pulls["f_max_hz"], "pull-ups"
+        out[sda] = {"kind": "i2c", "scl": scl, "clock_hz": design.nets[scl].get("clock_hz") if scl else None,
+                    "f_max_hz": f, "by": by, "pull_ups": pulls}
+    return out
 
 
 def contract(cfg, design):
@@ -385,7 +437,8 @@ def contract(cfg, design):
         "inputs": inputs(board, pins),
         "buses": buses,
         "analog": analog(design, pins),
-        "devices": devices(design, buses),
+        "devices": devices(design, buses, pins),
+        "bus_speed": bus_speed(design, buses, pins),
         "chains": chain_list,
         "channels": channels(board, chain_list),
     }
@@ -403,6 +456,14 @@ def gaps(design, c):
                        "channels")
     out += [f"{net}: no GPIO number in the pin name {e['name']} ([firmware] gpio)" for net, e in c["pins"].items()
             if e["gpio"] is None]
+    for bus, b in c.get("bus_speed", {}).items():
+        if b["kind"] == "spi" and b["modes"] == []:
+            modes = {r["part"]: r["modes"] for r in c["devices"].get("spi", []) if r["bus"] == bus}
+            out.append(f"{bus}: no SPI mode all its devices run in ({'; '.join(f'{p} {m}' for p, m in modes.items())}) "
+                       "– the firmware switches the mode per chip select")
+        if b["clock_hz"] is not None and b["f_max_hz"] is not None and b["clock_hz"] > b["f_max_hz"]:
+            out.append(f"{bus}: clock_hz {b['clock_hz']:g} Hz above what {b['by']} allows ({b['f_max_hz']:g} Hz) – "
+                       "edakit check reports it (LIM.range/clock)")
     out += [f"{ch['driver']} out{ch['output']} ({ch['net']}): reversed LED "
             f"{', '.join(x['des'] for x in ch['reversed'])} – edakit sim reports it too" for ch in c["channels"]
             if ch.get("reversed")]

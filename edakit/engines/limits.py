@@ -74,7 +74,44 @@ def run(ctx):
     found = judge_all(ctx.design, pin_voltages(ctx.design) + part_voltages(ctx.design))
     found += judge_all(ctx.joined, fuse_currents(ctx.joined, ctx.sim))
     return (found + hazardous(ctx.design) + supply_order(ctx.design) + charge_currents(ctx.design, ctx.sim)
-            + radio_power(ctx.design) + radio_bands(ctx.design))
+            + radio_power(ctx.design) + radio_bands(ctx.design) + bus_clocks(ctx.design))
+
+
+# --- bus clocks (maker-coverage FT-16) --------------------------------------------------------------------------------
+def bus_clocks(d):
+    """LIM.range/clock on a bus: the clock a net runs at (net clock_hz) – on an SPI clock line (fn spi.sck) at most the
+    highest SCK of every device on it (f_sck_max_hz), on an I2C clock line at most the highest SCL of every device on
+    it (f_scl_max_hz) and the speed its pull-ups allow with the bus capacitance known (buses.py: UM10204,
+    tr = 0.8473 · Rp · Cb within the mode's tr(max); tracks are not in Cb, so the real bus is slower still)."""
+    from .. import buses
+    from ..circuit import si
+    out = []
+    scl = set(buses.scl_nets(d))
+    for name in sorted(n for n, net in d.nets.items() if is_number(net.get("clock_hz"))):
+        hz, on = d.nets[name]["clock_hz"], (("net", name),)
+        if d.nets[name].get("fn") == "spi.sck":
+            rows, field, line = buses.spi_devices(d, name), "f_sck_max_hz", "SCK"
+        elif name in scl:
+            rows, field, line = buses.i2c_devices(d, name), "f_scl_max_hz", "SCL"
+        else:
+            continue
+        for row in rows:
+            if is_number(row["f_max_hz"]) and hz > row["f_max_hz"]:
+                des = row["part"]
+                out.append(Finding("LIM.range", "G", des, f"{des}: {line} on {name} at {si(hz, 'Hz')} (clock_hz), above "
+                                   f"its highest clock {si(row['f_max_hz'], 'Hz')}", f"{field} of {d.entry_key(des)}",
+                                   grade="clock", on=on + (("component", des),),
+                                   data={"value": hz, "limit": row["f_max_hz"], "unit": "Hz"}))
+        if line == "SCL":
+            sp = buses.i2c_speed(d, name, buses.sda_of(d, name))
+            if sp["rise_ns"] is not None and (sp["f_max_hz"] is None or hz > sp["f_max_hz"]):
+                allows = (f"the pull-ups allow {si(sp['f_max_hz'], 'Hz')} ({sp['mode']})" if sp["f_max_hz"]
+                          else "the pull-ups allow no mode")
+                out.append(Finding("LIM.range", "G", name, f"{name}: SCL at {si(hz, 'Hz')} (clock_hz), {allows} – "
+                                   f"{sp['line']}: tr = {buses.RISE} × {si(sp['pull_up_ohm'], 'Ω')} × "
+                                   f"{si(sp['c_bus_f'], 'F')} = {sp['rise_ns']:g} ns (Cb: {sp['c_bus']})", buses.SOURCE,
+                                   grade="clock", on=on, data={"value": hz, "limit": sp["f_max_hz"] or 0, "unit": "Hz"}))
+    return out
 
 
 # --- supply order ------------------------------------------------------------------------------------------------------

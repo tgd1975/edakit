@@ -61,13 +61,15 @@
    "drive": "open_drain",
    "v_max_v": 6.0,
    "v_rel_max_v": null,
-   "i_max_a": 0.01
+   "i_max_a": 0.01,
+   "c_in_f": 3e-12
   },
   "5": {
    "name": "SCL",
    "type": "input",
    "role": "scl",
-   "i_inject_max_a": 0.005
+   "i_inject_max_a": 0.005,
+   "c_in_f": 3e-12
   },
   "6": {
    "name": "VS+",
@@ -123,7 +125,8 @@
   "tj_max_c": 150,
   "rth_ja_k_per_w": 144.6,
   "t_min_c": -40,
-  "t_max_c": 125
+  "t_max_c": 125,
+  "f_scl_max_hz": 400000.0
  },
  "hints": [
   "input range 0–36 V on IN+, IN– and VBUS – do not apply more than 36 V; they withstand 0–36 V whether VS is applied or not",
@@ -139,7 +142,8 @@
   "TI INA226 36V, 16-Bit, Ultra-Precise I2C Output Current, Voltage, and Power Monitor With Alert, SBOS547C (June 2011, revised August 2026), p. 18 Table 6-2: target address 1000000 (A1 = A0 = GND) … A0 = VS +1, A1 = VS +4",
   "TI INA226 36V, 16-Bit, Ultra-Precise I2C Output Current, Voltage, and Power Monitor With Alert, SBOS547C (June 2011, revised August 2026), p. 21 Table 6-3: fSCL 0.001–0.4 MHz fast mode, 0.001–2.94 MHz high-speed mode",
   "TI INA226 36V, 16-Bit, Ultra-Precise I2C Output Current, Voltage, and Power Monitor With Alert, SBOS547C (June 2011, revised August 2026), p. 30 8.2.1.2: the alert pin must be pulled up to the VS pin voltage",
-  "TI INA226 36V, 16-Bit, Ultra-Precise I2C Output Current, Voltage, and Power Monitor With Alert, SBOS547C (June 2011, revised August 2026), p. 6 5.5 Electrical Characteristics: IQ quiescent current 330 µA typ., 420 µA max. – icc_a = 420 µA at VS (behaviour logic); Alert, an open-drain output, rests released"
+  "TI INA226 36V, 16-Bit, Ultra-Precise I2C Output Current, Voltage, and Power Monitor With Alert, SBOS547C (June 2011, revised August 2026), p. 6 5.5 Electrical Characteristics: IQ quiescent current 330 µA typ., 420 µA max. – icc_a = 420 µA at VS (behaviour logic); Alert, an open-drain output, rests released",
+  "f_scl_max_hz 400 kHz: table 6-3 bus timing diagram definitions, p. 21, SCL operating frequency, fast mode 0.001–0.4 MHz – the high-speed mode up to 2.94 MHz needs the HS master code and is not entered; c_in_f 3 pF on SCL and SDA: 6.5 electrical characteristics, p. 5, digital inputs, input capacitance 3 pF (typical, no maximum given) – TI INA226 SBOS547C, read 2026-10-31"
  ],
  "verified": {
   "by": "Claude (datasheet check, library draft)",
@@ -156,7 +160,8 @@
    "2026-10-31, pin limits (schema-gaps A6, B1–B3, C1–C4): TI SBOS547C 5.1: VSDA GND − 0.3 V to 6 V regardless of VS (v_rel_max_v null), VSCL GND − 0.3 V to VS + 0.3 V (the entry's vin_rel_max_v), input current into any pin 5 mA (i_inject_max_a on SCL, A0, A1), open-drain digital output current 10 mA (SDA and Alert i_max_a); the table names no voltage limit of Alert against VS (v_rel_max_v null)",
    "2026-10-31: Alert needs a pull-up where it is connected (SBOS547C 8.2.1.2) – an unused Alert in nc needs none",
    "2026-10-31, Alert's limit (rules-at-scale.md, decision 15): SBOS547C has no absolute-maximum row for Alert or A0/A1; the leakage is specified for 0 V ≤ VAlert ≤ VVS (5.5) and 8.2.1.2 says 'The alert pin must to be pulled up to the VVS pin voltage' – Alert is held to VS + 0.3 V like SCL (the entry's vin_rel_max_v, LIM.v/inject, a warning); 6.3.1.2 'If the alert function is not used, the Alert pin can be left floating' – the pull-up is a need when Alert is connected",
-   "2026-10-31: behaviour logic with icc_a 420 µA from SBOS547C 5.5 (IQ max, read now)"
+   "2026-10-31: behaviour logic with icc_a 420 µA from SBOS547C 5.5 (IQ max, read now)",
+   "2026-10-31: f(SCL) fast mode 0.4 MHz (HS 2.94 MHz not entered); input capacitance 3 pF typ (maker-coverage FT-16)"
   ],
   "open": [
    "address pins tied to SDA or SCL cannot be expressed in the entry's address model",

@@ -99,6 +99,9 @@ def coverage(design, prof=None):
         from ..radio import radios
         if radios(part) and not (part.get("antenna") or {}).get("keepout_mm"):
             found[("GEO.keepout", key, "no antenna.keepout_mm – the copper under its antenna is not checked")].append(des)
+        elif radios(part) and "edge_mm" not in (part.get("antenna") or {}):
+            found[("GEO.keepout", key, "no antenna.edge_mm – its antenna's place at the board edge is not checked")
+                  ].append(des)
         if kind in ("ic", "module"):
             behavior = p.get("behavior", "none")
             if behavior in OVER_TIME:

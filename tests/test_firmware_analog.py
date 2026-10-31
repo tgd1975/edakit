@@ -36,10 +36,12 @@ def test_a_divider_and_a_pull_up_in_front_of_adc_pins(project):
     assert a["TEMP"]["divider"] is None and a["TEMP"]["pull_up_ohm"] == 10000.0
 
 
-def test_the_example_has_no_analog_input_and_no_device(project):
+def test_the_example_has_no_analog_input_and_no_i2c_device(project):
+    """Its one bus device is the TLC5916 on the SPI bus LED (FT-16) – the fixture's entry gives no modes and no clock."""
     with_firmware(project)
     c = contract(project)
-    assert c["analog"] == {} and c["devices"] == {}
+    assert c["analog"] == {} and c["devices"] == {"spi": [{"bus": "LED", "part": "U2", "modes": None,
+                                                           "f_max_hz": None}]}
 
 
 def test_a_device_on_the_i2c_lines_with_its_address(project):
@@ -57,4 +59,4 @@ def test_a_device_on_the_i2c_lines_with_its_address(project):
                            {"name": "SCL", "pins": ["U1.2", "U8.2", "R9.2"], "v": [0, 3.4], "fn": "i2c.scl"}]
     project.save_graph(g)
     c = contract(project)
-    assert c["devices"] == {"i2c": [{"bus": "SDA", "address": "0x40", "part": "U8", "how": "A0 low"}]}
+    assert c["devices"]["i2c"] == [{"bus": "SDA", "address": "0x40", "part": "U8", "how": "A0 low", "f_max_hz": None}]

@@ -1057,7 +1057,8 @@
    -9.0,
    -10.3,
    9.0
-  ]
+  ],
+  "edge_mm": 1
  },
  "body": {
   "h_mm": 3.1
@@ -1097,8 +1098,9 @@
   "gpio_i_max_a 0.028 A: IOL typ 28 mA at VOL 0.495 V and maximum drive strength (table 15; IOH typ 40 mA, falling to about 29 mA per pin as more pins source current) – assumption: the datasheet gives no absolute maximum per pin",
   "pin v_max_v and gpio_v_max_v 3.6 V: VIH max VDD + 0.3 V at VDD 3.3 V (table 15); the module datasheet gives no absolute maximum for IO pins",
   "pull_ohm 45 kΩ: RPU/RPD typ (table 15)",
-  "antenna.keepout_mm: the antenna area of figure 13 (6.19 mm × 18 mm at the module's antenna end) placed in the EasyEDA footprint WIFI-SMD_ESP32-WROOM-32E (pin 1 at x = –9.0 mm, the antenna end towards –x, module edge at x = –16.49 mm, silk at –16.48 mm) – the base-board clearance the ESP32 Hardware Design Guidelines recommend beyond it is not included",
-  "ESP32 Series Datasheet v5.3, 4.8 Peripheral Pin Configurations: the pins for UART, regular I2C, the I2S Controller, the LED PWM Controller, Motor Control PWM and the Two-wire Automotive Interface (TWAI) can be chosen from any GPIOs via the GPIO Matrix; SPI (HSPI, VSPI) is multiplexed via the IO MUX (4.8.2) – left to the pins' functions"
+  "antenna.keepout_mm: the antenna area of figure 13 (6.19 mm × 18 mm at the module's antenna end) placed in the EasyEDA footprint WIFI-SMD_ESP32-WROOM-32E (pin 1 at x = –9.0 mm, the antenna end towards –x, module edge at x = –16.49 mm, silk at –16.48 mm)",
+  "ESP32 Series Datasheet v5.3, 4.8 Peripheral Pin Configurations: the pins for UART, regular I2C, the I2S Controller, the LED PWM Controller, Motor Control PWM and the Two-wire Automotive Interface (TWAI) can be chosen from any GPIOs via the GPIO Matrix; SPI (HSPI, VSPI) is multiplexed via the IO MUX (4.8.2) – left to the pins' functions",
+  "antenna.edge_mm 1: Espressif ESP32 Hardware Design Guidelines, release master (26 October 2026), 1.4.8 Positioning a Module on a Base Board, p. 27–29: the PCB antenna outside the base board, the feed point close to its edge; figure 25 (read from the graph): the board's edge at most 1 mm beyond the antenna area's outer side ('Max 1'), at most 2 mm beyond the module's side, the board cut away at least 15 mm beside the antenna – https://docs.espressif.com/projects/esp-hardware-design-guidelines/en/latest/esp32/esp-hardware-design-guidelines-en-master-esp32.pdf, read 2026-10-31; the 15 mm beside an antenna in a cut-out and inside the housing are not a field (the pcb reviewer asks, domain radio)"
  ],
  "notes": "Bare ESP32 module without regulator (3V3 supplied from outside). functions holds no pwm on purpose: the GPIO matrix routes LEDC/MCPWM to any GPIO, which the slice model of REQ.function cannot express – a net with fn pwm on this module is reported by REQ.function until the schema can say 'any channel through the matrix'.",
  "verified": {
@@ -1117,7 +1119,8 @@
    "EN: RC 10 kΩ / 1 µF recommended, not to be left floating",
    "footprint frame: pin 1 at (–9.0, –9.0) mm, module outline x –16.49 … 9.0 mm against figure 10/13",
    "2026-10-31: RXD0/TXD0 (pins 34, 35) with their weak pull-up during and after reset – ESP32 Series Datasheet v5.3, IO_MUX table (U0RXD, U0TXD: wpu), as read by the block agent of BL-7",
-   "2026-10-31: matrix ['uart', 'i2c', 'i2s', 'pwm', 'can'] – ESP32 Series Datasheet v5.3, 4.8 Peripheral Pin Configurations: the pins for UART, regular I2C, the I2S Controller, the LED PWM Controller, Motor Control PWM and the Two-wire Automotive Interface (TWAI) can be chosen from any GPIOs via the GPIO Matrix; SPI (HSPI, VSPI) is multiplexed via the IO MUX (4.8.2) – left to the pins' functions; REQ.function takes a net's fn on any GPIO of these kinds (schema-gaps A1)"
+   "2026-10-31: matrix ['uart', 'i2c', 'i2s', 'pwm', 'can'] – ESP32 Series Datasheet v5.3, 4.8 Peripheral Pin Configurations: the pins for UART, regular I2C, the I2S Controller, the LED PWM Controller, Motor Control PWM and the Two-wire Automotive Interface (TWAI) can be chosen from any GPIOs via the GPIO Matrix; SPI (HSPI, VSPI) is multiplexed via the IO MUX (4.8.2) – left to the pins' functions; REQ.function takes a net's fn on any GPIO of these kinds (schema-gaps A1)",
+   "2026-10-31: antenna.edge_mm 1 from the hardware design guidelines' keep-out figure (maker-coverage CK-11)"
   ],
   "open": [
    "pwm: LEDC/MCPWM reach any GPIO through the matrix – not expressible in functions (schema gap); fn pwm nets on this module are reported by REQ.function",
@@ -1127,7 +1130,8 @@
    "REACH: only 'Green certification: REACH/RoHS' in the datasheet – no SVHC statement read",
    "rth/tj: the module datasheet gives none",
    "least current (i_core_min_a): sleep currents are in the ESP32 Series Datasheet, not read; firmware-dependent",
-   "base-board antenna clearance per ESP32 Hardware Design Guidelines (not read) beyond the antenna area"
+   "antenna: the 15 mm clearance beside the antenna in a cut-out of the board and inside the housing (hardware design guidelines) is not checked – GEO.keepout holds the copper and the edge only",
+   "injection current (i_inject_max_a, maker-coverage CK-5): none in the datasheet – ESP32 Series Datasheet v5.3, table 5-1: no current through the pins' protection (read 2026-10-31); LIM.v/inject holds the pin's voltage alone"
   ]
  },
  "matrix": [

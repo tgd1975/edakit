@@ -283,6 +283,9 @@ def functions(d):
         if not valid_hz(net.get("pwm_hz")):
             out.append(Finding("STRUCT.net", "G", name, f"{name}: pwm_hz must be a frequency in Hz or [min, max], not "
                                f"{net['pwm_hz']!r}", on=on))
+        if net.get("clock_hz") is not None and not (is_number(net["clock_hz"]) and net["clock_hz"] > 0):
+            out.append(Finding("STRUCT.net", "G", name, f"{name}: clock_hz must be the bus clock in Hz, not "
+                               f"{net['clock_hz']!r}", on=on))
         if not fn:
             continue
         if fn not in FN_NAMES:
@@ -930,9 +933,15 @@ def stable_gains(d):
                 gain = 1 + (1 / sum(1 / x for x in rf)) / (1 / sum(1 / x for x in rg))
             if gain < least:
                 who = f"{des}{' channel ' + ch if ch else ''}"
+                # a config of the entry with a lower minimum: the part's external compensation (maker-coverage CK-28)
+                comp = sorted((x, name) for name, c in ((d.parts.get(d.entry_key(des)) or {}).get("configs") or {}).items()
+                              if is_number(x := ((c or {}).get("values") or {}).get("gain_min_ratio")) and x <= gain)
+                fix = "more gain, or a part stable at unity gain" + (
+                    f", or its config {comp[0][1]!r} – stable from {comp[0][0]:g} with what that config's pins need"
+                    if comp else "")
                 out.append(Finding("REQ.value", "G", des, f"{who}: closed-loop gain {gain:.3g} – the part is stable from "
-                                   f"{least:g}", f"gain_min_ratio of {d.entry_key(des)}",
-                                   "more gain, or a part stable at unity gain", grade="gain", on=(("component", des),)))
+                                   f"{least:g}", f"gain_min_ratio of {d.entry_key(des)}", fix, grade="gain",
+                                   on=(("component", des),)))
     return out
 
 
