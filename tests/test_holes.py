@@ -124,9 +124,13 @@ def test_plan_reports_p7(project):
         "manufacturer 0.7 mm"]
 
 
-@pytest.mark.parametrize("hole, want", [(["ROUND", 35.433], [0.9, 0.9]), (["SLOT", 15.748, 59.055], [0.4, 1.5]),
-                                        (["SLOT", 39.37, 20], [1.0, 1.0]), (None, None)])
+@pytest.mark.parametrize("hole, want", [(["ROUND", 3.5433], [0.9, 0.9]), (["SLOT", 1.5748, 5.9055], [0.4, 1.5]),
+                                        (["SLOT", 3.937, 2], [1.0, 1.0]), (None, None),
+                                        (["ROUND", 4.331, 4.331], [1.1, 1.1]), (["ROUND", 5.1182, 5.1182], [1.3, 1.3])])
 def test_dump_keeps_the_hole_size(monkeypatch, hole, want):
+    """getAllPinsByPrimitiveId gives the hole in 10 mil: the last two as EasyEDA Pro 3.2.206 gave them for the bell's
+    esp32tht – U1's 1.1 mm hole, S1's 1.3 mm one; read as mil they were 0.11 and 0.13 mm, and GEO.hole failed every
+    through-hole part."""
     pins = [{"padNumber": "1", "x": 1010, "y": 2000, "net": "VIN", "hole": hole, "metallization": True}]
     calls = {"PCB_Primitive.getPrimitivesBBox": {"minX": 990, "minY": 1980, "maxX": 1030, "maxY": 2020},
              "PCB_PrimitiveComponent.getAllPinsByPrimitiveId": pins}
