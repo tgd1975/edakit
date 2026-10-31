@@ -97,13 +97,15 @@ sign-offs rehashed, the mentions of `graph.json` renamed, all five RELEASED.
 
 ## KiCad tool chain ([kicad-toolchain.md](docs/concepts/done/kicad-toolchain.md))
 
-Built and merged into main on 2026-10-30, tested offline and in CI against KiCad 10 on the led-bar example.
+Built and merged into main on 2026-10-30, tested offline and in CI against KiCad 10 on the led-bar example. The live
+test with the owner ran on 2026-10-31, all seven steps; what it found and what was built from it (LT-1 to LT-11, branch
+`kicad-live-fixes`) is in the concept's section "Live test".
 
-- [ ] **The live test with the owner** (the concept's section "Live test"): steps 1, 3, 4 and 5 ran on a real
-      project, the 555 blinker of handbook 18 (`examples/blinker-555`, released 2026-10-31). Open: step 2 (the led-bar
-      example as a KiCad project, its schematic looked at in KiCad), step 6 (the placer T.1 on both tool chains) and
-      step 7 (a scratch copy of the bell's main board); with them the recorded KiCad export of T.6 and the probe of
-      T.7.
+- [ ] **LT-9, the led-bar example on real footprints:** its fixed rows in `[place]` do not fit the LCSC footprints (the
+      LEDs 4 mm apart at 4.2 mm, U1 in the keep-out of the hole at (3.5, 3.5), J1 4.3 mm off the edge), and its
+      Pico's entry names pins 41 and 43 SWCLK and SWDIO where the library's symbol has them the other way round, its
+      GP pins by their short names. The example is the tests' fixture on test footprints (test_pcb's `led_bar_geo`),
+      so the rows move only with the tests that read them; the pin names want the datasheet first.
 
 ## The documentation for its readers ([documentation.md](docs/concepts/new/documentation.md))
 

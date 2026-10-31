@@ -85,6 +85,28 @@ M30
 """
 
 
+EXPORT = Path(__file__).parent / "fixtures" / "kicad-export" / "led-bar-main"
+
+
+def test_a_recorded_kicad_export_reads_as_the_checks_read_it():
+    """The led-bar example's files as KiCad 10.0.6 wrote them in the live test of 2026-10-31 – placed by pcb place,
+    routed, poured and printed (concept T.6): the outline with the mounting and tooling holes as edakit draws them,
+    the tooling holes in the NPTH file, J1's plated holes, the vias and the poured top layer, as FILES.set and
+    GEO.copper read them."""
+    from shapely.geometry import Polygon
+    assert "GenerationSoftware,KiCad,Pcbnew,10.0" in (EXPORT / gerber.FILES["top"]).read_text()
+    assert gerber.missing(EXPORT, "top", "bottom", "top_silk", "bottom_silk", "top_mask", "bottom_mask", "outline",
+                          "pth", "vias", "npth") == []
+    outline = gerber.outline_shape(EXPORT)
+    assert [round(v, 2) for v in outline.bounds] == [0, 0, 90, 40]
+    holes = sorted((round(c.x, 2), round(c.y, 2)) for c in (Polygon(i).centroid for i in outline.interiors))
+    assert holes == [(3.5, 3.5), (3.5, 36.5), (86.5, 3.5), (86.5, 36.5)]
+    assert sorted((x, y) for x, y, *_ in gerber.parse_holes(EXPORT / gerber.FILES["npth"])) == [(3.5, 36.5), (86.5, 3.5)]
+    assert len(gerber.parse_holes(EXPORT / gerber.FILES["pth"])) == 2               # J1, through-hole
+    assert len(gerber.parse_holes(EXPORT / gerber.FILES["vias"])) == 28
+    assert gerber.shape(gerber.parse_gerber(EXPORT / gerber.FILES["top"])).area > 0.5 * 90 * 40   # the GND pour
+
+
 def test_kicad_macros_and_polygons_become_regions(tmp_path):
     f = tmp_path / "board-F_Cu.gbr"
     f.write_text(KICAD_GTL)
