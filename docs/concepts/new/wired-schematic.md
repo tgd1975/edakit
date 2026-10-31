@@ -11,7 +11,8 @@ prototype that draws every project at hand this way and measures what it costs
 the graph as TOML), the drawing code unchanged, the measures the same. Built so far: W.1, the frame of the SVG
 optional, which the owner asked for on the side – merged into main the same day; W.5, the board's print per pin
 (`print` in the parts entry, `PD2 (D2)` in the drawing), the same day; W.2, the wired style, merged into main the
-same day on the owner's word (the measures of the build below the table of what to build).
+same day on the owner's word (the measures of the build below the table of what to build); W.4, the interview's
+question on the drawing (new-project writes `style`, project-surveyor reports it), built the same day.
 
 ## The short answer
 

@@ -190,6 +190,7 @@ INTERVIEW = {
     "board": ("[boards.<name>]", "title", "board file"),
     "tool chain": ("[project] toolchain", "handbook 16"),
     "boards": ("bought = true", "wired = true"),
+    "drawing": ("style", "hardware/schematic.toml", "labels", "wires", "mixed"),
     "variants": ("variants/<v>/edakit.toml",),
     "maker": ("[cart] maker", "[cart] makers"),
     "assembly": ("[release] assembly", "sides", "pcba", "smd_only"),
@@ -283,6 +284,7 @@ def test_the_project_surveyor_reads_a_repository_and_changes_nothing():
     for words in ("counterpart", "not registered", "the user's decision, skill by skill"):
         assert words in place["skills"], words
     assert "`[docs] files`" in place["documents with values"] and "requirements-engineer" in place["requirements"]
+    assert "drawing" in place["the interview's answers"] and "`style`" in place["the interview's answers"]  # W.4
     form = flat(places)
     assert all(f"**{field}**" in form for field in ("found", "proposal", "reason"))
     result = section(path, "Result")
