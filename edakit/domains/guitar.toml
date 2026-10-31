@@ -8,7 +8,7 @@ about = "guitar pedals and instrument electronics: input loading, stable gain, b
 suggested_by = { nets = ["instrument"] }
 
 [switch]
-on = ["REQ.forbidden:btl"]
+on = ["REQ.forbidden:btl", "SIM.response"]
 
 [severity]
 

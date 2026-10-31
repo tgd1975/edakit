@@ -102,6 +102,22 @@ def resistor(p, key, ohm):
     p.save_part(key, r)
 
 
+def capacitor(p, key, farad, dielectric, mpn):
+    """A capacitor entry `key` of `farad`, from the example's 100 nF (C49678) – for values the library lacks."""
+    c = p.part("C49678")
+    c.update(lcsc=key, mpn=f"{mpn} (reference circuit)", verified={"by": "reference circuit"},
+             sources=["values for the reference circuit, not from a datasheet"])
+    c["values"].update(value_f=farad, dielectric=dielectric)
+    p.save_part(key, c)
+
+
+def ac(p, name, run):
+    """An AC run of the simulation config (sim.json ac, decision 9)."""
+    s = p.sim()
+    s.setdefault("ac", {})[name] = run
+    p.save_sim(s)
+
+
 def block(p, title, start, notes, board_title, near=None):
     """The circuit's own block in the drawing (hardware/schematic.toml, a third row) and the board's title; near: the
     capacitors drawn at a part."""
@@ -180,7 +196,8 @@ SPEAKER = {"lcsc": "C9100003", "mpn": "8 Ω speaker (reference circuit)", "kind"
 
 def audio(p):
     """U20, a class-D amplifier on +5V with 100 nF, its bridge-tied outputs to the speaker LS20; its input from GP8
-    through 1 kΩ (a PWM DAC's filter resistor)."""
+    through the PWM DAC's low-pass R20 1 kΩ / C21 10 nF (C0G) – an AC run expects its corner at 15.9 kHz:
+    flat at 1 kHz, the upper −3 dB corner between 10 and 25 kHz."""
     for key in ("C17513",):
         p.use_library_part(key)
     p.save_part(AMP["lcsc"], AMP)
@@ -191,15 +208,21 @@ def audio(p):
     add(g, "LS20", "audio", SPEAKER["lcsc"], {"1": "+", "2": "-"})
     add(g, "C20", "capacitor", "C49678", {"1": "1", "2": "2"}, value="100nF")
     add(g, "R20", "resistor", "C17513", {"1": "1", "2": "2"}, value="1k")
+    capacitor(p, "C9100020", 10e-9, "C0G", "10 nF C0G 0805")
+    add(g, "C21", "capacitor", "C9100020", {"1": "1", "2": "2"}, value="10nF")
     wire(g, "+5V", "U20.5", "C20.1")
-    wire(g, "GND", "U20.4", "C20.2")
+    wire(g, "GND", "U20.4", "C20.2", "C21.2")
     wire(g, "SPK_P", "U20.1", "LS20.1")
     wire(g, "SPK_N", "U20.2", "LS20.2")
-    wire(g, "AUDIO_IN", "U20.3", "R20.2", v=(0, 3.4))
+    wire(g, "AUDIO_IN", "U20.3", "R20.2", "C21.1", v=(0, 3.4))
     wire(g, "AUDIO_PWM", "R20.1", "U1.11", v=(0, 3.4), fn="pwm", pwm_hz=40000)
     p.save_graph(g)
     drive(p, "AUDIO_PWM")
-    block(p, "Amplifier", ["U20"], ["U20 class-D amplifier, bridge-tied to the speaker LS20", "R20: input from GP8 (PWM)"],
+    ac(p, "pwm_filter", {"about": "R20 / C21: f = 1 / (2π · 1 kΩ · 10 nF) = 15.9 kHz", "input": "AUDIO_PWM",
+                         "output": "AUDIO_IN", "expect": {"gain_db": [{"at_hz": 1000, "min": -0.5, "max": 0.5}],
+                                                          "high_hz": {"min": 10000, "max": 25000}}})
+    block(p, "Amplifier", ["U20"], ["U20 class-D amplifier, bridge-tied to the speaker LS20",
+                                    "R20 / C21: input from GP8 (PWM), low-pass at 15.9 kHz"],
           "Reference: audio", near={"C20": "U20"})
 
 
@@ -218,7 +241,9 @@ OPAMP = {"lcsc": "C9100004", "mpn": "single op-amp, rail to rail out (reference 
 
 def guitar(p):
     """An instrument buffer: the jack J20's tip on GTR_IN (a pickup that wants at least 1 MΩ), 2.2 MΩ to the
-    reference VREF (10 kΩ / 10 kΩ from +5V, 22 µF), U20 an op-amp follower on +5V with 100 nF."""
+    reference VREF (10 kΩ / 10 kΩ from +5V, 22 µF), U20 an op-amp follower on +5V with 100 nF; its output coupled
+    through C22 1 µF (film) onto BUF_OUT with R24 100 kΩ to ground – an AC run expects the follower flat at 1 kHz and
+    the coupling's corner, 1.6 Hz, below 10 Hz."""
     p.use_library_part("C17414")
     resistor(p, "C9100005", 2.2e6)
     p.save_part(OPAMP["lcsc"], OPAMP)
@@ -230,14 +255,23 @@ def guitar(p):
     add(g, "R22", "resistor", "C17414", {"1": "1", "2": "2"}, value="10k")
     add(g, "C20", "capacitor", "C45783", {"1": "1", "2": "2"}, value="22uF")
     add(g, "C21", "capacitor", "C49678", {"1": "1", "2": "2"}, value="100nF")
+    capacitor(p, "C9100021", 1e-6, "film", "1 µF film")
+    resistor(p, "C9100022", 100e3)
+    add(g, "C22", "capacitor", "C9100021", {"1": "1", "2": "2"}, value="1uF")
+    add(g, "R24", "resistor", "C9100022", {"1": "1", "2": "2"}, value="100k")
     wire(g, "+5V", "U20.5", "R21.1", "C21.1")
-    wire(g, "GND", "U20.4", "R22.2", "C20.2", "C21.2", "J20.2")
+    wire(g, "GND", "U20.4", "R22.2", "C20.2", "C21.2", "J20.2", "R24.2")
     wire(g, "VREF", "R21.2", "R22.1", "C20.1", "R20.2")
     wire(g, "GTR_IN", "J20.1", "R20.1", "U20.3", instrument="pickup", load_min_ohm=1e6)
-    wire(g, "GTR_OUT", "U20.1", "U20.2")
+    wire(g, "GTR_OUT", "U20.1", "U20.2", "C22.1")
+    wire(g, "BUF_OUT", "C22.2", "R24.1", v=(-2.5, 2.5))
     p.save_graph(g)
+    ac(p, "output_coupling", {"about": "C22 / R24: f = 1 / (2π · 100 kΩ · 1 µF) = 1.6 Hz", "input": "GTR_IN",
+                              "output": "BUF_OUT", "expect": {"gain_db": [{"at_hz": 1000, "min": -0.5, "max": 0.5}],
+                                                              "low_hz": {"max": 10}}})
     block(p, "Instrument Buffer", ["U20"], ["J20: the instrument (pickup) in, R20 2.2 MΩ bias to VREF",
-                                             "R21/R22 + C20: VREF at half the supply; U20 a follower"],
+                                             "R21/R22 + C20: VREF at half the supply; U20 a follower",
+                                             "C22 / R24: the output coupled, corner 1.6 Hz"],
           "Reference: guitar", near={"C21": "U20"})
 
 
@@ -388,6 +422,14 @@ def _resistor_to(p, des, key, ohm, text):
     p.save_graph(g)
 
 
+def _capacitor_to(p, des, key, farad, dielectric, text):
+    """`des` becomes a capacitor of `farad` – a new entry `key`, the graph's value with it."""
+    capacitor(p, key, farad, dielectric, f"{text} {dielectric}")
+    g = p.graph()
+    p.comp(g, des).update(lcsc=key, value=text)
+    p.save_graph(g)
+
+
 def _bypass_to_ground_level(p):
     """A bypass switch SW21 (the example's button part) from GTR_IN, at VREF, to an output BYPASS held at 0 V by
     10 kΩ – both sides in the signal path."""
@@ -450,11 +492,15 @@ def _flip(p, des):
 FAULTS = {
     "motors": [("no flyback diode", lambda p: _remove(p, "D20"), {"REQ.missing"}),
                ("a winding of 10 Ω", lambda p: _value(p, "C9100001", coil_ohm=10), {"LIM.i", "LIM.p"})],
-    "audio": [("an output on ground", lambda p: _merge(p, "SPK_N", "GND"), {"REQ.forbidden"})],
+    "audio": [("an output on ground", lambda p: _merge(p, "SPK_N", "GND"), {"REQ.forbidden"}),
+              ("a filter capacitor ten times larger",
+               lambda p: _capacitor_to(p, "C21", "C9100023", 100e-9, "C0G", "100nF"), {"SIM.response"})],
     "guitar": [("a bias of 470 kΩ", lambda p: _resistor_to(p, "R20", "C9100010", 470e3, "470k"), {"REQ.value"}),
                ("a reference above the inputs' range", lambda p: _resistor_to(p, "R22", "C9100011", 100e3, "100k"),
                 {"LIM.range"}),
-               ("a bypass switch to an output at 0 V", _bypass_to_ground_level, {"REQ.value"})],
+               ("a bypass switch to an output at 0 V", _bypass_to_ground_level, {"REQ.value"}),
+               ("a coupling capacitor ten times smaller",
+                lambda p: _capacitor_to(p, "C22", "C9100024", 100e-9, "film", "100nF"), {"SIM.response"})],
     "power": [("the cells' current limit", lambda p: _cell(p, i_max_a=0.02), {"LIM.i"}),
               ("no diode in front of the cells", lambda p: (_remove(p, "D20"), _merge(p, "BAT", "+5V")),
                {"PATH.reverse"})],

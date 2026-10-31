@@ -542,6 +542,7 @@ rule = "The simulation config names existing parts, nets and boards, and every v
 why = "A config the simulation cannot read checks nothing."
 fix = "Correct sim.json as the message says."
 severity = "error"
+grades = { off = "note" }
 replaces = ["E-1", "E-3"]
 sources = [
   "edakit handbook 5.1",
@@ -588,6 +589,18 @@ replaces = ["E-4"]
 sources = [
   "edakit handbook 5.3: a reversed LED elsewhere stays dark where it should light – the polarity check of the graph",
   "edakit rules.json G-7 (retired): polarity is checked by the simulation",
+]
+
+[codes."SIM.response"]
+title = "frequency response as expected"
+rule = "Every expectation of an AC run of the simulation config (ac) holds: the gain from its input to its output at the frequencies named (grade gain), and the lower and upper −3 dB corners within their ranges (grade corner). The gain is 20·log10 |V(output) / V(source)| for 1 V AC behind the run's source_ohm, linearised around a DC scenario; a corner is where the gain falls 3.01 dB below its largest value in the sweep. Runs only where sim.json names an expectation, only with the domain audio or guitar on."
+why = "A coupling capacitor ten times too small, a filter resistor of the wrong decade or a gain resistor swapped passes every DC check – the operating point is the same – and shows only as thin bass, a dull top or a level that clips the next stage. The DC-first simulation sees none of it; an expectation written next to the circuit (the corner the designer computed) holds it, the way a load's expected state holds the DC function."
+fix = "Find the part that sets the corner or the gain (an RC: f = 1 / (2π·R·C); a non-inverting stage: 1 + Rf/Rg) and correct its value, or correct the expectation where it was wrong. A corner from the op-amp's bandwidth is not modelled (no gain-bandwidth in the model) – judge it from the datasheet."
+severity = "warning"
+grades = { gain = "warning", corner = "warning" }
+sources = [
+  "rules-at-scale.md, decision 9 (2026-10-31): AC analysis opt-in, where sim.json names an expectation, in the domains audio and guitar, warnings first; maker-coverage FT-12",
+  "ngspice 42 (Ubuntu package 42+ds-3build1): the control command ac dec <points per decade> <fstart> <fstop> and wrdata of mag(v(node)), as edakit runs them (tests/test_sim_ac.py); the manual on ngspice.sourceforge.io was not reachable from the environment where this was built",
 ]
 
 [codes."SIM.copper"]

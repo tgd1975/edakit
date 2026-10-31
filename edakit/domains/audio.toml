@@ -7,7 +7,7 @@ about = "speakers, amplifiers and analog signal paths: bridge-tied outputs, stab
 suggested_by = { kinds = ["speaker"], roles = ["out_p", "out_n"] }
 
 [switch]                             # the findings this domain switches on (code, or code:topic)
-on = ["REQ.forbidden:btl"]
+on = ["REQ.forbidden:btl", "SIM.response"]
 
 [severity]
 
