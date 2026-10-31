@@ -7,8 +7,8 @@
 FT-1 = { status = "built", where = "transients: steps (sim/run.py, sim/netlist.py amps); LIM.range finds the brown-out", step = 6 }
 FT-2 = { status = "partial", where = "cables: length_m, awg | mm2, l_nh_per_m (circuit.wire_ohm, wire_h)", missing = "i_max_a from the gauge (no read ampacity table), c_pf_per_m, a board without a PCB instead of bought", step = 6 }
 FT-3 = { status = "built", where = "behaviour opamp (sim/netlist.py); LIM.range/opamp", step = 6 }
-FT-4 = { status = "open", missing = "the charger model needs the TP4056's and MCP73831's numbers – datasheets" }
-FT-5 = { status = "open", missing = "adjustable regulators: vref and minimum load per part – datasheets" }
+FT-4 = { status = "partial", where = "values prog_v, roles prog and bat; LIM.i/charge against the charger's i_out_max_a and the cell's i_charge_max_a (MCP73831 DS20001984H, TP4056 REV_2.4)", missing = "the CC/CV behaviour in the simulation, the charger's dissipation (5 V into 3 V at 1 A) and the termination current", step = 6 }
+FT-5 = { status = "partial", where = "values vref_v, i_load_min_a, roles adj and fb (circuit.feedback_vout); the simulation regulates to the divider; REQ.missing/feedback, REQ.value/feedback, LIM.range/min_load; AMS1117 datasheet as the example", missing = "a boost converter's output with EN low (VIN − VD): HINT.boost_enable names it, no model", step = 6 }
 FT-6 = { status = "built", where = "kinds motor, solenoid, speaker, heater, optocoupler (catalog/kinds.toml, sim/netlist.py)", step = 6 }
 FT-7 = { status = "open", missing = "the ES1 limits of IEC 62368-1 are tagged to verify; mains is open decision 3" }
 FT-8 = { status = "built", where = "sim.json fault_scenarios: reversed, shorted, off (sim/run.py fault_scenarios); the parts' limits as warnings", step = 6 }
@@ -44,12 +44,12 @@ CK-11 = { status = "partial", where = "entry antenna.keepout_mm; GEO.keepout on 
 CK-12 = { status = "built", where = "roles dp_a, dp_b, dn_a, dn_b; REQ.missing/usb_data (domain usb)", step = 6 }
 CK-13 = { status = "built", where = "pin needs; REQ.missing/pin, REQ.value/pin, REQ.forbidden/pin", step = 6 }
 CK-14 = { status = "partial", where = "a regulator's capacitors as pin needs", missing = "DC bias and the ESR window", step = 6 }
-CK-15 = { status = "partial", where = "REQ.missing flyback for motors and solenoids", missing = "clamp diodes at a bridge driver without internal ones (L298)", step = 6 }
+CK-15 = { status = "built", where = "REQ.missing flyback for motors and solenoids; pin clamp = \"none\" and REQ.missing/clamp for a bridge output without its own diodes (ST L298 datasheet, section 3)", step = 6 }
 CK-16 = { status = "built", where = "REQ.missing/leave on nets through a cable and on connectors marked off_board (domain cables)", step = 6 }
-CK-17 = { status = "open", missing = "RS-485 and CAN termination – the standards' numbers not read here" }
+CK-17 = { status = "built", where = "transceiver roles rs485_a/rs485_b, canh/canl; REQ.missing/termination, REQ.forbidden/termination, REQ.value/termination, REQ.value/failsafe; tables/buses.toml read from TI SLLA272D and SLOA101B", step = 6 }
 CK-18 = { status = "built", where = "cells i_max_a; LIM.i/cell", step = 6 }
 CK-19 = { status = "built", where = "net matrix row | col; REQ.missing/matrix, REQ.forbidden/matrix", step = 6 }
-CK-20 = { status = "open", missing = "configuration pins with voltage windows – datasheets" }
+CK-20 = { status = "built", where = "pin windows (with pull and pull_ohm in the netlist); REQ.value/window in stage E; example the MAX98357A SD_MODE (datasheet 19-6779 Rev 11)", step = 6 }
 CK-21 = { status = "built", where = "limits i_supply_pin_max_a; LIM.i/supply_pin (constant-current drivers)", step = 6 }
 CK-22 = { status = "open", missing = "the ES1 limits – tagged to verify" }
 CK-23 = { status = "built", where = "values f_clock_hz, limits f_max_hz; LIM.range/clock", step = 6 }
@@ -64,8 +64,8 @@ CK-31 = { status = "built", where = "layout.apart; GEO.spacing/apart on the Gerb
 
 [hints]
 HT-1 = { status = "built", where = "HINT.cable_line (domain cables)", step = 6 }
-HT-2 = { status = "open", missing = "the USB current budget's numbers are tagged extracted" }
-HT-3 = { status = "open", missing = "the 10 µF at attach is tagged extracted" }
+HT-2 = { status = "built", where = "HINT.usb_budget (domain usb); tables/usb.toml [budget], [typec_current] read from the USB 2.0 and Type-C specifications", step = 6 }
+HT-3 = { status = "built", where = "HINT.usb_inrush (domain usb); tables/usb.toml [attach] read from USB 2.0, 7.2.4.1", step = 6 }
 HT-4 = { status = "built", where = "HINT.boost_enable (domain power)", step = 6 }
 HT-5 = { status = "open", missing = "a charger's power path – no charger kind or behaviour yet (FT-4)" }
 HT-6 = { status = "built", where = "HINT.input_polarity (domain power)", step = 6 }

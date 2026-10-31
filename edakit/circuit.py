@@ -89,6 +89,28 @@ def resistors_to(d, net, targets):
     return out
 
 
+def feedback_vout(d, des):
+    """(vout, R1, R2) of an adjustable regulator set by its divider (maker-coverage FT-5), or None: values vref_v and a
+    pin with the role adj (the reference between the output and ADJ – LM317, AMS1117: VOUT = VREF × (1 + R2/R1)) or fb
+    (the reference from FB to ground – most bucks and boosts: VOUT = VREF × (1 + R1/R2)); R1 from the output (role vout)
+    to that pin, R2 from it to ground, resistors in parallel added up. The adjust pin's current (IADJ × R2) is left out,
+    as the datasheets do."""
+    part = d.part(des) or {}
+    vref = values(part).get("vref_v")
+    role = next((r for r in ("adj", "fb") if d.net_of(des, r)), None)
+    out, mid = d.net_of(des, "vout"), d.net_of(des, role) if role else None
+    if not is_number(vref) or not out or not mid:
+        return None
+
+    def parallel(rs):
+        rs = [r for _, r, _ in rs if is_number(r) and r > 0]
+        return 1 / sum(1 / r for r in rs) if rs else None
+    r1, r2 = parallel(resistors_to(d, mid, {out})), parallel(resistors_to(d, mid, {d.ground}))
+    if r1 is None or r2 is None:
+        return None
+    return (vref * (1 + r2 / r1) if role == "adj" else vref * (1 + r1 / r2)), r1, r2
+
+
 def resistor_like(d):
     """(des, net_a, net_b) for every resistive two-pole incl. both halves of a potentiometer."""
     out = []

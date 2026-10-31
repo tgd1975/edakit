@@ -434,14 +434,22 @@ class Netlist:
         self.meta["regs"][des] = {"kind": kind, "vin": vin, "vout": vout, "gnd": gnd, "vset": vset,
                                   "ammeter": f"v_{tag}_am#branch", "values": p, "extra_i": extra_i, "vin_min": vin_min}
 
+    def reg_values(self, des, part):
+        """The regulator's values; an adjustable one's vout_v from its divider and vref_v (circuit.feedback_vout)."""
+        from ..circuit import feedback_vout
+        p = dict(values(part))
+        if (fb := feedback_vout(self.d, des)) is not None:
+            p["vout_v"] = round(fb[0], 6)
+        return p
+
     def ic_ldo(self, des, part):
         self._regulator(des, self.rn(des, "vin", True), self.rn(des, "vout", True), self._gnd_of(des), "ldo",
-                        values(part), vin_min=limits(part).get("vin_min_v"))
+                        self.reg_values(des, part), vin_min=limits(part).get("vin_min_v"))
         self.meta["regs"][des]["limits"] = limits(part)
 
     def ic_buck(self, des, part, kind="buck"):
         self._regulator(des, self.rn(des, "vin", True), self.rn(des, "vout", True), self._gnd_of(des), kind,
-                        values(part), vin_min=limits(part).get("vin_min_v"))
+                        self.reg_values(des, part), vin_min=limits(part).get("vin_min_v"))
         self.meta["regs"][des]["limits"] = limits(part)
 
     def ic_boost(self, des, part):
@@ -578,6 +586,7 @@ class Netlist:
     def build(self, tran=None):
         for des in sorted(self.d.comps):
             self.component(des)
+        self.window_pulls()
         for el in getattr(self.d, "cable_elements", []):
             a, b = self.pn(el["pa"]), self.pn(el["pb"])
             if el.get("l"):          # the wire's inductance after its resistance: an LC spike at hot-plug
@@ -604,6 +613,22 @@ class Netlist:
         control = "op\n" + "\n".join(prints) if tran is None else self.tran_control(tran)
         return (f"edakit {self.sc['name']}\n{body}\n{models}\n"
                 f".options gmin=1e-12 reltol=1e-4 itl1=500 rshunt=1e12\n.control\n{control}\n.endc\n.end\n")
+
+    def window_pulls(self):
+        """A configuration pin's own pull (pin windows with pull up|down and pull_ohm – MAX98357A SD_MODE's 100 kΩ to
+        ground): it sets, with the board's resistors, the voltage the pin's windows read (REQ.value/window). Only pins
+        with windows: the other pins' pulls stay out of the operating point as before."""
+        for des in sorted(self.d.comps):
+            pins = (self.d.part(des) or {}).get("pins") or {}
+            on = {t: next((f"{des}.{n}" for n, p in pins.items() if p.get("type") == t
+                           and self.d.pin_net.get(f"{des}.{n}")), None) for t in ("ground", "power_in")}
+            for num, p in pins.items():
+                ref = f"{des}.{num}"
+                if not p.get("windows") or not p.get("pull_ohm") or p.get("pull") not in ("up", "down") \
+                        or not self.d.pin_net.get(ref):
+                    continue
+                to = on["power_in" if p["pull"] == "up" else "ground"]
+                self.add(f"R_PULL_{des}_{num} {self.pn(ref)} {self.pn(to) if to else '0'} {p['pull_ohm']:.6g}")
 
     def tran_control(self, tran):
         """.tran from the operating point at t = 0 (every source at its first point), the voltages of the nets in

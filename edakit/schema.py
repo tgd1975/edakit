@@ -121,6 +121,15 @@ def problems(entry):
             out.append(f"{at}.strap: {pin['strap']!r} – high or low")
         if pin.get("pull") not in (None, "up", "down"):
             out.append(f"{at}.pull: {pin['pull']!r} – up or down")
+        if pin.get("clamp") not in (None, "internal", "none"):
+            out.append(f"{at}.clamp: {pin['clamp']!r} – internal or none (clamp diodes of the output's own)")
+        ws = pin.get("windows")
+        if ws is not None and not (isinstance(ws, list) and ws and all(
+                isinstance(w, dict) and w.get("state") and set(w) <= {"state", "min_v", "max_v"}
+                and any(k in w for k in ("min_v", "max_v")) and all(is_number(w[k]) for k in ("min_v", "max_v") if k in w)
+                for w in ws)):
+            out.append(f"{at}.windows: a list of {{state, min_v, max_v}} – the voltage windows the pin reads, each with "
+                       "a state and at least one bound in V")
         lo, hi = pin.get("v_op_min_v"), pin.get("v_op_max_v")
         if is_number(lo) and is_number(hi) and lo > hi:
             out.append(f"{at}: v_op_min_v {lo} above v_op_max_v {hi}")

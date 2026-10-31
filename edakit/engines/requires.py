@@ -33,7 +33,8 @@ def run(ctx):
     d = ctx.joined
     return (decoupling(d) + i2c(d) + flyback(d) + usb_c(d) + functions(d) + hot_loops(ctx.design) + pin_needs(d)
             + balancing(d) + addresses(d) + uart_lines(d) + adc_sources(d) + btl_outputs(d) + instrument_loads(d)
-            + stable_gains(d) + usb_data(d) + leaving_lines(d) + matrix(d))
+            + stable_gains(d) + usb_data(d) + leaving_lines(d) + matrix(d) + bus_terminations(d) + bridge_clamps(d)
+            + feedback_dividers(d))
 
 
 def decoupling(d):
@@ -116,6 +117,67 @@ def flyback(d):
             out.append(Finding("REQ.missing", "G", des, f"{des}: {word} switched by {', '.join(switches)} without a diode "
                                f"across it (cathode at {plus}, anode at {minus})", n["source"],
                                "a diode directly across the coil", on=(("component", des),)))
+    return out
+
+
+def feedback_dividers(d):
+    """REQ.missing/feedback, REQ.value/feedback (maker-coverage FT-5): an adjustable regulator (values vref_v, a pin
+    with the role adj or fb) has its divider – R1 from the output to that pin, R2 from it to ground –, and the output it
+    sets stays within the output net's declared range."""
+    from ..circuit import feedback_vout
+    out = []
+    for des in sorted(d.comps):
+        part = d.part(des) or {}
+        role = next((r for r in ("adj", "fb") if d.net_of(des, r)), None)
+        if not is_number(values(part).get("vref_v")) or not role:
+            continue
+        net, on = d.net_of(des, "vout"), (("component", des),)
+        fb = feedback_vout(d, des)
+        if fb is None:
+            out.append(Finding("REQ.missing", "G", des, f"{des}: an adjustable regulator ({role.upper()}) without its "
+                               f"divider – a resistor from {net or 'its output'} to {d.net_of(des, role)} and one from "
+                               f"there to {d.ground}", f"vref_v of {d.entry_key(des)}", "the divider of the datasheet's "
+                               "application circuit", grade="feedback", on=on))
+            continue
+        vout, r1, r2 = fb
+        hi = v_range(d.nets[net])[1] if net in d.nets else None
+        if hi is not None and vout > hi + 1e-9:
+            out.append(Finding("REQ.value", "G", des, f"{des}: R1 {ohm(r1)} and R2 {ohm(r2)} set the output to "
+                               f"{vout:.3g} V, the net {net} declares up to {hi:g} V", f"vref_v of {d.entry_key(des)} "
+                               "(VOUT = VREF × (1 + " + ("R2/R1" if role == "adj" else "R1/R2") + "))",
+                               "the divider for the output the net is meant to carry, or the net's range",
+                               grade="feedback", on=on))
+    return out
+
+
+def bridge_clamps(d):
+    """REQ.missing/clamp (maker-coverage CK-15): an output whose entry says it has no clamp diodes of its own (pin field
+    clamp = "none" – the L298's bridges) and that drives a winding or a connector has a diode from the output to a supply
+    (cathode at the supply) and one from ground (anode at ground): the winding's current has a path when the bridge
+    turns off."""
+    n = needs()["flyback"]
+    supplies, gnd, out = supply_nets(d), d.ground, []
+    windings = set(d.comps_of_kind(*n["coils"])) | set(d.comps_of_kind("connector"))
+    diodes = [(x, d.net_of(x, "anode"), d.net_of(x, "cathode")) for x in d.comps_of_kind("diode")]
+    for des in sorted(d.comps):
+        for num, pin in ((d.part(des) or {}).get("pins") or {}).items():
+            net = d.pin_net.get(f"{des}.{num}")
+            if pin.get("clamp") != "none" or not net:
+                continue
+            loads = sorted({r.partition(".")[0] for r in d.nets[net]["pins"]} & windings)
+            if not loads:
+                continue
+            up = any(a == net and c in supplies for _, a, c in diodes)
+            down = any(c == net and a == gnd for _, a, c in diodes)
+            if up and down:
+                continue
+            lost = " and ".join(w for w, ok in ((f"one from {net} to the supply (cathode at the supply)", up),
+                                                (f"one from {gnd} to {net} (anode at {gnd})", down)) if not ok)
+            out.append(Finding("REQ.missing", "G", f"{des}.{num}", f"{des}.{num} ({pin.get('name', num)}) drives "
+                               f"{', '.join(loads)} and has no clamp diodes of its own (clamp = none) – missing: {lost}",
+                               "ST L298 datasheet (January 2000), 3 Applications: an external bridge of diodes is required "
+                               "when inductive loads are driven", "fast diodes (trr ≤ 200 ns, Schottky preferred) from "
+                               "each output to the supply and from ground", grade="clamp", on=(("component", des),)))
     return out
 
 
@@ -687,3 +749,83 @@ def matrix(d):
                            "QMK config_options DIODE_DIRECTION (maker-coverage CK-19)",
                            "all diodes the same way, as the firmware's diode direction says", grade="matrix"))
     return out
+
+
+# --- differential buses (maker-coverage CK-17) ----------------------------------------------------------------------
+BUS_ROLES = {"rs485": ("rs485_a", "rs485_b"), "can": ("canh", "canl")}    # a and b alone are a switch's pins
+
+
+def buses(d):
+    """{(kind, net a, net b): [transceivers]} – the pairs of nets the transceivers' bus pins (roles rs485_a/rs485_b,
+    canh/canl)
+    sit on; a pair across boards is one pair, its cable wires join the nets."""
+    out = defaultdict(list)
+    for des in d.comps:
+        pins = (d.part(des) or {}).get("pins") or {}
+        for kind, (ra, rb) in BUS_ROLES.items():
+            na = next((d.pin_net.get(f"{des}.{n}") for n, p in pins.items() if p.get("role") == ra), None)
+            nb = next((d.pin_net.get(f"{des}.{n}") for n, p in pins.items() if p.get("role") == rb), None)
+            if na and nb:
+                out[(kind, na, nb)].append(des)
+    return out
+
+
+def bus_terminations(d):
+    """REQ.missing/termination, REQ.forbidden/termination, REQ.value/termination: a differential bus has one
+    termination at each end – two across the boards of the graph –, each of the cable's 120 Ω, directly across the pair
+    or split (two resistors to a middle net); REQ.value/failsafe: an RS-485 bus with idle bias (a resistor from A to a
+    supply, one from B to ground) holds at least 200 mV across the pair with the lowest supply (tables/buses.toml)."""
+    from .. import catalog
+    t = catalog.table("buses")
+    gnd, supplies, out = d.ground, supply_nets(d), []
+    for (kind, na, nb), who in sorted(buses(d).items()):
+        want, src = t[kind]["termination_ohm"], f"catalog/tables/buses.toml [{kind}]"
+        place, on = f"{na}/{nb}", (("net", na), ("net", nb))
+        terms = [(des, r) for des, r, _ in resistors_to(d, na, {nb})]
+        via_a = {other: (des, r) for des, r, other in resistors_to(d, na, set(d.nets) - {nb, gnd} - supplies)}
+        for des_b, r_b, mid in resistors_to(d, nb, set(via_a)):
+            des_a, r_a = via_a[mid]
+            terms.append((f"{des_a}+{des_b}", (r_a + r_b) if is_number(r_a) and is_number(r_b) else None))
+        bus = f"{'RS-485' if kind == 'rs485' else 'CAN'} bus {place} ({', '.join(sorted(who))})"
+        if len(terms) < 2:
+            out.append(Finding("REQ.missing", "G", place, f"{bus}: {len(terms)} termination(s) in the graph, a bus has one "
+                               f"at each end of its cable – {want:g} Ω each", src, f"{want:g} Ω across the pair at the "
+                               "board at each end of the bus, or accept naming where the other end is terminated",
+                               grade="termination", on=on))
+        elif len(terms) > 2:
+            out.append(Finding("REQ.forbidden", "G", place, f"{bus}: {len(terms)} terminations "
+                               f"({', '.join(des for des, _ in terms)}) – only the two ends of the cable are terminated",
+                               src, "keep the terminations at the two ends of the bus, take the others out (or make "
+                               "them switchable)", grade="termination", on=on))
+        for des, r in terms:
+            if is_number(r) and abs(r - want) > 0.01 * want:
+                out.append(Finding("REQ.value", "G", place, f"{bus}: termination {des} is {ohm(r)}, the cable's "
+                                   f"impedance is {want:g} Ω", src, f"{want:g} Ω", grade="termination", on=on))
+        if kind == "rs485":
+            out += failsafe_bias(d, bus, place, on, na, nb, [r for des, r in terms if "+" not in des and is_number(r)],
+                                 t["rs485"]["idle_min_v"], src)
+    return out
+
+
+def failsafe_bias(d, bus, place, on, na, nb, direct, need_v, src):
+    """REQ.value/failsafe: the idle voltage a bias pair (A to a supply, B to ground) sets across the terminations."""
+    supplies = supply_nets(d)
+    ups = [(des, r, other) for des, r, other in resistors_to(d, na, supplies) if is_number(r)]
+    downs = [(des, r) for des, r, _ in resistors_to(d, nb, {d.ground}) if is_number(r)]
+    if not ups or not downs:
+        return []
+    # the supply's lowest declared voltage while it is on: the range's floor, or its top where the range starts at 0 V
+    # (a rail that is off as well) – then the margin at the rail's lower tolerance is not seen
+    lo = min((lambda v: v[0] if v[0] > 0 else v[1])(v_range(d.nets[other])) for _, _, other in ups)
+    r_up, r_down = min(r for _, r, _ in ups), min(r for _, r in downs)
+    if direct:
+        req = 1 / sum(1 / r for r in direct)
+        vab = lo * req / (r_up + r_down + req)
+    else:
+        vab = lo
+    if vab >= need_v:
+        return []
+    return [Finding("REQ.value", "G", place, f"{bus}: idle bias {ups[0][0]}/{downs[0][0]} holds {vab * 1e3:.0f} mV "
+                    f"across the pair at {lo:g} V with the terminations, below the {need_v * 1e3:.0f} mV a receiver "
+                    "detects", src, "smaller bias resistors (SLLA272: VAB = 200 mV + the noise), or transceivers with "
+                    "built-in failsafe and no bias", grade="failsafe", on=on)]

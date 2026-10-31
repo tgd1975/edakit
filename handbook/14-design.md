@@ -210,6 +210,12 @@ A net with pwm_hz lights LEDs: consider whether its frequency flickers.
 **`HINT.boost_enable`** – a boost converter switched off by its enable (note)  
 A boost converter whose enable an MCU drives: consider what its output does with EN low.
 
+**`HINT.usb_budget`** – the current a USB port gives (note)  
+A USB receptacle that powers the board: consider what the port gives – 100 mA before the device is configured, 500 mA after (USB 2.0), 900 mA on USB 3.2 single lane, 1.5 A or 3 A only where a Type-C source advertises it on CC and the board reads the advertisement.
+
+**`HINT.usb_inrush`** – more than 10 µF on USB VBUS (note)  
+A USB receptacle whose VBUS net carries more than 10 µF directly (the capacitors' value_f): consider a soft start or less capacitance ahead of it – USB 2.0 allows a device 10 µF at attach; HINT.bulk asks for a bulk capacitor at the same input, and the two meet here.
+
 **`HINT.input_polarity`** – a power input without a polarity check (note)  
 A battery holder or supply connector the graph does not mark as reversible: consider whether it can be plugged the wrong way round.
 

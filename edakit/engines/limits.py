@@ -73,7 +73,45 @@ def judge_all(design, quantities):
 def run(ctx):
     found = judge_all(ctx.design, pin_voltages(ctx.design) + part_voltages(ctx.design))
     found += judge_all(ctx.joined, fuse_currents(ctx.joined, ctx.sim))
-    return found + hazardous(ctx.design) + radio_power(ctx.design) + radio_bands(ctx.design)
+    return (found + hazardous(ctx.design) + charge_currents(ctx.design, ctx.sim) + radio_power(ctx.design)
+            + radio_bands(ctx.design))
+
+
+# --- linear chargers (maker-coverage FT-4) ----------------------------------------------------------------------------
+def charge_currents(d, sim=None):
+    """LIM.i/charge: a linear charger's programmed current – values prog_v of its entry over the resistor from its PROG
+    pin (role prog) to ground: MCP73831 1000 V / R_PROG, TP4056 1100 V or 1200 V by maker – within the charger's own
+    i_out_max_a and within the cell's i_charge_max_a (sim.json cells) where a battery holder of supplies.cells sits on
+    the charger's battery pin (role bat)."""
+    from ..circuit import resistors_to
+    out = []
+    cells = (sim or {}).get("cells") or {}
+    holders = ((sim or {}).get("supplies") or {}).get("cells") or {}
+    for des in sorted(d.comps, key=natural_key):
+        part = d.part(des) or {}
+        k = (part.get("values") or {}).get("prog_v")
+        prog = d.net_of(des, "prog")
+        if not is_number(k) or not prog:
+            continue
+        rs = [r for _, r, _ in resistors_to(d, prog, {d.ground}) if is_number(r) and r > 0]
+        if not rs:
+            continue
+        r = 1 / sum(1 / x for x in rs)
+        i_set = k / r
+        bounds = []
+        if is_number(most := (part.get("limits") or {}).get("i_out_max_a")):
+            bounds.append((most, f"i_out_max_a of {d.entry_key(des)}"))
+        bat = d.net_of(des, "bat")
+        for h, state in sorted(holders.items()):
+            if bat and bat in {d.pin_net.get(f"{h}.{n}") for n in ((d.part(h) or {}).get("pins") or {})}:
+                if is_number(lim := (cells.get(state) or {}).get("i_charge_max_a")):
+                    bounds.append((lim, f"i_charge_max_a of cells.{state} in sim.json ({h})"))
+        for most, src in bounds:
+            if i_set > most * (1 + 1e-9):
+                out.append(Finding("LIM.i", "G", des, f"{des}: R_PROG {r:.4g} Ω programs {num(i_set, 'A')} "
+                                   f"({k:g} V / R_PROG), allowed ≤ {num(most, 'A')}", src, grade="charge",
+                                   on=(("component", des),), data={"value": i_set, "limit": most, "unit": "A"}))
+    return out
 
 
 # --- hazardous voltage ------------------------------------------------------------------------------------------------

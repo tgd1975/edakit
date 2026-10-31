@@ -401,6 +401,10 @@ def function(s, load, low=None, plugin=None):
             s.q(des, "vin", None, "V", "", des, "input voltage", lo=vin, code="LIM.range", entry=False,
                 lims=[Limit(min=r["vin_min_v"], source=f"vin_min_v of {s.n.entry_key(des)}")])
         s.q(des, "i_out", max(res.get(reg["ammeter"], 0.0), 0.0), "A", "", des, "output current")
+        if (least := reg["values"].get("i_load_min_a")) is not None:      # maker-coverage FT-5: LM317, AMS1117
+            s.q(des, "i_out_min", None, "A", "", des, "output current at least the minimum load", code="LIM.range",
+                entry=False, grade="min_load", lo=max(res.get(reg["ammeter"], 0.0), 0.0),
+                lims=[Limit(min=least, source=f"i_load_min_a of {s.n.entry_key(des)}")])
         if reg["kind"] == "ldo" and "rth_ja_k_per_w" in r:
             junction(s, des, ldo_power(res, reg), r, f"junction temperature at {s.amb} °C")
     for des, m in meta["mcu"].items():
@@ -458,6 +462,7 @@ def function(s, load, low=None, plugin=None):
     input_injection(s)
     adc_windows(s)
     switch_dc(s)
+    config_windows(s)
     supply_pin_currents(s)
     clocks(s)
     logic_levels(s)
@@ -601,6 +606,30 @@ def adc_windows(s):
             x = at_pin(d, res, ref, ground_pin(d, des, s.n.part(des) or {}))
             s.q(ref, "v_adc", x, "V", "", des, f"{name} inside the ADC's window", lo=x, code="LIM.range", entry=False,
                 grade="adc", lims=[Limit(min=window[0], max=window[1], source=f"adc.range_v of {ref}")])
+
+
+def config_windows(s):
+    """REQ.value/window (maker-coverage CK-20): a configuration pin that reads its setting by voltage window (pin
+    windows: [{state, min_v, max_v}], the windows its datasheet guarantees – between the trip points' max and min) sits
+    inside one window in the operating point, not between two, where the part may read either; the pin's own pull is in
+    the netlist (netlist.window_pulls)."""
+    d, res = s.d, s.res
+    for des in sorted(d.comps):
+        part = s.n.part(des) or {}
+        ground = None
+        for num, p in (part.get("pins") or {}).items():
+            ws, ref = p.get("windows"), f"{des}.{num}"
+            if not isinstance(ws, list) or not ws or not d.pin_net.get(ref):
+                continue
+            ground = ground or ground_pin(d, des, part)
+            x = at_pin(d, res, ref, ground)
+            hit = [w.get("state") for w in ws if not math.isnan(x)
+                   and w.get("min_v", -math.inf) <= x <= w.get("max_v", math.inf)]
+            expected = "; ".join(f"{w.get('state')} " + (f"{w['min_v']:g}" if "min_v" in w else "") + " … "
+                                 + (f"{w['max_v']:g}" if "max_v" in w else "") + " V" for w in ws)
+            s.check("REQ.value", ref, f"{ref} ({p.get('name', num)}) inside one window of its setting"
+                    + (f": {hit[0]}" if hit else ""), x, expected, bool(hit), "V",
+                    f"pin windows of {s.n.entry_key(des)}", grade="window", on=(("component", des),))
 
 
 def supply_pin_currents(s):
