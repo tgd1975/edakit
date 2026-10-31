@@ -1,0 +1,270 @@
+{
+ "lcsc": "C6568",
+ "mpn": "CP2102-GMR",
+ "manufacturer": "SKYWORKS/SILICON LABS(芯科)",
+ "kind": "ic",
+ "package": "QFN-28 5 × 5 mm, 0.5 mm pitch, exposed pad",
+ "footprint": "WQFN-28_L5.0-W5.0-P0.50-BL-EP3.2",
+ "jlc_class": "Extended Part",
+ "datasheet": {
+  "url": "https://datasheet.lcsc.com/datasheet/pdf/995f8cf35f204a56bfc0167d47351f08.pdf?productCode=C6568",
+  "pinout_page": 10
+ },
+ "pins": {
+  "1": {
+   "name": "DCD",
+   "type": "input",
+   "v_max_v": 5.8,
+   "float_ok": true,
+   "hint": "data carrier detect input, active low; may stay open (Table 9)"
+  },
+  "2": {
+   "name": "RI",
+   "type": "input",
+   "v_max_v": 5.8,
+   "float_ok": true,
+   "hint": "ring indicator input, active low; may stay open (Table 9)"
+  },
+  "3": {
+   "name": "GND",
+   "type": "ground"
+  },
+  "4": {
+   "name": "D+",
+   "type": "bidirectional",
+   "v_max_v": 5.8,
+   "hint": "USB D+: integrated transceiver with on-chip matching and pull-up resistors – no external resistors (p. 1, section 6); TVS diodes at the connector recommended for ESD (Figure 5, option 3)"
+  },
+  "5": {
+   "name": "D-",
+   "type": "bidirectional",
+   "v_max_v": 5.8,
+   "hint": "USB D−: integrated transceiver with on-chip matching and pull-up resistors – no external resistors (p. 1, section 6); TVS diodes at the connector recommended for ESD (Figure 5, option 3)"
+  },
+  "6": {
+   "name": "VDD",
+   "type": "power_output",
+   "role": "vout",
+   "v_max_v": 4.2,
+   "hint": "3.3 V regulator output (≤ 100 mA) in configurations 1 and 2; in configuration 3 (regulator bypassed) a 3.0–3.6 V supply input with REGIN tied to it – this entry describes configurations 1 and 2 (section 10)",
+   "needs": [
+    {
+     "what": "capacitor",
+     "c_min_f": 1e-07,
+     "source": "Silicon Labs CP2102/9 Single-Chip USB to UART Bridge data sheet, Rev. 1.7 (7/16), Figure 5 and Figures 6–7 (C4 0.1 µF at VDD; C3 4.7 µF added when the regulator powers other devices, option 2) – 0.1 µF read as the minimum: assumption"
+    }
+   ]
+  },
+  "7": {
+   "name": "REGIN",
+   "type": "power_in",
+   "role": "vin",
+   "v_op_min_v": 4.0,
+   "v_op_max_v": 5.25,
+   "hint": "5 V input of the on-chip regulator (Table 6: 4.0–5.25 V); in configuration 3 tied to the 3 V net",
+   "needs": [
+    {
+     "what": "capacitor",
+     "c_min_f": 1e-06,
+     "source": "Silicon Labs CP2102/9 Single-Chip USB to UART Bridge data sheet, Rev. 1.7 (7/16), section 10 note ('additional decoupling capacitance (e.g., 0.1 µF in parallel with 1.0 µF) to the REGIN input') and Figures 5–7 (1.0 µF + 0.1 µF) – read as at least 1 µF: assumption"
+    }
+   ]
+  },
+  "8": {
+   "name": "VBUS",
+   "type": "input",
+   "v_max_v": 5.8,
+   "vih_v": 2.9,
+   "vil_v": 1.0,
+   "hint": "VBUS sense input: connect to the USB VBUS; 5 V here means a USB connection (Table 9); detection threshold 1.0–2.9 V (Table 6)"
+  },
+  "9": {
+   "name": "RST#",
+   "type": "bidirectional",
+   "v_max_v": 5.8,
+   "drive": "open_drain",
+   "vih_ratio": 0.7,
+   "vil_ratio": 0.25,
+   "hint": "device reset: open-drain output of the internal POR / VDD monitor; driving it low for ≥ 15 µs resets (Table 9, Table 5); a 4.7 kΩ pull-up to VDD can be added for noise immunity (Figure 5, option 1)"
+  },
+  "10": {
+   "name": "NC",
+   "type": "no_connect",
+   "hint": "leave unconnected or tie to VDD (Table 9)"
+  },
+  "11": {
+   "name": "SUSPEND#",
+   "type": "output",
+   "v_max_v": 5.8,
+   "hint": "driven low in USB suspend (Table 9); floats high for a moment during reset (section 6)"
+  },
+  "12": {
+   "name": "SUSPEND",
+   "type": "output",
+   "v_max_v": 5.8,
+   "hint": "driven high in USB suspend and until enumeration completes; floats high during reset – a 10 kΩ pull-down holds it low (section 6, Figure 5 option 4)"
+  },
+  "13": {
+   "name": "NC",
+   "type": "no_connect",
+   "hint": "leave unconnected or tie to VDD (Table 9)"
+  },
+  "14": {
+   "name": "NC",
+   "type": "no_connect",
+   "hint": "leave unconnected or tie to VDD (Table 9)"
+  },
+  "15": {
+   "name": "NC",
+   "type": "no_connect",
+   "hint": "leave unconnected or tie to VDD (Table 9)"
+  },
+  "16": {
+   "name": "NC",
+   "type": "no_connect",
+   "hint": "leave unconnected or tie to VDD (Table 9)"
+  },
+  "17": {
+   "name": "NC",
+   "type": "no_connect",
+   "hint": "leave unconnected or tie to VDD (Table 9)"
+  },
+  "18": {
+   "name": "NC",
+   "type": "no_connect",
+   "hint": "NC on the CP2102 (VPP on the CP2109); leave unconnected or tie to VDD (Table 9)"
+  },
+  "19": {
+   "name": "NC",
+   "type": "no_connect",
+   "hint": "leave unconnected or tie to VDD (Table 9)"
+  },
+  "20": {
+   "name": "NC",
+   "type": "no_connect",
+   "hint": "leave unconnected or tie to VDD (Table 9)"
+  },
+  "21": {
+   "name": "NC",
+   "type": "no_connect",
+   "hint": "leave unconnected or tie to VDD (Table 9)"
+  },
+  "22": {
+   "name": "NC",
+   "type": "no_connect",
+   "hint": "leave unconnected or tie to VDD (Table 9)"
+  },
+  "23": {
+   "name": "CTS",
+   "type": "input",
+   "v_max_v": 5.8,
+   "float_ok": true,
+   "hint": "clear to send input, active low; may stay open (Table 9)"
+  },
+  "24": {
+   "name": "RTS",
+   "type": "output",
+   "v_max_v": 5.8,
+   "hint": "ready to send output, active low (Table 9)"
+  },
+  "25": {
+   "name": "RXD",
+   "type": "input",
+   "v_max_v": 5.8,
+   "hint": "UART receive input (Table 9)"
+  },
+  "26": {
+   "name": "TXD",
+   "type": "output",
+   "v_max_v": 5.8,
+   "hint": "UART transmit output (Table 9)"
+  },
+  "27": {
+   "name": "DSR",
+   "type": "input",
+   "v_max_v": 5.8,
+   "float_ok": true,
+   "hint": "data set ready input, active low; may stay open (Table 9)"
+  },
+  "28": {
+   "name": "DTR",
+   "type": "output",
+   "v_max_v": 5.8,
+   "hint": "data terminal ready output, active low (Table 9)"
+  },
+  "29": {
+   "name": "EP",
+   "type": "ground",
+   "hint": "exposed pad, GND in the top view (Figure 2); θJA assumes it soldered (Table 3 note 2)"
+  }
+ },
+ "values": {
+  "behavior": "ldo",
+  "vout_v": 3.3,
+  "iq_a": 0.02623,
+  "vih_v": 2.0,
+  "vil_v": 0.8
+ },
+ "limits": {
+  "vdd_max_v": 4.2,
+  "vdd_op_min_v": 3.0,
+  "vdd_op_max_v": 3.6,
+  "vin_min_v": 4.0,
+  "vin_max_v": 5.25,
+  "i_out_max_a": 0.1,
+  "rth_ja_k_per_w": 32,
+  "t_min_c": -40,
+  "t_max_c": 85
+ },
+ "hints": [
+  "Silicon Labs: for newer designs the CP2102N is recommended instead of the CP2102 (p. 1)",
+  "three supply configurations (section 10, Figures 6–10): 1 USB bus-powered and 2 self-powered with the regulator – REGIN 4.0–5.25 V, VDD the 3.3 V output; 3 regulator bypassed – 3.0–3.6 V into VDD, REGIN tied to it. The entry models 1 and 2 (behaviour ldo, VDD power_output); for configuration 3 the project's copy needs behaviour none and VDD as power_in",
+  "the regulator's output VDD powers external 3 V devices up to 100 mA in total (Table 6 note); with other devices on it add 4.7 µF at VDD (Figure 5, option 2)",
+  "UART I/O, VBUS and RST take up to 5.8 V (Table 2); VIH ≥ 2.0 V, VIL ≤ 0.8 V on the UART and suspend pins (Table 4); outputs swing to VDD (3.3 V)",
+  "a self-powered design whose VDD or REGIN can be unpowered while VBUS has 5 V needs a divider on VBUS to respect its absolute maximum (section 10)"
+ ],
+ "sources": [
+  "Silicon Labs CP2102/9 Single-Chip USB to UART Bridge data sheet, Rev. 1.7 (7/16), LCSC's copy https://datasheet.lcsc.com/datasheet/pdf/995f8cf35f204a56bfc0167d47351f08.pdf?productCode=C6568, read 2026-10-31 (silabs.com refused the download, HTTP 403)",
+  "pin definitions, Table 9, p. 10; QFN-28 pinout top view, Figure 2, p. 11 (centre pad labelled GND)",
+  "absolute maximum ratings, Table 2, p. 5: VDD −0.3 … 4.2 V; any I/O pin, VBUS or RST −0.3 … 5.8 V (CP2102); 500 mA total through VDD and GND; 100 mA sunk by RST or any I/O pin; ambient under bias −55 … 125 °C",
+  "recommended operating conditions, Table 3, p. 6: VDD 3.0 / 3.3 / 3.6 V; IPU 200 / 230 µA (USB pull-up); TA −40 … +85 °C; θJA 32 °C/W (multi-layer PCB, exposed pad soldered); CP2102 IREGIN 20 mA typ. / 26 mA max. normal, 80 / 100 µA suspended (note 3: add the pull-up current)",
+  "iq_a 0.02623 = IREGIN max. 26 mA + IPU max. 0.23 mA (Table 3, note 3)",
+  "UART and suspend I/O, Table 4, p. 7: CP2102 VIH ≥ 2.0 V, VIL ≤ 0.8 V; VOH ≥ VDD − 0.7 V at −3 mA, VOL ≤ 0.6 V at 8.5 mA; baud rate ≤ 921600 bps",
+  "reset, Table 5, p. 7: RST low ≥ 15 µs; CP2102 VIHRESET ≥ 0.7 × VDD, VILRESET ≤ 0.25 × VDD",
+  "regulator, Table 6, p. 8: CP2102 VREGIN 4.0–5.25 V; VDDOUT 3.0 / 3.3 / 3.6 V at 1–100 mA; VBUS detection threshold 1.0 / 1.8 / 2.9 V; maximum regulator supply current 100 mA (i_out_max_a)",
+  "USB transceiver, Table 7, p. 8: pull-up 1.425–1.575 kΩ, output impedance 38 Ω",
+  "typical connection, Figure 5, p. 14; regulator configurations and the REGIN decoupling note, section 10, p. 18–20; SUSPEND behaviour at reset, section 6, p. 14",
+  "behaviour ldo (REGIN role vin, VDD role vout, vout_v 3.3 typ.): the regulator of configurations 1 and 2 – the data sheet gives no dropout voltage, so the simulation's default applies below VREGIN 4.0 V, where vin_min_v switches the model off anyway: assumption",
+  "RoHS: p. 1 ('RoHS-compliant 28-pin QFN'), Table 1; LCSC product data C6568 (RoHS), 2026-10-31",
+  "mpn, manufacturer, footprint, jlc_class, pin numbers and names: EasyEDA library data of C6568 via edakit part import, read 2026-10-31",
+  "stock: LCSC 39 759 pcs, JLCPCB assembly 54 977 pcs, Extended preferred (2026-10-31)"
+ ],
+ "compliance": {
+  "rohs": true,
+  "source": "Silicon Labs CP2102/9 Single-Chip USB to UART Bridge data sheet, Rev. 1.7 (7/16), p. 1 and Table 1; LCSC product data C6568, 2026-10-31"
+ },
+ "notes": "Modelled as an LDO from REGIN to VDD (configurations 1 and 2 of section 10) whose quiescent current is the bridge's own supply current. Configuration 3 (regulator bypassed) needs the project's copy changed: behavior none, VDD power_in.",
+ "verified": {
+  "by": "Claude (datasheet check, library draft)",
+  "date": "2026-10-31",
+  "datasheet": "Silicon Labs CP2102/9 Single-Chip USB to UART Bridge data sheet, Rev. 1.7 (7/16)",
+  "datasheet_sha256": "23956ca9f7b66d286c6b3d9101f75345f24e259ac60eaee51ef4e807acc0a175",
+  "checked": [
+   "QFN-28 pinout (Table 9, Figure 2) = the EasyEDA symbol: 1 DCD, 2 RI, 3 GND, 4 D+, 5 D−, 6 VDD, 7 REGIN, 8 VBUS, 9 RST (RST# there), 10 NC, 11 SUSPEND (active low, SUSPEND# there), 12 SUSPEND, 13–22 NC, 23 CTS, 24 RTS, 25 RXD, 26 TXD, 27 DSR, 28 DTR; pad 29 the exposed pad (GND)",
+   "abs. max VDD 4.2 V, I/O / VBUS / RST 5.8 V (Table 2)",
+   "VDD 3.0–3.6 V, IREGIN ≤ 26 mA, θJA 32 °C/W, TA −40 … +85 °C (Table 3)",
+   "VIH 2.0 V, VIL 0.8 V (Table 4); RST 0.7 / 0.25 × VDD (Table 5); VBUS threshold 1.0–2.9 V, regulator 4.0–5.25 V in, 3.0–3.6 V out, ≤ 100 mA (Table 6)",
+   "decoupling: REGIN 1.0 µF + 0.1 µF, VDD 0.1 µF (+ 4.7 µF), Figure 5 and section 10"
+  ],
+  "open": [
+   "the absolute maximum of REGIN is not in Table 2 (only VDD, I/O, VBUS and RST)",
+   "no junction temperature in the data sheet: LIM.t has no limit for the regulator despite θJA 32 °C/W",
+   "no dropout voltage: the ldo model's default applies below VREGIN 4.0 V",
+   "the schema cannot hold the three supply configurations; the entry is the bus-powered/self-powered one with the regulator – configuration 3 needs the project's copy changed",
+   "'100 mA maximum regulator supply current' (Table 6 note): whether the bridge's own ~26 mA counts in it is not stated; i_out_max_a 0.1 is held to the output only",
+   "'no external resistors on D+/D−' has no pin-needs form; in the pin hint",
+   "Silicon Labs recommends the CP2102N for new designs (p. 1); no CP2102N entry was written",
+   "the data sheet text does not print the ordering code CP2102-GMR (it lists CP2102-GM; the R suffix is not explained there); package and pinout compared instead"
+  ]
+ }
+}

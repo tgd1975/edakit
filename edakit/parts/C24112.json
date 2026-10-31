@@ -1,0 +1,236 @@
+{
+ "lcsc": "C24112",
+ "mpn": "MPU-6050",
+ "manufacturer": "TDK InvenSense(应美盛)",
+ "kind": "ic",
+ "package": "QFN-24 4 x 4 x 0.9 mm, exposed pad 2.70 x 2.60 mm",
+ "footprint": "QFN-24_L4.0-W4.0-P0.50-BL-EP2.7",
+ "jlc_class": "Extended Part",
+ "datasheet": {
+  "url": "https://datasheet.lcsc.com/datasheet/pdf/bba2ae92bee94263bbad2d14bc8967f1.pdf?productCode=C24112",
+  "pinout_page": 21
+ },
+ "address": {
+  "base": 104,
+  "pins": {
+   "9": 1
+  }
+ },
+ "pins": {
+  "1": {
+   "name": "CLKIN",
+   "type": "input",
+   "hint": "optional external reference clock input; connect to GND if unused"
+  },
+  "2": {
+   "name": "NC",
+   "type": "no_connect"
+  },
+  "3": {
+   "name": "NC",
+   "type": "no_connect"
+  },
+  "4": {
+   "name": "NC",
+   "type": "no_connect"
+  },
+  "5": {
+   "name": "NC",
+   "type": "no_connect"
+  },
+  "14": {
+   "name": "NC",
+   "type": "no_connect"
+  },
+  "15": {
+   "name": "NC",
+   "type": "no_connect"
+  },
+  "16": {
+   "name": "NC",
+   "type": "no_connect"
+  },
+  "17": {
+   "name": "NC",
+   "type": "no_connect"
+  },
+  "6": {
+   "name": "AUX_DA",
+   "type": "bidirectional",
+   "drive": "open_drain",
+   "hint": "auxiliary I2C master data, for external sensors; logic level VLOGIC (AUX_VDDIO = 0)"
+  },
+  "7": {
+   "name": "AUX_CL",
+   "type": "bidirectional",
+   "drive": "open_drain",
+   "hint": "auxiliary I2C master clock, for external sensors; logic level VLOGIC (AUX_VDDIO = 0)"
+  },
+  "8": {
+   "name": "VLOGIC",
+   "type": "power_in",
+   "v_op_min_v": 1.71,
+   "v_op_max_v": 3.46,
+   "needs": [
+    {
+     "what": "capacitor",
+     "c_min_f": 1e-08,
+     "source": "InvenSense MPU-6000 and MPU-6050 Product Specification, PS-MPU-6000A-00 Revision 3.4 (08/19/2013), p. 22 section 7.3 Bill of Materials for External Components: C4 VLOGIC bypass, ceramic X7R 10 nF ±10 %, 4 V"
+    }
+   ],
+   "hint": "digital I/O supply: VLOGIC ≤ VDD at all times (abs. max VDD + 0.5 V); monotonic ramp, 10–90 % within 3 ms, not before VDD starts to rise"
+  },
+  "9": {
+   "name": "AD0",
+   "type": "input",
+   "hint": "I2C address LSB: low 0x68, high 0x69"
+  },
+  "10": {
+   "name": "REGOUT",
+   "type": "output",
+   "v_max_v": 2.0,
+   "needs": [
+    {
+     "what": "capacitor",
+     "c_min_f": 1e-07,
+     "source": "InvenSense MPU-6000 and MPU-6050 Product Specification, PS-MPU-6000A-00 Revision 3.4 (08/19/2013), p. 22 section 7.3 Bill of Materials for External Components: C1 regulator filter, ceramic X7R 0.1 µF ±10 %, 2 V"
+    }
+   ],
+   "hint": "regulator filter capacitor connection only"
+  },
+  "11": {
+   "name": "FSYNC",
+   "type": "input",
+   "hint": "frame synchronization input; connect to GND if unused"
+  },
+  "12": {
+   "name": "INT",
+   "type": "output",
+   "hint": "interrupt output, totem pole or open-drain as configured (the register map is a separate document, not read here)"
+  },
+  "13": {
+   "name": "VDD",
+   "type": "power_in",
+   "role": "vdd",
+   "v_max_v": 6.0,
+   "needs": [
+    {
+     "what": "capacitor",
+     "c_min_f": 1e-07,
+     "source": "InvenSense MPU-6000 and MPU-6050 Product Specification, PS-MPU-6000A-00 Revision 3.4 (08/19/2013), p. 22 section 7.3 Bill of Materials for External Components: C2 VDD bypass, ceramic X7R 0.1 µF ±10 %, 4 V"
+    }
+   ],
+   "hint": "monotonic ramp, 10–90 % within 100 ms"
+  },
+  "18": {
+   "name": "GND",
+   "type": "ground"
+  },
+  "19": {
+   "name": "RESV",
+   "type": "no_connect",
+   "hint": "reserved – do not connect"
+  },
+  "20": {
+   "name": "CPOUT",
+   "type": "output",
+   "v_max_v": 30.0,
+   "needs": [
+    {
+     "what": "capacitor",
+     "c_min_f": 2.2e-09,
+     "source": "InvenSense MPU-6000 and MPU-6050 Product Specification, PS-MPU-6000A-00 Revision 3.4 (08/19/2013), p. 22 section 7.3 Bill of Materials for External Components: C3 charge pump, ceramic X7R 2.2 nF ±10 %, 50 V"
+    }
+   ],
+   "hint": "charge pump capacitor connection: 2.2 nF X7R rated 50 V (BOM 7.3); CPOUT abs. max 30 V"
+  },
+  "21": {
+   "name": "RESV",
+   "type": "no_connect",
+   "hint": "reserved – do not connect"
+  },
+  "22": {
+   "name": "RESV",
+   "type": "no_connect",
+   "hint": "reserved – do not connect"
+  },
+  "23": {
+   "name": "SCL",
+   "type": "input",
+   "role": "scl"
+  },
+  "24": {
+   "name": "SDA",
+   "type": "bidirectional",
+   "role": "sda",
+   "drive": "open_drain"
+  },
+  "25": {
+   "name": "EP",
+   "type": "mechanical",
+   "hint": "exposed die pad: no electrical connection; it should not be soldered to the PCB (package stress changes the sensor's performance) and no traces or vias may run under it (11.4.2, 11.4.3)"
+  }
+ },
+ "values": {
+  "vih_ratio": 0.7,
+  "vil_ratio": 0.3
+ },
+ "limits": {
+  "vdd_max_v": 6.0,
+  "vdd_op_min_v": 2.375,
+  "vdd_op_max_v": 3.46,
+  "vin_rel_max_v": 0.5,
+  "t_min_c": -40,
+  "t_max_c": 85
+ },
+ "hints": [
+  "input thresholds VIH 0.7 × VLOGIC, VIL 0.3 × VLOGIC – of VLOGIC (pin 8), not of VDD",
+  "SDA/SCL need pull-up resistors (typically to VDD, 9.2); I2C up to 400 kHz",
+  "exposed pad not soldered, no routing under the package; a ground plane under the e-pad is recommended (11.4.2, 11.4.3)",
+  "performance parameters are specified from -40 to +85 °C; the absolute maximum operating range is -40 to +105 °C"
+ ],
+ "sources": [
+  "pin numbers and names: EasyEDA library data of C24112 (edakit part import, 2026-10-31; pad 25 = EP); checked against InvenSense MPU-6000 and MPU-6050 Product Specification, PS-MPU-6000A-00 Revision 3.4 (08/19/2013), p. 21 section 7.1 Pin Out and Signal Description (MPU-6050 column, QFN top view)",
+  "InvenSense MPU-6000 and MPU-6050 Product Specification, PS-MPU-6000A-00 Revision 3.4 (08/19/2013), p. 14 section 6.3: VDD 2.375–3.46 V; VLOGIC 1.71 V to VDD; normal operating current typ 3.9 mA (gyro + accel + DMP) – no maximum given; specified temperature range -40 to +85 °C (t_min_c, t_max_c)",
+  "InvenSense MPU-6000 and MPU-6050 Product Specification, PS-MPU-6000A-00 Revision 3.4 (08/19/2013), p. 15 section 6.4: I2C 400 kHz fast mode; I2C address AD0 = 0 → 1101000 (0x68), AD0 = 1 → 1101001; MPU-6050 VIH min 0.7 × VLOGIC, VIL max 0.3 × VLOGIC",
+  "InvenSense MPU-6000 and MPU-6050 Product Specification, PS-MPU-6000A-00 Revision 3.4 (08/19/2013), p. 16 section 6.5: primary I2C VOL 0.4 V at 3 mA; AUX_CL/AUX_DA VOL and IOL only, no VOH – read as open-drain, together with 9.2 ('the lines are open-drain'): assumption for AUX_CL/AUX_DA",
+  "InvenSense MPU-6000 and MPU-6050 Product Specification, PS-MPU-6000A-00 Revision 3.4 (08/19/2013), p. 20 section 6.9 Absolute Maximum Ratings: VDD -0.5 to +6 V; VLOGIC -0.5 V to VDD + 0.5 V; REGOUT -0.5 to 2 V; CLKIN, AUX_DA, AD0, FSYNC, INT, SCL, SDA -0.5 V to VDD + 0.5 V (vin_rel_max_v, relative to VDD); CPOUT -0.5 to 30 V (2.5 V ≤ VDD ≤ 3.6 V); operating -40 to +105 °C",
+  "InvenSense MPU-6000 and MPU-6050 Product Specification, PS-MPU-6000A-00 Revision 3.4 (08/19/2013), p. 22 section 7.3 Bill of Materials for External Components: C1 0.1 µF (REGOUT), C2 0.1 µF (VDD), C3 2.2 nF 50 V (CPOUT), C4 10 nF (VLOGIC, MPU-6050 only)",
+  "InvenSense MPU-6000 and MPU-6050 Product Specification, PS-MPU-6000A-00 Revision 3.4 (08/19/2013), p. 23 section 7.4: power-on sequencing (VLOGIC ≤ VDD, ramps)",
+  "InvenSense MPU-6000 and MPU-6050 Product Specification, PS-MPU-6000A-00 Revision 3.4 (08/19/2013), p. 33 section 9.2: slave address b110100X, LSB from AD0; SDA and SCL typically need pull-ups to VDD",
+  "InvenSense MPU-6000 and MPU-6050 Product Specification, PS-MPU-6000A-00 Revision 3.4 (08/19/2013), p. 38 section 10.2: SDA, SCL, AD0, CLKIN, INT and AUX_DA/AUX_CL at VLOGIC levels (AUX_VDDIO = 0, its power-on value)",
+  "InvenSense MPU-6000 and MPU-6050 Product Specification, PS-MPU-6000A-00 Revision 3.4 (08/19/2013), p. 43 sections 11.4.2/11.4.3: exposed die pad not soldered, no electrical connection; no traces or vias under the package",
+  "lifecycle: LCSC product data of C24112 read 2026-10-31 says productCycle 'normal', 3367 in stock; a web search (2026-10-31) found DigiKey listing the MPU-6050 as obsolete – TDK's own product and EOL pages were not reachable (404); the datasheet says nothing about it"
+ ],
+ "notes": "End of life: TDK InvenSense's status for the MPU-6050 could not be confirmed from TDK (pages not found, 2026-10-31); DigiKey lists it as obsolete, LCSC as normal with stock. Check availability before designing it in.",
+ "verified": {
+  "by": "Claude (datasheet check, library draft)",
+  "date": "2026-10-31",
+  "datasheet": "InvenSense PS-MPU-6000A-00 Rev 3.4 (2013-08-19)",
+  "datasheet_sha256": "a4fdf69590b8cbab1cf0a5bcd359327b0ac022061fb233855aff2e191e7e3584",
+  "checked": [
+   "pinout and pin names = datasheet 7.1 (MPU-6050 column) = EasyEDA symbol; footprint pad 25 = exposed pad",
+   "footprint pad order (library cache): pads 1–24 counter-clockwise seen from the top, as the QFN top view",
+   "abs. max VDD 6 V, REGOUT 2 V, CPOUT 30 V, inputs VDD + 0.5 V",
+   "VDD 2.375–3.46 V, VLOGIC 1.71 V…VDD; VIH 0.7 × VLOGIC, VIL 0.3 × VLOGIC",
+   "I2C address 0x68/0x69 by AD0",
+   "external capacitors C1–C4 from the bill of materials 7.3"
+  ],
+  "open": [
+   "maximum supply current: the datasheet gives only typical values (3.9 mA gyro + accel + DMP) – idd_max_a left out",
+   "power-on default of the INT pin (push-pull or open-drain) is in the register map (RM-MPU-6000A), not read",
+   "AUX_CL/AUX_DA open-drain is read from 6.5 and 9.2, not stated for the auxiliary bus in so many words",
+   {
+    "text": "the exposed pad should not be soldered – the library footprint has a copper pad 25 (2.7 mm square, TOP); whether it gets paste is not in the cached footprint: check the paste layer in the assembly preview",
+    "when": "order"
+   },
+   {
+    "text": "pin 1 of the QFN at the footprint's pin-1 mark",
+    "when": "order"
+   },
+   "end-of-life status not confirmed from TDK (see notes)",
+   "no thermal resistance or junction temperature in the datasheet",
+   "RoHS/REACH not entered"
+  ]
+ }
+}

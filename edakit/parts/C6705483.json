@@ -1,0 +1,152 @@
+{
+ "lcsc": "C6705483",
+ "mpn": "HX711",
+ "manufacturer": "AVIA(海芯科技)",
+ "kind": "ic",
+ "package": "SOP-16",
+ "footprint": "SOP-16_L10.0-W3.9-P1.27-LS6.0-BL",
+ "jlc_class": "Extended Part",
+ "datasheet": {
+  "url": "https://datasheet.lcsc.com/datasheet/pdf/19a1151aaf9f4738f2b7e47b47658d99.pdf?productCode=C43656",
+  "pinout_page": 2
+ },
+ "pins": {
+  "1": {
+   "name": "VSUP",
+   "type": "power_in",
+   "v_op_min_v": 2.7,
+   "v_op_max_v": 5.5,
+   "hint": "regulator supply; without the on-chip regulator connect VSUP to AVDD or DVDD, whichever is higher"
+  },
+  "2": {
+   "name": "BASE",
+   "type": "output",
+   "hint": "regulator control output to the base of an external PNP (S8550 in Fig. 1); NC when the regulator is not used"
+  },
+  "3": {
+   "name": "AVDD",
+   "type": "power_in",
+   "hint": "analog supply; with the regulator VAVDD = VBG × (R1 + R2) / R2, at least 100 mV below VSUP; 10 µF on AVDD in Fig. 1 and Fig. 4"
+  },
+  "4": {
+   "name": "VFB",
+   "type": "analog",
+   "hint": "regulator control input (R1/R2 divider); connect to AGND when the regulator is not used"
+  },
+  "5": {
+   "name": "AGND",
+   "type": "ground"
+  },
+  "6": {
+   "name": "VBG",
+   "type": "output",
+   "hint": "reference bypass output, 1.25 V typ; 0.1 µF to AGND with the regulator (Fig. 1), not needed without it"
+  },
+  "7": {
+   "name": "INNA",
+   "type": "analog",
+   "hint": "channel A negative input (gain 128 or 64)"
+  },
+  "8": {
+   "name": "INPA",
+   "type": "analog",
+   "hint": "channel A positive input (gain 128 or 64)"
+  },
+  "9": {
+   "name": "INNB",
+   "type": "analog",
+   "hint": "channel B negative input (gain 32)"
+  },
+  "10": {
+   "name": "INPB",
+   "type": "analog",
+   "hint": "channel B positive input (gain 32)"
+  },
+  "11": {
+   "name": "PD_SCK",
+   "type": "input",
+   "hint": "serial clock and power down: high for more than 60 µs powers the chip down; clock high time 0.2–50 µs; 25–27 pulses per conversion select channel and gain"
+  },
+  "12": {
+   "name": "DOUT",
+   "type": "output",
+   "hint": "serial data output; high = no data ready, low = data ready"
+  },
+  "13": {
+   "name": "XO",
+   "type": "bidirectional",
+   "hint": "crystal I/O; NC when not used"
+  },
+  "14": {
+   "name": "XI",
+   "type": "input",
+   "hint": "to ground: on-chip oscillator; or a crystal across XI/XO, or an external clock through a 20 pF AC-coupling capacitor"
+  },
+  "15": {
+   "name": "RATE",
+   "type": "input",
+   "hint": "output data rate: low 10 SPS, high 80 SPS (on-chip oscillator)"
+  },
+  "16": {
+   "name": "DVDD",
+   "type": "power_in",
+   "role": "vdd",
+   "hint": "digital supply; the same supply as the MCU (Power Supply Options)"
+  }
+ },
+ "values": {
+  "vicm_v": [
+   1.2,
+   1.3
+  ]
+ },
+ "limits": {
+  "vdd_op_min_v": 2.6,
+  "vdd_op_max_v": 5.5,
+  "f_max_hz": 20000000.0,
+  "t_min_c": -40,
+  "t_max_c": 85
+ },
+ "hints": [
+  "input common-mode range AGND + 1.2 V … AVDD - 1.3 V (Table 2)",
+  "full-scale differential input ±0.5 × AVDD / gain: ±20 mV (gain 128) / ±40 mV (64) at AVDD 5 V; channel B ±80 mV (gain 32)",
+  "the reference board (Fig. 4) puts 100 Ω in series with each channel-A input and 0.1 µF across them, and 10 µF on VSUP/DVDD and on AVDD",
+  "crystal or external clock 1–20 MHz (11.0592 MHz gives exactly 10/80 SPS)"
+ ],
+ "sources": [
+  "pin numbers and names: EasyEDA library data of C6705483 (edakit part import, 2026-10-31); checked against Avia Semiconductor HX711 24-Bit Analog-to-Digital Converter (ADC) for Weigh Scales, V2.0, p. 2 pin diagram and Table 1",
+  "Avia Semiconductor HX711 24-Bit Analog-to-Digital Converter (ADC) for Weigh Scales, V2.0, p. 2 Table 1: VSUP 2.7–5.5 V (v_op of pin 1), AVDD 2.6–5.5 V, DVDD 2.6–5.5 V; pin functions",
+  "Avia Semiconductor HX711 24-Bit Analog-to-Digital Converter (ADC) for Weigh Scales, V2.0, p. 3 Table 2: common mode input AGND + 1.2 V … AVDD - 1.3 V (vicm_v as [above AGND, below AVDD], the convention of an op-amp's vicm_v – LIM.range reads it only for behaviour opamp); VBG 1.25 V typ; crystal or external clock 1 … 11.0592 … 20 MHz (f_max_hz); DVDD 2.6–5.5 V, AVDD/VSUP 2.6–5.5 V; analog supply current typ 1400 µA, digital typ 100 µA – no maxima",
+  "Avia Semiconductor HX711 24-Bit Analog-to-Digital Converter (ADC) for Weigh Scales, V2.0, p. 1 Features: operation temperature -40 … +85 °C (t_min_c, t_max_c); supply 2.6–5.5 V",
+  "Avia Semiconductor HX711 24-Bit Analog-to-Digital Converter (ADC) for Weigh Scales, V2.0, p. 4: Power Supply Options (DVDD = MCU supply; VAVDD = VBG × (R1 + R2) / R2, ≥ 100 mV below VSUP; without regulator VSUP to AVDD or DVDD, VFB to ground, BASE NC, no VBG capacitor); Clock Source Options (XI to ground = on-chip oscillator; external clock through 20 pF)",
+  "Avia Semiconductor HX711 24-Bit Analog-to-Digital Converter (ADC) for Weigh Scales, V2.0, p. 5 Fig. 2 timing table: T3 PD_SCK high 0.2–50 µs, T4 low ≥ 0.2 µs; power down after > 60 µs high",
+  "Avia Semiconductor HX711 24-Bit Analog-to-Digital Converter (ADC) for Weigh Scales, V2.0, p. 6 Fig. 4 reference PCB schematic: C1 10 µF (VSUP/DVDD), C2 10 µF (AVDD), C3 0.1 µF (VBG), C4 0.1 µF and R3/R4 100 Ω at channel A",
+  "the V2.0 document is LCSC's file listed under C43656 (HX711 in tubes); LCSC's file under C6705483 (reel) is the older 2009 issue without a version mark"
+ ],
+ "verified": {
+  "by": "Claude (datasheet check, library draft)",
+  "date": "2026-10-31",
+  "datasheet": "Avia HX711 datasheet V2.0",
+  "datasheet_sha256": "84834c42ac6b384490dd615dff7a2df240476bd1c9dcebf4fa72741fa7d2d00c",
+  "checked": [
+   "pinout and pin names = datasheet Table 1 (SOP-16) = EasyEDA symbol",
+   "supply ranges DVDD/AVDD 2.6–5.5 V, VSUP 2.7–5.5 V (Table 1)",
+   "input common-mode range, VBG 1.25 V, clock 1–20 MHz",
+   "regulator, clock and power-down pin use from pages 4–5"
+  ],
+  "open": [
+   "no absolute maximum ratings in the datasheet: vdd_max_v and pin v_max_v not entered",
+   "no logic input thresholds (VIH/VIL) and no output levels for PD_SCK, DOUT, RATE, XI",
+   "no maximum supply current (typ 1.4 mA analog incl. regulator, 0.1 mA digital) – idd_max_a left out",
+   "VSUP minimum: Table 1 says 2.7 V, Table 2 says 2.6 V – the pin takes 2.7 V",
+   "whether DOUT is push-pull is not stated (treated as a plain output)",
+   "the decoupling of VSUP, DVDD and AVDD is only shown in the reference design (10 µF), not specified: the catalog's default applies, the values are in hints",
+   "no thermal resistance or junction temperature; no package drawing",
+   {
+    "text": "pin 1 of the SOP-16 at the footprint's pin-1 mark",
+    "when": "order"
+   },
+   "RoHS/REACH not entered"
+  ]
+ }
+}
