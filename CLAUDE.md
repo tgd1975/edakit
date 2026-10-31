@@ -4,6 +4,9 @@ For sessions that change edakit itself – code, catalog, domains, handbook, ski
 hook adds the working agreements of handbook 11.4 only in a project with an edakit.toml, so not here; they hold here
 too.
 
+What is documentation, what is a source, and what a review of the documentation may change:
+`docs/organisation.md`.
+
 ## The yardstick
 
 Circuit design as code: everything needed to create, edit and change a circuit is text in the project's repository,
