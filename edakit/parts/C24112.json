@@ -185,7 +185,8 @@
    "role": "scl",
    "ref": "VLOGIC",
    "v_rel_max_v": 0.5,
-   "v_min_v": -0.5
+   "v_min_v": -0.5,
+   "c_in_f": 1e-11
   },
   "24": {
    "name": "SDA",
@@ -194,7 +195,8 @@
    "drive": "open_drain",
    "ref": "VLOGIC",
    "v_rel_max_v": 0.5,
-   "v_min_v": -0.5
+   "v_min_v": -0.5,
+   "c_in_f": 1e-11
   },
   "25": {
    "name": "EP",
@@ -212,7 +214,8 @@
   "vdd_op_max_v": 3.46,
   "vin_rel_max_v": 0.5,
   "t_min_c": -40,
-  "t_max_c": 85
+  "t_max_c": 85,
+  "f_scl_max_hz": 400000.0
  },
  "hints": [
   "input thresholds VIH 0.7 × VLOGIC, VIL 0.3 × VLOGIC – of VLOGIC (pin 8), not of VDD",
@@ -231,7 +234,8 @@
   "InvenSense MPU-6000 and MPU-6050 Product Specification, PS-MPU-6000A-00 Revision 3.4 (08/19/2013), p. 33 section 9.2: slave address b110100X, LSB from AD0; SDA and SCL typically need pull-ups to VDD",
   "InvenSense MPU-6000 and MPU-6050 Product Specification, PS-MPU-6000A-00 Revision 3.4 (08/19/2013), p. 38 section 10.2: SDA, SCL, AD0, CLKIN, INT and AUX_DA/AUX_CL at VLOGIC levels (AUX_VDDIO = 0, its power-on value)",
   "InvenSense MPU-6000 and MPU-6050 Product Specification, PS-MPU-6000A-00 Revision 3.4 (08/19/2013), p. 43 sections 11.4.2/11.4.3: exposed die pad not soldered, no electrical connection; no traces or vias under the package",
-  "lifecycle: LCSC product data of C24112 read 2026-10-31 says productCycle 'normal', 3367 in stock; a web search (2026-10-31) found DigiKey listing the MPU-6050 as obsolete – TDK's own product and EOL pages were not reachable (404); the datasheet says nothing about it"
+  "lifecycle: LCSC product data of C24112 read 2026-10-31 says productCycle 'normal', 3367 in stock; a web search (2026-10-31) found DigiKey listing the MPU-6050 as obsolete – TDK's own product and EOL pages were not reachable (404); the datasheet says nothing about it",
+  "f_scl_max_hz 400 kHz: 6.7 I2C timing characterization, fSCL max 400 kHz (I2C fast mode), p. 18; c_in_f 10 pF on SCL and SDA: 6.6 I2C I/O, CI capacitance for each I/O pin < 10 pF, p. 16 – InvenSense PS-MPU-6000A-00 Rev 3.4, read 2026-10-31"
  ],
  "notes": "End of life: TDK InvenSense's status for the MPU-6050 could not be confirmed from TDK (pages not found, 2026-10-31); DigiKey lists it as obsolete, LCSC as normal with stock. Check availability before designing it in.",
  "verified": {
@@ -248,7 +252,8 @@
    "external capacitors C1–C4 from the bill of materials 7.3",
    "2026-10-31: CPOUT capacitor rated at least 50 V (PS-MPU-6000A-00 Rev 3.4, 7.3 Bill of Materials: C3 X7R 2.2 nF ±10 % 50 V, read now)",
    "2026-10-31, pin limits (schema-gaps A6, B1–B3, C1–C4): PS-MPU-6000A-00 Rev 3.4: 6.3 'VLOGIC must be ≤VDD at all times' (supply_order); 6.4 digital inputs (SDA, AD0, SCL, FSYNC, CLKIN) VIH 0.7·VLOGIC, VIL 0.3·VLOGIC (ref VLOGIC); 6.5 primary and auxiliary I2C I/O (auxiliary at AUX_VDDIO = 0) VIH up to VLOGIC + 0.5 V, stricter than 6.9 (SCL, SDA, AUX_DA, AUX_CL: v_rel_max_v 0.5 against VLOGIC); 6.9 absolute maximum: VLOGIC, CLKIN, AUX_DA, AD0, FSYNC, INT, SCL, SDA −0.5 V to VDD + 0.5 V (rel_ref VDD where the thresholds refer to VLOGIC; v_min_v −0.5), REGOUT −0.5 to 2 V and CPOUT −0.5 to 30 V absolute (v_rel_max_v null)",
-   "2026-10-31, the limit of SCL, SDA, AUX_DA, AUX_CL (rules-at-scale.md, decision 13): held to VLOGIC + 0.5 V, the upper end of VIH in 6.5, not to the absolute VDD + 0.5 V of 6.9 – VLOGIC ≤ VDD at all times (6.3, supply_order), so every pin above VDD + 0.5 V is above VLOGIC + 0.5 V too, and between the two the datasheet promises no function; a warning (LIM.v/inject) either way"
+   "2026-10-31, the limit of SCL, SDA, AUX_DA, AUX_CL (rules-at-scale.md, decision 13): held to VLOGIC + 0.5 V, the upper end of VIH in 6.5, not to the absolute VDD + 0.5 V of 6.9 – VLOGIC ≤ VDD at all times (6.3, supply_order), so every pin above VDD + 0.5 V is above VLOGIC + 0.5 V too, and between the two the datasheet promises no function; a warning (LIM.v/inject) either way",
+   "2026-10-31: fSCL 400 kHz (6.7); CI < 10 pF per I2C pin (6.6) (maker-coverage FT-16)"
   ],
   "open": [
    "maximum supply current: the datasheet gives only typical values (3.9 mA gyro + accel + DMP) – idd_max_a left out",
@@ -265,7 +270,8 @@
    "end-of-life status not confirmed from TDK (see notes)",
    "no thermal resistance or junction temperature in the datasheet",
    "RoHS/REACH not entered",
-   "with AUX_VDDIO = 1 the auxiliary bus refers to VDD (7.11): AUX_DA and AUX_CL stay held to VLOGIC + 0.5 V (the power-on value AUX_VDDIO = 0) – a project that sets the bit accepts the finding with its reason"
+   "with AUX_VDDIO = 1 the auxiliary bus refers to VDD (7.11): AUX_DA and AUX_CL stay held to VLOGIC + 0.5 V (the power-on value AUX_VDDIO = 0) – a project that sets the bit accepts the finding with its reason",
+   "injection current (i_inject_max_a, maker-coverage CK-5): none in the datasheet – InvenSense PS-MPU-6000A-00 Rev 3.4: only the latch-up test level ±100 mA (6.9), no continuous current (read 2026-10-31); LIM.v/inject holds the pin's voltage alone"
   ]
  },
  "supply_order": [

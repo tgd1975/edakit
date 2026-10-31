@@ -19,7 +19,7 @@ FT-12 = { status = "built", where = "sim.json ac (sim/ac.py): .ac around a DC sc
 FT-13 = { status = "open", missing = "LED strip model" }
 FT-14 = { status = "open", missing = "constant-current LED buck – datasheets" }
 FT-15 = { status = "built", where = "fn i2s.*, can.*, onewire, usb.* (circuit.FN_LINES); REQ.function", step = 6 }
-FT-16 = { status = "partial", where = "edakit firmware: devices.i2c with the addresses the pins decide; buses", missing = "SPI mode and maximum clock per device, the bus speed the pull-ups allow – parts facts from datasheets, the bus capacitance", step = 6 }
+FT-16 = { status = "built", where = "edakit firmware: devices.i2c with the addresses the pins decide and each device's highest SCL, devices.spi with each device's modes and highest SCK, bus_speed per bus – the net's clock_hz, the slowest device, the modes every SPI device shares, the speed an I2C bus's pull-ups allow (NXP UM10204 Rev. 7.0: tr = 0.8473 · Rp · Cb, Cb from the pins' c_in_f and the cables' c_pf_per_m); net clock_hz held to them as LIM.range/clock (buses.py, limits.bus_clocks); entry fields spi_modes, f_sck_max_hz, f_scl_max_hz, pin c_in_f – filled for PCF8574/A, INA219, INA226, AT24C32D, DS3231, MPU-6050, BME280, MAX6675, MAX31855, MAX7219, SK9822 and the SSD1306 panel", missing = "tracks are not in the bus capacitance; the MCUs' own pin capacitance and the SK9822's SPI mode were not read; I2C high-speed mode (a master code) is not entered", step = 6 }
 FT-17 = { status = "open", missing = "corners of hFE, leakage, IDSS – datasheets" }
 FT-18 = { status = "partial", where = "ac source: {r_ohm, l_h, c_f} – R and L in series, C across (a pickup); source_ohm (a microphone)", missing = "the numbers of real pickups and microphones – no manufacturer's specification was reachable; the project gives its own", step = 6 }
 FT-19 = { status = "built", where = "engines/coverage.py; edakit check --coverage; the protocol's section 2", step = 6 }
@@ -34,13 +34,13 @@ CK-1 = { status = "built", where = "LVL.undefined/nc (ICs; a module brings its o
 CK-2 = { status = "built", where = "pin drive open_drain | tristate; LVL.undefined/open_drain; LVL.contention", step = 6 }
 CK-3 = { status = "partial", where = "entry address; REQ.forbidden/address", missing = "the pull-up's upper bound from the bus capacitance (needs c_pf_per_m)", step = 6 }
 CK-4 = { status = "built", where = "LIM.range/gate from vgs_th_v and the rds_on_max_ohm table", step = 6 }
-CK-5 = { status = "partial", where = "limits vin_rel_max_v; LIM.v/inject – also with one supply off (fault_scenarios off)", missing = "the injection current (i_inject_max_a) – datasheets", step = 6 }
+CK-5 = { status = "built", where = "limits vin_rel_max_v, pin i_inject_max_a; LIM.v/inject – also with one supply off (fault_scenarios off); the clamp current through a resistor in the simulation, with the library's PCF8574 (tests/test_pin_limits.py); i_inject_max_a from the datasheets of PCF8574/A, INA219, INA226, SN74AHCT1G125, OPA991, TMC2209 and NE5534", missing = "no injection current in the datasheets of WS2812B, CH340, MAX6675, MAX31855, PAM8403, MAX485, MPU-6050, INMP441, AT24C32D, RP2040, RP2350, the ESP32 chips and the ATmega328P – noted in each entry's verified.open; there LIM.v/inject holds the voltage alone", step = 6 }
 CK-6 = { status = "built", where = "pin adc; LIM.range/adc, REQ.value/adc", step = 6 }
 CK-7 = { status = "built", where = "polarized capacitors: LIM.v/polarized (G and E), PATH.reverse/polarized", step = 6 }
 CK-8 = { status = "built", where = "roles out_p, out_n; REQ.forbidden/btl (domains audio, guitar)", step = 6 }
 CK-9 = { status = "out", where = "rules-at-scale.md, decision 7 (2026-10-31): hazardous voltage recognised by LIM.hazardous, not checked" }
 CK-10 = { status = "out", where = "rules-at-scale.md, decision 7 (2026-10-31): hazardous voltage recognised by LIM.hazardous, not checked" }
-CK-11 = { status = "partial", where = "entry antenna.keepout_mm; GEO.keepout on the Gerber copper (fab.check_keepout); the coverage report names radios without it", missing = "the antenna at or over the board edge (the module maker's distance) – datasheets", step = 6 }
+CK-11 = { status = "built", where = "entry antenna.keepout_mm and antenna.edge_mm; GEO.keepout on the Gerber copper (fab.check_keepout) and GEO.keepout/edge – the antenna area at most edge_mm inside the outer outline, a cut-out no edge (fab.check_antenna_edge); Espressif's modules 1 mm (ESP32, ESP32-S3) and 0 (ESP32-C3) from their hardware design guidelines; the coverage report names radios without either", missing = "the 15 mm clearance beside an antenna in a cut-out and inside the housing (Espressif) – a question of the pcb reviewer (domain radio), no field", step = 6 }
 CK-12 = { status = "built", where = "roles dp_a, dp_b, dn_a, dn_b; REQ.missing/usb_data (domain usb)", step = 6 }
 CK-13 = { status = "built", where = "pin needs; REQ.missing/pin, REQ.value/pin, REQ.forbidden/pin", step = 6 }
 CK-14 = { status = "partial", where = "a regulator's capacitors as pin needs", missing = "DC bias and the ESR window", step = 6 }
@@ -57,7 +57,7 @@ CK-24 = { status = "out", where = "rules-at-scale.md, decision 7 (2026-10-31): h
 CK-25 = { status = "built", where = "LVL.undefined/analog", step = 6 }
 CK-26 = { status = "built", where = "REQ.function/uart", step = 6 }
 CK-27 = { status = "built", where = "net instrument, load_min_ohm, pin z_in_ohm; REQ.value/instrument", step = 6 }
-CK-28 = { status = "partial", where = "values gain_min_ratio; REQ.value/gain", missing = "the external compensation a part requires", step = 6 }
+CK-28 = { status = "built", where = "values gain_min_ratio; REQ.value/gain, its fix naming a config with a lower minimum; the external compensation as a pin need to another pin in that config – NE5534P (TI SLOS070D): stable from 3, config compensated from 1 with CC ≥ 22 pF between COMP and COMP/BAL (REQ.missing/pin)", missing = "the candidate's LM308: no datasheet on ti.com (lit/ds/symlink/lm308.pdf and the product page 404, 2026-10-31); the NE5534P entry has no LCSC number (the LCSC search answered 403)", step = 6 }
 CK-29 = { status = "built", where = "REQ.missing/balance", step = 6 }
 CK-30 = { status = "built", where = "net signal; REQ.value/switch (≤ 10 mV across a contact in a signal path), REQ.value/min_load (min_load_a – a contact in a signal path rated for signal currents, ≤ 10 µA); every relay contact set (roles common_2 …)", missing = "the 10 µA comes from maker-coverage CK-30 (forums), not a datasheet", step = 6 }
 CK-31 = { status = "built", where = "layout.apart; GEO.spacing/apart on the Gerber copper (fab.check_apart, gerber.Copper.distance)", step = 6 }

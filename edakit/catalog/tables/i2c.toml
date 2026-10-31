@@ -11,3 +11,34 @@ vol_v = 0.4
 r_max_ohm = 10000   # 100 kHz with the bus capacitance of a small board
 source = "NXP UM10204 Rev. 7.0 (2021), 7.1 Pull-up resistor sizing"
 tag = "r"
+
+# The bus speed the pull-ups allow (maker-coverage FT-16): the rise time between 0.3 VDD and 0.7 VDD,
+# tr = 0.8473 · Rp · Cb, within each mode's tr(max), and the bus capacitance within its Cb(max).
+[rise]
+factor = 0.8473     # T = t2 − t1 = 0.8473 × RC
+source = "NXP UM10204 Rev. 7.0 (1 October 2021), 7.1 Pull-up resistor sizing, p. 50"
+tag = "r"
+
+[[modes]]
+name = "standard"
+f_scl_hz = 100000
+tr_max_s = 1.0e-6
+cb_max_f = 400e-12
+source = "NXP UM10204 Rev. 7.0 (1 October 2021), table 11 (fSCL, tr, Cb – Standard-mode), p. 44"
+tag = "r"
+
+[[modes]]
+name = "fast"
+f_scl_hz = 400000
+tr_max_s = 300e-9
+cb_max_f = 400e-12
+source = "NXP UM10204 Rev. 7.0 (1 October 2021), table 11 (fSCL, tr, Cb – Fast-mode), p. 44"
+tag = "r"
+
+[[modes]]
+name = "fast_plus"
+f_scl_hz = 1000000
+tr_max_s = 120e-9
+cb_max_f = 550e-12
+source = "NXP UM10204 Rev. 7.0 (1 October 2021), table 11 (fSCL, tr, Cb – Fast-mode Plus), p. 44"
+tag = "r"

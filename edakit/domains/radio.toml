@@ -21,7 +21,7 @@ regulatory = [
 ]
 
 pcb = [
-  "Antenna areas: for every part with a printed or chip antenna, the copper of this board under and around it on every layer – pours, tracks, vias, parts – and where the antenna sits against the board edge, as the module maker's layout guide asks; GEO.keepout holds the area an entry gives (antenna.keepout_mm) – ask for the radios edakit check --coverage lists without it, and for the edge.",
+  "Antenna areas: for every part with a printed or chip antenna, the copper of this board under and around it on every layer – pours, tracks, vias, parts – and where the antenna sits against the board edge, as the module maker's layout guide asks; GEO.keepout holds the area an entry gives (antenna.keepout_mm) and, where the entry gives antenna.edge_mm, the antenna at the board edge – ask for the radios edakit check --coverage lists without them, and for the clearance beside the antenna and inside the housing (Espressif: at least 15 mm).",
 ]
 
 [fixtures]

@@ -601,7 +601,8 @@
    5.6,
    6.6,
    11.0
-  ]
+  ],
+  "edge_mm": 0
  },
  "body": {
   "h_mm": 2.4
@@ -642,8 +643,9 @@
   "pin v_max_v and gpio_v_max_v 3.6 V: VIH max VDD + 0.3 V at VDD 3.3 V (table 6-3)",
   "pull_ohm 45 kΩ: RPU/RPD typ (table 6-3)",
   "GPIO2 strap high: the datasheet recommends a pull-up although GPIO2 does not decide the boot mode (table 4-3 note 2) – LVL.boot asks for it",
-  "antenna.keepout_mm: the antenna area above the pad field (16.6 − 11.2 = 5.4 mm × 13.2 mm, figure 10-1/11-1) placed in the EasyEDA footprint WIFIM-SMD_ESP32-C3-MINI-1 (outline x ±6.6 mm, y –5.6 … 11.0 mm, silk line of the antenna area at y = 5.6 mm) – the base-board clearance of the hardware design guidelines is not included",
-  "ESP32-C3 Series Datasheet v2.4, peripheral pin table: UART0, SPI0/1, SPI2, UART1, I2C, I2S, TWAI and LED PWM on any GPIO through the GPIO Matrix (P2/P3)"
+  "antenna.keepout_mm: the antenna area above the pad field (16.6 − 11.2 = 5.4 mm × 13.2 mm, figure 10-1/11-1) placed in the EasyEDA footprint WIFIM-SMD_ESP32-C3-MINI-1 (outline x ±6.6 mm, y –5.6 … 11.0 mm, silk line of the antenna area at y = 5.6 mm)",
+  "ESP32-C3 Series Datasheet v2.4, peripheral pin table: UART0, SPI0/1, SPI2, UART1, I2C, I2S, TWAI and LED PWM on any GPIO through the GPIO Matrix (P2/P3)",
+  "antenna.edge_mm 0: Espressif ESP32-C3 Hardware Design Guidelines, release master (26 October 2026), 1.4.7 General Principles of PCB Layout for Modules, p. 21–23: 'place the module's on-board PCB antenna outside the base board'; figure 21 (read from the graph): the antenna area in a cut-out of the board's edge, at least 15 mm clear to both sides and above it, no distance to the edge given – edge_mm 0 – https://docs.espressif.com/projects/esp-hardware-design-guidelines/en/latest/esp32c3/esp-hardware-design-guidelines-en-master-esp32c3.pdf, read 2026-10-31; the 15 mm beside an antenna in a cut-out and inside the housing are not a field (the pcb reviewer asks, domain radio)"
  ],
  "notes": "ESP32-C3-MINI-1-H4X, the recommended variant (the MINI-1-N4 C2838502 is NRND since datasheet v1.5). functions holds no pwm on purpose (GPIO matrix, see verified.open).",
  "verified": {
@@ -659,7 +661,8 @@
    "Wi-Fi 2412–2484 MHz, 20.5 dBm; Bluetooth LE 2402–2480 MHz, up to 20 dBm",
    "power-up glitches GPIO6, GPIO7, GPIO10, GPIO20 (5 ns), GPIO18 (50 µs) – chip table 2-2",
    "footprint frame: outline x ±6.6 mm, y –5.6 … 11.0 mm against figure 10-1",
-   "2026-10-31: matrix ['uart', 'spi', 'i2c', 'i2s', 'pwm', 'can'] – ESP32-C3 Series Datasheet v2.4, peripheral pin table: UART0, SPI0/1, SPI2, UART1, I2C, I2S, TWAI and LED PWM on any GPIO through the GPIO Matrix (P2/P3); REQ.function takes a net's fn on any GPIO of these kinds (schema-gaps A1)"
+   "2026-10-31: matrix ['uart', 'spi', 'i2c', 'i2s', 'pwm', 'can'] – ESP32-C3 Series Datasheet v2.4, peripheral pin table: UART0, SPI0/1, SPI2, UART1, I2C, I2S, TWAI and LED PWM on any GPIO through the GPIO Matrix (P2/P3); REQ.function takes a net's fn on any GPIO of these kinds (schema-gaps A1)",
+   "2026-10-31: antenna.edge_mm 0 from the hardware design guidelines' keep-out figure (maker-coverage CK-11)"
   ],
   "open": [
    "pwm: LEDC reaches any GPIO through the matrix – not expressible in functions (schema gap); fn pwm nets on this module are reported by REQ.function",
@@ -669,7 +672,8 @@
    "REACH: only 'Green certification: RoHS/REACH' in the datasheet – no SVHC statement read",
    "rth/tj: none given",
    "least current (i_core_min_a): firmware-dependent",
-   "base-board antenna clearance per the hardware design guidelines (not read)"
+   "antenna: the 15 mm clearance beside the antenna in a cut-out of the board and inside the housing (hardware design guidelines) is not checked – GEO.keepout holds the copper and the edge only",
+   "injection current (i_inject_max_a, maker-coverage CK-5): none in the datasheet – ESP32-C3 Series Datasheet v2.4, table 5-1: no current through the pins' protection (read 2026-10-31); LIM.v/inject holds the pin's voltage alone"
   ]
  },
  "matrix": [

@@ -35,15 +35,17 @@ dielectric = ["C0G", "NP0", "X5R", "X7R", "X7S", "X6S", "Y5V", "electrolytic", "
 
 [free]
 values = ["polarized", "tolerance", "iout_accuracy", "iout_gain", "hfe_min", "hfe_max", "efficiency", "usb_c",
-          "i_hold_vs_temp", "first_bit_to", "v_io_v", "comparator", "tvs"]
+          "i_hold_vs_temp", "first_bit_to", "v_io_v", "comparator", "tvs",
+          "spi_modes"]          # spi_modes: the SPI modes (0–3: CPOL × 2 + CPHA) the part's serial interface runs in
 pin = ["name", "type", "role", "strap", "pull", "hint", "functions", "out_edge", "t_pd_ns", "needs", "drive", "float_ok", "adc", "z_in_ohm", "short_proof", "clamp", "windows",
        "biased",                # biased: an input the part holds at its own DC level (LVL.undefined/analog)
        "ref", "rel_ref"]        # ref, rel_ref: the supply pin a relative limit and the threshold ratios refer to
 entry = ["needs", "address", "antenna", "library", "symbol_differs", "matrix",
          "supply_order", "i_group_max_a", "configs", "config_default"]   # needs switches a default of catalog/needs.toml off
                                 # ({"decoupling": false}); address: a bus address (REQ.forbidden/address); antenna:
-                                # {keepout_mm = [x0, y0, x1, y1]} – the area around the antenna that stays free of
-                                # copper, in the footprint's frame at rotation 0 on top (GEO.keepout); library: the
+                                # {keepout_mm = [x0, y0, x1, y1], edge_mm} – the area around the antenna that stays
+                                # free of copper, in the footprint's frame at rotation 0 on top (GEO.keepout), and
+                                # how far inside the board's outer edge it may lie at most (GEO.keepout/edge); library: the
                                 # version of edakit/parts/ a copy was taken from (PARTS.library); symbol_differs:
                                 # {pin: reason} – pins where the entry follows the datasheet, not the library symbol
                                 # (STRUCT.entry/declared); matrix: the fn kinds a GPIO matrix routes to any GPIO pin
@@ -58,13 +60,15 @@ entry = ["needs", "address", "antenna", "library", "symbol_differs", "matrix",
 limits = ["p_max_w", "rth_ja_k_per_w", "tj_max_c", "t_max_c", "t_min_c"]
 values = []
 pin = ["v_max_v", "v_op_min_v", "v_op_max_v", "vih_v", "vil_v", "vih_ratio", "vil_ratio", "pull_ohm",
-       "v_min_v", "v_rel_max_v", "v_max_powered_v", "i_max_a", "i_inject_max_a", "r_load_min_ohm", "c_load_max_f"]
+       "v_min_v", "v_rel_max_v", "v_max_powered_v", "i_max_a", "i_inject_max_a", "r_load_min_ohm", "c_load_max_f",
+       "c_in_f"]
 # v_min_v: the pin's own lower limit (an RS-485 line, −7.5 V) – in place of the floor of an active pin; v_rel_max_v:
 # how far the pin may rise above its reference supply (the pin named in ref, else the part's supply) – null: none,
 # a pin rated above its supply; v_max_powered_v: the limit while the part is powered (v_max_v: unpowered); i_max_a:
 # the pin's own current; i_inject_max_a: the current its protection diodes take; r_load_min_ohm, c_load_max_f: what an
 # output may drive; ref names the supply pin a pin's v_rel_max_v and threshold ratios refer to, rel_ref the
-# relative limit's own where the datasheet refers it to another supply (MPU-6050: thresholds of VLOGIC, maximum VDD + 0.5 V)
+# relative limit's own where the datasheet refers it to another supply (MPU-6050: thresholds of VLOGIC, maximum VDD + 0.5 V);
+# c_in_f: the pin's input capacitance – on an I2C line part of the bus capacitance (the bus speed the pull-ups allow)
 
 [pin_types]
 types = ["passive", "input", "output", "bidirectional", "power_in", "power_output", "ground", "analog",
@@ -177,7 +181,8 @@ values = ["pitch_mm", "r_contact_ohm", "r_source_ohm", "usb_c"]
 [kinds.ic]
 roles = ["*"]
 limits = ["vdd_max_v", "vdd_op_min_v", "vdd_op_max_v", "vin_min_v", "vin_max_v", "vout_max_v", "i_out_max_a",
-          "vin_rel_max_v", "i_supply_pin_max_a", "f_max_hz"]
+          "vin_rel_max_v", "i_supply_pin_max_a", "f_max_hz",
+          "f_sck_max_hz", "f_scl_max_hz"]    # the highest clock of its SPI (SCK) and I2C (SCL) interface
 values = ["behavior", "vout_v", "dropout_v", "iq_a", "efficiency", "idd_max_a", "iout_gain", "iout_accuracy",
           "vout_knee_v", "vrext_v", "vih_v", "vil_v", "vih_ratio", "vil_ratio", "first_bit_to", "vout_swing_v",
           "vicm_v", "r_out_ohm", "comparator", "gain_min_ratio", "f_clock_hz", "vref_v", "i_load_min_a", "prog_v", "icc_a",
@@ -191,7 +196,7 @@ values = ["behavior", "vout_v", "dropout_v", "iq_a", "efficiency", "idd_max_a", 
 [kinds.module]
 roles = ["*"]
 limits = ["vdd_op_min_v", "vdd_op_max_v", "vin_min_v", "vin_max_v", "vsys_min_v", "vsys_max_v", "i_out_max_a",
-          "gpio_v_max_v", "gpio_i_max_a", "gpio_i_total_max_a", "f_max_hz"]
+          "gpio_v_max_v", "gpio_i_max_a", "gpio_i_total_max_a", "f_max_hz", "f_sck_max_hz", "f_scl_max_hz"]
 values = ["behavior", "regulator", "v_io_v", "vout_v", "dropout_v", "efficiency", "i_core_a", "i_core_min_a",
           "gpio_r_out_ohm", "iq_a", "vih_v", "vil_v", "vih_ratio", "vil_ratio", "usb_c", "f_clock_hz"]
 

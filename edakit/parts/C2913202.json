@@ -1395,7 +1395,8 @@
    10.39,
    9.0,
    16.39
-  ]
+  ],
+  "edge_mm": 1
  },
  "body": {
   "h_mm": 3.1
@@ -1435,8 +1436,9 @@
   "gpio_i_max_a 0.028 A: IOL typ 28 mA at VOL 0.495 V and PAD_DRIVER = 3 (table 6-3) – assumption: no absolute maximum per pin given",
   "pin v_max_v and gpio_v_max_v 3.6 V: VIH max VDD + 0.3 V at VDD 3.3 V (table 6-3)",
   "pull_ohm 45 kΩ: RPU/RPD typ (table 6-3)",
-  "antenna.keepout_mm: the antenna area of figure 11-1 (6 mm × 18 mm at the antenna end) placed in the EasyEDA footprint WIRELM-SMD_ESP32-S3-WROOM-1 (pin 1 at y = 8.895 mm, antenna end towards +y, module edge at y = 16.385 mm, silk at 16.395 mm and the antenna line at 10.355 mm) – the base-board clearance of the hardware design guidelines is not included",
-  "ESP32-S3 Series Datasheet v2.2, IO MUX and GPIO Matrix: 175 digital peripheral input signals can be sourced from the input of any GPIO pin, the output of any GPIO pin can be from any of the 184 digital peripheral output signals; the peripheral pin table assigns UART, SPI2, I2C, TWAI, LED PWM and I2S to any GPIO (priority 2-4)"
+  "antenna.keepout_mm: the antenna area of figure 11-1 (6 mm × 18 mm at the antenna end) placed in the EasyEDA footprint WIRELM-SMD_ESP32-S3-WROOM-1 (pin 1 at y = 8.895 mm, antenna end towards +y, module edge at y = 16.385 mm, silk at 16.395 mm and the antenna line at 10.355 mm)",
+  "ESP32-S3 Series Datasheet v2.2, IO MUX and GPIO Matrix: 175 digital peripheral input signals can be sourced from the input of any GPIO pin, the output of any GPIO pin can be from any of the 184 digital peripheral output signals; the peripheral pin table assigns UART, SPI2, I2C, TWAI, LED PWM and I2S to any GPIO (priority 2-4)",
+  "antenna.edge_mm 1: Espressif ESP32-S3 Hardware Design Guidelines, release master (26 October 2026), 1.4.7 General Principles of PCB Layout for Modules, p. 29–31: the PCB antenna outside the base board, the feed point close to its edge; figure 26 (read from the graph): the board's edge at most 1 mm beyond the antenna area's outer side ('Max 1'), at most 2 mm beyond the module's side, the board cut away at least 15 mm beside the antenna – https://docs.espressif.com/projects/esp-hardware-design-guidelines/en/latest/esp32s3/esp-hardware-design-guidelines-en-master-esp32s3.pdf, read 2026-10-31; the 15 mm beside an antenna in a cut-out and inside the housing are not a field (the pcb reviewer asks, domain radio)"
  ],
  "notes": "Bare ESP32-S3 module, N16R8 (octal PSRAM: IO35–37 used, 65 °C). functions holds no pwm on purpose (GPIO matrix, see verified.open).",
  "verified": {
@@ -1453,7 +1455,8 @@
    "Wi-Fi 2412–2484 MHz, 20.5 dBm; Bluetooth LE 2402–2480 MHz, up to 20 dBm",
    "power-up glitches of GPIO1–20 (chip table 2-2)",
    "footprint frame: pin 1 at (–8.75, 8.895) mm, outline y –9.14 … 16.39 mm against figure 11-1",
-   "2026-10-31: matrix ['uart', 'spi', 'i2c', 'i2s', 'pwm', 'can'] – ESP32-S3 Series Datasheet v2.2, IO MUX and GPIO Matrix: 175 digital peripheral input signals can be sourced from the input of any GPIO pin, the output of any GPIO pin can be from any of the 184 digital peripheral output signals; the peripheral pin table assigns UART, SPI2, I2C, TWAI, LED PWM and I2S to any GPIO (priority 2-4); REQ.function takes a net's fn on any GPIO of these kinds (schema-gaps A1)"
+   "2026-10-31: matrix ['uart', 'spi', 'i2c', 'i2s', 'pwm', 'can'] – ESP32-S3 Series Datasheet v2.2, IO MUX and GPIO Matrix: 175 digital peripheral input signals can be sourced from the input of any GPIO pin, the output of any GPIO pin can be from any of the 184 digital peripheral output signals; the peripheral pin table assigns UART, SPI2, I2C, TWAI, LED PWM and I2S to any GPIO (priority 2-4); REQ.function takes a net's fn on any GPIO of these kinds (schema-gaps A1)",
+   "2026-10-31: antenna.edge_mm 1 from the hardware design guidelines' keep-out figure (maker-coverage CK-11)"
   ],
   "open": [
    "pwm: LEDC/MCPWM reach any GPIO through the matrix – not expressible in functions (schema gap); fn pwm nets on this module are reported by REQ.function",
@@ -1463,7 +1466,8 @@
    "REACH: only 'Green certification: RoHS/REACH' – no SVHC statement read",
    "rth/tj: none given",
    "least current (i_core_min_a): firmware-dependent (deep sleep 7 µA … , table 6-7, plus PSRAM)",
-   "base-board antenna clearance per the hardware design guidelines (not read)"
+   "antenna: the 15 mm clearance beside the antenna in a cut-out of the board and inside the housing (hardware design guidelines) is not checked – GEO.keepout holds the copper and the edge only",
+   "injection current (i_inject_max_a, maker-coverage CK-5): none in the datasheet – ESP32-S3 Series Datasheet v2.2, table 5-1: no current through the pins' protection (read 2026-10-31); LIM.v/inject holds the pin's voltage alone"
   ]
  },
  "matrix": [

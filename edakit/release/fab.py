@@ -65,6 +65,8 @@ assembly preview at JLCPCB.
        label on its side, the [[silk.texts]] of the side, with [silk] designators on it the designators and group
        labels), and no part on it shows its designator while [silk] designators names the other side (waive GEO.silk on
        the part)
+  GEO.keepout no copper on either layer inside the antenna keep-out of a part's entry (antenna.keepout_mm), and with
+       antenna.edge_mm the antenna area at most that far inside the board's outer outline (warn)
   SYNC.plan every part the graph puts on the board has a row in [place] of the board file – fixed, from pcb place, or
        written back by pcb autolayout (auto = true); a part on a bought board is on no made board and needs none
   [looks] of the board file: the visible side's track length and the board's vias, an information row; above
@@ -1269,6 +1271,42 @@ def check_keepout(board, design, d, cu, rows):
         rows.add("L", "GEO.keepout", board.name, what, not bad, actual, "no copper", None if not bad else "warn")
 
 
+EDGE_TOL_MM = 0.05          # GEO.keepout/edge: an antenna area this much deeper than edge_mm is the outline's rounding
+
+
+def check_antenna_edge(board, design, d, rows):
+    """GEO.keepout/edge: where a part's entry gives how far inside the board's outer edge its antenna area may lie
+    (antenna.edge_mm, the module maker's layout guide), the area of antenna.keepout_mm, placed where the part sits in
+    pcb.json, lies at or over the outer outline of the Gerber files – its distance to the outside at most edge_mm. A
+    cut-out inside the board is no edge (Espressif: no module in the middle of the board with a clearance hollowed out
+    on all four sides). A warning while new; without a closed outline the part is listed as not checked."""
+    from shapely.geometry import Polygon
+    want = design.board_comps(board.name)
+    antennas = {ref: a for ref in want if isinstance(a := (design.part(ref) or {}).get("antenna"), dict)
+                and a.get("keepout_mm") and isinstance(a.get("edge_mm"), (int, float))}
+    if not antennas:
+        return
+    on_pcb = {c["designator"]: c for c in json.loads((d / "pcb.json").read_text())["components"] if c.get("designator")}
+    outer = None
+    if not gerber.missing(d / "gerber", "outline") and (shape := gerber.outline_shape(d / "gerber")) is not None:
+        outer = Polygon(max(getattr(shape, "geoms", [shape]), key=lambda g: g.area).exterior)
+    for ref, a in sorted(antennas.items(), key=lambda x: natural_key(x[0])):
+        if ref not in on_pcb:
+            continue
+        what = (f"{ref}: antenna at or over the board edge – its area at most {a['edge_mm']:g} mm inside the outline "
+                "(antenna.edge_mm)")
+        expected = f"<= {a['edge_mm']:g} mm inside"
+        if outer is None:
+            rows.add("L", "GEO.keepout", board.name, what, True, "not checked: no closed outline in the Gerber files",
+                     expected, "info")
+            continue
+        area = Polygon(keepout_polygon(on_pcb[ref], a["keepout_mm"]))
+        inside = outer.exterior.distance(area) if area.within(outer) else 0.0
+        ok = inside <= a["edge_mm"] + EDGE_TOL_MM
+        actual = f"{inside:.2f} mm inside the outline" if inside else "at or over the edge"
+        rows.add("L", "GEO.keepout", board.name, what, ok, actual, expected, None if ok else "warn")
+
+
 def check_apart(board, design, cu, rows):
     """GEO.spacing/apart: the pairs of layout.apart whose nets are on this board keep min_mm between their copper on
     every layer, measured on the raster of GEO.copper – a warning while new; without the Gerber files the pair is
@@ -1763,6 +1801,7 @@ def run(cfg, board, out, offline=False, verbose=False):
     cu = check_copper(board, design, d, rows)
     check_apart(board, design, cu, rows)
     check_keepout(board, design, d, cu, rows)
+    check_antenna_edge(board, design, d, rows)
     check_copper_sides(board, design, d, rows)
     check_drills(board, design, d, rows)
     check_rings(board, design, d, rows)

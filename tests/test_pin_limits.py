@@ -270,6 +270,39 @@ def test_an_input_above_its_supply_through_a_resistor_is_held_to_its_injection_c
     assert sim_rows(simulate(project, sim), "U2.13", "current into the clamp", failed=True)
 
 
+def pcf8574_port_pulled_to_5v(project, ohm, lcsc):
+    """The library's PCF8574 (C7605) as U9 on 3V3, its P0 pulled up to +5V through R9 (lcsc, ohm)."""
+    from test_configs import place
+    place(project, "C7605", "U9", {"16": "3V3", "8": "GND", "4": "P0_9"})
+    project.use_library_part(lcsc)
+    g = project.graph()
+    g["graph"]["components"].append(
+        {"designator": "R9", "type": "resistor", "lcsc": lcsc, "value": ohm, "pins": {"1": "1", "2": "2"}})
+    project.net(g, "P0_9")["pins"].append("R9.1")
+    project.net(g, "P0_9")["v"] = [0, 5.5]
+    project.net(g, "+5V")["pins"].append("R9.2")
+    project.save_graph(g)
+
+
+@needs_ngspice
+def test_a_library_port_pulled_above_its_supply_through_too_small_a_resistor(project):
+    """maker-coverage CK-5 with a library entry: the PCF8574's P0 (NXP Rev. 5, Table 9: IIHL(max) 400 µA through the
+    protection diode; VDD + 0.5 V) on a 3.3 V part pulled to 5 V through 1 kΩ – its clamp takes (5 − 3.3 − 0.5) V / 1 kΩ
+    = 1.2 mA, LIM.v/inject fails."""
+    pcf8574_port_pulled_to_5v(project, "1k", "C17513")
+    rows = sim_rows(simulate(project), "U9.4", "current into the clamp")
+    assert rows and all(r["result"] == "fail" and r["id"] == "LIM.v" for r in rows)
+    assert "through 1000 Ω" in rows[0]["check"]
+
+
+@needs_ngspice
+def test_a_library_port_pulled_above_its_supply_through_a_large_resistor(project):
+    """The same through 10 kΩ: 0.12 mA into the clamp, within its 400 µA – it passes."""
+    pcf8574_port_pulled_to_5v(project, "10k", "C17414")
+    rows = sim_rows(simulate(project), "U9.4", "current into the clamp")
+    assert rows and all(r["result"] == "pass" for r in rows)
+
+
 # --- C4: what an output may drive --------------------------------------------------------------------------------------
 def test_an_output_drives_no_less_resistance_and_no_more_capacitance_than_it_allows(project):
     """U2's SDO (output, on its own net SDO_OUT) with a 10 kΩ to ground and a 100 nF: within r_load_min_ohm 4.7 kΩ and

@@ -218,7 +218,8 @@
    "the I/O limit VIO ≤ VCC + 0.5 V applies to outputs too; LIM.v/inject (vin_rel_max_v) reads inputs only",
    "built-in pull resistors are given as currents (IUP, IDN): R232 pull 'down' without pull_ohm",
    "English 3C and Chinese 3D: which edition is current was not checked (WCH's site could not be read)",
-   "no behaviour model: the supply current is not drawn in the simulation"
+   "no behaviour model: the supply current is not drawn in the simulation",
+   "injection current (i_inject_max_a, maker-coverage CK-5): none in the datasheet – WCH CH340DS1 3C: input currents of the pins with pull-up or pull-down only; section 7 asks for an anti-backflow circuit where the MCU side is powered separately (read 2026-10-31); LIM.v/inject holds the pin's voltage alone"
   ]
  },
  "configs": {

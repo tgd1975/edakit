@@ -79,19 +79,22 @@
  "values": {
   "idd_max_a": 0.0015,
   "vih_v": 2.1,
-  "vil_v": 0.8
+  "vil_v": 0.8,
+  "spi_modes": [
+   0
+  ]
  },
  "limits": {
   "vdd_max_v": 4.0,
   "vdd_op_min_v": 3.0,
   "vdd_op_max_v": 3.6,
   "vin_rel_max_v": 0.3,
-  "f_max_hz": 5000000.0,
   "p_max_w": 0.4706,
   "tj_max_c": 150,
   "rth_ja_k_per_w": 170,
   "t_min_c": -40,
-  "t_max_c": 125
+  "t_max_c": 125,
+  "f_sck_max_hz": 5000000.0
  },
  "hints": [
   "3.3 V part: VCC 3.0–3.6 V, absolute maximum 4.0 V, every other pin at most VCC + 0.3 V – a 5 V microcontroller's SCK and CS damage it without level shifting (p. 2)",
@@ -108,11 +111,12 @@
   "package thermal characteristics, p. 2 note 1: θJA 170 °C/W, θJC 40 °C/W (JESD51-7, four-layer board)",
   "recommended operating conditions, p. 2: VCC 3.0 / 3.3 / 3.6 V, VIL ≤ 0.8 V, VIH ≥ 2.1 V",
   "DC characteristics, p. 2: ICC 900 µA typ., 1500 µA max.; VOH VCC − 0.4 V and VOL 0.4 V at 1.6 mA; thermocouple input bias current ±100 nA",
-  "serial interface timing, p. 4: fSCL ≤ 5 MHz (f_max_hz), CS rise to output disable tTR ≤ 40 ns – SO released (drive tristate)",
+  "serial interface timing, p. 4: fSCL ≤ 5 MHz (f_sck_max_hz), CS rise to output disable tTR ≤ 40 ns – SO released (drive tristate)",
   "applications information, p. 11: 0.1 µF bypass at VCC; 10 nF across T+/T−",
   "ordering information, p. 12: MAX31855KASA+T = K type, 8 SO, tape and reel; '+' lead(Pb)-free/RoHS-compliant",
   "mpn, manufacturer, footprint, jlc_class, pin numbers and names: EasyEDA library data of C52028 via edakit part import, read 2026-10-31",
-  "stock: LCSC 478 pcs, JLCPCB assembly 478 pcs (2026-10-31)"
+  "stock: LCSC 478 pcs, JLCPCB assembly 478 pcs (2026-10-31)",
+  "spi_modes [0]: figure 2 serial-interface timing, p. 5 (read from the graph): SCK low while CS falls (tCSS), D31 on SO tDV after CS falls, every further bit tDO after SCK falls – valid at the rising edge, CPOL 0, CPHA 0 – Maxim MAX31855 19-5793 Rev 5, read 2026-10-31"
  ],
  "compliance": {
   "rohs": true,
@@ -129,14 +133,16 @@
    "VCC 3.0–3.6 V, VIL 0.8 V, VIH 2.1 V, ICC ≤ 1.5 mA (p. 2)",
    "fSCL ≤ 5 MHz; SO disabled after CS rises (p. 4)",
    "T− not to GND (p. 7); 0.1 µF bypass, 10 nF across T+/T− (p. 11)",
-   "2026-10-31: T+–T− differential capacitor (19-5793 Rev 5, Noise Considerations, read now)"
+   "2026-10-31: T+–T− differential capacitor (19-5793 Rev 5, Noise Considerations, read now)",
+   "2026-10-31: fSCL 5 MHz (serial-interface timing, p. 4) as f_sck_max_hz; SPI mode 0 from figure 2 (maker-coverage FT-16)"
   ],
   "open": [
    "the 10 nF capacitor across T+ and T−: pin needs know a capacitor to ground only, not one between two pins",
    "analog.com was not reachable: whether ADI has a revision newer than Rev 5 (1/15) was not checked",
    "VIH's upper bound VCC + 0.3 V and the negative bounds (−0.3 V) have no pin field",
    "no behaviour model: the supply current (≤ 1.5 mA) is not drawn in the simulation",
-   "VCC bypass: 0.1 µF is the named value, read as a minimum"
+   "VCC bypass: 0.1 µF is the named value, read as a minimum",
+   "injection current (i_inject_max_a, maker-coverage CK-5): none in the datasheet – Maxim MAX31855 19-5793 Rev 5: absolute maximum ratings without a current into the pins (read 2026-10-31); LIM.v/inject holds the pin's voltage alone"
   ]
  }
 }

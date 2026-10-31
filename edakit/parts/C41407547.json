@@ -620,7 +620,8 @@
    "gpio_r_out_ohm: not given (VOL 0.5 V at the drive setting's current only)",
    "RoHS/REACH: not stated in the board datasheet",
    "SWCLK/SWDIO pull: on-chip pull-up at reset (chip pin table), resistance not given separately",
-   "TP7 (1V1, do not use) of the Pico 2 is not a pad of the SC0916 footprint"
+   "TP7 (1V1, do not use) of the Pico 2 is not a pad of the SC0916 footprint",
+   "injection current (i_inject_max_a, maker-coverage CK-5): none in the datasheet – RP2350 datasheet (build 01/10/2026), 14.9.1: VPIN −0.5 V … IOVDD + 0.5 V (FT pins up to 5.5 V while powered), no current through the pins' protection (read 2026-10-31); LIM.v/inject holds the pin's voltage alone"
   ]
  },
  "symbol_differs": {

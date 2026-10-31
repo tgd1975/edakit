@@ -94,14 +94,20 @@
  "values": {
   "vih_ratio": 0.8,
   "vil_ratio": 0.2,
-  "idd_max_a": 0.000714
+  "idd_max_a": 0.000714,
+  "spi_modes": [
+   0,
+   3
+  ]
  },
  "limits": {
   "vdd_max_v": 4.25,
   "vdd_op_min_v": 1.71,
   "vdd_op_max_v": 3.6,
   "t_min_c": -40,
-  "t_max_c": 85
+  "t_max_c": 85,
+  "f_scl_max_hz": 400000.0,
+  "f_sck_max_hz": 10000000.0
  },
  "hints": [
   "interface pins (SDI, SDO, SCK, CSB) at most VDDIO + 0.3 V, and never high while VDDIO is off – the ESD diodes to VDDIO can be destroyed",
@@ -118,7 +124,8 @@
   "Bosch Sensortec BME280 Data sheet, BST-BME280-DS001-24, document revision 1.24 (February 2024), p. 14 section 3.2: no interface pin high while VDDIO is off; VDDIO without VDD keeps the pins high-Z",
   "Bosch Sensortec BME280 Data sheet, BST-BME280-DS001-24, document revision 1.24 (February 2024), p. 32–33 sections 6.1/6.2: CSB to VDDIO selects I²C; SDA/SCL not pure open-drain, ESD diodes to VDDIO and GND; address 111011x – SDO to GND 0x76, to VDDIO 0x77, SDO must not float; SDI open drain with pull-up to VDDIO",
   "Bosch Sensortec BME280 Data sheet, BST-BME280-DS001-24, document revision 1.24 (February 2024), p. 35 section 6.4.1: VIL max 20 % VDDIO, VIH min 80 % VDDIO; internal CSB pull-up 70/120/190 kΩ (pull_ohm = typ)",
-  "Bosch Sensortec BME280 Data sheet, BST-BME280-DS001-24, document revision 1.24 (February 2024), p. 39 Figure 17: C1 (VDD), C2 (VDDIO) 100 nF recommended; pull-ups typically 4.7 kΩ; CSB direct to VDDIO"
+  "Bosch Sensortec BME280 Data sheet, BST-BME280-DS001-24, document revision 1.24 (February 2024), p. 39 Figure 17: C1 (VDD), C2 (VDDIO) 100 nF recommended; pull-ups typically 4.7 kΩ; CSB direct to VDDIO",
+  "f_scl_max_hz 400 kHz: 6.4.2 I2C timings, the standard and fast mode (S&F) – Fast-mode's 400 kHz (NXP UM10204 Rev. 7.0, table 11); the high-speed mode up to 3.4 MHz (section 1) needs the HS master code and is not entered; f_sck_max_hz 10 MHz: table 34 SPI timings, F_spi 0–10 MHz, p. 37; spi_modes [0, 3]: 6.3 SPI interface, 'compatible with SPI mode ‘00’ (CPOL = CPHA = ‘0’) and mode ‘11’ (CPOL = CPHA = ‘1’)', p. 34 – Bosch BST-BME280-DS001-24 rev 1.24, read 2026-10-31"
  ],
  "verified": {
   "by": "Claude (datasheet check, library draft)",
@@ -132,7 +139,8 @@
    "VDD 1.71–3.6 V, VDDIO 1.2–3.6 V; VIH 0.8 × VDDIO, VIL 0.2 × VDDIO",
    "I²C address 0x76/0x77 by SDO",
    "100 nF on VDD and VDDIO",
-   "2026-10-31, pin limits (schema-gaps A6, B1–B3, C1–C4): BST-BME280-DS001-24 rev 1.24: Table 5, voltage at any interface pin −0.3 V to VDDIO + 0.3 V (CSB, SDI, SCK, SDO: ref VDDIO, v_rel_max_v 0.3, v_min_v −0.3); Table 32, Vil_si 20 % and Vih_si 80 % of VDDIO (the entry's ratios, now of VDDIO); 'there are no limitations on slope and sequence of raising the VDD and VDDIO levels' – no supply_order"
+   "2026-10-31, pin limits (schema-gaps A6, B1–B3, C1–C4): BST-BME280-DS001-24 rev 1.24: Table 5, voltage at any interface pin −0.3 V to VDDIO + 0.3 V (CSB, SDI, SCK, SDO: ref VDDIO, v_rel_max_v 0.3, v_min_v −0.3); Table 32, Vil_si 20 % and Vih_si 80 % of VDDIO (the entry's ratios, now of VDDIO); 'there are no limitations on slope and sequence of raising the VDD and VDDIO levels' – no supply_order",
+   "2026-10-31: I2C S&F mode (6.4.2; HS 3.4 MHz not entered), SPI 10 MHz (table 34), SPI modes 00 and 11 (6.3) (maker-coverage FT-16)"
   ],
   "open": [
    "measurement currents are printed in the Typ column with the condition 'Max value at …' – whether 714 µA is a guaranteed maximum is not clear",
@@ -143,7 +151,8 @@
     "when": "order"
    },
    "no thermal resistance or junction temperature in the datasheet",
-   "RoHS/REACH not entered (datasheet 7.12: RoHS 2011/65/EU incl. 2015/863, halogen-free)"
+   "RoHS/REACH not entered (datasheet 7.12: RoHS 2011/65/EU incl. 2015/863, halogen-free)",
+   "c_in_f of SDI and SCK: the datasheet gives the bus load Cb ≤ 400 pF (table 32), no pin capacitance – not entered"
   ]
  }
 }

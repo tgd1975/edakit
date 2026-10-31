@@ -105,6 +105,14 @@ def problems(entry):
         if not (isinstance(box, list) and len(box) == 4 and all(is_number(x) for x in box)
                 and box[0] < box[2] and box[1] < box[3]):
             out.append("antenna.keepout_mm: [x0, y0, x1, y1] in mm with x0 < x1 and y0 < y1 (the footprint's frame)")
+        edge = entry["antenna"].get("edge_mm", 0) if isinstance(entry["antenna"], dict) else 0
+        if not (is_number(edge) and edge >= 0):
+            out.append("antenna.edge_mm: a distance in mm ≥ 0 – how far inside the board's outer edge the antenna area "
+                       "may lie at most (the module maker's layout guide)")
+    modes = (entry.get("values") or {}).get("spi_modes")
+    if modes is not None and not (isinstance(modes, list) and modes and len(set(modes)) == len(modes)
+                                  and all(isinstance(m, int) and not isinstance(m, bool) and 0 <= m <= 3 for m in modes)):
+        out.append(f"values.spi_modes: a list of the SPI modes 0–3 (CPOL × 2 + CPHA) the part runs in, not {modes!r}")
     sd = entry.get("symbol_differs")
     if sd is not None and not (isinstance(sd, dict) and sd and all(isinstance(v, str) and v.strip()
                                                                    for v in sd.values())):

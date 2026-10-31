@@ -142,7 +142,8 @@
    "CHIPEN thresholds: not given (Table 2 names L/R, WS, SCK only)",
    "SD pull-down: 100 kΩ 'sufficient' – no window given, the need has no bounds",
    "acoustic data (sensitivity −26 dBFS, SNR 61 dBA, AOP 120 dB SPL), WS range 7.8-50 kHz, SCK minimum 0.5 MHz, start-up 2^18 SCK cycles: no entry fields",
-   "no behaviour model: the simulation draws no supply current from the microphone (idd_max_a is read only by the cc_sink model)"
+   "no behaviour model: the simulation draws no supply current from the microphone (idd_max_a is read only by the cc_sink model)",
+   "injection current (i_inject_max_a, maker-coverage CK-5): none in the datasheet – InvenSense DS-INMP441-00 Rev 1.1: absolute maximum ratings without a current into the pins (read 2026-10-31); LIM.v/inject holds the pin's voltage alone"
   ]
  }
 }
