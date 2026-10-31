@@ -1,0 +1,242 @@
+{
+ "mpn": "LOLIN D1 MINI",
+ "manufacturer": "WEMOS (Quanzhou weimosi Electronic Technology Co., Ltd.)",
+ "kind": "module",
+ "package": "plug-in board 34.2 × 25.6 mm, 2 × 8 pins at 2.54 mm, USB-C, I2C connector SH1.0 4P",
+ "datasheet": {
+  "url": "https://www.wemos.cc/en/latest/_static/files/sch_d1_mini_v4.0.0.pdf",
+  "pinout_page": 1,
+  "title": "LOLIN D1 mini schematic",
+  "revision": "V4.0.0",
+  "page": "https://www.wemos.cc/en/latest/d1/d1_mini.html",
+  "chip": "https://documentation.espressif.com/0a-esp8266ex_datasheet_en.pdf"
+ },
+ "pins": {
+  "1": {
+   "name": "RST",
+   "type": "input",
+   "v_max_v": 3.6,
+   "pull": "up",
+   "pull_ohm": 12000,
+   "hint": "EXT_RSTB, low active: 12 kΩ to +3V3 (R7), reset button with 100 nF to GND, auto-reset from the CH340C through UMH3N; JP1 (open) joins it through 470 Ω to IO16 for deep-sleep wake-up (schematic)"
+  },
+  "2": {
+   "name": "A0",
+   "type": "analog",
+   "v_max_v": 3.2,
+   "functions": [
+    "adc0"
+   ],
+   "adc": {
+    "range_v": [
+     0.0,
+     3.2
+    ]
+   },
+   "hint": "TOUT through the divider 220 kΩ (R12) / 100 kΩ (R13): the ESP8266EX ADC reads 0–1.0 V at TOUT, the product page gives 3.2 V max at A0"
+  },
+  "3": {
+   "name": "IO16",
+   "type": "bidirectional",
+   "role": "gpio",
+   "v_max_v": 3.6,
+   "functions": [],
+   "hint": "GPIO16 (XPD_DCDC): deep-sleep wake-up when joined to EXT_RSTB (JP1); the product page: interrupt/PWM/I2C/one-wire not supported on this pin"
+  },
+  "4": {
+   "name": "IO14",
+   "type": "bidirectional",
+   "role": "gpio",
+   "v_max_v": 3.6,
+   "functions": [
+    "spi1.sck",
+    "i2s1.ws"
+   ],
+   "hint": "MTMS: HSPI_CLK, I2SI_WS (ESP8266EX table 2-1, 4-3, 4-5)"
+  },
+  "5": {
+   "name": "IO12",
+   "type": "bidirectional",
+   "role": "gpio",
+   "v_max_v": 3.6,
+   "functions": [
+    "spi1.rx",
+    "i2s1.sd"
+   ],
+   "hint": "MTDI: HSPI_MISO, I2SI_DATA (ESP8266EX table 2-1, 4-3, 4-5)"
+  },
+  "6": {
+   "name": "IO13",
+   "type": "bidirectional",
+   "role": "gpio",
+   "v_max_v": 3.6,
+   "functions": [
+    "spi1.tx",
+    "i2s1.bclk"
+   ],
+   "hint": "MTCK: HSPI_MOSI, UART0_CTS, I2SI_BCK (ESP8266EX table 2-1, 4-3, 4-5, 4-6)"
+  },
+  "7": {
+   "name": "IO15",
+   "type": "bidirectional",
+   "role": "gpio",
+   "v_max_v": 3.6,
+   "functions": [
+    "spi1.cs",
+    "i2s0.bclk"
+   ],
+   "pull": "down",
+   "pull_ohm": 12000,
+   "hint": "MTDO: HSPI_CS, UART0_RTS, I2SO_BCK; boot-mode pin (ESP8266EX datasheet note to table 2-1: GPIO2, GPIO0 and MTDO select the boot mode); 12 kΩ to GND on the board (R11)"
+  },
+  "8": {
+   "name": "+3V3",
+   "type": "power_output",
+   "role": "3v3",
+   "v_max_v": 3.6,
+   "hint": "output of the ME6211C33 LDO (from VBUS), 10 µF; the ME6211's current rating was not read"
+  },
+  "9": {
+   "name": "TX",
+   "type": "bidirectional",
+   "role": "gpio",
+   "v_max_v": 3.6,
+   "functions": [
+    "uart0.tx"
+   ],
+   "hint": "U0TXD (GPIO1) through 470 Ω (R8), also to the CH340C RXD; must not be pulled low during power-up (ESP8266EX table 2-1 note)"
+  },
+  "10": {
+   "name": "RX",
+   "type": "bidirectional",
+   "role": "gpio",
+   "v_max_v": 3.6,
+   "functions": [
+    "uart0.rx",
+    "i2s0.sd"
+   ],
+   "hint": "U0RXD (GPIO3), driven by the CH340C TXD on the board (schematic); I2SO_DATA (ESP8266EX table 4-5)"
+  },
+  "11": {
+   "name": "IO5",
+   "type": "bidirectional",
+   "role": "gpio",
+   "v_max_v": 3.6,
+   "functions": [],
+   "hint": "GPIO5: SCL of the board's I2C port (product page, P1) – I2C is software on the ESP8266EX (datasheet 4.4)"
+  },
+  "12": {
+   "name": "IO4",
+   "type": "bidirectional",
+   "role": "gpio",
+   "v_max_v": 3.6,
+   "functions": [],
+   "hint": "GPIO4: SDA of the board's I2C port (product page, P1) – I2C is software on the ESP8266EX (datasheet 4.4)"
+  },
+  "13": {
+   "name": "IO0",
+   "type": "bidirectional",
+   "role": "gpio",
+   "v_max_v": 3.6,
+   "functions": [],
+   "pull": "up",
+   "pull_ohm": 12000,
+   "hint": "GPIO0 (SPI_CS2); boot-mode pin (ESP8266EX datasheet note to table 2-1: GPIO2, GPIO0 and MTDO select the boot mode); 12 kΩ to +3V3 (R9), pulled low by the auto-reset transistor (UMH3N) for flashing"
+  },
+  "14": {
+   "name": "IO2",
+   "type": "bidirectional",
+   "role": "gpio",
+   "v_max_v": 3.6,
+   "functions": [
+    "uart1.tx",
+    "i2s0.ws"
+   ],
+   "pull": "up",
+   "pull_ohm": 12000,
+   "hint": "GPIO2: U1TXD, I2SO_WS; boot-mode pin (ESP8266EX datasheet note to table 2-1: GPIO2, GPIO0 and MTDO select the boot mode); 12 kΩ to +3V3 (R10) and the blue LED with 2 kΩ to +3V3 (on when low)"
+  },
+  "15": {
+   "name": "GND",
+   "type": "ground"
+  },
+  "16": {
+   "name": "VBUS",
+   "type": "power_in",
+   "role": "vin",
+   "hint": "USB-C VBUS, input of the ME6211C33 LDO (10 µF); the ME6211's input rating was not read"
+  }
+ },
+ "values": {
+  "behavior": "mcu",
+  "regulator": "ldo",
+  "vout_v": 3.3,
+  "v_io_v": 3.3,
+  "vih_ratio": 0.75,
+  "vil_ratio": 0.25,
+  "i_core_a": 0.17,
+  "usb_c": {
+   "cc": "rd_5k1",
+   "source": "LOLIN D1 mini schematic V4.0.0 (sch_d1_mini_v4.0.0.pdf, wemos.cc): R1 and R2, 5.1 kΩ from CC1 and CC2 to GND"
+  }
+ },
+ "limits": {
+  "gpio_v_max_v": 3.6,
+  "gpio_i_max_a": 0.012
+ },
+ "hints": [
+  "I2C and PWM are software on the ESP8266EX (datasheet 4.4, 4.7): they work on other GPIOs too – a net with fn i2c or pwm finds no hardware function here; leave fn out on bit-banged nets",
+  "the ESP8266EX datasheet v7.1 is marked NRND; Espressif recommends the ESP8684"
+ ],
+ "spice": {},
+ "compliance": {
+  "rohs": true,
+  "radio": {
+   "bands_mhz": [
+    [
+     2400,
+     2483.5
+    ]
+   ],
+   "max_dbm": 21.5,
+   "doc": "https://www.wemos.cc/en/latest/_static/files/certification/doc_d1_mini.pdf",
+   "source": "Espressif ESP8266EX Datasheet v7.1 (marked NRND, 2025.11): table 1-1 (2.4–2.5 GHz, 2400–2483.5 MHz; 802.11b +20 dBm), table 5-4 (PA output power 11b mode 19.5/20.5/21.5 dBm min/typ/max, input frequency 2412–2484 MHz); EU declaration of conformity LOLIN D1 MINI, 2026-02-07 (wemos.cc, read 2026-10-31)"
+  },
+  "source": "RoHS: certificate of conformity FTC26056002-1, ZhongShan Forever Testing, 2026-02-05 (RoHS 2011/65/EU & (EU) 2015/863), wemos.cc, read 2026-10-31; the EU declaration of conformity of 2026-02-07 names the RoHS and EMC directives (2014/30/EU) and EN 55032/55035 – it names no radio directive"
+ },
+ "sources": [
+  "LOLIN D1 mini schematic V4.0.0 (sch_d1_mini_v4.0.0.pdf, wemos.cc) (read 2026-10-31, KiCad drawing): J2 1–8 RST, A0, IO16, IO14 (SCK), IO12 (MISO), IO13 (MOSI), IO15, +3V3; J3 1–8 TX, RX, IO5 (SCL), IO4 (SDA), IO0, IO2, GND, VBUS; U1 ESP8266, U2 ME6211C33 (VBUS → +3V3, 10 µF in and out), U4 CH340C, U5 UMH3N auto-reset; CHIP_EN 12 kΩ (R4) and EXT_RSTB 12 kΩ (R7) to +3V3; IO0, IO2 12 kΩ up (R9, R10), IO15 12 kΩ down (R11); TX 470 Ω (R8); A0 220 kΩ (R12) / 100 kΩ (R13) to TOUT; LED1 with 2 kΩ on IO2; USB-C CC1/CC2 5.1 kΩ to GND (R1, R2); JP1 RST–IO16 through 470 Ω; PCB antenna ANT_PCB_2.4G_15.2MM_F",
+  "LOLIN D1 mini product page (wemos.cc/en/latest/d1/d1_mini.html, V4.0.0 current) (read 2026-10-31): 4 MB flash, ESP-8266EX, 11 digital IO, 1 analog input (3.2 V max input), USB-C, LOLIN I2C port, 'All of the IO pins run at 3.3V', size 34.2 × 25.6 mm; pin picture d1_mini_v4.0.0_5_16x9.png (RST, A0, 16, 14 SCK, 12 MISO, 13 MOSI, 15, 3.3V | TX, RX, 5 SCL, 4 SDA, 0, 2 LED, GND, VBUS)",
+  "Espressif ESP8266EX Datasheet v7.1 (marked NRND, 2025.11) (documentation.espressif.com, read 2026-10-31): table 2-1 pin definitions and note (GPIO2, GPIO0, MTDO select the boot mode; U0TXD not to be pulled low during power-up), table 4-3 HSPI (GPIO14 CLK, GPIO12 MISO, GPIO13 MOSI, GPIO15 CS), 4.4 I2C in software, table 4-5 I2S (input GPIO12 data, GPIO13 BCK, GPIO14 WS; output GPIO15 BCK, GPIO3 data, GPIO2 WS), table 4-6 UART (UART0 GPIO1/GPIO3, UART1 TX GPIO2), 4.7 PWM in software, table 4-9 ADC (TOUT 0–1.0 V), table 5-1 (VDD 2.5–3.6 V, VIL ≤ 0.25 VIO, VIH ≥ 0.75 VIO up to 3.6 V, IMAX 12 mA), table 5-3 TX current, table 5-4 radio",
+  "pin numbers: J2 1–8 as pins 1–8, J3 1–8 as pins 9–16 (the connector order of the schematic) – a footprint must follow this numbering",
+  "functions: spi1 = HSPI, uart0/uart1 as table 4-6, i2s0 = the I2S data output, i2s1 = the I2S data input (table 4-5; the datasheet numbers neither) – I2C and PWM are software and left out",
+  "i_core_a 0.17 A: TX 802.11b at +17 dBm typ 170 mA, 50 % duty cycle (table 5-3) – assumption: no maximum given",
+  "gpio_i_max_a 0.012 A: IMAX of table 5-1; gpio_v_max_v 3.6 V: VIH max of table 5-1",
+  "A0 v_max_v 3.2 V and adc.range_v [0, 3.2]: the product page's '3.2V max input' (1.0 V at TOUT behind 220 kΩ / 100 kΩ)"
+ ],
+ "notes": "Bought board without an LCSC number, keyed by its model number 'LOLIN D1 MINI' (DoC, RoHS and EMC certificates) with the spaces as '_' (proposed key LOLIN_D1_MINI) – a component names it with part = 'LOLIN D1 MINI' and bom: false. Entry for hardware V4.0.0 (USB-C, CH340C, ME6211C33).",
+ "verified": {
+  "by": "Claude (datasheet check, library draft)",
+  "date": "2026-10-31",
+  "datasheet": "LOLIN D1 mini schematic V4.0.0 (sch_d1_mini_v4.0.0.pdf, wemos.cc); Espressif ESP8266EX Datasheet v7.1 (marked NRND, 2025.11)",
+  "checked": [
+   "header pins J2/J3 against the schematic and the product page's pin picture",
+   "board pull resistors: RST, IO0, IO2 12 kΩ up; IO15 12 kΩ down; TX 470 Ω series; A0 divider 220 kΩ / 100 kΩ",
+   "USB-C CC1/CC2 5.1 kΩ to GND (values.usb_c rd_5k1)",
+   "ESP8266EX: VIH 0.75 VIO, VIL 0.25 VIO, IMAX 12 mA, VDD 2.5–3.6 V; HSPI, UART, I2S pins; I2C and PWM in software",
+   "radio 2400–2483.5 MHz, PA output 21.5 dBm max (11b)",
+   "RoHS certificate FTC26056002-1; EU DoC of 2026-02-07 (RoHS, EMC)"
+  ],
+  "open": [
+   "strap levels of GPIO0, GPIO2, GPIO15 (MTDO): the datasheet says only that they select the boot mode; the levels are in the ESP8266 Pin List (strapping list), not read – no strap set, the board's 12 kΩ pulls are recorded",
+   "footprint: no EasyEDA footprint chosen for the plug-in board (2 × 8 headers, 2.54 mm); its pin numbering must follow J2 = 1–8, J3 = 9–16",
+   "order: LOLIN sells through its own shop; no distributor order code read (PARTS.supplier warns about a bom: false part without one)",
+   "ME6211C33 (datasheet not read): dropout_v, iq_a, i_out_max_a, VIN range, rth_ja_k_per_w, tj_max_c – vin limits and LIM.t of the on-board LDO stay open",
+   "operating temperature of the board: not given (the ESP8266EX alone: –40 … 125 °C)",
+   "antenna_dbi of the PCB antenna: not given; antenna keep-out on the carrier board: no footprint frame to place it in",
+   "the EU DoC names no radio directive (2014/53/EU) for a board with a Wi-Fi transmitter – for the regulatory review (M-6)",
+   "i_core_a is a typical TX current at 50 % duty cycle, not a maximum; CH340C and LED add to it",
+   "pwm and i2c: software on the ESP8266EX – a net with fn pwm or i2c on this board is reported by REQ.function (bit-banged: leave fn out)"
+  ]
+ }
+}

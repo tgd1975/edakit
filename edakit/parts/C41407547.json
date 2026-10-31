@@ -1,0 +1,569 @@
+{
+ "lcsc": "C41407547",
+ "mpn": "Raspberry Pi Pico 2",
+ "manufacturer": "Raspberry Pi(树莓派)",
+ "kind": "module",
+ "package": "SMD/castellated module 51 × 21 mm, 2 × 20 pins at 2.54 mm, 3 debug pads",
+ "footprint": "COMM-SMD_L51.0-W21.0-P2.54_SC0916",
+ "jlc_class": "Extended Part",
+ "datasheet": {
+  "url": "https://datasheets.raspberrypi.com/pico/pico-2-datasheet.pdf",
+  "pinout_page": 4,
+  "title": "Raspberry Pi Pico 2 Datasheet",
+  "revision": "release 5"
+ },
+ "pins": {
+  "1": {
+   "name": "GP0",
+   "type": "bidirectional",
+   "role": "gpio",
+   "v_max_v": 3.63,
+   "hint": "fault-tolerant pin: up to 5.5 V while IOVDD is powered at 3.3 V, 3.63 V while unpowered (RP2350 datasheet table 1680) – v_max_v holds the unpowered limit",
+   "functions": [
+    "spi0.rx",
+    "uart0.tx",
+    "i2c0.sda",
+    "pwm0.a"
+   ]
+  },
+  "2": {
+   "name": "GP1",
+   "type": "bidirectional",
+   "role": "gpio",
+   "v_max_v": 3.63,
+   "hint": "fault-tolerant pin: up to 5.5 V while IOVDD is powered at 3.3 V, 3.63 V while unpowered (RP2350 datasheet table 1680) – v_max_v holds the unpowered limit",
+   "functions": [
+    "spi0.cs",
+    "uart0.rx",
+    "i2c0.scl",
+    "pwm0.b"
+   ]
+  },
+  "3": {
+   "name": "GND",
+   "type": "ground"
+  },
+  "4": {
+   "name": "GP2",
+   "type": "bidirectional",
+   "role": "gpio",
+   "v_max_v": 3.63,
+   "hint": "fault-tolerant pin: up to 5.5 V while IOVDD is powered at 3.3 V, 3.63 V while unpowered (RP2350 datasheet table 1680) – v_max_v holds the unpowered limit",
+   "functions": [
+    "spi0.sck",
+    "uart0.cts",
+    "i2c1.sda",
+    "pwm1.a",
+    "uart0.tx"
+   ]
+  },
+  "5": {
+   "name": "GP3",
+   "type": "bidirectional",
+   "role": "gpio",
+   "v_max_v": 3.63,
+   "hint": "fault-tolerant pin: up to 5.5 V while IOVDD is powered at 3.3 V, 3.63 V while unpowered (RP2350 datasheet table 1680) – v_max_v holds the unpowered limit",
+   "functions": [
+    "spi0.tx",
+    "uart0.rts",
+    "i2c1.scl",
+    "pwm1.b",
+    "uart0.rx"
+   ]
+  },
+  "6": {
+   "name": "GP4",
+   "type": "bidirectional",
+   "role": "gpio",
+   "v_max_v": 3.63,
+   "hint": "fault-tolerant pin: up to 5.5 V while IOVDD is powered at 3.3 V, 3.63 V while unpowered (RP2350 datasheet table 1680) – v_max_v holds the unpowered limit",
+   "functions": [
+    "spi0.rx",
+    "uart1.tx",
+    "i2c0.sda",
+    "pwm2.a"
+   ]
+  },
+  "7": {
+   "name": "GP5",
+   "type": "bidirectional",
+   "role": "gpio",
+   "v_max_v": 3.63,
+   "hint": "fault-tolerant pin: up to 5.5 V while IOVDD is powered at 3.3 V, 3.63 V while unpowered (RP2350 datasheet table 1680) – v_max_v holds the unpowered limit",
+   "functions": [
+    "spi0.cs",
+    "uart1.rx",
+    "i2c0.scl",
+    "pwm2.b"
+   ]
+  },
+  "8": {
+   "name": "GND",
+   "type": "ground"
+  },
+  "9": {
+   "name": "GP6",
+   "type": "bidirectional",
+   "role": "gpio",
+   "v_max_v": 3.63,
+   "hint": "fault-tolerant pin: up to 5.5 V while IOVDD is powered at 3.3 V, 3.63 V while unpowered (RP2350 datasheet table 1680) – v_max_v holds the unpowered limit",
+   "functions": [
+    "spi0.sck",
+    "uart1.cts",
+    "i2c1.sda",
+    "pwm3.a",
+    "uart1.tx"
+   ]
+  },
+  "10": {
+   "name": "GP7",
+   "type": "bidirectional",
+   "role": "gpio",
+   "v_max_v": 3.63,
+   "hint": "fault-tolerant pin: up to 5.5 V while IOVDD is powered at 3.3 V, 3.63 V while unpowered (RP2350 datasheet table 1680) – v_max_v holds the unpowered limit",
+   "functions": [
+    "spi0.tx",
+    "uart1.rts",
+    "i2c1.scl",
+    "pwm3.b",
+    "uart1.rx"
+   ]
+  },
+  "11": {
+   "name": "GP8",
+   "type": "bidirectional",
+   "role": "gpio",
+   "v_max_v": 3.63,
+   "hint": "fault-tolerant pin: up to 5.5 V while IOVDD is powered at 3.3 V, 3.63 V while unpowered (RP2350 datasheet table 1680) – v_max_v holds the unpowered limit",
+   "functions": [
+    "spi1.rx",
+    "uart1.tx",
+    "i2c0.sda",
+    "pwm4.a"
+   ]
+  },
+  "12": {
+   "name": "GP9",
+   "type": "bidirectional",
+   "role": "gpio",
+   "v_max_v": 3.63,
+   "hint": "fault-tolerant pin: up to 5.5 V while IOVDD is powered at 3.3 V, 3.63 V while unpowered (RP2350 datasheet table 1680) – v_max_v holds the unpowered limit",
+   "functions": [
+    "spi1.cs",
+    "uart1.rx",
+    "i2c0.scl",
+    "pwm4.b"
+   ]
+  },
+  "13": {
+   "name": "GND",
+   "type": "ground"
+  },
+  "14": {
+   "name": "GP10",
+   "type": "bidirectional",
+   "role": "gpio",
+   "v_max_v": 3.63,
+   "hint": "fault-tolerant pin: up to 5.5 V while IOVDD is powered at 3.3 V, 3.63 V while unpowered (RP2350 datasheet table 1680) – v_max_v holds the unpowered limit",
+   "functions": [
+    "spi1.sck",
+    "uart1.cts",
+    "i2c1.sda",
+    "pwm5.a",
+    "uart1.tx"
+   ]
+  },
+  "15": {
+   "name": "GP11",
+   "type": "bidirectional",
+   "role": "gpio",
+   "v_max_v": 3.63,
+   "hint": "fault-tolerant pin: up to 5.5 V while IOVDD is powered at 3.3 V, 3.63 V while unpowered (RP2350 datasheet table 1680) – v_max_v holds the unpowered limit",
+   "functions": [
+    "spi1.tx",
+    "uart1.rts",
+    "i2c1.scl",
+    "pwm5.b",
+    "uart1.rx"
+   ]
+  },
+  "16": {
+   "name": "GP12",
+   "type": "bidirectional",
+   "role": "gpio",
+   "v_max_v": 3.63,
+   "hint": "fault-tolerant pin: up to 5.5 V while IOVDD is powered at 3.3 V, 3.63 V while unpowered (RP2350 datasheet table 1680) – v_max_v holds the unpowered limit",
+   "functions": [
+    "spi1.rx",
+    "uart0.tx",
+    "i2c0.sda",
+    "pwm6.a"
+   ]
+  },
+  "17": {
+   "name": "GP13",
+   "type": "bidirectional",
+   "role": "gpio",
+   "v_max_v": 3.63,
+   "hint": "fault-tolerant pin: up to 5.5 V while IOVDD is powered at 3.3 V, 3.63 V while unpowered (RP2350 datasheet table 1680) – v_max_v holds the unpowered limit",
+   "functions": [
+    "spi1.cs",
+    "uart0.rx",
+    "i2c0.scl",
+    "pwm6.b"
+   ]
+  },
+  "18": {
+   "name": "GND",
+   "type": "ground"
+  },
+  "19": {
+   "name": "GP14",
+   "type": "bidirectional",
+   "role": "gpio",
+   "v_max_v": 3.63,
+   "hint": "fault-tolerant pin: up to 5.5 V while IOVDD is powered at 3.3 V, 3.63 V while unpowered (RP2350 datasheet table 1680) – v_max_v holds the unpowered limit",
+   "functions": [
+    "spi1.sck",
+    "uart0.cts",
+    "i2c1.sda",
+    "pwm7.a",
+    "uart0.tx"
+   ]
+  },
+  "20": {
+   "name": "GP15",
+   "type": "bidirectional",
+   "role": "gpio",
+   "v_max_v": 3.63,
+   "hint": "fault-tolerant pin: up to 5.5 V while IOVDD is powered at 3.3 V, 3.63 V while unpowered (RP2350 datasheet table 1680) – v_max_v holds the unpowered limit",
+   "functions": [
+    "spi1.tx",
+    "uart0.rts",
+    "i2c1.scl",
+    "pwm7.b",
+    "uart0.rx"
+   ]
+  },
+  "21": {
+   "name": "GP16",
+   "type": "bidirectional",
+   "role": "gpio",
+   "v_max_v": 3.63,
+   "hint": "fault-tolerant pin: up to 5.5 V while IOVDD is powered at 3.3 V, 3.63 V while unpowered (RP2350 datasheet table 1680) – v_max_v holds the unpowered limit",
+   "functions": [
+    "spi0.rx",
+    "uart0.tx",
+    "i2c0.sda",
+    "pwm0.a"
+   ]
+  },
+  "22": {
+   "name": "GP17",
+   "type": "bidirectional",
+   "role": "gpio",
+   "v_max_v": 3.63,
+   "hint": "fault-tolerant pin: up to 5.5 V while IOVDD is powered at 3.3 V, 3.63 V while unpowered (RP2350 datasheet table 1680) – v_max_v holds the unpowered limit",
+   "functions": [
+    "spi0.cs",
+    "uart0.rx",
+    "i2c0.scl",
+    "pwm0.b"
+   ]
+  },
+  "23": {
+   "name": "GND",
+   "type": "ground"
+  },
+  "24": {
+   "name": "GP18",
+   "type": "bidirectional",
+   "role": "gpio",
+   "v_max_v": 3.63,
+   "hint": "fault-tolerant pin: up to 5.5 V while IOVDD is powered at 3.3 V, 3.63 V while unpowered (RP2350 datasheet table 1680) – v_max_v holds the unpowered limit",
+   "functions": [
+    "spi0.sck",
+    "uart0.cts",
+    "i2c1.sda",
+    "pwm1.a",
+    "uart0.tx"
+   ]
+  },
+  "25": {
+   "name": "GP19",
+   "type": "bidirectional",
+   "role": "gpio",
+   "v_max_v": 3.63,
+   "hint": "fault-tolerant pin: up to 5.5 V while IOVDD is powered at 3.3 V, 3.63 V while unpowered (RP2350 datasheet table 1680) – v_max_v holds the unpowered limit",
+   "functions": [
+    "spi0.tx",
+    "uart0.rts",
+    "i2c1.scl",
+    "pwm1.b",
+    "uart0.rx"
+   ]
+  },
+  "26": {
+   "name": "GP20",
+   "type": "bidirectional",
+   "role": "gpio",
+   "v_max_v": 3.63,
+   "hint": "fault-tolerant pin: up to 5.5 V while IOVDD is powered at 3.3 V, 3.63 V while unpowered (RP2350 datasheet table 1680) – v_max_v holds the unpowered limit",
+   "functions": [
+    "spi0.rx",
+    "uart1.tx",
+    "i2c0.sda",
+    "pwm2.a"
+   ]
+  },
+  "27": {
+   "name": "GP21",
+   "type": "bidirectional",
+   "role": "gpio",
+   "v_max_v": 3.63,
+   "hint": "fault-tolerant pin: up to 5.5 V while IOVDD is powered at 3.3 V, 3.63 V while unpowered (RP2350 datasheet table 1680) – v_max_v holds the unpowered limit",
+   "functions": [
+    "spi0.cs",
+    "uart1.rx",
+    "i2c0.scl",
+    "pwm2.b"
+   ]
+  },
+  "28": {
+   "name": "GND",
+   "type": "ground"
+  },
+  "29": {
+   "name": "GP22",
+   "type": "bidirectional",
+   "role": "gpio",
+   "v_max_v": 3.63,
+   "hint": "fault-tolerant pin: up to 5.5 V while IOVDD is powered at 3.3 V, 3.63 V while unpowered (RP2350 datasheet table 1680) – v_max_v holds the unpowered limit",
+   "functions": [
+    "spi0.sck",
+    "uart1.cts",
+    "i2c1.sda",
+    "pwm3.a",
+    "uart1.tx"
+   ]
+  },
+  "30": {
+   "name": "RUN",
+   "type": "input",
+   "v_max_v": 3.63,
+   "pull": "up",
+   "pull_ohm": 50000,
+   "hint": "RP2350 enable: on-chip pull-up of about 50 kΩ to 3.3 V; short low to reset"
+  },
+  "31": {
+   "name": "GP26_ADC0",
+   "type": "bidirectional",
+   "role": "gpio",
+   "v_max_v": 3.6,
+   "hint": "GPIO26: ADC-capable pin with a reverse diode to IOVDD – the input must not exceed IOVDD + about 300 mV, and a voltage applied while the RP2350 is unpowered leaks into the 3.3 V rail (Raspberry Pi Pico 2 datasheet, General purpose I/O)",
+   "functions": [
+    "spi1.sck",
+    "uart1.cts",
+    "i2c1.sda",
+    "pwm5.a",
+    "uart1.tx",
+    "adc0"
+   ]
+  },
+  "32": {
+   "name": "GP27_ADC1",
+   "type": "bidirectional",
+   "role": "gpio",
+   "v_max_v": 3.6,
+   "hint": "GPIO27: ADC-capable pin with a reverse diode to IOVDD – the input must not exceed IOVDD + about 300 mV, and a voltage applied while the RP2350 is unpowered leaks into the 3.3 V rail (Raspberry Pi Pico 2 datasheet, General purpose I/O)",
+   "functions": [
+    "spi1.tx",
+    "uart1.rts",
+    "i2c1.scl",
+    "pwm5.b",
+    "uart1.rx",
+    "adc1"
+   ]
+  },
+  "33": {
+   "name": "AGND",
+   "type": "ground",
+   "hint": "AGND: ground reference of GPIO26–29 with its own analog ground plane; may join digital ground when ADC performance is not critical"
+  },
+  "34": {
+   "name": "GP28_ADC2",
+   "type": "bidirectional",
+   "role": "gpio",
+   "v_max_v": 3.6,
+   "hint": "GPIO28: ADC-capable pin with a reverse diode to IOVDD – the input must not exceed IOVDD + about 300 mV, and a voltage applied while the RP2350 is unpowered leaks into the 3.3 V rail (Raspberry Pi Pico 2 datasheet, General purpose I/O)",
+   "functions": [
+    "spi1.rx",
+    "uart0.tx",
+    "i2c0.sda",
+    "pwm6.a",
+    "adc2"
+   ]
+  },
+  "35": {
+   "name": "ADC_VREF",
+   "type": "power_output",
+   "role": "adc_vref",
+   "v_max_v": 3.63,
+   "hint": "ADC supply and reference, the 3.3 V rail filtered by 201 Ω into 2.2 µF; may take an external reference (e.g. a 3.0 V shunt)"
+  },
+  "36": {
+   "name": "3V3(OUT)",
+   "type": "power_output",
+   "role": "3v3",
+   "hint": "3.3 V of the on-board buck-boost SMPS; keep the external load below 300 mA"
+  },
+  "37": {
+   "name": "3V3_EN",
+   "type": "input",
+   "v_max_v": 5.5,
+   "pull": "up",
+   "pull_ohm": 100000,
+   "hint": "SMPS enable, pulled up to VSYS with 100 kΩ; short low to switch the 3.3 V (and the MCU) off"
+  },
+  "38": {
+   "name": "GND",
+   "type": "ground"
+  },
+  "39": {
+   "name": "VSYS",
+   "type": "power_in",
+   "role": "vsys",
+   "v_max_v": 5.5,
+   "hint": "main input 1.8–5.5 V to the buck-boost SMPS; fed from VBUS through a Schottky diode on the board"
+  },
+  "40": {
+   "name": "VBUS",
+   "type": "power_output",
+   "role": "vbus",
+   "hint": "the micro-USB 5 V (5 V ± 10 %), 0 V without USB; in USB host mode the board must be fed with 5 V here"
+  },
+  "41": {
+   "name": "SWCLK",
+   "type": "input",
+   "v_max_v": 3.63,
+   "pull": "up",
+   "hint": "SWD clock, debug pad D1 next to pin 20"
+  },
+  "42": {
+   "name": "GND",
+   "type": "ground"
+  },
+  "43": {
+   "name": "SWDIO",
+   "type": "bidirectional",
+   "v_max_v": 3.63,
+   "pull": "up",
+   "hint": "SWD data, debug pad D3 next to pin 21"
+  },
+  "TP1": {
+   "name": "GND (USB)",
+   "type": "ground"
+  },
+  "TP2": {
+   "name": "USB DM",
+   "type": "bidirectional",
+   "v_max_v": 3.63,
+   "functions": [
+    "usb0.dn"
+   ]
+  },
+  "TP3": {
+   "name": "USB DP",
+   "type": "bidirectional",
+   "v_max_v": 3.63,
+   "functions": [
+    "usb0.dp"
+   ]
+  },
+  "TP4": {
+   "name": "GPIO23/SMPS PS",
+   "type": "bidirectional",
+   "role": "gpio",
+   "v_max_v": 3.63,
+   "functions": [],
+   "hint": "GPIO23 drives the SMPS power-save pin – do not use"
+  },
+  "TP5": {
+   "name": "GPIO25/LED",
+   "type": "bidirectional",
+   "role": "gpio",
+   "v_max_v": 3.63,
+   "functions": [],
+   "hint": "GPIO25 drives the user LED – swings only to the LED's forward voltage, not recommended"
+  },
+  "TP6": {
+   "name": "BOOTSEL",
+   "type": "bidirectional",
+   "v_max_v": 3.63,
+   "hint": "short low at power-up: USB mass-storage programming mode"
+  }
+ },
+ "values": {
+  "behavior": "mcu",
+  "regulator": "buck",
+  "vout_v": 3.3,
+  "v_io_v": 3.3,
+  "vih_v": 2.0,
+  "vil_v": 0.8
+ },
+ "limits": {
+  "vsys_min_v": 1.8,
+  "vsys_max_v": 5.5,
+  "i_out_max_a": 0.3,
+  "gpio_v_max_v": 3.63,
+  "gpio_i_max_a": 0.012,
+  "gpio_i_total_max_a": 0.1,
+  "t_min_c": -20,
+  "t_max_c": 70
+ },
+ "hints": [
+  "internal: GPIO23 SMPS power save, GPIO24 VBUS sense, GPIO25 user LED, GPIO29 VSYS/3 on ADC3 (Raspberry Pi Pico 2 datasheet)",
+  "operating temperature –20 … 85 °C including self-heating, recommended maximum ambient 70 °C"
+ ],
+ "spice": {},
+ "compliance": {
+  "radio": "none",
+  "source": "Raspberry Pi Pico 2 Datasheet, release 5 (build 03/07/2026, d4e0f1799616), RP-008299-DS-3: RP2350 with flash, crystal, buck-boost SMPS and micro-USB (1, 4.4) – no radio on the board (the wireless variant is the Pico W / Pico 2 W) – read 2026-10-31"
+ },
+ "sources": [
+  "pin names: from the Pico 2 datasheet (figure 2 pinout, 3.1) as in the example project's entry (tests/fixtures/led-bar) – the EasyEDA symbol of C41407547 names pins 2–6 TP2–TP6 instead of GP1, GND, GP2, GP3, GP4 and pin 41 SWDIO, 43 SWCLK, against the datasheet (figure 2: SWCLK next to pin 20, SWDIO next to pin 21) and the footprint (pad 41 next to pad 20)",
+  "footprint, mpn, jlc_class: EasyEDA library data of C41407547 (edakit part import, 2026-10-31); footprint pads 1–43 and TP1–TP6 (pad 41 at the debug end next to pad 20)",
+  "Raspberry Pi Pico 2 Datasheet, release 5 (build 03/07/2026, d4e0f1799616), RP-008299-DS-3 (datasheets.raspberrypi.com, read 2026-10-31): figure 2 pinout, figure 4 pin numbering (debug pads D1–D3), 'pinout' section (VSYS 1.8–5.5 V, 3V3_EN 100 kΩ to VSYS, 3V3 load < 300 mA, RUN ~50 kΩ on-chip pull-up, AGND, ADC_VREF, TP1–TP6), recommended operating conditions (–20 … 85 °C incl. self-heating, 70 °C ambient, VBUS 5 V ± 10 %, VSYS 1.8–5.5 V), General purpose I/O (GPIO26–29: IOVDD + about 300 mV), ADC (201 Ω / 2.2 µF), Powerchain (RT6150 buck-boost, fixed 3.3 V)",
+  "RP2350 Datasheet, release 8 (build 01/10/2026, 80d627281ed5), RP-008373-DS-3 (read 2026-10-31): VPIN_FT abs. max 5.5 V with IOVDD at 3.3 V, 3.63 V with IOVDD at 1.8 V or 0 V; standard IO IOVDD + 0.5 V (table 1680); VIH min 2 V and VIL max 0.8 V at IOVDD 3.3 V (table 1683); VOH/VOL at IOH/IOL 2, 4, 8 or 12 mA by drive setting; RPU 32–86 kΩ, RPD 36–113 kΩ at IOVDD 3.3 V (table 1683); IIOVDD_MAX 100 mA sourced, IIOVSS_MAX 100 mA sunk (table 1683)",
+  "pin functions: pico-sdk 2.1.1, src/rp2350/hardware_regs/include/hardware/regs/io_bank0.h (IO_BANK0_GPIOn_CTRL_FUNCSEL_VALUE_* of GPIO0–28: SPI, UART, I2C, PWM), platform_defs.h (ADC_BASE_PIN 26), boards/pico2.h (PICO_SMPS_MODE_PIN 23, PICO_DEFAULT_LED_PIN 25) – raw.githubusercontent.com/raspberrypi/pico-sdk/2.1.1, read 2026-10-31",
+  "GPIO v_max_v 3.63 V: the level the FT pins tolerate with IOVDD at 0 V – the lower bound of the chip's limits; GPIO26–28 3.6 V: IOVDD + about 300 mV of the board datasheet",
+  "gpio_i_max_a 0.012 A: the highest drive setting at which VOH/VOL are specified – assumption: the datasheet gives no absolute maximum per pin",
+  "regulator 'buck': the on-board RT6150 is a buck-boost (the schema knows ldo, buck, boost) – the simulation models it as a buck with the default efficiency",
+  "t_max_c 70 °C: the recommended maximum ambient (85 °C including self-heating)",
+  "3V3_EN v_max_v 5.5 V: it is pulled up to VSYS (at most 5.5 V) on the board – the SMPS's own EN rating was not read",
+  "USB DM/DP (TP2/TP3) v_max_v 3.63 V: below the standard-IO limit IOVDD + 0.5 V – conservative"
+ ],
+ "notes": "Raspberry Pi Pico 2 (RP2350) as a module, reflow-soldered on its castellated pads or plugged on headers. Behaviour model 'mcu' with the on-board buck-boost (VSYS → 3V3).",
+ "verified": {
+  "by": "Claude (datasheet check, library draft)",
+  "date": "2026-10-31",
+  "datasheet": "Raspberry Pi Pico 2 Datasheet release 5",
+  "checked": [
+   "pin allocation 1–40 and the debug pads (SWCLK next to pin 20, GND, SWDIO next to pin 21) against figures 2 and 4",
+   "VSYS 1.8–5.5 V; VBUS 5 V ± 10 %; 3V3 load < 300 mA; 3V3_EN 100 kΩ to VSYS; RUN ~50 kΩ pull-up",
+   "GPIO26–28: IOVDD + about 300 mV, leak when unpowered",
+   "RP2350: VIH 2 V / VIL 0.8 V at 3.3 V, total IO current 100 mA sourced and sunk, abs. max pin voltage",
+   "functions of GPIO0–28 from the FUNCSEL values of io_bank0.h; PWM slice (n >> 1) & 7, channel a/b",
+   "–20 … 85 °C incl. self-heating, 70 °C recommended ambient"
+  ],
+  "open": [
+   "core current (i_core_a): the datasheet gives only typical VBUS currents of example programs, no maximum – the simulation's default applies",
+   "SMPS efficiency: no figure read – the simulation's default 0.85 applies; buck-boost not in the regulator enum (schema gap)",
+   "gpio_i_max_a is the highest specified drive setting, not an absolute maximum",
+   "gpio_r_out_ohm: not given (VOL 0.5 V at the drive setting's current only)",
+   "RoHS/REACH: not stated in the board datasheet",
+   "SWCLK/SWDIO pull: on-chip pull-up at reset (chip pin table), resistance not given separately",
+   "TP7 (1V1, do not use) of the Pico 2 is not a pad of the SC0916 footprint"
+  ]
+ }
+}
