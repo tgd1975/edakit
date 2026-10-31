@@ -59,7 +59,7 @@ CK-26 = { status = "built", where = "REQ.function/uart", step = 6 }
 CK-27 = { status = "built", where = "net instrument, load_min_ohm, pin z_in_ohm; REQ.value/instrument", step = 6 }
 CK-28 = { status = "partial", where = "values gain_min_ratio; REQ.value/gain", missing = "the external compensation a part requires", step = 6 }
 CK-29 = { status = "built", where = "REQ.missing/balance", step = 6 }
-CK-30 = { status = "open", missing = "no DC where signals are switched – a signal path the graph does not mark yet" }
+CK-30 = { status = "partial", where = "net signal; REQ.value/switch in the simulation (engines/sim.py switch_dc)", missing = "a contact rated for signal currents (min_load of the entry) – datasheets", step = 6 }
 CK-31 = { status = "open", missing = "nets kept apart on the board (layout.apart, GEO)" }
 
 [hints]

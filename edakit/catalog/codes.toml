@@ -441,13 +441,14 @@ sources = [
 
 [codes."REQ.value"]
 title = "what a part requires is in range"
-rule = "A required part has its value inside the range: an I2C pull-up (in parallel with the pins' own pulls) between (V − 0.4 V) / 3 mA and 10 kΩ, Rd 5.1 kΩ ± 10 % on a CC pin, what a pin needs inside the window its entry gives (grade pin), the source resistance an ADC pin sees (adc.r_source_max_ohm, unless a hold capacitor; grade adc), the load on an instrument input (net load_min_ohm; grade instrument), an op-amp's closed-loop gain against its minimum stable gain (gain_min_ratio; grade gain)."
+rule = "A required part has its value inside the range: an I2C pull-up (in parallel with the pins' own pulls) between (V − 0.4 V) / 3 mA and 10 kΩ, Rd 5.1 kΩ ± 10 % on a CC pin, what a pin needs inside the window its entry gives (grade pin), the source resistance an ADC pin sees (adc.r_source_max_ohm, unless a hold capacitor; grade adc), the load on an instrument input (net load_min_ohm; grade instrument), an op-amp's closed-loop gain against its minimum stable gain (gain_min_ratio; grade gain), and in the simulation the DC across a switch, relay contact or pot whose sides are both in a signal path (nets with signal or instrument) within 10 mV in every scenario (grade switch)."
 why = "A weak I2C pull-up makes the edges too slow, a strong one cannot be pulled low; a CC resistor outside its window reads as another device."
 fix = "4.7 kΩ for 100 kHz, 2.2 kΩ for 400 kHz on I2C; 5.1 kΩ per CC pin."
 severity = "error"
-grades = { pin = "warning", adc = "warning", instrument = "warning", gain = "warning" }
+grades = { pin = "warning", adc = "warning", instrument = "warning", gain = "warning", switch = "warning" }
 replaces = ["G-11", "G-14"]
 sources = [
+  "docs/concepts/new/maker-coverage.md, CK-30 (appendix GTP 31, 37; GTI 31; AUD 13) – no DC where signals are switched; the 10 mV is edakit's choice for its \"within a few mV\"",
   "NXP UM10204 Rev. 7.0, I2C-bus specification and user manual (2021), 7.1 Pull-up resistor sizing and table 10 – https://www.nxp.com/docs/en/user-guide/UM10204.pdf",
   "USB Type-C Cable and Connector Specification (USB-IF): sink termination Rd = 5.1 kΩ",
 ]

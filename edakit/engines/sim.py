@@ -447,6 +447,7 @@ def function(s, load, low=None, plugin=None):
     opamps(s)
     input_injection(s)
     adc_windows(s)
+    switch_dc(s)
     supply_pin_currents(s)
     clocks(s)
     logic_levels(s)
@@ -533,6 +534,42 @@ def input_injection(s):
             s.q(f"{des}.{num}", "vin_rel", x, "V", "", des, f"input {info.get('name', num)} above its supply",
                 code="LIM.v", entry=False, grade="inject",
                 lims=[Limit(max=rel, source=f"vin_rel_max_v of {s.n.entry_key(des)}")])
+
+
+SWITCH_DC_MAX_V = 0.01     # edakit's choice for "within a few mV" (maker-coverage CK-30), not a datasheet figure
+CONTACT_KINDS = ("switch", "button", "dip_switch", "relay", "potentiometer")
+
+
+def switch_dc(s):
+    """REQ.value/switch: the contacts of a switch, button, relay or pot whose sides are both in a signal path (nets
+    with signal or instrument) sit at one DC level in the scenario – a step across them is the pop when it switches
+    and the scratch when a pot turns. A side no element reaches (nan) is LVL.undefined/analog's, not this check's."""
+    d, res = s.d, s.res
+    signal = {name for name, net in d.nets.items() if net.get("signal") or net.get("instrument")}
+    if len(signal) < 2:
+        return
+    for des in sorted(s.n.comps):
+        part = s.n.part(des) or {}
+        kind = part.get("kind")
+        if kind not in CONTACT_KINDS:
+            continue
+        on = {}
+        for num, info in (part.get("pins") or {}).items():
+            if kind == "relay" and info.get("role") not in ("common", "no", "nc"):
+                continue
+            net = d.pin_net.get(f"{des}.{num}")
+            if net in signal:
+                on.setdefault(net, num)
+        if len(on) < 2:
+            continue
+        xs = {net: at_pin(d, res, f"{des}.{num}") for net, num in on.items()}
+        if any(x != x for x in xs.values()):
+            continue
+        lo, hi = min(xs, key=xs.get), max(xs, key=xs.get)
+        dv = xs[hi] - xs[lo]
+        s.check("REQ.value", des, f"DC across {des} in the signal path ({lo} {xs[lo]:.3g} V, {hi} {xs[hi]:.3g} V)",
+                dv * 1e3, f"≤ {SWITCH_DC_MAX_V * 1e3:g} mV", dv <= SWITCH_DC_MAX_V, "mV", "maker-coverage CK-30",
+                grade="switch", on=(("component", des),))
 
 
 def adc_windows(s):

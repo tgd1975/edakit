@@ -388,6 +388,19 @@ def _resistor_to(p, des, key, ohm, text):
     p.save_graph(g)
 
 
+def _bypass_to_ground_level(p):
+    """A bypass switch SW21 (the example's button part) from GTR_IN, at VREF, to an output BYPASS held at 0 V by
+    10 kΩ – both sides in the signal path."""
+    g = p.graph()
+    add(g, "SW21", "button", "C318884", {"1": "A", "2": "B (internal to A)", "3": "C", "4": "D (internal to C)"},
+        nc=["2", "4"])
+    add(g, "R23", "resistor", "C17414", {"1": "1", "2": "2"}, value="10k")
+    wire(g, "GTR_IN", "SW21.1", signal=True)
+    wire(g, "BYPASS", "SW21.3", "R23.1", signal=True)
+    wire(g, "GND", "R23.2")
+    p.save_graph(g)
+
+
 def _unconnect(p, des, num):
     """Pin `num` of `des` off its net into nc; a net left with one pin goes with it."""
     g = p.graph()
@@ -440,7 +453,8 @@ FAULTS = {
     "audio": [("an output on ground", lambda p: _merge(p, "SPK_N", "GND"), {"REQ.forbidden"})],
     "guitar": [("a bias of 470 kΩ", lambda p: _resistor_to(p, "R20", "C9100010", 470e3, "470k"), {"REQ.value"}),
                ("a reference above the inputs' range", lambda p: _resistor_to(p, "R22", "C9100011", 100e3, "100k"),
-                {"LIM.range"})],
+                {"LIM.range"}),
+               ("a bypass switch to an output at 0 V", _bypass_to_ground_level, {"REQ.value"})],
     "power": [("the cells' current limit", lambda p: _cell(p, i_max_a=0.02), {"LIM.i"}),
               ("no diode in front of the cells", lambda p: (_remove(p, "D20"), _merge(p, "BAT", "+5V")),
                {"PATH.reverse"})],
