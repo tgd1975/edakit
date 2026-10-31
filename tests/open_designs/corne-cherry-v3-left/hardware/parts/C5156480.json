@@ -1,0 +1,54 @@
+{
+ "lcsc": "C5156480",
+ "mpn": "CPG151101S11-16",
+ "manufacturer": "Kailh",
+ "kind": "button",
+ "package": "hot-swap socket for MX-style key switches, SMD",
+ "footprint": "CherryMX_Hotswap",
+ "datasheet": {
+  "url": "https://datasheet.lcsc.com/datasheet/pdf/5ea75d84e431b4d0c68ab6e4e17d332c.pdf",
+  "pinout_page": 1
+ },
+ "pins": {
+  "1": {
+   "name": "1",
+   "type": "passive",
+   "role": "a"
+  },
+  "2": {
+   "name": "2",
+   "type": "passive",
+   "role": "b"
+  }
+ },
+ "values": {
+  "r_on_ohm": 0.1,
+  "min_load_a": 1e-05
+ },
+ "limits": {
+  "i_max_a": 0.01,
+  "v_max_v": 12,
+  "t_min_c": -10,
+  "t_max_c": 60
+ },
+ "sources": [
+  "Kailh CPG151101S11-16 product specification KH-PS2206-43, Rev. A (2022-06-27), and drawing KHA-PG1511-388EN (2022-06-01), LCSC's copy https://datasheet.lcsc.com/datasheet/pdf/5ea75d84e431b4d0c68ab6e4e17d332c.pdf, read 2026-10-31",
+  "3: operating temperature −10 … +60 °C; contact resistance 100 mΩ max; 4: rating 12 V AC/DC max, 2 V DC min; 10 mA max, 10 µA DC min (min_load_a)",
+  "stand-in: the socket is what the BOM fits at SW1–SW21 (and at EXSW1, EXSW2); the key switch the builder plugs in is not part of the design – the socket's ratings stand for the key; pins 1, 2 as the KiCad symbol Switch:SW_Push (S1, S2 at EXSW1, EXSW2)",
+  "the v3 build guide: 'PCB sockets 42 – Compatible with Kailh and Gateron'; the Kailh socket of the v4 BOM stands in"
+ ],
+ "verified": {
+  "by": "Claude (datasheet check, open-design transcription)",
+  "date": "2026-10-31",
+  "datasheet": "Kailh CPG151101S11-16 product specification KH-PS2206-43, Rev. A (2022-06-27), and drawing KHA-PG1511-388EN (2022-06-01)",
+  "datasheet_sha256": "bc0def300e4339aace55295c60ccd6530c79339c4a903c1f05236851de2ca235",
+  "checked": [
+   "ratings",
+   "contact resistance",
+   "temperature range"
+  ],
+  "open": [
+   "the key switch itself (Cherry MX compatible) is the builder's choice – its own ratings are not here"
+  ]
+ }
+}
