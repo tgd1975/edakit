@@ -107,7 +107,7 @@ def test_offline_starts_no_server(project, monkeypatch, capsys):
     assert started == []
     assert code == (1 if "FAIL" in out else 0)                              # exit as today: 1 only for a FAIL
     assert "BRIDGE_TIMEOUT_MS" in out and "1 easyeda-mcp-pro server process(es)" in out
-    assert "extension" not in out and "return depth" not in out
+    assert "bridge extension" not in out and "return depth" not in out   # the ODB++ line may name the extension
 
 
 def test_no_easyeda_no_server(project, monkeypatch, capsys):

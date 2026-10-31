@@ -209,7 +209,9 @@ def main(cfg, args):
         print(f"{name}: {len(lines)} line{'s' if len(lines) != 1 else ''}, "
               + ", ".join(f"{g['code'] or g['item']} x {g['qty']}" for g in lines))
     (out / "hand_assembly.md").write_text(hand_assembly(cfg, design, lost), encoding="utf-8")
-    print(f"hand_assembly.md: {len(bought_by_hand(design))} parts by hand, {len(cfg.extras)} items off the board")
+    hand, extras = len(bought_by_hand(design)), len(cfg.extras)
+    print(f"hand_assembly.md: {hand} part{'s' if hand != 1 else ''} by hand, {extras} item{'s' if extras != 1 else ''} "
+          "off the board")
     for d in lost:
         lcsc = design.comps[d].get("lcsc")
         print(f"WARNING {d}: no supplier – an LCSC number, `order` in its parts entry or `supplier`"

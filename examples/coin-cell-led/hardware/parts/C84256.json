@@ -1,0 +1,60 @@
+{
+ "lcsc": "C84256",
+ "mpn": "NCD0805R1",
+ "manufacturer": "Foshan NationStar Optoelectronics",
+ "kind": "led",
+ "package": "0805",
+ "footprint": "LED0805-RD",
+ "jlc_class": "Basic Part",
+ "datasheet": {
+  "url": null,
+  "pinout_page": 2
+ },
+ "pins": {
+  "1": {
+   "name": "-",
+   "type": "passive",
+   "role": "cathode"
+  },
+  "2": {
+   "name": "+",
+   "type": "passive",
+   "role": "anode"
+  }
+ },
+ "values": {
+  "color": "red",
+  "vf_typ_v": 2.0,
+  "vf_min_v": 1.5,
+  "vf_max_v": 2.6,
+  "vf_at_a": 0.02
+ },
+ "limits": {
+  "if_max_a": 0.025,
+  "vr_max_v": 5,
+  "p_max_w": 0.065
+ },
+ "spice": {},
+ "sources": [
+  "mpn, footprint, jlc_class, pin numbers and names: EasyEDA library data of C84256, https://easyeda.com/api/products/C84256/components?version=6.4.19.5, read 2026-10-29 (edakit part import)",
+  "NationStar NCD0805R1 datasheet (form FGH/BD-0053.01-21B), page 1: IF 25 mA, IFP 50 mA (0.1 ms, 1/10), VR 5 V, PD 65 mW; VF 1.5 / 2.0 / 2.6 V and IV 50 / 115 / 230 mcd at IF 20 mA",
+  "page 2, outline: the cathode marked green on the left of the top view, the symbol's cathode left; library footprint LED0805-RD: pad 1 (symbol '-') on its chamfered side – pin 1 is the cathode",
+  "rs_ohm: not in the datasheet – the simulation's default of 10 Ohm"
+ ],
+ "verified": {
+  "by": "Claude (skill part-search)",
+  "date": "2026-10-29",
+  "datasheet": "NationStar NCD0805R1, form FGH/BD-0053.01-21B",
+  "datasheet_sha256": "3a6caf350b15816633bfee4b063cc7ad5a3f337d32b0366817f95e4b7b77eb76",
+  "checked": [
+   "pin 1 cathode, pin 2 anode: symbol, outline drawing and library footprint agree",
+   "IF 25 mA, VR 5 V, PD 65 mW; VF 1.5–2.6 V at 20 mA"
+  ],
+  "open": [
+   {
+    "text": "the cathode mark of the part on the footprint's chamfered side – JLCPCB's assembly preview",
+    "when": "order"
+   }
+  ]
+ }
+}

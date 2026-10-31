@@ -1,5 +1,6 @@
 """The site for GitHub Pages (docs/pages.py): every page of the handbook, the concepts, the skills and the agents is
-on it, a link to a page of the site stays on the site, a link to anything else goes to the file on GitHub."""
+on it, a link to a page of the site stays on the site, an image goes onto the site, a link to anything else goes to
+the file on GitHub."""
 
 import importlib.util
 import json
@@ -42,3 +43,16 @@ def test_links_stay_on_the_site_or_go_to_github():
     back = mod.rewrite("[home](../README.md) [ch](05-simulation.md)", "handbook/14-design.md", "handbook/14-design.md",
                        {"README.md": "index.md", "handbook/05-simulation.md": "handbook/05-simulation.md"})
     assert back == "[home](../index.md) [ch](05-simulation.md)"
+
+
+def test_an_image_goes_onto_the_site(tmp_path):
+    """GitHub's page of a file is HTML, no image: the walkthrough's drawings (handbook 17) are copied under files/."""
+    mod = pages()
+    media = set()
+    out = mod.rewrite("![s](../examples/coin-cell-led/docs/schematic.svg) [r](../examples/coin-cell-led/README.md)",
+                      "handbook/17-walkthrough.md", "handbook/17-walkthrough.md", {}, media)
+    assert out == (f"![s](../files/examples/coin-cell-led/docs/schematic.svg) "
+                   f"[r]({mod.REPO}/blob/main/examples/coin-cell-led/README.md)")
+    assert media == {"examples/coin-cell-led/docs/schematic.svg"}
+    docs = mod.assemble(tmp_path / "pages") / "docs"
+    assert (docs / "files" / "examples" / "coin-cell-led" / "docs" / "pcb_plan_main.png").is_file()

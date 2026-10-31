@@ -1,0 +1,18 @@
+# edakit project file: the table of contents – the project, its board and where its files are.
+# Reference: handbook/10-reference.md. How this project came about, step by step: handbook/17-walkthrough.md.
+#
+# A CR2032 coin cell, a push button and a red LED with its series resistor: press the button, the LED lights.
+# One board, JLCPCB assembles all four parts on its top side (Economic, SMD only).
+
+[project]
+name = "coin-cell-led"           # EasyEDA project (friendly name); created by hand once, edakit never creates it
+company = "edakit example"       # schematic title block
+quantity = 5                     # boards per order: the stock check (PARTS.stock) needs this many sets
+requirements = "hardware/requirements.toml"   # what the circuit must do (handbook 3.6)
+
+[boards.main]
+title = "Coin cell LED"          # page name of the readable schematic; EasyEDA documents and board file by default:
+                                 # generated_main, layout_main, PCB main, hardware/boards/main.toml
+
+[release]
+assembly = { sides = ["top"], smd_only = true }   # Economic PCBA: one side, SMD only (SYNC.cpl)

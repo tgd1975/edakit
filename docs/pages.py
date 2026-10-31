@@ -6,7 +6,8 @@
                                                 writes the site into build/site
 
 The workflow .github/workflows/pages.yml runs both on every push and publishes the site from main. The sources stay
-where they are; a link to a file the site does not carry goes to the file on GitHub.
+where they are; a link to a file the site does not carry goes to the file on GitHub, an image goes onto the site
+(files/<its path>) – GitHub's page of a file is no image.
 """
 
 from __future__ import annotations
@@ -56,8 +57,9 @@ def sources():
     return out
 
 
-def rewrite(text, src, site, mapped):
-    """The page's relative links: to a page of the site its path there, to anything else the file on GitHub."""
+def rewrite(text, src, site, mapped, media=None):
+    """The page's relative links: to a page of the site its path there, an image to its copy under files/ (its path
+    goes into the set media, for assemble to copy), to anything else the file on GitHub."""
     here = (ROOT / src).parent
 
     def one(m):
@@ -80,6 +82,9 @@ def rewrite(text, src, site, mapped):
             # the catalog page and its drawings are on the site; its generator is not
             new = _relpath("catalog/" + rel[len("docs/catalog/"):] if rel != "docs/catalog" else "catalog/", site)
             return f"{m.group(1)}{new}{m.group(3)}"
+        if m.group(1).startswith("!") and media is not None and resolved.is_file():
+            media.add(rel)
+            return f"{m.group(1)}{_relpath('files/' + rel, site)}{m.group(3)}"
         kind = "tree" if resolved.is_dir() else "blob"
         return f"{m.group(1)}{REPO}/{kind}/main/{rel}{'#' + anchor if anchor else ''}{m.group(3)}"
 
@@ -142,7 +147,7 @@ def assemble(out=ROOT / "build" / "pages"):
     docs = out / "docs"
     pages = sources()
     mapped = {src: site for src, site, _ in pages}
-    nav, sections = [], {}
+    nav, sections, media = [], {}, set()
     for src, site, section in pages:
         text = (ROOT / src).read_text(encoding="utf-8")
         meta, body = front_matter(text)
@@ -156,7 +161,7 @@ def assemble(out=ROOT / "build" / "pages"):
         title = title_of(text, name)
         f = docs / site
         f.parent.mkdir(parents=True, exist_ok=True)
-        f.write_text(rewrite(text, src, site, mapped), encoding="utf-8")
+        f.write_text(rewrite(text, src, site, mapped, media), encoding="utf-8")
         if section is None:
             nav.append({"Home": site})
             continue
@@ -168,6 +173,9 @@ def assemble(out=ROOT / "build" / "pages"):
         sections[section].append(site if site.endswith("index.md") else {title: site})
     shutil.copytree(ROOT / "docs" / "catalog", docs / "catalog", ignore=shutil.ignore_patterns("*.py", "__pycache__"))
     shutil.copytree(ROOT / "docs" / "brand", docs / "brand", ignore=shutil.ignore_patterns("README.md"))
+    for rel in sorted(media):
+        (docs / "files" / rel).parent.mkdir(parents=True, exist_ok=True)
+        shutil.copy2(ROOT / rel, docs / "files" / rel)
     # JSON is YAML: MkDocs reads it without PyYAML here
     (out / "mkdocs.yml").write_text(json.dumps(config(nav), indent=1, ensure_ascii=False), encoding="utf-8")
     return out

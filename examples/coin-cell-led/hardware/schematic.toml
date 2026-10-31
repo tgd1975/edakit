@@ -1,0 +1,12 @@
+# Schematic of coin-cell-led: one block and its notes (edakit handbook 10.3). In no hash: a note voids no sign-off.
+
+[layout]
+rows = [
+  [ [ { title = "Press the button, the LED lights", start = ["BT1"] } ] ],
+]
+
+[layout.notes]
+"Press the button, the LED lights" = [
+  "BT1: a CR2032, pin 1 = plus (datasheet QJ.BS-6)",
+  "D1 carries {sim:min SIM.state used/* D1 LED on} from a used cell, {sim:max SIM.state fresh/* D1 LED on} from a fresh one",
+]

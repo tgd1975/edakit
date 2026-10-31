@@ -135,6 +135,13 @@ with the reason, or a question back ([handbook 14.4](handbook/14-design.md#144-f
 project had to build itself because edakit could not goes back with `/edakit:propose-feature`, triaged the same way and
 built into one pull request of feature proposals ([handbook 11.6](handbook/11-working-with-claude.md)).
 
+## Walkthrough: a coin cell, a button, an LED
+
+[handbook/17-walkthrough.md](handbook/17-walkthrough.md) takes the smallest board – press a button, a red LED lights
+from a CR2032 – through every step once, from the setup to the delivered boards: who does each step, which command
+or skill, which file it writes, what is checked and what came out. Its project is
+[examples/coin-cell-led](examples/coin-cell-led/).
+
 ## Example: the Christmas bell
 
 [automatic_christmas_bell](https://github.com/tgd1975/automatic_christmas_bell) – an Arduino Nano counts down on five LEDs, then a servo rings a real bell. It is
@@ -170,6 +177,7 @@ Where it stands:
 | [edakit/blocks/](edakit/blocks/) | building blocks (LED, button, I2C pull-ups, transistor switch, supply inputs, USB-C) and the checked parts entries they use |
 | [edakit/easyeda/](edakit/easyeda/) | `mcp-server.sh` (pinned easyeda-mcp-pro with safe defaults), `bridge-extension-patch.sh` |
 | [skills/](skills/), [agents/](agents/), [hooks/](hooks/hooks.json), [bin/](bin/) | the Claude Code plugin |
+| [examples/coin-cell-led/](examples/coin-cell-led/README.md) | the project of the walkthrough (handbook 17): a CR2032, a push button, a red LED and its resistor |
 | [docs/catalog/](docs/catalog/build.py) | the catalog as one page: every code with rule, why, fix and sources, the domains, the tables, the reference circuits drawn as SVG with their seeded faults – written by `docs/catalog/build.py` |
 | [docs/pages.py](docs/pages.py) | assembles the site for GitHub Pages (MkDocs); [docs/concepts/](docs/concepts/) the concepts |
 | [evals/](evals/README.md) | typical tasks on the reference circuits for `claude plugin eval` – with Sonnet and with Opus; the baseline |

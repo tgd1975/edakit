@@ -205,7 +205,7 @@ A net with pwm_hz lights LEDs: consider whether its frequency flickers.
 A boost converter whose enable an MCU drives: consider what its output does with EN low.
 
 **`HINT.input_polarity`** – a power input without a polarity check (note)  
-A battery holder or supply connector the graph does not mark as reversible: consider whether it can be plugged the wrong way round.
+A supply connector the graph does not mark as reversible: consider whether it can be plugged the wrong way round. Not a battery holder – PATH.reverse checks every one as a source that may be reversed.
 
 **`HINT.thermal_copper`** – thermal resistance needs its copper (note)  
 A part whose temperature rests on rth_ja_k_per_w: consider whether the layout gives the copper that figure assumes.

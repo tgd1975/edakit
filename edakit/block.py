@@ -15,8 +15,8 @@ nets, and ports – the nets that connect to the rest of the circuit. `add` copi
   - missing parts entries are copied from the library (edakit/blocks/parts/); an existing entry must have the same pins
   - the graph file keeps its formatting (indent, UTF-8); nothing is written with --dry-run
 
-The block's notes say what is left to decide (values, sim.json, the graph's checks). Afterwards: edakit check, edakit hints,
-edakit sim – a block is a starting point that passed the checks once, not a sign-off.
+The block's notes say what is left to decide (values, sim.json, the graph's checks). Afterwards: edakit check (its HINT
+notes among the findings), edakit sim – a block is a starting point that passed the checks once, not a sign-off.
 """
 
 from __future__ import annotations
@@ -240,5 +240,5 @@ def main(cfg, args):
         print(f"  parts entries {'to copy' if args.dry_run else 'copied'} from the block library: {', '.join(copy)}")
     for note in block.get("notes", []):
         print(f"- {note}")
-    print("Next: edakit check, edakit hints, edakit sim – and the decisions the notes name.")
+    print("Next: edakit check, edakit sim – and the decisions the notes name.")
     return 0

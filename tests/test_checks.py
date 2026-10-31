@@ -118,6 +118,33 @@ def test_g10_reverse_protection_bypassed(project):
     assert any("U1.39" in m for c, m in run(project).errors if c == "PATH.reverse")
 
 
+def power_button(project, g):
+    """A second push button into the example's input path, a power button: J1 – SW2 – D1."""
+    g["graph"]["components"].append({**project.comp(g, "SW1"), "designator": "SW2", "label": "Power button"})
+    project.net(g, "VIN")["pins"] = ["J1.1", "SW2.1"]
+    g["graph"]["nets"].append({"name": "VIN_SW", "pins": ["SW2.3", "D1.2"], "v": [0, 5.5]})
+
+
+def test_a_button_passes_the_supply_on(project):
+    """A push button passes a reversed source on like a switch (PATH.reverse), and the supply as well (PATH.unfed):
+    behind it the diode's anode blocks, and +5V stays supplied. Until 2026-10-29 the button stopped both, and G-10
+    named the button itself – the walkthrough of handbook 17 found it."""
+    g = project.graph()
+    power_button(project, g)
+    project.save_graph(g)
+    assert run(project).errors == []
+
+
+def test_reverse_names_the_part_behind_a_button(project):
+    g = project.graph()
+    power_button(project, g)
+    project.net(g, "+5V")["pins"].remove("U1.39")
+    project.net(g, "VIN_SW")["pins"].append("U1.39")      # VSYS behind the button, in front of the diode
+    project.save_graph(g)
+    found = [m for c, m in run(project).errors if c == "PATH.reverse"]
+    assert any("U1.39 on VIN_SW" in m for m in found) and not any("SW2" in m for m in found)
+
+
 def test_p1_pin_name_differs(project):
     g = project.graph()
     project.comp(g, "U2")["pins"]["2"] = "DATA"
