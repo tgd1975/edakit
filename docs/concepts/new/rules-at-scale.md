@@ -362,3 +362,16 @@ Left to Claude by the owner on 2026-10-31 ("du entscheidest") – the three ques
     has no absolute-maximum row for Alert; its leakage is specified up to VS (5.5) and 8.2.1.2 says the pin "must"
     be pulled up to VS. The stricter reading, because a warning can be accepted and a missed limit cannot be seen.
 
+Confirmed by the owner on 2026-10-31 through a form (13–15 to main together with the build), and taken there, each as
+proposed – what became of the gaps the build left (maker-coverage-status.toml, schema-gaps.md):
+
+16. **The gaps that can be built now** are built, in parallel worktrees as W1–W7, each test first and every value
+    from a source with its revision: HT-5, FT-13, FT-14, FT-17, FT-9 with the rest of CK-14, the rest of FT-5, D3, E1,
+    CK-5, CK-11, CK-28, FT-16. Theme G of schema-gaps.md is not part of it.
+17. **What needs behaviour over time** – a charger's termination at C/10, the DW01A's hysteresis and delays, USB-PD's
+    negotiation with PG and the CC lines – gets no state model: a hint names the risk where the part is used, and the
+    coverage report lists it as not simulated. A load on the cell while it charges is HT-5's.
+18. **Sources that cannot be reached** stay open with their reason in the status – the Tube Screamer (electrosmash),
+    the MIDI specification, Eurorack, pickups, an ampacity table by gauge, ES1's AC limit. The key matrix of FT-21
+    comes from a public keyboard repository with a KiCad schematic, attached to the session read only.
+
