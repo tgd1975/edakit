@@ -1,6 +1,6 @@
 ---
 name: decision-round
-description: Present a review or open questions as numbered findings, read the user's short answers ("ad 1 ack, ad 2 …") and turn them into numbered decisions in the project's decision log, then implement them. Use for "review", "what is open", before larger changes with several judgement calls, and whenever the user answers with "ad 1 … ad 2 …".
+description: Present a review or open questions as numbered findings – asked in Claude Code's question form where the session has it –, read the user's answers (an option picked, or short ones like "ad 1 ack, ad 2 …") and turn them into numbered decisions in the project's decision log, then implement them. Use for "review", "what is open", before larger changes with several judgement calls, and whenever the user answers with "ad 1 … ad 2 …".
 argument-hint: "<topic, e.g. schematic, layout, enclosure>"
 ---
 
@@ -21,6 +21,12 @@ Topic: $ARGUMENTS. Why this format works: `${CLAUDE_PLUGIN_ROOT}/handbook/11-wor
   line at most.
 - What Claude can decide itself (no effect on cost, looks or operation) is not asked but listed at the end as
   "decided: …". No more than about 10 items – rather two rounds.
+- **Asked in the form.** With the tool AskUserQuestion at hand, the items go to the user as its questions – up to four
+  per call, several calls in a row. Each is a real question, not a statement, and stands on its own (the user may see
+  only the dialog: the item's number, designator and subject in the question); its alternatives with the recommended
+  one first and marked, the consequence and the trade-off in their descriptions; a file named by its path with a short
+  example (`hardware/boards/main.toml`, not "the main file"). What Claude decided itself goes into one closing
+  question for confirmation. Without the tool the list alone, answered in writing.
 - **Check candidates** of a review (findings a rule could find again) are one item: "make it a check in edakit?" –
   with what the check would test. Whether something becomes edakit knowledge is the user's decision; nothing is
   filed anywhere by itself – a proposal to edakit goes out only when the user asks for it (skill propose-rule).
@@ -29,6 +35,7 @@ Topic: $ARGUMENTS. Why this format works: `${CLAUDE_PLUGIN_ROOT}/handbook/11-wor
 
 | Answer | Meaning |
 |---|---|
+| an option picked in the form | that alternative; a note or free text with it is read like the answers below |
 | `ack`, `yes`, `ok`, `do it` | implement the proposal |
 | `don't care`, `you decide` | Claude decides, gives a short reason, documents it |
 | `no idea what this is about` | explain the item again without jargon, do not implement |

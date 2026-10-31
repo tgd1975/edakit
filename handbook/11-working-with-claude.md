@@ -17,7 +17,7 @@ agreements are as important as the scripts.
 | skill | `/edakit:pcb-round` | one layout round |
 | skill | `/edakit:release` | the gate, sign-offs, order checklist |
 | skill | `/edakit:cart` | a released board into the maker's cart with Claude in Chrome in the owner's browser – JLCPCB, PCBWay, Eurocircuits, AISLER –: the job of `edakit cart prepare`, every field set and read back, the quote checked (ORDER.form to ORDER.review), the regulatory review of the order, then the cart button and stop – never orders, never pays; afterwards the real cost into the fee table (8.4) |
-| skill | `/edakit:decision-round` | numbered findings, short answers, numbered decisions |
+| skill | `/edakit:decision-round` | numbered findings asked as questions, answers picked in the form or written short, numbered decisions |
 | skill | `/edakit:propose-rule` | a check, hint, block or part fact as a sealed issue to the edakit repository, and its outcome back into the decision (chapter 14.4) |
 | skill | `/edakit:propose-feature` | a feature edakit lacks and a project had to build or work around, as a sealed issue to the edakit repository, and its outcome back into the project (11.6) |
 | agent | `edakit:requirements-engineer` | reads every document of a project for what its circuit must do and returns candidates with their source, contradictions, vague words and requirements without evidence – the first inventory and a second opinion on the requirements file, in its own context; changes nothing (3.6) |
@@ -110,8 +110,11 @@ not that list.
    checklists for the user to re-check what an agent can check. Only real decisions go to the user: accepting a warning,
    approving a requirement (skill requirements), looks and operation, money.
 5. **Open questions go to the user in decision rounds.** Numbered findings with consequence and a recommended
-   proposal; the user answers "ad 1 ack, ad 2 b, ad 3 you decide"; every answer becomes a numbered decision with
-   reason and date (decision-round skill).
+   proposal, asked as questions in Claude Code's form (AskUserQuestion) – the alternatives, the recommendation first
+   – or answered in writing, "ad 1 ack, ad 2 b, ad 3 you decide"; every answer becomes a numbered decision with
+   reason and date (decision-round skill). Nineteen open decisions sent as one-line recommendations came back with
+   "where are the questions? those are statements"; in the form the user picks from afar and asks back in its text
+   field.
 6. **Realistic risks: how likely, what it costs.** Per risk, and the review agents per finding too. Delivery delays
    and stock problems are force majeure – one line. A deviation from a datasheet recommendation without a realistic
    consequence is not a finding.
