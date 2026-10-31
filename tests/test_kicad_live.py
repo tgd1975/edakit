@@ -140,9 +140,12 @@ def test_route_all_on_kicad_leaves_only_what_freerouting_left_open(project, caps
     monkeypatch.setattr(fab, "fetch_jlc", lambda bom, d: (d / "jlc_parts.json").write_text("{}"))
     rows = fab.run(cfg, board, project.root / "build" / "fab")
     print("\n".join(f"{r['id']:<5} {r['result']:<4} {r['check']}: {r['actual']}"[:220] for r in rows))
-    for cid in ("SYNC.pcb", "GEO.copper", "GEO.drc", "SYNC.footprint", "GEO.hole", "SYNC.footprint", "GEO.spacing", "GEO.spacing", "GEO.pour", "GEO.spacing", "SYNC.plan", "SYNC.bom", "SYNC.cpl",
-                "FILES.set"):
+    for cid in ("SYNC.pcb", "GEO.copper", "GEO.drc", "SYNC.footprint", "GEO.hole", "GEO.spacing", "GEO.ring",
+                "GEO.pour", "SYNC.bom", "SYNC.cpl", "FILES.set"):
         bad = [r for r in rows if r["id"] == cid and r["result"] == "fail"]
         assert not bad, bad
+    # SYNC.plan: every part has a row in [place] (L-20 of before); the plan's own row is the test footprints' (below)
+    assert [r["result"] for r in rows if r["id"] == "SYNC.plan" and r["check"].startswith("every part of the board")] \
+        == ["pass"]
     # SYNC.plan: every part where the plan puts it – the plan's own check is the test footprints' (pads beyond their box)
     assert [r["result"] for r in rows if r["id"] == "SYNC.plan" and r["check"].startswith("fixed parts")] == ["pass"]
