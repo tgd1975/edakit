@@ -1,7 +1,8 @@
 # Implementation plan: requirements, design as text, project scripts
 
-Status 2026-10-31: plan; phase 1 (1.1 to 1.8), 3.1 to 3.5, 3.7 and the follow-ups below are done; 2.1 to 2.4 and the
-offline part of 3.6 are built and wait for their live run in EasyEDA; 4.3 is written, reviewed and decided – the
+Status 2026-10-31: plan; phase 1 (1.1 to 1.8), 3.1 to 3.5, 3.7 and the follow-ups below are done; 2.1 to 2.4 and
+3.6 are built and ran live on 2026-10-31 (results under each live run; open from them: 2.2's mode "write", the
+bell's T-Display on the data path); 4.3 is written, reviewed and decided – the
 language deferred, TOML with names the form, its plan [circuit-language-plan.md](../done/circuit-language-plan.md)
 built on 2026-10-31 up to L.8, L.9 the bell's. It builds
 three concepts after the user took their decisions on 2026-10-28 (e5caf42, 301fd90):
@@ -40,16 +41,16 @@ starts when the user asks for it.
 | 1.6 | Requirements: checks, protocol section, `accept` lines, circuit hash | requirements order 2, decisions 4, 6, 8 | M | no | 1.5 | done (384385e) |
 | 1.7 | `[order]`: mask and print colour, thickness from `thickness_mm` | design-as-text, smaller findings | S | no | – | done (80c750e) |
 | 1.8 | The footprint geometry in the repository | project-scripts block 5, decision 5 | S | no | – | done (d63a81a) |
-| 2.1 | Positions of the auto-layout as text, one-time takeover, every part in the plan | design-as-text gap 1, decisions 3, 4 | M | yes | – | built offline (5d8a5df), live run open |
-| 2.2 | Rule set of EasyEDA's DRC | design-as-text decision 6 | S–M | yes | – | built offline (a71567f), live probe open |
-| 2.3 | Positions of single designators in `[silk]` | design-as-text, smaller findings | S | yes | – | built offline (112de3a), live run open |
-| 2.4 | Outdated inputs run first; `edakit run` | project-scripts block 4, decision 7 | M | yes | 1.4 | built (47ae793), live check open |
+| 2.1 | Positions of the auto-layout as text, one-time takeover, every part in the plan | design-as-text gap 1, decisions 3, 4 | M | yes | – | built offline (5d8a5df), live run passed 2026-10-31 |
+| 2.2 | Rule set of EasyEDA's DRC | design-as-text decision 6 | S–M | yes | – | built offline (a71567f), live probe 2026-10-31: writing holds – mode "write" open |
+| 2.3 | Positions of single designators in `[silk]` | design-as-text, smaller findings | S | yes | – | built offline (112de3a), live run passed 2026-10-31 |
+| 2.4 | Outdated inputs run first; `edakit run` | project-scripts block 4, decision 7 | M | yes | 1.4 | built (47ae793), live check passed 2026-10-31 |
 | 3.1 | Checks in the gate: `at`, phase `acceptance`; then `verify = script` | project-scripts block 6 | M | no | 1.2, 1.6 | done (9e63afd) |
 | 3.2 | Project agents: `[agents.*]`, `replaces`, their sign-offs required | project-scripts block 7, decisions 10, 11 | M | no | 1.2 | done (8d3cc15) |
 | 3.3 | Skills and the SessionStart hook use `edakit scripts` | project-scripts block 8 | S–M | no | 2.4, 3.2 | done (9b4d834, 834f623) |
 | 3.4 | Skill `requirements`, agent `requirements-engineer`, reviewers read the file | requirements order 3, decision 7 | M | no | 1.6 | done (0099ee3) |
 | 3.5 | `req:` as a source of value blocks | requirements order 4 | S | no | 1.5 | done (abf40d4) |
-| 3.6 | Own footprints as data in the parts entry | design-as-text gap 2, decision 5 | L | yes | 1.8 | built offline (8fd8e17), live run open |
+| 3.6 | Own footprints as data in the parts entry | design-as-text gap 2, decision 5 | L | yes | 1.8 | built offline (8fd8e17), live run 2026-10-31: 3–6 hold, the box symbol does not suit the bell |
 | 3.7 | Project setup: `new-project` with two ways, agent `project-surveyor` | project-setup, decisions 1–6 | M | no | 3.2, 3.4 | done (92db89f) |
 | 4.1 | Bell: requirements file | requirements order 5, decision 9 | M | no | 3.4, the bell's order | open |
 | 4.2 | Bell: entries for `kunst` and `tdisplay` | project-scripts example | S | no | 2.4 | open |
@@ -298,6 +299,51 @@ then `edakit silk apply`:
 3. `pcb parts`, `pcb apply`, `route all`, `silk apply` and `gate --easyeda` with an outdated input: the input runs
    before the EasyEDA work.
 
+**Results of 2026-10-31** (throwaway projects edakit-probe-ledbar, -drc, -fp; edakit of main at 8c4017a, EasyEDA Pro
+with the patched bridge 1.4.0):
+
+- **2.1 passed.** 1: `pcb takeover` on scratch copies of the bell (main, esp32, smd, tht) shows 19 rows each, without
+  `auto`, each equal to the real row; nothing written. 2: `pcb autolayout` writes D1 and R2 as `auto = true` rows at the
+  end of `[place]`, a second run writes nothing ("every part … has a row"), `pcb dump` + `pcb apply` put both back on
+  their rows to 0.001 mm. 3: after `route all`, `takeover` shows the 13 rows, `--write` writes them fixed, `pcb apply`'s
+  pad check 0.004 mm, `route drc` nothing new. 4: the gate's SYNC.plan rows "every part has a row" (L-20) and "fixed
+  parts = plan" (L-7) pass.
+- **2.2: writing holds.** 2: no `[MaxDepth]`, the name "JLCPCB Capability(Two Layers Board)", Track–Track 0.102 mm,
+  `getDefaultRuleConfigurationName` null; DRC A without a clearance error at 0.150 mm. 3: Track–Track 0.2 mm written
+  (true), read back 0.2, DRC B finds VIN–+5V at once. **The name changes** to "自定义配置" (Custom Config), and that
+  configuration appears in `getAllRuleConfigurations` – saved in the client's user preferences (`web.db`, table
+  users), so in every project's list; the named JLCPCB configurations keep their values. 4: kept after save and
+  reload; a second PCB of the project keeps 0.102 mm – the rules are the PCB's. 5: `createNetClass` true, the moved
+  nets keep "default" until the net rules are written; a Track rule POWER with entries "1" and "2" and with "1" alone
+  both find the 10-mil track on BOTTOM – a lone "1" covers every copper layer; kept after reload. 6:
+  `eda.write_drc_rules` with led-bar's `[routing]` → `[]`, after reload `differences` → `[]`, DRC D finds the 18-mil
+  class and the 0.165 mm clearance. 7: restored to the restore point value for value, classes deleted – but no API
+  call puts a PCB back on a named configuration (`PCB_Drc` has none), and `deleteRuleConfiguration("自定义配置")`
+  answers true while a PCB uses it and the entry stays. By the plan's rule edakit may write the rule set: a value
+  `"write"` of `drc_rules` is the next step; it leaves the PCB on the user's own configuration, and a project that
+  writes once stays on it.
+- **2.3 passed.** 1: R1's designator at (59, 20), rot 90, centred and standing, "fixed: R1", the rest clear of it.
+  2: 180 upside down, 270 standing the other way, 45 slanted. 3: `side = "bottom"` gives one free text R1 on the bottom
+  silk, read right from below; R1's own designator hidden; a second `silk apply` replaces it. 4: a row on R1's pad:
+  `silk preview` and `silk apply` report "fixed designator on a pad (top) – 2.57 mm²", exit 2, the Gerber check 0.600
+  mm². 5: the gate's GEO.silk (L-17) row of edakit's print fails at R1.2, the rest as expected; with `view = "bottom"`
+  `rot = 90` reads from below as 90 reads from above.
+- **2.4 passed.** 1: `edakit run tdisplay` (the bell's script as an easyeda script) runs under the claim; a second
+  session gets exit 3 from `edakit run` (exit 1 from `pcb dump`); a script of 75 s keeps the claim, `lock status`
+  names "edakit run slow" and its last access moves on. Under a claim taken by hand `lock status` keeps that claim's
+  note. 2: after the change of `project-library:esp32`, deleting U1, `pcb parts --write` and `pcb dump` leave SYNC.scripts
+  with "the routing" only; after `route all` the warning is gone. 3: an outdated input (`board:main`) ran before
+  `pcb parts`, `pcb apply`, `route all`, `silk apply` and `gate --easyeda`, each time before the step's first line; the
+  gate saw the new value.
+- **Found on the way** (fixes on their own branch): `schematic create` and `ensure_board` right after `openProject`
+  see no schematic or board yet (StopIteration, "no board") – a second run works; EasyEDA got into a state where
+  `modifySchematicName` answered false, later true without effect, in every project, until EasyEDA was restarted;
+  `schematic create` refuses to save on a symbol whose pin names differ although the entry declares it
+  (`symbol_differs` is read by `edakit check` only) – led-bar's Pico 2, whose EasyEDA symbol swaps SWDIO and SWCLK
+  against the datasheet (41 SWCLK, 43 SWDIO); led-bar's plan has overlapping LEDs and U1 in a hole's keep-out (it never
+  ran through EasyEDA); the local project's UUID is in `~/Dokumente/EasyEDA-Pro/projects/<name>.eprj2` (table
+  projects), so edakit could find a project never opened.
+
 ## Phase 3: the larger pieces
 
 **3.1 Checks in the gate.** A `check` script gets its place (`at`: before S, or after F to see the run's Gerber data)
@@ -378,6 +424,28 @@ keeps the footprint and the symbol stays the script's: without `"symbol": "box"`
 and `tdisplay_device.py symbol` remains an easyeda script. If the build does not hold – the editor opens another
 document, the print is not replaced, the read-back or the reload differs –, the bell keeps its script, the data still
 describes the footprint for P-9 and P-10, and the failing call goes into handbook 9.4.
+
+**Results of 2026-10-31** (throwaway project edakit-probe-fp, the bell's esp32 variant converted, `[project] name` the
+throwaway): 1: P-9 (now PARTS.footprint) passes with the slot MH. 2: the carrier placed, SYNC.footprint (P-10) fails on
+U1 – rows 2.54 mm apart against 22.86 mm, and pad size and hole (1.60/1.05 against 1.70/1.10 mm) –, so `pcb dump`
+measures shape, size and hole. 3: `part build` plans 25 pads, 2 lines, 2 texts, outline, box; `--write` builds, exit
+0, no read-back line; with `[scripts]` it records the change of `project-library:esp32`. 4: **the parts must be placed
+anew in the schematic** – `schematic create` and `schematic layout` after the build, as the bell's README says for its
+script; the hint of `part build` ("delete U1 in the PCB, pcb parts --write") leaves that out. Then `pcb parts --write`
+creates U1, the dump has `shape`, `w`, `h`, `rot`, `layer` and `hole` [1.1, 1.1] (so `PCB_PrimitivePad.create` takes
+holes in mil – B2), SYNC.footprint passes, `schematic check` passes. 5: pad 3 at −8.79: SYNC.footprint names both places,
+PARTS.footprint passes; after the rebuild the dump has pad 3 at −346.05 mil and the check passes. 6: closed and reopened,
+`pcb dump` gives the same file. The optional gate was left out.
+
+Two things did not hold. **The box symbol does not suit the bell's schematic:** `schematic layout` with it fails
+(wires not created, GND on U1.1 and U1.3–6) – the plan's fallback: the data keeps the footprint, the symbol stays the
+script's (`tdisplay_device.py symbol`, without `"symbol"` in the data). **`PCB_PrimitiveComponent.create` failed**
+("Cannot convert undefined or null to object") for U1 after the first builds – with the device of the project and of
+the system library and with the footprint alone – while R1 was created; after a build without MH it worked, and then
+with MH in all four forms (round and slot, plated or not) too. The cause is not found; edakit's message should name
+the way out (`schematic create`, `schematic layout`, then `pcb parts`). The slot's direction in the library view and
+the look of the footprint are the owner's to check (TODO.md). By the plan's rule the bell's footprint goes to the data
+path and the symbol stays the script's – in the bell's repository, at the owner's request.
 
 ## Phase 4: in the projects
 

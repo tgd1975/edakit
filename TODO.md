@@ -64,13 +64,33 @@ run against a maker's page or EasyEDA yet.
       new warning in their gate, to accept or to remove with the placeholder (`mark = "remove"`, a `barcode`).
 - [ ] The shared tree follows main; the plugin follows (skills, agents and code changed).
 
+## Live runs of design as text (2.1–2.4, 3.6 of the [implementation plan](docs/concepts/new/implementation-plan.md))
+
+Ran on 2026-10-31 in throwaway projects; the results are under each live run of the plan. Left from them:
+
+- [ ] **The owner's look at the footprint in EasyEDA:** in edakit-probe-fp the project library's footprint
+      HDR-TH_24P-P2.54-V-F-R2-C12-S2.54-2 – 2 × 12 pads, rows 22.86 mm apart, square pads 1 and 13, the outline, the USB
+      box, the texts "USB" and "T-Display", the slot MH in the middle standing upright (1.0 × 2.0 mm pad); then the three
+      throwaway projects edakit-probe-* deleted by hand, and afterwards "自定义配置" (Custom Config) deleted from the rule
+      configurations with `PCB_Drc.deleteRuleConfiguration` (a session under the claim).
+- [ ] **2.2, the mode `"write"` of `[routing] drc_rules`:** `route all` writes the rule set before its DRC
+      (`eda.write_drc_rules`, saved, reloaded, read back); handbook 7.5 and 9.4 say that the PCB stays on the client's
+      Custom Config afterwards.
+- [ ] **3.6, the way back into the PCB:** `part build --write` names `schematic create`, `schematic layout`, then
+      delete the part in the PCB, `pcb parts --write`, `pcb dump`; `pcb parts` turns "Cannot convert undefined or null
+      to object" from `PCB_PrimitiveComponent.create` into that advice.
+- [ ] **The bell's T-Display on the data path** (the bell's repository, at the owner's request; its session first):
+      the dry run's footprint data without `"symbol"`, `tdisplay_device.py symbol` stays an easyeda script; the esp32
+      variant's hashes change once (M-1, M-6 anew) – and the owner's answer whether a footprint change should void M-6.
+- [ ] **Found on the way:** `schematic create` and `ensure_board` wait for the documents after `openProject` (as
+      `open_pcb` does); `schematic create` honours `symbol_differs` of the entry in its pin check; led-bar's
+      `[place]` without overlapping LEDs and with U1 out of the hole's keep-out; `open_project` finds a project never
+      opened through `~/Dokumente/EasyEDA-Pro/projects/<name>.eprj2` (table projects).
+
 ## Walkthrough gaps ([walkthrough-gaps.md](docs/concepts/done/walkthrough-gaps.md))
 
 Built and decided on 2026-10-31; what is left runs live.
 
-- [ ] **B2, with step 3.6 under the EasyEDA claim:** build a footprint with a 1.0 mm hole, read it back three ways
-      (state `Hole`, `getAllPinsByPrimitiveId`, Gerber drill) – does `PCB_PrimitivePad.create` take holes in mil, as
-      `pad_args` writes them, or in 10 mil?
 - [ ] **The example at its next `edakit gate --easyeda`:** a new fab hash – C4 puts `mark = "remove"` into order.json
       of a `[looks]` board –, so M-5 once more; on the way look at A4 (`route all` on the round board without
       Freerouting's "geometry is degenerate"), B1 (protocol L: the vias' ring 0.15 mm, not 1.000), A5 (BT1's "+" on
