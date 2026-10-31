@@ -19,4 +19,4 @@ BAT760-7, LESD5D5.0CT1G, ESP-WROOM-32) the LCSC part of that number is used; SS8
 the micro-USB receptacle, the buttons and the headers parts of the same function. Each parts entry names its
 datasheet, what was read in it and what is open (`verified`).
 
-**What edakit finds** – and how each finding is judged – is in `tests/test_open_designs.py`.
+**What edakit finds** – and how each finding is judged – is in `findings.toml`, held by `tests/test_open_designs.py`.

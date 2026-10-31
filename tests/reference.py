@@ -5,8 +5,8 @@ FAULTS builds one mistake into it and expects exactly its codes (the overlap tes
 
 These are edakit's own circuits, shaped after common maker designs, not copies of published ones: the parts are the
 block library's checked entries and test entries whose values are chosen for the test, not taken from datasheets. The
-well-known open designs of FT-21 (an ESP32 DevKitC, a Tube Screamer, a QMK keyboard …) replace or join them once their
-schematics can be read.
+published open designs of FT-21 join them in tests/open_designs/ (an ESP32 DevKitC, a SparkFun level shifter), each
+transcribed from its schematic with every finding judged (tests/test_open_designs.py).
 
     python tests/reference.py DIR                  write every reference circuit as a project under DIR/<name>
     python tests/reference.py DIR NAME [FAULT]     write one into DIR – led-bar the example as it is –, with FAULT

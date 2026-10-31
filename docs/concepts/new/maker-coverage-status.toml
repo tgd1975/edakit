@@ -24,7 +24,7 @@ FT-17 = { status = "open", missing = "corners of hFE, leakage, IDSS – datashee
 FT-18 = { status = "open", missing = "source models for the audio band – needs FT-12" }
 FT-19 = { status = "built", where = "engines/coverage.py; edakit check --coverage; the protocol's section 2", step = 6 }
 FT-20 = { status = "built", where = "edakit/domains/, [project] domains, edakit domains", step = 3 }
-FT-21 = { status = "partial", where = "tests/reference.py: a reference circuit per domain, with seeded faults", missing = "the published open designs (DevKitC, Tube Screamer, QMK keyboard …) – their schematics could not be read", step = 7 }
+FT-21 = { status = "partial", where = "tests/reference.py: a reference circuit per domain, with seeded faults; tests/open_designs/: Espressif's ESP32-DevKitC V4 and SparkFun's Logic Level Converter, transcribed from their published schematics, every finding judged (findings.toml, tests/test_open_designs.py)", missing = "a guitar circuit (the Tube Screamer: electrosmash.com did not answer) and a key matrix (a QMK keyboard: its schematics sit in GitHub repositories outside this session's scope)", step = 7 }
 FT-22 = { status = "built", where = "edakit rules: code, severity, title", step = 1 }
 FT-23 = { status = "open", missing = "edakit graph show <designator or net>" }
 FT-24 = { status = "built", where = "evals/ for claude plugin eval; baseline in evals/README.md", step = 8 }

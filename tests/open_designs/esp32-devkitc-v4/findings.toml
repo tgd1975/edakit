@@ -1,0 +1,105 @@
+# What edakit check and edakit sim find on the published ESP32-DevKitC V4, and how each finding is judged:
+# real (a point of the design), lacks (a fact the transcription or the datasheets lack), criterion (edakit's own
+# yardstick, not the design's), known gap (edakit judges it wrong, not fixed yet – with the reason).
+# tests/test_open_designs.py holds the sets; the catalog page shows them (docs/catalog/build.py).
+
+[[check]]
+code = "LIM.v"
+place = "D6"
+judged = "real"
+why = "The LESD5D5.0's working voltage (VRWM 5.0 V) is below USB's 5.25 V. It breaks down at 5.6 V at the earliest, so it leaks more than its datasheet promises; it does not clamp."
+
+[[check]]
+code = "LVL.undefined"
+place = "SENSOR_VP"
+judged = "real"
+why = "Input-only pin without a pull resistor (GPIO34–39 have none) that only goes to the header: it floats until the user's circuit drives it – intended for a development board."
+
+[[check]]
+code = "LVL.undefined"
+place = "SENSOR_VN"
+judged = "real"
+why = "Input-only pin (GPIO39) without a pull resistor, only on the header: it floats until the user's circuit drives it – intended."
+
+[[check]]
+code = "LVL.undefined"
+place = "IO34"
+judged = "real"
+why = "Input-only pin (GPIO34) without a pull resistor, only on the header: it floats until the user's circuit drives it – intended."
+
+[[check]]
+code = "LVL.undefined"
+place = "IO35"
+judged = "real"
+why = "Input-only pin (GPIO35) without a pull resistor, only on the header: it floats until the user's circuit drives it – intended."
+
+[[check]]
+code = "LIM.band"
+grade = "firmware"
+place = "D2"
+judged = "real"
+why = "The module's 2412–2484 MHz reach channel 14 (Japan); in the EU the firmware keeps to channels 1–13 – the firmware's point, not the board's."
+
+[[check]]
+code = "LIM.eirp"
+grade = "unknown"
+place = "D2"
+judged = "lacks"
+why = "The module datasheet states neither its PCB antenna's gain nor the Bluetooth bands."
+
+[[check]]
+code = "REQ.value"
+grade = "pin"
+place = "D2.3 (EN)"
+judged = "real"
+why = "Espressif's own module datasheet recommends 10 kΩ / 1 µF at EN; the DevKitC V4 has 100 nF (with SW2's 100 nF, 200 nF) – the short reset delay behind its known boot problems."
+
+[[check]]
+code = "REQ.value"
+grade = "pin"
+place = "U1.9 (RSTb)"
+judged = "real"
+why = "The CP2102N datasheet recommends a 1 kΩ pull-up on RSTb; the DevKitC fits 2 kΩ – minor."
+
+[[check]]
+code = "STRUCT.prefix"
+place = "D2"
+judged = "real"
+why = "The schematic calls the module D2 – a naming point."
+
+[[sim]]
+code = "LIM.i"
+place = "J1"
+judged = "real"
+why = "With the module at the 0.5 A its datasheet asks the supply for, the board draws 526 mA from a USB 2.0 port that gives 500 mA."
+
+[[sim]]
+code = "LIM.t"
+place = "D3"
+judged = "real"
+why = "The BAT760 dissipates 0.22 W at 0.5 A; at 500 K/W (its datasheet's minimum pad) its junction reaches 137 °C at 25 °C ambient."
+
+[[sim]]
+code = "SIM.state"
+place = "U2"
+judged = "real"
+why = "At 4.75 V, after the cable and the Schottky, the AMS1117 (1.1 V dropout) gives 3.07 V, below 3.3 V ± 3 % – still above the module's 3.0 V."
+
+[[sim]]
+code = "SIM.state"
+place = "D1"
+judged = "criterion"
+why = "The power LED gets 0.96 mA at the lowest supply and the highest VF, below edakit's 1 mA for an LED that is on; the design's own aim for it is not known."
+
+[[fixed]]
+what = "A TVS held to its working voltage with a rectifier's margin of 1.5 (LIM.v on D4, D5, D6) – values tvs."
+[[fixed]]
+what = "The AMS1117's VOUT on pin 2 and on its tab counted as two drivers (LVL.contention on VDD33)."
+[[fixed]]
+what = "The CP2102N's RXD with its weak pull-up taken as floating (LVL.undefined on RXD)."
+[[fixed]]
+what = "The auto-program transistors' bases, driven through 10 kΩ by the bridge's DTR and RTS, taken as floating (LVL.undefined on Q1, Q2)."
+[[fixed]]
+what = "Header nets no simulated element touches judged as nan against their declared range (LIM.declared, 174 rows)."
+[[fixed]]
+what = "The schema did not know icc_a and i_a, the values the behaviours logic and current read (PARTS.schema)."

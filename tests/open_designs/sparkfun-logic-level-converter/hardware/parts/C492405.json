@@ -1,0 +1,63 @@
+{
+ "lcsc": "C492405",
+ "mpn": "PZ254V-11-06P",
+ "manufacturer": "XFCN(兴飞)",
+ "footprint": "HDR-TH_6P-P2.54-V-M",
+ "jlc_class": "Extended Part",
+ "kind": "connector",
+ "pins": {
+  "1": {
+   "name": "1",
+   "type": "passive",
+   "role": "1"
+  },
+  "2": {
+   "name": "2",
+   "type": "passive",
+   "role": "2"
+  },
+  "3": {
+   "name": "3",
+   "type": "passive",
+   "role": "3"
+  },
+  "4": {
+   "name": "4",
+   "type": "passive",
+   "role": "4"
+  },
+  "5": {
+   "name": "5",
+   "type": "passive",
+   "role": "5"
+  },
+  "6": {
+   "name": "6",
+   "type": "passive",
+   "role": "6"
+  }
+ },
+ "sources": [
+  "XFCN PZ254V-11 series drawing (as C22465879 of the same series): current rating 3 A, contact resistance 20 mΩ max"
+ ],
+ "verified": {
+  "by": "Claude (datasheet check, open-design transcription)",
+  "date": "2026-10-31",
+  "datasheet": "XFCN PZ254V-11 drawing",
+  "checked": [
+   "current",
+   "contact resistance"
+  ],
+  "open": [
+   "the schematic names JP1/JP2 without a part; a 1 × 6 header of the same series stands in"
+  ]
+ },
+ "package": "1 × 6, 2.54 mm, THT",
+ "values": {
+  "pitch_mm": 2.54,
+  "r_contact_ohm": 0.02
+ },
+ "limits": {
+  "i_max_a": 3.0
+ }
+}

@@ -1,0 +1,10 @@
+# What edakit check and edakit sim find on the published SparkFun Logic Level Converter, and how each finding is
+# judged (the words as in esp32-devkitc-v4/findings.toml). edakit check raises nothing beyond notes: the circuit is
+# the textbook bidirectional shifter, and the simulation shows both directions working – a line pulled low on either
+# side pulls the other to 0.2 V.
+
+[[sim]]
+code = "LIM.range"
+place = "Q1"
+judged = "known gap"
+why = "LIM.range/gate (CK-4) finds the BSS138 half on at VGS 3.1 V: its RDS(on) is specified only at 4.5 V and 10 V. In this shifter the MOSFET carries the pull-up current (0.5 mA) and works half on by design; the rule does not weigh the current, so it warns where nothing burns. Kept: a gate drive of 1.8 V (the low side the shifter is also used with) would leave it barely on – a fact worth seeing."
