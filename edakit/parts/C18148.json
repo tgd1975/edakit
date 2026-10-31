@@ -47,7 +47,8 @@
    "v_max_v": 12.5,
    "drive": "tristate",
    "z_in_ohm": 12000.0,
-   "hint": "non-inverting receiver input and driver output; bus pin: absolute maximum −7.5 V … +12.5 V; receiver specified for −7 V ≤ VCM ≤ 12 V; input resistance ≥ 12 kΩ (32 transceivers per bus); driver high impedance while DE is low"
+   "hint": "non-inverting receiver input and driver output; bus pin: absolute maximum −7.5 V … +12.5 V; receiver specified for −7 V ≤ VCM ≤ 12 V; input resistance ≥ 12 kΩ (32 transceivers per bus); driver high impedance while DE is low",
+   "short_proof": true
   },
   "7": {
    "name": "B",
@@ -56,7 +57,8 @@
    "v_max_v": 12.5,
    "drive": "tristate",
    "z_in_ohm": 12000.0,
-   "hint": "inverting receiver input and driver output; bus pin: absolute maximum −7.5 V … +12.5 V; receiver specified for −7 V ≤ VCM ≤ 12 V; input resistance ≥ 12 kΩ (32 transceivers per bus); driver high impedance while DE is low"
+   "hint": "inverting receiver input and driver output; bus pin: absolute maximum −7.5 V … +12.5 V; receiver specified for −7 V ≤ VCM ≤ 12 V; input resistance ≥ 12 kΩ (32 transceivers per bus); driver high impedance while DE is low",
+   "short_proof": true
   },
   "8": {
    "name": "VCC",
@@ -113,7 +115,8 @@
    "VCC 3.0–3.6 V (p. 7); VIH 2.0 V, VIL 0.8 V; RIN ≥ 12 kΩ; ICC ≤ 2.2 mA (p. 2–3)",
    "RO and driver outputs high impedance when disabled (p. 7, p. 12); 10 Mbps (p. 1)",
    "termination at both ends, short stubs (p. 14)",
-   "2026-10-31: bus pins A/B with the roles rs485_a/rs485_b that REQ termination and failsafe read (CK-17)"
+   "2026-10-31: bus pins A/B with the roles rs485_a/rs485_b that REQ termination and failsafe read (CK-17)",
+   "2026-10-31: A/B short_proof – the driver limits a short to ±250 mA and shuts down thermally (MAX3485 19-0333 Rev 1, as read by the block agent of BL-10)"
   ],
   "open": [
    "termination (120 Ω at both ends), the bus load (12 kΩ, 32 transceivers), the data rate (10 Mbps) and the receiver threshold (±200 mV): no schema field – in hints and sources, for CK-17",

@@ -919,7 +919,8 @@
     "can0.tx",
     "can0.rx"
    ],
-   "hint": "U0RXD: UART0 downloads firmware and prints the log (datasheet 9 Peripheral Schematics)"
+   "hint": "U0RXD: UART0 downloads firmware and prints the log (datasheet 9 Peripheral Schematics)",
+   "pull": "up"
   },
   "35": {
    "name": "TXD0",
@@ -954,7 +955,8 @@
     "can0.tx",
     "can0.rx"
    ],
-   "hint": "U0TXD: UART0 downloads firmware and prints the log (datasheet 9 Peripheral Schematics)"
+   "hint": "U0TXD: UART0 downloads firmware and prints the log (datasheet 9 Peripheral Schematics)",
+   "pull": "up"
   },
   "36": {
    "name": "IO22",
@@ -1112,7 +1114,8 @@
    "Wi-Fi 2412–2484 MHz, 19.5 dBm (802.11b); Bluetooth 2402–2480 MHz, up to +9 dBm",
    "ADC1 on IO32–IO39, ADC2 on IO0, IO2, IO4, IO12–IO15, IO25–IO27 (table 3)",
    "EN: RC 10 kΩ / 1 µF recommended, not to be left floating",
-   "footprint frame: pin 1 at (–9.0, –9.0) mm, module outline x –16.49 … 9.0 mm against figure 10/13"
+   "footprint frame: pin 1 at (–9.0, –9.0) mm, module outline x –16.49 … 9.0 mm against figure 10/13",
+   "2026-10-31: RXD0/TXD0 (pins 34, 35) with their weak pull-up during and after reset – ESP32 Series Datasheet v5.3, IO_MUX table (U0RXD, U0TXD: wpu), as read by the block agent of BL-7"
   ],
   "open": [
    "pwm: LEDC/MCPWM reach any GPIO through the matrix – not expressible in functions (schema gap); fn pwm nets on this module are reported by REQ.function",
