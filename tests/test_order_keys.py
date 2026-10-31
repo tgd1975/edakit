@@ -268,6 +268,9 @@ def test_the_shipped_profiles_are_valid():
     assert euro.offers("thickness_mm", 1.55) and euro.offers("thickness_mm", 1.6) is None
     assert euro.offers("mark", "specify") is False and makers.load("aisler").offers("finish", "OSP") is False
     assert not makers.load("aisler").has("mark") and euro.data["cart"] == "Add to basket"
+    way = makers.load("pcbway")
+    assert way.word("mark", "remove") == "Yes (extra+$ 1.5)" and not way.has("confirm_placement")
+    assert all(m.recorded for m in map(makers.load, ("aisler", "eurocircuits", "pcbway")))
 
 
 def test_a_profile_with_an_unknown_key_is_refused(tmp_path):
