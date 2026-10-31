@@ -120,7 +120,9 @@ edakit calls (`edakit/toolchain/kicad/cli.py`, `-v` prints every call):
 
 The DRC checks whose subject edakit checks itself are off in `<board>.kicad_pro`: footprints against the library
 (SYNC.footprint holds them to the parts database), courtyards (the plan), silkscreen overlaps and texts (GEO.silk on the
-Gerber files). What KiCad's DRC reports beyond that counts in GEO.drc.
+Gerber files). A pad needs one thermal spoke to its zone, not KiCad's default two: Freerouting knows no spokes and may
+leave room for one, EasyEDA's DRC asks for none, and GEO.copper checks the connection. What KiCad's DRC reports beyond
+that counts in GEO.drc.
 
 ## 16.6 The gate on KiCad
 

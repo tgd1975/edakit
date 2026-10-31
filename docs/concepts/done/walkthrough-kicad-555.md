@@ -1,7 +1,7 @@
 # A second walkthrough: a 555 blinker on KiCad
 
 Status 2026-10-31: built and run. The board went from the idea to RELEASED and `edakit export` on KiCad 10.0.6 –
-handbook chapter 18, `examples/blinker-555`, `tests/test_walkthrough_kicad.py`; nine gaps closed in edakit on the way
+handbook chapter 18, `examples/blinker-555`, `tests/test_walkthrough_kicad.py`; eleven gaps closed in edakit on the way
 (chapter 18.13). What the run decided differently from the sketch below: a LMC555 (1.5 V) rather than a TLC555, D1 from
 VDD into the discharge pin with the 50 % astable from OUT, a low-current LED and R-1 at 0.5 mA down to 1.1 V per cell
 (D-3), an AO3415A against reversed cells (D-4), R-4 at 8 mA after the review M-1 (D-9). Whether boards are ordered is

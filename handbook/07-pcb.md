@@ -51,7 +51,9 @@ holes = [[3.5, 36.5], [86.5, 3.5]]
 ```
 
 **Tooling holes:** JLCPCB's Economic assembly wants 2–3 non-plated holes of 1.152 mm with the solder mask 0.148 mm
-larger, in opposite corners. Without them JLCPCB drills its own – maybe somewhere visible. edakit creates them as free
+larger, in opposite corners. Without them JLCPCB drills its own – maybe somewhere visible. The plan keeps parts out of
+their keep-out, except parts the assembler leaves out (`bom: false`): fitted by hand afterwards, they are not there
+while the holes hold the board – the 555 blinker's battery holder covers one (handbook 18). edakit creates them as free
 pads without copper ring (they land in the NPTH drill file). Two EasyEDA quirks: while a free pad is in the PCB, pour
 fills fail – edakit takes them out before every fill and puts them back; and a pour polygon with a hole is not filled –
 the pour gets a notch from the edge around each tooling hole instead.

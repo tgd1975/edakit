@@ -355,6 +355,8 @@ file, the plan and the graph.
 
 ## 18.11 Layout
 
+### Placement
+
 The board file starts with the hand-over's three fixed parts. The plan's frame is mm, origin at the outline's lower
 left, y up; a part on the bottom is mirrored in its local y (16.3):
 
@@ -378,6 +380,8 @@ U1's decoupling next to its V+. It put them around BT1's pins, which are soldere
 (GEO.spacing, D-8):
 
 ![The placement plan of blinker-555: the holder under the whole board, switch and 555 at the right end](../examples/blinker-555/docs/pcb_plan_main.png)
+
+### Routing
 
 `edakit pcb apply` writes the parts, the outline and the rules into `main.kicad_pcb`; `edakit route all` routes with
 Freerouting, fills the ground pours with kicad-cli and runs KiCad's DRC with schematic parity:
@@ -404,6 +408,8 @@ It took three tries, each a gap of the KiCad chain or of the real footprints clo
 `pcb place` nor `pcb plan` saw the overlap –; the second, two SMD pads within 1 mm of BT1's pins; the third DRC found
 SW1's three free pins on a net "unconnected-(SW1-Pad3)" in KiCad's schematic and on none in the PCB.
 
+### Silkscreen
+
 `edakit silk apply` prints the designators, the board label and the texts of the board file – "+" and "−" beside
 BT1's pins and "2x AAA 1.5 V" (D-9) – and checks the print on kicad-cli's Gerber files. D1's designator had no room
 beside it and got a fixed spot below the LED (`[silk] place`):
@@ -423,6 +429,26 @@ beside it and got a fixed spot below the LED (`[silk] place`):
 The bottom carries the holder's outline with "+" and "−" from its library footprint. SW1's knob is drawn by its
 footprint beyond the body and so beyond the outline; GEO.silk's warning on it is accepted in the sign-off file with D-8
 – the maker prints nothing there.
+
+### The layout review
+
+The layout review M-5 – the agent pcb-reviewer, on a gate run's files – found nothing that blocks; six notes (D-10).
+Two you chose to build: tooling holes of our own, else JLCPCB drills its own where it likes, likely on the empty left
+of the visible top, with `[looks] visible = "top"` and a remark for the order form. One hole lies under the holder,
+which is fitted after the assembly. Routed once more, Freerouting left two GND pads room for one thermal spoke, which
+KiCad's DRC counted as starved (18.13). The rest are for the hand assembly: SW1 before BT1, a dab of glue under the
+holder's free end, and at M-2 D1's cathode by the chamfer of its outline:
+
+```toml
+[tooling]                  # JLCPCB Economic PCBA: two non-plated holes of our own, else JLCPCB drills them where it likes (D-10)
+holes = [[57.0, 3.5], [3.0, 24.5]]   # the second under BT1's body: the holder is fitted after the assembly
+
+[looks]
+visible = "top"            # the face people see: stage L holds its tracks, vias and texts
+
+[order]
+remark = "2 tooling holes added by customer."
+```
 
 ## 18.12 Release
 
@@ -457,6 +483,10 @@ each was closed in edakit with its test:
   differ by a rounding, and the footprint's own outline on the edge was a GEO.silk warning. 0.05 mm are rounding now.
 - **One output resistance for every corner.** U1's discharge pin at its 1.5 V maximum hid R-4's real current
   (18.8). `r_out_ohm` of a logic part takes [min, typ, max] at the spread corner.
+- **A tooling hole under a part fitted by hand.** `pcb plan` held BT1 to the keep-out of a tooling hole; a part with
+  `bom: false` is not there while the tooling holes hold the board.
+- **Thermal spokes on KiCad.** Freerouting left two GND pads room for one spoke each, and KiCad's DRC wants two by
+  default. The KiCad project edakit writes asks for one: EasyEDA asks for none, and GEO.copper checks the connection.
 
 Open, noted for later: a sign-off note counts every mention of a requirement's ID as passing evidence, also
 "R-4 not met" (M-1, note 9) – the rule is documented (8.7) and tested, and changing it is a decision about edakit;
