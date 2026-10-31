@@ -368,6 +368,7 @@ def stress(s):
         heat =[w for el in els if (w := dissipation(el, res)) is not None]
         if "rth_ja_k_per_w" in r and heat:
             junction(s, des, sum(heat), r)
+    cable_ratings(s)
     for des, m in meta["mcu"].items():
         r = limits(s.n.part(des))
         cur = {net: res.get(am, 0.0) for net, am in m.get("gpio_ammeters", {}).items()}
@@ -377,6 +378,40 @@ def stress(s):
             for what, i in (("sourced", sum(x for x in cur.values() if x > 0)),
                             ("sunk", -sum(x for x in cur.values() if x < 0))):
                 s.q(des, "gpio_i_total", i, "A", "mcu", des, f"GPIO current {what} by all outputs together")
+
+
+# --- cables: a wire's current against the cable's own rating (maker-coverage FT-2, rules-at-scale.md decision 22) -----
+def wire_current(d, res, w):
+    """The current through a wire of a cable (netlist.cable_wires): ngspice's own (@r_w1_8[i]), else from the voltages
+    at its two ends."""
+    i = res.get(f"@{w['name'].lower()}[i]")
+    if i is None:
+        far = w["node"] if "node" in w else netlist.pin_node(d, w["pb"])
+        i = (v(res, netlist.pin_node(d, w["pa"])) - v(res, far)) / w["r"]
+    return abs(i)
+
+
+def cable_ratings(s):
+    """LIM.i/cable: the current of every wire of a cable between boards within the cable's i_max_a – the rating per
+    wire of the cable's own datasheet, derated as every current; edakit derives none from the gauge. The wires of a
+    cable to an LED strip are the strip's (strip.judge, grade strip)."""
+    for w in getattr(s.d, "cable_elements", None) or []:
+        if w.get("strip") or not is_number(w.get("i_max_a")):
+            continue
+        s.q(f"cable {w['cable']}", "i", wire_current(s.d, s.res, w), "A", "", None,
+            f"current through wire {w['name'][2:]}", code="LIM.i", entry=False, grade="cable",
+            lims=[Limit(max=w["i_max_a"], derate=s.der.get("i", 1.0), source=f"i_max_a of cable {w['cable']}")])
+
+
+def cable_currents(d, res, meta):
+    """{cable: (current, wire)}: the highest current through a wire of each cable in one operating point – the wire
+    named by its pin at the cable's from end."""
+    out = {}
+    for w in netlist.cable_wires(d, meta):
+        i, wire = wire_current(d, res, w), w.get("wire") or w["name"].rsplit("_", 1)[-1]
+        if w["cable"] not in out or i > out[w["cable"]][0]:
+            out[w["cable"]] = (i, wire)
+    return out
 
 
 def jfet(s, des, kind, el):

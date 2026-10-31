@@ -189,7 +189,7 @@ def test_a_new_project_may_have_a_requirements_file():
 INTERVIEW = {
     "board": ("[boards.<name>]", "title", "board file"),
     "tool chain": ("[project] toolchain", "handbook 16"),
-    "boards": ("bought = true",),
+    "boards": ("bought = true", "wired = true"),
     "variants": ("variants/<v>/edakit.toml",),
     "maker": ("[cart] maker", "[cart] makers"),
     "assembly": ("[release] assembly", "sides", "pcba", "smd_only"),

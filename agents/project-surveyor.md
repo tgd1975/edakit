@@ -26,7 +26,7 @@ documents that hold requirements, nothing more.
 - **Check a proposal before you make it** (working agreement 7): an entry edakit would refuse is no proposal. The
   places and their keys: `${CLAUDE_PLUGIN_ROOT}/handbook/10-reference.md` (10.1 edakit.toml, 10.2 the board file,
   10.6 the files), `08-release-gate.md` (8.2 sign-offs and hashes, 8.6 project scripts and agents – the kinds, the
-  names of edakit's data, the rules an entry must keep), `04-parts-database.md` (4.1 the fields, 4.5 bought boards),
+  names of edakit's data, the rules an entry must keep), `04-parts-database.md` (4.1 the fields, 4.5 bought and hand-wired boards),
   `03-hardware-graph.md` (3.1 the graph, 3.5 the firmware contract), `06-schematic.md` (6.6 quoted values). edakit's
   skills and agents, the counterparts of the project's own: `${CLAUDE_PLUGIN_ROOT}/skills/*/SKILL.md`,
   `${CLAUDE_PLUGIN_ROOT}/agents/*.md`.
@@ -62,7 +62,7 @@ One numbered list per place, in this order:
    `compliance` in the parts entries, a sign-off the gate requires – is a candidate too.
 2. **EasyEDA project and released runs** – `[project] name` and `company`, one `[boards.<b>]` per board with its
    documents (`template`, `schematic`, `pcb`; only what differs from edakit's defaults), `bought = true` for a bought
-   board on a cable (4.5). Released runs stay as history, named with their place and state; edakit's gate makes the
+   board on a cable, `wired = true` for parts wired by hand without a PCB – a front panel, jacks, a strip (4.5). Released runs stay as history, named with their place and state; edakit's gate makes the
    next run.
 3. **Scripts** – per script one of three:
    - a `[scripts.<name>]` entry, written out: `kind`, `cmd`, `about` (one sentence, citing a decision), `reads`,

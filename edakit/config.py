@@ -51,7 +51,8 @@ PROJECT_KEYS = ("name", "company", "quantity", "distributors", "lock", "agreemen
                 "stock_max_age_days", "spare_pct", "requirements", "domains", "toolchain")
 TOOLCHAINS = ("easyeda", "kicad")   # [project] toolchain: the EDA tool the boards are drawn in (handbook 16)
 EASYEDA_BOARD_KEYS = ("template", "schematic", "pcb")   # [boards.<name>]: names of EasyEDA documents
-BOARD_KEYS = ("title", "template", "schematic", "pcb", "file", "bought")  # [boards.<name>] in edakit.toml
+BOARD_KEYS = ("title", "template", "schematic", "pcb", "file", "bought", "wired")  # [boards.<name>] in edakit.toml
+UNMADE = {"bought": "bought", "wired": "hand-wired"}   # the keys of a board edakit does not make, and what it is
 BOARD_FILE_KEYS = ("revision", "view", "outline", "holes", "tooling", "place", "near", "near_mm", "edge_mm", "edge_ok",
                    "on_headers", "header_keep_mm", "silk_overlap_mm", "park", "routing", "pours", "pour_regions",
                    "pour_min_piece_mm2", "pour_inset_mm", "silk", "loops", "net_classes", "copper", "order", "uniform",
@@ -180,6 +181,18 @@ class Board:
     thickness_mm: float = THICKNESS_MM                # board thickness: the order, lead protrusion in mech_<board>.json
     thickness_given: bool = False                     # thickness_mm is in the board file (order.md: where it comes from)
     bought: bool = False        # bought = true: on a cable, checked with the graph and the simulation, made by nobody
+    wired: bool = False         # wired = true: hand-wired, no PCB of its own – panel parts, jacks, pots, a strip on a
+                                # cable; checked and simulated as a bought board, its parts the project's, by hand
+
+    @property
+    def unmade(self):
+        """What a board edakit does not make is – "bought" or "hand-wired" –, None for a made board."""
+        return next((UNMADE[k] for k in UNMADE if getattr(self, k)), None)
+
+    @property
+    def unmade_key(self):
+        """The key that says so: "bought = true" or "wired = true"."""
+        return next((f"{k} = true" for k in UNMADE if getattr(self, k)), None)
 
     # --- plan <-> EasyEDA -------------------------------------------------------------------------------------------
     def to_eda(self, x, y, rot, side):
@@ -264,24 +277,26 @@ class Config:
         return makers.pcba(self, maker)
 
     def board(self, name=None, made=False) -> Board:
-        """The board name, or the only one. made: for what draws or reads a layout – a bought board is refused, and
-        without a name the only made board is taken."""
+        """The board name, or the only one. made: for what draws or reads a layout – a bought or hand-wired board is
+        refused, and without a name the only made board is taken."""
         pool = self.made() if made else self.boards
         if name is None:
             if len(pool) != 1:
                 raise ConfigError(f"several boards ({', '.join(pool)}) – pick one with --board" if pool else
-                                  f"every board of {self.path.name} is bought – there is no layout to make or read")
+                                  f"every board of {self.path.name} is bought or hand-wired – there is no layout to "
+                                  "make or read")
             return next(iter(pool.values()))
         if name not in self.boards:
             raise ConfigError(f"board '{name}' is not in {self.path.name} (known: {', '.join(self.boards)})")
-        if made and self.boards[name].bought:
-            raise ConfigError(f"board {name} is bought (bought = true in {self.path.name} [boards.{name}]): no "
+        b = self.boards[name]
+        if made and b.unmade:
+            raise ConfigError(f"board {name} is {b.unmade} ({b.unmade_key} in {self.path.name} [boards.{name}]): no "
                               "schematic, PCB or manufacturing files – edakit checks it with the graph and the simulation")
-        return self.boards[name]
+        return b
 
     def made(self) -> dict:
-        """The boards edakit makes: every board of [boards] but the bought ones."""
-        return {name: b for name, b in self.boards.items() if not b.bought}
+        """The boards edakit makes: every board of [boards] but the bought and the hand-wired ones."""
+        return {name: b for name, b in self.boards.items() if not b.unmade}
 
     def resolve(self, p) -> Path:
         p = Path(p)
@@ -648,6 +663,7 @@ def _board(name, entry, b, file="", project=None, quantity=5):
         thickness_mm=float(thickness),
         thickness_given="thickness_mm" in b,
         bought=entry.get("bought", False),
+        wired=entry.get("wired", False),
     )
 
 
@@ -924,14 +940,18 @@ def load(path=None) -> Config:
                          f"board is the KiCad project <artifacts>/kicad/{name}/ (handbook 16)"
                          for k in EASYEDA_BOARD_KEYS if k in entry]
         file = entry.get("file", f"hardware/boards/{name}.toml")
-        bought = entry.get("bought", False)
-        if not isinstance(bought, bool):
-            problems.append(f"[boards.{name}] bought: true or false")
-        if bought is True:     # made by nobody: no EasyEDA documents, no board file
-            problems += [f"[boards.{name}] {k}: a bought board is not drawn – no schematic, PCB or board file"
+        for k in UNMADE:
+            if not isinstance(entry.get(k, False), bool):
+                problems.append(f"[boards.{name}] {k}: true or false")
+        unmade = [k for k in UNMADE if entry.get(k) is True]
+        if len(unmade) > 1:
+            problems.append(f"[boards.{name}] bought or wired, not both – a bought assembly or parts wired by hand")
+        if unmade:     # made by nobody: no EasyEDA documents, no board file
+            what = UNMADE[unmade[0]]
+            problems += [f"[boards.{name}] {k}: a {what} board is not drawn – no schematic, PCB or board file"
                          for k in ("template", "schematic", "pcb", "file") if k in entry]
             if "file" not in entry and (root / file).exists():
-                problems.append(f"{file}: a bought board (bought = true in [boards.{name}]) has no board file")
+                problems.append(f"{file}: a {what} board ({unmade[0]} = true in [boards.{name}]) has no board file")
             files[name] = (file, {})
             continue
         if (root / file).exists():
@@ -969,7 +989,7 @@ def load(path=None) -> Config:
         raise ConfigError(f"{path}: {e}") from None
     quantity = int(p.get("quantity", 5))
     boards = {name: _board(name, raw["boards"][name], data, file,
-                           None if raw["boards"][name].get("bought") is True else project, quantity)
+                           None if any(raw["boards"][name].get(k) is True for k in UNMADE) else project, quantity)
               for name, (file, data) in files.items()}
     if not boards:
         raise ConfigError(f"{path}: at least one [boards.<name>] section is needed")
