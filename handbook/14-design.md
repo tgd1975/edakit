@@ -286,6 +286,8 @@ REQ.missing (flyback diode) and REQ.missing:cc (USB-C termination) are the refer
 rules; REQ.missing (I2C pull-ups), LVL.boot (strapping pins) and the MCU output currents of LIM come from CircuitSmith's rule
 catalog (14.6).
 
+**What no code catches.** `edakit mutate` builds mistakes into a copy of the design one at a time and lists those no code reports. On the example, without the simulation 24 of 45 are caught; with `--sim` 43 – the two left are R-EXT and the OE pull-up a hundred times larger: the LEDs dim with R-EXT, and nothing says how bright they should be (a load's `expect` would). The list is for reading, not a list of faults; a class of mistakes it shows again and again is a candidate (14.4). The reference circuits per domain (`tests/reference.py`) carry the seeded faults each domain must catch with exactly its codes.
+
 ## 14.5 Building blocks
 
 A block is a piece of graph with checked parts: components with LCSC numbers, nets, and ports – the nets that connect

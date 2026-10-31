@@ -93,6 +93,11 @@ def build_parser():
     p.add_argument("--write", action="store_true", help="write the converted files (default: list them)")
     _common(p)
 
+    p = sub.add_parser("mutate", help="mistakes built into a copy of the design one at a time: what no code catches")
+    p.add_argument("--sim", action="store_true", help="judge each mistake with the simulation as well (slower)")
+    p.add_argument("--json", help="write every mistake with what caught it as JSON")
+    _common(p)
+
     p = sub.add_parser("block", help="building blocks: list, show, or add one to the graph")
     p.add_argument("action", choices=["list", "show", "add"])
     p.add_argument("name", nargs="?", help="block name (edakit block list)")
@@ -326,6 +331,9 @@ def _main(argv=None):
     if args.command == "part":
         from . import part
         return part.main(cfg, args)
+    if args.command == "mutate":
+        from . import mutate
+        return mutate.main(cfg, args)
     if args.command == "convert":
         from . import convert
         return convert.main(cfg, args)
