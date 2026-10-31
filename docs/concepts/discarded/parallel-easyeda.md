@@ -1,5 +1,8 @@
 # Parallel EasyEDA instances
 
+Discarded by the owner on 2026-10-31, in a decision round: the gain – only the EasyEDA steps of different projects run
+in parallel – does not justify the memory of a second instance and the patches to the bridge and the server.
+
 Status 2026-10-25: proposal. Nothing is built, and nothing has been tried live. The findings come from reading the code
 of easyeda-mcp-pro 1.4.0 (`dist/bridge/manager.js`, `dist/bridge/listener-ownership.js`), the bridge extension it ships
 (`dist/index.js`) and EasyEDA Pro 3.2.206 (`resources/app/app.js`).

@@ -455,8 +455,8 @@ test footprints (handbook 16.8). Each on a scratch copy; the bell's repository d
 - Handbook [1](../../../handbook/01-approach.md), [7](../../../handbook/07-pcb.md),
   [8](../../../handbook/08-release-gate.md), [9](../../../handbook/09-easyeda-api.md).
 - Concepts [design-as-text.md](design-as-text.md) (gaps 1–3, decision 4),
-  [parallel-easyeda.md](../new/parallel-easyeda.md), [implementation-plan.md](../new/implementation-plan.md) (2.1 and
-  its live run).
+  [parallel-easyeda.md](../discarded/parallel-easyeda.md), [implementation-plan.md](../new/implementation-plan.md) (2.1
+  and its live run).
 - KiCad:
   - 10.0, released in March 2026, with the Ubuntu PPA and its install steps:
     [kicad.org/download/ubuntu](https://www.kicad.org/download/ubuntu/).
