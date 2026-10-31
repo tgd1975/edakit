@@ -178,19 +178,19 @@ Every input with thresholds (vih/vil on the pin or in the values) sits at ≤ VI
 **`LVL.direction`** – outputs only on pins that drive (error; replaces E-3)  
 The simulation drives an MCU output only on a pin that can drive (output or bidirectional).
 
-**`REQ.missing`** – what a part requires is there (error; replaces G-6, G-11, G-13, G-14, G-18)  
-What a part requires on its pins is in the graph: a capacitor to ground per supply pin (power_in), a pull-up per I2C line, a diode across a switched coil (cathode at its plus), Rd on each CC pin of a USB-C receptacle without controller, a layout.loops entry on each net of a hot loop (hot_loop).
+**`REQ.missing`** – what a part requires is there (error, pin: warning; replaces G-6, G-11, G-13, G-14, G-18)  
+What a part requires on its pins is in the graph: a capacitor to ground per supply pin (power_in), a pull-up per I2C line, a diode across a switched coil (cathode at its plus), Rd on each CC pin of a USB-C receptacle without controller, a layout.loops entry on each net of a hot loop (hot_loop), and what a pin's parts entry says it needs (needs: a capacitor to ground, a pull-up or pull-down, a series resistor, ground) – grade pin.
 - decoupling: per net at least one capacitor to ground per IC supply pin (`power_in`) – finds e.g.: the missing 100 nF
 - I2C pull-ups: every I2C line has a pull-up to a supply between (V − 0.4 V) / 3 mA and 10 kΩ, parallel ones added up; a line is I2C by the net's `bus`, an SDA/SCL net name, a pin role `sda`/`scl` or a pin name with SDA/SCL (a role decides over the name); pins with `pull`/`pull_ohm` count (modules) – finds e.g.: a bus without pull-ups, 47 kΩ, a module's pull-ups plus your own below 1 kΩ
 - flyback diode: a relay coil or a buzzer with `coil_ohm`, switched by a transistor or an output, has a diode across it with the cathode at its plus terminal – finds e.g.: a relay that kills its transistor at the first switch-off
 - USB-C sink: a receptacle with `cc1`/`cc2` pins has its own 5.1 kΩ ± 10 % to ground on each CC pin; silent when an IC is on the CC lines. A module or breakout states its receptacle's termination in `values.usb_c` (4.1): `rd_5k1` or `controller` passes, `none` has its CC pins checked the same way and fails without them – finds e.g.: no 5 V from a USB-C charger, CC1 and CC2 on one resistor, a breakout without its two resistors
 - hot loop in the hand-over: a part whose entry names its hot-loop pins (`hot_loop`, 4.1) has a `layout.loops` entry on every net of the loop – the nets of those pins and, one diode further, the net behind the rectifier on its switch node (`sw`); a buck or boost IC (`behavior`) without `hot_loop` is a warning; `accept` on the part, or on a net whose part of the loop closes over a pour – finds e.g.: a boost whose output loop was routed 61 mm across the board, passing every check because nobody listed it
 
-**`REQ.value`** – what a part requires is in range (error; replaces G-11, G-14)  
-A required part has its value inside the range: an I2C pull-up (in parallel with the pins' own pulls) between (V − 0.4 V) / 3 mA and 10 kΩ, Rd 5.1 kΩ ± 10 % on a CC pin.
+**`REQ.value`** – what a part requires is in range (error, pin: warning; replaces G-11, G-14)  
+A required part has its value inside the range: an I2C pull-up (in parallel with the pins' own pulls) between (V − 0.4 V) / 3 mA and 10 kΩ, Rd 5.1 kΩ ± 10 % on a CC pin, what a pin needs inside the window its entry gives (grade pin).
 
-**`REQ.forbidden`** – what must stay apart is apart (error; replaces G-14)  
-What a part forbids does not happen: CC1 and CC2 of a USB-C receptacle on one net (one resistor for both).
+**`REQ.forbidden`** – what must stay apart is apart (error, pin: warning; replaces G-14)  
+What a part forbids does not happen: CC1 and CC2 of a USB-C receptacle on one net (one resistor for both), a pin whose entry says never_to_ground on ground (grade pin).
 
 **`REQ.function`** – pin functions (error; replaces G-15)  
 A net's fn (pwm, adc, spi.sck, i2c.sda, uart.tx, …) is on a pin whose entry lists it in functions, the nets of one fn_bus use one peripheral instance, and PWM nets of one slice have one fixed pwm_hz and a channel each.

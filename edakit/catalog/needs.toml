@@ -35,3 +35,9 @@ tag = "r"
 switchers = ["buck", "boost"]   # behaviours whose entry must name it (PARTS.fact/hot_loop)
 source = "TI SNVA021C, AN-1149 Layout Guidelines for Switching Power Supplies (2013), 5"
 tag = "r"
+
+[pin]                 # REQ.missing, REQ.value, REQ.forbidden (grade pin): what a pin's parts entry says it needs
+what = ["capacitor", "pull_up", "pull_down", "series_resistor", "to_ground", "never_to_ground"]
+windows = { capacitor = ["c_min_f", "c_max_f"], pull_up = ["r_min_ohm", "r_max_ohm"], pull_down = ["r_min_ohm", "r_max_ohm"], series_resistor = ["r_min_ohm", "r_max_ohm"] }
+source = "the pin's parts entry (needs), from its datasheet"
+tag = "r"

@@ -3,7 +3,8 @@ requirement = (pin or role, what, params, source)).
 
 The requirements are data – catalog/needs.toml names which pins have them by type, role or kind, tables/ hold the
 numbers, a parts entry's `needs` switches a default off. Each section of needs.toml is one kind of requirement this
-engine knows: decoupling, i2c, flyback, cc, hot_loop – and the pin functions a net's fn asks for (REQ.function).
+engine knows: decoupling, i2c, flyback, cc, hot_loop, pin – the last what a pin's own entry says it needs (a capacitor,
+a pull, a series resistor, ground or never ground) – and the pin functions a net's fn asks for (REQ.function).
 """
 
 from __future__ import annotations
@@ -14,7 +15,7 @@ from functools import lru_cache
 
 from ..catalog import HERE
 from ..circuit import (FN_NAMES, I2C_R_MAX, I2C_SINK_A, I2C_VOL, USB_C_CC, USB_RD, USB_RD_TOL, cc_lines, fn_match,
-                       hz_text, i2c_name, ohm, resistors_to, supply_nets, v_range, valid_hz, values)
+                       hz_text, i2c_name, is_number, ohm, resistors_to, si, supply_nets, v_range, valid_hz, values)
 from ..findings import Finding
 
 
@@ -30,7 +31,7 @@ def switched_off(d, des, need):
 
 def run(ctx):
     d = ctx.joined
-    return decoupling(d) + i2c(d) + flyback(d) + usb_c(d) + functions(d) + hot_loops(ctx.design)
+    return decoupling(d) + i2c(d) + flyback(d) + usb_c(d) + functions(d) + hot_loops(ctx.design) + pin_needs(d)
 
 
 def decoupling(d):
@@ -270,3 +271,93 @@ def hot_loops(d):
                                    on=(("net", net), ("component", des))))
     return out
 
+
+
+def pin_needs_problems(need):
+    """What is wrong with one entry of a pin's needs: a known `what`, its window as numbers, min ≤ max."""
+    n = needs()["pin"]
+    if not isinstance(need, dict) or need.get("what") not in n["what"]:
+        return [f"needs {need!r}: what must be one of {', '.join(n['what'])}"]
+    window = n["windows"].get(need["what"], [])
+    out = [f"needs {need['what']}: unknown key '{k}'" for k in sorted(set(need) - {"what", "source", "why", *window})]
+    lo, hi = (need.get(k) for k in window) if window else (None, None)
+    out += [f"needs {need['what']}: {k} must be a number" for k in window if k in need and not is_number(need[k])]
+    if is_number(lo) and is_number(hi) and lo > hi:
+        out.append(f"needs {need['what']}: {window[0]} above {window[1]}")
+    return out
+
+
+def pin_needs(d):
+    """REQ.missing/pin, REQ.value/pin, REQ.forbidden/pin: what a pin's parts entry says it needs – a capacitor to
+    ground, a pull-up to a supply or a pull-down to ground, a series resistor, each in its window; to be on ground, or
+    never on it. A needs entry of the wrong form: PARTS.schema."""
+    n = needs()["pin"]
+    grounds = {d.ground} | set(d.graph.get("grounds") or [])
+    supplies = supply_nets(d) - grounds
+    caps = defaultdict(list)            # net -> [(capacitor, value)] of the capacitors to ground
+    for des in d.comps_of_kind("capacitor"):
+        a, b = (d.pin_net.get(f"{des}.{p}") for p in d.part(des)["pins"])
+        for here, there in ((a, b), (b, a)):
+            if there in grounds and here and here not in grounds:
+                caps[here].append((des, values(d.part(des)).get("value_f")))
+    out, seen = [], set()
+    for des in sorted(d.comps):
+        part = d.part(des) or {}
+        for num, info in (part.get("pins") or {}).items():
+            pin_needs_list = info.get("needs")
+            if pin_needs_list is None:
+                continue
+            key = d.entry_key(des)
+            if not isinstance(pin_needs_list, list):
+                if key not in seen:
+                    out.append(Finding("PARTS.schema", "P", key, f"{key}: pin {num} needs must be a list of requirements"))
+                continue
+            ref, net = f"{des}.{num}", d.pin_net.get(f"{des}.{num}")
+            who, on = f"{ref} ({info.get('name', num)})", (("component", des),) + ((("net", net),) if net else ())
+            for need in pin_needs_list:
+                problems = pin_needs_problems(need)
+                if problems:
+                    if (key, num) not in seen:
+                        out += [Finding("PARTS.schema", "P", key, f"{key}: pin {num} {p}") for p in problems]
+                    continue
+                what, src = need["what"], need.get("source") or n["source"]
+                lo, hi = (need.get(k) for k in n["windows"].get(what, ["", ""]))
+
+                def finding(code, text):
+                    out.append(Finding(code, "G", who, f"{who}: {text}", src, grade="pin", on=on))
+                if what == "to_ground":
+                    if net not in grounds:
+                        finding("REQ.missing", f"must be on ground ({d.ground}), is on {net or 'no net'}")
+                    continue
+                if what == "never_to_ground":
+                    if net in grounds:
+                        finding("REQ.forbidden", f"must never be on ground, is on {net}")
+                    continue
+                unit = "F" if what == "capacitor" else "Ω"
+                window = (f" of {si(lo, unit)} … {si(hi, unit)}" if lo is not None and hi is not None else
+                          f" of at least {si(lo, unit)}" if lo is not None else
+                          f" of at most {si(hi, unit)}" if hi is not None else "")
+                if net is None:
+                    finding("REQ.missing", f"not connected – needs a {what.replace('_', ' ')}{window}")
+                    continue
+                if what == "capacitor":
+                    found = caps.get(net, [])
+                    total = sum(x for _, x in found if is_number(x)) if all(is_number(x) for _, x in found) else None
+                    names, there = ", ".join(c for c, _ in found), f"to {d.ground}"
+                elif what in ("pull_up", "pull_down"):
+                    targets = supplies if what == "pull_up" else grounds
+                    found = [(r, x) for r, x, _ in resistors_to(d, net, targets)]
+                    total = (1 / sum(1 / x for _, x in found)) if found and all(is_number(x) and x > 0 for _, x in found) \
+                        else None
+                    names, there = ", ".join(r for r, _ in found), "to a supply" if what == "pull_up" else f"to {d.ground}"
+                else:
+                    found = [(r, x) for r, x, _ in resistors_to(d, net, set(d.nets) - supplies - grounds - {net})]
+                    total = min((x for _, x in found if is_number(x)), default=None)
+                    names, there = ", ".join(r for r, _ in found), "in series"
+                if not found:
+                    finding("REQ.missing", f"needs a {what.replace('_', ' ')}{window} {there} – {net} has none")
+                elif total is not None and ((lo is not None and total < lo) or (hi is not None and total > hi)):
+                    finding("REQ.value", f"needs a {what.replace('_', ' ')}{window} {there} – {names} on {net}: "
+                                         f"{si(total, unit)}")
+            seen.add((key, num))
+    return out
