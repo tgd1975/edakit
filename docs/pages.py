@@ -73,6 +73,9 @@ def rewrite(text, src, site, mapped):
         if rel in mapped:
             new = _relpath(mapped[rel], site)
             return f"{m.group(1)}{new}{'#' + anchor if anchor else ''}{m.group(3)}"
+        if rel.startswith("docs/brand/") and rel != "docs/brand/README.md":
+            # the logo files and the theme's stylesheet are on the site
+            return f"{m.group(1)}{_relpath(rel[len('docs/'):], site)}{m.group(3)}"
         if rel == "docs/catalog" or (rel.startswith("docs/catalog/") and not rel.endswith(".py")):
             # the catalog page and its drawings are on the site; its generator is not
             new = _relpath("catalog/" + rel[len("docs/catalog/"):] if rel != "docs/catalog" else "catalog/", site)
@@ -109,13 +112,17 @@ def config(nav):
             "name": "material",
             "features": ["navigation.sections", "navigation.top", "navigation.indexes", "search.highlight",
                          "content.code.copy", "toc.follow"],
+            "logo": "brand/edakit-mark-mono-white.svg",
+            "favicon": "brand/edakit-favicon.svg",
+            "font": {"text": "IBM Plex Sans", "code": "IBM Plex Mono"},
             "palette": [
-                {"media": "(prefers-color-scheme: light)", "scheme": "default", "primary": "teal", "accent": "teal",
+                {"media": "(prefers-color-scheme: light)", "scheme": "default", "primary": "custom", "accent": "custom",
                  "toggle": {"icon": "material/brightness-7", "name": "Dark mode"}},
-                {"media": "(prefers-color-scheme: dark)", "scheme": "slate", "primary": "teal", "accent": "teal",
+                {"media": "(prefers-color-scheme: dark)", "scheme": "slate", "primary": "custom", "accent": "custom",
                  "toggle": {"icon": "material/brightness-4", "name": "Light mode"}},
             ],
         },
+        "extra_css": ["brand/edakit.css"],
         "markdown_extensions": ["tables", "admonition", "attr_list", "md_in_html", "def_list",
                                 {"toc": {"permalink": True}}, "pymdownx.superfences",
                                 {"pymdownx.highlight": {"anchor_linenums": False}}, "pymdownx.inlinehilite",
@@ -160,6 +167,7 @@ def assemble(out=ROOT / "build" / "pages"):
                 nav.append({"Rule catalog": "catalog/index.html"})
         sections[section].append(site if site.endswith("index.md") else {title: site})
     shutil.copytree(ROOT / "docs" / "catalog", docs / "catalog", ignore=shutil.ignore_patterns("*.py", "__pycache__"))
+    shutil.copytree(ROOT / "docs" / "brand", docs / "brand", ignore=shutil.ignore_patterns("README.md"))
     # JSON is YAML: MkDocs reads it without PyYAML here
     (out / "mkdocs.yml").write_text(json.dumps(config(nav), indent=1, ensure_ascii=False), encoding="utf-8")
     return out
