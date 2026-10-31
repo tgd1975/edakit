@@ -818,12 +818,12 @@ Good to know:
 - Mounting holes: the pour leaves the `keep` circle free (screw head, washer); EasyEDA alone keeps only 0.26 mm.
 - On the bottom silk layer EasyEDA mirrors texts by itself (`mirror = false`), but **not** graphics – mirror fills and
   lines yourself.
-- JLCPCB prints its order number somewhere unless you place the placeholder `JLCJLCJLCJLC` and choose
-  "specify a location" when ordering: a `[[silk.texts]]` entry of at least 0.8 mm and `mark = "specify"` in `[order]`
-  of the board file – FILES.order checks that both are there (8.4). JLCPCB's help article reports the order number gone
-  since May 2026: FILES.order warns about the placeholder until ordering step 0 has seen the form, and a 2D barcode or a
-  serial number (`barcode`, `serial_number`) take its place. PCBWay's placeholder is `WayWayWay`; another maker's on the
-  board is printed as text, and FILES.order finds it.
+- JLCPCB prints no order number any more: its form offers "Remove Mark" or a 2D barcode with a serial number
+  (`barcode`, `serial_number` in `[order]`, 10.2), as ordering step 0 found on the form (8.4). A `JLCJLCJLCJLC` left on
+  the silkscreen is printed as text; FILES.order warns about it at every maker. PCBWay prints its product number
+  somewhere unless you place its placeholder `WayWayWay` and choose "Specify a location": a `[[silk.texts]]` entry and
+  `mark = "specify"` in `[order]` of the board file – FILES.order checks that both are there. Another maker's
+  placeholder on the board is printed as text, and FILES.order finds it.
 - The print colour follows the solder mask: JLCPCB prints white, on a white mask black. Artwork drawn for one colour
   says so with `silkscreen` next to `mask` in `[order]`; FILES.order fails a pair JLCPCB does not print (8.4).
 - Run `silk apply` again after every auto-layout and routing – spots depend on parts and vias.

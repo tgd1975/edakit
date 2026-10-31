@@ -1,0 +1,356 @@
+{
+ "maker": "jlcpcb",
+ "read": "2026-11-01T00:12:00+01:00",
+ "fields": [
+  {
+   "label": "Base Material",
+   "value": "FR-4"
+  },
+  {
+   "label": "Layers",
+   "value": "2"
+  },
+  {
+   "label": "Dimensions",
+   "value": "60 x 28 mm"
+  },
+  {
+   "label": "PCB Qty",
+   "value": "5"
+  },
+  {
+   "label": "Product Type",
+   "value": "Industrial/Consumer electronics"
+  },
+  {
+   "label": "Deburring/Edge rounding",
+   "value": "Yes"
+  },
+  {
+   "label": "Different Design",
+   "value": "1"
+  },
+  {
+   "label": "Delivery Format",
+   "value": "Single PCB"
+  },
+  {
+   "label": "PCB Thickness",
+   "value": "1.6mm"
+  },
+  {
+   "label": "PCB Color",
+   "value": "Green"
+  },
+  {
+   "label": "Silkscreen",
+   "value": "White"
+  },
+  {
+   "label": "Material Type",
+   "value": "FR4 TG135"
+  },
+  {
+   "label": "Surface Finish",
+   "value": "LeadFree HASL"
+  },
+  {
+   "label": "Outer Copper Weight",
+   "value": "1 oz"
+  },
+  {
+   "label": "Via Covering",
+   "value": "Tented"
+  },
+  {
+   "label": "Via Plating Method",
+   "value": "Not Specified"
+  },
+  {
+   "label": "Min via hole size/diameter",
+   "value": "0.3mm/(0.4/0.45mm)"
+  },
+  {
+   "label": "Board Outline Tolerance",
+   "value": "±0.2mm(Regular)"
+  },
+  {
+   "label": "Confirm Production file",
+   "value": "No"
+  },
+  {
+   "label": "Mark on PCB",
+   "value": "Remove Mark"
+  },
+  {
+   "label": "Electrical Test",
+   "value": "Flying Probe Fully Test"
+  },
+  {
+   "label": "Gold Fingers",
+   "value": "No"
+  },
+  {
+   "label": "Castellated Holes",
+   "value": "No"
+  },
+  {
+   "label": "Edge Plating",
+   "value": "No"
+  },
+  {
+   "label": "Blind Slots",
+   "value": "No"
+  },
+  {
+   "label": "UL Marking",
+   "value": "No"
+  },
+  {
+   "label": "Humidity Indicator Card",
+   "value": "No"
+  },
+  {
+   "label": "4-Wire Kelvin Test",
+   "value": "No"
+  },
+  {
+   "label": "Paper between PCBs",
+   "value": "No"
+  },
+  {
+   "label": "Appearance Quality",
+   "value": "IPC Class 2 Standard"
+  },
+  {
+   "label": "Silkscreen Technology",
+   "value": "Ink-jet Printing Silkscreen"
+  },
+  {
+   "label": "Package Box",
+   "value": "With JLCPCB logo"
+  },
+  {
+   "label": "Inspection Report",
+   "value": "No"
+  },
+  {
+   "label": "PCB Remark",
+   "value": "2 tooling holes added by customer."
+  },
+  {
+   "label": "PCBA Type",
+   "value": "Economic"
+  },
+  {
+   "label": "Assembly Side",
+   "value": "Top Side"
+  },
+  {
+   "label": "PCBA Qty",
+   "value": "5"
+  },
+  {
+   "label": "Tooling holes",
+   "value": "Added by Customer"
+  },
+  {
+   "label": "Confirm Parts Placement",
+   "value": "Yes"
+  },
+  {
+   "label": "Stencil Storage",
+   "value": "No"
+  },
+  {
+   "label": "Fixture Storage",
+   "value": "No"
+  },
+  {
+   "label": "Parts Selection",
+   "value": "By Customer (Self-Service)"
+  },
+  {
+   "label": "Bake Components",
+   "value": "No"
+  },
+  {
+   "label": "Photo Confirmation",
+   "value": "No"
+  },
+  {
+   "label": "Board Cleaning",
+   "value": "No"
+  },
+  {
+   "label": "Conformal Coating (cleaning included)",
+   "value": "No"
+  },
+  {
+   "label": "Packaging",
+   "value": "Antistatic bubble film"
+  },
+  {
+   "label": "Special stencil",
+   "value": "No"
+  },
+  {
+   "label": "Depanel boards & edge rail before delivery",
+   "value": "No"
+  },
+  {
+   "label": "Solder Paste",
+   "value": "High temp."
+  },
+  {
+   "label": "Flying Probe Test",
+   "value": "No"
+  },
+  {
+   "label": "Nitrogen reflow soldering",
+   "value": "Yes (for Economic)"
+  },
+  {
+   "label": "Function test",
+   "value": "No"
+  },
+  {
+   "label": "Assembly remark",
+   "value": "No"
+  },
+  {
+   "label": "Shipping Method",
+   "value": "DHL Express"
+  },
+  {
+   "label": "Product Description",
+   "value": "DIY  - HS Code 902300"
+  }
+ ],
+ "files": [
+  {
+   "name": "gerber_main"
+  }
+ ],
+ "parts": [
+  {
+   "part": "C49678",
+   "designators": [
+    "C1"
+   ],
+   "mark": ""
+  },
+  {
+   "part": "C28323",
+   "designators": [
+    "C2",
+    "C4"
+   ],
+   "mark": ""
+  },
+  {
+   "part": "C1710",
+   "designators": [
+    "C3"
+   ],
+   "mark": ""
+  },
+  {
+   "part": "C5366382",
+   "designators": [
+    "D1"
+   ],
+   "mark": ""
+  },
+  {
+   "part": "C133233",
+   "designators": [
+    "Q1"
+   ],
+   "mark": ""
+  },
+  {
+   "part": "C17817",
+   "designators": [
+    "R1"
+   ],
+   "mark": ""
+  },
+  {
+   "part": "C17540",
+   "designators": [
+    "R2"
+   ],
+   "mark": ""
+  },
+  {
+   "part": "C17414",
+   "designators": [
+    "R3"
+   ],
+   "mark": ""
+  },
+  {
+   "part": "C90760",
+   "designators": [
+    "U1"
+   ],
+   "mark": ""
+  }
+ ],
+ "dnp": [],
+ "prices": [
+  {
+   "label": "PCB Price",
+   "amount": 5.1,
+   "kind": "pcb"
+  },
+  {
+   "label": "Setup Fee",
+   "amount": 8.24,
+   "kind": "fee"
+  },
+  {
+   "label": "Stencil",
+   "amount": 1.55,
+   "kind": "fee"
+  },
+  {
+   "label": "Components(9 items)",
+   "amount": 4.15,
+   "kind": "parts"
+  },
+  {
+   "label": "Extended components fee",
+   "amount": 12.36,
+   "kind": "fee"
+  },
+  {
+   "label": "SMT Assembly",
+   "amount": 0.3,
+   "kind": "fee"
+  },
+  {
+   "label": "Confirm Parts Placement",
+   "amount": 0.45,
+   "kind": "fee"
+  },
+  {
+   "label": "Nitrogen reflow soldering",
+   "amount": 0.91,
+   "kind": "fee"
+  },
+  {
+   "label": "Total Price",
+   "amount": 33.06,
+   "kind": "total"
+  }
+ ],
+ "currency": "USD",
+ "lead_time": "1 - 2 days",
+ "notes": [
+  "Confirm Parts Placement dialog: 'Do not confirm automatically' ticked on the owner's word",
+  "the uploaded file names are not shown on JLCPCB's pages – only the project name gerber_main",
+  "shipping not on Quote & Order: the quote page estimated $23.44 DHL Express"
+ ]
+}

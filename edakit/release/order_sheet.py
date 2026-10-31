@@ -20,10 +20,12 @@ and check FILES.order (order settings = board, per maker). Both when the board h
        every field's value is one the maker's form offers (its profile's fields), no combination its profile excludes;
        the remark fits the form (JLCPCB: at most 200 characters, ASCII); thickness_mm is a thickness of the form; the
        silkscreen colour is the one the maker prints on the mask colour; mark = "specify" needs the maker's placeholder
-       (JLCPCB: JLCJLCJLCJLC, PCBWay: WayWayWay) on a silkscreen layer of pcb.json, at least its least height in
-       [[silk.texts]] (height not in [[silk.texts]]: warn); the placeholder with another mark warns, and so do the
-       placeholder and mark = "specify" while the profile reports the order number gone (JLCPCB); another maker's
-       placeholder on the silkscreen is a finding – this maker prints the letters as they are; an assembly class with fewer tooling holes than the profile's
+       (PCBWay: WayWayWay) on a silkscreen layer of pcb.json, at least its least height in [[silk.texts]] (height not
+       in [[silk.texts]]: warn); the placeholder with another mark warns, and so do the placeholder and mark =
+       "specify" while the profile reports the order number gone; another maker's placeholder on the silkscreen is a
+       finding – this maker prints the letters as they are; a former placeholder (JLCPCB's JLCJLCJLCJLC, its order
+       number gone since May 2026, seen on the form by ordering step 0) warns at every maker; an assembly class with
+       fewer tooling holes than the profile's
        tooling_min warns (JLCPCB: Economic, 2 – it adds its own); a provisional profile is named as information.
        Independent of the maker: layers and size_mm, where set, are those of the Gerber files; panel_by_customer fails
        – the run's Gerber is one board; pcba_quantity is at most quantity, and another number than [project] quantity
@@ -198,14 +200,17 @@ def sides_of(cfg):
     return None if not sides else "both" if len(sides) > 1 else sides[0]
 
 
-def item(maker, key, raw, source, note="", read=False):
+def item(maker, key, raw, source, note="", read=False, checkout=False):
     """One field of a maker's form: its key, section, label, the maker's word for raw, edakit's value, where it comes
-    from, a note; read: edakit has no value – the skill reads what the page shows and sets nothing."""
+    from, a note; read: edakit has no value – the skill reads what the page shows and sets nothing; checkout: the form
+    asks it at checkout, which the skill never opens – the owner's there, not read back before the cart."""
     default = "PCBA" if key in PCBA_KEYS else "Shipping" if key in SHIP_KEYS else "PCB"
     out = {"key": key, "section": maker.section(key, default), "label": maker.label(key),
            "value": maker.word(key, raw) if raw is not None else "–", "raw": raw, "from": source, "note": note}
-    if read or raw is None:
+    if read or raw is None or checkout:
         out["read"] = True
+    if checkout:
+        out["checkout"] = True
     return out
 
 
@@ -250,6 +255,9 @@ def form(cfg, design, board, d, maker, o=None, bom=None, found=None):
     for key in dict.fromkeys(keys):
         if not maker.has(key) or (key in PCBA_KEYS and not bom) or (key == "inner_copper_oz" and (layers or 2) <= 2):
             continue
+        when = (maker.field(key) or {}).get("when") or {}    # a field of a dialog behind another option
+        if any(o.get(k) not in (v if isinstance(v, list) else [v]) for k, v in when.items()):
+            continue
         raw, source, note = values.get(key) or (o.get(key), src(key), "")
         if key == "mark" and o["mark"] == "specify" and found and rules.get("placeholder"):
             note = f"{rules['placeholder']} at {pt(found[0][1])} on the {found[0][0]} silkscreen"
@@ -258,7 +266,8 @@ def form(cfg, design, board, d, maker, o=None, bom=None, found=None):
         if key == "delivery" and o.get("panel"):
             p = o["panel"]
             note = f"panel {p['x']} x {p['y']}, rails {p['rails_mm']:g} mm"
-        out.append(item(maker, key, raw, source, note, read=key == "bake" and raw is None))
+        at_checkout = bool((maker.field(key) or {}).get("checkout"))    # asked at checkout: not read back before the cart
+        out.append(item(maker, key, raw, source, note, read=key == "bake" and raw is None, checkout=at_checkout))
     return out
 
 
@@ -306,9 +315,13 @@ def check_material(c, o):
         t = board.thickness_mm
         ok = m.offers("thickness_mm", t)
         what = m.rules.get("thicknesses_for")
-        c.add(f"board thickness {m.name} makes" + (f" ({what})" if what else ""), ok,
-              f"{t:g} mm (thickness_mm)" + ("" if ok else f" – not a thickness of {m.name}'s form"),
-              ", ".join(f"{x:g}" for x in values) + " mm")
+        if ok is None:                    # the profile lists only some (more = true): not checked
+            c.add(f"board thickness {m.name} makes", True, f"{t:g} mm (thickness_mm) – not among the thicknesses "
+                  f"step 0 read ({', '.join(f'{x:g}' for x in values)} mm), not checked", "offered", "info")
+        else:
+            c.add(f"board thickness {m.name} makes" + (f" ({what})" if what else ""), ok,
+                  f"{t:g} mm (thickness_mm)" + ("" if ok else f" – not a thickness of {m.name}'s form"),
+                  ", ".join(f"{x:g}" for x in values) + " mm")
     want = m.silkscreen_on(o["mask"])
     if want is not None:
         mask, silk = o["mask"], o["silkscreen"]
@@ -347,6 +360,14 @@ def check_mark(c, o, data):
                                                     f"{m.name} has no order-number placeholder"), False,
               f"{text} at {pt(found[0][1])} on the {found[0][0]} silkscreen – {m.name} prints it as it is; a "
               f"release that carries it is a release for {owner}", "no placeholder of another maker")
+    # a maker's placeholder from before its order number went: no maker replaces it any more, not even that one
+    for text, owner in makers.placeholders(c.cfg, "former_placeholder").items():
+        if text == holder or not (found := foreign(board, data, text)):
+            continue
+        c.add(f"no {text} on the silkscreen – {owner} no longer prints its order number there", False,
+              f"{text} at {pt(found[0][1])} on the {found[0][0]} silkscreen – {m.name} prints it as it is; take it "
+              f'off (mark = "remove", or a barcode = "qr" or "datamatrix" for traceability)', "no former placeholder",
+              "warn")
     if not holder:
         return
     gone = m.rules.get("placeholder_gone")    # the maker reports its order number gone: the letters may be printed

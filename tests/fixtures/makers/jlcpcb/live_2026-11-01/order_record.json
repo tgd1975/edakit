@@ -1,0 +1,62 @@
+{
+ "date": "2026-11-01",
+ "run": "20261101-000246",
+ "fab_sha256": "ff5b1567b9162ccd4b3b6a51ec6a115fd482cc39feba8625241a86f29f8763f1",
+ "state_sha256": "b85dd8d8a978fd3160d7efee4d7919456fe41bec9903f0b0d2a3c3d6407937f3",
+ "board": "main",
+ "maker": "jlcpcb",
+ "quantity": 5,
+ "pcba_quantity": 5,
+ "job_sha256": "836d888ba3c468f8fdf1393c573595555603a2556804e3a381b88107da9b2b62",
+ "quote_sha256": "885bd69e5193c6917d0a765d789d5078306faa2189060e631b9e21cfdf0ca701",
+ "regulatory": {
+  "verdict": "Order: OK",
+  "findings": [
+   {
+    "n": 1,
+    "grade": "note"
+   },
+   {
+    "n": 2,
+    "grade": "note"
+   },
+   {
+    "n": 3,
+    "grade": "note"
+   },
+   {
+    "n": 4,
+    "grade": "note"
+   },
+   {
+    "n": 5,
+    "grade": "note"
+   },
+   {
+    "n": 6,
+    "grade": "note"
+   },
+   {
+    "n": 7,
+    "grade": "note"
+   },
+   {
+    "n": 8,
+    "grade": "note"
+   }
+  ]
+ },
+ "quote": {
+  "currency": "USD",
+  "board": 33.06
+ },
+ "estimate": 36.61,
+ "cart": {
+  "name": "gerber_main_Y9",
+  "quantity": 5,
+  "price": 33.06,
+  "currency": "USD"
+ },
+ "order_number": null,
+ "actual": null
+}

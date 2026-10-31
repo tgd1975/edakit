@@ -1,28 +1,190 @@
 # Eurocircuits (Mechelen, Belgium) – the maker's profile for edakit's order form (handbook 8.4). Data, no code, no
 # defaults of the board: those are edakit's keys of [order] (handbook 10.2).
 #
-# recorded = false: only what the search of 2026-10-30 found (docs/concepts/done/ordering.md, European
-# manufacturers); the form's labels, words and limits, the pick-and-place format and the basket button are recorded
-# on the site by ordering step 0. Until then FILES.order names the fields as not checked, and the skill cart stops before the
-# basket.
+# Recorded by ordering step 0 on 2026-10-31, signed in, up to the basket and nothing ordered
+# (tests/fixtures/makers/eurocircuits/step0_2026-10-31.md): the configurator be.eurocircuits.com/shop/assembly/
+# configurator.aspx with the tabs PCB Visualizer, PCBA Visualizer and Summary. The data go up as one zip of Gerber or
+# ODB++ files (or .kicad_pcb, .brd); the BOM with manufacturer part numbers and the CPL in JLCPCB's columns were taken
+# as edakit writes them. The basket button is on Summary, after a required tick "Accept the Eurocircuits Terms of
+# Sales" – a consent in the owner's name the skill does not give. The placement opens again from the basket
+# (Assembly Visualizer, CPL Editor): M-2 can wait for the basket. Values behind "More Options" were not read: a value
+# edakit sets there is not checked (no words).
 
 name = "Eurocircuits"
-recorded = false
-start = "https://www.eurocircuits.com/pcb-assembly-proto/"
+recorded = "2026-10-31"
+start = "https://be.eurocircuits.com/shop/assembly/configurator.aspx"   # signed in on this host, not www
 seat = "BE"                            # inside the EU: no import; for "sale" the owner stays the manufacturer (15.1)
 currency = "EUR"
 files = ["gerber", "bom_mpn", "cpl"]   # gerber_<b>.zip, bom_<b>_mpn.csv (MPN required), cpl_<b>.csv
-classes = ["proto", "series"]          # PCB Proto (1–5 boards, 2 or 4 layers) or a larger run – words: step 0
+classes = ["proto", "series"]          # the services "PCB proto" and the pools (STANDARD pool …) – Eurocircuits picks
 dnp = "omit"                           # a part not to place is left out of BOM and CPL
-never = ["Order", "Buy", "Checkout", "Pay", "Place order", "Confirm order"]
-ignore = {}
+cart = "Add to basket"                 # Summary; "Proceed to Summary – to Review the Offer or Save to Basket" is a hint
+never = ["Order", "Buy", "Checkout", "Proceed to checkout", "Pay", "Place order", "Confirm order", "Launch inquiry"]
 excludes = []
+
+# Fields the page shows that edakit does not set, each with its reason. The skill leaves them as Eurocircuits sets
+# them; ORDER.form names any other one as a question the maker added.
+[ignore]
+"Select a Service" = "Eurocircuits chooses the service by the board (PCB proto, STANDARD pool) after the upload"
+"Unit" = "mm, Eurocircuits' default"
+"Top stencil" = "no stencil: the assembly brings its own"
+"Bottom stencil" = "no stencil: the assembly brings its own"
+"Bottom soldermask" = "the skill sets it to the top's colour; edakit has one mask colour"
+"Bottom legend" = "the skill sets it to the top's colour; edakit has one print colour"
+"Material Tg" = "Eurocircuits' standard (145-150 ºC); edakit's tg words are JLCPCB's"
+"Outer layer copper foil" = "the foil before plating (18 µm, end +/-35 µm); edakit's copper_oz is the finished copper"
+"Blind/Buried via runs" = "none on edakit's boards"
+"Outer layer trackwidth (OL-TW)" = "measured by Eurocircuits from the data (Technology)"
+"Outer layer isolation distance (OL-TT-TP-PP)" = "measured by Eurocircuits from the data (Technology)"
+"Outer layer annular ring (OAR)" = "measured by Eurocircuits from the data (Technology)"
+"Smallest final hole" = "measured by Eurocircuits from the data (Technology)"
+"Hole density" = "measured by Eurocircuits from the data (Technology)"
+"Component pad pitch" = "measured by Eurocircuits from the data (Technology)"
+"Technology class" = "derived by Eurocircuits"
+"Peelable mask" = "not used"
+"Carbon contacts" = "not used"
+"UL marking" = "not used"
+"Milling" = "not used"
+"Specific hole tolerances" = "Eurocircuits' standard"
+"Specific dimension tolerances" = "Eurocircuits' standard"
+"Depth routing" = "not used"
+"Chamfered holes" = "not used"
+"Copper up to board edge" = "not used"
+"Edge connector gold surface mm²" = "not used"
+"Edge connector bevelling" = "not used"
+"Top heatsink paste" = "not used"
+"Bottom heatsink paste" = "not used"
+"Package quantity" = "Eurocircuits' standard"
+"Wire bonding" = "not used"
+"High-Voltage board" = "not used"
+"Special assembly requirements" = "none"
+"Automotive required" = "not used"
+"Do not assemble all PCBs" = "every board is assembled"
+"Total lead time" = "Eurocircuits' proposal"
+"PCB Name" = "the file name of the upload"
+"Purchase reference" = "the owner's, at checkout"
+"Project reference" = "the owner's, at checkout"
+"Article reference" = "the owner's, at checkout"
+"SMS notification" = "the owner's, at checkout"
+"Require Pre-Production Approval" = "pre-checked by Eurocircuits; the owner's choice"
+"Accept the Eurocircuits Terms of Sales" = "a consent in the owner's name: the skill stops and asks"
 
 [bom]
 columns = ["Designator", "Quantity", "Manufacturer", "MPN", "Comment"]
-match = "mpn"                          # Eurocircuits matches the BOM by manufacturer part number (PARTS.fact/mpn)
+match = "mpn"                          # Eurocircuits identifies the BOM by manufacturer part number (PARTS.fact/mpn)
 
-# The form's limits: ordering step 0 – none known yet, and no order-number placeholder.
+[cpl]
+columns = ["Designator", "Mid X", "Mid Y", "Layer", "Rotation"]   # taken as JLCPCB's: R1 at 10 mm, 10 mm, 0°, Top
+unit = "mm"
+rotation = "as SYNC.cpl writes it; the Assembly Editor showed the 0805 at 0° along X, as JLCPCB's preview"
+
+# The form's limits: no order-number placeholder.
 [rules]
+thicknesses_mm = [0.2, 0.36, 0.5, 0.8, 1.0, 1.2, 1.55, 2.0, 2.4, 3.2]
+thicknesses_for = "FR-4 Improved"
 
-[fields]                               # labels and words: ordering step 0
+[fields.layers]
+section = "PCB"
+label = "Number of layers"
+
+[fields.size_mm]
+section = "PCB"
+label = "PCB size"
+
+[fields.quantity]
+section = "PCB"
+label = "PCB quantity"
+
+[fields.delivery]
+section = "PCB"
+label = "Delivery format"
+words = { single = "Single PCB", panel_by_customer = "Panel" }
+
+[fields.material]
+section = "PCB"
+label = "Base material"
+words = { "FR-4" = "FR-4 Improved" }
+
+[fields.thickness_mm]                  # "More Options" read in live run 5.8 (2026-11-01): no 1.6 mm – 1.55 is the standard
+section = "PCB"
+label = "Board thickness"
+unit = " mm"
+values = [0.2, 0.36, 0.5, 0.8, 1.0, 1.2, 1.55, 2.0, 2.4, 3.2]
+
+[fields.mask]
+section = "PCB"
+label = "Top soldermask"
+words = { green = "Green", black = "Black", white = "White" }
+more = true                            # "More Options" not read
+
+[fields.silkscreen]
+section = "PCB"
+label = "Top legend"
+words = { white = "White" }
+
+[fields.finish]
+section = "PCB"
+label = "Surface finish"
+words = { "LeadFree HASL" = "HAL Lead-free" }   # default "Any lead-free finish" (Eurocircuits picks)
+more = true                            # ENIG and others behind "More Options", not read
+
+[fields.electrical_test]
+section = "PCB"
+label = "Bare Board Testing"
+words = { flying_probe = "Yes" }
+
+# No order number at Eurocircuits: "Specific marking" stays "No"; a board with mark = "specify", a barcode or a serial
+# number is refused (FILES.order), since edakit cannot say what Eurocircuits would print.
+[fields.mark]
+section = "PCB"
+label = "Specific marking"
+words = { default = "No", remove = "No" }
+
+[fields.barcode]
+section = "PCB"
+label = "Specific marking"
+words = { none = "No" }
+
+[fields.serial_number]
+section = "PCB"
+label = "Specific marking"
+words = { false = "No" }
+
+# No such field on Eurocircuits' configurator (as read on 2026-10-31): the keys are left out of its job. The assembly
+# class, the sides and the tooling follow from the data Eurocircuits analyses; the tg and the copper are its standard
+# (in ignore above); shipping is chosen at checkout.
+[fields]
+tg = false
+copper_oz = false
+inner_copper_oz = false
+vias = false
+outline_tolerance = false
+gold_fingers = false
+castellated = false
+edge_plating = false
+quality = false
+confirm_production_file = false
+paper_between = false
+packaging = false
+remark = false
+pcba = false
+sides = false
+pcba_quantity = false
+tooling = false
+confirm_placement = false
+photo_confirmation = false
+bake = false
+depanel = false
+conformal_coating = false
+function_test = false
+pcba_packaging = false
+
+[fields.ship_to]
+section = "Shipping"
+label = "Ship to"
+checkout = true
+
+[fields.shipping]
+section = "Shipping"
+label = "Shipping"
+checkout = true

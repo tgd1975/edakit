@@ -1,44 +1,226 @@
 # PCBWay (Shenzhen, registered office in Hangzhou, China) – the maker's profile for edakit's order form (handbook
 # 8.4). Data, no code, no defaults of the board: those are edakit's keys of [order] (handbook 10.2).
 #
-# recorded = false: what the search of 2026-10-30 found on PCBWay's help pages (docs/concepts/done/ordering.md,
-# PCBWay) – the order form's labels and words, the BOM template, the pick-and-place format and the cart flow are
-# recorded on the site by ordering step 0. Until then FILES.order names the fields as not checked.
+# Recorded by ordering step 0 on 2026-10-31, signed in, up to the upload and nothing ordered
+# (tests/fixtures/makers/pcbway/step0_2026-10-31.md). The form (orderonline.aspx) takes no files: "Calculate", then
+# "Save to Cart" – after a dialog "Special Notes" whose "Agree" declares the files free of export-controlled, illegal
+# and military content, a declaration in the owner's name the skill does not give –, then the cart's upload
+# (OrderUploadNew): Gerber zip, BOM, centroid file, assembly drawings, each taken as edakit writes it. "Submit the File
+# Now" starts PCBWay's review by engineers (1–2 days); the assembly price shows online but without the components
+# until that review. PCBWay shows no placement preview: M-2 is the engineers' question after the review.
 #
-# What differs from JLCPCB (reported): PCBWay sources the parts itself by manufacturer part number (turnkey) – a BOM
-# with MPN (PARTS.fact/mpn), no parts catalogue edakit could ask beforehand; the assembly price comes with PCBWay's BOM
-# quotation, by hand, and engineers review the files before payment. The skill cart stops at "Save to Cart": the
-# owner submits the order for the review and pays.
+# What differs from JLCPCB: PCBWay sources the parts itself by manufacturer part number (turnkey) – a BOM with MPN
+# (PARTS.fact/mpn), no parts catalogue edakit could ask beforehand.
 
 name = "PCBWay"
-recorded = false
-start = "https://www.pcbway.com/orderonline.aspx"   # the PCB form; the assembly form (quotesmt.aspx) links to it
+recorded = "2026-10-31"
+start = "https://www.pcbway.com/orderonline.aspx"   # the PCB form with the assembly below it
 seat = "CN"                            # outside the EU: for purpose "sale" the owner imports the boards (15.2)
 currency = "USD"
-files = ["gerber", "bom_mpn", "cpl"]   # gerber_<b>.zip, bom_<b>_mpn.csv (MPN required), cpl_<b>.csv (mm, SMD parts)
-classes = ["turnkey", "partial_turnkey", "kitted"]   # PCBWay sources all parts, some of them, or none – words: step 0
+files = ["gerber", "bom_mpn", "cpl"]   # gerber_<b>.zip, bom_<b>_mpn.csv (MPN required), cpl_<b>.csv
+classes = ["turnkey", "partial_turnkey", "kitted"]   # "3 flexible options": Turnkey, Combo, Kitted or Consigned
 dnp = "omit"                           # a part not to place is left out of BOM and CPL
-cart = "Save to Cart"                  # "Calculate → Save to Cart → files → engineering review → payment" (reported)
-never = ["Order", "Buy", "Checkout", "Pay", "Pay Now", "Submit Order", "Place Order", "Confirm Order"]
-ignore = {}
+cart = "Save to Cart"
+upload = "after_cart"                  # Gerber, BOM and centroid go up in the cart's upload (OrderUploadNew)
+matching = "review"                    # no part matching on the page: PCBWay's engineers match the BOM in their review
+never = ["Order", "Buy", "Checkout", "Proceed to checkout", "Pay", "Pay Now", "Submit Order", "Place Order",
+         "Confirm Order", "Submit the File Now", "Agree"]
 excludes = []
 
+# Fields the page shows that edakit does not set, each with its reason.
+[ignore]
+"Different design in panel" = "one design per board"
+"Min track/spacing" = "PCBWay's default (6/6mil); edakit's routing keeps JLCPCB's tighter limits anyway"
+"Min hole size" = "PCBWay's default (0.3mm)"
+"UV printing Multi-color" = "not used"
+"Peelable soldermask" = "not used"
+"Hole copper thickness" = "PCBWay's standard (20um)"
+"UL marking" = "not used"
+"Date code" = "not used"
+"Other special request" = "edakit's remark goes here (remark)"
+"SMD-Stencil" = "the assembly brings its own"
+"Contains sensitive components/parts" = "No, PCBWay's default"
+"Do you accept alternatives/substitutes made in China?" = "No, PCBWay's default: the BOM's parts as listed"
+"Firmware loading" = "not used"
+"Number of Unique Parts" = "may be left blank (PCBWay)"
+"Number of SMD Parts" = "may be left blank (PCBWay)"
+"Number of BGA/QFP Parts" = "may be left blank (PCBWay)"
+"Number of Through-Hole Parts" = "may be left blank (PCBWay)"
+"Press-fit assembly" = "not used"
+"Box build assembly" = "not used"
+"Cable wire harness assembly" = "not used"
+"Flying Probe Testing" = "PCBWay's default (No)"
+"Number of X-ray test" = "not used"
+"Detailed information of assembly" = "blank"
+"Add PO No." = "the owner's purchase order, if any"
+"Special Notes" = "a declaration in the owner's name (Agree): the skill stops and asks"
+"Tick means you accept we might change \"HASL\" to \"ENIG\" at our discretion without extra charge." = "left unticked: the finish is the job's"
+
 [bom]
-columns = ["Designator", "Quantity", "Manufacturer", "MPN", "Comment"]   # PCBWay's BOM template: ordering step 0
+columns = ["Designator", "Quantity", "Manufacturer", "MPN", "Comment"]   # taken; PCBWay asks designators, quantity, package, part number
 match = "mpn"                          # PCBWay buys the parts by manufacturer part number (PARTS.fact/mpn)
 
 [cpl]
+columns = ["Designator", "Mid X", "Mid Y", "Layer", "Rotation"]   # taken; PCBWay's template is Altium's Pick Place in mil
 unit = "mm"
-rotation = "as SYNC.cpl writes it – PCBWay's sense: ordering step 0"
+rotation = "as SYNC.cpl writes it; PCBWay's engineers read the file in the review"
 
 [rules]
+thicknesses_mm = [0.2, 0.3, 0.4, 0.6, 0.8, 1.0, 1.2, 1.6, 2.0, 2.4, 2.6, 2.8, 3.0, 3.2]
+thicknesses_for = "FR-4"
 placeholder = "WayWayWay"              # with "Specify a location": PCBWay puts its product number here (help center)
+
+[fields.delivery]
+section = "PCB"
+label = "Board type"
+words = { single = "Single pieces", panel_by_customer = "Panel by Customer", panel_by_maker = "Panel by Supplier" }
+
+[fields.size_mm]
+section = "PCB"
+label = "Size (single)"
+
+[fields.quantity]
+section = "PCB"
+label = "Quantity (single)"
+
+[fields.layers]
+section = "PCB"
+label = "Layers"
+
+[fields.material]
+section = "PCB"
+label = "Material"
+words = { "FR-4" = "FR-4" }
+
+[fields.tg]
+section = "PCB"
+label = "FR4-TG"
+words = { "TG135" = "TG 130-140" }     # PCBWay's default TG 150-160; 2 layers go to S1000H TG150 for free
+more = true
+
+[fields.thickness_mm]
+section = "PCB"
+label = "Thickness"
+
+[fields.mask]
+section = "PCB"
+label = "Solder mask"
+words = { green = "Green", red = "Red", yellow = "Yellow", blue = "Blue", white = "White", black = "Black", purple = "Purple" }
+
+[fields.silkscreen]
+section = "PCB"
+label = "Silkscreen"
+words = { white = "White", black = "Black" }
+
+[fields.finish]
+section = "PCB"
+label = "Surface finish"
+words = { "HASL(with lead)" = "HASL with lead", "LeadFree HASL" = "HASL lead free", "ENIG" = "Immersion gold(ENIG)" }
+more = true                            # OSP, hard gold, silver, tin, ENEPIG … – not edakit's words
+
+[fields.copper_oz]
+section = "PCB"
+label = "Finished copper"
+words = { 1 = "1 oz Cu", 2 = "2 oz Cu" }
+more = true                            # bare board, 3 … 13 oz
+
+[fields.vias]
+section = "PCB"
+label = "Via process"
+words = { tented = "Tenting vias", plugged = "Plugged vias with solder mask", untented = "Vias not covered" }
+
+[fields.gold_fingers]
+section = "PCB"
+label = "Edge connector"
+words = { false = "No", true = "Yes" }
+
+[fields.packaging]
+section = "PCB"
+label = "Package box"
+words = { standard = "With PCBWay logo" }
+
+[fields.serial_number]
+section = "PCB"
+label = "Add serial numbers"
+words = { false = "None" }
+more = true
+
+[fields.remark]
+section = "PCB"
+label = "Other special request"
 
 [fields.mark]
 section = "PCB"
 label = "Remove product No."
 
 [fields.mark.words]
-default = "No"                         # PCBWay places its product number itself, under an IC where it can
-remove = "Yes"                         # for a fee (help center: 1.5 $)
+default = "No"                         # PCBWay places its product number itself
+remove = "Yes (extra+$ 1.5)"
 specify = "Specify a location"         # at the placeholder WayWayWay, free
+
+[fields.pcba]
+section = "PCBA"
+label = "3 flexible options"
+words = { turnkey = "Turnkey", partial_turnkey = "Combo", kitted = "Kitted or Consigned" }
+
+[fields.sides]
+section = "PCBA"
+label = "Assembly side(s)"
+words = { top = "Top side", bottom = "Bottom side", both = "Both sides" }
+
+[fields.pcba_quantity]
+section = "PCBA"
+label = "Quantity"
+
+[fields.function_test]
+section = "PCBA"
+label = "Function test"
+words = { false = "No", true = "Yes" }
+
+[fields.depanel]
+section = "PCBA"
+label = "Depanel the boards to delivery"
+words = { false = "No", true = "Yes" }
+
+[fields.conformal_coating]
+section = "PCBA"
+label = "Conformal coating"
+words = { false = "No", true = "Yes" }
+
+[fields.castellated]
+section = "PCB"
+label = "Half-cut/Castellated holes"   # a checkbox under Customized Services and Advanced Options
+words = { false = "No", true = "Yes" }
+
+[fields.edge_plating]
+section = "PCB"
+label = "Edge plating"                 # a checkbox under Customized Services and Advanced Options
+words = { false = "No", true = "Yes" }
+
+[fields.paper_between]
+section = "PCB"
+label = "Paper between PCBs"           # a checkbox under Customized Services and Advanced Options
+words = { false = "No", true = "Yes" }
+
+[fields.ship_to]                       # the country of the shipping estimate; the address is the owner's at checkout
+section = "Shipping"
+label = "Ship to"
+checkout = true
+
+[fields.shipping]
+section = "Shipping"
+label = "Shipping"
+checkout = true
+
+# No such field on PCBWay's form: the keys are left out of its job.
+[fields]
+outline_tolerance = false
+barcode = false
+electrical_test = false
+confirm_placement = false
+photo_confirmation = false
+bake = false
+tooling = false
+quality = false
+confirm_production_file = false
+pcba_packaging = false

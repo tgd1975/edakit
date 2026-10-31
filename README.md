@@ -202,8 +202,8 @@ Where it stands:
   claim to correctness, and nothing in it is legally guaranteed.
 - Ordering ([concept](docs/concepts/done/ordering.md), [handbook 8.4](handbook/08-release-gate.md)): edakit and the
   skill cart put a released board into the maker's cart and stop there – nothing orders or pays. Built offline and
-  tested on recorded data; the makers' profiles (JLCPCB, PCBWay, Eurocircuits, AISLER) are provisional until their
-  forms are read on the sites, and the skill, the ODB++ export and AISLER have not run live yet.
+  tested on recorded data; the makers' profiles (JLCPCB, PCBWay, Eurocircuits, AISLER) are recorded from their forms,
+  read in the owner's accounts up to the cart; the skill and EasyEDA's ODB++ export have not run live yet.
 - Text, but built offline only ([concept](docs/concepts/done/design-as-text.md),
   [plan](docs/concepts/new/implementation-plan.md), steps 2.1 to 2.3 and 3.6): until their live run in EasyEDA these
   may still exist only there –

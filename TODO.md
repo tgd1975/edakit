@@ -27,9 +27,8 @@ run against a maker's page or EasyEDA yet.
       refused; the bell needs `mark = "remove"` or a barcode before its next order), the skill cart stopping at every
       consent in the owner's name, and what the live runs found fixed in `edakit cart` (numbers, uploads a page does
       not show or takes after the cart, matching in the maker's review, checkout fields, a cart line named by size).
-      Evidence in `tests/fixtures/makers/` (LIVE.md); full suite green. Open with it: whether JLCPCB's required customs
-      "Product Description" becomes a key of `[order]`; B6 (Economic on a round board with two customer tooling holes)
-      not checked.
+      Evidence in `tests/fixtures/makers/` (LIVE.md); full suite green. B6 (Economic on a round board with two customer
+      tooling holes) not checked.
 - [x] **PCBWay:** the files go up after "Save to Cart" (Gerber, BOM, centroid in Altium's mil format, assembly
       drawings; "Submit the File Now" starts the review); the assembly price shows online but without components until
       the review; one `bom_<b>_mpn.csv` serves PCBWay and Eurocircuits – both took it.
@@ -42,6 +41,10 @@ run against a maker's page or EasyEDA yet.
       clockwise). No component layers: KiCad as the converter for AISLER, or no AISLER. Seen on 2026-10-31: AISLER
       takes kicad-cli's ODB++ of led-bar with every part, offers edakit's properties as BOM columns ("edakit", "lcsc",
       MPN), leaves the tooling holes out; D1 (SS34) needed a part by hand, the LEDs were matched by value only.
+- [ ] **JLCPCB's customs "Product Description" as a key of `[order]`** (the owner's decision of 2026-11-01): a key –
+      the category with its HS code, outside the fab hash – that the skill cart sets and FILES.order names when it is
+      missing at a maker that asks for it (JLCPCB's Quote & Order, a cascader of category and HS code; the list in
+      `tests/fixtures/makers/jlcpcb/step0_2026-10-31.md`). Built with the skill add-feature.
 - [x] **5.7, 5.12:** the skill cart live at JLCPCB and PCBWay (2026-11-01, the 555 blinker, a copy of the example):
       every check passed, into the cart, order record written, nothing ordered.
 - [ ] **5.8:** Eurocircuits live – stopped, as it must, at "Board thickness": 1.6 mm is not among Eurocircuits'

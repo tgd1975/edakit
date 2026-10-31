@@ -2,25 +2,62 @@
 # board is edakit's keys of [order] (handbook 10.2), the same for every maker; this file gives each key the words of
 # JLCPCB's form, and holds the form's limits, the files, the class of the assembly, the cart button.
 #
-# recorded = false: the labels and words below are those of edakit's reference orders (order.md of 2026-10-24 and
-# 2026-10-25) and of JLCPCB's capabilities page, not yet read off the form field by field – ordering step 0 does that
-# and sets recorded to its date. Until then a label or word may differ from the page; the skill cart then stops on the
-# field, and ORDER.form names it.
+# Recorded by ordering step 0 on 2026-10-31, signed in, up to the cart and nothing ordered
+# (tests/fixtures/makers/jlcpcb/step0_2026-10-31.md, quote_page_2026-10-31.txt). The quote page (cart.jlcpcb.com/
+# quote) takes the Gerber zip; with "PCB Assembly" on, its button is "NEXT" to the steps PCB, Bill of Materials (BOM and
+# CPL as edakit writes them), Component Placements (the preview) and Quote & Order, whose "SAVE TO CART" puts the board
+# into the cart. The placement opens again from the cart (Product Details, Part Placement): M-2 can wait for the cart.
+# Three things the skill watches: the finish preselected is "HASL(with lead)" and the PCBA type fell back to Standard
+# after a fresh upload – every field is set and read back; the assembly terms are pre-checked ("I agree to the Terms
+# and Conditions of JLCPCB assembly Service") – a consent the owner gives, not the skill.
+#
+# The order number is gone: "Mark on PCB" offers "Remove Mark" (preselected) and "2D barcode (Serial Number)" only, as
+# JLCPCB's help article of 2026-05-22 reported. edakit's mark = "default" and "remove" are both "Remove Mark";
+# "specify" is not offered; JLCJLCJLCJLC on a silkscreen is printed as text (former_placeholder).
 
 name = "JLCPCB"
-recorded = false
+recorded = "2026-10-31"
 start = "https://cart.jlcpcb.com/quote"
 seat = "CN"                       # outside the EU: for purpose "sale" the owner imports the boards (handbook 15.2)
 currency = "USD"
 catalogue = "jlcpcb"              # PARTS.stock and edakit stock ask JLCPCB's assembly catalogue
 fees = "jlcpcb"                   # edakit/fees/jlcpcb.json, the fee table of edakit cost
 files = ["gerber", "bom", "cpl"]  # gerber_<b>.zip, bom_<b>.csv, cpl_<b>.csv
+unshown = ["bom", "cpl"]          # the pages name the Gerber upload only, as the project (gerber_main); BOM and CPL nowhere
 classes = ["economic", "standard"]
 dnp = "omit"                      # a part not to place is left out of BOM and CPL (SYNC.bom, SYNC.cpl)
 cart = "Save to Cart"
 never = ["Order", "Buy", "Checkout", "Pay", "Place Order", "Submit Order", "Secure Checkout"]
-ignore = {}                       # fields of the page edakit does not set, each with its reason – ordering step 0
-excludes = []                     # combinations of values the form refuses, each a table of keys – ordering step 0
+# "Number Only" – a serial number without a barcode – is a third choice of the dialog that edakit's keys do not name
+excludes = [{ barcode = "none", serial_number = true }]
+
+# Fields the page shows that edakit does not set, each with its reason. The skill leaves them as JLCPCB sets them.
+[ignore]
+"Product Type" = "Industrial/Consumer electronics, JLCPCB's default"
+"Deburring/Edge rounding" = "JLCPCB's default (Yes, $0.10)"
+"Different Design" = "one design per board"
+"Via Plating Method" = "Not Specified, JLCPCB's default"
+"Min via hole size/diameter" = "JLCPCB's default (0.3mm/(0.4/0.45mm)); edakit's routing keeps to it"
+"Blind Slots" = "not used"
+"UL Marking" = "not used"
+"Humidity Indicator Card" = "not used"
+"4-Wire Kelvin Test" = "not used"
+"Silkscreen Technology" = "Ink-jet Printing Silkscreen, JLCPCB's default"
+"Inspection Report" = "not used"
+"PCB Build Time" = "the owner's choice (the cheapest is preselected)"
+"Edge Rails/Fiducials" = "Standard PCBA's label of the tooling holes: the skill sets it as tooling"
+"Stencil Storage" = "not used"
+"Fixture Storage" = "not used"
+"Parts Selection" = "By Customer (Self-Service): edakit's BOM names the parts"
+"Board Cleaning" = "not used"
+"Special stencil" = "not used"
+"Solder Paste" = "JLCPCB's default (High temp.)"
+"Flying Probe Test" = "the assembled board's test: not used"
+"Nitrogen reflow soldering" = "JLCPCB's default"
+"Assembly remark" = "not used"
+"I agree to the Terms and Conditions of JLCPCB assembly Service" = "pre-checked by JLCPCB; a consent the owner gives"
+"Product Description" = "the customs category with its HS code, required on Quote & Order: the owner's, asked at the order"
+"Remark" = "Quote & Order's remark: not used"
 
 [bom]
 columns = ["Comment", "Designator", "Footprint", "LCSC Part #"]
@@ -29,19 +66,13 @@ match = "lcsc"                    # JLCPCB matches the BOM by LCSC number
 [cpl]
 columns = ["Designator", "Mid X", "Mid Y", "Layer", "Rotation"]
 unit = "mm"
-rotation = "as SYNC.cpl writes it: EasyEDA's rotation of the part, compared with the PCB"
+rotation = "as SYNC.cpl writes it: EasyEDA's rotation of the part, compared with the PCB; the preview showed an 0805 at 0° along X"
 
 [rules]                           # what FILES.order holds the board to
-thicknesses_mm = [0.4, 0.6, 0.8, 1.0, 1.2, 1.6, 2.0]   # "PCB Thickness" (capabilities page, read 2026-10-28)
+thicknesses_mm = [0.4, 0.6, 0.8, 1.0, 1.2, 1.6, 2.0]   # "PCB Thickness" (0.6 greyed out for some boards)
 thicknesses_for = "FR-4, 2 layers"
-remark_max = 200                  # characters of the remark field, ASCII
-placeholder = "JLCJLCJLCJLC"      # JLCPCB prints the order number here with "Order Number (Specify Position)"
-placeholder_min_mm = 0.8          # least height of the placeholder JLCPCB recognises (#40)
-# The owner's decision of 2026-10-30: FILES.order warns about the placeholder until ordering step 0 has seen the form – then
-# this line goes, or the placeholder (and with it mark specify) leaves the profile.
-placeholder_gone = """\
-  JLCPCB's help article (last updated 2026-05-22) reports the order number gone since May 2026 and asks not to add \
-  JLCJLCJLCJLC – it may be printed as text"""
+remark_max = 200                  # "PCB Remark", 0/200, ASCII
+former_placeholder = "JLCJLCJLCJLC"   # replaced by the order number until May 2026: now printed as text
 silkscreen_on = { white = "black", other = "white" }   # the print colour JLCPCB puts on a mask colour
 tooling_min = { economic = 2 }    # fewer and JLCPCB drills its own ("Added by JLCPCB")
 class_of_sides = { one = "economic", two = "standard" }   # without [release] assembly.pcba
@@ -99,17 +130,19 @@ words = { white = "White", black = "Black" }
 section = "PCB"
 label = "Surface Finish"
 words = { "HASL(with lead)" = "HASL(with lead)", "LeadFree HASL" = "LeadFree HASL", "ENIG" = "ENIG" }
+more = true                       # OSP (new) is offered too – not one of edakit's finishes
 
 [fields.tg]
 section = "PCB"
 label = "Material Type"
-words = { "TG135" = "FR4-Standard TG 135-140" }
+words = { "TG135" = "FR4 TG135" }
+more = true                       # KB6164 - TG135, KB6165F - TG155, Nan Ya NP-140F
 
 [fields.copper_oz]
 section = "PCB"
 label = "Outer Copper Weight"
 unit = " oz"
-values = [1, 2]
+values = [1, 2, 2.5, 3.5, 4.5]
 
 [fields.inner_copper_oz]
 section = "PCB"
@@ -142,33 +175,27 @@ section = "PCB"
 label = "Edge Plating"
 words = { false = "No", true = "Yes" }
 
-# Reported, not yet seen on the form: JLCPCB's help article "How to remove order number from your PCB" (last updated
-# 2026-05-22; read in search summaries on 2026-10-30) says the order number is not available since May 2026 and asks
-# not to add JLCJLCJLCJLC – a 2D barcode (QR or Data Matrix) or a serial number instead, printed where there is room.
-# Ordering step 0 checks the form; until then these words stay as the reference orders had them, and FILES.order warns about
-# the placeholder (rules.placeholder_gone).
+# "Mark on PCB": "Remove Mark" without a barcode; with one, "2D barcode (Serial Number)" and its dialog "Create 2D
+# barcode (Serial Number)" – Printing (2D barcode Only | Number Only | 2D barcode & Number), Code Type (QR Code | Data
+# Matrix Code: the skill sets it by barcode, the page does not show it back), Serial Number Setting, 2D Barcode Size
+# (5*5mm | 8*8mm | 10*10mm, 8*8 preselected), 2D Barcode Position (No Requirement | Specify Position), Submit.
 [fields.mark]
 section = "PCB"
 label = "Mark on PCB"
+words = { default = "Remove Mark", remove = "Remove Mark" }
+when = { barcode = ["none"] }
 
-[fields.mark.words]
-default = "Order Number (JLCPCB places it)"
-specify = "Order Number (Specify Position)"
-remove = "Remove Mark"
-
-[fields.barcode]                   # labels and words of the help article of 2026-05-22 – ordering step 0
+[fields.barcode]
 section = "PCB"
-label = "2D Barcode"
-
-[fields.barcode.words]
-none = "No"
-qr = "QR Code"
-datamatrix = "Data Matrix"
+label = "Mark on PCB"
+words = { qr = "2D barcode (Serial Number)", datamatrix = "2D barcode (Serial Number)" }
+when = { barcode = ["qr", "datamatrix"] }
 
 [fields.serial_number]
 section = "PCB"
-label = "Serial Number"
-words = { false = "No", true = "Yes" }
+label = "Printing"
+words = { false = "2D barcode Only", true = "2D barcode & Number" }
+when = { barcode = ["qr", "datamatrix"] }
 
 [fields.electrical_test]
 section = "PCB"
@@ -197,7 +224,7 @@ words = { standard = "With JLCPCB logo" }
 
 [fields.remark]
 section = "PCB"
-label = "Remark"
+label = "PCB Remark"
 
 [fields.pcba]
 section = "PCBA"
@@ -235,27 +262,30 @@ words = { false = "No", true = "Yes" }
 
 [fields.depanel]
 section = "PCBA"
-label = "Depanel boards before delivery"
+label = "Depanel boards & edge rail before delivery"
 words = { false = "No", true = "Yes" }
 
 [fields.conformal_coating]
 section = "PCBA"
-label = "Conformal Coating"
-words = { false = "No", true = "Yes" }
+label = "Conformal Coating (cleaning included)"
+words = { false = "No", true = "Single Side（50-200um）" }
+more = true                       # Double Sides, Customized Thickness
 
 [fields.function_test]
 section = "PCBA"
-label = "Function Test"
+label = "Function test"
 words = { false = "No", true = "Yes" }
 
 [fields.pcba_packaging]
 section = "PCBA"
 label = "Packaging"
-words = { antistatic_bag = "Antistatic bag" }
+words = { antistatic_bag = "Antistatic bubble film" }
 
-[fields.ship_to]
+[fields.ship_to]                  # the account's address at checkout, which the skill never opens: in order.md, not read back
 section = "Shipping"
 label = "Ship to"
+checkout = true
+
 
 [fields.shipping]
 section = "Shipping"

@@ -125,7 +125,7 @@ def test_prepare_writes_the_job_of_the_current_release(project, monkeypatch, cap
         RUN, "main", "jlcpcb", 5, "DE", "DHL Express")
     assert [f["name"] for f in j["files"]] == ["gerber_main.zip", "bom_main.csv", "cpl_main.csv"]
     assert all(len(f["sha256"]) == 64 and f["size"] > 0 for f in j["files"])
-    assert {f["label"]: f["value"] for f in j["fields"]}["Mark on PCB"] == "Order Number (Specify Position)"
+    assert {f["label"]: f["value"] for f in j["fields"]}["Mark on PCB"] == "Remove Mark"   # no order number since May 2026
     assert [(p["part"], p["designators"]) for p in j["bom"]] == [("C45783", ["C2"]), ("C8678", ["D1"])]
     assert j["dnp"] == [] and j["purpose"]["use"] == "private" and j["estimate"]["currency"] == "USD"
     assert "C8678" in j["compliance"]
@@ -165,13 +165,13 @@ def test_prepare_needs_a_current_release_and_the_shipping(project, monkeypatch, 
 
 
 def test_prepare_stops_for_a_second_maker_with_findings(project, monkeypatch, capsys):
-    """The placeholder warns for Eurocircuits as the second maker – the release stands for JLCPCB, the order at
-    Eurocircuits stops on it."""
-    released(project, fr.ordered, cart='[cart]\nmakers = ["jlcpcb", "eurocircuits"]\nship_to = "DE"\n'
+    """A QR code warns for Eurocircuits as the second maker (it prints no marking of its own) – the release stands for
+    JLCPCB, the order at Eurocircuits stops on it."""
+    released(project, lambda ex, p: fr.ordered(ex, p, {"barcode": "qr"}), cart='[cart]\nmakers = ["jlcpcb", "eurocircuits"]\nship_to = "DE"\n'
                                        'shipping = { jlcpcb = "DHL Express", eurocircuits = "UPS" }')
     assert cart(project, monkeypatch, "prepare", "--maker", "eurocircuits") == 1
     err = capsys.readouterr().err
-    assert "has findings for Eurocircuits, which it did not plan the board for" in err and "JLCJLCJLCJLC" in err
+    assert "has findings for Eurocircuits, which it did not plan the board for" in err and "Specific marking" in err
     assert cart(project, monkeypatch, "prepare") == 0
 
 
@@ -190,8 +190,8 @@ def test_a_quote_as_the_job_passes_and_waits_for_the_review(prepared, monkeypatc
 
 
 @pytest.mark.parametrize("change, page_change, expected", [
-    (lambda q: next(f for f in q["fields"] if f["label"] == "Mark on PCB").update(value="Remove Mark"), None,
-     ("ORDER.form", "fail", "Mark on PCB: the page 'Remove Mark', the job 'Order Number (Specify Position)'")),
+    (lambda q: next(f for f in q["fields"] if f["label"] == "Mark on PCB").update(value="2D barcode (Serial Number)"),
+     None, ("ORDER.form", "fail", "Mark on PCB: the page '2D barcode (Serial Number)', the job 'Remove Mark'")),
     (lambda q: q["fields"].append({"label": "Stencil", "value": "No"}), None,
      ("ORDER.form", "fail", "Stencil: a field neither in the job nor in the profile's ignore – the maker added a question")),
     (lambda q: q["fields"].pop(0), None, ("ORDER.form", "fail", "Base Material: not read back")),
@@ -386,3 +386,32 @@ def test_the_record_gets_the_order_number_and_the_totals(prepared, monkeypatch):
     assert cart(prepared, monkeypatch, "actual") == 0
     r = json.loads(next((prepared.root / "hardware" / "orders").glob("*.json")).read_text())
     assert r["order_number"] == "Y8-1234567A" and r["actual"]["quote"] == subtotal and r["actual"]["currency"] == "USD"
+
+
+def test_what_the_live_runs_found_in_the_comparison():
+    """Live runs 5.7 and 5.12 (2026-11-01): JLCPCB shows "60 x 28 mm" for edakit's "60.00 x 28.00 mm" and names only
+    the Gerber upload, as the project gerber_main; PCBWay takes the files in the cart and shows them there."""
+    from edakit import cart as c
+    assert c.norm("60.00 x 28.00 mm") == c.norm("60 x 28 mm") and c.norm("1.0") == c.norm("1") != c.norm("10")
+    files = [{"name": n, "size": 1000} for n in ("gerber_main.zip", "bom_main.csv", "cpl_main.csv")]
+    jlc = {"files": files, "maker": {"unshown": ["bom", "cpl"]}}
+    assert c.uploads_shown(jlc, [{"name": "gerber_main"}]) == []
+    assert c.uploads_shown({**jlc, "maker": {}}, [{"name": "gerber_main"}]) == [
+        "bom_main.csv: not among the uploads the page shows", "cpl_main.csv: not among the uploads the page shows"]
+    way = {"files": files, "maker": {"upload": "after_cart"}}
+    assert c.uploads_shown(way, [{"name": n, "size": "1 KB"} for n in ("gerber_main.zip", "bom_main.csv",
+                                                                         "cpl_main.csv")]) == []
+    assert c.uploads_shown(way, [{"name": "gerber_old.zip"}]) == [
+        "gerber_main.zip: not among the uploads the page shows", "bom_main.csv: not among the uploads the page shows",
+        "cpl_main.csv: not among the uploads the page shows", "gerber_old.zip: uploaded, but no file of the job"]
+
+
+def test_a_cart_line_named_by_its_size():
+    """PCBWay names a cart line "2 Layers Size 60x28mm 1.6mm" – the job's size names the board (live run 5.12)."""
+    from edakit import cart as c
+    job = {"board": "main", "quantity": 5, "files": [{"name": "gerber_main.zip"}],
+           "fields": [{"key": "size_mm", "value": "60.00 x 28.00 mm"}]}
+    quote = {"prices": [{"amount": 6.5, "kind": "pcb"}, {"amount": 29.0, "kind": "fee"}]}
+    assert c.check_cart(job, quote, {"name": "2 Layers Size 60x28mm 1.6mm", "quantity": 5, "price": 35.5})[0] == []
+    assert c.check_cart(job, quote, {"name": "2 Layers Size 50x28mm 1.6mm", "quantity": 5, "price": 35.5})[0] == [
+        "the cart line '2 Layers Size 50x28mm 1.6mm' names neither the board nor a file of the job"]

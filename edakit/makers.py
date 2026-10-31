@@ -7,15 +7,22 @@ maker takes and refuses:
 
     name, recorded     the maker's name; the date ordering step 0 recorded the form, false while it is provisional
     start, cart, never the page the skill cart opens, the one button it may press, buttons it must not touch
-    files              what is uploaded: gerber, bom, bom_mpn, cpl, odb
+    files              what is uploaded: gerber, bom, bom_mpn, cpl, odb; unshown: the uploads the maker's pages name
+                       nowhere (ORDER.files holds them by their hash only); upload: "after_cart" where the
+                       files go up in the cart (PCBWay) – their names are read back with the cart line;
+                       matching: "review" where the maker matches the BOM only in its review after the cart (PCBWay)
     bom, cpl           the columns, and the key the maker matches parts by (bom.match: lcsc or mpn)
-    fields             per key: section, label, words (edakit's value -> the form's word), unit, values; false: the
-                       maker has no such field, and the key is left out of its job
+    fields             per key: section, label, words (edakit's value -> the form's word), unit, values, more (the
+                       form offers more than the profile lists: another value is not checked), when ({key = [values]}:
+                       the form shows the field only while those keys have one of those values – a dialog behind an
+                       option), checkout (the form asks it at checkout only: in order.md, not read back before the
+                       cart); false: the maker has no such field, and the key is left out of its job
     excludes, ignore   combinations the form refuses; fields of the page edakit does not set, each with its reason
     classes            the assembly classes – the values of [release] assembly.pcba
     rules              the form's limits FILES.order checks: thicknesses_mm (and what they are for), remark_max, placeholder,
                        placeholder_min_mm, placeholder_gone (the maker reports its order number gone: FILES.order warns about
-                       the placeholder), silkscreen_on, tooling_min (per class), class_of_sides
+                       the placeholder), former_placeholder (the maker's placeholder before its order number went: every
+                       maker prints it as text), silkscreen_on, tooling_min (per class), class_of_sides
     catalogue          whose parts catalogue PARTS.stock and edakit stock ask ("jlcpcb"); none: the maker's matching at
                        the order (ORDER.parts)
     dnp                how a part not to place is marked: "omit" (left out of BOM and CPL); otherwise the job lists it
@@ -39,9 +46,11 @@ FILES = ("gerber", "bom", "bom_mpn", "cpl", "odb")   # what a maker takes: profi
 UPLOAD = {"gerber": "gerber_{b}.zip", "bom": "bom_{b}.csv", "bom_mpn": "bom_{b}_mpn.csv", "cpl": "cpl_{b}.csv",
           "odb": "odb_{b}.zip"}
 PROFILE_KEYS = ("name", "recorded", "start", "seat", "currency", "catalogue", "fees", "files", "classes", "dnp",
-                "cart", "never", "ignore", "excludes", "bom", "cpl", "rules", "fields", "about", "sources")
-FIELD_KEYS = ("section", "label", "words", "unit", "values")
+                "cart", "never", "ignore", "excludes", "bom", "cpl", "rules", "fields", "about", "sources", "unshown",
+                "upload", "matching")
+FIELD_KEYS = ("section", "label", "words", "unit", "values", "more", "when", "checkout")
 RULE_KEYS = ("thicknesses_mm", "thicknesses_for", "remark_max", "placeholder", "placeholder_min_mm", "placeholder_gone",
+             "former_placeholder",
              "silkscreen_on", "tooling_min", "class_of_sides")
 SECTIONS = ("PCB", "PCBA", "Shipping")
 CART_KEYS = ("maker", "makers", "ship_to", "shipping", "tolerance", "profiles")
@@ -117,13 +126,16 @@ class Maker:
         return None
 
     def offers(self, key, value):
-        """True, False, or None (the profile does not say)."""
+        """True, False, or None (the profile does not say – also a value missing from a field with more = true, whose
+        list ordering step 0 read only in part: the form has more behind a "More Options")."""
         values = self.offered(key)
         if values is None:
             return None
         if isinstance(value, (int, float)) and not isinstance(value, bool):
-            return any(not isinstance(v, bool) and isinstance(v, (int, float)) and abs(v - value) < 1e-9 for v in values)
-        return value in values
+            found = any(not isinstance(v, bool) and isinstance(v, (int, float)) and abs(v - value) < 1e-9 for v in values)
+        else:
+            found = value in values
+        return True if found else None if (self.field(key) or {}).get("more") else False
 
     def label(self, key):
         f = self.field(key) or {}
@@ -176,7 +188,14 @@ def _token(value):
 
 
 def _value(token):
-    return {"true": True, "false": False}.get(token, token)
+    """A key of words as edakit's value: true, false, a number ("1" in copper_oz's words), else the text."""
+    if token in ("true", "false"):
+        return token == "true"
+    try:
+        n = float(token)
+    except ValueError:
+        return token
+    return int(n) if n.is_integer() else n
 
 
 def profile_path(key, profiles=None, root=None):
@@ -196,14 +215,18 @@ def shipped():
 def problems(key, data):
     """What is wrong with a profile's form: unknown keys, wrong types."""
     out = [f"maker {key}: unknown key '{k}' (known: {', '.join(PROFILE_KEYS)})" for k in data if k not in PROFILE_KEYS]
+    if data.get("matching", "page") not in ("page", "review"):
+        out.append(f"maker {key}: matching must be \"page\" or \"review\"")
+    if data.get("upload", "before_cart") not in ("before_cart", "after_cart"):
+        out.append(f"maker {key}: upload must be \"before_cart\" or \"after_cart\"")
     for k in ("name", "start", "seat", "currency", "catalogue", "fees", "dnp", "cart"):
         if k in data and not isinstance(data[k], str):
             out.append(f"maker {key}: {k} must be a string")
-    for k in ("files", "classes", "never"):
+    for k in ("files", "classes", "never", "unshown"):
         if k in data and not (isinstance(data[k], list) and all(isinstance(v, str) for v in data[k])):
             out.append(f"maker {key}: {k} must be a list of strings")
-    out += [f"maker {key}: files: unknown file '{f}' (known: {', '.join(FILES)})" for f in data.get("files", [])
-            if f not in FILES]
+    out += [f"maker {key}: {k}: unknown file '{f}' (known: {', '.join(FILES)})" for k in ("files", "unshown")
+            for f in data.get(k, []) if f not in FILES]
     if "recorded" in data and data["recorded"] is not False and not isinstance(data["recorded"], str):
         out.append(f"maker {key}: recorded must be the date ordering step 0 recorded the form, or false")
     out += [f"maker {key}: rules: unknown key '{k}' (known: {', '.join(RULE_KEYS)})" for k in data.get("rules") or {}
@@ -340,9 +363,10 @@ def pcba(cfg, key=None):
     return cls, f"the first assembly class of {m.name}"
 
 
-def placeholders(cfg=None):
+def placeholders(cfg=None, rule="placeholder"):
     """{placeholder text: maker name} of every maker profile edakit ships and the project names – the texts a maker
-    replaces by its order number, and every other maker prints as they are (FILES.order)."""
+    replaces by its order number, and every other maker prints as they are (FILES.order). rule="former_placeholder":
+    the texts a maker replaced before its order number went, which every maker prints as they are now."""
     keys = set(shipped()) | (set(listed(cfg)) if cfg is not None else set())
     out = {}
     for key in sorted(keys):
@@ -350,8 +374,8 @@ def placeholders(cfg=None):
             m = get(cfg, key) if cfg is not None and key in listed(cfg) else load(key)
         except MakerError:
             continue
-        if m.rules.get("placeholder"):
-            out.setdefault(m.rules["placeholder"], m.name)
+        if m.rules.get(rule):
+            out.setdefault(m.rules[rule], m.name)
     return out
 
 

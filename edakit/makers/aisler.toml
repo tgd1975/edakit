@@ -1,23 +1,67 @@
 # AISLER (Netherlands, with a site in Germany) – the maker's profile for edakit's order form (handbook 8.4). Data,
 # no code, no defaults of the board: those are edakit's keys of [order] (handbook 10.2).
 #
-# recorded = false: only what the search of 2026-10-30 found (docs/concepts/done/ordering.md, European
-# manufacturers): AISLER assembles from ODB++ or native design files, not from Gerber. The upload page, the form's
-# labels and words, how a part not to place is marked (ordering step 0b) and the cart button are recorded by
-# ordering step 0. Until then FILES.order names the fields as not checked, and the skill cart stops before the cart.
+# Recorded by ordering step 0 on 2026-10-31, signed in, nothing ordered (tests/fixtures/makers/aisler/
+# step0_2026-10-31.md). AISLER assembles only from ODB++ or the native board file: a Gerber zip gives a bare board,
+# and there is no BOM or CPL upload. kicad-cli's ODB++ of led-bar was taken with every part; AISLER assigned parts by
+# the component properties (it offers "Auto detect MPN", "edakit", "lcsc", "package" and "value" as the column to
+# match by), left the tooling holes out (.no_pop), matched the LEDs by value only and left one diode unassigned – the
+# skill reads the BOM tab back (ORDER.parts). EasyEDA's ODB++ is ordering step 0b. There is no cart: the project is
+# saved as it is, and the skill stops before "Continue to Checkout"; a price shows only when every part is assigned.
 
 name = "AISLER"
-recorded = false
-start = "https://aisler.net/en/products/assembly"
+recorded = "2026-10-31"
+start = "https://aisler.net/en/products/assembly"   # "Start Project" opens a new project with its upload
 seat = "NL"                            # inside the EU: no import; for "sale" the owner stays the manufacturer (15.1)
 currency = "EUR"
 files = ["odb"]                        # odb_<b>.zip: board, parts and placement in one file (SYNC.odb)
-classes = ["assembly"]                 # "Amazing Assembly" – words: step 0
-never = ["Order", "Buy", "Checkout", "Pay", "Place order", "Confirm order"]
-ignore = {}
+classes = ["assembly"]                 # the service "Amazing Assembly" (also: Beautiful Boards, Simple Supply, Scalable Series)
+never = ["Order", "Buy", "Checkout", "Continue to Checkout", "Pay", "Place order", "Confirm order"]
 excludes = []
 
-# The form's limits: ordering step 0 – none known yet, and no order-number placeholder.
-[rules]
+[ignore]
+"Stackup & Design Rules" = "a line AISLER derives (2L 1.6mm 35um var.)"
+"Blitz Service" = "the owner's choice at checkout"
+"Quantity" = "the owner's, at checkout (quantity)"
 
-[fields]                               # labels and words: ordering step 0
+# The form's limits: no order-number placeholder, no remark field.
+[rules]
+thicknesses_mm = [0.8, 1.6]
+thicknesses_for = "2 layers, Amazing Assembly"
+
+[fields.thickness_mm]
+section = "PCB"
+label = "PCB Thickness"
+unit = "mm"
+
+[fields.finish]
+section = "PCB"
+label = "Surface Finish"
+words = { "LeadFree HASL" = "HASL Lead Free", "ENIG" = "ENIG" }
+
+[fields.mask]
+section = "PCB"
+label = "PCB Color"
+words = { green = "Green", white = "White", black = "Black", red = "Red", blue = "Blue" }
+
+[fields.silkscreen]
+section = "PCB"
+label = "Silkscreen"
+words = { white = "White", black = "Black" }
+
+[fields.copper_oz]
+section = "PCB"
+label = "Copper Thickness of outer layers"
+words = { 1 = "35 µm", 2 = "70 µm" }
+
+[fields.pcba]
+section = "PCBA"
+label = "Service"
+words = { assembly = "Amazing Assembly" }
+
+# No order number, no barcode or serial number, no remark field at AISLER: the keys are left out of its job.
+[fields]
+mark = false
+barcode = false
+serial_number = false
+remark = false
