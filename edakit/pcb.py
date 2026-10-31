@@ -131,11 +131,18 @@ def load_geometry(cfg, board):
 def plan_geometry(cfg, board, design, refs=None):
     """The geometry the plan works with: the dump of the PCB, and for a part of refs (default: the planned ones) that
     is not in it the footprint data of its parts entry ("source": "data", 4.5), else the footprint `edakit part
-    import` cached ("source": "library") – the pad nets from the graph."""
+    import` cached ("source": "library") – the pad nets from the graph. On KiCad a footprint not cached yet is read
+    from the library first, as `pcb apply` reads it (16.2): a new KiCad project places before its first apply."""
     from . import part
     f = geometry_file(cfg, board)
     geo = json.loads(f.read_text()) if f.exists() else {}
     for ref in board.place if refs is None else refs:
+        if ref not in geo and ref in design.comps and is_kicad(cfg) and not part.library_footprint(cfg, design, ref):
+            from .toolchain.kicad import library
+            try:
+                library.geometry_of(cfg, design, ref, fetch=True)
+            except library.LibraryError as e:
+                print(f"  {e}")
         if ref not in geo and ref in design.comps and (lib := part.library_footprint(cfg, design, ref)):
             pads = {n: {**p, "net": design.pin_net.get(f"{ref}.{n}", "")} for n, p in lib["pads"].items()}
             geo[ref] = {**lib, "pads": pads, "source": "data" if lib.get("source") == "data" else "library"}

@@ -406,6 +406,27 @@ def test_the_schematic_puts_pins_and_wire_ends_on_kicads_grid(project):
     assert ends and off == []
 
 
+def test_a_new_kicad_project_places_before_its_first_apply(project, monkeypatch):
+    """pcb place on KiCad read only the dump and part import's cache – a new project has neither, and it stopped
+    with "geometry.json is missing" where pcb apply reads the library itself (live test, LT-8)."""
+    from edakit import pcb
+    from edakit.toolchain.kicad import library
+    cfg = kicad_project(project)
+    design = Design.from_config(cfg)
+    pcb.geometry_file(cfg, cfg.board()).unlink(missing_ok=True)
+    f = cfg.artifacts / "footprints" / file_name(design.part("U2")["footprint"])
+    kept = f.read_text()
+    f.unlink()
+    asked = []
+
+    def read_library(cfg_, design_, des, fetch=True, today=None):
+        asked.append((des, fetch))
+        f.write_text(kept)
+    monkeypatch.setattr(library, "geometry_of", read_library)
+    geo = pcb.plan_geometry(cfg, cfg.board(), design, ["U2", "R1"])
+    assert asked == [("U2", True)] and set(geo) == {"U2", "R1"} and geo["U2"]["source"] == "library"
+
+
 def schematic_root(project):
     from edakit.toolchain.kicad import schematic as ks
     cfg = kicad_project(project)
