@@ -22,6 +22,7 @@ from __future__ import annotations
 
 import json
 import time
+from collections import Counter
 
 from . import eda
 from .design import Design, natural_key
@@ -313,6 +314,7 @@ def create(cfg, args):
         eda.open_project(mcp, cfg, args.create_project)
         prepare_schematic(mcp, name)
         eda.label_sheet(mcp, cfg, FOCUS["page"], f"{board.title} template", design.version)
+        eda.keep_schematic_name(mcp, FOCUS["schematic"], name, FOCUS["page"], panels=True)   # LT-10
         close_other_schematic_tabs(mcp)
         phase("search parts")
         devices = resolve_devices(cfg, mcp, comps, args.refresh_devices)
@@ -334,6 +336,7 @@ def create(cfg, args):
         phase("ERC")
         erc = mcp.call("easyeda_erc_run", projectId=PROJECT, scope="focused")
         print("  " + json.dumps({k: v for k, v in erc.items() if not isinstance(v, (list, dict))}, ensure_ascii=False))
+        eda.keep_schematic_name(mcp, FOCUS["schematic"], name, FOCUS["page"])   # never done under another name
         skipped = len(comps) - len(placed)
         if args.save:
             phase("save")
@@ -466,23 +469,49 @@ def check(cfg, args):
 
 # --- copy ---------------------------------------------------------------------------------------------------------
 
+def discard_copy(mcp, project, uuid, source, want, got):
+    """The message for a copy whose parts are not its source's – and the copy deleted where it is a free schematic of
+    the open project. In the KiCad live test of 2026-10-31 copySchematic on the template's UUID copied another
+    project's schematic (the bell's ESP32 THT template, 19 parts for a graph of 17, LT-11)."""
+    info = api(mcp, "DMT_Schematic.getSchematicInfo", uuid) or {}
+    page, fields = eda.title_block(info)
+    made = f"page '{page}'" + "".join(f", {k} '{fields[k]}'" for k in ("Company", "Version") if fields.get(k))
+    short = lambda refs: ", ".join(sorted(refs, key=natural_key)[:6]) or "–"  # noqa: E731
+    extra, missing = Counter(got) - Counter(want), Counter(want) - Counter(got)
+    if info.get("parentProjectUuid") == project and not info.get("parentBoardName"):
+        api(mcp, "DMT_Schematic.deleteSchematic", uuid)
+        fate = "the copy is deleted"
+    else:
+        fate = f"the copy {uuid} is left – not a free schematic of this project; delete it in EasyEDA"
+    return (f"copySchematic copied something else than '{source}': {len(got)} parts instead of {len(want)} (more: "
+            f"{short(extra)}; missing: {short(missing)}), what EasyEDA made: {made} – {fate}, nothing renamed. "
+            "Restart EasyEDA, or build the board schematic without a copy: `edakit schematic layout` (handbook 12)")
+
+
 def copy(cfg, args):
     """Copy a schematic in seconds instead of generating it for minutes (DMT_Schematic.copySchematic copies parts,
-    wires, net names and no-connect markers). Replaces the target unless a board hangs on it."""
+    wires, net names and no-connect markers). Replaces the target unless a board hangs on it. The copy is renamed
+    only when its parts are the source's (LT-11)."""
     board = cfg.board(args.board, made=True)
     source, target = args.source or board.template, args.target or board.schematic
     if source == target:
         return eda.die("source and target are the same")
+    version = Design.from_config(cfg).version
     mcp = eda.start(cfg, args.verbose)
     try:
         if not eda.wait_for_bridge(mcp, args.wait):
             return 1
-        eda.open_project(mcp, cfg)
+        project = eda.open_project(mcp, cfg)
         by_name = lambda n: [s for s in api(mcp, "DMT_Schematic.getAllSchematicsInfo") or []  # noqa: E731
                              if eda.schematic_name(mcp, s["uuid"]) == n]
         found = by_name(source)
         if len(found) != 1:
             raise MCPError(f"schematic '{source}' {'not found' if not found else 'exists several times'}")
+        drawn = eda.title_block(api(mcp, "DMT_Schematic.getSchematicInfo", found[0]["uuid"]) or {})[1].get("Version")
+        if drawn and drawn.startswith("graph v") and drawn != f"graph v{version}":
+            print(f"  ! '{source}' was drawn from {drawn}, the graph is v{version} – the copy is of that older state; "
+                  "`edakit schematic create` first")
+        want = eda.schematic_parts(mcp, found[0]["uuid"])
         for sch in by_name(target):
             if sch.get("parentBoardName"):
                 raise MCPError(f"'{target}' belongs to board {sch['parentBoardName']} – not overwritten. Use "
@@ -493,6 +522,9 @@ def copy(cfg, args):
         uuid = api(mcp, "DMT_Schematic.copySchematic", found[0]["uuid"])
         if not uuid or uuid in existing:
             raise MCPError(f"copySchematic returned no new UUID ({uuid})")
+        eda.activate_schematic(mcp, uuid)  # right after copySchematic the copy has no pages for a moment
+        if sorted(got := eda.schematic_parts(mcp, uuid)) != sorted(want):
+            raise MCPError(discard_copy(mcp, project, uuid, source, want, got))
         eda.activate_schematic(mcp, uuid)  # modifySchematicName renames the ACTIVE schematic
         eda.rename_schematic(mcp, uuid, target)
         n_pages = eda.activate_schematic(mcp, uuid)

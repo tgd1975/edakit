@@ -453,6 +453,46 @@ def rename_schematic(mcp, uuid, name):
     raise MCPError(f"schematic {uuid} could not be renamed to '{name}' – not deleted, check EasyEDA")
 
 
+def keep_schematic_name(mcp, uuid, name, page_uuid, panels=False):
+    """The schematic is still named `name`, else renamed back -> True when it had to be. The first schematic create
+    in a new project left the template named after its page title ("LED bar template") and a panel named
+    generated_main (KiCad live test 2026-10-31, LT-10): label_sheet's page rename reached the schematic. panels: name
+    a panel of the project that bears `name` – it is the user's to rename or delete, edakit leaves it."""
+    if panels:
+        for p, n in panel_names(mcp).items():
+            if n == name:
+                print(f"  ! a panel of the project is named '{name}' ({p}) – EasyEDA renamed it once instead of the "
+                      "schematic; rename or delete it in EasyEDA, edakit leaves it")
+    for _ in range(5):          # right after a write getSchematicInfo throws for a moment
+        now = schematic_name(mcp, uuid)
+        if now is not None:
+            break
+        time.sleep(1)
+    if now == name:
+        return False
+    print(f"  ! schematic {uuid} is named '{now}', not '{name}' – renaming it back")
+    focus_page(mcp, uuid, page_uuid)
+    rename_schematic(mcp, uuid, name)
+    return True
+
+
+def schematic_parts(mcp, uuid):
+    """The designators on every page of a schematic, page by page, each read counted only while its page stayed
+    active."""
+    refs = []
+    for page in (api(mcp, "DMT_Schematic.getSchematicInfo", uuid) or {}).get("page") or []:
+        on_page = read_on_page(mcp, uuid, page["uuid"], lambda: list_sheet_parts(mcp))
+        refs += [c["reference"] for c in on_page if c.get("reference")]
+    return refs
+
+
+def title_block(info):
+    """{field: value} of the first page's title block in a getSchematicInfo answer, and the page's name."""
+    page = (info.get("page") or [{}])[0]
+    fields = {k: (v or {}).get("value") for k, v in (page.get("titleBlockData") or {}).items()}
+    return page.get("name"), fields
+
+
 def verify_nets(mcp, nets, placed):
     """Compare the netlist in EasyEDA with the graph (through the designators). Right after many writes EasyEDA
     sometimes returns an empty netlist (0/88, two minutes later 88/88) – then wait and read again."""

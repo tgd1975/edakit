@@ -112,11 +112,16 @@ def test_schematic_create(project, monkeypatch, capsys, save):
     monkeypatch.setattr(schematic, "check_symbol_pins", lambda mcp, comps, placed, differs=None: 0)
     monkeypatch.setattr(schematic, "connect", lambda mcp, nets, placed, stub: 0)
     monkeypatch.setattr(schematic, "repair", lambda mcp, nets, placed, stub: 0)
-    monkeypatch.setitem(schematic.FOCUS, "page", "page")                        # prepare_schematic sets it
+    names = []                                     # the template's name, after the title block and at the end (LT-10)
+    monkeypatch.setattr(schematic.eda, "keep_schematic_name", lambda mcp, uuid, name, page, panels=False:
+                        names.append((uuid, name, panels)))
+    monkeypatch.setitem(schematic.FOCUS, "page", "page")                        # prepare_schematic sets them
+    monkeypatch.setitem(schematic.FOCUS, "schematic", "sch")
     assert cli.main(["schematic", "create", *(["--save"] if save else [])]) == 0
     found = steps(capsys.readouterr().out)
     assert numbered(found) and len(found) == 10 + save and found[0][2] == "bridge"
     assert found[-1][2] == ("save" if save else "ERC")
+    assert names == [("sch", "generated_main", True), ("sch", "generated_main", False)]
 
 
 class FakeLayout:

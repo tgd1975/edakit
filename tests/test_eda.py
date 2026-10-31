@@ -315,3 +315,138 @@ def test_a_rename_that_reaches_the_panel_is_undone_and_reported(cfg):
     with pytest.raises(eda.MCPError, match="renamed the panel 'Panel1' instead"):
         eda.rename_schematic(mcp, "s1", "generated_esp32")
     assert mcp.renamed_back == "Panel1"
+
+
+# --- schematic copy and create in the KiCad live test of 2026-10-31 (LT-10, LT-11) -----------------------------------
+
+def ok(result):
+    return {"ok": True, "result": result}
+
+
+class FakeDocs:
+    """EasyEDA's documents as schematic copy and create see them: schematics with their pages, the parts of each page,
+    the project's panels, the active page. foreign = (page name, company, version, parts, project): what copySchematic
+    put into the copy in the live run – another project's schematic; without it the copy is the source's."""
+
+    def __init__(self, parts=("C1", "R1", "U1"), version="graph v1.0", panel="Panel1", foreign=None):
+        self.sch = {"s-tpl": {"name": "generated_main", "board": None, "project": "uuid-proj",
+                              "pages": {"p-tpl": {"name": "LED bar template", "parts": list(parts),
+                                                  "tb": {"Company": "edakit example", "Version": version}}}}}
+        self.panels, self.foreign = {"pn1": panel}, foreign
+        self.active, self.deleted, self.renames = "p-tpl", [], []
+
+    def parent(self, page):
+        return next(u for u, s in self.sch.items() if page in s["pages"])
+
+    def names(self):
+        return {s["name"] for s in self.sch.values()}
+
+    def call(self, tool, timeout=130, **args):
+        if tool == "easyeda_schematic_sheet_info":
+            return {"sheet": {"uuid": self.active, "parentSchematicUuid": self.parent(self.active)}}
+        if tool == "easyeda_schematic_components":
+            parts = self.sch[self.parent(self.active)]["pages"][self.active]["parts"]
+            off, n = args.get("offset", 0), args.get("limit", 500)
+            return {"components": [{"reference": r, "primitiveId": f"id-{r}"} for r in parts][off:off + n],
+                    "total": len(parts)}
+        path, a = args["path"], args["args"]
+        if path == "DMT_Schematic.getAllSchematicsInfo":
+            return ok([{"uuid": u, "parentBoardName": s["board"], "page": [{"uuid": p} for p in s["pages"]]}
+                       for u, s in self.sch.items()])
+        if path == "DMT_Schematic.getSchematicInfo":
+            s = self.sch[a[0]]
+            return ok({"uuid": a[0], "name": s["name"], "parentBoardName": s["board"], "parentProjectUuid": s["project"],
+                       "page": [{"uuid": p, "name": pg["name"],
+                                 "titleBlockData": {k: {"value": v} for k, v in pg["tb"].items()}}
+                                for p, pg in s["pages"].items()]})
+        if path == "DMT_Project.getCurrentProjectInfo":
+            return ok({"uuid": "uuid-proj", "data": [{"itemType": "Panel", "uuid": u, "name": n}
+                                                     for u, n in self.panels.items()]})
+        if path == "DMT_Schematic.copySchematic":
+            src, project = self.sch[a[0]], "uuid-proj"
+            pages = {f"p-copy{i}": json.loads(json.dumps(pg)) for i, pg in enumerate(src["pages"].values())}
+            if self.foreign:
+                name, company, version, parts, project = self.foreign
+                pages = {"p-copy0": {"name": name, "parts": list(parts), "tb": {"Company": company, "Version": version}}}
+            self.sch["s-copy"] = {"name": f"{src['name']}_Copy", "board": None, "project": project, "pages": pages}
+            return ok("s-copy")
+        if path == "DMT_Schematic.deleteSchematic":
+            self.deleted.append(a[0])
+            del self.sch[a[0]]
+            return ok(True)
+        if path == "DMT_EditorControl.openDocument":
+            self.active = a[0]
+            return ok(True)
+        if path == "DMT_Schematic.modifySchematicName":        # acts on the ACTIVE schematic, as EasyEDA's does
+            self.sch[self.parent(self.active)]["name"] = a[1]
+            self.renames.append(a[1])
+            return ok(True)
+        raise AssertionError(path)
+
+    def close(self):
+        pass
+
+
+def run_copy(cfg, monkeypatch, mcp):
+    from types import SimpleNamespace
+
+    from edakit import schematic
+    monkeypatch.setattr(schematic.eda, "start", lambda cfg, verbose=False: mcp)
+    monkeypatch.setattr(schematic.eda, "wait_for_bridge", lambda mcp, wait: True)
+    monkeypatch.setattr(schematic.eda, "open_project", lambda mcp, cfg, create=False: "uuid-proj")
+    return schematic.copy(cfg, SimpleNamespace(board=None, source=None, target=None, verbose=False, wait=0,
+                                               save=False))
+
+
+BELL = ("Christmas bell ESP32 THT template", "Christmas bell", "graph v0.1", ["C1", "J9", "LED1", "R1", "U1"])
+
+
+def test_a_copy_with_the_parts_of_its_source_is_renamed(cfg, monkeypatch, capsys):
+    mcp = FakeDocs()
+    assert run_copy(cfg, monkeypatch, mcp) == 0
+    assert mcp.sch["s-copy"]["name"] == "layout_main" and mcp.deleted == []
+    assert "'generated_main' -> 'layout_main': 1 page(s), 3 parts" in capsys.readouterr().out
+
+
+def test_a_copy_of_another_schematic_is_deleted_and_named_never_renamed(cfg, monkeypatch, capsys):
+    """LT-11: copySchematic on the template's UUID made a copy of the bell's ESP32 THT template (19 parts for a graph
+    of 17), and edakit renamed it to layout_main. Now the copy's parts are held to the source's first."""
+    mcp = FakeDocs(foreign=(*BELL, "uuid-proj"))
+    assert run_copy(cfg, monkeypatch, mcp) == 1
+    assert mcp.deleted == ["s-copy"] and mcp.renames == [] and "layout_main" not in mcp.names()
+    err = capsys.readouterr().err
+    assert "5 parts instead of 3" in err and "J9, LED1" in err
+    assert "'Christmas bell ESP32 THT template'" in err and "'Christmas bell'" in err and "'graph v0.1'" in err
+    assert "the copy is deleted, nothing renamed" in err
+
+
+def test_a_wrong_copy_outside_the_open_project_is_left_and_named(cfg, monkeypatch, capsys):
+    mcp = FakeDocs(foreign=(*BELL, "uuid-bell"))
+    assert run_copy(cfg, monkeypatch, mcp) == 1
+    assert mcp.deleted == [] and mcp.renames == []
+    assert "s-copy is left – not a free schematic of this project" in capsys.readouterr().err
+
+
+def test_a_template_of_an_older_graph_is_named_before_it_is_copied(cfg, monkeypatch, capsys):
+    mcp = FakeDocs(version="graph v0.9")
+    assert run_copy(cfg, monkeypatch, mcp) == 0
+    assert "! 'generated_main' was drawn from graph v0.9, the graph is v1.0" in capsys.readouterr().out
+
+
+def test_a_template_the_page_rename_renamed_is_named_back(cfg, capsys):
+    """LT-10: the first schematic create in a new project left the template named "LED bar template" – the title of
+    its page – and a panel named generated_main. The name is read again after the title block and put back; a panel
+    of that name is named, not touched."""
+    mcp = FakeDocs(panel="generated_main")
+    mcp.sch["s-tpl"]["name"] = "LED bar template"
+    assert eda.keep_schematic_name(mcp, "s-tpl", "generated_main", "p-tpl", panels=True) is True
+    assert mcp.sch["s-tpl"]["name"] == "generated_main" and mcp.panels == {"pn1": "generated_main"}
+    out = capsys.readouterr().out
+    assert "is named 'LED bar template', not 'generated_main' – renaming it back" in out
+    assert "a panel of the project is named 'generated_main' (pn1)" in out
+
+
+def test_a_template_that_kept_its_name_is_left_alone(cfg, capsys):
+    mcp = FakeDocs()
+    assert eda.keep_schematic_name(mcp, "s-tpl", "generated_main", "p-tpl", panels=True) is False
+    assert mcp.renames == [] and capsys.readouterr().out == ""
