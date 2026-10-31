@@ -422,6 +422,9 @@ def function(s, load, low=None, plugin=None):
         r = limits(s.n.part(des))
         vin = v(res, reg["vin"]) - v(res, reg["gnd"])
         vout = v(res, reg["vout"]) - v(res, reg["gnd"])
+        if reg.get("enable") and v(res, reg["enable"]) < 0.5:      # maker-coverage FT-5: switched off by its enable
+            boost_off(s, des, reg, vin, vout)
+            continue
         s.check("SIM.state", des, f"output voltage ({reg['kind']})", vout, f"{reg['vset']} V ± {crit['rail_tol']:.0%}",
                 abs(vout - reg["vset"]) <= reg["vset"] * crit["rail_tol"], "V")
         if des in meta["mcu"]:
@@ -490,6 +493,7 @@ def function(s, load, low=None, plugin=None):
     opamps(s)
     bridges(s)
     chargers(s)
+    cc_led_drivers(s)
     input_injection(s)
     supply_order_e(s)
     powered_pins(s)
@@ -1023,6 +1027,75 @@ def chargers(s):
                                       f"IQ – × {r['rth_ja_k_per_w']:g} K/W")
 
 
+# --- a boost converter's enable, a constant-current LED buck (maker-coverage FT-5, FT-14) -----------------------------
+def boost_off(s, des, reg, vin, vout):
+    """A boost converter its enable switched off (switch_boost): its output is what the inductor and the diode behind
+    its switch pin pass from the input – a row of information instead of SIM.state; what hangs on the output is judged
+    at that level (the load's expect, LEDs on or dark, the parts' limits)."""
+    s.rows.append({"id": "SIM.state", "scenario": s.name, "item": des,
+                   "check": "output with EN low (converter off, no load disconnect)", "actual": f"{vout:.4g} V",
+                   "expected": f"the input {vin:.4g} V through the inductor and {reg['diode']} – information",
+                   "result": "info"})
+
+
+def cc_led_drivers(s):
+    """A constant-current step-down LED driver (behaviour cc_led_driver – PT4115, AL8860): the current R_S sets,
+    vsense_v [min … max] / R_S, within the driver's i_out_max_a (LIM.i/cc) and R_S at least r_sense_min_ohm
+    (REQ.value/cc); the input at least what the string needs – the voltage across R_S, the LEDs and the inductor, over
+    the maximum duty cycle, plus the set current through the switch's r_on_ohm: the on-time equation of both datasheets
+    (LIM.range/cc); each LED of the string at its share of the set current, or dark with dim low (SIM.state/cc); the
+    inductor of the string saturating above the peak current, the set current × (1 + ripple_ratio / 2) (LIM.i/cc).
+    The LEDs' own if_max_a and the inductor's i_max_a hold the simulated current (stress), the top of vsense_v."""
+    res, crit = s.res, s.crit
+    for des, cc in sorted((s.meta.get("cc_bucks") or {}).items()):
+        key, on, p = s.n.entry_key(des), (("component", des),), cc["values"]
+        r_s, vs = cc["r_s"], cc["vsense"]
+        if r_s is None or not vs:
+            s.check("SIM.state", des, "LED current set by R_S", "no resistor from VIN to the sense pin" if vs
+                    else "no vsense_v in the entry", "R_S from VIN to the sense pin, I = vsense_v / R_S", False,
+                    grade="cc", on=on)
+            continue
+        lo, hi = min(vs) / r_s, max(vs) / r_s
+        s.q(des, "i_out", hi, "A", "", des, f"LED current set by R_S {r_s:.4g} Ω ({min(vs) * 1e3:.4g} … "
+            f"{max(vs) * 1e3:.4g} mV / R_S, {lo * 1e3:.4g} … {hi * 1e3:.4g} mA)", lo=lo, code="LIM.i", grade="cc",
+            report=True)
+        if (least := cc["limits"].get("r_sense_min_ohm")) is not None:
+            s.q(des, "r_sense", None, "Ω", "", des, "sense resistor R_S", lo=r_s, code="REQ.value", grade="cc",
+                entry=False, lims=[Limit(min=least, source=f"r_sense_min_ohm of {key}")])
+        frac = min(max(v(res, cc["dim"]), 0.0), 1.0)
+        target = cc["i_set"] * frac
+        if frac > 1e-3:
+            g = v(res, cc["gnd"])
+            vin, sw = v(res, cc["vin"]) - g, v(res, cc["sw"]) - g
+            dmax, r_on = p.get("duty_max_ratio", 1.0), p.get("r_on_ohm", 0.0)
+            across = vin - sw
+            how = (f"input above the LED string: {across:.4g} V across R_S, the LEDs and the inductor"
+                   + (f" / {dmax:g} (maximum duty cycle)" if dmax != 1 else "") + f" + {target * 1e3:.4g} mA × "
+                   f"{r_on:g} Ω (switch)")
+            s.q(des, "vin_cc", None, "V", "", des, how, lo=vin, code="LIM.range", grade="cc", entry=False,
+                lims=[Limit(min=round(across / dmax + target * r_on, 6),
+                            source=f"vsense_v, r_on_ohm{', duty_max_ratio' if dmax != 1 else ''} of {key} – the "
+                                   "on-time equation of its datasheet")])
+        n, off_max = cc["parallel"], crit["led_off_max_a"]
+        for name in cc["leds"]:
+            label, cur = name[2:].upper(), res.get(f"@{name}[id]", float("nan"))
+            here = (("component", label),)
+            if frac > 1e-3:
+                share = target / n
+                s.check("SIM.state", label, f"LED current ({des} string)", cur, f"≥ {crit['led_on_min_ratio']:.0%} of "
+                        f"{share * 1e3:.2f} mA", cur >= crit["led_on_min_ratio"] * share, "A", grade="cc", on=here)
+            else:
+                s.check("SIM.state", label, "LED dark", cur, f"≤ {off_max * 1e6:.0f} µA", cur <= off_max, "A",
+                        grade="cc", on=here)
+        ripple = p.get("ripple_ratio")
+        for coil in cc["coils"] if ripple is not None and frac > 1e-3 else []:
+            sat = limits(s.n.part(coil)).get("i_sat_a")
+            if sat is not None:
+                s.q(coil, "i_peak", hi * frac * (1 + ripple / 2), "A", "inductor", coil,
+                    f"peak current: {hi * frac * 1e3:.4g} mA × (1 + {ripple:g} / 2), the ripple of {key}", code="LIM.i",
+                    grade="cc", entry=False, lims=[Limit(max=sat, source=f"i_sat_a of {s.n.entry_key(coil)}")])
+
+
 def opamps(s):
     """LIM.range/opamp: every input of an op-amp (behaviour opamp) inside its common-mode range – vicm_v [above vee,
     from vcc] –, and every output inside its swing: an output held at the limit of vout_swing_v while its inputs stand
@@ -1134,7 +1207,10 @@ def leds(s, load):
     leds_on = load.get("leds_on")
     groups = defaultdict(list)
     behind = behind_resistor(d, joined, chan_of)
+    strings = {name for cc in (meta.get("cc_bucks") or {}).values() for name in cc["leds"]}
     for name, info in meta["leds"].items():
+        if name in strings:
+            continue      # the string of a constant-current buck: cc_led_drivers judges it
         i = res.get(f"@{name}[id]", float("nan"))
         label = name[2:].upper()
         if mux := multiplexed(d, info["anode_net"], info["cathode_net"]):

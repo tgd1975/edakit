@@ -595,7 +595,7 @@ One row per pitfall: the pitfall with its numbers, what edakit does about it tod
 | 16 | LED supply tracks too narrow (IPC-2221, 10 °C: 3 A ≈ 1.37 mm, 5 A ≈ 2.8 mm) | covered: L-5 | – | IPC-2221 formula |
 | 17 | strip MOSFET not logic-level: IRF520 and IRFZ44N specified at VGS 10 V; TIP120 drops about 2 V | partly: E-2 with the SPICE model, no threshold corner | CK-4, BL-2 | Adafruit RGB strips (x); datasheets (x) |
 | 18 | PWM flicker: IEEE 1789 – 100 % modulation needs ≥ 1250 Hz (low risk), ≥ 3 kHz (no effect); Arduino 490 Hz | no | HT-9 | US DOE summary; Finelite white paper (x) |
-| 19 | constant-current buck sized wrong (PT4115: I = 0.1 V / RS, RS ≥ 0.082 Ω; inductor table; VIN above ΣVf) | no model | FT-14 | PT4115, AL8860 datasheets (x) |
+| 19 | constant-current buck sized wrong (PT4115: I = 0.1 V / RS, RS ≥ 0.082 Ω; inductor table; VIN above ΣVf) | covered: behaviour cc_led_driver – LIM.i/cc (current, inductor saturation), REQ.value/cc (RS), LIM.range/cc (VIN above the string); the inductance table: no | FT-14 | PT4115 PT4115_DS Rev EN_2.9, AL8860 DS39014 Rev. 8 - 2 (r) |
 | 20 | power LED without heat sink: θ ≤ (Tj − Ta) / P | partly: E-2 `rth_ja_k_per_w` of the part alone | HT-11 | star LED datasheets (x) |
 | 21 | MAX7219 at 3.3 V logic: VIH 3.5 V; common-cathode displays only | with part facts: E-3 | PF | MAX7219 datasheet (x) |
 | 22 | MAX7219 RSET, about 1 W dissipation, 10 µF + 0.1 µF at the chip | partly: G-6 | PF | MAX7219 table 11 (x) |
@@ -668,7 +668,7 @@ One row per pitfall: the pitfall with its numbers, what edakit does about it tod
 | 12 | linear regulator headroom and heat: 7805 2 V dropout, 12 → 5 V at 0.5 A = 3.5 W | covered: `ldo` model, E-3 | – | L7805 (x) |
 | 13 | buck module at an unknown trimmer setting, no reverse protection | no | FT-5 | MP1584 (x); LM2596 (x) |
 | 14 | feedback divider (VREF 1.25, 1.23, 0.8, 0.6 V); LM317 needs 10 mA load | no | FT-5 | onsemi LM317 (x) |
-| 15 | non-synchronous boost passes VIN − about 0.3 V with EN low (MT3608) | no | HT-4, FT-5 | TI SLVA191 (x); EEVblog (x) |
+| 15 | non-synchronous boost passes VIN − about 0.3 V with EN low (MT3608) | covered: HINT.boost_enable; behaviour boost shows VIN − VD with EN low, the load's expect holds it | HT-4, FT-5 | TI SLVA191A (r); EEVblog (x) |
 | 16 | ceramic DC bias: 4.7 µF, 6.3 V, 0603 X5R at 5 V ≈ 0.33 µF | no | FT-9 | ADI tutorial 5527 (x); Nordic (x) |
 | 17 | battery divider: 100 k + 100 k draws 21 µA; MΩ dividers against the ATmega's 10 kΩ | no | CK-6, BL-6, FT-11 | ATmega328P §23.6.1 (x); ESP-IDF ADC (x) |
 | 18 | Wi-Fi bursts 240–335 mA against the supply's impedance: brown-out | partly: E-3 at `i_core_a` | FT-1, BL-7 | Espressif schematic checklist (x) |

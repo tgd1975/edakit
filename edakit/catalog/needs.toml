@@ -32,7 +32,7 @@ source = "USB Type-C Cable and Connector Specification (USB-IF); Richtek AN064 (
 tag = "r"
 
 [hot_loop]            # REQ.missing: a layout.loops entry on each net of the hot loop a parts entry names (hot_loop)
-switchers = ["buck", "boost", "buck_boost"]   # behaviours whose entry must name it (PARTS.fact/hot_loop)
+switchers = ["buck", "boost", "buck_boost", "cc_led_driver"]   # behaviours whose entry must name it (PARTS.fact/hot_loop)
 source = "TI SNVA021C, AN-1149 Layout Guidelines for Switching Power Supplies (2013), 5"
 tag = "r"
 
