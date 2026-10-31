@@ -100,7 +100,7 @@ in `sources` – any RP2350 module takes the same list per GPIO. On the RP2040 a
 | `buzzer` | `v_max_v` | `coil_ohm` |
 | `relay` | `v_coil_max_v`, `i_max_a`, `v_max_v`, `i_contact_max_a`, `i_switch_max_a` | `coil_ohm`, `v_operate_v`, `v_release_v`, `r_contact_ohm`, `min_load_a` |
 | `connector` | `v_max_v`, `i_max_a`, `i_contact_max_a` | `pitch_mm`, `r_contact_ohm`, `r_source_ohm`, `usb_c` |
-| `ic` | `vdd_max_v`, `vdd_op_min_v`, `vdd_op_max_v`, `vin_min_v`, `vin_max_v`, `vout_max_v`, `i_out_max_a`, `vin_rel_max_v`, `i_supply_pin_max_a`, `f_max_hz` | `behavior`, `vout_v`, `dropout_v`, `iq_a`, `efficiency`, `idd_max_a`, `iout_gain`, `iout_accuracy`, `vout_knee_v`, `vrext_v`, `vih_v`, `vil_v`, `vih_ratio`, `vil_ratio`, `first_bit_to`, `vout_swing_v`, `vicm_v`, `r_out_ohm`, `comparator`, `gain_min_ratio`, `f_clock_hz`, `vref_v`, `i_load_min_a`, `prog_v`, `icc_a`, `i_a`, `vdd_shunt_v`, `i_shunt_max_a`, `pd_request_v`, `r_on_ohm`, `vgs_th_v`, `r_on_high_ohm`, `r_on_low_ohm`, `v_headroom_v`, `uvlo_v`, `v_pre_v`, `i_pre_ratio`, `i_term_ratio`, `v_ovp_v`, `v_ovp_release_v`, `v_uvp_v`, `v_uvp_release_v`, `v_ocp_v`, `v_scp_v` |
+| `ic` | `vdd_max_v`, `vdd_op_min_v`, `vdd_op_max_v`, `vin_min_v`, `vin_max_v`, `vout_max_v`, `i_out_max_a`, `vin_rel_max_v`, `i_supply_pin_max_a`, `f_max_hz`, `r_sense_min_ohm` | `behavior`, `vout_v`, `dropout_v`, `iq_a`, `efficiency`, `idd_max_a`, `iout_gain`, `iout_accuracy`, `vout_knee_v`, `vrext_v`, `vih_v`, `vil_v`, `vih_ratio`, `vil_ratio`, `first_bit_to`, `vout_swing_v`, `vicm_v`, `r_out_ohm`, `comparator`, `gain_min_ratio`, `f_clock_hz`, `vref_v`, `i_load_min_a`, `prog_v`, `icc_a`, `i_a`, `vdd_shunt_v`, `i_shunt_max_a`, `pd_request_v`, `r_on_ohm`, `vgs_th_v`, `r_on_high_ohm`, `r_on_low_ohm`, `v_headroom_v`, `uvlo_v`, `v_pre_v`, `i_pre_ratio`, `i_term_ratio`, `v_ovp_v`, `v_ovp_release_v`, `v_uvp_v`, `v_uvp_release_v`, `v_ocp_v`, `v_scp_v`, `vsense_v`, `duty_max_ratio`, `ripple_ratio` |
 | `module` | `vdd_op_min_v`, `vdd_op_max_v`, `vin_min_v`, `vin_max_v`, `vsys_min_v`, `vsys_max_v`, `i_out_max_a`, `gpio_v_max_v`, `gpio_i_max_a`, `gpio_i_total_max_a`, `f_max_hz` | `behavior`, `regulator`, `v_io_v`, `vout_v`, `dropout_v`, `efficiency`, `i_core_a`, `i_core_min_a`, `gpio_r_out_ohm`, `iq_a`, `vih_v`, `vil_v`, `vih_ratio`, `vil_ratio`, `usb_c`, `f_clock_hz` |
 | `motor` | `v_max_v`, `i_max_a` | `coil_ohm` |
 | `solenoid` | `v_max_v`, `i_max_a` | `coil_ohm` |
@@ -109,7 +109,7 @@ in `sources` – any RP2350 module takes the same list per GPIO. On the RP2040 a
 | `optocoupler` | `if_max_a`, `vr_max_v`, `vce_max_v`, `ic_max_a`, `v_load_max_v`, `i_load_max_a` | `vf_v`, `vf_at_a`, `ctr_min_ratio`, `behavior`, `r_on_ohm`, `if_on_a`, `if_off_a`, `i_leak_a` |
 | `esd_array` | `vrwm_max_v` | `vbr_min_v`, `vf_v`, `vf_at_a`, `c_io_f` |
 
-Per pin: `v_max_v`, `v_op_min_v`, `v_op_max_v`, `vih_v`, `vil_v`, `vih_ratio`, `vil_ratio`, `pull_ohm`, `v_min_v`, `v_rel_max_v`, `v_max_powered_v`, `i_max_a`, `i_inject_max_a`, `r_load_min_ohm`, `c_load_max_f`; and `name`, `type`, `role`, `strap`, `pull`, `hint`, `functions`, `out_edge`, `t_pd_ns`, `needs`, `drive`, `float_ok`, `adc`, `z_in_ohm`, `short_proof`, `clamp`, `windows`, `biased`, `ref`, `rel_ref`. Every name ends in its unit: `_v` V, `_a` A, `_w` W, `_ohm` Ω, `_f` F, `_h` H, `_c` °C, `_hz` Hz, `_dbm` dBm, `_dbi` dBi, `_mm` mm, `_n` N, `_s` s, `_ns` ns, `_k_per_w` K/W, `_ratio` 1. Words: `behavior` ldo, buck, boost, buck_boost, mcu, cc_sink, opamp, logic, current, bridge, charger, protection, pd_sink, pass_gate, photomos, matrix_driver, none; `regulator` ldo, buck, boost, buck_boost, none; `color` red, green, blue, yellow, orange, white, warm_white, amber, uv, ir, rgb; `dielectric` C0G, NP0, X5R, X7R, X7S, X6S, Y5V, electrolytic, polymer, tantalum, film.
+Per pin: `v_max_v`, `v_op_min_v`, `v_op_max_v`, `vih_v`, `vil_v`, `vih_ratio`, `vil_ratio`, `pull_ohm`, `v_min_v`, `v_rel_max_v`, `v_max_powered_v`, `i_max_a`, `i_inject_max_a`, `r_load_min_ohm`, `c_load_max_f`, `pull_v`; and `name`, `type`, `role`, `strap`, `pull`, `hint`, `functions`, `out_edge`, `t_pd_ns`, `needs`, `drive`, `float_ok`, `adc`, `z_in_ohm`, `short_proof`, `clamp`, `windows`, `biased`, `ref`, `rel_ref`. Every name ends in its unit: `_v` V, `_a` A, `_w` W, `_ohm` Ω, `_f` F, `_h` H, `_c` °C, `_hz` Hz, `_dbm` dBm, `_dbi` dBi, `_mm` mm, `_n` N, `_s` s, `_ns` ns, `_k_per_w` K/W, `_ratio` 1. Words: `behavior` ldo, buck, boost, buck_boost, mcu, cc_sink, opamp, logic, current, bridge, charger, protection, pd_sink, pass_gate, photomos, matrix_driver, cc_led_driver, none; `regulator` ldo, buck, boost, buck_boost, none; `color` red, green, blue, yellow, orange, white, warm_white, amber, uv, ir, rgb; `dielectric` C0G, NP0, X5R, X7R, X7S, X6S, Y5V, electrolytic, polymer, tantalum, film.
 <!-- edakit:end -->
 
 A limit named `<quantity>_max_<unit>` or `<quantity>_min_<unit>` is held to the quantity of that name at the part
@@ -177,7 +177,15 @@ entry's before the default of the pin type. What the names do not say:
 - a module's on-board regulator `values.regulator`: `ldo`, `buck`, `boost`, `buck_boost` (the Pico's RT6150) or
   `none`.
 - an adjustable regulator: `vref_v` and the pin role `adj` or `fb`, with `i_load_min_a` where it needs a minimum load
-  (chapter 5.2).
+  (chapter 5.2). An asynchronous boost with an external rectifier and no output pin (the MT3608) gives `sw` and `en`
+  instead of `vout`: its output is the net behind the diode on `sw`.
+- a constant-current LED buck (`behavior: "cc_led_driver"`, PT4115, AL8860): `vsense_v`, the mean current sense
+  threshold `[min, typ, max]` (I = vsense / R_S), `r_on_ohm` the switch, `duty_max_ratio` its maximum duty cycle where
+  the datasheet gives one, `ripple_ratio` the inductor's peak-to-peak ripple over the mean current, `uvlo_v`, and
+  `limits.r_sense_min_ohm` where the datasheet names the least sense resistor; the pin roles `vin`, `sense` (CSN,
+  SET), `sw`, `gnd`, `dim` (DIM, CTRL) – chapter 5.2.
+- a pin's own pull-up to an internal supply: `pull` up, `pull_ohm` and `pull_v`, the voltage it pulls to (the
+  PT4115's DIM: 200 kΩ to 5 V) – the constant-current LED buck's model puts it into the operating point.
 - any IC with logic inputs: the thresholds of the recommended operating conditions, `vih_v` | `vih_ratio` and
   `vil_v` | `vil_ratio` (a ratio of its supply, e.g. 0.7 and 0.3 for VIH 0.7 × VDD), which LVL.threshold holds its
   `input` pins and the MCU outputs that drive them to; ICs further in chapter 5.

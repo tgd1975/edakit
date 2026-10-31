@@ -59,7 +59,7 @@ the supply over time and LIM.v judges them. Switching spikes and fast edges are 
 | Model | Roles | Parameters | Behaviour |
 |---|---|---|---|
 | `ldo` | `vin`, `vout`, (`gnd`), (`adj` or `fb`) | `vout_v`, `dropout_v`, `iq_a`; adjustable: `vref_v`, `i_load_min_a` | output = min(vout, vin − dropout); input current = output current + iq |
-| `buck`, `boost`, `buck_boost` | `vin`, `vout`, (`fb`) | `vout_v`, `efficiency`, `iq_a`; adjustable: `vref_v`, `i_load_min_a` | ideal output – the same whether the input is above or below it; input power = output power / efficiency |
+| `buck`, `boost`, `buck_boost` | `vin`, `vout`, (`fb`); a boost without `vout`: `sw`, (`en`) | `vout_v`, `efficiency`, `iq_a`; adjustable: `vref_v`, `i_load_min_a` | ideal output – the same whether the input is above or below it; input power = output power / efficiency. An asynchronous boost whose output is no pin of its own (MT3608) has it behind the diode on its `sw` pin, and `en` low switches it off (below) |
 | `mcu` | `vsys`/`vin`/`vdd`, optional `vout`/`3v3`, `gpio` | `v_io_v` (V, or `"vin"` when the I/O runs from the supply pin, as on a 5 V AVR), `i_core_a` (default 0.03 A; an upper bound), `i_core_min_a` (the least current, for the minimum load only – above; default `i_core_a`), `gpio_r_out_ohm`, `regulator` (`ldo`/`buck`/`boost`/`buck_boost`), `vout_v` (regulator output, default `v_io_v`), `efficiency`, `vih_v`/`vih_ratio`, `vil_v`/`vil_ratio` | on-board regulator feeding the core and external loads; GPIO outputs as sources with output resistance (levels from the load's `gpio`), pull-ups from the config; the config's `inputs` must sit at a defined logic level |
 | `cc_sink` | `rext`, `out` (or `out0` … `outN`), `vdd`, `oe_n` | `vrext_v`, `iout_gain`, `vout_knee_v`, `idd_max_a` | constant-current LED driver (TLC5916, STP08CP05, …): R-EXT held at vrext, every enabled output sinks gain × I(R-EXT) with a soft knee; `oe_n` high = all off; pins of type `output` (SDO to the next driver's SDI or to an MCU input that reads the chain back) low through 50 Ω, as in `logic`; an unconnected SDO stays out of the netlist |
 | `opamp` | `vcc`, `vee` (or `gnd`), per channel `in_p`, `in_n`, `out` – with a suffix for several (`in_p_a`, `out_a`, `in_p_b` …) | `vout_swing_v`, `vicm_v`, `iq_a`, `r_out_ohm`, `comparator` | op-amp: the output follows the inputs with an open-loop gain of 10⁴, limited to the rails plus `vout_swing_v` – `[above vee, from vcc]`, e.g. `[0.02, -1.5]` for an output that stops 1.5 V below the supply (none: rail to rail) –, behind `r_out_ohm` (50 Ω); `iq_a` from vcc to vee; the output's own current comes from ground in the model, so a source's current misses it. LIM.range/opamp (a warning) holds every input to the common-mode range `vicm_v` (same form: `[0, -1.5]` from vee to 1.5 V below vcc) and every output to its linear range – an output at its limit while the inputs stand apart has saturated; `comparator: true` is meant to |
@@ -70,6 +70,7 @@ the supply over time and LIM.v judges them. Switching spikes and fast edges are 
 | `protection` | `vdd` (the cell through its resistor), `gnd` (the cell's minus), `od`, `oc`, `vm` | `v_ovp_v`, `v_uvp_v`, `v_ocp_v` (and the release voltages `v_ovp_release_v`, `v_uvp_release_v`, `v_scp_v`, for the record), `r_out_ohm`, `iq_a` | one-cell protection IC (DW01A): OD at `vdd` while the cell is above `v_uvp_v` and VM − gnd below `v_ocp_v`, else at gnd; OC at `vdd` while the cell is below `v_ovp_v`, else at VM; above `v_ovp_v` OD stays high (the cell discharges through the charge MOSFET's body diode). An operating point has no history: no hysteresis, no delays – the state of a cell coming from the normal range. Within a few 10 mV of a threshold the operating point may not converge |
 | `pd_sink` | `vdd`, `gnd`, `cfg1` … `cfg3`, `vbus_sense` | `vdd_shunt_v`, `i_shunt_max_a`, `pd_request_v` | a USB PD sink (CH224K): VDD a shunt regulator at `vdd_shunt_v` that sinks up to `i_shunt_max_a` from the series resistor the board feeds it through – at the limit VDD rises with the supply (LIM.i "VDD shunt current", LIM.declared on the VDD net); the voltage the CFG levels request (`pd_request_v`: `{"1xx": 5, "000": 9, …}`, CFG1 CFG2 CFG3, `x` for either) is REQ.value/pd_request's, stage G – the charger is the project's source at the voltage it delivers |
 | `pass_gate` | `vref1`, `en`, per channel `a1`/`b1`, `a2`/`b2` … | `r_on_ohm`, `vgs_th_v` | a pass-gate translator (PCA9306 class): each channel a switch of `r_on_ohm` between its sides that conducts while the lower side sits below `vref1` and `en` is above it – a side pulled low passes the low, released sides stay at their own pull-ups |
+| `cc_led_driver` | `vin`, `sense`, `sw`, `gnd`, (`dim`) | `vsense_v` (`[min, typ, max]`), `r_on_ohm`, `duty_max_ratio`, `ripple_ratio`, `uvlo_v`, `iq_a`; limits `i_out_max_a`, `r_sense_min_ohm` | constant-current step-down LED driver with high-side sense (PT4115, AL8860): R_S from `vin` to `sense` sets I = `vsense_v` / R_S, the LED string from `sense` through the inductor to `sw` carries it, a Schottky diode returns from `sw` to `vin` – below |
 | `none` | – | – | nothing |
 
 An adjustable regulator – `vref_v` and a pin with the role `adj` (the reference between the output and ADJ: LM317,
@@ -78,6 +79,42 @@ AMS1117) or `fb` (the reference from FB to ground: most bucks and boosts) – ta
 R1/R2) with `fb` (the adjust pin's current left out, as the datasheets do). The check holds the divider to the output
 net's declared range (REQ.value/feedback, REQ.missing/feedback without one); with `i_load_min_a` every scenario loads
 the regulator at least that much (LIM.range/min_load – the AMS1117 needs 10 mA, which its divider can draw itself).
+
+An asynchronous boost converter with an external rectifier (the MT3608) has no output pin: its output is the net behind
+the one diode on its `sw` pin, the divider's R1 runs from there. With its enable (`en`) low – at the pin's VIL and
+below – the converter stops: its output source lets go and it draws nothing, but the graph's inductor and diode still
+join the input to the output, so the output sits at VIN − VD at the load's current (TI SLVA191A: "The input voltage … is
+connected to the output voltage when the device is disabled"). The protocol shows that level as information ("output
+with EN low"), not as a regulator off its set voltage; what hangs on the output is judged at it – an `expect` of the load
+on the output net (`{"BOOST_OUT": {"max_v": 0.5}}`) fails, an LED meant to be dark lights. HINT.boost_enable names the
+pattern in the check. A boost with its own `vout` pin – a module, a synchronous part with its body diode – keeps its
+output at `vout_v` whatever its enable does: what passes through such a part switched off is not in its entry.
+
+A constant-current LED buck (`cc_led_driver`: the PT4115, the AL8860) regulates the mean voltage across its sense
+resistor: R_S – the resistors from the `vin` net to the `sense` net, in parallel – sets I = `vsense_v` / R_S, and the
+model runs at the top of `vsense_v`, the upper bound every check uses (the PT4115's A type 95 / 98 / 101 mV: 0.13 Ω gives
+731 … 777 mA). Its switch pulls that current into `sw` as long as it can – at most (V(sw) − (1 − `duty_max_ratio`) ×
+V(vin)) / (`duty_max_ratio` × `r_on_ohm`), the switch on for its maximum duty cycle –; of it the share D = 1 −
+V(sw) / V(vin) goes to ground and the rest back to `vin`, the freewheeling diode's: the input current of an ideal buck,
+the switch's and the diode's losses left out. `dim` scales the current – off at the pin's VIL and below, full at VIH and
+above, linear in between (the datasheets' DC dimming differs in detail); a pin's own pull-up to an internal supply
+(`pull`, `pull_ohm`, `pull_v`: the PT4115's 200 kΩ to 5 V) is in the operating point, a dim pin without one that only
+capacitors touch floats, which both datasheets call on. Below `uvlo_v` it is off. The LED string – LEDs anode to cathode
+and inductors from the `sense` net to the `sw` net – is judged here, not by its leds_on: each LED at 80 % of its share
+of the set current or more, dark while dim is low (SIM.state/cc). The checks, all warnings so far:
+
+- LIM.i/cc: the set current, `vsense_v` (max) / R_S, within the driver's `i_out_max_a` (the PT4115's 1.2 A, the AL8860's
+  1 A in TSOT25); the inductor of the string saturating above the peak current, the set current × (1 + `ripple_ratio`
+  / 2) (the PT4115 sets the ripple to 0.3 × I, the AL8860 to 0.4 × I), within its `i_sat_a`
+- REQ.value/cc: R_S at least `r_sense_min_ohm` (the PT4115's 0.082 Ω)
+- LIM.range/cc: the input at least what the string needs – the voltage across R_S, the LEDs and the inductor over
+  `duty_max_ratio` (the AL8860's 98 %; 1 where the datasheet gives none), plus the set current through `r_on_ohm`: the
+  on-time equation both datasheets give, TON = L × ΔI / (VIN − VLED − I × (RS + RL + RSW)) – finds e.g.: three white
+  LEDs on 10 V
+
+The LEDs' own `if_max_a` and the inductor's `i_max_a` hold the simulated current (LIM.i, 5.3). Not in the model: the
+switching itself (ripple, frequency), the switch's and the diode's losses and the driver's temperature, the inductance
+range the PT4115's table recommends per current.
 
 Two parts that are no IC have models of their own. An optocoupler with `behavior: "photomos"` (a PhotoMOS, AQY212)
 switches between its roles `load_a` and `load_b` a resistance both ways – `r_on_ohm` (its maximum) while its LED carries
@@ -285,8 +322,8 @@ The simulation config names existing parts, nets and boards, and every value has
 The operating point of every scenario converges, every transient run reaches its end.
 - the operating point converges, a transient run runs to its end; a net of `copper` that stays one node is noted (info) with the reason
 
-**`SIM.state`** – the circuit does what the scenario expects (error; replaces E-3)  
-In every scenario the circuit reaches the state its load expects: LEDs on or dark, each LED of a driver channel at its share of the set current and parallel LEDs sharing it, a regulator's output at its set voltage, a blocking diode blocking, the board drawing at least a supply's minimum load, an LED the right way round, and what the project plugin checks.
+**`SIM.state`** – the circuit does what the scenario expects (error, cc: warning; replaces E-3)  
+In every scenario the circuit reaches the state its load expects: LEDs on or dark, each LED of a driver channel at its share of the set current and parallel LEDs sharing it, a regulator's output at its set voltage, a blocking diode blocking, the board drawing at least a supply's minimum load, an LED the right way round, each LED in the string of a constant-current LED driver at its share of the set current or dark while the driver's dim pin is low (grade cc), and what the project plugin checks. A boost converter its enable switches off has no set voltage to reach: its output – what its inductor and diode pass from the input – is a row of information, and what hangs on it is judged at that level.
 - function: current from every source (≤ `i_max_a`; ≥ `i_min_a` with every MCU at its `i_core_min_a` – 5.1), no source and no cell fed backwards (≤ `i_back_max_a`, `i_charge_max_a`, 1 mA by default), regulator outputs within tolerance, input above `vin_min_v`, LDO junction temperature – an MCU module's own LDO too, with the core current it carries (5.3) – against the same limit as LIM.t's, MCU supply voltage and load on its regulator, MCU inputs at a defined level (≤ VIL or ≥ VIH – a 3.3 V signal into a 5 V AVR is the classic case), every part with an operating supply range inside it, every input pin with thresholds at a defined level and the high level of every MCU output reaching the VIH of the inputs on its net (5.3), MCU outputs only on pins that can drive (an output on an input-only pin is reported and not driven), LED driver output headroom and junction temperature, every LED on or dark as the load says (driver channels: ≥ 80 % of its share of the set current, also for an LED behind 0 Ω bridges or one resistor; parallel LEDs share within a ratio – 5.3), relays pull in (`v_operate_v`) and release (`v_release_v`) as the load says, an own board supplied inside the range it was simulated for (`vin_min_v` … `vin_max_v`, 4.5), diodes that must block (`expect_blocking`), every net inside its declared range `v` (a net of `copper`: its lowest and highest pin), plus the plugin's checks
 
 **`SIM.driver`** – every LED has a known driver (error; replaces E-4)  

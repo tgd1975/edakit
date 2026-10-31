@@ -16,7 +16,9 @@ ICs and modules are replaced by behaviour models, chosen by values.behavior in t
 
   ldo       roles vin, vout (gnd optional): vout = min(vout_v, vin - dropout_v); input current = output + iq_a
   buck      roles vin, vout: ideal output vout_v; input power = output power / efficiency (B-source)
-  boost     same as buck; checks vin_min_v from the limits
+  boost     same as buck; checks vin_min_v from the limits. Without a vout pin (an asynchronous boost, MT3608) the
+            output is the net behind the diode on its switch pin (role sw), and its enable (role en) low switches it
+            off: the graph's inductor and diode then pass VIN − VD to the output (switch_boost)
             Every regulator (the mcu's on-board one too) whose limits give vin_min_v (mcu: vin_min_v|vsys_min_v) locks out
             below it: output and input current fall to 0 over the UVLO_V below vin_min – a DC result above it is the
             same, a transient run sees the regulator switch off
@@ -48,6 +50,9 @@ ICs and modules are replaced by behaviour models, chosen by values.behavior in t
             uvlo_v or without a PROG resistor; the current measured
   protection  one-cell protection IC (DW01A): roles vdd, gnd, od, oc, vm; OD high above v_uvp_v and below v_ocp_v at
             VM, OC high below v_ovp_v (else at VM), behind r_out_ohm
+  cc_led_driver  constant-current step-down LED driver (PT4115, AL8860): roles vin, sense, sw, gnd, dim; R_S from vin
+            to sense sets vsense_v / R_S (its top), dim scales it, the switch pulls it into SW while r_on_ohm and
+            duty_max_ratio let it; an ideal buck's input current (ic_cc_led_driver)
   none      nothing (e.g. a module that is not powered in this design)
 
 A MOSFET whose entry has the roles gate_2 and source_2 (a dual MOSFET, FS8205A) is two transistors with the same
@@ -449,7 +454,7 @@ class Netlist:
             if fn is None:
                 raise ValueError(f"{des}: unknown behaviour model '{behavior}' (built in: ldo, buck, boost, buck_boost, "
                                  "mcu, cc_sink, opamp, logic, current, bridge, charger, protection, matrix_driver, "
-                                 "pd_sink, pass_gate, photomos, none; or a plugin model)")
+                                 "pd_sink, pass_gate, photomos, cc_led_driver, none; or a plugin model)")
             fn(self, des, part) if behavior in self.plugin_models else fn(des, part)
 
     # --- behaviour models -----------------------------------------------------------------------------------------
@@ -496,7 +501,133 @@ class Netlist:
         self.meta["regs"][des]["limits"] = limits(part)
 
     def ic_boost(self, des, part):
-        self.ic_buck(des, part, "boost")
+        """A boost with a vout pin as buck; an asynchronous one whose output is behind the diode on its switch pin
+        (MT3608, no vout pin): switch_boost."""
+        if self.rn(des, "vout") is None and self.rn(des, "sw") is not None:
+            self.switch_boost(des, part)
+        else:
+            self.ic_buck(des, part, "boost")
+
+    # --- a boost converter's enable, a constant-current LED buck (maker-coverage FT-5, FT-14) -----------------------
+    def probe(self, des, what, expr):
+        """A node that holds an expression of the operating point (0 … 1) for the checks to read: x_<des>_<what>."""
+        x = f"x_{des.lower()}_{what}"
+        self.add(f"B_{des}_{what.upper()} {x} 0 V = {expr}")
+        return x
+
+    def switch_boost(self, des, part):
+        """An asynchronous boost whose output is no pin of its own (MT3608): the output is the net behind the diode on
+        its switch pin (circuit.switch_output), held at vout_v – from the divider and vref_v – while its enable (role
+        en) is high; input power = output power / efficiency, plus iq_a, as buck. EN low – at the pin's VIL and below,
+        rising to VIH (level, to the fourth power: nothing left at 0 V) – switches it off: the output source lets go
+        (between them a conductance of en / BOOST_ON_OHM that only sources – the rectifier lets no current back), the
+        input current stops, and the graph's inductor and diode still join the input to the output – VIN − VD at the
+        load's current, as the topology has it: no switch disconnects the load (TI SLVA191A). The shutdown current is
+        left out; EN unconnected is on."""
+        from ..circuit import is_number, switch_output
+        p = self.reg_values(des, part)
+        vin, gnd = self.rn(des, "vin", True), self._gnd_of(des)
+        behind = switch_output(self.d, des)
+        if behind is None:
+            raise ValueError(f"{des}: a boost without a vout pin needs one diode from its switch pin (role sw) to its "
+                             "output")
+        if not is_number(p.get("vout_v")):
+            raise ValueError(f"{des}: no output voltage – vout_v, or vref_v with its divider on FB (role fb)")
+        dio, tag, vset = behind[1], des.lower(), p["vout_v"]
+        vout = self.rn(dio, "cathode")
+        vin_min = limits(part).get("vin_min_v")
+        on = "" if vin_min is None else f"min(1, max(V({vin},{gnd})-{vin_min - UVLO_V:.6g}, 0)/{UVLO_V})*"
+        level = self.level(des, part, "en", vin)
+        en = self.probe(des, "en", f"({level})**4" if level else "1")
+        self.add(f"B_{des}_O x_{tag}_s {gnd} V = {on}{vset}")
+        self.add(f"B_{des}_G x_{tag}_s x_{tag}_o I = V({en})*max(V(x_{tag}_s)-V(x_{tag}_o), 0)/{BOOST_ON_OHM}")
+        self.add(f"V_{des}_AM x_{tag}_o {vout} 0")
+        eta = p.get("efficiency", 0.85)
+        self.add(f"B_{des}_I {vin} {gnd} I = {on}V({en})*({vset}*max(i(V_{des}_AM),0)/({eta}*max(V({vin},{gnd}),0.3))"
+                 f" + {p.get('iq_a', 0.0)})")
+        self.meta["regs"][des] = {"kind": "boost", "vin": vin, "vout": vout, "gnd": gnd, "vset": vset,
+                                  "ammeter": f"v_{tag}_am#branch", "values": p, "extra_i": 0.0, "vin_min": vin_min,
+                                  "limits": limits(part), "enable": en, "diode": dio}
+
+    def led_string(self, start, stop):
+        """(LEDs, inductors) of a constant-current buck's string: from the net `start` (its sense pin) on through LEDs,
+        anode to cathode, and inductors, up to the net `stop` (its switch pin)."""
+        leds, coils, seen, todo = [], [], {start, stop}, [start]
+        while todo:
+            net = todo.pop()
+            for ref in self.d.nets.get(net, {}).get("pins", []):
+                x = ref.split(".", 1)[0]
+                kind = (self.d.part(x) or {}).get("kind")
+                if kind == "led" and self.d.net_of(x, "anode") == net and x not in leds:
+                    leds.append(x)
+                    nxt = self.d.net_of(x, "cathode")
+                elif kind == "inductor" and x not in coils:
+                    coils.append(x)
+                    nxt = next((n for n in (self.d.pin_net.get(f"{x}.{p}") for p in ("1", "2")) if n != net), None)
+                else:
+                    continue
+                if nxt and nxt not in seen:
+                    seen.add(nxt)
+                    todo.append(nxt)
+        return leds, coils
+
+    def ic_cc_led_driver(self, des, part):
+        """Constant-current step-down LED driver with high-side sense (PT4115, AL8860): roles vin, sense, sw, gnd, dim.
+        The resistors from the vin net to the sense net (R_S, in parallel) set I = vsense_v / R_S – the top of vsense_v
+        [min, typ, max], the upper bound every check uses –, scaled by dim: off at the pin's VIL and below, full at VIH
+        and above, linear in between (the datasheets' DC dimming differs in detail). A pin's own pull-up to an internal
+        supply (pull up, pull_ohm, pull_v) is in the operating point; a dim pin without one that only capacitors touch
+        floats – on, as both datasheets say; unconnected, or without vih_v and vil_v: on. The switch pulls that current
+        into SW – the LED string between sense and SW, through the inductor, carries it – as far as it can: at most
+        (V(sw) − (1 − D_max) × V(vin)) / (D_max × r_on_ohm), on for its maximum duty cycle duty_max_ratio (default 1).
+        Of the current the share D = 1 − V(sw) / V(vin) goes to ground, the rest back to vin – the freewheeling
+        diode's –: the input current of an ideal buck, D × I, the diode's and the switch's losses left out (the graph's
+        diode stays blocked). Off below uvlo_v; iq_a from vin."""
+        from ..circuit import resistors_to
+        p, tag = values(part), des.lower()
+        vin, sw, gnd = self.rn(des, "vin"), self.rn(des, "sw"), self._gnd_of(des)
+        vin_net, sense_net, sw_net = (self.d.net_of(des, r) for r in ("vin", "sense", "sw"))
+        if vin is None or sw is None:
+            return
+        rs = [x for _, x, _ in resistors_to(self.d, sense_net, {vin_net}) if x and x > 0] \
+            if sense_net and vin_net else []
+        r_s = 1 / sum(1 / x for x in rs) if rs else None
+        vs = [x for x in (p.get("vsense_v") if isinstance(p.get("vsense_v"), list) else [p.get("vsense_v")])
+              if isinstance(x, (int, float))]
+        i_set = max(vs) / r_s if r_s and vs else 0.0
+        frac = "1"
+        ref = self.role_pins(des).get("dim")
+        if ref:
+            info, node = part["pins"][ref.split(".", 1)[1]], self.pn(ref)
+            pulled = info.get("pull") == "up" and info.get("pull_ohm") and info.get("pull_v") is not None
+            if pulled:
+                self.add(f"V_{des}_PULL x_{tag}_pull {gnd} DC {info['pull_v']}")
+                self.add(f"R_{des}_PULL x_{tag}_pull {node} {info['pull_ohm']:.6g}")
+            others = [r for r in self.d.nets[self.d.pin_net[ref]]["pins"] if r.split(".", 1)[0] != des]
+            floating = not pulled and all((self.d.part(r.split(".", 1)[0]) or {}).get("kind") == "capacitor"
+                                          for r in others)
+            vil, vih = info.get("vil_v"), info.get("vih_v")
+            if not floating and isinstance(vil, (int, float)) and isinstance(vih, (int, float)) and vih > vil:
+                x = f"(V({node},{gnd})-{vil:g})/{vih - vil:g}"
+                frac = smooth(min, smooth(max, x, "0", 1e-4), "1", 1e-4)
+        dim = self.probe(des, "dim", frac)
+        dmax, r_on, uvlo = p.get("duty_max_ratio", 1.0), p.get("r_on_ohm", 0.0), p.get("uvlo_v")
+        rest = f"-{1 - dmax:g}*V({vin},{gnd})" if dmax < 1 else ""
+        lim = f"max(V({sw},{gnd}){rest}, 0)/{max(dmax * r_on, 1e-3):g}"
+        on = f"0.5*(1+tanh((V({vin},{gnd})-{uvlo:g})/0.02))*" if uvlo else ""
+        i_tot = f"{on}V({dim})*{smooth(min, f'{i_set:.6g}', lim, 1e-3)}"
+        duty = f"min(max(1-V({sw},{gnd})/max(V({vin},{gnd}),0.1), 0), 1)"
+        self.add(f"V_{des}_AM {sw} x_{tag}_sw 0")
+        self.add(f"B_{des}_SW x_{tag}_sw {gnd} I = {duty}*{i_tot}")
+        self.add(f"B_{des}_FW x_{tag}_sw {vin} I = (1-{duty})*{i_tot}")
+        if p.get("iq_a"):
+            self.current_load(f"{des}_IQ", vin, gnd, p["iq_a"])
+        leds, coils = self.led_string(sense_net, sw_net) if sense_net and sw_net else ([], [])
+        self.meta.setdefault("cc_bucks", {})[des] = {
+            "vin": vin, "sw": sw, "gnd": gnd, "ammeter": f"v_{tag}_am#branch", "r_s": r_s, "vsense": vs,
+            "i_set": i_set, "dim": dim, "values": p, "limits": limits(part), "coils": coils,
+            "leds": [f"d_{x}".lower() for x in leds],
+            "parallel": max(1, sum(1 for x in leds if self.d.net_of(x, "anode") == sense_net))}
 
     def ic_mcu(self, des, part):
         p = values(part)
@@ -920,6 +1051,7 @@ FAULT_SHORT_OHM = 0.01      # a short of a generated fault scenario
 PD_SHUNT_OHM = 0.1          # the dynamic resistance of a PD sink's VDD shunt in the model: within 3 mV at 30 mA
 PASS_GATE_KNEE_V = 0.1      # a pass gate turns on over this much below its reference
 CHARGER_CV_OHM = 0.01       # how stiffly the charger model holds the float voltage – a model constant, no datasheet value
+BOOST_ON_OHM = 1e-3         # a switch_boost's output source while enabled – a model constant, no datasheet value
 
 
 def build(design, cfg, scenario, plugin_models=None, tran=None):

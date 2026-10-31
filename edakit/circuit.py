@@ -118,13 +118,13 @@ def resistors_to(d, net, targets):
 def feedback_vout(d, des):
     """(vout, R1, R2) of an adjustable regulator set by its divider (maker-coverage FT-5), or None: values vref_v and a
     pin with the role adj (the reference between the output and ADJ – LM317, AMS1117: VOUT = VREF × (1 + R2/R1)) or fb
-    (the reference from FB to ground – most bucks and boosts: VOUT = VREF × (1 + R1/R2)); R1 from the output (role vout)
-    to that pin, R2 from it to ground, resistors in parallel added up. The adjust pin's current (IADJ × R2) is left out,
-    as the datasheets do."""
+    (the reference from FB to ground – most bucks and boosts: VOUT = VREF × (1 + R1/R2)); R1 from the output (role vout;
+    a boost without one: the net behind the diode on its switch pin) to that pin, R2 from it to ground, resistors in
+    parallel added up. The adjust pin's current (IADJ × R2) is left out, as the datasheets do."""
     part = d.part(des) or {}
     vref = values(part).get("vref_v")
     role = next((r for r in ("adj", "fb") if d.net_of(des, r)), None)
-    out, mid = d.net_of(des, "vout"), d.net_of(des, role) if role else None
+    out, mid = regulator_output(d, des), d.net_of(des, role) if role else None
     if not is_number(vref) or not out or not mid:
         return None
 
@@ -135,6 +135,26 @@ def feedback_vout(d, des):
     if r1 is None or r2 is None:
         return None
     return (vref * (1 + r2 / r1) if role == "adj" else vref * (1 + r1 / r2)), r1, r2
+
+
+def switch_output(d, des):
+    """(net, diode) behind the rectifier on a boost converter's switch pin (role sw): the cathode's net of the one diode
+    whose anode is on it – the output of an asynchronous boost (MT3608), which is no pin of the IC (maker-coverage
+    FT-5); None where there is no such diode or more than one output."""
+    sw = d.net_of(des, "sw")
+    found = {(d.net_of(x, "cathode"), x) for x in d.comps_of_kind("diode") if sw and d.net_of(x, "anode") == sw}
+    nets = {net for net, _ in found if net and net != sw}
+    return min(found) if len(nets) == 1 and len(found) == 1 else None
+
+
+def regulator_output(d, des):
+    """A regulator's output net: its pin with the role vout, else – a boost converter without one – the net behind the
+    diode on its switch pin (switch_output)."""
+    out = d.net_of(des, "vout")
+    if out or values(d.part(des) or {}).get("behavior") != "boost":
+        return out
+    behind = switch_output(d, des)
+    return behind[0] if behind else None
 
 
 def resistor_like(d):

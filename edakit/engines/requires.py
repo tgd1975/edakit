@@ -133,14 +133,14 @@ def feedback_dividers(d):
     """REQ.missing/feedback, REQ.value/feedback (maker-coverage FT-5): an adjustable regulator (values vref_v, a pin
     with the role adj or fb) has its divider – R1 from the output to that pin, R2 from it to ground –, and the output it
     sets stays within the output net's declared range."""
-    from ..circuit import feedback_vout
+    from ..circuit import feedback_vout, regulator_output
     out = []
     for des in sorted(d.comps):
         part = d.part(des) or {}
         role = next((r for r in ("adj", "fb") if d.net_of(des, r)), None)
         if not is_number(values(part).get("vref_v")) or not role:
             continue
-        net, on = d.net_of(des, "vout"), (("component", des),)
+        net, on = regulator_output(d, des), (("component", des),)
         fb = feedback_vout(d, des)
         if fb is None:
             out.append(Finding("REQ.missing", "G", des, f"{des}: an adjustable regulator ({role.upper()}) without its "
