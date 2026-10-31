@@ -391,3 +391,14 @@ proposed – what became of the gaps the build left (maker-coverage-status.toml,
     the MIDI specification, Eurorack, pickups, an ampacity table by gauge, ES1's AC limit. The key matrix of FT-21
     comes from a public keyboard repository with a KiCad schematic, attached to the session read only.
 
+Taken by the owner on 2026-10-31 through a form – the candidates still in part after the build:
+
+19. **FT-4, a charger's termination** counts as built: decision 17 stands – no state model; what keeps the charge from
+    terminating and can be seen on the board is checked (a load on the cell: HINT.power_path; the charge current
+    against the cell: LIM.i/charge), HINT.charge_termination names the rest and the coverage report lists the charger
+    as not simulated over time.
+20. **FT-18, pickups and microphones:** the makers' published values – the owner allows their hosts in the
+    environment; where a maker gives no inductance the project gives its own (measured or published).
+21. **FT-21, a guitar circuit:** a pedal with an open licence and a KiCad schematic from a public repository, read only
+    like the Corne, instead of the Tube Screamer drawings of electrosmash.com.
+
