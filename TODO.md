@@ -76,6 +76,17 @@ Built and decided on 2026-10-31; what is left runs live.
       nothing tells the maker about; LIM.p rows for LEDs change the simulation's counts; an accepted simulation
       finding counts as waived in the gate.
 
+## The graph as TOML ([circuit-language-plan.md](docs/concepts/done/circuit-language-plan.md))
+
+L.1 to L.8 built on 2026-10-31.
+
+- [ ] **L.9, on the owner's word, in the bell's session and not during an order:** `edakit graph convert` in the main
+      configuration and the three variants, the sign-offs carried over; the bell's mentions of `graph.json`
+      (`hardware/README.md`, `docs/decisions.md`, a comment in the esp32 firmware) name the generated file; the four
+      round trips of the sketch once more, `edakit graph json` against the former `graph.json`. Scripts that read
+      `graph` show as outdated once after the conversion (`edakit run` or `edakit scripts stamp`), and the firmware
+      contract wants `edakit firmware` again.
+
 ## KiCad tool chain ([kicad-toolchain.md](docs/concepts/done/kicad-toolchain.md))
 
 Built and merged into main on 2026-10-30, tested offline and in CI against KiCad 10 on the led-bar example.

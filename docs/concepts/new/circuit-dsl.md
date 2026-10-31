@@ -723,7 +723,8 @@ toolchain" below.
 
 Not before, and not without, these:
 
-1. **The TOML form is built** ([circuit-language-plan.md](circuit-language-plan.md), L.1 to L.9): pins by name or
+1. **The TOML form is built** ([circuit-language-plan.md](../done/circuit-language-plan.md), L.1 to L.9; L.1 to L.8 built on
+   2026-10-31, L.9 the bell's): pins by name or
    role, the resolved `graph.json` beside the form, `--check` in the hook. The language compiles to the same
    artifact; without it, it has no target.
 2. **Blocks want parameters.** Measured in the projects: three or more blocks whose values a project changes – the
@@ -913,4 +914,4 @@ A](https://github.com/Systems-Modeling/SysML-v2-Release/blob/master/sysml/src/ex
   prototype [translate.py and bell.circuit](../done/prototypes/circuit-language/),
   [maker-coverage.md](../done/maker-coverage.md) (the owner's projects, FT-23, FT-24, the stability of the model),
   [circuit-language.md](../done/circuit-language.md) (the sketch, its review and decisions) and
-  [circuit-language-plan.md](circuit-language-plan.md).
+  [circuit-language-plan.md](../done/circuit-language-plan.md).

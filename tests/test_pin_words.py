@@ -1,4 +1,4 @@
-"""Pins by name or role (docs/concepts/new/circuit-language-plan.md, L.1 and L.2; the rules table of
+"""Pins by name or role (docs/concepts/done/circuit-language-plan.md, L.1 and L.2; the rules table of
 docs/concepts/done/circuit-language.md): the Design reads every pin word of the graph once – the number first, then
 the name of one pin, then the role of one pin, then a name or role several pins share, which stands for all of them –
 and everything after it reads numbers as before. A finding names a pin by the word rule, the number in brackets where

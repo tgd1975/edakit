@@ -1,8 +1,10 @@
 # Implementation plan: pins by name or role, the graph as TOML
 
-Status 2026-10-31: plan for the decisions of [circuit-language.md](../done/circuit-language.md) (its table of
-2026-10-31); nothing built yet. Each step starts when the user asks for it. The ground rules of
-[implementation-plan.md](implementation-plan.md) hold: one step, one branch, built with add-feature – a failing test
+Status 2026-10-31: settled. L.1 to L.8 built on the owner's word of 2026-10-31 ("bitte … bearbeiten"), merged on
+the branch `ccr-f80e23dc-ak6668` with the suite green – section "State after the build"; L.9, the bell converting, is
+the bell's, on the owner's word and not during an order (the owner's answer of the same day), kept in `TODO.md`.
+Plan for the decisions of [circuit-language.md](circuit-language.md) (its table of 2026-10-31). The ground rules of
+[implementation-plan.md](../new/implementation-plan.md) hold: one step, one branch, built with add-feature – a failing test
 first, then the interface, the code, the handbook, `pytest` and `ruff` –; no key, no change; hashes named; the bell told
 before a step changes its gate result or hashes.
 
@@ -13,22 +15,22 @@ graph as TOML with names, `hardware/graph.toml`, named by `[project] graph`; the
 canonical JSON, sorted; `edakit graph json` and the resolved `hardware/graph.json` generated beside the form and
 checked in the pre-commit hook; `edakit graph convert` for a project that moves; `block add` on a TOML graph; the
 handbook and the skills. The language of the sketch stays deferred; its prototypes in
-[prototypes/circuit-language](../done/prototypes/circuit-language/) stay the record of the sketch at `75d5c32`, and the
+[prototypes/circuit-language](prototypes/circuit-language/) stay the record of the sketch at `75d5c32`, and the
 round trip they ran moves into the tests of L.6.
 
 ## Overview
 
 | Step | What | Decision | Size | Waits for | State |
 | --- | --- | --- | --- | --- | --- |
-| L.1 | Pins by name or role in the loader; findings name pins by the word rule | 1, 6; confirmed 1–3 | M | – | open |
-| L.2 | The pin map from the parts entry | 3 | S | L.1 | open |
-| L.3 | The TOML form, read by `load_graph()` | 1; confirmed 4, 5 | M | L.1 | open |
-| L.4 | The circuit hash of a TOML graph | 2 | S | L.3 | open |
-| L.5 | `edakit graph json`, the resolved `graph.json`, `--check` in the pre-commit hook | 4; confirmed 5 | M | L.3 | open |
-| L.6 | `edakit graph convert`, the sign-offs carried over, the round trip as its test | confirmed 6 | M | L.4, L.5 | open |
-| L.7 | `block add` on a TOML graph | 1 | M | L.3 | open |
-| L.8 | Handbook, reference, skills, README, the catalog's text of STRUCT.entry and STRUCT.pin | 1 | M | L.5, L.6, L.7 | open |
-| L.9 | The bell converts, in its repository | – | S | L.8, the user's word | open |
+| L.1 | Pins by name or role in the loader; findings name pins by the word rule | 1, 6; confirmed 1–3 | M | – | built |
+| L.2 | The pin map from the parts entry | 3 | S | L.1 | built |
+| L.3 | The TOML form, read by `load_graph()` | 1; confirmed 4, 5 | M | L.1 | built |
+| L.4 | The circuit hash of a TOML graph | 2 | S | L.3 | built |
+| L.5 | `edakit graph json`, the resolved `graph.json`, `--check` in the pre-commit hook | 4; confirmed 5 | M | L.3 | built |
+| L.6 | `edakit graph convert`, the sign-offs carried over, the round trip as its test | confirmed 6 | M | L.4, L.5 | built |
+| L.7 | `block add` on a TOML graph | 1 | M | L.3 | built |
+| L.8 | Handbook, reference, skills, README, the catalog's text of STRUCT.entry and STRUCT.pin | 1 | M | L.5, L.6, L.7 | built |
+| L.9 | The bell converts, in its repository | – | S | L.8, the user's word | open – the bell's, on the owner's word |
 
 ```mermaid
 graph LR
@@ -137,6 +139,28 @@ would have needed; from L.3 on it is the TOML form.
 
 ## Not in this plan
 
-The language itself (deferred; what it would need, on which basis and when: [circuit-dsl.md](circuit-dsl.md)); a
+The language itself (deferred; what it would need, on which basis and when: [circuit-dsl.md](../new/circuit-dsl.md)); a
 net in fragments (decision 7); an alias per pin (6); variants as differences (5); converting the reference circuits
 of the tests and the evals to TOML – only where a test needs it.
+
+## State after the build
+
+Built on 2026-10-31 in worktrees, one or two steps each, test first; merged on `ccr-f80e23dc-ak6668` with the whole
+suite green after every merge (2534 passed after L.8). A JSON graph loads and hashes as before.
+
+| Step | State | Where |
+| --- | --- | --- |
+| L.1 | built: the Design reads every pin word once – nets, `nc`, `locks.pins`, `layout.loops`, a cable's `pins` – by number, name of one pin, role of one pin (the role of the part's config), then a shared name or role; a word that names no pin, or a shared word where one pin is meant, is STRUCT.pin; findings name a pin by the word rule (`Design.pin_text`, "U2.VDD (16)"), places stay numbers, so accepts keyed by place keep working | `edakit/design.py` (`resolve`, `word`, `words`, `pin_text`), `findings.py`, `tests/test_pin_words.py` |
+| L.2 | built: a component without `pins` takes its entry's map; without an entry the numbers its nets and `nc` use, STRUCT.entry reports only the missing entry; where the map is the entry's only the comparison with the library symbol is left | `edakit/design.py`, `engines/struct.py`, catalog STRUCT.entry |
+| L.3 | built: `load_graph()` reads a `.toml` graph – keyed tables in the order of the file, errors with file and line, an empty graph has empty lists; `edakit convert` leaves a TOML graph alone and names a key of before in it; the release notes read the purpose through `load_graph` | `edakit/design.py` (`graph_of_toml`), `convert.py`, `release/publish.py`, `tests/test_graph_toml.py` |
+| L.4 | built: a TOML graph hashes as canonical sorted data – components by designator, nets and cables by name, a net's pins sorted, `hash_ignore` applied, `purpose` and `compliance` whole; a JSON graph's hash pinned byte for byte | `release/gate.py` (`content`, `arranged`), `scripts.py`, `requirements.py` |
+| L.5 | built: `edakit graph json [--write\|--check]` – the resolved graph in the format of before, `--write` beside a TOML source only, `--check` exit 2 with what differs; the generated file is in no hash and no data name | `edakit/graph_form.py`, `cli.py`, `tests/test_graph_form.py` |
+| L.6 | built: `edakit graph convert [--dry-run]` – the TOML written by the word rule, the pin map left out where it is the entry's, `[project] graph` set by a line edit, the resolved `graph.json` written, the sign-offs of scope `circuit` carried over (`rehashed`); refuses null, a name twice, a word that names no pin, an existing `graph.toml`, and reads its own TOML back before writing. The touchstone ran on led-bar and the seven reference circuits. Not carried over: script stamps (scripts that read `graph` show as outdated once) and the firmware contract's `state_sha256` (convert says to run `edakit firmware`) – handbook 3.1, 10.5 | `edakit/graph_form.py`, `convert.py` (`carry_signoffs`) |
+| L.7 | built: `block add` on a TOML graph through a line editor that keeps comments and arrangement – tables after the last of their kind, a pin appended in the style of its array, `accept` as keys, grounds; the new text is written only if it reads back as the graph with the block; the block's pin maps left out where they are the entries' (decision 3) | `edakit/toml_edit.py`, `block.py`, `tests/test_block_toml.py` |
+| L.8 | built: handbook 1, 2.7, 3 (the form on led-bar, the generated file, moving a project, 3.2, 3.4), 7.4, 8.2, 8.6, 10, 14.3, 14.5; catalog STRUCT.entry and STRUCT.pin; skills new-project (writes `hardware/graph.toml`, the hook line), circuit-design, hardware-change, own-part; the agents; README; `evals/add-led`; one TOML value writer for convert and block add | handbook, `skills/`, `agents/`, `tests/test_plugin.py` |
+| L.9 | open: the bell converts in its repository – on the owner's word, in the bell's session, not during an order | `TODO.md` |
+
+Seen on the way and left: the walkthrough of handbook 17 and `examples/coin-cell-led` stay JSON as the record of a
+run; the reference circuits and the evals stay JSON (decision of the plan). Two old mentions of the key `checks` in
+circuit-design §2 and the agent project-surveyor predate this plan.
+

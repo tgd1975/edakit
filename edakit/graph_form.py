@@ -1,5 +1,5 @@
 """The graph's two files: the TOML form a person writes and the resolved JSON edakit generates beside it
-(docs/concepts/new/circuit-language-plan.md, steps L.5 and L.6; the decisions of docs/concepts/done/circuit-language.md).
+(docs/concepts/done/circuit-language-plan.md, steps L.5 and L.6; the decisions of docs/concepts/done/circuit-language.md).
 
     edakit graph json            the resolved graph on stdout: {"graph": …} as a JSON graph has always been – pin
                                  numbers everywhere (the Design's reading of every pin word), the full pin map of
