@@ -208,7 +208,7 @@ grades = { polarized = "warning", inject = "warning", powered = "warning", order
 details = [
   "voltage domains: every net's range within `v_max_v` of every pin on it – finds e.g.: a 5-V signal on a 3.3-V GPIO",
   "voltage ratings with margin: capacitors (×1.5), diodes VRRM (×1.5), BJT VCEO, MOSFET VDS/VGS (×1.5), fuses, switches, connectors – finds e.g.: a 6.3-V capacitor on a 5-V rail",
-  "stress of every part against its ratings with derating: resistor power ≤ 50 %, currents ≤ 80 %, capacitor/diode/transistor voltages ≤ 67 %, LED forward current and reverse voltage, fuse hold current at ambient, connector, switch and relay contact current, relay coil voltage, the current of every MCU output (`gpio_i_max_a`) and of all outputs together, sourced and sunk (`gpio_i_total_max_a`) – each pin may be fine and the sum beyond the package; the junction temperature of every part with `rth_ja_k_per_w` against its `tj_max_c`, and on a board of `touch_c` against the touch limit (5.3)",
+  "stress of every part against its ratings with derating: the power of resistors, transistors and LEDs ≤ 50 %, currents ≤ 80 %, capacitor/diode/transistor voltages ≤ 67 %, LED forward current, reverse voltage and power (VF × IF), fuse hold current at ambient, connector, switch and relay contact current, relay coil voltage, the current of every MCU output (`gpio_i_max_a`) and of all outputs together, sourced and sunk (`gpio_i_total_max_a`) – each pin may be fine and the sum beyond the package; the junction temperature of every part with `rth_ja_k_per_w` against its `tj_max_c`, and on a board of `touch_c` against the touch limit (5.3)",
   "transient limits: in every run of `transients` each limit of its `expect` – a net's lowest voltage ≥ `min_v`, highest ≤ `max_v`, a source's peak current ≤ `i_max_a` – and every MCU's supply pin, once it has reached its `vin_min_v` (`vsys_min_v`), never below it again before the run ends; actual value with the time it occurs (\"2.985 V at 1.3 ms\")",
 ]
 replaces = ["G-3", "G-8", "E-2", "E-5"]
@@ -264,7 +264,7 @@ sources = [
 
 [codes."LIM.p"]
 title = "power within its limit"
-rule = "Every part's dissipation stays within the derated p_max_w of its entry."
+rule = "Every part's dissipation stays within the derated p_max_w of its entry (sim.json derating p, 50 % by default) at the operating point of every scenario: a resistor's I²R, a transistor's VCE × IC + VBE × IB, a MOSFET's VDS × ID, a JFET's VDS × ID + VGS × IG, an LED's forward voltage × forward current – each colour of an RGB LED against its colour's p_max_w where its entry gives the limits per colour."
 why = "Derating buys lifetime and covers worst-case supply, tolerance and ambient that a DC analysis does not see."
 fix = "A part with a higher rating, another value, or another operating point."
 severity = "error"
@@ -272,6 +272,7 @@ replaces = ["E-2"]
 sources = [
   "edakit handbook 5.3",
   "the datasheet of each part: ratings in its parts entry (MCU: gpio_i_max_a, gpio_i_total_max_a; rth_ja_k_per_w, tj_max_c)",
+  "edakit handbook 17.6 and walkthrough-gaps.md, A1 (2026-10-31): the walkthrough's D1 (NationStar NCD0805R1, PD 65 mW) had LIM.p rows for R1 only – an LED below its if_max_a and above its p_max_w passed",
 ]
 
 [codes."LIM.t"]

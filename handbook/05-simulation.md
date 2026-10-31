@@ -472,6 +472,14 @@ Every expectation of an AC run of the simulation config (ac) holds: the gain fro
 A net listed for copper is simulated with its routed copper; where it is not, it stays one ideal node.
 <!-- edakit:end -->
 
+**Power.** What a part dissipates at the operating point of every scenario is held to the `p_max_w` of its entry,
+derated by `derating.p` of sim.json (50 % by default, `catalog/tables/derating.toml`): a resistor's I²R, a
+transistor's VCE × IC + VBE × IB, a MOSFET's VDS × ID, a JFET's VDS × ID + VGS × IG, and an LED's VF × IF, its series
+resistance included – each colour of an RGB LED against its colour's `p_max_w` where the entry gives its limits per
+colour. LIM.i alone does not hold an LED: one below its `if_max_a` with a high forward voltage can be above its power
+rating. The walkthrough's red LED dissipates 14.75 mW at the most, against 32.5 mW, half its 65 mW (17.6). A part
+without `p_max_w` gets no LIM.p row; a diode's power counts into its junction temperature only (below).
+
 **Heat and touch.** Half the power rating is no temperature: an AO3401A (125 K/W) at LIM.p's 0.45 W runs at 96 °C
 at 40 °C ambient. Every part whose entry gives `rth_ja_k_per_w` gets its junction temperature in every scenario,
 `ambient_c` + P × Rth(j-a), with P the power of all its elements – a resistor's I²R, a diode's or LED's VF × IF, a

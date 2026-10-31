@@ -130,5 +130,5 @@ def test_touch_limit_of_an_unknown_board(project):
 
 def test_example_has_no_new_items(project):
     out = simulate(project)
-    assert len(out["checks"]) == 738
+    assert len(out["checks"]) == 834
     assert not [c for c in out["checks"] if c["check"].startswith(JUNCTION + ":") and c["id"] == "LIM.t"]   # a part's own

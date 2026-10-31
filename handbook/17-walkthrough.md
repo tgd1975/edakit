@@ -231,7 +231,7 @@ used/pressed/vf-max                fail      2.500V   2.500V   2.500V
 used/released/vf-min               ok        2.500V   0.000V   0.000V
 used/released/vf-max               ok        2.500V   0.000V   0.000V
 
-84 comparisons: fail 2, pass 82
+92 comparisons: fail 2, pass 90
 
 SIM.state – the circuit does what the scenario expects: 2 error
   E  [used/pressed/vf-min] D1: LED on: 0.0003974 A, expected ≥ 1 mA
@@ -265,8 +265,9 @@ STRUCT.entry – graph pins = parts entry: 2 error
 ```
 
 With the pins and nets swapped, the 150 Ω of the block stay: the simulation gives 1.22 mA from a used cell into the
-LED at its highest forward voltage, 10.7 mA from a fresh cell at its lowest – LIM.i allows 20 mA, 80 % of its 25 mA. The
-computation is in R1's `notes`, the reason in D-2.
+LED at its highest forward voltage, 10.7 mA from a fresh cell at its lowest – LIM.i allows 20 mA, 80 % of its 25 mA, and
+LIM.p holds the 14.75 mW it then dissipates (Vf × If) to 32.5 mW, half its 65 mW. The computation is in R1's `notes`,
+the reason in D-2.
 
 **A cell upside down (PATH.reverse, D-3).** The holder takes the cell either way round, and PATH.reverse wants a
 blocking part behind it. A Schottky diode in series costs about 0.3 V – just the margin R-1 needs from a used cell; a P-MOSFET costs two
@@ -285,7 +286,7 @@ button pressed. Its first run failed – the nets were declared from 0 V, and a 
 ```text
 reversed/pressed                   fail     -3.200V  -3.200V  -3.200V
 
-95 comparisons: fail 3, pass 92
+104 comparisons: fail 3, pass 101
 
 LIM.declared – net inside its declared range: 3 error
   E  [reversed/pressed] VBAT: net voltage inside the declared range: -3.2 V, expected 0 … 3.3 V   (v of net VBAT …)
@@ -304,7 +305,7 @@ reviewer checks the reason:
 }
 ```
 
-Now: 0 errors, 3 accepted; 95 simulation comparisons pass.
+Now: 0 errors, 3 accepted; 104 simulation comparisons pass.
 
 ## 17.7 Stock and cost
 
@@ -450,7 +451,7 @@ requirements: 1 passed, 1 open after the export (section 11 of the protocol)
 ```text
 | P Parts | parts database complete, graph pins = parts database, parts verified, … | 7 | 0 | 0 | 0 | 0 | passed |
 | G Graph | structure, pin locks, voltage domains, inputs, drivers, decoupling, … | 35 | 0 | 0 | 4 | 0 | passed |
-| E Simulation | ngspice operating points of all scenarios, stress of every part, … | 95 | 0 | 0 | 0 | 0 | passed |
+| E Simulation | ngspice operating points of all scenarios, stress of every part, … | 104 | 0 | 0 | 0 | 0 | passed |
 ```
 
 In P and G every code without a finding counts once as passed – the codes the domains `core` and `power` switch on –,
