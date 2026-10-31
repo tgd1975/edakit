@@ -5,13 +5,15 @@ import json
 
 import pytest
 
+from helpers import check
+
 from edakit import checks
 from edakit.design import Design
 
 
 def run(project):
     cfg = project.config()
-    return checks.run(Design.from_config(cfg), cfg)
+    return check(Design.from_config(cfg), cfg)
 
 
 def ids(rep):
@@ -22,7 +24,7 @@ def test_example_is_clean(project):
     rep = run(project)
     assert rep.errors == []
     assert rep.pending == []
-    assert {c for c, _, _ in rep.waived} == {"G-4"}
+    assert {c for c, _, _ in rep.waived} == {"LVL.undefined"}
 
 
 def test_g1_unconnected_pin(project):
@@ -30,7 +32,7 @@ def test_g1_unconnected_pin(project):
     net = project.net(g, "BTN")
     net["pins"].remove("SW1.1")
     project.save_graph(g)
-    assert "G-1" in ids(run(project))
+    assert "STRUCT.pin" in ids(run(project))
 
 
 def test_g1_pin_in_two_nets(project):
@@ -42,13 +44,13 @@ def test_g1_pin_in_two_nets(project):
 
 def test_g1_check_settings_and_ground_name_what_the_graph_has(project):
     g = project.graph()
-    g["graph"]["checks"]["reverse_protect"] = ["J9"]
-    g["graph"]["checks"]["pin_lock"] = {}            # pin_locks misspelt
+    g["graph"]["locks"]["pins"]["J9.1"] = "VIN"
+    g["graph"]["locks"]["pin"] = {}                  # pins misspelt
     g["graph"]["ground"] = "0V"
     project.save_graph(g)
-    msgs = [m for c, m in run(project).errors if c == "G-1"]
-    assert "checks.reverse_protect: no part J9 in the graph" in msgs and "ground: no net 0V in the graph" in msgs
-    assert any(m.startswith("checks: unknown key 'pin_lock'") for m in msgs)
+    msgs = [m for c, m in run(project).errors if c == "STRUCT.ref"]
+    assert "locks.pins: no part J9 in the graph" in msgs and "ground: no net 0V in the graph" in msgs
+    assert any(m.startswith("locks: unknown key 'pin'") for m in msgs)
 
 
 def test_g2_pin_lock(project):
@@ -56,14 +58,14 @@ def test_g2_pin_lock(project):
     project.net(g, "LED_CLK")["pins"].remove("U1.4")
     project.net(g, "BTN")["pins"].append("U1.4")
     project.save_graph(g)
-    assert "G-2" in ids(run(project))
+    assert "STRUCT.lock" in ids(run(project))
 
 
 def test_g3_voltage_above_pin_limit(project):
     g = project.graph()
     project.net(g, "BTN")["v"] = [0, 5.0]   # 5 V on a 3.63-V GPIO
     project.save_graph(g)
-    assert "G-3" in ids(run(project))
+    assert "LIM.v" in ids(run(project))
 
 
 def test_g4_floating_input(project):
@@ -73,7 +75,7 @@ def test_g4_floating_input(project):
     project.net(g, "3V3")["pins"].remove("R2.1")
     g["graph"]["components"] = [c for c in g["graph"]["components"] if c["designator"] != "R2"]
     project.save_graph(g)
-    assert any("LED_OE" in m for c, m in run(project).errors if c == "G-4")
+    assert any("LED_OE" in m for c, m in run(project).errors if c == "LVL.undefined")
 
 
 def test_g5_two_outputs(project):
@@ -84,12 +86,12 @@ def test_g5_two_outputs(project):
     g["graph"]["nets"].append(sdo)
     project.save_graph(g)
     rep = run(project)
-    # U1.10 is bidirectional, U2.14 an output: one output – no G-5; make the MCU pin an output too
+    # U1.10 is bidirectional, U2.14 an output: one output – no LVL.contention; make the MCU pin an output too
     part = project.part("C41407547")
     part["pins"]["10"]["type"] = "output"
     project.save_part("C41407547", part)
     rep = run(project)
-    assert "G-5" in ids(rep)
+    assert "LVL.contention" in ids(rep)
 
 
 def test_g6_missing_decoupling(project):
@@ -98,14 +100,14 @@ def test_g6_missing_decoupling(project):
     project.net(g, "GND")["pins"].remove("C1.2")
     g["graph"]["components"] = [c for c in g["graph"]["components"] if c["designator"] != "C1"]
     project.save_graph(g)
-    assert "G-6" in ids(run(project))
+    assert "REQ.missing" in ids(run(project))
 
 
 def test_g8_capacitor_rating(project):
     part = project.part("C45783")
-    part["ratings"]["v_max"] = 6.3   # 22 µF on a 5.5-V rail needs 8.25 V
+    part["limits"]["v_max_v"] = 6.3   # 22 µF on a 5.5-V rail needs 8.25 V
     project.save_part("C45783", part)
-    assert "G-8" in ids(run(project))
+    assert "LIM.v" in ids(run(project))
 
 
 def test_g10_reverse_protection_bypassed(project):
@@ -113,19 +115,19 @@ def test_g10_reverse_protection_bypassed(project):
     project.net(g, "VIN")["pins"] += ["U1.39"]          # VSYS directly at the connector
     project.net(g, "+5V")["pins"].remove("U1.39")
     project.save_graph(g)
-    assert any("U1.39" in m for c, m in run(project).errors if c == "G-10")
+    assert any("U1.39" in m for c, m in run(project).errors if c == "PATH.reverse")
 
 
 def test_p1_pin_name_differs(project):
     g = project.graph()
     project.comp(g, "U2")["pins"]["2"] = "DATA"
     project.save_graph(g)
-    assert "P-1" in ids(run(project))
+    assert "STRUCT.entry" in ids(run(project))
 
 
 def test_p1_missing_parts_entry(project):
     (project.root / "hardware" / "parts" / "C17414.json").unlink()
-    assert "P-1" in ids(run(project))
+    assert "STRUCT.entry" in ids(run(project))
 
 
 def test_g9_unverified_part_is_pending(project):
@@ -134,14 +136,14 @@ def test_g9_unverified_part_is_pending(project):
     project.save_part("C2297", part)
     rep = run(project)
     assert not rep.errors
-    assert any(c == "G-9" for c, _ in rep.pending)
+    assert any(c == "PARTS.verified" for c, _ in rep.pending)
 
 
 def test_waive_needs_reason_and_is_reported(project):
     g = project.graph()
-    project.net(g, "LED_CLK").pop("waive")
+    project.net(g, "LED_CLK").pop("accept")
     project.save_graph(g)
-    assert "G-4" in ids(run(project))
+    assert "LVL.undefined" in ids(run(project))
 
 
 # --- checks adopted from CircuitSmith's rule catalog and the reference project -------------------------------------
@@ -162,7 +164,7 @@ def test_g11_i2c_line_without_pullup(project):
     g = project.graph()
     i2c_bus(project, g)
     project.save_graph(g)
-    assert any("SDA" in m and "without a pull-up" in m for c, m in run(project).errors if c == "G-11")
+    assert any("SDA" in m and "without a pull-up" in m for c, m in run(project).errors if c == "REQ.missing")
 
 
 def test_g11_pullup_in_range(project):
@@ -172,12 +174,12 @@ def test_g11_pullup_in_range(project):
     project.net(g, "SDA")["pins"].append("R10.2")
     project.net(g, "3V3")["pins"].append("R10.1")
     project.save_graph(g)
-    assert "G-11" not in ids(run(project))
+    assert "REQ.value" not in ids(run(project))
     for value, words in ((47000, "above"), (680, "below")):
         part = project.part("C17414")
-        part["params"]["value_ohm"] = value
+        part["values"]["value_ohm"] = value
         project.save_part("C17414", part)
-        assert any(words in m for c, m in run(project).errors if c == "G-11")
+        assert any(words in m for c, m in run(project).errors if c == "REQ.value")
 
 
 def test_g11_pullup_on_a_module_pin_counts(project):
@@ -187,7 +189,7 @@ def test_g11_pullup_on_a_module_pin_counts(project):
     part = project.part("C41407547")
     part["pins"]["10"].update(pull="up", pull_ohm=4700)
     project.save_part("C41407547", part)
-    assert "G-11" not in ids(run(project))
+    assert not {"REQ.missing", "REQ.value"} & ids(run(project))
 
 
 def test_g11_bus_found_by_pin_name_and_role(project):
@@ -198,10 +200,10 @@ def test_g11_bus_found_by_pin_name_and_role(project):
     part = project.part("C41407547")
     part["pins"]["10"]["name"] = "SDA"
     project.save_part("C41407547", part)
-    assert "G-11" not in ids(run(project))  # the role gpio says what the pin is: no I2C
+    assert "REQ.missing" not in ids(run(project))  # the role gpio says what the pin is: no I2C
     del part["pins"]["10"]["role"]
     project.save_part("C41407547", part)
-    assert "G-11" in ids(run(project))      # without a role its name counts
+    assert "REQ.missing" in ids(run(project))      # without a role its name counts
 
 
 def strap(project, level, pull=None):
@@ -219,12 +221,12 @@ def strap(project, level, pull=None):
 
 def test_g12_strap_held_by_internal_pull(project):
     project.save_graph(strap(project, "high", pull="up"))
-    assert "G-12" not in ids(run(project))
+    assert "LVL.boot" not in ids(run(project))
 
 
 def test_g12_strap_floats(project):
     project.save_graph(strap(project, "high"))
-    assert any("nothing holds it" in m for c, m in run(project).errors if c == "G-12")
+    assert any("nothing holds it" in m for c, m in run(project).errors if c == "LVL.boot")
 
 
 def test_g12_pull_against_the_boot_level(project):
@@ -233,7 +235,7 @@ def test_g12_pull_against_the_boot_level(project):
     project.net(g, "BOOT")["pins"].append("R10.1")
     project.net(g, "GND")["pins"].append("R10.2")
     project.save_graph(g)
-    assert any("R10 holds it low" in m for c, m in run(project).errors if c == "G-12")
+    assert any("R10 holds it low" in m for c, m in run(project).errors if c == "LVL.boot")
 
 
 def test_g12_strap_driven_by_an_output(project):
@@ -241,7 +243,7 @@ def test_g12_strap_driven_by_an_output(project):
     project.comp(g, "U2")["nc"].remove("14")   # SDO of the LED driver: a push-pull output
     project.net(g, "BOOT")["pins"].append("U2.14")
     project.save_graph(g)
-    assert any("U2.14 drives it" in m for c, m in run(project).errors if c == "G-12")
+    assert any("U2.14 drives it" in m for c, m in run(project).errors if c == "LVL.boot")
 
 
 def coil_stage(project, coil_part, coil_pins):
@@ -273,12 +275,12 @@ def add_flyback(project):
     project.save_graph(g)
 
 
-BUZZER = {"lcsc": "C409842", "mpn": "YS-MBZ12085C05R42", "kind": "buzzer", "params": {"coil_ohm": 42},
-          "ratings": {"v_max": 7}, "verified": {"by": "test"},
+BUZZER = {"lcsc": "C409842", "mpn": "YS-MBZ12085C05R42", "kind": "buzzer", "values": {"coil_ohm": 42},
+          "limits": {"v_max_v": 7}, "verified": {"by": "test"},
           "pins": {"1": {"name": "+", "type": "passive", "role": "plus"},
                    "2": {"name": "-", "type": "passive", "role": "minus"}}}
 RELAY = {"lcsc": "C9000001", "mpn": "test relay 5 V", "kind": "relay", "verified": {"by": "test"},
-         "params": {"coil_ohm": 70, "v_operate": 3.75, "v_release": 0.5}, "ratings": {"v_coil_max": 6.5, "i_max_a": 2},
+         "values": {"coil_ohm": 70, "v_operate_v": 3.75, "v_release_v": 0.5}, "limits": {"v_coil_max_v": 6.5, "i_max_a": 2},
          "pins": {"1": {"name": "A1", "type": "passive", "role": "coil_plus"},
                   "2": {"name": "A2", "type": "passive", "role": "coil_minus"},
                   "3": {"name": "COM", "type": "passive", "role": "common"},
@@ -289,17 +291,17 @@ RELAY = {"lcsc": "C9000001", "mpn": "test relay 5 V", "kind": "relay", "verified
 @pytest.mark.parametrize("part,roles", [(BUZZER, ("plus", "minus")), (RELAY, ("coil_plus", "coil_minus"))])
 def test_g13_flyback_diode(project, part, roles):
     coil_stage(project, part, roles)
-    assert any("X1" in m and "without a diode" in m for c, m in run(project).errors if c == "G-13")
+    assert any("X1" in m and "without a diode" in m for c, m in run(project).errors if c == "REQ.missing")
     add_flyback(project)
     rep = run(project)
-    assert "G-13" not in ids(rep) and not rep.errors
+    assert "REQ.missing" not in ids(rep) and not rep.errors
 
 
 def test_g13_piezo_buzzer_has_no_coil(project):
     piezo = json.loads(json.dumps(BUZZER))
-    del piezo["params"]["coil_ohm"]
+    del piezo["values"]["coil_ohm"]
     coil_stage(project, piezo, ("plus", "minus"))
-    assert "G-13" not in ids(run(project))
+    assert "REQ.missing" not in ids(run(project))
 
 
 def usb_c(project, rd=("C27834", "C27834"), shared=False):
@@ -309,7 +311,7 @@ def usb_c(project, rd=("C27834", "C27834"), shared=False):
     g = project.graph()
     g["graph"]["components"].append(comp("J5", "C456012", {"A12": "GND", "A9": "VBUS", "A5": "CC1", "B5": "CC2",
                                                            "B9": "VBUS", "B12": "GND", "7": "EH"}, kind="connector",
-                                         waive={"G-8": "vSafe5V up to 5.5 V"}))
+                                         accept={"LIM.v": "vSafe5V up to 5.5 V"}))
     project.net(g, "+5V")["pins"] += ["J5.A9", "J5.B9"]
     project.net(g, "GND")["pins"] += ["J5.A12", "J5.B12", "J5.7"]
     if shared:
@@ -330,22 +332,22 @@ def usb_c(project, rd=("C27834", "C27834"), shared=False):
 def test_g14_usb_c_with_its_own_rd_per_cc(project):
     usb_c(project)
     rep = run(project)
-    assert "G-14" not in ids(rep) and not rep.errors
+    assert not rep.errors
 
 
 def test_g14_cc_not_connected(project):
     usb_c(project, rd=("C27834", None))
-    assert any("CC2 not connected" in m for c, m in run(project).errors if c == "G-14")
+    assert any("CC2 not connected" in m for c, m in run(project).errors if c == "REQ.missing")
 
 
 def test_g14_cc_lines_share_one_resistor(project):
     usb_c(project, shared=True)
-    assert any("on one net" in m for c, m in run(project).errors if c == "G-14")
+    assert any("on one net" in m for c, m in run(project).errors if c == "REQ.forbidden")
 
 
 def test_g14_wrong_rd(project):
     usb_c(project, rd=("C27834", "C17414"))   # 10 k on CC2
-    assert any("CC2" in m and "needs 5.1 kΩ" in m for c, m in run(project).errors if c == "G-14")
+    assert any("CC2" in m and "needs 5.1 kΩ" in m for c, m in run(project).errors if c == "REQ.value")
 
 
 def test_g14_silent_with_a_controller(project):
@@ -354,7 +356,7 @@ def test_g14_silent_with_a_controller(project):
     project.free_pins(g, "U1.10")
     project.net(g, "CC2")["pins"].append("U1.10")   # an IC on the CC line: it handles CC itself
     project.save_graph(g)
-    assert "G-14" not in ids(run(project))
+    assert not {"REQ.missing", "REQ.value", "REQ.forbidden"} & ids(run(project))
 
 
 # a bought USB-C breakout (the reference project's Soldered 333011): eight solder eyes, no CC resistors on it
@@ -373,7 +375,7 @@ def breakout(project, usb=None, cc_pins=True):
     if not cc_pins:
         part["pins"] = {"1": part["pins"]["1"], "8": part["pins"]["8"]}
     if usb is not None:
-        part["params"] = {"usb_c": usb}
+        part["values"] = {"usb_c": usb}
     (project.root / "hardware" / "parts" / "333011.json").write_text(json.dumps(part))
     g = project.graph()
     pins = {k: v["name"] for k, v in part["pins"].items()}
@@ -387,12 +389,12 @@ def breakout(project, usb=None, cc_pins=True):
 
 
 def g14(rep):
-    return [m for c, m in rep.errors if c == "G-14"]
+    return [m for c, m in rep.errors if c in ("REQ.missing", "REQ.value", "REQ.forbidden", "PARTS.schema")]
 
 
 def test_g14_breakout_as_a_module_without_the_field_is_not_checked(project):
     breakout(project)
-    assert g14(run(project)) == []                     # as before: a module is no receptacle for G-14
+    assert g14(run(project)) == []                     # as before: a module is no receptacle for REQ.missing:cc
 
 
 def test_g14_breakout_without_rd_and_its_cc_pins_unconnected(project):
@@ -416,14 +418,14 @@ def test_g14_breakout_without_rd_gets_them_on_the_board(project):
 
 def test_g14_receptacle_that_is_no_pin_of_the_graph(project):
     breakout(project, {"cc": "none"}, cc_pins=False)
-    msg = ("J9: USB-C receptacle without CC termination (params.usb_c of 333011: cc none) and its CC lines are no pins "
+    msg = ("J9: USB-C receptacle without CC termination (values.usb_c of 333011: cc none) and its CC lines are no pins "
            "of the graph – a USB-C source switches VBUS on only with 5.1 kΩ to GND on each CC pin")
     assert g14(run(project)) == [msg]
     g = project.graph()
-    project.comp(g, "J9")["waive"] = {"G-14": "powered from a C-to-A cable only, the cable is part of the kit"}
+    project.comp(g, "J9")["accept"] = {"REQ.missing": "powered from a C-to-A cable only, the cable is part of the kit"}
     project.save_graph(g)
     rep = run(project)
-    assert g14(rep) == [] and ("G-14", msg, "powered from a C-to-A cable only, the cable is part of the kit") \
+    assert g14(rep) == [] and ("REQ.missing", msg, "powered from a C-to-A cable only, the cable is part of the kit") \
         in rep.waived
 
 
@@ -431,7 +433,7 @@ def test_g14_receptacle_that_is_no_pin_of_the_graph(project):
 def test_g14_module_that_terminates_its_receptacle(project, cc):
     """An MCU module with USB-C on board (RP2350-Zero: 5.1 kΩ on CC1 and CC2) or a breakout with a PD controller."""
     part = project.part("C41407547")
-    part["params"]["usb_c"] = {"cc": cc, "source": "module schematic"}
+    part["values"]["usb_c"] = {"cc": cc, "source": "module schematic"}
     project.save_part("C41407547", part)
     breakout(project, {"cc": cc}, cc_pins=False)
     assert g14(run(project)) == []
@@ -439,7 +441,7 @@ def test_g14_module_that_terminates_its_receptacle(project, cc):
 
 def test_g14_usb_c_field_needs_a_known_termination(project):
     breakout(project, {"cc": "5k1"}, cc_pins=False)
-    assert g14(run(project)) == ["J9: params.usb_c of 333011 needs cc rd_5k1, controller or none, not '5k1'"]
+    assert g14(run(project)) == ["J9: values.usb_c of 333011 needs cc rd_5k1, controller or none, not '5k1'"]
 
 
 def test_g4_mosfet_gate_needs_a_resistor(project):
@@ -468,13 +470,14 @@ def test_failed_checks_are_explained(project, capsys):
     project.save_graph(g)
     assert checks.main(project.config(), argparse.Namespace(release=False, json=None)) == 1
     out = capsys.readouterr().out
-    assert "G-11 (I2C pull-ups):" in out and "why:" in out and "UM10204" in out
-    assert "design hints open: H-1, H-3" in out
+    assert "REQ.missing – what a part requires is there: 1 error" in out and "SDA: I2C line without a pull-up" in out
+    assert "  REQ.missing: Add the part next to the pin" in out and "edakit explain <code>" in out
+    assert "HINT.bulk – bulk capacitor at the power input: 1 note" in out and "HINT.debounce" in out
 
 
 # --- 0 Ω bridges join their nets (feature proposal #1) --------------------------------------------------------------
 BRIDGE = {"lcsc": "C9000002", "mpn": "test 0 Ω bridge 0805", "kind": "resistor", "verified": {"by": "test"},
-          "params": {"value_ohm": 0.0}, "ratings": {"p_max_w": 0.125, "v_max": 150},
+          "values": {"value_ohm": 0.0}, "limits": {"p_max_w": 0.125, "v_max_v": 150},
           "pins": {"1": {"name": "1", "type": "passive", "role": "1"},
                    "2": {"name": "2", "type": "passive", "role": "2"}}}
 
@@ -482,8 +485,8 @@ BRIDGE = {"lcsc": "C9000002", "mpn": "test 0 Ω bridge 0805", "kind": "resistor"
 def bridge(project, g, des, net, pin, value_ohm=0.0):
     """`pin` moves from `net` to a new net <net>_B, joined to `net` by the resistor `des` – a 0 Ω bridge that crosses a
     track on a board with all tracks on one side."""
-    project.save_part(BRIDGE["lcsc"], {**BRIDGE, "params": {"value_ohm": value_ohm}})
-    g["graph"]["components"].append(comp(des, BRIDGE["lcsc"], R, value=f"{value_ohm:g}"))   # P-6: as the entry says
+    project.save_part(BRIDGE["lcsc"], {**BRIDGE, "values": {"value_ohm": value_ohm}})
+    g["graph"]["components"].append(comp(des, BRIDGE["lcsc"], R, value=f"{value_ohm:g}"))   # STRUCT.identity: as the entry says
     project.net(g, net)["pins"].remove(pin)
     project.net(g, net)["pins"].append(f"{des}.1")
     g["graph"]["nets"].append({"name": f"{net}_B", "pins": [f"{des}.2", pin], "v": project.net(g, net)["v"]})
@@ -502,17 +505,16 @@ def test_zero_ohm_bridges_join_their_nets(project, capsys):
     bridged(project)
     rep = run(project)
     assert rep.errors == [] and rep.pending == []
-    assert {c for c, _, _ in rep.waived} == {"G-4"}
+    assert {c for c, _, _ in rep.waived} == {"LVL.undefined"}
     assert checks.main(project.config(), argparse.Namespace(release=False, json=None)) == 0
     assert ("joined by 0 Ω bridges, checked as one net: GND = GND_B (R11); 3V3 = 3V3_B (R10); LED7 = LED7_B (R12)"
             in capsys.readouterr().out)
 
 
 def test_a_resistor_joins_no_nets(project):
-    bridged(project, value_ohm=10000)            # the same places with 10 kΩ: the pull-up and the capacitor are cut off
-    assert sorted(run(project).errors) == [
-        ("G-4", "LED_OE: only MCU pins drive this input – floating until the firmware runs"),
-        ("G-6", "3V3: 1 IC supply pins (U2.16) but 0 capacitor(s) to GND")]
+    bridged(project, value_ohm=10000)            # the same places with 10 kΩ: the capacitor is cut off; the pull-up
+    assert sorted(run(project).errors) == [      # still holds LED_OE, through 20 kΩ to 3V3
+        ("REQ.missing", "3V3: 1 IC supply pins (U2.16) but 0 capacitor(s) to GND")]
 
 
 def test_joined_nets_are_one_net_for_the_checks(project):
@@ -525,14 +527,14 @@ def test_joined_nets_are_one_net_for_the_checks(project):
     part = project.part("C41407547")
     part["pins"]["10"]["type"] = "output"
     project.save_part("C41407547", part)
-    assert ("G-5", "CLASH: several outputs drive this net: U2.14, U1.10") in run(project).errors
+    assert ("LVL.contention", "CLASH: several outputs drive this net: U2.14, U1.10") in run(project).errors
 
 
 def test_g1_purpose_says_what_the_board_is_for(project):
     g = project.graph()
     g["graph"]["purpose"]["use"] = "hobby"
     project.save_graph(g)
-    assert any("purpose.use must be one of private, gift, sale" in m for c, m in run(project).errors if c == "G-1")
+    assert any("purpose.use must be one of private, gift, sale" in m for c, m in run(project).errors if c == "STRUCT.purpose")
 
 
 def test_a_part_bought_elsewhere_finds_its_entry_by_the_manufacturer_number(project):
@@ -551,28 +553,28 @@ def test_a_part_bought_elsewhere_finds_its_entry_by_the_manufacturer_number(proj
     assert run(project).errors == []
     r2["part"] = "RC0805FR-0710KX"                       # a manufacturer number without an entry
     project.save_graph(g)
-    assert ("P-1", "R2: no parts entry with mpn RC0805FR-0710KX") in run(project).errors
+    assert ("STRUCT.entry", "R2: no parts entry with mpn RC0805FR-0710KX") in run(project).errors
 
 
-# --- G-15 pin functions (rule proposal #43) -------------------------------------------------------------------------
+# --- REQ.function pin functions (rule proposal #43) -------------------------------------------------------------------------
 def g15(rep):
-    return sorted(m for c, m in rep.errors if c == "G-15")
+    return sorted(m for c, m in rep.errors if c in ("REQ.function", "STRUCT.net"))
 
 
 def test_g15_spi_roles_swapped(project):
-    """The example before G-15: data on GP2 (SPI0 SCK), clock on GP3 (SPI0 TX) – fine bit-banged, not on SPI0."""
+    """The example before REQ.function: data on GP2 (SPI0 SCK), clock on GP3 (SPI0 TX) – fine bit-banged, not on SPI0."""
     g = project.graph()
     project.net(g, "LED_SDI")["pins"][0], project.net(g, "LED_CLK")["pins"][0] = "U1.4", "U1.5"
-    g["graph"]["checks"]["pin_locks"].update({"U1.4": "LED_SDI", "U1.5": "LED_CLK"})
+    g["graph"]["locks"]["pins"].update({"U1.4": "LED_SDI", "U1.5": "LED_CLK"})
     project.save_graph(g)
     assert g15(run(project)) == [
         "LED_CLK: needs spi.sck, but U1.5 (GP3) has spi0.tx, uart0.rts, i2c1.scl, pwm1.b, uart0.rx",
         "LED_SDI: needs spi.tx, but U1.4 (GP2) has spi0.sck, uart0.cts, i2c1.sda, pwm1.a, uart0.tx"]
     for name in ("LED_SDI", "LED_CLK"):
-        project.net(g, name)["waive"]["G-15"] = "bit-banged, no SPI peripheral"
+        project.net(g, name)["accept"]["REQ.function"] = "bit-banged, no SPI peripheral"
     project.save_graph(g)
     rep = run(project)
-    assert rep.errors == [] and sum(c == "G-15" for c, _, _ in rep.waived) == 2
+    assert rep.errors == [] and sum(c == "REQ.function" for c, _, _ in rep.waived) == 2
 
 
 def test_g15_one_bus_one_peripheral(project):
@@ -613,7 +615,7 @@ def test_g15_pwm_nets_of_one_slice_share_one_frequency(project, hz, msg):
 def test_g15_pwm_nets_of_one_slice_at_one_frequency(project):
     pwm_pair(project, ("11", "12"), (1000, 1000))
     rep = run(project)
-    assert rep.errors == [] and not [m for c, m in rep.notes if c == "G-15"]
+    assert rep.errors == [] and not [m for c, m in rep.notes if c == "PARTS.fact"]
 
 
 def test_g15_pwm_channel_used_twice(project):
@@ -660,7 +662,7 @@ def test_g15_pin_without_functions_is_a_note(project):
     project.save_part("C41407547", part)
     rep = run(project)
     assert rep.errors == []
-    assert ("G-15", "LED_SDI: needs spi.tx, but no pin on it has functions in its parts entry – not checked") \
+    assert ("PARTS.fact", "LED_SDI: needs spi.tx, but no pin on it has functions in its parts entry – not checked") \
         in rep.notes
 
 
@@ -672,7 +674,7 @@ def test_g15_unknown_fn_and_pwm_hz(project):
     assert g15(run(project)) == [
         "LED_OE: pwm_hz must be a frequency in Hz or [min, max], not 'fast'",
         "LED_SDI: unknown fn 'spi.mosi' (known: pwm, adc, spi.sck, spi.tx, spi.rx, spi.cs, i2c.sda, i2c.scl, uart.tx, "
-        "uart.rx)"]
+        "uart.rx, i2s.bclk, i2s.ws, i2s.sd, can.tx, can.rx, onewire, usb.dp, usb.dn)"]
 
 
 def test_g15_sees_through_0_ohm_bridges(project):
@@ -686,9 +688,9 @@ def test_g15_sees_through_0_ohm_bridges(project):
         in g15(run(project))
 
 
-# --- G-16 ground and supply pins (rule proposal #44) ----------------------------------------------------------------
+# --- PATH.unfed ground and supply pins (rule proposal #44) ----------------------------------------------------------------
 def g16(rep):
-    return sorted(m for c, m in rep.errors if c == "G-16")
+    return sorted(m for c, m in rep.errors if c in ("PATH.unfed", "PATH.ground", "STRUCT.ref"))
 
 
 def move(project, g, pins, to, v=(0, 3.4)):
@@ -702,10 +704,10 @@ def move(project, g, pins, to, v=(0, 3.4)):
 
 def test_g16_supply_rail_split_by_a_typo(project):
     g = project.graph()
-    move(project, g, ["U2.16", "C1.1"], "3.3V")       # 3.3V instead of 3V3: G-6 is content, the capacitor came along
+    move(project, g, ["U2.16", "C1.1"], "3.3V")       # 3.3V instead of 3V3: REQ.missing is content, the capacitor came along
     project.save_graph(g)
     rep = run(project)
-    assert g16(rep) == ["U2.16 (VDD) on 3.3V: nothing supplies this net"] and "G-6" not in ids(rep)
+    assert g16(rep) == ["U2.16 (VDD) on 3.3V: nothing supplies this net"] and "REQ.missing" not in ids(rep)
 
 
 def test_g16_ground_pin_on_a_net_of_its_own(project):
@@ -722,7 +724,7 @@ def test_g16_ground_pin_on_a_net_of_its_own(project):
 
 
 INDUCTOR = {"lcsc": "C9000003", "mpn": "test ferrite bead 0805", "kind": "inductor", "verified": {"by": "test"},
-            "params": {"value_h": 1e-6, "dcr_ohm": 0.1},
+            "values": {"value_h": 1e-6, "dcr_ohm": 0.1},
             "pins": {"1": {"name": "1", "type": "passive"}, "2": {"name": "2", "type": "passive"}}}
 
 
@@ -759,7 +761,7 @@ def test_g16_supply_pin_on_ground(project):
 @pytest.mark.parametrize("value_ohm,found", [(100, False), (150, True)])
 def test_g16_supply_through_a_resistor_up_to_100_ohm(project, value_ohm, found):
     """U2 behind a series resistor from 3V3: a shunt or a filter passes, a larger one is no supply path."""
-    project.save_part("C9000004", {**BRIDGE, "lcsc": "C9000004", "params": {"value_ohm": value_ohm}})
+    project.save_part("C9000004", {**BRIDGE, "lcsc": "C9000004", "values": {"value_ohm": value_ohm}})
     g = project.graph()
     move(project, g, ["U2.16", "C1.1"], "3V3_U2")
     g["graph"]["components"].append(comp("R20", "C9000004", R))
@@ -767,7 +769,7 @@ def test_g16_supply_through_a_resistor_up_to_100_ohm(project, value_ohm, found):
     project.net(g, "3V3_U2")["pins"].append("R20.2")
     project.save_graph(g)
     assert g16(run(project)) == (["U2.16 (VDD) on 3V3_U2: nothing supplies this net"] if found else [])
-    project.net(g, "3V3_U2")["waive"] = {"G-16": "U2 runs from 3V3 through R20 on purpose"}
+    project.net(g, "3V3_U2")["accept"] = {"PATH.unfed": "U2 runs from 3V3 through R20 on purpose"}
     project.save_graph(g)
     assert g16(run(project)) == []
 
@@ -780,9 +782,9 @@ def test_g16_supply_only_through_a_diode_in_forward_direction(project):
     assert g16(run(project)) == ["U1.39 (VSYS) on +5V: nothing supplies this net"]
 
 
-# --- G-17 fuse against what it protects (rule proposal #45) ---------------------------------------------------------
+# --- LIM.i fuse against what it protects (rule proposal #45) ---------------------------------------------------------
 def g17(rep):
-    return sorted(m for c, m in rep.errors if c == "G-17"), sorted(m for c, m in rep.warnings if c == "G-17")
+    return sorted(m for c, m in rep.errors if c == "LIM.i"), sorted(m for c, m in rep.warnings if c == "LIM.i")
 
 
 def fused_input(project):
@@ -821,7 +823,7 @@ def test_g17_hold_current_at_the_lowest_ambient(project):
 def test_g17_cable_and_switch_in_the_path(project):
     g = fused_input(project)
     project.save_part("C9000005", {"lcsc": "C9000005", "mpn": "test slide switch", "kind": "switch",
-                                   "verified": {"by": "test"}, "ratings": {"i_max_a": 0.5, "v_max": 12},
+                                   "verified": {"by": "test"}, "limits": {"i_max_a": 0.5, "v_max_v": 12},
                                    "pins": {"1": {"name": "1", "type": "passive", "role": "common"},
                                             "2": {"name": "2", "type": "passive", "role": "throw_a"}}})
     g["graph"]["components"] += [comp("SW2", "C9000005", R, kind="switch"),
@@ -837,10 +839,10 @@ def test_g17_cable_and_switch_in_the_path(project):
                       "F1: holds 1.5 A, above the 1 A of cable W1 – an overload in between never trips it"]
     assert warnings == ["F1: trips at 3 A, above the 2 A of J1 – an overload in between may last for minutes",
                         "F1: trips at 3 A, above the 2 A of J2 – an overload in between may last for minutes"]
-    project.comp(g, "F1")["waive"] = {"G-17": "normal current 0.2 A, a short trips within 100 ms"}
+    project.comp(g, "F1")["accept"] = {"LIM.i": "normal current 0.2 A, a short trips within 100 ms"}
     project.save_graph(g)
     rep = run(project)
-    assert g17(rep) == ([], []) and sum(c == "G-17" for c, _, _ in rep.waived) == 4
+    assert g17(rep) == ([], []) and sum(c == "LIM.i" for c, _, _ in rep.waived) == 4
 
 
 def test_g17_usb_c_sink_block(project):
@@ -850,7 +852,7 @@ def test_g17_usb_c_sink_block(project):
     rep = run(project)
     assert g17(rep) == ([], ["F1: trips at 3 A, above the 2.5 A of J2 – an overload in between may last for minutes"])
     part = project.part("C456012")
-    part["ratings"]["i_max_a"] = 1.25                 # one ground contact for the whole receptacle
+    part["limits"]["i_max_a"] = 1.25                 # one ground contact for the whole receptacle
     project.save_part("C456012", part)
     assert g17(run(project))[0] == ["F1: holds 1.5 A, above the 1.25 A of J2 – an overload in between never trips it"]
 
@@ -858,14 +860,14 @@ def test_g17_usb_c_sink_block(project):
 def test_g17_needs_the_ratings(project):
     fused_input(project)
     part = project.part("C495353")
-    del part["ratings"]["i_hold_a"], part["ratings"]["i_trip_a"]
+    del part["limits"]["i_hold_a"], part["limits"]["i_trip_a"]
     project.save_part("C495353", part)
     assert g17(run(project)) == ([], [])
 
 
-# --- G-18 hot loop of a switching regulator in layout.loops (rule proposal #47) --------------------------------------
+# --- REQ.missing hot loop of a switching regulator in layout.loops (rule proposal #47) --------------------------------------
 BOOST = {"lcsc": "C9000010", "mpn": "test boost converter (MT3608-like)", "kind": "ic", "verified": {"by": "test"},
-         "params": {"behavior": "boost", "vout_v": 12, "efficiency": 0.85}, "hot_loop": ["sw", "gnd"],
+         "values": {"behavior": "boost", "vout_v": 12, "efficiency": 0.85}, "hot_loop": ["sw", "gnd"],
          "pins": {"1": {"name": "SW", "type": "passive", "role": "sw"}, "2": {"name": "GND", "type": "ground"},
                   "3": {"name": "FB", "type": "passive", "role": "fb"}, "4": {"name": "EN", "type": "passive",
                                                                             "role": "en"},
@@ -896,7 +898,8 @@ def boost(project, entry=BOOST, loops=()):
 
 
 def g18(rep):
-    return [m for c, m in rep.errors if c == "G-18"], [m for c, m in rep.warnings if c == "G-18"]
+    return ([m for c, m in rep.errors if c in ("REQ.missing", "PARTS.schema")],
+            [m for c, m in rep.warnings if c == "PARTS.fact"])
 
 
 def test_g18_boost_without_its_loop_in_layout_loops(project):
@@ -905,7 +908,7 @@ def test_g18_boost_without_its_loop_in_layout_loops(project):
     assert g18(rep) == (["U3 (boost): no layout.loops entry on BOOST_SW (U3.1 SW)",
                          "U3 (boost): no layout.loops entry on GND (U3.2 GND)",
                          "U3 (boost): no layout.loops entry on VOUT (behind D10)"], [])
-    assert set(ids(rep)) == {"G-18"}
+    assert set(ids(rep)) == {"REQ.missing"}
 
 
 def test_g18_the_net_behind_the_diode_counts(project):
@@ -921,13 +924,13 @@ def test_g18_every_net_of_the_loop_listed(project):
 
 def test_g18_waive_on_the_part_or_on_the_net(project):
     g = boost(project, loops=BOOST_LOOPS[:2])
-    project.net(g, "GND")["waive"] = {"G-18": "the return closes over the ground plane under the loop"}
+    project.net(g, "GND")["accept"] = {"REQ.missing": "the return closes over the ground plane under the loop"}
     project.save_graph(g)
     rep = run(project)
-    assert g18(rep) == ([], []) and [m for c, m, _ in rep.waived if c == "G-18"] == \
+    assert g18(rep) == ([], []) and [m for c, m, _ in rep.waived if c == "REQ.missing"] == \
         ["U3 (boost): no layout.loops entry on GND (U3.2 GND)"]
     g["graph"]["layout"]["loops"] = []
-    project.comp(g, "U3")["waive"] = {"G-18": "a module's layout, not ours"}
+    project.comp(g, "U3")["accept"] = {"REQ.missing": "a module's layout, not ours"}
     project.save_graph(g)
     assert g18(run(project)) == ([], [])
 
@@ -935,8 +938,8 @@ def test_g18_waive_on_the_part_or_on_the_net(project):
 def test_g18_buck_or_boost_without_hot_loop_is_a_warning(project):
     entry = {k: v for k, v in BOOST.items() if k != "hot_loop"}
     boost(project, entry)
-    assert g18(run(project)) == ([], ["U3 (boost): parts entry C9000010 names no hot_loop – G-18 cannot ask for its "
-                                      "hot loop in layout.loops"])
+    assert g18(run(project)) == ([], ["U3 (boost): parts entry C9000010 names no hot_loop – its hot loop cannot be "
+                                      "asked for in layout.loops"])
 
 
 def test_g18_hot_loop_role_the_part_does_not_have(project):

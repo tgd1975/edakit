@@ -14,7 +14,11 @@
    "label": "{as}: reverse-polarity PMOS",
    "part": "AO3401A",
    "lcsc": "C15127",
-   "pins": {"1": "G", "2": "S", "3": "D"}
+   "pins": {
+    "1": "G",
+    "2": "S",
+    "3": "D"
+   }
   },
   {
    "designator": "R1",
@@ -23,19 +27,51 @@
    "part": "0805W8F1002T5E",
    "lcsc": "C17414",
    "value": "10k",
-   "pins": {"1": "1", "2": "2"}
+   "pins": {
+    "1": "1",
+    "2": "2"
+   }
   }
  ],
  "nets": [
-  {"name": "in", "pins": ["Q1.3"]},
-  {"name": "out", "pins": ["Q1.2"], "v": "@in"},
-  {"name": "gate", "pins": ["Q1.1", "R1.1"], "v": [0, 0.1]},
-  {"name": "gnd", "pins": ["R1.2"]}
+  {
+   "name": "in",
+   "pins": [
+    "Q1.3"
+   ]
+  },
+  {
+   "name": "out",
+   "pins": [
+    "Q1.2"
+   ],
+   "v": "@in"
+  },
+  {
+   "name": "gate",
+   "pins": [
+    "Q1.1",
+    "R1.1"
+   ],
+   "v": [
+    0,
+    0.1
+   ]
+  },
+  {
+   "name": "gnd",
+   "pins": [
+    "R1.2"
+   ]
+  }
  ],
- "covers": ["G-4", "G-10"],
+ "covers": [
+  "LVL.undefined",
+  "PATH.reverse"
+ ],
  "notes": [
-  "Graph: the connector that feeds 'in' into checks.reverse_protect.",
+  "Graph: the connector that feeds 'in' gets \"source\": \"reversible\".",
   "Above about 10 V input: a zener (10 V) from gate to source and a larger gate resistor, so that VGS stays below 12 V.",
-  "AO3401A: 3.2 A at 70 °C, 60 mΩ at VGS -4.5 V; edakit sim checks current and power (E-2)."
+  "AO3401A: 3.2 A at 70 °C, 60 mΩ at VGS -4.5 V; edakit sim checks current and power (LIM)."
  ]
 }

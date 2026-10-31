@@ -35,8 +35,9 @@ from collections import Counter, defaultdict
 from html import escape
 from pathlib import Path
 
-from . import rules
-from .checks import supply_nets
+from . import engines
+from .engines.hint import MATCHERS
+from .circuit import supply_nets
 from .design import Design, natural_key
 from .schematic_layout import (TITLE_BLOCK, Drawing, Layout, block_notes, box_union, check_geometry, layout_config,
                                merge_wires, on_segment, rot)
@@ -429,7 +430,7 @@ def default_power(design):
 def seed_parts(cfg, design, comps):
     """Parts that start a block: power inputs first, then modules, ICs, connectors, relays, battery holders."""
     kinds = {d: (design.part(d) or {}).get("kind") for d in comps}
-    inputs = set(rules.MATCHERS["power_input"](design, cfg, rules.load_sim(cfg)))
+    inputs = set(MATCHERS["power_input"](design, cfg, engines.load_sim(cfg)))
     seeds = [d for d in comps if kinds[d] in SEED_ORDER]
     return sorted(seeds, key=lambda d: (0 if d in inputs else SEED_ORDER[kinds[d]], natural_key(d)))
 

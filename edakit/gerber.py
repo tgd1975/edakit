@@ -311,7 +311,7 @@ class Raster:
 
 class Copper(Raster):
     """Rasterised copper layers, islands, connections through plated holes, pads per island and net. The raster covers
-    the copper and 3 mm around it, and the points of extent (mm) as well – the board outline, say (L-15)."""
+    the copper and 3 mm around it, and the points of extent (mm) as well – the board outline, say (GEO.pour)."""
 
     def __init__(self, folder, pin_net, extent=()):
         import numpy as np
@@ -374,7 +374,7 @@ class Copper(Raster):
 
 
 def plus_signs(path, lo=0.3, hi=2.0, tol=0.1):
-    """'+' signs drawn in a silkscreen file the way footprints draw them (L-8): two straight strokes of lo to hi mm,
+    """'+' signs drawn in a silkscreen file the way footprints draw them (GEO.mark): two straight strokes of lo to hi mm,
     as long as each other (± 0.2 mm), at right angles (|cos| < 0.1), their middles within tol mm of each other.
     -> [(x, y)] in mm, one per sign. A frame, an arc or a letter does not qualify: its strokes meet at their ends, are
     shorter or longer, or cross at another angle."""
@@ -403,7 +403,7 @@ def plus_signs(path, lo=0.3, hi=2.0, tol=0.1):
 
 
 def outline_shape(folder):
-    """The board as the outline file draws it (mm, L-17): the area its closed paths enclose – mounting holes and
+    """The board as the outline file draws it (mm, GEO.silk): the area its closed paths enclose – mounting holes and
     cut-outs left open – without the NPTH holes of the drill file. None without a closed path."""
     from shapely.geometry import LineString, Point
     from shapely.ops import polygonize, unary_union

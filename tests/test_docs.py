@@ -1,4 +1,4 @@
-"""edakit docs and G-19: documents and schematic notes quote values from graph, parts and simulation (handbook 6.6)."""
+"""edakit docs and DOCS.quote: documents and schematic notes quote values from graph, parts and simulation (handbook 6.6)."""
 
 import argparse
 import json
@@ -12,7 +12,7 @@ from edakit.design import Design
 from edakit.sim import run as simrun
 
 SVG = "{http://www.w3.org/2000/svg}"
-LED_CURRENT = "sim:max E-3 * D2 LED current*"
+LED_CURRENT = "sim:max SIM.state * D2 LED current*"
 BLOCK = f"<!--edakit {LED_CURRENT}-->9.45 mA<!--/edakit-->"
 R1 = "With all eight LEDs on, the board draws at most 500 mA from J1 at 4.75 to 5.25 V."   # R-1 of the example's file
 
@@ -70,7 +70,7 @@ def test_a_stale_block_is_g19_and_write_fills_it(project, monkeypatch, capsys):
     capsys.readouterr()
     assert cli.main(["docs"]) == 2
     out = capsys.readouterr().out
-    assert f"G-19  docs/values.md:3: {LED_CURRENT}: written 9.45 mA, now 4.02 mA" in out
+    assert f"DOCS.quote  docs/values.md:3: {LED_CURRENT}: written 9.45 mA, now 4.02 mA" in out
     assert cli.main(["docs", "--write"]) == 0
     assert f.read_text() == f"# Values\n\nLED current: <!--edakit {LED_CURRENT}-->4.02 mA<!--/edakit--> per LED.\n"
     assert cli.main(["docs"]) == 0
@@ -92,18 +92,18 @@ def test_sources_and_formats(project):
     assert src.text("graph:R1.value") == "2k"
     assert src.text("graph:version") == "1.0"
     assert src.text("graph:LED_OE.v") == "0 … 3.4 V"
-    assert src.text("part:C90107.params.vrext_v") == "1.26 V"
-    assert src.text("part:C17414.params.value_ohm") == "10 kΩ"
-    assert src.text("part:C90107.params.vrext_v", "%.1f V") == "1.3 V"
+    assert src.text("part:C90107.values.vrext_v") == "1.26 V"
+    assert src.text("part:C17414.values.value_ohm") == "10 kΩ"
+    assert src.text("part:C90107.values.vrext_v", "%.1f V") == "1.3 V"
     assert src.text(LED_CURRENT) == "9.45 mA"
     assert src.text(LED_CURRENT, "%.1f mA") == "9.4 mA"           # scaled to the prefix of the format
-    assert src.text("sim:min E-3 */idle/* D2 LED dark", "%.0f nA") in {"21 nA", "26 nA", "20 nA"}
+    assert src.text("sim:min SIM.state */idle/* D2 LED dark", "%.0f nA") in {"21 nA", "26 nA", "20 nA"}
     src.decimal = ","                                          # [docs] decimal = "," for documents in German
     assert src.text(LED_CURRENT) == "9,45 mA" and src.text("graph:LED_OE.v") == "0 … 3,4 V"
     for bad, why in (("graph:R99.value", "no part, net or cable R99"), ("graph:R1.colour", "no key colour"),
-                     ("part:C1.params.x", "no parts entry C1"), ("sim:max E-9 *", "no simulation row matches"),
-                     ("sim:one E-3 * D2 LED current*", "rows match, 'one' wants exactly one"),
-                     ("sim:avg E-3 *", "sim:max, sim:min or sim:one"), ("foo:bar", "unknown source")):
+                     ("part:C1.values.x", "no parts entry C1"), ("sim:max XYZ.none *", "no simulation row matches"),
+                     ("sim:one SIM.state * D2 LED current*", "rows match, 'one' wants exactly one"),
+                     ("sim:avg SIM.state *", "sim:max, sim:min or sim:one"), ("foo:bar", "unknown source")):
         with pytest.raises(docs.QuoteError, match=why):
             src.text(bad)
 
@@ -113,7 +113,7 @@ def test_an_unknown_designator_in_a_note_is_g19(project, monkeypatch, capsys):
     monkeypatch.chdir(project.root)
     assert cli.main(["docs"]) == 2
     out = capsys.readouterr().out
-    assert 'G-19  hardware/schematic.toml [layout.notes] "LED Driver": {graph:R41.value}: no part, net or cable R41' in out
+    assert 'DOCS.quote  hardware/schematic.toml [layout.notes] "LED Driver": {graph:R41.value}: no part, net or cable R41' in out
 
 
 def test_the_last_simulation_result_is_reused(project, monkeypatch, capsys):
@@ -138,7 +138,7 @@ def test_gate_runs_g19_on_its_own_simulation(project, monkeypatch, capsys):
     r1_to_4k7(project)
     cli.main(["gate"])
     protocol = next((project.root / "build" / "release").glob("*/protocol.md")).read_text()
-    assert "G-19 (documents quote the design data)" in protocol and "written 9.45 mA, now 4.02 mA" in protocol
+    assert "DOCS.quote (documents quote the design data)" in protocol and "written 9.45 mA, now 4.02 mA" in protocol
 
 
 def test_without_quotes_nothing_happens(project, monkeypatch, capsys):
@@ -157,8 +157,8 @@ def test_a_block_quotes_a_requirement_by_its_id(project, monkeypatch, capsys):
     monkeypatch.chdir(project.root)
     assert cli.main(["docs"]) == 2
     out = capsys.readouterr().out
-    assert f"G-19  docs/values.md:1: req:R-1: written (empty), now {R1}" in out
-    assert "G-19  docs/values.md:2: req:N-2: written old, now The LEDs can be read in a lit room." in out
+    assert f"DOCS.quote  docs/values.md:1: req:R-1: written (empty), now {R1}" in out
+    assert "DOCS.quote  docs/values.md:2: req:N-2: written old, now The LEDs can be read in a lit room." in out
     assert cli.main(["docs", "--write"]) == 0
     assert f.read_text() == (f"Power: <!--edakit req:R-1-->{R1}<!--/edakit-->\n"
                              "Light: <!--edakit req:N-2-->The LEDs can be read in a lit room.<!--/edakit-->\n")
@@ -167,13 +167,13 @@ def test_a_block_quotes_a_requirement_by_its_id(project, monkeypatch, capsys):
     reqs.write_text(reqs.read_text().replace("at most 500 mA", "at most 400 mA"))
     capsys.readouterr()
     assert cli.main(["docs"]) == 2
-    assert (f"G-19  docs/values.md:1: req:R-1: written {R1}, now {R1.replace('500', '400')}"
+    assert (f"DOCS.quote  docs/values.md:1: req:R-1: written {R1}, now {R1.replace('500', '400')}"
             in capsys.readouterr().out)
 
 
 def test_req_quotes_drafts_but_not_dropped_entries(project):
     """A draft is quoted as it stands; a dropped entry no longer holds – like a part gone from the graph, quoting it is
-    G-19; its text stays in the requirements file, edakit req shows it with the reason."""
+    DOCS.quote; its text stays in the requirements file, edakit req shows it with the reason."""
     with_requirements(project)
     cfg = project.config()
     src = docs.Sources(cfg, Design.from_config(cfg))
@@ -191,7 +191,7 @@ def test_without_the_key_req_is_g19_that_names_it(project, monkeypatch, capsys):
     listed(project, f"<!--edakit req:R-1-->{R1}<!--/edakit-->\n")
     monkeypatch.chdir(project.root)
     assert cli.main(["docs"]) == 2
-    assert "G-19  docs/values.md:1: req:R-1: no [project] requirements in edakit.toml" in capsys.readouterr().out
+    assert "DOCS.quote  docs/values.md:1: req:R-1: no [project] requirements in edakit.toml" in capsys.readouterr().out
 
 
 def test_req_quotes_on_one_line_and_names_a_file_that_does_not_read(project):

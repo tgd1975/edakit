@@ -1,7 +1,7 @@
 """Ordering step 10 (docs/concepts/new/ordering.md): EasyEDA's ODB++ export for a maker that takes it (AISLER),
-read by edakit/odb.py and held by F-7 to the run's Gerber, drill, BOM and CPL files and to the graph. No real export
+read by edakit/odb.py and held by SYNC.odb to the run's Gerber, drill, BOM and CPL files and to the graph. No real export
 of EasyEDA is at hand yet (ordering step 0b): the ODB++ here is written by the test from the export of
-test_fab_run – the same copper, mask and silkscreen, drill hits, outline, parts and nets –, so that F-7 passes on it,
+test_fab_run – the same copper, mask and silkscreen, drill hits, outline, parts and nets –, so that SYNC.odb passes on it,
 and each fault is one change of it."""
 
 import io
@@ -125,7 +125,7 @@ def run(project, change=None, cart='[cart]\nmaker = "aisler"', fault=None, odb_f
 
 
 def f7(rows):
-    return [(r["result"], r["check"], r["actual"]) for r in rows if r["id"] == "F-7"]
+    return [(r["result"], r["check"], r["actual"]) for r in rows if r["id"] == "SYNC.odb"]
 
 
 def test_the_reader_takes_the_job(project, tmp_path):
@@ -195,7 +195,7 @@ def test_a_second_maker_warns_and_an_export_that_failed_is_named(project):
     rows = run(project, odb_file=False)
     assert f7(rows) == [("fail", "ODB++ of this run for AISLER", "odb_main.zip: not exported")]
     rows = run(project, cart='[cart]\nmaker = "jlcpcb"', odb_file=False)
-    assert f7(rows) == []                                   # no maker that takes ODB++: no F-7
+    assert f7(rows) == []                                   # no maker that takes ODB++: no SYNC.odb
 
 
 def test_a_part_left_in_against_the_makers_dnp_fails(project, tmp_path):

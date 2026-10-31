@@ -98,7 +98,7 @@ def test_the_drop_reaches_the_far_pins(project):
     assert not failing(simulate(project, sim_config(project), cfg))                      # 4.443 V: passes
     out = simulate(project, sim_config(project, nets=["+5V"]), cfg)
     bad = failing(out)
-    assert {(c["id"], c["item"], c["check"]) for c in bad} == {("E-3", "+5V", RANGE)}
+    assert {(c["id"], c["item"], c["check"]) for c in bad} == {("LIM.declared", "+5V", RANGE)}
     low = next(c for c in bad if c["scenario"] == "usb-min/all_on/vf-max")
     lo, hi = (float(x.split(" V")[0]) for x in low["actual"].split(" … "))
     assert 4.35 < lo < 4.38 and 4.43 < hi < 4.45                              # about 4.37 V at the far pins
@@ -106,7 +106,7 @@ def test_the_drop_reaches_the_far_pins(project):
     assert {c["scenario"].split("/")[0] for c in bad} == {"usb-min"}
     row = next(s for s in out["scenarios"] if s["name"] == "usb-min/all_on/vf-max")
     assert abs(row["nets"]["+5V"] - lo) < 1e-3                                 # the report: the lowest pin
-    assert not [c for c in out["checks"] if c["id"] == "E-1" and c["result"] != "pass"]
+    assert not [c for c in out["checks"] if c["id"] == "SIM.converge" and c["result"] != "pass"]
     u1 = next(c for c in out["checks"] if c["item"] == "U1" and c["check"] == "supply voltage"
               and c["scenario"] == "usb-min/all_on/vf-max")
     assert u1["actual"].startswith("4.3")                                     # the MCU at its own pin
@@ -160,7 +160,7 @@ def test_a_via_joins_the_layers(project):
 def test_a_net_without_routing_stays_ideal(project):
     sim = sim_config(project, nets=["+5V"])
     out = simulate(project, sim)
-    notes = [c for c in out["checks"] if c["id"] == "E-1" and c["result"] == "info"]
+    notes = [c for c in out["checks"] if c["id"] == "SIM.copper" and c["result"] == "info"]
     assert [(c["scenario"], c["item"], c["check"]) for c in notes] == [("copper", "+5V", "copper not annotated")]
     assert "no routing of board main" in notes[0]["actual"]
     plain = simulate(project, sim_config(project))
@@ -170,7 +170,7 @@ def test_a_net_without_routing_stays_ideal(project):
 def test_sim_names_a_net_it_could_not_annotate(project, capsys):
     (project.root / "hardware" / "sim.json").write_text(json.dumps(sim_config(project, nets=["+5V"])))
     assert cli.main(["sim", "--config", str(project.root / "edakit.toml")]) == 0
-    assert "INFO  E-1 copper                         +5V          copper not annotated: no routing of board main" \
+    assert "SIM.copper – copper annotated: 1 note\n  E  +5V: copper not annotated: no routing of board main" \
         in capsys.readouterr().out
     assert not (project.root / "build" / "edakit" / "route").exists()        # reading the routing creates nothing
 
@@ -179,7 +179,7 @@ def test_an_open_net_stays_ideal(project):
     pads, wires = plus5v_track()
     cfg = routed(project, {"+5V": (pads, [wire("TOP", 0.15, [(0, 0), (100 * MIL, 0)])])})   # ends short of the loads
     out = simulate(project, sim_config(project, nets=["+5V"]), cfg)
-    note, = [c for c in out["checks"] if c["result"] == "info" and c["id"] == "E-1"]
+    note, = [c for c in out["checks"] if c["result"] == "info" and c["id"] == "SIM.copper"]
     assert "not connected" in note["actual"] and "U1.39" in note["actual"]
     assert not failing(out)
 

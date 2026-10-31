@@ -19,14 +19,14 @@ def test_supply_inside_the_operating_range(project):
     ok = [c for c in out["checks"] if c["item"] == "U2" and c["check"] == RANGE]
     assert len(ok) == 12 and all(c["result"] == "pass" and c["actual"] == "3.3 V" for c in ok)
     part = project.part("C90107")
-    part["ratings"]["vdd_op_min"] = 4.5                           # a 5 V-only part like the TPIC6B595 on 3V3
+    part["limits"]["vdd_op_min_v"] = 4.5                           # a 5 V-only part like the TPIC6B595 on 3V3
     project.save_part("C90107", part)
     bad = failing(simulate(project))
     assert {(c["id"], c["item"], c["check"], c["actual"], c["expected"]) for c in bad} == {
-        ("E-3", "U2", RANGE, "3.3 V", "4.5 … 5.5 V")}
+        ("LIM.range", "U2", RANGE, "3.3 V", "4.5 … 5.5 V")}
     assert len(bad) == 12                                         # in every scenario
-    part["ratings"]["vdd_op_min"] = 3.0
-    part["pins"]["16"]["v_op"] = [4.5, 5.5]                       # the pin's own range wins over the part's
+    part["limits"]["vdd_op_min_v"] = 3.0
+    part["pins"]["16"].update(v_op_min_v=4.5, v_op_max_v=5.5)    # the pin's own range wins over the part's
     project.save_part("C90107", part)
     assert {(c["item"], c["expected"]) for c in failing(simulate(project))} == {("U2", "4.5 … 5.5 V")}
 
@@ -43,7 +43,7 @@ def five_volt_driver(project):
 
 def thresholds(project):
     part = project.part("C90107")
-    part["params"].update(vih_ratio=0.7, vil_ratio=0.3)
+    part["values"].update(vih_ratio=0.7, vil_ratio=0.3)
     project.save_part("C90107", part)
 
 
@@ -61,7 +61,7 @@ def test_inputs_at_a_valid_logic_level(project):
 def test_input_between_its_thresholds(project):
     five_volt_driver(project)                                     # VDD 4.4–5.0 V: VIH 3.1–3.5 V against 3.3 V
     bad = failing(simulate(project))
-    assert {c["id"] for c in bad} == {"E-3"}
+    assert {c["id"] for c in bad} == {"LVL.threshold"}
     assert {c["item"] for c in bad} == {"U1 LED_SDI", "U1 LED_CLK", "U1 LED_LE", "U1 LED_OE", "U2 LED_OE"}
     oe = next(c for c in bad if c["item"] == "U2 LED_OE" and c["scenario"] == "usb-max/idle/vf-min")
     assert oe["check"].startswith("input level undefined at OE(ED2)") and oe["actual"] == "3.3 V"
@@ -102,7 +102,7 @@ def test_no_source_is_fed_backwards(project):
     assert len(fed) == 12 and all(c["result"] == "pass" and c["actual"] == "0 A" for c in fed)
     sim = module_usb(sim_config(project), both={"J1": 5.25, "U1": 4.75})   # the PC's USB below the supply at J1
     bad = failing(simulate(project, sim))
-    assert {(c["id"], c["item"], c["check"], c["expected"]) for c in bad} == {("E-3", "U1", BACK, "≤ 1 mA")}
+    assert {(c["id"], c["item"], c["check"], c["expected"]) for c in bad} == {("LIM.backfeed", "U1", BACK, "≤ 1 mA")}
     assert len(bad) == 4 and all(0.2 < float(c["actual"].split()[0]) < 0.35 for c in bad)   # 0.25–0.29 A into the PC
     sim["sources"]["U1"]["i_back_max_a"] = 0.5                    # the source's own limit
     assert not failing(simulate(project, sim))
@@ -117,7 +117,7 @@ def test_no_source_is_fed_backwards(project):
 HOLDER = {"lcsc": "C9000001", "mpn": "test holder", "kind": "battery_holder", "verified": {"by": "test"},
           "pins": {"1": {"name": "+", "type": "power_output", "role": "plus"},
                    "2": {"name": "-", "type": "ground", "role": "minus"}},
-          "params": {"cells": 1}, "ratings": {}}
+          "values": {"cells": 1}, "limits": {}}
 
 
 def cells_on_the_rail(project):
@@ -140,7 +140,7 @@ def test_no_cell_is_charged(project):
     out = simulate(project, sim)
     bad = failing(out)
     assert {(c["id"], c["scenario"].split("/")[0], c["item"], c["check"], c["expected"]) for c in bad} == {
-        ("E-3", "usb+cells", "BT1", CHARGE, "≤ 1 mA")}
+        ("LIM.backfeed", "usb+cells", "BT1", CHARGE, "≤ 1 mA")}
     assert len(bad) == 4 and all(float(c["actual"].split()[0]) > 0.01 for c in bad)
     alone = [c for c in out["checks"] if c["scenario"].startswith("cells/") and c["check"] == CHARGE]
     assert len(alone) == 4 and all(c["result"] == "pass" and c["actual"] == "0 A" for c in alone)
@@ -156,7 +156,7 @@ def power_bank_and_wifi(project):
     """J1 a power bank that switches off below 100 mA; U1 a module whose current varies – 0.27 A while it transmits
     Wi-Fi (an ESP32: 240 mA at +19.5 dBm, Espressif ESP32 datasheet v5.3 table 5-4), 40 mA at the least."""
     part = project.part("C41407547")
-    part["params"].update(i_core_a=0.27, i_core_min_a=0.04)
+    part["values"].update(i_core_a=0.27, i_core_min_a=0.04)
     project.save_part("C41407547", part)
     sim = sim_config(project)
     sim["sources"]["J1"]["i_min_a"] = 0.1
@@ -169,7 +169,7 @@ def test_minimum_load_at_the_least_current(project):
     on = {c["scenario"]: c for c in out["checks"] if c["item"] == "J1" and c["check"].startswith(ON)}
     assert len(on) == 12 and {c["check"] for c in on.values()} == {LEAST}
     bad = failing(out)                                            # idle with U1 at 40 mA: 42–47 mA from J1
-    assert {(c["id"], c["item"], c["check"], c["expected"]) for c in bad} == {("E-3", "J1", LEAST, "≥ 100 mA")}
+    assert {(c["id"], c["item"], c["check"], c["expected"]) for c in bad} == {("LIM.i", "J1", LEAST, "≥ 100 mA")}
     assert {c["scenario"].split("/")[1] for c in bad} == {"idle"} and len(bad) == 6
     assert all(0.04 < float(c["actual"].split()[0]) < 0.05 for c in bad)
     assert all(0.11 < float(c["actual"].split()[0]) < 0.13 for s, c in on.items() if "/all_on/" in s)
@@ -177,7 +177,7 @@ def test_minimum_load_at_the_least_current(project):
     for row in out["scenarios"]:                                  # every other check: U1 at its upper bound, 0.27 A
         assert drawn[row["name"]]["actual"] == f"{row['sources']['J1']:.4g} A" and row["sources"]["J1"] > 0.22
     part = project.part("C41407547")
-    del part["params"]["i_core_min_a"]                            # without it: the minimum load at i_core_a, as before
+    del part["values"]["i_core_min_a"]                            # without it: the minimum load at i_core_a, as before
     project.save_part("C41407547", part)
     out = simulate(project, sim)
     on = [c for c in out["checks"] if c["item"] == "J1" and c["check"].startswith(ON)]
@@ -203,10 +203,10 @@ def test_least_current_runs_only_for_a_minimum_load(project, monkeypatch):
 def test_least_current_inside_the_upper_bound(project):
     sim = power_bank_and_wifi(project)
     part = project.part("C41407547")
-    part["params"]["i_core_min_a"] = 0.3                          # above i_core_a: no least current
+    part["values"]["i_core_min_a"] = 0.3                          # above i_core_a: no least current
     project.save_part("C41407547", part)
     bad = failing(simulate(project, sim))
-    assert {(c["id"], c["item"]) for c in bad} == {("E-1", "circuit")} and len(bad) == 12
+    assert {(c["id"], c["item"]) for c in bad} == {("SIM.converge", "circuit")} and len(bad) == 12
     assert "U1: i_core_min_a 0.3 – the least current, a number from 0 to i_core_a (0.27 A)" in bad[0]["actual"]
 
 
@@ -227,7 +227,7 @@ def test_scenarios_for_every_combination_of_sources(project):
     out = simulate(project, sim)
     row = next(s for s in out["scenarios"] if s["name"] == "J1 5.25 + U1 4.75/all_on/vf-min")
     assert row["supply"] == "J1 5.25 + U1 4.75" and row["sources"]["U1"] == pytest.approx(-0.247, abs=0.01)
-    bad = failing(out)                                            # the back-feed into U1 – E-3 says so
+    bad = failing(out)                                            # the back-feed into U1 – SIM.state says so
     assert {(c["scenario"].split("/")[0], c["item"], c["check"]) for c in bad} == {
         ("J1 5.25 + U1 4.75", "U1", "current into the supply (fed backwards)")}
     sim.pop("combine_sources")

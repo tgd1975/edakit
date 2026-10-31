@@ -369,10 +369,11 @@ def test_edakit_check_reports_the_findings(project, capsys, tmp_path):
     out = tmp_path / "check.json"
     assert checks.main(project.config(), argparse.Namespace(release=False, json=str(out))) == 1
     text = capsys.readouterr().out
-    assert "ERROR   scripts  x: an input, but no edakit step reads what it writes (build/x.json)" in text
-    assert "handbook 8.6" in text and "; 1 errors, 3 waived" in text
-    errors = json.loads(out.read_text())["errors"]
-    assert [e["check"] for e in errors] == ["scripts"] and errors[0]["msg"].startswith("x: an input")
+    assert "SYNC.scripts – project scripts current: 1 error\n  G  x: an input, but no edakit step reads what it writes " \
+        "(build/x.json)" in text
+    assert "handbook 8.6" in text and "; 1 error, 4 note, 3 accepted" in text
+    errors = [f for f in json.loads(out.read_text())["findings"] if f["severity"] == "error" and not f.get("accepted")]
+    assert [e["code"] for e in errors] == ["SYNC.scripts"] and errors[0]["text"].startswith("x: an input")
 
 
 def test_edakit_check_with_entries_that_resolve(project, capsys):
@@ -381,10 +382,10 @@ def test_edakit_check_with_entries_that_resolve(project, capsys):
     toml.write_text(toml.read_text() + KUNST.replace("hardware/art/bell.svg", "hardware/art/x.svg"))
     f = project.root / "hardware" / "boards" / "main.toml"
     f.write_text(f.read_text() + '\n[[silk.art]]\nsvg = "hardware/art/x.svg"\nx = 20\ny = 20\nwidth_mm = 10\n')
-    assert checks.main(project.config(), argparse.Namespace(release=False, json=None)) == 1
-    assert [line for line in capsys.readouterr().out.splitlines() if line.split()[1:2] == ["scripts"]] == [
+    from test_script_stamps import check
+    assert check(project, capsys) == (1, [
         "ERROR   scripts  kunst never run: no stamp in hardware/scripts.lock – Bell, greeting, star and snowflake as "
-        "shapes for the silkscreen"]
+        "shapes for the silkscreen"])
 
 
 # --- edakit's data by name, each with a hash -------------------------------------------------------------------------

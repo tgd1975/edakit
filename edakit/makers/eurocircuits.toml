@@ -3,7 +3,7 @@
 #
 # recorded = false: only what the search of 2026-10-30 found (docs/concepts/new/ordering.md, European
 # manufacturers); the form's labels, words and limits, the pick-and-place format and the basket button are recorded
-# on the site by ordering step 0. Until then F-6 names the fields as not checked, and the skill cart stops before the
+# on the site by ordering step 0. Until then FILES.order names the fields as not checked, and the skill cart stops before the
 # basket.
 
 name = "Eurocircuits"
@@ -20,7 +20,7 @@ excludes = []
 
 [bom]
 columns = ["Designator", "Quantity", "Manufacturer", "MPN", "Comment"]
-match = "mpn"                          # Eurocircuits matches the BOM by manufacturer part number (P-12)
+match = "mpn"                          # Eurocircuits matches the BOM by manufacturer part number (PARTS.fact/mpn)
 
 # The form's limits: ordering step 0 – none known yet, and no order-number placeholder.
 [rules]

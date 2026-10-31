@@ -1,0 +1,47 @@
+# The domain core: what every board needs (concept rules-at-scale.md, section 5). Always on. Everything the other
+# domains do not switch on is core's: structure, artifacts, limits and levels of the basic kinds, parts, files,
+# documents. Severities not set here are the catalog's (catalog/codes.toml).
+
+[domain]
+name = "core"
+about = "what every board needs: structure, artifacts, limits and levels of the basic kinds, parts, files, documents"
+
+[severity]
+
+[severity.sale]                      # a board that is sold: what the firmware or the data can settle, accepted
+"PARTS.fact/radio" = "warning"       # in the sign-off file
+
+[severity.gift]                      # lead in the finish: REACH Art. 33 asks to name it to a consumer who asks
+"ORDER.finish" = "warning"
+
+[severity.private]
+"ORDER.finish" = "note"
+
+[facts.type]                         # required per graph type: a missing fact is PARTS.fact/<its last name>
+module = ["compliance.radio"]        # its bands and power, or "none" – the regulatory review (M-6) reads it
+microcontroller = ["compliance.radio"]
+
+[hints]
+apply = ["HINT.datasheet", "HINT.bulk", "HINT.gate", "HINT.debounce", "HINT.inductive", "HINT.switcher", "HINT.lithium", "HINT.esd",
+         "HINT.two_supplies", "HINT.readback", "HINT.flicker"]
+
+[review]
+electrical = [
+  "Several sources: for every combination that can be present at once – USB, battery, a programming cable, a host port – which source feeds which net? Does any of them feed back into a host port, a cell or another supply, also through a MOSFET body diode or a diode inside a module? What happens in the switch-over gap? LIM.backfeed holds the simulated scenarios (sim.json combine_sources), HINT.two_supplies names the nets two supplies meet on, LIM.range and LIM.v hold the transient runs – ask for the switch-overs and unplugs no run covers.",
+  "MCU pin functions: does every signal sit on a pin that has its function – PWM channel, SPI, I2C or UART instance, ADC input? Do PWM signals of independent frequencies sit on different PWM slices or timers? Is every pin used brought out on the module's header? Do errata touch the pins used? REQ.function holds the nets that state fn; a net without fn or a pin without functions it does not see.",
+  "Supply range and input levels of every IC that is not the MCU: is its minimum operating voltage met on its net, do VIH and VIL fit the domain that drives its inputs? LIM.v holds the absolute maximum, LIM.range and LVL.threshold the operating range and levels of every part whose entry gives them – ask for the parts without them, and for the power nets sim.json copper does not list.",
+  "Read-back of synchronous outputs: on which clock edge does a shift register or driver chain change its serial output, against the edge the MCU samples on in the SPI mode it uses? HINT.readback asks it for every output the MCU reads from a part whose inputs it also drives.",
+  "Minimum load of a supply: does a power bank stay on at the least current the board draws – firmware idle, radio off, LEDs dark? LIM.i holds every source with i_min_a, at i_core_min_a where the MCU's entry gives it – ask for it where an MCU's current swings.",
+  "Junction and touch temperature: for every part that dissipates – a conducting diode or body diode, a linear regulator, a resistor at its limit – its junction temperature, and its surface where a person can reach it. LIM.t holds every part whose entry gives rth_ja_k_per_w – ask for the parts without it.",
+]
+regulatory = [
+  "Scope: what `private`, `gift` or `sale` means for this board – placing on the market, making available. A board built for oneself still has to keep frequency law and must not be dangerous; in Germany it must meet the EMC requirements in substance – EMVG § 6 covers putting into service and passing on, a radio product FuAG § 7 – without the formalities of a sale. A gift is placing on the market under REACH (Art. 3(12): free of charge too), so Art. 33 applies: name a substance of very high concern above 0.1 % to a consumer who asks (45 days) – the suppliers' SVHC statements (`compliance.reach`) are needed for it (handbook 15.1).",
+  "Substances: RoHS status of every part with its source; REACH SVHC statements; a part without a statement is open.",
+  "Batteries: chemistry, protection, and for a board that is sold removability, labelling and the duties of whoever places it on the market.",
+  "Supply: mains voltage on the board (low voltage directive), a power supply that comes with the product (its own conformity), USB power.",
+  "A product that is sold: product safety and EMC, the EU declaration of conformity, the technical file, the CE marking, the manufacturer's name and address, the registrations (electrical equipment, packaging, batteries), and rules for connected products from the date they apply.",
+  "Children: if the notes say children use it, whether it is a toy.",
+]
+
+[fixtures]                           # reference circuits, after the integration of maker-coverage (decided)
+clean = []

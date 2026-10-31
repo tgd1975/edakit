@@ -1,0 +1,24 @@
+# The domain radio: parts that transmit – e.i.r.p. and bands against the EU licence-exempt bands (concept
+# rules-at-scale.md, section 5; handbook 15.2). Support, not legal advice.
+
+[domain]
+name = "radio"
+about = "parts that transmit: their e.i.r.p. and bands against the EU licence-exempt bands, purpose.radio"
+suggested_by = { radio = true }      # a part whose entry states compliance.radio with bands, or purpose.radio
+
+[switch]
+on = ["LIM.eirp", "LIM.band", "STRUCT.purpose:radio", "STRUCT.ref:radio", "PARTS.schema:radio"]
+
+[severity]
+
+[severity.sale]                      # a board that is sold: what the firmware keeps, accepted in the sign-off file
+"LIM.eirp" = "warning"
+"LIM.band/firmware" = "warning"
+
+[review]
+regulatory = [
+  "Radio: every part that transmits – bands and power against the EU's licence-exempt bands (the power as e.i.r.p.: conducted power plus antenna gain; `edakit check` compares it with the band's limit where that is an e.i.r.p., LIM.eirp), the module's own conformity, and what the product needs on top when it is sold. A module made for another region's band is a block. An ESP32 that transmits Wi-Fi: ask for the line in the firmware that sets an EU country with 802.11d off after every Wi-Fi start – `esp_wifi_set_country_code(\"DE\", false)`, the radio off if it fails (handbook 15.2); with `true` the station takes the country its access point announces – JP opens channel 14. What the firmware has to keep – channels, the country and 802.11d, the transmit power – is graded by the purpose (handbook 15.4): a note for a board built for oneself or given away, important for one that is sold, a block only where the hardware cannot be made to comply.",
+]
+
+[fixtures]
+clean = []

@@ -67,7 +67,7 @@ recommendation first. Leave out what an earlier answer makes moot: assembly and 
 | money | A budget, a currency? | no budget · a budget: amount and currency | `[cost]`: `budget`, `currency` – the first maker's currency (JLCPCB and PCBWay USD, Eurocircuits and AISLER EUR) unless the user names another –, `rates` for a second currency (`{ EUR = 1.15 }`) |
 | purpose | Private, a gift, or for sale? Where is it used? | private – built for oneself · gift – given away now and then · sale – sold, also in small series or as a kit | the graph's `purpose`: `use`, `market` (EU), `notes` – what it is, who uses it (children?). It decides how deep the regulatory review M-6 goes (handbook 15.1) – support, not legal advice: nothing in it is legally guaranteed, and it claims no correctness. The report says what the maker's seat means for it: outside the EU and `sale`, the owner imports the boards and is the manufacturer; inside the EU, no import, and the owner stays the manufacturer |
 | requirements | What must the circuit do? | now, with the skill requirements · later | now: the skill requirements writes `hardware/requirements.toml` with the user, and `[project] requirements` names it (section 5); later: nothing yet |
-| firmware | Does firmware follow the graph's pins? | it follows the graph · the firmware is the reference, the graph keeps its pins · no firmware that depends on the pins | `[firmware]` and `edakit firmware --check` in the hook (handbook 3.5); the other way round `checks.pin_locks` in the graph, the circuit designer's (G-2) |
+| firmware | Does firmware follow the graph's pins? | it follows the graph · the firmware is the reference, the graph keeps its pins · no firmware that depends on the pins | `[firmware]` and `edakit firmware --check` in the hook (handbook 3.5); the other way round `locks.pins` in the graph, the circuit designer's (STRUCT.lock) |
 | documents | Do documents quote values – currents, voltages, a part's value? | no · yes: these files | `[docs] files`, `decimal = ","` for a decimal comma, `edakit docs` in the hook (handbook 6.6) |
 | own tools | Does the project bring scripts or agents? | none · as the inventory proposes | `[scripts.<name>]` for every script that touches edakit's flow, `[agents.<name>]` for every agent that signs what edakit releases (handbook 8.6); the project's skills are listed in the report, not registered |
 
@@ -81,7 +81,7 @@ decision of the project: one numbered entry in its decision log (skill decision-
 edakit: one board main, JLCPCB Economic on top, Eurocircuits to compare, 5 sets, a gift in the EU, no budget".
 
 **What the maker changes beyond assembly and order.** A maker that matches by manufacturer part number (PCBWay,
-Eurocircuits) makes `mpn` and `manufacturer` required in every BOM part's entry – P-12 from the first part on, and the
+Eurocircuits) makes `mpn` and `manufacturer` required in every BOM part's entry – PARTS.fact/mpn from the first part on, and the
 agent part-selector and the skill part-search fill them; parts are still chosen by LCSC number. With JLCPCB among the
 makers its classes (Basic, Extended) and `edakit stock` stay as they are; without it no stock snapshot is needed. A
 maker that takes ODB++ (AISLER) needs the patched MCP server and bridge – `edakit doctor` checks both. A project moving
@@ -144,7 +144,7 @@ report names them.
    circuit-design reads the file instead of asking.
 3. Graph with the skill circuit-design: power input, MCU, the main functions – building blocks where they fit
    (`edakit block list`), other parts by LCSC number (part-search skill), nets with voltage ranges `v`. `edakit check`
-   until 0 errors, `edakit hints` worked through, `edakit sim` – scenarios first at the supply limits. A moving
+   until 0 errors, `edakit check` worked through, `edakit sim` – scenarios first at the supply limits. A moving
    project has its graph: circuit-design takes what `edakit check` found.
 4. Without a PCB (a development board and hand wiring) the project stops here: `edakit schematic draw` gives the
    schematic, EasyEDA is not needed. With a PCB: the user creates the EasyEDA project once by hand (File → New →

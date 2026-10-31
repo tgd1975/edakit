@@ -34,8 +34,8 @@ With the graph as the only source:
   reversed supply reaches only the anode of a blocking diode" are a few lines of Python over that file.
 - **Every artifact can be regenerated.** Schematic, PCB parts, nets, tracks, pours, silkscreen – all generated. That
   is what makes the EasyEDA side safe to automate: anything broken is deleted and rebuilt, without asking.
-- **Every hand-over has a comparison.** Graph ↔ schematic (S-2), graph ↔ PCB pads (L-1), plan ↔ PCB (L-7),
-  graph ↔ copper in the Gerber files (L-2), graph ↔ BOM (F-1). An error has to slip past an independent comparison
+- **Every hand-over has a comparison.** Graph ↔ schematic (SYNC.schematic), graph ↔ PCB pads (SYNC.pcb), plan ↔ PCB (SYNC.plan),
+  graph ↔ copper in the Gerber files (GEO.copper), graph ↔ BOM (SYNC.bom). An error has to slip past an independent comparison
   to reach the manufacturer.
 - **Changes are cheap and complete.** Swapping a part is a line in the graph plus `create → layout → pcb parts →
   route → gate`. Nothing is forgotten in a corner of the schematic.
@@ -57,7 +57,7 @@ With the graph as the only source:
 6. **An independent agent's result is the sign-off.** Checks that need judgement – is this footprint's pin 1 really
    pin 1, is this layout manufacturable and usable – are done by a separate agent in its own session. If it says OK,
    it is signed; if not, the cause is fixed and it checks again. The human is asked for decisions, not for checklists.
-7. **Decisions are numbered.** D-12, E-4: written down with reason, date and alternatives, cited where they apply. A
+7. **Decisions are numbered.** D-12, SIM.driver: written down with reason, date and alternatives, cited where they apply. A
    later session (or a later you) knows why the 18-mil tracks are below the class width and that it was accepted.
 8. **Tooling over clicking.** When EasyEDA needs a click, first look for the API path (parts without the import dialog,
    pad nets directly, own DSN instead of the DSN export). A dialog that remains must be a plain OK.
@@ -98,4 +98,4 @@ what is checked by judgement and by whom, and an acceptance test after delivery 
 | [11 Working with Claude](11-working-with-claude.md) | plugin, skills, agents, parallel sessions, working agreements |
 | [12 Troubleshooting](12-troubleshooting.md) | symptom → cause → fix |
 | [13 Lessons learned](13-lessons-learned.md) | what cost time, what we would do again |
-| [14 Designing a circuit](14-design.md) | designer and reviewer, the rule catalog, hints, building blocks, from a finding to a check |
+| [14 Designing a circuit](14-design.md) | designer and reviewer, the catalog – engines, codes, data, domains –, hints, building blocks, from a finding to a rule |

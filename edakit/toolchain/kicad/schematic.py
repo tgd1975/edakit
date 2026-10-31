@@ -2,7 +2,7 @@
 16.3): the same blocks, parts, wires, flags and notes, with the parts' symbols as KiCad symbols.
 
     write(cfg, board)            -> (path, problems): the schematic and the board's symbol library (<board>.kicad_sym)
-    check(cfg, board, out)       -> Findings: kicad-cli's netlist against the graph (S-2, schematic.compare) and the
+    check(cfg, board, out)       -> Findings: kicad-cli's netlist against the graph (SYNC.schematic, schematic.compare) and the
                                     errors of KiCad's ERC
 
 Every symbol is the drawing's own, one per part, turned as the sheet turns it (no rotation is left to KiCad); its pins
@@ -231,7 +231,7 @@ def write_library(cfg, board, libs):
 
 
 def check(cfg, board, verbose=False):
-    """S-2 on KiCad: the netlist kicad-cli exports against the graph (schematic.compare), and the errors of KiCad's
+    """SYNC.schematic on KiCad: the netlist kicad-cli exports against the graph (schematic.compare), and the errors of KiCad's
     ERC. -> Findings."""
     from ...design import Design
     from ...schematic import Findings, compare

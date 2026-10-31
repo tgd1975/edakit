@@ -12,34 +12,35 @@ Examples: [the Christmas bell's parts](https://github.com/tgd1975/automatic_chri
 
 | Field | Content |
 |---|---|
-| `lcsc`, `mpn`, `manufacturer` | identification; `lcsc` equals the file name, `mpn` is what a component names in `part` – P-6 compares them, with the `kind` and the value parameters; with a maker that matches by MPN (Eurocircuits, `[cart]`) `mpn` and `manufacturer` are required for every assembled part (P-12) and go into `bom_<board>_mpn.csv` |
-| `order` | where a part bought separately is ordered, supplier → order code: `{"rs": "223-0562", "farnell": "…"}`; a value may be `{code, moq, step}` with the supplier's minimum and pack size, `{"lcsc": {"moq": 20, "step": 20}}` (the LCSC code defaults to `lcsc`). The first supplier is the default of `edakit order`; P-5 warns about a `bom: false` part with neither an LCSC number nor `order` – a `C99…` library number counts as none, LCSC does not sell it |
+| `lcsc`, `mpn`, `manufacturer` | identification; `lcsc` equals the file name, `mpn` is what a component names in `part` – STRUCT.identity compares them, with the `kind` and the value parameters; with a maker that matches by MPN (Eurocircuits, `[cart]`) `mpn` and `manufacturer` are required for every assembled part (PARTS.fact/mpn) and go into `bom_<board>_mpn.csv` |
+| `order` | where a part bought separately is ordered, supplier → order code: `{"rs": "223-0562", "farnell": "…"}`; a value may be `{code, moq, step}` with the supplier's minimum and pack size, `{"lcsc": {"moq": 20, "step": 20}}` (the LCSC code defaults to `lcsc`). The first supplier is the default of `edakit order`; PARTS.supplier warns about a `bom: false` part with neither an LCSC number nor `order` – a `C99…` library number counts as none, LCSC does not sell it |
 | `kind` | `resistor`, `capacitor`, `inductor`, `fuse`, `diode`, `led`, `led_rgb`, `npn`, `pnp`, `pmos`, `nmos`, `switch`, `dip_switch`, `button`, `potentiometer`, `battery_holder`, `buzzer`, `relay`, `connector`, `ic`, `module` |
-| `package`, `footprint` | the footprint name must equal the EasyEDA footprint (L-4 compares it with the PCB) |
-| `footprint_data` | optional: the footprint as data – origin, pads, outline and print in mm –, from which `edakit part build` builds the project's copy and to which P-10 holds it; an own footprint as text (4.5) |
-| `jlc_class` | Basic / Extended Part; P-4 and F-2 warn when JLCPCB's catalogue lists another class |
+| `package`, `footprint` | the footprint name must equal the EasyEDA footprint (SYNC.footprint compares it with the PCB) |
+| `footprint_data` | optional: the footprint as data – origin, pads, outline and print in mm –, from which `edakit part build` builds the project's copy and to which SYNC.footprint holds it; an own footprint as text (4.5) |
+| `jlc_class` | Basic / Extended Part; PARTS.stock warn when JLCPCB's catalogue lists another class |
 | `datasheet` | `url`, `pinout_page`; `edakit part fetch` keeps the PDF beside the project, not in the entry (4.3) |
-| `pins` | pin number → `name` (as in the EasyEDA symbol and identical to the graph – S-2 compares them), `type`, `role` (the meaning; for polarised parts it follows the footprint's polarity print when symbol and footprint disagree), `vmax`; from the datasheet where it applies: `strap` (`"high"`/`"low"`: level the pin needs at reset, G-12), `pull` (`"up"`/`"down"`: internal or built-in pull resistor, with `pull_ohm` if known – G-11, G-12), `hint` (a warning from the datasheet, e.g. "ADC2: no analog reads while WiFi is on"); on MCU and module pins `functions` – what the pin-mux table offers, `<peripheral><instance>.<line>`: `["spi0.sck", "uart0.cts", "i2c1.sda", "pwm1.a", "uart0.tx"]`, `adc0`; for PWM the instance is the slice and the line the channel; `[]` = no free function (used on the module), no key = unknown (G-15); from the recommended operating conditions: `v_op` (`[min, max]` of a supply pin that differs from the part's `vdd_op_min`/`vdd_op_max`) and the thresholds of one input pin, `vih_v` or `vih_ratio`, `vil_v` or `vil_ratio`, where they differ from the part's (E-3); on a serial output (SDO, Q7) of a clocked part: `out_edge` (`"rising"`/`"falling"`: the clock edge after which it changes) and `t_pd_ns` (`[min, max]` clock-to-output delay at the part's supply, `null` where the datasheet gives none) – `edakit hints` shows them with H-9 |
-| `hints` | warnings of the datasheet for the part as a whole; `edakit hints` shows them and the pin `hint`s of connected pins |
-| `hot_loop` | switching regulators: the pin roles of the loop that carries the pulsed current, from the datasheet's layout section – a buck `["vin", "sw", "gnd"]`, an asynchronous boost `["sw", "gnd"]`; a ground pin without a role is `gnd`. G-18 wants a `layout.loops` entry on each of their nets and on the net behind a diode on `sw` |
+| `pins` | pin number → `name` (as in the EasyEDA symbol and identical to the graph – SYNC.schematic compares them), `type`, `role` (the meaning; for polarised parts it follows the footprint's polarity print when symbol and footprint disagree), `v_max_v`; from the datasheet where it applies: `strap` (`"high"`/`"low"`: level the pin needs at reset, LVL.boot), `pull` (`"up"`/`"down"`: internal or built-in pull resistor, with `pull_ohm` if known – REQ.missing, LVL.boot), `hint` (a warning from the datasheet, e.g. "ADC2: no analog reads while WiFi is on"); `adc` on a pin that converts (`{"range_v": [0.15, 2.45], "r_source_max_ohm": 10000, "c_hold_min_f": 1e-7}`: the window the converter reads in the attenuation the firmware uses, the source resistance it allows, the hold capacitor that lifts that limit – LIM.range/adc holds a net with `fn: adc` to the window in every scenario, REQ.value/adc the resistors on it, both warnings), `z_in_ohm` (an input's impedance, for the load on an instrument input), `short_proof` (true where a pin may go to a cable without a series resistor – REQ.missing/leave leaves it alone), `drive` (`"open_drain"` or `"tristate"` on an output that lets go of its line: such outputs share a line without LVL.contention, and a line only they drive needs a pull-up, LVL.undefined/open_drain), `float_ok` (true where the datasheet allows an unused input to float – otherwise an IC input in `nc` is LVL.undefined/nc), `needs` (what the pin needs from the circuit, from the datasheet's application section: a list of `{"what": "capacitor", "c_min_f": 1e-6, "c_max_f": 10e-6, "source": "…"}` – `what` one of `capacitor` (to ground), `pull_up` (to a supply), `pull_down` (to ground), `series_resistor` (each with `r_min_ohm`/`r_max_ohm`, a capacitor with `c_min_f`/`c_max_f`, either bound optional), `to_ground`, `never_to_ground`: an ESP32's EN with 10 kΩ and 1 µF, a regulator's output capacitor, USB series resistors, MAX6675 T− on ground and MAX31855 T− never; REQ.missing, REQ.value and REQ.forbidden hold them, grade `pin`, a warning); on MCU and module pins `functions` – what the pin-mux table offers, `<peripheral><instance>.<line>`: `["spi0.sck", "uart0.cts", "i2c1.sda", "pwm1.a", "uart0.tx"]`, `adc0`; for PWM the instance is the slice and the line the channel; `[]` = no free function (used on the module), no key = unknown (REQ.function); from the recommended operating conditions: `v_op_min_v`, `v_op_max_v` (a supply pin's range where it differs from the part's `vdd_op_min_v`/`vdd_op_max_v`) and the thresholds of one input pin, `vih_v` or `vih_ratio`, `vil_v` or `vil_ratio`, where they differ from the part's (LVL.threshold); on a serial output (SDO, Q7) of a clocked part: `out_edge` (`"rising"`/`"falling"`: the clock edge after which it changes) and `t_pd_ns` (`[min, max]` clock-to-output delay at the part's supply, `null` where the datasheet gives none) – `edakit check` shows them with HINT.readback |
+| `address` | a device on a bus: `{"base": 104, "pins": {"9": 1}, "also": [112], "on": "6"}` – its address with every address pin low, what each pin adds when high (by pin number), further addresses it always answers to (a PCA9685's All-Call), the pin whose net is the bus (default: the pin with the role `sda`). Two devices on one bus at one address are REQ.forbidden/address (a warning); a pin the graph does not hold high or low leaves the device out |
+| `hints` | warnings of the datasheet for the part as a whole; `edakit check` shows them and the pin `hint`s of connected pins |
+| `hot_loop` | switching regulators: the pin roles of the loop that carries the pulsed current, from the datasheet's layout section – a buck `["vin", "sw", "gnd"]`, an asynchronous boost `["sw", "gnd"]`; a ground pin without a role is `gnd`. REQ.missing wants a `layout.loops` entry on each of their nets and on the net behind a diode on `sw` |
 | `symbol` | optional: the sides of the box `edakit schematic draw` draws for an IC or module – `{"left": [pins], "right": [pins], "top": [pins], "bottom": [pins]}`; without it the pins run as on a DIP package (6.5). With `footprint_data` and its `"symbol": "box"` also the box `edakit part build` draws as the copy's symbol in EasyEDA (4.5) |
-| `params` | values for simulation and calculations; `behavior` for ICs (chapter 5) |
-| `ratings` | limits for the stress checks |
+| `limits` | what the part withstands or needs, per kind below – the engine LIMITS holds every quantity to them |
+| `values` | what the simulation and the calculations read, per kind below; `behavior` for ICs (chapter 5) |
 | `spice` | `{"model": ".model SS34 D(IS=20u N=1.2 RS=0.04 …)"}` for diodes and transistors |
-| `lead` | through-hole parts only: lead cross-section per pad number or `"*"`: `shape` (`square`, `round`, `rect`), `a_mm`, `b_mm`, `tol_mm`, `hole_rec_mm`, `source` – checks P-7 (before the layout, on the footprint geometry) and L-9 (in the gate, on the drill file); the ring a widened hole leaves: L-16; a footprint with plated holes and no `lead` keeps P-7 pending; optional `length_mm`, the lead length below the seating plane – the mechanical model gives its protrusion (7.4) |
+| `lead` | through-hole parts only: lead cross-section per pad number or `"*"`: `shape` (`square`, `round`, `rect`), `a_mm`, `b_mm`, `tol_mm`, `hole_rec_mm`, `source` – checks GEO.hole (before the layout, on the footprint geometry) and GEO.hole (in the gate, on the drill file); the ring a widened hole leaves: GEO.ring; a footprint with plated holes and no `lead` keeps GEO.hole pending; optional `length_mm`, the lead length below the seating plane – the mechanical model gives its protrusion (7.4) |
 | `body` | optional: `{"h_mm": 2.3}`, the height of the body above the board, on the side the part sits on – for the mechanical model (7.4) |
 | `mate` | optional, for a connector: its mated plug with the strain relief, `{"box": [x0, y0, x1, y1], "h_mm": 6.5, "exit": "+y"}` – `box` in footprint mm (relative to the part's origin at 0° on TOP, as `pcb dump` measures it), `h_mm` its height above the board, `exit` the direction the cable leaves the box: `+x`, `-x`, `+y`, `-y`, or `+z` (away from the board). `pcb plan` checks it (7.4) |
-| `pad_map` | only when pad numbers are deliberately swapped on the placed part: `{PCB pad: library pad}` – check L-10 |
+| `pad_map` | only when pad numbers are deliberately swapped on the placed part: `{PCB pad: library pad}` – check SYNC.footprint |
 | `sources` | where every value comes from; "assumption …" marks what must be checked with extra care – also a value taken from a sibling part or the series. The gate protocol lists every source with the word "assumption" (8.2) |
-| `compliance` | for the regulatory review (M-6, chapter 15): `rohs` (true, false or the exemption), `reach` (the supplier's SVHC statement), `radio` for a part that transmits – `bands_mhz` (`[[from, to], …]` in MHz: the bands it can transmit in, as datasheet or certificate state them), `max_dbm` (the conducted power at the RF port, as datasheets state it – not the radiated power), `antenna_dbi` (the gain of the antenna it transmits through in the product, from the module's datasheet or certificate), `eirp_dbm` (optional: the e.i.r.p. where a certificate states it), `doc` (URL of the EU declaration of conformity); its e.i.r.p. is `eirp_dbm`, else `max_dbm` + `antenna_dbi`, and G-24 holds it to the limit of the band (3.3) –, or `"none"` for a part that does not transmit: a part of graph type `module` or `microcontroller` states one of the two, else P-11 reports it (information, for a board that is sold a warning); `source` (page and date) |
+| `compliance` | for the regulatory review (M-6, chapter 15): `rohs` (true, false or the exemption), `reach` (the supplier's SVHC statement), `radio` for a part that transmits – `bands_mhz` (`[[from, to], …]` in MHz: the bands it can transmit in, as datasheet or certificate state them), `max_dbm` (the conducted power at the RF port, as datasheets state it – not the radiated power), `antenna_dbi` (the gain of the antenna it transmits through in the product, from the module's datasheet or certificate), `eirp_dbm` (optional: the e.i.r.p. where a certificate states it), `doc` (URL of the EU declaration of conformity); its e.i.r.p. is `eirp_dbm`, else `max_dbm` + `antenna_dbi`, and LIM.eirp holds it to the limit of the band (3.3) –, or `"none"` for a part that does not transmit: a part of graph type `module` or `microcontroller` states one of the two, else PARTS.fact reports it (information, for a board that is sold a warning); `source` (page and date) |
 | `verified` | `null` or the sign-off: `by`, `date`, `datasheet` (revision), `checked` (list), `open` (list: a text, or `{"text": "…", "when": "order"}` – `when` names the phase whose manual check answers it: `order` the assembly preview M-2, `acceptance` the delivered board M-4), optional `datasheet_sha256` (the file signed against, as `edakit part fetch` recorded it), optional `second_check` (the independent M-1 review). The gate protocol lists the open points (8.2) |
-| `own` | a part nobody sells (4.5): `what` – `pcb` (a board of an edakit project), `bin` (from your stock, no longer to be had), `handmade`; for `pcb` its source: `project`, `connectors`, `state_sha256` (the board's circuit hash), and in the copy `path`, `commit`, `repo`, `released` – P-3 compares them |
+| `own` | a part nobody sells (4.5): `what` – `pcb` (a board of an edakit project), `bin` (from your stock, no longer to be had), `handmade`; for `pcb` its source: `project`, `connectors`, `state_sha256` (the board's circuit hash), and in the copy `path`, `commit`, `repo`, `released` – SYNC.source compares them |
 
 **Pin types** (`type`): `passive`, `input`, `output`, `bidirectional`, `power_in`, `power_output`, `ground`, `analog`,
-`current_sink`, `no_connect`, `mechanical`. G-4, G-5, G-6 and G-16 work with them: `power_in` needs a capacitor and
+`current_sink`, `no_connect`, `mechanical`. LVL.undefined, LVL.contention, REQ.missing and PATH.unfed work with them: `power_in` needs a capacitor and
 a net that a supply reaches, a `ground` pin the ground net, two `output`s on one net are a conflict, an `input` needs a
 driver. An MCU pin that can only read (the ESP32's GPIO34–39) is `input`, even with the role `gpio`: the simulation
-refuses to drive it (E-3).
+refuses to drive it (LVL.direction).
 
 **Pin functions** (`functions`) come from the MCU's pin-mux table, not from memory: the example's Pico 2 entry
 (`tests/fixtures/led-bar/hardware/parts/C41407547.json`) has them for the RP2350, from the pico-sdk headers it names
@@ -50,6 +51,7 @@ in `sources` – any RP2350 module takes the same list per GPIO. On the RP2040 a
 
 | kind | roles |
 |---|---|
+| capacitor | the pin numbers `1`, `2`; a polarized one `plus`, `minus` |
 | diode, led | `anode`, `cathode` |
 | led_rgb | common cathode: `anode_red`, `anode_green`, `anode_blue`, `cathode`; common anode: `anode`, `cathode_red`, `cathode_green`, `cathode_blue` – a pin with the role `anode` makes it a common anode |
 | npn, pnp | `collector`, `base`, `emitter` |
@@ -61,37 +63,87 @@ in `sources` – any RP2350 module takes the same list per GPIO. On the RP2040 a
 | battery_holder | `plus`, `minus` (several cells: `plus_a`, `minus_a`, …) |
 | buzzer | `plus`, `minus` |
 | relay | `coil_plus`, `coil_minus`, `common`, `no`, `nc` |
-| connector | free (`pin1`, …); `vbus`/`gnd` for a supply input; `cc1`, `cc2` on a USB-C receptacle (G-14; a module or breakout without these roles: `params.usb_c`) |
-| ic, module | as the behaviour model needs them: `vin`, `vout`, `gnd`, `vsys`, `3v3`, `gpio`, `rext`, `out`, `oe_n`, `vdd`; `sda`, `scl` for I2C pins (G-11); on shift registers and LED drivers `sdi`, `sdo` (serial data in and out) and the outputs numbered `out0` … `outN` where their order matters – the simulation reads them as `out`, the firmware contract numbers its channels by them (3.5) |
+| motor, solenoid, speaker | `plus`, `minus` (a motor's and a solenoid's winding `coil_ohm`, a speaker's `impedance_ohm`: the simulation's resistor; a switched winding needs its flyback diode, REQ.missing) |
+| heater | the pin numbers (`value_ohm`: its resistance, LIM.p its power) |
+| optocoupler | `anode`, `cathode`, `collector`, `emitter` (`vf_v`, `vf_at_a` of the LED; `ctr_min_ratio`: the transistor passes at least that share of the LED current) |
+| connector | free (`pin1`, …); `vbus`/`gnd` for a supply input; `cc1`, `cc2` on a USB-C receptacle (REQ.missing:cc; a module or breakout without these roles: `values.usb_c`) |
+| ic, module | as the behaviour model needs them: `vin`, `vout`, `gnd`, `vsys`, `3v3`, `gpio`, `rext`, `out`, `oe_n`, `vdd`; `sda`, `scl` for I2C pins (REQ.missing); on shift registers and LED drivers `sdi`, `sdo` (serial data in and out) and the outputs numbered `out0` … `outN` where their order matters – the simulation reads them as `out`, the firmware contract numbers its channels by them (3.5) |
 
-**Ratings** per kind (what the checks read): resistor `p_max_w`, `v_max`; capacitor `v_max`; diode `if_avg_a`, `vrrm`;
-LED `if_max_a`, `vr_max` (per colour for RGB); BJT `ic_max_a`, `vceo`, `vebo`, `p_max_w`; MOSFET `id_max_a`, `vds_max`,
-`vgs_max`, `p_max_w`; fuse `i_hold_a`, `i_trip_a` (+ `params.i_hold_vs_temp`: `[[°C, A], …]`, G-17); switch/connector
-`i_max_a` (what the part carries as a whole: a USB-C receptacle's two ground contacts at 1.25 A each are 2.5 A),
-`v_max`; inductor `i_rated_a`, `i_sat_a`; regulators `vin_min`, `i_out_max_a`, `rth_ja_k_per_w`; MCU modules
-`vin_min`/`vsys_min`, `i_out_max_a`, `gpio_i_max_a` (per output pin) and `gpio_i_total_max_a` (all outputs together,
-sourced and sunk separately – the package's supply pins), and with an on-board LDO (`regulator: "ldo"`) the
-`rth_ja_k_per_w` and `tj_max_c` of that regulator, from its datasheet (E-3 holds its junction temperature with the
-core current it carries, 5.3); relays `v_coil_max`, `i_max_a` (contacts); LED drivers
-`rth_ja_k_per_w`; any IC or module `vdd_op_min`, `vdd_op_max` – the operating supply range of the recommended operating
-conditions, not the absolute maximum (E-3 holds every supply pin to it); own boards (behaviour `current`) `vin_min`,
-`vin_max` – the voltage at the connector over the board's own simulation (4.5, E-3); any part that dissipates –
-resistor, diode, LED, BJT, MOSFET – `rth_ja_k_per_w` (thermal resistance junction to ambient) and `tj_max_c`: E-2 holds
-ambient + P × Rth(j-a) to the junction limit and, on a board people touch, to `touch_c` (5.3); without `rth_ja_k_per_w`
-the part gets no temperature item.
+**Limits and values** per kind – what `edakit part lint` holds an entry to and the engines read; generated from
+`edakit/catalog/kinds.toml` (`python -m edakit.catalog.handbook --write`):
 
-**Parameters**: resistor `value_ohm` (`0`: a bridge that joins its nets, 3.3), `r_max_ohm` (a bridge's maximum
-resistance from the datasheet, simulated instead of 0 Ω; 50 mΩ without it); capacitor `value_f`; inductor `value_h`,
-`dcr_ohm`; LED `vf_typ`, `vf_min`, `vf_max`, `vf_at_a`, `rs_ohm` (RGB: one set per colour, under `red`, `green`,
-`blue`); shift registers and LED drivers `first_bit_to` (the output the first shifted bit ends on, e.g. `"out7"` – from
-the datasheet's timing diagram, copied into the firmware contract, 3.5); switch/button `r_on_ohm`; buzzer `coil_ohm` (a
-magnetic buzzer; it is a coil for G-13); relay `coil_ohm`, `v_operate`, `v_release` (must-operate and must-release
-voltage), `r_contact_ohm`; a module or breakout with a USB-C
-receptacle `usb_c`: `{"cc": "rd_5k1" | "controller" | "none", "source": "…"}` – how the board terminates its
-CC lines, from its schematic (G-14; the RP2350-Zero has 5.1 kΩ on CC1 and CC2, the breakout Soldered 333011 has
-none); ICs see chapter 5 – and for any IC with logic inputs the thresholds of the recommended operating
-conditions, `vih_v` | `vih_ratio` and `vil_v` | `vil_ratio` (a ratio of its supply, e.g. 0.7 and 0.3 for VIH 0.7 × VDD),
-which E-3 holds its `input` pins and the MCU outputs that drive them to.
+<!-- edakit:generated kinds -->
+| kind | limits | values |
+|---|---|---|
+| every kind | `p_max_w`, `rth_ja_k_per_w`, `tj_max_c`, `t_max_c`, `t_min_c` | – |
+| `resistor` | `v_max_v` | `value_ohm`, `r_max_ohm`, `tolerance` |
+| `potentiometer` | `v_max_v` | `value_ohm`, `tolerance` |
+| `capacitor` | `v_max_v`, `vr_max_v`, `i_ripple_a` | `value_f`, `dielectric`, `polarized`, `tolerance` |
+| `inductor` | `i_max_a`, `i_sat_a` | `value_h`, `dcr_ohm` |
+| `fuse` | `v_max_v`, `i_max_a`, `i_hold_a`, `i_trip_a` | `r_min_ohm`, `r_max_ohm`, `i_hold_vs_temp` |
+| `diode` | `vr_max_v`, `if_max_a`, `ifsm_max_a` | `vf_v`, `vf_at_a`, `ir_a`, `ir_at_v` |
+| `led` | `vr_max_v`, `if_max_a` | `color`, `vf_typ_v`, `vf_min_v`, `vf_max_v`, `vf_at_a`, `rs_ohm` |
+| `led_rgb` | `vr_max_v`, `if_max_a` | `vf_typ_v`, `vf_min_v`, `vf_max_v`, `vf_at_a`, `rs_ohm` |
+| `npn` | `vce_max_v`, `veb_max_v`, `ic_max_a` | `hfe_min`, `hfe_max`, `vce_sat_v` |
+| `pnp` | `vce_max_v`, `veb_max_v`, `ic_max_a` | `hfe_min`, `hfe_max`, `vce_sat_v` |
+| `nmos` | `vds_max_v`, `vgs_max_v`, `id_max_a`, `is_body_max_a` | `vgs_th_v`, `rds_on_max_ohm`, `vsd_v_at_1a` |
+| `pmos` | `vds_max_v`, `vgs_max_v`, `id_max_a`, `is_body_max_a` | `vgs_th_v`, `rds_on_max_ohm`, `vsd_v_at_1a` |
+| `switch` | `v_max_v`, `i_max_a` | `r_on_ohm`, `force_n` |
+| `dip_switch` | `v_max_v`, `i_max_a` | `r_on_ohm` |
+| `button` | `v_max_v`, `i_max_a` | `r_on_ohm`, `force_n` |
+| `battery_holder` | `i_max_a`, `v_max_v` | `r_contact_ohm` |
+| `buzzer` | `v_max_v` | `coil_ohm` |
+| `relay` | `v_coil_max_v`, `i_max_a`, `v_max_v` | `coil_ohm`, `v_operate_v`, `v_release_v`, `r_contact_ohm` |
+| `connector` | `v_max_v`, `i_max_a` | `pitch_mm`, `r_contact_ohm`, `r_source_ohm`, `usb_c` |
+| `ic` | `vdd_max_v`, `vdd_op_min_v`, `vdd_op_max_v`, `vin_min_v`, `vin_max_v`, `vout_max_v`, `i_out_max_a`, `vin_rel_max_v`, `i_supply_pin_max_a`, `f_max_hz` | `behavior`, `vout_v`, `dropout_v`, `iq_a`, `efficiency`, `idd_max_a`, `iout_gain`, `iout_accuracy`, `vout_knee_v`, `vrext_v`, `vih_v`, `vil_v`, `vih_ratio`, `vil_ratio`, `first_bit_to`, `vout_swing_v`, `vicm_v`, `r_out_ohm`, `comparator`, `gain_min_ratio`, `f_clock_hz` |
+| `module` | `vdd_op_min_v`, `vdd_op_max_v`, `vin_min_v`, `vin_max_v`, `vsys_min_v`, `vsys_max_v`, `i_out_max_a`, `gpio_v_max_v`, `gpio_i_max_a`, `gpio_i_total_max_a`, `f_max_hz` | `behavior`, `regulator`, `v_io_v`, `vout_v`, `dropout_v`, `efficiency`, `i_core_a`, `i_core_min_a`, `gpio_r_out_ohm`, `iq_a`, `vih_v`, `vil_v`, `vih_ratio`, `vil_ratio`, `usb_c`, `f_clock_hz` |
+| `motor` | `v_max_v`, `i_max_a` | `coil_ohm` |
+| `solenoid` | `v_max_v`, `i_max_a` | `coil_ohm` |
+| `speaker` | `v_max_v` | `impedance_ohm` |
+| `heater` | `v_max_v` | `value_ohm` |
+| `optocoupler` | `if_max_a`, `vr_max_v`, `vce_max_v`, `ic_max_a` | `vf_v`, `vf_at_a`, `ctr_min_ratio` |
+
+Per pin: `v_max_v`, `v_op_min_v`, `v_op_max_v`, `vih_v`, `vil_v`, `vih_ratio`, `vil_ratio`, `pull_ohm`; and `name`, `type`, `role`, `strap`, `pull`, `hint`, `functions`, `out_edge`, `t_pd_ns`, `needs`, `drive`, `float_ok`, `adc`, `z_in_ohm`, `short_proof`. Every name ends in its unit: `_v` V, `_a` A, `_w` W, `_ohm` Ω, `_f` F, `_h` H, `_c` °C, `_hz` Hz, `_dbm` dBm, `_dbi` dBi, `_mm` mm, `_n` N, `_s` s, `_ns` ns, `_k_per_w` K/W, `_ratio` 1. Words: `behavior` ldo, buck, boost, mcu, cc_sink, opamp, logic, current, none; `regulator` ldo, buck, boost, none; `color` red, green, blue, yellow, orange, white, warm_white, amber, uv, ir, rgb; `dielectric` C0G, NP0, X5R, X7R, X7S, X6S, Y5V, electrolytic, polymer, tantalum, film.
+<!-- edakit:end -->
+
+A limit named `<quantity>_max_<unit>` or `<quantity>_min_<unit>` is held to the quantity of that name at the part
+(LIM.v, LIM.i, LIM.p, LIM.t, LIM.range – chapter 14.2); a limit on a pin (`v_max_v`) comes before the entry's, the
+entry's before the default of the pin type. What the names do not say:
+
+- switch, connector, battery holder `i_max_a`: what the part carries as a whole – a USB-C receptacle's two ground
+  contacts at 1.25 A each are 2.5 A; fuse `i_hold_a`, `i_trip_a` with `values.i_hold_vs_temp` (`[[°C, A], …]`), which
+  LIM.i reads at the lowest ambient of sim.json.
+- MCU modules: `gpio_i_max_a` per output pin and `gpio_i_total_max_a` for all outputs together, sourced and sunk
+  separately – the package's supply pins; with an on-board LDO (`regulator: "ldo"`) the `rth_ja_k_per_w` and
+  `tj_max_c` of that regulator, from its datasheet – LIM.t holds its junction temperature with the core current it
+  carries (5.3).
+- any IC or module `vdd_op_min_v`, `vdd_op_max_v`: the operating supply range of the recommended operating
+  conditions, not the absolute maximum – LIM.range holds every supply pin to it; a supply pin with another range has
+  its own `v_op_min_v` / `v_op_max_v`. Own boards (behaviour `current`) `vin_min_v`, `vin_max_v` – the voltage at the
+  connector over the board's own simulation (4.5).
+- any part that dissipates – resistor, diode, LED, BJT, MOSFET – `rth_ja_k_per_w` (junction to ambient) and
+  `tj_max_c`: LIM.t holds ambient + P × Rth(j-a) to the junction limit and, on a board people touch, to `touch_c`
+  (5.3); without `rth_ja_k_per_w` the part gets no temperature item.
+- a MOSFET used as a switch: `vgs_th_v` (`[min, typ, max]`) and `rds_on_max_ohm` as a table `{"-2.5": 0.085, "-4.5": 0.06}` (VGS → Ω) – LIM.range/gate reports one whose |VGS| lies between its threshold and the lowest VGS its RDS(on) is specified at: a P-MOSFET on 5 V that a 3.3 V output cannot switch off, an IRF520 at 3.3 V.
+- a constant-current driver: `limits.i_supply_pin_max_a`, what its ground pin carries – LIM.i/supply_pin holds all its outputs together.
+- an MCU: `values.f_clock_hz` and `limits.f_max_hz` as a table by supply voltage (`{"2.7": 10e6, "4.5": 20e6}`) – LIM.range/clock holds the clock to what its supply allows.
+- an op-amp that is stable only above a gain: `values.gain_min_ratio` – REQ.value/gain against its closed-loop gain.
+- an IC whose inputs must not rise above its supply: `limits.vin_rel_max_v`, how far above (e.g. 0.5 V) – LIM.v/inject holds every input in every scenario.
+- a polarized capacitor (an electrolytic, a tantalum): `values.polarized: true` and the pin roles `plus` and `minus`; `vr_max_v` the reverse voltage the series allows – LIM.v holds it in the declared ranges and the simulation, and PATH.reverse reports one a reversed source reaches (both grade `polarized`, warnings).
+- resistor `value_ohm` `0` is a bridge that joins its nets (3.3); `r_max_ohm` its maximum resistance from the
+  datasheet, simulated instead of 0 Ω (50 mΩ without it).
+- LED `vf_typ_v`, `vf_min_v`, `vf_max_v`, `vf_at_a`, `rs_ohm` – an RGB LED one set per colour under `red`, `green`,
+  `blue`, limits too.
+- shift registers and LED drivers `first_bit_to`: the output the first shifted bit ends on, e.g. `"out7"`, from the
+  datasheet's timing diagram – copied into the firmware contract (3.5).
+- buzzer `coil_ohm`: a magnetic buzzer, a coil for REQ.missing (flyback diode); relay `v_operate_v`, `v_release_v`
+  (must-operate and must-release voltage).
+- a module or breakout with a USB-C receptacle `usb_c`: `{"cc": "rd_5k1" | "controller" | "none", "source": "…"}` – how
+  the board terminates its CC lines, from its schematic (REQ.missing:cc; the RP2350-Zero has 5.1 kΩ on CC1 and CC2,
+  the breakout Soldered 333011 has none).
+- any IC with logic inputs: the thresholds of the recommended operating conditions, `vih_v` | `vih_ratio` and
+  `vil_v` | `vil_ratio` (a ratio of its supply, e.g. 0.7 and 0.3 for VIH 0.7 × VDD), which LVL.threshold holds its
+  `input` pins and the MCU outputs that drive them to; ICs further in chapter 5.
 
 The block library (`edakit/blocks/parts/`) holds checked entries of the parts the building blocks use – resistors,
 LEDs, the SS14/SS34 diodes, S8050, AO3401A, a USB-C receptacle, a polyfuse, buttons, a JST connector – to copy from.
@@ -123,7 +175,7 @@ not see – stock from a search snippet is no stock figure.
 
 At LCSC and JLCPCB:
 
-- **`edakit part search "RGB LED 5mm common cathode"`** asks JLCPCB's public parts catalogue – the endpoint of F-2, no
+- **`edakit part search "RGB LED 5mm common cathode"`** asks JLCPCB's public parts catalogue – the endpoint of PARTS.stock, no
   login, no EasyEDA, no bridge, no claim. One line per hit: LCSC number, manufacturer part number, manufacturer, class
   (Basic, Extended, preferred), JLCPCB's assembly stock, package, category; `C99…` numbers dropped, Basic first, then
   by stock. `--basic` keeps Basic and preferred parts, `--min-stock N` drops the rest, `--limit N` (25) is the page
@@ -139,7 +191,7 @@ At LCSC and JLCPCB:
   is never overwritten: the command lists where it differs from the library (exit 2), `--update` fills in only the
   fields it lacks. Either way the symbol goes to `<artifacts>/library/<LCSC>.json` and the footprint to
   `<artifacts>/footprints/<footprint>.json`, in the units and axes of `pcb dump` (mil, y up, rotation 0 on TOP), each
-  pad with shape, size and, for a hole, `hole` [w, l] in mm and `plated`. With the symbol cached, P-1 compares the
+  pad with shape, size and, for a hole, `hole` [w, l] in mm and `plated`. With the symbol cached, STRUCT.entry compares the
   graph with it (3.3); `pcb plan` takes the footprint for a part that is not in the PCB yet (7.4). The endpoint is
   undocumented: an unknown number answers HTTP 200 with `success: false` ("not in the library", exit 1), and after
   some two dozen requests in a few minutes it answered HTTP 403 for a while – import what you need, not the catalogue.
@@ -149,19 +201,19 @@ At LCSC and JLCPCB:
   Free text ("led 5mm red") returns mostly noise; the classification filter has no effect. Series names work
   (e.g. `XL-304`, `KT-0805`, `UNI-ROYAL 0805W8F…`).
 - **Exact match only:** the search is full text – take hits whose `supplierId` equals the number.
-- `C99…` numbers are user libraries without an orderable part – P-6 refuses one on a part that goes into the BOM.
+- `C99…` numbers are user libraries without an orderable part – STRUCT.identity refuses one on a part that goes into the BOM.
 - **Stock and price:** `https://wmsc.lcsc.com/ftps/wm/product/detail?productCode=Cxxxx` (stock, price breaks,
   parameters). LCSC's own search blocks automated requests (HTTP 403); jlcsearch is too thin for single parts.
 - **JLCPCB's assembly stock differs from LCSC's.** `edakit stock` asks JLCPCB's public catalogue
   (`selectSmtComponentList`) and part page (`jlcpcb.com/partdetail/<C…>`) about every assembled part and writes a dated
   snapshot, `hardware/stock.json`: listed, Basic/Extended/preferred, stock, MPN, PCBA type ("Economic and Standard" or
   "Standard Only"), MSL, X-ray, machine or hand soldering, attrition (`lossNumber`), minimum (`leastPatchNumber`) and
-  price breaks. Check **P-4** reads it on every `edakit check`, offline: a part not listed (pre-order only), short of
+  price breaks. Check **PARTS.stock** reads it on every `edakit check`, offline: a part not listed (pre-order only), short of
   stock for `quantity` boards – under Standard PCBA plus the attrition, max(n + attrition, minimum) –, under another
   MPN than its entry, or "Standard Only" on an Economic order (`[release] assembly.pcba`) fails; MSL ≥ 5 (baked for a
   fee and two days), stock within `stock_margin_pct` and another class than `jlc_class` warn; a snapshot older than
   `stock_max_age_days` is pending. `edakit stock --lcsc C…` prints the same for candidates before they are in the
-  graph. At the export F-2 asks the catalogue again.
+  graph. At the export PARTS.stock asks the catalogue again.
 - Report stock as a number with a date. "Few" is not information.
 
 ## 4.3 Signing off a part
@@ -169,7 +221,7 @@ At LCSC and JLCPCB:
 1. `edakit part fetch <key>` and read `<datasheets>/<key>.pdf` (4.6); note its revision, and its `sha256` from
    `<key>.json` as `verified.datasheet_sha256`.
 2. Check pinout and pin names, **polarity at the footprint** (which pad is pin 1, anode, +), package, every value in
-   `params` and `ratings`, especially the ones marked as assumption.
+   `values` and `limits`, especially the ones marked as assumption.
 3. Correct the file, extend `sources`.
 4. `verified`: `{"by", "date", "datasheet", "checked": [...], "open": [...]}`.
 5. Critical parts (MCU, regulators, drivers, polarised parts, connectors) get an independent second check (M-1) by the
@@ -186,7 +238,7 @@ In the reference project the EasyEDA footprint of a 5-mm LED printed "+" next to
 called pad 1 the cathode. Editing the project's footprint through the API went nowhere (chapter 9.4). The fix was in
 the graph: the net of the anode goes to the pad with the "+" print, and the parts entry gives pin 1 the role `anode` –
 so every check, the simulation and the firmware pin tables follow automatically. The gate's polarity sheet (one tile
-per polarised part: copper, silkscreen, pad numbers, roles, nets) is what makes this visible at a glance. L-8 of the
+per polarised part: copper, silkscreen, pad numbers, roles, nets) is what makes this visible at a glance. GEO.mark of the
 gate finds it on its own: it reads the "+" the footprint draws in the silk Gerber and fails when the nearest pad with a
 polarity role is a cathode (8.1).
 
@@ -202,18 +254,18 @@ datasheet – edakit derives the parts entry from it:
    - `pins`: the net on the board is the pin's name. The simulation's source is `power_in` / `vin`, the ground
      `ground` / `gnd`, a rail the board makes `power_output` / `vout`, an I2C line `bidirectional` / `sda` or `scl`;
      any other pin takes the strongest type among the parts on its net (output, bidirectional, current_sink, input,
-     analog, else passive). A resistor to a supply or to ground gives `pull` and `pull_ohm` (G-11, G-12 count them);
-     `vmax` is the lowest limit on the net – a pin's `vmax`, a capacitor's `v_max` / 1.5
-   - `params`: behaviour `current`, the largest current from the connector over the board's scenarios (its DC
+     analog, else passive). A resistor to a supply or to ground gives `pull` and `pull_ohm` (REQ.missing, LVL.boot count them);
+     `v_max_v` is the lowest limit on the net – a pin's `v_max_v`, a capacitor's `v_max_v` / 1.5
+   - `values`: behaviour `current`, the largest current from the connector over the board's scenarios (its DC
      scenarios: fault cases with `info` and transient runs are left out)
-   - `ratings`: `vin_min`, `vin_max` – the voltage at the connector over those scenarios
+   - `limits`: `vin_min_v`, `vin_max_v` – the voltage at the connector over those scenarios
    - `compliance`: RoHS, REACH and radio as the board's parts entries state them – `radio` lists their radios, is
      `"none"` when none transmits and every module and microcontroller of the board says `"none"`, and is left out
-     while one of them states nothing (P-11 in the project that uses the board)
+     while one of them states nothing (PARTS.fact in the project that uses the board)
 
    The board's simulation must pass, and exactly one of the connectors must be a source of it: the supply the board
    draws from the project that uses it. `edakit part datasheet` without arguments renews every datasheet of the
-   project. Commit them – a datasheet belongs to a state of the board, and P-3 says when it is older.
+   project. Commit them – a datasheet belongs to a state of the board, and SYNC.source says when it is older.
 2. **In the project that uses the board:** `edakit part own ../board` copies the datasheet into the parts database
    and adds where it comes from: the path, the commit, the repository, and the gate run that released this state of
    the board if there is one and it was neither superseded nor withdrawn (`<reports>/*/fab/manifest.json` of the
@@ -223,9 +275,9 @@ datasheet – edakit derives the parts entry from it:
 3. **Sign it off** like any part (4.3), against the datasheet at that commit. Copying the same state again keeps the
    sign-off; a changed board needs a new one.
 
-The checks then treat the board like any IC: its pins take part in G-3 to G-6, G-11 and G-12, the simulation draws its
-current from the supply pin, and E-3 holds the voltage there inside `vin_min` … `vin_max` – the board was simulated
-only in that range; give its own `sim.json` more if the host needs more. P-3 compares the copy with its source:
+The checks then treat the board like any IC: its pins take part in LIM.v, LVL and REQ, the simulation draws its
+current from the supply pin, and LIM.range holds the voltage there inside `vin_min_v` … `vin_max_v` – the board was simulated
+only in that range; give its own `sim.json` more if the host needs more. SYNC.source compares the copy with its source:
 
 | Finding | Result |
 |---|---|
@@ -243,11 +295,11 @@ its current as an `external` load (5.1).
 `module`, or `connector` for a breakout that only passes lines on), written from the seller's schematic, with
 `"bom": false` when JLCPCB does not assemble them. Plugged or soldered onto the board (pin headers, castellated pads)
 they are components of that board: the footprint is the header or pad row, the pins are the ones the board brings
-out. A USB-C receptacle on such a board is checked by G-14 in one of two ways:
+out. A USB-C receptacle on such a board is checked by REQ.missing:cc in one of two ways:
 
 - its CC eyes as pins of the entry – a `connector` with the roles `cc1`, `cc2`, or a `module` whose entry says
-  `params.usb_c` `{"cc": "none"}`: G-14 wants the two 5.1 kΩ on those pins, as parts of the graph;
-- its receptacle inside the board, CC lines no pins of the entry (an MCU module with USB-C on board): `params.usb_c`
+  `values.usb_c` `{"cc": "none"}`: REQ.missing:cc wants the two 5.1 kΩ on those pins, as parts of the graph;
+- its receptacle inside the board, CC lines no pins of the entry (an MCU module with USB-C on board): `values.usb_c`
   says what the board has – `rd_5k1` and `controller` pass, `none` fails.
 
 A bought board on a cable – a breakout in an enclosure wired to the board's power connector – is a board of its own
@@ -260,9 +312,9 @@ bought = true                # no template, schematic, pcb or file: there is not
 ```
 
 Its parts are components with `"board": "usb"` and `"bom": false` – the breakout with the eyes it brings out, and what
-you solder onto it, such as the two 5.1 kΩ from CC1 and CC2 to GND; G-1 wants `bom: false` on every one, nobody
+you solder onto it, such as the two 5.1 kΩ from CC1 and CC2 to GND; STRUCT wants `bom: false` on every one, nobody
 assembles them. A cable joins it to your connector (`cables`, 3.1) with the resistance of its wires. The checks and the
-simulation see it like any board: G-14 the CC eyes, G-17 the cable's rating, and sim.json's source sits at the
+simulation see it like any board: REQ.missing:cc the CC eyes, LIM.i the cable's rating, and sim.json's source sits at the
 breakout's connector, with the cable in the path (5.1). Nobody draws it: the gate's stages S and L/F leave it out with
 an information row each, the manifest, the `fab` hash, the layout hash and so the layout review M-5 cover the made
 boards (8.1, 8.2), and the commands that make or read a layout refuse it with one line (`--board usb`) or skip it.
@@ -273,14 +325,14 @@ boards (8.1, 8.2), and the commands that make or read a layout refuse it with on
 the datasheet. The skill `own-part` asks for pins, supply range and current once, has what nobody knows measured, and
 writes the entry with `own: {"what": "pcb" | "bin" | "handmade", "notes": …}`: every value with its source ("measured
 2026-11-02, multimeter …, all LEDs on: 182 mA"), what is guessed as "assumption …", and the sign-off against those
-notes. The checks treat it like the copy of an edakit board; P-3 has nothing to compare it with.
+notes. The checks treat it like the copy of an edakit board; SYNC.source has nothing to compare it with.
 
 ### Own footprints as data
 
 A footprint that exists only in EasyEDA – drawn in its editor, or rebuilt there by a script of the project – is not
 text: the repository knows its name, `pcb dump` measures what was put there, and nobody can review or diff it. The
 parts entry can hold it as data instead, in `footprint_data` beside `footprint`. edakit builds the project's copy from
-it (`edakit part build`), holds the copy to it (P-10), and a change of the footprint is a line of text. The Christmas
+it (`edakit part build`), holds the copy to it (SYNC.footprint), and a change of the footprint is a line of text. The Christmas
 bell's T-Display, rebuilt today by its script `tdisplay_device.py` from the copy of a 2×12 female header, as data:
 
 ```json
@@ -314,12 +366,12 @@ footprints `edakit part import` caches:
 | `pads_same_number` | optional: number → every pad of a number used several times (shell legs), as the cache has them; `pads` holds the first |
 | `lines` | silkscreen polylines `{points, width}`, closed when the last point is the first; width default 0.15 mm (JLCPCB prints nothing thinner) |
 | `texts` | silkscreen texts `{text, x, y, size, width, rot}`, centred on x, y |
-| `marks` | polarity marks `{sign, x, y, size, width}`: a `"+"` drawn as two strokes of `size` – as L-8 finds a "+" in the silk Gerber (strokes of 0.3 to 2 mm) –, a `"−"` as one |
+| `marks` | polarity marks `{sign, x, y, size, width}`: a `"+"` drawn as two strokes of `size` – as GEO.mark finds a "+" in the silk Gerber (strokes of 0.3 to 2 mm) –, a `"−"` as one |
 | `outline` | the body on the component-shape layer, `[[x, y], …]`: the part's extent in EasyEDA |
 | `symbol` | `"box"`: the copy's symbol is rebuilt too (below); without it the carrier's symbol stays |
 
-**Why beside `footprint`, not in it.** `footprint` stays the name of the copy in EasyEDA: L-4 compares it with the PCB,
-`part import` writes and compares it, `pcb plan`, P-7 and `part diff` find the library footprint by it, and the copy
+**Why beside `footprint`, not in it.** `footprint` stays the name of the copy in EasyEDA: SYNC.footprint compares it with the PCB,
+`part import` writes and compares it, `pcb plan`, GEO.hole and `part diff` find the library footprint by it, and the copy
 keeps the carrier's footprint name (the bell's T-Display is still `HDR-TH_24P-…`, decision D-13 there). An object in
 its place would break every reader of the name – and every older edakit that reads the entry; beside it, an entry
 without `footprint_data` is what it was, and no project changes until it adds the data. The name says which copy, the
@@ -329,9 +381,9 @@ data what it looks like.
 on the side `symbol` names (the others on the right), 10 units of 10 mil long, its name and number from the entry, the
 body as wide as the names need. Nothing is missing for such a box. What the entry does not have is any other drawing:
 a diode, an LED or a transistor is a shape `schematic draw` makes up, not data – so `"symbol": "box"` is for modules,
-ICs and boards, and for every other part the carrier's symbol stays; its pins must be the entry's (P-1 against the
-library symbol, S-2 in the gate). The designator prefix (U, J …) and the device's other properties stay the carrier's.
-With `"symbol": "box"` P-1 does not compare the graph with the carrier's library symbol: it is not the copy's.
+ICs and boards, and for every other part the carrier's symbol stays; its pins must be the entry's (STRUCT.entry against the
+library symbol, SYNC.schematic in the gate). The designator prefix (U, J …) and the device's other properties stay the carrier's.
+With `"symbol": "box"` STRUCT.entry does not compare the graph with the carrier's library symbol: it is not the copy's.
 
 **The way:**
 
@@ -340,13 +392,13 @@ With `"symbol": "box"` P-1 does not compare the graph with the carrier's library
    refused. The source is the dump of a placed part (`<board>.geometry.json`, `--board` picks the board), else the
    library footprint of `edakit part import`. The dump measures places and holes – shapes and sizes only of parts that
    have footprint data, and older dumps not even holes –, so shape and size come from the library footprint where it
-   has the pad at the same place; what is still missing, P-9 names ("pads 1–24: shape missing"), exit 2. Neither the
+   has the pad at the same place; what is still missing, PARTS.footprint names ("pads 1–24: shape missing"), exit 2. Neither the
    dump nor the cache has the print: without `lines`, `texts`, `marks` and `outline` the build keeps the copy's print,
    with any of them the copy's print is exactly the data's.
 2. **Change the data** – a pad is a line. The circuit hash changes (the parts file, byte for byte), so M-1, which
    checks polarity at the footprint, is done again (decision 5 of design-as-text), and the layout hash, so a sign-off of
    scope `layout` lapses; the fab hash sees the copper at the next gate run.
-3. **Build the copy:** `edakit part build KEY` checks the data (P-9) and shows what it would build –
+3. **Build the copy:** `edakit part build KEY` checks the data (PARTS.footprint) and shows what it would build –
    `24 pads (24 with a hole), 2 lines, 2 texts, outline, symbol: a box with 24 pins`; `--write` builds it in
    EasyEDA, under the claim (`--board` picks the board; default the only made one). The carrier is the device the part
    is placed with – its LCSC number, which for a stand-in is another part's (the bell's T-Display on the female header
@@ -359,27 +411,27 @@ With `"symbol": "box"` P-1 does not compare the graph with the carrier's library
    (8.6).
 4. **Into the PCB:** placed parts keep their old copy (9.4) – delete them in the PCB, `edakit pcb parts --write`,
    `edakit pcb dump` (it measures the pads of parts with footprint data with shape, size, rotation and layer), then
-   `edakit check`: P-10 holds the copy to the data. Then the round as usual, through `route all`.
+   `edakit check`: SYNC.footprint holds the copy to the data. Then the round as usual, through `route all`.
 
 **Checks** (3.3), only in a project where a parts entry has `footprint_data` – every other project runs the checks it
-ran: **P-9** the data is complete and consistent – every pad its place, shape and size, a through-hole pad its hole;
+ran: **PARTS.footprint** the data is complete and consistent – every pad its place, shape and size, a through-hole pad its hole;
 every pad a pin of the entry or `mechanical`, every pin a pad; lines, texts, marks and outline well formed; a `"+"`
-mark nearest to a pad whose role is anode, plus or vbus, a `"−"` to cathode or minus (L-8's test, on the text); a symbol
-box whose sides name pins of the entry, each once. **P-10** the copy equals the data – the footprint the dump measured
+mark nearest to a pad whose role is anode, plus or vbus, a `"−"` to cathode or minus (GEO.mark's test, on the text); a symbol
+box whose sides name pins of the entry, each once. **SYNC.footprint** the copy equals the data – the footprint the dump measured
 on the board has the footprint name of the entry and the data's pads: the same numbers, each within 0.02 mm of its
-place (L-7's tolerance; the bell's copy lies 0.0013 mm off), the same hole within 0.01 mm, and where the dump measured
-them shape, size, rotation and layer. P-10 runs on the dump, offline: in every `edakit check`, right after the dump of
+place (SYNC.plan's tolerance; the bell's copy lies 0.0013 mm off), the same hole within 0.01 mm, and where the dump measured
+them shape, size, rotation and layer. SYNC.footprint runs on the dump, offline: in every `edakit check`, right after the dump of
 a round, where a stale copy is found before anything is routed on it, and in the gate's stage P. Stage L does not
-repeat it: there L-10 holds the PCB's pads to the same dump within 0.05 mm – data = dump in P-10, dump = PCB in L-10 –,
+repeat it: there SYNC.footprint holds the PCB's pads to the same dump within 0.05 mm – data = dump in SYNC.footprint, dump = PCB in SYNC.footprint –,
 and the PCB export has no holes and shapes, the dump has. The print is not measured by `pcb dump`; the gate sees it on
-the silkscreen (L-8, L-17).
+the silkscreen (GEO.mark, GEO.silk).
 
-Until the dump has the part, `pcb plan`, `pcb place`, P-7 and `part diff` take the data as the part's geometry
+Until the dump has the part, `pcb plan`, `pcb place`, GEO.hole and `part diff` take the data as the part's geometry
 ("footprint data", before the library footprint), so holes and leads are checked on the text already.
 
 Not covered yet: pad shapes NGON and POLYGON (written as RECT, ELLIPSE or OVAL), arcs and circles in the print
 (written as points), the direction of a slot (built along the pad's longer side – the live run of step 3.6 has to show
-it), and the print in P-10. The build runs EasyEDA calls the bell's and the reference project's scripts use, but in this
+it), and the print in SYNC.footprint. The build runs EasyEDA calls the bell's and the reference project's scripts use, but in this
 form it has not run against EasyEDA yet (implementation plan, live run of 3.6).
 
 ## 4.6 Datasheets kept with the project
@@ -391,7 +443,7 @@ none yet. The sources, in this order:
 1. `--url URL`
 2. the entry's `datasheet.url`
 3. for an LCSC number, `pdfUrl` of LCSC's product data (`https://wmsc.lcsc.com/ftps/wm/product/detail?productCode=…`)
-4. `dataManualUrl` of exactly that number in JLCPCB's catalogue (the endpoint of F-2)
+4. `dataManualUrl` of exactly that number in JLCPCB's catalogue (the endpoint of PARTS.stock)
 
 An HTML page is searched once for a link to a PDF (the viewer of an `item.szlcsc.com` page, the download of a JLCPCB
 part page). Only a complete PDF counts – it starts with `%PDF` and has its `%%EOF` in the last 64 kB (some tools

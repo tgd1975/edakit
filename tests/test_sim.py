@@ -6,6 +6,7 @@ import shutil
 import pytest
 
 from edakit.design import Design
+from edakit.engines import sim as esim
 from edakit.sim import run as simrun
 
 pytestmark = pytest.mark.skipif(not shutil.which("ngspice"), reason="ngspice not installed")
@@ -43,9 +44,9 @@ def test_reversed_led(project):
 
 def test_overloaded_resistor(project):
     part = project.part("C17604")
-    part["ratings"]["p_max_w"] = 1e-6
+    part["limits"]["p_max_w"] = 1e-6
     project.save_part("C17604", part)
-    assert any(c["id"] == "E-2" and c["item"] == "R1" for c in failing(simulate(project)))
+    assert any(c["id"] == "LIM.p" and c["item"] == "R1" for c in failing(simulate(project)))
 
 
 def test_net_range_too_narrow(project):
@@ -108,22 +109,22 @@ def test_input_level_defined(project):
     sim = json.loads((project.root / "hardware" / "sim.json").read_text())
     sim["mcu"]["U1"]["inputs"] = ["BTN"]
     part = project.part("C41407547")
-    part["params"].update(vih_v=2.0, vil_v=0.8)
+    part["values"].update(vih_v=2.0, vil_v=0.8)
     project.save_part("C41407547", part)
     out = simulate(project, sim)
     levels = [c for c in out["checks"] if c["item"] == "U1 BTN"]
     assert {c["check"].split()[2] for c in levels} == {"high", "low"} and not failing(out)
-    part["params"]["vih_v"] = 3.5                                 # the pull-up to 3.3 V no longer reaches VIH
+    part["values"]["vih_v"] = 3.5                                 # the pull-up to 3.3 V no longer reaches VIH
     project.save_part("C41407547", part)
     assert any(c["item"] == "U1 BTN" and "undefined" in c["check"] for c in failing(simulate(project, sim)))
 
 
 def test_io_level_follows_the_supply_pin(project):
     part = project.part("C41407547")
-    part["params"]["v_io"] = "vin"                                # LED_OE high would be VSYS, not 3.3 V
+    part["values"]["v_io_v"] = "vin"                                # LED_OE high would be VSYS, not 3.3 V
     project.save_part("C41407547", part)
-    assert any(c["id"] == "E-1" and "vout_v" in c["actual"] for c in failing(simulate(project)))
-    part["params"]["vout_v"] = 3.3
+    assert any(c["id"] == "SIM.converge" and "vout_v" in c["actual"] for c in failing(simulate(project)))
+    part["values"]["vout_v"] = 3.3
     project.save_part("C41407547", part)
     assert any(c["item"] == "LED_OE" and "declared range" in c["check"] for c in failing(simulate(project)))
 
@@ -139,11 +140,11 @@ def test_fault_load_only_in_extra_scenarios(project):
 
 def test_unknown_behaviour_model_fails_cleanly(project):
     part = project.part("C90107")
-    part["params"]["behavior"] = "no_such_model"
+    part["values"]["behavior"] = "no_such_model"
     project.save_part("C90107", part)
     out = simulate(project)
     assert all(s["status"] == "error" for s in out["scenarios"])
-    assert any(c["id"] == "E-1" and "no_such_model" in c["actual"] for c in out["checks"])
+    assert any(c["id"] == "SIM.converge" and "no_such_model" in c["actual"] for c in out["checks"])
 
 
 def test_gpio_current_per_pin_and_in_total(project):
@@ -151,16 +152,16 @@ def test_gpio_current_per_pin_and_in_total(project):
     sim["mcu"]["U1"]["outputs"].append("BTN")                   # GPIO high into the pressed button: ~110 mA
     sim["loads"]["all_on"]["gpio"]["BTN"] = 1
     part = project.part("C41407547")
-    part["ratings"].update(gpio_i_max_a=0.5, gpio_i_total_max_a=1.0)
+    part["limits"].update(gpio_i_max_a=0.5, gpio_i_total_max_a=1.0)
     project.save_part("C41407547", part)
     gpio = lambda out: [c for c in out["checks"] if c["check"].startswith("GPIO")]  # noqa: E731
-    out = simulate(project, sim)                                  # (the 50-mA button itself fails E-2 here)
+    out = simulate(project, sim)                                  # (the 50-mA button itself fails LIM.* here)
     assert any(c["item"] == "U1 BTN" for c in gpio(out)) and not failing({"checks": gpio(out)})
-    part["ratings"].update(gpio_i_max_a=0.012, gpio_i_total_max_a=0.05)   # RP2040-like: 12 mA per pin, 50 mA in all
+    part["limits"].update(gpio_i_max_a=0.012, gpio_i_total_max_a=0.05)   # RP2040-like: 12 mA per pin, 50 mA in all
     project.save_part("C41407547", part)
     bad = failing({"checks": gpio(simulate(project, sim))})
-    assert any(c["id"] == "E-2" and c["item"] == "U1 BTN" and c["check"] == "GPIO output current" for c in bad)
-    assert any(c["id"] == "E-2" and c["check"] == "GPIO current sourced by all outputs together" for c in bad)
+    assert any(c["id"] == "LIM.i" and c["item"] == "U1 BTN" and c["check"] == "GPIO output current" for c in bad)
+    assert any(c["id"] == "LIM.i" and c["check"] == "GPIO current sourced by all outputs together" for c in bad)
 
 
 def test_output_on_an_input_only_pin(project):
@@ -168,7 +169,7 @@ def test_output_on_an_input_only_pin(project):
     part["pins"]["7"]["type"] = "input"                           # GP5 (LED_OE) as if it could only read
     project.save_part("C41407547", part)
     bad = failing(simulate(project))
-    assert any(c["id"] == "E-3" and c["item"] == "U1 LED_OE" and "can only be an input" in c["check"] for c in bad)
+    assert any(c["id"] == "LVL.direction" and c["item"] == "U1 LED_OE" and "can only be an input" in c["check"] for c in bad)
 
 
 def test_relay_pulls_in_and_releases(project):
@@ -206,7 +207,7 @@ def test_bridge_is_simulated_with_its_maximum_resistance(project):
         text, _ = netlist.build(Design.from_config(project.config()), sim, next(simrun.scenarios(sim)))
         return next(x for x in text.splitlines() if x.startswith("R_R10 "))
     assert line() == "R_R10 n_3v3 n_3v3_b 0.05"                 # no r_max_ohm in the entry: 50 mΩ
-    project.save_part(BRIDGE["lcsc"], {**BRIDGE, "params": {"value_ohm": 0.0, "r_max_ohm": 0.02}})
+    project.save_part(BRIDGE["lcsc"], {**BRIDGE, "values": {"value_ohm": 0.0, "r_max_ohm": 0.02}})
     assert line() == "R_R10 n_3v3 n_3v3_b 0.02"
 
 
@@ -218,10 +219,10 @@ RGB = {"lcsc": "C7371895", "mpn": "XL-B504RGBC", "manufacturer": "XINGLIGHT", "k
                 "2": {"name": "R", "type": "passive", "role": "cathode_red"},
                 "3": {"name": "G", "type": "passive", "role": "cathode_green"},
                 "4": {"name": "B", "type": "passive", "role": "cathode_blue"}},
-       "params": {"red": {"vf_min": 1.8, "vf_typ": 2.1, "vf_max": 2.4, "vf_at_a": 0.02, "rs_ohm": 10},
-                  "green": {"vf_min": 2.8, "vf_typ": 3.1, "vf_max": 3.4, "vf_at_a": 0.02, "rs_ohm": 10},
-                  "blue": {"vf_min": 2.8, "vf_typ": 3.1, "vf_max": 3.4, "vf_at_a": 0.02, "rs_ohm": 10}},
-       "ratings": {c: {"if_max_a": 0.02, "vr_max": 5} for c in ("red", "green", "blue")}}
+       "values": {"red": {"vf_min_v": 1.8, "vf_typ_v": 2.1, "vf_max_v": 2.4, "vf_at_a": 0.02, "rs_ohm": 10},
+                  "green": {"vf_min_v": 2.8, "vf_typ_v": 3.1, "vf_max_v": 3.4, "vf_at_a": 0.02, "rs_ohm": 10},
+                  "blue": {"vf_min_v": 2.8, "vf_typ_v": 3.1, "vf_max_v": 3.4, "vf_at_a": 0.02, "rs_ohm": 10}},
+       "limits": {c: {"if_max_a": 0.02, "vr_max_v": 5} for c in ("red", "green", "blue")}}
 COMMON_CATHODE = {"1": "cathode", "2": "anode_red", "3": "anode_green", "4": "anode_blue"}
 
 
@@ -255,14 +256,14 @@ def test_rgb_led_with_a_common_anode(project):
         on = [c for c in mine if c["check"] == f"LED current ({net})"]
         assert len(on) == 6 and all(float(c["actual"].split()[0]) == pytest.approx(0.00945, rel=0.02) for c in on)
         assert len([c for c in mine if c["check"] == "LED dark"]) == 6          # idle: 3 supplies x 2 corners
-        assert len([c for c in mine if c["id"] == "E-2"]) == 24                 # forward current, reverse voltage
+        assert len([c for c in mine if c["id"] in ("LIM.i", "LIM.v")]) == 24    # forward current, reverse voltage
     j1 = next(s for s in out["scenarios"] if s["name"] == "usb-min/all_on/vf-max")["sources"]["J1"]
     assert j1 == pytest.approx(0.114, abs=0.002)
 
 
 def test_rgb_led_with_a_common_anode_by_leds_on(project):
     rgb_led(project)                                              # each cathode through 1 kΩ to GND, no driver output:
-    project.use_library_part("C17513")                            # E-3 goes by the load's leds_on
+    project.use_library_part("C17513")                            # SIM.state goes by the load's leds_on
     g = project.graph()
     for pin, net, des in (("2", "LED5", "R10"), ("3", "LED6", "R11"), ("4", "LED7", "R12")):
         project.net(g, net)["pins"].remove(f"D10.{pin}")
@@ -276,7 +277,7 @@ def test_rgb_led_with_a_common_anode_by_leds_on(project):
     sim["loads"]["all_on"]["leds_on"] = ["D10_RED"]               # one colour – green and blue light all the same
     out = simulate(project, sim)
     led = {(c["scenario"].split("/")[1], c["item"], c["check"], c["result"]) for c in out["checks"]
-           if c["item"].startswith("D10_") and c["id"] == "E-3"}
+           if c["item"].startswith("D10_") and c["id"] == "SIM.state"}
     assert led == {("idle", f"D10_{x}", "LED on", "pass") for x in ("RED", "GREEN", "BLUE")} | {
         ("all_on", "D10_RED", "LED on", "pass"), ("all_on", "D10_GREEN", "LED dark", "fail"),
         ("all_on", "D10_BLUE", "LED dark", "fail")}
@@ -298,7 +299,7 @@ def test_rgb_led_layout_from_its_roles(project, roles, anode, cathode):
 def resistor(ohm):
     """A test resistor, 0805 1/8 W, its value in its own entry (as the 0 Ω bridge of test_checks.py)."""
     return {"lcsc": f"C9{ohm:06d}", "mpn": f"test {ohm} Ω 0805", "kind": "resistor", "verified": {"by": "test"},
-            "params": {"value_ohm": float(ohm)}, "ratings": {"p_max_w": 0.125, "v_max": 150},
+            "values": {"value_ohm": float(ohm)}, "limits": {"p_max_w": 0.125, "v_max_v": 150},
             "pins": {"1": {"name": "1", "type": "passive", "role": "1"},
                      "2": {"name": "2", "type": "passive", "role": "2"}}}
 
@@ -326,9 +327,9 @@ def test_leds_behind_balancing_resistors_count_on_their_output(project):
     balanced(project)
     out = simulate(project)
     assert not failing(out) and all(s["status"] == "ok" for s in out["scenarios"])
-    assert len(out["checks"]) == 828                              # 810 before: no E-3 for D9, D10, LED7 in all_on
+    assert len(out["checks"]) == 828                              # 810 before: no SIM.state for D9, D10, LED7 in all_on
     for led in ("D9", "D10"):
-        mine = [c for c in out["checks"] if c["item"] == led and c["id"] == "E-3"]
+        mine = [c for c in out["checks"] if c["item"] == led and c["id"] == "SIM.state"]
         on = [c for c in mine if c["check"] == "LED current (LED7)"]
         assert len(on) == 6                                       # all_on: 3 supplies x 2 corners, half of 9.45 mA
         assert all(float(c["actual"].split()[0]) == pytest.approx(0.00945 / 2, rel=0.02) for c in on)
@@ -361,7 +362,7 @@ def test_which_nets_are_behind_a_balancing_resistor(project):
     project.net(g, "GND")["pins"].append("R14.2")                 # behind an output
     project.save_graph(g)
     d = Design.from_config(project.config())
-    assert simrun.behind_resistor(d, d.joined_nets(), {f"LED{i}" for i in range(8)}) == {"D9_K": "LED7"}
+    assert esim.behind_resistor(d, d.joined_nets(), {f"LED{i}" for i in range(8)}) == {"D9_K": "LED7"}
 
 
 def read_back(project):
@@ -415,15 +416,15 @@ def test_led_without_a_known_driver(project):
     status_led(project, sim)                                      # D10 lights in all_on, and nothing checks it
     bad = failing(simulate(project, sim))
     assert {(c["id"], c["scenario"].split("/")[1], c["item"], c["check"]) for c in bad} == {
-        ("E-4", "all_on", "D10", "LED without a known driver")}
+        ("SIM.driver", "all_on", "D10", "LED without a known driver")}
     assert len(bad) == 6                                          # 3 supplies x 2 corners
     assert bad[0]["actual"] == "cathode at GND, on no driver output; the load has no leds_on"
-    sim["loads"]["all_on"]["leds_on"] = ["D10"]                   # the load says it lights: E-3 checks it
+    sim["loads"]["all_on"]["leds_on"] = ["D10"]                   # the load says it lights: SIM.state checks it
     out = simulate(project, sim)
     assert not failing(out)
     on = [c for c in out["checks"] if c["item"] == "D10" and c["check"] == "LED on"]
     assert len(on) == 6 and all(c["result"] == "pass" for c in on)
-    assert not [c for c in out["checks"] if c["id"] == "E-4"]   # E-4 reports only an LED without a state
+    assert not [c for c in out["checks"] if c["id"] == "SIM.driver"]   # SIM.driver reports only an LED without a state
 
 
 def test_led_left_out_of_the_simulation(project):
@@ -439,7 +440,7 @@ def test_led_left_out_of_the_simulation(project):
     project.save_graph(g)
     bad = failing(simulate(project, sim))
     assert {(c["id"], c["item"], c["check"], c["actual"]) for c in bad} == {
-        ("E-4", "D10", "LED without a known driver",
+        ("SIM.driver", "D10", "LED without a known driver",
          "left out of the simulation: no pin with the role cathode in its parts entry")}
     assert len(bad) == 12                                         # in every scenario
     project.comp(g, "D10")["lcsc"] = "C2297"                      # the entry with both roles: simulated and checked

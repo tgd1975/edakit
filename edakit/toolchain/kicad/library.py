@@ -14,7 +14,7 @@ the same spot.
 
     pad shapes   RECT -> rect, ELLIPSE -> circle (w = h) or oval, OVAL -> oval, POLYGON -> custom with its corners
     holes        [w, l] mm -> (drill w) or (drill oval …) along the pad's long side; not plated -> np_thru_hole
-    silkscreen   footprint_data lines, texts, marks (a "+" two strokes, as L-8 reads them) and outline (F.Fab); else
+    silkscreen   footprint_data lines, texts, marks (a "+" two strokes, as GEO.mark reads them) and outline (F.Fab); else
                  the library's silkscreen (part.footprint_silk); the body box on F.Fab
 """
 
@@ -178,7 +178,7 @@ def geometry_of(cfg, design, des, fetch=True, today=None):
         geo = geometry(entry)
         if geo is None:
             raise LibraryError(f"{des}: the footprint data of its parts entry is not complete – edakit check names "
-                               "what P-9 misses")
+                               "what PARTS.footprint misses")
         return entry.get("footprint") or design.entry_key(des), geo, data_of(entry)
     lcsc = design.comps[des].get("lcsc")
     name = entry.get("footprint") or (part.cached(cfg, lcsc) or {}).get("footprint")

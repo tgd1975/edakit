@@ -21,16 +21,16 @@ opinion** on the requirements file.
   history – a statement found only there is a candidate marked so.
 - edakit.toml: where the project's files are.
 - The graph: `purpose` (use, market, notes – who uses the board), the `notes` of components and nets (they cite
-  decisions), `checks` (`pin_locks`: the pins the firmware relies on).
+  decisions), `checks` (`locks.pins`: the pins the firmware relies on).
 - The simulation config: sources and supplies with their ranges, limits and notes (`i_min_a` for a power bank, the
   current a USB port allows) – often a requirement whose evidence exists already –, loads, `touch_c`, `transients`.
 - The sign-off file: the notes of the manual checks, the reasons of accepted warnings.
 - The last gate run, if there is one: `<reports>/<run>/protocol.md` – the rows of sections 3 and 7 (what a rows
   pattern can match), the acceptance list of section 6, the requirements of section 11.
 - The requirements file, if `[project] requirements` names it: `edakit req 2>&1 | cat`, and `edakit check 2>&1 | cat`
-  for G-20 to G-23 on the file.
+  for DOCS.ref to DOCS.draft on the file.
 - Offline you may also run `edakit sim --json /tmp/sim.json 2>&1 | cat` (every simulation row with `id`, `scenario`,
-  `item` and `check` – what a rows pattern matches), `edakit rules <ID>`, and `git log` on a document to see which of
+  `item` and `check` – what a rows pattern matches), `edakit explain <code>`, and `git log` on a document to see which of
   two is newer.
 
 ## What you look for
@@ -59,8 +59,8 @@ opinion** on the requirements file.
 
 - one statement, testable as written: a quantity with unit, a limit, a condition; a need in its owner's words;
 - `source` says where it stands, `from` where it comes from – complete and right;
-- `verify` tests the sentence: a rows pattern that matches the rows of the scenario and the part it is about (`E-3 *`
-  matches every row of the check and says nothing about the sentence), a review that judges this kind of thing, an
+- `verify` tests the sentence: a rows pattern that matches the rows of the scenario and the part it is about (`LIM.i *`
+  matches every row of the code and says nothing about the sentence), a review that judges this kind of thing, an
   acceptance step a person can do on the delivered board;
 - the binding fits: a safety limit as `may` or a wish as `must` is a finding;
 - every accepted need leads to a requirement; a draft is still open; a dropped entry has its reason;
@@ -74,7 +74,7 @@ Numbered lists, so that the skill requirements can turn them into one decision r
 1. **Candidates**, needs first – per candidate: kind and a proposed ID (the next free numbers of the file), the text,
    `source` (file and section or line, decision number), for a need `who`, for a requirement `from`, a proposed
    `binding` with its reason and `verify` – existing evidence with the rows it matched
-   ("rows `E-3 * J1 current from the supply` – 12 rows in the last gate run") or proposed ("proposed: a scenario with
+   ("rows `LIM.i * J1 current from the supply` – 12 rows in the last gate run") or proposed ("proposed: a scenario with
    the servo stalled") –, and what is open. Written so that it can go into the file as it is. What the file has
    already: by its ID, not again.
 2. **Contradictions** – both places in their words, what the circuit does today, the question, a proposal.

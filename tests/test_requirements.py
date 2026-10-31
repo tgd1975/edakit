@@ -43,7 +43,7 @@ text = "With all eight LEDs on, the board draws at most 500 mA from J1 at 4.75 t
 source = "sim.json: the note of source J1"
 from = ["N-1", "USB 2.0: 500 mA per port"]
 binding = "must"
-verify = [{ rows = "E-3 * J1 current from the supply" },
+verify = [{ rows = "LIM.i * J1 current from the supply" },
           { accept = "on the USB port of a laptop: all eight LEDs on, the port stays on" }]
 status = "accepted"
 
@@ -52,7 +52,7 @@ id = "R-2"
 text = "A supply plugged into J1 the wrong way round reaches only the anode of D1."
 from = ["N-1"]
 binding = "must"
-verify = [{ rows = "G-10 *" }]
+verify = [{ rows = "PATH.reverse *" }]
 status = "accepted"
 
 [[requirement]]
@@ -60,7 +60,7 @@ id = "R-3"
 text = "Every LED that is on carries at least 7.5 mA (80 % of the 9.45 mA R1 sets) at 4.75 to 5.25 V."
 from = ["N-2"]
 binding = "should"
-verify = [{ rows = "E-3 * D? LED current *" }]
+verify = [{ rows = "SIM.state * D? LED current *" }]
 status = "accepted"
 
 [[requirement]]
@@ -68,7 +68,7 @@ id = "R-4"
 text = "From power-up until the firmware drives LED_OE low, no LED carries more than 10 µA."
 from = ["N-3"]
 binding = "must"
-verify = [{ rows = "E-3 * D? LED dark" }, { signoff = "M-1" }]
+verify = [{ rows = "SIM.state * D? LED dark" }, { signoff = "M-1" }]
 status = "draft"
 """
 
@@ -106,7 +106,7 @@ def test_req_lists_needs_and_requirements_with_status_binding_and_evidence(proje
     assert re.search(r"R-1 +accepted +must +With all eight LEDs on", out)
     assert re.search(r"R-3 +accepted +should +Every LED that is on", out)
     assert re.search(r"R-4 +draft +must +From power-up", out)
-    for evidence in ("rows E-3 * J1 current from the supply", "accept on the USB port of a laptop", "rows G-10 *",
+    for evidence in ("rows LIM.i * J1 current from the supply", "accept on the USB port of a laptop", "rows PATH.reverse *",
                      "signoff M-1"):
         assert evidence in out                                              # verify as written
     assert "not evaluated" in out and "passed" not in out and "FAILED" not in out
@@ -118,7 +118,7 @@ def test_req_id_shows_the_chain_from_where_it_comes_from_to_what_verifies_it(pro
     assert req(toml, "R-1") == 0
     out = capsys.readouterr().out
     origin, text = out.index("The bar runs from a USB charger"), out.index("With all eight LEDs on")
-    evidence = out.index("E-3 * J1 current from the supply")
+    evidence = out.index("LIM.i * J1 current from the supply")
     assert origin < text < evidence and "USB 2.0: 500 mA per port" in out
     assert "on the USB port of a laptop" in out and "not evaluated" in out
     assert "R-2" not in out and "N-2" not in out                            # only the chain of R-1
@@ -128,7 +128,7 @@ def test_req_need_shows_the_requirements_that_follow_from_it(project, capsys):
     toml = with_requirements(project)
     assert req(toml, "N-1") == 0
     out = capsys.readouterr().out
-    assert "The bar runs from a USB charger" in out and "R-1" in out and "R-2" in out and "G-10 *" in out
+    assert "The bar runs from a USB charger" in out and "R-1" in out and "R-2" in out and "PATH.reverse *" in out
     assert "R-3" not in out
     assert req(toml, "N-4") == 0
     assert "no requirement names it in from" in capsys.readouterr().out
@@ -163,7 +163,7 @@ def test_the_example_reads_without_problems(project):
     r1 = next(e for e in entries if e.id == "R-1")
     assert r1.kind == "requirement" and r1.binding == "must" and r1.status == "accepted"
     assert r1.from_ == ["N-1", "USB 2.0: 500 mA per port"] and r1.source == "sim.json: the note of source J1"
-    assert r1.verify == [("rows", "E-3 * J1 current from the supply"),
+    assert r1.verify == [("rows", "LIM.i * J1 current from the supply"),
                          ("accept", "on the USB port of a laptop: all eight LEDs on, the port stays on")]
     n4 = next(e for e in entries if e.id == "N-4")
     assert n4.kind == "need" and n4.status == "dropped" and n4.reason.startswith("the TLC5916")
@@ -206,7 +206,7 @@ def test_every_binding_reads(tmp_path, binding):
     ('[[needs]]\nid = "N-1"\n', "unknown key 'needs' (known: need, requirement)"),
     ('[need]\nid = "N-1"\n', "need must be an array of tables: [[need]]"),
     (NEED + 'binding = "must"\n', "N-1: unknown key 'binding' (known: id, text, who, source, status, reason)"),
-    (NEED + 'verify = [{ rows = "E-3 *" }]\n', "N-1: unknown key 'verify'"),
+    (NEED + 'verify = [{ rows = "LIM.i *" }]\n', "N-1: unknown key 'verify'"),
     (REQUIREMENT + 'who = "the user"\n', "R-1: unknown key 'who' (known: id, text, source, from, binding, verify, "
                                          "status, reason)"),
     (REQUIREMENT + "source = 3\n", "R-1: source must be a text"),
@@ -224,9 +224,9 @@ def test_every_binding_reads(tmp_path, binding):
     (NEED.replace('"accepted"', '""'), "N-1: status must be draft, accepted or dropped, not ''"),
     (REQUIREMENT + 'verify = [{ test = "x" }]\n', "R-1: verify 1: unknown kind 'test' (known: rows, signoff, script, "
                                                   "accept)"),
-    (REQUIREMENT + 'verify = [{ rows = "E-3 *", accept = "x" }]\n', "R-1: verify 1: one kind per entry"),
+    (REQUIREMENT + 'verify = [{ rows = "LIM.i *", accept = "x" }]\n', "R-1: verify 1: one kind per entry"),
     (REQUIREMENT + 'verify = [{ rows = "" }]\n', "R-1: verify 1: rows needs a text"),
-    (REQUIREMENT + 'verify = { rows = "E-3 *" }\n', 'R-1: verify must be a list, e.g. [{ rows = "E-3 * J1 *" }]'),
+    (REQUIREMENT + 'verify = { rows = "LIM.i *" }\n', 'R-1: verify must be a list, e.g. [{ rows = "LIM.i * J1 *" }]'),
     (REQUIREMENT + 'from = "N-1"\n', 'R-1: from must be a list of texts, e.g. ["N-2", "D-8"]'),
     (REQUIREMENT + 'from = ["N-1", ""]\n', "R-1: from must be a list of texts"),
     (NEED.replace('text = "t"\n', ""), "N-1: text is missing"),
@@ -282,7 +282,7 @@ def variant_of(project, own):
 
 def test_a_variant_reads_the_main_projects_file_and_its_own(project, capsys):
     own = ('[[requirement]]\nid = "R-5"\ntext = "The variant draws at most 300 mA from J1."\nfrom = ["N-1"]\n'
-           'binding = "must"\nverify = [{ rows = "E-3 * J1 current from the supply" }]\nstatus = "draft"\n')
+           'binding = "must"\nverify = [{ rows = "LIM.i * J1 current from the supply" }]\nstatus = "draft"\n')
     toml = variant_of(project, own)
     assert req(toml) == 0
     out = capsys.readouterr().out

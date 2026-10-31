@@ -9,7 +9,7 @@ to a graph – and about the knowledge the checks are made of.
 |---|---|---|
 | project surveyor | the agent `project-surveyor` in its own context, for the skill `new-project` | for a project that moves to edakit: reads the repository – hardware data, scripts, agents, skills, documents, decisions, hooks – and returns per place candidates with where it found them, a proposal and its reason; changes nothing – the skill asks the user in its interview and writes after the OK (2.7) |
 | requirements engineer | a session with the skill `requirements`, and the agent `requirements-engineer` in its own context | the skill collects with the user what the circuit must do, asks back in a decision round until vague words are numbers, writes drafts into the requirements file and has the user approve them – never the graph; the agent reads every document of the project, changes nothing, and returns candidates with their source, contradictions, vague words and requirements without evidence: the first inventory and a second opinion (3.6) |
-| circuit designer | a session with the skills `circuit-design` and `hardware-change` | reads the requirements file – without one, asks for the requirements in one decision round –, picks blocks and parts, computes values, writes the graph with its check settings and the schematic file, works through `edakit check`, `edakit hints` and `edakit sim`, draws the schematic, writes the hand-over |
+| circuit designer | a session with the skills `circuit-design` and `hardware-change` | reads the requirements file – without one, asks for the requirements in one decision round –, picks blocks and parts, computes values, writes the graph with its check settings and the schematic file, works through `edakit check` and `edakit sim`, draws the schematic, writes the hand-over |
 | part selector | agent `part-selector`, its own context | finds parts for the circuit designer at the project's distributors (one profile each), compares stock, price, lifecycle and compliance data, recommends one and writes its parts entry; never touches the graph (chapter 4.2) |
 | electrical reviewer | agent `electrical-reviewer`, its own session | reads graph, hand-over, parts, simulation and datasheets, changes nothing, returns numbered findings with probability and cost – before the first layout, before every hand-over that changes parts or the power path, and as the sign-off M-1 |
 | regulatory reviewer | agent `regulatory-reviewer`, its own session | checks circuit and parts against EU law for the purpose in the graph (RoHS, REACH, radio, batteries, product safety), changes nothing, returns numbered findings with their sources – its result is the sign-off M-6 (chapter 15), support and not legal advice |
@@ -27,7 +27,7 @@ its sign-off and names the ones it found met in the note it signs with (8.7).
 PCB designer gets nothing else. It is `layout` in the graph: parts that are fixed (pressed, looked at), at the edge
 (plugged in from outside), next to another part (a current-setting resistor at its pin), the hot loops of switching
 regulators, and notes no program checks. The decoupling capacitor of every IC is derived from the graph.
-`edakit handover` shows all of it together with the circuit's state and sign-offs, and L-12 holds the plan to it
+`edakit handover` shows all of it together with the circuit's state and sign-offs, and SYNC.plan holds the plan to it
 (7.4). Because it is part of the graph, the hand-over is reviewed and signed with the circuit (M-1). A circuit change
 the layout needs – another GPIO, another footprint – goes back as a written request in the decision log; the PCB
 designer does not change the graph. A project without a PCB ends at the hand-over: the drawing is the schematic.
@@ -37,82 +37,214 @@ graph, the simulation config and the schematic file, the part selector the parts
 files. A file has one owner, and its hash says which sign-offs a change voids – a new placement voids the layout
 review, not the circuit's.
 
-## 14.2 The rule catalog
+## 14.2 The catalog: engines, codes, data and domains
 
-`edakit/rules.json` holds every check edakit runs – P, G, E, S, L, F – with five things: a **title** (the words that
-go next to the ID: "L-9 (hole fits the lead)"), the **rule** in one sentence, **why** it exists, **what to do** about a
-finding, and the **sources**: a standard, an application note, a datasheet, or the lesson in this handbook the check
-was born from.
+What edakit knows about circuits is data in one catalog; the code reads it. Five things carry it:
+
+| Thing | Where | Holds |
+|---|---|---|
+| engines and codes | `edakit/catalog/codes.toml` | twelve engines, each deciding one kind of relation, and their codes: title, rule, why, what to do, severity and grades, sources, the check IDs of before it replaces |
+| parts schema | `edakit/catalog/kinds.toml` | per kind the limits and values an entry may give, every name with its unit (4.1); `edakit part lint` holds the entries to it |
+| defaults | `edakit/catalog/needs.toml`, `levels.toml`, `paths.toml` | what a pin or part of a kind requires unless its entry says otherwise (decoupling per `power_in`, a pull-up per I2C line, a diode per coil, Rd per CC pin), the levels at reset, the parts a supply passes through |
+| tables | `edakit/catalog/tables/` | the numbers with their source: EU radio bands, USB, I2C, derating, JLCPCB's capabilities, IPC-2221 |
+| domains | `edakit/domains/` | which codes are on and how severe, the facts a kind must give, the hints, the reviewers' questions |
+
+**Engines.** Each decides one kind of relation, on the graph, the parts, the simulation, the plan or the files:
+
+| Engine | Decides |
+|---|---|
+| STRUCT | the graph is well-formed and names what exists |
+| SYNC | every artifact equals the graph and the plan |
+| LIM | every quantity within its limit |
+| LVL | every input defined in every state, no two drivers fight |
+| REQ | what a part requires on its pins is present and in range |
+| PATH | what a reversed, unfed or misplaced supply reaches |
+| SIM | the scenarios run, are complete and reach the states they expect |
+| GEO | copper, holes, print, widths and distances on plan and Gerber files |
+| FILES | manufacturing files and sheets complete and consistent |
+| PARTS | parts entries complete, well-formed, verified, orderable |
+| DOCS | documents and requirements quote the design |
+| HINT | patterns that need judgement, as notes |
+
+LIM does not compute anything itself. Producers give it quantities – the declared ranges of the graph times a
+derating factor in stage G, the simulated values in stage E – and it compares each with the limit of that name in the
+parts entry (`v_max_v`, `i_max_a`, `p_max_w`, `tj_max_c`), derated where the table says so. A new limit in a parts
+entry is checked without new code.
+
+**Codes.** A finding's code is `ENGINE.relation`: `LIM.v` a voltage beyond its limit, `REQ.missing` a part without
+what it requires, `LVL.boot` a strapping pin at the wrong level. The code says what kind of finding it is without a
+lookup. A finding carries code, stage, place, text, source and fix, and where it applies a grade and a topic:
+
+- **severity** – `error` (blocks `edakit check`), `warning` (the gate wants it accepted in the sign-off file),
+  `pending` (blocks the release, cannot be accepted: an unverified part, a missing stock snapshot), `note`. The
+  catalog gives each code its default; the profile of the project may set another.
+- **grade** – a sub-case with its own severity: `margin` (inside the limit, in its margin), `unknown` (a value
+  missing), `stale`, `unchecked`, `draft`, `firmware` (the firmware keeps it), or a missing fact (`PARTS.fact/lead`).
+  A profile sets `"LIM.i/margin" = "error"` like any code.
+- **topic** – the part of a code one domain switches on or one acceptance names: `REQ.missing:cc` (USB-C
+  termination), `GEO.spacing:paste`, `SYNC.plan:handover`.
 
 ```bash
-edakit rules            # all checks and hints, one line each
-edakit rules G-11 L-9   # the full entries
+edakit rules                 # the engines and their codes, one line each
+edakit explain REQ.missing   # rule, why, what to do, severity, sources
+edakit explain G-8           # a check ID of before: the codes that replace it (10.7)
 ```
 
-The catalog is where findings get explained: `edakit check` prints the entry of every check that failed below the
-findings, and the gate protocol ends with "The rules behind the findings" for every check that failed or warned. A
-test makes sure that every check ID the code can report has an entry.
+The catalog explains the findings: `edakit check` prints what to do for every code that failed below the findings, the
+gate protocol ends with "The rules behind the findings", and the handbook's lists of codes (3.3, 5.3, 8.1) and the
+parts schema (4.1) are generated from it – `python -m edakit.catalog.handbook --write`, and a test fails while they
+differ. Tests make sure that every code the engines can report has an entry and that the catalog passes its lint: every
+code with engine, title, rule, why and fix, every table row with its source.
 
-**Check IDs are stable.** A check that is retired keeps its entry and its number is not reused – G-7 (polarity in the
-graph) moved to the simulation and stays G-7, retired. A protocol from last year must still mean what it meant.
+**Accepting.** One mechanism for everything a person has seen and answered: `accept` with a reason, keyed by the
+code – `"accept": {"LVL.undefined": "floating until the firmware runs, harmless: OE is pulled high"}` on the net or the
+component, `{"HINT.bulk": "C1 1000 µF next to J1 (D-8)"}` on the graph, a code and a place (`"HINT.bulk J2"`) for one
+place only. A key may name a grade or a topic: `LIM.i/margin`, `GEO.spacing:paste`. In the graph it is part of the
+circuit hash and renews M-1. Warnings for the release are accepted in the sign-off file under `accept` (8.2).
+Pending findings cannot be accepted.
 
-N and R are no letters of the catalog: N-… and R-… are the needs and requirements of a project's requirements file
-(3.6), and a protocol names both. The checks on that file are G-20 to G-23.
+**Domains.** A profile of rules per area of electronics. `core` is always on: structure, artifacts, limits and levels
+of the basic kinds, parts, files, documents. `usb` switches on the USB-C termination and its data in both orientations, `radio` the e.i.r.p.
+and the bands of parts that transmit, `audio` bridge-tied outputs and the hints of hum and switching noise, `guitar`
+the instrument input's load and the pedal's supply, `motors` the hints of motor supplies and heaters, `power` those of
+cells, converters and polarity, `cables` the lines on a lead. Each is suggested by what the graph has: a USB-C
+receptacle, a part that transmits, a speaker, an instrument net, a motor, a battery holder, a cable. `mains` is not
+there yet: edakit says nothing about spacing for hazardous voltage (maker-coverage, open decision 3). A domain file sets severities (also per purpose: `[severity.sale]`), switches codes or
+topics on, names the facts a kind must give (a missing one is `PARTS.fact`), the hints that apply and the questions
+the reviewers ask. A project names its domains in edakit.toml:
 
-**Findings come only from code.** A check is a function with a negative test; Claude does not invent checks at
-runtime. What Claude knows beyond the catalog goes into a review as a finding with its evidence, or into a check
-candidate (14.4) – not into a finding that looks like a check.
+```toml
+[project]
+domains = ["usb"]        # core is always on; without the key every domain the graph suggests is on
+```
+
+A part in the graph suggests the domain it needs – a USB-C receptacle `usb`, a part that transmits `radio`. Left out of
+an explicit list, it gives one note, `STRUCT.domain`: no silent gap. `edakit domains` shows the domains on, off and
+suggested, and the reviewers' questions of the domains on. Domain files live in edakit only.
+
+**Purpose.** `purpose.use` of the graph (private, gift, sale) is a dimension of the profile: what the firmware or a
+parts entry can settle – a radio band, a radio nobody stated – is a warning for a board that is sold and a note
+otherwise (8.1, chapter 15).
+
+N and R are no engines: N-… and R-… are the needs and requirements of a project's requirements file (3.6), and a
+protocol names both. The codes on that file are DOCS.ref, DOCS.need, DOCS.evidence and DOCS.draft.
+
+**Findings come only from code.** A code is reported by an engine with a negative test; Claude does not invent checks
+at runtime. What Claude knows beyond the catalog goes into a review as a finding with its evidence, or into a proposal
+(14.4) – not into a finding that looks like a code.
 
 ## 14.3 Hints
 
 Some knowledge has no rule a program could decide: whether a hot-plugged cable needs an electrolytic, whether a button
-needs a hardware debounce, whether a connector is touched by people. These are **hints**: matched by the kinds of parts
-in the graph or by a pattern, shown by `edakit hints`, never blocking.
+needs a hardware debounce, whether a connector is touched by people. These are **hints**, the engine HINT: matched by
+the kinds of parts in the graph or by a pattern, shown by `edakit check` as notes, never blocking. Generated from the
+catalog:
 
-| Hint | When | About |
-|---|---|---|
-| H-1 | a power input (battery holder, connector with a `vbus` pin, `checks.reverse_protect` of the graph, a sim source) | bulk capacitor at the input against hot-plug ringing and load steps |
-| H-2 | a MOSFET | gate series resistor against ringing |
-| H-3 | a button, switch or DIP switch | debouncing |
-| H-4 | a transistor switching a connector pin | flyback diode for an inductive load off the board |
-| H-5 | a buck or boost regulator, an inductor | the hot loop – G-18 wants it in `layout.loops`, L-11 measures it |
-| H-6 | a battery holder | protection for lithium cells |
-| H-7 | a signal line from a connector to an IC pin | ESD protection at the connector |
-| H-8 | two supplies reach one net – power inputs as for H-1 and a module's `power_output` pin with the role `vbus` – and at least one of them without a diode on the way; fuses, switches, inductors and a single MOSFET pass, a back-to-back MOSFET pair passes nothing | back-feed into a supply: cells charged, a PC's USB port fed, a body diode heating |
-| H-9 | an `output` pin of a part the MCU drives (its clock among the inputs) on a net with an MCU pin (role `gpio`), directly or through one resistor – a read-back from a chain or a shift register | the output's edge and delay (`out_edge`, `t_pd_ns`) against the SPI mode the firmware samples in |
+<!-- edakit:generated codes HINT -->
+**`HINT.datasheet`** – notes of the parts entries (note)  
+A parts entry's own warnings – hints of the part, hint of a connected pin (an ESP32 pin of ADC2: no analog reads while Wi-Fi is on) – are shown for every part and pin of the graph they belong to.
+
+**`HINT.bulk`** – bulk capacitor at the power input (note; replaces H-1)  
+Bulk capacitor at the power input: consider it where it applies.
+
+**`HINT.gate`** – MOSFET gate resistor (note; replaces H-2)  
+MOSFET gate resistor: consider it where it applies.
+
+**`HINT.debounce`** – debounce buttons and switches (note; replaces H-3)  
+Debounce buttons and switches: consider it where it applies.
+
+**`HINT.inductive`** – inductive load off the board (note; replaces H-4)  
+Inductive load off the board: consider it where it applies.
+
+**`HINT.switcher`** – switching regulator layout (note; replaces H-5)  
+Switching regulator layout: consider it where it applies.
+
+**`HINT.lithium`** – lithium cells need protection (note; replaces H-6)  
+Lithium cells need protection: consider it where it applies.
+
+**`HINT.esd`** – ESD at external connectors (note; replaces H-7)  
+ESD at external connectors: consider it where it applies.
+
+**`HINT.two_supplies`** – two supplies on one net (note; replaces H-8)  
+Two supplies on one net: consider it where it applies.
+
+**`HINT.readback`** – read-back of a serial output (note; replaces H-9)  
+Read-back of a serial output: consider it where it applies.
+
+**`HINT.motor_supply`** – motor supply: bulk capacitor and returned energy (note)  
+A motor on the board: consider the bulk capacitor at its driver's motor supply and where its returned energy goes.
+
+**`HINT.heater`** – a heater needs a second interruption (note)  
+A heater on the board: consider a second, independent way to switch it off.
+
+**`HINT.audio_ground`** – audio: ground loops and shared returns (note)  
+A speaker or an analog path on the board: consider where its ground returns and what shares it.
+
+**`HINT.class_d`** – filterless class-D output on a cable (note)  
+A bridge-tied output reaches a connector: consider a filter at the output.
+
+**`HINT.audio_switching`** – switching in the audio band (note)  
+A switching regulator, a charge pump or a PWM net on a board with an audio path: consider what it puts into the audio band.
+
+**`HINT.signal_ceramic`** – class-2 ceramic in a signal path (note)  
+A class-2 ceramic capacitor (X5R, X7R, Y5V …) on a net with an analog pin: consider whether it sits in the signal path.
+
+**`HINT.jack_battery`** – battery switched by the input jack (note)  
+A battery on a board with an instrument input: consider how it is switched off.
+
+**`HINT.pedal_supply`** – a pedal's supply among others (note)  
+An instrument board with a supply input: consider the other pedals and amplifiers on the same supply and ground.
+
+**`HINT.string_ground`** – the player on the amplifier's ground (note)  
+An instrument input: consider what ties the player to ground.
+
+**`HINT.flicker`** – LED flicker from PWM (note)  
+A net with pwm_hz lights LEDs: consider whether its frequency flickers.
+
+**`HINT.boost_enable`** – a boost converter switched off by its enable (note)  
+A boost converter whose enable an MCU drives: consider what its output does with EN low.
+
+**`HINT.input_polarity`** – a power input without a polarity check (note)  
+A battery holder or supply connector the graph does not mark as reversible: consider whether it can be plugged the wrong way round.
+
+**`HINT.thermal_copper`** – thermal resistance needs its copper (note)  
+A part whose temperature rests on rth_ja_k_per_w: consider whether the layout gives the copper that figure assumes.
+
+**`HINT.cable_line`** – a signal line on a cable (note)  
+A signal net runs through a cable: consider what the cable's length and the world at its end do to it.
+<!-- edakit:end -->
 
 The designer handles each one and writes down how, in the graph:
 
 ```json
-"hints": {"H-1": "C1 1000 µF next to J1 (D-8)", "H-3": "firmware debounces 20 ms"}
+"accept": {"HINT.bulk": "C1 1000 µF next to J1 (D-8)", "HINT.debounce": "firmware debounces 20 ms"}
 ```
 
-`edakit hints` then lists it as taken care of, and the reviewer checks whether the reason holds. `edakit check` names
-the open ones in its last line.
+`edakit check` then lists it as accepted, with the reason, and the reviewer checks whether the reason holds.
 
 **Notes in the parts database** are hints that belong to one part: `"hints": [...]` for the part and `"hint"` per pin,
-from its datasheet – "ADC2: no analog reads while WiFi is on" on the ESP32's pins of ADC2, "keep BOOT0 low" on an STM32.
-`edakit hints` shows them for the parts in the graph and their connected pins.
+from its datasheet – "ADC2: no analog reads while WiFi is on" on the ESP32's pins of ADC2, "keep BOOT0 low" on an
+STM32. `edakit check` shows them as `HINT.datasheet` for the parts in the graph and their connected pins.
 
-## 14.4 From a finding to a check
+## 14.4 From a finding to a rule
 
-The checks of edakit are lessons: a footprint with '+' at the cathode, a switching loop across the board, holes too
-small for header tails. Each one was found once by a person or a review agent, and each one became a check. The loop
-is part of the workflow:
+The rules of edakit are lessons: a footprint with '+' at the cathode, a switching loop across the board, holes too
+small for header tails. Each one was found once by a person or a review agent, and each one became a code, a fact or a
+domain setting. The loop is part of the workflow:
 
-1. The reviewers mark every finding with the catalog check it falls under – then also why that check did not report
-   it, which may be a bug – or as a **check candidate**: what a rule over graph, parts, simulation, plan or Gerber
-   files would test to find this kind of fault again. Findings that need judgement are marked as such. The classes
-   no check covers fully yet are questions in the reviewer's prompt ("Not covered by a check yet" in
-   electrical-reviewer: several sources, back-feed and the switch-over gap, MCU pin functions, supply range and input
-   levels of the other ICs and the track drop in front of them, read-back edges, junction and touch temperature, what
-   an off-board module brings), so every review asks them instead of finding them by chance; a check that covers part
-   of a class is named in its question (G-15, E-2, E-3, E-5, G-14, the routed copper of sim.json `copper`, and the
-   hints H-8, H-9).
-2. In the decision round the check candidates are one item: make it a check? The user decides. Nothing is filed
+1. The reviewers mark every finding with the code it falls under – then also why that code did not report it: a
+   bug, or a fact missing in a parts entry – or as a **candidate**: which engine and which data would find this kind
+   of fault again – a fact (a limit, a default, a table row), a new relation, or a domain setting. Findings that need
+   judgement are marked as such. The classes no code covers fully yet are the reviewers' questions in the domain files
+   (`[review]` in `edakit/domains/`, shown by `edakit domains`: several sources, back-feed and the switch-over gap, MCU
+   pin functions, supply range and input levels of the other ICs, read-back edges, junction and touch temperature, what
+   an off-board module brings), so every review asks them instead of finding them by chance; each question names the
+   codes that cover part of its class (REQ.function, LIM.backfeed, LIM.range, LVL.threshold, LIM.t, REQ.missing:cc,
+   HINT.two_supplies, HINT.readback).
+2. In the decision round the candidates are one item: make it edakit knowledge? The user decides. Nothing is filed
    anywhere by itself – whether a finding is knowledge worth keeping is a judgement, not something a program can tell.
 3. Yes: a decision in the project's decision log, written so that it can be built later without the conversation –
-   what the check would test, the finding with its numbers, the source, `edakit: open`.
+   what the rule would find, the finding with its numbers, the source, `edakit: open`.
 4. **Proposal.** When the user asks for it, the skill `propose-rule` turns the decision into an issue in the edakit
    repository: a fixed text (`edakit proposal template`: kind, rule, why, finding, fix, sources, origin), shown to the
    user before it goes out – the issue is public – and sealed with `edakit proposal seal`, whose last line is the
@@ -122,18 +254,24 @@ is part of the workflow:
    proposal still without a result, one after another, so proposals filed at the same time are not lost when GitHub
    cancels their waiting runs. Correctly made: `edakit proposal verify` – every section filled in, the checksum
    matches; a body edited by hand fails on purpose. Does it make sense: new, the right kind, the sources hold,
-   general rather than one project's choice, decidable by a program (else a hint), clear enough to build. The result
+   general rather than one project's choice, which engine and which data – a fact before a new relation, a relation
+   only where a program decides it (else a hint) –, clear enough to build. The kinds: `fact` (a row of data: a part
+   fact, a default, a table row), `relation` (a new code, a hint too), `domain` (a severity, a required fact, a
+   reviewer's question), `block`, `retire`; a proposal sealed before the codes says `check`, `hint` or `part` and is
+   read as relation or fact. The result
    is one of three, as a comment on the issue: **Accepted**, **Rejected** with a reason a person can check, or
    **Question** with the alternatives – everything between accepted and rejected is a question.
 6. **Build.** An accepted proposal is built with the skill `add-rule` (a skill of the repository, in
-   `.claude/skills/`, not part of the plugin): catalog entry (title, rule, why, fix, sources), the check, a negative
-   test that builds the fault into the example and expects the check to fail, a run against real projects to rule out
-   false alarms, and the table in this handbook. One commit per proposal, all of them in one open pull request from
-   `rules/proposals`; the user merges it. The same skill adds hints, blocks and facts of single parts, and retires
-   checks – also by hand in the repository, without an issue.
+   `.claude/skills/`, not part of the plugin): a fact as a row with its source (a parts entry of the block library, a
+   default, a table); a relation as a code in `codes.toml` (title, rule, why, fix, severity, sources) and its place in
+   an engine – a new code starts as a warning; a domain change in its domain file; then a negative test that builds
+   the fault into the example and expects the code, a run against real projects to rule out false alarms, and the
+   generated lists of this handbook (`python -m edakit.catalog.handbook --write`). One commit per proposal, all of
+   them in one open pull request from `rules/proposals`; the user merges it. The same skill adds blocks and retires
+   codes – also by hand in the repository, without an issue.
 7. **Back in the project.** `propose-rule` follows the issue: it answers questions with the user, and after the merge
-   the decision gets the check's ID (`edakit: G-15`) or `edakit: rejected (#12)`. From the next plugin update on the
-   check runs on every project – the plugin pins no version, so every commit on `main` is an update.
+   the decision gets the code (`edakit: REQ.function`) or `edakit: rejected (#12)`. From the next plugin update on the
+   rule runs on every project – the plugin pins no version, so every commit on `main` is an update.
 
 Who may propose: only the repository owner – the Action does not start for anyone else, and GitHub's author field
 says who wrote an issue. The checksum adds that the text is the one that was sealed. The Action needs the Claude
@@ -144,9 +282,11 @@ Claude stopped* as `401 Invalid bearer token`; with a new one, `gh workflow run 
 waiting. From the Action only public projects can be cloned for the run against real projects; the pull request
 names what could not be run, and that is run by hand before merging.
 
-G-13 (flyback diode) and G-14 (USB-C termination) are the reference project's buzzer stage and USB-C input turned into
-rules; G-11 (I2C pull-ups), G-12 (strapping pins) and the MCU output currents of E-2 come from CircuitSmith's rule
+REQ.missing (flyback diode) and REQ.missing:cc (USB-C termination) are the reference project's buzzer stage and USB-C input turned into
+rules; REQ.missing (I2C pull-ups), LVL.boot (strapping pins) and the MCU output currents of LIM come from CircuitSmith's rule
 catalog (14.6).
+
+**What no code catches.** `edakit mutate` builds mistakes into a copy of the design one at a time and lists those no code reports. On the example, without the simulation 24 of 45 are caught; with `--sim` 43 – the two left are R-EXT and the OE pull-up a hundred times larger: the LEDs dim with R-EXT, and nothing says how bright they should be (a load's `expect` would). The list is for reading, not a list of faults; a class of mistakes it shows again and again is a candidate (14.4). The reference circuits per domain (`tests/reference.py`) carry the seeded faults each domain must catch with exactly its codes.
 
 ## 14.5 Building blocks
 
@@ -167,7 +307,7 @@ edakit block add led --as STATUS --connect in=LED_STATUS
 | `i2c-pullups` | 4.7 kΩ on SDA and SCL, marks both nets as I2C |
 | `npn-switch` | S8050 low-side switch with base and base-emitter resistor and a flyback diode |
 | `power-input-jst` | JST PH input, SS34 against reverse polarity, 22 µF |
-| `power-or-pmos` | two supplies ORed onto one rail: USB through an SS34, cells or a second input through two AO3401A back-to-back that USB switches off – neither supply is fed backwards (H-8) |
+| `power-or-pmos` | two supplies ORed onto one rail: USB through an SS34, cells or a second input through two AO3401A back-to-back that USB switches off – neither supply is fed backwards (HINT.two_supplies) |
 | `reverse-pmos` | AO3401A reverse-polarity protection with its gate resistor |
 | `usb-c-sink` | USB-C power input with 5.1 kΩ per CC pin and a polyfuse |
 
@@ -175,7 +315,7 @@ What `add` does: designators get the next free numbers (`R1` of the block become
 instance's name (`STATUS_ANODE`), each port joins the net given with `--connect` – or a new net, if the block knows its
 voltage range – and `gnd` joins the project's ground. Missing parts entries are copied from the block library; an
 existing entry must have the same pins. The graph file keeps its indentation. The block's notes say what is left to
-decide: the LED current, the entries in sim.json, the connector in `checks.reverse_protect`.
+decide: the LED current, the entries in sim.json, `"source": "reversible"` on the connector.
 
 Every block passes `edakit check` and `edakit sim` and is drawn by `edakit schematic draw` once it is in the example
 project – a test makes sure of that. That

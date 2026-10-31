@@ -1,10 +1,12 @@
-"""The hand-over from the circuit to the layout: requirements in the graph and derived from it, G-1 for their names,
-L-12 for the plan, L-11 for the loops the circuit hands over."""
+"""The hand-over from the circuit to the layout: requirements in the graph and derived from it, STRUCT for their names,
+SYNC.plan for the plan, GEO.loop for the loops the circuit hands over."""
 
 import json
 from types import SimpleNamespace
 
-from edakit import checks, cli, handover, pcb
+from helpers import check
+
+from edakit import cli, handover, pcb
 from edakit.design import Design
 from edakit.handover import Requirement
 from edakit.release import fab
@@ -34,7 +36,7 @@ def test_example_hands_over_what_the_graph_says_and_the_decoupling(project):
 
 def test_waive_lifts_the_derived_decoupling(project):
     g = project.graph()
-    project.comp(g, "U2")["waive"] = {"L-12": "decoupled on the module next to it"}
+    project.comp(g, "U2")["accept"] = {"SYNC.plan": "decoupled on the module next to it"}
     project.save_graph(g)
     assert not [r for r in handover.requirements(Design.from_config(project.config()), "main")
                 if r.kind == "decoupling"]
@@ -42,7 +44,7 @@ def test_waive_lifts_the_derived_decoupling(project):
 
 def test_a_capacitor_behind_a_zero_ohm_bridge_still_decouples(project):
     project.save_part("C9000002", {"lcsc": "C9000002", "mpn": "0 Ω bridge", "kind": "resistor",
-                                   "params": {"value_ohm": 0.0},
+                                   "values": {"value_ohm": 0.0},
                                    "pins": {"1": {"name": "1", "type": "passive"}, "2": {"name": "2", "type": "passive"}}})
     g = project.graph()
     g["graph"]["components"].append({"designator": "R11", "type": "resistor", "lcsc": "C9000002", "value": "0",
@@ -61,7 +63,7 @@ def test_names_the_graph_does_not_have_are_g1(project):
                                 loops=[{"a": "C1.1", "b": "C2.1", "max_mm": 5}])
     project.save_graph(g)
     cfg = project.config()
-    found = [m for c, m in checks.run(Design.from_config(cfg), cfg).errors if c == "G-1"]
+    found = [m for c, m in check(Design.from_config(cfg), cfg).errors if c == "STRUCT.ref"]
     assert found == ["layout: unknown key 'fixd' (known: fixed, edge, near, loops, notes)",
                      "layout.edge: no part J7 in the graph", "layout.near: no part U9 in the graph",
                      "layout.loops: C1.1 and C2.1 are not on one net of one board"]
@@ -111,7 +113,7 @@ def test_loops_of_the_graph_reach_l11(project, tmp_path):
         "lines": [{"Net": "3V3", "Layer": 1, "StartX": 0, "StartY": 0, "EndX": 1000, "EndY": 0, "LineWidth": 10}]}))
     rows = fab.Rows()
     fab.check_loops(cfg.board(), design, tmp_path, rows)
-    assert [(r["id"], r["result"]) for r in rows] == [("L-11", "fail")]
+    assert [(r["id"], r["result"]) for r in rows] == [("GEO.loop", "fail")]
     assert "C1.1-U2.16 (U2 supply): 25.4 mm > 5.0 mm" in rows[0]["actual"]
 
 

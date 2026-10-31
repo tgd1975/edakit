@@ -1,0 +1,6 @@
+schema_version: "1.1"
+name: fault-motors
+tags: [fault, motors]
+runs: 1
+context:
+  scaffold_script: scaffold.sh

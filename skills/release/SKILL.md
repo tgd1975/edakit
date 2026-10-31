@@ -10,7 +10,7 @@ Concept: `${CLAUDE_PLUGIN_ROOT}/handbook/08-release-gate.md`.
 
 ## Procedure
 
-1. **Offline** (seconds): `edakit stock 2>&1 | cat` when the snapshot is older than `stock_max_age_days` (P-4 is
+1. **Offline** (seconds): `edakit stock 2>&1 | cat` when the snapshot is older than `stock_max_age_days` (PARTS.stock is
    pending then), then `edakit gate 2>&1 | cat` – P, G, E and the project's checks of phase export before S (their
    `at`, handbook 8.1). Before it, with `[scripts]` in edakit.toml (handbook 8.6): `edakit scripts 2>&1 | cat`, and a
    derive script made from the layout – it reads the footprints, the mechanical model or the routing: the stand that
@@ -27,11 +27,11 @@ Concept: `${CLAUDE_PLUGIN_ROOT}/handbook/08-release-gate.md`.
    `<reports>/<run>/fab/<board>/`.
 3. Read `<reports>/<run>/protocol.md`. Summarise per stage passed / failed / warning / open, then the findings with
    actual and expected value. Always name stages and checks with their short name next to the letter: "stage L
-   (board)", "L-9 (hole fits the lead)" – nobody remembers the letters; the names come from the rule catalog
+   (board)", "GEO.hole (hole fits the lead)" – nobody remembers the letters; the names come from the catalog
    (`edakit rules`), and section 10 of the protocol explains every check that failed or warned.
 4. **Fix causes, do not define findings away.** The cause is in the graph, the parts database, the plan or the
    project's mechanics → hardware-change or pcb-round skill. **Only the user accepts a warning** – it is a decision.
-   Propose the entry for the sign-off file (`accepted_warnings`: `match` as fnmatch pattern over "ID scenario item
+   Propose the entry for the sign-off file (`accept`: `match` as fnmatch pattern over "ID scenario item
    step" as shown in section 3 of the protocol, `scope`, `reason`, `by`, `date`, and `parts` {designator: LCSC} for
    a warning about particular parts – it lapses when one of them is swapped) and add it after their OK. A lapsed
    acceptance (section 3) goes back to the user: judge again, then update `parts` or remove it. A row `scripts` of
@@ -71,7 +71,7 @@ Concept: `${CLAUDE_PLUGIN_ROOT}/handbook/08-release-gate.md`.
 ## Order (up to the cart; ordering and paying are the user's)
 
 The released board goes into the maker's cart with the skill cart (`/edakit:cart`): `edakit cart prepare` from the
-current release, the form filled and read back with Claude in Chrome, `edakit cart check` (B-1 to B-7) with the
+current release, the form filled and read back with Claude in Chrome, `edakit cart check` (ORDER.form to ORDER.review) with the
 regulatory review of the order, then the maker's cart button – nothing ordered or paid (handbook 8.4). Without Claude
 in Chrome the skill prints the job as a checklist and `edakit cart check` checks what the user filled in. The MCP
 server cannot order on purpose. The checklist below is what the skill and its checks cover, and what stays the
@@ -80,8 +80,8 @@ user's:
 - [ ] `edakit release verify <the files about to be uploaded>` says every file is of the current release (exit 0) –
       per made board `gerber_<b>.zip`, `bom_<b>.csv`, `cpl_<b>.csv` (a bought board, `bought = true`, has none)
 - [ ] Assembly type matches `[release] assembly` (Economic: one side, SMD; two SMD sides or a "Standard Only" part
-      need Standard PCBA – `assembly.pcba`, P-4); bake set when P-4 warns about MSL ≥ 5
-- [ ] The form as `fab/<b>/order.md` of the released run says (with `[order]` in the board file; F-6 checked it):
+      need Standard PCBA – `assembly.pcba`, PARTS.stock); bake set when PARTS.stock warns about MSL ≥ 5
+- [ ] The form as `fab/<b>/order.md` of the released run says (with `[order]` in the board file; FILES.order checked it):
       thickness, mask and silkscreen colour, tooling holes "added by customer" when the board has its own, order
       number "specify position" at the placeholder, the remark (≤ 200 ASCII characters, tabs only on stretches
       order.md lists as free), bake. Without `[order]`: thickness, colours, tooling holes, order number position and

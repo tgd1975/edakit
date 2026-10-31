@@ -1,0 +1,16 @@
+# IPC-2221 track width – GEO.width.
+
+[table]
+about = "external layer track width from current: A[mil²] = (I / (k · ΔT^b))^(1/c)"
+source = "IPC-2221 (2012), 6.2 conductor width and figure 6-4"
+tag = "r"
+
+[outer]
+k = 0.048
+b = 0.44
+c = 0.725
+dt_k = 10        # temperature rise edakit allows
+reserve = 1.5    # on 1.5 × the largest simulated current
+mil_per_oz = 1.378   # copper thickness of 1 oz
+source = "IPC-2221 figure 6-4 (external conductors), the fit of its curves"
+tag = "r"

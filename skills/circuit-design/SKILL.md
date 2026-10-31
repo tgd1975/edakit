@@ -1,6 +1,6 @@
 ---
 name: circuit-design
-description: Design a circuit or a new function from requirements – topology, parts and values – and write it into the hardware graph with building blocks, the rule catalog, the design hints and the simulation. Use when the user describes what a board or a function should do ("an Arduino Nano, five LEDs and a servo, powered by USB", "add a buzzer", "a USB-C input"), asks how to build something electrically, or starts the graph of a new project. Not for reviewing a finished design – that is the agent electrical-reviewer.
+description: Design a circuit or a new function from requirements – topology, parts and values – and write it into the hardware graph with building blocks, the catalog of codes, the design hints and the simulation. Use when the user describes what a board or a function should do ("an Arduino Nano, five LEDs and a servo, powered by USB", "add a buzzer", "a USB-C input"), asks how to build something electrically, or starts the graph of a new project. Not for reviewing a finished design – that is the agent electrical-reviewer.
 argument-hint: "<what the circuit must do>"
 ---
 
@@ -33,7 +33,7 @@ not one question after the other. The purpose goes into the graph:
 `"purpose": {"use": "private" | "gift" | "sale", "market": "EU", "notes": "what it is, who uses it"}`. A part that
 can transmit more than the EU allows – an ESP32's Wi-Fi channel 14, a LoRa chip's 902–928 MHz – can get its use
 there too, what the firmware will keep: `"radio": {"U1": {"bands_mhz": [[2412, 2472]], "notes": "Wi-Fi channels
-1–13"}}` or `{"U1": "off"}`. Without it G-25 tells what the firmware must keep – information, for a board that is
+1–13"}}` or `{"U1": "off"}`. Without it LIM.band tells what the firmware must keep – information, for a board that is
 sold a warning; a part that can transmit in no EU band at all is an error (handbook 15 – support, not legal advice).
 
 ## 2. Building blocks first
@@ -54,63 +54,63 @@ say what is left: values, sim.json, the graph's `checks`.
   Extended type, a "Standard Only" part or a second assembled side raises the order by more than the part itself.
 - MCU pins: read the entry first – strapping pins (`strap`), input-only pins (`type: input`), notes (`hint`, e.g. an
   ADC that does not work with WiFi), what each pin can do (`functions`). Buttons, LEDs and pulls stay off strapping
-  pins unless they agree with the boot level (G-12). A net that needs a peripheral says so – `fn` (`spi.tx`, `pwm`,
-  `adc`, …), `fn_bus` for the nets of one bus on one peripheral instance, `pwm_hz` for PWM – and G-15 checks the pin,
+  pins unless they agree with the boot level (LVL.boot). A net that needs a peripheral says so – `fn` (`spi.tx`, `pwm`,
+  `adc`, …), `fn_bus` for the nets of one bus on one peripheral instance, `pwm_hz` for PWM – and REQ.function checks the pin,
   the bus and the PWM slices; a pin's function is chosen here, not when the firmware is written.
 - The function of every MCU pin you use, from the MCU's datasheet: a PWM signal on a PWM channel, and PWM signals with
   independent frequencies on different PWM slices or timers; a bus on a pin of its peripheral instance (SPI, I2C,
-  UART); an analog input on an ADC input – into `functions` of the entry, where G-15 reads it. On a module, only pins
+  UART); an analog input on an ADC input – into `functions` of the entry, where REQ.function reads it. On a module, only pins
   brought out on its header – the module's pinout, not the chip's. Errata of the MCU that touch the pins used.
 - Every IC that is not the MCU: its supply range against the net it is supplied from (the minimum operating voltage,
-  not only `vmax`), and the VIH and VIL of its inputs against the domain that drives them – a 5 V part with
-  VIH = 0.7 × VCC does not read 3.3 V logic. E-3 checks both where the entry gives them (`vdd_op_min`/`vdd_op_max`,
+  not only `v_max_v`), and the VIH and VIL of its inputs against the domain that drives them – a 5 V part with
+  VIH = 0.7 × VCC does not read 3.3 V logic. LIM.range and LVL.threshold check both where the entry gives them (`vdd_op_min_v`/`vdd_op_max_v`,
   `vih_v`|`vih_ratio`, `vil_v`|`vil_ratio`).
 
 ## 4. Values are computed
 
 Every value with formula and numbers in the component's notes: `R = (5 V − 2.0 V) / 10 mA = 300 Ω → 330 Ω`. Defaults
-come from the rule catalog (`edakit rules G-11` for I2C pull-ups, `G-4` for pulls, `G-14` for USB-C) and from the
+come from the catalog (`edakit explain REQ.missing` for I2C pull-ups, `LVL.undefined` for pulls, `REQ.missing:cc` for USB-C) and from the
 datasheets, not from memory. If you rely on a rule that is not in the catalog, say so in the notes and report it as a
-check candidate (handbook 14.4) – do not present it as an established check.
+candidate (handbook 14.4) – do not present it as an established code.
 
 ## 5. Into the graph
 
 Nets with worst-case voltage ranges `v`. A ground that is separate on purpose (an analog ground joined at one point)
-goes into the graph's `grounds` – every other ground pin belongs on the ground net (G-16). Decisions numbered (D-…) in
+goes into the graph's `grounds` – every other ground pin belongs on the ground net (PATH.unfed). Decisions numbered (D-…) in
 the decision log and cited in `notes`. sim.json:
 sources, supplies at their limits, loads with the MCU's outputs, inputs, LEDs on (`leds_on` in every load once an LED is
-on no driver output, `[]` when none lights – E-4), buttons, relays. No source and no cell takes more than 1 mA back
-(E-3); a cell its charger charges on purpose gets `i_charge_max_a` in its cell state. Several sources (a module with
+on no driver output, `[]` when none lights – SIM.driver), buttons, relays. No source and no cell takes more than 1 mA back
+(LIM.backfeed); a cell its charger charges on purpose gets `i_charge_max_a` in its cell state. Several sources (a module with
 its own USB, cells next to USB): `combine_sources` with the range of each, not combinations written by hand.
 A power bank gets its minimum load `i_min_a`; an MCU whose current swings (Wi-Fi on and off) gets its upper bound as
-`i_core_a` and its least current as `i_core_min_a` – E-3 holds the minimum load at the least (handbook 5.1).
+`i_core_a` and its least current as `i_core_min_a` – LIM.i holds the minimum load at the least (handbook 5.1).
 A supply that comes and goes – USB plugged and unplugged, a switch-over to cells – gets `transients` (handbook 5.2):
-the plug-in, the unplug and the switch-over ramp, with the rail's lowest voltage and the inrush as `expect`; E-5 holds
+the plug-in, the unplug and the switch-over ramp, with the rail's lowest voltage and the inrush as `expect`; LIM.v holds
 the MCU above its minimum once it has started.
 A board people touch (requirements: what a person touches): `touch_c` with its limit from the product's standard
-(IEC 62368-1 TS1: 48 °C for longer than a minute) – E-2 holds every part with `rth_ja_k_per_w` on it to that limit.
+(IEC 62368-1 TS1: 48 °C for longer than a minute) – LIM.t holds every part with `rth_ja_k_per_w` on it to that limit.
 A requirement that simulation rows verify (`edakit req`) needs its scenario here – sim.json is yours, the pattern in
 its `verify` belongs to the requirements file.
 
 ## 6. Check loop (seconds)
 
 ```bash
-edakit check 2>&1 | cat     # 0 errors: fix the cause; waive only with a reason that holds
-edakit hints 2>&1 | cat     # each open hint: handle it, or write down why it does not apply
+edakit check 2>&1 | cat     # 0 errors: fix the cause; accept only with a reason that holds
+edakit domains 2>&1 | cat   # the domains on and suggested; a new part may need one more
 edakit sim 2>&1 | cat       # every scenario passes
 edakit schematic draw 2>&1 | cat   # the circuit as a drawing (SVG) for the user to look at – no EasyEDA needed
 ```
 
-A hint that is taken care of gets a line in the graph: `"hints": {"H-1": "C1 1000 µF next to J1"}`. Settings the checks
-need go into the graph's `checks` – the pins the firmware relies on (`pin_locks`; or, where the firmware follows the
-graph, the contract of `edakit firmware`, handbook 3.5, with the roles `sdi`, `sdo`, `out0` … `outN` on drivers), a
-connector that can be plugged in the wrong way (`reverse_protect`). Blocks and notes of the drawing, once it should look
+A hint that is taken care of gets a line in the graph: `"accept": {"HINT.bulk": "C1 1000 µF next to J1"}`. The pins the
+firmware relies on go into the graph's `locks.pins` (or, where the firmware follows the graph, the contract of
+`edakit firmware`, handbook 3.5, with the roles `sdi`, `sdo`, `out0` … `outN` on drivers); a connector that can be
+plugged in the wrong way gets `"source": "reversible"`. Blocks and notes of the drawing, once it should look
 a certain way, go into the schematic file `hardware/schematic.toml` (handbook 10.3).
 
 ## 7. Hand over
 
 What you know about the board goes into the graph as `layout` – the PCB designer gets nothing else, and the plan check
-holds the layout to it (L-12, handbook 7.4):
+holds the layout to it (SYNC.plan, handbook 7.4):
 
 ```json
 "layout": {"fixed": ["SW1", "D2"], "edge": ["J1"], "near": {"R1": "U2"},
@@ -122,12 +122,12 @@ holds the layout to it (L-12, handbook 7.4):
   constraint from the enclosure.
 - `near`: helpers that belong to a pin – a current-setting resistor, a crystal and its capacitors, ESD protection at
   its connector, a feedback divider. The decoupling capacitor of every IC is derived, no line needed.
-- `loops`: the hot loop of a switching regulator (pads of one net, checked on the routed board by L-11) – one entry
-  on every net of it, the net behind the diode included; G-18 asks for them from the regulator's `hot_loop`.
+- `loops`: the hot loop of a switching regulator (pads of one net, checked on the routed board by GEO.loop) – one entry
+  on every net of it, the net behind the diode included; REQ.missing asks for them from the regulator's `hot_loop`.
 - `notes`: everything else the layout must know and no program checks – the layout review reads it.
 
 ```bash
-edakit check 2>&1 | cat      # G-1 also checks the names in layout
+edakit check 2>&1 | cat      # STRUCT also checks the names in layout
 edakit handover 2>&1 | cat   # the hand-over as the PCB designer will read it
 ```
 
@@ -145,4 +145,4 @@ schematic, and the project is done without EasyEDA.
 
 Requirements as understood – with a requirements file, which parts meet which requirement: per R-… the parts and
 values that meet it and the rows or the review that test it –, blocks and parts used, computed values, open
-decisions, results of check, hints and sim, check candidates, where the drawing is, the hand-over (`edakit handover`).
+decisions, results of check and sim, candidates, where the drawing is, the hand-over (`edakit handover`).

@@ -1,0 +1,119 @@
+# What became of maker-coverage's candidates (docs/concepts/new/maker-coverage.md, section Candidates) – one entry per
+# candidate: status built, partial or open; where it lives (codes with their grade, files, commands); what is missing or
+# why it is open. The catalog page (docs/catalog/build.py) shows it; rules-at-scale.md's build log sums it up.
+# "datasheets" as a reason: the numbers come from datasheets or standards this environment could not reach.
+
+[features]
+FT-1 = { status = "built", where = "transients: steps (sim/run.py, sim/netlist.py amps); LIM.range finds the brown-out", step = 6 }
+FT-2 = { status = "partial", where = "cables: length_m, awg | mm2, l_nh_per_m (circuit.wire_ohm, wire_h)", missing = "i_max_a from the gauge (no read ampacity table), c_pf_per_m, a board without a PCB instead of bought", step = 6 }
+FT-3 = { status = "built", where = "behaviour opamp (sim/netlist.py); LIM.range/opamp", step = 6 }
+FT-4 = { status = "open", missing = "the charger model needs the TP4056's and MCP73831's numbers – datasheets" }
+FT-5 = { status = "open", missing = "adjustable regulators: vref and minimum load per part – datasheets" }
+FT-6 = { status = "built", where = "kinds motor, solenoid, speaker, heater, optocoupler (catalog/kinds.toml, sim/netlist.py)", step = 6 }
+FT-7 = { status = "open", missing = "the ES1 limits of IEC 62368-1 are tagged to verify; mains is open decision 3" }
+FT-8 = { status = "open", missing = "generated fault scenarios (reversed supply as a DC scenario, a wire shorted, one supply off)" }
+FT-9 = { status = "open", missing = "DC bias of ceramics needs the capacitance curves – datasheets" }
+FT-10 = { status = "open", missing = "analog constants in the firmware contract" }
+FT-11 = { status = "built", where = "loads: expect (engines/sim.py function) – LIM.i, LIM.v", step = 6 }
+FT-12 = { status = "open", missing = "AC analysis – open decision 5" }
+FT-13 = { status = "open", missing = "LED strip model" }
+FT-14 = { status = "open", missing = "constant-current LED buck – datasheets" }
+FT-15 = { status = "built", where = "fn i2s.*, can.*, onewire, usb.* (circuit.FN_LINES); REQ.function", step = 6 }
+FT-16 = { status = "open", missing = "bus parameters in the firmware contract" }
+FT-17 = { status = "open", missing = "corners of hFE, leakage, IDSS – datasheets" }
+FT-18 = { status = "open", missing = "source models for the audio band – needs FT-12" }
+FT-19 = { status = "built", where = "engines/coverage.py; edakit check --coverage; the protocol's section 2", step = 6 }
+FT-20 = { status = "built", where = "edakit/domains/, [project] domains, edakit domains", step = 3 }
+FT-21 = { status = "partial", where = "tests/reference.py: a reference circuit per domain, with seeded faults", missing = "the published open designs (DevKitC, Tube Screamer, QMK keyboard …) – their schematics could not be read", step = 7 }
+FT-22 = { status = "built", where = "edakit rules: code, severity, title", step = 1 }
+FT-23 = { status = "open", missing = "edakit graph show <designator or net>" }
+FT-24 = { status = "built", where = "evals/ for claude plugin eval; baseline in evals/README.md", step = 8 }
+
+[checks]
+CK-1 = { status = "built", where = "LVL.undefined/nc (ICs; a module brings its own resistors)", step = 6 }
+CK-2 = { status = "built", where = "pin drive open_drain | tristate; LVL.undefined/open_drain; LVL.contention", step = 6 }
+CK-3 = { status = "partial", where = "entry address; REQ.forbidden/address", missing = "the pull-up's upper bound from the bus capacitance (needs c_pf_per_m)", step = 6 }
+CK-4 = { status = "built", where = "LIM.range/gate from vgs_th_v and the rds_on_max_ohm table", step = 6 }
+CK-5 = { status = "partial", where = "limits vin_rel_max_v; LIM.v/inject", missing = "the injection current and the scenarios with one supply off (FT-8)", step = 6 }
+CK-6 = { status = "built", where = "pin adc; LIM.range/adc, REQ.value/adc", step = 6 }
+CK-7 = { status = "built", where = "polarized capacitors: LIM.v/polarized (G and E), PATH.reverse/polarized", step = 6 }
+CK-8 = { status = "built", where = "roles out_p, out_n; REQ.forbidden/btl (domains audio, guitar)", step = 6 }
+CK-9 = { status = "open", missing = "spacing of hazardous voltage – open decision 3, the IEC 60664-1 tables not read here" }
+CK-10 = { status = "open", missing = "isolation and mains input – open decision 3" }
+CK-11 = { status = "open", missing = "antenna keep-out on the board geometry (GEO)" }
+CK-12 = { status = "built", where = "roles dp_a, dp_b, dn_a, dn_b; REQ.missing/usb_data (domain usb)", step = 6 }
+CK-13 = { status = "built", where = "pin needs; REQ.missing/pin, REQ.value/pin, REQ.forbidden/pin", step = 6 }
+CK-14 = { status = "partial", where = "a regulator's capacitors as pin needs", missing = "DC bias and the ESR window", step = 6 }
+CK-15 = { status = "partial", where = "REQ.missing flyback for motors and solenoids", missing = "clamp diodes at a bridge driver without internal ones (L298)", step = 6 }
+CK-16 = { status = "partial", where = "REQ.missing/leave on nets through a cable (domain cables)", missing = "off-board connectors without a cable in the graph", step = 6 }
+CK-17 = { status = "open", missing = "RS-485 and CAN termination – the standards' numbers not read here" }
+CK-18 = { status = "built", where = "cells i_max_a; LIM.i/cell", step = 6 }
+CK-19 = { status = "built", where = "net matrix row | col; REQ.missing/matrix, REQ.forbidden/matrix", step = 6 }
+CK-20 = { status = "open", missing = "configuration pins with voltage windows – datasheets" }
+CK-21 = { status = "built", where = "limits i_supply_pin_max_a; LIM.i/supply_pin (constant-current drivers)", step = 6 }
+CK-22 = { status = "open", missing = "the ES1 limits – tagged to verify" }
+CK-23 = { status = "built", where = "values f_clock_hz, limits f_max_hz; LIM.range/clock", step = 6 }
+CK-24 = { status = "open", missing = "capacitor banks above the hazardous limit – open decision 3" }
+CK-25 = { status = "built", where = "LVL.undefined/analog", step = 6 }
+CK-26 = { status = "built", where = "REQ.function/uart", step = 6 }
+CK-27 = { status = "built", where = "net instrument, load_min_ohm, pin z_in_ohm; REQ.value/instrument", step = 6 }
+CK-28 = { status = "partial", where = "values gain_min_ratio; REQ.value/gain", missing = "the external compensation a part requires", step = 6 }
+CK-29 = { status = "built", where = "REQ.missing/balance", step = 6 }
+CK-30 = { status = "open", missing = "no DC where signals are switched – a signal path the graph does not mark yet" }
+CK-31 = { status = "open", missing = "nets kept apart on the board (layout.apart, GEO)" }
+
+[hints]
+HT-1 = { status = "built", where = "HINT.cable_line (domain cables)", step = 6 }
+HT-2 = { status = "open", missing = "the USB current budget's numbers are tagged extracted" }
+HT-3 = { status = "open", missing = "the 10 µF at attach is tagged extracted" }
+HT-4 = { status = "built", where = "HINT.boost_enable (domain power)", step = 6 }
+HT-5 = { status = "open", missing = "a charger's power path – no charger kind or behaviour yet (FT-4)" }
+HT-6 = { status = "built", where = "HINT.input_polarity (domain power)", step = 6 }
+HT-7 = { status = "open", missing = "a jack carrying a supply – no role for jack contacts yet" }
+HT-8 = { status = "built", where = "HINT.audio_ground (domain audio)", step = 6 }
+HT-9 = { status = "built", where = "HINT.flicker (core)", step = 6 }
+HT-10 = { status = "built", where = "HINT.heater (domain motors)", step = 6 }
+HT-11 = { status = "built", where = "HINT.thermal_copper (domain power)", step = 6 }
+HT-12 = { status = "built", where = "HINT.motor_supply (domain motors)", step = 6 }
+HT-13 = { status = "built", where = "HINT.class_d (domain audio)", step = 6 }
+HT-14 = { status = "open", missing = "relay contacts switching off-board loads" }
+HT-15 = { status = "built", where = "HINT.jack_battery (domain guitar)", step = 6 }
+HT-16 = { status = "built", where = "HINT.audio_switching (domains audio, guitar)", step = 6 }
+HT-17 = { status = "built", where = "HINT.signal_ceramic (domains audio, guitar)", step = 6 }
+HT-18 = { status = "built", where = "HINT.pedal_supply (domain guitar)", step = 6 }
+HT-19 = { status = "built", where = "HINT.string_ground (domain guitar)", step = 6 }
+
+[blocks]                     # all open: a block needs checked parts entries – datasheets
+BL-1 = { status = "open", missing = "addressable LED input – datasheets" }
+BL-2 = { status = "open", missing = "logic-level N-MOSFET switch – datasheets" }
+BL-3 = { status = "open", missing = "high-side P-MOSFET switch with level shift – datasheets" }
+BL-4 = { status = "open", missing = "Li-ion charger with protection – datasheets" }
+BL-5 = { status = "open", missing = "3.3 V LDO for an ESP32 – datasheets" }
+BL-6 = { status = "open", missing = "battery voltage measurement – datasheets" }
+BL-7 = { status = "open", missing = "ESP32 module support – datasheets" }
+BL-8 = { status = "open", missing = "USB-C with data and ESD – datasheets" }
+BL-9 = { status = "open", missing = "I2C level shift – datasheets" }
+BL-10 = { status = "open", missing = "RS-485 at 3.3 V – datasheets" }
+BL-11 = { status = "open", missing = "MIDI in and out – datasheets" }
+BL-12 = { status = "open", missing = "cable input with RC and TVS – datasheets" }
+BL-13 = { status = "open", missing = "servo connector with bulk capacitor – datasheets" }
+BL-14 = { status = "open", missing = "DC motor driver – datasheets" }
+BL-15 = { status = "open", missing = "Eurorack power entry – datasheets" }
+BL-16 = { status = "open", missing = "instrument buffer – datasheets" }
+BL-17 = { status = "open", missing = "pedal power entry – datasheets" }
+BL-18 = { status = "open", missing = "relay bypass with mute – datasheets" }
+
+[part_facts]                 # the library of checked entries for popular parts – open decision 4, and datasheets
+modules = { status = "open", parts = ["ESP32-WROOM-32", "ESP32-S3 module", "ESP32-C3 module", "NodeMCU-32S", "Wemos D1 mini", "Arduino Nano", "RP2040 boards", "RP2350 boards"] }
+leds_displays = { status = "open", parts = ["WS2812B", "SK6812", "APA102", "SSD1306 module", "PCF8574 backpack", "PCF8574A backpack", "MAX7219"] }
+power = { status = "open", parts = ["AMS1117-3.3", "low-quiescent LDO", "TP4056", "MCP73831", "DW01A with FS8205", "MT3608", "CH224K"] }
+switching = { status = "open", parts = ["AO3400", "IRLZ44N", "IRF520", "DRV8833", "TB6612", "L298N", "A4988", "DRV8825", "TMC2209"] }
+sensors_buses = { status = "open", parts = ["DS3231 with AT24C32", "MPU-6050", "BME280", "INA219", "INA226", "DS18B20", "HX711", "ACS712", "HC-SR04", "MAX31855", "MAX6675", "CH340", "CP2102", "MAX485", "MAX3485"] }
+audio = { status = "open", parts = ["MAX98357A", "PAM8403", "INMP441"] }
+
+[review]
+electrical-audio = { status = "built", where = "edakit/domains/audio.toml [review]" }
+electrical-cables = { status = "built", where = "edakit/domains/cables.toml [review]" }
+pcb-rf = { status = "open", missing = "antenna areas – a pcb question of the radio domain" }
+pcb-hazardous = { status = "open", missing = "spacing between domains – with mains (open decision 3)" }
+pcb-thermal-pads = { status = "open", missing = "copper and vias under exposed pads" }

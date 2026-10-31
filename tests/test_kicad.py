@@ -201,7 +201,7 @@ def test_pcb_json_has_the_parts_their_nets_and_no_tooling_hole(project):
     (d / "drc.json").write_text("[]")
     rows = fab.Rows()
     fab.check_pcb(cfg, board, design, d, rows)
-    l1 = [r for r in rows if r["id"] in ("L-1", "L-4")]
+    l1 = [r for r in rows if r["id"] in ("SYNC.pcb", "SYNC.footprint")]
     assert l1 and all(r["result"] == "pass" for r in l1), l1
     holes = [p for p in kb.board_json(cfg, board)["pads"] if p["ref"] is None]
     assert len(holes) == len(board.tooling) and all(p["hole"] == ["ROUND", pytest.approx(1.152 * config.MIL_PER_MM)]

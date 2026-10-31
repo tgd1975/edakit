@@ -1,0 +1,25 @@
+# The domain audio: speakers, amplifiers, analog signal paths – bridge-tied outputs, stable gain, ground and switching
+# noise (concept rules-at-scale.md, section 5; maker-coverage cluster AUD).
+
+[domain]
+name = "audio"
+about = "speakers, amplifiers and analog signal paths: bridge-tied outputs, stable gain, hum, switching noise"
+suggested_by = { kinds = ["speaker"], roles = ["out_p", "out_n"] }
+
+[switch]                             # the findings this domain switches on (code, or code:topic)
+on = ["REQ.forbidden:btl"]
+
+[severity]
+
+[hints]
+apply = ["HINT.audio_ground", "HINT.class_d", "HINT.audio_switching", "HINT.signal_ceramic"]
+
+[review]
+electrical = [
+  "Ground and returns: one return point for the audio path; large currents (the amplifier's supply, motors, LEDs) not returning under an input's reference; loops through USB or mains earth (HINT.audio_ground).",
+  "Supply of the amplifier: its peak current at full power against the supply and its local decoupling; a load step in a transient run shows the dip (steps).",
+  "Signal levels: every stage's bias inside its op-amp's ranges (LIM.range/opamp), the output's headroom at full signal, the input's level against the ADC's window where it is converted (LIM.range/adc).",
+]
+
+[fixtures]
+clean = []

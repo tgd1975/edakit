@@ -43,7 +43,7 @@ if [ "$COUNT" != "1" ]; then
   exit 1
 fi
 sed -i 's/async function exportPdf(params) {/&\n      if (params.what === "schematic") return normalizeBinaryResult2(await callFirst2(["SCH_ManufactureData.getExportDocumentFile"], void 0, "PDF"), "schematic.pdf");/' "$BUNDLE"
-# ODB++ for a maker that assembles from it (edakit handbook 8.4, F-7): the server's tool easyeda_export_odb calls
+# ODB++ for a maker that assembles from it (edakit handbook 8.4, SYNC.odb): the server's tool easyeda_export_odb calls
 # board.exportGerbers with format "odb" – answer it with PCB_ManufactureData.getOpenDatabaseDoublePlusFile(fileName,
 # unit, otherData) (BETA in EasyEDA Pro's API), marked format "odb" so that the tool can tell it from a Gerber ZIP.
 COUNT="$(grep -c 'async function exportGerbers(params) {' "$BUNDLE" || true)"

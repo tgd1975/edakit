@@ -1,4 +1,4 @@
-"""P-7 (#36): through-hole leads known and fitting the footprint before the layout – L-9's test on the holes of the
+"""GEO.hole (#36): through-hole leads known and fitting the footprint before the layout – GEO.hole's test on the holes of the
 footprint geometry (`pcb dump`, else the library footprint of `edakit part import`), in `edakit check` and `pcb plan`.
 J1 of the example is the only through-hole part: B2B-PH-K-S, leads □0.5 mm, the maker's hole 0.7 mm."""
 
@@ -7,7 +7,9 @@ from pathlib import Path
 
 import pytest
 
-from edakit import checks, cli, part, pcb
+from helpers import check
+
+from edakit import cli, part, pcb
 from edakit.design import Design
 from edakit.release import gate
 
@@ -39,20 +41,19 @@ def lead(project, **change):
 
 def p7(project):
     cfg = project.config()
-    rep = checks.run(Design.from_config(cfg), cfg)
-    return {kind: [m for c, m, *_ in getattr(rep, kind) if c == "P-7"]
+    rep = check(Design.from_config(cfg), cfg)
+    return {kind: [m for c, m, *_ in getattr(rep, kind) if c in ("GEO.hole", "PARTS.fact")]
             for kind in ("errors", "pending", "warnings", "notes", "waived")}
 
 
 def test_holes_that_take_the_lead(project):
     dump(project)
     assert p7(project) == {"errors": [], "pending": [], "warnings": [], "notes": [], "waived": []}
-    assert "P-7" in checks.EXECUTED
 
 
 def test_a_hole_too_small_for_the_lead(project):
     dump(project, (0.70, 0.70))
-    assert p7(project)["errors"] == []                     # 0.7 mm is the maker's hole: it fits by that (L-9)
+    assert p7(project)["errors"] == []                     # 0.7 mm is the maker's hole: it fits by that (GEO.hole)
     dump(project, (0.65, 0.65))
     assert p7(project)["errors"] == ["J1 (pads 1, 2, pcb dump): hole 0.65 mm for diagonal 0.71 mm, play -0.06 mm, "
                                      "worst case -0.14 mm, manufacturer 0.7 mm"]
@@ -82,7 +83,7 @@ def test_without_hole_sizes_or_geometry_only_a_note(project, capsys):
     assert p7(project)["notes"] == ["not run: no footprint geometry – edakit pcb dump once the parts are in the PCB, "
                                     "or edakit part import <LCSC> for the library's"]
     dump(project, None)
-    assert p7(project)["notes"] == ["J1: hole size unknown – edakit pcb dump (the geometry is older than P-7)"]
+    assert p7(project)["notes"] == ["J1: hole size unknown – edakit pcb dump (the geometry is older than GEO.hole)"]
     assert cli.main(["check", "--config", str(project.root / "edakit.toml")]) == 0
 
 
@@ -103,7 +104,7 @@ def test_the_library_footprint_is_the_second_source(project, monkeypatch):
 def test_waive(project):
     dump(project, (0.65, 0.65))
     g = project.graph()
-    project.comp(g, "J1")["waive"] = {"P-7": "reworked by hand"}
+    project.comp(g, "J1")["accept"] = {"GEO.hole": "reworked by hand"}
     project.save_graph(g)
     assert p7(project)["errors"] == [] and len(p7(project)["waived"]) == 1
 
@@ -112,14 +113,14 @@ def test_the_gate_counts_p7_in_stage_p(project):
     dump(project, (0.65, 0.65))
     cfg = project.config()
     rows, _ = gate.stage_graph(cfg, Design.from_config(cfg))
-    assert {r["stage"] for r in rows if r["id"] == "P-7"} == {"P"}
+    assert {r["stage"] for r in rows if r["id"] == "GEO.hole"} == {"P"}
 
 
 def test_plan_reports_p7(project):
     dump(project, (0.65, 0.65))
     cfg = project.config()
-    assert [p for p in pcb.plan(cfg, cfg.board()) if p.startswith("P-7")] == [
-        "P-7 J1 (pads 1, 2, pcb dump): hole 0.65 mm for diagonal 0.71 mm, play -0.06 mm, worst case -0.14 mm, "
+    assert [p for p in pcb.plan(cfg, cfg.board()) if p.startswith("GEO.hole")] == [
+        "GEO.hole J1 (pads 1, 2, pcb dump): hole 0.65 mm for diagonal 0.71 mm, play -0.06 mm, worst case -0.14 mm, "
         "manufacturer 0.7 mm"]
 
 

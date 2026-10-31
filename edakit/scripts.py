@@ -66,7 +66,7 @@ about agents, see agents):
   5  an edakit step needs what an input writes, directly or through another input
   6  no edakit step needs what a derive writes
   7  edakit's steps, the data and after make no cycle – read-backs of a later round are not counted: edakit check
-     reads the footprints (P-7), edakit sim the routing (copper), pcb place the footprints
+     reads the footprints (GEO.hole), edakit sim the routing (copper), pcb place the footprints
   8  a check has an id of its own, a phase, and reads gerber:<b> only at "after F"
   9  after names other entries of [scripts]
 """
@@ -89,7 +89,7 @@ from dataclasses import dataclass, field
 from pathlib import Path
 from typing import NamedTuple
 
-from . import rules
+from . import catalog
 
 KINDS = ("input", "derive", "easyeda", "check")      # of a [scripts.*] entry; the kind sim is [project] sim_plugin
 NEEDS = {"input": ("cmd", "about", "writes"), "derive": ("cmd", "about", "writes"),
@@ -114,7 +114,7 @@ NAME = re.compile(r"([A-Za-z][\w-]*)(?::([^/\\]*))?")   # graph, routing:tree; a
 
 # edakit's steps in their fixed order, with what each reads and writes. <b> stands for every board, art:<b> for the
 # SVGs of the board files' [[silk.art]], plugin for [project] sim_plugin. Left out are the read-backs of a later round:
-# edakit check reads the footprints (P-7), edakit sim the routing (with copper), pcb place the footprints.
+# edakit check reads the footprints (GEO.hole), edakit sim the routing (with copper), pcb place the footprints.
 STEPS = (
     ("edakit firmware", ("graph", "parts", "sim", "plugin"), ("firmware",)),
     ("edakit check", ("graph", "parts", "sim"), ()),
@@ -364,7 +364,7 @@ def _entries(cfg, names, finding):
             sid = str(e.raw["id"])
             ids[sid].append(e.label)
             why = ("a stage of the gate" if sid in GATE_STAGES else "a sign-off" if sid.startswith("M-") else
-                   "an ID of the rule catalog" if rules.entry(sid) else None)
+                   "a code of the catalog" if catalog.code(sid) else None)
             if why:
                 finding(8, f"{e.label}: id {sid} is {why} – a check needs an id of its own")
     for sid, labels in ids.items():
@@ -871,9 +871,9 @@ def gate_rows(cfg):
     made again –, a note informs, and a current script passes. A project without [scripts], [[release.stages]] and
     sim_plugin gets none."""
     res, states, problem, entries, _ = _review(cfg)
-    rows = [{"stage": "G", "id": "scripts", "item": "", "check": msg, "result": RESULT[level]}
+    rows = [{"stage": "G", "id": "SYNC.scripts", "item": "", "check": msg, "result": RESULT[level]}
             for level, msg in _findings(res, states, problem) + _change_findings(cfg, problem, res, entries)]
-    return rows + [{"stage": "G", "id": "scripts", "item": "", "check": f"{s.name} current – {s.about}",
+    return rows + [{"stage": "G", "id": "SYNC.scripts", "item": "", "check": f"{s.name} current – {s.about}",
                     "result": "pass"} for s in states if s.state == "current"]
 
 
@@ -1636,8 +1636,8 @@ def agent_rows(cfg):
         return []
     review = agents(cfg)
     if review.findings:
-        return [{"stage": "G", "id": "agents", "item": "", "check": f.msg, "result": "fail"} for f in review.findings]
-    return [{"stage": "G", "id": "agents", "item": "", "check": f"{name}: {_agent_said(a, phase=False)} – "
+        return [{"stage": "G", "id": "SYNC.agents", "item": "", "check": f.msg, "result": "fail"} for f in review.findings]
+    return [{"stage": "G", "id": "SYNC.agents", "item": "", "check": f"{name}: {_agent_said(a, phase=False)} – "
                                                                 f"{a.get('about', '')}", "result": "pass"}
             for name, a in cfg.agents.items()]
 

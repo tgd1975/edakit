@@ -33,7 +33,7 @@ then keep clear of them. `edakit silk preview` draws the artwork onto the last G
 
 Run it again after every auto-layout and routing: the spots depend on where the small parts and vias ended up. `apply`
 keeps the silk files of its first export, before it prints anything, in <artifacts>/silk_footprints_<board>/: the gate
-(L-17) fails on print on a solder-mask opening that is not in them – edakit's own – and only warns on the rest.
+(GEO.silk) fails on print on a solder-mask opening that is not in them – edakit's own – and only warns on the rest.
 API notes: designators are attributes (PCB_PrimitiveAttribute, key 'Designator'); modify works on locked parts too;
 alignMode 5 = centre on x/y. Stroke font 'default': measured 0.5-0.6 x height per character.
 """
@@ -263,7 +263,7 @@ def corner_spot(area, obstacles, w, h, corner="bottom-left", step=0.5):
 
 MIN_SILK_MM = 0.15  # JLCPCB: thinner silkscreen does not print
 MIN_GAP_MM = 0.2    # narrower gaps inside the artwork fill in
-MIN_TEXT_MM = 1.0   # JLCPCB: lower characters are unidentifiable (L-17)
+MIN_TEXT_MM = 1.0   # JLCPCB: lower characters are unidentifiable (GEO.silk)
 
 
 def svg_geometry(path):
@@ -356,7 +356,7 @@ def polygons(g):
 
 def footprint_print(cfg, board):
     """Where `apply` keeps the silk Gerber files of its first export – the print that is not edakit's own: the
-    footprints', and texts and designators edakit did not place. The gate (L-17) tells edakit's print from it."""
+    footprints', and texts and designators edakit did not place. The gate (GEO.silk) tells edakit's print from it."""
     return cfg.artifacts / f"silk_footprints_{board.name}"
 
 
@@ -459,7 +459,7 @@ def apply(cfg, board, mcp, step=None):
     folder = export_gerber(cfg, board, mcp)  # now the silk layer holds only the footprints' own print
     kept = footprint_print(cfg, board)
     kept.mkdir(parents=True, exist_ok=True)
-    for key in ("top_silk", "bottom_silk"):              # kept for the gate: what is not in it is edakit's (L-17)
+    for key in ("top_silk", "bottom_silk"):              # kept for the gate: what is not in it is edakit's (GEO.silk)
         if (folder / gerber.FILES[key]).exists():
             shutil.copy(folder / gerber.FILES[key], kept / gerber.FILES[key])
     mask_key, silk_key = GERBER_KEYS[layer]

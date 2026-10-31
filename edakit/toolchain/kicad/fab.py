@@ -2,15 +2,15 @@
 and kicad-cli – the same files in the same form, so that every check of the gate runs unchanged.
 
     pcb.json                 board.pcb_json: components with pads, tracks, texts, designators
-    drc.json                 cli.drc: KiCad's DRC with schematic parity, as findings (L-3)
+    drc.json                 cli.drc: KiCad's DRC with schematic parity, as findings (GEO.drc)
     gerber_<board>.zip       Gerber and drill files of kicad-cli under the names the checks know (gerber.FILES):
                              the plated holes of KiCad's PTH file split into component holes and vias by the drill's
                              X2 function (ViaDrill), else by the vias of the PCB
     gerber/                  the ZIP unpacked, plus FlyingProbeTesting.json made from pcb.json – the pad positions
                              gerber.Copper labels the copper with (EasyEDA exports one; KiCad has none, so it stays out
                              of the ZIP)
-    cpl_kicad.csv            kicad-cli's position file in the columns of EasyEDA's CPL (F-3)
-    bom_kicad.json           the schematic's parts per LCSC number from kicad-cli's netlist, as EasyEDA's BOM (F-1)
+    cpl_kicad.csv            kicad-cli's position file in the columns of EasyEDA's CPL (SYNC.cpl)
+    bom_kicad.json           the schematic's parts per LCSC number from kicad-cli's netlist, as EasyEDA's BOM (SYNC.bom)
 """
 
 from __future__ import annotations
@@ -67,7 +67,7 @@ def collect(cfg, board, d, verbose=False):
     write_cpl(cli.pos(p["pcb"], raw / "pos.csv", verbose), data, d / "cpl_kicad.csv")
     if p["sch"].exists():
         _, comps = cli.netlist(p["sch"], raw / "netlist.net", verbose)
-    else:                                 # no schematic yet: the PCB's parts (S-2 says the schematic is missing)
+    else:                                 # no schematic yet: the PCB's parts (SYNC.schematic says the schematic is missing)
         comps = {c["designator"]: {"LCSC": lcsc_of(cfg, board, c["designator"]), "value": c["deviceName"]}
                  for c in data["components"]}
     (d / "bom_kicad.json").write_text(json.dumps(bom(comps), indent=1, ensure_ascii=False))

@@ -1,4 +1,4 @@
-"""`edakit stock` and check P-4 (parts orderable), offline: JLCPCB's answers are recorded in tests/fixtures/jlcpcb/ –
+"""`edakit stock` and check PARTS.stock (parts orderable), offline: JLCPCB's answers are recorded in tests/fixtures/jlcpcb/ –
 the catalogue answer of `selectSmtComponentList` per LCSC number (the fields edakit reads) and an excerpt of each part
 page jlcpcb.com/partdetail/<C…> (its "PCBA Type" cell and the part's record in the page data), read 2026-10-27.
 
@@ -12,7 +12,9 @@ from pathlib import Path
 
 import pytest
 
-from edakit import checks, cli
+from helpers import check, executed
+
+from edakit import cli
 from edakit.design import Design
 
 REC = Path(__file__).resolve().parent / "fixtures" / "jlcpcb"
@@ -21,13 +23,13 @@ TODAY = dt.date.today().isoformat()
 
 
 def p4(rep):
-    return ([m for c, m in rep.errors if c == "P-4"], [m for c, m in rep.pending if c == "P-4"],
-            [m for c, m in rep.warnings if c == "P-4"], [m for c, m in rep.notes if c == "P-4"])
+    return ([m for c, m in rep.errors if c == "PARTS.stock"], [m for c, m in rep.pending if c == "PARTS.stock"],
+            [m for c, m in rep.warnings if c == "PARTS.stock"], [m for c, m in rep.notes if c == "PARTS.stock"])
 
 
 def run_checks(project):
     cfg = project.config()
-    return checks.run(Design.from_config(cfg), cfg)
+    return check(Design.from_config(cfg), cfg)
 
 
 def stock_cli(project, monkeypatch, *args):
@@ -108,7 +110,7 @@ def test_edakit_stock_writes_the_snapshot_of_the_assembled_parts(project, jlcpcb
         "min_qty": 5, "price_breaks": None}
     out = capsys.readouterr().out
     assert "[9/9]" in out and "C41407547" in out and "Standard Only" in out
-    assert "ERROR   P-4  U1 C41407547" in out
+    assert "PARTS.stock – parts orderable: " in out and "\n  P  U1 C41407547" in out
     jlcpcb.clear()
     assert stock_cli(project, monkeypatch) == 2 and jlcpcb == []          # everything is fresh: nothing asked
     assert stock_cli(project, monkeypatch, "--refresh") == 2 and sorted(jlcpcb) == ASSEMBLED
@@ -134,13 +136,13 @@ def test_edakit_stock_lcsc_prints_and_writes_nothing(tmp_path, jlcpcb, monkeypat
     assert not list(tmp_path.iterdir())
 
 
-# --- P-4 ------------------------------------------------------------------------------------------------------------
+# --- PARTS.stock ------------------------------------------------------------------------------------------------------------
 
 def test_without_a_snapshot_p4_is_a_note_and_the_rest_unchanged(project):
     rep = run_checks(project)
     assert p4(rep) == ([], [], [], ["no stock snapshot (hardware/stock.json) – edakit stock asks JLCPCB about the 9 "
                                     "assembled parts"])
-    assert not rep.errors and not rep.pending and not rep.warnings and "P-4" in checks.EXECUTED
+    assert not rep.errors and not rep.pending and not rep.warnings and "PARTS.stock" in executed(project.config())
 
 
 def test_the_example_with_its_snapshot_fails_u1(project, jlcpcb, monkeypatch, capsys):
@@ -190,16 +192,16 @@ def test_one_fault_per_p4_row(stocked, fault, change, expected):
 def test_a_p4_finding_can_be_waived(stocked):
     edit_snapshot(stocked, lambda s: s["parts"]["C8678"].update(mpn="SS14"))
     g = stocked.graph()
-    stocked.comp(g, "D1")["waive"] = {"P-4": "JLCPCB's catalogue names the SS34 wrongly (ticket 123)"}
+    stocked.comp(g, "D1")["accept"] = {"PARTS.stock": "JLCPCB's catalogue names the SS34 wrongly (ticket 123)"}
     stocked.save_graph(g)
     rep = run_checks(stocked)
-    assert p4(rep)[0] == [] and [c for c, _, _ in rep.waived].count("P-4") == 1
+    assert p4(rep)[0] == [] and [c for c, _, _ in rep.waived].count("PARTS.stock") == 1
 
 
 def test_the_gate_lists_p4_in_stage_p(project):
     from edakit.release import gate
     rows, _ = gate.stage_graph(project.config(), Design.from_config(project.config()))
-    assert {(r["stage"], r["result"]) for r in rows if r["id"] == "P-4"} == {("P", "info"), ("P", "pass")}
+    assert {(r["stage"], r["result"]) for r in rows if r["id"] == "PARTS.stock"} == {("P", "info"), ("P", "pass")}
 
 
 def test_stock_keys(project):

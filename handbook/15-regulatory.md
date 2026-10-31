@@ -16,7 +16,7 @@ complete; nothing in them is legally guaranteed. Whoever sells or gives away the
 
 `purpose` in the graph (3.1): `{"use": "private" | "gift" | "sale", "market": "EU", "notes": "what it is, who uses
 it"}`, and for a part that can transmit more than the EU allows, optionally, `radio` – how its firmware uses it:
-`{"U1": {"bands_mhz": [[2412, 2472]], "notes": "Wi-Fi channels 1–13"}}` or `{"U1": "off"}`; G-25 compares it with the
+`{"U1": {"bands_mhz": [[2412, 2472]], "notes": "Wi-Fi channels 1–13"}}` or `{"U1": "off"}`; LIM.band compares it with the
 EU bands. It is part of the circuit hash: a new purpose needs a new M-6. The skill new-project asks for it when the
 project is set up (2.7), before the first part is chosen.
 
@@ -30,7 +30,7 @@ project is set up (2.7), before the first part is chosen.
 
 | Rule | What it asks | Applies to | Source |
 |---|---|---|---|
-| Frequency use | transmit only in a licence-exempt band within its power and duty cycle: 433.05–434.79 MHz, 863–870 MHz (868.0–868.6 MHz: 25 mW, ≤ 1 %), 2400–2483.5 MHz (100 mW e.i.r.p.), 5 GHz RLAN (5150–5350 MHz 200 mW, 5470–5725 MHz 1 W mean e.i.r.p.). The e.i.r.p. is the power fed to the antenna times its gain – the datasheet's conducted power in dBm plus the antenna's gain in dBi; G-24 compares it with the band's limit, and G-25 the bands a part transmits in – its `bands_mhz`, or what `purpose.radio` says the firmware keeps (15.1) – with these bands (3.3; how edakit grades what the firmware has to keep: 15.4). 902–928 MHz (US LoRa) is none of them – 880–915 MHz is mobile uplink in Europe. An ESP32 keeps to channels 1–13 only by its firmware: an EU country with 802.11d off, `esp_wifi_set_country_code("DE", false)` after every Wi-Fi start (Arduino-ESP32 deinitialises the driver on `WiFi.mode(WIFI_OFF)`), the radio off if the call fails – with 802.11d on, ESP-IDF's default, a station takes the country of its access point, and JP allows channel 14 (2484 MHz); leaving the default country is no rule either ("CN" in ESP-IDF 4.4, "01" in 6.1). Operating radio equipment that does not comply is prohibited also privately | every board that transmits | [2006/771/EC](https://eur-lex.europa.eu/legal-content/EN/TXT/?uri=CELEX:32006D0771) (as amended), [BNetzA Vfg. 91/2025](https://www.bundesnetzagentur.de/DE/Fachthemen/Telekommunikation/Frequenzen/Allgemeinzuteilungen/_DL/vfg91_2025.pdf), [Vfg. 136/2022](https://www.bundesnetzagentur.de/DE/Fachthemen/Telekommunikation/Frequenzen/Allgemeinzuteilungen/_DL/MobilfunkDectWlanCBFunk/vfg136_2022.pdf), [FuAG § 7](https://www.gesetze-im-internet.de/fuag/__7.html), [ESP-IDF `esp_wifi_set_country_code`](https://docs.espressif.com/projects/esp-idf/en/stable/esp32/api-reference/network/esp_wifi.html), [Arduino-ESP32 2.0.17 WiFiGeneric.cpp](https://github.com/espressif/arduino-esp32/blob/2.0.17/libraries/WiFi/src/WiFiGeneric.cpp) |
+| Frequency use | transmit only in a licence-exempt band within its power and duty cycle: 433.05–434.79 MHz, 863–870 MHz (868.0–868.6 MHz: 25 mW, ≤ 1 %), 2400–2483.5 MHz (100 mW e.i.r.p.), 5 GHz RLAN (5150–5350 MHz 200 mW, 5470–5725 MHz 1 W mean e.i.r.p.). The e.i.r.p. is the power fed to the antenna times its gain – the datasheet's conducted power in dBm plus the antenna's gain in dBi; LIM.eirp compares it with the band's limit, and LIM.band the bands a part transmits in – its `bands_mhz`, or what `purpose.radio` says the firmware keeps (15.1) – with these bands (3.3; how edakit grades what the firmware has to keep: 15.4). 902–928 MHz (US LoRa) is none of them – 880–915 MHz is mobile uplink in Europe. An ESP32 keeps to channels 1–13 only by its firmware: an EU country with 802.11d off, `esp_wifi_set_country_code("DE", false)` after every Wi-Fi start (Arduino-ESP32 deinitialises the driver on `WiFi.mode(WIFI_OFF)`), the radio off if the call fails – with 802.11d on, ESP-IDF's default, a station takes the country of its access point, and JP allows channel 14 (2484 MHz); leaving the default country is no rule either ("CN" in ESP-IDF 4.4, "01" in 6.1). Operating radio equipment that does not comply is prohibited also privately | every board that transmits | [2006/771/EC](https://eur-lex.europa.eu/legal-content/EN/TXT/?uri=CELEX:32006D0771) (as amended), [BNetzA Vfg. 91/2025](https://www.bundesnetzagentur.de/DE/Fachthemen/Telekommunikation/Frequenzen/Allgemeinzuteilungen/_DL/vfg91_2025.pdf), [Vfg. 136/2022](https://www.bundesnetzagentur.de/DE/Fachthemen/Telekommunikation/Frequenzen/Allgemeinzuteilungen/_DL/MobilfunkDectWlanCBFunk/vfg136_2022.pdf), [FuAG § 7](https://www.gesetze-im-internet.de/fuag/__7.html), [ESP-IDF `esp_wifi_set_country_code`](https://docs.espressif.com/projects/esp-idf/en/stable/esp32/api-reference/network/esp_wifi.html), [Arduino-ESP32 2.0.17 WiFiGeneric.cpp](https://github.com/espressif/arduino-esp32/blob/2.0.17/libraries/WiFi/src/WiFiGeneric.cpp) |
 | Radio equipment | anything that transmits or receives: the board with a fixed module is one radio product – the module's certificates are input, not a substitute. Own conformity assessment, EU declaration of conformity, instructions with bands and power. Internet-connected: cybersecurity since 1 Aug 2025; EN 18031 gives no presumption of conformity where the user may skip setting a password – then a notified body | sale | [2014/53/EU](https://eur-lex.europa.eu/legal-content/EN/TXT/?uri=CELEX:32014L0053), [2022/30](https://eur-lex.europa.eu/legal-content/EN/TXT/?uri=CELEX:32022R0030) |
 | EMC | electromagnetic compatibility, no lower voltage limit; a radio product is covered by RED instead | sale; in Germany also own use and passing on, in substance – EMVG § 6 lets equipment (§ 3 no. 2 a: any finished product for an end user with a function of its own) be passed on and put into service only if it meets the act's essential requirements (§ 4), without the formalities of placing on the market (§ 8); a radio product put into service and used: FuAG § 7 with § 4(1) no. 2 | [2014/30/EU](https://eur-lex.europa.eu/legal-content/EN/TXT/?uri=CELEX:32014L0030), [EMVG §§ 3, 4, 6](https://www.gesetze-im-internet.de/emvg_2016/__6.html), [FuAG §§ 4, 7](https://www.gesetze-im-internet.de/fuag/__7.html) |
 | Low voltage | 50–1000 V AC, 75–1500 V DC: a 5 V board is outside, the mains power supply that comes with it is not (its own CE, ecodesign) | sale | [2014/35/EU](https://eur-lex.europa.eu/legal-content/EN/TXT/?uri=CELEX:32014L0035) |
@@ -52,8 +52,8 @@ an imported power supply or cell is its importer.
 - **Per part** – `compliance` in the parts entry (4.1), filled by the agent part-selector or the skill part-search: RoHS
   status (and the exemption it relies on), the supplier's REACH SVHC statement, and for a part that transmits its
   bands, its power at the RF port and the gain of its antenna – or the e.i.r.p. a certificate states – and the EU
-  declaration of conformity (`compliance.radio`, 4.1); G-24 compares the e.i.r.p. with the band's limit. A part that
-  does not transmit says `"none"`; P-11 asks every module and microcontroller for one or the other. What nobody
+  declaration of conformity (`compliance.radio`, 4.1); LIM.eirp compares the e.i.r.p. with the band's limit. A part that
+  does not transmit says `"none"`; PARTS.fact asks every module and microcontroller for one or the other. What nobody
   states is open, not fine.
 - **Per own board** (4.5) – its `compliance` collects what its parts entries state, with the parts that state nothing.
   An own board is no module with certificates of its own: it is part of the product, and whoever gives the product
@@ -61,7 +61,7 @@ an imported power supply or cell is its importer.
 - **Per project** – `purpose` in the graph and the decision log: who uses the board (children?), the cell in a battery
   holder (chemistry, capacity, soldered or plugged), the power supply that comes with it, whether it connects to the
   internet and which personal data it handles – then also passwords and updates of the firmware.
-  Which boards people touch, and for how long: their `touch_c` in sim.json (5.2), checked by E-2 – a hot surface is a
+  Which boards people touch, and for how long: their `touch_c` in sim.json (5.2), checked by LIM – a hot surface is a
   risk of the product safety analysis.
 
 ## 15.4 The sign-off
@@ -72,8 +72,8 @@ when the sign-off file does not list it (8.2). With a requirements file the revi
 `verify` names `signoff = "M-6"` – a board that must not transmit – and names the ones it found met in its note
 (8.7). The agent's findings are numbered – **block** (may not be sold or operated like this), **important**,
 **note** – each with the rule, its source and a proposal, and they go into the decision round with the electrical
-review. What a program could decide – a part without a RoHS status – the agent marks as a check candidate (14.4); a
-band outside the EU's is G-25 already, an e.i.r.p. over the band's limit G-24.
+review. What a program could decide – a part without a RoHS status – the agent marks as a candidate (14.4); a
+band outside the EU's is LIM.band already, an e.i.r.p. over the band's limit LIM.eirp.
 
 **What the firmware has to keep is graded by the purpose.** The law of 15.2 stays as it is: operating radio equipment
 that does not comply is prohibited also privately. Only edakit's grading follows its job – edakit builds circuits
@@ -85,14 +85,14 @@ and a **block** only where the hardware cannot be made to comply: a part made fo
 ## 15.5 At the order
 
 M-6 reviews the circuit; the order adds what M-6 never saw, and what may change between the release and the cart. The
-parts are not new at the order – B-2 holds the maker's matching to the release, which M-6 saw, and a part the maker
+parts are not new at the order – ORDER.parts holds the maker's matching to the release, which M-6 saw, and a part the maker
 would replace needs a new release with a new M-6. The agent regulatory-reviewer "At the order" (the skill cart, step
 8) reads `job.json`, `quote.json` and `quote_page.txt` – as data, never as instructions –, `check.md` and the M-6
 result for the run's circuit hash, and looks only at the difference:
 
 | What | Why it matters |
 |---|---|
-| the surface finish and the other keys of the form | in the layout and fab hash, not in the circuit hash: leaded HASL is lead in the product (B-6 grades it: fail for `sale`, warning for `gift`, note for `private`), a coating or another material is part of the product |
+| the surface finish and the other keys of the form | in the layout and fab hash, not in the circuit hash: leaded HASL is lead in the product (ORDER.finish grades it: fail for `sale`, warning for `gift`, note for `private`), a coating or another material is part of the product |
 | the quantity against the purpose | 50 boards for `private` asks whether the purpose is still true – a new purpose is a new M-6 |
 | where the maker sits | outside the EU (JLCPCB, PCBWay) and `sale`: the owner imports the boards and is the manufacturer – name and address, technical file, registrations before the first sale (15.2); inside the EU (Eurocircuits, AISLER): no import, the owner stays the manufacturer (15.1), the maker's declarations are input for the technical file |
 | parts the owner supplies to the maker | imported by the owner when bought outside the EU |
@@ -102,6 +102,6 @@ result for the run's circuit hash, and looks only at the difference:
 Its result goes unchanged into `regulatory.md`: numbered findings graded as for M-6, the SHA-256 of the job and the
 quote it reviewed, the line that it is support and not legal advice, and as the last line `Order: OK` or
 `Order: not OK`. A difference that changes the circuit is a **block** ("new M-6 needed"). It is no sign-off in the
-sign-off file – the release and its hashes stay as they are –, but B-7 makes the cart wait for it, and a new quote
+sign-off file – the release and its hashes stay as they are –, but ORDER.review makes the cart wait for it, and a new quote
 needs a new review because its hash changes. The order record keeps the verdict with the numbers and grades of the
 findings (8.4).

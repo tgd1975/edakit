@@ -10,14 +10,14 @@ stage each, with its id – stage_checks runs it; phase order and acceptance are
 Result: <reports>/<YYYYMMDD-hhmmss>/
     protocol.md            readable protocol: header with hashes, stages, findings with actual and expected value,
                            warnings and who accepted them, waivers, open sign-offs, manual checks, simulation table,
-                           and the rule, reason and fix of every check that failed or warned (rules.json)
+                           and the rule, reason and fix of every code that failed or warned (the catalog)
     graph_checks.json, sim.json, schematic_<board>.json   raw results
     fab/<board>/           Gerber ZIP, BOM and CPL in JLCPCB format plus raw data (stages L, F)
     fab/manifest.json      SHA-256 of every file to upload – the files of every maker of [cart] makers –, the
                            hashes of the checked state, the decision, and whether the run is the current release
                            (status: released, superseded, withdrawn)
     makers.json            per maker of [cart] makers its role (planned or other) and the findings of its checks
-                           (P-4, F-2, F-6, P-12, F-7) – edakit cart prepare stops for another maker with one
+                           (PARTS.stock, FILES.order, PARTS.fact/mpn, SYNC.odb) – edakit cart prepare stops for another maker with one
 
 RELEASED only if
   - every stage ran and no check failed,
@@ -71,7 +71,7 @@ from collections import Counter, defaultdict
 from fnmatch import fnmatch
 from pathlib import Path
 
-from .. import checks, docs, eda, requirements, rules
+from .. import catalog, docs, eda, requirements
 from ..design import Design
 from ..toolchain import is_kicad
 
@@ -295,7 +295,7 @@ def load_signoff(cfg, head, write=False):
         if write:
             save_manifest(path, s, indent=2)
             print(f"  {notes[-1]}")
-    used = {x.get("scope", "circuit") for x in [*s.get("manual", []), *s.get("accepted_warnings", [])]}
+    used = {x.get("scope", "circuit") for x in [*s.get("manual", []), *s.get("accept", [])]}
     for scope, key in SCOPE_KEY.items():
         if scope == "fab" and head.get(key) is None:   # known only after stage F
             valid[scope] = False
@@ -317,16 +317,21 @@ def load_signoff(cfg, head, write=False):
             notes.append(f"{path.name}: {sid} is missing – added as open, " + (
                 "every release needs it" if sid in REQUIRED else
                 f"the project agent {agent.name} signs it ([agents.{agent.name}])"))
-    warns, gone = lapsed(cfg, [a for a in s.get("accepted_warnings", []) if valid.get(a.get("scope", "circuit"))])
-    return {**s, "manual": manual, "accepted_warnings": warns, "lapsed_warnings": gone}, notes
+    warns, gone = lapsed(cfg, [a for a in s.get("accept", []) if valid.get(a.get("scope", "circuit"))])
+    return {**s, "manual": manual, "accept": warns, "lapsed": gone}, notes
 
 
 def key_of(item):
-    return " ".join(str(item.get(k, "")) for k in ("id", "scenario", "item", "check") if item.get(k, "") != "")
+    """'GEO.hole main D2: hole tight …' – what an accept of the sign-off file is matched against: code, scenario, item
+    and check; the item left out where the check starts with it (a finding of stage P or G names its place first)."""
+    check = str(item.get("check", ""))
+    keys = [k for k in ("id", "scenario", "item", "check") if item.get(k, "") != ""
+            and not (k == "item" and check.startswith(str(item[k])))]
+    return " ".join(str(item[k]) for k in keys)
 
 
 def accepted(item, signoff):
-    return next((a for a in signoff.get("accepted_warnings", []) if fnmatch(key_of(item), a["match"])), None)
+    return next((a for a in signoff.get("accept", []) if fnmatch(key_of(item), a["match"])), None)
 
 
 def datasheet_open(cfg):
@@ -371,26 +376,49 @@ def datasheet_list(found):
     return L
 
 
+RESULT_OF = {"error": "fail", "warning": "warn", "note": "info", "pending": "pending"}
+
+
 def stage_graph(cfg, design):
-    rep = checks.run(design, cfg)
+    """Stages P and G: the findings of edakit check as rows – an accepted one with its reason, a note or a finding about
+    a draft of the requirements file as information –, and a passed row for every code the profile has on without a
+    finding of severity error or pending."""
+    from .. import engines
+    rep = engines.run_all(design, cfg)
     rows = []
-    stage_of = lambda c: "P" if c.startswith("P-") or c == "G-9" else "G"  # noqa: E731
-    for c, m in rep.errors:
-        rows.append({"stage": stage_of(c), "id": c, "item": "", "check": m, "result": "fail"})
-    for c, m, r in rep.waived:
-        rows.append({"stage": stage_of(c), "id": c, "item": "", "check": m, "result": "waived", "reason": r})
-    for c, m in rep.pending:
-        rows.append({"stage": stage_of(c), "id": c, "item": "", "check": m, "result": "pending"})
-    for c, m in rep.warnings:
-        rows.append({"stage": stage_of(c), "id": c, "item": "", "check": m, "result": "warn"})
-    for c, m in rep.notes + rep.drafts:   # a finding about a draft requirement: never blocks, needs no acceptance
-        rows.append({"stage": stage_of(c), "id": c, "item": "", "check": m, "result": "info"})
+    for f in rep.findings:
+        if f.code in ("SYNC.scripts", "SYNC.agents"):
+            continue          # the project's scripts and agents: rows of their own, with what passed (scripts.gate_rows)
+        result = "waived" if f.accepted and f.severity != "pending" else \
+            "info" if f.data.get("draft") and f.severity == "warning" else RESULT_OF[f.severity]
+        rows.append({"stage": f.stage if f.stage in "PG" else "G", "id": f.code, "item": f.place, "check": f.text,
+                     "result": result, **({"reason": f.accepted} if result == "waived" else {})})
     hit = {r["id"] for r in rows if r["result"] in ("fail", "pending")}
-    rows += [{"stage": stage_of(c), "id": c, "item": "", "check": rules.title(c), "result": "pass"}
-             for c in checks.executed(cfg) if c not in hit]
+    prof = engines.profile(design, cfg)
+    rows += [{"stage": "P" if code.startswith(("PARTS.", "STRUCT.entry", "STRUCT.identity")) else "G", "id": code,
+              "item": "", "check": catalog.title(code), "result": "pass"} for code in executed(prof, cfg) if code not in hit]
     from .. import cost
     rows += cost.gate_rows(cfg)   # with [cost]: the estimate, above the budget a warning
     return rows, rep.to_dict()
+
+
+def executed(prof, cfg):
+    """The codes of stages P and G a run checks, each counted once as passed where it has no finding: those of the
+    engines on the graph and of the checks beyond it that the profile has on – the footprint data's only where an
+    entry has footprint data, the requirements file's only with [project] requirements, PARTS.stock only with a
+    maker of [cart] makers that orders from JLCPCB's catalogue; no hint, no suggestion note."""
+    from ..findings import Finding
+    from ..checks import has_footprint_data
+    graph = ("STRUCT.", "LIM.", "LVL.", "REQ.", "PATH.", "PARTS.")
+    beyond = ["SYNC.source", "GEO.hole", "GEO.formed"]
+    beyond += ["SYNC.footprint"] if has_footprint_data(cfg) else []
+    beyond += ["DOCS.ref", "DOCS.need", "DOCS.evidence", "DOCS.draft"] if cfg.requirements else []
+    from .. import makers
+    skip = {"STRUCT.domain"} | (set() if has_footprint_data(cfg) else {"PARTS.footprint"})
+    if not makers.with_catalogue(cfg, "jlcpcb"):
+        skip.add("PARTS.stock")       # no maker of [cart] makers orders from JLCPCB's catalogue: it does not run
+    return [c for c in catalog.codes() if (c.startswith(graph) or c in beyond) and c not in skip
+            and prof.on(Finding(c, "G", "", ""))]
 
 
 def stage_checks(cfg, outdir, project_checks, step=None):
@@ -448,7 +476,7 @@ def stage_schematic(cfg, outdir):
     rows = []
     for board in cfg.boards.values():
         if board.bought:
-            rows.append(bought_row("S", "S-2", board))
+            rows.append(bought_row("S", "SYNC.schematic", board))
             continue
         if is_kicad(cfg):              # the schematic is the KiCad project's (handbook 16): name it by its file
             board = dataclasses.replace(board, template=f"{board.name}.kicad_sch")
@@ -456,15 +484,17 @@ def stage_schematic(cfg, outdir):
         args = argparse.Namespace(board=board.name, schematic=None, no_pins=False, json=str(out), verbose=False, wait=90)
         code = schematic.check(cfg, args)
         if code == 1:
-            rows.append({"stage": "S", "id": "S-2", "item": board.template, "check": "comparison not runnable",
+            rows.append({"stage": "S", "id": "SYNC.schematic", "item": board.template, "check": "comparison not runnable",
                          "result": "fail"})
             continue
         found = json.loads(out.read_text()) if out.exists() else {}
         for section, msgs in found.items():
-            rows += [{"stage": "S", "id": "S-2", "item": f"{board.template}: {section}", "check": m, "result": "fail"}
+            rows += [{"stage": "S", "id": "SYNC.schematic", "item": f"{board.template}: {section}", "check": m,
+                      "result": "fail"}
                      for m in msgs]
         if code == 0:
-            rows.append({"stage": "S", "id": "S-2", "item": board.template, "check": "schematic = graph", "result": "pass"})
+            rows.append({"stage": "S", "id": "SYNC.schematic", "item": board.template, "check": "schematic = graph",
+                         "result": "pass"})
     return rows
 
 
@@ -477,7 +507,7 @@ def upload(cfg, board):
 
 def maker_findings(cfg, rows):
     """{maker: {name, role, findings}} of a run: the rows a check that holds the board to that maker failed, warned or
-    left open (P-4, F-2, F-6, P-12, F-7 – the row names its maker, or its text starts with it)."""
+    left open (PARTS.stock, FILES.order, PARTS.fact/mpn, SYNC.odb – the row names its maker, or its text starts with it)."""
     from .. import makers
     out = {}
     for key in makers.listed(cfg):
@@ -511,7 +541,7 @@ def stage_fab(cfg, outdir, step=None):
         lost = [f for f in files if not (d / board.name / f).exists()]
         what = "(Gerber ZIP, BOM, CPL)" if files == [p.format(b=board.name) for p in UPLOAD] else \
             f"of [cart] makers ({', '.join(files)})"
-        rows.append({"stage": "F", "id": "F-4", "item": board.name, "check": f"manufacturing files of this run complete "
+        rows.append({"stage": "F", "id": "FILES.manifest", "item": board.name, "check": f"manufacturing files of this run complete "
                      f"{what}, checksums in the manifest", "actual": ", ".join(lost) or "complete",
                      "expected": "complete", "result": "fail" if lost else "pass"})
     return rows
@@ -522,7 +552,7 @@ def fab_hashes(cfg, outdir):
     from . import fab
     try:
         layers = {b: fab.fab_layers(outdir / "fab" / b, b) for b in cfg.made()}
-    except Exception as e:   # unreadable files: F-4/F-5 name them; the sign-offs with scope 'fab' then do not count
+    except Exception as e:   # unreadable files: FILES.manifest/FILES.set name them; the sign-offs with scope 'fab' then do not count
         print(f"  fab hash not computed: {e}", file=sys.stderr)
         return {}
     return {"fab_method": fab.FAB_METHOD, "fab_layers": layers, "fab_sha256": fab.fab_hash(layers)}
@@ -812,8 +842,13 @@ def write_protocol(cfg, outdir, head, rows, sim, signoff, notes, decision, reaso
                "passed with reservations" if c["warn"] or c["pending"] else
                "advisories (do not block)" if c["advisory"] else "passed")
         L.append(f"| {sid} {name} | {what} | {c['pass']} | {c['fail']} | {c['warn']} | {c['waived']} | {c['pending']} | {res} |")
-    L += ["\nIn P (parts) and G (graph) every rule without a finding counts once as passed; executed: "
-          + ", ".join(rules.label(k) for k in checks.executed(cfg)) + ".\n", "## 2 Findings\n"]
+    from .. import engines
+    prof = engines.profile(Design.from_config(cfg), cfg)
+    on = ["core", *prof.enabled]
+    L += [f"\nIn P (parts) and G (graph) every code without a finding counts once as passed – the codes the "
+          f"domain{'s' if len(on) > 1 else ''} {', '.join(on)} {'have' if len(on) > 1 else 'has'} on: "
+          + ", ".join(executed(prof, cfg)) + ".\n",
+          "## 2 Findings\n"]
     fails = [r for r in rows if r["result"] == "fail"] + [c | {"stage": "E"} for c in sim["checks"] if c["result"] == "fail"]
     advis = [r for r in rows if r["result"] == "advisory"]
     if advis:
@@ -823,17 +858,24 @@ def write_protocol(cfg, outdir, head, rows, sim, signoff, notes, decision, reaso
         L.append("No check failed.\n")
     else:
         L += ["| Stage | Check | Scenario | Item | Step | Actual | Expected |", "|---|---|---|---|---|---|---|"]
-        L += [f"| {f['stage']} | {rules.label(f['id'])} | {f.get('scenario', '')} | {f['item']} | {f['check']} | "
+        L += [f"| {f['stage']} | {catalog.label(f['id'])} | {f.get('scenario', '')} | {f['item']} | {f['check']} | "
               f"{f.get('actual', '')} | {f.get('expected', '')} |" for f in fails]
         L.append("")
-    # the notes of stages P and G, as edakit check prints them – E lists its own in section 7, P-2 and cost stand in 8
-    infos = [r for r in rows if r["result"] == "info" and r["stage"] in ("P", "G") and r["id"] not in ("P-2", "cost")]
+    # the notes of stages P and G, as edakit check prints them – E lists its own in section 7, FILES.sheet and cost stand in 8
+    infos = [r for r in rows if r["result"] == "info" and r["stage"] in ("P", "G")
+             and r["id"] not in ("FILES.sheet", "cost")]
+    from ..engines.coverage import coverage
+    gaps = coverage(Design.from_config(cfg), prof)
+    if gaps:
+        L += ["Not checked for lack of data – no finding, nobody looked (`edakit check --coverage`):\n",
+              *[f"- {g.line()}" for g in gaps], ""]
     if infos:
         L += ["Information (does not block the release, needs no acceptance):\n",
-              *[f"- {rules.label(r['id'])}: {r['check']}" for r in infos], ""]
+              *[f"- {catalog.label(r['id'])}: " + (f"{r['item']}: " if r["item"] and not str(r["check"]).startswith(
+                  str(r["item"])) else "") + str(r["check"]) for r in infos], ""]
     L.append("## 3 Warnings\n")
     warns = [c for c in [*sim["checks"], *rows] if c["result"] == "warn"]
-    gone = signoff.get("lapsed_warnings", [])
+    gone = signoff.get("lapsed", [])
 
     def verdict(w):
         if a := accepted(w, signoff):
@@ -844,12 +886,12 @@ def write_protocol(cfg, outdir, head, rows, sim, signoff, notes, decision, reaso
         was = ", ".join(f"{d} = {n}" for d, n in old["parts"].items()) if isinstance(old["parts"], dict) else ""
         return (f"**not accepted** (lapsed: {old['lapsed']}; accepted by {old.get('by')} ({old.get('date')})"
                 + (f" for {was}" if was else "") + ")")
-    L += [f"- `{key_of(w)}` ({rules.title(w['id']) or 'project check'}). Actual: {w.get('actual', '')}. "
+    L += [f"- `{key_of(w)}` ({catalog.title(w['id']) or 'project check'}). Actual: {w.get('actual', '')}. "
           f"Expected: {w.get('expected', '')}. → " + verdict(w) for w in warns] or ["None."]
     if gone:
         L += ["\nAcceptances that lapsed – a part they name is another one now; judge again and update `parts`, or "
               "remove them:\n", *[f"- `{a['match']}`: {a['lapsed']}" for a in gone]]
-    L.append("\n## 4 Waivers in the graph\n")
+    L.append("\n## 4 Accepted in the graph\n")
     L += [f"- {r['id']} {r['check']}  \n  reason: {r['reason']}" for r in rows if r["result"] == "waived"] or ["None."]
     L.append("\n## 5 Open sign-offs\n")
     L += [f"- [ ] {r['check']}" for r in rows if r["result"] == "pending"] or ["None."]
@@ -870,7 +912,7 @@ def write_protocol(cfg, outdir, head, rows, sim, signoff, notes, decision, reaso
     L += [f"- note: {n}" for n in notes + sheet_notes]
     L += datasheet_list(sheet)
     L += ["\n## 7 Simulation (stage E)\n", "| Scenario | Status | Nets | Supply current |", "|---|---|---|---|"]
-    for s in sim["scenarios"]:   # a transient run (E-5): lowest … highest voltage, peak current
+    for s in sim["scenarios"]:   # a transient run (LIM.v): lowest … highest voltage, peak current
         hi = s.get("nets_max", {})
         nets = ", ".join(f"{n} {v:.3f}" + (f" … {hi[n]:.3f}" if n in hi else "") + " V" for n, v in s.get("nets", {}).items())
         src = ", ".join(f"{d} {'peak ' if s.get('transient') else ''}{i * 1e3:.0f} mA" for d, i in s.get("sources", {}).items())
@@ -881,7 +923,7 @@ def write_protocol(cfg, outdir, head, rows, sim, signoff, notes, decision, reaso
     L += ["\n| Check | Step | passed | failed | warning | info |", "|---|---|---:|---:|---:|---:|"]
     L += [f"| {cid} | {what} | {n['pass']} | {n['fail']} | {n['warn']} | {n['info']} |" for (cid, what), n in sorted(agg.items())]
     L.append("\nAll single values: `sim.json`.\n")
-    shown = [r for r in rows if r["stage"] not in "PGE" or r["id"] in ("P-2", "cost")]
+    shown = [r for r in rows if r["stage"] not in "PGE" or r["id"] in ("FILES.sheet", "cost")]
     L.append("## 8 Other stages\n")
     if shown:
         L += ["| Stage | Check | Item | Step | Actual | Expected | Result |", "|---|---|---|---|---|---|---|"]
@@ -900,12 +942,12 @@ def write_protocol(cfg, outdir, head, rows, sim, signoff, notes, decision, reaso
                  + (":" if decision == "RELEASED" else " – **do not upload, state not released**:") + "\n")
         L += [f"- `{f}` `{h[:16]}…`" for f, h in files.items()]
     L.append("\n## 10 The rules behind the findings\n")
-    explained = [i for i in dict.fromkeys(c["id"] for c in [*fails, *warns]) if rules.entry(i)]
+    explained = [i for i in dict.fromkeys(c["id"] for c in [*fails, *warns]) if catalog.code(i)]
     for i in explained:
-        lines = rules.explain(i, indent="")
+        lines = catalog.explain(i, indent="")
         L += [f"**{lines[0]}**\n", *[f"- {line}" for line in lines[1:]], ""]
     if not explained:
-        L.append("No check of the catalog failed or warned. Every check: `edakit rules`.")
+        L.append("No code of the catalog failed or warned. Every code: `edakit rules`.")
     if cfg.requirements:    # [project] requirements: section 11, only then – every other section keeps its number
         L += ["\n## 11 Requirements\n",
               *requirements.section(reqs, signoff, [cfg.relative(p) for p in cfg.requirements])]
@@ -946,7 +988,7 @@ def main(cfg, args):
     routing = copper.load_routing(cfg) if sim_cfg.get("copper") else None   # the routed copper, as it is now
     sim = simrun.run_all(Design.from_config(cfg), sim_cfg, plugin=plugin, routing=routing)
     simrun.write_net_currents(cfg, sim)
-    rows += docs.stage_rows(cfg, design, sim)    # G-19: quoted values against this run's simulation
+    rows += docs.stage_rows(cfg, design, sim)    # DOCS.quote: quoted values against this run's simulation
     (outdir / "sim.json").write_text(json.dumps(sim, indent=1, ensure_ascii=False) + "\n", encoding="utf-8")
     stages_run = set(OFFLINE)
     if before:      # the checks before S, where [[release.stages]] always ran

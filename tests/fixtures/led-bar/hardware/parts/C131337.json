@@ -23,13 +23,13 @@
       "role": "pin2"
     }
   },
-  "params": {
+  "values": {
     "r_contact_ohm": 0.01,
     "pitch_mm": 2.0
   },
-  "ratings": {
+  "limits": {
     "i_max_a": 2.0,
-    "v_max": 100,
+    "v_max_v": 100,
     "t_min_c": -40,
     "t_max_c": 105
   },

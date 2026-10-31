@@ -21,9 +21,11 @@ of the repository owner. The checksum shows that the text is the one sealed here
    instead of proposing it again.
 3. `edakit proposal template` into a file in the scratchpad, filled in, in English:
    - **title:** a few words, like the title of a check ("hole fits the lead")
-   - **Kind:** `check` (a program decides it), `hint` (needs judgement), `block`, `part` (a fact from one part's
-     datasheet), `retire`
-   - **Rule, Why, Fix:** as they would stand in the rule catalog
+   - **Kind:** `fact` (a row of data: a limit or value of one part, a default every part of a kind has, a table row),
+     `relation` (a new code: what an engine would find that no code finds – a hint, where it needs judgement),
+     `domain` (a severity, a fact a kind must give, a reviewer's question), `block`, `retire`. A fact before a
+     relation: most lessons are a number a part did not have
+   - **Rule, Why, Fix:** as they would stand in the catalog (`edakit explain LIM.v` shows one)
    - **Finding:** designator or net, the numbers, the state (circuit hash or commit)
    - **Sources:** every source opened and read in this session – document number, revision, section. A rule from
      memory is said to be one; the triage asks for the source then.
@@ -48,5 +50,5 @@ The decision gets the issue: `edakit: #12` with its link. Commit in the project 
 | Result | In the project |
 |---|---|
 | **Question** | show the questions; answer with the user's words (`gh issue comment 12 --repo tgd1975/edakit --body …`), or change the proposal: edit the draft, seal it again, `gh issue edit 12 --repo tgd1975/edakit --body-file body.md`. Never edit the body by hand – the checksum fails then, on purpose |
-| **Accepted** – G-15 in #20 | after the pull request is merged and the plugin is updated: the decision gets `edakit: G-15`, then `edakit check` in the project |
+| **Accepted** – REQ.function in #20 | after the pull request is merged and the plugin is updated: the decision gets `edakit: REQ.function`, then `edakit check` in the project |
 | **Rejected** | the decision gets `edakit: rejected (#12)` and the reason in one line |

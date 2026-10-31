@@ -54,7 +54,7 @@ no foreign pins, no unknown nets), pin numbers **and names** and no-connect mark
 differs from the symbol (`D11/MOSI` in the graph, `D11` in the symbol) fails: the graph then assumed another
 pinout, and that is the error to catch here – or the library part disagrees with itself (an LED symbol naming pin 1
 `K` while its footprint prints `+` at pad 1). Names follow the symbol; the meaning sits in the roles. The gate runs it for every board
-(S-2). Run it also at the start of every EasyEDA session and before every gate run: a template once had a pin on two
+(SYNC.schematic). Run it also at the start of every EasyEDA session and before every gate run: a template once had a pin on two
 nets without anyone having written to it; regenerating fixed it.
 
 ## 6.3 Copy and lay out
@@ -148,17 +148,17 @@ designators are 1.8 mm high.
 A project without a PCB – a development board and hand wiring – never needs EasyEDA: checks, simulation and this
 drawing work from the graph alone. For a PCB, EasyEDA's board schematic stays the one that counts; the PCB hangs on it.
 
-## 6.6 Values quoted from the design data (G-19)
+## 6.6 Values quoted from the design data (DOCS.quote)
 
 A number in a note or a document goes stale when the circuit changes: R1 swapped from 2 k to 4.7 k, the simulation
 gives 4.02 mA, and the note still says "I_OUT = … = 9.45 mA". So a note or a document names the source of the number
 and edakit fills it in – a requirement's sentence the same way.
 
-- **Schematic notes** (`[layout.notes]`, 10.3) hold placeholders: `"I_OUT = {sim:max E-3 * D2 LED current*}"`.
+- **Schematic notes** (`[layout.notes]`, 10.3) hold placeholders: `"I_OUT = {sim:max SIM.state * D2 LED current*}"`.
   `schematic draw` and `schematic layout` fill them in when they draw; one that cannot be filled stays as written,
   with a warning. Only braces that start with a source are read – `{R1}` stays as it is.
 - **Markdown documents** listed in `[docs] files` (10.1) hold blocks, invisible when rendered:
-  `LED current <!--edakit sim:max E-3 * D2 LED current*-->9.45 mA<!--/edakit--> per output`. A file that is not
+  `LED current <!--edakit sim:max SIM.state * D2 LED current*-->9.45 mA<!--/edakit--> per output`. A file that is not
   listed is never read.
 
 | Source | Value |
@@ -169,7 +169,7 @@ and edakit fills it in – a requirement's sentence the same way.
 | `sim:max\|min\|one <pattern>` | the numeric actual of the simulation rows whose `ID scenario item check` matches the pattern – the key the sign-off file's `match` uses (8.2); `one` wants exactly one row |
 | `req:<ID>` | the `text` of a need or requirement of `[project] requirements` (3.6): `req:R-1`, `req:N-2` – on one line |
 
-A format after the source – `{sim:max E-3 * D2 LED current* %.1f mA}` – formats the number, scaled to the prefix
+A format after the source – `{sim:max SIM.state * D2 LED current* %.1f mA}` – formats the number, scaled to the prefix
 written after it; without one: three significant digits and the unit of the source (`4.02 mA`). `[docs] decimal =
 ","` writes a decimal comma. The simulation result is the one `edakit sim` saved last
 (`<artifacts>/sim/result.json`) while its inputs are unchanged; otherwise edakit simulates once.
@@ -183,17 +183,17 @@ must do, they quote the requirements file (3.6) by ID instead of copying the sen
 
 The quote is the entry's `text`, a line break in it as a space – a block is one line. A draft is quoted as it
 stands; when its text changes, the quote is stale like any other. A dropped entry is not quoted: it no longer holds,
-and a document that quotes it reads as if it did – G-19 names it with its reason; quote the entry that holds now, or
+and a document that quotes it reads as if it did – DOCS.quote names it with its reason; quote the entry that holds now, or
 drop the block. Its text stays in the requirements file, where `edakit req` shows it. Without `[project] requirements`
-a `req:` source is G-19 that names the key; a requirements file that does not read, G-19 with what is wrong in it.
+a `req:` source is DOCS.quote that names the key; a requirements file that does not read, DOCS.quote with what is wrong in it.
 The requirements file is in the circuit hash (8.2), the documents are not: a changed requirement voids M-1 and M-6,
 `edakit docs --write` then brings the quotes along without voiding anything.
 
 ```bash
-edakit docs            # G-19 for every block that differs from its source and every source that does not exist; exit 2
+edakit docs            # DOCS.quote for every block that differs from its source and every source that does not exist; exit 2
 edakit docs --write    # fill in the current values
 ```
 
-G-19 also runs in the gate's stage G on the gate's own simulation, an error like G-2 for a pin table. Documents and
+DOCS.quote also runs in the gate's stage G on the gate's own simulation, an error like STRUCT.lock for a pin table. Documents and
 the schematic file are in no hash (8.2): correcting a quoted number voids no sign-off. Put `edakit docs` into the
 pre-commit hook next to `edakit check` and `edakit sim`.

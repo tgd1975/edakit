@@ -266,9 +266,9 @@ def test_fab_collects_the_files_of_stages_l_and_f_from_kicad(project, fake_cli):
     rows = fab.Rows()
     from edakit.design import Design
     fab.check_fab(cfg, board, Design.from_config(cfg), d, rows)
-    f1 = next(r for r in rows if r["id"] == "F-1")
+    f1 = next(r for r in rows if r["id"] == "SYNC.bom")
     assert f1["result"] == "pass" and "KiCad" in f1["check"], f1
-    f3 = next(r for r in rows if r["id"] == "F-3")
+    f3 = next(r for r in rows if r["id"] == "SYNC.cpl")
     assert f3["result"] == "pass", f3
 
 
@@ -340,5 +340,5 @@ def test_the_gates_stage_s_reads_the_kicad_schematic(project, fake_cli):
     out = project.root / "build" / "release" / "run"
     out.mkdir(parents=True)
     rows = gate.stage_schematic(cfg, out)
-    assert rows == [{"stage": "S", "id": "S-2", "item": "main.kicad_sch", "check": "schematic = graph",
+    assert rows == [{"stage": "S", "id": "SYNC.schematic", "item": "main.kicad_sch", "check": "schematic = graph",
                      "result": "pass"}]

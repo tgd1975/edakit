@@ -1,23 +1,24 @@
 """edakit command line. Every command reads the project's edakit.toml (see handbook/10-reference.md).
 
     edakit check                     stages P/G: rule checks on the graph (offline, < 1 s)
-    edakit rules [ID ...]            the rule catalog: what each check and hint is about, why, what to do
-    edakit hints                     design hints that apply to the graph, notes from the parts database
+    edakit rules [CODE ...]          the engines and the codes of the catalog
+    edakit explain CODE ...          rule, why, fix and sources of a code (LIM.v, REQ.missing …)
     edakit block list|show|add       building blocks with checked parts into the graph
     edakit part import LCSC [--update]   symbol pins and footprint of an LCSC number from the library – no EasyEDA
+    edakit part lint [KEY ...]       every parts entry held to the schema of its kind (catalog/kinds.toml)
     edakit part diff OLD NEW         how a new footprint maps onto the old one before a swap (offline)
     edakit part fetch KEY [--url U] | --all   a part's datasheet PDF, kept beside the project and checked to be of it
     edakit part search "KEYWORDS"    JLCPCB's parts catalogue: LCSC number, class, stock – no EasyEDA
     edakit part datasheet|own        own parts: a board of an edakit project as a part in another project
     edakit part footprint KEY [--write]   a library footprint as data in the parts entry (footprint_data) – offline
     edakit part build KEY [--write]  the project's copy in EasyEDA built from the entry's footprint data
-    edakit stock [--refresh]         what JLCPCB says about the assembled parts, as a dated snapshot (check P-4)
+    edakit stock [--refresh]         what JLCPCB says about the assembled parts, as a dated snapshot (check PARTS.stock)
     edakit cost [--json F]           the order for `quantity` boards from BOM, board and the dated fee table
-    edakit order [--out DIR]         the assembler's BOM, a cart per other supplier, the hand-assembly list (P-5)
+    edakit order [--out DIR]         the assembler's BOM, a cart per other supplier, the hand-assembly list (PARTS.supplier)
     edakit cart fields|prepare|check|actual   the order at the maker: its form from [order], the job of the skill
-                                     cart, B-1 to B-7 on what it brought back, the real cost (never orders, never pays)
+                                     cart, ORDER.form to ORDER.review on what it brought back, the real cost (never orders, never pays)
     edakit sim                       stage E: ngspice operating points of all scenarios (offline, seconds)
-    edakit docs [--write]            values quoted in documents and schematic notes: G-19 for stale ones, --write fills in
+    edakit docs [--write]            values quoted in documents and schematic notes: DOCS.quote for stale ones, --write fills in
     edakit firmware [--check]        the board's firmware contract as JSON from the graph; --check: drift (opt-in)
     edakit req [ID ...]              what the circuit must do: needs and requirements with status, binding, evidence;
                                      with an ID its chain – from where, the requirement, what verifies it (opt-in)
@@ -42,9 +43,12 @@
     edakit lock [status|claim|release|yield CHAT]   share EasyEDA between parallel Claude sessions
     edakit proposal template|seal|verify   a rule or feature proposal for the edakit repository, sealed with its SHA-256
     edakit doctor                    Node, easyeda-mcp-pro, bridge, EasyEDA process, ngspice, Freerouting
+    edakit convert [--write]         graph, parts entries and sign-off file into the form of the restructuring
+    edakit domains [--review R]      the project's domains (core, usb, radio …): on, off, suggested; with --review the
+                                     questions of the enabled domains for the electrical, regulatory or pcb review
 
 Exit codes everywhere: 0 = ok, 2 = findings, 1 = error. `edakit lock`, `edakit run` of an easyeda script: 3 = another
-session holds EasyEDA. `edakit cart check`: 3 = B-1 to B-6 passed, the regulatory review of the order (B-7) is open.
+session holds EasyEDA. `edakit cart check`: 3 = ORDER.form to ORDER.finish passed, the regulatory review of the order (ORDER.review) is open.
 `route all|drc` and `silk apply|check`: 3 = the DRC's only item is "Import Changes" and schematic = PCB – EasyEDA
 waits for the import acknowledgement (Design → Import Changes once).
 """
@@ -72,13 +76,28 @@ def build_parser():
     p = sub.add_parser("check", help="rule checks on the graph (stages P, G)")
     p.add_argument("--release", action="store_true", help="also fail on open sign-offs")
     p.add_argument("--json", help="write the findings as JSON")
+    p.add_argument("--coverage", action="store_true", help="list what went unchecked for lack of data, per code")
     _common(p)
 
-    p = sub.add_parser("rules", help="the rule catalog: checks and hints with reason, fix and sources")
-    p.add_argument("ids", nargs="*", help="check or hint IDs, e.g. G-4 L-9 H-1 (default: the list)")
+    p = sub.add_parser("rules", help="the engines and codes of the catalog")
+    p.add_argument("ids", nargs="*", help="codes (LIM.v); an old check ID (G-4) names the codes replacing it; default: "
+                                          "the list")
 
-    p = sub.add_parser("hints", help="design hints that apply to the graph, and notes from the parts database")
-    p.add_argument("--json", help="write them as JSON")
+    p = sub.add_parser("explain", help="rule, why, fix and sources of a code")
+    p.add_argument("ids", nargs="+", help="codes, e.g. LIM.v REQ.missing (an old ID such as LIM.v names its codes)")
+
+    p = sub.add_parser("domains", help="the domains of the project: on, off, suggested; the reviewers' questions")
+    p.add_argument("--review", choices=["electrical", "regulatory", "pcb"], help="the questions of the enabled domains "
+                                                                                "for this review")
+    _common(p)
+
+    p = sub.add_parser("convert", help="graph, parts entries and sign-off file into the form of the restructuring")
+    p.add_argument("--write", action="store_true", help="write the converted files (default: list them)")
+    _common(p)
+
+    p = sub.add_parser("mutate", help="mistakes built into a copy of the design one at a time: what no code catches")
+    p.add_argument("--sim", action="store_true", help="judge each mistake with the simulation as well (slower)")
+    p.add_argument("--json", help="write every mistake with what caught it as JSON")
     _common(p)
 
     p = sub.add_parser("block", help="building blocks: list, show, or add one to the graph")
@@ -93,7 +112,8 @@ def build_parser():
 
     p = sub.add_parser("part", help="the library's data of an LCSC number, a footprint swap compared, datasheets, "
                                     "a catalogue search, own parts, own footprints as data")
-    p.add_argument("action", choices=["import", "diff", "fetch", "search", "datasheet", "own", "footprint", "build"])
+    p.add_argument("action", choices=["import", "diff", "fetch", "search", "datasheet", "own", "footprint", "build",
+                                      "lint"])
     p.add_argument("source", nargs="?", help="import: the LCSC number; diff: the old part; fetch, footprint, build: "
                                              "the parts-entry key; search: the keywords; own: the board's project (its "
                                              "directory or edakit.toml)")
@@ -114,7 +134,7 @@ def build_parser():
                                                         "rebuild the copy in EasyEDA (default: show only)")
     _common(p)
 
-    p = sub.add_parser("stock", help="ask JLCPCB about every assembled part and write the stock snapshot (P-4)")
+    p = sub.add_parser("stock", help="ask JLCPCB about every assembled part and write the stock snapshot (PARTS.stock)")
     p.add_argument("--board", help="only the parts of this board")
     p.add_argument("--refresh", action="store_true", help="ask about every part again, not only missing or old ones")
     p.add_argument("--lcsc", nargs="+", metavar="C", help="print what JLCPCB says about these parts, write nothing "
@@ -144,7 +164,7 @@ def build_parser():
     p.add_argument("--keep", help="keep netlists and ngspice output in this directory")
     _common(p)
 
-    p = sub.add_parser("docs", help="values quoted from the design data in documents and notes (G-19)")
+    p = sub.add_parser("docs", help="values quoted from the design data in documents and notes (DOCS.quote)")
     p.add_argument("--write", action="store_true", help="fill in the current values")
     _common(p)
 
@@ -288,8 +308,11 @@ def _main(argv=None):
         from . import lock
         return lock.main(args)
     if args.command == "rules":
-        from . import rules
-        return rules.main_rules(args)
+        from . import catalog
+        return catalog.main_rules(args)
+    if args.command == "explain":
+        from . import catalog
+        return catalog.main_explain(args)
     if args.command == "proposal":
         from . import proposal
         return proposal.main(args)
@@ -316,15 +339,21 @@ def _main(argv=None):
     if args.command == "check":
         from . import checks
         return checks.main(cfg, args)
-    if args.command == "hints":
-        from . import rules
-        return rules.main_hints(cfg, args)
     if args.command == "block":
         from . import block
         return block.main(cfg, args)
     if args.command == "part":
         from . import part
         return part.main(cfg, args)
+    if args.command == "mutate":
+        from . import mutate
+        return mutate.main(cfg, args)
+    if args.command == "convert":
+        from . import convert
+        return convert.main(cfg, args)
+    if args.command == "domains":
+        from . import profile
+        return profile.main(cfg, args)
     if args.command == "stock":
         from . import stock
         return stock.main(cfg, args)

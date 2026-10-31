@@ -1,0 +1,26 @@
+# The domain guitar: pedals, instrument preamps and their supplies – the load on a pickup, stable gain, the battery
+# through the jack, the pedal's supply among others (concept rules-at-scale.md, section 5; maker-coverage clusters
+# GTP, GTI).
+
+[domain]
+name = "guitar"
+about = "guitar pedals and instrument electronics: input loading, stable gain, battery and supply, the player's ground"
+suggested_by = { nets = ["instrument"] }
+
+[switch]
+on = ["REQ.forbidden:btl"]
+
+[severity]
+
+[hints]
+apply = ["HINT.jack_battery", "HINT.pedal_supply", "HINT.string_ground", "HINT.audio_switching", "HINT.signal_ceramic"]
+
+[review]
+electrical = [
+  "The instrument input: the load the pickup or piezo sees – bias resistors, a tuner branch and the first stage in parallel – against what it needs (REQ.value/instrument, net load_min_ohm), an input high-pass, a series resistor against ESD at the jack.",
+  "Bias of discrete stages: transistor stages across the spread of hFE and of the JFETs' IDSS and VGS(off) – the simulation takes the entry's values, not their spread; ask for the worst part.",
+  "DC where signals are switched: both sides of a footswitch, relay contact or pot at the same DC level in every state, else it pops (LVL.undefined/analog finds a node without a DC path).",
+]
+
+[fixtures]
+clean = []

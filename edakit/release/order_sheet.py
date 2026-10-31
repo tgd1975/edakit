@@ -1,6 +1,6 @@
 """The order form of one board – written per gate run from [order] (edakit's defaults, [order] of edakit.toml, [order]
 of the board file) and thickness_mm, [release] assembly, the stock snapshot and the manufacturing files of the run –
-and check F-6 (order settings = board, per maker). Both when the board has [order] or the project has [cart];
+and check FILES.order (order settings = board, per maker). Both when the board has [order] or the project has [cart];
 `fab.run` calls `check` after the F checks.
 
     DIR/<board>/order.md   every field of the planned maker's form ([cart] maker, JLCPCB without it), in the order of
@@ -15,7 +15,7 @@ and check F-6 (order settings = board, per maker). Both when the board has [orde
                            neither is in it. Without [order] the file is not there (a stale one is removed), and the
                            fab hash is the files' alone, as before
 
-  F-6  per maker of [cart] makers – a finding fails for [cart] maker and warns for every other one (makers.result):
+  FILES.order  per maker of [cart] makers – a finding fails for [cart] maker and warns for every other one (makers.result):
        every field's value is one the maker's form offers (its profile's fields), no combination its profile excludes;
        the remark fits the form (JLCPCB: at most 200 characters, ASCII); thickness_mm is a thickness of the form; the
        silkscreen colour is the one the maker prints on the mask colour; mark = "specify" needs the maker's placeholder
@@ -26,7 +26,7 @@ and check F-6 (order settings = board, per maker). Both when the board has [orde
        tooling_min warns (JLCPCB: Economic, 2 – it adds its own); a provisional profile is named as information.
        Independent of the maker: layers and size_mm, where set, are those of the Gerber files; panel_by_customer fails
        – the run's Gerber is one board; pcba_quantity is at most quantity, and another number than [project] quantity
-       warns (P-4 and F-2 count that many sets); copper within tab_copper_mm of a declared tab zone fails – measured
+       warns (PARTS.stock counts that many sets); copper within tab_copper_mm of a declared tab zone fails – measured
        on the Gerber copper of both sides against the Gerber outline. The free outline stretches are information.
 
 Coordinates in messages and in order.md are Gerber mm (EasyEDA, seen from the top) – what the maker sees; tab zones
@@ -257,10 +257,10 @@ def field_text(f):
     return f["value"] + (f" – {f['note']}" if f.get("note") and f["key"] not in ("remark",) else "")
 
 
-# --- F-6 --------------------------------------------------------------------------------------------------------------
+# --- FILES.order --------------------------------------------------------------------------------------------------------------
 
 class Check:
-    """The rows of F-6 for one maker: a finding fails for the planned maker and warns for every other one; a warning
+    """The rows of FILES.order for one maker: a finding fails for the planned maker and warns for every other one; a warning
     stays a warning, information stays information."""
 
     def __init__(self, cfg, board, maker, rows):
@@ -270,7 +270,7 @@ class Check:
     def add(self, check, ok, actual, expected, level=None):
         result = "pass" if ok and level != "info" else level if level in ("warn", "info") else \
             makers.result(self.cfg, self.maker.key, False)
-        self.rows.add("F", "F-6", self.board.name, check, ok, actual, expected, result)
+        self.rows.add("F", "FILES.order", self.board.name, check, ok, actual, expected, result)
         self.rows[-1]["maker"] = self.maker.key
 
 
@@ -414,22 +414,22 @@ def check_derived(cfg, board, o, g, rows):
     """Keys only to check (layers, size_mm), a panel edakit does not draw, the quantities – the same for every maker."""
     layers, size = facts(g)
     if "layers" in o.get("_from", {}):
-        rows.add("F", "F-6", board.name, "layers = the run's Gerber files ([order] layers)", o["layers"] == layers,
+        rows.add("F", "FILES.order", board.name, "layers = the run's Gerber files ([order] layers)", o["layers"] == layers,
                  f"{layers} copper layers in the Gerber files", f"{o['layers']} ([order] layers)")
     if "size_mm" in o.get("_from", {}):
         ok = size is not None and all(abs(a - b) <= SIZE_TOL_MM for a, b in zip(sorted(size), sorted(o["size_mm"])))
-        rows.add("F", "F-6", board.name, "size = the run's Gerber outline ([order] size_mm)", ok,
+        rows.add("F", "FILES.order", board.name, "size = the run's Gerber outline ([order] size_mm)", ok,
                  f"{size[0]:.2f} x {size[1]:.2f} mm (Gerber outline)" if size else "no closed outline",
                  f"{o['size_mm'][0]:g} x {o['size_mm'][1]:g} mm ± {SIZE_TOL_MM} mm")
     if o["delivery"] == "panel_by_customer":
-        rows.add("F", "F-6", board.name, "delivery = the run's files", False, 'delivery = "panel_by_customer" – the '
+        rows.add("F", "FILES.order", board.name, "delivery = the run's files", False, 'delivery = "panel_by_customer" – the '
                  "run's Gerber is one board, edakit draws no panel; single, or panel_by_maker with panel",
                  "single or panel_by_maker")
     q, n = o["quantity"], o["pcba_quantity"]
-    rows.add("F", "F-6", board.name, "PCBA quantity at most the PCB quantity", n <= q,
+    rows.add("F", "FILES.order", board.name, "PCBA quantity at most the PCB quantity", n <= q,
              f"pcba_quantity {n}, quantity {q}", "pcba_quantity <= quantity")
     if n != cfg.quantity:
-        rows.add("F", "F-6", board.name, "PCBA quantity = [project] quantity (the sets P-4 and F-2 count)", False,
+        rows.add("F", "FILES.order", board.name, "PCBA quantity = [project] quantity (the sets PARTS.stock counts)", False,
                  f"pcba_quantity {n}, [project] quantity {cfg.quantity} – the stock checks count "
                  f"{cfg.quantity} sets", f"{cfg.quantity}", "warn")
 
@@ -441,12 +441,12 @@ def check_tabs(board, o, g, rows):
     lost = gerber.missing(g, "outline", "top", "bottom")
     if lost:
         if o["tab_zones"]:
-            rows.add("F", "F-6", board.name, "tab zones free of copper", False, f"{', '.join(lost)} missing", "present")
+            rows.add("F", "FILES.order", board.name, "tab zones free of copper", False, f"{', '.join(lost)} missing", "present")
         return None
     poly = outline(g)
     if poly is None:
         if o["tab_zones"]:
-            rows.add("F", "F-6", board.name, "tab zones free of copper", False, "no closed outline in the Gerber files",
+            rows.add("F", "FILES.order", board.name, "tab zones free of copper", False, "no closed outline in the Gerber files",
                      "closed outline")
         return None
     ring, cu, mm = poly.exterior, copper(g), o["tab_copper_mm"]
@@ -457,7 +457,7 @@ def check_tabs(board, o, g, rows):
         off = [f"{pt(p)} is {Point(p).distance(ring):.2f} mm off the outline" for p in (ea, eb)
                if Point(p).distance(ring) > ON_OUTLINE_MM]
         if off:
-            rows.add("F", "F-6", board.name, f"tab zone {name} on the outline", False, "; ".join(off),
+            rows.add("F", "FILES.order", board.name, f"tab zone {name} on the outline", False, "; ".join(off),
                      f"<= {ON_OUTLINE_MM} mm")
             zones.append((name, None))
             continue
@@ -465,13 +465,13 @@ def check_tabs(board, o, g, rows):
         dist = line.distance(cu) if not cu.is_empty else math.inf
         at = nearest_points(line, cu)[0] if not cu.is_empty else None
         ok = dist >= mm - 1e-6
-        rows.add("F", "F-6", board.name, f"tab zone {name}: no copper within tab_copper_mm of the edge", ok,
+        rows.add("F", "FILES.order", board.name, f"tab zone {name}: no copper within tab_copper_mm of the edge", ok,
                  f"{line.length:.1f} mm, nearest copper {dist:.2f} mm" if ok
                  else f"copper {dist:.2f} mm from the edge at {pt((at.x, at.y))}", f">= {mm:.2f} mm (tab_copper_mm)")
         zones.append((name, dist))
     free = free_stretches(ring, cu, mm)
     longest = sorted(free, key=lambda p: -p.length)
-    rows.add("F", "F-6", board.name, f"outline stretches with no copper within {mm:.2f} mm (where tabs can go)", True,
+    rows.add("F", "FILES.order", board.name, f"outline stretches with no copper within {mm:.2f} mm (where tabs can go)", True,
              f"{len(free)}, {sum(p.length for p in free):.1f} of {ring.length:.1f} mm"
              + (": " + "; ".join(piece_text(p) for p in longest[:4]) if free else ""), "information", "info")
     return poly, free, zones
@@ -507,7 +507,7 @@ def sheet(cfg, design, board, maker, o, fields, bom, tabs):
     L = [f"# Order form – board {board.name} ({board.title}), {cfg.project}\n",
          f"Written by edakit for {maker.name} ({'[cart] maker' if given else 'the maker without [cart]'}) from the "
          "keys of [order] – edakit's defaults, [order] of edakit.toml and of the board file –, [release] assembly, "
-         "the stock snapshot and the files of this run; check F-6 compares them. Upload only from a released run "
+         "the stock snapshot and the files of this run; check FILES.order compares them. Upload only from a released run "
          "(manifest.json); `edakit cart prepare` fills the form from these fields. Coordinates: Gerber mm. The "
          "settings that change the board as made count in the fab hash (order.json): a sign-off of scope fab, like "
          "M-5, holds for them as written here.\n"]
@@ -545,7 +545,7 @@ def sheet(cfg, design, board, maker, o, fields, bom, tabs):
     L.append("")
     L += ["## Tabs\n"]
     if tabs is None:
-        L.append("Not measured – Gerber outline or copper missing (F-5).\n")
+        L.append("Not measured – Gerber outline or copper missing (FILES.set).\n")
     else:
         _, free, zones = tabs
         L.append(f"Copper kept from the edge where a tab may go: {o['tab_copper_mm']:.2f} mm (tab_copper_mm), "
@@ -569,7 +569,7 @@ def sheet(cfg, design, board, maker, o, fields, bom, tabs):
 
 
 def check(cfg, board, design, d, rows, bom):
-    """F-6, order.md and order.json for one board – when it has [order] (of its board file or of edakit.toml) or the
+    """FILES.order, order.md and order.json for one board – when it has [order] (of its board file or of edakit.toml) or the
     project has [cart]; order.json only with [order]: without it a stale order.json of an earlier run in d goes, so
     that the fab hash holds no settings the project does not give."""
     import json
@@ -597,7 +597,7 @@ def check(cfg, board, design, d, rows, bom):
     fields = form(cfg, design, board, d, planned, o, bom, placeholders(board, data, planned)[0])
     (d / "order.md").write_text(sheet(cfg, design, board, planned, o, fields, bom, tabs), encoding="utf-8")
     pcba = makers.pcba(cfg)
-    rows.add("F", "F-6", board.name, "order form of this run", True,
+    rows.add("F", "FILES.order", board.name, "order form of this run", True,
              f"order.md: {planned.name}, {pcba[0].capitalize() + ' PCBA' if bom else 'PCB only'}, mark "
              f"{planned.word('mark', o['mark'])}"
              + (f", tooling {planned.word('tooling', 'customer' if board.tooling else 'maker')}" if bom else ""),

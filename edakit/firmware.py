@@ -5,7 +5,7 @@ entries as neutral JSON – and its drift.
     edakit firmware --check    compare the committed contract with the graph; exit 2 on drift (pre-commit hook)
 
 Opt-in: only with [firmware] in edakit.toml. Without it nothing changes – a project whose firmware is the reference
-keeps checking the graph against the firmware with checks.pin_locks (G-2); both can stand side by side. Turning the
+keeps checking the graph against the firmware with locks.pins (STRUCT.lock); both can stand side by side. Turning the
 contract into firmware source (a MicroPython module, a C header) is the project's job: a script that reads the JSON.
 
 What the contract holds (handbook 3.5):
@@ -13,14 +13,14 @@ What the contract holds (handbook 3.5):
     mcu        the MCU it describes ([firmware] mcu, default the one part with GPIO pins)
     pins       {net: {pin, name, gpio, dir, pull, idle, active[, leds, fn, fn_bus, pwm_hz]}} – every connected pin of
                the MCU with the role gpio; gpio is the first group of [firmware] gpio over the pin's name
-    pwm        {net: pwm_hz or null} of the nets with fn "pwm" (graph, G-15)
+    pwm        {net: pwm_hz or null} of the nets with fn "pwm" (graph, REQ.function)
     inputs     buttons and switches on MCU pins with their active level; DIP switches bit by bit in the order of their
                roles a1 … aN / b1 … bN
-    buses      {fn_bus: {fn: net}} (graph, G-15), I2C lines by pin role sda/scl as "i2c"
+    buses      {fn_bus: {fn: net}} (graph, REQ.function), I2C lines by pin role sda/scl as "i2c"
     chains     from an MCU net through the roles sdi → sdo of shift registers and LED drivers: data net, parts in
                shift order, read-back net (the last sdo on an MCU pin), the MCU nets every part of it shares, and
-               params.first_bit_to of its parts ("unknown" without it)
-    channels   driver outputs (roles out0 … outN) → the LEDs they light, traced as E-3/E-4 trace them (directly, behind
+               values.first_bit_to of its parts ("unknown" without it)
+    channels   driver outputs (roles out0 … outN) → the LEDs they light, traced as SIM.state/SIM.driver trace them (directly, behind
                0 Ω bridges, behind a balancing resistor); channel = the outputs of the drivers before it in its chain
                + its output number
 
@@ -36,10 +36,10 @@ import re
 import sys
 from pathlib import Path
 
-from . import checks
+from . import circuit
 from .design import natural_key
 from .sim.netlist import led_roles, out_role
-from .sim.run import behind_resistor, led_on_output
+from .engines.sim import behind_resistor, led_on_output
 
 SWITCH_KINDS = ("button", "switch", "dip_switch")
 DRIVES_MCU = ("output", "power_output")          # pin types that drive a net the MCU reads
@@ -81,8 +81,8 @@ class Board:
         self.d, self.mcu = design, mcu
         self.j = design.joined()
         self.join = design.joined_nets()
-        self.rails = checks.supply_nets(self.j)
-        self.res = checks.resistor_like(self.j)
+        self.rails = circuit.supply_nets(self.j)
+        self.res = circuit.resistor_like(self.j)
 
     def jn(self, net):
         return self.join.get(net, net)
@@ -95,7 +95,7 @@ class Board:
         return [r for r in self.j.nets[net]["pins"] if r.split(".", 1)[0] != self.mcu]
 
     def pulls_at(self, net, skip=()):
-        return [(des, checks.resistor_value(self.j, des), other) for des, a, b in self.res if des not in skip
+        return [(des, circuit.resistor_value(self.j, des), other) for des, a, b in self.res if des not in skip
                 and net in (a, b) and self.level(other := b if a == net else a) is not None]
 
     def series(self, net):
@@ -121,7 +121,7 @@ class Board:
         vals = [v for _, v, _ in found]
         ohm = 1 / sum(1 / v for v in vals) if vals and all(vals) else None
         if ohm is not None and chain:
-            ohm += checks.resistor_value(self.j, chain[0]) or 0
+            ohm += circuit.resistor_value(self.j, chain[0]) or 0
         return {"dir": "up" if dirs.pop() else "down", "by": chain + sorted({d for d, _, _ in found}, key=natural_key),
                 "ohm": round(ohm, 6) if ohm is not None else None}
 
@@ -154,7 +154,7 @@ def gpio_leds(board, nets):
                 net = board.jn(net) if net else None
                 at = net if net in nets else behind.get(net)
                 if at:
-                    color = color or (part.get("params") or {}).get("color")
+                    color = color or circuit.values(part).get("color")
                     out.setdefault(at, []).append({"des": des, **({"color": color} if color else {}), "side": side})
                     break
     return out
@@ -251,7 +251,7 @@ def chains(board, pins):
             reach = [{mcu_nets[n] for num in j.part(d)["pins"] if (n := j.pin_net.get(f"{d}.{num}")) in mcu_nets}
                      for d in parts]
             common = set.intersection(*reach) - {net, back}
-            facts = {d: (j.part(d).get("params") or {}).get("first_bit_to") or "unknown" for d in parts}
+            facts = {d: circuit.values(j.part(d)).get("first_bit_to") or "unknown" for d in parts}
             first = next(iter(facts.values())) if len(set(facts.values())) == 1 else facts   # per part where they differ
             out.append({"data": net, "parts": parts, "read_back": back, "first_bit_to": first,
                         "common": sorted(common, key=natural_key)})
@@ -259,7 +259,7 @@ def chains(board, pins):
 
 
 def channels(board, chain_list):
-    """Driver output → LEDs, as E-3/E-4 trace them."""
+    """Driver output → LEDs, as SIM.state/SIM.driver trace them."""
     d = board.d
     drivers = [x for x in d.comps if role_pins(d, x, out_role)]
     chained = {p: (i, pos) for i, ch in enumerate(chain_list) for pos, p in enumerate(ch["parts"])}
@@ -285,7 +285,7 @@ def channels(board, chain_list):
             a, k = (board.jn(n) if (n := d.pins_by_role(des).get(r)) else None for r in (a_role, k_role))
             hit = led_on_output(outs, behind, a, k)
             if hit:
-                color = color or (part.get("params") or {}).get("color")
+                color = color or circuit.values(part).get("color")
                 entry = {"des": des, **({"color": color} if color else {})}
                 lit.setdefault(hit[0], {"leds": [], "reversed": []})["leds" if hit[1] == "cathode" else "reversed"] \
                     .append(entry)

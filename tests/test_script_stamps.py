@@ -60,9 +60,12 @@ def edakit(project, monkeypatch, capsys, *argv):
 
 
 def check(project, capsys):
-    """edakit check: (exit code, its lines with the ID scripts)."""
-    code = checks.main(project.config(), argparse.Namespace(release=False, json=None))
-    return code, [line for line in capsys.readouterr().out.splitlines() if line.split()[1:2] == ["scripts"]]
+    """edakit check: (exit code, its findings of the project scripts, SYNC.scripts, as lines "LEVEL   scripts  text")."""
+    out = project.root / "check.json"
+    code = checks.main(project.config(), argparse.Namespace(release=False, json=str(out)))
+    capsys.readouterr()
+    return code, [f"{f['severity'].upper():<8}scripts  {f['text']}" for f in json.loads(out.read_text())["findings"]
+                  if f["code"] == "SYNC.scripts"]
 
 
 def stamp(project, monkeypatch, capsys, *names):
@@ -254,15 +257,15 @@ def test_an_input_fails_a_derive_or_easyeda_script_warns(project, capsys):
         f"WARNING scripts  lib never run: no stamp in {LOCK} – The module's footprint (D-13)"])
     rows = scripts.gate_rows(cfg)
     assert [(r["stage"], r["id"], r["item"], r["result"], r["check"].split(":")[0]) for r in rows] == [
-        ("G", "scripts", "", "fail", "kunst never run"), ("G", "scripts", "", "warn", "bild never run"),
-        ("G", "scripts", "", "warn", "lib never run")]
+        ("G", "SYNC.scripts", "", "fail", "kunst never run"), ("G", "SYNC.scripts", "", "warn", "bild never run"),
+        ("G", "SYNC.scripts", "", "warn", "lib never run")]
 
 
 def test_entries_that_do_not_resolve_fail_the_gate(project):
     """The user's decision: edakit refuses entries that do not resolve – stage G fails, and no stamp is compared."""
     ts.resolve(project, ts.entry("x", kind="input", **ts.X, writes=["build/x.json"]))
     rows = scripts.gate_rows(project.config())
-    assert [(r["stage"], r["id"], r["result"]) for r in rows] == [("G", "scripts", "fail")]
+    assert [(r["stage"], r["id"], r["result"]) for r in rows] == [("G", "SYNC.scripts", "fail")]
     assert rows[0]["check"].startswith("x: an input, but no edakit step reads what it writes (build/x.json)")
 
 
@@ -275,8 +278,8 @@ def test_the_gate_reports_the_scripts_in_stage_g(project, monkeypatch, capsys):
     code, _ = edakit(project, monkeypatch, capsys, "gate", "--no-scripts")
     assert code == 2
     text = (sorted((project.root / "build" / "release").iterdir())[-1] / "protocol.md").read_text()
-    assert f"| G | scripts |  |  | kunst never run: no stamp in {LOCK} – {ABOUT} |  |  |" in tg.section(text, 2)
-    assert (f"- `scripts bild never run: no stamp in {LOCK} – The board as a picture for the README` (project check). "
+    assert f"| G | SYNC.scripts (project scripts current) |  |  | kunst never run: no stamp in {LOCK} – {ABOUT} |  |  |" in tg.section(text, 2)
+    assert (f"- `SYNC.scripts bild never run: no stamp in {LOCK} – The board as a picture for the README` (project scripts current). "
             "Actual: . Expected: . → **not accepted**") in tg.section(text, 3)
     stages = tg.section(text, 1)
     assert "| G Graph |" in stages and "1 check(s) failed (section 2)" in text

@@ -1,9 +1,9 @@
 """Who supplies what for `quantity` sets: the assembler's BOM, one cart per other supplier, the hand-assembly list –
-and check P-5 (every bought part has a supplier).
+and check PARTS.supplier (every bought part has a supplier).
 
     edakit order [--out DIR]          default <artifacts>/order/
 
-    bom_<board>.csv        the assembler's BOM, the file F-1 writes – none for a bought board (bought = true)
+    bom_<board>.csv        the assembler's BOM, the file SYNC.bom writes – none for a bought board (bought = true)
     cart_<supplier>.csv    LCSC in its BOM tool's columns "LCSC Part Number,Quantity,Comment"; any other supplier
                            "Code,Quantity,Item,Designators"
     hand_assembly.md       per board the parts fitted by hand (designator, part, side, supplier), and the items off the
@@ -19,7 +19,7 @@ spare, moq, step, unit_price, currency) – the list `edakit cost` prices.
 Pieces per cart line: ceil(per set x quantity x (1 + [project] spare_pct / 100)) + the components' or the item's
 `spare`, at least `moq`, a multiple of `step`. Own parts (`own` in the entry) are made, not bought: no cart.
 
-  P-5  a part bought separately (bom: false) has an LCSC number – not a C99… EasyEDA library number – or `order` in its
+  PARTS.supplier  a part bought separately (bom: false) has an LCSC number – not a C99… EasyEDA library number – or `order` in its
        parts entry (warning)
 """
 
@@ -168,7 +168,7 @@ def hand_assembly(cfg, design, lost):
 
 
 def check(design, rep, cfg=None):
-    """P-5: a part bought separately (bom: false) names where it comes from. A C99… number is no LCSC number."""
+    """PARTS.supplier: a part bought separately (bom: false) names where it comes from. A C99… number is no LCSC number."""
     by_entry = defaultdict(list)
     for des, c in design.comps.items():
         if c.get("bom") is not False or orderable(c.get("lcsc")) or not (c.get("lcsc") or c.get("part")):
@@ -178,7 +178,7 @@ def check(design, rep, cfg=None):
             continue
         by_entry[(entry.get("mpn") or c.get("part") or c["lcsc"], c.get("lcsc"))].append(des)
     for (mpn, lcsc), refs in sorted(by_entry.items(), key=lambda kv: natural_key(kv[1][0])):
-        rep.warnings.append(("P-5", f"{refs_text(sorted(refs, key=natural_key))} {mpn}: bought separately (bom: false), "
+        rep.warnings.append(("PARTS.supplier", f"{refs_text(sorted(refs, key=natural_key))} {mpn}: bought separately (bom: false), "
                                     "but neither an LCSC number nor `order` in its parts entry"
                                     + (f" ({lcsc} is an EasyEDA library number, LCSC does not sell it)" if lcsc else "")
                                     + " – name the supplier and its order code"))

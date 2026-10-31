@@ -5,18 +5,18 @@
 # recorded = false: the labels and words below are those of edakit's reference orders (order.md of 2026-10-24 and
 # 2026-10-25) and of JLCPCB's capabilities page, not yet read off the form field by field – ordering step 0 does that
 # and sets recorded to its date. Until then a label or word may differ from the page; the skill cart then stops on the
-# field, and B-1 names it.
+# field, and ORDER.form names it.
 
 name = "JLCPCB"
 recorded = false
 start = "https://cart.jlcpcb.com/quote"
 seat = "CN"                       # outside the EU: for purpose "sale" the owner imports the boards (handbook 15.2)
 currency = "USD"
-catalogue = "jlcpcb"              # P-4, F-2 and edakit stock ask JLCPCB's assembly catalogue
+catalogue = "jlcpcb"              # PARTS.stock and edakit stock ask JLCPCB's assembly catalogue
 fees = "jlcpcb"                   # edakit/fees/jlcpcb.json, the fee table of edakit cost
 files = ["gerber", "bom", "cpl"]  # gerber_<b>.zip, bom_<b>.csv, cpl_<b>.csv
 classes = ["economic", "standard"]
-dnp = "omit"                      # a part not to place is left out of BOM and CPL (F-1, F-3)
+dnp = "omit"                      # a part not to place is left out of BOM and CPL (SYNC.bom, SYNC.cpl)
 cart = "Save to Cart"
 never = ["Order", "Buy", "Checkout", "Pay", "Place Order", "Submit Order", "Secure Checkout"]
 ignore = {}                       # fields of the page edakit does not set, each with its reason – ordering step 0
@@ -29,15 +29,15 @@ match = "lcsc"                    # JLCPCB matches the BOM by LCSC number
 [cpl]
 columns = ["Designator", "Mid X", "Mid Y", "Layer", "Rotation"]
 unit = "mm"
-rotation = "as F-3 writes it: EasyEDA's rotation of the part, compared with the PCB"
+rotation = "as SYNC.cpl writes it: EasyEDA's rotation of the part, compared with the PCB"
 
-[rules]                           # what F-6 holds the board to
+[rules]                           # what FILES.order holds the board to
 thicknesses_mm = [0.4, 0.6, 0.8, 1.0, 1.2, 1.6, 2.0]   # "PCB Thickness" (capabilities page, read 2026-10-28)
 thicknesses_for = "FR-4, 2 layers"
 remark_max = 200                  # characters of the remark field, ASCII
 placeholder = "JLCJLCJLCJLC"      # JLCPCB prints the order number here with "Order Number (Specify Position)"
 placeholder_min_mm = 0.8          # least height of the placeholder JLCPCB recognises (#40)
-# The owner's decision of 2026-10-30: F-6 warns about the placeholder until ordering step 0 has seen the form – then
+# The owner's decision of 2026-10-30: FILES.order warns about the placeholder until ordering step 0 has seen the form – then
 # this line goes, or the placeholder (and with it mark specify) leaves the profile.
 placeholder_gone = """\
   JLCPCB's help article (last updated 2026-05-22) reports the order number gone since May 2026 and asks not to add \
@@ -145,7 +145,7 @@ words = { false = "No", true = "Yes" }
 # Reported, not yet seen on the form: JLCPCB's help article "How to remove order number from your PCB" (last updated
 # 2026-05-22; read in search summaries on 2026-10-30) says the order number is not available since May 2026 and asks
 # not to add JLCJLCJLCJLC – a 2D barcode (QR or Data Matrix) or a serial number instead, printed where there is room.
-# Ordering step 0 checks the form; until then these words stay as the reference orders had them, and F-6 warns about
+# Ordering step 0 checks the form; until then these words stay as the reference orders had them, and FILES.order warns about
 # the placeholder (rules.placeholder_gone).
 [fields.mark]
 section = "PCB"

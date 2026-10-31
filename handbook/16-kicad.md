@@ -62,7 +62,7 @@ its pad numbers, for every part JLCPCB places (concept, decision 3). A part whos
 gets `footprint_data`, started by `edakit part footprint KEY --write` from the LCSC footprint (4.5). A part whose
 footprint is not cached yet is read from the library at the first `pcb apply` (cache only, the entry is not touched).
 The cache holds the library's silkscreen too – lines, circles, arcs, filled regions, the strokes of texts – so polarity
-marks print as the library draws them (L-8). A cache from an older edakit lacks it and is read again. Pads: `RECT` →
+marks print as the library draws them (GEO.mark). A cache from an older edakit lacks it and is read again. Pads: `RECT` →
 rect, `ELLIPSE` → circle or oval, `OVAL` → oval, `POLYGON` → custom with its corners; holes as round or oval drills
 along the pad's long side, not plated → `np_thru_hole`.
 
@@ -111,22 +111,22 @@ edakit calls (`edakit/toolchain/kicad/cli.py`, `-v` prints every call):
   `pcb export pdf`, `pcb render`.
 
 The DRC checks whose subject edakit checks itself are off in `<board>.kicad_pro`: footprints against the library
-(P-10, L-10 hold them to the parts database), courtyards (the plan), silkscreen overlaps and texts (L-17 on the Gerber
-files). What KiCad's DRC reports beyond that counts in L-3.
+(SYNC.footprint hold them to the parts database), courtyards (the plan), silkscreen overlaps and texts (GEO.silk on the Gerber
+files). What KiCad's DRC reports beyond that counts in GEO.drc.
 
 ## 16.6 The gate on KiCad
 
 Stages P, G, E: unchanged. S, L, F read the same files, made from the KiCad project:
 
-- **S-2:** the netlist kicad-cli exports against the graph (`schematic.compare`), plus the errors of KiCad's ERC; the
+- **SYNC.schematic:** the netlist kicad-cli exports against the graph (`schematic.compare`), plus the errors of KiCad's ERC; the
   protocol names `<board>.kicad_sch`.
-- **L:** `pcb.json` read from the file; `drc.json` from KiCad's DRC. L-3 has its KiCad rows: "KiCad DRC without
+- **L:** `pcb.json` read from the file; `drc.json` from KiCad's DRC. GEO.drc has its KiCad rows: "KiCad DRC without
   findings (other kinds)", "schematic and PCB in sync (KiCad's schematic parity)", and with `drc_rules = "check"` the
   rules of `<board>.kicad_pro` against `[routing]`.
 - **F:** kicad-cli's Gerber and drill files under the names the checks know (`gerber.FILES`): the plated holes of
   KiCad's PTH file are split into component holes and vias by the drill's X2 function (`ViaDrill`), else by the vias of
   the PCB; `FlyingProbeTesting.json` is made from the pads of `pcb.json` – it stays out of the ZIP, which holds only
-  the Gerber and drill files. F-1 compares the BOM with the schematic's (`bom_kicad.json`), F-3 the CPL with kicad-cli's
+  the Gerber and drill files. SYNC.bom compares the BOM with the schematic's (`bom_kicad.json`), SYNC.cpl the CPL with kicad-cli's
   position file (`cpl_kicad.csv`).
 
 The Gerber reader takes what KiCad writes: aperture macros (RoundRect, RotRect, Outline, FreePoly) and polygon
@@ -136,7 +136,7 @@ is computed the same way; its value is the tool chain's, so a fab sign-off lapse
 ## 16.7 Switching a project
 
 1. `toolchain = "kicad"` in `[project]`, the EasyEDA document names out of `[boards.<name>]`.
-2. Every part needs a row in `[place]` (L-20): a board placed in EasyEDA has them after `pcb takeover --write` there;
+2. Every part needs a row in `[place]` (SYNC.plan): a board placed in EasyEDA has them after `pcb takeover --write` there;
    otherwise `pcb place --rest --write`.
 3. `schematic create`, `pcb apply`, `route all`, `silk apply`, `gate --eda`.
 
@@ -151,7 +151,7 @@ Confirmed by the CI job `kicad` on the led-bar example (KiCad 10.0, its containe
   has nothing but the connections the routing has not made yet. The first run found every pad in conflict with the
   schematic: local labels name a net "/GND" – the schematic has global labels since;
 - the flags of 16.5 for Gerber, drill and position file; the file names of the export; the Gerber reader on KiCad's
-  files; the position file's place and turn of every part against `pcb.json` (F-3), on the bottom too: a part at 90°
+  files; the position file's place and turn of every part against `pcb.json` (SYNC.cpl), on the bottom too: a part at 90°
   and one at 180° keep their turn in the position file (neither -a nor 180-a);
 - the frames: KiCad's own Gerber copper lies at every pad edakit reads, also for turned parts and parts on the bottom;
 - `route all` on KiCad: Freerouting routed all 18 nets of the example, edakit wrote 208 track pieces and 29 vias, KiCad
@@ -159,9 +159,9 @@ Confirmed by the CI job `kicad` on the led-bar example (KiCad 10.0, its containe
   two things had to be learnt there: KiCad 10 names nets in items by name, and leaves out
   `(filled_areas_thickness no)`, which under KiCad 8's version gives a fill a stroke of `min_thickness` – and the DRC
   found nothing again;
-- stages L and F of the gate on KiCad's export of the routed board: L-1, L-2 (the copper of KiCad's Gerber files:
-  every net connected, no short), L-3, L-4, L-7 (every part where the plan puts it, measured by `pcb dump` from the
-  file), L-9, L-10, L-13 to L-17, L-20, F-1, F-3 and F-5 pass.
+- stages L and F of the gate on KiCad's export of the routed board: SYNC.pcb, GEO.copper (the copper of KiCad's Gerber files:
+  every net connected, no short), GEO.drc, SYNC.footprint, SYNC.plan (every part where the plan puts it, measured by `pcb dump` from the
+  file), GEO.hole, SYNC.footprint, GEO.spacing to GEO.silk, SYNC.plan, SYNC.bom, SYNC.cpl and FILES.set pass.
 
 Open – the first runs on a real project, the led-bar example as a KiCad project, then the Christmas bell (the steps
 are in the concept, "Live test"):

@@ -6,7 +6,10 @@ import shutil
 
 import pytest
 
-from edakit import block, checks, rules, schematic_draw
+from helpers import check
+
+from edakit import block, catalog, engines, schematic_draw
+from edakit.engines import hint
 from edakit.design import Design
 from edakit.sim import run as simrun
 
@@ -35,7 +38,7 @@ def signals(project, names=("SIG", "SIG2")):
 
 def errors(project):
     cfg = project.config()
-    return checks.run(Design.from_config(cfg), cfg).errors
+    return check(Design.from_config(cfg), cfg).errors
 
 
 def test_every_block_is_in_this_test():
@@ -59,7 +62,7 @@ def test_library_block_is_consistent(name):
             assert (f"{des}.{pin}" in used) != (pin in c.get("nc", [])), f"{des}.{pin}"
     for name_, n in nets.items():
         assert name_ in b["ports"] or "v" in n, name_
-    assert all(rules.entry(cid) for cid in b.get("covers", []))
+    assert all(catalog.code(cid.split(":")[0].split("/")[0]) for cid in b.get("covers", []))
 
 
 @pytest.mark.parametrize("name", sorted(CONNECT))
@@ -100,9 +103,9 @@ def test_block_marks_its_nets(project):
     g = project.graph()
     assert project.net(g, "SIG")["bus"] == "i2c"
     part = project.part("C17673")
-    part["params"]["value_ohm"] = 47000
+    part["values"]["value_ohm"] = 47000
     project.save_part("C17673", part)
-    assert any(c == "G-11" for c, _ in errors(project))   # the mark makes G-11 check GPIO nets
+    assert any(c == "REQ.value" for c, _ in errors(project))   # the mark makes REQ.missing check GPIO nets
 
 
 def test_dry_run_writes_nothing(project):
@@ -159,8 +162,8 @@ def test_block_in_the_example_passes_the_simulation(project, name):
     _, comps, *_ = block.add(project.config(), name, "T", CONNECT[name])
     sim = json.loads((project.root / "hardware" / "sim.json").read_text())
     leds = [c["designator"] for c in comps if c["type"] == "led"]
-    if leds:   # as the block's notes ask: the signal is an MCU output, a load lights the LED (E-3), the others say
-        sim["mcu"]["U1"]["outputs"].append("SIG")             # that it is dark (E-4)
+    if leds:   # as the block's notes ask: the signal is an MCU output, a load lights the LED (SIM.state), the others say
+        sim["mcu"]["U1"]["outputs"].append("SIG")             # that it is dark (SIM.driver)
         for load in sim["loads"].values():
             load.setdefault("leds_on", [])
         sim["loads"]["t_on"] = {"gpio": {"LED_OE": 1, "SIG": 1}, "leds_on": leds}
@@ -198,7 +201,7 @@ def test_power_or_pmos_with_two_supplies_passes_the_checks(project):
     two_supplies(project)
     assert errors(project) == []
     cfg = project.config()
-    assert "H-8" not in rules.matching_hints(Design.from_config(cfg), cfg, rules.load_sim(cfg))
+    assert "HINT.two_supplies" not in hint.matching(Design.from_config(cfg), cfg, engines.load_sim(cfg))
 
 
 @pytest.mark.skipif(not shutil.which("ngspice"), reason="ngspice not installed")
@@ -207,7 +210,11 @@ def test_power_or_pmos_feeds_no_supply_backwards(project):
     higher (fresh lithium cells at 5.4 V against USB at 4.75 V)."""
     sim = two_supplies(project)
     out = simrun.run_all(Design.from_config(project.config()), sim)
-    assert [c for c in out["checks"] if c["result"] == "fail"] == []
+    bad = [c for c in out["checks"] if c["result"] == "fail"]
+    # the one gap the block's notes name: cells above USB leave |VGS| between the worst-case threshold and the
+    # specified on-state – LIM.range/gate, a warning, and only there
+    assert {(c["id"], c["item"], c["scenario"].split("/")[0]) for c in bad} == {("LIM.range", "Q1", "bat-high"),
+                                                                               ("LIM.range", "Q2", "bat-high")}
     rows = {r["name"]: r["sources"] for r in out["scenarios"]}
     assert all(i > -1e-3 for sources in rows.values() for i in sources.values()), rows
     assert all(sources["J1"] < 1e-3 for name, sources in rows.items() if name.startswith(("bat-high", "usb-high")))

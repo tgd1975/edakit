@@ -3,10 +3,10 @@
 #
 # recorded = false: what the search of 2026-10-30 found on PCBWay's help pages (docs/concepts/new/ordering.md,
 # PCBWay) – the order form's labels and words, the BOM template, the pick-and-place format and the cart flow are
-# recorded on the site by ordering step 0. Until then F-6 names the fields as not checked.
+# recorded on the site by ordering step 0. Until then FILES.order names the fields as not checked.
 #
 # What differs from JLCPCB (reported): PCBWay sources the parts itself by manufacturer part number (turnkey) – a BOM
-# with MPN (P-12), no parts catalogue edakit could ask beforehand; the assembly price comes with PCBWay's BOM
+# with MPN (PARTS.fact/mpn), no parts catalogue edakit could ask beforehand; the assembly price comes with PCBWay's BOM
 # quotation, by hand, and engineers review the files before payment. The skill cart stops at "Save to Cart": the
 # owner submits the order for the review and pays.
 
@@ -25,11 +25,11 @@ excludes = []
 
 [bom]
 columns = ["Designator", "Quantity", "Manufacturer", "MPN", "Comment"]   # PCBWay's BOM template: ordering step 0
-match = "mpn"                          # PCBWay buys the parts by manufacturer part number (P-12)
+match = "mpn"                          # PCBWay buys the parts by manufacturer part number (PARTS.fact/mpn)
 
 [cpl]
 unit = "mm"
-rotation = "as F-3 writes it – PCBWay's sense: ordering step 0"
+rotation = "as SYNC.cpl writes it – PCBWay's sense: ordering step 0"
 
 [rules]
 placeholder = "WayWayWay"              # with "Specify a location": PCBWay puts its product number here (help center)

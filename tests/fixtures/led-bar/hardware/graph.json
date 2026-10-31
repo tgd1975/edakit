@@ -12,7 +12,7 @@
     "conventions": {
       "pin_reference": "'<designator>.<pin>' with the pin numbers of the EasyEDA/LCSC symbol",
       "v": "per net: [min, max] in V over all intended operating states",
-      "waive": "per net or component: {check id: reason} accepts a finding on purpose"
+      "accept": "per net or component: {code: reason} accepts a finding on purpose (edakit explain <code>)"
     },
     "components": [
       {
@@ -26,7 +26,8 @@
           "1": "1",
           "2": "2"
         },
-        "notes": "Pin 1 = VIN (+5 V), pin 2 = GND. Through-hole, soldered by hand (Economic assembly: SMD only)."
+        "notes": "Pin 1 = VIN (+5 V), pin 2 = GND. Through-hole, soldered by hand (Economic assembly: SMD only).",
+        "source": "reversible"
       },
       {
         "designator": "D1",
@@ -411,8 +412,8 @@
         ],
         "fn": "spi.tx",
         "fn_bus": "LED",
-        "waive": {
-          "G-4": "Floating until the firmware runs, but harmless: R2 holds OE high, so no output can switch on."
+        "accept": {
+          "LVL.undefined": "Floating until the firmware runs, but harmless: R2 holds OE high, so no output can switch on."
         }
       },
       {
@@ -427,8 +428,8 @@
         ],
         "fn": "spi.sck",
         "fn_bus": "LED",
-        "waive": {
-          "G-4": "Floating until the firmware runs, but harmless: R2 holds OE high, so no output can switch on."
+        "accept": {
+          "LVL.undefined": "Floating until the firmware runs, but harmless: R2 holds OE high, so no output can switch on."
         }
       },
       {
@@ -441,8 +442,8 @@
           0,
           3.4
         ],
-        "waive": {
-          "G-4": "Floating until the firmware runs, but harmless: R2 holds OE high, so no output can switch on."
+        "accept": {
+          "LVL.undefined": "Floating until the firmware runs, but harmless: R2 holds OE high, so no output can switch on."
         }
       },
       {
@@ -594,11 +595,8 @@
         "D2 to D9 form the bar: one row, in this order from left to right, as the user reads it."
       ]
     },
-    "checks": {
-      "reverse_protect": [
-        "J1"
-      ],
-      "pin_locks": {
+    "locks": {
+      "pins": {
         "U1.4": "LED_CLK",
         "U1.5": "LED_SDI",
         "U1.6": "LED_LE",

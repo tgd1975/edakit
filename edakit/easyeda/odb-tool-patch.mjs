@@ -1,7 +1,7 @@
 #!/usr/bin/env node
 // Adds the MCP tool easyeda_export_odb to the pinned easyeda-mcp-pro (dist/tools/L1_export.js): EasyEDA Pro's ODB++
 // export (PCB_ManufactureData.getOpenDatabaseDoublePlusFile, BETA in its extension API) for a maker that assembles from
-// ODB++ – AISLER (edakit handbook 8.4, check F-7).
+// ODB++ – AISLER (edakit handbook 8.4, check SYNC.odb).
 //
 // The tool calls the bridge method board.exportGerbers with format "odb": a method the server already knows, so its
 // method registry – and the registry hash it sends the bridge – stay as they are. The bridge extension built by

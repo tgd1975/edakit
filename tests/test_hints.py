@@ -1,85 +1,67 @@
-"""The rule catalog: every check the code can report has an entry, hints match the graph, findings get explained."""
+"""The hints (engine HINT, edakit/engines/hint.py): what matches the graph, what is taken care of, the notes of the
+parts entries; and how the protocol names and explains a finding by its code."""
 
-import argparse
 import json
-import re
-from pathlib import Path
 
-from edakit import checks, rules
+from helpers import check
+
+from edakit import catalog, engines
 from edakit.design import Design
+from edakit.engines import hint
 from edakit.release import gate
 
-CODE = Path(rules.__file__).parent
+
+def matching(project):
+    """The hints of the example as its profile applies them."""
+    cfg = project.config()
+    d = Design.from_config(cfg)
+    return hint.matching(d, cfg, engines.load_sim(cfg), engines.profile(d, cfg).hints)
 
 
-def ids_in_code():
-    found = set()
-    for f in CODE.rglob("*.py"):
-        found |= set(re.findall(r'"([PGESLFB]-\d+)"', f.read_text(encoding="utf-8")))
+def open_hints(project):
+    """{code: [places]} of the hints the graph does not accept."""
+    cfg = project.config()
+    found = {}
+    for f in engines.run(Design.from_config(cfg), cfg).findings:
+        if f.code.startswith("HINT.") and f.code != "HINT.datasheet" and not f.accepted:
+            found.setdefault(f.code, []).append(f.place)
     return found
 
 
-def test_every_check_of_the_code_is_in_the_catalog():
-    assert ids_in_code() - set(rules.catalog()["checks"]) == set()
-
-
-def test_catalog_entries_are_complete():
-    c = rules.catalog()
-    for cid, e in {**c["checks"], **c["hints"]}.items():
-        for key in ("title", "why", "fix", "sources"):
-            assert e.get(key), (cid, key)
-        assert all(isinstance(s, str) and s.strip() for s in e["sources"]), cid
-    assert all(e.get("rule") for e in c["checks"].values())
-    assert rules.entry("G-7")["retired"] and "G-7" not in checks.EXECUTED   # a retired number is not reused
-    assert all(rules.entry(cid) and not rules.entry(cid).get("retired") for cid in checks.EXECUTED)
-
-
-def test_the_requirement_checks_are_in_the_catalog_and_run_only_with_the_key():
-    """G-20 to G-23 (handbook 3.6) are complete entries, not in EXECUTED – a project without [project] requirements
-    runs the checks it ran before – and no check has the letter of a need N-… or a requirement R-…."""
-    from edakit import requirements
-    assert all(rules.entry(cid) and not rules.entry(cid).get("retired") for cid in requirements.CHECKS)
-    assert not set(requirements.CHECKS) & set(checks.EXECUTED)
-    assert not [cid for cid in rules.catalog()["checks"] if cid[0] in "NR"]
-
-
 def test_hint_conditions_are_known():
-    kinds = {"resistor", "capacitor", "inductor", "fuse", "diode", "led", "led_rgb", "npn", "pnp", "pmos", "nmos",
-             "switch", "dip_switch", "button", "potentiometer", "battery_holder", "buzzer", "relay", "connector", "ic",
-             "module"}
-    for hid, h in rules.catalog()["hints"].items():
-        assert h["when"] and set(h["when"]) <= {"kinds", "match"}, hid
-        assert set(h["when"].get("kinds", [])) <= kinds, hid
-        assert h["when"].get("match", "power_input") in rules.MATCHERS, hid
+    from edakit.schema import kinds
+    for name, e in catalog.codes().items():
+        if not name.startswith("HINT.") or name == "HINT.datasheet":
+            continue
+        assert e["when"] and set(e["when"]) <= {"kinds", "match"}, name
+        assert set(e["when"].get("kinds", [])) <= set(kinds()["kinds"]), name
+        assert e["when"].get("match", "power_input") in hint.MATCHERS, name
 
 
-def test_label_names_the_check_with_words():
-    assert rules.label("L-9") == "L-9 (hole fits the lead)"
-    assert rules.label("K-1") == "K-1"   # a project's own stage: no entry, the ID stays as it is
-    lines = rules.explain("G-14")
-    assert lines[0].startswith("G-14 (USB-C sink termination): ")
+def test_label_names_the_code_with_words():
+    assert catalog.label("GEO.hole") == "GEO.hole (hole fits the lead)"
+    assert catalog.label("K-1") == "K-1"   # a project's own stage: no entry, the ID stays as it is
+    lines = catalog.explain("REQ.missing")
+    assert lines[0].startswith("REQ.missing (what a part requires is there): ")
     assert any(line.strip().startswith("why:") for line in lines)
 
 
 def test_hints_of_the_example(project):
-    cfg = project.config()
-    d = Design.from_config(cfg)
-    assert rules.matching_hints(d, cfg, rules.load_sim(cfg)) == {"H-1": ["J1"], "H-3": ["SW1"]}
+    assert matching(project) == {"HINT.bulk": ["J1"], "HINT.debounce": ["SW1"]}
 
 
 def test_read_back_from_a_chain(project):
     from test_sim import read_back
     read_back(project)                            # U2's SDO to GP7; the MCU drives U2's SDI, CLK, LE and OE
-    cfg = project.config()
-    assert rules.matching_hints(Design.from_config(cfg), cfg)["H-9"] == ["U2 SDO to U1 GP7"]
+    assert matching(project)["HINT.readback"] == ["U2 SDO to U1 GP7"]
     part = project.part("C90107")
     part["pins"]["14"].update(out_edge="rising", t_pd_ns=[12, 30])     # TI SLVS695D 7.7, VDD 3 V: tPLH4/tPHL4
     project.save_part("C90107", part)
-    assert rules.matching_hints(Design.from_config(cfg), cfg)["H-9"] == [
+    assert matching(project)["HINT.readback"] == [
         "U2 SDO to U1 GP7 (changes 12–30 ns after the rising clock edge)"]
     part["pins"]["14"]["t_pd_ns"] = [None, 32]                         # a datasheet without a minimum (STP08CP05)
     project.save_part("C90107", part)
-    assert rules.matching_hints(Design.from_config(cfg), cfg)["H-9"] == [
+    assert matching(project)["HINT.readback"] == [
         "U2 SDO to U1 GP7 (changes ≤ 32 ns after the rising clock edge)"]
 
 
@@ -93,8 +75,7 @@ def test_read_back_through_a_series_resistor(project):
     project.net(g, "LED_SDO")["pins"].append("R3.1")
     g["graph"]["nets"].append({"name": "GP7_IN", "pins": ["R3.2", "U1.10"], "v": [0, 3.4]})
     project.save_graph(g)
-    cfg = project.config()
-    assert rules.matching_hints(Design.from_config(cfg), cfg)["H-9"] == ["U2 SDO to U1 GP7"]
+    assert matching(project)["HINT.readback"] == ["U2 SDO to U1 GP7"]
 
 
 def test_no_read_back_without_the_mcu_driving_the_part(project):
@@ -104,16 +85,17 @@ def test_no_read_back_without_the_mcu_driving_the_part(project):
     for num in ("2", "3", "4", "13"):             # SDI, CLK, LE, OE: no input the MCU drives – an output, not a chain
         part["pins"][num]["type"] = "passive"
     project.save_part("C90107", part)
-    cfg = project.config()
-    assert "H-9" not in rules.matching_hints(Design.from_config(cfg), cfg)
+    assert "HINT.readback" not in matching(project)
 
 
-def test_hint_taken_care_of_is_not_open(project):
+def test_hint_taken_care_of_is_accepted(project):
     g = project.graph()
-    g["graph"]["hints"] = {"H-3": "firmware debounces for 20 ms"}
+    g["graph"]["accept"] = {"HINT.debounce": "firmware debounces for 20 ms"}
     project.save_graph(g)
-    cfg = project.config()
-    assert list(rules.open_hints(Design.from_config(cfg), cfg)) == ["H-1"]
+    assert list(open_hints(project)) == ["HINT.bulk"]
+    g["graph"]["accept"] = {"HINT.bulk J2": "another connector"}       # accepted for one place only
+    project.save_graph(g)
+    assert open_hints(project) == {"HINT.bulk": ["J1"], "HINT.debounce": ["SW1"]}
 
 
 def test_notes_of_the_parts_database(project):
@@ -122,30 +104,24 @@ def test_notes_of_the_parts_database(project):
     part["pins"]["4"]["hint"] = "pin note"       # GP2, connected (LED_CLK)
     part["pins"]["1"]["hint"] = "unused pin"     # GP0 is nc: not shown
     project.save_part("C41407547", part)
-    notes = rules.part_notes(Design.from_config(project.config()))
+    notes = hint.part_notes(Design.from_config(project.config()))
     assert ("U1", "module note") in notes and ("U1.4 (GP2)", "pin note") in notes
     assert not any(n == "unused pin" for _, n in notes)
+    cfg = project.config()
+    found = [(f.place, f.text) for f in engines.run(Design.from_config(cfg), cfg).findings if f.code == "HINT.datasheet"]
+    assert ("U1.4 (GP2)", "pin note") in found
 
 
-def test_hints_command(project, capsys):
+def test_hints_are_findings_of_edakit_check(project, capsys):
+    from edakit import cli
     g = project.graph()
-    g["graph"]["hints"] = {"H-1": "C2 22 µF next to the module", "H-99": "typo"}
+    g["graph"]["accept"] = {"HINT.bulk": "C2 22 µF next to the module"}
     project.save_graph(g)
-    out_file = project.root / "hints.json"
-    assert rules.main_hints(project.config(), argparse.Namespace(json=str(out_file))) == 0
+    assert cli.main(["check", "--config", str(project.root / "edakit.toml")]) == 0
     out = capsys.readouterr().out
-    assert "H-3 (debounce buttons and switches) – SW1" in out
-    assert "taken care of: C2 22 µF next to the module" in out and "H-99: in the graph's hints but not" in out
-    data = json.loads(out_file.read_text())
-    assert list(data["open"]) == ["H-3"] and data["handled"]["H-1"]["applies_to"] == ["J1"]
-
-
-def test_rules_command(capsys):
-    assert rules.main_rules(argparse.Namespace(ids=[])) == 0
-    assert "G-12  strapping pins" in capsys.readouterr().out
-    assert rules.main_rules(argparse.Namespace(ids=["G-11", "X-99"])) == 1
-    out = capsys.readouterr().out
-    assert "UM10204" in out and "X-99: not in the catalog" in out
+    assert "HINT.debounce – debounce buttons and switches: 1 note\n  G  SW1: debounce buttons and switches" in out
+    assert "HINT.bulk – bulk capacitor at the power input: 1 note (accepted)" in out
+    assert "      accepted: C2 22 µF next to the module" in out
 
 
 def test_protocol_names_and_explains_the_findings(project, tmp_path):
@@ -153,23 +129,22 @@ def test_protocol_names_and_explains_the_findings(project, tmp_path):
     head = {"time": "2026-10-25T20:00:00+01:00", "tester": "test", "graph_version": "1.0", "graph_date": "2026-10-25",
             "graph_sha256": "a", "state_sha256": "b", "layout_sha256": "c", "git_commit": "abc", "git_dirty": False,
             "tools": {"python": "3", "edakit": "0", "ngspice": "ngspice-45", "easyeda-mcp-pro": "1.4.0"}}
-    rows = [{"stage": "L", "id": "L-9", "item": "main", "check": "hole takes the lead", "result": "fail"},
-            {"stage": "L", "id": "L-5", "item": "main", "check": "track width >= class width", "result": "warn"},
+    rows = [{"stage": "L", "id": "GEO.hole", "item": "main", "check": "hole takes the lead", "result": "fail"},
+            {"stage": "L", "id": "GEO.width", "item": "main", "check": "track width >= class width", "result": "warn"},
             {"stage": "K", "id": "K-1", "item": "Mechanics", "check": "door fits", "result": "fail"}]
     gate.write_protocol(cfg, tmp_path, head, rows, {"checks": [], "scenarios": []}, {"manual": []}, [], "NOT RELEASED",
                         [], set("PGESLF"), gate.STAGES, {})
     text = (tmp_path / "protocol.md").read_text()
-    assert "| L | L-9 (hole fits the lead) |" in text and "| K | K-1 |" in text
-    assert "`L-5 main track width >= class width` (track width)" in text
+    assert "| L | GEO.hole (hole fits the lead) |" in text and "| K | K-1 |" in text
+    assert "`GEO.width main track width >= class width` (track width)" in text
     rules_part = text.split("## 10 The rules behind the findings")[1]
-    assert "**L-9 (hole fits the lead):" in rules_part and "**L-5 (track width):" in rules_part
+    assert "**GEO.hole (hole fits the lead):" in rules_part and "**GEO.width (track width):" in rules_part
     assert "K-1" not in rules_part
 
 
-# --- H-8 two supplies on one net (rule proposal #48) -----------------------------------------------------------------
+# --- HINT.two_supplies two supplies on one net (rule proposal #48) -----------------------------------------------------------------
 def h8(project):
-    cfg = project.config()
-    return rules.matching_hints(Design.from_config(cfg), cfg, rules.load_sim(cfg)).get("H-8", [])
+    return matching(project).get("HINT.two_supplies", [])
 
 
 def second_supply(project, path="pmos"):
@@ -218,7 +193,7 @@ def test_h8_a_single_pmos_is_no_block(project):
     second_supply(project)
     assert h8(project) == ["BAT (J1 unblocked, J2)", "VIN (J1 unblocked, J2)"]   # Q10 conducts both ways
     cfg = project.config()
-    assert checks.run(Design.from_config(cfg), cfg).errors == []     # no check sees it
+    assert check(Design.from_config(cfg), cfg).errors == []     # no check sees it
 
 
 def test_h8_back_to_back_pair_or_a_diode_blocks(project):
@@ -238,10 +213,9 @@ def test_h8_module_vbus_pin_on_the_rail(project):
     project.net(g, "+5V")["pins"].append("U1.40")
     project.save_graph(g)
     assert h8(project) == ["+5V (J1, U1 unblocked)"]
-    g["graph"]["hints"] = {"H-8": "J1 unplugged while flashing (operating rule)"}
+    g["graph"]["accept"] = {"HINT.two_supplies": "J1 unplugged while flashing (operating rule)"}
     project.save_graph(g)
-    cfg = project.config()
-    assert "H-8" not in rules.open_hints(Design.from_config(cfg), cfg, rules.load_sim(cfg))
+    assert "HINT.two_supplies" not in open_hints(project)
 
 
 def test_h8_simulation_sources_and_fuses(project):
@@ -261,10 +235,10 @@ def test_h8_simulation_sources_and_fuses(project):
 
 
 def test_the_order_checks_are_in_the_catalog():
-    """B-1 to B-7 (edakit cart check, handbook 8.4) are complete entries; no project stage takes their letter – K is
-    a project's (handbook 8.1: the reference project's mechanics)."""
-    from edakit import cart
-    assert set(cart.CHECKS) == {f"B-{i}" for i in range(1, 8)}
-    assert all(rules.entry(cid) and not rules.entry(cid).get("retired") for cid in cart.CHECKS)
-    assert all(rules.title(cid) == cart.CHECKS[cid] for cid in cart.CHECKS)
+    """ORDER.form to ORDER.review (edakit cart check, handbook 8.4) are the codes of the engine ORDER, titled as cart
+    names them, each replacing its check ID of before (B-1 to B-7)."""
+    from edakit import cart, catalog
+    assert set(cart.CHECKS) == {c for c in catalog.codes() if c.startswith("ORDER.")}
+    assert all(catalog.code(c)["title"] == cart.CHECKS[c] for c in cart.CHECKS)
+    assert sorted(catalog.old_map()[f"B-{i}"][0] for i in range(1, 8)) == sorted(cart.CHECKS)
 

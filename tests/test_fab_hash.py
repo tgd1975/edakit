@@ -1,5 +1,5 @@
 """Sign-offs on the manufacturing files (#65): `fab_sha256` over what the manufacturer builds from – every Gerber layer
-rasterised as L-2 does (0.02 mm), the drill hits, the BOM and CPL rows, and with [order] the order settings that change
+rasterised as GEO.copper does (0.02 mm), the drill hits, the BOM and CPL rows, and with [order] the order settings that change
 the made board – and `edakit fab diff`, on the export of tests/test_fab_run.py written twice. Documentation and
 drill-drawing layers are left out."""
 

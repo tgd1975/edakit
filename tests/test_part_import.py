@@ -1,5 +1,5 @@
 """edakit part import (#32): the symbol pins and the footprint of an LCSC number from the library data, without
-EasyEDA – the parts entry, the geometry cache, P-1 against the symbol, `pcb plan` on library geometry.
+EasyEDA – the parts entry, the geometry cache, STRUCT.entry against the symbol, `pcb plan` on library geometry.
 
 fixtures/easyeda/ holds EasyEDA's public component data as https://easyeda.com/api/products/<LCSC>/components
 ?version=6.4.19.5 answered on 2026-10-27, trimmed to the fields edakit reads; not-found.json is the answer to a number
@@ -11,7 +11,9 @@ from pathlib import Path
 
 import pytest
 
-from edakit import checks, cli, part, pcb
+from helpers import check as engines_check
+
+from edakit import cli, part, pcb
 from edakit.design import Design
 
 ANSWERS = Path(__file__).resolve().parent / "fixtures" / "easyeda"
@@ -46,12 +48,12 @@ def cache(project, footprint):
 
 def check(project):
     cfg = project.config()
-    return checks.run(Design.from_config(cfg), cfg)
+    return engines_check(Design.from_config(cfg), cfg)
 
 
 def test_import_writes_a_new_entry(project, library, capsys):
     entry_file(project, "C2297").unlink()
-    assert "P-1" in {c for c, _ in check(project).errors}           # today: no entry for D2-D9
+    assert "STRUCT.entry" in {c for c, _ in check(project).errors}           # today: no entry for D2-D9
     assert run(project, "import", "C2297") == 0
     e = json.loads(entry_file(project, "C2297").read_text())
     assert (e["lcsc"], e["mpn"], e["manufacturer"], e["footprint"], e["jlc_class"]) == \
@@ -64,8 +66,8 @@ def test_import_writes_a_new_entry(project, library, capsys):
     assert [round(pads[n]["x"] / MIL, 2) for n in ("1", "2")] == [1.05, -1.05]
     assert all((round(p["w"] / MIL, 2), round(p["h"] / MIL, 2)) == (1.0, 1.4) for p in pads.values())
     rep = check(project)
-    assert not [m for c, m in rep.errors if c == "P-1"]
-    assert [m for c, m in rep.pending if c == "G-9" and m.startswith("C2297")]
+    assert not [m for c, m in rep.errors if c == "STRUCT.entry"]
+    assert [m for c, m in rep.pending if c == "PARTS.verified" and m.startswith("C2297")]
     assert "new entry" in capsys.readouterr().out
 
 
@@ -133,15 +135,15 @@ def test_p1_compares_the_graph_with_the_symbol(project, library):
     for i in range(2, 10):
         project.comp(g, f"D{i}")["pins"] = {"1": "K", "2": "A"}
     project.save_graph(g)
-    assert not [m for c, m in check(project).errors if c == "P-1"]  # without the cache: as today
+    assert not [m for c, m in check(project).errors if c == "STRUCT.entry"]  # without the cache: as today
     assert run(project, "import", "C2297") == 2                     # the entry differs: reported, kept
-    found = [m for c, m in check(project).errors if c == "P-1"]
+    found = [m for c, m in check(project).errors if c == "STRUCT.entry"]
     assert len(found) == 8 and found[0].startswith("D2: pins differ from the library symbol of C2297")
     assert "pin 1: symbol 'A', graph 'K'" in found[0]
     g = project.graph()
-    project.comp(g, "D2")["waive"] = {"P-1": "pin names of our own"}
+    project.comp(g, "D2")["accept"] = {"STRUCT.entry": "pin names of our own"}
     project.save_graph(g)
-    assert [c for c, _, _ in check(project).waived if c == "P-1"]
+    assert [c for c, _, _ in check(project).waived if c == "STRUCT.entry"]
 
 
 def placed_geometry(project, without=()):

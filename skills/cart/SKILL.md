@@ -1,6 +1,6 @@
 ---
 name: cart
-description: Put a released board into the maker's cart – JLCPCB, PCBWay, Eurocircuits or AISLER – with Claude in Chrome in the owner's browser, from the job of `edakit cart prepare`, every field set and read back, the parts matched, the quote read and checked by `edakit cart check` (B-1 to B-7), the regulatory review of the order, and stop at the cart. Never orders, never pays, never opens the checkout. Afterwards the real cost from the order page (`edakit cart actual`). Use for "order the board", "put it in the cart", "fill in the JLCPCB form", "what did the order really cost".
+description: Put a released board into the maker's cart – JLCPCB, PCBWay, Eurocircuits or AISLER – with Claude in Chrome in the owner's browser, from the job of `edakit cart prepare`, every field set and read back, the parts matched, the quote read and checked by `edakit cart check` (ORDER.form to ORDER.review), the regulatory review of the order, and stop at the cart. Never orders, never pays, never opens the checkout. Afterwards the real cost from the order page (`edakit cart actual`). Use for "order the board", "put it in the cart", "fill in the JLCPCB form", "what did the order really cost".
 argument-hint: "[--board B] [--maker M] | actual"
 ---
 
@@ -60,14 +60,14 @@ on the page, a mail to the owner) is taken out of `[cart] makers` by the owner.
    the lead time.
 7. **Check.** Write `quote.json` and `quote_page.txt` into the job's folder (below); put the screenshots of the
    filled form, the matching and the preview into `screens/` there where the tools can save them, else show them to
-   the owner in the conversation. Run `edakit cart check 2>&1 | cat`. A failed B-1 to B-6 stops here: nothing into
-   the cart, the findings to the owner. Exit 3 means B-1 to B-6 passed and the review is next.
+   the owner in the conversation. Run `edakit cart check 2>&1 | cat`. A failed ORDER.form to ORDER.finish stops here: nothing into
+   the cart, the findings to the owner. Exit 3 means ORDER.form to ORDER.finish passed and the review is next.
 8. **Regulatory review.** Start the agent regulatory-reviewer with the prompt "At the order", the job's folder and the
    run (its section "At the order"); write its result, unchanged, to `regulatory.md` in the folder. Run
-   `edakit cart check 2>&1 | cat` again for B-7.
+   `edakit cart check 2>&1 | cat` again for ORDER.review.
 9. **M-2, where it cannot wait.** If the maker's profile or ordering step 0 says the placement preview cannot be
    opened again from the cart, stop here: the owner does M-2 on the preview and says whether to go on.
-10. **Cart.** Only when B-1 to B-7 passed: press the job's `cart` button – that one, nothing else –, read the cart
+10. **Cart.** Only when ORDER.form to ORDER.review passed: press the job's `cart` button – that one, nothing else –, read the cart
     line back (what it names, quantity, price, currency) into `cart.json`, run `edakit cart check --cart 2>&1 | cat`
     (it writes the order record `hardware/orders/…`), and stop. A job without a `cart` button (a provisional profile
     of a maker step 0 has not recorded): stop before the cart and say so. Tell the owner the result, and that M-2 at
@@ -79,7 +79,7 @@ replacement) is reported, not answered.
 
 ## What you write
 
-`quote.json` – what the page showed, as read, nothing from the job or from memory (B-4 holds every value to the page
+`quote.json` – what the page showed, as read, nothing from the job or from memory (ORDER.read holds every value to the page
 text):
 
 ```json
@@ -120,6 +120,6 @@ invoice, read that file. Write `actual.json` and `actual_page.txt` into the job'
 `smt joints`, `manual joints`, `hand soldering`, `reflow joints`, `x-ray`, `packing`, `bake`, `large size`) – none
 where no line is the same; `count`: the units the page shows for a fee per unit (joints, parts, types). Then
 `edakit cart actual 2>&1 | cat` – with a saved file `edakit cart actual --from FILE` (HTML or PDF; edakit reads its
-text itself). It checks B-4 on it, writes `actual.md`, puts what maps one to one into the project's fee table, and
+text itself). It checks ORDER.read on it, writes `actual.md`, puts what maps one to one into the project's fee table, and
 completes the order record. Report the three totals – estimate, quote, actual – and what went into the fee table; the
 fee table and the order record are committed with the owner's OK.

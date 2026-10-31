@@ -1,0 +1,42 @@
+# EU licence-exempt radio bands and their e.i.r.p. limits – LIM.eirp and LIM.band (handbook 15.2).
+# Support, not legal advice: no claim to correctness, nothing legally guaranteed.
+
+[table]
+about = "EU licence-exempt bands (MHz) and, where the limit is an e.i.r.p., the band's highest limit in mW"
+source = "BNetzA Vfg. 91/2025 (November 2025) and Vfg. 136/2022 as amended by Vfg. 49/2023"
+tag = "r"
+
+# A band whose limit is an e.i.r.p.: LIM.eirp holds a transmitter's e.i.r.p. to it.
+[[eirp]]
+from_mhz = 2400
+to_mhz = 2483.5
+limit_mw = 100
+source = "BNetzA Vfg. 91/2025 table 2 entry 57c (wideband data transmission), table 3 entry D57c (WLAN)"
+tag = "r"
+
+[[eirp]]
+from_mhz = 5150
+to_mhz = 5350
+limit_mw = 200
+source = "BNetzA Vfg. 136/2022 tables 1–3 (WAS/RLAN, mean e.i.r.p.)"
+tag = "r"
+
+[[eirp]]
+from_mhz = 5470
+to_mhz = 5725
+limit_mw = 1000
+source = "BNetzA Vfg. 136/2022 tables 1–3 (WAS/RLAN, mean e.i.r.p.)"
+tag = "r"
+
+# Short range devices with e.r.p. limits: LIM.band counts them as EU bands, LIM.eirp does not judge their power.
+[[band]]
+from_mhz = 433.05
+to_mhz = 434.79
+source = "BNetzA Vfg. 91/2025 table 2 entries 44a, 44b, 45c"
+tag = "r"
+
+[[band]]
+from_mhz = 863
+to_mhz = 870
+source = "BNetzA Vfg. 91/2025 table 2 entries 46a to 56b"
+tag = "r"

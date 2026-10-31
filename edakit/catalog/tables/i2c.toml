@@ -1,0 +1,13 @@
+# I2C pull-up window – REQ.value on I2C lines.
+
+[table]
+about = "I2C pull-up sizing, Standard mode"
+source = "NXP UM10204 Rev. 7.0 (2021), 7.1 and table 10"
+tag = "r"
+
+[pullup]
+sink_a = 0.003      # Rp(min) = (V - VOL) / 3 mA
+vol_v = 0.4
+r_max_ohm = 10000   # 100 kHz with the bus capacitance of a small board
+source = "NXP UM10204 Rev. 7.0 (2021), 7.1 Pull-up resistor sizing"
+tag = "r"

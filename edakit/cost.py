@@ -120,7 +120,7 @@ def load_fee_table(cfg=None, maker=None):
 
 def quoted_pcb(cfg, board, maker=None):
     """(price, how) of the PCBs from the quote of the current release – the board line of the maker's quote.json, as
-    long as its fab hash, quantity and maker are the board's and B-1 to B-5 passed on it (edakit cart check); None
+    long as its fab hash, quantity and maker are the board's and ORDER.form to ORDER.files passed on it (edakit cart check); None
     otherwise. Nothing is written into edakit.toml, and [cost] pcb_price wins."""
     from . import cart, makers
     from .release import gate

@@ -42,11 +42,11 @@ Every decision gets a **number** in the project's decision log (D-… design, E-
 decision, reason (in the user's words where possible), date, alternatives. Cite the number in the graph or the code
 where it applies. Update the list of open items.
 
-An accepted check candidate is a decision like any other, written so that it can be built later without this
+An accepted candidate is a decision like any other, written so that it can be built later without this
 conversation: what the check would test, the finding that showed it (designator, numbers), the evidence or source,
 and `edakit: open`. When the user asks, the skill propose-rule sends it to the edakit repository as an issue
 (`edakit: #12`); its triage builds it, rejects it or asks back, and the decision then gets the check's ID
-(`edakit: G-15`) or `edakit: rejected (#12)`.
+(`edakit: REQ.function`) or `edakit: rejected (#12)`.
 
 ## 4. Implement and report
 

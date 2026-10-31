@@ -3,7 +3,7 @@ from edakit import cli, proposal
 FILLED = """## hole fits the lead
 
 ### Kind
-check
+relation
 
 ### Rule
 Every plated hole of a THT footprint is at least 0.2 mm larger than the lead it takes.
@@ -36,18 +36,18 @@ feature
 A 0 Ω resistor (value_ohm 0) joins its two nets for the checks and the simulation, as copper would.
 
 ### Gap
-`edakit check` on the origin: G-4 on TLC_OE (pull-up behind R35) and G-6 on V_LED (capacitors behind R55), both
+`edakit check` on the origin: LVL.undefined on TLC_OE (pull-up behind R35) and REQ.missing on V_LED (capacitors behind R55), both
 false; `edakit sim` stops with ZeroDivisionError in stress().
 
 ### Reference
 pytree hardware/graph/check_graph.py bridged() at 9d9efad: nets joined through parts with value_ohm 0 count as one
-for G-4 and G-6; run_sims.py uses r_max_ohm instead of 0.
+for LVL.undefined and REQ.missing; run_sims.py uses r_max_ohm instead of 0.
 
 ### Interface
 none – a parts entry with value_ohm 0 is enough.
 
 ### Test
-The example gets a 0 Ω bridge between the button's pull-up and 3V3: today G-4 fires and sim crashes, then neither.
+The example gets a 0 Ω bridge between the button's pull-up and 3V3: today LVL.undefined fires and sim crashes, then neither.
 
 ### Origin
 - project: pytree (private)
@@ -88,11 +88,20 @@ def test_sealing_again_replaces_the_seal():
 
 
 def test_unsealed_missing_and_unknown():
-    text = FILLED.replace("### Fix\nA footprint with 1.0–1.1 mm holes.\n", "").replace("check\n", "rule\n", 1)
+    text = FILLED.replace("### Fix\nA footprint with 1.0–1.1 mm holes.\n", "").replace("relation\n", "rule\n", 1)
     problems = proposal.verify(text)
     assert problems[0].startswith("no seal")
     assert any("section 'Fix' is missing" in p for p in problems)
     assert any(p.startswith("kind 'rule'") for p in problems)
+
+
+def test_kinds_of_the_restructuring_and_of_before():
+    """fact, relation, domain, block, retire; a proposal sealed before the restructuring (check, hint, part) still
+    verifies – the triage reads check and hint as relation, part as fact."""
+    assert "one of: fact, relation, domain, block, retire" in proposal.template()
+    for kind in (*proposal.RULE_KINDS, *proposal.OLD_KINDS):
+        body, problems = proposal.seal(FILLED.replace("relation\n", f"{kind}\n", 1))
+        assert problems == [] and proposal.verify(body) == [], kind
 
 
 def test_cli(tmp_path, capsys):
@@ -121,7 +130,7 @@ def test_feature_proposal_verifies_with_its_own_sections():
 
 
 def test_rule_sections_do_not_make_a_feature():
-    problems = proposal.check(FILLED.replace("check\n", "feature\n", 1))
+    problems = proposal.check(FILLED.replace("relation\n", "feature\n", 1))
     assert any("section 'Capability' is missing" in p for p in problems)
     assert not any("kind" in p for p in problems)
 

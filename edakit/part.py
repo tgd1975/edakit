@@ -19,7 +19,7 @@ parts.
                                 The entry is not touched (a change would lapse its sign-off); verified.datasheet_sha256
                                 of a sign-off says which file was signed
     edakit part search "KEYWORDS" [--basic] [--min-stock N] [--limit 25] [--json FILE]
-                                JLCPCB's public parts catalogue (F-2's endpoint), without EasyEDA: LCSC number, mpn,
+                                JLCPCB's public parts catalogue (PARTS.stock's endpoint), without EasyEDA: LCSC number, mpn,
                                 manufacturer, class (Basic, Extended, preferred), assembly stock, package, category;
                                 C99… dropped, Basic first, then by stock; an LCSC number gives only its exact hit.
                                 Exit 2 when nothing is found
@@ -30,7 +30,7 @@ parts.
 
 The library geometry has the units and axes of `edakit pcb dump` (mil, y up, relative to the part origin at 0° on
 TOP); a pad with a hole adds `hole` [w, l] in mm and `plated`, every pad its shape, size `w` × `h` (mil) and `rot`.
-P-1 compares the graph with a cached symbol, `pcb plan` takes a cached footprint for a part that is not in the PCB yet
+STRUCT.entry compares the graph with a cached symbol, `pcb plan` takes a cached footprint for a part that is not in the PCB yet
 – or, where the parts entry has footprint data, that data (library_footprint).
 
 Own parts: a board of an edakit project used as a part in another project. No distributor sells it; its datasheet
@@ -52,12 +52,12 @@ Derived from the board's project:
               analog, passive among its pins. pull and pull_ohm from resistors to a supply or to ground; vmax is the
               lowest limit on the net: pin vmax, capacitor v_max / 1.5
   params      behaviour "current": the largest current from the connector over the board's scenarios
-  ratings     vin_min, vin_max: the voltage at the connector over those scenarios – E-3 holds the host to it
+  ratings     vin_min, vin_max: the voltage at the connector over those scenarios – SIM.state holds the host to it
   compliance  from the board's parts: RoHS, REACH statements, radio
   own         what "pcb", connectors, the hash of the board's circuit (state_sha256); the copy adds path, commit,
               repository and the release of that state
 
-P-3 compares the copy with its source and a project's datasheets with its state (checks.py calls check()).
+SYNC.source compares the copy with its source and a project's datasheets with its state (checks.py calls check()).
 """
 
 from __future__ import annotations
@@ -76,7 +76,7 @@ import urllib.request
 from collections import Counter
 from pathlib import Path
 
-from . import checks, config
+from . import circuit, config
 from .config import MIL_PER_MM
 from .design import Design, natural_key
 
@@ -161,24 +161,26 @@ def simulate(cfg, d, sim, probe):
 
 def pull(d, net):
     """('up'|'down', parallel resistance or None) of the resistors from the net to a supply or to ground."""
-    for way, targets in (("up", checks.supply_nets(d)), ("down", {d.ground})):
-        rs = [r for _, r, _ in checks.resistors_to(d, net, targets)]
+    for way, targets in (("up", circuit.supply_nets(d)), ("down", {d.ground})):
+        rs = [r for _, r, _ in circuit.resistors_to(d, net, targets)]
         if rs:
             return way, (1 / sum(1 / r for r in rs) if all(rs) else None)
     return None, None
 
 
 def limit(d, net, inside):
-    """Lowest voltage limit on the net: pin vmax, capacitor v_max / 1.5 (G-8's margin) – with what sets it."""
+    """Lowest voltage limit on the net: a pin's v_max_v, a capacitor's v_max_v / its derating factor (LIM.v's margin,
+    catalog/tables/derating.toml) – with what sets it."""
+    from .engines.quantities import FACTOR
     found = []
     for ref in inside:
         info = d.pin_info(ref)
-        if info.get("vmax") is not None:
-            found.append((float(info["vmax"]), f"{ref} ({info.get('name', '')}) vmax"))
+        if info.get("v_max_v") is not None:
+            found.append((float(info["v_max_v"]), f"{ref} ({info.get('name', '')}) v_max_v"))
         p = d.part(ref.split(".", 1)[0]) or {}
-        if p.get("kind") == "capacitor" and (p.get("ratings") or {}).get("v_max"):
-            found.append((round(p["ratings"]["v_max"] / checks.CAP_FACTOR, 2),
-                          f"{ref.split('.', 1)[0]} v_max {p['ratings']['v_max']} V / {checks.CAP_FACTOR}"))
+        if p.get("kind") == "capacitor" and circuit.limits(p).get("v_max_v"):
+            v_max, f = circuit.limits(p)["v_max_v"], FACTOR["capacitor"]
+            found.append((round(v_max / f, 2), f"{ref.split('.', 1)[0]} v_max_v {v_max} V / {f}"))
     return min(found) if found else (None, "")
 
 
@@ -191,7 +193,7 @@ def classify(d, net, inside, powered):
         return {"type": "power_output", "role": "vout"}
     if "power_in" in types:
         return None   # a supply input the simulation does not feed
-    line = checks.i2c_name(net) or next((x for x in map(checks.i2c_line, map(d.pin_info, inside)) if x), None)
+    line = circuit.i2c_name(net) or next((x for x in map(circuit.i2c_line, map(d.pin_info, inside)) if x), None)
     if line:
         return {"type": "bidirectional", "role": line}
     if d.nets[net].get("bus") == "i2c":
@@ -201,8 +203,8 @@ def classify(d, net, inside, powered):
 
 def compliance(d, project, state):
     """What the parts entries of the board say about RoHS, REACH and radio. radio: the radios of its parts, "none"
-    when none transmits and every module and microcontroller says so (P-11), else left out – not known."""
-    from .checks import RADIO_TYPES
+    when none transmits and every module and microcontroller says so (PARTS.fact), else left out – not known."""
+    from .radio import RADIO_TYPES
     rohs = {"not compliant": [], "exemption": [], "not known": []}
     reach, radio, unstated, n = [], [], [], 0
     for des in sorted(d.comps, key=natural_key):
@@ -276,21 +278,21 @@ def datasheet(cfg, connectors, name=None):
                     info["pull_ohm"] = round(ohm, 1)
         vmax, why = limit(d, net, inside)
         if vmax is not None and kind["type"] != "ground":
-            info["vmax"] = vmax
-            srcs.append(f"pin {num} vmax: {why}")
+            info["v_max_v"] = vmax
+            srcs.append(f"pin {num} v_max_v: {why}")
         entry_pins[num] = info
         notes[num] = inside
     i_a = round(worst["sources"][des], 4)
     lo, hi = round(min(volts), 3), round(max(volts), 3)
-    srcs += [f"params.i_a: the largest current from {des} over {len(rows)} scenarios of "
+    srcs += [f"values.i_a: the largest current from {des} over {len(rows)} scenarios of "
              f"{cfg.relative(cfg.sim_config)} ({worst['name']})",
-             f"ratings vin_min, vin_max: the voltage at {des} over those scenarios"]
+             f"limits vin_min_v, vin_max_v: the voltage at {des} over those scenarios"]
     entry = {
         "mpn": name or cfg.project, "manufacturer": f"own board ({cfg.project})", "kind": "module",
         "datasheet": {"url": file_name(name or cfg.project)[:-5] + ".md"},
         "pins": entry_pins,
-        "params": {"behavior": "current", "i_a": i_a},
-        "ratings": {"vin_min": lo, "vin_max": hi},
+        "values": {"behavior": "current", "i_a": i_a},
+        "limits": {"vin_min_v": lo, "vin_max_v": hi},
         "compliance": compliance(d, cfg.project, state),
         "sources": srcs,
         "own": {"what": "pcb", "project": cfg.project, "connectors": list(connectors), "graph_version": d.version,
@@ -316,15 +318,15 @@ def markdown(cfg, d, entry, notes, rows, des, plus, minus):
         inside = notes.get(num, [])
         there = ", ".join(f"{r} ({n})" if (n := d.pin_info(r).get("name")) and n != r.split(".", 1)[1] else r
                           for r in inside[:4]) + (f", … ({len(inside)} pins)" if len(inside) > 4 else "")
-        pull_txt = f"{p['pull']} {checks.ohm(p['pull_ohm'])}" if p.get("pull_ohm") else p.get("pull", "–")
-        lines.append(f"| {num} | {p['name']} | {p['type']} | {p.get('role', '–')} | {p.get('vmax', '–')} | "
+        pull_txt = f"{p['pull']} {circuit.ohm(p['pull_ohm'])}" if p.get("pull_ohm") else p.get("pull", "–")
+        lines.append(f"| {num} | {p['name']} | {p['type']} | {p.get('role', '–')} | {p.get('v_max_v', '–')} | "
                      f"{pull_txt} | {there or '–'} |")
-    i_a, r = entry["params"]["i_a"], entry["ratings"]
+    i_a, r = entry["values"]["i_a"], entry["limits"]
     lines += ["", "## Supply", "",
               f"Through {plus} against {minus} at {des}, as simulated over {len(rows)} scenarios of "
               f"{cfg.relative(cfg.sim_config)} (`edakit sim` there):", "",
-              f"- voltage at the connector: {r['vin_min']} … {r['vin_max']} V – a project that uses the board must "
-              "keep it there (E-3)",
+              f"- voltage at the connector: {r['vin_min_v']} … {r['vin_max_v']} V – a project that uses the board must "
+              "keep it there (LIM.range)",
               f"- largest current: {i_a * 1e3:.0f} mA", "",
               "| Scenario | Voltage | Current |", "|---|---|---|"]
     lines += [f"| {s['name']} | {s['nets'][plus] - s['nets'][minus]:.3f} V | {s['sources'][des] * 1e3:.0f} mA |"
@@ -349,7 +351,7 @@ def markdown(cfg, d, entry, notes, rows, des, plus, minus):
     lines += ["", "## Not in this datasheet", "",
               "- the footprint and the EasyEDA device the board gets in a project that uses it",
               "- the board's logic levels and timing: its signal pins are typed, not simulated – a project that uses "
-              "it checks them with G-3, G-4, G-5 and G-11"]
+              "it checks them with LIM.v, LVL.undefined, LVL.contention and REQ.missing"]
     return "\n".join(lines) + "\n"
 
 
@@ -431,12 +433,12 @@ def own(cfg, source, name=None):
     out.write_text(json.dumps(entry, indent=1, ensure_ascii=False) + "\n", encoding="utf-8")
     todo = []
     if dirty:
-        todo.append(f"copied from uncommitted changes in {path} – commit there and copy again (P-3 stays open)")
+        todo.append(f"copied from uncommitted changes in {path} – commit there and copy again (SYNC.source stays open)")
     if not entry["own"]["released"]:
-        todo.append(f"{path} is not released at this state – P-3 warns until it is (edakit gate there, then copy "
+        todo.append(f"{path} is not released at this state – SYNC.source warns until it is (edakit gate there, then copy "
                     "again) or the warning is accepted in the sign-off file")
     if not entry["verified"]:
-        todo.append("sign it off against its datasheet (handbook 4.3; G-9 stays open until then)")
+        todo.append("sign it off against its datasheet (handbook 4.3; PARTS.verified stays open until then)")
     todo.append(f"the component: \"part\": \"{entry['mpn']}\", \"bom\": false, pins "
                 + json.dumps({k: p["name"] for k, p in entry["pins"].items()}, ensure_ascii=False)
                 + ", an easyeda_device with symbol and footprint of the board")
@@ -579,7 +581,7 @@ def footprint_silk(ds, hx, hy):
             elif f[0] == "TEXT" and f[7] in SILK_LAYERS and f[1] not in ("P", "N") and len(f) > 11:
                 add(f[7], svg_polylines(f[11]), float(f[4]))
         except (IndexError, ValueError):
-            continue              # a shape the library writes otherwise: left out, the gate's L-8 and L-17 see the print
+            continue              # a shape the library writes otherwise: left out, the gate's GEO.mark and GEO.silk see the print
     return out
 
 
@@ -624,7 +626,7 @@ def cached_footprint(cfg, footprint):
 
 def library_footprint(cfg, design, des):
     """A component's footprint before its dump: the footprint data of its parts entry (4.5) – the copy edakit builds,
-    "source": "data"; None while the data is not complete (P-9) –, else the cached library geometry of its footprint:
+    "source": "data"; None while the data is not complete (PARTS.footprint) –, else the cached library geometry of its footprint:
     the name of its parts entry, else of the library."""
     entry = design.part(des) or {}
     if "footprint_data" in entry:
@@ -648,7 +650,7 @@ def write_cache(cfg, lib, today):
 
 def entry_differences(entry, lib):
     """Where a parts entry differs from the library: fields it lacks, values that differ (case and blanks ignored but
-    in the footprint name, which L-4 compares as it is), pins as S-2 compares them."""
+    in the footprint name, which SYNC.footprint compares as it is), pins as SYNC.schematic compares them."""
     from .schematic import pin_differences
     out = []
     for k in ENTRY_FIELDS:
@@ -707,7 +709,7 @@ def main_import(cfg, args):
         print(f"{cfg.relative(out)}: new entry – {lib['mpn']} ({lib['manufacturer']}), footprint {lib['footprint']}, "
               f"{lib['jlc_class']}, {len(lib['pins'])} pins")
         print("  kind, pin types and roles, values and ratings are for whoever signs it off against its datasheet "
-              "(handbook 4.3; G-9 stays open until then)")
+              "(handbook 4.3; PARTS.verified stays open until then)")
     elif diffs:
         print(f"{cfg.relative(out)}: differs from the library – the entry is kept" +
               (f" (filled in: {', '.join(done)})" if done else ""))
@@ -722,7 +724,7 @@ def main_import(cfg, args):
         print(f"  library geometry: {cfg.relative(cache['footprint'])} ({len(geo['pads'])} pads"
               + (f", {holes} with a hole" if holes else "") + f", {(x1 - x0) / MIL_PER_MM:.1f} x "
               f"{(y1 - y0) / MIL_PER_MM:.1f} mm)")
-    print(f"  symbol: {cfg.relative(cache['symbol'])} – P-1 compares the graph with it")
+    print(f"  symbol: {cfg.relative(cache['symbol'])} – STRUCT.entry compares the graph with it")
     return 2 if diffs else 0
 
 
@@ -747,7 +749,7 @@ def _download(url):
 
 
 def catalogue_search(keyword, page_size=25):
-    """JLCPCB's public parts catalogue through F-2's client (release/fab.py jlc_search; no login, only the keyword
+    """JLCPCB's public parts catalogue through PARTS.stock's client (release/fab.py jlc_search; no login, only the keyword
     leaves the machine): the hits of a full-text search as the catalogue gives them. Network errors and a changed
     answer raise. The one place part fetch and part search reach the catalogue."""
     from .release import fab
@@ -1219,7 +1221,7 @@ def compare(cfg, old_key, new_key):
                 + (f" – slot narrower than {JLC_SLOT_MM} mm (JLCPCB minimum)" if narrow else "")
             holes_fit &= fits and not narrow
         elif h:
-            line["l9"] = f"no lead data in the entry of {new_key} – the fit is not checked (P-7)"
+            line["l9"] = f"no lead data in the entry of {new_key} – the fit is not checked (GEO.hole)"
         if not any(x["old"] == line["old"] and x["text"] == line["text"] for x in holes):   # shell legs: once
             holes.append(line)
     box = lambda g: ((g["bbox"][2] - g["bbox"][0]) / MIL_PER_MM, (g["bbox"][3] - g["bbox"][1]) / MIL_PER_MM)  # noqa
@@ -1283,7 +1285,7 @@ def text(r):
         out.append(f"row {p['row']}: pitch {p['old_mm']:.2f} → {p['new_mm']:.2f} mm")
     for h in r["holes"]:
         pads = h["old"] if h["old"] == h["new"] else f"{h['old']}→{h['new']}"
-        out.append(f"hole {pads}: {h['text']}" + (f" – L-9: {h['l9']}" if h.get("l9") else ""))
+        out.append(f"hole {pads}: {h['text']}" + (f" – GEO.hole: {h['l9']}" if h.get("l9") else ""))
     b = r["box_mm"]
     out.append(f"box: {b['old'][0]:.1f} x {b['old'][1]:.1f} mm → {b['new'][0]:.1f} x {b['new'][1]:.1f} mm")
     out += [f"graph change: {g}" for g in r["graph"]]
@@ -1301,10 +1303,10 @@ def main_diff(cfg, args):
     return 0 if r["drop_in"] else 2
 
 
-# --- P-3 -------------------------------------------------------------------------------------------------------------
+# --- SYNC.source -------------------------------------------------------------------------------------------------------------
 
 def check(d, rep, cfg):
-    """P-3: own parts against their source, and this project's datasheets against its state."""
+    """SYNC.source: own parts against their source, and this project's datasheets against its state."""
     for key in sorted({d.entry_key(des) for des in d.comps} - {None}):
         entry = d.parts[key]
         own_ = entry.get("own")
@@ -1312,33 +1314,33 @@ def check(d, rep, cfg):
             continue
         who = f"{', '.join(des for des in d.comps if d.entry_key(des) == key)} {entry.get('mpn', key)}"
         if own_.get("what") not in WHAT:
-            rep.error("P-3", f"{who}: own.what is {own_.get('what')!r} – one of {', '.join(WHAT)}")
+            rep.error("SYNC.source", f"{who}: own.what is {own_.get('what')!r} – one of {', '.join(WHAT)}")
             continue
         if own_["what"] != "pcb":
             continue
         missing = [k for k in ("path", "connectors", "state_sha256", "commit") if not own_.get(k)]
         if missing:
-            rep.error("P-3", f"{who}: own part without own.{missing[0]} – edakit part own")
+            rep.error("SYNC.source", f"{who}: own part without own.{missing[0]} – edakit part own")
             continue
         path = own_["path"]
         if "uncommitted" in own_["commit"]:
-            rep.pending.append(("P-3", f"{who}: copied from uncommitted changes in {path} – commit there and renew "
+            rep.pending.append(("SYNC.source", f"{who}: copied from uncommitted changes in {path} – commit there and renew "
                                        f"with edakit part own {path}"))
         toml = cfg.root / path / "edakit.toml"
         if not toml.is_file():
-            rep.notes.append(("P-3", f"{who}: {path} not found – the copy is not compared with its source"))
+            rep.notes.append(("SYNC.source", f"{who}: {path} not found – the copy is not compared with its source"))
         else:
             try:
                 changed = state_hash(config.load(toml)) != own_["state_sha256"]
             except config.ConfigError as e:
-                rep.notes.append(("P-3", f"{who}: {path} cannot be read ({e}) – the copy is not compared with its "
+                rep.notes.append(("SYNC.source", f"{who}: {path} cannot be read ({e}) – the copy is not compared with its "
                                          "source"))
             else:
                 if changed:
-                    rep.pending.append(("P-3", f"{who}: {path} has changed since its datasheet – edakit part "
+                    rep.pending.append(("SYNC.source", f"{who}: {path} has changed since its datasheet – edakit part "
                                                f"datasheet there, then edakit part own {path}"))
         if not own_.get("released"):
-            rep.warnings.append(("P-3", f"{who}: {path} is not released at the state of its datasheet – release it "
+            rep.warnings.append(("SYNC.source", f"{who}: {path} is not released at the state of its datasheet – release it "
                                         f"(edakit gate) and renew with edakit part own {path}, or accept the warning "
                                         "in the sign-off file"))
     sheets = sorted(datasheet_dir(cfg).glob("*.json"))
@@ -1346,7 +1348,7 @@ def check(d, rep, cfg):
     for f in sheets:
         sheet = json.loads(f.read_text(encoding="utf-8"))
         if (sheet.get("own") or {}).get("state_sha256") != state:
-            rep.pending.append(("P-3", f"{sheet.get('mpn', f.stem)}: datasheet export of an older state – edakit "
+            rep.pending.append(("SYNC.source", f"{sheet.get('mpn', f.stem)}: datasheet export of an older state – edakit "
                                        "part datasheet"))
 
 
@@ -1355,6 +1357,9 @@ def main(cfg, args):
     try:
         if args.action == "import":
             return main_import(cfg, args)
+        if args.action == "lint":
+            from . import schema
+            return schema.main_lint(cfg, args)
         if args.action == "diff":
             return main_diff(cfg, args)
         if args.action == "fetch":
@@ -1380,8 +1385,8 @@ def main(cfg, args):
             for f in done:
                 e = json.loads(f.read_text(encoding="utf-8"))
                 print(f"{cfg.relative(f)} and {f.with_suffix('.md').name}: {e['mpn']} through "
-                      f"{', '.join(e['own']['connectors'])}, {e['params']['i_a'] * 1e3:.0f} mA at "
-                      f"{e['ratings']['vin_min']} … {e['ratings']['vin_max']} V")
+                      f"{', '.join(e['own']['connectors'])}, {e['values']['i_a'] * 1e3:.0f} mA at "
+                      f"{e['limits']['vin_min_v']} … {e['limits']['vin_max_v']} V")
                 for num, p in e["pins"].items():
                     print(f"  {num:>3} {p['name']:<12} {p['type']:<14} {p.get('role', '')}")
             return 0

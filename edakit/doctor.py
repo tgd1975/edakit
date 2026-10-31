@@ -173,8 +173,8 @@ ODB_TOOL = "name: 'easyeda_export_odb'"     # the tool odb-tool-patch.mjs adds t
 
 def odb_line(cfg, runtime, installed):
     """(level, text, hint) for the ODB++ export: the tool in the installed server – needed only with a maker of
-    [cart] makers that takes ODB++ (AISLER, F-7); the bridge's handler is in the extension bridge-extension-patch.sh
-    builds, and F-7 names an extension without it."""
+    [cart] makers that takes ODB++ (AISLER, SYNC.odb); the bridge's handler is in the extension bridge-extension-patch.sh
+    builds, and SYNC.odb names an extension without it."""
     from .release import fab
     need = cfg is not None and bool(fab.odb_takers(cfg))
     tools = Path(runtime) / "node_modules/easyeda-mcp-pro/dist/tools/L1_export.js"
@@ -183,7 +183,7 @@ def odb_line(cfg, runtime, installed):
         return "OK", "ODB++ export: easyeda_export_odb in the server; the bridge needs the extension with ODB++ " \
                      "(bridge-extension-patch.sh)", ""
     return ("WARN" if need else "INFO", "ODB++ export: easyeda_export_odb not in the server"
-            + (" – a maker of [cart] makers takes ODB++ (F-7)" if need else ""),
+            + (" – a maker of [cart] makers takes ODB++ (SYNC.odb)" if need else ""),
             "mcp-server.sh patches it in on its next start (odb-tool-patch.mjs); then build and import the bridge "
             "extension with ODB++ (bash edakit/easyeda/bridge-extension-patch.sh, handbook 2.5)" if need else "")
 

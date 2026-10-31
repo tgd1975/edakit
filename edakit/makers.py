@@ -13,17 +13,17 @@ maker takes and refuses:
                        maker has no such field, and the key is left out of its job
     excludes, ignore   combinations the form refuses; fields of the page edakit does not set, each with its reason
     classes            the assembly classes – the values of [release] assembly.pcba
-    rules              the form's limits F-6 checks: thicknesses_mm (and what they are for), remark_max, placeholder,
-                       placeholder_min_mm, placeholder_gone (the maker reports its order number gone: F-6 warns about
+    rules              the form's limits FILES.order checks: thicknesses_mm (and what they are for), remark_max, placeholder,
+                       placeholder_min_mm, placeholder_gone (the maker reports its order number gone: FILES.order warns about
                        the placeholder), silkscreen_on, tooling_min (per class), class_of_sides
-    catalogue          whose parts catalogue P-4, F-2 and edakit stock ask ("jlcpcb"); none: the maker's matching at
-                       the order (B-2)
+    catalogue          whose parts catalogue PARTS.stock and edakit stock ask ("jlcpcb"); none: the maker's matching at
+                       the order (ORDER.parts)
     dnp                how a part not to place is marked: "omit" (left out of BOM and CPL); otherwise the job lists it
     seat, currency     where the maker sits (the regulatory review at the order), its currency
     fees               the fee table edakit cost prices with (edakit/fees/<fees>.json)
 
 [cart] maker is the maker the board is planned for, [cart] makers every maker whose checks and files the gate runs
-and writes. A check that holds a board to a maker (P-4, F-2, F-6, P-12, F-7) fails for the planned maker and warns for
+and writes. A check that holds a board to a maker (PARTS.stock, FILES.order, PARTS.fact/mpn, SYNC.odb) fails for the planned maker and warns for
 every other one (result). Without [cart] the maker is JLCPCB and the makers are ["jlcpcb"]: every check as before.
 """
 
@@ -45,7 +45,7 @@ RULE_KEYS = ("thicknesses_mm", "thicknesses_for", "remark_max", "placeholder", "
              "silkscreen_on", "tooling_min", "class_of_sides")
 SECTIONS = ("PCB", "PCBA", "Shipping")
 CART_KEYS = ("maker", "makers", "ship_to", "shipping", "tolerance", "profiles")
-TOLERANCE = 0.10                 # [cart] tolerance: per price line, in the maker's currency, before B-3 warns
+TOLERANCE = 0.10                 # [cart] tolerance: per price line, in the maker's currency, before ORDER.quote warns
 
 
 class MakerError(Exception):
@@ -135,7 +135,7 @@ class Maker:
 
     def word(self, key, value):
         """The form's word for edakit's value of a key: from words, a number with its unit, a size as the form shows it,
-        else the value as text. A value words do not list keeps edakit's word (F-6 names it)."""
+        else the value as text. A value words do not list keeps edakit's word (FILES.order names it)."""
         f = self.field(key) or {}
         words = f.get("words") or {}
         token = _token(value)
@@ -342,7 +342,7 @@ def pcba(cfg, key=None):
 
 def placeholders(cfg=None):
     """{placeholder text: maker name} of every maker profile edakit ships and the project names – the texts a maker
-    replaces by its order number, and every other maker prints as they are (F-6)."""
+    replaces by its order number, and every other maker prints as they are (FILES.order)."""
     keys = set(shipped()) | (set(listed(cfg)) if cfg is not None else set())
     out = {}
     for key in sorted(keys):
@@ -356,5 +356,5 @@ def placeholders(cfg=None):
 
 
 def with_catalogue(cfg, catalogue="jlcpcb"):
-    """The makers of the project that order from that parts catalogue (P-4, F-2, edakit stock)."""
+    """The makers of the project that order from that parts catalogue (PARTS.stock, edakit stock)."""
     return [k for k in listed(cfg) if get(cfg, k).catalogue == catalogue]

@@ -2,9 +2,9 @@
 
     version()                    "10.0.6"
     fill_zones(pcb)              pcb drc --refill-zones --save-board: the zones filled and saved in the file
-    drc(pcb, out)                pcb drc, JSON report -> findings as EasyEDA's DRC gives them (drc.json, L-3)
-    erc(sch, out)                sch erc, JSON report -> findings (S-3)
-    netlist(sch, out)            sch export netlist -> {net: [ref.pin]}, {ref: fields} (S-2, F-1)
+    drc(pcb, out)                pcb drc, JSON report -> findings as EasyEDA's DRC gives them (drc.json, GEO.drc)
+    erc(sch, out)                sch erc, JSON report -> findings (SYNC.schematic, section erc)
+    netlist(sch, out)            sch export netlist -> {net: [ref.pin]}, {ref: fields} (SYNC.schematic, SYNC.bom)
     gerbers(pcb, out)            pcb export gerbers: copper, mask, paste, silkscreen, outline
     drill(pcb, out)              pcb export drill: Excellon in mm, plated and not plated apart, slots as G85
     pos(pcb, out)                pcb export pos: CSV in mm, both sides

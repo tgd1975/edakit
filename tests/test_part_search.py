@@ -82,7 +82,7 @@ def test_preferred_extended_counts_as_basic(project, catalogue, capsys):
 
 
 def test_an_lcsc_number_gives_only_its_exact_hit(project, catalogue, capsys):
-    """Full text: C2297 also finds MIC2297, LTC2297, XC2297 … – F-2 takes the exact number only, so does search."""
+    """Full text: C2297 also finds MIC2297, LTC2297, XC2297 … – PARTS.stock takes the exact number only, so does search."""
     assert run(project, "C2297") == 0
     assert codes(capsys.readouterr().out) == ["C2297"]
 
@@ -113,7 +113,7 @@ def test_limit_and_json(project, catalogue, tmp_path):
 
 
 def test_part_search_and_part_fetch_ask_f2s_catalogue_client(jlcpcb):
-    """One client for JLCPCB's catalogue: part search and part fetch reach it through fab.jlc_search, as F-2, stock
+    """One client for JLCPCB's catalogue: part search and part fetch reach it through fab.jlc_search, as PARTS.stock, stock
     and order do."""
     hits = part.catalogue_search("C2297")
     assert jlcpcb == ["C2297"]

@@ -32,7 +32,7 @@ between projects goes into edakit.toml, a board or schematic file or the graph, 
 
 ## 3. Code
 
-In the module of the stage: `checks.py` (P, G), `sim/` (E), `pcb.py`, `route.py`, `silk.py`, `release/fab.py` (L, F).
+In the module of the stage: `engines/` and `checks.py` (P, G), `sim/` and `engines/sim.py` (E), `pcb.py`, `route.py`, `silk.py`, `release/fab.py` (L, F).
 What needs EasyEDA stays a thin call around a function that takes data and returns data – that function gets the
 tests. Messages start with designator or net and give the numbers, like the rest of edakit.
 
@@ -44,7 +44,7 @@ The test of step 1 passes, and its counterpart: the same example without the pat
 
 - `tests/fixtures/led-bar`: `edakit check`, `edakit sim`, `edakit gate` (offline) report what they did before
 - the Christmas bell (`https://github.com/tgd1975/automatic_christmas_bell`) and other projects at hand, read only:
-  `edakit check` and `edakit hints` write nothing; for the simulation call `run_all` from Python, for routing and
+  `edakit check` and `edakit check` write nothing; for the simulation call `run_all` from Python, for routing and
   plan the offline steps (`route dsn`, `route check`, `pcb plan`) into the scratchpad
 - the origin, if it can be cloned: the gap command shows it closed. A private origin: write down the commands that
   show it, for the pull request

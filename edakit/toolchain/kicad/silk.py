@@ -3,7 +3,7 @@ where designators, the board label, texts and artwork go –, written into the K
 Gerber files from kicad-cli, the DRC KiCad's.
 
 The steps follow silk.apply: hide the designators of the placed side and of [silk] hide, drop edakit's own print of
-the last run, export Gerber (the footprints' own print, kept for L-17), artwork and texts, designators, the board
+the last run, export Gerber (the footprints' own print, kept for GEO.silk), artwork and texts, designators, the board
 label, then the check on a second export. Sizes: KiCad's text size is the height of a capital, the height edakit asks
 for (EasyEDA's em size is converted, silk.font_size; KiCad needs none).
 """
@@ -56,7 +56,7 @@ def apply(cfg, board, step=None, verbose=False):
     folder = export_gerber(cfg, board, verbose)
     kept = footprint_print(cfg, board)
     kept.mkdir(parents=True, exist_ok=True)
-    for key in ("top_silk", "bottom_silk"):              # kept for the gate: what is not in it is edakit's (L-17)
+    for key in ("top_silk", "bottom_silk"):              # kept for the gate: what is not in it is edakit's (GEO.silk)
         if (folder / gerber.FILES[key]).exists():
             shutil.copy(folder / gerber.FILES[key], kept / gerber.FILES[key])
     mask_key, silk_key = GERBER_KEYS[layer]

@@ -1,5 +1,11 @@
 #!/usr/bin/env bash
 # edakit from this plugin or clone, run through uv (installs the Python dependencies on first use).
 # On Linux with uv from snap, pipe the output when Claude Code captures it: edakit … 2>&1 | cat
+# Where uv cannot write its cache (a sandbox, a read-only home) and the plugin's .venv exists, edakit runs from that
+# environment directly.
 ROOT="$(cd "$(dirname "$(readlink -f "${BASH_SOURCE[0]}")")/.." && pwd)"
+CACHE="${UV_CACHE_DIR:-${XDG_CACHE_HOME:-$HOME/.cache}/uv}"
+if [ -x "$ROOT/.venv/bin/python" ] && ! { mkdir -p "$CACHE" 2>/dev/null && [ -w "$CACHE" ]; }; then
+  PYTHONPATH="$ROOT${PYTHONPATH:+:$PYTHONPATH}" exec "$ROOT/.venv/bin/python" -m edakit.cli "$@"
+fi
 exec uv run --quiet --project "$ROOT" edakit "$@"

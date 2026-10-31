@@ -44,16 +44,16 @@ runs before `edakit check`, which warns on it otherwise: `edakit run <name> 2>&1
 one that reads the contract after `edakit firmware`, below). A project without entries skips this.
 
 ```bash
-edakit check 2>&1 | cat     # ERROR: fix. WAIVED: only with a reason in the graph. PENDING blocks only the release
-edakit hints 2>&1 | cat     # design hints of new parts: handle them or note why not ("hints" in the graph)
-edakit stock 2>&1 | cat     # new or other parts: what JLCPCB says about them, dated – P-4 reads it in edakit check
+edakit check 2>&1 | cat     # error: fix. accepted: only with a reason in the graph. pending blocks only the release
+edakit domains 2>&1 | cat   # the domains on; a domain a new part suggests and the list leaves out is a note
+edakit stock 2>&1 | cat     # new or other parts: what JLCPCB says about them, dated – PARTS.stock reads it in edakit check
 edakit cost 2>&1 | cat      # what the change costs: class, Extended types, bake, X-ray – against [cost] budget
 edakit sim 2>&1 | cat       # exit 2 = finding: find the cause, do not argue it away
 ```
 
 `edakit check` explains every failed check below the findings; `edakit rules <ID>` gives the full entry.
 
-Values quoted in documents and schematic notes (`[docs]`, handbook 6.6): `edakit docs` names the stale ones (G-19),
+Values quoted in documents and schematic notes (`[docs]`, handbook 6.6): `edakit docs` names the stale ones (DOCS.quote),
 `edakit docs --write` fills them in – no sign-off is voided. With `[firmware]` in edakit.toml: `edakit firmware` writes
 the firmware contract again (`--check` says whether it drifted, handbook 3.5) – commit it with the graph; the project's
 renderer turns it into firmware source. Plus the project's own generated files and tests. A change of the protection
@@ -80,7 +80,7 @@ the PCB designer takes over the reviewed state and the reviews' results, not a c
 after the layout. The release sign-offs stay as they are (skill release).
 
 The PCB designer takes it over in its own session with the skill pcb-round – it brings the change into the EasyEDA
-schematic and the PCB (`schematic create/layout`, `pcb parts/nets`) and checks the plan against the hand-over (L-12).
+schematic and the PCB (`schematic create/layout`, `pcb parts/nets`) and checks the plan against the hand-over (SYNC.plan).
 
 ## 4. Documentation and sign-offs
 

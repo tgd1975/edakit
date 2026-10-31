@@ -22,13 +22,13 @@
       "role": "2"
     }
   },
-  "params": {
+  "values": {
     "value_ohm": 10000.0,
     "tolerance": 0.01
   },
-  "ratings": {
+  "limits": {
     "p_max_w": 0.125,
-    "v_max": 150
+    "v_max_v": 150
   },
   "spice": {},
   "sources": [

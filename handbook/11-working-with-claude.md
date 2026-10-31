@@ -16,7 +16,7 @@ agreements are as important as the scripts.
 | skill | `/edakit:own-part` | the parts entry of a part nobody sells and no edakit project describes – own board, from the bin, made by hand – from the user's documents and measurement (4.5) |
 | skill | `/edakit:pcb-round` | one layout round |
 | skill | `/edakit:release` | the gate, sign-offs, order checklist |
-| skill | `/edakit:cart` | a released board into the maker's cart with Claude in Chrome in the owner's browser – JLCPCB, PCBWay, Eurocircuits, AISLER –: the job of `edakit cart prepare`, every field set and read back, the quote checked (B-1 to B-7), the regulatory review of the order, then the cart button and stop – never orders, never pays; afterwards the real cost into the fee table (8.4) |
+| skill | `/edakit:cart` | a released board into the maker's cart with Claude in Chrome in the owner's browser – JLCPCB, PCBWay, Eurocircuits, AISLER –: the job of `edakit cart prepare`, every field set and read back, the quote checked (ORDER.form to ORDER.review), the regulatory review of the order, then the cart button and stop – never orders, never pays; afterwards the real cost into the fee table (8.4) |
 | skill | `/edakit:decision-round` | numbered findings, short answers, numbered decisions |
 | skill | `/edakit:propose-rule` | a check, hint, block or part fact as a sealed issue to the edakit repository, and its outcome back into the decision (chapter 14.4) |
 | skill | `/edakit:propose-feature` | a feature edakit lacks and a project had to build or work around, as a sealed issue to the edakit repository, and its outcome back into the project (11.6) |
@@ -25,7 +25,7 @@ agreements are as important as the scripts.
 | agent | `edakit:part-selector` | finds a part at the project's distributors (a profile each) and writes its parts entry, in its own context (chapter 4.2) |
 | agent | `edakit:easyeda-operator` | runs one long EasyEDA step and returns only the result – keeps the main conversation clean |
 | agent | `edakit:electrical-reviewer` | independent circuit review; its result is the sign-off M-1 |
-| agent | `edakit:regulatory-reviewer` | circuit and parts against EU law for the board's purpose; its result is the sign-off M-6 (chapter 15) – and "At the order" what an order adds (finish, quantity, the maker's seat), checked by B-7 |
+| agent | `edakit:regulatory-reviewer` | circuit and parts against EU law for the board's purpose; its result is the sign-off M-6 (chapter 15) – and "At the order" what an order adds (finish, quantity, the maker's seat), checked by ORDER.review |
 | agent | `edakit:pcb-reviewer` | independent layout review (read-only EasyEDA tools); its result is the sign-off M-5 |
 | MCP | `easyeda` | easyeda-mcp-pro, pinned, safe defaults |
 | hook | PreToolUse on the easyeda tools | claims EasyEDA for the session, refuses when another session holds it |
@@ -119,13 +119,13 @@ not that list.
    solder tabs) against the board geometry; electrical specs of the exact part, not of a similar one.
 8. **Robust, not fitted to today's layout.** Mechanical parts derived from the layout (enclosures, stands) get
    uniform clearances over areas and contact only where needed – not pockets fitted to today's pins.
-9. **Name stages and checks with words.** "Stage L (board)", "L-9 (hole fits the lead)" – nobody remembers letters.
+9. **Name stages and checks with words.** "Stage L (board)", "GEO.hole (hole fits the lead)" – nobody remembers letters.
 10. **Cost matters, effort is no argument.** A cheaper part is worth a gate run; a gate run is routine, not a cost.
 11. **Requests to the user stand apart at the end of a message**, not hidden in a paragraph.
 12. **Circuit, layout and review are separate roles** (chapter 14.1). The circuit designer (skill circuit-design)
     hands over in writing, the PCB designer works from that in a session of its own (skill pcb-round), and the agents
     electrical-reviewer and pcb-reviewer review in theirs. A design reviewed by its designer has not been reviewed.
-13. **A finding a rule could have found can become a check.** Reviewers mark such findings as check candidates; the
+13. **A finding a rule could have found can become one.** Reviewers mark such findings as candidates; the
     user decides, nothing is filed by itself; an accepted candidate is a decision in the project's log, goes to the
     edakit repository as a proposal when the user asks (skill propose-rule), and is triaged and built there (skills
     triage-rule and add-rule, chapter 14.4). Rules come from the catalog and the

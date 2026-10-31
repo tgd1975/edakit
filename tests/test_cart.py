@@ -1,6 +1,6 @@
 """Ordering step 4 (docs/concepts/new/ordering.md): `edakit cart prepare` writes the job of the skill cart from the
 current release, `edakit cart check` holds what the skill brought back – quote.json and the page text – to the job,
-the release and the page (B-1 to B-7), `--cart` checks the cart line and writes the order record. On recorded data:
+the release and the page (ORDER.form to ORDER.review), `--cart` checks the cart line and writes the order record. On recorded data:
 the example's export of test_fab_run, released, and a quote and page text as the skill would write them."""
 
 import json
@@ -181,28 +181,28 @@ def test_a_quote_as_the_job_passes_and_waits_for_the_review(prepared, monkeypatc
     write_quote(prepared)
     assert cart(prepared, monkeypatch, "check") == 3
     got = results(prepared)
-    assert {k: v[0] for k, v in got.items()} == {"B-1": "pass", "B-2": "pass", "B-3": "pass", "B-4": "pass",
-                                                 "B-5": "pass", "B-6": "pass", "B-7": "open"}
+    assert {k: v[0] for k, v in got.items()} == {"ORDER.form": "pass", "ORDER.parts": "pass", "ORDER.quote": "pass", "ORDER.read": "pass",
+                                                 "ORDER.files": "pass", "ORDER.finish": "pass", "ORDER.review": "open"}
     review(prepared)
     assert cart(prepared, monkeypatch, "check") == 0
-    assert results(prepared)["B-7"][0] == "pass"
+    assert results(prepared)["ORDER.review"][0] == "pass"
     assert "Every check passed" in (order_dir(prepared) / "check.md").read_text()
 
 
 @pytest.mark.parametrize("change, page_change, expected", [
     (lambda q: next(f for f in q["fields"] if f["label"] == "Mark on PCB").update(value="Remove Mark"), None,
-     ("B-1", "fail", "Mark on PCB: the page 'Remove Mark', the job 'Order Number (Specify Position)'")),
+     ("ORDER.form", "fail", "Mark on PCB: the page 'Remove Mark', the job 'Order Number (Specify Position)'")),
     (lambda q: q["fields"].append({"label": "Stencil", "value": "No"}), None,
-     ("B-1", "fail", "Stencil: a field neither in the job nor in the profile's ignore – the maker added a question")),
-    (lambda q: q["fields"].pop(0), None, ("B-1", "fail", "Base Material: not read back")),
-    (lambda q: q["parts"][1].update(mark="replaced: C123"), None, ("B-2", "fail", "C8678 D1: replaced: C123")),
-    (lambda q: q["parts"].pop(0), None, ("B-2", "fail", "C45783 C2: not in the maker's matching")),
+     ("ORDER.form", "fail", "Stencil: a field neither in the job nor in the profile's ignore – the maker added a question")),
+    (lambda q: q["fields"].pop(0), None, ("ORDER.form", "fail", "Base Material: not read back")),
+    (lambda q: q["parts"][1].update(mark="replaced: C123"), None, ("ORDER.parts", "fail", "C8678 D1: replaced: C123")),
+    (lambda q: q["parts"].pop(0), None, ("ORDER.parts", "fail", "C45783 C2: not in the maker's matching")),
     (lambda q: q["prices"][1].update(amount=q["prices"][1]["amount"] + 1.5), None,
-     ("B-3", "warn", "assembly fees: quote ")),
-    (None, lambda page: page.replace("3-4 days", ""), ("B-4", "fail", "not in quote_page.txt: 3-4 days")),
+     ("ORDER.quote", "warn", "assembly fees: quote ")),
+    (None, lambda page: page.replace("3-4 days", ""), ("ORDER.read", "fail", "not in quote_page.txt: 3-4 days")),
     (lambda q: q["files"][0].update(name="gerber_old.zip"), None,
-     ("B-5", "fail", "gerber_main.zip: not among the uploads the page shows")),
-    (lambda q: q["files"][0].update(size="1 KB"), None, ("B-5", "fail", "gerber_main.zip: the page shows 1 KB")),
+     ("ORDER.files", "fail", "gerber_main.zip: not among the uploads the page shows")),
+    (lambda q: q["files"][0].update(size="1 KB"), None, ("ORDER.files", "fail", "gerber_main.zip: the page shows 1 KB")),
 ])
 def test_each_finding_of_the_check(prepared, monkeypatch, change, page_change, expected):
     write_quote(prepared, change, page_change)
@@ -218,7 +218,7 @@ def test_a_changed_upload_file_fails_b5(prepared, monkeypatch):
     f = prepared.config().reports / RUN / "fab" / "main" / "cpl_main.csv"
     f.write_text(f.read_text() + "\n")
     assert cart(prepared, monkeypatch, "check") == 2
-    assert "cpl_main.csv: changed since the job" in results(prepared)["B-5"][1]
+    assert "cpl_main.csv: changed since the job" in results(prepared)["ORDER.files"][1]
 
 
 @pytest.mark.parametrize("use, result", [("sale", "fail"), ("gift", "warn"), ("private", "info")])
@@ -230,7 +230,7 @@ def test_lead_in_the_finish_by_purpose(project, monkeypatch, use, result):
     assert cart(project, monkeypatch, "prepare") == 0
     write_quote(project)
     cart(project, monkeypatch, "check")
-    level, text = results(project)["B-6"]
+    level, text = results(project)["ORDER.finish"]
     assert level == result and text.startswith(f"HASL(with lead): lead in the product, purpose {use}")
 
 
@@ -241,10 +241,10 @@ def test_the_review_must_be_of_this_job_and_quote(prepared, monkeypatch):
     assert cart(prepared, monkeypatch, "check") == 0                      # the bytes are the same: the hash holds
     write_quote(prepared, lambda q: q["prices"][3].update(amount=21.0))   # another quote
     assert cart(prepared, monkeypatch, "check") == 2
-    assert "names another quote.json than the one now there" in results(prepared)["B-7"][1]
+    assert "names another quote.json than the one now there" in results(prepared)["ORDER.review"][1]
     review(prepared, verdict="Order: not OK")
     assert cart(prepared, monkeypatch, "check") == 2
-    assert results(prepared)["B-7"] == ("fail", "regulatory.md: Order: not OK")
+    assert results(prepared)["ORDER.review"] == ("fail", "regulatory.md: Order: not OK")
 
 
 # --- --cart and the order record ---------------------------------------------------------------------------------------
@@ -328,7 +328,7 @@ def test_real_cost_into_the_projects_fee_table(prepared, monkeypatch, capsys):
     write_actual(prepared)
     assert cart(prepared, monkeypatch, "actual") == 0
     out = capsys.readouterr().out
-    assert "ok   B-4 read, not made up" in out and "fee table: Setup fee: economic_setup 8.5" in out
+    assert "ok   ORDER.read read, not made up" in out and "fee table: Setup fee: economic_setup 8.5" in out
     own = json.loads((prepared.root / "hardware" / "fees" / "jlcpcb.json").read_text())
     setup = own["pcba"]["economic_setup"]
     assert (setup["value"], setup["date"], setup["source"]) == (8.5, "2026-11-02", "order Y8-1234567A at JLCPCB, "
@@ -360,7 +360,7 @@ def test_a_value_not_on_the_page_writes_nothing(prepared, monkeypatch, capsys):
     d = order_dir(prepared)
     (d / "actual_page.txt").write_text((d / "actual_page.txt").read_text().replace("Y8-1234567A", ""))
     assert cart(prepared, monkeypatch, "actual") == 2
-    assert "FAIL B-4 read, not made up: not in the page text: Y8-1234567A" in capsys.readouterr().out
+    assert "FAIL ORDER.read read, not made up: not in the page text: Y8-1234567A" in capsys.readouterr().out
     assert not (prepared.root / "hardware" / "fees" / "jlcpcb.json").exists()
 
 

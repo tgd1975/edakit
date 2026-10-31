@@ -2,7 +2,7 @@
 
     edakit cart fields  [--board B] [--maker M]          every field of the maker's form: value, where it comes from
     edakit cart prepare [--board B] [--maker M]          the job of the skill cart, from the current release
-    edakit cart check   [--board B] [--maker M] [--cart] B-1 to B-7 on what the skill brought back; --cart: the cart line
+    edakit cart check   [--board B] [--maker M] [--cart] ORDER.form to ORDER.review on what the skill brought back; --cart: the cart line
     edakit cart actual  [--board B] [--maker M] [--from FILE]   the real cost of the order
 
 The skill cart (Claude in Chrome, in the owner's browser) fills the maker's form from the job and stops at the maker's
@@ -16,13 +16,13 @@ release and the page text Claude kept. The files of an order live next to the up
         quote.json        written by the skill: the fields, parts and price lines as read on the page
         quote_page.txt    the page text of the form, the matching and the quote, as read
         screens/          screenshots of the filled form, the matching and the placement preview (M-2)
-        regulatory.md     the agent regulatory-reviewer on the order, unchanged (B-7)
+        regulatory.md     the agent regulatory-reviewer on the order, unchanged (ORDER.review)
         check.md          the result of edakit cart check
         cart.json         the cart line as read back after the cart button (--cart)
         actual.json, actual_page.txt, actual.md   the real cost after the owner ordered and paid
 
-Exit codes: 0 = ok, 2 = findings (the order stops), 1 = error; edakit cart check 3 = B-1 to B-6 passed, the regulatory
-review of the order (B-7) is open.
+Exit codes: 0 = ok, 2 = findings (the order stops), 1 = error; edakit cart check 3 = ORDER.form to ORDER.finish passed, the regulatory
+review of the order (ORDER.review) is open.
 """
 
 from __future__ import annotations
@@ -41,9 +41,9 @@ JOB, QUOTE, PAGE, SCREENS = "job.json", "quote.json", "quote_page.txt", "screens
 REVIEW, CHECK, CHECK_JSON, CART = "regulatory.md", "check.md", "check.json", "cart.json"
 ACTUAL, ACTUAL_PAGE, ACTUAL_MD = "actual.json", "actual_page.txt", "actual.md"
 ORDERS = Path("hardware") / "orders"   # the order records, versioned, outside every hash
-CHECKS = {"B-1": "form = job", "B-2": "parts = release", "B-3": "quote against the estimate",
-          "B-4": "read, not made up", "B-5": "the same files", "B-6": "lead in the finish",
-          "B-7": "regulatory review of this order"}
+CHECKS = {"ORDER.form": "form = job", "ORDER.parts": "parts = release", "ORDER.quote": "quote against the estimate",
+          "ORDER.read": "read, not made up", "ORDER.files": "the same files", "ORDER.finish": "lead in the finish",
+          "ORDER.review": "regulatory review of this order"}
 NEVER = ("Order", "Buy", "Checkout", "Pay", "Submit order", "Place order")   # the skill's fixed list, besides the profile's
 GRADES = ("block", "important", "note")
 OK_LINE, NOT_OK_LINE = "Order: OK", "Order: not OK"
@@ -488,16 +488,16 @@ def check_cart(job, quote, cart):
 
 
 def evaluate(cfg, out, job, quote, page):
-    """B-1 to B-7: [(id, result, actual)]."""
+    """ORDER.form to ORDER.review: [(id, result, actual)]."""
     res = []
-    for cid, (bad, ok_text) in (("B-1", b1(job, quote)), ("B-2", b2(job, quote))):
+    for cid, (bad, ok_text) in (("ORDER.form", b1(job, quote)), ("ORDER.parts", b2(job, quote))):
         res.append((cid, "fail" if bad else "pass", "; ".join(bad) if bad else ok_text))
     warn, actual = b3(job, quote)
-    res.append(("B-3", "warn" if warn else "pass", "; ".join(warn) + " – " + actual if warn else actual))
-    for cid, (bad, ok_text) in (("B-4", b4(quote, page)), ("B-5", b5(cfg, job, quote))):
+    res.append(("ORDER.quote", "warn" if warn else "pass", "; ".join(warn) + " – " + actual if warn else actual))
+    for cid, (bad, ok_text) in (("ORDER.read", b4(quote, page)), ("ORDER.files", b5(cfg, job, quote))):
         res.append((cid, "fail" if bad else "pass", "; ".join(bad) if bad else ok_text))
-    res.append(("B-6", *b6(job, quote)))
-    res.append(("B-7", *b7(out)))
+    res.append(("ORDER.finish", *b6(job, quote)))
+    res.append(("ORDER.review", *b7(out)))
     return res
 
 
@@ -506,7 +506,7 @@ def write_check(out, job, quote, res, cart=None):
     head = {"time": dt.datetime.now().astimezone().isoformat(timespec="seconds"), "job_sha256": sha_of(out / JOB),
             "quote_sha256": sha_of(out / QUOTE)}
     rows = [{"id": c, "check": CHECKS.get(c, "cart line"), "result": r, "actual": a} for c, r, a in res]
-    quote_ok = all(r["result"] != "fail" for r in rows if r["id"] in ("B-1", "B-2", "B-4", "B-5"))
+    quote_ok = all(r["result"] != "fail" for r in rows if r["id"] in ("ORDER.form", "ORDER.parts", "ORDER.read", "ORDER.files"))
     done = {**head, "results": rows, "quote_ok": quote_ok,
             "passed": all(r["result"] in ("pass", "warn", "info") for r in rows)}
     (out / CHECK_JSON).write_text(json.dumps(done, indent=1, ensure_ascii=False) + "\n", encoding="utf-8")
@@ -573,7 +573,7 @@ PER_UNIT = {"loading": "{cls}_loading", "smt joints": "{cls}_smt_joint", "manual
 
 
 def page_text(path):
-    """The text of a saved order page or invoice for B-4: HTML without its tags, a PDF through pdftotext, text as is."""
+    """The text of a saved order page or invoice for ORDER.read: HTML without its tags, a PDF through pdftotext, text as is."""
     import html
     import shutil
     import subprocess
@@ -592,7 +592,7 @@ def page_text(path):
 
 
 def b4_actual(actual, page):
-    """B-4 on the real cost: the order number, every amount and every count of actual.json in the page text."""
+    """ORDER.read on the real cost: the order number, every amount and every count of actual.json in the page text."""
     values = [actual.get("order_number"), *(amount_text(x["amount"]) for x in [*actual.get("lines", []),
                                                                                 *actual.get("order", [])]
                                             if x.get("amount") is not None),
@@ -700,7 +700,7 @@ def write_fees(cfg, m, job, actual, updates, rows):
 
 
 def actual_cost(cfg, args):
-    """The real cost after the owner ordered and paid: B-4 on it, actual.md – estimate, quote and actual line by line,
+    """The real cost after the owner ordered and paid: ORDER.read on it, actual.md – estimate, quote and actual line by line,
     per order shipping, VAT and coupon against [cost] –, the project's fee table one to one, the order record."""
     board, m, out, job, _ = load_order(cfg, args, need=())
     if not (out / ACTUAL).exists():
@@ -725,7 +725,7 @@ def actual_cost(cfg, args):
     cur = actual.get("currency") or (quote or {}).get("currency") or e.get("currency", "")
     L = [f"# Real cost – board {job['board']} at {m.name}, order {actual.get('order_number')} ({actual.get('date')})\n",
          f"Written by edakit cart actual from {ACTUAL} and {'--from ' + Path(args.source).name if args.source else ACTUAL_PAGE}"
-         f" (B-4: {'; '.join(bad) if bad else b4_text}). Run {job['run']}, fab {str(job['fab_sha256'])[:12]}…, "
+         f" (ORDER.read: {'; '.join(bad) if bad else b4_text}). Run {job['run']}, fab {str(job['fab_sha256'])[:12]}…, "
          f"{job['quantity']} PCBs, {job['pcba_quantity']} assembled. Amounts in {cur}.\n",
          "| Line | Estimate | Quote | Actual | Actual − estimate |", "|---|---:|---:|---:|---:|"]
     for kind, label, est in kinds:
@@ -751,14 +751,14 @@ def actual_cost(cfg, args):
         path, written = write_fees(cfg, m, job, actual, updates, notes)
     L += ["## Into the fee table\n", *(f"- {w}" for w in written)] if written else ["## Into the fee table\n",
                                                                                    "Nothing written." + (
-                                                                                       " B-4 failed." if bad else "")]
+                                                                                       " ORDER.read failed." if bad else "")]
     if path is not None:
         L.append(f"\nTable: `{cfg.relative(path)}` – edakit cost takes per fee the newest value.")
     if notes:
         L += ["\nNot written:\n", *(f"- {n}" for n in notes)]
     (out / ACTUAL_MD).write_text("\n".join(L) + "\n", encoding="utf-8")
     rec = complete_record(cfg, job, out, actual, {"estimate": est, "quote": q, "actual": a, "currency": cur})
-    print(f"{'FAIL' if bad else 'ok  '} B-4 read, not made up: {'; '.join(bad) if bad else b4_text}")
+    print(f"{'FAIL' if bad else 'ok  '} ORDER.read read, not made up: {'; '.join(bad) if bad else b4_text}")
     print(f"board {job['board']} at {m.name}: estimate {money(est)}, quote {money(q)}, actual {money(a)} {cur}")
     for w in written:
         print(f"  fee table: {w}")
@@ -817,10 +817,10 @@ def check(cfg, args):
         print(f"order record: {cfg.relative(path)}")
     print(f"check: {cfg.relative(out / CHECK)}")
     if any(r == "fail" for _, r, _ in res):
-        print("The order stops: nothing into the cart (B-1 to B-7 must pass).")
+        print("The order stops: nothing into the cart (ORDER.form to ORDER.review must pass).")
         return 2
     if any(r == "open" for _, r, _ in res):
-        print("B-1 to B-6 passed – the regulatory review of the order is next (B-7).")
+        print("ORDER.form to ORDER.finish passed – the regulatory review of the order is next (ORDER.review).")
         return 3
     return 0
 

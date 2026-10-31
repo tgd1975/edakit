@@ -1,66 +1,28 @@
-"""The rule catalog (rules.json): every check edakit runs and every design hint, each with its rule, why it exists,
-what to do about a finding and where the knowledge comes from.
-
-    edakit rules [ID ...]       the catalog as a list, or the full entries of some checks and hints
-    edakit hints [--json FILE]  the hints that apply to the project's graph, and the notes in its parts entries
-
-Checks (P, G, E, S, L, F) find faults and block the release. A hint (H) has no rule that a program could decide: it
-says what to consider when a kind of part is in the graph. The skill circuit-design works through the hints, the
-agent electrical-reviewer confirms them, and a hint that is taken care of gets a line in the graph:
-"hints": {"H-1": "C1 1000 µF next to J1"}.
-
-Parts entries may carry their own notes: "hints" (a list, for the part) and "hint" per pin, e.g. on an ESP32 pin
-that belongs to ADC2 ("no analog reads while WiFi is on"). `edakit hints` lists them for the parts and connected
-pins of the graph.
+"""HINT: patterns that need judgement, as notes (concept rules-at-scale.md, section 2). A hint has no rule a program
+could decide; it says what to consider where a kind of part or a pattern is in the graph. Each code HINT.* names in
+catalog/codes.toml when it applies – `when` with the kinds of parts, or a matcher of MATCHERS below; each place it
+applies to is one finding, severity note unless a domain says otherwise. What is taken care of is accepted in the
+graph: "accept": {"HINT.bulk": "C1 1000 µF next to J1"} for every place, "HINT.bulk J1" for one.
 """
 
 from __future__ import annotations
 
-import json
 from collections import Counter, defaultdict
-from functools import lru_cache
-from pathlib import Path
 
-from .design import natural_key
+from .. import catalog
+from ..circuit import values
+from ..design import natural_key
+from ..findings import Finding
 
-CATALOG = Path(__file__).with_name("rules.json")
 SIGNAL_TYPES = {"input", "output", "bidirectional", "analog"}
 
 
-@lru_cache(maxsize=1)
-def catalog():
-    return json.loads(CATALOG.read_text(encoding="utf-8"))
+def reversible(design):
+    """Sources that may be reversed: "source": "reversible" on a component, checks.reverse_protect of before."""
+    marked = {des for des, c in design.comps.items() if c.get("source") == "reversible"}
+    return marked | set((design.graph.get("checks") or {}).get("reverse_protect") or [])
 
 
-def entry(cid):
-    c = catalog()
-    return c["checks"].get(cid) or c["hints"].get(cid)
-
-
-def title(cid):
-    return (entry(cid) or {}).get("title", "")
-
-
-def label(cid):
-    """'L-9 (hole fits the lead)' – checks are named with words; nobody remembers the letters."""
-    t = title(cid)
-    return f"{cid} ({t})" if t else cid
-
-
-def explain(cid, indent="    "):
-    """Lines that explain a check or a hint: the rule, why it exists, what to do, the sources."""
-    e = entry(cid)
-    if not e:
-        return []
-    lines = [f"{label(cid)}: {e['rule']}" if "rule" in e else label(cid)]
-    if e.get("retired"):
-        lines.append(f"{indent}retired: {e['retired']}")
-    lines += [f"{indent}why: {e['why']}", f"{indent}what to do: {e['fix']}"]
-    lines += [f"{indent}source: {s}" for s in e.get("sources", [])]
-    return lines
-
-
-# --- hints -----------------------------------------------------------------------------------------------------------
 def _part_kind(design, des):
     return (design.part(des) or {}).get("kind")
 
@@ -68,7 +30,7 @@ def _part_kind(design, des):
 def _power_inputs(design, cfg, sim):
     """Where the supply comes in: battery holders, connectors with a vbus pin, checks.reverse_protect, sim sources."""
     found = set(design.comps_of_kind("battery_holder"))
-    found |= set((design.graph.get("checks") or {}).get("reverse_protect", []))
+    found |= reversible(design)
     found |= {d for d in design.comps_of_kind("connector")
               if "vbus" in {p.get("role") for p in design.part(d)["pins"].values()}}
     found |= set((sim or {}).get("sources", {}))
@@ -121,15 +83,15 @@ def _transistors_at_connectors(design, cfg, sim):
 
 def _switching_regulators(design, cfg, sim):
     regs = [d for d in design.comps_of_kind("ic", "module")
-            if (design.part(d).get("params") or {}).get("behavior") in ("buck", "boost")]
+            if values(design.part(d)).get("behavior") in ("buck", "boost")]
     return regs + design.comps_of_kind("inductor")
 
 
 def _supply_starts(design, cfg, sim):
-    """{supply: nets it feeds directly}: the power inputs of H-1 by their supply pins – the plus of a battery holder,
+    """{supply: nets it feeds directly}: the power inputs of HINT.bulk by their supply pins – the plus of a battery holder,
     the vbus pins of a connector, the pins of a connector in checks.reverse_protect, the plus of a sim source – and a
     module's pin of type power_output with the role vbus (its USB VBUS brought out). Ground is no supply net."""
-    protect = set((design.graph.get("checks") or {}).get("reverse_protect") or [])
+    protect = reversible(design)
     sources = (sim or {}).get("sources") or {}
     out = {}
     for des in design.comps:
@@ -250,36 +212,144 @@ def _read_backs(design, cfg, sim):
     return found
 
 
+CERAMIC_CLASS2 = ("X5R", "X7R", "X7S", "X6S", "Y5V")
+
+
+def _analog_nets(design):
+    """Nets with an analog pin: the audio path, as far as the entries say."""
+    return {name for name, net in design.nets.items() if any(design.pin_info(r).get("type") == "analog"
+                                                             for r in net["pins"])}
+
+
+def _audio_board(design):
+    return bool(design.comps_of_kind("speaker") or _analog_nets(design))
+
+
+def _btl_outputs(design, cfg, sim):
+    """Bridge-tied outputs (roles out_p, out_n) that reach a connector – a filterless class-D output on a cable."""
+    found = []
+    for des in design.comps:
+        for num, info in ((design.part(des) or {}).get("pins") or {}).items():
+            role = str(info.get("role") or "")
+            net = design.pin_net.get(f"{des}.{num}")
+            if net and (role.startswith("out_p") or role.startswith("out_n")) and any(
+                    _part_kind(design, r.split(".", 1)[0]) == "connector" for r in design.nets[net]["pins"]):
+                found.append(des)
+    return found
+
+
+def _switching_near_audio(design, cfg, sim):
+    """A switching regulator, a charge pump or a PWM net on a board with an audio path."""
+    if not _audio_board(design):
+        return []
+    found = _switching_regulators(design, cfg, sim)
+    found += [name for name, net in design.nets.items() if net.get("pwm_hz") is not None]
+    return found
+
+
+def _ceramics_in_signal_path(design, cfg, sim):
+    """A class-2 ceramic (X5R, X7R, Y5V …) on a net with an analog pin – it distorts a signal."""
+    analog = _analog_nets(design)
+    return [des for des in design.comps_of_kind("capacitor")
+            if values(design.part(des)).get("dielectric") in CERAMIC_CLASS2
+            and any(design.pin_net.get(f"{des}.{p}") in analog for p in design.part(des)["pins"])]
+
+
+def _instrument_inputs(design, cfg, sim):
+    """Nets an instrument comes in on (instrument: pickup or piezo)."""
+    return [name for name, net in design.nets.items() if net.get("instrument")]
+
+
+def _pedal_power_inputs(design, cfg, sim):
+    """The power inputs of a board with an instrument input."""
+    return _power_inputs(design, cfg, sim) if _instrument_inputs(design, cfg, sim) else []
+
+
+def _battery_on_a_board_with_jacks(design, cfg, sim):
+    """A battery holder on a board with an instrument input – the jack's ring is the usual switch."""
+    return list(design.comps_of_kind("battery_holder")) if _instrument_inputs(design, cfg, sim) else []
+
+
+def _pwm_leds(design, cfg, sim):
+    """Nets with pwm_hz that light LEDs: an LED on the net, one resistor away, or behind a transistor it switches."""
+    found = []
+    for name, net in design.nets.items():
+        if net.get("pwm_hz") is None:
+            continue
+        near = {name} | _resistor_neighbours(design, name)
+        for q in design.comps_of_kind("npn", "pnp", "nmos", "pmos"):
+            if design.net_of(q, "base") in near or design.net_of(q, "gate") in near:
+                near |= {design.net_of(q, "collector"), design.net_of(q, "drain")} - {None}
+        near |= {x for n in list(near) for x in _resistor_neighbours(design, n)}
+        if any(_part_kind(design, r.split(".", 1)[0]) in ("led", "led_rgb") for n in near if n in design.nets
+               for r in design.nets[n]["pins"]):
+            found.append(name)
+    return found
+
+
+def _boost_enable_on_gpio(design, cfg, sim):
+    """A boost converter whose enable (role en) an MCU pin drives."""
+    return [des for des in design.comps if values(design.part(des)).get("behavior") == "boost"
+            and (net := design.net_of(des, "en")) and _mcu_pins(design, net)]
+
+
+def _unmarked_power_inputs(design, cfg, sim):
+    """Battery holders and supply connectors the graph does not mark as reversible – nothing checks their polarity."""
+    marked = reversible(design)
+    return [des for des in design.comps_of_kind("battery_holder", "connector") if des not in marked and (
+        _part_kind(design, des) == "battery_holder"
+        or "vbus" in {p.get("role") for p in design.part(des)["pins"].values()})]
+
+
+def _rated_by_copper(design, cfg, sim):
+    """Parts whose temperature rests on rth_ja_k_per_w – a figure for the datasheet's copper."""
+    return [des for des in design.comps if "rth_ja_k_per_w" in ((design.part(des) or {}).get("limits") or {})]
+
+
+def _cable_lines(design, cfg, sim):
+    """Signal nets that run through a cable: not ground, not a supply."""
+    quiet = {design.ground} | {name for name, net in design.nets.items()
+                               if any(design.pin_info(r).get("type") in ("power_in", "power_output", "ground")
+                                      for r in net["pins"])}
+    found = set()
+    for c in design.graph.get("cables", []):
+        for a in c.get("pins", {}):
+            net = design.pin_net.get(f"{c['from']}.{a}")
+            if net and net not in quiet:
+                found.add(net)
+    return sorted(found)
+
+
 MATCHERS = {"power_input": _power_inputs, "connector_signal": _connector_signals,
             "transistor_at_connector": _transistors_at_connectors, "switching_regulator": _switching_regulators,
-            "two_supplies": _two_supplies, "read_back": _read_backs}
+            "two_supplies": _two_supplies, "read_back": _read_backs, "btl_output": _btl_outputs,
+            "switching_near_audio": _switching_near_audio, "ceramic_in_signal_path": _ceramics_in_signal_path,
+            "instrument_input": _instrument_inputs, "battery_with_jacks": _battery_on_a_board_with_jacks,
+            "pedal_power_input": _pedal_power_inputs, "pwm_leds": _pwm_leds, "boost_enable": _boost_enable_on_gpio,
+            "unmarked_power_input": _unmarked_power_inputs, "rated_by_copper": _rated_by_copper,
+            "cable_line": _cable_lines}
 
 
-def matching_hints(design, cfg=None, sim=None):
-    """{hint id: [what it applies to]} for every hint whose 'when' fits the graph."""
+
+def matching(design, cfg=None, sim=None, applied=None):
+    """{code: [places]} of every hint whose `when` fits the graph – of those `applied` names (a profile's hints)
+    where given."""
     out = {}
-    for hid, h in catalog()["hints"].items():
-        w = h["when"]
+    for name, e in catalog.codes().items():
+        w = e.get("when")
+        if not w or (applied is not None and name not in applied):
+            continue
         hits = list(design.comps_of_kind(*w.get("kinds", [])))
         if "match" in w:
             hits += MATCHERS[w["match"]](design, cfg, sim)
         if hits:
-            out[hid] = sorted(set(hits), key=natural_key)
+            out[name] = sorted(set(hits), key=natural_key)
     return out
 
 
-def handled_hints(design):
-    """The graph's record of hints that are taken care of: {"H-1": "how"}."""
-    return design.graph.get("hints") or {}
-
-
-def open_hints(design, cfg=None, sim=None):
-    handled = handled_hints(design)
-    return {h: hits for h, hits in matching_hints(design, cfg, sim).items() if h not in handled}
-
-
 def part_notes(design):
-    """(where, note) from the parts entries: the part's 'hints' and the 'hint' of every connected pin."""
+    """(place, note) from the parts entries: the part's `hints` at its designators, a pin's `hint` at its connected
+    pins."""
     out = []
     for key in sorted({design.entry_key(d) for d in design.comps} - {None}, key=natural_key):
         part = design.parts[key]
@@ -292,63 +362,10 @@ def part_notes(design):
     return out
 
 
-def load_sim(cfg):
-    """The simulation config if there is one – hints use its sources; a missing or broken file is no error here."""
-    try:
-        return json.loads(cfg.sim_config.read_text(encoding="utf-8"))
-    except (OSError, ValueError, AttributeError):
-        return None
-
-
-# --- command line ----------------------------------------------------------------------------------------------------
-def main_rules(args):
-    c = catalog()
-    if args.ids:
-        unknown = [i for i in args.ids if not entry(i)]
-        for i in args.ids:
-            if entry(i):
-                print("\n".join(explain(i)) + "\n")
-        for i in unknown:
-            print(f"{i}: not in the catalog")
-        return 1 if unknown else 0
-    print("Checks (they block the release):")
-    for cid, e in c["checks"].items():
-        print(f"  {cid:<5} {e['title']:<32} {'retired – ' + e['retired'] if e.get('retired') else e['rule']}")
-    print("\nHints (things to consider, no rule a program could decide):")
-    for hid, h in c["hints"].items():
-        when = h["when"].get("match") or "parts of kind " + ", ".join(h["when"]["kinds"])
-        print(f"  {hid:<5} {h['title']:<32} when: {when}")
-    print("\nDetails: edakit rules <ID> …")
-    return 0
-
-
-def main_hints(cfg, args):
-    from .design import Design
-    design = Design.from_config(cfg)
-    found = matching_hints(design, cfg, load_sim(cfg))
-    handled = handled_hints(design)
-    open_ = {h: hits for h, hits in found.items() if h not in handled}
-    for hid, hits in open_.items():
-        lines = explain(hid)
-        print(f"{lines[0]} – {', '.join(hits)}")
-        print("\n".join(lines[1:]) + "\n")
-    for hid, how in handled.items():
-        if hid in found:
-            print(f"{label(hid)} – {', '.join(found[hid])}\n    taken care of: {how}\n")
-        elif not entry(hid):
-            print(f"{hid}: in the graph's hints but not in the catalog\n")
-    notes = part_notes(design)
-    if notes:
-        print("From the parts database:")
-        for where, note in notes:
-            print(f"  {where}: {note}")
-        print()
-    print(f"{len(open_)} open, {sum(h in found for h in handled)} taken care of"
-          + (f", {len(notes)} notes from the parts database" if notes else "")
-          + ". A hint that is taken care of gets a line in the graph: \"hints\": {\"H-…\": \"how\"}.")
-    if args.json:
-        Path(args.json).write_text(json.dumps(
-            {"open": open_, "handled": {h: {"applies_to": found.get(h, []), "how": how} for h, how in handled.items()},
-             "parts": [{"where": w, "note": n} for w, n in notes]}, indent=1, ensure_ascii=False) + "\n",
-            encoding="utf-8")
-    return 0
+def run(ctx):
+    found = [Finding(code, "G", place, catalog.title(code), on=(("component", place),) if place in ctx.design.comps
+                     else ())
+             for code, places in matching(ctx.design, ctx.cfg, ctx.sim, ctx.profile.hints if ctx.profile else None
+                                          ).items() for place in places]
+    return found + [Finding("HINT.datasheet", "P", place, note, "the parts entry") for place, note in
+                    part_notes(ctx.design)]

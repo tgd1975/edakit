@@ -22,13 +22,13 @@
       "role": "2"
     }
   },
-  "params": {
+  "values": {
     "value_f": 1e-07,
     "dielectric": "X7R",
     "tolerance": 0.1
   },
-  "ratings": {
-    "v_max": 50
+  "limits": {
+    "v_max_v": 50
   },
   "spice": {},
   "sources": [

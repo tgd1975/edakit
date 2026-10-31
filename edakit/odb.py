@@ -1,5 +1,5 @@
 """Read an ODB++ archive – the export EasyEDA Pro writes for AISLER (getOpenDatabaseDoublePlusFile, ordering step 10) –
-far enough for check F-7 to hold it to the released Gerber and pick-and-place files without trusting EasyEDA.
+far enough for check SYNC.odb to hold it to the released Gerber and pick-and-place files without trusting EasyEDA.
 
     read(path) -> Job      a .zip or .tgz with one job: matrix, units, the step's profile, layers with features,
                            drill holes, components with their pins, nets
@@ -17,7 +17,7 @@ What is read (ODB++ v7/v8, the parts of the format a board export uses):
 Standard symbols: r (round), s (square), rect (with xr/xc corners as a rectangle), oval, di (diamond, as a
 rectangle), oct (as a rectangle), donut_r (as round). Dimensions of symbols are in mils in an INCH file and in microns
 in an MM file; coordinates in inch or mm. Everything returned is in mm. Rotations as ODB++ gives them: degrees
-clockwise; F-7 converts them to the CPL's sense. A features file compressed with .Z is not read (named in the
+clockwise; SYNC.odb converts them to the CPL's sense. A features file compressed with .Z is not read (named in the
 error); plain and .gz are.
 """
 

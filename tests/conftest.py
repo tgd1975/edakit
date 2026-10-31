@@ -70,3 +70,4 @@ def project(tmp_path):
         def comp(self, g, des):
             return next(c for c in g["graph"]["components"] if c["designator"] == des)
     return P()
+

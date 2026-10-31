@@ -1,5 +1,5 @@
-"""Pieces of stages L and F that work on files: hole vs lead (L-9), loop length (L-11), Gerber parsing (L-2), every
-part in the plan (L-20)."""
+"""Pieces of stages L and F that work on files: hole vs lead (GEO.hole), loop length (GEO.loop), Gerber parsing (GEO.copper), every
+part in the plan (SYNC.plan)."""
 
 import json
 from types import SimpleNamespace
@@ -102,7 +102,7 @@ def test_annular_ring_is_the_copper_around_the_hole():
     assert fab.ring_mm(parts, (3.0, 2.0, 3.0, 2.0, 0.3)) is None                         # no copper there
 
 
-# --- L-20: every part of the board has a row in [place] (step 2.1) ---------------------------------------------------
+# --- SYNC.plan: every part of the board has a row in [place] (step 2.1) ---------------------------------------------------
 
 def rows_check(project):
     cfg = project.config()
@@ -112,14 +112,14 @@ def rows_check(project):
 
 
 def test_every_part_of_the_example_has_a_row(project):
-    assert rows_check(project) == [("L-20", "pass", "17 parts, each with a row")]
+    assert rows_check(project) == [("SYNC.plan", "pass", "17 parts, each with a row")]
 
 
 def test_parts_left_to_the_auto_layout_without_a_row_fail(project):
     """The example as it was before step 2.1: D1 and R2 left to the auto-layout, in no file."""
     f = project.root / "hardware" / "boards" / "main.toml"
     f.write_text("".join(ln for ln in f.read_text().splitlines(keepends=True) if not ln.startswith(("D1 = ", "R2 = "))))
-    assert rows_check(project) == [("L-20", "fail", "D1, R2: no row in hardware/boards/main.toml [place] (2 of 17 "
+    assert rows_check(project) == [("SYNC.plan", "fail", "D1, R2: no row in hardware/boards/main.toml [place] (2 of 17 "
                                                     "parts)")]
 
 

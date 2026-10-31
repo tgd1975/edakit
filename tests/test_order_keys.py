@@ -1,6 +1,6 @@
 """Ordering steps 2 and 3 (docs/concepts/new/ordering.md): every field of a maker's form as a key of [order] with
 edakit's default – [order] of edakit.toml under [order] of the board file –, order.json with the keys that change the
-board where they differ from the default, the maker's profile ([cart], edakit/makers/<maker>.toml) and F-6 per maker:
+board where they differ from the default, the maker's profile ([cart], edakit/makers/<maker>.toml) and FILES.order per maker:
 a finding fails for [cart] maker and warns for every other maker."""
 
 import json
@@ -29,7 +29,7 @@ def run(project, fault=None):
 
 
 def f6(rows):
-    return [(r["result"], r["check"], r["actual"]) for r in rows if r["id"] == "F-6"]
+    return [(r["result"], r["check"], r["actual"]) for r in rows if r["id"] == "FILES.order"]
 
 
 def sheet(project):
@@ -118,7 +118,7 @@ def test_the_project_order_gives_every_board_an_order_json(project):
         f.write_text(head + rest[rest.index("\n[[silk.texts]]"):])
         toml(p, '[order]\nmark = "specify"\nmask = "black"')
     rows = run(project, project_wide)
-    assert fr.findings(rows) == [("F-6", "warn")]       # the placeholder: JLCPCB's order number reported gone
+    assert fr.findings(rows) == [("FILES.order", "warn")]       # the placeholder: JLCPCB's order number reported gone
     settings = json.loads((project.root / "build" / "fab" / "main" / "order.json").read_text())
     assert (settings["mask"], settings["mark"]) == ("black", "specify")
     assert "| PCB Color | Black | edakit.toml |" in sheet(project)
@@ -137,7 +137,7 @@ def test_order_md_lists_every_field_with_where_it_comes_from(project):
 
 
 def test_cart_without_order_writes_the_form_but_no_order_json(project):
-    """[cart] alone: the form of edakit's defaults, F-6 – and no order.json, so the fab hash stays the files'."""
+    """[cart] alone: the form of edakit's defaults, FILES.order – and no order.json, so the fab hash stays the files'."""
     def cart(ex, p):
         toml(p, '[cart]\nmaker = "jlcpcb"\nship_to = "DE"\nshipping = { jlcpcb = "DHL Express" }')
     rows = run(project, cart)
@@ -200,10 +200,10 @@ def test_the_assembly_class_is_one_of_the_planned_makers(project):
         project.config()
 
 
-# --- F-6 per maker ---------------------------------------------------------------------------------------------------
+# --- FILES.order per maker ---------------------------------------------------------------------------------------------------
 
 def test_a_second_maker_warns_where_the_first_fails(project):
-    """1.57 mm is no thickness of JLCPCB's form: F-6 fails for JLCPCB as the planned maker – and only warns when
+    """1.57 mm is no thickness of JLCPCB's form: FILES.order fails for JLCPCB as the planned maker – and only warns when
     JLCPCB is the second maker, beside Eurocircuits, whose thicknesses are not recorded yet."""
     rows = run(project, fr.thickness(1.57))
     assert ("fail", "board thickness JLCPCB makes (FR-4, 2 layers)",
@@ -230,7 +230,7 @@ def test_the_placeholder_is_jlcpcbs(project):
             "(18.0, 3.0) on the top silkscreen – Eurocircuits prints it as it is; a release that carries it is a "
             "release for JLCPCB")
     assert ("warn", *text) in f6(rows)
-    assert fr.findings(rows) == [("F-6", "warn"), ("F-6", "warn")]       # and JLCPCB's own, reported gone
+    assert fr.findings(rows) == [("FILES.order", "warn"), ("FILES.order", "warn")]       # and JLCPCB's own, reported gone
     rows = run(project, both("eurocircuits"))
     assert ("fail", *text) in f6(rows)
 
@@ -259,7 +259,7 @@ def test_a_provisional_profile_is_named(project):
                                          "with panel")),
     ({"quantity": 5, "pcba_quantity": 6}, ("fail", "PCBA quantity at most the PCB quantity",
                                            "pcba_quantity 6, quantity 5")),
-    ({"quantity": 10}, ("warn", "PCBA quantity = [project] quantity (the sets P-4 and F-2 count)",
+    ({"quantity": 10}, ("warn", "PCBA quantity = [project] quantity (the sets PARTS.stock counts)",
                         "pcba_quantity 10, [project] quantity 5 – the stock checks count 5 sets")),
 ])
 def test_keys_only_to_check_and_the_quantities(project, order, expected):
@@ -269,7 +269,7 @@ def test_keys_only_to_check_and_the_quantities(project, order, expected):
 
 def test_layers_and_size_that_agree_pass(project):
     rows = run(project, lambda ex, p: fr.ordered(ex, p, {"layers": 2, "size_mm": [30.05, 20]}))
-    assert fr.findings(rows) == [("F-6", "warn")]       # the placeholder: JLCPCB's order number reported gone
+    assert fr.findings(rows) == [("FILES.order", "warn")]       # the placeholder: JLCPCB's order number reported gone
 
 
 # --- edakit cart fields ----------------------------------------------------------------------------------------------
@@ -289,46 +289,52 @@ def test_cart_fields_prints_the_form(project, monkeypatch, capsys):
     assert "aisler is not in [cart] makers" in capsys.readouterr().err
 
 
-# --- P-4, F-2 and edakit stock per maker ------------------------------------------------------------------------------
+# --- PARTS.stock and edakit stock per maker ------------------------------------------------------------------------------
 
 def test_p4_runs_only_with_a_maker_of_jlcpcbs_catalogue(project, jlcpcb, monkeypatch, capsys):
-    """Ordering step 3: P-4 asks JLCPCB's catalogue only where a maker of [cart] makers orders from it. As the planned
-    maker JLCPCB's findings fail; as the second maker they warn, named; without it P-4 does not run."""
+    """Ordering step 3: PARTS.stock asks JLCPCB's catalogue only where a maker of [cart] makers orders from it. As the
+    planned maker JLCPCB's findings fail; as the second maker they warn (grade other_maker), named; without it
+    PARTS.stock does not run."""
+    from helpers import executed
     from test_stock import p4, run_checks, stock_cli
-    from edakit import checks
     stock_cli(project, monkeypatch)
     capsys.readouterr()
     errors, _, warnings, _ = p4(run_checks(project))
     assert len(errors) == 2 and not warnings                              # U1: out of stock, "Standard Only"
     toml(project, '[cart]\nmaker = "eurocircuits"\nmakers = ["eurocircuits", "jlcpcb"]')
-    errors, pending, warnings, _ = p4(run_checks(project))
+    rep = run_checks(project)
+    errors, pending, warnings, _ = p4(rep)
     assert not errors and not pending and len(warnings) == 2
-    assert all(w.startswith("JLCPCB (not the planned maker): U1 C41407547") for w in warnings)
+    assert all(w.startswith("U1 C41407547") and w.endswith("– JLCPCB, not the planned maker") for w in warnings)
+    assert {f.grade for f in rep.findings if f.code == "PARTS.stock" and f.severity == "warning"} == {"other_maker"}
     toml(project, '[cart]\nmaker = "eurocircuits"')
     errors, pending, warnings, notes = p4(run_checks(project))
     assert (errors, pending, warnings) == ([], [], []) and notes == [
         "not run: no maker of [cart] makers orders from JLCPCB's parts catalogue – Eurocircuits matches the parts at "
-        "the order (B-2); no stock snapshot needed"]
-    assert "P-4" not in checks.executed(project.config()) and "P-4" in checks.executed()
+        "the order (ORDER.parts); no stock snapshot needed"]
+    assert "PARTS.stock" not in executed(project.config())
+    toml(project, '[cart]\nmaker = "jlcpcb"')
+    assert "PARTS.stock" in executed(project.config())
+    toml(project, '[cart]\nmaker = "eurocircuits"')
     assert stock_cli(project, monkeypatch) == 1
     assert "no maker of [cart] makers orders from JLCPCB's parts catalogue" in capsys.readouterr().err
 
 
 def test_f2_per_maker(project):
-    """F-2 reads JLCPCB's catalogue (here the recorded answer in jlc_parts.json): a line missing there fails while
-    JLCPCB is the planned maker and warns while it is the second one; without JLCPCB F-2 does not run."""
+    """PARTS.stock reads JLCPCB's catalogue (here the recorded answer in jlc_parts.json): a line missing there fails while
+    JLCPCB is the planned maker and warns while it is the second one; without JLCPCB PARTS.stock does not run."""
     def missing_line(planned, makers_):
         def fault(ex, p):
             ex.jlc.pop("C8678", None)
             toml(p, f'[cart]\nmaker = "{planned}"\nmakers = {json.dumps(makers_)}')
         return fault
     rows = run(project, missing_line("jlcpcb", ["jlcpcb"]))
-    assert ("F-2", "fail") in fr.findings(rows)
+    assert ("PARTS.stock", "fail") in fr.findings(rows)
     rows = run(project, missing_line("eurocircuits", ["eurocircuits", "jlcpcb"]))
-    f2 = [r for r in rows if r["id"] == "F-2"]
+    f2 = [r for r in rows if r["id"] == "PARTS.stock"]
     assert [r["result"] for r in f2] == ["warn"] and f2[0]["actual"].startswith("JLCPCB (not the planned maker): D1 ")
     rows = run(project, missing_line("eurocircuits", ["eurocircuits"]))
-    assert not [r for r in rows if r["id"] == "F-2"]
+    assert not [r for r in rows if r["id"] == "PARTS.stock"]
 
 
 # --- edakit cost with the keys and the makers -------------------------------------------------------------------------
@@ -373,32 +379,31 @@ def test_cost_without_a_fee_table_for_the_maker(project, monkeypatch, capsys):
     assert [r["result"] for r in cost.gate_rows(project.config())] == ["info"]
 
 
-# --- P-12 and the BOM with MPN (ordering step 8) ---------------------------------------------------------------------
+# --- PARTS.fact/mpn and the BOM with MPN (ordering step 8) ---------------------------------------------------------------------
 
 def test_p12_needs_mpn_and_manufacturer_for_a_maker_that_matches_by_mpn(project):
-    """Ordering step 8: Eurocircuits matches by MPN – every assembled part's entry names mpn and manufacturer; an
-    error while Eurocircuits is the planned maker, a warning while it is the second; not run without such a maker."""
-    from edakit import checks
+    """Ordering step 8: Eurocircuits matches by MPN – every assembled part's entry names mpn and manufacturer
+    (PARTS.fact/mpn); an error while Eurocircuits is the planned maker, a warning (grade other_maker) while it is the
+    second; not run without such a maker."""
+    from helpers import check
     from edakit.design import Design
 
     def p12():
         cfg = project.config()
-        rep = checks.run(Design.from_config(cfg), cfg)
-        return [m for c, m in rep.errors if c == "P-12"], [m for c, m in rep.warnings if c == "P-12"], cfg
-    errors, warnings, cfg = p12()
-    assert (errors, warnings) == ([], []) and "P-12" not in checks.executed(cfg)
+        rep = check(Design.from_config(cfg), cfg)
+        mine = [f for f in rep.findings if f.code == "PARTS.fact" and f.grade in ("mpn", "other_maker")]
+        return ([f.text for f in mine if f.severity == "error"], [f.text for f in mine if f.severity == "warning"])
+    assert p12() == ([], [])
     part = project.part("C8678")
     del part["manufacturer"]
     project.save_part("C8678", part)
-    assert p12()[:2] == ([], [])
+    assert p12() == ([], [])
     toml(project, '[cart]\nmaker = "eurocircuits"')
-    errors, warnings, cfg = p12()
-    assert errors == ["D1 C8678: the parts entry has no manufacturer – Eurocircuits matches the BOM by manufacturer "
-                      "part number"] and "P-12" in checks.executed(cfg)
+    assert p12() == (["D1 C8678: the parts entry has no manufacturer – Eurocircuits matches the BOM by manufacturer "
+                      "part number"], [])
     toml(project, '[cart]\nmakers = ["jlcpcb", "eurocircuits"]')
-    errors, warnings, _ = p12()
-    assert not errors and warnings == ["Eurocircuits (not the planned maker): D1 C8678: the parts entry has no "
-                                       "manufacturer – Eurocircuits matches the BOM by manufacturer part number"]
+    assert p12() == ([], ["D1 C8678: the parts entry has no manufacturer – Eurocircuits matches the BOM by manufacturer "
+                          "part number – Eurocircuits, not the planned maker"])
 
 
 def test_the_bom_with_mpn_for_a_maker_that_takes_it(project):
@@ -415,7 +420,7 @@ def test_the_bom_with_mpn_for_a_maker_that_takes_it(project):
 
 def test_pcbway_has_a_placeholder_of_its_own(project):
     """PCBWay (planned with the user on 2026-10-30): its placeholder is WayWayWay – JLCPCB's letters on the silkscreen
-    are text to it, and mark = "specify" there needs WayWayWay; it matches the BOM by MPN (P-12, bom_<b>_mpn.csv)."""
+    are text to it, and mark = "specify" there needs WayWayWay; it matches the BOM by MPN (PARTS.fact/mpn, bom_<b>_mpn.csv)."""
     m = makers.load("pcbway")
     assert (m.matches_by, m.rules["placeholder"], m.seat, m.data["cart"]) == ("mpn", "WayWayWay", "CN", "Save to Cart")
 
@@ -440,7 +445,7 @@ def test_pcbways_placeholder_is_text_to_jlcpcb(project):
 
 
 def test_jlcpcbs_placeholder_warns_and_the_barcode_is_a_key(project):
-    """The owner's decision of 2026-10-30: JLCPCB reports its order number gone since May 2026 – F-6 warns about the
+    """The owner's decision of 2026-10-30: JLCPCB reports its order number gone since May 2026 – FILES.order warns about the
     placeholder, as long as the profile says so (rules.placeholder_gone); without the placeholder, mark = "remove" and
     a QR code nothing warns. The barcode and the serial number change the board: order.json has them where set."""
     rows = run(project, lambda ex, p: fr.ordered(ex, p))

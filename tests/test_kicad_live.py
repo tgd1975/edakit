@@ -63,7 +63,7 @@ def test_the_exports_are_what_the_checks_read(project):
     assert len(holes) == len(board.tooling)                       # the mounting holes are cut-outs of the outline
     loops = gerber.loops(d / "gerber" / gerber.FILES["outline"])
     assert len(loops) == 1 + len(board.holes)
-    # the position file of KiCad and the parts as edakit reads them from the PCB agree (F-3)
+    # the position file of KiCad and the parts as edakit reads them from the PCB agree (SYNC.cpl)
     data = kb.pcb_json(cfg, board)
     cpl = {r["Designator"]: r for r in kfab.read_cpl(d / "cpl_kicad.csv")}
     for c in data["components"]:
@@ -99,7 +99,7 @@ def test_kicad_puts_every_pad_where_edakit_reads_it_also_on_the_bottom(project):
             x, y = p["X"] / kb.MIL_PER_MM, p["Y"] / kb.MIL_PER_MM
             missing += [f"{c['designator']}.{p['PadNumber']} {k}" for k in sides if not cu.labels_at(k, x, y, 0.05)]
     assert missing == []
-    # F-3 on the bottom: a turn read from below (-a) would leave D1 at 180, one of 180-a R2 at 90 – the two together
+    # SYNC.cpl on the bottom: a turn read from below (-a) would leave D1 at 180, one of 180-a R2 at 90 – the two together
     cpl = {r["Designator"]: r for r in kfab.read_cpl(d / "cpl_kicad.csv")}
     assert [(cpl[r]["Layer"], float(cpl[r]["Rotation"])) for r in ("R2", "D1")] == [("B", 90), ("B", 180)]
 
@@ -134,15 +134,18 @@ def test_route_all_on_kicad_leaves_only_what_freerouting_left_open(project, caps
     assert [f for f in again if f["ruleName"] != "unconnected"] == [], again
     assert len([f for f in again if f["ruleName"] == "unconnected"]) == \
         len([f for f in found if f["ruleName"] == "unconnected"])
-    # stages L and F on what KiCad exports – JLCPCB's catalogue (F-2) and the simulation (L-5) left out, the rest
-    # as the gate runs it, after pcb dump (L-7)
+    # stages L and F on what KiCad exports – JLCPCB's catalogue (PARTS.stock) and the simulation (GEO.width) left out, the rest
+    # as the gate runs it, after pcb dump (SYNC.plan)
     assert run("pcb", "dump", "--no-scripts") == 0
     monkeypatch.setattr(fab, "fetch_jlc", lambda bom, d: (d / "jlc_parts.json").write_text("{}"))
     rows = fab.run(cfg, board, project.root / "build" / "fab")
     print("\n".join(f"{r['id']:<5} {r['result']:<4} {r['check']}: {r['actual']}"[:220] for r in rows))
-    for cid in ("L-1", "L-2", "L-3", "L-4", "L-9", "L-10", "L-13", "L-14", "L-15", "L-16", "L-20", "F-1", "F-3",
-                "F-5"):
+    for cid in ("SYNC.pcb", "GEO.copper", "GEO.drc", "SYNC.footprint", "GEO.hole", "GEO.spacing", "GEO.ring",
+                "GEO.pour", "SYNC.bom", "SYNC.cpl", "FILES.set"):
         bad = [r for r in rows if r["id"] == cid and r["result"] == "fail"]
         assert not bad, bad
-    # L-7: every part where the plan puts it – the plan's own check is the test footprints' (pads beyond their box)
-    assert [r["result"] for r in rows if r["id"] == "L-7" and r["check"].startswith("fixed parts")] == ["pass"]
+    # SYNC.plan: every part has a row in [place] (L-20 of before); the plan's own row is the test footprints' (below)
+    assert [r["result"] for r in rows if r["id"] == "SYNC.plan" and r["check"].startswith("every part of the board")] \
+        == ["pass"]
+    # SYNC.plan: every part where the plan puts it – the plan's own check is the test footprints' (pads beyond their box)
+    assert [r["result"] for r in rows if r["id"] == "SYNC.plan" and r["check"].startswith("fixed parts")] == ["pass"]
