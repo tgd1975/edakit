@@ -43,5 +43,9 @@ regulatory = [
   "Children: if the notes say children use it, whether it is a toy.",
 ]
 
+pcb = [
+  "Exposed pads: under every part with a thermal or exposed pad – regulators, drivers, QFN packages – the copper the datasheet's thermal figure assumes, the vias into an inner or the other layer (count, drill, tented or filled against solder wicking), and the paste aperture that keeps the part from floating; LIM.t rests on rth_ja_k_per_w, a figure for the datasheet's copper (HINT.thermal_copper).",
+]
+
 [fixtures]                           # reference circuits, after the integration of maker-coverage (decided)
 clean = []
