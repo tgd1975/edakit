@@ -6,6 +6,9 @@ review sign-off. Claude Code does every step from there – checks, simulation, 
 through edakit and EasyEDA Pro. A change is a diff, and the release gate checks it on the files that go to the
 manufacturer. What is not text yet is listed under [Status and limits](#status-and-limits).
 
+The documentation as a site – handbook, rule catalog with the reference circuits, concepts, skills, agents:
+<https://tgd1975.github.io/edakit/>.
+
 You describe the circuit once – parts by LCSC number, pins, nets with voltage ranges – in a JSON *hardware graph*.
 edakit checks it with rules, simulates every operating case with ngspice, generates the schematic in EasyEDA Pro,
 brings parts and nets into the PCB without dialogs, places the fixed parts from a plan, routes with Freerouting,
@@ -116,7 +119,7 @@ session that designs does not review ([handbook 14.1](handbook/14-design.md#141-
 
 What a project teaches goes back with `/edakit:propose-rule`: a check, hint, block or part fact as an issue here,
 sealed with its SHA-256. An Action triages it – accepted and built into one pull request of rule proposals, rejected
-with the reason, or a question back ([handbook 14.4](handbook/14-design.md#144-from-a-finding-to-a-check)). What a
+with the reason, or a question back ([handbook 14.4](handbook/14-design.md#144-from-a-finding-to-a-rule)). What a
 project had to build itself because edakit could not goes back with `/edakit:propose-feature`, triaged the same way and
 built into one pull request of feature proposals ([handbook 11.6](handbook/11-working-with-claude.md)).
 
@@ -151,10 +154,12 @@ Where it stands:
 | [handbook/](handbook/README.md) | the approach, setup, graph, parts, simulation, schematic, PCB, release gate, EasyEDA API notes, reference, working with Claude, troubleshooting, lessons learned, designing a circuit, regulatory review |
 | [edakit/](edakit/) | the Python package: checks, simulation, EasyEDA client, schematic, PCB, routing, Gerber analysis, silkscreen, export, release gate, EasyEDA claim |
 | [edakit/catalog/](edakit/catalog/) | the catalog: engines and their codes with rule, reason, fix and sources, the parts schema, the defaults and tables (handbook 14.2) |
-| [edakit/domains/](edakit/domains/) | the domains of rules – core, usb, radio: severities, required facts, hints, the reviewers' questions |
+| [edakit/domains/](edakit/domains/) | the domains of rules – core, usb, radio, audio, guitar, motors, power, cables: severities, required facts, hints, the reviewers' questions |
 | [edakit/blocks/](edakit/blocks/) | building blocks (LED, button, I2C pull-ups, transistor switch, supply inputs, USB-C) and the checked parts entries they use |
 | [edakit/easyeda/](edakit/easyeda/) | `mcp-server.sh` (pinned easyeda-mcp-pro with safe defaults), `bridge-extension-patch.sh` |
 | [skills/](skills/), [agents/](agents/), [hooks/](hooks/hooks.json), [bin/](bin/) | the Claude Code plugin |
+| [docs/catalog/](docs/catalog/build.py) | the catalog as one page: every code with rule, why, fix and sources, the domains, the tables, the reference circuits drawn as SVG with their seeded faults – written by `docs/catalog/build.py` |
+| [docs/pages.py](docs/pages.py) | assembles the site for GitHub Pages (MkDocs); [docs/concepts/](docs/concepts/) the concepts |
 | [evals/](evals/README.md) | typical tasks on the reference circuits for `claude plugin eval` – with Sonnet and with Opus; the baseline |
 | [tests/](tests/) | negative tests: every check seen red once; [tests/fixtures/led-bar/](tests/fixtures/led-bar/) is the project they build their faults into, [tests/reference.py](tests/reference.py) a reference circuit per domain with its seeded faults, stages L and F on a written export of its input stage ([test_fab_run.py](tests/test_fab_run.py)) |
 

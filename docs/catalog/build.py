@@ -36,6 +36,10 @@ def md(text):
     return re.sub(r"\*\*([^*]+)\*\*", r"<strong>\1</strong>", t)
 
 
+def code_links(codes):
+    return " ".join(f'<a href="#{c}"><code>{c}</code></a>' for c in codes)
+
+
 def chip(sev, label=None):
     return f'<span class="chip {escape(sev)}">{escape(label or sev)}</span>'
 
@@ -226,7 +230,7 @@ def circuits_section(items):
            '<code>edakit sim</code> clean under its domains; each seeded fault raises exactly its codes '
            '(<code>tests/test_reference.py</code>). The values are chosen for the test, not taken from datasheets.</p>']
     for name, about, doms, svg, faults in items:
-        rows = "".join(f'<tr><td>{escape(what)}</td><td>{" ".join(f"<a href=\"#{c}\"><code>{c}</code></a>" for c in sorted(codes))}</td></tr>'
+        rows = "".join(f'<tr><td>{escape(what)}</td><td>{code_links(sorted(codes))}</td></tr>'
                        for what, _, codes in faults)
         table = (f'<table class="faults"><thead><tr><th>Seeded fault</th><th>Codes it raises</th></tr></thead>'
                  f'<tbody>{rows}</tbody></table>' if faults else "")
@@ -267,7 +271,7 @@ def candidates_section():
 def old_ids_section():
     def key(old):
         return "PGESLFH".index(old[0]), int(old[2:])
-    rows = "".join(f'<tr><td>{escape(o)}</td><td>{" ".join(f"<a href=\"#{c}\"><code>{c}</code></a>" for c in new)}</td></tr>'
+    rows = "".join(f'<tr><td>{escape(o)}</td><td>{code_links(new)}</td></tr>'
                    for o, new in sorted(catalog.old_map().items(), key=lambda x: key(x[0])))
     return ('<section id="before"><h2>Check IDs of before</h2><p>The IDs per stage before the restructuring and the '
             'codes that replace them; <code>edakit explain G-8</code> says the same.</p><div class="scroll"><table>'
@@ -391,7 +395,7 @@ def page(items):
     tiles = "".join(f'<div class="tile"><span class="big">{v}</span><span class="lbl">{k}</span></div>' for k, v in (
         ("Engines", len(catalog.engines())), ("Codes", len(codes)), ("Grades", grades), ("Hints", len(hints)),
         ("Domains", len(profile.domains())), ("Sources cited", sources), ("Reference circuits", len(items))))
-    body = (f'<header class="top"><h1>edakit rule catalog</h1><p>Every rule edakit checks – engine, code, severity, '
+    body = (f'<header class="top"><p class="meta"><a href="../">edakit documentation</a></p><h1>edakit rule catalog</h1><p>Every rule edakit checks – engine, code, severity, '
             'rule, why, what to do and its sources –, the domains that switch rules on, the tables of numbers, the parts '
             'schema, the reference circuits with their seeded faults, and what became of the maker-coverage '
             'candidates. Generated from <code>edakit/catalog</code>, <code>edakit/domains</code> and '
