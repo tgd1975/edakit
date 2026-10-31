@@ -1,0 +1,216 @@
+Title: Online PCB Instant Quote - JLCPCB
+URL: https://cart.jlcpcb.com/quote
+Source element: <main>
+---
+Select Product
+
+Standard PCB/PCBA
+
+Advanced PCB/PCBA
+
+SMT Stencil
+
+Flex Heater
+
+Mechatronic Parts
+
+3D Printing
+
+CNC Machining
+
+PCB Layout
+
+Sheet Metal
+
+Online PCB Quote
+Re-Upload
+Gerber Viewer
+Detected 1 layer board of 20x20mm(0.787x0.787 inches).
+Base Material
+FR-4
+Flex
+Aluminum
+Copper Core
+Rogers
+PTFE Teflon
+HDI
+Layers
+124
+High Precision PCB
+6
+8
+10
+12
+14
+16
+Dimensions
+*
+PCB Qty
+5
+Product Type
+Industrial/Consumer electronicsAerospaceMedical
+PCB Specifications
+Deburring/Edge rounding
+No Yes
+Different Design
+1 234
+Delivery Format
+Single PCB Panel by Customer Panel by JLCPCB
+PCB Thickness
+0.4mm0.6mm0.8mm1.0mm1.2mm1.6mm2.0mm
+PCB Color
+Green
+
+Purple
+
+Red
+
+Yellow
+
+Blue
+
+White
+
+Black
+Silkscreen
+White
+Material Type
+FR4 TG135KB6164 - TG135KB6165F - TG155Nan Ya NP-140F
+Surface Finish
+OSP
+New
+HASL(with lead) LeadFree HASL ENIG
+High-spec Options
+Outer Copper Weight
+1 oz2 oz2.5 oz3.5 oz4.5 oz
+Via Covering
+TentedUntentedPluggedEpoxy Filled & CappedCopper paste Filled & Capped
+Via Plating Method
+Not SpecifiedConductive AdhesiveHorizontal Electroless Copper Plating
+Min via hole size/diameter
+0.3mm/(0.4/0.45mm)0.25mm/(0.35/0.4mm)0.2mm/(0.3/0.35mm)0.15mm/(0.25/0.3mm)0.1mm/(0.2/0.25mm)
+Board Outline Tolerance
+±0.2mm(Regular)±0.1mm(Precision)
+Confirm Production file
+NoYes
+Mark on PCB
+Remove Mark2D barcode (Serial Number)
+Electrical Test
+Flying Probe Fully Test
+Gold Fingers
+No Yes
+Castellated Holes
+No Yes
+Edge Plating
+NoYes
+Blind Slots
+NoYes
+UL Marking
+NoYes (Any Position)Yes (Specify Position)
+Humidity Indicator Card
+NoYes
+Advanced Options
+
+4-Wire Kelvin Test
+
+NoYes
+
+Paper between PCBs
+
+NoYes
+
+Appearance Quality
+
+IPC Class 2 StandardSuperb Quality
+Silkscreen Technology
+Ink-jet Printing SilkscreenHigh-precision Printing SilkscreenEasyEDA multi-color silkscreenHigh-definition Exposure Silkscreen
+
+Package Box
+
+With JLCPCB logoBlank box
+
+Inspection Report
+
+NoFinal Inspection ReportElectrical Test ReportROHS Test Report
+PCB Remark
+0/200
+PCB Assembly
+Assembly cost starting from $0 with coupon>
+Assemble top side
+Assemble bottom side
+PCBA Type
+Economic Standard What's the difference?
+Assembly Side
+Top Side Bottom Side Both Sides
+PCBA Qty
+5 2
+Tooling holes
+Added by JLCPCB Added by Customer
+Confirm Parts Placement
+No Yes
+Stencil Storage
+No Yes
+Fixture Storage
+No Yes
+Parts Selection
+By Customer (Self-Service) By JLCPCB (Manual Match)
+Advanced Options
+Bake Components
+Photo Confirmation
+Board Cleaning
+Conformal Coating (cleaning included)
+Packaging
+Special stencil
+Depanel boards & edge rail before delivery
+Solder Paste
+Flying Probe Test
+Nitrogen reflow soldering
+Function test
+Assembly remark
+
+I agree to the Terms and Conditions of JLCPCB assembly Service .
+
+Stencil
+Stencil Order Guide>
+Order together with PCB
+Charge Details
+Special Offer
+$4.00
+Via Covering
+$0.00
+Surface Finish
+$0.00
+Deburring/Edge rounding
+$0.10
+Economic PCBA Price
+Components
+-
+Extended components fee
+-
+SMT Assembly
+-
+Hand-soldering labor fee
+-
+Manual Assembly
+-
+PCB Build Time
+2 days
+$0.00
+24 hours
+$7.60
+24 hours PCBA Only
+$0.00
+Calculated Price
+
+Additional charges may apply for special cases
+
+$4.10
+Web Price
+$2.10
+Desktop Price
+NEXT
+Shipping Estimate
+Weight
+0.14kg
+Coupons
+Save $30.00Save $20.00
