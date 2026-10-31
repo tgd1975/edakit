@@ -216,10 +216,15 @@ def files(cfg):
     return out
 
 
-def carry_signoffs(cfg, before):
+CARRIED = ("graph, parts entries and sign-off file in the form of the restructuring (handbook 14.2): names with their "
+           "unit, accept by code, locks – every value carried over; the files were the signed ones")
+
+
+def carry_signoffs(cfg, before, by="edakit convert", why=CARRIED):
     """After the conversion: when the files were the signed ones (the sign-off file's state_sha256 was their circuit
     hash), the sign-offs of scope 'circuit' keep counting – the new hash goes into the file and both into `rehashed`,
-    as the gate records a change of [release] hash_ignore. -> the line to print, or None."""
+    as the gate records a change of [release] hash_ignore. `by` and `why` say which conversion (edakit graph convert
+    too). -> the line to print, or None."""
     import datetime as dt
     from .release import gate
     path = Path(cfg.signoff)
@@ -231,11 +236,8 @@ def carry_signoffs(cfg, before):
     if s.get("state_sha256") != before or after == before:
         return None
     s["state_sha256"] = after
-    s.setdefault("rehashed", []).append({
-        "date": dt.date.today().isoformat(), "by": "edakit convert",
-        "why": "graph, parts entries and sign-off file in the form of the restructuring (handbook 14.2): names with "
-               "their unit, accept by code, locks – every value carried over; the files were the signed ones",
-        "state_sha256": [before, after]})
+    s.setdefault("rehashed", []).append({"date": dt.date.today().isoformat(), "by": by, "why": why,
+                                         "state_sha256": [before, after]})
     m = re.search(r"^( +)\S", old, re.M)
     path.write_text(json.dumps(s, indent=len(m.group(1)) if m else 1, ensure_ascii=False) + "\n", encoding="utf-8")
     return (f"{cfg.relative(path)}: the sign-offs of scope 'circuit' keep counting – state_sha256 {before[:12]}… → "

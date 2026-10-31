@@ -84,6 +84,17 @@ with a blank (the Pico's TP1, "GND (USB)"), a word that says no more than the nu
 `pin3`) and a name several pins share give the number. A name that misleads stays the symbol's – the Nano whose symbol
 labels pin 14 PB4 although D11 is PB3 on the chip is written `U1.PB4` with a note –; there is no alias per pin.
 
+**The graph as TOML, and the JSON generated from it.** `[project] graph` may name a `.toml` file with the same keys,
+components, nets and cables as tables keyed by designator and name (10.1). `edakit graph json` prints the resolved
+graph – `{"graph": …}` with pin numbers wherever a pin is named and every component's pin map –, and with `--write`
+keeps it beside the TOML as `hardware/graph.json`, committed with it: a rewire through a parts entry, a role
+corrected, changes no line of the TOML but shows there as pin numbers. `--check` finds a generated file that no
+longer matches (exit 2) – a line for the pre-commit hook. The generated file is derived: the circuit hash and the
+scripts' data name `graph` take the TOML, and project scripts that read the graph as JSON keep reading it.
+`edakit graph convert` moves a JSON project once – `hardware/graph.toml` with pins by name or role and the entries'
+pin maps left out, `[project] graph`, the resolved `graph.json` in place of the source –, and when the files were the
+signed ones the sign-offs of scope `circuit` keep counting (10.5).
+
 ## 3.2 Conventions that save trouble
 
 - **Pin numbers come from the EasyEDA symbol**, not from the datasheet. They usually agree; for LEDs and diodes they

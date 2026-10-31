@@ -4,6 +4,9 @@
     edakit rules [CODE ...]          the engines and the codes of the catalog
     edakit explain CODE ...          rule, why, fix and sources of a code (LIM.v, REQ.missing …)
     edakit graph show NAME           one part or net: what the graph and its parts entry say, the findings on it
+    edakit graph json [--write|--check]   the resolved graph with pin numbers; beside a TOML graph hardware/graph.json,
+                                     --check: drift (pre-commit hook)
+    edakit graph convert [--dry-run] a JSON graph moved to hardware/graph.toml once, its sign-offs carried over
     edakit block list|show|add       building blocks with checked parts into the graph
     edakit part import LCSC [--update]   symbol pins and footprint of an LCSC number from the library – no EasyEDA
     edakit part lint [KEY ...]       every parts entry held to the schema of its kind (catalog/kinds.toml)
@@ -89,10 +92,16 @@ def build_parser():
     p = sub.add_parser("explain", help="rule, why, fix and sources of a code")
     p.add_argument("ids", nargs="+", help="codes, e.g. LIM.v REQ.missing (an old ID such as LIM.v names its codes)")
 
-    p = sub.add_parser("graph", help="what the graph says about one part or net, and the findings on it")
-    p.add_argument("action", choices=["show"])
-    p.add_argument("name", help="a designator (U1) or a net name (LED_CLK)")
-    p.add_argument("--json", help="write the view and its findings as JSON")
+    p = sub.add_parser("graph", help="what the graph says about one part or net; the resolved graph as JSON; a JSON "
+                                     "graph moved to TOML")
+    p.add_argument("action", choices=["show", "json", "convert"])
+    p.add_argument("name", nargs="?", help="show: a designator (U1) or a net name (LED_CLK)")
+    p.add_argument("--json", help="show: write the view and its findings as JSON")
+    p.add_argument("--write", action="store_true", help="json: write the resolved graph beside a TOML graph "
+                                                        "(hardware/graph.json)")
+    p.add_argument("--check", action="store_true", help="json: compare the generated file with the graph, write "
+                                                        "nothing; exit 2 on drift")
+    p.add_argument("--dry-run", action="store_true", help="convert: print what would change, write nothing")
     _common(p)
 
     p = sub.add_parser("domains", help="the domains of the project: on, off, suggested; the reviewers' questions")
@@ -373,9 +382,12 @@ def _main(argv=None):
     if args.command == "convert":
         from . import convert
         return convert.main(cfg, args)
-    if args.command == "graph":
+    if args.command == "graph" and args.action == "show":
         from . import graph_show
         return graph_show.main(cfg, args)
+    if args.command == "graph":
+        from . import graph_form
+        return graph_form.main(cfg, args)
     if args.command == "domains":
         from . import profile
         return profile.main(cfg, args)
