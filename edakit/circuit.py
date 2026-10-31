@@ -65,7 +65,7 @@ def v_range(net):
 
 
 def ohm(x):
-    return f"{x / 1000:.3g} kΩ" if x >= 1000 else f"{x:.3g} Ω"
+    return f"{x / 1e6:.3g} MΩ" if x >= 1e6 else f"{x / 1000:.3g} kΩ" if x >= 1000 else f"{x:.3g} Ω"
 
 
 def supply_nets(d):

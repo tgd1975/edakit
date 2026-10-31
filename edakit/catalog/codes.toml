@@ -437,11 +437,11 @@ sources = [
 
 [codes."REQ.value"]
 title = "what a part requires is in range"
-rule = "A required part has its value inside the range: an I2C pull-up (in parallel with the pins' own pulls) between (V − 0.4 V) / 3 mA and 10 kΩ, Rd 5.1 kΩ ± 10 % on a CC pin, what a pin needs inside the window its entry gives (grade pin), the source resistance an ADC pin sees (adc.r_source_max_ohm, unless a hold capacitor; grade adc)."
+rule = "A required part has its value inside the range: an I2C pull-up (in parallel with the pins' own pulls) between (V − 0.4 V) / 3 mA and 10 kΩ, Rd 5.1 kΩ ± 10 % on a CC pin, what a pin needs inside the window its entry gives (grade pin), the source resistance an ADC pin sees (adc.r_source_max_ohm, unless a hold capacitor; grade adc), the load on an instrument input (net load_min_ohm; grade instrument), an op-amp's closed-loop gain against its minimum stable gain (gain_min_ratio; grade gain)."
 why = "A weak I2C pull-up makes the edges too slow, a strong one cannot be pulled low; a CC resistor outside its window reads as another device."
 fix = "4.7 kΩ for 100 kHz, 2.2 kΩ for 400 kHz on I2C; 5.1 kΩ per CC pin."
 severity = "error"
-grades = { pin = "warning", adc = "warning" }
+grades = { pin = "warning", adc = "warning", instrument = "warning", gain = "warning" }
 replaces = ["G-11", "G-14"]
 sources = [
   "NXP UM10204 Rev. 7.0, I2C-bus specification and user manual (2021), 7.1 Pull-up resistor sizing and table 10 – https://www.nxp.com/docs/en/user-guide/UM10204.pdf",
@@ -450,11 +450,11 @@ sources = [
 
 [codes."REQ.forbidden"]
 title = "what must stay apart is apart"
-rule = "What a part forbids does not happen: CC1 and CC2 of a USB-C receptacle on one net (one resistor for both), a pin whose entry says never_to_ground on ground (grade pin), two devices on one bus at one address (grade address: base and address pins of the entries)."
+rule = "What a part forbids does not happen: CC1 and CC2 of a USB-C receptacle on one net (one resistor for both), a pin whose entry says never_to_ground on ground (grade pin), two devices on one bus at one address (grade address: base and address pins of the entries), a bridge-tied output (roles out_p, out_n) on ground, on another part's net or on another channel's (grade btl)."
 why = "With CC1 and CC2 on one resistor an electronically marked cable reads as a fault and the source gives no power."
 fix = "One resistor per CC pin."
 severity = "error"
-grades = { pin = "warning", address = "warning" }
+grades = { pin = "warning", address = "warning", btl = "warning" }
 replaces = ["G-14"]
 sources = [
   "Richtek AN064, USB Type-C/PD Brief Introduction and Analysis (2021): a sink asserts Rd on the CC pins – https://www.richtek.com/~/media/AN%20PDF/AN064_EN.pdf",
@@ -1309,5 +1309,82 @@ severity = "note"
 when = { kinds = ["heater"] }
 sources = [
   "docs/concepts/new/maker-coverage.md, appendix MOT 30: Marlin Configuration.h (thermal protection), Klipper Config_Reference, Voron documentation – read in full in the maker-coverage research",
+]
+
+[codes."HINT.audio_ground"]
+title = "audio: ground loops and shared returns"
+rule = "A speaker or an analog path on the board: consider where its ground returns and what shares it."
+why = "Hum and buzz come from loops through USB or mains earth, from large currents returning under an input's reference, from an amplifier's supply shared with switching loads or a radio, and from RF rectified at an input (maker-coverage AUD 6, AUD 8)."
+fix = "One return point for the audio path; the amplifier's supply filtered from switching loads and the radio; an RC low-pass or a ferrite at inputs on a board with a radio."
+severity = "note"
+when = { kinds = ["speaker"] }
+sources = [
+  "docs/concepts/new/maker-coverage.md, appendix AUD 6 (ESP-IDF ADC documentation, read in full) and AUD 8 (OpenEnergyMonitor documentation, read in full)",
+]
+
+[codes."HINT.class_d"]
+title = "filterless class-D output on a cable"
+rule = "A bridge-tied output reaches a connector: consider a filter at the output."
+why = "A filterless class-D amplifier relies on the speaker's inductance near the board; on a lead its switching edges radiate (maker-coverage AUD 1, HT-13)."
+fix = "A ferrite or an LC filter at the outputs above the lead length the amplifier's datasheet allows; the speaker on short, twisted leads."
+severity = "note"
+when = { match = "btl_output" }
+sources = [
+  "docs/concepts/new/maker-coverage.md, appendix AUD 1 (PAM8403 and Adafruit MAX98357A, tagged to verify)",
+]
+
+[codes."HINT.audio_switching"]
+title = "switching in the audio band"
+rule = "A switching regulator, a charge pump or a PWM net on a board with an audio path: consider what it puts into the audio band."
+why = "Charge pumps whine near 10 kHz, boost converters burst at light load, LED and tap-tempo PWM ticks through supply and ground into the signal (maker-coverage AUD 12, GTP 17)."
+fix = "Switching above 20 kHz or filtered from the audio rail; a separate return for the switching current; PWM of LEDs on a board with audio above the audio band."
+severity = "note"
+when = { match = "switching_near_audio" }
+sources = [
+  "docs/concepts/new/maker-coverage.md, appendix GTP 17 (ElectroSmash CE-2 analysis and Bontempo, read in full) and AUD 12 (TC1044S, LT1054, tagged to verify)",
+]
+
+[codes."HINT.signal_ceramic"]
+title = "class-2 ceramic in a signal path"
+rule = "A class-2 ceramic capacitor (X5R, X7R, Y5V …) on a net with an analog pin: consider whether it sits in the signal path."
+why = "The capacitance of class-2 ceramics changes with the voltage across them, so a signal through one is distorted; C0G and film capacitors do not (maker-coverage GTP 24, GTI 36)."
+fix = "C0G or film in the signal path; class-2 ceramics for decoupling only."
+severity = "note"
+when = { match = "ceramic_in_signal_path" }
+sources = [
+  "docs/concepts/new/maker-coverage.md, appendix GTI 36 (PJRC Audio library, read in full)",
+]
+
+[codes."HINT.jack_battery"]
+title = "battery switched by the input jack"
+rule = "A battery on a board with an instrument input: consider how it is switched off."
+why = "Pedals and active instruments switch the battery through the ring of the input or output jack: a cable left plugged drains it, a stereo cable leaves the circuit off, and a DC jack's switch lug that does not break battery plus lets both supplies meet (maker-coverage GTP 32, GTI 8)."
+fix = "The battery's minus through the jack's ring contact as the circuit expects, the DC jack's lug breaking battery plus; say in the documentation that the cable switches it on."
+severity = "note"
+when = { match = "battery_with_jacks" }
+sources = [
+  "docs/concepts/new/maker-coverage.md, appendix GTP 32 (ElectroSmash analyses, read in full)",
+]
+
+[codes."HINT.pedal_supply"]
+title = "a pedal's supply among others"
+rule = "An instrument board with a supply input: consider the other pedals and amplifiers on the same supply and ground."
+why = "Positive-ground pedals put their sleeves on +9 V and short a shared supply; daisy chains form ground loops; a series part in the DC jack's ground leg is bypassed by the audio cables' shields (maker-coverage GTP 2, GTP 35, GTI 32)."
+fix = "A centre-negative 9 V input with reverse protection in the plus leg; say whether the board needs an isolated outlet."
+severity = "note"
+when = { match = "pedal_power_input" }
+sources = [
+  "docs/concepts/new/maker-coverage.md, appendix GTP 2 (ElectroSmash germanium fuzz and Rangemaster) and GTP 35 (ElectroSmash CE-2), read in full",
+]
+
+[codes."HINT.string_ground"]
+title = "the player on the amplifier's ground"
+rule = "An instrument input: consider what ties the player to ground."
+why = "The bridge ground connects the player's hand to the amplifier's ground; a fault there, or a capacitor from mains to chassis, puts the player in the path (maker-coverage GTI 7, GTI 27)."
+fix = "No capacitor from mains to chassis on the instrument's side; a resistor or capacitor in the string ground only of a safety class rated for it."
+severity = "note"
+when = { match = "instrument_input" }
+sources = [
+  "docs/concepts/new/maker-coverage.md, appendix GTI 7 and GTI 27 (tagged extracted)",
 ]
 

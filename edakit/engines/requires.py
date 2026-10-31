@@ -32,7 +32,8 @@ def switched_off(d, des, need):
 def run(ctx):
     d = ctx.joined
     return (decoupling(d) + i2c(d) + flyback(d) + usb_c(d) + functions(d) + hot_loops(ctx.design) + pin_needs(d)
-            + balancing(d) + addresses(d) + uart_lines(d) + adc_sources(d))
+            + balancing(d) + addresses(d) + uart_lines(d) + adc_sources(d) + btl_outputs(d) + instrument_loads(d)
+            + stable_gains(d))
 
 
 def decoupling(d):
@@ -497,4 +498,91 @@ def adc_sources(d):
                                    f"allows {ohm(adc['r_source_max_ohm'])}{held}", f"adc of pin {ref}",
                                    "a smaller divider, a buffer, or the hold capacitor", grade="adc",
                                    on=(("net", name),)))
+    return out
+
+
+def btl_outputs(d):
+    """REQ.forbidden/btl: a bridge-tied output (roles out_p, out_n – a suffix per channel) on ground, on a net another
+    part drives or reads, or on another channel's net; the load between a pair is a speaker."""
+    grounds = {d.ground} | set(d.graph.get("grounds") or [])
+    out = []
+    for des in sorted(d.comps):
+        pins = (d.part(des) or {}).get("pins") or {}
+        mine = {}
+        for num, info in pins.items():
+            role = str(info.get("role") or "")
+            if role.startswith(("out_p", "out_n")) and (net := d.pin_net.get(f"{des}.{num}")):
+                mine[f"{des}.{num}"] = (role, net)
+        for ref, (role, net) in mine.items():
+            who, on = f"{ref} ({role})", (("component", des), ("net", net))
+
+            def bad(text):
+                out.append(Finding("REQ.forbidden", "G", who, f"{who}: {text}", "roles out_p, out_n of "
+                                   f"{d.entry_key(des)}", "a speaker between the pair and nothing else on it",
+                                   grade="btl", topic="btl", on=on))
+            if net in grounds:
+                bad(f"a bridge-tied output on {net} – it is never ground")
+                continue
+            twins = [r for r, (ro, n) in mine.items() if n == net and r != ref]
+            if twins:
+                bad(f"on {net} with {', '.join(twins)} – each output of a bridge needs its own net")
+            others = [r for r in d.nets[net]["pins"] if not r.startswith(f"{des}.") and d.pin_info(r).get("type")
+                      in ("input", "output", "bidirectional", "analog", "power_in", "power_output")]
+            if others:
+                bad(f"on {net} with {', '.join(others)} – a bridge-tied output drives the speaker and nothing else")
+    return out
+
+
+def instrument_loads(d):
+    """REQ.value/instrument: an instrument input (a net with instrument and load_min_ohm) loaded by less than it
+    allows – the resistors from it and the inputs on it (pin z_in_ohm) in parallel."""
+    out = []
+    for name, net in sorted(d.nets.items()):
+        least = net.get("load_min_ohm")
+        if not net.get("instrument") or not is_number(least):
+            continue
+        rs = [x for _, x, _ in resistors_to(d, name, set(d.nets) - {name})]
+        rs += [d.pin_info(r)["z_in_ohm"] for r in net["pins"] if is_number(d.pin_info(r).get("z_in_ohm"))]
+        if not rs or not all(is_number(x) and x > 0 for x in rs):
+            continue
+        load = 1 / sum(1 / x for x in rs)
+        if load < least:
+            out.append(Finding("REQ.value", "G", name, f"{name}: the {net['instrument']} sees {ohm(load)} – it wants at "
+                               f"least {ohm(least)}", f"load_min_ohm of net {name}",
+                               "a buffer with a high input impedance first (block instrument-buffer, maker-coverage "
+                               "BL-16), larger bias resistors", grade="instrument", on=(("net", name),)))
+    return out
+
+
+def stable_gains(d):
+    """REQ.value/gain: an op-amp channel whose closed-loop gain – 1 + Rf / Rg from its feedback resistors, a follower
+    1 – is below the part's minimum stable gain (values gain_min_ratio)."""
+    from ..sim.netlist import OPAMP_ROLE
+    out = []
+    for des in sorted(d.comps):
+        part = d.part(des) or {}
+        least = values(part).get("gain_min_ratio")
+        if not is_number(least):
+            continue
+        chans = defaultdict(dict)
+        for num, info in (part.get("pins") or {}).items():
+            m = OPAMP_ROLE.match(str(info.get("role") or ""))
+            if m and (net := d.pin_net.get(f"{des}.{num}")):
+                chans[(m.group(2) or "")[1:]][m.group(1)] = net
+        for ch, n in sorted(chans.items()):
+            if not {"in_n", "out"} <= set(n):
+                continue
+            if n["in_n"] == n["out"]:
+                gain = 1.0
+            else:
+                rf = [x for _, x, _ in resistors_to(d, n["in_n"], {n["out"]})]
+                rg = [x for _, x, other in resistors_to(d, n["in_n"], set(d.nets) - {n["out"], n["in_n"]})]
+                if not rf or not rg or not all(is_number(x) and x > 0 for x in rf + rg):
+                    continue
+                gain = 1 + (1 / sum(1 / x for x in rf)) / (1 / sum(1 / x for x in rg))
+            if gain < least:
+                who = f"{des}{' channel ' + ch if ch else ''}"
+                out.append(Finding("REQ.value", "G", des, f"{who}: closed-loop gain {gain:.3g} – the part is stable from "
+                                   f"{least:g}", f"gain_min_ratio of {d.entry_key(des)}",
+                                   "more gain, or a part stable at unity gain", grade="gain", on=(("component", des),)))
     return out

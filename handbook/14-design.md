@@ -172,6 +172,27 @@ A motor on the board: consider the bulk capacitor at its driver's motor supply a
 
 **`HINT.heater`** – a heater needs a second interruption (note)  
 A heater on the board: consider a second, independent way to switch it off.
+
+**`HINT.audio_ground`** – audio: ground loops and shared returns (note)  
+A speaker or an analog path on the board: consider where its ground returns and what shares it.
+
+**`HINT.class_d`** – filterless class-D output on a cable (note)  
+A bridge-tied output reaches a connector: consider a filter at the output.
+
+**`HINT.audio_switching`** – switching in the audio band (note)  
+A switching regulator, a charge pump or a PWM net on a board with an audio path: consider what it puts into the audio band.
+
+**`HINT.signal_ceramic`** – class-2 ceramic in a signal path (note)  
+A class-2 ceramic capacitor (X5R, X7R, Y5V …) on a net with an analog pin: consider whether it sits in the signal path.
+
+**`HINT.jack_battery`** – battery switched by the input jack (note)  
+A battery on a board with an instrument input: consider how it is switched off.
+
+**`HINT.pedal_supply`** – a pedal's supply among others (note)  
+An instrument board with a supply input: consider the other pedals and amplifiers on the same supply and ground.
+
+**`HINT.string_ground`** – the player on the amplifier's ground (note)  
+An instrument input: consider what ties the player to ground.
 <!-- edakit:end -->
 
 The designer handles each one and writes down how, in the graph:

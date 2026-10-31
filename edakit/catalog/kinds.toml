@@ -34,7 +34,7 @@ dielectric = ["C0G", "NP0", "X5R", "X7R", "X7S", "X6S", "Y5V", "electrolytic", "
 [free]
 values = ["polarized", "tolerance", "iout_accuracy", "iout_gain", "hfe_min", "hfe_max", "efficiency", "usb_c",
           "i_hold_vs_temp", "first_bit_to", "v_io_v", "comparator"]
-pin = ["name", "type", "role", "strap", "pull", "hint", "functions", "out_edge", "t_pd_ns", "needs", "drive", "float_ok", "adc"]
+pin = ["name", "type", "role", "strap", "pull", "hint", "functions", "out_edge", "t_pd_ns", "needs", "drive", "float_ok", "adc", "z_in_ohm"]
 entry = ["needs", "address"]   # needs switches a default of catalog/needs.toml off ({"decoupling": false});
                                 # address: a bus address (REQ.forbidden/address)
 
@@ -149,7 +149,7 @@ limits = ["vdd_max_v", "vdd_op_min_v", "vdd_op_max_v", "vin_min_v", "vin_max_v",
           "vin_rel_max_v"]
 values = ["behavior", "vout_v", "dropout_v", "iq_a", "efficiency", "idd_max_a", "iout_gain", "iout_accuracy",
           "vout_knee_v", "vrext_v", "vih_v", "vil_v", "vih_ratio", "vil_ratio", "first_bit_to", "vout_swing_v",
-          "vicm_v", "r_out_ohm", "comparator"]
+          "vicm_v", "r_out_ohm", "comparator", "gain_min_ratio"]
 
 [kinds.module]
 roles = ["*"]

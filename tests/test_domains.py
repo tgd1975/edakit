@@ -93,8 +93,8 @@ def test_purpose_grades_the_radio_domain(project):
 
 
 def test_unknown_domain_is_a_config_error(project):
-    set_domains(project, ["audio"])
-    with pytest.raises(config.ConfigError, match="audio – no domain of edakit/domains"):
+    set_domains(project, ["theremin"])
+    with pytest.raises(config.ConfigError, match="theremin – no domain of edakit/domains"):
         project.config()
 
 

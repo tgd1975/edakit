@@ -212,9 +212,70 @@ def _read_backs(design, cfg, sim):
     return found
 
 
+CERAMIC_CLASS2 = ("X5R", "X7R", "X7S", "X6S", "Y5V")
+
+
+def _analog_nets(design):
+    """Nets with an analog pin: the audio path, as far as the entries say."""
+    return {name for name, net in design.nets.items() if any(design.pin_info(r).get("type") == "analog"
+                                                             for r in net["pins"])}
+
+
+def _audio_board(design):
+    return bool(design.comps_of_kind("speaker") or _analog_nets(design))
+
+
+def _btl_outputs(design, cfg, sim):
+    """Bridge-tied outputs (roles out_p, out_n) that reach a connector – a filterless class-D output on a cable."""
+    found = []
+    for des in design.comps:
+        for num, info in ((design.part(des) or {}).get("pins") or {}).items():
+            role = str(info.get("role") or "")
+            net = design.pin_net.get(f"{des}.{num}")
+            if net and (role.startswith("out_p") or role.startswith("out_n")) and any(
+                    _part_kind(design, r.split(".", 1)[0]) == "connector" for r in design.nets[net]["pins"]):
+                found.append(des)
+    return found
+
+
+def _switching_near_audio(design, cfg, sim):
+    """A switching regulator, a charge pump or a PWM net on a board with an audio path."""
+    if not _audio_board(design):
+        return []
+    found = _switching_regulators(design, cfg, sim)
+    found += [name for name, net in design.nets.items() if net.get("pwm_hz") is not None]
+    return found
+
+
+def _ceramics_in_signal_path(design, cfg, sim):
+    """A class-2 ceramic (X5R, X7R, Y5V …) on a net with an analog pin – it distorts a signal."""
+    analog = _analog_nets(design)
+    return [des for des in design.comps_of_kind("capacitor")
+            if values(design.part(des)).get("dielectric") in CERAMIC_CLASS2
+            and any(design.pin_net.get(f"{des}.{p}") in analog for p in design.part(des)["pins"])]
+
+
+def _instrument_inputs(design, cfg, sim):
+    """Nets an instrument comes in on (instrument: pickup or piezo)."""
+    return [name for name, net in design.nets.items() if net.get("instrument")]
+
+
+def _pedal_power_inputs(design, cfg, sim):
+    """The power inputs of a board with an instrument input."""
+    return _power_inputs(design, cfg, sim) if _instrument_inputs(design, cfg, sim) else []
+
+
+def _battery_on_a_board_with_jacks(design, cfg, sim):
+    """A battery holder on a board with an instrument input – the jack's ring is the usual switch."""
+    return list(design.comps_of_kind("battery_holder")) if _instrument_inputs(design, cfg, sim) else []
+
+
 MATCHERS = {"power_input": _power_inputs, "connector_signal": _connector_signals,
             "transistor_at_connector": _transistors_at_connectors, "switching_regulator": _switching_regulators,
-            "two_supplies": _two_supplies, "read_back": _read_backs}
+            "two_supplies": _two_supplies, "read_back": _read_backs, "btl_output": _btl_outputs,
+            "switching_near_audio": _switching_near_audio, "ceramic_in_signal_path": _ceramics_in_signal_path,
+            "instrument_input": _instrument_inputs, "battery_with_jacks": _battery_on_a_board_with_jacks,
+            "pedal_power_input": _pedal_power_inputs}
 
 
 

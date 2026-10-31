@@ -49,6 +49,9 @@ def suggests(design, rule):
     keys = set(rule.get("values", []))
     if keys and any(keys & set(p.get("values") or {}) for p in parts):
         return True
+    marks = set(rule.get("nets", []))
+    if marks and any(marks & set(net) for net in design.nets.values()):
+        return True
     if rule.get("radio"):
         if (design.graph.get("purpose") or {}).get("radio") is not None:
             return True
