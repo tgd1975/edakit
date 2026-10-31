@@ -195,3 +195,23 @@ def test_steps_say_what_is_wrong(project, steps, match):
     sim["transients"] = {"x": {"supply": {"J1": 5}, "load": "idle", "stop_s": 0.001, "steps": steps}}
     with pytest.raises(simrun.SimError, match=match):
         simulate(project, sim)
+
+
+def test_an_ngspice_run_past_its_time_is_a_sim_error(monkeypatch):
+    """ngspice running into its timeout ends with a SimError naming the run, not with subprocess.TimeoutExpired –
+    found with the charger model just above its overcharge threshold."""
+    import shutil as _shutil
+    import subprocess
+
+    import pytest as _pytest
+
+    from edakit.sim import run as simrun
+
+    def slow(*a, **k):
+        raise subprocess.TimeoutExpired(a[0], k.get("timeout"))
+    monkeypatch.setattr(_shutil, "which", lambda name: "/usr/bin/" + name)
+    monkeypatch.setattr(subprocess, "run", slow)
+    with _pytest.raises(simrun.SimError, match="no operating point within"):
+        simrun.ngspice("* empty\n.end\n", name="usb-min/all_on")
+    with _pytest.raises(simrun.SimError, match="transient run took more than"):
+        simrun.ngspice_tran("* empty\n.end\n", "out.txt", name="plug")

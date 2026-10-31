@@ -1,6 +1,6 @@
 # Schema gaps found while writing the parts library
 
-Status 2026-10-31: proposal, not decided. While writing the 51 library drafts in `edakit/parts/` from their datasheets
+Status 2026-10-31: decided (rules-at-scale.md, decisions 10 and 11) and built – the state per item at the end. While writing the 51 library drafts in `edakit/parts/` from their datasheets
 (rules-at-scale.md, decision 8), seven agents reported facts the parts schema (`edakit/catalog/kinds.toml`) has no
 field for, and places where edakit's checks judge a correct circuit wrongly. They are grouped here, with how many of
 the seven groups (modules, LEDs and displays, power, switching, sensors, buses, audio) met each, and a proposal per
@@ -115,3 +115,27 @@ A first – each is a finding that is wrong today –, with I1 and I7. Then B1, 
 which make checks of existing codes hold on more pins. E1 is a pass over the drafts with fields that exist. E2 to E6, F and G when a
 project needs them. H goes to the owner: whether edakit should check a cached symbol against its entry beyond the pin
 names (STRUCT.entry), and whether the four symbols are reported to EasyEDA/LCSC.
+
+## State after the build (2026-10-31)
+
+Built in seven worktrees (W1–W7) and merged; each item with a test that is red without it.
+
+| Items | State | Where |
+|---|---|---|
+| A1–A5, A7 | built | entry `matrix`, pin `drive = "bridge"`, pin `biased`, address pins `{low, high, sda, scl}`, REQ.function on MCU and module pins only, behaviour `matrix_driver` (W1) |
+| A6, B1–B3, C1–C4 | built | pin `ref`, `rel_ref`, `v_rel_max_v`, `v_max_powered_v`, `v_min_v`, `i_max_a`, `i_inject_max_a`, `r_load_min_ohm`, `c_load_max_f`; entry `supply_order`, `i_group_max_a`; grades LIM.v/powered, LIM.v/order, LIM.i/pin, REQ.value/load (W2) |
+| D1, D2, D4, D5 | built | `needs.capacitor.to`, `needs.crystal` and kind `crystal`, `needs.capacitor.v_min_v`, a capacitor window on the parts layout.near places (W3) |
+| D3 | in part | `needs.tie`, `no_pull`, `no_series`, `float_ok = false` built; the BME280's CSB and SDO, which hold only in I2C mode, wait for an entry with `configs` (F1 exists now) |
+| E1 | in part | `logic` with `icc_a` on AT24C32D, INA219, DS18B20; the model holds every output low, so parts with outputs wait for a `logic` that lets released outputs go |
+| E2, E3, E4, E6 | built | behaviours `bridge`, `charger`, `protection`, `buck_boost`; roles `gate_2`/`source_2`/`drain_2` for a dual MOSFET (W4) – not modelled: a charger's termination, the DW01A's hysteresis and delays |
+| E5 | in part | behaviour `pd_sink` with REQ.value/pd_request (W5) – PG, the CC lines and the negotiation not modelled |
+| F1–F3 | built | entry `configs`, `config_default`, a component's `config`, needs with `when` (W6) |
+| I1, I7 | built | LIM.v against a part's own ground pin; LIM.v/polarized leaves signal coupling to stage E (W1) |
+| I2–I4 | built | sim.json source with `outputs`, relay roles per contact set, behaviours `photomos`, `pass_gate`, kind `esd_array` (W5) |
+| I5, I6, I8, I9 | built | net `isolated`, `i_contact_max_a`, `i_switch_max_a`, `min_load_a`, block keys `graph`, `optional`, `block add --without`, accepts `"code place"` (W6) |
+| H | built | STRUCT.entry/symbol and `symbol_differs` (W7); the report `upstream/issue-6-easyeda-symbols.md`, not sent – the owner sends it |
+| G | open | not part of decision 10 |
+
+Left for the owner: the MPU-6050's SCL/SDA held to VLOGIC + 0.5 V (the VIH range, stricter than the absolute
+VDD + 0.5 V) – recorded as open in its entry; the 10 µA a contact in a signal path may need at most (maker-coverage
+CK-30, from forums, not a datasheet); whether the INA226's Alert may be pulled above VS (its datasheet does not say).

@@ -7,7 +7,7 @@
 FT-1 = { status = "built", where = "transients: steps (sim/run.py, sim/netlist.py amps); LIM.range finds the brown-out", step = 6 }
 FT-2 = { status = "partial", where = "cables: length_m, awg | mm2, l_nh_per_m (circuit.wire_ohm, wire_h)", missing = "i_max_a from the gauge (no read ampacity table), c_pf_per_m, a board without a PCB instead of bought", step = 6 }
 FT-3 = { status = "built", where = "behaviour opamp (sim/netlist.py); LIM.range/opamp", step = 6 }
-FT-4 = { status = "partial", where = "values prog_v, roles prog and bat; LIM.i/charge against the charger's i_out_max_a and the cell's i_charge_max_a (MCP73831 DS20001984H, TP4056 REV_2.4)", missing = "the CC/CV behaviour in the simulation, the charger's dissipation (5 V into 3 V at 1 A) and the termination current", step = 6 }
+FT-4 = { status = "partial", where = "behaviour charger (prog_v/R_PROG, precondition, float voltage, UVLO, dissipation) – TP4056, MCP73831; LIM.i/charge on any scenario with a cell", missing = "the termination current – a state of the charge cycle an operating point cannot show", step = 6 }
 FT-5 = { status = "partial", where = "values vref_v, i_load_min_a, roles adj and fb (circuit.feedback_vout); the simulation regulates to the divider; REQ.missing/feedback, REQ.value/feedback, LIM.range/min_load; AMS1117 datasheet as the example", missing = "a boost converter's output with EN low (VIN − VD): HINT.boost_enable names it, no model", step = 6 }
 FT-6 = { status = "built", where = "kinds motor, solenoid, speaker, heater, optocoupler (catalog/kinds.toml, sim/netlist.py)", step = 6 }
 FT-7 = { status = "out", where = "rules-at-scale.md, decision 7 (2026-10-31): hazardous voltage recognised by LIM.hazardous, not checked" }
@@ -59,7 +59,7 @@ CK-26 = { status = "built", where = "REQ.function/uart", step = 6 }
 CK-27 = { status = "built", where = "net instrument, load_min_ohm, pin z_in_ohm; REQ.value/instrument", step = 6 }
 CK-28 = { status = "partial", where = "values gain_min_ratio; REQ.value/gain", missing = "the external compensation a part requires", step = 6 }
 CK-29 = { status = "built", where = "REQ.missing/balance", step = 6 }
-CK-30 = { status = "partial", where = "net signal; REQ.value/switch in the simulation (engines/sim.py switch_dc)", missing = "a contact rated for signal currents (min_load of the entry) – datasheets", step = 6 }
+CK-30 = { status = "built", where = "net signal; REQ.value/switch (≤ 10 mV across a contact in a signal path), REQ.value/min_load (min_load_a – a contact in a signal path rated for signal currents, ≤ 10 µA); every relay contact set (roles common_2 …)", missing = "the 10 µA comes from maker-coverage CK-30 (forums), not a datasheet", step = 6 }
 CK-31 = { status = "built", where = "layout.apart; GEO.spacing/apart on the Gerber copper (fab.check_apart, gerber.Copper.distance)", step = 6 }
 
 [hints]

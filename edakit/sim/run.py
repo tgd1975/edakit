@@ -47,13 +47,21 @@ class SimError(Exception):
     pass
 
 
+NGSPICE_OP_S = 120         # an operating point that takes longer does not converge
+NGSPICE_TRAN_S = 600       # a transient run that takes longer is too fine for the check
+
+
 def ngspice(text, keep=None, name="run"):
     if not shutil.which("ngspice"):
         raise SimError("ngspice not found – install it (Debian/Ubuntu: sudo apt install ngspice)")
     with tempfile.TemporaryDirectory() as tmp:
         cir = Path(keep or tmp) / (re.sub(r"[^\w.-]", "_", name) + ".cir")
         cir.write_text(text)
-        res = subprocess.run(["ngspice", "-b", str(cir)], capture_output=True, text=True, timeout=120)
+        try:
+            res = subprocess.run(["ngspice", "-b", str(cir)], capture_output=True, text=True, timeout=NGSPICE_OP_S)
+        except subprocess.TimeoutExpired:
+            raise SimError(f"{name}: ngspice found no operating point within {NGSPICE_OP_S} s – a model that does not "
+                           "converge there (the scenario's sources, a behaviour model near its threshold)") from None
         if keep:
             cir.with_suffix(".log").write_text(res.stdout + res.stderr)
     values = {}
@@ -79,7 +87,12 @@ def ngspice_tran(text, data_file, keep=None, name="run"):
         d = Path(keep or tmp)
         cir = d / (re.sub(r"[^\w.-]", "_", name) + ".cir")
         cir.write_text(text)
-        res = subprocess.run(["ngspice", "-b", cir.name], cwd=d, capture_output=True, text=True, timeout=600)
+        try:
+            res = subprocess.run(["ngspice", "-b", cir.name], cwd=d, capture_output=True, text=True,
+                                 timeout=NGSPICE_TRAN_S)
+        except subprocess.TimeoutExpired:
+            raise SimError(f"{name}: the transient run took more than {NGSPICE_TRAN_S} s – a shorter stop_s or a "
+                           "coarser step") from None
         if keep:
             cir.with_suffix(".log").write_text(res.stdout + res.stderr)
         dat = d / data_file
