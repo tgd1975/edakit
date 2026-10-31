@@ -583,15 +583,17 @@ as follows (chapters 6 and 7). Each command ran in less than half a minute:
 
 5. The agent pcb-reviewer reviews the round, in a session of its own, on the manufacturing files of a gate run
    (17.12). Nothing blocked; it had four notes:
-   - BT1's designator lay under the cell;
+   - BT1's designator lay under the cell – GEO.silk did not see it then; with a `body.box` in BT1's entry it would
+     (grade body, 8.1);
    - the board label sat 8 mm left of the axis;
    - without `[order]` no file said that the tooling holes are the customer's – JLCPCB might drill its own on the face
-     people see;
+     people see (FILES.order warns about that now, grade tooling);
    - `hand_solder_keep_mm` was not set.
 
    You chose to move both texts above the cell, as it proposed – how the board looks is yours to decide. The
-   designer took the remark for JLCPCB and `[looks]` too. The fourth note it answered: the key covers through-hole
-   joints only, and BT1 has SMD tabs – the reviewer withdrew it. A second `silk apply`, a second gate run, a second
+   designer took the remark for JLCPCB and `[looks]` too. The fourth note it answered: the key covered through-hole
+   joints only then, and BT1 has SMD tabs – the reviewer withdrew it. Since then it covers the SMD tabs of a part
+   with `bom: false` too, on the side the part sits on (7.5): set, it would hold BT1's tabs. A second `silk apply`, a second gate run, a second
    look: only the top silkscreen and the order settings had changed (`edakit fab diff`), and the reviewer signed M-5
    for that run's files.
 
