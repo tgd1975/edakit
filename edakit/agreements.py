@@ -28,6 +28,9 @@ so that every session knows it – a project that keeps working agreements of it
 (python3 older than 3.11) or in a file that does not parse the entries cannot be read; one line then says that the
 project registers some and that edakit scripts lists them.
 
+Last, where `edakit` is not on PATH, one line with the path of the plugin's bin/edakit – a session finds its command line
+without searching for it.
+
 Stdlib only and run with python3 directly, like `lock.py hook`: no uv start-up when a session starts. It never stops
 a session: whatever goes wrong, it exits 0 (the reason on stderr).
 """
@@ -143,13 +146,21 @@ def registered(entries):
     return lines
 
 
+def command():
+    """The line that says where edakit is when it is not on PATH: the plugin's bin/edakit."""
+    import shutil
+    if shutil.which("edakit"):
+        return []
+    return [f"The edakit command line is {Path(__file__).resolve().parents[1] / 'bin' / 'edakit'} – it is not on PATH."]
+
+
 def hook(data):
     """The hook's output for the hook JSON `data`, or None for no output."""
     path = find_project(data.get("cwd") or os.getcwd())
     if path is None:
         return None
     wanted, entries = read(path)
-    lines = ([digest()] if wanted else []) + registered(entries)
+    lines = ([digest()] if wanted else []) + registered(entries) + command()
     if not lines:
         return None
     return {"hookSpecificOutput": {"hookEventName": "SessionStart", "additionalContext": "\n".join(lines)}}

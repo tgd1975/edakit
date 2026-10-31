@@ -512,6 +512,9 @@ def main(cfg, args):
         print("\n" + "\n".join(format_findings(found)))
     if args.json:
         Path(args.json).write_text(json.dumps(out, indent=1, ensure_ascii=False) + "\n", encoding="utf-8")
-    print(f"net currents → {write_net_currents(cfg, out)}")
-    save_result(cfg, sim, out)
+    try:            # the results stand above; a project whose artifacts cannot be written loses only the files
+        print(f"net currents → {write_net_currents(cfg, out)}")
+        save_result(cfg, sim, out)
+    except OSError as e:
+        print(f"note: the artifacts were not written ({e}) – the results above are complete")
     return 2 if any(f.severity == "error" and not f.accepted for f in found) else 0

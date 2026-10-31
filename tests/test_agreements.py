@@ -26,12 +26,19 @@ OFF = ("quantity = 5", "quantity = 5\nagreements = false")       # [project] agr
 
 @pytest.fixture(autouse=True)
 def no_config_from_outside(monkeypatch):
+    import os
     monkeypatch.delenv("EDAKIT_CONFIG", raising=False)
+    monkeypatch.setenv("PATH", f"{ROOT / 'bin'}:{os.environ.get('PATH', '')}")     # edakit found: no line for it
 
 
-def run_hook(cwd, env=None):
-    """The hook as Claude Code starts it: plain python3, the hook JSON on stdin, from another directory."""
+def run_hook(cwd, env=None, on_path=True):
+    """The hook as Claude Code starts it: plain python3, the hook JSON on stdin, from another directory – with the
+    plugin's bin/ on PATH, as a session that finds edakit has it."""
+    import os
     data = {"session_id": "s1", "hook_event_name": "SessionStart", "source": "startup", "cwd": str(cwd)}
+    env = dict(env if env is not None else os.environ)
+    path = [x for x in env.get("PATH", "").split(":") if x and not (Path(x) / "edakit").exists()]
+    env["PATH"] = ":".join(([str(ROOT / "bin")] if on_path else []) + path)
     res = subprocess.run([sys.executable, str(SCRIPT)], input=json.dumps(data), capture_output=True, text=True,
                          cwd="/", env=env, timeout=10)
     assert res.returncode == 0, res.stderr
@@ -188,3 +195,11 @@ def test_entries_that_cannot_be_read_cost_no_agreement(tmp_path):
     lines = context(run_hook(odd)).splitlines()
     assert lines[:-2] == agreements.digest().splitlines()
     assert lines[-2].startswith("The project's agents") and lines[-1].startswith("- x (signs ?")
+
+
+def test_where_edakit_is_not_on_path_the_hook_names_it(tmp_path):
+    root = tmp_path / "led-bar"
+    shutil.copytree(EXAMPLE, root, ignore=shutil.ignore_patterns("build"))
+    assert "is not on PATH" not in context(run_hook(root))
+    line = context(run_hook(root, on_path=False)).splitlines()[-1]
+    assert line == f"The edakit command line is {ROOT / 'bin' / 'edakit'} – it is not on PATH."
