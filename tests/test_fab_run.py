@@ -999,6 +999,24 @@ def test_silk_apply_run_again_leaves_only_the_footprints_print(project):
     assert l17(rows)["C2: silkscreen on its solder-mask openings – JLCPCB clips it there"][0] == "warn"
 
 
+def test_a_board_printed_by_an_older_silk_apply_is_told_to_run_it_again(project):
+    """walkthrough-gaps B7, the bell's report of 2026-10-30: a board printed by a `silk apply` of before 2026-10-28 has
+    its memo (silk_strings_<board>.json) but no silk_footprints_<board>/. GEO.silk cannot tell edakit's print from the
+    footprints' then: one fail that says so and what to do – silk apply once more, which removes its old print before
+    it keeps the footprints' – and no finding about the board itself; the print on the openings is still held per
+    part. Without the memo edakit printed nothing, and there is nothing to tell apart."""
+    def older(ex, p):
+        ex.silk_memo = {"strings": ["s1"], "fills": []}
+        silk_line(*ACROSS_C2)(ex, p)
+    rows = run(project, older)
+    assert findings(rows) == [("GEO.silk", "fail"), ("GEO.silk", "warn")]
+    assert l17(rows)["edakit's own print (designators, texts, artwork of silk apply) off the solder-mask openings"] == (
+        "fail", "silk_strings_main.json exists, silk_footprints_main/ does not: edakit's print cannot be told from the "
+        "footprints' (silk apply of an older edakit) – run edakit silk apply")
+    assert l17(rows)["C2: silkscreen on its solder-mask openings – JLCPCB clips it there"][0] == "warn"
+    assert not [k for k in l17(rows) if k.startswith(("TOP: edakit's own", "BOTTOM: edakit's own"))]   # not measured
+
+
 def test_a_group_label_or_unlabelled_covers_a_part(project):
     def grouped(ex, p):
         ex.pcb["designators"].update(J1=False, C2=False, D1=False)

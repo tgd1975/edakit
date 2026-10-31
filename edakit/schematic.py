@@ -423,10 +423,10 @@ def check(cfg, args):
         eda.open_project(mcp, cfg)
         sch_uuid, pages = eda.find_pages(mcp, name)
         sch_comps, sch_nets = [], {}
-        for page in pages:
-            eda.focus_page(mcp, sch_uuid, page)
-            sch_comps += eda.list_sheet_parts(mcp)
-            nets = mcp.call("easyeda_schematic_nets", projectId=PROJECT, scope="focused")
+        for page in pages:    # both tools answer for the focused page: counted only while it stayed active
+            parts, nets = eda.read_on_page(mcp, sch_uuid, page, lambda: (
+                eda.list_sheet_parts(mcp), mcp.call("easyeda_schematic_nets", projectId=PROJECT, scope="focused")))
+            sch_comps += parts
             if nets.get("not_available"):
                 raise MCPError(f"nets not readable: {nets.get('error')}")
             for net in nets.get("nets", []):  # nets of the same name are one net across pages

@@ -147,3 +147,80 @@ def test_progress_with_a_total_numbers_its_phases(capsys, monkeypatch):
     assert re.search(r"^\[ *\d+\.\d min\] step 1/2: bridge$", out, re.M)
     assert re.search(r"^\[ *\d+\.\d min\] step 2/2: place$", out, re.M)
     assert "  (place: " in out                                    # the duration of each phase stays
+
+
+# --- reads of the focused page: the BOM of gate --easyeda (walkthrough-gaps B7) ---------------------------------------
+
+class FakeTabs:
+    """Two schematics with their pages in tabs, one active: easyeda_bom_generate answers for the ACTIVE page, as the
+    bridge does. switch: {call number of easyeda_bom_generate: page} – EasyEDA makes that page active while the BOM
+    is read (it switches tabs on its own). The template's tab is open from stage S."""
+
+    BOM = {"lay1": [{"lcsc": "C1", "reference": "R1"}], "lay2": [{"lcsc": "C2", "reference": "D1"}],
+           "tpl1": [{"lcsc": "C1", "reference": "R1"}, {"lcsc": "C9", "reference": "D1"}]}
+
+    def __init__(self, switch=None, unsaved=False):
+        self.sch = {"s-layout": ("layout_main", ["lay1", "lay2"]), "s-template": ("generated_main", ["tpl1"])}
+        self.active, self.switch, self.reads = "tpl1", dict(switch or {}), 0
+        self.tabs = [{"tabId": "t-tpl1", "title": "generated_main", "isUnSaved": unsaved,
+                      "data": {"sch": True, "data-schematic-uuid": "s-template"}},
+                     {"tabId": "t-pcb", "title": "main", "data": {"pcb": True}}]
+        self.closed = []
+
+    def call(self, tool, timeout=130, **args):
+        if tool == "easyeda_schematic_sheet_info":
+            return {"sheet": {"uuid": self.active, "parentSchematicUuid": self.parent(self.active)}}
+        if tool == "easyeda_bom_generate":
+            self.reads += 1
+            bom = self.BOM[self.active]
+            self.active = self.switch.pop(self.reads, self.active)
+            return {"entries": bom}
+        path, a = args["path"], args["args"]
+        if path == "DMT_Schematic.getAllSchematicsInfo":
+            return {"ok": True, "result": [{"uuid": u, "page": [{"uuid": p} for p in pages]}
+                                           for u, (_, pages) in self.sch.items()]}
+        if path == "DMT_Schematic.getSchematicInfo":
+            return {"ok": True, "result": {"name": self.sch[a[0]][0]}}
+        if path == "DMT_EditorControl.openDocument":
+            self.active = a[0]
+            return {"ok": True, "result": True}
+        if path == "DMT_EditorControl.getSplitScreenTree":
+            return {"ok": True, "result": [{"tabs": self.tabs}]}
+        if path == "DMT_EditorControl.closeDocument":
+            self.closed.append(a[0])
+            return {"ok": True, "result": True}
+        raise AssertionError(path)
+
+    def parent(self, page):
+        return next(u for u, (_, pages) in self.sch.items() if page in pages)
+
+
+R1 = {"lcsc": "C1", "reference": "R1", "quantity": 1}
+D1 = {"lcsc": "C2", "reference": "D1", "quantity": 1}
+
+
+def test_the_bom_is_read_from_every_page_of_the_boards_schematic(cfg):
+    """easyeda_bom_generate lists the parts of the focused page: each page of the board's schematic in turn, merged –
+    and the template's tab, open since stage S, is closed first, so EasyEDA cannot switch to it."""
+    from edakit.release import fab
+    mcp = FakeTabs()
+    assert fab.board_bom(mcp, cfg.board()) == [R1, D1]
+    assert mcp.closed == ["t-tpl1"]
+
+
+def test_a_page_that_loses_the_focus_while_its_bom_is_read_is_read_again(cfg, capsys):
+    """The bell's report of 2026-10-30: the BOM tool mixed tabs. EasyEDA switches to the template while page 2's BOM
+    is read, and the answer is the template's (D1 as C9), not page 2's: that read does not count, the page is read
+    again. An unsaved template tab stays open."""
+    from edakit.release import fab
+    mcp = FakeTabs(switch={2: "tpl1"}, unsaved=True)
+    assert fab.board_bom(mcp, cfg.board()) == [R1, D1]
+    assert mcp.reads == 3 and mcp.closed == []
+    assert "page lay2 lost the focus while it was read – reading it again" in capsys.readouterr().out
+
+
+def test_a_page_that_never_holds_the_focus_stops_the_read(cfg):
+    from edakit.release import fab
+    mcp = FakeTabs(switch={2: "tpl1", 3: "tpl1", 4: "tpl1"}, unsaved=True)
+    with pytest.raises(eda.MCPError, match="page lay2: another tab became active while it was read, 3 times"):
+        fab.board_bom(mcp, cfg.board())
