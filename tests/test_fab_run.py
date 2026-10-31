@@ -101,7 +101,7 @@ def cut(project):
 
 
 class Layer(list):
-    """Gerber items in mm: ("flash", (kind, a, b), x, y) and ("draw", width, points, tag)."""
+    """Gerber items in mm: ("flash", (kind, a, b), x, y), ("draw", width, points, tag) and ("region", points, tag)."""
 
     def text(self):
         aps, body = {}, []
@@ -112,6 +112,10 @@ class Layer(list):
         for item in self:
             if item[0] == "flash":
                 body += [f"D{code(item[1])}*", f"X{um(item[2])}Y{um(item[3])}D03*"]
+            elif item[0] == "region":
+                pts = item[1] + item[1][:1]
+                body += ["G36*", f"X{um(pts[0][0])}Y{um(pts[0][1])}D02*"]
+                body += [f"X{um(x)}Y{um(y)}D01*" for x, y in pts[1:]] + ["G37*"]
             else:
                 _, w, pts, _ = item
                 body += [f"D{code(('C', w, w))}*", f"X{um(pts[0][0])}Y{um(pts[0][1])}D02*"]
@@ -475,6 +479,17 @@ def via(ex, x, y, pad=0.6096, hole=0.3048):
         ex.gerber[layer].append(("flash", ("C", pad, pad), x, y))
 
 
+POUR = [(5, 13), (12, 13), (12, 18.5), (5, 18.5)]   # a GND pour on both layers, on the GND track along y = 13.5
+
+
+def via_in_pour(ex, pad=0.6096):
+    """A GND via at (8, 16) inside a pour of its own net on both layers – the pour a region, as EasyEDA writes it
+    (walkthrough gaps B1)."""
+    for layer in ("top", "bottom"):
+        ex.gerber[layer].append(("region", POUR, "GND"))
+    via(ex, 8, 16, pad=pad)
+
+
 def plus_at(x, y, text=True):
     """The "+" of the export moved to (x, y): drawn in the top silkscreen as two crossing strokes, the way a footprint
     draws it, and as a PCB text unless text is False (a footprint's own print)."""
@@ -496,6 +511,19 @@ def silk_line(*pts):
 ACROSS_C2 = ((18, 9), (20, 9))     # across C2.1's mask opening (1.1 x 1.4 mm): 0.165 mm² of print on it
 
 
+BODY = [-2.5, -2.0, 2.5, 2.0]      # a body of 5 x 4 mm over C2's footprint box of 3.7 x 1.9 mm (walkthrough gaps B3)
+
+
+def c2_body(ex, project, *strokes):
+    """C2's parts entry with a body larger than its footprint (body.box, footprint mm) – the way a coin cell stands out
+    of its holder – and strokes of print (a designator, say) on the top silkscreen. C2 sits at (20, 9): its footprint
+    box reaches to y = 9.95, its body to y = 11."""
+    entry = project.part("C45783")
+    project.save_part("C45783", {**entry, "body": {"box": BODY}})
+    for pts in strokes:
+        silk_line(*pts)(ex, project)
+
+
 def own_print(ex, project):
     """`silk apply` ran – its memo, and the print it found before placing anything, saved – and then a line of its
     own print lies across C2.1: a part moved after it, say."""
@@ -509,6 +537,16 @@ def via_at_joint(ex, project):
     only the via is on J1's solder side."""
     via(ex, 1.6, 9)
     ex.line("GND", 1, [(1.6, 9), (1.6, 6)])
+
+
+TAB_VIA = (10.8, 7.5)        # 0.35 mm (copper to copper) below D1.2 (VIN), an SMD pad 2.5 x 1.7 mm at (10.8, 9)
+
+
+def via_at_smd_tab(ex, project):
+    """D1 soldered by hand (bom: false, walkthrough gaps B5) and a via without a track 0.35 mm below its SMD pad D1.2 –
+    D1 sits on TOP, so TOP is the side of its joints."""
+    graph(project, lambda g: project.comp(g, "D1").update(bom=False))
+    via(ex, *TAB_VIA)
 
 
 def track_at_joint(ex, project):
@@ -721,8 +759,10 @@ FAULTS = [
      [("GEO.ring", "fail", "J1.1: 0.125 mm on TOP and BOTTOM (hole Ø 1.00 mm); J1.2: 0.125 mm on TOP and BOTTOM")]),
     ("a pad ring below JLCPCB's capability value", j1_pads(1.38),
      [("GEO.ring", "warn", "pad 1, 2: 0.190 mm on TOP and BOTTOM (hole Ø 1.00 mm)")]),
-    ("a via ring below 0.05 mm", lambda ex, p: via(ex, 8, 13.5, pad=0.38),     # on TOP the GND track is its ring
-     [("GEO.ring", "fail", "via at (8.00, 13.50): 0.037 mm on BOTTOM (hole Ø 0.30 mm)")]),
+    ("a via ring below 0.05 mm", lambda ex, p: via(ex, 8, 13.5, pad=0.38),     # the GND track over it is no ring
+     [("GEO.ring", "fail", "via at (8.00, 13.50): 0.037 mm on TOP and BOTTOM (hole Ø 0.30 mm)")]),
+    ("a via ring below 0.05 mm inside a pour of its own net", lambda ex, p: via_in_pour(ex, pad=0.38),
+     [("GEO.ring", "fail", "via at (8.00, 16.00): 0.037 mm on TOP and BOTTOM (hole Ø 0.30 mm)")]),
     ("two vias closer than 0.2 mm", lambda ex, p: (via(ex, 8, 13.5), via(ex, 8.45, 13.5)),
      [("GEO.spacing", "fail", "via at (8.00, 13.50) – via at (8.45, 13.50): 0.145 mm apart, below 0.20 mm")]),
     ("a via closer than 0.45 mm to a component hole", lambda ex, p: via(ex, 3, 12.05),     # J1 is soldered by hand
@@ -742,6 +782,8 @@ FAULTS = [
      [("GEO.silk", "warn", "C2 on the top without a visible designator")]),
     ("the designators not read with the PCB", lambda ex, p: ex.pcb.pop("designators"),
      [("GEO.silk", "fail", "pcb.json without the designators")]),
+    ("print under a body larger than its footprint", lambda ex, p: c2_body(ex, p, [(19.5, 10.6), (20.5, 10.6)]),
+     [("GEO.silk", "warn", "TOP: 0.168 mm² in 1 spot: (20.0, 10.6) mm")]),
     ("a text height below the fab's minimum",
      lambda ex, p: board_file(p, 'edge_ok = ["J1"]', 'edge_ok = ["J1"]\n\n[silk]\nlabel_h_mm = 0.8'),
      [("GEO.silk", "warn", "label_h_mm = 0.8 mm")]),
@@ -751,6 +793,9 @@ FAULTS = [
        "hand_solder_keep_mm 0.5")]),
     ("a via without a track next to a hand-soldered joint", lambda ex, p: via(ex, 1.6, 9),
      [("GEO.spacing", "fail", "J1.1 (VIN) – via (no track, net unknown) at (1.60, 9.00): 0.40 mm")]),
+    ("a via next to a hand-soldered SMD tab", via_at_smd_tab,
+     [("GEO.spacing", "fail", "D1.2 (VIN) – via (no track, net unknown) at (10.80, 7.50): 0.35 mm apart on TOP, the side "
+       "D1 sits on, below hand_solder_keep_mm 0.5")]),
     # GEO.silk (#81) – only with [looks] in the board file
     ("a designator shown on the visible side", visible_designator,
      [("GEO.silk", "fail", "TOP (visible): C2 shows its designator – [silk] designators is bottom")]),
@@ -900,6 +945,15 @@ def test_rings_and_hole_spacing_of_the_clean_export(project):
     assert rows == [("pass", "2 holes (narrowest ring 0.200 mm, J1.1), 0 vias"), ("pass", "closest 1.000 mm (J1.1 – J1.2)")]
 
 
+def test_a_via_inside_a_pour_keeps_its_own_ring(project):
+    """Walkthrough gaps B1: the example's vias (0.61 mm on 0.305 mm) sat in its GND pours and GEO.ring reported
+    "narrowest ring 1.000 mm" – the pour, measured up to 1 mm. The via's ring is its own pad's, inside a pour too."""
+    rows = run(project, lambda ex, p: via_in_pour(ex))
+    assert findings(rows) == []
+    ring = next(r for r in rows if r["id"] == "GEO.ring")
+    assert ring["actual"] == "2 holes (narrowest ring 0.200 mm, J1.1), 1 vias (narrowest ring 0.152 mm)"
+
+
 def test_a_waived_annular_ring_is_listed_with_its_reason(project):
     def waived(ex, p):
         j1_pads(1.25)(ex, p)
@@ -1018,6 +1072,27 @@ def test_silk_apply_run_again_leaves_only_the_footprints_print(project):
     assert l17(rows)["TOP: edakit's own print (designators, texts, artwork of silk apply) off the solder-mask "
                      "openings"] == ("pass", "TOP: 0.000 mm²")
     assert l17(rows)["C2: silkscreen on its solder-mask openings – JLCPCB clips it there"][0] == "warn"
+
+
+BODY_CHECK = "print under bodies larger than their footprint (body.box of the parts entry)"
+
+
+def test_print_outside_a_body_or_inside_its_footprint_passes(project):
+    """Walkthrough gaps B3: print outside both body and footprint passes; inside the footprint box it passes as before –
+    the footprint's own print lies there (here a stroke between C2's pads). A part without body.box gets no row: the
+    clean export's GEO.silk rows are what they were (test_silkscreen_of_the_clean_export)."""
+    rows = run(project, lambda ex, p: c2_body(ex, p, [(19.5, 11.5), (20.5, 11.5)], [(20, 8.3), (20, 9.7)]))
+    assert findings(rows) == []
+    assert l17(rows)[BODY_CHECK] == ("pass", "C2: TOP: 0.000 mm²")
+
+
+def test_print_under_a_body_without_footprint_geometry_is_not_checked(project):
+    def no_geometry(ex, p):
+        c2_body(ex, p, [(19.5, 10.6), (20.5, 10.6)])
+        del ex.geo["C2"]
+    rows = run(project, no_geometry)
+    assert l17(rows)["C2: print under its body"] == (
+        "info", "not checked: no footprint geometry of C2 in main.geometry.json (edakit pcb dump)")
 
 
 def test_a_group_label_or_unlabelled_covers_a_part(project):

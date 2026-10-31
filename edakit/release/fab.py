@@ -53,14 +53,17 @@ assembly preview at JLCPCB.
   GEO.pour copper per layer from the Gerber files: share of the board area and largest copper-free circle (info); a
        circle above [copper] max_bare_mm on a poured layer, a share below [copper] min_cover, a copper piece without
        pad, via or plated hole: warn
-  GEO.ring every plated hole keeps JLCPCB's annular ring (component hole 0.18 mm, warn below 0.20 mm; via 0.05 mm) and
-       every two plated holes JLCPCB's hole-to-hole spacing, edge to edge (0.45 mm with a component hole, 0.2 mm vias)
+  GEO.ring every plated hole keeps JLCPCB's annular ring (component hole 0.18 mm, warn below 0.20 mm; via 0.05 mm, on
+       the via's own pad, a pour around it not counted) and every two plated holes JLCPCB's hole-to-hole spacing, edge
+       to edge (0.45 mm with a component hole, 0.2 mm vias)
   GEO.silk silkscreen from the Gerber files: edakit's own print on a solder-mask opening (fail), other print there per part,
        print beyond the outline, a part of the designators side without a visible designator or group label (not in
-       [silk] unlabelled), a text height edakit prints below 1.0 mm (warn)
-  GEO.spacing with [routing] hand_solder_keep_mm: on the solder side of every through-hole pad of a hand-soldered part
-       (bom: false), vias and pads of other nets at least that far away; pads as GEO.spacing, vias from the via drill file
-       (net: the tracks of pcb.json that end on them)
+       [silk] unlabelled), a text height edakit prints below 1.0 mm, print under a body larger than its footprint
+       (body.box of the parts entry) beyond the footprint's box (warn)
+  GEO.spacing with [routing] hand_solder_keep_mm: on the solder side of every pad of a hand-soldered part (bom: false) –
+       a through-hole pad's the side its part does not sit on, an SMD pad's its own –, vias and pads of other nets at
+       least that far away; pads as GEO.spacing, vias from the via drill file (net: the tracks of pcb.json that end on
+       them)
   GEO.silk with [looks]: on the visible side every PCB text of the silkscreen is one the board file puts there (the board
        label on its side, the [[silk.texts]] of the side, with [silk] designators on it the designators and group
        labels), and no part on it shows its designator while [silk] designators names the other side (waive GEO.silk on
@@ -597,6 +600,7 @@ def check_silk(cfg, board, design, d, rows):
                  f"{', '.join(lost)} missing (Gerber export)", "present")
     else:
         silk_print(cfg, board, data, d / "gerber", rows)
+        silk_bodies(cfg, board, design, data, d / "gerber", rows)
     silk_designators(board, design, data, rows)
     silk_heights(cfg, board, rows)
 
@@ -672,6 +676,48 @@ def silk_print(cfg, board, data, g, rows):
             rows.add("L", "GEO.silk", board.name, f"{name}: silkscreen inside the board outline", area <= SILK_LIMIT_MM2,
                      f"{name}: " + (spots_text(out, around="around ").replace(" in ", " beyond it in ", 1) if out
                                     else "0.000 mm² beyond it"), "0 mm²", None if area <= SILK_LIMIT_MM2 else "warn")
+
+
+def silk_bodies(cfg, board, design, data, g, rows):
+    """GEO.silk/body: a part whose parts entry gives a body larger than its footprint (body.box – a coin cell standing
+    out of its holder) covers the print under it. Where the body, placed where pcb.json has the part, reaches beyond
+    the footprint's box (the geometry of `pcb dump`), print on the part's side – a designator, a text – is hidden once
+    the part is in: a warning per part. Inside the footprint box lies the footprint's own print, which the Gerber
+    file cannot tell from a designator: as before, not looked at. No row without body.box; a part without footprint
+    geometry is listed as not checked."""
+    from shapely.geometry import Polygon
+
+    from .. import pcb as pcbmod
+    from .. import silk
+    want = design.board_comps(board.name)
+    on_pcb = {c["designator"]: c for c in data["components"] if c.get("designator") in want}
+    bodies = silk.body_shapes(design, on_pcb)
+    if not bodies:
+        return
+    geo_file = pcbmod.geometry_file(cfg, board)
+    geo = json.loads(geo_file.read_text()) if geo_file.exists() else {}
+    printed, clear = {}, []
+    for ref in sorted(bodies, key=natural_key):
+        c = on_pcb[ref]
+        if ref not in geo:
+            rows.add("L", "GEO.silk", board.name, f"{ref}: print under its body", True,
+                     f"not checked: no footprint geometry of {ref} in {geo_file.name} (edakit pcb dump)", "0 mm²", "info")
+            continue
+        layer = BOTTOM if str(c.get("layer")) in (str(BOTTOM), "BOTTOM") else TOP
+        name, key = ("BOTTOM" if layer == BOTTOM else "TOP"), silk.GERBER_KEYS[layer][1]
+        if key not in printed:
+            printed[key] = gerber.shape(gerber.parse_gerber(g / gerber.FILES[key]))
+        footprint = Polygon(keepout_polygon(c, [v * MM for v in geo[ref]["bbox"]]))
+        spots = silk_spots(printed[key].intersection(bodies[ref].difference(footprint)))
+        area = sum(p.area for p in spots)
+        if area > SILK_LIMIT_MM2:
+            rows.add("L", "GEO.silk", board.name, f"{ref}: print under its body beyond its footprint (body.box of its "
+                     "parts entry) – hidden once the part is in", False, f"{name}: {spots_text(spots)}", "0 mm²", "warn")
+        else:
+            clear.append(f"{ref}: {name}: {area:.3f} mm²")
+    if clear:
+        rows.add("L", "GEO.silk", board.name, "print under bodies larger than their footprint (body.box of the parts "
+                 "entry)", True, "; ".join(clear), "0 mm²")
 
 
 def silk_designators(board, design, data, rows):
@@ -901,8 +947,9 @@ def pcb_vias(d, lines, diameter_mil):
 
 
 def check_hand_joints(cfg, board, design, d, rows):
-    """GEO.spacing with [routing] hand_solder_keep_mm: on the solder side of every through-hole pad of a hand-soldered part
-    (bom: false), no via or pad of another net closer than the keep – the pads as `route read` saw them (as GEO.spacing), the
+    """GEO.spacing with [routing] hand_solder_keep_mm: on the solder side of every pad of a hand-soldered part (bom: false) –
+    a through-hole pad's the side its part does not sit on, an SMD pad's its own (route.hand_joints) –, no via or pad of
+    another net closer than the keep – the pads as `route read` saw them (as GEO.spacing), the
     vias from the via drill file with the net of the tracks of pcb.json that end on them. Tracks do not count. A pair
     waived in the graph (waive GEO.spacing on the joint's part or net, or on the other part or net) is listed with its reason.
     Off (0): no row."""
@@ -1039,13 +1086,40 @@ def ring_mm(parts, hole):
     return None if piece is None else piece.boundary.distance(axis) - half
 
 
+VIA_AT_MM = 0.01             # a flash this close to a via's centre is the via's own pad (drill files in µm, Gerber in nm)
+
+
+def flashes(ops):
+    """The flashed pads of a layer's Gerber operations: [(x, y, area)] – a pad as EasyEDA and KiCad write it, also a via's;
+    a pour is a region, a track a draw."""
+    from .. import gerber as g
+    return [(dat[1], dat[2], g.shape([(kind, dat)], 64)) for kind, dat in ops if kind == "flash"]
+
+
+def via_ring_mm(pads, hole):
+    """The annular ring of a via's own pad on one layer: from the hole's edge to the edge of the flashes at the via's
+    centre (mm, at most RING_REACH_MM) – a pour or a track around the via does not count, it would hide a pad too
+    small for its hole (walkthrough gaps B1). None when no flash sits at the via's centre. pads: flashes() of the
+    layer."""
+    from shapely.geometry import Point
+    from shapely.ops import unary_union
+    x, y = hole[0], hole[1]
+    own = [a for px, py, a in pads if abs(px - x) <= VIA_AT_MM and abs(py - y) <= VIA_AT_MM and not a.is_empty]
+    if not own:
+        return None
+    return min(unary_union(own).boundary.distance(Point(x, y)) - hole[4] / 2, RING_REACH_MM)
+
+
 def check_rings(board, design, d, rows):
     """GEO.ring: every plated hole keeps JLCPCB's annular ring on TOP and BOTTOM (2 layers, 1 oz: a component hole 0.18 mm,
     warning below 0.20 mm; a via 0.05 mm, via Ø >= hole + 0.1 mm), and every two plated holes – also two of one part –
     keep JLCPCB's hole-to-hole spacing, edge to edge (0.45 mm when a component hole is one of them, 0.2 mm between two
     vias). Vias are the holes of the via drill file (EasyEDA writes them into the PTH file as well); the other plated
-    holes are named by the through-hole pad of pcb.json at their place. The ring is the copper around the hole in the
-    Gerber files, whatever it belongs to. accept {"GEO.ring": …} (or "GEO.spacing:holes") on a part or net of the graph lists them as accepted."""
+    holes are named by the through-hole pad of pcb.json at their place. A component hole's ring is the copper around
+    the hole in the Gerber files, whatever it belongs to; a via's is its own pad's, the flash at its centre
+    (via_ring_mm) – a pour of its own net around it measured up to RING_REACH_MM and hid a pad too small for its hole
+    (walkthrough gaps B1) –, and the copper around the hole only where a layer flashes no pad there. accept
+    {"GEO.ring": …} (or "GEO.spacing:holes") on a part or net of the graph lists them as accepted."""
     g = d / "gerber"
     if lost := gerber.missing(g, "top", "bottom", "pth"):
         rows.add("L", "GEO.ring", board.name, "Gerber and drill files for the annular rings", False,
@@ -1081,12 +1155,19 @@ def check_rings(board, design, d, rows):
     def size(h):
         return f"Ø {h[4]:.2f} mm" if h[:2] == h[2:4] else \
             f"{h[4]:.2f} x {h[4] + math.hypot(h[2] - h[0], h[3] - h[1]):.2f} mm"
-    copper = {name: [(a.bounds, a) for a in (gerber.shape([op], 64) for op in gerber.parse_gerber(g / gerber.FILES[k]))
-                      if not a.is_empty] for name, k in (("TOP", "top"), ("BOTTOM", "bottom"))}
+    ops = {name: gerber.parse_gerber(g / gerber.FILES[k]) for name, k in (("TOP", "top"), ("BOTTOM", "bottom"))}
+    copper = {name: [(a.bounds, a) for a in (gerber.shape([op], 64) for op in layer) if not a.is_empty]
+              for name, layer in ops.items()}
+    flashed = {name: flashes(layer) for name, layer in ops.items()}
     narrow, low, waived, narrowest = [], defaultdict(lambda: defaultdict(list)), [], {}   # narrowest: via? -> ring
+
+    def ring(layer, h, is_via):
+        """A via's own pad where the layer flashes one at its centre, else the copper around the hole."""
+        own = via_ring_mm(flashed[layer], h) if is_via else None
+        return ring_mm(copper[layer], h) if own is None else own
     for item in holes:
         h, name, part, _, is_via = item
-        rings = {layer: ring_mm(parts, h) for layer, parts in copper.items()}
+        rings = {layer: ring(layer, h, is_via) for layer in copper}
         none = [layer for layer, r in rings.items() if r is None]
         least = min((r for r in rings.values() if r is not None), default=None)
         where = " and ".join(layer for layer, r in rings.items() if r is not None and abs(r - least) < RING_TOL_MM)

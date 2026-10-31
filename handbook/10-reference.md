@@ -246,7 +246,8 @@ from the outline, in the DSN and in Freerouting; the pours: `pour_inset_mm`), `p
 `widths` (`"classes"`: the DSN takes the widths of `classes` and `signal_mil`; `"sim"`: every class at least the
 IPC-2221 width of its nets' simulated currents, a net outside the classes that needs more than `signal_mil` a class of
 its own – needs `net_currents.json`, 7.5), `hand_solder_keep_mm` (0 = off: GEO.spacing, vias and pads of other nets at
-least this far, in mm, from the through-hole pads of `bom: false` parts on their solder side; `route dsn` writes via
+least this far, in mm, from the pads of `bom: false` parts on their solder side – a through-hole pad's the side its part
+does not sit on, an SMD pad's its own; `route dsn` writes via
 keep-outs around them, 7.5), `drc_rules` (none: GEO.drc as before; `"check"`: the gate reads the rule set of EasyEDA's DRC
 with the DRC and GEO.drc holds it to these rules – clearance, edge clearance, track widths, via, classes, 7.5),
 `[[routing.keepouts]]` ({layer, what = "wire"|"all", rect | polygon, windows, window_mm}), `[[routing.fixed_wires]]`
