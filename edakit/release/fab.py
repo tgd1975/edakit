@@ -1193,10 +1193,11 @@ def check_loops(board, design, d, rows):
 
 
 def check_copper(board, design, d, rows):
+    """GEO.copper on the Gerber files; -> the Copper raster (None when the files are missing) for GEO.spacing/apart."""
     if lost := gerber.missing(d / "gerber", "top", "bottom", "pth", "probe"):
         rows.add("L", "GEO.copper", board.name, "Gerber and drill files for the copper check", False,
                  f"{', '.join(lost)} missing (Gerber export)", "present")
-        return
+        return None
     with contextlib.redirect_stdout(io.StringIO()):
         cu = gerber.Copper(d / "gerber", design.pin_net)
     want = design.board_comps(board.name)
@@ -1217,6 +1218,33 @@ def check_copper(board, design, d, rows):
     shorts = [f"{' + '.join(n)} ({', '.join(p[:4])})" for n, p in cu.shorts]
     rows.add("L", "GEO.copper", board.name, "copper from the Gerber files: no short between nets", not shorts,
              "; ".join(shorts[:8]) or "none", "none")
+    return cu
+
+
+def check_apart(board, design, cu, rows):
+    """GEO.spacing/apart: the pairs of layout.apart whose nets are on this board keep min_mm between their copper on
+    every layer, measured on the raster of GEO.copper – a warning while new; without the Gerber files the pair is
+    listed as not checked."""
+    from ..handover import layout
+    mine = design.board_comps(board.name)
+    on_board = {n for n, net in design.nets.items() if any(r.partition(".")[0] in mine for r in net["pins"])}
+    for ap in layout(design).get("apart", []):
+        a, b, least = ap.get("a"), ap.get("b"), ap.get("min_mm")
+        if a not in on_board or b not in on_board:
+            continue
+        what = f"{a} and {b} at least {least:g} mm apart (layout.apart{': ' + ap['what'] if ap.get('what') else ''})"
+        if cu is None:
+            rows.add("L", "GEO.spacing", board.name, what, True, "not checked: the Gerber files are missing", f">= {least:g} mm",
+                     "info")
+            continue
+        found = cu.distance(a, b)
+        if found is None:
+            rows.add("L", "GEO.spacing", board.name, what, True, "no layer with copper of both", f">= {least:g} mm")
+            continue
+        gap, x, y, layer = found
+        ok = gap >= least - gerber.RES
+        rows.add("L", "GEO.spacing", board.name, what, ok, f"{gap:.2f} mm on {layer} at ({x:.1f}, {y:.1f})",
+                 f">= {least:g} mm", None if ok else "warn")
 
 
 BARE_STEP = 5                # GEO.pour: the copper-free circle is measured on blocks of 5 x 5 raster points (0.1 mm)
@@ -1684,7 +1712,8 @@ def run(cfg, board, out, offline=False, verbose=False):
     check_pcb(cfg, board, design, d, rows)
     check_rows(board, design, rows)
     check_silk(cfg, board, design, d, rows)
-    check_copper(board, design, d, rows)
+    cu = check_copper(board, design, d, rows)
+    check_apart(board, design, cu, rows)
     check_copper_sides(board, design, d, rows)
     check_drills(board, design, d, rows)
     check_rings(board, design, d, rows)

@@ -856,11 +856,11 @@ sources = [
 
 [codes."GEO.spacing"]
 title = "pads and holes keep their distance"
-rule = "Every pad keeps the routing clearance from every pad of another part on another net, SMD pads on an assembled side the paste gap, hand-soldered joints their keep-out, and every two plated holes JLCPCB's hole-to-hole spacing."
+rule = "Every pad keeps the routing clearance from every pad of another part on another net, SMD pads on an assembled side the paste gap, hand-soldered joints their keep-out, and every two plated holes JLCPCB's hole-to-hole spacing. With layout.apart in the graph: the copper of each pair of nets keeps min_mm apart on every layer, measured on the Gerber files (grade apart, a warning while new)."
 why = "Pads too close bridge in soldering; holes too close break out in drilling."
 fix = "Move the parts apart or change the footprint."
 severity = "error"
-grades = { margin = "warning" }
+grades = { margin = "warning", apart = "warning" }
 details = [
   "pads of different parts on different nets at least the routing clearance (`clearance_mil`) apart on every copper layer both are on; a pad without a net counts as a net of its own, pads of one part are not compared. Measured as `route check` measures it (7.5), on the pads of `route read` (`<artifacts>/route/<board>_board.json`) – pcb.json has no pad shapes –, and only while every pad there sits where the PCB has it, on its layer and net; otherwise GEO.spacing fails and asks for `route read`. `waive: {\"GEO.spacing\": \"…\"}` on one of the two parts or nets lists the pair as waived – why it exists: two resistors stood with their pads 0.09 mm apart: the plan compares boxes, `route check` measured only tracks and vias, and only EasyEDA's DRC could have seen it, after the copper was written",
   "on every side that is assembled (`[release] assembly` `sides`), SMD pads of different parts on different nets at least the paste gap (`paste_gap_mm`, 0.4 mm) apart, so that the stencil keeps a web between their prints; a pad without a net counts as a net of its own, pads of one part, through-hole pads and pads on a side that is not assembled are not compared. Measured on the pads of `route read` like GEO.spacing, and only while they are the PCB's. `waive: {\"GEO.spacing\": \"…\"}` on one of the two parts or nets lists the pair as waived – why it exists: the paste of a ground pad and a transistor base pad of neighbouring parts was 0.06 mm apart: above every copper rule, a bridge in reflow that the bare-board test cannot see; the layout review found it",
@@ -868,6 +868,7 @@ details = [
 ]
 replaces = ["L-13", "L-14", "L-16", "L-18"]
 sources = [
+  "docs/concepts/new/maker-coverage.md, CK-31 (appendix GTP 10, 22, 23, 25, 33; GTI 16, 26, 29; MCU 6, 7) – nets kept apart, the distance from the circuit designer",
   "JLCPCB PCB Manufacturing Capabilities, minimum clearances: SMD pad to pad clearance (different nets) 0.15 mm (read 2026-10-26) – https://jlcpcb.com/capabilities/pcb-capabilities",
   "JLCPCB, Terms and Conditions of JLCPCB Assembly Service (updated 2026-09-09), 2.2: placement and gap of the components after IPC-7351B medium or low density, components with very small gap avoided – https://jlcpcb.com/help/article/61-Terms-and-Conditions-of-JLCPCB-Assembly-Service",
   "edakit handbook 7.5 and 8.1",
