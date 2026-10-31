@@ -208,6 +208,26 @@ def test_pcb_json_has_the_parts_their_nets_and_no_tooling_hole(project):
                                                     for p in holes)
 
 
+def test_a_no_connect_pin_has_the_net_kicad_gives_it(project, monkeypatch):
+    """The 555 blinker of handbook 18: KiCad nets a pin its schematic marks no-connect as "unconnected-(SW1-Pad3)",
+    and its schematic parity found SW1's pads without that net. The pad gets the netlist's name; read back it is
+    no net, as the graph has it."""
+    from edakit.toolchain.kicad import cli
+    cfg = kicad_project(project)
+    board, design = cfg.board(), Design.from_config(cfg)
+    kb.write_parts(cfg, board)                                      # no schematic yet: nothing to take
+    assert kb.Pcb.load(kb.paths(cfg, board)["pcb"]).used() - {""} == set(kb.net_names(design, board))
+    kb.paths(cfg, board)["sch"].write_text("(kicad_sch)")
+    monkeypatch.setattr(cli, "netlist", lambda sch, out, verbose=False: (
+        {"GND": ["SW1.3"], "unconnected-(SW1-Pad2)": ["SW1.2"], "unconnected-(SW1-Pad4)": ["SW1.4"]}, {}))
+    kb.write_parts(cfg, board)
+    pcb = kb.Pcb.load(kb.paths(cfg, board)["pcb"])
+    pads = {str(p[1]): p for ref, f in kb.parts(pcb) if ref == "SW1" for p in sexp.find(f, "pad")}
+    assert [str(sexp.first(pads[n], "net")[2]) for n in ("2", "4")] == ["unconnected-(SW1-Pad2)",
+                                                                         "unconnected-(SW1-Pad4)"]
+    assert {p["num"]: p["net"] for p in kb.board_json(cfg, board)["pads"] if p["ref"] == "SW1"}["2"] == ""
+
+
 def test_outline_and_mounting_holes_come_back_as_outlines(project):
     cfg = kicad_project(project)
     board = cfg.board()
@@ -268,6 +288,7 @@ def test_the_project_file_carries_the_rules_of_the_board_file(project):
     assert classes["POWER"]["track_width"] == pytest.approx(18 / config.MIL_PER_MM)
     assert {"netclass": "POWER", "pattern": "+5V"} in pro["net_settings"]["netclass_patterns"]
     assert pro["board"]["design_settings"]["rule_severities"]["lib_footprint_mismatch"] == "ignore"
+    assert pro["board"]["design_settings"]["rules"]["min_resolved_spokes"] == 1   # handbook 18: Freerouting knows no spokes
 
 
 # --- the schematic ----------------------------------------------------------------------------------------------------

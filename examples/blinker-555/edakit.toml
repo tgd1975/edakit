@@ -1,0 +1,20 @@
+# edakit project file: the table of contents – the project, its board and where its files are.
+# Reference: handbook/10-reference.md. How this project came about, step by step: handbook/18-walkthrough-kicad.md.
+#
+# Two AAA cells, a slide switch, a CMOS 555 and a red LED: switch it on and the LED blinks about once a second.
+# One board, drawn in KiCad; JLCPCB assembles the SMD parts on the top side (Economic), holder and switch are
+# soldered by hand.
+
+[project]
+name = "blinker-555"             # the KiCad project in build/edakit/kicad/main/ – edakit writes it, nothing by hand
+company = "edakit example"       # schematic title block
+toolchain = "kicad"              # KiCad 10 instead of EasyEDA Pro (handbook 16): no EasyEDA documents to name
+quantity = 5                     # boards per order: the stock check (PARTS.stock) needs this many sets
+graph = "hardware/graph.toml"    # the graph as TOML; edakit graph json --write keeps hardware/graph.json beside it
+requirements = "hardware/requirements.toml"   # what the circuit must do (handbook 3.6)
+
+[boards.main]
+title = "555 blinker"            # page name of the readable schematic; board file by default hardware/boards/main.toml
+
+[release]
+assembly = { sides = ["top"], smd_only = true }   # Economic PCBA: one side, SMD only (SYNC.cpl)

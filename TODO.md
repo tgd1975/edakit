@@ -121,19 +121,19 @@ L.1 to L.8 built on 2026-10-31.
 
 Built and merged into main on 2026-10-30, tested offline and in CI against KiCad 10 on the led-bar example.
 
-- [ ] **The live test with the owner** (the concept's section "Live test", steps 1 to 7): KiCad 10 from the PPA,
-      the example as a KiCad project, PCB, routing, gate, the placer T.1 on both tool chains, a scratch copy of the
-      bell's main board; with it the recorded KiCad export of T.6 and the probe of T.7.
+- [ ] **The live test with the owner** (the concept's section "Live test"): steps 1, 3, 4 and 5 ran on a real
+      project, the 555 blinker of handbook 18 (`examples/blinker-555`, released 2026-10-31). Open: step 2 (the led-bar
+      example as a KiCad project, its schematic looked at in KiCad), step 6 (the placer T.1 on both tool chains) and
+      step 7 (a scratch copy of the bell's main board); with them the recorded KiCad export of T.6 and the probe of
+      T.7.
 
-## Walkthrough 2: a 555 blinker on KiCad ([walkthrough-kicad-555.md](docs/concepts/new/walkthrough-kicad-555.md))
+## Walkthrough 2: a 555 blinker on KiCad ([walkthrough-kicad-555.md](docs/concepts/done/walkthrough-kicad-555.md))
 
-Decided on 2026-10-31; nothing to build in edakit beforehand. Simulation over time is out of scope.
+Run on 2026-10-31 up to RELEASED and `edakit export`: handbook chapter 18, `examples/blinker-555`,
+`tests/test_walkthrough_kicad.py`.
 
-- [ ] **The run**, where KiCad 10, ngspice and Freerouting are installed: `examples/blinker-555` (2×AAA on the
-      bottom, slide switch, CMOS 555, red LED; JLCPCB Economic for the SMD parts, holder and switch by hand), steps 1
-      to 12 up to RELEASED and `edakit export`; what breaks (E2 to E6) fixed on the way; handbook chapter 18,
-      `tests/test_walkthrough_kicad.py`. Afterwards: the KiCad live test's steps 1, 3, 4 and 5 count as done, and
-      whether boards are ordered is decided.
+- [ ] **Whether boards are ordered** – the owner's decision at the release (concept, decision 9); ordered, M-2 at
+      JLCPCB's assembly preview and M-4 on the delivered boards: the blink rate counted at 3.2 V and 2.0 V (R-2).
 
 ## The schematic with every connection drawn through ([wired-schematic.md](docs/concepts/new/wired-schematic.md))
 

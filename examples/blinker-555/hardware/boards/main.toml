@@ -1,0 +1,58 @@
+# Board main of blinker-555 (handbook 7, 10.2): outline, placement plan, silkscreen. The layout hash covers it.
+revision = "1"
+edge_ok = ["SW1"]          # its knob reaches over the right edge
+
+[outline]                  # about the holder's size (53.0 × 24.6 mm), with SW1 at the right end
+rect = [60, 28]
+corner_radius = 2
+
+[tooling]                  # JLCPCB Economic PCBA: two non-plated holes of our own, else JLCPCB drills them where it likes (D-10)
+holes = [[57.0, 3.5], [3.0, 24.5]]   # the second under BT1's body: the holder is fitted after the assembly
+
+[looks]
+visible = "top"            # the face people see: stage L holds its tracks, vias and texts
+
+[order]
+remark = "2 tooling holes added by customer."
+
+[place]                    # the hand-over's fixed parts BT1, SW1, D1; the rest placed by edakit pcb place --rest, then moved by hand: the 555 group 5 mm left, clear of BT1's pins
+BT1 = { x = 50.9, y = 14, rot = 0, side = "bottom" }   # its body 0.7 … 53.8 mm under the board, the PC pins at the right end
+SW1 = { x = 57.8, y = 14, rot = 90, side = "top" }     # body flush with the right edge, the knob over it
+D1  = { x = 56.5, y = 24, rot = 0, side = "top" }      # beside SW1: on top, where it is seen
+Q1 = { x = 53.7, y = 12.0, rot = 180, side = "top" }
+U1 = { x = 44.4, y = 14.8, rot = 0, side = "top" }
+C1 = { x = 41.6, y = 20, rot = 0, side = "top" }
+R1 = { x = 44.4, y = 10.3, rot = 180, side = "top" }
+R2 = { x = 52.4, y = 24, rot = 0, side = "top" }
+C2 = { x = 41.7, y = 9.2, rot = 270, side = "top" }
+C3 = { x = 46.6, y = 20, rot = 0, side = "top" }
+C4 = { x = 40, y = 14.8, rot = 90, side = "top" }
+R3 = { x = 55, y = 6, rot = 0, side = "top" }
+
+[silk]
+designators = "top"
+place = { D1 = { x = 56.5, y = 22.3, rot = 0, side = "top" } }   # under the LED: beside it R2 and the edge leave no room
+
+[routing]
+hand_solder_keep_mm = 1.0  # GEO.spacing: other nets' pads and vias this far from BT1's pins (top) and SW1's (bottom)
+
+[[silk.texts]]             # BT1's poles on the top side, where its pins are soldered and a lab supply is clipped on
+text = "+"
+x = 52.6
+y = 20.35
+h_mm = 1.5
+side = "top"
+
+[[silk.texts]]
+text = "-"
+x = 52.6
+y = 7.65
+h_mm = 1.5
+side = "top"
+
+[[silk.texts]]             # AAA-sized Li-ion cells (10440, 3.7 V) would overload Q1, R2 and D1 (D-9)
+text = "2x AAA 1.5 V"
+x = 14
+y = 14
+h_mm = 2.0
+side = "top"

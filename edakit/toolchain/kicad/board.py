@@ -255,8 +255,9 @@ def hidden_prop(name, text, layer, key):
             *library.font(1.0, 0.15)]
 
 
-def placed(cfg, board, design, fp, ref, at, nets, symbol=None, locked=False):
-    """The board's (footprint …) of a part: fp turned and, on the bottom, mirrored; at: (x mm, y mm, angle, side)."""
+def placed(cfg, board, design, fp, ref, at, nets, symbol=None, locked=False, unconnected=None):
+    """The board's (footprint …) of a part: fp turned and, on the bottom, mirrored; at: (x mm, y mm, angle, side);
+    unconnected: {ref.pin: net} of the no-connect pins (unconnected_nets)."""
     x, y, angle, side = at
     mirror = side == "bottom"
     key = (board.name, "footprint", ref)
@@ -284,7 +285,7 @@ def placed(cfg, board, design, fp, ref, at, nets, symbol=None, locked=False):
     for k, g in enumerate(fp.graphics):
         item += library.graphic_items(g, k, mirror, angle, key)
     for i, pad in enumerate(fp.pads):
-        net = design.pin_net.get(f"{ref}.{pad.num}", "")
+        net = design.pin_net.get(f"{ref}.{pad.num}", "") or (unconnected or {}).get(f"{ref}.{pad.num}", "")
         item.append(library.pad_item(pad, angle, mirror, (nets[net], net) if net else None, (*key, i)))
     return item
 
@@ -341,7 +342,8 @@ def write_parts(cfg, board, design=None, fps=None, symbols=None):
     p = paths(cfg, board)
     old = Pcb.load(p["pcb"])
     pcb = old or Pcb()
-    pcb.renumber(net_names(design, board))
+    unconnected = {ref: net for ref, net in unconnected_nets(cfg, board).items() if ref not in design.pin_net}
+    pcb.renumber(net_names(design, board) + sorted(set(unconnected.values())))
     parked, out = [], []
     for k, ref in enumerate(refs):
         row = board.place.get(ref)
@@ -355,7 +357,7 @@ def write_parts(cfg, board, design=None, fps=None, symbols=None):
             px, py = board.park
             at, locked = (px + PARK_STEP_MM * len(parked), -py, 0, "top"), False
             parked.append(ref)
-        out.append(placed(cfg, board, design, fps[ref], ref, at, pcb.nets, symbols.get(ref), locked))
+        out.append(placed(cfg, board, design, fps[ref], ref, at, pcb.nets, symbols.get(ref), locked, unconnected))
     out += [tooling_footprint(board, k, *to_kicad(*(mil(v) for v in board.eda_point(x, y))))
             for k, (x, y) in enumerate(board.tooling, 1)]
     pcb.footprints = out
@@ -393,7 +395,10 @@ def write_project(cfg, board, design):
                       "min_via_annular_width": 0.05, "min_copper_edge_clearance": want["edge"],
                       "min_hole_clearance": 0.25, "min_hole_to_hole": 0.2, "min_silk_clearance": 0,
                       "min_text_height": 0.6, "min_text_thickness": 0.08, "allow_blind_buried_vias": False,
-                      "allow_microvias": False},
+                      "allow_microvias": False,
+                      # a pad a track leaves room for one thermal spoke only is connected (GEO.copper checks it on the
+                      # Gerber files): Freerouting knows no spokes, EasyEDA's DRC asks for none (handbook 18)
+                      "min_resolved_spokes": 1},
             "track_widths": [0.0], "via_dimensions": [{"diameter": 0.0, "drill": 0.0}]}},
         "erc": {"rule_severities": ERC_SEVERITIES},
         "meta": {"filename": p["pro"].name, "version": 1},
@@ -454,9 +459,26 @@ def pad_hole(pad):
     return ["ROUND", round(mil(nums[0]), 4)]
 
 
+UNCONNECTED = "unconnected-"   # KiCad's net of a pin its schematic marks no-connect: "unconnected-(SW1-Pad3)"
+
+
 def pad_net(pcb, pad):
+    """The pad's net as the graph names it – a no-connect pin's net of KiCad's ("unconnected-(…)") is none."""
     n = first(pad, "net")
-    return str(n[2]) if n and len(n) > 2 else (pcb.net_name(n[1]) if n else "")
+    name = str(n[2]) if n and len(n) > 2 else (pcb.net_name(n[1]) if n else "")
+    return "" if name.startswith(UNCONNECTED) else name
+
+
+def unconnected_nets(cfg, board, verbose=False):
+    """{ref.pin: net} – the nets KiCad gives the pins its schematic marks no-connect, "unconnected-(SW1-Pad3)":
+    KiCad's own update gives their pads these nets, and its schematic parity wants them there. Taken from KiCad's
+    netlist export, not built from its naming rule; nothing before `schematic create`."""
+    from . import cli
+    sch = paths(cfg, board)["sch"]
+    if not sch.exists():
+        return {}
+    nets, _ = cli.netlist(sch, cfg.artifact("kicad_check", f"{board.name}_apply.net"), verbose)
+    return {pins[0]: name for name, pins in nets.items() if name.startswith(UNCONNECTED) and len(pins) == 1}
 
 
 def parts(pcb):

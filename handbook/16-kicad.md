@@ -5,9 +5,10 @@ A project draws its boards in EasyEDA Pro or in KiCad – one key in edakit.toml
 with its plan, the routing with Freerouting and every check of the gate are the same for both. Only the EDA project is
 the tool chain's: an EasyEDA project driven through the bridge, or KiCad files that edakit writes and kicad-cli reads.
 
-**State 2026-10-30:** built; tested offline against a kicad-cli the tests fake, and in CI against KiCad 10 (the job
-`kicad` of tests.yml, KiCad's container image, `tests/test_kicad_live.py`) on the led-bar example. No board has gone
-through it to a release yet; 16.8 says what is confirmed and what is open. On a machine with kicad-cli of another major
+**State 2026-10-31:** built; tested offline against a kicad-cli the tests fake, and in CI against KiCad 10 (the job
+`kicad` of tests.yml, KiCad's container image, `tests/test_kicad_live.py`) on the led-bar example. The first board
+released through it is the 555 blinker of chapter 18, with KiCad 10.0.6; 16.8 says what is confirmed and what is
+open. On a machine with kicad-cli of another major
 version (KiCad 9, say) the live tests are skipped with the reason – they hold KiCad 10's behaviour, and a red run there
 is no regression; the CI job sets `EDAKIT_KICAD_LIVE=required`, so a missing kicad-cli or another major fails there.
 
@@ -70,7 +71,10 @@ along the pad's long side, not plated → `np_thru_hole`.
 
 **Symbols** are the ones `schematic draw` draws (6.5), one per part, turned as the sheet turns it; their pins are the
 drawing's pin tips, of length 0 and passive – edakit's checks of stage G reason about drivers, not KiCad's ERC. Nets are
-named by labels where the drawing writes a net name or a flag.
+named by labels where the drawing writes a net name or a flag. A pin in `nc` that the drawing shows gets KiCad's
+no-connect flag, and KiCad nets it on its own, "unconnected-(SW1-Pad3)": `pcb apply` gives its pad that net, taken
+from kicad-cli's netlist export, so that the schematic parity of the DRC finds it; read back it is no net, as the graph
+has it.
 
 **Frames:** inside, edakit computes in EasyEDA's frame (mil, y up, 7.1); a point (x, y) lies at (x mm, −y mm) in the
 KiCad files. A bottom-side part is mirrored in local y and turned as EasyEDA does it (`Board.transform`), so every pad
@@ -117,7 +121,9 @@ edakit calls (`edakit/toolchain/kicad/cli.py`, `-v` prints every call):
 
 The DRC checks whose subject edakit checks itself are off in `<board>.kicad_pro`: footprints against the library
 (SYNC.footprint holds them to the parts database), courtyards (the plan), silkscreen overlaps and texts (GEO.silk on the
-Gerber files). What KiCad's DRC reports beyond that counts in GEO.drc.
+Gerber files). A pad needs one thermal spoke to its zone, not KiCad's default two: Freerouting knows no spokes and may
+leave room for one, EasyEDA's DRC asks for none, and GEO.copper checks the connection. What KiCad's DRC reports beyond
+that counts in GEO.drc.
 
 ## 16.6 The gate on KiCad
 
@@ -177,8 +183,14 @@ Confirmed by the CI job `kicad` on the led-bar example (KiCad 10.0, its containe
   hits, the profile, the parts with place, rotation (ODB++ clockwise) and side – parts at 270° among them – and the nets;
   the tooling holes carry `.no_pop` (kicad-cli 10.0.6, 2026-10-31; `test_kicad_odb_is_read_and_equals_the_runs_files`).
 
-Open – the first runs on a real project, the led-bar example as a KiCad project, then the Christmas bell (the steps
-are in the concept, "Live test"):
+Confirmed on a real project, the 555 blinker of chapter 18 (KiCad 10.0.6):
 
-- footprints from the real LCSC data (the tests use footprints of their own): silkscreen, polygon pads, slots;
-- the gate `--eda` end to end with the sign-offs, `export`.
+- footprints from the real LCSC data through `pcb apply`: through-hole pads, the plated slots of a switch's pegs, a
+  SOIC-8, oval and rectangular pads, the library's silkscreen – a holder's outline and its poles; a through-hole part
+  on the bottom, mirrored as EasyEDA mirrors it, its poles where the drawing has them;
+- a pin the schematic marks no-connect gets KiCad's net on its pad (16.3), and a pad one thermal spoke (16.5);
+- the gate `--eda` end to end with every sign-off up to RELEASED, and `export` with `kicad_main.zip`.
+
+Open – the led-bar example as a KiCad project looked at in KiCad, the placer on both tool chains, the Christmas bell
+(the steps are in the concept, "Live test"); polygon pads, which the blinker's footprints do not have; the square
+notch the pours leave around a tooling hole, EasyEDA's workaround, where KiCad could fill around it.

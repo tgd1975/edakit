@@ -1,0 +1,73 @@
+{
+ "lcsc": "C254917",
+ "mpn": "2468",
+ "manufacturer": "Keystone",
+ "footprint": "BAT-TH_2P-L53.0-W24.6-P12.70_2468",
+ "jlc_class": "Extended Part",
+ "kind": "battery_holder",
+ "pins": {
+  "1": {
+   "name": "-",
+   "type": "passive",
+   "role": "minus"
+  },
+  "2": {
+   "name": "+",
+   "type": "passive",
+   "role": "plus"
+  }
+ },
+ "sources": [
+  "Keystone catalogue M65, p. 28, 'Economical plastic battery holders' (LCSC's copy, edakit part fetch C254917, read 2026-10-31): Cat. No. 2468, 'AAA', two cells in series, PC mount; 2.086 [53.0] × .968 [24.6], .512 [13.0] high; terminals .500 [12.7] apart, 'terminals this side only'; '−' above '+' in the side view",
+  "specifications: holder polypropylene, springs spring steel nickel plate, PC pins .031 (.79) brass nickel plate; 'holders for multiple batteries are prewired in series'",
+  "body.box: the library footprint's outline (−1974 … 112 mil along, ±484 mil across, pads at its end) = 53.0 × 24.6 mm of the drawing",
+  "the library footprint BAT-TH_2P-L53.0-W24.6-P12.70_2468: pad 2 with a '+' and pad 1 with a '−' on the top silkscreen, 12.7 mm apart; holes 1.5 mm",
+  "stock: JLCPCB 178 pcs, Extended Part, 'Economic and Standard' (edakit stock --lcsc C254917, 2026-10-31)",
+  "mpn, manufacturer, footprint, jlc_class, pin numbers and names: EasyEDA library data of C254917, https://easyeda.com/api/products/C254917/components?version=6.4.19.5, read 2026-10-31 (edakit part import)"
+ ],
+ "verified": {
+  "by": "Claude (skill part-search)",
+  "date": "2026-10-31",
+  "datasheet": "Keystone catalogue M65 p. 28 (R9, 6/24/15)",
+  "datasheet_sha256": "c49789d14ad0c6a98e32ffb2f0c49da09ad6c68e3dacd29cd834012184b60b9b",
+  "checked": [
+   "Cat. No. 2468: two AAA cells in series, PC pins, 53.0 × 24.6 × 13.0 mm, terminals 12.7 mm apart at one end – the footprint's outline and pad pitch",
+   "pin 2 '+', pin 1 '−': symbol names and the footprint's silkscreen agree; the drawing's side view puts '−' above '+', which does not tie them to pad numbers",
+   "PC pins Ø 0.79 mm (specifications)"
+  ],
+  "open": [
+   {
+    "text": "soldered by hand: the holder's '+' terminal in pad 2, at the silkscreen '+' – the cells' '+' marks inside the holder show which terminal it is",
+    "when": "acceptance"
+   }
+  ]
+ },
+ "package": "through-hole, two AAA cells in series, PC pins",
+ "datasheet": {
+  "url": "https://www.keyelco.com/userAssets/file/M65p28.pdf",
+  "pinout_page": 1,
+  "title": "Keystone Electronics, Economical plastic battery holders (catalogue M65, p. 28)",
+  "revision": "M65 Sect 1 complete R9, 6/24/15"
+ },
+ "values": {},
+ "limits": {},
+ "lead": {
+  "*": {
+   "shape": "round",
+   "a_mm": 0.79,
+   "b_mm": 0.79,
+   "tol_mm": null,
+   "hole_rec_mm": null,
+   "source": "Keystone M65 p. 28, specifications: 'PC Pins: .031 (.79) Brass, Nickel Plate'; no hole is recommended"
+  }
+ },
+ "body": {
+  "h_mm": 13.0,
+  "box": [
+   -50.17,
+   -12.3,
+   2.87,
+   12.3
+  ]
+ }
+}

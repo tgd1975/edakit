@@ -1,11 +1,11 @@
 # A second walkthrough: a 555 blinker on KiCad
 
-Status 2026-10-31: concept, asked for by the owner; nothing built, nothing run. Written against main at `2f4628a`. The
-owner's word the same day: a simulation over time is out of scope for edakit – the walkthrough builds the circuit and
-evaluates the board as far as edakit can without one. All decisions were taken the same day (section "Decisions"):
-JLCPCB Economic for the SMD parts with the holder and the switch soldered by hand, the holder on the bottom, and only
-the phase in which the LED is lit simulated. Nothing in edakit has to be built before the run. What is left is the run
-itself, on a machine with KiCad 10, ngspice and Freerouting.
+Status 2026-10-31: built and run. The board went from the idea to RELEASED and `edakit export` on KiCad 10.0.6 –
+handbook chapter 18, `examples/blinker-555`, `tests/test_walkthrough_kicad.py`; eleven gaps closed in edakit on the way
+(chapter 18.13). What the run decided differently from the sketch below: a LMC555 (1.5 V) rather than a TLC555, D1 from
+VDD into the discharge pin with the 50 % astable from OUT, a low-current LED and R-1 at 0.5 mA down to 1.1 V per cell
+(D-3), an AO3415A against reversed cells (D-4), R-4 at 8 mA after the review M-1 (D-9). Whether boards are ordered is
+the owner's decision at the release. The concept as it was decided, written against main at `2f4628a`:
 
 ## Goal
 
@@ -182,8 +182,8 @@ a container with KiCad's image, as in the CI job `kicad`.
 - edakit at `2f4628a`: handbook [16](../../../handbook/16-kicad.md) (16.8: what KiCad 10 confirmed and what is
   open), [17](../../../handbook/17-walkthrough.md), [5](../../../handbook/05-simulation.md) (5.1 behaviour `logic`,
   loads and their `expect`, the switch's `throw`), [3](../../../handbook/03-hardware-graph.md) (3.1 `states`, the
-  graph as TOML); [kicad-toolchain.md](../done/kicad-toolchain.md) ("Live test", decision 5);
-  [maker-coverage.md](../done/maker-coverage.md) (case 24: NE555 at 3.3 V); [walkthrough-gaps.md](../done/walkthrough-gaps.md);
+  graph as TOML); [kicad-toolchain.md](./kicad-toolchain.md) ("Live test", decision 5);
+  [maker-coverage.md](./maker-coverage.md) (case 24: NE555 at 3.3 V); [walkthrough-gaps.md](./walkthrough-gaps.md);
   `edakit/catalog/kinds.toml` (`switch`, `battery_holder`, `ic`, the capacitor's `tolerance` and `dc_bias`);
   `edakit/cost.py` (`sides = []`: the PCB only); `TODO.md` (the KiCad live test).
 - 555 timing: the astable's t_high = ln 2 · (RA + RB) · C and t_low = ln 2 · RB · C, as in TI's NE555 and TLC555

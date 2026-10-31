@@ -1101,6 +1101,18 @@ def test_print_outside_a_body_or_inside_its_footprint_passes(project):
     assert l17(rows)[BODY_CHECK] == ("pass", "C2: TOP: 0.000 mm²")
 
 
+def test_a_body_as_large_as_its_footprint_within_rounding_passes(project):
+    """The 555 blinker of handbook 18: BT1's body.box from the drawing (53.00 mm) and its footprint box from the
+    library (53.04 mm) differ by a rounding, and the footprint's own outline stroke on the box's edge was a warning
+    (0.118 mm²). Within 0.05 mm of the footprint box the print counts as the footprint's."""
+    def body_at_the_edge(ex, p):
+        entry = p.part("C45783")
+        p.save_part("C45783", {**entry, "body": {"box": [-1.85, -0.952, 1.85, 0.952]}})   # 2 µm beyond the box
+        silk_line((19.5, 9.95), (20.5, 9.95))(ex, p)                                   # along the box's edge
+    rows = run(project, body_at_the_edge)
+    assert findings(rows) == [] and l17(rows)[BODY_CHECK] == ("pass", "C2: TOP: 0.000 mm²")
+
+
 def test_print_under_a_body_without_footprint_geometry_is_not_checked(project):
     def no_geometry(ex, p):
         c2_body(ex, p, [(19.5, 10.6), (20.5, 10.6)])

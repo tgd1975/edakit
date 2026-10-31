@@ -1,0 +1,406 @@
+{
+ "date": "2026-10-31",
+ "source": "JLCPCB assembly catalogue (selectSmtComponentList) and part pages (jlcpcb.com/partdetail/<LCSC>)",
+ "parts": {
+  "C1710": {
+   "date": "2026-10-31",
+   "listed": true,
+   "class": "Basic Part",
+   "preferred": false,
+   "stock": 1880603,
+   "mpn": "CL21B103KBANNNC",
+   "attrition": 10,
+   "min_qty": 20,
+   "price_breaks": [
+    [
+     1,
+     0.0089
+    ],
+    [
+     500,
+     0.0069
+    ],
+    [
+     1500,
+     0.0061
+    ],
+    [
+     4000,
+     0.0054
+    ],
+    [
+     24000,
+     0.0052
+    ],
+    [
+     48000,
+     0.005
+    ]
+   ],
+   "assembly_type": "Economic and Standard",
+   "msl": 1,
+   "xray": false,
+   "mode": "smt"
+  },
+  "C17414": {
+   "date": "2026-10-31",
+   "listed": true,
+   "class": "Basic Part",
+   "preferred": false,
+   "stock": 52364269,
+   "mpn": "0805W8F1002T5E",
+   "attrition": 10,
+   "min_qty": 20,
+   "price_breaks": [
+    [
+     1,
+     0.0034
+    ],
+    [
+     1000,
+     0.0026
+    ],
+    [
+     5000,
+     0.0018
+    ],
+    [
+     10000,
+     0.0016
+    ],
+    [
+     50000,
+     0.0014
+    ],
+    [
+     50200,
+     0.0014
+    ]
+   ],
+   "assembly_type": "Economic and Standard",
+   "msl": null,
+   "xray": false,
+   "mode": "smt"
+  },
+  "C17540": {
+   "date": "2026-10-31",
+   "listed": true,
+   "class": "Basic Part",
+   "preferred": false,
+   "stock": 1001440,
+   "mpn": "0805W8F2000T5E",
+   "attrition": 10,
+   "min_qty": 20,
+   "price_breaks": [
+    [
+     1,
+     0.0068
+    ],
+    [
+     1000,
+     0.0054
+    ],
+    [
+     5000,
+     0.0046
+    ],
+    [
+     10000,
+     0.0041
+    ],
+    [
+     50000,
+     0.0037
+    ],
+    [
+     100000,
+     0.0035
+    ]
+   ],
+   "assembly_type": "Economic and Standard",
+   "msl": null,
+   "xray": false,
+   "mode": "smt"
+  },
+  "C17817": {
+   "date": "2026-10-31",
+   "listed": true,
+   "class": "Extended Part",
+   "preferred": false,
+   "stock": 29920,
+   "mpn": "0805W8F7503T5E",
+   "attrition": 10,
+   "min_qty": 20,
+   "price_breaks": [
+    [
+     1,
+     0.0029
+    ],
+    [
+     1000,
+     0.0023
+    ],
+    [
+     5000,
+     0.0018
+    ],
+    [
+     10000,
+     0.0016
+    ],
+    [
+     50000,
+     0.0014
+    ],
+    [
+     50200,
+     0.0014
+    ]
+   ],
+   "assembly_type": "Economic and Standard",
+   "msl": null,
+   "xray": false,
+   "mode": "smt"
+  },
+  "C28323": {
+   "date": "2026-10-31",
+   "listed": true,
+   "class": "Basic Part",
+   "preferred": false,
+   "stock": 2357764,
+   "mpn": "CL21B105KBFNNNE",
+   "attrition": 10,
+   "min_qty": 20,
+   "price_breaks": [
+    [
+     1,
+     0.0422
+    ],
+    [
+     100,
+     0.0345
+    ],
+    [
+     300,
+     0.0306
+    ],
+    [
+     2000,
+     0.0273
+    ],
+    [
+     4000,
+     0.0261
+    ],
+    [
+     10000,
+     0.0253
+    ]
+   ],
+   "assembly_type": "Economic and Standard",
+   "msl": 1,
+   "xray": false,
+   "mode": "smt"
+  },
+  "C49678": {
+   "date": "2026-10-31",
+   "listed": true,
+   "class": "Basic Part",
+   "preferred": false,
+   "stock": 22702619,
+   "mpn": "CC0805KRX7R9BB104",
+   "attrition": 10,
+   "min_qty": 20,
+   "price_breaks": [
+    [
+     1,
+     0.0206
+    ],
+    [
+     200,
+     0.0156
+    ],
+    [
+     600,
+     0.0128
+    ],
+    [
+     4000,
+     0.0107
+    ],
+    [
+     8000,
+     0.0093
+    ],
+    [
+     20000,
+     0.0085
+    ]
+   ],
+   "assembly_type": "Economic and Standard",
+   "msl": 1,
+   "xray": false,
+   "mode": "smt"
+  },
+  "C90760": {
+   "date": "2026-10-31",
+   "listed": true,
+   "class": "Extended Part",
+   "preferred": false,
+   "stock": 18469,
+   "mpn": "LMC555CMX/NOPB",
+   "attrition": 0,
+   "min_qty": 0,
+   "price_breaks": [
+    [
+     1,
+     0.2888
+    ],
+    [
+     50,
+     0.2258
+    ],
+    [
+     150,
+     0.1987
+    ],
+    [
+     500,
+     0.1579
+    ],
+    [
+     2500,
+     0.1429
+    ],
+    [
+     5000,
+     0.1339
+    ]
+   ],
+   "assembly_type": "Economic and Standard",
+   "msl": 1,
+   "xray": false,
+   "mode": "smt"
+  },
+  "C133233": {
+   "date": "2026-10-31",
+   "listed": true,
+   "class": "Extended Part",
+   "preferred": false,
+   "stock": 240610,
+   "mpn": "AO3415A",
+   "attrition": 4,
+   "min_qty": 5,
+   "price_breaks": [
+    [
+     1,
+     0.1026
+    ],
+    [
+     50,
+     0.0824
+    ],
+    [
+     150,
+     0.0719
+    ],
+    [
+     500,
+     0.0632
+    ],
+    [
+     3000,
+     0.0534
+    ],
+    [
+     6000,
+     0.0514
+    ]
+   ],
+   "assembly_type": "Economic and Standard",
+   "msl": 1,
+   "xray": false,
+   "mode": "smt"
+  },
+  "C2971995": {
+   "date": "2026-10-31",
+   "listed": true,
+   "class": "Extended Part",
+   "preferred": false,
+   "stock": 132358,
+   "mpn": "0805CG103J500NT",
+   "attrition": 8,
+   "min_qty": 20,
+   "price_breaks": [
+    [
+     1,
+     0.0422
+    ],
+    [
+     200,
+     0.0337
+    ],
+    [
+     600,
+     0.0291
+    ],
+    [
+     4000,
+     0.0253
+    ],
+    [
+     8000,
+     0.0229
+    ],
+    [
+     20000,
+     0.0215
+    ]
+   ],
+   "assembly_type": "Economic and Standard",
+   "msl": 1,
+   "xray": false,
+   "mode": "smt"
+  },
+  "C5366382": {
+   "date": "2026-10-31",
+   "listed": true,
+   "class": "Extended Part",
+   "preferred": false,
+   "stock": 2211,
+   "mpn": "APTD2012LSURCK",
+   "attrition": 0,
+   "min_qty": 5,
+   "price_breaks": [
+    [
+     1,
+     0.2208
+    ],
+    [
+     50,
+     0.1699
+    ],
+    [
+     150,
+     0.1482
+    ],
+    [
+     500,
+     0.1209
+    ],
+    [
+     3000,
+     0.1088
+    ],
+    [
+     6000,
+     0.1016
+    ]
+   ],
+   "assembly_type": "Economic and Standard",
+   "msl": 3,
+   "xray": false,
+   "mode": "smt"
+  }
+ }
+}

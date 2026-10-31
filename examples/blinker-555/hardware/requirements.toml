@@ -1,0 +1,53 @@
+# What the circuit must do (handbook 3.6, 10.4): drafted with the skill requirements, accepted by the owner.
+
+[[need]]
+id = "N-1"
+text = "Switch it on and the red LED blinks about once a second; switch it off and it is dark."
+who = "whoever switches it on"
+source = "the idea of the example (handbook 18)"
+status = "accepted"
+
+[[need]]
+id = "N-2"
+text = "Two AAA cells last a long time, and switched off the board does not drain them."
+who = "whoever changes the cells"
+source = "the idea of the example (handbook 18)"
+status = "accepted"
+
+[[requirement]]
+id = "R-1"
+text = "With SW1 on, D1 carries at least 0.5 mA while it is lit – from two fresh alkaline AAA cells (3.2 V) down to two used to 1.1 V each (2.2 V)."
+source = "N-1; D-2, changed by D-3: 0.5 mA through a low-current LED (APTD2012LSURCK, 60–150 mcd at 2 mA) is brighter on axis than 1 mA through an ordinary red 0805 LED, in a narrower 40° beam; no red LED reaches 1 mA at 2.0 V by its datasheet without breaking R-4 (sim.json, cell 'used')"
+from = ["N-1"]
+binding = "must"
+verify = [{ rows = "SIM.state * D1 LED on" },
+          { accept = "switch SW1 on with fresh cells: D1 blinks; switch it off: D1 is dark" }]
+status = "accepted"
+
+[[requirement]]
+id = "R-2"
+text = "With SW1 on, D1 flashes 48 to 72 times a minute – at 3.2 V and at 2.0 V."
+source = "N-1: about once a second, ±20 %"
+from = ["N-1"]
+binding = "must"
+verify = [{ accept = "from a lab supply at 3.2 V and at 2.0 V instead of the cells: count D1's flashes for 60 s – 48 to 72 each" }]
+status = "accepted"
+
+[[requirement]]
+id = "R-3"
+text = "With SW1 off, D1 is dark and the board draws at most 1 µA from the cells."
+source = "N-2; 1 µA is 8.8 mAh a year, under 1 % of an alkaline AAA's capacity"
+from = ["N-2"]
+binding = "must"
+verify = [{ rows = "SIM.state */off/* D1 LED dark" },
+          { rows = "LIM.i */off/* BT1 current from the cell (expected in this load)" }]
+status = "accepted"
+
+[[requirement]]
+id = "R-4"
+text = "With SW1 on and D1 lit, the board draws at most 8 mA from the cells."
+source = "N-2: the current budget while the LED is lit; D-9: 8 mA instead of 5 mA – R-1 and 5 mA cannot both hold with a series resistor once U1's discharge pin is as strong as it is at 3.2 V"
+from = ["N-2"]
+binding = "should"
+verify = [{ rows = "LIM.i */on/* BT1 current from the cell (expected in this load)" }]
+status = "accepted"

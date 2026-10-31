@@ -473,6 +473,10 @@ def function(s, load, low=None, plugin=None):
             s.q(key, "i", -res.get(meta["sources"][key]["branch"], 0.0), "A", "", key, "current from the supply "
                 "(expected in this load)", code="LIM.i", entry=False,
                 lims=[Limit(max=lim.get("i_max_a"), min=lim.get("i_min_a"), source="expect of the load in sim.json")])
+        elif key in meta.get("cells", {}):          # a battery holder: what its cells deliver in this load
+            s.q(key, "i", max(delivered(s, meta["cells"][key]), 0.0), "A", "", key, "current from the "
+                "cell (expected in this load)", code="LIM.i", entry=False,
+                lims=[Limit(max=lim.get("i_max_a"), min=lim.get("i_min_a"), source="expect of the load in sim.json")])
         elif key in d.nets:
             g = v(res, netlist.node(netlist.local_ground(d, key), d.ground))
             x = max(v(res, n) for n in netlist.net_nodes(d, key)) - g
@@ -480,8 +484,9 @@ def function(s, load, low=None, plugin=None):
                 entry=False, lims=[Limit(max=lim.get("max_v"), min=lim.get("min_v"),
                                          source="expect of the load in sim.json")])
         else:
-            s.check("SIM.config", key, "expect of the load", f"{key} is neither a source nor a net",
-                    "a source of sources (i_max_a, i_min_a) or a net (min_v, max_v)", False)
+            s.check("SIM.config", key, "expect of the load", f"{key} is neither a source, a battery holder nor a net",
+                    "a source of sources or a battery holder with a cell state (i_max_a, i_min_a), or a net "
+                    "(min_v, max_v)", False)
     for des, src in meta["sources"].items():
         lim = src.get("i_back_max_a")
         lim = crit["blocking_max_a"] if lim is None else lim
@@ -490,11 +495,11 @@ def function(s, load, low=None, plugin=None):
             lims=[Limit(max=lim, source=f"i_back_max_a of sources.{des} (default the criteria's blocking_max_a)")])
     for name, cell in meta.get("cells", {}).items():     # name: the holder – an accept on it reaches its cell's rows
         lim = s.sim["cells"][cell["state"]].get("i_charge_max_a", crit["blocking_max_a"])
-        s.q(name, "i", max(res.get(cell["branch"], 0.0), 0.0), "A", "", name, "current into the cell (charging)",
+        s.q(name, "i", max(-delivered(s, cell), 0.0), "A", "", name, "current into the cell (charging)",
             code="LIM.backfeed", entry=False,
             lims=[Limit(max=lim, source=f"i_charge_max_a of cells.{cell['state']} in sim.json")])
         if (most := s.sim["cells"][cell["state"]].get("i_max_a")) is not None:
-            s.q(name, "i", max(-res.get(cell["branch"], 0.0), 0.0), "A", "", name, "current from the cell", code="LIM.i",
+            s.q(name, "i", max(delivered(s, cell), 0.0), "A", "", name, "current from the cell", code="LIM.i",
                 entry=False, grade="cell",
                 lims=[Limit(max=most, source=f"i_max_a of cells.{cell['state']} in sim.json")])
     for des, reg in meta["regs"].items():
@@ -612,9 +617,17 @@ def function(s, load, low=None, plugin=None):
         plugin.checks(design=d, cfg=s.sim, res=res, meta=meta, load=load, add=s.plugin_add)
 
 
+def delivered(s, cell):
+    """The current a battery holder's cell delivers (A, + delivered, − charged): the current out of its source in the
+    sense of its voltage – a cell state below 0 V is a cell upside down, which delivers the other way round."""
+    i = -s.res.get(cell["branch"], 0.0)
+    return -i if s.sim["cells"][cell["state"]].get("v", 0) < 0 else i
+
+
 def operating_range(s):
     """LIM.range: a part with an operating supply range – vdd_op_min_v/vdd_op_max_v for its supply pins, or a pin's
-    v_op_min_v/v_op_max_v – supplied inside it, measured to its own ground pin."""
+    v_op_min_v/v_op_max_v – supplied inside it, measured to its own ground pin. A supply within DEAD_RAIL_V of 0 V
+    is a part switched off – a power switch open – and a row of information, not a supply below its range."""
     d, res = s.d, s.res
     for des in sorted(s.n.comps):
         part = s.n.part(des) or {}
@@ -632,6 +645,13 @@ def operating_range(s):
             seen.add((net, lo, hi))
             x = at_pin(d, res, f"{des}.{num}", ground)
             if math.isnan(x):
+                continue
+            what = f"supply voltage at {part['pins'][num].get('name', num)} inside its operating range"
+            if abs(x) < netlist.DEAD_RAIL_V:      # switched off – the model's own loads are off below it too
+                s.rows.append({"id": "LIM.range", "scenario": s.name, "item": des, "check": what,
+                               "actual": fmt(x if abs(x) >= 1e-6 else 0.0, "V"),
+                               "expected": f"unpowered below {netlist.DEAD_RAIL_V:g} V: off, "
+                               "no range to hold", "result": "info"})
                 continue
             s.q(des, "v_op", x, "V", "", des, f"supply voltage at {part['pins'][num].get('name', num)} inside its "
                                               "operating range", lo=x, code="LIM.range", entry=False,

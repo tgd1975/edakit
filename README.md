@@ -188,6 +188,7 @@ Where it stands:
 | [edakit/easyeda/](edakit/easyeda/) | `mcp-server.sh` (pinned easyeda-mcp-pro with safe defaults), `bridge-extension-patch.sh`, `odb-tool-patch.mjs` (the ODB++ export) |
 | [skills/](skills/), [agents/](agents/), [hooks/](hooks/hooks.json), [bin/](bin/) | the Claude Code plugin |
 | [examples/coin-cell-led/](examples/coin-cell-led/README.md) | the project of the walkthrough (handbook 17): a CR2032, a push button, a red LED and its resistor |
+| [examples/blinker-555/](examples/blinker-555/README.md) | the project of walkthrough 2 (handbook 18), drawn in KiCad: two AAA cells, a slide switch, a CMOS 555 and an LED that blinks |
 | [docs/catalog/](docs/catalog/build.py) | the catalog as one page: every code with rule, why, fix and sources, the domains, the tables, the reference circuits drawn as SVG with their seeded faults – written by `docs/catalog/build.py` |
 | [docs/pages.py](docs/pages.py) | assembles the site for GitHub Pages (MkDocs); [docs/concepts/](docs/concepts/) the concepts |
 | [docs/organisation.md](docs/organisation.md) | how the repository is organised: what is documentation, what a source, code, data, generated or test data |

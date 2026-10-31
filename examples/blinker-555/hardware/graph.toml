@@ -1,0 +1,171 @@
+# The hardware graph (handbook 3.1): components, nets and cables keyed by designator and name, pins by name
+# or role through the parts entries. edakit graph json writes the resolved graph beside it (graph.json).
+name = "blinker-555"
+version = "0.1"
+date = "2026-10-31"
+description = "Switch it on and a red LED blinks about once a second, from two AAA cells; switch it off and the cells deliver nothing."
+
+[purpose]
+use = "private"
+market = "EU"
+notes = "The example of the edakit handbook, chapter 18: built for oneself."
+
+[accept]
+"HINT.bulk" = "no cable and no plug: the cells sit in BT1 on the board; C4 1 µF ceramic and C1 100 nF at U1, as its datasheet asks (D-6)"
+"HINT.lithium" = "two alkaline AAA cells, not lithium: nothing charges them (LIM.backfeed) (D-6)"
+
+[layout]
+fixed = ["BT1", "SW1", "D1"]
+edge = ["SW1"]
+notes = [
+  "BT1 (Keystone 2468, 53.0 × 24.6 × 13 mm) on the bottom, the board about its size; its two PC pins are soldered on the top side",
+  "SW1 at the board's edge, its knob out over it; its terminals and pegs are soldered on the bottom – not under BT1's body",
+  "D1 on top, where it is seen",
+  "C1 and C4 close to U1's V+ (8); C2 close to U1's TRIG (2) and TH (6), its ground next to GND (1); C3 next to CV (5)",
+]
+
+[conventions]
+pin_reference = "'<designator>.<pin>' with the pin's name or role, else its symbol number – the parts entry says which pin that is"
+
+# --- the supply: two AAA cells in series, a slide switch in their plus ------------------------------------------
+[components.BT1]
+type = "battery_holder"
+label = "2×AAA holder"
+part = "2468"
+lcsc = "C254917"
+bom = false
+notes = "Keystone 2468: two AAA cells in series, PC pins; on the bottom, soldered by hand (D-1)."
+
+[components.SW1]
+type = "switch"
+label = "Power switch"
+part = "SK12D07VG4"
+lcsc = "C393937"
+bom = false
+nc = ["throw_b", "4", "5"]
+notes = "SPDT used as on/off: common to throw_a is on; pins 4 and 5 are the frame's pegs. Through-hole at the board's edge, soldered by hand (D-1)."
+
+# --- the timer: a CMOS 555 in the 50 % astable with one timing resistor from OUT ----------------------------------
+[components.U1]
+type = "ic"
+label = "CMOS 555 timer"
+part = "LMC555CMX/NOPB"
+lcsc = "C90760"
+states = { OUTPUT = "low", DC = "low" }
+accept = { "HINT.thermal_copper" = "U1 dissipates about 2 mW at most (250 µA at 3.2 V, D1's 7.3 mA through DIS at 15 Ω): under 1 K at 169 K/W, no copper needed" }
+notes = "Runs from 1.5 V. The simulation holds the phase in which D1 is lit: OUTPUT low, DC (discharge) low. R1 from OUTPUT charges and discharges C2 between 1/3 and 2/3 of VDD: f = 1 / (2 ln 2 · R1 · C2). DC is free for D1."
+
+[components.R1]
+type = "resistor"
+label = "Timing resistor"
+part = "0805W8F7503T5E"
+lcsc = "C17817"
+value = "750k"
+notes = "f = 1 / (2 ln 2 · 750 kΩ · 1 µF) = 0.962 Hz, 57.7 flashes a minute; worst case 48.0–72.4 (D-5)."
+
+[components.C2]
+type = "capacitor"
+label = "Timing capacitor"
+part = "CL21B105KBFNNNE"
+lcsc = "C28323"
+value = "1uF"
+
+[components.C1]
+type = "capacitor"
+label = "Decoupling at U1"
+part = "CC0805KRX7R9BB104"
+lcsc = "C49678"
+value = "100nF"
+
+[components.C4]
+type = "capacitor"
+label = "Bulk at U1"
+part = "CL21B105KBFNNNE"
+lcsc = "C28323"
+value = "1uF"
+notes = "The LMC555 datasheet's minimum: 0.1 µF in parallel with 1 µF at V+ (section 10)."
+
+[components.C3]
+type = "capacitor"
+label = "Control voltage bypass"
+part = "CL21B103KBANNNC"
+lcsc = "C1710"
+value = "10nF"
+notes = "The LMC555 datasheet's layout example bypasses CV with 0.01 µF (11.2)."
+
+# --- the LED: from VDD into the open-drain discharge output ------------------------------------------------------
+[components.R2]
+type = "resistor"
+label = "LED series resistor"
+part = "0805W8F2000T5E"
+lcsc = "C17540"
+value = "200"
+notes = "Sized for R-1: from cells at 2.2 V D1 at its highest Vf takes 0.52 mA (≥ 0.5 mA, U1's discharge pin at its 150 Ω end); 220 Ω gave 0.498 mA there (D-3). From fresh cells at its lowest Vf and DIS at 15 Ω: 7.3 mA, 7.6 mA from the cells (R-4: 8 mA, D-9)."
+
+[components.D1]
+type = "led"
+label = "LED (hyper red, low current)"
+part = "APTD2012LSURCK"
+lcsc = "C5366382"
+value = "red"
+notes = "Specified at 2 mA: 60–150 mcd – at 0.5 mA brighter on axis than an ordinary red 0805 LED at 1 mA, in a narrower 40° beam (D-3)."
+accept = { "HINT.thermal_copper" = "D1 dissipates at most 11.9 mW, its junction 33 °C at 25 °C by the datasheet's 680 K/W (measured on 16 mm² of copper per pad; on its 1.4 mm² pads a few kelvin more, far below its 115 °C)" }
+
+# --- reverse polarity: a P-MOSFET in the plus line behind SW1 (block reverse-pmos) -----------------------------
+[components.Q1]
+type = "transistor"
+label = "Reverse-polarity PMOS"
+part = "AO3415A"
+lcsc = "C133233"
+notes = "Drain towards the cells, source towards VDD, gate to ground: on from 1.8 V, its body diode blocks cells put in upside down (D-4)."
+accept = { "HINT.gate" = "no driver: the gate sits on ground through R3 and Q1 never switches – nothing rings", "HINT.thermal_copper" = "Q1 dissipates about 2 µW (7.6 mA through 65 mΩ at most)" }
+
+[components.R3]
+type = "resistor"
+label = "Q1 gate to ground"
+part = "0805W8F1002T5E"
+lcsc = "C17414"
+value = "10k"
+
+[nets.VBAT]
+pins = ["BT1.plus", "SW1.common"]
+v = [-3.3, 3.3]
+notes = "the cells: 2 × 1.6 V fresh off load, 2 × 1.1 V used (R-1); negative with both cells upside down"
+
+[nets.VSW]
+pins = ["SW1.throw_a", "Q1.drain"]
+v = [-3.3, 3.3]
+
+[nets.VDD]
+pins = ["Q1.source", "U1.vdd", "U1.reset_n", "C1.1", "C4.1", "R2.1"]
+v = [-0.3, 3.3]
+notes = "the cells' voltage while SW1 is on, behind Q1; RESET tied to it; a little below 0 V with the cells upside down, where U1's substrate diode holds Q1's leakage"
+
+[nets.GATE]
+pins = ["Q1.gate", "R3.1"]
+v = [0, 0.1]
+
+[nets.GND]
+pins = ["BT1.minus", "U1.gnd", "C1.2", "C2.2", "C3.2", "C4.2", "R3.2"]
+v = [0, 0]
+
+[nets.OUT]
+pins = ["U1.out", "R1.1"]
+v = [0, 3.3]
+
+[nets.TIMING]
+pins = ["U1.trig", "U1.thr", "R1.2", "C2.1"]
+v = [0, 3.3]
+notes = "C2 swings between 1/3 and 2/3 of VDD"
+
+[nets.CV]
+pins = ["U1.cv", "C3.1"]
+v = [0, 3.3]
+
+[nets.LED_A]
+pins = ["R2.2", "D1.anode"]
+v = [-0.3, 3.3]
+
+[nets.LED_K]
+pins = ["D1.cathode", "U1.dis"]
+v = [0, 3.3]

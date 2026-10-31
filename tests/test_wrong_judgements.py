@@ -111,6 +111,25 @@ def test_an_open_drain_line_without_pull_up_still_floats():
     assert open_drain(d) == ["FAULT"]                     # nFault: open drain, no pull-up
 
 
+def test_an_open_drain_output_that_sinks_an_led_does_not_float():
+    """The 555 blinker of handbook 18: D1 from VDD through R2 into the LMC555's discharge output. Released, D1 is
+    dark – the LED is the output's load, and nothing reads the net."""
+    chip = {"kind": "ic", "pins": {"1": {"name": "DIS", "type": "output", "drive": "open_drain"}}}
+    led, res = lib("C2297"), lib("C17471")
+    cathode = next(n for n, p in led["pins"].items() if p["role"] == "cathode")
+    anode = next(n for n, p in led["pins"].items() if p["role"] == "anode")
+    parts = {"U": chip, "C2297": led, "C17471": res}
+    comps = [comp("U9", "U", chip), comp("D9", "C2297", led, type_="led"), comp("R9", "C17471", res, type_="resistor")]
+    nets = [{"name": "VDD", "pins": ["R9.1"], "v": [3.3, 3.3]}, {"name": "LED_A", "pins": ["R9.2", f"D9.{anode}"],
+                                                                  "v": [0, 3.3]},
+            {"name": "LED_K", "pins": [f"D9.{cathode}", "U9.1"], "v": [0, 3.3]}]
+    assert open_drain(design(parts, comps, nets)) == []    # before: "LED_K … released, it floats"
+    nets[2]["pins"].append("U9.2")                          # an input on the net reads what floats there
+    chip["pins"]["2"] = {"name": "IN", "type": "input"}
+    comps[0] = comp("U9", "U", chip)
+    assert open_drain(design(parts, comps, nets)) == ["LED_K"]
+
+
 # --- A3: an input the part biases itself ------------------------------------------------------------------------------
 def amp_input(biased=True):
     amp, cap = lib("C17337"), lib("C2895284")

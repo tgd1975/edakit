@@ -1,0 +1,80 @@
+{
+ "lcsc": "C133233",
+ "mpn": "AO3415A",
+ "manufacturer": "AOS",
+ "footprint": "SOT-23-3_L2.9-W1.6-P1.90-LS2.8-BR",
+ "jlc_class": "Extended Part",
+ "kind": "pmos",
+ "pins": {
+  "1": {
+   "name": "G",
+   "type": "passive",
+   "role": "gate"
+  },
+  "2": {
+   "name": "S",
+   "type": "passive",
+   "role": "source"
+  },
+  "3": {
+   "name": "D",
+   "type": "passive",
+   "role": "drain"
+  }
+ },
+ "sources": [
+  "AOS AO3415A data sheet Rev. 3.0, June 2013 (LCSC's copy, edakit part fetch C133233, read 2026-10-31)",
+  "p. 1: SOT23, G pin 1, S pin 2, D pin 3; absolute maximum VDS −20 V, VGS ±8 V, ID −5 A (25 °C), PD 1.5 W (25 °C), TJ −55 … 150 °C; RθJA steady state 85 typ / 100 max °C/W; ESD protected",
+  "p. 2: VGS(th) −0.3 / −0.57 / −0.9 V; RDS(on) max 41 mΩ at −4.5 V, 53 mΩ at −2.5 V, 65 mΩ at −1.8 V; VSD −0.64 V typ at −1 A; IS −2 A; IDSS ≤ 1 µA at −20 V; IGSS ≤ ±10 µA at ±8 V",
+  "spice: a level-1 model, VTO −0.57 V and KP 25 A/V², RD 20 mΩ: 52 mΩ at VGS −1.8 V (65 mΩ max), 40 mΩ at −2.5 V (53 mΩ max) – assumption, the datasheet gives no model (M-1, finding 5)",
+  "mpn, manufacturer, footprint, jlc_class, pin numbers and names: EasyEDA library data of C133233, https://easyeda.com/api/products/C133233/components?version=6.4.19.5, read 2026-10-31 (edakit part import)"
+ ],
+ "verified": {
+  "by": "Claude (skill part-search)",
+  "date": "2026-10-31",
+  "datasheet": "AOS AO3415A Rev. 3.0 (June 2013)",
+  "datasheet_sha256": "9340fe2395009f1f8b83d11651e677c6357cb078472a33ff61880ae918718221",
+  "checked": [
+   "pin 1 G, 2 S, 3 D (p. 1) = the EasyEDA symbol and the SOT-23 footprint",
+   "VGS(th) −0.3 … −0.9 V; RDS(on) specified from VGS −1.8 V (65 mΩ max) – on at the 2.2 V end voltage of R-1",
+   "VDS −20 V, VGS ±8 V, ID −5 A, body diode IS −2 A"
+  ],
+  "open": []
+ },
+ "package": "SOT-23",
+ "datasheet": {
+  "url": "https://www.aosmd.com/res/datasheets/AO3415A.pdf",
+  "pinout_page": 1,
+  "title": "AOS AO3415A 20V P-Channel MOSFET",
+  "revision": "Rev. 3.0, June 2013"
+ },
+ "values": {
+  "vgs_th_v": [
+   -0.9,
+   -0.57,
+   -0.3
+  ],
+  "rds_on_max_ohm": {
+   "-1.8": 0.065,
+   "-2.5": 0.053,
+   "-4.5": 0.041
+  },
+  "vsd_v_at_1a": 0.64
+ },
+ "limits": {
+  "vds_max_v": 20,
+  "vgs_max_v": 8,
+  "id_max_a": 5,
+  "p_max_w": 1.5,
+  "is_body_max_a": 2.0,
+  "tj_max_c": 150,
+  "rth_ja_k_per_w": 100
+ },
+ "spice": {
+  "model": ".model AO3415A PMOS(LEVEL=1 VTO=-0.57 KP=25 RD=0.02 IS=1e-12 LAMBDA=0.01)"
+ },
+ "compliance": {
+  "rohs": true,
+  "source": "LCSC product data C133233 (RoHS), read 2026-10-31"
+ }
+}
