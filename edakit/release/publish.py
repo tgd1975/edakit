@@ -314,9 +314,10 @@ def decisions(cfg, prev):
 
 def purpose(pcfg):
     """purpose of the project's graph (handbook 3.1): {use, market, notes, radio} – {} without one."""
+    from ..design import load_graph
     try:
-        return (json.loads(pcfg.graph.read_text(encoding="utf-8")).get("graph") or {}).get("purpose") or {}
-    except (OSError, json.JSONDecodeError, AttributeError):
+        return load_graph(pcfg.graph).get("purpose") or {}
+    except (OSError, ValueError, AttributeError, configmod.ConfigError):
         return {}
 
 

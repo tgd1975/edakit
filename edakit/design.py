@@ -8,6 +8,9 @@ Graph file (JSON), either {"graph": {...}} or the inner object directly:
     cables:     [{name, from, to, pins: {from_pin: to_pin}, r_ohm_per_wire}]
     ground:     name of the ground net (default "GND")
 
+or a .toml file ([project] graph = "hardware/graph.toml") with the same keys, components, nets and cables as tables
+keyed by designator and name – [components.R1], [nets."+5V"] –, read to the same dict (graph_of_toml).
+
 Parts database: one JSON file per part (hardware/parts/C17414.json) with kind, pins (name, type, role, vmax),
 params, ratings, spice, footprint, lead, compliance, order, verified. See handbook/04-parts-database.md. A component
 finds its entry by its LCSC number (the file name) – or, without one, by its manufacturer part number `part` (the
@@ -22,6 +25,7 @@ from __future__ import annotations
 import copy
 import json
 import re
+import tomllib
 from pathlib import Path
 
 
@@ -30,9 +34,46 @@ def natural_key(text):
     return [int(t) if t.isdigit() else t for t in re.split(r"(\d+)", str(text))]
 
 
+KEYED = {"components": "designator", "nets": "name", "cables": "name"}   # the tables of a TOML graph and their key
+
+
 def load_graph(path):
-    data = json.loads(Path(path).read_text(encoding="utf-8"))
+    """The graph of a file (the inner object): a .toml file through graph_of_toml, else JSON, {"graph": {...}} or the
+    inner object directly."""
+    path = Path(path)
+    text = path.read_text(encoding="utf-8")
+    if path.suffix == ".toml":
+        return graph_of_toml(text, path)
+    data = json.loads(text)
     return data.get("graph", data)
+
+
+def graph_of_toml(text, where="graph"):
+    """The graph of its TOML form, as the JSON gives it: [components.<designator>], [nets.<name>] and [cables.<name>]
+    become the lists components, nets and cables in the order of the file, the table's key as designator or name
+    first; every other key stays as it is – purpose, conventions, accept, layout, locks, ground, grounds –, the pin
+    words as written. A key or table twice and what is no TOML – null among it – is a ConfigError with the file
+    (`where`) and the line tomllib names."""
+    from .config import ConfigError
+    try:
+        data = tomllib.loads(text)
+    except tomllib.TOMLDecodeError as e:
+        raise ConfigError(f"{where}: {e}") from None
+    for key, field in KEYED.items():
+        table = data.get(key)
+        if table is None or table == []:                    # cables = []: none, as the JSON writes it
+            continue
+        if not isinstance(table, dict):
+            raise ConfigError(f"{where}: {key}: a table keyed by {field}, [{key}.<{field}>]")
+        rows = []
+        for name, row in table.items():
+            if not isinstance(row, dict):
+                raise ConfigError(f"{where}: {key}.{name}: a table, [{key}.{name}]")
+            if field in row:
+                raise ConfigError(f"{where}: [{key}.{name}]: {field} is the table's key")
+            rows.append({field: name, **row})
+        data[key] = rows
+    return data
 
 
 def load_parts(directory):
