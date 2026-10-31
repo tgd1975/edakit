@@ -542,7 +542,8 @@ def data_hash(cfg, name):
       project-library:<b> the project library is in EasyEDA only: what changes it is an easyeda script, and running
                           the script is what tells edakit – the hash of its last change edakit run recorded in
                           hardware/scripts.lock (which script, when); None before any
-      graph, parts, sim   the files as the circuit hash reads them – graph and parts without [release] hash_ignore
+      graph, parts, sim   the files as the circuit hash reads them – graph and parts without [release] hash_ignore,
+                          a TOML graph as its data (comments and arrangement count for nothing)
       board:<b>           the board file
       footprints:<b>      the geometry edakit pcb dump measures, beside the board file (<b>.geometry.json) – one
                           from before among the artifacts (pcb_geometry_<b>.json) until it is moved
@@ -576,7 +577,9 @@ def data_hash(cfg, name):
         files = [cfg.resolve(p) for p, k in names.own.items() if k == key]
     files = [f for f in files if f.is_file()]
     ignore = cfg.release.get("hash_ignore", []) if kind in ("graph", "parts") else ()
-    return gate.file_hash(cfg.root, files, ignore, files) if files else ABSENT
+    if not files:
+        return ABSENT
+    return gate.file_hash(cfg.root, files, ignore, files, graph=files[0] if kind == "graph" else None)
 
 
 def _gerber_hash(cfg, b):

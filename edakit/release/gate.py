@@ -78,7 +78,8 @@ from fnmatch import fnmatch
 from pathlib import Path
 
 from .. import catalog, docs, eda, requirements
-from ..design import Design
+from ..config import ConfigError
+from ..design import KEYED, Design, graph_of_toml
 from ..toolchain import is_kicad
 
 STAGES = [
@@ -133,30 +134,53 @@ def strip(data, ignore):
     return data
 
 
-def content(path, ignore=()):
+def arranged(graph):
+    """A graph with the arrangement of its form taken out: components sorted by designator, nets and cables by name,
+    the pins of a net sorted – the order no check reads (circuit-language decision 2)."""
+    out = dict(graph)
+    for key, field in KEYED.items():           # graph_of_toml made each a list of tables
+        if isinstance(out.get(key), list):
+            out[key] = sorted(out[key], key=lambda row: str(row[field]))
+    if isinstance(out.get("nets"), list):
+        out["nets"] = [{**n, "pins": sorted(n["pins"], key=str)} if isinstance(n.get("pins"), list) else n
+                       for n in out["nets"]]
+    return out
+
+
+def content(path, ignore=(), graph=False):
     """What the hash takes of a file: its bytes; with ignore, a JSON file as canonical JSON (sorted keys, no
-    whitespace) without those keys. A file that is no valid JSON stays bytes."""
+    whitespace) without those keys. A file that is no valid JSON stays bytes. graph: the file is the project's graph –
+    a TOML graph is read as data in any case and taken as canonical JSON, arranged, without the keys of ignore, so that
+    a comment, a blank line and a table or pin moved count for nothing; one that does not load stays bytes. A JSON
+    graph as any JSON file."""
     path = Path(path)
     if not path.exists():
         return b"<missing>"
     raw = path.read_bytes()
-    if not ignore:
+    if graph and path.suffix == ".toml":
+        try:
+            data = arranged(graph_of_toml(raw.decode("utf-8"), path))
+        except (ConfigError, UnicodeDecodeError):
+            return raw
+    elif not ignore:
         return raw
-    try:
-        data = json.loads(raw)
-    except (json.JSONDecodeError, UnicodeDecodeError):
-        return raw
+    else:
+        try:
+            data = json.loads(raw)
+        except (json.JSONDecodeError, UnicodeDecodeError):
+            return raw
     return json.dumps(strip(data, set(ignore)), sort_keys=True, separators=(",", ":"), ensure_ascii=False).encode()
 
 
-def file_hash(root, files, ignore=(), documented=(), extra=()):
-    """SHA-256 over the names and contents of files; the files in `documented` without the keys in ignore. extra:
-    [(name, bytes)] taken after the files the same way – none, and the hash is that of the files alone."""
+def file_hash(root, files, ignore=(), documented=(), extra=(), graph=None):
+    """SHA-256 over the names and contents of files; the files in `documented` without the keys in ignore, the graph
+    file `graph` as content() takes a graph. extra: [(name, bytes)] taken after the files the same way – none, and the
+    hash is that of the files alone."""
     h = hashlib.sha256()
     documented = {Path(f) for f in documented}
     for f in files:
         h.update(str(Path(f).relative_to(root) if Path(f).is_relative_to(root) else f).encode() + b"\0"
-                 + content(f, ignore if Path(f) in documented else ()))
+                 + content(f, ignore if Path(f) in documented else (), graph is not None and Path(f) == Path(graph)))
     for name, data in extra:
         h.update(name.encode() + b"\0" + data)
     return h.hexdigest()
@@ -173,9 +197,10 @@ def state_files(cfg):
 def state_hash(cfg, ignore=None):
     """The circuit hash (state_sha256). [release] hash_ignore leaves its keys out of the graph and the parts entries;
     the simulation config (its `sources` are the supplies), the plugin, state_files and the requirements files stay
-    bytes – the reviews read the requirements whole."""
+    bytes – the reviews read the requirements whole. A TOML graph counts with its data, a JSON graph with its bytes
+    or, with hash_ignore, as canonical JSON (content)."""
     ignore = cfg.release.get("hash_ignore", []) if ignore is None else ignore
-    return file_hash(cfg.root, state_files(cfg), ignore, [cfg.graph, *cfg.parts.glob("*.json")])
+    return file_hash(cfg.root, state_files(cfg), ignore, [cfg.graph, *cfg.parts.glob("*.json")], graph=cfg.graph)
 
 
 def layout_files(cfg):

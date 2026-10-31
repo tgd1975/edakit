@@ -1,15 +1,17 @@
-"""The graph as TOML (circuit-language plan, step L.3): load_graph reads a .toml graph to the dict the JSON gives,
-and every reader goes through it. A JSON graph loads as before."""
+"""The graph as TOML (circuit-language plan, steps L.3 and L.4): load_graph reads a .toml graph to the dict the JSON
+gives, every reader goes through it, and the circuit hash takes the TOML graph's data – comments and arrangement count
+for nothing, every change of data does. A JSON graph loads and hashes as before."""
 
+import hashlib
 import json
 import re
 
 import pytest
 
-from edakit import block, cli, convert
+from edakit import block, cli, convert, scripts
 from edakit.config import ConfigError
 from edakit.design import load_graph
-from edakit.release import publish
+from edakit.release import gate, publish
 
 
 # --- a graph written as TOML -----------------------------------------------------------------------------------------
@@ -242,3 +244,110 @@ def test_the_release_notes_read_the_purpose_of_a_toml_graph(project):
     cfg = to_toml(project)
     assert publish.purpose(cfg) == {"use": "private", "market": "EU",
                                     "notes": "An example board for edakit, built for testing, not sold or given away."}
+
+
+# --- L.4 the circuit hash of a TOML graph ----------------------------------------------------------------------------
+def ignore(project, keys):
+    toml = project.root / "edakit.toml"
+    toml.write_text(toml.read_text().replace("[release]\n", f"[release]\nhash_ignore = {json.dumps(keys)}\n"))
+    return project.config()
+
+
+def today(cfg, ignore=()):
+    """The circuit hash of a JSON graph as it was before the TOML form: the files byte for byte; with hash_ignore the
+    graph and the parts entries as canonical JSON without those keys, purpose and compliance whole."""
+    def strip(d):
+        if isinstance(d, dict):
+            return {k: v if k in ("purpose", "compliance") else strip(v) for k, v in d.items() if k not in ignore}
+        return [strip(v) for v in d] if isinstance(d, list) else d
+    h = hashlib.sha256()
+    documented = [cfg.graph, *cfg.parts.glob("*.json")]
+    for f in gate.state_files(cfg):
+        data = f.read_bytes() if f.exists() else b"<missing>"
+        if ignore and f in documented:
+            data = json.dumps(strip(json.loads(data)), sort_keys=True, separators=(",", ":"),
+                              ensure_ascii=False).encode()
+        h.update(str(f.relative_to(cfg.root)).encode() + b"\0" + data)
+    return h.hexdigest()
+
+
+FROZEN = '{"graph": {"name": "frozen", "components": [{"designator": "R1", "notes": "x", "pins": {"1": "1"}}],\n' \
+         ' "nets": [{"name": "A", "pins": ["R1.1"], "v": [0, 5]}], "purpose": {"notes": "y"}}}\n'
+
+
+def test_a_json_graph_keeps_its_circuit_hash(project, tmp_path):
+    """Byte for byte as before: the example's circuit hash by the rule of before, and a frozen graph's hash pinned."""
+    cfg = project.config()
+    assert gate.state_hash(cfg) == today(cfg)
+    cfg = ignore(project, ["notes", "sources"])
+    assert gate.state_hash(cfg) == today(cfg, {"notes", "sources"})
+    frozen = tmp_path / "graph.json"
+    frozen.write_text(FROZEN, encoding="utf-8")
+    assert gate.content(frozen) == FROZEN.encode()
+    assert hashlib.sha256(gate.content(frozen, ["notes"])).hexdigest() == \
+        "7a72f0dca26764e6924de1b22e3c180265bca133ab9a0e07d2774219e42cc8b1"
+
+
+def edited(project, change):
+    """The circuit hash of the example's TOML graph with a change to its text."""
+    path = project.root / "hardware" / "graph.toml"
+    text = path.read_text(encoding="utf-8")
+    assert change(text) != text, "the change does not change the text"
+    path.write_text(change(text), encoding="utf-8")
+    try:
+        return gate.state_hash(project.config())
+    finally:
+        path.write_text(text, encoding="utf-8")
+
+
+def rearranged(project):
+    """The example's graph as TOML with its components and nets in the opposite order and the pins of GND turned
+    round."""
+    g = project.graph()["graph"]
+    g["components"].reverse()
+    g["nets"].reverse()
+    next(n for n in g["nets"] if n["name"] == "GND")["pins"].reverse()
+    return as_toml(g)
+
+
+def test_the_circuit_hash_of_a_toml_graph_takes_its_data(project):
+    other = rearranged(project)
+    cfg = to_toml(project)
+    h = gate.state_hash(cfg)
+    assert edited(project, lambda t: "# a comment at the top\n" + t) == h
+    assert edited(project, lambda t: t.replace('"type" = "connector"', '"type" = "connector"   # the input', 1)) == h
+    assert edited(project, lambda t: t.replace("\n[", "\n\n\n[")) == h                   # blank lines
+    assert edited(project, lambda t: other) == h                                         # tables and pins moved
+    assert edited(project, lambda t: t.replace('"U1.4"', '"U1.3"', 1)) != h               # a pin
+    assert edited(project, lambda t: t.replace('"value" = "10k"', '"value" = "4.7k"', 1)) != h
+    assert edited(project, lambda t: t.replace("not sold or given away", "sold")) != h    # purpose.notes
+    assert edited(project, lambda t: t.replace('"notes" = "Pin 1 = VIN', '"notes" = "Pin one = VIN', 1)) != h
+    assert edited(project, lambda t: t + "\n[components.R1\n") != h                       # no TOML: its bytes
+
+
+def test_hash_ignore_reaches_into_a_toml_graph_and_purpose_stays_whole(project):
+    to_toml(project)
+    cfg = ignore(project, ["notes"])
+    h = gate.state_hash(cfg)
+    assert edited(project, lambda t: t.replace('"notes" = "Pin 1 = VIN', '"notes" = "Pin one = VIN', 1)) == h
+    assert edited(project, lambda t: t.replace("not sold or given away", "sold")) != h    # KEEP_WHOLE: M-6 reads it
+    assert edited(project, lambda t: t.replace('"U1.4"', '"U1.3"', 1)) != h
+
+
+def test_graph_sha256_names_the_bytes_of_a_toml_graph(project):
+    cfg = to_toml(project)
+    head = gate.header(cfg)
+    assert head["graph_sha256"] == hashlib.sha256(cfg.graph.read_bytes()).hexdigest()
+    cfg.graph.write_text("# a comment\n" + cfg.graph.read_text(encoding="utf-8"), encoding="utf-8")
+    now = gate.header(cfg)
+    assert now["graph_sha256"] != head["graph_sha256"] and now["state_sha256"] == head["state_sha256"]
+
+
+def test_a_script_reads_a_toml_graph_as_the_circuit_hash_does(project):
+    cfg = to_toml(project)
+    first = scripts.data_hash(cfg, "graph")
+    assert scripts.data_hash(cfg, "hardware/graph.toml") == first
+    cfg.graph.write_text("# a comment\n" + cfg.graph.read_text(encoding="utf-8"), encoding="utf-8")
+    assert scripts.data_hash(cfg, "graph") == first
+    cfg.graph.write_text(cfg.graph.read_text(encoding="utf-8").replace('"U1.4"', '"U1.3"', 1), encoding="utf-8")
+    assert scripts.data_hash(cfg, "graph") != first
