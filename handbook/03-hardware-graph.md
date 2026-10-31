@@ -313,6 +313,8 @@ the graph is the reference and the firmware follows. A project may use both.
 | `pwm` | `{net: pwm_hz}` of the nets with `fn: "pwm"` |
 | `inputs` | buttons and switches on MCU pins with their `active` level; a DIP switch as `bits` in the order of its roles `a1` … `aN` / `b1` … `bN` |
 | `buses` | `{fn_bus: {fn: net}}`, and I2C lines by pin role `sda`/`scl` as `i2c` |
+| `analog` | every MCU pin on a net with `fn` `"adc"`: `pin`, `gpio`, `channel` (the pin's functions `adc…`), the `divider` in front of it – the net one resistor from another net and one from ground: `from`, `top`, `top_ohm`, `bottom`, `bottom_ohm`, `ratio` –, or a lone `pull_up_ohm` / `pull_down_ohm` (a thermistor's partner); values from the resistors' entries |
+| `devices` | `{"i2c": [{bus, address, part, how}]}` – every device on the MCU's I2C lines whose entry gives its `address` (4.1), at the address its pins decide, the bus named by its SDA net |
 | `chains` | from an MCU net through the roles `sdi` → `sdo`: `data`, `parts` in shift order, `read_back` (the last `sdo` on an MCU pin), `common` (MCU nets every part of the chain shares: clock, latch, enable) and `first_bit_to` (the part fact `values.first_bit_to`, `"unknown"` without it) |
 | `channels` | `{channel, chain, driver, output, pin, net, leds}` for every output with the role `out0` … `outN`, the LEDs traced as SIM.state/SIM.driver trace them: cathode on the output directly, behind 0 Ω bridges or behind a balancing resistor (5.3); `channel` = the outputs of the drivers before it in its chain + its number. A reversed LED is listed under `reversed` |
 

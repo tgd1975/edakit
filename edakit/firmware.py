@@ -17,6 +17,12 @@ What the contract holds (handbook 3.5):
     inputs     buttons and switches on MCU pins with their active level; DIP switches bit by bit in the order of their
                roles a1 … aN / b1 … bN
     buses      {fn_bus: {fn: net}} (graph, REQ.function), I2C lines by pin role sda/scl as "i2c"
+    analog     {net: {pin, gpio, channel, divider, pull_up_ohm, pull_down_ohm}} – every MCU pin on a net with fn "adc":
+               the converter channel (the pin's functions adc…, null without), the divider in front of it (the net one
+               resistor from another net and one from ground: from, top_ohm, bottom_ohm, ratio), or a lone pull-up or
+               pull-down (a thermistor's partner); values of the resistors' entries
+    devices    {"i2c": [{bus, address, part, how}]} – every device on an I2C line of the MCU whose entry gives its address
+               (REQ.forbidden/address), the address as its pins decide it, the bus named by its SDA net
     chains     from an MCU net through the roles sdi → sdo of shift registers and LED drivers: data net, parts in
                shift order, read-back net (the last sdo on an MCU pin), the MCU nets every part of it shares, and
                values.first_bit_to of its parts ("unknown" without it)
@@ -304,6 +310,45 @@ def channels(board, chain_list):
     return sorted(rows, key=lambda r: (r["chain"] is None, r["chain"] or 0, r["channel"], natural_key(r["driver"])))
 
 
+def analog(design, pins):
+    """{net: …} of the MCU's analog inputs (fn adc): channel, divider or pull – from the resistors on the net."""
+    out = {}
+    for net, e in pins.items():
+        if design.nets.get(net, {}).get("fn") != "adc":
+            continue
+        info = design.pin_info(e["pin"])
+        channel = next((f for f in info.get("functions") or [] if str(f).lower().startswith("adc")), None)
+        top, bottom = [], []
+        for des in sorted(design.comps_of_kind("resistor"), key=natural_key):
+            a, b = (design.pin_net.get(f"{des}.{p}") for p in ("1", "2"))
+            if net not in (a, b) or a == b:
+                continue
+            other, ohm = (b if a == net else a), circuit.resistor_value(design, des)
+            (bottom if other == design.ground else top).append((des, other, ohm))
+        row = {"pin": e["pin"], "gpio": e["gpio"], "channel": channel, "divider": None, "pull_up_ohm": None,
+               "pull_down_ohm": None}
+        if len(top) == 1 and len(bottom) == 1 and top[0][2] and bottom[0][2]:
+            rt, rb = top[0][2], bottom[0][2]
+            row["divider"] = {"from": top[0][1], "top": top[0][0], "top_ohm": rt, "bottom": bottom[0][0],
+                              "bottom_ohm": rb, "ratio": round(rb / (rt + rb), 6)}
+        elif len(top) == 1 and not bottom:
+            row["pull_up_ohm"] = top[0][2]
+        elif len(bottom) == 1 and not top:
+            row["pull_down_ohm"] = bottom[0][2]
+        out[net] = row
+    return out
+
+
+def devices(design, buses):
+    """{"i2c": [...]} – the devices with an address on the MCU's I2C lines (the SDA nets of buses)."""
+    from .engines.requires import bus_devices
+    sda = {nets.get("sda") for name, nets in buses.items() if name == "i2c" or name.startswith("i2c")} - {None}
+    found, _ = bus_devices(design)
+    rows = [{"bus": bus, "address": f"0x{x:02X}", "part": des, "how": how}
+            for bus, devs in sorted(found.items()) if bus in sda for x, des, how in devs]
+    return {"i2c": sorted(rows, key=lambda r: (r["bus"], r["address"], natural_key(r["part"])))} if rows else {}
+
+
 def contract(cfg, design):
     from .release import gate
     fw = cfg.firmware or {}
@@ -339,6 +384,8 @@ def contract(cfg, design):
         "pwm": {n: e.get("pwm_hz") for n, e in pins.items() if e.get("fn") == "pwm"},
         "inputs": inputs(board, pins),
         "buses": buses,
+        "analog": analog(design, pins),
+        "devices": devices(design, buses),
         "chains": chain_list,
         "channels": channels(board, chain_list),
     }

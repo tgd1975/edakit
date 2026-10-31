@@ -403,6 +403,23 @@ def addresses(d):
     """REQ.forbidden/address: two devices on one bus at the same address. An entry's address gives its base, the pins
     that add to it when high ({pin: value}) and further addresses it answers to (also); the bus is the net of its pin
     `on`, by default the pin with the role sda. A pin whose level the graph does not decide leaves the device out."""
+    buses, out = bus_devices(d)
+    for bus, devs in sorted(buses.items()):
+        by = defaultdict(list)
+        for x, des, how in devs:
+            by[x].append((des, how))
+        for x, users in sorted(by.items()):
+            if len({des for des, _ in users}) > 1:
+                who = ", ".join(f"{des} ({how})" if how else des for des, how in users)
+                out.append(Finding("REQ.forbidden", "G", f"bus {bus}", f"bus {bus}: {who} all answer to 0x{x:02X}",
+                                   "address of the parts entries", "another address by its pins, another part, or a "
+                                   "second bus", grade="address", on=tuple(("component", des) for des, _ in users)))
+    return out
+
+
+def bus_devices(d):
+    """({bus net: [(address, des, how)]}, [PARTS.schema findings]) – every device whose entry gives its address, at
+    the address its pins decide ('A0 low, A1 high'), and its further fixed addresses (how 'fixed')."""
     grounds = {d.ground} | set(d.graph.get("grounds") or [])
     supplies = supply_nets(d) - grounds
     buses = defaultdict(list)            # net -> [(address, des, how)]
@@ -435,17 +452,7 @@ def addresses(d):
             continue
         for x in [value, *a.get("also", [])]:
             buses[bus].append((x, des, ", ".join(how) if x == value else "fixed"))
-    for bus, devs in sorted(buses.items()):
-        by = defaultdict(list)
-        for x, des, how in devs:
-            by[x].append((des, how))
-        for x, users in sorted(by.items()):
-            if len({des for des, _ in users}) > 1:
-                who = ", ".join(f"{des} ({how})" if how else des for des, how in users)
-                out.append(Finding("REQ.forbidden", "G", f"bus {bus}", f"bus {bus}: {who} all answer to 0x{x:02X}",
-                                   "address of the parts entries", "another address by its pins, another part, or a "
-                                   "second bus", grade="address", on=tuple(("component", des) for des, _ in users)))
-    return out
+    return buses, out
 
 
 def uart_lines(d):

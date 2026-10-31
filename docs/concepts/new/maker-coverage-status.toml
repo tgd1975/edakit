@@ -13,13 +13,13 @@ FT-6 = { status = "built", where = "kinds motor, solenoid, speaker, heater, opto
 FT-7 = { status = "open", missing = "the ES1 limits of IEC 62368-1 are tagged to verify; mains is open decision 3" }
 FT-8 = { status = "open", missing = "generated fault scenarios (reversed supply as a DC scenario, a wire shorted, one supply off)" }
 FT-9 = { status = "open", missing = "DC bias of ceramics needs the capacitance curves – datasheets" }
-FT-10 = { status = "open", missing = "analog constants in the firmware contract" }
+FT-10 = { status = "built", where = "edakit firmware: analog (channel, divider, pull) per ADC input; drift by --check", step = 6 }
 FT-11 = { status = "built", where = "loads: expect (engines/sim.py function) – LIM.i, LIM.v", step = 6 }
 FT-12 = { status = "open", missing = "AC analysis – open decision 5" }
 FT-13 = { status = "open", missing = "LED strip model" }
 FT-14 = { status = "open", missing = "constant-current LED buck – datasheets" }
 FT-15 = { status = "built", where = "fn i2s.*, can.*, onewire, usb.* (circuit.FN_LINES); REQ.function", step = 6 }
-FT-16 = { status = "open", missing = "bus parameters in the firmware contract" }
+FT-16 = { status = "partial", where = "edakit firmware: devices.i2c with the addresses the pins decide; buses", missing = "SPI mode and maximum clock per device, the bus speed the pull-ups allow – parts facts from datasheets, the bus capacitance", step = 6 }
 FT-17 = { status = "open", missing = "corners of hFE, leakage, IDSS – datasheets" }
 FT-18 = { status = "open", missing = "source models for the audio band – needs FT-12" }
 FT-19 = { status = "built", where = "engines/coverage.py; edakit check --coverage; the protocol's section 2", step = 6 }
