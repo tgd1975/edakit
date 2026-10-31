@@ -59,6 +59,10 @@ def test_a_pin_held_against_the_supply_its_ref_names(project):
     project.save_part("C90107", part)
     bad = sim_rows(simulate(project), "U2.13", "above GND", failed=True)
     assert bad and {r["id"] for r in bad} == {"LIM.v"}
+    part["pins"]["13"]["rel_ref"] = "VDD"           # the relative limit's own reference: back to VDD, it passes
+    project.save_part("C90107", part)
+    out = simulate(project)
+    assert sim_rows(out, "U2.13", "above VDD") and not sim_rows(out, "U2.13", "above", failed=True)
 
 
 @needs_ngspice
@@ -191,6 +195,25 @@ def test_a_sink_pin_and_a_group_of_them_held_to_their_currents(project):
     out = simulate(project)
     assert sim_rows(out, "U2.5", "current of pin OUT0", failed=True)
     assert sim_rows(out, "U2 outputs", "sunk", failed=True)
+    part["i_group_max_a"]["outputs"]["dir"] = "sourced"     # a sum of sourced currents only: the sinks are not in it
+    project.save_part("C90107", part)
+    out = simulate(project)
+    assert not sim_rows(out, "U2 outputs", "sunk") and sim_rows(out, "U2 outputs", "sourced")
+
+
+@needs_ngspice
+def test_an_mcus_port_group_sums_its_output_ammeters(project):
+    """The MCU's outputs LED_SDI, LED_CLK, LED_LE, LED_OE (GP2–GP5, pins 4–7 of the Pico 2) as a group: OE low sinks
+    the 10 kΩ pull-up's 0.33 mA – within 100 mA, beyond 0.1 mA (values for the test)."""
+    part = project.part("C41407547")
+    part["i_group_max_a"] = {"spi": {"pins": ["4", "5", "6", "7"], "max": 0.1, "dir": "sunk"}}
+    project.save_part("C41407547", part)
+    out = simulate(project)
+    rows = sim_rows(out, "U1 spi", "sunk")
+    assert rows and all(r["result"] == "pass" for r in rows) and not sim_rows(out, "U1 spi", "sourced")
+    part["i_group_max_a"]["spi"]["max"] = 1e-4
+    project.save_part("C41407547", part)
+    assert sim_rows(simulate(project), "U1 spi", "sunk", failed=True)
 
 
 # --- C2: a pin's own negative limit ------------------------------------------------------------------------------------

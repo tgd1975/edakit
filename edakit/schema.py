@@ -119,9 +119,10 @@ def problems(entry):
             elif unit_of(name) and not numeric(v) and not (name == "v_rel_max_v" and v is None):
                 out.append(f"{at}.{name}: {v!r} is no number")
         names = {p.get("name") for p in (entry.get("pins") or {}).values()}
-        if "ref" in pin and pin["ref"] not in names:
-            out.append(f"{at}.ref: {pin['ref']!r} – the name of a pin of this part (the supply its relative limits and "
-                       "threshold ratios refer to)")
+        for key in ("ref", "rel_ref"):
+            if key in pin and pin[key] not in names:
+                out.append(f"{at}.{key}: {pin[key]!r} – the name of a pin of this part (the supply its relative limits "
+                           "and threshold ratios refer to)")
         if pin.get("strap") not in (None, "high", "low"):
             out.append(f"{at}.strap: {pin['strap']!r} – high or low")
         if pin.get("pull") not in (None, "up", "down"):
@@ -153,7 +154,7 @@ def supply_order_problems(entry):
 
 
 def group_problems(entry):
-    """i_group_max_a: {group: {pins: [pin numbers], max: A}}."""
+    """i_group_max_a: {group: {pins: [pin numbers], max: A, dir: sourced | sunk – optional}}."""
     groups = entry.get("i_group_max_a")
     if groups is None:
         return []
@@ -162,8 +163,9 @@ def group_problems(entry):
         return ["i_group_max_a: {group: {pins = [numbers], max = A}} – the most current a group of pins carries"]
     out = []
     for name, g in groups.items():
-        if not (isinstance(g, dict) and isinstance(g.get("pins"), list) and g["pins"] and is_number(g.get("max"))):
-            out.append(f"i_group_max_a.{name}: {{pins = [numbers], max = A}}")
+        if not (isinstance(g, dict) and isinstance(g.get("pins"), list) and g["pins"] and is_number(g.get("max"))
+                and g.get("dir") in (None, "sourced", "sunk")):
+            out.append(f"i_group_max_a.{name}: {{pins = [numbers], max = A, dir = sourced | sunk (optional)}}")
             continue
         out += [f"i_group_max_a.{name}: pin {n!r} – not a pin of this part" for n in g["pins"] if str(n) not in pins]
     return out

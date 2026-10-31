@@ -551,14 +551,16 @@ def pin_by_name(part, name):
     return next((n for n, i in (part.get("pins") or {}).items() if i.get("name") == name), None)
 
 
-def reference(d, res, des, part, info, ground):
-    """(volts, what) – the supply a pin's relative limit and threshold ratios refer to: the pin its `ref` names, else
-    the part's first connected supply pin; (None, …) without one."""
-    if info.get("ref"):
-        num = pin_by_name(part, info["ref"])
+def reference(d, res, des, part, info, ground, key="ref"):
+    """(volts, what) – the supply a pin's relative limit and threshold ratios refer to: the pin its `ref` names (for
+    the relative limit `rel_ref` first, where the datasheet refers it to another supply than the thresholds), else the
+    part's first connected supply pin; (None, …) without one."""
+    name = info.get(key) or info.get("ref")
+    if name:
+        num = pin_by_name(part, name)
         if num and f"{des}.{num}" in d.pin_net:
-            return at_pin(d, res, f"{des}.{num}", ground), info["ref"]
-        return None, info["ref"]
+            return at_pin(d, res, f"{des}.{num}", ground), name
+        return None, name
     pins = [n for n in supply_pins(part) if f"{des}.{n}" in d.pin_net]
     if not pins:
         return None, "its supply"
@@ -618,7 +620,7 @@ def input_injection(s):
                 continue
             if rel is None:
                 continue
-            vref, ref_name = reference(d, res, des, part, info, ground)
+            vref, ref_name = reference(d, res, des, part, info, ground, key="rel_ref")
             if vref is None or math.isnan(vref):
                 continue
             x = at_pin(d, res, ref, ground) - vref
@@ -655,14 +657,14 @@ def supply_order_e(s):
 
 def powered(s, des, part, ground):
     """Whether the part is powered in this scenario: its first supply pin at least its operating minimum (the pin's
-    v_op_min_v, the entry's vdd_op_min_v or vin_min_v), else at least POWERED_FALLBACK_V."""
+    v_op_min_v, the entry's vdd_op_min_v, vin_min_v or vsys_min_v), else at least POWERED_FALLBACK_V."""
     d = s.d
     pins = [n for n in supply_pins(part) if f"{des}.{n}" in d.pin_net]
     if not pins:
         return False
     info, r = part["pins"][pins[0]], limits(part)
-    least = next((x for x in (info.get("v_op_min_v"), r.get("vdd_op_min_v"), r.get("vin_min_v")) if is_number(x)),
-                 POWERED_FALLBACK_V)
+    least = next((x for x in (info.get("v_op_min_v"), r.get("vdd_op_min_v"), r.get("vin_min_v"), r.get("vsys_min_v"))
+                  if is_number(x)), POWERED_FALLBACK_V)
     return at_pin(d, s.res, f"{des}.{pins[0]}", ground) >= least
 
 
@@ -724,18 +726,29 @@ def pin_current(s, des, ref):
     return total
 
 
+def mcu_pin_currents(s, des, part):
+    """{pin number: current out of the pin (A)} of an MCU's outputs, from their ammeters."""
+    amps = (s.meta["mcu"].get(des) or {}).get("gpio_ammeters", {})
+    out = {}
+    for num in (part.get("pins") or {}):
+        net = s.d.pin_net.get(f"{des}.{num}")
+        if net in amps:
+            out[num] = s.res.get(amps[net], 0.0)
+    return out
+
+
 def pin_currents(s):
     """LIM.i/pin (schema-gaps C1): a pin's current within its i_max_a, a group's sourced and sunk sums within the max of
-    the entry's i_group_max_a – where the operating point gives the currents (pin_current)."""
+    the entry's i_group_max_a ("dir": "sourced" or "sunk" for a group the datasheet sums in one direction only) – where
+    the operating point gives the currents: pin_current, an MCU's output ammeters (its pins' own limit is gpio_i)."""
     for des in sorted(s.n.comps):
         part = s.n.part(des) or {}
-        if values(part).get("behavior") == "mcu":
-            continue                           # an MCU's outputs have their ammeters (gpio_i)
-        wanted = any(is_number(i.get("i_max_a")) for i in (part.get("pins") or {}).values())
+        mcu = values(part).get("behavior") == "mcu"
+        wanted = not mcu and any(is_number(i.get("i_max_a")) for i in (part.get("pins") or {}).values())
         if not wanted and not part.get("i_group_max_a"):
             continue
-        known = {}
-        for num, info in (part.get("pins") or {}).items():
+        known = mcu_pin_currents(s, des, part) if mcu else {}
+        for num, info in ({} if mcu else (part.get("pins") or {})).items():
             ref = f"{des}.{num}"
             if ref not in s.d.pin_net:
                 continue
@@ -753,6 +766,8 @@ def pin_currents(s):
             if not got or not is_number(g.get("max")):
                 continue
             for what, x in (("sourced", sum(i for i in got if i > 0)), ("sunk", -sum(i for i in got if i < 0))):
+                if g.get("dir") not in (None, what):
+                    continue
                 s.q(f"{des} {group}", "i_group", x, "A", "", des, f"current {what} by the pins of {group} together",
                     code="LIM.i", entry=False, grade="pin",
                     lims=[Limit(max=g["max"], derate=s.der.get("i", 1.0),
