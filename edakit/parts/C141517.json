@@ -14,7 +14,7 @@
   "1": {
    "name": "AO1",
    "type": "output",
-   "drive": "tristate",
+   "drive": "bridge",
    "v_max_v": 15,
    "hint": "bridge output, on two pins – join both; H, L or OFF (high impedance) in stop and standby (H-SW control function p. 4); internal regenerative diodes to VM and PGND (VF 1.1 V max at 1 A); no overcurrent protection in the datasheet (thermal shutdown and low-voltage detection only)",
    "clamp": "internal"
@@ -22,7 +22,7 @@
   "2": {
    "name": "AO1",
    "type": "output",
-   "drive": "tristate",
+   "drive": "bridge",
    "v_max_v": 15,
    "hint": "bridge output, on two pins – join both; H, L or OFF (high impedance) in stop and standby (H-SW control function p. 4); internal regenerative diodes to VM and PGND (VF 1.1 V max at 1 A); no overcurrent protection in the datasheet (thermal shutdown and low-voltage detection only)",
    "clamp": "internal"
@@ -40,7 +40,7 @@
   "5": {
    "name": "AO2",
    "type": "output",
-   "drive": "tristate",
+   "drive": "bridge",
    "v_max_v": 15,
    "hint": "bridge output, on two pins – join both; H, L or OFF (high impedance) in stop and standby (H-SW control function p. 4); internal regenerative diodes to VM and PGND (VF 1.1 V max at 1 A); no overcurrent protection in the datasheet (thermal shutdown and low-voltage detection only)",
    "clamp": "internal"
@@ -48,7 +48,7 @@
   "6": {
    "name": "AO2",
    "type": "output",
-   "drive": "tristate",
+   "drive": "bridge",
    "v_max_v": 15,
    "hint": "bridge output, on two pins – join both; H, L or OFF (high impedance) in stop and standby (H-SW control function p. 4); internal regenerative diodes to VM and PGND (VF 1.1 V max at 1 A); no overcurrent protection in the datasheet (thermal shutdown and low-voltage detection only)",
    "clamp": "internal"
@@ -56,7 +56,7 @@
   "7": {
    "name": "BO2",
    "type": "output",
-   "drive": "tristate",
+   "drive": "bridge",
    "v_max_v": 15,
    "hint": "bridge output, on two pins – join both; H, L or OFF (high impedance) in stop and standby (H-SW control function p. 4); internal regenerative diodes to VM and PGND (VF 1.1 V max at 1 A); no overcurrent protection in the datasheet (thermal shutdown and low-voltage detection only)",
    "clamp": "internal"
@@ -64,7 +64,7 @@
   "8": {
    "name": "BO2",
    "type": "output",
-   "drive": "tristate",
+   "drive": "bridge",
    "v_max_v": 15,
    "hint": "bridge output, on two pins – join both; H, L or OFF (high impedance) in stop and standby (H-SW control function p. 4); internal regenerative diodes to VM and PGND (VF 1.1 V max at 1 A); no overcurrent protection in the datasheet (thermal shutdown and low-voltage detection only)",
    "clamp": "internal"
@@ -82,7 +82,7 @@
   "11": {
    "name": "BO1",
    "type": "output",
-   "drive": "tristate",
+   "drive": "bridge",
    "v_max_v": 15,
    "hint": "bridge output, on two pins – join both; H, L or OFF (high impedance) in stop and standby (H-SW control function p. 4); internal regenerative diodes to VM and PGND (VF 1.1 V max at 1 A); no overcurrent protection in the datasheet (thermal shutdown and low-voltage detection only)",
    "clamp": "internal"
@@ -90,7 +90,7 @@
   "12": {
    "name": "BO1",
    "type": "output",
-   "drive": "tristate",
+   "drive": "bridge",
    "v_max_v": 15,
    "hint": "bridge output, on two pins – join both; H, L or OFF (high impedance) in stop and standby (H-SW control function p. 4); internal regenerative diodes to VM and PGND (VF 1.1 V max at 1 A); no overcurrent protection in the datasheet (thermal shutdown and low-voltage detection only)",
    "clamp": "internal"
@@ -236,7 +236,8 @@
    "operating range p. 3: VCC 2.7 … 5.5 V, VM 2.5 … 13.5 V, IOUT 1.0 A (VM ≥ 4.5 V) / 0.4 A, fPWM 100 kHz",
    "electrical p. 5: VIH Vcc × 0.7, VIL Vcc × 0.3, ICC 1.8 / 2.2 mA max, Vsat(U+L), regenerative diode VF 1.1 V max",
    "θj-a 160 °C/W IC only (p. 6); capacitors 10 µF + 0.1 µF at VM and Vcc (p. 7)",
-   "2026-10-31: outputs clamp = internal – the Toshiba datasheet names internal regenerative diodes (as read for the library draft)"
+   "2026-10-31: outputs clamp = internal – the Toshiba datasheet names internal regenerative diodes (as read for the library draft)",
+   "2026-10-31: bridge outputs drive = bridge – the H-bridge outputs the datasheet of this draft describes (source above): driven high or low while enabled, off in sleep or coast; LEVELS counts them as defining their net (schema-gaps A2)"
   ],
   "open": [
    "tj_max_c: the datasheet states no maximum junction temperature (thermal shutdown 175 °C typ, design target; Tstg 150 °C)",

@@ -42,7 +42,7 @@
   "5": {
    "name": "AOUT1",
    "type": "output",
-   "drive": "tristate",
+   "drive": "bridge",
    "short_proof": true,
    "hint": "bridge output (N-channel FETs): Z when nENBL is high, in sleep and reset (pin functions); overcurrent protection on every FET for a short to ground, to supply and across the winding – the device then stays off until nRESET or a VM cycle (8.3.7.1)"
   },
@@ -55,14 +55,14 @@
   "7": {
    "name": "AOUT2",
    "type": "output",
-   "drive": "tristate",
+   "drive": "bridge",
    "short_proof": true,
    "hint": "bridge output (N-channel FETs): Z when nENBL is high, in sleep and reset (pin functions); overcurrent protection on every FET for a short to ground, to supply and across the winding – the device then stays off until nRESET or a VM cycle (8.3.7.1)"
   },
   "8": {
    "name": "BOUT2",
    "type": "output",
-   "drive": "tristate",
+   "drive": "bridge",
    "short_proof": true,
    "hint": "bridge output (N-channel FETs): Z when nENBL is high, in sleep and reset (pin functions); overcurrent protection on every FET for a short to ground, to supply and across the winding – the device then stays off until nRESET or a VM cycle (8.3.7.1)"
   },
@@ -75,7 +75,7 @@
   "10": {
    "name": "BOUT1",
    "type": "output",
-   "drive": "tristate",
+   "drive": "bridge",
    "short_proof": true,
    "hint": "bridge output (N-channel FETs): Z when nENBL is high, in sleep and reset (pin functions); overcurrent protection on every FET for a short to ground, to supply and across the winding – the device then stays off until nRESET or a VM cycle (8.3.7.1)"
   },
@@ -256,7 +256,8 @@
    "recommended p. 4: VM 8.2 … 45 V, VREF 1 … 3.5 V, V3P3OUT ≤ 1 mA; RθJA 31.6 K/W",
    "electrical p. 6: VIL 0.7 / VIH 2.2 V, pull-downs 100 kΩ, DECAY levels and pulls, RDS(on), IVM 8 mA, open-drain nFAULT/nHOME",
    "capacitors p. 3, 10, 11.1: 0.1 µF per VM pin, 0.01 µF CP1–CP2, 0.1 µF + 1 MΩ VCP–VM, 0.47 µF V3P3OUT",
-   "OCP 8.3.7.1: shorts to ground, supply and across the winding"
+   "OCP 8.3.7.1: shorts to ground, supply and across the winding",
+   "2026-10-31: bridge outputs drive = bridge – the H-bridge outputs the datasheet of this draft describes (source above): driven high or low while enabled, off in sleep or coast; LEVELS counts them as defining their net (schema-gaps A2)"
   ],
   "open": [
    "the PowerPAD (footprint pad 29) has no pin in the EasyEDA symbol, so the graph cannot hold it on ground; the datasheet's thermal data assume it soldered to a ground plane",

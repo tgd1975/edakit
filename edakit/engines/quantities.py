@@ -83,8 +83,19 @@ def part_limits(design, q):
 
 
 # --- producers of stage G: the declared ranges -----------------------------------------------------------------------
+def own_ground(d, des):
+    """The net of a part's first connected ground pin, where it is not the board's ground (a cell protection IC on the
+    cell's minus); None otherwise."""
+    part = d.part(des) or {}
+    net = next((d.pin_net[f"{des}.{n}"] for n, i in (part.get("pins") or {}).items()
+                if i.get("type") == "ground" and f"{des}.{n}" in d.pin_net), None)
+    return net if net is not None and net != d.ground and net in d.nets else None
+
+
 def pin_voltages(d):
-    """The voltage at every pin: the declared range of its net."""
+    """The voltage at every pin: the declared range of its net – against the part's own ground pin where that is not
+    the board's ground (schema-gaps I1): the pin's range less the ground net's, extreme by extreme, since both move
+    with that ground (a declared range cannot say which states coincide; stage E judges the operating points)."""
     out = []
     for name, net in d.nets.items():
         lo, hi = v_range(net)
@@ -92,11 +103,20 @@ def pin_voltages(d):
             des, _, num = ref.partition(".")
             info = d.pin_info(ref)
             pin = f"{ref} ({info.get('name', num)})"
-            out.append(Quantity(ref, "v", hi, lo=lo, entry=d.entry_key(des) if des in d.comps else None, pin=num,
-                                pin_type=info.get("type", ""), how=f"{name} {lo:g}…{hi:g} V at {pin}", on=(("net", name),),
-                                say=lambda v, lim, f, name=name, pin=pin: (
-                                    f"{name} up to {v:g} V, but {pin} allows {lim:g} V" if v > 0 or lim > 0
-                                    else f"{name} down to {v:g} V at {pin}")))
+            g = own_ground(d, des) if des in d.comps else None
+            plo, phi, how = lo, hi, f"{name} {lo:g}…{hi:g} V at {pin}"
+            if g is not None:
+                if g == name:
+                    continue                 # the ground pin itself: 0 V against itself
+                glo, ghi = v_range(d.nets[g])
+                plo, phi = lo - glo, hi - ghi
+                how += f", against {g} ({glo:g}…{ghi:g} V), the part's own ground"
+            out.append(Quantity(ref, "v", phi, lo=plo, entry=d.entry_key(des) if des in d.comps else None, pin=num,
+                                pin_type=info.get("type", ""), how=how, on=(("net", name),),
+                                say=lambda v, lim, f, name=name, pin=pin, g=g: (
+                                    (f"{name} up to {v:g} V" + (f" against {g}" if g else "") + f", but {pin} allows "
+                                     f"{lim:g} V") if v > 0 or lim > 0
+                                    else f"{name} down to {v:g} V" + (f" against {g}" if g else "") + f" at {pin}")))
     return out
 
 
@@ -107,6 +127,13 @@ ACROSS = {"capacitor": [("v", "across")], "diode": [("vr", "reverse")], "npn": [
 PASSIVE = ("fuse", "switch", "dip_switch", "button", "potentiometer", "resistor", "buzzer", "connector")
 TERMINALS = {"collector-emitter": ("collector", "emitter"), "drain-source": ("drain", "source"),
              "gate-source": ("gate", "source")}
+
+
+def coupling(d, *nets):
+    """A capacitor in a signal path – a side on a net marked signal or instrument: both sides carry the same AC, what
+    it sees is the DC between them, which stage E judges on the operating points; the extremes of the two declared
+    ranges never coincide (schema-gaps I7)."""
+    return any((d.nets.get(n) or {}).get(k) for n in nets for k in ("signal", "instrument"))
 
 
 def part_voltages(d):
@@ -147,7 +174,8 @@ def part_voltages(d):
                 say = (lambda v, lim, f, des=des, label=label: f"{des}: |{label}| up to {v:.1f} V, "
                        + (f"VCEO {lim:g} V" if label == "VCE" else f"rated {lim:g} V"))
             out.append(Quantity(des, name, v, kind=kind, entry=key, how=how, on=on, say=say))
-        if polarized(part) and (plus := d.net_of(des, "plus")) and (minus := d.net_of(des, "minus")):
+        if (polarized(part) and (plus := d.net_of(des, "plus")) and (minus := d.net_of(des, "minus"))
+                and not coupling(d, plus, minus)):
             out.append(Quantity(des, "vr", rng(minus)[1] - rng(plus)[0], kind=kind, entry=key, grade="polarized",
                                 how=f"{des}: reverse from {minus} to {plus}", on=on,
                                 say=lambda v, lim, f, des=des: f"{des}: reverse up to {v:.1f} V, allowed {lim:g} V"))

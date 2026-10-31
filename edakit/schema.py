@@ -20,6 +20,7 @@ from .findings import Finding
 
 BOUND = re.compile(r"(.+)_(max|min)_([a-z_]+)$")
 OLD_KEYS = ("ratings", "params")
+DRIVES = ("open_drain", "tristate", "bridge")   # pin drive: lets go of its net, or a half-bridge (LEVELS)
 
 
 @lru_cache(maxsize=1)
@@ -104,6 +105,11 @@ def problems(entry):
         if not (isinstance(box, list) and len(box) == 4 and all(is_number(x) for x in box)
                 and box[0] < box[2] and box[1] < box[3]):
             out.append("antenna.keepout_mm: [x0, y0, x1, y1] in mm with x0 < x1 and y0 < y1 (the footprint's frame)")
+    if "matrix" in entry:
+        from .circuit import FN_LINES
+        if not (isinstance(entry["matrix"], list) and all(x in FN_LINES for x in entry["matrix"])):
+            out.append(f"matrix: a list of fn kinds ({', '.join(FN_LINES)}) the GPIO matrix routes to any GPIO, not "
+                       f"{entry['matrix']!r}")
     roles = (k["kinds"][kind]).get("roles", [])
     pin_names = allowed(kind, "pin") | set(k["free"]["pin"])
     for num, pin in (entry.get("pins") or {}).items():
@@ -121,6 +127,10 @@ def problems(entry):
             out.append(f"{at}.strap: {pin['strap']!r} – high or low")
         if pin.get("pull") not in (None, "up", "down"):
             out.append(f"{at}.pull: {pin['pull']!r} – up or down")
+        if pin.get("drive") not in (None, *DRIVES):
+            out.append(f"{at}.drive: {pin['drive']!r} – one of {', '.join(DRIVES)}")
+        if pin.get("biased") not in (None, True, False):
+            out.append(f"{at}.biased: {pin['biased']!r} – true or false")
         if pin.get("clamp") not in (None, "internal", "none"):
             out.append(f"{at}.clamp: {pin['clamp']!r} – internal or none (clamp diodes of the output's own)")
         ws = pin.get("windows")

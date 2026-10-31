@@ -406,7 +406,7 @@ class Netlist:
             fn = self.plugin_models.get(behavior) or getattr(self, f"ic_{behavior}", None)
             if fn is None:
                 raise ValueError(f"{des}: unknown behaviour model '{behavior}' (built in: ldo, buck, boost, mcu, cc_sink,"
-                                 " opamp, logic, current, none; or a plugin model)")
+                                 " opamp, logic, current, matrix_driver, none; or a plugin model)")
             fn(self, des, part) if behavior in self.plugin_models else fn(des, part)
 
     # --- behaviour models -----------------------------------------------------------------------------------------
@@ -581,6 +581,10 @@ class Netlist:
 
     def ic_none(self, des, part):
         pass
+
+    def ic_matrix_driver(self, des, part):
+        """A multiplexing LED driver (MAX7219): its segment and digit outputs scan the LEDs between them – no DC state
+        to model; engines/sim.py leaves those LEDs out of SIM.state and SIM.driver and says so."""
 
     # --- build ----------------------------------------------------------------------------------------------------
     def build(self, tran=None):

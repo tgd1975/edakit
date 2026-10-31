@@ -14,7 +14,7 @@
   "1": {
    "name": "OUT2B",
    "type": "output",
-   "drive": "tristate",
+   "drive": "bridge",
    "short_proof": true,
    "v_max_v": 37,
    "hint": "DMOS full-bridge output: off while ENABLE is high, in sleep and reset; shorted-load and short-to-ground protection (a short to ground latches until SLEEP goes high or VDD is removed) – a short to VBB is not named; motor output voltage -2.0 … 37 V"
@@ -148,7 +148,7 @@
   "21": {
    "name": "OUT1B",
    "type": "output",
-   "drive": "tristate",
+   "drive": "bridge",
    "short_proof": true,
    "v_max_v": 37,
    "hint": "DMOS full-bridge output: off while ENABLE is high, in sleep and reset; shorted-load and short-to-ground protection (a short to ground latches until SLEEP goes high or VDD is removed) – a short to VBB is not named; motor output voltage -2.0 … 37 V"
@@ -177,7 +177,7 @@
   "24": {
    "name": "OUT1A",
    "type": "output",
-   "drive": "tristate",
+   "drive": "bridge",
    "short_proof": true,
    "v_max_v": 37,
    "hint": "DMOS full-bridge output: off while ENABLE is high, in sleep and reset; shorted-load and short-to-ground protection (a short to ground latches until SLEEP goes high or VDD is removed) – a short to VBB is not named; motor output voltage -2.0 … 37 V"
@@ -189,7 +189,7 @@
   "26": {
    "name": "OUT2A",
    "type": "output",
-   "drive": "tristate",
+   "drive": "bridge",
    "short_proof": true,
    "v_max_v": 37,
    "hint": "DMOS full-bridge output: off while ENABLE is high, in sleep and reset; shorted-load and short-to-ground protection (a short to ground latches until SLEEP goes high or VDD is removed) – a short to VBB is not named; motor output voltage -2.0 … 37 V"
@@ -254,7 +254,8 @@
    "absolute maximum p. 2: VBB 35 V, IOUT ±2 A, VIN and VDD -0.3 … 5.5 V, outputs -2 … 37 V, VSENSE ±0.5 V, VREF 5.5 V, TA -20 … 85 °C, TJ 150 °C",
    "electrical p. 4: VBB 8 … 35 V, VDD 3 … 5.5 V, Rds(on) 430 mΩ max, VF 1.2 V, IDD 8 mA, VIN 0.7 / 0.3 × VDD, MSx pull-downs, VREF 0 … 4 V",
    "RθJA 32 K/W (p. 5); capacitors VREG 0.22 µF (must), CP 0.1 µF, VCP 0.1 µF to VBB (pp. 9–10, p. 1)",
-   "protection p. 9: shorted load and short to ground"
+   "protection p. 9: shorted load and short to ground",
+   "2026-10-31: bridge outputs drive = bridge – the H-bridge outputs the datasheet of this draft describes (source above): driven high or low while enabled, off in sleep or coast; LEVELS counts them as defining their net (schema-gaps A2)"
   ],
   "open": [
    "CP1–CP2 and VCP–VBB capacitors are not to ground – pin hints only",

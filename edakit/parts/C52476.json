@@ -151,7 +151,8 @@
  },
  "values": {
   "vih_v": 3.5,
-  "vil_v": 0.8
+  "vil_v": 0.8,
+  "behavior": "matrix_driver"
  },
  "limits": {
   "vdd_max_v": 6,
@@ -196,7 +197,8 @@
    "pinout (p. 1, 5) = EasyEDA symbol pin numbers and names; footprint pads 1–12 in one row, 13–24 back along the other",
    "V+ abs. max. 6 V, operating 4.0–5.5 V; inputs −0.3 … 6 V; VIH 3.5 V, VIL 0.8 V; CLK 10 MHz; tDO 25 ns on CLK's falling edge",
    "θJA 85 °C/W, TJ 150 °C, 941 mW (wide SO); −40 … +85 °C (E grade)",
-   "10 µF + 0.1 µF at V+, both GND pins connected, RSET from ISET to V+ (Table 11)"
+   "10 µF + 0.1 µF at V+, both GND pins connected, RSET from ISET to V+ (Table 11)",
+   "2026-10-31: behavior matrix_driver – Maxim 19-4452 Rev 4 (7/03): multiplex scan circuitry, segment and digit drivers, display scan rate 500-1300 Hz with 8 digits scanned; LEDs between its SEG and DIG pins have no DC state, the simulation leaves them out of SIM.state and SIM.driver (schema-gaps A7)"
   ],
   "open": [
    "revision: the LCSC copy is 19-4452 Rev 4 (7/03) with the Maxim Integrated footer; analog.com gave an empty reply, so whether a newer revision exists was not checked",
