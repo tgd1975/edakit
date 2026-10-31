@@ -198,6 +198,12 @@ An instrument board with a supply input: consider the other pedals and amplifier
 **`HINT.string_ground`** – the player on the amplifier's ground (note)  
 An instrument input: consider what ties the player to ground.
 
+**`HINT.jack_supply`** – a supply on a jack contact (note)  
+A jack whose tip, ring or a switch contact carries a supply (roles tip, ring, sleeve, tip_switch, ring_switch, sleeve_switch): consider what happens while a plug goes in and comes out.
+
+**`HINT.relay_load`** – relay contacts switching a load off the board (note)  
+A relay whose contacts (common, no, nc) reach a connector or run through a cable: consider the load they switch.
+
 **`HINT.flicker`** – LED flicker from PWM (note)  
 A net with pwm_hz lights LEDs: consider whether its frequency flickers.
 

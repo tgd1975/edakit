@@ -320,6 +320,35 @@ def _cable_lines(design, cfg, sim):
     return sorted(found)
 
 
+JACK_ROLES = {"tip", "ring", "sleeve", "tip_switch", "ring_switch", "sleeve_switch"}   # roles of a jack's contacts
+
+
+def _jacks_with_supply(design, cfg, sim):
+    """Jacks (connectors with tip, ring or sleeve contacts) where a contact carries a supply – the sleeve too when it
+    is not ground."""
+    from ..circuit import supply_nets
+    supplies = supply_nets(design)
+    found = []
+    for des in design.comps_of_kind("connector"):
+        roles = {num: p.get("role") for num, p in design.part(des)["pins"].items()}
+        if not JACK_ROLES & set(roles.values()):
+            continue
+        if any(role in JACK_ROLES and design.pin_net.get(f"{des}.{num}") in supplies for num, role in roles.items()):
+            found.append(des)
+    return found
+
+
+def _relays_switching_off_board(design, cfg, sim):
+    """Relays whose contacts (common, no, nc) reach a connector or run through a cable – the load is off the board."""
+    leaving = {design.pin_net.get(f"{c['from']}.{a}") for c in design.graph.get("cables", []) for a in c.get("pins", {})}
+    leaving |= {design.pin_net.get(f"{d}.{num}") for d in design.comps_of_kind("connector")
+                for num in design.part(d)["pins"]}
+    leaving -= {None, design.ground}
+    return [des for des in design.comps_of_kind("relay")
+            if any(p.get("role") in ("common", "no", "nc") and design.pin_net.get(f"{des}.{num}") in leaving
+                   for num, p in design.part(des)["pins"].items())]
+
+
 MATCHERS = {"power_input": _power_inputs, "connector_signal": _connector_signals,
             "transistor_at_connector": _transistors_at_connectors, "switching_regulator": _switching_regulators,
             "two_supplies": _two_supplies, "read_back": _read_backs, "btl_output": _btl_outputs,
@@ -327,7 +356,8 @@ MATCHERS = {"power_input": _power_inputs, "connector_signal": _connector_signals
             "instrument_input": _instrument_inputs, "battery_with_jacks": _battery_on_a_board_with_jacks,
             "pedal_power_input": _pedal_power_inputs, "pwm_leds": _pwm_leds, "boost_enable": _boost_enable_on_gpio,
             "unmarked_power_input": _unmarked_power_inputs, "rated_by_copper": _rated_by_copper,
-            "cable_line": _cable_lines}
+            "cable_line": _cable_lines, "jack_supply": _jacks_with_supply,
+            "relay_off_board": _relays_switching_off_board}
 
 
 

@@ -69,14 +69,14 @@ HT-3 = { status = "open", missing = "the 10 µF at attach is tagged extracted" }
 HT-4 = { status = "built", where = "HINT.boost_enable (domain power)", step = 6 }
 HT-5 = { status = "open", missing = "a charger's power path – no charger kind or behaviour yet (FT-4)" }
 HT-6 = { status = "built", where = "HINT.input_polarity (domain power)", step = 6 }
-HT-7 = { status = "open", missing = "a jack carrying a supply – no role for jack contacts yet" }
+HT-7 = { status = "built", where = "HINT.jack_supply (core; connector roles tip, ring, sleeve, tip_switch, ring_switch, sleeve_switch)", step = 6 }
 HT-8 = { status = "built", where = "HINT.audio_ground (domain audio)", step = 6 }
 HT-9 = { status = "built", where = "HINT.flicker (core)", step = 6 }
 HT-10 = { status = "built", where = "HINT.heater (domain motors)", step = 6 }
 HT-11 = { status = "built", where = "HINT.thermal_copper (domain power)", step = 6 }
 HT-12 = { status = "built", where = "HINT.motor_supply (domain motors)", step = 6 }
 HT-13 = { status = "built", where = "HINT.class_d (domain audio)", step = 6 }
-HT-14 = { status = "open", missing = "relay contacts switching off-board loads" }
+HT-14 = { status = "built", where = "HINT.relay_load (core)", step = 6 }
 HT-15 = { status = "built", where = "HINT.jack_battery (domain guitar)", step = 6 }
 HT-16 = { status = "built", where = "HINT.audio_switching (domains audio, guitar)", step = 6 }
 HT-17 = { status = "built", where = "HINT.signal_ceramic (domains audio, guitar)", step = 6 }

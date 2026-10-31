@@ -139,7 +139,7 @@ limits = ["v_coil_max_v", "i_max_a", "v_max_v"]
 values = ["coil_ohm", "v_operate_v", "v_release_v", "r_contact_ohm"]
 
 [kinds.connector]
-roles = ["*"]
+roles = ["*"]          # a jack's contacts: tip, ring, sleeve, tip_switch, ring_switch, sleeve_switch
 limits = ["v_max_v", "i_max_a"]
 values = ["pitch_mm", "r_contact_ohm", "r_source_ohm", "usb_c"]
 

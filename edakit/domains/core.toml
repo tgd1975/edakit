@@ -23,7 +23,7 @@ microcontroller = ["compliance.radio"]
 
 [hints]
 apply = ["HINT.datasheet", "HINT.bulk", "HINT.gate", "HINT.debounce", "HINT.inductive", "HINT.switcher", "HINT.lithium", "HINT.esd",
-         "HINT.two_supplies", "HINT.readback", "HINT.flicker"]
+         "HINT.two_supplies", "HINT.readback", "HINT.flicker", "HINT.jack_supply", "HINT.relay_load"]
 
 [review]
 electrical = [

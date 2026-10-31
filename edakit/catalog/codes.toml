@@ -1499,6 +1499,28 @@ sources = [
   "docs/concepts/new/maker-coverage.md, appendix GTI 7 and GTI 27 (tagged extracted)",
 ]
 
+[codes."HINT.jack_supply"]
+title = "a supply on a jack contact"
+rule = "A jack whose tip, ring or a switch contact carries a supply (roles tip, ring, sleeve, tip_switch, ring_switch, sleeve_switch): consider what happens while a plug goes in and comes out."
+why = "A plug's tip slides across the ring and sleeve springs on its way in and out: a supply on the tip or ring is shorted to the sleeve – usually ground – for a moment and fed into whatever the plug's contacts touch; split keyboards with TRRS links between their halves are known to fail when plugged live (maker-coverage HT-7)."
+fix = "A series resistor or a PTC between the supply and the jack, a switch contact that connects the supply only with the plug home, or no hot-plug stated in the documentation; accept the hint with the reason where the supply is current-limited anyway."
+severity = "note"
+when = { match = "jack_supply" }
+sources = [
+  "docs/concepts/new/maker-coverage.md, HT-7 (QMK on TRRS links between the halves of a split keyboard; asp_pro's expression pedal on a TRS jack)",
+]
+
+[codes."HINT.relay_load"]
+title = "relay contacts switching a load off the board"
+rule = "A relay whose contacts (common, no, nc) reach a connector or run through a cable: consider the load they switch."
+why = "A relay's contact rating is stated for a resistive load: an LED driver or a switch-mode supply draws many times its current for a moment when switched on, a motor or solenoid arcs when switched off – contacts weld or wear long before their rated current; the load is off the board, so nothing in the graph tells what it is (maker-coverage HT-14)."
+fix = "The load's inrush and its kind against the relay's ratings for that kind of load (the datasheet's tables), an NTC or soft start for a capacitive load, a snubber or a diode across an inductive one; accept the hint naming the load."
+severity = "note"
+when = { match = "relay_off_board" }
+sources = [
+  "docs/concepts/new/maker-coverage.md, HT-14 (appendix AUD 20)",
+]
+
 [codes."HINT.flicker"]
 title = "LED flicker from PWM"
 rule = "A net with pwm_hz lights LEDs: consider whether its frequency flickers."
