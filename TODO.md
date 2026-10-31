@@ -131,7 +131,7 @@ Decided on 2026-10-31; W.1 (the frame of the SVG optional), W.5 (the board's pri
 and W.4 (new-project asks for the style, the surveyor reports it) built and merged the same day. The rest starts on
 the owner's word, one step per branch:
 
-- [ ] **W.3** placement for wires: the module in the middle, channels as wide as the wires that must pass; the
+- [x] **W.3** placement for wires: the module in the middle, channels as wide as the wires that must pass; the
       prototype's table as the test.
 
 ## The documentation for its readers ([documentation.md](docs/concepts/new/documentation.md))
