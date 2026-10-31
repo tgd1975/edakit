@@ -1,0 +1,60 @@
+{
+ "lcsc": "C1710",
+ "mpn": "CL21B103KBANNNC",
+ "manufacturer": "SAMSUNG(三星)",
+ "kind": "capacitor",
+ "package": "0805",
+ "footprint": "C0805",
+ "jlc_class": "Basic Part",
+ "datasheet": {
+  "url": "https://datasheet.lcsc.com/datasheet/pdf/02336ea48ea44ca18c72517dd3cb7b47.pdf?productCode=C1710",
+  "pinout_page": null,
+  "title": "Samsung Electro-Mechanics MLCC catalogue (Multilayer Ceramic Capacitors)",
+  "revision": "November 2015"
+ },
+ "pins": {
+  "1": {
+   "name": "1",
+   "type": "passive",
+   "role": "1"
+  },
+  "2": {
+   "name": "2",
+   "type": "passive",
+   "role": "2"
+  }
+ },
+ "values": {
+  "value_f": 1e-08,
+  "dielectric": "X7R",
+  "tolerance": 0.1
+ },
+ "limits": {
+  "v_max_v": 50,
+  "t_min_c": -55,
+  "t_max_c": 125
+ },
+ "spice": {},
+ "sources": [
+  "Samsung Electro-Mechanics MLCC catalogue (LCSC's copy, edakit part fetch C1710, read 2026-10-31), part numbering system: CL = MLCC, 21 = 0805 (2012), B = X7R, 103 = 10 × 10^3 pF = 10 nF, K = ±10 %, B = 50 V; the thickness letter A is not in this catalogue's table; C = cardboard tape, 7\" reel",
+  "class II table: B = X7R, –55 … +125 °C, ±15 %",
+  "mpn, manufacturer, footprint, jlc_class, pin numbers and names: EasyEDA library data of C1710, https://easyeda.com/api/products/C1710/components?version=6.4.19.5, read 2026-10-31 (edakit part import)",
+  "JLCPCB catalogue 2026-10-31: Basic Part, 1 880 603 pcs"
+ ],
+ "compliance": {
+  "rohs": true,
+  "source": "LCSC product data C1710 (RoHS), read 2026-10-31"
+ },
+ "notes": "10 nF / 50 V X7R in 0805 (JLCPCB Basic): U1's control voltage bypass (blinker-555, D-8).",
+ "verified": {
+  "by": "Claude (skill part-search)",
+  "date": "2026-10-31",
+  "datasheet": "Samsung Electro-Mechanics MLCC catalogue (LCSC's copy)",
+  "datasheet_sha256": "96baebe4bd0ce363e87be28b5b003f511f1502e084a6fc4f02333ded56c808f6",
+  "checked": [
+   "part number CL21B103KBANNNC decoded with the catalogue's part numbering system: 0805, X7R, 10 nF, ±10 %, 50 V",
+   "X7R –55 … +125 °C, ±15 %"
+  ],
+  "open": []
+ }
+}

@@ -1,0 +1,117 @@
+{
+ "lcsc": "C393937",
+ "mpn": "SK12D07VG4",
+ "manufacturer": "SHOU HAN(首韩)",
+ "footprint": "SW-TH_SK12D07VG4",
+ "jlc_class": "Extended Part",
+ "kind": "switch",
+ "pins": {
+  "1": {
+   "name": "1",
+   "type": "passive",
+   "role": "throw_a"
+  },
+  "2": {
+   "name": "2",
+   "type": "passive",
+   "role": "common"
+  },
+  "3": {
+   "name": "3",
+   "type": "passive",
+   "role": "throw_b"
+  },
+  "4": {
+   "name": "4",
+   "type": "passive"
+  },
+  "5": {
+   "name": "5",
+   "type": "passive"
+  }
+ },
+ "sources": [
+  "Shenzhen Shouhan SK12D07VG4 specification for approval, 2nd edition 2020-06-17 (LCSC's copy, edakit part fetch C393937, read 2026-10-31): 1.1 rating DC 50 V 0.5 A; −25 … +70 °C; 2.1 contact resistance 30 mΩ max; 2.2 insulation resistance 250 MΩ min (100 V DC)",
+  "drawing, p. 4: horizontal slide switch, body 8.7 × 4.4 mm, knob 4 mm out of the body, travel 2 mm; terminals 2.0 mm apart, 0.5 × 0.4 mm; frame pegs 8.3 mm apart, 1.2 × 0.3 mm; schematic: the middle terminal common, shorted to one of the outer two",
+  "pins 4 and 5: the frame's pegs, plated slots in the library footprint – mechanical, no contact",
+  "stock: JLCPCB 92 371 pcs, Extended Part (edakit stock --lcsc C393937, 2026-10-31)",
+  "mpn, manufacturer, footprint, jlc_class, pin numbers and names: EasyEDA library data of C393937, https://easyeda.com/api/products/C393937/components?version=6.4.19.5, read 2026-10-31 (edakit part import)"
+ ],
+ "verified": {
+  "by": "Claude (skill part-search)",
+  "date": "2026-10-31",
+  "datasheet": "Shouhan SK12D07VG4 specification, 2nd edition 2020-06-17",
+  "datasheet_sha256": "5ed271e0750da0f1f8bdc8f57b1e9cdc8c042dd7d38d7af44583cbb10c5c7072",
+  "checked": [
+   "pin 2 the middle terminal = common; 1 and 3 the throws (drawing p. 4, schematic); the library footprint puts 1, 2, 3 in a row 2.0 mm apart and the pegs 4, 5 at 8.3 mm",
+   "DC 50 V, 0.5 A; contact resistance ≤ 30 mΩ; insulation ≥ 250 MΩ (p. 2)"
+  ],
+  "open": [
+   {
+    "text": "which knob position closes pin 1 (throw_a, 'on') – the slider's side at the board's edge; mark 'ON' on the silkscreen after looking at the part",
+    "when": "acceptance"
+   }
+  ]
+ },
+ "package": "through-hole, horizontal slide switch SPDT, 3 terminals 2.0 mm apart and 2 frame pegs",
+ "datasheet": {
+  "url": null,
+  "pinout_page": 4,
+  "title": "Shenzhen Shouhan SK12D07VG4 specification for approval",
+  "revision": "2nd edition, 2020-06-17"
+ },
+ "values": {
+  "r_on_ohm": 0.03
+ },
+ "limits": {
+  "v_max_v": 50,
+  "i_max_a": 0.5,
+  "t_min_c": -25,
+  "t_max_c": 70
+ },
+ "lead": {
+  "1": {
+   "shape": "rect",
+   "a_mm": 0.5,
+   "b_mm": 0.4,
+   "tol_mm": null,
+   "hole_rec_mm": null,
+   "source": "SK12D07VG4 drawing, p. 4: terminal 0.5 wide, '0.4 THK'"
+  },
+  "2": {
+   "shape": "rect",
+   "a_mm": 0.5,
+   "b_mm": 0.4,
+   "tol_mm": null,
+   "hole_rec_mm": null,
+   "source": "SK12D07VG4 drawing, p. 4: terminal 0.5 wide, '0.4 THK'"
+  },
+  "3": {
+   "shape": "rect",
+   "a_mm": 0.5,
+   "b_mm": 0.4,
+   "tol_mm": null,
+   "hole_rec_mm": null,
+   "source": "SK12D07VG4 drawing, p. 4: terminal 0.5 wide, '0.4 THK'"
+  },
+  "4": {
+   "shape": "rect",
+   "a_mm": 1.2,
+   "b_mm": 0.3,
+   "tol_mm": null,
+   "hole_rec_mm": null,
+   "source": "SK12D07VG4 drawing, p. 4: frame peg 1.2 wide, '0.3 THK'"
+  },
+  "5": {
+   "shape": "rect",
+   "a_mm": 1.2,
+   "b_mm": 0.3,
+   "tol_mm": null,
+   "hole_rec_mm": null,
+   "source": "SK12D07VG4 drawing, p. 4: frame peg 1.2 wide, '0.3 THK'"
+  }
+ },
+ "body": {
+  "h_mm": 4.4
+ }
+}

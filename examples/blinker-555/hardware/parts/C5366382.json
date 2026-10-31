@@ -1,0 +1,72 @@
+{
+ "lcsc": "C5366382",
+ "mpn": "APTD2012LSURCK",
+ "manufacturer": "Kingbright(今台)",
+ "footprint": "LED-SMD_L2.0-W1.3_APTD2012SF4C",
+ "jlc_class": "Extended Part",
+ "kind": "led",
+ "pins": {
+  "1": {
+   "name": "K",
+   "type": "passive",
+   "role": "cathode"
+  },
+  "2": {
+   "name": "A",
+   "type": "passive",
+   "role": "anode"
+  }
+ },
+ "sources": [
+  "Kingbright APTD2012LSURCK data sheet DSAO7910 Rev V.5A, 2021-03-24 (LCSC's copy, edakit part fetch C5366382, read 2026-10-31)",
+  "p. 1: Hyper Red (AlGaInP), water clear; Iv at 2 mA 60 min / 150 typ mcd (CIE127-2007: 20 / 50 mcd), 40°; package drawing: pad 1 at the polarity mark, the chip symbol 1 cathode – 2 anode; recommended pattern 0.8 + 1.1 + 0.8 mm; MSL 3, RoHS compliant, halogen-free",
+  "p. 2: VF at IF 2 mA 1.5 / 1.75 / 2.1 V (±0.1 V); IR ≤ 10 µA at VR 5 V; absolute maximum: PD 75 mW, VR 5 V, Tj 115 °C, Top −40 … +85 °C, IF 30 mA DC, IFM 185 mA (1/10, 0.1 ms); Rth JA 680 °C/W",
+  "rs_ohm: not in the datasheet – the simulation's default of 10 Ohm",
+  "mpn, manufacturer, footprint, jlc_class, pin numbers and names: EasyEDA library data of C5366382, https://easyeda.com/api/products/C5366382/components?version=6.4.19.5, read 2026-10-31 (edakit part import)"
+ ],
+ "verified": {
+  "by": "Claude (skill part-search)",
+  "date": "2026-10-31",
+  "datasheet": "Kingbright DSAO7910 Rev V.5A (2021-03-24)",
+  "datasheet_sha256": "bbaee561298d6d9cc806b5743aad24c4cb7cdd13c2cdd67f0e5049728e45f88b",
+  "checked": [
+   "pin 1 cathode (K), pin 2 anode (A): the chip symbol of p. 1, the EasyEDA symbol and the footprint's chamfered outline at pad 1 agree",
+   "VF 1.5–2.1 V at 2 mA; IF 30 mA, VR 5 V, PD 75 mW (p. 2)",
+   "Iv at 2 mA ≥ 60 mcd (≥ 20 mcd to CIE127): at 0.5 mA about a quarter of it"
+  ],
+  "open": [
+   {
+    "text": "D1's polarity mark against the footprint's pad 1 – JLCPCB's assembly preview",
+    "when": "order"
+   }
+  ]
+ },
+ "package": "0805 (2.0 × 1.25 mm)",
+ "datasheet": {
+  "url": "https://www.kingbrightusa.com/images/catalog/SPEC/APTD2012LSURCK.pdf",
+  "pinout_page": 1,
+  "title": "Kingbright APTD2012LSURCK 2.0 × 1.25 mm SMD chip LED lamp",
+  "revision": "DSAO7910 / 1203015435 Rev V.5A, 2021-03-24"
+ },
+ "values": {
+  "color": "red",
+  "vf_min_v": 1.5,
+  "vf_typ_v": 1.75,
+  "vf_max_v": 2.1,
+  "vf_at_a": 0.002
+ },
+ "limits": {
+  "if_max_a": 0.03,
+  "vr_max_v": 5,
+  "p_max_w": 0.075,
+  "tj_max_c": 115,
+  "rth_ja_k_per_w": 680,
+  "t_min_c": -40,
+  "t_max_c": 85
+ },
+ "spice": {},
+ "compliance": {
+  "rohs": true,
+  "source": "Kingbright DSAO7910 Rev V.5A p. 1: 'RoHS compliant', 'Halogen-free'"
+ }
+}

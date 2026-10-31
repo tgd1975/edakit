@@ -1,0 +1,344 @@
+{
+ "graph": {
+  "name": "blinker-555",
+  "version": "0.1",
+  "date": "2026-10-31",
+  "description": "Switch it on and a red LED blinks about once a second, from two AAA cells; switch it off and the cells deliver nothing.",
+  "purpose": {
+   "use": "private",
+   "market": "EU",
+   "notes": "The example of the edakit handbook, chapter 18: built for oneself."
+  },
+  "accept": {
+   "HINT.bulk": "no cable and no plug: the cells sit in BT1 on the board; C4 1 µF ceramic and C1 100 nF at U1, as its datasheet asks (D-6)",
+   "HINT.lithium": "two alkaline AAA cells, not lithium: nothing charges them (LIM.backfeed) (D-6)"
+  },
+  "layout": {
+   "fixed": [
+    "BT1",
+    "SW1",
+    "D1"
+   ],
+   "edge": [
+    "SW1"
+   ],
+   "notes": [
+    "BT1 (Keystone 2468, 53.0 × 24.6 × 13 mm) on the bottom, the board about its size; its two PC pins are soldered on the top side",
+    "SW1 at the board's edge, its knob out over it; its terminals and pegs are soldered on the bottom – not under BT1's body",
+    "D1 on top, where it is seen",
+    "C1 and C4 close to U1's V+, C2 close to U1's DC and TH (LMC555 datasheet 11.1)"
+   ]
+  },
+  "conventions": {
+   "pin_reference": "'<designator>.<pin>' with the pin's name or role, else its symbol number – the parts entry says which pin that is"
+  },
+  "components": [
+   {
+    "designator": "BT1",
+    "type": "battery_holder",
+    "label": "2×AAA holder",
+    "part": "2468",
+    "lcsc": "C254917",
+    "bom": false,
+    "pins": {
+     "1": "-",
+     "2": "+"
+    },
+    "notes": "Keystone 2468: two AAA cells in series, PC pins; on the bottom, soldered by hand (D-1)."
+   },
+   {
+    "designator": "SW1",
+    "type": "switch",
+    "label": "Power switch",
+    "part": "SK12D07VG4",
+    "lcsc": "C393937",
+    "bom": false,
+    "pins": {
+     "1": "1",
+     "2": "2",
+     "3": "3",
+     "4": "4",
+     "5": "5"
+    },
+    "nc": [
+     "3",
+     "4",
+     "5"
+    ],
+    "notes": "SPDT used as on/off: common to throw_a is on; pins 4 and 5 are the frame's pegs. Through-hole at the board's edge, soldered by hand (D-1)."
+   },
+   {
+    "designator": "U1",
+    "type": "ic",
+    "label": "CMOS 555 timer",
+    "part": "LMC555CMX/NOPB",
+    "lcsc": "C90760",
+    "pins": {
+     "1": "GND",
+     "2": "TRIGER#",
+     "3": "OUTPUT",
+     "4": "RESET#",
+     "5": "CV",
+     "6": "TH",
+     "7": "DC",
+     "8": "V+"
+    },
+    "states": {
+     "OUTPUT": "low",
+     "DC": "low"
+    },
+    "accept": {
+     "HINT.thermal_copper": "U1 dissipates below 1 mW (250 µA at 3.2 V, D1's 4.4 mA through DIS at 0.15 V): no copper needed"
+    },
+    "notes": "Runs from 1.5 V. The simulation holds the phase in which D1 is lit: OUTPUT low, DC (discharge) low. R1 from OUTPUT charges and discharges C2 between 1/3 and 2/3 of VDD: f = 1 / (2 ln 2 · R1 · C2). DC is free for D1."
+   },
+   {
+    "designator": "R1",
+    "type": "resistor",
+    "label": "Timing resistor",
+    "part": "0805W8F7503T5E",
+    "lcsc": "C17817",
+    "value": "750k",
+    "pins": {
+     "1": "1",
+     "2": "2"
+    },
+    "notes": "f = 1 / (2 ln 2 · 750 kΩ · 1 µF) = 0.962 Hz, 57.7 flashes a minute; worst case 48.0–72.4 (D-5)."
+   },
+   {
+    "designator": "C2",
+    "type": "capacitor",
+    "label": "Timing capacitor",
+    "part": "CL21B105KBFNNNE",
+    "lcsc": "C28323",
+    "value": "1uF",
+    "pins": {
+     "1": "1",
+     "2": "2"
+    }
+   },
+   {
+    "designator": "C1",
+    "type": "capacitor",
+    "label": "Decoupling at U1",
+    "part": "CC0805KRX7R9BB104",
+    "lcsc": "C49678",
+    "value": "100nF",
+    "pins": {
+     "1": "1",
+     "2": "2"
+    }
+   },
+   {
+    "designator": "C4",
+    "type": "capacitor",
+    "label": "Bulk at U1",
+    "part": "CL21B105KBFNNNE",
+    "lcsc": "C28323",
+    "value": "1uF",
+    "pins": {
+     "1": "1",
+     "2": "2"
+    },
+    "notes": "The LMC555 datasheet's minimum: 0.1 µF in parallel with 1 µF at V+ (section 10)."
+   },
+   {
+    "designator": "C3",
+    "type": "capacitor",
+    "label": "Control voltage bypass",
+    "part": "CL21B103KBANNNC",
+    "lcsc": "C1710",
+    "value": "10nF",
+    "pins": {
+     "1": "1",
+     "2": "2"
+    },
+    "notes": "The LMC555 datasheet's layout example bypasses CV with 0.01 µF (11.2)."
+   },
+   {
+    "designator": "R2",
+    "type": "resistor",
+    "label": "LED series resistor",
+    "part": "0805W8F2000T5E",
+    "lcsc": "C17540",
+    "value": "200",
+    "pins": {
+     "1": "1",
+     "2": "2"
+    },
+    "notes": "Sized between R-4 and R-1: from fresh cells D1 at its lowest Vf takes 4.6 mA (4.9 mA with U1, ≤ 5 mA), from cells at 2.2 V at its highest 0.52 mA (≥ 0.5 mA); 220 Ω gave 0.498 mA there (D-3)."
+   },
+   {
+    "designator": "D1",
+    "type": "led",
+    "label": "LED (hyper red, low current)",
+    "part": "APTD2012LSURCK",
+    "lcsc": "C5366382",
+    "value": "red",
+    "pins": {
+     "1": "K",
+     "2": "A"
+    },
+    "notes": "Specified at 2 mA: 60–150 mcd – at 0.5 mA brighter than an ordinary red 0805 LED at 1 mA (D-3).",
+    "accept": {
+     "HINT.thermal_copper": "D1 dissipates at most 7.3 mW, its junction 30 °C at 25 °C by the datasheet's 680 K/W"
+    }
+   },
+   {
+    "designator": "Q1",
+    "type": "transistor",
+    "label": "Reverse-polarity PMOS",
+    "part": "AO3415A",
+    "lcsc": "C133233",
+    "pins": {
+     "1": "G",
+     "2": "S",
+     "3": "D"
+    },
+    "notes": "Drain towards the cells, source towards VDD, gate to ground: on from 1.8 V, its body diode blocks cells put in upside down (D-4).",
+    "accept": {
+     "HINT.gate": "no driver: the gate sits on ground through R3 and Q1 never switches – nothing rings",
+     "HINT.thermal_copper": "Q1 dissipates about 1 µW (4.9 mA through 65 mΩ at most)"
+    }
+   },
+   {
+    "designator": "R3",
+    "type": "resistor",
+    "label": "Q1 gate to ground",
+    "part": "0805W8F1002T5E",
+    "lcsc": "C17414",
+    "value": "10k",
+    "pins": {
+     "1": "1",
+     "2": "2"
+    }
+   }
+  ],
+  "nets": [
+   {
+    "name": "VBAT",
+    "pins": [
+     "BT1.2",
+     "SW1.2"
+    ],
+    "v": [
+     -3.3,
+     3.3
+    ],
+    "notes": "the cells: 2 × 1.6 V fresh off load, 2 × 1.1 V used (R-1); negative with both cells upside down"
+   },
+   {
+    "name": "VSW",
+    "pins": [
+     "SW1.1",
+     "Q1.3"
+    ],
+    "v": [
+     -3.3,
+     3.3
+    ]
+   },
+   {
+    "name": "VDD",
+    "pins": [
+     "Q1.2",
+     "U1.8",
+     "U1.4",
+     "C1.1",
+     "C4.1",
+     "R2.1"
+    ],
+    "v": [
+     -0.3,
+     3.3
+    ],
+    "notes": "the cells' voltage while SW1 is on, behind Q1; RESET tied to it; a little below 0 V with the cells upside down, where U1's substrate diode holds Q1's leakage"
+   },
+   {
+    "name": "GATE",
+    "pins": [
+     "Q1.1",
+     "R3.1"
+    ],
+    "v": [
+     0,
+     0.1
+    ]
+   },
+   {
+    "name": "GND",
+    "pins": [
+     "BT1.1",
+     "U1.1",
+     "C1.2",
+     "C2.2",
+     "C3.2",
+     "C4.2",
+     "R3.2"
+    ],
+    "v": [
+     0,
+     0
+    ]
+   },
+   {
+    "name": "OUT",
+    "pins": [
+     "U1.3",
+     "R1.1"
+    ],
+    "v": [
+     0,
+     3.3
+    ]
+   },
+   {
+    "name": "TIMING",
+    "pins": [
+     "U1.2",
+     "U1.6",
+     "R1.2",
+     "C2.1"
+    ],
+    "v": [
+     0,
+     3.3
+    ],
+    "notes": "C2 swings between 1/3 and 2/3 of VDD"
+   },
+   {
+    "name": "CV",
+    "pins": [
+     "U1.5",
+     "C3.1"
+    ],
+    "v": [
+     0,
+     3.3
+    ]
+   },
+   {
+    "name": "LED_A",
+    "pins": [
+     "R2.2",
+     "D1.2"
+    ],
+    "v": [
+     -0.3,
+     3.3
+    ]
+   },
+   {
+    "name": "LED_K",
+    "pins": [
+     "D1.1",
+     "U1.7"
+    ],
+    "v": [
+     0,
+     3.3
+    ]
+   }
+  ]
+ }
+}

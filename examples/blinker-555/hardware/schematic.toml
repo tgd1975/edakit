@@ -1,0 +1,16 @@
+# Schematic of blinker-555: two blocks and their notes (edakit handbook 10.3). In no hash: a note voids no sign-off.
+
+[layout]
+rows = [
+  [ [ { title = "Two AAA cells, switch and reverse protection", start = ["BT1"] } ],
+    [ { title = "CMOS 555 blinker", start = ["U1"] } ] ],
+]
+
+[layout.notes]
+"Two AAA cells, switch and reverse protection" = [
+  "Q1 blocks cells put in upside down (D-4)",
+]
+"CMOS 555 blinker" = [
+  "f = 1 / (2 ln 2 · R1 · C2) = 0.96 Hz, 50 % lit (D-5)",
+  "D1 carries {sim:min SIM.state used/* D1 LED on} at 2.2 V, {sim:max SIM.state fresh/* D1 LED on} from fresh cells",
+]

@@ -1,0 +1,142 @@
+{
+ "lcsc": "C90760",
+ "mpn": "LMC555CMX/NOPB",
+ "manufacturer": "TI(德州仪器)",
+ "footprint": "SOIC-8_L4.9-W3.9-P1.27-LS6.0-BL",
+ "jlc_class": "Extended Part",
+ "kind": "ic",
+ "pins": {
+  "1": {
+   "name": "GND",
+   "type": "ground",
+   "role": "gnd"
+  },
+  "2": {
+   "name": "TRIGER#",
+   "type": "analog",
+   "role": "trig",
+   "v_min_v": -0.3,
+   "v_rel_max_v": 0.3,
+   "hint": "comparator input: below 1/3 of V+ (VTRIG 0.4–0.6 V at 1.5 V) it sets the flip-flop – the output goes high and DIS lets go (8.3); trigger current 10 pA typ"
+  },
+  "3": {
+   "name": "OUTPUT",
+   "type": "output",
+   "role": "out",
+   "v_min_v": -0.3,
+   "v_rel_max_v": 0.3,
+   "i_max_a": 0.1,
+   "hint": "push-pull: VOH ≥ 1.0 V at −0.25 mA and VOL ≤ 0.4 V at 1 mA with V+ 1.5 V, VOH ≥ 4.4 V at −2 mA and VOL ≤ 0.6 V at 8 mA with 5 V (6.5) – a weak source at low supply: about 2 kΩ high, 400 Ω low at 1.5 V"
+  },
+  "4": {
+   "name": "RESET#",
+   "type": "input",
+   "role": "reset_n",
+   "v_min_v": -0.3,
+   "v_rel_max_v": 0.3,
+   "vih_v": 1.1,
+   "vil_v": 0.4,
+   "hint": "active low: tie it to V+ when unused, against false triggering (pin functions, p. 3); VRES 0.4–1.0 V at 1.5 V, 0.4–1.1 V at 12 V (6.5)"
+  },
+  "5": {
+   "name": "CV",
+   "type": "analog",
+   "role": "cv",
+   "v_min_v": -0.3,
+   "v_rel_max_v": 0.3,
+   "biased": true,
+   "hint": "control voltage: the 2/3 V+ point of the internal divider (VCTRL 0.8–1.2 V at 1.5 V, 2.9–3.8 V at 5 V, 6.5); the layout example bypasses it with 0.01 µF (11.2, C2)"
+  },
+  "6": {
+   "name": "TH",
+   "type": "analog",
+   "role": "thr",
+   "v_min_v": -0.3,
+   "v_rel_max_v": 0.3,
+   "hint": "comparator input: above 2/3 of V+ (the CV voltage) it resets the flip-flop – the output goes low and DIS pulls down (8.3); threshold current 10 pA typ"
+  },
+  "7": {
+   "name": "DC",
+   "type": "output",
+   "role": "dis",
+   "drive": "open_drain",
+   "v_min_v": -0.3,
+   "v_rel_max_v": 0.3,
+   "hint": "discharge: open drain, low in phase with the output (pin functions, p. 3); VDIS ≤ 150 mV at 1 mA with V+ 1.5 V, ≤ 300 mV at 10 mA with 5 V (6.5) – about 150 Ω and 30 Ω; leakage ≤ 100 nA at 12 V"
+  },
+  "8": {
+   "name": "V+",
+   "type": "power_in",
+   "role": "vdd",
+   "needs": [
+    {
+     "what": "capacitor",
+     "c_min_f": 1e-07,
+     "source": "TI SNAS558M, 10 Power Supply Recommendations: minimum 0.1 µF in parallel with a 1-µF electrolytic, as close as possible to the LMC555"
+    }
+   ]
+  }
+ },
+ "sources": [
+  "TI LMC555 data sheet SNAS558M (February 2000, revised July 2016), LCSC's copy (edakit part fetch C90760, read 2026-10-31)",
+  "pin functions, p. 3: 1 GND, 2 Trigger, 3 Output, 4 Reset, 5 Control Voltage, 6 Threshold, 7 Discharge (open collector, in phase with the output), 8 V+ (SOIC D)",
+  "6.1 absolute maximum ratings, p. 4: supply 15 V; input −0.3 V to V+ + 0.3 V; output 15 V; output current 100 mA",
+  "6.3 recommended operating conditions, p. 4: LMC555CM −40 … 85 °C; SOIC-8 740 mW at 25 °C; features, p. 1, and 10, p. 17: supply 1.5 V to 15 V ('1.5 V supply operating voltage ensured')",
+  "6.4 thermal information, p. 4: RθJA SOIC 169 °C/W",
+  "6.5 electrical characteristics, p. 5: IS, VCTRL, VDIS, VOL, VOH, VTRIG, VRES, timing accuracy at 1.5, 5 and 12 V; IDIS leakage ≤ 100 nA at 12 V",
+  "8.4.2 astable operation, p. 10: the capacitor charges and discharges between 1/3 and 2/3 V+, the frequency independent of the supply",
+  "11.2 layout example, p. 17: C2 0.01 µF bypass for the control voltage pin, C3 0.1 µF ceramic, C4 1 µF",
+  "13 package option addendum, p. 19: LMC555CMX/NOPB ACTIVE, SOIC D 8, Green (RoHS & no Sb/Br), CU SN, Level-1-260C-UNLIM, −40 to 85 °C",
+  "mpn, manufacturer, footprint, jlc_class, pin numbers and names: EasyEDA library data of C90760, https://easyeda.com/api/products/C90760/components?version=6.4.19.5, read 2026-10-31 (edakit part import)"
+ ],
+ "verified": {
+  "by": "Claude (skill part-search)",
+  "date": "2026-10-31",
+  "datasheet": "TI SNAS558M (revised July 2016)",
+  "datasheet_sha256": "3ac8d41ac202b0b043d0d09da1b0711302c314cfc8aaae4e802458b31f6cc7e5",
+  "checked": [
+   "pin functions (p. 3) = the EasyEDA symbol: 1 GND, 2 TRIGER#, 3 OUTPUT, 4 RESET#, 5 CV, 6 TH, 7 DC, 8 V+",
+   "supply 1.5–15 V (p. 1, p. 17), absolute maximum 15 V (p. 4)",
+   "DIS open collector in phase with the output (p. 3): low while the output is low",
+   "VDIS ≤ 150 mV at 1 mA with 1.5 V; VOL ≤ 0.4 V at 1 mA, VOH ≥ 1.0 V at −0.25 mA with 1.5 V (p. 5)",
+   "IS ≤ 150 µA at 1.5 V, ≤ 250 µA at 5 V (p. 5)",
+   "SOIC-8 footprint SOIC-8_L4.9-W3.9-P1.27-LS6.0-BL: pads 1–4 on one side, 5–8 on the other, pin 1 marked – the D package of p. 19"
+  ],
+  "open": [
+   {
+    "text": "the pin-1 dot of U1 against the footprint's pin-1 mark – JLCPCB's assembly preview",
+    "when": "order"
+   }
+  ]
+ },
+ "package": "SOIC-8 (TI D)",
+ "datasheet": {
+  "url": "https://www.ti.com/lit/ds/symlink/lmc555.pdf",
+  "pinout_page": 3,
+  "title": "TI LMC555 CMOS Timer",
+  "revision": "SNAS558M (February 2000, revised July 2016)"
+ },
+ "values": {
+  "behavior": "logic",
+  "icc_a": 0.00025,
+  "r_out_ohm": 150
+ },
+ "limits": {
+  "vdd_max_v": 15,
+  "vdd_op_min_v": 1.5,
+  "vdd_op_max_v": 15,
+  "rth_ja_k_per_w": 169,
+  "t_min_c": -40,
+  "t_max_c": 85
+ },
+ "hints": [
+  "supply bypass: 0.1 µF in parallel with 1 µF as close as possible to V+ (10, 11.1); the timing capacitor close to DIS (11.1)",
+  "the timing at a low supply: the monostable's 1.1·RC is 0.9–1.25 ms for 1.1 ms at 1.5 V, 1.0–1.20 ms at 5 V (6.5, timing accuracy) – the CV voltage spreads 0.8–1.2 V at 1.5 V, the thresholds with it",
+  "icc_a 250 µA: the supply current's maximum at 5 V (6.5: 150 µA max at 1.5 V, 250 µA at 5 V, 400 µA at 12 V) – an upper bound between 2 and 3.2 V",
+  "r_out_ohm 150 Ω: DIS at V+ 1.5 V (≤ 150 mV at 1 mA) – the output that carries D1's current; OUT is weaker at low supply (2 kΩ high, 400 Ω low at 1.5 V) and drives only the timing resistor's µA here; the model has one output resistance for both"
+ ],
+ "compliance": {
+  "rohs": true,
+  "source": "TI SNAS558M package option addendum, p. 19: LMC555CMX/NOPB 'Green (RoHS & no Sb/Br)'"
+ }
+}

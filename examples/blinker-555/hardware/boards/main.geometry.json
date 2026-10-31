@@ -1,0 +1,397 @@
+{
+ "BT1": {
+  "primitiveId": "343d14a1-ec36-5e22-938e-fa647d970b60",
+  "footprint": "BAT-TH_2P-L53.0-W24.6-P12.70_2468",
+  "device": "2468",
+  "bbox": [
+   -1975.1,
+   -485.0,
+   112.9,
+   485.0
+  ],
+  "pads": {
+   "1": {
+    "x": 0.0,
+    "y": 250.0,
+    "net": "GND",
+    "tht": true,
+    "hole": [
+     1.5,
+     1.5
+    ],
+    "plated": true
+   },
+   "2": {
+    "x": 0.0,
+    "y": -250.0,
+    "net": "VBAT",
+    "tht": true,
+    "hole": [
+     1.5,
+     1.5
+    ],
+    "plated": true
+   }
+  }
+ },
+ "C1": {
+  "primitiveId": "3ab72a91-5f03-5d0f-b665-b43bdc47b9bc",
+  "footprint": "C0805",
+  "device": "100nF",
+  "bbox": [
+   -77.0,
+   -35.0,
+   78.0,
+   36.0
+  ],
+  "pads": {
+   "2": {
+    "x": 39.37,
+    "y": -0.0,
+    "net": "GND",
+    "tht": false
+   },
+   "1": {
+    "x": -39.37,
+    "y": -0.0,
+    "net": "VDD",
+    "tht": false
+   }
+  }
+ },
+ "C2": {
+  "primitiveId": "fb7f99b9-64f2-5711-b7f6-108599cb54d1",
+  "footprint": "C0805",
+  "device": "1uF",
+  "bbox": [
+   -77.0,
+   -35.0,
+   78.0,
+   36.0
+  ],
+  "pads": {
+   "2": {
+    "x": 39.37,
+    "y": -0.0,
+    "net": "GND",
+    "tht": false
+   },
+   "1": {
+    "x": -39.37,
+    "y": -0.0,
+    "net": "TIMING",
+    "tht": false
+   }
+  }
+ },
+ "C3": {
+  "primitiveId": "0f0d73ed-ecf1-5c81-bc01-99f55c528804",
+  "footprint": "C0805",
+  "device": "10nF",
+  "bbox": [
+   -77.0,
+   -35.0,
+   78.0,
+   36.0
+  ],
+  "pads": {
+   "2": {
+    "x": 39.37,
+    "y": -0.0,
+    "net": "GND",
+    "tht": false
+   },
+   "1": {
+    "x": -39.37,
+    "y": -0.0,
+    "net": "CV",
+    "tht": false
+   }
+  }
+ },
+ "C4": {
+  "primitiveId": "e2bd4da3-698f-55d3-9b69-fb2fb3c9fa53",
+  "footprint": "C0805",
+  "device": "1uF",
+  "bbox": [
+   -77.0,
+   -35.0,
+   78.0,
+   36.0
+  ],
+  "pads": {
+   "2": {
+    "x": 39.37,
+    "y": -0.0,
+    "net": "GND",
+    "tht": false
+   },
+   "1": {
+    "x": -39.37,
+    "y": -0.0,
+    "net": "VDD",
+    "tht": false
+   }
+  }
+ },
+ "D1": {
+  "primitiveId": "04aab41f-1f76-5c70-92f4-8654793331f4",
+  "footprint": "LED-SMD_L2.0-W1.3_APTD2012SF4C",
+  "device": "red",
+  "bbox": [
+   -80.1,
+   -35.0,
+   70.9,
+   35.0
+  ],
+  "pads": {
+   "2": {
+    "x": 40.0,
+    "y": -0.0,
+    "net": "LED_A",
+    "tht": false
+   },
+   "1": {
+    "x": -40.0,
+    "y": -0.0,
+    "net": "LED_K",
+    "tht": false
+   }
+  }
+ },
+ "Q1": {
+  "primitiveId": "e7d6e199-a51b-59b3-a1f4-b97cb3e93a9c",
+  "footprint": "SOT-23-3_L2.9-W1.6-P1.90-LS2.8-BR",
+  "device": "AO3415A",
+  "bbox": [
+   -70.01,
+   -61.0,
+   69.69,
+   60.0
+  ],
+  "pads": {
+   "1": {
+    "x": 48.62,
+    "y": -37.4,
+    "net": "GATE",
+    "tht": false
+   },
+   "2": {
+    "x": 48.62,
+    "y": 37.4,
+    "net": "VDD",
+    "tht": false
+   },
+   "3": {
+    "x": -48.63,
+    "y": -0.0,
+    "net": "VSW",
+    "tht": false
+   }
+  }
+ },
+ "R1": {
+  "primitiveId": "e89de735-48b3-5814-883d-7d3468cdcb5d",
+  "footprint": "R0805",
+  "device": "750k",
+  "bbox": [
+   -69.0,
+   -36.0,
+   70.0,
+   36.0
+  ],
+  "pads": {
+   "2": {
+    "x": 39.37,
+    "y": -0.0,
+    "net": "TIMING",
+    "tht": false
+   },
+   "1": {
+    "x": -39.37,
+    "y": -0.0,
+    "net": "OUT",
+    "tht": false
+   }
+  }
+ },
+ "R2": {
+  "primitiveId": "61bcfb85-0456-5402-9dfa-78b7967ede21",
+  "footprint": "R0805",
+  "device": "200",
+  "bbox": [
+   -69.0,
+   -36.0,
+   70.0,
+   36.0
+  ],
+  "pads": {
+   "2": {
+    "x": 39.37,
+    "y": -0.0,
+    "net": "LED_A",
+    "tht": false
+   },
+   "1": {
+    "x": -39.37,
+    "y": -0.0,
+    "net": "VDD",
+    "tht": false
+   }
+  }
+ },
+ "R3": {
+  "primitiveId": "b7d99c1e-60fe-597c-ab33-acb8b8fa784b",
+  "footprint": "R0805",
+  "device": "10k",
+  "bbox": [
+   -69.0,
+   -36.0,
+   70.0,
+   36.0
+  ],
+  "pads": {
+   "2": {
+    "x": 39.37,
+    "y": -0.0,
+    "net": "GND",
+    "tht": false
+   },
+   "1": {
+    "x": -39.37,
+    "y": -0.0,
+    "net": "GATE",
+    "tht": false
+   }
+  }
+ },
+ "SW1": {
+  "primitiveId": "b5d9e8c7-034c-558d-9c9c-181d679d507a",
+  "footprint": "SW-TH_SK12D07VG4",
+  "device": "SK12D07VG4",
+  "bbox": [
+   -206.7,
+   -196.0,
+   206.7,
+   89.0
+  ],
+  "pads": {
+   "1": {
+    "x": -78.74,
+    "y": -0.0,
+    "net": "VSW",
+    "tht": true,
+    "hole": [
+     0.914,
+     0.914
+    ],
+    "plated": true
+   },
+   "2": {
+    "x": 0.0,
+    "y": -0.0,
+    "net": "VBAT",
+    "tht": true,
+    "hole": [
+     0.914,
+     0.914
+    ],
+    "plated": true
+   },
+   "3": {
+    "x": 78.74,
+    "y": -0.0,
+    "net": "",
+    "tht": true,
+    "hole": [
+     0.914,
+     0.914
+    ],
+    "plated": true
+   },
+   "4": {
+    "x": 163.39,
+    "y": -0.0,
+    "net": "",
+    "tht": true,
+    "hole": [
+     0.8,
+     1.6
+    ],
+    "plated": true
+   },
+   "5": {
+    "x": -163.39,
+    "y": -0.0,
+    "net": "",
+    "tht": true,
+    "hole": [
+     0.8,
+     1.6
+    ],
+    "plated": true
+   }
+  }
+ },
+ "U1": {
+  "primitiveId": "6c1a85c6-c173-58a0-b4fc-cdecc37819b6",
+  "footprint": "SOIC-8_L4.9-W3.9-P1.27-LS6.0-BL",
+  "device": "LMC555CMX/NOPB",
+  "bbox": [
+   -110.44,
+   -140.0,
+   110.44,
+   137.79
+  ],
+  "pads": {
+   "5": {
+    "x": 75.0,
+    "y": 102.36,
+    "net": "CV",
+    "tht": false
+   },
+   "6": {
+    "x": 25.0,
+    "y": 102.36,
+    "net": "TIMING",
+    "tht": false
+   },
+   "7": {
+    "x": -25.0,
+    "y": 102.36,
+    "net": "LED_K",
+    "tht": false
+   },
+   "8": {
+    "x": -75.0,
+    "y": 102.36,
+    "net": "VDD",
+    "tht": false
+   },
+   "4": {
+    "x": 75.0,
+    "y": -102.36,
+    "net": "VDD",
+    "tht": false
+   },
+   "3": {
+    "x": 25.0,
+    "y": -102.36,
+    "net": "OUT",
+    "tht": false
+   },
+   "2": {
+    "x": -25.0,
+    "y": -102.36,
+    "net": "TIMING",
+    "tht": false
+   },
+   "1": {
+    "x": -75.0,
+    "y": -102.36,
+    "net": "GND",
+    "tht": false
+   }
+  }
+ }
+}

@@ -1,0 +1,90 @@
+{
+  "about": "Scenarios for `edakit sim`: fresh and used cells x switch on or off x the LED's forward-voltage corners, and both cells upside down. On, the 555 sits in the phase in which D1 is lit (U1's states in the graph).",
+  "ambient_c": 25,
+  "cells": {
+    "fresh": {
+      "v": 3.2,
+      "r": 0.6,
+      "note": "two fresh alkaline AAA cells in series: 1.6 V each off load; internal resistance 0.15–0.3 Ohm each fresh (Energizer E92 datasheet) – 0.3 Ohm each"
+    },
+    "used": {
+      "v": 2.2,
+      "r": 2.0,
+      "note": "two alkaline AAA cells used to 1.1 V each, the end voltage of R-1 (D-3); 1 Ohm each assumed – the internal resistance rises as the cell empties, no datasheet gives it"
+    },
+    "reversed": {
+      "v": -3.2,
+      "r": 0.6,
+      "note": "both fresh cells put in upside down – the holder takes them that way"
+    }
+  },
+  "supplies": {
+    "fresh": {
+      "BT1": "fresh"
+    },
+    "used": {
+      "BT1": "used"
+    }
+  },
+  "loads": {
+    "on": {
+      "about": "SW1 on, the 555 in the phase in which D1 is lit",
+      "leds_on": [
+        "D1"
+      ],
+      "expect": {
+        "BT1": {
+          "i_max_a": 0.005
+        }
+      }
+    },
+    "off": {
+      "about": "SW1 off",
+      "throw": {
+        "SW1": "throw_b"
+      },
+      "leds_on": [],
+      "expect": {
+        "BT1": {
+          "i_max_a": 1e-06
+        }
+      }
+    },
+    "on_reversed": {
+      "about": "SW1 on with both cells upside down: Q1 blocks, D1 stays dark",
+      "leds_on": [],
+      "matrix": false
+    }
+  },
+  "corners": [
+    "min",
+    "max"
+  ],
+  "derating": {
+    "p": 0.5,
+    "i": 0.8,
+    "v_cap": 0.67,
+    "v_diode": 0.67,
+    "v_bjt": 0.67
+  },
+  "report": [
+    "VBAT",
+    "VSW",
+    "VDD",
+    "LED_A",
+    "LED_K"
+  ],
+  "criteria": {
+    "led_on_min_a": 0.0005
+  },
+  "extra_scenarios": [
+    {
+      "name": "reversed/on",
+      "supply": {
+        "BT1": "reversed"
+      },
+      "load": "on_reversed",
+      "corner": "max"
+    }
+  ]
+}

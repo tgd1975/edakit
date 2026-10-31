@@ -1,0 +1,56 @@
+{
+ "lcsc": "C17817",
+ "mpn": "0805W8F7503T5E",
+ "manufacturer": "UNI-ROYAL(厚声)",
+ "footprint": "R0805",
+ "jlc_class": "Extended Part",
+ "kind": "resistor",
+ "pins": {
+  "1": {
+   "name": "1",
+   "type": "passive",
+   "role": "1"
+  },
+  "2": {
+   "name": "2",
+   "type": "passive",
+   "role": "2"
+  }
+ },
+ "sources": [
+  "UNI-ROYAL thick film chip resistor series (LCSC's copy, edakit part fetch C17817, read 2026-10-31): part numbering 2.1–2.4 – 0805, W8 = 1/8 W, F = ±1 %, 7503 = 750 kΩ; ratings table: 0805 working voltage 150 V, overload 300 V, −55 … 155 °C; TCR ±100 ppm/°C above 10 Ω",
+  "mpn, manufacturer, footprint, jlc_class, pin numbers and names: EasyEDA library data of C17817, https://easyeda.com/api/products/C17817/components?version=6.4.19.5, read 2026-10-31 (edakit part import)"
+ ],
+ "verified": {
+  "by": "Claude (skill part-search)",
+  "date": "2026-10-31",
+  "datasheet": "UNI-ROYAL thick film chip resistors (series document)",
+  "datasheet_sha256": "11cd644d5d8a34a6d12775afb80bf58d8fc11f0c3b700dbd0f7a59942ceaa5ef",
+  "checked": [
+   "order code 0805W8F7503T5E: 0805, W8 = 1/8 W, F = ±1 %, 7503 = 750 kΩ",
+   "0805 working voltage 150 V, −55 … 155 °C"
+  ],
+  "open": []
+ },
+ "package": "0805",
+ "datasheet": {
+  "url": null,
+  "pinout_page": null,
+  "title": "UNI-ROYAL thick film chip resistors 01005–2512 (one document for the series)"
+ },
+ "values": {
+  "value_ohm": 750000.0,
+  "tolerance": 0.01
+ },
+ "limits": {
+  "p_max_w": 0.125,
+  "v_max_v": 150,
+  "t_min_c": -55,
+  "t_max_c": 155
+ },
+ "spice": {},
+ "compliance": {
+  "rohs": true,
+  "source": "LCSC product data C17817 (RoHS), read 2026-10-31"
+ }
+}
