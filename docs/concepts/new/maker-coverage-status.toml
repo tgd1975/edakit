@@ -103,13 +103,13 @@ BL-16 = { status = "open", missing = "instrument buffer – datasheets" }
 BL-17 = { status = "open", missing = "pedal power entry – datasheets" }
 BL-18 = { status = "open", missing = "relay bypass with mute – datasheets" }
 
-[part_facts]                 # the library of checked entries for popular parts – open decision 4, and datasheets
-modules = { status = "open", parts = ["ESP32-WROOM-32", "ESP32-S3 module", "ESP32-C3 module", "NodeMCU-32S", "Wemos D1 mini", "Arduino Nano", "RP2040 boards", "RP2350 boards"] }
-leds_displays = { status = "open", parts = ["WS2812B", "SK6812", "APA102", "SSD1306 module", "PCF8574 backpack", "PCF8574A backpack", "MAX7219"] }
-power = { status = "open", parts = ["AMS1117-3.3", "low-quiescent LDO", "TP4056", "MCP73831", "DW01A with FS8205", "MT3608", "CH224K"] }
-switching = { status = "open", parts = ["AO3400", "IRLZ44N", "IRF520", "DRV8833", "TB6612", "L298N", "A4988", "DRV8825", "TMC2209"] }
-sensors_buses = { status = "open", parts = ["DS3231 with AT24C32", "MPU-6050", "BME280", "INA219", "INA226", "DS18B20", "HX711", "ACS712", "HC-SR04", "MAX31855", "MAX6675", "CH340", "CP2102", "MAX485", "MAX3485"] }
-audio = { status = "open", parts = ["MAX98357A", "PAM8403", "INMP441"] }
+[part_facts]                 # library drafts in edakit/parts/ (decision 8), written from the datasheets on 2026-10-31 – each counts once the owner signs it
+modules = { status = "partial", parts = ["ESP32-WROOM-32", "ESP32-S3 module", "ESP32-C3 module", "NodeMCU-32S", "Wemos D1 mini", "Arduino Nano", "RP2040 boards", "RP2350 boards"], where = "C701341 (ESP32-WROOM-32E), C2913202 (ESP32-S3-WROOM-1), C41349510 (ESP32-C3-MINI-1-H4X), LOLIN_D1_MINI, A000005 (Arduino Nano), C7203002 (Pico), C41407547 (Pico 2)", missing = "the owner's signatures; NodeMCU-32S – its datasheet hosts refused" }
+leds_displays = { status = "partial", parts = ["WS2812B", "SK6812", "APA102", "SSD1306 module", "PCF8574 backpack", "PCF8574A backpack", "MAX7219"], where = "C2874885 (WS2812B-V5/W), C5378720 (SK6812), C2829089 (SK9822 for the APA102, which LCSC does not stock), C2890596 (SSD1306 panel), C7605 (PCF8574T), C86832 (PCF8574AT), C52476 (MAX7219)", missing = "the owner's signatures; the OLED and LCD backpack boards themselves – no LCSC part, a seller's schematic needed" }
+power = { status = "partial", parts = ["AMS1117-3.3", "low-quiescent LDO", "TP4056", "MCP73831", "DW01A with FS8205", "MT3608", "CH224K"], where = "C6186 (AMS1117-3.3), C5446 (XC6206), C16581 (TP4056), C424093 (MCP73831), C351410 (DW01A), C2830320 (FS8205A), C84817 (MT3608), C970725 (CH224K)", missing = "the owner's signatures; CH224K out of stock (CH224A recommended by WCH, no entry)" }
+switching = { status = "partial", parts = ["AO3400", "IRLZ44N", "IRF520", "DRV8833", "TB6612", "L298N", "A4988", "DRV8825", "TMC2209"], where = "C20917, C38774, C2598, C50506, C141517, C19922, C38437, C81582, C2150710", missing = "the owner's signatures" }
+sensors_buses = { status = "partial", parts = ["DS3231 with AT24C32", "MPU-6050", "BME280", "INA219", "INA226", "DS18B20", "HX711", "ACS712", "HC-SR04", "MAX31855", "MAX6675", "CH340", "CP2102", "MAX485", "MAX3485"], where = "C9866 (DS3231), C60583 (AT24C32D), C24112, C92489, C87469, C49851, C9753, C6705483 (HX711), C44471 and C10681 (ACS712 5 A, 20 A), C52028, C16030, C84681 (CH340C), C14267 (CH340G), C6568 (CP2102), C19738, C18148", missing = "the owner's signatures; HC-SR04 – no manufacturer document, an entry is not defensible" }
+audio = { status = "partial", parts = ["MAX98357A", "PAM8403", "INMP441"], where = "C910544, C17337, C5438445", missing = "the owner's signatures" }
 
 [review]
 electrical-audio = { status = "built", where = "edakit/domains/audio.toml [review]" }

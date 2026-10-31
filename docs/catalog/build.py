@@ -324,15 +324,21 @@ def candidates_section():
                       f'<th>Where</th><th>Missing</th></tr></thead><tbody>{rows}</tbody></table></div>')
     pf = s["part_facts"]
     n = sum(len(e["parts"]) for e in pf.values())
-    tiles.append(f'<div class="tile"><span class="big">0</span><span class="of">of {n}</span><span class="lbl">Part facts'
-                 '</span><span class="sub">open decision 4 · datasheets</span></div>')
-    groups.append("<h3>Part facts</h3><ul>" + "".join(f"<li><strong>{escape(k.replace('_', ' '))}:</strong> "
-                                                       f"{escape(', '.join(e['parts']))}</li>" for k, e in pf.items())
-                  + "</ul>")
+    from edakit import library
+    keys = library.keys()
+    drafts = [k for k in keys if "library draft" in str((library.entry(k).get("verified") or {}).get("by", ""))]
+    signed = sum(1 for k in keys if library.signature(k))
+    tiles.append(f'<div class="tile"><span class="big">{signed}</span><span class="of">of {len(keys)} signed</span>'
+                 f'<span class="lbl">Parts library</span><span class="sub">{len(drafts)} drafts for {n} part facts · '
+                 'the owner signs</span></div>')
+    rows = "".join(f'<tr><td>{escape(k.replace("_", " "))}</td><td>{chip(e["status"])}</td><td>{md(e.get("where", ""))}'
+                   f'</td><td>{md(e.get("missing", ""))}</td></tr>' for k, e in pf.items())
+    groups.append('<h3>Part facts – the parts library</h3><div class="scroll"><table class="cand"><thead><tr><th>Group</th>'
+                  f'<th>Status</th><th>Entries</th><th>Missing</th></tr></thead><tbody>{rows}</tbody></table></div>')
     return ('<section id="candidates"><h2>maker-coverage candidates</h2><p>The candidates of '
             '<code>docs/concepts/new/maker-coverage.md</code> and what became of them '
-            '(<code>maker-coverage-status.toml</code>). Open for lack of read datasheets or standards, or by an open '
-            'decision.</p><div class="tiles">' + "".join(tiles) + "</div>" + "".join(groups) + "</section>")
+            '(<code>maker-coverage-status.toml</code>). Open where a datasheet or standard could not be read, or where '
+            'the change was not a contained one.</p><div class="tiles">' + "".join(tiles) + "</div>" + "".join(groups) + "</section>")
 
 
 def old_ids_section():
