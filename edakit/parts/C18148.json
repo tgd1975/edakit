@@ -43,7 +43,7 @@
   "6": {
    "name": "A",
    "type": "bidirectional",
-   "role": "a",
+   "role": "rs485_a",
    "v_max_v": 12.5,
    "drive": "tristate",
    "z_in_ohm": 12000.0,
@@ -52,7 +52,7 @@
   "7": {
    "name": "B",
    "type": "bidirectional",
-   "role": "b",
+   "role": "rs485_b",
    "v_max_v": 12.5,
    "drive": "tristate",
    "z_in_ohm": 12000.0,
@@ -112,7 +112,8 @@
    "abs. max VCC 7 V, logic inputs 7 V, A/B −7.5 … +12.5 V, RO VCC + 0.3 V, TJ 160 °C, 471 mW at 70 °C (p. 2)",
    "VCC 3.0–3.6 V (p. 7); VIH 2.0 V, VIL 0.8 V; RIN ≥ 12 kΩ; ICC ≤ 2.2 mA (p. 2–3)",
    "RO and driver outputs high impedance when disabled (p. 7, p. 12); 10 Mbps (p. 1)",
-   "termination at both ends, short stubs (p. 14)"
+   "termination at both ends, short stubs (p. 14)",
+   "2026-10-31: bus pins A/B with the roles rs485_a/rs485_b that REQ termination and failsafe read (CK-17)"
   ],
   "open": [
    "termination (120 Ω at both ends), the bus load (12 kΩ, 32 transceivers), the data rate (10 Mbps) and the receiver threshold (±200 mV): no schema field – in hints and sources, for CK-17",

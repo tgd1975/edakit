@@ -66,7 +66,8 @@
  },
  "values": {
   "behavior": "none",
-  "vout_v": 4.2
+  "vout_v": 4.2,
+  "prog_v": 1000
  },
  "limits": {
   "vdd_max_v": 7.0,
@@ -110,7 +111,8 @@
    "absolute maximum p. 3: VDD 7.0 V, I/O -0.3 … VDD + 0.3 V, TJ internally limited",
    "DC characteristics p. 3–5: VREG 4.20 V ±0.75 %, IREG = 1000 V / RPROG, RPROG 2 … 67 kΩ, STAT currents and levels, θJA 230 °C/W, TJ -40 … 125 °C",
    "capacitors: minimum 4.7 µF at VDD (3.1) and at VBAT (3.2, 6.1.1.4)",
-   "options AC: 10 % / 66.5 % / 7.5 % / 96.5 % (p. 26)"
+   "options AC: 10 % / 66.5 % / 7.5 % / 96.5 % (p. 26)",
+   "2026-10-31: prog_v 1000 V – I_REG = 1000 V / R_PROG, Microchip DS20001984H section 5.1.2 (as read for the library draft and for FT-4)"
   ],
   "open": [
    "VBAT has no absolute maximum of its own: 'all inputs and outputs -0.3 … VDD + 0.3 V' would forbid a cell on VBAT with VDD absent, which the data sheet itself specifies (reverse leakage with VDD floating) – not entered",

@@ -26,7 +26,8 @@
    "type": "output",
    "drive": "tristate",
    "short_proof": true,
-   "hint": "bridge output: H, L or Z (coast, sleep) by the truth table 7.3.2; overcurrent protection covers a short to ground, to supply and across the winding (7.3.5.1)"
+   "hint": "bridge output: H, L or Z (coast, sleep) by the truth table 7.3.2; overcurrent protection covers a short to ground, to supply and across the winding (7.3.5.1)",
+   "clamp": "internal"
   },
   "3": {
    "name": "AISEN",
@@ -39,14 +40,16 @@
    "type": "output",
    "drive": "tristate",
    "short_proof": true,
-   "hint": "bridge output: H, L or Z (coast, sleep) by the truth table 7.3.2; overcurrent protection covers a short to ground, to supply and across the winding (7.3.5.1)"
+   "hint": "bridge output: H, L or Z (coast, sleep) by the truth table 7.3.2; overcurrent protection covers a short to ground, to supply and across the winding (7.3.5.1)",
+   "clamp": "internal"
   },
   "5": {
    "name": "BOUT2",
    "type": "output",
    "drive": "tristate",
    "short_proof": true,
-   "hint": "bridge output: H, L or Z (coast, sleep) by the truth table 7.3.2; overcurrent protection covers a short to ground, to supply and across the winding (7.3.5.1)"
+   "hint": "bridge output: H, L or Z (coast, sleep) by the truth table 7.3.2; overcurrent protection covers a short to ground, to supply and across the winding (7.3.5.1)",
+   "clamp": "internal"
   },
   "6": {
    "name": "BISEN",
@@ -59,7 +62,8 @@
    "type": "output",
    "drive": "tristate",
    "short_proof": true,
-   "hint": "bridge output: H, L or Z (coast, sleep) by the truth table 7.3.2; overcurrent protection covers a short to ground, to supply and across the winding (7.3.5.1)"
+   "hint": "bridge output: H, L or Z (coast, sleep) by the truth table 7.3.2; overcurrent protection covers a short to ground, to supply and across the winding (7.3.5.1)",
+   "clamp": "internal"
   },
   "8": {
    "name": "nFault",
@@ -179,7 +183,8 @@
    "electrical p. 6: VIL 0.7 V / VIH 2 V (nSLEEP 0.5 / 2.5 V), RPD 150 kΩ / 500 kΩ, IVM 3 mA max, RDS(on) HS / LS, nFAULT open drain",
    "capacitors: VM 10 µF min to GND, VINT 2.2 µF 6.3 V to GND, VCP 0.01 µF 16 V to VM (p. 3, 10.1)",
    "outputs recirculate through the body diodes in fast decay (7.3.2) – no clamp diodes needed",
-   "outputs: Z in coast and sleep (truth table 7.3.2) – drive tristate; OCP on every FET for shorts to ground, supply and across the winding (7.3.5.1) – short_proof"
+   "outputs: Z in coast and sleep (truth table 7.3.2) – drive tristate; OCP on every FET for shorts to ground, supply and across the winding (7.3.5.1) – short_proof",
+   "2026-10-31: outputs clamp = internal – SLVSAR1E: the bridge's body diodes clamp the winding (as read for the library draft)"
   ],
   "open": [
    "VCP needs 0.01 µF to VM, not to ground – needs.capacitor knows only a capacitor to ground, so it is a pin hint only",

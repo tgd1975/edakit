@@ -198,9 +198,12 @@ def released_nets(d):
             continue
         if resistors_to(d, name, held - {name}):
             continue
+        roles = {i.get("role") for i in infos}
+        fix = ("a pull-down to ground – the B line of an RS-485 bias pair (REQ.value/failsafe)" if roles & {"rs485_b"}
+               else "a pull-up to the bus supply – the A line of an RS-485 bias pair (REQ.value/failsafe)"
+               if roles & {"rs485_a"} else "a pull-up to the bus supply")
         out.append(Finding("LVL.undefined", "G", name, f"{name}: driven only by outputs that let go ({', '.join(open_)}) "
-                           "and nothing holds it – released, it floats", fix="a pull-up to the bus supply",
-                           grade="open_drain", on=(("net", name),)))
+                           "and nothing holds it – released, it floats", fix=fix, grade="open_drain", on=(("net", name),)))
     return out
 
 

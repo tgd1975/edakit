@@ -96,7 +96,9 @@ def i2c(d):
 
 
 def flyback(d):
-    """REQ.missing: a coil a transistor or an output switches has a diode across it, cathode at its plus."""
+    """REQ.missing: a coil a transistor or an output switches has a diode across it, cathode at its plus – not where the
+    output's entry says how it clamps (pin clamp: internal, or none – then REQ.missing/clamp asks for the bridge's
+    diodes)."""
     n = needs()["flyback"]
     out = []
     for des in d.comps_of_kind(*n["coils"]):
@@ -109,7 +111,10 @@ def flyback(d):
         switches = [q for q in d.comps_of_kind("npn", "pnp", "nmos", "pmos")
                     if {d.net_of(q, "collector"), d.net_of(q, "drain")} & {plus, minus}]
         switches += [r for net in (plus, minus) for r in d.nets[net]["pins"]
-                     if d.pin_info(r).get("type") in ("output", "bidirectional")]
+                     if d.pin_info(r).get("type") in ("output", "bidirectional")
+                     and d.pin_info(r).get("clamp") not in ("internal", "none")]
+        # an output with clamp = internal clamps the winding itself (a bridge's body or regenerative diodes); with
+        # clamp = none a single diode across a winding a bridge drives both ways would short it – REQ.missing/clamp
         if switches and not any(d.net_of(x, "cathode") == plus and d.net_of(x, "anode") == minus
                                 for x in d.comps_of_kind("diode")):
             word = {"motor": "the motor's winding", "solenoid": "the solenoid's winding"}.get(part["kind"],

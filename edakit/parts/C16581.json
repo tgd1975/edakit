@@ -90,7 +90,8 @@
  },
  "values": {
   "behavior": "none",
-  "vout_v": 4.2
+  "vout_v": 4.2,
+  "prog_v": 1100
  },
  "limits": {
   "vdd_max_v": 8,
@@ -132,7 +133,8 @@
    "absolute maximum p. 2: VCC 8 V, TEMP and CE 10 V, BAT pin current 1200 mA, Tj 145 °C, ambient -40 … 85 °C",
    "electrical characteristics p. 5: VCC 4.0 … 8.0 V, VFLOAT 4.2 V ±1 %, IBAT at 1.1 / 2.2 kΩ, trickle, UVLO, termination, status outputs",
    "charge current 1100 / RPROG and the RPROG table p. 9; status outputs open drain p. 7, 10",
-   "typical applications p. 3: 10 µF at VCC and at BAT"
+   "typical applications p. 3: 10 µF at VCC and at BAT",
+   "2026-10-31: prog_v 1100 V – I_BAT = 1100 V / R_PROG, TP4056 REV_2.4 (as read for the library draft and for FT-4)"
   ],
   "open": [
    "the absolute maximum of BAT reads '-0.3V~0.7V' (p. 2) – evidently misprinted; no v_max_v for BAT",
