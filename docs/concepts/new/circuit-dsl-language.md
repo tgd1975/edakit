@@ -5,13 +5,13 @@ fixes what that concept leaves to "the language": every construct with its synta
 into the resolved graph and the errors it raises; how the compiler resolves names and expands usages, loops and
 variants; the derivation rules; the electrical library on SysML v2 that the notation is defined on and the
 exports map to. It is written so that the session that builds it needs no question answered: where
-circuit-dsl.md left a choice open, this document takes it and marks it "decided"; the owner's objection changes
-it. The toolchain – modules, commands, tests, the steps and their order – is
-[circuit-dsl-toolchain.md](circuit-dsl-toolchain.md). Facts about edakit are those of main at `2f4628a`, with
-the TOML form of circuit-language-plan.md built (L.1 to L.8, settled the same day); facts about SysML v2 and
-KerML come from the specifications and the library files named in the sources. Against the yardstick
-(CLAUDE.md): the source and the resolved graph are text in the project's repository; a model edits the source
-through the CLI and `graph show`; nothing of the circuit lives only in EasyEDA or in someone's head.
+circuit-dsl.md left a choice open, this document takes it and marks it "decided"; the owner confirmed the
+seventeen decisions of section 12 on 2026-10-31. The toolchain – modules, commands, tests, the steps and their
+order – is [circuit-dsl-toolchain.md](circuit-dsl-toolchain.md). Facts about edakit are those of main at
+`2f4628a`, with the TOML form of circuit-language-plan.md built (L.1 to L.8, settled the same day); facts about
+SysML v2 and KerML come from the specifications and the library files named in the sources. Against the
+yardstick (CLAUDE.md): the source and the resolved graph are text in the project's repository; a model edits the
+source through the CLI and `graph show`; nothing of the circuit lives only in EasyEDA or in someone's head.
 
 ## 1. The frame
 
@@ -907,7 +907,9 @@ requirement R-7 from D-8 should "A USB power bank stays on: the circuit draws at
 
 ## 12. Decided here
 
-What this document decides beyond circuit-dsl.md, each with its reason; the owner's objection changes it:
+What this document decides beyond circuit-dsl.md, each with its reason – confirmed by the owner on 2026-10-31 in
+the closing question of the round that wrote them: item 16 chosen among three alternatives (SYNC.graph for TOML
+and language projects alike), the other sixteen acked as written:
 
 1. `for` only at the top level of a main file, an included file or a variant, one level, over `part`, `net`, `use`,
    `lock`, `cable` and `layout` – nothing in the projects needs more, and a second level is a construct of its own.

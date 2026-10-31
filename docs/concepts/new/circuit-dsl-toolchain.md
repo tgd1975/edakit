@@ -29,11 +29,12 @@ it reuses. Sizes as in the plans: S a day, M a few days, L a week or more, in a 
 - **No key, no change.** `tests/fixtures/led-bar` stays a JSON project and reports what it reports today in every
   step; every existing test stays; the plugin's hooks, the proposals workflow and the bell are not touched. A new
   dependency is optional (`pygls`, `systree`) and never in edakit's default install.
-- **Decisions.** What circuit-dsl-language.md and this plan say is decided. Where the code forces a choice neither
-  names, the session decides by the section "Defaults for the session", writes the decision with date and reason
-  into "Decisions of the session" at the end of this file, and goes on. It stops to ask only for a choice that
-  changes a hash rule, the name of a file a project commits, or the surface of a statement – and asks at the end,
-  in the closing report, after every other step is built; nothing waits in the middle.
+-  **Decisions.** What circuit-dsl-language.md and this plan say is decided, the language's section 12 confirmed
+  by the owner on 2026-10-31. Where the code forces a choice neither names, the session decides by the section
+  "Defaults for the session", writes the decision with date and reason into "Decisions of the session" at the
+  end of this file, and goes on. It stops to ask only for a choice that changes a hash rule, the name of a file
+  a project commits, or the surface of a statement – and asks at the end, in the closing report, after every
+  other step is built; nothing waits in the middle.
 - **Never:** file an issue or a proposal, open a pull request unless asked, push to main, skip or weaken a check to
   get green, change the proposals workflow, state a fact about a tool or an API that was not read from the tool's
   own output or documentation (working agreement 17: the grammar file, the standard reader's output, pygls's and
