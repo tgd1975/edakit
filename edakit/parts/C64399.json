@@ -1,0 +1,110 @@
+{
+ "lcsc": "C64399",
+ "mpn": "HFD4/5-SR",
+ "manufacturer": "Xiamen Hongfa Electroacoustic",
+ "kind": "relay",
+ "package": "SMD 10 × 6.5 mm, 8 pins",
+ "footprint": "RELAY-SMD_HFD4-5-SR",
+ "jlc_class": "Extended Part",
+ "datasheet": {
+  "url": "https://datasheet.lcsc.com/datasheet/pdf/59ff853d5a970e012add9fdcb7e5ee79.pdf?productCode=C64399",
+  "pinout_page": 4
+ },
+ "pins": {
+  "1": {
+   "name": "1",
+   "type": "passive",
+   "role": "coil_plus"
+  },
+  "2": {
+   "name": "2",
+   "type": "passive",
+   "role": "nc"
+  },
+  "3": {
+   "name": "3",
+   "type": "passive",
+   "role": "common"
+  },
+  "4": {
+   "name": "4",
+   "type": "passive",
+   "role": "no"
+  },
+  "5": {
+   "name": "5",
+   "type": "passive",
+   "role": "no"
+  },
+  "6": {
+   "name": "6",
+   "type": "passive",
+   "role": "common"
+  },
+  "7": {
+   "name": "7",
+   "type": "passive",
+   "role": "nc"
+  },
+  "8": {
+   "name": "8",
+   "type": "passive",
+   "role": "coil_minus"
+  }
+ },
+ "values": {
+  "coil_ohm": 178,
+  "v_operate_v": 3.75,
+  "v_release_v": 0.5,
+  "r_contact_ohm": 0.1
+ },
+ "limits": {
+  "v_coil_max_v": 10,
+  "i_max_a": 1.0,
+  "v_max_v": 220,
+  "t_min_c": -40,
+  "t_max_c": 85
+ },
+ "hints": [
+  "contacts AgNi + Au plated; minimum applicable load 10 mV 10 µA – a reference value (contact data, note 2)",
+  "operate and release time 3 ms max each (characteristics); a diode across the coil makes the release slower",
+  "Hongfa recommends the 4.5 V coil for a 5 V transistor drive (coil data, note 3); apply the coil voltage as a step (note 7)",
+  "two contact sets (2C): set 1 common 3, NC 2, NO 4; set 2 common 6, NC 7, NO 5 – the simulation switches set 1 only"
+ ],
+ "compliance": {
+  "rohs": true,
+  "source": "Hongfa HFD4 data sheet (2024 Rev. 1.00), p. 1: RoHS compliant"
+ },
+ "sources": [
+  "Hongfa HFD4 subminiature signal relay data sheet, 2024 Rev. 1.00 (catalogue pages 67–74) – LCSC product data of C64399, https://datasheet.lcsc.com/datasheet/pdf/59ff853d5a970e012add9fdcb7e5ee79.pdf?productCode=C64399, read 2026-10-31",
+  "part number (ordering information p. 69): HFD4 / 5 = 5 VDC coil / S = standard SMT / R = tape and reel; single side stable",
+  "coil data p. 68, single side stable standard type HFD4/5: nominal 5 VDC, pick-up 3.75 VDC max, drop-out 0.5 VDC min, coil 178 Ω ±10 %, 140 mW, max. voltage 10 VDC ('the maximum voltage the coil could endure in a short period of time', note 5)",
+  "contact data p. 67: 2C, contact resistance 100 mΩ max (10 mA 30 mVDC), AgNi + Au plated, rating 1 A 30 VDC / 0.3 A 125 VAC resistive, max. switching current 2 A, max. switching voltage 250 VAC / 220 VDC, min. applicable load 10 mV 10 µA",
+  "characteristics p. 67: operate time 3 ms max, release time 3 ms max, ambient −40 … 85 °C (105 °C for the 888 version), MSL 3 for SMT types",
+  "pins: wiring diagram p. 70 (bottom view, not energized): 1 coil +, 8 coil −; set 1: 3 common, 2 NC, 4 NO; set 2: 6 common, 7 NC, 5 NO – EasyEDA symbol of C64399 (edakit part import 2026-10-31): pins 1 … 8, named by number",
+  "JLCPCB catalogue (edakit stock --lcsc, 2026-10-31): Extended Part, 47 123 pcs; LCSC 29 908 pcs"
+ ],
+ "notes": "DPDT signal relay, 5 V coil (178 Ω, 28 mA), gold-plated contacts, single side stable. The true bypass of block relay-bypass. Library draft, group guitar.",
+ "verified": {
+  "by": "Claude (datasheet check, library draft)",
+  "date": "2026-10-31",
+  "datasheet": "Hongfa HFD4 data sheet, 2024 Rev. 1.00",
+  "datasheet_sha256": "7f938b2d2ffcc8fd455c1948b6b5cb4fbe7eb2be588cc1df1f99795dda90643a",
+  "checked": [
+   "coil data HFD4/5: 3.75 V pick-up max, 0.5 V drop-out min, 178 Ω ±10 %, 10 V max",
+   "contacts: 2C, AgNi + Au plated, 100 mΩ, 1 A 30 VDC, min. load 10 mV 10 µA",
+   "wiring diagram (bottom view): 1/8 coil, 3-2-4 and 6-7-5 common-NC-NO",
+   "operate/release 3 ms max; −40 … 85 °C"
+  ],
+  "open": [
+   "a guitar signal into a high-impedance input carries about 1 µA – below the 10 µA minimum applicable load (a reference value); Hongfa offers a (825) version for tiny loads",
+   "v_coil_max_v 10 is a short-term maximum (note 5), not a continuous rating; the coil resistance spread ±10 % is not in the simulation",
+   "the schema has one role per contact kind: both sets carry common/no/nc, and the simulation models the first set only",
+   "MSL 3: reflow within the floor life or bake (notice 10)",
+   {
+    "text": "pin 1 orientation mark of the relay against the footprint",
+    "when": "order"
+   }
+  ]
+ }
+}

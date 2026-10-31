@@ -1,0 +1,88 @@
+{
+ "lcsc": "C415471",
+ "mpn": "AQY212GSX",
+ "manufacturer": "Panasonic",
+ "kind": "optocoupler",
+ "package": "SOP-4 (2.54 mm)",
+ "footprint": "SOP-4_L4.3-W4.4-P2.54-LS6.8-TR",
+ "jlc_class": "Extended Part",
+ "datasheet": {
+  "url": "https://datasheet.lcsc.com/datasheet/pdf/34fb405561c918c0998ae004e61391be.pdf?productCode=C719745",
+  "pinout_page": 4
+ },
+ "pins": {
+  "1": {
+   "name": "1",
+   "type": "passive",
+   "role": "anode"
+  },
+  "2": {
+   "name": "2",
+   "type": "passive",
+   "role": "cathode"
+  },
+  "3": {
+   "name": "3",
+   "type": "passive"
+  },
+  "4": {
+   "name": "4",
+   "type": "passive"
+  }
+ },
+ "values": {
+  "vf_v": 1.14,
+  "vf_at_a": 0.005
+ },
+ "limits": {
+  "if_max_a": 0.05,
+  "vr_max_v": 5,
+  "vce_max_v": 60,
+  "ic_max_a": 1.0,
+  "p_max_w": 0.45,
+  "t_min_c": -40,
+  "t_max_c": 85
+ },
+ "hints": [
+  "MOSFET output (1 Form A, AC/DC) between pins 3 and 4: Ron 0.34 typ / 0.7 Ω max at IF 5 mA; LED current 5 … 30 mA recommended, operate current 1.1 mA typ / 3 mA max",
+  "turn-on time 1.3 typ / 5.0 ms max, turn-off 0.1 typ / 0.5 ms max at IF 5 mA – with less LED current the turn-on is slower (figure 10)",
+  "output capacitance between 3 and 4 when off: up to about 220 pF at 0 V, falling with voltage (figure 12, typical) – it loads a signal line it sits on"
+ ],
+ "compliance": {
+  "rohs": true,
+  "source": "LCSC product data C415471 (2026-10-31): RoHS (isEnvironment true)"
+ },
+ "sources": [
+  "Panasonic PhotoMOS GU SOP 1 Form A High Capacity (AQY211G2S, AQY212G2S, AQY212GS), ASCTB133E 202103 – LCSC product data of C719745 (AQY212GS), https://datasheet.lcsc.com/datasheet/pdf/34fb405561c918c0998ae004e61391be.pdf?productCode=C719745, read 2026-10-31; LCSC's copy for C415471 is the older ASCTB133E 201703-T with the same ratings and characteristics (sha256 d9af2ffea3f4dd53c4af0c5b64bb5f742191215bdfe9e57385b650dea93f365f)",
+  "part number (types p. 1): AQY212GS = 60 V, 1.0 A; packing X = tape and reel, picked from the 1/2-pin side",
+  "absolute maximum p. 1: LED forward current 50 mA, LED reverse voltage 5 V, peak forward current 1 A, input power 75 mW, load voltage 60 V (peak AC), continuous load current 1.0 A, peak 3 A (100 ms), output power 400 mW, total 450 mW, I/O isolation 1 500 Vrms, −40 … +85 °C",
+  "electrical characteristics p. 2: LED operate current 1.1 mA typ / 3 mA max, turn-off current 0.3 mA min, LED dropout voltage 1.32 V typ (1.14 V at IF = 5 mA), 1.5 V max at 50 mA; Ron 0.34 typ / 0.7 Ω max (IF 5 mA, IL max, within 1 s); leakage 1 µA max; Ton 1.3 / 5.0 ms, Toff 0.1 / 0.5 ms (IF 5 mA, IL 100 mA, VL 10 V); Ciso 0.8 / 1.5 pF",
+  "recommended operating conditions p. 2: LED current 5 … 30 mA; AQY212GS load voltage 48 V peak AC max, load current 1.0 A max",
+  "vf_v 1.14 at vf_at_a 0.005: the typical dropout voltage at 5 mA (p. 2)",
+  "vce_max_v 60, ic_max_a 1.0: the output's load voltage and continuous load current (absolute maximum) in the optocoupler kind's fields for the output",
+  "pins: schematic p. 4 – 1 LED anode, 2 LED cathode, 3 and 4 the output; EasyEDA symbol of C415471 (edakit part import 2026-10-31): pins 1 … 4 named by number (the symbol of C719745, AQY212GS in tubes, has three pins only – that number is not used)",
+  "JLCPCB catalogue (edakit stock --lcsc, 2026-10-31): Extended Part, 19 230 pcs, MSL 3"
+ ],
+ "notes": "PhotoMOS solid-state relay, 1 Form A, 60 V, 1 A, Ron 0.7 Ω max – the mute across the output of block relay-bypass. Library draft, group guitar.",
+ "verified": {
+  "by": "Claude (datasheet check, library draft)",
+  "date": "2026-10-31",
+  "datasheet": "Panasonic PhotoMOS GU SOP 1 Form A High Capacity, ASCTB133E 202103",
+  "datasheet_sha256": "cc43b13142a5689d1cb4cd29baf62f931776cfe572433ffb40efd2163fc1df40",
+  "checked": [
+   "absolute maximum p. 1: IF 50 mA, VR 5 V, VL 60 V, IL 1.0 A, PT 450 mW, −40 … 85 °C",
+   "p. 2: IFon 3 mA max, VF 1.14 V at 5 mA, Ron 0.7 Ω max, Ton 5 ms / Toff 0.5 ms max, recommended IF 5 … 30 mA",
+   "schematic p. 4: 1 anode, 2 cathode, 3/4 output"
+  ],
+  "open": [
+   "the kind optocoupler models a transistor output (ctr_min_ratio × IF from collector to emitter); a PhotoMOS output is a resistance in both directions – no such model, so the output pins carry no role and the simulation leaves the output open",
+   "vce_max_v and ic_max_a stand for the output's load voltage and load current; no check reads them without the roles",
+   "the output capacitance (figure 12) is a typical curve only",
+   "MSL 3: reflow within the floor life or bake",
+   {
+    "text": "pin 1 mark of the package against the footprint",
+    "when": "order"
+   }
+  ]
+ }
+}

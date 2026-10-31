@@ -1,0 +1,116 @@
+{
+ "lcsc": "C2864555",
+ "mpn": "OPA991IDBVR",
+ "manufacturer": "Texas Instruments",
+ "kind": "ic",
+ "package": "SOT-23-5",
+ "footprint": "SOT-23-5_L2.9-W1.6-P0.95-LS2.8-BR",
+ "jlc_class": "Extended Part",
+ "datasheet": {
+  "url": "https://www.ti.com/lit/ds/symlink/opa991.pdf",
+  "pinout_page": 4
+ },
+ "pins": {
+  "1": {
+   "name": "OUT",
+   "type": "output",
+   "role": "out"
+  },
+  "2": {
+   "name": "V-",
+   "type": "ground",
+   "role": "gnd"
+  },
+  "3": {
+   "name": "IN+",
+   "type": "input",
+   "role": "in_p",
+   "z_in_ohm": 6000000000000.0
+  },
+  "4": {
+   "name": "IN-",
+   "type": "input",
+   "role": "in_n",
+   "z_in_ohm": 6000000000000.0
+  },
+  "5": {
+   "name": "V+",
+   "type": "power_in",
+   "role": "vcc",
+   "needs": [
+    {
+     "what": "capacitor",
+     "c_min_f": 1e-07,
+     "source": "TI OPAx991 data sheet SBOS969F (January 2022), 10.1 Layout Guidelines: low-ESR 0.1-µF ceramic bypass capacitors between each supply pin and ground, close to the device"
+    }
+   ]
+  }
+ },
+ "values": {
+  "behavior": "opamp",
+  "vout_swing_v": [
+   0.055,
+   -0.055
+  ],
+  "vicm_v": [
+   -0.1,
+   0.1
+  ],
+  "iq_a": 0.00075,
+  "gain_min_ratio": 1
+ },
+ "limits": {
+  "vdd_max_v": 42,
+  "vdd_op_min_v": 2.7,
+  "vdd_op_max_v": 40,
+  "vin_rel_max_v": 0.5,
+  "tj_max_c": 150,
+  "t_min_c": -40,
+  "t_max_c": 125,
+  "rth_ja_k_per_w": 185.7
+ },
+ "hints": [
+  "rail-to-rail input from two input pairs: between (V+) − 2 V and (V+) − 1 V both are on – offset, CMRR, noise and THD are worse there (7.3.5); bias an audio stage at mid supply, below (V+) − 2 V",
+  "capacitive load drive 1 nF (6.7); larger loads – a long cable – with an isolation resistor RISO in series with the output (7.3.4, figure 7-5: 50 Ω)",
+  "no phase reversal beyond the input range (figure 6-30); inputs more than 0.5 V beyond the rails: limit the current to 10 mA (6.1 note 3)"
+ ],
+ "compliance": {
+  "rohs": true,
+  "radio": "none",
+  "source": "LCSC product data C2864555 (2026-10-31): RoHS (isEnvironment true); the data sheet states nothing"
+ },
+ "sources": [
+  "TI OPA991, OPA2991, OPA4991 data sheet SBOS969F (October 2019, revised January 2022), from TI https://www.ti.com/lit/ds/symlink/opa991.pdf, read 2026-10-31",
+  "pins: figure 5-1 and table 5-1 p. 4, DBV (SOT-23-5): 1 OUT, 2 V−, 3 IN+, 4 IN−, 5 V+ – EasyEDA symbol of C2864555 (edakit part import 2026-10-31): 1 OUT, 2 V-, 3 IN+, 4 IN-, 5 V+",
+  "vdd_max_v 42: 6.1 absolute maximum supply voltage 0 … 42 V; vin_rel_max_v 0.5: 6.1 common-mode voltage of the signal inputs (V−) − 0.5 … (V+) + 0.5 V, input current ±10 mA",
+  "vdd_op_min_v 2.7, vdd_op_max_v 40: 6.3 recommended supply voltage 2.7 … 40 V",
+  "vicm_v [-0.1, 0.1]: 6.7 common-mode voltage range (V−) − 0.1 V … (V+) + 0.1 V",
+  "vout_swing_v [0.055, -0.055]: 6.7 voltage output swing from rail, VS = 40 V, RL = 10 kΩ: 50 typ / 55 max mV (RL = 2 kΩ: 250 mV max; VS = 2.7 V, RL = 10 kΩ: 12 mV max) – the 10 kΩ maximum entered",
+  "z_in_ohm 6e12: 6.7 common-mode input impedance ZICM 6 TΩ || 1 pF; input bias current ±10 pA typ (no maximum given)",
+  "iq_a 0.00075: 6.7 quiescent current per amplifier 560 typ / 685 max µA at 25 °C, 750 µA max over −40 … 125 °C – the maximum over temperature entered",
+  "gain_min_ratio 1: 6.7 phase margin 60° at G = +1, RL = 10 kΩ; slew rate and settling specified at G = +1 – unity-gain stable",
+  "rth_ja_k_per_w 185.7: 6.4 RθJA DBV (SOT-23-5) 185.7 °C/W; tj_max_c 150: 6.1 junction temperature 150 °C; t_min_c -40, t_max_c 125: 6.3 specified temperature −40 … 125 °C",
+  "6.7: GBW 4.5 MHz, SR 21 V/µs, noise 10.8 nV/√Hz at 1 kHz, THD+N 0.00021 % (VS = 40 V, 3 VRMS, G = 1, 1 kHz), short-circuit current ±75 mA, capacitive load drive 1000 pF, open-loop output impedance 525 Ω at 1 MHz",
+  "JLCPCB catalogue (edakit stock --lcsc, 2026-10-31): Extended Part, 8 289 pcs, MSL 1"
+ ],
+ "notes": "40 V rail-to-rail input/output op-amp, CMOS input (±10 pA), unity-gain stable. Instrument buffer of block instrument-buffer: runs from a 3.3 or 5 V board and from a pedal's 9 V up to an 18 V outlet. Library draft, group guitar.",
+ "verified": {
+  "by": "Claude (datasheet check, library draft)",
+  "date": "2026-10-31",
+  "datasheet": "TI OPAx991 data sheet SBOS969F (revised January 2022)",
+  "datasheet_sha256": "4e9370f684ab08af64d03d3bec012f6323a4d02231f7079392bcfde032d61312",
+  "checked": [
+   "DBV pinout p. 4 = EasyEDA symbol of C2864555 (1 OUT, 2 V−, 3 IN+, 4 IN−, 5 V+)",
+   "absolute maximum 6.1: supply 42 V, inputs (V−) − 0.5 … (V+) + 0.5 V, 10 mA, TJ 150 °C",
+   "recommended 6.3: 2.7 … 40 V, −40 … 125 °C",
+   "6.7: VCM (V−) − 0.1 … (V+) + 0.1 V, swing 55 mV max at 10 kΩ (40 V), IQ 685/750 µA max, ZICM 6 TΩ, phase margin 60° at G = +1",
+   "6.4: RθJA 185.7 °C/W (DBV-5)"
+  ],
+  "open": [
+   "the output swing depends on load and supply (12 mV at 2.7 V / 10 kΩ … 250 mV at 40 V / 2 kΩ); the behaviour model takes one figure – the 10 kΩ maximum at 40 V",
+   "V− is typed ground (single supply); a split-supply design needs V− as a supply pin of its own",
+   "input bias current has no maximum in the data sheet (±10 pA typical)",
+   "the shutdown variant OPA991S (SOT-23-6) is another part; this entry is the 5-pin DBV"
+  ]
+ }
+}

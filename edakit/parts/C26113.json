@@ -1,0 +1,59 @@
+{
+ "lcsc": "C26113",
+ "mpn": "0805W8F2204T5E",
+ "manufacturer": "UNI-ROYAL(厚声)",
+ "kind": "resistor",
+ "package": "0805",
+ "footprint": "R0805",
+ "jlc_class": "Extended Part",
+ "datasheet": {
+  "url": "https://datasheet.lcsc.com/datasheet/pdf/0a975aaa49b7c97f38a963127be4a823.pdf?productCode=C26113",
+  "pinout_page": null
+ },
+ "pins": {
+  "1": {
+   "name": "1",
+   "type": "passive",
+   "role": "1"
+  },
+  "2": {
+   "name": "2",
+   "type": "passive",
+   "role": "2"
+  }
+ },
+ "values": {
+  "value_ohm": 2200000.0,
+  "tolerance": 0.01
+ },
+ "limits": {
+  "p_max_w": 0.125,
+  "v_max_v": 150,
+  "t_min_c": -55,
+  "t_max_c": 155
+ },
+ "spice": {},
+ "sources": [
+  "UNI-ROYAL Thick Film Chip Resistors data sheet V.3 (Feb. 12, 2019), LCSC's copy https://datasheet.lcsc.com/datasheet/pdf/0a975aaa49b7c97f38a963127be4a823.pdf?productCode=C26113, read 2026-10-31 (one document for the series; it does not print the order code)",
+  "order code (section 2–3, p. 2): 0805 = size, W8 = 1/8 W, F = ±1 %, 2204 = 220 × 10^4 Ω = 2.2 MΩ, T = tape and reel, 5 = 5000 pcs, E = lead free",
+  "resistance range (section 6, p. 4): 0805 1/8 W at 70 °C, ±1 % for 0.1 Ω ≤ R < 10 MΩ",
+  "ratings (section 7, p. 5): 0805 max. working voltage 150 V, overload 300 V, −55 … 155 °C; power derated above 70 °C (section 9, figure 1)",
+  "mpn, manufacturer, footprint, jlc_class, pins: EasyEDA library data of C26113 via edakit part import, read 2026-10-31",
+  "JLCPCB catalogue (edakit stock --lcsc, 2026-10-31): Extended Part (preferred), 95 083 pcs"
+ ],
+ "notes": "2.2 MΩ bias and pull-down resistor (blocks instrument-buffer, relay-bypass). Library draft, sibling of C17414 and C17408.",
+ "verified": {
+  "by": "Claude (datasheet check, library draft)",
+  "date": "2026-10-31",
+  "datasheet": "UNI-ROYAL Thick Film Chip Resistors V.3 (2019-02-12)",
+  "datasheet_sha256": "11cd644d5d8a34a6d12775afb80bf58d8fc11f0c3b700dbd0f7a59942ceaa5ef",
+  "checked": [
+   "order code 0805W8F2204T5E: W8 = 1/8 W, F = ±1 %, 2204 = 2.2 MΩ (p. 2); within the 1 % range of 0805 (p. 4)",
+   "0805: 150 V max. working voltage, −55 … 155 °C (p. 5)"
+  ],
+  "open": [
+   "the power derating above 70 °C ambient (figure 1, p. 5) is a curve – p_max_w is the value up to 70 °C",
+   "thick-film excess noise at megohms is not in the data sheet"
+  ]
+ }
+}

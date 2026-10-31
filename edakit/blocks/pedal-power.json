@@ -1,0 +1,206 @@
+{
+ "name": "pedal-power",
+ "title": "Pedal power entry: 9 V centre-negative jack, Schottky, 100 Ω / 100 µF, 4.5 V reference",
+ "about": "A pedal's 9 V input: a 5.5 mm DC jack wired centre negative, an SS14 Schottky in the plus leg against a reversed plug, then 100 Ω and 100 µF as the filter of the audio rail, and the reference at half that rail – two 10 kΩ with 100 µF. The parts are rated for a 12 or 18 V outlet as well (jack 24 V, diode 40 V, capacitors 35 V). Maker-coverage BL-17.",
+ "ports": {
+  "vplus": "the protected supply behind the diode, unfiltered: relay coils, LEDs, a regulator for the logic",
+  "out": "the filtered rail for the audio stages (op-amp supplies)",
+  "vref": "half of out (4.5 V at 9 V): the bias of the audio stages",
+  "gnd": "ground"
+ },
+ "components": [
+  {
+   "designator": "J1",
+   "type": "connector",
+   "label": "{as}: 9 V DC jack, centre negative (pin 1 ground, pin 2 plus)",
+   "part": "PJ-102AH",
+   "lcsc": "C3096093",
+   "pins": {
+    "1": "1",
+    "2": "2",
+    "3": "3"
+   },
+   "nc": [
+    "3"
+   ],
+   "source": "reversible",
+   "notes": "Centre negative: pin 1 (centre) ground, pin 2 (barrel) plus. Pin 3, the switch lug, is closed to pin 2 without a plug – battery plus there, else in nc."
+  },
+  {
+   "designator": "D1",
+   "type": "diode",
+   "label": "{as}: reverse-polarity Schottky in the plus leg",
+   "part": "SS14",
+   "lcsc": "C2480",
+   "pins": {
+    "1": "K",
+    "2": "A"
+   }
+  },
+  {
+   "designator": "R1",
+   "type": "resistor",
+   "label": "{as}: supply filter 100 Ω",
+   "part": "0805W8F1000T5E",
+   "lcsc": "C17408",
+   "value": "100",
+   "pins": {
+    "1": "1",
+    "2": "2"
+   }
+  },
+  {
+   "designator": "C1",
+   "type": "capacitor",
+   "label": "{as}: supply filter 100 µF 35 V",
+   "part": "UWT1V101MCL1GS",
+   "lcsc": "C125975",
+   "value": "100uF",
+   "pins": {
+    "1": "1",
+    "2": "2"
+   }
+  },
+  {
+   "designator": "R2",
+   "type": "resistor",
+   "label": "{as}: vref divider 10 k (top)",
+   "part": "0805W8F1002T5E",
+   "lcsc": "C17414",
+   "value": "10k",
+   "pins": {
+    "1": "1",
+    "2": "2"
+   }
+  },
+  {
+   "designator": "R3",
+   "type": "resistor",
+   "label": "{as}: vref divider 10 k (bottom)",
+   "part": "0805W8F1002T5E",
+   "lcsc": "C17414",
+   "value": "10k",
+   "pins": {
+    "1": "1",
+    "2": "2"
+   }
+  },
+  {
+   "designator": "C2",
+   "type": "capacitor",
+   "label": "{as}: vref 100 µF 35 V",
+   "part": "UWT1V101MCL1GS",
+   "lcsc": "C125975",
+   "value": "100uF",
+   "pins": {
+    "1": "1",
+    "2": "2"
+   }
+  }
+ ],
+ "nets": [
+  {
+   "name": "jack",
+   "pins": [
+    "J1.2",
+    "D1.2"
+   ],
+   "v": [
+    0,
+    18
+   ],
+   "notes": "The jack's plus (barrel contact): a reversed plug reaches D1's anode only."
+  },
+  {
+   "name": "vplus",
+   "pins": [
+    "D1.1",
+    "R1.1"
+   ],
+   "v": [
+    0,
+    18
+   ]
+  },
+  {
+   "name": "out",
+   "pins": [
+    "R1.2",
+    "C1.1",
+    "R2.1"
+   ],
+   "v": [
+    0,
+    18
+   ]
+  },
+  {
+   "name": "vref",
+   "pins": [
+    "R2.2",
+    "R3.1",
+    "C2.1"
+   ],
+   "v": [
+    0,
+    9
+   ]
+  },
+  {
+   "name": "gnd",
+   "pins": [
+    "J1.1",
+    "C1.2",
+    "R3.2",
+    "C2.2"
+   ]
+  }
+ ],
+ "covers": [
+  "PATH.reverse",
+  "LIM.v",
+  "PATH.unfed",
+  "HINT.pedal_supply",
+  "HINT.jack_battery",
+  "HINT.bulk"
+ ],
+ "notes": [
+  "J1 centre negative, the pedal convention (HINT.pedal_supply): pin 1 (the 2.0 mm centre pin) ground, pin 2 plus. J1 carries \"source\": \"reversible\": PATH.reverse checks that a centre-positive plug reaches only D1's anode. Check that the adapter's plug fits the 2.0 mm pin.",
+  "D1 SS14 in the plus leg – not in the ground leg, which the audio cables' shields bypass (HINT.pedal_supply): 40 V reverse, so a reversed 18 V outlet stays within 0.67 × 40 V = 26.8 V; 1 A; VF ≤ 0.55 V at 1 A (MDD SS12…SS1200, Rev 2025A5). The library's AO3401A (block reverse-pmos) would drop less, but its gate allows ±12 V only – a 12 V outlet is at its limit, an 18 V one beyond.",
+  "R1 100 Ω and C1 100 µF: the audio rail's low-pass at 1/(2π · 100 Ω · 100 µF) = 15.9 Hz. R1 drops 0.1 V per mA (1 V at 10 mA, maker-coverage GTP 34) and carries 25 mA at most (0805, 1/8 W, 50 % derating): relay coils, LEDs and a logic regulator go on vplus, ahead of R1.",
+  "R2, R3 10 kΩ and C2 100 µF: vref at half of out with 5 kΩ source resistance – loads on vref at least 50 kΩ, 10 × the divider (maker-coverage GTP 9); megohm bias resistors are far above. τ = 5 kΩ × 100 µF = 0.5 s: vref ramps up over about 2.5 s at power-on (the thump of GTP 9 is that ramp). C2 is the same part as C1 – more than the 10 µF the reference needs at least, one part fewer. The divider draws 0.45 mA at 9 V.",
+  "C1, C2 35 V: an 18 V outlet stays within 0.67 × 35 V = 23.5 V (maker-coverage GTP 36). The nets are declared up to 18 V (vref 9 V) – for 9 V supplies only, narrow them.",
+  "Battery: its plus on J1 pin 3 (remove it from nc), so the adapter's plug cuts it off; its minus through the input jack's ring contact (HINT.jack_battery).",
+  "sim.json: J1 under sources (plus \"2\", minus \"1\") with the outlet's current limit as i_max_a, and its voltages under supplies (e.g. 8.5, 9, 9.6 V).",
+  "A bulk capacitor on vplus as well where relay coils or LEDs switch there (HINT.bulk)."
+ ],
+ "test": {
+  "connect": {},
+  "about": "vplus, out and vref become the nets T_VPLUS, T_OUT and T_VREF; the jack J1 becomes J2 – a 9 V source beside the example's 5 V J1",
+  "sim": {
+   "sources": {
+    "J2": {
+     "plus": "2",
+     "minus": "1",
+     "r_ohm": 0.5,
+     "i_max_a": 0.1,
+     "note": "values for the test: a 9 V outlet of a pedal supply, not a data sheet's"
+    }
+   },
+   "supplies": {
+    "usb-min": {
+     "J1": 4.75,
+     "J2": 8.5
+    },
+    "usb-nom": {
+     "J1": 5.0,
+     "J2": 9.0
+    },
+    "usb-max": {
+     "J1": 5.25,
+     "J2": 9.6
+    }
+   }
+  }
+ }
+}

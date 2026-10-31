@@ -1,0 +1,71 @@
+{
+ "lcsc": "C125975",
+ "mpn": "UWT1V101MCL1GS",
+ "manufacturer": "Nichicon",
+ "kind": "capacitor",
+ "package": "SMD V-chip aluminium electrolytic D6.3 × L7.7 mm",
+ "footprint": "CAP-SMD_BD6.3-L6.6-W6.6-LS7.6-FD",
+ "jlc_class": "Extended Part",
+ "datasheet": {
+  "url": "https://datasheet.lcsc.com/datasheet/pdf/cb59f9e388f2dc680eb863415949550b.pdf?productCode=C125975",
+  "pinout_page": null
+ },
+ "pins": {
+  "1": {
+   "name": "1",
+   "type": "passive",
+   "role": "plus"
+  },
+  "2": {
+   "name": "2",
+   "type": "passive",
+   "role": "minus"
+  }
+ },
+ "values": {
+  "value_f": 0.0001,
+  "dielectric": "electrolytic",
+  "polarized": true,
+  "tolerance": 0.2
+ },
+ "limits": {
+  "v_max_v": 35,
+  "vr_max_v": 0,
+  "i_ripple_a": 0.084,
+  "t_min_c": -55,
+  "t_max_c": 105
+ },
+ "compliance": {
+  "rohs": true,
+  "source": "Nichicon WT series (CAT.8100D): compliant to the RoHS directive (2011/65/EU)"
+ },
+ "sources": [
+  "Nichicon aluminium electrolytic capacitors, chip type WT series (UWT), CAT.8100D – LCSC's copy for C125975 (dimension table page), https://datasheet.lcsc.com/datasheet/pdf/cb59f9e388f2dc680eb863415949550b.pdf?productCode=C125975, and the full two pages from LCSC's copy for C445058 (UWT1V100MCL1GB), https://datasheet.lcsc.com/datasheet/pdf/e31f9b11320c1fd5f4e5f7937742b1d1.pdf?productCode=C445058, read 2026-10-31",
+  "type numbering: UWT 1V 101 M CL 1 GS = WT series, 35 V, 100 µF, ±20 %, size code CL (φ3 … 8 × 7.7), configuration, package GS (φ6.3 … 10, L 5.8/7.7)",
+  "dimensions table: 100 µF / 35 V (1V): 6.3 × 7.7 mm, rated ripple current 84 mA rms at 105 °C, 120 Hz (frequency coefficients 0.70 at 50 Hz … 1.50 at 10 kHz and above)",
+  "specifications: category temperature −55 … +105 °C, rated voltage 4 … 50 V, capacitance tolerance ±20 % (120 Hz, 20 °C), leakage ≤ 0.01CV or 3 µA after 2 minutes (35 µA here), tan δ 0.14 max at 35 V, endurance 1000 h at 105 °C",
+  "vr_max_v 0: the data sheet rates no reverse voltage – an aluminium electrolytic, 0 entered",
+  "pins: EasyEDA footprint of C125975 (edakit part import 2026-10-31): pad 1 under the chamfered outline corners and the '+' print = plus, pad 2 with the '−' print = minus",
+  "JLCPCB catalogue (edakit stock --lcsc, 2026-10-31): Extended Part, 147 224 pcs"
+ ],
+ "notes": "100 µF/35 V aluminium electrolytic, V-chip 6.3 × 7.7 mm, 105 °C. Supply filter and 4.5 V reference of block pedal-power – 35 V for a 12 or 18 V outlet. Polar. Library draft, group guitar.",
+ "verified": {
+  "by": "Claude (datasheet check, library draft)",
+  "date": "2026-10-31",
+  "datasheet": "Nichicon WT series, CAT.8100D",
+  "datasheet_sha256": "2e82aeeaaf8a40cd77e3be92afe84b5926008705b14e6fc3878c95c44b01d79e",
+  "checked": [
+   "dimensions table: 100 µF 35 V, 6.3 × 7.7 mm, 84 mA rms at 105 °C / 120 Hz",
+   "−55 … +105 °C, ±20 %, leakage 0.01CV or 3 µA, tan δ 0.14 (35 V)",
+   "type numbering UWT1V101MCL1GS"
+  ],
+  "open": [
+   "ESR / impedance not given in the series table",
+   "LCSC's copy for this number holds the dimension page only; the specifications were read from the series' second page in LCSC's copy for C445058 (same CAT.8100D)",
+   {
+    "text": "the polarity band (minus) of the part against the footprint's '+' and chamfer",
+    "when": "order"
+   }
+  ]
+ }
+}

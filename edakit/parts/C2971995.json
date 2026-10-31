@@ -1,0 +1,58 @@
+{
+ "lcsc": "C2971995",
+ "mpn": "0805CG103J500NT",
+ "manufacturer": "FH (Guangdong Fenghua Advanced Tech)",
+ "kind": "capacitor",
+ "package": "0805",
+ "footprint": "C0805",
+ "jlc_class": "Extended Part",
+ "datasheet": {
+  "url": "https://datasheet.lcsc.com/datasheet/pdf/09fe2daf22580a99fa7fea93ccb20fb7.pdf?productCode=C2971995",
+  "pinout_page": null
+ },
+ "pins": {
+  "1": {
+   "name": "1",
+   "type": "passive",
+   "role": "1"
+  },
+  "2": {
+   "name": "2",
+   "type": "passive",
+   "role": "2"
+  }
+ },
+ "values": {
+  "value_f": 1e-08,
+  "dielectric": "C0G",
+  "tolerance": 0.05
+ },
+ "limits": {
+  "v_max_v": 50,
+  "t_min_c": -55,
+  "t_max_c": 125
+ },
+ "spice": {},
+ "sources": [
+  "Fenghua General Series Multi-layer Ceramic Capacitors 1005–1812 product specification (revision history to A0005), 30 pages – LCSC product data of C2971995, https://datasheet.lcsc.com/datasheet/pdf/09fe2daf22580a99fa7fea93ccb20fb7.pdf?productCode=C2971995, read 2026-10-31",
+  "how to order (p. 1–2): 0805 = size, CG = C0G, 103 = 10 nF, J = ±5 %, 500 = 50 V, N = nickel barrier termination, T = 7\" tape",
+  "capacitance range C0G (conventional voltage ≤ 50 V): 0805 10 nF at 25 V and 50 V (thickness code EA)",
+  "temperature coefficient C0G: 0 ± 30 ppm/°C, −55 … 125 °C",
+  "mpn, manufacturer, footprint, pins: EasyEDA library data of C2971995 via edakit part import, read 2026-10-31 (jlc_class empty there)",
+  "JLCPCB catalogue (edakit stock --lcsc, 2026-10-31): Extended Part, 132 358 pcs"
+ ],
+ "notes": "10 nF C0G 50 V – the input coupling of block instrument-buffer (with 2.2 MΩ: 7.2 Hz). Library draft.",
+ "verified": {
+  "by": "Claude (datasheet check, library draft)",
+  "date": "2026-10-31",
+  "datasheet": "Fenghua General Series MLCC 1005–1812 specification (rev. A0005)",
+  "datasheet_sha256": "705023d3be0454148a96fc2715d249a32d8ff442e70b64d1116d3490ed1d8136",
+  "checked": [
+   "ordering code: CG = C0G, 103 = 10 nF, J = ±5 %, 500 = 50 V",
+   "0805 C0G 10 nF listed at 50 V; C0G 0 ± 30 ppm/°C, −55 … 125 °C"
+  ],
+  "open": [
+   "insulation resistance and leakage at the coupling's DC were not read – at 2.2 MΩ a leakage of 1 nA moves the bias by 2 mV"
+  ]
+ }
+}
