@@ -27,7 +27,8 @@ DERATING = table("derating")["E"]
 # (netlist element kind, quantity) -> the derating of sim.json / derating.toml [E.derate] that applies to its limit
 DERATE = {"v": {"capacitor": "v_cap"}, "vr": {"diode": "v_diode"}, "vce": {"npn": "v_bjt", "pnp": "v_bjt"},
           "vds": {"nmos": "v_bjt", "pmos": "v_bjt"}, "vgs": {"nmos": "v_bjt", "pmos": "v_bjt"}}
-DIM = {"p": "p", "i": "i", "if": "i", "ic": "i", "id": "i", "gpio_i": "i", "gpio_i_total": "i"}
+DIM = {"p": "p", "i": "i", "if": "i", "ic": "i", "id": "i", "gpio_i": "i", "gpio_i_total": "i", "i_contact": "i",
+       "i_switch": "i"}
 # what a generated fault scenario (FT-8) judges: the parts' limits – a board without its supply does not reach the
 # states its load expects, and its nets leave their declared ranges by design of the fault
 FAULT_CODES = ("LIM.v", "LIM.i", "LIM.p", "LIM.t", "LIM.backfeed")
@@ -234,6 +235,27 @@ def led_on_output(outputs, behind, anode, cathode):
 
 
 # --- stress: every part against its limits ---------------------------------------------------------------------------
+def parallel_contacts(s, des, node):
+    """How many of a connector's pins are on the net a supply feeds at `node` – USB-C's four VBUS pins share it."""
+    nets = {s.d.pin_net.get(f"{des}.{num}") for num in (s.n.part(des) or {}).get("pins") or {}
+            if netlist.pin_node(s.d, f"{des}.{num}") == node}
+    nets.discard(None)
+    if not nets:
+        return 1
+    return max(1, sum(1 for num in (s.n.part(des) or {}).get("pins") or {} if s.d.pin_net.get(f"{des}.{num}") in nets))
+
+
+def min_load(s, des, part, i):
+    """REQ.value/min_load: a closed contact carries at least the minimum load of its entry (values min_load_a) – below
+    it a contact may not close reliably: no current breaks the film on it. A contact in a signal path carries no DC by
+    design (grade switch): there its entry's rating is judged instead (switch_dc)."""
+    least = values(part).get("min_load_a")
+    if least is None or des in signal_path_contacts(s):
+        return
+    s.check("REQ.value", des, f"current through a closed contact of {des}", i * 1e6, f"≥ {least * 1e6:g} µA",
+            i >= least, "µA", f"min_load_a of {s.n.entry_key(des)}", grade="min_load", on=(("component", des),))
+
+
 def stress(s):
     """Every part's voltages, currents, power and temperature against its entry's limits."""
     res, meta = s.res, s.meta
@@ -266,6 +288,12 @@ def stress(s):
                     lims=[Limit(max=hold, derate=s.der["i"], source=f"i_hold_a of {s.n.entry_key(des)} at {s.amb} °C")])
             elif kind in ("switch", "connector", "source") and i is not None:
                 s.q(des, "i", abs(i), "A", kind, des, "contact current")
+                n = parallel_contacts(s, des, nodes[1]) if kind == "source" else 1
+                s.q(des, "i_contact", abs(i) / n, "A", kind, des,
+                    "current per contact" + (f" ({n} contacts on the supply's net)" if n > 1 else ""))
+                if kind == "switch":     # a closed contact of a switch, button, DIP switch or relay
+                    s.q(des, "i_switch", abs(i), "A", kind, des, "current it breaks when it opens", grade="switching")
+                    min_load(s, des, part, abs(i))
             elif kind == "load":
                 s.q(des, "i", el["i"], "A", kind, des, "contact current (external load)")
             elif kind == "inductor":
@@ -473,6 +501,8 @@ def function(s, load, low=None, plugin=None):
                 abs(i) <= crit["blocking_max_a"], "A")
     tol, gnd = crit["net_range_tol_v"], d.ground
     for name, net in d.nets.items():
+        if net.get("isolated"):
+            continue        # its range is its own loop's, not against this board's ground (net key isolated)
         g = v(res, netlist.node(netlist.local_ground(d, name), gnd))
         lo, hi = net.get("v", [0, 0])
         nodes = netlist.net_nodes(d, name)
@@ -560,18 +590,18 @@ def input_injection(s):
 
 
 SWITCH_DC_MAX_V = 0.01     # edakit's choice for "within a few mV" (maker-coverage CK-30), not a datasheet figure
+SIGNAL_MIN_LOAD_A = 10e-6  # a contact rated for signal currents: "minimum load 10 µA" (maker-coverage CK-30, forums)
 CONTACT_KINDS = ("switch", "button", "dip_switch", "relay", "potentiometer")
 
 
-def switch_dc(s):
-    """REQ.value/switch: the contacts of a switch, button, relay or pot whose sides are both in a signal path (nets
-    with signal or instrument) sit at one DC level in the scenario – a step across them is the pop when it switches
-    and the scratch when a pot turns. A side no element reaches (nan) is LVL.undefined/analog's, not this check's."""
-    d, res = s.d, s.res
+def signal_path_contacts(s):
+    """{designator: {net: pin}} of the switches, buttons, relays and pots whose contacts have both sides in a signal
+    path (nets with signal or instrument)."""
+    if getattr(s, "_signal_contacts", None) is not None:
+        return s._signal_contacts
+    d, out = s.d, {}
     signal = {name for name, net in d.nets.items() if net.get("signal") or net.get("instrument")}
-    if len(signal) < 2:
-        return
-    for des in sorted(s.n.comps):
+    for des in sorted(s.n.comps) if len(signal) >= 2 else ():
         part = s.n.part(des) or {}
         kind = part.get("kind")
         if kind not in CONTACT_KINDS:
@@ -583,8 +613,26 @@ def switch_dc(s):
             net = d.pin_net.get(f"{des}.{num}")
             if net in signal:
                 on.setdefault(net, num)
-        if len(on) < 2:
-            continue
+        if len(on) >= 2:
+            out[des] = on
+    s._signal_contacts = out
+    return out
+
+
+def switch_dc(s):
+    """REQ.value/switch: the contacts of a switch, button, relay or pot whose sides are both in a signal path (nets
+    with signal or instrument) sit at one DC level in the scenario – a step across them is the pop when it switches
+    and the scratch when a pot turns. A side no element reaches (nan) is LVL.undefined/analog's, not this check's.
+    REQ.value/min_load: such a contact is rated for signal currents – the minimum load of its entry (values
+    min_load_a) at most 10 µA; an entry without min_load_a is not judged."""
+    d, res = s.d, s.res
+    for des, on in signal_path_contacts(s).items():
+        least = values(s.n.part(des) or {}).get("min_load_a")
+        if least is not None:
+            s.check("REQ.value", des, f"minimum load of {des}'s contacts in the signal path", least * 1e6,
+                    f"≤ {SIGNAL_MIN_LOAD_A * 1e6:g} µA", least <= SIGNAL_MIN_LOAD_A, "µA",
+                    f"min_load_a of {s.n.entry_key(des)}; maker-coverage CK-30", grade="min_load",
+                    on=(("component", des),))
         xs = {net: at_pin(d, res, f"{des}.{num}") for net, num in on.items()}
         if any(x != x for x in xs.values()):
             continue

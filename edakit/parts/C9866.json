@@ -144,7 +144,20 @@
    "name": "VBAT",
    "type": "power_in",
    "v_max_v": 6.0,
-   "hint": "backup supply: as backup source no capacitor is required; as primary source decouple with 0.1 µF to 1.0 µF low-leakage; if VBAT is not used, connect it to ground"
+   "hint": "backup supply: as backup source no capacitor is required; as primary source decouple with 0.1 µF to 1.0 µF low-leakage; if VBAT is not used, connect it to ground",
+   "needs": [
+    {
+     "what": "capacitor",
+     "c_min_f": 1e-07,
+     "when": "vbat_primary",
+     "source": "Maxim DS3231 19-5170 Rev 10 (3/15), pin description VBAT: 'When using the device with the VBAT input as the primary power source, this pin should be decoupled using a 0.1µF to 1.0µF low-leakage capacitor'"
+    },
+    {
+     "what": "to_ground",
+     "when": "no_battery",
+     "source": "Maxim DS3231 19-5170 Rev 10 (3/15), pin description VBAT: 'If VBAT is not used, connect to ground'"
+    }
+   ]
   },
   "15": {
    "name": "SDA",
@@ -205,7 +218,8 @@
    "supply current ICCA 300 µA, ICCSCONV 650 µA max at 5.5 V",
    "open-drain 32kHz, INT/SQW, SDA, RST; RST internal 50 kΩ pull-up",
    "I2C address 0x68 (1101000)",
-   "VCC decoupling 0.1–1.0 µF; N.C. pins 5–12 to ground"
+   "VCC decoupling 0.1–1.0 µF; N.C. pins 5–12 to ground",
+   "2026-10-31: VBAT by config from DS3231 Rev 10, pin description: backup (default) needs no capacitor, vbat_primary 0.1–1.0 µF low-leakage, no_battery on ground"
   ],
   "open": [
    "the copy read is LCSC's file listed under C722469 (DS3231SN#, same device, other packing); the manufacturer's own URL (analog.com) refused automated download",
@@ -217,5 +231,23 @@
    },
    "RoHS/REACH: the datasheet says '#' parts are RoHS-compliant and may contain exempt lead; compliance not entered"
   ]
- }
+ },
+ "configs": {
+  "backup": {
+   "about": "VBAT as the backup supply (a coin cell): no capacitor required (Maxim DS3231 19-5170 Rev 10 (3/15), pin description VBAT)"
+  },
+  "vbat_primary": {
+   "about": "VBAT as the primary power source: 0.1–1.0 µF low-leakage capacitor (Maxim DS3231 19-5170 Rev 10 (3/15), pin description VBAT)"
+  },
+  "no_battery": {
+   "about": "VBAT not used: on ground (Maxim DS3231 19-5170 Rev 10 (3/15), pin description VBAT)",
+   "pins": {
+    "14": {
+     "type": "ground",
+     "v_max_v": null
+    }
+   }
+  }
+ },
+ "config_default": "backup"
 }

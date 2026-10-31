@@ -52,7 +52,9 @@ board, the schematic or the checks (the earlier one-file form) is refused with a
 | `toolchain` | `easyeda` | the EDA tool the boards are drawn in: `easyeda` (EasyEDA Pro through the bridge) or `kicad` (KiCad 10: edakit writes one KiCad project per board into `<artifacts>/kicad/<board>/` and calls kicad-cli, chapter 16). With `kicad` the EasyEDA document names of `[boards.<name>]` are refused |
 
 The name of the ground net is in the graph (`ground`, default `GND`), with the circuit it belongs to; nets that are
-ground on purpose besides it (an analog ground) in `grounds` (3.1, PATH.unfed).
+ground on purpose besides it (an analog ground) in `grounds` (3.1, PATH.unfed) – `edakit block add` adds those of a
+block (its `graph.grounds`, the lipo-charger's cell minus, 14.5). The configuration a part runs in is in the graph too:
+a component's `config` names one of its entry's `configs` (3.1, 4.1).
 
 ### [boards.&lt;name&gt;]
 
@@ -366,8 +368,8 @@ scripts that write what they read first, when those are outdated or never ran, a
 | `edakit mutate [--sim] [--json F]` | – | graph, parts, with `--sim` the simulation config | – (mistakes built into a copy one at a time – every part left out, diodes, LEDs and polarized capacitors turned round, resistors ×100 and ÷100, nets shorted to ground – and those that raise no new error, warning or pending finding listed: what no code catches; in memory) |
 | `edakit convert [--write]` | – | graph, parts entries, sign-off file, documents, schematic notes, requirements files | `--write`: the files in the form of the restructuring (limits and values with units, accept by code, locks, codes in quotes and rows patterns), each with its own indent; when they were the signed ones, the sign-offs of scope 'circuit' keep counting – the new circuit hash goes into the sign-off file, both into `rehashed`; without: the list |
 | `edakit block list\|show NAME` | – | the block library (no project needed) | – |
-| `edakit block add NAME --as I [--connect PORT=NET …] [--board B] [--file F] [--dry-run]` | – | graph, parts, block | graph (formatting kept), missing parts entries |
-| `edakit part lint [KEY …]` | – | parts entries, the schema `edakit/catalog/kinds.toml` | – (PARTS.schema per problem; exit 2 on problems) |
+| `edakit block add NAME --as I [--connect PORT=NET …] [--without DES …] [--board B] [--file F] [--dry-run]` | – | graph, parts, block | graph (formatting kept, the block's `graph.grounds` added to `grounds`), missing parts entries; `--without` leaves out optional parts of the block (14.5) |
+| `edakit part lint [KEY …]` | – | parts entries, the schema `edakit/catalog/kinds.toml` – each of an entry's `configs` as the entry it makes | – (PARTS.schema per problem; exit 2 on problems) |
 | `edakit part import LCSC [--update]` | – (internet) | EasyEDA's public component data of that number (4.2) | a new `hardware/parts/<LCSC>.json`, else nothing (`--update`: the fields it lacks); `<artifacts>/library/<LCSC>.json`, `<artifacts>/footprints/<footprint>.json`; exit 2 = the entry differs |
 | `edakit part diff OLD NEW [--json F]` | – | geometry of both (the dump of a placed part, else the footprint data of the entry, else the library footprint of `part import`), their parts entries (roles, `lead`), graph | – (F: the comparison as JSON); exit 0 = drop-in, 2 = something to decide (7.3) |
 | `edakit part footprint KEY [--board B] [--write]` | – | the footprint geometry of a placed part of KEY (`--board`: that board's), else the library footprint of `part import`; with the dump also the library footprint, for shapes and sizes (4.5) | – (prints the footprint as data); `--write`: `footprint_data` and a line of `sources` in the parts entry. Refused for an entry that has the data; exit 2 when PARTS.footprint finds something missing |

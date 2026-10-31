@@ -37,7 +37,14 @@
    "type": "power_in",
    "role": "vdd",
    "v_max_v": 6.0,
-   "hint": "optional supply; must be grounded for parasite power mode"
+   "hint": "optional supply; must be grounded for parasite power mode",
+   "needs": [
+    {
+     "what": "to_ground",
+     "when": "parasite",
+     "source": "Maxim DS18B20 19-7487 Rev 6 (7/19) (LCSC copy, sha256 066c8a3c…), pin description: 'VDD must be grounded for operation in parasite power mode'; Powering the DS18B20: 'the VDD pin must be connected to ground'"
+    }
+   ]
   }
  },
  "values": {
@@ -72,7 +79,8 @@
    "pinout = datasheet TO-92 bottom view (1 GND, 2 DQ, 3 VDD) = EasyEDA symbol and footprint pad numbers",
    "abs. max any pin -0.5…6.0 V; operating -55…125 °C",
    "VDD 3.0–5.5 V; VIL 0.8 V, VIH 2.2 V (local power); active current max 1.5 mA",
-   "DQ open-drain, external pull-up of about 5 kΩ"
+   "DQ open-drain, external pull-up of about 5 kΩ",
+   "2026-10-31: configs external (default) and parasite from DS18B20 Rev 6, pin description, Powering the DS18B20 (VDD to ground in parasite power) and DC table (VIH 2.2 V local, 3.0 V parasite); the VDD to-ground need holds when parasite"
   ],
   "open": [
    "the TO-92 package drawing is not in the datasheet (Maxim refers to its package site): `lead` (lead cross-section) not entered – GEO.hole stays pending",
@@ -86,5 +94,24 @@
    "the copy read is LCSC's; analog.com refused automated download",
    "RoHS/REACH not entered ('+' = lead-free package)"
   ]
- }
+ },
+ "configs": {
+  "external": {
+   "about": "local power: VDD 3.0–5.5 V from a supply; DQ VIH 2.2 V (Maxim DS18B20 19-7487 Rev 6 (7/19) (LCSC copy, sha256 066c8a3c…), DC table)"
+  },
+  "parasite": {
+   "about": "parasite power from DQ: VDD on ground, DQ VIH 3.0 V; a strong pull-up during conversions and EEPROM copies, not recommended above +100 °C (Maxim DS18B20 19-7487 Rev 6 (7/19) (LCSC copy, sha256 066c8a3c…), Powering the DS18B20 and DC table)",
+   "pins": {
+    "2": {
+     "vih_v": 3.0
+    },
+    "3": {
+     "type": "ground",
+     "role": null,
+     "v_max_v": null
+    }
+   }
+  }
+ },
+ "config_default": "external"
 }

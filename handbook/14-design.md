@@ -347,9 +347,24 @@ voltage range – and `gnd` joins the project's ground. Missing parts entries ar
 existing entry must have the same pins. The graph file keeps its indentation. The block's notes say what is left to
 decide: the LED current, the entries in sim.json, `"source": "reversible"` on the connector.
 
+A block may carry keys of the graph and say what can go:
+
+- `graph` – keys for the project's graph: `{"grounds": ["cell_n"]}` adds the block's net (under its instance name,
+  `CHG_CELL_N`) to the graph's `grounds` (3.1) – the lipo-charger's cell minus, the DW01A's own ground.
+- `optional` – `{"parts": ["R3"], "ports": ["dout"]}`: parts `--without R3` leaves out, and ports that may stay
+  unconnected. A pin left alone on a net by a missing part goes into its component's `nc` when the net is an optional
+  port that `--connect` does not name (addressable-led-input without its second series resistor); a net left with no
+  pin is not created. `--without` refuses a part that is not optional. The flyback diode of the nmos-, npn- and
+  pmos-switches (no winding to drive) and the bias pair of rs485 (a bus biased elsewhere) are optional.
+- `accept` on a block's net or component may name a place – `{"LIM.v D1": "…"}` –; `add` renames the designator in
+  the key as it renames the part (3.1).
+
 Every block passes `edakit check` and `edakit sim` and is drawn by `edakit schematic draw` once it is in the example
 project – a test makes sure of that; where in the example it goes, and what its simulation needs, stands in the block's
-own `test` table (`"sim": false` with the reason where the example's rails, not the block, keep it from simulating).
+own `test` table: `connect` (its ports in the example), `sim` (the block's own sim.json keys, merged deeply into the
+example's – an MCU's outputs, loads –, or `false` where the example's rails, not the block, keep it from simulating),
+`remove_supplies` (supply cases of the example the block cannot meet, the example's +5V behind its diode at USB
+minimum), `without` (optional parts the test leaves out); `sim: false` and `remove_supplies` need a `why`.
 Their parts come from the parts library and are drafts until the owner signs them (4.1). That
 makes a block a good start, not a sign-off: values, ratings and the review are still the project's. A project's own
 blocks are JSON files of the same form, added with `--file`.

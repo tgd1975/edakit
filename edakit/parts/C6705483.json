@@ -31,7 +31,14 @@
   "4": {
    "name": "VFB",
    "type": "analog",
-   "hint": "regulator control input (R1/R2 divider); connect to AGND when the regulator is not used"
+   "hint": "regulator control input (R1/R2 divider); connect to AGND when the regulator is not used",
+   "needs": [
+    {
+     "what": "to_ground",
+     "when": "no_regulator",
+     "source": "Avia HX711 datasheet V2.0 (LCSC copy, sha256 84834c42…), Power Supply Options: 'If the on-chip analog supply regulator is not used … Pin VFB should be connected to Ground and pin BASE becomes NC'"
+    }
+   ]
   },
   "5": {
    "name": "AGND",
@@ -40,7 +47,15 @@
   "6": {
    "name": "VBG",
    "type": "output",
-   "hint": "reference bypass output, 1.25 V typ; 0.1 µF to AGND with the regulator (Fig. 1), not needed without it"
+   "hint": "reference bypass output, 1.25 V typ; 0.1 µF to AGND with the regulator (Fig. 1), not needed without it",
+   "needs": [
+    {
+     "what": "capacitor",
+     "c_min_f": 1e-07,
+     "when": "regulator",
+     "source": "Avia HX711 datasheet V2.0 (LCSC copy, sha256 84834c42…), Fig. 1 (0.1 µF at VBG) and Power Supply Options: without the regulator 'The external 0.1uF bypass capacitor … at the VBG output pin is then not needed'"
+    }
+   ]
   },
   "7": {
    "name": "INNA",
@@ -132,7 +147,8 @@
    "pinout and pin names = datasheet Table 1 (SOP-16) = EasyEDA symbol",
    "supply ranges DVDD/AVDD 2.6–5.5 V, VSUP 2.7–5.5 V (Table 1)",
    "input common-mode range, VBG 1.25 V, clock 1–20 MHz",
-   "regulator, clock and power-down pin use from pages 4–5"
+   "regulator, clock and power-down pin use from pages 4–5",
+   "2026-10-31: configs regulator and no_regulator from HX711 V2.0, Power Supply Options and Fig. 1: VBG's 0.1 µF only with the regulator, VFB on ground without it"
   ],
   "open": [
    "no absolute maximum ratings in the datasheet: vdd_max_v and pin v_max_v not entered",
@@ -148,5 +164,13 @@
    },
    "RoHS/REACH not entered"
   ]
+ },
+ "configs": {
+  "regulator": {
+   "about": "the on-chip analog supply regulator with an external transistor: AVDD = VBG × (R1 + R2)/R2, at least 100 mV below VSUP; 0.1 µF at VBG (Avia HX711 datasheet V2.0 (LCSC copy, sha256 84834c42…), Fig. 1 and Power Supply Options)"
+  },
+  "no_regulator": {
+   "about": "no regulator: VSUP to AVDD or DVDD, whichever is higher; VFB on ground, BASE not connected, no capacitor at VBG (Avia HX711 datasheet V2.0 (LCSC copy, sha256 84834c42…), Power Supply Options)"
+  }
  }
 }

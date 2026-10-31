@@ -53,6 +53,66 @@ def old_form(graph, parts):
     return None
 
 
+# --- configurations of a part (handbook 4.1: configs) ---------------------------------------------------------------
+SECTIONS = ("limits", "values")      # a config's overrides of the entry's tables; None removes a key
+REPLACED = ("address",)              # a config's own value of these entry keys replaces the entry's; None removes it
+
+
+def conditional(entry):
+    """Whether an entry has configs or pin needs with `when` – only then does a component see more than the entry."""
+    return bool(entry.get("configs")) or any(isinstance(n, dict) and "when" in n for p in (entry.get("pins") or {}).values()
+                                             for n in (p.get("needs") or []) if isinstance(p.get("needs"), list))
+
+
+def config_of(entry, comp):
+    """The config a component runs its part in: its own `config`, else the entry's `config_default`, else none."""
+    return comp.get("config") or entry.get("config_default")
+
+
+def holds(when, config, connected):
+    """Whether a need's `when` holds: a config name or a list of them, or "connected" (the pin is on a net)."""
+    names = when if isinstance(when, list) else [when]
+    return any(w == config or (w == "connected" and connected) for w in names)
+
+
+def configured(entry, config, connected_pins=()):
+    """The entry as a component in `config` sees it: the config's pins, limits, values and needs over the entry's (a
+    key set to None removes it), the pin needs whose `when` does not hold left out and `when` dropped from the rest."""
+    out = {k: v for k, v in entry.items() if k not in ("pins", "configs", "config_default")}
+    over = (entry.get("configs") or {}).get(config) or {}
+    for section in SECTIONS + ("needs",):
+        if section in over:
+            merged = dict(entry.get(section) or {})
+            for k, v in (over[section] or {}).items():
+                if v is None:
+                    merged.pop(k, None)
+                else:
+                    merged[k] = v
+            out[section] = merged
+    for key in REPLACED:
+        if key in over:
+            if over[key] is None:
+                out.pop(key, None)
+            else:
+                out[key] = over[key]
+    pins = {}
+    for num, pin in (entry.get("pins") or {}).items():
+        pin = dict(pin)
+        for k, v in ((over.get("pins") or {}).get(num) or {}).items():
+            if v is None:
+                pin.pop(k, None)
+            else:
+                pin[k] = v
+        if isinstance(pin.get("needs"), list):
+            pin["needs"] = [{k: v for k, v in n.items() if k != "when"} for n in pin["needs"]
+                            if not isinstance(n, dict) or "when" not in n or holds(n["when"], config, num in connected_pins)]
+        pins[num] = pin
+    out["pins"] = pins
+    if config:
+        out["config"] = config
+    return out
+
+
 class Design:
     def __init__(self, graph_path, parts_dir, boards=None, graph=None, parts=None):
         self.graph_path = Path(graph_path)
@@ -70,6 +130,7 @@ class Design:
             from .config import ConfigError
             raise ConfigError(f"{why} – the form of before the restructuring; edakit convert --write converts the "
                               "project once (handbook 10.5)")
+        self._seen = {}                 # des -> (entry, what the component sees of it)
         self.by_mpn = {}
         for key, entry in self.parts.items():
             self.by_mpn.setdefault(str(entry.get("mpn") or key), key)
@@ -92,8 +153,20 @@ class Design:
         return self.by_mpn.get(str(c.get("part") or ""))
 
     def part(self, des):
+        """The parts entry of a component – with the config the component names applied (entry `configs`, component
+        `config`) and the pin needs whose `when` does not hold for it left out (handbook 4.1)."""
         key = self.entry_key(des)
-        return self.parts[key] if key else None
+        if not key:
+            return None
+        entry = self.parts[key]
+        seen = self._seen.get(des)
+        if seen is None or seen[0] is not entry:          # an entry replaced in memory is looked at anew
+            part = entry
+            if conditional(entry):
+                part = configured(entry, config_of(entry, self.comps[des]),
+                                  {num for num in entry.get("pins") or {} if f"{des}.{num}" in self.pin_net})
+            seen = self._seen[des] = (entry, part)
+        return seen[1]
 
     def pin_info(self, ref):
         des, _, pin = ref.partition(".")

@@ -123,7 +123,8 @@
     "12",
     "15"
    ],
-   "notes": "3.3 V operation: V3 joined to VCC; no crystal (built-in clock); unused MODEM inputs and R232 may float (datasheet note under the pin table)."
+   "notes": "3.3 V operation: V3 joined to VCC; no crystal (built-in clock); unused MODEM inputs and R232 may float (datasheet note under the pin table).",
+   "config": "3v3"
   },
   {
    "designator": "R1",
@@ -391,7 +392,8 @@
   "The txd net carries an accept for LVL.undefined: the module entry lacks U0TXD's internal pull-up – remove the accept once the entry has \"pull\": \"up\" on TXD0.",
   "A reset button is not part of the block: one from EN to ground if wanted (the module datasheet's figure 9 has it) – R1/C1 stay the EN delay, the button block's own 10 kΩ would double R1.",
   "Before USB enumeration the CH340C reads DTR# as a configuration input (CH340 datasheet 5.1) – the state of Q1/Q2 in that moment is not checked by this block.",
-  "Keep copper away from the antenna end (the entry's antenna keep-out, GEO.keepout)."
+  "Keep copper away from the antenna end (the entry's antenna keep-out, GEO.keepout).",
+  "U2 runs in its config 3v3 (CH340DS1 3C, 5.1): V3 joined to VCC, VCC 3.1–3.6 V – the entry's configs hold the 5 V mode's range and thresholds apart."
  ],
  "test": {
   "connect": {

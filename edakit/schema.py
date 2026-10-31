@@ -133,6 +133,38 @@ def problems(entry):
         lo, hi = pin.get("v_op_min_v"), pin.get("v_op_max_v")
         if is_number(lo) and is_number(hi) and lo > hi:
             out.append(f"{at}: v_op_min_v {lo} above v_op_max_v {hi}")
+    return out + config_problems(entry)
+
+
+CONFIG_KEYS = ("about", "pins", "limits", "values", "needs", "address")
+
+
+def config_problems(entry):
+    """[text] of an entry's configs (handbook 4.1): each a table of about, pins, limits, values, needs over the entry's;
+    its pins pins of the entry; the entry as each config shows it of the schema; config_default and every pin need's
+    `when` a config of the entry or "connected"."""
+    from .design import configured
+    configs = entry.get("configs")
+    out = []
+    if configs is not None and not (isinstance(configs, dict) and all(isinstance(c, dict) for c in configs.values())):
+        return ["configs: a table of {name: {about, pins, limits, values, needs}}"]
+    configs = configs or {}
+    for name, c in configs.items():
+        out += [f"configs.{name}.{k}: not a key of a config ({', '.join(CONFIG_KEYS)})" for k in c if k not in CONFIG_KEYS]
+        out += [f"configs.{name}.pins.{num}: no pin {num} in the entry" for num in (c.get("pins") or {})
+                if num not in (entry.get("pins") or {})]
+        out += [f"configs.{name}: {p}" for p in problems(configured(entry, name)) if not p.startswith("configs")]
+    if entry.get("config_default") is not None and entry["config_default"] not in configs:
+        out.append(f"config_default: {entry['config_default']!r} – not one of configs ({', '.join(configs) or 'none'})")
+    for num, pin in (entry.get("pins") or {}).items():
+        for need in pin.get("needs") or [] if isinstance(pin.get("needs"), list) else []:
+            if not isinstance(need, dict) or "when" not in need:
+                continue
+            names = need["when"] if isinstance(need["when"], list) else [need["when"]]
+            bad = [w for w in names if w != "connected" and w not in configs]
+            if bad:
+                out.append(f"pins.{num}.needs: when {', '.join(map(repr, bad))} – a config of the entry "
+                           f"({', '.join(configs) or 'none'}) or \"connected\"")
     return out
 
 

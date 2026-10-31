@@ -254,7 +254,8 @@
    "abs. max VDD 4.2 V, I/O / VBUS / RST 5.8 V (Table 2)",
    "VDD 3.0–3.6 V, IREGIN ≤ 26 mA, θJA 32 °C/W, TA −40 … +85 °C (Table 3)",
    "VIH 2.0 V, VIL 0.8 V (Table 4); RST 0.7 / 0.25 × VDD (Table 5); VBUS threshold 1.0–2.9 V, regulator 4.0–5.25 V in, 3.0–3.6 V out, ≤ 100 mA (Table 6)",
-   "decoupling: REGIN 1.0 µF + 0.1 µF, VDD 0.1 µF (+ 4.7 µF), Figure 5 and section 10"
+   "decoupling: REGIN 1.0 µF + 0.1 µF, VDD 0.1 µF (+ 4.7 µF), Figure 5 and section 10",
+   "2026-10-31: configs regulator (default: configurations 1 and 2) and bypassed (configuration 3) from CP2102/9 Rev. 1.7, section 10, Figures 6, 7, 9, Tables 3 and 6"
   ],
   "open": [
    "the absolute maximum of REGIN is not in Table 2 (only VDD, I/O, VBUS and RST)",
@@ -266,5 +267,45 @@
    "Silicon Labs recommends the CP2102N for new designs (p. 1); no CP2102N entry was written",
    "the data sheet text does not print the ordering code CP2102-GMR (it lists CP2102-GM; the R suffix is not explained there); package and pinout compared instead"
   ]
- }
+ },
+ "configs": {
+  "regulator": {
+   "about": "configurations 1 and 2: the on-chip regulator from REGIN (4.0–5.25 V) to VDD, its 3.3 V output (Silicon Labs CP2102/9 data sheet Rev. 1.7 (7/16) (LCSC copy, sha256 23956ca9…), section 10, Figures 6 and 7, Table 6)"
+  },
+  "bypassed": {
+   "about": "configuration 3: 3 V supplied to VDD, the regulator disabled by REGIN tied to the 3 V net (Silicon Labs CP2102/9 data sheet Rev. 1.7 (7/16) (LCSC copy, sha256 23956ca9…), section 10 and Figure 9; Table 3: VDD 3.0–3.6 V)",
+   "values": {
+    "behavior": null,
+    "vout_v": null,
+    "iq_a": null
+   },
+   "limits": {
+    "vin_min_v": null,
+    "vin_max_v": null,
+    "i_out_max_a": null
+   },
+   "pins": {
+    "6": {
+     "type": "power_in",
+     "role": "vdd",
+     "needs": [
+      {
+       "what": "capacitor",
+       "c_min_f": 4.8e-06,
+       "source": "Silicon Labs CP2102/9 data sheet Rev. 1.7 (7/16) (LCSC copy, sha256 23956ca9…), Figure 9: 4.7 µF ∥ 0.1 µF at VDD from the 3 V power net – read as the total minimum: assumption"
+      }
+     ]
+    },
+    "7": {
+     "type": "power_in",
+     "role": "vdd",
+     "v_op_min_v": null,
+     "v_op_max_v": null,
+     "needs": null,
+     "hint": "configuration 3: REGIN tied to the 3 V net to disable the regulator (section 10)"
+    }
+   }
+  }
+ },
+ "config_default": "regulator"
 }

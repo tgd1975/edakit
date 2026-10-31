@@ -62,6 +62,9 @@ def part_limits(design, q):
     part = design.parts.get(q.entry) if q.entry else None
     if part is None:
         return out
+    des = q.place.split(".", 1)[0]
+    if des in (getattr(design, "comps", None) or {}) and design.entry_key(des) == q.entry:
+        part = design.part(des)              # the component's config applied (handbook 4.1)
     if q.pin:
         info = (part.get("pins") or {}).get(q.pin) or {}
         table_, where = info, f"pin {q.pin} ({info.get('name', q.pin)}) of {q.entry}"
@@ -83,13 +86,24 @@ def part_limits(design, q):
 
 
 # --- producers of stage G: the declared ranges -----------------------------------------------------------------------
+def own_reference(d, des):
+    """Whether a part has a ground pin on an isolated net – a reference on the isolated side its pins there refer to."""
+    part = d.part(des) or {}
+    return any(p.get("type") == "ground" and d.nets.get(d.pin_net.get(f"{des}.{num}"), {}).get("isolated")
+               for num, p in (part.get("pins") or {}).items())
+
+
 def pin_voltages(d):
-    """The voltage at every pin: the declared range of its net."""
+    """The voltage at every pin: the declared range of its net. An isolated net's range is its own loop's (net key
+    isolated): a pin there is held to it only where its part has a ground pin on the isolated side too – an
+    optocoupler's LED is not, a digital isolator's side 1 with GND1 on the isolated ground is."""
     out = []
     for name, net in d.nets.items():
         lo, hi = v_range(net)
         for ref in net["pins"]:
             des, _, num = ref.partition(".")
+            if net.get("isolated") and des in d.comps and not own_reference(d, des):
+                continue
             info = d.pin_info(ref)
             pin = f"{ref} ({info.get('name', num)})"
             out.append(Quantity(ref, "v", hi, lo=lo, entry=d.entry_key(des) if des in d.comps else None, pin=num,
@@ -171,20 +185,20 @@ def fuse_currents(d, sim=None):
         hold, trip = hold_current(part, t_min), r.get("i_trip_a")
         at = f" at {t_min:g} °C" if t_min is not None and (part.get("values") or {}).get("i_hold_vs_temp") else ""
         nets, on = series_nets(d, fuse), (("component", fuse),)
-        rated = [(des, d.entry_key(des), []) for des in d.comps_of_kind("connector", "switch")
-                 if "i_max_a" in limits(d.part(des)) and any(d.pin_net.get(f"{des}.{n}") in nets
-                                                            for n in d.part(des)["pins"])]
-        rated += [(f"cable {c['name']}", None, [Limit(max=c["i_max_a"], source=f"i_max_a of cable {c['name']}")])
+        rated = [(des, d.entry_key(des), [], name) for des in d.comps_of_kind("connector", "switch")
+                 if any(d.pin_net.get(f"{des}.{n}") in nets for n in d.part(des)["pins"])
+                 for name in ("i", "i_contact") if f"{name}_max_a" in limits(d.part(des))]
+        rated += [(f"cable {c['name']}", None, [Limit(max=c["i_max_a"], source=f"i_max_a of cable {c['name']}")], "i")
                   for c in d.graph.get("cables", [])
                   if "i_max_a" in c and any(d.pin_net.get(f"{c['from']}.{a}") in nets for a in c["pins"])]
-        for place, key, lims in rated:
-            out.append(Quantity(place, "i", hold, unit="A", entry=key, limits=lims, on=on,
+        for place, key, lims, name in rated:
+            out.append(Quantity(place, name, hold, unit="A", entry=key, limits=lims, on=on,
                                 how=f"{fuse} holds {hold:.3g} A{at}",
                                 say=lambda v, lim, f, fuse=fuse, at=at, place=place: (
                                     f"{fuse}: holds {v:.3g} A{at}, above the {lim:g} A of {place} – an overload in "
                                     "between never trips it")))
             if trip is not None:
-                out.append(Quantity(place, "i", trip, unit="A", entry=key, limits=lims, on=on, grade="margin",
+                out.append(Quantity(place, name, trip, unit="A", entry=key, limits=lims, on=on, grade="margin",
                                     how=f"{fuse} trips at {trip:g} A",
                                     say=lambda v, lim, f, fuse=fuse, place=place: (
                                         f"{fuse}: trips at {v:g} A, above the {lim:g} A of {place} – an overload in "

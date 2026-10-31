@@ -229,11 +229,7 @@
     -0.2,
     0.1
    ],
-   "notes": "The cell's minus, the DW01A's ground. In operation within millivolts of gnd: below it by I × 2 RDS(on) while the cell discharges (at most the DW01A's 170 mV overcurrent threshold), above it while charging. With Q1 open after an overdischarge or a short it floats down to −Vcell against gnd – a protective state, not in this range; the DW01A sees none of it, its pins are referenced to this net.",
-   "accept": {
-    "PATH.ground": "The DW01A is referenced to the cell's minus by design (DW01A data sheet Rev B p. 3, typical application): its GND sits in front of the protection MOSFETs, not on the board's ground. A project may put this net into the graph's grounds instead.",
-    "REQ.missing/pin": "TD goes to the DW01A's own ground, the cell's minus, as in the typical application (DW01A data sheet Rev B p. 3) – not to the board's ground behind the protection MOSFETs."
-   }
+   "notes": "The cell's minus, the DW01A's ground. In operation within millivolts of gnd: below it by I × 2 RDS(on) while the cell discharges (at most the DW01A's 170 mV overcurrent threshold), above it while charging. With Q1 open after an overdischarge or a short it floats down to −Vcell against gnd – a protective state, not in this range; the DW01A sees none of it, its pins are referenced to this net."
   },
   {
    "name": "vcc_dw",
@@ -245,10 +241,7 @@
    "v": [
     0,
     4.35
-   ],
-   "accept": {
-    "REQ.missing": "C3 bypasses VCC to the DW01A's own ground, the cell's minus (DW01A data sheet Rev B p. 3, typical application: C1 0.1 µF from VCC to the cell's minus); a capacitor to the board's ground would sit across the protection MOSFETs."
-   }
+   ]
   },
   {
    "name": "od",
@@ -340,7 +333,8 @@
   "Heat: the charger dissipates (VDD − VBAT) × IREG, worst (5.5 V − 2.7 V) × IREG – 0.31 W at 110 mA, 1.54 W at 550 mA, where thermal regulation lowers the current (DS20001984H 6.1.1.3). No temperature input: the MCP73831 charges at any temperature – keep the cell inside its charging range by placement, or take the TP4056 (C16581) with an NTC on TEMP.",
   "Simulation: the MCP73831 and the DW01A have no behaviour model (behavior none) – edakit sim neither charges the cell nor drives Q1's gates; the FS8205A entry models MOSFET 1 only, so the cell's path through MOSFET 2 is open in the simulation and a battery scenario sees no cell. The load sharing (D1, Q2, R4) is simulated.",
   "HINT.two_supplies notes the two paths onto sys (and onto the cell): D1 keeps sys from feeding USB; Q2's body diode points from the cell to sys and conducts only once sys falls about half a volt below the cell – the cell then helps carry the load, it is never charged that way. The charger feeds the cell on purpose. Record it in the project with an accept on those nets.",
-  "Net ranges: the cell's minus and the DW01A's outputs carry the ranges of normal operation, referred to gnd. When the DW01A opens Q1 (overdischarge, overcurrent, short) the cell's minus drops to −Vcell against gnd; edakit judges the DW01A's pins against gnd, so the full range would read as −4.35 V at TD, OD, OC – against the DW01A's own ground they stay within 0 … VCC."
+  "Net ranges: the cell's minus and the DW01A's outputs carry the ranges of normal operation, referred to gnd. When the DW01A opens Q1 (overdischarge, overcurrent, short) the cell's minus drops to −Vcell against gnd; edakit judges the DW01A's pins against gnd, so the full range would read as −4.35 V at TD, OD, OC – against the DW01A's own ground they stay within 0 … VCC.",
+  "graph.grounds: the block puts its cell's-minus net into the project's grounds – the DW01A is referenced to it by design (DW01A Rev B p. 3), so its GND, TD and the VCC capacitor to it count as on ground (PATH.ground, REQ.missing/pin, the decoupling)."
  ],
  "test": {
   "connect": {
@@ -363,7 +357,14 @@
     0.1
    ]
   },
-  "sim": false,
-  "why": "The example has no USB input that suits a charger: VIN is the reversible J1 (PATH.reverse would rightly flag the charger in front of D1), and +5V lies behind D1 (SS34) – at usb-min with all LEDs on it is 4.44 V, below the MCP73831-2's 4.5 V operating minimum (VREG + 0.3 V, DS20001984H 3.1), LIM.range. Placed there by hand, every other check of edakit sim passes; the block's own composition with usb-c-sink, a cell and ldo-3v3 was simulated outside the example."
+  "why": "the example's +5V is USB behind its SS34 and sinks to 4.44 V with all LEDs on at USB 4.75 V – below the MCP73831-2's 4.5 V operating minimum (VREG + 0.3 V, DS20001984H 3.1); a rail of the example, not of the block: the test leaves out the supply case usb-min",
+  "remove_supplies": [
+   "usb-min"
+  ]
+ },
+ "graph": {
+  "grounds": [
+   "cell_n"
+  ]
  }
 }

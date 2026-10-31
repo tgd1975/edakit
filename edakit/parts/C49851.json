@@ -32,7 +32,14 @@
    "name": "Alert",
    "type": "output",
    "drive": "open_drain",
-   "hint": "multi-functional alert, open-drain: pull it up to the VS voltage (8.2.1.2)"
+   "hint": "multi-functional alert, open-drain: pull it up to the VS voltage (8.2.1.2)",
+   "needs": [
+    {
+     "what": "pull_up",
+     "when": "connected",
+     "source": "TI INA226 SBOS547C (revised August 2026), 8.2.1.2: 'The alert pin must to be pulled up to the VVS pin voltage via the pull-up resistors'; 6: Alert is an open-drain output"
+    }
+   ]
   },
   "4": {
    "name": "SDA",
@@ -125,7 +132,8 @@
    "abs. max VS 6 V, IN± and VBUS 40 V, SDA 6 V, SCL VS + 0.3 V, TJ 150 °C; RθJA 144.6 °C/W",
    "VS 2.7–5.5 V; VIH 0.7 × VS, VIL 0.3 × VS; IQ max 420 µA",
    "I2C address 0x40 + A0 (1) + A1 (4) for GND/VS",
-   "Alert open-drain; 0.1 µF supply bypass (typical value)"
+   "Alert open-drain; 0.1 µF supply bypass (typical value)",
+   "2026-10-31: Alert needs a pull-up where it is connected (SBOS547C 8.2.1.2) – an unused Alert in nc needs none"
   ],
   "open": [
    "address pins tied to SDA or SCL cannot be expressed in the entry's address model",
