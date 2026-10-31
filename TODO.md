@@ -58,12 +58,6 @@ run against a maker's page or EasyEDA yet.
       BOM part without `compliance.rohs` on a board for sale; the maker's RoHS and REACH statements in its profile.
       Each becomes a rule only with the skill add-rule, on the owner's word.
 
-### After the merge into main
-
-- [ ] Tell the bell's session and pytree-27: F-6 now warns about JLCPCB's placeholder `JLCJLCJLCJLC` on a board – a
-      new warning in their gate, to accept or to remove with the placeholder (`mark = "remove"`, a `barcode`).
-- [ ] The shared tree follows main; the plugin follows (skills, agents and code changed).
-
 ## Live runs of design as text (2.1–2.4, 3.6 of the [implementation plan](docs/concepts/new/implementation-plan.md))
 
 Ran on 2026-10-31 in throwaway projects, the footprint checked by the owner in EasyEDA, the throwaway projects and
@@ -97,12 +91,6 @@ Built and decided on 2026-10-31; what is left runs live.
       Freerouting's "geometry is degenerate"), B1 (protocol L: the vias' ring 0.15 mm, not 1.000), A5 (BT1's "+" on
       the polarity sheet), B3 (GEO.silk grade body on BT1's cell) and B7 (the BOM from the board's schematic with the
       other tabs closed).
-- [ ] **Tell the bell's session and pytree-27 after the merge into main:** findings name pins by name or role
-      ("U2.VDD (16)" for "U2.16 (VDD)") – a sign-off pattern on the old text stops matching; C4 changes the fab hash of
-      a board with `[looks]` and `[order]` and no `mark`; FILES.order warns about `[tooling]` on an Economic board that
-      nothing tells the maker about; LIM.p rows for LEDs change the simulation's counts; an accepted simulation
-      finding counts as waived in the gate, an unaccepted simulation warning as a warning – it wants an accept in the
-      sign-off file where it failed before.
 
 ## The graph as TOML ([circuit-language-plan.md](docs/concepts/done/circuit-language-plan.md))
 
