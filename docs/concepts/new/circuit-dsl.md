@@ -19,10 +19,11 @@ variation, requirements with satisfy and verify, units –, but no electrical se
 open tooling in its infancy. The Python libraries (SKiDL, PCBDL, faebryk, circuit-synth) make the circuit a program,
 which edakit's tools cannot edit. The rest is proprietary, dormant or one person's experiment.
 
-What is worth taking: SysML v2's semantics as the model behind the language, so that its vocabulary is a standard's
-and an export to SysML v2 is possible; `.ato`'s ergonomics as the model for the syntax – units with tolerances,
-`assert … within`, arrays, chains –; and edakit's own resolved graph (decision 4 of circuit-language.md) as the compile
-target, so that every check, the hash and the reviews keep reading what they read today.
+What is worth taking: KerML, the kernel under SysML v2, as the foundation the language is defined on – the way SysML
+v2 itself is defined on it –, so that every construct has a standard's meaning and an export to KerML and SysML v2 is
+mechanical; `.ato`'s ergonomics as the model for the syntax – units with tolerances, `assert … within`, arrays,
+chains –; and edakit's own resolved graph (decision 4 of circuit-language.md) as the compile target, so that every
+check, the hash and the reviews keep reading what they read today.
 
 ## Where the value would come from
 
@@ -312,6 +313,56 @@ implementation and an alpha in Rust, and models have seen little SysML v2. What 
 a standard's – definition, usage, redefinition, variation, satisfy, verify –, clean rules for what a redefinition
 means, and the option of an export `edakit graph sysml` for whoever models the system around the board in SysML v2.
 
+### KerML underneath
+
+The owner would find KerML a fitting foundation (2026-10-31). It is, in the way SysML v2 is built on it: SysML v2 is
+KerML plus libraries plus a surface syntax – `part def` is a KerML structure specializing the library's `Part`,
+`part` a feature, `connection` a connector. edakit's notation can be defined the same way: every construct an element
+of an electrical KerML library, the notation the surface syntax over it.
+
+| Notation | KerML |
+| --- | --- |
+| `def led (color = green, i = …) ports in gnd` | `struct Led :> Block` with `feature in : Pin`, `feature gnd : Pin`, the parameters features with defaults |
+| `use led step1 (…) in = LED_G1 …` | `feature step1 : Led`, its port a member of the net's connector |
+| `part R4 resistor lcsc C17630 value 330Ω` | `feature R4 : Resistor` with attribute features `lcsc`, `value`, `board` … |
+| `net GND 0 V U1.GND C1.minus …` | `connector GND : Net (U1.GND, C1.minus, …)` with features `v`, `fn`, `accept` – n-ary |
+| `param vlogic = 0..5.5 V` | `feature vlogic : VoltageRange default …` |
+| `for n in 0..7 …` | multiplicity, `feature D : LED[8]`, indexed features |
+| `assert … within …` | `inv { … }`, an invariant |
+| `variant esp32 of smd …` | a structure specializing the base, its features redefined with `:>>` |
+| `alias U1 led1 = PD6` | a feature `led1` of the module's usage bound to its pin feature |
+| `satisfies R-3`, `decision D-8`, `accept` | metadata; `satisfy` and `verify` themselves are SysML v2's, a level up |
+| units, ranges, tolerances | datatypes of the electrical library; in an export the ISQ and SI libraries of SysML v2 |
+
+What that gives: the meaning of redefinition, of inheritance down a variant chain, of multiplicity and of an
+invariant comes from a standard instead of being invented; the export `edakit graph kerml` (and `sysml`, where
+requirements, variation and units want SysML v2's libraries) is a mapping, not a translation; a standard parser –
+Syster, the pilot implementation – can check the exported model, a conformance test the compiler's tests can run
+once such a parser is usable from Python; and the handbook's vocabulary is the standard's. What it does not give: the
+electrical domain – net, pin, role, LCSC number, board, order – which is edakit's library on KerML as on any other
+kernel; and nothing at run time, since the engines read the resolved graph.
+
+Why KerML's own textual notation is not the source: it is more abstract than SysML v2's – `struct`, `feature`,
+`connector` for `part def`, `part`, `connection` – at the same length, two to three times the notation of the
+sketch; models have seen even less of it than of SysML v2, and the owner's measure is Sonnet; and a conforming KerML
+reader with name resolution and implied relationships is many times the sketch's parser. The LED step in KerML, as far
+as the grammar goes:
+
+```text
+package Bell {
+    import Electrical::*;                       // edakit's library: Block, Pin, Net, Resistor, LED
+    struct LedStep :> Block {
+        feature color : LedColor default green;  feature i : CurrentRange;
+        feature in : Pin;  feature gnd : Pin;
+        feature R : Resistor;  feature D : LED;
+        connector : Net (in, R.p1);  connector anode : Net (R.p2, D.anode);  connector : Net (D.cathode, gnd);
+        inv { (in.v.max - D.vf.min) / R.value <= i.max }
+    }
+    feature step1 : LedStep { :>> color = green;  feature :>> R { :>> designator = "R4"; :>> lcsc = "C17630"; } }
+    connector : Net (u1.PD6, step1.in);
+}
+```
+
 `.ato` is the right model for the syntax – units with tolerances, `assert … within`, arrays, chains, `lcsc_id` – and
 the wrong basis: adopting the syntax without the compiler is a reimplementation, adopting the compiler binds edakit
 to a picker-centric, KiCad-only tool chain on Python 3.14 whose open branch may be frozen. A notation modeled on it,
@@ -321,10 +372,11 @@ Python is the fallback, not the basis: if the evals show that a model edits the 
 restricted Python API with the resolved graph as the artifact is the way with the least syntax. The price is that only
 a model can edit the source.
 
-The recommendation: a notation of edakit's own, small, declarative, with SysML v2's semantics and `.ato`'s
-ergonomics, compiled to the resolved graph; TOML with names stays the flat form; a SysML v2 export later, if anyone
-asks for it. The sketch's parser (242 lines) is the measure: definitions, usages, `for`, expressions, assertions and
-variants are each a construct of that size, and the compiler to the resolved graph is the sketch's writer.
+The recommendation: a notation of edakit's own, small, declarative, defined over KerML – every construct an element of
+an electrical library on the kernel –, with `.ato`'s ergonomics, compiled to the resolved graph and exportable to KerML
+and SysML v2; TOML with names stays the flat form. The sketch's parser (242 lines) is the measure: definitions,
+usages, `for`, expressions, assertions and variants are each a construct of that size, and the compiler to the
+resolved graph is the sketch's writer.
 
 ## When it brings value
 
@@ -351,8 +403,9 @@ The stages, each useful on its own:
 - **Stage 2: projects.** `hardware/graph.circuit` beside or instead of `graph.toml`, with `use`, `for`, variants and
   assertions; `edakit graph json` compiles either; `graph show` reads a slice of the resolved graph (FT-23). The bell
   and the tree as the first users, each at the user's request. Size M to L.
-- **Stage 3, optional: a SysML v2 export** of the resolved graph with its definitions – an afternoon, when someone
-  models the system around the board.
+- **Stage 3: the KerML export** and, where requirements, variation and units want its libraries, the SysML v2
+  export – a mapping, since the notation is defined over KerML –, and the conformance test with a standard parser
+  once one is usable from Python.
 
 The value, estimated on the owner's projects: the bell from 72 lines of content in the sketch's language to about 30;
 led-bar's eight LEDs from about 150 lines of JSON to three; the tree's 65 KB graph, which no session should read
@@ -382,9 +435,14 @@ file where it does not reach them.
 
 Each a real choice, the recommended answer first, with its trade-off; none is due before the triggers above hold.
 
-1. **The basis.**
-   - *A notation of edakit's own with SysML v2's semantics and `.ato`'s ergonomics, compiled to the resolved graph*
-     (recommended): fits the data, stays small, tools can edit it; a parser and a chapter to build, a syntax to learn.
+1. **The basis.** The owner leans to KerML (2026-10-31).
+   - *A notation of edakit's own, defined over KerML as SysML v2 is, with `.ato`'s ergonomics, compiled to the
+     resolved graph and exported to KerML and SysML v2* (recommended): a standard's meaning for every construct and
+     a conformance test, a small notation tools can edit; a parser, a library and a chapter to build, a syntax to
+     learn.
+   - *KerML's textual notation as the source, with an electrical library*: no notation of edakit's own; `struct`,
+     `feature` and `connector` at two to three times the text, a notation models have barely seen, a conforming
+     reader many times the sketch's parser.
    - *SysML v2's textual notation with an electrical library*: a standard, requirements and variants built in; two to
      three times the text, no electrical semantics, alpha tooling, a notation models barely know.
    - *A subset compatible with `.ato`*: some familiarity and an editor extension for free; edakit's nets, entries and
@@ -408,11 +466,11 @@ Each a real choice, the recommended answer first, with its trade-off; none is du
    - *A variant file that redefines the main file, hashed as its resolved graph* (recommended): a few lines per
      variant, sign-offs that survive what does not reach them; a resolution across files.
    - *Complete files, as today*: nothing new; four times every change.
-6. **SysML v2.**
-   - *An export of the resolved graph, later, on request* (recommended): the standard gets a role without binding
-     the source.
-   - *Never*: nothing to maintain; no interoperability.
-   - *As the source*: decision 1, second option.
+6. **The export.**
+   - *KerML, and SysML v2 where its libraries are needed, as stage 3, with the conformance test* (recommended): the
+     standard gets a role without binding the source; a mapping to maintain.
+   - *Never*: nothing to maintain; no interoperability, no conformance test.
+   - *As the source*: decision 1, second or third option.
 7. **Building it at all.**
    - *When the triggers hold, stage 1 first* (recommended): the value is measured before the cost is paid.
    - *A prototype now, on the bell and led-bar, as the sketch was*: a decision on evidence sooner; a prototype that
