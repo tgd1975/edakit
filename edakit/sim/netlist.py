@@ -36,7 +36,9 @@ ICs and modules are replaced by behaviour models, chosen by values.behavior in t
   none      nothing (e.g. a module that is not powered in this design)
 
 Constant-current loads – i_core_a, idd_max_a, icc_a, i_a, an external load – fall to 0 below DEAD_RAIL_V across them, so
-that a rail nothing feeds stays at 0 V instead of being pulled below ground; above it they are constant.
+that a rail nothing feeds stays at 0 V instead of being pulled below ground; above it they are constant. In a transient
+run, `steps` turns the current of an external load, an MCU's core or a `current` model into [t, A] points (amps): a
+servo starting, a Wi-Fi burst, a motor's start current.
 
 Every element ends on the node of its pin (pn): the node of the pin's net, or – for a net whose routed copper is in the
 simulation (sim.json copper, copper.py) – the pin's own pad node, with the tracks and vias as resistors in between.
@@ -50,7 +52,7 @@ from __future__ import annotations
 import math
 import re
 
-from ..circuit import limits, values
+from ..circuit import limits, values, wire_h, wire_ohm
 
 VT = 0.02585
 LED_N = 2.0
@@ -140,7 +142,7 @@ def split_boards(design):
                     design.pin_net[ref] = alt
             design.cable_elements.append({"name": f"R_{cable['name']}_{p_src}", "des": dst, "a": alt, "b": net,
                                           "pa": f"{src}.{p_src}", "pb": f"{dst}.{p_dst}",
-                                          "r": cable.get("r_ohm_per_wire", 0.05)})
+                                          "r": wire_ohm(cable), "l": wire_h(cable)})
 
 
 def local_ground(design, net):
@@ -204,8 +206,18 @@ class Netlist:
                 el["value"] = value
             self.meta["elements"].setdefault(des, []).append(el)
 
+    def amps(self, des, default):
+        """The current of a load: `default`, or in a transient run whose `steps` name `des` its [t, A] points – an
+        ngspice pwl of time, held at the first point before it and at the last after it."""
+        pts = (self.sc.get("steps") or {}).get(des)
+        if not pts:
+            return default
+        pts = ([[0, pts[0][1]]] if pts[0][0] > 0 else []) + list(pts) + [[pts[-1][0] * 10 + 1, pts[-1][1]]]
+        return "pwl(time, " + ", ".join(f"{t:.9g}, {a:.9g}" for t, a in pts) + ")"
+
     def current_load(self, name, plus, minus, i_a, des=None, kind=None):
-        """A constant current from `plus` to `minus` that falls to 0 below DEAD_RAIL_V across it."""
+        """A constant current from `plus` to `minus` that falls to 0 below DEAD_RAIL_V across it (i_a: a number or an
+        expression of time, amps)."""
         self.add(f"B_{name} {plus} {minus} I = {i_a}*min(1, max(V({plus},{minus}), 0)/{DEAD_RAIL_V})", des, kind,
                  (plus, minus))
 
@@ -260,7 +272,7 @@ class Netlist:
         minus = self.pn(f"{des}.{spec['minus']}")
         if plus is None or minus is None:
             raise ValueError(f"{des}: external load between unconnected pins {spec['plus']} and {spec['minus']}")
-        self.current_load(f"{des}_EXT", plus, minus, spec["i_a"], des, "load")
+        self.current_load(f"{des}_EXT", plus, minus, self.amps(des, spec["i_a"]), des, "load")
         self.meta["elements"][des][-1]["i"] = spec["i_a"]
 
     def component(self, des):
@@ -366,21 +378,23 @@ class Netlist:
     def _gnd_of(self, des):
         return self.rn(des, "gnd") or "0"
 
-    def _regulator(self, des, vin, vout, gnd, kind, p, extra_i=0.0, vin_min=None):
+    def _regulator(self, des, vin, vout, gnd, kind, p, extra_i=0.0, vin_min=None, extra=None):
         """Output source at vout with an ammeter; input current from vin by kind ('ldo' or 'buck'/'boost'). With
         vin_min: undervoltage lockout – output and input current scaled by `on`, 1 at vin_min and above, 0 at
-        vin_min - UVLO_V and below."""
+        vin_min - UVLO_V and below. extra_i: a current the regulator feeds besides its output pin (an MCU's core);
+        extra: the same as an expression of time (amps), extra_i then its value at t = 0."""
         tag = des.lower()
+        extra = extra_i if extra is None else extra
         vset = p.get("vout_v", 3.3)
         on = "" if vin_min is None else f"min(1, max(V({vin},{gnd})-{vin_min - UVLO_V:.6g}, 0)/{UVLO_V})*"
         self.add(f"V_{des}_AM x_{tag}_o {vout} 0")
         if kind == "ldo":
             self.add(f"B_{des}_O x_{tag}_o {gnd} V = {on}min({vset}, max(V({vin},{gnd})-{p.get('dropout_v', 0.3)}, 0))")
-            self.add(f"B_{des}_I {vin} {gnd} I = {on}(max(i(V_{des}_AM),0) + {p.get('iq_a', 0.0) + extra_i})")
+            self.add(f"B_{des}_I {vin} {gnd} I = {on}(max(i(V_{des}_AM),0) + {p.get('iq_a', 0.0)} + {extra})")
         else:
             eta = p.get("efficiency", 0.85)
             self.add(f"B_{des}_O x_{tag}_o {gnd} V = {on}{vset}")
-            self.add(f"B_{des}_I {vin} {gnd} I = {on}({vset}*(max(i(V_{des}_AM),0)+{extra_i})/({eta}*max(V({vin},{gnd}),0.3))"
+            self.add(f"B_{des}_I {vin} {gnd} I = {on}({vset}*(max(i(V_{des}_AM),0)+{extra})/({eta}*max(V({vin},{gnd}),0.3))"
                      f" + {p.get('iq_a', 0.0)})")
         self.meta["regs"][des] = {"kind": kind, "vin": vin, "vout": vout, "gnd": gnd, "vset": vset,
                                   "ammeter": f"v_{tag}_am#branch", "values": p, "extra_i": extra_i, "vin_min": vin_min}
@@ -412,9 +426,9 @@ class Netlist:
                 raise ValueError(f"{des}: v_io_v = '{v_io}' – give the on-board regulator's output as values vout_v")
             r = limits(part)
             self._regulator(des, vin, vout, "0", p["regulator"], {**p, "vout_v": vset}, extra_i=i_core,
-                            vin_min=r.get("vin_min_v", r.get("vsys_min_v")))
+                            vin_min=r.get("vin_min_v", r.get("vsys_min_v")), extra=self.amps(des, i_core))
         elif vin:
-            self.current_load(f"{des}_CORE", vin, "0", i_core)
+            self.current_load(f"{des}_CORE", vin, "0", self.amps(des, i_core))
         gpio = {self.d.pin_net.get(f"{des}.{n}") for n, i in part["pins"].items() if i.get("role") == "gpio"}
         rail = (self.pn(self.pin_on(des, mcfg["io_rail"])) or self.n(mcfg["io_rail"])) if mcfg.get("io_rail") \
             else (vin if v_io == "vin" else vout or vin)
@@ -492,7 +506,7 @@ class Netlist:
         for num, info in part["pins"].items():
             net = self.d.pin_net.get(f"{des}.{num}")
             if net and info["type"] == "power_in":
-                self.current_load(f"{des}_{num}", self.pn(f"{des}.{num}"), "0", values(part).get("i_a", 0.001))
+                self.current_load(f"{des}_{num}", self.pn(f"{des}.{num}"), "0", self.amps(des, values(part).get("i_a", 0.001)))
 
     def ic_none(self, des, part):
         pass
@@ -503,7 +517,12 @@ class Netlist:
             self.component(des)
         for el in getattr(self.d, "cable_elements", []):
             a, b = self.pn(el["pa"]), self.pn(el["pb"])
-            self.add(f"{el['name']} {a} {b} {el['r']}", el["des"], "connector", (a, b), el["r"])
+            if el.get("l"):          # the wire's inductance after its resistance: an LC spike at hot-plug
+                x = f"x_{el['name'].lower()}"
+                self.add(f"{el['name']} {a} {x} {el['r']:.6g}", el["des"], "connector", (a, x), el["r"])
+                self.add(f"L{el['name'][1:]} {x} {b} {el['l']:.6g}")
+            else:
+                self.add(f"{el['name']} {a} {b} {el['r']:.6g}", el["des"], "connector", (a, b), el["r"])
         for name, a, b, r in (getattr(self.d, "copper", None) or {}).get("elements", []):   # tracks and vias
             self.add(f"R_CU_{name} {a} {b} {r:.6g}")
         prints = ["print all"]

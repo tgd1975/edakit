@@ -150,3 +150,48 @@ def test_transients_say_what_is_wrong(project, bad, match):
     sim["transients"] = bad
     with pytest.raises(simrun.SimError, match=match):
         simulate(project, sim)
+
+
+# --- load steps (maker-coverage FT-1) ----------------------------------------------------------------------------
+BURST = [[0, 0.03], [0.001, 0.03], [0.00101, 0.35], [0.003, 0.35], [0.00301, 0.03]]     # a Wi-Fi burst on the core
+
+
+def test_a_core_step_shows_in_the_supply_current(project):
+    """steps turns the MCU's core current into [t, A] points: the burst of 0.35 A shows in J1's peak current, which the
+    same run without steps keeps below 0.1 A."""
+    sim = sim_config(project)
+    run = {"supply": {"J1": 4.75}, "load": "idle", "stop_s": 0.004, "step_s": 1e-5, "expect": {"J1": {"i_max_a": 0.1}}}
+    sim["transients"] = {"usb-burst": run}
+    assert not failing(simulate(project, sim))
+    sim["transients"]["usb-burst"] = {**run, "steps": {"U1": BURST}}
+    out = simulate(project, sim)
+    peak = next(c for c in failing(out) if c["check"] == "peak current from the supply")
+    assert peak["id"] == "LIM.i" and peak["item"] == "J1" and peak["expected"] == "≤ 100 mA"
+    assert 0.25 < out["scenarios"][-1]["sources"]["J1"] < 0.5       # 0.35 A at 3.3 V through the on-board buck
+
+
+def test_an_external_load_starting_browns_the_mcu_out(project):
+    """A servo-like load at the input steps from 50 mA to 12 A for 2 ms: the source's 0.3 Ω takes the rail below the
+    MCU's minimum, LIM.range finds the brown-out; at its 50 mA the run passes."""
+    sim = sim_config(project)
+    sim["loads"]["idle"]["external"] = {"J1": {"plus": "1", "minus": "2", "i_a": 0.05}}
+    run = {"supply": {"J1": 4.75}, "load": "idle", "stop_s": 0.005, "step_s": 1e-5}
+    sim["transients"] = {"usb-servo": run}
+    assert not failing(simulate(project, sim))
+    sim["transients"]["usb-servo"] = {**run, "steps": {"J1": [[0, 0.05], [0.001, 0.05], [0.00101, 12], [0.003, 12],
+                                                             [0.00301, 0.05]]}}
+    bad = failing(simulate(project, sim))
+    assert ("LIM.range", "U1") in {(c["id"], c["item"]) for c in bad}
+
+
+@pytest.mark.parametrize("steps, match", [
+    ({"C2": [[0, 1]]}, "steps C2 – an external load"),
+    ({"U1": [[0, 1], [0, 2]]}, "steps U1 – a list of"),
+    ({"U1": [[0, -1]]}, "steps U1 – a list of"),
+    ([1], "steps, a map"),
+])
+def test_steps_say_what_is_wrong(project, steps, match):
+    sim = sim_config(project)
+    sim["transients"] = {"x": {"supply": {"J1": 5}, "load": "idle", "stop_s": 0.001, "steps": steps}}
+    with pytest.raises(simrun.SimError, match=match):
+        simulate(project, sim)

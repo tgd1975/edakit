@@ -159,7 +159,9 @@ before.
   "usb-unplug": {"supply": {"J1": [[0, 4.75], [0.001, 4.75], [0.00101, 0]]}, "load": "all_on", "corner": "max",
                  "stop_s": 0.0013, "step_s": 1e-6, "expect": {"+5V": {"min_v": 1.8}}},
   "usb-plug":   {"supply": {"J1": [[0, 0], [0.001, 4.75]]}, "load": "all_on", "stop_s": 0.002,
-                 "expect": {"J1": {"i_max_a": 0.5}}}
+                 "expect": {"J1": {"i_max_a": 0.5}}},
+  "wifi-burst": {"supply": {"J1": 4.75}, "load": "idle", "stop_s": 0.004, "step_s": 1e-5,
+                 "steps": {"U1": [[0, 0.03], [0.001, 0.03], [0.00101, 0.35], [0.003, 0.35], [0.00301, 0.03]]}}
 }
 ```
 
@@ -170,8 +172,14 @@ last value held) and each battery holder a cell state of `cells`; what it leaves
 net for a plug-in, the DC state for an unplug – and runs `.tran`. `expect` holds limits per net (`min_v`, `max_v`, the
 lowest and highest voltage during the run) and per source (`i_max_a`, the peak current it delivers); every MCU whose
 ratings give `vin_min_v` (or `vsys_min_v`) is held to it as well, from the moment its supply pin first reaches it – a plug
-run passes once the MCU has started and never browns out, an unplug fails as soon as the rail falls below it (LIM.v).
-`"info": true` turns failures into information. Each run gets its row in the scenario table with the lowest and highest
+run passes once the MCU has started and never browns out, an unplug fails as soon as the rail falls below it (LIM.range;
+the limits of `expect` are LIM.v on a net and LIM.i on a source).
+`steps` lets loads change during the run, as `[t, A]` points (seconds rising from 0, amperes ≥ 0; linear in
+between, the first value held before the first point and the last after the last): an external load of the run's load
+(a servo starting or stalling, a motor's start current), an MCU's core current (a Wi-Fi burst, a radio pulse), a part
+of behaviour `current`. Without `steps` they are the constants of the operating points. A load step is how the brown-out
+"it resets when the motor starts" shows: the source resistance and the wires take the rail down, and the MCU's minimum
+(LIM.range) fails while the step lasts. `"info": true` turns failures into information. Each run gets its row in the scenario table with the lowest and highest
 voltage of the `report` nets and the peak current of each source; a run adds no stress items and no net currents.
 On the example, J1 dropping to 0 V in 10 µs leaves +5V at 2.99 V after 0.3 ms with C2 = 22 µF and at 1.59 V with
 1 µF, where the Pico 2 locks out; the plug-in takes 0.22 A from J1 while C2 charges. A switch-over between two sources

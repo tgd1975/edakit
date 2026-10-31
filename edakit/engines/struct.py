@@ -13,7 +13,7 @@ from collections import Counter, defaultdict
 from pathlib import Path
 
 from .. import handover
-from ..circuit import KINDS_OF_PREFIX, KINDS_OF_TYPE, PURPOSES, core_mpn, read_value, value_problem
+from ..circuit import KINDS_OF_PREFIX, KINDS_OF_TYPE, PURPOSES, cable_problems, core_mpn, read_value, value_problem
 from ..design import natural_key
 from ..findings import Finding
 
@@ -72,6 +72,8 @@ def structure(d, boards, bought=()):
             add("STRUCT.net", net["name"], f"net {net['name']}: missing or invalid voltage range 'v'")
     cable_pins = set()
     for cab in g.get("cables", []):
+        for problem in cable_problems(cab):
+            add("STRUCT.net", f"cable {cab.get('name')}", f"cable {cab.get('name')}: {problem}")
         for a, b in cab["pins"].items():
             ref_a, ref_b = f"{cab['from']}.{a}", f"{cab['to']}.{b}"
             cable_pins |= {ref_a, ref_b}

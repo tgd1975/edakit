@@ -200,3 +200,54 @@ def test_order_writes_no_bom_for_it_and_keeps_its_parts(project, monkeypatch, ca
 def test_cost_has_no_pcb_and_no_assembly_for_it(project):
     usb_board(project)
     assert list(cost.estimate(project.config())["boards"]) == ["main"]
+
+
+# --- cables with length and gauge (maker-coverage FT-2) ---------------------------------------------------------------
+
+def test_wire_resistance_from_length_and_gauge():
+    from edakit.circuit import cable_problems, wire_h, wire_mm2, wire_ohm
+    assert round(wire_mm2({"awg": 24}), 4) == 0.2047                  # d = 0.511 mm
+    assert round(wire_ohm({"length_m": 1, "awg": 24}), 4) == 0.0840
+    assert round(wire_ohm({"length_m": 2, "mm2": 0.5}), 4) == 0.0688
+    assert wire_ohm({"r_ohm_per_wire": 0.2}) == 0.2 and wire_ohm({}) == 0.05
+    assert wire_h({"length_m": 2, "l_nh_per_m": 600}) == pytest.approx(1.2e-6)
+    assert cable_problems({"name": "W1", "length_m": 2, "awg": 24, "l_nh_per_m": 600}) == []
+    assert cable_problems({"length_m": 2}) == ["length_m needs the wire's awg or mm2"]
+    assert cable_problems({"awg": 24}) == ["awg needs the cable's length_m"]
+    assert cable_problems({"length_m": 1, "awg": 24, "mm2": 0.2}) == ["awg or mm2, not both"]
+    assert cable_problems({"r_ohm_per_wire": 0.1, "length_m": 1, "awg": 24}) == [
+        "r_ohm_per_wire or length_m with awg or mm2, not both"]
+    assert cable_problems({"awg": 50, "length_m": 1, "colour": "red"})[:2] == [
+        "unknown key 'colour' (known: about, awg, i_max_a, l_nh_per_m, length_m, mm2, notes, r_ohm_per_wire)",
+        "awg must be a gauge from 0 to 40, not 50"]
+
+
+def test_a_cable_without_its_gauge_is_a_finding(project):
+    g = usb_board(project)
+    g["graph"]["cables"][0] = {**g["graph"]["cables"][0], "length_m": 2}
+    g["graph"]["cables"][0].pop("r_ohm_per_wire")
+    project.save_graph(g)
+    assert found(project, "STRUCT.net") == ["cable W1: length_m needs the wire's awg or mm2"]
+
+
+@pytest.mark.skipif(not shutil.which("ngspice"), reason="ngspice not installed")
+def test_a_long_thin_cable_drops_the_supply(project):
+    """W1 as 2 m of AWG 28 (0.42 Ω per wire) instead of 65 mΩ: +5V falls by the drop over both wires; with
+    l_nh_per_m the wires are an inductance as well."""
+    from edakit.sim import netlist
+    g = usb_board(project)
+    sim = json.loads((project.root / "hardware" / "sim.json").read_text())
+
+    def plus5():
+        out = simrun.run_all(Design.from_config(project.config()), sim)
+        return next(s for s in out["scenarios"] if s["name"].endswith("all_on/vf-max"))["nets"]["+5V"]
+    short = plus5()
+    cable = {k: v for k, v in g["graph"]["cables"][0].items() if k != "r_ohm_per_wire"}
+    g["graph"]["cables"][0] = {**cable, "length_m": 2, "awg": 28, "l_nh_per_m": 600}
+    project.save_graph(g)
+    long = plus5()
+    assert 0.02 < short - long < 0.2
+    text, _ = netlist.build(Design.from_config(project.config()), sim, next(simrun.scenarios(sim)))
+    lines = text.splitlines()
+    assert any(line.startswith("R_W1_8 ") and line.endswith(" 0.42482") for line in lines)
+    assert any(line.startswith("L_W1_8 ") and line.endswith(" 1.2e-06") for line in lines)

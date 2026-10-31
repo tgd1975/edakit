@@ -5,8 +5,9 @@
 Scenarios = supplies x loads x LED forward-voltage corners from the simulation config (edakit.toml [project] sim),
 plus "extra_scenarios" listed there. "combine_sources" adds supplies for every combination of the sources it names:
 each alone at both ends of its range, all together with one high and the others low (generated_supplies).
-"transients" adds runs over time: the supplies follow [t, V] points (plug, unplug, a switch-over), ngspice .tran from
-the operating point at t = 0; without the key nothing runs.
+"transients" adds runs over time: the supplies follow [t, V] points (plug, unplug, a switch-over), loads may step
+([t, A] points under "steps": a servo starting, a Wi-Fi burst), ngspice .tran from the operating point at t = 0;
+without the key nothing runs.
 
 The simulation is a producer (engines/sim.py): every scenario's voltages, currents, power and temperatures against the
 limits of the parts entries (LIM.v, LIM.i, LIM.p, LIM.t), supplies against operating ranges (LIM.range), the declared
@@ -216,7 +217,7 @@ def scenarios(sim):
                "info": s.get("info", False)}
 
 
-RUN_KEYS = {"supply", "load", "corner", "stop_s", "step_s", "expect", "info", "about", "note"}
+RUN_KEYS = {"supply", "load", "corner", "stop_s", "step_s", "steps", "expect", "info", "about", "note"}
 
 
 def number(x):
@@ -258,6 +259,20 @@ def transient_runs(design, sim):
             elif not (isinstance(x, str) and x in cells and (design.part(des) or {}).get("kind") == "battery_holder"):
                 raise SimError(f"{at}: {des} is neither a source of sources nor a battery holder with a cell state of "
                                "cells")
+        steps = r.get("steps") or {}
+        if not isinstance(steps, dict):
+            raise SimError(f"{at}: steps, a map from each load that steps to its [t, A] points, expected")
+        external = sim["loads"][r["load"]].get("external") or {}
+        for des, pts in steps.items():
+            behavior = ((design.part(des) or {}).get("values") or {}).get("behavior")
+            if des not in external and behavior not in ("mcu", "current"):
+                raise SimError(f"{at}: steps {des} – an external load of load {r['load']}, an MCU or a part of behaviour "
+                               "current steps, nothing else")
+            if not (isinstance(pts, list) and pts and all(isinstance(q, list) and len(q) == 2 and all(map(number, q))
+                                                          and q[1] >= 0 for q in pts)
+                    and pts[0][0] >= 0 and all(a[0] < b[0] for a, b in zip(pts, pts[1:]))):
+                raise SimError(f"{at}: steps {des} – a list of [t, A] points with rising t from 0 and currents ≥ 0 "
+                               f"expected, not {pts!r}")
         for key, lim in (r.get("expect") or {}).items():
             allowed = {"i_max_a"} if key in sources else {"min_v", "max_v"} if key in design.nets else None
             if allowed is None:
@@ -287,7 +302,8 @@ def transient(design, new, sim, name, run, keep=None, models=None):
     sources = sim.get("sources", {})
     nets = [n for n in dict.fromkeys([*sim.get("report", []), *(k for k in expect if k not in sources)])]
     grounds = {n: netlist.local_ground(design, n) for n in nets}
-    sc = {"name": name, "supply": run["supply"], "load": sim["loads"][run["load"]], "corner": corner}
+    sc = {"name": name, "supply": run["supply"], "load": sim["loads"][run["load"]], "corner": corner,
+          "steps": run.get("steps") or {}}
     tran = {"step_s": run.get("step_s", run["stop_s"] / 1000), "stop_s": run["stop_s"],
             "nets": [*nets, *grounds.values()], "file": re.sub(r"[^\w.-]", "_", name) + ".dat"}
     s = esim.Scene(design, new, sim, {}, {}, name, run.get("info", False))

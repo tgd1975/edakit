@@ -268,3 +268,63 @@ def value_problem(text, part, key, what):
         return f"{what} {text} reads {si(got[0], unit)}, parts entry {key} has {param} {si(want, unit)}"
     return None
 
+
+
+# --- cables ----------------------------------------------------------------------------------------------------------
+AWG_D0_MM, AWG_BASE = 0.127, 92     # the gauge's definition (ASTM B258): d(n) = 0.127 mm × 92^((36 − n) / 39)
+CABLE_OHM = 0.05                    # a wire without r_ohm_per_wire or length and gauge
+CABLE_KEYS = {"name", "from", "to", "pins", "r_ohm_per_wire", "length_m", "awg", "mm2", "l_nh_per_m", "i_max_a",
+              "notes", "about"}
+
+
+def wire_mm2(cable):
+    """A cable's wire cross-section in mm²: `mm2`, or from `awg`; None without either."""
+    if is_number(cable.get("mm2")):
+        return cable["mm2"]
+    if is_number(cable.get("awg")):
+        d = AWG_D0_MM * AWG_BASE ** ((36 - cable["awg"]) / 39)
+        return 3.141592653589793 * d * d / 4
+    return None
+
+
+def wire_ohm(cable):
+    """The resistance of one wire: r_ohm_per_wire, or copper of length_m and its gauge (copper.RHO_OHM_MM, 20 °C, as
+    the routed tracks), else CABLE_OHM."""
+    from .sim.copper import RHO_OHM_MM
+    if is_number(cable.get("r_ohm_per_wire")):
+        return cable["r_ohm_per_wire"]
+    mm2 = wire_mm2(cable)
+    if mm2 and is_number(cable.get("length_m")):
+        return RHO_OHM_MM * cable["length_m"] * 1000 / mm2
+    return CABLE_OHM
+
+
+def wire_h(cable):
+    """The inductance of one wire in H: l_nh_per_m × length_m, 0 without them."""
+    if is_number(cable.get("l_nh_per_m")) and is_number(cable.get("length_m")):
+        return cable["l_nh_per_m"] * 1e-9 * cable["length_m"]
+    return 0.0
+
+
+def cable_problems(cable):
+    """What is wrong with a cable's wire data: its resistance either given or from length and gauge, numbers ≥ 0."""
+    out = []
+    for k in sorted(set(cable) - CABLE_KEYS):
+        out.append(f"unknown key '{k}' (known: {', '.join(sorted(CABLE_KEYS - {'name', 'from', 'to', 'pins'}))})")
+    for k in ("r_ohm_per_wire", "length_m", "mm2", "l_nh_per_m", "i_max_a"):
+        if k in cable and not (is_number(cable[k]) and cable[k] >= 0):
+            out.append(f"{k} must be a number ≥ 0, not {cable[k]!r}")
+    if "awg" in cable and not (is_number(cable["awg"]) and 0 <= cable["awg"] <= 40):
+        out.append(f"awg must be a gauge from 0 to 40, not {cable['awg']!r}")
+    gauge = [k for k in ("awg", "mm2") if k in cable]
+    if len(gauge) > 1:
+        out.append("awg or mm2, not both")
+    if "r_ohm_per_wire" in cable and ("length_m" in cable or gauge):
+        out.append("r_ohm_per_wire or length_m with awg or mm2, not both")
+    elif "length_m" in cable and not gauge:
+        out.append("length_m needs the wire's awg or mm2")
+    elif gauge and "length_m" not in cable:
+        out.append(f"{gauge[0]} needs the cable's length_m")
+    if "l_nh_per_m" in cable and "length_m" not in cable:
+        out.append("l_nh_per_m needs the cable's length_m")
+    return out
