@@ -107,6 +107,9 @@ def test_schema_names_what_does_not_fit():
         "the form of before (ratings, params, vmax …) – edakit convert converts it"]
     assert schema.problems({"kind": "ic", "pins": {}, "limits": {"vdd_op_min_v": 5, "vdd_op_max_v": 3}}) == [
         "limits: vdd_op_min_v 5 above vdd_op_max_v 3"]
+    printed = {"kind": "module", "pins": {"1": {"name": "PD2", "type": "bidirectional", "print": "D2"},
+                                          "2": {"name": "PD3", "type": "bidirectional", "print": ""}}}
+    assert schema.problems(printed) == ["pins.2.print: '' – the pin's name as the board prints it, a text"]
 
 
 def test_part_lint_and_convert_commands(project, capsys):

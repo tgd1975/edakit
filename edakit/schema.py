@@ -168,6 +168,8 @@ def problems(entry):
             if key in pin and pin[key] not in names:
                 out.append(f"{at}.{key}: {pin[key]!r} – the name of a pin of this part (the supply its relative limits "
                            "and threshold ratios refer to)")
+        if "print" in pin and not (isinstance(pin["print"], str) and pin["print"].strip()):
+            out.append(f"{at}.print: {pin['print']!r} – the pin's name as the board prints it, a text")
         if pin.get("strap") not in (None, "high", "low"):
             out.append(f"{at}.strap: {pin['strap']!r} – high or low")
         if pin.get("pull") not in (None, "up", "down"):

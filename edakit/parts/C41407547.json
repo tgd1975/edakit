@@ -15,6 +15,7 @@
  "pins": {
   "1": {
    "name": "GP0",
+   "print": "GP0",
    "type": "bidirectional",
    "role": "gpio",
    "v_max_v": 3.63,
@@ -30,6 +31,7 @@
   },
   "2": {
    "name": "GP1",
+   "print": "GP1",
    "type": "bidirectional",
    "role": "gpio",
    "v_max_v": 3.63,
@@ -45,10 +47,12 @@
   },
   "3": {
    "name": "GND",
+   "print": "GND",
    "type": "ground"
   },
   "4": {
    "name": "GP2",
+   "print": "GP2",
    "type": "bidirectional",
    "role": "gpio",
    "v_max_v": 3.63,
@@ -65,6 +69,7 @@
   },
   "5": {
    "name": "GP3",
+   "print": "GP3",
    "type": "bidirectional",
    "role": "gpio",
    "v_max_v": 3.63,
@@ -81,6 +86,7 @@
   },
   "6": {
    "name": "GP4",
+   "print": "GP4",
    "type": "bidirectional",
    "role": "gpio",
    "v_max_v": 3.63,
@@ -96,6 +102,7 @@
   },
   "7": {
    "name": "GP5",
+   "print": "GP5",
    "type": "bidirectional",
    "role": "gpio",
    "v_max_v": 3.63,
@@ -111,10 +118,12 @@
   },
   "8": {
    "name": "GND",
+   "print": "GND",
    "type": "ground"
   },
   "9": {
    "name": "GP6",
+   "print": "GP6",
    "type": "bidirectional",
    "role": "gpio",
    "v_max_v": 3.63,
@@ -131,6 +140,7 @@
   },
   "10": {
    "name": "GP7",
+   "print": "GP7",
    "type": "bidirectional",
    "role": "gpio",
    "v_max_v": 3.63,
@@ -147,6 +157,7 @@
   },
   "11": {
    "name": "GP8",
+   "print": "GP8",
    "type": "bidirectional",
    "role": "gpio",
    "v_max_v": 3.63,
@@ -162,6 +173,7 @@
   },
   "12": {
    "name": "GP9",
+   "print": "GP9",
    "type": "bidirectional",
    "role": "gpio",
    "v_max_v": 3.63,
@@ -177,10 +189,12 @@
   },
   "13": {
    "name": "GND",
+   "print": "GND",
    "type": "ground"
   },
   "14": {
    "name": "GP10",
+   "print": "GP10",
    "type": "bidirectional",
    "role": "gpio",
    "v_max_v": 3.63,
@@ -197,6 +211,7 @@
   },
   "15": {
    "name": "GP11",
+   "print": "GP11",
    "type": "bidirectional",
    "role": "gpio",
    "v_max_v": 3.63,
@@ -213,6 +228,7 @@
   },
   "16": {
    "name": "GP12",
+   "print": "GP12",
    "type": "bidirectional",
    "role": "gpio",
    "v_max_v": 3.63,
@@ -228,6 +244,7 @@
   },
   "17": {
    "name": "GP13",
+   "print": "GP13",
    "type": "bidirectional",
    "role": "gpio",
    "v_max_v": 3.63,
@@ -243,10 +260,12 @@
   },
   "18": {
    "name": "GND",
+   "print": "GND",
    "type": "ground"
   },
   "19": {
    "name": "GP14",
+   "print": "GP14",
    "type": "bidirectional",
    "role": "gpio",
    "v_max_v": 3.63,
@@ -263,6 +282,7 @@
   },
   "20": {
    "name": "GP15",
+   "print": "GP15",
    "type": "bidirectional",
    "role": "gpio",
    "v_max_v": 3.63,
@@ -279,6 +299,7 @@
   },
   "21": {
    "name": "GP16",
+   "print": "GP16",
    "type": "bidirectional",
    "role": "gpio",
    "v_max_v": 3.63,
@@ -294,6 +315,7 @@
   },
   "22": {
    "name": "GP17",
+   "print": "GP17",
    "type": "bidirectional",
    "role": "gpio",
    "v_max_v": 3.63,
@@ -309,10 +331,12 @@
   },
   "23": {
    "name": "GND",
+   "print": "GND",
    "type": "ground"
   },
   "24": {
    "name": "GP18",
+   "print": "GP18",
    "type": "bidirectional",
    "role": "gpio",
    "v_max_v": 3.63,
@@ -329,6 +353,7 @@
   },
   "25": {
    "name": "GP19",
+   "print": "GP19",
    "type": "bidirectional",
    "role": "gpio",
    "v_max_v": 3.63,
@@ -345,6 +370,7 @@
   },
   "26": {
    "name": "GP20",
+   "print": "GP20",
    "type": "bidirectional",
    "role": "gpio",
    "v_max_v": 3.63,
@@ -360,6 +386,7 @@
   },
   "27": {
    "name": "GP21",
+   "print": "GP21",
    "type": "bidirectional",
    "role": "gpio",
    "v_max_v": 3.63,
@@ -375,10 +402,12 @@
   },
   "28": {
    "name": "GND",
+   "print": "GND",
    "type": "ground"
   },
   "29": {
    "name": "GP22",
+   "print": "GP22",
    "type": "bidirectional",
    "role": "gpio",
    "v_max_v": 3.63,
@@ -395,6 +424,7 @@
   },
   "30": {
    "name": "RUN",
+   "print": "RUN",
    "type": "input",
    "v_max_v": 3.63,
    "pull": "up",
@@ -403,6 +433,7 @@
   },
   "31": {
    "name": "GP26_ADC0",
+   "print": "GP26",
    "type": "bidirectional",
    "role": "gpio",
    "v_max_v": 3.6,
@@ -421,6 +452,7 @@
   },
   "32": {
    "name": "GP27_ADC1",
+   "print": "GP27",
    "type": "bidirectional",
    "role": "gpio",
    "v_max_v": 3.6,
@@ -439,11 +471,13 @@
   },
   "33": {
    "name": "AGND",
+   "print": "AGND",
    "type": "ground",
    "hint": "AGND: ground reference of GPIO26–29 with its own analog ground plane; may join digital ground when ADC performance is not critical"
   },
   "34": {
    "name": "GP28_ADC2",
+   "print": "GP28",
    "type": "bidirectional",
    "role": "gpio",
    "v_max_v": 3.6,
@@ -461,6 +495,7 @@
   },
   "35": {
    "name": "ADC_VREF",
+   "print": "ADC_VREF",
    "type": "power_output",
    "role": "adc_vref",
    "v_max_v": 3.63,
@@ -468,12 +503,14 @@
   },
   "36": {
    "name": "3V3(OUT)",
+   "print": "3V3(OUT)",
    "type": "power_output",
    "role": "3v3",
    "hint": "3.3 V of the on-board buck-boost SMPS; keep the external load below 300 mA"
   },
   "37": {
    "name": "3V3_EN",
+   "print": "3V3_EN",
    "type": "input",
    "v_max_v": 5.5,
    "pull": "up",
@@ -482,10 +519,12 @@
   },
   "38": {
    "name": "GND",
+   "print": "GND",
    "type": "ground"
   },
   "39": {
    "name": "VSYS",
+   "print": "VSYS",
    "type": "power_in",
    "role": "vsys",
    "v_max_v": 5.5,
@@ -493,12 +532,14 @@
   },
   "40": {
    "name": "VBUS",
+   "print": "VBUS",
    "type": "power_output",
    "role": "vbus",
    "hint": "the micro-USB 5 V (5 V ± 10 %), 0 V without USB; in USB host mode the board must be fed with 5 V here"
   },
   "41": {
    "name": "SWCLK",
+   "print": "SWCLK",
    "type": "input",
    "v_max_v": 3.63,
    "pull": "up",
@@ -506,10 +547,12 @@
   },
   "42": {
    "name": "GND",
+   "print": "GND",
    "type": "ground"
   },
   "43": {
    "name": "SWDIO",
+   "print": "SWDIO",
    "type": "bidirectional",
    "v_max_v": 3.63,
    "pull": "up",
@@ -596,7 +639,8 @@
   "regulator 'buck': the on-board RT6150 is a buck-boost (the schema knows ldo, buck, boost) – the simulation models it as a buck with the default efficiency",
   "t_max_c 70 °C: the recommended maximum ambient (85 °C including self-heating)",
   "3V3_EN v_max_v 5.5 V: it is pulled up to VSYS (at most 5.5 V) on the board – the SMPS's own EN rating was not read",
-  "USB DM/DP (TP2/TP3) v_max_v 3.63 V: below the standard-IO limit IOVDD + 0.5 V – conservative"
+  "USB DM/DP (TP2/TP3) v_max_v 3.63 V: below the standard-IO limit IOVDD + 0.5 V – conservative",
+  "print per pin: the labels of the pinout page for Pico 1 and Pico 2 (Pico-2-Pinout.pdf, https://datasheets.raspberrypi.com/pico/Pico-2-Pinout.pdf); pin 33 is labelled GND and AGND there – print takes AGND; the test pads TP1–TP6 are not on it"
  ],
  "notes": "Raspberry Pi Pico 2 (RP2350) as a module, reflow-soldered on its castellated pads or plugged on headers. Behaviour model 'mcu' with the on-board buck-boost (VSYS → 3V3).",
  "verified": {

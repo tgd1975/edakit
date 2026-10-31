@@ -13,6 +13,7 @@
  "pins": {
   "1": {
    "name": "D1/TX",
+   "print": "D1/TX",
    "type": "bidirectional",
    "role": "gpio",
    "v_max_v": 5.5,
@@ -23,6 +24,7 @@
   },
   "2": {
    "name": "D0/RX",
+   "print": "D0/RX",
    "type": "bidirectional",
    "role": "gpio",
    "v_max_v": 5.5,
@@ -33,6 +35,7 @@
   },
   "3": {
    "name": "RESET",
+   "print": "RESET",
    "type": "input",
    "v_max_v": 5.5,
    "pull": "up",
@@ -41,10 +44,12 @@
   },
   "4": {
    "name": "GND",
+   "print": "GND",
    "type": "ground"
   },
   "5": {
    "name": "D2",
+   "print": "D2",
    "type": "bidirectional",
    "role": "gpio",
    "v_max_v": 5.5,
@@ -53,6 +58,7 @@
   },
   "6": {
    "name": "D3",
+   "print": "~D3",
    "type": "bidirectional",
    "role": "gpio",
    "v_max_v": 5.5,
@@ -63,6 +69,7 @@
   },
   "7": {
    "name": "D4",
+   "print": "D4",
    "type": "bidirectional",
    "role": "gpio",
    "v_max_v": 5.5,
@@ -71,6 +78,7 @@
   },
   "8": {
    "name": "D5",
+   "print": "~D5",
    "type": "bidirectional",
    "role": "gpio",
    "v_max_v": 5.5,
@@ -81,6 +89,7 @@
   },
   "9": {
    "name": "D6",
+   "print": "~D6",
    "type": "bidirectional",
    "role": "gpio",
    "v_max_v": 5.5,
@@ -91,6 +100,7 @@
   },
   "10": {
    "name": "D7",
+   "print": "D7",
    "type": "bidirectional",
    "role": "gpio",
    "v_max_v": 5.5,
@@ -99,6 +109,7 @@
   },
   "11": {
    "name": "D8",
+   "print": "D8",
    "type": "bidirectional",
    "role": "gpio",
    "v_max_v": 5.5,
@@ -107,6 +118,7 @@
   },
   "12": {
    "name": "D9",
+   "print": "~D9",
    "type": "bidirectional",
    "role": "gpio",
    "v_max_v": 5.5,
@@ -117,6 +129,7 @@
   },
   "13": {
    "name": "D10",
+   "print": "~D10",
    "type": "bidirectional",
    "role": "gpio",
    "v_max_v": 5.5,
@@ -128,6 +141,7 @@
   },
   "14": {
    "name": "D11/MOSI",
+   "print": "~D11",
    "type": "bidirectional",
    "role": "gpio",
    "v_max_v": 5.5,
@@ -139,6 +153,7 @@
   },
   "15": {
    "name": "D12/MISO",
+   "print": "D12",
    "type": "bidirectional",
    "role": "gpio",
    "v_max_v": 5.5,
@@ -149,6 +164,7 @@
   },
   "16": {
    "name": "D13/SCK",
+   "print": "D13",
    "type": "bidirectional",
    "role": "gpio",
    "v_max_v": 5.5,
@@ -159,18 +175,21 @@
   },
   "17": {
    "name": "3V3",
+   "print": "+3V3",
    "type": "power_output",
    "role": "3v3",
    "hint": "3.3 V from the 3V3OUT of the FT232RL USB-serial chip (schematic); its current rating is in the FTDI datasheet (not read)"
   },
   "18": {
    "name": "AREF",
+   "print": "AREF",
    "type": "analog",
    "v_max_v": 5.5,
    "hint": "ADC reference of the ATmega328P, 100 nF to GND on the board"
   },
   "19": {
    "name": "A0",
+   "print": "A0",
    "type": "bidirectional",
    "role": "gpio",
    "v_max_v": 5.5,
@@ -188,6 +207,7 @@
   },
   "20": {
    "name": "A1",
+   "print": "A1",
    "type": "bidirectional",
    "role": "gpio",
    "v_max_v": 5.5,
@@ -205,6 +225,7 @@
   },
   "21": {
    "name": "A2",
+   "print": "A2",
    "type": "bidirectional",
    "role": "gpio",
    "v_max_v": 5.5,
@@ -222,6 +243,7 @@
   },
   "22": {
    "name": "A3",
+   "print": "A3",
    "type": "bidirectional",
    "role": "gpio",
    "v_max_v": 5.5,
@@ -239,6 +261,7 @@
   },
   "23": {
    "name": "A4",
+   "print": "A4",
    "type": "bidirectional",
    "role": "gpio",
    "v_max_v": 5.5,
@@ -257,6 +280,7 @@
   },
   "24": {
    "name": "A5",
+   "print": "A5",
    "type": "bidirectional",
    "role": "gpio",
    "v_max_v": 5.5,
@@ -275,6 +299,7 @@
   },
   "25": {
    "name": "A6",
+   "print": "A6",
    "type": "analog",
    "v_max_v": 5.5,
    "functions": [
@@ -291,6 +316,7 @@
   },
   "26": {
    "name": "A7",
+   "print": "A7",
    "type": "analog",
    "v_max_v": 5.5,
    "functions": [
@@ -307,6 +333,7 @@
   },
   "27": {
    "name": "+5V",
+   "print": "+5V",
    "type": "power_output",
    "role": "vout",
    "v_max_v": 5.5,
@@ -314,6 +341,7 @@
   },
   "28": {
    "name": "RESET",
+   "print": "RESET",
    "type": "input",
    "v_max_v": 5.5,
    "pull": "up",
@@ -322,10 +350,12 @@
   },
   "29": {
    "name": "GND",
+   "print": "GND",
    "type": "ground"
   },
   "30": {
    "name": "VIN",
+   "print": "VIN",
    "type": "power_in",
    "role": "vin",
    "v_max_v": 15,
@@ -374,7 +404,8 @@
   "adc.range_v [0, 5.0]: 0 V … AVCC = +5V, the default reference – assumption: the firmware keeps the default reference (AREF pin without external reference)",
   "the AVR VIH/VIL are from table 30-1 (–40 … 105 °C table; the –40 … 85 °C table did not extract as text)",
   "pin v_max_v and gpio_v_max_v 5.5 V: VCC + 0.5 V at VCC 5 V (abs. max); RESET held to the same 5.5 V although the AVR allows 13 V on RESET (the board joins it to +5V through 1 kΩ)",
-  "VIN v_max_v 15 V and vin_min_v/vin_max_v 7–15 V: the user manual's range; the LM1117's own ratings were not read"
+  "VIN v_max_v 15 V and vin_min_v/vin_max_v 7–15 V: the user manual's range; the LM1117's own ratings were not read",
+  "print per pin: the labels of Arduino's pinout page (A000005-full-pinout.pdf, last update 30/06/2021, https://docs.arduino.cc/resources/pinouts/A000005-full-pinout.pdf) – ~ marks a PWM pin"
  ],
  "notes": "Bought board without an LCSC number, keyed by its manufacturer part number (handbook 4: a part bought from another distributor; 4.5 bought boards) – a component names it with part = A000005 and bom: false. footprint and order are not filled (see verified.open).",
  "verified": {

@@ -165,6 +165,16 @@ def test_parts_entry_chooses_the_sides():
     assert typo.problems == ["X1: the parts entry's 'symbol' lists pins 1, 9 twice or the part has none"]
 
 
+def test_the_boards_print_beside_the_symbols_name():
+    one = OnePart("module", {"1": "gpio", "2": "gpio", "3": "gpio"})
+    one.comps["X1"]["pins"]["3"] = "3"                                   # a symbol pin without a name
+    one._part["pins"]["1"]["print"] = "D2"
+    one._part["pins"]["2"]["print"] = "GPIO"                             # the same as the symbol's name
+    one._part["pins"]["3"]["print"] = "A7"
+    texts = {text for _, _, text, *_ in symbol(one, "X1").texts}
+    assert {"GPIO (D2)", "GPIO", "A7"} <= texts and "GPIO (GPIO)" not in texts
+
+
 def test_mechanical_pins_only_when_connected():
     roles = {**SYMBOLS["switch"], "4": ""}
     s = symbol(OnePart("switch", roles, open_pins={"4"}, types={"4": "mechanical"}), "X1")
