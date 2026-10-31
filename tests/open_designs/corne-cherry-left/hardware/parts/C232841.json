@@ -1,0 +1,61 @@
+{
+ "lcsc": "C232841",
+ "mpn": "1N4148WT",
+ "manufacturer": "onsemi",
+ "kind": "diode",
+ "package": "SOD-523F",
+ "footprint": "D_SOD-523",
+ "datasheet": {
+  "url": "https://datasheet.lcsc.com/datasheet/pdf/bed5775b3e24a382b80d4f522916afbc.pdf",
+  "pinout_page": 1
+ },
+ "pins": {
+  "1": {
+   "name": "K",
+   "type": "passive",
+   "role": "cathode"
+  },
+  "2": {
+   "name": "A",
+   "type": "passive",
+   "role": "anode"
+  }
+ },
+ "values": {
+  "vf_v": 1.0,
+  "vf_at_a": 0.01,
+  "ir_a": 2.5e-08,
+  "ir_at_v": 20
+ },
+ "limits": {
+  "vr_max_v": 75,
+  "p_max_w": 0.2,
+  "rth_ja_k_per_w": 500,
+  "tj_max_c": 150
+ },
+ "spice": {
+  "model": ".model D1N4148WT D(IS=5.5e-11 N=1.85 RS=1.0 BV=75 IBV=5u CJO=0.57p TT=4n)",
+  "source": "fitted to the typical forward voltage at 25 °C of the graph 'Forward Voltage vs Ambient Temperature' (p. 2, read from the graph): 0.80 V at 1 mA, 0.92 V at 10 mA (N 1.85, IS 5.5e-11 A), 1.12 V at 100 mA (RS 1.0 Ω), 1.25 V at 200 mA; BV the VRRM, IBV at IR 5 µA; CJO from the capacitance graph (0.57 pF at 0 V), TT from trr 4 ns (assumption: TT ≈ trr)"
+ },
+ "sources": [
+  "Fairchild (onsemi) 1N4148WT / 1N4448WT / 1N914BWT datasheet, Rev. A2 (September 2009), LCSC's copy https://datasheet.lcsc.com/datasheet/pdf/bed5775b3e24a382b80d4f522916afbc.pdf, read 2026-10-31",
+  "p. 1: SOD-523F, band = cathode; absolute maximum VRSM and VRRM 75 V, IFRM 300 mA (repetitive peak), TJ −55 … +150 °C; PD 200 mW, RθJA 500 °C/W (FR-4, minimum land pad)",
+  "electrical characteristics: VF ≤ 1 V at 10 mA (1N4148WT); IR ≤ 25 nA at 20 V, ≤ 5 µA at 75 V; CO ≤ 4 pF; trr ≤ 4 ns",
+  "pin names K, A and numbers 1 K, 2 A as the Corne's KiCad symbol Diode:1N4148WT"
+ ],
+ "verified": {
+  "by": "Claude (datasheet check, open-design transcription)",
+  "date": "2026-10-31",
+  "datasheet": "Fairchild (onsemi) 1N4148WT / 1N4448WT / 1N914BWT datasheet, Rev. A2 (September 2009)",
+  "datasheet_sha256": "defd8fc24309f0c671ca0bdf6cb482434f90c4abd3d53e7ffb44bdf7444d607b",
+  "checked": [
+   "pinning",
+   "absolute maximum ratings and thermal characteristics",
+   "VF, IR, capacitance, trr",
+   "forward voltage graph"
+  ],
+  "open": [
+   "no continuous forward current rating: the sheet gives only IFRM 300 mA (repetitive peak) – if_max_a stays out; PD 200 mW and RθJA 500 °C/W hold the diode (LIM.p, LIM.t)"
+  ]
+ }
+}

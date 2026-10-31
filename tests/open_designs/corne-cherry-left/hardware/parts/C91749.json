@@ -1,0 +1,59 @@
+{
+ "lcsc": "C91749",
+ "mpn": "Q22FA23V0041800",
+ "manufacturer": "Epson",
+ "kind": "crystal",
+ "package": "SMD 3.2 × 2.5 mm, 4 pads",
+ "footprint": "Crystal_SMD_3225-4Pin_3.2x2.5mm",
+ "datasheet": {
+  "url": "https://datasheet.lcsc.com/datasheet/pdf/e7614187a51a9c8b73ca60179e03ae50.pdf",
+  "pinout_page": 4
+ },
+ "pins": {
+  "1": {
+   "name": "1",
+   "type": "passive",
+   "role": "1"
+  },
+  "2": {
+   "name": "2",
+   "type": "ground"
+  },
+  "3": {
+   "name": "3",
+   "type": "passive",
+   "role": "2"
+  },
+  "4": {
+   "name": "4",
+   "type": "ground"
+  }
+ },
+ "values": {
+  "f_hz": 12000000.0,
+  "c_load_f": 1.8e-11
+ },
+ "limits": {
+  "t_min_c": -40,
+  "t_max_c": 85
+ },
+ "sources": [
+  "Epson crystal unit specification Q22FA23V0041800 (FA-238V), INFO. No. A14-201-2B (2014-05-22), LCSC's copy https://datasheet.lcsc.com/datasheet/pdf/e7614187a51a9c8b73ca60179e03ae50.pdf, read 2026-10-31",
+  "[2]: operating −40 … +85 °C; drive level 100 µW typ, 200 µW max; [3]: 12 MHz fundamental, CL 18 pF, ±20 × 10⁻⁶ at 25 °C, R1 ≤ 100 Ω, C0 ≤ 5 pF",
+  "[5] circuit: #1, #3 crystal; #2, #4 GND (connected to the cover) – pin names 1–4 as the Corne's KiCad symbol Device:Crystal_GND24_Small"
+ ],
+ "verified": {
+  "by": "Claude (datasheet check, open-design transcription)",
+  "date": "2026-10-31",
+  "datasheet": "Epson crystal unit specification Q22FA23V0041800 (FA-238V), INFO. No. A14-201-2B (2014-05-22)",
+  "datasheet_sha256": "2e75f52dc42aba49846899f87029df8b160bf261b09c9b5d299374423dab99cd",
+  "checked": [
+   "frequency, load capacitance, tolerance",
+   "pin circuit",
+   "temperature range"
+  ],
+  "open": [
+   "the load capacitors (27 pF each, with the stray capacitance) against CL 18 pF: not checked by edakit"
+  ]
+ }
+}

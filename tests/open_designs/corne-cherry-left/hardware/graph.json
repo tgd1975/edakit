@@ -1,0 +1,2218 @@
+{
+ "graph": {
+  "name": "corne-cherry-left",
+  "version": "1.0",
+  "date": "2026-10-31",
+  "description": "The Corne keyboard v4 (foostan/crkbd, corne-cherry hotswap), left half as published: USB-C with 5.1 kΩ CC resistors and ESD protection, a Schottky to +5V, an NCP1117LP 3.3 V regulator, an RP2040 with 16 MB QSPI flash and a 12 MHz crystal, 21 keys and 2 extra keys in hot-swap sockets each on its own GPIO (no matrix), 23 SK6812MINI-E RGB LEDs in one chain one diode below +5V, a TRS jack to the right half, an OLED header, BOOT and RESET buttons. Transcribed for edakit's tests.",
+  "purpose": {
+   "use": "private",
+   "market": "EU",
+   "notes": "An open keyboard that makers order and build for themselves; vendors also sell kits. The transcription is a test of edakit, not a product."
+  },
+  "conventions": {
+   "pin_reference": "'<designator>.<pin>' with the pin numbers of the Corne's KiCad symbols (= its footprints' pads); the encoder positions EXSW1/2 with the socket's pins 1 (S1) and 2 (S2)",
+   "v": "per net: [min, max] in V over all intended operating states",
+   "source": "foostan/crkbd at 63366fb, pcbs/common/left.kicad_sch (sheet 'left' of pcbs/corne-cherry/hotswap/corne-cherry.kicad_sch), https://github.com/foostan/crkbd"
+  },
+  "cables": [],
+  "layout": {},
+  "locks": {},
+  "components": [
+   {
+    "designator": "C1",
+    "type": "capacitor",
+    "label": "crystal load 27 pF (XIN)",
+    "part": "0402CG270J500NT",
+    "lcsc": "C1557",
+    "value": "27p",
+    "pins": {
+     "1": "1",
+     "2": "2"
+    },
+    "nc": []
+   },
+   {
+    "designator": "C2",
+    "type": "capacitor",
+    "label": "crystal load 27 pF",
+    "part": "0402CG270J500NT",
+    "lcsc": "C1557",
+    "value": "27p",
+    "pins": {
+     "1": "1",
+     "2": "2"
+    },
+    "nc": []
+   },
+   {
+    "designator": "C3",
+    "type": "capacitor",
+    "label": "+1V1 decoupling 100nF",
+    "part": "CL05B104KO5NNNC",
+    "lcsc": "C1525",
+    "value": "100n",
+    "pins": {
+     "1": "1",
+     "2": "2"
+    },
+    "nc": []
+   },
+   {
+    "designator": "C4",
+    "type": "capacitor",
+    "label": "+1V1 decoupling 100nF",
+    "part": "CL05B104KO5NNNC",
+    "lcsc": "C1525",
+    "value": "100n",
+    "pins": {
+     "1": "1",
+     "2": "2"
+    },
+    "nc": []
+   },
+   {
+    "designator": "C5",
+    "type": "capacitor",
+    "label": "+1V1 decoupling 1uF",
+    "part": "CL05A105KA5NQNC",
+    "lcsc": "C52923",
+    "value": "1u",
+    "pins": {
+     "1": "1",
+     "2": "2"
+    },
+    "nc": []
+   },
+   {
+    "designator": "C6",
+    "type": "capacitor",
+    "label": "+5V 10 µF",
+    "part": "CL05A106MQ5NUNC",
+    "lcsc": "C15525",
+    "value": "10u",
+    "pins": {
+     "1": "1",
+     "2": "2"
+    },
+    "nc": []
+   },
+   {
+    "designator": "C7",
+    "type": "capacitor",
+    "label": "+3V3 decoupling 100nF",
+    "part": "CL05B104KO5NNNC",
+    "lcsc": "C1525",
+    "value": "100n",
+    "pins": {
+     "1": "1",
+     "2": "2"
+    },
+    "nc": []
+   },
+   {
+    "designator": "C8",
+    "type": "capacitor",
+    "label": "+3V3 decoupling 1uF",
+    "part": "CL05A105KA5NQNC",
+    "lcsc": "C52923",
+    "value": "1u",
+    "pins": {
+     "1": "1",
+     "2": "2"
+    },
+    "nc": []
+   },
+   {
+    "designator": "C9",
+    "type": "capacitor",
+    "label": "+3V3 decoupling 100nF",
+    "part": "CL05B104KO5NNNC",
+    "lcsc": "C1525",
+    "value": "100n",
+    "pins": {
+     "1": "1",
+     "2": "2"
+    },
+    "nc": []
+   },
+   {
+    "designator": "C10",
+    "type": "capacitor",
+    "label": "+3V3 decoupling 100nF",
+    "part": "CL05B104KO5NNNC",
+    "lcsc": "C1525",
+    "value": "100n",
+    "pins": {
+     "1": "1",
+     "2": "2"
+    },
+    "nc": []
+   },
+   {
+    "designator": "C11",
+    "type": "capacitor",
+    "label": "+3V3 decoupling 10uF",
+    "part": "CL05A106MQ5NUNC",
+    "lcsc": "C15525",
+    "value": "10u",
+    "pins": {
+     "1": "1",
+     "2": "2"
+    },
+    "nc": []
+   },
+   {
+    "designator": "C12",
+    "type": "capacitor",
+    "label": "+3V3 decoupling 100nF",
+    "part": "CL05B104KO5NNNC",
+    "lcsc": "C1525",
+    "value": "100n",
+    "pins": {
+     "1": "1",
+     "2": "2"
+    },
+    "nc": []
+   },
+   {
+    "designator": "C13",
+    "type": "capacitor",
+    "label": "+3V3 decoupling 100nF",
+    "part": "CL05B104KO5NNNC",
+    "lcsc": "C1525",
+    "value": "100n",
+    "pins": {
+     "1": "1",
+     "2": "2"
+    },
+    "nc": []
+   },
+   {
+    "designator": "C14",
+    "type": "capacitor",
+    "label": "+3V3 decoupling 100nF",
+    "part": "CL05B104KO5NNNC",
+    "lcsc": "C1525",
+    "value": "100n",
+    "pins": {
+     "1": "1",
+     "2": "2"
+    },
+    "nc": []
+   },
+   {
+    "designator": "C15",
+    "type": "capacitor",
+    "label": "+3V3 decoupling 100nF",
+    "part": "CL05B104KO5NNNC",
+    "lcsc": "C1525",
+    "value": "100n",
+    "pins": {
+     "1": "1",
+     "2": "2"
+    },
+    "nc": []
+   },
+   {
+    "designator": "C16",
+    "type": "capacitor",
+    "label": "+3V3 decoupling 1uF",
+    "part": "CL05A105KA5NQNC",
+    "lcsc": "C52923",
+    "value": "1u",
+    "pins": {
+     "1": "1",
+     "2": "2"
+    },
+    "nc": []
+   },
+   {
+    "designator": "D1",
+    "type": "diode",
+    "label": "drops the LEDs' supply by one diode (1N4148WT)",
+    "part": "1N4148WT",
+    "lcsc": "C232841",
+    "pins": {
+     "1": "K",
+     "2": "A"
+    },
+    "nc": [],
+    "notes": "The LEDs run one diode drop below +5V, so that the RP2040's 3.3 V data reaches their VIH of 0.65 VDD."
+   },
+   {
+    "designator": "EXLED1",
+    "type": "ic",
+    "label": "per-key RGB LED EXLED1",
+    "part": "SK6812MINI-E",
+    "lcsc": "C5149201",
+    "pins": {
+     "1": "VDD",
+     "2": "DOUT",
+     "3": "VSS",
+     "4": "DIN"
+    },
+    "nc": []
+   },
+   {
+    "designator": "EXLED2",
+    "type": "ic",
+    "label": "per-key RGB LED EXLED2",
+    "part": "SK6812MINI-E",
+    "lcsc": "C5149201",
+    "pins": {
+     "1": "VDD",
+     "2": "DOUT",
+     "3": "VSS",
+     "4": "DIN"
+    },
+    "nc": [
+     "2"
+    ],
+    "notes": "Last LED of the chain: DOUT open (the schematic's no-connect)."
+   },
+   {
+    "designator": "EXSW1",
+    "type": "button",
+    "label": "extra key 1 (hot-swap socket at the encoder position)",
+    "part": "CPG151101S11-16",
+    "lcsc": "C5156480",
+    "pins": {
+     "1": "1",
+     "2": "2"
+    },
+    "nc": [],
+    "notes": "The schematic's RotaryEncoder_Switch position; the BOM fits the key socket C5156480 on its switch pads S1 (pin 1, GND) and S2 (pin 2, KEYEX1). The encoder pads A (GPIO5), B (GPIO7) and C (GND) stay empty."
+   },
+   {
+    "designator": "EXSW2",
+    "type": "button",
+    "label": "extra key 2 (hot-swap socket at the encoder position)",
+    "part": "CPG151101S11-16",
+    "lcsc": "C5156480",
+    "pins": {
+     "1": "1",
+     "2": "2"
+    },
+    "nc": [],
+    "notes": "As EXSW1: socket on S1 (GND) and S2 (KEYEX2); the empty encoder pads A (GPIO6) and B (GPIO7)."
+   },
+   {
+    "designator": "J1",
+    "type": "connector",
+    "label": "USB-C receptacle",
+    "part": "TYPE-C-31-M-13C",
+    "lcsc": "C2848620",
+    "pins": {
+     "A1": "GND",
+     "A4": "VBUS",
+     "A5": "CC1",
+     "A6": "D+",
+     "A7": "D-",
+     "A8": "SBU1",
+     "A9": "VBUS",
+     "A12": "GND",
+     "B1": "GND",
+     "B4": "VBUS",
+     "B5": "CC2",
+     "B6": "D+",
+     "B7": "D-",
+     "B8": "SBU2",
+     "B9": "VBUS",
+     "B12": "GND",
+     "S1": "SHIELD"
+    },
+    "nc": [
+     "A8",
+     "B8"
+    ]
+   },
+   {
+    "designator": "J2",
+    "type": "connector",
+    "label": "TRS jack to the other half (5 V, data, GND)",
+    "part": "PJ-399B-6A",
+    "lcsc": "C128994",
+    "pins": {
+     "S": "~",
+     "T": "~",
+     "R": "~"
+    },
+    "nc": [],
+    "off_board": true,
+    "notes": "TRS to the right half: tip +5V, ring the single-wire serial link (GPIO12), sleeve GND – the right half is powered through it when this half has the USB cable."
+   },
+   {
+    "designator": "J3",
+    "type": "connector",
+    "label": "OLED module (I2C, 5 V)",
+    "part": "PZ254V-11-04P",
+    "pins": {
+     "1": "Pin_1",
+     "2": "Pin_2",
+     "3": "Pin_3",
+     "4": "Pin_4"
+    },
+    "nc": [],
+    "bom": false,
+    "notes": "Conn_01x04 on the footprint kbd_local:OLED, not in the BOM: SDA (GPIO6), SCL (GPIO7), +5V, GND for an OLED module; GPIO6/7 are also the encoders' A/B lines."
+   },
+   {
+    "designator": "J4",
+    "type": "connector",
+    "label": "SWD header",
+    "part": "PZ254V-11-03P",
+    "lcsc": "C2937625",
+    "pins": {
+     "1": "Pin_1",
+     "2": "Pin_2",
+     "3": "Pin_3"
+    },
+    "nc": [],
+    "bom": false,
+    "notes": "Conn_01x03 SWD header, not in the BOM."
+   },
+   {
+    "designator": "LED1",
+    "type": "ic",
+    "label": "per-key RGB LED LED1",
+    "part": "SK6812MINI-E",
+    "lcsc": "C5149201",
+    "pins": {
+     "1": "VDD",
+     "2": "DOUT",
+     "3": "VSS",
+     "4": "DIN"
+    },
+    "nc": []
+   },
+   {
+    "designator": "LED2",
+    "type": "ic",
+    "label": "per-key RGB LED LED2",
+    "part": "SK6812MINI-E",
+    "lcsc": "C5149201",
+    "pins": {
+     "1": "VDD",
+     "2": "DOUT",
+     "3": "VSS",
+     "4": "DIN"
+    },
+    "nc": []
+   },
+   {
+    "designator": "LED3",
+    "type": "ic",
+    "label": "per-key RGB LED LED3",
+    "part": "SK6812MINI-E",
+    "lcsc": "C5149201",
+    "pins": {
+     "1": "VDD",
+     "2": "DOUT",
+     "3": "VSS",
+     "4": "DIN"
+    },
+    "nc": []
+   },
+   {
+    "designator": "LED4",
+    "type": "ic",
+    "label": "per-key RGB LED LED4",
+    "part": "SK6812MINI-E",
+    "lcsc": "C5149201",
+    "pins": {
+     "1": "VDD",
+     "2": "DOUT",
+     "3": "VSS",
+     "4": "DIN"
+    },
+    "nc": []
+   },
+   {
+    "designator": "LED5",
+    "type": "ic",
+    "label": "per-key RGB LED LED5",
+    "part": "SK6812MINI-E",
+    "lcsc": "C5149201",
+    "pins": {
+     "1": "VDD",
+     "2": "DOUT",
+     "3": "VSS",
+     "4": "DIN"
+    },
+    "nc": []
+   },
+   {
+    "designator": "LED6",
+    "type": "ic",
+    "label": "per-key RGB LED LED6",
+    "part": "SK6812MINI-E",
+    "lcsc": "C5149201",
+    "pins": {
+     "1": "VDD",
+     "2": "DOUT",
+     "3": "VSS",
+     "4": "DIN"
+    },
+    "nc": []
+   },
+   {
+    "designator": "LED7",
+    "type": "ic",
+    "label": "per-key RGB LED LED7",
+    "part": "SK6812MINI-E",
+    "lcsc": "C5149201",
+    "pins": {
+     "1": "VDD",
+     "2": "DOUT",
+     "3": "VSS",
+     "4": "DIN"
+    },
+    "nc": []
+   },
+   {
+    "designator": "LED8",
+    "type": "ic",
+    "label": "per-key RGB LED LED8",
+    "part": "SK6812MINI-E",
+    "lcsc": "C5149201",
+    "pins": {
+     "1": "VDD",
+     "2": "DOUT",
+     "3": "VSS",
+     "4": "DIN"
+    },
+    "nc": []
+   },
+   {
+    "designator": "LED9",
+    "type": "ic",
+    "label": "per-key RGB LED LED9",
+    "part": "SK6812MINI-E",
+    "lcsc": "C5149201",
+    "pins": {
+     "1": "VDD",
+     "2": "DOUT",
+     "3": "VSS",
+     "4": "DIN"
+    },
+    "nc": []
+   },
+   {
+    "designator": "LED10",
+    "type": "ic",
+    "label": "per-key RGB LED LED10",
+    "part": "SK6812MINI-E",
+    "lcsc": "C5149201",
+    "pins": {
+     "1": "VDD",
+     "2": "DOUT",
+     "3": "VSS",
+     "4": "DIN"
+    },
+    "nc": []
+   },
+   {
+    "designator": "LED11",
+    "type": "ic",
+    "label": "per-key RGB LED LED11",
+    "part": "SK6812MINI-E",
+    "lcsc": "C5149201",
+    "pins": {
+     "1": "VDD",
+     "2": "DOUT",
+     "3": "VSS",
+     "4": "DIN"
+    },
+    "nc": []
+   },
+   {
+    "designator": "LED12",
+    "type": "ic",
+    "label": "per-key RGB LED LED12",
+    "part": "SK6812MINI-E",
+    "lcsc": "C5149201",
+    "pins": {
+     "1": "VDD",
+     "2": "DOUT",
+     "3": "VSS",
+     "4": "DIN"
+    },
+    "nc": []
+   },
+   {
+    "designator": "LED13",
+    "type": "ic",
+    "label": "per-key RGB LED LED13",
+    "part": "SK6812MINI-E",
+    "lcsc": "C5149201",
+    "pins": {
+     "1": "VDD",
+     "2": "DOUT",
+     "3": "VSS",
+     "4": "DIN"
+    },
+    "nc": []
+   },
+   {
+    "designator": "LED14",
+    "type": "ic",
+    "label": "per-key RGB LED LED14",
+    "part": "SK6812MINI-E",
+    "lcsc": "C5149201",
+    "pins": {
+     "1": "VDD",
+     "2": "DOUT",
+     "3": "VSS",
+     "4": "DIN"
+    },
+    "nc": []
+   },
+   {
+    "designator": "LED15",
+    "type": "ic",
+    "label": "per-key RGB LED LED15",
+    "part": "SK6812MINI-E",
+    "lcsc": "C5149201",
+    "pins": {
+     "1": "VDD",
+     "2": "DOUT",
+     "3": "VSS",
+     "4": "DIN"
+    },
+    "nc": []
+   },
+   {
+    "designator": "LED16",
+    "type": "ic",
+    "label": "per-key RGB LED LED16",
+    "part": "SK6812MINI-E",
+    "lcsc": "C5149201",
+    "pins": {
+     "1": "VDD",
+     "2": "DOUT",
+     "3": "VSS",
+     "4": "DIN"
+    },
+    "nc": []
+   },
+   {
+    "designator": "LED17",
+    "type": "ic",
+    "label": "per-key RGB LED LED17",
+    "part": "SK6812MINI-E",
+    "lcsc": "C5149201",
+    "pins": {
+     "1": "VDD",
+     "2": "DOUT",
+     "3": "VSS",
+     "4": "DIN"
+    },
+    "nc": []
+   },
+   {
+    "designator": "LED18",
+    "type": "ic",
+    "label": "per-key RGB LED LED18",
+    "part": "SK6812MINI-E",
+    "lcsc": "C5149201",
+    "pins": {
+     "1": "VDD",
+     "2": "DOUT",
+     "3": "VSS",
+     "4": "DIN"
+    },
+    "nc": []
+   },
+   {
+    "designator": "LED19",
+    "type": "ic",
+    "label": "per-key RGB LED LED19",
+    "part": "SK6812MINI-E",
+    "lcsc": "C5149201",
+    "pins": {
+     "1": "VDD",
+     "2": "DOUT",
+     "3": "VSS",
+     "4": "DIN"
+    },
+    "nc": []
+   },
+   {
+    "designator": "LED20",
+    "type": "ic",
+    "label": "per-key RGB LED LED20",
+    "part": "SK6812MINI-E",
+    "lcsc": "C5149201",
+    "pins": {
+     "1": "VDD",
+     "2": "DOUT",
+     "3": "VSS",
+     "4": "DIN"
+    },
+    "nc": []
+   },
+   {
+    "designator": "LED21",
+    "type": "ic",
+    "label": "per-key RGB LED LED21",
+    "part": "SK6812MINI-E",
+    "lcsc": "C5149201",
+    "pins": {
+     "1": "VDD",
+     "2": "DOUT",
+     "3": "VSS",
+     "4": "DIN"
+    },
+    "nc": []
+   },
+   {
+    "designator": "R1",
+    "type": "resistor",
+    "label": "CC1 Rd 5.1 kΩ",
+    "part": "0402WGF5101TCE",
+    "lcsc": "C25905",
+    "value": "5.1k",
+    "pins": {
+     "1": "1",
+     "2": "2"
+    },
+    "nc": []
+   },
+   {
+    "designator": "R2",
+    "type": "resistor",
+    "label": "CC2 Rd 5.1 kΩ",
+    "part": "0402WGF5101TCE",
+    "lcsc": "C25905",
+    "value": "5.1k",
+    "pins": {
+     "1": "1",
+     "2": "2"
+    },
+    "nc": []
+   },
+   {
+    "designator": "R3",
+    "type": "resistor",
+    "label": "crystal damping 1 kΩ (XOUT)",
+    "part": "0402WGF1001TCE",
+    "lcsc": "C11702",
+    "value": "1k",
+    "pins": {
+     "1": "1",
+     "2": "2"
+    },
+    "nc": []
+   },
+   {
+    "designator": "R4",
+    "type": "resistor",
+    "label": "USB D+ 27 Ω",
+    "part": "FRC0402F27R0TS",
+    "lcsc": "C2909343",
+    "value": "27",
+    "pins": {
+     "1": "1",
+     "2": "2"
+    },
+    "nc": []
+   },
+   {
+    "designator": "R5",
+    "type": "resistor",
+    "label": "USB D− 27 Ω",
+    "part": "FRC0402F27R0TS",
+    "lcsc": "C2909343",
+    "value": "27",
+    "pins": {
+     "1": "1",
+     "2": "2"
+    },
+    "nc": []
+   },
+   {
+    "designator": "R6",
+    "type": "resistor",
+    "label": "BOOT button 1 kΩ",
+    "part": "0402WGF1001TCE",
+    "lcsc": "C11702",
+    "value": "1k",
+    "pins": {
+     "1": "1",
+     "2": "2"
+    },
+    "nc": []
+   },
+   {
+    "designator": "R7",
+    "type": "resistor",
+    "label": "QSPI_SS (/CS) pull-up 10 kΩ",
+    "part": "0402WGF1002TCE",
+    "lcsc": "C25744",
+    "value": "10k",
+    "pins": {
+     "1": "1",
+     "2": "2"
+    },
+    "nc": []
+   },
+   {
+    "designator": "R8",
+    "type": "resistor",
+    "label": "VBUS divider 5.6 kΩ",
+    "part": "0402WGF5601TCE",
+    "lcsc": "C25908",
+    "value": "5.6k",
+    "pins": {
+     "1": "1",
+     "2": "2"
+    },
+    "nc": []
+   },
+   {
+    "designator": "R9",
+    "type": "resistor",
+    "label": "VBUS divider 10 kΩ",
+    "part": "0402WGF1002TCE",
+    "lcsc": "C25744",
+    "value": "10K",
+    "pins": {
+     "1": "1",
+     "2": "2"
+    },
+    "nc": []
+   },
+   {
+    "designator": "SMDSW1",
+    "type": "button",
+    "label": "BOOT button (QSPI_SS low)",
+    "part": "TS-1088R-02026",
+    "lcsc": "C455280",
+    "pins": {
+     "1": "1",
+     "2": "2"
+    },
+    "nc": []
+   },
+   {
+    "designator": "SMDSW2",
+    "type": "button",
+    "label": "RESET button (RUN low)",
+    "part": "TS-1088R-02026",
+    "lcsc": "C455280",
+    "pins": {
+     "1": "1",
+     "2": "2"
+    },
+    "nc": []
+   },
+   {
+    "designator": "SW1",
+    "type": "button",
+    "label": "key 1 (hot-swap socket)",
+    "part": "CPG151101S11-16",
+    "lcsc": "C5156480",
+    "pins": {
+     "1": "1",
+     "2": "2"
+    },
+    "nc": []
+   },
+   {
+    "designator": "SW2",
+    "type": "button",
+    "label": "key 2 (hot-swap socket)",
+    "part": "CPG151101S11-16",
+    "lcsc": "C5156480",
+    "pins": {
+     "1": "1",
+     "2": "2"
+    },
+    "nc": []
+   },
+   {
+    "designator": "SW3",
+    "type": "button",
+    "label": "key 3 (hot-swap socket)",
+    "part": "CPG151101S11-16",
+    "lcsc": "C5156480",
+    "pins": {
+     "1": "1",
+     "2": "2"
+    },
+    "nc": []
+   },
+   {
+    "designator": "SW4",
+    "type": "button",
+    "label": "key 4 (hot-swap socket)",
+    "part": "CPG151101S11-16",
+    "lcsc": "C5156480",
+    "pins": {
+     "1": "1",
+     "2": "2"
+    },
+    "nc": []
+   },
+   {
+    "designator": "SW5",
+    "type": "button",
+    "label": "key 5 (hot-swap socket)",
+    "part": "CPG151101S11-16",
+    "lcsc": "C5156480",
+    "pins": {
+     "1": "1",
+     "2": "2"
+    },
+    "nc": []
+   },
+   {
+    "designator": "SW6",
+    "type": "button",
+    "label": "key 6 (hot-swap socket)",
+    "part": "CPG151101S11-16",
+    "lcsc": "C5156480",
+    "pins": {
+     "1": "1",
+     "2": "2"
+    },
+    "nc": []
+   },
+   {
+    "designator": "SW7",
+    "type": "button",
+    "label": "key 7 (hot-swap socket)",
+    "part": "CPG151101S11-16",
+    "lcsc": "C5156480",
+    "pins": {
+     "1": "1",
+     "2": "2"
+    },
+    "nc": []
+   },
+   {
+    "designator": "SW8",
+    "type": "button",
+    "label": "key 8 (hot-swap socket)",
+    "part": "CPG151101S11-16",
+    "lcsc": "C5156480",
+    "pins": {
+     "1": "1",
+     "2": "2"
+    },
+    "nc": []
+   },
+   {
+    "designator": "SW9",
+    "type": "button",
+    "label": "key 9 (hot-swap socket)",
+    "part": "CPG151101S11-16",
+    "lcsc": "C5156480",
+    "pins": {
+     "1": "1",
+     "2": "2"
+    },
+    "nc": []
+   },
+   {
+    "designator": "SW10",
+    "type": "button",
+    "label": "key 10 (hot-swap socket)",
+    "part": "CPG151101S11-16",
+    "lcsc": "C5156480",
+    "pins": {
+     "1": "1",
+     "2": "2"
+    },
+    "nc": []
+   },
+   {
+    "designator": "SW11",
+    "type": "button",
+    "label": "key 11 (hot-swap socket)",
+    "part": "CPG151101S11-16",
+    "lcsc": "C5156480",
+    "pins": {
+     "1": "1",
+     "2": "2"
+    },
+    "nc": []
+   },
+   {
+    "designator": "SW12",
+    "type": "button",
+    "label": "key 12 (hot-swap socket)",
+    "part": "CPG151101S11-16",
+    "lcsc": "C5156480",
+    "pins": {
+     "1": "1",
+     "2": "2"
+    },
+    "nc": []
+   },
+   {
+    "designator": "SW13",
+    "type": "button",
+    "label": "key 13 (hot-swap socket)",
+    "part": "CPG151101S11-16",
+    "lcsc": "C5156480",
+    "pins": {
+     "1": "1",
+     "2": "2"
+    },
+    "nc": []
+   },
+   {
+    "designator": "SW14",
+    "type": "button",
+    "label": "key 14 (hot-swap socket)",
+    "part": "CPG151101S11-16",
+    "lcsc": "C5156480",
+    "pins": {
+     "1": "1",
+     "2": "2"
+    },
+    "nc": []
+   },
+   {
+    "designator": "SW15",
+    "type": "button",
+    "label": "key 15 (hot-swap socket)",
+    "part": "CPG151101S11-16",
+    "lcsc": "C5156480",
+    "pins": {
+     "1": "1",
+     "2": "2"
+    },
+    "nc": []
+   },
+   {
+    "designator": "SW16",
+    "type": "button",
+    "label": "key 16 (hot-swap socket)",
+    "part": "CPG151101S11-16",
+    "lcsc": "C5156480",
+    "pins": {
+     "1": "1",
+     "2": "2"
+    },
+    "nc": []
+   },
+   {
+    "designator": "SW17",
+    "type": "button",
+    "label": "key 17 (hot-swap socket)",
+    "part": "CPG151101S11-16",
+    "lcsc": "C5156480",
+    "pins": {
+     "1": "1",
+     "2": "2"
+    },
+    "nc": []
+   },
+   {
+    "designator": "SW18",
+    "type": "button",
+    "label": "key 18 (hot-swap socket)",
+    "part": "CPG151101S11-16",
+    "lcsc": "C5156480",
+    "pins": {
+     "1": "1",
+     "2": "2"
+    },
+    "nc": []
+   },
+   {
+    "designator": "SW19",
+    "type": "button",
+    "label": "key 19 (hot-swap socket)",
+    "part": "CPG151101S11-16",
+    "lcsc": "C5156480",
+    "pins": {
+     "1": "1",
+     "2": "2"
+    },
+    "nc": []
+   },
+   {
+    "designator": "SW20",
+    "type": "button",
+    "label": "key 20 (hot-swap socket)",
+    "part": "CPG151101S11-16",
+    "lcsc": "C5156480",
+    "pins": {
+     "1": "1",
+     "2": "2"
+    },
+    "nc": []
+   },
+   {
+    "designator": "SW21",
+    "type": "button",
+    "label": "key 21 (hot-swap socket)",
+    "part": "CPG151101S11-16",
+    "lcsc": "C5156480",
+    "pins": {
+     "1": "1",
+     "2": "2"
+    },
+    "nc": []
+   },
+   {
+    "designator": "U1",
+    "type": "microcontroller",
+    "label": "RP2040 microcontroller",
+    "part": "RP2040",
+    "lcsc": "C2040",
+    "pins": {
+     "1": "IOVDD",
+     "2": "GPIO0",
+     "3": "GPIO1",
+     "4": "GPIO2",
+     "5": "GPIO3",
+     "6": "GPIO4",
+     "7": "GPIO5",
+     "8": "GPIO6",
+     "9": "GPIO7",
+     "10": "IOVDD",
+     "11": "GPIO8",
+     "12": "GPIO9",
+     "13": "GPIO10",
+     "14": "GPIO11",
+     "15": "GPIO12",
+     "16": "GPIO13",
+     "17": "GPIO14",
+     "18": "GPIO15",
+     "19": "TESTEN",
+     "20": "XIN",
+     "21": "XOUT",
+     "22": "IOVDD",
+     "23": "DVDD",
+     "24": "SWCLK",
+     "25": "SWD",
+     "26": "RUN",
+     "27": "GPIO16",
+     "28": "GPIO17",
+     "29": "GPIO18",
+     "30": "GPIO19",
+     "31": "GPIO20",
+     "32": "GPIO21",
+     "33": "IOVDD",
+     "34": "GPIO22",
+     "35": "GPIO23",
+     "36": "GPIO24",
+     "37": "GPIO25",
+     "38": "GPIO26_ADC0",
+     "39": "GPIO27_ADC1",
+     "40": "GPIO28_ADC2",
+     "41": "GPIO29_ADC3",
+     "42": "IOVDD",
+     "43": "ADC_AVDD",
+     "44": "VREG_IN",
+     "45": "VREG_VOUT",
+     "46": "USB_DM",
+     "47": "USB_DP",
+     "48": "USB_VDD",
+     "49": "IOVDD",
+     "50": "DVDD",
+     "51": "QSPI_SD3",
+     "52": "QSPI_SCLK",
+     "53": "QSPI_SD0",
+     "54": "QSPI_SD2",
+     "55": "QSPI_SD1",
+     "56": "QSPI_SS",
+     "57": "GND"
+    },
+    "nc": [
+     "7"
+    ],
+    "notes": "GPIO5 (RE0A) goes only to the A pad of the EC12 encoder at EXSW1, which the BOM leaves empty: nc. GPIO21 on +3V3 tells the firmware this is the left half."
+   },
+   {
+    "designator": "U2",
+    "type": "regulator",
+    "label": "3.3 V regulator (NCP1117LP)",
+    "part": "NCP1117LPST33T3G",
+    "lcsc": "C146799",
+    "pins": {
+     "1": "GND",
+     "2": "VO",
+     "3": "VI"
+    },
+    "nc": []
+   },
+   {
+    "designator": "U3",
+    "type": "ic",
+    "label": "USB ESD protection (TPD4E05U06)",
+    "part": "TPD4E05U06DQAR",
+    "lcsc": "C138714",
+    "pins": {
+     "1": "D1+",
+     "2": "D1-",
+     "3": "GND",
+     "4": "D2+",
+     "5": "D2-",
+     "6": "NC",
+     "7": "NC",
+     "8": "GND",
+     "9": "NC",
+     "10": "NC"
+    },
+    "nc": [],
+    "notes": "D+ on pins 1, 4 and the NC pins 7, 10; D− on 2, 5 and the NC pins 6, 9 – the flow-through routing of the datasheet."
+   },
+   {
+    "designator": "U4",
+    "type": "ic",
+    "label": "16 MB QSPI flash (W25Q128JV)",
+    "part": "W25Q128JVSIQ",
+    "lcsc": "C113767",
+    "pins": {
+     "1": "~{CS}",
+     "2": "DO(IO1)",
+     "3": "IO2",
+     "4": "GND",
+     "5": "DI(IO0)",
+     "6": "CLK",
+     "7": "IO3",
+     "8": "VCC"
+    },
+    "nc": []
+   },
+   {
+    "designator": "Y1",
+    "type": "crystal",
+    "label": "12 MHz crystal",
+    "part": "Q22FA23V0041800",
+    "lcsc": "C91749",
+    "pins": {
+     "1": "1",
+     "2": "2",
+     "3": "3",
+     "4": "4"
+    },
+    "nc": []
+   },
+   {
+    "designator": "ZD1",
+    "type": "diode",
+    "label": "VBUS to +5V (RB521S30 Schottky)",
+    "part": "RB521S30T1G",
+    "lcsc": "C145179",
+    "pins": {
+     "1": "K",
+     "2": "A"
+    },
+    "nc": []
+   }
+  ],
+  "nets": [
+   {
+    "name": "+1V1",
+    "pins": [
+     "C3.1",
+     "C4.1",
+     "C5.1",
+     "U1.23",
+     "U1.45",
+     "U1.50"
+    ],
+    "v": [
+     0,
+     1.16
+    ]
+   },
+   {
+    "name": "+3V3",
+    "pins": [
+     "C10.1",
+     "C11.1",
+     "C12.1",
+     "C13.1",
+     "C14.1",
+     "C15.1",
+     "C16.1",
+     "C7.1",
+     "C8.1",
+     "C9.1",
+     "R7.2",
+     "U1.1",
+     "U1.10",
+     "U1.22",
+     "U1.32",
+     "U1.33",
+     "U1.42",
+     "U1.43",
+     "U1.44",
+     "U1.48",
+     "U1.49",
+     "U2.2",
+     "U4.8"
+    ],
+    "v": [
+     0,
+     3.365
+    ]
+   },
+   {
+    "name": "+5V",
+    "pins": [
+     "C6.1",
+     "D1.2",
+     "J2.T",
+     "J3.3",
+     "U2.3",
+     "ZD1.1"
+    ],
+    "v": [
+     0,
+     5.25
+    ]
+   },
+   {
+    "name": "GND",
+    "pins": [
+     "C1.2",
+     "C10.2",
+     "C11.2",
+     "C12.2",
+     "C13.2",
+     "C14.2",
+     "C15.2",
+     "C16.2",
+     "C2.2",
+     "C3.2",
+     "C4.2",
+     "C5.2",
+     "C6.2",
+     "C7.2",
+     "C8.2",
+     "C9.2",
+     "EXLED1.3",
+     "EXLED2.3",
+     "EXSW1.1",
+     "EXSW2.1",
+     "J1.A1",
+     "J1.B1",
+     "J1.S1",
+     "J1.A12",
+     "J1.B12",
+     "J2.S",
+     "J3.4",
+     "J4.2",
+     "LED1.3",
+     "LED10.3",
+     "LED11.3",
+     "LED12.3",
+     "LED13.3",
+     "LED14.3",
+     "LED15.3",
+     "LED16.3",
+     "LED17.3",
+     "LED18.3",
+     "LED19.3",
+     "LED2.3",
+     "LED20.3",
+     "LED21.3",
+     "LED3.3",
+     "LED4.3",
+     "LED5.3",
+     "LED6.3",
+     "LED7.3",
+     "LED8.3",
+     "LED9.3",
+     "R1.1",
+     "R2.1",
+     "R9.2",
+     "SMDSW1.1",
+     "SMDSW2.1",
+     "SW1.2",
+     "SW10.2",
+     "SW11.2",
+     "SW12.2",
+     "SW13.2",
+     "SW14.2",
+     "SW15.2",
+     "SW16.2",
+     "SW17.2",
+     "SW18.2",
+     "SW19.2",
+     "SW2.2",
+     "SW20.2",
+     "SW21.2",
+     "SW3.2",
+     "SW4.2",
+     "SW5.2",
+     "SW6.2",
+     "SW7.2",
+     "SW8.2",
+     "SW9.2",
+     "U1.19",
+     "U1.57",
+     "U2.1",
+     "U3.3",
+     "U3.8",
+     "U4.4",
+     "Y1.2",
+     "Y1.4"
+    ],
+    "v": [
+     0,
+     0
+    ]
+   },
+   {
+    "name": "LED_VDD",
+    "pins": [
+     "D1.1",
+     "EXLED1.1",
+     "EXLED2.1",
+     "LED1.1",
+     "LED10.1",
+     "LED11.1",
+     "LED12.1",
+     "LED13.1",
+     "LED14.1",
+     "LED15.1",
+     "LED16.1",
+     "LED17.1",
+     "LED18.1",
+     "LED19.1",
+     "LED2.1",
+     "LED20.1",
+     "LED21.1",
+     "LED3.1",
+     "LED4.1",
+     "LED5.1",
+     "LED6.1",
+     "LED7.1",
+     "LED8.1",
+     "LED9.1"
+    ],
+    "v": [
+     0,
+     5.25
+    ]
+   },
+   {
+    "name": "VBUS",
+    "pins": [
+     "J1.A4",
+     "J1.A9",
+     "J1.B4",
+     "J1.B9",
+     "R8.1",
+     "ZD1.2"
+    ],
+    "v": [
+     0,
+     5.25
+    ]
+   },
+   {
+    "name": "BOOT",
+    "pins": [
+     "R6.2",
+     "SMDSW1.2"
+    ],
+    "v": [
+     0,
+     3.4
+    ]
+   },
+   {
+    "name": "CC1",
+    "pins": [
+     "J1.A5",
+     "R1.2"
+    ],
+    "v": [
+     0,
+     5.25
+    ]
+   },
+   {
+    "name": "CC2",
+    "pins": [
+     "J1.B5",
+     "R2.2"
+    ],
+    "v": [
+     0,
+     5.25
+    ]
+   },
+   {
+    "name": "D+",
+    "pins": [
+     "J1.A6",
+     "J1.B6",
+     "R4.1",
+     "U3.1",
+     "U3.4",
+     "U3.7",
+     "U3.10"
+    ],
+    "v": [
+     0,
+     3.6
+    ]
+   },
+   {
+    "name": "D-",
+    "pins": [
+     "J1.A7",
+     "J1.B7",
+     "R5.2",
+     "U3.2",
+     "U3.5",
+     "U3.6",
+     "U3.9"
+    ],
+    "v": [
+     0,
+     3.6
+    ]
+   },
+   {
+    "name": "EXLED1_DOUT",
+    "pins": [
+     "EXLED1.2",
+     "EXLED2.4"
+    ],
+    "v": [
+     0,
+     5.25
+    ]
+   },
+   {
+    "name": "KEY1",
+    "pins": [
+     "SW1.1",
+     "U1.14"
+    ],
+    "v": [
+     0,
+     3.4
+    ],
+    "notes": "key to GND, read with the RP2040's pull-up the firmware enables (QMK direct pins)"
+   },
+   {
+    "name": "KEY10",
+    "pins": [
+     "SW10.1",
+     "U1.40"
+    ],
+    "v": [
+     0,
+     3.4
+    ],
+    "notes": "key to GND, read with the RP2040's pull-up the firmware enables (QMK direct pins)"
+   },
+   {
+    "name": "KEY11",
+    "pins": [
+     "SW11.1",
+     "U1.39"
+    ],
+    "v": [
+     0,
+     3.4
+    ],
+    "notes": "key to GND, read with the RP2040's pull-up the firmware enables (QMK direct pins)"
+   },
+   {
+    "name": "KEY12",
+    "pins": [
+     "SW12.1",
+     "U1.38"
+    ],
+    "v": [
+     0,
+     3.4
+    ],
+    "notes": "key to GND, read with the RP2040's pull-up the firmware enables (QMK direct pins)"
+   },
+   {
+    "name": "KEY13",
+    "pins": [
+     "SW13.1",
+     "U1.35"
+    ],
+    "v": [
+     0,
+     3.4
+    ],
+    "notes": "key to GND, read with the RP2040's pull-up the firmware enables (QMK direct pins)"
+   },
+   {
+    "name": "KEY14",
+    "pins": [
+     "SW14.1",
+     "U1.36"
+    ],
+    "v": [
+     0,
+     3.4
+    ],
+    "notes": "key to GND, read with the RP2040's pull-up the firmware enables (QMK direct pins)"
+   },
+   {
+    "name": "KEY15",
+    "pins": [
+     "SW15.1",
+     "U1.37"
+    ],
+    "v": [
+     0,
+     3.4
+    ],
+    "notes": "key to GND, read with the RP2040's pull-up the firmware enables (QMK direct pins)"
+   },
+   {
+    "name": "KEY16",
+    "pins": [
+     "SW16.1",
+     "U1.27"
+    ],
+    "v": [
+     0,
+     3.4
+    ],
+    "notes": "key to GND, read with the RP2040's pull-up the firmware enables (QMK direct pins)"
+   },
+   {
+    "name": "KEY17",
+    "pins": [
+     "SW17.1",
+     "U1.29"
+    ],
+    "v": [
+     0,
+     3.4
+    ],
+    "notes": "key to GND, read with the RP2040's pull-up the firmware enables (QMK direct pins)"
+   },
+   {
+    "name": "KEY18",
+    "pins": [
+     "SW18.1",
+     "U1.31"
+    ],
+    "v": [
+     0,
+     3.4
+    ],
+    "notes": "key to GND, read with the RP2040's pull-up the firmware enables (QMK direct pins)"
+   },
+   {
+    "name": "KEY19",
+    "pins": [
+     "SW19.1",
+     "U1.34"
+    ],
+    "v": [
+     0,
+     3.4
+    ],
+    "notes": "key to GND, read with the RP2040's pull-up the firmware enables (QMK direct pins)"
+   },
+   {
+    "name": "KEY2",
+    "pins": [
+     "SW2.1",
+     "U1.12"
+    ],
+    "v": [
+     0,
+     3.4
+    ],
+    "notes": "key to GND, read with the RP2040's pull-up the firmware enables (QMK direct pins)"
+   },
+   {
+    "name": "KEY20",
+    "pins": [
+     "SW20.1",
+     "U1.30"
+    ],
+    "v": [
+     0,
+     3.4
+    ],
+    "notes": "key to GND, read with the RP2040's pull-up the firmware enables (QMK direct pins)"
+   },
+   {
+    "name": "KEY21",
+    "pins": [
+     "SW21.1",
+     "U1.28"
+    ],
+    "v": [
+     0,
+     3.4
+    ],
+    "notes": "key to GND, read with the RP2040's pull-up the firmware enables (QMK direct pins)"
+   },
+   {
+    "name": "KEY3",
+    "pins": [
+     "SW3.1",
+     "U1.4"
+    ],
+    "v": [
+     0,
+     3.4
+    ],
+    "notes": "key to GND, read with the RP2040's pull-up the firmware enables (QMK direct pins)"
+   },
+   {
+    "name": "KEY4",
+    "pins": [
+     "SW4.1",
+     "U1.2"
+    ],
+    "v": [
+     0,
+     3.4
+    ],
+    "notes": "key to GND, read with the RP2040's pull-up the firmware enables (QMK direct pins)"
+   },
+   {
+    "name": "KEY5",
+    "pins": [
+     "SW5.1",
+     "U1.41"
+    ],
+    "v": [
+     0,
+     3.4
+    ],
+    "notes": "key to GND, read with the RP2040's pull-up the firmware enables (QMK direct pins)"
+   },
+   {
+    "name": "KEY6",
+    "pins": [
+     "SW6.1",
+     "U1.3"
+    ],
+    "v": [
+     0,
+     3.4
+    ],
+    "notes": "key to GND, read with the RP2040's pull-up the firmware enables (QMK direct pins)"
+   },
+   {
+    "name": "KEY7",
+    "pins": [
+     "SW7.1",
+     "U1.5"
+    ],
+    "v": [
+     0,
+     3.4
+    ],
+    "notes": "key to GND, read with the RP2040's pull-up the firmware enables (QMK direct pins)"
+   },
+   {
+    "name": "KEY8",
+    "pins": [
+     "SW8.1",
+     "U1.18"
+    ],
+    "v": [
+     0,
+     3.4
+    ],
+    "notes": "key to GND, read with the RP2040's pull-up the firmware enables (QMK direct pins)"
+   },
+   {
+    "name": "KEY9",
+    "pins": [
+     "SW9.1",
+     "U1.17"
+    ],
+    "v": [
+     0,
+     3.4
+    ],
+    "notes": "key to GND, read with the RP2040's pull-up the firmware enables (QMK direct pins)"
+   },
+   {
+    "name": "KEYEX1",
+    "pins": [
+     "EXSW1.2",
+     "U1.6"
+    ],
+    "v": [
+     0,
+     3.4
+    ],
+    "notes": "key to GND, read with the RP2040's pull-up the firmware enables (QMK direct pins)"
+   },
+   {
+    "name": "KEYEX2",
+    "pins": [
+     "EXSW2.2",
+     "U1.11"
+    ],
+    "v": [
+     0,
+     3.4
+    ],
+    "notes": "key to GND, read with the RP2040's pull-up the firmware enables (QMK direct pins)"
+   },
+   {
+    "name": "LED",
+    "pins": [
+     "LED1.4",
+     "U1.13"
+    ],
+    "v": [
+     0,
+     3.4
+    ]
+   },
+   {
+    "name": "LED10_DOUT",
+    "pins": [
+     "LED10.2",
+     "LED11.4"
+    ],
+    "v": [
+     0,
+     5.25
+    ]
+   },
+   {
+    "name": "LED11_DOUT",
+    "pins": [
+     "LED11.2",
+     "LED12.4"
+    ],
+    "v": [
+     0,
+     5.25
+    ]
+   },
+   {
+    "name": "LED12_DOUT",
+    "pins": [
+     "LED12.2",
+     "LED13.4"
+    ],
+    "v": [
+     0,
+     5.25
+    ]
+   },
+   {
+    "name": "LED13_DOUT",
+    "pins": [
+     "LED13.2",
+     "LED14.4"
+    ],
+    "v": [
+     0,
+     5.25
+    ]
+   },
+   {
+    "name": "LED14_DOUT",
+    "pins": [
+     "LED14.2",
+     "LED15.4"
+    ],
+    "v": [
+     0,
+     5.25
+    ]
+   },
+   {
+    "name": "LED15_DOUT",
+    "pins": [
+     "LED15.2",
+     "LED16.4"
+    ],
+    "v": [
+     0,
+     5.25
+    ]
+   },
+   {
+    "name": "LED16_DOUT",
+    "pins": [
+     "LED16.2",
+     "LED17.4"
+    ],
+    "v": [
+     0,
+     5.25
+    ]
+   },
+   {
+    "name": "LED17_DOUT",
+    "pins": [
+     "LED17.2",
+     "LED18.4"
+    ],
+    "v": [
+     0,
+     5.25
+    ]
+   },
+   {
+    "name": "LED18_DOUT",
+    "pins": [
+     "LED18.2",
+     "LED19.4"
+    ],
+    "v": [
+     0,
+     5.25
+    ]
+   },
+   {
+    "name": "LED19_DOUT",
+    "pins": [
+     "LED19.2",
+     "LED20.4"
+    ],
+    "v": [
+     0,
+     5.25
+    ]
+   },
+   {
+    "name": "LED1_DOUT",
+    "pins": [
+     "LED1.2",
+     "LED2.4"
+    ],
+    "v": [
+     0,
+     5.25
+    ]
+   },
+   {
+    "name": "LED20_DOUT",
+    "pins": [
+     "LED20.2",
+     "LED21.4"
+    ],
+    "v": [
+     0,
+     5.25
+    ]
+   },
+   {
+    "name": "LED21_DOUT",
+    "pins": [
+     "EXLED1.4",
+     "LED21.2"
+    ],
+    "v": [
+     0,
+     5.25
+    ]
+   },
+   {
+    "name": "LED2_DOUT",
+    "pins": [
+     "LED2.2",
+     "LED3.4"
+    ],
+    "v": [
+     0,
+     5.25
+    ]
+   },
+   {
+    "name": "LED3_DOUT",
+    "pins": [
+     "LED3.2",
+     "LED4.4"
+    ],
+    "v": [
+     0,
+     5.25
+    ]
+   },
+   {
+    "name": "LED4_DOUT",
+    "pins": [
+     "LED4.2",
+     "LED5.4"
+    ],
+    "v": [
+     0,
+     5.25
+    ]
+   },
+   {
+    "name": "LED5_DOUT",
+    "pins": [
+     "LED5.2",
+     "LED6.4"
+    ],
+    "v": [
+     0,
+     5.25
+    ]
+   },
+   {
+    "name": "LED6_DOUT",
+    "pins": [
+     "LED6.2",
+     "LED7.4"
+    ],
+    "v": [
+     0,
+     5.25
+    ]
+   },
+   {
+    "name": "LED7_DOUT",
+    "pins": [
+     "LED7.2",
+     "LED8.4"
+    ],
+    "v": [
+     0,
+     5.25
+    ]
+   },
+   {
+    "name": "LED8_DOUT",
+    "pins": [
+     "LED8.2",
+     "LED9.4"
+    ],
+    "v": [
+     0,
+     5.25
+    ]
+   },
+   {
+    "name": "LED9_DOUT",
+    "pins": [
+     "LED10.4",
+     "LED9.2"
+    ],
+    "v": [
+     0,
+     5.25
+    ]
+   },
+   {
+    "name": "QSPI_SCLK",
+    "pins": [
+     "U1.52",
+     "U4.6"
+    ],
+    "v": [
+     0,
+     3.4
+    ]
+   },
+   {
+    "name": "QSPI_SD0",
+    "pins": [
+     "U1.53",
+     "U4.5"
+    ],
+    "v": [
+     0,
+     3.4
+    ]
+   },
+   {
+    "name": "QSPI_SD1",
+    "pins": [
+     "U1.55",
+     "U4.2"
+    ],
+    "v": [
+     0,
+     3.4
+    ]
+   },
+   {
+    "name": "QSPI_SD2",
+    "pins": [
+     "U1.54",
+     "U4.3"
+    ],
+    "v": [
+     0,
+     3.4
+    ]
+   },
+   {
+    "name": "QSPI_SD3",
+    "pins": [
+     "U1.51",
+     "U4.7"
+    ],
+    "v": [
+     0,
+     3.4
+    ]
+   },
+   {
+    "name": "QSPI_SS",
+    "pins": [
+     "R6.1",
+     "R7.1",
+     "U1.56",
+     "U4.1"
+    ],
+    "v": [
+     0,
+     3.4
+    ]
+   },
+   {
+    "name": "RE1A_SDA",
+    "pins": [
+     "J3.1",
+     "U1.8"
+    ],
+    "v": [
+     0,
+     3.4
+    ],
+    "fn": "i2c.sda",
+    "notes": "SDA to the OLED header J3; with an EC12 encoder at EXSW2 its A line (RE1A)"
+   },
+   {
+    "name": "REB_SCL",
+    "pins": [
+     "J3.2",
+     "U1.9"
+    ],
+    "v": [
+     0,
+     3.4
+    ],
+    "fn": "i2c.scl",
+    "notes": "SCL to the OLED header J3; with EC12 encoders at EXSW1/2 their B line (REB)"
+   },
+   {
+    "name": "RUN",
+    "pins": [
+     "SMDSW2.2",
+     "U1.26"
+    ],
+    "v": [
+     0,
+     3.4
+    ]
+   },
+   {
+    "name": "SWCLK",
+    "pins": [
+     "J4.1",
+     "U1.24"
+    ],
+    "v": [
+     0,
+     3.4
+    ]
+   },
+   {
+    "name": "SWD",
+    "pins": [
+     "J4.3",
+     "U1.25"
+    ],
+    "v": [
+     0,
+     3.4
+    ]
+   },
+   {
+    "name": "TX",
+    "pins": [
+     "J2.R",
+     "U1.15"
+    ],
+    "v": [
+     0,
+     3.4
+    ],
+    "notes": "single-wire serial link to the other half through the TRS ring (QMK split, half duplex)"
+   },
+   {
+    "name": "USB_DM",
+    "pins": [
+     "R5.1",
+     "U1.46"
+    ],
+    "v": [
+     0,
+     3.6
+    ]
+   },
+   {
+    "name": "USB_DP",
+    "pins": [
+     "R4.2",
+     "U1.47"
+    ],
+    "v": [
+     0,
+     3.6
+    ]
+   },
+   {
+    "name": "USB_VBUS_PIN",
+    "pins": [
+     "R8.2",
+     "R9.1",
+     "U1.16"
+    ],
+    "v": [
+     0,
+     3.4
+    ],
+    "notes": "VBUS through R8 5.6 kΩ / R9 10 kΩ: the firmware sees whether this half has the USB cable"
+   },
+   {
+    "name": "XIN",
+    "pins": [
+     "C1.1",
+     "U1.20",
+     "Y1.1"
+    ],
+    "v": [
+     0,
+     3.4
+    ]
+   },
+   {
+    "name": "XOUT",
+    "pins": [
+     "R3.2",
+     "U1.21"
+    ],
+    "v": [
+     0,
+     3.4
+    ]
+   },
+   {
+    "name": "XTAL_OUT",
+    "pins": [
+     "C2.1",
+     "R3.1",
+     "Y1.3"
+    ],
+    "v": [
+     0,
+     3.4
+    ]
+   }
+  ]
+ }
+}

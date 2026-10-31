@@ -1,0 +1,747 @@
+{
+ "lcsc": "C2040",
+ "mpn": "RP2040",
+ "manufacturer": "Raspberry Pi",
+ "kind": "ic",
+ "package": "QFN-56 7 × 7 mm, 0.4 mm pitch, exposed pad (pin 57)",
+ "footprint": "QFN-56-1EP_7x7mm_P0.4mm_EP3.2x3.2mm",
+ "datasheet": {
+  "url": "https://datasheets.raspberrypi.com/rp2040/rp2040-datasheet.pdf",
+  "pinout_page": 10
+ },
+ "pins": {
+  "1": {
+   "name": "IOVDD",
+   "type": "power_in",
+   "v_max_v": 3.63,
+   "v_op_min_v": 1.62,
+   "v_op_max_v": 3.63,
+   "role": "vdd"
+  },
+  "2": {
+   "name": "GPIO0",
+   "type": "bidirectional",
+   "role": "gpio",
+   "functions": [
+    "spi0.rx",
+    "uart0.tx",
+    "i2c0.sda",
+    "pwm0.a"
+   ],
+   "pull": "down",
+   "pull_ohm": 50000,
+   "v_rel_max_v": 0.5,
+   "v_max_v": 3.63
+  },
+  "3": {
+   "name": "GPIO1",
+   "type": "bidirectional",
+   "role": "gpio",
+   "functions": [
+    "spi0.cs",
+    "uart0.rx",
+    "i2c0.scl",
+    "pwm0.b"
+   ],
+   "pull": "down",
+   "pull_ohm": 50000,
+   "v_rel_max_v": 0.5,
+   "v_max_v": 3.63
+  },
+  "4": {
+   "name": "GPIO2",
+   "type": "bidirectional",
+   "role": "gpio",
+   "functions": [
+    "spi0.sck",
+    "uart0.cts",
+    "i2c1.sda",
+    "pwm1.a"
+   ],
+   "pull": "down",
+   "pull_ohm": 50000,
+   "v_rel_max_v": 0.5,
+   "v_max_v": 3.63
+  },
+  "5": {
+   "name": "GPIO3",
+   "type": "bidirectional",
+   "role": "gpio",
+   "functions": [
+    "spi0.tx",
+    "uart0.rts",
+    "i2c1.scl",
+    "pwm1.b"
+   ],
+   "pull": "down",
+   "pull_ohm": 50000,
+   "v_rel_max_v": 0.5,
+   "v_max_v": 3.63
+  },
+  "6": {
+   "name": "GPIO4",
+   "type": "bidirectional",
+   "role": "gpio",
+   "functions": [
+    "spi0.rx",
+    "uart1.tx",
+    "i2c0.sda",
+    "pwm2.a"
+   ],
+   "pull": "down",
+   "pull_ohm": 50000,
+   "v_rel_max_v": 0.5,
+   "v_max_v": 3.63
+  },
+  "7": {
+   "name": "GPIO5",
+   "type": "bidirectional",
+   "role": "gpio",
+   "functions": [
+    "spi0.cs",
+    "uart1.rx",
+    "i2c0.scl",
+    "pwm2.b"
+   ],
+   "pull": "down",
+   "pull_ohm": 50000,
+   "v_rel_max_v": 0.5,
+   "v_max_v": 3.63
+  },
+  "8": {
+   "name": "GPIO6",
+   "type": "bidirectional",
+   "role": "gpio",
+   "functions": [
+    "spi0.sck",
+    "uart1.cts",
+    "i2c1.sda",
+    "pwm3.a"
+   ],
+   "pull": "down",
+   "pull_ohm": 50000,
+   "v_rel_max_v": 0.5,
+   "v_max_v": 3.63
+  },
+  "9": {
+   "name": "GPIO7",
+   "type": "bidirectional",
+   "role": "gpio",
+   "functions": [
+    "spi0.tx",
+    "uart1.rts",
+    "i2c1.scl",
+    "pwm3.b"
+   ],
+   "pull": "down",
+   "pull_ohm": 50000,
+   "v_rel_max_v": 0.5,
+   "v_max_v": 3.63
+  },
+  "10": {
+   "name": "IOVDD",
+   "type": "power_in",
+   "v_max_v": 3.63,
+   "v_op_min_v": 1.62,
+   "v_op_max_v": 3.63
+  },
+  "11": {
+   "name": "GPIO8",
+   "type": "bidirectional",
+   "role": "gpio",
+   "functions": [
+    "spi1.rx",
+    "uart1.tx",
+    "i2c0.sda",
+    "pwm4.a"
+   ],
+   "pull": "down",
+   "pull_ohm": 50000,
+   "v_rel_max_v": 0.5,
+   "v_max_v": 3.63
+  },
+  "12": {
+   "name": "GPIO9",
+   "type": "bidirectional",
+   "role": "gpio",
+   "functions": [
+    "spi1.cs",
+    "uart1.rx",
+    "i2c0.scl",
+    "pwm4.b"
+   ],
+   "pull": "down",
+   "pull_ohm": 50000,
+   "v_rel_max_v": 0.5,
+   "v_max_v": 3.63
+  },
+  "13": {
+   "name": "GPIO10",
+   "type": "bidirectional",
+   "role": "gpio",
+   "functions": [
+    "spi1.sck",
+    "uart1.cts",
+    "i2c1.sda",
+    "pwm5.a"
+   ],
+   "pull": "down",
+   "pull_ohm": 50000,
+   "v_rel_max_v": 0.5,
+   "v_max_v": 3.63
+  },
+  "14": {
+   "name": "GPIO11",
+   "type": "bidirectional",
+   "role": "gpio",
+   "functions": [
+    "spi1.tx",
+    "uart1.rts",
+    "i2c1.scl",
+    "pwm5.b"
+   ],
+   "pull": "down",
+   "pull_ohm": 50000,
+   "v_rel_max_v": 0.5,
+   "v_max_v": 3.63
+  },
+  "15": {
+   "name": "GPIO12",
+   "type": "bidirectional",
+   "role": "gpio",
+   "functions": [
+    "spi1.rx",
+    "uart0.tx",
+    "i2c0.sda",
+    "pwm6.a"
+   ],
+   "pull": "down",
+   "pull_ohm": 50000,
+   "v_rel_max_v": 0.5,
+   "v_max_v": 3.63
+  },
+  "16": {
+   "name": "GPIO13",
+   "type": "bidirectional",
+   "role": "gpio",
+   "functions": [
+    "spi1.cs",
+    "uart0.rx",
+    "i2c0.scl",
+    "pwm6.b"
+   ],
+   "pull": "down",
+   "pull_ohm": 50000,
+   "v_rel_max_v": 0.5,
+   "v_max_v": 3.63
+  },
+  "17": {
+   "name": "GPIO14",
+   "type": "bidirectional",
+   "role": "gpio",
+   "functions": [
+    "spi1.sck",
+    "uart0.cts",
+    "i2c1.sda",
+    "pwm7.a"
+   ],
+   "pull": "down",
+   "pull_ohm": 50000,
+   "v_rel_max_v": 0.5,
+   "v_max_v": 3.63
+  },
+  "18": {
+   "name": "GPIO15",
+   "type": "bidirectional",
+   "role": "gpio",
+   "functions": [
+    "spi1.tx",
+    "uart0.rts",
+    "i2c1.scl",
+    "pwm7.b"
+   ],
+   "pull": "down",
+   "pull_ohm": 50000,
+   "v_rel_max_v": 0.5,
+   "v_max_v": 3.63
+  },
+  "19": {
+   "name": "TESTEN",
+   "type": "input",
+   "pull": "down",
+   "pull_ohm": 50000,
+   "v_rel_max_v": 0.5,
+   "needs": [
+    {
+     "what": "to_ground",
+     "source": "RP2040 Datasheet, build-date 2025-02-20, build-version 3184e62 (RP-008371-DS-1), 1.4.2 table 1: 'Factory test mode pin. Tie to GND.'"
+    }
+   ]
+  },
+  "20": {
+   "name": "XIN",
+   "type": "passive",
+   "needs": [
+    {
+     "what": "crystal",
+     "to": "XOUT",
+     "f_min_hz": 12000000.0,
+     "f_max_hz": 12000000.0,
+     "source": "RP2040 Datasheet, build-date 2025-02-20, build-version 3184e62 (RP-008371-DS-1), 1.4.2 table 1: 'The USB bootloader requires a 12MHz crystal or 12MHz clock input'; 2.16: 1–15 MHz crystals, the reference design 12 MHz with a damping resistor"
+    }
+   ],
+   "hint": "crystal oscillator, Analogue (XOSC) (table 617)"
+  },
+  "21": {
+   "name": "XOUT",
+   "type": "passive",
+   "hint": "crystal oscillator, Analogue (XOSC) (table 617)"
+  },
+  "22": {
+   "name": "IOVDD",
+   "type": "power_in",
+   "v_max_v": 3.63,
+   "v_op_min_v": 1.62,
+   "v_op_max_v": 3.63
+  },
+  "23": {
+   "name": "DVDD",
+   "type": "power_in",
+   "v_op_min_v": 1.05,
+   "v_op_max_v": 1.16,
+   "hint": "core supply 1.1 V – from VREG_VOUT here (2.9.2)"
+  },
+  "24": {
+   "name": "SWCLK",
+   "type": "input",
+   "pull": "up",
+   "pull_ohm": 50000,
+   "v_max_v": 3.63,
+   "v_rel_max_v": 0.5
+  },
+  "25": {
+   "name": "SWD",
+   "type": "bidirectional",
+   "pull": "up",
+   "pull_ohm": 50000,
+   "v_max_v": 3.63,
+   "v_rel_max_v": 0.5
+  },
+  "26": {
+   "name": "RUN",
+   "type": "input",
+   "pull": "up",
+   "pull_ohm": 50000,
+   "v_max_v": 3.63,
+   "v_rel_max_v": 0.5,
+   "hint": "global asynchronous reset: low resets, high runs (1.4.2)"
+  },
+  "27": {
+   "name": "GPIO16",
+   "type": "bidirectional",
+   "role": "gpio",
+   "functions": [
+    "spi0.rx",
+    "uart0.tx",
+    "i2c0.sda",
+    "pwm0.a"
+   ],
+   "pull": "down",
+   "pull_ohm": 50000,
+   "v_rel_max_v": 0.5,
+   "v_max_v": 3.63
+  },
+  "28": {
+   "name": "GPIO17",
+   "type": "bidirectional",
+   "role": "gpio",
+   "functions": [
+    "spi0.cs",
+    "uart0.rx",
+    "i2c0.scl",
+    "pwm0.b"
+   ],
+   "pull": "down",
+   "pull_ohm": 50000,
+   "v_rel_max_v": 0.5,
+   "v_max_v": 3.63
+  },
+  "29": {
+   "name": "GPIO18",
+   "type": "bidirectional",
+   "role": "gpio",
+   "functions": [
+    "spi0.sck",
+    "uart0.cts",
+    "i2c1.sda",
+    "pwm1.a"
+   ],
+   "pull": "down",
+   "pull_ohm": 50000,
+   "v_rel_max_v": 0.5,
+   "v_max_v": 3.63
+  },
+  "30": {
+   "name": "GPIO19",
+   "type": "bidirectional",
+   "role": "gpio",
+   "functions": [
+    "spi0.tx",
+    "uart0.rts",
+    "i2c1.scl",
+    "pwm1.b"
+   ],
+   "pull": "down",
+   "pull_ohm": 50000,
+   "v_rel_max_v": 0.5,
+   "v_max_v": 3.63
+  },
+  "31": {
+   "name": "GPIO20",
+   "type": "bidirectional",
+   "role": "gpio",
+   "functions": [
+    "spi0.rx",
+    "uart1.tx",
+    "i2c0.sda",
+    "pwm2.a"
+   ],
+   "pull": "down",
+   "pull_ohm": 50000,
+   "v_rel_max_v": 0.5,
+   "v_max_v": 3.63
+  },
+  "32": {
+   "name": "GPIO21",
+   "type": "bidirectional",
+   "role": "gpio",
+   "functions": [
+    "spi0.cs",
+    "uart1.rx",
+    "i2c0.scl",
+    "pwm2.b"
+   ],
+   "pull": "down",
+   "pull_ohm": 50000,
+   "v_rel_max_v": 0.5,
+   "v_max_v": 3.63
+  },
+  "33": {
+   "name": "IOVDD",
+   "type": "power_in",
+   "v_max_v": 3.63,
+   "v_op_min_v": 1.62,
+   "v_op_max_v": 3.63
+  },
+  "34": {
+   "name": "GPIO22",
+   "type": "bidirectional",
+   "role": "gpio",
+   "functions": [
+    "spi0.sck",
+    "uart1.cts",
+    "i2c1.sda",
+    "pwm3.a"
+   ],
+   "pull": "down",
+   "pull_ohm": 50000,
+   "v_rel_max_v": 0.5,
+   "v_max_v": 3.63
+  },
+  "35": {
+   "name": "GPIO23",
+   "type": "bidirectional",
+   "role": "gpio",
+   "functions": [
+    "spi0.tx",
+    "uart1.rts",
+    "i2c1.scl",
+    "pwm3.b"
+   ],
+   "pull": "down",
+   "pull_ohm": 50000,
+   "v_rel_max_v": 0.5,
+   "v_max_v": 3.63
+  },
+  "36": {
+   "name": "GPIO24",
+   "type": "bidirectional",
+   "role": "gpio",
+   "functions": [
+    "spi1.rx",
+    "uart1.tx",
+    "i2c0.sda",
+    "pwm4.a"
+   ],
+   "pull": "down",
+   "pull_ohm": 50000,
+   "v_rel_max_v": 0.5,
+   "v_max_v": 3.63
+  },
+  "37": {
+   "name": "GPIO25",
+   "type": "bidirectional",
+   "role": "gpio",
+   "functions": [
+    "spi1.cs",
+    "uart1.rx",
+    "i2c0.scl",
+    "pwm4.b"
+   ],
+   "pull": "down",
+   "pull_ohm": 50000,
+   "v_rel_max_v": 0.5,
+   "v_max_v": 3.63
+  },
+  "38": {
+   "name": "GPIO26_ADC0",
+   "type": "bidirectional",
+   "role": "gpio",
+   "functions": [
+    "spi1.sck",
+    "uart1.cts",
+    "i2c1.sda",
+    "pwm5.a",
+    "adc0"
+   ],
+   "pull": "down",
+   "pull_ohm": 50000,
+   "v_rel_max_v": 0.5,
+   "hint": "GPIO with ADC input (Digital IO / Analogue, not fault tolerant): at most IOVDD + 0.5 V, and the ADC reads up to ADC_AVDD (tables 614, 622, 627)"
+  },
+  "39": {
+   "name": "GPIO27_ADC1",
+   "type": "bidirectional",
+   "role": "gpio",
+   "functions": [
+    "spi1.tx",
+    "uart1.rts",
+    "i2c1.scl",
+    "pwm5.b",
+    "adc1"
+   ],
+   "pull": "down",
+   "pull_ohm": 50000,
+   "v_rel_max_v": 0.5,
+   "hint": "GPIO with ADC input (Digital IO / Analogue, not fault tolerant): at most IOVDD + 0.5 V, and the ADC reads up to ADC_AVDD (tables 614, 622, 627)"
+  },
+  "40": {
+   "name": "GPIO28_ADC2",
+   "type": "bidirectional",
+   "role": "gpio",
+   "functions": [
+    "spi1.rx",
+    "uart0.tx",
+    "i2c0.sda",
+    "pwm6.a",
+    "adc2"
+   ],
+   "pull": "down",
+   "pull_ohm": 50000,
+   "v_rel_max_v": 0.5,
+   "hint": "GPIO with ADC input (Digital IO / Analogue, not fault tolerant): at most IOVDD + 0.5 V, and the ADC reads up to ADC_AVDD (tables 614, 622, 627)"
+  },
+  "41": {
+   "name": "GPIO29_ADC3",
+   "type": "bidirectional",
+   "role": "gpio",
+   "functions": [
+    "spi1.cs",
+    "uart0.rx",
+    "i2c0.scl",
+    "pwm6.b",
+    "adc3"
+   ],
+   "pull": "down",
+   "pull_ohm": 50000,
+   "v_rel_max_v": 0.5,
+   "hint": "GPIO with ADC input (Digital IO / Analogue, not fault tolerant): at most IOVDD + 0.5 V, and the ADC reads up to ADC_AVDD (tables 614, 622, 627)"
+  },
+  "42": {
+   "name": "IOVDD",
+   "type": "power_in",
+   "v_max_v": 3.63,
+   "v_op_min_v": 1.62,
+   "v_op_max_v": 3.63
+  },
+  "43": {
+   "name": "ADC_AVDD",
+   "type": "power_in",
+   "v_max_v": 3.63,
+   "v_op_min_v": 1.62,
+   "v_op_max_v": 3.63
+  },
+  "44": {
+   "name": "VREG_IN",
+   "type": "power_in",
+   "role": "vin",
+   "v_max_v": 3.63,
+   "v_op_min_v": 1.62,
+   "v_op_max_v": 3.63,
+   "needs": [
+    {
+     "what": "capacitor",
+     "c_min_f": 1e-06,
+     "source": "RP2040 Datasheet, build-date 2025-02-20, build-version 3184e62 (RP-008371-DS-1), 2.9.3 and 2.10.1: a 1 µF capacitor between VREG_VIN and ground close to the pin"
+    }
+   ],
+   "hint": "input of the on-chip core regulator; also powers the power-on reset and brown-out detection (2.9.3)"
+  },
+  "45": {
+   "name": "VREG_VOUT",
+   "type": "power_output",
+   "role": "vout",
+   "needs": [
+    {
+     "what": "capacitor",
+     "c_min_f": 1e-06,
+     "source": "RP2040 Datasheet, build-date 2025-02-20, build-version 3184e62 (RP-008371-DS-1), 2.10.1: 'The regulator must have 1μF capacitors placed close to its input (VREG_VIN) and output (VREG_VOUT) pins'"
+    }
+   ],
+   "hint": "core regulator output, nominal 1.1 V, 100 mA max (1.4.2)"
+  },
+  "46": {
+   "name": "USB_DM",
+   "type": "bidirectional",
+   "needs": [
+    {
+     "what": "series_resistor",
+     "r_min_ohm": 27,
+     "r_max_ohm": 27,
+     "source": "RP2040 Datasheet, build-date 2025-02-20, build-version 3184e62 (RP-008371-DS-1), 1.4.2 table 1 and table 620: 'A 27Ω series termination resistor is required on each pin'"
+    }
+   ],
+   "hint": "USB IO with the bus pull-ups and pull-downs inside (table 614)"
+  },
+  "47": {
+   "name": "USB_DP",
+   "type": "bidirectional",
+   "needs": [
+    {
+     "what": "series_resistor",
+     "r_min_ohm": 27,
+     "r_max_ohm": 27,
+     "source": "RP2040 Datasheet, build-date 2025-02-20, build-version 3184e62 (RP-008371-DS-1), 1.4.2 table 1 and table 620: 'A 27Ω series termination resistor is required on each pin'"
+    }
+   ],
+   "hint": "USB IO with the bus pull-ups and pull-downs inside (table 614)"
+  },
+  "48": {
+   "name": "USB_VDD",
+   "type": "power_in",
+   "v_max_v": 3.63,
+   "v_op_min_v": 3.135,
+   "v_op_max_v": 3.63
+  },
+  "49": {
+   "name": "IOVDD",
+   "type": "power_in",
+   "v_max_v": 3.63,
+   "v_op_min_v": 1.62,
+   "v_op_max_v": 3.63
+  },
+  "50": {
+   "name": "DVDD",
+   "type": "power_in",
+   "v_op_min_v": 1.05,
+   "v_op_max_v": 1.16,
+   "hint": "core supply 1.1 V – from VREG_VOUT here (2.9.2)"
+  },
+  "51": {
+   "name": "QSPI_SD3",
+   "type": "bidirectional",
+   "v_rel_max_v": 0.5
+  },
+  "52": {
+   "name": "QSPI_SCLK",
+   "type": "output",
+   "pull": "down",
+   "pull_ohm": 50000,
+   "v_rel_max_v": 0.5
+  },
+  "53": {
+   "name": "QSPI_SD0",
+   "type": "bidirectional",
+   "v_rel_max_v": 0.5
+  },
+  "54": {
+   "name": "QSPI_SD2",
+   "type": "bidirectional",
+   "v_rel_max_v": 0.5
+  },
+  "55": {
+   "name": "QSPI_SD1",
+   "type": "bidirectional",
+   "v_rel_max_v": 0.5
+  },
+  "56": {
+   "name": "QSPI_SS",
+   "type": "bidirectional",
+   "pull": "up",
+   "pull_ohm": 50000,
+   "v_rel_max_v": 0.5,
+   "hint": "flash chip select; tied low at boot (the \"bootrom button\") the bootrom skips the flash and starts USB device boot (2.8.1)"
+  },
+  "57": {
+   "name": "GND",
+   "type": "ground",
+   "role": "gnd",
+   "hint": "the central pad: the only ground connection (1.4.2, table 621)"
+  }
+ },
+ "values": {
+  "behavior": "mcu",
+  "v_io_v": 3.3,
+  "vih_v": 2.0,
+  "vil_v": 0.8,
+  "i_core_a": 0.0541,
+  "regulator": "ldo",
+  "vout_v": 1.1
+ },
+ "limits": {
+  "vdd_max_v": 3.63,
+  "vdd_op_min_v": 1.62,
+  "vdd_op_max_v": 3.63,
+  "gpio_i_total_max_a": 0.05,
+  "t_min_c": -40,
+  "t_max_c": 85
+ },
+ "compliance": {
+  "radio": "none",
+  "source": "RP2040 Datasheet, build-date 2025-02-20, build-version 3184e62 (RP-008371-DS-1), 1.2 Summary: the key features list no radio (GPIO, SPI flash, peripherals, PIO, ADC, USB 1.1); read 2026-10-31"
+ },
+ "sources": [
+  "RP2040 Datasheet, build-date 2025-02-20, build-version 3184e62 (RP-008371-DS-1), https://datasheets.raspberrypi.com/rp2040/rp2040-datasheet.pdf, read 2026-10-31",
+  "pin numbers and names: the KiCad symbol MCU_RaspberryPi:RP2040 as the Corne's schematic places it (pin 57 the exposed pad) – the same numbers as figure 3 and tables 615–621",
+  "1.4.2 table 1: USB_DM/USB_DP need 27 Ω series resistors; XIN/XOUT a 12 MHz crystal for the USB bootloader; RUN low resets; TESTEN tie to GND; VREG_VOUT nominal 1.1 V, 100 mA max",
+  "1.4.3 table 2: GPIO functions F1 SPI, F2 UART, F3 I2C, F4 PWM per GPIO0–29 (functions); GPIO26–29 the ADC inputs ADC0–3",
+  "5.5.2 tables 614–619: pin types – GPIO0–25, SWCLK, SWD and RUN fault tolerant (FT: very little current below 3.63 V with IOVDD at 0 V), GPIO26–29, QSPI and TESTEN standard; reset states: GPIO pull-down, QSPI_SCLK pull-down, QSPI_CSn pull-up, SWCLK/SWD/RUN pull-up, TESTEN pull-down",
+  "5.5.3.1 table 622: IOVDD −0.5 … 3.63 V; voltage at an IO −0.5 … IOVDD + 0.5 V (v_rel_max_v 0.5; v_max_v 3.63 on FT pins with IOVDD at 0 V)",
+  "5.5.3.3 table 624: case temperature −40 … 85 °C (t_min_c, t_max_c)",
+  "5.5.3.4 table 625: VIH ≥ 2 V, VIL ≤ 0.8 V at IOVDD 3.3 V (vih_v, vil_v); RPU and RPD 50–80 kΩ (pull_ohm 50000, the minimum); IIOVDD_MAX and IIOVSS_MAX 50 mA, the sum of all GPIO and QSPI currents (gpio_i_total_max_a)",
+  "5.6 table 634: IOVDD 1.62–3.63 V, DVDD 1.05–1.16 V, VREG_VIN 1.62–3.63 V, USB_VDD 3.135–3.63 V, ADC_AVDD 1.62–3.63 V",
+  "2.9 and 2.10.1: 100 nF at each IOVDD, DVDD, USB_VDD and ADC_AVDD pin; 1 µF at VREG_VIN and at VREG_VOUT",
+  "regulator ldo, vout_v 1.1: the on-chip core regulator from VREG_VIN to VREG_VOUT, nominal 1.1 V, 100 mA max (1.4.2, 2.10) – the behaviour model feeds the core current through it",
+  "i_core_a 0.0541 A: the highest 'maximum average' currents of table 637 per supply summed – DVDD 16.6 mA and IOVDD 35.5 mA ('Popcorn'), USB_VDD 2.0 mA (BOOTSEL active); an upper bound, the core is fed by the on-chip regulator from VREG_VIN, which the model does not separate from IOVDD"
+ ],
+ "verified": {
+  "by": "Claude (datasheet check, open-design transcription)",
+  "date": "2026-10-31",
+  "datasheet": "RP2040 Datasheet, build-date 2025-02-20, build-version 3184e62 (RP-008371-DS-1)",
+  "datasheet_sha256": "be56fbb75ba0ae9e26558a73c93ac3e75c2ad4e6878d3b6703de2a76d886ea8c",
+  "checked": [
+   "pin numbers and names against figure 3 and tables 615–621",
+   "GPIO functions F1–F4 (table 2)",
+   "pin types, reset pulls (tables 614–619)",
+   "absolute maximum and IO characteristics (tables 622, 625)",
+   "supply ranges (table 634)",
+   "decoupling and regulator capacitors (2.9, 2.10.1)"
+  ],
+  "open": [
+   "i_core_a: a sum of maximum averages of three use cases, not a guaranteed maximum – the datasheet gives none",
+   "gpio_i_max_a: the datasheet gives VOH/VOL at 2, 4, 8 or 12 mA drive settings, no maximum per pin",
+   "the core regulator's dropout is not given: the model's default (0.3 V) applies",
+   "QSPI_SS as the boot strap: not given as strap here – low at boot starts USB device boot on purpose (the BOOT button; 2.8.1)"
+  ]
+ }
+}

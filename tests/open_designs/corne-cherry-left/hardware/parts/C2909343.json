@@ -1,0 +1,48 @@
+{
+ "lcsc": "C2909343",
+ "mpn": "FRC0402F27R0TS",
+ "manufacturer": "FOJAN",
+ "kind": "resistor",
+ "package": "0402",
+ "footprint": "R_0402_1005Metric",
+ "datasheet": {
+  "url": "https://datasheet.lcsc.com/datasheet/pdf/106fb934f95f063b695dad1b31b1eab8.pdf"
+ },
+ "pins": {
+  "1": {
+   "name": "1",
+   "type": "passive",
+   "role": "1"
+  },
+  "2": {
+   "name": "2",
+   "type": "passive",
+   "role": "2"
+  }
+ },
+ "values": {
+  "value_ohm": 27.0,
+  "tolerance": 0.01
+ },
+ "limits": {
+  "p_max_w": 0.0625,
+  "v_max_v": 50
+ },
+ "sources": [
+  "FOJAN FRC series thick film chip resistor product specification (1005–1812 types), LCSC's copy https://datasheet.lcsc.com/datasheet/pdf/106fb934f95f063b695dad1b31b1eab8.pdf, read 2026-10-31",
+  "parts number explanation: FRC, 0402, F = ±1 %, 27R0 = 27.0 Ω, T reel, S termination; ratings table: 0402 1/16 W at 70 °C, max. working voltage 50 V, overload 100 V"
+ ],
+ "verified": {
+  "by": "Claude (datasheet check, open-design transcription)",
+  "date": "2026-10-31",
+  "datasheet": "FOJAN FRC series thick film chip resistor product specification (1005–1812 types)",
+  "datasheet_sha256": "56042d128202b5f271f463df25503de8ecb937075b7c2c03a512ccf4e0823d31",
+  "checked": [
+   "value and tolerance from the part number",
+   "series ratings"
+  ],
+  "open": [
+   "the specification states no version or date on its pages"
+  ]
+ }
+}

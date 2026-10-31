@@ -1,0 +1,76 @@
+{
+ "lcsc": "C5149201",
+ "mpn": "SK6812MINI-E",
+ "manufacturer": "OPSCO Optoelectronics",
+ "kind": "ic",
+ "package": "3.2 × 2.8 × 1.78 mm, 4 pads, reverse mount",
+ "footprint": "YS-SK6812MINI-E",
+ "datasheet": {
+  "url": "https://datasheet.lcsc.com/datasheet/pdf/0907a34a701b4aef568078003f6e9eae.pdf",
+  "pinout_page": 5
+ },
+ "pins": {
+  "1": {
+   "name": "VDD",
+   "type": "power_in",
+   "role": "vdd"
+  },
+  "2": {
+   "name": "DOUT",
+   "type": "output",
+   "role": "sdo"
+  },
+  "3": {
+   "name": "VSS",
+   "type": "ground",
+   "role": "gnd"
+  },
+  "4": {
+   "name": "DIN",
+   "type": "input",
+   "role": "sdi"
+  }
+ },
+ "values": {
+  "behavior": "current",
+  "i_a": 0.0006,
+  "vih_ratio": 0.65,
+  "vil_ratio": 0.3
+ },
+ "limits": {
+  "vdd_max_v": 5.5,
+  "vdd_op_min_v": 3.7,
+  "vdd_op_max_v": 5.5,
+  "t_min_c": -40,
+  "t_max_c": 80
+ },
+ "hints": [
+  "single-wire return-to-zero data at 800 kbit/s, GRB, MSB first: T0H 0.25–0.40 µs, T1H 0.70–1.00 µs, reset low > 200 µs (sections 10–13)",
+  "a decoupling capacitor at every LED is called essential, value not given; series resistors of about 500 Ω at the chain's signal input and output for short distances (section 14)",
+  "12 mA version: one colour may run at 100 % grey level, all three at most 70 % (section 1)",
+  "MSL 5a (section 1)"
+ ],
+ "sources": [
+  "OPSCO SK6812MINI-E-012 product specification, document SK6812MINI-E-012 Rev. B/1, version B/2 (2025-11-22), LCSC's copy https://datasheet.lcsc.com/datasheet/pdf/0907a34a701b4aef568078003f6e9eae.pdf, read 2026-10-31",
+  "section 5: pins 1 GND, 2 DIN, 3 VDD, 4 DOUT; the Corne's footprint kbd_local:YS-SK6812MINI-E and its symbol number them 1 VDD, 2 DOUT, 3 VSS, 4 DIN – this entry follows the Corne's footprint, as the graph does",
+  "section 7 (Ta 25 °C): VDD +3.7 … +5.5 V, Topt −40 … +80 °C, ESD 2 kV HBM",
+  "section 9 (Ta 25 °C): VDD 3.7 / 5.0 / 5.5 V; VIH ≥ 0.65 VDD, VIL ≤ 0.3 VDD at VDD 5.0 V; output current 10 / 12 / 14.5 mA per colour; static IDD 0.6 mA typ at VDD 4.5 V (i_a: the LED dark)",
+  "section 1: 5 V at 12 mA; with all three colours lit at most 70 % grey level – the lit case is a load of the simulation (sim.json rgb_70), not a value here"
+ ],
+ "verified": {
+  "by": "Claude (datasheet check, open-design transcription)",
+  "date": "2026-10-31",
+  "datasheet": "OPSCO SK6812MINI-E-012 product specification, document SK6812MINI-E-012 Rev. B/1, version B/2 (2025-11-22)",
+  "datasheet_sha256": "d78c60d7a163c7fdb69db78a2fccf0faa8104532fdee0b0472736aaeac427cc7",
+  "checked": [
+   "pins (section 5) against the Corne's footprint numbering",
+   "limits (section 7)",
+   "thresholds, output current, static current (section 9)"
+  ],
+  "open": [
+   "vdd_max_v 5.5: the limit table gives only the working range +3.7 … +5.5 V",
+   "no input voltage limit given: vin_rel_max_v stays out",
+   "i_a 0.6 mA is the typical static current, no maximum given"
+  ]
+ }
+}

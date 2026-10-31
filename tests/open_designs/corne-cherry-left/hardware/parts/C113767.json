@@ -1,0 +1,88 @@
+{
+ "lcsc": "C113767",
+ "mpn": "W25Q128JVSIQ",
+ "manufacturer": "Winbond",
+ "kind": "ic",
+ "package": "SOIC-8 208 mil",
+ "footprint": "SOIC-8_5.23x5.23mm_P1.27mm",
+ "datasheet": {
+  "url": "https://datasheet.lcsc.com/datasheet/pdf/deb5ae36ee5d4406b73283cbc91e149f.pdf",
+  "pinout_page": 5
+ },
+ "pins": {
+  "1": {
+   "name": "~{CS}",
+   "type": "input",
+   "hint": "/CS must track VCC at power-up and power-down; a pull-up resistor can do it (4.1, 7.1)"
+  },
+  "2": {
+   "name": "DO(IO1)",
+   "type": "bidirectional"
+  },
+  "3": {
+   "name": "IO2",
+   "type": "bidirectional",
+   "hint": "/WP (IO2) in the datasheet"
+  },
+  "4": {
+   "name": "GND",
+   "type": "ground",
+   "role": "gnd"
+  },
+  "5": {
+   "name": "DI(IO0)",
+   "type": "bidirectional"
+  },
+  "6": {
+   "name": "CLK",
+   "type": "input"
+  },
+  "7": {
+   "name": "IO3",
+   "type": "bidirectional",
+   "hint": "/HOLD or /RESET (IO3) in the datasheet"
+  },
+  "8": {
+   "name": "VCC",
+   "type": "power_in",
+   "role": "vdd"
+  }
+ },
+ "values": {
+  "behavior": "logic",
+  "icc_a": 0.025,
+  "vih_ratio": 0.7,
+  "vil_ratio": 0.3
+ },
+ "limits": {
+  "vdd_max_v": 4.6,
+  "vdd_op_min_v": 2.7,
+  "vdd_op_max_v": 3.6,
+  "vin_rel_max_v": 0.4,
+  "t_min_c": -40,
+  "t_max_c": 85
+ },
+ "sources": [
+  "Winbond W25Q128JV datasheet, Revision E (publication release date November 23, 2017), LCSC's copy https://datasheet.lcsc.com/datasheet/pdf/deb5ae36ee5d4406b73283cbc91e149f.pdf, read 2026-10-31",
+  "3.1 and 3.3: SOIC 208-mil pin assignment 1 /CS, 2 DO (IO1), 3 /WP (IO2), 4 GND, 5 DI (IO0), 6 CLK, 7 /HOLD or /RESET (IO3), 8 VCC; pin names as the Corne's KiCad symbol Memory_Flash:W25Q128JVS",
+  "9.1: VCC −0.6 … 4.6 V, voltage on any pin −0.6 … VCC + 0.4 V (vin_rel_max_v)",
+  "9.2: VCC 3.0–3.6 V at 133 MHz, 2.7–3.0 V at 104 MHz; ambient −40 … +85 °C (industrial)",
+  "9.4: VIL ≤ 0.3 VCC, VIH ≥ 0.7 VCC; ICC3 read up to 20 mA (104 MHz), ICC4–ICC7 write and erase 25 mA max (icc_a)"
+ ],
+ "verified": {
+  "by": "Claude (datasheet check, open-design transcription)",
+  "date": "2026-10-31",
+  "datasheet": "Winbond W25Q128JV datasheet, Revision E (publication release date November 23, 2017)",
+  "datasheet_sha256": "cee5c3a5e3367c21261d5fa6730807fe4294539888297882cdcfa6e0eb91b72d",
+  "checked": [
+   "pin assignment SOIC 208-mil",
+   "absolute maximum ratings",
+   "operating range",
+   "input thresholds",
+   "supply currents"
+  ],
+  "open": [
+   "the /CS pull-up is 'if needed' (4.1) – not entered as a need"
+  ]
+ }
+}

@@ -1,0 +1,231 @@
+{
+ "about": "This half has the USB cable (it feeds the right half through the TRS jack, which is not simulated). Values with 'note' are assumptions.",
+ "ambient_c": 25,
+ "sources": {
+  "J1": {
+   "plus": "A4",
+   "minus": "A1",
+   "r_ohm": 0.3,
+   "i_max_a": 0.5,
+   "note": "USB 2.0 port and cable: 0.3 Ω source resistance (assumed, as edakit's example); a USB 2.0 port delivers 0.5 A – the CC resistors ask for no more"
+  }
+ },
+ "supplies": {
+  "usb-min": {
+   "J1": 4.75
+  },
+  "usb-nom": {
+   "J1": 5.0
+  },
+  "usb-max": {
+   "J1": 5.25
+  }
+ },
+ "loads": {
+  "idle": {
+   "about": "firmware runs, the LEDs dark (0.6 mA each), the LED data line low, keys released",
+   "gpio": {},
+   "leds_on": []
+  },
+  "data_high": {
+   "about": "the RP2040 drives the LED data line high: its 3.3 V against the first LED's VIH",
+   "gpio": {
+    "LED": 1
+   },
+   "leds_on": []
+  },
+  "rgb_70": {
+   "about": "every LED lit white at the 70 % grey level the datasheet allows for three colours: 3 × 14.5 mA × 0.7 = 30.5 mA each on top of the static current",
+   "gpio": {},
+   "leds_on": [],
+   "external": {
+    "LED1": {
+     "plus": "1",
+     "minus": "3",
+     "i_a": 0.03045
+    },
+    "LED2": {
+     "plus": "1",
+     "minus": "3",
+     "i_a": 0.03045
+    },
+    "LED3": {
+     "plus": "1",
+     "minus": "3",
+     "i_a": 0.03045
+    },
+    "LED4": {
+     "plus": "1",
+     "minus": "3",
+     "i_a": 0.03045
+    },
+    "LED5": {
+     "plus": "1",
+     "minus": "3",
+     "i_a": 0.03045
+    },
+    "LED6": {
+     "plus": "1",
+     "minus": "3",
+     "i_a": 0.03045
+    },
+    "LED7": {
+     "plus": "1",
+     "minus": "3",
+     "i_a": 0.03045
+    },
+    "LED8": {
+     "plus": "1",
+     "minus": "3",
+     "i_a": 0.03045
+    },
+    "LED9": {
+     "plus": "1",
+     "minus": "3",
+     "i_a": 0.03045
+    },
+    "LED10": {
+     "plus": "1",
+     "minus": "3",
+     "i_a": 0.03045
+    },
+    "LED11": {
+     "plus": "1",
+     "minus": "3",
+     "i_a": 0.03045
+    },
+    "LED12": {
+     "plus": "1",
+     "minus": "3",
+     "i_a": 0.03045
+    },
+    "LED13": {
+     "plus": "1",
+     "minus": "3",
+     "i_a": 0.03045
+    },
+    "LED14": {
+     "plus": "1",
+     "minus": "3",
+     "i_a": 0.03045
+    },
+    "LED15": {
+     "plus": "1",
+     "minus": "3",
+     "i_a": 0.03045
+    },
+    "LED16": {
+     "plus": "1",
+     "minus": "3",
+     "i_a": 0.03045
+    },
+    "LED17": {
+     "plus": "1",
+     "minus": "3",
+     "i_a": 0.03045
+    },
+    "LED18": {
+     "plus": "1",
+     "minus": "3",
+     "i_a": 0.03045
+    },
+    "LED19": {
+     "plus": "1",
+     "minus": "3",
+     "i_a": 0.03045
+    },
+    "LED20": {
+     "plus": "1",
+     "minus": "3",
+     "i_a": 0.03045
+    },
+    "LED21": {
+     "plus": "1",
+     "minus": "3",
+     "i_a": 0.03045
+    },
+    "EXLED1": {
+     "plus": "1",
+     "minus": "3",
+     "i_a": 0.03045
+    },
+    "EXLED2": {
+     "plus": "1",
+     "minus": "3",
+     "i_a": 0.03045
+    }
+   },
+   "note": "the firmware decides the brightness; QMK's limit is not part of the design"
+  }
+ },
+ "corners": [
+  "min",
+  "max"
+ ],
+ "mcu": {
+  "U1": {
+   "outputs": [
+    "LED"
+   ],
+   "pullups": [
+    "KEY1",
+    "KEY2",
+    "KEY3",
+    "KEY4",
+    "KEY5",
+    "KEY6",
+    "KEY7",
+    "KEY8",
+    "KEY9",
+    "KEY10",
+    "KEY11",
+    "KEY12",
+    "KEY13",
+    "KEY14",
+    "KEY15",
+    "KEY16",
+    "KEY17",
+    "KEY18",
+    "KEY19",
+    "KEY20",
+    "KEY21",
+    "KEYEX1",
+    "KEYEX2"
+   ],
+   "pullup_ohm": 50000,
+   "inputs": [
+    "KEY1",
+    "KEY2",
+    "KEY3",
+    "KEY4",
+    "KEY5",
+    "KEY6",
+    "KEY7",
+    "KEY8",
+    "KEY9",
+    "KEY10",
+    "KEY11",
+    "KEY12",
+    "KEY13",
+    "KEY14",
+    "KEY15",
+    "KEY16",
+    "KEY17",
+    "KEY18",
+    "KEY19",
+    "KEY20",
+    "KEY21",
+    "KEYEX1",
+    "KEYEX2",
+    "USB_VBUS_PIN"
+   ],
+   "io_rail": "+3V3",
+   "note": "QMK direct pins: the firmware enables the pull-up of each key's GPIO (RPU 50–80 kΩ, table 625); the GPIOs run from IOVDD on +3V3, the core from the on-chip regulator"
+  }
+ },
+ "report": [
+  "+5V",
+  "LED_VDD",
+  "+3V3"
+ ]
+}
