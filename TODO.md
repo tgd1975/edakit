@@ -132,8 +132,8 @@ unsure, ask:
       feedback lines; prototypes off the navigation.
 - [ ] **D.4** The reference: 10.5 as entries with the generated synopsis; the catalog page split; the chapters'
       generated lists as the short kind.
-- [ ] **D.5** The chapters in place, worst first – 8, 3, 5, 7, 4, 10, then the rest –, the review for meaning after
-      each; chapter 13 takes the history.
+- [ ] **D.5** The chapters in place, condensed to a third fewer words with no statement lost, worst first – 8, 3, 5, 7,
+      4, 10, then the rest –, the review for meaning after each; chapter 13 takes the history.
 - [ ] **D.6** The reader pages "Adding a rule" and "Working on edakit".
 - [ ] **D.7** The "is it for me" numbers from the evals; the findings on sources (the plugin's descriptions say "JSON
       hardware graph") to the owner.

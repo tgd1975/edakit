@@ -1,18 +1,18 @@
 # The documentation: who reads it, how it is organised, how it is written
 
 Status 2026-10-31: decided – the eight decisions and what Claude decided itself accepted by the owner the same day, and
-a ninth added by the owner the same evening (the circuit alone as a station), in a decision round in Claude Code's form
-(the table at the end); nothing built; each step D.1 to D.7 starts on the owner's word, one per branch, listed in
-`TODO.md`. Written against main at `8fba5f2`. Asked for by the owner: the pages are comprehensive but confusing, so
-unreadable – a concept for how the documentation should look, be organised and be written, who its readers are, the
-language and its style, what is missing for it to be understood, everything needed so that others use edakit. With one
-condition the owner set while it was written: everything `docs/organisation.md` does not list as documentation – skills,
-agents, CLAUDE.md, the catalog's and the domains' texts, the manifests, the concepts – is data the automation reads; a
-change there may break something elsewhere or shift a meaning, so this concept leaves it alone and says where
-documentation itself is read by the automation; and a rule for every change: when unsure, ask – or check whether the
-text is generated or used elsewhere, which says to leave it as it is. The findings come from the site built from main
-(`docs/pages.py`, MkDocs), the Markdown measured – words, sentence lengths, headings, cross-references, the words that
-go unexplained – and the code and tests that read the documentation.
+a ninth and a tenth added by the owner the same evening (the circuit alone as a station; condensing as a rule, with its
+measure), in a decision round in Claude Code's form (the table at the end); nothing built; each step D.1 to D.7 starts
+on the owner's word, one per branch, listed in `TODO.md`. Written against main at `8fba5f2`. Asked for by the owner: the
+pages are comprehensive but confusing, so unreadable – a concept for how the documentation should look, be organised and
+be written, who its readers are, the language and its style, what is missing for it to be understood, everything needed
+so that others use edakit. With one condition the owner set while it was written: everything `docs/organisation.md` does
+not list as documentation – skills, agents, CLAUDE.md, the catalog's and the domains' texts, the manifests, the concepts
+– is data the automation reads; a change there may break something elsewhere or shift a meaning, so this concept leaves
+it alone and says where documentation itself is read by the automation; and a rule for every change: when unsure, ask –
+or check whether the text is generated or used elsewhere, which says to leave it as it is. The findings come from the
+site built from main (`docs/pages.py`, MkDocs), the Markdown measured – words, sentence lengths, headings,
+cross-references, the words that go unexplained – and the code and tests that read the documentation.
 
 ## The short answer
 
@@ -29,15 +29,16 @@ reference material named from 415 places in the code, the skills and the agents.
 Proposed: three layers over the one source that exists. An **entry layer** written anew and short – a start page of one
 screen, a quickstart to the first finding in fifteen minutes without EasyEDA, one page on how it works, a glossary –;
 the **guides**, which are the handbook's chapters, kept under their numbers and file names but grouped by reader and by
-station – the circuit, the board – in the navigation and trimmed in place – subheadings, shorter sentences, the
-generated code lists replaced by a table and a link, the history and the private projects moved out, a status line where
-something is offline only – with the rule that a statement the automation points at is shortened at most, never moved or
-changed; and the **reference**, generated where the code knows it: the commands from the command line's own help, the
-catalog as one page per engine instead of 1.6 MB in one file. The sources – concepts, skills, agents, evals – stay
-readable on the site, but at its end under "Inside edakit", with an index that says what a concept is and in which state
-each one is, and their texts untouched. One style guide, `docs/style.md`, says how every layer is written and what it
-does not apply to, and a test holds what can be counted. The files, chapter numbers and section numbers stay: 415 places
-name them, the SessionStart hook reads section 11.4, and six tests hold the pages to the code.
+station – the circuit, the board – in the navigation and trimmed in place – condensed to a third fewer words with no
+statement lost, subheadings, shorter sentences, the generated code lists replaced by a table and a link, the history and
+the private projects moved out, a status line where something is offline only – with the rule that a statement the
+automation points at is shortened at most, never moved or changed; and the **reference**, generated where the code knows
+it: the commands from the command line's own help, the catalog as one page per engine instead of 1.6 MB in one file. The
+sources – concepts, skills, agents, evals – stay readable on the site, but at its end under "Inside edakit", with an
+index that says what a concept is and in which state each one is, and their texts untouched. One style guide,
+`docs/style.md`, says how every layer is written and what it does not apply to, and a test holds what can be counted.
+The files, chapter numbers and section numbers stay: 415 places name them, the SessionStart hook reads section 11.4, and
+six tests hold the pages to the code.
 
 Everything this concept adds is text in the repository; what it moves into text is what exists today only in the owner's
 head: who the readers are and how the documentation is written.
@@ -211,6 +212,11 @@ above – every sentence checked first for being generated or used elsewhere, an
 doubt:
 
 - The first paragraph says who the page is for and what they can do after it.
+- Condensed: the same statements in a third fewer words – every statement once, at the place that owns it, the rest a
+  link; one example instead of three; no sentence that announces the next; no restatement of what a code block shows; no
+  chapter over 500 lines, no paragraph over 120 words. A qualification – a number, a condition, an exception – is a
+  statement and stays; in a section the automation names, the wording gets shorter and nothing leaves. Where a chapter
+  does not give the third without a statement going, the review says why, and the statements win.
 - A subheading at least every 80 lines; the long sections of 3, 4, 5, 7 and 8 get `###` by topic, their statements where
   they were.
 - Sentences: one aside, one cross-reference, one list per sentence; a cross-reference names its subject – "the sign-off
@@ -276,7 +282,8 @@ help texts are code; each keeps its own words, and the documentation follows the
 | | Entry | Guides | Reference |
 | --- | --- | --- | --- |
 | sentence | at most 20 words on average, none over 35 | at most 25 on average | fragments allowed in entries and cells |
-| paragraph | at most four sentences | one idea; a subheading every 80 lines at most | an entry per thing |
+| paragraph | at most four sentences | one idea, at most 120 words; a subheading every 80 lines at most | an entry per thing |
+| length | a page of at most two screens; the quickstart longer | a chapter of at most 500 lines; the same statements in a third fewer words than today | as long as the things it lists |
 | asides | none – a second sentence instead | one per sentence, the en dash as written | – |
 | cross-references | to the glossary and to one guide page, by name | the subject and the number: "the board file (10.2)" | by number and name |
 | terms | introduced one per sentence, linked to the glossary at first use | used as the glossary has them | as the glossary has them |
@@ -290,6 +297,13 @@ skills and the catalog: hand-over, sign-off, tool chain, parts entry, board file
 spelling as written; "catalog" is edakit's own name, "catalogue" JLCPCB's. No superlatives, no "simply", no "just", no
 "the hard way". Numbers with their unit and a space (0.2 mm, 5 V). Prose wrapped at 120 characters, as written.
 
+**Dense.** Every statement once, at the place that owns it; everywhere else a link, not a paraphrase – the command list
+of the README, 10.5 and `edakit --help` are one list in one place. One example where one shows it. No sentence that
+announces another, no restatement of a code block or a table in prose, no history in a guide. Short sentences and dense
+text are not opposites: the words that go are the asides, the repetitions and the enumerations, not the statements – a
+qualification is a statement and stays, and a shorter wording never trades a meaning (the rules of "What the automation
+reads").
+
 **A page.** Its first paragraph says for whom and what they can do after it; the shortest path comes first, the details
 after, the reasons at the end; a status admonition at the top where something is offline only or planned; headings of at
 most five words in the navigation. Regulatory content says once that it is support, not legal advice (CLAUDE.md).
@@ -302,9 +316,10 @@ generated and held by a test, as chapter 17's drawings are.
 (`test_walkthrough.py` is the pattern).
 
 **Held by a test.** What can be counted is counted, in edakit's own spirit: `tests/test_style.py` measures the entry
-pages' sentence length, finds a section over 80 lines without a subheading, a bare "(N.N)", "the reference project" or
-"the user" in a reader page's own sentences, a date outside chapter 13 and the status lines, a term in bold without a
-glossary entry. It reads documentation only. The rest is the documentation review's (`docs/organisation.md`).
+pages' sentence length, finds a section over 80 lines without a subheading, a chapter over 500 lines, a paragraph over
+120 words, a bare "(N.N)", "the reference project" or "the user" in a reader page's own sentences, a date outside
+chapter 13 and the status lines, a term in bold without a glossary entry. It reads documentation only. The rest is the
+documentation review's (`docs/organisation.md`).
 
 ## What is missing, so that others use it
 
@@ -335,7 +350,7 @@ glossary entry. It reads documentation only. The rest is the documentation revie
 | D.2 | The entry layer: the README as the start page, `docs/quickstart.md` with its test, `docs/how-it-works.md` with the pipeline drawing and the transcript; `test_plugin.py` pointed at the page that lists skills and agents | M | D.1 |
 | D.3 | The site: the navigation as data, by reader, short titles; `organisation.md` and the brand page on it; "Inside edakit" with its index and the source line; the footer line; the feedback line; prototypes off the navigation; `test_pages.py` follows | S–M | D.2 |
 | D.4 | The reference: 10.5 as entries with the generated synopsis; the catalog page split by `build.py`; the chapters' generated lists as the short kind of `catalog/handbook.py` | M | D.1 |
-| D.5 | The chapters in place, worst first – 8, 3, 5, 7, 4, 10, then 2, 6, 11, 14, 15, 16, 17, 1 –, one per branch, the review for meaning after each; chapter 13 takes the history | L (M per large chapter) | D.1 |
+| D.5 | The chapters in place, worst first – 8, 3, 5, 7, 4, 10, then 2, 6, 11, 14, 15, 16, 17, 1 –, condensed to a third fewer words with the statements listed before and checked after, one per branch, the review for meaning after each; chapter 13 takes the history | L (M per large chapter) | D.1 |
 | D.6 | The reader pages: "Adding a rule", "Working on edakit" with CLAUDE.md beside it | M | D.3 |
 | D.7 | The "is it for me" numbers from the evals; the findings on sources (the plugin's descriptions) to the owner | S | – |
 | D.8 | "What changed", if decided | S | D.3 |
@@ -350,9 +365,10 @@ through a navigation that tells them where they are, with the chapters still as 
   alone, and without EasyEDA – tried by one person, and by Claude in a fresh session with the site as its only input, as
   an eval case (`evals/`).
 - The entry pages: sentences at most 20 words on average; no page over two screens but the quickstart.
-- The guides: no section over 80 lines without a subheading; sentences at most 25 words on average; no bare "(N.N)"; no
-  "the reference project" and no "the user" in a reader page's own sentences; no date outside chapter 13, the status
-  lines and the dates the automation relies on.
+- The guides: a third fewer words than today per chapter, no statement lost (the review's list), no chapter over 500
+  lines, no paragraph over 120 words; no section over 80 lines without a subheading; sentences at most 25 words on
+  average; no bare "(N.N)"; no "the reference project" and no "the user" in a reader page's own sentences; no date
+  outside chapter 13, the status lines and the dates the automation relies on.
 - The navigation: two levels, at most fourteen entries per group, titles of at most five words.
 - The reference: no cell over 25 words; the commands' synopses equal the command line (test); no catalog page over 300
   KB.
@@ -382,6 +398,10 @@ through a navigation that tells them where they are, with the chapters still as 
   with the places that name the section, `test_references.py` red before a section goes. What the rules do not catch – a
   shortened sentence that a skill read differently – is found by the review's reading of the skills against the new
   text, or by the first session that runs the skill; the first sessions after a trimmed chapter are watched for it.
+- **Condensing is where meaning drifts most.** A cut qualification changes what a sentence says; a merged pair of
+  sentences can lose the case one of them covered. Held by the rule that a qualification is a statement, by the review's
+  list of statements per chapter – the list is written before the chapter is condensed and checked after –, and by the
+  owner's rule: unsure, ask; generated or used elsewhere, leave it.
 - **Drift from the code.** A trimmed chapter can lose a true sentence. The review checks each chapter against the code
   after its branch (`docs/organisation.md`); the tests hold the quoted outputs; a correct sentence stays as it is,
   shortened only where it is nested.
@@ -408,6 +428,7 @@ recommendation.
 | 7 | The command reference | entries: the synopsis generated from the parser and held by a test, reads, writes and exit codes hand-written beneath; the help texts changed only in `cli.py` through a branch | the table as today; fully generated (loses reads and writes) | accepted |
 | 8 | "What changed" from the merge commits on the site | not built until a reader asks: the commit messages are written for the owner | built with D.3 | accepted |
 | 9 | The circuit alone as a station (the owner's addition: "we can also make only a circuit SVG – maybe that is the maker anyway") | two groups, "The circuit" and "The board", instead of "Use it"; chapter 14 to the circuit; the quickstart is the station and says so; the pipeline drawing shows the cut | one group with the station on its index page only; a sentence in the maker's row only | accepted |
+| 10 | Condensing as a rule (the owner's addition: "it would be advisable to condense the texts – a style question") | the same statements in a third fewer words per chapter, no chapter over 500 lines, no paragraph over 120 words, no statement lost – the review's list proves it, and where a chapter does not give the third the statements win | the rules without a number; a target per chapter set at its branch | accepted |
 
 Decided by Claude and confirmed by the owner on 2026-10-31: MkDocs Material stays; chapter files and numbers stay;
 sources, data and code untouched, with the rules of the section "What the automation reads"; `tests/test_references.py`;
