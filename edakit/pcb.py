@@ -11,15 +11,18 @@ mounting and tooling holes, copper pours, EasyEDA's auto-layout.
                                     other side, near, polarised parts of the kinds in `uniform` pointing the same way
                                     (default: LEDs in a row), mated plugs (`mate` of the parts entry) clear of the
                                     other parts and out through the outline; SYNC.plan the layout requirements of the
-                                    circuit; GEO.hole holes and leads), airline length, preview PNG, net classes from the
-                                    simulation, the mechanical model mech_<board>.json; a part not in the dump yet
-                                    takes the library footprint `edakit part import` cached
+                                    circuit; GEO.hole holes and leads; GEO.spacing the pads of different parts as route
+                                    check measures them: clearance, paste gap, hand_solder_keep_mm – where the
+                                    geometry or the library cache has their shapes), airline length, preview PNG, net
+                                    classes from the simulation, the mechanical model mech_<board>.json; a part not in
+                                    the dump yet takes the library footprint `edakit part import` cached
     edakit pcb place [--rest] [--write] [--only C1,R1]
                                     offline: a spot next to its host for every part the circuit or the board file
                                     ties to one (layout.near, [near], the decoupling of SYNC.plan) and [place] lacks;
                                     --rest: every other part of the board without a row as well, by airline length
                                     (most pins on nets of placed parts first, the shortest airline length on an
-                                    assembled side, then moves and swaps while it falls); --write adds the rows to
+                                    assembled side, then moves and swaps while it falls); a spot only where the plan
+                                    check – the pads too (GEO.spacing) – finds nothing new; --write adds the rows to
                                     [place] with auto = true (a later run may move those)
     edakit pcb parts [--write]      parts of the board schematic -> PCB without the "Import Changes" dialog
     edakit pcb nets [--write]       pad nets in the PCB = graph
@@ -377,6 +380,101 @@ def check_handover(board, design, place, boxes):
                 caps = r.others[0] if len(r.others) == 1 else f"one of {', '.join(r.others)}"
                 out.append(f"{r.part}: no capacitor of its own from {net} to {design.ground} within "
                            f"{board.near_mm:g} mm – fix {caps} next to it")
+    return out
+
+
+# --- GEO.spacing on the plan: the pads of different parts as `route check` measures them on the PCB ----------------
+
+PAD_LAYERS = {"TOP": TOP, "BOTTOM": BOTTOM, "MULTI": MULTI_LAYER}
+
+
+def pad_copper(cfg, geo, design):
+    """The pads of geo whose copper the plan knows: {ref: [(number, pad)]} – pad: place (mil, at 0° on TOP), its net of
+    the graph (the dump's for a part the graph lacks), shape, w, h, rot and layer from the geometry where it has them
+    (footprint data, the library footprint, a KiCad dump), else from the library footprint `edakit part import` cached
+    under the same name: its pad of the same number at the same place (footprint.POS_MM). A pad with neither – an
+    EasyEDA dump without the cache – is left out; `route check` measures it on the PCB."""
+    from . import part
+    from .footprint import POS_MM
+    out = {}
+    for ref, g in geo.items():
+        lib = part.cached_footprint(cfg, g.get("footprint")) or {}
+        pads = []
+        for num, q in g.get("pads", {}).items():
+            net = design.pin_net.get(f"{ref}.{num}", "") if ref in design.comps else q.get("net") or ""
+            for leg in g.get("pads_same_number", {}).get(num) or [q]:
+                p = {**q, **leg, "net": net}
+                if not (p.get("shape") and p.get("w") and p.get("h")):
+                    same = [m for m in (lib.get("pads_same_number") or {}).get(num) or
+                            ([lib["pads"][num]] if num in lib.get("pads", {}) else [])
+                            if m.get("shape") and m.get("w") and m.get("h")
+                            and math.hypot(m["x"] - p["x"], m["y"] - p["y"]) / MIL_PER_MM <= POS_MM]
+                    if not same:
+                        continue
+                    p.update({k: same[0][k] for k in ("shape", "w", "h", "rot", "layer") if k in same[0]})
+                pads.append((num, p))
+        if pads:
+            out[ref] = pads
+    return out
+
+
+def spacing_rules(cfg, board, design):
+    """GEO.spacing as `route check` holds the placement to it: the routing clearance, the paste gap on the assembled
+    sides ([release] assembly), hand_solder_keep_mm at the parts soldered by hand, the accepts of the graph."""
+    from types import SimpleNamespace
+
+    from . import route
+    rules = route.Rules(board)
+    gap, sides = route.paste_rule(cfg)
+    return SimpleNamespace(clear=rules.clear, paste=gap, sides=sides, keep=rules.joint_keep,
+                           hand=route.hand_soldered(design.graph, board.name) if rules.joint_keep else set(),
+                           waive={t: route.pad_accepts(design.graph, "GEO.spacing", t)
+                                  for t in ("clearance", "paste", "joint")})
+
+
+def plan_pads(board, place, copper):
+    """The pads of the parts in place as `route read` reads them from the PCB – EasyEDA's frame, mil, layer ids, a
+    bottom-side part's local y mirrored – for route's GEO.spacing functions: {"components", "pads"}."""
+    comps, pads = [], []
+    for ref, p in place.items():
+        if ref not in copper:
+            continue
+        ex, ey, erot, layer = board.to_eda(p.x, p.y, p.rot, p.side)
+        comps.append({"ref": ref, "layer": layer})
+        a, flip = math.radians(erot), -1 if layer == BOTTOM else 1
+        for num, q in copper[ref]:
+            lx, ly = q["x"], q["y"] * flip
+            side = q.get("layer") or ("MULTI" if q.get("tht") else "TOP")
+            if layer == BOTTOM and side != "MULTI":
+                side = "TOP" if side == "BOTTOM" else "BOTTOM"
+            pads.append({"ref": ref, "num": num, "net": q.get("net") or "", "shape": [q["shape"], q["w"], q["h"]],
+                         "x": ex * MIL_PER_MM + lx * math.cos(a) - ly * math.sin(a),
+                         "y": ey * MIL_PER_MM + lx * math.sin(a) + ly * math.cos(a),
+                         "rot": (erot + flip * (q.get("rot") or 0)) % 360, "layer": PAD_LAYERS[side]})
+    return {"components": comps, "pads": pads}
+
+
+def spacing_findings(cfg, board, geo, design, place, spacing=None):
+    """GEO.spacing on the plan, as `route check` turns a placement down before anything is written: pads of different
+    parts on different nets closer than the routing clearance, SMD pads on an assembled side closer than the paste gap,
+    pads of other nets closer than hand_solder_keep_mm to a joint soldered by hand – the pads pad_copper knows, a pair
+    the graph accepts left out. spacing: (spacing_rules, pad_copper), computed once by a caller that asks often."""
+    from . import route
+    rules, copper = spacing or (spacing_rules(cfg, board, design), pad_copper(cfg, geo, design))
+    data = plan_pads(board, place, copper)
+    out, seen = [], set()
+    for g in route.pad_gaps(data, rules.clear, rules.waive["clearance"]):
+        if not g["waived"]:
+            seen.add((g["a"], g["b"]))
+            out.append(f"GEO.spacing {route.gap_text(g, rules.clear)}")
+    if rules.sides:
+        out += [f"GEO.spacing {route.gap_text(g, rules.paste, 'the paste gap')}"
+                for g in route.pad_gaps(data, rules.paste, rules.waive["paste"], rules.sides)
+                if not g["waived"] and (g["a"], g["b"]) not in seen]
+    if rules.keep:
+        out += [f"GEO.spacing {route.joint_text(g, rules.keep, board)}"
+                for g in route.joint_gaps(data, rules.keep, rules.hand, (), rules.waive["joint"])
+                if not g["waived"]]
     return out
 
 
@@ -759,6 +857,12 @@ def plan(cfg, board):
     say_unmeasured(geo, place)
     problems += check_plan(cfg, board, geo, place, boxes, tht)
     problems += [f"SYNC.plan {p}" for p in check_handover(board, design, place, boxes)]
+    copper = pad_copper(cfg, geo, design)
+    problems += spacing_findings(cfg, board, geo, design, place, (spacing_rules(cfg, board, design), copper))
+    if blind := sorted((r for r in place if r in geo and set(geo[r].get("pads", {})) - {n for n, _ in copper.get(r, ())}),
+                       key=natural_key):
+        print(f"  GEO.spacing not judged at the pads without a shape: {', '.join(blind)} – an EasyEDA dump measures "
+              "places only; edakit part import caches the library's pads, route check measures the PCB")
     holes = Recorder()      # GEO.hole on the plan's geometry: a hole that does not take its lead is a plan finding
     checks.check_holes(design, holes, lambda r: (geo[r], GEOMETRY_FROM.get(geo[r].get("source"), "{}").format(
         geo[r].get("footprint")) if geo[r].get("source") else "pcb dump") if r in geo else (None, None))
@@ -862,9 +966,12 @@ def plan_state(board, geo, place):
     return boxes, tht
 
 
-def plan_findings(cfg, board, geo, design, place, boxes, tht):
+def plan_findings(cfg, board, geo, design, place, boxes, tht, spacing=None):
+    """What pcb place holds a spot to: the plan check, the circuit's layout requirements and GEO.spacing between the
+    pads (spacing_findings) -> Counter of the findings."""
     from collections import Counter
-    return Counter(check_plan(cfg, board, geo, place, boxes, tht) + check_handover(board, design, place, boxes))
+    return Counter(check_plan(cfg, board, geo, place, boxes, tht) + check_handover(board, design, place, boxes)
+                   + spacing_findings(cfg, board, geo, design, place, spacing))
 
 
 def gap_to(corners, b):
@@ -967,9 +1074,9 @@ def spot_candidates(board, geo, place, boxes, tht, part, hosts, rows):
     return [(float(X[i]), float(Y[i]), PLACE_ROTATIONS[rot[i]]) for i in order]
 
 
-def find_spot(cfg, board, geo, design, state, part, hosts, rows):
-    """The first spot of spot_candidates where check_plan and check_handover report nothing new -> (Placement or None,
-    the first new finding of the best spot turned down)."""
+def find_spot(cfg, board, geo, design, state, part, hosts, rows, spacing=None):
+    """The first spot of spot_candidates where plan_findings – check_plan, check_handover, GEO.spacing between the pads –
+    reports nothing new -> (Placement or None, the first new finding of the best spot turned down)."""
     from shapely.geometry import box
 
     from .config import Placement
@@ -978,7 +1085,8 @@ def find_spot(cfg, board, geo, design, state, part, hosts, rows):
     edge = outline_polygon(board).exterior
     inner = outline_polygon(board).buffer(-0.3)
     at_edge = any(r.kind == "edge" and r.part == part for r in handover.requirements(design, board.name))
-    before = plan_findings(cfg, board, geo, design, place, boxes, tht)
+    spacing = spacing or (spacing_rules(cfg, board, design), pad_copper(cfg, geo, design))
+    before = plan_findings(cfg, board, geo, design, place, boxes, tht, spacing)
     tried, why = 0, None
     for x, y, rot in spot_candidates(board, geo, place, boxes, tht, part, hosts, rows):
         p = Placement(x, y, rot, side, auto=True)
@@ -989,7 +1097,7 @@ def find_spot(cfg, board, geo, design, state, part, hosts, rows):
             continue
         pads = [board.transform((q["x"], q["y"]), x, y, rot, side) for q in geo[part]["pads"].values() if q["tht"]]
         new = plan_findings(cfg, board, geo, design, {**place, part: p}, {**boxes, part: b},
-                            {s: v + (pads if s == side else []) for s, v in tht.items()}) - before
+                            {s: v + (pads if s == side else []) for s, v in tht.items()}, spacing) - before
         if not new:
             return p, None
         why = why or sorted(new)[0]   # the best spot's first new finding, for the message
@@ -1247,6 +1355,7 @@ class Placing:
                            key=lambda d: (d not in near, natural_key(d)))
         self.hosted = []     # the hosts of the parts placed next to one
         self.airline = []    # the parts --rest placed by airline length, in their order
+        self.spacing = spacing_rules(cfg, board, design), pad_copper(cfg, geo, design)   # GEO.spacing, read once
         self.nets = {}       # part -> the nets of its pins in the graph, ground left out (a net once per pin)
         for pin, net in design.pin_net.items():
             if net != design.ground:
@@ -1278,7 +1387,7 @@ class Placing:
         self.boxes, self.tht = plan_state(self.board, self.geo, self.place)
 
     def findings(self):
-        return plan_findings(self.cfg, self.board, self.geo, self.design, *self.state())
+        return plan_findings(self.cfg, self.board, self.geo, self.design, *self.state(), self.spacing)
 
     def put(self, part, hosts, supply=None):
         board, geo = self.board, self.geo
@@ -1289,7 +1398,7 @@ class Placing:
             self.failed.add(part)
             return
         pairs = tie_pads(self.pin_net, self.design.ground, geo, part, hosts[0], supply)
-        p, why = find_spot(self.cfg, board, geo, self.design, self.state(), part, hosts, pairs)
+        p, why = find_spot(self.cfg, board, geo, self.design, self.state(), part, hosts, pairs, self.spacing)
         pins = "; ".join(f"pin{'s' * (len(theirs) > 1)} {', '.join(theirs)}, {net}" for net, _, theirs in pairs[0])
         if p is None:
             self.problems.append((part, f"{part}: no free spot within near_mm {board.near_mm:g} of {hosts[0]}"
