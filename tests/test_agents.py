@@ -141,9 +141,9 @@ FAULTS = {
     "phase order": (10, own(phase="order"), 'optik: phase = "order" – export or acceptance; in phase order the owner '
                                             "checks at the manufacturer, no agent gets there"),
     "scope missing": (10, agent("optik", file=".claude/agents/optik.md", about=OPTIK, signs="M-7", phase="export"),
-                      "optik: scope missing – a sign-off of its own is bound to the hash of its scope: circuit, layout "
-                      "or fab"),
-    "scope unknown": (10, own(scope="board"), 'optik: scope = "board" – circuit, layout or fab'),
+                      "optik: scope missing – a sign-off of its own is bound to the hash of its scope: circuit, "
+                      "electrical, layout or fab"),
+    "scope unknown": (10, own(scope="board"), 'optik: scope = "board" – circuit, electrical, layout or fab'),
     "scope with an edakit review": (10, PYTREE.replace('replaces = "pcb-reviewer"',
                                                        'replaces = "pcb-reviewer"\nscope    = "layout"'),
                                     "pcb-pruefer: scope belongs to a sign-off of its own – M-5 keeps the scope the "

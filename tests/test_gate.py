@@ -136,7 +136,7 @@ def test_regulatory_review_is_required_also_when_the_file_lacks_it(project):
     path.write_text(json.dumps(s))
     loaded, notes = gate.load_signoff(project.config(), {"state_sha256": None, "layout_sha256": None})
     m6 = next(m for m in loaded["manual"] if m["id"] == "M-6")
-    assert m6["phase"] == "export" and m6["scope"] == "circuit" and m6["done_by"] is None
+    assert m6["phase"] == "export" and m6["scope"] == "electrical" and m6["done_by"] is None
     assert any("M-6 is missing" in n for n in notes)
     d, reasons = gate.decide(rows("pass"), [], loaded, ALL, gate.STAGES)
     assert d == "NOT RELEASED" and "M-6" in reasons[0]
@@ -344,8 +344,8 @@ def test_turning_hash_ignore_on_rehashes_the_signed_state(project):
     gate.load_signoff(cfg, {"state_sha256": new, "layout_sha256": None}, write=True)
     written = json.loads(path.read_text())
     assert written["state_sha256"] == new
-    assert written["rehashed"][-1]["state_sha256"] == [old, new]
-    assert written["rehashed"][-1]["hash_ignore"] == ["notes"]
+    entry = next(r for r in reversed(written["rehashed"]) if "hash_ignore" in r)   # M-6's move comes after it
+    assert entry["state_sha256"] == [old, new] and entry["hash_ignore"] == ["notes"]
     # a further key later: the old hash is the one with the list recorded last
     cfg = ignore(project, ["notes", "sources"])
     newer = gate.state_hash(cfg)

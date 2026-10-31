@@ -192,6 +192,7 @@ def prepare(cfg, args):
         raise CartError(f"the order settings that change the board differ from run {run}'s {order_sheet.SETTINGS} "
                         "([order] of edakit.toml?) – a new gate run first")
     head = {k: man.get(k) for k in ("state_sha256", "layout_sha256", "fab_sha256")}
+    head["electrical_sha256"] = man.get("electrical_sha256") or gate.electrical_hash(cfg)   # the files are the run's
     signoff, _ = gate.load_signoff(cfg, head)                                   # 3. M-6 for the run's circuit hash
     m6 = next((x for x in signoff.get("manual", []) if x.get("id") == "M-6"), None)
     if not (m6 and m6.get("done_by")):

@@ -95,12 +95,13 @@ OFFLINE, WITH_EASYEDA = "PGE", "SLF"
 PHASES = [("export", "before the export (condition of the release)"),
           ("order", "after uploading to the manufacturer, before paying"),
           ("acceptance", "after delivery, per board")]
-SCOPE_KEY = {"circuit": "state_sha256", "layout": "layout_sha256", "fab": "fab_sha256"}
+SCOPE_KEY = {"circuit": "state_sha256", "electrical": "electrical_sha256", "layout": "layout_sha256",
+             "fab": "fab_sha256"}
 REQUIRED = {   # manual checks every release needs, also when an older sign-off file does not list them
     "M-1": {"phase": "export", "scope": "circuit",
             "text": "Critical parts checked a second time against their datasheets, independently – the agent "
                     "electrical-reviewer in its own session"},
-    "M-6": {"phase": "export", "scope": "circuit",
+    "M-6": {"phase": "export", "scope": "electrical",     # a footprint has no regulatory content (2026-10-31)
             "text": "Regulatory review: circuit and parts against EU law for the stated purpose (RoHS, REACH, radio, "
                     "batteries, product safety) – the agent regulatory-reviewer in its own session; support, not "
                     "legal advice: no claim to correctness, nothing legally guaranteed"},
@@ -204,6 +205,13 @@ def state_hash(cfg, ignore=None):
     return file_hash(cfg.root, state_files(cfg), ignore, [cfg.graph, *cfg.parts.glob("*.json")], graph=cfg.graph)
 
 
+def electrical_hash(cfg):
+    """The electrical hash (electrical_sha256): the circuit hash without the footprint data of the parts entries –
+    what M-6 is bound to, since a footprint has no regulatory content (the owner's decision of 2026-10-31). The footprint
+    data counts in the circuit hash for M-1 (polarity and pins against the datasheet) and in the layout hash."""
+    return state_hash(cfg, [*cfg.release.get("hash_ignore", []), "footprint_data"])
+
+
 def layout_files(cfg):
     from ..pcb import geometry_file
     made = cfg.made()     # a bought or hand-wired board has no layout: no board file, no artwork, no footprint geometry
@@ -257,6 +265,7 @@ def header(cfg):
     return {
         "graph_sha256": hashlib.sha256(cfg.graph.read_bytes()).hexdigest(),
         "state_sha256": state_hash(cfg),
+        "electrical_sha256": electrical_hash(cfg),
         "layout_sha256": layout_hash(cfg),
         "graph_version": design.version, "graph_date": design.graph.get("date"),
         "git_commit": sh(cfg.root, "git", "rev-parse", "--short", "HEAD"),
@@ -281,6 +290,23 @@ def rehash(cfg, s, head):
             "why": f"[release] hash_ignore = {json.dumps(now)}" + (f" (was {json.dumps(before)})" if before else "")
                    + ": the circuit hash leaves these keys out; the files are the signed ones",
             "hash_ignore": now, "state_sha256": [signed, head["state_sha256"]]}
+
+
+def rebind_m6(s, head):
+    """The `rehashed` entry that gives a sign-off file without electrical_sha256 the electrical hash of its files and
+    moves an M-6 of scope 'circuit' to scope 'electrical' – a file from before the electrical hash, or one whose
+    sign-offs of scope 'electrical' copied the circuit hash only –, while its circuit hash is the current one: the files
+    signed are these, so the electrical hash of these files is the one signed. Otherwise None, and M-6 stays."""
+    new = head.get("electrical_sha256")
+    if s.get("electrical_sha256") or not new or not s.get("state_sha256") or s["state_sha256"] != head.get("state_sha256"):
+        return None
+    if not any(m.get("id") == "M-6" and m.get("scope", "circuit") == "circuit" or m.get("scope") == "electrical"
+               for m in [*s.get("manual", []), *s.get("accept", [])]):
+        return None
+    return {"date": dt.date.today().isoformat(), "by": "edakit gate",
+            "why": "M-6 bound to the electrical hash – the circuit without the footprint data, which has no regulatory "
+                   "content (2026-10-31); the files are the signed ones",
+            "electrical_sha256": [None, new]}
 
 
 def lapsed(cfg, warns):
@@ -321,11 +347,23 @@ def load_signoff(cfg, head, write=False):
     s = {} if missing else json.loads(path.read_text(encoding="utf-8"))
     notes = [f"{path.name} missing – no sign-offs; the required checks are open"] if missing else []
     valid = {"decision": True}
+    if "electrical_sha256" not in head:   # a caller with the circuit hash only: the files' own, when they are its files
+        head = {**head, "electrical_sha256": electrical_hash(cfg) if head.get("state_sha256") is not None
+                and head["state_sha256"] == state_hash(cfg) else None}
     if not missing and (entry := rehash(cfg, s, head)):
         old, new = entry["state_sha256"]
         s["state_sha256"] = new
         s.setdefault("rehashed", []).append(entry)
         notes.append(f"{path.name}: rehashed – {entry['why']}; state_sha256 {old[:12]}… → {new[:12]}…")
+        if write:
+            save_manifest(path, s, indent=2)
+            print(f"  {notes[-1]}")
+    if not missing and (entry := rebind_m6(s, head)):
+        s["electrical_sha256"] = entry["electrical_sha256"][1]
+        s["manual"] = [{**m, "scope": "electrical"} if m.get("id") == "M-6" and m.get("scope", "circuit") == "circuit"
+                       else m for m in s["manual"]]
+        s.setdefault("rehashed", []).append(entry)
+        notes.append(f"{path.name}: rehashed – {entry['why']}; electrical_sha256 → {entry['electrical_sha256'][1][:12]}…")
         if write:
             save_manifest(path, s, indent=2)
             print(f"  {notes[-1]}")
@@ -341,7 +379,7 @@ def load_signoff(cfg, head, write=False):
                              "(no fab_sha256) and do not count")
             continue
         valid[scope] = s.get(key) == head.get(key)
-        if not (missing or valid[scope]) and (scope != "fab" or scope in used or key in s):
+        if not (missing or valid[scope]) and (scope not in ("fab", "electrical") or scope in used or key in s):
             notes.append(f"{path.name}: sign-offs with scope '{scope}' belong to another state ({key}) and do not count")
     team = scripts.agents(cfg)          # [agents.<name>]: what the project's agents sign, held to them
     manual = []
@@ -642,7 +680,8 @@ def write_manifest(cfg, outdir, head, decision):
                 "git": head["git_commit"] + (" + uncommitted changes" if head["git_dirty"] else ""),
                 "graph_version": head.get("graph_version"),
                 "graph_sha256": head["graph_sha256"], "state_sha256": head["state_sha256"],
-                "layout_sha256": head["layout_sha256"], "files": files}
+                "electrical_sha256": head.get("electrical_sha256"), "layout_sha256": head["layout_sha256"],
+                "files": files}
     if head.get("fab_sha256"):
         manifest.update(fab_method=head["fab_method"], fab_sha256=head["fab_sha256"], fab_layers=head["fab_layers"])
     if decision == "RELEASED":
@@ -890,6 +929,8 @@ def write_protocol(cfg, outdir, head, rows, sim, signoff, notes, decision, reaso
          f"| SHA-256 graph | `{head['graph_sha256']}` |",
          f"| SHA-256 circuit | `{head['state_sha256']}` (graph, parts database, simulation config"
          f"{', requirements' if cfg.requirements else ''}) |",
+         f"| SHA-256 electrical | `{head.get('electrical_sha256')}` (the circuit without the parts' footprint data – "
+         "M-6) |",
          f"| SHA-256 layout | `{head['layout_sha256']}` (board files, artwork, layout files, footprint geometry"
          + (", footprint data" if footprint_data(cfg) else "") + ") |",
          *([f"| SHA-256 fab | `{head['fab_sha256']}` (what the manufacturer builds from: Gerber layers, drill hits, "

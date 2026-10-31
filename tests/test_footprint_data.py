@@ -636,3 +636,87 @@ def test_the_data_round_trips_through_the_geometry(project):
     back = footprint.from_geometry(geo)
     assert back["pads"] == {n: {k: v for k, v in p.items()} for n, p in J1_DATA["pads"].items()}
     assert all(math.isclose(a, b) for a, b in zip(footprint.box(e["footprint_data"]), [-1.6, -0.85, 1.6, 0.85]))
+
+
+# --- M-6 not voided by the footprint data (the owner's decision of 2026-10-31) -------------------------------------
+
+def signed(project, scope_m6=None):
+    """The example's sign-off file with M-1 and M-6 signed for the current state; M-6 with scope_m6 when given."""
+    cfg = project.config()
+    path = project.root / "hardware" / "signoff.json"
+    s = json.loads(path.read_text())
+    s["state_sha256"], s["electrical_sha256"] = gate.state_hash(cfg), gate.electrical_hash(cfg)
+    s["manual"] = [{**m, "done_by": "agent", "date": "2026-10-31",
+                    **({"scope": scope_m6} if scope_m6 and m["id"] == "M-6" else {})} for m in s["manual"]]
+    path.write_text(json.dumps(s, indent=2))
+    return path
+
+
+def counted(project, write=False):
+    cfg = project.config()
+    head = {k: v for k, v in gate.header(cfg).items() if k.endswith("_sha256") and k != "graph_sha256"}
+    loaded, notes = gate.load_signoff(cfg, head, write=write)
+    return {m["id"]: m["done_by"] for m in loaded["manual"] if m["id"] in ("M-1", "M-6")}, notes
+
+
+def test_the_electrical_hash_leaves_the_footprint_data_out(project):
+    before = gate.electrical_hash(project.config())
+    e = own(project, "C131337", J1_DATA)
+    assert gate.electrical_hash(project.config()) == before             # data added: the circuit hash changed only
+    e["footprint_data"]["pads"]["1"]["x"] = 1.05
+    project.save_part("C131337", e)
+    assert gate.electrical_hash(project.config()) == before
+    e["limits"]["i_max_a"] = 1.5                                         # a rating: both
+    project.save_part("C131337", e)
+    assert gate.electrical_hash(project.config()) != before
+
+
+def test_a_changed_footprint_voids_m1_not_m6(project):
+    """M-6 is bound to the electrical hash: a footprint has no regulatory content. M-1 keeps the circuit hash – it
+    checks polarity and pins against the datasheet."""
+    e = own(project, "C131337", J1_DATA)
+    signed(project, scope_m6="electrical")
+    assert counted(project)[0] == {"M-1": "agent", "M-6": "agent"}
+    e["footprint_data"]["pads"]["1"]["x"] = 1.05
+    project.save_part("C131337", e)
+    assert counted(project)[0] == {"M-1": None, "M-6": "agent"}
+    e["limits"]["i_max_a"] = 1.5
+    project.save_part("C131337", e)
+    assert counted(project)[0] == {"M-1": None, "M-6": None}
+
+
+def test_an_older_m6_of_scope_circuit_moves_to_electrical_while_its_circuit_holds(project):
+    """A sign-off file from before: M-6 with scope 'circuit', no electrical_sha256. While the circuit hash is the signed
+    one, the gate binds M-6 to the electrical hash of the same files and records it in `rehashed`; from then on a
+    footprint change leaves it standing."""
+    e = own(project, "C131337", J1_DATA)
+    path = signed(project, scope_m6="circuit")      # a file from before the electrical hash
+    s = json.loads(path.read_text())
+    del s["electrical_sha256"]
+    path.write_text(json.dumps(s, indent=2))
+    marks, notes = counted(project, write=True)
+    assert marks == {"M-1": "agent", "M-6": "agent"} and any("M-6" in n and "electrical" in n for n in notes)
+    s = json.loads(path.read_text())
+    assert s["electrical_sha256"] == gate.electrical_hash(project.config())
+    assert next(m for m in s["manual"] if m["id"] == "M-6")["scope"] == "electrical"
+    assert s["rehashed"][-1]["electrical_sha256"] == [None, s["electrical_sha256"]]
+    e["footprint_data"]["pads"]["1"]["x"] = 1.05
+    project.save_part("C131337", e)
+    assert counted(project)[0] == {"M-1": None, "M-6": "agent"}
+
+
+def test_an_older_m6_stays_on_the_circuit_when_the_circuit_changed(project):
+    e = own(project, "C131337", J1_DATA)
+    path = signed(project, scope_m6="circuit")      # a file from before the electrical hash
+    s = json.loads(path.read_text())
+    del s["electrical_sha256"]
+    path.write_text(json.dumps(s, indent=2))
+    e["footprint_data"]["pads"]["1"]["x"] = 1.05
+    project.save_part("C131337", e)
+    assert counted(project, write=True)[0] == {"M-1": None, "M-6": None}
+    assert next(m for m in json.loads(path.read_text())["manual"] if m["id"] == "M-6")["scope"] == "circuit"
+
+
+def test_a_new_m6_is_required_with_scope_electrical():
+    assert gate.REQUIRED["M-6"]["scope"] == "electrical" and gate.REQUIRED["M-1"]["scope"] == "circuit"
+    assert gate.SCOPE_KEY["electrical"] == "electrical_sha256"

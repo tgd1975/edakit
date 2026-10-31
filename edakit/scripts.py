@@ -1431,7 +1431,7 @@ OWNER = {"M-2": "the owner's check at the manufacturer, after uploading",     # 
 SIGNOFF = re.compile(r"M-[1-9]\d*")             # a manual check of the sign-off file
 AGENT_NEEDS = ("file", "about", "signs", "phase")
 AGENT_PHASES = ("export", "acceptance")         # order: the owner checks at the manufacturer, no agent gets there
-SCOPES = ("circuit", "layout", "fab")           # the hashes of the gate (gate.SCOPE_KEY)
+SCOPES = ("circuit", "electrical", "layout", "fab")   # the hashes of the gate (gate.SCOPE_KEY)
 HOOKS = {   # where agents review, in the order of the flow, with the skill that starts them
     "circuit": "circuit review – before the layout (skills circuit-design, hardware-change)",
     "round": "round review – after a layout round that changed placement, routing or pours (skill pcb-round)",
@@ -1447,7 +1447,7 @@ REVIEWED = {   # edakit's reviews at their hook points, and what each looks at t
     "M-5": {"round": "the round's Gerber export – findings, no sign-off",
             "release": "M-5: the gate run's manufacturing files"},
 }
-OWN_HOOK = {"circuit": "circuit", "layout": "round", "fab": "release"}   # a sign-off of its own, phase export: by scope
+OWN_HOOK = {"circuit": "circuit", "electrical": "circuit", "layout": "round", "fab": "release"}   # a sign-off of its own, phase export: by scope
 
 
 class Agent(NamedTuple):
@@ -1555,10 +1555,10 @@ def agents(cfg) -> Agents:
                 clear = False
             if scope is None:
                 finding(10, f"{name}: scope missing – a sign-off of its own is bound to the hash of its scope: circuit, "
-                            "layout or fab")
+                            "electrical, layout or fab")
                 clear = False
             elif scope not in SCOPES:
-                finding(10, f'{name}: scope = "{scope}" – circuit, layout or fab')
+                finding(10, f'{name}: scope = "{scope}" – circuit, electrical, layout or fab')
                 clear = False
         if sid and SIGNOFF.fullmatch(sid) and sid not in OWNER:      # a sign-off an agent may sign: one agent each
             by_sid[sid].append(name)

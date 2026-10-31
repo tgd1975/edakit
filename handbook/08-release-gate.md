@@ -229,11 +229,14 @@ needs the file current runs `edakit pcb plan` first.
 
 ## 8.2 Hashes and sign-offs
 
-Every run records two hashes in the protocol header, and a run with stage F a third:
+Every run records three hashes in the protocol header, and a run with stage F a fourth:
 
 - **circuit** (`state_sha256`): graph (with its ground net and check settings), parts database, simulation config
   (and plugin, `[release] state_files`), and the requirements files of `[project] requirements` (3.6, 8.7) – a
   changed requirement voids M-1 and M-6, as a new purpose does: the reviews read the requirements
+- **electrical** (`electrical_sha256`): the circuit hash without the footprint data of the parts entries (4.5) – what
+  M-6 is bound to, since a footprint has no regulatory content (the owner's decision of 2026-10-31); a changed pad
+  voids M-1, not M-6. Without footprint data in any entry it covers what the circuit hash covers
 - **layout** (`layout_sha256`): the board files with the artwork they place (`[[silk.art]]`) and the footprint
   geometry beside them (`<board>.geometry.json`, 7.4), and `[release] layout_files` – of the made boards; a bought
   or hand-wired board has none. Where a parts entry has footprint data (4.5), the data of every entry a part of a made
@@ -241,7 +244,7 @@ Every run records two hashes in the protocol header, and a run with stage F a th
   voids the sign-offs of scope `layout` as a changed geometry does. A project without footprint data keeps its hash; one
   with it has "footprint data" among what the protocol header says the hash covers. The circuit hash covers the data
   without more: it takes every parts file, byte for byte or (with `hash_ignore`) as canonical JSON – a changed pad
-  voids M-1 too, which checks polarity at the footprint
+  voids M-1 too, which checks polarity at the footprint; the electrical hash leaves it out
 - **fab** (`fab_sha256`): what the manufacturer builds from, per made board – every Gerber layer of
   `fab/<board>/gerber/` rasterised at 0.02 mm as GEO.copper does, in the frame of the board outline (documentation and
   drill-drawing layers left out: nobody builds from them), the drill hits (both ends, diameter) rounded to 1 µm and
@@ -305,7 +308,8 @@ the new hash goes into the file, both into `rehashed` with `by` "edakit graph co
 well, nothing is carried over.
 
 The sign-off file (`[project] signoff`, [example](https://github.com/tgd1975/automatic_christmas_bell/blob/main/hardware/signoff.json)) holds manual checks and
-accepted warnings. Each counts only if the hash of its scope (`circuit`, `layout`, `fab`) equals the current one. The
+accepted warnings. Each counts only if the hash of its scope (`circuit`, `electrical`, `layout`, `fab`) equals the
+current one. The
 fab hash is known only after stage F: in a run without it (the offline gate) sign-offs with scope `fab` do not count.
 One that is signed is not open either – the gate names the fab hash of the sign-off file it is bound to, which stage F
 checks: "M-5 signed for fab f958da9ad4f8… – checked by stage F (section 6)" among the reasons, and the same in its line
@@ -375,14 +379,17 @@ no key to switch them off.
 | Check | Phase | Scope | What |
 |---|---|---|---|
 | M-1 | export | circuit | the critical parts checked a second time against their datasheets – agent electrical-reviewer |
-| M-6 | export | circuit | the regulatory review (chapter 15) – agent regulatory-reviewer; support, not legal advice |
+| M-6 | export | electrical | the regulatory review (chapter 15) – agent regulatory-reviewer; support, not legal advice |
 | M-5 | export | fab | the layout review on the manufacturing files of a gate run – agent pcb-reviewer |
 
 Not everything that can be ordered may be sold or even operated in the EU, and nothing else in the gate looks at that
 (M-6).
 
 A sign-off file that lists one of the three keeps its own phase, scope and text (an older M-5 with scope `layout`
-stays so). A project's agents (`[agents.<name>]`, 8.6) add to the list: a sign-off of its own of phase `export` – M-7 of
+stays so) – except M-6 of scope `circuit` from before the electrical hash: while the file's `state_sha256` is the
+current circuit hash, the gate binds it to the electrical hash of the same files (`electrical_sha256`, scope
+`electrical`) and records that in `rehashed`; when the circuit changed meanwhile, it stays on the circuit until it is
+signed again. A project's agents (`[agents.<name>]`, 8.6) add to the list: a sign-off of its own of phase `export` – M-7 of
 the agent optik – is required the same way, in the phase and bound to the hash of the scope the agent's entry gives;
 with `replaces` edakit's review stays required and the project agent signs it. Such a sign-off counts only when its
 `done_by` names the agent.

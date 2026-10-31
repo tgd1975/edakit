@@ -17,7 +17,7 @@ are. What one role decides lives in a file of its own, with one owner and one ha
 | `hardware/boards/<name>.toml` | one board: outline, holes, placement, routing, pours, silkscreen (10.2) | PCB designer | layout |
 | `hardware/boards/<name>.geometry.json` | the footprint geometry of the board's parts as placed in the PCB: boxes, pads, holes (7.4) – beside the board file, with its name | `edakit pcb dump` | layout |
 | the SVGs of `[[silk.art]]` | artwork on the silkscreen (7.7), drawn by hand or by a project script | PCB designer | layout |
-| `hardware/signoff.json` | sign-offs and accepted warnings, each bound to the hash of its scope: circuit, layout or fab (8.2); an accepted warning with `parts` {designator: LCSC} also to those parts; `rehashed` records a change of the hash method (the gate writes it for `hash_ignore`) | reviewers, the user | – |
+| `hardware/signoff.json` | sign-offs and accepted warnings, each bound to the hash of its scope: circuit, electrical (M-6), layout or fab (8.2); an accepted warning with `parts` {designator: LCSC} also to those parts; `rehashed` records a change of the hash method (the gate writes it for `hash_ignore`) | reviewers, the user | – |
 | `hardware/firmware.json` | the firmware contract, with `[firmware]` (3.5) | `edakit firmware` | – |
 | `hardware/scripts.lock` | the stamps of the project scripts: per script its `cmd`, the script itself and the hashes of what it reads, at its last run; after an `easyeda` script ran through `edakit run`, what it changed and what is from before it (8.6) | `edakit run`, `edakit scripts stamp`, the steps that run an input first; `pcb dump` and `route all` take off what they made again | – |
 
