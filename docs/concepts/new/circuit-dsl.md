@@ -264,13 +264,14 @@ variant esp32 of ../smd/hardware/graph.circuit
   param vlogic = 0..3.4 V                     # 3.3 V logic: every net written with vlogic follows (D-13)
   part U1 module "LILYGO TTGO T-Display V1.1" lcsc C18722937 no-bom "LILYGO T-Display V1.1 (plugged in)"
     nc    …                                   # the module's unused pins
-    alias led1 = IO27 led2 = IO26 led3 = IO25 led4 = IO33 led5 = IO32 servo = IO13 btn_start = IO38 btn_reset = IO37
+    alias led1 = IO27 led2 = IO26 led3 = IO25 led4 = IO33 led5 = IO32
+    alias servo = IO13 btn_start = IO38 btn_reset = IO37
     notes "Plugs into two 1x12 female headers …"
   part LED5 led KT-0805YG lcsc C2292 "0805 LED, yellow-green, countdown step 1"   notes "D-14: …"
   part LED4 led KT-0805YG lcsc C2292 "0805 LED, yellow-green, countdown step 2"   notes "D-14: …"
   for n in 1..5
-    part R{n} resistor "100 Ω 0805" lcsc C17408 value 100Ω   notes "D-14: (3.3 V − 2.1 V) / (100 Ω + 30 Ω + 10 Ω) ≈ 8.6 mA"
-  net +3V3 vlogic U1.3V3 S1.a S2.a   notes "3V3 pin of the T-Display (AP2112K-3.3); switched to the inputs by the buttons (D-13)."
+    part R{n} resistor "100 Ω 0805" lcsc C17408 value 100Ω   notes "D-14: (3.3 V − 2.1 V) / 140 Ω ≈ 8.6 mA"
+  net +3V3 vlogic U1.3V3 S1.a S2.a   notes "3V3 pin of the T-Display; switched to the inputs by the buttons (D-13)."
   net +5V without S1.a S2.a          notes "5V pin of the T-Display: USB VBUS behind the module's 1N5819; …"
   net SERVO      notes "IO13, 3.3 V PWM into the servo's signal input (D-13)."
   net BTN_START  notes "Pressed = 3.3 V at IO38 (input only), else R7 pulls to GND (D-13)."
